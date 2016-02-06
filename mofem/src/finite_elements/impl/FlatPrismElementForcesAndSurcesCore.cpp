@@ -197,9 +197,6 @@ PetscErrorCode FlatPrismElementForcesAndSurcesCore::operator()() {
         ierr = getNodesFieldData(dataH1,meshPositionsFieldName); CHKERRQ(ierr);
         ierr = getEdgesFieldData(dataH1,meshPositionsFieldName); CHKERRQ(ierr);
         ierr = getTrisFieldData(dataH1,meshPositionsFieldName); CHKERRQ(ierr);
-        ierr = getNodesFieldDofs(dataH1,meshPositionsFieldName); CHKERRQ(ierr);
-        ierr = getEdgesFieldDofs(dataH1,meshPositionsFieldName); CHKERRQ(ierr);
-        ierr = getTrisFieldDofs(dataH1,meshPositionsFieldName); CHKERRQ(ierr);
         try {
           ierr = opHOCoordsAndNormals.opRhs(dataH1); CHKERRQ(ierr);
           ierr = opHOCoordsAndNormals.calculateNormals(); CHKERRQ(ierr);
@@ -289,7 +286,6 @@ PetscErrorCode FlatPrismElementForcesAndSurcesCore::operator()() {
                 ierr = getColNodesIndices(*op_data[ss],field_name); CHKERRQ(ierr);
               }
               ierr = getNodesFieldData(*op_data[ss],field_name); CHKERRQ(ierr);
-              ierr = getNodesFieldDofs(*op_data[ss],field_name); CHKERRQ(ierr);
               case HCURL:
               if(!ss) {
                 ierr = getEdgesRowIndices(*op_data[ss],field_name); CHKERRQ(ierr);
@@ -298,7 +294,7 @@ PetscErrorCode FlatPrismElementForcesAndSurcesCore::operator()() {
               }
               ierr = getEdgesOrder(*op_data[ss],field_name); CHKERRQ(ierr);
               ierr = getEdgesFieldData(*op_data[ss],field_name); CHKERRQ(ierr);
-              ierr = getEdgesFieldDofs(*op_data[ss],field_name); CHKERRQ(ierr);
+              // ierr = getEdgesFieldDofs(*op_data[ss],field_name); CHKERRQ(ierr);
               case HDIV:
               if(!ss) {
                 ierr = getTrisRowIndices(*op_data[ss],field_name); CHKERRQ(ierr);
@@ -307,7 +303,7 @@ PetscErrorCode FlatPrismElementForcesAndSurcesCore::operator()() {
               }
               ierr = getTrisOrder(*op_data[ss],field_name); CHKERRQ(ierr);
               ierr = getTrisFieldData(*op_data[ss],field_name); CHKERRQ(ierr);
-              ierr = getTrisFieldDofs(*op_data[ss],field_name); CHKERRQ(ierr);
+              // ierr = getTrisFieldDofs(*op_data[ss],field_name); CHKERRQ(ierr);
               break;
               case L2:
               SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not make sanes on face");

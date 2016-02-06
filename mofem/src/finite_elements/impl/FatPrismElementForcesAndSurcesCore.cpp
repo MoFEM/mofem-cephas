@@ -587,9 +587,6 @@ PetscErrorCode FatPrismElementForcesAndSurcesCore::operator()() {
         ierr = getNodesFieldData(dataH1TrianglesOnly,meshPositionsFieldName); CHKERRQ(ierr);
         ierr = getEdgesFieldData(dataH1TrianglesOnly,meshPositionsFieldName); CHKERRQ(ierr);
         ierr = getTrisFieldData(dataH1TrianglesOnly,meshPositionsFieldName); CHKERRQ(ierr);
-        ierr = getNodesFieldDofs(dataH1TrianglesOnly,meshPositionsFieldName); CHKERRQ(ierr);
-        ierr = getEdgesFieldDofs(dataH1TrianglesOnly,meshPositionsFieldName); CHKERRQ(ierr);
-        ierr = getTrisFieldDofs(dataH1TrianglesOnly,meshPositionsFieldName); CHKERRQ(ierr);
         try {
           ierr = opHOCoordsAndNormals.opRhs(dataH1TrianglesOnly); CHKERRQ(ierr);
           ierr = opHOCoordsAndNormals.calculateNormals(); CHKERRQ(ierr);
@@ -675,7 +672,6 @@ PetscErrorCode FatPrismElementForcesAndSurcesCore::operator()() {
                 ierr = getColNodesIndices(*op_data[ss],field_name); CHKERRQ(ierr);
               }
               ierr = getNodesFieldData(*op_data[ss],field_name); CHKERRQ(ierr);
-              ierr = getNodesFieldDofs(*op_data[ss],field_name); CHKERRQ(ierr);
               case HCURL:
               if(!ss) {
                 ierr = getEdgesRowIndices(*op_data[ss],field_name); CHKERRQ(ierr);
@@ -684,7 +680,7 @@ PetscErrorCode FatPrismElementForcesAndSurcesCore::operator()() {
               }
               ierr = getEdgesOrder(*op_data[ss],field_name); CHKERRQ(ierr);
               ierr = getEdgesFieldData(*op_data[ss],field_name); CHKERRQ(ierr);
-              ierr = getEdgesFieldDofs(*op_data[ss],field_name); CHKERRQ(ierr);
+              // ierr = getEdgesFieldDofs(*op_data[ss],field_name); CHKERRQ(ierr);
               case HDIV:
               if(!ss) {
                 ierr = getTrisRowIndices(*op_data[ss],field_name); CHKERRQ(ierr);
@@ -693,7 +689,6 @@ PetscErrorCode FatPrismElementForcesAndSurcesCore::operator()() {
               }
               ierr = getTrisOrder(*op_data[ss],field_name); CHKERRQ(ierr);
               ierr = getTrisFieldData(*op_data[ss],field_name); CHKERRQ(ierr);
-              ierr = getTrisFieldDofs(*op_data[ss],field_name); CHKERRQ(ierr);
               if(!ss) {
                 ierr = getQuadRowIndices(*op_data[ss],field_name); CHKERRQ(ierr);
               } else {
@@ -701,7 +696,6 @@ PetscErrorCode FatPrismElementForcesAndSurcesCore::operator()() {
               }
               ierr = getQuadOrder(*op_data[ss],field_name); CHKERRQ(ierr);
               ierr = getQuadFieldData(*op_data[ss],field_name); CHKERRQ(ierr);
-              ierr = getQuadFieldDofs(*op_data[ss],field_name); CHKERRQ(ierr);
               case L2:
               if(!ss) {
                 ierr = getPrismRowIndices(*op_data[ss],field_name); CHKERRQ(ierr);
@@ -710,7 +704,6 @@ PetscErrorCode FatPrismElementForcesAndSurcesCore::operator()() {
               }
               ierr = getPrismOrder(*op_data[ss],field_name); CHKERRQ(ierr);
               ierr = getPrismFieldData(*op_data[ss],field_name); CHKERRQ(ierr);
-              ierr = getPrismFieldDofs(*op_data[ss],field_name); CHKERRQ(ierr);
               break;
               case NOFIELD:
               if(!getNinTheLoop()) {
