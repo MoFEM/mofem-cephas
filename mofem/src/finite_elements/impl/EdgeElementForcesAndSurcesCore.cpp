@@ -220,7 +220,6 @@ PetscErrorCode EdgeElementForcesAndSurcesCore::operator()() {
               ierr = getColNodesIndices(*op_data[ss],field_name); CHKERRQ(ierr);
             }
             ierr = getNodesFieldData(*op_data[ss],field_name); CHKERRQ(ierr);
-            ierr = getNodesFieldDofs(*op_data[ss],field_name); CHKERRQ(ierr);
             case HCURL:
             if(!ss) {
               ierr = getEdgesRowIndices(*op_data[ss],field_name); CHKERRQ(ierr);
@@ -229,7 +228,6 @@ PetscErrorCode EdgeElementForcesAndSurcesCore::operator()() {
             }
             ierr = getEdgesOrder(*op_data[ss],field_name); CHKERRQ(ierr);
             ierr = getEdgesFieldData(*op_data[ss],field_name); CHKERRQ(ierr);
-            ierr = getEdgesFieldDofs(*op_data[ss],field_name); CHKERRQ(ierr);
             break;
             case HDIV:
             SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not make sanes on edge");

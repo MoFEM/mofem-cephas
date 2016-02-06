@@ -235,10 +235,6 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::operator()() {
       ierr = getEdgesFieldData(dataH1,meshPositionsFieldName); CHKERRQ(ierr);
       ierr = getTrisFieldData(dataH1,meshPositionsFieldName); CHKERRQ(ierr);
       ierr = getTetsFieldData(dataH1,meshPositionsFieldName); CHKERRQ(ierr);
-      ierr = getNodesFieldDofs(dataH1,meshPositionsFieldName); CHKERRQ(ierr);
-      ierr = getEdgesFieldDofs(dataH1,meshPositionsFieldName); CHKERRQ(ierr);
-      ierr = getTrisFieldDofs(dataH1,meshPositionsFieldName); CHKERRQ(ierr);
-      ierr = getTetsFieldDofs(dataH1,meshPositionsFieldName); CHKERRQ(ierr);
       try {
         ierr = opHOatGaussPoints.opRhs(dataH1); CHKERRQ(ierr);
         hoGaussPtsInvJac.resize(hoGaussPtsJac.size1(),hoGaussPtsJac.size2(),false);
@@ -343,7 +339,6 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::operator()() {
                 ierr = getColNodesIndices(*op_data[ss],field_name); CHKERRQ(ierr);
               }
               ierr = getNodesFieldData(*op_data[ss],field_name); CHKERRQ(ierr);
-              ierr = getNodesFieldDofs(*op_data[ss],field_name); CHKERRQ(ierr);
               case HCURL:
               if(!ss) {
                 ierr = getEdgesRowIndices(*op_data[ss],field_name); CHKERRQ(ierr);
@@ -352,7 +347,7 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::operator()() {
               }
               ierr = getEdgesOrder(*op_data[ss],field_name); CHKERRQ(ierr);
               ierr = getEdgesFieldData(*op_data[ss],field_name); CHKERRQ(ierr);
-              ierr = getEdgesFieldDofs(*op_data[ss],field_name); CHKERRQ(ierr);
+              // ierr = getEdgesFieldDofs(*op_data[ss],field_name); CHKERRQ(ierr);
               case HDIV:
               if(!ss) {
                 ierr = getTrisRowIndices(*op_data[ss],field_name); CHKERRQ(ierr);
@@ -361,7 +356,6 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::operator()() {
               }
               ierr = getTrisOrder(*op_data[ss],field_name); CHKERRQ(ierr);
               ierr = getTrisFieldData(*op_data[ss],field_name); CHKERRQ(ierr);
-              ierr = getTrisFieldDofs(*op_data[ss],field_name); CHKERRQ(ierr);
               case L2:
               if(!ss) {
                 ierr = getTetsRowIndices(*op_data[ss],field_name); CHKERRQ(ierr);
@@ -371,7 +365,6 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::operator()() {
               }
               ierr = getTetsOrder(*op_data[ss],field_name); CHKERRQ(ierr);
               ierr = getTetsFieldData(*op_data[ss],field_name); CHKERRQ(ierr);
-              ierr = getTetsFieldDofs(*op_data[ss],field_name); CHKERRQ(ierr);
               break;
               case NOFIELD:
               if(!getNinTheLoop()) {
