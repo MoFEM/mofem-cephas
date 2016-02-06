@@ -180,6 +180,11 @@ int main(int argc, char *argv[]) {
       ierr = getEdgesFieldData(data,"FIELD1"); CHKERRQ(ierr);
       ierr = getTrisFieldData(data,"FIELD1"); CHKERRQ(ierr);
 
+      data.dataOnEntities[MBVERTEX][0].getN().resize(4,3,false);
+      ierr = ShapeMBTRI(
+        &*data.dataOnEntities[MBVERTEX][0].getN().data().begin(),
+        G_TRI_X4,G_TRI_Y4,4
+      ); CHKERRQ(ierr);
       ierr = shapeTRIFunctions_H1(data,G_TRI_X4,G_TRI_Y4,4); CHKERRQ(ierr);
 
       nOrmals_at_GaussPt.resize(4,3);

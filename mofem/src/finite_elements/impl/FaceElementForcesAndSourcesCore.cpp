@@ -57,7 +57,8 @@ extern "C" {
 #endif
   #include <cblas.h>
   #include <lapack_wrap.h>
-  #include <gm_rule.h>
+  // #include <gm_rule.h>
+  #include <quad.h>
 #ifdef __cplusplus
 }
 #endif
@@ -101,17 +102,52 @@ PetscErrorCode FaceElementForcesAndSourcesCore::operator()() {
   int nb_gauss_pts;
   int rule = getRule(order);
   if(rule >= 0) {
-    //if(mField.check_field(meshPositionsFieldName)) {
-    //rule += 1;
-    //}
-    nb_gauss_pts = gm_rule_size(rule,2);
-    gaussPts.resize(3,nb_gauss_pts,false);
-    ierr = Grundmann_Moeller_integration_points_2D_TRI(
-      rule,&gaussPts(0,0),&gaussPts(1,0),&gaussPts(2,0)
-    ); CHKERRQ(ierr);
+    if(rule<QUAD_2D_TABLE_SIZE) {
+      if(QUAD_2D_TABLE[rule]->dim!=2) {
+        SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"wrong dimension");
+      }
+      if(QUAD_2D_TABLE[rule]->order<rule) {
+        SETERRQ2(
+          PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"wrong order %d != %d",
+          QUAD_2D_TABLE[rule]->order,rule
+        );
+      }
+      nb_gauss_pts = QUAD_2D_TABLE[rule]->npoints;
+      gaussPts.resize(3,nb_gauss_pts,false);
+      cblas_dcopy(
+        nb_gauss_pts,&QUAD_2D_TABLE[rule]->points[1],3,&gaussPts(0,0),1
+      );
+      cblas_dcopy(
+        nb_gauss_pts,&QUAD_2D_TABLE[rule]->points[2],3,&gaussPts(1,0),1
+      );
+      cblas_dcopy(
+        nb_gauss_pts,QUAD_2D_TABLE[rule]->weights,1,&gaussPts(2,0),1
+      );
+      dataH1.dataOnEntities[MBVERTEX][0].getN().resize(nb_gauss_pts,3,false);
+      double *shape_ptr = &*dataH1.dataOnEntities[MBVERTEX][0].getN().data().begin();
+      cblas_dcopy(
+        3*nb_gauss_pts,QUAD_2D_TABLE[rule]->points,1,shape_ptr,1
+      );
+    } else {
+      SETERRQ2(
+        PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"rule > quadrature order %d < %d",
+        rule,QUAD_2D_TABLE_SIZE
+      );
+      nb_gauss_pts = 0;
+    }
+    // nb_gauss_pts = gm_rule_size(rule,2);
+    // gaussPts.resize(3,nb_gauss_pts,false);
+    // ierr = Grundmann_Moeller_integration_points_2D_TRI(
+    //   rule,&gaussPts(0,0),&gaussPts(1,0),&gaussPts(2,0)
+    // ); CHKERRQ(ierr);
   } else {
     ierr = setGaussPts(order); CHKERRQ(ierr);
     nb_gauss_pts = gaussPts.size2();
+    dataH1.dataOnEntities[MBVERTEX][0].getN().resize(nb_gauss_pts,3,false);
+    ierr = ShapeMBTRI(
+      &*dataH1.dataOnEntities[MBVERTEX][0].getN().data().begin(),
+      &gaussPts(0,0),&gaussPts(1,0),nb_gauss_pts
+    ); CHKERRQ(ierr);
   }
   if(nb_gauss_pts == 0) PetscFunctionReturn(0);
 
@@ -164,9 +200,6 @@ PetscErrorCode FaceElementForcesAndSourcesCore::operator()() {
     ierr = getNodesFieldData(dataH1,meshPositionsFieldName); CHKERRQ(ierr);
     ierr = getEdgesFieldData(dataH1,meshPositionsFieldName); CHKERRQ(ierr);
     ierr = getTrisFieldData(dataH1,meshPositionsFieldName); CHKERRQ(ierr);
-    ierr = getNodesFieldDofs(dataH1,meshPositionsFieldName); CHKERRQ(ierr);
-    ierr = getEdgesFieldDofs(dataH1,meshPositionsFieldName); CHKERRQ(ierr);
-    ierr = getTrisFieldDofs(dataH1,meshPositionsFieldName); CHKERRQ(ierr);
     try {
       ierr = opHOCoordsAndNormals.opRhs(dataH1); CHKERRQ(ierr);
       ierr = opHOCoordsAndNormals.calculateNormals(); CHKERRQ(ierr);
@@ -248,7 +281,6 @@ PetscErrorCode FaceElementForcesAndSourcesCore::operator()() {
               ierr = getColNodesIndices(*op_data[ss],field_name); CHKERRQ(ierr);
             }
             ierr = getNodesFieldData(*op_data[ss],field_name); CHKERRQ(ierr);
-            ierr = getNodesFieldDofs(*op_data[ss],field_name); CHKERRQ(ierr);
             case HCURL:
             if(!ss) {
               ierr = getEdgesRowIndices(*op_data[ss],field_name); CHKERRQ(ierr);
@@ -257,7 +289,6 @@ PetscErrorCode FaceElementForcesAndSourcesCore::operator()() {
             }
             ierr = getEdgesOrder(*op_data[ss],field_name); CHKERRQ(ierr);
             ierr = getEdgesFieldData(*op_data[ss],field_name); CHKERRQ(ierr);
-            ierr = getEdgesFieldDofs(*op_data[ss],field_name); CHKERRQ(ierr);
             case HDIV:
             if(!ss) {
               ierr = getTrisRowIndices(*op_data[ss],field_name); CHKERRQ(ierr);
@@ -266,7 +297,6 @@ PetscErrorCode FaceElementForcesAndSourcesCore::operator()() {
             }
             ierr = getTrisOrder(*op_data[ss],field_name); CHKERRQ(ierr);
             ierr = getTrisFieldData(*op_data[ss],field_name); CHKERRQ(ierr);
-            ierr = getTrisFieldDofs(*op_data[ss],field_name); CHKERRQ(ierr);
             break;
             case L2:
             SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not make sanes on face");

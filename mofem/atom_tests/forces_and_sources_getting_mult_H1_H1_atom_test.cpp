@@ -253,6 +253,11 @@ int main(int argc, char *argv[]) {
       ierr = getFaceTriNodes(data_row); CHKERRQ(ierr);
       ierr = getFaceTriNodes(data_col); CHKERRQ(ierr);
 
+      data_row.dataOnEntities[MBVERTEX][0].getN().resize(4,4,false);
+      ierr = ShapeMBTET(
+        &*data_row.dataOnEntities[MBVERTEX][0].getN().data().begin(),G_TET_X4,G_TET_Y4,G_TET_Z4,4
+      ); CHKERRQ(ierr);
+      data_col.dataOnEntities[MBVERTEX][0].getN() = data_row.dataOnEntities[MBVERTEX][0].getN();
       ierr = shapeTETFunctions_H1(data_row,G_TET_X4,G_TET_Y4,G_TET_Z4,4); CHKERRQ(ierr);
       ierr = shapeTETFunctions_H1(data_col,G_TET_X4,G_TET_Y4,G_TET_Z4,4); CHKERRQ(ierr);
 
