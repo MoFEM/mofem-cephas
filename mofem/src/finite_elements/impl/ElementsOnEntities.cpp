@@ -350,16 +350,19 @@ PetscErrorCode ForcesAndSurcesCore::getTypeIndices(
   FENumeredDofMoFEMEntity_multiIndex::index<Composite_Name_Type_And_Side_Number_mi_tag>::type::iterator dit,hi_dit;
   dit = dofs.get<Composite_Name_Type_And_Side_Number_mi_tag>().lower_bound(boost::make_tuple(field_name,type,side_number));
   hi_dit = dofs.get<Composite_Name_Type_And_Side_Number_mi_tag>().upper_bound(boost::make_tuple(field_name,type,side_number));
-  indices.resize(0);
-  local_indices.resize(0);
-  for(;dit!=hi_dit;dit++) {
-    int idx = dit->get_petsc_gloabl_dof_idx();
+  if(dit!=hi_dit) {
     indices.resize(dit->get_nb_dofs_on_ent(),false);
-    int elemem_idx = dit->get_EntDofIdx();
-    indices[elemem_idx] = idx;
-    int local_idx = dit->get_petsc_local_dof_idx();
     local_indices.resize(dit->get_nb_dofs_on_ent(),false);
-    local_indices[elemem_idx] = local_idx;
+    for(;dit!=hi_dit;dit++) {
+      int idx = dit->get_petsc_gloabl_dof_idx();
+      int elemem_idx = dit->get_EntDofIdx();
+      indices[elemem_idx] = idx;
+      int local_idx = dit->get_petsc_local_dof_idx();
+      local_indices[elemem_idx] = local_idx;
+    }
+  } else {
+    indices.resize(0);
+    local_indices.resize(0);
   }
   PetscFunctionReturn(0);
 }
