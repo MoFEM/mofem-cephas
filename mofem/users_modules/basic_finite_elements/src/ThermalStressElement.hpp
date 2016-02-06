@@ -28,7 +28,7 @@ struct ThermalStressElement {
 
   struct MyVolumeFE: public VolumeElementForcesAndSourcesCore {
     MyVolumeFE(FieldInterface &m_field): VolumeElementForcesAndSourcesCore(m_field) {}
-    int getRule(int order) { return order-1; };
+    int getRule(int order) { return 2*(order-1); };
   };
 
   MyVolumeFE feThermalStressRhs;

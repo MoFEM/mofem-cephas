@@ -134,7 +134,6 @@ PetscErrorCode VertexElementForcesAndSourcesCore::operator()() {
               ierr = getColNodesIndices(*op_data[ss],field_name); CHKERRQ(ierr);
             }
             ierr = getNodesFieldData(*op_data[ss],field_name); CHKERRQ(ierr);
-            ierr = getNodesFieldDofs(*op_data[ss],field_name); CHKERRQ(ierr);
             break;
             case HCURL:
             SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not make sanes on edge");
