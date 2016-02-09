@@ -35,7 +35,7 @@ NonlinearElasticElement::MyVolumeFE::MyVolumeFE(FieldInterface &m_field):
   F(PETSC_NULL),
   addToRule(1) {}
 
-int NonlinearElasticElement::MyVolumeFE::getRule(int order) { return (order-1+addToRule); };
+int NonlinearElasticElement::MyVolumeFE::getRule(int order) { return 2*(order-1)+addToRule; };
 
 PetscErrorCode NonlinearElasticElement::MyVolumeFE::preProcess() {
   PetscFunctionBegin;

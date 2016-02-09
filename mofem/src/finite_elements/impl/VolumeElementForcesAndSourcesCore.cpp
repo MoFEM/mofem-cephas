@@ -57,7 +57,8 @@ extern "C" {
 #endif
   #include <cblas.h>
   #include <lapack_wrap.h>
-  #include <gm_rule.h>
+  // #include <gm_rule.h>
+  #include <quad.h>
 #ifdef __cplusplus
 }
 #endif
@@ -116,21 +117,61 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::operator()() {
     int nb_gauss_pts;
     int rule = getRule(order);
     if(rule >= 0) {
-      //if(mField.check_field(meshPositionsFieldName)) {
-      //rule += 1;
-      //}
-      nb_gauss_pts = gm_rule_size(rule,3);
-      gaussPts.resize(4,nb_gauss_pts,false);
-      ierr = Grundmann_Moeller_integration_points_3D_TET(
-        rule,&gaussPts(0,0),&gaussPts(1,0),&gaussPts(2,0),&gaussPts(3,0)
-      ); CHKERRQ(ierr);
+      if(rule<QUAD_3D_TABLE_SIZE) {
+        if(QUAD_3D_TABLE[rule]->dim!=3) {
+          SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"wrong dimension");
+        }
+        if(QUAD_3D_TABLE[rule]->order<rule) {
+          SETERRQ2(
+            PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"wrong order %d != %d",
+            QUAD_3D_TABLE[rule]->order,rule
+          );
+        }
+        nb_gauss_pts = QUAD_3D_TABLE[rule]->npoints;
+        gaussPts.resize(4,nb_gauss_pts,false);
+        cblas_dcopy(
+          nb_gauss_pts,&QUAD_3D_TABLE[rule]->points[1],4,&gaussPts(0,0),1
+        );
+        cblas_dcopy(
+          nb_gauss_pts,&QUAD_3D_TABLE[rule]->points[2],4,&gaussPts(1,0),1
+        );
+        cblas_dcopy(
+          nb_gauss_pts,&QUAD_3D_TABLE[rule]->points[3],4,&gaussPts(2,0),1
+        );
+        cblas_dcopy(
+          nb_gauss_pts,QUAD_3D_TABLE[rule]->weights,1,&gaussPts(3,0),1
+        );
+        dataH1.dataOnEntities[MBVERTEX][0].getN().resize(nb_gauss_pts,4,false);
+        double *shape_ptr = dataH1.dataOnEntities[MBVERTEX][0].getN().data().begin();
+        cblas_dcopy(
+          4*nb_gauss_pts,QUAD_3D_TABLE[rule]->points,1,shape_ptr,1
+        );
+      } else {
+        SETERRQ2(
+          PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"rule > quadrature order %d < %d",
+          rule,QUAD_3D_TABLE_SIZE
+        );
+        nb_gauss_pts = 0;
+      }
+      // nb_gauss_pts = gm_rule_size(rule,3);
+      // gaussPts.resize(4,nb_gauss_pts,false);
+      // ierr = Grundmann_Moeller_integration_points_3D_TET(
+      //   rule,&gaussPts(0,0),&gaussPts(1,0),&gaussPts(2,0),&gaussPts(3,0)
+      // ); CHKERRQ(ierr);
     } else {
       ierr = setGaussPts(order); CHKERRQ(ierr);
       nb_gauss_pts = gaussPts.size2();
+      dataH1.dataOnEntities[MBVERTEX][0].getN().resize(nb_gauss_pts,4,false);
+      ierr = ShapeMBTET(
+        &*dataH1.dataOnEntities[MBVERTEX][0].getN().data().begin(),
+        &gaussPts(0,0),&gaussPts(1,0),&gaussPts(2,0),nb_gauss_pts
+      ); CHKERRQ(ierr);
     }
     if(nb_gauss_pts == 0) PetscFunctionReturn(0);
 
-    ierr = shapeTETFunctions_H1(dataH1,&gaussPts(0,0),&gaussPts(1,0),&gaussPts(2,0),nb_gauss_pts); CHKERRQ(ierr);
+    ierr = shapeTETFunctions_H1(
+      dataH1,&gaussPts(0,0),&gaussPts(1,0),&gaussPts(2,0),nb_gauss_pts
+    ); CHKERRQ(ierr);
 
     if((dataH1.spacesOnEntities[MBTRI]).test(HDIV)) {
       ierr = shapeTETFunctions_Hdiv(dataHdiv,&gaussPts(0,0),&gaussPts(1,0),&gaussPts(2,0),nb_gauss_pts); CHKERRQ(ierr);
@@ -194,10 +235,6 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::operator()() {
       ierr = getEdgesFieldData(dataH1,meshPositionsFieldName); CHKERRQ(ierr);
       ierr = getTrisFieldData(dataH1,meshPositionsFieldName); CHKERRQ(ierr);
       ierr = getTetsFieldData(dataH1,meshPositionsFieldName); CHKERRQ(ierr);
-      ierr = getNodesFieldDofs(dataH1,meshPositionsFieldName); CHKERRQ(ierr);
-      ierr = getEdgesFieldDofs(dataH1,meshPositionsFieldName); CHKERRQ(ierr);
-      ierr = getTrisFieldDofs(dataH1,meshPositionsFieldName); CHKERRQ(ierr);
-      ierr = getTetsFieldDofs(dataH1,meshPositionsFieldName); CHKERRQ(ierr);
       try {
         ierr = opHOatGaussPoints.opRhs(dataH1); CHKERRQ(ierr);
         hoGaussPtsInvJac.resize(hoGaussPtsJac.size1(),hoGaussPtsJac.size2(),false);
@@ -302,7 +339,6 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::operator()() {
                 ierr = getColNodesIndices(*op_data[ss],field_name); CHKERRQ(ierr);
               }
               ierr = getNodesFieldData(*op_data[ss],field_name); CHKERRQ(ierr);
-              ierr = getNodesFieldDofs(*op_data[ss],field_name); CHKERRQ(ierr);
               case HCURL:
               if(!ss) {
                 ierr = getEdgesRowIndices(*op_data[ss],field_name); CHKERRQ(ierr);
@@ -311,7 +347,7 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::operator()() {
               }
               ierr = getEdgesOrder(*op_data[ss],field_name); CHKERRQ(ierr);
               ierr = getEdgesFieldData(*op_data[ss],field_name); CHKERRQ(ierr);
-              ierr = getEdgesFieldDofs(*op_data[ss],field_name); CHKERRQ(ierr);
+              // ierr = getEdgesFieldDofs(*op_data[ss],field_name); CHKERRQ(ierr);
               case HDIV:
               if(!ss) {
                 ierr = getTrisRowIndices(*op_data[ss],field_name); CHKERRQ(ierr);
@@ -320,7 +356,6 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::operator()() {
               }
               ierr = getTrisOrder(*op_data[ss],field_name); CHKERRQ(ierr);
               ierr = getTrisFieldData(*op_data[ss],field_name); CHKERRQ(ierr);
-              ierr = getTrisFieldDofs(*op_data[ss],field_name); CHKERRQ(ierr);
               case L2:
               if(!ss) {
                 ierr = getTetsRowIndices(*op_data[ss],field_name); CHKERRQ(ierr);
@@ -330,7 +365,6 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::operator()() {
               }
               ierr = getTetsOrder(*op_data[ss],field_name); CHKERRQ(ierr);
               ierr = getTetsFieldData(*op_data[ss],field_name); CHKERRQ(ierr);
-              ierr = getTetsFieldDofs(*op_data[ss],field_name); CHKERRQ(ierr);
               break;
               case NOFIELD:
               if(!getNinTheLoop()) {

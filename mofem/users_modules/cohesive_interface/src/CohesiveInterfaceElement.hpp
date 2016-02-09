@@ -32,7 +32,7 @@ struct CohesiveInterfaceElement {
 
   struct MyPrism: public MoFEM::FlatPrismElementForcesAndSurcesCore {
     MyPrism(FieldInterface &m_field): MoFEM::FlatPrismElementForcesAndSurcesCore(m_field) {}
-    int getRule(int order) { return order; };
+    int getRule(int order) { return 2*order; };
   };
   MyPrism feRhs;
   MyPrism feLhs;

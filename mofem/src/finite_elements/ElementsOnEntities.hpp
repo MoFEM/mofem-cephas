@@ -136,12 +136,19 @@ struct ForcesAndSurcesCore: public FEMethod {
   // ** Data **
 
   PetscErrorCode getNodesFieldData(
-    const string &field_name,FEDofMoFEMEntity_multiIndex &dofs,VectorDouble &nodes_data
+    const string &field_name,
+    FEDofMoFEMEntity_multiIndex &dofs,
+    VectorDouble &nodes_data,
+    VectorDofs &nodes_dofs
   );
 
   PetscErrorCode getTypeFieldData(
-    const string &field_name,FEDofMoFEMEntity_multiIndex &dofs,
-    EntityType type,int side_number,VectorDouble &ent_field_data
+    const string &field_name,
+    FEDofMoFEMEntity_multiIndex &dofs,
+    EntityType type,
+    int side_number,
+    VectorDouble &ent_field_data,
+    VectorDofs &ent_field_dofs
   );
 
   PetscErrorCode getTypeFieldData(
@@ -150,13 +157,14 @@ struct ForcesAndSurcesCore: public FEMethod {
   );
 
   PetscErrorCode getNoFieldFieldData(
-    const string &field_name,FEDofMoFEMEntity_multiIndex &dofs,VectorDouble &ent_field_data
+    const string &field_name,
+    FEDofMoFEMEntity_multiIndex &dofs,
+    VectorDouble &ent_field_data,
+    VectorDofs &ent_field_dofs
   );
-
   PetscErrorCode getNoFieldFieldData(
     DataForcesAndSurcesCore &data,const string &field_name
   );
-
   PetscErrorCode getNodesFieldData(DataForcesAndSurcesCore &data,const string &field_name);
   PetscErrorCode getEdgesFieldData(DataForcesAndSurcesCore &data,const string &field_name);
   PetscErrorCode getTrisFieldData(DataForcesAndSurcesCore &data,const string &field_name);
@@ -164,36 +172,10 @@ struct ForcesAndSurcesCore: public FEMethod {
   PetscErrorCode getTetsFieldData(DataForcesAndSurcesCore &data,const string &field_name);
   PetscErrorCode getPrismFieldData(DataForcesAndSurcesCore &data,const string &field_name);
 
-  // ** DoFS **
-
-  PetscErrorCode getNodesFieldDofs(
-    const string &field_name,FEDofMoFEMEntity_multiIndex &dofs,VectorDofs &nodes_dofs
-  );
-
-  PetscErrorCode getTypeFieldDofs(
-    const string &field_name,FEDofMoFEMEntity_multiIndex &dofs,
-    EntityType type,int side_number,VectorDofs &ent_field_dofs
-  );
-
-  PetscErrorCode getTypeFieldDofs(
-    const string &field_name,FEDofMoFEMEntity_multiIndex &dofs,
-    EntityType type,boost::ptr_vector<DataForcesAndSurcesCore::EntData> &data
-  );
-
-  PetscErrorCode getNoFieldFieldDofs(
-    const string &field_name,FEDofMoFEMEntity_multiIndex &dofs,VectorDofs &nodes_dofs
-  );
-
-  PetscErrorCode getNoFieldFieldDofs(DataForcesAndSurcesCore &data,const string &field_name);
-
-  PetscErrorCode getNodesFieldDofs(DataForcesAndSurcesCore &data,const string &field_name);
-  PetscErrorCode getEdgesFieldDofs(DataForcesAndSurcesCore &data,const string &field_name);
-  PetscErrorCode getTrisFieldDofs(DataForcesAndSurcesCore &data,const string &field_name);
-  PetscErrorCode getQuadFieldDofs(DataForcesAndSurcesCore &data,const string &field_name);
-  PetscErrorCode getTetsFieldDofs(DataForcesAndSurcesCore &data,const string &field_name);
-  PetscErrorCode getPrismFieldDofs(DataForcesAndSurcesCore &data,const string &field_name);
-
+  /// \brief Get nodes on triangles
   PetscErrorCode getFaceTriNodes(DataForcesAndSurcesCore &data);
+
+  /// \brief Get field approximation space on entities
   PetscErrorCode getSpacesOnEntities(DataForcesAndSurcesCore &data);
 
   // ** Data form NumeredDofMoFEMEntity_multiIndex **
@@ -294,7 +276,7 @@ struct ForcesAndSurcesCore: public FEMethod {
    https://github.com/johannesgerer/jburkardt-m/tree/master/gm_rule
    http://people.sc.fsu.edu/~jburkardt/cpp_src/gm_rule/gm_rule.html
   **/
-  virtual int getRule(int order) { return order; };
+  virtual int getRule(int order) { return 2*order; };
 
   /** \brief set user specific integration rule
 

@@ -58,7 +58,7 @@ struct ThermalElement {
      * More details about algorithm
      * http://people.sc.fsu.edu/~jburkardt/cpp_src/gm_rule/gm_rule.html
     **/
-    int getRule(int order) { return order-1; };
+    int getRule(int order) { return 2*(order-1); };
   };
   MyVolumeFE feRhs; ///< cauclate right hand side for tetrahedral elements
   MyVolumeFE& getLoopFeRhs() { return feRhs; } ///< get rhs volume element
@@ -72,7 +72,7 @@ struct ThermalElement {
     */
   struct MyTriFE: public FaceElementForcesAndSourcesCore {
     MyTriFE(FieldInterface &m_field): FaceElementForcesAndSourcesCore(m_field) {}
-    int getRule(int order) { return order; };
+    int getRule(int order) { return 2*order; };
   };
 
   MyTriFE feFlux; //< heat flux element

@@ -84,8 +84,8 @@ struct FatPrismElementForcesAndSurcesCore: public ForcesAndSurcesCore {
   ) {
   }
 
-  virtual int getRuleTrianglesOnly(int order) { return order; };
-  virtual int getRuleThroughThickness(int order) { return order; };
+  virtual int getRuleTrianglesOnly(int order) { return 2*order; };
+  virtual int getRuleThroughThickness(int order) { return 2*order; };
 
   virtual PetscErrorCode setGaussPtsTrianglesOnly(int order_triangles_only)  {
     PetscFunctionBegin;
