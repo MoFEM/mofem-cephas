@@ -94,3 +94,7 @@ add_subdirectory(
   ${UM_SOURCE_DIR}/helmholtz
   ${PROJECT_BINARY_DIR}/helmholtz
 )
+add_subdirectory(
+  ${UM_SOURCE_DIR}/reliability
+  ${PROJECT_BINARY_DIR}/reliability
+)
