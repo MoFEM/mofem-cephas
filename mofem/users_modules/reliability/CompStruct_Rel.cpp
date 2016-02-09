@@ -954,8 +954,9 @@ int main(int argc, char * argv[]) {
    *  Read inputs' statistical properties from file to insert into <probdata>
    */
   Stochastic_Model probdata;
-  
-  ifstream ProbDataFile("//mnt//home//Dropbox//DURACOMP_Cal//009_MoFEM//04_ReliabilityAnalysis//Input_probdata_Example01.txt");
+  cout<<"\n\nRead file"<<endl;
+  ifstream ProbDataFile("/Users/nxz6/Dropbox/DURACOMP_Cal/009_MoFEM/04_ReliabilityAnalysis/Input_probdata_Example01.txt");
+  cout<<"\n Open the file"<<endl;
   
   char   buffer[256];
   string stringbuf;
@@ -1041,7 +1042,7 @@ int main(int argc, char * argv[]) {
   }
   
 
-  //cout<<"number of variables: "<<probdata.nvars<<endl;
+  cout<<"number of variables: "<<probdata.nvars<<endl;
   //cout<<"distribution type: "<<probdata.marg[0][0]<<endl;
   //cout<<"correlation coefficient: "<<probdata.correlation[1][1]<<endl;
 
