@@ -171,7 +171,7 @@ It is strongly advised users modules should have one name space, that potential
 naming conflicts, f.e. \code
 namespace SolidShellModule {
 }
-\end
+\endcode
 
 
 */
