@@ -97,8 +97,8 @@ if(DOXYGEN_FOUND)
     include(${LOOP_MODULE})
   endforeach(LOOP_MODULE)
 
-  find_program(SFTP NAMES sftp)
-  if(SFTP)
+  find_program(SCP NAMES scp)
+  if(SCP)
 
     # This work that script publish_doc.sh is created first in source
     # directory, then copied to binary direcyory with set premissions to execute.
@@ -120,6 +120,6 @@ if(DOXYGEN_FOUND)
       COMMENT "Publish (likask) doxygen documentation" VERBATIM
     )
 
-  endif(SFTP)
+  endif(SCP)
 
 endif(DOXYGEN_FOUND)
