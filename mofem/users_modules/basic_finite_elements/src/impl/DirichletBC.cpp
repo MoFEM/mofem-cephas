@@ -323,7 +323,7 @@ PetscErrorCode TemperatureBCFEMethodPreAndPostProc::iNitalize() {
         ierr = it->get_cubit_msId_entities_by_dimension(mField.get_moab(),dim,ents,true); CHKERRQ(ierr);
         if(dim>1) {
           Range _edges;
-          ierr = mField.get_moab()  .get_adjacencies(ents,1,false,_edges,Interface::UNION); CHKERRQ(ierr);
+          ierr = mField.get_moab().get_adjacencies(ents,1,false,_edges,Interface::UNION); CHKERRQ(ierr);
           ents.insert(_edges.begin(),_edges.end());
         }
         if(dim>0) {
@@ -356,11 +356,10 @@ PetscErrorCode TemperatureBCFEMethodPreAndPostProc::iNitalize() {
 
 PetscErrorCode FixBcAtEntities::iNitalize() {
   PetscFunctionBegin;
-  ParallelComm* pcomm = ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
   if(mapZeroRows.empty()) {
     for(vector<string>::iterator fit = fieldNames.begin();fit!=fieldNames.end();fit++) {
       for(Range::iterator eit = eNts.begin();eit!=eNts.end();eit++) {
-        for(_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_NAME_ENT_PART_FOR_LOOP_(problemPtr,*fit,*eit,pcomm->rank(),dof)) {
+        for(_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_NAME_ENT_PART_FOR_LOOP_(problemPtr,*fit,*eit,mField.getCommRank(),dof)) {
           mapZeroRows[dof->get_petsc_gloabl_dof_idx()] = 0;
         }
       }
@@ -382,15 +381,15 @@ PetscErrorCode FixBcAtEntities::preProcess() {
 
   switch (ts_ctx) {
     case CTX_TSSETIFUNCTION: {
-	snes_ctx = CTX_SNESSETFUNCTION;
-	snes_x = ts_u;
-	snes_f = ts_F;
-	break;
+      snes_ctx = CTX_SNESSETFUNCTION;
+      snes_x = ts_u;
+      snes_f = ts_F;
+      break;
     }
     case CTX_TSSETIJACOBIAN: {
-	snes_ctx = CTX_SNESSETJACOBIAN;
-	snes_B = ts_B;
-	break;
+      snes_ctx = CTX_SNESSETJACOBIAN;
+      snes_B = ts_B;
+      break;
     }
     default:
     break;
@@ -410,8 +409,9 @@ PetscErrorCode FixBcAtEntities::postProcess() {
     ); CHKERRQ(ierr);
     ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
     ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
-    for(vector<int>::iterator vit = dofsIndices.begin();vit!=dofsIndices.end();vit++) {
-      ierr = VecSetValue(snes_f,*vit,0,INSERT_VALUES); CHKERRQ(ierr);
+    int ii = 0;
+    for(vector<int>::iterator vit = dofsIndices.begin();vit!=dofsIndices.end();vit++,ii++) {
+      ierr = VecSetValue(snes_f,*vit,dofsValues[ii],INSERT_VALUES); CHKERRQ(ierr);
     }
     ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
     ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
@@ -423,8 +423,9 @@ PetscErrorCode FixBcAtEntities::postProcess() {
     case CTX_SNESSETFUNCTION: {
       ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
       ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
-      for(vector<int>::iterator vit = dofsIndices.begin();vit!=dofsIndices.end();vit++) {
-        ierr = VecSetValue(snes_f,*vit,0,INSERT_VALUES); CHKERRQ(ierr);
+      int ii = 0;
+      for(vector<int>::iterator vit = dofsIndices.begin();vit!=dofsIndices.end();vit++,ii++) {
+        ierr = VecSetValue(snes_f,*vit,dofsValues[ii],INSERT_VALUES); CHKERRQ(ierr);
       }
       ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
       ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
@@ -444,7 +445,7 @@ PetscErrorCode FixBcAtEntities::postProcess() {
     }
     break;
     default:
-	SETERRQ(PETSC_COMM_SELF,1,"unknown snes stage");
+    SETERRQ(PETSC_COMM_SELF,1,"unknown snes stage");
   }
 
   PetscFunctionReturn(0);
