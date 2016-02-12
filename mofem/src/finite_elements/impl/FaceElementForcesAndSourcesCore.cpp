@@ -375,4 +375,109 @@ PetscErrorCode FaceElementForcesAndSourcesCore::operator()() {
   PetscFunctionReturn(0);
 }
 
+PetscErrorCode OpCalculateInvJacForFace::doWork(
+  int side,
+  EntityType type,
+  DataForcesAndSurcesCore::EntData &data
+) {
+  PetscFunctionBegin;
+  // PetscErrorCode ierr;
+
+  try {
+
+    if(type == MBVERTEX) {
+      VectorDouble &coords = getCoords();
+      double *coords_ptr = &*coords.data().begin();
+      double *diff_n = &*data.getDiffN().data().begin();
+      int size = data.getN().size2();
+      int idx = 0;
+      double j00,j01,j10,j11;
+      for(int gg = 0;gg<1;gg++) {
+        // this is triangle, derivative of nodal shape functions is constant.
+        // So only need to do one node.
+        j00 = cblas_ddot(size,&coords_ptr[0],3,&diff_n[idx+0],2);
+        j01 = cblas_ddot(size,&coords_ptr[0],3,&diff_n[idx+1],2);
+        j10 = cblas_ddot(size,&coords_ptr[1],3,&diff_n[idx+0],2);
+        j11 = cblas_ddot(size,&coords_ptr[1],3,&diff_n[idx+1],2);
+        idx += 2*size;
+      }
+      double det = j00*j11-j01*j10;
+      invJac.resize(2,2,false);
+      invJac(0,0) = j11/det;
+      invJac(0,1) = -j01/det;
+      invJac(1,0) = -j10/det;
+      invJac(1,1) = j00/det;
+    }
+  } catch (exception& ex) {
+    ostringstream ss;
+    ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
+    SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
+  }
+
+  doVerticesRow = true;
+  doEdgesRow = false;
+  doQuadsRow = false;
+  doTrisRow = false;
+  doTetsRow = false;
+  doPrismsRow = false;
+
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode OpSetInvJacH1ForFace::doWork(
+  int side,
+  EntityType type,
+  DataForcesAndSurcesCore::EntData &data
+) {
+  PetscFunctionBegin;
+  // PetscErrorCode ierr;
+
+  try {
+    unsigned int nb_dofs = data.getN().size2();
+    if(nb_dofs==0) PetscFunctionReturn(0);
+    unsigned int nb_gauss_pts = data.getN().size1();
+    diffNinvJac.resize(nb_gauss_pts,2*nb_dofs,false);
+
+    if(type!=MBVERTEX) {
+      if(nb_dofs != data.getDiffN().size2()/2) {
+        SETERRQ2(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,
+          "data inconsistency nb_dofs != data.diffN.size2()/3 ( %u != %u/2 )",
+          nb_dofs,data.getDiffN().size2()
+        );
+      }
+    }
+
+    //cerr << type << endl;
+    //cerr << data.getDiffN() << endl;
+    //cerr << endl;
+    switch (type) {
+      case MBVERTEX:
+      case MBEDGE:
+      case MBTRI: {
+        for(unsigned int gg = 0;gg<nb_gauss_pts;gg++) {
+          for(unsigned int dd = 0;dd<nb_dofs;dd++) {
+            cblas_dgemv(
+              CblasRowMajor,CblasTrans,2,2,1.,
+              &*invJac.data().begin(),2,
+              &data.getDiffN()(gg,2*dd),1,
+              0.,&diffNinvJac(gg,2*dd),1
+            );
+          }
+        }
+        data.getDiffN().data().swap(diffNinvJac.data());
+      }
+      break;
+      default:
+      SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented");
+    }
+
+  } catch (exception& ex) {
+    ostringstream ss;
+    ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
+    SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
+  }
+
+  PetscFunctionReturn(0);
+}
+
 }

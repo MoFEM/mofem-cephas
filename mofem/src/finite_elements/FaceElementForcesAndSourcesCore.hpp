@@ -79,9 +79,8 @@ struct FaceElementForcesAndSourcesCore: public ForcesAndSurcesCore {
     */
   struct UserDataOperator: public ForcesAndSurcesCore::UserDataOperator {
 
-    UserDataOperator(
-      const string &field_name,const char type):
-      ForcesAndSurcesCore::UserDataOperator(field_name,type) {}
+    UserDataOperator(const string &field_name,const char type):
+    ForcesAndSurcesCore::UserDataOperator(field_name,type) {}
 
     UserDataOperator(
       const string &row_field_name,const string &col_field_name,const char type):
@@ -185,6 +184,42 @@ struct FaceElementForcesAndSourcesCore: public ForcesAndSurcesCore {
   }
 
 };
+
+/** \brief Calculate inverse of jacobian for face element
+
+  It is assumed that face element is XY plane. Applied
+  only for 2d problems.
+
+  \todo Generalize function for arbitrary face orientation in 3d space
+
+*/
+struct OpCalculateInvJacForFace: public FaceElementForcesAndSourcesCore::UserDataOperator {
+  MatrixDouble &invJac;
+  OpCalculateInvJacForFace(const string &field_name,MatrixDouble &inv_jac):
+  FaceElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROW),
+  invJac(inv_jac) {}
+  PetscErrorCode doWork(
+    int side,EntityType type,DataForcesAndSurcesCore::EntData &data
+  );
+};
+
+/** \brief Transform local reference derivatives of shape functions to global derivatives
+
+It is used for 2d problems.
+
+*/
+struct OpSetInvJacH1ForFace: public FaceElementForcesAndSourcesCore::UserDataOperator {
+  MatrixDouble &invJac;
+  OpSetInvJacH1ForFace(const string &field_name,MatrixDouble &inv_jac):
+  FaceElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROW),
+  invJac(inv_jac) {}
+  MatrixDouble diffNinvJac;
+  PetscErrorCode doWork(
+    int side,EntityType type,DataForcesAndSurcesCore::EntData &data
+  );
+};
+
+
 
 }
 
