@@ -428,6 +428,7 @@ struct Core:
   PetscErrorCode add_ents_to_finite_element_by_EDGEs(const Range& vert,const string &name);
   PetscErrorCode add_ents_to_finite_element_by_TRIs(const Range& tris,const BitFEId id);
   PetscErrorCode add_ents_to_finite_element_by_TRIs(const Range& tris,const string &name);
+  PetscErrorCode add_ents_to_finite_element_by_TRIs(const EntityHandle meshset,const string &name,const bool recursive = false);
   PetscErrorCode add_ents_to_finite_element_by_TETs(const Range& tets,const BitFEId id);
   PetscErrorCode add_ents_to_finite_element_by_TETs(const Range& tets,const string &name);
   PetscErrorCode add_ents_to_finite_element_by_TETs(const EntityHandle meshset,const BitFEId id,const bool recursive = false);
