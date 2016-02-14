@@ -1504,6 +1504,20 @@ PetscErrorCode Core::add_ents_to_finite_element_by_TRIs(const Range& tris,const 
   }
   PetscFunctionReturn(0);
 }
+PetscErrorCode Core::add_ents_to_finite_element_by_TRIs(const EntityHandle meshset,const string &name,const bool recursive) {
+  PetscFunctionBegin;
+  *build_MoFEM &= 1<<0;
+  EntityHandle idm = no_handle;
+  try {
+    idm = get_finite_element_meshset(get_BitFEId(name));
+  } catch (MoFEMException const &e) {
+    SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
+  }
+  Range tris;
+  rval = moab.get_entities_by_type(meshset,MBTRI,tris,recursive); CHKERR_PETSC(rval);
+  rval = moab.add_entities(idm,tris); CHKERR_PETSC(rval);
+  PetscFunctionReturn(0);
+}
 PetscErrorCode Core::add_ents_to_finite_element_by_TETs(const EntityHandle meshset,const BitFEId id,const bool recursive) {
   PetscFunctionBegin;
   *build_MoFEM &= 1<<0;

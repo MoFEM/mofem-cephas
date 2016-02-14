@@ -874,23 +874,29 @@ struct FieldInterface: public FieldUnknownInterface {
      */
   virtual PetscErrorCode modify_finite_element_off_field_col(const string &MoFEMFiniteElement_name,const string &name_row) = 0;
 
-  /** \brief add EDGES entities from meshset to finite element database given by name
+  /** \brief add EDGES entities from range to finite element database given by name
    * \ingroup mofem_fe
    *
    * \param range contains tetrahedrons
    * \param name Finite Element name
-   * \param recursive if true parent meshset is searched recursively
    */
   virtual PetscErrorCode add_ents_to_finite_element_by_EDGEs(const Range& edge,const string &name) = 0;
 
-  /** \brief add VERTICES entities from meshset to finite element database given by name
+  /** \brief add VERTICES entities from range to finite element database given by name
    * \ingroup mofem_fe
    *
    * \param range contains tetrahedrons
    * \param name Finite Element name
-   * \param recursive if true parent meshset is searched recursively
    */
   virtual PetscErrorCode add_ents_to_finite_element_by_VERTICEs(const Range& vert,const string &name) = 0;
+
+  /** \brief add TRI entities from range to finite element database given by name
+   * \ingroup mofem_fe
+   *
+   * \param range contains tetrahedrons
+   * \param name Finite Element name
+   */
+  virtual PetscErrorCode add_ents_to_finite_element_by_TRIs(const Range& tris,const string &name) = 0;
 
   /** \brief add TRI entities from meshset to finite element database given by name
    * \ingroup mofem_fe
@@ -899,9 +905,11 @@ struct FieldInterface: public FieldUnknownInterface {
    * \param name Finite Element name
    * \param recursive if true parent meshset is searched recursively
    */
-  virtual PetscErrorCode add_ents_to_finite_element_by_TRIs(const Range& tris,const string &name) = 0;
+  virtual PetscErrorCode add_ents_to_finite_element_by_TRIs(
+    const EntityHandle meshset,const string &name,const bool recursive = false
+  ) = 0;
 
-  /** \brief add TET entities from meshset to finite element database given by name
+  /** \brief add TET entities from range to finite element database given by name
    * \ingroup mofem_fe
    *
    * \param range contains tetrahedrons
@@ -916,7 +924,9 @@ struct FieldInterface: public FieldUnknownInterface {
    * \param name Finite Element name
    * \param recursive if true parent meshset is searched recursively
    */
-  virtual PetscErrorCode add_ents_to_finite_element_by_TETs(const EntityHandle meshset,const string &name,const bool recursive = false) = 0;
+  virtual PetscErrorCode add_ents_to_finite_element_by_TETs(
+    const EntityHandle meshset,const string &name,const bool recursive = false
+  ) = 0;
 
   /** \brief add PRISM entities from meshset to finite element database given by name
    * \ingroup mofem_fe
@@ -933,7 +943,9 @@ struct FieldInterface: public FieldUnknownInterface {
    * \param name Finite Element name
    * \param recursive if true parent meshset is searched recursively
    */
-  virtual PetscErrorCode add_ents_to_finite_element_by_PRISMs(const EntityHandle meshset,const string &name,const bool recursive = false) = 0;
+  virtual PetscErrorCode add_ents_to_finite_element_by_PRISMs(
+    const EntityHandle meshset,const string &name,const bool recursive = false
+  ) = 0;
 
   /** \brief add TET elements from given refinement level to finite element database given by name
    * \ingroup mofem_fe
