@@ -786,7 +786,7 @@ int main(int argc, char *argv[]) {
       ierr = m_field.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",post_proc); CHKERRQ(ierr);
       ostringstream ss;
       ss << "out_values_" << step << ".h5m";
-      rval = post_proc.postProcMesh.write_file(ss.str().c_str(),"MOAB","PARALLEL=WRITE_PART"); CHKERR_PETSC(rval);
+      ierr = post_proc.writeFile(ss.str().c_str()); CHKERRQ(ierr);
 
     }
 

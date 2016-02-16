@@ -481,11 +481,31 @@ PetscErrorCode PostProcVolumeOnRefinedMesh::postProcess() {
     rval = postProcMesh.tag_set_data(pcomm_post_proc_mesh->part_tag(),&*tit,1,&rank); CHKERR_PETSC(rval);
   }
 
-  rval = pcomm->resolve_shared_ents(0); CHKERR_PETSC(rval);
+  rval = pcomm_post_proc_mesh->resolve_shared_ents(0); CHKERR_PETSC(rval);
+
+  #ifndef MOAB_HDF5_PARALLEL
+  #warning "No parallel HDF5, not most efficient way of writing files"
+  for(int r = 0;r<pcomm_post_proc_mesh->size();r++) {
+    // FIXME make better communication send only to proc 0
+    rval = pcomm_post_proc_mesh->broadcast_entities(r,tets,false,true); CHKERR_PETSC(rval);
+  }
+  #endif //
 
   PetscFunctionReturn(0);
 }
 
+PetscErrorCode PostProcVolumeOnRefinedMesh::writeFile(const string file_name) {
+ PetscFunctionBegin;
+ ErrorCode rval;
+ #ifdef MOAB_HDF5_PARALLEL
+ rval = postProcMesh.write_file(file_name.c_str(),"MOAB","PARALLEL=WRITE_PART"); CHKERR_PETSC(rval);
+ #else
+ if(m_field.getCommRank()==0) {
+   rval = postProcMesh.write_file(file_name.c_str(),"MOAB",""); CHKERR_PETSC(rval);
+ }
+ #endif
+ PetscFunctionReturn(0);
+}
 
 PetscErrorCode PostProcVolumeOnRefinedMesh::OpHdivFunctions::doWork(
   int side,
@@ -741,7 +761,7 @@ PetscErrorCode PostProcFatPrismOnRefinedMesh::postProcess() {
       pcomm_post_proc_mesh->part_tag(),&*pit,1,&rank
     ); CHKERR_PETSC(rval);
   }
-  rval = pcomm->resolve_shared_ents(0); CHKERR_PETSC(rval);
+  rval = pcomm_post_proc_mesh->resolve_shared_ents(0); CHKERR_PETSC(rval);
   PetscFunctionReturn(0);
 }
 
@@ -885,6 +905,6 @@ PetscErrorCode PostProcFaceOnRefinedMesh::postProcess() {
       pcomm_post_proc_mesh->part_tag(),&*pit,1,&rank
     ); CHKERR_PETSC(rval);
   }
-  rval = pcomm->resolve_shared_ents(0); CHKERR_PETSC(rval);
+  rval = pcomm_post_proc_mesh->resolve_shared_ents(0); CHKERR_PETSC(rval);
   PetscFunctionReturn(0);
 }

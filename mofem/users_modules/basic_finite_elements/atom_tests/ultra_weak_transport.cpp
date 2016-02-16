@@ -365,20 +365,20 @@ int main(int argc, char *argv[]) {
 
   ierr = post_proc.addFieldValuesPostProc("VALUES"); CHKERRQ(ierr);
   ierr = m_field.loop_finite_elements("ULTRAWEAK","ULTRAWEAK",post_proc);  CHKERRQ(ierr);
-  rval = post_proc.postProcMesh.write_file("out_values.h5m","MOAB","PARALLEL=WRITE_PART"); CHKERR_PETSC(rval);
+  ierr = post_proc.writeFile("out_values.h5m"); CHKERRQ(ierr);
   //rval = post_proc.postProcMesh.write_file("out.vtk","VTK",""); CHKERR_PETSC(rval);
   ierr = post_proc.clearOperators(); CHKERRQ(ierr);
 
   ierr = post_proc.addFieldValuesPostProc("FLUXES"); CHKERRQ(ierr);
   ierr = m_field.loop_finite_elements("ULTRAWEAK","ULTRAWEAK",post_proc);  CHKERRQ(ierr);
-  rval = post_proc.postProcMesh.write_file("out_fluxes.h5m","MOAB","PARALLEL=WRITE_PART"); CHKERR_PETSC(rval);
+  ierr = post_proc.writeFile("out_fluxes.h5m"); CHKERRQ(ierr);
   ierr = post_proc.clearOperators(); CHKERRQ(ierr);
 
   PostProcVolumeOnRefinedMesh post_proc_error(m_field,false,0);
   ierr = post_proc_error.generateReferenceElementMesh(); CHKERRQ(ierr);
   ierr = post_proc_error.addFieldValuesPostProc("ERROR"); CHKERRQ(ierr);
   ierr = m_field.loop_finite_elements("ULTRAWEAK_CALCULATE_ERROR","ULTRAWEAK_ERROR",post_proc_error);  CHKERRQ(ierr);
-  rval = post_proc_error.postProcMesh.write_file("out_error.h5m","MOAB","PARALLEL=WRITE_PART"); CHKERR_PETSC(rval);
+  ierr = post_proc_error.writeFile("out_error.h5m"); CHKERRQ(ierr);
   ierr = post_proc_error.clearOperators(); CHKERRQ(ierr);
 
   //if(pcomm->rank()==0) {

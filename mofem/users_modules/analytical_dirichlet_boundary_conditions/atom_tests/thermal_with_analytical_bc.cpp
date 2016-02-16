@@ -259,7 +259,7 @@ int main(int argc, char *argv[]) {
     ierr = post_proc.addFieldValuesPostProc("MESH_NODE_POSITIONS"); CHKERRQ(ierr);
     ierr = post_proc.addFieldValuesGradientPostProc("TEMP"); CHKERRQ(ierr);
     ierr = m_field.loop_finite_elements("TEST_PROBLEM","THERMAL_FE",post_proc); CHKERRQ(ierr);
-    rval = post_proc.postProcMesh.write_file("out.h5m","MOAB","PARALLEL=WRITE_PART"); CHKERR_PETSC(rval);
+    ierr = post_proc.writeFile("out.h5m"); CHKERRQ(ierr);
 
   }
 
