@@ -494,7 +494,7 @@ int main(int argc, char *argv[]) {
         ierr = DMoFEMLoopFiniteElements(dm,"ELASTIC",&post_proc); CHKERRQ(ierr);
         ostringstream o1;
         o1 << "out_" << sit->step_number << ".h5m";
-        rval = post_proc.postProcMesh.write_file(o1.str().c_str(),"MOAB","PARALLEL=WRITE_PART"); CHKERR_PETSC(rval);
+        ierr = post_proc.writeFile(o1.str().c_str()); CHKERRQ(ierr);
       }
     } else {
       ierr = VecZeroEntries(F_thermal); CHKERRQ(ierr);
@@ -527,7 +527,7 @@ int main(int argc, char *argv[]) {
       //Save data on mesh
       ierr = DMoFEMMeshToLocalVector(dm,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
       ierr = DMoFEMLoopFiniteElements(dm,"ELASTIC",&post_proc); CHKERRQ(ierr);
-      rval = post_proc.postProcMesh.write_file("out.h5m","MOAB","PARALLEL=WRITE_PART"); CHKERR_PETSC(rval);
+      ierr = post_proc.writeFile("out.h5m"); CHKERRQ(ierr);
     }
     ierr = VecDestroy(&F_thermal); CHKERRQ(ierr);
   } else {
@@ -540,7 +540,7 @@ int main(int argc, char *argv[]) {
     //Save data on mesh
     ierr = DMoFEMMeshToLocalVector(dm,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
     ierr = DMoFEMLoopFiniteElements(dm,"ELASTIC",&post_proc); CHKERRQ(ierr);
-    rval = post_proc.postProcMesh.write_file("out.h5m","MOAB","PARALLEL=WRITE_PART"); CHKERR_PETSC(rval);
+    ierr = post_proc.writeFile("out.h5m"); CHKERRQ(ierr);
   }
 
   elastic.getLoopFeEnergy().snes_ctx = SnesMethod::CTX_SNESNONE;

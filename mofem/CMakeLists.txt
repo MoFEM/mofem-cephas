@@ -38,11 +38,13 @@ include(cmake/FindiMesh.cmake)
 include(cmake/FindCGM.cmake)
 include(cmake/FindLASSO.cmake)
 include(cmake/FindMESHKIT.cmake)
-include(cmake/FindADOL-C.cmake)
 
 #PETSC tools
 include(cmake/FindTAO.cmake)
 include(cmake/FindSLEPC.cmake)
+
+#ADOL-C
+include(cmake/FindADOL-C.cmake)
 
 #CGAL tools
 #find_package(CGAL HINTS ${CGAL_DIR}/lib/CGAL)
@@ -70,11 +72,11 @@ get_git_head_revision(GIT_REFSPEC GIT_SHA1)
 configure_file(
   "${PROJECT_SOURCE_DIR}/include/config.h.in"
   "${PROJECT_SOURCE_DIR}/include/config.h"
-  )
+)
 configure_file(
   "${PROJECT_SOURCE_DIR}/include/version.h.in"
   "${PROJECT_SOURCE_DIR}/include/version.h"
-  )
+)
 include_directories("${PROJECT_SOURCE_DIR}/include")
 
 #add coverage
@@ -88,14 +90,14 @@ endif(WITHCOVERAGE)
 add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND} --verbose)
 
 resolve_includes(PROJECT_INCLUDE_DIRECTORIES
-  "${PETSCVAR_PACKAGES_INCLUDES} ${MOAB_INCLUDES0} ${MOAB_INCLUDES}"
-  )
+  "${PETSCVAR_PACKAGES_INCLUDES} ${MOAB_INCLUDES0}"
+)
 
 include_directories(
   ${PROJECT_INCLUDE_DIRECTORIES}
   ${PETSC_DIR}/${PETSC_ARCH}/include
   ${PETSCVAR_DIR}/include
-  )
+)
 
 if(TAO_LIBRARY)
   include_directories(${TAO_DIR}/include)
@@ -120,6 +122,10 @@ file(COPY
   ${PROJECT_SOURCE_DIR}/INSTALL
   DESTINATION ${PROJECT_BINARY_DIR}
 )
+
+resolve_definitions(MOAB_DEFINITIONS ${MOAB_CPPFLAGS})
+message(STATUS ${MOAB_DEFINITIONS})
+add_definitions(${MOAB_DEFINITIONS})
 
 #add executable library form subdirectory
 enable_testing()

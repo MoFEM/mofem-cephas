@@ -671,7 +671,7 @@ int main(int argc, char *argv[]) {
 
       ierr = post_proc.addFieldValuesPostProc("MESH_NODE_POSITIONS"); CHKERRQ(ierr);
       ierr = m_field.loop_finite_elements("ACOUSTIC_PROBLEM","HELMHOLTZ_RERE_FE",post_proc); CHKERRQ(ierr);
-      rval = post_proc.postProcMesh.write_file("fe_solution_mesh_post_proc.h5m","MOAB","PARALLEL=WRITE_PART"); CHKERR_PETSC(rval);
+      ierr = post_proc.writeFile("fe_solution_mesh_post_proc.h5m"); CHKERRQ(ierr);
 
     }
     if(is_partitioned) {

@@ -264,6 +264,8 @@ struct PostProcVolumeOnRefinedMesh: public PostProcTemplateOnRefineMesh<VolumeEl
 
   PetscErrorCode postProcess();
 
+  PetscErrorCode writeFile(const string file_name);
+
   /** \brief Add operator to post-process Hdiv field
   */
   PetscErrorCode addHdivFunctionsPostProc(const string field_name);
