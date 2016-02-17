@@ -500,7 +500,7 @@ PetscErrorCode PostProcVolumeOnRefinedMesh::writeFile(const string file_name) {
  #ifdef MOAB_HDF5_PARALLEL
  rval = postProcMesh.write_file(file_name.c_str(),"MOAB","PARALLEL=WRITE_PART"); CHKERR_PETSC(rval);
  #else
- if(m_field.getCommRank()==0) {
+ if(mField.getCommRank()==0) {
    rval = postProcMesh.write_file(file_name.c_str(),"MOAB",""); CHKERR_PETSC(rval);
  }
  #endif
