@@ -264,6 +264,8 @@ struct PostProcVolumeOnRefinedMesh: public PostProcTemplateOnRefineMesh<VolumeEl
 
   PetscErrorCode postProcess();
 
+  PetscErrorCode writeFile(const string file_name);
+
   /** \brief Add operator to post-process Hdiv field
   */
   PetscErrorCode addHdivFunctionsPostProc(const string field_name);
@@ -320,6 +322,46 @@ struct PostProcFatPrismOnRefinedMesh: public PostProcTemplateOnRefineMesh<FatPri
   PetscErrorCode setGaussPtsTrianglesOnly(int order_triangles_only);
   PetscErrorCode setGaussPtsThroughThickness(int order_thickness);
   PetscErrorCode generateReferenceElementMesh();
+
+  map<EntityHandle,EntityHandle> elementsMap;
+
+  PetscErrorCode preProcess();
+  PetscErrorCode postProcess();
+
+  struct CommonData: PostProcCommonOnRefMesh::CommonData {
+  };
+  CommonData commonData;
+
+  virtual PostProcCommonOnRefMesh::CommonData& getCommonData() {
+    return commonData;
+  }
+
+};
+
+struct PostProcFaceOnRefinedMesh: public PostProcTemplateOnRefineMesh<FaceElementForcesAndSourcesCore> {
+
+  bool sixNodePostProcTris;
+
+  PostProcFaceOnRefinedMesh(
+    FieldInterface &m_field,
+    bool six_node_post_proc_tris = true
+  ):
+  PostProcTemplateOnRefineMesh<FaceElementForcesAndSourcesCore>(m_field),
+  sixNodePostProcTris(six_node_post_proc_tris) {
+  }
+
+  virtual ~PostProcFaceOnRefinedMesh() {
+    ParallelComm* pcomm_post_proc_mesh = ParallelComm::get_pcomm(&postProcMesh,MYPCOMM_INDEX);
+    if(pcomm_post_proc_mesh != NULL) {
+      delete pcomm_post_proc_mesh;
+    }
+  }
+
+  // Gauss pts set on refined mesh
+  int getRule(int order) { return -1; };
+
+  PetscErrorCode generateReferenceElementMesh();
+  PetscErrorCode setGaussPts(int order);
 
   map<EntityHandle,EntityHandle> elementsMap;
 

@@ -149,7 +149,7 @@ else(EXISTS "${CTEST_SOURCE_DIRECTORY}/users_modules/ground_surface_temperature"
   )
 endif()
 
-# modules - ground_surface_temperature
+# modules - solid shell element
 if(NOT EXISTS "${CTEST_SOURCE_DIRECTORY}/users_modules/solid_shell_prism_element")
   exec_program(
     ${CTEST_GIT_COMMAND}
@@ -161,6 +161,22 @@ else(EXISTS "${CTEST_SOURCE_DIRECTORY}/users_modules/solid_shell_prism_element")
   exec_program(
     ${CTEST_GIT_COMMAND}
     "${CTEST_SOURCE_DIRECTORY}/users_modules/solid_shell_prism_element"
+    ARGS pull
+  )
+endif()
+
+# modules - minimal surface area
+if(NOT EXISTS "${CTEST_SOURCE_DIRECTORY}/users_modules/minimal_surface_equation")
+  exec_program(
+    ${CTEST_GIT_COMMAND}
+    "${CTEST_SOURCE_DIRECTORY}/users_modules"
+    ARGS clone https://likask@bitbucket.org/likask/mofem_um_minimal_surface_equation.git
+    "${CTEST_SOURCE_DIRECTORY}/users_modules/minimal_surface_equation"
+  )
+else(EXISTS "${CTEST_SOURCE_DIRECTORY}/users_modules/minimal_surface_equation")
+  exec_program(
+    ${CTEST_GIT_COMMAND}
+    "${CTEST_SOURCE_DIRECTORY}/users_modules/minimal_surface_equation"
     ARGS pull
   )
 endif()

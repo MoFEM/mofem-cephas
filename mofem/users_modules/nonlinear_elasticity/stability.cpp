@@ -564,7 +564,7 @@ int main(int argc, char *argv[]) {
   ierr = post_proc.addFieldValuesPostProc("D0"); CHKERRQ(ierr);
   ierr = post_proc.addFieldValuesGradientPostProc("D0"); CHKERRQ(ierr);
   ierr = m_field.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",post_proc); CHKERRQ(ierr);
-  rval = post_proc.postProcMesh.write_file("out.h5m","MOAB","PARALLEL=WRITE_PART"); CHKERR_PETSC(rval);
+  ierr = post_proc.writeFile("out.h5m"); CHKERRQ(ierr);
 
   PetscScalar eigr,eigi,nrm2r;
   for(int nn = 0;nn<nev;nn++) {
@@ -576,7 +576,7 @@ int main(int argc, char *argv[]) {
     ierr = m_field.set_other_global_ghost_vector(
       "ELASTIC_MECHANICS","SPATIAL_POSITION","EIGEN_VECTOR",COL,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
     ierr = m_field.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",post_proc); CHKERRQ(ierr);
-    rval = post_proc.postProcMesh.write_file(o1.str().c_str(),"MOAB","PARALLEL=WRITE_PART"); CHKERR_PETSC(rval);
+    ierr = post_proc.writeFile(o1.str().c_str()); CHKERRQ(ierr);
   }
 
   ierr = KSPDestroy(&solver); CHKERRQ(ierr);

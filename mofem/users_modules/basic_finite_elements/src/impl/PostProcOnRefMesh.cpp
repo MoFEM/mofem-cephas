@@ -481,11 +481,31 @@ PetscErrorCode PostProcVolumeOnRefinedMesh::postProcess() {
     rval = postProcMesh.tag_set_data(pcomm_post_proc_mesh->part_tag(),&*tit,1,&rank); CHKERR_PETSC(rval);
   }
 
-  rval = pcomm->resolve_shared_ents(0); CHKERR_PETSC(rval);
+  rval = pcomm_post_proc_mesh->resolve_shared_ents(0); CHKERR_PETSC(rval);
+
+  #ifndef MOAB_HDF5_PARALLEL
+  #warning "No parallel HDF5, not most efficient way of writing files"
+  for(int r = 0;r<pcomm_post_proc_mesh->size();r++) {
+    // FIXME make better communication send only to proc 0
+    rval = pcomm_post_proc_mesh->broadcast_entities(r,tets,false,true); CHKERR_PETSC(rval);
+  }
+  #endif //
 
   PetscFunctionReturn(0);
 }
 
+PetscErrorCode PostProcVolumeOnRefinedMesh::writeFile(const string file_name) {
+ PetscFunctionBegin;
+ ErrorCode rval;
+ #ifdef MOAB_HDF5_PARALLEL
+ rval = postProcMesh.write_file(file_name.c_str(),"MOAB","PARALLEL=WRITE_PART"); CHKERR_PETSC(rval);
+ #else
+ if(m_field.getCommRank()==0) {
+   rval = postProcMesh.write_file(file_name.c_str(),"MOAB",""); CHKERR_PETSC(rval);
+ }
+ #endif
+ PetscFunctionReturn(0);
+}
 
 PetscErrorCode PostProcVolumeOnRefinedMesh::OpHdivFunctions::doWork(
   int side,
@@ -625,6 +645,7 @@ PetscErrorCode PostProcFatPrismOnRefinedMesh::generateReferenceElementMesh() {
   }
   PetscFunctionReturn(0);
 }
+
 PetscErrorCode PostProcFatPrismOnRefinedMesh::setGaussPtsTrianglesOnly(int order_triangles_only) {
   PetscFunctionBegin;
   if(gaussPtsTrianglesOnly.size1()==0 || gaussPtsTrianglesOnly.size2()==0) {
@@ -703,6 +724,7 @@ PetscErrorCode PostProcFatPrismOnRefinedMesh::setGaussPtsTrianglesOnly(int order
   // rval = postProcMesh.delete_entities(&prism,1); CHKERR_PETSC(rval);
   PetscFunctionReturn(0);
 }
+
 PetscErrorCode PostProcFatPrismOnRefinedMesh::setGaussPtsThroughThickness(int order_thickness) {
   PetscFunctionBegin;
   if(gaussPtsThroughThickness.size1()==0 || gaussPtsThroughThickness.size2()==0) {
@@ -739,6 +761,150 @@ PetscErrorCode PostProcFatPrismOnRefinedMesh::postProcess() {
       pcomm_post_proc_mesh->part_tag(),&*pit,1,&rank
     ); CHKERR_PETSC(rval);
   }
-  rval = pcomm->resolve_shared_ents(0); CHKERR_PETSC(rval);
+  rval = pcomm_post_proc_mesh->resolve_shared_ents(0); CHKERR_PETSC(rval);
+  PetscFunctionReturn(0);
+}
+
+
+PetscErrorCode PostProcFaceOnRefinedMesh::generateReferenceElementMesh() {
+  PetscFunctionBegin;
+
+  gaussPts.resize(3,3,false);
+  gaussPts.clear();
+  gaussPts(0,0) = 0;
+  gaussPts(1,0) = 0;
+  gaussPts(0,1) = 1;
+  gaussPts(1,1) = 0;
+  gaussPts(0,2) = 0;
+  gaussPts(1,2) = 1;
+  mapGaussPts.resize(gaussPts.size2());
+
+  moab::Core core_ref;
+  Interface& moab_ref = core_ref;
+  const EntityHandle *conn;
+  int num_nodes;
+  EntityHandle tri_conn[3];
+  MatrixDouble coords(6,3);
+  for(int gg = 0;gg!=3;gg++) {
+    coords(gg,0) = gaussPts(0,gg);
+    coords(gg,1) = gaussPts(1,gg);
+    coords(gg,2) = 0;
+    rval = moab_ref.create_vertex(&coords(gg,0),tri_conn[gg]); CHKERR_PETSC(rval);
+  }
+
+  EntityHandle tri;
+  rval = moab_ref.create_element(MBTRI,tri_conn,3,tri); CHKERR_PETSC(rval);
+  Range edges;
+  rval = moab_ref.get_adjacencies(&tri,1,1,true,edges); CHKERR_PETSC(rval);
+  EntityHandle meshset;
+  rval = moab_ref.create_meshset(MESHSET_SET|MESHSET_TRACK_OWNER,meshset); CHKERR_PETSC(rval);
+  rval = moab_ref.add_entities(meshset,&tri,1); CHKERR_PETSC(rval);
+  rval = moab_ref.add_entities(meshset,edges); CHKERR_PETSC(rval);
+  if(sixNodePostProcTris) {
+    rval = moab_ref.convert_entities(meshset,true,false,false); CHKERR_PETSC(rval);
+  }
+  rval = moab_ref.get_connectivity(tri,conn,num_nodes,false); CHKERR_PETSC(rval);
+  rval = moab_ref.get_coords(conn,num_nodes,&coords(0,0));
+
+  gaussPts.resize(3,num_nodes,false);
+  gaussPts.clear();
+  for(int nn = 0;nn<3;nn++) {
+    gaussPts(0,nn) = coords(nn,0);
+    gaussPts(1,nn) = coords(nn,1);
+    gaussPts(0,3+nn) = coords(3+nn,0);
+    gaussPts(1,3+nn) = coords(3+nn,1);
+  }
+
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode PostProcFaceOnRefinedMesh::setGaussPts(int order) {
+  PetscFunctionBegin;
+  if(gaussPts.size1()==0) {
+    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"post-process mesh not generated");
+  }
+
+  // PetscErrorCode ierr;
+  MoABErrorCode rval;
+  const EntityHandle *conn;
+  int num_nodes;
+  EntityHandle tri;
+
+  if(elementsMap.find(fePtr->get_ent())!=elementsMap.end()) {
+    tri = elementsMap[fePtr->get_ent()];
+  } else {
+    ublas::vector<EntityHandle> tri_conn(3);
+    ublas::matrix<double> coords_tri(3,3);
+    ublas::vector<double> coords(3);
+    rval = mField.get_moab().get_connectivity(fePtr->get_ent(),conn,num_nodes,true); CHKERR_PETSC(rval);
+    rval = mField.get_moab().get_coords(conn,num_nodes,&coords_tri(0,0));
+    for(int gg = 0;gg!=3;gg++) {
+      double ksi = gaussPts(0,gg);
+      double eta = gaussPts(1,gg);
+      double n0 = N_MBTRI0(ksi,eta);
+      double n1 = N_MBTRI1(ksi,eta);
+      double n2 = N_MBTRI2(ksi,eta);
+      double x = n0*coords_tri(0,0)+n1*coords_tri(1,0)+n2*coords_tri(2,0);
+      double y = n0*coords_tri(0,1)+n1*coords_tri(1,1)+n2*coords_tri(2,1);
+      coords[0] = x;
+      coords[1] = y;
+      coords[2] = 0;
+      rval = postProcMesh.create_vertex(
+        &coords[0],tri_conn[gg]
+      ); CHKERR_PETSC(rval);
+    }
+    rval = postProcMesh.create_element(MBTRI,&tri_conn[0],3,tri); CHKERR_PETSC(rval);
+    elementsMap[fePtr->get_ent()] = tri;
+    Range edges;
+    rval = postProcMesh.get_adjacencies(&tri,1,1,true,edges); CHKERR_PETSC(rval);
+    EntityHandle meshset;
+    rval = postProcMesh.create_meshset(MESHSET_SET,meshset); CHKERR_PETSC(rval);
+    rval = postProcMesh.add_entities(meshset,&tri,1); CHKERR_PETSC(rval);
+    rval = postProcMesh.add_entities(meshset,edges); CHKERR_PETSC(rval);
+    if(sixNodePostProcTris) {
+      rval = postProcMesh.convert_entities(meshset,true,false,false); CHKERR_PETSC(rval);
+    }
+    rval = postProcMesh.delete_entities(&meshset,1); CHKERR_PETSC(rval);
+    rval = postProcMesh.delete_entities(edges); CHKERR_PETSC(rval);
+  }
+
+  // Set values which map nodes with integration points on the prism
+  {
+    rval = postProcMesh.get_connectivity(tri,conn,num_nodes,false); CHKERR_PETSC(rval);
+    mapGaussPts.resize(num_nodes);
+    for(int nn = 0;nn<num_nodes;nn++) {
+      mapGaussPts[nn] = conn[nn];
+    }
+  }
+
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode PostProcFaceOnRefinedMesh::preProcess() {
+  PetscFunctionBegin;
+  ParallelComm* pcomm_post_proc_mesh = ParallelComm::get_pcomm(&postProcMesh,MYPCOMM_INDEX);
+  if(pcomm_post_proc_mesh != NULL) {
+    delete pcomm_post_proc_mesh;
+  }
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode PostProcFaceOnRefinedMesh::postProcess() {
+  PetscFunctionBegin;
+  ParallelComm* pcomm = ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
+  ParallelComm* pcomm_post_proc_mesh = ParallelComm::get_pcomm(&postProcMesh,MYPCOMM_INDEX);
+  if(pcomm_post_proc_mesh == NULL) {
+    pcomm_post_proc_mesh = new ParallelComm(&postProcMesh,mField.get_comm());
+  }
+  Range tris;
+  rval = postProcMesh.get_entities_by_type(0,MBTRI,tris,false);  CHKERR_PETSC(rval);
+  int rank = pcomm->rank();
+  Range::iterator pit = tris.begin();
+  for(;pit!=tris.end();pit++) {
+    rval = postProcMesh.tag_set_data(
+      pcomm_post_proc_mesh->part_tag(),&*pit,1,&rank
+    ); CHKERR_PETSC(rval);
+  }
+  rval = pcomm_post_proc_mesh->resolve_shared_ents(0); CHKERR_PETSC(rval);
   PetscFunctionReturn(0);
 }

@@ -78,11 +78,12 @@ struct DataOperator {
 struct OpSetInvJacH1: public DataOperator {
 
   MatrixDouble &invJac;
-  OpSetInvJacH1(MatrixDouble &_invJac): invJac(_invJac) {}
+  OpSetInvJacH1(MatrixDouble &inv_jac): invJac(inv_jac) {}
 
   MatrixDouble diffNinvJac;
   PetscErrorCode doWork(
-    int side,EntityType type,DataForcesAndSurcesCore::EntData &data);
+    int side,EntityType type,DataForcesAndSurcesCore::EntData &data
+  );
 
 };
 
@@ -109,7 +110,6 @@ struct OpSetHoInvJacH1: public DataOperator {
   PetscErrorCode doWork(int side,EntityType type,DataForcesAndSurcesCore::EntData &data);
 
 };
-
 
 /** \brief transform local reference derivatives of shape function to global derivatives if higher order geometry is given
   */

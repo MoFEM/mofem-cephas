@@ -534,7 +534,8 @@ PetscErrorCode DataOperator::opRhs(
 PetscErrorCode OpSetInvJacH1::doWork(
     int side,
     EntityType type,
-    DataForcesAndSurcesCore::EntData &data) {
+    DataForcesAndSurcesCore::EntData &data
+  ) {
   PetscFunctionBegin;
   PetscErrorCode ierr;
 

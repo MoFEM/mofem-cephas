@@ -269,7 +269,7 @@ int main(int argc, char *argv[]) {
     ierr = post_proc1.addFieldValuesPostProc("erorNORM"); CHKERRQ(ierr);
     ierr = post_proc1.addFieldValuesPostProc("MESH_NODE_POSITIONS"); CHKERRQ(ierr);
     ierr = m_field.loop_finite_elements("NORM_PROBLEM","NORM_FE",post_proc1); CHKERRQ(ierr);
-    rval = post_proc1.postProcMesh.write_file("norm_error.h5m","MOAB","PARALLEL=WRITE_PART"); CHKERR_PETSC(rval);
+    ierr = post_proc1.writeFile("norm_error.h5m"); CHKERRQ(ierr);
 
   }
 

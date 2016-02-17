@@ -28,7 +28,8 @@ target_link_libraries(body_force_atom
 
 cm_export_file("elasticity_atom_test_body_force.h5m" export_atom_tests_basic_fe)
 add_test(body_force_atom_test
-  ${MoFEM_MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/body_force_atom -my_file elasticity_atom_test_body_force.h5m)
+  ${MoFEM_MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/body_force_atom -my_file elasticity_atom_test_body_force.h5m
+)
 add_test(forces_and_sources_body_force_atom_test_compare ${CMAKE_COMMAND} -E compare_files
   ${CMAKE_CURRENT_SOURCE_DIR}/blessed_files/body_force_atom_test.txt
   ${CMAKE_CURRENT_BINARY_DIR}/body_force_atom_test.txt

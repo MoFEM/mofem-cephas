@@ -92,6 +92,7 @@ struct TimeForceScale: public MethodForForceScaling {
   PetscErrorCode getForceScale(const double ts_t,double &scale) {
     PetscFunctionBegin;
     if(!fLg) {
+      scale = 1; // not scale at all, no history file
       PetscFunctionReturn(0);
     }
     if(readFile==0) {
