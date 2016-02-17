@@ -30,6 +30,7 @@ foreach(LINE ${MOAB_VARIBLES})
 
     if(${VARSTRIP} STREQUAL "MOAB_INCLUDES")
       set(VARSTRIPEXT "${VARSTRIP}${MOAB_INCLUDES_COUNTER}")
+      string(REGEX REPLACE "${VARSTRIP} *=" "" VAL ${LINE})
       set("${VARSTRIPEXT}" ${VAL} CACHE INTERNAL "moab varible")
       set(MOAB_INCLUDES_COUNTER 1)
       # message(STATUS ${VARSTRIPEXT})
