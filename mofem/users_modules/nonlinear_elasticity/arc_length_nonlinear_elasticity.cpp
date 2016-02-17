@@ -725,14 +725,18 @@ int main(int argc, char *argv[]) {
 
     if(step % 1 == 0) {
       //Save restart file
-      ostringstream sss;
-      sss << "restart_" << step << ".h5m";
-      rval = moab.write_file(sss.str().c_str(),"MOAB","PARALLEL=WRITE_PART"); CHKERR_PETSC(rval);
+      #ifdef MOAB_HDF5_PARALLEL
+        ostringstream sss;
+        sss << "restart_" << step << ".h5m";
+        rval = moab.write_file(sss.str().c_str(),"MOAB","PARALLEL=WRITE_PART"); CHKERR_PETSC(rval);
+      #else
+      #warning "No parallel HDF5, no writing restart file"
+      #endif
       //Save data on mesh
       ierr = m_field.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",post_proc); CHKERRQ(ierr);
       ostringstream o1;
       o1 << "out_" << step << ".h5m";
-      rval = post_proc.postProcMesh.write_file(o1.str().c_str(),"MOAB","PARALLEL=WRITE_PART"); CHKERR_PETSC(rval);
+      ierr = post_proc.writeFile(o1.str().c_str()); CHKERRQ(ierr);
     }
 
     ierr = pre_post_method.potsProcessLoadPath(); CHKERRQ(ierr);

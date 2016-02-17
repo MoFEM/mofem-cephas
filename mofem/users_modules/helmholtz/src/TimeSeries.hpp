@@ -691,7 +691,7 @@ of boundary conditions could be easily implemented.
       {
         ostringstream ss;
         ss << "pressure_real_time_step_" << k << ".h5m";
-        rval = postProc.postProcMesh.write_file(ss.str().c_str(),"MOAB","PARALLEL=WRITE_PART"); CHKERR_PETSC(rval);
+        ierr = postProc.writeFile(ss.str().c_str()); CHKERRQ(ierr);
         PetscPrintf(PETSC_COMM_WORLD,"Saved %s\n",ss.str().c_str());
       }
 

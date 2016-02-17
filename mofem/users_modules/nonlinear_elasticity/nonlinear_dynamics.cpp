@@ -141,7 +141,7 @@ struct MonitorPostProc: public FEMethod {
         ierr = mField.loop_finite_elements("DYNAMICS","MASS_ELEMENT",postProc); CHKERRQ(ierr);
         ostringstream sss;
         sss << "out_values_" << (*step) << ".h5m";
-        rval = postProc.postProcMesh.write_file(sss.str().c_str(),"MOAB","PARALLEL=WRITE_PART"); CHKERR_PETSC(rval);
+        ierr = postProc.writeFile(sss.str().c_str()); CHKERRQ(ierr);
       }
 
       feElasticEnergy.snes_ctx = SnesMethod::CTX_SNESNONE;

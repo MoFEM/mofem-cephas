@@ -1,5 +1,3 @@
-#Warrning This implementation is based on old, less flexible methodogy. Should be reimplemented.
-
 #example how to run
 
 mpirun -np 5 ./arc_length_interface \
@@ -11,7 +9,7 @@ mpirun -np 5 ./arc_length_interface \
   -snes_type newtonls -snes_linesearch_type l2 \
   -snes_linesearch_monitor \
   -snes_max_it 16 -snes_atol 1e-8 -snes_rtol 1e-8 \
-  -my_sr 1e-3 -my_ms 10 -snes_converged_reason 
+  -my_sr 1e-3 -my_ms 10 -snes_converged_reason
 
 #input
 

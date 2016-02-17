@@ -116,7 +116,7 @@ struct MonitorPostProc: public FEMethod {
       ierr = mField.loop_finite_elements("DMTHERMAL","THERMAL_FE",postProc); CHKERRQ(ierr);
       ostringstream sss;
       sss << "out_thermal_" << step << ".h5m";
-      rval = postProc.postProcMesh.write_file(sss.str().c_str(),"MOAB","PARALLEL=WRITE_PART"); CHKERR_PETSC(rval);
+      ierr = postProc.writeFile(sss.str().c_str()); CHKERRQ(ierr);
     }
     PetscFunctionReturn(0);
   }

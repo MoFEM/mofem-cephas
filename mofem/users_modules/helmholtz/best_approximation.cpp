@@ -320,7 +320,7 @@ int main(int argc, char *argv[]) {
 
     ierr = post_proc.addFieldValuesPostProc("MESH_NODE_POSITIONS"); CHKERRQ(ierr);
     ierr = m_field.loop_finite_elements("EX1_PROBLEM","FE1",post_proc); CHKERRQ(ierr);
-    rval = post_proc.postProcMesh.write_file("best_solution_mesh_post_proc.h5m","MOAB","PARALLEL=WRITE_PART"); CHKERR_PETSC(rval);
+    ierr = post_proc.writeFile("best_solution_mesh_post_proc.h5m"); CHKERRQ(ierr);
 
   }
 
