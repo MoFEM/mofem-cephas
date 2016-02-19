@@ -338,7 +338,7 @@ PetscErrorCode FatPrismElementForcesAndSurcesCore::operator()() {
     for(int ee = 0;ee<9;ee++) {
       if(ee>=3&&ee<=5) {
         // through thickness ho approximation
-        // linear xi,eta, ho terms for eta
+        // linear xi,eta, ho terms for zeta
         int order = dataH1TroughThickness.dataOnEntities[MBEDGE][ee].getOrder();
         int nb_dofs = NBEDGE_H1(order);
         if((unsigned int)nb_dofs!=dataH1TroughThickness.dataOnEntities[MBEDGE][ee].getN().size2()) {
