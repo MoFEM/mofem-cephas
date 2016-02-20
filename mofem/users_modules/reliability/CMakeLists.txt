@@ -16,22 +16,97 @@
 # You should have received a copy of the GNU Lesser General Public
 # License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 
+include_directories(${UM_SOURCE_DIR}/obsolete/src)
+include_directories(${UM_SOURCE_DIR}/obsolete/src/c)
+include_directories(${UM_SOURCE_DIR}/obsolete/src/c_impl)
 
-#include_directories(${UM_SOURCE_DIR}/elasticity/src)
-#include_directories(${UM_SOURCE_DIR}/nonlinear_elastic_materials/src)
+include_directories(${PROJECT_SOURCE_DIR}/nonlinear_elasticity)
+include_directories(${PROJECT_SOURCE_DIR}/nonlinear_elasticity/src)
+include_directories(${PROJECT_SOURCE_DIR}/nonlinear_elastic_materials/src)
+include_directories(${PROJECT_SOURCE_DIR}/elasticity/src)
 
-#include_directories("${MoFEM_PROJECT_SOURCE_DIR}/users_modules/homogenisation/src")
-#include_directories("${MoFEM_PROJECT_SOURCE_DIR}/users_modules/obsolete/src")
-include_directories("${MoFEM_PROJECT_SOURCE_DIR}/users_modules/reliability/src")
-include_directories("${MoFEM_PROJECT_SOURCE_DIR}/users_modules/reliability/third_party")
-#include_directories("${MoFEM_PROJECT_SOURCE_DIR}/users_modules/composite_laminates/src")
-#include_directories("${MoFEM_PROJECT_SOURCE_DIR}/users_modules/moisture_transport/src")
-#include_directories("${MoFEM_PROJECT_SOURCE_DIR}/users_modules/degradation_model/src")
+include_directories(${PROJECT_SOURCE_DIR}/homogenisation/src)
+include_directories(${PROJECT_SOURCE_DIR}/moisture_transport/src)
+include_directories("${UM_SOURCE_DIR}/cohesive_interface/src")
+include_directories(${UM_SOURCE_DIR}/small_strain_plasticity/src)
+
+include_directories("${UM_SOURCE_DIR}/reliability/src")
+include_directories("${UM_SOURCE_DIR}/reliability/third_party")
+#include_directories("${UM_SOURCE_DIR}/composite_laminates/src")
+#include_directories("${UM_SOURCE_DIR}/degradation_model/src")
+
+include_directories("${UM_SOURCE_DIR}/basic_finite_elements/src")
 
 
 add_library(user_modules_reliability
   ${UM_SOURCE_DIR}/reliability/third_party/ltqnorm.c
 )	   
+
+add_executable(psfe_rve_mechanical ${PROJECT_SOURCE_DIR}/reliability/psfe_rve_mechanical.cpp)
+target_link_libraries(psfe_rve_mechanical
+  user_modules_homogenisation
+  users_modules_obsolete
+  users_modules
+  mofem_finite_elements
+  mofem_interfaces
+  mofem_multi_indices
+  mofem_petsc
+  mofem_approx
+  mofem_third_party
+  mofem_cblas
+  ${MoFEM_PROJECT_LIBS}
+)
+
+# 2. Linear displacement boundary condition
+
+  add_executable(trans_iso_RVE_disp_7vars ${PROJECT_SOURCE_DIR}/reliability/trans_iso_RVE_disp_7vars.cpp)
+target_link_libraries(
+  trans_iso_RVE_disp_7vars
+  user_modules_homogenisation 
+  users_modules_obsolete
+  users_modules
+  mofem_finite_elements 
+  mofem_interfaces 
+  mofem_multi_indices 
+  mofem_petsc 
+  mofem_approx 
+  mofem_third_party 
+  mofem_cblas  
+  ${MoFEM_PROJECT_LIBS})
+  
+# 3. Periodic boundary condition
+
+  add_executable(trans_iso_RVE_Periodic_7vars ${UM_SOURCE_DIR}/reliability/trans_iso_RVE_Periodic_7vars.cpp)
+target_link_libraries(
+  trans_iso_RVE_Periodic_7vars
+  user_modules_homogenisation 
+  users_modules_obsolete
+  users_modules
+  mofem_finite_elements 
+  mofem_interfaces 
+  mofem_multi_indices 
+  mofem_petsc 
+  mofem_approx 
+  mofem_third_party 
+  mofem_cblas 
+  ${MoFEM_PROJECT_LIBS})  
+
+# 4. Constant traction boundary condition
+  
+  add_executable(trans_iso_RVE_Traction_7vars ${UM_SOURCE_DIR}/reliability/trans_iso_RVE_Traction_7vars.cpp)
+target_link_libraries(
+  trans_iso_RVE_Traction_7vars
+  user_modules_homogenisation 
+  users_modules_obsolete
+  users_modules
+  mofem_finite_elements 
+  mofem_interfaces 
+  mofem_multi_indices 
+  mofem_petsc 
+  mofem_approx 
+  mofem_third_party 
+  mofem_cblas 
+  ${MoFEM_PROJECT_LIBS})    
 
 # =======================================================================================#
 #                                                                                        #
@@ -59,7 +134,30 @@ target_link_libraries(
   mofem_petsc  
   mofem_approx 
   mofem_third_party 
-  mofem_cblas 
-  boost_program_options
+  mofem_cblas
   ${MoFEM_PROJECT_LIBS}
 )
+
+
+#---------------------------------------- 
+# Case 2: Reliability analysis - Laminate
+#---------------------------------------- 
+# ${UM_SOURCE_DIR}/basic_finite_elements/src/impl/PCMGSetUpViaApproxOrders.cpp
+add_executable(MsFE_Reliability_Laminate_FORM_Disp 
+               ${UM_SOURCE_DIR}/reliability/MsFE_Reliability_Laminate_FORM_Disp.cpp
+               )
+target_link_libraries(
+  MsFE_Reliability_Laminate_FORM_Disp
+  user_modules_reliability
+  user_modules_homogenisation
+  users_modules_obsolete 
+  users_modules
+  mofem_finite_elements 
+  mofem_interfaces 
+  mofem_multi_indices 
+  mofem_petsc  
+  mofem_approx 
+  mofem_third_party 
+  mofem_cblas 
+  ${MoFEM_PROJECT_LIBS}
+  )
