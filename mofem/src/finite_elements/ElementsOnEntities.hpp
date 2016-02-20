@@ -54,8 +54,36 @@ struct ForcesAndSurcesCore: public FEMethod {
   int getMaxColOrder();
 
   PetscErrorCode getSense(EntityType type,boost::ptr_vector<DataForcesAndSurcesCore::EntData> &data);
-  PetscErrorCode getDataOrder(const EntityType type,const FieldSpace space,boost::ptr_vector<DataForcesAndSurcesCore::EntData> &data);
-  PetscErrorCode getDataOrder(const string &field_name,const EntityType type,boost::ptr_vector<DataForcesAndSurcesCore::EntData> &data);
+
+  /// \brief get maximal approximation order of approximation on the entity
+  PetscErrorCode getDataOrder(
+    const EntityType type,const FieldSpace space,boost::ptr_vector<DataForcesAndSurcesCore::EntData> &data
+  );
+
+  /// \brief do not use it it will be removed, use getDataOrder
+  DEPRECATED PetscErrorCode getOrder(
+    const EntityType type,const FieldSpace space,boost::ptr_vector<DataForcesAndSurcesCore::EntData> &data
+  ) {
+    PetscFunctionBegin;
+    PetscErrorCode ierr;
+    ierr = getDataOrder(type,space,data); CHKERRQ(ierr);
+    PetscFunctionReturn(0);
+  }
+
+  /// \brief get maximal approximation order on entity
+  PetscErrorCode getDataOrder(
+    const string &field_name,const EntityType type,boost::ptr_vector<DataForcesAndSurcesCore::EntData> &data
+  );
+
+  /// \brief do not use it it will be removed, use getDataOrder
+  DEPRECATED PetscErrorCode getOrder(
+    const string &field_name,const EntityType type,boost::ptr_vector<DataForcesAndSurcesCore::EntData> &data
+  ) {
+    PetscFunctionBegin;
+    PetscErrorCode ierr;
+    ierr = getDataOrder(field_name,type,data); CHKERRQ(ierr);
+    PetscFunctionReturn(0);
+  }
 
   PetscErrorCode getEdgesSense(DataForcesAndSurcesCore &data);
   PetscErrorCode getTrisSense(DataForcesAndSurcesCore &data);
