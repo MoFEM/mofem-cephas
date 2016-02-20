@@ -19,12 +19,14 @@ find_package(MoFEM 0.3.0
   REQUIRED HINTS ${MOFEM_DIR} ../ ../../ $ENV{MOFEM_DIR}
 )
 
-find_package( PythonInterp )
-find_package( PythonLibs )
-if(PYTHON_INCLUDE_DIRS)
-  include_directories ( ${PYTHON_INCLUDE_DIRS} )
-endif(PYTHON_INCLUDE_DIRS)
+find_package(Git)
+# find_package(PythonInterp)
+# find_package(PythonLibs)
+# if(PYTHON_INCLUDE_DIRS)
+#   include_directories ( ${PYTHON_INCLUDE_DIRS} )
+# endif(PYTHON_INCLUDE_DIRS)
 
+include(ExternalProject)
 include(${MoFEM_PROJECT_SOURCE_DIR}/cmake/ExportFile.cmake)
 
 set(CMAKE_C_COMPILER ${MoFEM_CMAKE_C_COMPILER})
