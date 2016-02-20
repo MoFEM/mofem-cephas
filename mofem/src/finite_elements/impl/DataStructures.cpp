@@ -142,7 +142,7 @@ DerivedDataForcesAndSurcesCore::DerivedDataForcesAndSurcesCore(DataForcesAndSurc
 ostream& operator<<(ostream& os,const DataForcesAndSurcesCore::EntData &e) {
   os <<
     "sEnse: " << e.getSense() << endl <<
-    "oRder: " << e.getOrder() << endl <<
+    "oRder: " << e.getDataOrder() << endl <<
     "global indices: " << e.getIndices() << endl <<
     "local indices: " << e.getLocalIndices() << endl;
   os.precision(2);

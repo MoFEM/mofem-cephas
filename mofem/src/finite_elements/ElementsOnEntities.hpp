@@ -44,25 +44,34 @@ struct ForcesAndSurcesCore: public FEMethod {
 
   PetscErrorCode getNumberOfNodes(int &num_nodes);
 
+  /// \brief get max order of approximation for data fields
+  int getMaxDataOrder();
+
+  /// \brief get max order of approximation for field in rows
+  int getMaxRowOrder();
+
+  /// \brief get max order of approximation for field in columns
+  int getMaxColOrder();
+
   PetscErrorCode getSense(EntityType type,boost::ptr_vector<DataForcesAndSurcesCore::EntData> &data);
-  PetscErrorCode getOrder(const EntityType type,const FieldSpace space,boost::ptr_vector<DataForcesAndSurcesCore::EntData> &data);
-  PetscErrorCode getOrder(const string &field_name,const EntityType type,boost::ptr_vector<DataForcesAndSurcesCore::EntData> &data);
+  PetscErrorCode getDataOrder(const EntityType type,const FieldSpace space,boost::ptr_vector<DataForcesAndSurcesCore::EntData> &data);
+  PetscErrorCode getDataOrder(const string &field_name,const EntityType type,boost::ptr_vector<DataForcesAndSurcesCore::EntData> &data);
 
   PetscErrorCode getEdgesSense(DataForcesAndSurcesCore &data);
   PetscErrorCode getTrisSense(DataForcesAndSurcesCore &data);
   PetscErrorCode getQuadSense(DataForcesAndSurcesCore &data);
 
-  PetscErrorCode getEdgesOrder(DataForcesAndSurcesCore &data,const FieldSpace space);
-  PetscErrorCode getTrisOrder(DataForcesAndSurcesCore &data,const FieldSpace space);
-  PetscErrorCode getQuadOrder(DataForcesAndSurcesCore &data,const FieldSpace space);
-  PetscErrorCode getTetsOrder(DataForcesAndSurcesCore &data,const FieldSpace space);
-  PetscErrorCode getPrismOrder(DataForcesAndSurcesCore &data,const FieldSpace space);
+  PetscErrorCode getEdgesDataOrder(DataForcesAndSurcesCore &data,const FieldSpace space);
+  PetscErrorCode getTrisDataOrder(DataForcesAndSurcesCore &data,const FieldSpace space);
+  PetscErrorCode getQuadDataOrder(DataForcesAndSurcesCore &data,const FieldSpace space);
+  PetscErrorCode getTetsDataOrder(DataForcesAndSurcesCore &data,const FieldSpace space);
+  PetscErrorCode getPrismDataOrder(DataForcesAndSurcesCore &data,const FieldSpace space);
 
-  PetscErrorCode getEdgesOrder(DataForcesAndSurcesCore &data,const string &field_name);
-  PetscErrorCode getTrisOrder(DataForcesAndSurcesCore &data,const string &field_name);
-  PetscErrorCode getQuadOrder(DataForcesAndSurcesCore &data,const string &field_name);
-  PetscErrorCode getTetsOrder(DataForcesAndSurcesCore &data,const string &field_name);
-  PetscErrorCode getPrismOrder(DataForcesAndSurcesCore &data,const string &field_name);
+  PetscErrorCode getEdgesDataOrder(DataForcesAndSurcesCore &data,const string &field_name);
+  PetscErrorCode getTrisDataOrder(DataForcesAndSurcesCore &data,const string &field_name);
+  PetscErrorCode getQuadDataOrder(DataForcesAndSurcesCore &data,const string &field_name);
+  PetscErrorCode getTetsDataOrder(DataForcesAndSurcesCore &data,const string &field_name);
+  PetscErrorCode getPrismDataOrder(DataForcesAndSurcesCore &data,const string &field_name);
 
   // ** Indices **
 
@@ -254,29 +263,21 @@ struct ForcesAndSurcesCore: public FEMethod {
     DataForcesAndSurcesCore &data,const double *G_X,const double *G_Y,const int G_DIM
   );
 
-  /** \brief it is used to calculate nb. of Gauss integration points
+  /// \brief It will be removed in the future
+  DEPRECATED virtual int getRule(int order) { return 2*order; };
 
-   This function in general should be overload, returning integration rank
-   depending on operator type. Integration rule should be set to
-   integrate matrix and vector exactly.
+  virtual int getRule(
+    int order_row,int order_col,int order_data
+  ) {
+    return getRule(order_data);
+  };
 
-   If function return -1
-   \code
-   int getRule(int order) { return -1; };
-   \endcode
-   then, function \codes setGaussPts(order) \endcode is called. In setGaussPts
-   user can implement own integration rule for specific approx. order.
-
-   At this stage of development integration points are weight are calculated following this paper:
-   Albert Nijenhuis, Herbert Wilf, Combinatorial Algorithms for Computers and
-   Calculators, Second Edition, Academic Press, 1978, ISBN: 0-12-519260-6,
-   LC: QA164.N54.
-
-   More details about algorithm
-   https://github.com/johannesgerer/jburkardt-m/tree/master/gm_rule
-   http://people.sc.fsu.edu/~jburkardt/cpp_src/gm_rule/gm_rule.html
-  **/
-  virtual int getRule(int order) { return 2*order; };
+  /// !\brief It will be removed in the future
+  DEPRECATED virtual PetscErrorCode setGaussPts(int order) {
+    PetscFunctionBegin;
+    SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"sorry, not implemented");
+    PetscFunctionReturn(0);
+  }
 
   /** \brief set user specific integration rule
 
@@ -299,9 +300,9 @@ struct ForcesAndSurcesCore: public FEMethod {
     in reference element, where last index in row is for integration weight.
 
     */
-  virtual PetscErrorCode setGaussPts(int order) {
+  virtual PetscErrorCode setGaussPts(int order_row,int order_col,int order_data) {
     PetscFunctionBegin;
-    SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"sorry, not implemented");
+    ierr = setGaussPts(order_data); CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }
 

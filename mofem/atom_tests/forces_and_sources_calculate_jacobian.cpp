@@ -187,9 +187,9 @@ int main(int argc, char *argv[]) {
 
       ierr = getEdgesSense(data); CHKERRQ(ierr);
       ierr = getTrisSense(data); CHKERRQ(ierr);
-      ierr = getEdgesOrder(data,H1); CHKERRQ(ierr);
-      ierr = getTrisOrder(data,H1); CHKERRQ(ierr);
-      ierr = getTetsOrder(data,H1); CHKERRQ(ierr);
+      ierr = getEdgesDataOrder(data,H1); CHKERRQ(ierr);
+      ierr = getTrisDataOrder(data,H1); CHKERRQ(ierr);
+      ierr = getTetsDataOrder(data,H1); CHKERRQ(ierr);
       ierr = getFaceTriNodes(data); CHKERRQ(ierr);
 
       data.dataOnEntities[MBVERTEX][0].getN().resize(4,4,false);
