@@ -66,7 +66,7 @@ struct DataForcesAndSurcesCore {
     virtual int getSense() const { return sEnse; }
 
     /// \brief get approximation order
-    virtual ApproximationOrder getDataOrder() const { return oRder; }
+    virtual ApproximationOrder getOrder() const { return oRder; }
 
     /// \brief get global indices of dofs on entity
     virtual const VectorInt& getIndices() const { return iNdices; }
