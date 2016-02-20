@@ -35,12 +35,6 @@ add_subdirectory(
   ${PROJECT_BINARY_DIR}/convective_mass_element/atom_tests
 )
 
-file(
-  GLOB_RECURSE INSTLLED_MODULES
-  FOLLOW_SYMLINKS
-  ?*/InstalledAddModule.cmake
-)
-
 if(WITH_MODULE_OBSOLETE)
   if(NOT EXISTS ${UM_SOURCE_DIR}/obsolete)
     execute_process(
@@ -113,6 +107,12 @@ if(WITH_MODULE_MINIMAL_HELMHOLTZ)
     )
   endif(NOT EXISTS ${UM_SOURCE_DIR}/helmholtz)
 endif(WITH_MODULE_MINIMAL_HELMHOLTZ)
+
+file(
+  GLOB_RECURSE INSTLLED_MODULES
+  FOLLOW_SYMLINKS
+  ?*/InstalledAddModule.cmake
+)
 
 # inattal modules && git pull for all users modules
 add_custom_target(
