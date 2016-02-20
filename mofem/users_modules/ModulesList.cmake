@@ -105,6 +105,15 @@ if(WITH_MODULE_MINIMAL_SURFACE_EQUATION)
   endif(NOT EXISTS ${UM_SOURCE_DIR}/minimal_surface_equation)
 endif(WITH_MODULE_MINIMAL_SURFACE_EQUATION)
 
+if(WITH_MODULE_MINIMAL_HELMHOLTZ)
+  if(NOT EXISTS ${UM_SOURCE_DIR}/helmholtz)
+    execute_process(
+      COMMAND ${GIT_EXECUTABLE} clone https://bitbucket.org/likask/mofem_um_helmholtz helmholtz
+      WORKING_DIRECTORY ${UM_SOURCE_DIR}
+    )
+  endif(NOT EXISTS ${UM_SOURCE_DIR}/helmholtz)
+endif(WITH_MODULE_MINIMAL_HELMHOLTZ)
+
 # inattal modules && git pull for all users modules
 add_custom_target(
   update_users_modules
@@ -165,8 +174,4 @@ add_subdirectory(
 add_subdirectory(
   ${UM_SOURCE_DIR}/nonlinear_elasticity
   ${PROJECT_BINARY_DIR}/nonlinear_elasticity
-)
-add_subdirectory(
-  ${UM_SOURCE_DIR}/helmholtz
-  ${PROJECT_BINARY_DIR}/helmholtz
 )
