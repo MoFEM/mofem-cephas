@@ -75,7 +75,7 @@ endif(WITH_MODULE_GELS)
 if(WITH_MODULE_STRAIN_PLASTICITY)
   if(NOT EXISTS ${UM_SOURCE_DIR}/strain_plasticity)
     execute_process(
-      COMMAND ${GIT_EXECUTABLE} clone https://bitbucket.org/likask/mofem_um_small_strain_plasticity strain_plasticity
+      COMMAND ${GIT_EXECUTABLE} clone https://bitbucket.org/likask/mofem_um_small_strain_plasticity small_strain_plasticity
       WORKING_DIRECTORY ${UM_SOURCE_DIR}
     )
   endif(NOT EXISTS ${UM_SOURCE_DIR}/strain_plasticity)
