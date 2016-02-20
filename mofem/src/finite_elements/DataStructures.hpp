@@ -44,6 +44,7 @@ namespace MoFEM {
   // shallow adaptor classes
   typedef ublas::vector<double,ublas::shallow_array_adaptor<double> > VectorAdaptor;
   typedef ublas::matrix<double,ublas::row_major,ublas::shallow_array_adaptor<double> > MatrixAdaptor;
+  typedef ublas::vector<int,ublas::shallow_array_adaptor<int> > VectorIntAdaptor;
 
 /** \brief data structure for finite element entity
   * \ingroup mofem_forces_and_sources
@@ -70,11 +71,41 @@ struct DataForcesAndSurcesCore {
     /// \brief get global indices of dofs on entity
     virtual const VectorInt& getIndices() const { return iNdices; }
 
+    /// \brief get global indices of dofs on entity up to given order
+    virtual const VectorIntAdaptor getIndicesUpToOrder(int order) {
+      int size = 0;
+      if(!iNdices.size()) {
+        size = dOfs[0]->get_order_nb_dofs(order)*dOfs[0]->get_nb_of_coeffs();
+      }
+      int *data = &*iNdices.data().begin();
+      return VectorIntAdaptor(size,ublas::shallow_array_adaptor<int>(size,data));
+    }
+
     /// \brief get local indices of dofs on entity
     virtual const VectorInt& getLocalIndices() const { return localIndices; }
 
+    /// \brief get local indices of dofs on entity up to given order
+    virtual const VectorIntAdaptor getLocalIndicesUpToOrder(int order) {
+      int size = 0;
+      if(!localIndices.size()) {
+        size = dOfs[0]->get_order_nb_dofs(order)*dOfs[0]->get_nb_of_coeffs();
+      }
+      int *data = &*localIndices.data().begin();
+      return VectorIntAdaptor(size,ublas::shallow_array_adaptor<int>(size,data));
+    }
+
     /// \brief get dofs values
     virtual const VectorDouble& getFieldData() const { return fieldData; }
+
+    /// \brief get dofs values up to given order
+    virtual const VectorAdaptor getFieldDataUpToOrder(int order) {
+      int size = 0;
+      if(!fieldData.size()) {
+        size = dOfs[0]->get_order_nb_dofs(order)*dOfs[0]->get_nb_of_coeffs();
+      }
+      double *data = &*fieldData.data().begin();
+      return VectorAdaptor(size,ublas::shallow_array_adaptor<double>(size,data));
+    }
 
     /// \brief get dofs data stature FEDofMoFEMEntity
     virtual const VectorDofs& getFieldDofs() const { return dOfs; }
@@ -104,7 +135,7 @@ struct DataForcesAndSurcesCore {
     virtual const MatrixDouble& getDiffN() const { return diffN; }
 
     virtual int& getSense() { return sEnse; }
-    virtual ApproximationOrder& getOrder() { return oRder; }
+    virtual ApproximationOrder& getDataOrder() { return oRder; }
     virtual VectorInt& getIndices() { return iNdices; }
     virtual VectorInt& getLocalIndices() { return localIndices; }
     virtual VectorDouble& getFieldData() { return fieldData; }
@@ -281,16 +312,7 @@ struct DerivedDataForcesAndSurcesCore: public DataForcesAndSurcesCore  {
 
     DataForcesAndSurcesCore::EntData &entData;
     DerivedEntData(DataForcesAndSurcesCore::EntData &ent_data):
-    entData(ent_data),oRder(0) {}
-
-    const VectorInt& getIndices() const { return iNdices; }
-    VectorInt& getIndices() { return iNdices; }
-    const VectorDouble& getFieldData() const { return fieldData; }
-    const VectorDofs& getFieldDofs() const { return dOfs; }
-    VectorDouble& getFieldData() { return fieldData; }
-    VectorDofs& getFieldDofs() { return dOfs; }
-    ApproximationOrder getOrder() const { return oRder; }
-    ApproximationOrder& getOrder() { return oRder; }
+    entData(ent_data) {}
 
     inline int getSense() const { return entData.getSense(); }
     inline const MatrixDouble& getN() const { return entData.getN(); }
@@ -299,12 +321,6 @@ struct DerivedDataForcesAndSurcesCore: public DataForcesAndSurcesCore  {
     inline MatrixDouble& getDiffN() { return entData.getDiffN(); }
     inline const MatrixDouble&  getHdivN() const { return entData.getHdivN(); };
     inline MatrixDouble&  getHdivN() { return entData.getHdivN(); };
-
-    private:
-    ApproximationOrder oRder;
-    VectorInt iNdices;
-    VectorDofs dOfs;
-    VectorDouble fieldData;
 
   };
 

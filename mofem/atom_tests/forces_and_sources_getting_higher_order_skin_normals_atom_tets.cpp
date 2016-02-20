@@ -171,8 +171,8 @@ int main(int argc, char *argv[]) {
       ierr = getSpacesOnEntities(data); CHKERRQ(ierr);
 
       ierr = getEdgesSense(data); CHKERRQ(ierr);
-      ierr = getEdgesOrder(data,H1); CHKERRQ(ierr);
-      ierr = getTrisOrder(data,H1); CHKERRQ(ierr);
+      ierr = getEdgesDataOrder(data,H1); CHKERRQ(ierr);
+      ierr = getTrisDataOrder(data,H1); CHKERRQ(ierr);
       ierr = getRowNodesIndices(data,"FIELD1"); CHKERRQ(ierr);
       ierr = getEdgesRowIndices(data,"FIELD1"); CHKERRQ(ierr);
       ierr = getTrisRowIndices(data,"FIELD1"); CHKERRQ(ierr);

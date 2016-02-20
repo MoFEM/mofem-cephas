@@ -73,49 +73,63 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::operator()() {
     if(fePtr->get_ent_type() != MBTET) PetscFunctionReturn(0);
 
     ierr = getSpacesOnEntities(dataH1); CHKERRQ(ierr);
-
-    //H1
     ierr = getFaceTriNodes(dataH1); CHKERRQ(ierr);
+    //H1
     if((dataH1.spacesOnEntities[MBEDGE]).test(H1)) {
       ierr = getEdgesSense(dataH1); CHKERRQ(ierr);
-      ierr = getEdgesOrder(dataH1,H1); CHKERRQ(ierr);
     }
     if((dataH1.spacesOnEntities[MBTRI]).test(H1)) {
-      ierr = getTrisOrder(dataH1,H1); CHKERRQ(ierr);
       ierr = getTrisSense(dataH1); CHKERRQ(ierr);
     }
+    //Hdiv
+    if((dataH1.spacesOnEntities[MBTRI]).test(HDIV)) {
+      ierr = getTrisSense(dataHdiv); CHKERRQ(ierr);
+      ierr = getFaceTriNodes(dataHdiv); CHKERRQ(ierr);
+    }
+
+    //H1
+    if((dataH1.spacesOnEntities[MBEDGE]).test(H1)) {
+      ierr = getEdgesDataOrder(dataH1,H1); CHKERRQ(ierr);
+    }
+    if((dataH1.spacesOnEntities[MBTRI]).test(H1)) {
+      ierr = getTrisDataOrder(dataH1,H1); CHKERRQ(ierr);
+    }
     if((dataH1.spacesOnEntities[MBTET]).test(H1)) {
-      ierr = getTetsOrder(dataH1,H1); CHKERRQ(ierr);
+      ierr = getTetsDataOrder(dataH1,H1); CHKERRQ(ierr);
     }
 
     //Hdiv
     if((dataH1.spacesOnEntities[MBTRI]).test(HDIV)) {
       ierr = getTrisSense(dataHdiv); CHKERRQ(ierr);
-      ierr = getTrisOrder(dataHdiv,HDIV); CHKERRQ(ierr);
-      ierr = getTetsOrder(dataHdiv,HDIV); CHKERRQ(ierr);
+      ierr = getTrisDataOrder(dataHdiv,HDIV); CHKERRQ(ierr);
+      ierr = getTetsDataOrder(dataHdiv,HDIV); CHKERRQ(ierr);
       ierr = getFaceTriNodes(dataHdiv); CHKERRQ(ierr);
     }
 
     //L2
     if((dataH1.spacesOnEntities[MBTET]).test(L2)) {
-      ierr = getTetsOrder(dataL2,L2); CHKERRQ(ierr);
+      ierr = getTetsDataOrder(dataL2,L2); CHKERRQ(ierr);
     }
 
-    int order = 1;
-    for(unsigned int ee = 0;ee<dataH1.dataOnEntities[MBEDGE].size();ee++) {
-      order = max(order,dataH1.dataOnEntities[MBEDGE][ee].getOrder());
-    }
-    for(unsigned int ff = 0;ff<dataH1.dataOnEntities[MBTRI].size();ff++) {
-      order = max(order,dataH1.dataOnEntities[MBTRI][ff].getOrder());
-    }
-    order = max(order,dataH1.dataOnEntities[MBTET][0].getOrder());
-    for(unsigned int ff = 0;ff<dataHdiv.dataOnEntities[MBTRI].size();ff++) {
-      order = max(order,dataHdiv.dataOnEntities[MBTRI][ff].getOrder());
-    }
-    order = max(order,dataL2.dataOnEntities[MBTET][0].getOrder());
+    // int order = 1;
+    // for(unsigned int ee = 0;ee<dataH1.dataOnEntities[MBEDGE].size();ee++) {
+    //   order = max(order,dataH1.dataOnEntities[MBEDGE][ee].getDataOrder());
+    // }
+    // for(unsigned int ff = 0;ff<dataH1.dataOnEntities[MBTRI].size();ff++) {
+    //   order = max(order,dataH1.dataOnEntities[MBTRI][ff].getDataOrder());
+    // }
+    // order = max(order,dataH1.dataOnEntities[MBTET][0].getDataOrder());
+    // for(unsigned int ff = 0;ff<dataHdiv.dataOnEntities[MBTRI].size();ff++) {
+    //   order = max(order,dataHdiv.dataOnEntities[MBTRI][ff].getDataOrder());
+    // }
+    // order = max(order,dataL2.dataOnEntities[MBTET][0].getDataOrder());
 
+    int order_data = getMaxDataOrder();
+    int order_row = getMaxRowOrder();
+    int order_col = getMaxColOrder();
+    int rule = getRule(order_row,order_col,order_data);
+    // cerr << order_data << " " << order_row << " " << order_col << " " << rule << endl;
     int nb_gauss_pts;
-    int rule = getRule(order);
     if(rule >= 0) {
       if(rule<QUAD_3D_TABLE_SIZE) {
         if(QUAD_3D_TABLE[rule]->dim!=3) {
@@ -159,7 +173,7 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::operator()() {
       //   rule,&gaussPts(0,0),&gaussPts(1,0),&gaussPts(2,0),&gaussPts(3,0)
       // ); CHKERRQ(ierr);
     } else {
-      ierr = setGaussPts(order); CHKERRQ(ierr);
+      ierr = setGaussPts(order_row,order_col,order_data); CHKERRQ(ierr);
       nb_gauss_pts = gaussPts.size2();
       dataH1.dataOnEntities[MBVERTEX][0].getN().resize(nb_gauss_pts,4,false);
       ierr = ShapeMBTET(
@@ -225,9 +239,9 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::operator()() {
       if((fePtr->get_BitFieldId_data()&id).none()) {
         SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_FOUND,"no MESH_NODE_POSITIONS in element data");
       }
-      ierr = getEdgesOrder(dataH1,meshPositionsFieldName); CHKERRQ(ierr);
-      ierr = getTrisOrder(dataH1,meshPositionsFieldName); CHKERRQ(ierr);
-      ierr = getTetsOrder(dataH1,meshPositionsFieldName); CHKERRQ(ierr);
+      ierr = getEdgesDataOrder(dataH1,meshPositionsFieldName); CHKERRQ(ierr);
+      ierr = getTrisDataOrder(dataH1,meshPositionsFieldName); CHKERRQ(ierr);
+      ierr = getTetsDataOrder(dataH1,meshPositionsFieldName); CHKERRQ(ierr);
       ierr = getNodesFieldData(dataH1,meshPositionsFieldName); CHKERRQ(ierr);
       if(dataH1.dataOnEntities[MBVERTEX][0].getFieldData().size()!=12) {
         SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_FOUND,"no MESH_NODE_POSITIONS in element data");
@@ -345,7 +359,7 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::operator()() {
               } else {
                 ierr = getEdgesColIndices(*op_data[ss],field_name); CHKERRQ(ierr);
               }
-              ierr = getEdgesOrder(*op_data[ss],field_name); CHKERRQ(ierr);
+              ierr = getEdgesDataOrder(*op_data[ss],field_name); CHKERRQ(ierr);
               ierr = getEdgesFieldData(*op_data[ss],field_name); CHKERRQ(ierr);
               // ierr = getEdgesFieldDofs(*op_data[ss],field_name); CHKERRQ(ierr);
               case HDIV:
@@ -354,7 +368,7 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::operator()() {
               } else {
                 ierr = getTrisColIndices(*op_data[ss],field_name); CHKERRQ(ierr);
               }
-              ierr = getTrisOrder(*op_data[ss],field_name); CHKERRQ(ierr);
+              ierr = getTrisDataOrder(*op_data[ss],field_name); CHKERRQ(ierr);
               ierr = getTrisFieldData(*op_data[ss],field_name); CHKERRQ(ierr);
               case L2:
               if(!ss) {
@@ -363,7 +377,7 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::operator()() {
 
                 ierr = getTetsColIndices(*op_data[ss],field_name); CHKERRQ(ierr);
               }
-              ierr = getTetsOrder(*op_data[ss],field_name); CHKERRQ(ierr);
+              ierr = getTetsDataOrder(*op_data[ss],field_name); CHKERRQ(ierr);
               ierr = getTetsFieldData(*op_data[ss],field_name); CHKERRQ(ierr);
               break;
               case NOFIELD:

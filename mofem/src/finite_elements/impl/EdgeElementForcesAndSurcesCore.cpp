@@ -72,11 +72,15 @@ PetscErrorCode EdgeElementForcesAndSurcesCore::operator()() {
 
   //PetscAttachDebugger();
 
-  ierr = getEdgesOrder(dataH1,H1); CHKERRQ(ierr);
+  ierr = getEdgesDataOrder(dataH1,H1); CHKERRQ(ierr);
+  ierr = getEdgesDataOrder(dataH1,H1); CHKERRQ(ierr);
 
   dataH1.dataOnEntities[MBEDGE][0].getSense() = 1; // set sense to 1, this is this entity
-  int order = dataH1.dataOnEntities[MBEDGE][0].getOrder();
-  int rule = getRule(order);
+
+  int order_data = getMaxDataOrder();
+  int order_row = getMaxRowOrder();
+  int order_col = getMaxColOrder();
+  int rule = getRule(order_row,order_col,order_data);
   int nb_gauss_pts;
   {
     if(rule<QUAD_1D_TABLE_SIZE) {
@@ -145,7 +149,7 @@ PetscErrorCode EdgeElementForcesAndSurcesCore::operator()() {
     dataPtr->get<FieldName_mi_tag>().end()
   ) {
 
-    ierr = getEdgesOrder(dataH1,meshPositionsFieldName); CHKERRQ(ierr);
+    ierr = getEdgesDataOrder(dataH1,meshPositionsFieldName); CHKERRQ(ierr);
     ierr = getNodesFieldData(dataH1,meshPositionsFieldName); CHKERRQ(ierr);
     ierr = getEdgesFieldData(dataH1,meshPositionsFieldName); CHKERRQ(ierr);
     try {
@@ -226,7 +230,7 @@ PetscErrorCode EdgeElementForcesAndSurcesCore::operator()() {
             } else {
               ierr = getEdgesColIndices(*op_data[ss],field_name); CHKERRQ(ierr);
             }
-            ierr = getEdgesOrder(*op_data[ss],field_name); CHKERRQ(ierr);
+            ierr = getEdgesDataOrder(*op_data[ss],field_name); CHKERRQ(ierr);
             ierr = getEdgesFieldData(*op_data[ss],field_name); CHKERRQ(ierr);
             break;
             case HDIV:

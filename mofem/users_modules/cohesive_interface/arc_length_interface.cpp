@@ -777,11 +777,11 @@ int main(int argc, char *argv[]) {
 
     if(step % 1 == 0) {
 
-      if(pcomm->rank()==0) {
-        ostringstream sss;
-        sss << "restart_" << step << ".h5m";
-        rval = moab.write_file(sss.str().c_str()); CHKERR_PETSC(rval);
-      }
+      // if(pcomm->rank()==0) {
+      //   ostringstream sss;
+      //   sss << "restart_" << step << ".h5m";
+      //   rval = moab.write_file(sss.str().c_str()); CHKERR_PETSC(rval);
+      // }
 
       ierr = m_field.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",post_proc); CHKERRQ(ierr);
       ostringstream ss;

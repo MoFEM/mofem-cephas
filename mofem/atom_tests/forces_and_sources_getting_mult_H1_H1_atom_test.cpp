@@ -236,12 +236,12 @@ int main(int argc, char *argv[]) {
       ierr = getEdgesSense(data_col); CHKERRQ(ierr);
       ierr = getTrisSense(data_col); CHKERRQ(ierr);
 
-      ierr = getEdgesOrder(data_row,H1); CHKERRQ(ierr);
-      ierr = getEdgesOrder(data_col,H1); CHKERRQ(ierr);
-      ierr = getTrisOrder(data_row,H1); CHKERRQ(ierr);
-      ierr = getTrisOrder(data_col,H1); CHKERRQ(ierr);
-      ierr = getTetsOrder(data_row,H1); CHKERRQ(ierr);
-      ierr = getTetsOrder(data_col,H1); CHKERRQ(ierr);
+      ierr = getEdgesDataOrder(data_row,H1); CHKERRQ(ierr);
+      ierr = getEdgesDataOrder(data_col,H1); CHKERRQ(ierr);
+      ierr = getTrisDataOrder(data_row,H1); CHKERRQ(ierr);
+      ierr = getTrisDataOrder(data_col,H1); CHKERRQ(ierr);
+      ierr = getTetsDataOrder(data_row,H1); CHKERRQ(ierr);
+      ierr = getTetsDataOrder(data_col,H1); CHKERRQ(ierr);
       ierr = getRowNodesIndices(data_row,"FIELD1"); CHKERRQ(ierr);
       ierr = getColNodesIndices(data_row,"FIELD2"); CHKERRQ(ierr);
       ierr = getEdgesRowIndices(data_row,"FIELD1"); CHKERRQ(ierr);
