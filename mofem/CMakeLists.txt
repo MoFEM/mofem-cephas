@@ -30,10 +30,15 @@ include(cmake/ResolveCompilerPaths.cmake)
 
 project(MoFEM C Fortran CXX)
 
+# Installing extermal packages
+include(ExternalProject)
+execute_process(
+  COMMAND ${CMAKE_COMMAND} -E make_directory ${PROJECT_BINARY_DIR}/external/include
+  COMMAND ${CMAKE_COMMAND} -E make_directory ${PROJECT_BINARY_DIR}/external/lib
+  COMMAND ${CMAKE_COMMAND} -E make_directory ${PROJECT_BINARY_DIR}/external/bin
+)
+
 #SIGMA tools
-include(cmake/FindTetGen.cmake)
-include(cmake/FindNetGen.cmake)
-include(cmake/FindTriangle.cmake)
 include(cmake/FindiMesh.cmake)
 include(cmake/FindCGM.cmake)
 include(cmake/FindLASSO.cmake)
@@ -43,8 +48,11 @@ include(cmake/FindMESHKIT.cmake)
 include(cmake/FindTAO.cmake)
 include(cmake/FindSLEPC.cmake)
 
-#ADOL-C
+#Other tools
 include(cmake/FindADOL-C.cmake)
+include(cmake/FindTetGen.cmake)
+include(cmake/FindNetGen.cmake)
+include(cmake/FindTriangle.cmake)
 
 #CGAL tools
 #find_package(CGAL HINTS ${CGAL_DIR}/lib/CGAL)

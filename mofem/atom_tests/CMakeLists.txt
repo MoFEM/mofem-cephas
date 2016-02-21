@@ -580,6 +580,9 @@ if(TETGEN_LIBRARY)
     mofem_third_party
     ${PROJECT_LIBS}
   )
+  if(WITH_TETGEN)
+    add_dependencies(tetgen_interface install_tetegen)
+  endif(WITH_TETGEN)
 
   add_test(tetgen_interface_atom ${MPI_RUN} -np 1
     ${CMAKE_CURRENT_BINARY_DIR}/tetgen_interface -my_file Tinterface.h5m
@@ -636,8 +639,13 @@ if(ADOL-C_LIBRARY)
 
   add_executable(adol-c_atom adol-c_atom.cpp)
   target_link_libraries(adol-c_atom ${PROJECT_LIBS})
+  if(WITH_ADOL-C)
+    add_dependencies(adol-c_atom adolc)
+  endif(WITH_ADOL-C)
 
-  add_test(adol-c_atom_test ${MPI_RUN} -np 1
-    ${CMAKE_CURRENT_BINARY_DIR}/adol-c_atom)
+  add_test(
+    adol-c_atom_test ${MPI_RUN} -np 1
+    ${CMAKE_CURRENT_BINARY_DIR}/adol-c_atom
+  )
 
 endif(ADOL-C_LIBRARY)
