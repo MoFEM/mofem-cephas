@@ -53,6 +53,12 @@ struct ForcesAndSurcesCore: public FEMethod {
   /// \brief get max order of approximation for field in columns
   int getMaxColOrder();
 
+  /**
+   * \brief get sense (orientation) of entity
+   * @param  type type of entity
+   * @param  data entity data
+   * @return      error code
+   */
   PetscErrorCode getSense(EntityType type,boost::ptr_vector<DataForcesAndSurcesCore::EntData> &data);
 
   /// \brief get maximal approximation order of approximation on the entity
@@ -85,7 +91,18 @@ struct ForcesAndSurcesCore: public FEMethod {
     PetscFunctionReturn(0);
   }
 
+  /**
+   * get  edge sense )orientation) in respect finite element entity
+   * @param  data structure where results are stored
+   * @return      error code
+   */
   PetscErrorCode getEdgesSense(DataForcesAndSurcesCore &data);
+
+  /**
+   * get triangle sense (orientation)
+   * @param  data structure where results are stored
+   * @return      error code
+   */
   PetscErrorCode getTrisSense(DataForcesAndSurcesCore &data);
   PetscErrorCode getQuadSense(DataForcesAndSurcesCore &data);
 
