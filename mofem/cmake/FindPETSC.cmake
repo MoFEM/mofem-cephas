@@ -14,7 +14,7 @@ if(NOT PETSC_ARCH)
 endif(NOT PETSC_ARCH)
 
 
-find_file (PETSC_VARIBLES_FILE petscvariables
+find_file(PETSC_VARIBLES_FILE petscvariables
   HINTS
   ${PETSC_DIR}/${PETSC_ARCH}/conf
   ${PETSC_DIR}/${PETSC_ARCH}/lib/petsc/conf
