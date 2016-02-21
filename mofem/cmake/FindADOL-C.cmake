@@ -29,6 +29,7 @@ if(WITH_ADOL-C)
   find_library(COLPACK_LIBLARY NAMES Colpack PATHS /usr/local/lib)
   execute_process(COMMAND ${CMAKE_COMMAND} -E make_directory ${PROJECT_BINARY_DIR}/external/lib64)
   execute_process(COMMAND ${CMAKE_COMMAND} -E touch ${PROJECT_BINARY_DIR}/external/lib64/libadolc.a)
+  add_dependencies(install_prerequisites adolc)
 endif(WITH_ADOL-C)
 
 if(WITH_ADOL-C)

@@ -20,9 +20,6 @@ if(WITH_TETGEN)
     URL https://bitbucket.org/likask/mofem-joseph/downloads/tetgen1.5.0.tgz
     INSTALL_COMMAND ""
   )
-  execute_process(COMMAND ${CMAKE_COMMAND} -E make_directory ${PROJECT_BINARY_DIR}/external/include)
-  execute_process(COMMAND ${CMAKE_COMMAND} -E make_directory ${PROJECT_BINARY_DIR}/external/lib)
-  execute_process(COMMAND ${CMAKE_COMMAND} -E make_directory ${PROJECT_BINARY_DIR}/external/bin)
   execute_process(COMMAND ${CMAKE_COMMAND} -E touch ${PROJECT_BINARY_DIR}/external/lib/libtet.a)
   add_custom_target(
     copy_tetgen_fiels
@@ -32,6 +29,7 @@ if(WITH_TETGEN)
     COMMAND ${CMAKE_COMMAND} -E copy_if_different ${PROJECT_BINARY_DIR}/external/src/tetgen-build/tetgen ${PROJECT_BINARY_DIR}/external/bin
     DEPENDS tetgen
   )
+  add_dependencies(install_prerequisites tetgen copy_tetgen_fiels)
 endif(WITH_TETGEN)
 
 if(WITH_TETGEN)
