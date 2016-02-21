@@ -20,15 +20,16 @@ if(WITH_TETGEN)
     URL https://bitbucket.org/likask/mofem-joseph/downloads/tetgen1.5.0.tgz
     INSTALL_COMMAND ""
   )
+  execute_process(COMMAND ${CMAKE_COMMAND} -E make_directory ${PROJECT_BINARY_DIR}/external/include)
+  execute_process(COMMAND ${CMAKE_COMMAND} -E make_directory ${PROJECT_BINARY_DIR}/external/lib)
+  execute_process(COMMAND ${CMAKE_COMMAND} -E make_directory ${PROJECT_BINARY_DIR}/external/bin)
+  execute_process(COMMAND ${CMAKE_COMMAND} -E touch ${PROJECT_BINARY_DIR}/external/lib/libtet.a)
   add_custom_target(
-    install_tetegen
+    copy_tetgen_fiels
     ALL
-    COMMAND ${CMAKE_COMMAND} -E make_directory ${PROJECT_BINARY_DIR}/external/include/
-    COMMAND ${CMAKE_COMMAND} -E make_directory ${PROJECT_BINARY_DIR}/external/lib/
-    COMMAND ${CMAKE_COMMAND} -E make_directory ${PROJECT_BINARY_DIR}/external/bin/
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different ${PROJECT_BINARY_DIR}/external/src/tetgen/include/tetgen.h ${PROJECT_BINARY_DIR}/external/include/
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different ${PROJECT_BINARY_DIR}/external/src/tetgen-build/libtet* ${PROJECT_BINARY_DIR}/external/lib/
-    COMMAND ${CMAKE_COMMAND} -E copy_if_different ${PROJECT_BINARY_DIR}/external/src/tetgen-build/tetgen ${PROJECT_BINARY_DIR}/external/bin/
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different ${PROJECT_BINARY_DIR}/external/src/tetgen/include/tetgen.h ${PROJECT_BINARY_DIR}/external/include
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different ${PROJECT_BINARY_DIR}/external/src/tetgen-build/libtet* ${PROJECT_BINARY_DIR}/external/lib
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different ${PROJECT_BINARY_DIR}/external/src/tetgen-build/tetgen ${PROJECT_BINARY_DIR}/external/bin
     DEPENDS tetgen
   )
 endif(WITH_TETGEN)
@@ -36,11 +37,9 @@ endif(WITH_TETGEN)
 if(WITH_TETGEN)
   if(NOT TETGEN_LIBRARY)
     include_directories(${PROJECT_BINARY_DIR}/external/include)
-    link_directories(${PROJECT_BINARY_DIR}/external/lib)
     add_definitions(-DWITH_TETGEN)
     set(TETGEN_DIR ${PROJECT_BINARY_DIR}/external CACHE FILEPATH "path to tetgen dir"  FORCE)
-    set(TETGEN_LIBRARY ${TETGEN_DIR}/lib/libtet.a CACHE FILEPATH "tetgen lib"  FORCE)
-    add_library(TETGEN_LIBRARY STATIC IMPORTED)
+    set(TETGEN_LIBRARY IMPORTED_LOCATION ${TETGEN_DIR}/lib/libtet.a)
     message(STATUS ${TETGEN_LIBRARY})
   endif(NOT TETGEN_LIBRARY)
 endif(WITH_TETGEN)

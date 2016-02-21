@@ -581,7 +581,7 @@ if(TETGEN_LIBRARY)
     ${PROJECT_LIBS}
   )
   if(WITH_TETGEN)
-    add_dependencies(tetgen_interface install_tetegen)
+    add_dependencies(tetgen_interface tetgen)
   endif(WITH_TETGEN)
 
   add_test(tetgen_interface_atom ${MPI_RUN} -np 1
@@ -635,17 +635,14 @@ add_test(prisms_elements_from_surface ${MPI_RUN} -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/prisms_elements_from_surface -my_file rectangle_surface_mesh.cub
 )
 
-if(ADOL-C_LIBRARY)
-
+if(WITH_ADOL-C)
   add_executable(adol-c_atom adol-c_atom.cpp)
   target_link_libraries(adol-c_atom ${PROJECT_LIBS})
   if(WITH_ADOL-C)
     add_dependencies(adol-c_atom adolc)
   endif(WITH_ADOL-C)
-
   add_test(
     adol-c_atom_test ${MPI_RUN} -np 1
     ${CMAKE_CURRENT_BINARY_DIR}/adol-c_atom
   )
-
-endif(ADOL-C_LIBRARY)
+endif(WITH_ADOL-C)
