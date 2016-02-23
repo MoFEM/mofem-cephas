@@ -26,8 +26,6 @@ namespace MoFEM {
  * \brief keeps information about indexed dofs
  * \ingroup dof_multi_indices
 
- \bug active is obsolete and should be removed
-
  */
 struct DofMoFEMEntity: public interface_MoFEMEntity<MoFEMEntity> {
 
@@ -113,7 +111,7 @@ struct DofMoFEMEntity: public interface_MoFEMEntity<MoFEMEntity> {
   };
 
   //check if node is active
-  inline int get_active() const { return active ? 1 : 0; }
+  inline char get_active() const { return active ? 1 : 0; }
   friend ostream& operator<<(ostream& os,const DofMoFEMEntity& e);
 
   inline const DofMoFEMEntity* get_DofMoFEMEntity_ptr() const { return const_cast<DofMoFEMEntity*>(this); };
@@ -143,7 +141,7 @@ struct interface_DofMoFEMEntity: public interface_MoFEMEntity<T> {
     return interface_MoFEMEntity<T>::field_ptr->get_dof_coeff_idx();
   };
 
-  inline int get_active() const { return interface_MoFEMEntity<T>::field_ptr->get_active(); }
+  inline char get_active() const { return interface_MoFEMEntity<T>::field_ptr->get_active(); }
   inline const DofMoFEMEntity* get_DofMoFEMEntity_ptr() const {
     return interface_MoFEMEntity<T>::field_ptr->get_DofMoFEMEntity_ptr();
   };
@@ -255,6 +253,8 @@ typedef multi_index_container<
     > >,
     //non_unique
     ordered_non_unique<
+      const_mem_fun<DofMoFEMEntity,char,&DofMoFEMEntity::get_active> >,
+    ordered_non_unique<
       tag<FieldName_mi_tag>, const_mem_fun<DofMoFEMEntity::interface_type_MoFEMField,boost::string_ref,&DofMoFEMEntity::get_name_ref> >,
     ordered_non_unique<
       tag<Ent_mi_tag>, const_mem_fun<DofMoFEMEntity,EntityHandle,&DofMoFEMEntity::get_ent> >,
@@ -304,7 +304,7 @@ typedef multi_index_container<
     ordered_unique<
       const_mem_fun<DofMoFEMEntity,GlobalUId,&DofMoFEMEntity::get_global_unique_id> >,
     ordered_non_unique<
-      const_mem_fun<DofMoFEMEntity,int,&DofMoFEMEntity::get_active> >
+      const_mem_fun<DofMoFEMEntity,char,&DofMoFEMEntity::get_active> >
   > > DofMoFEMEntity_multiIndex_active_view;
 
 /** \brief multi-index view on DofMoFEMEntity order

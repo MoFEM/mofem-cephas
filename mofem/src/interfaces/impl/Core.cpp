@@ -606,11 +606,11 @@ PetscErrorCode Core::synchronise_entities(Range &ents,int verb) {
       EntityHandle handle_on_sharing_proc = meit->get_sharing_handlers_ptr()[proc];
       sbuffer[meit->get_sharing_procs_ptr()[proc]].push_back(handle_on_sharing_proc);
       if(verb>1) {
-	PetscSynchronizedPrintf(comm,"send %lu (%lu) to %d at %d\n",
-	  meit->get_ref_ent(),handle_on_sharing_proc,meit->get_sharing_procs_ptr()[proc],rAnk);
+        PetscSynchronizedPrintf(comm,"send %lu (%lu) to %d at %d\n",
+        meit->get_ref_ent(),handle_on_sharing_proc,meit->get_sharing_procs_ptr()[proc],rAnk);
       }
       if(!(pstatus&PSTATUS_MULTISHARED)) {
-	break;
+        break;
       }
     }
 
@@ -705,15 +705,15 @@ PetscErrorCode Core::synchronise_entities(Range &ents,int verb) {
       RefMoFEMEntity_multiIndex::index<Ent_mi_tag>::type::iterator meit;
       meit = refinedEntities.get<Ent_mi_tag>().find(ent);
       if(meit == refinedEntities.get<Ent_mi_tag>().end()) {
-	SETERRQ2(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,
-	  "rank %d entity %lu not exist on database, local entity can not be found for this owner",rAnk,ent);
-      }
-      if(verb>2) {
-	PetscSynchronizedPrintf(comm,"received %ul (%ul) from %d at %d\n",meit->get_ref_ent(),ent,onodes[kk],rAnk);
-      }
-      ents.insert(meit->get_ref_ent());
+        SETERRQ2(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,
+          "rank %d entity %lu not exist on database, local entity can not be found for this owner",rAnk,ent);
+        }
+        if(verb>2) {
+          PetscSynchronizedPrintf(comm,"received %ul (%ul) from %d at %d\n",meit->get_ref_ent(),ent,onodes[kk],rAnk);
+        }
+        ents.insert(meit->get_ref_ent());
 
-    }
+      }
 
   }
 
@@ -839,9 +839,9 @@ PetscErrorCode Core::initialiseDatabseInformationFromMesh(int verb) {
   mit = meshsets.begin();
   for(;mit!=meshsets.end();mit++) {
     BitFieldId field_id;
-    //get bit id form field tag
+    // Get bit id form field tag
     rval = moab.tag_get_data(th_FieldId,&*mit,1,&field_id); CHKERR_PETSC(rval);
-    //check if meshset if field meshset
+    // Check if meshset if field meshset
     if(field_id!=0) {
       pair<MoFEMField_multiIndex::iterator,bool> p;
       try {
@@ -893,8 +893,9 @@ PetscErrorCode Core::initialiseDatabseInformationFromMesh(int verb) {
         }
       }
     }
+    // Check for finite elements
     BitFieldId fe_id;
-    //get bit id from fe tag
+    // Get bit id from fe tag
     rval = moab.tag_get_data(th_FEId,&*mit,1,&fe_id); CHKERR_PETSC(rval);
     //check if meshset is finite element meshset
     if(fe_id!=0) {
