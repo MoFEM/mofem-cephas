@@ -50,6 +50,7 @@
 #include <DataStructures.hpp>
 #include <DataOperators.hpp>
 #include <ElementsOnEntities.hpp>
+#include <VolumeElementForcesAndSourcesCore.hpp>
 #include <FatPrismElementForcesAndSurcesCore.hpp>
 
 #ifdef __cplusplus
@@ -454,10 +455,8 @@ PetscErrorCode FatPrismElementForcesAndSurcesCore::operator()() {
       siit = side_table.get<1>().lower_bound(boost::make_tuple(MBQUAD,0));
       SideNumber_multiIndex::nth_index<1>::type::iterator hi_siit;
       hi_siit = side_table.get<1>().upper_bound(boost::make_tuple(MBQUAD,3));
-      const EntityHandle *conn_prism;
-      int num_nodes_prism;
       EntityHandle ent = fePtr->get_ent();
-      rval = mField.get_moab().get_connectivity(ent,conn_prism,num_nodes_prism,true); CHKERR_PETSC(rval);
+      rval = mField.get_moab().get_connectivity(ent,conn,num_nodes,true); CHKERR_PETSC(rval);
       // cerr << "\n\n" << endl;
       // const int quad_nodes[3][4] = { {0,1,4,3}, {1,2,5,4}, {0,2,5,3} };
       for(;siit!=hi_siit;siit++) {
@@ -469,12 +468,12 @@ PetscErrorCode FatPrismElementForcesAndSurcesCore::operator()() {
           quad,conn_quad,num_nodes_quad,true
         ); CHKERR_PETSC(rval);
         for(int nn = 0;nn<num_nodes_quad;nn++) {
-          quads_nodes[4*siit->side_number+nn] = distance(conn_prism,find(conn_prism,conn_prism+6,conn_quad[nn]));
+          quads_nodes[4*siit->side_number+nn] = distance(conn,find(conn,conn+6,conn_quad[nn]));
           // cerr
           // << "quad " << quad
           // << " side number " << siit->side_number
           // << " " << quads_nodes[4*siit->side_number+nn]
-          // << " " << conn_prism[quads_nodes[4*siit->side_number+nn]]
+          // << " " << conn[quads_nodes[4*siit->side_number+nn]]
           // << " " << conn_quad[nn]
           // << endl;
         }
