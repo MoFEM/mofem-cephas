@@ -428,7 +428,8 @@ int main(int argc, char *argv[]) {
     ierr = KSPGetPC(solver,&pc); CHKERRQ(ierr);
     PetscObjectTypeCompare((PetscObject)pc,PCMG,&same);
     if (same) {
-      ierr = PCMGSetUpViaApproxOrders(pc,&m_field,"ELASTIC_PROB"); CHKERRQ(ierr);
+      PCMGSetUpViaApproxOrdersCtx pc_ctx(&m_field,"ELASTIC_PROB");
+      ierr = PCMGSetUpViaApproxOrders(pc,&pc_ctx); CHKERRQ(ierr);
     }
   }
   ierr = KSPSetUp(solver); CHKERRQ(ierr);

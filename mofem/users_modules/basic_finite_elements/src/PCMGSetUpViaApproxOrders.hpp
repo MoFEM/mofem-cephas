@@ -1,6 +1,6 @@
 /** \file PCMGSetUpViaApproxOrders.hpp
- * \brief header of multi-grid solver for p- adaptivity 
- * 
+ * \brief header of multi-grid solver for p- adaptivity
+ *
  * MoFEM is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the
  * Free Software Foundation, either version 3 of the License, or (at your
@@ -18,7 +18,39 @@
 #ifndef __PCMGSETUP_VIA_APPROX_ORDERS_HPP__
 #define __PCMGSETUP_VIA_APPROX_ORDERS_HPP__
 
-PetscErrorCode PCMGSetUpViaApproxOrders(PC pc,FieldInterface *mfield_ptr,const char problem_name[],int verb = 0);
+struct PCMGSetUpViaApproxOrdersCtx {
+
+  FieldInterface *mFieldPtr;		///< MoFEM interface
+  string problemName;			///< Problem name
+
+  PCMGSetUpViaApproxOrdersCtx(FieldInterface *mfield_ptr,string problem_name):
+  mFieldPtr(mfield_ptr),
+  problemName(problem_name),
+  nbLevels(2),
+  coarseOrder(2),
+  orderAtLastLevel(1000),
+  verboseLevel(0) {
+  }
+
+  ~PCMGSetUpViaApproxOrdersCtx() {
+  }
+
+  int nbLevels;				///< number of multi-grid levels
+  int coarseOrder;			///< approximation order of coarse level
+  int orderAtLastLevel;  ///< set maximal evaluated order
+
+  int verboseLevel;
+
+  PetscErrorCode ierr;
+
+  virtual PetscErrorCode getOptions();
+  virtual PetscErrorCode getIsAtLevel(int order_at_next_level,IS *is);
+  virtual PetscErrorCode buildProlongationOperator(PC pc,int verb = 0);
+
+};
+
+PetscErrorCode PCMGSetUpViaApproxOrders(
+  PC pc,PCMGSetUpViaApproxOrdersCtx *ctx,int verb = 0
+);
 
 #endif //__PCMGSETUP_VIA_APPROX_ORDERS_HPP__
-
