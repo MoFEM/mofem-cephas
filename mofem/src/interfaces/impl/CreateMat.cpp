@@ -69,10 +69,20 @@ struct CreateRowComressedADJMatrix: public Core {
 
     */
   template<typename TAG>
+  PetscErrorCode createMatArrays(
+    ProblemsByName::iterator p_miit,
+    const MatType type,
+    vector<PetscInt> &i,vector<PetscInt> &j,
+    const bool no_diagonals = true,int verb = -1
+  );
+
+  template<typename TAG>
   PetscErrorCode createMat(
     const string &name,Mat *M,const MatType type,
     PetscInt **_i,PetscInt **_j,PetscScalar **_v,
-    const bool no_diagonals = true,int verb = -1);
+    const bool no_diagonals = true,int verb = -1
+  );
+
 
   /** \brief Get element adjacencies
     */
@@ -141,8 +151,10 @@ PetscErrorCode CreateRowComressedADJMatrix::getEntityAdjacenies(
 }
 
 template<typename TAG>
-PetscErrorCode CreateRowComressedADJMatrix::createMat(
-  const string &name,Mat *M,const MatType type,PetscInt **_i,PetscInt **_j,PetscScalar **_v,
+PetscErrorCode CreateRowComressedADJMatrix::createMatArrays(
+  ProblemsByName::iterator p_miit,
+  const MatType type,
+  vector<PetscInt> &i,vector<PetscInt> &j,
   const bool no_diagonals,int verb
 ) {
   PetscFunctionBegin;
@@ -151,18 +163,12 @@ PetscErrorCode CreateRowComressedADJMatrix::createMat(
 
   typedef typename boost::multi_index::index<NumeredDofMoFEMEntity_multiIndex,TAG>::type NumeredDofMoFEMEntitysByIdx;
 
-  // Find problem by name FIXME: this should be outsourced to other function,
-  // where to this function only problem pointer is passed.
-  ProblemsByName &pRoblems_set = pRoblems.get<Problem_mi_tag>();
-  ProblemsByName::iterator p_miit = pRoblems_set.find(name);
-  if(p_miit==pRoblems_set.end()) SETERRQ1(PETSC_COMM_SELF,MOFEM_NOT_FOUND,"problem < %s > is not found (top tip: check spelling)",name.c_str());
-
   // Get multi-indices for rows and columns
   const NumeredDofMoFEMEntitysByIdx &dofs_row_by_idx = p_miit->numered_dofs_rows.get<TAG>();
   const NumeredDofMoFEMEntitysByIdx &dofs_col_by_idx = p_miit->numered_dofs_cols.get<TAG>();
   DofIdx nb_dofs_row = p_miit->get_nb_dofs_row();
   if(nb_dofs_row == 0) {
-    SETERRQ1(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"problem <%s> has zero rows",name.c_str());
+    SETERRQ1(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"problem <%s> has zero rows",p_miit->get_name().c_str());
   }
 
   // Get adjacencies form other processors
@@ -362,7 +368,6 @@ PetscErrorCode CreateRowComressedADJMatrix::createMat(
   MoFEMEntity *mofem_ent_ptr = NULL;
   int row_last_evaluated_idx = -1;
 
-  vector<PetscInt> i,j;
   vector<DofIdx> dofs_vec;
   NumeredDofMoFEMEntity_multiIndex_uid_view_hashed dofs_col_view;
   // loop local rows
@@ -375,7 +380,7 @@ PetscErrorCode CreateRowComressedADJMatrix::createMat(
     if(strcmp(type,MATMPIADJ)==0) {
       DofIdx idx = TAG::get_index(miit_row);
       if(dofs_col_by_idx.find(idx)->get_global_unique_id()!=miit_row->get_global_unique_id()) {
-        SETERRQ(PETSC_COMM_SELF,PETSC_ERR_ARG_SIZ,"data insonsistency");
+        SETERRQ(PETSC_COMM_SELF,PETSC_ERR_ARG_SIZ,"data inconsistency");
       }
     }
 
@@ -399,7 +404,9 @@ PetscErrorCode CreateRowComressedADJMatrix::createMat(
 
         if(idx<0) {
           SETERRQ1(
-            PETSC_COMM_SELF,PETSC_ERR_ARG_SIZ,"data inconsistency, dof index is smaller than 0, problem name < %s >",name.c_str()
+            PETSC_COMM_SELF,PETSC_ERR_ARG_SIZ,
+            "data inconsistency, dof index is smaller than 0, problem name < %s >",
+            p_miit->get_name().c_str()
           );
         }
         if(idx>=p_miit->get_nb_dofs_col()) {
@@ -409,7 +416,9 @@ PetscErrorCode CreateRowComressedADJMatrix::createMat(
           ss << *(*cvit) << endl;
           PetscPrintf(comm,"%s\n",ss.str().c_str());
           SETERRQ1(
-            PETSC_COMM_SELF,PETSC_ERR_ARG_SIZ,"data inconsistency, dof index is bigger than size of problem, problem name < %s >",name.c_str()
+            PETSC_COMM_SELF,PETSC_ERR_ARG_SIZ,
+            "data inconsistency, dof index is bigger than size of problem, problem name < %s >",
+            p_miit->get_name().c_str()
           );
 
         }
@@ -488,12 +497,6 @@ PetscErrorCode CreateRowComressedADJMatrix::createMat(
 
   //build adj matrix
   i.push_back(j.size());
-  ierr = PetscMalloc(i.size()*sizeof(PetscInt),_i); CHKERRQ(ierr);
-  ierr = PetscMalloc(j.size()*sizeof(PetscInt),_j); CHKERRQ(ierr);
-  copy(i.begin(),i.end(),*_i);
-  copy(j.begin(),j.end(),*_j);
-  PetscInt nb_row_dofs = p_miit->get_nb_dofs_row();
-  PetscInt nb_col_dofs = p_miit->get_nb_dofs_col();
 
   if(strcmp(type,MATMPIADJ)==0) {
 
@@ -501,8 +504,6 @@ PetscErrorCode CreateRowComressedADJMatrix::createMat(
     if(i.size()-1 != (unsigned int)nb_loc_row_from_iterators) {
       SETERRQ(PETSC_COMM_SELF,PETSC_ERR_ARG_SIZ,"data inconsistency");
     }
-    ierr = MatCreateMPIAdj(comm,i.size()-1,nb_col_dofs,*_i,*_j,PETSC_NULL,M); CHKERRQ(ierr);
-    ierr = MatSetOption(*M,MAT_STRUCTURALLY_SYMMETRIC,PETSC_TRUE); CHKERRQ(ierr);
 
   } else if(strcmp(type,MATMPIAIJ)==0) {
 
@@ -514,10 +515,6 @@ PetscErrorCode CreateRowComressedADJMatrix::createMat(
     if((unsigned int)nb_local_dofs_row!=i.size()-1) {
       SETERRQ(PETSC_COMM_SELF,PETSC_ERR_ARG_SIZ,"data inconsistency");
     }
-    PetscInt nb_local_dofs_col = p_miit->get_nb_local_dofs_col();
-    ierr = ::MatCreateMPIAIJWithArrays(
-      comm,nb_local_dofs_row,nb_local_dofs_col,nb_row_dofs,nb_col_dofs,*_i,*_j,PETSC_NULL,M
-    ); CHKERRQ(ierr);
 
   } else if(strcmp(type,MATAIJ)==0) {
 
@@ -529,6 +526,62 @@ PetscErrorCode CreateRowComressedADJMatrix::createMat(
     if((unsigned int)nb_local_dofs_row!=i.size()-1) {
       SETERRQ(PETSC_COMM_SELF,PETSC_ERR_ARG_SIZ,"data inconsistency");
     }
+
+  } else {
+
+    SETERRQ(PETSC_COMM_SELF,PETSC_ERR_ARG_NULL,"not implemented");
+
+  }
+
+
+  PetscLogEventEnd(USER_EVENT_createMat,0,0,0,0);
+  PetscFunctionReturn(0);
+}
+
+template<typename TAG>
+PetscErrorCode CreateRowComressedADJMatrix::createMat(
+  const string &name,Mat *M,const MatType type,PetscInt **_i,PetscInt **_j,PetscScalar **_v,
+  const bool no_diagonals,int verb
+) {
+  PetscFunctionBegin;
+
+  ProblemsByName &pRoblems_set = pRoblems.get<Problem_mi_tag>();
+  ProblemsByName::iterator p_miit = pRoblems_set.find(name);
+  if(p_miit==pRoblems_set.end()) {
+    SETERRQ1(PETSC_COMM_SELF,MOFEM_NOT_FOUND,"problem < %s > is not found (top tip: check spelling)",name.c_str());
+  }
+
+  vector<PetscInt> i,j;
+  ierr = createMatArrays<TAG>(p_miit,type,i,j,no_diagonals,verb); CHKERRQ(ierr);
+
+  ierr = PetscMalloc(i.size()*sizeof(PetscInt),_i); CHKERRQ(ierr);
+  ierr = PetscMalloc(j.size()*sizeof(PetscInt),_j); CHKERRQ(ierr);
+  copy(i.begin(),i.end(),*_i);
+  copy(j.begin(),j.end(),*_j);
+
+
+  PetscInt nb_row_dofs = p_miit->get_nb_dofs_row();
+  PetscInt nb_col_dofs = p_miit->get_nb_dofs_col();
+
+  if(strcmp(type,MATMPIADJ)==0) {
+
+    // Adjacency matrix used to partition problems, f.e. METIS
+    ierr = MatCreateMPIAdj(comm,i.size()-1,nb_col_dofs,*_i,*_j,PETSC_NULL,M); CHKERRQ(ierr);
+    ierr = MatSetOption(*M,MAT_STRUCTURALLY_SYMMETRIC,PETSC_TRUE); CHKERRQ(ierr);
+
+  } else if(strcmp(type,MATMPIAIJ)==0) {
+
+    // Compressed MPIADJ matrix
+    PetscInt nb_local_dofs_row = p_miit->get_nb_local_dofs_row();
+    PetscInt nb_local_dofs_col = p_miit->get_nb_local_dofs_col();
+    ierr = ::MatCreateMPIAIJWithArrays(
+      comm,nb_local_dofs_row,nb_local_dofs_col,nb_row_dofs,nb_col_dofs,*_i,*_j,PETSC_NULL,M
+    ); CHKERRQ(ierr);
+
+  } else if(strcmp(type,MATAIJ)==0) {
+
+    // Sequential compressed ADJ matrix
+    PetscInt nb_local_dofs_row = p_miit->get_nb_local_dofs_row();
     PetscInt nb_local_dofs_col = p_miit->get_nb_local_dofs_col();
     ierr = ::MatCreateSeqAIJWithArrays(PETSC_COMM_SELF,nb_local_dofs_row,nb_local_dofs_col,*_i,*_j,PETSC_NULL,M); CHKERRQ(ierr);
 
@@ -538,7 +591,7 @@ PetscErrorCode CreateRowComressedADJMatrix::createMat(
 
   }
   //MatView(*M,PETSC_VIEWER_STDOUT_WORLD);
-  PetscLogEventEnd(USER_EVENT_createMat,0,0,0,0);
+
   PetscFunctionReturn(0);
 }
 
