@@ -66,11 +66,23 @@ PetscErrorCode PCMGSetUpViaApproxOrdersCtx::getOptions() {
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode PCMGSetUpViaApproxOrdersCtx::getIsAtLevel(int order_at_next_level,IS *is) {
+PetscErrorCode PCMGSetUpViaApproxOrdersCtx::createIsAtLevel(int kk,IS *is) {
   PetscFunctionBegin;
+  //if is last level, take all remaining orders dofs, if any left
+  int order_at_next_level = kk+coarseOrder;
+  if(kk == nbLevels-1) {
+    order_at_next_level = orderAtLastLevel;
+  }
   ierr = mFieldPtr->ISCreateProblemOrder(problemName,ROW,0,order_at_next_level,is); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
+
+PetscErrorCode PCMGSetUpViaApproxOrdersCtx::destroyIsAtLevel(int kk,IS *is) {
+  PetscFunctionBegin;
+  ierr = ISDestroy(is);
+  PetscFunctionReturn(0);
+}
+
 
 PetscErrorCode PCMGSetUpViaApproxOrdersCtx::buildProlongationOperator(PC pc,int verb) {
   PetscFunctionBegin;
@@ -89,15 +101,8 @@ PetscErrorCode PCMGSetUpViaApproxOrdersCtx::buildProlongationOperator(PC pc,int 
 
   for(int kk = 0;kk<nbLevels;kk++) {
 
-    //if is last level, take all remaining orders dofs, if any left
-    int order_at_next_level = kk+coarseOrder;
-    if(kk == nbLevels-1) {
-      order_at_next_level = orderAtLastLevel;
-    }
-
     //get indices up to up to give approximation order
-    // ierr = mFieldPtr->ISCreateProblemOrder(problemName,ROW,0,order_at_next_level,&is_vec[kk]); CHKERRQ(ierr);
-    ierr = getIsAtLevel(order_at_next_level,&is_vec[kk]); CHKERRQ(ierr);
+    ierr = createIsAtLevel(kk,&is_vec[kk]); CHKERRQ(ierr);
     ierr = ISGetSize(is_vec[kk],&is_glob_size[kk]); CHKERRQ(ierr);
     ierr = ISGetLocalSize(is_vec[kk],&is_loc_size[kk]); CHKERRQ(ierr);
 
@@ -225,9 +230,8 @@ PetscErrorCode PCMGSetUpViaApproxOrdersCtx::buildProlongationOperator(PC pc,int 
 
   }
 
-
   for(unsigned int kk = 0;kk<is_vec.size();kk++) {
-    ierr = ISDestroy(&is_vec[kk]); CHKERRQ(ierr);
+    ierr = destroyIsAtLevel(kk,&is_vec[kk]); CHKERRQ(ierr);
   }
 
   if(verb>0) {

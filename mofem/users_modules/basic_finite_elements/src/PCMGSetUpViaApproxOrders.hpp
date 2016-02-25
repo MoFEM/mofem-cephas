@@ -44,7 +44,8 @@ struct PCMGSetUpViaApproxOrdersCtx {
   PetscErrorCode ierr;
 
   virtual PetscErrorCode getOptions();
-  virtual PetscErrorCode getIsAtLevel(int order_at_next_level,IS *is);
+  virtual PetscErrorCode createIsAtLevel(int kk,IS *is);
+  virtual PetscErrorCode destroyIsAtLevel(int kk,IS *is);
   virtual PetscErrorCode buildProlongationOperator(PC pc,int verb = 0);
 
 };
