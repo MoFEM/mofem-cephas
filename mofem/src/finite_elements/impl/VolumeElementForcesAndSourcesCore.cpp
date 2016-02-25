@@ -176,10 +176,12 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::operator()() {
       ierr = setGaussPts(order_row,order_col,order_data); CHKERRQ(ierr);
       nb_gauss_pts = gaussPts.size2();
       dataH1.dataOnEntities[MBVERTEX][0].getN().resize(nb_gauss_pts,4,false);
-      ierr = ShapeMBTET(
-        &*dataH1.dataOnEntities[MBVERTEX][0].getN().data().begin(),
-        &gaussPts(0,0),&gaussPts(1,0),&gaussPts(2,0),nb_gauss_pts
-      ); CHKERRQ(ierr);
+      if(nb_gauss_pts>0) {
+        ierr = ShapeMBTET(
+          &*dataH1.dataOnEntities[MBVERTEX][0].getN().data().begin(),
+          &gaussPts(0,0),&gaussPts(1,0),&gaussPts(2,0),nb_gauss_pts
+        ); CHKERRQ(ierr);
+      }
     }
     if(nb_gauss_pts == 0) PetscFunctionReturn(0);
 
