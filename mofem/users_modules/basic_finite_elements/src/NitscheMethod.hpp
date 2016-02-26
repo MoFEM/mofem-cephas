@@ -595,7 +595,7 @@ struct NitscheMethod {
             }
             //dP
             if(nitscheCommonData.dP[col_type].empty()!=0) {
-              if(nitscheCommonData.dP.size()==4) {
+              if(nitscheCommonData.dP[col_type].size()==4) {
                 if(nitscheCommonData.dP[col_type][ff].size()==(unsigned int)nb_face_gauss_pts) {
                   MatrixDouble &dP = nitscheCommonData.dP[col_type][ff][fgg];
                   if(dP.size1()==3 && dP.size2()==(unsigned int)nb_dofs_col) {
