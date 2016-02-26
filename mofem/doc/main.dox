@@ -21,7 +21,7 @@ for L2,H1,H-div and H-curl spaces, see \cite NME:NME847.
 MoFEM is the blend of the Boost MultiIndex containers, MOAB (Mesh Oriented
 Database) \cite tautges_moab:2004 and PETSc (Portable, Extensible Toolkit for
 Scientific Computation) \cite petsc-web-page. MoFEM is developed in C++ and it
-is open-source software under the GNU Lesser General Public License (see Legal
+is open-source software under the GNU Lesser General Public License (see \ref legal_stuff)
 Stuff).
 
 MoFEM can read and write number of mesh file formats using functionality
@@ -100,7 +100,7 @@ List of third party libraries and packages used by MoFEM:
 - CMake <http://www.cmake.org>
 - ParaView <http://www.paraview.org>
 
-\subsection License
+\subsection legal_stuff Legal staff
 
 MoFEM is free software: you can redistribute it and/or modify it under the terms
 of the GNU Lesser General Public License as published by the Free Software
