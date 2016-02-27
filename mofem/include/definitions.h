@@ -71,7 +71,7 @@ enum MoFEMErrorCodes {
 /// \brief approximation spaces
 enum FieldApproximationBase {
   AINSWORTH_COLE_BASE = 1,
-  BERNSTEIN_BEZIER, ///< Not yet implemented
+  BERNSTEIN_BEZIER_BASE, ///< Not yet implemented
   LASTBASE 	///< FieldSpace in [ 0, LASTSPACE )
 };
 

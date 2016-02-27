@@ -48,7 +48,12 @@ namespace MoFEM {
 const static int debug = 1;
 
 PetscErrorCode Core::add_field(
-  const string& name,const FieldSpace space,const FieldCoefficientsNumber nb_of_coefficients,enum MoFEMTypes bh,int verb
+  const string& name,
+  const FieldSpace space,
+  const FieldApproximationBase base,
+  const FieldCoefficientsNumber nb_of_coefficients,
+  enum MoFEMTypes bh,
+  int verb
 ) {
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
@@ -67,12 +72,8 @@ PetscErrorCode Core::add_field(
     rval = moab.tag_set_data(th_FieldId,&meshset,1,&id); CHKERR_PETSC(rval);
     //space
     rval = moab.tag_set_data(th_FieldSpace,&meshset,1,&space); CHKERR_PETSC(rval);
-    //add meshset to ref_ents // meshset dof on all level sets
-    // if(space == NOFIELD) {
-    //   pair<RefMoFEMEntity_multiIndex::iterator,bool> p_ref_ent = refinedEntities.insert(RefMoFEMEntity(moab,meshset));
-    //   bool success = refinedEntities.modify(p_ref_ent.first,RefMoFEMEntity_change_add_bit(BitRefLevel().set()));
-    //   if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification not succeeded");
-    // }
+    //base
+    rval = moab.tag_set_data(th_FieldBase,&meshset,1,&base); CHKERR_PETSC(rval);
     //name
     void const* tag_data[] = { name.c_str() };
     int tag_sizes[1]; tag_sizes[0] = name.size();

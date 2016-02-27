@@ -104,7 +104,7 @@ struct MoFEMField {
   inline boost::string_ref get_name_ref() const { return boost::string_ref((char *)tag_name_data,tag_name_size); };
   inline string get_name() const { return string((char *)tag_name_data,tag_name_size); };
   inline FieldSpace get_space() const { return *tag_space_data; };
-  inline FieldApproximationBase get_base() const { return *tag_base_data; };
+  inline FieldApproximationBase get_approx_base() const { return *tag_base_data; };
 
   DEPRECATED inline FieldCoefficientsNumber get_max_rank() const { return *tag_nb_coeff_data; };
 
@@ -178,7 +178,7 @@ struct interface_MoFEMField {
   inline boost::string_ref get_name_ref() const { return field_ptr->get_name_ref(); };
   inline string get_name() const { return field_ptr->get_name(); };
   inline FieldSpace get_space() const { return field_ptr->get_space(); };
-  inline FieldApproximationBase get_base() const { return field_ptr->get_base(); };
+  inline FieldApproximationBase get_approx_base() const { return field_ptr->get_approx_base(); };
 
   DEPRECATED inline FieldCoefficientsNumber get_max_rank() const { return field_ptr->get_nb_of_coeffs(); };
 

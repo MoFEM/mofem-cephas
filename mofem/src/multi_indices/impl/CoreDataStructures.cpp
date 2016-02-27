@@ -94,8 +94,10 @@ MoFEMField::MoFEMField(Interface &moab,const EntityHandle meshset,const CoordSys
   for(int tt = 0;tt<MBMAXTYPE;tt++) {
     forder_table[tt] = NULL;
   }
-  switch (*tag_space_data) {
-    case H1:
+  switch(*tag_base_data) {
+    case AINSWORTH_COLE_BASE:
+    switch(*tag_space_data) {
+      case H1:
       forder_table[MBVERTEX] = fNBVERTEX_H1_AINSWORTH_COLE;
       forder_table[MBEDGE] = fNBEDGE_H1_AINSWORTH_COLE;
       forder_table[MBTRI] = fNBFACETRI_H1_AINSWORTH_COLE;
@@ -103,32 +105,38 @@ MoFEMField::MoFEMField(Interface &moab,const EntityHandle meshset,const CoordSys
       forder_table[MBTET] = fNBVOLUMETET_H1_AINSWORTH_COLE;
       forder_table[MBPRISM] = fNBVOLUMEPRISM_H1_AINSWORTH_COLE;
       break;
-    case HDIV:
+      case HDIV:
       forder_table[MBVERTEX] = fNBVERTEX_HDIV_AINSWORTH_COLE;
       forder_table[MBEDGE] = fNBEDGE_HDIV_AINSWORTH_COLE;
       forder_table[MBTRI] = fNBFACETRI_HDIV_AINSWORTH_COLE;
       forder_table[MBTET] = fNBVOLUMETET_HDIV_AINSWORTH_COLE;
       break;
-    case HCURL:
+      case HCURL:
       forder_table[MBVERTEX] = fNBVERTEX_HCURL_AINSWORTH_COLE;
       forder_table[MBEDGE] = fNBEDGE_HCURL_AINSWORTH_COLE;
       forder_table[MBTRI] = fNBFACETRI_HCURL_AINSWORTH_COLE;
       forder_table[MBTET] = fNBVOLUMETET_HCURL_AINSWORTH_COLE;
       break;
-    case L2:
+      case L2:
       forder_table[MBVERTEX] = fNBVERTEX_L2;
       forder_table[MBEDGE] = fNBEDGE_L2_AINSWORTH_COLE;
       forder_table[MBTRI] = fNBFACETRI_L2_AINSWORTH_COLE;
       forder_table[MBTET] = fNBVOLUMETET_L2_AINSWORTH_COLE;
       break;
-    case NOFIELD:
-    for(EntityType t = MBVERTEX;t<MBMAXTYPE;t++) {
-      // Concept of approximation order make no sense is there is no field
-      forder_table[t] = fNBENTITYSET_NOFIELD;
-    }
+      case NOFIELD:
+      for(EntityType t = MBVERTEX;t<MBMAXTYPE;t++) {
+        // Concept of approximation order make no sense is there is no field
+        forder_table[t] = fNBENTITYSET_NOFIELD;
+      }
       break;
+      default:
+      THROW_AT_LINE("unknown approximation space");
+    }
+    break;
+    case BERNSTEIN_BEZIER_BASE:
+      THROW_AT_LINE("BERNSTEIN_BEZIER_BASE not implemented yer")
     default:
-      THROW_AT_LINE("not implemented");
+    THROW_AT_LINE("unknown approximation base");
   }
 }
 
