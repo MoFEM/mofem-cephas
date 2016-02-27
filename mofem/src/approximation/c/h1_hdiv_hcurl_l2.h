@@ -39,11 +39,11 @@ extern "C" {
 #define NBEDGE_HDIV_AINSWORTH_COLE(P) (0)
 #define NBFACETRI_HDIV_AINSWORTH_COLE(P) ((P>0) ? (P+1)*(P+2)/2 : 0)
 #define NBVOLUMETET_HDIV_AINSWORTH_COLE(P) ((P>1) ? (P-1)*(P+1)*(P+2)/2 : 0)
-#define NBFACETRI_EDGE_HDIV(P) ((P>0) ? P : 0)
-#define NBFACETRI_FACE_HDIV(P) ((P>2) ? ((P-2)*(P-2)+(P-2))/2 : 0)
-#define NBVOLUMETET_EDGE_HDIV(P) ((P>1) ? P-1 : 0)
-#define NBVOLUMETET_FACE_HDIV(P) ((P>2) ? ((P-2)*(P-2)+(P-2)) : 0)
-#define NBVOLUMETET_VOLUME_HDIV(P) ((P>3) ? ((P-3)*(P-2)*(P-1)/2) : 0)
+#define NBFACETRI_EDGE_HDIV_AINSWORTH_COLE(P) ((P>0) ? P : 0)
+#define NBFACETRI_FACE_HDIV_AINSWORTH_COLE(P) ((P>2) ? ((P-2)*(P-2)+(P-2))/2 : 0)
+#define NBVOLUMETET_EDGE_HDIV_AINSWORTH_COLE(P) ((P>1) ? P-1 : 0)
+#define NBVOLUMETET_FACE_HDIV_AINSWORTH_COLE(P) ((P>2) ? ((P-2)*(P-2)+(P-2)) : 0)
+#define NBVOLUMETET_VOLUME_HDIV_AINSWORTH_COLE(P) ((P>3) ? ((P-3)*(P-2)*(P-1)/2) : 0)
 
 /**
  * \brief Calculate Lagrange approximation basis

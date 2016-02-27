@@ -24,6 +24,7 @@ namespace MoFEM {
 const int prism_adj_edges[] = { 6,7,8, -1,-1,-1, 0,1,2 };
 const int prism_edges_conn[6][2] = { {0,1},{1,2},{2,0}, {3,4}, {4,5}, {5,3} };
 
+inline int fNBENTITY_GENERIC(int P) { (void)P; return 0; }
 inline int fNBENTITYSET_NOFIELD(int P) { (void)P; return 1; }
 //
 inline int fNBVERTEX_L2(int P) { (void)P; return 0; }
@@ -49,7 +50,7 @@ inline int fNBVERTEX_HCURL_AINSWORTH_COLE(int P) { (void)P; return 0; }
 inline int fNBEDGE_HCURL_AINSWORTH_COLE(int P) { return NBEDGE_HCURL_AINSWORTH_COLE(P); }
 inline int fNBFACETRI_HCURL_AINSWORTH_COLE(int P) { return NBFACETRI_HCURL_AINSWORTH_COLE(P); }
 inline int fNBVOLUMETET_HCURL_AINSWORTH_COLE(int P) { return NBVOLUMETET_HCURL_AINSWORTH_COLE(P); }
-//
+
 /// \brief number of approx. functions for HDIV space on vertex
 ///
 /// zero number of digrees of freedom on vertex for that space
@@ -60,17 +61,6 @@ inline int fNBEDGE_HDIV_AINSWORTH_COLE(int P) { assert(P==P); (void)P; return NB
 inline int fNBFACETRI_HDIV_AINSWORTH_COLE(int P) { return NBFACETRI_HDIV_AINSWORTH_COLE(P); }
 /// number of approx. functions for HDIV space on voulem
 inline int fNBVOLUMETET_HDIV_AINSWORTH_COLE(int P) { return NBVOLUMETET_HDIV_AINSWORTH_COLE(P); }
-
-struct ltstr
-{ inline bool operator()(const string &s1, const string& s2) const
-  { return strcmp(s1.c_str(), s2.c_str()) < 0; } };
-
-
-template<typename Tag>
-void get_vector_by_multi_index_tag(vector<DofMoFEMEntity> &vec_dof,const DofMoFEMEntity_multiIndex &dofs,Tag* = 0) {
-  const typename boost::multi_index::index<DofMoFEMEntity_multiIndex,Tag>::type& i = get<Tag>(dofs);
-  vec_dof.insert(vec_dof.end(),i.begin(),i.end());
-}
 
 /** \brief if moab entity hanled
   */
