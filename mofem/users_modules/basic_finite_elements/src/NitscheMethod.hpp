@@ -144,9 +144,10 @@ struct NitscheMethod {
     PetscErrorCode doWork(int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
       PetscFunctionBegin;
 
+      int faceInRespectToTet = getFEMethod()->nInTheLoop;
+      int nb_face_gauss_pts = getGaussPts().size2();
+
       try {
-        int faceInRespectToTet = getFEMethod()->nInTheLoop;
-        int nb_face_gauss_pts = getGaussPts().size2();
         if(type == MBVERTEX) {
           commonData.faceGaussPts.resize(4);
           commonData.faceGaussPts[faceInRespectToTet] = getGaussPts();
@@ -167,9 +168,16 @@ struct NitscheMethod {
           commonData.rAy[faceInRespectToTet] = -getNormal();
           commonData.rAy[faceInRespectToTet] /= norm_2(getNormal());
         }
+      } catch (const std::exception& ex) {
+        ostringstream ss;
+        ss << "throw in method: " << ex.what() << endl;
+        SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+      }
+
+      try {
         for(int fgg = 0;fgg<nb_face_gauss_pts;fgg++) {
           int gg = commonData.inTetFaceGaussPtsNumber[faceInRespectToTet][fgg];
-          //cerr << fgg << " " << gg << " " << side << " " << type << endl;
+          // cerr << fgg << " " << gg << " " << side << " " << type << endl;
           CommonData::MultiIndexData gauss_pt_data(gg,side,type);
           pair<CommonData::Container::iterator,bool> p;
           p = commonData.facesContainer.insert(gauss_pt_data);
@@ -180,12 +188,16 @@ struct NitscheMethod {
           VectorDouble &shape_fun = p_data.shapeFunctions;
           int nb_shape_fun = data.getN().size2();
           shape_fun.resize(nb_shape_fun);
-          cblas_dcopy(nb_shape_fun,&data.getN()(fgg,0),1,&shape_fun[0],1);
+          // cerr << "nb_shape_fun " << nb_shape_fun << endl;
+          if(nb_shape_fun) {
+            cblas_dcopy(nb_shape_fun,&data.getN()(fgg,0),1,&shape_fun[0],1);
+          }
           p_data.iNdices = data.getIndices();
           p_data.dofOrders.resize(data.getFieldDofs().size(),false);
           for(unsigned int dd = 0;dd<data.getFieldDofs().size();dd++) {
             p_data.dofOrders[dd] = data.getFieldDofs()[dd]->get_dof_order();
           }
+          // cerr << shape_fun << endl;
         }
       } catch (const std::exception& ex) {
         ostringstream ss;
@@ -583,7 +595,7 @@ struct NitscheMethod {
             }
             //dP
             if(nitscheCommonData.dP[col_type].empty()!=0) {
-              if(nitscheCommonData.dP.size()==4) {
+              if(nitscheCommonData.dP[col_type].size()==4) {
                 if(nitscheCommonData.dP[col_type][ff].size()==(unsigned int)nb_face_gauss_pts) {
                   MatrixDouble &dP = nitscheCommonData.dP[col_type][ff][fgg];
                   if(dP.size1()==3 && dP.size2()==(unsigned int)nb_dofs_col) {

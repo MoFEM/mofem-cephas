@@ -48,7 +48,12 @@ namespace MoFEM {
 const static int debug = 1;
 
 PetscErrorCode Core::add_field(
-  const string& name,const FieldSpace space,const ApproximationRank nb_of_coefficients,enum MoFEMTypes bh,int verb
+  const string& name,
+  const FieldSpace space,
+  const FieldApproximationBase base,
+  const FieldCoefficientsNumber nb_of_coefficients,
+  enum MoFEMTypes bh,
+  int verb
 ) {
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
@@ -67,12 +72,8 @@ PetscErrorCode Core::add_field(
     rval = moab.tag_set_data(th_FieldId,&meshset,1,&id); CHKERR_PETSC(rval);
     //space
     rval = moab.tag_set_data(th_FieldSpace,&meshset,1,&space); CHKERR_PETSC(rval);
-    //add meshset to ref_ents // meshset dof on all level sets
-    // if(space == NOFIELD) {
-    //   pair<RefMoFEMEntity_multiIndex::iterator,bool> p_ref_ent = refinedEntities.insert(RefMoFEMEntity(moab,meshset));
-    //   bool success = refinedEntities.modify(p_ref_ent.first,RefMoFEMEntity_change_add_bit(BitRefLevel().set()));
-    //   if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification not succeeded");
-    // }
+    //base
+    rval = moab.tag_set_data(th_FieldBase,&meshset,1,&base); CHKERR_PETSC(rval);
     //name
     void const* tag_data[] = { name.c_str() };
     int tag_sizes[1]; tag_sizes[0] = name.size();
@@ -107,7 +108,7 @@ PetscErrorCode Core::add_field(
     int def_rank = 1;
     string Tag_rank_name = "_Field_Rank_"+name;
     rval = moab.tag_get_handle(
-      Tag_rank_name.c_str(),sizeof(ApproximationRank),MB_TYPE_OPAQUE,
+      Tag_rank_name.c_str(),sizeof(FieldCoefficientsNumber),MB_TYPE_OPAQUE,
       th_Rank,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES,&def_rank
     ); CHKERR_PETSC(rval);
     rval = moab.tag_set_data(th_Rank,&meshset,1,&nb_of_coefficients); CHKERR_PETSC(rval);
@@ -970,7 +971,7 @@ PetscErrorCode Core::dofs_NoField(const BitFieldId id,map<EntityType,int> &dof_c
     //this is nor real field in space (set order to zero)
     bool success = entsFields.modify(e_miit.first,MoFEMEntity_change_order(moab,0));
     if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
-    ApproximationRank rank = 0;
+    FieldCoefficientsNumber rank = 0;
     //create dofs on this entity (nb. of dofs is equal to rank)
     for(;rank<e_miit.first->get_nb_of_coeffs();rank++) {
       pair<DofMoFEMEntity_multiIndex::iterator,bool> d_miit;
@@ -1009,7 +1010,7 @@ PetscErrorCode Core::dofs_NoField(const BitFieldId id,map<EntityType,int> &dof_c
   }
   PetscFunctionReturn(0);
 }
-PetscErrorCode Core::dofs_L2H1HcurlHdiv(const BitFieldId id,map<EntityType,int> &dof_counter,int verb) {
+PetscErrorCode Core::dofs_L2H1HcurlHdiv(const BitFieldId id,map<EntityType,int> &dof_counter,map<EntityType,int> &inactive_dof_counter,int verb) {
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
   //field it
@@ -1074,10 +1075,12 @@ PetscErrorCode Core::dofs_L2H1HcurlHdiv(const BitFieldId id,map<EntityType,int> 
       e_miit = p_e_miit.first;
     }
     // insert dofmoabent into mofem databse
+    int nb_dofs_on_ent = e_miit->get_nb_dofs_on_ent();
+    int nb_active_dosf_on_ent = e_miit->get_nb_of_coeffs()*e_miit->get_order_nb_dofs(e_miit->get_max_order());
     int DD = 0;
     int oo = 0;
-    // loop orders
-    for(;oo<=e_miit->get_max_order();oo++) {
+    // loop orders (loop until max entity order is set)
+    for(;oo<=e_miit->get_max_order()||DD<nb_dofs_on_ent;oo++) {
       //loop nb. dofs at order oo
       for(int dd = 0;dd<e_miit->get_order_nb_dofs_diff(oo);dd++) {
         //loop rank
@@ -1087,8 +1090,15 @@ PetscErrorCode Core::dofs_L2H1HcurlHdiv(const BitFieldId id,map<EntityType,int> 
             DofMoFEMEntity mdof(&*(e_miit),oo,rr,DD);
             d_miit = dofsField.insert(mdof);
             if(d_miit.second) {
-              dof_counter[d_miit.first->get_ent_type()]++;
-              bool success = dofsField.modify(d_miit.first,DofMoFEMEntity_active_change(true));
+              bool is_active;
+              if(DD<nb_active_dosf_on_ent) {
+                is_active = true;
+                dof_counter[d_miit.first->get_ent_type()]++;
+              } else {
+                is_active = false;
+                inactive_dof_counter[d_miit.first->get_ent_type()]++;
+              }
+              bool success = dofsField.modify(d_miit.first,DofMoFEMEntity_active_change(is_active));
               if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
             }
             //check ent
@@ -1118,7 +1128,7 @@ PetscErrorCode Core::dofs_L2H1HcurlHdiv(const BitFieldId id,map<EntityType,int> 
         }
       }
     }
-    if(DD != e_miit->get_nb_of_coeffs()*e_miit->get_order_nb_dofs(e_miit->get_max_order())) {
+    if(DD != e_miit->get_nb_dofs_on_ent()) {
       SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
     }
   }
@@ -1132,6 +1142,7 @@ PetscErrorCode Core::build_fields(int verb) {
   field_set_by_id::iterator miit = set_id.begin();
   for(;miit!=set_id.end();miit++) {
     map<EntityType,int> dof_counter;
+    map<EntityType,int> inactive_dof_counter;
     if (verb > 0) {
       PetscSynchronizedPrintf(comm,"Build Field %s (rank %d)\n",miit->get_name().c_str(),rAnk);
     }
@@ -1143,42 +1154,44 @@ PetscErrorCode Core::build_fields(int verb) {
       case H1:
       case HCURL:
       case HDIV:
-      ierr = dofs_L2H1HcurlHdiv(miit->get_id(),dof_counter,verb); CHKERRQ(ierr);
+      ierr = dofs_L2H1HcurlHdiv(miit->get_id(),dof_counter,inactive_dof_counter,verb); CHKERRQ(ierr);
       break;
       default:
       SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented");
     }
     if (verb > 0) {
-      int _dof_counter_ = 0;
-      for (map<EntityType,int>::iterator it = dof_counter.begin();it!=dof_counter.end();it++) {
+      int nb_added_dofs = 0;
+      int nb_inactive_added_dofs = 0;
+      for(map<EntityType,int>::iterator it = dof_counter.begin();it!=dof_counter.end();it++) {
         switch (it->first) {
           case MBVERTEX:
-          PetscSynchronizedPrintf(comm,"nb added dofs (vertices) %d\n",it->second);
+          PetscSynchronizedPrintf(comm,"nb added dofs (vertices) %d (inactive %d)\n",it->second,inactive_dof_counter[it->first]);
           break;
           case MBEDGE:
-          PetscSynchronizedPrintf(comm,"nb added dofs (edges) %d\n",it->second);
+          PetscSynchronizedPrintf(comm,"nb added dofs (edges) %d (inactive %d)\n",it->second,inactive_dof_counter[it->first]);
           break;
           case MBTRI:
-          PetscSynchronizedPrintf(comm,"nb added dofs (triangles) %d\n",it->second);
+          PetscSynchronizedPrintf(comm,"nb added dofs (triangles) %d (inactive %d)\n",it->second,inactive_dof_counter[it->first]);
           break;
           case MBQUAD:
-          PetscSynchronizedPrintf(comm,"nb added dofs (quads) %d\n",it->second);
+          PetscSynchronizedPrintf(comm,"nb added dofs (quads) %d (inactive %d)\n",it->second,inactive_dof_counter[it->first]);
           break;
           case MBTET:
-          PetscSynchronizedPrintf(comm,"nb added dofs (tets) %d\n",it->second);
+          PetscSynchronizedPrintf(comm,"nb added dofs (tets) %d (inactive %d)\n",it->second,inactive_dof_counter[it->first]);
           break;
           case MBPRISM:
-          PetscSynchronizedPrintf(comm,"nb added dofs (prisms) %d\n",it->second);
+          PetscSynchronizedPrintf(comm,"nb added dofs (prisms) %d (inactive %d)\n",it->second,inactive_dof_counter[it->first]);
           break;
           case MBENTITYSET:
-          PetscSynchronizedPrintf(comm,"nb added dofs (meshsets) %d\n",it->second);
+          PetscSynchronizedPrintf(comm,"nb added dofs (meshsets) %d (inactive %d)\n",it->second,inactive_dof_counter[it->first]);
           break;
           default:
           SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented");
         }
-        _dof_counter_ += it->second;
+        nb_added_dofs += it->second;
+        nb_inactive_added_dofs += inactive_dof_counter[it->first];
       }
-      PetscSynchronizedPrintf(comm,"nb added dofs %d\n",_dof_counter_);
+      PetscSynchronizedPrintf(comm,"nb added dofs %d (inacrive_dof_counter %d)\n",nb_added_dofs,nb_inactive_added_dofs);
     }
   }
   *build_MoFEM = 1<<0;
@@ -3099,12 +3112,12 @@ PetscErrorCode Core::clear_dofs_fields(const string &name,const Range ents,int v
       ait = entFEAdjacencies.get<Unique_mi_tag>().lower_bound(dit->get_MoFEMEntity_ptr()->get_global_unique_id());
       hi_ait = entFEAdjacencies.get<Unique_mi_tag>().upper_bound(dit->get_MoFEMEntity_ptr()->get_global_unique_id());
       for(;ait!=hi_ait;ait++) {
-  	EntMoFEMFiniteElement *EntMoFEMFiniteElement_ptr;
-	EntMoFEMFiniteElement_ptr = const_cast<EntMoFEMFiniteElement *>(ait->EntMoFEMFiniteElement_ptr);
-	EntMoFEMFiniteElement_ptr->row_dof_view.erase(dit->get_global_unique_id());
-	EntMoFEMFiniteElement_ptr->col_dof_view.erase(dit->get_global_unique_id());
-	EntMoFEMFiniteElement_ptr->data_dof_view.erase(dit->get_global_unique_id());
-	EntMoFEMFiniteElement_ptr->data_dofs.get<Unique_mi_tag>().erase(dit->get_global_unique_id());
+        EntMoFEMFiniteElement *EntMoFEMFiniteElement_ptr;
+        EntMoFEMFiniteElement_ptr = const_cast<EntMoFEMFiniteElement *>(ait->EntMoFEMFiniteElement_ptr);
+        EntMoFEMFiniteElement_ptr->row_dof_view.erase(dit->get_global_unique_id());
+        EntMoFEMFiniteElement_ptr->col_dof_view.erase(dit->get_global_unique_id());
+        EntMoFEMFiniteElement_ptr->data_dof_view.erase(dit->get_global_unique_id());
+        EntMoFEMFiniteElement_ptr->data_dofs.get<Unique_mi_tag>().erase(dit->get_global_unique_id());
       }
       dit = dofsField.get<Composite_Name_And_Ent_mi_tag>().erase(dit);
     }

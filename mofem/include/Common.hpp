@@ -19,20 +19,17 @@
 #define __COMMON_HPP__
 
 namespace MoFEM {
-  
+
   typedef ErrorCode MoABErrorCode;
 
   //typedefs
-  typedef PetscInt DofIdx;
-  typedef int FEIdx;
-  typedef int EntIdx;
-  typedef int EntPart;
-  typedef PetscScalar FieldData;
-  typedef int ApproximationOrder;
-  typedef int ApproximationRank;
-
-  //consts
-  const int max_ApproximationOrder = 10;
+  typedef int DofIdx; ///< Index of DOF
+  typedef int FEIdx;  ///< Index of the element
+  typedef int EntIdx;   ///< Index of DOF on the entity
+  typedef int EntPart;  ///< Partition owning entity
+  typedef double FieldData;  ///< Field data type
+  typedef int ApproximationOrder; ///< Approximation on the entity
+  typedef int FieldCoefficientsNumber; ///< Number of field coefficients
 
   //typedefs
   const EntityHandle no_handle = 0;

@@ -70,7 +70,7 @@ PetscErrorCode Core::field_axpy(const double alpha,const string& field_name_x,co
     int nb_dofs_on_x_entity = x_eit->tag_FieldData_size/sizeof(FieldData);
     for(int dd = 0;dd<nb_dofs_on_x_entity;dd++) {
       ApproximationOrder dof_order = x_eit->tag_dof_order_data[dd];
-      ApproximationRank dof_rank = x_eit->tag_dof_rank_data[dd];
+      FieldCoefficientsNumber dof_rank = x_eit->tag_dof_rank_data[dd];
       FieldData data = x_eit->tag_FieldData[dd];
       DofMoFEMEntity_multiIndex::index<Composite_Name_Ent_Order_And_CoeffIdx_mi_tag>::type::iterator dit;
       dit = dofsField.get<Composite_Name_Ent_Order_And_CoeffIdx_mi_tag>().find(

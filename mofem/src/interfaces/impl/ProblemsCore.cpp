@@ -109,13 +109,17 @@ PetscErrorCode Core::build_partitioned_problem(MoFEMProblem *problem_ptr,bool sq
   //add dofs for rows and cols and set ownership
   DofMoFEMEntity_multiIndex_active_view* dofs_ptr[] = { &dofs_rows, &dofs_cols };
   NumeredDofMoFEMEntity_multiIndex *numered_dofs_ptr[] = {
-    &(problem_ptr->numered_dofs_rows), &(problem_ptr->numered_dofs_cols) };
+    &(problem_ptr->numered_dofs_rows), &(problem_ptr->numered_dofs_cols)
+  };
   int* nbdof_ptr[] = {
-    problem_ptr->tag_nbdof_data_row, problem_ptr->tag_nbdof_data_col };
+    problem_ptr->tag_nbdof_data_row, problem_ptr->tag_nbdof_data_col
+  };
   int* local_nbdof_ptr[] = {
-    problem_ptr->tag_local_nbdof_data_row, problem_ptr->tag_local_nbdof_data_col };
+    problem_ptr->tag_local_nbdof_data_row, problem_ptr->tag_local_nbdof_data_col
+  };
   int* ghost_nbdof_ptr[] = {
-    problem_ptr->tag_ghost_nbdof_data_row, problem_ptr->tag_ghost_nbdof_data_col };
+    problem_ptr->tag_ghost_nbdof_data_row, problem_ptr->tag_ghost_nbdof_data_col
+  };
   int nb_local_dofs[] = { 0,0 };
   for(int ss = 0;ss<2;ss++) {
     *(nbdof_ptr[ss]) = 0;
@@ -496,8 +500,8 @@ PetscErrorCode Core::build_problem(MoFEMProblem *problem_ptr,int verb) {
   //job done, some debugging and postprocessing
   if(verbose>0) {
     PetscSynchronizedPrintf(comm,"Problem %s Nb. rows %u Nb. cols %u\n",
-	problem_ptr->get_name().c_str(),
-	problem_ptr->numered_dofs_rows.size(),problem_ptr->numered_dofs_cols.size());
+    problem_ptr->get_name().c_str(),
+    problem_ptr->numered_dofs_rows.size(),problem_ptr->numered_dofs_cols.size());
   }
   if(verb>1) {
     EntMoFEMFiniteElement_multiIndex::iterator miit_ss = miit2;

@@ -29,6 +29,7 @@ solid_shell_prism_element
 soft_tissue_materials
 minimal_surface_equation
 bone_remodelling
+helmholtz
 
 _Store
 *.swp

@@ -50,6 +50,7 @@
 #include <DataStructures.hpp>
 #include <DataOperators.hpp>
 #include <ElementsOnEntities.hpp>
+#include <VolumeElementForcesAndSourcesCore.hpp>
 #include <FatPrismElementForcesAndSurcesCore.hpp>
 
 #ifdef __cplusplus
@@ -81,18 +82,18 @@ PetscErrorCode FatPrismElementForcesAndSurcesCore::operator()() {
       ierr = getEdgesSense(dataH1); CHKERRQ(ierr);
       ierr = getTrisSense(dataH1); CHKERRQ(ierr);
       ierr = getQuadSense(dataH1); CHKERRQ(ierr);
-      ierr = getEdgesOrder(dataH1,H1); CHKERRQ(ierr);
-      ierr = getTrisOrder(dataH1,H1); CHKERRQ(ierr);
-      ierr = getQuadOrder(dataH1,H1); CHKERRQ(ierr);
-      ierr = getPrismOrder(dataH1,H1); CHKERRQ(ierr);
+      ierr = getEdgesDataOrder(dataH1,H1); CHKERRQ(ierr);
+      ierr = getTrisDataOrder(dataH1,H1); CHKERRQ(ierr);
+      ierr = getQuadDataOrder(dataH1,H1); CHKERRQ(ierr);
+      ierr = getPrismDataOrder(dataH1,H1); CHKERRQ(ierr);
       // Triangles only
       ierr = getEdgesSense(dataH1TrianglesOnly); CHKERRQ(ierr);
       ierr = getTrisSense(dataH1TrianglesOnly); CHKERRQ(ierr);
-      ierr = getEdgesOrder(dataH1TrianglesOnly,H1); CHKERRQ(ierr);
-      ierr = getTrisOrder(dataH1TrianglesOnly,H1); CHKERRQ(ierr);
+      ierr = getEdgesDataOrder(dataH1TrianglesOnly,H1); CHKERRQ(ierr);
+      ierr = getTrisDataOrder(dataH1TrianglesOnly,H1); CHKERRQ(ierr);
       // Through thickness
       ierr = getEdgesSense(dataH1TroughThickness); CHKERRQ(ierr);
-      ierr = getEdgesOrder(dataH1TroughThickness,H1); CHKERRQ(ierr);
+      ierr = getEdgesDataOrder(dataH1TroughThickness,H1); CHKERRQ(ierr);
     }
     //Hdiv
     if((dataH1.spacesOnEntities[MBTRI]).test(HDIV)) {
@@ -123,21 +124,21 @@ PetscErrorCode FatPrismElementForcesAndSurcesCore::operator()() {
     for(unsigned int ee = 0;ee<9;ee++) {
       if(!valid_edges[ee]) continue;
       order_triangles_only = max(
-        order_triangles_only,dataH1TrianglesOnly.dataOnEntities[MBEDGE][ee].getOrder()
+        order_triangles_only,dataH1TrianglesOnly.dataOnEntities[MBEDGE][ee].getDataOrder()
       );
     }
     for(unsigned int ff = 3;ff<=4;ff++) {
       order_triangles_only = max(
-        order_triangles_only,dataH1TrianglesOnly.dataOnEntities[MBTRI][ff].getOrder()
+        order_triangles_only,dataH1TrianglesOnly.dataOnEntities[MBTRI][ff].getDataOrder()
       );
     }
     for(unsigned int qq = 0;qq<3;qq++) {
       order_triangles_only = max(
-        order_triangles_only,dataH1TroughThickness.dataOnEntities[MBQUAD][qq].getOrder()
+        order_triangles_only,dataH1TroughThickness.dataOnEntities[MBQUAD][qq].getDataOrder()
       );
     }
     order_triangles_only = max(
-      order_triangles_only,dataH1TroughThickness.dataOnEntities[MBPRISM][0].getOrder()
+      order_triangles_only,dataH1TroughThickness.dataOnEntities[MBPRISM][0].getDataOrder()
     );
     // integration pts on the triangles surfaces
     int rule = getRuleTrianglesOnly(order_triangles_only);
@@ -204,16 +205,16 @@ PetscErrorCode FatPrismElementForcesAndSurcesCore::operator()() {
     int order_thickness = 1;
     for(unsigned int ee = 3;ee<=5;ee++) {
       order_thickness = max(
-        order_thickness,dataH1TroughThickness.dataOnEntities[MBEDGE][ee].getOrder()
+        order_thickness,dataH1TroughThickness.dataOnEntities[MBEDGE][ee].getDataOrder()
       );
     }
     for(unsigned int qq = 0;qq<3;qq++) {
       order_thickness = max(
-        order_thickness,dataH1TroughThickness.dataOnEntities[MBQUAD][qq].getOrder()
+        order_thickness,dataH1TroughThickness.dataOnEntities[MBQUAD][qq].getDataOrder()
       );
     }
     order_thickness = max(
-      order_thickness,dataH1TroughThickness.dataOnEntities[MBPRISM][0].getOrder()
+      order_thickness,dataH1TroughThickness.dataOnEntities[MBPRISM][0].getDataOrder()
     );
     // integration points
     int rule = getRuleThroughThickness(order_thickness);
@@ -260,7 +261,7 @@ PetscErrorCode FatPrismElementForcesAndSurcesCore::operator()() {
     for(unsigned int ee = 3;ee<=5;ee++) {
       int sense = dataH1TroughThickness.dataOnEntities[MBEDGE][ee].getSense();
       // cerr << "sense " << sense << endl;
-      int order = dataH1TroughThickness.dataOnEntities[MBEDGE][ee].getOrder()-2;
+      int order = dataH1TroughThickness.dataOnEntities[MBEDGE][ee].getDataOrder()-2;
       dataH1TroughThickness.dataOnEntities[MBEDGE][ee].getN().resize(
         nb_gauss_pts_through_thickness,order<0?0:1+order,false
       );
@@ -338,9 +339,9 @@ PetscErrorCode FatPrismElementForcesAndSurcesCore::operator()() {
     for(int ee = 0;ee<9;ee++) {
       if(ee>=3&&ee<=5) {
         // through thickness ho approximation
-        // linear xi,eta, ho terms for eta
-        int order = dataH1TroughThickness.dataOnEntities[MBEDGE][ee].getOrder();
-        int nb_dofs = NBEDGE_H1(order);
+        // linear xi,eta, ho terms for zeta
+        int order = dataH1TroughThickness.dataOnEntities[MBEDGE][ee].getDataOrder();
+        int nb_dofs = NBEDGE_H1_AINSWORTH_COLE(order);
         if((unsigned int)nb_dofs!=dataH1TroughThickness.dataOnEntities[MBEDGE][ee].getN().size2()) {
           SETERRQ2(
             PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"nb_dofs != nb_dofs",
@@ -454,10 +455,8 @@ PetscErrorCode FatPrismElementForcesAndSurcesCore::operator()() {
       siit = side_table.get<1>().lower_bound(boost::make_tuple(MBQUAD,0));
       SideNumber_multiIndex::nth_index<1>::type::iterator hi_siit;
       hi_siit = side_table.get<1>().upper_bound(boost::make_tuple(MBQUAD,3));
-      const EntityHandle *conn_prism;
-      int num_nodes_prism;
       EntityHandle ent = fePtr->get_ent();
-      rval = mField.get_moab().get_connectivity(ent,conn_prism,num_nodes_prism,true); CHKERR_PETSC(rval);
+      rval = mField.get_moab().get_connectivity(ent,conn,num_nodes,true); CHKERR_PETSC(rval);
       // cerr << "\n\n" << endl;
       // const int quad_nodes[3][4] = { {0,1,4,3}, {1,2,5,4}, {0,2,5,3} };
       for(;siit!=hi_siit;siit++) {
@@ -469,19 +468,19 @@ PetscErrorCode FatPrismElementForcesAndSurcesCore::operator()() {
           quad,conn_quad,num_nodes_quad,true
         ); CHKERR_PETSC(rval);
         for(int nn = 0;nn<num_nodes_quad;nn++) {
-          quads_nodes[4*siit->side_number+nn] = distance(conn_prism,find(conn_prism,conn_prism+6,conn_quad[nn]));
+          quads_nodes[4*siit->side_number+nn] = distance(conn,find(conn,conn+6,conn_quad[nn]));
           // cerr
           // << "quad " << quad
           // << " side number " << siit->side_number
           // << " " << quads_nodes[4*siit->side_number+nn]
-          // << " " << conn_prism[quads_nodes[4*siit->side_number+nn]]
+          // << " " << conn[quads_nodes[4*siit->side_number+nn]]
           // << " " << conn_quad[nn]
           // << endl;
         }
-        int order = dataH1.dataOnEntities[MBQUAD][siit->side_number].getOrder();
+        int order = dataH1.dataOnEntities[MBQUAD][siit->side_number].getDataOrder();
         quad_order[siit->side_number] = order;
-        dataH1.dataOnEntities[MBQUAD][siit->side_number].getN().resize(nb_gauss_pts,NBFACEQUAD_H1(order),false);
-        dataH1.dataOnEntities[MBQUAD][siit->side_number].getDiffN().resize(nb_gauss_pts,3*NBFACEQUAD_H1(order),false);
+        dataH1.dataOnEntities[MBQUAD][siit->side_number].getN().resize(nb_gauss_pts,NBFACEQUAD_H1_AINSWORTH_COLE(order),false);
+        dataH1.dataOnEntities[MBQUAD][siit->side_number].getDiffN().resize(nb_gauss_pts,3*NBFACEQUAD_H1_AINSWORTH_COLE(order),false);
         if(dataH1.dataOnEntities[MBQUAD][siit->side_number].getN().size2()>0) {
           quad_n[siit->side_number] = &*dataH1.dataOnEntities[MBQUAD][siit->side_number].getN().data().begin();
           diff_quad_n[siit->side_number] = &*dataH1.dataOnEntities[MBQUAD][siit->side_number].getDiffN().data().begin();
@@ -500,12 +499,12 @@ PetscErrorCode FatPrismElementForcesAndSurcesCore::operator()() {
     }
     // prism
     {
-      int order = dataH1.dataOnEntities[MBPRISM][0].getOrder();
+      int order = dataH1.dataOnEntities[MBPRISM][0].getDataOrder();
       double *vertex_n  = &dataH1.dataOnEntities[MBVERTEX][0].getN()(0,0);
       double *diff_vertex_n = &dataH1.dataOnEntities[MBVERTEX][0].getDiffN()(0,0);
-      dataH1.dataOnEntities[MBPRISM][0].getN().resize(nb_gauss_pts,NBVOLUMEPRISM_H1(order),false);
-      dataH1.dataOnEntities[MBPRISM][0].getDiffN().resize(nb_gauss_pts,3*NBVOLUMEPRISM_H1(order),false);
-      if(NBVOLUMEPRISM_H1(order)>0) {
+      dataH1.dataOnEntities[MBPRISM][0].getN().resize(nb_gauss_pts,NBVOLUMEPRISM_H1_AINSWORTH_COLE(order),false);
+      dataH1.dataOnEntities[MBPRISM][0].getDiffN().resize(nb_gauss_pts,3*NBVOLUMEPRISM_H1_AINSWORTH_COLE(order),false);
+      if(NBVOLUMEPRISM_H1_AINSWORTH_COLE(order)>0) {
         ierr = H1_VolumeShapeFunctions_MBPRISM(
           order,
           vertex_n,
@@ -582,8 +581,8 @@ PetscErrorCode FatPrismElementForcesAndSurcesCore::operator()() {
         nOrmals_at_GaussPtF4.resize(nb_gauss_pts_on_faces,3,false);
         tAngent1_at_GaussPtF4.resize(nb_gauss_pts_on_faces,3,false);
         tAngent2_at_GaussPtF4.resize(nb_gauss_pts_on_faces,3,false);
-        ierr = getEdgesOrder(dataH1TrianglesOnly,meshPositionsFieldName); CHKERRQ(ierr);
-        ierr = getTrisOrder(dataH1TrianglesOnly,meshPositionsFieldName); CHKERRQ(ierr);
+        ierr = getEdgesDataOrder(dataH1TrianglesOnly,meshPositionsFieldName); CHKERRQ(ierr);
+        ierr = getTrisDataOrder(dataH1TrianglesOnly,meshPositionsFieldName); CHKERRQ(ierr);
         ierr = getNodesFieldData(dataH1TrianglesOnly,meshPositionsFieldName); CHKERRQ(ierr);
         ierr = getEdgesFieldData(dataH1TrianglesOnly,meshPositionsFieldName); CHKERRQ(ierr);
         ierr = getTrisFieldData(dataH1TrianglesOnly,meshPositionsFieldName); CHKERRQ(ierr);
@@ -678,7 +677,7 @@ PetscErrorCode FatPrismElementForcesAndSurcesCore::operator()() {
               } else {
                 ierr = getEdgesColIndices(*op_data[ss],field_name); CHKERRQ(ierr);
               }
-              ierr = getEdgesOrder(*op_data[ss],field_name); CHKERRQ(ierr);
+              ierr = getEdgesDataOrder(*op_data[ss],field_name); CHKERRQ(ierr);
               ierr = getEdgesFieldData(*op_data[ss],field_name); CHKERRQ(ierr);
               // ierr = getEdgesFieldDofs(*op_data[ss],field_name); CHKERRQ(ierr);
               case HDIV:
@@ -687,14 +686,14 @@ PetscErrorCode FatPrismElementForcesAndSurcesCore::operator()() {
               } else {
                 ierr = getTrisColIndices(*op_data[ss],field_name); CHKERRQ(ierr);
               }
-              ierr = getTrisOrder(*op_data[ss],field_name); CHKERRQ(ierr);
+              ierr = getTrisDataOrder(*op_data[ss],field_name); CHKERRQ(ierr);
               ierr = getTrisFieldData(*op_data[ss],field_name); CHKERRQ(ierr);
               if(!ss) {
                 ierr = getQuadRowIndices(*op_data[ss],field_name); CHKERRQ(ierr);
               } else {
                 ierr = getQuadColIndices(*op_data[ss],field_name); CHKERRQ(ierr);
               }
-              ierr = getQuadOrder(*op_data[ss],field_name); CHKERRQ(ierr);
+              ierr = getQuadDataOrder(*op_data[ss],field_name); CHKERRQ(ierr);
               ierr = getQuadFieldData(*op_data[ss],field_name); CHKERRQ(ierr);
               case L2:
               if(!ss) {
@@ -702,7 +701,7 @@ PetscErrorCode FatPrismElementForcesAndSurcesCore::operator()() {
               } else {
                 ierr = getPrismColIndices(*op_data[ss],field_name); CHKERRQ(ierr);
               }
-              ierr = getPrismOrder(*op_data[ss],field_name); CHKERRQ(ierr);
+              ierr = getPrismDataOrder(*op_data[ss],field_name); CHKERRQ(ierr);
               ierr = getPrismFieldData(*op_data[ss],field_name); CHKERRQ(ierr);
               break;
               case NOFIELD:

@@ -79,33 +79,37 @@ PetscErrorCode FlatPrismElementForcesAndSurcesCore::operator()() {
     if((dataH1.spacesOnEntities[MBEDGE]).test(H1)) {
       ierr = getEdgesSense(dataH1); CHKERRQ(ierr);
       ierr = getTrisSense(dataH1); CHKERRQ(ierr);
-      ierr = getEdgesOrder(dataH1,H1); CHKERRQ(ierr);
-      ierr = getTrisOrder(dataH1,H1); CHKERRQ(ierr);
+      ierr = getEdgesDataOrder(dataH1,H1); CHKERRQ(ierr);
+      ierr = getTrisDataOrder(dataH1,H1); CHKERRQ(ierr);
     }
 
     //Hdiv
     if((dataH1.spacesOnEntities[MBTRI]).test(HDIV)) {
       ierr = getTrisSense(dataHdiv); CHKERRQ(ierr);
-      ierr = getTrisOrder(dataHdiv,HDIV); CHKERRQ(ierr);
+      ierr = getTrisDataOrder(dataHdiv,HDIV); CHKERRQ(ierr);
     }
 
-    int order = 1;
-    for(unsigned int ee = 0;ee<3;ee++) {
-      order = max(
-        order,dataH1.dataOnEntities[MBEDGE][ee].getOrder()
-      );
-    }
-    for(unsigned int ee = 6;ee<dataH1.dataOnEntities[MBEDGE].size();ee++) {
-      order = max(
-        order,dataH1.dataOnEntities[MBEDGE][ee].getOrder()
-      );
-    }
-    for(unsigned int ff = 0;ff<dataHdiv.dataOnEntities[MBTRI].size();ff++) {
-      order = max(order,dataHdiv.dataOnEntities[MBTRI][ff].getOrder());
-    }
+    // int order = 1;
+    // for(unsigned int ee = 0;ee<3;ee++) {
+    //   order = max(
+    //     order,dataH1.dataOnEntities[MBEDGE][ee].getDataOrder()
+    //   );
+    // }
+    // for(unsigned int ee = 6;ee<dataH1.dataOnEntities[MBEDGE].size();ee++) {
+    //   order = max(
+    //     order,dataH1.dataOnEntities[MBEDGE][ee].getDataOrder()
+    //   );
+    // }
+    // for(unsigned int ff = 0;ff<dataHdiv.dataOnEntities[MBTRI].size();ff++) {
+    //   order = max(order,dataHdiv.dataOnEntities[MBTRI][ff].getDataOrder());
+    // }
 
+    int order_data = getMaxDataOrder();
+    int order_row = getMaxRowOrder();
+    int order_col = getMaxColOrder();
+    int rule = getRule(order_row,order_col,order_data);
     int nb_gauss_pts;
-    int rule = getRule(order);
+    // int rule = getRule(order);
     if(rule >= 0) {
       if(rule<QUAD_2D_TABLE_SIZE) {
         if(QUAD_2D_TABLE[rule]->dim!=2) {
@@ -141,7 +145,7 @@ PetscErrorCode FlatPrismElementForcesAndSurcesCore::operator()() {
       //   rule,&gaussPts(0,0),&gaussPts(1,0),&gaussPts(2,0)
       // ); CHKERRQ(ierr);
     } else {
-      ierr = setGaussPts(order); CHKERRQ(ierr);
+      ierr = setGaussPts(order_row,order_col,order_data); CHKERRQ(ierr);
       nb_gauss_pts = gaussPts.size2();
     }
     if(nb_gauss_pts == 0) PetscFunctionReturn(0);
@@ -192,8 +196,8 @@ PetscErrorCode FlatPrismElementForcesAndSurcesCore::operator()() {
         nOrmals_at_GaussPtF4.resize(nb_gauss_pts,3,false);
         tAngent1_at_GaussPtF4.resize(nb_gauss_pts,3,false);
         tAngent2_at_GaussPtF4.resize(nb_gauss_pts,3,false);
-        ierr = getEdgesOrder(dataH1,meshPositionsFieldName); CHKERRQ(ierr);
-        ierr = getTrisOrder(dataH1,meshPositionsFieldName); CHKERRQ(ierr);
+        ierr = getEdgesDataOrder(dataH1,meshPositionsFieldName); CHKERRQ(ierr);
+        ierr = getTrisDataOrder(dataH1,meshPositionsFieldName); CHKERRQ(ierr);
         ierr = getNodesFieldData(dataH1,meshPositionsFieldName); CHKERRQ(ierr);
         ierr = getEdgesFieldData(dataH1,meshPositionsFieldName); CHKERRQ(ierr);
         ierr = getTrisFieldData(dataH1,meshPositionsFieldName); CHKERRQ(ierr);
@@ -292,7 +296,7 @@ PetscErrorCode FlatPrismElementForcesAndSurcesCore::operator()() {
               } else {
                 ierr = getEdgesColIndices(*op_data[ss],field_name); CHKERRQ(ierr);
               }
-              ierr = getEdgesOrder(*op_data[ss],field_name); CHKERRQ(ierr);
+              ierr = getEdgesDataOrder(*op_data[ss],field_name); CHKERRQ(ierr);
               ierr = getEdgesFieldData(*op_data[ss],field_name); CHKERRQ(ierr);
               // ierr = getEdgesFieldDofs(*op_data[ss],field_name); CHKERRQ(ierr);
               case HDIV:
@@ -301,7 +305,7 @@ PetscErrorCode FlatPrismElementForcesAndSurcesCore::operator()() {
               } else {
                 ierr = getTrisColIndices(*op_data[ss],field_name); CHKERRQ(ierr);
               }
-              ierr = getTrisOrder(*op_data[ss],field_name); CHKERRQ(ierr);
+              ierr = getTrisDataOrder(*op_data[ss],field_name); CHKERRQ(ierr);
               ierr = getTrisFieldData(*op_data[ss],field_name); CHKERRQ(ierr);
               // ierr = getTrisFieldDofs(*op_data[ss],field_name); CHKERRQ(ierr);
               break;

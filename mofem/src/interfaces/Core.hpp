@@ -55,7 +55,7 @@ struct Core:
   //Data and low level methods
   Tag th_Part;
   Tag th_RefType,th_RefParentHandle,th_RefBitLevel,th_RefBitLevel_Mask,th_RefBitEdge,th_RefFEMeshset;
-  Tag th_FieldId,th_FieldName,th_FieldName_DataNamePrefix,th_FieldSpace;
+  Tag th_FieldId,th_FieldName,th_FieldName_DataNamePrefix,th_FieldSpace,th_FieldBase;
   Tag th_FEId,th_FEName;
   Tag th_FEIdCol,th_FEIdRow,th_FEIdData;
   Tag th_ProblemId,th_ProblemName,th_ProblemFEId;
@@ -359,8 +359,13 @@ struct Core:
 
   //field
   PetscErrorCode add_field(
-    const string& name,const FieldSpace space,const ApproximationRank nb_cooficients,enum MoFEMTypes bh = MF_EXCL,int verb = -1
+    const string& name,
+    const FieldSpace space,
+    const FieldApproximationBase base,
+    const FieldCoefficientsNumber nb_cooficients,
+    enum MoFEMTypes bh = MF_EXCL,int verb = -1
   );
+
   PetscErrorCode add_ents_to_field_by_VERTICEs(const Range &nodes,const BitFieldId id,int verb = -1);
   PetscErrorCode add_ents_to_field_by_VERTICEs(const Range &nodes,const string& name,int verb = -1);
   PetscErrorCode add_ents_to_field_by_VERTICEs(const EntityHandle meshset,const BitFieldId id,int verb = -1);
@@ -395,7 +400,9 @@ struct Core:
 
   //build fiels
   PetscErrorCode dofs_NoField(const BitFieldId id,map<EntityType,int> &dof_counter,int verb = -1);
-  PetscErrorCode dofs_L2H1HcurlHdiv(const BitFieldId id,map<EntityType,int> &dof_counter,int verb = -1);
+  PetscErrorCode dofs_L2H1HcurlHdiv(
+    const BitFieldId id,map<EntityType,int> &dof_counter,map<EntityType,int> &inactive_dof_counter,int verb = -1
+  );
   PetscErrorCode build_fields(int verb = -1);
   PetscErrorCode clear_dofs_fields(const BitRefLevel &bit,const BitRefLevel &mask,int verb = -1);
   PetscErrorCode clear_ents_fields(const BitRefLevel &bit,const BitRefLevel &mask,int verb = -1);
