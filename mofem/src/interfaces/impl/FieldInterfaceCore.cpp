@@ -48,7 +48,7 @@ namespace MoFEM {
 const static int debug = 1;
 
 PetscErrorCode Core::add_field(
-  const string& name,const FieldSpace space,const ApproximationRank nb_of_coefficients,enum MoFEMTypes bh,int verb
+  const string& name,const FieldSpace space,const FieldCoefficientsNumber nb_of_coefficients,enum MoFEMTypes bh,int verb
 ) {
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
@@ -107,7 +107,7 @@ PetscErrorCode Core::add_field(
     int def_rank = 1;
     string Tag_rank_name = "_Field_Rank_"+name;
     rval = moab.tag_get_handle(
-      Tag_rank_name.c_str(),sizeof(ApproximationRank),MB_TYPE_OPAQUE,
+      Tag_rank_name.c_str(),sizeof(FieldCoefficientsNumber),MB_TYPE_OPAQUE,
       th_Rank,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES,&def_rank
     ); CHKERR_PETSC(rval);
     rval = moab.tag_set_data(th_Rank,&meshset,1,&nb_of_coefficients); CHKERR_PETSC(rval);
@@ -970,7 +970,7 @@ PetscErrorCode Core::dofs_NoField(const BitFieldId id,map<EntityType,int> &dof_c
     //this is nor real field in space (set order to zero)
     bool success = entsFields.modify(e_miit.first,MoFEMEntity_change_order(moab,0));
     if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
-    ApproximationRank rank = 0;
+    FieldCoefficientsNumber rank = 0;
     //create dofs on this entity (nb. of dofs is equal to rank)
     for(;rank<e_miit.first->get_nb_of_coeffs();rank++) {
       pair<DofMoFEMEntity_multiIndex::iterator,bool> d_miit;

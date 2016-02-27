@@ -581,7 +581,7 @@ struct FieldInterface: public FieldUnknownInterface {
     * \prama nb_of_cooficients of the field, f.e. temperature has nb_of_cooficients 1, displacement in 3d has nb_of_cooficients 3
     */
   virtual PetscErrorCode add_field(
-    const string& name,const FieldSpace space,const ApproximationRank nb_of_cooficients,enum MoFEMTypes bh = MF_EXCL,int verb = -1
+    const string& name,const FieldSpace space,const FieldCoefficientsNumber nb_of_cooficients,enum MoFEMTypes bh = MF_EXCL,int verb = -1
   ) = 0;
 
   /**

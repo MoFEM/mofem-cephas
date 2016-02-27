@@ -62,7 +62,7 @@ struct DofMoFEMEntity: public interface_MoFEMEntity<MoFEMEntity> {
   DofMoFEMEntity(
     const MoFEMEntity *entity_ptr,
     const ApproximationOrder dof_order,
-    const ApproximationRank dof_rank,
+    const FieldCoefficientsNumber dof_rank,
     const DofIdx _dof
   );
 
@@ -100,14 +100,14 @@ struct DofMoFEMEntity: public interface_MoFEMEntity<MoFEMEntity> {
     return ((ApproximationOrder*)field_ptr->tag_dof_order_data)[dof];
   };
 
-  DEPRECATED inline ApproximationRank get_dof_rank() const {
-    return ((ApproximationRank*)field_ptr->tag_dof_rank_data)[dof];
+  DEPRECATED inline FieldCoefficientsNumber get_dof_rank() const {
+    return ((FieldCoefficientsNumber*)field_ptr->tag_dof_rank_data)[dof];
   };
 
   /** \brief Get dof coefficient
   */
-  inline ApproximationRank get_dof_coeff_idx() const {
-    return ((ApproximationRank*)field_ptr->tag_dof_rank_data)[dof];
+  inline FieldCoefficientsNumber get_dof_coeff_idx() const {
+    return ((FieldCoefficientsNumber*)field_ptr->tag_dof_rank_data)[dof];
   };
 
   //check if node is active
@@ -133,11 +133,11 @@ struct interface_DofMoFEMEntity: public interface_MoFEMEntity<T> {
   inline EntityHandle get_ent() const { return interface_MoFEMEntity<T>::field_ptr->get_ent(); };
   inline ApproximationOrder get_dof_order() const { return interface_MoFEMEntity<T>::field_ptr->get_dof_order(); };
 
-  DEPRECATED inline ApproximationRank get_dof_rank() const {
+  DEPRECATED inline FieldCoefficientsNumber get_dof_rank() const {
     return interface_MoFEMEntity<T>::field_ptr->get_dof_coeff_idx();
   };
 
-  inline ApproximationRank get_dof_coeff_idx() const {
+  inline FieldCoefficientsNumber get_dof_coeff_idx() const {
     return interface_MoFEMEntity<T>::field_ptr->get_dof_coeff_idx();
   };
 
@@ -281,7 +281,7 @@ typedef multi_index_container<
           const_mem_fun<DofMoFEMEntity::interface_type_MoFEMField,boost::string_ref,&DofMoFEMEntity::get_name_ref>,
           const_mem_fun<DofMoFEMEntity,EntityHandle,&DofMoFEMEntity::get_ent>,
           const_mem_fun<DofMoFEMEntity,ApproximationOrder,&DofMoFEMEntity::get_dof_order>,
-          const_mem_fun<DofMoFEMEntity,ApproximationRank,&DofMoFEMEntity::get_dof_coeff_idx>
+          const_mem_fun<DofMoFEMEntity,FieldCoefficientsNumber,&DofMoFEMEntity::get_dof_coeff_idx>
         > >
   > > DofMoFEMEntity_multiIndex;
 
@@ -470,7 +470,7 @@ typedef multi_index_container<
 	     NumeredDofMoFEMEntity,
 	      const_mem_fun<NumeredDofMoFEMEntity::interface_type_MoFEMField,boost::string_ref,&NumeredDofMoFEMEntity::get_name_ref>,
 	      member<NumeredDofMoFEMEntity,unsigned int,&NumeredDofMoFEMEntity::part>,
-	      const_mem_fun<NumeredDofMoFEMEntity::interface_type_DofMoFEMEntity,ApproximationRank,&NumeredDofMoFEMEntity::get_dof_coeff_idx>
+	      const_mem_fun<NumeredDofMoFEMEntity::interface_type_DofMoFEMEntity,FieldCoefficientsNumber,&NumeredDofMoFEMEntity::get_dof_coeff_idx>
 	    > >,
     ordered_non_unique<
       tag<Composite_Name_And_Part_mi_tag>,

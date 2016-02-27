@@ -41,7 +41,7 @@ namespace MoFEM {
 DofMoFEMEntity::DofMoFEMEntity(
   const MoFEMEntity *entity_ptr,
   const ApproximationOrder dof_order,
-  const ApproximationRank dof_rank,
+  const FieldCoefficientsNumber dof_rank,
   const DofIdx _dof
 ):
 interface_MoFEMEntity<MoFEMEntity>(entity_ptr),
@@ -66,7 +66,7 @@ active(false) {
   }
   assert(field_ptr->tag_dof_rank_data!=NULL);
   ((ApproximationOrder*)field_ptr->tag_dof_order_data)[dof] = dof_order;
-  ((ApproximationRank*)field_ptr->tag_dof_rank_data)[dof] = dof_rank;
+  ((FieldCoefficientsNumber*)field_ptr->tag_dof_rank_data)[dof] = dof_rank;
   local_uid = get_local_unique_id_calculate();
   global_uid = get_global_unique_id_calculate();
   short_uid = get_non_nonunique_short_id_calculate();
