@@ -119,6 +119,14 @@ add_custom_target(
   update_users_modules
   COMMENT "Update all modules ..." VERBATIM
 )
+add_custom_target(
+  checkout_CDashTesting
+  COMMENT "Checkout CDashTesting branch ..." VERBATIM
+)
+add_custom_target(
+  checkout_master
+  COMMENT "Checkout master branch ..." VERBATIM
+)
 foreach(LOOP_MODULE ${INSTLLED_MODULES})
   string(REGEX REPLACE
     "/+InstalledAddModule.cmake" ""
@@ -143,8 +151,7 @@ foreach(LOOP_MODULE ${INSTLLED_MODULES})
     ".*/+" ""
     MODULE_NAME ${MODULE_DIRECTORY}
   )
-  include(${LOOP_MODULE})
-  message(STATUS "Add custom target ... update_${MODULE_NAME}")
+  message(STATUS "Add custom targets for ${MODULE_NAME}")
   add_custom_target(
     update_${MODULE_NAME}
     COMMAND ${GIT_EXECUTABLE} pull
@@ -152,6 +159,22 @@ foreach(LOOP_MODULE ${INSTLLED_MODULES})
     COMMENT "Update module ... ${MODULE_NAME}" VERBATIM
   )
   add_dependencies(update_users_modules update_${MODULE_NAME})
+  add_custom_target(
+    checkout_CDashTesting_${MODULE_NAME}
+    COMMAND ${GIT_EXECUTABLE} checkout CDashTesting
+    WORKING_DIRECTORY ${MODULE_DIRECTORY}
+    COMMENT "Checkout CDashTesting baranch for module ${MODULE_NAME}" VERBATIM
+  )
+  add_dependencies(checkout_CDashTesting checkout_CDashTesting_${MODULE_NAME})
+  add_custom_target(
+    checkout_master_${MODULE_NAME}
+    COMMAND ${GIT_EXECUTABLE} checkout master
+    WORKING_DIRECTORY ${MODULE_DIRECTORY}
+    COMMENT "Checkout master baranch for module ${MODULE_NAME}" VERBATIM
+  )
+  add_dependencies(checkout_master checkout_master_${MODULE_NAME})
+  # include module
+  include(${LOOP_MODULE})
 endforeach(LOOP_MODULE)
 
 # Users Programs
