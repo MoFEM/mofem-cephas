@@ -573,16 +573,45 @@ struct FieldInterface: public FieldUnknownInterface {
   virtual PetscErrorCode shift_right_bit_ref(const int shift,int verb = -1) = 0;
 
   /**
-    * \brief add approximation field
-    * \ingroup mofem_field
-    *
-    * \param name of the field
-    * \param space approximation space (H1, Hdiv, Hcurl, L2 and NoField (dofs adjacent to meshset)
-    * \prama nb_of_cooficients of the field, f.e. temperature has nb_of_cooficients 1, displacement in 3d has nb_of_cooficients 3
-    */
+   * \brief Add field
+   * @param  name              name of the filed
+   * @param  space             space (L2,H1,Hdiv,Hcurl)
+   * @param  base              approximation base (AINSWORTH_COLE_BASE, BERNSTEIN_BEZIER_BASE)
+   * @param  nb_of_cooficients number of field coefficients
+   * @param  bh                if MF_EXCL throws error if field exits, MF_ZERO no error if field exist
+   * @param  verb              verbosity level
+   * @return                   error code
+   */
   virtual PetscErrorCode add_field(
-    const string& name,const FieldSpace space,const ApproximationRank nb_of_cooficients,enum MoFEMTypes bh = MF_EXCL,int verb = -1
+    const string& name,
+    const FieldSpace space,
+    const FieldApproximationBase base,
+    const FieldCoefficientsNumber nb_of_cooficients,
+    enum MoFEMTypes bh = MF_EXCL,
+    int verb = -1
   ) = 0;
+
+  /**
+  * \brief Add field with default AINSWORTH_COLE_BASE approximation base
+  * @param  name              name of the filed
+  * @param  space             space (L2,H1,Hdiv,Hcurl)
+  * @param  nb_of_cooficients number of field coefficients
+  * @param  bh                if MF_EXCL throws error if field exits, MF_ZERO no error if field exist
+  * @param  verb              verbosity level
+  * @return                   error code
+  */
+  inline PetscErrorCode add_field(
+    const string& name,
+    const FieldSpace space,
+    const FieldCoefficientsNumber nb_of_cooficients,
+    enum MoFEMTypes bh = MF_EXCL,
+    int verb = -1
+  ) {
+    PetscErrorCode ierr;
+    PetscFunctionBegin;
+    ierr = add_field(name,space,AINSWORTH_COLE_BASE,nb_of_cooficients,bh,verb); CHKERRQ(ierr);
+    PetscFunctionReturn(0);
+  }
 
   /**
     * \brief set field entities on vertices

@@ -32,7 +32,7 @@ namespace MoFEM {
  \ingroup mofem_forces_and_sources_tet_element
 
  User is implementing own operator at Gauss point level, by own object
- derived from VolumeElementForcesAndSourcesCoreL::UserDataOperator.  Arbitrary
+ derived from VolumeElementForcesAndSourcesCore::UserDataOperator.  Arbitrary
  number of operator added pushing objects to rowOpPtrVector and
  rowColOpPtrVector.
 
@@ -62,12 +62,12 @@ struct VolumeElementForcesAndSourcesCore: public ForcesAndSurcesCore {
   OpSetHoPiolaTransform opSetHoPiolaTransform;
   OpSetHoInvJacHdiv opSetHoInvJacHdiv;
 
-  VolumeElementForcesAndSourcesCore(FieldInterface &m_field):
+  VolumeElementForcesAndSourcesCore(FieldInterface &m_field,const EntityType type = MBTET):
     ForcesAndSurcesCore(m_field),
-    dataH1(MBTET),derivedDataH1(dataH1),
-    dataL2(MBTET),derivedDataL2(dataL2),
-    dataHdiv(MBTET),derivedDataHdiv(dataHdiv),
-    dataNoField(MBTET),dataNoFieldCol(MBTET),
+    dataH1(type),derivedDataH1(dataH1),
+    dataL2(type),derivedDataL2(dataL2),
+    dataHdiv(type),derivedDataHdiv(dataHdiv),
+    dataNoField(type),dataNoFieldCol(type),
     opSetInvJacH1(invJac),
     opPiolaTransform(vOlume,Jac),opSetInvJacHdiv(invJac),
     meshPositionsFieldName("MESH_NODE_POSITIONS"),
@@ -140,7 +140,9 @@ struct VolumeElementForcesAndSourcesCore: public ForcesAndSurcesCore {
 
     /** \brief return pointer to Generic Tetrahedral Finite Element object
      */
-    inline const VolumeElementForcesAndSourcesCore* getTetFE() { return ptrFE; }
+     inline const VolumeElementForcesAndSourcesCore* getVolumeFE() { return ptrFE; }
+
+    DEPRECATED inline const VolumeElementForcesAndSourcesCore* getTetFE() { return ptrFE; }
 
     //differential operators
     PetscErrorCode getDivergenceMatrixOperato_Hdiv(

@@ -167,18 +167,22 @@ PetscErrorCode DisplacementBCFEMethodPreAndPostProc::postProcess() {
   }
 
   if(snes_ctx == CTX_SNESNONE && ts_ctx == CTX_TSNONE) {
-    ierr = MatAssemblyBegin(snes_B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
-    ierr = MatAssemblyEnd(snes_B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
-    ierr = MatZeroRowsColumns(
-      snes_B,dofsIndices.size(),dofsIndices.empty()?PETSC_NULL:&dofsIndices[0],dIag,PETSC_NULL,PETSC_NULL
-    ); CHKERRQ(ierr);
-    ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
-    ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
-    for(vector<int>::iterator vit = dofsIndices.begin();vit!=dofsIndices.end();vit++) {
-      ierr = VecSetValue(snes_f,*vit,0,INSERT_VALUES); CHKERRQ(ierr);
+    if(snes_B) {
+      ierr = MatAssemblyBegin(snes_B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+      ierr = MatAssemblyEnd(snes_B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+      ierr = MatZeroRowsColumns(
+        snes_B,dofsIndices.size(),dofsIndices.empty()?PETSC_NULL:&dofsIndices[0],dIag,PETSC_NULL,PETSC_NULL
+      ); CHKERRQ(ierr);
     }
-    ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
-    ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
+    if(snes_f) {
+      ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
+      ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
+      for(vector<int>::iterator vit = dofsIndices.begin();vit!=dofsIndices.end();vit++) {
+        ierr = VecSetValue(snes_f,*vit,0,INSERT_VALUES); CHKERRQ(ierr);
+      }
+      ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
+      ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
+    }
   }
 
   switch(snes_ctx) {
@@ -402,19 +406,23 @@ PetscErrorCode FixBcAtEntities::preProcess() {
 PetscErrorCode FixBcAtEntities::postProcess() {
   PetscFunctionBegin;
   if(snes_ctx == CTX_SNESNONE && ts_ctx == CTX_TSNONE) {
-    ierr = MatAssemblyBegin(snes_B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
-    ierr = MatAssemblyEnd(snes_B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
-    ierr = MatZeroRowsColumns(
-      snes_B,dofsIndices.size(),dofsIndices.empty()?PETSC_NULL:&dofsIndices[0],dIag,PETSC_NULL,PETSC_NULL
-    ); CHKERRQ(ierr);
-    ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
-    ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
-    int ii = 0;
-    for(vector<int>::iterator vit = dofsIndices.begin();vit!=dofsIndices.end();vit++,ii++) {
-      ierr = VecSetValue(snes_f,*vit,dofsValues[ii],INSERT_VALUES); CHKERRQ(ierr);
+    if(snes_B) {
+      ierr = MatAssemblyBegin(snes_B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+      ierr = MatAssemblyEnd(snes_B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+      ierr = MatZeroRowsColumns(
+        snes_B,dofsIndices.size(),dofsIndices.empty()?PETSC_NULL:&dofsIndices[0],dIag,PETSC_NULL,PETSC_NULL
+      ); CHKERRQ(ierr);
     }
-    ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
-    ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
+    if(snes_f) {
+      ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
+      ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
+      int ii = 0;
+      for(vector<int>::iterator vit = dofsIndices.begin();vit!=dofsIndices.end();vit++,ii++) {
+        ierr = VecSetValue(snes_f,*vit,dofsValues[ii],INSERT_VALUES); CHKERRQ(ierr);
+      }
+      ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
+      ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
+    }
   }
 
   switch(snes_ctx) {

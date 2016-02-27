@@ -120,14 +120,17 @@ struct ProjectionFieldOn10NodeTet: public Projection10NodeCoordsOnField {
   bool onCoords;
   string onTag;
 
+  const int maxApproximationOrder;
+
   ProjectionFieldOn10NodeTet(
     FieldInterface& m_field,string _field_name,bool set_nodes,bool on_coords,string on_tag = "NoNE"
   ):
   Projection10NodeCoordsOnField(m_field,_field_name),
   setNodes(set_nodes),
   onCoords(on_coords),
-  onTag(on_tag)
-  {}
+  onTag(on_tag),
+  maxApproximationOrder(20) {
+  }
 
   Tag th;
   MoFEMField_multiIndex::index<FieldName_mi_tag>::type::iterator field_it;
@@ -148,10 +151,11 @@ struct ProjectionFieldOn10NodeTet: public Projection10NodeCoordsOnField {
         onTag.c_str(),field_rank,MB_TYPE_DOUBLE,
         th,MB_TAG_CREAT|MB_TAG_SPARSE,&*def_VAL.data().begin()); CHKERR_THROW(rval);
       }
-    L.resize(max_ApproximationOrder+1);
-    ierr = Legendre_polynomials(max_ApproximationOrder,0.,NULL,&*L.data().begin(),NULL,3); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
-  }
+
+      L.resize(maxApproximationOrder+1);
+      ierr = Legendre_polynomials(maxApproximationOrder,0.,NULL,&*L.data().begin(),NULL,3); CHKERRQ(ierr);
+      PetscFunctionReturn(0);
+    }
 
   PetscErrorCode operator()() {
     PetscFunctionBegin;
@@ -198,7 +202,7 @@ struct ProjectionFieldOn10NodeTet: public Projection10NodeCoordsOnField {
       PetscFunctionReturn(0);
     }
 
-    if(dofPtr->get_dof_order()>=max_ApproximationOrder) {
+    if(dofPtr->get_dof_order()>=maxApproximationOrder) {
       SETERRQ(PETSC_COMM_SELF,1,"too big approximation order, increase constant max_ApproximationOrder");
     }
     double approx_val = 0.25*L[dofPtr->get_dof_order()-2]*dofPtr->get_FieldData();

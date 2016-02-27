@@ -164,12 +164,12 @@ struct OpGetDataAndGradient: public DataOperator {
   MatrixDouble &dataGrad_at_GaussPt;
 
   const unsigned int dim;
-  const ApproximationRank rank;
+  const FieldCoefficientsNumber rank;
 
   OpGetDataAndGradient(
     MatrixDouble &data_at_gauss_pt,
     MatrixDouble &data_grad_at_gauss_pt,
-    ApproximationRank _rank,
+    FieldCoefficientsNumber _rank,
     unsigned int _dim = 3):
       data_at_GaussPt(data_at_gauss_pt),
       dataGrad_at_GaussPt(data_grad_at_gauss_pt),

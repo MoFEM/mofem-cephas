@@ -36,28 +36,21 @@ namespace MoFEM {
  number of operator added pushing objects to rowOpPtrVector and
  rowColOpPtrVector.
 
+ \todo Need to implement operators that will make this element work as Volume element
+
  */
-struct FatPrismElementForcesAndSurcesCore: public ForcesAndSurcesCore {
+struct FatPrismElementForcesAndSurcesCore: public VolumeElementForcesAndSourcesCore {
 
   MoABErrorCode rval;
   double aRea[2];
   VectorDouble normal;
-  VectorDouble coords;
 
-  MatrixDouble gaussPts;
-  MatrixDouble coordsAtGaussPts;
   MatrixDouble gaussPtsTrianglesOnly;
   MatrixDouble coordsAtGaussPtsTrianglesOnly;
   MatrixDouble gaussPtsThroughThickness;
 
-  DataForcesAndSurcesCore dataH1;
-  DerivedDataForcesAndSurcesCore derivedDataH1;
-  DataForcesAndSurcesCore dataNoField,dataNoFieldCol;
-
   DataForcesAndSurcesCore dataH1TrianglesOnly;
   DataForcesAndSurcesCore dataH1TroughThickness;
-
-  string meshPositionsFieldName;
 
   MatrixDouble hoCoordsAtGaussPtsF3;
   MatrixDouble nOrmals_at_GaussPtF3;
@@ -70,14 +63,9 @@ struct FatPrismElementForcesAndSurcesCore: public ForcesAndSurcesCore {
   OpGetCoordsAndNormalsOnPrism opHOCoordsAndNormals;
 
   FatPrismElementForcesAndSurcesCore(FieldInterface &m_field):
-  ForcesAndSurcesCore(m_field),
-  dataH1(MBPRISM),
-  derivedDataH1(dataH1),
-  dataNoField(MBPRISM),
-  dataNoFieldCol(MBPRISM),
+  VolumeElementForcesAndSourcesCore(m_field,MBPRISM),
   dataH1TrianglesOnly(MBPRISM),
   dataH1TroughThickness(MBPRISM),
-  meshPositionsFieldName("MESH_NODE_POSITIONS"),
   opHOCoordsAndNormals(
     hoCoordsAtGaussPtsF3,nOrmals_at_GaussPtF3,tAngent1_at_GaussPtF3,tAngent2_at_GaussPtF3,
     hoCoordsAtGaussPtsF4,nOrmals_at_GaussPtF4,tAngent1_at_GaussPtF4,tAngent2_at_GaussPtF4
@@ -102,15 +90,15 @@ struct FatPrismElementForcesAndSurcesCore: public ForcesAndSurcesCore {
   /** \brief default operator for Flat Prism element
     * \ingroup mofem_forces_and_sources_prism_element
     */
-  struct UserDataOperator: public ForcesAndSurcesCore::UserDataOperator {
+  struct UserDataOperator: public VolumeElementForcesAndSourcesCore::UserDataOperator {
 
     UserDataOperator(const string &field_name,const char type):
-    ForcesAndSurcesCore::UserDataOperator(field_name,type) {}
+    VolumeElementForcesAndSourcesCore::UserDataOperator(field_name,type) {}
 
     UserDataOperator(
       const string &row_field_name,const string &col_field_name,const char type
     ):
-    ForcesAndSurcesCore::UserDataOperator(row_field_name,col_field_name,type) {
+    VolumeElementForcesAndSourcesCore::UserDataOperator(row_field_name,col_field_name,type) {
     }
 
     /** \brief get face aRea
@@ -137,13 +125,6 @@ struct FatPrismElementForcesAndSurcesCore: public ForcesAndSurcesCore {
       double *data  = &(ptrFE->normal[3]);
       return VectorAdaptor(3,ublas::shallow_array_adaptor<double>(3,data));
     }
-
-    /** \brief get triangle coordinates
-
-      Vector has 6 elements, i.e. coordinates on face F3 and F4
-
-     */
-    inline VectorDouble& getCoords() { return ptrFE->coords; }
 
     /** \brief get Gauss pts. in the prism
      */

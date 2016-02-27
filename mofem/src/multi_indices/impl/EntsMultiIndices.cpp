@@ -107,7 +107,7 @@ MoFEMEntity::MoFEMEntity(Interface &moab,const MoFEMField *_field_ptr,const RefM
       rval = moab.tag_get_by_ptr(field_ptr->th_AppDofOrder,&ent,1,(const void **)&tag_dof_order_data,tag_size); CHKERR_THROW(rval);
       assert(tag_size[0]/sizeof(ApproximationOrder) == tag_FieldData_size/sizeof(FieldData));
       rval = moab.tag_get_by_ptr(field_ptr->th_DofRank,&ent,1,(const void **)&tag_dof_rank_data,tag_size); CHKERR_THROW(rval);
-      assert(tag_size[0]/sizeof(ApproximationRank) == tag_FieldData_size/sizeof(FieldData));
+      assert(tag_size[0]/sizeof(FieldCoefficientsNumber) == tag_FieldData_size/sizeof(FieldData));
     }
   }
 }
@@ -135,7 +135,7 @@ void MoFEMEntity_change_order::operator()(MoFEMEntity &e) {
       rval = moab.tag_get_by_ptr(e.field_ptr->th_AppDofOrder,&ent,1,(const void **)&e.tag_dof_order_data,tag_size); CHKERR(rval);
       assert(tag_size[0]/sizeof(ApproximationOrder) == e.tag_FieldData_size/sizeof(FieldData));
       rval = moab.tag_get_by_ptr(e.field_ptr->th_DofRank,&ent,1,(const void **)&e.tag_dof_rank_data,tag_size); CHKERR(rval);
-      assert(tag_size[0]/sizeof(ApproximationRank) == e.tag_FieldData_size/sizeof(FieldData));
+      assert(tag_size[0]/sizeof(FieldCoefficientsNumber) == e.tag_FieldData_size/sizeof(FieldData));
       return;
     }
     data.resize(e.tag_FieldData_size/sizeof(FieldData));
@@ -154,10 +154,10 @@ void MoFEMEntity_change_order::operator()(MoFEMEntity &e) {
     //rank
     rval = moab.tag_get_by_ptr(e.field_ptr->th_DofRank,&ent,1,(const void **)&e.tag_dof_rank_data,tag_size);
     assert(rval == MB_SUCCESS);
-    assert(tag_size[0]/sizeof(ApproximationRank) == e.tag_FieldData_size/sizeof(FieldData));
+    assert(tag_size[0]/sizeof(FieldCoefficientsNumber) == e.tag_FieldData_size/sizeof(FieldData));
     data_dof_rank.resize(e.tag_FieldData_size/sizeof(FieldData));
-    ApproximationRank *ptr_dof_rank_begin = (ApproximationRank*)e.tag_dof_rank_data;
-    ApproximationRank *ptr_dof_rank_end = (ApproximationRank*)e.tag_dof_rank_data + e.tag_FieldData_size/sizeof(FieldData);
+    FieldCoefficientsNumber *ptr_dof_rank_begin = (FieldCoefficientsNumber*)e.tag_dof_rank_data;
+    FieldCoefficientsNumber *ptr_dof_rank_end = (FieldCoefficientsNumber*)e.tag_dof_rank_data + e.tag_FieldData_size/sizeof(FieldData);
     copy(ptr_dof_rank_begin,ptr_dof_rank_end,data_dof_rank.begin());
   }
   if(nb_dofs>0) {
@@ -175,7 +175,7 @@ void MoFEMEntity_change_order::operator()(MoFEMEntity &e) {
     rval = moab.tag_get_by_ptr(e.field_ptr->th_AppDofOrder,&ent,1,(const void **)&e.tag_dof_order_data,tag_size); CHKERR(rval);
     //rank
     data_dof_rank.resize(nb_dofs,0);
-    tag_size[0] = data_dof_rank.size()*sizeof(ApproximationRank);
+    tag_size[0] = data_dof_rank.size()*sizeof(FieldCoefficientsNumber);
     tag_data[0] = &data_dof_rank[0];
     rval = moab.tag_set_by_ptr(e.field_ptr->th_DofRank,&ent,1,tag_data,tag_size); CHKERR(rval); assert(rval==MB_SUCCESS);
     rval = moab.tag_get_by_ptr(e.field_ptr->th_DofRank,&ent,1,(const void **)&e.tag_dof_rank_data,tag_size); CHKERR(rval);

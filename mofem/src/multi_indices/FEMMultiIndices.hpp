@@ -426,6 +426,55 @@ struct NumeredMoFEMFiniteElement: public interface_EntMoFEMFiniteElement<EntMoFE
     os << "part " << e.part << " " << *(e.fe_ptr);
     return os;
   }
+
+  /**
+   * Loop over DOFs in row on element
+   * @param  FEPTR pointer to element structure \ref NumeredMoFEMFiniteElement
+   * @param  IT    iterator
+   * @return       user return in for(_IT_FENUMEREDDOFMOFEMENTITY_ROW_FOR_LOOP_(FEPTR,IT))
+   * \ingroup fe_multi_indices
+   */
+  #define _IT_FENUMEREDDOFMOFEMENTITY_ROW_FOR_LOOP_(FEPTR,IT) \
+  FENumeredDofMoFEMEntity_multiIndex::iterator IT = FEPTR->rows_dofs.begin(); \
+  IT!=FEPTR->rows_dofs.end(); IT++
+
+  /**
+   * Loop over DOFs in col on element
+   * @param  FEPTR pointer to element structure \ref NumeredMoFEMFiniteElement
+   * @param  IT    iterator
+   * @return       user return in for(_IT_FENUMEREDDOFMOFEMENTITY_COL_FOR_LOOP_(FEPTR,IT))
+   * \ingroup fe_multi_indices
+   */
+  #define _IT_FENUMEREDDOFMOFEMENTITY_COL_FOR_LOOP_(FEPTR,IT) \
+  FENumeredDofMoFEMEntity_multiIndex::iterator IT = FEPTR->cols_dofs.begin(); \
+  IT!=FEPTR->cols_dofs.end(); IT++
+
+  /**
+   * Loop over DOFs in row on element for particular filed
+   * @param  FEPTR pointer to element structure \ref NumeredMoFEMFiniteElement
+   * @param  NAME  name of filed
+   * @param  IT    iterator
+   * @return       user return in for(_IT_FENUMEREDDOFMOFEMENTITY_BY_NAME_ROW_FOR_LOOP_(FEPTR,NAME,IT))
+   * \ingroup fe_multi_indices
+   */
+  #define _IT_FENUMEREDDOFMOFEMENTITY_BY_NAME_ROW_FOR_LOOP_(FEPTR,NAME,IT) \
+  FENumeredDofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator IT = FEPTR->rows_dofs.get<FieldName_mi_tag>().lower_bound(NAME); \
+  IT!=FEPTR->rows_dofs.get<FieldName_mi_tag>().upper_bound(NAME); IT++
+
+  /**
+   * Loop over DOFs in col on element for particular filed
+   * @param  FEPTR pointer to element structure \ref NumeredMoFEMFiniteElement
+   * @param  NAME  name of filed
+   * @param  IT    iterator
+   * @return       user return in for(_IT_FENUMEREDDOFMOFEMENTITY_BY_NAME_COL_FOR_LOOP_(FEPTR,NAME,IT))
+   * \ingroup fe_multi_indices
+   */
+  #define _IT_FENUMEREDDOFMOFEMENTITY_BY_NAME_COL_FOR_LOOP_(FEPTR,NAME,IT) \
+  FENumeredDofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator IT = FEPTR->cols_dofs.get<FieldName_mi_tag>().lower_bound(NAME); \
+  IT!=FEPTR->cols_dofs.get<FieldName_mi_tag>().upper_bound(NAME); IT++
+
+
+
 };
 
 /** \brief interface for NumeredMoFEMFiniteElement

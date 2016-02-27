@@ -50,6 +50,7 @@
 #include <DataStructures.hpp>
 #include <DataOperators.hpp>
 #include <ElementsOnEntities.hpp>
+#include <VolumeElementForcesAndSourcesCore.hpp>
 #include <FatPrismElementForcesAndSurcesCore.hpp>
 
 #ifdef __cplusplus
@@ -340,7 +341,7 @@ PetscErrorCode FatPrismElementForcesAndSurcesCore::operator()() {
         // through thickness ho approximation
         // linear xi,eta, ho terms for zeta
         int order = dataH1TroughThickness.dataOnEntities[MBEDGE][ee].getDataOrder();
-        int nb_dofs = NBEDGE_H1(order);
+        int nb_dofs = NBEDGE_H1_AINSWORTH_COLE(order);
         if((unsigned int)nb_dofs!=dataH1TroughThickness.dataOnEntities[MBEDGE][ee].getN().size2()) {
           SETERRQ2(
             PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"nb_dofs != nb_dofs",
@@ -454,10 +455,8 @@ PetscErrorCode FatPrismElementForcesAndSurcesCore::operator()() {
       siit = side_table.get<1>().lower_bound(boost::make_tuple(MBQUAD,0));
       SideNumber_multiIndex::nth_index<1>::type::iterator hi_siit;
       hi_siit = side_table.get<1>().upper_bound(boost::make_tuple(MBQUAD,3));
-      const EntityHandle *conn_prism;
-      int num_nodes_prism;
       EntityHandle ent = fePtr->get_ent();
-      rval = mField.get_moab().get_connectivity(ent,conn_prism,num_nodes_prism,true); CHKERR_PETSC(rval);
+      rval = mField.get_moab().get_connectivity(ent,conn,num_nodes,true); CHKERR_PETSC(rval);
       // cerr << "\n\n" << endl;
       // const int quad_nodes[3][4] = { {0,1,4,3}, {1,2,5,4}, {0,2,5,3} };
       for(;siit!=hi_siit;siit++) {
@@ -469,19 +468,19 @@ PetscErrorCode FatPrismElementForcesAndSurcesCore::operator()() {
           quad,conn_quad,num_nodes_quad,true
         ); CHKERR_PETSC(rval);
         for(int nn = 0;nn<num_nodes_quad;nn++) {
-          quads_nodes[4*siit->side_number+nn] = distance(conn_prism,find(conn_prism,conn_prism+6,conn_quad[nn]));
+          quads_nodes[4*siit->side_number+nn] = distance(conn,find(conn,conn+6,conn_quad[nn]));
           // cerr
           // << "quad " << quad
           // << " side number " << siit->side_number
           // << " " << quads_nodes[4*siit->side_number+nn]
-          // << " " << conn_prism[quads_nodes[4*siit->side_number+nn]]
+          // << " " << conn[quads_nodes[4*siit->side_number+nn]]
           // << " " << conn_quad[nn]
           // << endl;
         }
         int order = dataH1.dataOnEntities[MBQUAD][siit->side_number].getDataOrder();
         quad_order[siit->side_number] = order;
-        dataH1.dataOnEntities[MBQUAD][siit->side_number].getN().resize(nb_gauss_pts,NBFACEQUAD_H1(order),false);
-        dataH1.dataOnEntities[MBQUAD][siit->side_number].getDiffN().resize(nb_gauss_pts,3*NBFACEQUAD_H1(order),false);
+        dataH1.dataOnEntities[MBQUAD][siit->side_number].getN().resize(nb_gauss_pts,NBFACEQUAD_H1_AINSWORTH_COLE(order),false);
+        dataH1.dataOnEntities[MBQUAD][siit->side_number].getDiffN().resize(nb_gauss_pts,3*NBFACEQUAD_H1_AINSWORTH_COLE(order),false);
         if(dataH1.dataOnEntities[MBQUAD][siit->side_number].getN().size2()>0) {
           quad_n[siit->side_number] = &*dataH1.dataOnEntities[MBQUAD][siit->side_number].getN().data().begin();
           diff_quad_n[siit->side_number] = &*dataH1.dataOnEntities[MBQUAD][siit->side_number].getDiffN().data().begin();
@@ -503,9 +502,9 @@ PetscErrorCode FatPrismElementForcesAndSurcesCore::operator()() {
       int order = dataH1.dataOnEntities[MBPRISM][0].getDataOrder();
       double *vertex_n  = &dataH1.dataOnEntities[MBVERTEX][0].getN()(0,0);
       double *diff_vertex_n = &dataH1.dataOnEntities[MBVERTEX][0].getDiffN()(0,0);
-      dataH1.dataOnEntities[MBPRISM][0].getN().resize(nb_gauss_pts,NBVOLUMEPRISM_H1(order),false);
-      dataH1.dataOnEntities[MBPRISM][0].getDiffN().resize(nb_gauss_pts,3*NBVOLUMEPRISM_H1(order),false);
-      if(NBVOLUMEPRISM_H1(order)>0) {
+      dataH1.dataOnEntities[MBPRISM][0].getN().resize(nb_gauss_pts,NBVOLUMEPRISM_H1_AINSWORTH_COLE(order),false);
+      dataH1.dataOnEntities[MBPRISM][0].getDiffN().resize(nb_gauss_pts,3*NBVOLUMEPRISM_H1_AINSWORTH_COLE(order),false);
+      if(NBVOLUMEPRISM_H1_AINSWORTH_COLE(order)>0) {
         ierr = H1_VolumeShapeFunctions_MBPRISM(
           order,
           vertex_n,

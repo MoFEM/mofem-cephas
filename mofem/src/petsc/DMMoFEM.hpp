@@ -115,9 +115,25 @@ PetscErrorCode DMoFEMPreProcessFiniteElements(DM dm,MoFEM::FEMethod *method);
 PetscErrorCode DMoFEMPostProcessFiniteElements(DM dm,MoFEM::FEMethod *method);
 
 /**
-  * \brief execute finite element method for each element in dm (problem)
-  * \ingroup dm
-  */
+ * \brief Executes FEMethod for finite elements in DM
+ * @param  dm       MoFEM discrete manager
+ * @param  fe_name  name of finite element
+ * @param  method   pointer to \ref MoFEM::FEMethod
+ * @param  low_rank lowest rank of processor
+ * @param  up_rank  upper run of processor
+ * @return          Error code
+ * \ingroup dm
+ */
+PetscErrorCode DMoFEMLoopFiniteElementsUpAndLowRank(DM dm,const char fe_name[],MoFEM::FEMethod *method,int low_rank,int up_rank);
+
+/**
+ * \brief Executes FEMethod for finite elements in DM
+ * @param  dm      MoFEM discrete manager
+ * @param  fe_name name of element
+ * @param  method  pointer to \ref MOFEM::FEMethod
+ * @return         Error code
+ * \ingroup dm
+ */
 PetscErrorCode DMoFEMLoopFiniteElements(DM dm,const char fe_name[],MoFEM::FEMethod *method);
 
 /**

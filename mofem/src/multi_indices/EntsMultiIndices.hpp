@@ -403,7 +403,7 @@ struct MoFEMEntity: public interface_MoFEMField<MoFEMField>, interface_RefMoFEME
   const FieldData* tag_FieldData;
   int tag_FieldData_size;
   const ApproximationOrder* tag_dof_order_data;
-  const ApproximationRank* tag_dof_rank_data;
+  const FieldCoefficientsNumber* tag_dof_rank_data;
   LocalUId local_uid;
   GlobalUId global_uid;
   MoFEMEntity(Interface &moab,const MoFEMField *_field_ptr,const RefMoFEMEntity *_ref_mab_ent_ptr);
@@ -469,7 +469,7 @@ struct MoFEMEntity_change_order {
   ApproximationOrder order;
   vector<FieldData> data;
   vector<ApproximationOrder> data_dof_order;
-  vector<ApproximationRank> data_dof_rank;
+  vector<FieldCoefficientsNumber> data_dof_rank;
   MoFEMEntity_change_order(Interface& _moab,ApproximationOrder _order): moab(_moab),order(_order) {};
   void operator()(MoFEMEntity &e);
 };
