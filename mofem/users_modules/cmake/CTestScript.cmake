@@ -23,6 +23,7 @@ set(CTEST_CUSTOM_MEMCHECK_IGNORE
 )
 
 ctest_configure()
+ctest_build(TARGET checkout_CDashTesting)
 ctest_build(TARGET update_users_modules)
 ctest_build()
 ctest_test()

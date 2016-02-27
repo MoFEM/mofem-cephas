@@ -29,6 +29,11 @@ if(NOT EXISTS "${CTEST_SOURCE_DIRECTORY}/users_modules/moisture_transport")
     ARGS clone https://likask@bitbucket.org/likask/mofem_um_moisture_transport.git
     "${CTEST_SOURCE_DIRECTORY}/users_modules/moisture_transport"
   )
+  exec_program(
+    ${CTEST_GIT_COMMAND}
+    "${CTEST_SOURCE_DIRECTORY}/users_modules/moisture_transport"
+    ARGS checkout CDashTesting
+  )
 else(EXISTS "${CTEST_SOURCE_DIRECTORY}/users_modules/moisture_transport")
   exec_program(
     ${CTEST_GIT_COMMAND}
@@ -44,6 +49,11 @@ if(NOT EXISTS "${CTEST_SOURCE_DIRECTORY}/users_modules/ground_surface_temperatur
     "${CTEST_SOURCE_DIRECTORY}/users_modules"
     ARGS clone https://likask@bitbucket.org/likask/mofem_um_ground_surface_temperature.git
     "${CTEST_SOURCE_DIRECTORY}/users_modules/ground_surface_temperature"
+  )
+  exec_program(
+    ${CTEST_GIT_COMMAND}
+    "${CTEST_SOURCE_DIRECTORY}/users_modules/ground_surface_temperature"
+    ARGS checkout CDashTesting
   )
 else(EXISTS "${CTEST_SOURCE_DIRECTORY}/users_modules/ground_surface_temperature")
   exec_program(
