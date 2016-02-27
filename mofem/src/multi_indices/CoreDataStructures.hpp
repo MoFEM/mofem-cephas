@@ -62,7 +62,7 @@ inline int fNBFACETRI_HDIV_AINSWORTH_COLE(int P) { return NBFACETRI_HDIV_AINSWOR
 /// number of approx. functions for HDIV space on voulem
 inline int fNBVOLUMETET_HDIV_AINSWORTH_COLE(int P) { return NBVOLUMETET_HDIV_AINSWORTH_COLE(P); }
 
-/** \brief if moab entity hanled
+/** \brief Test MoAB entity handle if has structure as is assumed by MoFEM
   */
 PetscErrorCode test_moab(Interface &moab,const EntityHandle ent);
 

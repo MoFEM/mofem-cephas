@@ -135,6 +135,12 @@ MoFEMField::MoFEMField(Interface &moab,const EntityHandle meshset,const CoordSys
     break;
     case BERNSTEIN_BEZIER_BASE:
       THROW_AT_LINE("BERNSTEIN_BEZIER_BASE not implemented yer")
+    break;
+    case USER_BASE:
+    for(int ee = 0;ee<MBMAXTYPE;ee++) {
+      forder_table[ee] = fNBENTITY_GENERIC;
+    }
+    break;
     default:
     THROW_AT_LINE("unknown approximation base");
   }
@@ -160,7 +166,6 @@ ostream& operator<<(ostream& os,const MoFEMEntityEntMoFEMFiniteElementAdjacencyM
   return os;
 }
 
-//....
 PetscErrorCode test_moab(Interface &moab,const EntityHandle ent) {
   PetscFunctionBegin;
   //tets type

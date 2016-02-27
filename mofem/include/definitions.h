@@ -72,6 +72,7 @@ enum MoFEMErrorCodes {
 enum FieldApproximationBase {
   AINSWORTH_COLE_BASE = 1,
   BERNSTEIN_BEZIER_BASE, ///< Not yet implemented
+  USER_BASE, ///< user implemented approximation base
   LASTBASE 	///< FieldSpace in [ 0, LASTSPACE )
 };
 
@@ -79,6 +80,7 @@ const static char * const ApproximationBaseNames[] = {
   "", // empty space
   "AINSWORTH_COLE_BASE",
   "BERNSTEIN_BEZIER_BASE",
+  "USER_BASE"
   "LASTBASE"
 };
 
