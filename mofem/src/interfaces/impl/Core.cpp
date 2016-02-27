@@ -298,7 +298,7 @@ Core::Core(Interface& _moab,MPI_Comm _comm,int _verbose):
   FieldApproximationBase def_base = LASTBASE;
   rval = moab.tag_get_handle(
     "_FieldBase",sizeof(FieldApproximationBase),MB_TYPE_OPAQUE,
-    th_FieldBase,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES,&def_space
+    th_FieldBase,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES,&def_base
   ); CHKERR_THROW(rval);
 
   const int def_val_len = 0;
