@@ -53,7 +53,8 @@ struct MoFEMField {
 
   BitFieldId* tag_id_data; 		///< tag keeps field id
   FieldSpace* tag_space_data;		///< tag keeps field space
-  ApproximationRank* tag_rank_data; 	///< tag keeps field rank (dimension, f.e. Temperature field has rank 1, displacements field in 3d has rank 3)
+  FieldApproximationBase* tag_base_data;		///< tag keeps field space
+  ApproximationRank* tag_nb_coeff_data; 	///< tag keeps field rank (dimension, f.e. Temperature field has rank 1, displacements field in 3d has rank 3)
   const void* tag_name_data; 		///< tag keeps name of the field
   int tag_name_size; 			///< number of bits necessary to keep field name
   const void* tag_name_prefix_data; 	///< tag keeps name prefix of the field
@@ -103,11 +104,13 @@ struct MoFEMField {
   inline boost::string_ref get_name_ref() const { return boost::string_ref((char *)tag_name_data,tag_name_size); };
   inline string get_name() const { return string((char *)tag_name_data,tag_name_size); };
   inline FieldSpace get_space() const { return *tag_space_data; };
-  DEPRECATED inline ApproximationRank get_max_rank() const { return *tag_rank_data; };
+  inline FieldApproximationBase get_base() const { return *tag_base_data; };
+
+  DEPRECATED inline ApproximationRank get_max_rank() const { return *tag_nb_coeff_data; };
 
   /* \brief get number of field coefficients
   */
-  inline ApproximationRank get_nb_of_coeffs() const { return *tag_rank_data; };
+  inline ApproximationRank get_nb_of_coeffs() const { return *tag_nb_coeff_data; };
 
 
   /**
@@ -175,6 +178,7 @@ struct interface_MoFEMField {
   inline boost::string_ref get_name_ref() const { return field_ptr->get_name_ref(); };
   inline string get_name() const { return field_ptr->get_name(); };
   inline FieldSpace get_space() const { return field_ptr->get_space(); };
+  inline FieldApproximationBase get_base() const { return field_ptr->get_base(); };
 
   DEPRECATED inline ApproximationRank get_max_rank() const { return field_ptr->get_nb_of_coeffs(); };
 

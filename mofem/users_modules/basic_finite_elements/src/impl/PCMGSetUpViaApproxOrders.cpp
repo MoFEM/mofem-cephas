@@ -138,7 +138,6 @@ PetscErrorCode PCMGSetUpViaApproxOrdersCtx::buildProlongationOperator(PC pc,int 
     col_loc_size = is_loc_size[kk-1];		//smaller
     col_glob_size = is_glob_size[kk-1];
 
-
     // FIXME: Use MatCreateMPIAIJWithArrays
     Mat R;  //small to big
     ierr = MatCreate(mFieldPtr->get_comm(),&R); CHKERRQ(ierr);
@@ -190,6 +189,8 @@ PetscErrorCode PCMGSetUpViaApproxOrdersCtx::buildProlongationOperator(PC pc,int 
 
     ierr = PCMGSetInterpolation(pc,kk,R); CHKERRQ(ierr);
 
+
+    #if PETSC_VERSION_LE(3,5,3)
     {
       // FIXME: If restriction is not set, MatPtAP generate error. This is rather PETSc than MoFEM problem.
       // Petsc Development GIT revision: v3.5.3-1524-gee900cc  GIT Date: 2015-01-31 17:44:15 -0600
@@ -223,6 +224,7 @@ PetscErrorCode PCMGSetUpViaApproxOrdersCtx::buildProlongationOperator(PC pc,int 
 
       ierr = MatDestroy(&RT); CHKERRQ(ierr);
     }
+    #endif
 
     ierr = MatDestroy(&R); CHKERRQ(ierr);
 

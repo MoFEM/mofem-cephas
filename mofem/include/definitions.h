@@ -69,6 +69,20 @@ enum MoFEMErrorCodes {
 };
 
 /// \brief approximation spaces
+enum FieldApproximationBase {
+  AINSWORTH_COLE_BASE = 1,
+  BERNSTEIN_BEZIER, ///< Not yet implemented
+  LASTBASE 	///< FieldSpace in [ 0, LASTSPACE )
+};
+
+const static char * const ApproximationBaseNames[] = {
+  "", // empty space
+  "AINSWORTH_COLE_BASE",
+  "BERNSTEIN_BEZIER_BASE",
+  "LASTBASE"
+};
+
+/// \brief approximation spaces
 enum FieldSpace {
   NOFIELD = 1, 	///< scalar or vector of scalars describe (no true field)
   H1, 		///< continuous field

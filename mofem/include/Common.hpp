@@ -19,7 +19,7 @@
 #define __COMMON_HPP__
 
 namespace MoFEM {
-  
+
   typedef ErrorCode MoABErrorCode;
 
   //typedefs
@@ -27,12 +27,12 @@ namespace MoFEM {
   typedef int FEIdx;
   typedef int EntIdx;
   typedef int EntPart;
-  typedef PetscScalar FieldData;
+  typedef double FieldData;
   typedef int ApproximationOrder;
   typedef int ApproximationRank;
 
   //consts
-  const int max_ApproximationOrder = 10;
+  // const int max_ApproximationOrder = 10;
 
   //typedefs
   const EntityHandle no_handle = 0;

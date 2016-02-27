@@ -308,8 +308,8 @@ struct ForcesAndSurcesCore: public FEMethod {
     DataForcesAndSurcesCore &data,const double *G_X,const double *G_Y,const int G_DIM
   );
 
-  /// \brief It will be removed in the future
-  DEPRECATED virtual int getRule(int order) { return 2*order; };
+  /// \brief It could be be removed in the future use other variant
+  virtual int getRule(int order) { return 2*order; };
 
   virtual int getRule(
     int order_row,int order_col,int order_data
@@ -317,8 +317,8 @@ struct ForcesAndSurcesCore: public FEMethod {
     return getRule(order_data);
   };
 
-  /// !\brief It will be removed in the future
-  DEPRECATED virtual PetscErrorCode setGaussPts(int order) {
+  /// !\brief It will be removed in the future use other variant
+  virtual PetscErrorCode setGaussPts(int order) {
     PetscFunctionBegin;
     SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"sorry, not implemented");
     PetscFunctionReturn(0);

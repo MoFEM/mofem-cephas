@@ -55,7 +55,7 @@ struct Core:
   //Data and low level methods
   Tag th_Part;
   Tag th_RefType,th_RefParentHandle,th_RefBitLevel,th_RefBitLevel_Mask,th_RefBitEdge,th_RefFEMeshset;
-  Tag th_FieldId,th_FieldName,th_FieldName_DataNamePrefix,th_FieldSpace;
+  Tag th_FieldId,th_FieldName,th_FieldName_DataNamePrefix,th_FieldSpace,th_FieldBase;
   Tag th_FEId,th_FEName;
   Tag th_FEIdCol,th_FEIdRow,th_FEIdData;
   Tag th_ProblemId,th_ProblemName,th_ProblemFEId;

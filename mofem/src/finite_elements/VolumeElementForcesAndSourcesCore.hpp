@@ -140,7 +140,9 @@ struct VolumeElementForcesAndSourcesCore: public ForcesAndSurcesCore {
 
     /** \brief return pointer to Generic Tetrahedral Finite Element object
      */
-    inline const VolumeElementForcesAndSourcesCore* getTetFE() { return ptrFE; }
+     inline const VolumeElementForcesAndSourcesCore* getVolumeFE() { return ptrFE; }
+
+    DEPRECATED inline const VolumeElementForcesAndSourcesCore* getTetFE() { return ptrFE; }
 
     //differential operators
     PetscErrorCode getDivergenceMatrixOperato_Hdiv(
