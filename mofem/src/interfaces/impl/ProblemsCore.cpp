@@ -447,7 +447,7 @@ PetscErrorCode Core::build_problem(MoFEMProblem *problem_ptr,int verb) {
   EntMoFEMFiniteElement_multiIndex::iterator hi_miit2 = entsFiniteElements.end();
   DofMoFEMEntity_multiIndex_active_view dofs_rows,dofs_cols;
   EntMoFEMFiniteElement_multiIndex::iterator miit3 = miit2;
-  //iterate all finite elemen entities in database
+  //iterate all finite element entities in database
   for(;miit3!=hi_miit2;miit3++) {
     //if element is in problem
     if((miit3->get_id()&problem_ptr->get_BitFEId()).any()) {

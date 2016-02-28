@@ -72,15 +72,18 @@ MoFEMProblem::MoFEMProblem(Interface &moab,const EntityHandle _meshset): meshset
   rval = moab.tag_get_handle("_RefBitLevelMask",th_RefBitLevel_Mask); CHKERR(rval);
   rval = moab.tag_get_by_ptr(th_RefBitLevel_Mask,&meshset,1,(const void **)&tag_BitRefLevel_DofMask); CHKERR(rval);
 }
+
 ostream& operator<<(ostream& os,const MoFEMProblem& e) {
   os << "problem id " << e.get_id()
     << " MoFEMFiniteElement id " << e.get_BitFEId()
     << " name "<<e.get_name();
   return os;
 }
+
 BitFEId MoFEMProblem::get_BitFEId() const {
   return *tag_BitFEId_data;
 }
+
 PetscErrorCode MoFEMProblem::get_row_dofs_by_petsc_gloabl_dof_idx(DofIdx idx,const NumeredDofMoFEMEntity **dof_ptr) const {
   PetscFunctionBegin;
   NumeredDofMoFEMEntity_multiIndex::index<PetscGlobalIdx_mi_tag>::type::iterator dit;
@@ -91,6 +94,7 @@ PetscErrorCode MoFEMProblem::get_row_dofs_by_petsc_gloabl_dof_idx(DofIdx idx,con
   *dof_ptr = &*dit;
   PetscFunctionReturn(0);
 }
+
 PetscErrorCode MoFEMProblem::get_col_dofs_by_petsc_gloabl_dof_idx(DofIdx idx,const NumeredDofMoFEMEntity **dof_ptr) const {
   PetscFunctionBegin;
   NumeredDofMoFEMEntity_multiIndex::index<PetscGlobalIdx_mi_tag>::type::iterator dit;
@@ -101,6 +105,41 @@ PetscErrorCode MoFEMProblem::get_col_dofs_by_petsc_gloabl_dof_idx(DofIdx idx,con
   *dof_ptr = &*dit;
   PetscFunctionReturn(0);
 }
+
+PetscErrorCode MoFEMProblem::getNumberOfElementsByNameAndPart(MPI_Comm comm,const string name,PetscLayout *layout) const {
+  PetscFunctionBegin;
+  PetscErrorCode ierr;
+  int size, rank;
+  MPI_Comm_size(comm,&size);
+  MPI_Comm_rank(comm,&rank);
+  ierr = PetscLayoutCreate(comm,layout); CHKERRQ(ierr);
+  ierr = PetscLayoutSetBlockSize(*layout,1); CHKERRQ(ierr);
+  typedef NumeredMoFEMFiniteElement_multiIndex::index<Composite_Name_And_Part_mi_tag>::type FeByNameAndPart;
+  const FeByNameAndPart &fe_by_name_and_part = numeredFiniteElements.get<Composite_Name_And_Part_mi_tag>();
+  int nb_elems;
+  nb_elems = fe_by_name_and_part.count(boost::make_tuple(name,rank));
+  ierr = PetscLayoutSetSize(*layout,nb_elems); CHKERRQ(ierr);
+  ierr = PetscLayoutSetUp(*layout); CHKERRQ(ierr);
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode MoFEMProblem::getNumberOfElementsByPart(MPI_Comm comm,PetscLayout *layout) const {
+  PetscFunctionBegin;
+  PetscErrorCode ierr;
+  int size, rank;
+  MPI_Comm_size(comm,&size);
+  MPI_Comm_rank(comm,&rank);
+  ierr = PetscLayoutCreate(comm,layout); CHKERRQ(ierr);
+  ierr = PetscLayoutSetBlockSize(*layout,1); CHKERRQ(ierr);
+  typedef NumeredMoFEMFiniteElement_multiIndex::index<Part_mi_tag>::type FeByPart;
+  const FeByPart &fe_by_part = numeredFiniteElements.get<Part_mi_tag>();
+  int nb_elems;
+  nb_elems = fe_by_part.count(rank);
+  ierr = PetscLayoutSetSize(*layout,nb_elems); CHKERRQ(ierr);
+  ierr = PetscLayoutSetUp(*layout); CHKERRQ(ierr);
+  PetscFunctionReturn(0);
+}
+
 void ProblemFiniteElementChangeBitAdd::operator()(MoFEMProblem &p) {
   *(p.tag_BitFEId_data) |= f_id;
 }
