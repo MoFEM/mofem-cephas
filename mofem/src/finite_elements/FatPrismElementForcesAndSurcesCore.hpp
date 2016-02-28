@@ -227,8 +227,8 @@ struct FatPrismElementForcesAndSurcesCore: public VolumeElementForcesAndSourcesC
 
     PetscErrorCode setPtrFE(FatPrismElementForcesAndSurcesCore *ptr) {
       PetscFunctionBegin;
-      ptrFE = ptr;
       VolumeElementForcesAndSourcesCore::UserDataOperator::setPtrFE(ptr);
+      ptrFE = ptr;
       PetscFunctionReturn(0);
     }
 
