@@ -74,7 +74,7 @@ struct DataForcesAndSurcesCore {
     /// \brief get global indices of dofs on entity up to given order
     virtual const VectorIntAdaptor getIndicesUpToOrder(int order) {
       int size = 0;
-      if(!iNdices.size()) {
+      if(iNdices.size()) {
         size = dOfs[0]->get_order_nb_dofs(order)*dOfs[0]->get_nb_of_coeffs();
       }
       int *data = &*iNdices.data().begin();
@@ -87,7 +87,7 @@ struct DataForcesAndSurcesCore {
     /// \brief get local indices of dofs on entity up to given order
     virtual const VectorIntAdaptor getLocalIndicesUpToOrder(int order) {
       int size = 0;
-      if(!localIndices.size()) {
+      if(localIndices.size()) {
         size = dOfs[0]->get_order_nb_dofs(order)*dOfs[0]->get_nb_of_coeffs();
       }
       int *data = &*localIndices.data().begin();
@@ -100,7 +100,7 @@ struct DataForcesAndSurcesCore {
     /// \brief get dofs values up to given order
     virtual const VectorAdaptor getFieldDataUpToOrder(int order) {
       int size = 0;
-      if(!fieldData.size()) {
+      if(fieldData.size()) {
         size = dOfs[0]->get_order_nb_dofs(order)*dOfs[0]->get_nb_of_coeffs();
       }
       double *data = &*fieldData.data().begin();
