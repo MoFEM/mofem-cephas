@@ -149,10 +149,10 @@ struct VolumeElementForcesAndSourcesCore: public ForcesAndSurcesCore {
       int side,EntityType type,DataForcesAndSurcesCore::EntData &data,
       int gg,VectorDouble &div);
 
-    PetscErrorCode setPtrFE(VolumeElementForcesAndSourcesCore *ptr) {
+    PetscErrorCode setPtrFE(ForcesAndSurcesCore *ptr) {
       PetscFunctionBegin;
       ForcesAndSurcesCore::UserDataOperator::setPtrFE(ptr);
-      ptrFE = ptr;
+      ptrFE = dynamic_cast<VolumeElementForcesAndSourcesCore*>(ptr);
       PetscFunctionReturn(0);
     }
 

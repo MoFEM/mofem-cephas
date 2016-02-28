@@ -225,10 +225,10 @@ struct FatPrismElementForcesAndSurcesCore: public VolumeElementForcesAndSourcesC
      */
     inline const FatPrismElementForcesAndSurcesCore* getPrismFE() { return ptrFE; }
 
-    PetscErrorCode setPtrFE(FatPrismElementForcesAndSurcesCore *ptr) {
+    PetscErrorCode setPtrFE(ForcesAndSurcesCore *ptr) {
       PetscFunctionBegin;
       VolumeElementForcesAndSourcesCore::UserDataOperator::setPtrFE(ptr);
-      ptrFE = ptr;
+      ptrFE = dynamic_cast<FatPrismElementForcesAndSurcesCore*>(ptr);
       PetscFunctionReturn(0);
     }
 
