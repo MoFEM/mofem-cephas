@@ -138,9 +138,9 @@ struct VolumeElementForcesAndSourcesCore: public ForcesAndSurcesCore {
     inline MatrixDouble& getHoGaussPtsInvJac() { return ptrFE->hoGaussPtsInvJac; }
     inline VectorDouble& getHoGaussPtsDetJac() { return ptrFE->hoGaussPtsDetJac; }
 
-    /** \brief return pointer to Generic Tetrahedral Finite Element object
+    /** \brief return pointer to Generic Volume Finite Element object
      */
-     inline const VolumeElementForcesAndSourcesCore* getVolumeFE() { return ptrFE; }
+    inline const VolumeElementForcesAndSourcesCore* getVolumeFE() { return ptrFE; }
 
     DEPRECATED inline const VolumeElementForcesAndSourcesCore* getTetFE() { return ptrFE; }
 
@@ -149,10 +149,10 @@ struct VolumeElementForcesAndSourcesCore: public ForcesAndSurcesCore {
       int side,EntityType type,DataForcesAndSurcesCore::EntData &data,
       int gg,VectorDouble &div);
 
-    PetscErrorCode setPtrFE(ForcesAndSurcesCore *ptr) {
+    PetscErrorCode setPtrFE(VolumeElementForcesAndSourcesCore *ptr) {
       PetscFunctionBegin;
-      ptrFE = dynamic_cast<VolumeElementForcesAndSourcesCore*>(ptr);
       ForcesAndSurcesCore::UserDataOperator::setPtrFE(ptr);
+      ptrFE = ptr;
       PetscFunctionReturn(0);
     }
 

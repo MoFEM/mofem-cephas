@@ -215,16 +215,20 @@ struct FatPrismElementForcesAndSurcesCore: public VolumeElementForcesAndSourcesC
 
     inline DataForcesAndSurcesCore& getTroughThicknessDataStructure() { return ptrFE->dataH1TroughThickness; }
 
-    /** \brief return pointer to triangle finite element object
-     */
-    inline const FatPrismElementForcesAndSurcesCore* getFlatPrismElementForcesAndSurcesCore() {
-      return ptrFE;
-    }
+    // /** \brief return pointer to triangle finite element object
+    //  */
+    // inline const FatPrismElementForcesAndSurcesCore* getFlatPrismElementForcesAndSurcesCore() {
+    //   return ptrFE;
+    // }
 
-    PetscErrorCode setPtrFE(ForcesAndSurcesCore *ptr) {
+    /** \brief return pointer to fat prism finite element
+     */
+    inline const FatPrismElementForcesAndSurcesCore* getPrismFE() { return ptrFE; }
+
+    PetscErrorCode setPtrFE(FatPrismElementForcesAndSurcesCore *ptr) {
       PetscFunctionBegin;
-      ptrFE = dynamic_cast<FatPrismElementForcesAndSurcesCore*>(ptr);
-      ForcesAndSurcesCore::UserDataOperator::setPtrFE(ptr);
+      ptrFE = ptr;
+      VolumeElementForcesAndSourcesCore::UserDataOperator::setPtrFE(ptr);
       PetscFunctionReturn(0);
     }
 
