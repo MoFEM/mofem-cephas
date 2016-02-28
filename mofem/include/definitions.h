@@ -70,10 +70,10 @@ enum MoFEMErrorCodes {
 
 /// \brief approximation spaces
 enum FieldApproximationBase {
-  AINSWORTH_COLE_BASE = 1,
-  BERNSTEIN_BEZIER_BASE, ///< Not yet implemented
+  AINSWORTH_COLE_BASE = 1, ///< Ainsworth Cole approx. base \cite NME:NME847
+  BERNSTEIN_BEZIER_BASE, ///< Not yet implemented, in implementation we will follow \cite ainsworth2011bernstein
   USER_BASE, ///< user implemented approximation base
-  LASTBASE 	///< FieldSpace in [ 0, LASTSPACE )
+  LASTBASE 	///< FieldSpace in [ 0, LASTBASE )
 };
 
 const static char * const ApproximationBaseNames[] = {
