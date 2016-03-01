@@ -28,7 +28,7 @@ using namespace MoFEM;
   #include <petsc-private/petscimpl.h>
 #endif
 
-static PetscErrorCode ierr;
+// static PetscErrorCode ierr;
 //static ErrorCode rval;
 
 PetscErrorCode PCMGSetUpViaApproxOrdersCtx::getOptions() {

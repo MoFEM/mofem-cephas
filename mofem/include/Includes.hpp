@@ -38,6 +38,7 @@ extern "C" {
 #include <petscts.h>
 #include <petscdm.h>
 #include <petscao.h>
+#include <petscis.h>
 
 //STL
 #include <string>

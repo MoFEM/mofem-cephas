@@ -23,6 +23,9 @@ namespace MoFEM {
 
 /** \brief keeps data about problem
   * \ingroup problems_multi_indices
+  *
+  * \todo Implement layouts for DOFs
+  *
   */
 struct MoFEMProblem {
   EntityHandle meshset;
@@ -408,6 +411,54 @@ struct MoFEMProblem {
   PetscErrorCode get_col_dofs_by_petsc_gloabl_dof_idx(DofIdx idx,const NumeredDofMoFEMEntity **dof_ptr) const;
   BitFEId get_BitFEId() const;
   friend ostream& operator<<(ostream& os,const MoFEMProblem& e);
+
+  /**
+   * \brief Get number of finite elements by name on processors
+   *
+   * Size retuned IS is equal to size of processors.
+   *
+   * What PetscLayout see, <http://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/IS/index.html>
+   *
+   * Example of usage for layout
+   * \code
+
+   PetscInt rstart, rend;
+   ierr = PetscLayoutGetRange(layout, &rstart, &rend); CHKERRQ(ierr);
+   int global_size;
+   ierr = PetscLayoutGetSize(layout,&global_size); CHKERRQ(ierr);
+
+   \endcode
+   *
+   * @param  comm Communicator
+   * @param  name Finite element name
+   * @param  layout Get number of elements on each processor
+   * @return      error code
+   */
+  PetscErrorCode getNumberOfElementsByNameAndPart(MPI_Comm comm,const string name,PetscLayout *layout) const;
+
+  /**
+   * \brief Get number of finite elements on processors
+   *
+   * Size retuned IS is equal to size of processors.
+   *
+   * What PetscLayout see, <http://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/IS/index.html>
+   *
+   * Example of usage for layout
+   * \code
+
+   PetscInt rstart, rend;
+   ierr = PetscLayoutGetRange(layout, &rstart, &rend); CHKERRQ(ierr);
+   int global_size;
+   ierr = PetscLayoutGetSize(layout,&global_size); CHKERRQ(ierr);
+
+   \endcode
+   *
+   * @param  comm Communicator
+   * @param  layout Get number of elements on each processor
+   * @return      error code
+   */
+  PetscErrorCode getNumberOfElementsByPart(MPI_Comm comm,PetscLayout *layout) const;
+
 };
 
 /**
