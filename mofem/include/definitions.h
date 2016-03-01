@@ -68,7 +68,7 @@ enum MoFEMErrorCodes {
   MOFEM_MOAB_ERROR = 109
 };
 
-/// \brief approximation spaces
+/// \brief approximation base
 enum FieldApproximationBase {
   AINSWORTH_COLE_BASE = 1, ///< Ainsworth Cole approx. base \cite NME:NME847
   BERNSTEIN_BEZIER_BASE, ///< Not yet implemented, in implementation we will follow \cite ainsworth2011bernstein

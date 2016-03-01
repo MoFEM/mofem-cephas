@@ -260,6 +260,9 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::operator()() {
         for(int gg = 0;gg<nb_gauss_pts;gg++) {
           cblas_dcopy(9,&hoGaussPtsJac(gg,0),1,&jac(0,0),1);
           hoGaussPtsDetJac[gg] = ShapeDetJacVolume(&jac(0,0));
+          if(hoGaussPtsDetJac[gg]<0) {
+            SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"Negative volume");
+          }
           ierr = ShapeInvJacVolume(&hoGaussPtsInvJac(gg,0)); CHKERRQ(ierr);
         }
         ierr = opSetHoInvJacH1.opRhs(dataH1); CHKERRQ(ierr);
