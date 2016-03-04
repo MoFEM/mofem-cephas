@@ -51,10 +51,10 @@ namespace MoFEM {
 PetscErrorCode Core::add_series_recorder(const string &series_name) {
   PetscFunctionBegin;
   EntityHandle meshset;
-  rval = moab.create_meshset(MESHSET_SET|MESHSET_TRACK_OWNER,meshset); CHKERR_PETSC(rval);
+  rval = moab.create_meshset(MESHSET_SET|MESHSET_TRACK_OWNER,meshset); CHKERRQ_MOAB(rval);
   void const* tag_data[] = { series_name.c_str() };
   int tag_sizes[1]; tag_sizes[0] = series_name.size();
-  rval = moab.tag_set_by_ptr(th_SeriesName,&meshset,1,tag_data,tag_sizes); CHKERR_PETSC(rval);
+  rval = moab.tag_set_by_ptr(th_SeriesName,&meshset,1,tag_data,tag_sizes); CHKERRQ_MOAB(rval);
   pair<Series_multiIndex::iterator,bool> p = sEries.insert(MoFEMSeries(moab,meshset));
   if(!p.second) {
     SETERRQ1(PETSC_COMM_SELF,1,"serie recorder <%s> is already there",series_name.c_str());
@@ -75,16 +75,16 @@ PetscErrorCode Core::delete_recorder_series(const string& series_name) {
     SETERRQ1(PETSC_COMM_SELF,1,"serie recorder <%s> not exist and can be deleted",series_name.c_str());
   }
   EntityHandle series_meshset = sit->get_meshset();
-  rval = moab.tag_delete(sit->th_SeriesTime); CHKERR_PETSC(rval);
-  rval = moab.tag_delete(sit->th_SeriesDataHandles); CHKERR_PETSC(rval);
-  rval = moab.tag_delete(sit->th_SeriesDataUIDs); CHKERR_PETSC(rval);
-  rval = moab.tag_delete(sit->th_SeriesData); CHKERR_PETSC(rval);
+  rval = moab.tag_delete(sit->th_SeriesTime); CHKERRQ_MOAB(rval);
+  rval = moab.tag_delete(sit->th_SeriesDataHandles); CHKERRQ_MOAB(rval);
+  rval = moab.tag_delete(sit->th_SeriesDataUIDs); CHKERRQ_MOAB(rval);
+  rval = moab.tag_delete(sit->th_SeriesData); CHKERRQ_MOAB(rval);
   sEries.get<SeriesName_mi_tag>().erase(sit);
   vector<EntityHandle> contained;
-  rval = moab.get_contained_meshsets(series_meshset,contained); CHKERR_PETSC(rval);
-  rval = moab.remove_entities(series_meshset,&contained[0],contained.size()); CHKERR_PETSC(rval);
-  rval = moab.delete_entities(&contained[0],contained.size()); CHKERR_PETSC(rval);
-  rval = moab.delete_entities(&series_meshset,1); CHKERR_PETSC(rval);
+  rval = moab.get_contained_meshsets(series_meshset,contained); CHKERRQ_MOAB(rval);
+  rval = moab.remove_entities(series_meshset,&contained[0],contained.size()); CHKERRQ_MOAB(rval);
+  rval = moab.delete_entities(&contained[0],contained.size()); CHKERRQ_MOAB(rval);
+  rval = moab.delete_entities(&series_meshset,1); CHKERRQ_MOAB(rval);
   PetscFunctionReturn(0);
 }
 PetscErrorCode Core::record_problem(const string& serie_name,const MoFEMProblem *problemPtr,RowColData rc) {

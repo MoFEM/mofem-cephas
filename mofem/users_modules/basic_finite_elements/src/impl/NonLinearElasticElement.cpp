@@ -917,7 +917,7 @@ PetscErrorCode NonlinearElasticElement::setBlocks(
     ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
     int id = it->get_msId();
     EntityHandle meshset = it->get_meshset();
-    rval = mField.get_moab().get_entities_by_type(meshset,MBTET,setOfBlocks[id].tEts,true); CHKERR_PETSC(rval);
+    rval = mField.get_moab().get_entities_by_type(meshset,MBTET,setOfBlocks[id].tEts,true); CHKERRQ_MOAB(rval);
     setOfBlocks[id].iD = id;
     setOfBlocks[id].E = mydata.data.Young;
     setOfBlocks[id].PoissonRatio = mydata.data.Poisson;

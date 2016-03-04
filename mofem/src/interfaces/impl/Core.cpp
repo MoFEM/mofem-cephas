@@ -255,197 +255,197 @@ Core::Core(Interface& _moab,MPI_Comm _comm,int _verbose):
   rval = moab.tag_get_handle(
     "_MoFEM_VERSION",version.size()*sizeof(char),MB_TYPE_OPAQUE,
     th_version,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES,NULL
-  ); CHKERR_THROW(rval);
+  ); CHKERRQ_MOAB_THROW(rval);
   const char *ptr_version = version.c_str();
-  rval = moab.tag_set_data(th_version,&root_meshset,1,ptr_version); CHKERR_THROW(rval);
+  rval = moab.tag_set_data(th_version,&root_meshset,1,ptr_version); CHKERRQ_MOAB_THROW(rval);
 
   //tags saved in vtk-files
   const int def_part = -1;
-  rval = moab.tag_get_handle("PARTITION",1,MB_TYPE_INTEGER,th_Part,MB_TAG_CREAT|MB_TAG_SPARSE,&def_part); CHKERR_THROW(rval);
+  rval = moab.tag_get_handle("PARTITION",1,MB_TYPE_INTEGER,th_Part,MB_TAG_CREAT|MB_TAG_SPARSE,&def_part); CHKERRQ_MOAB_THROW(rval);
 
   //Tags Ref
   EntityHandle def_handle = 0;
-  rval = moab.tag_get_handle("_RefParentHandle",1,MB_TYPE_HANDLE,th_RefParentHandle,MB_TAG_CREAT|MB_TAG_SPARSE,&def_handle); CHKERR_THROW(rval);
+  rval = moab.tag_get_handle("_RefParentHandle",1,MB_TYPE_HANDLE,th_RefParentHandle,MB_TAG_CREAT|MB_TAG_SPARSE,&def_handle); CHKERRQ_MOAB_THROW(rval);
   const int def_type[] = {0,0};
-  rval = moab.tag_get_handle("_RefType",2,MB_TYPE_INTEGER,th_RefType,MB_TAG_CREAT|MB_TAG_SPARSE,def_type); CHKERR_THROW(rval);
+  rval = moab.tag_get_handle("_RefType",2,MB_TYPE_INTEGER,th_RefType,MB_TAG_CREAT|MB_TAG_SPARSE,def_type); CHKERRQ_MOAB_THROW(rval);
   BitRefLevel def_bit_level = 0;
   rval = moab.tag_get_handle(
     "_RefBitLevel",sizeof(BitRefLevel),MB_TYPE_OPAQUE,
     th_RefBitLevel,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES,&def_bit_level
-  ); CHKERR_THROW(rval);
+  ); CHKERRQ_MOAB_THROW(rval);
   BitRefLevel def_bit_level_mask = BitRefLevel().set();
   rval = moab.tag_get_handle(
     "_RefBitLevelMask",sizeof(BitRefLevel),MB_TYPE_OPAQUE,
     th_RefBitLevel_Mask,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES,&def_bit_level_mask
-  ); CHKERR_THROW(rval);
+  ); CHKERRQ_MOAB_THROW(rval);
   BitRefEdges def_bit_egde = 0;
   rval = moab.tag_get_handle(
     "_RefBitEdge",sizeof(BitRefEdges),MB_TYPE_OPAQUE,
     th_RefBitEdge,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES,&def_bit_egde
-  ); CHKERR_THROW(rval);
+  ); CHKERRQ_MOAB_THROW(rval);
 
   //Tags Field
   const unsigned long int def_id = 0;
   rval = moab.tag_get_handle(
     "_FieldId",sizeof(BitFieldId),MB_TYPE_OPAQUE,
     th_FieldId,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES,&def_id
-  ); CHKERR_THROW(rval);
+  ); CHKERRQ_MOAB_THROW(rval);
   FieldSpace def_space = LASTSPACE;
   rval = moab.tag_get_handle(
     "_FieldSpace",sizeof(FieldSpace),MB_TYPE_OPAQUE,
     th_FieldSpace,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES,&def_space
-  ); CHKERR_THROW(rval);
+  ); CHKERRQ_MOAB_THROW(rval);
   FieldApproximationBase def_base = LASTBASE;
   rval = moab.tag_get_handle(
     "_FieldBase",sizeof(FieldApproximationBase),MB_TYPE_OPAQUE,
     th_FieldBase,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES,&def_base
-  ); CHKERR_THROW(rval);
+  ); CHKERRQ_MOAB_THROW(rval);
 
   const int def_val_len = 0;
   rval = moab.tag_get_handle(
     "_FieldName",def_val_len,MB_TYPE_OPAQUE,
     th_FieldName,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES|MB_TAG_VARLEN,NULL
-  ); CHKERR_THROW(rval);
+  ); CHKERRQ_MOAB_THROW(rval);
   rval = moab.tag_get_handle(
     "_FieldName_DataNamePrefix",def_val_len,MB_TYPE_OPAQUE,
     th_FieldName_DataNamePrefix,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES|MB_TAG_VARLEN,NULL
-  ); CHKERR_THROW(rval);
+  ); CHKERRQ_MOAB_THROW(rval);
 
   //Tags FE
   rval = moab.tag_get_handle(
     "_FEId",sizeof(BitFEId),MB_TYPE_OPAQUE,
     th_FEId,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES,&def_id
-  ); CHKERR_THROW(rval);
+  ); CHKERRQ_MOAB_THROW(rval);
   rval = moab.tag_get_handle(
     "_FEName",def_val_len,MB_TYPE_OPAQUE,
     th_FEName,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES|MB_TAG_VARLEN,NULL
-  ); CHKERR_THROW(rval);
+  ); CHKERRQ_MOAB_THROW(rval);
   rval = moab.tag_get_handle(
     "_FEIdCol",sizeof(BitFieldId),MB_TYPE_OPAQUE,
     th_FEIdCol,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES,&def_id
-  ); CHKERR_THROW(rval);
+  ); CHKERRQ_MOAB_THROW(rval);
   rval = moab.tag_get_handle(
     "_FEIdRow",sizeof(BitFieldId),MB_TYPE_OPAQUE,
     th_FEIdRow,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES,&def_id
-  ); CHKERR_THROW(rval);
+  ); CHKERRQ_MOAB_THROW(rval);
   rval = moab.tag_get_handle(
     "_FEIdData",sizeof(BitFieldId),MB_TYPE_OPAQUE,
     th_FEIdData,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES,&def_id
-  ); CHKERR_THROW(rval);
+  ); CHKERRQ_MOAB_THROW(rval);
 
   //Tags Problem
   rval = moab.tag_get_handle("_ProblemId",sizeof(BitProblemId),MB_TYPE_OPAQUE,
     th_ProblemId,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES,&def_id
-  ); CHKERR_THROW(rval);
+  ); CHKERRQ_MOAB_THROW(rval);
   rval = moab.tag_get_handle("_ProblemFEId",sizeof(BitFEId),MB_TYPE_OPAQUE,
     th_ProblemFEId,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES,&def_id
-  ); CHKERR_THROW(rval);
+  ); CHKERRQ_MOAB_THROW(rval);
   rval = moab.tag_get_handle("_ProblemName",def_val_len,MB_TYPE_OPAQUE,
     th_ProblemName,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES|MB_TAG_VARLEN,NULL
-  ); CHKERR_THROW(rval);
+  ); CHKERRQ_MOAB_THROW(rval);
   DofIdx def_nbdofs = 0;
   rval = moab.tag_get_handle(
     "_ProblemNbDofsRow",sizeof(DofIdx),MB_TYPE_OPAQUE,
     th_ProblemNbDofsRow,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES,&def_nbdofs
-  ); CHKERR_THROW(rval);
+  ); CHKERRQ_MOAB_THROW(rval);
   rval = moab.tag_get_handle(
     "_ProblemNbDofsCol",sizeof(DofIdx),MB_TYPE_OPAQUE,
     th_ProblemNbDofsCol,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES,&def_nbdofs
-  ); CHKERR_THROW(rval);
+  ); CHKERRQ_MOAB_THROW(rval);
   rval = moab.tag_get_handle(
     "_ProblemLocalNbDofsRow",sizeof(DofIdx),MB_TYPE_OPAQUE,
     th_ProblemLocalNbDofRow,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES,&def_nbdofs
-  ); CHKERR_THROW(rval);
+  ); CHKERRQ_MOAB_THROW(rval);
   rval = moab.tag_get_handle(
     "_ProblemGhostNbDofsRow",sizeof(DofIdx),MB_TYPE_OPAQUE,
     th_ProblemGhostNbDofRow,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES,&def_nbdofs
-  ); CHKERR_THROW(rval);
+  ); CHKERRQ_MOAB_THROW(rval);
   rval = moab.tag_get_handle(
     "_ProblemLocalNbDofsCol",sizeof(DofIdx),MB_TYPE_OPAQUE,
     th_ProblemLocalNbDofCol,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES,&def_nbdofs
-  ); CHKERR_THROW(rval);
+  ); CHKERRQ_MOAB_THROW(rval);
   rval = moab.tag_get_handle(
     "_ProblemGhostNbDofsCol",sizeof(DofIdx),MB_TYPE_OPAQUE,
     th_ProblemGhostNbDofCol,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES,&def_nbdofs
-  ); CHKERR_THROW(rval);
+  ); CHKERRQ_MOAB_THROW(rval);
 
   //Coordinate systems
   const int def_coord_sys_dim[] = { 0,0,0,0 };
   rval = moab.tag_get_handle(
     "_CoordSysDim",4,MB_TYPE_INTEGER,th_CoordSysDim,MB_TAG_CREAT|MB_TAG_SPARSE,&def_coord_sys_dim
-  ); CHKERR_THROW(rval);
+  ); CHKERRQ_MOAB_THROW(rval);
   EntityHandle def_coor_sys_meshset = 0;
   rval = moab.tag_get_handle(
     "_CoordSysMeshSet",1,MB_TYPE_HANDLE,th_CoordSysMeshSet,MB_TAG_CREAT|MB_TAG_SPARSE,&def_coor_sys_meshset
-  ); CHKERR_THROW(rval);
+  ); CHKERRQ_MOAB_THROW(rval);
   rval = moab.tag_get_handle(
     "_CoordSysName",def_val_len,MB_TYPE_OPAQUE,
     th_CoordSysName,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES|MB_TAG_VARLEN,NULL
-  ); CHKERR_THROW(rval);
+  ); CHKERRQ_MOAB_THROW(rval);
 
   //Global Variables
   //Fields
   int def_shift = 1;
   rval = moab.tag_get_handle("_FieldShift",1,MB_TYPE_INTEGER,th_FieldShift,MB_TAG_CREAT|MB_TAG_MESH,&def_shift);
   if(rval==MB_ALREADY_ALLOCATED) rval = MB_SUCCESS;
-  CHKERR_THROW(rval);
+  CHKERRQ_MOAB_THROW(rval);
   const void* tag_data[1];
-  rval = moab.tag_get_by_ptr(th_FieldShift,&root_meshset,1,tag_data); CHKERR_THROW(rval);
+  rval = moab.tag_get_by_ptr(th_FieldShift,&root_meshset,1,tag_data); CHKERRQ_MOAB_THROW(rval);
   fShift = (int*)tag_data[0];
   //FE
   rval = moab.tag_get_handle("_FEShift",1,MB_TYPE_INTEGER,th_FEShift,MB_TAG_CREAT|MB_TAG_MESH,&def_shift);
   if(rval==MB_ALREADY_ALLOCATED) rval = MB_SUCCESS;
-  CHKERR_THROW(rval);
-  rval = moab.tag_get_by_ptr(th_FEShift,&root_meshset,1,tag_data); CHKERR_THROW(rval);
+  CHKERRQ_MOAB_THROW(rval);
+  rval = moab.tag_get_by_ptr(th_FEShift,&root_meshset,1,tag_data); CHKERRQ_MOAB_THROW(rval);
   feShift = (int*)tag_data[0];
   //Problem
   rval = moab.tag_get_handle("_ProblemShift",1,MB_TYPE_INTEGER,th_ProblemShift,MB_TAG_CREAT|MB_TAG_MESH,&def_shift);
   if(rval==MB_ALREADY_ALLOCATED) rval = MB_SUCCESS;
-  CHKERR_THROW(rval);
-  rval = moab.tag_get_by_ptr(th_ProblemShift,&root_meshset,1,tag_data); CHKERR_THROW(rval);
+  CHKERRQ_MOAB_THROW(rval);
+  rval = moab.tag_get_by_ptr(th_ProblemShift,&root_meshset,1,tag_data); CHKERRQ_MOAB_THROW(rval);
   pShift = (int*)tag_data[0];
   //SaftyNets
   int def_bool = 0;
   rval = moab.tag_get_handle("_MoFEMBuild",1,MB_TYPE_INTEGER,th_MoFEMBuild,MB_TAG_CREAT|MB_TAG_MESH,&def_bool);
   if(rval==MB_ALREADY_ALLOCATED) rval = MB_SUCCESS;
-  rval = moab.tag_get_by_ptr(th_MoFEMBuild,&root_meshset,1,(const void **)&build_MoFEM); CHKERR_THROW(rval);
+  rval = moab.tag_get_by_ptr(th_MoFEMBuild,&root_meshset,1,(const void **)&build_MoFEM); CHKERRQ_MOAB_THROW(rval);
   //Meshsets
   int default_val = -1;
   rval = moab.tag_get_handle(DIRICHLET_SET_TAG_NAME,1, MB_TYPE_INTEGER,
-    nsTag, MB_TAG_SPARSE|MB_TAG_CREAT, &default_val); CHKERR_THROW(rval);
+    nsTag, MB_TAG_SPARSE|MB_TAG_CREAT, &default_val); CHKERRQ_MOAB_THROW(rval);
   rval = moab.tag_get_handle(NEUMANN_SET_TAG_NAME,1, MB_TYPE_INTEGER,
-    ssTag, MB_TAG_SPARSE|MB_TAG_CREAT, &default_val); CHKERR_THROW(rval);
+    ssTag, MB_TAG_SPARSE|MB_TAG_CREAT, &default_val); CHKERRQ_MOAB_THROW(rval);
   const int def_bc_data_len = 0;
   std::string tag_name = std::string(DIRICHLET_SET_TAG_NAME)+"__BC_DATA";
   rval = moab.tag_get_handle(tag_name.c_str(),def_bc_data_len,MB_TYPE_OPAQUE,
-    nsTag_data,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES|MB_TAG_VARLEN,NULL); CHKERR_THROW(rval);
+    nsTag_data,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES|MB_TAG_VARLEN,NULL); CHKERRQ_MOAB_THROW(rval);
   tag_name = std::string(NEUMANN_SET_TAG_NAME)+"__BC_DATA";
   rval = moab.tag_get_handle(tag_name.c_str(),def_bc_data_len,MB_TYPE_OPAQUE,
-    ssTag_data,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES|MB_TAG_VARLEN,NULL); CHKERR_THROW(rval);
+    ssTag_data,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES|MB_TAG_VARLEN,NULL); CHKERRQ_MOAB_THROW(rval);
   rval = moab.tag_get_handle(MATERIAL_SET_TAG_NAME, 1, MB_TYPE_INTEGER,
-    bhTag,MB_TAG_SPARSE|MB_TAG_CREAT,&default_val); CHKERR_THROW(rval);
+    bhTag,MB_TAG_SPARSE|MB_TAG_CREAT,&default_val); CHKERRQ_MOAB_THROW(rval);
   std::vector<unsigned int> def_uint_zero(3,0);
   rval= moab.tag_get_handle(BLOCK_HEADER,3*sizeof(unsigned int),MB_TYPE_INTEGER,
     bhTag_header,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES,&def_uint_zero[0]
-  ); CHKERR_THROW(rval);
+  ); CHKERRQ_MOAB_THROW(rval);
   Tag block_attribs;
   int def_Block_Attributes_length = 0;
   rval = moab.tag_get_handle(BLOCK_ATTRIBUTES,def_Block_Attributes_length,MB_TYPE_DOUBLE,
     block_attribs,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_VARLEN,NULL
-  ); CHKERR_THROW(rval);
+  ); CHKERRQ_MOAB_THROW(rval);
   Tag entity_name_tag;
   rval = moab.tag_get_handle(
     NAME_TAG_NAME,NAME_TAG_SIZE,MB_TYPE_OPAQUE,entity_name_tag,MB_TAG_SPARSE|MB_TAG_CREAT
-  ); CHKERR_THROW(rval);
+  ); CHKERRQ_MOAB_THROW(rval);
   //Series
   rval = moab.tag_get_handle("_SeriesName",def_val_len,MB_TYPE_OPAQUE,
     th_SeriesName,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES|MB_TAG_VARLEN,NULL
-  ); CHKERR_THROW(rval);
+  ); CHKERRQ_MOAB_THROW(rval);
   //For VTK files
   int def_elem_type = MBMAXTYPE;
   rval = moab.tag_get_handle(
     "ElemType",1,MB_TYPE_INTEGER,th_ElemType,MB_TAG_CREAT|MB_TAG_SPARSE,&def_elem_type
-  ); CHKERR_THROW(rval);
+  ); CHKERRQ_MOAB_THROW(rval);
   //
   clearMap();
   initialiseDatabseInformationFromMesh(verbose);
@@ -556,10 +556,10 @@ PetscErrorCode Core::addPrismToDatabase(const EntityHandle prism,int verb) {
       );
       int num_nodes;
       const EntityHandle* conn;
-      rval = moab.get_connectivity(prism,conn,num_nodes,true); CHKERR_THROW(rval);
+      rval = moab.get_connectivity(prism,conn,num_nodes,true); CHKERRQ_MOAB_THROW(rval);
       Range face_side3,face_side4;
-      rval = moab.get_adjacencies(conn,3,2,false,face_side3); CHKERR_PETSC(rval);
-      rval = moab.get_adjacencies(&conn[3],3,2,false,face_side4); CHKERR_PETSC(rval);
+      rval = moab.get_adjacencies(conn,3,2,false,face_side3); CHKERRQ_MOAB(rval);
+      rval = moab.get_adjacencies(&conn[3],3,2,false,face_side4); CHKERRQ_MOAB(rval);
       if(face_side3.size()!=1) SETERRQ(PETSC_COMM_SELF,1,"prism don't have side face 3");
       if(face_side4.size()!=1) SETERRQ(PETSC_COMM_SELF,1,"prims don't have side face 4");
       p_MoFEMFiniteElement.first->get_side_number_ptr(moab,*face_side3.begin());
@@ -755,7 +755,7 @@ PetscErrorCode Core::initialiseDatabseInformationFromMesh(int verb) {
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
   Range meshsets;
-  rval = moab.get_entities_by_type(0,MBENTITYSET,meshsets,true);  CHKERR_PETSC(rval);
+  rval = moab.get_entities_by_type(0,MBENTITYSET,meshsets,true);  CHKERRQ_MOAB(rval);
   //loop all meshsets in moab to find meshets with boundary conditions
   Range::iterator mit = meshsets.begin();
   for(;mit!=meshsets.end();mit++) {
@@ -783,7 +783,7 @@ PetscErrorCode Core::initialiseDatabseInformationFromMesh(int verb) {
   for(;mit!=meshsets.end();mit++) {
     try {
       int cs_dim[] = { 0,0,0,0 };
-      rval = moab.tag_get_data(th_CoordSysDim,&*mit,1,&cs_dim); CHKERR_PETSC(rval);
+      rval = moab.tag_get_data(th_CoordSysDim,&*mit,1,&cs_dim); CHKERRQ_MOAB(rval);
       if(cs_dim[0]+cs_dim[1]+cs_dim[2]+cs_dim[3]) {
         CoordSys coord_sys(moab,*mit);
         pair<CoordSys_multiIndex ::iterator,bool> p = coordinateSystems.insert(coord_sys);
@@ -800,16 +800,16 @@ PetscErrorCode Core::initialiseDatabseInformationFromMesh(int verb) {
     csit = coordinateSystems.get<CoordSysName_mi_tag >().find("CARTESIAN3D");
     if(csit==coordinateSystems.get<CoordSysName_mi_tag >().end()) {
       EntityHandle meshset;
-      rval = moab.create_meshset(MESHSET_SET|MESHSET_TRACK_OWNER,meshset); CHKERR_PETSC(rval);
+      rval = moab.create_meshset(MESHSET_SET|MESHSET_TRACK_OWNER,meshset); CHKERRQ_MOAB(rval);
       int dim[] = { 3,0,0,0 };
-      rval = moab.tag_set_data(th_CoordSysDim,&meshset,1,dim); CHKERR_PETSC(rval);
+      rval = moab.tag_set_data(th_CoordSysDim,&meshset,1,dim); CHKERRQ_MOAB(rval);
       string sys_name_str = "CARTESIAN3D";
       void const* sys_name[] = { sys_name_str.c_str() };
       int sys_name_size[1];
       sys_name_size[0] = sys_name_str.size();
       rval = moab.tag_set_by_ptr(
         th_CoordSysName,&meshset,1,sys_name,sys_name_size
-      ); CHKERR_PETSC(rval);
+      ); CHKERRQ_MOAB(rval);
       CoordSys coord_sys(moab,meshset);
       pair<CoordSys_multiIndex ::iterator,bool> p = coordinateSystems.insert(coord_sys);
       if(!p.second) {
@@ -819,16 +819,16 @@ PetscErrorCode Core::initialiseDatabseInformationFromMesh(int verb) {
     csit = coordinateSystems.get<CoordSysName_mi_tag>().find("UNDEFINED");
     if(csit==coordinateSystems.get<CoordSysName_mi_tag>().end()) {
       EntityHandle meshset;
-      rval = moab.create_meshset(MESHSET_SET|MESHSET_TRACK_OWNER,meshset); CHKERR_PETSC(rval);
+      rval = moab.create_meshset(MESHSET_SET|MESHSET_TRACK_OWNER,meshset); CHKERRQ_MOAB(rval);
       int dim[] = { -1,0,0,0 };
-      rval = moab.tag_set_data(th_CoordSysDim,&meshset,1,dim); CHKERR_PETSC(rval);
+      rval = moab.tag_set_data(th_CoordSysDim,&meshset,1,dim); CHKERRQ_MOAB(rval);
       string sys_name_str = "UNDEFINED";
       void const* sys_name[] = { sys_name_str.c_str() };
       int sys_name_size[1];
       sys_name_size[0] = sys_name_str.size();
       rval = moab.tag_set_by_ptr(
         th_CoordSysName,&meshset,1,sys_name,sys_name_size
-      ); CHKERR_PETSC(rval);
+      ); CHKERRQ_MOAB(rval);
       CoordSys coord_sys(moab,meshset);
       pair<CoordSys_multiIndex ::iterator,bool> p = coordinateSystems.insert(coord_sys);
       if(!p.second) {
@@ -846,13 +846,13 @@ PetscErrorCode Core::initialiseDatabseInformationFromMesh(int verb) {
   for(;mit!=meshsets.end();mit++) {
     BitFieldId field_id;
     // Get bit id form field tag
-    rval = moab.tag_get_data(th_FieldId,&*mit,1,&field_id); CHKERR_PETSC(rval);
+    rval = moab.tag_get_data(th_FieldId,&*mit,1,&field_id); CHKERRQ_MOAB(rval);
     // Check if meshset if field meshset
     if(field_id!=0) {
       pair<MoFEMField_multiIndex::iterator,bool> p;
       try {
         EntityHandle coord_sys_id;
-        rval = moab.tag_get_data(th_CoordSysMeshSet,&*mit,1,&coord_sys_id); CHKERR_PETSC(rval);
+        rval = moab.tag_get_data(th_CoordSysMeshSet,&*mit,1,&coord_sys_id); CHKERRQ_MOAB(rval);
         CoordSys_multiIndex::index<Meshset_mi_tag>::type::iterator cs_it;
         if(coord_sys_id!=0) {
           cs_it = coordinateSystems.get<Meshset_mi_tag>().find(coord_sys_id);
@@ -878,7 +878,7 @@ PetscErrorCode Core::initialiseDatabseInformationFromMesh(int verb) {
         NOT_USED(p_ref_ent);
       } else {
         Range ents;
-        rval = moab.get_entities_by_handle(*mit,ents,false); CHKERR_PETSC(rval);
+        rval = moab.get_entities_by_handle(*mit,ents,false); CHKERRQ_MOAB(rval);
         if(verb > 1) {
           ostringstream ss;
           ss << "read field ents " << ents.size() << endl;;
@@ -902,7 +902,7 @@ PetscErrorCode Core::initialiseDatabseInformationFromMesh(int verb) {
     // Check for finite elements
     BitFieldId fe_id;
     // Get bit id from fe tag
-    rval = moab.tag_get_data(th_FEId,&*mit,1,&fe_id); CHKERR_PETSC(rval);
+    rval = moab.tag_get_data(th_FEId,&*mit,1,&fe_id); CHKERRQ_MOAB(rval);
     //check if meshset is finite element meshset
     if(fe_id!=0) {
       pair<MoFEMFiniteElement_multiIndex::iterator,bool> p = finiteElements.insert(MoFEMFiniteElement(moab,*mit));
@@ -914,8 +914,8 @@ PetscErrorCode Core::initialiseDatabseInformationFromMesh(int verb) {
       NOT_USED(p);
       assert(p.first->meshset == *mit);
       Range ents;
-      rval = moab.get_entities_by_type(*mit,MBENTITYSET,ents,false); CHKERR_PETSC(rval);
-      rval = moab.get_entities_by_handle(*mit,ents,true); CHKERR_PETSC(rval);
+      rval = moab.get_entities_by_type(*mit,MBENTITYSET,ents,false); CHKERRQ_MOAB(rval);
+      rval = moab.get_entities_by_handle(*mit,ents,true); CHKERRQ_MOAB(rval);
       Range::iterator eit = ents.begin();
       for(;eit!=ents.end();eit++) {
         pair<RefMoFEMEntity_multiIndex::iterator,bool> p_ref_ent = refinedEntities.insert(RefMoFEMEntity(moab,*eit));
@@ -955,7 +955,7 @@ PetscErrorCode Core::initialiseDatabseInformationFromMesh(int verb) {
     }
     BitProblemId problem_id;
     //get bit id form problem tag
-    rval = moab.tag_get_data(th_ProblemId,&*mit,1,&problem_id); CHKERR_PETSC(rval);
+    rval = moab.tag_get_data(th_ProblemId,&*mit,1,&problem_id); CHKERRQ_MOAB(rval);
     //check if meshset if problem meshset
     if(problem_id!=0) {
       pair<MoFEMProblem_multiIndex::iterator,bool> p = pRoblems.insert(MoFEMProblem(moab,*mit));
@@ -983,7 +983,7 @@ PetscErrorCode Core::initialiseDatabseInformationFromMesh(int verb) {
   //build ref entities meshset
   for(int dd = 0;dd<=3;dd++) {
     Range ents;
-    rval = moab.get_entities_by_dimension(0,dd,ents,false); CHKERR_PETSC(rval);
+    rval = moab.get_entities_by_dimension(0,dd,ents,false); CHKERRQ_MOAB(rval);
     Range::iterator eit = ents.begin();
     for(;eit!=ents.end();eit++) {
       switch (moab.type_from_handle(*eit)) {
@@ -1030,14 +1030,14 @@ PetscErrorCode Core::initialiseDatabseInformationFromMesh(int verb) {
 PetscErrorCode Core::add_coordinate_system(const int cs_dim[],const string name) {
   PetscFunctionBegin;
   EntityHandle meshset;
-  rval = moab.create_meshset(MESHSET_SET|MESHSET_TRACK_OWNER,meshset); CHKERR_PETSC(rval);
-  rval = moab.tag_set_data(th_CoordSysDim,&meshset,1,cs_dim); CHKERR_PETSC(rval);
+  rval = moab.create_meshset(MESHSET_SET|MESHSET_TRACK_OWNER,meshset); CHKERRQ_MOAB(rval);
+  rval = moab.tag_set_data(th_CoordSysDim,&meshset,1,cs_dim); CHKERRQ_MOAB(rval);
   void const* sys_name[] = { name.c_str() };
   int sys_name_size[1];
   sys_name_size[0] = name.size();
   rval = moab.tag_set_by_ptr(
     th_CoordSysName,&meshset,1,sys_name,sys_name_size
-  ); CHKERR_PETSC(rval);
+  ); CHKERRQ_MOAB(rval);
   CoordSys coord_sys(moab,meshset);
   pair<CoordSys_multiIndex ::iterator,bool> p = coordinateSystems.insert(coord_sys);
   if(!p.second) {

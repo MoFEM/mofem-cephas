@@ -116,19 +116,19 @@ PetscErrorCode NetGenInterface::stlSetSurfaceTriangles(Ng_STL_Geometry *stl_geom
 
     int num_nodes;
     const EntityHandle* conn;
-    rval = m_field.get_moab().get_connectivity(*tit,conn,num_nodes,true); CHKERR_PETSC(rval);
+    rval = m_field.get_moab().get_connectivity(*tit,conn,num_nodes,true); CHKERRQ_MOAB(rval);
     double coords[9];
-    rval = m_field.get_moab().get_coords(conn,3,coords); CHKERR_PETSC(rval);
+    rval = m_field.get_moab().get_coords(conn,3,coords); CHKERRQ_MOAB(rval);
 
     int first = 0,second = 1;
     Range adj_tet;
-    rval = m_field.get_moab().get_adjacencies(&*tit,1,3,false,adj_tet); CHKERR_PETSC(rval);
+    rval = m_field.get_moab().get_adjacencies(&*tit,1,3,false,adj_tet); CHKERRQ_MOAB(rval);
     adj_tet = intersect(adj_tet,tets);
     if(!adj_tet.empty()) {
       int side_number;
       int sense;
       int offset;
-      rval = m_field.get_moab().side_number(adj_tet[0],*tit,side_number,sense,offset); CHKERR_PETSC(rval);
+      rval = m_field.get_moab().side_number(adj_tet[0],*tit,side_number,sense,offset); CHKERRQ_MOAB(rval);
       if(sense == -1) {
 	first = 1;
 	second = 0;
@@ -158,9 +158,9 @@ PetscErrorCode NetGenInterface::stlSetSurfaceEdges(Ng_STL_Geometry *stl_geom,Ran
 
     int num_nodes;
     const EntityHandle* conn;
-    rval = m_field.get_moab().get_connectivity(*eit,conn,num_nodes,true); CHKERR_PETSC(rval);
+    rval = m_field.get_moab().get_connectivity(*eit,conn,num_nodes,true); CHKERRQ_MOAB(rval);
     double coords[6];
-    rval = m_field.get_moab().get_coords(conn,2,coords); CHKERR_PETSC(rval);
+    rval = m_field.get_moab().get_coords(conn,2,coords); CHKERRQ_MOAB(rval);
 
     Ng_STL_AddEdge(stl_geom,&coords[3*0],&coords[3*1]);
 
@@ -176,7 +176,7 @@ PetscErrorCode NetGenInterface::setPoints(Ng_Mesh *mesh,vector<EntityHandle> &pt
   FieldInterface& m_field = cOre;
 
   vector<double> coords(pts.size()*3);
-  rval = m_field.get_moab().get_coords(&*pts.begin(),pts.size(),&*coords.begin()); CHKERR_PETSC(rval);
+  rval = m_field.get_moab().get_coords(&*pts.begin(),pts.size(),&*coords.begin()); CHKERRQ_MOAB(rval);
 
   vector<EntityHandle>::iterator pit = pts.begin();
   for(int nn = 0;pit!=pts.end();pit++,nn++) {
@@ -204,17 +204,17 @@ PetscErrorCode NetGenInterface::setSurfaceElements(Ng_Mesh *mesh,vector<EntityHa
 
     int num_nodes;
     const EntityHandle* conn;
-    rval = m_field.get_moab().get_connectivity(*eit,conn,num_nodes,true); CHKERR_PETSC(rval);
+    rval = m_field.get_moab().get_connectivity(*eit,conn,num_nodes,true); CHKERRQ_MOAB(rval);
 
     int order[] = { 0,1,2 };
     Range adj_tet;
-    rval = m_field.get_moab().get_adjacencies(&*eit,1,3,false,adj_tet); CHKERR_PETSC(rval);
+    rval = m_field.get_moab().get_adjacencies(&*eit,1,3,false,adj_tet); CHKERRQ_MOAB(rval);
     adj_tet = intersect(adj_tet,*tets);
     if(!adj_tet.empty()) {
       int side_number;
       int sense;
       int offset;
-      rval = m_field.get_moab().side_number(adj_tet[0],*eit,side_number,sense,offset); CHKERR_PETSC(rval);
+      rval = m_field.get_moab().side_number(adj_tet[0],*eit,side_number,sense,offset); CHKERRQ_MOAB(rval);
       if(sense == -1) {
 	order[0] = 1;
 	order[1] = 0;
@@ -251,7 +251,7 @@ PetscErrorCode NetGenInterface::getPoints(Ng_Mesh *mesh,vector<EntityHandle> &pt
     Ng_GetPoint(mesh,nn,x);
     if(pts[nn-1]!=0) {
       double coords[3];
-      rval = m_field.get_moab().get_coords(&pts[nn-1],1,coords); CHKERR_PETSC(rval);
+      rval = m_field.get_moab().get_coords(&pts[nn-1],1,coords); CHKERRQ_MOAB(rval);
       cblas_daxpy(3,-1,x,1,coords,1);
       double d = cblas_dnrm2(3,coords,1);
       const double eps = 1e-12;
@@ -260,7 +260,7 @@ PetscErrorCode NetGenInterface::getPoints(Ng_Mesh *mesh,vector<EntityHandle> &pt
       }
     }
     EntityHandle node;
-    rval = m_field.get_moab().create_vertex(x,node); CHKERR_PETSC(rval);
+    rval = m_field.get_moab().create_vertex(x,node); CHKERRQ_MOAB(rval);
     pts[nn-1] = node;
   }
   PetscFunctionReturn(0);
@@ -275,7 +275,7 @@ PetscErrorCode NetGenInterface::getSurfaceElements(Ng_Mesh *mesh,vector<EntityHa
   Tag th_geom_info;
   int def_marker = 0;
   rval = m_field.get_moab().tag_get_handle(
-    "NETGEN_GEOMINFO",1,MB_TYPE_INTEGER,th_geom_info,MB_TAG_CREAT|MB_TAG_SPARSE,&def_marker); CHKERR_PETSC(rval);
+    "NETGEN_GEOMINFO",1,MB_TYPE_INTEGER,th_geom_info,MB_TAG_CREAT|MB_TAG_SPARSE,&def_marker); CHKERRQ_MOAB(rval);
 
   int ne;
   ne = Ng_GetNSE(mesh);
@@ -292,12 +292,12 @@ PetscErrorCode NetGenInterface::getSurfaceElements(Ng_Mesh *mesh,vector<EntityHa
 	for(int nn = 0;nn<3;nn++) {
 	  conn[nn] = pts[pi[nn]-1];
 	}
-	rval = m_field.get_moab().create_element(MBTRI,conn,3,elem); CHKERR_PETSC(rval);
+	rval = m_field.get_moab().create_element(MBTRI,conn,3,elem); CHKERRQ_MOAB(rval);
 	elms.push_back(elem);
 	for(int nn = 0;nn<3;nn++) {
 	  //cerr << "GeomInfo " << el.GeomInfoPi(nn+1) << endl;
 	  int stl_tri_num = el.GeomInfoPi(nn+1).trignum;
-	  rval = m_field.get_moab().tag_set_data(th_geom_info,&conn[nn],1,&stl_tri_num); CHKERR_PETSC(rval);
+	  rval = m_field.get_moab().tag_set_data(th_geom_info,&conn[nn],1,&stl_tri_num); CHKERRQ_MOAB(rval);
 	}
 	break;
       case NG_QUAD:
@@ -332,7 +332,7 @@ PetscErrorCode NetGenInterface::getVolumeElements(Ng_Mesh *mesh,vector<EntityHan
 	conn0 = conn[0];
 	conn[0] = conn[1];
 	conn[1] = conn0;
-	rval = m_field.get_moab().create_element(MBTET,conn,4,elem); CHKERR_PETSC(rval);
+	rval = m_field.get_moab().create_element(MBTET,conn,4,elem); CHKERRQ_MOAB(rval);
 	elms.push_back(elem);
 	break;
       case NG_PYRAMID:

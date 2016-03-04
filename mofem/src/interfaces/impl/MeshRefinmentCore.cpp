@@ -50,45 +50,45 @@ PetscErrorCode Core::add_verices_in_the_middel_of_edges(const EntityHandle meshs
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
   Range edges;
-  rval = moab.get_entities_by_type(meshset,MBEDGE,edges,recursive);  CHKERR_PETSC(rval);
+  rval = moab.get_entities_by_type(meshset,MBEDGE,edges,recursive);  CHKERRQ_MOAB(rval);
   if(edges.empty()) {
     Range tets;
-    rval = moab.get_entities_by_type(meshset,MBTET,tets,recursive); CHKERR_PETSC(rval);
-    rval = moab.get_adjacencies(tets,1,true,edges,Interface::UNION); CHKERR_PETSC(rval);
+    rval = moab.get_entities_by_type(meshset,MBTET,tets,recursive); CHKERRQ_MOAB(rval);
+    rval = moab.get_adjacencies(tets,1,true,edges,Interface::UNION); CHKERRQ_MOAB(rval);
     if(tets.empty()) {
       Range prisms;
-      rval = moab.get_entities_by_type(meshset,MBPRISM,prisms,recursive); CHKERR_PETSC(rval);
+      rval = moab.get_entities_by_type(meshset,MBPRISM,prisms,recursive); CHKERRQ_MOAB(rval);
       for(Range::iterator pit = prisms.begin();pit!=prisms.end();pit++) {
         const EntityHandle* conn;
         int num_nodes;
-        rval = moab.get_connectivity(*pit,conn,num_nodes,true);  CHKERR_PETSC(rval);
+        rval = moab.get_connectivity(*pit,conn,num_nodes,true);  CHKERRQ_MOAB(rval);
         assert(num_nodes==6);
         //
         Range edge;
-        rval = moab.get_adjacencies(&conn[0],2,1,true,edge); CHKERR_PETSC(rval);
+        rval = moab.get_adjacencies(&conn[0],2,1,true,edge); CHKERRQ_MOAB(rval);
         assert(edge.size()==1);
         edges.insert(edge[0]);
         edge.clear();
-        rval = moab.get_adjacencies(&conn[1],2,1,true,edge); CHKERR_PETSC(rval);
+        rval = moab.get_adjacencies(&conn[1],2,1,true,edge); CHKERRQ_MOAB(rval);
         assert(edge.size()==1);
         edges.insert(edge[0]);
         EntityHandle conn_edge2[] = { conn[2], conn[0] };
         edge.clear();
-        rval = moab.get_adjacencies(conn_edge2,2,1,true,edge); CHKERR_PETSC(rval);
+        rval = moab.get_adjacencies(conn_edge2,2,1,true,edge); CHKERRQ_MOAB(rval);
         assert(edge.size()==1);
         edges.insert(edge[0]);
         //
         edge.clear();
-        rval = moab.get_adjacencies(&conn[3],2,1,true,edge); CHKERR_PETSC(rval);
+        rval = moab.get_adjacencies(&conn[3],2,1,true,edge); CHKERRQ_MOAB(rval);
         assert(edge.size()==1);
         edges.insert(edge[0]);
         edge.clear();
-        rval = moab.get_adjacencies(&conn[4],2,1,true,edge); CHKERR_PETSC(rval);
+        rval = moab.get_adjacencies(&conn[4],2,1,true,edge); CHKERRQ_MOAB(rval);
         assert(edge.size()==1);
         edges.insert(edge[0]);
         EntityHandle conn_edge8[] = { conn[5], conn[3] };
         edge.clear();
-        rval = moab.get_adjacencies(conn_edge8,2,1,true,edge); CHKERR_PETSC(rval);
+        rval = moab.get_adjacencies(conn_edge8,2,1,true,edge); CHKERRQ_MOAB(rval);
         assert(edge.size()==1);
         edges.insert(edge[0]);
       }
@@ -129,18 +129,18 @@ PetscErrorCode Core::add_verices_in_the_middel_of_edges(const Range &_edges,cons
     if(ref_parent_ents_view.empty()||miit_view == ref_parent_ents_view.end()) {
       const EntityHandle* conn;
       int num_nodes;
-      rval = moab.get_connectivity(*eit,conn,num_nodes,true);  CHKERR_PETSC(rval);
+      rval = moab.get_connectivity(*eit,conn,num_nodes,true);  CHKERRQ_MOAB(rval);
       if(num_nodes !=2 ) {
         SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"edge should have 2 edges");
       }
       double coords[num_nodes*3];
-      rval = moab.get_coords(conn,num_nodes,coords); CHKERR_PETSC(rval);
+      rval = moab.get_coords(conn,num_nodes,coords); CHKERRQ_MOAB(rval);
       cblas_daxpy(3,1.,&coords[3],1,coords,1);
       cblas_dscal(3,0.5,coords,1);
       EntityHandle node;
-      rval = moab.create_vertex(coords,node); CHKERR_PETSC(rval);
-      rval = moab.tag_set_data(th_RefParentHandle,&node,1,&*eit); CHKERR_PETSC(rval);
-      rval = moab.tag_set_data(th_RefBitLevel,&node,1,&bit); CHKERR_PETSC(rval);
+      rval = moab.create_vertex(coords,node); CHKERRQ_MOAB(rval);
+      rval = moab.tag_set_data(th_RefParentHandle,&node,1,&*eit); CHKERRQ_MOAB(rval);
+      rval = moab.tag_set_data(th_RefBitLevel,&node,1,&bit); CHKERRQ_MOAB(rval);
       pair<RefMoFEMEntity_multiIndex::iterator,bool> p_ent = refinedEntities.insert(RefMoFEMEntity(moab,node));
       if(!p_ent.second) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"this entity is there");
       if(verbose>2) {
@@ -162,7 +162,7 @@ PetscErrorCode Core::add_verices_in_the_middel_of_edges(const Range &_edges,cons
 PetscErrorCode Core::refine_TET(const EntityHandle meshset,const BitRefLevel &bit,const bool respect_interface) {
   PetscFunctionBegin;
   Range tets;
-  rval = moab.get_entities_by_type(meshset,MBTET,tets,false); CHKERR_PETSC(rval);
+  rval = moab.get_entities_by_type(meshset,MBTET,tets,false); CHKERRQ_MOAB(rval);
   ierr = refine_TET(tets,bit,respect_interface); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
@@ -204,7 +204,7 @@ PetscErrorCode Core::refine_TET(const Range &_tets,const BitRefLevel &bit,const 
     int num_nodes;
     moab.get_connectivity(*tit,conn,num_nodes,true);
     //Range _tit_edges;
-    //rval = moab.get_adjacencies(&*tit,1,1,true,_tit_edges); CHKERR_PETSC(rval);
+    //rval = moab.get_adjacencies(&*tit,1,1,true,_tit_edges); CHKERRQ_MOAB(rval);
     for(int nn = 0;nn<num_nodes;nn++) {
       bool success = refinedEntities.modify(refinedEntities.get<Ent_mi_tag>().find(conn[nn]),RefMoFEMEntity_change_add_bit(bit));
       if(!success) SETERRQ(PETSC_COMM_SELF,1,"can not set refinement bit level to tet node");
@@ -219,7 +219,7 @@ PetscErrorCode Core::refine_TET(const Range &_tets,const BitRefLevel &bit,const 
     map<EntityHandle /*edge*/,const RefMoFEMEntity* /*node*/> map_ref_nodes_by_edges;
     for(int ee = 0;ee<6;ee++) {
       EntityHandle edge;
-      rval = moab.side_element(*tit,1,ee,edge);  CHKERR_PETSC(rval);
+      rval = moab.side_element(*tit,1,ee,edge);  CHKERRQ_MOAB(rval);
       RefMoFEMEntity_multiIndex_view_by_parent_entity::iterator miit_view;
       miit_view = ref_parent_ents_view.find(edge);
       if(miit_view != ref_parent_ents_view.end()) {
@@ -253,7 +253,7 @@ PetscErrorCode Core::refine_TET(const Range &_tets,const BitRefLevel &bit,const 
           << edge_new_nodes[ee] << endl;
           for(int eee = 0;eee<6;eee++) {
             EntityHandle edge;
-            rval = moab.side_element(*tit,1,eee,edge);  CHKERR_PETSC(rval);
+            rval = moab.side_element(*tit,1,eee,edge);  CHKERRQ_MOAB(rval);
             const EntityHandle* conn_edge;
             int num_nodes;
             moab.get_connectivity(edge,conn_edge,num_nodes,true);
@@ -279,7 +279,7 @@ PetscErrorCode Core::refine_TET(const Range &_tets,const BitRefLevel &bit,const 
         bool success = refinedEntities.modify(tit_miit,RefMoFEMEntity_change_add_bit(bit));
         if(!success) SETERRQ(PETSC_COMM_SELF,1,"impossible tet");
         Range tit_conn;
-        rval = moab.get_connectivity(&*tit,1,tit_conn,true); CHKERR_PETSC(rval);
+        rval = moab.get_connectivity(&*tit,1,tit_conn,true); CHKERRQ_MOAB(rval);
         for(Range::iterator nit = tit_conn.begin();nit!=tit_conn.end();nit++) {
           ref_ents_by_ent::iterator nit_miit = ref_ents_ent.find(*nit);
           if(nit_miit==ref_ents_ent.end()) SETERRQ(PETSC_COMM_SELF,1,"can not find face in refinedEntities");
@@ -287,7 +287,7 @@ PetscErrorCode Core::refine_TET(const Range &_tets,const BitRefLevel &bit,const 
           if(!success) SETERRQ(PETSC_COMM_SELF,1,"impossible node");
         }
         Range tit_edges;
-        rval = moab.get_adjacencies(&*tit,1,1,false,tit_edges); CHKERR_PETSC(rval);
+        rval = moab.get_adjacencies(&*tit,1,1,false,tit_edges); CHKERRQ_MOAB(rval);
         for(Range::iterator eit = tit_edges.begin();eit!=tit_edges.end();eit++) {
           ref_ents_by_ent::iterator eit_miit = ref_ents_ent.find(*eit);
           if(eit_miit==ref_ents_ent.end()) SETERRQ(PETSC_COMM_SELF,1,"can not find face in refinedEntities");
@@ -295,7 +295,7 @@ PetscErrorCode Core::refine_TET(const Range &_tets,const BitRefLevel &bit,const 
           if(!success) SETERRQ(PETSC_COMM_SELF,1,"impossible edge");
         }
         Range tit_faces;
-        rval = moab.get_adjacencies(&*tit,1,2,false,tit_faces); CHKERR_PETSC(rval);
+        rval = moab.get_adjacencies(&*tit,1,2,false,tit_faces); CHKERRQ_MOAB(rval);
         if(tit_faces.size()!=4) SETERRQ(PETSC_COMM_SELF,1,"existing tet in mofem database should have 4 adjacent edges");
         for(Range::iterator fit = tit_faces.begin();fit!=tit_faces.end();fit++) {
           ref_ents_by_ent::iterator fit_miit = ref_ents_ent.find(*fit);
@@ -406,9 +406,9 @@ PetscErrorCode Core::refine_TET(const Range &_tets,const BitRefLevel &bit,const 
         if(!ref_tets_bit.test(tt)) {
           if(miit_composite!=hi_miit_composite) {
             Range new_tets_conns_tet;
-            rval = moab.get_adjacencies(&new_tets_conns[4*tt],4,2,false,new_tets_conns_tet); CHKERR_PETSC(rval);
+            rval = moab.get_adjacencies(&new_tets_conns[4*tt],4,2,false,new_tets_conns_tet); CHKERRQ_MOAB(rval);
             if(new_tets_conns_tet.empty()) {
-              rval = moab.create_element(MBTET,&new_tets_conns[4*tt],4,ref_tets[tt]); CHKERR_PETSC(rval);
+              rval = moab.create_element(MBTET,&new_tets_conns[4*tt],4,ref_tets[tt]); CHKERRQ_MOAB(rval);
             } else {
               if(new_tets_conns_tet.size()!=1) {
                 SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
@@ -416,10 +416,10 @@ PetscErrorCode Core::refine_TET(const Range &_tets,const BitRefLevel &bit,const 
               ref_tets[tt] = new_tets_conns_tet[0];
             }
           } else {
-            rval = moab.create_element(MBTET,&new_tets_conns[4*tt],4,ref_tets[tt]); CHKERR_PETSC(rval);
+            rval = moab.create_element(MBTET,&new_tets_conns[4*tt],4,ref_tets[tt]); CHKERRQ_MOAB(rval);
           }
           Range ref_tet_nodes;
-          rval = moab.get_connectivity(&ref_tets[tt],1,ref_tet_nodes,true); CHKERR_PETSC(rval);
+          rval = moab.get_connectivity(&ref_tets[tt],1,ref_tet_nodes,true); CHKERRQ_MOAB(rval);
           if(ref_tet_nodes.size()!=4) {
             cerr << tt << " " << nb_new_tets << " " << sub_type << " " << parent_edges_bit << endl;
             cerr << _conn_[0] << " "
@@ -450,10 +450,10 @@ PetscErrorCode Core::refine_TET(const Range &_tets,const BitRefLevel &bit,const 
           int ref_type[2];
           ref_type[0] = parent_edges_bit.count();
           ref_type[1] = sub_type;
-          rval = moab.tag_set_data(th_RefType,&ref_tets[tt],1,ref_type); CHKERR_PETSC(rval);
-          rval = moab.tag_set_data(th_RefParentHandle,&ref_tets[tt],1,&*tit); CHKERR_PETSC(rval);
-          rval = moab.tag_set_data(th_RefBitLevel,&ref_tets[tt],1,&bit); CHKERR_PETSC(rval);
-          rval = moab.tag_set_data(th_RefBitEdge,&ref_tets[tt],1,&parent_edges_bit); CHKERR_PETSC(rval);
+          rval = moab.tag_set_data(th_RefType,&ref_tets[tt],1,ref_type); CHKERRQ_MOAB(rval);
+          rval = moab.tag_set_data(th_RefParentHandle,&ref_tets[tt],1,&*tit); CHKERRQ_MOAB(rval);
+          rval = moab.tag_set_data(th_RefBitLevel,&ref_tets[tt],1,&bit); CHKERRQ_MOAB(rval);
+          rval = moab.tag_set_data(th_RefBitEdge,&ref_tets[tt],1,&parent_edges_bit); CHKERRQ_MOAB(rval);
           //add refined entity
           pair<RefMoFEMEntity_multiIndex::iterator,bool> p_MoFEMEntity = refinedEntities.insert(RefMoFEMEntity(moab,ref_tets[tt]));
           //add refined element
@@ -485,14 +485,14 @@ PetscErrorCode Core::refine_TET(const Range &_tets,const BitRefLevel &bit,const 
     //find parents for new edges and faces
     //get tet edges and faces
     Range tit_edges,tit_faces;
-    rval = moab.get_adjacencies(&*tit,1,1,false,tit_edges); CHKERR_PETSC(rval);
-    rval = moab.get_adjacencies(&*tit,1,2,false,tit_faces); CHKERR_PETSC(rval);
+    rval = moab.get_adjacencies(&*tit,1,1,false,tit_edges); CHKERRQ_MOAB(rval);
+    rval = moab.get_adjacencies(&*tit,1,2,false,tit_faces); CHKERRQ_MOAB(rval);
     Range edges_nodes[6],faces_nodes[4];
     //for edges - add ref nodes
     //edges_nodes[ee] - contains all nodes on edge ee including mid nodes if exist
     Range::iterator eit = tit_edges.begin();
     for(int ee = 0;eit!=tit_edges.end();eit++,ee++) {
-      rval = moab.get_connectivity(&*eit,1,edges_nodes[ee],true); CHKERR_PETSC(rval);
+      rval = moab.get_connectivity(&*eit,1,edges_nodes[ee],true); CHKERRQ_MOAB(rval);
       map<EntityHandle,const RefMoFEMEntity*>::iterator map_miit = map_ref_nodes_by_edges.find(*eit);
       if(map_miit!=map_ref_nodes_by_edges.end()) {
         edges_nodes[ee].insert(map_miit->second->get_ref_ent());
@@ -502,9 +502,9 @@ PetscErrorCode Core::refine_TET(const Range &_tets,const BitRefLevel &bit,const 
     //faces_nodes[ff] - contains all nodes on face ff including mid nodes if exist
     Range::iterator fit=tit_faces.begin();
     for(int ff = 0;fit!=tit_faces.end();fit++,ff++) {
-      rval = moab.get_connectivity(&*fit,1,faces_nodes[ff],true); CHKERR_PETSC(rval);
+      rval = moab.get_connectivity(&*fit,1,faces_nodes[ff],true); CHKERRQ_MOAB(rval);
       Range fit_edges;
-      rval = moab.get_adjacencies(&*fit,1,1,false,fit_edges); CHKERR_PETSC(rval);
+      rval = moab.get_adjacencies(&*fit,1,1,false,fit_edges); CHKERRQ_MOAB(rval);
       for(Range::iterator eit2 =  fit_edges.begin();eit2 != fit_edges.end();eit2++) {
         map<EntityHandle,const RefMoFEMEntity*>::iterator map_miit = map_ref_nodes_by_edges.find(*eit2);
         if(map_miit!=map_ref_nodes_by_edges.end()) {
@@ -515,18 +515,18 @@ PetscErrorCode Core::refine_TET(const Range &_tets,const BitRefLevel &bit,const 
     //add ref nodes to tet
     //tet_nodes contains all nodes on tet inluding mid edge nodes
     Range tet_nodes;
-    rval = moab.get_connectivity(&*tit,1,tet_nodes,true); CHKERR_PETSC(rval);
+    rval = moab.get_connectivity(&*tit,1,tet_nodes,true); CHKERRQ_MOAB(rval);
     for(map<EntityHandle,const RefMoFEMEntity*>::iterator map_miit = map_ref_nodes_by_edges.begin();
     map_miit != map_ref_nodes_by_edges.end();map_miit++) {
       tet_nodes.insert(map_miit->second->get_ref_ent());
     }
     Range ref_edges;
     //get all all edges of refined tets
-    rval = moab.get_adjacencies(ref_tets,nb_new_tets,1,true,ref_edges,Interface::UNION); CHKERR_PETSC(rval);
+    rval = moab.get_adjacencies(ref_tets,nb_new_tets,1,true,ref_edges,Interface::UNION); CHKERRQ_MOAB(rval);
     //check for all ref edge and set parents
     for(Range::iterator reit = ref_edges.begin();reit!=ref_edges.end();reit++) {
       Range ref_edges_nodes;
-      rval = moab.get_connectivity(&*reit,1,ref_edges_nodes,true); CHKERR_PETSC(rval);
+      rval = moab.get_connectivity(&*reit,1,ref_edges_nodes,true); CHKERRQ_MOAB(rval);
       if(ref_edges_nodes.size()!=2) {
         SETERRQ(PETSC_COMM_SELF,1,"data inconsistency, edge should have 2 nodes");
       }
@@ -537,7 +537,7 @@ PetscErrorCode Core::refine_TET(const Range &_tets,const BitRefLevel &bit,const 
         //this tests if given edge is contained by edge of refined tetrahedral
         if(intersect(edges_nodes[ee],ref_edges_nodes).size()==2) {
           EntityHandle edge = tit_edges[ee];
-          rval = moab.tag_set_data(th_RefParentHandle,&*reit,1,&edge); CHKERR_PETSC(rval);
+          rval = moab.tag_set_data(th_RefParentHandle,&*reit,1,&edge); CHKERRQ_MOAB(rval);
           pair<RefMoFEMEntity_multiIndex::iterator,bool> p_ent = refinedEntities.insert(RefMoFEMEntity(moab,*reit));
           bool success = refinedEntities.modify(p_ent.first,RefMoFEMEntity_change_add_bit(bit));
           if(!success) SETERRQ(PETSC_COMM_SELF,1,"impossible to set edge pranet");
@@ -559,7 +559,7 @@ PetscErrorCode Core::refine_TET(const Range &_tets,const BitRefLevel &bit,const 
         //thi tests if givem edge is contained by face of  tetrahedral
         if(intersect(faces_nodes[ff],ref_edges_nodes).size()==2) {
           EntityHandle face = tit_faces[ff];
-          rval = moab.tag_set_data(th_RefParentHandle,&*reit,1,&face); CHKERR_PETSC(rval);
+          rval = moab.tag_set_data(th_RefParentHandle,&*reit,1,&face); CHKERRQ_MOAB(rval);
           //add edge to refinedEntities
           pair<RefMoFEMEntity_multiIndex::iterator,bool> p_ent = refinedEntities.insert(RefMoFEMEntity(moab,*reit));
           bool success = refinedEntities.modify(p_ent.first,RefMoFEMEntity_change_add_bit(bit));
@@ -577,7 +577,7 @@ PetscErrorCode Core::refine_TET(const Range &_tets,const BitRefLevel &bit,const 
       if(ff<4) continue; //this refined edge is contained by face of tetrahedral
       // check if ref edge is in coarse tetrahedral (i.e. that is internal edge of refined tetrahedral)
       if(intersect(tet_nodes,ref_edges_nodes).size()==2) {
-        rval = moab.tag_set_data(th_RefParentHandle,&*reit,1,&*tit); CHKERR_PETSC(rval);
+        rval = moab.tag_set_data(th_RefParentHandle,&*reit,1,&*tit); CHKERRQ_MOAB(rval);
         //add edge to refinedEntities
         pair<RefMoFEMEntity_multiIndex::iterator,bool> p_ent = refinedEntities.insert(RefMoFEMEntity(moab,*reit));
         bool success = refinedEntities.modify(p_ent.first,RefMoFEMEntity_change_add_bit(bit));
@@ -594,40 +594,40 @@ PetscErrorCode Core::refine_TET(const Range &_tets,const BitRefLevel &bit,const 
 
       //this will help to debug error
       Range ref_edges_nodes_tets;
-      rval = moab.get_adjacencies(ref_edges_nodes,3,true,ref_edges_nodes_tets,Interface::UNION); CHKERR_PETSC(rval);
+      rval = moab.get_adjacencies(ref_edges_nodes,3,true,ref_edges_nodes_tets,Interface::UNION); CHKERRQ_MOAB(rval);
       ref_edges_nodes_tets = intersect(ref_edges_nodes_tets,tets);
       ref_edges_nodes_tets.insert(*reit);
 
       EntityHandle meshset_out;
-      rval = moab.create_meshset(MESHSET_SET,meshset_out); CHKERR_PETSC(rval);
-      rval = moab.add_entities(meshset_out,ref_edges_nodes_tets); CHKERR_PETSC(rval);
-      rval = moab.write_file("debug_error.vtk","VTK","",&meshset_out,1); CHKERR_PETSC(rval);
-      rval = moab.delete_entities(&meshset_out,1); CHKERR_PETSC(rval);
+      rval = moab.create_meshset(MESHSET_SET,meshset_out); CHKERRQ_MOAB(rval);
+      rval = moab.add_entities(meshset_out,ref_edges_nodes_tets); CHKERRQ_MOAB(rval);
+      rval = moab.write_file("debug_error.vtk","VTK","",&meshset_out,1); CHKERRQ_MOAB(rval);
+      rval = moab.delete_entities(&meshset_out,1); CHKERRQ_MOAB(rval);
 
       //refined edge is not child of any edge, face or tetrahedral, this is imposible edge
       SETERRQ(PETSC_COMM_SELF,1,"impossible refined edge");
     }
     Range ref_faces;
-    rval = moab.get_adjacencies(ref_tets,nb_new_tets,2,true,ref_faces,Interface::UNION); CHKERR_PETSC(rval);
+    rval = moab.get_adjacencies(ref_tets,nb_new_tets,2,true,ref_faces,Interface::UNION); CHKERRQ_MOAB(rval);
     Tag th_interface_side;
     const int def_side[] = {0};
     rval = moab.tag_get_handle("INTERFACE_SIDE",1,MB_TYPE_INTEGER,
-    th_interface_side,MB_TAG_CREAT|MB_TAG_SPARSE,def_side); CHKERR_PETSC(rval);
+    th_interface_side,MB_TAG_CREAT|MB_TAG_SPARSE,def_side); CHKERRQ_MOAB(rval);
     // check for all ref faces
     for(Range::iterator rfit = ref_faces.begin();rfit!=ref_faces.end();rfit++) {
       Range ref_faces_nodes;
-      rval = moab.get_connectivity(&*rfit,1,ref_faces_nodes,true); CHKERR_PETSC(rval);
+      rval = moab.get_connectivity(&*rfit,1,ref_faces_nodes,true); CHKERRQ_MOAB(rval);
       // check if ref face is in coarse face
       int ff = 0;
       for(;ff<4;ff++) {
         //check if refined edge is contained by face of tetrahedral
         if(intersect(faces_nodes[ff],ref_faces_nodes).size()==3) {
           EntityHandle face = tit_faces[ff];
-          rval = moab.tag_set_data(th_RefParentHandle,&*rfit,1,&face); CHKERR_PETSC(rval);
+          rval = moab.tag_set_data(th_RefParentHandle,&*rfit,1,&face); CHKERRQ_MOAB(rval);
           int side = 0;
           //set face side if it is on interface
-          rval = moab.tag_get_data(th_interface_side,&face,1,&side); CHKERR_PETSC(rval);
-          rval = moab.tag_set_data(th_interface_side,&*rfit,1,&side); CHKERR_PETSC(rval);
+          rval = moab.tag_get_data(th_interface_side,&face,1,&side); CHKERRQ_MOAB(rval);
+          rval = moab.tag_set_data(th_interface_side,&*rfit,1,&side); CHKERRQ_MOAB(rval);
           //add face to refinedEntities
           pair<RefMoFEMEntity_multiIndex::iterator,bool> p_ent = refinedEntities.insert(RefMoFEMEntity(moab,*rfit));
           bool success = refinedEntities.modify(p_ent.first,RefMoFEMEntity_change_add_bit(bit));
@@ -646,7 +646,7 @@ PetscErrorCode Core::refine_TET(const Range &_tets,const BitRefLevel &bit,const 
       //check if ref face is in coarse tetrahedral
       //this is ref face which is contained by tetrahedral volume
       if(intersect(tet_nodes,ref_faces_nodes).size()==3) {
-        rval = moab.tag_set_data(th_RefParentHandle,&*rfit,1,&*tit); CHKERR_PETSC(rval);
+        rval = moab.tag_set_data(th_RefParentHandle,&*rfit,1,&*tit); CHKERRQ_MOAB(rval);
         pair<RefMoFEMEntity_multiIndex::iterator,bool> p_ent = refinedEntities.insert(RefMoFEMEntity(moab,*rfit));
         //add face to refinedEntities
         bool success = refinedEntities.modify(p_ent.first,RefMoFEMEntity_change_add_bit(bit));
@@ -686,7 +686,7 @@ PetscErrorCode Core::refine_PRISM(const EntityHandle meshset,const BitRefLevel &
     }
   }
   Range prisms;
-  rval = moab.get_entities_by_type(meshset,MBPRISM,prisms,false); CHKERR_PETSC(rval);
+  rval = moab.get_entities_by_type(meshset,MBPRISM,prisms,false); CHKERRQ_MOAB(rval);
   Range::iterator pit = prisms.begin();
   for(;pit!=prisms.end();pit++) {
     ref_ENTs_by_ent::iterator miit_prism = refinedEntities.get<Ent_mi_tag>().find(*pit);
@@ -699,15 +699,15 @@ PetscErrorCode Core::refine_PRISM(const EntityHandle meshset,const BitRefLevel &
     //prism connectivity
     int num_nodes;
     const EntityHandle* conn;
-    rval = moab.get_connectivity(*pit,conn,num_nodes,true); CHKERR_PETSC(rval);
+    rval = moab.get_connectivity(*pit,conn,num_nodes,true); CHKERRQ_MOAB(rval);
     assert(num_nodes==6);
     // edges connectivity
     EntityHandle edges[6];
     for(int ee = 0;ee<3; ee++) {
-      rval = moab.side_element(*pit,1,ee,edges[ee]); CHKERR_PETSC(rval);
+      rval = moab.side_element(*pit,1,ee,edges[ee]); CHKERRQ_MOAB(rval);
     }
     for(int ee = 6;ee<9; ee++) {
-      rval = moab.side_element(*pit,1,ee,edges[ee-3]); CHKERR_PETSC(rval);
+      rval = moab.side_element(*pit,1,ee,edges[ee-3]); CHKERRQ_MOAB(rval);
     }
     // detect split edges
     BitRefEdges split_edges(0);
@@ -790,10 +790,10 @@ PetscErrorCode Core::refine_PRISM(const EntityHandle meshset,const BitRefLevel &
 	  PetscPrintf(comm,ss.str().c_str());
 	}
 	if(!ref_prism_bit.test(pp)) {
-	  rval = moab.create_element(MBPRISM,&new_prism_conn[6*pp],6,ref_prisms[pp]); CHKERR_PETSC(rval);
-	  rval = moab.tag_set_data(th_RefParentHandle,&ref_prisms[pp],1,&*pit); CHKERR_PETSC(rval);
-	  rval = moab.tag_set_data(th_RefBitLevel,&ref_prisms[pp],1,&bit); CHKERR_PETSC(rval);
-	  rval = moab.tag_set_data(th_RefBitEdge,&ref_prisms[pp],1,&split_edges); CHKERR_PETSC(rval);
+	  rval = moab.create_element(MBPRISM,&new_prism_conn[6*pp],6,ref_prisms[pp]); CHKERRQ_MOAB(rval);
+	  rval = moab.tag_set_data(th_RefParentHandle,&ref_prisms[pp],1,&*pit); CHKERRQ_MOAB(rval);
+	  rval = moab.tag_set_data(th_RefBitLevel,&ref_prisms[pp],1,&bit); CHKERRQ_MOAB(rval);
+	  rval = moab.tag_set_data(th_RefBitEdge,&ref_prisms[pp],1,&split_edges); CHKERRQ_MOAB(rval);
 	  pair<RefMoFEMEntity_multiIndex::iterator,bool> p_ent = refinedEntities.insert(RefMoFEMEntity(moab,ref_prisms[pp]));
 	  pair<RefMoFEMElement_multiIndex::iterator,bool> p_MoFEMFiniteElement;
 	  try {

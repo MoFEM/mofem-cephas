@@ -70,8 +70,9 @@ PetscErrorCode DMMoFEMGetSquareProblem(DM dm,PetscBool *square_problem);
  * This allows for tag reduction or tag exchange, f.e.
 
  \code
+ ierr = DMMoFEMGetSquareProblem(dm,"SHELL_ELEMENT"); CHKERRQ(ierr);
  Tag th;
- rval = mField.get_moab().tag_get_handle("ADAPT_ORDER",th); CHKERR_PETSC(rval);
+ rval = mField.get_moab().tag_get_handle("ADAPT_ORDER",th); CHKERRQ_MOAB(rval);
  ParallelComm* pcomm = ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
  // rval = pcomm->reduce_tags(th,MPI_SUM,prisms);
  rval = pcomm->exchange_tags(th,prisms);

@@ -165,7 +165,7 @@ enum CubitBC {
 #define BITPROBLEMID_SIZE 32 /*max number of problems*/
 #define BITINTERFACEUID_SIZE 32
 
-//// default comunicator number
+//// default communicator number
 #define MYPCOMM_INDEX 0
 
 //This Is form MOAB
@@ -181,21 +181,38 @@ enum CubitBC {
 #define NOT_USED(x) ( (void)(x) )
 
 /** \brief set barrier start
- *
  * Run code in sequence, starting from process 0, and ends on last process.
+ *
+ * It can be only used for testing. Do not use that function as a part of these
+ * code.
+ *
  */
 #define BARRIER_RANK_START(PCMB) \
   { for(unsigned int i = 0; \
   i<PCMB->proc_config().proc_rank(); i++) MPI_Barrier(PCMB->proc_config().proc_comm()); };
-/// set barrier end
+
+/** \brief set barrier start
+  * Run code in sequence, starting from process 0, and ends on last process.
+  *
+  * It can be only used for testing. Do not use that function as a part of these
+  * code.
+  *
+  */
 #define BARRIER_RANK_END(PCMB) \
   { for(unsigned int i = PCMB->proc_config().proc_rank(); \
   i<PCMB->proc_config().proc_size(); i++) MPI_Barrier(PCMB->proc_config().proc_comm()); };
 
+/**
+ * \brief Is used to indicate that macro is deprecated
+ * Do nothing just triggers error at the compilation
+ */
+DEPRECATED static void macro_is_depracted_using_deprecated_function() {}
 
-//ERROR
-/// check moab error
-#define CHKERR(a) do { \
+/**
+ * \brief check error code of MoAB functions and print on screen error
+ * @param  a error code
+ */
+#define CHKERR_MOAB(a) do { \
   ErrorCode val = (a); \
   if (MB_SUCCESS != val) { \
     cerr << "Error code  " << val << " at " << __FILE__ << ":" << __LINE__ << std::endl; \
@@ -203,9 +220,24 @@ enum CubitBC {
   } \
 } while (false)
 
+/**
+ * \brief do not use that macro it will be removed in future
+ */
+#define CHKERR(a) \
+  macro_is_depracted_using_deprecated_function(); \
+  do { \
+  ErrorCode val = (a); \
+  if (MB_SUCCESS != val) { \
+    cerr << "Error code  " << val << " at " << __FILE__ << ":" << __LINE__ << std::endl; \
+    assert(1); \
+  } \
+} while (false)
 
-/// check moab error and communicate it using petsc interface
-#define CHKERR_PETSC(a) do { \
+/**
+ * \brief check error code of MoAB function
+ * @param  a MoABErrorCode
+ */
+#define CHKERRQ_MOAB(a) do { \
   ErrorCode val = (a); \
   if (MB_SUCCESS != val) { \
     std::ostringstream ss; \
@@ -215,7 +247,26 @@ enum CubitBC {
   } \
 } while (false)
 
-#define CHKERR_THROW(a) do { \
+/**
+ * \brief do not use that macro it will be removed in future
+ */
+#define CHKERR_PETSC(a) \
+  macro_is_depracted_using_deprecated_function(); \
+  do { \
+  ErrorCode val = (a); \
+  if (MB_SUCCESS != val) { \
+    std::ostringstream ss; \
+    ss << "Error code  " << val << " at " << __FILE__ << ":" << __LINE__ << std::endl; \
+    std::string str(ss.str()); \
+    SETERRQ(PETSC_COMM_SELF,MOFEM_MOAB_ERROR,str.c_str()); \
+  } \
+} while (false)
+
+/**
+ * \bried Check error code of MoAB function and throw MoFEM exception
+ * @param  a MoABErrorCode
+ */
+#define CHKERRQ_MOAB_THROW(a) do { \
   ErrorCode val = (a); \
   if (MB_SUCCESS != val) { \
     std::ostringstream ss; \
@@ -224,12 +275,34 @@ enum CubitBC {
   } \
 } while (false)
 
+/**
+ * \brief do not use that macro it will be removed in future
+ */
+#define CHKERR_THROW(a) \
+  macro_is_depracted_using_deprecated_function(); \
+  do { \
+  ErrorCode val = (a); \
+  if (MB_SUCCESS != val) { \
+    std::ostringstream ss; \
+    ss << "Error code  " << val << " at " << __FILE__ << ":" << __LINE__ << std::endl; \
+    throw MoFEMException(MOFEM_MOAB_ERROR,ss.str().c_str() ); \
+  } \
+} while (false)
+
+/**
+ * \brief Throw MoFEM exception
+ * @param  a message
+ */
 #define THROW_AT_LINE(a) { \
   std::ostringstream ss; \
   ss << a << " " << " at " << __FILE__ << ":" << __LINE__ << std::endl; \
-  throw MoFEMException( MOFEM_MOFEMEXCEPTION_THROW,ss.str().c_str() ); \
+  throw MoFEMException(MOFEM_MOFEMEXCEPTION_THROW,ss.str().c_str() ); \
 }
 
+/**
+ * \brief Convert number to string
+ * @param  x number
+ */
 #define SSTR( x ) dynamic_cast< std::ostringstream & >( \
   ( std::ostringstream() << std::dec << x ) ).str()
 

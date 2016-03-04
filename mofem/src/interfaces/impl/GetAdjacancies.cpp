@@ -51,7 +51,7 @@ PetscErrorCode Core::get_adjacencies_equality(const EntityHandle from_entiti,con
   RefMoFEMEntity from_ref_entiti(moab,from_entiti);
   //cerr << "from:\n";
   //cerr << from_ref_entiti << endl;
-  rval = moab.get_adjacencies(&from_entiti,1,to_dimension,false,adj_entities); CHKERR_PETSC(rval);
+  rval = moab.get_adjacencies(&from_entiti,1,to_dimension,false,adj_entities); CHKERRQ_MOAB(rval);
   Range::iterator eit = adj_entities.begin();
   //cerr << "to:\n";
   for(;eit!=adj_entities.end();) {
@@ -70,7 +70,7 @@ PetscErrorCode Core::get_adjacencies_any(const EntityHandle from_entiti,const in
   RefMoFEMEntity from_ref_entiti(moab,from_entiti);
   //cerr << "from:\n";
   //cerr << from_ref_entiti << endl;
-  rval = moab.get_adjacencies(&from_entiti,1,to_dimension,false,adj_entities); CHKERR_PETSC(rval);
+  rval = moab.get_adjacencies(&from_entiti,1,to_dimension,false,adj_entities); CHKERRQ_MOAB(rval);
   Range::iterator eit = adj_entities.begin();
   //cerr << "to:\n";
   for(;eit!=adj_entities.end();) {
@@ -102,7 +102,7 @@ PetscErrorCode Core::get_adjacencies(
     ss << "from: " << bit << endl << "to: " << endl;
     PetscPrintf(comm,ss.str().c_str());
   }
-  rval = moab.get_adjacencies(from_entities,num_netities,to_dimension,false,adj_entities,operation_type); CHKERR_PETSC(rval);
+  rval = moab.get_adjacencies(from_entities,num_netities,to_dimension,false,adj_entities,operation_type); CHKERRQ_MOAB(rval);
   Range::iterator eit = adj_entities.begin();
   //cerr << "to:\n";
   for(;eit!=adj_entities.end();) {

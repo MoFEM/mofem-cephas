@@ -113,11 +113,11 @@ int main(int argc, char *argv[]) {
     option = "PARALLEL=BCAST_DELETE;"
       "PARALLEL_RESOLVE_SHARED_ENTS;"
       "PARTITION=PARALLEL_PARTITION;";
-    rval = moab.load_file(mesh_file_name, 0, option); CHKERR_PETSC(rval);
+    rval = moab.load_file(mesh_file_name, 0, option); CHKERRQ_MOAB(rval);
   } else {
     const char *option;
     option = "";
-    rval = moab.load_file(mesh_file_name, 0, option); CHKERR_PETSC(rval);
+    rval = moab.load_file(mesh_file_name, 0, option); CHKERRQ_MOAB(rval);
   }
 
   //Create MoFEM (Joseph) database
@@ -195,12 +195,12 @@ int main(int argc, char *argv[]) {
         if(block_data[it->get_msId()].oRder == order) continue;
         PetscPrintf(PETSC_COMM_WORLD,"Set block %d order to %d\n",it->get_msId(),block_data[it->get_msId()].oRder);
         Range block_ents;
-        rval = moab.get_entities_by_handle(it->get_meshset(),block_ents,true); CHKERR_PETSC(rval);
+        rval = moab.get_entities_by_handle(it->get_meshset(),block_ents,true); CHKERRQ_MOAB(rval);
         Range ents_to_set_order;
-        rval = moab.get_adjacencies(block_ents,3,false,ents_to_set_order,Interface::UNION); CHKERR_PETSC(rval);
+        rval = moab.get_adjacencies(block_ents,3,false,ents_to_set_order,Interface::UNION); CHKERRQ_MOAB(rval);
         ents_to_set_order = ents_to_set_order.subset_by_type(MBTET);
-        rval = moab.get_adjacencies(block_ents,2,false,ents_to_set_order,Interface::UNION); CHKERR_PETSC(rval);
-        rval = moab.get_adjacencies(block_ents,1,false,ents_to_set_order,Interface::UNION); CHKERR_PETSC(rval);
+        rval = moab.get_adjacencies(block_ents,2,false,ents_to_set_order,Interface::UNION); CHKERRQ_MOAB(rval);
+        rval = moab.get_adjacencies(block_ents,1,false,ents_to_set_order,Interface::UNION); CHKERRQ_MOAB(rval);
         ierr = m_field.synchronise_entities(ents_to_set_order); CHKERRQ(ierr);
         ierr = m_field.set_field_order(ents_to_set_order,"DISPLACEMENT",block_data[it->get_msId()].oRder); CHKERRQ(ierr);
       }
@@ -232,7 +232,7 @@ int main(int argc, char *argv[]) {
   ierr = m_field.modify_finite_element_add_field_data("BODY_FORCE","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
   for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,BLOCKSET|BODYFORCESSET,it)) {
     Range tets;
-    rval = m_field.get_moab().get_entities_by_type(it->meshset,MBTET,tets,true); CHKERR_PETSC(rval);
+    rval = m_field.get_moab().get_entities_by_type(it->meshset,MBTET,tets,true); CHKERRQ_MOAB(rval);
     ierr = m_field.add_ents_to_finite_element_by_TETs(tets,"BODY_FORCE"); CHKERRQ(ierr);
   }
 
@@ -276,9 +276,9 @@ int main(int argc, char *argv[]) {
         PetscPrintf(PETSC_COMM_WORLD,"Set block %d temperature to %3.2g\n",
         it->get_msId(),block_data[it->get_msId()].initTemp);
         Range block_ents;
-        rval = moab.get_entities_by_handle(it->meshset,block_ents,true); CHKERR_PETSC(rval);
+        rval = moab.get_entities_by_handle(it->meshset,block_ents,true); CHKERRQ_MOAB(rval);
         Range vertices;
-        rval = moab.get_connectivity(block_ents,vertices,true); CHKERR_PETSC(rval);
+        rval = moab.get_connectivity(block_ents,vertices,true); CHKERRQ_MOAB(rval);
         ierr = m_field.set_field(block_data[it->get_msId()].initTemp,MBVERTEX,vertices,"TEMP"); CHKERRQ(ierr);
       }
     }

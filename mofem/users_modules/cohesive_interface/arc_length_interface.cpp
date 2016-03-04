@@ -70,7 +70,7 @@ struct ArcLengthElement: public ArcLengthIntElemFEMethod {
     for(_IT_CUBITMESHSETS_BY_NAME_FOR_LOOP_(mField,"LoadPath",cit)) {
       EntityHandle meshset = cit->get_meshset();
       Range nodes;
-      rval = mOab.get_entities_by_type(meshset,MBVERTEX,nodes,true); CHKERR_THROW(rval);
+      rval = mOab.get_entities_by_type(meshset,MBVERTEX,nodes,true); CHKERRQ_MOAB_THROW(rval);
       PostProcNodes.merge(nodes);
     }
 
@@ -92,7 +92,7 @@ struct ArcLengthElement: public ArcLengthIntElemFEMethod {
       dit = numered_dofs_rows.get<Ent_mi_tag>().lower_bound(*nit);
       hi_dit = numered_dofs_rows.get<Ent_mi_tag>().upper_bound(*nit);
       double coords[3];
-      rval = mOab.get_coords(&*nit,1,coords);  CHKERR_THROW(rval);
+      rval = mOab.get_coords(&*nit,1,coords);  CHKERRQ_MOAB_THROW(rval);
       for(;dit!=hi_dit;dit++) {
         PetscPrintf(PETSC_COMM_WORLD,"%s [ %d ] %6.4e -> ",lit->get_name().c_str(),lit->get_dof_coeff_idx(),lit->get_FieldData());
         PetscPrintf(PETSC_COMM_WORLD,"%s [ %d ] %6.4e ",dit->get_name().c_str(),dit->get_dof_coeff_idx(),dit->get_FieldData());
@@ -221,7 +221,7 @@ int main(int argc, char *argv[]) {
   //Read mesh to MOAB
   const char *option;
   option = "";//"PARALLEL=BCAST;";//;DEBUG_IO";
-  rval = moab.load_file(mesh_file_name, 0, option); CHKERR_PETSC(rval);
+  rval = moab.load_file(mesh_file_name, 0, option); CHKERRQ_MOAB(rval);
   ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
   if(pcomm == NULL) pcomm =  new ParallelComm(&moab,PETSC_COMM_WORLD);
 
@@ -230,17 +230,17 @@ int main(int argc, char *argv[]) {
   double def_step_size = 1;
   rval = moab.tag_get_handle("_STEPSIZE",1,MB_TYPE_DOUBLE,th_step_size,MB_TAG_CREAT|MB_TAG_MESH,&def_step_size);
   if(rval==MB_ALREADY_ALLOCATED) rval = MB_SUCCESS;
-  CHKERR(rval);
+  CHKERR_MOAB(rval);
   int def_step = 1;
   rval = moab.tag_get_handle("_STEP",1,MB_TYPE_INTEGER,th_step,MB_TAG_CREAT|MB_TAG_MESH,&def_step);
   if(rval==MB_ALREADY_ALLOCATED) rval = MB_SUCCESS;
-  CHKERR(rval);
+  CHKERR_MOAB(rval);
   const void* tag_data_step_size[1];
   EntityHandle root = moab.get_root_set();
-  rval = moab.tag_get_by_ptr(th_step_size,&root,1,tag_data_step_size); CHKERR_PETSC(rval);
+  rval = moab.tag_get_by_ptr(th_step_size,&root,1,tag_data_step_size); CHKERRQ_MOAB(rval);
   double& step_size = *(double *)tag_data_step_size[0];
   const void* tag_data_step[1];
-  rval = moab.tag_get_by_ptr(th_step,&root,1,tag_data_step); CHKERR_PETSC(rval);
+  rval = moab.tag_get_by_ptr(th_step,&root,1,tag_data_step); CHKERRQ_MOAB(rval);
   int& step = *(int *)tag_data_step[0];
   //end of data stored for restart
   ierr = PetscPrintf(PETSC_COMM_WORLD,"Start step %D and step_size = %6.4e\n",step,step_size); CHKERRQ(ierr);
@@ -256,7 +256,7 @@ int main(int argc, char *argv[]) {
     th_my_ref_level,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES,&def_bit_level);
   const EntityHandle root_meshset = m_field.get_moab().get_root_set();
   BitRefLevel *ptr_bit_level0;
-  rval = m_field.get_moab().tag_get_by_ptr(th_my_ref_level,&root_meshset,1,(const void**)&ptr_bit_level0); CHKERR_PETSC(rval);
+  rval = m_field.get_moab().tag_get_by_ptr(th_my_ref_level,&root_meshset,1,(const void**)&ptr_bit_level0); CHKERRQ_MOAB(rval);
   BitRefLevel& bit_level0 = *ptr_bit_level0;
   BitRefLevel problem_bit_level = bit_level0;
 
@@ -274,11 +274,11 @@ int main(int argc, char *argv[]) {
       {
         //get tet enties form back bit_level
         EntityHandle ref_level_meshset = 0;
-        rval = moab.create_meshset(MESHSET_SET,ref_level_meshset); CHKERR_PETSC(rval);
+        rval = moab.create_meshset(MESHSET_SET,ref_level_meshset); CHKERRQ_MOAB(rval);
         ierr = m_field.get_entities_by_type_and_ref_level(bit_levels.back(),BitRefLevel().set(),MBTET,ref_level_meshset); CHKERRQ(ierr);
         ierr = m_field.get_entities_by_type_and_ref_level(bit_levels.back(),BitRefLevel().set(),MBPRISM,ref_level_meshset); CHKERRQ(ierr);
         Range ref_level_tets;
-        rval = moab.get_entities_by_handle(ref_level_meshset,ref_level_tets,true); CHKERR_PETSC(rval);
+        rval = moab.get_entities_by_handle(ref_level_meshset,ref_level_tets,true); CHKERRQ_MOAB(rval);
         //get faces and test to split
         ierr = interface.get_msId_3dENTS_sides(cubit_meshset,bit_levels.back(),true,0); CHKERRQ(ierr);
         //set new bit level
@@ -286,7 +286,7 @@ int main(int argc, char *argv[]) {
         //split faces and
         ierr = interface.get_msId_3dENTS_split_sides(ref_level_meshset,bit_levels.back(),cubit_meshset,true,true,0); CHKERRQ(ierr);
         //clean meshsets
-        rval = moab.delete_entities(&ref_level_meshset,1); CHKERR_PETSC(rval);
+        rval = moab.delete_entities(&ref_level_meshset,1); CHKERRQ_MOAB(rval);
       }
       //update cubit meshsets
       for(_IT_CUBITMESHSETS_FOR_LOOP_(m_field,ciit)) {
@@ -366,18 +366,18 @@ int main(int argc, char *argv[]) {
       EntityHandle no_field_vertex;
       {
         const double coords[] = {0,0,0};
-        rval = m_field.get_moab().create_vertex(coords,no_field_vertex); CHKERR_PETSC(rval);
+        rval = m_field.get_moab().create_vertex(coords,no_field_vertex); CHKERRQ_MOAB(rval);
         Range range_no_field_vertex;
         range_no_field_vertex.insert(no_field_vertex);
         ierr = m_field.seed_ref_level(range_no_field_vertex,BitRefLevel().set()); CHKERRQ(ierr);
         EntityHandle lambda_meshset = m_field.get_field_meshset("LAMBDA");
-        rval = m_field.get_moab().add_entities(lambda_meshset,range_no_field_vertex); CHKERR_PETSC(rval);
+        rval = m_field.get_moab().add_entities(lambda_meshset,range_no_field_vertex); CHKERRQ_MOAB(rval);
       }
       //this entity will carray data for this finite element
       EntityHandle meshset_fe_arc_length;
       {
-        rval = moab.create_meshset(MESHSET_SET,meshset_fe_arc_length); CHKERR_PETSC(rval);
-        rval = moab.add_entities(meshset_fe_arc_length,&no_field_vertex,1); CHKERR_PETSC(rval);
+        rval = moab.create_meshset(MESHSET_SET,meshset_fe_arc_length); CHKERRQ_MOAB(rval);
+        rval = moab.add_entities(meshset_fe_arc_length,&no_field_vertex,1); CHKERRQ_MOAB(rval);
         ierr = m_field.seed_ref_level_MESHSET(meshset_fe_arc_length,BitRefLevel().set()); CHKERRQ(ierr);
       }
       //finally add created meshset to the ARC_LENGTH finite element
@@ -400,9 +400,9 @@ int main(int argc, char *argv[]) {
     Range prims;
     ierr = m_field.get_entities_by_type_and_ref_level(problem_bit_level,BitRefLevel().set(),MBPRISM,prims); CHKERRQ(ierr);
     Range prims_faces;
-    rval = m_field.get_moab().get_adjacencies(prims,2,false,prims_faces,Interface::UNION); CHKERR_PETSC(rval);
+    rval = m_field.get_moab().get_adjacencies(prims,2,false,prims_faces,Interface::UNION); CHKERRQ_MOAB(rval);
     Range prims_faces_edges;
-    rval = m_field.get_moab().get_adjacencies(prims_faces,1,false,prims_faces_edges,Interface::UNION); CHKERR_PETSC(rval);
+    rval = m_field.get_moab().get_adjacencies(prims_faces,1,false,prims_faces_edges,Interface::UNION); CHKERRQ_MOAB(rval);
     ierr = m_field.set_field_order(prims_faces,"DISPLACEMENT",order>1 ? order-1 : 0); CHKERRQ(ierr);
     ierr = m_field.set_field_order(prims_faces_edges,"DISPLACEMENT",order>1 ? order-1 : 0); CHKERRQ(ierr);*/
 
@@ -424,7 +424,7 @@ int main(int argc, char *argv[]) {
     ierr = m_field.modify_problem_add_finite_element("ELASTIC_MECHANICS","BODY_FORCE"); CHKERRQ(ierr);
     for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,BLOCKSET|BODYFORCESSET,it)) {
       Range tets;
-      rval = m_field.get_moab().get_entities_by_type(it->meshset,MBTET,tets,true); CHKERR_PETSC(rval);
+      rval = m_field.get_moab().get_entities_by_type(it->meshset,MBTET,tets,true); CHKERRQ_MOAB(rval);
       ierr = m_field.add_ents_to_finite_element_by_TETs(tets,"BODY_FORCE"); CHKERRQ(ierr);
     }
   }
@@ -503,9 +503,9 @@ int main(int argc, char *argv[]) {
 
       EntityHandle meshset = it->get_meshset();
       Range tris;
-      rval = moab.get_entities_by_type(meshset,MBTRI,tris,true); CHKERR_PETSC(rval);
+      rval = moab.get_entities_by_type(meshset,MBTRI,tris,true); CHKERRQ_MOAB(rval);
       Range ents3d;
-      rval = moab.get_adjacencies(tris,3,false,ents3d,Interface::UNION); CHKERR_PETSC(rval);
+      rval = moab.get_adjacencies(tris,3,false,ents3d,Interface::UNION); CHKERRQ_MOAB(rval);
       interface_materials.back().pRisms = ents3d.subset_by_type(MBPRISM);
 
     }
@@ -541,7 +541,7 @@ int main(int argc, char *argv[]) {
     rval = m_field.get_moab().get_entities_by_type(
       m_field.get_finite_element_meshset("ELASTIC"),MBTET,
       elastic.setOfBlocks[id].tEts,true
-    ); CHKERR_PETSC(rval);
+    ); CHKERRQ_MOAB(rval);
     ierr = elastic.setOperators(
       "DISPLACEMENT","MESH_NODE_POSITIONS",false,true
     ); CHKERRQ(ierr);
@@ -780,7 +780,7 @@ int main(int argc, char *argv[]) {
       // if(pcomm->rank()==0) {
       //   ostringstream sss;
       //   sss << "restart_" << step << ".h5m";
-      //   rval = moab.write_file(sss.str().c_str()); CHKERR_PETSC(rval);
+      //   rval = moab.write_file(sss.str().c_str()); CHKERRQ_MOAB(rval);
       // }
 
       ierr = m_field.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",post_proc); CHKERRQ(ierr);

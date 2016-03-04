@@ -54,11 +54,11 @@ int main(int argc, char *argv[]) {
 
   EntityHandle nodes[4];
   for(int nn = 0;nn<4;nn++) {
-    rval = moab.create_vertex(&tet_coords[3*nn],nodes[nn]); CHKERR_PETSC(rval);
+    rval = moab.create_vertex(&tet_coords[3*nn],nodes[nn]); CHKERRQ_MOAB(rval);
   }
 
   EntityHandle tet;
-  rval = moab.create_element(MBTET,nodes,4,tet); CHKERR_PETSC(rval);
+  rval = moab.create_element(MBTET,nodes,4,tet); CHKERRQ_MOAB(rval);
 
   ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
   if(pcomm == NULL) pcomm =  new ParallelComm(&moab,PETSC_COMM_WORLD);
@@ -71,7 +71,7 @@ int main(int argc, char *argv[]) {
   BitRefLevel bit_level0;
   bit_level0.set(0);
   EntityHandle meshset_level0;
-  rval = moab.create_meshset(MESHSET_SET,meshset_level0); CHKERR_PETSC(rval);
+  rval = moab.create_meshset(MESHSET_SET,meshset_level0); CHKERRQ_MOAB(rval);
   ierr = m_field.seed_ref_level_3D(0,bit_level0); CHKERRQ(ierr);
 
   //Fields
@@ -184,7 +184,7 @@ int main(int argc, char *argv[]) {
   ierr = post_proc.generateReferenceElementMesh(); CHKERRQ(ierr);
   ierr = post_proc.addHdivFunctionsPostProc("HDIV");  CHKERRQ(ierr);
   ierr = m_field.loop_finite_elements("TEST_PROBLEM","TEST_FE",post_proc);  CHKERRQ(ierr);
-  rval = post_proc.postProcMesh.write_file("out.vtk","VTK",""); CHKERR_PETSC(rval);*/
+  rval = post_proc.postProcMesh.write_file("out.vtk","VTK",""); CHKERRQ_MOAB(rval);*/
 
 
   ierr = PetscFinalize(); CHKERRQ(ierr);

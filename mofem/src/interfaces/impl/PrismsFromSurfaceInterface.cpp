@@ -70,60 +70,60 @@ PetscErrorCode PrismsFromSurfaceInterface::createPrisms(const Range &ents,Range 
   for(Range::iterator tit = tris.begin();tit!=tris.end();tit++) {
     const EntityHandle* conn;
     int number_nodes = 0;
-    rval = m_field.get_moab().get_connectivity(*tit,conn,number_nodes,false); CHKERR_PETSC(rval);
+    rval = m_field.get_moab().get_connectivity(*tit,conn,number_nodes,false); CHKERRQ_MOAB(rval);
     double coords[3*number_nodes];
-    rval = m_field.get_moab().get_coords(conn,number_nodes,coords); CHKERR_PETSC(rval);
+    rval = m_field.get_moab().get_coords(conn,number_nodes,coords); CHKERRQ_MOAB(rval);
     EntityHandle prism_nodes[6];
     for(int nn = 0;nn<3;nn++) {
       prism_nodes[nn] = conn[nn];
       if(createdVertices.find(conn[nn])!=createdVertices.end()) {
         prism_nodes[3+nn] = createdVertices[prism_nodes[nn]];
       } else {
-        rval = m_field.get_moab().create_vertex(&coords[3*nn],prism_nodes[3+nn]); CHKERR_PETSC(rval);
+        rval = m_field.get_moab().create_vertex(&coords[3*nn],prism_nodes[3+nn]); CHKERRQ_MOAB(rval);
         createdVertices[conn[nn]] = prism_nodes[3+nn];
         rval = m_field.get_moab().tag_set_data(
           cOre.get_th_RefParentHandle(),&prism_nodes[3+nn],1,&prism_nodes[nn]
-        ); CHKERR_PETSC(rval);
+        ); CHKERRQ_MOAB(rval);
       }
     }
     EntityHandle prism;
     rval = m_field.get_moab().create_element(MBPRISM,prism_nodes,6,prism); CHKERRQ(rval);
     Range edges;
-    rval = m_field.get_moab().get_adjacencies(&prism,1,1,true,edges,Interface::UNION); CHKERR_PETSC(rval);
+    rval = m_field.get_moab().get_adjacencies(&prism,1,1,true,edges,Interface::UNION); CHKERRQ_MOAB(rval);
     Range faces;
-    rval = m_field.get_moab().get_adjacencies(&prism,1,2,true,faces,Interface::UNION); CHKERR_PETSC(rval);
+    rval = m_field.get_moab().get_adjacencies(&prism,1,2,true,faces,Interface::UNION); CHKERRQ_MOAB(rval);
     prisms.insert(prism);
     for(int ee = 0;ee<=2;ee++) {
       EntityHandle e1;
       rval = m_field.get_moab().side_element(prism,1,ee,e1);
       EntityHandle e2;
-      rval = m_field.get_moab().side_element(prism,1,ee+6,e2); CHKERR_PETSC(rval);
-      rval = m_field.get_moab().tag_set_data(cOre.get_th_RefParentHandle(),&e2,1,&e1); CHKERR_PETSC(rval);
+      rval = m_field.get_moab().side_element(prism,1,ee+6,e2); CHKERRQ_MOAB(rval);
+      rval = m_field.get_moab().tag_set_data(cOre.get_th_RefParentHandle(),&e2,1,&e1); CHKERRQ_MOAB(rval);
     }
     EntityHandle f3,f4;
     {
       rval = m_field.get_moab().side_element(prism,2,3,f3);
       rval = m_field.get_moab().side_element(prism,2,4,f4);
-      rval = m_field.get_moab().tag_set_data(cOre.get_th_RefParentHandle(),&f4,1,&f3); CHKERR_PETSC(rval);
+      rval = m_field.get_moab().tag_set_data(cOre.get_th_RefParentHandle(),&f4,1,&f3); CHKERRQ_MOAB(rval);
     }
     if(number_nodes>3) {
       EntityHandle meshset;
-      rval = m_field.get_moab().create_meshset(MESHSET_SET,meshset); CHKERR_PETSC(rval);
-      rval = m_field.get_moab().add_entities(meshset,&f4,1); CHKERR_PETSC(rval);
+      rval = m_field.get_moab().create_meshset(MESHSET_SET,meshset); CHKERRQ_MOAB(rval);
+      rval = m_field.get_moab().add_entities(meshset,&f4,1); CHKERRQ_MOAB(rval);
       for(int ee = 0;ee<=2;ee++) {
         EntityHandle e2;
-        rval = m_field.get_moab().side_element(prism,1,ee+6,e2); CHKERR_PETSC(rval);
-        rval = m_field.get_moab().add_entities(meshset,&e2,1); CHKERR_PETSC(rval);
+        rval = m_field.get_moab().side_element(prism,1,ee+6,e2); CHKERRQ_MOAB(rval);
+        rval = m_field.get_moab().add_entities(meshset,&e2,1); CHKERRQ_MOAB(rval);
       }
-      rval = m_field.get_moab().convert_entities(meshset,true,false,false); CHKERR_PETSC(rval);
-      rval = m_field.get_moab().delete_entities(&meshset,1); CHKERR_PETSC(rval);
+      rval = m_field.get_moab().convert_entities(meshset,true,false,false); CHKERRQ_MOAB(rval);
+      rval = m_field.get_moab().delete_entities(&meshset,1); CHKERRQ_MOAB(rval);
       const EntityHandle* conn_f4;
       int number_nodes_f4 = 0;
-      rval = m_field.get_moab().get_connectivity(f4,conn_f4,number_nodes_f4,false); CHKERR_PETSC(rval);
+      rval = m_field.get_moab().get_connectivity(f4,conn_f4,number_nodes_f4,false); CHKERRQ_MOAB(rval);
       if(number_nodes_f4 != number_nodes) {
         SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
       }
-      rval = m_field.get_moab().set_coords(&conn_f4[3],3,&coords[9]); CHKERR_PETSC(rval);
+      rval = m_field.get_moab().set_coords(&conn_f4[3],3,&coords[9]); CHKERRQ_MOAB(rval);
     }
   }
   PetscFunctionReturn(0);
@@ -143,7 +143,7 @@ PetscErrorCode PrismsFromSurfaceInterface::seedPrismsEntities(Range &prisms,cons
     int dim = m_field.get_moab().dimension_from_handle(prisms[0]);
     for(int dd = 0;dd<=dim;dd++) {
       Range ents;
-      rval = m_field.get_moab().get_adjacencies(prisms,dd,true,ents,Interface::UNION); CHKERR_PETSC(rval);
+      rval = m_field.get_moab().get_adjacencies(prisms,dd,true,ents,Interface::UNION); CHKERRQ_MOAB(rval);
       Range::iterator eit = ents.begin();
       for(;eit!=ents.end();eit++) {
         pair<RefMoFEMEntity_multiIndex::iterator,bool> p_ent = refined_entities_ptr->insert(

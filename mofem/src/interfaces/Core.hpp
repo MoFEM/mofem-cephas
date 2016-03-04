@@ -225,10 +225,10 @@ struct Core:
         ss << *it << endl;
         ss << data << endl;
         Range tets,tris,edges,nodes;
-        rval = moab.get_entities_by_type(it->meshset,MBTET,tets,true); CHKERR_PETSC(rval);
-        rval = moab.get_entities_by_type(it->meshset,MBTRI,tris,true); CHKERR_PETSC(rval);
-        rval = moab.get_entities_by_type(it->meshset,MBEDGE,edges,true); CHKERR_PETSC(rval);
-        rval = moab.get_entities_by_type(it->meshset,MBVERTEX,nodes,true); CHKERR_PETSC(rval);
+        rval = moab.get_entities_by_type(it->meshset,MBTET,tets,true); CHKERRQ_MOAB(rval);
+        rval = moab.get_entities_by_type(it->meshset,MBTRI,tris,true); CHKERRQ_MOAB(rval);
+        rval = moab.get_entities_by_type(it->meshset,MBEDGE,edges,true); CHKERRQ_MOAB(rval);
+        rval = moab.get_entities_by_type(it->meshset,MBVERTEX,nodes,true); CHKERRQ_MOAB(rval);
         ss << "name "<< it->get_name() << endl;
         ss << "msId "<< it->get_msId() << " nb. tets " << tets.size() << endl;
         ss << "msId "<< it->get_msId() << " nb. tris " << tris.size() << endl;
@@ -288,7 +288,7 @@ struct Core:
       ss << *it << endl;
       ss << data;
       Range tets;
-      rval = moab.get_entities_by_type(it->meshset,MBTET,tets,true); CHKERR_PETSC(rval);
+      rval = moab.get_entities_by_type(it->meshset,MBTET,tets,true); CHKERRQ_MOAB(rval);
       ss << "MAT_ELATIC msId "<< it->get_msId() << " nb. tets " << tets.size() << endl;
       ss << endl;
       PetscPrintf(comm,ss.str().c_str());
@@ -509,7 +509,9 @@ struct Core:
   PetscErrorCode debugPartitionedProblem(const MoFEMProblem *problem_ptr,int verb = -1);
   PetscErrorCode resolve_shared_ents(const MoFEMProblem *problem_ptr,const string &fe_name,int verb = -1);
   PetscErrorCode resolve_shared_ents(const string &name,const string &fe_name,int verb = -1);
-
+  PetscErrorCode get_problem_elements_layout(
+    const string &name,const string &fe_name,PetscLayout *layout,int verb = -1
+  );
 
   ///save meshsets
   PetscErrorCode get_problem_finite_elements_entities(const string &name,const string &fe_name,const EntityHandle meshset);

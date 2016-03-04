@@ -71,7 +71,7 @@ PetscErrorCode VertexElementForcesAndSourcesCore::operator()() {
 
   EntityHandle ent = fePtr->get_ent();
   coords.resize(3,false);
-  rval = mField.get_moab().get_coords(&ent,1,&*coords.data().begin()); CHKERR_PETSC(rval);
+  rval = mField.get_moab().get_coords(&ent,1,&*coords.data().begin()); CHKERRQ_MOAB(rval);
 
   const UserDataOperator::OpType types[2] = {
     UserDataOperator::OPROW, UserDataOperator::OPCOL

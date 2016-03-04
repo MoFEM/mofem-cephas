@@ -86,7 +86,7 @@ NodalForce::OpNodalForce::OpNodalForce(const string field_name,Vec _F,bCForce &d
     const CubitMeshSets *cubit_meshset_ptr;
     ierr = mField.get_cubit_msId(ms_id,NODESET,&cubit_meshset_ptr); CHKERRQ(ierr);
     ierr = cubit_meshset_ptr->get_bc_data_structure(mapForce[ms_id].data); CHKERRQ(ierr);
-    rval = mField.get_moab().get_entities_by_type(cubit_meshset_ptr->meshset,MBVERTEX,mapForce[ms_id].nOdes,true); CHKERR_PETSC(rval);
+    rval = mField.get_moab().get_entities_by_type(cubit_meshset_ptr->meshset,MBVERTEX,mapForce[ms_id].nOdes,true); CHKERRQ_MOAB(rval);
     fe.getOpPtrVector().push_back(new OpNodalForce(field_name,F,mapForce[ms_id],methodsOp,use_snes_f));
     PetscFunctionReturn(0);
   }
@@ -97,11 +97,11 @@ NodalForce::OpNodalForce::OpNodalForce(const string field_name,Vec _F,bCForce &d
     const EntityHandle root_meshset = mField.get_moab().get_root_set();
     rval = mField.get_moab().tag_get_handle("_LoadFactor_Scale_",1,MB_TYPE_DOUBLE,thScale,MB_TAG_CREAT|MB_TAG_EXCL|MB_TAG_MESH,&def_scale);
     if(rval == MB_ALREADY_ALLOCATED) {
-      rval = mField.get_moab().tag_get_by_ptr(thScale,&root_meshset,1,(const void**)&sCale); CHKERR_THROW(rval);
+      rval = mField.get_moab().tag_get_by_ptr(thScale,&root_meshset,1,(const void**)&sCale); CHKERRQ_MOAB_THROW(rval);
     } else {
-      CHKERR_THROW(rval);
-      rval = mField.get_moab().tag_set_data(thScale,&root_meshset,1,&def_scale); CHKERR_THROW(rval);
-      rval = mField.get_moab().tag_get_by_ptr(thScale,&root_meshset,1,(const void**)&sCale); CHKERR_THROW(rval);
+      CHKERRQ_MOAB_THROW(rval);
+      rval = mField.get_moab().tag_set_data(thScale,&root_meshset,1,&def_scale); CHKERRQ_MOAB_THROW(rval);
+      rval = mField.get_moab().tag_get_by_ptr(thScale,&root_meshset,1,(const void**)&sCale); CHKERRQ_MOAB_THROW(rval);
     }
   }
 

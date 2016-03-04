@@ -662,7 +662,7 @@ PetscErrorCode Core::set_other_global_ghost_vector(
         diiiit = dofsField.get<Composite_Name_And_Ent_And_EndDofIdx_mi_tag>().find(boost::make_tuple(cpy_field_name,miit->get_ent(),miit->get_EntDofIdx()));
         if(diiiit==dofsField.get<Composite_Name_And_Ent_And_EndDofIdx_mi_tag>().end()) {
           EntityHandle ent = miit->get_ent();
-          rval = moab.add_entities(cpy_fit->get_meshset(),&ent,1); CHKERR_PETSC(rval);
+          rval = moab.add_entities(cpy_fit->get_meshset(),&ent,1); CHKERRQ_MOAB(rval);
           //create field moabent
           ApproximationOrder order = miit->get_max_order();
           pair<MoFEMEntity_multiIndex::iterator,bool> p_e_miit;

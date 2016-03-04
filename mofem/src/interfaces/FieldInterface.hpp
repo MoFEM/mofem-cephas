@@ -1346,7 +1346,7 @@ struct FieldInterface: public FieldUnknownInterface {
 
    \code
    Tag th;
-   rval = mField.get_moab().tag_get_handle("ADAPT_ORDER",th); CHKERR_PETSC(rval);
+   rval = mField.get_moab().tag_get_handle("ADAPT_ORDER",th); CHKERRQ_MOAB(rval);
    ParallelComm* pcomm = ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
    // rval = pcomm->reduce_tags(th,MPI_SUM,prisms);
    rval = pcomm->exchange_tags(th,prisms);
@@ -1368,8 +1368,9 @@ struct FieldInterface: public FieldUnknownInterface {
    * This allows for tag reduction or tag exchange, f.e.
 
    \code
+   ierr = m_field.resolve_shared_ents(problem_ptr,"SHELL_ELEMENT"); CHKERRQ(ierr);
    Tag th;
-   rval = mField.get_moab().tag_get_handle("ADAPT_ORDER",th); CHKERR_PETSC(rval);
+   rval = mField.get_moab().tag_get_handle("ADAPT_ORDER",th); CHKERRQ_MOAB(rval);
    ParallelComm* pcomm = ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
    // rval = pcomm->reduce_tags(th,MPI_SUM,prisms);
    rval = pcomm->exchange_tags(th,prisms);
@@ -1380,9 +1381,27 @@ struct FieldInterface: public FieldUnknownInterface {
   virtual PetscErrorCode resolve_shared_ents(const string &name,const string &fe_name,int verb = -1) = 0;
 
   /**
+   * \brief Get layout of elements in the problem
+   * \ingroup mofem_problems
+   *
+   * In layout is stored information how many elements is on each processor, for
+   * more information look int petsc documentation
+   * <http://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/IS/PetscLayoutCreate.html#PetscLayoutCreate>
+   *
+   * @param  name    problem name
+   * @param  fe_name finite elements
+   * @param  layout  layout
+   * @param  verb    verbosity level
+   * @return         error code
+   */
+  virtual PetscErrorCode get_problem_elements_layout(
+    const string &name,const string &fe_name,PetscLayout *layout,int verb = -1
+  ) = 0;
+
+  /**
     * \brief add finite elements to the meshset
+    * \ingroup mofem_problems
     *
-    * Add finite elements to do meshset.
     * \param name is problem name
     * \param fe_name
     * \param meshset

@@ -89,11 +89,11 @@ struct EdgeForce {
       }
       for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,NODESET|FORCESET,it)) {
         Range tris;
-        rval = m_field.get_moab().get_entities_by_type(it->meshset,MBTRI,tris,true); CHKERR_PETSC(rval);
+        rval = m_field.get_moab().get_entities_by_type(it->meshset,MBTRI,tris,true); CHKERRQ_MOAB(rval);
         Range edges;
-        rval = m_field.get_moab().get_entities_by_type(it->meshset,MBEDGE,edges,true); CHKERR_PETSC(rval);
+        rval = m_field.get_moab().get_entities_by_type(it->meshset,MBEDGE,edges,true); CHKERRQ_MOAB(rval);
         Range tris_edges;
-        rval = m_field.get_moab().get_adjacencies(tris,1,false,tris_edges,Interface::UNION); CHKERR_PETSC(rval);
+        rval = m_field.get_moab().get_adjacencies(tris,1,false,tris_edges,Interface::UNION); CHKERRQ_MOAB(rval);
         edges = subtract(edges,tris_edges);
         ierr = m_field.add_ents_to_finite_element_by_EDGEs(edges,"FORCE_FE"); CHKERRQ(ierr);
       }

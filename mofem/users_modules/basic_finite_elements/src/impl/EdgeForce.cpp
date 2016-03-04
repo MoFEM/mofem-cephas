@@ -123,7 +123,7 @@ PetscErrorCode EdgeForce::addForce(const string field_name,Vec F,int ms_id,bool 
   const CubitMeshSets *cubit_meshset_ptr;
   ierr = mField.get_cubit_msId(ms_id,NODESET,&cubit_meshset_ptr); CHKERRQ(ierr);
   ierr = cubit_meshset_ptr->get_bc_data_structure(mapForce[ms_id].data); CHKERRQ(ierr);
-  rval = mField.get_moab().get_entities_by_type(cubit_meshset_ptr->meshset,MBEDGE,mapForce[ms_id].eDges,true); CHKERR_PETSC(rval);
+  rval = mField.get_moab().get_entities_by_type(cubit_meshset_ptr->meshset,MBEDGE,mapForce[ms_id].eDges,true); CHKERRQ_MOAB(rval);
   // Add operator for element, set data and entities operating on the data
   fe.getOpPtrVector().push_back(new OpEdgeForce(field_name,F,mapForce[ms_id],methodsOp,use_snes_f));
   PetscFunctionReturn(0);

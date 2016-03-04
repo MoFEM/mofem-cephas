@@ -69,11 +69,11 @@ struct PrismInterface: public FieldUnknownInterface {
    * Each inteface face has two tages, 
    *    const int def_side[] = {0};
    *	rval = moab.tag_get_handle("INTERFACE_SIDE",1,MB_TYPE_INTEGER,
-   *	  th_interface_side,MB_TAG_CREAT|MB_TAG_SPARSE,def_side); CHKERR_PETSC(rval);
+   *	  th_interface_side,MB_TAG_CREAT|MB_TAG_SPARSE,def_side); CHKERRQ_MOAB(rval);
    * 
    *  	const EntityHandle def_node[] = {0};
    *	rval = moab.tag_get_handle("SIDE_INTFACE_ELEMENT",1,MB_TYPE_HANDLE,
-   *	  th_side_elem,MB_TAG_CREAT|MB_TAG_SPARSE,def_node); CHKERR_PETSC(rval);
+   *	  th_side_elem,MB_TAG_CREAT|MB_TAG_SPARSE,def_node); CHKERRQ_MOAB(rval);
    * 
    * First tag inform abot inteface side, second tag inform about side adjacent 
    * inteface element.
