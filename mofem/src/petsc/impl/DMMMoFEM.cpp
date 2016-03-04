@@ -226,6 +226,18 @@ PetscErrorCode DMMoFEMResolveSharedEntities(DM dm,const char fe_name[]) {
   PetscFunctionReturn(0);
 }
 
+PetscErrorCode DMMoFEMGetProblemFiniteElementLayout(DM dm,const char fe_name[],PetscLayout *layout) {
+  PetscFunctionBegin;
+  PetscValidHeaderSpecific(dm,DM_CLASSID,1);
+  PetscFunctionBegin;
+  DMCtx *dm_field = (DMCtx*)dm->data;
+  PetscErrorCode ierr;
+  MPI_Comm comm;
+  ierr = PetscObjectGetComm((PetscObject)dm,&comm); CHKERRQ(ierr);
+  ierr = dm_field->problemPtr->getNumberOfElementsByNameAndPart(comm,fe_name,layout); CHKERRQ(ierr);
+  PetscFunctionReturn(0);
+}
+
 PetscErrorCode DMMoFEMGetSquareProblem(DM dm,PetscBool *square_problem) {
   PetscFunctionBegin;
   PetscFunctionBegin;

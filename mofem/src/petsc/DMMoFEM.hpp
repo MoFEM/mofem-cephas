@@ -83,6 +83,22 @@ PetscErrorCode DMMoFEMGetSquareProblem(DM dm,PetscBool *square_problem);
 PetscErrorCode DMMoFEMResolveSharedEntities(DM dm,const char fe_name[]);
 
 /**
+ * \brief Get finite elements layout in the problem
+ *
+ * In layout is stored information how many elements is on each processor, for
+ * more information look int petsc documentation
+ * <http://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/IS/PetscLayoutCreate.html#PetscLayoutCreate>
+ *
+ * @param  dm     discrete manager for this problem
+ * @param  fe_name finite element name
+ * @param  layout pointer to layout, for created layout user take responsibility for destroying it.
+ * @return        error code
+ *
+ * \ingroup dm
+ */
+PetscErrorCode DMMoFEMGetProblemFiniteElementLayout(DM dm,PetscLayout *layout);
+
+/**
   * \brief add element to dm
   * \ingroup dm
   */
