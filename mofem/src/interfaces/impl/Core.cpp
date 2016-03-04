@@ -61,6 +61,10 @@
 #include <moab/AdaptiveKDTree.hpp>
 #include <BitLevelCoupler.hpp>
 
+extern "C" {
+  void macro_is_depracted_using_deprecated_function() {}
+}
+
 namespace MoFEM {
 
 //const static int debug = 1;

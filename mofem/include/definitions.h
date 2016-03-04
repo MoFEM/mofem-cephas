@@ -202,11 +202,19 @@ enum CubitBC {
   { for(unsigned int i = PCMB->proc_config().proc_rank(); \
   i<PCMB->proc_config().proc_size(); i++) MPI_Barrier(PCMB->proc_config().proc_comm()); };
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * \brief Is used to indicate that macro is deprecated
  * Do nothing just triggers error at the compilation
  */
-DEPRECATED static void macro_is_depracted_using_deprecated_function() {}
+DEPRECATED void macro_is_depracted_using_deprecated_function();
+
+#ifdef __cplusplus
+}
+#endif
 
 /**
  * \brief check error code of MoAB functions and print on screen error
