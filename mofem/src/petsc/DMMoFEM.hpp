@@ -91,7 +91,7 @@ PetscErrorCode DMMoFEMResolveSharedEntities(DM dm,const char fe_name[]);
  *
  * @param  dm     discrete manager for this problem
  * @param  fe_name finite element name
- * @param  layout pointer to layout, for created layout user take responsibility for destroying it.
+ * @param  layout pointer to layout, for created layout user takes responsibility for destroying it.
  * @return        error code
  *
  * \ingroup dm

@@ -942,6 +942,7 @@ PetscErrorCode Core::resolve_shared_ents(const MoFEMProblem *problem_ptr,const s
     }
   }
   rval = pcomm->resolve_shared_ents(meshset,3); CHKERRQ_MOAB(rval);
+  rval = pcomm->assign_global_ids(meshset,3,0); CHKERRQ_MOAB(rval);
   rval = moab.delete_entities(&meshset,1); CHKERRQ_MOAB(rval);
   PetscFunctionReturn(0);
 }
