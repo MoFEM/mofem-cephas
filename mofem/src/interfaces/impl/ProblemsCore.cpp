@@ -895,4 +895,69 @@ PetscErrorCode Core::debugPartitionedProblem(const MoFEMProblem *problem_ptr,int
   PetscFunctionReturn(0);
 }
 
+PetscErrorCode Core::resolve_shared_ents(const MoFEMProblem *problem_ptr,const string &fe_name,int verb) {
+  PetscFunctionBegin;
+  EntityHandle meshset;
+  rval = moab.create_meshset(MESHSET_SET,meshset); CHKERR_PETSC(rval);
+  ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
+  vector<int> shprocs(MAX_SHARING_PROCS,0);
+  vector<EntityHandle> shhandles(MAX_SHARING_PROCS,0);
+  for(_IT_NUMEREDFEMOFEMENTITY_BY_NAME_FOR_LOOP_(problem_ptr,fe_name,fe_it)) {
+    EntityHandle ent = fe_it->get_ent();
+    rval = moab.add_entities(meshset,&ent,1); CHKERR_PETSC(rval);
+    int part = fe_it->get_part();
+    rval = moab.tag_set_data(pcomm->part_tag(),&ent,1,&part); CHKERR_PETSC(rval);
+    shprocs.clear();
+    shhandles.clear();
+    if(pcomm->size()>1) {
+      unsigned char pstatus = 0;
+      if(pcomm->rank()!=part) {
+        pstatus = PSTATUS_NOT_OWNED;
+        pstatus |= PSTATUS_GHOST;
+      }
+      if(pcomm->size()>2) {
+        pstatus |= PSTATUS_SHARED;
+        pstatus |= PSTATUS_MULTISHARED;
+      } else {
+        pstatus |= PSTATUS_SHARED;
+      }
+      int rrr = 0;
+      for(int rr = 0;rr<pcomm->size();rr++) {
+        if(rr!=pcomm->rank()) {
+          shhandles[rrr] = ent;
+          shprocs[rrr] = rr;
+          rrr++;
+        }
+        shprocs[rrr] = -1;
+      }
+      if(pstatus&PSTATUS_SHARED) {
+        rval = moab.tag_set_data(pcomm->sharedp_tag(),&ent,1,&shprocs[0]); CHKERR_PETSC(rval);
+        rval = moab.tag_set_data(pcomm->sharedh_tag(),&ent,1,&shhandles[0]); CHKERR_PETSC(rval);
+      }
+      if(PSTATUS_MULTISHARED) {
+        rval = moab.tag_set_data(pcomm->sharedps_tag(),&ent,1,&shprocs[0]); CHKERR_PETSC(rval);
+        rval = moab.tag_set_data(pcomm->sharedhs_tag(),&ent,1,&shhandles[0]); CHKERR_PETSC(rval);
+      }
+      rval = moab.tag_set_data(pcomm->pstatus_tag(),&ent,1,&pstatus); CHKERR_PETSC(rval);
+    }
+  }
+  rval = pcomm->resolve_shared_ents(meshset,3); CHKERR_PETSC(rval);
+  rval = moab.delete_entities(&meshset,1); CHKERR_PETSC(rval);
+  PetscFunctionReturn(0);
+}
+PetscErrorCode Core::resolve_shared_ents(const string &name,const string &fe_name,int verb) {
+  PetscFunctionBegin;
+  typedef MoFEMProblem_multiIndex::index<Problem_mi_tag>::type MoFEMProblem_multiIndex_by_name;
+  typedef NumeredDofMoFEMEntity_multiIndex::index<Unique_mi_tag>::type NumeredDofMoFEMEntitys_by_uid;
+  //find p_miit
+  MoFEMProblem_multiIndex_by_name &problems_set = pRoblems.get<Problem_mi_tag>();
+  MoFEMProblem_multiIndex_by_name::iterator p_miit = problems_set.find(name);
+  if(p_miit==problems_set.end()) {
+    SETERRQ1(PETSC_COMM_SELF,1,"problem with name < %s > not defined (top tip check spelling)",name.c_str());
+  }
+  ierr = resolve_shared_ents(&*p_miit,fe_name,verb); CHKERRQ(ierr);
+  PetscFunctionReturn(0);
+}
+
+
 }

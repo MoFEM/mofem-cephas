@@ -216,6 +216,16 @@ PetscErrorCode DMMoFEMSetSquareProblem(DM dm,PetscBool square_problem) {
   PetscFunctionReturn(0);
 }
 
+PetscErrorCode DMMoFEMResolveSharedEntities(DM dm,const char fe_name[]) {
+  PetscErrorCode ierr;
+  PetscFunctionBegin;
+  PetscValidHeaderSpecific(dm,DM_CLASSID,1);
+  PetscFunctionBegin;
+  DMCtx *dm_field = (DMCtx*)dm->data;
+  ierr = dm_field->mField_ptr->resolve_shared_ents(dm_field->problemPtr,fe_name); CHKERRQ(ierr);
+  PetscFunctionReturn(0);
+}
+
 PetscErrorCode DMMoFEMGetSquareProblem(DM dm,PetscBool *square_problem) {
   PetscFunctionBegin;
   PetscFunctionBegin;

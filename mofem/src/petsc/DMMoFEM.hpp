@@ -61,6 +61,27 @@ PetscErrorCode DMMoFEMSetSquareProblem(DM dm,PetscBool square_problem);
 PetscErrorCode DMMoFEMGetSquareProblem(DM dm,PetscBool *square_problem);
 
 /**
+ * \brief Resolve shared entities
+ * @param  dm      dm
+ * @param  fe_name finite element for which shared entities are resolved
+ * @return         error code
+ *
+
+ * This allows for tag reduction or tag exchange, f.e.
+
+ \code
+ Tag th;
+ rval = mField.get_moab().tag_get_handle("ADAPT_ORDER",th); CHKERR_PETSC(rval);
+ ParallelComm* pcomm = ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
+ // rval = pcomm->reduce_tags(th,MPI_SUM,prisms);
+ rval = pcomm->exchange_tags(th,prisms);
+ \endcode
+
+ * \ingroup dm
+ */
+PetscErrorCode DMMoFEMResolveSharedEntities(DM dm,const char fe_name[]);
+
+/**
   * \brief add element to dm
   * \ingroup dm
   */

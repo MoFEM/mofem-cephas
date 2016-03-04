@@ -1334,6 +1334,52 @@ struct FieldInterface: public FieldUnknownInterface {
   virtual PetscErrorCode partition_check_matrix_fill_in(const string &problem_name,int row,int col,int verb) = 0;
 
   /**
+   * \brief resolve shared entities for finite elements in the problem
+   * \ingroup mofem_problems
+
+   * @param  problem_ptr  problem pointer
+   * @param  fe_name     finite element name
+   * @param  verb        verbosity level
+   * @return             error code
+   *
+   * This allows for tag reduction or tag exchange, f.e.
+
+   \code
+   Tag th;
+   rval = mField.get_moab().tag_get_handle("ADAPT_ORDER",th); CHKERR_PETSC(rval);
+   ParallelComm* pcomm = ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
+   // rval = pcomm->reduce_tags(th,MPI_SUM,prisms);
+   rval = pcomm->exchange_tags(th,prisms);
+   \endcode
+
+   *
+   */
+  virtual PetscErrorCode resolve_shared_ents(const MoFEMProblem *problem_ptr,const string &fe_name,int verb = -1) = 0;
+
+  /**
+   * \brief resolve shared entities for finite elements in the problem
+   * \ingroup mofem_problems
+
+   * @param  name        problem name
+   * @param  fe_name     finite element name
+   * @param  verb        verbosity level
+   * @return             error code
+   *
+   * This allows for tag reduction or tag exchange, f.e.
+
+   \code
+   Tag th;
+   rval = mField.get_moab().tag_get_handle("ADAPT_ORDER",th); CHKERR_PETSC(rval);
+   ParallelComm* pcomm = ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
+   // rval = pcomm->reduce_tags(th,MPI_SUM,prisms);
+   rval = pcomm->exchange_tags(th,prisms);
+   \endcode
+
+   *
+   */
+  virtual PetscErrorCode resolve_shared_ents(const string &name,const string &fe_name,int verb = -1) = 0;
+
+  /**
     * \brief add finite elements to the meshset
     *
     * Add finite elements to do meshset.

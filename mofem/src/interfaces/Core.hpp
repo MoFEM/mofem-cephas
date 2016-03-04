@@ -507,6 +507,9 @@ struct Core:
   PetscErrorCode partition_check_matrix_fill_in(const string &problem_neme,int row,int col,int verb);
   PetscErrorCode printPartitionedProblem(const MoFEMProblem *problem_ptr,int verb = -1);
   PetscErrorCode debugPartitionedProblem(const MoFEMProblem *problem_ptr,int verb = -1);
+  PetscErrorCode resolve_shared_ents(const MoFEMProblem *problem_ptr,const string &fe_name,int verb = -1);
+  PetscErrorCode resolve_shared_ents(const string &name,const string &fe_name,int verb = -1);
+
 
   ///save meshsets
   PetscErrorCode get_problem_finite_elements_entities(const string &name,const string &fe_name,const EntityHandle meshset);
