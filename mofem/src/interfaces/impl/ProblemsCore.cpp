@@ -967,7 +967,7 @@ PetscErrorCode Core::get_problem_elements_layout(const string &name,const string
   if(p_miit==problems_set.end()) {
     SETERRQ1(PETSC_COMM_SELF,1,"problem with name < %s > not defined (top tip check spelling)",name.c_str());
   }
-  ierr = p_miit->getNumberOfElementsByPart(get_comm(),layout); CHKERRQ(ierr);
+  ierr = p_miit->getNumberOfElementsByNameAndPart(get_comm(),fe_name,layout); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 
