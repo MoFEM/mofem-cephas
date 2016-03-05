@@ -1366,7 +1366,7 @@ BitFEId Core::get_BitFEId(const string& name) const {
   typedef MoFEMFiniteElement_multiIndex::index<FiniteElement_name_mi_tag>::type finiteElements_by_name;
   const finiteElements_by_name& set = finiteElements.get<FiniteElement_name_mi_tag>();
   finiteElements_by_name::iterator miit = set.find(name);
-  if(miit==set.end()) THROW_AT_LINE(("finite element < "+name+" > not found (top tip: check spelling)").c_str());
+  if(miit==set.end()) THROW_MESSAGE(("finite element < "+name+" > not found (top tip: check spelling)").c_str());
   return miit->get_id();
 }
 string Core::get_BitFEId_name(const BitFEId id) const {
@@ -1380,7 +1380,7 @@ EntityHandle Core::get_finite_element_meshset(const BitFEId id) const {
   typedef MoFEMFiniteElement_multiIndex::index<BitFEId_mi_tag>::type finiteElements_by_id;
   const finiteElements_by_id& set = finiteElements.get<BitFEId_mi_tag>();
   finiteElements_by_id::iterator miit = set.find(id);
-  if(miit==set.end()) THROW_AT_LINE("finite element not found");
+  if(miit==set.end()) THROW_MESSAGE("finite element not found");
   return miit->meshset;
 }
 EntityHandle Core::get_finite_element_meshset(const string& name) const {
@@ -2604,7 +2604,7 @@ PetscErrorCode Core::update_finite_element_meshset_by_entities_children(const st
   typedef MoFEMFiniteElement_multiIndex::index<FiniteElement_name_mi_tag>::type finiteElements_by_name;
   const finiteElements_by_name& set = finiteElements.get<FiniteElement_name_mi_tag>();
   finiteElements_by_name::iterator miit = set.find(name);
-  if(miit==set.end()) THROW_AT_LINE(("finite element < "+name+" > not found (top tip: check spelling)").c_str());
+  if(miit==set.end()) THROW_MESSAGE(("finite element < "+name+" > not found (top tip: check spelling)").c_str());
   EntityHandle meshset = miit->get_meshset();
   ierr = update_meshset_by_entities_children(meshset,child_bit,meshset,fe_ent_type,false,verb);  CHKERRQ(ierr);
   PetscFunctionReturn(0);

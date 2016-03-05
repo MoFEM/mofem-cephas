@@ -78,7 +78,7 @@ struct CohesiveInterfaceElement {
       double def_damaged = 0;
       rval = mField.get_moab().tag_get_handle(
         "DAMAGED_PRISM",1,MB_TYPE_INTEGER,thDamagedPrism,MB_TAG_CREAT|MB_TAG_SPARSE,&def_damaged
-      ); CHKERRQ_MOAB_THROW(rval);
+      ); MOAB_THROW(rval);
       const int def_len = 0;
       rval = mField.get_moab().tag_get_handle("_KAPPA",def_len,MB_TYPE_DOUBLE,
       thKappa,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_VARLEN,NULL); CHKERRQ_MOAB(rval);

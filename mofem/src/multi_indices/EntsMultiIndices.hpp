@@ -282,11 +282,11 @@ struct RefMoFEMEntity_change_remove_parent {
   Tag th_RefParentHandle;
   ErrorCode rval;
   RefMoFEMEntity_change_remove_parent(Interface &moab): mOab(moab) {
-    rval = mOab.tag_get_handle("_RefParentHandle",th_RefParentHandle); CHKERRQ_MOAB_THROW(rval);
+    rval = mOab.tag_get_handle("_RefParentHandle",th_RefParentHandle); MOAB_THROW(rval);
   }
   void operator()(RefMoFEMEntity &e) {
-    rval = mOab.tag_delete_data(th_RefParentHandle,&e.ent,1); CHKERRQ_MOAB_THROW(rval);
-    rval = mOab.tag_get_by_ptr(th_RefParentHandle,&e.ent,1,(const void **)&(e.tag_parent_ent)); CHKERRQ_MOAB_THROW(rval);
+    rval = mOab.tag_delete_data(th_RefParentHandle,&e.ent,1); MOAB_THROW(rval);
+    rval = mOab.tag_get_by_ptr(th_RefParentHandle,&e.ent,1,(const void **)&(e.tag_parent_ent)); MOAB_THROW(rval);
   }
 };
 
@@ -306,10 +306,10 @@ struct RefMoFEMEntity_change_parent {
   Tag th_RefParentHandle;
   ErrorCode rval;
   RefMoFEMEntity_change_parent(Interface &moab,EntityHandle parent): mOab(moab),pArent(parent) {
-    rval = mOab.tag_get_handle("_RefParentHandle",th_RefParentHandle); CHKERRQ_MOAB_THROW(rval);
+    rval = mOab.tag_get_handle("_RefParentHandle",th_RefParentHandle); MOAB_THROW(rval);
   }
   void operator()(RefMoFEMEntity &e) {
-    rval = mOab.tag_get_by_ptr(th_RefParentHandle,&e.ent,1,(const void **)&(e.tag_parent_ent)); CHKERRQ_MOAB_THROW(rval);
+    rval = mOab.tag_get_by_ptr(th_RefParentHandle,&e.ent,1,(const void **)&(e.tag_parent_ent)); MOAB_THROW(rval);
     *(e.tag_parent_ent) = pArent;
   }
 };

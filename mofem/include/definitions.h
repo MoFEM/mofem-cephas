@@ -148,16 +148,6 @@ enum CubitBC {
   LASTCUBITSET
 };
 
-//taken from http://stackoverflow.com/questions/295120/c-mark-as-deprecated
-#ifdef __GNUC__
-  #define DEPRECATED __attribute__((deprecated))
-#elif defined(_MSC_VER)
-  #define DEPRECATED __declspec(deprecated)
-#else
-  #pragma message("WARNING: You need to implement DEPRECATED for this compiler")
-  #define DEPRECATED
-#endif
-
 #define BITREFEDGES_SIZE 6 /*number of edges on tetrahedral*/
 #define BITREFLEVEL_SIZE 128 /*max number of refinements*/
 #define BITFIELDID_SIZE 32 /*max number of fields*/
@@ -177,6 +167,16 @@ enum CubitBC {
 #define MB_START_ID ((EntityID)1)        //!< All entity id's currently start at 1
 #define MB_END_ID ((EntityID)MB_ID_MASK) //!< Last id is the complement of the MASK
 #define MB_ID_MASK (~MB_TYPE_MASK)
+
+//taken from http://stackoverflow.com/questions/295120/c-mark-as-deprecated
+#ifdef __GNUC__
+  #define DEPRECATED __attribute__((deprecated))
+#elif defined(_MSC_VER)
+  #define DEPRECATED __declspec(deprecated)
+#else
+  #pragma message("WARNING: You need to implement DEPRECATED for this compiler")
+  #define DEPRECATED
+#endif
 
 #define NOT_USED(x) ( (void)(x) )
 
@@ -274,7 +274,7 @@ DEPRECATED void macro_is_depracted_using_deprecated_function();
  * \bried Check error code of MoAB function and throw MoFEM exception
  * @param  a MoABErrorCode
  */
-#define CHKERRQ_MOAB_THROW(a) do { \
+#define MOAB_THROW(a) do { \
   ErrorCode val = (a); \
   if (MB_SUCCESS != val) { \
     std::ostringstream ss; \
@@ -301,7 +301,17 @@ DEPRECATED void macro_is_depracted_using_deprecated_function();
  * \brief Throw MoFEM exception
  * @param  a message
  */
+#define THROW_MESSAGE(a) { \
+  std::ostringstream ss; \
+  ss << a << " " << " at " << __FILE__ << ":" << __LINE__ << std::endl; \
+  throw MoFEMException(MOFEM_MOFEMEXCEPTION_THROW,ss.str().c_str() ); \
+}
+
+/**
+ * \brief do not use that macro it will be removed in future
+ */
 #define THROW_AT_LINE(a) { \
+  macro_is_depracted_using_deprecated_function(); \
   std::ostringstream ss; \
   ss << a << " " << " at " << __FILE__ << ":" << __LINE__ << std::endl; \
   throw MoFEMException(MOFEM_MOFEMEXCEPTION_THROW,ss.str().c_str() ); \

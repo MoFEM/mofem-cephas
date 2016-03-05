@@ -46,7 +46,7 @@ RefMoFEMElement_MESHSET::RefMoFEMElement_MESHSET(Interface &moab,const RefMoFEME
     case MBENTITYSET:
     break;
     default:
-      THROW_AT_LINE("this work only for MESHSETs");
+      THROW_MESSAGE("this work only for MESHSETs");
   }
 }
 SideNumber* RefMoFEMElement_MESHSET::get_side_number_ptr(Interface &moab,EntityHandle ent) const {
@@ -55,24 +55,24 @@ SideNumber* RefMoFEMElement_MESHSET::get_side_number_ptr(Interface &moab,EntityH
   SideNumber_multiIndex::iterator miit;
   miit = const_cast<SideNumber_multiIndex&>(side_number_table).insert(SideNumber(ent,-1,0,0)).first;
   return const_cast<SideNumber*>(&*miit);
-  THROW_AT_LINE("not implemented");
+  THROW_MESSAGE("not implemented");
   return NULL;
 }
 RefMoFEMElement_PRISM::RefMoFEMElement_PRISM(Interface &moab,const RefMoFEMEntity *_RefMoFEMEntity_ptr): RefMoFEMElement(moab,_RefMoFEMEntity_ptr) {
   ErrorCode rval;
   Tag th_RefBitEdge;
-  rval = moab.tag_get_handle("_RefBitEdge",th_RefBitEdge); CHKERRQ_MOAB_THROW(rval);
-  rval = moab.tag_get_by_ptr(th_RefBitEdge,&ref_ptr->ent,1,(const void **)&tag_BitRefEdges); CHKERRQ_MOAB_THROW(rval);
+  rval = moab.tag_get_handle("_RefBitEdge",th_RefBitEdge); MOAB_THROW(rval);
+  rval = moab.tag_get_by_ptr(th_RefBitEdge,&ref_ptr->ent,1,(const void **)&tag_BitRefEdges); MOAB_THROW(rval);
   switch (ref_ptr->get_ent_type()) {
     case MBPRISM:
     break;
     default:
-      THROW_AT_LINE("this work only for PRISMs");
+      THROW_MESSAGE("this work only for PRISMs");
   }
   EntityHandle prism = get_ref_ent();
   int num_nodes;
   const EntityHandle* conn;
-  rval = moab.get_connectivity(prism,conn,num_nodes,true); CHKERRQ_MOAB_THROW(rval);
+  rval = moab.get_connectivity(prism,conn,num_nodes,true); MOAB_THROW(rval);
   assert(num_nodes == 6);
   for(int nn = 0;nn<6; nn++) {
     const_cast<SideNumber_multiIndex&>(side_number_table).insert(SideNumber(conn[nn],nn,0,-1));
@@ -99,23 +99,23 @@ SideNumber* RefMoFEMElement_PRISM::get_side_number_ptr(Interface &moab,EntityHan
   // use moab to get sense, side and offset
   MoABErrorCode rval;
   int side_number,sense,offset;
-  rval = moab.side_number(ref_ptr->ent,ent,side_number,sense,offset); CHKERRQ_MOAB_THROW(rval);
+  rval = moab.side_number(ref_ptr->ent,ent,side_number,sense,offset); MOAB_THROW(rval);
 
   // it has to be degenerated prism, get sense from nodes topology
   if(side_number==-1) {
 
     if(moab.type_from_handle(ent)==MBVERTEX) {
-      THROW_AT_LINE("Huston we have problem, vertex (specified by ent) is not part of prism, that is impossible (top tip: check your prisms)");
+      THROW_MESSAGE("Huston we have problem, vertex (specified by ent) is not part of prism, that is impossible (top tip: check your prisms)");
     }
 
     //get prism connectivity
     int num_nodes;
     const EntityHandle* conn;
-    rval = moab.get_connectivity(ref_ptr->ent,conn,num_nodes,true); CHKERRQ_MOAB_THROW(rval);
+    rval = moab.get_connectivity(ref_ptr->ent,conn,num_nodes,true); MOAB_THROW(rval);
     assert(num_nodes==6);
     //get ent connectivity
     const EntityHandle* conn_ent;
-    rval = moab.get_connectivity(ent,conn_ent,num_nodes,true); CHKERRQ_MOAB_THROW(rval);
+    rval = moab.get_connectivity(ent,conn_ent,num_nodes,true); MOAB_THROW(rval);
 
     // for(int nn = 0; nn<6;nn++) {
     //   cerr << conn[nn] << " ";
@@ -175,10 +175,10 @@ SideNumber* RefMoFEMElement_PRISM::get_side_number_ptr(Interface &moab,EntityHan
           cerr << face3[0] << " " << face3[1] << " " << face3[2] << endl;
           cerr << face4[0] << " " << face4[1] << " " << face4[2] << endl;
           cerr << offset << endl;
-          THROW_AT_LINE("Huston we have problem");
+          THROW_MESSAGE("Huston we have problem");
         }
       }
-      THROW_AT_LINE("Huston we have problem");
+      THROW_MESSAGE("Huston we have problem");
     }
 
     if(num_nodes == 2) {
@@ -233,23 +233,23 @@ SideNumber* RefMoFEMElement_PRISM::get_side_number_ptr(Interface &moab,EntityHan
       // };
       // cerr << endl;
       // cerr << conn_ent[0] << " " << conn_ent[1] << endl;
-      THROW_AT_LINE("Huston we have problem");
+      THROW_MESSAGE("Huston we have problem");
     }
     ostringstream sss;
     sss << "this not working: " << ent << " type: " << moab.type_from_handle(ent) << " " << MBEDGE << " " << MBTRI << endl;
-    THROW_AT_LINE(sss.str().c_str());
+    THROW_MESSAGE(sss.str().c_str());
   }
   miit = const_cast<SideNumber_multiIndex&>(side_number_table).insert(SideNumber(ent,side_number,sense,offset)).first;
   return const_cast<SideNumber*>(&*miit);
-  THROW_AT_LINE("not implemented");
+  THROW_MESSAGE("not implemented");
   return NULL;
 }
 RefMoFEMElement_TET::RefMoFEMElement_TET(Interface &moab,const RefMoFEMEntity *_RefMoFEMEntity_ptr):
 RefMoFEMElement(moab,_RefMoFEMEntity_ptr),tag_BitRefEdges(NULL) {
   ErrorCode rval;
   Tag th_RefBitEdge;
-  rval = moab.tag_get_handle("_RefBitEdge",th_RefBitEdge); CHKERRQ_MOAB_THROW(rval);
-  rval = moab.tag_get_by_ptr(th_RefBitEdge,&ref_ptr->ent,1,(const void **)&tag_BitRefEdges); CHKERRQ_MOAB_THROW(rval);
+  rval = moab.tag_get_handle("_RefBitEdge",th_RefBitEdge); MOAB_THROW(rval);
+  rval = moab.tag_get_by_ptr(th_RefBitEdge,&ref_ptr->ent,1,(const void **)&tag_BitRefEdges); MOAB_THROW(rval);
   Tag th_RefType;
   switch (ref_ptr->get_ent_type()) {
     case MBTET:
@@ -261,10 +261,10 @@ RefMoFEMElement(moab,_RefMoFEMEntity_ptr),tag_BitRefEdges(NULL) {
       MOFEM_DATA_INCONSISTENCY,PETSC_ERROR_INITIAL,
       "this work only for TETs",PETSC_NULL
     );
-    THROW_AT_LINE("this work only for TETs");
+    THROW_MESSAGE("this work only for TETs");
   }
-  rval = moab.tag_get_handle("_RefType",th_RefType); CHKERRQ_MOAB_THROW(rval);
-  rval = moab.tag_get_by_ptr(th_RefType,&ref_ptr->ent,1,(const void **)&tag_type_data); CHKERRQ_MOAB_THROW(rval);
+  rval = moab.tag_get_handle("_RefType",th_RefType); MOAB_THROW(rval);
+  rval = moab.tag_get_by_ptr(th_RefType,&ref_ptr->ent,1,(const void **)&tag_type_data); MOAB_THROW(rval);
   const_cast<SideNumber_multiIndex&>(side_number_table).insert(SideNumber(ref_ptr->ent,0,0,0));
 }
 SideNumber* RefMoFEMElement_TET::get_side_number_ptr(Interface &moab,EntityHandle ent) const {
@@ -280,12 +280,12 @@ SideNumber* RefMoFEMElement_TET::get_side_number_ptr(Interface &moab,EntityHandl
   }
   ErrorCode rval;
   int side_number,sense,offset;
-  rval = moab.side_number(ref_ptr->ent,ent,side_number,sense,offset); CHKERRQ_MOAB_THROW(rval);
+  rval = moab.side_number(ref_ptr->ent,ent,side_number,sense,offset); MOAB_THROW(rval);
   pair<SideNumber_multiIndex::iterator,bool> p_miit;
   p_miit = const_cast<SideNumber_multiIndex&>(side_number_table).insert(SideNumber(ent,side_number,sense,offset));
   miit = p_miit.first;
   if(miit->ent != ent) {
-    THROW_AT_LINE("this not working");
+    THROW_MESSAGE("this not working");
   }
   //cerr << side_number << " " << sense << " " << offset << endl;
   return const_cast<SideNumber*>(&*miit);
@@ -301,21 +301,21 @@ RefMoFEMElement_TRI::RefMoFEMElement_TRI(Interface &moab,const RefMoFEMEntity *_
     case MBTRI:
     break;
     default:
-    THROW_AT_LINE("this work only for TRIs");
+    THROW_MESSAGE("this work only for TRIs");
   }
   ErrorCode rval;
   int side_number,sense,offset;
   EntityHandle tri = get_ref_ent();
   int num_nodes;
   const EntityHandle* conn;
-  rval = moab.get_connectivity(tri,conn,num_nodes,true); CHKERRQ_MOAB_THROW(rval);
+  rval = moab.get_connectivity(tri,conn,num_nodes,true); MOAB_THROW(rval);
   for(int nn = 0;nn<3; nn++) {
     const_cast<SideNumber_multiIndex&>(side_number_table).insert(SideNumber(conn[nn],nn,0,-1));
   }
   for(int ee = 0;ee<3; ee++) {
     EntityHandle edge;
-    rval = moab.side_element(tri,1,ee,edge); CHKERRQ_MOAB_THROW(rval);
-    rval = moab.side_number(tri,edge,side_number,sense,offset); CHKERRQ_MOAB_THROW(rval);
+    rval = moab.side_element(tri,1,ee,edge); MOAB_THROW(rval);
+    rval = moab.side_number(tri,edge,side_number,sense,offset); MOAB_THROW(rval);
     const_cast<SideNumber_multiIndex&>(side_number_table).insert(SideNumber(edge,ee,sense,offset));
   }
   const_cast<SideNumber_multiIndex&>(side_number_table).insert(SideNumber(tri,0,0,0));
@@ -333,7 +333,7 @@ SideNumber* RefMoFEMElement_TRI::get_side_number_ptr(Interface &moab,EntityHandl
   }
   ErrorCode rval;
   int side_number,sense,offset;
-  rval = moab.side_number(ref_ptr->ent,ent,side_number,sense,offset); CHKERRQ_MOAB_THROW(rval);
+  rval = moab.side_number(ref_ptr->ent,ent,side_number,sense,offset); MOAB_THROW(rval);
   miit = const_cast<SideNumber_multiIndex&>(side_number_table).insert(SideNumber(ent,side_number,sense,offset)).first;
   //cerr << side_number << " " << sense << " " << offset << endl;
   return const_cast<SideNumber*>(&*miit);
@@ -347,7 +347,7 @@ RefMoFEMElement_EDGE::RefMoFEMElement_EDGE(Interface &moab,const RefMoFEMEntity 
     case MBEDGE:
     break;
     default:
-      THROW_AT_LINE("this work only for TRIs");
+      THROW_MESSAGE("this work only for TRIs");
   }
 }
 SideNumber* RefMoFEMElement_EDGE::get_side_number_ptr(Interface &moab,EntityHandle ent) const {
@@ -363,7 +363,7 @@ SideNumber* RefMoFEMElement_EDGE::get_side_number_ptr(Interface &moab,EntityHand
   }
   ErrorCode rval;
   int side_number,sense,offset;
-  rval = moab.side_number(ref_ptr->ent,ent,side_number,sense,offset); CHKERRQ_MOAB_THROW(rval);
+  rval = moab.side_number(ref_ptr->ent,ent,side_number,sense,offset); MOAB_THROW(rval);
   miit = const_cast<SideNumber_multiIndex&>(side_number_table).insert(SideNumber(ent,side_number,sense,offset)).first;
   //cerr << side_number << " " << sense << " " << offset << endl;
   return const_cast<SideNumber*>(&*miit);
@@ -377,7 +377,7 @@ RefMoFEMElement_VERTEX::RefMoFEMElement_VERTEX(Interface &moab,const RefMoFEMEnt
     case MBVERTEX:
     break;
     default:
-      THROW_AT_LINE("this works only for TRIs");
+      THROW_MESSAGE("this works only for TRIs");
   }
 }
 SideNumber* RefMoFEMElement_VERTEX::get_side_number_ptr(Interface &moab,EntityHandle ent) const {
@@ -391,7 +391,7 @@ SideNumber* RefMoFEMElement_VERTEX::get_side_number_ptr(Interface &moab,EntityHa
     miit = const_cast<SideNumber_multiIndex&>(side_number_table).insert(SideNumber(ent,-1,0,0)).first;
     return const_cast<SideNumber*>(&*miit);
   }
-  THROW_AT_LINE("no side entity for vertex if its is not an vertex itself");
+  THROW_MESSAGE("no side entity for vertex if its is not an vertex itself");
   return NULL;
 }
 ostream& operator<<(ostream& os,const RefMoFEMElement_VERTEX& e) {

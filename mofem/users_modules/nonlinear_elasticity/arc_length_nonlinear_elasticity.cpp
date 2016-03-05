@@ -329,7 +329,7 @@ int main(int argc, char *argv[]) {
   for(_IT_CUBITMESHSETS_BY_NAME_FOR_LOOP_(m_field,"LoadPath",cit)) {
     EntityHandle meshset = cit->get_meshset();
     Range nodes;
-    rval = moab.get_entities_by_type(meshset,MBVERTEX,nodes,true); CHKERRQ_MOAB_THROW(rval);
+    rval = moab.get_entities_by_type(meshset,MBVERTEX,nodes,true); MOAB_THROW(rval);
     node_set.merge(nodes);
   }
   PetscPrintf(PETSC_COMM_WORLD,"Nb. nodes in load path: %u\n",node_set.size());

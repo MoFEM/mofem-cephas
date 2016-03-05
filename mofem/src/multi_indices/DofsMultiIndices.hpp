@@ -34,20 +34,20 @@ struct DofMoFEMEntity: public interface_MoFEMEntity<MoFEMEntity> {
   typedef interface_RefMoFEMEntity<RefMoFEMEntity> interface_type_RefMoFEMEntity;
 
   static LocalUId get_local_unique_id_calculate(const DofIdx _dof_,const MoFEMEntity *_ent_ptr_) {
-    if(_dof_>=512) THROW_AT_LINE("_dof>=512");
+    if(_dof_>=512) THROW_MESSAGE("_dof>=512");
     LocalUId _uid_ = ((UId)_dof_)|((_ent_ptr_->get_local_unique_id())<<9);
     return _uid_;
   }
 
   static GlobalUId get_global_unique_id_calculate(const DofIdx _dof_,const MoFEMEntity *_ent_ptr_) {
-    if(_dof_>=512) THROW_AT_LINE("_dof>=512");
+    if(_dof_>=512) THROW_MESSAGE("_dof>=512");
     GlobalUId _uid_ = ((UId)_dof_)|((_ent_ptr_->get_global_unique_id())<<9);
     return _uid_;
   }
 
   static ShortId get_non_nonunique_short_id(const DofIdx _dof_,const MoFEMEntity *_ent_ptr_) {
-    if(_dof_>=512) THROW_AT_LINE("_dof>=512")
-    if(sizeof(ShortId) < sizeof(char)+2) THROW_AT_LINE("sizeof(ShortId)< sizeof(char)+2")
+    if(_dof_>=512) THROW_MESSAGE("_dof>=512")
+    if(sizeof(ShortId) < sizeof(char)+2) THROW_MESSAGE("sizeof(ShortId)< sizeof(char)+2")
     char bit_number = _ent_ptr_->get_bit_number();
     ShortId _uid_ = ((ShortId)_dof_)|(((ShortId)bit_number)<<9);
     return _uid_;

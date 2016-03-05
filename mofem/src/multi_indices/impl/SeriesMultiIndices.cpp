@@ -40,7 +40,7 @@ MoFEMSeries::MoFEMSeries(Interface &moab,const EntityHandle _meshset):
 
   Tag th_SeriesName;
   rval = moab.tag_get_handle("_SeriesName",th_SeriesName); CHKERR_MOAB(rval);
-  rval = moab.tag_get_by_ptr(th_SeriesName,&meshset,1,(const void **)&tag_name_data,&tag_name_size); CHKERRQ_MOAB_THROW(rval);
+  rval = moab.tag_get_by_ptr(th_SeriesName,&meshset,1,(const void **)&tag_name_data,&tag_name_size); MOAB_THROW(rval);
 
   const int def_val_len = 0;
 
@@ -48,22 +48,22 @@ MoFEMSeries::MoFEMSeries(Interface &moab,const EntityHandle _meshset):
   string Tag_SeriesTime = "_SeriesTime_"+get_name();
   double def_time = 0;
   rval = moab.tag_get_handle(Tag_SeriesTime.c_str(),1,MB_TYPE_DOUBLE,
-    th_SeriesTime,MB_TAG_CREAT|MB_TAG_SPARSE,&def_time); CHKERRQ_MOAB_THROW(rval);
+    th_SeriesTime,MB_TAG_CREAT|MB_TAG_SPARSE,&def_time); MOAB_THROW(rval);
 
   //handles
   string Tag_DataHandles_SeriesName = "_SeriesDataHandles_"+get_name();
   rval = moab.tag_get_handle(Tag_DataHandles_SeriesName.c_str(),def_val_len,MB_TYPE_HANDLE,
-    th_SeriesDataHandles,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_VARLEN,NULL); CHKERRQ_MOAB_THROW(rval);
+    th_SeriesDataHandles,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_VARLEN,NULL); MOAB_THROW(rval);
 
   //uids
   string Tag_DataUIDs_SeriesName = "_SeriesDataUIDs_"+get_name();
   rval = moab.tag_get_handle(Tag_DataUIDs_SeriesName.c_str(),def_val_len,MB_TYPE_OPAQUE,
-    th_SeriesDataUIDs,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES|MB_TAG_VARLEN,NULL); CHKERRQ_MOAB_THROW(rval);
+    th_SeriesDataUIDs,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES|MB_TAG_VARLEN,NULL); MOAB_THROW(rval);
 
   //data
   string Tag_Data_SeriesName = "_SeriesData_"+get_name();
   rval = moab.tag_get_handle(Tag_Data_SeriesName.c_str(),def_val_len,MB_TYPE_OPAQUE,
-    th_SeriesData,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES|MB_TAG_VARLEN,NULL); CHKERRQ_MOAB_THROW(rval);
+    th_SeriesData,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES|MB_TAG_VARLEN,NULL); MOAB_THROW(rval);
 
 }
 

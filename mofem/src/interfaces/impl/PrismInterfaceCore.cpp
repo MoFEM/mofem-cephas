@@ -670,7 +670,7 @@ PetscErrorCode Core::get_msId_3dENTS_split_sides(
     int num_nodes;
     //parent prism
     const EntityHandle* conn_parent;
-    rval = moab.get_connectivity(parent_prism,conn_parent,num_nodes,true); CHKERRQ_MOAB_THROW(rval);
+    rval = moab.get_connectivity(parent_prism,conn_parent,num_nodes,true); MOAB_THROW(rval);
     Range face_side3_parent,face_side4_parent;
     rval = moab.get_adjacencies(conn_parent,3,2,false,face_side3_parent); CHKERRQ_MOAB(rval);
     rval = moab.get_adjacencies(&conn_parent[3],3,2,false,face_side4_parent); CHKERRQ_MOAB(rval);
@@ -682,7 +682,7 @@ PetscErrorCode Core::get_msId_3dENTS_split_sides(
     }
     //new prism
     const EntityHandle* conn;
-    rval = moab.get_connectivity(*pit,conn,num_nodes,true); CHKERRQ_MOAB_THROW(rval);
+    rval = moab.get_connectivity(*pit,conn,num_nodes,true); MOAB_THROW(rval);
     Range face_side3,face_side4;
     rval = moab.get_adjacencies(conn,3,2,false,face_side3); CHKERRQ_MOAB(rval);
     rval = moab.get_adjacencies(&conn[3],3,2,false,face_side4); CHKERRQ_MOAB(rval);

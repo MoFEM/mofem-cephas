@@ -70,7 +70,7 @@ struct ArcLengthElement: public ArcLengthIntElemFEMethod {
     for(_IT_CUBITMESHSETS_BY_NAME_FOR_LOOP_(mField,"LoadPath",cit)) {
       EntityHandle meshset = cit->get_meshset();
       Range nodes;
-      rval = mOab.get_entities_by_type(meshset,MBVERTEX,nodes,true); CHKERRQ_MOAB_THROW(rval);
+      rval = mOab.get_entities_by_type(meshset,MBVERTEX,nodes,true); MOAB_THROW(rval);
       PostProcNodes.merge(nodes);
     }
 
@@ -92,7 +92,7 @@ struct ArcLengthElement: public ArcLengthIntElemFEMethod {
       dit = numered_dofs_rows.get<Ent_mi_tag>().lower_bound(*nit);
       hi_dit = numered_dofs_rows.get<Ent_mi_tag>().upper_bound(*nit);
       double coords[3];
-      rval = mOab.get_coords(&*nit,1,coords);  CHKERRQ_MOAB_THROW(rval);
+      rval = mOab.get_coords(&*nit,1,coords);  MOAB_THROW(rval);
       for(;dit!=hi_dit;dit++) {
         PetscPrintf(PETSC_COMM_WORLD,"%s [ %d ] %6.4e -> ",lit->get_name().c_str(),lit->get_dof_coeff_idx(),lit->get_FieldData());
         PetscPrintf(PETSC_COMM_WORLD,"%s [ %d ] %6.4e ",dit->get_name().c_str(),dit->get_dof_coeff_idx(),dit->get_FieldData());

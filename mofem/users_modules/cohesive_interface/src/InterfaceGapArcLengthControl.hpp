@@ -43,19 +43,19 @@ struct ArcLengthIntElemFEMethod: public FEMethod {
       VecCreateGhost(PETSC_COMM_WORLD,0,1,1,ghosts,&GhostLambdaInt);
     }
     Range prisms;
-    rval = mOab.get_entities_by_type(0,MBPRISM,prisms,false); CHKERRQ_MOAB_THROW(rval);
+    rval = mOab.get_entities_by_type(0,MBPRISM,prisms,false); MOAB_THROW(rval);
     for(Range::iterator pit = prisms.begin();pit!=prisms.end();pit++) {
       EntityHandle f3,f4;
-      rval = mOab.side_element(*pit,2,3,f3); CHKERRQ_MOAB_THROW(rval);
-      rval = mOab.side_element(*pit,2,4,f4); CHKERRQ_MOAB_THROW(rval);
+      rval = mOab.side_element(*pit,2,3,f3); MOAB_THROW(rval);
+      rval = mOab.side_element(*pit,2,4,f4); MOAB_THROW(rval);
       Faces3.insert(f3);
       Faces4.insert(f4);
     }
 
-    rval = mOab.get_adjacencies(Faces3,1,false,Edges3); CHKERRQ_MOAB_THROW(rval);
-    rval = mOab.get_adjacencies(Faces4,1,false,Edges4); CHKERRQ_MOAB_THROW(rval);
-    rval = mOab.get_connectivity(Faces3,Nodes3,true); CHKERRQ_MOAB_THROW(rval);
-    rval = mOab.get_connectivity(Faces4,Nodes4,true); CHKERRQ_MOAB_THROW(rval);
+    rval = mOab.get_adjacencies(Faces3,1,false,Edges3); MOAB_THROW(rval);
+    rval = mOab.get_adjacencies(Faces4,1,false,Edges4); MOAB_THROW(rval);
+    rval = mOab.get_connectivity(Faces3,Nodes3,true); MOAB_THROW(rval);
+    rval = mOab.get_connectivity(Faces4,Nodes4,true); MOAB_THROW(rval);
     //Faces3.insert(Edges3.begin(),Edges3.end());
     Faces3.insert(Nodes3.begin(),Nodes3.end());
     //Faces4.insert(Edges4.begin(),Edges4.end());
@@ -63,7 +63,7 @@ struct ArcLengthIntElemFEMethod: public FEMethod {
 
     double def_damaged = 0;
     rval = mOab.tag_get_handle(
-      "DAMAGED_PRISM",1,MB_TYPE_INTEGER,thDamagedPrism,MB_TAG_CREAT|MB_TAG_SPARSE,&def_damaged); CHKERRQ_MOAB_THROW(rval);
+      "DAMAGED_PRISM",1,MB_TYPE_INTEGER,thDamagedPrism,MB_TAG_CREAT|MB_TAG_SPARSE,&def_damaged); MOAB_THROW(rval);
 
   }
   ~ArcLengthIntElemFEMethod() {

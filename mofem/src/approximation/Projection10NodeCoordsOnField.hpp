@@ -149,7 +149,7 @@ struct ProjectionFieldOn10NodeTet: public Projection10NodeCoordsOnField {
       ublas::vector<double> def_VAL = ublas::zero_vector<double>(field_rank);
       rval = mField.get_moab().tag_get_handle(
         onTag.c_str(),field_rank,MB_TYPE_DOUBLE,
-        th,MB_TAG_CREAT|MB_TAG_SPARSE,&*def_VAL.data().begin()); CHKERRQ_MOAB_THROW(rval);
+        th,MB_TAG_CREAT|MB_TAG_SPARSE,&*def_VAL.data().begin()); MOAB_THROW(rval);
       }
 
       L.resize(maxApproximationOrder+1);

@@ -113,7 +113,7 @@ struct PostProcTemplateOnRefineMesh: public ELEMENT {
   }
 
   virtual PostProcCommonOnRefMesh::CommonData& getCommonData() {
-    THROW_AT_LINE("not implemented");
+    THROW_MESSAGE("not implemented");
   }
 
   /** \brief Add operator to post-process L2 or H1 field value

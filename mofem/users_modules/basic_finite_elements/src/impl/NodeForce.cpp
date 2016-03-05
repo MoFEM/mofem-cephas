@@ -97,11 +97,11 @@ NodalForce::OpNodalForce::OpNodalForce(const string field_name,Vec _F,bCForce &d
     const EntityHandle root_meshset = mField.get_moab().get_root_set();
     rval = mField.get_moab().tag_get_handle("_LoadFactor_Scale_",1,MB_TYPE_DOUBLE,thScale,MB_TAG_CREAT|MB_TAG_EXCL|MB_TAG_MESH,&def_scale);
     if(rval == MB_ALREADY_ALLOCATED) {
-      rval = mField.get_moab().tag_get_by_ptr(thScale,&root_meshset,1,(const void**)&sCale); CHKERRQ_MOAB_THROW(rval);
+      rval = mField.get_moab().tag_get_by_ptr(thScale,&root_meshset,1,(const void**)&sCale); MOAB_THROW(rval);
     } else {
-      CHKERRQ_MOAB_THROW(rval);
-      rval = mField.get_moab().tag_set_data(thScale,&root_meshset,1,&def_scale); CHKERRQ_MOAB_THROW(rval);
-      rval = mField.get_moab().tag_get_by_ptr(thScale,&root_meshset,1,(const void**)&sCale); CHKERRQ_MOAB_THROW(rval);
+      MOAB_THROW(rval);
+      rval = mField.get_moab().tag_set_data(thScale,&root_meshset,1,&def_scale); MOAB_THROW(rval);
+      rval = mField.get_moab().tag_get_by_ptr(thScale,&root_meshset,1,(const void**)&sCale); MOAB_THROW(rval);
     }
   }
 
