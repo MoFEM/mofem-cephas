@@ -118,7 +118,7 @@ PetscErrorCode MoFEMProblem::getNumberOfElementsByNameAndPart(MPI_Comm comm,cons
   const FeByNameAndPart &fe_by_name_and_part = numeredFiniteElements.get<Composite_Name_And_Part_mi_tag>();
   int nb_elems;
   nb_elems = fe_by_name_and_part.count(boost::make_tuple(name,rank));
-  ierr = PetscLayoutSetSize(*layout,nb_elems); CHKERRQ(ierr);
+  ierr = PetscLayoutSetLocalSize(*layout,nb_elems); CHKERRQ(ierr);
   ierr = PetscLayoutSetUp(*layout); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
@@ -135,7 +135,7 @@ PetscErrorCode MoFEMProblem::getNumberOfElementsByPart(MPI_Comm comm,PetscLayout
   const FeByPart &fe_by_part = numeredFiniteElements.get<Part_mi_tag>();
   int nb_elems;
   nb_elems = fe_by_part.count(rank);
-  ierr = PetscLayoutSetSize(*layout,nb_elems); CHKERRQ(ierr);
+  ierr = PetscLayoutSetLocalSize(*layout,nb_elems); CHKERRQ(ierr);
   ierr = PetscLayoutSetUp(*layout); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }

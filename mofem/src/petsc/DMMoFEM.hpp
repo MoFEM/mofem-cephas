@@ -96,7 +96,7 @@ PetscErrorCode DMMoFEMResolveSharedEntities(DM dm,const char fe_name[]);
  *
  * \ingroup dm
  */
-PetscErrorCode DMMoFEMGetProblemFiniteElementLayout(DM dm,PetscLayout *layout);
+PetscErrorCode DMMoFEMGetProblemFiniteElementLayout(DM dm,const char fe_name[],PetscLayout *layout);
 
 /**
   * \brief add element to dm
