@@ -23,6 +23,8 @@ struct PCMGSetUpViaApproxOrdersCtx {
   FieldInterface *mFieldPtr;		///< MoFEM interface
   string problemName;			///< Problem name
 
+  vector<double> dIag;
+
   PCMGSetUpViaApproxOrdersCtx(FieldInterface *mfield_ptr,string problem_name):
   mFieldPtr(mfield_ptr),
   problemName(problem_name),

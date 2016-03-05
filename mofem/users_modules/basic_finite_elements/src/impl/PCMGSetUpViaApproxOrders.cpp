@@ -74,6 +74,8 @@ PetscErrorCode PCMGSetUpViaApproxOrdersCtx::createIsAtLevel(int kk,IS *is) {
     order_at_next_level = orderAtLastLevel;
   }
   ierr = mFieldPtr->ISCreateProblemOrder(problemName,ROW,0,order_at_next_level,is); CHKERRQ(ierr);
+  dIag.resize(nbLevels);
+  dIag[kk] = 1;
   PetscFunctionReturn(0);
 }
 
@@ -170,7 +172,7 @@ PetscErrorCode PCMGSetUpViaApproxOrdersCtx::buildProlongationOperator(PC pc,int 
     for(int jj = 0;jj<col_loc_size;jj++) {
       map<int,int>::iterator mit = idx_map.find(col_indices_ptr[jj]);
       if(mit != idx_map.end()) {
-        ierr = MatSetValue(R,mit->second,cstart+jj,1,INSERT_VALUES); CHKERRQ(ierr);
+        ierr = MatSetValue(R,mit->second,cstart+jj,dIag[kk],INSERT_VALUES); CHKERRQ(ierr);
       }
     }
 
