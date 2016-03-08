@@ -48,6 +48,7 @@
 #include <Core.hpp>
 
 //SRC/PETSC
+#include <KspCtx.hpp>
 #include <SnesCtx.hpp>
 #include <TsCtx.hpp>
 #include <DMMoFEM.hpp>

@@ -18,6 +18,9 @@
 #ifndef __PCMGSETUP_VIA_APPROX_ORDERS_HPP__
 #define __PCMGSETUP_VIA_APPROX_ORDERS_HPP__
 
+/**
+ * \brief Set data structures of MG pre-conditioner via approximation orders
+ */
 struct PCMGSetUpViaApproxOrdersCtx {
 
   FieldInterface *mFieldPtr;		///< MoFEM interface
@@ -45,13 +48,45 @@ struct PCMGSetUpViaApproxOrdersCtx {
 
   PetscErrorCode ierr;
 
+  /**
+   * \brief get options from line command
+   * @return error code
+   */
   virtual PetscErrorCode getOptions();
+
+  /**
+   * \brief Set IS for levels
+   * @param  kk level
+   * @param  is pointer to IS
+   * @return    error code
+   */
   virtual PetscErrorCode createIsAtLevel(int kk,IS *is);
+
+  /**
+   * \brief Destroy IS if internally created
+   * @param  kk level
+   * @param  is pointer to is
+   * @return    error code
+   */
   virtual PetscErrorCode destroyIsAtLevel(int kk,IS *is);
+
+  /**
+   * \brief Set up data structures for MG
+   * @param  pc   MG pre-conditioner <http://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/PC/PCMG.html>
+   * @param  verb verbosity level
+   * @return      error code
+   */
   virtual PetscErrorCode buildProlongationOperator(PC pc,int verb = 0);
 
 };
 
+/**
+ * \brief Function build MG structure
+ * @param  pc   MG pre-conditioner <http://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/PC/PCMG.html>
+ * @param  ctx  MoFEM data structure for MG
+ * @param  verb verbosity level
+ * @return      error code
+ */
 PetscErrorCode PCMGSetUpViaApproxOrders(
   PC pc,PCMGSetUpViaApproxOrdersCtx *ctx,int verb = 0
 );

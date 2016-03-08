@@ -64,8 +64,8 @@ struct KspCtx {
   basic_method_to_do& get_preProcess_to_do_Mat() { return preProcess_Mat; }
   basic_method_to_do& get_postProcess_to_do_Mat() { return postProcess_Mat; }
 
-  friend PetscErrorCode KspRhs(KSP ksp,Vec x,Vec f,void *ctx);
-  friend PetscErrorCode KspMat(KSP ksp,Vec x,Mat A,Mat B,void *ctx);
+  friend PetscErrorCode KspRhs(KSP ksp,Vec f,void *ctx);
+  friend PetscErrorCode KspMat(KSP ksp,Mat A,Mat B,void *ctx);
 
 };
 
