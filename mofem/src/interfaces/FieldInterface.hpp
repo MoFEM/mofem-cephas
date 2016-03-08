@@ -15,7 +15,7 @@
 #ifndef __FIELDINTERFACE_HPP__
 #define __FIELDINTERFACE_HPP__
 
-#include "FieldUnknownInterface.hpp"
+#include "UnknownInterface.hpp"
 
 /** \brief name space of MoFEM library functions and classes
   */
@@ -32,7 +32,7 @@ static const MOFEMuuid IDD_MOFEMFieldInterface = MOFEMuuid( BitIntefaceId(FIELD_
  *  (*) define elements, <br>
  *  (*) define problems, <br>
  */
-struct FieldInterface: public FieldUnknownInterface {
+struct FieldInterface: public UnknownInterface {
 
   virtual PetscErrorCode query_interface_type(const std::type_info& type, void*& ptr) = 0;
 

@@ -76,7 +76,7 @@ PetscErrorCode print_MoFem_verison(MPI_Comm comm) {
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode Core::queryInterface(const MOFEMuuid& uuid,FieldUnknownInterface** iface) {
+PetscErrorCode Core::queryInterface(const MOFEMuuid& uuid,UnknownInterface** iface) {
   PetscFunctionBegin;
   *iface = NULL;
   if(uuid == IDD_MOFEMPrismInterface) {

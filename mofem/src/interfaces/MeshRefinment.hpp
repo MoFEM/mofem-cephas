@@ -17,7 +17,7 @@
 #ifndef __MESHREFINE_HPP__
 #define __MESHREFINE_HPP__
 
-#include "FieldUnknownInterface.hpp"
+#include "UnknownInterface.hpp"
 
 namespace MoFEM {
 
@@ -34,7 +34,7 @@ static const MOFEMuuid IDD_MOFEMMeshRefine = MOFEMuuid( BitIntefaceId(MESH_REFIN
   \bug If outsourced, class member functions should follow name convention
 
   */
-struct MeshRefinment: public FieldUnknownInterface {
+struct MeshRefinment: public UnknownInterface {
 
   ///destructor
   virtual ~MeshRefinment() {}

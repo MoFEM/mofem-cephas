@@ -17,7 +17,7 @@
 #ifndef __SERIESRECORDER_HPP__
 #define __SERIESRECORDER_HPP__
 
-#include "FieldUnknownInterface.hpp"
+#include "UnknownInterface.hpp"
 
 namespace MoFEM {
 
@@ -29,7 +29,7 @@ static const MOFEMuuid IDD_MOFEMSeriesRecorder = MOFEMuuid( BitIntefaceId(SERIES
   Is abstraction of Core interface.  
  
  */
-struct SeriesRecorder: public FieldUnknownInterface {
+struct SeriesRecorder: public UnknownInterface {
 
   ///destructor
   virtual ~SeriesRecorder() {}

@@ -47,7 +47,7 @@
 
 namespace MoFEM {
 
-PetscErrorCode PrismsFromSurfaceInterface::queryInterface(const MOFEMuuid& uuid, FieldUnknownInterface** iface) {
+PetscErrorCode PrismsFromSurfaceInterface::queryInterface(const MOFEMuuid& uuid, UnknownInterface** iface) {
   PetscFunctionBegin;
   *iface = NULL;
   if(uuid == IDD_MOFEMPrismsFromSurface) {
@@ -55,7 +55,7 @@ PetscErrorCode PrismsFromSurfaceInterface::queryInterface(const MOFEMuuid& uuid,
     PetscFunctionReturn(0);
   }
   if(uuid == IDD_MOFEMUnknown) {
-    *iface = dynamic_cast<FieldUnknownInterface*>(this);
+    *iface = dynamic_cast<UnknownInterface*>(this);
     PetscFunctionReturn(0);
   }
   SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"unknown interface");

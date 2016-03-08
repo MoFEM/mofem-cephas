@@ -54,7 +54,7 @@ static ErrorCode rval;
 
 namespace MoFEM {
 
-PetscErrorCode BitLevelCouplerInterface::queryInterface(const MOFEMuuid& uuid, FieldUnknownInterface** iface) {
+PetscErrorCode BitLevelCouplerInterface::queryInterface(const MOFEMuuid& uuid, UnknownInterface** iface) {
   PetscFunctionBegin;
   *iface = NULL;
   if(uuid == IDD_MOFEMBitLevelCoupler) {
@@ -62,7 +62,7 @@ PetscErrorCode BitLevelCouplerInterface::queryInterface(const MOFEMuuid& uuid, F
     PetscFunctionReturn(0);
   }
   if(uuid == IDD_MOFEMUnknown) {
-    *iface = dynamic_cast<FieldUnknownInterface*>(this);
+    *iface = dynamic_cast<UnknownInterface*>(this);
     PetscFunctionReturn(0);
   }
   SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"unknown interface");

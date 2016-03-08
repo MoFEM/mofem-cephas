@@ -17,13 +17,13 @@
 #ifndef __PRISMINTERFACE_HPP__
 #define __PRISMINTERFACE_HPP__
 
-#include "FieldUnknownInterface.hpp"
+#include "UnknownInterface.hpp"
 
 namespace MoFEM {
 
 static const MOFEMuuid IDD_MOFEMPrismInterface = MOFEMuuid( BitIntefaceId(PRISM_INTEFACE) );
 
-struct PrismInterface: public FieldUnknownInterface {
+struct PrismInterface: public UnknownInterface {
 
   ///destructor
   virtual ~PrismInterface() {}

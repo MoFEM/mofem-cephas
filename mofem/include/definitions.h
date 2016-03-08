@@ -28,7 +28,7 @@
   *
   */
 enum MoFEMInterfaces {
-  FIELD_UNKNOWNINTERFACE = 1<<0,
+  UNKNOWNINTERFACE = 1<<0,
   //Field Interface
   FIELD_INTERFACE = 1<<0|1<<1,
   MESH_REFINE = 1<<1|1<<2,

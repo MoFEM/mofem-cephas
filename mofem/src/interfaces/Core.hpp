@@ -32,7 +32,7 @@ namespace MoFEM {
 struct Core:
   public FieldInterface, MeshRefinment, PrismInterface, SeriesRecorder {
 
-  PetscErrorCode queryInterface(const MOFEMuuid& uuid, FieldUnknownInterface** iface);
+  PetscErrorCode queryInterface(const MOFEMuuid& uuid, UnknownInterface** iface);
   PetscErrorCode query_interface_type(const std::type_info& iface_type, void*& ptr);
 
   Interface& moab;
@@ -46,7 +46,7 @@ struct Core:
 
   protected:
 
-  boost::ptr_map<unsigned long,FieldUnknownInterface *> iFaces;
+  boost::ptr_map<unsigned long,UnknownInterface *> iFaces;
 
   //Database
   ErrorCode rval;

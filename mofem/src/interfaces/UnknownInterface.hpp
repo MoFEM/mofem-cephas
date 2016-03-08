@@ -1,6 +1,6 @@
-/** \file FieldUnknownInterface.hpp
- * \brief MoFEM interface 
- * 
+/** \file UnknownInterface.hpp
+ * \brief MoFEM interface
+ *
  * Low level data structures not used directly by user
  */
 
@@ -14,8 +14,8 @@
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 */
 
-#ifndef __MOFEMUNKNOWNFIELD_HPP__
-#define __MOFEMUNKNOWNFIELD_HPP__
+#ifndef __MOFEMUNKNOWNINTERFACE_HPP__
+#define __MOFEMUNKNOWNINTERFACE_HPP__
 
 namespace MoFEM {
 
@@ -29,7 +29,7 @@ struct MOFEMuuid {
     return (uUId&orig.uUId) == orig.uUId;
   }
 
-  //uuid  
+  //uuid
   BitIntefaceId uUId;
 
 };
@@ -37,17 +37,16 @@ struct MOFEMuuid {
 //! uuid for an unknown interface
 //! this can be used to either return a default interface
 //! or a NULL interface
-static const MOFEMuuid IDD_MOFEMUnknown = MOFEMuuid( BitIntefaceId(FIELD_UNKNOWNINTERFACE) );
+static const MOFEMuuid IDD_MOFEMUnknown = MOFEMuuid( BitIntefaceId(UNKNOWNINTERFACE) );
 
 /** \brief base class for all interface classes
   * \ingroup mofem
   */
-struct FieldUnknownInterface {
-  virtual PetscErrorCode queryInterface (const MOFEMuuid& uuid, FieldUnknownInterface** iface) = 0;
-  virtual ~FieldUnknownInterface() {}
+struct UnknownInterface {
+  virtual PetscErrorCode queryInterface (const MOFEMuuid& uuid, UnknownInterface** iface) = 0;
+  virtual ~UnknownInterface() {}
 };
 
 }
 
-#endif // __MOFEMUNKNOWNFIELD_HPP__
- 
+#endif // __MOFEMUNKNOWNINTERFACE_HPP__
