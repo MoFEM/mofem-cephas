@@ -57,71 +57,23 @@
 
 #include <DMMoFEM.hpp>
 
-namespace MoFEM {
-
-struct DMCtx {
-
-  FieldInterface *mField_ptr; 		//< MoFEM interface
-  string problemName;			//< problem name
-
-  KspCtx *kspCtx;			//< data structure KSP
-  SnesCtx *snesCtx;			//< data structure SNES
-  TsCtx	*tsCtx;				//< data structure for TS solver
-
-  //options
-  PetscBool isPartitioned;		//< true if read mesh is on parts
-  PetscBool isSquareMatrix;		//< true if rows equals to cols
-  PetscInt verbosity;			//< verbosity
-
-  int rAnk,sIze;
-
-  //global control
-  static PetscBool isProblemsBuild;
-
-  //pouinter to data structures
-  const MoFEMProblem *problemPtr;	//< pinter to problem data structure
-
-  DMCtx();
-  virtual ~DMCtx();
-
-  friend PetscErrorCode DMCreate_MoFEM(DM dm);
-  friend PetscErrorCode DMDestroy_MoFEM(DM dm);
-  friend PetscErrorCode DMCreateGlobalVector_MoFEM(DM dm,Vec *globV);
-  friend PetscErrorCode DMCreateLocalVector_MoFEM(DM dm,Vec *locV);
-  friend PetscErrorCode DMCreateMatrix_MoFEM(DM dm,Mat *M);
-  friend PetscErrorCode DMSetUp_MoFEM(DM dm);
-  #if PETSC_VERSION_GE(3,5,3)
-    friend PetscErrorCode DMSetFromOptions_MoFEM(PetscOptions *PetscOptionsObject,DM dm);
-  #else
-    friend PetscErrorCode DMSetFromOptions_MoFEM(DM dm);
-  #endif
-  friend PetscErrorCode DMGlobalToLocalBegin_MoFEM(DM dm,Vec,InsertMode,Vec);
-  friend PetscErrorCode DMGlobalToLocalEnd_MoFEM(DM dm,Vec,InsertMode,Vec);
-  friend PetscErrorCode DMLocalToGlobalBegin_MoFEM(DM,Vec,InsertMode,Vec);
-  friend PetscErrorCode DMLocalToGlobalEnd_MoFEM(DM,Vec,InsertMode,Vec);
-};
-
-PetscBool DMCtx::isProblemsBuild = PETSC_FALSE;
+using namespace MoFEM;
 
 DMCtx::DMCtx():
-  mField_ptr(PETSC_NULL),
-  kspCtx(NULL),
-  snesCtx(NULL),
-  tsCtx(NULL),
-  isPartitioned(PETSC_FALSE),
-  isSquareMatrix(PETSC_TRUE),
-  verbosity(0) {
-}
+mField_ptr(PETSC_NULL),
+isProblemBuild(PETSC_FALSE),
+kspCtx(NULL),
+snesCtx(NULL),
+tsCtx(NULL),
+isPartitioned(PETSC_FALSE),
+isSquareMatrix(PETSC_TRUE),
+verbosity(0) {}
+
 DMCtx::~DMCtx() {
   delete kspCtx;
   delete snesCtx;
   delete tsCtx;
 }
-
-
-}
-
-using namespace MoFEM;
 
 PetscErrorCode DMRegister_MoFEM(const char sname[]) {
   PetscErrorCode ierr;
@@ -164,6 +116,7 @@ PetscErrorCode DMMoFEMCreateMoFEM(
 ) {
   PetscErrorCode ierr;
   PetscFunctionBegin;
+
   DMCtx *dm_field = (DMCtx*)dm->data;
   if(!dm->data) {
     SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"data structure for MoFEM not yet created");
@@ -330,6 +283,49 @@ PetscErrorCode DMoFEMLoopDofs(DM dm,const char field_name[],MoFEM::EntMethod *me
   PetscFunctionReturn(0);
 }
 
+
+// static PetscErrorCode set_compute_operators_via_sub_matrix_and_is(KSP ksp,Mat Amat,Mat Pmat,void *ctx) {
+//   PetscErrorCode;
+//   DMCtx *dm_field = (DMCtx*)ctx;
+//   int level = dm_field->subMatrixLevel;
+//   int nb_levels = dm_field->isSubMatrixLevels.size();
+//
+//   if(nb_levels = 0 || level == nb_levels-1) {
+//     if(
+//       !dm_field->kspCtx->get_preProcess_to_do_Mat().empty() ||
+//       !dm_field->kspCtx->get_loops_to_do_Mat().empty() ||
+//       !dm_field->kspCtx->get_postProcess_to_do_Mat().empty()
+//     ) {
+//       dm_field->fineKspA = Amat;
+//       dm_field->fineKspB = Pmat;
+//       ierr = KspMat(ksp,Amat,Pmat); CHKERRQ(ierr);
+//
+//       if(fineIsSubMatrixLevel) {
+//         ierr = MatGetSubMatrix(
+//           Pmat,
+//           dm_field->fineIsSubMatrixLevel,
+//           dm_field->fineIsSubMatrixLevel,
+//           MAT_INITIAL_MATRIX,
+//           &dm_field->fineKspB
+//         ); CHKERRQ(ierr);
+//       }
+//
+//     }
+//   } else {
+//   }
+//
+//   PetscFunctionReturn(0);
+// }
+
+// PetscErrorCode DMMoFEMKSPSetComputeOperatorsViaSubMatrixbByIs(DM dm) {
+//   PetscErrorCode ierr;
+//   PetscValidHeaderSpecific(dm,DM_CLASSID,1);
+//   PetscFunctionBegin;
+//   DMCtx *dm_field = (DMCtx*)dm->data;
+//   ierr = DMKSPSetComputeOperators(dm,set_compute_operators_via_sub_matrix_and_is,dm_field); CHKERRQ(ierr);
+//   PetscFunctionReturn(0);
+// }
+
 PetscErrorCode DMMoFEMKSPSetComputeRHS(DM dm,const char fe_name[],MoFEM::FEMethod *method,MoFEM::FEMethod *pre_only,MoFEM::FEMethod *post_only) {
   PetscErrorCode ierr;
   PetscValidHeaderSpecific(dm,DM_CLASSID,1);
@@ -347,11 +343,13 @@ PetscErrorCode DMMoFEMKSPSetComputeRHS(DM dm,const char fe_name[],MoFEM::FEMetho
   ierr = DMKSPSetComputeRHS(dm,KspRhs,dm_field->kspCtx); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
+
 PetscErrorCode DMMoFEMKSPSetComputeOperators(DM dm,const char fe_name[],MoFEM::FEMethod *method,MoFEM::FEMethod *pre_only,MoFEM::FEMethod *post_only) {
   PetscErrorCode ierr;
   PetscValidHeaderSpecific(dm,DM_CLASSID,1);
   PetscFunctionBegin;
   DMCtx *dm_field = (DMCtx*)dm->data;
+
   if(pre_only!=NULL) {
     dm_field->kspCtx->get_preProcess_to_do_Mat().push_back(pre_only);
   }
@@ -362,6 +360,7 @@ PetscErrorCode DMMoFEMKSPSetComputeOperators(DM dm,const char fe_name[],MoFEM::F
     dm_field->kspCtx->get_postProcess_to_do_Mat().push_back(post_only);
   }
   ierr = DMKSPSetComputeOperators(dm,KspMat,dm_field->kspCtx); CHKERRQ(ierr);
+
   PetscFunctionReturn(0);
 }
 
@@ -562,12 +561,12 @@ PetscErrorCode DMSetUp_MoFEM(DM dm) {
   if(dm_field->isPartitioned) {
     ierr = dm_field->mField_ptr->build_partitioned_problem(dm_field->problemName,dm_field->isSquareMatrix); CHKERRQ(ierr);
     ierr = dm_field->mField_ptr->partition_finite_elements(dm_field->problemName,true,0,dm_field->sIze,1); CHKERRQ(ierr);
-    dm_field->isProblemsBuild = PETSC_TRUE;
+    dm_field->isProblemBuild = PETSC_TRUE;
   } else {
     ierr = dm_field->mField_ptr->build_problem(dm_field->problemName); CHKERRQ(ierr);
     ierr = dm_field->mField_ptr->partition_problem(dm_field->problemName); CHKERRQ(ierr);
     ierr = dm_field->mField_ptr->partition_finite_elements(dm_field->problemName); CHKERRQ(ierr);
-    dm_field->isProblemsBuild = PETSC_TRUE;
+    dm_field->isProblemBuild = PETSC_TRUE;
   }
   ierr = dm_field->mField_ptr->partition_ghost_dofs(dm_field->problemName); CHKERRQ(ierr);
   PetscFunctionReturn(0);
@@ -647,5 +646,32 @@ PetscErrorCode DMLocalToGlobalBegin_MoFEM(DM dm,Vec l,InsertMode mode,Vec g) {
 PetscErrorCode DMLocalToGlobalEnd_MoFEM(DM,Vec l,InsertMode mode,Vec g) {
   //PetscErrorCode ierr;
   PetscFunctionBegin;
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode DMMoFEMPushBackCoarseningIS(DM,IS is) {
+  PetscErrorCode ierr;
+  PetscValidHeaderSpecific(dm,DM_CLASSID,1);
+  PetscFunctionBegin;
+  DMCtx *dm_field = (DMCtx*)dm->data;
+  dm_field->coarseningIS.push_back(is);
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode DMMoFEMPopBackCoarseningIS(DM,IS *is) {
+  PetscErrorCode ierr;
+  PetscValidHeaderSpecific(dm,DM_CLASSID,1);
+  PetscFunctionBegin;
+  DMCtx *dm_field = (DMCtx*)dm->data;
+  *is = dm_field->coarseningIS.pop_back();
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode DMCreateInterpolation_MoFEM(DM dm1,DM dm2,Mat *mat,Vec *vec) {
+  PetscErrorCode ierr;
+  PetscValidHeaderSpecific(dm,DM_CLASSID,1);
+  PetscFunctionBegin;
+  DMCtx *dm_field = (DMCtx*)dm->data;
+
   PetscFunctionReturn(0);
 }

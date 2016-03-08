@@ -180,6 +180,16 @@ PetscErrorCode DMoFEMLoopFiniteElements(DM dm,const char fe_name[],MoFEM::FEMeth
   */
 PetscErrorCode DMoFEMLoopDofs(DM dm,const char field_name[],MoFEM::EntMethod *method);
 
+// /**
+//  * \brief Set compute operator for KSP solver via sub-matrix and IS
+//  *
+//  * @param  dm   DM
+//  * @return      error code
+//  *
+//  * \ingroup dm
+//  */
+// PetscErrorCode DMMoFEMKSPSetComputeOperatorsViaSubMatrixbByIs(DM dm);
+
 /**
   * \brief set KSP right hand side evaluation function
   * \ingroup dm
@@ -187,9 +197,17 @@ PetscErrorCode DMoFEMLoopDofs(DM dm,const char field_name[],MoFEM::EntMethod *me
 PetscErrorCode DMMoFEMKSPSetComputeRHS(DM dm,const char fe_name[],MoFEM::FEMethod *method,MoFEM::FEMethod *pre_only,MoFEM::FEMethod *post_only);
 
 /**
-  * \brief set KSP matrix evaluation function
-  * \ingroup dm
-  */
+ * \brief Set KSP opetators and push mofem finite element methods
+ *
+ * @param  dm        DM
+ * @param  fe_name   finite element name
+ * @param  method    method on the element (executed for each element in the problem which given name)
+ * @param  pre_only  method for pre-process before element method
+ * @param  post_only method for post-process after element method
+ * @return           error code
+ *
+ * \ingroup dm
+ */
 PetscErrorCode DMMoFEMKSPSetComputeOperators(DM dm,const char fe_name[],MoFEM::FEMethod *method,MoFEM::FEMethod *pre_only,MoFEM::FEMethod *post_only);
 
 /**
@@ -375,6 +393,86 @@ PetscErrorCode DMLocalToGlobalBegin_MoFEM(DM,Vec,InsertMode,Vec);
   * the routine that ends the local to global scatter
   */
 PetscErrorCode DMLocalToGlobalEnd_MoFEM(DM,Vec,InsertMode,Vec);
+
+/**
+ * \brief Push back coarsening level
+ *
+ * @param  DM dm
+ * @param  is set IS used for coarsening
+ * @return error code
+ *
+ * \ingroup dm
+ */
+PetscErrorCode DMMoFEMPushBackCoarseningIS(DM,IS is);
+
+/**
+ * [DMMoFEMPushBackCoarseningIS description]
+ * @param  DM [description]
+ * @param  is [description]
+ * @return    [description]
+ */
+PetscErrorCode DMMoFEMPopBackCoarseningIS(DM,IS *is);
+
+/**
+ * [DMCreateInterpolation_MoFEM description]
+ * @param  dm1 the DM object
+ * @param  dm2 the DM object
+ * @param  mat the interpolation
+ * @param  vec not active here (PETSC_NULL)
+ * @return     error cdoe
+ */
+PetscErrorCode DMCreateInterpolation_MoFEM(DM dm1,DM dm2,Mat *mat,Vec *vec);
+
+
+namespace MoFEM {
+
+  /**
+   * \brief PETSc  Discrete Manager data structure
+   *
+   * This structure should not be accessed or modified by user. Is not available
+   * from outside MoFEM DM manager. However user can inherit dat class and
+   * add data for additional functionality.
+   *
+   * This is part of implementation for PETSc interface, see more details in
+   * <http://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/DM/index.html>
+   *
+   */
+  struct DMCtx {
+
+    FieldInterface *mField_ptr; 		///< MoFEM interface
+    PetscBool isProblemBuild;      ///< True if problem is build
+    string problemName;			        ///< Problem name
+
+    KspCtx *kspCtx;			  ///< data structure KSP
+    SnesCtx *snesCtx;			///< data structure SNES
+    TsCtx	*tsCtx;				   ///< data structure for TS solver
+
+    //options
+    PetscBool isPartitioned;		///< true if read mesh is on parts
+    PetscBool isSquareMatrix;		///< true if rows equals to cols
+    PetscInt verbosity;			    ///< verbosity
+
+    vector<IS> coarseningIS;   ///< Coarsening IS
+
+    int rAnk,sIze;
+
+    //pointer to data structures
+    const MoFEMProblem *problemPtr;	  ///< pinter to problem data structure
+
+    DMCtx();
+    virtual ~DMCtx();
+
+  };
+
+  struct DMInterpolationMatrixShell {
+
+    int levelDm1;
+    int levelDm2;
+
+  };
+
+
+}
 
 #endif //__DMMMOFEM_H
 
