@@ -295,6 +295,14 @@ PetscErrorCode DMMoFEMSetIsPartitioned(DM dm,PetscBool is_partitioned);
 PetscErrorCode DMMoFEMGetIsPartitioned(DM dm,PetscBool *is_partitioned);
 
 /**
+ * \brief Set operators for MoFEM dm
+ * @param  dm
+ * @return  error code
+ * \ingroup dm
+ */
+PetscErrorCode DMSetOperators_MoFEM(DM dm);
+
+/**
   * \brief Create dm data structure with MoFEM data structure
   * \ingroup dm
   */
@@ -394,37 +402,11 @@ PetscErrorCode DMLocalToGlobalBegin_MoFEM(DM,Vec,InsertMode,Vec);
   */
 PetscErrorCode DMLocalToGlobalEnd_MoFEM(DM,Vec,InsertMode,Vec);
 
-/**
- * \brief Push back coarsening level
- *
- * @param  DM dm
- * @param  is set IS used for coarsening
- * @return error code
- *
- * \ingroup dm
- */
-PetscErrorCode DMMoFEMPushBackCoarseningIS(DM,IS is);
-
-/**
- * [DMMoFEMPushBackCoarseningIS description]
- * @param  DM [description]
- * @param  is [description]
- * @return    [description]
- */
-PetscErrorCode DMMoFEMPopBackCoarseningIS(DM,IS *is);
-
-/**
- * [DMCreateInterpolation_MoFEM description]
- * @param  dm1 the DM object
- * @param  dm2 the DM object
- * @param  mat the interpolation
- * @param  vec not active here (PETSC_NULL)
- * @return     error cdoe
- */
-PetscErrorCode DMCreateInterpolation_MoFEM(DM dm1,DM dm2,Mat *mat,Vec *vec);
-
 
 namespace MoFEM {
+
+  static const int DMCTX_INTERFACE = 1<<0;
+  static const MOFEMuuid IDD_DMCTX = MOFEMuuid(BitIntefaceId(DMCTX_INTERFACE));
 
   /**
    * \brief PETSc  Discrete Manager data structure
@@ -437,7 +419,9 @@ namespace MoFEM {
    * <http://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/DM/index.html>
    *
    */
-  struct DMCtx {
+  struct DMCtx: public MoFEM::UnknownInterface {
+
+    PetscErrorCode queryInterface(const MOFEMuuid& uuid,UnknownInterface** iface);
 
     FieldInterface *mField_ptr; 		///< MoFEM interface
     PetscBool isProblemBuild;      ///< True if problem is build
@@ -452,8 +436,6 @@ namespace MoFEM {
     PetscBool isSquareMatrix;		///< true if rows equals to cols
     PetscInt verbosity;			    ///< verbosity
 
-    vector<IS> coarseningIS;   ///< Coarsening IS
-
     int rAnk,sIze;
 
     //pointer to data structures
@@ -461,13 +443,6 @@ namespace MoFEM {
 
     DMCtx();
     virtual ~DMCtx();
-
-  };
-
-  struct DMInterpolationMatrixShell {
-
-    int levelDm1;
-    int levelDm2;
 
   };
 

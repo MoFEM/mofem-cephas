@@ -18,6 +18,59 @@
 #ifndef __PCMGSETUP_VIA_APPROX_ORDERS_HPP__
 #define __PCMGSETUP_VIA_APPROX_ORDERS_HPP__
 
+static const int DMMGVIAAPPROXORDERSCTX_INTERFACE = 1<<1;
+static const MOFEMuuid IDD_DMMGVIAAPPROXORDERSCTX = MOFEMuuid(BitIntefaceId(DMMGVIAAPPROXORDERSCTX_INTERFACE));
+
+/**
+ * \brief Structure for DM for multi-grid via approximation orders
+ */
+struct DMMGViaApproxOrdersCtx: public MoFEM::DMCtx {
+
+  PetscErrorCode queryInterface(const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface);
+
+  DMMGViaApproxOrdersCtx();
+  ~DMMGViaApproxOrdersCtx();
+
+  Mat fineMatrix;            ///< Assembled matrix at fine level
+  vector<IS> coarseningIS;   ///< Coarsening IS
+  vector<Mat> kspOperators;  ///< Get KSP operators
+
+};
+
+
+PetscErrorCode DMRegister_MGViaApproxOrders(const char sname[]);
+
+PetscErrorCode DMCreate_MGViaApproxOrders(DM dm);
+
+PetscErrorCode DMDestroy_MGViaApproxOrders(DM dm);
+
+/**
+ * \brief Push back coarsening level
+ *
+ * @param  DM discrete manager
+ * @param  is Push back IS used for coarsening
+ * @param  A  Get sub-matrix of A using is (that sets operators for coarsening levels)
+ * @return error code
+ *
+ * \ingroup dm
+ */
+PetscErrorCode DMMGViaApproxOrdersPushBackCoarseningIS(DM,IS is,Mat A);
+
+/**
+ * [DMMoFEMPushBackCoarseningIS description]
+ * @param  DM dm
+ * @param  is pop back IS
+ * @return    error code
+ */
+PetscErrorCode DMMGViaApproxOrdersPopBackCoarseningIS(DM);
+
+
+PetscErrorCode DMCreate_MGViaApproxOrdersCoarse(DM dm);
+
+PetscErrorCode DMCoarsen_MGViaApproxOrders(DM dm, MPI_Comm comm, DM *dmc);
+
+PetscErrorCode DMCreateInterpolation_MGViaApproxOrders(DM dm1,DM dm2,Mat *mat,Vec *vec);
+
 /**
  * \brief Set data structures of MG pre-conditioner via approximation orders
  */

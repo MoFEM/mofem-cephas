@@ -301,7 +301,9 @@ int main(int argc, char *argv[]) {
   ierr = m_field.modify_problem_ref_level_add_bit("ELASTIC_PROB",bit_level0); CHKERRQ(ierr);
 
   DMType dm_name = "ELASTIC_PROB";
-  ierr = DMRegister_MoFEM(dm_name); CHKERRQ(ierr);
+  ierr = DMRegister_MGViaApproxOrders(dm_name); CHKERRQ(ierr);
+  // ierr = DMRegister_MoFEM(dm_name); CHKERRQ(ierr);
+
   //craete dm instance
   DM dm;
   ierr = DMCreate(PETSC_COMM_WORLD,&dm);CHKERRQ(ierr);
@@ -316,6 +318,7 @@ int main(int argc, char *argv[]) {
   ierr = DMMoFEMAddElement(dm,"FLUID_PRESSURE_FE"); CHKERRQ(ierr);
   ierr = DMMoFEMAddElement(dm,"FORCE_FE"); CHKERRQ(ierr);
   ierr = DMMoFEMAddElement(dm,"PRESSURE_FE"); CHKERRQ(ierr);
+
 
   ierr = DMSetUp(dm); CHKERRQ(ierr);
 

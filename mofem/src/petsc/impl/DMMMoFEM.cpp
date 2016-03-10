@@ -75,6 +75,21 @@ DMCtx::~DMCtx() {
   delete tsCtx;
 }
 
+PetscErrorCode DMCtx::queryInterface(const MOFEMuuid& uuid, UnknownInterface** iface) {
+  PetscFunctionBegin;
+  *iface = NULL;
+  if(uuid == IDD_DMCTX) {
+    *iface = dynamic_cast<DMCtx*>(this);
+    PetscFunctionReturn(0);
+  }
+  if(uuid == IDD_MOFEMUnknown) {
+    *iface = dynamic_cast<UnknownInterface*>(this);
+    PetscFunctionReturn(0);
+  }
+  SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"unknown interface");
+  PetscFunctionReturn(0);
+}
+
 PetscErrorCode DMRegister_MoFEM(const char sname[]) {
   PetscErrorCode ierr;
   PetscFunctionBegin;
@@ -82,12 +97,9 @@ PetscErrorCode DMRegister_MoFEM(const char sname[]) {
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode DMCreate_MoFEM(DM dm) {
-  //PetscErrorCode ierr;
+PetscErrorCode DMSetOperators_MoFEM(DM dm) {
   PetscValidHeaderSpecific(dm,DM_CLASSID,1);
   PetscFunctionBegin;
-
-  dm->data = new DMCtx();
 
   dm->ops->createglobalvector       = DMCreateGlobalVector_MoFEM;
   dm->ops->createlocalvector        = DMCreateLocalVector_MoFEM;
@@ -99,6 +111,18 @@ PetscErrorCode DMCreate_MoFEM(DM dm) {
   dm->ops->globaltolocalend         = DMGlobalToLocalEnd_MoFEM;
   dm->ops->localtoglobalbegin       = DMLocalToGlobalBegin_MoFEM;
   dm->ops->localtoglobalend         = DMLocalToGlobalEnd_MoFEM;
+
+  PetscFunctionReturn(0);
+}
+
+
+PetscErrorCode DMCreate_MoFEM(DM dm) {
+  PetscErrorCode ierr;
+  PetscValidHeaderSpecific(dm,DM_CLASSID,1);
+  PetscFunctionBegin;
+
+  dm->data = new DMCtx();
+  ierr = DMSetOperators_MoFEM(dm); CHKERRQ(ierr);
 
   PetscFunctionReturn(0);
 }
@@ -283,49 +307,6 @@ PetscErrorCode DMoFEMLoopDofs(DM dm,const char field_name[],MoFEM::EntMethod *me
   PetscFunctionReturn(0);
 }
 
-
-// static PetscErrorCode set_compute_operators_via_sub_matrix_and_is(KSP ksp,Mat Amat,Mat Pmat,void *ctx) {
-//   PetscErrorCode;
-//   DMCtx *dm_field = (DMCtx*)ctx;
-//   int level = dm_field->subMatrixLevel;
-//   int nb_levels = dm_field->isSubMatrixLevels.size();
-//
-//   if(nb_levels = 0 || level == nb_levels-1) {
-//     if(
-//       !dm_field->kspCtx->get_preProcess_to_do_Mat().empty() ||
-//       !dm_field->kspCtx->get_loops_to_do_Mat().empty() ||
-//       !dm_field->kspCtx->get_postProcess_to_do_Mat().empty()
-//     ) {
-//       dm_field->fineKspA = Amat;
-//       dm_field->fineKspB = Pmat;
-//       ierr = KspMat(ksp,Amat,Pmat); CHKERRQ(ierr);
-//
-//       if(fineIsSubMatrixLevel) {
-//         ierr = MatGetSubMatrix(
-//           Pmat,
-//           dm_field->fineIsSubMatrixLevel,
-//           dm_field->fineIsSubMatrixLevel,
-//           MAT_INITIAL_MATRIX,
-//           &dm_field->fineKspB
-//         ); CHKERRQ(ierr);
-//       }
-//
-//     }
-//   } else {
-//   }
-//
-//   PetscFunctionReturn(0);
-// }
-
-// PetscErrorCode DMMoFEMKSPSetComputeOperatorsViaSubMatrixbByIs(DM dm) {
-//   PetscErrorCode ierr;
-//   PetscValidHeaderSpecific(dm,DM_CLASSID,1);
-//   PetscFunctionBegin;
-//   DMCtx *dm_field = (DMCtx*)dm->data;
-//   ierr = DMKSPSetComputeOperators(dm,set_compute_operators_via_sub_matrix_and_is,dm_field); CHKERRQ(ierr);
-//   PetscFunctionReturn(0);
-// }
-
 PetscErrorCode DMMoFEMKSPSetComputeRHS(DM dm,const char fe_name[],MoFEM::FEMethod *method,MoFEM::FEMethod *pre_only,MoFEM::FEMethod *post_only) {
   PetscErrorCode ierr;
   PetscValidHeaderSpecific(dm,DM_CLASSID,1);
@@ -349,7 +330,6 @@ PetscErrorCode DMMoFEMKSPSetComputeOperators(DM dm,const char fe_name[],MoFEM::F
   PetscValidHeaderSpecific(dm,DM_CLASSID,1);
   PetscFunctionBegin;
   DMCtx *dm_field = (DMCtx*)dm->data;
-
   if(pre_only!=NULL) {
     dm_field->kspCtx->get_preProcess_to_do_Mat().push_back(pre_only);
   }
@@ -360,7 +340,6 @@ PetscErrorCode DMMoFEMKSPSetComputeOperators(DM dm,const char fe_name[],MoFEM::F
     dm_field->kspCtx->get_postProcess_to_do_Mat().push_back(post_only);
   }
   ierr = DMKSPSetComputeOperators(dm,KspMat,dm_field->kspCtx); CHKERRQ(ierr);
-
   PetscFunctionReturn(0);
 }
 
@@ -646,32 +625,5 @@ PetscErrorCode DMLocalToGlobalBegin_MoFEM(DM dm,Vec l,InsertMode mode,Vec g) {
 PetscErrorCode DMLocalToGlobalEnd_MoFEM(DM,Vec l,InsertMode mode,Vec g) {
   //PetscErrorCode ierr;
   PetscFunctionBegin;
-  PetscFunctionReturn(0);
-}
-
-PetscErrorCode DMMoFEMPushBackCoarseningIS(DM,IS is) {
-  PetscErrorCode ierr;
-  PetscValidHeaderSpecific(dm,DM_CLASSID,1);
-  PetscFunctionBegin;
-  DMCtx *dm_field = (DMCtx*)dm->data;
-  dm_field->coarseningIS.push_back(is);
-  PetscFunctionReturn(0);
-}
-
-PetscErrorCode DMMoFEMPopBackCoarseningIS(DM,IS *is) {
-  PetscErrorCode ierr;
-  PetscValidHeaderSpecific(dm,DM_CLASSID,1);
-  PetscFunctionBegin;
-  DMCtx *dm_field = (DMCtx*)dm->data;
-  *is = dm_field->coarseningIS.pop_back();
-  PetscFunctionReturn(0);
-}
-
-PetscErrorCode DMCreateInterpolation_MoFEM(DM dm1,DM dm2,Mat *mat,Vec *vec) {
-  PetscErrorCode ierr;
-  PetscValidHeaderSpecific(dm,DM_CLASSID,1);
-  PetscFunctionBegin;
-  DMCtx *dm_field = (DMCtx*)dm->data;
-
   PetscFunctionReturn(0);
 }
