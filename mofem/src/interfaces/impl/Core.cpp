@@ -99,7 +99,7 @@ PetscErrorCode Core::queryInterface(const MOFEMuuid& uuid,UnknownInterface** ifa
     *iface = dynamic_cast<FieldInterface*>(this);
     PetscFunctionReturn(0);
   }
-  SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"unknown inteface");
+  SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"unknown interface");
   PetscFunctionReturn(0);
 }
 
