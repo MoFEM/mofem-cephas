@@ -41,13 +41,11 @@ using namespace MoFEM;
 DMMGViaApproxOrdersCtx::DMMGViaApproxOrdersCtx(): MoFEM::DMCtx() {
 }
 DMMGViaApproxOrdersCtx::~DMMGViaApproxOrdersCtx() {
+  PetscErrorCode ierr;
+  for(unsigned int ii = 0;ii<kspOperators.size();ii++) {
+    ierr = MatDestroy(&kspOperators[ii]); CHKERRABORT(PETSC_COMM_WORLD,ierr);
+  }
 }
-
-#define GET_DM_FIELD(DM) \
-  MoFEM::UnknownInterface *iface; \
-  ierr = ((DMCtx*)DM->data)->queryInterface(IDD_DMMGVIAAPPROXORDERSCTX,&iface); CHKERRQ(ierr); \
-  DMMGViaApproxOrdersCtx *dm_field = reinterpret_cast<DMMGViaApproxOrdersCtx*>(iface)
-
 
 PetscErrorCode DMMGViaApproxOrdersCtx::queryInterface(const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface) {
   PetscFunctionBegin;
@@ -61,34 +59,10 @@ PetscErrorCode DMMGViaApproxOrdersCtx::queryInterface(const MOFEMuuid& uuid,MoFE
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode DMRegister_MGViaApproxOrders(const char sname[]) {
-  PetscErrorCode ierr;
-  PetscFunctionBegin;
-  ierr = DMRegister(sname,DMCreate_MGViaApproxOrders); CHKERRQ(ierr);
-  ierr = DMRegister((string(sname)+"_Coarse").c_str(),DMCreate_MGViaApproxOrdersCoarse); CHKERRQ(ierr);
-  PetscFunctionReturn(0);
-}
-
-PetscErrorCode DMCreate_MGViaApproxOrders(DM dm) {
-  PetscErrorCode ierr;
-  PetscValidHeaderSpecific(dm,DM_CLASSID,1);
-  PetscFunctionBegin;
-
-  dm->data = new DMMGViaApproxOrdersCtx();
-  ierr = DMSetOperators_MoFEM(dm); CHKERRQ(ierr);
-  dm->ops->destroy = DMDestroy_MGViaApproxOrders;
-  dm->ops->coarsen = DMCoarsen_MGViaApproxOrders;
-
-  PetscFunctionReturn(0);
-}
-
-PetscErrorCode DMDestroy_MGViaApproxOrders(DM dm) {
-  //PetscErrorCode ierr;
-  PetscValidHeaderSpecific(dm,DM_CLASSID,1);
-  PetscFunctionBegin;
-  delete (DMCtx*)dm->data;
-  PetscFunctionReturn(0);
-}
+#define GET_DM_FIELD(DM) \
+  MoFEM::UnknownInterface *iface; \
+  ierr = ((DMCtx*)DM->data)->queryInterface(IDD_DMMGVIAAPPROXORDERSCTX,&iface); CHKERRQ(ierr); \
+  DMMGViaApproxOrdersCtx *dm_field = reinterpret_cast<DMMGViaApproxOrdersCtx*>(iface)
 
 PetscErrorCode DMMGViaApproxOrdersPushBackCoarseningIS(DM dm,IS is,Mat A,Mat *subA) {
   PetscErrorCode ierr;
@@ -96,9 +70,12 @@ PetscErrorCode DMMGViaApproxOrdersPushBackCoarseningIS(DM dm,IS is,Mat A,Mat *su
   PetscFunctionBegin;
   GET_DM_FIELD(dm);
   dm_field->coarseningIS.push_back(is);
+  //FIXME: If is not the coarse level it would be better to have shell matrix.
+  //It would save memory.
   ierr = MatGetSubMatrix(A,is,is,MAT_INITIAL_MATRIX,subA); CHKERRQ(ierr);
   dm_field->kspOperators.push_back(*subA);
   ierr = PetscObjectReference((PetscObject)dm_field->kspOperators.back()); CHKERRQ(ierr);
+
   PetscFunctionReturn(0);
 }
 
@@ -108,14 +85,33 @@ PetscErrorCode DMMGViaApproxOrdersPopBackCoarseningIS(DM dm) {
   PetscFunctionBegin;
   GET_DM_FIELD(dm);
   dm_field->coarseningIS.pop_back();
-  if(dm_field->kspOperators.back()!=PETSC_NULL) {
+  if(dm_field->kspOperators.back()) {
     ierr = MatDestroy(&dm_field->kspOperators.back()); CHKERRQ(ierr);
   }
   dm_field->kspOperators.pop_back();
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode DMCreateMatrix_MGViaApproxOrdersCoarse(DM dm,Mat *M) {
+PetscErrorCode DMRegister_MGViaApproxOrders(const char sname[]) {
+  PetscErrorCode ierr;
+  PetscFunctionBegin;
+  ierr = DMRegister(sname,DMCreate_MGViaApproxOrders); CHKERRQ(ierr);
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode DMCreate_MGViaApproxOrders(DM dm) {
+  PetscErrorCode ierr;
+  PetscValidHeaderSpecific(dm,DM_CLASSID,1);
+  PetscFunctionBegin;
+  dm->data = new DMMGViaApproxOrdersCtx();
+  ierr = DMSetOperators_MoFEM(dm); CHKERRQ(ierr);
+  dm->ops->creatematrix = DMCreateMatrix_MGViaApproxOrders;
+  dm->ops->coarsen = DMCoarsen_MGViaApproxOrders;
+  dm->ops->createinterpolation = DMCreateInterpolation_MGViaApproxOrders;
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode DMCreateMatrix_MGViaApproxOrders(DM dm,Mat *M) {
   PetscErrorCode ierr;
   PetscValidHeaderSpecific(dm,DM_CLASSID,1);
   PetscFunctionBegin;
@@ -124,23 +120,10 @@ PetscErrorCode DMCreateMatrix_MGViaApproxOrdersCoarse(DM dm,Mat *M) {
   MPI_Comm comm;
   ierr = PetscObjectGetComm((PetscObject)dm,&comm); CHKERRQ(ierr);
   int leveldown = dm->leveldown;
-
   if(dm_field->kspOperators.size()<leveldown) {
     SETERRQ(comm,MOFEM_DATA_INCONSISTENCY,"data inconsistency, no IS for that level");
   }
   *M = dm_field->kspOperators[leveldown];
-
-  PetscFunctionReturn(0);
-}
-
-PetscErrorCode DMCreate_MGViaApproxOrdersCoarse(DM dm) {
-  PetscErrorCode ierr;
-  PetscValidHeaderSpecific(dm,DM_CLASSID,1);
-  PetscFunctionBegin;
-
-  ierr = DMSetOperators_MoFEM(dm); CHKERRQ(ierr);
-  dm->ops->destroy = PETSC_NULL;
-  dm->ops->creatematrix = DMCreateMatrix_MGViaApproxOrdersCoarse;
 
   PetscFunctionReturn(0);
 }
@@ -153,9 +136,81 @@ PetscErrorCode DMCoarsen_MGViaApproxOrders(DM dm, MPI_Comm comm, DM *dmc) {
   GET_DM_FIELD(dm);
 
   ierr = DMCreate(comm,dmc);CHKERRQ(ierr);
-  ierr = DMSetType(*dmc,(dm_field->problemName+"_Coarse").c_str()); CHKERRQ(ierr);
+  ierr = DMSetType(*dmc,(dm_field->problemName).c_str()); CHKERRQ(ierr);
   (*dmc)->data = dm->data;
+  ((DMCtx*)((*dmc)->data))->referenceNumber++;
 
+  PetscFunctionReturn(0);
+}
+
+struct MGShellProjectionMatrix {
+
+  IS isUp,isDown;
+  VecScatter sCatter;
+  MGShellProjectionMatrix(): sCatter(PETSC_NULL) {
+  }
+  virtual ~MGShellProjectionMatrix() {
+  }
+
+};
+
+static PetscErrorCode inerpolation_matrix_destroy(Mat mat) {
+  PetscErrorCode ierr;
+  PetscFunctionBegin;
+  void *void_ctx;
+  ierr = MatShellGetContext(mat,&void_ctx); CHKERRQ(ierr);
+  MGShellProjectionMatrix *ctx = (MGShellProjectionMatrix*)void_ctx;
+  if(ctx->sCatter) {
+    ierr = VecScatterDestroy(&ctx->sCatter); CHKERRQ(ierr);
+  }
+
+  delete ctx;
+  PetscFunctionReturn(0);
+}
+
+static PetscErrorCode inerpolation_matrix_mult_generic(Mat mat,Vec x,Vec f,InsertMode addv,ScatterMode mode) {
+  PetscErrorCode ierr;
+  PetscFunctionBegin;
+  void *void_ctx;
+  ierr = MatShellGetContext(mat,&void_ctx); CHKERRQ(ierr);
+  MGShellProjectionMatrix *ctx = (MGShellProjectionMatrix*)void_ctx;
+  if(!ctx->sCatter) {
+    if(mode == SCATTER_FORWARD) {
+      ierr = VecScatterCreate(x,ctx->isUp,f,ctx->isDown,&ctx->sCatter); CHKERRQ(ierr);
+    } else {
+      ierr = VecScatterCreate(f,ctx->isUp,x,ctx->isDown,&ctx->sCatter); CHKERRQ(ierr);
+    }
+  }
+  ierr = VecScatterBegin(ctx->sCatter,x,f,addv,mode); CHKERRQ(ierr);
+  ierr = VecScatterEnd(ctx->sCatter,x,f,addv,mode); CHKERRQ(ierr);
+  PetscFunctionReturn(0);
+}
+
+static PetscErrorCode inerpolation_matrix_mult(Mat mat,Vec x,Vec f) {
+  PetscErrorCode ierr;
+  PetscFunctionBegin;
+  ierr = inerpolation_matrix_mult_generic(mat,x,f,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  PetscFunctionReturn(0);
+}
+
+static PetscErrorCode inerpolation_matrix_mult_transpose(Mat mat,Vec x,Vec f) {
+  PetscErrorCode ierr;
+  PetscFunctionBegin;
+  ierr = inerpolation_matrix_mult_generic(mat,x,f,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  PetscFunctionReturn(0);
+}
+
+static PetscErrorCode inerpolation_matrix_mult_add(Mat mat,Vec x,Vec f) {
+  PetscErrorCode ierr;
+  PetscFunctionBegin;
+  ierr = inerpolation_matrix_mult_generic(mat,x,f,ADD_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  PetscFunctionReturn(0);
+}
+
+static PetscErrorCode inerpolation_matrix_mult_transpose_add(Mat mat,Vec x,Vec f) {
+  PetscErrorCode ierr;
+  PetscFunctionBegin;
+  ierr = inerpolation_matrix_mult_generic(mat,x,f,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 
@@ -167,10 +222,40 @@ PetscErrorCode DMCreateInterpolation_MGViaApproxOrders(DM dm1,DM dm2,Mat *mat,Ve
   int dm1_leveldown = dm1->leveldown;
   int dm2_leveldown = dm2->leveldown;
 
-  // MoFEM::UnknownInterface *iface;
-  // ierr = ((DMCtx*)dm->data)->queryInterface(IDD_DMMGVIAAPPROXORDERSCTX,&iface); CHKERRQ(ierr);
-  // DMMGViaApproxOrdersCtx *dm_field = reinterpret_cast<DMMGViaApproxOrdersCtx*>(iface);
-  // //FIXME
+  MPI_Comm comm;
+  ierr = PetscObjectGetComm((PetscObject)dm1,&comm); CHKERRQ(ierr);
+
+  int m,n,M,N;
+
+  MGShellProjectionMatrix *mat_ctx = new MGShellProjectionMatrix();
+  {
+    GET_DM_FIELD(dm1);
+    if(dm_field->coarseningIS.size()<dm1_leveldown) {
+      SETERRQ(PETSC_COMM_WORLD,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
+    }
+    mat_ctx->isUp = dm_field->coarseningIS[dm1_leveldown];
+    ierr = ISGetSize(mat_ctx->isUp,&M); CHKERRQ(ierr);
+    ierr = ISGetLocalSize(mat_ctx->isUp,&m); CHKERRQ(ierr);
+  }
+  {
+    GET_DM_FIELD(dm2);
+    if(dm_field->coarseningIS.size()<dm2_leveldown) {
+      SETERRQ(PETSC_COMM_WORLD,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
+    }
+    mat_ctx->isUp = dm_field->coarseningIS[dm2_leveldown];
+    ierr = ISGetSize(mat_ctx->isUp,&N); CHKERRQ(ierr);
+    ierr = ISGetLocalSize(mat_ctx->isUp,&n); CHKERRQ(ierr);
+  }
+
+  ierr = MatCreateShell(comm,m,n,M,N,(void*)mat_ctx,mat); CHKERRQ(ierr);
+  ierr = MatShellSetOperation(*mat,MATOP_DESTROY,(void(*)(void))inerpolation_matrix_destroy); CHKERRQ(ierr);
+  ierr = MatShellSetOperation(*mat,MATOP_MULT,(void(*)(void))inerpolation_matrix_mult); CHKERRQ(ierr);
+  ierr = MatShellSetOperation(*mat,MATOP_MULT_TRANSPOSE,(void(*)(void))inerpolation_matrix_mult_transpose); CHKERRQ(ierr);
+  ierr = MatShellSetOperation(*mat,MATOP_MULT_ADD,(void(*)(void))inerpolation_matrix_mult_add); CHKERRQ(ierr);
+  ierr = MatShellSetOperation(*mat,MATOP_MULT_TRANSPOSE_ADD,(void(*)(void))inerpolation_matrix_mult_transpose_add); CHKERRQ(ierr);
+
+  vec = PETSC_NULL;
+
   PetscFunctionReturn(0);
 }
 

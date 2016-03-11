@@ -57,6 +57,7 @@ struct SnesCtx {
     PetscLogEventRegister("LoopSNESRhs",0,&USER_EVENT_SnesRhs);
     PetscLogEventRegister("LoopSNESMat",0,&USER_EVENT_SnesMat);
   }
+  virtual ~SnesCtx() {}
 
   const FieldInterface& getm_field() const { return mField; }
   const Interface& get_moab() const { return moab; }

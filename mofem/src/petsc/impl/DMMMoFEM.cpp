@@ -131,7 +131,11 @@ PetscErrorCode DMDestroy_MoFEM(DM dm) {
   //PetscErrorCode ierr;
   PetscValidHeaderSpecific(dm,DM_CLASSID,1);
   PetscFunctionBegin;
-  delete (DMCtx*)dm->data;
+  if(!((DMCtx*)dm->data)->referenceNumber) {
+    delete (DMCtx*)dm->data;
+  } else {
+    (((DMCtx*)dm->data)->referenceNumber)--;
+  }
   PetscFunctionReturn(0);
 }
 

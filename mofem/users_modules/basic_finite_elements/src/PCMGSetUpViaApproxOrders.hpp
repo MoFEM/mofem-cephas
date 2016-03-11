@@ -38,12 +38,6 @@ struct DMMGViaApproxOrdersCtx: public MoFEM::DMCtx {
 };
 
 
-PetscErrorCode DMRegister_MGViaApproxOrders(const char sname[]);
-
-PetscErrorCode DMCreate_MGViaApproxOrders(DM dm);
-
-PetscErrorCode DMDestroy_MGViaApproxOrders(DM dm);
-
 /**
  * \brief Push back coarsening level
  *
@@ -54,7 +48,7 @@ PetscErrorCode DMDestroy_MGViaApproxOrders(DM dm);
  *
  * \ingroup dm
  */
-PetscErrorCode DMMGViaApproxOrdersPushBackCoarseningIS(DM,IS is,Mat A);
+PetscErrorCode DMMGViaApproxOrdersPushBackCoarseningIS(DM,IS is,Mat A,Mat *subA);
 
 /**
  * [DMMoFEMPushBackCoarseningIS description]
@@ -65,7 +59,11 @@ PetscErrorCode DMMGViaApproxOrdersPushBackCoarseningIS(DM,IS is,Mat A);
 PetscErrorCode DMMGViaApproxOrdersPopBackCoarseningIS(DM);
 
 
-PetscErrorCode DMCreate_MGViaApproxOrdersCoarse(DM dm);
+PetscErrorCode DMRegister_MGViaApproxOrders(const char sname[]);
+
+PetscErrorCode DMCreate_MGViaApproxOrders(DM dm);
+
+PetscErrorCode DMCreateMatrix_MGViaApproxOrders(DM dm,Mat *M);
 
 PetscErrorCode DMCoarsen_MGViaApproxOrders(DM dm, MPI_Comm comm, DM *dmc);
 

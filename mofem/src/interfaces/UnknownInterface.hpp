@@ -19,12 +19,17 @@
 
 namespace MoFEM {
 
+/**
+ * \brief MoFEM interface unique ID
+ * \ingroup mofem
+ */
 struct MOFEMuuid {
 
   MOFEMuuid() { memset( this, 0, sizeof(MOFEMuuid)); }
   MOFEMuuid(BitIntefaceId uuid) { uUId = uuid; }
 
-  //! returns whether two uuid's are equal
+  /** \brief returns whether two uuid's are equal
+  **/
   bool operator==(const MOFEMuuid& orig) const {
     return (uUId&orig.uUId) == orig.uUId;
   }
@@ -34,14 +39,15 @@ struct MOFEMuuid {
 
 };
 
-//! uuid for an unknown interface
-//! this can be used to either return a default interface
-//! or a NULL interface
+/** uuid for an unknown interface
+  * this can be used to either return a default interface
+  * or a NULL interface
+**/
 static const MOFEMuuid IDD_MOFEMUnknown = MOFEMuuid( BitIntefaceId(UNKNOWNINTERFACE) );
 
 /** \brief base class for all interface classes
   * \ingroup mofem
-  */
+**/
 struct UnknownInterface {
   virtual PetscErrorCode queryInterface (const MOFEMuuid& uuid, UnknownInterface** iface) = 0;
   virtual ~UnknownInterface() {}

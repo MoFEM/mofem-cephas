@@ -444,6 +444,8 @@ namespace MoFEM {
     DMCtx();
     virtual ~DMCtx();
 
+    int referenceNumber;
+
   };
 
 

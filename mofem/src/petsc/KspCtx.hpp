@@ -53,6 +53,7 @@ struct KspCtx {
     PetscLogEventRegister("LoopKSPRhs",0,&USER_EVENT_KspRhs);
     PetscLogEventRegister("LoopKSPMat",0,&USER_EVENT_KspMat);
   }
+  virtual ~KspCtx() {}
 
   const FieldInterface& getm_field() const { return mField; }
   const Interface& get_moab() const { return moab; }
