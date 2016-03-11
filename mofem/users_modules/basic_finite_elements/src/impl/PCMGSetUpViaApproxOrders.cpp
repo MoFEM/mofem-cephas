@@ -70,12 +70,15 @@ PetscErrorCode DMMGViaApproxOrdersPushBackCoarseningIS(DM dm,IS is,Mat A,Mat *su
   PetscFunctionBegin;
   GET_DM_FIELD(dm);
   dm_field->coarseningIS.push_back(is);
-  //FIXME: If is not the coarse level it would be better to have shell matrix.
-  //It would save memory.
-  ierr = MatGetSubMatrix(A,is,is,MAT_INITIAL_MATRIX,subA); CHKERRQ(ierr);
-  dm_field->kspOperators.push_back(*subA);
+  // FIXME: If is not the coarse level it would be better to have shell matrix.
+  // It would save memory.
+  if(is) {
+    ierr = MatGetSubMatrix(A,is,is,MAT_INITIAL_MATRIX,subA); CHKERRQ(ierr);
+    dm_field->kspOperators.push_back(*subA);
+  } else {
+    dm_field->kspOperators.push_back(A);
+  }
   ierr = PetscObjectReference((PetscObject)dm_field->kspOperators.back()); CHKERRQ(ierr);
-
   PetscFunctionReturn(0);
 }
 
@@ -119,6 +122,11 @@ PetscErrorCode DMCreateMatrix_MGViaApproxOrders(DM dm,Mat *M) {
 
   MPI_Comm comm;
   ierr = PetscObjectGetComm((PetscObject)dm,&comm); CHKERRQ(ierr);
+
+  if(dm_field->kspOperators.empty()) {
+    SETERRQ(comm,MOFEM_DATA_INCONSISTENCY,"data inconsistency, operator can not be set");
+  }
+
   int leveldown = dm->leveldown;
   if(dm_field->kspOperators.size()<leveldown) {
     SETERRQ(comm,MOFEM_DATA_INCONSISTENCY,"data inconsistency, no IS for that level");

@@ -318,8 +318,6 @@ int main(int argc, char *argv[]) {
   ierr = DMMoFEMAddElement(dm,"FLUID_PRESSURE_FE"); CHKERRQ(ierr);
   ierr = DMMoFEMAddElement(dm,"FORCE_FE"); CHKERRQ(ierr);
   ierr = DMMoFEMAddElement(dm,"PRESSURE_FE"); CHKERRQ(ierr);
-
-
   ierr = DMSetUp(dm); CHKERRQ(ierr);
 
   //ierr = m_field.partition_check_matrix_fill_in("ELASTIC_PROB",-1,-1,1); CHKERRQ(ierr);
@@ -422,8 +420,10 @@ int main(int argc, char *argv[]) {
   //Solver
   KSP solver;
   ierr = KSPCreate(PETSC_COMM_WORLD,&solver); CHKERRQ(ierr);
-  ierr = KSPSetOperators(solver,Aij,Aij); CHKERRQ(ierr);
+  ierr = KSPSetDM(solver,dm); CHKERRQ(ierr);
+  ierr = KSPSetDMActive(solver,PETSC_FALSE); CHKERRQ(ierr);
   ierr = KSPSetFromOptions(solver); CHKERRQ(ierr);
+  ierr = KSPSetOperators(solver,Aij,Aij); CHKERRQ(ierr);
   {
     //from PETSc example ex42.c
     PetscBool same = PETSC_FALSE;
@@ -433,6 +433,8 @@ int main(int argc, char *argv[]) {
     if (same) {
       PCMGSetUpViaApproxOrdersCtx pc_ctx(&m_field,"ELASTIC_PROB");
       ierr = PCMGSetUpViaApproxOrders(pc,&pc_ctx); CHKERRQ(ierr);
+    } else {
+      ierr = DMMGViaApproxOrdersPushBackCoarseningIS(dm,PETSC_NULL,Aij,PETSC_NULL); CHKERRQ(ierr);
     }
   }
   ierr = KSPSetUp(solver); CHKERRQ(ierr);
@@ -558,6 +560,7 @@ int main(int argc, char *argv[]) {
   ierr = VecDestroy(&D0); CHKERRQ(ierr);
   ierr = MatDestroy(&Aij); CHKERRQ(ierr);
   ierr = KSPDestroy(&solver); CHKERRQ(ierr);
+  ierr = DMDestroy(&dm); CHKERRQ(ierr);
 
   PetscFinalize();
 
