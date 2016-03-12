@@ -145,7 +145,7 @@ PetscErrorCode DMCreateMatrix_MGViaApproxOrders(DM dm,Mat *M) {
   if(dm_field->kspOperators.size()<leveldown) {
     SETERRQ(comm,MOFEM_DATA_INCONSISTENCY,"data inconsistency, no IS for that level");
   }
-  *M = dm_field->kspOperators[leveldown];
+  *M = dm_field->kspOperators[dm_field->kspOperators.size()-1-leveldown];
 
   PetscFunctionReturn(0);
 }
@@ -186,10 +186,8 @@ struct MGShellProjectionMatrix {
 
   int levelUp,levelDown;
   IS isUp,isDown;
-  ISLocalToGlobalMapping mapDown;
   VecScatter sCatter;
   MGShellProjectionMatrix():
-  mapDown(PETSC_NULL),
   sCatter(PETSC_NULL) {
   }
   virtual ~MGShellProjectionMatrix() {
@@ -203,9 +201,6 @@ static PetscErrorCode inerpolation_matrix_destroy(Mat mat) {
   void *void_ctx;
   ierr = MatShellGetContext(mat,&void_ctx); CHKERRQ(ierr);
   MGShellProjectionMatrix *ctx = (MGShellProjectionMatrix*)void_ctx;
-  if(ctx->mapDown) {
-    ierr = ISLocalToGlobalMappingDestroy(&ctx->mapDown); CHKERRQ(ierr);
-  }
   if(ctx->sCatter) {
     ierr = VecScatterDestroy(&ctx->sCatter); CHKERRQ(ierr);
   }
@@ -217,61 +212,72 @@ static PetscErrorCode inerpolation_matrix_destroy(Mat mat) {
 static PetscErrorCode inerpolation_matrix_mult_generic(Mat mat,Vec x,Vec f,InsertMode addv,ScatterMode mode) {
   PetscErrorCode ierr;
   PetscFunctionBegin;
+
   void *void_ctx;
   ierr = MatShellGetContext(mat,&void_ctx); CHKERRQ(ierr);
   MGShellProjectionMatrix *ctx = (MGShellProjectionMatrix*)void_ctx;
 
   cerr << ctx->levelDown << " " << ctx->levelUp << " : ";
-  int m,n,M,N;
+  int M,N;
   ierr = ISGetSize(ctx->isUp,&M); CHKERRQ(ierr);
-  ierr = ISGetLocalSize(ctx->isUp,&m); CHKERRQ(ierr);
   ierr = ISGetSize(ctx->isDown,&N); CHKERRQ(ierr);
-  ierr = ISGetLocalSize(ctx->isDown,&n); CHKERRQ(ierr);
-  cerr << m << " " << n << " " << M << " " << N << " : ";
-  ierr = VecGetSize(x,&M); CHKERRQ(ierr);
-  ierr = VecGetLocalSize(x,&m); CHKERRQ(ierr);
-  ierr = VecGetSize(f,&N); CHKERRQ(ierr);
-  ierr = VecGetLocalSize(f,&n); CHKERRQ(ierr);
-  cerr << m << " " << n << " " << M << " " << N << " : ";
-  cerr << mode << endl;
+  cerr << M << " " << N << " : ";
 
-  if(!ctx->mapDown && ctx->isDown) {
-    ierr = ISLocalToGlobalMappingCreateIS(ctx->isDown,&ctx->mapDown); CHKERRQ(ierr);
-  }
+  int K,L;
+  ierr = VecGetSize(x,&K); CHKERRQ(ierr);
+  ierr = VecGetSize(f,&L); CHKERRQ(ierr);
+  cerr << K << " " << L << " : ";
+  cerr << mode << endl;
 
   if(!ctx->sCatter) {
 
-    vector<int> coarse_idx(n);
-    vector<int> coarse_loc_idx(n);
-
-    const int *idx;
-    ierr = ISGetIndices(ctx->isUp,&idx); CHKERRQ(ierr);
-    copy(&idx[0],&idx[n],coarse_idx.begin());
-    ierr = ISRestoreIndices(ctx->isUp,&idx); CHKERRQ(ierr);
-
-    if(ctx->mapDown) {
-      int nout;
-      ierr = ISGlobalToLocalMappingApply(
-        ctx->mapDown,IS_GTOLM_MASK,N,&*coarse_idx.begin(),&nout,&*coarse_loc_idx.begin()
-      ); CHKERRQ(ierr);
+    IS is_to_map,is_to_scatter;
+    int size;
+    if(N>M) {
+      size = M;
+      is_to_map = ctx->isDown;
+      is_to_scatter = ctx->isUp;
     } else {
-      coarse_loc_idx.swap(coarse_idx);
+      size = N;
+      is_to_map = ctx->isUp;
+      is_to_scatter = ctx->isDown;
     }
+
+    ISLocalToGlobalMapping map;
+    ierr = ISLocalToGlobalMappingCreateIS(is_to_map,&map); CHKERRQ(ierr);
+
+    vector<int> coarse_idx(size);
+    vector<int> coarse_loc_idx(size);
+    const int *idx;
+    ierr = ISGetIndices(is_to_scatter,&idx); CHKERRQ(ierr);
+    copy(&idx[0],&idx[size],coarse_idx.begin());
+    ierr = ISRestoreIndices(is_to_scatter,&idx); CHKERRQ(ierr);
+    int nout;
+    ierr = ISGlobalToLocalMappingApply(
+      map,IS_GTOLM_MASK,size,&*coarse_idx.begin(),&nout,&*coarse_loc_idx.begin()
+    ); CHKERRQ(ierr);
+
+    ierr = ISLocalToGlobalMappingDestroy(&map); CHKERRQ(ierr);
 
     MPI_Comm comm;
     ierr = PetscObjectGetComm((PetscObject)mat,&comm); CHKERRQ(ierr);
     IS is;
-    ierr = ISCreateGeneral(comm,n,&*coarse_loc_idx.begin(),PETSC_USE_POINTER,&is); CHKERRQ(ierr);
-
-    ierr = ISGetLocalSize(is,&n); CHKERRQ(ierr);
-    cerr << "is " << n << endl;
-
+    ierr = ISCreateGeneral(comm,size,&*coarse_loc_idx.begin(),PETSC_USE_POINTER,&is); CHKERRQ(ierr);
 
     if(mode == SCATTER_FORWARD) {
-      ierr = VecScatterCreate(x,is,f,PETSC_NULL,&ctx->sCatter); CHKERRQ(ierr);
+      if(K>L) {
+        ierr = VecScatterCreate(x,is,f,PETSC_NULL,&ctx->sCatter); CHKERRQ(ierr);
+      } else {
+        ierr = VecScatterCreate(x,PETSC_NULL,f,is,&ctx->sCatter); CHKERRQ(ierr);
+      }
     } else {
-      ierr = VecScatterCreate(f,is,x,PETSC_NULL,&ctx->sCatter); CHKERRQ(ierr);
+      if(K>L) {
+        ierr = VecScatterCreate(f,PETSC_NULL,x,is,&ctx->sCatter); CHKERRQ(ierr);
+      } else {
+        ierr = VecScatterCreate(f,is,x,PETSC_NULL,&ctx->sCatter); CHKERRQ(ierr);
+      }
     }
+
     ierr = ISDestroy(&is); CHKERRQ(ierr);
 
   }
@@ -324,10 +330,11 @@ PetscErrorCode DMCreateInterpolation_MGViaApproxOrders(DM dm1,DM dm2,Mat *mat,Ve
   PetscValidHeaderSpecific(dm1,DM_CLASSID,1);
   PetscValidHeaderSpecific(dm2,DM_CLASSID,1);
   PetscFunctionBegin;
-  int dm1_leveldown = dm1->leveldown;
-  int dm2_leveldown = dm2->leveldown;
 
-  cerr << dm1_leveldown << " " << dm2_leveldown << endl;
+  int dm_down_leveldown = dm1->leveldown;
+  int dm_up_leveldown = dm2->leveldown;
+
+  cerr << dm_down_leveldown << " " << dm_up_leveldown << endl;
 
   MPI_Comm comm;
   ierr = PetscObjectGetComm((PetscObject)dm1,&comm); CHKERRQ(ierr);
@@ -338,39 +345,24 @@ PetscErrorCode DMCreateInterpolation_MGViaApproxOrders(DM dm1,DM dm2,Mat *mat,Ve
   {
     // Coarser mesh
     GET_DM_FIELD(dm1);
-    if(dm_field->coarseningIS.size()<dm1_leveldown) {
+    if(dm_field->coarseningIS.size()<dm_down_leveldown) {
       SETERRQ(PETSC_COMM_WORLD,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
     }
-    mat_ctx->isDown = dm_field->coarseningIS[dm1_leveldown];
-    mat_ctx->levelDown = dm1_leveldown;
+    mat_ctx->isDown = dm_field->coarseningIS[dm_field->coarseningIS.size()-1-dm_down_leveldown];
+    mat_ctx->levelDown = dm_down_leveldown;
     ierr = ISGetSize(mat_ctx->isDown,&M); CHKERRQ(ierr);
     ierr = ISGetLocalSize(mat_ctx->isDown,&m); CHKERRQ(ierr);
   }
   {
     // Finer mesh
     GET_DM_FIELD(dm2);
-    if(dm_field->coarseningIS.size()<dm2_leveldown) {
+    if(dm_field->coarseningIS.size()<dm_up_leveldown) {
       SETERRQ(PETSC_COMM_WORLD,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
     }
-    mat_ctx->isUp = dm_field->coarseningIS[dm2_leveldown];
-    mat_ctx->levelUp = dm2_leveldown;
+    mat_ctx->isUp = dm_field->coarseningIS[dm_field->coarseningIS.size()-1-dm_up_leveldown];
+    mat_ctx->levelUp = dm_up_leveldown;
     ierr = ISGetSize(mat_ctx->isUp,&N); CHKERRQ(ierr);
     ierr = ISGetLocalSize(mat_ctx->isUp,&n); CHKERRQ(ierr);
-  }
-  if(mat_ctx->levelDown<=mat_ctx->levelUp) {
-    SETERRQ2(
-      PETSC_COMM_WORLD,MOFEM_DATA_INCONSISTENCY,
-      "data inconsistency %d <= %d",
-      mat_ctx->levelDown,
-      mat_ctx->levelUp
-    );
-  }
-  if(M<N) {
-    SETERRQ2(
-      PETSC_COMM_WORLD,MOFEM_DATA_INCONSISTENCY,
-      "data inconsistency %d <= %d",
-      M,N
-    );
   }
 
   ierr = MatCreateShell(comm,n,m,N,M,(void*)mat_ctx,mat); CHKERRQ(ierr);
@@ -444,7 +436,6 @@ PetscErrorCode PCMGSetUpViaApproxOrdersCtx::destroyIsAtLevel(int kk,IS *is) {
   PetscFunctionReturn(0);
 }
 
-
 PetscErrorCode PCMGSetUpViaApproxOrdersCtx::buildProlongationOperator(PC pc,int verb) {
   PetscFunctionBegin;
   verb = verb > verboseLevel ? verb : verboseLevel;
@@ -469,7 +460,6 @@ PetscErrorCode PCMGSetUpViaApproxOrdersCtx::buildProlongationOperator(PC pc,int 
     ierr = createIsAtLevel(kk,&is_vec[kk]); CHKERRQ(ierr);
     ierr = ISGetSize(is_vec[kk],&is_glob_size[kk]); CHKERRQ(ierr);
     ierr = ISGetLocalSize(is_vec[kk],&is_loc_size[kk]); CHKERRQ(ierr);
-
 
     if(verb>0) {
       PetscSynchronizedPrintf(comm,
