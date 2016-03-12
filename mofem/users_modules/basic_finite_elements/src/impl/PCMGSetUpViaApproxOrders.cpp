@@ -225,8 +225,8 @@ static PetscErrorCode inerpolation_matrix_mult_generic(Mat mat,Vec x,Vec f,Inser
   ierr = VecGetLocalSize(x,&m); CHKERRQ(ierr);
   ierr = VecGetSize(f,&N); CHKERRQ(ierr);
   ierr = VecGetLocalSize(f,&n); CHKERRQ(ierr);
-  cerr << m << " " << n << " " << M << " " << N;
-  cerr << endl;
+  cerr << m << " " << n << " " << M << " " << N << " : ";
+  cerr << mode << endl;
 
   if(!ctx->mapDown && ctx->isDown) {
     ierr = ISLocalToGlobalMappingCreateIS(ctx->isDown,&ctx->mapDown); CHKERRQ(ierr);
@@ -261,9 +261,9 @@ static PetscErrorCode inerpolation_matrix_mult_generic(Mat mat,Vec x,Vec f,Inser
 
 
     if(mode == SCATTER_FORWARD) {
-      ierr = VecScatterCreate(x,PETSC_NULL,f,is,&ctx->sCatter); CHKERRQ(ierr);
+      ierr = VecScatterCreate(x,is,f,PETSC_NULL,&ctx->sCatter); CHKERRQ(ierr);
     } else {
-      ierr = VecScatterCreate(f,PETSC_NULL,x,is,&ctx->sCatter); CHKERRQ(ierr);
+      ierr = VecScatterCreate(f,is,x,PETSC_NULL,&ctx->sCatter); CHKERRQ(ierr);
     }
     ierr = ISDestroy(&is); CHKERRQ(ierr);
 
@@ -278,6 +278,14 @@ static PetscErrorCode inerpolation_matrix_mult_generic(Mat mat,Vec x,Vec f,Inser
 static PetscErrorCode inerpolation_matrix_mult(Mat mat,Vec x,Vec f) {
   PetscErrorCode ierr;
   PetscFunctionBegin;
+  cerr << "mult ";
+  int M,N;
+  ierr = MatGetSize(mat,&N,&M); CHKERRQ(ierr);
+  cerr << M << " " << N << " : ";
+  ierr = VecGetSize(x,&N); CHKERRQ(ierr);
+  ierr = VecGetSize(f,&M); CHKERRQ(ierr);
+  cerr << M << " " << N << endl;
+
   ierr = inerpolation_matrix_mult_generic(mat,x,f,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
@@ -285,6 +293,7 @@ static PetscErrorCode inerpolation_matrix_mult(Mat mat,Vec x,Vec f) {
 static PetscErrorCode inerpolation_matrix_mult_transpose(Mat mat,Vec x,Vec f) {
   PetscErrorCode ierr;
   PetscFunctionBegin;
+  cerr << "trans mult" << endl;
   ierr = inerpolation_matrix_mult_generic(mat,x,f,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
@@ -349,8 +358,15 @@ PetscErrorCode DMCreateInterpolation_MGViaApproxOrders(DM dm1,DM dm2,Mat *mat,Ve
       mat_ctx->levelUp
     );
   }
+  if(M<N) {
+    SETERRQ2(
+      PETSC_COMM_WORLD,MOFEM_DATA_INCONSISTENCY,
+      "data inconsistency %d <= %d",
+      M,N
+    );
+  }
 
-  ierr = MatCreateShell(comm,m,n,M,N,(void*)mat_ctx,mat); CHKERRQ(ierr);
+  ierr = MatCreateShell(comm,n,m,N,M,(void*)mat_ctx,mat); CHKERRQ(ierr);
   ierr = MatShellSetOperation(*mat,MATOP_DESTROY,(void(*)(void))inerpolation_matrix_destroy); CHKERRQ(ierr);
   ierr = MatShellSetOperation(*mat,MATOP_MULT,(void(*)(void))inerpolation_matrix_mult); CHKERRQ(ierr);
   ierr = MatShellSetOperation(*mat,MATOP_MULT_TRANSPOSE,(void(*)(void))inerpolation_matrix_mult_transpose); CHKERRQ(ierr);
