@@ -431,11 +431,9 @@ int main(int argc, char *argv[]) {
     ierr = KSPGetPC(solver,&pc); CHKERRQ(ierr);
     PetscObjectTypeCompare((PetscObject)pc,PCMG,&same);
     if (same) {
-      PCMGSetUpViaApproxOrdersCtx pc_ctx(&m_field,"ELASTIC_PROB");
+      PCMGSetUpViaApproxOrdersCtx pc_ctx(dm,Aij);
       ierr = PCMGSetUpViaApproxOrders(pc,&pc_ctx); CHKERRQ(ierr);
-    } else {
-      ierr = DMMGViaApproxOrdersPushBackCoarseningIS(dm,PETSC_NULL,Aij,PETSC_NULL); CHKERRQ(ierr);
-    }
+    } 
   }
   ierr = KSPSetUp(solver); CHKERRQ(ierr);
 

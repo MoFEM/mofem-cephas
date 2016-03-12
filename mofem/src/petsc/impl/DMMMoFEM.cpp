@@ -177,6 +177,17 @@ PetscErrorCode DMMoFEMCreateMoFEM(
   PetscFunctionReturn(0);
 }
 
+PetscErrorCode DMoFEMGetFieldInterfacePtr(DM dm,const MoFEM::FieldInterface **m_field_ptr) {
+  PetscValidHeaderSpecific(dm,DM_CLASSID,1);
+  PetscFunctionBegin;
+  DMCtx *dm_field = (DMCtx*)dm->data;
+  if(!dm->data) {
+    SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"data structure for MoFEM not yet created");
+  }
+  *m_field_ptr = dm_field->mField_ptr;
+  PetscFunctionReturn(0);
+}
+
 PetscErrorCode DMMoFEMGetProblemPtr(DM dm,const MoFEM::MoFEMProblem **problem_ptr) {
   PetscValidHeaderSpecific(dm,DM_CLASSID,1);
   PetscFunctionBegin;

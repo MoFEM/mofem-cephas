@@ -35,6 +35,15 @@ PetscErrorCode DMRegister_MoFEM(const char sname[]);
 PetscErrorCode DMMoFEMCreateMoFEM(DM dm,MoFEM::FieldInterface *m_field_ptr,const char problem_name[],const MoFEM::BitRefLevel &bit_level);
 
 /**
+ * \brief Get pointer to MoFEM::FieldInterface
+ * @param  dm          Distributed mesh manager
+ * @param  m_field_ptr Pointer to pointer of field interface
+ * @return             Error code
+ * \ingroup dm
+ */
+PetscErrorCode DMoFEMGetFieldInterfacePtr(DM dm,const MoFEM::FieldInterface **m_field_ptr);
+
+/**
   * \brief Get pointer to problem data structure
   * \ingroup dm
   */
@@ -454,6 +463,6 @@ namespace MoFEM {
 #endif //__DMMMOFEM_H
 
 /***************************************************************************//**
- * \defgroup dm Discreet manager
+ * \defgroup dm Distributed mesh manager
  * \ingroup mofem
  ******************************************************************************/

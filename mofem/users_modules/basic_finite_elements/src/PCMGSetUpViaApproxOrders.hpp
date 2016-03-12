@@ -74,14 +74,19 @@ PetscErrorCode DMCreateInterpolation_MGViaApproxOrders(DM dm1,DM dm2,Mat *mat,Ve
  */
 struct PCMGSetUpViaApproxOrdersCtx {
 
-  FieldInterface *mFieldPtr;		///< MoFEM interface
-  string problemName;			///< Problem name
+  // FieldInterface *mFieldPtr;		///< MoFEM interface
+  // string problemName;			      ///< Problem name
 
-  vector<double> dIag;
+  DM dM;  ///< Distributed mesh manager
+  Mat A;  ///< Matrix at fine level
 
-  PCMGSetUpViaApproxOrdersCtx(FieldInterface *mfield_ptr,string problem_name):
-  mFieldPtr(mfield_ptr),
-  problemName(problem_name),
+  PCMGSetUpViaApproxOrdersCtx(
+    DM dm,Mat a
+  ):
+  // mFieldPtr(mfield_ptr),
+  // problemName(problem_name),
+  dM(dm),
+  A(a),
   nbLevels(2),
   coarseOrder(2),
   orderAtLastLevel(1000),
