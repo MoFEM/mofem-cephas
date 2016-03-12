@@ -156,6 +156,12 @@ static PetscErrorCode ksp_set_operators(KSP ksp,Mat A,Mat B,void *ctx) {
   PetscFunctionReturn(0);
 }
 
+// static PetscErrorCode ksp_set_rhs(KSP ksp,Vec f,void *ctx) {
+//   PetscFunctionBegin;
+//   // do nothing
+//   PetscFunctionReturn(0);
+// }
+
 PetscErrorCode DMCoarsen_MGViaApproxOrders(DM dm, MPI_Comm comm, DM *dmc) {
   PetscErrorCode ierr;
   PetscValidHeaderSpecific(dm,DM_CLASSID,1);
@@ -169,6 +175,7 @@ PetscErrorCode DMCoarsen_MGViaApproxOrders(DM dm, MPI_Comm comm, DM *dmc) {
   ierr = DMSetType(*dmc,(dm_field->problemName).c_str()); CHKERRQ(ierr);
 
   ierr = DMKSPSetComputeOperators(*dmc,ksp_set_operators,NULL); CHKERRQ(ierr);
+  // ierr = DMKSPSetComputeRHS(dm,ksp_set_rhs,NULL ); CHKERRQ(ierr);
 
   cerr << "Coarsen " << dm->leveldown << " " << dm->levelup << " " << endl;
 
@@ -373,7 +380,7 @@ PetscErrorCode DMCreateInterpolation_MGViaApproxOrders(DM dm1,DM dm2,Mat *mat,Ve
   ierr = MatShellSetOperation(*mat,MATOP_MULT_ADD,(void(*)(void))inerpolation_matrix_mult_add); CHKERRQ(ierr);
   ierr = MatShellSetOperation(*mat,MATOP_MULT_TRANSPOSE_ADD,(void(*)(void))inerpolation_matrix_mult_transpose_add); CHKERRQ(ierr);
 
-  vec = PETSC_NULL;
+  *vec = PETSC_NULL;
 
   PetscFunctionReturn(0);
 }

@@ -67,7 +67,8 @@ snesCtx(NULL),
 tsCtx(NULL),
 isPartitioned(PETSC_FALSE),
 isSquareMatrix(PETSC_TRUE),
-verbosity(0) {}
+verbosity(0),
+referenceNumber(0) {}
 
 DMCtx::~DMCtx() {
   delete kspCtx;
