@@ -309,19 +309,19 @@ static PetscErrorCode inerpolation_matrix_mult_transpose(Mat mat,Vec x,Vec f) {
   PetscFunctionReturn(0);
 }
 
-static PetscErrorCode inerpolation_matrix_mult_add(Mat mat,Vec x,Vec f) {
-  PetscErrorCode ierr;
-  PetscFunctionBegin;
-  ierr = inerpolation_matrix_mult_generic(mat,x,f,ADD_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  PetscFunctionReturn(0);
-}
-
-static PetscErrorCode inerpolation_matrix_mult_transpose_add(Mat mat,Vec x,Vec f) {
-  PetscErrorCode ierr;
-  PetscFunctionBegin;
-  ierr = inerpolation_matrix_mult_generic(mat,x,f,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-  PetscFunctionReturn(0);
-}
+// static PetscErrorCode inerpolation_matrix_mult_add(Mat mat,Vec x,Vec f) {
+//   PetscErrorCode ierr;
+//   PetscFunctionBegin;
+//   ierr = inerpolation_matrix_mult_generic(mat,x,f,ADD_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+//   PetscFunctionReturn(0);
+// }
+//
+// static PetscErrorCode inerpolation_matrix_mult_transpose_add(Mat mat,Vec x,Vec f) {
+//   PetscErrorCode ierr;
+//   PetscFunctionBegin;
+//   ierr = inerpolation_matrix_mult_generic(mat,x,f,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+//   PetscFunctionReturn(0);
+// }
 
 PetscErrorCode DMCreateInterpolation_MGViaApproxOrders(DM dm1,DM dm2,Mat *mat,Vec *vec) {
   PetscErrorCode ierr;
