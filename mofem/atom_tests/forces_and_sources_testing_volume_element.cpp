@@ -42,7 +42,7 @@ int main(int argc, char *argv[]) {
 
   PetscBool flg = PETSC_TRUE;
   char mesh_file_name[255];
-  #if PETSC_VERSION_GE(3,6,3)
+  #if PETSC_VERSION_GE(3,6,4)
   ierr = PetscOptionsGetString(PETSC_NULL,"","-my_file",mesh_file_name,255,&flg); CHKERRQ(ierr);
   #else
   ierr = PetscOptionsGetString(PETSC_NULL,"-my_file",mesh_file_name,255,&flg); CHKERRQ(ierr);

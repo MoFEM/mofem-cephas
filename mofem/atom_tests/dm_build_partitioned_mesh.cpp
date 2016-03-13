@@ -36,7 +36,7 @@ int main(int argc, char *argv[]) {
 
   PetscBool flg = PETSC_TRUE;
   char mesh_file_name[255];
-  #if PETSC_VERSION_GE(3,6,3)
+  #if PETSC_VERSION_GE(3,6,4)
   ierr = PetscOptionsGetString(PETSC_NULL,"","-my_file",mesh_file_name,255,&flg); CHKERRQ(ierr);
   #else
   ierr = PetscOptionsGetString(PETSC_NULL,"-my_file",mesh_file_name,255,&flg); CHKERRQ(ierr);
@@ -77,7 +77,7 @@ int main(int argc, char *argv[]) {
   ierr = m_field.seed_ref_level_3D(root_set,bit_level0); CHKERRQ(ierr);
   //define & build field
   int field_rank = 1;
-  #if PETSC_VERSION_GE(3,6,3)
+  #if PETSC_VERSION_GE(3,6,4)
   ierr = PetscOptionsGetInt(PETSC_NULL,"","-my_field_rank",&field_rank,&flg); CHKERRQ(ierr);
   #else
   ierr = PetscOptionsGetInt(PETSC_NULL,"-my_field_rank",&field_rank,&flg); CHKERRQ(ierr);
@@ -122,7 +122,7 @@ int main(int argc, char *argv[]) {
 
   PetscBool save_file = PETSC_TRUE;
 
-  #if PETSC_VERSION_GE(3,6,3)
+  #if PETSC_VERSION_GE(3,6,4)
   ierr = PetscOptionsGetBool(PETSC_NULL,"","-my_save_fiele",&save_file,&flg); CHKERRQ(ierr);
   #else
   ierr = PetscOptionsGetBool(PETSC_NULL,"-my_save_fiele",&save_file,&flg); CHKERRQ(ierr);
