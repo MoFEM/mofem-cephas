@@ -421,7 +421,6 @@ int main(int argc, char *argv[]) {
   KSP solver;
   ierr = KSPCreate(PETSC_COMM_WORLD,&solver); CHKERRQ(ierr);
   ierr = KSPSetDM(solver,dm); CHKERRQ(ierr);
-  ierr = KSPSetDMActive(solver,PETSC_FALSE); CHKERRQ(ierr);
   ierr = KSPSetFromOptions(solver); CHKERRQ(ierr);
   ierr = KSPSetOperators(solver,Aij,Aij); CHKERRQ(ierr);
   {
@@ -433,7 +432,9 @@ int main(int argc, char *argv[]) {
     if (same) {
       PCMGSetUpViaApproxOrdersCtx pc_ctx(dm,Aij);
       ierr = PCMGSetUpViaApproxOrders(pc,&pc_ctx); CHKERRQ(ierr);
-    } 
+    } else {
+      ierr = KSPSetDMActive(solver,PETSC_FALSE); CHKERRQ(ierr);
+    }
   }
   ierr = KSPSetUp(solver); CHKERRQ(ierr);
 

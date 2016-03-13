@@ -36,7 +36,11 @@ int main(int argc, char *argv[]) {
 
   PetscBool flg = PETSC_TRUE;
   char mesh_file_name[255];
+  #if PETSC_VERSION_GE(3,6,3)
+  ierr = PetscOptionsGetString(PETSC_NULL,"","-my_file",mesh_file_name,255,&flg); CHKERRQ(ierr);
+  #else
   ierr = PetscOptionsGetString(PETSC_NULL,"-my_file",mesh_file_name,255,&flg); CHKERRQ(ierr);
+  #endif
   if(flg != PETSC_TRUE) {
     SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_file (MESH FILE NEEDED)");
   }
@@ -73,7 +77,11 @@ int main(int argc, char *argv[]) {
   ierr = m_field.seed_ref_level_3D(root_set,bit_level0); CHKERRQ(ierr);
   //define & build field
   int field_rank = 1;
+  #if PETSC_VERSION_GE(3,6,3)
+  ierr = PetscOptionsGetInt(PETSC_NULL,"","-my_field_rank",&field_rank,&flg); CHKERRQ(ierr);
+  #else
   ierr = PetscOptionsGetInt(PETSC_NULL,"-my_field_rank",&field_rank,&flg); CHKERRQ(ierr);
+  #endif
   ierr = m_field.add_field("FIELD",H1,field_rank); CHKERRQ(ierr);
   //add entities to field
   ierr = m_field.add_ents_to_field_by_TETs(root_set,"FIELD"); CHKERRQ(ierr);
@@ -113,11 +121,17 @@ int main(int argc, char *argv[]) {
   ierr = DMCreateMatrix(dm,&m); CHKERRQ(ierr);
 
   PetscBool save_file = PETSC_TRUE;
+
+  #if PETSC_VERSION_GE(3,6,3)
+  ierr = PetscOptionsGetBool(PETSC_NULL,"","-my_save_fiele",&save_file,&flg); CHKERRQ(ierr);
+  #else
   ierr = PetscOptionsGetBool(PETSC_NULL,"-my_save_fiele",&save_file,&flg); CHKERRQ(ierr);
+  #endif
   if(save_file) {
 
     PetscViewer viewer;
     ierr = PetscViewerASCIIOpen(PETSC_COMM_WORLD,"dm_build_partitioned_mesh.txt",&viewer); CHKERRQ(ierr);
+    ierr = PetscViewerSetFormat(viewer,PETSC_VIEWER_ASCII_INFO); CHKERRQ(ierr);
     MatView(m,viewer);
     ierr = PetscViewerDestroy(&viewer); CHKERRQ(ierr);
 

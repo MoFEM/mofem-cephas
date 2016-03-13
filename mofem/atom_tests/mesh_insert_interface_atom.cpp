@@ -27,7 +27,11 @@ int main(int argc, char *argv[]) {
 
   PetscBool flg = PETSC_TRUE;
   char mesh_file_name[255];
+  #if PETSC_VERSION_GE(3,6,3)
+  ierr = PetscOptionsGetString(PETSC_NULL,"","-my_file",mesh_file_name,255,&flg); CHKERRQ(ierr);
+  #else
   ierr = PetscOptionsGetString(PETSC_NULL,"-my_file",mesh_file_name,255,&flg); CHKERRQ(ierr);
+  #endif
   if(flg != PETSC_TRUE) {
     SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_file (MESH FILE NEEDED)");
   }
@@ -41,7 +45,7 @@ int main(int argc, char *argv[]) {
   Interface& moab = mb_instance;
   const char *option;
   option = "";//"PARALLEL=BCAST";//;DEBUG_IO";
-  rval = moab.load_file(mesh_file_name, 0, option); CHKERR_MOAB(rval); 
+  rval = moab.load_file(mesh_file_name, 0, option); CHKERR_MOAB(rval);
   ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
   if(pcomm == NULL) pcomm =  new ParallelComm(&moab,PETSC_COMM_WORLD);
 
@@ -70,14 +74,14 @@ int main(int argc, char *argv[]) {
       ierr = interface.get_msId_3dENTS_sides(cubit_meshset,bit_levels.back(),true,0); CHKERRQ(ierr);
       //set new bit level
       bit_levels.push_back(BitRefLevel().set(ll++));
-      //split faces and 
+      //split faces and
       ierr = interface.get_msId_3dENTS_split_sides(ref_level_meshset,bit_levels.back(),cubit_meshset,true,true,0); CHKERRQ(ierr);
       //clean meshsets
       rval = moab.delete_entities(&ref_level_meshset,1); CHKERRQ_MOAB(rval);
     }
     //update cubit meshsets
     for(_IT_CUBITMESHSETS_FOR_LOOP_(m_field,ciit)) {
-      EntityHandle cubit_meshset = ciit->meshset; 
+      EntityHandle cubit_meshset = ciit->meshset;
       ierr = m_field.update_meshset_by_entities_children(cubit_meshset,bit_levels.back(),cubit_meshset,MBVERTEX,true); CHKERRQ(ierr);
       ierr = m_field.update_meshset_by_entities_children(cubit_meshset,bit_levels.back(),cubit_meshset,MBEDGE,true); CHKERRQ(ierr);
       ierr = m_field.update_meshset_by_entities_children(cubit_meshset,bit_levels.back(),cubit_meshset,MBTRI,true); CHKERRQ(ierr);
@@ -110,7 +114,7 @@ int main(int argc, char *argv[]) {
   ierr = m_field.add_ents_to_finite_element_by_TETs(0,"ELEM_SCALAR",true); CHKERRQ(ierr);
   ierr = m_field.add_ents_to_finite_element_by_PRISMs(0,"INTERFACE",true); CHKERRQ(ierr);
 
-  //add problems 
+  //add problems
   //set problem for all last two levels, only for testing pruposes
   for(int lll = ll-2;lll<ll;lll++) {
     stringstream problem_name;
@@ -151,8 +155,8 @@ int main(int argc, char *argv[]) {
     EntityHandle cubit_meshset = cit->get_meshset();
 
     BlockSetAttributes mydata;
-    ierr = cit->get_attribute_data_structure(mydata); CHKERRQ(ierr);   
-    cout << mydata << endl;  
+    ierr = cit->get_attribute_data_structure(mydata); CHKERRQ(ierr);
+    cout << mydata << endl;
 
     Range tets;
     rval = moab.get_entities_by_type(cubit_meshset,MBTET,tets,true); CHKERRQ_MOAB(rval);
@@ -168,7 +172,7 @@ int main(int argc, char *argv[]) {
       coords[2] += mydata.data.User3;
       rval = moab.set_coords(&*nit,1,coords); CHKERRQ_MOAB(rval);
     }
-    
+
   }
 
   //partition
@@ -191,10 +195,10 @@ int main(int argc, char *argv[]) {
   Range tets;
   rval = moab.get_entities_by_handle(out_meshset_tet,tets,true); CHKERRQ_MOAB(rval);
   for(Range::iterator tit = tets.begin();tit!=tets.end();tit++) {
-    int num_nodes; 
+    int num_nodes;
     const EntityHandle* conn;
     rval = moab.get_connectivity(*tit,conn,num_nodes,true); CHKERRQ_MOAB(rval);
-    
+
     for(int nn = 0;nn<num_nodes;nn++) {
       cout << conn[nn] << " ";
       myfile << conn[nn] << " ";
@@ -209,10 +213,10 @@ int main(int argc, char *argv[]) {
   Range prisms;
   rval = moab.get_entities_by_handle(out_meshset_prism,prisms); CHKERRQ_MOAB(rval);
   for(Range::iterator pit = prisms.begin();pit!=prisms.end();pit++) {
-    int num_nodes; 
+    int num_nodes;
     const EntityHandle* conn;
     rval = moab.get_connectivity(*pit,conn,num_nodes,true); CHKERRQ_MOAB(rval);
-    
+
     for(int nn = 0;nn<num_nodes;nn++) {
       cout << conn[nn] << " ";
       myfile << conn[nn] << " ";

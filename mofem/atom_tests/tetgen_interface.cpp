@@ -1,4 +1,4 @@
-/* 
+/*
  * This file is part of MoFEM.
  * MoFEM is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the
@@ -11,7 +11,7 @@
  * License for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
- * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. 
+ * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>.
  */
 
 #include <tetgen.h>
@@ -50,7 +50,11 @@ int main(int argc, char *argv[]) {
   //Read parameters from line command
   PetscBool flg = PETSC_TRUE;
   char mesh_file_name[255];
+  #if PETSC_VERSION_GE(3,6,3)
+  ierr = PetscOptionsGetString(PETSC_NULL,"","-my_file",mesh_file_name,255,&flg); CHKERRQ(ierr);
+  #else
   ierr = PetscOptionsGetString(PETSC_NULL,"-my_file",mesh_file_name,255,&flg); CHKERRQ(ierr);
+  #endif
   if(flg != PETSC_TRUE) {
     SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_file (MESH FILE NEEDED)");
   }
@@ -58,7 +62,7 @@ int main(int argc, char *argv[]) {
   //Read mesh to MOAB
   const char *option;
   option = "";//"PARALLEL=BCAST;";//;DEBUG_IO";
-  rval = moab.load_file(mesh_file_name, 0, option); CHKERRQ_MOAB(rval); 
+  rval = moab.load_file(mesh_file_name, 0, option); CHKERRQ_MOAB(rval);
   ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
   if(pcomm == NULL) pcomm =  new ParallelComm(&moab,PETSC_COMM_WORLD);
 
@@ -69,7 +73,7 @@ int main(int argc, char *argv[]) {
   BitRefLevel bit_level0;
   bit_level0.set(0);
   ierr = m_field.seed_ref_level_3D(0,bit_level0); CHKERRQ(ierr);
-  
+
   Range nodes,tets;
   rval = moab.get_entities_by_type(0,MBVERTEX,nodes,false); CHKERRQ_MOAB(rval);
   rval = moab.get_entities_by_type(0,MBTET,tets,false); CHKERRQ_MOAB(rval);
@@ -120,8 +124,8 @@ int main(int argc, char *argv[]) {
 
   //set nodes to TetGen data structures
   ierr = tetgen_iface->inData(nodes,in,moab_tetgen_map,tetgen_moab_map); CHKERRQ(ierr);
-  
-  
+
+
   Range side_set_faces;
   for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,SIDESET,sit)) {
     Range faces;
@@ -138,7 +142,7 @@ int main(int argc, char *argv[]) {
     cout << " number of triangle entities " << nb_ents
       << " number of faces disjoint regions " << sorted_outer_surface_skin.size() << endl;
     for(unsigned int vv = 0;vv<sorted_outer_surface_skin.size();vv++) {
-      cout << "\tnb of disjoint region " << vv 
+      cout << "\tnb of disjoint region " << vv
 	<< " nb of no-planar subregions " << sorted_outer_surface_skin[vv].size() << endl;
       for(unsigned int vvv = 0;vvv<sorted_outer_surface_skin[vv].size();vvv++) {
 	cout << "\t\tnb. of subregion " << vvv << " nb. elements in subregion " << sorted_outer_surface_skin[vv][vvv].size() << endl;
@@ -170,7 +174,7 @@ int main(int argc, char *argv[]) {
       //markers.push_back(pair<Range,int>(polygons,-1));
     }
   }
-  
+
   // set markers to side Cubit sets
   for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,SIDESET,sit)) {
     int id = sit->get_msId();
@@ -192,7 +196,7 @@ int main(int argc, char *argv[]) {
   }
   //set volume regions
   ierr = tetgen_iface->setReginData(regions,in);  CHKERRQ(ierr);
-  
+
   //print mesh in tetgeb format
   if(debug>0) {
     char tetgen_in_file_name[] = "in";
@@ -247,4 +251,3 @@ int main(int argc, char *argv[]) {
   PetscFinalize();
 
 }
-

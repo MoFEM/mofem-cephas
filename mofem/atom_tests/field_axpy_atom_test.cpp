@@ -28,7 +28,7 @@ double roundn(double n)
 	//break n into fractional part (fract) and integral part (intp)
     double fract, intp;
     fract = modf(n,&intp);
-    
+
 //    //round up
 //    if (fract>=.5)
 //    {
@@ -66,12 +66,20 @@ int main(int argc, char *argv[]) {
   //Reade parameters from line command
   PetscBool flg = PETSC_TRUE;
   char mesh_file_name[255];
+  #if PETSC_VERSION_GE(3,6,3)
+  ierr = PetscOptionsGetString(PETSC_NULL,"","-my_file",mesh_file_name,255,&flg); CHKERRQ(ierr);
+  #else
   ierr = PetscOptionsGetString(PETSC_NULL,"-my_file",mesh_file_name,255,&flg); CHKERRQ(ierr);
+  #endif
   if(flg != PETSC_TRUE) {
     SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_file (MESH FILE NEEDED)");
   }
   PetscInt order;
+  #if PETSC_VERSION_GE(3,6,3)
+  ierr = PetscOptionsGetInt(PETSC_NULL,"","-my_order",&order,&flg); CHKERRQ(ierr);
+  #else
   ierr = PetscOptionsGetInt(PETSC_NULL,"-my_order",&order,&flg); CHKERRQ(ierr);
+  #endif
   if(flg != PETSC_TRUE) {
     order = 1;
   }
@@ -79,7 +87,7 @@ int main(int argc, char *argv[]) {
   //Read mesh to MOAB
   const char *option;
   option = "";//"PARALLEL=BCAST;";//;DEBUG_IO";
-  rval = moab.load_file(mesh_file_name, 0, option); CHKERRQ_MOAB(rval); 
+  rval = moab.load_file(mesh_file_name, 0, option); CHKERRQ_MOAB(rval);
   ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
   if(pcomm == NULL) pcomm =  new ParallelComm(&moab,PETSC_COMM_WORLD);
 
@@ -134,7 +142,7 @@ int main(int argc, char *argv[]) {
   for(_IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(mField,"FIELD_A",dof_ptr))
     {
         if(dof_ptr->get_ent_type()!=MBVERTEX) continue;
-        
+
         if(dof_ptr->get_dof_coeff_idx()==0)
         {
             //Round and truncate to 3 decimal places
@@ -156,12 +164,12 @@ int main(int argc, char *argv[]) {
             cout << boost::format("%.3lf") % roundn(fval) << endl;
             myfile << boost::format("%.3lf") % roundn(fval) << endl;
         }
-        
+
     }
   for(_IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(mField,"FIELD_B",dof_ptr))
     {
         if(dof_ptr->get_ent_type()!=MBVERTEX) continue;
-        
+
         if(dof_ptr->get_dof_coeff_idx()==0)
         {
             //Round and truncate to 3 decimal places
@@ -183,7 +191,7 @@ int main(int argc, char *argv[]) {
             cout << boost::format("%.3lf") % roundn(fval) << endl;
             myfile << boost::format("%.3lf") % roundn(fval) << endl;
         }
-        
+
     }
 
   myfile.close();
@@ -193,4 +201,3 @@ int main(int argc, char *argv[]) {
   return 0;
 
 }
-

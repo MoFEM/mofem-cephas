@@ -45,12 +45,20 @@ int main(int argc, char *argv[]) {
   //Reade parameters from line command
   PetscBool flg = PETSC_TRUE;
   char mesh_file_name[255];
+  #if PETSC_VERSION_GE(3,6,3)
+  ierr = PetscOptionsGetString(PETSC_NULL,"","-my_file",mesh_file_name,255,&flg); CHKERRQ(ierr);
+  #else
   ierr = PetscOptionsGetString(PETSC_NULL,"-my_file",mesh_file_name,255,&flg); CHKERRQ(ierr);
+  #endif
   if(flg != PETSC_TRUE) {
     SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_file (MESH FILE NEEDED)");
   }
   PetscInt order;
+  #if PETSC_VERSION_GE(3,6,3)
+  ierr = PetscOptionsGetInt(PETSC_NULL,"","-my_order",&order,&flg); CHKERRQ(ierr);
+  #else
   ierr = PetscOptionsGetInt(PETSC_NULL,"-my_order",&order,&flg); CHKERRQ(ierr);
+  #endif
   if(flg != PETSC_TRUE) {
     order = 1;
   }
@@ -58,7 +66,7 @@ int main(int argc, char *argv[]) {
   //Read mesh to MOAB
   const char *option;
   option = "";//"PARALLEL=BCAST;";//;DEBUG_IO";
-  rval = moab.load_file(mesh_file_name, 0, option); CHKERRQ_MOAB(rval); 
+  rval = moab.load_file(mesh_file_name, 0, option); CHKERRQ_MOAB(rval);
   ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
   if(pcomm == NULL) pcomm =  new ParallelComm(&moab,PETSC_COMM_WORLD);
 
@@ -152,9 +160,10 @@ int main(int argc, char *argv[]) {
   ierr = m_field.VecCreateGhost("TEST_PROBLEM",ROW,&F); CHKERRQ(ierr);
   Mat A;
   ierr = m_field.MatCreateMPIAIJWithArrays("TEST_PROBLEM",&A); CHKERRQ(ierr);
- 
+
   PetscViewer viewer;
-  ierr = PetscViewerASCIIOpen(PETSC_COMM_SELF,"serial_matrix.txt",&viewer); CHKERRQ(ierr); 
+  ierr = PetscViewerASCIIOpen(PETSC_COMM_SELF,"serial_matrix.txt",&viewer); CHKERRQ(ierr);
+  ierr = PetscViewerSetFormat(viewer,PETSC_VIEWER_ASCII_INFO); CHKERRQ(ierr);
   ierr = MatView(A,viewer); CHKERRQ(ierr);
 
   //ierr = MatView(A,PETSC_VIEWER_DRAW_SELF); CHKERRQ(ierr);
@@ -175,4 +184,3 @@ int main(int argc, char *argv[]) {
   return 0;
 
 }
-

@@ -31,7 +31,11 @@ int main(int argc, char *argv[]) {
 
   PetscBool flg = PETSC_TRUE;
   char mesh_file_name[255];
+  #if PETSC_VERSION_GE(3,6,3)
+  ierr = PetscOptionsGetString(PETSC_NULL,"","-my_file",mesh_file_name,255,&flg); CHKERRQ(ierr);
+  #else
   ierr = PetscOptionsGetString(PETSC_NULL,"-my_file",mesh_file_name,255,&flg); CHKERRQ(ierr);
+  #endif
   if(flg != PETSC_TRUE) {
     SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_file (MESH FILE NEEDED)");
   }
@@ -43,7 +47,7 @@ int main(int argc, char *argv[]) {
 
   const char *option;
   option = "";//"PARALLEL=BCAST";//;DEBUG_IO";
-  rval = moab.load_file(mesh_file_name, 0, option); CHKERR_MOAB(rval); 
+  rval = moab.load_file(mesh_file_name, 0, option); CHKERR_MOAB(rval);
 
   MoFEM::Core core(moab);
   FieldInterface& m_field = core;
@@ -78,29 +82,32 @@ int main(int argc, char *argv[]) {
   //PetscAttachDebugger ();
   //ierr = m_field.shift_right_bit_ref(1); CHKERRQ(ierr);
 
-  ofstream myfile;
-  myfile.open("mesh_refine.txt");
+  // ofstream myfile;
+  // myfile.open("mesh_refine.txt");
 
   EntityHandle out_meshset_tet;
   rval = moab.create_meshset(MESHSET_SET,out_meshset_tet); CHKERRQ_MOAB(rval);
   ierr = m_field.get_entities_by_type_and_ref_level(bit_level1,BitRefLevel().set(),MBTET,out_meshset_tet); CHKERRQ(ierr);
   Range tets;
   rval = moab.get_entities_by_handle(out_meshset_tet,tets); CHKERRQ_MOAB(rval);
-  for(Range::iterator tit = tets.begin();tit!=tets.end();tit++) {
-    int num_nodes; 
-    const EntityHandle* conn;
-    rval = moab.get_connectivity(*tit,conn,num_nodes,true); CHKERRQ_MOAB(rval);
-    
-    for(int nn = 0;nn<num_nodes;nn++) {
-      //cout << conn[nn] << " ";
-      myfile << conn[nn] << " ";
-    }
-    //cout << endl;
-    myfile << endl;
+  // {
+  //   int ii = 0;
+  //   for(Range::iterator tit = tets.begin();tit!=tets.end();tit++) {
+  //     int num_nodes;
+  //     const EntityHandle* conn;
+  //     rval = moab.get_connectivity(*tit,conn,num_nodes,true); CHKERRQ_MOAB(rval);
+  //
+  //     for(int nn = 0;nn<num_nodes;nn++) {
+  //       //cout << conn[nn] << " ";
+  //       myfile << conn[nn] << " ";
+  //     }
+  //     //cout << endl;
+  //     myfile << endl;
+  //     if(ii>25) break;
+  //   }
+  // }
 
-  }
-
-  myfile.close();
+  // myfile.close();
 
   rval = moab.write_file("out_mesh_refine.vtk","VTK","",&out_meshset_tet,1); CHKERRQ_MOAB(rval);
 
@@ -116,7 +123,7 @@ int main(int argc, char *argv[]) {
   ierr = bit_ref_copuler_ptr->buidlAdjacenciesEdgesFacesVolumes(bit_level0,children,true,2); CHKERRQ(ierr);
 
   //reset entities
-  bit_ref_copuler_ptr->vErify = false; 
+  bit_ref_copuler_ptr->vErify = false;
   Range children_new;
   ierr = m_field.get_entities_by_ref_level(bit_level1,bit_level1,children_new); CHKERRQ(ierr);
   ierr = bit_ref_copuler_ptr->resetParents(children_new,true); CHKERRQ(ierr);
@@ -126,4 +133,5 @@ int main(int argc, char *argv[]) {
 
   PetscFinalize();
 
+  return 0;
 }
