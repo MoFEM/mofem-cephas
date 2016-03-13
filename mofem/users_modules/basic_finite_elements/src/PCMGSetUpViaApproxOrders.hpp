@@ -69,6 +69,9 @@ PetscErrorCode DMCoarsen_MGViaApproxOrders(DM dm, MPI_Comm comm, DM *dmc);
 
 PetscErrorCode DMCreateInterpolation_MGViaApproxOrders(DM dm1,DM dm2,Mat *mat,Vec *vec);
 
+PetscErrorCode DMRestrict_MGViaApproxOrders(DM fine,Mat mat,Vec vec,Mat mat2,DM coarse,void *ctx);
+
+
 /**
  * \brief Set data structures of MG pre-conditioner via approximation orders
  */

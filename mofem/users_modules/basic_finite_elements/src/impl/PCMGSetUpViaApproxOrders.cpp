@@ -136,6 +136,7 @@ PetscErrorCode DMCreate_MGViaApproxOrders(DM dm) {
   dm->ops->coarsen = DMCoarsen_MGViaApproxOrders;
   dm->ops->createinterpolation = DMCreateInterpolation_MGViaApproxOrders;
   ierr = DMKSPSetComputeOperators(dm,ksp_set_operators,NULL); CHKERRQ(ierr);
+  ierr = DMCoarsenHookAdd(dm,NULL,DMRestrict_MGViaApproxOrders,NULL); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 
@@ -363,9 +364,9 @@ PetscErrorCode DMCreateInterpolation_MGViaApproxOrders(DM dm1,DM dm2,Mat *mat,Ve
     ierr = ISGetLocalSize(mat_ctx->isUp,&n); CHKERRQ(ierr);
   }
 
-  if(N<M) {
-    SETERRQ(comm,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
-  }
+  // if(N<M) {
+  //   SETERRQ(comm,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
+  // }
 
   cerr << N << " " << M << endl;
 
@@ -380,14 +381,23 @@ PetscErrorCode DMCreateInterpolation_MGViaApproxOrders(DM dm1,DM dm2,Mat *mat,Ve
   ierr = MatShellSetOperation(*mat,MATOP_DESTROY,(void(*)(void))inerpolation_matrix_destroy); CHKERRQ(ierr);
   ierr = MatShellSetOperation(*mat,MATOP_MULT,(void(*)(void))inerpolation_matrix_mult); CHKERRQ(ierr);
   ierr = MatShellSetOperation(*mat,MATOP_MULT_TRANSPOSE,(void(*)(void))inerpolation_matrix_mult_transpose); CHKERRQ(ierr);
-  ierr = MatShellSetOperation(*mat,MATOP_MULT_ADD,(void(*)(void))inerpolation_matrix_mult_add); CHKERRQ(ierr);
-  ierr = MatShellSetOperation(*mat,MATOP_MULT_TRANSPOSE_ADD,(void(*)(void))inerpolation_matrix_mult_transpose_add); CHKERRQ(ierr);
+  // ierr = MatShellSetOperation(*mat,MATOP_MULT_ADD,(void(*)(void))inerpolation_matrix_mult_add); CHKERRQ(ierr);
+  // ierr = MatShellSetOperation(*mat,MATOP_MULT_TRANSPOSE_ADD,(void(*)(void))inerpolation_matrix_mult_transpose_add); CHKERRQ(ierr);
 
   *vec = PETSC_NULL;
 
   PetscFunctionReturn(0);
 }
 
+PetscErrorCode DMRestrict_MGViaApproxOrders(DM fine,Mat mat,Vec vec,Mat mat2,DM coarse,void *ctx) {
+  PetscErrorCode ierr;
+  PetscFunctionBegin;
+  cerr << "Restrict ";
+  int  M,N;
+  ierr = MatGetSize(mat,&M,&N); CHKERRQ(ierr);
+  cerr << M << " " << " " << N << endl;
+  PetscFunctionReturn(0);
+}
 
 PetscErrorCode PCMGSetUpViaApproxOrdersCtx::getOptions() {
   PetscFunctionBegin;
