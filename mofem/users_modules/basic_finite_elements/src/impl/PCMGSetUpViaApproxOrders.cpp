@@ -288,41 +288,41 @@ static PetscErrorCode inerpolation_matrix_mult_generic(Mat mat,Vec x,Vec f,Inser
   PetscFunctionReturn(0);
 }
 
-// static PetscErrorCode inerpolation_matrix_mult(Mat mat,Vec x,Vec f) {
-//   PetscErrorCode ierr;
-//   PetscFunctionBegin;
-//   cerr << "mult ";
-//   int M,N;
-//   ierr = MatGetSize(mat,&N,&M); CHKERRQ(ierr);
-//   cerr << M << " " << N << " : ";
-//   ierr = VecGetSize(x,&N); CHKERRQ(ierr);
-//   ierr = VecGetSize(f,&M); CHKERRQ(ierr);
-//   cerr << M << " " << N << endl;
-//   ierr = inerpolation_matrix_mult_generic(mat,x,f,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-//   PetscFunctionReturn(0);
-// }
-//
-// static PetscErrorCode inerpolation_matrix_mult_transpose(Mat mat,Vec x,Vec f) {
-//   PetscErrorCode ierr;
-//   PetscFunctionBegin;
-//   cerr << "trans mult" << endl;
-//   ierr = inerpolation_matrix_mult_generic(mat,x,f,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-//   PetscFunctionReturn(0);
-// }
+static PetscErrorCode inerpolation_matrix_mult(Mat mat,Vec x,Vec f) {
+  PetscErrorCode ierr;
+  PetscFunctionBegin;
+  cerr << "mult ";
+  int M,N;
+  ierr = MatGetSize(mat,&N,&M); CHKERRQ(ierr);
+  cerr << M << " " << N << " : ";
+  ierr = VecGetSize(x,&N); CHKERRQ(ierr);
+  ierr = VecGetSize(f,&M); CHKERRQ(ierr);
+  cerr << M << " " << N << endl;
+  ierr = inerpolation_matrix_mult_generic(mat,x,f,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  PetscFunctionReturn(0);
+}
 
-// static PetscErrorCode inerpolation_matrix_mult_add(Mat mat,Vec x,Vec f) {
-//   PetscErrorCode ierr;
-//   PetscFunctionBegin;
-//   ierr = inerpolation_matrix_mult_generic(mat,x,f,ADD_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-//   PetscFunctionReturn(0);
-// }
-//
-// static PetscErrorCode inerpolation_matrix_mult_transpose_add(Mat mat,Vec x,Vec f) {
-//   PetscErrorCode ierr;
-//   PetscFunctionBegin;
-//   ierr = inerpolation_matrix_mult_generic(mat,x,f,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-//   PetscFunctionReturn(0);
-// }
+static PetscErrorCode inerpolation_matrix_mult_transpose(Mat mat,Vec x,Vec f) {
+  PetscErrorCode ierr;
+  PetscFunctionBegin;
+  cerr << "trans mult" << endl;
+  ierr = inerpolation_matrix_mult_generic(mat,x,f,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  PetscFunctionReturn(0);
+}
+
+static PetscErrorCode inerpolation_matrix_mult_add(Mat mat,Vec x,Vec f) {
+  PetscErrorCode ierr;
+  PetscFunctionBegin;
+  ierr = inerpolation_matrix_mult_generic(mat,x,f,ADD_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  PetscFunctionReturn(0);
+}
+
+static PetscErrorCode inerpolation_matrix_mult_transpose_add(Mat mat,Vec x,Vec f) {
+  PetscErrorCode ierr;
+  PetscFunctionBegin;
+  ierr = inerpolation_matrix_mult_generic(mat,x,f,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  PetscFunctionReturn(0);
+}
 
 PetscErrorCode DMCreateInterpolation_MGViaApproxOrders(DM dm1,DM dm2,Mat *mat,Vec *vec) {
   PetscErrorCode ierr;
@@ -330,14 +330,13 @@ PetscErrorCode DMCreateInterpolation_MGViaApproxOrders(DM dm1,DM dm2,Mat *mat,Ve
   PetscValidHeaderSpecific(dm2,DM_CLASSID,1);
   PetscFunctionBegin;
 
-
   MPI_Comm comm;
   ierr = PetscObjectGetComm((PetscObject)dm1,&comm); CHKERRQ(ierr);
 
   int m,n,M,N;
 
-  DM dm_down = dm2;
-  DM dm_up = dm1;
+  DM dm_down = dm1;
+  DM dm_up = dm2;
 
   int dm_down_leveldown = dm_down->leveldown;
   int dm_up_leveldown = dm_up->leveldown;
@@ -375,64 +374,62 @@ PetscErrorCode DMCreateInterpolation_MGViaApproxOrders(DM dm1,DM dm2,Mat *mat,Ve
 
   cerr << M << " " << N << endl;
 
-  //
-  // ierr = MatCreateShell(comm,m,n,M,N,(void*)mat_ctx,mat); CHKERRQ(ierr);
-  //
-  // Vec right,left;
-  // ierr = MatCreateVecs(*mat,&right,&left); CHKERRQ(ierr);
-  // ierr = inerpolation_matrix_mult_generic(*mat,right,left,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  // ierr = VecDestroy(&right); CHKERRQ(ierr);
-  // ierr = VecDestroy(&left); CHKERRQ(ierr);
-  //
-  // ierr = MatShellSetOperation(*mat,MATOP_DESTROY,(void(*)(void))inerpolation_matrix_destroy); CHKERRQ(ierr);
-  // ierr = MatShellSetOperation(*mat,MATOP_MULT,(void(*)(void))inerpolation_matrix_mult); CHKERRQ(ierr);
-  // ierr = MatShellSetOperation(*mat,MATOP_MULT_TRANSPOSE,(void(*)(void))inerpolation_matrix_mult_transpose); CHKERRQ(ierr);
-  // // ierr = MatShellSetOperation(*mat,MATOP_MULT_ADD,(void(*)(void))inerpolation_matrix_mult_add); CHKERRQ(ierr);
-  // // ierr = MatShellSetOperation(*mat,MATOP_MULT_TRANSPOSE_ADD,(void(*)(void))inerpolation_matrix_mult_transpose_add); CHKERRQ(ierr);
-  //
+  ierr = MatCreateShell(comm,m,n,M,N,(void*)mat_ctx,mat); CHKERRQ(ierr);
 
-  // FIXME: Use MatCreateMPIAIJWithArrays
-  ierr = MatCreate(comm,mat); CHKERRQ(ierr);
-  ierr = MatSetSizes(*mat,m,n,M,N); CHKERRQ(ierr);
-  ierr = MatSetType(*mat,MATMPIAIJ); CHKERRQ(ierr);
-  ierr = MatMPIAIJSetPreallocation(*mat,1,PETSC_NULL,0,PETSC_NULL); CHKERRQ(ierr);
+  Vec right,left;
+  ierr = MatCreateVecs(*mat,&right,&left); CHKERRQ(ierr);
+  ierr = inerpolation_matrix_mult_generic(*mat,right,left,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = VecDestroy(&right); CHKERRQ(ierr);
+  ierr = VecDestroy(&left); CHKERRQ(ierr);
 
-  //get matrix layout
-  PetscLayout rmap,cmap;
-  ierr = MatGetLayouts(*mat,&rmap,&cmap); CHKERRQ(ierr);
-  int rstart,rend,cstart,cend;
-  ierr = PetscLayoutGetRange(rmap,&rstart,&rend); CHKERRQ(ierr);
-  ierr = PetscLayoutGetRange(cmap,&cstart,&cend); CHKERRQ(ierr);
+  ierr = MatShellSetOperation(*mat,MATOP_DESTROY,(void(*)(void))inerpolation_matrix_destroy); CHKERRQ(ierr);
+  ierr = MatShellSetOperation(*mat,MATOP_MULT,(void(*)(void))inerpolation_matrix_mult); CHKERRQ(ierr);
+  ierr = MatShellSetOperation(*mat,MATOP_MULT_TRANSPOSE,(void(*)(void))inerpolation_matrix_mult_transpose); CHKERRQ(ierr);
+  ierr = MatShellSetOperation(*mat,MATOP_MULT_ADD,(void(*)(void))inerpolation_matrix_mult_add); CHKERRQ(ierr);
+  ierr = MatShellSetOperation(*mat,MATOP_MULT_TRANSPOSE_ADD,(void(*)(void))inerpolation_matrix_mult_transpose_add); CHKERRQ(ierr);
 
-  // if(verb>0) {
-  //   PetscSynchronizedPrintf(comm,"level %d row start %d row end %d\n",kk,rstart,rend);
-  //   PetscSynchronizedPrintf(comm,"level %d col start %d col end %d\n",kk,cstart,cend);
+  // // FIXME: Use MatCreateMPIAIJWithArrays
+  // ierr = MatCreate(comm,mat); CHKERRQ(ierr);
+  // ierr = MatSetSizes(*mat,m,n,M,N); CHKERRQ(ierr);
+  // ierr = MatSetType(*mat,MATMPIAIJ); CHKERRQ(ierr);
+  // ierr = MatMPIAIJSetPreallocation(*mat,1,PETSC_NULL,0,PETSC_NULL); CHKERRQ(ierr);
+  //
+  // //get matrix layout
+  // PetscLayout rmap,cmap;
+  // ierr = MatGetLayouts(*mat,&rmap,&cmap); CHKERRQ(ierr);
+  // int rstart,rend,cstart,cend;
+  // ierr = PetscLayoutGetRange(rmap,&rstart,&rend); CHKERRQ(ierr);
+  // ierr = PetscLayoutGetRange(cmap,&cstart,&cend); CHKERRQ(ierr);
+  //
+  // // if(verb>0) {
+  // //   PetscSynchronizedPrintf(comm,"level %d row start %d row end %d\n",kk,rstart,rend);
+  // //   PetscSynchronizedPrintf(comm,"level %d col start %d col end %d\n",kk,cstart,cend);
+  // // }
+  //
+  // const int *row_indices_ptr,*col_indices_ptr;
+  // ierr = ISGetIndices(mat_ctx->isDown,&row_indices_ptr); CHKERRQ(ierr);
+  // ierr = ISGetIndices(mat_ctx->isUp,&col_indices_ptr); CHKERRQ(ierr);
+  //
+  // map<int,int> idx_map;
+  // for(int ii = 0;ii<m;ii++) {
+  //   idx_map[row_indices_ptr[ii]] = rstart+ii;
   // }
-
-  const int *row_indices_ptr,*col_indices_ptr;
-  ierr = ISGetIndices(mat_ctx->isDown,&row_indices_ptr); CHKERRQ(ierr);
-  ierr = ISGetIndices(mat_ctx->isUp,&col_indices_ptr); CHKERRQ(ierr);
-
-  map<int,int> idx_map;
-  for(int ii = 0;ii<m;ii++) {
-    idx_map[row_indices_ptr[ii]] = rstart+ii;
-  }
-
-  // FIXME: Use MatCreateMPIAIJWithArrays and set array directly
-  for(int jj = 0;jj<n;jj++) {
-    map<int,int>::iterator mit = idx_map.find(col_indices_ptr[jj]);
-    if(mit != idx_map.end()) {
-      ierr = MatSetValue(*mat,mit->second,cstart+jj,1,INSERT_VALUES); CHKERRQ(ierr);
-    }
-  }
-
-  ierr = ISRestoreIndices(mat_ctx->isDown,&row_indices_ptr); CHKERRQ(ierr);
-  ierr = ISRestoreIndices(mat_ctx->isUp,&col_indices_ptr); CHKERRQ(ierr);
-
-  ierr = MatAssemblyBegin(*mat,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
-  ierr = MatAssemblyEnd(*mat,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
-
-  delete mat_ctx;
+  //
+  // // FIXME: Use MatCreateMPIAIJWithArrays and set array directly
+  // for(int jj = 0;jj<n;jj++) {
+  //   map<int,int>::iterator mit = idx_map.find(col_indices_ptr[jj]);
+  //   if(mit != idx_map.end()) {
+  //     ierr = MatSetValue(*mat,mit->second,cstart+jj,1,INSERT_VALUES); CHKERRQ(ierr);
+  //   }
+  // }
+  //
+  // ierr = ISRestoreIndices(mat_ctx->isDown,&row_indices_ptr); CHKERRQ(ierr);
+  // ierr = ISRestoreIndices(mat_ctx->isUp,&col_indices_ptr); CHKERRQ(ierr);
+  //
+  // ierr = MatAssemblyBegin(*mat,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+  // ierr = MatAssemblyEnd(*mat,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+  //
+  // delete mat_ctx;
 
   *vec = PETSC_NULL;
 
