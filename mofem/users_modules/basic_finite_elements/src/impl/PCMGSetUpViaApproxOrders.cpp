@@ -172,10 +172,7 @@ PetscErrorCode DMCoarsen_MGViaApproxOrders(DM dm, MPI_Comm comm, DM *dmc) {
   ierr = DMCreate(comm,dmc);CHKERRQ(ierr);
   (*dmc)->data = dm->data;
   ierr = DMSetType(*dmc,(dm_field->problemName).c_str()); CHKERRQ(ierr);
-  // ierr = DMSetCoarseDM(dm,*dmc); CHKERRQ(ierr);
-  //dm->coarseMesh = NULL;
   ierr = PetscObjectReference((PetscObject)(*dmc)); CHKERRQ(ierr);
-
   PetscInfo1(dm,"Coarsen DMMGViaApproxOrders leveldown = %d\n",dm->leveldown);
 
   PetscFunctionReturn(0);
@@ -326,6 +323,8 @@ PetscErrorCode DMCreateInterpolation_MGViaApproxOrders(DM dm1,DM dm2,Mat *mat,Ve
   PetscValidHeaderSpecific(dm1,DM_CLASSID,1);
   PetscValidHeaderSpecific(dm2,DM_CLASSID,1);
   PetscFunctionBegin;
+
+
 
   MPI_Comm comm;
   ierr = PetscObjectGetComm((PetscObject)dm1,&comm); CHKERRQ(ierr);
