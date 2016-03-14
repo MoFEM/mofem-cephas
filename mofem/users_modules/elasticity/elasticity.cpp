@@ -561,7 +561,7 @@ int main(int argc, char *argv[]) {
   ierr = VecDestroy(&D0); CHKERRQ(ierr);
   ierr = MatDestroy(&Aij); CHKERRQ(ierr);
   ierr = KSPDestroy(&solver); CHKERRQ(ierr);
-  // ierr = DMDestroy(&dm); CHKERRQ(ierr);
+  ierr = DMDestroy(&dm); CHKERRQ(ierr);
 
   PetscFinalize();
 
