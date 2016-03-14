@@ -35,6 +35,8 @@ struct DMMGViaApproxOrdersCtx: public MoFEM::DMCtx {
   vector<IS> coarseningIS;   ///< Coarsening IS
   vector<Mat> kspOperators;  ///< Get KSP operators
 
+  PetscLogEvent USER_EVENT_DMDMMGViaApproxOrdersCtx;
+
 };
 
 
@@ -68,8 +70,6 @@ PetscErrorCode DMCreateMatrix_MGViaApproxOrders(DM dm,Mat *M);
 PetscErrorCode DMCoarsen_MGViaApproxOrders(DM dm, MPI_Comm comm, DM *dmc);
 
 PetscErrorCode DMCreateInterpolation_MGViaApproxOrders(DM dm1,DM dm2,Mat *mat,Vec *vec);
-
-PetscErrorCode DMRestrict_MGViaApproxOrders(DM fine,Mat mat,Vec vec,Mat mat2,DM coarse,void *ctx);
 
 PetscErrorCode DMCreateGlobalVector_MGViaApproxOrders(DM dm,Vec *g);
 
