@@ -133,6 +133,7 @@ PetscErrorCode DMCreate_MGViaApproxOrders(DM dm) {
   }
   ierr = DMSetOperators_MoFEM(dm); CHKERRQ(ierr);
   dm->ops->creatematrix = DMCreateMatrix_MGViaApproxOrders;
+  dm->ops->createglobalvector = DMCreateGlobalVector_MGViaApproxOrders;
   dm->ops->coarsen = DMCoarsen_MGViaApproxOrders;
   dm->ops->createinterpolation = DMCreateInterpolation_MGViaApproxOrders;
   ierr = DMKSPSetComputeOperators(dm,ksp_set_operators,NULL); CHKERRQ(ierr);
@@ -287,27 +288,27 @@ static PetscErrorCode inerpolation_matrix_mult_generic(Mat mat,Vec x,Vec f,Inser
   PetscFunctionReturn(0);
 }
 
-static PetscErrorCode inerpolation_matrix_mult(Mat mat,Vec x,Vec f) {
-  PetscErrorCode ierr;
-  PetscFunctionBegin;
-  cerr << "mult ";
-  int M,N;
-  ierr = MatGetSize(mat,&N,&M); CHKERRQ(ierr);
-  cerr << M << " " << N << " : ";
-  ierr = VecGetSize(x,&N); CHKERRQ(ierr);
-  ierr = VecGetSize(f,&M); CHKERRQ(ierr);
-  cerr << M << " " << N << endl;
-  ierr = inerpolation_matrix_mult_generic(mat,x,f,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  PetscFunctionReturn(0);
-}
-
-static PetscErrorCode inerpolation_matrix_mult_transpose(Mat mat,Vec x,Vec f) {
-  PetscErrorCode ierr;
-  PetscFunctionBegin;
-  cerr << "trans mult" << endl;
-  ierr = inerpolation_matrix_mult_generic(mat,x,f,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-  PetscFunctionReturn(0);
-}
+// static PetscErrorCode inerpolation_matrix_mult(Mat mat,Vec x,Vec f) {
+//   PetscErrorCode ierr;
+//   PetscFunctionBegin;
+//   cerr << "mult ";
+//   int M,N;
+//   ierr = MatGetSize(mat,&N,&M); CHKERRQ(ierr);
+//   cerr << M << " " << N << " : ";
+//   ierr = VecGetSize(x,&N); CHKERRQ(ierr);
+//   ierr = VecGetSize(f,&M); CHKERRQ(ierr);
+//   cerr << M << " " << N << endl;
+//   ierr = inerpolation_matrix_mult_generic(mat,x,f,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+//   PetscFunctionReturn(0);
+// }
+//
+// static PetscErrorCode inerpolation_matrix_mult_transpose(Mat mat,Vec x,Vec f) {
+//   PetscErrorCode ierr;
+//   PetscFunctionBegin;
+//   cerr << "trans mult" << endl;
+//   ierr = inerpolation_matrix_mult_generic(mat,x,f,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+//   PetscFunctionReturn(0);
+// }
 
 // static PetscErrorCode inerpolation_matrix_mult_add(Mat mat,Vec x,Vec f) {
 //   PetscErrorCode ierr;
@@ -329,37 +330,41 @@ PetscErrorCode DMCreateInterpolation_MGViaApproxOrders(DM dm1,DM dm2,Mat *mat,Ve
   PetscValidHeaderSpecific(dm2,DM_CLASSID,1);
   PetscFunctionBegin;
 
-  int dm1_leveldown = dm1->leveldown;
-  int dm2_leveldown = dm2->leveldown;
-
-  cerr << "Create interpolation matrix ";
-  cerr << dm1_leveldown << " " << dm2_leveldown << " ";
 
   MPI_Comm comm;
   ierr = PetscObjectGetComm((PetscObject)dm1,&comm); CHKERRQ(ierr);
 
   int m,n,M,N;
 
+  DM dm_down = dm2;
+  DM dm_up = dm1;
+
+  int dm_down_leveldown = dm_down->leveldown;
+  int dm_up_leveldown = dm_up->leveldown;
+
+  cerr << "Create interpolation matrix ";
+  cerr << dm_down_leveldown << " " << dm_up_leveldown << " ";
+
   MGShellProjectionMatrix *mat_ctx = new MGShellProjectionMatrix();
   {
     // Coarser mesh
-    GET_DM_FIELD(dm1);
-    if(dm_field->coarseningIS.size()<dm1_leveldown) {
+    GET_DM_FIELD(dm_down);
+    if(dm_field->coarseningIS.size()<dm_down_leveldown) {
       SETERRQ(PETSC_COMM_WORLD,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
     }
-    mat_ctx->isDown = dm_field->coarseningIS[dm1_leveldown];
-    mat_ctx->levelDown = dm1_leveldown;
+    mat_ctx->isDown = dm_field->coarseningIS[dm_down_leveldown];
+    mat_ctx->levelDown = dm_down_leveldown;
     ierr = ISGetSize(mat_ctx->isDown,&M); CHKERRQ(ierr);
     ierr = ISGetLocalSize(mat_ctx->isDown,&m); CHKERRQ(ierr);
   }
   {
     // Finer mesh
-    GET_DM_FIELD(dm2);
-    if(dm_field->coarseningIS.size()<dm2_leveldown) {
+    GET_DM_FIELD(dm_up);
+    if(dm_field->coarseningIS.size()<dm_up_leveldown) {
       SETERRQ(PETSC_COMM_WORLD,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
     }
-    mat_ctx->isUp = dm_field->coarseningIS[dm2_leveldown];
-    mat_ctx->levelUp = dm2_leveldown;
+    mat_ctx->isUp = dm_field->coarseningIS[dm_up_leveldown];
+    mat_ctx->levelUp = dm_up_leveldown;
     ierr = ISGetSize(mat_ctx->isUp,&N); CHKERRQ(ierr);
     ierr = ISGetLocalSize(mat_ctx->isUp,&n); CHKERRQ(ierr);
   }
@@ -368,21 +373,66 @@ PetscErrorCode DMCreateInterpolation_MGViaApproxOrders(DM dm1,DM dm2,Mat *mat,Ve
   //   SETERRQ(comm,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
   // }
 
-  cerr << N << " " << M << endl;
+  cerr << M << " " << N << endl;
 
-  ierr = MatCreateShell(comm,m,n,M,N,(void*)mat_ctx,mat); CHKERRQ(ierr);
+  //
+  // ierr = MatCreateShell(comm,m,n,M,N,(void*)mat_ctx,mat); CHKERRQ(ierr);
+  //
+  // Vec right,left;
+  // ierr = MatCreateVecs(*mat,&right,&left); CHKERRQ(ierr);
+  // ierr = inerpolation_matrix_mult_generic(*mat,right,left,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  // ierr = VecDestroy(&right); CHKERRQ(ierr);
+  // ierr = VecDestroy(&left); CHKERRQ(ierr);
+  //
+  // ierr = MatShellSetOperation(*mat,MATOP_DESTROY,(void(*)(void))inerpolation_matrix_destroy); CHKERRQ(ierr);
+  // ierr = MatShellSetOperation(*mat,MATOP_MULT,(void(*)(void))inerpolation_matrix_mult); CHKERRQ(ierr);
+  // ierr = MatShellSetOperation(*mat,MATOP_MULT_TRANSPOSE,(void(*)(void))inerpolation_matrix_mult_transpose); CHKERRQ(ierr);
+  // // ierr = MatShellSetOperation(*mat,MATOP_MULT_ADD,(void(*)(void))inerpolation_matrix_mult_add); CHKERRQ(ierr);
+  // // ierr = MatShellSetOperation(*mat,MATOP_MULT_TRANSPOSE_ADD,(void(*)(void))inerpolation_matrix_mult_transpose_add); CHKERRQ(ierr);
+  //
 
-  Vec right,left;
-  ierr = MatCreateVecs(*mat,&right,&left); CHKERRQ(ierr);
-  ierr = inerpolation_matrix_mult_generic(*mat,right,left,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  ierr = VecDestroy(&right); CHKERRQ(ierr);
-  ierr = VecDestroy(&left); CHKERRQ(ierr);
+  // FIXME: Use MatCreateMPIAIJWithArrays
+  ierr = MatCreate(comm,mat); CHKERRQ(ierr);
+  ierr = MatSetSizes(*mat,m,n,M,N); CHKERRQ(ierr);
+  ierr = MatSetType(*mat,MATMPIAIJ); CHKERRQ(ierr);
+  ierr = MatMPIAIJSetPreallocation(*mat,1,PETSC_NULL,0,PETSC_NULL); CHKERRQ(ierr);
 
-  ierr = MatShellSetOperation(*mat,MATOP_DESTROY,(void(*)(void))inerpolation_matrix_destroy); CHKERRQ(ierr);
-  ierr = MatShellSetOperation(*mat,MATOP_MULT,(void(*)(void))inerpolation_matrix_mult); CHKERRQ(ierr);
-  ierr = MatShellSetOperation(*mat,MATOP_MULT_TRANSPOSE,(void(*)(void))inerpolation_matrix_mult_transpose); CHKERRQ(ierr);
-  // ierr = MatShellSetOperation(*mat,MATOP_MULT_ADD,(void(*)(void))inerpolation_matrix_mult_add); CHKERRQ(ierr);
-  // ierr = MatShellSetOperation(*mat,MATOP_MULT_TRANSPOSE_ADD,(void(*)(void))inerpolation_matrix_mult_transpose_add); CHKERRQ(ierr);
+  //get matrix layout
+  PetscLayout rmap,cmap;
+  ierr = MatGetLayouts(*mat,&rmap,&cmap); CHKERRQ(ierr);
+  int rstart,rend,cstart,cend;
+  ierr = PetscLayoutGetRange(rmap,&rstart,&rend); CHKERRQ(ierr);
+  ierr = PetscLayoutGetRange(cmap,&cstart,&cend); CHKERRQ(ierr);
+
+  // if(verb>0) {
+  //   PetscSynchronizedPrintf(comm,"level %d row start %d row end %d\n",kk,rstart,rend);
+  //   PetscSynchronizedPrintf(comm,"level %d col start %d col end %d\n",kk,cstart,cend);
+  // }
+
+  const int *row_indices_ptr,*col_indices_ptr;
+  ierr = ISGetIndices(mat_ctx->isDown,&row_indices_ptr); CHKERRQ(ierr);
+  ierr = ISGetIndices(mat_ctx->isUp,&col_indices_ptr); CHKERRQ(ierr);
+
+  map<int,int> idx_map;
+  for(int ii = 0;ii<m;ii++) {
+    idx_map[row_indices_ptr[ii]] = rstart+ii;
+  }
+
+  // FIXME: Use MatCreateMPIAIJWithArrays and set array directly
+  for(int jj = 0;jj<n;jj++) {
+    map<int,int>::iterator mit = idx_map.find(col_indices_ptr[jj]);
+    if(mit != idx_map.end()) {
+      ierr = MatSetValue(*mat,mit->second,cstart+jj,1,INSERT_VALUES); CHKERRQ(ierr);
+    }
+  }
+
+  ierr = ISRestoreIndices(mat_ctx->isDown,&row_indices_ptr); CHKERRQ(ierr);
+  ierr = ISRestoreIndices(mat_ctx->isUp,&col_indices_ptr); CHKERRQ(ierr);
+
+  ierr = MatAssemblyBegin(*mat,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+  ierr = MatAssemblyEnd(*mat,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+
+  delete mat_ctx;
 
   *vec = PETSC_NULL;
 
@@ -392,10 +442,29 @@ PetscErrorCode DMCreateInterpolation_MGViaApproxOrders(DM dm1,DM dm2,Mat *mat,Ve
 PetscErrorCode DMRestrict_MGViaApproxOrders(DM fine,Mat mat,Vec vec,Mat mat2,DM coarse,void *ctx) {
   PetscErrorCode ierr;
   PetscFunctionBegin;
+  // Mat tmp;
+  // ierr = MatTranspose(mat,MAT_INITIAL_MATRIX,&tmp); CHKERRQ(ierr);
+  // Mat tmp2 = mat;
+  // mat = tmp;
+  // ierr = MatDestroy(&tmp2); CHKERRQ(ierr);
   cerr << "Restrict ";
   int  M,N;
   ierr = MatGetSize(mat,&M,&N); CHKERRQ(ierr);
-  cerr << M << " " << " " << N << endl;
+  cerr << M << " " << " " << N << " : " << fine->leveldown << " " << coarse->leveldown << endl;
+  // MatView(mat,PETSC_VIEWER_DRAW_WORLD);
+  // std::string wait;
+  // std::cin >> wait;
+
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode DMCreateGlobalVector_MGViaApproxOrders(DM dm,Vec *g) {
+  PetscErrorCode ierr;
+  PetscValidHeaderSpecific(dm,DM_CLASSID,1);
+  PetscFunctionBegin;
+  int leveldown = dm->leveldown;
+  GET_DM_FIELD(dm);
+  ierr = MatCreateVecs(dm_field->kspOperators[leveldown],g,NULL); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 
@@ -509,117 +578,117 @@ PetscErrorCode PCMGSetUpViaApproxOrdersCtx::buildProlongationOperator(PC pc,int 
   }
   cerr << "end\n\n";
 
-  /*// prolongation and restriction uses the same matrices
-  ierr = PCMGSetGalerkin(pc,PETSC_TRUE); CHKERRQ(ierr);
-
-  map<int,int> idx_map;
-  int kk = 1;
-  while(kk<nbLevels) {
-
-    if(verb>0) {
-      PetscPrintf(comm,"level %d\n",kk);
-    }
-
-    int row_loc_size,row_glob_size,col_loc_size,col_glob_size;
-
-    row_loc_size = is_loc_size[kk];		//bigger
-    row_glob_size = is_glob_size[kk];
-    col_loc_size = is_loc_size[kk-1];		//smaller
-    col_glob_size = is_glob_size[kk-1];
-
-    // FIXME: Use MatCreateMPIAIJWithArrays
-    Mat R;  //small to big
-    ierr = MatCreate(comm,&R); CHKERRQ(ierr);
-    ierr = MatSetSizes(R,row_loc_size,col_loc_size,row_glob_size,col_glob_size); CHKERRQ(ierr);
-    ierr = MatSetType(R,MATMPIAIJ); CHKERRQ(ierr);
-    ierr = MatMPIAIJSetPreallocation(R,1,PETSC_NULL,0,PETSC_NULL); CHKERRQ(ierr);
-
-    //get matrix layout
-    PetscLayout rmap,cmap;
-    ierr = MatGetLayouts(R,&rmap,&cmap); CHKERRQ(ierr);
-    int rstart,rend,cstart,cend;
-    ierr = PetscLayoutGetRange(rmap,&rstart,&rend); CHKERRQ(ierr);
-    ierr = PetscLayoutGetRange(cmap,&cstart,&cend); CHKERRQ(ierr);
-
-    if(verb>0) {
-      PetscSynchronizedPrintf(comm,"level %d row start %d row end %d\n",kk,rstart,rend);
-      PetscSynchronizedPrintf(comm,"level %d col start %d col end %d\n",kk,cstart,cend);
-    }
-
-    const int *row_indices_ptr,*col_indices_ptr;
-    ierr = ISGetIndices(is_vec[kk],&row_indices_ptr); CHKERRQ(ierr);
-    ierr = ISGetIndices(is_vec[kk-1],&col_indices_ptr); CHKERRQ(ierr);
-
-    idx_map.clear();
-    for(int ii = 0;ii<row_loc_size;ii++) {
-      idx_map[row_indices_ptr[ii]] = rstart+ii;
-    }
-
-    // FIXME: Use MatCreateMPIAIJWithArrays and set array directly
-    for(int jj = 0;jj<col_loc_size;jj++) {
-      map<int,int>::iterator mit = idx_map.find(col_indices_ptr[jj]);
-      if(mit != idx_map.end()) {
-        ierr = MatSetValue(R,mit->second,cstart+jj,dIag[kk],INSERT_VALUES); CHKERRQ(ierr);
-      }
-    }
-
-    ierr = ISRestoreIndices(is_vec[kk],&row_indices_ptr); CHKERRQ(ierr);
-    ierr = ISRestoreIndices(is_vec[kk-1],&col_indices_ptr); CHKERRQ(ierr);
-
-    ierr = MatAssemblyBegin(R,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
-    ierr = MatAssemblyEnd(R,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
-
-    if(verb>1) {
-      //MatView(R,PETSC_VIEWER_STDOUT_WORLD);
-      MatView(R,PETSC_VIEWER_DRAW_WORLD);
-      std::string wait;
-      std::cin >> wait;
-    }
-
-    ierr = PCMGSetInterpolation(pc,kk,R); CHKERRQ(ierr);
-
-
-    #if PETSC_VERSION_LE(3,5,3)
-    {
-      // FIXME: If restriction is not set, MatPtAP generate error. This is rather PETSc than MoFEM problem.
-      // Petsc Development GIT revision: v3.5.3-1524-gee900cc  GIT Date: 2015-01-31 17:44:15 -0600
-
-      // [0]PETSC ERROR: [0] MatPtAPSymbolic_MPIAIJ_MPIAIJ line 124 /opt/petsc/src/mat/impls/aij/mpi/mpiptap.c
-      // [0]PETSC ERROR: [0] MatPtAP_MPIAIJ_MPIAIJ line 80 /opt/petsc/src/mat/impls/aij/mpi/mpiptap.c
-      // [0]PETSC ERROR: [0] MatPtAP line 8458 /opt/petsc/src/mat/interface/matrix.c
-      // [0]PETSC ERROR: [0] PCSetUp_MG line 552 /opt/petsc/src/ksp/pc/impls/mg/mg.c
-      // [0]PETSC ERROR: [0] KSPSetUp line 220 /opt/petsc/src/ksp/ksp/interface/itfunc.c
-
-      // ==4284== Invalid read of size 8
-      // ==4284==    at 0x5CAC873: MatPtAPSymbolic_MPIAIJ_MPIAIJ (mpiptap.c:154)
-      // ==4284==    by 0x5CABA74: MatPtAP_MPIAIJ_MPIAIJ (mpiptap.c:83)
-      // ==4284==    by 0x5D566D1: MatPtAP (matrix.c:8537)
-      // ==4284==    by 0x61F27D6: PCSetUp_MG (mg.c:642)
-      // ==4284==    by 0x612BD9C: PCSetUp (precon.c:909)
-      // ==4284==    by 0x62C1A51: KSPSetUp (itfunc.c:306)
-      // ==4284==    by 0xB98326: main (elasticity.cpp:403)
-      // ==4284==  Address 0x208 is not stack'd, malloc'd or (recently) free'd
-
-      Mat RT;
-      ierr = MatTranspose(R,MAT_INITIAL_MATRIX,&RT); CHKERRQ(ierr);
-      ierr = PCMGSetRestriction(pc,kk,RT); CHKERRQ(ierr);
-
-      if(verb>1) {
-        //MatView(R,PETSC_VIEWER_STDOUT_WORLD);
-        MatView(RT,PETSC_VIEWER_DRAW_WORLD);
-        std::string wait;
-        std::cin >> wait;
-      }
-
-      ierr = MatDestroy(&RT); CHKERRQ(ierr);
-    }
-    #endif
-
-    ierr = MatDestroy(&R); CHKERRQ(ierr);
-
-    kk++;
-
-  }*/
+  // // prolongation and restriction uses the same matrices
+  // ierr = PCMGSetGalerkin(pc,PETSC_TRUE); CHKERRQ(ierr);
+  //
+  // map<int,int> idx_map;
+  // int kk = 1;
+  // while(kk<nbLevels) {
+  //
+  //   if(verb>0) {
+  //     PetscPrintf(comm,"level %d\n",kk);
+  //   }
+  //
+  //   int row_loc_size,row_glob_size,col_loc_size,col_glob_size;
+  //
+  //   row_loc_size = is_loc_size[kk];		//bigger
+  //   row_glob_size = is_glob_size[kk];
+  //   col_loc_size = is_loc_size[kk-1];		//smaller
+  //   col_glob_size = is_glob_size[kk-1];
+  //
+  //   // FIXME: Use MatCreateMPIAIJWithArrays
+  //   Mat R;  //small to big
+  //   ierr = MatCreate(comm,&R); CHKERRQ(ierr);
+  //   ierr = MatSetSizes(R,row_loc_size,col_loc_size,row_glob_size,col_glob_size); CHKERRQ(ierr);
+  //   ierr = MatSetType(R,MATMPIAIJ); CHKERRQ(ierr);
+  //   ierr = MatMPIAIJSetPreallocation(R,1,PETSC_NULL,0,PETSC_NULL); CHKERRQ(ierr);
+  //
+  //   //get matrix layout
+  //   PetscLayout rmap,cmap;
+  //   ierr = MatGetLayouts(R,&rmap,&cmap); CHKERRQ(ierr);
+  //   int rstart,rend,cstart,cend;
+  //   ierr = PetscLayoutGetRange(rmap,&rstart,&rend); CHKERRQ(ierr);
+  //   ierr = PetscLayoutGetRange(cmap,&cstart,&cend); CHKERRQ(ierr);
+  //
+  //   if(verb>0) {
+  //     PetscSynchronizedPrintf(comm,"level %d row start %d row end %d\n",kk,rstart,rend);
+  //     PetscSynchronizedPrintf(comm,"level %d col start %d col end %d\n",kk,cstart,cend);
+  //   }
+  //
+  //   const int *row_indices_ptr,*col_indices_ptr;
+  //   ierr = ISGetIndices(is_vec[kk],&row_indices_ptr); CHKERRQ(ierr);
+  //   ierr = ISGetIndices(is_vec[kk-1],&col_indices_ptr); CHKERRQ(ierr);
+  //
+  //   idx_map.clear();
+  //   for(int ii = 0;ii<row_loc_size;ii++) {
+  //     idx_map[row_indices_ptr[ii]] = rstart+ii;
+  //   }
+  //
+  //   // FIXME: Use MatCreateMPIAIJWithArrays and set array directly
+  //   for(int jj = 0;jj<col_loc_size;jj++) {
+  //     map<int,int>::iterator mit = idx_map.find(col_indices_ptr[jj]);
+  //     if(mit != idx_map.end()) {
+  //       ierr = MatSetValue(R,mit->second,cstart+jj,1,INSERT_VALUES); CHKERRQ(ierr);
+  //     }
+  //   }
+  //
+  //   ierr = ISRestoreIndices(is_vec[kk],&row_indices_ptr); CHKERRQ(ierr);
+  //   ierr = ISRestoreIndices(is_vec[kk-1],&col_indices_ptr); CHKERRQ(ierr);
+  //
+  //   ierr = MatAssemblyBegin(R,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+  //   ierr = MatAssemblyEnd(R,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+  //
+  //   if(verb>1) {
+  //     //MatView(R,PETSC_VIEWER_STDOUT_WORLD);
+  //     MatView(R,PETSC_VIEWER_DRAW_WORLD);
+  //     std::string wait;
+  //     std::cin >> wait;
+  //   }
+  //
+  //   ierr = PCMGSetInterpolation(pc,kk,R); CHKERRQ(ierr);
+  //
+  //
+  //   #if PETSC_VERSION_LE(3,5,3)
+  //   {
+  //     // FIXME: If restriction is not set, MatPtAP generate error. This is rather PETSc than MoFEM problem.
+  //     // Petsc Development GIT revision: v3.5.3-1524-gee900cc  GIT Date: 2015-01-31 17:44:15 -0600
+  //
+  //     // [0]PETSC ERROR: [0] MatPtAPSymbolic_MPIAIJ_MPIAIJ line 124 /opt/petsc/src/mat/impls/aij/mpi/mpiptap.c
+  //     // [0]PETSC ERROR: [0] MatPtAP_MPIAIJ_MPIAIJ line 80 /opt/petsc/src/mat/impls/aij/mpi/mpiptap.c
+  //     // [0]PETSC ERROR: [0] MatPtAP line 8458 /opt/petsc/src/mat/interface/matrix.c
+  //     // [0]PETSC ERROR: [0] PCSetUp_MG line 552 /opt/petsc/src/ksp/pc/impls/mg/mg.c
+  //     // [0]PETSC ERROR: [0] KSPSetUp line 220 /opt/petsc/src/ksp/ksp/interface/itfunc.c
+  //
+  //     // ==4284== Invalid read of size 8
+  //     // ==4284==    at 0x5CAC873: MatPtAPSymbolic_MPIAIJ_MPIAIJ (mpiptap.c:154)
+  //     // ==4284==    by 0x5CABA74: MatPtAP_MPIAIJ_MPIAIJ (mpiptap.c:83)
+  //     // ==4284==    by 0x5D566D1: MatPtAP (matrix.c:8537)
+  //     // ==4284==    by 0x61F27D6: PCSetUp_MG (mg.c:642)
+  //     // ==4284==    by 0x612BD9C: PCSetUp (precon.c:909)
+  //     // ==4284==    by 0x62C1A51: KSPSetUp (itfunc.c:306)
+  //     // ==4284==    by 0xB98326: main (elasticity.cpp:403)
+  //     // ==4284==  Address 0x208 is not stack'd, malloc'd or (recently) free'd
+  //
+  //     Mat RT;
+  //     ierr = MatTranspose(R,MAT_INITIAL_MATRIX,&RT); CHKERRQ(ierr);
+  //     ierr = PCMGSetRestriction(pc,kk,RT); CHKERRQ(ierr);
+  //
+  //     if(verb>1) {
+  //       //MatView(R,PETSC_VIEWER_STDOUT_WORLD);
+  //       MatView(RT,PETSC_VIEWER_DRAW_WORLD);
+  //       std::string wait;
+  //       std::cin >> wait;
+  //     }
+  //
+  //     ierr = MatDestroy(&RT); CHKERRQ(ierr);
+  //   }
+  //   #endif
+  //
+  //   ierr = MatDestroy(&R); CHKERRQ(ierr);
+  //
+  //   kk++;
+  //
+  // }
 
   for(unsigned int kk = 0;kk<is_vec.size();kk++) {
     ierr = destroyIsAtLevel(kk,&is_vec[kk]); CHKERRQ(ierr);

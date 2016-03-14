@@ -436,6 +436,8 @@ int main(int argc, char *argv[]) {
       ierr = KSPSetDMActive(solver,PETSC_FALSE); CHKERRQ(ierr);
     }
   }
+  ierr = KSPSetInitialGuessKnoll(solver,PETSC_FALSE); CHKERRQ(ierr);
+  ierr = KSPSetInitialGuessNonzero(solver,PETSC_TRUE); CHKERRQ(ierr);
   ierr = KSPSetUp(solver); CHKERRQ(ierr);
 
   PostProcVolumeOnRefinedMesh post_proc(m_field);

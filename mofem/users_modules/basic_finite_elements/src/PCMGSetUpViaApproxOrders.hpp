@@ -71,6 +71,7 @@ PetscErrorCode DMCreateInterpolation_MGViaApproxOrders(DM dm1,DM dm2,Mat *mat,Ve
 
 PetscErrorCode DMRestrict_MGViaApproxOrders(DM fine,Mat mat,Vec vec,Mat mat2,DM coarse,void *ctx);
 
+PetscErrorCode DMCreateGlobalVector_MGViaApproxOrders(DM dm,Vec *g);
 
 /**
  * \brief Set data structures of MG pre-conditioner via approximation orders
