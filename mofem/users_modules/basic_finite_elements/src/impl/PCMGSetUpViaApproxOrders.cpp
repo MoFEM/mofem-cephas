@@ -154,7 +154,7 @@ PetscErrorCode DMCreateMatrix_MGViaApproxOrders(DM dm,Mat *M) {
   if(dm_field->kspOperators.size()<leveldown) {
     SETERRQ(comm,MOFEM_DATA_INCONSISTENCY,"data inconsistency, no IS for that level");
   }
-  *M = dm_field->kspOperators[leveldown];
+  *M = dm_field->kspOperators[dm_field->kspOperators.size()-1-leveldown];
   ierr = PetscObjectReference((PetscObject)*M); CHKERRQ(ierr);
 
   PetscInfo1(dm,"Create Matrix DMMGViaApproxOrders leveldown = %d\n",leveldown);
@@ -349,7 +349,7 @@ PetscErrorCode DMCreateInterpolation_MGViaApproxOrders(DM dm1,DM dm2,Mat *mat,Ve
     if(dm_field->coarseningIS.size()<dm_down_leveldown) {
       SETERRQ(PETSC_COMM_WORLD,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
     }
-    mat_ctx->isDown = dm_field->coarseningIS[dm_down_leveldown];
+    mat_ctx->isDown = dm_field->coarseningIS[dm_field->coarseningIS.size()-1-dm_down_leveldown];
     mat_ctx->levelDown = dm_down_leveldown;
     ierr = ISGetSize(mat_ctx->isDown,&M); CHKERRQ(ierr);
     ierr = ISGetLocalSize(mat_ctx->isDown,&m); CHKERRQ(ierr);
@@ -360,7 +360,7 @@ PetscErrorCode DMCreateInterpolation_MGViaApproxOrders(DM dm1,DM dm2,Mat *mat,Ve
     if(dm_field->coarseningIS.size()<dm_up_leveldown) {
       SETERRQ(PETSC_COMM_WORLD,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
     }
-    mat_ctx->isUp = dm_field->coarseningIS[dm_up_leveldown];
+    mat_ctx->isUp = dm_field->coarseningIS[dm_field->coarseningIS.size()-1-dm_up_leveldown];
     mat_ctx->levelUp = dm_up_leveldown;
     ierr = ISGetSize(mat_ctx->isUp,&N); CHKERRQ(ierr);
     ierr = ISGetLocalSize(mat_ctx->isUp,&n); CHKERRQ(ierr);
@@ -388,7 +388,7 @@ PetscErrorCode DMCreateGlobalVector_MGViaApproxOrders(DM dm,Vec *g) {
   PetscInfo1(
     dm,"Create global vector DMMGViaApproxOrders leveldown = %d\n",dm->leveldown
   );
-  ierr = MatCreateVecs(dm_field->kspOperators[leveldown],g,NULL); CHKERRQ(ierr);
+  ierr = MatCreateVecs(dm_field->kspOperators[dm_field->kspOperators.size()-1-leveldown],g,NULL); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 
@@ -491,8 +491,7 @@ PetscErrorCode PCMGSetUpViaApproxOrdersCtx::buildProlongationOperator(PC pc,int 
   ierr = PCMGSetGalerkin(pc,PETSC_FALSE); CHKERRQ(ierr);
   ierr = PCMGSetLevels(pc,nbLevels,NULL);  CHKERRQ(ierr);
 
-  for(int kk = nbLevels-1;kk!=-1;kk--) {
-  // for(int kk = 0;kk!=nbLevels;kk++) {
+  for(int kk = 0;kk!=nbLevels;kk++) {
     Mat subA;
     ierr = DMMGViaApproxOrdersPushBackCoarseningIS(dM,is_vec[kk],A,&subA); CHKERRQ(ierr);
     if(subA) {
