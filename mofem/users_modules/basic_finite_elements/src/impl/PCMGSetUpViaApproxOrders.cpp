@@ -177,6 +177,9 @@ PetscErrorCode DMCoarsen_MGViaApproxOrders(DM dm, MPI_Comm comm, DM *dmc) {
   ierr = DMCreate(comm,dmc);CHKERRQ(ierr);
   (*dmc)->data = dm->data;
   ierr = DMSetType(*dmc,(dm_field->problemName).c_str()); CHKERRQ(ierr);
+  // ierr = DMSetCoarseDM(dm,*dmc); CHKERRQ(ierr);
+  //dm->coarseMesh = NULL;
+  ierr = PetscObjectReference((PetscObject)(*dmc)); CHKERRQ(ierr);
   cerr << "Coarsen " << dm->leveldown << " " << dm->levelup << " " << endl;
 
   PetscFunctionReturn(0);
