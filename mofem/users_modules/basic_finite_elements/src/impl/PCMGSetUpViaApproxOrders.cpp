@@ -42,6 +42,9 @@ DMMGViaApproxOrdersCtx::DMMGViaApproxOrdersCtx(): MoFEM::DMCtx() {
 }
 DMMGViaApproxOrdersCtx::~DMMGViaApproxOrdersCtx() {
   PetscErrorCode ierr;
+  for(unsigned int ii = 0;ii<coarseningIS.size();ii++) {
+    ierr = ISDestroy(&coarseningIS[ii]); CHKERRABORT(PETSC_COMM_WORLD,ierr);
+  }
   for(unsigned int ii = 0;ii<kspOperators.size();ii++) {
     ierr = MatDestroy(&kspOperators[ii]); CHKERRABORT(PETSC_COMM_WORLD,ierr);
   }
