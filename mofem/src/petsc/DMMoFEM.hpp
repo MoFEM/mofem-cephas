@@ -429,6 +429,8 @@ namespace MoFEM {
    * This is part of implementation for PETSc interface, see more details in
    * <http://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/DM/index.html>
    *
+   * \ingroup dm
+   *
    */
   struct DMCtx: public MoFEM::UnknownInterface {
 

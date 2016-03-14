@@ -145,17 +145,22 @@ PetscErrorCode DMCreateMatrix_MGViaApproxOrders(DM dm,Mat *M) {
   PetscFunctionBegin;
   GET_DM_FIELD(dm);
 
-  MPI_Comm comm;
-  ierr = PetscObjectGetComm((PetscObject)dm,&comm); CHKERRQ(ierr);
-  if(dm_field->kspOperators.empty()) {
-    SETERRQ(comm,MOFEM_DATA_INCONSISTENCY,"data inconsistency, operator can not be set");
-  }
   int leveldown = dm->leveldown;
-  if(dm_field->kspOperators.size()<leveldown) {
-    SETERRQ(comm,MOFEM_DATA_INCONSISTENCY,"data inconsistency, no IS for that level");
+
+  if(dm_field->kspOperators.empty()) {
+    ierr = DMCreateMatrix_MoFEM(dm,M); CHKERRQ(ierr);
+  } else {
+    MPI_Comm comm;
+    ierr = PetscObjectGetComm((PetscObject)dm,&comm); CHKERRQ(ierr);
+    if(dm_field->kspOperators.empty()) {
+      SETERRQ(comm,MOFEM_DATA_INCONSISTENCY,"data inconsistency, operator can not be set");
+    }
+    if(dm_field->kspOperators.size()<leveldown) {
+      SETERRQ(comm,MOFEM_DATA_INCONSISTENCY,"data inconsistency, no IS for that level");
+    }
+    *M = dm_field->kspOperators[dm_field->kspOperators.size()-1-leveldown];
+    ierr = PetscObjectReference((PetscObject)*M); CHKERRQ(ierr);
   }
-  *M = dm_field->kspOperators[dm_field->kspOperators.size()-1-leveldown];
-  ierr = PetscObjectReference((PetscObject)*M); CHKERRQ(ierr);
 
   PetscInfo1(dm,"Create Matrix DMMGViaApproxOrders leveldown = %d\n",leveldown);
 
@@ -420,10 +425,14 @@ PetscErrorCode DMCreateGlobalVector_MGViaApproxOrders(DM dm,Vec *g) {
   PetscFunctionBegin;
   int leveldown = dm->leveldown;
   GET_DM_FIELD(dm);
+  if(dm_field->kspOperators.empty()) {
+    ierr = DMCreateGlobalVector_MoFEM(dm,g); CHKERRQ(ierr);
+  } else {
+    ierr = MatCreateVecs(dm_field->kspOperators[dm_field->kspOperators.size()-1-leveldown],g,NULL); CHKERRQ(ierr);
+  }
   PetscInfo1(
     dm,"Create global vector DMMGViaApproxOrders leveldown = %d\n",dm->leveldown
   );
-  ierr = MatCreateVecs(dm_field->kspOperators[dm_field->kspOperators.size()-1-leveldown],g,NULL); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 

@@ -23,6 +23,7 @@ static const MOFEMuuid IDD_DMMGVIAAPPROXORDERSCTX = MOFEMuuid(BitIntefaceId(DMMG
 
 /**
  * \brief Structure for DM for multi-grid via approximation orders
+ * \ingroup dm
  */
 struct DMMGViaApproxOrdersCtx: public MoFEM::DMCtx {
 
@@ -35,13 +36,11 @@ struct DMMGViaApproxOrdersCtx: public MoFEM::DMCtx {
   vector<IS> coarseningIS;   ///< Coarsening IS
   vector<Mat> kspOperators;  ///< Get KSP operators
 
-  PetscLogEvent USER_EVENT_DMDMMGViaApproxOrdersCtx;
-
 };
 
 
 /**
- * \brief Push back coarsening level
+ * \brief Push back coarsening level to MG via approximation orders
  *
  * @param  DM discrete manager
  * @param  is Push back IS used for coarsening
@@ -53,24 +52,75 @@ struct DMMGViaApproxOrdersCtx: public MoFEM::DMCtx {
 PetscErrorCode DMMGViaApproxOrdersPushBackCoarseningIS(DM,IS is,Mat A,Mat *subA);
 
 /**
- * [DMMoFEMPushBackCoarseningIS description]
+ * \brief Pop is form MG via approximation orders
  * @param  DM dm
  * @param  is pop back IS
  * @return    error code
+ *
+ * \ingroup dm
  */
 PetscErrorCode DMMGViaApproxOrdersPopBackCoarseningIS(DM);
 
-
+/**
+ * \brief Register DM for Multi-Grid via approximation orders
+ * @param  sname problem/dm registered name
+ * @return       error code
+ * \ingroup dm
+ */
 PetscErrorCode DMRegister_MGViaApproxOrders(const char sname[]);
 
+/**
+ * \brief Create DM data structure for Multi-Grid via approximation orders
+ *
+ * It set data structure and operators needed
+ *
+ * @param  dm Discrete manager
+ * @return    Error code
+ */
 PetscErrorCode DMCreate_MGViaApproxOrders(DM dm);
 
+/**
+ * \brief Create matrix for Multi-Grid via approximation orders
+ *
+ * Not used directly by user
+ *
+ * @param  dm  Distributed mesh data structure
+ * @param  M  Matrix
+ * @return    Error code
+ * \ingroup dm
+ */
 PetscErrorCode DMCreateMatrix_MGViaApproxOrders(DM dm,Mat *M);
 
+/**
+ * \brief Coarsen DM
+ *
+ * Not used directly by user
+ *
+ * @param  dm   Distributed mesh data structure
+ * @param  comm Communicator
+ * @param  dmc  Coarse distributed mesh data structure
+ * @return      Error code
+ *
+ * \ingroup dm
+ */
 PetscErrorCode DMCoarsen_MGViaApproxOrders(DM dm, MPI_Comm comm, DM *dmc);
 
+/**
+ * \brief Create interpolation matrix between data managers dm1 and dm2
+ * @param  dm1 Distributed mesh data structure
+ * @param  dm2 Distributed mesh data structure
+ * @param  mat Pointer to returned interpolation matrix
+ * @param  vec Pointer to scaling vector here returned NULL
+ * @return     Error code
+ */
 PetscErrorCode DMCreateInterpolation_MGViaApproxOrders(DM dm1,DM dm2,Mat *mat,Vec *vec);
 
+/**
+ * \brief Create global vector for DMGViaApproxOrders
+ * @param  dm Distributed mesh data structure
+ * @param  g  returned pointer to vector
+ * @return    Error code
+ */
 PetscErrorCode DMCreateGlobalVector_MGViaApproxOrders(DM dm,Vec *g);
 
 /**

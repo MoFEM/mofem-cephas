@@ -324,11 +324,11 @@ int main(int argc, char *argv[]) {
 
   //create matrices
   Vec F,D,D0;
-  ierr = DMCreateGlobalVector_MoFEM(dm,&F); CHKERRQ(ierr);
+  ierr = DMCreateGlobalVector(dm,&F); CHKERRQ(ierr);
   ierr = VecDuplicate(F,&D); CHKERRQ(ierr);
   ierr = VecDuplicate(F,&D0); CHKERRQ(ierr);
   Mat Aij;
-  ierr = DMCreateMatrix_MoFEM(dm,&Aij); CHKERRQ(ierr);
+  ierr = DMCreateMatrix(dm,&Aij); CHKERRQ(ierr);
   ierr = MatSetOption(Aij,MAT_SPD,PETSC_TRUE); CHKERRQ(ierr);
 
   ierr = VecZeroEntries(F); CHKERRQ(ierr);
@@ -433,6 +433,7 @@ int main(int argc, char *argv[]) {
       PCMGSetUpViaApproxOrdersCtx pc_ctx(dm,Aij);
       ierr = PCMGSetUpViaApproxOrders(pc,&pc_ctx); CHKERRQ(ierr);
     } else {
+      // Operators are already set, do not use DM for doing that
       ierr = KSPSetDMActive(solver,PETSC_FALSE); CHKERRQ(ierr);
     }
   }
