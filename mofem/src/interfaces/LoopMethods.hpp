@@ -17,8 +17,6 @@
 #ifndef __LOOPMETHODS_HPP__
 #define __LOOPMETHODS_HPP__
 
-#include "UnknownInterface.hpp"
-
 namespace MoFEM {
 
 static const MOFEMuuid IDD_MOFEMBasicMethod = MOFEMuuid( BitIntefaceId(BASIC_METHOD) );

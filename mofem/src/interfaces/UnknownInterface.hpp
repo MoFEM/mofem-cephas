@@ -51,6 +51,10 @@ static const MOFEMuuid IDD_MOFEMUnknown = MOFEMuuid( BitIntefaceId(UNKNOWNINTERF
 struct UnknownInterface {
   virtual PetscErrorCode queryInterface (const MOFEMuuid& uuid, UnknownInterface** iface) = 0;
   virtual ~UnknownInterface() {}
+  virtual int getInterfaceMajorVersion() const { return MoFEM_VERSION_MAJOR; }
+  virtual int getInterfaceMinorVersion() const { return MoFEM_VERSION_MINOR; }
+  virtual int getIntefaceBuild() const { return MoFEM_VERSION_BUILD; }
+  virtual string getGitIDCommitName() const { return string(GIT_SHA1_NAME); }
 };
 
 }

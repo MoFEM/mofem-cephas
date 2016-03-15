@@ -14,6 +14,7 @@
 
 */
 
+#include <version.h>
 #include <Includes.hpp>
 #include <definitions.h>
 #include <Common.hpp>
@@ -34,6 +35,7 @@
 #include <CoreDataStructures.hpp>
 #include <SeriesMultiIndices.hpp>
 
+#include <UnknownInterface.hpp>
 #include <LoopMethods.hpp>
 #include <FieldInterface.hpp>
 #include <MeshRefinment.hpp>

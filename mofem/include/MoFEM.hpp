@@ -18,12 +18,14 @@
 #include <Includes.hpp>
 
 //SRC APPROXIMATION
+#include <version.h>
 #include <config.h>
 #include <definitions.h>
 #include <h1_hdiv_hcurl_l2.h>
 #include <fem_tools.h>
 
 #include <Common.hpp>
+#include <UnknownInterface.hpp>
 
 //SRC/MULTI-INDICES
 #include <MaterialBlocks.hpp>
