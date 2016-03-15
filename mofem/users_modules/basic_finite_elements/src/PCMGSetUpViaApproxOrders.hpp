@@ -38,6 +38,13 @@ struct DMMGViaApproxOrdersCtx: public MoFEM::DMCtx {
 
 };
 
+/**
+ * \brief Gets size of coarseningIS in internal data struture DMMGViaApproxOrdersCtx
+ * @param  dm   DM
+ * @param  size size of coarseningIS
+ * @return      Error code
+ */
+PetscErrorCode DMMGViaApproxOrdersGetCoarseningISSize(DM dm,int *size);
 
 /**
  * \brief Push back coarsening level to MG via approximation orders
@@ -45,11 +52,26 @@ struct DMMGViaApproxOrdersCtx: public MoFEM::DMCtx {
  * @param  DM discrete manager
  * @param  is Push back IS used for coarsening
  * @param  A  Get sub-matrix of A using is (that sets operators for coarsening levels)
- * @return error code
+ * @param  subA  returning pointer to created sub matrix
+ * @return Error code
  *
  * \ingroup dm
  */
 PetscErrorCode DMMGViaApproxOrdersPushBackCoarseningIS(DM,IS is,Mat A,Mat *subA);
+
+/**
+ * \brief Replace coarsening level to MG via approximation orders
+ *
+ * @param  DM discrete manager
+ * @param  pos position at wich IS is added
+ * @param  is add IS used for coarsening
+ * @param  A  Get sub-matrix of A using is (that sets operators for coarsening levels)
+ * @param  subA  returning pointer to created sub matrix
+ * @return error code
+ *
+ * \ingroup dm
+ */
+PetscErrorCode DMMGViaApproxOrdersAddCoarseningIS(DM,int pos,IS is,Mat A,Mat *subA);
 
 /**
  * \brief Pop is form MG via approximation orders
@@ -60,6 +82,16 @@ PetscErrorCode DMMGViaApproxOrdersPushBackCoarseningIS(DM,IS is,Mat A,Mat *subA)
  * \ingroup dm
  */
 PetscErrorCode DMMGViaApproxOrdersPopBackCoarseningIS(DM);
+
+/**
+ * \brief Replace coarsening IS in DM via approximation orders
+ * @param  dm       dm
+ * @param  is_vec   Pointer to vector of is
+ * @param  nb_elems Number of elements
+ * @param  A        Fine matrix
+ * @return          Error code
+ */
+PetscErrorCode DMMGViaApproxOrdersReplaceCoarseningIS(DM dm,IS *is_vec,int nb_elems,Mat A,int verb = 0);
 
 /**
  * \brief Register DM for Multi-Grid via approximation orders

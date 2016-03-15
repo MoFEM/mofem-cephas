@@ -69,6 +69,15 @@ PetscErrorCode DMMGViaApproxOrdersCtx::queryInterface(const MOFEMuuid& uuid,MoFE
   ierr = ((DMCtx*)DM->data)->queryInterface(IDD_DMMGVIAAPPROXORDERSCTX,&iface); CHKERRQ(ierr); \
   DMMGViaApproxOrdersCtx *dm_field = reinterpret_cast<DMMGViaApproxOrdersCtx*>(iface)
 
+PetscErrorCode DMMGViaApproxOrdersGetCoarseningISSize(DM dm,int *size) {
+  PetscErrorCode ierr;
+  PetscValidHeaderSpecific(dm,DM_CLASSID,1);
+  PetscFunctionBegin;
+  GET_DM_FIELD(dm);
+  *size = dm_field->coarseningIS.size();
+  PetscFunctionReturn(0);
+}
+
 PetscErrorCode DMMGViaApproxOrdersPushBackCoarseningIS(DM dm,IS is,Mat A,Mat *subA) {
   PetscErrorCode ierr;
   PetscValidHeaderSpecific(dm,DM_CLASSID,1);
@@ -105,6 +114,64 @@ PetscErrorCode DMMGViaApproxOrdersPopBackCoarseningIS(DM dm) {
   }
   dm_field->kspOperators.pop_back();
   PetscInfo(dm,"Pop back IS to DMMGViaApproxOrders\n");
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode DMMGViaApproxOrdersReplaceCoarseningIS(DM dm,IS *is_vec,int nb_elems,Mat A,int verb) {
+  PetscErrorCode ierr;
+  PetscValidHeaderSpecific(dm,DM_CLASSID,1);
+  PetscFunctionBegin;
+  GET_DM_FIELD(dm);
+  int nb_no_changed = 0;
+  int nb_replaced = 0;
+  int nb_deleted = 0;
+  int nb_added = 0;
+  vector<IS>::iterator it;
+  it = dm_field->coarseningIS.begin();
+  int ii = 0;
+  for(;it!=dm_field->coarseningIS.end();it++,ii++) {
+    if(ii<nb_elems) {
+      PetscBool  flg;
+      ierr = ISEqual(*it,is_vec[ii],&flg); CHKERRQ(ierr);
+      if(!flg) {
+        ierr = ISDestroy(&*it); CHKERRQ(ierr);
+        ierr = MatDestroy(&dm_field->kspOperators[ii]); CHKERRQ(ierr);
+        *it = is_vec[ii];
+        ierr = PetscObjectReference((PetscObject)is_vec[ii]); CHKERRQ(ierr);
+        Mat subA;
+        ierr = MatGetSubMatrix(A,is_vec[ii],is_vec[ii],MAT_INITIAL_MATRIX,&subA); CHKERRQ(ierr);
+        ierr = PetscObjectReference((PetscObject)subA); CHKERRQ(ierr);
+        dm_field->kspOperators[ii] = subA;
+        ierr = MatDestroy(&subA); CHKERRQ(ierr);
+        nb_replaced++;
+      }
+    } else {
+      nb_no_changed++;
+      continue;
+    }
+  }
+  if(dm_field->coarseningIS.size()<nb_elems) {
+    for(;ii<nb_elems;ii++) {
+      Mat subA;
+      ierr = DMMGViaApproxOrdersPushBackCoarseningIS(dm,is_vec[ii],A,&subA); CHKERRQ(ierr);
+      ierr = MatDestroy(&subA); CHKERRQ(ierr);
+      nb_added++;
+    }
+  } else {
+    for(;ii<dm_field->coarseningIS.size();ii++) {
+      ierr = DMMGViaApproxOrdersPopBackCoarseningIS(dm); CHKERRQ(ierr);
+      nb_deleted++;
+    }
+  }
+  MPI_Comm comm;
+  ierr = PetscObjectGetComm((PetscObject)dm,&comm); CHKERRQ(ierr);
+  if(verb>0) {
+    PetscPrintf(
+      comm,"DMMGViaApproxOrders nb_no_changed = %d, nb_replaced = %d, nb_added = %d, nb_deleted = %d, size = %d\n",
+      nb_no_changed,nb_replaced,nb_added,nb_deleted,dm_field->coarseningIS.size()
+    );
+  }
+  PetscInfo(dm,"Replace IS to DMMGViaApproxOrders\n");
   PetscFunctionReturn(0);
 }
 
@@ -504,10 +571,6 @@ PetscErrorCode PCMGSetUpViaApproxOrdersCtx::buildProlongationOperator(PC pc,int 
   if(verb>0) {
     PetscPrintf(comm,"set MG levels %u\n",nbLevels);
   }
-
-  int sIze,rAnk;
-  MPI_Comm_size(comm,&sIze);
-  MPI_Comm_rank(comm,&rAnk);
 
   vector<IS> is_vec(nbLevels+1);
   vector<int> is_glob_size(nbLevels+1),is_loc_size(nbLevels+1);
