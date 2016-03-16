@@ -32,11 +32,24 @@ struct DMMGViaApproxOrdersCtx: public MoFEM::DMCtx {
   DMMGViaApproxOrdersCtx();
   ~DMMGViaApproxOrdersCtx();
 
+  AO aO;
   Mat fineMatrix;            ///< Assembled matrix at fine level
   vector<IS> coarseningIS;   ///< Coarsening IS
   vector<Mat> kspOperators;  ///< Get KSP operators
 
 };
+
+/**
+ * \brief Set DM ordering
+ *
+ * IS can be given is some other ordering, AO will transform indices from coarseningIS ordering
+ * to ordering used to construct fine matrix.
+ *
+ * @param  dm [description]
+ * @param  ao [description]
+ * @return    [description]
+ */
+PetscErrorCode DMMGViaApproxOrdersSetAO(DM dm,AO ao);
 
 /**
  * \brief Gets size of coarseningIS in internal data struture DMMGViaApproxOrdersCtx
@@ -58,20 +71,6 @@ PetscErrorCode DMMGViaApproxOrdersGetCoarseningISSize(DM dm,int *size);
  * \ingroup dm
  */
 PetscErrorCode DMMGViaApproxOrdersPushBackCoarseningIS(DM,IS is,Mat A,Mat *subA);
-
-/**
- * \brief Replace coarsening level to MG via approximation orders
- *
- * @param  DM discrete manager
- * @param  pos position at wich IS is added
- * @param  is add IS used for coarsening
- * @param  A  Get sub-matrix of A using is (that sets operators for coarsening levels)
- * @param  subA  returning pointer to created sub matrix
- * @return error code
- *
- * \ingroup dm
- */
-PetscErrorCode DMMGViaApproxOrdersAddCoarseningIS(DM,int pos,IS is,Mat A,Mat *subA);
 
 /**
  * \brief Pop is form MG via approximation orders

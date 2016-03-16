@@ -38,7 +38,10 @@ using namespace MoFEM;
   #include <petsc-private/vecimpl.h> /*I  "petscdm.h"   I*/
 #endif
 
-DMMGViaApproxOrdersCtx::DMMGViaApproxOrdersCtx(): MoFEM::DMCtx() {
+DMMGViaApproxOrdersCtx::DMMGViaApproxOrdersCtx():
+  MoFEM::DMCtx(),
+  aO(PETSC_NULL),
+  fineMatrix(PETSC_NULL) {
 }
 DMMGViaApproxOrdersCtx::~DMMGViaApproxOrdersCtx() {
   PetscErrorCode ierr;
@@ -48,6 +51,7 @@ DMMGViaApproxOrdersCtx::~DMMGViaApproxOrdersCtx() {
   for(unsigned int ii = 0;ii<kspOperators.size();ii++) {
     ierr = MatDestroy(&kspOperators[ii]); CHKERRABORT(PETSC_COMM_WORLD,ierr);
   }
+  ierr = AODestroy(&aO); CHKERRABORT(PETSC_COMM_WORLD,ierr);
 }
 
 PetscErrorCode DMMGViaApproxOrdersCtx::queryInterface(const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface) {
@@ -68,6 +72,19 @@ PetscErrorCode DMMGViaApproxOrdersCtx::queryInterface(const MOFEMuuid& uuid,MoFE
   MoFEM::UnknownInterface *iface; \
   ierr = ((DMCtx*)DM->data)->queryInterface(IDD_DMMGVIAAPPROXORDERSCTX,&iface); CHKERRQ(ierr); \
   DMMGViaApproxOrdersCtx *dm_field = reinterpret_cast<DMMGViaApproxOrdersCtx*>(iface)
+
+PetscErrorCode DMMGViaApproxOrdersSetAO(DM dm,AO ao) {
+  PetscErrorCode ierr;
+  PetscValidHeaderSpecific(dm,DM_CLASSID,1);
+  PetscFunctionBegin;
+  GET_DM_FIELD(dm);
+  if(dm_field->aO) {
+    ierr = AODestroy(&dm_field->aO); CHKERRQ(ierr);
+  }
+  dm_field->aO = ao;
+  ierr = PetscObjectReference((PetscObject)dm_field->aO); CHKERRQ(ierr);
+  PetscFunctionReturn(0);
+}
 
 PetscErrorCode DMMGViaApproxOrdersGetCoarseningISSize(DM dm,int *size) {
   PetscErrorCode ierr;
@@ -90,7 +107,13 @@ PetscErrorCode DMMGViaApproxOrdersPushBackCoarseningIS(DM dm,IS is,Mat A,Mat *su
   // FIXME: If is not the coarse level it would be better to have shell matrix.
   // It would save memory.
   if(is) {
-    ierr = MatGetSubMatrix(A,is,is,MAT_INITIAL_MATRIX,subA); CHKERRQ(ierr);
+    IS is2;
+    ierr = ISDuplicate(is,&is2); CHKERRQ(ierr);
+    if(dm_field->aO) {
+      ierr = AOApplicationToPetscIS(dm_field->aO,is2); CHKERRQ(ierr);
+    }
+    ierr = MatGetSubMatrix(A,is2,is2,MAT_INITIAL_MATRIX,subA); CHKERRQ(ierr);
+    ierr = ISDestroy(&is2); CHKERRQ(ierr);
     dm_field->kspOperators.push_back(*subA);
   } else {
     SETERRQ(PETSC_COMM_WORLD,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
@@ -138,11 +161,17 @@ PetscErrorCode DMMGViaApproxOrdersReplaceCoarseningIS(DM dm,IS *is_vec,int nb_el
         ierr = MatDestroy(&dm_field->kspOperators[ii]); CHKERRQ(ierr);
         *it = is_vec[ii];
         ierr = PetscObjectReference((PetscObject)is_vec[ii]); CHKERRQ(ierr);
+        IS is;
+        ierr = ISDuplicate(is_vec[ii],&is); CHKERRQ(ierr);
+        if(dm_field->aO) {
+          ierr = AOApplicationToPetscIS(dm_field->aO,is); CHKERRQ(ierr);
+        }
         Mat subA;
-        ierr = MatGetSubMatrix(A,is_vec[ii],is_vec[ii],MAT_INITIAL_MATRIX,&subA); CHKERRQ(ierr);
+        ierr = MatGetSubMatrix(A,is,is,MAT_INITIAL_MATRIX,&subA); CHKERRQ(ierr);
         ierr = PetscObjectReference((PetscObject)subA); CHKERRQ(ierr);
         dm_field->kspOperators[ii] = subA;
         ierr = MatDestroy(&subA); CHKERRQ(ierr);
+        ierr = ISDestroy(&is); CHKERRQ(ierr);
         nb_replaced++;
       }
     } else {
