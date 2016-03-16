@@ -434,7 +434,7 @@ typedef multi_index_container<
     ordered_unique<
       tag<Unique_mi_tag>,
       const_mem_fun<NumeredDofMoFEMEntity::interface_type_DofMoFEMEntity,GlobalUId,&NumeredDofMoFEMEntity::get_global_unique_id> >,
-    ordered_unique<
+    ordered_non_unique<
       tag<Composite_Name_And_Ent_And_EndDofIdx_mi_tag>,
       composite_key<
 	      NumeredDofMoFEMEntity,
