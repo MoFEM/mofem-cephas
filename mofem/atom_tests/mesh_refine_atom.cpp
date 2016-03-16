@@ -82,34 +82,34 @@ int main(int argc, char *argv[]) {
   //PetscAttachDebugger ();
   //ierr = m_field.shift_right_bit_ref(1); CHKERRQ(ierr);
 
-  // ofstream myfile;
-  // myfile.open("mesh_refine.txt");
+  ofstream myfile;
+  myfile.open("mesh_refine.txt");
 
   EntityHandle out_meshset_tet;
   rval = moab.create_meshset(MESHSET_SET,out_meshset_tet); CHKERRQ_MOAB(rval);
   ierr = m_field.get_entities_by_type_and_ref_level(bit_level1,BitRefLevel().set(),MBTET,out_meshset_tet); CHKERRQ(ierr);
   Range tets;
   rval = moab.get_entities_by_handle(out_meshset_tet,tets); CHKERRQ_MOAB(rval);
-  // {
-  //   int ii = 0;
-  //   for(Range::iterator tit = tets.begin();tit!=tets.end();tit++) {
-  //     int num_nodes;
-  //     const EntityHandle* conn;
-  //     rval = moab.get_connectivity(*tit,conn,num_nodes,true); CHKERRQ_MOAB(rval);
-  //
-  //     for(int nn = 0;nn<num_nodes;nn++) {
-  //       //cout << conn[nn] << " ";
-  //       myfile << conn[nn] << " ";
-  //     }
-  //     //cout << endl;
-  //     myfile << endl;
-  //     if(ii>25) break;
-  //   }
-  // }
+  {
+    int ii = 0;
+    for(Range::iterator tit = tets.begin();tit!=tets.end();tit++) {
+      int num_nodes;
+      const EntityHandle* conn;
+      rval = moab.get_connectivity(*tit,conn,num_nodes,true); CHKERRQ_MOAB(rval);
 
-  // myfile.close();
+      for(int nn = 0;nn<num_nodes;nn++) {
+        //cout << conn[nn] << " ";
+        myfile << conn[nn] << " ";
+      }
+      //cout << endl;
+      myfile << endl;
+      if(ii>25) break;
+    }
+  }
 
-  rval = moab.write_file("out_mesh_refine.vtk","VTK","",&out_meshset_tet,1); CHKERRQ_MOAB(rval);
+  myfile.close();
+
+  //rval = moab.write_file("out_mesh_refine.vtk","VTK","",&out_meshset_tet,1); CHKERRQ_MOAB(rval);
 
   BitLevelCouplerInterface *bit_ref_copuler_ptr;
   ierr = m_field.query_interface(bit_ref_copuler_ptr); CHKERRQ(ierr);
