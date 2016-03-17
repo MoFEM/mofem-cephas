@@ -109,6 +109,8 @@ PetscErrorCode DMMGViaApproxOrdersPushBackCoarseningIS(DM dm,IS is,Mat A,Mat *su
   if(is) {
     IS is2;
     ierr = ISDuplicate(is,&is2); CHKERRQ(ierr);
+    ierr = ISCopy(is,is2); CHKERRQ(ierr);
+
     if(dm_field->aO) {
       ierr = AOApplicationToPetscIS(dm_field->aO,is2); CHKERRQ(ierr);
     }
@@ -163,6 +165,7 @@ PetscErrorCode DMMGViaApproxOrdersReplaceCoarseningIS(DM dm,IS *is_vec,int nb_el
         ierr = PetscObjectReference((PetscObject)is_vec[ii]); CHKERRQ(ierr);
         IS is;
         ierr = ISDuplicate(is_vec[ii],&is); CHKERRQ(ierr);
+        ierr = ISCopy(is_vec[ii],is); CHKERRQ(ierr);
         if(dm_field->aO) {
           ierr = AOApplicationToPetscIS(dm_field->aO,is); CHKERRQ(ierr);
         }
@@ -348,6 +351,7 @@ static PetscErrorCode inerpolation_matrix_mult_generic(Mat mat,Vec x,Vec f,Inser
 
     IS is;
     ierr = ISDuplicate(is_to_scatter,&is); CHKERRQ(ierr);
+    ierr = ISCopy(is_to_scatter,is); CHKERRQ(ierr);
 
     AO ao;
     ierr = AOCreateMappingIS(is_to_map,PETSC_NULL,&ao); CHKERRQ(ierr);
