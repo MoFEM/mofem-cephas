@@ -21,6 +21,33 @@
 static const int DMMGVIAAPPROXORDERSCTX_INTERFACE = 1<<1;
 static const MOFEMuuid IDD_DMMGVIAAPPROXORDERSCTX = MOFEMuuid(BitIntefaceId(DMMGVIAAPPROXORDERSCTX_INTERFACE));
 
+struct MGShellSubMatrix {
+  IS iS;
+  Mat fineMatrix;
+  VecScatter sCatter;
+  Vec fineX,fineF;
+  MGShellSubMatrix(Mat fine_matrix,IS is):
+  iS(is),
+  fineMatrix(fine_matrix),
+  sCatter(PETSC_NULL) {
+    PetscErrorCode ierr;
+    ierr = PetscObjectReference((PetscObject)fineMatrix); CHKERRABORT(PETSC_COMM_WORLD,ierr);
+    ierr = PetscObjectReference((PetscObject)iS); CHKERRABORT(PETSC_COMM_WORLD,ierr);
+  }
+  virtual ~MGShellSubMatrix() {
+    if(sCatter) {
+      PetscErrorCode ierr;
+      ierr = VecScatterDestroy(&sCatter); CHKERRABORT(PETSC_COMM_WORLD,ierr);
+      ierr = VecDestroy(&fineX); CHKERRABORT(PETSC_COMM_WORLD,ierr);
+      ierr = VecDestroy(&fineF); CHKERRABORT(PETSC_COMM_WORLD,ierr);
+      ierr = ISDestroy(&iS); CHKERRABORT(PETSC_COMM_WORLD,ierr);
+      ierr = MatDestroy(&fineMatrix); CHKERRABORT(PETSC_COMM_WORLD,ierr);
+    }
+  }
+};
+
+PetscErrorCode MGViaApproxOrdersSubMatrixCreate(Mat fine_matrix,IS is,Mat *mat);
+
 /**
  * \brief Structure for DM for multi-grid via approximation orders
  * \ingroup dm
