@@ -115,10 +115,10 @@ PetscErrorCode DMMGViaApproxOrdersPushBackCoarseningIS(DM dm,IS is,Mat A,Mat *su
     ierr = MatGetSubMatrix(A,is2,is2,MAT_INITIAL_MATRIX,subA); CHKERRQ(ierr);
     ierr = ISDestroy(&is2); CHKERRQ(ierr);
     dm_field->kspOperators.push_back(*subA);
+    ierr = PetscObjectReference((PetscObject)(*subA)); CHKERRQ(ierr);
   } else {
     SETERRQ(PETSC_COMM_WORLD,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
   }
-  ierr = PetscObjectReference((PetscObject)dm_field->kspOperators.back()); CHKERRQ(ierr);
   PetscInfo(dm,"Push back IS to DMMGViaApproxOrders\n");
   PetscFunctionReturn(0);
 }
@@ -288,6 +288,10 @@ struct MGShellProjectionMatrix {
   sCatter(PETSC_NULL) {
   }
   virtual ~MGShellProjectionMatrix() {
+    if(sCatter) {
+      PetscErrorCode ierr;
+      ierr = VecScatterDestroy(&sCatter); CHKERRABORT(PETSC_COMM_WORLD,ierr);
+    }
   }
 
 };
@@ -300,6 +304,7 @@ static PetscErrorCode inerpolation_matrix_destroy(Mat mat) {
   MGShellProjectionMatrix *ctx = (MGShellProjectionMatrix*)void_ctx;
   if(ctx->sCatter) {
     ierr = VecScatterDestroy(&ctx->sCatter); CHKERRQ(ierr);
+    ctx->sCatter = PETSC_NULL;
   }
   delete ctx;
   PetscFunctionReturn(0);
@@ -340,9 +345,6 @@ static PetscErrorCode inerpolation_matrix_mult_generic(Mat mat,Vec x,Vec f,Inser
       is_to_map = ctx->isUp;
       is_to_scatter = ctx->isDown;
     }
-
-    ISLocalToGlobalMapping map;
-    ierr = ISLocalToGlobalMappingCreateIS(is_to_map,&map); CHKERRQ(ierr);
 
     IS is;
     ierr = ISDuplicate(is_to_scatter,&is); CHKERRQ(ierr);
