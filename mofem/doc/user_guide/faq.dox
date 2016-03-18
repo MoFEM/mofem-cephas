@@ -173,7 +173,7 @@ namespace SolidShellModule {
 }
 \endcode
 
-\section prfiling_code_mac_os_x Profiling code on MacOSX
+\section prfiling_code_mac_os_x How to profile code using XCode tools?
 
 To profile code in MacOS X environment, from line command you execute \em instruments,
 for example
@@ -188,9 +188,16 @@ instruments -v -t "Time Profiler" \
 
 This generates directory \em instrumentscli0.trace and for next run
 \em instrumentscli1.trace, and similarly for subsequent runs. You can see changes
-in execution of the code by 
+in execution of the code by
 \code
 open instrumentscli0.trace
 \endcode
+
+\section profiling_code_stages How to profile code using PETSc tools?
+
+See PETSc documentation
+<http://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/Profiling/PetscLogStageRegister.html>
+and examples
+<http://www.mcs.anl.gov/petsc/petsc-current/src/ksp/ksp/examples/tutorials/ex9.c.html>
 
 */

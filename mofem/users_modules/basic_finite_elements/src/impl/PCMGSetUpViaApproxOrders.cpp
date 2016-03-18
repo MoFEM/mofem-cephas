@@ -38,93 +38,6 @@ using namespace MoFEM;
   #include <petsc-private/vecimpl.h> /*I  "petscdm.h"   I*/
 #endif
 
-static PetscErrorCode sub_matrix_destroy(Mat mat) {
-  PetscErrorCode ierr;
-  PetscFunctionBegin;
-  void *void_ctx;
-  ierr = MatShellGetContext(mat,&void_ctx); CHKERRQ(ierr);
-  MGShellSubMatrix *ctx = (MGShellSubMatrix*)void_ctx;
-  if(ctx->sCatter) {
-    ierr = VecScatterDestroy(&ctx->sCatter); CHKERRQ(ierr);
-    ierr = VecDestroy(&ctx->fineX); CHKERRQ(ierr);
-    ierr = VecDestroy(&ctx->fineF); CHKERRQ(ierr);
-    ctx->sCatter = PETSC_NULL;
-  }
-  ierr = MatDestroy(&ctx->fineMatrix); CHKERRQ(ierr);
-  ierr = ISDestroy(&ctx->iS); CHKERRQ(ierr);
-  delete ctx;
-  PetscFunctionReturn(0);
-}
-
-static PetscErrorCode sub_matrix_mult_generic(Mat mat,Vec x,Vec f,InsertMode addv,PetscErrorCode (*mult)(Mat mat,Vec x,Vec y)) {
-  PetscErrorCode ierr;
-  PetscFunctionBegin;
-  void *void_ctx;
-  ierr = MatShellGetContext(mat,&void_ctx); CHKERRQ(ierr);
-  MGShellSubMatrix *ctx = (MGShellSubMatrix*)void_ctx;
-  if(!ctx->sCatter) {
-    ierr = MatCreateVecs(ctx->fineMatrix,&ctx->fineX,&ctx->fineF); CHKERRQ(ierr);
-    ierr = VecScatterCreate(ctx->fineX,ctx->iS,x,PETSC_NULL,&ctx->sCatter); CHKERRQ(ierr);
-  }
-  ierr = VecScatterBegin(ctx->sCatter,x,ctx->fineX,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  ierr = VecScatterEnd(ctx->sCatter,x,ctx->fineX,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  ierr = mult(ctx->fineMatrix,ctx->fineX,ctx->fineF); CHKERRQ(ierr);
-  ierr = VecScatterBegin(ctx->sCatter,ctx->fineX,f,addv,SCATTER_REVERSE); CHKERRQ(ierr);
-  ierr = VecScatterEnd(ctx->sCatter,ctx->fineX,f,addv,SCATTER_REVERSE); CHKERRQ(ierr);
-  PetscFunctionReturn(0);
-}
-
-static PetscErrorCode sub_matrix_mult(Mat mat,Vec x,Vec f,InsertMode addv) {
-  PetscFunctionBegin;
-  PetscErrorCode ierr;
-  ierr = sub_matrix_mult_generic(mat,x,f,INSERT_VALUES,MatMult); CHKERRQ(ierr);
-  PetscFunctionReturn(0);
-}
-
-static PetscErrorCode sub_matrix_mult_add(Mat mat,Vec x,Vec f,InsertMode addv) {
-  PetscFunctionBegin;
-  PetscErrorCode ierr;
-  ierr = sub_matrix_mult_generic(mat,x,f,ADD_VALUES,MatMult); CHKERRQ(ierr);
-  PetscFunctionReturn(0);
-}
-
-static PetscErrorCode sub_matrix_mult_transpose(Mat mat,Vec x,Vec f,InsertMode addv) {
-  PetscFunctionBegin;
-  PetscErrorCode ierr;
-  ierr = sub_matrix_mult_generic(mat,x,f,INSERT_VALUES,MatMultTranspose); CHKERRQ(ierr);
-  PetscFunctionReturn(0);
-}
-
-static PetscErrorCode sub_matrix_mult_transpose_add(Mat mat,Vec x,Vec f,InsertMode addv) {
-  PetscFunctionBegin;
-  PetscErrorCode ierr;
-  ierr = sub_matrix_mult_generic(mat,x,f,ADD_VALUES,MatMultTranspose); CHKERRQ(ierr);
-  PetscFunctionReturn(0);
-}
-
-PetscErrorCode MGViaApproxOrdersSubMatrixCreate(Mat fine_matrix,IS is,Mat *mat) {
-  PetscFunctionBegin;
-
-  PetscErrorCode ierr;
-  MGShellSubMatrix *mat_ctx = new MGShellSubMatrix(fine_matrix,is);
-  MPI_Comm comm;
-  ierr = PetscObjectGetComm((PetscObject)fine_matrix,&comm); CHKERRQ(ierr);
-
-  int M,m;
-  ierr = ISGetSize(is,&M); CHKERRQ(ierr);
-  ierr = ISGetLocalSize(is,&m); CHKERRQ(ierr);
-
-  ierr = MatCreateShell(comm,m,m,M,M,(void*)mat_ctx,mat); CHKERRQ(ierr);
-
-  ierr = MatShellSetOperation(*mat,MATOP_DESTROY,(void(*)(void))sub_matrix_destroy); CHKERRQ(ierr);
-  ierr = MatShellSetOperation(*mat,MATOP_MULT,(void(*)(void))sub_matrix_mult); CHKERRQ(ierr);
-  ierr = MatShellSetOperation(*mat,MATOP_MULT_TRANSPOSE,(void(*)(void))sub_matrix_mult_transpose); CHKERRQ(ierr);
-  ierr = MatShellSetOperation(*mat,MATOP_MULT_ADD,(void(*)(void))sub_matrix_mult_add); CHKERRQ(ierr);
-  ierr = MatShellSetOperation(*mat,MATOP_MULT_TRANSPOSE_ADD,(void(*)(void))sub_matrix_mult_transpose_add); CHKERRQ(ierr);
-
-  PetscFunctionReturn(0);
-}
-
 DMMGViaApproxOrdersCtx::DMMGViaApproxOrdersCtx():
   MoFEM::DMCtx(),
   aO(PETSC_NULL),
@@ -200,11 +113,7 @@ PetscErrorCode DMMGViaApproxOrdersPushBackCoarseningIS(DM dm,IS is,Mat A,Mat *su
       ierr = ISCopy(is,is2); CHKERRQ(ierr);
       ierr = AOApplicationToPetscIS(dm_field->aO,is2); CHKERRQ(ierr);
     }
-    if(dm_field->kspOperators.empty()) {
-      ierr = MatGetSubMatrix(A,is2,is2,MAT_INITIAL_MATRIX,subA); CHKERRQ(ierr);
-    } else {
-      ierr = MGViaApproxOrdersSubMatrixCreate(A,is2,subA); CHKERRQ(ierr);
-    }
+    ierr = MatGetSubMatrix(A,is2,is2,MAT_INITIAL_MATRIX,subA); CHKERRQ(ierr);
     if(dm_field->aO) {
       ierr = ISDestroy(&is2); CHKERRQ(ierr);
     }
@@ -262,11 +171,7 @@ PetscErrorCode DMMGViaApproxOrdersReplaceCoarseningIS(DM dm,IS *is_vec,int nb_el
           ierr = AOApplicationToPetscIS(dm_field->aO,is); CHKERRQ(ierr);
         }
         Mat subA;
-        if(ii == 0) {
-          ierr = MatGetSubMatrix(A,is,is,MAT_INITIAL_MATRIX,&subA); CHKERRQ(ierr);
-        } else {
-          ierr = MGViaApproxOrdersSubMatrixCreate(A,is,&subA); CHKERRQ(ierr);
-        }
+        ierr = MatGetSubMatrix(A,is,is,MAT_INITIAL_MATRIX,&subA); CHKERRQ(ierr);
         ierr = PetscObjectReference((PetscObject)subA); CHKERRQ(ierr);
         dm_field->kspOperators[ii] = subA;
         ierr = MatDestroy(&subA); CHKERRQ(ierr);
