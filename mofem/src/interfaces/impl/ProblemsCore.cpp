@@ -85,7 +85,7 @@ PetscErrorCode Core::build_partitioned_problem(MoFEMProblem *problem_ptr,bool sq
   //bool success = pRoblems.modify(p_miit,ProblemClearNumeredFiniteElementsChange());
   //if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
 
-  //get rows and cols dofs view
+  //get rows and cols dofs view based on data on elements
   DofMoFEMEntity_multiIndex_active_view dofs_rows,dofs_cols;
   {
     //fe_miit iterator for finite elements
@@ -122,6 +122,8 @@ PetscErrorCode Core::build_partitioned_problem(MoFEMProblem *problem_ptr,bool sq
   int* ghost_nbdof_ptr[] = {
     problem_ptr->tag_ghost_nbdof_data_row, problem_ptr->tag_ghost_nbdof_data_col
   };
+  //Loop over dofs on rows and columns and add to multi-indices in dofs problem structure,
+  //set partition for each dof
   int nb_local_dofs[] = { 0,0 };
   for(int ss = 0;ss<2;ss++) {
     *(nbdof_ptr[ss]) = 0;
@@ -184,6 +186,7 @@ PetscErrorCode Core::build_partitioned_problem(MoFEMProblem *problem_ptr,bool sq
   vector<vector<IdxDataType> > ids_data_packed_rows(sIze),ids_data_packed_cols(sIze);
 
   //ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
+  // Loop over dofs on this processor and prepare those dofs to send on another proc
   for(int ss = 0;ss<2;ss++) {
 
     NumeredDofMoFEMEntity_multiIndex::index<Part_mi_tag>::type::iterator mit,hi_mit;
@@ -335,7 +338,7 @@ PetscErrorCode Core::build_partitioned_problem(MoFEMProblem *problem_ptr,bool sq
         kk++;
       }
 
-      if(nrecvs_cols) {
+    if(nrecvs_cols) {
       ierr = MPI_Waitall(nrecvs_cols,r_waits_col,status);CHKERRQ(ierr);
     }
     if(nsends_cols) {
@@ -347,7 +350,7 @@ PetscErrorCode Core::build_partitioned_problem(MoFEMProblem *problem_ptr,bool sq
 
   }
 
-  // set values
+  // set values received from other processors
   for(int ss = 0;ss<2;ss++) {
 
     int nrecvs;
