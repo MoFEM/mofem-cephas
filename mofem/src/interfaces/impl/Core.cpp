@@ -200,8 +200,8 @@ PetscErrorCode mofem_error_handler(MPI_Comm comm,int line,const char *fun,const 
       (*PetscErrorPrintf)("--------------------- MoFEM Error Message---------------------------------------------------------------------------\n");
       (*PetscErrorPrintf)("MoFEM version %d.%d.%d\n",MoFEM_VERSION_MAJOR,MoFEM_VERSION_MINOR,MoFEM_VERSION_BUILD);
       (*PetscErrorPrintf)("MoFEM git commit id %s\n",GIT_SHA1_NAME);
-      (*PetscErrorPrintf)("See http://userweb.eng.gla.ac.uk/lukasz.kaczmarczyk/MoFem/html/guidelines_bug_reporting.html for bug reporting.\n");
-      (*PetscErrorPrintf)("See http://userweb.eng.gla.ac.uk/lukasz.kaczmarczyk/MoFem/html/faq_and_bugs.html for trouble shooting.\n");
+      (*PetscErrorPrintf)("See http://mofem.eng.gla.ac.uk/mofem/html/guidelines_bug_reporting.html for bug reporting.\n");
+      (*PetscErrorPrintf)("See http://mofem.eng.gla.ac.uk/mofem/html/faq_and_bugs.html for trouble shooting.\n");
       error_printf_normal();
 
     }
