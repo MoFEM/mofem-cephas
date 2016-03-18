@@ -636,6 +636,8 @@ struct Core:
   PetscLogEvent USER_EVENT_operator;
   PetscLogEvent USER_EVENT_postProcess;
   PetscLogEvent USER_EVENT_createMat;
+  PetscLogEvent USER_EVENT_buildProblem;
+
 
   // size and rank of communicator
   int sIze,rAnk;

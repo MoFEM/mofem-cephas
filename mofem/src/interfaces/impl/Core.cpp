@@ -459,7 +459,9 @@ Core::Core(Interface& _moab,MPI_Comm _comm,int _verbose):
   PetscLogEventRegister("FE_preProcess",0,&USER_EVENT_preProcess);
   PetscLogEventRegister("FE_operator",0,&USER_EVENT_operator);
   PetscLogEventRegister("FE_postProcess",0,&USER_EVENT_postProcess);
-  PetscLogEventRegister("FielCore_createMat",0,&USER_EVENT_createMat);
+  PetscLogEventRegister("MoFEMCreateMat",0,&USER_EVENT_createMat);
+  PetscLogEventRegister("MoFEMBuildProblem",0,&USER_EVENT_buildProblem);
+
 }
 Core::~Core() {
 }

@@ -414,7 +414,7 @@ PetscErrorCode Core::build_partitioned_problem(MoFEMProblem *problem_ptr,bool sq
   ierr = PetscFree(status); CHKERRQ(ierr);
 
   ierr = printPartitionedProblem(problem_ptr,verb); CHKERRQ(ierr);
-  ierr = debugPartitionedProblem(problem_ptr,verb); CHKERRQ(ierr);
+  //ierr = debugPartitionedProblem(problem_ptr,verb); CHKERRQ(ierr);
 
   *build_MoFEM |= 1<<3;
   *build_MoFEM |= 1<<4; // It is assumed that user who uses this function knows what he is doing
@@ -441,6 +441,8 @@ PetscErrorCode Core::build_problem(MoFEMProblem *problem_ptr,int verb) {
   if(problem_ptr->get_BitRefLevel().none()) {
     SETERRQ1(PETSC_COMM_SELF,1,"problem <%s> refinement level not set",problem_ptr->get_name().c_str());
   }
+
+  PetscLogEventBegin(USER_EVENT_buildProblem,0,0,0,0);
 
   //zero finite elements
   problem_ptr->numeredFiniteElements.clear();
@@ -535,6 +537,9 @@ PetscErrorCode Core::build_problem(MoFEMProblem *problem_ptr,int verb) {
     PetscSynchronizedFlush(comm,PETSC_STDOUT);
   }
   *build_MoFEM |= 1<<3; // It is assumed that user who uses this function knows what he is doing
+
+  PetscLogEventEnd(USER_EVENT_buildProblem,0,0,0,0);
+
   PetscFunctionReturn(0);
 }
 PetscErrorCode Core::build_problem(const string &problem_name,int verb) {
