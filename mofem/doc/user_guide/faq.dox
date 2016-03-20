@@ -15,6 +15,8 @@ If problem is large, mesh can be partitioned for to save memory and improve effi
 mbpart -t -p PartKway  16 cylinder.cub cylinder_16parts.h5m
 \endcode
 
+The tool \em mbpart is part of MoAB. To have it you need compile MoAB with Zoltan library.
+
 \section running_multi_grid How to multi-grid solver via approximation orders?
 
 Code is run using direct solver, i.e. \em MUMPS on coarse level. Note that
