@@ -71,10 +71,11 @@ struct DofMoFEMEntity: public interface_MoFEMEntity<MoFEMEntity> {
 
   /** \brief unique dof id
     */
-  inline LocalUId get_local_unique_id() const { return local_uid; };
+  inline const LocalUId& get_local_unique_id() const { return local_uid; };
   inline LocalUId get_local_unique_id_calculate() const { return get_local_unique_id_calculate(dof,get_MoFEMEntity_ptr()); }
 
-  inline GlobalUId get_global_unique_id() const { return global_uid; };
+  inline const GlobalUId& get_global_unique_id() const { return global_uid; };
+  // inline GlobalUId get_global_unique_id() const { return global_uid; };
   inline GlobalUId get_global_unique_id_calculate() const { return get_global_unique_id_calculate(dof,get_MoFEMEntity_ptr()); }
 
   /** \brief get short uid it is unique in combination with entity handle
@@ -125,8 +126,8 @@ struct DofMoFEMEntity: public interface_MoFEMEntity<MoFEMEntity> {
 template <typename T>
 struct interface_DofMoFEMEntity: public interface_MoFEMEntity<T> {
   interface_DofMoFEMEntity(const T *_ptr): interface_MoFEMEntity<T>(_ptr) {};
-  inline LocalUId get_local_unique_id() const { return interface_MoFEMEntity<T>::field_ptr->get_local_unique_id(); }
-  inline GlobalUId get_global_unique_id() const { return interface_MoFEMEntity<T>::field_ptr->get_global_unique_id(); }
+  inline const LocalUId& get_local_unique_id() const { return interface_MoFEMEntity<T>::field_ptr->get_local_unique_id(); }
+  inline const GlobalUId& get_global_unique_id() const { return interface_MoFEMEntity<T>::field_ptr->get_global_unique_id(); }
   inline ShortId get_non_nonunique_short_id() const { return interface_MoFEMEntity<T>::field_ptr->get_non_nonunique_short_id(); }
   inline DofIdx get_EntDofIdx() const { return interface_MoFEMEntity<T>::field_ptr->get_EntDofIdx(); }
   inline FieldData& get_FieldData() const { return interface_MoFEMEntity<T>::field_ptr->get_FieldData(); }
@@ -235,7 +236,7 @@ typedef multi_index_container<
   indexed_by<
     //uniqe
     ordered_unique<
-      tag<Unique_mi_tag>, const_mem_fun<DofMoFEMEntity,GlobalUId,&DofMoFEMEntity::get_global_unique_id> >,
+      tag<Unique_mi_tag>, const_mem_fun<DofMoFEMEntity,const GlobalUId&,&DofMoFEMEntity::get_global_unique_id> >,
     ordered_unique<
       tag<Composite_Ent_and_ShortId_mi_tag>,
         composite_key<
@@ -302,7 +303,7 @@ typedef multi_index_container<
   const DofMoFEMEntity*,
   indexed_by<
     ordered_unique<
-      const_mem_fun<DofMoFEMEntity,GlobalUId,&DofMoFEMEntity::get_global_unique_id> >,
+      const_mem_fun<DofMoFEMEntity,const GlobalUId&,&DofMoFEMEntity::get_global_unique_id> >,
     ordered_non_unique<
       const_mem_fun<DofMoFEMEntity,char,&DofMoFEMEntity::get_active> >
   > > DofMoFEMEntity_multiIndex_active_view;
@@ -337,7 +338,7 @@ typedef multi_index_container<
   FEDofMoFEMEntity,
   indexed_by<
     ordered_unique<
-      tag<Unique_mi_tag>, const_mem_fun<FEDofMoFEMEntity::interface_type_DofMoFEMEntity,GlobalUId,&FEDofMoFEMEntity::get_global_unique_id> >,
+      tag<Unique_mi_tag>, const_mem_fun<FEDofMoFEMEntity::interface_type_DofMoFEMEntity,const GlobalUId&,&FEDofMoFEMEntity::get_global_unique_id> >,
     ordered_non_unique<
       tag<Ent_mi_tag>, const_mem_fun<FEDofMoFEMEntity::interface_type_DofMoFEMEntity,EntityHandle,&FEDofMoFEMEntity::get_ent> >,
     ordered_non_unique<
@@ -388,7 +389,7 @@ typedef multi_index_container<
   FENumeredDofMoFEMEntity,
   indexed_by<
     ordered_unique<
-      tag<Unique_mi_tag>, const_mem_fun<FENumeredDofMoFEMEntity::interface_type_DofMoFEMEntity,GlobalUId,&FENumeredDofMoFEMEntity::get_global_unique_id> >,
+      tag<Unique_mi_tag>, const_mem_fun<FENumeredDofMoFEMEntity::interface_type_DofMoFEMEntity,const GlobalUId&,&FENumeredDofMoFEMEntity::get_global_unique_id> >,
     ordered_non_unique<
       tag<Ent_mi_tag>, const_mem_fun<FENumeredDofMoFEMEntity::interface_type_DofMoFEMEntity,EntityHandle,&FENumeredDofMoFEMEntity::get_ent> >,
     ordered_non_unique<
@@ -433,7 +434,7 @@ typedef multi_index_container<
   indexed_by<
     ordered_unique<
       tag<Unique_mi_tag>,
-      const_mem_fun<NumeredDofMoFEMEntity::interface_type_DofMoFEMEntity,GlobalUId,&NumeredDofMoFEMEntity::get_global_unique_id> >,
+      const_mem_fun<NumeredDofMoFEMEntity::interface_type_DofMoFEMEntity,const GlobalUId&,&NumeredDofMoFEMEntity::get_global_unique_id> >,
     ordered_non_unique<
       tag<Composite_Name_And_Ent_And_EndDofIdx_mi_tag>,
       composite_key<

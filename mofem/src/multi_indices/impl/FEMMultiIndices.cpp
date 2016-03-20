@@ -823,7 +823,6 @@ static PetscErrorCode get_fe_MoFEMFiniteElement_dof_view(
   const int operation_type
 ) {
   PetscFunctionBegin;
-  GlobalUId global_uid;
   typename boost::multi_index::index<MOFEM_DOFS,Unique_mi_tag>::type::iterator mofem_it,mofem_it_end;
   DofMoFEMEntity_multiIndex_uid_view::iterator it,it_end;
   if(operation_type==Interface::UNION) {
@@ -832,16 +831,16 @@ static PetscErrorCode get_fe_MoFEMFiniteElement_dof_view(
     it = fe_dofs_view.begin();
     it_end = fe_dofs_view.end();
     for(;it!=it_end;it++) {
-      global_uid = (*it)->get_global_unique_id();
+      const GlobalUId &global_uid = (*it)->get_global_unique_id();
       if(mofem_it != mofem_it_end) {
         if(mofem_it->get_global_unique_id() != global_uid) {
           mofem_it = mofem_dofs.template get<Unique_mi_tag>().find(global_uid);
-        }
+        }  // else lucky guess
       } else {
         mofem_it = mofem_dofs.template get<Unique_mi_tag>().find(global_uid);
       }
       if(mofem_it != mofem_it_end) {
-        mofem_dofs_view.insert(&*mofem_it);
+        mofem_dofs_view.insert(mofem_dofs_view.end(),&*mofem_it);
         mofem_it++;
       }
     }
