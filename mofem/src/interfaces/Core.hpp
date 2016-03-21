@@ -491,14 +491,15 @@ struct Core:
   PetscErrorCode list_adjacencies() const;
 
   //problem building
+  PetscErrorCode build_partitioned_problems(int verb = -1);
+  PetscErrorCode build_partitioned_problem(const string &name,bool square_matrix = true,int verb = -1);
+  PetscErrorCode build_partitioned_problem(MoFEMProblem *problem_ptr,bool square_matrix = true,int verb = -1);
+  PetscErrorCode partition_mesh(Range &ents,int dim,int adj_dim,int n_parts,int verb = -1);
   PetscErrorCode build_problem(const string &name,int verb = -1);
   PetscErrorCode clear_problem(const string &name,int verb = -1);
   PetscErrorCode build_problem(MoFEMProblem *problem_ptr,int verb = -1);
   PetscErrorCode build_problems(int verb = -1);
   PetscErrorCode clear_problems(int verb = -1);
-  PetscErrorCode build_partitioned_problems(int verb = -1);
-  PetscErrorCode build_partitioned_problem(const string &name,bool square_matrix = true,int verb = -1);
-  PetscErrorCode build_partitioned_problem(MoFEMProblem *problem_ptr,bool square_matrix = true,int verb = -1);
   PetscErrorCode partition_simple_problem(const string &name,int verb = -1);
   PetscErrorCode partition_problem(const string &name,int verb = -1);
   PetscErrorCode partition_compose_problem(const string &name,const string &problem_for_rows,bool copy_rows,const string &problem_for_cols,bool copy_cols,int verb = -1);

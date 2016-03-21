@@ -635,6 +635,22 @@ add_test(prisms_elements_from_surface ${MPI_RUN} -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/prisms_elements_from_surface -my_file rectangle_surface_mesh.cub
 )
 
+add_executable(partition_mesh partition_mesh.cpp)
+target_link_libraries(partition_mesh
+  mofem_finite_elements
+  mofem_interfaces
+  mofem_multi_indices
+  mofem_petsc
+  mofem_approx
+  mofem_cblas
+  mofem_third_party
+  ${PROJECT_LIBS}
+)
+add_test(partition_mesh ${MPI_RUN} -np 1
+  ${CMAKE_CURRENT_BINARY_DIR}/partition_mesh -my_file disp01.h5m
+)
+
+
 if(WITH_ADOL-C)
   add_executable(adol-c_atom adol-c_atom.cpp)
   target_link_libraries(adol-c_atom ${PROJECT_LIBS})

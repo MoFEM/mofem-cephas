@@ -1270,6 +1270,21 @@ struct FieldInterface: public UnknownInterface {
    */
   virtual PetscErrorCode build_partitioned_problems(int verb = -1) = 0;
 
+  /**
+   * \brief Set partition tag to each finite element in the problem
+   *
+   * This will use one of the mesh partitioning programs available from PETSc
+   * See <http://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/Mat/MatPartitioningType.html>
+   *
+   * @param  ents        Entities to partition
+   * @param  dim         Dimension of entities to partition
+   * @param  adj_dim     Adjacency dimension
+   * @param  n_parts     Number of partitions
+   * @param  verb        Verbosity level
+   * @return             Error code
+   */
+  virtual PetscErrorCode partition_mesh(Range &ents,int dim,int adj_dim,int n_parts,int verb = -1) = 0;
+
   /** \brief partition problem dofs
    * \ingroup mofem_problems
    *

@@ -48,6 +48,8 @@
 
 #include <boost/scoped_array.hpp>
 
+#include <moab/MeshTopoUtil.hpp>
+
 namespace MoFEM {
 
 struct __attribute__ ((__packed__)) IdxDataType {
@@ -431,6 +433,202 @@ PetscErrorCode Core::build_partitioned_problems(int verb) {
   for(;p_miit!=pRoblems.end();p_miit++) {
     ierr = build_partitioned_problem(const_cast<MoFEMProblem*>(&*p_miit),verb); CHKERRQ(ierr);
   }
+  PetscFunctionReturn(0);
+}
+PetscErrorCode Core::partition_mesh(Range &ents,int dim,int adj_dim,int n_parts,int verb) {
+  PetscFunctionBegin;
+  if(verb==-1) verb = verbose;
+
+  //get layout
+  int rstart,rend,nb_elems;
+  {
+    PetscLayout layout;
+    ierr = PetscLayoutCreate(comm,&layout); CHKERRQ(ierr);
+    ierr = PetscLayoutSetBlockSize(layout, 1); CHKERRQ(ierr);
+    ierr = PetscLayoutSetSize(layout,ents.size()); CHKERRQ(ierr);
+    ierr = PetscLayoutSetUp(layout); CHKERRQ(ierr);
+    ierr = PetscLayoutGetSize(layout,&nb_elems); CHKERRQ(ierr);
+    ierr = PetscLayoutGetRange(layout,&rstart,&rend); CHKERRQ(ierr);
+    ierr = PetscLayoutDestroy(&layout); CHKERRQ(ierr);
+    if (verb > 0) {
+      PetscSynchronizedPrintf(
+        comm,"Finite elements partition in problem: row lower %d row upper %d nb elems %d\n",rstart,rend,nb_elems
+      );
+      PetscSynchronizedFlush(comm,PETSC_STDOUT);
+    }
+  }
+
+  map<EntityHandle,int> problem_fe_ents;
+  {
+    Range::iterator eit = ents.begin();
+    for(int ii = 0;eit!=ents.end();eit++,ii++) {
+      problem_fe_ents[*eit] = ii;
+    }
+  }
+
+  int *_i;
+  int *_j;
+  {
+    MeshTopoUtil mtu(&moab);
+    vector<int> i(rend-rstart+1,0),j;
+    {
+      int jj = 0;
+      Range::iterator fe_it = ents.begin();
+      for(int ii = 0;fe_it!=ents.end();fe_it++,ii++) {
+        if(ii < rstart) continue;
+        if(ii >= rend) break;
+        if(moab.type_from_handle(*fe_it)==MBENTITYSET) {
+          SETERRQ(comm,MOFEM_NOT_IMPLEMENTED,"not yet implemented, don't know what to do for meshset element");
+        } else {
+          Range adj_ents;
+          rval = mtu.get_bridge_adjacencies(*fe_it,adj_dim,dim,adj_ents); CHKERRQ_MOAB(rval);
+          adj_ents = intersect(adj_ents,ents);
+          i[jj] = j.size();
+          for(Range::iterator eit = adj_ents.begin();eit!=adj_ents.end();eit++) {
+            if(*eit==*fe_it) continue; // no diagonal
+            j.push_back(problem_fe_ents[*eit]);
+          }
+        }
+        jj++;
+      }
+      i[jj] = j.size();
+    }
+    ierr = PetscMalloc(i.size()*sizeof(int),&_i); CHKERRQ(ierr);
+    ierr = PetscMalloc(j.size()*sizeof(int),&_j); CHKERRQ(ierr);
+    copy(i.begin(),i.end(),_i);
+    copy(j.begin(),j.end(),_j);
+  }
+
+  {
+    Mat Adj;
+    // Adjacency matrix used to partition problems, f.e. METIS
+    ierr = MatCreateMPIAdj(comm,rend-rstart,nb_elems,_i,_j,PETSC_NULL,&Adj); CHKERRQ(ierr);
+    ierr = MatSetOption(Adj,MAT_STRUCTURALLY_SYMMETRIC,PETSC_TRUE); CHKERRQ(ierr);
+
+    // if(1) {
+    //   Mat A;
+    //   MatConvert(Adj,MATMPIAIJ,MAT_INITIAL_MATRIX,&A);
+    //   MatView(A,PETSC_VIEWER_DRAW_WORLD);
+    //   std::string wait;
+    //   std::cin >> wait;
+    //   MatDestroy(&A);
+    // }
+
+    // run pets to do partitioning
+    MatPartitioning part;
+    IS is;
+    ierr = MatPartitioningCreate(comm,&part); CHKERRQ(ierr);
+    ierr = MatPartitioningSetAdjacency(part,Adj); CHKERRQ(ierr);
+    ierr = MatPartitioningSetFromOptions(part); CHKERRQ(ierr);
+    ierr = MatPartitioningSetNParts(part,n_parts); CHKERRQ(ierr);
+    ierr = MatPartitioningApply(part,&is); CHKERRQ(ierr);
+
+    //gather
+    IS is_gather,is_num,is_gather_num;
+    ierr = ISAllGather(is,&is_gather); CHKERRQ(ierr);
+    ierr = ISPartitioningToNumbering(is,&is_num); CHKERRQ(ierr);
+    ierr = ISAllGather(is_num,&is_gather_num); CHKERRQ(ierr);
+
+    const int *part_number,*gids;
+    ierr = ISGetIndices(is_gather,&part_number);  CHKERRQ(ierr);
+    ierr = ISGetIndices(is_gather_num,&gids);  CHKERRQ(ierr);
+
+    // set partition tag and gid tag to entities
+    ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
+    Tag gid_tag;
+    Tag part_tag = pcomm->part_tag();
+    {
+      const int zero =  0;
+      rval = moab.tag_get_handle(
+        GLOBAL_ID_TAG_NAME,1,MB_TYPE_INTEGER,gid_tag,MB_TAG_DENSE|MB_TAG_CREAT,&zero
+      ); CHKERRQ_MOAB(rval);
+      // get any sets already with this tag, and clear them
+      rval = moab.tag_set_data(part_tag,ents,part_number); CHKERRQ_MOAB(rval);
+      // vector<int> add_one(ents.size());
+      // for(int ii = 0;ii<ents.size();ii++) {
+      //   add_one[ii] = gids[ii]+1;
+      // }
+      // rval = moab.tag_set_data(gid_tag,ents,&add_one[0]); CHKERRQ_MOAB(rval);
+      // rval = moab.tag_set_data(gid_tag,ents,&gids[0]); CHKERRQ_MOAB(rval);
+    }
+
+    map<int,Range> parts_ents;
+    {
+      // get entities on each part
+      Range::iterator eit = ents.begin();
+      for(int ii = 0;eit!=ents.end();eit++,ii++) {
+        parts_ents[part_number[ii]].insert(*eit);
+      }
+      Range tagged_sets;
+      rval = moab.get_entities_by_type_and_tag(
+        0,MBENTITYSET,&part_tag,NULL,1,tagged_sets,Interface::UNION
+      ); CHKERRQ_MOAB(rval);
+      if(!tagged_sets.empty()) {
+        rval = moab.tag_delete_data(part_tag,tagged_sets); CHKERRQ_MOAB(rval);
+        // rval = moab.delete_entities(tagged_sets); CHKERRQ_MOAB(rval);
+      }
+      if(n_parts > (int) tagged_sets.size()) {
+        // too few partition sets - create missing ones
+        int num_new = n_parts - tagged_sets.size();
+        for(int i = 0;i < num_new;i++) {
+          EntityHandle new_set;
+          rval = moab.create_meshset(MESHSET_SET, new_set); CHKERR_MOAB(rval);
+          tagged_sets.insert(new_set);
+        }
+      } else if (n_parts < (int)tagged_sets.size()) {
+        // too many partition sets - delete extras
+        int num_del = tagged_sets.size() - n_parts;
+        for(int i = 0; i < num_del; i++) {
+          EntityHandle old_set = tagged_sets.pop_back();
+          rval = moab.delete_entities(&old_set, 1); CHKERR_MOAB(rval);
+        }
+      }
+      // write a tag to those sets denoting they're partition sets, with a value of the
+      // proc number
+      int *dum_ids = new int[n_parts];
+      for(int i = 0;i<n_parts;i++) dum_ids[i] = i;
+      rval = moab.tag_set_data(part_tag,tagged_sets,dum_ids); CHKERR_MOAB(rval);
+      for(int i = 0;i<n_parts;i++) {
+        rval = moab.add_entities(tagged_sets[i],parts_ents[i]); CHKERR_MOAB(rval);
+      }
+
+      // // get lower dimension entities on each part
+      // for(int pp = 0;pp!=n_parts;pp++) {
+      //   for(int dd = dim-1;dd!=-1;dd--) {
+      //     Range adj_ents;
+      //     rval = moab.get_adjacencies(
+      //       parts_ents[pp].subset_by_dimension(dim),dd,false,adj_ents,Interface::UNION
+      //     ); CHKERRQ_MOAB(rval);
+      //     parts_ents[pp].merge(adj_ents);
+      //   }
+      // }
+      // for(int pp = 1;pp!=n_parts;pp++) {
+      //   for(int ppp = 0;ppp!=pp;ppp++) {
+      //     parts_ents[pp] = subtract(parts_ents[pp],parts_ents[ppp]);
+      //   }
+      // }
+      // // set gid to lower dimension entities
+      // for(int dd = 0;dd<dim;dd++) {
+      //   int ii = 0; // moab indexing from 1
+      //   for(int pp = 0;pp!=n_parts;pp++) {
+      //     Range dim_ents = parts_ents[pp].subset_by_dimension(dd);
+      //     for(Range::iterator eit = dim_ents.begin();eit!=dim_ents.end();eit++,ii++) {
+      //       rval = moab.tag_set_data(gid_tag,&*eit,1,&ii); CHKERRQ_MOAB(rval);
+      //     }
+      //   }
+      // }
+    }
+
+    ierr = ISRestoreIndices(is_gather,&part_number);  CHKERRQ(ierr);
+    ierr = ISRestoreIndices(is_gather_num,&gids);  CHKERRQ(ierr);
+    ierr = ISDestroy(&is_num); CHKERRQ(ierr);
+    ierr = ISDestroy(&is_gather_num); CHKERRQ(ierr);
+    ierr = ISDestroy(&is_gather); CHKERRQ(ierr);
+    ierr = ISDestroy(&is); CHKERRQ(ierr);
+    ierr = MatPartitioningDestroy(&part); CHKERRQ(ierr);
+    ierr = MatDestroy(&Adj); CHKERRQ(ierr);
+  }
+
   PetscFunctionReturn(0);
 }
 PetscErrorCode Core::build_problem(MoFEMProblem *problem_ptr,int verb) {
