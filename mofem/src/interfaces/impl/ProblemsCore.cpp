@@ -78,6 +78,8 @@ PetscErrorCode Core::build_partitioned_problem(const string &name,bool square_ma
 }
 PetscErrorCode Core::build_partitioned_problem(MoFEMProblem *problem_ptr,bool square_matrix,int verb) {
   PetscFunctionBegin;
+  PetscLogEventBegin(USER_EVENT_buildProblem,0,0,0,0);
+
   if(verb==-1) verb = verbose;
   if(problem_ptr->get_BitRefLevel().none()) {
     SETERRQ1(PETSC_COMM_SELF,1,"problem <%s> refinement level not set",problem_ptr->get_name().c_str());
@@ -419,10 +421,13 @@ PetscErrorCode Core::build_partitioned_problem(MoFEMProblem *problem_ptr,bool sq
   ierr = PetscFree(status); CHKERRQ(ierr);
 
   ierr = printPartitionedProblem(problem_ptr,verb); CHKERRQ(ierr);
-  //ierr = debugPartitionedProblem(problem_ptr,verb); CHKERRQ(ierr);
+  ierr = debugPartitionedProblem(problem_ptr,verb); CHKERRQ(ierr);
 
   *build_MoFEM |= 1<<3;
   *build_MoFEM |= 1<<4; // It is assumed that user who uses this function knows what he is doing
+
+  PetscLogEventEnd(USER_EVENT_buildProblem,0,0,0,0);
+
   PetscFunctionReturn(0);
 }
 PetscErrorCode Core::build_partitioned_problems(int verb) {
@@ -438,6 +443,7 @@ PetscErrorCode Core::build_partitioned_problems(int verb) {
 PetscErrorCode Core::partition_mesh(Range &ents,int dim,int adj_dim,int n_parts,int verb) {
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
+
 
   //get layout
   int rstart,rend,nb_elems;
@@ -544,12 +550,12 @@ PetscErrorCode Core::partition_mesh(Range &ents,int dim,int adj_dim,int n_parts,
       ); CHKERRQ_MOAB(rval);
       // get any sets already with this tag, and clear them
       rval = moab.tag_set_data(part_tag,ents,part_number); CHKERRQ_MOAB(rval);
+      // rval = moab.tag_set_data(gid_tag,ents,&gids[0]); CHKERRQ_MOAB(rval);
       // vector<int> add_one(ents.size());
       // for(int ii = 0;ii<ents.size();ii++) {
       //   add_one[ii] = gids[ii]+1;
       // }
       // rval = moab.tag_set_data(gid_tag,ents,&add_one[0]); CHKERRQ_MOAB(rval);
-      // rval = moab.tag_set_data(gid_tag,ents,&gids[0]); CHKERRQ_MOAB(rval);
     }
 
     map<int,Range> parts_ents;
@@ -592,31 +598,44 @@ PetscErrorCode Core::partition_mesh(Range &ents,int dim,int adj_dim,int n_parts,
         rval = moab.add_entities(tagged_sets[i],parts_ents[i]); CHKERR_MOAB(rval);
       }
 
+      rval = pcomm->assign_global_ids(0,dim,0,false); CHKERR_MOAB(rval);
+
+
       // // get lower dimension entities on each part
       // for(int pp = 0;pp!=n_parts;pp++) {
+      //   Range dim_ents = parts_ents[pp].subset_by_dimension(dim);
       //   for(int dd = dim-1;dd!=-1;dd--) {
       //     Range adj_ents;
       //     rval = moab.get_adjacencies(
-      //       parts_ents[pp].subset_by_dimension(dim),dd,false,adj_ents,Interface::UNION
+      //       dim_ents,dd,false,adj_ents,Interface::UNION
       //     ); CHKERRQ_MOAB(rval);
       //     parts_ents[pp].merge(adj_ents);
+      //     // cerr << pp << " add " << parts_ents[pp].size() << endl;
       //   }
       // }
       // for(int pp = 1;pp!=n_parts;pp++) {
       //   for(int ppp = 0;ppp!=pp;ppp++) {
+      //     // cerr << pp << "<-" << ppp << " " << parts_ents[pp].size() << " " << parts_ents[ppp].size();
       //     parts_ents[pp] = subtract(parts_ents[pp],parts_ents[ppp]);
+      //     // cerr << " " << parts_ents[pp].size() << endl;
       //   }
       // }
       // // set gid to lower dimension entities
       // for(int dd = 0;dd<dim;dd++) {
-      //   int ii = 0; // moab indexing from 1
+      //   int gid = 0; // moab indexing from 1
       //   for(int pp = 0;pp!=n_parts;pp++) {
       //     Range dim_ents = parts_ents[pp].subset_by_dimension(dd);
-      //     for(Range::iterator eit = dim_ents.begin();eit!=dim_ents.end();eit++,ii++) {
-      //       rval = moab.tag_set_data(gid_tag,&*eit,1,&ii); CHKERRQ_MOAB(rval);
+      //     // cerr << dim_ents.size() << " " << dd  << " " << pp << endl;
+      //     for(Range::iterator eit = dim_ents.begin();eit!=dim_ents.end();eit++) {
+      //       // if(dd>0) {
+      //       //   rval = moab.tag_set_data(part_tag,&*eit,1,&pp); CHKERRQ_MOAB(rval);
+      //       // }
+      //       // rval = moab.tag_set_data(gid_tag,&*eit,1,&gid); CHKERRQ_MOAB(rval);
+      //       gid++;
       //     }
       //   }
       // }
+
     }
 
     ierr = ISRestoreIndices(is_gather,&part_number);  CHKERRQ(ierr);
@@ -1105,16 +1124,29 @@ PetscErrorCode Core::debugPartitionedProblem(const MoFEMProblem *problem_ptr,int
 
 PetscErrorCode Core::resolve_shared_ents(const MoFEMProblem *problem_ptr,const string &fe_name,int verb) {
   PetscFunctionBegin;
-  EntityHandle meshset;
-  rval = moab.create_meshset(MESHSET_SET,meshset); CHKERRQ_MOAB(rval);
   ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
   vector<int> shprocs(MAX_SHARING_PROCS,0);
   vector<EntityHandle> shhandles(MAX_SHARING_PROCS,0);
+  Range ents;
+  Tag th_gid;
+  const int zero =  0;
+  rval = moab.tag_get_handle(
+    GLOBAL_ID_TAG_NAME,1,MB_TYPE_INTEGER,th_gid,MB_TAG_DENSE|MB_TAG_CREAT,&zero
+  ); CHKERRQ_MOAB(rval);
+  PetscLayout layout;
+  ierr = problem_ptr->getNumberOfElementsByNameAndPart(get_comm(),fe_name,&layout); CHKERRQ(ierr);
+  int gid,last_gid;
+  ierr = PetscLayoutGetRange(layout,&gid,&last_gid); CHKERRQ(ierr);
+  ierr = PetscLayoutDestroy(&layout); CHKERRQ(ierr);
   for(_IT_NUMEREDFEMOFEMENTITY_BY_NAME_FOR_LOOP_(problem_ptr,fe_name,fe_it)) {
     EntityHandle ent = fe_it->get_ent();
-    rval = moab.add_entities(meshset,&ent,1); CHKERRQ_MOAB(rval);
+    ents.insert(ent);
     int part = fe_it->get_part();
     rval = moab.tag_set_data(pcomm->part_tag(),&ent,1,&part); CHKERRQ_MOAB(rval);
+    if(part == pcomm->rank()) {
+      rval = moab.tag_set_data(th_gid,&ent,1,&gid); CHKERRQ_MOAB(rval);
+      gid++;
+    }
     shprocs.clear();
     shhandles.clear();
     if(pcomm->size()>1) {
@@ -1149,9 +1181,7 @@ PetscErrorCode Core::resolve_shared_ents(const MoFEMProblem *problem_ptr,const s
       rval = moab.tag_set_data(pcomm->pstatus_tag(),&ent,1,&pstatus); CHKERRQ_MOAB(rval);
     }
   }
-  rval = pcomm->resolve_shared_ents(meshset,3); CHKERRQ_MOAB(rval);
-  rval = pcomm->assign_global_ids(meshset,3,0); CHKERRQ_MOAB(rval);
-  rval = moab.delete_entities(&meshset,1); CHKERRQ_MOAB(rval);
+  rval = pcomm->exchange_tags(th_gid,ents); CHKERRQ_MOAB(rval);
   PetscFunctionReturn(0);
 }
 PetscErrorCode Core::resolve_shared_ents(const string &name,const string &fe_name,int verb) {
