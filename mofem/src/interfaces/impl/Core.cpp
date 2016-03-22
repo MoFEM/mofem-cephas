@@ -790,9 +790,12 @@ PetscErrorCode Core::initialiseDatabseInformationFromMesh(int verb) {
   mit = meshsets.begin();
   for(;mit!=meshsets.end();mit++) {
     try {
-      int cs_dim[] = { 0,0,0,0 };
-      rval = moab.tag_get_data(th_CoordSysDim,&*mit,1,&cs_dim); CHKERRQ_MOAB(rval);
-      if(cs_dim[0]+cs_dim[1]+cs_dim[2]+cs_dim[3]) {
+      const char *cs_name;
+      int cs_name_size;
+      rval = moab.tag_get_by_ptr(
+        th_CoordSysName,&*mit,1,(const void **)&cs_name,&cs_name_size
+      );
+      if(rval == MB_SUCCESS && cs_name_size) {
         CoordSys coord_sys(moab,*mit);
         pair<CoordSys_multiIndex ::iterator,bool> p = coordinateSystems.insert(coord_sys);
         if(!p.second) {
