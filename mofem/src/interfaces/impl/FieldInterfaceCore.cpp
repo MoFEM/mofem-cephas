@@ -829,7 +829,7 @@ PetscErrorCode Core::set_field_order(const Range &ents,const BitFieldId id,const
         if(ref_ent.get_BitRefLevel().none()) continue; // not on any mesh and not in database
         cerr << ref_ent << endl;
         cerr << "bit level " << ref_ent.get_BitRefLevel() << endl;
-        SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"database inconsistency");
+        SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"Try to add entities which are not seeded or added to database");
 
       }
 
@@ -1194,7 +1194,7 @@ PetscErrorCode Core::build_fields(int verb) {
         nb_added_dofs += it->second;
         nb_inactive_added_dofs += inactive_dof_counter[it->first];
       }
-      PetscSynchronizedPrintf(comm,"nb added dofs %d (inacrive_dof_counter %d)\n",nb_added_dofs,nb_inactive_added_dofs);
+      PetscSynchronizedPrintf(comm,"nb added dofs %d (number of inactive dofs %d)\n",nb_added_dofs,nb_inactive_added_dofs);
     }
   }
   *build_MoFEM = 1<<0;
