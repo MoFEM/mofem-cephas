@@ -65,12 +65,13 @@ PetscErrorCode DMMGViaApproxOrdersGetCoarseningISSize(DM dm,int *size);
  * @param  DM discrete manager
  * @param  is Push back IS used for coarsening
  * @param  A  Get sub-matrix of A using is (that sets operators for coarsening levels)
- * @param  subA  returning pointer to created sub matrix
+ * @param  subA  Returning pointer to created sub matrix
+ * @param  subA  If true create sub matrix, otherwise in subA has to be valid pointer to subA
  * @return Error code
  *
  * \ingroup dm
  */
-PetscErrorCode DMMGViaApproxOrdersPushBackCoarseningIS(DM,IS is,Mat A,Mat *subA);
+PetscErrorCode DMMGViaApproxOrdersPushBackCoarseningIS(DM,IS is,Mat A,Mat *subA,bool create_sub_matrix);
 
 /**
  * \brief Pop is form MG via approximation orders

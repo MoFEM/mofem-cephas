@@ -95,7 +95,7 @@ PetscErrorCode DMMGViaApproxOrdersGetCoarseningISSize(DM dm,int *size) {
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode DMMGViaApproxOrdersPushBackCoarseningIS(DM dm,IS is,Mat A,Mat *subA) {
+PetscErrorCode DMMGViaApproxOrdersPushBackCoarseningIS(DM dm,IS is,Mat A,Mat *subA,bool create_sub_matrix) {
   PetscErrorCode ierr;
   PetscValidHeaderSpecific(dm,DM_CLASSID,1);
   PetscFunctionBegin;
@@ -113,7 +113,9 @@ PetscErrorCode DMMGViaApproxOrdersPushBackCoarseningIS(DM dm,IS is,Mat A,Mat *su
       ierr = ISCopy(is,is2); CHKERRQ(ierr);
       ierr = AOApplicationToPetscIS(dm_field->aO,is2); CHKERRQ(ierr);
     }
-    ierr = MatGetSubMatrix(A,is2,is2,MAT_INITIAL_MATRIX,subA); CHKERRQ(ierr);
+    if(create_sub_matrix) {
+      ierr = MatGetSubMatrix(A,is2,is2,MAT_INITIAL_MATRIX,subA); CHKERRQ(ierr);
+    }
     if(dm_field->aO) {
       ierr = ISDestroy(&is2); CHKERRQ(ierr);
     }
@@ -164,19 +166,24 @@ PetscErrorCode DMMGViaApproxOrdersReplaceCoarseningIS(DM dm,IS *is_vec,int nb_el
         ierr = MatDestroy(&dm_field->kspOperators[ii]); CHKERRQ(ierr);
         *it = is_vec[ii];
         ierr = PetscObjectReference((PetscObject)is_vec[ii]); CHKERRQ(ierr);
-        IS is = is_vec[ii];
-        if(dm_field->aO) {
-          ierr = ISDuplicate(is_vec[ii],&is); CHKERRQ(ierr);
-          ierr = ISCopy(is_vec[ii],is); CHKERRQ(ierr);
-          ierr = AOApplicationToPetscIS(dm_field->aO,is); CHKERRQ(ierr);
-        }
-        Mat subA;
-        ierr = MatGetSubMatrix(A,is,is,MAT_INITIAL_MATRIX,&subA); CHKERRQ(ierr);
-        ierr = PetscObjectReference((PetscObject)subA); CHKERRQ(ierr);
-        dm_field->kspOperators[ii] = subA;
-        ierr = MatDestroy(&subA); CHKERRQ(ierr);
-        if(dm_field->aO) {
-          ierr = ISDestroy(&is); CHKERRQ(ierr);
+        if(ii<nb_elems-1) {
+          IS is = is_vec[ii];
+          if(dm_field->aO) {
+            ierr = ISDuplicate(is_vec[ii],&is); CHKERRQ(ierr);
+            ierr = ISCopy(is_vec[ii],is); CHKERRQ(ierr);
+            ierr = AOApplicationToPetscIS(dm_field->aO,is); CHKERRQ(ierr);
+          }
+          Mat subA;
+          ierr = MatGetSubMatrix(A,is,is,MAT_INITIAL_MATRIX,&subA); CHKERRQ(ierr);
+          ierr = PetscObjectReference((PetscObject)subA); CHKERRQ(ierr);
+          dm_field->kspOperators[ii] = subA;
+          ierr = MatDestroy(&subA); CHKERRQ(ierr);
+          if(dm_field->aO) {
+            ierr = ISDestroy(&is); CHKERRQ(ierr);
+          }
+        } else {
+          ierr = PetscObjectReference((PetscObject)A); CHKERRQ(ierr);
+          dm_field->kspOperators[ii] = A;
         }
         nb_replaced++;
       }
@@ -186,12 +193,14 @@ PetscErrorCode DMMGViaApproxOrdersReplaceCoarseningIS(DM dm,IS *is_vec,int nb_el
     }
   }
   if(dm_field->coarseningIS.size()<nb_elems) {
-    for(;ii<nb_elems;ii++) {
+    for(;ii<nb_elems-1;ii++) {
       Mat subA;
-      ierr = DMMGViaApproxOrdersPushBackCoarseningIS(dm,is_vec[ii],A,&subA); CHKERRQ(ierr);
+      ierr = DMMGViaApproxOrdersPushBackCoarseningIS(dm,is_vec[ii],A,&subA,true); CHKERRQ(ierr);
       ierr = MatDestroy(&subA); CHKERRQ(ierr);
       nb_added++;
     }
+    ierr = DMMGViaApproxOrdersPushBackCoarseningIS(dm,is_vec[ii],A,&A,false); CHKERRQ(ierr);
+    nb_added++;
   } else {
     for(;ii<dm_field->coarseningIS.size();ii++) {
       ierr = DMMGViaApproxOrdersPopBackCoarseningIS(dm); CHKERRQ(ierr);
@@ -638,7 +647,7 @@ PetscErrorCode PCMGSetUpViaApproxOrdersCtx::buildProlongationOperator(PC pc,int 
 
   for(int kk = 0;kk!=nbLevels;kk++) {
     Mat subA;
-    ierr = DMMGViaApproxOrdersPushBackCoarseningIS(dM,is_vec[kk],A,&subA); CHKERRQ(ierr);
+    ierr = DMMGViaApproxOrdersPushBackCoarseningIS(dM,is_vec[kk],A,&subA,true); CHKERRQ(ierr);
     if(subA) {
       ierr = MatDestroy(&subA); CHKERRQ(ierr);
     }
