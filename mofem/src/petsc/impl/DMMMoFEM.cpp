@@ -125,6 +125,7 @@ PetscErrorCode DMCreate_MoFEM(DM dm) {
   PetscFunctionBegin;
 
   dm->data = new DMCtx();
+
   ierr = DMSetOperators_MoFEM(dm); CHKERRQ(ierr);
 
   PetscFunctionReturn(0);

@@ -40,8 +40,8 @@ using namespace MoFEM;
 
 DMMGViaApproxOrdersCtx::DMMGViaApproxOrdersCtx():
   MoFEM::DMCtx(),
-  aO(PETSC_NULL),
-  fineMatrix(PETSC_NULL) {
+  aO(PETSC_NULL) {
+    // cerr << "create dm\n";
 }
 DMMGViaApproxOrdersCtx::~DMMGViaApproxOrdersCtx() {
   PetscErrorCode ierr;
@@ -51,7 +51,11 @@ DMMGViaApproxOrdersCtx::~DMMGViaApproxOrdersCtx() {
   for(unsigned int ii = 0;ii<kspOperators.size();ii++) {
     ierr = MatDestroy(&kspOperators[ii]); CHKERRABORT(PETSC_COMM_WORLD,ierr);
   }
-  ierr = AODestroy(&aO); CHKERRABORT(PETSC_COMM_WORLD,ierr);
+  if(aO) {
+    // cerr << "destroy ao\n";
+    ierr = AODestroy(&aO); CHKERRABORT(PETSC_COMM_WORLD,ierr);
+  }
+  // cerr << "destroy dm\n";
 }
 
 PetscErrorCode DMMGViaApproxOrdersCtx::queryInterface(const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface) {
@@ -79,10 +83,13 @@ PetscErrorCode DMMGViaApproxOrdersSetAO(DM dm,AO ao) {
   PetscFunctionBegin;
   GET_DM_FIELD(dm);
   if(dm_field->aO) {
+    //cerr << dm_field->aO << endl;
     ierr = AODestroy(&dm_field->aO); CHKERRQ(ierr);
+    // cerr << "destroy ao when adding\n";
   }
   dm_field->aO = ao;
-  ierr = PetscObjectReference((PetscObject)dm_field->aO); CHKERRQ(ierr);
+  ierr = PetscObjectReference((PetscObject)ao); CHKERRQ(ierr);
+  // cerr << "add ao\n";
   PetscFunctionReturn(0);
 }
 
@@ -308,7 +315,6 @@ struct MGShellProjectionMatrix {
       ierr = VecScatterDestroy(&sCatter); CHKERRABORT(PETSC_COMM_WORLD,ierr);
     }
   }
-
 };
 
 static PetscErrorCode inerpolation_matrix_destroy(Mat mat) {
@@ -484,49 +490,6 @@ PetscErrorCode DMCreateInterpolation_MGViaApproxOrders(DM dm1,DM dm2,Mat *mat,Ve
   ierr = MatShellSetOperation(*mat,MATOP_MULT_TRANSPOSE,(void(*)(void))inerpolation_matrix_mult_transpose); CHKERRQ(ierr);
   ierr = MatShellSetOperation(*mat,MATOP_MULT_ADD,(void(*)(void))inerpolation_matrix_mult_add); CHKERRQ(ierr);
   ierr = MatShellSetOperation(*mat,MATOP_MULT_TRANSPOSE_ADD,(void(*)(void))inerpolation_matrix_mult_transpose_add); CHKERRQ(ierr);
-
-  // // FIXME: Use MatCreateMPIAIJWithArrays
-  // ierr = MatCreate(comm,mat); CHKERRQ(ierr);
-  // ierr = MatSetSizes(*mat,m,n,M,N); CHKERRQ(ierr);
-  // ierr = MatSetType(*mat,MATMPIAIJ); CHKERRQ(ierr);
-  // ierr = MatMPIAIJSetPreallocation(*mat,1,PETSC_NULL,0,PETSC_NULL); CHKERRQ(ierr);
-  //
-  // //get matrix layout
-  // PetscLayout rmap,cmap;
-  // ierr = MatGetLayouts(*mat,&rmap,&cmap); CHKERRQ(ierr);
-  // int rstart,rend,cstart,cend;
-  // ierr = PetscLayoutGetRange(rmap,&rstart,&rend); CHKERRQ(ierr);
-  // ierr = PetscLayoutGetRange(cmap,&cstart,&cend); CHKERRQ(ierr);
-  //
-  // // if(verb>0) {
-  // //   PetscSynchronizedPrintf(comm,"level %d row start %d row end %d\n",kk,rstart,rend);
-  // //   PetscSynchronizedPrintf(comm,"level %d col start %d col end %d\n",kk,cstart,cend);
-  // // }
-  //
-  // const int *row_indices_ptr,*col_indices_ptr;
-  // ierr = ISGetIndices(mat_ctx->isDown,&row_indices_ptr); CHKERRQ(ierr);
-  // ierr = ISGetIndices(mat_ctx->isUp,&col_indices_ptr); CHKERRQ(ierr);
-  //
-  // map<int,int> idx_map;
-  // for(int ii = 0;ii<m;ii++) {
-  //   idx_map[row_indices_ptr[ii]] = rstart+ii;
-  // }
-  //
-  // // FIXME: Use MatCreateMPIAIJWithArrays and set array directly
-  // for(int jj = 0;jj<n;jj++) {
-  //   map<int,int>::iterator mit = idx_map.find(col_indices_ptr[jj]);
-  //   if(mit != idx_map.end()) {
-  //     ierr = MatSetValue(*mat,mit->second,cstart+jj,1,INSERT_VALUES); CHKERRQ(ierr);
-  //   }
-  // }
-  //
-  // ierr = ISRestoreIndices(mat_ctx->isDown,&row_indices_ptr); CHKERRQ(ierr);
-  // ierr = ISRestoreIndices(mat_ctx->isUp,&col_indices_ptr); CHKERRQ(ierr);
-  //
-  // ierr = MatAssemblyBegin(*mat,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
-  // ierr = MatAssemblyEnd(*mat,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
-  //
-  // delete mat_ctx;
 
   *vec = PETSC_NULL;
 

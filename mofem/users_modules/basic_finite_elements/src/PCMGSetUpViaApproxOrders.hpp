@@ -33,7 +33,6 @@ struct DMMGViaApproxOrdersCtx: public MoFEM::DMCtx {
   ~DMMGViaApproxOrdersCtx();
 
   AO aO;
-  Mat fineMatrix;            ///< Assembled matrix at fine level
   vector<IS> coarseningIS;   ///< Coarsening IS
   vector<Mat> kspOperators;  ///< Get KSP operators
 
