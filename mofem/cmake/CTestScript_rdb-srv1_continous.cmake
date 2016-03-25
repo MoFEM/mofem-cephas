@@ -1,6 +1,6 @@
 set(
   CTEST_BUILD_OPTIONS
-  "-DPETSC_DIR=/opt/petsc-3.5.1 -DPETSC_ARCH=arch-linux2-c-debug \
+  "-DPETSC_DIR=/opt/petsc -DPETSC_ARCH=arch-linux2-c-debug \
   -DMOAB_DIR=/opt/local_new_moab \
   -DADOL-C_DIR=/opt/local_adol-c-2.5.2 \
   -DTETGEN_DIR=/opt/tetgen1.5.0 \
