@@ -14,7 +14,7 @@
 
 
 #include <Includes.hpp>
-// #include <version.h>
+#include <version.h>
 #include <definitions.h>
 #include <Common.hpp>
 
@@ -33,6 +33,8 @@
 #include <BCMultiIndices.hpp>
 #include <CoreDataStructures.hpp>
 #include <SeriesMultiIndices.hpp>
+
+#include <UnknownInterface.hpp>
 
 #include <LoopMethods.hpp>
 #include <FieldInterface.hpp>

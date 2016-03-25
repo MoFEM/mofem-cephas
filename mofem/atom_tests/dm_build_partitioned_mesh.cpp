@@ -36,7 +36,11 @@ int main(int argc, char *argv[]) {
 
   PetscBool flg = PETSC_TRUE;
   char mesh_file_name[255];
+  #if PETSC_VERSION_GE(3,6,4)
+  ierr = PetscOptionsGetString(PETSC_NULL,"","-my_file",mesh_file_name,255,&flg); CHKERRQ(ierr);
+  #else
   ierr = PetscOptionsGetString(PETSC_NULL,"-my_file",mesh_file_name,255,&flg); CHKERRQ(ierr);
+  #endif
   if(flg != PETSC_TRUE) {
     SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_file (MESH FILE NEEDED)");
   }
@@ -58,10 +62,10 @@ int main(int argc, char *argv[]) {
   if(pcomm == NULL) pcomm =  new ParallelComm(&moab,PETSC_COMM_WORLD);
   const char *option;
   option = "PARALLEL=BCAST_DELETE;PARALLEL_RESOLVE_SHARED_ENTS;PARTITION=PARALLEL_PARTITION;";
-  rval = moab.load_file(mesh_file_name, 0, option); CHKERR_PETSC(rval);
-  //rval = pcomm->resolve_shared_ents(0,3,0); CHKERR_PETSC(rval);
-  //rval = pcomm->resolve_shared_ents(0,3,1); CHKERR_PETSC(rval);
-  //rval = pcomm->resolve_shared_ents(0,3,2); CHKERR_PETSC(rval);
+  rval = moab.load_file(mesh_file_name, 0, option); CHKERRQ_MOAB(rval);
+  //rval = pcomm->resolve_shared_ents(0,3,0); CHKERRQ_MOAB(rval);
+  //rval = pcomm->resolve_shared_ents(0,3,1); CHKERRQ_MOAB(rval);
+  //rval = pcomm->resolve_shared_ents(0,3,2); CHKERRQ_MOAB(rval);
 
   MoFEM::Core core(moab);
   FieldInterface& m_field = core;
@@ -73,7 +77,11 @@ int main(int argc, char *argv[]) {
   ierr = m_field.seed_ref_level_3D(root_set,bit_level0); CHKERRQ(ierr);
   //define & build field
   int field_rank = 1;
+  #if PETSC_VERSION_GE(3,6,4)
+  ierr = PetscOptionsGetInt(PETSC_NULL,"","-my_field_rank",&field_rank,&flg); CHKERRQ(ierr);
+  #else
   ierr = PetscOptionsGetInt(PETSC_NULL,"-my_field_rank",&field_rank,&flg); CHKERRQ(ierr);
+  #endif
   ierr = m_field.add_field("FIELD",H1,field_rank); CHKERRQ(ierr);
   //add entities to field
   ierr = m_field.add_ents_to_field_by_TETs(root_set,"FIELD"); CHKERRQ(ierr);
@@ -113,11 +121,17 @@ int main(int argc, char *argv[]) {
   ierr = DMCreateMatrix(dm,&m); CHKERRQ(ierr);
 
   PetscBool save_file = PETSC_TRUE;
+
+  #if PETSC_VERSION_GE(3,6,4)
+  ierr = PetscOptionsGetBool(PETSC_NULL,"","-my_save_fiele",&save_file,&flg); CHKERRQ(ierr);
+  #else
   ierr = PetscOptionsGetBool(PETSC_NULL,"-my_save_fiele",&save_file,&flg); CHKERRQ(ierr);
+  #endif
   if(save_file) {
 
     PetscViewer viewer;
     ierr = PetscViewerASCIIOpen(PETSC_COMM_WORLD,"dm_build_partitioned_mesh.txt",&viewer); CHKERRQ(ierr);
+    ierr = PetscViewerSetFormat(viewer,PETSC_VIEWER_ASCII_INFO); CHKERRQ(ierr);
     MatView(m,viewer);
     ierr = PetscViewerDestroy(&viewer); CHKERRQ(ierr);
 

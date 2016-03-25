@@ -241,7 +241,7 @@ struct ElasticMaterials {
       if(blockData[it->get_msId()].oRder == disp_order) continue;
       PetscPrintf(mField.get_comm(),"Set block %d oRder to %d\n",it->get_msId(),blockData[it->get_msId()].oRder);
       Range block_ents;
-      rval = mField.get_moab().get_entities_by_handle(it->meshset,block_ents,true); CHKERR(rval);
+      rval = mField.get_moab().get_entities_by_handle(it->meshset,block_ents,true); CHKERR_MOAB(rval);
       Range ents_to_set_order;
       ierr = mField.get_moab().get_adjacencies(block_ents,3,false,ents_to_set_order,Interface::UNION); CHKERRQ(ierr);
       ents_to_set_order = ents_to_set_order.subset_by_type(MBTET);
@@ -280,7 +280,7 @@ struct ElasticMaterials {
       Mat_Elastic mydata;
       ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
       EntityHandle meshset = it->get_meshset();
-      rval = mField.get_moab().get_entities_by_type(meshset,MBTET,set_of_blocks[id].tEts,true); CHKERR_PETSC(rval);
+      rval = mField.get_moab().get_entities_by_type(meshset,MBTET,set_of_blocks[id].tEts,true); CHKERRQ_MOAB(rval);
       set_of_blocks[id].iD = id;
       set_of_blocks[id].E = mydata.data.Young;
       if(blockData[id].yOung >= 0) set_of_blocks[id].E = blockData[id].yOung;
@@ -322,7 +322,7 @@ struct ElasticMaterials {
     for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BLOCKSET|BODYFORCESSET,it)) {
       int id = it->get_msId();
       EntityHandle meshset = it->get_meshset();
-      rval = mField.get_moab().get_entities_by_type(meshset,MBTET,set_of_blocks[id].tEts,true); CHKERR_PETSC(rval);
+      rval = mField.get_moab().get_entities_by_type(meshset,MBTET,set_of_blocks[id].tEts,true); CHKERRQ_MOAB(rval);
       Block_BodyForces mydata;
       ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
       set_of_blocks[id].rho0 = mydata.data.density;
@@ -386,14 +386,14 @@ struct ElasticMaterials {
         }
         rval = mField.get_moab().get_entities_by_type(
           it->meshset,MBTET,set_of_blocks[it->get_msId()].tEts,true
-        ); CHKERR_PETSC(rval);
+        ); CHKERRQ_MOAB(rval);
         set_of_blocks[it->get_msId()].gBeta = data[0];
         set_of_blocks[it->get_msId()].vBeta = data[1];
       }
       if(blockData[id].dashG > 0) {
         set = true;
         Range tEts;
-        rval = mField.get_moab().get_entities_by_type(meshset,MBTET,tEts,true); CHKERR_PETSC(rval);
+        rval = mField.get_moab().get_entities_by_type(meshset,MBTET,tEts,true); CHKERRQ_MOAB(rval);
         if(tEts.empty()) continue;
         set_of_blocks[it->get_msId()].tEts = tEts;
         set_of_blocks[it->get_msId()].gBeta = blockData[id].dashG;

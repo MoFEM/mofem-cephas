@@ -162,7 +162,7 @@ struct UltraWeakTransportElement {
       ierr = it->get_attribute_data_structure(temp_data); CHKERRQ(ierr);
       setOfBlocks[it->get_msId()].cOnductivity = temp_data.data.Conductivity;
       setOfBlocks[it->get_msId()].cApacity = temp_data.data.HeatCapacity;
-      rval = mField.get_moab().get_entities_by_type(it->meshset,MBTET,setOfBlocks[it->get_msId()].tEts,true); CHKERR_PETSC(rval);
+      rval = mField.get_moab().get_entities_by_type(it->meshset,MBTET,setOfBlocks[it->get_msId()].tEts,true); CHKERRQ_MOAB(rval);
       ierr = mField.add_ents_to_finite_element_by_TETs(setOfBlocks[it->get_msId()].tEts,"ULTRAWEAK"); CHKERRQ(ierr);
       ierr = mField.add_ents_to_finite_element_by_TETs(setOfBlocks[it->get_msId()].tEts,"ULTRAWEAK_ERROR"); CHKERRQ(ierr);
 
@@ -935,17 +935,17 @@ struct UltraWeakTransportElement {
 
         double def_VAL = 0;
         Tag th_error_div_sigma;
-        rval = cTx.mField.get_moab().tag_get_handle("ERRORL2_DIVSIGMA_F",1,MB_TYPE_DOUBLE,th_error_div_sigma,MB_TAG_CREAT|MB_TAG_SPARSE,&def_VAL); CHKERR_PETSC(rval);
+        rval = cTx.mField.get_moab().tag_get_handle("ERRORL2_DIVSIGMA_F",1,MB_TYPE_DOUBLE,th_error_div_sigma,MB_TAG_CREAT|MB_TAG_SPARSE,&def_VAL); CHKERRQ_MOAB(rval);
         Tag th_error_flux;
-        rval = cTx.mField.get_moab().tag_get_handle("ERRORL2_FLUX",1,MB_TYPE_DOUBLE,th_error_flux,MB_TAG_CREAT|MB_TAG_SPARSE,&def_VAL); CHKERR_PETSC(rval);
+        rval = cTx.mField.get_moab().tag_get_handle("ERRORL2_FLUX",1,MB_TYPE_DOUBLE,th_error_flux,MB_TAG_CREAT|MB_TAG_SPARSE,&def_VAL); CHKERRQ_MOAB(rval);
         if(type == MBTRI && side == 0) {
           cTx.mField.get_moab().tag_set_data(th_error_div_sigma,&fe_ent,1,&def_VAL);
         }
 
         double* error_div_ptr;
-        rval = cTx.mField.get_moab().tag_get_by_ptr(th_error_div_sigma,&fe_ent,1,(const void**)&error_div_ptr); CHKERR_PETSC(rval);
+        rval = cTx.mField.get_moab().tag_get_by_ptr(th_error_div_sigma,&fe_ent,1,(const void**)&error_div_ptr); CHKERRQ_MOAB(rval);
         double* error_flux_ptr;
-        rval = cTx.mField.get_moab().tag_get_by_ptr(th_error_flux,&fe_ent,1,(const void**)&error_flux_ptr); CHKERR_PETSC(rval);
+        rval = cTx.mField.get_moab().tag_get_by_ptr(th_error_flux,&fe_ent,1,(const void**)&error_flux_ptr); CHKERRQ_MOAB(rval);
 
         deltaFlux.resize(3);
         for(int gg = 0;gg<nb_gauss_pts;gg++) {

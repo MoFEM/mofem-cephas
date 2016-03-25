@@ -16,6 +16,7 @@
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 */
 
+#include <version.h>
 #include <Includes.hpp>
 #include <definitions.h>
 #include <Common.hpp>
@@ -36,6 +37,7 @@
 #include <CoreDataStructures.hpp>
 #include <SeriesMultiIndices.hpp>
 
+#include <UnknownInterface.hpp>
 #include <LoopMethods.hpp>
 
 namespace MoFEM {

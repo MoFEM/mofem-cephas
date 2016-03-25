@@ -63,7 +63,7 @@ int main(int argc, char *argv[]) {
   const char *option;
   option = "";//"PARALLEL=BCAST;";//;DEBUG_IO";
   BARRIER_RANK_START(pcomm)
-  rval = moab.load_file(mesh_file_name, 0, option); CHKERR_PETSC(rval);
+  rval = moab.load_file(mesh_file_name, 0, option); CHKERRQ_MOAB(rval);
   BARRIER_RANK_END(pcomm)
 
   //Create MoFEM (Joseph) database
@@ -74,7 +74,7 @@ int main(int argc, char *argv[]) {
   BitRefLevel bit_level0;
   bit_level0.set(0);
   EntityHandle meshset_level0;
-  rval = moab.create_meshset(MESHSET_SET,meshset_level0); CHKERR_PETSC(rval);
+  rval = moab.create_meshset(MESHSET_SET,meshset_level0); CHKERRQ_MOAB(rval);
   ierr = m_field.seed_ref_level_3D(0,bit_level0); CHKERRQ(ierr);
 
   //Fields
@@ -157,7 +157,7 @@ int main(int argc, char *argv[]) {
   ierr = m_field.get_entities_by_type_and_ref_level(BitRefLevel().set(0),BitRefLevel().set(),MBTET,tets); CHKERRQ(ierr);
   Skinner skin(&moab);
   Range skin_faces; // skin faces from 3d ents
-  rval = skin.find_skin(0,tets,false,skin_faces); CHKERR(rval);
+  rval = skin.find_skin(0,tets,false,skin_faces); CHKERR_MOAB(rval);
 
   // note: what is essential (dirichlet) is neutral (neumann) for ultra wik comparic to classical FE
   /*Range neumann_tris;
@@ -366,7 +366,7 @@ int main(int argc, char *argv[]) {
   ierr = post_proc.addFieldValuesPostProc("VALUES"); CHKERRQ(ierr);
   ierr = m_field.loop_finite_elements("ULTRAWEAK","ULTRAWEAK",post_proc);  CHKERRQ(ierr);
   ierr = post_proc.writeFile("out_values.h5m"); CHKERRQ(ierr);
-  //rval = post_proc.postProcMesh.write_file("out.vtk","VTK",""); CHKERR_PETSC(rval);
+  //rval = post_proc.postProcMesh.write_file("out.vtk","VTK",""); CHKERRQ_MOAB(rval);
   ierr = post_proc.clearOperators(); CHKERRQ(ierr);
 
   ierr = post_proc.addFieldValuesPostProc("FLUXES"); CHKERRQ(ierr);
@@ -383,7 +383,7 @@ int main(int argc, char *argv[]) {
 
   //if(pcomm->rank()==0) {
     //EntityHandle fe_meshset = m_field.get_finite_element_meshset("ULTRAWEAK");
-    //rval = moab.write_file("error.vtk","VTK","",&fe_meshset,1); CHKERR_PETSC(rval); CHKERR_PETSC(rval);
+    //rval = moab.write_file("error.vtk","VTK","",&fe_meshset,1); CHKERRQ_MOAB(rval); CHKERRQ_MOAB(rval);
   //}
 
   ierr = PetscFinalize(); CHKERRQ(ierr);

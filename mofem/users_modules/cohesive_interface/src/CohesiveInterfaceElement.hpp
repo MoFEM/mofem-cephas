@@ -78,10 +78,10 @@ struct CohesiveInterfaceElement {
       double def_damaged = 0;
       rval = mField.get_moab().tag_get_handle(
         "DAMAGED_PRISM",1,MB_TYPE_INTEGER,thDamagedPrism,MB_TAG_CREAT|MB_TAG_SPARSE,&def_damaged
-      ); CHKERR_THROW(rval);
+      ); MOAB_THROW(rval);
       const int def_len = 0;
       rval = mField.get_moab().tag_get_handle("_KAPPA",def_len,MB_TYPE_DOUBLE,
-      thKappa,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_VARLEN,NULL); CHKERR_PETSC(rval);
+      thKappa,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_VARLEN,NULL); CHKERRQ_MOAB(rval);
       E0 = youngModulus/h;
       g0 = ft/E0;
       kappa1 = 2*Gf/ft;
@@ -116,8 +116,8 @@ struct CohesiveInterfaceElement {
         int tag_size[1];
         tag_size[0] = nb_gauss_pts;
         void const* tag_data[] = { &kappa[0] };
-        rval = mField.get_moab().tag_set_by_ptr(thKappa,&ent,1,tag_data,tag_size);  CHKERR_PETSC(rval);
-        rval = mField.get_moab().tag_get_by_ptr(thKappa,&ent,1,(const void **)&kappaPtr,&kappaSize);  CHKERR_PETSC(rval);
+        rval = mField.get_moab().tag_set_by_ptr(thKappa,&ent,1,tag_data,tag_size);  CHKERRQ_MOAB(rval);
+        rval = mField.get_moab().tag_get_by_ptr(thKappa,&ent,1,(const void **)&kappaPtr,&kappaSize);  CHKERRQ_MOAB(rval);
       }
       PetscFunctionReturn(0);
     }
@@ -297,7 +297,7 @@ struct CohesiveInterfaceElement {
       if(all_gauss_pts_damaged) {
         EntityHandle ent = fe_method->fePtr->get_ent();
         int set_prism_as_demaged = 1;
-        rval = mField.get_moab().tag_set_data(thDamagedPrism,&ent,1,&set_prism_as_demaged); CHKERR_PETSC(rval);
+        rval = mField.get_moab().tag_set_data(thDamagedPrism,&ent,1,&set_prism_as_demaged); CHKERRQ_MOAB(rval);
       }
       PetscFunctionReturn(0);
     }

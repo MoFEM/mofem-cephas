@@ -33,14 +33,14 @@ namespace MoFEM {
 PetscErrorCode CubitMeshSets::get_tags_hanlders(Interface &moab) {
   PetscFunctionBegin;
   ErrorCode rval;
-  rval = moab.tag_get_handle(DIRICHLET_SET_TAG_NAME,nsTag); CHKERR(rval);CHKERR_THROW(rval);
-  rval = moab.tag_get_handle(NEUMANN_SET_TAG_NAME,ssTag); CHKERR(rval);CHKERR_THROW(rval);
-  rval = moab.tag_get_handle((string(DIRICHLET_SET_TAG_NAME)+"__BC_DATA").c_str(),nsTag_data); CHKERR(rval);CHKERR_THROW(rval);
-  rval = moab.tag_get_handle((string(NEUMANN_SET_TAG_NAME)+"__BC_DATA").c_str(),ssTag_data); CHKERR(rval);CHKERR_THROW(rval);
-  rval = moab.tag_get_handle(MATERIAL_SET_TAG_NAME,bhTag); CHKERR(rval);CHKERR_THROW(rval);
-  rval = moab.tag_get_handle(BLOCK_HEADER,bhTag_header); CHKERR(rval);CHKERR_THROW(rval);
-  rval = moab.tag_get_handle(BLOCK_ATTRIBUTES,block_attribs); CHKERR(rval); CHKERR_THROW(rval);
-  rval = moab.tag_get_handle(NAME_TAG_NAME,entityNameTag); CHKERR(rval);CHKERR_THROW(rval);
+  rval = moab.tag_get_handle(DIRICHLET_SET_TAG_NAME,nsTag); CHKERR_MOAB(rval);MOAB_THROW(rval);
+  rval = moab.tag_get_handle(NEUMANN_SET_TAG_NAME,ssTag); CHKERR_MOAB(rval);MOAB_THROW(rval);
+  rval = moab.tag_get_handle((string(DIRICHLET_SET_TAG_NAME)+"__BC_DATA").c_str(),nsTag_data); CHKERR_MOAB(rval);MOAB_THROW(rval);
+  rval = moab.tag_get_handle((string(NEUMANN_SET_TAG_NAME)+"__BC_DATA").c_str(),ssTag_data); CHKERR_MOAB(rval);MOAB_THROW(rval);
+  rval = moab.tag_get_handle(MATERIAL_SET_TAG_NAME,bhTag); CHKERR_MOAB(rval);MOAB_THROW(rval);
+  rval = moab.tag_get_handle(BLOCK_HEADER,bhTag_header); CHKERR_MOAB(rval);MOAB_THROW(rval);
+  rval = moab.tag_get_handle(BLOCK_ATTRIBUTES,block_attribs); CHKERR_MOAB(rval); MOAB_THROW(rval);
+  rval = moab.tag_get_handle(NAME_TAG_NAME,entityNameTag); CHKERR_MOAB(rval);MOAB_THROW(rval);
   PetscFunctionReturn(0);
 }
 CubitMeshSets::CubitMeshSets(Interface &moab,const EntityHandle _meshset):
@@ -50,14 +50,14 @@ CubitMeshSets::CubitMeshSets(Interface &moab,const EntityHandle _meshset):
   PetscErrorCode ierr;
   ierr = get_tags_hanlders(moab); CHKERRABORT(PETSC_COMM_WORLD,ierr);
   ErrorCode rval;
-  rval = moab.tag_get_tags_on_entity(meshset,tag_handles); CHKERR(rval);CHKERR_THROW(rval);
+  rval = moab.tag_get_tags_on_entity(meshset,tag_handles); CHKERR_MOAB(rval);MOAB_THROW(rval);
   vector<Tag>::iterator tit = tag_handles.begin();
   for(;tit!=tag_handles.end();tit++) {
     if(
       *tit == nsTag ||
       *tit == ssTag ||
       *tit == bhTag) {
-      rval = moab.tag_get_by_ptr(*tit,&meshset,1,(const void **)&msId); CHKERR(rval);CHKERR_THROW(rval);
+      rval = moab.tag_get_by_ptr(*tit,&meshset,1,(const void **)&msId); CHKERR_MOAB(rval);MOAB_THROW(rval);
     }
     if(
       (*tit == nsTag_data)||
@@ -81,22 +81,22 @@ CubitMeshSets::CubitMeshSets(Interface &moab,const EntityHandle _meshset):
     if(
       (*tit == nsTag_data) ||
       (*tit == ssTag_data)) {
-      rval = moab.tag_get_by_ptr(*tit,&meshset,1,(const void **)&tag_bc_data,&tag_bc_size); CHKERR(rval);CHKERR_THROW(rval);
+      rval = moab.tag_get_by_ptr(*tit,&meshset,1,(const void **)&tag_bc_data,&tag_bc_size); CHKERR_MOAB(rval);MOAB_THROW(rval);
       PetscErrorCode ierr;
       ierr = get_type_from_bc_data(cubit_bc_type); if(ierr>0) throw("unrecognised bc_data type");
     }
     if(*tit == bhTag_header) {
-      rval = moab.tag_get_by_ptr(*tit,&meshset,1,(const void **)&tag_block_header_data); CHKERR(rval);CHKERR_THROW(rval);
+      rval = moab.tag_get_by_ptr(*tit,&meshset,1,(const void **)&tag_block_header_data); CHKERR_MOAB(rval);MOAB_THROW(rval);
       if(tag_block_header_data[1]>0) cubit_bc_type |= MATERIALSET;
     }
     if(*tit == block_attribs) {
-      rval = moab.tag_get_by_ptr(*tit,&meshset,1,(const void **)&tag_block_attributes,&tag_block_attributes_size); CHKERR(rval); CHKERR_THROW(rval);
+      rval = moab.tag_get_by_ptr(*tit,&meshset,1,(const void **)&tag_block_attributes,&tag_block_attributes_size); CHKERR_MOAB(rval); MOAB_THROW(rval);
       //for(int ii = 0;ii<tag_block_attributes_size;ii++) {
 	//cerr << "RRRRR " << tag_block_attributes[ii] << endl;
       //}
     }
     if(*tit == entityNameTag) {
-      rval = moab.tag_get_by_ptr(entityNameTag,&meshset,1,(const void **)&tag_name_data); CHKERR(rval); CHKERR_THROW(rval);
+      rval = moab.tag_get_by_ptr(entityNameTag,&meshset,1,(const void **)&tag_name_data); CHKERR_MOAB(rval); MOAB_THROW(rval);
       PetscErrorCode ierr;
       ierr = get_type_from_name(cubit_bc_type); if(ierr>0) throw("unrecognised Cubit name type");
     }
@@ -130,20 +130,20 @@ CubitMeshSets::CubitMeshSets(Interface &moab,const CubitBCType _cubit_bc_type,co
   PetscErrorCode ierr;
   ierr = get_tags_hanlders(moab); CHKERRABORT(PETSC_COMM_WORLD,ierr);
   ErrorCode rval;
-  rval = moab.create_meshset(MESHSET_SET|MESHSET_TRACK_OWNER,meshset); CHKERR_THROW(rval);
+  rval = moab.create_meshset(MESHSET_SET|MESHSET_TRACK_OWNER,meshset); MOAB_THROW(rval);
 
   switch(_cubit_bc_type.to_ulong()) {
     case NODESET:
-      rval = moab.tag_set_data(nsTag,&meshset,1,&_msId); CHKERR(rval);CHKERR_THROW(rval);
-      rval = moab.tag_get_by_ptr(nsTag,&meshset,1,(const void **)&msId); CHKERR(rval);CHKERR_THROW(rval);
+      rval = moab.tag_set_data(nsTag,&meshset,1,&_msId); CHKERR_MOAB(rval);MOAB_THROW(rval);
+      rval = moab.tag_get_by_ptr(nsTag,&meshset,1,(const void **)&msId); CHKERR_MOAB(rval);MOAB_THROW(rval);
     break;
     case SIDESET:
-      rval = moab.tag_set_data(ssTag,&meshset,1,&_msId); CHKERR(rval);CHKERR_THROW(rval);
-      rval = moab.tag_get_by_ptr(ssTag,&meshset,1,(const void **)&msId); CHKERR(rval);CHKERR_THROW(rval);
+      rval = moab.tag_set_data(ssTag,&meshset,1,&_msId); CHKERR_MOAB(rval);MOAB_THROW(rval);
+      rval = moab.tag_get_by_ptr(ssTag,&meshset,1,(const void **)&msId); CHKERR_MOAB(rval);MOAB_THROW(rval);
     break;
     case BLOCKSET:
-      rval = moab.tag_set_data(bhTag,&meshset,1,&_msId); CHKERR(rval);CHKERR_THROW(rval);
-      rval = moab.tag_get_by_ptr(bhTag,&meshset,1,(const void **)&msId); CHKERR(rval);CHKERR_THROW(rval);
+      rval = moab.tag_set_data(bhTag,&meshset,1,&_msId); CHKERR_MOAB(rval);MOAB_THROW(rval);
+      rval = moab.tag_get_by_ptr(bhTag,&meshset,1,(const void **)&msId); CHKERR_MOAB(rval);MOAB_THROW(rval);
     break;
     default: {
       PetscTraceBackErrorHandler(
@@ -161,14 +161,14 @@ CubitMeshSets::CubitMeshSets(Interface &moab,const CubitBCType _cubit_bc_type,co
 PetscErrorCode CubitMeshSets::get_cubit_msId_entities_by_dimension(Interface &moab,const int dimension,Range &entities,const bool recursive)  const {
   PetscFunctionBegin;
   ErrorCode rval;
-  //rval = moab.list_entity(meshset); CHKERR_PETSC(rval);
+  //rval = moab.list_entity(meshset); CHKERRQ_MOAB(rval);
   rval = moab.get_entities_by_dimension(meshset,dimension,entities,recursive);
   if(rval !=  MB_SUCCESS) {
     ostringstream ss;
     ss << "bc set " << *this << endl;
     PetscPrintf(PETSC_COMM_WORLD,ss.str().c_str());
   }
-  CHKERR_PETSC(rval);
+  CHKERRQ_MOAB(rval);
   PetscFunctionReturn(0);
 }
 PetscErrorCode CubitMeshSets::get_cubit_msId_entities_by_dimension(Interface &moab,Range &entities,const bool recursive)  const {
@@ -188,14 +188,14 @@ PetscErrorCode CubitMeshSets::get_cubit_msId_entities_by_dimension(Interface &mo
 PetscErrorCode CubitMeshSets::get_cubit_msId_entities_by_type(Interface &moab,const EntityType type,Range &entities,const bool recursive)  const {
   PetscFunctionBegin;
   ErrorCode rval;
-  //rval = moab.list_entity(meshset); CHKERR_PETSC(rval);
+  //rval = moab.list_entity(meshset); CHKERRQ_MOAB(rval);
   rval = moab.get_entities_by_type(meshset,type,entities,recursive);
   if(rval !=  MB_SUCCESS) {
     ostringstream ss;
     ss << "bc set " << *this << endl;
     PetscPrintf(PETSC_COMM_WORLD,ss.str().c_str());
   }
-  CHKERR_PETSC(rval);
+  CHKERRQ_MOAB(rval);
   PetscFunctionReturn(0);
 }
 

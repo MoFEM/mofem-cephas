@@ -43,19 +43,19 @@ struct ArcLengthIntElemFEMethod: public FEMethod {
       VecCreateGhost(PETSC_COMM_WORLD,0,1,1,ghosts,&GhostLambdaInt);
     }
     Range prisms;
-    rval = mOab.get_entities_by_type(0,MBPRISM,prisms,false); CHKERR_THROW(rval);
+    rval = mOab.get_entities_by_type(0,MBPRISM,prisms,false); MOAB_THROW(rval);
     for(Range::iterator pit = prisms.begin();pit!=prisms.end();pit++) {
       EntityHandle f3,f4;
-      rval = mOab.side_element(*pit,2,3,f3); CHKERR_THROW(rval);
-      rval = mOab.side_element(*pit,2,4,f4); CHKERR_THROW(rval);
+      rval = mOab.side_element(*pit,2,3,f3); MOAB_THROW(rval);
+      rval = mOab.side_element(*pit,2,4,f4); MOAB_THROW(rval);
       Faces3.insert(f3);
       Faces4.insert(f4);
     }
 
-    rval = mOab.get_adjacencies(Faces3,1,false,Edges3); CHKERR_THROW(rval);
-    rval = mOab.get_adjacencies(Faces4,1,false,Edges4); CHKERR_THROW(rval);
-    rval = mOab.get_connectivity(Faces3,Nodes3,true); CHKERR_THROW(rval);
-    rval = mOab.get_connectivity(Faces4,Nodes4,true); CHKERR_THROW(rval);
+    rval = mOab.get_adjacencies(Faces3,1,false,Edges3); MOAB_THROW(rval);
+    rval = mOab.get_adjacencies(Faces4,1,false,Edges4); MOAB_THROW(rval);
+    rval = mOab.get_connectivity(Faces3,Nodes3,true); MOAB_THROW(rval);
+    rval = mOab.get_connectivity(Faces4,Nodes4,true); MOAB_THROW(rval);
     //Faces3.insert(Edges3.begin(),Edges3.end());
     Faces3.insert(Nodes3.begin(),Nodes3.end());
     //Faces4.insert(Edges4.begin(),Edges4.end());
@@ -63,7 +63,7 @@ struct ArcLengthIntElemFEMethod: public FEMethod {
 
     double def_damaged = 0;
     rval = mOab.tag_get_handle(
-      "DAMAGED_PRISM",1,MB_TYPE_INTEGER,thDamagedPrism,MB_TAG_CREAT|MB_TAG_SPARSE,&def_damaged); CHKERR_THROW(rval);
+      "DAMAGED_PRISM",1,MB_TYPE_INTEGER,thDamagedPrism,MB_TAG_CREAT|MB_TAG_SPARSE,&def_damaged); MOAB_THROW(rval);
 
   }
   ~ArcLengthIntElemFEMethod() {
@@ -77,15 +77,15 @@ struct ArcLengthIntElemFEMethod: public FEMethod {
   PetscErrorCode remove_damaged_prisms_nodes() {
     PetscFunctionBegin;
     Range prisms;
-    rval = mOab.get_entities_by_type(0,MBPRISM,prisms,false); CHKERR_PETSC(rval);
+    rval = mOab.get_entities_by_type(0,MBPRISM,prisms,false); CHKERRQ_MOAB(rval);
     vector<int> is_prism_damaged(prisms.size());
-    rval = mOab.tag_get_data(thDamagedPrism,prisms,&*is_prism_damaged.begin()); CHKERR_PETSC(rval);
+    rval = mOab.tag_get_data(thDamagedPrism,prisms,&*is_prism_damaged.begin()); CHKERRQ_MOAB(rval);
     Range::iterator pit = prisms.begin();
     vector<int>::iterator vit = is_prism_damaged.begin();
     for(;pit!=prisms.end();pit++,vit++) {
       if(*vit>0) {
         Range nodes;
-        rval = mOab.get_connectivity(&*pit,1,nodes,true); CHKERR_PETSC(rval);
+        rval = mOab.get_connectivity(&*pit,1,nodes,true); CHKERRQ_MOAB(rval);
         for(Range::iterator nit = nodes.begin();nit!=nodes.end();nit++) {
           Faces3.erase(*nit);
           Faces4.erase(*nit);

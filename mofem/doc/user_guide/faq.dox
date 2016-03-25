@@ -15,6 +15,8 @@ If problem is large, mesh can be partitioned for to save memory and improve effi
 mbpart -t -p PartKway  16 cylinder.cub cylinder_16parts.h5m
 \endcode
 
+The tool \em mbpart is part of MoAB. To have it you need compile MoAB with Zoltan library.
+
 \section running_multi_grid How to multi-grid solver via approximation orders?
 
 Code is run using direct solver, i.e. \em MUMPS on coarse level. Note that
@@ -173,5 +175,31 @@ namespace SolidShellModule {
 }
 \endcode
 
+\section prfiling_code_mac_os_x How to profile code using XCode tools?
+
+To profile code in MacOS X environment, from line command you execute \em instruments,
+for example
+\code
+instruments -v -t "Time Profiler" \
+./elasticity -my_file LShape.h5m  -ksp_type fgmres -ksp_monitor -my_order 5 \
+-pc_type mg -mofem_mg_verbose 1 -mofem_mg_coarse_order 1 \
+-mofem_mg_levels 5 -mg_coarse_ksp_type preonly \
+-mg_coarse_pc_type lu -mg_coarse_pc_factor_mat_solver_package mumps \
+-pc_mg_smoothup 10 -pc_mg_smoothdown 10 -pc_mg_type multiplicative -log_summary
+\endcode
+
+This generates directory \em instrumentscli0.trace and for next run
+\em instrumentscli1.trace, and similarly for subsequent runs. You can see changes
+in execution of the code by
+\code
+open instrumentscli0.trace
+\endcode
+
+\section profiling_code_stages How to profile code using PETSc tools?
+
+See PETSc documentation
+<http://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/Profiling/PetscLogStageRegister.html>
+and examples
+<http://www.mcs.anl.gov/petsc/petsc-current/src/ksp/ksp/examples/tutorials/ex9.c.html>
 
 */

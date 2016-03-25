@@ -219,7 +219,7 @@ PetscErrorCode AnalyticalDirichletBC::ApproxField::OpLhs::doWork(
     PetscFunctionBegin;
     ParallelComm* pcomm = ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
     Range ents;
-    rval = mField.get_moab().get_connectivity(tris,ents,true); CHKERR_PETSC(rval);
+    rval = mField.get_moab().get_connectivity(tris,ents,true); CHKERRQ_MOAB(rval);
     ierr = mField.get_moab().get_adjacencies(tris,1,false,ents,Interface::UNION); CHKERRQ(ierr);
     ents.merge(tris);
     for(Range::iterator eit = ents.begin();eit!=ents.end();eit++) {

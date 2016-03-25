@@ -19,12 +19,14 @@
 * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
 #include <Includes.hpp>
-// #include <version.h>
+#include <version.h>
 #include <definitions.h>
 #include <Common.hpp>
 
 #include <h1_hdiv_hcurl_l2.h>
 #include <fem_tools.h>
+
+#include <UnknownInterface.hpp>
 
 #include <MaterialBlocks.hpp>
 #include <CubitBCData.hpp>
@@ -71,7 +73,7 @@ PetscErrorCode VertexElementForcesAndSourcesCore::operator()() {
 
   EntityHandle ent = fePtr->get_ent();
   coords.resize(3,false);
-  rval = mField.get_moab().get_coords(&ent,1,&*coords.data().begin()); CHKERR_PETSC(rval);
+  rval = mField.get_moab().get_coords(&ent,1,&*coords.data().begin()); CHKERRQ_MOAB(rval);
 
   const UserDataOperator::OpType types[2] = {
     UserDataOperator::OPROW, UserDataOperator::OPCOL

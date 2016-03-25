@@ -248,7 +248,7 @@ struct NitscheMethod {
         EntityHandle tet = fePtr->get_ent();
         for(int ff = 0;ff<4;ff++) {
           EntityHandle face;
-          rval = mField.get_moab().side_element(tet,2,ff,face); CHKERR_PETSC(rval);
+          rval = mField.get_moab().side_element(tet,2,ff,face); CHKERRQ_MOAB(rval);
           if(blockData.fAces.find(face)!=blockData.fAces.end()) {
             commonData.fAces[ff] = face;
             commonData.nbActiveFaces++;

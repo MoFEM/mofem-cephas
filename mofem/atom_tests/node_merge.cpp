@@ -38,7 +38,11 @@ int main(int argc, char *argv[]) {
   //Read parameters from line command
   PetscBool flg = PETSC_TRUE;
   char mesh_file_name[255];
+  #if PETSC_VERSION_GE(3,6,4)
+  ierr = PetscOptionsGetString(PETSC_NULL,"","-my_file",mesh_file_name,255,&flg); CHKERRQ(ierr);
+  #else
   ierr = PetscOptionsGetString(PETSC_NULL,"-my_file",mesh_file_name,255,&flg); CHKERRQ(ierr);
+  #endif
   if(flg != PETSC_TRUE) {
     SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_file (MESH FILE NEEDED)");
   }
@@ -46,7 +50,7 @@ int main(int argc, char *argv[]) {
   //Read mesh to MOAB
   const char *option;
   option = "";//"PARALLEL=BCAST;";//;DEBUG_IO";
-  rval = moab.load_file(mesh_file_name, 0, option); CHKERR_PETSC(rval);
+  rval = moab.load_file(mesh_file_name, 0, option); CHKERRQ_MOAB(rval);
   ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
   if(pcomm == NULL) pcomm =  new ParallelComm(&moab,PETSC_COMM_WORLD);
 
@@ -68,23 +72,23 @@ int main(int argc, char *argv[]) {
     bit_level1.set(ii);
 
     Range edges;
-    //rval = moab.get_entities_by_type(0,MBEDGE,edges,false); CHKERR_PETSC(rval);
+    //rval = moab.get_entities_by_type(0,MBEDGE,edges,false); CHKERRQ_MOAB(rval);
     ierr = m_field.get_entities_by_type_and_ref_level(bit_level0,BitRefLevel().set(),MBEDGE,edges); CHKERRQ(ierr);
     Range::iterator eit = edges.begin();
 
     const EntityHandle* conn;
     int num_nodes;
-    rval = moab.get_connectivity(*eit,conn,num_nodes,true); CHKERR_PETSC(rval);
+    rval = moab.get_connectivity(*eit,conn,num_nodes,true); CHKERRQ_MOAB(rval);
     ierr = node_merger_iface->mergeNodes(conn[0],conn[1],bit_level1,bit_level0); CHKERRQ(ierr);
 
     EntityHandle meshset_level1;
-    rval = moab.create_meshset(MESHSET_SET,meshset_level1); CHKERR_PETSC(rval);
+    rval = moab.create_meshset(MESHSET_SET,meshset_level1); CHKERRQ_MOAB(rval);
     ierr = m_field.get_entities_by_type_and_ref_level(bit_level1,BitRefLevel().set(),MBTET,meshset_level1); CHKERRQ(ierr);
 
     ostringstream ss;
     ss << "node_merger_" << ii << ".vtk";
 
-    if(debug) rval = moab.write_file(ss.str().c_str(),"VTK","",&meshset_level1,1); CHKERR_PETSC(rval);
+    if(debug) rval = moab.write_file(ss.str().c_str(),"VTK","",&meshset_level1,1); CHKERRQ_MOAB(rval);
     bit_level0 = bit_level1;
 
   }

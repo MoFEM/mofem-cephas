@@ -8,4 +8,4 @@ application is implemented.
 The objective is to have implementation with reach abstraction (able to
 implement nontrivial finite elements) while being small and compassable.
 
-[Go to Documentation Page](http://userweb.eng.gla.ac.uk/lukasz.kaczmarczyk/MoFem/html/index.html)
+[Go to Documentation Page](http://mofem.eng.gla.ac.uk/mofem/html/index.html)

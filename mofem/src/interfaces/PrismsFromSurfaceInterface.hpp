@@ -23,9 +23,9 @@ static const MOFEMuuid IDD_MOFEMPrismsFromSurface = MOFEMuuid(BitIntefaceId(PRIS
 /** \brief merge node from two bit levels
   * \ingroup mofem
   */
-struct PrismsFromSurfaceInterface: public FieldUnknownInterface {
+struct PrismsFromSurfaceInterface: public UnknownInterface {
 
-  PetscErrorCode queryInterface(const MOFEMuuid& uuid, FieldUnknownInterface** iface);
+  PetscErrorCode queryInterface(const MOFEMuuid& uuid, UnknownInterface** iface);
 
   MoFEM::Core& cOre;
   PrismsFromSurfaceInterface(MoFEM::Core& core): cOre(core) {};

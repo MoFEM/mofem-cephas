@@ -56,11 +56,11 @@ int main(int argc, char *argv[]) {
 
   EntityHandle nodes[4];
   for(int nn = 0;nn<4;nn++) {
-    rval = moab.create_vertex(&tet_coords[3*nn],nodes[nn]); CHKERR_PETSC(rval);
+    rval = moab.create_vertex(&tet_coords[3*nn],nodes[nn]); CHKERRQ_MOAB(rval);
   }
 
   EntityHandle tet;
-  rval = moab.create_element(MBTET,nodes,4,tet); CHKERR_PETSC(rval);
+  rval = moab.create_element(MBTET,nodes,4,tet); CHKERRQ_MOAB(rval);
 
   ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
   if(pcomm == NULL) pcomm =  new ParallelComm(&moab,PETSC_COMM_WORLD);
@@ -75,7 +75,7 @@ int main(int argc, char *argv[]) {
   BitRefLevel bit_level0;
   bit_level0.set(0);
   EntityHandle meshset_level0;
-  rval = moab.create_meshset(MESHSET_SET,meshset_level0); CHKERR_PETSC(rval);
+  rval = moab.create_meshset(MESHSET_SET,meshset_level0); CHKERRQ_MOAB(rval);
   ierr = m_field.seed_ref_level_3D(0,bit_level0); CHKERRQ(ierr);
 
   //fields
@@ -106,7 +106,7 @@ int main(int argc, char *argv[]) {
   ierr = m_field.get_entities_by_type_and_ref_level(BitRefLevel().set(0),BitRefLevel().set(),MBTET,tets); CHKERRQ(ierr);
   Skinner skin(&moab);
   Range skin_faces; // skin faces from 3d ents
-  rval = skin.find_skin(0,tets,false,skin_faces); CHKERR(rval);
+  rval = skin.find_skin(0,tets,false,skin_faces); CHKERR_MOAB(rval);
   ierr = m_field.add_ents_to_finite_element_by_TRIs(skin_faces,"SKIN_FE"); CHKERRQ(ierr);
 
   //build finite elemnts
@@ -295,7 +295,7 @@ int main(int argc, char *argv[]) {
   for(_IT_GET_DOFS_FIELD_BY_NAME_AND_TYPE_FOR_LOOP_(m_field,"MESH_NODE_POSITIONS",MBVERTEX,dof)) {
     EntityHandle vert = dof->get_ent();
     double coords[3];
-    rval = moab.get_coords(&vert,1,coords); CHKERR(rval);
+    rval = moab.get_coords(&vert,1,coords); CHKERR_MOAB(rval);
     coords[0] *= 2;
     coords[1] *= 4;
     coords[2] *= 0.5;

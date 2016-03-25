@@ -32,7 +32,7 @@ namespace MoFEM {
 struct Core:
   public FieldInterface, MeshRefinment, PrismInterface, SeriesRecorder {
 
-  PetscErrorCode queryInterface(const MOFEMuuid& uuid, FieldUnknownInterface** iface);
+  PetscErrorCode queryInterface(const MOFEMuuid& uuid, UnknownInterface** iface);
   PetscErrorCode query_interface_type(const std::type_info& iface_type, void*& ptr);
 
   Interface& moab;
@@ -46,7 +46,7 @@ struct Core:
 
   protected:
 
-  boost::ptr_map<unsigned long,FieldUnknownInterface *> iFaces;
+  boost::ptr_map<unsigned long,UnknownInterface *> iFaces;
 
   //Database
   ErrorCode rval;
@@ -225,10 +225,10 @@ struct Core:
         ss << *it << endl;
         ss << data << endl;
         Range tets,tris,edges,nodes;
-        rval = moab.get_entities_by_type(it->meshset,MBTET,tets,true); CHKERR_PETSC(rval);
-        rval = moab.get_entities_by_type(it->meshset,MBTRI,tris,true); CHKERR_PETSC(rval);
-        rval = moab.get_entities_by_type(it->meshset,MBEDGE,edges,true); CHKERR_PETSC(rval);
-        rval = moab.get_entities_by_type(it->meshset,MBVERTEX,nodes,true); CHKERR_PETSC(rval);
+        rval = moab.get_entities_by_type(it->meshset,MBTET,tets,true); CHKERRQ_MOAB(rval);
+        rval = moab.get_entities_by_type(it->meshset,MBTRI,tris,true); CHKERRQ_MOAB(rval);
+        rval = moab.get_entities_by_type(it->meshset,MBEDGE,edges,true); CHKERRQ_MOAB(rval);
+        rval = moab.get_entities_by_type(it->meshset,MBVERTEX,nodes,true); CHKERRQ_MOAB(rval);
         ss << "name "<< it->get_name() << endl;
         ss << "msId "<< it->get_msId() << " nb. tets " << tets.size() << endl;
         ss << "msId "<< it->get_msId() << " nb. tris " << tris.size() << endl;
@@ -288,7 +288,7 @@ struct Core:
       ss << *it << endl;
       ss << data;
       Range tets;
-      rval = moab.get_entities_by_type(it->meshset,MBTET,tets,true); CHKERR_PETSC(rval);
+      rval = moab.get_entities_by_type(it->meshset,MBTET,tets,true); CHKERRQ_MOAB(rval);
       ss << "MAT_ELATIC msId "<< it->get_msId() << " nb. tets " << tets.size() << endl;
       ss << endl;
       PetscPrintf(comm,ss.str().c_str());
@@ -491,14 +491,15 @@ struct Core:
   PetscErrorCode list_adjacencies() const;
 
   //problem building
+  PetscErrorCode build_partitioned_problems(int verb = -1);
+  PetscErrorCode build_partitioned_problem(const string &name,bool square_matrix = true,int verb = -1);
+  PetscErrorCode build_partitioned_problem(MoFEMProblem *problem_ptr,bool square_matrix = true,int verb = -1);
+  PetscErrorCode partition_mesh(Range &ents,int dim,int adj_dim,int n_parts,int verb = -1);
   PetscErrorCode build_problem(const string &name,int verb = -1);
   PetscErrorCode clear_problem(const string &name,int verb = -1);
   PetscErrorCode build_problem(MoFEMProblem *problem_ptr,int verb = -1);
   PetscErrorCode build_problems(int verb = -1);
   PetscErrorCode clear_problems(int verb = -1);
-  PetscErrorCode build_partitioned_problems(int verb = -1);
-  PetscErrorCode build_partitioned_problem(const string &name,bool square_matrix = true,int verb = -1);
-  PetscErrorCode build_partitioned_problem(MoFEMProblem *problem_ptr,bool square_matrix = true,int verb = -1);
   PetscErrorCode partition_simple_problem(const string &name,int verb = -1);
   PetscErrorCode partition_problem(const string &name,int verb = -1);
   PetscErrorCode partition_compose_problem(const string &name,const string &problem_for_rows,bool copy_rows,const string &problem_for_cols,bool copy_cols,int verb = -1);
@@ -507,6 +508,11 @@ struct Core:
   PetscErrorCode partition_check_matrix_fill_in(const string &problem_neme,int row,int col,int verb);
   PetscErrorCode printPartitionedProblem(const MoFEMProblem *problem_ptr,int verb = -1);
   PetscErrorCode debugPartitionedProblem(const MoFEMProblem *problem_ptr,int verb = -1);
+  PetscErrorCode resolve_shared_ents(const MoFEMProblem *problem_ptr,const string &fe_name,int verb = -1);
+  PetscErrorCode resolve_shared_ents(const string &name,const string &fe_name,int verb = -1);
+  PetscErrorCode get_problem_elements_layout(
+    const string &name,const string &fe_name,PetscLayout *layout,int verb = -1
+  );
 
   ///save meshsets
   PetscErrorCode get_problem_finite_elements_entities(const string &name,const string &fe_name,const EntityHandle meshset);
@@ -631,6 +637,8 @@ struct Core:
   PetscLogEvent USER_EVENT_operator;
   PetscLogEvent USER_EVENT_postProcess;
   PetscLogEvent USER_EVENT_createMat;
+  PetscLogEvent USER_EVENT_buildProblem;
+
 
   // size and rank of communicator
   int sIze,rAnk;

@@ -77,14 +77,14 @@ int main(int argc, char *argv[]) {
   const char *option;
   option = "";//"PARALLEL=BCAST;";//;DEBUG_IO";
   BARRIER_RANK_START(pcomm)
-  rval = moab.load_file(mesh_file_name, 0, option); CHKERR_PETSC(rval);
+  rval = moab.load_file(mesh_file_name, 0, option); CHKERRQ_MOAB(rval);
   BARRIER_RANK_END(pcomm)
 
   //set entitities bit level
   BitRefLevel bit_level0;
   bit_level0.set(0);
   EntityHandle meshset_level0;
-  rval = moab.create_meshset(MESHSET_SET,meshset_level0); CHKERR_PETSC(rval);
+  rval = moab.create_meshset(MESHSET_SET,meshset_level0); CHKERRQ_MOAB(rval);
   ierr = m_field.seed_ref_level_3D(0,bit_level0); CHKERRQ(ierr);
 
   //Fields
@@ -206,14 +206,14 @@ int main(int argc, char *argv[]) {
 
   EntityHandle fe_meshset = m_field.get_finite_element_meshset("TEST_FE");
   Range tets;
-  rval = moab.get_entities_by_type(fe_meshset,MBTET,tets,true); CHKERR_PETSC(rval);
+  rval = moab.get_entities_by_type(fe_meshset,MBTET,tets,true); CHKERRQ_MOAB(rval);
   Range tets_edges;
-  rval = moab.get_adjacencies(tets,1,false,tets_edges,Interface::UNION); CHKERR(rval);
+  rval = moab.get_adjacencies(tets,1,false,tets_edges,Interface::UNION); CHKERR_MOAB(rval);
   EntityHandle edges_meshset;
-  rval = moab.create_meshset(MESHSET_SET,edges_meshset); CHKERR_PETSC(rval);
-  rval = moab.add_entities(edges_meshset,tets); CHKERR_PETSC(rval);
-  rval = moab.add_entities(edges_meshset,tets_edges); CHKERR_PETSC(rval);
-  rval = moab.convert_entities(edges_meshset,true,false,false); CHKERR_PETSC(rval);
+  rval = moab.create_meshset(MESHSET_SET,edges_meshset); CHKERRQ_MOAB(rval);
+  rval = moab.add_entities(edges_meshset,tets); CHKERRQ_MOAB(rval);
+  rval = moab.add_entities(edges_meshset,tets_edges); CHKERRQ_MOAB(rval);
+  rval = moab.convert_entities(edges_meshset,true,false,false); CHKERRQ_MOAB(rval);
 
   ProjectionFieldOn10NodeTet ent_method_field1_on_10nodeTet(m_field,"FIELD1",true,false,"FIELD1");
   ierr = m_field.loop_dofs("FIELD1",ent_method_field1_on_10nodeTet); CHKERRQ(ierr);
@@ -222,10 +222,10 @@ int main(int argc, char *argv[]) {
 
   if(pcomm->rank()==0) {
     EntityHandle out_meshset;
-    rval = moab.create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
+    rval = moab.create_meshset(MESHSET_SET,out_meshset); CHKERRQ_MOAB(rval);
     ierr = m_field.get_problem_finite_elements_entities("TEST_PROBLEM","TEST_FE",out_meshset); CHKERRQ(ierr);
-    rval = moab.write_file("out.vtk","VTK","",&out_meshset,1); CHKERR_PETSC(rval);
-    rval = moab.delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
+    rval = moab.write_file("out.vtk","VTK","",&out_meshset,1); CHKERRQ_MOAB(rval);
+    rval = moab.delete_entities(&out_meshset,1); CHKERRQ_MOAB(rval);
   }
 
   typedef tee_device<ostream, ofstream> TeeDevice;
@@ -236,11 +236,11 @@ int main(int argc, char *argv[]) {
   TeeStream my_split(tee);
 
   Range nodes;
-  rval = moab.get_entities_by_type(0,MBVERTEX,nodes,true); CHKERR(rval);
+  rval = moab.get_entities_by_type(0,MBVERTEX,nodes,true); CHKERR_MOAB(rval);
   ublas::matrix<double> nodes_vals;
   nodes_vals.resize(nodes.size(),3);
   rval = moab.tag_get_data(
-    ent_method_field1_on_10nodeTet.th,nodes,&*nodes_vals.data().begin()); CHKERR(rval);
+    ent_method_field1_on_10nodeTet.th,nodes,&*nodes_vals.data().begin()); CHKERR_MOAB(rval);
 
   const double eps = 1e-4;
 

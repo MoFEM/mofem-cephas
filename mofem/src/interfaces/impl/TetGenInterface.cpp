@@ -26,12 +26,14 @@
 #endif
 
 #include <Includes.hpp>
-// #include <version.h>
+#include <version.h>
 #include <definitions.h>
 #include <Common.hpp>
 
 #include <h1_hdiv_hcurl_l2.h>
 #include <fem_tools.h>
+
+#include <UnknownInterface.hpp>
 
 #include <MaterialBlocks.hpp>
 #include <CubitBCData.hpp>
@@ -60,7 +62,7 @@
 
 namespace MoFEM {
 
-PetscErrorCode TetGenInterface::queryInterface(const MOFEMuuid& uuid, FieldUnknownInterface** iface) {
+PetscErrorCode TetGenInterface::queryInterface(const MOFEMuuid& uuid, UnknownInterface** iface) {
   PetscFunctionBegin;
   *iface = NULL;
   if(uuid == IDD_MOFEMTetGegInterface) {
@@ -68,7 +70,7 @@ PetscErrorCode TetGenInterface::queryInterface(const MOFEMuuid& uuid, FieldUnkno
     PetscFunctionReturn(0);
   }
   if(uuid == IDD_MOFEMUnknown) {
-    *iface = dynamic_cast<FieldUnknownInterface*>(this);
+    *iface = dynamic_cast<UnknownInterface*>(this);
     PetscFunctionReturn(0);
   }
   SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"unknown interface");
@@ -91,7 +93,7 @@ PetscErrorCode TetGenInterface::inData(
   Tag th_marker;
   int def_marker = 0;
   rval = m_field.get_moab().tag_get_handle(
-    "TETGEN_MARKER",1,MB_TYPE_INTEGER,th_marker,MB_TAG_CREAT|MB_TAG_SPARSE,&def_marker); CHKERR_PETSC(rval);
+    "TETGEN_MARKER",1,MB_TYPE_INTEGER,th_marker,MB_TAG_CREAT|MB_TAG_SPARSE,&def_marker); CHKERRQ_MOAB(rval);
 
   //All indices start from 0
   in.firstnumber = 0;
@@ -101,8 +103,8 @@ PetscErrorCode TetGenInterface::inData(
   if(points.size()>0) {
     in.pointlist = new double[in.numberofpoints * 3];
     in.pointmarkerlist = new int[in.numberofpoints];
-    rval = m_field.get_moab().get_coords(points,in.pointlist); CHKERR_PETSC(rval);
-    rval = m_field.get_moab().tag_get_data(th_marker,points,in.pointmarkerlist); CHKERR_PETSC(rval);
+    rval = m_field.get_moab().get_coords(points,in.pointlist); CHKERRQ_MOAB(rval);
+    rval = m_field.get_moab().tag_get_data(th_marker,points,in.pointmarkerlist); CHKERRQ_MOAB(rval);
     it = points.begin();
     for(int ii = 0;it != points.end(); it++,ii++) {
       unsigned long iii = MBVERTEX|(ii<<MB_TYPE_WIDTH);
@@ -119,7 +121,7 @@ PetscErrorCode TetGenInterface::inData(
     for(int ii = 0;it!=tets.end();it++,ii++) {
       int num_nodes;
       const EntityHandle* conn;
-      rval = m_field.get_moab().get_connectivity(*it,conn,num_nodes,true); CHKERR_PETSC(rval);
+      rval = m_field.get_moab().get_connectivity(*it,conn,num_nodes,true); CHKERRQ_MOAB(rval);
       tetgen_moab_map[MBTET|(ii<<MB_TYPE_WIDTH)] = *it;
       moab_tetgen_map[*it] = MBTET|(ii<<MB_TYPE_WIDTH);
       for(int nn = 0;nn<4;nn++) {
@@ -137,21 +139,21 @@ PetscErrorCode TetGenInterface::inData(
     in.trifacelist = new int[3*in.numberoftrifaces];
     in.trifacemarkerlist = new int[in.numberoftrifaces];
     //fill(&in.trifacemarkerlist[0],&in.trifacemarkerlist[in.numberoftrifaces],1);
-    rval = m_field.get_moab().tag_get_data(th_marker,tris,in.trifacemarkerlist); CHKERR_PETSC(rval);
+    rval = m_field.get_moab().tag_get_data(th_marker,tris,in.trifacemarkerlist); CHKERRQ_MOAB(rval);
     it = tris.begin();
     for(int ii = 0;it!=tris.end();it++,ii++) {
       int num_nodes;
       const EntityHandle* conn;
-      rval = m_field.get_moab().get_connectivity(*it,conn,num_nodes,true); CHKERR_PETSC(rval);
+      rval = m_field.get_moab().get_connectivity(*it,conn,num_nodes,true); CHKERRQ_MOAB(rval);
       int order[] = {0,1,2};
       Range tets;
-      rval = m_field.get_moab().get_adjacencies(&*it,1,3,true,tets); CHKERR_PETSC(rval);
+      rval = m_field.get_moab().get_adjacencies(&*it,1,3,true,tets); CHKERRQ_MOAB(rval);
       tets = intersect(tets,ents.subset_by_type(MBTET));
       if(tets.size()==1) {
 	int side_number;
 	int sense;
 	int offset;
-	rval = m_field.get_moab().side_number(tets[0],*it,side_number,sense,offset); CHKERR_PETSC(rval);
+	rval = m_field.get_moab().side_number(tets[0],*it,side_number,sense,offset); CHKERRQ_MOAB(rval);
 	if(sense == -1) {
 	  order[0] = 1;
 	  order[1] = 0;
@@ -174,12 +176,12 @@ PetscErrorCode TetGenInterface::inData(
     in.edgelist = new int[2*in.numberofedges];
     in.edgemarkerlist = new int[in.numberofedges];
     //fill(&in.edgemarkerlist[0],&in.edgemarkerlist[in.numberofedges],1);
-    rval = m_field.get_moab().tag_get_data(th_marker,edges,in.edgemarkerlist); CHKERR_PETSC(rval);
+    rval = m_field.get_moab().tag_get_data(th_marker,edges,in.edgemarkerlist); CHKERRQ_MOAB(rval);
     it = edges.begin();
     for(int ii = 0;it!=edges.end();it++,ii++) {
       int num_nodes;
       const EntityHandle* conn;
-      rval = m_field.get_moab().get_connectivity(*it,conn,num_nodes,true); CHKERR_PETSC(rval);
+      rval = m_field.get_moab().get_connectivity(*it,conn,num_nodes,true); CHKERRQ_MOAB(rval);
       tetgen_moab_map[MBEDGE|(ii<<MB_TYPE_WIDTH)] = *it;
       moab_tetgen_map[*it] = MBEDGE|(ii<<MB_TYPE_WIDTH);
       for(int nn = 0;nn<2;nn++) {
@@ -242,7 +244,7 @@ PetscErrorCode TetGenInterface::outData(
   Tag th_marker;
   int def_marker = 0;
   rval = m_field.get_moab().tag_get_handle(
-    "TETGEN_MARKER",1,MB_TYPE_INTEGER,th_marker,MB_TAG_CREAT|MB_TAG_SPARSE,&def_marker); CHKERR_PETSC(rval);
+    "TETGEN_MARKER",1,MB_TYPE_INTEGER,th_marker,MB_TAG_CREAT|MB_TAG_SPARSE,&def_marker); CHKERRQ_MOAB(rval);
 
   int ii = 0;
   for(;ii<out.numberofpoints;ii++) {
@@ -250,7 +252,7 @@ PetscErrorCode TetGenInterface::outData(
       if(memcmp(&in.pointlist[3*ii],&out.pointlist[3*ii],3*sizeof(double)) == 0) {
 	unsigned long iii = MBVERTEX|(ii<<MB_TYPE_WIDTH);
 	if(tetgen_moab_map.find(iii)!=tetgen_moab_map.end()) {
-	  rval = m_field.get_moab().tag_set_data(th_marker,&tetgen_moab_map[iii],1,&out.pointmarkerlist[ii]); CHKERR_PETSC(rval);
+	  rval = m_field.get_moab().tag_set_data(th_marker,&tetgen_moab_map[iii],1,&out.pointmarkerlist[ii]); CHKERRQ_MOAB(rval);
 	  continue;
 	} else {
 	  SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency between TetGen and MoAB");
@@ -260,7 +262,7 @@ PetscErrorCode TetGenInterface::outData(
     if(id_in_tags) {
       if(out.pointparamlist[ii].tag>0) {
 	EntityHandle node;
-	rval = m_field.get_moab().handle_from_id(MBVERTEX,in.pointparamlist[ii].tag-1,node); CHKERR_PETSC(rval);
+	rval = m_field.get_moab().handle_from_id(MBVERTEX,in.pointparamlist[ii].tag-1,node); CHKERRQ_MOAB(rval);
 	if(moab_tetgen_map.find(node)!=moab_tetgen_map.end()) {
 	  continue;
 	}
@@ -270,8 +272,8 @@ PetscErrorCode TetGenInterface::outData(
       SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"node should not be created");
     }
     EntityHandle node;
-    rval = m_field.get_moab().create_vertex(&out.pointlist[3*ii],node); CHKERR_PETSC(rval);
-    rval = m_field.get_moab().tag_set_data(th_marker,&node,1,&out.pointmarkerlist[ii]); CHKERR_PETSC(rval);
+    rval = m_field.get_moab().create_vertex(&out.pointlist[3*ii],node); CHKERRQ_MOAB(rval);
+    rval = m_field.get_moab().tag_set_data(th_marker,&node,1,&out.pointmarkerlist[ii]); CHKERRQ_MOAB(rval);
     moab_tetgen_map[node] = MBVERTEX|(ii<<MB_TYPE_WIDTH);
     tetgen_moab_map[MBVERTEX|(ii<<MB_TYPE_WIDTH)] = node;
     if(ents!=NULL) ents->insert(node);
@@ -299,12 +301,12 @@ PetscErrorCode TetGenInterface::outData(
       conn[nn] = tetgen_moab_map.at(MBVERTEX|(nnn<<MB_TYPE_WIDTH));
     }
     Range tets;
-    rval = m_field.get_moab().get_adjacencies(conn,4,3,true,tets); CHKERR_PETSC(rval);
+    rval = m_field.get_moab().get_adjacencies(conn,4,3,true,tets); CHKERRQ_MOAB(rval);
     EntityHandle tet;
     if(tets.empty()) {
-      rval = m_field.get_moab().create_element(MBTET,conn,4,tet); CHKERR_PETSC(rval);
+      rval = m_field.get_moab().create_element(MBTET,conn,4,tet); CHKERRQ_MOAB(rval);
       Range tet_nodes;
-      rval = m_field.get_moab().get_connectivity(&tet,1,tet_nodes,true); CHKERR_PETSC(rval);
+      rval = m_field.get_moab().get_connectivity(&tet,1,tet_nodes,true); CHKERRQ_MOAB(rval);
       if(tet_nodes.size()!=4) {
 	SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency; tet should have 4 nodes");
       }
@@ -370,7 +372,7 @@ PetscErrorCode TetGenInterface::setFaceData(
 	  break;
 	  default: {
 	    rval = m_field.get_moab().get_connectivity(
-	      *it,conn,num_nodes,true); CHKERR_PETSC(rval);
+	      *it,conn,num_nodes,true); CHKERRQ_MOAB(rval);
 	    p->numberofvertices = num_nodes;
 	  }
 	}
@@ -399,7 +401,7 @@ PetscErrorCode TetGenInterface::getTriangleMarkers(
   Tag th_marker;
   int def_marker = 0;
   rval = m_field.get_moab().tag_get_handle(
-    "TETGEN_MARKER",1,MB_TYPE_INTEGER,th_marker,MB_TAG_CREAT|MB_TAG_SPARSE,&def_marker); CHKERR_PETSC(rval);
+    "TETGEN_MARKER",1,MB_TYPE_INTEGER,th_marker,MB_TAG_CREAT|MB_TAG_SPARSE,&def_marker); CHKERRQ_MOAB(rval);
   int ii = 0;
   for(;ii<out.numberoftrifaces;ii++) {
     if(only_non_zero) {
@@ -417,14 +419,14 @@ PetscErrorCode TetGenInterface::getTriangleMarkers(
       }
     }
     Range face;
-    rval = m_field.get_moab().get_adjacencies(conn,3,2,true,face); CHKERR_PETSC(rval);
+    rval = m_field.get_moab().get_adjacencies(conn,3,2,true,face); CHKERRQ_MOAB(rval);
     face = face.subset_by_type(MBTRI);
     if(face.size()!=1) {
       SETERRQ1(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency between TetGen and MoAB, %u",face.size());
     }
     if(ents!=NULL) ents->merge(face);
     if(ents_map!=NULL) (*ents_map)[out.trifacemarkerlist[ii]].merge(face);
-    rval = m_field.get_moab().tag_set_data(th_marker,&*face.begin(),1,&out.trifacemarkerlist[ii]); CHKERR_PETSC(rval);
+    rval = m_field.get_moab().tag_set_data(th_marker,&*face.begin(),1,&out.trifacemarkerlist[ii]); CHKERRQ_MOAB(rval);
   }
   PetscFunctionReturn(0);
 }
@@ -440,15 +442,15 @@ PetscErrorCode TetGenInterface::setReginData(vector<pair<EntityHandle,int> >& re
     double coords[3];
     switch(m_field.get_moab().type_from_handle(it->first)) {
       case MBVERTEX: {
-	rval = m_field.get_moab().get_coords(&it->first,1,coords); CHKERR_PETSC(rval);
+	rval = m_field.get_moab().get_coords(&it->first,1,coords); CHKERRQ_MOAB(rval);
       }
       break;
       case MBTET: {
 	int num_nodes;
 	const EntityHandle* conn;
-	rval = m_field.get_moab().get_connectivity(it->first,conn,num_nodes,true); CHKERR_PETSC(rval);
+	rval = m_field.get_moab().get_connectivity(it->first,conn,num_nodes,true); CHKERRQ_MOAB(rval);
 	double _coords[12];
-	rval = m_field.get_moab().get_coords(conn,num_nodes,_coords); CHKERR_PETSC(rval);
+	rval = m_field.get_moab().get_coords(conn,num_nodes,_coords); CHKERRQ_MOAB(rval);
 	coords[0] = (_coords[0] + _coords[3] + _coords[6] + _coords[9 ])/4.;
 	coords[1] = (_coords[1] + _coords[4] + _coords[7] + _coords[10])/4.;
 	coords[2] = (_coords[2] + _coords[5] + _coords[8] + _coords[11])/4.;
@@ -479,12 +481,12 @@ PetscErrorCode TetGenInterface::getReginData(
   Tag th_region;
   rval = m_field.get_moab().tag_get_handle("TETGEN_REGION",th_region);
   if(rval == MB_SUCCESS) {
-    rval = m_field.get_moab().tag_delete(th_region); CHKERR_PETSC(rval);
+    rval = m_field.get_moab().tag_delete(th_region); CHKERRQ_MOAB(rval);
   }
   double def_marker = 0;
   rval = m_field.get_moab().tag_get_handle(
     "TETGEN_REGION",nbattributes,MB_TYPE_DOUBLE,
-    th_region,MB_TAG_CREAT|MB_TAG_SPARSE,&def_marker); CHKERR_PETSC(rval);
+    th_region,MB_TAG_CREAT|MB_TAG_SPARSE,&def_marker); CHKERRQ_MOAB(rval);
   int ii = 0;
   for(;ii<out.numberoftetrahedra;ii++) {
     int jj = 0;
@@ -496,7 +498,7 @@ PetscErrorCode TetGenInterface::getReginData(
 	  "data inconsistency between TetGen and MoAB");
       }
       EntityHandle ent = tetgen_moab_map[iii];
-      rval = m_field.get_moab().tag_set_data(th_region,&ent,1,&id); CHKERR_PETSC(rval);
+      rval = m_field.get_moab().tag_set_data(th_region,&ent,1,&id); CHKERRQ_MOAB(rval);
       if(ents!=NULL) ents->insert(ent);
       if(ents_map!=NULL) (*ents_map)[id].insert(ent);
     }
@@ -566,16 +568,16 @@ PetscErrorCode TetGenInterface::groupPlanar_Triangle(Range &tris,vector<Range> &
 
       //get edges on vit skin
       Range skin_edges;
-      rval = skin.find_skin(0,*vit,false,skin_edges); CHKERR(rval);
+      rval = skin.find_skin(0,*vit,false,skin_edges); CHKERR_MOAB(rval);
 
       //skin edge nodes
       Range skin_edges_nodes;
-      rval = m_field.get_moab().get_connectivity(skin_edges,skin_edges_nodes,true); CHKERR_PETSC(rval);
+      rval = m_field.get_moab().get_connectivity(skin_edges,skin_edges_nodes,true); CHKERRQ_MOAB(rval);
 
       //get tris adjacent to vit skin edges
       Range skin_edges_tris;
       rval = m_field.get_moab().get_adjacencies(
-        skin_edges,2,false,skin_edges_tris,Interface::UNION); CHKERR_PETSC(rval);
+        skin_edges,2,false,skin_edges_tris,Interface::UNION); CHKERRQ_MOAB(rval);
       //get tris which are part of facet
       Range inner_tris = intersect(skin_edges_tris,*vit);
       Range outer_tris = intersect(skin_edges_tris,tris);
@@ -586,7 +588,7 @@ PetscErrorCode TetGenInterface::groupPlanar_Triangle(Range &tris,vector<Range> &
       Range::iterator tit = outer_tris.begin();
       for(;tit!=outer_tris.end();tit++) {
         Range tit_conn;
-        rval = m_field.get_moab().get_connectivity(&*tit,1,tit_conn,true); CHKERR_PETSC(rval);
+        rval = m_field.get_moab().get_connectivity(&*tit,1,tit_conn,true); CHKERRQ_MOAB(rval);
         tit_conn = subtract(tit_conn,skin_edges_nodes);
         if(tit_conn.empty()) {
 	  coplanar_tris.insert(*tit);
@@ -595,14 +597,14 @@ PetscErrorCode TetGenInterface::groupPlanar_Triangle(Range &tris,vector<Range> &
 	} else {
 	  Range tit_edges;
 	  rval = m_field.get_moab().get_adjacencies(
-	    &*tit,1,1,false,tit_edges,Interface::UNION); CHKERR_PETSC(rval);
+	    &*tit,1,1,false,tit_edges,Interface::UNION); CHKERRQ_MOAB(rval);
 	  tit_edges = intersect(tit_edges,skin_edges);
 	  if(tit_edges.size()!=1) {
 	    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
 	  }
 	  Range inner_tri;
  	  rval = m_field.get_moab().get_adjacencies(
-	    tit_edges,2,false,inner_tri,Interface::UNION); CHKERR_PETSC(rval);
+	    tit_edges,2,false,inner_tri,Interface::UNION); CHKERRQ_MOAB(rval);
 	  inner_tri = intersect(inner_tri,inner_tris);
 	  if(inner_tri.size()!=1) {
 	    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
@@ -611,10 +613,10 @@ PetscErrorCode TetGenInterface::groupPlanar_Triangle(Range &tris,vector<Range> &
 	  int num_nodes;
 	  const EntityHandle* inner_tri_conn;
 	  rval = m_field.get_moab().get_connectivity(
-	    *inner_tri.begin(),inner_tri_conn,num_nodes,true); CHKERR_PETSC(rval);
+	    *inner_tri.begin(),inner_tri_conn,num_nodes,true); CHKERRQ_MOAB(rval);
 	  double coords[12];
-	  rval = m_field.get_moab().get_coords(inner_tri_conn,3,coords); CHKERR_PETSC(rval);
-	  rval = m_field.get_moab().get_coords(&*tit_conn.begin(),1,&coords[9]); CHKERR_PETSC(rval);
+	  rval = m_field.get_moab().get_coords(inner_tri_conn,3,coords); CHKERRQ_MOAB(rval);
+	  rval = m_field.get_moab().get_coords(&*tit_conn.begin(),1,&coords[9]); CHKERRQ_MOAB(rval);
 	  bool coplanar;
 	  ierr = checkPlanar_Trinagle(coords,&coplanar,eps); CHKERRQ(ierr);
 	  if(coplanar) {
@@ -701,7 +703,7 @@ PetscErrorCode TetGenInterface::makePolygonFacet(Range &ents,Range &polygons,
   Skinner skin(&m_field.get_moab());
 
   Range skin_edges;
-  rval = skin.find_skin(0,ents,false,skin_edges); CHKERR(rval);
+  rval = skin.find_skin(0,ents,false,skin_edges); CHKERR_MOAB(rval);
 
   vector<EntityHandle> polygon_nodes;
   EntityHandle seed = skin_edges[0];
@@ -710,14 +712,14 @@ PetscErrorCode TetGenInterface::makePolygonFacet(Range &ents,Range &polygons,
   skin_edges.erase(seed);
   int num_nodes;
   const EntityHandle* conn;
-  rval = m_field.get_moab().get_connectivity(seed,conn,num_nodes,true); CHKERR_PETSC(rval);
+  rval = m_field.get_moab().get_connectivity(seed,conn,num_nodes,true); CHKERRQ_MOAB(rval);
   polygon_nodes.push_back(conn[0]);
   //cerr << endl;
   //cerr << conn[0] << " " << conn[1] << endl;
   do {
     EntityHandle last_node = polygon_nodes.back();
     Range adj_edges;
-    rval = m_field.get_moab().get_adjacencies(&last_node,1,1,false,adj_edges); CHKERR_PETSC(rval);
+    rval = m_field.get_moab().get_adjacencies(&last_node,1,1,false,adj_edges); CHKERRQ_MOAB(rval);
     adj_edges = intersect(adj_edges,skin_edges);
     if(adj_edges.size()==0) {
       break;
@@ -727,7 +729,7 @@ PetscErrorCode TetGenInterface::makePolygonFacet(Range &ents,Range &polygons,
     }
     seen_edges.insert(adj_edges[0]);
     skin_edges.erase(adj_edges[0]);
-    rval = m_field.get_moab().get_connectivity(adj_edges[0],conn,num_nodes,true); CHKERR_PETSC(rval);
+    rval = m_field.get_moab().get_connectivity(adj_edges[0],conn,num_nodes,true); CHKERRQ_MOAB(rval);
     EntityHandle add_node = (last_node == conn[0]) ? conn[1] : conn[0];
     polygon_nodes.push_back(add_node);
     //cerr << "\t" << add_node << endl;
@@ -758,9 +760,9 @@ PetscErrorCode TetGenInterface::makePolygonFacet(Range &ents,Range &polygons,
         mp = *(pit+1);
       }
       double coords[9];
-      rval = m_field.get_moab().get_coords(&mm,1,&coords[3*0]); CHKERR_PETSC(rval);
-      rval = m_field.get_moab().get_coords(&mc,1,&coords[3*1]); CHKERR_PETSC(rval);
-      rval = m_field.get_moab().get_coords(&mp,1,&coords[3*2]); CHKERR_PETSC(rval);
+      rval = m_field.get_moab().get_coords(&mm,1,&coords[3*0]); CHKERRQ_MOAB(rval);
+      rval = m_field.get_moab().get_coords(&mc,1,&coords[3*1]); CHKERRQ_MOAB(rval);
+      rval = m_field.get_moab().get_coords(&mp,1,&coords[3*2]); CHKERRQ_MOAB(rval);
       cblas_daxpy(3,-1,&coords[3*1],1,&coords[3*0],1); //mm = mm - mc
       cblas_daxpy(3,-1,&coords[3*1],1,&coords[3*2],1); //mp = mp - mc
       double spin[9];
@@ -782,17 +784,17 @@ PetscErrorCode TetGenInterface::makePolygonFacet(Range &ents,Range &polygons,
   /*pit = polygon_nodes.begin();
   for(;pit!=polygon_nodes.end();pit++) {
     double coords[3];
-    rval = m_field.get_moab().get_coords(&*pit,1,coords); CHKERR_PETSC(rval);
+    rval = m_field.get_moab().get_coords(&*pit,1,coords); CHKERRQ_MOAB(rval);
     cerr << *pit << " " << coords[0] << " " << coords[1] << " " << coords[2] << endl;
   }*/
 
   Range existing_polygon;
   rval = m_field.get_moab().get_adjacencies(
-    &polygon_nodes[0],polygon_nodes.size(),2,true,existing_polygon); CHKERR_PETSC(rval);
+    &polygon_nodes[0],polygon_nodes.size(),2,true,existing_polygon); CHKERRQ_MOAB(rval);
   if(existing_polygon.empty()) {
     EntityHandle polygon;
     rval = m_field.get_moab().create_element(
-      MBPOLYGON,&polygon_nodes[0],polygon_nodes.size(),polygon); CHKERR_PETSC(rval);
+      MBPOLYGON,&polygon_nodes[0],polygon_nodes.size(),polygon); CHKERRQ_MOAB(rval);
     polygons.insert(polygon);
   } else {
     polygons.merge(existing_polygon);

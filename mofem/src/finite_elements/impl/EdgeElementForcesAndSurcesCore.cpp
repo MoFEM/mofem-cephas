@@ -19,12 +19,14 @@
 * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
 #include <Includes.hpp>
-// #include <version.h>
+#include <version.h>
 #include <definitions.h>
 #include <Common.hpp>
 
 #include <h1_hdiv_hcurl_l2.h>
 #include <fem_tools.h>
+
+#include <UnknownInterface.hpp>
 
 #include <MaterialBlocks.hpp>
 #include <CubitBCData.hpp>
@@ -127,9 +129,9 @@ PetscErrorCode EdgeElementForcesAndSurcesCore::operator()() {
   EntityHandle ent = fePtr->get_ent();
   int num_nodes;
   const EntityHandle* conn;
-  rval = mField.get_moab().get_connectivity(ent,conn,num_nodes,true); CHKERR_PETSC(rval);
+  rval = mField.get_moab().get_connectivity(ent,conn,num_nodes,true); CHKERRQ_MOAB(rval);
   cOords.resize(num_nodes*3,false);
-  rval = mField.get_moab().get_coords(conn,num_nodes,&*cOords.data().begin()); CHKERR_PETSC(rval);
+  rval = mField.get_moab().get_coords(conn,num_nodes,&*cOords.data().begin()); CHKERRQ_MOAB(rval);
 
   dIrection.resize(3,false);
   cblas_dcopy(3,&cOords[3],1,&*dIrection.data().begin(),1);

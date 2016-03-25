@@ -96,10 +96,10 @@ struct MonitorPostProc: public FEMethod {
     Tag th_step;
     rval = m_field.get_moab().tag_get_handle("_TsStep_",1,MB_TYPE_INTEGER,th_step,MB_TAG_CREAT|MB_TAG_EXCL|MB_TAG_MESH,&def_t_val);
     if(rval == MB_ALREADY_ALLOCATED) {
-      rval = m_field.get_moab().tag_get_by_ptr(th_step,&root_meshset,1,(const void**)&step); CHKERR(rval);
+      rval = m_field.get_moab().tag_get_by_ptr(th_step,&root_meshset,1,(const void**)&step); CHKERR_MOAB(rval);
     } else {
-      rval = m_field.get_moab().tag_set_data(th_step,&root_meshset,1,&def_t_val); CHKERR(rval);
-      rval = m_field.get_moab().tag_get_by_ptr(th_step,&root_meshset,1,(const void**)&step); CHKERR(rval);
+      rval = m_field.get_moab().tag_set_data(th_step,&root_meshset,1,&def_t_val); CHKERR_MOAB(rval);
+      rval = m_field.get_moab().tag_get_by_ptr(th_step,&root_meshset,1,(const void**)&step); CHKERR_MOAB(rval);
     }
 
     PetscBool flg = PETSC_TRUE;
@@ -187,19 +187,19 @@ struct MonitorRestart: public FEMethod {
     Tag th_time;
     rval = m_field.get_moab().tag_get_handle("_TsTime_",1,MB_TYPE_DOUBLE,th_time,MB_TAG_CREAT|MB_TAG_EXCL|MB_TAG_MESH,&def_t_val);
     if(rval == MB_ALREADY_ALLOCATED) {
-      rval = m_field.get_moab().tag_get_by_ptr(th_time,&root_meshset,1,(const void**)&time); CHKERR(rval);
+      rval = m_field.get_moab().tag_get_by_ptr(th_time,&root_meshset,1,(const void**)&time); CHKERR_MOAB(rval);
       ierr = TSSetTime(ts,*time); CHKERRABORT(PETSC_COMM_WORLD,ierr);
     } else {
-      rval = m_field.get_moab().tag_set_data(th_time,&root_meshset,1,&def_t_val); CHKERR(rval);
-      rval = m_field.get_moab().tag_get_by_ptr(th_time,&root_meshset,1,(const void**)&time); CHKERR(rval);
+      rval = m_field.get_moab().tag_set_data(th_time,&root_meshset,1,&def_t_val); CHKERR_MOAB(rval);
+      rval = m_field.get_moab().tag_get_by_ptr(th_time,&root_meshset,1,(const void**)&time); CHKERR_MOAB(rval);
     }
     Tag th_step;
     rval = m_field.get_moab().tag_get_handle("_TsStep_",1,MB_TYPE_INTEGER,th_step,MB_TAG_CREAT|MB_TAG_EXCL|MB_TAG_MESH,&def_t_val);
     if(rval == MB_ALREADY_ALLOCATED) {
-      rval = m_field.get_moab().tag_get_by_ptr(th_step,&root_meshset,1,(const void**)&step); CHKERR(rval);
+      rval = m_field.get_moab().tag_get_by_ptr(th_step,&root_meshset,1,(const void**)&step); CHKERR_MOAB(rval);
     } else {
-      rval = m_field.get_moab().tag_set_data(th_step,&root_meshset,1,&def_t_val); CHKERR(rval);
-      rval = m_field.get_moab().tag_get_by_ptr(th_step,&root_meshset,1,(const void**)&step); CHKERR(rval);
+      rval = m_field.get_moab().tag_set_data(th_step,&root_meshset,1,&def_t_val); CHKERR_MOAB(rval);
+      rval = m_field.get_moab().tag_get_by_ptr(th_step,&root_meshset,1,(const void**)&step); CHKERR_MOAB(rval);
     }
 
     PetscBool flg = PETSC_TRUE;
@@ -221,7 +221,7 @@ struct MonitorRestart: public FEMethod {
     //   if((*step)%pRT==0) {
     //     ostringstream ss;
     //     ss << "restart_" << (*step) << ".h5m";
-    //     rval = mField.get_moab().write_file(ss.str().c_str()/*,"MOAB","PARALLEL=WRITE_PART"*/); CHKERR_PETSC(rval);
+    //     rval = mField.get_moab().write_file(ss.str().c_str()/*,"MOAB","PARALLEL=WRITE_PART"*/); CHKERRQ_MOAB(rval);
     //   }
     // }
     (*step)++;
@@ -276,11 +276,11 @@ int main(int argc, char *argv[]) {
       "PARALLEL=BCAST_DELETE;"
       "PARALLEL_RESOLVE_SHARED_ENTS;"
       "PARTITION=PARALLEL_PARTITION;";
-    rval = moab.load_file(mesh_file_name, 0, option); CHKERR_PETSC(rval);
+    rval = moab.load_file(mesh_file_name, 0, option); CHKERRQ_MOAB(rval);
   } else {
     const char *option;
     option = "";
-    rval = moab.load_file(mesh_file_name, 0, option); CHKERR_PETSC(rval);
+    rval = moab.load_file(mesh_file_name, 0, option); CHKERRQ_MOAB(rval);
   }
 
   MoFEM::Core core(moab);
@@ -291,7 +291,7 @@ int main(int argc, char *argv[]) {
   BitRefLevel bit_level0;
   bit_level0.set(0);
   EntityHandle meshset_level0;
-  rval = moab.create_meshset(MESHSET_SET, meshset_level0); CHKERR_PETSC(rval);
+  rval = moab.create_meshset(MESHSET_SET, meshset_level0); CHKERRQ_MOAB(rval);
   ierr = m_field.seed_ref_level_3D(0, bit_level0); CHKERRQ(ierr);
   ierr = m_field.get_entities_by_ref_level(
     bit_level0, BitRefLevel().set(), meshset_level0); CHKERRQ(ierr);
@@ -334,12 +334,12 @@ int main(int argc, char *argv[]) {
   ierr = m_field.modify_finite_element_add_field_data("NEUMANN_FE","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
   for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,NODESET|FORCESET, it)) {
     Range tris;
-    rval = moab.get_entities_by_type(it->meshset,MBTRI,tris,true); CHKERR_PETSC(rval);
+    rval = moab.get_entities_by_type(it->meshset,MBTRI,tris,true); CHKERRQ_MOAB(rval);
     ierr = m_field.add_ents_to_finite_element_by_TRIs(tris,"NEUMANN_FE"); CHKERRQ(ierr);
   }
   for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,SIDESET|PRESSURESET,it)) {
     Range tris;
-    rval = moab.get_entities_by_type(it->meshset,MBTRI,tris,true); CHKERR_PETSC(rval);
+    rval = moab.get_entities_by_type(it->meshset,MBTRI,tris,true); CHKERRQ_MOAB(rval);
     ierr = m_field.add_ents_to_finite_element_by_TRIs(tris, "NEUMANN_FE"); CHKERRQ(ierr);
   }
   // Add nodal force element

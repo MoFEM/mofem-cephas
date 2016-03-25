@@ -19,12 +19,14 @@
 * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
 #include <Includes.hpp>
-// #include <version.h>
+#include <version.h>
 #include <definitions.h>
 #include <Common.hpp>
 
 #include <h1_hdiv_hcurl_l2.h>
 #include <fem_tools.h>
+
+#include <UnknownInterface.hpp>
 
 #include <MaterialBlocks.hpp>
 #include <CubitBCData.hpp>
@@ -456,7 +458,7 @@ PetscErrorCode FatPrismElementForcesAndSurcesCore::operator()() {
       SideNumber_multiIndex::nth_index<1>::type::iterator hi_siit;
       hi_siit = side_table.get<1>().upper_bound(boost::make_tuple(MBQUAD,3));
       EntityHandle ent = fePtr->get_ent();
-      rval = mField.get_moab().get_connectivity(ent,conn,num_nodes,true); CHKERR_PETSC(rval);
+      rval = mField.get_moab().get_connectivity(ent,conn,num_nodes,true); CHKERRQ_MOAB(rval);
       // cerr << "\n\n" << endl;
       // const int quad_nodes[3][4] = { {0,1,4,3}, {1,2,5,4}, {0,2,5,3} };
       for(;siit!=hi_siit;siit++) {
@@ -466,7 +468,7 @@ PetscErrorCode FatPrismElementForcesAndSurcesCore::operator()() {
         EntityHandle quad = siit->ent;
         rval = mField.get_moab().get_connectivity(
           quad,conn_quad,num_nodes_quad,true
-        ); CHKERR_PETSC(rval);
+        ); CHKERRQ_MOAB(rval);
         for(int nn = 0;nn<num_nodes_quad;nn++) {
           quads_nodes[4*siit->side_number+nn] = distance(conn,find(conn,conn+6,conn_quad[nn]));
           // cerr
@@ -528,9 +530,9 @@ PetscErrorCode FatPrismElementForcesAndSurcesCore::operator()() {
     EntityHandle ent = fePtr->get_ent();
     int num_nodes;
     const EntityHandle* conn;
-    rval = mField.get_moab().get_connectivity(ent,conn,num_nodes,true); CHKERR_PETSC(rval);
+    rval = mField.get_moab().get_connectivity(ent,conn,num_nodes,true); CHKERRQ_MOAB(rval);
     coords.resize(num_nodes*3,false);
-    rval = mField.get_moab().get_coords(conn,num_nodes,&*coords.data().begin()); CHKERR_PETSC(rval);
+    rval = mField.get_moab().get_coords(conn,num_nodes,&*coords.data().begin()); CHKERRQ_MOAB(rval);
 
     normal.resize(6,false);
     ierr = ShapeFaceNormalMBTRI(

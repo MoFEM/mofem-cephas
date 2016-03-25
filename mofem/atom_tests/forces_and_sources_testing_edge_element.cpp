@@ -44,7 +44,12 @@ int main(int argc, char *argv[]) {
 
   PetscBool flg = PETSC_TRUE;
   char mesh_file_name[255];
+  #if PETSC_VERSION_GE(3,6,4)
+  ierr = PetscOptionsGetString(PETSC_NULL,"","-my_file",mesh_file_name,255,&flg); CHKERRQ(ierr);
+  #else
   ierr = PetscOptionsGetString(PETSC_NULL,"-my_file",mesh_file_name,255,&flg); CHKERRQ(ierr);
+  #endif
+
   if(flg != PETSC_TRUE) {
     SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_file (MESH FILE NEEDED)");
   }
@@ -58,13 +63,13 @@ int main(int argc, char *argv[]) {
 
   const char *option;
   option = "";//"PARALLEL=BCAST;";//;DEBUG_IO";
-  rval = moab.load_file(mesh_file_name, 0, option); CHKERR_PETSC(rval);
+  rval = moab.load_file(mesh_file_name, 0, option); CHKERRQ_MOAB(rval);
 
   //set entitities bit level
   BitRefLevel bit_level0;
   bit_level0.set(0);
   EntityHandle meshset_level0;
-  rval = moab.create_meshset(MESHSET_SET,meshset_level0); CHKERR_PETSC(rval);
+  rval = moab.create_meshset(MESHSET_SET,meshset_level0); CHKERRQ_MOAB(rval);
   ierr = m_field.seed_ref_level_3D(0,bit_level0); CHKERRQ(ierr);
 
   //Fields
@@ -100,12 +105,12 @@ int main(int argc, char *argv[]) {
 
   //add entities to finite element
   Range tets;
-  rval = moab.get_entities_by_type(0,MBTET,tets,false); CHKERR_PETSC(rval);
+  rval = moab.get_entities_by_type(0,MBTET,tets,false); CHKERRQ_MOAB(rval);
   Skinner skin(&m_field.get_moab());
   Range tets_skin;
-  rval = skin.find_skin(0,tets,false,tets_skin); CHKERR(rval);
+  rval = skin.find_skin(0,tets,false,tets_skin); CHKERR_MOAB(rval);
   Range tets_skin_edges;
-  rval = moab.get_adjacencies(tets_skin,1,false,tets_skin_edges,Interface::UNION); CHKERR_PETSC(rval);
+  rval = moab.get_adjacencies(tets_skin,1,false,tets_skin_edges,Interface::UNION); CHKERRQ_MOAB(rval);
   ierr = m_field.add_ents_to_finite_element_by_EDGEs(tets_skin_edges,"TEST_FE"); CHKERRQ(ierr);
 
   //set app. order

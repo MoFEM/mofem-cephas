@@ -18,7 +18,7 @@
 #ifndef __TETGENINTERFACE_HPP__
 #define __TETGENINTERFACE_HPP__
 
-#include "FieldUnknownInterface.hpp"
+#include "UnknownInterface.hpp"
 
 class tetgenio;
 
@@ -29,9 +29,9 @@ static const MOFEMuuid IDD_MOFEMTetGegInterface = MOFEMuuid( BitIntefaceId(TETGE
 /** \brief use TetGen to generate mesh
   * \ingroup mofem
   */
-struct TetGenInterface: public FieldUnknownInterface {
+struct TetGenInterface: public UnknownInterface {
 
-  PetscErrorCode queryInterface(const MOFEMuuid& uuid, FieldUnknownInterface** iface);
+  PetscErrorCode queryInterface(const MOFEMuuid& uuid, UnknownInterface** iface);
 
   MoFEM::Core& cOre;
   TetGenInterface(MoFEM::Core& core): cOre(core) {};
