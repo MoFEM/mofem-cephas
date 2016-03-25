@@ -505,7 +505,11 @@ PetscErrorCode DMCreateGlobalVector_MGViaApproxOrders(DM dm,Vec *g) {
   if(dm_field->kspOperators.empty()) {
     ierr = DMCreateGlobalVector_MoFEM(dm,g); CHKERRQ(ierr);
   } else {
+    #if PETSC_VERSION_GE(3,5,3)
     ierr = MatCreateVecs(dm_field->kspOperators[dm_field->kspOperators.size()-1-leveldown],g,NULL); CHKERRQ(ierr);
+    #else
+    ierr = MatGetVecs(dm_field->kspOperators[dm_field->kspOperators.size()-1-leveldown],g,NULL); CHKERRQ(ierr);
+    #endif
   }
   PetscInfo1(
     dm,"Create global vector DMMGViaApproxOrders leveldown = %d\n",dm->leveldown

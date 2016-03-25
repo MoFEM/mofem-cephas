@@ -1141,7 +1141,7 @@ PetscErrorCode Core::resolve_shared_ents(const MoFEMProblem *problem_ptr,const s
   for(_IT_NUMEREDFEMOFEMENTITY_BY_NAME_FOR_LOOP_(problem_ptr,fe_name,fe_it)) {
     EntityHandle ent = fe_it->get_ent();
     ents.insert(ent);
-    int part = fe_it->get_part();
+    unsigned int part = fe_it->get_part();
     rval = moab.tag_set_data(pcomm->part_tag(),&ent,1,&part); CHKERRQ_MOAB(rval);
     if(part == pcomm->rank()) {
       rval = moab.tag_set_data(th_gid,&ent,1,&gid); CHKERRQ_MOAB(rval);
