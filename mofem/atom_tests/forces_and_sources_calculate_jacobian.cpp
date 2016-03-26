@@ -47,7 +47,11 @@ int main(int argc, char *argv[]) {
 
   PetscBool flg = PETSC_TRUE;
   char mesh_file_name[255];
+  #if PETSC_VERSION_GE(3,6,4)
+  ierr = PetscOptionsGetString(PETSC_NULL,"","-my_file",mesh_file_name,255,&flg); CHKERRQ(ierr);
+  #else
   ierr = PetscOptionsGetString(PETSC_NULL,"-my_file",mesh_file_name,255,&flg); CHKERRQ(ierr);
+  #endif
   if(flg != PETSC_TRUE) {
     SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_file (MESH FILE NEEDED)");
   }
@@ -62,7 +66,7 @@ int main(int argc, char *argv[]) {
   const char *option;
   option = "";//"PARALLEL=BCAST;";//;DEBUG_IO";
   BARRIER_RANK_START(pcomm)
-  rval = moab.load_file(mesh_file_name, 0, option); CHKERR_PETSC(rval);
+  rval = moab.load_file(mesh_file_name, 0, option); CHKERRQ_MOAB(rval);
   BARRIER_RANK_END(pcomm)
 
   //set entitities bit level
@@ -211,9 +215,9 @@ int main(int argc, char *argv[]) {
       EntityHandle ent = fePtr->get_ent();
       int num_nodes;
       const EntityHandle* conn;
-      rval = mField.get_moab().get_connectivity(ent,conn,num_nodes,true); CHKERR_PETSC(rval);
+      rval = mField.get_moab().get_connectivity(ent,conn,num_nodes,true); CHKERRQ_MOAB(rval);
       coords.resize(num_nodes*3);
-      rval = mField.get_moab().get_coords(conn,num_nodes,&*coords.data().begin()); CHKERR_PETSC(rval);
+      rval = mField.get_moab().get_coords(conn,num_nodes,&*coords.data().begin()); CHKERRQ_MOAB(rval);
 
       invJac.resize(3,3);
       ierr = ShapeJacMBTET(&*data.dataOnEntities[MBVERTEX][0].getDiffN().data().begin(),&*coords.begin(),&*invJac.data().begin()); CHKERRQ(ierr);

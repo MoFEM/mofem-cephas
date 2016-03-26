@@ -24,9 +24,9 @@ static const MOFEMuuid IDD_MOFEMNodeMerger = MOFEMuuid( BitIntefaceId(NODEMERGER
 /** \brief merge node from two bit levels
   * \ingroup mofem
   */
-struct NodeMergerInterface: public FieldUnknownInterface {
+struct NodeMergerInterface: public UnknownInterface {
 
-  PetscErrorCode queryInterface(const MOFEMuuid& uuid, FieldUnknownInterface** iface);
+  PetscErrorCode queryInterface(const MOFEMuuid& uuid, UnknownInterface** iface);
 
   MoFEM::Core& cOre;
   NodeMergerInterface(MoFEM::Core& core): cOre(core) {};

@@ -17,8 +17,6 @@
 #ifndef __LOOPMETHODS_HPP__
 #define __LOOPMETHODS_HPP__
 
-#include "FieldUnknownInterface.hpp"
-
 namespace MoFEM {
 
 static const MOFEMuuid IDD_MOFEMBasicMethod = MOFEMuuid( BitIntefaceId(BASIC_METHOD) );
@@ -118,9 +116,9 @@ struct TSMethod {
  *
  * It allows to exchange data between MoFEM and user functions. It stores information about multi-indices.
  */
-struct BasicMethod: public FieldUnknownInterface,KspMethod,SnesMethod,TSMethod {
+struct BasicMethod: public UnknownInterface,KspMethod,SnesMethod,TSMethod {
 
-  PetscErrorCode queryInterface (const MOFEMuuid& uuid, FieldUnknownInterface** iface) {
+  PetscErrorCode queryInterface (const MOFEMuuid& uuid, UnknownInterface** iface) {
     if(uuid == IDD_MOFEMBasicMethod) {
       *iface = dynamic_cast<BasicMethod*>(this);
       PetscFunctionReturn(0);
@@ -172,7 +170,7 @@ struct BasicMethod: public FieldUnknownInterface,KspMethod,SnesMethod,TSMethod {
   */
 struct FEMethod: public BasicMethod {
 
-  PetscErrorCode queryInterface (const MOFEMuuid& uuid, FieldUnknownInterface** iface) {
+  PetscErrorCode queryInterface (const MOFEMuuid& uuid, UnknownInterface** iface) {
     PetscFunctionBegin;
     if(uuid == IDD_MOFEMFEMethod) {
       *iface = dynamic_cast<FEMethod*>(this);
@@ -420,7 +418,7 @@ struct FEMethod: public BasicMethod {
  */
 struct EntMethod: public BasicMethod {
 
-  PetscErrorCode queryInterface (const MOFEMuuid& uuid, FieldUnknownInterface** iface) {
+  PetscErrorCode queryInterface (const MOFEMuuid& uuid, UnknownInterface** iface) {
     PetscFunctionBegin;
     if(uuid == IDD_MOFEMEntMethod) {
       *iface = dynamic_cast<EntMethod*>(this);

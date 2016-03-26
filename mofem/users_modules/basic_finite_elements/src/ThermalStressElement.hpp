@@ -205,7 +205,7 @@ struct ThermalStressElement {
         setOfBlocks[it->get_msId()].youngModulus = mydata.data.Young;
         setOfBlocks[it->get_msId()].poissonRatio = mydata.data.Poisson;
         setOfBlocks[it->get_msId()].thermalExpansion = mydata.data.ThermalExpansion;
-        rval = mField.get_moab().get_entities_by_type(it->meshset,MBTET,setOfBlocks[it->get_msId()].tEts,true); CHKERR_PETSC(rval);
+        rval = mField.get_moab().get_entities_by_type(it->meshset,MBTET,setOfBlocks[it->get_msId()].tEts,true); CHKERRQ_MOAB(rval);
         ierr = mField.add_ents_to_finite_element_by_TETs(setOfBlocks[it->get_msId()].tEts,fe_name); CHKERRQ(ierr);
         double ref_temp;
         PetscBool flg;

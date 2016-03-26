@@ -76,10 +76,10 @@ struct PostPorcStress: public VolumeElementForcesAndSourcesCore::UserDataOperato
     Tag th_id;
     int def_block_id = -1;
     rval = postProcMesh.tag_get_handle(
-      "BLOCK_ID",1,MB_TYPE_INTEGER,th_id,MB_TAG_CREAT|MB_TAG_SPARSE,&def_block_id); CHKERR_PETSC(rval);
+      "BLOCK_ID",1,MB_TYPE_INTEGER,th_id,MB_TAG_CREAT|MB_TAG_SPARSE,&def_block_id); CHKERRQ_MOAB(rval);
     Range::iterator tit = commonData.tEts.begin();
     for(;tit!=commonData.tEts.end();tit++) {
-      rval = postProcMesh.tag_set_data(th_id,&*tit,1,&id);  CHKERR_PETSC(rval);
+      rval = postProcMesh.tag_set_data(th_id,&*tit,1,&id);  CHKERRQ_MOAB(rval);
     }
 
     string tag_name_piola1 = dof_ptr->get_name()+"_PIOLA1_STRESS";
@@ -90,9 +90,9 @@ struct PostPorcStress: public VolumeElementForcesAndSourcesCore::UserDataOperato
     bzero(def_VAL,tag_length*sizeof(double));
     Tag th_piola1,th_energy;
     rval = postProcMesh.tag_get_handle(
-      tag_name_piola1.c_str(),tag_length,MB_TYPE_DOUBLE,th_piola1,MB_TAG_CREAT|MB_TAG_SPARSE,def_VAL); CHKERR_PETSC(rval);
+      tag_name_piola1.c_str(),tag_length,MB_TYPE_DOUBLE,th_piola1,MB_TAG_CREAT|MB_TAG_SPARSE,def_VAL); CHKERRQ_MOAB(rval);
     rval = postProcMesh.tag_get_handle(
-      tag_name_energy.c_str(),1,MB_TYPE_DOUBLE,th_energy,MB_TAG_CREAT|MB_TAG_SPARSE,def_VAL); CHKERR_PETSC(rval);
+      tag_name_energy.c_str(),1,MB_TYPE_DOUBLE,th_energy,MB_TAG_CREAT|MB_TAG_SPARSE,def_VAL); CHKERRQ_MOAB(rval);
 
     int nb_gauss_pts = data.getN().size1();
     if(mapGaussPts.size()!=(unsigned int)nb_gauss_pts) {
@@ -134,9 +134,9 @@ struct PostPorcStress: public VolumeElementForcesAndSourcesCore::UserDataOperato
       }
 
       ierr = dAta.materialDoublePtr->calculateP_PiolaKirchhoffI(dAta,getMoFEMFEPtr()); CHKERRQ(ierr);
-      rval = postProcMesh.tag_set_data(th_piola1,&mapGaussPts[gg],1,&dAta.materialDoublePtr->P(0,0)); CHKERR_PETSC(rval);
+      rval = postProcMesh.tag_set_data(th_piola1,&mapGaussPts[gg],1,&dAta.materialDoublePtr->P(0,0)); CHKERRQ_MOAB(rval);
       dAta.materialDoublePtr->calculateElasticEnergy(dAta,getMoFEMFEPtr()); CHKERRQ(ierr);
-      rval = postProcMesh.tag_set_data(th_energy,&mapGaussPts[gg],1,&dAta.materialDoublePtr->eNergy); CHKERR_PETSC(rval);
+      rval = postProcMesh.tag_set_data(th_energy,&mapGaussPts[gg],1,&dAta.materialDoublePtr->eNergy); CHKERRQ_MOAB(rval);
 
     }
 

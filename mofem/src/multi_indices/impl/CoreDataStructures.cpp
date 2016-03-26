@@ -55,42 +55,42 @@ MoFEMField::MoFEMField(Interface &moab,const EntityHandle meshset,const CoordSys
   ErrorCode rval;
   //id
   Tag th_field_id;
-  rval = moab.tag_get_handle("_FieldId",th_field_id); CHKERR(rval);
-  rval = moab.tag_get_by_ptr(th_field_id,&meshSet,1,(const void **)&tag_id_data); CHKERR_THROW(rval);
+  rval = moab.tag_get_handle("_FieldId",th_field_id); CHKERR_MOAB(rval);
+  rval = moab.tag_get_by_ptr(th_field_id,&meshSet,1,(const void **)&tag_id_data); MOAB_THROW(rval);
   //space
   Tag th_field_space;
-  rval = moab.tag_get_handle("_FieldSpace",th_field_space); CHKERR(rval);
-  rval = moab.tag_get_by_ptr(th_field_space,&meshSet,1,(const void **)&tag_space_data); CHKERR_THROW(rval);
+  rval = moab.tag_get_handle("_FieldSpace",th_field_space); CHKERR_MOAB(rval);
+  rval = moab.tag_get_by_ptr(th_field_space,&meshSet,1,(const void **)&tag_space_data); MOAB_THROW(rval);
   //approx. base
   Tag th_field_base;
-  rval = moab.tag_get_handle("_FieldBase",th_field_base); CHKERR(rval);
-  rval = moab.tag_get_by_ptr(th_field_base,&meshSet,1,(const void **)&tag_base_data); CHKERR_THROW(rval);
+  rval = moab.tag_get_handle("_FieldBase",th_field_base); CHKERR_MOAB(rval);
+  rval = moab.tag_get_by_ptr(th_field_base,&meshSet,1,(const void **)&tag_base_data); MOAB_THROW(rval);
   //name
   Tag th_field_name;
-  rval = moab.tag_get_handle("_FieldName",th_field_name); CHKERR(rval);
-  rval = moab.tag_get_by_ptr(th_field_name,&meshSet,1,(const void **)&tag_name_data,&tag_name_size); CHKERR_THROW(rval);
+  rval = moab.tag_get_handle("_FieldName",th_field_name); CHKERR_MOAB(rval);
+  rval = moab.tag_get_by_ptr(th_field_name,&meshSet,1,(const void **)&tag_name_data,&tag_name_size); MOAB_THROW(rval);
   //name prefix
   Tag th_field_name_data_name_prefix;
-  rval = moab.tag_get_handle("_FieldName_DataNamePrefix",th_field_name_data_name_prefix); CHKERR(rval);
-  rval = moab.tag_get_by_ptr(th_field_name_data_name_prefix,&meshSet,1,(const void **)&tag_name_prefix_data,&tag_name_prefix_size); CHKERR_THROW(rval);
+  rval = moab.tag_get_handle("_FieldName_DataNamePrefix",th_field_name_data_name_prefix); CHKERR_MOAB(rval);
+  rval = moab.tag_get_by_ptr(th_field_name_data_name_prefix,&meshSet,1,(const void **)&tag_name_prefix_data,&tag_name_prefix_size); MOAB_THROW(rval);
   string name_data_prefix((char *)tag_name_prefix_data,tag_name_prefix_size);
   //data
   string tag_data_name = name_data_prefix+get_name();
-  rval = moab.tag_get_handle(tag_data_name.c_str(),th_FieldData); CHKERR_THROW(rval);
+  rval = moab.tag_get_handle(tag_data_name.c_str(),th_FieldData); MOAB_THROW(rval);
   //order
   string tag_approximation_order_name = "_App_Order_"+get_name();
-  rval = moab.tag_get_handle(tag_approximation_order_name.c_str(),th_AppOrder); CHKERR_THROW(rval);
+  rval = moab.tag_get_handle(tag_approximation_order_name.c_str(),th_AppOrder); MOAB_THROW(rval);
   //dof order
   string tag_dof_approximation_order_name = "_App_Dof_Order"+get_name();
-  rval = moab.tag_get_handle(tag_dof_approximation_order_name.c_str(),th_AppDofOrder); CHKERR_THROW(rval);
+  rval = moab.tag_get_handle(tag_dof_approximation_order_name.c_str(),th_AppDofOrder); MOAB_THROW(rval);
   //rank
   Tag th_rank;
   string Tag_rank_name = "_Field_Rank_"+get_name();
-  rval = moab.tag_get_handle(Tag_rank_name.c_str(),th_rank); CHKERR_THROW(rval);
-  rval = moab.tag_get_by_ptr(th_rank,&meshSet,1,(const void **)&tag_nb_coeff_data); CHKERR_THROW(rval);
+  rval = moab.tag_get_handle(Tag_rank_name.c_str(),th_rank); MOAB_THROW(rval);
+  rval = moab.tag_get_by_ptr(th_rank,&meshSet,1,(const void **)&tag_nb_coeff_data); MOAB_THROW(rval);
   //dof rank
   string Tag_dof_rank_name = "_Field_Dof_Rank_"+get_name();
-  rval = moab.tag_get_handle(Tag_dof_rank_name.c_str(),th_DofRank); CHKERR_THROW(rval);
+  rval = moab.tag_get_handle(Tag_dof_rank_name.c_str(),th_DofRank); MOAB_THROW(rval);
   for(int tt = 0;tt<MBMAXTYPE;tt++) {
     forder_table[tt] = NULL;
   }
@@ -130,11 +130,11 @@ MoFEMField::MoFEMField(Interface &moab,const EntityHandle meshset,const CoordSys
       }
       break;
       default:
-      THROW_AT_LINE("unknown approximation space");
+      THROW_MESSAGE("unknown approximation space");
     }
     break;
     case BERNSTEIN_BEZIER_BASE:
-      THROW_AT_LINE("BERNSTEIN_BEZIER_BASE not implemented yer")
+      THROW_MESSAGE("BERNSTEIN_BEZIER_BASE not implemented yer")
     break;
     case USER_BASE:
     for(int ee = 0;ee<MBMAXTYPE;ee++) {
@@ -142,7 +142,7 @@ MoFEMField::MoFEMField(Interface &moab,const EntityHandle meshset,const CoordSys
     }
     break;
     default:
-    THROW_AT_LINE("unknown approximation base");
+    THROW_MESSAGE("unknown approximation base");
   }
 }
 

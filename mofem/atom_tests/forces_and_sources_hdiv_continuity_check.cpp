@@ -55,13 +55,17 @@ int main(int argc, char *argv[]) {
 
   PetscBool flg = PETSC_TRUE;
   char mesh_file_name[255];
+  #if PETSC_VERSION_GE(3,6,4)
+  ierr = PetscOptionsGetString(PETSC_NULL,"","-my_file",mesh_file_name,255,&flg); CHKERRQ(ierr);
+  #else
   ierr = PetscOptionsGetString(PETSC_NULL,"-my_file",mesh_file_name,255,&flg); CHKERRQ(ierr);
+  #endif
   if(flg != PETSC_TRUE) {
     SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_file (MESH FILE NEEDED)");
   }
   const char *option;
   option = "";
-  rval = moab.load_file(mesh_file_name, 0, option); CHKERR_PETSC(rval);
+  rval = moab.load_file(mesh_file_name, 0, option); CHKERRQ_MOAB(rval);
 
   ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
   if(pcomm == NULL) pcomm =  new ParallelComm(&moab,PETSC_COMM_WORLD);
@@ -74,7 +78,7 @@ int main(int argc, char *argv[]) {
   BitRefLevel bit_level0;
   bit_level0.set(0);
   EntityHandle meshset_level0;
-  rval = moab.create_meshset(MESHSET_SET,meshset_level0); CHKERR_PETSC(rval);
+  rval = moab.create_meshset(MESHSET_SET,meshset_level0); CHKERRQ_MOAB(rval);
   ierr = m_field.seed_ref_level_3D(0,bit_level0); CHKERRQ(ierr);
 
   //Fields
@@ -125,7 +129,7 @@ int main(int argc, char *argv[]) {
   ierr = m_field.get_entities_by_type_and_ref_level(BitRefLevel().set(0),BitRefLevel().set(),MBTET,tets); CHKERRQ(ierr);
   Skinner skin(&moab);
   Range skin_faces; // skin faces from 3d ents
-  rval = skin.find_skin(0,tets,false,skin_faces); CHKERR(rval);
+  rval = skin.find_skin(0,tets,false,skin_faces); CHKERR_MOAB(rval);
   ierr = m_field.add_ents_to_finite_element_by_TRIs(skin_faces,"SKIN_FE"); CHKERRQ(ierr);
 
   Range faces;
@@ -211,7 +215,7 @@ int main(int argc, char *argv[]) {
         }
 
         double *t_ptr;
-        rval = m_field.get_moab().tag_get_by_ptr(tH,&face,1,(const void **)&t_ptr); CHKERR_PETSC(rval);
+        rval = m_field.get_moab().tag_get_by_ptr(tH,&face,1,(const void **)&t_ptr); CHKERRQ_MOAB(rval);
         dd = 0;
         for(;dd<3;dd++) {
           t_ptr[dd] += sense*t[dd];
@@ -287,9 +291,9 @@ int main(int argc, char *argv[]) {
       EntityHandle face = getMoFEMFEPtr()->get_ent();
 
       double *t_ptr;
-      rval = m_field.get_moab().tag_get_by_ptr(tH1,&face,1,(const void **)&t_ptr); CHKERR_PETSC(rval);
+      rval = m_field.get_moab().tag_get_by_ptr(tH1,&face,1,(const void **)&t_ptr); CHKERRQ_MOAB(rval);
       double *tn_ptr;
-      rval = m_field.get_moab().tag_get_by_ptr(tH2,&face,1,(const void **)&tn_ptr); CHKERR_PETSC(rval);
+      rval = m_field.get_moab().tag_get_by_ptr(tH2,&face,1,(const void **)&tn_ptr); CHKERRQ_MOAB(rval);
 
       *tn_ptr = getNormals_at_GaussPt()(0,0)*t_ptr[0]+getNormals_at_GaussPt()(0,1)*t_ptr[1]+getNormals_at_GaussPt()(0,2)*t_ptr[2];
 
@@ -334,9 +338,9 @@ int main(int argc, char *argv[]) {
       EntityHandle face = getMoFEMFEPtr()->get_ent();
 
       double *t_ptr;
-      rval = m_field.get_moab().tag_get_by_ptr(tH1,&face,1,(const void **)&t_ptr); CHKERR_PETSC(rval);
+      rval = m_field.get_moab().tag_get_by_ptr(tH1,&face,1,(const void **)&t_ptr); CHKERRQ_MOAB(rval);
       double *tn_ptr;
-      rval = m_field.get_moab().tag_get_by_ptr(tH2,&face,1,(const void **)&tn_ptr); CHKERR_PETSC(rval);
+      rval = m_field.get_moab().tag_get_by_ptr(tH2,&face,1,(const void **)&tn_ptr); CHKERRQ_MOAB(rval);
 
       *tn_ptr = getNormals_at_GaussPt()(0,0)*t_ptr[0]+getNormals_at_GaussPt()(0,1)*t_ptr[1]+getNormals_at_GaussPt()(0,2)*t_ptr[2];
 
@@ -374,17 +378,17 @@ int main(int argc, char *argv[]) {
 
   Tag th1;
   double def_val[] = {0,0,0};
-  rval = moab.tag_get_handle("T",3,MB_TYPE_DOUBLE,th1,MB_TAG_CREAT|MB_TAG_SPARSE,&def_val); CHKERR_PETSC(rval);
+  rval = moab.tag_get_handle("T",3,MB_TYPE_DOUBLE,th1,MB_TAG_CREAT|MB_TAG_SPARSE,&def_val); CHKERRQ_MOAB(rval);
   tet_fe.getOpPtrVector().push_back(new OpTetFluxes(m_field,th1));
 
   Tag th2;
-  rval = moab.tag_get_handle("TN",1,MB_TYPE_DOUBLE,th2,MB_TAG_CREAT|MB_TAG_SPARSE,&def_val); CHKERR_PETSC(rval);
+  rval = moab.tag_get_handle("TN",1,MB_TYPE_DOUBLE,th2,MB_TAG_CREAT|MB_TAG_SPARSE,&def_val); CHKERRQ_MOAB(rval);
   tri_fe.getOpPtrVector().push_back(new OpFacesFluxes(m_field,th1,th2,my_split));
   skin_fe.getOpPtrVector().push_back(new OpFacesSkinFluxes(m_field,th1,th2,my_split));
 
   for(Range::iterator fit = faces.begin();fit!=faces.end();fit++) {
-    rval = moab.tag_set_data(th1,&*fit,1,&def_val); CHKERR_PETSC(rval);
-    rval = moab.tag_set_data(th2,&*fit,1,&def_val); CHKERR_PETSC(rval);
+    rval = moab.tag_set_data(th1,&*fit,1,&def_val); CHKERRQ_MOAB(rval);
+    rval = moab.tag_set_data(th2,&*fit,1,&def_val); CHKERRQ_MOAB(rval);
   }
 
   ierr = m_field.loop_finite_elements("TEST_PROBLEM","TET_FE",tet_fe);  CHKERRQ(ierr);
@@ -394,9 +398,9 @@ int main(int argc, char *argv[]) {
   ierr = m_field.loop_finite_elements("TEST_PROBLEM","SKIN_FE",skin_fe);  CHKERRQ(ierr);
 
   EntityHandle meshset;
-  rval = moab.create_meshset(MESHSET_SET,meshset); CHKERR_PETSC(rval);
+  rval = moab.create_meshset(MESHSET_SET,meshset); CHKERRQ_MOAB(rval);
   ierr = m_field.get_entities_by_type_and_ref_level(BitRefLevel().set(0),BitRefLevel().set(),MBTRI,meshset); CHKERRQ(ierr);
-  rval = moab.write_file("out.vtk","VTK","",&meshset,1); CHKERR_PETSC(rval);
+  rval = moab.write_file("out.vtk","VTK","",&meshset,1); CHKERRQ_MOAB(rval);
 
   ierr = PetscFinalize(); CHKERRQ(ierr);
 }

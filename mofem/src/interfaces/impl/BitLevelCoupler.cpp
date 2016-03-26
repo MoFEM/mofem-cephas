@@ -12,11 +12,13 @@
 */
 
 #include <Includes.hpp>
-// #include <version.h>
+#include <version.h>
 #include <definitions.h>
 #include <Common.hpp>
 
 #include <h1_hdiv_hcurl_l2.h>
+
+#include <UnknownInterface.hpp>
 
 #include <MaterialBlocks.hpp>
 #include <CubitBCData.hpp>
@@ -54,7 +56,7 @@ static ErrorCode rval;
 
 namespace MoFEM {
 
-PetscErrorCode BitLevelCouplerInterface::queryInterface(const MOFEMuuid& uuid, FieldUnknownInterface** iface) {
+PetscErrorCode BitLevelCouplerInterface::queryInterface(const MOFEMuuid& uuid, UnknownInterface** iface) {
   PetscFunctionBegin;
   *iface = NULL;
   if(uuid == IDD_MOFEMBitLevelCoupler) {
@@ -62,7 +64,7 @@ PetscErrorCode BitLevelCouplerInterface::queryInterface(const MOFEMuuid& uuid, F
     PetscFunctionReturn(0);
   }
   if(uuid == IDD_MOFEMUnknown) {
-    *iface = dynamic_cast<FieldUnknownInterface*>(this);
+    *iface = dynamic_cast<UnknownInterface*>(this);
     PetscFunctionReturn(0);
   }
   SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"unknown interface");
@@ -76,9 +78,9 @@ PetscErrorCode BitLevelCouplerInterface::buildTree(const BitRefLevel &parent_lev
   Range tets;
   ierr = m_field.get_entities_by_type_and_ref_level(
     parent_level,BitRefLevel().set(),MBTET,tets); CHKERRQ(ierr);
-  rval = treePtr->build_tree(tets); CHKERR_PETSC(rval);
+  rval = treePtr->build_tree(tets); CHKERRQ_MOAB(rval);
   if(verb > 2) {
-    rval = treePtr->print(); CHKERR_PETSC(rval);
+    rval = treePtr->print(); CHKERRQ_MOAB(rval);
   }
   PetscFunctionReturn(0);
 }
@@ -95,7 +97,7 @@ PetscErrorCode BitLevelCouplerInterface::getParent(const double *coords,EntityHa
   PetscFunctionBegin;
   FieldInterface& m_field = cOre;
   EntityHandle leaf_out;
-  rval = treePtr->point_search(coords,leaf_out,iter_tol,inside_tol); CHKERR_PETSC(rval);
+  rval = treePtr->point_search(coords,leaf_out,iter_tol,inside_tol); CHKERRQ_MOAB(rval);
   bool is_in;
   Range tets;
   ierr = m_field.get_moab().get_entities_by_type(leaf_out,MBTET,tets); CHKERRQ(ierr);
@@ -116,74 +118,74 @@ PetscErrorCode BitLevelCouplerInterface::getParent(const double *coords,EntityHa
 	//vertices
 	if(fabs(N[0]-1) < inside_tol && fabs(N[1])<inside_tol && fabs(N[2])<inside_tol && fabs(N[3])<inside_tol) {
 	  if(verb>1) cout << "node 0 found " << endl;
-	  rval = m_field.get_moab().side_element(*tit,0,0,parent); CHKERR_PETSC(rval);
+	  rval = m_field.get_moab().side_element(*tit,0,0,parent); CHKERRQ_MOAB(rval);
 	  PetscFunctionReturn(0);
 	}
 	if(fabs(N[0]) < inside_tol && fabs(N[1]-1)<inside_tol && fabs(N[2])<inside_tol && fabs(N[3])<inside_tol) {
 	  if(verb>1) cout << "node 1 found " << endl;
-	  rval = m_field.get_moab().side_element(*tit,0,1,parent); CHKERR_PETSC(rval);
+	  rval = m_field.get_moab().side_element(*tit,0,1,parent); CHKERRQ_MOAB(rval);
 	  PetscFunctionReturn(0);
 	}
 	if(fabs(N[0]) < inside_tol && fabs(N[1])<inside_tol && fabs(N[2]-2)<inside_tol && fabs(N[3])<inside_tol) {
 	  if(verb>1) cout << "node 2 found " << endl;
-	  rval = m_field.get_moab().side_element(*tit,0,2,parent); CHKERR_PETSC(rval);
+	  rval = m_field.get_moab().side_element(*tit,0,2,parent); CHKERRQ_MOAB(rval);
 	  PetscFunctionReturn(0);
 	}
 	if(fabs(N[0]) < inside_tol && fabs(N[1])<inside_tol && fabs(N[2])<inside_tol && fabs(N[3]-1)<inside_tol) {
 	  if(verb>1) cout << "node 3 found " << endl;
-	  rval = m_field.get_moab().side_element(*tit,0,3,parent); CHKERR_PETSC(rval);
+	  rval = m_field.get_moab().side_element(*tit,0,3,parent); CHKERRQ_MOAB(rval);
 	  PetscFunctionReturn(0);
 	}
 	//edges
 	if(fabs(N[0])>inside_tol && fabs(N[1])>inside_tol && fabs(N[2])<inside_tol && fabs(N[3])<inside_tol) {
 	  if(verb>1) cout << "edge 0 found " << endl;
-	  rval = m_field.get_moab().side_element(*tit,1,0,parent); CHKERR_PETSC(rval);
+	  rval = m_field.get_moab().side_element(*tit,1,0,parent); CHKERRQ_MOAB(rval);
 	  PetscFunctionReturn(0);
 	}
 	if(fabs(N[0])<inside_tol && fabs(N[1])>inside_tol && fabs(N[2])>inside_tol && fabs(N[3])<inside_tol) {
 	  if(verb>1) cout << "edge 1 found " << endl;
-	  rval = m_field.get_moab().side_element(*tit,1,1,parent); CHKERR_PETSC(rval);
+	  rval = m_field.get_moab().side_element(*tit,1,1,parent); CHKERRQ_MOAB(rval);
 	  PetscFunctionReturn(0);
 	}
 	if(fabs(N[0])>inside_tol && fabs(N[1])<inside_tol && fabs(N[2])>inside_tol && fabs(N[3])<inside_tol) {
 	  if(verb>1) cout << "edge 2 found " << endl;
-	  rval = m_field.get_moab().side_element(*tit,1,2,parent); CHKERR_PETSC(rval);
+	  rval = m_field.get_moab().side_element(*tit,1,2,parent); CHKERRQ_MOAB(rval);
 	  PetscFunctionReturn(0);
 	}
 	if(fabs(N[0])>inside_tol && fabs(N[1])<inside_tol && fabs(N[2])<inside_tol && fabs(N[3])>inside_tol) {
 	  if(verb>1) cout << "edge 3 found " << endl;
-	  rval = m_field.get_moab().side_element(*tit,1,3,parent); CHKERR_PETSC(rval);
+	  rval = m_field.get_moab().side_element(*tit,1,3,parent); CHKERRQ_MOAB(rval);
 	  PetscFunctionReturn(0);
 	}
 	if(fabs(N[0])<inside_tol && fabs(N[1])>inside_tol && fabs(N[2])<inside_tol && fabs(N[3])>inside_tol) {
 	  if(verb>1) cout << "edge 4 found " << endl;
-	  rval = m_field.get_moab().side_element(*tit,1,4,parent); CHKERR_PETSC(rval);
+	  rval = m_field.get_moab().side_element(*tit,1,4,parent); CHKERRQ_MOAB(rval);
 	  PetscFunctionReturn(0);
 	}
 	if(fabs(N[0])<inside_tol && fabs(N[1])<inside_tol && fabs(N[2])>inside_tol && fabs(N[3])>inside_tol) {
 	  if(verb>1) cout << "edge 5 found " << endl;
-	  rval = m_field.get_moab().side_element(*tit,1,5,parent); CHKERR_PETSC(rval);
+	  rval = m_field.get_moab().side_element(*tit,1,5,parent); CHKERRQ_MOAB(rval);
 	  PetscFunctionReturn(0);
 	}
 	//faces
 	if(fabs(N[0])>inside_tol && fabs(N[1])>inside_tol && fabs(N[2])<inside_tol && fabs(N[3])>inside_tol) {
 	  if(verb>1) cout << "face 0 found " << endl;
-	  rval = m_field.get_moab().side_element(*tit,2,0,parent); CHKERR_PETSC(rval);
+	  rval = m_field.get_moab().side_element(*tit,2,0,parent); CHKERRQ_MOAB(rval);
 	  PetscFunctionReturn(0);
 	}
 	if(fabs(N[0])<inside_tol && fabs(N[1])>inside_tol && fabs(N[2])>inside_tol && fabs(N[3])>inside_tol) {
 	  if(verb>1) cout << "face 1 found " << endl;
-	  rval = m_field.get_moab().side_element(*tit,2,1,parent); CHKERR_PETSC(rval);
+	  rval = m_field.get_moab().side_element(*tit,2,1,parent); CHKERRQ_MOAB(rval);
 	  PetscFunctionReturn(0);
 	}
 	if(fabs(N[0])>inside_tol && fabs(N[1])<inside_tol && fabs(N[2])>inside_tol && fabs(N[3])>inside_tol) {
 	  if(verb>1) cout << "face 2 found " << endl;
-	  rval = m_field.get_moab().side_element(*tit,2,2,parent); CHKERR_PETSC(rval);
+	  rval = m_field.get_moab().side_element(*tit,2,2,parent); CHKERRQ_MOAB(rval);
 	  PetscFunctionReturn(0);
 	}
 	if(fabs(N[0])>inside_tol && fabs(N[1])>inside_tol && fabs(N[2])>inside_tol && fabs(N[3])<inside_tol) {
 	  if(verb>1) cout << "face 3 found " << endl;
-	  rval = m_field.get_moab().side_element(*tit,2,2,parent); CHKERR_PETSC(rval);
+	  rval = m_field.get_moab().side_element(*tit,2,2,parent); CHKERRQ_MOAB(rval);
 	  PetscFunctionReturn(0);
 	}
 	//set parent
@@ -245,7 +247,7 @@ PetscErrorCode BitLevelCouplerInterface::buidlAdjacenciesVerticesOnTets(const Bi
     //}
 
     double coords[3];
-    rval = m_field.get_moab().get_coords(&node,1,coords); CHKERR_PETSC(rval);
+    rval = m_field.get_moab().get_coords(&node,1,coords); CHKERRQ_MOAB(rval);
     EntityHandle parent = 0;
     ierr = getParent(coords,parent,false,iter_tol,inside_tol,verb); CHKERRQ(ierr);
     ierr = chanegParent(refined_ptr->project<0>(it),parent,vertex_elements); CHKERRQ(ierr);
@@ -342,7 +344,7 @@ PetscErrorCode BitLevelCouplerInterface::buidlAdjacenciesEdgesFacesVolumes(
       for(;max_dim<=3;max_dim++) {
 	Range parent_ents;
 	rval = m_field.get_moab().get_adjacencies(
-	  &*conn_parents.begin(),num_nodes,max_dim,false,parent_ents); CHKERR_PETSC(rval);
+	  &*conn_parents.begin(),num_nodes,max_dim,false,parent_ents); CHKERRQ_MOAB(rval);
 	parent_ents.erase(it->get_ref_ent());
 	if(!parent_ents.empty()) {
 	  ierr = chanegParent(refined_ptr->project<0>(it),*parent_ents.begin(),elements); CHKERRQ(ierr);
@@ -453,8 +455,8 @@ PetscErrorCode BitLevelCouplerInterface::getLocCoordsOnTet(EntityHandle tet,cons
   FieldInterface& m_field = cOre;
 
   int num_nodes;
-  rval = m_field.get_moab().get_connectivity(tet,cOnn,num_nodes,true); CHKERR_PETSC(rval);
-  rval = m_field.get_moab().get_coords(cOnn,num_nodes,cOords); CHKERR_PETSC(rval);
+  rval = m_field.get_moab().get_connectivity(tet,cOnn,num_nodes,true); CHKERRQ_MOAB(rval);
+  rval = m_field.get_moab().get_coords(cOnn,num_nodes,cOords); CHKERRQ_MOAB(rval);
   double shifted_glob_coors[3];
   cblas_dcopy(3,glob_coords,1,shifted_glob_coors,1);
   for(int nn = 1;nn<4;nn++) {

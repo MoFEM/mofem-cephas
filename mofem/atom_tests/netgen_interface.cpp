@@ -52,7 +52,7 @@ int main(int argc, char *argv[]) {
   //Read mesh to MOAB
   const char *option;
   option = "";//"PARALLEL=BCAST;";//;DEBUG_IO";
-  rval = moab.load_file(mesh_file_name, 0, option); CHKERR_PETSC(rval); 
+  rval = moab.load_file(mesh_file_name, 0, option); CHKERRQ_MOAB(rval); 
   ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
   if(pcomm == NULL) pcomm =  new ParallelComm(&moab,PETSC_COMM_WORLD);
 
@@ -83,9 +83,9 @@ int main(int argc, char *argv[]) {
   bit_level0.set(0);
   ierr = m_field.seed_ref_level_3D(0,bit_level0); CHKERRQ(ierr);
   Range tets;
-  rval = moab.get_entities_by_type(0,MBTET,tets,false); CHKERR_PETSC(rval);
+  rval = moab.get_entities_by_type(0,MBTET,tets,false); CHKERRQ_MOAB(rval);
   Range outer_surface_skin;
-  rval = skin.find_skin(0,tets,false,outer_surface_skin); CHKERR(rval);
+  rval = skin.find_skin(0,tets,false,outer_surface_skin); CHKERR_MOAB(rval);
 
   // Initialise the Netgen Core library
   Ng_Init();
@@ -133,10 +133,10 @@ int main(int argc, char *argv[]) {
   vector<EntityHandle> surface_elems;
   ierr = netgen_iface->getSurfaceElements(mesh,pts,surface_elems); CHKERRQ(ierr);
 
-  rval = moab.create_meshset(MESHSET_SET,meshset_out); CHKERR_PETSC(rval);
-  rval = moab.add_entities(meshset_out,&*surface_elems.begin(),surface_elems.size()); CHKERR(rval);
-  if(debug) rval = moab.write_file("netgen1.vtk","VTK","",&meshset_out,1); CHKERR_PETSC(rval);
-  rval = moab.delete_entities(&meshset_out,1); CHKERR_PETSC(rval);
+  rval = moab.create_meshset(MESHSET_SET,meshset_out); CHKERRQ_MOAB(rval);
+  rval = moab.add_entities(meshset_out,&*surface_elems.begin(),surface_elems.size()); CHKERR_MOAB(rval);
+  if(debug) rval = moab.write_file("netgen1.vtk","VTK","",&meshset_out,1); CHKERRQ_MOAB(rval);
+  rval = moab.delete_entities(&meshset_out,1); CHKERRQ_MOAB(rval);
 
   delete stl_geom;
   Ng_DeleteMesh(mesh);	
@@ -173,10 +173,10 @@ int main(int argc, char *argv[]) {
   vector<EntityHandle> volume_elems;
   ierr = netgen_iface->getVolumeElements(mesh,pts,volume_elems); CHKERRQ(ierr);
 
-  rval = moab.create_meshset(MESHSET_SET,meshset_out); CHKERR_PETSC(rval);
-  rval = moab.add_entities(meshset_out,&*volume_elems.begin(),volume_elems.size()); CHKERR(rval);
-  if(debug) rval = moab.write_file("netgen2.vtk","VTK","",&meshset_out,1); CHKERR_PETSC(rval);
-  rval = moab.delete_entities(&meshset_out,1); CHKERR_PETSC(rval);
+  rval = moab.create_meshset(MESHSET_SET,meshset_out); CHKERRQ_MOAB(rval);
+  rval = moab.add_entities(meshset_out,&*volume_elems.begin(),volume_elems.size()); CHKERR_MOAB(rval);
+  if(debug) rval = moab.write_file("netgen2.vtk","VTK","",&meshset_out,1); CHKERRQ_MOAB(rval);
+  rval = moab.delete_entities(&meshset_out,1); CHKERRQ_MOAB(rval);
 
   Ng_DeleteMesh(mesh);	
   Ng_Exit();

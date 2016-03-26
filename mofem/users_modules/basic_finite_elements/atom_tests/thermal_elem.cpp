@@ -64,7 +64,7 @@ int main(int argc, char *argv[]) {
   const char *option;
   option = "";//"PARALLEL=BCAST;";//;DEBUG_IO";
   BARRIER_RANK_START(pcomm)
-  rval = moab.load_file(mesh_file_name, 0, option); CHKERR_PETSC(rval);
+  rval = moab.load_file(mesh_file_name, 0, option); CHKERRQ_MOAB(rval);
   BARRIER_RANK_END(pcomm)
 
   //Create MoFEM (Joseph) database
@@ -75,7 +75,7 @@ int main(int argc, char *argv[]) {
   BitRefLevel bit_level0;
   bit_level0.set(0);
   EntityHandle meshset_level0;
-  rval = moab.create_meshset(MESHSET_SET,meshset_level0); CHKERR_PETSC(rval);
+  rval = moab.create_meshset(MESHSET_SET,meshset_level0); CHKERRQ_MOAB(rval);
   ierr = m_field.seed_ref_level_3D(0,bit_level0); CHKERRQ(ierr);
 
   //Fields
@@ -189,10 +189,10 @@ int main(int argc, char *argv[]) {
   ierr = m_field.loop_dofs("TEST_PROBLEM","TEMP",ROW,ent_method); CHKERRQ(ierr);
   if(pcomm->rank()==0) {
     EntityHandle out_meshset;
-    rval = moab.create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
+    rval = moab.create_meshset(MESHSET_SET,out_meshset); CHKERRQ_MOAB(rval);
     ierr = m_field.get_problem_finite_elements_entities("TEST_PROBLEM","THERMAL_FE",out_meshset); CHKERRQ(ierr);
-    rval = moab.write_file("out.vtk","VTK","",&out_meshset,1); CHKERR_PETSC(rval);
-    rval = moab.delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
+    rval = moab.write_file("out.vtk","VTK","",&out_meshset,1); CHKERRQ_MOAB(rval);
+    rval = moab.delete_entities(&out_meshset,1); CHKERRQ_MOAB(rval);
   }*/
 
   //Matrix View

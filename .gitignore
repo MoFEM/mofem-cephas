@@ -1,6 +1,7 @@
 mofem/include/config.h
 mofem/include/version.h
-mofem/scripts/publish_doc.sh
+mofem/scripts/publish_doc_likask.sh
+mofem/scripts/publish_doc_cdash.sh
 mofem/scripts/git_contributors.sh
 mofem/doc/contributors_list
 mofem/doc/footer.html

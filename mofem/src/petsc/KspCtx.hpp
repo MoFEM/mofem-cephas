@@ -53,6 +53,7 @@ struct KspCtx {
     PetscLogEventRegister("LoopKSPRhs",0,&USER_EVENT_KspRhs);
     PetscLogEventRegister("LoopKSPMat",0,&USER_EVENT_KspMat);
   }
+  virtual ~KspCtx() {}
 
   const FieldInterface& getm_field() const { return mField; }
   const Interface& get_moab() const { return moab; }
@@ -64,8 +65,8 @@ struct KspCtx {
   basic_method_to_do& get_preProcess_to_do_Mat() { return preProcess_Mat; }
   basic_method_to_do& get_postProcess_to_do_Mat() { return postProcess_Mat; }
 
-  friend PetscErrorCode KspRhs(KSP ksp,Vec x,Vec f,void *ctx);
-  friend PetscErrorCode KspMat(KSP ksp,Vec x,Mat A,Mat B,void *ctx);
+  friend PetscErrorCode KspRhs(KSP ksp,Vec f,void *ctx);
+  friend PetscErrorCode KspMat(KSP ksp,Mat A,Mat B,void *ctx);
 
 };
 

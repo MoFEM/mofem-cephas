@@ -17,7 +17,7 @@
 #ifndef __NETGENINTERFACE_HPP__
 #define __NETGENINTERFACE_HPP__
 
-#include "FieldUnknownInterface.hpp"
+#include "UnknownInterface.hpp"
 
 namespace MoFEM {
 
@@ -26,9 +26,9 @@ static const MOFEMuuid IDD_MOFEMNetGegInterface = MOFEMuuid( BitIntefaceId(NETGE
 /** \brief Use NetGen to generate mesh
   * \ingroup mofem
   */
-struct NetGenInterface: public FieldUnknownInterface {
+struct NetGenInterface: public UnknownInterface {
 
-  PetscErrorCode queryInterface(const MOFEMuuid& uuid, FieldUnknownInterface** iface);
+  PetscErrorCode queryInterface(const MOFEMuuid& uuid, UnknownInterface** iface);
 
   MoFEM::Core& cOre;
   NetGenInterface(MoFEM::Core& core): cOre(core) {};

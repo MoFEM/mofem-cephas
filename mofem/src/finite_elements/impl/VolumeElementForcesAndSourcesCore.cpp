@@ -19,12 +19,14 @@
 * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
 #include <Includes.hpp>
-// #include <version.h>
+#include <version.h>
 #include <definitions.h>
 #include <Common.hpp>
 
 #include <h1_hdiv_hcurl_l2.h>
 #include <fem_tools.h>
+
+#include <UnknownInterface.hpp>
 
 #include <MaterialBlocks.hpp>
 #include <CubitBCData.hpp>
@@ -198,9 +200,9 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::operator()() {
     }
 
     EntityHandle ent = fePtr->get_ent();
-    rval = mField.get_moab().get_connectivity(ent,conn,num_nodes,true); CHKERR_PETSC(rval);
+    rval = mField.get_moab().get_connectivity(ent,conn,num_nodes,true); CHKERRQ_MOAB(rval);
     coords.resize(num_nodes*3,false);
-    rval = mField.get_moab().get_coords(conn,num_nodes,&*coords.data().begin()); CHKERR_PETSC(rval);
+    rval = mField.get_moab().get_coords(conn,num_nodes,&*coords.data().begin()); CHKERRQ_MOAB(rval);
     vOlume = ShapeVolumeMBTET(&*dataH1.dataOnEntities[MBVERTEX][0].getDiffN().data().begin(),&*coords.data().begin());
     Jac.resize(3,3,false);
     invJac.resize(3,3,false);
@@ -260,6 +262,9 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::operator()() {
         for(int gg = 0;gg<nb_gauss_pts;gg++) {
           cblas_dcopy(9,&hoGaussPtsJac(gg,0),1,&jac(0,0),1);
           hoGaussPtsDetJac[gg] = ShapeDetJacVolume(&jac(0,0));
+          if(hoGaussPtsDetJac[gg]<0) {
+            SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"Negative volume");
+          }
           ierr = ShapeInvJacVolume(&hoGaussPtsInvJac(gg,0)); CHKERRQ(ierr);
         }
         ierr = opSetHoInvJacH1.opRhs(dataH1); CHKERRQ(ierr);

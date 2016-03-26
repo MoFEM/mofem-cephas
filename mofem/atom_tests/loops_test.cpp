@@ -35,7 +35,11 @@ int main(int argc, char *argv[]) {
     //Read parameters from line command
     PetscBool flg = PETSC_TRUE;
     char mesh_file_name[255];
+    #if PETSC_VERSION_GE(3,6,4)
+    ierr = PetscOptionsGetString(PETSC_NULL,"","-my_file",mesh_file_name,255,&flg); CHKERRQ(ierr);
+    #else
     ierr = PetscOptionsGetString(PETSC_NULL,"-my_file",mesh_file_name,255,&flg); CHKERRQ(ierr);
+    #endif
     if(flg != PETSC_TRUE) {
       SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_file (MESH FILE NEEDED)");
     }
@@ -43,7 +47,7 @@ int main(int argc, char *argv[]) {
     //Read mesh to MOAB
     const char *option;
     option = "";
-    rval = moab.load_file(mesh_file_name, 0, option); CHKERR_PETSC(rval);
+    rval = moab.load_file(mesh_file_name, 0, option); CHKERRQ_MOAB(rval);
     ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
     if(pcomm == NULL) pcomm =  new ParallelComm(&moab,PETSC_COMM_WORLD);
 

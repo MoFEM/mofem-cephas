@@ -127,6 +127,10 @@ add_custom_target(
   checkout_master
   COMMENT "Checkout master branch ..." VERBATIM
 )
+add_custom_target(
+  merge_CDashTesting
+  COMMENT "Make merge CDashTesting branch ..." VERBATIM
+)
 foreach(LOOP_MODULE ${INSTLLED_MODULES})
   string(REGEX REPLACE
     "/+InstalledAddModule.cmake" ""
@@ -173,6 +177,13 @@ foreach(LOOP_MODULE ${INSTLLED_MODULES})
     COMMENT "Checkout master baranch for module ${MODULE_NAME}" VERBATIM
   )
   add_dependencies(checkout_master checkout_master_${MODULE_NAME})
+  add_custom_target(
+    merge_CDashTesting_${MODULE_NAME}
+    COMMAND ${GIT_EXECUTABLE} merge --ff CDashTesting
+    WORKING_DIRECTORY ${MODULE_DIRECTORY}
+    COMMENT "Make merge CDashTesting branch for module ${MODULE_NAME}" VERBATIM
+  )
+  add_dependencies(merge_CDashTesting merge_CDashTesting_${MODULE_NAME})
   # include module
   include(${LOOP_MODULE})
 endforeach(LOOP_MODULE)

@@ -70,7 +70,7 @@ PetscErrorCode DisplacementBCFEMethodPreAndPostProc::iNitalize() {
         }
         if(dim>0) {
           Range _nodes;
-          rval = mField.get_moab().get_connectivity(ents,_nodes,true); CHKERR_PETSC(rval);
+          rval = mField.get_moab().get_connectivity(ents,_nodes,true); CHKERRQ_MOAB(rval);
           ents.insert(_nodes.begin(),_nodes.end());
         }
         for(Range::iterator eit = ents.begin();eit!=ents.end();eit++) {
@@ -262,7 +262,7 @@ PetscErrorCode SpatialPositionsBCFEMethodPreAndPostProc::iNitalize() {
         }
         if(dim>0) {
           Range _nodes;
-          rval = mField.get_moab().get_connectivity(ents,_nodes,true); CHKERR_PETSC(rval);
+          rval = mField.get_moab().get_connectivity(ents,_nodes,true); CHKERRQ_MOAB(rval);
           ents.insert(_nodes.begin(),_nodes.end());
         }
         for(Range::iterator eit = ents.begin();eit!=ents.end();eit++) {
@@ -270,7 +270,7 @@ PetscErrorCode SpatialPositionsBCFEMethodPreAndPostProc::iNitalize() {
             if(dof->get_ent_type() == MBVERTEX) {
               EntityHandle node = dof->get_ent();
               cOords.resize(3);
-              rval = mField.get_moab().get_coords(&node,1,&*cOords.data().begin()); CHKERR_PETSC(rval);
+              rval = mField.get_moab().get_coords(&node,1,&*cOords.data().begin()); CHKERRQ_MOAB(rval);
               if(dof->get_dof_coeff_idx() == 0 && mydata.data.flag1) {
                 mapZeroRows[dof->get_petsc_gloabl_dof_idx()] = cOords[0]+scaled_values[0];
               }
@@ -332,7 +332,7 @@ PetscErrorCode TemperatureBCFEMethodPreAndPostProc::iNitalize() {
         }
         if(dim>0) {
           Range _nodes;
-          rval = mField.get_moab().get_connectivity(ents,_nodes,true); CHKERR_PETSC(rval);
+          rval = mField.get_moab().get_connectivity(ents,_nodes,true); CHKERRQ_MOAB(rval);
           ents.insert(_nodes.begin(),_nodes.end());
         }
         for(Range::iterator eit = ents.begin();eit!=ents.end();eit++) {
@@ -483,7 +483,7 @@ PetscErrorCode DirichletBCFromBlockSetFEMethodPreAndPostProc::iNitalize() {
           }
           if(dim>0) {
             Range nodes;
-            rval = mField.get_moab().get_connectivity(ents,nodes,true); CHKERR_PETSC(rval);
+            rval = mField.get_moab().get_connectivity(ents,nodes,true); CHKERRQ_MOAB(rval);
             ents.insert(nodes.begin(),nodes.end());
           }
           for(Range::iterator eit = ents.begin();eit!=ents.end();eit++) {

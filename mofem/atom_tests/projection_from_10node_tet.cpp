@@ -53,19 +53,23 @@ int main(int argc, char *argv[]) {
   MPI_Comm_rank(PETSC_COMM_WORLD,&rank);
   /*if(rank==0) {
     EntityHandle dummy_meshset;
-    rval = moab.create_meshset(MESHSET_SET,dummy_meshset); CHKERR_PETSC(rval);
+    rval = moab.create_meshset(MESHSET_SET,dummy_meshset); CHKERRQ_MOAB(rval);
   }*/
 
   PetscBool flg = PETSC_TRUE;
   char mesh_file_name[255];
+  #if PETSC_VERSION_GE(3,6,4)
+  ierr = PetscOptionsGetString(PETSC_NULL,"","-my_file",mesh_file_name,255,&flg); CHKERRQ(ierr);
+  #else
   ierr = PetscOptionsGetString(PETSC_NULL,"-my_file",mesh_file_name,255,&flg); CHKERRQ(ierr);
+  #endif
   if(flg != PETSC_TRUE) {
     SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_file (MESH FILE NEEDED)");
   }
 
   const char *option;
   option = "";//"PARALLEL=BCAST;";//;DEBUG_IO";
-  rval = moab.load_file(mesh_file_name, 0, option); CHKERR(rval);
+  rval = moab.load_file(mesh_file_name, 0, option); CHKERR_MOAB(rval);
   ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
   if(pcomm == NULL) pcomm =  new ParallelComm(&moab,PETSC_COMM_WORLD);
 
@@ -92,9 +96,9 @@ int main(int argc, char *argv[]) {
   bit_level0.set(0);
   ierr = m_field.seed_ref_level_3D(0,bit_level0); CHKERRQ(ierr);
   Range tets;
-  rval = moab.get_entities_by_type(0,MBTET,tets,true); CHKERR_PETSC(rval);
+  rval = moab.get_entities_by_type(0,MBTET,tets,true); CHKERRQ_MOAB(rval);
   Range edges;
-  rval = moab.get_entities_by_type(0,MBEDGE,edges,true); CHKERR_PETSC(rval);
+  rval = moab.get_entities_by_type(0,MBEDGE,edges,true); CHKERRQ_MOAB(rval);
   ierr = m_field.seed_finite_elements(edges); CHKERRQ(ierr);
 
   //add ents to field and set app. order

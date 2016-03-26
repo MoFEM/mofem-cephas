@@ -15,7 +15,7 @@
 #ifndef __FIELDINTERFACE_HPP__
 #define __FIELDINTERFACE_HPP__
 
-#include "FieldUnknownInterface.hpp"
+#include "UnknownInterface.hpp"
 
 /** \brief name space of MoFEM library functions and classes
   */
@@ -32,7 +32,7 @@ static const MOFEMuuid IDD_MOFEMFieldInterface = MOFEMuuid( BitIntefaceId(FIELD_
  *  (*) define elements, <br>
  *  (*) define problems, <br>
  */
-struct FieldInterface: public FieldUnknownInterface {
+struct FieldInterface: public UnknownInterface {
 
   virtual PetscErrorCode query_interface_type(const std::type_info& type, void*& ptr) = 0;
 
@@ -1270,6 +1270,21 @@ struct FieldInterface: public FieldUnknownInterface {
    */
   virtual PetscErrorCode build_partitioned_problems(int verb = -1) = 0;
 
+  /**
+   * \brief Set partition tag to each finite element in the problem
+   *
+   * This will use one of the mesh partitioning programs available from PETSc
+   * See <http://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/Mat/MatPartitioningType.html>
+   *
+   * @param  ents        Entities to partition
+   * @param  dim         Dimension of entities to partition
+   * @param  adj_dim     Adjacency dimension
+   * @param  n_parts     Number of partitions
+   * @param  verb        Verbosity level
+   * @return             Error code
+   */
+  virtual PetscErrorCode partition_mesh(Range &ents,int dim,int adj_dim,int n_parts,int verb = -1) = 0;
+
   /** \brief partition problem dofs
    * \ingroup mofem_problems
    *
@@ -1334,9 +1349,74 @@ struct FieldInterface: public FieldUnknownInterface {
   virtual PetscErrorCode partition_check_matrix_fill_in(const string &problem_name,int row,int col,int verb) = 0;
 
   /**
+   * \brief resolve shared entities for finite elements in the problem
+   * \ingroup mofem_problems
+
+   * @param  problem_ptr  problem pointer
+   * @param  fe_name     finite element name
+   * @param  verb        verbosity level
+   * @return             error code
+   *
+   * This allows for tag reduction or tag exchange, f.e.
+
+   \code
+   Tag th;
+   rval = mField.get_moab().tag_get_handle("ADAPT_ORDER",th); CHKERRQ_MOAB(rval);
+   ParallelComm* pcomm = ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
+   // rval = pcomm->reduce_tags(th,MPI_SUM,prisms);
+   rval = pcomm->exchange_tags(th,prisms);
+   \endcode
+
+   *
+   */
+  virtual PetscErrorCode resolve_shared_ents(const MoFEMProblem *problem_ptr,const string &fe_name,int verb = -1) = 0;
+
+  /**
+   * \brief resolve shared entities for finite elements in the problem
+   * \ingroup mofem_problems
+
+   * @param  name        problem name
+   * @param  fe_name     finite element name
+   * @param  verb        verbosity level
+   * @return             error code
+   *
+   * This allows for tag reduction or tag exchange, f.e.
+
+   \code
+   ierr = m_field.resolve_shared_ents(problem_ptr,"SHELL_ELEMENT"); CHKERRQ(ierr);
+   Tag th;
+   rval = mField.get_moab().tag_get_handle("ADAPT_ORDER",th); CHKERRQ_MOAB(rval);
+   ParallelComm* pcomm = ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
+   // rval = pcomm->reduce_tags(th,MPI_SUM,prisms);
+   rval = pcomm->exchange_tags(th,prisms);
+   \endcode
+
+   *
+   */
+  virtual PetscErrorCode resolve_shared_ents(const string &name,const string &fe_name,int verb = -1) = 0;
+
+  /**
+   * \brief Get layout of elements in the problem
+   * \ingroup mofem_problems
+   *
+   * In layout is stored information how many elements is on each processor, for
+   * more information look int petsc documentation
+   * <http://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/IS/PetscLayoutCreate.html#PetscLayoutCreate>
+   *
+   * @param  name    problem name
+   * @param  fe_name finite elements
+   * @param  layout  layout
+   * @param  verb    verbosity level
+   * @return         error code
+   */
+  virtual PetscErrorCode get_problem_elements_layout(
+    const string &name,const string &fe_name,PetscLayout *layout,int verb = -1
+  ) = 0;
+
+  /**
     * \brief add finite elements to the meshset
+    * \ingroup mofem_problems
     *
-    * Add finite elements to do meshset.
     * \param name is problem name
     * \param fe_name
     * \param meshset

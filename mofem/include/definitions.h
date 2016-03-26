@@ -28,7 +28,7 @@
   *
   */
 enum MoFEMInterfaces {
-  FIELD_UNKNOWNINTERFACE = 1<<0,
+  UNKNOWNINTERFACE = 1<<0,
   //Field Interface
   FIELD_INTERFACE = 1<<0|1<<1,
   MESH_REFINE = 1<<1|1<<2,
@@ -68,12 +68,12 @@ enum MoFEMErrorCodes {
   MOFEM_MOAB_ERROR = 109
 };
 
-/// \brief approximation spaces
+/// \brief approximation base
 enum FieldApproximationBase {
-  AINSWORTH_COLE_BASE = 1,
-  BERNSTEIN_BEZIER_BASE, ///< Not yet implemented
+  AINSWORTH_COLE_BASE = 1, ///< Ainsworth Cole approx. base \cite NME:NME847
+  BERNSTEIN_BEZIER_BASE, ///< Not yet implemented, in implementation we will follow \cite ainsworth2011bernstein
   USER_BASE, ///< user implemented approximation base
-  LASTBASE 	///< FieldSpace in [ 0, LASTSPACE )
+  LASTBASE 	///< FieldSpace in [ 0, LASTBASE )
 };
 
 const static char * const ApproximationBaseNames[] = {
@@ -148,16 +148,6 @@ enum CubitBC {
   LASTCUBITSET
 };
 
-//taken from http://stackoverflow.com/questions/295120/c-mark-as-deprecated
-#ifdef __GNUC__
-  #define DEPRECATED __attribute__((deprecated))
-#elif defined(_MSC_VER)
-  #define DEPRECATED __declspec(deprecated)
-#else
-  #pragma message("WARNING: You need to implement DEPRECATED for this compiler")
-  #define DEPRECATED
-#endif
-
 #define BITREFEDGES_SIZE 6 /*number of edges on tetrahedral*/
 #define BITREFLEVEL_SIZE 128 /*max number of refinements*/
 #define BITFIELDID_SIZE 32 /*max number of fields*/
@@ -165,7 +155,7 @@ enum CubitBC {
 #define BITPROBLEMID_SIZE 32 /*max number of problems*/
 #define BITINTERFACEUID_SIZE 32
 
-//// default comunicator number
+//// default communicator number
 #define MYPCOMM_INDEX 0
 
 //This Is form MOAB
@@ -178,24 +168,59 @@ enum CubitBC {
 #define MB_END_ID ((EntityID)MB_ID_MASK) //!< Last id is the complement of the MASK
 #define MB_ID_MASK (~MB_TYPE_MASK)
 
+//taken from http://stackoverflow.com/questions/295120/c-mark-as-deprecated
+#ifdef __GNUC__
+  #define DEPRECATED __attribute__((deprecated))
+#elif defined(_MSC_VER)
+  #define DEPRECATED __declspec(deprecated)
+#else
+  #pragma message("WARNING: You need to implement DEPRECATED for this compiler")
+  #define DEPRECATED
+#endif
+
 #define NOT_USED(x) ( (void)(x) )
 
 /** \brief set barrier start
- *
  * Run code in sequence, starting from process 0, and ends on last process.
+ *
+ * It can be only used for testing. Do not use that function as a part of these
+ * code.
+ *
  */
 #define BARRIER_RANK_START(PCMB) \
   { for(unsigned int i = 0; \
   i<PCMB->proc_config().proc_rank(); i++) MPI_Barrier(PCMB->proc_config().proc_comm()); };
-/// set barrier end
+
+/** \brief set barrier start
+  * Run code in sequence, starting from process 0, and ends on last process.
+  *
+  * It can be only used for testing. Do not use that function as a part of these
+  * code.
+  *
+  */
 #define BARRIER_RANK_END(PCMB) \
   { for(unsigned int i = PCMB->proc_config().proc_rank(); \
   i<PCMB->proc_config().proc_size(); i++) MPI_Barrier(PCMB->proc_config().proc_comm()); };
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-//ERROR
-/// check moab error
-#define CHKERR(a) do { \
+/**
+ * \brief Is used to indicate that macro is deprecated
+ * Do nothing just triggers error at the compilation
+ */
+DEPRECATED void macro_is_depracted_using_deprecated_function();
+
+#ifdef __cplusplus
+}
+#endif
+
+/**
+ * \brief check error code of MoAB functions and print on screen error
+ * @param  a error code
+ */
+#define CHKERR_MOAB(a) do { \
   ErrorCode val = (a); \
   if (MB_SUCCESS != val) { \
     cerr << "Error code  " << val << " at " << __FILE__ << ":" << __LINE__ << std::endl; \
@@ -203,9 +228,24 @@ enum CubitBC {
   } \
 } while (false)
 
+/**
+ * \brief do not use that macro it will be removed in future
+ */
+#define CHKERR(a) \
+  macro_is_depracted_using_deprecated_function(); \
+  do { \
+  ErrorCode val = (a); \
+  if (MB_SUCCESS != val) { \
+    cerr << "Error code  " << val << " at " << __FILE__ << ":" << __LINE__ << std::endl; \
+    assert(1); \
+  } \
+} while (false)
 
-/// check moab error and communicate it using petsc interface
-#define CHKERR_PETSC(a) do { \
+/**
+ * \brief check error code of MoAB function
+ * @param  a MoABErrorCode
+ */
+#define CHKERRQ_MOAB(a) do { \
   ErrorCode val = (a); \
   if (MB_SUCCESS != val) { \
     std::ostringstream ss; \
@@ -215,7 +255,26 @@ enum CubitBC {
   } \
 } while (false)
 
-#define CHKERR_THROW(a) do { \
+/**
+ * \brief do not use that macro it will be removed in future
+ */
+#define CHKERR_PETSC(a) \
+  macro_is_depracted_using_deprecated_function(); \
+  do { \
+  ErrorCode val = (a); \
+  if (MB_SUCCESS != val) { \
+    std::ostringstream ss; \
+    ss << "Error code  " << val << " at " << __FILE__ << ":" << __LINE__ << std::endl; \
+    std::string str(ss.str()); \
+    SETERRQ(PETSC_COMM_SELF,MOFEM_MOAB_ERROR,str.c_str()); \
+  } \
+} while (false)
+
+/**
+ * \bried Check error code of MoAB function and throw MoFEM exception
+ * @param  a MoABErrorCode
+ */
+#define MOAB_THROW(a) do { \
   ErrorCode val = (a); \
   if (MB_SUCCESS != val) { \
     std::ostringstream ss; \
@@ -224,12 +283,44 @@ enum CubitBC {
   } \
 } while (false)
 
-#define THROW_AT_LINE(a) { \
+/**
+ * \brief do not use that macro it will be removed in future
+ */
+#define CHKERR_THROW(a) \
+  macro_is_depracted_using_deprecated_function(); \
+  do { \
+  ErrorCode val = (a); \
+  if (MB_SUCCESS != val) { \
+    std::ostringstream ss; \
+    ss << "Error code  " << val << " at " << __FILE__ << ":" << __LINE__ << std::endl; \
+    throw MoFEMException(MOFEM_MOAB_ERROR,ss.str().c_str() ); \
+  } \
+} while (false)
+
+/**
+ * \brief Throw MoFEM exception
+ * @param  a message
+ */
+#define THROW_MESSAGE(a) { \
   std::ostringstream ss; \
   ss << a << " " << " at " << __FILE__ << ":" << __LINE__ << std::endl; \
-  throw MoFEMException( MOFEM_MOFEMEXCEPTION_THROW,ss.str().c_str() ); \
+  throw MoFEMException(MOFEM_MOFEMEXCEPTION_THROW,ss.str().c_str() ); \
 }
 
+/**
+ * \brief do not use that macro it will be removed in future
+ */
+#define THROW_AT_LINE(a) { \
+  macro_is_depracted_using_deprecated_function(); \
+  std::ostringstream ss; \
+  ss << a << " " << " at " << __FILE__ << ":" << __LINE__ << std::endl; \
+  throw MoFEMException(MOFEM_MOFEMEXCEPTION_THROW,ss.str().c_str() ); \
+}
+
+/**
+ * \brief Convert number to string
+ * @param  x number
+ */
 #define SSTR( x ) dynamic_cast< std::ostringstream & >( \
   ( std::ostringstream() << std::dec << x ) ).str()
 

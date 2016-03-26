@@ -97,8 +97,8 @@ if(DOXYGEN_FOUND)
     include(${LOOP_MODULE})
   endforeach(LOOP_MODULE)
 
-  find_program(SCP NAMES scp)
-  if(SCP)
+  find_program(RSYNC NAMES rsync)
+  if(RSYNC)
 
     # This work that script publish_doc.sh is created first in source
     # directory, then copied to binary direcyory with set premissions to execute.
@@ -106,20 +106,35 @@ if(DOXYGEN_FOUND)
     # from PROJECT_SOURCE_DIR/publish_doc
 
     configure_file(
-      ${PROJECT_SOURCE_DIR}/scripts/publish_doc.sh.in
-      ${PROJECT_SOURCE_DIR}/scripts/publish_doc.sh
+      ${PROJECT_SOURCE_DIR}/scripts/publish_doc_likask.sh.in
+      ${PROJECT_SOURCE_DIR}/scripts/publish_doc_likask.sh
       @ONLY
     )
-    file(COPY ${PROJECT_SOURCE_DIR}/scripts/publish_doc.sh
+    file(COPY ${PROJECT_SOURCE_DIR}/scripts/publish_doc_likask.sh
       DESTINATION ${PROJECT_BINARY_DIR}/scripts/
       FILE_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_EXECUTE
     )
     add_custom_target(doc_publish_likask
-      ${PROJECT_BINARY_DIR}/scripts/publish_doc.sh
+      ${PROJECT_BINARY_DIR}/scripts/publish_doc_likask.sh
       WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
-      COMMENT "Publish (likask) doxygen documentation" VERBATIM
+      COMMENT "Publish (userweb.eng.gla.ac.uk) doxygen documentation" VERBATIM
     )
 
-  endif(SCP)
+    configure_file(
+      ${PROJECT_SOURCE_DIR}/scripts/publish_doc_cdash.sh.in
+      ${PROJECT_SOURCE_DIR}/scripts/publish_doc_cdash.sh
+      @ONLY
+    )
+    file(COPY ${PROJECT_SOURCE_DIR}/scripts/publish_doc_cdash.sh
+      DESTINATION ${PROJECT_BINARY_DIR}/scripts/
+      FILE_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_EXECUTE
+    )
+    add_custom_target(doc_publish_cdash
+      ${PROJECT_BINARY_DIR}/scripts/publish_doc_cdash.sh
+      WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
+      COMMENT "Publish (cdash.eng.gla.ac) doxygen documentation" VERBATIM
+    )
+
+  endif(RSYNC)
 
 endif(DOXYGEN_FOUND)

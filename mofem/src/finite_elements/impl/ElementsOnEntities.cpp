@@ -19,12 +19,14 @@
 * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
 #include <Includes.hpp>
-// #include <version.h>
+#include <version.h>
 #include <definitions.h>
 #include <Common.hpp>
 
 #include <h1_hdiv_hcurl_l2.h>
 #include <fem_tools.h>
+
+#include <UnknownInterface.hpp>
 
 #include <MaterialBlocks.hpp>
 #include <CubitBCData.hpp>
@@ -910,11 +912,11 @@ PetscErrorCode ForcesAndSurcesCore::getFaceTriNodes(DataForcesAndSurcesCore &dat
       const EntityHandle *conn_tet;
       int num_nodes_tet;
       EntityHandle ent = fePtr->get_ent();
-      rval = mField.get_moab().get_connectivity(ent,conn_tet,num_nodes_tet,true); CHKERR_PETSC(rval);
+      rval = mField.get_moab().get_connectivity(ent,conn_tet,num_nodes_tet,true); CHKERRQ_MOAB(rval);
       if(num_nodes_tet != 4) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
       int num_nodes_face;
       const EntityHandle *conn_face;
-      rval = mField.get_moab().get_connectivity(side->ent,conn_face,num_nodes_face,true); CHKERR_PETSC(rval);
+      rval = mField.get_moab().get_connectivity(side->ent,conn_face,num_nodes_face,true); CHKERRQ_MOAB(rval);
       if(num_nodes_face != 3) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
       if(conn_face[0] != conn_tet[data.facesNodes(side->side_number,0)])
         SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
@@ -1340,7 +1342,7 @@ PetscErrorCode ForcesAndSurcesCore::shapeFlatPRISMFunctions_H1(
 
     int num_nodes;
     const EntityHandle *conn_prism;
-    rval = mField.get_moab().get_connectivity(fePtr->get_ent(),conn_prism,num_nodes,true); CHKERR_PETSC(rval);
+    rval = mField.get_moab().get_connectivity(fePtr->get_ent(),conn_prism,num_nodes,true); CHKERRQ_MOAB(rval);
 
     SideNumber_multiIndex& side_table = const_cast<SideNumber_multiIndex&>(fePtr->get_side_number_table());
     SideNumber_multiIndex::nth_index<1>::type::iterator siit3 = side_table.get<1>().find(boost::make_tuple(MBTRI,3));
@@ -1349,8 +1351,8 @@ PetscErrorCode ForcesAndSurcesCore::shapeFlatPRISMFunctions_H1(
     if(siit4==side_table.get<1>().end()) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
     const EntityHandle *conn_face3;
     const EntityHandle *conn_face4;
-    rval = mField.get_moab().get_connectivity(siit3->ent,conn_face3,num_nodes,true); CHKERR_PETSC(rval);
-    rval = mField.get_moab().get_connectivity(siit4->ent,conn_face4,num_nodes,true); CHKERR_PETSC(rval);
+    rval = mField.get_moab().get_connectivity(siit3->ent,conn_face3,num_nodes,true); CHKERRQ_MOAB(rval);
+    rval = mField.get_moab().get_connectivity(siit4->ent,conn_face4,num_nodes,true); CHKERRQ_MOAB(rval);
 
     MatrixDouble N(G_DIM,3);
     ierr = ShapeMBTRI(&*N.data().begin(),G_X,G_Y,G_DIM); CHKERRQ(ierr);

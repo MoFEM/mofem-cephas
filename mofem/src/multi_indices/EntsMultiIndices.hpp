@@ -282,11 +282,11 @@ struct RefMoFEMEntity_change_remove_parent {
   Tag th_RefParentHandle;
   ErrorCode rval;
   RefMoFEMEntity_change_remove_parent(Interface &moab): mOab(moab) {
-    rval = mOab.tag_get_handle("_RefParentHandle",th_RefParentHandle); CHKERR_THROW(rval);
+    rval = mOab.tag_get_handle("_RefParentHandle",th_RefParentHandle); MOAB_THROW(rval);
   }
   void operator()(RefMoFEMEntity &e) {
-    rval = mOab.tag_delete_data(th_RefParentHandle,&e.ent,1); CHKERR_THROW(rval);
-    rval = mOab.tag_get_by_ptr(th_RefParentHandle,&e.ent,1,(const void **)&(e.tag_parent_ent)); CHKERR_THROW(rval);
+    rval = mOab.tag_delete_data(th_RefParentHandle,&e.ent,1); MOAB_THROW(rval);
+    rval = mOab.tag_get_by_ptr(th_RefParentHandle,&e.ent,1,(const void **)&(e.tag_parent_ent)); MOAB_THROW(rval);
   }
 };
 
@@ -306,10 +306,10 @@ struct RefMoFEMEntity_change_parent {
   Tag th_RefParentHandle;
   ErrorCode rval;
   RefMoFEMEntity_change_parent(Interface &moab,EntityHandle parent): mOab(moab),pArent(parent) {
-    rval = mOab.tag_get_handle("_RefParentHandle",th_RefParentHandle); CHKERR_THROW(rval);
+    rval = mOab.tag_get_handle("_RefParentHandle",th_RefParentHandle); MOAB_THROW(rval);
   }
   void operator()(RefMoFEMEntity &e) {
-    rval = mOab.tag_get_by_ptr(th_RefParentHandle,&e.ent,1,(const void **)&(e.tag_parent_ent)); CHKERR_THROW(rval);
+    rval = mOab.tag_get_by_ptr(th_RefParentHandle,&e.ent,1,(const void **)&(e.tag_parent_ent)); MOAB_THROW(rval);
     *(e.tag_parent_ent) = pArent;
   }
 };
@@ -455,7 +455,7 @@ struct interface_MoFEMEntity: public interface_MoFEMField<T>,interface_RefMoFEME
   inline int get_order_nb_dofs_diff(int order) const { return interface_MoFEMField<T>::field_ptr->get_order_nb_dofs_diff(order); }
   inline ApproximationOrder get_max_order() const { return interface_MoFEMField<T>::field_ptr->get_max_order(); }
   inline const LocalUId& get_local_unique_id() const { return interface_MoFEMField<T>::field_ptr->get_local_unique_id(); }
-  inline const LocalUId& get_global_unique_id() const { return interface_MoFEMField<T>::field_ptr->get_global_unique_id(); }
+  inline const GlobalUId& get_global_unique_id() const { return interface_MoFEMField<T>::field_ptr->get_global_unique_id(); }
   inline const MoFEMEntity* get_MoFEMEntity_ptr() const { return interface_MoFEMField<T>::field_ptr->get_MoFEMEntity_ptr(); };
   inline const RefMoFEMEntity* get_RefMoFEMEntity_ptr() const { return interface_MoFEMField<T>::field_ptr->get_RefMoFEMEntity_ptr(); }
 };

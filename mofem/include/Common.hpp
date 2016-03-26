@@ -156,6 +156,60 @@ namespace MoFEM {
   */
   typedef bitset<32> CubitBCType;
 
+  #if PETSC_VERSION_GE(3,6,4)
+
+  DEPRECATED inline PetscErrorCode  PetscOptionsGetInt(const char pre[],const char name[],PetscInt *ivalue,PetscBool  *set) {
+    PetscErrorCode ierr;
+    PetscFunctionBegin;
+    ierr = ::PetscOptionsGetInt(PETSC_NULL,pre,name,ivalue,set); CHKERRQ(ierr);
+    PetscFunctionReturn(0);
+  }
+
+  DEPRECATED inline PetscErrorCode PetscOptionsGetReal(const char pre[],const char name[],PetscReal *dval,PetscBool *set) {
+    PetscErrorCode ierr;
+    PetscFunctionBegin;
+    ierr  = ::PetscOptionsGetReal(PETSC_NULL,pre,name,dval,set); CHKERRQ(ierr);
+    PetscFunctionReturn(0);
+  }
+
+  DEPRECATED inline PetscErrorCode PetscOptionsGetScalar(const char pre[],const char name[],PetscScalar *dval,PetscBool *set) {
+    PetscErrorCode ierr;
+    PetscFunctionBegin;
+    ierr  = ::PetscOptionsGetScalar(PETSC_NULL,pre,name,dval,set); CHKERRQ(ierr);
+    PetscFunctionReturn(0);
+  }
+
+  DEPRECATED inline PetscErrorCode PetscOptionsGetString(const char pre[],const char name[],char str[],size_t size,PetscBool *set) {
+    PetscErrorCode ierr;
+    PetscFunctionBegin;
+    ierr  = ::PetscOptionsGetString(PETSC_NULL,pre,name,str,size,set); CHKERRQ(ierr);
+    PetscFunctionReturn(0);
+  }
+
+  DEPRECATED inline PetscErrorCode PetscOptionsGetBool(const char pre[],const char name[],PetscBool  *bval,PetscBool *set) {
+    PetscErrorCode ierr;
+    PetscFunctionBegin;
+    ierr  = ::PetscOptionsGetBool(PETSC_NULL,pre,name,bval,set); CHKERRQ(ierr);
+    PetscFunctionReturn(0);
+  }
+
+  DEPRECATED inline PetscErrorCode PetscOptionsGetRealArray(const char pre[],const char name[],PetscReal dval[],PetscInt *nmax,PetscBool *set) {
+    PetscErrorCode ierr;
+    PetscFunctionBegin;
+    ierr  = ::PetscOptionsGetRealArray(PETSC_NULL,pre,name,dval,nmax,set); CHKERRQ(ierr);
+    PetscFunctionReturn(0);
+  }
+
+  DEPRECATED inline PetscErrorCode PetscOptionsGetEList(
+    const char pre[],const char name[],const char*const* list,PetscInt next,PetscInt *value,PetscBool *set
+  ) {
+    PetscErrorCode ierr;
+    PetscFunctionBegin;
+    ierr  = ::PetscOptionsGetEList(PETSC_NULL,pre,name,list,next,value,set); CHKERRQ(ierr);
+    PetscFunctionReturn(0);
+  }
+
+  #endif
 
 }
 

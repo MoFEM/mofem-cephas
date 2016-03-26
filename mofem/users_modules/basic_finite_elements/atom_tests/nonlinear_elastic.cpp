@@ -58,7 +58,7 @@ int main(int argc, char *argv[]) {
 
   const char *option;
   option = "";//"PARALLEL=BCAST;";//;DEBUG_IO";
-  rval = moab.load_file(mesh_file_name, 0, option); CHKERR_PETSC(rval);
+  rval = moab.load_file(mesh_file_name, 0, option); CHKERRQ_MOAB(rval);
   ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
   if(pcomm == NULL) pcomm =  new ParallelComm(&moab,PETSC_COMM_WORLD);
 
@@ -73,7 +73,7 @@ int main(int argc, char *argv[]) {
   BitRefLevel bit_level0;
   bit_level0.set(0);
   EntityHandle meshset_level0;
-  rval = moab.create_meshset(MESHSET_SET,meshset_level0); CHKERR_PETSC(rval);
+  rval = moab.create_meshset(MESHSET_SET,meshset_level0); CHKERRQ_MOAB(rval);
   ierr = m_field.seed_ref_level_3D(0,bit_level0); CHKERRQ(ierr);
   ierr = m_field.get_entities_by_ref_level(bit_level0,BitRefLevel().set(),meshset_level0); CHKERRQ(ierr);
 
@@ -134,7 +134,7 @@ int main(int argc, char *argv[]) {
       int dof_rank = dof_ptr->get_dof_coeff_idx();
       double &fval = dof_ptr->get_FieldData();
       if(node!=ent) {
-        rval = moab.get_coords(&ent,1,coords); CHKERR_PETSC(rval);
+        rval = moab.get_coords(&ent,1,coords); CHKERRQ_MOAB(rval);
         node = ent;
       }
       fval = scale_positions*coords[dof_rank];
