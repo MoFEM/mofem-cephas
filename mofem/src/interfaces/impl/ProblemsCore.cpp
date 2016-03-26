@@ -1162,7 +1162,7 @@ PetscErrorCode Core::resolve_shared_ents(const MoFEMProblem *problem_ptr,const s
         pstatus |= PSTATUS_SHARED;
       }
       int rrr = 0;
-      for(int rr = 0;rr<pcomm->size();rr++) {
+      for(unsigned int rr = 0;rr<pcomm->size();rr++) {
         if(rr!=pcomm->rank()) {
           shhandles[rrr] = ent;
           shprocs[rrr] = rr;
