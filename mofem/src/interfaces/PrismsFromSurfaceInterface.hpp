@@ -31,8 +31,34 @@ struct PrismsFromSurfaceInterface: public UnknownInterface {
   PrismsFromSurfaceInterface(MoFEM::Core& core): cOre(core) {};
 
   map<EntityHandle,EntityHandle> createdVertices;
+
+  /**
+   * \brief Make prisms from triangles
+   * @param  ents   Range of triangles
+   * @param  prisms Returned range of prisms
+   * @param  verb   Verbosity level
+   * @return        Error code
+   */
   PetscErrorCode createPrisms(const Range &ents,Range &prisms,int verb = -1);
+
+  /**
+   * \brief Seed prism entities by bit level
+   * @param  prisms Range of entities
+   * @param  bit    BitRefLevel
+   * @param  verb   Verbosity level
+   * @return        Error code
+   */
   PetscErrorCode seedPrismsEntities(Range &prisms,const BitRefLevel &bit,int verb = -1);
+
+  /**
+   * \brief Make prisms by extruding top or bottom prisms
+   * @param  prisms      Input prisms
+   * @param  top_or_down Use top or down face
+   * @param  out_prisms  Returned prisms entities
+   * @param  verb        Verbosity level
+   * @return             Error code
+   */
+  PetscErrorCode createPrismsFromPrisms(const Range &prisms,bool top_or_down,Range &out_prisms,int verb = -1);
 
 };
 

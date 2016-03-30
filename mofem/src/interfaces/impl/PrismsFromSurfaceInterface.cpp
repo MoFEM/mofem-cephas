@@ -166,5 +166,23 @@ PetscErrorCode PrismsFromSurfaceInterface::seedPrismsEntities(Range &prisms,cons
   PetscFunctionReturn(0);
 }
 
+PetscErrorCode PrismsFromSurfaceInterface::createPrismsFromPrisms(const Range &prisms,bool top_or_down,Range &out_prisms,int verb) {
+  PetscErrorCode ierr;
+  MoABErrorCode rval;
+  PetscFunctionBegin;
+  FieldInterface& m_field = cOre;
+  Range tris;
+  for(Range::iterator pit = prisms.begin();pit!=prisms.end();pit++) {
+    EntityHandle face;
+    if(top_or_down) {
+      rval = m_field.get_moab().side_element(*pit,2,3,face); CHKERRQ_MOAB(rval);
+    } else {
+      rval = m_field.get_moab().side_element(*pit,2,4,face); CHKERRQ_MOAB(rval);
+    }
+    tris.insert(face);
+  }
+  ierr = createPrisms(tris,out_prisms,verb); CHKERRQ(ierr);
+  PetscFunctionReturn(0);
+}
 
 }
