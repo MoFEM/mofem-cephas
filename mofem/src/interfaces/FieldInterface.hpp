@@ -99,11 +99,12 @@ struct FieldInterface: public UnknownInterface {
     * \ingroup mofem_bc
 
     *
-    * \param  see CubitBC (NODESET, SIDESET or BLOCKSET and more)
-    * \param msId id of the BLOCKSET/SIDESET/BLOCKSET: from CUBIT
-    *
+    * \param see CubitBC (NODESET, SIDESET or BLOCKSET and more)
+    * \param ms_id id of the BLOCKSET/SIDESET/BLOCKSET
+    * \param name of set
+
     */
-  virtual PetscErrorCode add_cubit_msId(const CubitBCType cubit_bc_tyep,const int msId) = 0;
+  virtual PetscErrorCode add_cubit_msId(const CubitBCType cubit_bc_tyep,const int msId,const string name = "") = 0;
 
   /**
     * \brief delete cubit meshset

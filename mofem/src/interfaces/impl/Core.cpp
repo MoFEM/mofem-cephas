@@ -226,7 +226,7 @@ PetscErrorCode mofem_error_handler(MPI_Comm comm,int line,const char *fun,const 
 
   } else {
 
-    /* do not print error messages since process 0 will print them, sleep before aborting so will not accidently kill process 0*/
+    /* do not print error messages since process 0 will print them, sleep before aborting so will not accidentally kill process 0*/
     PetscSleep(10.0);
     abort();
 
@@ -770,7 +770,7 @@ PetscErrorCode Core::initialiseDatabseInformationFromMesh(int verb) {
     try {
       //check if meshset is cubit meshset
       CubitMeshSets base_meshset(moab,*mit);
-      if((base_meshset.cubit_bc_type&CubitBCType(NODESET|SIDESET|BLOCKSET)).any()) {
+      if((base_meshset.cubitBcType&CubitBCType(NODESET|SIDESET|BLOCKSET)).any()) {
         pair<CubitMeshSet_multiIndex::iterator,bool> p = cubitMeshsets.insert(base_meshset);
         if(!p.second) {
           SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"meshset not inserted");

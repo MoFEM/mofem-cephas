@@ -166,7 +166,7 @@ PetscErrorCode PrismsFromSurfaceInterface::seedPrismsEntities(Range &prisms,cons
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode PrismsFromSurfaceInterface::createPrismsFromPrisms(const Range &prisms,bool top_or_down,Range &out_prisms,int verb) {
+PetscErrorCode PrismsFromSurfaceInterface::createPrismsFromPrisms(const Range &prisms,bool from_down,Range &out_prisms,int verb) {
   PetscErrorCode ierr;
   MoABErrorCode rval;
   PetscFunctionBegin;
@@ -174,7 +174,7 @@ PetscErrorCode PrismsFromSurfaceInterface::createPrismsFromPrisms(const Range &p
   Range tris;
   for(Range::iterator pit = prisms.begin();pit!=prisms.end();pit++) {
     EntityHandle face;
-    if(top_or_down) {
+    if(from_down) {
       rval = m_field.get_moab().side_element(*pit,2,3,face); CHKERRQ_MOAB(rval);
     } else {
       rval = m_field.get_moab().side_element(*pit,2,4,face); CHKERRQ_MOAB(rval);
@@ -182,6 +182,39 @@ PetscErrorCode PrismsFromSurfaceInterface::createPrismsFromPrisms(const Range &p
     tris.insert(face);
   }
   ierr = createPrisms(tris,out_prisms,verb); CHKERRQ(ierr);
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode PrismsFromSurfaceInterface::setThickness(const Range &prisms,const double director3[],const double director4[]) {
+  MoABErrorCode rval;
+  PetscFunctionBegin;
+  FieldInterface& m_field = cOre;
+  Range nodes_f3,nodes_f4;
+  for(Range::iterator pit = prisms.begin();pit!=prisms.end();pit++) {
+    for(int ff = 3;ff<=4;ff++) {
+      EntityHandle face;
+      rval = m_field.get_moab().side_element(*pit,2,ff,face); CHKERRQ_MOAB(rval);
+      const EntityHandle* conn;
+      int number_nodes = 0;
+      rval = m_field.get_moab().get_connectivity(face,conn,number_nodes,false); CHKERRQ_MOAB(rval);
+      if(ff == 3) {
+        nodes_f3.insert(&conn[0],&conn[number_nodes]);
+      } else {
+        nodes_f4.insert(&conn[0],&conn[number_nodes]);
+      }
+    }
+  }
+  double coords[3];
+  for(Range::iterator nit = nodes_f3.begin();nit!=nodes_f3.end();nit++) {
+    rval = m_field.get_moab().get_coords(&*nit,1,coords); CHKERRQ_MOAB(rval);
+    cblas_daxpy(3,1,director3,1,coords,1);
+    rval = m_field.get_moab().set_coords(&*nit,1,coords); CHKERRQ_MOAB(rval);
+  }
+  for(Range::iterator nit = nodes_f4.begin();nit!=nodes_f4.end();nit++) {
+    rval = m_field.get_moab().get_coords(&*nit,1,coords); CHKERRQ_MOAB(rval);
+    cblas_daxpy(3,1,director4,1,coords,1);
+    rval = m_field.get_moab().set_coords(&*nit,1,coords); CHKERRQ_MOAB(rval);
+  }
   PetscFunctionReturn(0);
 }
 

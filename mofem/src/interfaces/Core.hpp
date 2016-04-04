@@ -180,17 +180,16 @@ struct Core:
   PetscErrorCode check_number_of_ents_in_ents_finite_element();
   PetscErrorCode rebuild_database(int verb = -1);
 
-
   //cubit meshsets
-  bool check_msId_meshset(const int msId,const CubitBCType cubit_bc_type);
-  PetscErrorCode add_cubit_msId(const CubitBCType cubit_bc_type,const int msId);
-  PetscErrorCode delete_cubit_msId(const CubitBCType cubit_bc_type,const int msId);
-  PetscErrorCode get_cubit_msId(const int msId,const CubitBCType cubit_bc_type,const CubitMeshSets **cubit_meshset_ptr);
-  PetscErrorCode get_cubit_msId_entities_by_dimension(const int msId,const CubitBCType cubit_bc_type, const int dimension,Range &entities,const bool recursive = false);
-  PetscErrorCode get_cubit_msId_entities_by_dimension(const int msId,const CubitBCType cubit_bc_type, Range &entities,const bool recursive = false);
-  PetscErrorCode get_cubit_msId_entities_by_dimension(const int msId,const unsigned int cubit_bc_type, const int dimension,Range &entities,const bool recursive = false);
-  PetscErrorCode get_cubit_msId_entities_by_dimension(const int msId,const unsigned int cubit_bc_type, Range &entities,const bool recursive = false);
-  PetscErrorCode get_cubit_msId_meshset(const int msId,const unsigned int cubit_bc_type,EntityHandle &meshset);
+  bool check_msId_meshset(const int ms_id,const CubitBCType cubit_bc_type);
+  PetscErrorCode add_cubit_msId(const CubitBCType cubit_bc_type,const int ms_id,const string name = "");
+  PetscErrorCode delete_cubit_msId(const CubitBCType cubit_bc_type,const int ms_id);
+  PetscErrorCode get_cubit_msId(const int ms_id,const CubitBCType cubit_bc_type,const CubitMeshSets **cubit_meshset_ptr);
+  PetscErrorCode get_cubit_msId_entities_by_dimension(const int ms_id,const CubitBCType cubit_bc_type, const int dimension,Range &entities,const bool recursive = false);
+  PetscErrorCode get_cubit_msId_entities_by_dimension(const int ms_id,const CubitBCType cubit_bc_type, Range &entities,const bool recursive = false);
+  PetscErrorCode get_cubit_msId_entities_by_dimension(const int ms_id,const unsigned int cubit_bc_type, const int dimension,Range &entities,const bool recursive = false);
+  PetscErrorCode get_cubit_msId_entities_by_dimension(const int ms_id,const unsigned int cubit_bc_type, Range &entities,const bool recursive = false);
+  PetscErrorCode get_cubit_msId_meshset(const int ms_id,const unsigned int cubit_bc_type,EntityHandle &meshset);
   PetscErrorCode get_cubit_meshsets(const unsigned int cubit_bc_type,Range &meshsets);
   CubitMeshSet_multiIndex::iterator get_cubit_meshsets_begin() { return cubitMeshsets.begin(); }
   CubitMeshSet_multiIndex::iterator get_cubit_meshsets_end() { return cubitMeshsets.end(); }

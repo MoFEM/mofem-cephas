@@ -53,12 +53,22 @@ struct PrismsFromSurfaceInterface: public UnknownInterface {
   /**
    * \brief Make prisms by extruding top or bottom prisms
    * @param  prisms      Input prisms
-   * @param  top_or_down Use top or down face
+   * @param  from_down  Use top or down face, if true from f3
    * @param  out_prisms  Returned prisms entities
    * @param  verb        Verbosity level
    * @return             Error code
    */
-  PetscErrorCode createPrismsFromPrisms(const Range &prisms,bool top_or_down,Range &out_prisms,int verb = -1);
+  PetscErrorCode createPrismsFromPrisms(const Range &prisms,bool from_down,Range &out_prisms,int verb = -1);
+
+
+  /**
+   * Set uniform thickness
+   * @param  prisms   Range of prisms
+   * @param  director3 Displacement of face 3
+   * @param  director4 Displacement of face 4
+   * @return
+   */
+  PetscErrorCode setThickness(const Range &prisms,const double director3[],const double director4[]);
 
 };
 
