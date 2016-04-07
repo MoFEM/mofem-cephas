@@ -54,8 +54,10 @@ const static bool debug = false;
   */
 struct CreateRowComressedADJMatrix: public Core {
 
-  CreateRowComressedADJMatrix(Interface& moab,MPI_Comm _comm = PETSC_COMM_WORLD,int _verbose = 1):
-    Core(moab,_comm,_verbose) {};
+  CreateRowComressedADJMatrix(
+    Interface& moab,MPI_Comm _comm = PETSC_COMM_WORLD,TagType _tag_type = MB_TAG_SPARSE,int _verbose = 1
+  ):
+  Core(moab,_comm,_tag_type,_verbose) {};
 
   typedef MoFEMEntityEntMoFEMFiniteElementAdjacencyMap_multiIndex::index<Unique_mi_tag>::type AdjByEnt;
   typedef MoFEMProblem_multiIndex::index<Problem_mi_tag>::type ProblemsByName;

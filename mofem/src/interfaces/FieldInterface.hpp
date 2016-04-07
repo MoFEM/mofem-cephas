@@ -579,8 +579,9 @@ struct FieldInterface: public UnknownInterface {
    * @param  space             space (L2,H1,Hdiv,Hcurl)
    * @param  base              approximation base (AINSWORTH_COLE_BASE, BERNSTEIN_BEZIER_BASE)
    * @param  nb_of_cooficients number of field coefficients
+   * @param  tag_type          type of the tag MB_TAG_DENSE or MB_TAG_SPARSE (DENSE is faster and uses less memory, SPARSE is more flexible if you define field on subdomains)
    * @param  bh                if MF_EXCL throws error if field exits, MF_ZERO no error if field exist
-   * @param  verb              verbosity level
+   * @param  verb              verbosity leve
    * @return                   error code
    */
   virtual PetscErrorCode add_field(
@@ -588,7 +589,8 @@ struct FieldInterface: public UnknownInterface {
     const FieldSpace space,
     const FieldApproximationBase base,
     const FieldCoefficientsNumber nb_of_cooficients,
-    enum MoFEMTypes bh = MF_EXCL,
+    const TagType tag_type = MB_TAG_SPARSE,
+    const enum MoFEMTypes bh = MF_EXCL,
     int verb = -1
   ) = 0;
 
@@ -605,12 +607,12 @@ struct FieldInterface: public UnknownInterface {
     const string& name,
     const FieldSpace space,
     const FieldCoefficientsNumber nb_of_cooficients,
-    enum MoFEMTypes bh = MF_EXCL,
+    const enum MoFEMTypes bh = MF_EXCL,
     int verb = -1
   ) {
     PetscErrorCode ierr;
     PetscFunctionBegin;
-    ierr = add_field(name,space,AINSWORTH_COLE_BASE,nb_of_cooficients,bh,verb); CHKERRQ(ierr);
+    ierr = add_field(name,space,AINSWORTH_COLE_BASE,nb_of_cooficients,MB_TAG_SPARSE,bh,verb); CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }
 

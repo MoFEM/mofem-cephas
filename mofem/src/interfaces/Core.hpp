@@ -29,8 +29,7 @@ namespace MoFEM {
   without interfering with users modules programmer work.
 
  */
-struct Core:
-  public FieldInterface, MeshRefinment, PrismInterface, SeriesRecorder {
+struct Core: public FieldInterface, MeshRefinment, PrismInterface, SeriesRecorder {
 
   PetscErrorCode queryInterface(const MOFEMuuid& uuid, UnknownInterface** iface);
   PetscErrorCode query_interface_type(const std::type_info& iface_type, void*& ptr);
@@ -38,7 +37,7 @@ struct Core:
   Interface& moab;
   MPI_Comm comm;
 
-  Core(Interface& _moab,MPI_Comm _comm = PETSC_COMM_WORLD,int _verbose = 1);
+  Core(Interface& _moab,MPI_Comm _comm = PETSC_COMM_WORLD,TagType _tag_type = MB_TAG_SPARSE,int _verbose = 1);
   ~Core();
 
   Tag get_th_RefParentHandle() { return th_RefParentHandle; }
@@ -362,7 +361,9 @@ struct Core:
     const FieldSpace space,
     const FieldApproximationBase base,
     const FieldCoefficientsNumber nb_cooficients,
-    enum MoFEMTypes bh = MF_EXCL,int verb = -1
+    const TagType tag_type = MB_TAG_SPARSE,
+    const enum MoFEMTypes bh = MF_EXCL,
+    int verb = -1
   );
 
   PetscErrorCode add_ents_to_field_by_VERTICEs(const Range &nodes,const BitFieldId id,int verb = -1);
