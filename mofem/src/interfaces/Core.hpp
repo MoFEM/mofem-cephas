@@ -355,7 +355,24 @@ struct Core: public FieldInterface, MeshRefinment, PrismInterface, SeriesRecorde
   PetscErrorCode synchronise_field_entities(const BitFieldId id,int verb = -1);
   PetscErrorCode synchronise_field_entities(const string& name,int verb = -1);
 
-  //field
+  /**
+   * \brief Add filed
+   * @param  name           Field name
+   * @param  space          Space L2,H1,Hdiv,Hcurl
+   * @param  base           Approximation base AINSWORTH_COLE_BASE, BERNSTEIN_BEZIER_BASE ...
+   * @param  nb_cooficients Number of field coefficients
+   * @param  tag_type       Tag type, MB_TAG_DENSE or MB_TAG_SPARSE (default)
+   * @param  bh             Control behavior, if MF_EXCL throws error if exist
+   * @param  verb           Verbosity level
+   * @return                Return error code
+
+   * \todo MB_TAG_DENSE will not work properly in general case. It is need to separate field
+   * tags for each entity separately. That will allow for HO orders but homogenous approx. order
+   * on each entity. Need some discussion what is optimal solution. MB_TAG_SPARSE gives flexibility,
+   * but it not memory efficient. MB_TAG_DENSE uses memory more efficient and in principle allow
+   * for better efficiency if properly utilized.
+
+   */
   PetscErrorCode add_field(
     const string& name,
     const FieldSpace space,
