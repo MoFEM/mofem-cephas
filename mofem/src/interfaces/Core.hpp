@@ -366,11 +366,13 @@ struct Core: public FieldInterface, MeshRefinment, PrismInterface, SeriesRecorde
    * @param  verb           Verbosity level
    * @return                Return error code
 
-   * \todo MB_TAG_DENSE will not work properly in general case. It is need to separate field
-   * tags for each entity separately. That will allow for HO orders but homogenous approx. order
-   * on each entity. Need some discussion what is optimal solution. MB_TAG_SPARSE gives flexibility,
-   * but it not memory efficient. MB_TAG_DENSE uses memory more efficient and in principle allow
-   * for better efficiency if properly utilized.
+   TODO: \todo MB_TAG_DENSE will not work properly in general case. It is need to separate field
+   tags for each entity separately. That will allow for HO orders but homogenous approx. order
+   on each entity. Need some discussion what is optimal solution. MB_TAG_SPARSE gives flexibility,
+   but it not memory efficient. MB_TAG_DENSE uses memory more efficient and in principle allow
+   for better efficiency if properly utilized.
+
+   FIXME: \bug Need to resolve problem of dense tags at this stage of development will make only problems
 
    */
   PetscErrorCode add_field(
