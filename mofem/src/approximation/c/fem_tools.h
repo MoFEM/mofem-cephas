@@ -225,6 +225,11 @@ PetscErrorCode Gegenbauer_polynomials(
   int p,double alpha, double s,double *diff_s,double *L,double *diffL,const int dim
 );
 
+PetscErrorCode Lobatto_polynomials(
+  int p,double s,double *diff_s,double *L,double *diffL,const int dim
+);
+
+
 //2 Node edge
 PetscErrorCode ShapeMBEDGE(double *N,const double *G_X,int DIM);
 PetscErrorCode ShapeDiffMBEDGE(double *diffN);

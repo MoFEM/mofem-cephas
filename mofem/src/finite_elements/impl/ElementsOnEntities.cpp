@@ -986,7 +986,7 @@ PetscErrorCode ForcesAndSurcesCore::shapeTETFunctions_H1(
       _sense_,_order_,
       &*data.dataOnEntities[MBVERTEX][0].getN().data().begin(),
       &*data.dataOnEntities[MBVERTEX][0].getDiffN().data().begin(),
-      _H1edgeN_,_diffH1edgeN_,G_DIM
+      _H1edgeN_,_diffH1edgeN_,G_DIM,Legendre_polynomials
     ); CHKERRQ(ierr);
 
   }
@@ -1022,7 +1022,8 @@ PetscErrorCode ForcesAndSurcesCore::shapeTETFunctions_H1(
       &*data.dataOnEntities[MBVERTEX][0].getDiffN().data().begin(),
       _H1faceN_,
       _diffH1faceN_,
-      G_DIM
+      G_DIM,
+      Legendre_polynomials
     ); CHKERRQ(ierr);
 
   }
@@ -1040,7 +1041,8 @@ PetscErrorCode ForcesAndSurcesCore::shapeTETFunctions_H1(
       &*data.dataOnEntities[MBVERTEX][0].getDiffN().data().begin(),
       &*data.dataOnEntities[MBTET][0].getN().data().begin(),
       &*data.dataOnEntities[MBTET][0].getDiffN().data().begin(),
-      G_DIM
+      G_DIM,
+      Legendre_polynomials
     ); CHKERRQ(ierr);
 
   }
@@ -1305,7 +1307,7 @@ PetscErrorCode ForcesAndSurcesCore::shapeTRIFunctions_H1(
     ierr = H1_EdgeShapeFunctions_MBTRI(sense,order,
       &*data.dataOnEntities[MBVERTEX][0].getN().data().begin(),
       &*data.dataOnEntities[MBVERTEX][0].getDiffN().data().begin(),
-      H1edgeN,diffH1edgeN,G_DIM
+      H1edgeN,diffH1edgeN,G_DIM,Legendre_polynomials
     ); CHKERRQ(ierr);
   }
 
@@ -1325,7 +1327,7 @@ PetscErrorCode ForcesAndSurcesCore::shapeTRIFunctions_H1(
       &*data.dataOnEntities[MBVERTEX][0].getDiffN().data().begin(),
       &*data.dataOnEntities[MBTRI][0].getN().data().begin(),
       &*data.dataOnEntities[MBTRI][0].getDiffN().data().begin(),
-      G_DIM
+      G_DIM,Legendre_polynomials
     ); CHKERRQ(ierr);
   }
 
@@ -1409,7 +1411,7 @@ PetscErrorCode ForcesAndSurcesCore::shapeFlatPRISMFunctions_H1(
         &*diffN.data().begin(),
         &H1edgeN[0],
         &diffH1edgeN[0],
-        G_DIM
+        G_DIM,Legendre_polynomials
       ); CHKERRQ(ierr);
       //shape functions on face 4
       ierr = H1_EdgeShapeFunctions_MBTRI(
@@ -1419,7 +1421,7 @@ PetscErrorCode ForcesAndSurcesCore::shapeFlatPRISMFunctions_H1(
         &*diffN.data().begin(),
         &H1edgeN[6],
         &diffH1edgeN[6],
-        G_DIM
+        G_DIM,Legendre_polynomials
       ); CHKERRQ(ierr);
     }
 
@@ -1439,7 +1441,7 @@ PetscErrorCode ForcesAndSurcesCore::shapeFlatPRISMFunctions_H1(
           &*diffN.data().begin(),
           &*data.dataOnEntities[MBTRI][ff].getN().data().begin(),
           &*data.dataOnEntities[MBTRI][ff].getDiffN().data().begin(),
-          G_DIM
+          G_DIM,Legendre_polynomials
         ); CHKERRQ(ierr);
       }
     }
