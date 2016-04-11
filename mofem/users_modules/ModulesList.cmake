@@ -14,6 +14,8 @@
 # List of sources for user_modules libaries.
 set(UM_LIB_SOURCES "")
 
+# Those are default sub-modules
+# FIXME: This has to find solution as a install with sub-modules
 include(${UM_SOURCE_DIR}/basic_finite_elements/AddModule.cmake)
 include(${UM_SOURCE_DIR}/analytical_dirichlet_boundary_conditions/AddModule.cmake)
 include(${UM_SOURCE_DIR}/convective_mass_element/AddModule.cmake)
@@ -35,6 +37,7 @@ add_subdirectory(
   ${PROJECT_BINARY_DIR}/convective_mass_element/atom_tests
 )
 
+# Those modules could be downloaded with MoFEM
 if(WITH_MODULE_OBSOLETE)
   if(NOT EXISTS ${UM_SOURCE_DIR}/obsolete)
     execute_process(
@@ -52,7 +55,6 @@ if(WITH_MODULE_HOMOGENISATION)
     )
   endif(NOT EXISTS ${UM_SOURCE_DIR}/homogenisation)
 endif(WITH_MODULE_HOMOGENISATION)
-
 
 if(WITH_MODULE_FRACTURE_MECHANICS)
   if(NOT EXISTS ${UM_SOURCE_DIR}/fracture_mechanics)
@@ -114,7 +116,7 @@ file(
   ?*/InstalledAddModule.cmake
 )
 
-# inattal modules && git pull for all users modules
+# Install modules && git pull for all users modules
 add_custom_target(
   update_users_modules
   COMMENT "Update all modules ..." VERBATIM
@@ -131,6 +133,18 @@ add_custom_target(
   merge_CDashTesting
   COMMENT "Make merge CDashTesting branch ..." VERBATIM
 )
+add_custom_target(
+  get_modules_contributors_init
+  COMMAND echo "Modules contributors" > ${PROJECT_SOURCE_DIR}/doc/contributors_list_modules
+  COMMENT "Init file for modules contributors list ..." VERBATIM
+)
+add_custom_target(
+  get_modules_contributors
+  COMMENT "Get module contributors ..." VERBATIM
+)
+add_dependencies(get_modules_contributors get_modules_contributors_init)
+
+# Recognise that module is installed
 foreach(LOOP_MODULE ${INSTLLED_MODULES})
   string(REGEX REPLACE
     "/+InstalledAddModule.cmake" ""
@@ -144,6 +158,8 @@ foreach(LOOP_MODULE ${INSTLLED_MODULES})
   message(STATUS "Add definitions to the compiler command -DWITH_MODULE_${MODULE_NAME}")
   add_definitions(-DWITH_MODULE_${MODULE_NAME})
 endforeach(LOOP_MODULE)
+
+# Add custom tags for all modules
 foreach(LOOP_MODULE ${INSTLLED_MODULES})
   # message(STATUS "${LOOP_MODULE}")
   string(REGEX REPLACE
@@ -184,11 +200,23 @@ foreach(LOOP_MODULE ${INSTLLED_MODULES})
     COMMENT "Make merge CDashTesting branch for module ${MODULE_NAME}" VERBATIM
   )
   add_dependencies(merge_CDashTesting merge_CDashTesting_${MODULE_NAME})
+  # get contributors
+  add_custom_target(
+    get_module_contributors_${MODULE_NAME}
+    COMMAND echo >> ${PROJECT_SOURCE_DIR}/doc/contributors_list_modules
+    COMMAND echo ${MODULE_NAME} >> ${PROJECT_SOURCE_DIR}/doc/contributors_list_modules
+    COMMAND ${GIT_EXECUTABLE} shortlog -s -e -n | sed "s/\@/ at /g" >> ${PROJECT_SOURCE_DIR}/doc/contributors_list_modules
+    WORKING_DIRECTORY ${MODULE_DIRECTORY}
+    COMMENT "Get module contributors ${MODULE_NAME}" VERBATIM
+  )
+  add_dependencies(get_modules_contributors get_module_contributors_${MODULE_NAME})
   # include module
   include(${LOOP_MODULE})
 endforeach(LOOP_MODULE)
 
-# Users Programs
+
+# Base modules programs
+# FIXME: This has to find solution as a install with sub-modules
 add_subdirectory(
   ${UM_SOURCE_DIR}/thermal
   ${PROJECT_BINARY_DIR}/thermal
