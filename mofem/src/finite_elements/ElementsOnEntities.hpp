@@ -229,8 +229,15 @@ struct ForcesAndSurcesCore: public FEMethod {
   /// \brief Get nodes on triangles
   PetscErrorCode getFaceTriNodes(DataForcesAndSurcesCore &data);
 
-  /// \brief Get field approximation space on entities
-  PetscErrorCode getSpacesOnEntities(DataForcesAndSurcesCore &data);
+  /// \brief Get field approximation space and base on entities
+  PetscErrorCode getSpacesAndBaseOnEntities(DataForcesAndSurcesCore &data);
+
+  DEPRECATED PetscErrorCode getSpacesOnEntities(DataForcesAndSurcesCore &data) {
+    PetscErrorCode ierr;
+    PetscFunctionBegin;
+    ierr = getSpacesAndBaseOnEntities(data); CHKERRQ(ierr);
+    PetscFunctionReturn(0);
+  }
 
   // ** Data form NumeredDofMoFEMEntity_multiIndex **
 
@@ -247,18 +254,6 @@ struct ForcesAndSurcesCore: public FEMethod {
   PetscErrorCode getProblemNodesColIndices(const string &field_name,VectorInt &nodes_indices) const;
   PetscErrorCode getProblemTypeColIndices(const string &field_name,EntityType type,int side_number,VectorInt &indices) const;
 
-  /** \brief computes approximation functions for tetrahedral and H1 space
-    */
-  PetscErrorCode shapeTETFunctions_H1(
-    DataForcesAndSurcesCore &data,const double *G_X,const double *G_Y,const double *G_Z,const int G_DIM
-  );
-
-  /** \brief computes approximation functions for tetrahedral and L2 space
-    */
-  PetscErrorCode shapeTETFunctions_L2(
-    DataForcesAndSurcesCore &data,const double *G_X,const double *G_Y,const double *G_Z,const int G_DIM
-  );
-
   ublas::matrix<MatrixDouble > N_face_edge;
   ublas::vector<MatrixDouble > N_face_bubble;
   ublas::vector<MatrixDouble > N_volume_edge;
@@ -271,11 +266,25 @@ struct ForcesAndSurcesCore: public FEMethod {
   ublas::vector<MatrixDouble > diffN_volume_face;
   MatrixDouble diffN_volume_bubble;
 
+  /** \brief computes approximation functions for tetrahedral and H1 space
+    */
+  PetscErrorCode shapeTETFunctions_H1(
+    DataForcesAndSurcesCore &data,const double *G_X,const double *G_Y,const double *G_Z,const int G_DIM,
+    PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
+  );
+
+  /** \brief computes approximation functions for tetrahedral and L2 space
+    */
+  PetscErrorCode shapeTETFunctions_L2(
+    DataForcesAndSurcesCore &data,const double *G_X,const double *G_Y,const double *G_Z,const int G_DIM,
+    PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
+  );
 
   /** \brief computes approximation functions for tetrahedral and H1 space
     */
   PetscErrorCode shapeTETFunctions_Hdiv(
-    DataForcesAndSurcesCore &data,const double *G_X,const double *G_Y,const double *G_Z,const int G_DIM
+    DataForcesAndSurcesCore &data,const double *G_X,const double *G_Y,const double *G_Z,const int G_DIM,
+    PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
   );
 
   /** \brief computes approximation functions for triangle and H1 space

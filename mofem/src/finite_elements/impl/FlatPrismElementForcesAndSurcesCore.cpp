@@ -75,7 +75,7 @@ PetscErrorCode FlatPrismElementForcesAndSurcesCore::operator()() {
 
   try {
 
-    ierr = getSpacesOnEntities(dataH1); CHKERRQ(ierr);
+    ierr = getSpacesAndBaseOnEntities(dataH1); CHKERRQ(ierr);
 
     //H1
     if((dataH1.spacesOnEntities[MBEDGE]).test(H1)) {

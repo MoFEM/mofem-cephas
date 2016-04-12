@@ -74,7 +74,7 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::operator()() {
 
     if(fePtr->get_ent_type() != MBTET) PetscFunctionReturn(0);
 
-    ierr = getSpacesOnEntities(dataH1); CHKERRQ(ierr);
+    ierr = getSpacesAndBaseOnEntities(dataH1); CHKERRQ(ierr);
     ierr = getFaceTriNodes(dataH1); CHKERRQ(ierr);
     //H1
     if((dataH1.spacesOnEntities[MBEDGE]).test(H1)) {
@@ -187,17 +187,29 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::operator()() {
     }
     if(nb_gauss_pts == 0) PetscFunctionReturn(0);
 
-    ierr = shapeTETFunctions_H1(
-      dataH1,&gaussPts(0,0),&gaussPts(1,0),&gaussPts(2,0),nb_gauss_pts
-    ); CHKERRQ(ierr);
+    cerr << dataH1.basesOnEntities[MBVERTEX] << endl;
+    cerr << dataH1.basesOnEntities[MBVERTEX].test(AINSWORTH_COLE_BASE) << endl;
+    cerr << dataH1.basesOnEntities[MBEDGE] << endl;
+    cerr << dataH1.basesOnEntities[MBEDGE].test(AINSWORTH_COLE_BASE) << endl;
 
-    if((dataH1.spacesOnEntities[MBTRI]).test(HDIV)) {
-      ierr = shapeTETFunctions_Hdiv(dataHdiv,&gaussPts(0,0),&gaussPts(1,0),&gaussPts(2,0),nb_gauss_pts); CHKERRQ(ierr);
+    if(dataH1.bAse.test(AINSWORTH_COLE_BASE)) {
+      ierr = shapeTETFunctions_H1(
+        dataH1,&gaussPts(0,0),&gaussPts(1,0),&gaussPts(2,0),nb_gauss_pts,Legendre_polynomials
+      ); CHKERRQ(ierr);
+      if((dataH1.spacesOnEntities[MBTRI]).test(HDIV)) {
+        ierr = shapeTETFunctions_Hdiv(
+          dataHdiv,&gaussPts(0,0),&gaussPts(1,0),&gaussPts(2,0),nb_gauss_pts,Legendre_polynomials
+        ); CHKERRQ(ierr);
+      }
+      if((dataH1.spacesOnEntities[MBTET]).test(L2)) {
+        ierr = shapeTETFunctions_L2(
+          dataL2,&gaussPts(0,0),&gaussPts(1,0),&gaussPts(2,0),nb_gauss_pts,Legendre_polynomials
+        ); CHKERRQ(ierr);
+      }
+    }
+    if(dataH1.basesOnEntities[MBVERTEX].test(LOBATTO_BASE)) {
     }
 
-    if((dataH1.spacesOnEntities[MBTET]).test(L2)) {
-      ierr = shapeTETFunctions_L2(dataL2,&gaussPts(0,0),&gaussPts(1,0),&gaussPts(2,0),nb_gauss_pts); CHKERRQ(ierr);
-    }
 
     EntityHandle ent = fePtr->get_ent();
     rval = mField.get_moab().get_connectivity(ent,conn,num_nodes,true); CHKERRQ_MOAB(rval);
@@ -233,7 +245,6 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::operator()() {
       ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
       SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
     }
-
 
     if(
       dataPtr->get<FieldName_mi_tag>().find(meshPositionsFieldName)!=

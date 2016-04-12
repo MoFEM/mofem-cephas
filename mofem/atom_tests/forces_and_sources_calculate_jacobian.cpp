@@ -187,7 +187,7 @@ int main(int argc, char *argv[]) {
     PetscErrorCode operator()() {
       PetscFunctionBegin;
 
-      ierr = getSpacesOnEntities(data); CHKERRQ(ierr);
+      ierr = getSpacesAndBaseOnEntities(data); CHKERRQ(ierr);
 
       ierr = getEdgesSense(data); CHKERRQ(ierr);
       ierr = getTrisSense(data); CHKERRQ(ierr);
@@ -200,7 +200,7 @@ int main(int argc, char *argv[]) {
       ierr = ShapeMBTET(
         &*data.dataOnEntities[MBVERTEX][0].getN().data().begin(),G_TET_X4,G_TET_Y4,G_TET_Z4,4
       ); CHKERRQ(ierr);
-      ierr = shapeTETFunctions_H1(data,G_TET_X4,G_TET_Y4,G_TET_Z4,4); CHKERRQ(ierr);
+      ierr = shapeTETFunctions_H1(data,G_TET_X4,G_TET_Y4,G_TET_Z4,4,Legendre_polynomials); CHKERRQ(ierr);
 
       ierr = getRowNodesIndices(data,"FIELD1"); CHKERRQ(ierr);
       ierr = getEdgesRowIndices(data,"FIELD1"); CHKERRQ(ierr);

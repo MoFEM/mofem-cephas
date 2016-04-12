@@ -232,8 +232,8 @@ int main(int argc, char *argv[]) {
     PetscErrorCode operator()() {
       PetscFunctionBegin;
 
-      ierr = getSpacesOnEntities(data_row); CHKERRQ(ierr);
-      ierr = getSpacesOnEntities(data_col); CHKERRQ(ierr);
+      ierr = getSpacesAndBaseOnEntities(data_row); CHKERRQ(ierr);
+      ierr = getSpacesAndBaseOnEntities(data_col); CHKERRQ(ierr);
 
       ierr = getEdgesSense(data_row); CHKERRQ(ierr);
       ierr = getTrisSense(data_row); CHKERRQ(ierr);
@@ -262,8 +262,8 @@ int main(int argc, char *argv[]) {
         &*data_row.dataOnEntities[MBVERTEX][0].getN().data().begin(),G_TET_X4,G_TET_Y4,G_TET_Z4,4
       ); CHKERRQ(ierr);
       data_col.dataOnEntities[MBVERTEX][0].getN() = data_row.dataOnEntities[MBVERTEX][0].getN();
-      ierr = shapeTETFunctions_H1(data_row,G_TET_X4,G_TET_Y4,G_TET_Z4,4); CHKERRQ(ierr);
-      ierr = shapeTETFunctions_H1(data_col,G_TET_X4,G_TET_Y4,G_TET_Z4,4); CHKERRQ(ierr);
+      ierr = shapeTETFunctions_H1(data_row,G_TET_X4,G_TET_Y4,G_TET_Z4,4,Legendre_polynomials); CHKERRQ(ierr);
+      ierr = shapeTETFunctions_H1(data_col,G_TET_X4,G_TET_Y4,G_TET_Z4,4,Legendre_polynomials); CHKERRQ(ierr);
 
       try {
 	ierr = op.opLhs(data_row,data_col,true); CHKERRQ(ierr);

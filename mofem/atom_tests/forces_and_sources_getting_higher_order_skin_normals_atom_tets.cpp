@@ -172,7 +172,7 @@ int main(int argc, char *argv[]) {
     PetscErrorCode operator()() {
       PetscFunctionBegin;
 
-      ierr = getSpacesOnEntities(data); CHKERRQ(ierr);
+      ierr = getSpacesAndBaseOnEntities(data); CHKERRQ(ierr);
 
       ierr = getEdgesSense(data); CHKERRQ(ierr);
       ierr = getEdgesDataOrder(data,H1); CHKERRQ(ierr);

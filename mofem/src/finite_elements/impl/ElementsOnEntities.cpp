@@ -929,31 +929,31 @@ PetscErrorCode ForcesAndSurcesCore::getFaceTriNodes(DataForcesAndSurcesCore &dat
   PetscFunctionReturn(0);
 }
 
-// ** Space **
+// ** Space and Base **
 
-PetscErrorCode ForcesAndSurcesCore::getSpacesOnEntities(DataForcesAndSurcesCore &data) {
+PetscErrorCode ForcesAndSurcesCore::getSpacesAndBaseOnEntities(DataForcesAndSurcesCore &data) {
   PetscFunctionBegin;
-
   try {
-
-  for(_IT_GET_FEDATA_DOFS_FOR_LOOP_(this,dof)) {
-    data.spacesOnEntities[dof->get_ent_type()].set(dof->get_space());
-  }
-
+    for(_IT_GET_FEDATA_DOFS_FOR_LOOP_(this,dof)) {
+      data.sPace.set(dof->get_space());
+      data.bAse.set(dof->get_approx_base());
+      data.spacesOnEntities[dof->get_ent_type()].set(dof->get_space());
+      data.basesOnEntities[dof->get_ent_type()].set(dof->get_approx_base());
+      // cerr << "approx base " << ApproximationBaseNames[dof->get_approx_base()] << " " << data.basesOnEntities[dof->get_ent_type()] << endl;
+    }
   } catch (exception& ex) {
     ostringstream ss;
     ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
     SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
   }
-
   PetscFunctionReturn(0);
 }
 
 // ** Shape Functions **
 
 PetscErrorCode ForcesAndSurcesCore::shapeTETFunctions_H1(
-  DataForcesAndSurcesCore &data,
-  const double *G_X,const double *G_Y,const double *G_Z,const int G_DIM
+  DataForcesAndSurcesCore &data,const double *G_X,const double *G_Y,const double *G_Z,const int G_DIM,
+  PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
 ) {
   PetscFunctionBegin;
 
@@ -986,7 +986,7 @@ PetscErrorCode ForcesAndSurcesCore::shapeTETFunctions_H1(
       _sense_,_order_,
       &*data.dataOnEntities[MBVERTEX][0].getN().data().begin(),
       &*data.dataOnEntities[MBVERTEX][0].getDiffN().data().begin(),
-      _H1edgeN_,_diffH1edgeN_,G_DIM,Legendre_polynomials
+      _H1edgeN_,_diffH1edgeN_,G_DIM,base_polynomials
     ); CHKERRQ(ierr);
 
   }
@@ -1023,7 +1023,7 @@ PetscErrorCode ForcesAndSurcesCore::shapeTETFunctions_H1(
       _H1faceN_,
       _diffH1faceN_,
       G_DIM,
-      Legendre_polynomials
+      base_polynomials
     ); CHKERRQ(ierr);
 
   }
@@ -1042,7 +1042,7 @@ PetscErrorCode ForcesAndSurcesCore::shapeTETFunctions_H1(
       &*data.dataOnEntities[MBTET][0].getN().data().begin(),
       &*data.dataOnEntities[MBTET][0].getDiffN().data().begin(),
       G_DIM,
-      Legendre_polynomials
+      base_polynomials
     ); CHKERRQ(ierr);
 
   }
@@ -1051,233 +1051,238 @@ PetscErrorCode ForcesAndSurcesCore::shapeTETFunctions_H1(
 }
 
 PetscErrorCode ForcesAndSurcesCore::shapeTETFunctions_L2(
-    DataForcesAndSurcesCore &data,
-    const double *G_X,const double *G_Y,const double *G_Z,const int G_DIM) {
-    PetscFunctionBegin;
+  DataForcesAndSurcesCore &data,const double *G_X,const double *G_Y,const double *G_Z,const int G_DIM,
+  PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
+) {
+  PetscFunctionBegin;
 
+  data.dataOnEntities[MBVERTEX][0].getN().resize(G_DIM,4,false);
+  ierr = ShapeMBTET(&*data.dataOnEntities[MBVERTEX][0].getN().data().begin(),G_X,G_Y,G_Z,G_DIM); CHKERRQ(ierr);
+  data.dataOnEntities[MBVERTEX][0].getDiffN().resize(4,3,false);
+  ierr = ShapeDiffMBTET(&*data.dataOnEntities[MBVERTEX][0].getDiffN().data().begin()); CHKERRQ(ierr);
+
+  data.dataOnEntities[MBTET][0].getN().resize(G_DIM,NBVOLUMETET_L2_AINSWORTH_COLE(data.dataOnEntities[MBTET][0].getDataOrder()),false);
+  data.dataOnEntities[MBTET][0].getDiffN().resize(G_DIM,3*NBVOLUMETET_L2_AINSWORTH_COLE(data.dataOnEntities[MBTET][0].getDataOrder()),false);
+
+  ierr = L2_ShapeFunctions_MBTET(
+    data.dataOnEntities[MBTET][0].getDataOrder(),
+    &*data.dataOnEntities[MBVERTEX][0].getN().data().begin(),&*data.dataOnEntities[MBVERTEX][0].getDiffN().data().begin(),
+    &*data.dataOnEntities[MBTET][0].getN().data().begin(),
+    &*data.dataOnEntities[MBTET][0].getDiffN().data().begin(),
+    G_DIM
+  ); CHKERRQ(ierr);
+
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode ForcesAndSurcesCore::shapeTETFunctions_Hdiv(
+  DataForcesAndSurcesCore &data,const double *G_X,const double *G_Y,const double *G_Z,const int G_DIM,
+  PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
+) {
+  PetscFunctionBegin;
+
+  //calculate shape function for tet, needed to construct shape functions for h_div
+
+  if(data.dataOnEntities[MBVERTEX][0].getN().size1() != (unsigned int)G_DIM) {
     data.dataOnEntities[MBVERTEX][0].getN().resize(G_DIM,4,false);
     ierr = ShapeMBTET(&*data.dataOnEntities[MBVERTEX][0].getN().data().begin(),G_X,G_Y,G_Z,G_DIM); CHKERRQ(ierr);
-    data.dataOnEntities[MBVERTEX][0].getDiffN().resize(4,3,false);
-    ierr = ShapeDiffMBTET(&*data.dataOnEntities[MBVERTEX][0].getDiffN().data().begin()); CHKERRQ(ierr);
-
-    data.dataOnEntities[MBTET][0].getN().resize(G_DIM,NBVOLUMETET_L2_AINSWORTH_COLE(data.dataOnEntities[MBTET][0].getDataOrder()),false);
-    data.dataOnEntities[MBTET][0].getDiffN().resize(G_DIM,3*NBVOLUMETET_L2_AINSWORTH_COLE(data.dataOnEntities[MBTET][0].getDataOrder()),false);
-
-    ierr = L2_ShapeFunctions_MBTET(
-      data.dataOnEntities[MBTET][0].getDataOrder(),
-      &*data.dataOnEntities[MBVERTEX][0].getN().data().begin(),&*data.dataOnEntities[MBVERTEX][0].getDiffN().data().begin(),
-      &*data.dataOnEntities[MBTET][0].getN().data().begin(),
-      &*data.dataOnEntities[MBTET][0].getDiffN().data().begin(),
-      G_DIM); CHKERRQ(ierr);
-
-    PetscFunctionReturn(0);
   }
+  //that is cheep to calate, no harm done if recalculated
+  data.dataOnEntities[MBVERTEX][0].getDiffN().resize(4,3);
+  ierr = ShapeDiffMBTET(&*data.dataOnEntities[MBVERTEX][0].getDiffN().data().begin()); CHKERRQ(ierr);
 
-  PetscErrorCode ForcesAndSurcesCore::shapeTETFunctions_Hdiv(
-    DataForcesAndSurcesCore &data,
-    const double *G_X,const double *G_Y,const double *G_Z,const int G_DIM
-  ) {
-    PetscFunctionBegin;
+  //face shape functions
 
-    //calculate shape function for tet, needed to construct shape functions for h_div
+  double *phi_f_e[4][3];
+  double *phi_f[4];
+  double *diff_phi_f_e[4][3];
+  double *diff_phi_f[4];
 
-    if(data.dataOnEntities[MBVERTEX][0].getN().size1() != (unsigned int)G_DIM) {
-      data.dataOnEntities[MBVERTEX][0].getN().resize(G_DIM,4,false);
-      ierr = ShapeMBTET(&*data.dataOnEntities[MBVERTEX][0].getN().data().begin(),G_X,G_Y,G_Z,G_DIM); CHKERRQ(ierr);
-    }
-    //that is cheep to calate, no harm done if recalculated
-    data.dataOnEntities[MBVERTEX][0].getDiffN().resize(4,3);
-    ierr = ShapeDiffMBTET(&*data.dataOnEntities[MBVERTEX][0].getDiffN().data().begin()); CHKERRQ(ierr);
+  N_face_edge.resize(4,3,false);
+  N_face_bubble.resize(4,false);
+  diffN_face_edge.resize(4,3,false);
+  diffN_face_bubble.resize(4,false);
 
-    //face shape functions
-
-    double *phi_f_e[4][3];
-    double *phi_f[4];
-    double *diff_phi_f_e[4][3];
-    double *diff_phi_f[4];
-
-    N_face_edge.resize(4,3,false);
-    N_face_bubble.resize(4,false);
-    diffN_face_edge.resize(4,3,false);
-    diffN_face_bubble.resize(4,false);
-
-    int faces_order[4];
-    for(int ff = 0;ff<4;ff++) {
-      if(data.dataOnEntities[MBTRI][ff].getSense() == 0) {
-        SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
-      }
-      faces_order[ff] = data.dataOnEntities[MBTRI][ff].getDataOrder();
-      //three edges on face
-      for(int ee = 0;ee<3;ee++) {
-        N_face_edge(ff,ee).resize(G_DIM,3*NBFACETRI_EDGE_HDIV_AINSWORTH_COLE(faces_order[ff]),false);
-        diffN_face_edge(ff,ee).resize(G_DIM,9*NBFACETRI_EDGE_HDIV_AINSWORTH_COLE(faces_order[ff]),false);
-        phi_f_e[ff][ee] = &((N_face_edge(ff,ee))(0,0));
-        diff_phi_f_e[ff][ee] = &((diffN_face_edge(ff,ee))(0,0));
-      }
-      N_face_bubble[ff].resize(G_DIM,3*NBFACETRI_FACE_HDIV_AINSWORTH_COLE(faces_order[ff]),false);
-      diffN_face_bubble[ff].resize(G_DIM,9*NBFACETRI_FACE_HDIV_AINSWORTH_COLE(faces_order[ff]),false);
-      phi_f[ff] = &*(N_face_bubble[ff].data().begin());
-      diff_phi_f[ff] = &*(diffN_face_bubble[ff].data().begin());
-    }
-
-    ierr = Hdiv_EdgeFaceShapeFunctions_MBTET(
-      &data.facesNodes(0,0),faces_order,
-      &data.dataOnEntities[MBVERTEX][0].getN()(0,0),
-      &data.dataOnEntities[MBVERTEX][0].getDiffN()(0,0),
-      phi_f_e,diff_phi_f_e,G_DIM); CHKERRQ(ierr);
-
-    ierr = Hdiv_FaceBubbleShapeFunctions_MBTET(
-      &data.facesNodes(0,0),faces_order,
-      &data.dataOnEntities[MBVERTEX][0].getN()(0,0),
-      &data.dataOnEntities[MBVERTEX][0].getDiffN()(0,0),
-      phi_f,diff_phi_f,G_DIM); CHKERRQ(ierr);
-
-    //volume shape functions
-
-    double *phi_v_e[6];
-    double *phi_v_f[4];
-    double *phi_v;
-    double *diff_phi_v_e[6];
-    double *diff_phi_v_f[4];
-    double *diff_phi_v;
-
-    int volume_order = data.dataOnEntities[MBTET][0].getDataOrder();
-    double coords[] = { 0,0,0, 1,0,0, 0,1,0, 0,0,1 };
-
-    N_volume_edge.resize(6,false);
-    diffN_volume_edge.resize(6,false);
-    for(int ee = 0;ee<6;ee++) {
-      N_volume_edge[ee].resize(G_DIM,3*NBVOLUMETET_EDGE_HDIV_AINSWORTH_COLE(volume_order),false);
-      diffN_volume_edge[ee].resize(G_DIM,9*NBVOLUMETET_EDGE_HDIV_AINSWORTH_COLE(volume_order),false);
-      phi_v_e[ee] = &*(N_volume_edge[ee].data().begin());
-      diff_phi_v_e[ee] = &*(diffN_volume_edge[ee].data().begin());
-    }
-    ierr = Hdiv_EdgeBasedVolumeShapeFunctions_MBTET(
-      volume_order,coords,&data.dataOnEntities[MBVERTEX][0].getN()(0,0),
-      &data.dataOnEntities[MBVERTEX][0].getDiffN()(0,0),
-      phi_v_e,diff_phi_v_e,G_DIM
-    ); CHKERRQ(ierr);
-
-    N_volume_face.resize(4,false);
-    diffN_volume_face.resize(4,false);
-    for(int ff = 0;ff<4;ff++) {
-      N_volume_face[ff].resize(G_DIM,3*NBVOLUMETET_FACE_HDIV_AINSWORTH_COLE(volume_order),false);
-      diffN_volume_face[ff].resize(G_DIM,9*NBVOLUMETET_FACE_HDIV_AINSWORTH_COLE(volume_order),false);
-      phi_v_f[ff] = &*(N_volume_face[ff].data().begin());
-      diff_phi_v_f[ff] = &*(diffN_volume_face[ff].data().begin());
-    }
-    ierr = Hdiv_FaceBasedVolumeShapeFunctions_MBTET(
-      volume_order,coords,&data.dataOnEntities[MBVERTEX][0].getN()(0,0),
-      &data.dataOnEntities[MBVERTEX][0].getDiffN()(0,0),
-      phi_v_f,diff_phi_v_f,G_DIM); CHKERRQ(ierr);
-
-    N_volume_bubble.resize(G_DIM,3*NBVOLUMETET_VOLUME_HDIV_AINSWORTH_COLE(volume_order),false);
-    diffN_volume_bubble.resize(G_DIM,9*NBVOLUMETET_VOLUME_HDIV_AINSWORTH_COLE(volume_order),false);
-    phi_v = &*(N_volume_bubble.data().begin());
-    diff_phi_v = &*(diffN_volume_bubble.data().begin());
-    ierr = Hdiv_VolumeBubbleShapeFunctions_MBTET(
-      volume_order,coords,&data.dataOnEntities[MBVERTEX][0].getN()(0,0),
-      &data.dataOnEntities[MBVERTEX][0].getDiffN()(0,0),
-      phi_v,diff_phi_v,G_DIM
-    ); CHKERRQ(ierr);
-
-    // Set shape functions into data strucrure Shape functions hast to be put
-    // in arrays in order which guarantee hierarhical series of digrees of
-    // freedom, i.e. in other words dofs form sub-entities has to be group
-    // by order.
-
-    //faces
-    if(data.dataOnEntities[MBTRI].size()!=4) {
+  int faces_order[4];
+  for(int ff = 0;ff<4;ff++) {
+    if(data.dataOnEntities[MBTRI][ff].getSense() == 0) {
       SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
     }
-    for(int ff = 0;ff<4;ff++) {
-      data.dataOnEntities[MBTRI][ff].getHdivN().resize(G_DIM,3*NBFACETRI_HDIV_AINSWORTH_COLE(faces_order[ff]),false);
-      data.dataOnEntities[MBTRI][ff].getDiffHdivN().resize(G_DIM,9*NBFACETRI_HDIV_AINSWORTH_COLE(faces_order[ff]),false);
-      int col = 0,diff_col = 0;
-      for(int oo = 0;oo<faces_order[ff];oo++) {
-        for(int ee = 0;ee<3;ee++) {
-          //values
-          for(int dd = 3*NBFACETRI_EDGE_HDIV_AINSWORTH_COLE(oo);dd<3*NBFACETRI_EDGE_HDIV_AINSWORTH_COLE(oo+1);dd++,col++) {
-            for(int gg = 0;gg<G_DIM;gg++) {
-              data.dataOnEntities[MBTRI][ff].getHdivN()(gg,col) = N_face_edge(ff,ee)(gg,dd);
-            }
-          }
-          //direvatives
-          for(int dd = 9*NBFACETRI_EDGE_HDIV_AINSWORTH_COLE(oo);dd<9*NBFACETRI_EDGE_HDIV_AINSWORTH_COLE(oo+1);dd++,diff_col++) {
-            for(int gg = 0;gg<G_DIM;gg++) {
-              data.dataOnEntities[MBTRI][ff].getDiffHdivN()(gg,diff_col) = diffN_face_edge(ff,ee)(gg,dd);
-            }
-          }
-        }
-        //values
-        for(int dd = 3*NBFACETRI_FACE_HDIV_AINSWORTH_COLE(oo);dd<3*NBFACETRI_FACE_HDIV_AINSWORTH_COLE(oo+1);dd++,col++) {
-          for(int gg = 0;gg<G_DIM;gg++) {
-            data.dataOnEntities[MBTRI][ff].getHdivN()(gg,col) = N_face_bubble[ff](gg,dd);
-          }
-        }
-        //direvatives
-        for(int dd = 9*NBFACETRI_FACE_HDIV_AINSWORTH_COLE(oo);dd<9*NBFACETRI_FACE_HDIV_AINSWORTH_COLE(oo+1);dd++,diff_col++) {
-          for(int gg = 0;gg<G_DIM;gg++) {
-            data.dataOnEntities[MBTRI][ff].getDiffHdivN()(gg,diff_col) = diffN_face_bubble[ff](gg,dd);
-          }
-        }
-      }
+    faces_order[ff] = data.dataOnEntities[MBTRI][ff].getDataOrder();
+    //three edges on face
+    for(int ee = 0;ee<3;ee++) {
+      N_face_edge(ff,ee).resize(G_DIM,3*NBFACETRI_EDGE_HDIV_AINSWORTH_COLE(faces_order[ff]),false);
+      diffN_face_edge(ff,ee).resize(G_DIM,9*NBFACETRI_EDGE_HDIV_AINSWORTH_COLE(faces_order[ff]),false);
+      phi_f_e[ff][ee] = &((N_face_edge(ff,ee))(0,0));
+      diff_phi_f_e[ff][ee] = &((diffN_face_edge(ff,ee))(0,0));
     }
+    N_face_bubble[ff].resize(G_DIM,3*NBFACETRI_FACE_HDIV_AINSWORTH_COLE(faces_order[ff]),false);
+    diffN_face_bubble[ff].resize(G_DIM,9*NBFACETRI_FACE_HDIV_AINSWORTH_COLE(faces_order[ff]),false);
+    phi_f[ff] = &*(N_face_bubble[ff].data().begin());
+    diff_phi_f[ff] = &*(diffN_face_bubble[ff].data().begin());
+  }
 
-    //volume
+  ierr = Hdiv_EdgeFaceShapeFunctions_MBTET(
+    &data.facesNodes(0,0),faces_order,
+    &data.dataOnEntities[MBVERTEX][0].getN()(0,0),
+    &data.dataOnEntities[MBVERTEX][0].getDiffN()(0,0),
+    phi_f_e,diff_phi_f_e,G_DIM
+  ); CHKERRQ(ierr);
+
+  ierr = Hdiv_FaceBubbleShapeFunctions_MBTET(
+    &data.facesNodes(0,0),faces_order,
+    &data.dataOnEntities[MBVERTEX][0].getN()(0,0),
+    &data.dataOnEntities[MBVERTEX][0].getDiffN()(0,0),
+    phi_f,diff_phi_f,G_DIM
+  ); CHKERRQ(ierr);
+
+  //volume shape functions
+
+  double *phi_v_e[6];
+  double *phi_v_f[4];
+  double *phi_v;
+  double *diff_phi_v_e[6];
+  double *diff_phi_v_f[4];
+  double *diff_phi_v;
+
+  int volume_order = data.dataOnEntities[MBTET][0].getDataOrder();
+  double coords[] = { 0,0,0, 1,0,0, 0,1,0, 0,0,1 };
+
+  N_volume_edge.resize(6,false);
+  diffN_volume_edge.resize(6,false);
+  for(int ee = 0;ee<6;ee++) {
+    N_volume_edge[ee].resize(G_DIM,3*NBVOLUMETET_EDGE_HDIV_AINSWORTH_COLE(volume_order),false);
+    diffN_volume_edge[ee].resize(G_DIM,9*NBVOLUMETET_EDGE_HDIV_AINSWORTH_COLE(volume_order),false);
+    phi_v_e[ee] = &*(N_volume_edge[ee].data().begin());
+    diff_phi_v_e[ee] = &*(diffN_volume_edge[ee].data().begin());
+  }
+  ierr = Hdiv_EdgeBasedVolumeShapeFunctions_MBTET(
+    volume_order,coords,&data.dataOnEntities[MBVERTEX][0].getN()(0,0),
+    &data.dataOnEntities[MBVERTEX][0].getDiffN()(0,0),
+    phi_v_e,diff_phi_v_e,G_DIM
+  ); CHKERRQ(ierr);
+
+  N_volume_face.resize(4,false);
+  diffN_volume_face.resize(4,false);
+  for(int ff = 0;ff<4;ff++) {
+    N_volume_face[ff].resize(G_DIM,3*NBVOLUMETET_FACE_HDIV_AINSWORTH_COLE(volume_order),false);
+    diffN_volume_face[ff].resize(G_DIM,9*NBVOLUMETET_FACE_HDIV_AINSWORTH_COLE(volume_order),false);
+    phi_v_f[ff] = &*(N_volume_face[ff].data().begin());
+    diff_phi_v_f[ff] = &*(diffN_volume_face[ff].data().begin());
+  }
+  ierr = Hdiv_FaceBasedVolumeShapeFunctions_MBTET(
+    volume_order,coords,&data.dataOnEntities[MBVERTEX][0].getN()(0,0),
+    &data.dataOnEntities[MBVERTEX][0].getDiffN()(0,0),
+    phi_v_f,diff_phi_v_f,G_DIM
+  ); CHKERRQ(ierr);
+
+  N_volume_bubble.resize(G_DIM,3*NBVOLUMETET_VOLUME_HDIV_AINSWORTH_COLE(volume_order),false);
+  diffN_volume_bubble.resize(G_DIM,9*NBVOLUMETET_VOLUME_HDIV_AINSWORTH_COLE(volume_order),false);
+  phi_v = &*(N_volume_bubble.data().begin());
+  diff_phi_v = &*(diffN_volume_bubble.data().begin());
+  ierr = Hdiv_VolumeBubbleShapeFunctions_MBTET(
+    volume_order,coords,&data.dataOnEntities[MBVERTEX][0].getN()(0,0),
+    &data.dataOnEntities[MBVERTEX][0].getDiffN()(0,0),
+    phi_v,diff_phi_v,G_DIM
+  ); CHKERRQ(ierr);
+
+  // Set shape functions into data strucrure Shape functions hast to be put
+  // in arrays in order which guarantee hierarhical series of digrees of
+  // freedom, i.e. in other words dofs form sub-entities has to be group
+  // by order.
+
+  //faces
+  if(data.dataOnEntities[MBTRI].size()!=4) {
+    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
+  }
+  for(int ff = 0;ff<4;ff++) {
+    data.dataOnEntities[MBTRI][ff].getHdivN().resize(G_DIM,3*NBFACETRI_HDIV_AINSWORTH_COLE(faces_order[ff]),false);
+    data.dataOnEntities[MBTRI][ff].getDiffHdivN().resize(G_DIM,9*NBFACETRI_HDIV_AINSWORTH_COLE(faces_order[ff]),false);
     int col = 0,diff_col = 0;
-    data.dataOnEntities[MBTET][0].getHdivN().resize(G_DIM,3*NBVOLUMETET_HDIV_AINSWORTH_COLE(volume_order),false);
-    data.dataOnEntities[MBTET][0].getDiffHdivN().resize(G_DIM,9*NBVOLUMETET_HDIV_AINSWORTH_COLE(volume_order),false);
-    for(int oo = 0;oo<volume_order;oo++) {
-      for(int ee = 0;ee<6;ee++) {
+    for(int oo = 0;oo<faces_order[ff];oo++) {
+      for(int ee = 0;ee<3;ee++) {
         //values
-        for(int dd = 3*NBVOLUMETET_EDGE_HDIV_AINSWORTH_COLE(oo);dd<3*NBVOLUMETET_EDGE_HDIV_AINSWORTH_COLE(oo+1);dd++,col++) {
+        for(int dd = 3*NBFACETRI_EDGE_HDIV_AINSWORTH_COLE(oo);dd<3*NBFACETRI_EDGE_HDIV_AINSWORTH_COLE(oo+1);dd++,col++) {
           for(int gg = 0;gg<G_DIM;gg++) {
-            data.dataOnEntities[MBTET][0].getHdivN()(gg,col) = N_volume_edge[ee](gg,dd);
+            data.dataOnEntities[MBTRI][ff].getHdivN()(gg,col) = N_face_edge(ff,ee)(gg,dd);
           }
         }
         //direvatives
-        for(int dd = 9*NBVOLUMETET_EDGE_HDIV_AINSWORTH_COLE(oo);dd<9*NBVOLUMETET_EDGE_HDIV_AINSWORTH_COLE(oo+1);dd++,diff_col++) {
+        for(int dd = 9*NBFACETRI_EDGE_HDIV_AINSWORTH_COLE(oo);dd<9*NBFACETRI_EDGE_HDIV_AINSWORTH_COLE(oo+1);dd++,diff_col++) {
           for(int gg = 0;gg<G_DIM;gg++) {
-            data.dataOnEntities[MBTET][0].getDiffHdivN()(gg,diff_col) = diffN_volume_edge[ee](gg,dd);
-          }
-        }
-      }
-      for(int ff = 0;ff<4;ff++) {
-        //values
-        for(int dd = 3*NBVOLUMETET_FACE_HDIV_AINSWORTH_COLE(oo);dd<3*NBVOLUMETET_FACE_HDIV_AINSWORTH_COLE(oo+1);dd++,col++) {
-          for(int gg = 0;gg<G_DIM;gg++) {
-            data.dataOnEntities[MBTET][0].getHdivN()(gg,col) = N_volume_face[ff](gg,dd);
-          }
-        }
-        //direvatives
-        for(int dd = 9*NBVOLUMETET_FACE_HDIV_AINSWORTH_COLE(oo);dd<9*NBVOLUMETET_FACE_HDIV_AINSWORTH_COLE(oo+1);dd++,diff_col++) {
-          for(int gg = 0;gg<G_DIM;gg++) {
-            data.dataOnEntities[MBTET][0].getDiffHdivN()(gg,diff_col) = diffN_volume_face[ff](gg,dd);
+            data.dataOnEntities[MBTRI][ff].getDiffHdivN()(gg,diff_col) = diffN_face_edge(ff,ee)(gg,dd);
           }
         }
       }
       //values
-      for(int dd = 3*NBVOLUMETET_VOLUME_HDIV_AINSWORTH_COLE(oo);dd<3*NBVOLUMETET_VOLUME_HDIV_AINSWORTH_COLE(oo+1);dd++,col++) {
+      for(int dd = 3*NBFACETRI_FACE_HDIV_AINSWORTH_COLE(oo);dd<3*NBFACETRI_FACE_HDIV_AINSWORTH_COLE(oo+1);dd++,col++) {
         for(int gg = 0;gg<G_DIM;gg++) {
-          data.dataOnEntities[MBTET][0].getHdivN()(gg,col) = N_volume_bubble(gg,dd);
+          data.dataOnEntities[MBTRI][ff].getHdivN()(gg,col) = N_face_bubble[ff](gg,dd);
         }
       }
       //direvatives
-      for(int dd = 9*NBVOLUMETET_VOLUME_HDIV_AINSWORTH_COLE(oo);dd<9*NBVOLUMETET_VOLUME_HDIV_AINSWORTH_COLE(oo+1);dd++,diff_col++) {
+      for(int dd = 9*NBFACETRI_FACE_HDIV_AINSWORTH_COLE(oo);dd<9*NBFACETRI_FACE_HDIV_AINSWORTH_COLE(oo+1);dd++,diff_col++) {
         for(int gg = 0;gg<G_DIM;gg++) {
-          data.dataOnEntities[MBTET][0].getDiffHdivN()(gg,diff_col) = diffN_volume_bubble(gg,dd);
+          data.dataOnEntities[MBTRI][ff].getDiffHdivN()(gg,diff_col) = diffN_face_bubble[ff](gg,dd);
         }
       }
-
     }
-
-    PetscFunctionReturn(0);
   }
 
+  //volume
+  int col = 0,diff_col = 0;
+  data.dataOnEntities[MBTET][0].getHdivN().resize(G_DIM,3*NBVOLUMETET_HDIV_AINSWORTH_COLE(volume_order),false);
+  data.dataOnEntities[MBTET][0].getDiffHdivN().resize(G_DIM,9*NBVOLUMETET_HDIV_AINSWORTH_COLE(volume_order),false);
+  for(int oo = 0;oo<volume_order;oo++) {
+    for(int ee = 0;ee<6;ee++) {
+      //values
+      for(int dd = 3*NBVOLUMETET_EDGE_HDIV_AINSWORTH_COLE(oo);dd<3*NBVOLUMETET_EDGE_HDIV_AINSWORTH_COLE(oo+1);dd++,col++) {
+        for(int gg = 0;gg<G_DIM;gg++) {
+          data.dataOnEntities[MBTET][0].getHdivN()(gg,col) = N_volume_edge[ee](gg,dd);
+        }
+      }
+      //direvatives
+      for(int dd = 9*NBVOLUMETET_EDGE_HDIV_AINSWORTH_COLE(oo);dd<9*NBVOLUMETET_EDGE_HDIV_AINSWORTH_COLE(oo+1);dd++,diff_col++) {
+        for(int gg = 0;gg<G_DIM;gg++) {
+          data.dataOnEntities[MBTET][0].getDiffHdivN()(gg,diff_col) = diffN_volume_edge[ee](gg,dd);
+        }
+      }
+    }
+    for(int ff = 0;ff<4;ff++) {
+      //values
+      for(int dd = 3*NBVOLUMETET_FACE_HDIV_AINSWORTH_COLE(oo);dd<3*NBVOLUMETET_FACE_HDIV_AINSWORTH_COLE(oo+1);dd++,col++) {
+        for(int gg = 0;gg<G_DIM;gg++) {
+          data.dataOnEntities[MBTET][0].getHdivN()(gg,col) = N_volume_face[ff](gg,dd);
+        }
+      }
+      //direvatives
+      for(int dd = 9*NBVOLUMETET_FACE_HDIV_AINSWORTH_COLE(oo);dd<9*NBVOLUMETET_FACE_HDIV_AINSWORTH_COLE(oo+1);dd++,diff_col++) {
+        for(int gg = 0;gg<G_DIM;gg++) {
+          data.dataOnEntities[MBTET][0].getDiffHdivN()(gg,diff_col) = diffN_volume_face[ff](gg,dd);
+        }
+      }
+    }
+    //values
+    for(int dd = 3*NBVOLUMETET_VOLUME_HDIV_AINSWORTH_COLE(oo);dd<3*NBVOLUMETET_VOLUME_HDIV_AINSWORTH_COLE(oo+1);dd++,col++) {
+      for(int gg = 0;gg<G_DIM;gg++) {
+        data.dataOnEntities[MBTET][0].getHdivN()(gg,col) = N_volume_bubble(gg,dd);
+      }
+    }
+    //direvatives
+    for(int dd = 9*NBVOLUMETET_VOLUME_HDIV_AINSWORTH_COLE(oo);dd<9*NBVOLUMETET_VOLUME_HDIV_AINSWORTH_COLE(oo+1);dd++,diff_col++) {
+      for(int gg = 0;gg<G_DIM;gg++) {
+        data.dataOnEntities[MBTET][0].getDiffHdivN()(gg,diff_col) = diffN_volume_bubble(gg,dd);
+      }
+    }
+
+  }
+
+  PetscFunctionReturn(0);
+}
+
 PetscErrorCode ForcesAndSurcesCore::shapeTRIFunctions_H1(
-  DataForcesAndSurcesCore &data,
-  const double *G_X,const double *G_Y,const int G_DIM) {
+  DataForcesAndSurcesCore &data,const double *G_X,const double *G_Y,const int G_DIM
+) {
   PetscFunctionBegin;
 
   // data.dataOnEntities[MBVERTEX][0].getN().resize(G_DIM,3,false);

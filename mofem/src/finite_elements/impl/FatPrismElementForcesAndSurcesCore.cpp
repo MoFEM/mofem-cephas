@@ -76,9 +76,9 @@ PetscErrorCode FatPrismElementForcesAndSurcesCore::operator()() {
 
   try {
 
-    ierr = getSpacesOnEntities(dataH1); CHKERRQ(ierr);
-    ierr = getSpacesOnEntities(dataH1TrianglesOnly); CHKERRQ(ierr);
-    ierr = getSpacesOnEntities(dataH1TroughThickness); CHKERRQ(ierr);
+    ierr = getSpacesAndBaseOnEntities(dataH1); CHKERRQ(ierr);
+    ierr = getSpacesAndBaseOnEntities(dataH1TrianglesOnly); CHKERRQ(ierr);
+    ierr = getSpacesAndBaseOnEntities(dataH1TroughThickness); CHKERRQ(ierr);
     //H1
     if((dataH1.spacesOnEntities[MBEDGE]).test(H1)) {
       ierr = getEdgesSense(dataH1); CHKERRQ(ierr);

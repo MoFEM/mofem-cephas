@@ -284,8 +284,11 @@ struct DataForcesAndSurcesCore {
 
   };
 
-  ublas::matrix<int> facesNodes; 			///< nodes on finite element faces
-  bitset<LASTSPACE> spacesOnEntities[MBMAXTYPE]; 	///< spaces on entity types
+  bitset<LASTBASE> sPace;
+  bitset<LASTBASE> bAse;
+  ublas::matrix<int> facesNodes; 			                  ///< nodes on finite element faces
+  bitset<LASTSPACE> spacesOnEntities[MBMAXTYPE]; 	      ///< spaces on entity types
+  bitset<LASTBASE> basesOnEntities[MBMAXTYPE]; 	        ///< bases on entity types
   boost::ptr_vector<EntData> dataOnEntities[MBMAXTYPE]; ///< data on nodes, shape function, dofs values, etc.
 
   DataForcesAndSurcesCore(EntityType type);

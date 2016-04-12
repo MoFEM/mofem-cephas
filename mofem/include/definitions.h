@@ -80,6 +80,7 @@ enum FieldApproximationBase {
 const static char * const ApproximationBaseNames[] = {
   "", // empty space
   "AINSWORTH_COLE_BASE",
+  "LOBATTO_BASE",
   "BERNSTEIN_BEZIER_BASE",
   "USER_BASE"
   "LASTBASE"
@@ -88,11 +89,11 @@ const static char * const ApproximationBaseNames[] = {
 /// \brief approximation spaces
 enum FieldSpace {
   NOFIELD = 1, 	///< scalar or vector of scalars describe (no true field)
-  H1, 		///< continuous field
-  HDIV,		///< field with continuous normal traction
-  HCURL,	///< field with continuous tangents
-  L2,		///< field with C-1 continuity
-  LASTSPACE 	///< FieldSpace in [ 0, LASTSPACE )
+  H1, 		      ///< continuous field
+  HDIV,		      ///< field with continuous normal traction
+  HCURL,	      ///< field with continuous tangents
+  L2,		        ///< field with C-1 continuity
+  LASTSPACE 	  ///< FieldSpace in [ 0, LASTSPACE )
 };
 
 const static char * const FieldSpaceNames[] = {
