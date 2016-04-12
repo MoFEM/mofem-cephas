@@ -171,6 +171,7 @@ PetscErrorCode EdgeElementForcesAndSurcesCore::operator()() {
   vector<string> last_eval_field_name(2);
   DataForcesAndSurcesCore *op_data[2];
   FieldSpace space[2];
+  FieldApproximationBase base[2];
 
   boost::ptr_vector<UserDataOperator>::iterator oit,hi_oit;
   oit = opPtrVector.begin();
@@ -183,7 +184,9 @@ PetscErrorCode EdgeElementForcesAndSurcesCore::operator()() {
     for(int ss = 0;ss!=2;ss++) {
 
       string field_name = !ss ? oit->rowFieldName : oit->colFieldName;
-      BitFieldId data_id = mField.get_field_structure(field_name)->get_id();
+      const MoFEMField* field_struture = mField.get_field_structure(field_name);
+      BitFieldId data_id = field_struture->get_id();
+
       if((oit->getMoFEMFEPtr()->get_BitFieldId_data()&data_id).none()) {
         SETERRQ2(
           PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"no data field < %s > on finite element < %s >",
@@ -193,8 +196,7 @@ PetscErrorCode EdgeElementForcesAndSurcesCore::operator()() {
 
       if(oit->getOpType()&types[ss] || oit->getOpType()&UserDataOperator::OPROWCOL) {
 
-        space[ss] = mField.get_field_structure(field_name)->get_space();
-
+        space[ss] = field_struture->get_space();
         switch(space[ss]) {
           case H1:
           op_data[ss] = !ss ? &dataH1 : &derivedDataH1;
@@ -213,6 +215,17 @@ PetscErrorCode EdgeElementForcesAndSurcesCore::operator()() {
           break;
           case LASTSPACE:
           SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"unknown space");
+          break;
+        }
+
+        base[ss] = field_struture->get_approx_base();
+        switch(base[ss]) {
+          case AINSWORTH_COLE_BASE:
+          break;
+          case LOBATTO_BASE:
+          break;
+          default:
+          SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"unknown or not implemented base");
           break;
         }
 
