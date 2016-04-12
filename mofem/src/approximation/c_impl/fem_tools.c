@@ -1,3 +1,7 @@
+/** \file fem_tools.c
+ * \brief Loose implementation of some useful functions
+ */
+
 /* This file is part of MoFEM.
  * MoFEM is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the
@@ -21,6 +25,7 @@
 
 #include <fem_tools.h>
 #include <gm_rule.h>
+#include <phg-quadrule/quad.h>
 
 #include <h1_hdiv_hcurl_l2.h>
 
@@ -348,7 +353,7 @@ PetscErrorCode GradientOfDeformation(double *diffN,double *dofs,double *F) {
   PetscFunctionReturn(0);
 }
 
-// Approximation
+// Base functions
 PetscErrorCode Legendre_polynomials(
   int p,double s,double *diff_s,double *L,double *diffL,const int dim
 ) {
@@ -402,8 +407,10 @@ PetscErrorCode Legendre_polynomials(
   PetscFunctionReturn(0);
 }
 
-// Gegenbauer Polynomials
-PetscErrorCode Gegenbauer_polynomials(int p,double alpha, double s,double *diff_s,double *L,double *diffL,const int dim) {
+PetscErrorCode Lobatto_polynomials(
+  int p,double s,double *diff_s,double *L,double *diffL,const int dim
+) {
+  PetscErrorCode ierr;
   PetscFunctionBegin;
   if(dim < 1) SETERRQ(PETSC_COMM_SELF,1,"dim < 1");
   if(dim > 3) SETERRQ(PETSC_COMM_SELF,1,"dim > 3");
@@ -413,42 +420,66 @@ PetscErrorCode Gegenbauer_polynomials(int p,double alpha, double s,double *diff_
     diffL[0*(p+1)+0] = 0;
     if(dim >= 2) {
       diffL[1*(p+1)+0] = 0;
-      if(dim == 3) diffL[2*(p+1)+0] = 0;
+      if(dim == 3) {
+        diffL[2*(p+1)+0] = 0;
+      }
     }
   }
   if(p==0) PetscFunctionReturn(0);
-  L[1] = 2*alpha*s;
+  L[1] = s;
   if(diffL != NULL) {
     if(diff_s == NULL) {
       SETERRQ(PETSC_COMM_SELF,1,"diff_s == NULL");
     }
-    diffL[0*(p+1)+1] = 2*alpha*diff_s[0];
+    diffL[0*(p+1)+1] = diff_s[0];
     if(dim >= 2) {
-      diffL[1*(p+1)+1] = 2*alpha*diff_s[1];
-      if(dim == 3) diffL[2*(p+1)+1] = 2*alpha*diff_s[2];
+      diffL[1*(p+1)+1] = diff_s[1];
+      if(dim == 3) {
+        diffL[2*(p+1)+1] = diff_s[2];
+      }
     }
   }
   if(p==1) PetscFunctionReturn(0);
-  int l = 1;
-  for(;l<p;l++) {
-    double A = ( (2*(alpha+(double)l))/((double)l+1) );
-    double B = ( (2*alpha+(double)l-1)/((double)l+1) );
-    L[l+1] = A*s*L[l] - B*L[l-1];
-    if(diffL!=NULL) {
-      if(diff_s==NULL) {
-        SETERRQ(PETSC_COMM_SELF,1,"diff_s == NULL");
+  double l[p+1];
+  ierr = Legendre_polynomials(p,s,NULL,l,NULL,1); CHKERRQ(ierr);
+  {
+    // Derivatives
+    int k = 1;
+    for(;k<p;k++) {
+      if(diffL!=NULL) {
+        if(diff_s==NULL) {
+          SETERRQ(PETSC_COMM_SELF,1,"diff_s == NULL");
+        }
+        diffL[0*(p+1)+k+1] = l[k+1]*diff_s[1];
+        if(dim >= 2) {
+          diffL[1*(p+1)+k+1] = l[k+1]*diff_s[1];
+          if(dim == 3) {
+            diffL[2*(p+1)+k+1] = l[k+1]*diff_s[1];
+          }
+        }
       }
-      diffL[0*(p+1)+l+1] = A*(s*diffL[0*(p+1)+l] + diff_s[0]*L[l]) - B*diffL[0*(p+1)+l-1];
-      if(dim >= 2) {
-        diffL[1*(p+1)+l+1] = A*(s*diffL[1*(p+1)+l] + diff_s[1]*L[l]) - B*diffL[1*(p+1)+l-1];
-        if(dim == 3) diffL[2*(p+1)+l+1] = A*(s*diffL[2*(p+1)+l] + diff_s[2]*L[l]) - B*diffL[2*(p+1)+l-1];
+    }
+  }
+  {
+    // Functions
+    bzero(&L[2],(p+1)*sizeof(double));
+    int nb_gauss_pts = QUAD_1D_TABLE[p]->npoints;
+    for(int gg = 0;gg<nb_gauss_pts;gg++) {
+      double ksi = QUAD_1D_TABLE[p]->points[1]-QUAD_1D_TABLE[p]->points[0];
+      ierr = Legendre_polynomials(
+        p,ksi,NULL,l,NULL,1
+      ); CHKERRQ(ierr);
+      double w = 2*QUAD_2D_TABLE[p]->weights[gg];
+      int k = 1;
+      for(;k<p;k++) {
+        L[k+1] += w*l[k+1];
       }
     }
   }
   PetscFunctionReturn(0);
 }
 
-//ALL COMPLEX FROM NOW
+//Come functions with complex variables if one like to calculate derivative using complex variable
 void ShapeDiffMBTETinvJ_complex(double *diffN,__CLPK_doublecomplex *invJac,__CLPK_doublecomplex *diffNinvJac,const enum CBLAS_TRANSPOSE Trans) {
   __CLPK_doublecomplex tmp1 = {1.,0.},tmp2 = {0.,0.};
   int ii = 0,jj;

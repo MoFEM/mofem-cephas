@@ -92,35 +92,52 @@ PetscErrorCode Core::add_field(
     string Tag_data_name = name_data_prefix+name;
     const int def_len = 0;
     rval = moab.tag_get_handle(
-      Tag_data_name.c_str(),def_len,MB_TYPE_OPAQUE,
-      th_FieldData,MB_TAG_CREAT|MB_TAG_BYTES|MB_TAG_VARLEN|tag_type,NULL
+      Tag_data_name.c_str(),
+      def_len,
+      MB_TYPE_OPAQUE,
+      th_FieldData,
+      MB_TAG_CREAT|MB_TAG_BYTES|MB_TAG_VARLEN|MB_TAG_SPARSE,
+      NULL
     ); CHKERRQ_MOAB(rval);
     //order
     ApproximationOrder def_ApproximationOrder = -1;
     string Tag_ApproximationOrder_name = "_App_Order_"+name;
     rval = moab.tag_get_handle(
-      Tag_ApproximationOrder_name.c_str(),sizeof(ApproximationOrder),MB_TYPE_OPAQUE,
-      th_AppOrder,MB_TAG_CREAT|MB_TAG_BYTES|tag_type,&def_ApproximationOrder
+      Tag_ApproximationOrder_name.c_str(),
+      sizeof(ApproximationOrder),
+      MB_TYPE_OPAQUE,
+      th_AppOrder,MB_TAG_CREAT|MB_TAG_BYTES|tag_type,
+      &def_ApproximationOrder
     ); CHKERRQ_MOAB(rval);
     //dof order
     string Tag_dof_ApproximationOrder_name = "_App_Dof_Order"+name;
     rval = moab.tag_get_handle(
-      Tag_dof_ApproximationOrder_name.c_str(),def_len,MB_TYPE_OPAQUE,
-      th_AppDofOrder,MB_TAG_CREAT|MB_TAG_BYTES|MB_TAG_VARLEN|tag_type,NULL
+      Tag_dof_ApproximationOrder_name.c_str(),
+      def_len,MB_TYPE_OPAQUE,
+      th_AppDofOrder,
+      MB_TAG_CREAT|MB_TAG_BYTES|MB_TAG_VARLEN|MB_TAG_SPARSE,
+      NULL
     ); CHKERRQ_MOAB(rval);
     //rank
     int def_rank = 1;
     string Tag_rank_name = "_Field_Rank_"+name;
     rval = moab.tag_get_handle(
-      Tag_rank_name.c_str(),sizeof(FieldCoefficientsNumber),MB_TYPE_OPAQUE,
-      th_Rank,MB_TAG_CREAT|MB_TAG_BYTES|tag_type,&def_rank
+      Tag_rank_name.c_str(),
+      sizeof(FieldCoefficientsNumber),
+      MB_TYPE_OPAQUE,
+      th_Rank,
+      MB_TAG_CREAT|MB_TAG_BYTES|tag_type,
+      &def_rank
     ); CHKERRQ_MOAB(rval);
     rval = moab.tag_set_data(th_Rank,&meshset,1,&nb_of_coefficients); CHKERRQ_MOAB(rval);
     //dof rank
     string Tag_dof_rank_name = "_Field_Dof_Rank_"+name;
     rval = moab.tag_get_handle(
-      Tag_dof_rank_name.c_str(),def_len,MB_TYPE_OPAQUE,
-      th_DofRank,MB_TAG_CREAT|MB_TAG_BYTES|MB_TAG_VARLEN|tag_type,NULL
+      Tag_dof_rank_name.c_str(),
+      def_len,MB_TYPE_OPAQUE,
+      th_DofRank,
+      MB_TAG_CREAT|MB_TAG_BYTES|MB_TAG_VARLEN|MB_TAG_SPARSE,
+      NULL
     ); CHKERRQ_MOAB(rval);
     //add meshset
     pair<MoFEMField_multiIndex::iterator,bool> p;

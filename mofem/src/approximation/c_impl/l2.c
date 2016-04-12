@@ -6,7 +6,7 @@
 
 */
 
-/**  
+/**
  * MoFEM is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
  * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
@@ -20,6 +20,7 @@
 #include <cblas.h>
 
 #include <definitions.h>
+#include <fem_tools.h>
 #include <h1_hdiv_hcurl_l2.h>
 
 PetscErrorCode L2_FaceShapeFunctions_MBTRI(int p,double *N,double *diffN,double *L2N,double *diff_L2N,int GDIM) {
@@ -45,7 +46,7 @@ PetscErrorCode L2_FaceShapeFunctions_MBTRI(int p,double *N,double *diffN,double 
     int shift = ii*P;
     int jj = 0;
     int oo = 0;
-    for(;oo<=p;oo++) {    
+    for(;oo<=p;oo++) {
       int pp0 = 0;
       for(;pp0<=oo;pp0++) {
 	int pp1 = oo-pp0;
@@ -79,7 +80,7 @@ PetscErrorCode L2_ShapeFunctions_MBTET(int p,double *N,double *diffN,double *L2N
   for(;dd<3;dd++) {
     diff_ksiL0[dd] = ( diffN[1*3 + dd] - diffN[0*3 + dd] );
     diff_ksiL1[dd] = ( diffN[2*3 + dd] - diffN[0*3 + dd] );
-    diff_ksiL2[dd] = ( diffN[3*3 + dd] - diffN[0*3 + dd] ); 
+    diff_ksiL2[dd] = ( diffN[3*3 + dd] - diffN[0*3 + dd] );
   }
   int ii = 0;
   for(;ii<GDIM;ii++) {
@@ -95,7 +96,7 @@ PetscErrorCode L2_ShapeFunctions_MBTET(int p,double *N,double *diffN,double *L2N
     int shift = ii*P;
     int jj = 0;
     int oo = 0;
-    for(;oo<=p;oo++) {    
+    for(;oo<=p;oo++) {
 
       int pp0 = 0;
       for(;pp0<=oo;pp0++) {
@@ -110,7 +111,7 @@ PetscErrorCode L2_ShapeFunctions_MBTET(int p,double *N,double *diffN,double *L2N
 	    if(diff_L2N!=NULL) {
 	      int dd = 0;
 	      for(;dd<3;dd++) {
-		diff_L2N[3*shift+3*jj+dd] = 
+		diff_L2N[3*shift+3*jj+dd] =
 		  diffL0[dd*(p+1)+pp0]*L1[pp1]*L2[pp2]+L0[pp0]*diffL1[dd*(p+1)+pp1]
 		  *L2[pp2]+L0[pp0]*L1[pp1]*diffL2[dd*(p+1)+pp2];
 	      }
@@ -129,14 +130,12 @@ PetscErrorCode L2_ShapeFunctions_MBTET(int p,double *N,double *diffN,double *L2N
 PetscErrorCode L2_VolumeShapeDiffMBTETinvJ(int base_p,int p,double *volume_diffN,double *invJac,double *volume_diffNinvJac,int GDIM) {
   PetscFunctionBegin;
   int ii,gg;
-  for(ii = 0;ii<NBVOLUMETET_L2_AINSWORTH_COLE(p);ii++) { 
+  for(ii = 0;ii<NBVOLUMETET_L2_AINSWORTH_COLE(p);ii++) {
     for(gg = 0;gg<GDIM;gg++) {
       int shift1 = NBVOLUMETET_L2_AINSWORTH_COLE(base_p)*gg;
       int shift2 = NBVOLUMETET_L2_AINSWORTH_COLE(p)*gg;
       cblas_dgemv(CblasRowMajor,CblasTrans,3,3,1.,
-	invJac,3,&(volume_diffN)[3*shift1+3*ii],1,0.,&(volume_diffNinvJac)[3*shift2+3*ii],1); 
-  }} 
+	invJac,3,&(volume_diffN)[3*shift1+3*ii],1,0.,&(volume_diffNinvJac)[3*shift2+3*ii],1);
+  }}
   PetscFunctionReturn(0);
 }
-
-

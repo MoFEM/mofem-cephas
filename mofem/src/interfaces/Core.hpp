@@ -2,6 +2,9 @@
  * \brief Core FieldInterface class for user interface
  *
  * Low level data structures not used directly by user
+ *
+ * FIXME It is a mess with names of core cpp files need better organization
+ *
  */
 
 /*

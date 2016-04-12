@@ -6,7 +6,7 @@
 
 */
 
-/**  
+/**
  * MoFEM is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
  * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
@@ -20,6 +20,7 @@
 #include <cblas.h>
 
 #include <definitions.h>
+#include <fem_tools.h>
 #include <h1_hdiv_hcurl_l2.h>
 
 PetscErrorCode Spin(double *spinOmega,double *vecOmega);
@@ -63,7 +64,7 @@ PetscErrorCode Hdiv_EdgeBasedVolumeShapeFunctions_MBTET(
     cblas_daxpy(3,-1,&coords[3*edges_nodes[2*ee+0]],1,tau_e[ee],1);
     double nrm2 = cblas_dnrm2(3,tau_e[ee],1);
     cblas_dscal(3,1./nrm2,tau_e[ee],1);
-  } 
+  }
   int ii = 0;
   for(;ii<GDIM;ii++) {
     int node_shift = ii*4;
@@ -81,7 +82,7 @@ PetscErrorCode Hdiv_EdgeBasedVolumeShapeFunctions_MBTET(
 	}
 	int dd = 0;
 	for(;dd<3;dd++) {
-	  diff_Beta_e[dd] = 
+	  diff_Beta_e[dd] =
 	    diffN[3*edges_nodes[2*ee+1]+dd]*N[node_shift+edges_nodes[2*ee+0]]
 	    + N[node_shift+edges_nodes[2*ee+1]]*diffN[3*edges_nodes[2*ee+0]+dd];
 	  diff_ksi_0i[dd] =
@@ -157,13 +158,13 @@ PetscErrorCode Hdiv_FaceBasedVolumeShapeFunctions_MBTET(
 	ierr = Legendre_polynomials(p,ksi_0i,NULL,Psi_l,NULL,3); CHKERRQ(ierr);
 	ierr = Legendre_polynomials(p,ksi_0j,NULL,Psi_m,NULL,3); CHKERRQ(ierr);
       }
-      double Beta_0ij = 
+      double Beta_0ij =
 	N[node_shift+faces_nodes[3*ff+0]]*N[node_shift+faces_nodes[3*ff+1]]*N[node_shift+faces_nodes[3*ff+2]];
       double diff_Beta_0ij[3];
       if(diffPHI_v_f!=NULL) {
 	int dd = 0;
 	for(;dd<3;dd++) {
-	  diff_Beta_0ij[dd] = 
+	  diff_Beta_0ij[dd] =
 	    diffN[3*faces_nodes[3*ff+0]+dd]*N[node_shift+faces_nodes[3*ff+1]]*N[node_shift+faces_nodes[3*ff+2]]+
 	    N[node_shift+faces_nodes[3*ff+0]]*diffN[3*faces_nodes[3*ff+1]+dd]*N[node_shift+faces_nodes[3*ff+2]]+
 	    N[node_shift+faces_nodes[3*ff+0]]*N[node_shift+faces_nodes[3*ff+1]]*diffN[3*faces_nodes[3*ff+2]+dd];
@@ -185,7 +186,7 @@ PetscErrorCode Hdiv_FaceBasedVolumeShapeFunctions_MBTET(
 	      int dd = 0;
 	      for(;dd<3;dd++) {
 		cblas_dcopy(3,tau_0i[ff],1,&(diffPHI_v_f[ff])[9*shift + 9*jj + 3*dd],1);
-		diff[dd] = 
+		diff[dd] =
 		  diff_Beta_0ij[dd]*Psi_l[l]*Psi_m[m]+
 		  Beta_0ij*diff_Psi_l[dd*(p+1)+l]*Psi_m[m]+
 		  Beta_0ij*Psi_l[l]*diff_Psi_m[dd*(p+1)+m];
@@ -227,7 +228,7 @@ PetscErrorCode Hdiv_VolumeBubbleShapeFunctions_MBTET(
   int ii = 0;
   for(;ii<GDIM;ii++) {
     int node_shift = ii*4;
-    double Beta_0ijk = 
+    double Beta_0ijk =
       N[ node_shift + 0]*N[ node_shift + 1]*N[ node_shift + 2]*N[ node_shift + 3];
     double ksi_0i = N[ node_shift+1 ] - N[ node_shift+0 ];
     double ksi_0j = N[ node_shift+2 ] - N[ node_shift+0 ];
@@ -268,23 +269,23 @@ PetscErrorCode Hdiv_VolumeBubbleShapeFunctions_MBTET(
 	    double s = Beta_0ijk*Psi_l[l]*Psi_m[m]*Psi_n[n];
 	    int kk = 0;
 	    for(;kk<3;kk++) {
-	      PHI_v[3*shift + 3*3*jj + 3*0 + kk] = s*ed[0][kk]; 
-	      PHI_v[3*shift + 3*3*jj + 3*1 + kk] = s*ed[1][kk]; 
-	      PHI_v[3*shift + 3*3*jj + 3*2 + kk] = s*ed[2][kk]; 
+	      PHI_v[3*shift + 3*3*jj + 3*0 + kk] = s*ed[0][kk];
+	      PHI_v[3*shift + 3*3*jj + 3*1 + kk] = s*ed[1][kk];
+	      PHI_v[3*shift + 3*3*jj + 3*2 + kk] = s*ed[2][kk];
 	    }
 	    if(diffPHI_v!=NULL) {
 	      int dd = 0;
 	      for(;dd<3;dd++) {
-		double diff = 
+		double diff =
 		  diff_Beta_0ijk[dd]*Psi_l[l]*Psi_m[m]*Psi_n[n]+
 		  Beta_0ijk*diff_Psi_l[dd*(p+1)+l]*Psi_m[m]*Psi_n[n]+
 		  Beta_0ijk*Psi_l[l]*diff_Psi_m[dd*(p+1)+m]*Psi_n[n]+
 		  Beta_0ijk*Psi_l[l]*Psi_m[m]*diff_Psi_n[dd*(p+1)+n];
 		int kk = 0;
 		for(;kk<3;kk++) {
-		  diffPHI_v[9*shift + 3*9*jj + 9*0 + 3*dd + kk] = diff*ed[0][kk]; 
-		  diffPHI_v[9*shift + 3*9*jj + 9*1 + 3*dd + kk] = diff*ed[1][kk]; 
-		  diffPHI_v[9*shift + 3*9*jj + 9*2 + 3*dd + kk] = diff*ed[2][kk]; 
+		  diffPHI_v[9*shift + 3*9*jj + 9*0 + 3*dd + kk] = diff*ed[0][kk];
+		  diffPHI_v[9*shift + 3*9*jj + 9*1 + 3*dd + kk] = diff*ed[1][kk];
+		  diffPHI_v[9*shift + 3*9*jj + 9*2 + 3*dd + kk] = diff*ed[2][kk];
 		}
 	      }
 	    }
@@ -327,7 +328,7 @@ PetscErrorCode Hdiv_EdgeFaceShapeFunctions_MBTET_ON_FACE(
   int ii = 0;
   for(;ii<GDIM;ii++) {
     int node_shift = ii*NB;
-    int shift = ii*NBFACETRI_EDGE_HDIV_AINSWORTH_COLE(p); 
+    int shift = ii*NBFACETRI_EDGE_HDIV_AINSWORTH_COLE(p);
     int ee = 0;
     for(;ee<3;ee++) {
       int n0_idx = faces_nodes[face_edges_nodes[2*ee+0]];
@@ -418,19 +419,19 @@ PetscErrorCode Hdiv_FaceBubbleShapeFunctions_MBTET_ON_FACE(
       ierr = Legendre_polynomials(p,ksi_0i,NULL,Psi_l,NULL,3); CHKERRQ(ierr);
       ierr = Legendre_polynomials(p,ksi_0j,NULL,Psi_m,NULL,3); CHKERRQ(ierr);
     }
-    double Beta_0ij = 
+    double Beta_0ij =
       N[node_shift+faces_nodes[0]]*N[node_shift+faces_nodes[1]]*N[node_shift+faces_nodes[2]];
     double diff_Beta_0ij[3];
     if(diffPHI_f!=NULL) {
       int dd = 0;
       for(;dd<3;dd++) {
-	diff_Beta_0ij[dd] = 
+	diff_Beta_0ij[dd] =
 	  diffN[3*faces_nodes[0]+dd]*N[node_shift+faces_nodes[1]]*N[node_shift+faces_nodes[2]] +
 	  N[node_shift+faces_nodes[0]]*diffN[3*faces_nodes[1]+dd]*N[node_shift+faces_nodes[2]] +
 	  N[node_shift+faces_nodes[0]]*N[node_shift+faces_nodes[1]]*diffN[3*faces_nodes[2]+dd];
       }
     }
-    int shift = ii*NBFACETRI_FACE_HDIV_AINSWORTH_COLE(p); 
+    int shift = ii*NBFACETRI_FACE_HDIV_AINSWORTH_COLE(p);
     int jj = 0;
     int oo = 0;
     for(;oo<=p-3;oo++) {
@@ -447,7 +448,7 @@ PetscErrorCode Hdiv_FaceBubbleShapeFunctions_MBTET_ON_FACE(
 	    for(;dd<3;dd++) {
 	      double *diff_phi_f = &(diffPHI_f)[9*shift+9*jj+3*dd];
 	      cblas_dcopy(3,Phi_f,1,diff_phi_f,1);
-	      double diff = 
+	      double diff =
 		diff_Beta_0ij[dd]*Psi_l[l]*Psi_m[m]+
 		Beta_0ij*diff_Psi_l[dd*(p+1)+l]*Psi_m[m]+
 		Beta_0ij*Psi_l[l]*diff_Psi_m[dd*(p+1)+m];
@@ -455,11 +456,10 @@ PetscErrorCode Hdiv_FaceBubbleShapeFunctions_MBTET_ON_FACE(
 	    }
 	  }
 	  jj++;
-	} 
+	}
       }
     }
     if(jj!=NBFACETRI_FACE_HDIV_AINSWORTH_COLE(p)) SETERRQ2(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"wrong order %d != %d",jj,NBFACETRI_FACE_HDIV_AINSWORTH_COLE(p));
   }
   PetscFunctionReturn(0);
 }
-

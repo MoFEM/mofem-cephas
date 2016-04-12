@@ -1,5 +1,8 @@
 /** \file fem_tools.h
- * \brief Core FieldInterface class for user interface
+ * \brief Loose implementation of some useful functions
+ *
+ * FIXME: Implementation here is very unstructured, need cleaning and pruning
+ *
  */
 
 /*
@@ -205,30 +208,28 @@ PetscErrorCode GradientOfDeformation(double *diffN,double *dofs,double *F);
  \retval L approximation functions
  \retval diffL derivatives, i.e. \f$\frac{\partial L}{\partial \xi_i}\f$
  \param dim dimension
+ \return error code
+
  */
 PetscErrorCode Legendre_polynomials(
   int p,double s,double *diff_s,double *L,double *diffL,const int dim
 );
 
 /**
- * \brief Calculate Gegenbauer Polynomials and their derivatives
- *
- * \param p is approximation order
- * \param alpha Gegenbauer factor
- * \param s is is position [-1,1]
- * \param diff_s derivatives of shape functions
- * \param L approximation functions
- * \param diffL derivatives
- * \param dim dimension
- */
-PetscErrorCode Gegenbauer_polynomials(
-  int p,double alpha, double s,double *diff_s,double *L,double *diffL,const int dim
-);
+ * \brief Calculate Lobatto base functions
 
+ \param p is approximation order
+ \param s is position \f$s\in[-1,1]\f$
+ \param diff_s derivatives of shape functions, i.e. \f$\frac{\partial s}{\partial \xi_i}\f$
+ \retval L approximation functions
+ \retval diffL derivatives, i.e. \f$\frac{\partial L}{\partial \xi_i}\f$
+ \param dim dimension
+ \return error code
+
+*/
 PetscErrorCode Lobatto_polynomials(
   int p,double s,double *diff_s,double *L,double *diffL,const int dim
 );
-
 
 //2 Node edge
 PetscErrorCode ShapeMBEDGE(double *N,const double *G_X,int DIM);

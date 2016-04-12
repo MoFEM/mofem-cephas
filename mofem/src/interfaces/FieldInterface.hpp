@@ -577,7 +577,7 @@ struct FieldInterface: public UnknownInterface {
    * \brief Add field
    * @param  name              name of the filed
    * @param  space             space (L2,H1,Hdiv,Hcurl)
-   * @param  base              approximation base (AINSWORTH_COLE_BASE, BERNSTEIN_BEZIER_BASE)
+   * @param  base              approximation base (AINSWORTH_COLE_BASE, LOBATTO, BERNSTEIN_BEZIER_BASE, ... see FieldApproximationBase)
    * @param  nb_of_cooficients number of field coefficients
    * @param  tag_type          type of the tag MB_TAG_DENSE or MB_TAG_SPARSE (DENSE is faster and uses less memory, SPARSE is more flexible if you define field on subdomains)
    * @param  bh                if MF_EXCL throws error if field exits, MF_ZERO no error if field exist
@@ -596,6 +596,7 @@ struct FieldInterface: public UnknownInterface {
 
   /**
   * \brief Add field with default AINSWORTH_COLE_BASE approximation base
+  *
   * @param  name              name of the filed
   * @param  space             space (L2,H1,Hdiv,Hcurl)
   * @param  nb_of_cooficients number of field coefficients

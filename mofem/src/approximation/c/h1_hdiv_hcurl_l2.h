@@ -45,17 +45,6 @@ extern "C" {
 #define NBVOLUMETET_FACE_HDIV_AINSWORTH_COLE(P) ((P>2) ? ((P-2)*(P-2)+(P-2)) : 0)
 #define NBVOLUMETET_VOLUME_HDIV_AINSWORTH_COLE(P) ((P>3) ? ((P-3)*(P-2)*(P-1)/2) : 0)
 
-/**
- * \brief Calculate Lagrange approximation basis
- *
- * \param p is approximation order
- * \param s is is position [-1,1]
- * \parem L approximation functions
- * \param diffL derivatives
- * \param dim dimension
- */
-PetscErrorCode Legendre_polynomials(int p,double s,double *diff_s,double *L,double *diffL,const int dim);
-
 PetscErrorCode L2_FaceShapeFunctions_MBTRI(int p,double *N,double *diffN,double *L2N,double *diff_L2N,int GDIM);
 PetscErrorCode L2_ShapeFunctions_MBTET(int p,double *N,double *diffN,double *L2N,double *diff_L2N,int GDIM);
 PetscErrorCode L2_VolumeShapeDiffMBTETinvJ(int base_p,int p,double *volume_diffN,double *invJac,double *volume_diffNinvJac,int GDIM);
