@@ -193,7 +193,7 @@ docktime
 
 ##6. Building MoFEM in Docker##
 
-###6.1 Building MoFEM v0.2###
+###6.1 Building MoFEM ###
 
 In v0.2 the core MoFEM libraries are built separately from the user’s modules.
 This adds further complications during the building process which will be

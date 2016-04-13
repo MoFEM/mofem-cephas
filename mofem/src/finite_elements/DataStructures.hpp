@@ -59,7 +59,12 @@ struct DataForcesAndSurcesCore {
     */
   struct EntData {
 
-    EntData(): sEnse(0),oRder(0) {};
+    EntData():
+    sEnse(0),
+    oRder(0),
+    bAse(NOBASE) {
+    };
+
     virtual ~EntData() {}
 
     /// \brief get entity sense, need to calculate shape functions with conforming approximation fields
@@ -117,7 +122,9 @@ struct DataForcesAndSurcesCore {
       * this return matrix (nb. of rows is equal to nb. of Gauss pts, nb. of
       * columns is equal to number of shape functions on this entity
       */
-    virtual const MatrixDouble& getN() const { return N; }
+    virtual const MatrixDouble& getN(const FieldApproximationBase base) const { return N[base]; }
+
+    virtual const MatrixDouble& getN() const { return getN(bAse); }
 
     /** \brief get derivatives of shape functions
      *
@@ -135,7 +142,9 @@ struct DataForcesAndSurcesCore {
      * Note that for node element this function make no sense.
      *
      */
-    virtual const MatrixDouble& getDiffN() const { return diffN; }
+    virtual const MatrixDouble& getDiffN(const FieldApproximationBase base) const { return diffN[base]; }
+
+    virtual const MatrixDouble& getDiffN() const { return getDiffN(bAse); }
 
     virtual int& getSense() { return sEnse; }
     virtual ApproximationOrder& getDataOrder() { return oRder; }
@@ -143,12 +152,50 @@ struct DataForcesAndSurcesCore {
     virtual VectorInt& getLocalIndices() { return localIndices; }
     virtual VectorDouble& getFieldData() { return fieldData; }
     virtual VectorDofs& getFieldDofs() { return dOfs; }
-    virtual MatrixDouble& getN() { return N; }
 
-    /** \brief get derivatives of shape functions
-     *
+    /**
+     * \brief Get shape functions
+     * @param  base Approximation base
+     * @return      Error code
      */
-    virtual MatrixDouble& getDiffN() { return diffN; }
+    virtual MatrixDouble& getN(const FieldApproximationBase base) { return N[base]; }
+
+    /**
+     * \brief Get shape functions
+     *
+     * It assumed that approximation base for given field is known and stored in this data structure
+     *
+     * @return Error code
+     */
+    virtual MatrixDouble& getN() { return getN(bAse); }
+
+    /**
+     * \brief Get derivatives of shape functions
+     * @param  base Approximation base
+     * @return      Error code
+     */
+    virtual MatrixDouble& getDiffN(const FieldApproximationBase base) { return diffN[base]; }
+
+    /**
+     * \brief Get derivatives of shape functions
+     *
+     * It assumed that approximation base for given field is known and stored in this data structure
+     *
+     * @return Error code
+     */
+    virtual MatrixDouble& getDiffN() { return getDiffN(bAse); }
+
+    /**
+     * \brief Get approximation base
+     * @return Approximation base
+     */
+    virtual FieldApproximationBase& getBase() { return bAse; }
+
+    /**
+     * \brief Get field space
+     * @return Field space
+     */
+    virtual FieldSpace& getSpace() { return sPace; }
 
     /// \brief get shape functions at Gauss pts
     inline const VectorAdaptor getN(int gg) {
@@ -218,9 +265,14 @@ struct DataForcesAndSurcesCore {
       }
     }
 
+    inline const MatrixDouble&  getHdivN(const FieldApproximationBase base) const { return getN(base); };
+    inline const MatrixDouble&  getDiffHdivN(const FieldApproximationBase base) const { return getDiffN(base); };
+    inline MatrixDouble&  getHdivN(const FieldApproximationBase base) { return getN(base); };
+    inline MatrixDouble&  getDiffHdivN(const FieldApproximationBase base) { return getDiffN(base); };
+
     /** \brief get shape functions for Hdiv space
     */
-    inline const MatrixDouble&  getHdivN() const { return getN(); };
+    inline const MatrixDouble&  getHdivN() const { return getN(bAse); };
 
     /** \brief get derivatives of shape functions for Hdiv space
     */
@@ -272,20 +324,21 @@ struct DataForcesAndSurcesCore {
 
     friend ostream& operator<<(ostream& os,const DataForcesAndSurcesCore::EntData &e);
 
-  private:
-    int sEnse;
-    ApproximationOrder oRder;
-    VectorInt iNdices;
-    VectorInt localIndices;
-    VectorDofs dOfs;
-    VectorDouble fieldData;
-    MatrixDouble N;
-    MatrixDouble diffN;
-
+  protected:
+    int sEnse;                    ///< Entity sense (orientation)
+    ApproximationOrder oRder;     ///< Entity order
+    FieldSpace sPace;             ///< Entity space
+    FieldApproximationBase bAse;  ///< Field approximation base
+    VectorInt iNdices;            ///< Global indices on entity
+    VectorInt localIndices;       ///< Local indices on entity
+    VectorDofs dOfs;              ///< Dofs on entity
+    VectorDouble fieldData;       ///< Field data on entity
+    MatrixDouble N[LASTBASE];
+    MatrixDouble diffN[LASTBASE];
   };
 
-  bitset<LASTBASE> sPace;
-  bitset<LASTBASE> bAse;
+  bitset<LASTBASE> sPace;   ///< spaces on element
+  bitset<LASTBASE> bAse;    ///< bases on element
   ublas::matrix<int> facesNodes; 			                  ///< nodes on finite element faces
   bitset<LASTSPACE> spacesOnEntities[MBMAXTYPE]; 	      ///< spaces on entity types
   bitset<LASTBASE> basesOnEntities[MBMAXTYPE]; 	        ///< bases on entity types
@@ -321,12 +374,12 @@ struct DerivedDataForcesAndSurcesCore: public DataForcesAndSurcesCore  {
     entData(ent_data) {}
 
     inline int getSense() const { return entData.getSense(); }
-    inline const MatrixDouble& getN() const { return entData.getN(); }
-    inline const MatrixDouble& getDiffN() const { return entData.getDiffN(); }
-    inline MatrixDouble& getN() { return entData.getN(); }
-    inline MatrixDouble& getDiffN() { return entData.getDiffN(); }
-    inline const MatrixDouble&  getHdivN() const { return entData.getHdivN(); };
-    inline MatrixDouble&  getHdivN() { return entData.getHdivN(); };
+    inline const MatrixDouble& getN() const { return entData.getN(bAse); }
+    inline const MatrixDouble& getDiffN() const { return entData.getDiffN(bAse); }
+    inline MatrixDouble& getN() { return entData.getN(bAse); }
+    inline MatrixDouble& getDiffN() { return entData.getDiffN(bAse); }
+    inline const MatrixDouble&  getHdivN() const { return entData.getHdivN(bAse); };
+    inline MatrixDouble&  getHdivN() { return entData.getHdivN(bAse); };
 
   };
 

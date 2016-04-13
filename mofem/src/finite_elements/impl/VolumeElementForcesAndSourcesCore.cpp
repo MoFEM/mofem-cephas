@@ -74,6 +74,24 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::operator()() {
 
     if(fePtr->get_ent_type() != MBTET) PetscFunctionReturn(0);
 
+    // Calculate volume and inverse jacobian
+    {
+      EntityHandle ent = fePtr->get_ent();
+      rval = mField.get_moab().get_connectivity(ent,conn,num_nodes,true); CHKERRQ_MOAB(rval);
+      coords.resize(num_nodes*3,false);
+      rval = mField.get_moab().get_coords(conn,num_nodes,&*coords.data().begin()); CHKERRQ_MOAB(rval);
+      double diff_n[12];
+      ierr = ShapeDiffMBTET(diff_n); CHKERRQ(ierr);
+      vOlume = ShapeVolumeMBTET(diff_n,&*coords.data().begin());
+      Jac.resize(3,3,false);
+      invJac.resize(3,3,false);
+      ierr = ShapeJacMBTET(
+        diff_n,&*coords.begin(),&*Jac.data().begin()
+      ); CHKERRQ(ierr);
+      noalias(invJac) = Jac;
+      ierr = ShapeInvJacVolume(&*invJac.data().begin()); CHKERRQ(ierr);
+    }
+
     ierr = getSpacesAndBaseOnEntities(dataH1); CHKERRQ(ierr);
     ierr = getFaceTriNodes(dataH1); CHKERRQ(ierr);
     //H1
@@ -97,34 +115,21 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::operator()() {
       ierr = getTrisDataOrder(dataH1,H1); CHKERRQ(ierr);
     }
     if((dataH1.spacesOnEntities[MBTET]).test(H1)) {
-      ierr = getTetsDataOrder(dataH1,H1); CHKERRQ(ierr);
+      ierr = getTetDataOrder(dataH1,H1); CHKERRQ(ierr);
     }
 
     //Hdiv
     if((dataH1.spacesOnEntities[MBTRI]).test(HDIV)) {
       ierr = getTrisSense(dataHdiv); CHKERRQ(ierr);
       ierr = getTrisDataOrder(dataHdiv,HDIV); CHKERRQ(ierr);
-      ierr = getTetsDataOrder(dataHdiv,HDIV); CHKERRQ(ierr);
+      ierr = getTetDataOrder(dataHdiv,HDIV); CHKERRQ(ierr);
       ierr = getFaceTriNodes(dataHdiv); CHKERRQ(ierr);
     }
 
     //L2
     if((dataH1.spacesOnEntities[MBTET]).test(L2)) {
-      ierr = getTetsDataOrder(dataL2,L2); CHKERRQ(ierr);
+      ierr = getTetDataOrder(dataL2,L2); CHKERRQ(ierr);
     }
-
-    // int order = 1;
-    // for(unsigned int ee = 0;ee<dataH1.dataOnEntities[MBEDGE].size();ee++) {
-    //   order = max(order,dataH1.dataOnEntities[MBEDGE][ee].getDataOrder());
-    // }
-    // for(unsigned int ff = 0;ff<dataH1.dataOnEntities[MBTRI].size();ff++) {
-    //   order = max(order,dataH1.dataOnEntities[MBTRI][ff].getDataOrder());
-    // }
-    // order = max(order,dataH1.dataOnEntities[MBTET][0].getDataOrder());
-    // for(unsigned int ff = 0;ff<dataHdiv.dataOnEntities[MBTRI].size();ff++) {
-    //   order = max(order,dataHdiv.dataOnEntities[MBTRI][ff].getDataOrder());
-    // }
-    // order = max(order,dataL2.dataOnEntities[MBTET][0].getDataOrder());
 
     int order_data = getMaxDataOrder();
     int order_row = getMaxRowOrder();
@@ -157,8 +162,8 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::operator()() {
         cblas_dcopy(
           nb_gauss_pts,QUAD_3D_TABLE[rule]->weights,1,&gaussPts(3,0),1
         );
-        dataH1.dataOnEntities[MBVERTEX][0].getN().resize(nb_gauss_pts,4,false);
-        double *shape_ptr = dataH1.dataOnEntities[MBVERTEX][0].getN().data().begin();
+        dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE).resize(nb_gauss_pts,4,false);
+        double *shape_ptr = dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE).data().begin();
         cblas_dcopy(
           4*nb_gauss_pts,QUAD_3D_TABLE[rule]->points,1,shape_ptr,1
         );
@@ -169,74 +174,69 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::operator()() {
         );
         nb_gauss_pts = 0;
       }
-      // nb_gauss_pts = gm_rule_size(rule,3);
-      // gaussPts.resize(4,nb_gauss_pts,false);
-      // ierr = Grundmann_Moeller_integration_points_3D_TET(
-      //   rule,&gaussPts(0,0),&gaussPts(1,0),&gaussPts(2,0),&gaussPts(3,0)
-      // ); CHKERRQ(ierr);
     } else {
       ierr = setGaussPts(order_row,order_col,order_data); CHKERRQ(ierr);
       nb_gauss_pts = gaussPts.size2();
-      dataH1.dataOnEntities[MBVERTEX][0].getN().resize(nb_gauss_pts,4,false);
+      dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE).resize(nb_gauss_pts,4,false);
       if(nb_gauss_pts>0) {
         ierr = ShapeMBTET(
-          &*dataH1.dataOnEntities[MBVERTEX][0].getN().data().begin(),
+          &*dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE).data().begin(),
           &gaussPts(0,0),&gaussPts(1,0),&gaussPts(2,0),nb_gauss_pts
         ); CHKERRQ(ierr);
       }
     }
     if(nb_gauss_pts == 0) PetscFunctionReturn(0);
 
+    // Get coords at Gauss points
+    {
+      double *shape_functions = &*dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE).data().begin();
+      coordsAtGaussPts.resize(nb_gauss_pts,3,false);
+      for(int gg = 0;gg<nb_gauss_pts;gg++) {
+        for(int dd = 0;dd<3;dd++) {
+          coordsAtGaussPts(gg,dd) = cblas_ddot(4,&shape_functions[4*gg],1,&coords[dd],3);
+        }
+      }
+    }
+
+    vector<FieldApproximationBase> shape_functions_for_bases;
     if(dataH1.bAse.test(AINSWORTH_COLE_BASE)) {
+      shape_functions_for_bases.push_back(AINSWORTH_COLE_BASE);
+      dataH1.dataOnEntities[MBVERTEX][0].getBase() = AINSWORTH_COLE_BASE;
+      dataH1.dataOnEntities[MBVERTEX][0].getN(AINSWORTH_COLE_BASE).resize(nb_gauss_pts,4,false);
+      noalias(dataH1.dataOnEntities[MBVERTEX][0].getN(AINSWORTH_COLE_BASE)) = dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE);
       ierr = shapeTETFunctions_H1(
-        dataH1,&gaussPts(0,0),&gaussPts(1,0),&gaussPts(2,0),nb_gauss_pts,Legendre_polynomials
+        dataH1,&gaussPts(0,0),&gaussPts(1,0),&gaussPts(2,0),nb_gauss_pts,AINSWORTH_COLE_BASE,Legendre_polynomials
       ); CHKERRQ(ierr);
       if((dataH1.spacesOnEntities[MBTRI]).test(HDIV)) {
         ierr = shapeTETFunctions_Hdiv(
-          dataHdiv,&gaussPts(0,0),&gaussPts(1,0),&gaussPts(2,0),nb_gauss_pts,Legendre_polynomials
+          dataHdiv,&gaussPts(0,0),&gaussPts(1,0),&gaussPts(2,0),nb_gauss_pts,AINSWORTH_COLE_BASE,Legendre_polynomials
         ); CHKERRQ(ierr);
       }
       if((dataH1.spacesOnEntities[MBTET]).test(L2)) {
         ierr = shapeTETFunctions_L2(
-          dataL2,&gaussPts(0,0),&gaussPts(1,0),&gaussPts(2,0),nb_gauss_pts,Legendre_polynomials
+          dataL2,&gaussPts(0,0),&gaussPts(1,0),&gaussPts(2,0),nb_gauss_pts,AINSWORTH_COLE_BASE,Legendre_polynomials
         ); CHKERRQ(ierr);
       }
     }
     if(dataH1.basesOnEntities[MBVERTEX].test(LOBATTO_BASE)) {
+      shape_functions_for_bases.push_back(LOBATTO_BASE);
+      dataH1.dataOnEntities[MBVERTEX][0].getBase() = LOBATTO_BASE;
+      dataH1.dataOnEntities[MBVERTEX][0].getN(LOBATTO_BASE).resize(nb_gauss_pts,4,false);
+      noalias(dataH1.dataOnEntities[MBVERTEX][0].getN(LOBATTO_BASE)) = dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE);
       ierr = shapeTETFunctions_H1(
-        dataH1,&gaussPts(0,0),&gaussPts(1,0),&gaussPts(2,0),nb_gauss_pts,Lobatto_polynomials
+        dataH1,&gaussPts(0,0),&gaussPts(1,0),&gaussPts(2,0),nb_gauss_pts,LOBATTO_BASE,Lobatto_polynomials
       ); CHKERRQ(ierr);
       if((dataH1.spacesOnEntities[MBTRI]).test(HDIV)) {
         SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not yet implemented");
         ierr = shapeTETFunctions_Hdiv(
-          dataHdiv,&gaussPts(0,0),&gaussPts(1,0),&gaussPts(2,0),nb_gauss_pts,Lobatto_polynomials
+          dataHdiv,&gaussPts(0,0),&gaussPts(1,0),&gaussPts(2,0),nb_gauss_pts,LOBATTO_BASE,Lobatto_polynomials
         ); CHKERRQ(ierr);
       }
       if((dataH1.spacesOnEntities[MBTET]).test(L2)) {
         SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not yet implemented");
         ierr = shapeTETFunctions_L2(
-          dataL2,&gaussPts(0,0),&gaussPts(1,0),&gaussPts(2,0),nb_gauss_pts,Lobatto_polynomials
+          dataL2,&gaussPts(0,0),&gaussPts(1,0),&gaussPts(2,0),nb_gauss_pts,LOBATTO_BASE,Lobatto_polynomials
         ); CHKERRQ(ierr);
-      }
-    }
-
-    EntityHandle ent = fePtr->get_ent();
-    rval = mField.get_moab().get_connectivity(ent,conn,num_nodes,true); CHKERRQ_MOAB(rval);
-    coords.resize(num_nodes*3,false);
-    rval = mField.get_moab().get_coords(conn,num_nodes,&*coords.data().begin()); CHKERRQ_MOAB(rval);
-    vOlume = ShapeVolumeMBTET(&*dataH1.dataOnEntities[MBVERTEX][0].getDiffN().data().begin(),&*coords.data().begin());
-    Jac.resize(3,3,false);
-    invJac.resize(3,3,false);
-    ierr = ShapeJacMBTET(
-      &*dataH1.dataOnEntities[MBVERTEX][0].getDiffN().data().begin(),&*coords.begin(),&*Jac.data().begin()
-    ); CHKERRQ(ierr);
-    noalias(invJac) = Jac;
-    ierr = ShapeInvJacVolume(&*invJac.data().begin()); CHKERRQ(ierr);
-
-    coordsAtGaussPts.resize(nb_gauss_pts,3,false);
-    for(int gg = 0;gg<nb_gauss_pts;gg++) {
-      for(int dd = 0;dd<3;dd++) {
-        coordsAtGaussPts(gg,dd) = cblas_ddot(4,&dataH1.dataOnEntities[MBVERTEX][0].getN()(gg,0),1,&coords[dd],3);
       }
     }
 
@@ -261,12 +261,14 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::operator()() {
     ) {
       const MoFEMField* field_struture = mField.get_field_structure(meshPositionsFieldName);
       BitFieldId id = field_struture->get_id();
+
       if((fePtr->get_BitFieldId_data()&id).none()) {
         SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_FOUND,"no MESH_NODE_POSITIONS in element data");
       }
-      ierr = getEdgesDataOrder(dataH1,meshPositionsFieldName); CHKERRQ(ierr);
-      ierr = getTrisDataOrder(dataH1,meshPositionsFieldName); CHKERRQ(ierr);
-      ierr = getTetsDataOrder(dataH1,meshPositionsFieldName); CHKERRQ(ierr);
+
+      ierr = getEdgesDataOrderSpaceAndBase(dataH1,meshPositionsFieldName); CHKERRQ(ierr);
+      ierr = getTrisDataOrderSpaceAndBase(dataH1,meshPositionsFieldName); CHKERRQ(ierr);
+      ierr = getTetDataOrderSpaceAndBase(dataH1,meshPositionsFieldName); CHKERRQ(ierr);
       ierr = getNodesFieldData(dataH1,meshPositionsFieldName); CHKERRQ(ierr);
       if(dataH1.dataOnEntities[MBVERTEX][0].getFieldData().size()!=12) {
         SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_FOUND,"no MESH_NODE_POSITIONS in element data");
@@ -302,11 +304,9 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::operator()() {
         SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
       }
     } else {
-
       hoCoordsAtGaussPts.resize(0,0,false);
       hoGaussPtsInvJac.resize(0,0,false);
       hoGaussPtsDetJac.resize(0,false);
-
       MatrixDouble diffN(nb_gauss_pts,12);
       for(int gg = 0;gg<nb_gauss_pts;gg++) {
         for(int nn = 0;nn<4;nn++) {
@@ -317,7 +317,6 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::operator()() {
       }
       dataH1.dataOnEntities[MBVERTEX][0].getDiffN().resize(diffN.size1(),diffN.size2(),false);
       dataH1.dataOnEntities[MBVERTEX][0].getDiffN().data().swap(diffN.data());
-
     }
 
     const UserDataOperator::OpType types[2] = {
@@ -400,25 +399,23 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::operator()() {
               } else {
                 ierr = getEdgesColIndices(*op_data[ss],field_name); CHKERRQ(ierr);
               }
-              ierr = getEdgesDataOrder(*op_data[ss],field_name); CHKERRQ(ierr);
+              ierr = getEdgesDataOrderSpaceAndBase(*op_data[ss],field_name); CHKERRQ(ierr);
               ierr = getEdgesFieldData(*op_data[ss],field_name); CHKERRQ(ierr);
-              // ierr = getEdgesFieldDofs(*op_data[ss],field_name); CHKERRQ(ierr);
               case HDIV:
               if(!ss) {
                 ierr = getTrisRowIndices(*op_data[ss],field_name); CHKERRQ(ierr);
               } else {
                 ierr = getTrisColIndices(*op_data[ss],field_name); CHKERRQ(ierr);
               }
-              ierr = getTrisDataOrder(*op_data[ss],field_name); CHKERRQ(ierr);
+              ierr = getTrisDataOrderSpaceAndBase(*op_data[ss],field_name); CHKERRQ(ierr);
               ierr = getTrisFieldData(*op_data[ss],field_name); CHKERRQ(ierr);
               case L2:
               if(!ss) {
                 ierr = getTetsRowIndices(*op_data[ss],field_name); CHKERRQ(ierr);
               } else {
-
                 ierr = getTetsColIndices(*op_data[ss],field_name); CHKERRQ(ierr);
               }
-              ierr = getTetsDataOrder(*op_data[ss],field_name); CHKERRQ(ierr);
+              ierr = getTetDataOrderSpaceAndBase(*op_data[ss],field_name); CHKERRQ(ierr);
               ierr = getTetsFieldData(*op_data[ss],field_name); CHKERRQ(ierr);
               break;
               case NOFIELD:
@@ -499,35 +496,37 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::operator()() {
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode VolumeElementForcesAndSourcesCore::UserDataOperator::getDivergenceMatrixOperato_Hdiv(
-  int side,EntityType type,DataForcesAndSurcesCore::EntData &data,
-  int gg,VectorDouble &div) {
-    PetscFunctionBegin;
+PetscErrorCode VolumeElementForcesAndSourcesCore::UserDataOperator::getDivergenceMatrixOperator_Hdiv(
+  int side,EntityType type,
+  DataForcesAndSurcesCore::EntData &data,
+  int gg,VectorDouble &div
+) {
+  PetscFunctionBegin;
 
-    try {
+  try {
 
-      int nb_dofs = data.getFieldData().size();
-      if((unsigned int)nb_dofs != data.getDiffHdivN().size2()/9) {
-        SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
-      }
-
-      if(nb_dofs == 0) PetscFunctionReturn(0);
-
-      int dd = 0;
-      for(;dd<nb_dofs;dd++) {
-        div[dd] =
-        (data.getDiffHdivN(dd,gg))(0,0)+
-        (data.getDiffHdivN(dd,gg))(1,1)+
-        (data.getDiffHdivN(dd,gg))(2,2);
-      }
-
-    } catch (exception& ex) {
-      ostringstream ss;
-      ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
-      SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+    int nb_dofs = data.getFieldData().size();
+    if((unsigned int)nb_dofs != data.getDiffHdivN().size2()/9) {
+      SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
     }
 
-    PetscFunctionReturn(0);
+    if(nb_dofs == 0) PetscFunctionReturn(0);
+
+    int dd = 0;
+    for(;dd<nb_dofs;dd++) {
+      div[dd] =
+      (data.getDiffHdivN(dd,gg))(0,0)+
+      (data.getDiffHdivN(dd,gg))(1,1)+
+      (data.getDiffHdivN(dd,gg))(2,2);
+    }
+
+  } catch (exception& ex) {
+    ostringstream ss;
+    ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
+    SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
   }
+
+  PetscFunctionReturn(0);
+}
 
 }

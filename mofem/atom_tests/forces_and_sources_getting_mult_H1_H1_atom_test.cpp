@@ -167,9 +167,12 @@ int main(int argc, char *argv[]) {
         int row_side,int col_side,
         EntityType row_type,EntityType col_type,
         DataForcesAndSurcesCore::EntData &row_data,
-        DataForcesAndSurcesCore::EntData &col_data) {
+        DataForcesAndSurcesCore::EntData &col_data
+      ) {
           PetscFunctionBegin;
 
+          row_data.getBase() = AINSWORTH_COLE_BASE;
+          col_data.getBase() = AINSWORTH_COLE_BASE;
           int nb_row_dofs = row_data.getN().size2();
           int nb_col_dofs = col_data.getN().size2();
 
@@ -244,8 +247,8 @@ int main(int argc, char *argv[]) {
       ierr = getEdgesDataOrder(data_col,H1); CHKERRQ(ierr);
       ierr = getTrisDataOrder(data_row,H1); CHKERRQ(ierr);
       ierr = getTrisDataOrder(data_col,H1); CHKERRQ(ierr);
-      ierr = getTetsDataOrder(data_row,H1); CHKERRQ(ierr);
-      ierr = getTetsDataOrder(data_col,H1); CHKERRQ(ierr);
+      ierr = getTetDataOrder(data_row,H1); CHKERRQ(ierr);
+      ierr = getTetDataOrder(data_col,H1); CHKERRQ(ierr);
       ierr = getRowNodesIndices(data_row,"FIELD1"); CHKERRQ(ierr);
       ierr = getColNodesIndices(data_row,"FIELD2"); CHKERRQ(ierr);
       ierr = getEdgesRowIndices(data_row,"FIELD1"); CHKERRQ(ierr);
@@ -257,20 +260,20 @@ int main(int argc, char *argv[]) {
       ierr = getFaceTriNodes(data_row); CHKERRQ(ierr);
       ierr = getFaceTriNodes(data_col); CHKERRQ(ierr);
 
-      data_row.dataOnEntities[MBVERTEX][0].getN().resize(4,4,false);
+      data_row.dataOnEntities[MBVERTEX][0].getN(AINSWORTH_COLE_BASE).resize(4,4,false);
       ierr = ShapeMBTET(
-        &*data_row.dataOnEntities[MBVERTEX][0].getN().data().begin(),G_TET_X4,G_TET_Y4,G_TET_Z4,4
+        &*data_row.dataOnEntities[MBVERTEX][0].getN(AINSWORTH_COLE_BASE).data().begin(),G_TET_X4,G_TET_Y4,G_TET_Z4,4
       ); CHKERRQ(ierr);
-      data_col.dataOnEntities[MBVERTEX][0].getN() = data_row.dataOnEntities[MBVERTEX][0].getN();
-      ierr = shapeTETFunctions_H1(data_row,G_TET_X4,G_TET_Y4,G_TET_Z4,4,Legendre_polynomials); CHKERRQ(ierr);
-      ierr = shapeTETFunctions_H1(data_col,G_TET_X4,G_TET_Y4,G_TET_Z4,4,Legendre_polynomials); CHKERRQ(ierr);
+      data_col.dataOnEntities[MBVERTEX][0].getN(AINSWORTH_COLE_BASE) = data_row.dataOnEntities[MBVERTEX][0].getN(AINSWORTH_COLE_BASE);
+      ierr = shapeTETFunctions_H1(data_row,G_TET_X4,G_TET_Y4,G_TET_Z4,4,AINSWORTH_COLE_BASE,Legendre_polynomials); CHKERRQ(ierr);
+      ierr = shapeTETFunctions_H1(data_col,G_TET_X4,G_TET_Y4,G_TET_Z4,4,AINSWORTH_COLE_BASE,Legendre_polynomials); CHKERRQ(ierr);
 
       try {
-	ierr = op.opLhs(data_row,data_col,true); CHKERRQ(ierr);
+        ierr = op.opLhs(data_row,data_col,true); CHKERRQ(ierr);
       } catch (exception& ex) {
-	ostringstream ss;
-	ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__ << endl;
-	SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+        ostringstream ss;
+        ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__ << endl;
+        SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
 
       PetscFunctionReturn(0);

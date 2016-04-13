@@ -177,6 +177,8 @@ int main(int argc, char *argv[]) {
       ierr = getEdgesSense(data); CHKERRQ(ierr);
       ierr = getEdgesDataOrder(data,H1); CHKERRQ(ierr);
       ierr = getTrisDataOrder(data,H1); CHKERRQ(ierr);
+      ierr = getEdgesDataOrderSpaceAndBase(data,"FIELD1"); CHKERRQ(ierr);
+      ierr = getTrisDataOrderSpaceAndBase(data,"FIELD1"); CHKERRQ(ierr);
       ierr = getRowNodesIndices(data,"FIELD1"); CHKERRQ(ierr);
       ierr = getEdgesRowIndices(data,"FIELD1"); CHKERRQ(ierr);
       ierr = getTrisRowIndices(data,"FIELD1"); CHKERRQ(ierr);
@@ -184,12 +186,12 @@ int main(int argc, char *argv[]) {
       ierr = getEdgesFieldData(data,"FIELD1"); CHKERRQ(ierr);
       ierr = getTrisFieldData(data,"FIELD1"); CHKERRQ(ierr);
 
-      data.dataOnEntities[MBVERTEX][0].getN().resize(4,3,false);
+      data.dataOnEntities[MBVERTEX][0].getN(AINSWORTH_COLE_BASE).resize(4,3,false);
       ierr = ShapeMBTRI(
-        &*data.dataOnEntities[MBVERTEX][0].getN().data().begin(),
+        &*data.dataOnEntities[MBVERTEX][0].getN(AINSWORTH_COLE_BASE).data().begin(),
         G_TRI_X4,G_TRI_Y4,4
       ); CHKERRQ(ierr);
-      ierr = shapeTRIFunctions_H1(data,G_TRI_X4,G_TRI_Y4,4); CHKERRQ(ierr);
+      ierr = shapeTRIFunctions_H1(data,G_TRI_X4,G_TRI_Y4,4,AINSWORTH_COLE_BASE,Legendre_polynomials); CHKERRQ(ierr);
 
       nOrmals_at_GaussPt.resize(4,3);
       tAngent1_at_GaussPt.resize(4,3);

@@ -193,14 +193,14 @@ int main(int argc, char *argv[]) {
       ierr = getTrisSense(data); CHKERRQ(ierr);
       ierr = getEdgesDataOrder(data,H1); CHKERRQ(ierr);
       ierr = getTrisDataOrder(data,H1); CHKERRQ(ierr);
-      ierr = getTetsDataOrder(data,H1); CHKERRQ(ierr);
+      ierr = getTetDataOrder(data,H1); CHKERRQ(ierr);
       ierr = getFaceTriNodes(data); CHKERRQ(ierr);
 
-      data.dataOnEntities[MBVERTEX][0].getN().resize(4,4,false);
+      data.dataOnEntities[MBVERTEX][0].getN(AINSWORTH_COLE_BASE).resize(4,4,false);
       ierr = ShapeMBTET(
-        &*data.dataOnEntities[MBVERTEX][0].getN().data().begin(),G_TET_X4,G_TET_Y4,G_TET_Z4,4
+        &*data.dataOnEntities[MBVERTEX][0].getN(AINSWORTH_COLE_BASE).data().begin(),G_TET_X4,G_TET_Y4,G_TET_Z4,4
       ); CHKERRQ(ierr);
-      ierr = shapeTETFunctions_H1(data,G_TET_X4,G_TET_Y4,G_TET_Z4,4,Legendre_polynomials); CHKERRQ(ierr);
+      ierr = shapeTETFunctions_H1(data,G_TET_X4,G_TET_Y4,G_TET_Z4,4,AINSWORTH_COLE_BASE,Legendre_polynomials); CHKERRQ(ierr);
 
       ierr = getRowNodesIndices(data,"FIELD1"); CHKERRQ(ierr);
       ierr = getEdgesRowIndices(data,"FIELD1"); CHKERRQ(ierr);

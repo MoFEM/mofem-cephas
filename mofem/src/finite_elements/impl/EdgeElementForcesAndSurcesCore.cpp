@@ -151,7 +151,7 @@ PetscErrorCode EdgeElementForcesAndSurcesCore::operator()() {
     dataPtr->get<FieldName_mi_tag>().end()
   ) {
 
-    ierr = getEdgesDataOrder(dataH1,meshPositionsFieldName); CHKERRQ(ierr);
+    ierr = getEdgesDataOrderSpaceAndBase(dataH1,meshPositionsFieldName); CHKERRQ(ierr);
     ierr = getNodesFieldData(dataH1,meshPositionsFieldName); CHKERRQ(ierr);
     ierr = getEdgesFieldData(dataH1,meshPositionsFieldName); CHKERRQ(ierr);
     try {
@@ -245,7 +245,7 @@ PetscErrorCode EdgeElementForcesAndSurcesCore::operator()() {
             } else {
               ierr = getEdgesColIndices(*op_data[ss],field_name); CHKERRQ(ierr);
             }
-            ierr = getEdgesDataOrder(*op_data[ss],field_name); CHKERRQ(ierr);
+            ierr = getEdgesDataOrderSpaceAndBase(*op_data[ss],field_name); CHKERRQ(ierr);
             ierr = getEdgesFieldData(*op_data[ss],field_name); CHKERRQ(ierr);
             break;
             case HDIV:

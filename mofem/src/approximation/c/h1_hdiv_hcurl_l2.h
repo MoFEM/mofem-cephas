@@ -52,7 +52,7 @@ PetscErrorCode L2_VolumeShapeDiffMBTETinvJ(int base_p,int p,double *volume_diffN
 /**
  * \brief H1_EdgeShapeFunctions_MBTRI
  *
- * \param sense of edges, it is array of integers dim 3 (3-egdes of triangle)
+ * \param sense of edges, it is array of integers dim 3 (3-edges of triangle)
  * \param p of edges
  */
 PetscErrorCode H1_EdgeShapeFunctions_MBTRI(

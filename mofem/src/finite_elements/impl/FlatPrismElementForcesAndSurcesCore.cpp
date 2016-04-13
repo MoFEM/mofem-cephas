@@ -198,8 +198,8 @@ PetscErrorCode FlatPrismElementForcesAndSurcesCore::operator()() {
         nOrmals_at_GaussPtF4.resize(nb_gauss_pts,3,false);
         tAngent1_at_GaussPtF4.resize(nb_gauss_pts,3,false);
         tAngent2_at_GaussPtF4.resize(nb_gauss_pts,3,false);
-        ierr = getEdgesDataOrder(dataH1,meshPositionsFieldName); CHKERRQ(ierr);
-        ierr = getTrisDataOrder(dataH1,meshPositionsFieldName); CHKERRQ(ierr);
+        ierr = getEdgesDataOrderSpaceAndBase(dataH1,meshPositionsFieldName); CHKERRQ(ierr);
+        ierr = getTrisDataOrderSpaceAndBase(dataH1,meshPositionsFieldName); CHKERRQ(ierr);
         ierr = getNodesFieldData(dataH1,meshPositionsFieldName); CHKERRQ(ierr);
         ierr = getEdgesFieldData(dataH1,meshPositionsFieldName); CHKERRQ(ierr);
         ierr = getTrisFieldData(dataH1,meshPositionsFieldName); CHKERRQ(ierr);
@@ -309,7 +309,7 @@ PetscErrorCode FlatPrismElementForcesAndSurcesCore::operator()() {
               } else {
                 ierr = getEdgesColIndices(*op_data[ss],field_name); CHKERRQ(ierr);
               }
-              ierr = getEdgesDataOrder(*op_data[ss],field_name); CHKERRQ(ierr);
+              ierr = getEdgesDataOrderSpaceAndBase(*op_data[ss],field_name); CHKERRQ(ierr);
               ierr = getEdgesFieldData(*op_data[ss],field_name); CHKERRQ(ierr);
               // ierr = getEdgesFieldDofs(*op_data[ss],field_name); CHKERRQ(ierr);
               case HDIV:
@@ -318,7 +318,7 @@ PetscErrorCode FlatPrismElementForcesAndSurcesCore::operator()() {
               } else {
                 ierr = getTrisColIndices(*op_data[ss],field_name); CHKERRQ(ierr);
               }
-              ierr = getTrisDataOrder(*op_data[ss],field_name); CHKERRQ(ierr);
+              ierr = getTrisDataOrderSpaceAndBase(*op_data[ss],field_name); CHKERRQ(ierr);
               ierr = getTrisFieldData(*op_data[ss],field_name); CHKERRQ(ierr);
               // ierr = getTrisFieldDofs(*op_data[ss],field_name); CHKERRQ(ierr);
               break;

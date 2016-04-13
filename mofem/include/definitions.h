@@ -70,21 +70,33 @@ enum MoFEMErrorCodes {
 
 /// \brief approximation base
 enum FieldApproximationBase {
+  NOBASE = 0,
   AINSWORTH_COLE_BASE = 1, ///< Ainsworth Cole (Legendre) approx. base \cite NME:NME847
   LOBATTO_BASE, ///< Like AINSWORTH_COLE_BASE but with Lobatto base instead Legendre \cite beriot2015efficient
   BERNSTEIN_BEZIER_BASE, ///< Not yet implemented, in implementation we will follow \cite ainsworth2011bernstein
   USER_BASE, ///< user implemented approximation base
-  LASTBASE 	///< FieldSpace in [ 0, LASTBASE )
+  LASTBASE
 };
 
 const static char * const ApproximationBaseNames[] = {
-  "", // empty space
+  "NOBASE",
   "AINSWORTH_COLE_BASE",
   "LOBATTO_BASE",
   "BERNSTEIN_BEZIER_BASE",
-  "USER_BASE"
+  "USER_BASE",
   "LASTBASE"
 };
+
+#ifdef __cplusplus
+const static FieldApproximationBase ApproximationBaseArray[] = {
+  NOBASE,
+  AINSWORTH_COLE_BASE,
+  LOBATTO_BASE,
+  BERNSTEIN_BEZIER_BASE,
+  USER_BASE,
+  LASTBASE
+};
+#endif // __cplusplus
 
 /// \brief approximation spaces
 enum FieldSpace {

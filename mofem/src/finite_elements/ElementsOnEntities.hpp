@@ -77,7 +77,7 @@ struct ForcesAndSurcesCore: public FEMethod {
   }
 
   /// \brief get maximal approximation order on entity
-  PetscErrorCode getDataOrder(
+  PetscErrorCode getDataOrderSpaceAndBase(
     const string &field_name,const EntityType type,boost::ptr_vector<DataForcesAndSurcesCore::EntData> &data
   );
 
@@ -87,7 +87,7 @@ struct ForcesAndSurcesCore: public FEMethod {
   ) {
     PetscFunctionBegin;
     PetscErrorCode ierr;
-    ierr = getDataOrder(field_name,type,data); CHKERRQ(ierr);
+    ierr = getDataOrderSpaceAndBase(field_name,type,data); CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }
 
@@ -109,14 +109,45 @@ struct ForcesAndSurcesCore: public FEMethod {
   PetscErrorCode getEdgesDataOrder(DataForcesAndSurcesCore &data,const FieldSpace space);
   PetscErrorCode getTrisDataOrder(DataForcesAndSurcesCore &data,const FieldSpace space);
   PetscErrorCode getQuadDataOrder(DataForcesAndSurcesCore &data,const FieldSpace space);
-  PetscErrorCode getTetsDataOrder(DataForcesAndSurcesCore &data,const FieldSpace space);
+  PetscErrorCode getTetDataOrder(DataForcesAndSurcesCore &data,const FieldSpace space);
   PetscErrorCode getPrismDataOrder(DataForcesAndSurcesCore &data,const FieldSpace space);
 
-  PetscErrorCode getEdgesDataOrder(DataForcesAndSurcesCore &data,const string &field_name);
-  PetscErrorCode getTrisDataOrder(DataForcesAndSurcesCore &data,const string &field_name);
-  PetscErrorCode getQuadDataOrder(DataForcesAndSurcesCore &data,const string &field_name);
-  PetscErrorCode getTetsDataOrder(DataForcesAndSurcesCore &data,const string &field_name);
-  PetscErrorCode getPrismDataOrder(DataForcesAndSurcesCore &data,const string &field_name);
+  PetscErrorCode getEdgesDataOrderSpaceAndBase(DataForcesAndSurcesCore &data,const string &field_name);
+  PetscErrorCode getTrisDataOrderSpaceAndBase(DataForcesAndSurcesCore &data,const string &field_name);
+  PetscErrorCode getQuadDataOrderSpaceAndBase(DataForcesAndSurcesCore &data,const string &field_name);
+  PetscErrorCode getTetDataOrderSpaceAndBase(DataForcesAndSurcesCore &data,const string &field_name);
+  PetscErrorCode getPrismDataOrderSpaceAndBase(DataForcesAndSurcesCore &data,const string &field_name);
+
+  DEPRECATED PetscErrorCode getEdgesDataOrder(DataForcesAndSurcesCore &data,const string &field_name) {
+    PetscErrorCode ierr;
+    PetscFunctionBegin;
+    ierr = getEdgesDataOrderSpaceAndBase(data,field_name); CHKERRQ(ierr);
+    PetscFunctionReturn(0);
+  }
+  DEPRECATED PetscErrorCode getTrisDataOrder(DataForcesAndSurcesCore &data,const string &field_name) {
+    PetscErrorCode ierr;
+    PetscFunctionBegin;
+    ierr = getTrisDataOrderSpaceAndBase(data,field_name); CHKERRQ(ierr);
+    PetscFunctionReturn(0);
+  }
+  DEPRECATED PetscErrorCode getQuadDataOrder(DataForcesAndSurcesCore &data,const string &field_name) {
+    PetscErrorCode ierr;
+    PetscFunctionBegin;
+    ierr = getQuadDataOrderSpaceAndBase(data,field_name); CHKERRQ(ierr);
+    PetscFunctionReturn(0);
+  }
+  DEPRECATED PetscErrorCode getTetDataOrder(DataForcesAndSurcesCore &data,const string &field_name) {
+    PetscErrorCode ierr;
+    PetscFunctionBegin;
+    ierr = getTetDataOrderSpaceAndBase(data,field_name); CHKERRQ(ierr);
+    PetscFunctionReturn(0);
+  }
+  DEPRECATED PetscErrorCode getPrismDataOrder(DataForcesAndSurcesCore &data,const string &field_name) {
+    PetscErrorCode ierr;
+    PetscFunctionBegin;
+    ierr = getPrismDataOrderSpaceAndBase(data,field_name); CHKERRQ(ierr);
+    PetscFunctionReturn(0);
+  }
 
   // ** Indices **
 
@@ -193,7 +224,9 @@ struct ForcesAndSurcesCore: public FEMethod {
     const string &field_name,
     FEDofMoFEMEntity_multiIndex &dofs,
     VectorDouble &nodes_data,
-    VectorDofs &nodes_dofs
+    VectorDofs &nodes_dofs,
+    FieldSpace &space,
+    FieldApproximationBase &base
   );
 
   PetscErrorCode getTypeFieldData(
@@ -206,8 +239,10 @@ struct ForcesAndSurcesCore: public FEMethod {
   );
 
   PetscErrorCode getTypeFieldData(
-    const string &field_name,FEDofMoFEMEntity_multiIndex &dofs,
-    EntityType type,boost::ptr_vector<DataForcesAndSurcesCore::EntData> &data
+    const string &field_name,
+    FEDofMoFEMEntity_multiIndex &dofs,
+    EntityType type,
+    boost::ptr_vector<DataForcesAndSurcesCore::EntData> &data
   );
 
   PetscErrorCode getNoFieldFieldData(
@@ -219,7 +254,15 @@ struct ForcesAndSurcesCore: public FEMethod {
   PetscErrorCode getNoFieldFieldData(
     DataForcesAndSurcesCore &data,const string &field_name
   );
+
+  /**
+   * \brief Get data on nodes
+   * @param  data       Data structure
+   * @param  field_name Field name
+   * @return            Error code
+   */
   PetscErrorCode getNodesFieldData(DataForcesAndSurcesCore &data,const string &field_name);
+
   PetscErrorCode getEdgesFieldData(DataForcesAndSurcesCore &data,const string &field_name);
   PetscErrorCode getTrisFieldData(DataForcesAndSurcesCore &data,const string &field_name);
   PetscErrorCode getQuadFieldData(DataForcesAndSurcesCore &data,const string &field_name);
@@ -247,7 +290,8 @@ struct ForcesAndSurcesCore: public FEMethod {
   /// \brief get indices by type (generic function) which are declared for problem but not this particular element
   PetscErrorCode getProblemTypeIndices(
     const string &field_name,const NumeredDofMoFEMEntity_multiIndex &dofs,
-    EntityType type,int side_number,VectorInt &indices) const;
+    EntityType type,int side_number,VectorInt &indices
+  ) const;
 
   PetscErrorCode getProblemNodesRowIndices(const string &field_name,VectorInt &nodes_indices) const;
   PetscErrorCode getProblemTypeRowIndices(const string &field_name,EntityType type,int side_number,VectorInt &indices) const;
@@ -269,34 +313,59 @@ struct ForcesAndSurcesCore: public FEMethod {
   /** \brief computes approximation functions for tetrahedral and H1 space
     */
   PetscErrorCode shapeTETFunctions_H1(
-    DataForcesAndSurcesCore &data,const double *G_X,const double *G_Y,const double *G_Z,const int G_DIM,
+    DataForcesAndSurcesCore &data,
+    const double *G_X,
+    const double *G_Y,
+    const double *G_Z,
+    const int G_DIM,
+    const FieldApproximationBase base,
     PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
   );
 
   /** \brief computes approximation functions for tetrahedral and L2 space
     */
   PetscErrorCode shapeTETFunctions_L2(
-    DataForcesAndSurcesCore &data,const double *G_X,const double *G_Y,const double *G_Z,const int G_DIM,
+    DataForcesAndSurcesCore &data,
+    const double *G_X,
+    const double *G_Y,
+    const double *G_Z,
+    const int G_DIM,
+    const FieldApproximationBase base,
     PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
   );
 
   /** \brief computes approximation functions for tetrahedral and H1 space
     */
   PetscErrorCode shapeTETFunctions_Hdiv(
-    DataForcesAndSurcesCore &data,const double *G_X,const double *G_Y,const double *G_Z,const int G_DIM,
+    DataForcesAndSurcesCore &data,
+    const double *G_X,
+    const double *G_Y,
+    const double *G_Z,
+    const int G_DIM,
+    const FieldApproximationBase base,
     PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
   );
 
   /** \brief computes approximation functions for triangle and H1 space
     */
   PetscErrorCode shapeTRIFunctions_H1(
-    DataForcesAndSurcesCore &data,const double *G_X,const double *G_Y,const int G_DIM
+    DataForcesAndSurcesCore &data,
+    const double *G_X,
+    const double *G_Y,
+    const int G_DIM,
+    const FieldApproximationBase base,
+    PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
   );
 
   /** \brief computes approximation functions for triangle and H1 space
     */
   PetscErrorCode shapeTRIFunctions_Hdiv(
-    DataForcesAndSurcesCore &data,const double *G_X,const double *G_Y,const int G_DIM
+    DataForcesAndSurcesCore &data,
+    const double *G_X,
+    const double *G_Y,
+    const int G_DIM,
+    const FieldApproximationBase base,
+    PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
   );
 
   /** \brief computes approximation functions for edge and H1 space
@@ -442,7 +511,7 @@ struct ForcesAndSurcesCore: public FEMethod {
       opType(type),
       ptrFE(NULL) {};
 
-    UserDataOperator(
+      UserDataOperator(
         const string &_row_field_name,const string &_col_field_name,const char type
       ):
       rowFieldName(_row_field_name),
