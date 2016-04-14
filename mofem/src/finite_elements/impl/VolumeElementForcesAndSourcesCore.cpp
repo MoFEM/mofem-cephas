@@ -239,6 +239,10 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::operator()() {
         ); CHKERRQ(ierr);
       }
     }
+    if(dataH1.bAse.test(BERNSTEIN_BEZIER_BASE)) {
+      SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented");
+    }
+
 
     try {
       ierr = opSetInvJacH1.opRhs(dataH1); CHKERRQ(ierr);

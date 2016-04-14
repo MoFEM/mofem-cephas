@@ -203,6 +203,9 @@ PetscErrorCode FaceElementForcesAndSourcesCore::operator()() {
       ); CHKERRQ(ierr);
     }
   }
+  if(dataH1.bAse.test(BERNSTEIN_BEZIER_BASE)) {
+    SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented");
+  }
 
   for(
     vector<FieldApproximationBase>::iterator bit = shape_functions_for_bases.begin();

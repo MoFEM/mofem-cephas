@@ -1596,28 +1596,33 @@ PetscErrorCode ForcesAndSurcesCore::shapeTRIFunctions_Hdiv(
 }
 
 PetscErrorCode ForcesAndSurcesCore::shapeEDGEFunctions_H1(
-  DataForcesAndSurcesCore &data,int side_number,const double *G_X,const int G_DIM
+  DataForcesAndSurcesCore &data,
+  int side_number,
+  const double *G_X,
+  const int G_DIM,
+  const FieldApproximationBase base,
+  PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
 ) {
   PetscFunctionBegin;
 
-  // data.dataOnEntities[MBVERTEX][0].getN().resize(G_DIM,2,false);
+  // data.dataOnEntities[MBVERTEX][0].getN(base).resize(G_DIM,2,false);
   // ierr = ShapeMBEDGE(
-  //   &*data.dataOnEntities[MBVERTEX][0].getN().data().begin(),
+  //   &*data.dataOnEntities[MBVERTEX][0].getN(base).data().begin(),
   //   G_X,
   //   G_DIM
   // ); CHKERRQ(ierr);
-  data.dataOnEntities[MBVERTEX][0].getDiffN().resize(2,1,false);
+  data.dataOnEntities[MBVERTEX][0].getDiffN(base).resize(2,1,false);
   ierr = ShapeDiffMBEDGE(
-    &*data.dataOnEntities[MBVERTEX][0].getDiffN().data().begin()
+    &*data.dataOnEntities[MBVERTEX][0].getDiffN(base).data().begin()
   ); CHKERRQ(ierr);
 
-  //cerr << data.dataOnEntities[MBVERTEX][0].getN() << endl;
-  //cerr << data.dataOnEntities[MBVERTEX][0].getDiffN() << endl;
+  //cerr << data.dataOnEntities[MBVERTEX][0].getN(base) << endl;
+  //cerr << data.dataOnEntities[MBVERTEX][0].getDiffN(base) << endl;
 
   int sense = data.dataOnEntities[MBEDGE][side_number].getSense();
   int order = data.dataOnEntities[MBEDGE][side_number].getDataOrder();
-  data.dataOnEntities[MBEDGE][side_number].getN().resize(G_DIM,NBEDGE_H1_AINSWORTH_COLE(order),false);
-  data.dataOnEntities[MBEDGE][side_number].getDiffN().resize(G_DIM,NBEDGE_H1_AINSWORTH_COLE(order),false);
+  data.dataOnEntities[MBEDGE][side_number].getN(base).resize(G_DIM,NBEDGE_H1_AINSWORTH_COLE(order),false);
+  data.dataOnEntities[MBEDGE][side_number].getDiffN(base).resize(G_DIM,NBEDGE_H1_AINSWORTH_COLE(order),false);
   if(data.dataOnEntities[MBEDGE][side_number].getDataOrder()>1) {
     double diff_s = 2.; // s = s(xi), ds/dxi = 2., because change of basis
     for(int gg = 0;gg<G_DIM;gg++) {
@@ -1629,34 +1634,36 @@ PetscErrorCode ForcesAndSurcesCore::shapeEDGEFunctions_H1(
 
       // calculate Legendre polynomials at integration points
       ierr = Legendre_polynomials(
-        NBEDGE_H1_AINSWORTH_COLE(order)-1,s,&diff_s,
-        &data.dataOnEntities[MBEDGE][side_number].getN()(gg,0),
-        &data.dataOnEntities[MBEDGE][side_number].getDiffN()(gg,0),1
+        NBEDGE_H1_AINSWORTH_COLE(order)-1,
+        s,
+        &diff_s,
+        &data.dataOnEntities[MBEDGE][side_number].getN(base)(gg,0),
+        &data.dataOnEntities[MBEDGE][side_number].getDiffN(base)(gg,0),1
       ); CHKERRQ(ierr);
 
-      for(unsigned int pp = 0;pp<data.dataOnEntities[MBEDGE][side_number].getN().size2();pp++) {
+      for(unsigned int pp = 0;pp<data.dataOnEntities[MBEDGE][side_number].getN(base).size2();pp++) {
 
-        double L = data.dataOnEntities[MBEDGE][side_number].getN()(gg,pp);
-        double diffL = data.dataOnEntities[MBEDGE][side_number].getDiffN()(gg,pp);
+        double L = data.dataOnEntities[MBEDGE][side_number].getN(base)(gg,pp);
+        double diffL = data.dataOnEntities[MBEDGE][side_number].getDiffN(base)(gg,pp);
 
         // Calculate edge shape functions N0*N1*L(p), where N0 and N1 are nodal shape functions
-        data.dataOnEntities[MBEDGE][side_number].getN()(gg,pp) =
-          data.dataOnEntities[MBVERTEX][0].getN()(gg,0)*
-          data.dataOnEntities[MBVERTEX][0].getN()(gg,1)*L;
+        data.dataOnEntities[MBEDGE][side_number].getN(base)(gg,pp) =
+          data.dataOnEntities[MBVERTEX][0].getN(base)(gg,0)*
+          data.dataOnEntities[MBVERTEX][0].getN(base)(gg,1)*L;
 
         // Calculate derivative edge shape functions
         // dN/dksi = dN0/dxi*N1*L + N0*dN1/ksi*L + N0*N1*dL/dxi
-        data.dataOnEntities[MBEDGE][side_number].getDiffN()(gg,pp) =
-          ((+1.)*data.dataOnEntities[MBVERTEX][0].getN()(gg,1)
-          +data.dataOnEntities[MBVERTEX][0].getN()(gg,0)*(-1.))*L
-          +data.dataOnEntities[MBVERTEX][0].getN()(gg,0)*
-          data.dataOnEntities[MBVERTEX][0].getN()(gg,1)*diffL;
+        data.dataOnEntities[MBEDGE][side_number].getDiffN(base)(gg,pp) =
+          ((+1.)*data.dataOnEntities[MBVERTEX][0].getN(base)(gg,1)
+          +data.dataOnEntities[MBVERTEX][0].getN(base)(gg,0)*(-1.))*L
+          +data.dataOnEntities[MBVERTEX][0].getN(base)(gg,0)*
+          data.dataOnEntities[MBVERTEX][0].getN(base)(gg,1)*diffL;
       }
     }
   }
 
-  //cerr << data.dataOnEntities[MBEDGE][0].getN() << endl;
-  //cerr << data.dataOnEntities[MBEDGE][0].getDiffN() << endl;
+  //cerr << data.dataOnEntities[MBEDGE][0].getN(base) << endl;
+  //cerr << data.dataOnEntities[MBEDGE][0].getDiffN(base) << endl;
 
   PetscFunctionReturn(0);
 }

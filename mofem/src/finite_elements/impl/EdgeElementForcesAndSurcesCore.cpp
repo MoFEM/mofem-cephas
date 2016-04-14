@@ -72,8 +72,21 @@ PetscErrorCode EdgeElementForcesAndSurcesCore::operator()() {
 
   if(fePtr->get_ent_type() != MBEDGE) PetscFunctionReturn(0);
 
-  //PetscAttachDebugger();
+  EntityHandle ent = fePtr->get_ent();
+  {
+    int num_nodes;
+    const EntityHandle* conn;
+    rval = mField.get_moab().get_connectivity(ent,conn,num_nodes,true); CHKERRQ_MOAB(rval);
+    cOords.resize(num_nodes*3,false);
+    rval = mField.get_moab().get_coords(conn,num_nodes,&*cOords.data().begin()); CHKERRQ_MOAB(rval);
+    dIrection.resize(3,false);
+    cblas_dcopy(3,&cOords[3],1,&*dIrection.data().begin(),1);
+    cblas_daxpy(3,-1.,&cOords[0],1,&*dIrection.data().begin(),1);
+    lEngth = cblas_dnrm2(3,&*dIrection.data().begin(),1);
+  }
 
+  //PetscAttachDebugger();
+  ierr = getSpacesAndBaseOnEntities(dataH1); CHKERRQ(ierr);
   ierr = getEdgesDataOrder(dataH1,H1); CHKERRQ(ierr);
   ierr = getEdgesDataOrder(dataH1,H1); CHKERRQ(ierr);
 
@@ -103,8 +116,8 @@ PetscErrorCode EdgeElementForcesAndSurcesCore::operator()() {
       cblas_dcopy(
         nb_gauss_pts,QUAD_1D_TABLE[rule]->weights,1,&gaussPts(1,0),1
       );
-      dataH1.dataOnEntities[MBVERTEX][0].getN().resize(nb_gauss_pts,2,false);
-      double *shape_ptr = &*dataH1.dataOnEntities[MBVERTEX][0].getN().data().begin();
+      dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE).resize(nb_gauss_pts,2,false);
+      double *shape_ptr = &*dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE).data().begin();
       cblas_dcopy(
         2*nb_gauss_pts,QUAD_1D_TABLE[rule]->points,1,shape_ptr,1
       );
@@ -116,27 +129,6 @@ PetscErrorCode EdgeElementForcesAndSurcesCore::operator()() {
       nb_gauss_pts = 0;
     }
   }
-  // {
-  //   nb_gauss_pts = gm_rule_size(rule,1);
-  //   gaussPts.resize(2,nb_gauss_pts,false);
-  //   ierr = Grundmann_Moeller_integration_points_1D_EDGE(
-  //     rule,&gaussPts(0,0),&gaussPts(1,0)
-  //   ); CHKERRQ(ierr);
-  // }
-
-  ierr = shapeEDGEFunctions_H1(dataH1,0,&gaussPts(0,0),nb_gauss_pts); CHKERRQ(ierr);
-
-  EntityHandle ent = fePtr->get_ent();
-  int num_nodes;
-  const EntityHandle* conn;
-  rval = mField.get_moab().get_connectivity(ent,conn,num_nodes,true); CHKERRQ_MOAB(rval);
-  cOords.resize(num_nodes*3,false);
-  rval = mField.get_moab().get_coords(conn,num_nodes,&*cOords.data().begin()); CHKERRQ_MOAB(rval);
-
-  dIrection.resize(3,false);
-  cblas_dcopy(3,&cOords[3],1,&*dIrection.data().begin(),1);
-  cblas_daxpy(3,-1.,&cOords[0],1,&*dIrection.data().begin(),1);
-  lEngth = cblas_dnrm2(3,&*dIrection.data().begin(),1);
 
   coordsAtGaussPts.resize(nb_gauss_pts,3,false);
   for(int gg = 0;gg<nb_gauss_pts;gg++) {
@@ -144,7 +136,20 @@ PetscErrorCode EdgeElementForcesAndSurcesCore::operator()() {
       coordsAtGaussPts(gg,dd) = N_MBEDGE0(gaussPts(0,gg))*cOords[dd] + N_MBEDGE1(gaussPts(0,gg))*cOords[3+dd];
     }
   }
-  //cerr << coordsAtGaussPts << endl;
+
+  vector<FieldApproximationBase> shape_functions_for_bases;
+  if(dataH1.bAse.test(AINSWORTH_COLE_BASE)) {
+    shape_functions_for_bases.push_back(AINSWORTH_COLE_BASE);
+    dataH1.dataOnEntities[MBVERTEX][0].getN(AINSWORTH_COLE_BASE).resize(nb_gauss_pts,2,false);
+    noalias(dataH1.dataOnEntities[MBVERTEX][0].getN(AINSWORTH_COLE_BASE)) = dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE);
+    ierr = shapeEDGEFunctions_H1(dataH1,0,&gaussPts(0,0),nb_gauss_pts,AINSWORTH_COLE_BASE,Legendre_polynomials); CHKERRQ(ierr);
+  }
+  if(dataH1.bAse.test(LOBATTO_BASE)) {
+    SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented");
+  }
+  if(dataH1.bAse.test(BERNSTEIN_BEZIER_BASE)) {
+    SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented");
+  }
 
   if(
     dataPtr->get<FieldName_mi_tag>().find(meshPositionsFieldName)!=
@@ -153,7 +158,6 @@ PetscErrorCode EdgeElementForcesAndSurcesCore::operator()() {
 
     ierr = getEdgesDataOrderSpaceAndBase(dataH1,meshPositionsFieldName); CHKERRQ(ierr);
     ierr = getNodesFieldData(dataH1,meshPositionsFieldName); CHKERRQ(ierr);
-    ierr = getEdgesFieldData(dataH1,meshPositionsFieldName); CHKERRQ(ierr);
     try {
       ierr = opGetHoTangentOnEdge.opRhs(dataH1); CHKERRQ(ierr);
     } catch (exception& ex) {
