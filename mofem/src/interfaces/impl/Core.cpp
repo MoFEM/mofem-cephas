@@ -1125,6 +1125,8 @@ PetscErrorCode Core::set_field_coordinate_system(const string field_name,const s
     }
   }
   switch(field_it->get_space()) {
+    case NOSPACE:
+    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"No space given");
     case H1:
     if(field_it->get_nb_of_coeffs()!=dim) {
       SETERRQ2(
