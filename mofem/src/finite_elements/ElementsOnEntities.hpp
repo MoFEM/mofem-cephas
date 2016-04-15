@@ -311,6 +311,7 @@ struct ForcesAndSurcesCore: public FEMethod {
   MatrixDouble diffN_volume_bubble;
 
   /** \brief computes approximation functions for tetrahedral and H1 space
+    * FIXME: This functions should be in separate class in approximation folder
     */
   PetscErrorCode shapeTETFunctions_H1(
     DataForcesAndSurcesCore &data,
@@ -323,6 +324,7 @@ struct ForcesAndSurcesCore: public FEMethod {
   );
 
   /** \brief computes approximation functions for tetrahedral and L2 space
+    * FIXME: This functions should be in separate class in approximation folder
     */
   PetscErrorCode shapeTETFunctions_L2(
     DataForcesAndSurcesCore &data,
@@ -335,6 +337,7 @@ struct ForcesAndSurcesCore: public FEMethod {
   );
 
   /** \brief computes approximation functions for tetrahedral and H1 space
+    * FIXME: This functions should be in separate class in approximation folder
     */
   PetscErrorCode shapeTETFunctions_Hdiv(
     DataForcesAndSurcesCore &data,
@@ -347,6 +350,7 @@ struct ForcesAndSurcesCore: public FEMethod {
   );
 
   /** \brief computes approximation functions for triangle and H1 space
+    * FIXME: This functions should be in separate class in approximation folder
     */
   PetscErrorCode shapeTRIFunctions_H1(
     DataForcesAndSurcesCore &data,
@@ -358,6 +362,7 @@ struct ForcesAndSurcesCore: public FEMethod {
   );
 
   /** \brief computes approximation functions for triangle and H1 space
+    * FIXME: This functions should be in separate class in approximation folder
     */
   PetscErrorCode shapeTRIFunctions_Hdiv(
     DataForcesAndSurcesCore &data,
@@ -369,6 +374,7 @@ struct ForcesAndSurcesCore: public FEMethod {
   );
 
   /** \brief computes approximation functions for edge and H1 space
+    * FIXME: This functions should be in separate class in approximation folder
     */
   PetscErrorCode shapeEDGEFunctions_H1(
     DataForcesAndSurcesCore &data,
@@ -380,6 +386,7 @@ struct ForcesAndSurcesCore: public FEMethod {
   );
 
   /** \brief computes approximation functions for prism and H1 space
+    * FIXME: This functions should be in separate class in approximation folder
     */
   PetscErrorCode shapeFlatPRISMFunctions_H1(
     DataForcesAndSurcesCore &data,
@@ -391,6 +398,7 @@ struct ForcesAndSurcesCore: public FEMethod {
   );
 
   /** \brief computes approximation functions for prism and H1 space
+    * FIXME: This functions should be in separate class in approximation folder
     */
   PetscErrorCode shapeFlatPRISMFunctions_Hdiv(
     DataForcesAndSurcesCore &data,

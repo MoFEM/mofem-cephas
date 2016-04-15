@@ -74,6 +74,23 @@ PetscErrorCode FatPrismElementForcesAndSurcesCore::operator()() {
 
   if(fePtr->get_ent_type() != MBPRISM) PetscFunctionReturn(0);
 
+  EntityHandle ent = fePtr->get_ent();
+  int num_nodes;
+  const EntityHandle* conn;
+  rval = mField.get_moab().get_connectivity(ent,conn,num_nodes,true); CHKERRQ_MOAB(rval);
+  {
+    coords.resize(num_nodes*3,false);
+    rval = mField.get_moab().get_coords(conn,num_nodes,&*coords.data().begin()); CHKERRQ_MOAB(rval);
+
+    double diff_n[6];
+    ierr = ShapeDiffMBTRI(diff_n); CHKERRQ(ierr);
+    normal.resize(6,false);
+    ierr = ShapeFaceNormalMBTRI(diff_n,&coords[0],&normal[0]); CHKERRQ(ierr);
+    ierr = ShapeFaceNormalMBTRI(diff_n, &coords[9],&normal[3]); CHKERRQ(ierr);
+    aRea[0] = cblas_dnrm2(3,&normal[0],1)*0.5;
+    aRea[1] = cblas_dnrm2(3,&normal[3],1)*0.5;
+  }
+
   try {
 
     ierr = getSpacesAndBaseOnEntities(dataH1); CHKERRQ(ierr);
@@ -166,6 +183,11 @@ PetscErrorCode FatPrismElementForcesAndSurcesCore::operator()() {
         cblas_dcopy(
           nb_gauss_pts_on_faces,QUAD_2D_TABLE[rule]->weights,1,&gaussPtsTrianglesOnly(2,0),1
         );
+        dataH1TrianglesOnly.dataOnEntities[MBVERTEX][0].getN(NOBASE).resize(nb_gauss_pts_on_faces,3,false);
+        double *shape_ptr = &*dataH1TrianglesOnly.dataOnEntities[MBVERTEX][0].getN(NOBASE).data().begin();
+        cblas_dcopy(
+          3*nb_gauss_pts_on_faces,QUAD_2D_TABLE[rule]->points,1,shape_ptr,1
+        );
       } else {
         SETERRQ2(
           PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"rule > quadrature order %d < %d",
@@ -173,26 +195,20 @@ PetscErrorCode FatPrismElementForcesAndSurcesCore::operator()() {
         );
         nb_gauss_pts_on_faces = 0;
       }
-      // nb_gauss_pts_on_faces = gm_rule_size(rule,2);
-      // gaussPtsTrianglesOnly.resize(3,nb_gauss_pts_on_faces,false);
-      // ierr = Grundmann_Moeller_integration_points_2D_TRI(
-      //   rule,
-      //   &gaussPtsTrianglesOnly(0,0),
-      //   &gaussPtsTrianglesOnly(1,0),
-      //   &gaussPtsTrianglesOnly(2,0)
-      // ); CHKERRQ(ierr);
     } else {
       ierr = setGaussPtsTrianglesOnly(order_triangles_only); CHKERRQ(ierr);
       nb_gauss_pts_on_faces = gaussPtsTrianglesOnly.size2();
+      if(nb_gauss_pts_on_faces == 0) PetscFunctionReturn(0);
+      dataH1TrianglesOnly.dataOnEntities[MBVERTEX][0].getN(NOBASE).resize(nb_gauss_pts_on_faces,3,false);
+      if(nb_gauss_pts_on_faces) {
+        ierr = ShapeMBTRI(
+          &*dataH1TrianglesOnly.dataOnEntities[MBVERTEX][0].getN(NOBASE).data().begin(),
+          &gaussPtsTrianglesOnly(0,0),
+          &gaussPtsTrianglesOnly(1,0),
+          nb_gauss_pts_on_faces
+        ); CHKERRQ(ierr);
+      }
     }
-    if(nb_gauss_pts_on_faces == 0) PetscFunctionReturn(0);
-    // // calculate shape functions
-    // ierr = shapeFlatPRISMFunctions_H1(
-    //   dataH1TrianglesOnly,
-    //   &gaussPtsTrianglesOnly(0,0),
-    //   &gaussPtsTrianglesOnly(1,0),
-    //   nb_gauss_pts_on_faces
-    // ); CHKERRQ(ierr);
   } catch (MoFEMException const &e) {
     SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
   } catch (exception& ex) {
@@ -246,47 +262,11 @@ PetscErrorCode FatPrismElementForcesAndSurcesCore::operator()() {
         );
         nb_gauss_pts_through_thickness = 0;
       }
-      // nb_gauss_pts_through_thickness = gm_rule_size(rule,1);
-      // gaussPtsThroughThickness.resize(2,nb_gauss_pts_through_thickness,false);
-      // ierr = Grundmann_Moeller_integration_points_1D_EDGE(
-      //   rule,
-      //   &gaussPtsThroughThickness(0,0),
-      //   &gaussPtsThroughThickness(1,0)
-      // ); CHKERRQ(ierr);
-      // cerr << gaussPtsThroughThickness << endl;
     } else {
       ierr = setGaussPtsThroughThickness(order_thickness); CHKERRQ(ierr);
       nb_gauss_pts_through_thickness = gaussPtsThroughThickness.size2();
     }
     if(nb_gauss_pts_through_thickness == 0) PetscFunctionReturn(0);
-    // calculate Legendre approx. on edges
-    for(unsigned int ee = 3;ee<=5;ee++) {
-      int sense = dataH1TroughThickness.dataOnEntities[MBEDGE][ee].getSense();
-      // cerr << "sense " << sense << endl;
-      int order = dataH1TroughThickness.dataOnEntities[MBEDGE][ee].getDataOrder()-2;
-      dataH1TroughThickness.dataOnEntities[MBEDGE][ee].getN().resize(
-        nb_gauss_pts_through_thickness,order<0?0:1+order,false
-      );
-      dataH1TroughThickness.dataOnEntities[MBEDGE][ee].getDiffN().resize(
-        nb_gauss_pts_through_thickness,order<0?0:1+order,false
-      );
-      if(order<0) continue;
-      double diff_s = 2.; // s = s(xi), ds/dxi = 2., because change of basis
-      for(int gg = 0;gg<nb_gauss_pts_through_thickness;gg++) {
-        double s = 2*gaussPtsThroughThickness(0,gg)-1; // makes form -1..1
-        if(!sense) {
-          s *= -1;
-          diff_s *= -1;
-        }
-        // calculate Legendre polynomials at integration points
-        ierr = Legendre_polynomials(
-          order,s,&diff_s,
-          &dataH1TroughThickness.dataOnEntities[MBEDGE][ee].getN()(gg,0),
-          &dataH1TroughThickness.dataOnEntities[MBEDGE][ee].getDiffN()(gg,0),
-          1
-        ); CHKERRQ(ierr);
-      }
-    }
   } catch (MoFEMException const &e) {
     SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
   } catch (exception& ex) {
@@ -295,31 +275,44 @@ PetscErrorCode FatPrismElementForcesAndSurcesCore::operator()() {
     SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
   }
 
-  // Build prism approx.
   int nb_gauss_pts = nb_gauss_pts_on_faces*nb_gauss_pts_through_thickness;
-  try {
-    gaussPts.resize(4,nb_gauss_pts,false);
-    {
-      int gg = 0;
-      for(int ggf = 0;ggf<nb_gauss_pts_on_faces;ggf++) {
-        for(int ggt = 0;ggt<nb_gauss_pts_through_thickness;ggt++,gg++) {
-          gaussPts(0,gg) = gaussPtsTrianglesOnly(0,ggf);
-          gaussPts(1,gg) = gaussPtsTrianglesOnly(1,ggf);
-          gaussPts(2,gg) = gaussPtsThroughThickness(0,ggt);
-          gaussPts(3,gg) = gaussPtsTrianglesOnly(2,ggf)*gaussPtsThroughThickness(1,ggt);
-        }
+  gaussPts.resize(4,nb_gauss_pts,false);
+  {
+    int gg = 0;
+    for(int ggf = 0;ggf<nb_gauss_pts_on_faces;ggf++) {
+      for(int ggt = 0;ggt<nb_gauss_pts_through_thickness;ggt++,gg++) {
+        gaussPts(0,gg) = gaussPtsTrianglesOnly(0,ggf);
+        gaussPts(1,gg) = gaussPtsTrianglesOnly(1,ggf);
+        gaussPts(2,gg) = gaussPtsThroughThickness(0,ggt);
+        gaussPts(3,gg) = gaussPtsTrianglesOnly(2,ggf)*gaussPtsThroughThickness(1,ggt);
       }
     }
-    // nodes
+  }
+
+  {
+    coordsAtGaussPtsTrianglesOnly.resize(nb_gauss_pts_on_faces,6,false);
+    for(int gg = 0;gg<nb_gauss_pts_on_faces;gg++) {
+      for(int dd = 0;dd<3;dd++) {
+        coordsAtGaussPtsTrianglesOnly(gg,dd) = cblas_ddot(
+          3,&dataH1TrianglesOnly.dataOnEntities[MBVERTEX][0].getN(NOBASE)(gg,0),1,&coords[dd],3
+        );
+        coordsAtGaussPtsTrianglesOnly(gg,3+dd) = cblas_ddot(
+          3,&dataH1TrianglesOnly.dataOnEntities[MBVERTEX][0].getN(NOBASE)(gg,0),1,&coords[9+dd],3
+        );
+      }
+    }
     // linear for xi,eta and zeta
-    dataH1.dataOnEntities[MBVERTEX][0].getN().resize(nb_gauss_pts,6,false);
-    dataH1.dataOnEntities[MBVERTEX][0].getDiffN().resize(nb_gauss_pts,18);
+    dataH1TrianglesOnly.dataOnEntities[MBVERTEX][0].getDiffN(NOBASE).resize(1,6);
+    ierr = ShapeDiffMBTRI(&dataH1TrianglesOnly.dataOnEntities[MBVERTEX][0].getDiffN(NOBASE)(0,0)); CHKERRQ(ierr);
+    dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE).resize(nb_gauss_pts,6,false);
+    dataH1.dataOnEntities[MBVERTEX][0].getDiffN(NOBASE).resize(nb_gauss_pts,18);
     for(int dd = 0;dd<6;dd++) {
       int gg = 0;
       for(int ggf = 0;ggf<nb_gauss_pts_on_faces;ggf++) {
-        double tri_n = dataH1TrianglesOnly.dataOnEntities[MBVERTEX][0].getN()(ggf,dd);
-        double dksi_tri_n = dataH1TrianglesOnly.dataOnEntities[MBVERTEX][0].getDiffN()(ggf,2*dd+0);
-        double deta_tri_n = dataH1TrianglesOnly.dataOnEntities[MBVERTEX][0].getDiffN()(ggf,2*dd+1);
+        int ddd = dd>2? ddd = dd-3 : dd;
+        double tri_n = dataH1TrianglesOnly.dataOnEntities[MBVERTEX][0].getN(NOBASE)(ggf,ddd);
+        double dksi_tri_n = dataH1TrianglesOnly.dataOnEntities[MBVERTEX][0].getDiffN(NOBASE)(0,2*ddd+0);
+        double deta_tri_n = dataH1TrianglesOnly.dataOnEntities[MBVERTEX][0].getDiffN(NOBASE)(0,2*ddd+1);
         for(int ggt = 0;ggt<nb_gauss_pts_through_thickness;ggt++,gg++) {
           double zeta = gaussPtsThroughThickness(0,ggt);
           double dzeta,edge_shape;
@@ -330,234 +323,11 @@ PetscErrorCode FatPrismElementForcesAndSurcesCore::operator()() {
             dzeta = diffN_MBEDGE1;
             edge_shape = N_MBEDGE1(zeta);
           }
-          dataH1.dataOnEntities[MBVERTEX][0].getN()(gg,dd) = tri_n*edge_shape;
-          dataH1.dataOnEntities[MBVERTEX][0].getDiffN()(gg,3*dd+0) = dksi_tri_n*edge_shape;
-          dataH1.dataOnEntities[MBVERTEX][0].getDiffN()(gg,3*dd+1) = deta_tri_n*edge_shape;
-          dataH1.dataOnEntities[MBVERTEX][0].getDiffN()(gg,3*dd+2) = tri_n*dzeta;
+          dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE)(gg,dd) = tri_n*edge_shape;
+          dataH1.dataOnEntities[MBVERTEX][0].getDiffN(NOBASE)(gg,3*dd+0) = dksi_tri_n*edge_shape;
+          dataH1.dataOnEntities[MBVERTEX][0].getDiffN(NOBASE)(gg,3*dd+1) = deta_tri_n*edge_shape;
+          dataH1.dataOnEntities[MBVERTEX][0].getDiffN(NOBASE)(gg,3*dd+2) = tri_n*dzeta;
         }
-      }
-    }
-    // edges on triangles
-    for(int ee = 0;ee<9;ee++) {
-      if(ee>=3&&ee<=5) {
-        // through thickness ho approximation
-        // linear xi,eta, ho terms for zeta
-        int order = dataH1TroughThickness.dataOnEntities[MBEDGE][ee].getDataOrder();
-        int nb_dofs = NBEDGE_H1_AINSWORTH_COLE(order);
-        if((unsigned int)nb_dofs!=dataH1TroughThickness.dataOnEntities[MBEDGE][ee].getN().size2()) {
-          SETERRQ2(
-            PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"nb_dofs != nb_dofs",
-            nb_dofs,dataH1TroughThickness.dataOnEntities[MBEDGE][ee].getN().size2()
-          );
-        }
-        dataH1.dataOnEntities[MBEDGE][ee].getN().resize(nb_gauss_pts,nb_dofs,false);
-        dataH1.dataOnEntities[MBEDGE][ee].getDiffN().resize(nb_gauss_pts,3*nb_dofs,false);
-        if(nb_dofs == 0) continue;
-        const int prism_edge_map[9][2] = {
-          {0,1}, {1,2}, {2,0}, {0,3}, {1,4}, {2,5}, {3,4}, {4,5}, {5,3}
-        };
-        int gg = 0;
-        for(int ggf = 0;ggf<nb_gauss_pts_on_faces;ggf++) {
-          double tri_n = dataH1TrianglesOnly.dataOnEntities[MBVERTEX][0].getN()(ggf,prism_edge_map[ee][0]);
-          double dksi_tri_n[2];
-          for(int kk = 0;kk<2;kk++) {
-            dksi_tri_n[kk] = dataH1TrianglesOnly.dataOnEntities[MBVERTEX][0].getDiffN()(ggf,2*prism_edge_map[ee][0]+kk);
-          }
-          for(int ggt = 0;ggt<nb_gauss_pts_through_thickness;ggt++,gg++) {
-            double zeta = gaussPtsThroughThickness(0,ggt);
-            double n0 = N_MBEDGE0(zeta);
-            double n1 = N_MBEDGE1(zeta);
-            double n0n1 = n0*n1;
-            for(int dd = 0;dd<nb_dofs;dd++) {
-              double l = dataH1TroughThickness.dataOnEntities[MBEDGE][ee].getN()(ggt,dd);
-              double diff_l = dataH1TroughThickness.dataOnEntities[MBEDGE][ee].getDiffN()(ggt,dd);
-              double edge_m = n0n1*l;
-              double dzeta_edge_m = (diffN_MBEDGE0*n1+n0*diffN_MBEDGE1)*l + n0n1*diff_l;
-              dataH1.dataOnEntities[MBEDGE][ee].getN()(gg,dd) = tri_n*edge_m;
-              for(int kk = 0;kk<2;kk++) {
-                dataH1.dataOnEntities[MBEDGE][ee].getDiffN()(gg,3*dd+kk) = dksi_tri_n[kk]*edge_m;
-              }
-              dataH1.dataOnEntities[MBEDGE][ee].getDiffN()(gg,3*dd+2) = tri_n*dzeta_edge_m;
-            }
-          }
-        }
-      } else {
-        // on triangles ho approximation
-        // ho terms on edges, linear zeta
-        int nb_dofs = dataH1TrianglesOnly.dataOnEntities[MBEDGE][ee].getN().size2();
-        dataH1.dataOnEntities[MBEDGE][ee].getN().resize(nb_gauss_pts,nb_dofs,false);
-        dataH1.dataOnEntities[MBEDGE][ee].getDiffN().resize(nb_gauss_pts,3*nb_dofs,false);
-        for(int dd = 0;dd<nb_dofs;dd++) {
-          int gg = 0;
-          for(int ggf = 0;ggf<nb_gauss_pts_on_faces;ggf++) {
-            double tri_n = dataH1TrianglesOnly.dataOnEntities[MBEDGE][ee].getN()(ggf,dd);
-            double dksi_tri_n = dataH1TrianglesOnly.dataOnEntities[MBEDGE][ee].getDiffN()(ggf,2*dd+0);
-            double deta_tri_n = dataH1TrianglesOnly.dataOnEntities[MBEDGE][ee].getDiffN()(ggf,2*dd+1);
-            for(int ggt = 0;ggt<nb_gauss_pts_through_thickness;ggt++,gg++) {
-              double zeta = gaussPtsThroughThickness(0,ggt);
-              double dzeta,edge_shape;
-              if(ee<3) {
-                dzeta = diffN_MBEDGE0;
-                edge_shape = N_MBEDGE0(zeta);
-              } else {
-                dzeta = diffN_MBEDGE1;
-                edge_shape = N_MBEDGE1(zeta);
-              }
-              dataH1.dataOnEntities[MBEDGE][ee].getN()(gg,dd) = tri_n*edge_shape;
-              dataH1.dataOnEntities[MBEDGE][ee].getDiffN()(gg,3*dd+0) = dksi_tri_n*edge_shape;
-              dataH1.dataOnEntities[MBEDGE][ee].getDiffN()(gg,3*dd+1) = deta_tri_n*edge_shape;
-              dataH1.dataOnEntities[MBEDGE][ee].getDiffN()(gg,3*dd+2) = tri_n*dzeta;
-            }
-          }
-        }
-      }
-    }
-    // triangles
-    // ho on triangles, linear zeta
-    for(int ff = 3;ff<=4;ff++) {
-      int nb_dofs;
-      nb_dofs = dataH1TrianglesOnly.dataOnEntities[MBTRI][ff].getN().size2();
-      dataH1.dataOnEntities[MBTRI][ff].getN().resize(nb_gauss_pts,nb_dofs,false);
-      dataH1.dataOnEntities[MBTRI][ff].getDiffN().resize(nb_gauss_pts,3*nb_dofs,false);
-      for(int dd = 0;dd<nb_dofs;dd++) {
-        int gg = 0;
-        for(int ggf = 0;ggf<nb_gauss_pts_on_faces;ggf++) {
-          double tri_n = dataH1TrianglesOnly.dataOnEntities[MBTRI][ff].getN()(ggf,dd);
-          double dksi_tri_n[2];
-          for(int kk = 0;kk<2;kk++) {
-            dksi_tri_n[kk] = dataH1TrianglesOnly.dataOnEntities[MBTRI][ff].getDiffN()(ggf,2*dd+kk);
-          }
-          for(int ggt = 0;ggt<nb_gauss_pts_through_thickness;ggt++,gg++) {
-            double zeta = gaussPtsThroughThickness(0,ggt);
-            double dzeta,edge_shape;
-            if(ff == 3) {
-              dzeta = diffN_MBEDGE0;
-              edge_shape = N_MBEDGE0(zeta);
-            } else {
-              dzeta = diffN_MBEDGE1;
-              edge_shape = N_MBEDGE1(zeta);
-            }
-            dataH1.dataOnEntities[MBTRI][ff].getN()(gg,dd) = tri_n*edge_shape;
-            for(int kk = 0;kk<2;kk++) {
-              dataH1.dataOnEntities[MBTRI][ff].getDiffN()(gg,3*dd+kk) = dksi_tri_n[kk]*edge_shape;
-            }
-            dataH1.dataOnEntities[MBTRI][ff].getDiffN()(gg,3*dd+2) = tri_n*dzeta;
-          }
-        }
-      }
-    }
-    // quads
-    // higher order edges and zeta
-    {
-      int quads_nodes[3*4];
-      int quad_order[3];
-      double *quad_n[3],*diff_quad_n[3];
-      SideNumber_multiIndex& side_table = const_cast<SideNumber_multiIndex&>(fePtr->get_side_number_table());
-      SideNumber_multiIndex::nth_index<1>::type::iterator siit;
-      siit = side_table.get<1>().lower_bound(boost::make_tuple(MBQUAD,0));
-      SideNumber_multiIndex::nth_index<1>::type::iterator hi_siit;
-      hi_siit = side_table.get<1>().upper_bound(boost::make_tuple(MBQUAD,3));
-      EntityHandle ent = fePtr->get_ent();
-      rval = mField.get_moab().get_connectivity(ent,conn,num_nodes,true); CHKERRQ_MOAB(rval);
-      // cerr << "\n\n" << endl;
-      // const int quad_nodes[3][4] = { {0,1,4,3}, {1,2,5,4}, {0,2,5,3} };
-      for(;siit!=hi_siit;siit++) {
-        //  cerr << "sn " << siit->side_number << endl;
-        int num_nodes_quad;
-        const EntityHandle *conn_quad;
-        EntityHandle quad = siit->ent;
-        rval = mField.get_moab().get_connectivity(
-          quad,conn_quad,num_nodes_quad,true
-        ); CHKERRQ_MOAB(rval);
-        for(int nn = 0;nn<num_nodes_quad;nn++) {
-          quads_nodes[4*siit->side_number+nn] = distance(conn,find(conn,conn+6,conn_quad[nn]));
-          // cerr
-          // << "quad " << quad
-          // << " side number " << siit->side_number
-          // << " " << quads_nodes[4*siit->side_number+nn]
-          // << " " << conn[quads_nodes[4*siit->side_number+nn]]
-          // << " " << conn_quad[nn]
-          // << endl;
-        }
-        int order = dataH1.dataOnEntities[MBQUAD][siit->side_number].getDataOrder();
-        quad_order[siit->side_number] = order;
-        dataH1.dataOnEntities[MBQUAD][siit->side_number].getN().resize(nb_gauss_pts,NBFACEQUAD_H1_AINSWORTH_COLE(order),false);
-        dataH1.dataOnEntities[MBQUAD][siit->side_number].getDiffN().resize(nb_gauss_pts,3*NBFACEQUAD_H1_AINSWORTH_COLE(order),false);
-        if(dataH1.dataOnEntities[MBQUAD][siit->side_number].getN().size2()>0) {
-          quad_n[siit->side_number] = &*dataH1.dataOnEntities[MBQUAD][siit->side_number].getN().data().begin();
-          diff_quad_n[siit->side_number] = &*dataH1.dataOnEntities[MBQUAD][siit->side_number].getDiffN().data().begin();
-        } else {
-          quad_n[siit->side_number] = NULL;
-          diff_quad_n[siit->side_number] = NULL;
-        }
-      }
-      {
-        double *vertex_n = &*dataH1.dataOnEntities[MBVERTEX][0].getN().data().begin();
-        double *diff_vertex_n = &*dataH1.dataOnEntities[MBVERTEX][0].getDiffN().data().begin();
-        ierr = H1_QuadShapeFunctions_MBPRISM(
-          quads_nodes,quad_order,vertex_n,diff_vertex_n,quad_n,diff_quad_n,nb_gauss_pts,Legendre_polynomials
-        ); CHKERRQ(ierr);
-      }
-    }
-    // prism
-    {
-      int order = dataH1.dataOnEntities[MBPRISM][0].getDataOrder();
-      double *vertex_n  = &dataH1.dataOnEntities[MBVERTEX][0].getN()(0,0);
-      double *diff_vertex_n = &dataH1.dataOnEntities[MBVERTEX][0].getDiffN()(0,0);
-      dataH1.dataOnEntities[MBPRISM][0].getN().resize(nb_gauss_pts,NBVOLUMEPRISM_H1_AINSWORTH_COLE(order),false);
-      dataH1.dataOnEntities[MBPRISM][0].getDiffN().resize(nb_gauss_pts,3*NBVOLUMEPRISM_H1_AINSWORTH_COLE(order),false);
-      if(NBVOLUMEPRISM_H1_AINSWORTH_COLE(order)>0) {
-        ierr = H1_VolumeShapeFunctions_MBPRISM(
-          order,
-          vertex_n,
-          diff_vertex_n,
-          &dataH1.dataOnEntities[MBPRISM][0].getN()(0,0),
-          &dataH1.dataOnEntities[MBPRISM][0].getDiffN()(0,0),
-          nb_gauss_pts,
-          Legendre_polynomials
-        ); CHKERRQ(ierr);
-      }
-    }
-  } catch (MoFEMException const &e) {
-    SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
-  } catch (exception& ex) {
-    ostringstream ss;
-    ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
-    SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
-  }
-
-  try {
-
-    EntityHandle ent = fePtr->get_ent();
-    int num_nodes;
-    const EntityHandle* conn;
-    rval = mField.get_moab().get_connectivity(ent,conn,num_nodes,true); CHKERRQ_MOAB(rval);
-    coords.resize(num_nodes*3,false);
-    rval = mField.get_moab().get_coords(conn,num_nodes,&*coords.data().begin()); CHKERRQ_MOAB(rval);
-
-    normal.resize(6,false);
-    ierr = ShapeFaceNormalMBTRI(
-      &*dataH1TrianglesOnly.dataOnEntities[MBVERTEX][0].getDiffN().data().begin(),
-      &coords[0],
-      &normal[0]
-    ); CHKERRQ(ierr);
-    ierr = ShapeFaceNormalMBTRI(
-      &*dataH1TrianglesOnly.dataOnEntities[MBVERTEX][0].getDiffN().data().begin(),
-      &coords[9],
-      &normal[3]
-    ); CHKERRQ(ierr);
-    aRea[0] = cblas_dnrm2(3,&normal[0],1)*0.5;
-    aRea[1] = cblas_dnrm2(3,&normal[3],1)*0.5;
-
-    coordsAtGaussPtsTrianglesOnly.resize(nb_gauss_pts_on_faces,6,false);
-    for(int gg = 0;gg<nb_gauss_pts_on_faces;gg++) {
-      for(int dd = 0;dd<3;dd++) {
-        coordsAtGaussPtsTrianglesOnly(gg,dd) = cblas_ddot(
-          3,&dataH1TrianglesOnly.dataOnEntities[MBVERTEX][0].getN()(gg,0),1,&coords[dd],3
-        );
-        coordsAtGaussPtsTrianglesOnly(gg,3+dd) = cblas_ddot(
-          3,&dataH1TrianglesOnly.dataOnEntities[MBVERTEX][0].getN()(gg,0),1,&coords[9+dd],3
-        );
       }
     }
 
@@ -565,10 +335,268 @@ PetscErrorCode FatPrismElementForcesAndSurcesCore::operator()() {
     for(int gg = 0;gg<nb_gauss_pts;gg++) {
       for(int dd = 0;dd<3;dd++) {
         coordsAtGaussPts(gg,dd) = cblas_ddot(
-          6,&dataH1.dataOnEntities[MBVERTEX][0].getN()(gg,0),1,&coords[dd],3
+          6,&dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE)(gg,0),1,&coords[dd],3
         );
       }
     }
+  }
+
+  for(int b = AINSWORTH_COLE_BASE; b!=USER_BASE; b++) {
+
+    FieldApproximationBase base = ApproximationBaseArray[b];
+    if(!dataH1.bAse.test(base)) continue;
+
+    PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim);
+
+    switch(base) {
+      case AINSWORTH_COLE_BASE:
+      base_polynomials = Legendre_polynomials;
+      break;
+      case LOBATTO_BASE:
+      base_polynomials = Lobatto_polynomials;
+      break;
+      default:
+      SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"base not implemented");
+    }
+
+    // Calculate Legendre approx. on edges
+    for(unsigned int ee = 3;ee<=5;ee++) {
+      int sense = dataH1TroughThickness.dataOnEntities[MBEDGE][ee].getSense();
+      int order = dataH1TroughThickness.dataOnEntities[MBEDGE][ee].getDataOrder()-2;
+      dataH1TroughThickness.dataOnEntities[MBEDGE][ee].getN(base).resize(
+        nb_gauss_pts_through_thickness,order<0?0:1+order,false
+      );
+      dataH1TroughThickness.dataOnEntities[MBEDGE][ee].getDiffN(base).resize(
+        nb_gauss_pts_through_thickness,order<0?0:1+order,false
+      );
+      if(order<0) continue;
+      double diff_s = 2.; // s = s(xi), ds/dxi = 2., because change of basis
+      for(int gg = 0;gg<nb_gauss_pts_through_thickness;gg++) {
+        double s = 2*gaussPtsThroughThickness(0,gg)-1; // makes form -1..1
+        if(!sense) {
+          s *= -1;
+          diff_s *= -1;
+        }
+        // calculate Legendre polynomials at integration points on edges thorough thickness
+        ierr = base_polynomials(
+          order,s,&diff_s,
+          &dataH1TroughThickness.dataOnEntities[MBEDGE][ee].getN(base)(gg,0),
+          &dataH1TroughThickness.dataOnEntities[MBEDGE][ee].getDiffN(base)(gg,0),
+          1
+        ); CHKERRQ(ierr);
+      }
+    }
+
+    // Calculate shape functions on triangles
+    ierr = shapeFlatPRISMFunctions_H1(
+      dataH1TrianglesOnly,
+      &gaussPtsTrianglesOnly(0,0),
+      &gaussPtsTrianglesOnly(1,0),
+      nb_gauss_pts_on_faces,
+      base,
+      base_polynomials
+    ); CHKERRQ(ierr);
+
+    // Build prism approx.
+    try {
+      // nodes
+      // linear for xi,eta and zeta
+      dataH1.dataOnEntities[MBVERTEX][0].getN(base).resize(nb_gauss_pts,6,false);
+      dataH1.dataOnEntities[MBVERTEX][0].getDiffN(base).resize(nb_gauss_pts,18);
+      noalias(dataH1.dataOnEntities[MBVERTEX][0].getN(base)) = dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE);
+      noalias(dataH1.dataOnEntities[MBVERTEX][0].getDiffN(base)) = dataH1.dataOnEntities[MBVERTEX][0].getDiffN(NOBASE);
+
+      // edges on triangles
+      for(int ee = 0;ee<9;ee++) {
+        if(ee>=3&&ee<=5) {
+          // through thickness ho approximation
+          // linear xi,eta, ho terms for zeta
+          int order = dataH1TroughThickness.dataOnEntities[MBEDGE][ee].getDataOrder();
+          int nb_dofs = NBEDGE_H1_AINSWORTH_COLE(order);
+          if((unsigned int)nb_dofs!=dataH1TroughThickness.dataOnEntities[MBEDGE][ee].getN(base).size2()) {
+            SETERRQ2(
+              PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"nb_dofs != nb_dofs",
+              nb_dofs,dataH1TroughThickness.dataOnEntities[MBEDGE][ee].getN(base).size2()
+            );
+          }
+          dataH1.dataOnEntities[MBEDGE][ee].getN(base).resize(nb_gauss_pts,nb_dofs,false);
+          dataH1.dataOnEntities[MBEDGE][ee].getDiffN(base).resize(nb_gauss_pts,3*nb_dofs,false);
+          if(nb_dofs == 0) continue;
+          const int prism_edge_map[9][2] = {
+            {0,1}, {1,2}, {2,0}, {0,3}, {1,4}, {2,5}, {3,4}, {4,5}, {5,3}
+          };
+          int gg = 0;
+          for(int ggf = 0;ggf<nb_gauss_pts_on_faces;ggf++) {
+            double tri_n = dataH1TrianglesOnly.dataOnEntities[MBVERTEX][0].getN(base)(ggf,prism_edge_map[ee][0]);
+            double dksi_tri_n[2];
+            for(int kk = 0;kk<2;kk++) {
+              dksi_tri_n[kk] = dataH1TrianglesOnly.dataOnEntities[MBVERTEX][0].getDiffN(base)(ggf,2*prism_edge_map[ee][0]+kk);
+            }
+            for(int ggt = 0;ggt<nb_gauss_pts_through_thickness;ggt++,gg++) {
+              double zeta = gaussPtsThroughThickness(0,ggt);
+              double n0 = N_MBEDGE0(zeta);
+              double n1 = N_MBEDGE1(zeta);
+              double n0n1 = n0*n1;
+              for(int dd = 0;dd<nb_dofs;dd++) {
+                double l = dataH1TroughThickness.dataOnEntities[MBEDGE][ee].getN(base)(ggt,dd);
+                double diff_l = dataH1TroughThickness.dataOnEntities[MBEDGE][ee].getDiffN(base)(ggt,dd);
+                double edge_m = n0n1*l;
+                double dzeta_edge_m = (diffN_MBEDGE0*n1+n0*diffN_MBEDGE1)*l + n0n1*diff_l;
+                dataH1.dataOnEntities[MBEDGE][ee].getN(base)(gg,dd) = tri_n*edge_m;
+                for(int kk = 0;kk<2;kk++) {
+                  dataH1.dataOnEntities[MBEDGE][ee].getDiffN(base)(gg,3*dd+kk) = dksi_tri_n[kk]*edge_m;
+                }
+                dataH1.dataOnEntities[MBEDGE][ee].getDiffN(base)(gg,3*dd+2) = tri_n*dzeta_edge_m;
+              }
+            }
+          }
+        } else {
+          // on triangles ho approximation
+          // ho terms on edges, linear zeta
+          int nb_dofs = dataH1TrianglesOnly.dataOnEntities[MBEDGE][ee].getN(base).size2();
+          dataH1.dataOnEntities[MBEDGE][ee].getN(base).resize(nb_gauss_pts,nb_dofs,false);
+          dataH1.dataOnEntities[MBEDGE][ee].getDiffN(base).resize(nb_gauss_pts,3*nb_dofs,false);
+          for(int dd = 0;dd<nb_dofs;dd++) {
+            int gg = 0;
+            for(int ggf = 0;ggf<nb_gauss_pts_on_faces;ggf++) {
+              double tri_n = dataH1TrianglesOnly.dataOnEntities[MBEDGE][ee].getN(base)(ggf,dd);
+              double dksi_tri_n = dataH1TrianglesOnly.dataOnEntities[MBEDGE][ee].getDiffN(base)(ggf,2*dd+0);
+              double deta_tri_n = dataH1TrianglesOnly.dataOnEntities[MBEDGE][ee].getDiffN(base)(ggf,2*dd+1);
+              for(int ggt = 0;ggt<nb_gauss_pts_through_thickness;ggt++,gg++) {
+                double zeta = gaussPtsThroughThickness(0,ggt);
+                double dzeta,edge_shape;
+                if(ee<3) {
+                  dzeta = diffN_MBEDGE0;
+                  edge_shape = N_MBEDGE0(zeta);
+                } else {
+                  dzeta = diffN_MBEDGE1;
+                  edge_shape = N_MBEDGE1(zeta);
+                }
+                dataH1.dataOnEntities[MBEDGE][ee].getN(base)(gg,dd) = tri_n*edge_shape;
+                dataH1.dataOnEntities[MBEDGE][ee].getDiffN(base)(gg,3*dd+0) = dksi_tri_n*edge_shape;
+                dataH1.dataOnEntities[MBEDGE][ee].getDiffN(base)(gg,3*dd+1) = deta_tri_n*edge_shape;
+                dataH1.dataOnEntities[MBEDGE][ee].getDiffN(base)(gg,3*dd+2) = tri_n*dzeta;
+              }
+            }
+          }
+        }
+      }
+      // triangles
+      // ho on triangles, linear zeta
+      for(int ff = 3;ff<=4;ff++) {
+        int nb_dofs;
+        nb_dofs = dataH1TrianglesOnly.dataOnEntities[MBTRI][ff].getN(base).size2();
+        dataH1.dataOnEntities[MBTRI][ff].getN(base).resize(nb_gauss_pts,nb_dofs,false);
+        dataH1.dataOnEntities[MBTRI][ff].getDiffN(base).resize(nb_gauss_pts,3*nb_dofs,false);
+        for(int dd = 0;dd<nb_dofs;dd++) {
+          int gg = 0;
+          for(int ggf = 0;ggf<nb_gauss_pts_on_faces;ggf++) {
+            double tri_n = dataH1TrianglesOnly.dataOnEntities[MBTRI][ff].getN(base)(ggf,dd);
+            double dksi_tri_n[2];
+            for(int kk = 0;kk<2;kk++) {
+              dksi_tri_n[kk] = dataH1TrianglesOnly.dataOnEntities[MBTRI][ff].getDiffN(base)(ggf,2*dd+kk);
+            }
+            for(int ggt = 0;ggt<nb_gauss_pts_through_thickness;ggt++,gg++) {
+              double zeta = gaussPtsThroughThickness(0,ggt);
+              double dzeta,edge_shape;
+              if(ff == 3) {
+                dzeta = diffN_MBEDGE0;
+                edge_shape = N_MBEDGE0(zeta);
+              } else {
+                dzeta = diffN_MBEDGE1;
+                edge_shape = N_MBEDGE1(zeta);
+              }
+              dataH1.dataOnEntities[MBTRI][ff].getN(base)(gg,dd) = tri_n*edge_shape;
+              for(int kk = 0;kk<2;kk++) {
+                dataH1.dataOnEntities[MBTRI][ff].getDiffN(base)(gg,3*dd+kk) = dksi_tri_n[kk]*edge_shape;
+              }
+              dataH1.dataOnEntities[MBTRI][ff].getDiffN(base)(gg,3*dd+2) = tri_n*dzeta;
+            }
+          }
+        }
+      }
+      // quads
+      // higher order edges and zeta
+      {
+        int quads_nodes[3*4];
+        int quad_order[3];
+        double *quad_n[3],*diff_quad_n[3];
+        SideNumber_multiIndex& side_table = const_cast<SideNumber_multiIndex&>(fePtr->get_side_number_table());
+        SideNumber_multiIndex::nth_index<1>::type::iterator siit;
+        siit = side_table.get<1>().lower_bound(boost::make_tuple(MBQUAD,0));
+        SideNumber_multiIndex::nth_index<1>::type::iterator hi_siit;
+        hi_siit = side_table.get<1>().upper_bound(boost::make_tuple(MBQUAD,3));
+        EntityHandle ent = fePtr->get_ent();
+        rval = mField.get_moab().get_connectivity(ent,conn,num_nodes,true); CHKERRQ_MOAB(rval);
+        // cerr << "\n\n" << endl;
+        // const int quad_nodes[3][4] = { {0,1,4,3}, {1,2,5,4}, {0,2,5,3} };
+        for(;siit!=hi_siit;siit++) {
+          //  cerr << "sn " << siit->side_number << endl;
+          int num_nodes_quad;
+          const EntityHandle *conn_quad;
+          EntityHandle quad = siit->ent;
+          rval = mField.get_moab().get_connectivity(
+            quad,conn_quad,num_nodes_quad,true
+          ); CHKERRQ_MOAB(rval);
+          for(int nn = 0;nn<num_nodes_quad;nn++) {
+            quads_nodes[4*siit->side_number+nn] = distance(conn,find(conn,conn+6,conn_quad[nn]));
+            // cerr
+            // << "quad " << quad
+            // << " side number " << siit->side_number
+            // << " " << quads_nodes[4*siit->side_number+nn]
+            // << " " << conn[quads_nodes[4*siit->side_number+nn]]
+            // << " " << conn_quad[nn]
+            // << endl;
+          }
+          int order = dataH1.dataOnEntities[MBQUAD][siit->side_number].getDataOrder();
+          quad_order[siit->side_number] = order;
+          dataH1.dataOnEntities[MBQUAD][siit->side_number].getN(base).resize(nb_gauss_pts,NBFACEQUAD_H1_AINSWORTH_COLE(order),false);
+          dataH1.dataOnEntities[MBQUAD][siit->side_number].getDiffN(base).resize(nb_gauss_pts,3*NBFACEQUAD_H1_AINSWORTH_COLE(order),false);
+          if(dataH1.dataOnEntities[MBQUAD][siit->side_number].getN(base).size2()>0) {
+            quad_n[siit->side_number] = &*dataH1.dataOnEntities[MBQUAD][siit->side_number].getN(base).data().begin();
+            diff_quad_n[siit->side_number] = &*dataH1.dataOnEntities[MBQUAD][siit->side_number].getDiffN(base).data().begin();
+          } else {
+            quad_n[siit->side_number] = NULL;
+            diff_quad_n[siit->side_number] = NULL;
+          }
+        }
+        {
+          double *vertex_n = &*dataH1.dataOnEntities[MBVERTEX][0].getN(base).data().begin();
+          double *diff_vertex_n = &*dataH1.dataOnEntities[MBVERTEX][0].getDiffN(base).data().begin();
+          ierr = H1_QuadShapeFunctions_MBPRISM(
+            quads_nodes,quad_order,vertex_n,diff_vertex_n,quad_n,diff_quad_n,nb_gauss_pts,Legendre_polynomials
+          ); CHKERRQ(ierr);
+        }
+      }
+      // prism
+      {
+        int order = dataH1.dataOnEntities[MBPRISM][0].getDataOrder();
+        double *vertex_n  = &dataH1.dataOnEntities[MBVERTEX][0].getN(base)(0,0);
+        double *diff_vertex_n = &dataH1.dataOnEntities[MBVERTEX][0].getDiffN(base)(0,0);
+        dataH1.dataOnEntities[MBPRISM][0].getN(base).resize(nb_gauss_pts,NBVOLUMEPRISM_H1_AINSWORTH_COLE(order),false);
+        dataH1.dataOnEntities[MBPRISM][0].getDiffN(base).resize(nb_gauss_pts,3*NBVOLUMEPRISM_H1_AINSWORTH_COLE(order),false);
+        if(NBVOLUMEPRISM_H1_AINSWORTH_COLE(order)>0) {
+          ierr = H1_VolumeShapeFunctions_MBPRISM(
+            order,
+            vertex_n,
+            diff_vertex_n,
+            &dataH1.dataOnEntities[MBPRISM][0].getN(base)(0,0),
+            &dataH1.dataOnEntities[MBPRISM][0].getDiffN(base)(0,0),
+            nb_gauss_pts,
+            Legendre_polynomials
+          ); CHKERRQ(ierr);
+        }
+      }
+    } catch (MoFEMException const &e) {
+      SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
+    } catch (exception& ex) {
+      ostringstream ss;
+      ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
+      SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
+    }
+  }
+
+  try {
 
     try {
 

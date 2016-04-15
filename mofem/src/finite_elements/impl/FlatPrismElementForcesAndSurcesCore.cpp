@@ -151,6 +151,15 @@ PetscErrorCode FlatPrismElementForcesAndSurcesCore::operator()() {
     } else {
       ierr = setGaussPts(order_row,order_col,order_data); CHKERRQ(ierr);
       nb_gauss_pts = gaussPts.size2();
+      dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE).resize(nb_gauss_pts,3,false);
+      if(nb_gauss_pts) {
+        ierr = ShapeMBTRI(
+          &*dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE).data().begin(),
+          &gaussPts(0,0),
+          &gaussPts(1,0),
+          nb_gauss_pts
+        ); CHKERRQ(ierr);
+      }
     }
     if(nb_gauss_pts == 0) PetscFunctionReturn(0);
 
