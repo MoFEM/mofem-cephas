@@ -382,13 +382,23 @@ struct ForcesAndSurcesCore: public FEMethod {
   /** \brief computes approximation functions for prism and H1 space
     */
   PetscErrorCode shapeFlatPRISMFunctions_H1(
-    DataForcesAndSurcesCore &data,const double *G_X,const double *G_Y,const int G_DIM
+    DataForcesAndSurcesCore &data,
+    const double *G_X,
+    const double *G_Y,
+    const int G_DIM,
+    const FieldApproximationBase base,
+    PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
   );
 
   /** \brief computes approximation functions for prism and H1 space
     */
   PetscErrorCode shapeFlatPRISMFunctions_Hdiv(
-    DataForcesAndSurcesCore &data,const double *G_X,const double *G_Y,const int G_DIM
+    DataForcesAndSurcesCore &data,
+    const double *G_X,
+    const double *G_Y,
+    const int G_DIM,
+    const FieldApproximationBase base,
+    PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
   );
 
   /// \brief It could be be removed in the future use other variant

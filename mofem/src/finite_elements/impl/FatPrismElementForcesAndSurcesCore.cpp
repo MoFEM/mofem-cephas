@@ -186,13 +186,13 @@ PetscErrorCode FatPrismElementForcesAndSurcesCore::operator()() {
       nb_gauss_pts_on_faces = gaussPtsTrianglesOnly.size2();
     }
     if(nb_gauss_pts_on_faces == 0) PetscFunctionReturn(0);
-    // calculate shape functions
-    ierr = shapeFlatPRISMFunctions_H1(
-      dataH1TrianglesOnly,
-      &gaussPtsTrianglesOnly(0,0),
-      &gaussPtsTrianglesOnly(1,0),
-      nb_gauss_pts_on_faces
-    ); CHKERRQ(ierr);
+    // // calculate shape functions
+    // ierr = shapeFlatPRISMFunctions_H1(
+    //   dataH1TrianglesOnly,
+    //   &gaussPtsTrianglesOnly(0,0),
+    //   &gaussPtsTrianglesOnly(1,0),
+    //   nb_gauss_pts_on_faces
+    // ); CHKERRQ(ierr);
   } catch (MoFEMException const &e) {
     SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
   } catch (exception& ex) {

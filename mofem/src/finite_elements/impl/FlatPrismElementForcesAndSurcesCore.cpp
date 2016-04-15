@@ -75,6 +75,23 @@ PetscErrorCode FlatPrismElementForcesAndSurcesCore::operator()() {
 
   try {
 
+    EntityHandle ent = fePtr->get_ent();
+    int num_nodes;
+    const EntityHandle* conn;
+    rval = mField.get_moab().get_connectivity(ent,conn,num_nodes,true); CHKERRQ_MOAB(rval);
+    {
+      coords.resize(num_nodes*3,false);
+      rval = mField.get_moab().get_coords(conn,num_nodes,&*coords.data().begin()); CHKERRQ_MOAB(rval);
+
+      double diff_n[6];
+      ierr = ShapeDiffMBTRI(diff_n); CHKERRQ(ierr);
+      normal.resize(6,false);
+      ierr = ShapeFaceNormalMBTRI(diff_n,&coords[0],&normal[0]); CHKERRQ(ierr);
+      ierr = ShapeFaceNormalMBTRI(diff_n, &coords[9],&normal[3]); CHKERRQ(ierr);
+      aRea[0] = cblas_dnrm2(3,&normal[0],1)*0.5;
+      aRea[1] = cblas_dnrm2(3,&normal[3],1)*0.5;
+    }
+
     ierr = getSpacesAndBaseOnEntities(dataH1); CHKERRQ(ierr);
 
     //H1
@@ -90,21 +107,6 @@ PetscErrorCode FlatPrismElementForcesAndSurcesCore::operator()() {
       ierr = getTrisSense(dataHdiv); CHKERRQ(ierr);
       ierr = getTrisDataOrder(dataHdiv,HDIV); CHKERRQ(ierr);
     }
-
-    // int order = 1;
-    // for(unsigned int ee = 0;ee<3;ee++) {
-    //   order = max(
-    //     order,dataH1.dataOnEntities[MBEDGE][ee].getDataOrder()
-    //   );
-    // }
-    // for(unsigned int ee = 6;ee<dataH1.dataOnEntities[MBEDGE].size();ee++) {
-    //   order = max(
-    //     order,dataH1.dataOnEntities[MBEDGE][ee].getDataOrder()
-    //   );
-    // }
-    // for(unsigned int ff = 0;ff<dataHdiv.dataOnEntities[MBTRI].size();ff++) {
-    //   order = max(order,dataHdiv.dataOnEntities[MBTRI][ff].getDataOrder());
-    // }
 
     int order_data = getMaxDataOrder();
     int order_row = getMaxRowOrder();
@@ -134,6 +136,11 @@ PetscErrorCode FlatPrismElementForcesAndSurcesCore::operator()() {
         cblas_dcopy(
           nb_gauss_pts,QUAD_2D_TABLE[rule]->weights,1,&gaussPts(2,0),1
         );
+        dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE).resize(nb_gauss_pts,3,false);
+        double *shape_ptr = &*dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE).data().begin();
+        cblas_dcopy(
+          3*nb_gauss_pts,QUAD_2D_TABLE[rule]->points,1,shape_ptr,1
+        );
       } else {
         SETERRQ2(
           PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"rule > quadrature order %d < %d",
@@ -141,47 +148,50 @@ PetscErrorCode FlatPrismElementForcesAndSurcesCore::operator()() {
         );
         nb_gauss_pts = 0;
       }
-      // nb_gauss_pts = gm_rule_size(rule,2);
-      // gaussPts.resize(3,nb_gauss_pts,false);
-      // ierr = Grundmann_Moeller_integration_points_2D_TRI(
-      //   rule,&gaussPts(0,0),&gaussPts(1,0),&gaussPts(2,0)
-      // ); CHKERRQ(ierr);
     } else {
       ierr = setGaussPts(order_row,order_col,order_data); CHKERRQ(ierr);
       nb_gauss_pts = gaussPts.size2();
     }
     if(nb_gauss_pts == 0) PetscFunctionReturn(0);
 
-    ierr = shapeFlatPRISMFunctions_H1(dataH1,&gaussPts(0,0),&gaussPts(1,0),nb_gauss_pts); CHKERRQ(ierr);
-    if(dataH1.spacesOnEntities[MBTRI].test(HDIV)) {
-      ierr = shapeFlatPRISMFunctions_Hdiv(dataHdiv,&gaussPts(0,0),&gaussPts(1,0),nb_gauss_pts); CHKERRQ(ierr); CHKERRQ(ierr);
-    }
-
-    EntityHandle ent = fePtr->get_ent();
-    int num_nodes;
-    const EntityHandle* conn;
-    rval = mField.get_moab().get_connectivity(ent,conn,num_nodes,true); CHKERRQ_MOAB(rval);
-    coords.resize(num_nodes*3,false);
-    rval = mField.get_moab().get_coords(conn,num_nodes,&*coords.data().begin()); CHKERRQ_MOAB(rval);
-
-    normal.resize(6,false);
-    ierr = ShapeFaceNormalMBTRI(
-      &*dataH1.dataOnEntities[MBVERTEX][0].getDiffN().data().begin(),
-      &coords[0],&normal[0]
-    ); CHKERRQ(ierr);
-    ierr = ShapeFaceNormalMBTRI(
-      &*dataH1.dataOnEntities[MBVERTEX][0].getDiffN().data().begin(),
-      &coords[9],&normal[3]
-    ); CHKERRQ(ierr);
-    aRea[0] = cblas_dnrm2(3,&normal[0],1)*0.5;
-    aRea[1] = cblas_dnrm2(3,&normal[3],1)*0.5;
-
-    coordsAtGaussPts.resize(nb_gauss_pts,6,false);
-    for(int gg = 0;gg<nb_gauss_pts;gg++) {
-      for(int dd = 0;dd<3;dd++) {
-        coordsAtGaussPts(gg,dd) = cblas_ddot(3,&dataH1.dataOnEntities[MBVERTEX][0].getN()(gg,0),1,&coords[dd],3);
-        coordsAtGaussPts(gg,3+dd) = cblas_ddot(3,&dataH1.dataOnEntities[MBVERTEX][0].getN()(gg,0),1,&coords[9+dd],3);
+    {
+      coordsAtGaussPts.resize(nb_gauss_pts,6,false);
+      for(int gg = 0;gg<nb_gauss_pts;gg++) {
+        for(int dd = 0;dd<3;dd++) {
+          coordsAtGaussPts(gg,dd) = cblas_ddot(3,&dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE)(gg,0),1,&coords[dd],3);
+          coordsAtGaussPts(gg,3+dd) = cblas_ddot(3,&dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE)(gg,0),1,&coords[9+dd],3);
+        }
       }
+    }
+    vector<FieldApproximationBase> shape_functions_for_bases;
+    if(dataH1.bAse.test(AINSWORTH_COLE_BASE)) {
+      dataH1.dataOnEntities[MBVERTEX][0].getBase() = AINSWORTH_COLE_BASE;
+      shape_functions_for_bases.push_back(AINSWORTH_COLE_BASE);
+      ierr = shapeFlatPRISMFunctions_H1(
+        dataH1,&gaussPts(0,0),&gaussPts(1,0),nb_gauss_pts,AINSWORTH_COLE_BASE,Legendre_polynomials
+      ); CHKERRQ(ierr);
+      if(dataH1.spacesOnEntities[MBTRI].test(HDIV)) {
+        ierr = shapeFlatPRISMFunctions_Hdiv(
+          dataHdiv,&gaussPts(0,0),&gaussPts(1,0),nb_gauss_pts,AINSWORTH_COLE_BASE,Legendre_polynomials
+        ); CHKERRQ(ierr); CHKERRQ(ierr);
+      }
+    }
+    if(dataH1.bAse.test(LOBATTO_BASE)) {
+      dataH1.dataOnEntities[MBVERTEX][0].getBase() = LOBATTO_BASE;
+      shape_functions_for_bases.push_back(LOBATTO_BASE);
+      dataH1.dataOnEntities[MBVERTEX][0].getBase() = AINSWORTH_COLE_BASE;
+      shape_functions_for_bases.push_back(AINSWORTH_COLE_BASE);
+      ierr = shapeFlatPRISMFunctions_H1(
+        dataH1,&gaussPts(0,0),&gaussPts(1,0),nb_gauss_pts,LOBATTO_BASE,Lobatto_polynomials
+      ); CHKERRQ(ierr);
+      if(dataH1.spacesOnEntities[MBTRI].test(HDIV)) {
+        ierr = shapeFlatPRISMFunctions_Hdiv(
+          dataHdiv,&gaussPts(0,0),&gaussPts(1,0),nb_gauss_pts,LOBATTO_BASE,Lobatto_polynomials
+        ); CHKERRQ(ierr); CHKERRQ(ierr);
+      }
+    }
+    if(dataH1.bAse.test(BERNSTEIN_BEZIER_BASE)) {
+      SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented");
     }
 
     try {

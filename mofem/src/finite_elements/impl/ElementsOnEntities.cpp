@@ -1409,7 +1409,11 @@ PetscErrorCode ForcesAndSurcesCore::shapeTRIFunctions_H1(
 
 PetscErrorCode ForcesAndSurcesCore::shapeFlatPRISMFunctions_H1(
   DataForcesAndSurcesCore &data,
-  const double *G_X,const double *G_Y,const int G_DIM
+  const double *G_X,
+  const double *G_Y,
+  const int G_DIM,
+  const FieldApproximationBase base,
+  PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
 ) {
   PetscFunctionBegin;
 
@@ -1433,8 +1437,8 @@ PetscErrorCode ForcesAndSurcesCore::shapeFlatPRISMFunctions_H1(
     ierr = ShapeMBTRI(&*N.data().begin(),G_X,G_Y,G_DIM); CHKERRQ(ierr);
     MatrixDouble diffN(3,2);
     ierr = ShapeDiffMBTRI(&*diffN.data().begin()); CHKERRQ(ierr);
-    data.dataOnEntities[MBVERTEX][0].getN().resize(G_DIM,6,false);
-    data.dataOnEntities[MBVERTEX][0].getDiffN().resize(G_DIM,12,false);
+    data.dataOnEntities[MBVERTEX][0].getN(base).resize(G_DIM,6,false);
+    data.dataOnEntities[MBVERTEX][0].getDiffN(base).resize(G_DIM,12,false);
 
     int face_nodes[2][3];
     for(int nn = 0;nn<3;nn++) {
@@ -1446,12 +1450,12 @@ PetscErrorCode ForcesAndSurcesCore::shapeFlatPRISMFunctions_H1(
         double val = N(gg,nn);
         double val_x = diffN(nn,0);
         double val_y = diffN(nn,1);
-        data.dataOnEntities[MBVERTEX][0].getN()(gg,nn) = val;
-        data.dataOnEntities[MBVERTEX][0].getDiffN()(gg,2*nn+0) = val_x;
-        data.dataOnEntities[MBVERTEX][0].getDiffN()(gg,2*nn+1) = val_y;
-        data.dataOnEntities[MBVERTEX][0].getN()(gg,3+nn) = val;
-        data.dataOnEntities[MBVERTEX][0].getDiffN()(gg,6+2*nn+0) = val_x;
-        data.dataOnEntities[MBVERTEX][0].getDiffN()(gg,6+2*nn+1) = val_y;
+        data.dataOnEntities[MBVERTEX][0].getN(base)(gg,nn) = val;
+        data.dataOnEntities[MBVERTEX][0].getDiffN(base)(gg,2*nn+0) = val_x;
+        data.dataOnEntities[MBVERTEX][0].getDiffN(base)(gg,2*nn+1) = val_y;
+        data.dataOnEntities[MBVERTEX][0].getN(base)(gg,3+nn) = val;
+        data.dataOnEntities[MBVERTEX][0].getDiffN(base)(gg,6+2*nn+0) = val_x;
+        data.dataOnEntities[MBVERTEX][0].getDiffN(base)(gg,6+2*nn+1) = val_y;
       }
     }
 
@@ -1471,10 +1475,10 @@ PetscErrorCode ForcesAndSurcesCore::shapeFlatPRISMFunctions_H1(
         sense[ee] = data.dataOnEntities[MBEDGE][ee].getSense();
         order[ee] = data.dataOnEntities[MBEDGE][ee].getDataOrder();
         int nb_dofs = NBEDGE_H1_AINSWORTH_COLE(data.dataOnEntities[MBEDGE][ee].getDataOrder());
-        data.dataOnEntities[MBEDGE][ee].getN().resize(G_DIM,nb_dofs,false);
-        data.dataOnEntities[MBEDGE][ee].getDiffN().resize(G_DIM,2*nb_dofs,false);
-        H1edgeN[ee] = &*data.dataOnEntities[MBEDGE][ee].getN().data().begin();
-        diffH1edgeN[ee] = &*data.dataOnEntities[MBEDGE][ee].getDiffN().data().begin();
+        data.dataOnEntities[MBEDGE][ee].getN(base).resize(G_DIM,nb_dofs,false);
+        data.dataOnEntities[MBEDGE][ee].getDiffN(base).resize(G_DIM,2*nb_dofs,false);
+        H1edgeN[ee] = &*data.dataOnEntities[MBEDGE][ee].getN(base).data().begin();
+        diffH1edgeN[ee] = &*data.dataOnEntities[MBEDGE][ee].getDiffN(base).data().begin();
       }
       //shape functions on face 3
       ierr = H1_EdgeShapeFunctions_MBTRI(
@@ -1484,7 +1488,7 @@ PetscErrorCode ForcesAndSurcesCore::shapeFlatPRISMFunctions_H1(
         &*diffN.data().begin(),
         &H1edgeN[0],
         &diffH1edgeN[0],
-        G_DIM,Legendre_polynomials
+        G_DIM,base_polynomials
       ); CHKERRQ(ierr);
       //shape functions on face 4
       ierr = H1_EdgeShapeFunctions_MBTRI(
@@ -1494,7 +1498,7 @@ PetscErrorCode ForcesAndSurcesCore::shapeFlatPRISMFunctions_H1(
         &*diffN.data().begin(),
         &H1edgeN[6],
         &diffH1edgeN[6],
-        G_DIM,Legendre_polynomials
+        G_DIM,base_polynomials
       ); CHKERRQ(ierr);
     }
 
@@ -1505,16 +1509,16 @@ PetscErrorCode ForcesAndSurcesCore::shapeFlatPRISMFunctions_H1(
     if((data.spacesOnEntities[MBTRI]).test(H1)) {
       for(int ff = 3;ff<=4;ff++) {
         int nb_dofs = NBFACETRI_H1_AINSWORTH_COLE(data.dataOnEntities[MBTRI][ff].getDataOrder());
-        data.dataOnEntities[MBTRI][ff].getN().resize(G_DIM,nb_dofs,false);
-        data.dataOnEntities[MBTRI][ff].getDiffN().resize(G_DIM,2*nb_dofs,false);
+        data.dataOnEntities[MBTRI][ff].getN(base).resize(G_DIM,nb_dofs,false);
+        data.dataOnEntities[MBTRI][ff].getDiffN(base).resize(G_DIM,2*nb_dofs,false);
         ierr = H1_FaceShapeFunctions_MBTRI(
           face_nodes[ff-3],
           data.dataOnEntities[MBTRI][ff].getDataOrder(),
           &*N.data().begin(),
           &*diffN.data().begin(),
-          &*data.dataOnEntities[MBTRI][ff].getN().data().begin(),
-          &*data.dataOnEntities[MBTRI][ff].getDiffN().data().begin(),
-          G_DIM,Legendre_polynomials
+          &*data.dataOnEntities[MBTRI][ff].getN(base).data().begin(),
+          &*data.dataOnEntities[MBTRI][ff].getDiffN(base).data().begin(),
+          G_DIM,base_polynomials
         ); CHKERRQ(ierr);
       }
     }
@@ -1633,7 +1637,7 @@ PetscErrorCode ForcesAndSurcesCore::shapeEDGEFunctions_H1(
       }
 
       // calculate Legendre polynomials at integration points
-      ierr = Legendre_polynomials(
+      ierr = base_polynomials(
         NBEDGE_H1_AINSWORTH_COLE(order)-1,
         s,
         &diff_s,
@@ -1669,8 +1673,13 @@ PetscErrorCode ForcesAndSurcesCore::shapeEDGEFunctions_H1(
 }
 
 PetscErrorCode ForcesAndSurcesCore::shapeFlatPRISMFunctions_Hdiv(
-    DataForcesAndSurcesCore &data,
-    const double *G_X,const double *G_Y,const int G_DIM) {
+  DataForcesAndSurcesCore &data,
+  const double *G_X,
+  const double *G_Y,
+  const int G_DIM,
+  const FieldApproximationBase base,
+  PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
+) {
   PetscFunctionBegin;
   SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not yet implemented, i.e. flat prism with Hdiv space");
   PetscFunctionReturn(0);

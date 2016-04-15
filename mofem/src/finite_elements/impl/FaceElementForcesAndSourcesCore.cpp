@@ -78,7 +78,6 @@ PetscErrorCode FaceElementForcesAndSourcesCore::operator()() {
     coords.resize(num_nodes*3,false);
     rval = mField.get_moab().get_coords(conn,num_nodes,&*coords.data().begin()); CHKERRQ_MOAB(rval);
 
-
     double diff_n[6];
     ierr = ShapeDiffMBTRI(diff_n); CHKERRQ(ierr);
     normal.resize(3,false);
@@ -177,7 +176,6 @@ PetscErrorCode FaceElementForcesAndSourcesCore::operator()() {
     shape_functions_for_bases.push_back(AINSWORTH_COLE_BASE);
     dataH1.dataOnEntities[MBVERTEX][0].getN(AINSWORTH_COLE_BASE).resize(nb_gauss_pts,3,false);
     noalias(dataH1.dataOnEntities[MBVERTEX][0].getN(AINSWORTH_COLE_BASE)) = dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE);
-
     ierr = shapeTRIFunctions_H1(
       dataH1,&gaussPts(0,0),&gaussPts(1,0),nb_gauss_pts,AINSWORTH_COLE_BASE,Legendre_polynomials
     ); CHKERRQ(ierr);
