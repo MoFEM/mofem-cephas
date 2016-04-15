@@ -971,6 +971,9 @@ PetscErrorCode ForcesAndSurcesCore::getSpacesAndBaseOnEntities(DataForcesAndSurc
   PetscFunctionBegin;
   try {
     for(_IT_GET_FEDATA_DOFS_FOR_LOOP_(this,dof)) {
+      // cerr << *dof << endl;
+      // cerr << dof->get_space() << " " << data.sPace.size() << endl;
+      // cerr << dof->get_approx_base() << " " << data.bAse.size() << endl;
       data.sPace.set(dof->get_space());
       data.bAse.set(dof->get_approx_base());
       data.spacesOnEntities[dof->get_ent_type()].set(dof->get_space());
@@ -1126,7 +1129,8 @@ PetscErrorCode ForcesAndSurcesCore::shapeTETFunctions_L2(
 
   ierr = L2_ShapeFunctions_MBTET(
     data.dataOnEntities[MBTET][0].getDataOrder(),
-    &*data.dataOnEntities[MBVERTEX][0].getN(base).data().begin(),&*data.dataOnEntities[MBVERTEX][0].getDiffN().data().begin(),
+    &*data.dataOnEntities[MBVERTEX][0].getN(base).data().begin(),
+    &*data.dataOnEntities[MBVERTEX][0].getDiffN(base).data().begin(),
     &*data.dataOnEntities[MBTET][0].getN(base).data().begin(),
     &*data.dataOnEntities[MBTET][0].getDiffN(base).data().begin(),
     G_DIM

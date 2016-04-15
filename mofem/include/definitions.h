@@ -100,6 +100,7 @@ const static FieldApproximationBase ApproximationBaseArray[] = {
 
 /// \brief approximation spaces
 enum FieldSpace {
+  NOSPACE = 0,
   NOFIELD = 1, 	///< scalar or vector of scalars describe (no true field)
   H1, 		      ///< continuous field
   HDIV,		      ///< field with continuous normal traction
@@ -109,7 +110,7 @@ enum FieldSpace {
 };
 
 const static char * const FieldSpaceNames[] = {
-  "", // empty space
+  "NOSPACE", 
   "NOFIELD",
   "H1",
   "HDIV",

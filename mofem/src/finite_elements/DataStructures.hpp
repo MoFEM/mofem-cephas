@@ -337,7 +337,7 @@ struct DataForcesAndSurcesCore {
     MatrixDouble diffN[LASTBASE];
   };
 
-  bitset<LASTBASE> sPace;   ///< spaces on element
+  bitset<LASTSPACE> sPace;   ///< spaces on element
   bitset<LASTBASE> bAse;    ///< bases on element
   ublas::matrix<int> facesNodes; 			                  ///< nodes on finite element faces
   bitset<LASTSPACE> spacesOnEntities[MBMAXTYPE]; 	      ///< spaces on entity types
