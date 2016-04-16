@@ -18,6 +18,7 @@ add_library(mofem_approx
   impl/EntityRefine.cpp
   impl/BaseFunction.cpp
   impl/LegendrePolynomial.cpp
+  impl/LobattoPolynomial.cpp
   c_impl/base_functions.c
   c_impl/fem_tools.c
   c_impl/h1.c

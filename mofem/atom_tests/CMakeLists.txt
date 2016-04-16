@@ -650,6 +650,37 @@ add_test(partition_mesh ${MPI_RUN} -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/partition_mesh -my_file disp01.h5m
 )
 
+add_executable(testing_base_functions testing_base_functions.cpp)
+target_link_libraries(testing_base_functions
+  mofem_finite_elements
+  mofem_interfaces
+  mofem_multi_indices
+  mofem_petsc
+  mofem_approx
+  mofem_cblas
+  mofem_third_party
+  ${PROJECT_LIBS}
+)
+list(INSERT testing_base_list
+  0
+  legendre
+  lobatto
+  h1tet
+  hdivtet
+  l2tet
+  h1tri
+  hdiftri
+  h1edge
+  h1flatprism
+  h1fatprism
+)
+foreach(test_base ${testing_base_list})
+  add_test(testing_base_functions_${test_base}
+    ${MPI_RUN} -np 1
+    ${CMAKE_CURRENT_BINARY_DIR}/testing_base_functions -base ${test_base}
+  )
+endforeach(test_base IN testing_base_list)
+
 
 if(WITH_ADOL-C)
   add_executable(adol-c_atom adol-c_atom.cpp)

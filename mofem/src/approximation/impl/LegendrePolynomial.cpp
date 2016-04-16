@@ -19,6 +19,8 @@
 #include <config.h>
 #include <definitions.h>
 #include <Includes.hpp>
+
+#include <base_functions.h>
 #include <Common.hpp>
 #include <UnknownInterface.hpp>
 using namespace MoFEM;
@@ -55,5 +57,28 @@ PetscErrorCode LegendrePolynomial::queryInterface(
     SETERRQ(PETSC_COMM_WORLD,MOFEM_DATA_INCONSISTENCY,"wrong interference");
   }
   ierr = BaseFunction::queryInterface(uuid,iface); CHKERRQ(ierr);
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode LegendrePolynomial::getValue(
+  ublas::matrix<double> &pTs,
+  boost::shared_ptr<ublas::matrix<double> > baseFunPtr,
+  boost::shared_ptr<ublas::matrix<double> > baseDiffFunPtr,
+  boost::shared_ptr<BaseFunctionCtx> ctxPtr
+) {
+  PetscErrorCode ierr;
+  PetscFunctionBegin;
+  MoFEM::UnknownInterface *iface;
+  ierr = ctxPtr->queryInterface(IDD_LEGENDRE_BASE_FUNCTION,&iface); CHKERRQ(ierr);
+  LegendrePolynomialCtx *ctx = reinterpret_cast<LegendrePolynomialCtx*>(iface);
+  baseFunPtr->resize(1,ctx->P+1,false);
+  baseDiffFunPtr->resize(ctx->dIm,ctx->P+1,false);
+  double *l = NULL;
+  double *diff_l = NULL;
+  if(baseFunPtr) l = &*baseFunPtr->data().begin();
+  if(baseDiffFunPtr) diff_l = &*baseDiffFunPtr->data().begin();
+  for(int gg = 0;gg<pTs.size2();gg++) {
+    ierr = (ctx->base_polynomials)(ctx->P,pTs(0,gg),ctx->diffS,l,diff_l,ctx->dIm); CHKERRQ(ierr);
+  }
   PetscFunctionReturn(0);
 }

@@ -22,8 +22,6 @@
 
 namespace MoFEM {
 
-
-
   static const int LEGENDRE_BASE_FUNCTION_INTERFACE = 1<<1;
   static const MOFEMuuid IDD_LEGENDRE_BASE_FUNCTION = MOFEMuuid(BitIntefaceId(LEGENDRE_BASE_FUNCTION_INTERFACE));
 
@@ -31,8 +29,21 @@ namespace MoFEM {
 
     PetscErrorCode queryInterface(const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface);
 
-    LegendrePolynomialCtx();
-    ~LegendrePolynomialCtx();
+    int P;
+    double *diffS;
+    int dIm;
+
+    PetscErrorCode (*base_polynomials)(
+      int p,double s,double *diff_s,double *L,double *diffL,const int dim
+    );
+
+    LegendrePolynomialCtx(int p,double *diff_s,int dim):
+    P(p),
+    diffS(diff_s),
+    dIm(dim),
+    base_polynomials(Legendre_polynomials) {
+    }
+    ~LegendrePolynomialCtx() {}
 
   };
 
@@ -43,13 +54,12 @@ namespace MoFEM {
     LegendrePolynomial() {}
     ~LegendrePolynomial() {}
 
-    virtual PetscErrorCode getValue(
+    PetscErrorCode getValue(
       ublas::matrix<double> &pTs,
       boost::shared_ptr<ublas::matrix<double> > baseFunPtr,
       boost::shared_ptr<ublas::matrix<double> > baseDiffFunPtr,
       boost::shared_ptr<BaseFunctionCtx> ctxPtr
     );
-
 
   };
 

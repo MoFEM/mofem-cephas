@@ -1,4 +1,4 @@
-/** \file BaseFunction.cpp
+/** \file LobattoPolynomial.cpp
  * \brief implementation of multi-grid solver for p- adaptivity
  *
  * MoFEM is free software: you can redistribute it and/or modify it under
@@ -19,51 +19,67 @@
 #include <config.h>
 #include <definitions.h>
 #include <Includes.hpp>
+
+#include <base_functions.h>
 #include <Common.hpp>
 #include <UnknownInterface.hpp>
 using namespace MoFEM;
 
 #include <BaseFunction.hpp>
+#include <LegendrePolynomial.hpp>
+#include <LobattoPolynomial.hpp>
 
-PetscErrorCode BaseFunctionCtx::queryInterface(
+PetscErrorCode LobattoPolynomialCtx::queryInterface(
   const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface
 ) {
+  PetscErrorCode ierr;
   PetscFunctionBegin;
   *iface = NULL;
-  if(uuid == IDD_UNKNOWN_BASE_FUNCTION) {
-    *iface = dynamic_cast<BaseFunctionCtx*>(this);
+  if(uuid == IDD_LOBATTO_BASE_FUNCTION) {
+    *iface = dynamic_cast<LobattoPolynomialCtx*>(this);
     PetscFunctionReturn(0);
   } else {
     SETERRQ(PETSC_COMM_WORLD,MOFEM_DATA_INCONSISTENCY,"wrong interference");
   }
+  ierr = LegendrePolynomialCtx::queryInterface(uuid,iface); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode BaseFunction::queryInterface(
+PetscErrorCode LobattoPolynomial::queryInterface(
   const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface
 ) {
+  PetscErrorCode ierr;
   PetscFunctionBegin;
   *iface = NULL;
-  if(uuid == IDD_UNKNOWN_BASE_FUNCTION) {
-    *iface = dynamic_cast<BaseFunction*>(this);
+  if(uuid == IDD_LOBATTO_BASE_FUNCTION) {
+    *iface = dynamic_cast<LobattoPolynomial*>(this);
     PetscFunctionReturn(0);
   } else {
     SETERRQ(PETSC_COMM_WORLD,MOFEM_DATA_INCONSISTENCY,"wrong interference");
   }
+  ierr = LegendrePolynomial::queryInterface(uuid,iface); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode BaseFunction::getValue(
+PetscErrorCode LobattoPolynomial::getValue(
   ublas::matrix<double> &pTs,
   boost::shared_ptr<ublas::matrix<double> > baseFunPtr,
   boost::shared_ptr<ublas::matrix<double> > baseDiffFunPtr,
   boost::shared_ptr<BaseFunctionCtx> ctxPtr
 ) {
+  PetscErrorCode ierr;
   PetscFunctionBegin;
-  SETERRQ(
-    PETSC_COMM_SELF,
-    MOFEM_NOT_IMPLEMENTED,
-    "BaseFunction has not valid implementation of any shape function"
-  );
+  MoFEM::UnknownInterface *iface;
+  ierr = ctxPtr->queryInterface(IDD_LOBATTO_BASE_FUNCTION,&iface); CHKERRQ(ierr);
+  LobattoPolynomialCtx *ctx = reinterpret_cast<LobattoPolynomialCtx*>(iface);
+  baseFunPtr->resize(1,ctx->P+1,false);
+  baseDiffFunPtr->resize(ctx->dIm,ctx->P+1,false);
+  double *l = NULL;
+  double *diff_l = NULL;
+  if(baseFunPtr) l = &*baseFunPtr->data().begin();
+  if(baseDiffFunPtr) diff_l = &*baseDiffFunPtr->data().begin();
+  for(int gg = 0;gg<pTs.size2();gg++) {
+    ierr = (ctx->base_polynomials)(ctx->P,pTs(0,gg),ctx->diffS,l,diff_l,ctx->dIm); CHKERRQ(ierr);
+  }
   PetscFunctionReturn(0);
 }
