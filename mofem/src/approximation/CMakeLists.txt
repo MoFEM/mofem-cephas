@@ -11,9 +11,14 @@
 # You should have received a copy of the GNU Lesser General Public
 # License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 
-#approximation
+include_directories(${PROJECT_SOURCE_DIR}/src/interfaces)
+
+# Approximation lib
 add_library(mofem_approx
   impl/EntityRefine.cpp
+  impl/BaseFunction.cpp
+  impl/LegendrePolynomial.cpp
+  c_impl/base_functions.c
   c_impl/fem_tools.c
   c_impl/h1.c
   c_impl/hdiv.c
@@ -21,5 +26,3 @@ add_library(mofem_approx
 )
 
 install(TARGETS mofem_approx DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
-
-#install(FILES c/fem_tools.h c/h1_hdiv_hcurl_l2.h DESTINATION ${CMAKE_INSTALL_PREFIX}/include)

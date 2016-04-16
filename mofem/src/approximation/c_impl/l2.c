@@ -21,6 +21,7 @@
 
 #include <definitions.h>
 #include <fem_tools.h>
+#include <base_functions.h>
 #include <h1_hdiv_hcurl_l2.h>
 
 PetscErrorCode L2_FaceShapeFunctions_MBTRI(int p,double *N,double *diffN,double *L2N,double *diff_L2N,int GDIM) {

@@ -184,53 +184,6 @@ PetscErrorCode ShapeMBTET_inverse(
 /// calculate gradient of deformation
 PetscErrorCode GradientOfDeformation(double *diffN,double *dofs,double *F);
 
-/**
- \brief Calculate Legendre approximation basis
-
- Lagrange polynomial is given by
- \f[
- L_0(s)=1;\quad L_1(s) = s
- \f]
- and following terms are generated inductively
- \f[
- L_{l+1}=\frac{2l+1}{l+1}sL_l(s)-\frac{l}{l+1}L_{l-1}(s)
- \f]
-
- Note that:
- \f[
- s\in[-1,1] \quad \textrm{and}\; s=s(\xi_0,\xi_1,\xi_2)
- \f]
- where \f$\xi_i\f$ are barycentric coordinates of element.
-
- \param p is approximation order
- \param s is position \f$s\in[-1,1]\f$
- \param diff_s derivatives of shape functions, i.e. \f$\frac{\partial s}{\partial \xi_i}\f$
- \retval L approximation functions
- \retval diffL derivatives, i.e. \f$\frac{\partial L}{\partial \xi_i}\f$
- \param dim dimension
- \return error code
-
- */
-PetscErrorCode Legendre_polynomials(
-  int p,double s,double *diff_s,double *L,double *diffL,const int dim
-);
-
-/**
- * \brief Calculate Lobatto base functions
-
- \param p is approximation order
- \param s is position \f$s\in[-1,1]\f$
- \param diff_s derivatives of shape functions, i.e. \f$\frac{\partial s}{\partial \xi_i}\f$
- \retval L approximation functions
- \retval diffL derivatives, i.e. \f$\frac{\partial L}{\partial \xi_i}\f$
- \param dim dimension
- \return error code
-
-*/
-PetscErrorCode Lobatto_polynomials(
-  int p,double s,double *diff_s,double *L,double *diffL,const int dim
-);
-
 //2 Node edge
 PetscErrorCode ShapeMBEDGE(double *N,const double *G_X,int DIM);
 PetscErrorCode ShapeDiffMBEDGE(double *diffN);

@@ -23,6 +23,7 @@
 #include <definitions.h>
 #include <Common.hpp>
 
+#include <base_functions.h>
 #include <h1_hdiv_hcurl_l2.h>
 #include <fem_tools.h>
 
@@ -674,6 +675,8 @@ PetscErrorCode FatPrismElementForcesAndSurcesCore::operator()() {
 
           space[ss] = field_struture->get_space();
           switch(space[ss]) {
+            case NOSPACE:
+            SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"unknown space");
             case H1:
             op_data[ss] = !ss ? &dataH1 : &derivedDataH1;
             break;
@@ -706,6 +709,8 @@ PetscErrorCode FatPrismElementForcesAndSurcesCore::operator()() {
           if(last_eval_field_name[ss]!=field_name) {
 
             switch(space[ss]) {
+              case NOSPACE:
+              SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"unknown space");
               case H1:
               if(!ss) {
                 ierr = getRowNodesIndices(*op_data[ss],field_name); CHKERRQ(ierr);

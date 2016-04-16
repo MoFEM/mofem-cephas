@@ -1195,14 +1195,16 @@ PetscErrorCode ForcesAndSurcesCore::shapeTETFunctions_Hdiv(
     &data.facesNodes(0,0),faces_order,
     &data.dataOnEntities[MBVERTEX][0].getN(base)(0,0),
     &data.dataOnEntities[MBVERTEX][0].getDiffN(base)(0,0),
-    phi_f_e,diff_phi_f_e,G_DIM
+    phi_f_e,diff_phi_f_e,G_DIM,
+    base_polynomials
   ); CHKERRQ(ierr);
 
   ierr = Hdiv_FaceBubbleShapeFunctions_MBTET(
     &data.facesNodes(0,0),faces_order,
     &data.dataOnEntities[MBVERTEX][0].getN(base)(0,0),
     &data.dataOnEntities[MBVERTEX][0].getDiffN(base)(0,0),
-    phi_f,diff_phi_f,G_DIM
+    phi_f,diff_phi_f,G_DIM,
+    base_polynomials
   ); CHKERRQ(ierr);
 
   //volume shape functions
@@ -1228,7 +1230,8 @@ PetscErrorCode ForcesAndSurcesCore::shapeTETFunctions_Hdiv(
   ierr = Hdiv_EdgeBasedVolumeShapeFunctions_MBTET(
     volume_order,coords,&data.dataOnEntities[MBVERTEX][0].getN(base)(0,0),
     &data.dataOnEntities[MBVERTEX][0].getDiffN(base)(0,0),
-    phi_v_e,diff_phi_v_e,G_DIM
+    phi_v_e,diff_phi_v_e,G_DIM,
+    base_polynomials
   ); CHKERRQ(ierr);
 
   N_volume_face.resize(4,false);
@@ -1242,7 +1245,8 @@ PetscErrorCode ForcesAndSurcesCore::shapeTETFunctions_Hdiv(
   ierr = Hdiv_FaceBasedVolumeShapeFunctions_MBTET(
     volume_order,coords,&data.dataOnEntities[MBVERTEX][0].getN(base)(0,0),
     &data.dataOnEntities[MBVERTEX][0].getDiffN(base)(0,0),
-    phi_v_f,diff_phi_v_f,G_DIM
+    phi_v_f,diff_phi_v_f,G_DIM,
+    base_polynomials
   ); CHKERRQ(ierr);
 
   N_volume_bubble.resize(G_DIM,3*NBVOLUMETET_VOLUME_HDIV_AINSWORTH_COLE(volume_order),false);
@@ -1252,7 +1256,8 @@ PetscErrorCode ForcesAndSurcesCore::shapeTETFunctions_Hdiv(
   ierr = Hdiv_VolumeBubbleShapeFunctions_MBTET(
     volume_order,coords,&data.dataOnEntities[MBVERTEX][0].getN(base)(0,0),
     &data.dataOnEntities[MBVERTEX][0].getDiffN(base)(0,0),
-    phi_v,diff_phi_v,G_DIM
+    phi_v,diff_phi_v,G_DIM,
+    base_polynomials
   ); CHKERRQ(ierr);
 
   // Set shape functions into data strucrure Shape functions hast to be put
@@ -1570,12 +1575,14 @@ PetscErrorCode ForcesAndSurcesCore::shapeTRIFunctions_Hdiv(
     face_nodes,face_order,
     &data.dataOnEntities[MBVERTEX][0].getN(base)(0,0),
     NULL,
-    PHI_f_e,NULL,G_DIM,3
+    PHI_f_e,NULL,G_DIM,3,
+    base_polynomials
   ); CHKERRQ(ierr);
   ierr = Hdiv_FaceBubbleShapeFunctions_MBTET_ON_FACE(
     face_nodes,face_order,
     &data.dataOnEntities[MBVERTEX][0].getN(base)(0,0),NULL,
-    PHI_f,NULL,G_DIM,3
+    PHI_f,NULL,G_DIM,3,
+    base_polynomials
   ); CHKERRQ(ierr);
 
   // set shape functions into data structure

@@ -91,15 +91,34 @@ PetscErrorCode H1_VolumeShapeFunctions_MBPRISM(
 );
 
 // Hdiv shape functions
-
-PetscErrorCode Hdiv_EdgeFaceShapeFunctions_MBTET(int *faces_nodes,int *p,double *N,double *diffN,double *PHI_f_e[4][3],double *diffPHI_f_e[4][3],int GDIM);
-PetscErrorCode Hdiv_FaceBubbleShapeFunctions_MBTET(int *faces_nodes,int *p,double *N,double *diffN,double *PHI_f[4],double *diffPHI_f[4],int GDIM);
-PetscErrorCode Hdiv_EdgeBasedVolumeShapeFunctions_MBTET(int p,double *coords,double *N,double *diffN,double *PHI_v_e[6],double *diffPHI_v_e[6],int GDIM);
-PetscErrorCode Hdiv_FaceBasedVolumeShapeFunctions_MBTET(int p,double *coords,double *N,double *diffN,double *PHI_v_f[4],double *diffPHI_v_f[4],int GDIM);
-PetscErrorCode Hdiv_VolumeBubbleShapeFunctions_MBTET(int p,double *coords,double *N,double *diffN,double *PHI_v,double *diffPHI_v,int GDIM);
-
-PetscErrorCode Hdiv_EdgeFaceShapeFunctions_MBTET_ON_FACE(int *faces_nodes,int p,double *N,double *diffN,double *PHI_f_e[3],double *diffPHI_f_e[3],int GDIM,int NB);
-PetscErrorCode Hdiv_FaceBubbleShapeFunctions_MBTET_ON_FACE(int *faces_nodes,int p,double *N,double *diffN,double *PHI_f,double *diffPHI_f,int GDIM,int NB);
+PetscErrorCode Hdiv_EdgeFaceShapeFunctions_MBTET(
+  int *faces_nodes,int *p,double *N,double *diffN,double *PHI_f_e[4][3],double *diffPHI_f_e[4][3],int GDIM,
+  PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
+);
+PetscErrorCode Hdiv_FaceBubbleShapeFunctions_MBTET(
+  int *faces_nodes,int *p,double *N,double *diffN,double *PHI_f[4],double *diffPHI_f[4],int GDIM,
+  PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
+);
+PetscErrorCode Hdiv_EdgeBasedVolumeShapeFunctions_MBTET(
+  int p,double *coords,double *N,double *diffN,double *PHI_v_e[6],double *diffPHI_v_e[6],int GDIM,
+  PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
+);
+PetscErrorCode Hdiv_FaceBasedVolumeShapeFunctions_MBTET(
+  int p,double *coords,double *N,double *diffN,double *PHI_v_f[4],double *diffPHI_v_f[4],int GDIM,
+  PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
+);
+PetscErrorCode Hdiv_VolumeBubbleShapeFunctions_MBTET(
+  int p,double *coords,double *N,double *diffN,double *PHI_v,double *diffPHI_v,int GDIM,
+  PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
+);
+PetscErrorCode Hdiv_EdgeFaceShapeFunctions_MBTET_ON_FACE(
+  int *faces_nodes,int p,double *N,double *diffN,double *PHI_f_e[3],double *diffPHI_f_e[3],int GDIM,int NB,
+  PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
+);
+PetscErrorCode Hdiv_FaceBubbleShapeFunctions_MBTET_ON_FACE(
+  int *faces_nodes,int p,double *N,double *diffN,double *PHI_f,double *diffPHI_f,int GDIM,int NB,
+  PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
+);
 
 #ifdef __cplusplus
 }

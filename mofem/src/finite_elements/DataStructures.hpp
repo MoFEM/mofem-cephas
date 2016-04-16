@@ -46,6 +46,8 @@ namespace MoFEM {
   typedef ublas::matrix<double,ublas::row_major,ublas::shallow_array_adaptor<double> > MatrixAdaptor;
   typedef ublas::vector<int,ublas::shallow_array_adaptor<int> > VectorIntAdaptor;
 
+  typedef vector<boost::shared_ptr<MatrixDouble> > ShapeFunctionBasesVector;
+
 /** \brief data structure for finite element entity
   * \ingroup mofem_forces_and_sources
   *
@@ -59,13 +61,8 @@ struct DataForcesAndSurcesCore {
     */
   struct EntData {
 
-    EntData():
-    sEnse(0),
-    oRder(0),
-    bAse(NOBASE) {
-    };
-
-    virtual ~EntData() {}
+    EntData();
+    virtual ~EntData();
 
     /// \brief get entity sense, need to calculate shape functions with conforming approximation fields
     virtual int getSense() const { return sEnse; }
@@ -122,7 +119,9 @@ struct DataForcesAndSurcesCore {
       * this return matrix (nb. of rows is equal to nb. of Gauss pts, nb. of
       * columns is equal to number of shape functions on this entity
       */
-    virtual const MatrixDouble& getN(const FieldApproximationBase base) const { return N[base]; }
+    virtual const MatrixDouble& getN(const FieldApproximationBase base) const {
+      return *(N[base]);
+    }
 
     virtual const MatrixDouble& getN() const { return getN(bAse); }
 
@@ -142,7 +141,9 @@ struct DataForcesAndSurcesCore {
      * Note that for node element this function make no sense.
      *
      */
-    virtual const MatrixDouble& getDiffN(const FieldApproximationBase base) const { return diffN[base]; }
+    virtual const MatrixDouble& getDiffN(const FieldApproximationBase base) const {
+      return *(diffN[base]);
+    }
 
     virtual const MatrixDouble& getDiffN() const { return getDiffN(bAse); }
 
@@ -158,7 +159,12 @@ struct DataForcesAndSurcesCore {
      * @param  base Approximation base
      * @return      Error code
      */
-    virtual MatrixDouble& getN(const FieldApproximationBase base) { return N[base]; }
+    virtual MatrixDouble& getN(const FieldApproximationBase base) { return *(N[base]); }
+
+    /**
+     * Get shared pointer to base shape functions
+     */
+    virtual boost::shared_ptr<MatrixDouble> getNSharedPtr(const FieldApproximationBase base) { return N[base]; }
 
     /**
      * \brief Get shape functions
@@ -174,7 +180,12 @@ struct DataForcesAndSurcesCore {
      * @param  base Approximation base
      * @return      Error code
      */
-    virtual MatrixDouble& getDiffN(const FieldApproximationBase base) { return diffN[base]; }
+    virtual MatrixDouble& getDiffN(const FieldApproximationBase base) { return *(diffN[base]); }
+
+    /**
+     * Get shared pointer to derivatives of base shape functions
+     */
+    virtual boost::shared_ptr<MatrixDouble> getDiffNSharedPtr(const FieldApproximationBase base) { return diffN[base]; }
 
     /**
      * \brief Get derivatives of shape functions
@@ -331,10 +342,10 @@ struct DataForcesAndSurcesCore {
     FieldApproximationBase bAse;  ///< Field approximation base
     VectorInt iNdices;            ///< Global indices on entity
     VectorInt localIndices;       ///< Local indices on entity
-    VectorDofs dOfs;              ///< Dofs on entity
+    VectorDofs dOfs;              ///< DoFs on entity
     VectorDouble fieldData;       ///< Field data on entity
-    MatrixDouble N[LASTBASE];
-    MatrixDouble diffN[LASTBASE];
+    ShapeFunctionBasesVector N;     ///< Base functions
+    ShapeFunctionBasesVector diffN; ///< Derivatives of base functions
   };
 
   bitset<LASTSPACE> sPace;   ///< spaces on element

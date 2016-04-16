@@ -110,7 +110,7 @@ enum FieldSpace {
 };
 
 const static char * const FieldSpaceNames[] = {
-  "NOSPACE", 
+  "NOSPACE",
   "NOFIELD",
   "H1",
   "HDIV",

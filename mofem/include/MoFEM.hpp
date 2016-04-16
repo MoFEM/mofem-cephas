@@ -21,11 +21,16 @@
 #include <version.h>
 #include <config.h>
 #include <definitions.h>
-#include <h1_hdiv_hcurl_l2.h>
-#include <fem_tools.h>
 
 #include <Common.hpp>
 #include <UnknownInterface.hpp>
+
+//SRC/APPROXIMATION
+#include <base_functions.h>
+#include <h1_hdiv_hcurl_l2.h>
+#include <fem_tools.h>
+#include <BaseFunction.hpp>
+#include <LegendrePolynomial.hpp>
 
 //SRC/MULTI-INDICES
 #include <MaterialBlocks.hpp>
