@@ -23,7 +23,6 @@
 
 namespace MoFEM {
 
-  static const int UNKNOWN_BASE_FUNCTION_INTERFACE = 1<<0;
   static const MOFEMuuid IDD_UNKNOWN_BASE_FUNCTION = MOFEMuuid(BitIntefaceId(UNKNOWN_BASE_FUNCTION_INTERFACE));
 
   struct BaseFunctionCtx: public UnknownInterface {
@@ -43,10 +42,8 @@ namespace MoFEM {
     ~BaseFunction() {}
 
     virtual PetscErrorCode getValue(
-      ublas::matrix<double> &pTs,
-      boost::shared_ptr<ublas::matrix<double> > baseFunPtr,
-      boost::shared_ptr<ublas::matrix<double> > baseDiffFunPtr,
-      boost::shared_ptr<BaseFunctionCtx> ctxPtr
+      ublas::matrix<double> &pts,
+      boost::shared_ptr<BaseFunctionCtx> ctx_ptr
     );
 
   };

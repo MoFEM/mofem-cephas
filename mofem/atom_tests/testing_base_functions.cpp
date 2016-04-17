@@ -13,6 +13,7 @@
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
 #include <MoFEM.hpp>
+#include <quad.h>
 
 using namespace MoFEM;
 
@@ -20,6 +21,16 @@ ErrorCode rval;
 PetscErrorCode ierr;
 
 static char help[] = "teting interface inserting algorithm\n\n";
+
+static double sum_matrix(ublas::matrix<double> &m) {
+  double s = 0;
+  for(int ii = 0;ii<m.size1();ii++) {
+    for(int jj = 0;jj<m.size2();jj++) {
+      s +=m (ii,jj);
+    }
+  }
+  return s;
+}
 
 int main(int argc, char *argv[]) {
 
@@ -71,24 +82,28 @@ int main(int argc, char *argv[]) {
   boost::shared_ptr<ublas::matrix<double> > base_ptr(new ublas::matrix<double>);
   boost::shared_ptr<ublas::matrix<double> > diff_base_ptr(new ublas::matrix<double>);
 
-  const double eps = 1e-3;
+  const double eps = 1e-4;
 
   if(choise_value==LEGENDREPOLYNOMIAL) {
     double diff_s = 1;
     ierr = LegendrePolynomial().getValue(
       pts_1d,
-      base_ptr,
-      diff_base_ptr,
-      boost::shared_ptr<BaseFunctionCtx>(new LegendrePolynomialCtx(4,&diff_s,1))
+      boost::shared_ptr<BaseFunctionCtx>(
+        new LegendrePolynomialCtx(4,&diff_s,1,base_ptr,diff_base_ptr)
+      )
     ); CHKERRQ(ierr);
 
     cout << "LegendrePolynomial\n";
     cout << *base_ptr << endl;
     cout << *diff_base_ptr << endl;
-    if(fabs(-0.289062-(*base_ptr)(0,4))>1e-6) {
+    double sum = sum_matrix(*base_ptr);
+    double diff_sum = sum_matrix(*diff_base_ptr);
+    cout << sum << endl;
+    cout << diff_sum << endl;
+    if(fabs(0.648438-sum)>eps) {
       SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"wrong result");
     }
-    if(fabs(-1.5625-(*diff_base_ptr)(0,4))>1e-6) {
+    if(fabs(1.3125-diff_sum)>eps) {
       SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"wrong result");
     }
   }
@@ -97,9 +112,9 @@ int main(int argc, char *argv[]) {
     double diff_s = 1;
     ierr = LobattoPolynomial().getValue(
       pts_1d,
-      base_ptr,
-      diff_base_ptr,
-      boost::shared_ptr<BaseFunctionCtx>(new LobattoPolynomialCtx(4,&diff_s,1))
+      boost::shared_ptr<BaseFunctionCtx>(
+        new LobattoPolynomialCtx(4,&diff_s,1,base_ptr,diff_base_ptr)
+      )
     ); CHKERRQ(ierr);
     cout << "LobattoPolynomial\n";
     cout << *base_ptr << endl;
@@ -109,8 +124,88 @@ int main(int argc, char *argv[]) {
     }
   }
 
+  DataForcesAndSurcesCore tet_data(MBTET);
+  for(int type = MBVERTEX;type!=MBMAXTYPE;type++) {
+    tet_data.spacesOnEntities[type].set(L2);
+    tet_data.spacesOnEntities[type].set(H1);
+    tet_data.spacesOnEntities[type].set(HDIV);
+  }
+  tet_data.dataOnEntities[MBVERTEX].resize(1);
+  tet_data.dataOnEntities[MBVERTEX][0].getDataOrder() = 1;
+  tet_data.dataOnEntities[MBEDGE].resize(6);
+  for(int ee = 0;ee<6;ee++) {
+    tet_data.dataOnEntities[MBEDGE][ee].getDataOrder() = 3;
+    tet_data.dataOnEntities[MBEDGE][ee].getSense() = 1;
+  }
+  tet_data.dataOnEntities[MBTRI].resize(4);
+  for(int ff = 0;ff<4;ff++) {
+    tet_data.dataOnEntities[MBTRI][ff].getDataOrder() = 4;
+    tet_data.dataOnEntities[MBTRI][ff].getSense() = 1;
+  }
+  tet_data.dataOnEntities[MBTET].resize(1);
+  tet_data.dataOnEntities[MBTET][0].getDataOrder() = 5;
+
+  ublas::matrix<double> pts_tet;
+  int tet_rule = 2;
+  int nb_gauss_pts = QUAD_3D_TABLE[tet_rule]->npoints;
+  pts_tet.resize(3,nb_gauss_pts,false);
+  cblas_dcopy(
+    nb_gauss_pts,&QUAD_3D_TABLE[tet_rule]->points[1],4,&pts_tet(0,0),1
+  );
+  cblas_dcopy(
+    nb_gauss_pts,&QUAD_3D_TABLE[tet_rule]->points[2],4,&pts_tet(1,0),1
+  );
+  cblas_dcopy(
+    nb_gauss_pts,&QUAD_3D_TABLE[tet_rule]->points[3],4,&pts_tet(2,0),1
+  );
+  tet_data.dataOnEntities[MBVERTEX][0].getN(AINSWORTH_COLE_BASE).resize(nb_gauss_pts,4,false);
+  double *shape_ptr = tet_data.dataOnEntities[MBVERTEX][0].getN(AINSWORTH_COLE_BASE).data().begin();
+  cblas_dcopy(
+    4*nb_gauss_pts,QUAD_3D_TABLE[tet_rule]->points,1,shape_ptr,1
+  );
+  tet_data.facesNodes.resize(4,3);
+  const int cannonical_tet_face[4][3] = { {0,1,3}, {1,2,3}, {0,3,2}, {0,2,1} };
+  for(int ff = 0;ff<4;ff++) {
+    for(int nn = 0;nn<3;nn++) {
+      tet_data.facesNodes(ff,nn) = cannonical_tet_face[ff][nn];
+    }
+  }
+
   if(choise_value==H1TET) {
-    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"wrong result");
+    ierr = H1TetPolynomial().getValue(
+      pts_tet,
+      boost::shared_ptr<BaseFunctionCtx>(
+        new H1TetPolynomialCtx(tet_data,H1,AINSWORTH_COLE_BASE)
+      )
+    ); CHKERRQ(ierr);
+    double sum = 0,diff_sum = 0;
+    cout << "Edges\n";
+    for(int ee = 0;ee<6;ee++) {
+      cout << tet_data.dataOnEntities[MBEDGE][ee].getN(AINSWORTH_COLE_BASE) << endl;
+      cout << tet_data.dataOnEntities[MBEDGE][ee].getDiffN(AINSWORTH_COLE_BASE) << endl;
+      sum += sum_matrix(tet_data.dataOnEntities[MBEDGE][ee].getN(AINSWORTH_COLE_BASE));
+      diff_sum += sum_matrix(tet_data.dataOnEntities[MBEDGE][ee].getDiffN(AINSWORTH_COLE_BASE));
+    }
+    cout << "Faces\n";
+    for(int ff = 0;ff<4;ff++) {
+      cout << tet_data.dataOnEntities[MBTRI][ff].getN(AINSWORTH_COLE_BASE) << endl;
+      cout << tet_data.dataOnEntities[MBTRI][ff].getDiffN(AINSWORTH_COLE_BASE) << endl;
+      sum += sum_matrix(tet_data.dataOnEntities[MBTRI][ff].getN(AINSWORTH_COLE_BASE));
+      diff_sum += sum_matrix(tet_data.dataOnEntities[MBTRI][ff].getDiffN(AINSWORTH_COLE_BASE));
+    }
+    cout << "Tets\n";
+    cout << tet_data.dataOnEntities[MBTET][0].getN(AINSWORTH_COLE_BASE) << endl;
+    cout << tet_data.dataOnEntities[MBTET][0].getDiffN(AINSWORTH_COLE_BASE) << endl;
+    sum += sum_matrix(tet_data.dataOnEntities[MBTET][0].getN(AINSWORTH_COLE_BASE));
+    diff_sum += sum_matrix(tet_data.dataOnEntities[MBTET][0].getDiffN(AINSWORTH_COLE_BASE));
+    cout << "sum  " << sum << endl;
+    cout << "diff_sum " << diff_sum << endl;
+    if(fabs(1.3509-sum)>eps) {
+      SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"wrong result");
+    }
+    if(fabs(0.233313-diff_sum)>eps) {
+      SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"wrong result");
+    }
   }
 
   if(choise_value==HDIVTET) {

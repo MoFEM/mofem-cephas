@@ -46,6 +46,24 @@ enum MoFEMInterfaces {
   PRISMSFROMSURFACE_INTERFACE = 1<<3|1<<8 ///< create prisms from surface elements
 };
 
+/**
+ * \brief interfaces for PETSc DM interfaces
+ */
+enum DMInterfaces {
+  UNKNOWN_DM_INTERFACE = 1<<0,
+  DMCTX_INTERFACE = 1<<1
+};
+
+/**
+ * \brief Interfaces uses to manage base functions
+ */
+enum BaseIntefaces {
+  UNKNOWN_BASE_FUNCTION_INTERFACE = 1<<0,
+  LEGENDRE_BASE_FUNCTION_INTERFACE = 1<<1,
+  LOBATTO_BASE_FUNCTION_INTERFACE = 1<<2,
+  H1TET_BASE_FUNCTION_INTERFACE = 1<<3
+};
+
 /** \brief Error handling
   *
   * This is complementary to PETSC error codes. The numerical values for

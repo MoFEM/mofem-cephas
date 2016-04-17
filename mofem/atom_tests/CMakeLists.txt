@@ -11,25 +11,26 @@
 # You should have received a copy of the GNU Lesser General Public
 # License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 
-include_directories("${PROJECT_SOURCE_DIR}/include")
-include_directories("${PROJECT_SOURCE_DIR}/third_party")
-include_directories("${PROJECT_SOURCE_DIR}/third_party/cblas")
+include_directories(${PROJECT_SOURCE_DIR}/include)
+include_directories(${PROJECT_SOURCE_DIR}/third_party)
+include_directories(${PROJECT_SOURCE_DIR}/third_party/cblas)
+include_directories(${PROJECT_SOURCE_DIR}/third_party/phg-quadrule)
 
-include_directories("${PROJECT_SOURCE_DIR}/src/approximation")
-include_directories("${PROJECT_SOURCE_DIR}/src/approximation/c")
-link_directories("${PROJECT_BINARY_DIR}/src/approximation")
+include_directories(${PROJECT_SOURCE_DIR}/src/approximation)
+include_directories(${PROJECT_SOURCE_DIR}/src/approximation/c)
+link_directories(${PROJECT_BINARY_DIR}/src/approximation)
 
-include_directories("${PROJECT_SOURCE_DIR}/src/multi_indices")
-link_directories("${PROJECT_BINARY_DIR}/src/multi_indices")
+include_directories(${PROJECT_SOURCE_DIR}/src/multi_indices)
+link_directories(${PROJECT_BINARY_DIR}/src/multi_indices)
 
-include_directories("${PROJECT_SOURCE_DIR}/src/interfaces")
-link_directories("${PROJECT_BINARY_DIR}/src/interfaces")
+include_directories(${PROJECT_SOURCE_DIR}/src/interfaces)
+link_directories(${PROJECT_BINARY_DIR}/src/interfaces)
 
-include_directories("${PROJECT_SOURCE_DIR}/src/petsc")
-link_directories("${PROJECT_BINARY_DIR}/src/petsc")
+include_directories(${PROJECT_SOURCE_DIR}/src/petsc)
+link_directories(${PROJECT_BINARY_DIR}/src/petsc)
 
-include_directories("${PROJECT_SOURCE_DIR}/src/finite_elements")
-link_directories("${PROJECT_BINARY_DIR}/src/finite_elements")
+include_directories(${PROJECT_SOURCE_DIR}/src/finite_elements)
+link_directories(${PROJECT_BINARY_DIR}/src/finite_elements)
 
 # cubit_bc_test
 cm_export_file("../meshes/disp01.h5m" export_atom_tests)

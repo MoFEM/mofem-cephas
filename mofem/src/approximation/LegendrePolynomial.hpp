@@ -22,7 +22,6 @@
 
 namespace MoFEM {
 
-  static const int LEGENDRE_BASE_FUNCTION_INTERFACE = 1<<1;
   static const MOFEMuuid IDD_LEGENDRE_BASE_FUNCTION = MOFEMuuid(BitIntefaceId(LEGENDRE_BASE_FUNCTION_INTERFACE));
 
   struct LegendrePolynomialCtx: public BaseFunctionCtx {
@@ -32,16 +31,26 @@ namespace MoFEM {
     int P;
     double *diffS;
     int dIm;
+    boost::shared_ptr<ublas::matrix<double> > baseFunPtr;
+    boost::shared_ptr<ublas::matrix<double> > baseDiffFunPtr;
 
-    PetscErrorCode (*base_polynomials)(
+    PetscErrorCode (*basePolynomials)(
       int p,double s,double *diff_s,double *L,double *diffL,const int dim
     );
 
-    LegendrePolynomialCtx(int p,double *diff_s,int dim):
+    LegendrePolynomialCtx(
+      int p,
+      double *diff_s,
+      int dim,
+      boost::shared_ptr<ublas::matrix<double> > base_fun_ptr,
+      boost::shared_ptr<ublas::matrix<double> > base_diff_fun_ptr
+    ):
     P(p),
     diffS(diff_s),
     dIm(dim),
-    base_polynomials(Legendre_polynomials) {
+    baseFunPtr(base_fun_ptr),
+    baseDiffFunPtr(base_diff_fun_ptr),
+    basePolynomials(Legendre_polynomials) {
     }
     ~LegendrePolynomialCtx() {}
 
@@ -55,10 +64,8 @@ namespace MoFEM {
     ~LegendrePolynomial() {}
 
     PetscErrorCode getValue(
-      ublas::matrix<double> &pTs,
-      boost::shared_ptr<ublas::matrix<double> > baseFunPtr,
-      boost::shared_ptr<ublas::matrix<double> > baseDiffFunPtr,
-      boost::shared_ptr<BaseFunctionCtx> ctxPtr
+      ublas::matrix<double> &pts,
+      boost::shared_ptr<BaseFunctionCtx> ctx_ptr
     );
 
   };

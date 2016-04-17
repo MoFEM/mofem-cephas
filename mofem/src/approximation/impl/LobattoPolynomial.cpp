@@ -62,24 +62,22 @@ PetscErrorCode LobattoPolynomial::queryInterface(
 }
 
 PetscErrorCode LobattoPolynomial::getValue(
-  ublas::matrix<double> &pTs,
-  boost::shared_ptr<ublas::matrix<double> > baseFunPtr,
-  boost::shared_ptr<ublas::matrix<double> > baseDiffFunPtr,
-  boost::shared_ptr<BaseFunctionCtx> ctxPtr
+  ublas::matrix<double> &pts,
+  boost::shared_ptr<BaseFunctionCtx> ctx_ptr
 ) {
   PetscErrorCode ierr;
   PetscFunctionBegin;
   MoFEM::UnknownInterface *iface;
-  ierr = ctxPtr->queryInterface(IDD_LOBATTO_BASE_FUNCTION,&iface); CHKERRQ(ierr);
+  ierr = ctx_ptr->queryInterface(IDD_LOBATTO_BASE_FUNCTION,&iface); CHKERRQ(ierr);
   LobattoPolynomialCtx *ctx = reinterpret_cast<LobattoPolynomialCtx*>(iface);
-  baseFunPtr->resize(1,ctx->P+1,false);
-  baseDiffFunPtr->resize(ctx->dIm,ctx->P+1,false);
+  ctx->baseFunPtr->resize(1,ctx->P+1,false);
+  ctx->baseDiffFunPtr->resize(ctx->dIm,ctx->P+1,false);
   double *l = NULL;
   double *diff_l = NULL;
-  if(baseFunPtr) l = &*baseFunPtr->data().begin();
-  if(baseDiffFunPtr) diff_l = &*baseDiffFunPtr->data().begin();
-  for(int gg = 0;gg<pTs.size2();gg++) {
-    ierr = (ctx->base_polynomials)(ctx->P,pTs(0,gg),ctx->diffS,l,diff_l,ctx->dIm); CHKERRQ(ierr);
+  if(ctx->baseFunPtr) l = &*ctx->baseFunPtr->data().begin();
+  if(ctx->baseDiffFunPtr) diff_l = &*ctx->baseDiffFunPtr->data().begin();
+  for(int gg = 0;gg<pts.size2();gg++) {
+    ierr = (ctx->basePolynomials)(ctx->P,pts(0,gg),ctx->diffS,l,diff_l,ctx->dIm); CHKERRQ(ierr);
   }
   PetscFunctionReturn(0);
 }

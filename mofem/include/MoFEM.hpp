@@ -62,6 +62,16 @@
 #include <DMMoFEM.hpp>
 
 //SRC/FINITE_ELEMENTS
-#include <ForcesAndSurcesCore.hpp>
+#include <DataStructures.hpp>
+#include <H1TetPolynomial.hpp> // Base functions on tet
+#include <DataOperators.hpp>
+#include <ElementsOnEntities.hpp>
+#include <VolumeElementForcesAndSourcesCore.hpp>
+#include <FaceElementForcesAndSourcesCore.hpp>
+#include <EdgeElementForcesAndSurcesCore.hpp>
+#include <VertexElementForcesAndSourcesCore.hpp>
+#include <FlatPrismElementForcesAndSurcesCore.hpp>
+#include <FatPrismElementForcesAndSurcesCore.hpp>
+
 
 #endif //MOFEM_HPP__

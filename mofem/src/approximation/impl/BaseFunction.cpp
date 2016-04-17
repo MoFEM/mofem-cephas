@@ -54,10 +54,8 @@ PetscErrorCode BaseFunction::queryInterface(
 }
 
 PetscErrorCode BaseFunction::getValue(
-  ublas::matrix<double> &pTs,
-  boost::shared_ptr<ublas::matrix<double> > baseFunPtr,
-  boost::shared_ptr<ublas::matrix<double> > baseDiffFunPtr,
-  boost::shared_ptr<BaseFunctionCtx> ctxPtr
+  ublas::matrix<double> &pts,
+  boost::shared_ptr<BaseFunctionCtx> ctx_ptr
 ) {
   PetscFunctionBegin;
   SETERRQ(
