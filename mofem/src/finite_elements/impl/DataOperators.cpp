@@ -566,34 +566,34 @@ PetscErrorCode OpSetInvJacH1::doWork(
           ierr = ShapeDiffMBTETinvJ(
             &*data.getDiffN(base).data().begin(),&*invJac.data().begin(),&*diffNinvJac.data().begin()
           ); CHKERRQ(ierr);
-          }
-          break;
-          case MBEDGE:
-          case MBTRI:
-          case MBTET: {
-            for(unsigned int gg = 0;gg<nb_gauss_pts;gg++) {
-              for(unsigned int dd = 0;dd<nb_dofs;dd++) {
-                cblas_dgemv(CblasRowMajor,CblasTrans,3,3,1.,
-                  &*invJac.data().begin(),3,&data.getDiffN(base)(gg,3*dd),1,0.,&diffNinvJac(gg,3*dd),1
-                );
-              }
+        }
+        break;
+        case MBEDGE:
+        case MBTRI:
+        case MBTET: {
+          for(unsigned int gg = 0;gg<nb_gauss_pts;gg++) {
+            for(unsigned int dd = 0;dd<nb_dofs;dd++) {
+              cblas_dgemv(CblasRowMajor,CblasTrans,3,3,1.,
+                &*invJac.data().begin(),3,&data.getDiffN(base)(gg,3*dd),1,0.,&diffNinvJac(gg,3*dd),1
+              );
             }
           }
-          break;
-          default:
-          SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented");
-
         }
-
-        data.getDiffN(base).data().swap(diffNinvJac.data());
+        break;
+        default:
+        SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented");
 
       }
 
-    } catch (exception& ex) {
-      ostringstream ss;
-      ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
-      SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
+      data.getDiffN(base).data().swap(diffNinvJac.data());
+
     }
+
+  } catch (exception& ex) {
+    ostringstream ss;
+    ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
+    SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
+  }
 
   PetscFunctionReturn(0);
 }
@@ -880,6 +880,9 @@ PetscErrorCode OpGetDataAndGradient::doWork(
       );
     }
     if(nb_dofs/rank > data.getN().size2()) {
+      cerr << side << " " << type << " " << ApproximationBaseNames[data.getBase()] << endl;
+      cerr << data.getN() << endl;
+      cerr << data.getN(NOBASE) << endl;
       SETERRQ2(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,
         "data inconsistency nb_dofs >= data.N.size2() %u >= %u",nb_dofs,data.getN().size2()
       );

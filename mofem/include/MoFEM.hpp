@@ -63,7 +63,7 @@
 
 //SRC/FINITE_ELEMENTS
 #include <DataStructures.hpp>
-#include <H1TetPolynomial.hpp> // Base functions on tet
+#include <TetPolynomialBase.hpp> // Base functions on tet
 #include <DataOperators.hpp>
 #include <ElementsOnEntities.hpp>
 #include <VolumeElementForcesAndSourcesCore.hpp>

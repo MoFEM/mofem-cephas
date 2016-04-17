@@ -249,6 +249,14 @@ int main(int argc, char *argv[]) {
       ierr = getTrisDataOrder(data_col,H1); CHKERRQ(ierr);
       ierr = getTetDataOrder(data_row,H1); CHKERRQ(ierr);
       ierr = getTetDataOrder(data_col,H1); CHKERRQ(ierr);
+      data_row.dataOnEntities[MBVERTEX][0].getBase() = AINSWORTH_COLE_BASE;
+      ierr = getEdgesDataOrderSpaceAndBase(data_row,"FIELD1"); CHKERRQ(ierr);
+      ierr = getTrisDataOrderSpaceAndBase(data_row,"FIELD1"); CHKERRQ(ierr);
+      ierr = getTetDataOrderSpaceAndBase(data_row,"FIELD1"); CHKERRQ(ierr);
+      data_col.dataOnEntities[MBVERTEX][0].getBase() = AINSWORTH_COLE_BASE;
+      ierr = getEdgesDataOrderSpaceAndBase(data_col,"FIELD2"); CHKERRQ(ierr);
+      ierr = getTrisDataOrderSpaceAndBase(data_col,"FIELD2"); CHKERRQ(ierr);
+      ierr = getTetDataOrderSpaceAndBase(data_col,"FIELD2"); CHKERRQ(ierr);
       ierr = getRowNodesIndices(data_row,"FIELD1"); CHKERRQ(ierr);
       ierr = getColNodesIndices(data_row,"FIELD2"); CHKERRQ(ierr);
       ierr = getEdgesRowIndices(data_row,"FIELD1"); CHKERRQ(ierr);
@@ -260,13 +268,25 @@ int main(int argc, char *argv[]) {
       ierr = getFaceTriNodes(data_row); CHKERRQ(ierr);
       ierr = getFaceTriNodes(data_col); CHKERRQ(ierr);
 
-      data_row.dataOnEntities[MBVERTEX][0].getN(AINSWORTH_COLE_BASE).resize(4,4,false);
-      ierr = ShapeMBTET(
-        &*data_row.dataOnEntities[MBVERTEX][0].getN(AINSWORTH_COLE_BASE).data().begin(),G_TET_X4,G_TET_Y4,G_TET_Z4,4
+      MatrixDouble gauss_pts(4,4);
+      for(int gg = 0;gg<4;gg++) {
+        gauss_pts(0,gg) = G_TET_X4[gg];
+        gauss_pts(1,gg) = G_TET_Y4[gg];
+        gauss_pts(2,gg) = G_TET_Z4[gg];
+        gauss_pts(3,gg) = G_TET_W4[gg];
+      }
+      ierr = TetPolynomialBase().getValue(
+        gauss_pts,
+        boost::shared_ptr<BaseFunctionCtx>(
+          new TetPolynomialBaseCtx(data_row,H1,AINSWORTH_COLE_BASE)
+        )
       ); CHKERRQ(ierr);
-      data_col.dataOnEntities[MBVERTEX][0].getN(AINSWORTH_COLE_BASE) = data_row.dataOnEntities[MBVERTEX][0].getN(AINSWORTH_COLE_BASE);
-      ierr = shapeTETFunctions_H1(data_row,G_TET_X4,G_TET_Y4,G_TET_Z4,4,AINSWORTH_COLE_BASE,Legendre_polynomials); CHKERRQ(ierr);
-      ierr = shapeTETFunctions_H1(data_col,G_TET_X4,G_TET_Y4,G_TET_Z4,4,AINSWORTH_COLE_BASE,Legendre_polynomials); CHKERRQ(ierr);
+      ierr = TetPolynomialBase().getValue(
+        gauss_pts,
+        boost::shared_ptr<BaseFunctionCtx>(
+          new TetPolynomialBaseCtx(data_col,H1,AINSWORTH_COLE_BASE)
+        )
+      ); CHKERRQ(ierr);
 
       try {
         ierr = op.opLhs(data_row,data_col,true); CHKERRQ(ierr);

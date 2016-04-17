@@ -41,6 +41,7 @@ int main(int argc, char *argv[]) {
     LOBATTOPOLYNOMIAL,
     H1TET,
     HDIVTET,
+    HCURLTET,
     L2TET,
     H1TRI,
     HDIVTRI,
@@ -55,6 +56,7 @@ int main(int argc, char *argv[]) {
     "lobatto",
     "h1tet",
     "hdivtet",
+    "hcurltet",
     "l2tet",
     "h1tri",
     "hdiftri",
@@ -172,12 +174,29 @@ int main(int argc, char *argv[]) {
   }
 
   if(choise_value==H1TET) {
-    ierr = H1TetPolynomial().getValue(
+
+    tet_data.dataOnEntities[MBVERTEX][0].getN(NOBASE).resize(nb_gauss_pts,4,false);
+    ierr = ShapeMBTET(
+      &*tet_data.dataOnEntities[MBVERTEX][0].getN(NOBASE).data().begin(),
+      &pts_tet(0,0),
+      &pts_tet(1,0),
+      &pts_tet(2,0),
+      nb_gauss_pts
+    ); CHKERRQ(ierr);
+
+    ierr = TetPolynomialBase().getValue(
       pts_tet,
       boost::shared_ptr<BaseFunctionCtx>(
-        new H1TetPolynomialCtx(tet_data,H1,AINSWORTH_COLE_BASE)
+        new TetPolynomialBaseCtx(tet_data,H1,AINSWORTH_COLE_BASE,NOBASE)
       )
     ); CHKERRQ(ierr);
+    if(
+      tet_data.dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE).get()!=
+      tet_data.dataOnEntities[MBVERTEX][0].getNSharedPtr(AINSWORTH_COLE_BASE).get()
+    ) {
+      SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"Different pointers");
+    }
+
     double sum = 0,diff_sum = 0;
     cout << "Edges\n";
     for(int ee = 0;ee<6;ee++) {
@@ -209,14 +228,77 @@ int main(int argc, char *argv[]) {
   }
 
   if(choise_value==HDIVTET) {
-    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"wrong result");
+    ierr = TetPolynomialBase().getValue(
+      pts_tet,
+      boost::shared_ptr<BaseFunctionCtx>(
+        new TetPolynomialBaseCtx(tet_data,HDIV,AINSWORTH_COLE_BASE)
+      )
+    ); CHKERRQ(ierr);
+    double sum = 0,diff_sum = 0;
+    cout << "Faces\n";
+    for(int ff = 0;ff<4;ff++) {
+      cout << tet_data.dataOnEntities[MBTRI][ff].getN(AINSWORTH_COLE_BASE) << endl;
+      cout << tet_data.dataOnEntities[MBTRI][ff].getDiffN(AINSWORTH_COLE_BASE) << endl;
+      sum += sum_matrix(tet_data.dataOnEntities[MBTRI][ff].getN(AINSWORTH_COLE_BASE));
+      diff_sum += sum_matrix(tet_data.dataOnEntities[MBTRI][ff].getDiffN(AINSWORTH_COLE_BASE));
+    }
+    cout << "Tets\n";
+    cout << tet_data.dataOnEntities[MBTET][0].getN(AINSWORTH_COLE_BASE) << endl;
+    cout << tet_data.dataOnEntities[MBTET][0].getDiffN(AINSWORTH_COLE_BASE) << endl;
+    sum += sum_matrix(tet_data.dataOnEntities[MBTET][0].getN(AINSWORTH_COLE_BASE));
+    diff_sum += sum_matrix(tet_data.dataOnEntities[MBTET][0].getDiffN(AINSWORTH_COLE_BASE));
+    cout << "sum  " << sum << endl;
+    cout << "diff_sum " << diff_sum << endl;
+    if(fabs(0.188636-sum)>eps) {
+      SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"wrong result");
+    }
+    if(fabs(32.9562-diff_sum)>eps) {
+      SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"wrong result");
+    }
+  }
+
+  if(choise_value==HCURLTET) {
+    ierr = TetPolynomialBase().getValue(
+      pts_tet,
+      boost::shared_ptr<BaseFunctionCtx>(
+        new TetPolynomialBaseCtx(tet_data,HCURL,AINSWORTH_COLE_BASE)
+      )
+    ); CHKERRQ(ierr);
+    double sum = 0,diff_sum = 0;
+    cout << "Edges\n";
+    for(int ee = 0;ee<6;ee++) {
+      cout << tet_data.dataOnEntities[MBEDGE][ee].getN(AINSWORTH_COLE_BASE) << endl;
+      cout << tet_data.dataOnEntities[MBEDGE][ee].getDiffN(AINSWORTH_COLE_BASE) << endl;
+      sum += sum_matrix(tet_data.dataOnEntities[MBEDGE][ee].getN(AINSWORTH_COLE_BASE));
+      diff_sum += sum_matrix(tet_data.dataOnEntities[MBEDGE][ee].getDiffN(AINSWORTH_COLE_BASE));
+    }
+    cout << "Faces\n";
+    for(int ff = 0;ff<4;ff++) {
+      cout << tet_data.dataOnEntities[MBTRI][ff].getN(AINSWORTH_COLE_BASE) << endl;
+      cout << tet_data.dataOnEntities[MBTRI][ff].getDiffN(AINSWORTH_COLE_BASE) << endl;
+      sum += sum_matrix(tet_data.dataOnEntities[MBTRI][ff].getN(AINSWORTH_COLE_BASE));
+      diff_sum += sum_matrix(tet_data.dataOnEntities[MBTRI][ff].getDiffN(AINSWORTH_COLE_BASE));
+    }
+    cout << "Tets\n";
+    cout << tet_data.dataOnEntities[MBTET][0].getN(AINSWORTH_COLE_BASE) << endl;
+    cout << tet_data.dataOnEntities[MBTET][0].getDiffN(AINSWORTH_COLE_BASE) << endl;
+    sum += sum_matrix(tet_data.dataOnEntities[MBTET][0].getN(AINSWORTH_COLE_BASE));
+    diff_sum += sum_matrix(tet_data.dataOnEntities[MBTET][0].getDiffN(AINSWORTH_COLE_BASE));
+    cout << "sum  " << sum << endl;
+    cout << "diff_sum " << diff_sum << endl;
+    // if(fabs(1.3509-sum)>eps) {
+    //   SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"wrong result");
+    // }
+    // if(fabs(0.233313-diff_sum)>eps) {
+    //   SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"wrong result");
+    // }
   }
 
   if(choise_value==L2TET) {
-    ierr = H1TetPolynomial().getValue(
+    ierr = TetPolynomialBase().getValue(
       pts_tet,
       boost::shared_ptr<BaseFunctionCtx>(
-        new H1TetPolynomialCtx(tet_data,L2,AINSWORTH_COLE_BASE)
+        new TetPolynomialBaseCtx(tet_data,L2,AINSWORTH_COLE_BASE)
       )
     ); CHKERRQ(ierr);
     double sum = 0,diff_sum = 0;

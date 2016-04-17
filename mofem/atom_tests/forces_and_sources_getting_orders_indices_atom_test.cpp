@@ -177,19 +177,29 @@ int main(int argc, char *argv[]) {
       ierr = getTetDataOrder(data,H1); CHKERRQ(ierr);
       ierr = getFaceTriNodes(data); CHKERRQ(ierr);
 
-      data.dataOnEntities[MBVERTEX][0].getBase() = AINSWORTH_COLE_BASE;
-      data.dataOnEntities[MBVERTEX][0].getN(AINSWORTH_COLE_BASE).resize(4,4,false);
-      ierr = ShapeMBTET(
-        &*data.dataOnEntities[MBVERTEX][0].getN(AINSWORTH_COLE_BASE).data().begin(),G_TET_X4,G_TET_Y4,G_TET_Z4,4
+      MatrixDouble gauss_pts(4,4);
+      for(int gg = 0;gg<4;gg++) {
+        gauss_pts(0,gg) = G_TET_X4[gg];
+        gauss_pts(1,gg) = G_TET_Y4[gg];
+        gauss_pts(2,gg) = G_TET_Z4[gg];
+        gauss_pts(3,gg) = G_TET_W4[gg];
+      }
+      ierr = TetPolynomialBase().getValue(
+        gauss_pts,
+        boost::shared_ptr<BaseFunctionCtx>(
+          new TetPolynomialBaseCtx(data,H1,AINSWORTH_COLE_BASE)
+        )
       ); CHKERRQ(ierr);
-      ierr = shapeTETFunctions_H1(data,G_TET_X4,G_TET_Y4,G_TET_Z4,4,AINSWORTH_COLE_BASE,Legendre_polynomials); CHKERRQ(ierr);
 
       ierr = getEdgesDataOrderSpaceAndBase(data,"FIELD1"); CHKERRQ(ierr);
       ierr = getTrisDataOrderSpaceAndBase(data,"FIELD1"); CHKERRQ(ierr);
+      ierr = getTetDataOrderSpaceAndBase(data,"FIELD1"); CHKERRQ(ierr);
       ierr = getRowNodesIndices(data,"FIELD1"); CHKERRQ(ierr);
       ierr = getEdgesRowIndices(data,"FIELD1"); CHKERRQ(ierr);
       ierr = getTrisRowIndices(data,"FIELD1"); CHKERRQ(ierr);
       ierr = getTetsRowIndices(data,"FIELD1"); CHKERRQ(ierr);
+      ierr = getNodesFieldData(data,"FIELD1"); CHKERRQ(ierr);
+      data.dataOnEntities[MBVERTEX][0].getFieldData().resize(0);
 
       my_split << "FIELD1:\n";
       my_split << data << endl;
@@ -202,6 +212,8 @@ int main(int argc, char *argv[]) {
       ierr = getEdgesColIndices(derived_data,"FIELD2"); CHKERRQ(ierr);
       ierr = getTrisColIndices(derived_data,"FIELD2"); CHKERRQ(ierr);
       ierr = getTetsColIndices(derived_data,"FIELD2"); CHKERRQ(ierr);
+      ierr = getNodesFieldData(derived_data,"FIELD2"); CHKERRQ(ierr);
+      derived_data.dataOnEntities[MBVERTEX][0].getFieldData().resize(0);
 
       my_split << "FIELD2:\n";
       my_split << derived_data << endl;

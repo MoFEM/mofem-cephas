@@ -45,6 +45,8 @@ struct VolumeElementForcesAndSourcesCore: public ForcesAndSurcesCore {
   DerivedDataForcesAndSurcesCore derivedDataL2;
   DataForcesAndSurcesCore dataHdiv;
   DerivedDataForcesAndSurcesCore derivedDataHdiv;
+  DataForcesAndSurcesCore dataHcurl;
+  DerivedDataForcesAndSurcesCore derivedDataHcurl;
   DataForcesAndSurcesCore dataNoField;
   DataForcesAndSurcesCore dataNoFieldCol;
 
@@ -71,6 +73,8 @@ struct VolumeElementForcesAndSourcesCore: public ForcesAndSurcesCore {
   derivedDataL2(dataL2),
   dataHdiv(type),
   derivedDataHdiv(dataHdiv),
+  dataHcurl(type),
+  derivedDataHcurl(dataHcurl),
   dataNoField(type),
   dataNoFieldCol(type),
   opSetInvJacH1(invJac),

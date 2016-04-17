@@ -1,4 +1,4 @@
-/** \file H1TetPolynomial.hpp
+/** \file TetPolynomialBase.hpp
 \brief Implementation of Ainsworth-Cole H1 base on tetrahedral
 
 */
@@ -24,7 +24,7 @@ namespace MoFEM {
 
   static const MOFEMuuid IDD_H1TET_BASE_FUNCTION = MOFEMuuid(BitIntefaceId(H1TET_BASE_FUNCTION_INTERFACE));
 
-  struct H1TetPolynomialCtx: public BaseFunctionCtx {
+  struct TetPolynomialBaseCtx: public BaseFunctionCtx {
 
     PetscErrorCode queryInterface(const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface);
 
@@ -34,22 +34,24 @@ namespace MoFEM {
     DataForcesAndSurcesCore &dAta;
     const FieldSpace sPace;
     const FieldApproximationBase bAse;
+    const FieldApproximationBase copyNodeBase;
 
-    H1TetPolynomialCtx(
+    TetPolynomialBaseCtx(
       DataForcesAndSurcesCore &data,
       const FieldSpace space,
-      const FieldApproximationBase base
+      const FieldApproximationBase base,
+      const FieldApproximationBase copy_node_base = LASTBASE
     );
-    ~H1TetPolynomialCtx();
+    ~TetPolynomialBaseCtx();
 
   };
 
-  struct H1TetPolynomial: public BaseFunction {
+  struct TetPolynomialBase: public BaseFunction {
 
     PetscErrorCode queryInterface(const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface);
 
-    H1TetPolynomial();
-    ~H1TetPolynomial();
+    TetPolynomialBase();
+    ~TetPolynomialBase();
 
     PetscErrorCode getValue(
       ublas::matrix<double> &pts,
@@ -58,13 +60,33 @@ namespace MoFEM {
 
   private:
 
-    H1TetPolynomialCtx *cTx;
+    TetPolynomialBaseCtx *cTx;
 
     PetscErrorCode getValueH1(
       ublas::matrix<double> &pts
     );
 
     PetscErrorCode getValueL2(
+      ublas::matrix<double> &pts
+    );
+
+    ublas::matrix<MatrixDouble > N_face_edge;
+    ublas::vector<MatrixDouble > N_face_bubble;
+    ublas::vector<MatrixDouble > N_volume_edge;
+    ublas::vector<MatrixDouble > N_volume_face;
+    MatrixDouble N_volume_bubble;
+
+    ublas::matrix<MatrixDouble > diffN_face_edge;
+    ublas::vector<MatrixDouble > diffN_face_bubble;
+    ublas::vector<MatrixDouble > diffN_volume_edge;
+    ublas::vector<MatrixDouble > diffN_volume_face;
+    MatrixDouble diffN_volume_bubble;
+
+    PetscErrorCode getValueHdiv(
+      ublas::matrix<double> &pts
+    );
+
+    PetscErrorCode getValueHCurl(
       ublas::matrix<double> &pts
     );
 

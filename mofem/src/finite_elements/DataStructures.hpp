@@ -164,7 +164,7 @@ struct DataForcesAndSurcesCore {
     /**
      * Get shared pointer to base shape functions
      */
-    virtual boost::shared_ptr<MatrixDouble> getNSharedPtr(const FieldApproximationBase base) { return N[base]; }
+    virtual boost::shared_ptr<MatrixDouble>& getNSharedPtr(const FieldApproximationBase base) { return N[base]; }
 
     /**
      * \brief Get shape functions
@@ -185,7 +185,7 @@ struct DataForcesAndSurcesCore {
     /**
      * Get shared pointer to derivatives of base shape functions
      */
-    virtual boost::shared_ptr<MatrixDouble> getDiffNSharedPtr(const FieldApproximationBase base) { return diffN[base]; }
+    virtual boost::shared_ptr<MatrixDouble>& getDiffNSharedPtr(const FieldApproximationBase base) { return diffN[base]; }
 
     /**
      * \brief Get derivatives of shape functions

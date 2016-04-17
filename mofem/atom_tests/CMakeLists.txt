@@ -667,6 +667,7 @@ list(INSERT testing_base_list
   legendre
   lobatto
   h1tet
+  hcurltet
   hdivtet
   l2tet
   h1tri

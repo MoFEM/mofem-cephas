@@ -139,13 +139,15 @@ int main(int argc, char *argv[]) {
 
     TeeStream &mySplit;
     OpPrintingHdivApproximationFunctions(TeeStream &my_split):
-      VolumeElementForcesAndSourcesCore::UserDataOperator("HDIV",UserDataOperator::OPROW),mySplit(my_split)
-    {}
+    VolumeElementForcesAndSourcesCore::UserDataOperator("HDIV",UserDataOperator::OPROW),mySplit(my_split) {
+
+    }
 
     PetscErrorCode doWork(
       int side,
       EntityType type,
-      DataForcesAndSurcesCore::EntData &data) {
+      DataForcesAndSurcesCore::EntData &data
+    ) {
       PetscFunctionBegin;
 
       if(data.getFieldData().size()==0) PetscFunctionReturn(0);

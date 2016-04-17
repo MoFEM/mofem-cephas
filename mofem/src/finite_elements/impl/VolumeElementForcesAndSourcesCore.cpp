@@ -50,7 +50,12 @@
 #include <SeriesRecorder.hpp>
 #include <Core.hpp>
 
+#include <BaseFunction.hpp>
+#include <LegendrePolynomial.hpp>
+#include <LobattoPolynomial.hpp>
+
 #include <DataStructures.hpp>
+#include <TetPolynomialBase.hpp> // Base functions on tet
 #include <DataOperators.hpp>
 #include <ElementsOnEntities.hpp>
 #include <VolumeElementForcesAndSourcesCore.hpp>
@@ -188,6 +193,11 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::operator()() {
     }
     if(nb_gauss_pts == 0) PetscFunctionReturn(0);
 
+    /// Use the some node base
+    dataHdiv.dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE) = dataH1.dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE);
+    dataHcurl.dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE) = dataH1.dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE);
+    dataL2.dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE) = dataH1.dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE);
+
     // Get coords at Gauss points
     {
       double *shape_functions = &*dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE).data().begin();
@@ -199,51 +209,58 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::operator()() {
       }
     }
 
-    vector<FieldApproximationBase> shape_functions_for_bases;
-    if(dataH1.bAse.test(AINSWORTH_COLE_BASE)) {
-      shape_functions_for_bases.push_back(AINSWORTH_COLE_BASE);
-      dataH1.dataOnEntities[MBVERTEX][0].getBase() = AINSWORTH_COLE_BASE;
-      dataH1.dataOnEntities[MBVERTEX][0].getN(AINSWORTH_COLE_BASE).resize(nb_gauss_pts,4,false);
-      noalias(dataH1.dataOnEntities[MBVERTEX][0].getN(AINSWORTH_COLE_BASE)) = dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE);
-      ierr = shapeTETFunctions_H1(
-        dataH1,&gaussPts(0,0),&gaussPts(1,0),&gaussPts(2,0),nb_gauss_pts,AINSWORTH_COLE_BASE,Legendre_polynomials
-      ); CHKERRQ(ierr);
-      if((dataH1.spacesOnEntities[MBTRI]).test(HDIV)) {
-        ierr = shapeTETFunctions_Hdiv(
-          dataHdiv,&gaussPts(0,0),&gaussPts(1,0),&gaussPts(2,0),nb_gauss_pts,AINSWORTH_COLE_BASE,Legendre_polynomials
-        ); CHKERRQ(ierr);
-      }
-      if((dataH1.spacesOnEntities[MBTET]).test(L2)) {
-        ierr = shapeTETFunctions_L2(
-          dataL2,&gaussPts(0,0),&gaussPts(1,0),&gaussPts(2,0),nb_gauss_pts,AINSWORTH_COLE_BASE,Legendre_polynomials
-        ); CHKERRQ(ierr);
-      }
-    }
-    if(dataH1.basesOnEntities[MBVERTEX].test(LOBATTO_BASE)) {
-      shape_functions_for_bases.push_back(LOBATTO_BASE);
-      dataH1.dataOnEntities[MBVERTEX][0].getBase() = LOBATTO_BASE;
-      dataH1.dataOnEntities[MBVERTEX][0].getN(LOBATTO_BASE).resize(nb_gauss_pts,4,false);
-      noalias(dataH1.dataOnEntities[MBVERTEX][0].getN(LOBATTO_BASE)) = dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE);
-      ierr = shapeTETFunctions_H1(
-        dataH1,&gaussPts(0,0),&gaussPts(1,0),&gaussPts(2,0),nb_gauss_pts,LOBATTO_BASE,Lobatto_polynomials
-      ); CHKERRQ(ierr);
-      if((dataH1.spacesOnEntities[MBTRI]).test(HDIV)) {
-        SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not yet implemented");
-        ierr = shapeTETFunctions_Hdiv(
-          dataHdiv,&gaussPts(0,0),&gaussPts(1,0),&gaussPts(2,0),nb_gauss_pts,LOBATTO_BASE,Lobatto_polynomials
-        ); CHKERRQ(ierr);
-      }
-      if((dataH1.spacesOnEntities[MBTET]).test(L2)) {
-        SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not yet implemented");
-        ierr = shapeTETFunctions_L2(
-          dataL2,&gaussPts(0,0),&gaussPts(1,0),&gaussPts(2,0),nb_gauss_pts,LOBATTO_BASE,Lobatto_polynomials
-        ); CHKERRQ(ierr);
-      }
-    }
-    if(dataH1.bAse.test(BERNSTEIN_BEZIER_BASE)) {
-      SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented");
-    }
+    try {
 
+      vector<FieldApproximationBase> shape_functions_for_bases;
+      for(int b = AINSWORTH_COLE_BASE;b!=LASTBASE;b++) {
+        if(dataH1.bAse.test(b)) {
+          switch (ApproximationBaseArray[b]) {
+            case AINSWORTH_COLE_BASE:
+            case LOBATTO_BASE:
+            if(dataH1.spacesOnEntities[MBVERTEX].test(H1)) {
+              ierr = TetPolynomialBase().getValue(
+                gaussPts,
+                boost::shared_ptr<BaseFunctionCtx>(
+                  new TetPolynomialBaseCtx(dataH1,H1,ApproximationBaseArray[b],NOBASE)
+                )
+              ); CHKERRQ(ierr);
+            }
+            if(dataH1.spacesOnEntities[MBTRI].test(HDIV)) {
+              ierr = TetPolynomialBase().getValue(
+                gaussPts,
+                boost::shared_ptr<BaseFunctionCtx>(
+                  new TetPolynomialBaseCtx(dataHdiv,HDIV,ApproximationBaseArray[b],NOBASE)
+                )
+              ); CHKERRQ(ierr);
+            }
+            if(dataH1.spacesOnEntities[MBEDGE].test(HCURL)) {
+              ierr = TetPolynomialBase().getValue(
+                gaussPts,
+                boost::shared_ptr<BaseFunctionCtx>(
+                  new TetPolynomialBaseCtx(dataHcurl,HCURL,ApproximationBaseArray[b],NOBASE)
+                )
+              ); CHKERRQ(ierr);
+            }
+            if(dataH1.spacesOnEntities[MBTET].test(L2)) {
+              ierr = TetPolynomialBase().getValue(
+                gaussPts,
+                boost::shared_ptr<BaseFunctionCtx>(
+                  new TetPolynomialBaseCtx(dataL2,L2,ApproximationBaseArray[b],NOBASE)
+                )
+              ); CHKERRQ(ierr);
+            }
+            break;
+            default:
+            SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"Not yet implemented");
+          }
+        }
+      }
+
+    } catch (exception& ex) {
+      ostringstream ss;
+      ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
+      SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
+    }
 
     try {
       ierr = opSetInvJacH1.opRhs(dataH1); CHKERRQ(ierr);
@@ -312,16 +329,26 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::operator()() {
       hoCoordsAtGaussPts.resize(0,0,false);
       hoGaussPtsInvJac.resize(0,0,false);
       hoGaussPtsDetJac.resize(0,false);
-      MatrixDouble diffN(nb_gauss_pts,12);
-      for(int gg = 0;gg<nb_gauss_pts;gg++) {
-        for(int nn = 0;nn<4;nn++) {
-          for(int dd = 0;dd<3;dd++) {
-            diffN(gg,nn*3+dd) = dataH1.dataOnEntities[MBVERTEX][0].getDiffN()(nn,dd);
+      try {
+        for(int b = AINSWORTH_COLE_BASE;b!=LASTBASE;b++) {
+          if(dataH1.dataOnEntities[MBVERTEX][0].getDiffN(ApproximationBaseArray[b]).size1()!=4) continue;
+          if(dataH1.dataOnEntities[MBVERTEX][0].getDiffN(ApproximationBaseArray[b]).size2()!=3) continue;
+          MatrixDouble diffN(nb_gauss_pts,12);
+          for(int gg = 0;gg<nb_gauss_pts;gg++) {
+            for(int nn = 0;nn<4;nn++) {
+              for(int dd = 0;dd<3;dd++) {
+                diffN(gg,nn*3+dd) = dataH1.dataOnEntities[MBVERTEX][0].getDiffN(ApproximationBaseArray[b])(nn,dd);
+              }
+            }
           }
+          dataH1.dataOnEntities[MBVERTEX][0].getDiffN(ApproximationBaseArray[b]).resize(diffN.size1(),diffN.size2(),false);
+          dataH1.dataOnEntities[MBVERTEX][0].getDiffN(ApproximationBaseArray[b]).data().swap(diffN.data());
         }
+      } catch (exception& ex) {
+        ostringstream ss;
+        ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
+        SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
       }
-      dataH1.dataOnEntities[MBVERTEX][0].getDiffN().resize(diffN.size1(),diffN.size2(),false);
-      dataH1.dataOnEntities[MBVERTEX][0].getDiffN().data().swap(diffN.data());
     }
 
     const UserDataOperator::OpType types[2] = {
