@@ -109,17 +109,6 @@ PetscErrorCode H1TetPolynomial::getValueH1(ublas::matrix<double> &pts) {
   ) = cTx->basePolynomials;
 
   int nb_gauss_pts = pts.size2();
-  if(!nb_gauss_pts) {
-    PetscFunctionReturn(0);
-  }
-
-  if(pts.size1()<3) {
-    SETERRQ(
-      PETSC_COMM_SELF,
-      MOFEM_DATA_INCONSISTENCY,
-      "Wrong dimension of pts, should be at least 3 rows with coordinates"
-    );
-  }
 
   if(data.dataOnEntities[MBVERTEX][0].getN(base).size2()!=4) {
     data.dataOnEntities[MBVERTEX][0].getN(base).resize(nb_gauss_pts,4,false);
@@ -230,6 +219,58 @@ PetscErrorCode H1TetPolynomial::getValueH1(ublas::matrix<double> &pts) {
   PetscFunctionReturn(0);
 }
 
+PetscErrorCode H1TetPolynomial::getValueL2(
+  ublas::matrix<double> &pts
+) {
+  PetscErrorCode ierr;
+  PetscFunctionBegin;
+
+  DataForcesAndSurcesCore data = cTx->dAta;
+  const FieldApproximationBase base = cTx->bAse;
+  PetscErrorCode (*base_polynomials)(
+    int p,double s,double *diff_s,double *L,double *diffL,const int dim
+  ) = cTx->basePolynomials;
+
+  int nb_gauss_pts = pts.size2();
+
+  if(data.dataOnEntities[MBVERTEX][0].getN(base).size2()!=4) {
+    data.dataOnEntities[MBVERTEX][0].getN(base).resize(nb_gauss_pts,4,false);
+    ierr = ShapeMBTET(
+      &*data.dataOnEntities[MBVERTEX][0].getN(base).data().begin(),
+      &pts(0,0),
+      &pts(1,0),
+      &pts(2,0),
+      nb_gauss_pts
+    ); CHKERRQ(ierr);
+  }
+  if(data.dataOnEntities[MBVERTEX][0].getN(base).size1()!=nb_gauss_pts) {
+    SETERRQ1(
+      PETSC_COMM_SELF,
+      MOFEM_DATA_INCONSISTENCY,
+      "Base functions or nodes has wrong number of integration points for base %s",
+      ApproximationBaseNames[base]
+    );
+  }
+  data.dataOnEntities[MBVERTEX][0].getDiffN(base).resize(4,3,false);
+  ierr = ShapeDiffMBTET(&*data.dataOnEntities[MBVERTEX][0].getDiffN(base).data().begin()); CHKERRQ(ierr);
+
+  data.dataOnEntities[MBTET][0].getN(base).resize(nb_gauss_pts,NBVOLUMETET_L2_AINSWORTH_COLE(data.dataOnEntities[MBTET][0].getDataOrder()),false);
+  data.dataOnEntities[MBTET][0].getDiffN(base).resize(nb_gauss_pts,3*NBVOLUMETET_L2_AINSWORTH_COLE(data.dataOnEntities[MBTET][0].getDataOrder()),false);
+
+  ierr = L2_ShapeFunctions_MBTET(
+    data.dataOnEntities[MBTET][0].getDataOrder(),
+    &*data.dataOnEntities[MBVERTEX][0].getN(base).data().begin(),
+    &*data.dataOnEntities[MBVERTEX][0].getDiffN(base).data().begin(),
+    &*data.dataOnEntities[MBTET][0].getN(base).data().begin(),
+    &*data.dataOnEntities[MBTET][0].getDiffN(base).data().begin(),
+    nb_gauss_pts
+  ); CHKERRQ(ierr);
+
+
+  PetscFunctionReturn(0);
+}
+
+
 PetscErrorCode H1TetPolynomial::getValue(
   ublas::matrix<double> &pts,
   boost::shared_ptr<BaseFunctionCtx> ctx_ptr
@@ -241,9 +282,25 @@ PetscErrorCode H1TetPolynomial::getValue(
   ierr = ctx_ptr->queryInterface(IDD_H1TET_BASE_FUNCTION,&iface); CHKERRQ(ierr);
   cTx = reinterpret_cast<H1TetPolynomialCtx*>(iface);
 
+  int nb_gauss_pts = pts.size2();
+  if(!nb_gauss_pts) {
+    PetscFunctionReturn(0);
+  }
+
+  if(pts.size1()<3) {
+    SETERRQ(
+      PETSC_COMM_SELF,
+      MOFEM_DATA_INCONSISTENCY,
+      "Wrong dimension of pts, should be at least 3 rows with coordinates"
+    );
+  }
+
   switch (cTx->sPace) {
     case H1:
     ierr = getValueH1(pts); CHKERRQ(ierr);
+    break;
+    case L2:
+    ierr = getValueL2(pts); CHKERRQ(ierr);
     break;
     default:
     SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"Not yet implemented");

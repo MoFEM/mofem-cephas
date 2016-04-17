@@ -64,6 +64,11 @@ namespace MoFEM {
       ublas::matrix<double> &pts
     );
 
+    PetscErrorCode getValueL2(
+      ublas::matrix<double> &pts
+    );
+
+
   };
 
 

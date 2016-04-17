@@ -213,7 +213,26 @@ int main(int argc, char *argv[]) {
   }
 
   if(choise_value==L2TET) {
-    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"wrong result");
+    ierr = H1TetPolynomial().getValue(
+      pts_tet,
+      boost::shared_ptr<BaseFunctionCtx>(
+        new H1TetPolynomialCtx(tet_data,L2,AINSWORTH_COLE_BASE)
+      )
+    ); CHKERRQ(ierr);
+    double sum = 0,diff_sum = 0;
+    cout << "Tets\n";
+    cout << tet_data.dataOnEntities[MBTET][0].getN(AINSWORTH_COLE_BASE) << endl;
+    cout << tet_data.dataOnEntities[MBTET][0].getDiffN(AINSWORTH_COLE_BASE) << endl;
+    sum += sum_matrix(tet_data.dataOnEntities[MBTET][0].getN(AINSWORTH_COLE_BASE));
+    diff_sum += sum_matrix(tet_data.dataOnEntities[MBTET][0].getDiffN(AINSWORTH_COLE_BASE));
+    cout << "sum  " << sum << endl;
+    cout << "diff_sum " << diff_sum << endl;
+    if(fabs(3.60352-sum)>eps) {
+      SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"wrong result");
+    }
+    if(fabs(-36.9994-diff_sum)>eps) {
+      SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"wrong result");
+    }
   }
 
   if(choise_value==H1TRI) {
