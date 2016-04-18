@@ -17,14 +17,18 @@
 * You should have received a copy of the GNU Lesser General Public
 * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef __H1ENTPOLYNOMIALCTX_HPP__
-#define __H1ENTPOLYNOMIALCTX_HPP__
+#ifndef __ENTPOLYNOMIALCTX_HPP__
+#define __ENTPOLYNOMIALCTX_HPP__
 
 namespace MoFEM {
 
   static const MOFEMuuid IDD_TET_BASE_FUNCTION = MOFEMuuid(BitIntefaceId(TET_BASE_FUNCTION_INTERFACE));
   static const MOFEMuuid IDD_TRI_BASE_FUNCTION = MOFEMuuid(BitIntefaceId(TRI_BASE_FUNCTION_INTERFACE));
 
+  /**
+   * \brief Class used to pass that about element to class calculating base functions on tet,triangle,edge
+   * \ingroup mofem_base_functions
+   */
   struct EntPolynomialBaseCtx: public BaseFunctionCtx {
 
     PetscErrorCode queryInterface(const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface);
@@ -49,4 +53,4 @@ namespace MoFEM {
 
 }
 
-#endif //__H1ENTPOLYNOMIALCTX_HPP__
+#endif //__ENTPOLYNOMIALCTX_HPP__

@@ -17,11 +17,15 @@
 * You should have received a copy of the GNU Lesser General Public
 * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef __H1TETPOLYNOMIAL_HPP__
-#define __H1TETPOLYNOMIAL_HPP__
+#ifndef __TETPOLYNOMIALBASE_HPP__
+#define __TETPOLYNOMIALBASE_HPP__
 
 namespace MoFEM {
 
+  /**
+   * \brief Calculate base functions on tetrahedral
+   * \ingroup mofem_base_functions
+   */
   struct TetPolynomialBase: public BaseFunction {
 
     PetscErrorCode queryInterface(const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface);
@@ -72,4 +76,4 @@ namespace MoFEM {
 
 }
 
-#endif //__H1TETPOLYNOMIAL_HPP__
+#endif //__TETPOLYNOMIALBASE_HPP__

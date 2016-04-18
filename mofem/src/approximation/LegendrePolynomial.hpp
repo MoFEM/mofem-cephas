@@ -24,6 +24,10 @@ namespace MoFEM {
 
   static const MOFEMuuid IDD_LEGENDRE_BASE_FUNCTION = MOFEMuuid(BitIntefaceId(LEGENDRE_BASE_FUNCTION_INTERFACE));
 
+  /**
+   * \brief Class used to give arguments to Legendre base functions
+   * \ingroup mofem_base_functions
+   */
   struct LegendrePolynomialCtx: public BaseFunctionCtx {
 
     PetscErrorCode queryInterface(const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface);
@@ -56,6 +60,10 @@ namespace MoFEM {
 
   };
 
+  /**
+   * \brief Calculating Legendre base functions
+   * \ingroup mofem_base_functions
+   */
   struct LegendrePolynomial: public BaseFunction {
 
     PetscErrorCode queryInterface(const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface);

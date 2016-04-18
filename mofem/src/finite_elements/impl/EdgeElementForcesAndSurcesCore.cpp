@@ -50,7 +50,13 @@
 #include <SeriesRecorder.hpp>
 #include <Core.hpp>
 
+#include <BaseFunction.hpp>
+#include <LegendrePolynomial.hpp>
+#include <LobattoPolynomial.hpp>
+
 #include <DataStructures.hpp>
+#include <EntPolynomialBaseCtx.hpp>
+#include <EdgePolynomialBase.hpp> // Base functions on tet
 #include <DataOperators.hpp>
 #include <ElementsOnEntities.hpp>
 #include <EdgeElementForcesAndSurcesCore.hpp>
@@ -138,18 +144,40 @@ PetscErrorCode EdgeElementForcesAndSurcesCore::operator()() {
     }
   }
 
-  vector<FieldApproximationBase> shape_functions_for_bases;
-  if(dataH1.bAse.test(AINSWORTH_COLE_BASE)) {
-    shape_functions_for_bases.push_back(AINSWORTH_COLE_BASE);
-    dataH1.dataOnEntities[MBVERTEX][0].getN(AINSWORTH_COLE_BASE).resize(nb_gauss_pts,2,false);
-    noalias(dataH1.dataOnEntities[MBVERTEX][0].getN(AINSWORTH_COLE_BASE)) = dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE);
-    ierr = shapeEDGEFunctions_H1(dataH1,0,&gaussPts(0,0),nb_gauss_pts,AINSWORTH_COLE_BASE,Legendre_polynomials); CHKERRQ(ierr);
-  }
-  if(dataH1.bAse.test(LOBATTO_BASE)) {
-    SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented");
-  }
-  if(dataH1.bAse.test(BERNSTEIN_BEZIER_BASE)) {
-    SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented");
+  try {
+
+    for(int b = AINSWORTH_COLE_BASE;b!=LASTBASE;b++) {
+      if(dataH1.bAse.test(b)) {
+        switch (ApproximationBaseArray[b]) {
+          case AINSWORTH_COLE_BASE:
+          case LOBATTO_BASE:
+          if(dataH1.spacesOnEntities[MBVERTEX].test(H1)) {
+            ierr = EdgePolynomialBase().getValue(
+              gaussPts,
+              boost::shared_ptr<BaseFunctionCtx>(
+                new EntPolynomialBaseCtx(dataH1,H1,ApproximationBaseArray[b],NOBASE)
+              )
+            ); CHKERRQ(ierr);
+          }
+          if(dataH1.spacesOnEntities[MBTRI].test(HDIV)) {
+            SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"Not yet implemented");
+          }
+          if(dataH1.spacesOnEntities[MBEDGE].test(HCURL)) {
+            SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"Not yet implemented");
+          }
+          if(dataH1.spacesOnEntities[MBTET].test(L2)) {
+            SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"Not yet implemented");
+          }
+          break;
+          default:
+          SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"Not yet implemented");
+        }
+      }
+    }
+  } catch (exception& ex) {
+    ostringstream ss;
+    ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
+    SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
   }
 
   if(

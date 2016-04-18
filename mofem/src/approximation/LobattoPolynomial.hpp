@@ -24,6 +24,10 @@ namespace MoFEM {
 
   static const MOFEMuuid IDD_LOBATTO_BASE_FUNCTION = MOFEMuuid(BitIntefaceId(LEGENDRE_BASE_FUNCTION_INTERFACE));
 
+  /**
+   * \brief Class used to give arguments to Lobatto base functions
+   * \ingroup mofem_base_functions
+   */
   struct LobattoPolynomialCtx: public LegendrePolynomialCtx {
 
     PetscErrorCode queryInterface(const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface);
@@ -42,6 +46,10 @@ namespace MoFEM {
 
   };
 
+  /**
+   * \brief Calculating Lobatto base functions
+   * \ingroup mofem_base_functions
+   */
   struct LobattoPolynomial: public LegendrePolynomial {
 
     PetscErrorCode queryInterface(const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface);

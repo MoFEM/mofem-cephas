@@ -25,6 +25,10 @@ namespace MoFEM {
 
   static const MOFEMuuid IDD_UNKNOWN_BASE_FUNCTION = MOFEMuuid(BitIntefaceId(UNKNOWN_BASE_FUNCTION_INTERFACE));
 
+  /**
+   * \brief Base class used to exchange data between element data structures and class calculating base functions
+   * \ingroup mofem_base_functions
+   */
   struct BaseFunctionCtx: public UnknownInterface {
 
     PetscErrorCode queryInterface(const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface);
@@ -34,6 +38,10 @@ namespace MoFEM {
 
   };
 
+  /**
+   * \brief Base class if inherited used to calculate base functions
+   * \ingroup mofem_base_functions
+   */
   struct BaseFunction: public UnknownInterface {
 
     PetscErrorCode queryInterface(const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface);
@@ -51,3 +59,8 @@ namespace MoFEM {
 }
 
 #endif //__BASEFUNCTION_HPP__
+
+/***************************************************************************//**
+ * \defgroup mofem_base_functions Base functions
+ * \ingroup mofem
+ ******************************************************************************/

@@ -20,7 +20,7 @@ using namespace MoFEM;
 ErrorCode rval;
 PetscErrorCode ierr;
 
-static char help[] = "teting interface inserting algorithm\n\n";
+static char help[] = "testing interface inserting algorithm\n\n";
 
 static double sum_matrix(ublas::matrix<double> &m) {
   double s = 0;
@@ -344,10 +344,10 @@ int main(int argc, char *argv[]) {
   nb_gauss_pts = QUAD_2D_TABLE[tri_rule]->npoints;
   pts_tri.resize(2,nb_gauss_pts,false);
   cblas_dcopy(
-    nb_gauss_pts,&QUAD_2D_TABLE[tri_rule]->points[1],4,&pts_tri(0,0),1
+    nb_gauss_pts,&QUAD_2D_TABLE[tri_rule]->points[1],3,&pts_tri(0,0),1
   );
   cblas_dcopy(
-    nb_gauss_pts,&QUAD_2D_TABLE[tri_rule]->points[2],4,&pts_tri(1,0),1
+    nb_gauss_pts,&QUAD_2D_TABLE[tri_rule]->points[2],3,&pts_tri(1,0),1
   );
   tri_data.dataOnEntities[MBVERTEX][0].getN(NOBASE).resize(nb_gauss_pts,3,false);
   {
@@ -424,8 +424,60 @@ int main(int argc, char *argv[]) {
     SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"wrong result");
   }
 
+  DataForcesAndSurcesCore edge_data(MBTRI);
+  for(int type = MBVERTEX;type!=MBMAXTYPE;type++) {
+    edge_data.spacesOnEntities[type].set(L2);
+    edge_data.spacesOnEntities[type].set(H1);
+    edge_data.spacesOnEntities[type].set(HDIV);
+  }
+  edge_data.dataOnEntities[MBVERTEX].resize(1);
+  edge_data.dataOnEntities[MBVERTEX][0].getDataOrder() = 1;
+  edge_data.dataOnEntities[MBEDGE].resize(1);
+  edge_data.dataOnEntities[MBEDGE][0].getDataOrder() = 4;
+  edge_data.dataOnEntities[MBEDGE][0].getSense() = 1;
+
+  ublas::matrix<double> pts_edge;
+  int edge_rule = 6;
+  nb_gauss_pts = QUAD_1D_TABLE[edge_rule]->npoints;
+  pts_edge.resize(1,nb_gauss_pts,false);
+  cblas_dcopy(
+    nb_gauss_pts,&QUAD_1D_TABLE[edge_rule]->points[1],2,&pts_edge(0,0),1
+  );
+  edge_data.dataOnEntities[MBVERTEX][0].getN(NOBASE).resize(nb_gauss_pts,2,false);
+  {
+    double *shape_ptr = edge_data.dataOnEntities[MBVERTEX][0].getN(NOBASE).data().begin();
+    cblas_dcopy(
+      2*nb_gauss_pts,QUAD_1D_TABLE[edge_rule]->points,1,shape_ptr,1
+    );
+  }
+
   if(choise_value==H1EDGE) {
-    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"wrong result");
+    ierr = EdgePolynomialBase().getValue(
+      pts_edge,
+      boost::shared_ptr<BaseFunctionCtx>(
+        new EntPolynomialBaseCtx(edge_data,H1,AINSWORTH_COLE_BASE,NOBASE)
+      )
+    ); CHKERRQ(ierr);
+    if(
+      edge_data.dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE).get()!=
+      edge_data.dataOnEntities[MBVERTEX][0].getNSharedPtr(AINSWORTH_COLE_BASE).get()
+    ) {
+      SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"Different pointers");
+    }
+    double sum = 0,diff_sum = 0;
+    cout << "Edge\n";
+    cout << edge_data.dataOnEntities[MBEDGE][0].getN(AINSWORTH_COLE_BASE) << endl;
+    cout << edge_data.dataOnEntities[MBEDGE][0].getDiffN(AINSWORTH_COLE_BASE) << endl;
+    sum += sum_matrix(edge_data.dataOnEntities[MBEDGE][0].getN(AINSWORTH_COLE_BASE));
+    diff_sum += sum_matrix(edge_data.dataOnEntities[MBEDGE][0].getDiffN(AINSWORTH_COLE_BASE));
+    cout << "sum  " << sum << endl;
+    cout << "diff sum " << diff_sum << endl;
+    if(fabs(0.506122-sum)>eps) {
+      SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"wrong result");
+    }
+    if(fabs(2.85714-diff_sum)>eps) {
+      SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"wrong result");
+    }
   }
 
   if(choise_value==H1FLATPRIS) {

@@ -1,6 +1,5 @@
-/** \file TriPolynomialBase.hpp
+/** \file TetPolynomialBase.hpp
 \brief Implementation of Ainsworth-Cole H1 base on tetrahedral
-
 */
 
 /* This file is part of MoFEM.
@@ -17,21 +16,21 @@
 * You should have received a copy of the GNU Lesser General Public
 * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef __H1TRIPOLYNOMIAL_HPP__
-#define __H1TRIPOLYNOMIAL_HPP__
+#ifndef __EDGEPOLYNOMIALBASE_HPP__
+#define __EDGEPOLYNOMIALBASE_HPP__
 
 namespace MoFEM {
 
   /**
-   * \brief Calculate base functions on triangle
+   * \brief Calculate base functions on tetrahedral
    * \ingroup mofem_base_functions
    */
-  struct TriPolynomialBase: public BaseFunction {
+  struct EdgePolynomialBase: public BaseFunction {
 
     PetscErrorCode queryInterface(const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface);
 
-    TriPolynomialBase();
-    ~TriPolynomialBase();
+    EdgePolynomialBase();
+    ~EdgePolynomialBase();
 
     PetscErrorCode getValue(
       ublas::matrix<double> &pts,
@@ -42,26 +41,15 @@ namespace MoFEM {
 
     EntPolynomialBaseCtx *cTx;
 
-    PetscErrorCode getValueH1(
-      ublas::matrix<double> &pts
-    );
+    ublas::vector<double> L,diffL;
 
-    PetscErrorCode getValueL2(
-      ublas::matrix<double> &pts
-    );
+    PetscErrorCode getValueH1(ublas::matrix<double> &pts);
 
-    ublas::matrix<MatrixDouble > N_face_edge;
-    ublas::vector<MatrixDouble > N_face_bubble;
-    ublas::matrix<MatrixDouble > diffN_face_edge;
-    ublas::vector<MatrixDouble > diffN_face_bubble;
+    PetscErrorCode getValueL2(ublas::matrix<double> &pts);
 
-    PetscErrorCode getValueHdiv(
-      ublas::matrix<double> &pts
-    );
+    PetscErrorCode getValueHdiv(ublas::matrix<double> &pts);
 
-    PetscErrorCode getValueHCurl(
-      ublas::matrix<double> &pts
-    );
+    PetscErrorCode getValueHCurl(ublas::matrix<double> &pts);
 
 
   };
@@ -69,4 +57,4 @@ namespace MoFEM {
 
 }
 
-#endif //__H1TRIPOLYNOMIAL_HPP__
+#endif //__EDGEPOLYNOMIALBASE_HPP__
