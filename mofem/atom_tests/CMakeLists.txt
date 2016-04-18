@@ -671,7 +671,9 @@ list(INSERT testing_base_list
   hdivtet
   l2tet
   h1tri
-  hdiftri
+  hdivtri
+  hcurltri
+  l2tri
   h1edge
   h1flatprism
   h1fatprism

@@ -22,6 +22,7 @@ add_library(mofem_approx
   impl/LegendrePolynomial.cpp
   impl/LobattoPolynomial.cpp
   impl/TetPolynomialBase.cpp
+  impl/TriPolynomialBase.cpp
   c_impl/base_functions.c
   c_impl/fem_tools.c
   c_impl/h1.c

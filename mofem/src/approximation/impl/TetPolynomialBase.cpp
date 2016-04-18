@@ -112,10 +112,6 @@ PetscErrorCode TetPolynomialBase::getValueH1(ublas::matrix<double> &pts) {
 
   int nb_gauss_pts = pts.size2();
 
-
-  data.dataOnEntities[MBVERTEX][0].getDiffN(base).resize(4,3,false);
-  ierr = ShapeDiffMBTET(&*data.dataOnEntities[MBVERTEX][0].getDiffN(base).data().begin()); CHKERRQ(ierr);
-
   int _sense_[6],_order_[6];
   if(data.spacesOnEntities[MBEDGE].test(H1)) {
     //edges
@@ -220,9 +216,6 @@ PetscErrorCode TetPolynomialBase::getValueL2(
 
   int nb_gauss_pts = pts.size2();
 
-  data.dataOnEntities[MBVERTEX][0].getDiffN(base).resize(4,3,false);
-  ierr = ShapeDiffMBTET(&*data.dataOnEntities[MBVERTEX][0].getDiffN(base).data().begin()); CHKERRQ(ierr);
-
   data.dataOnEntities[MBTET][0].getN(base).resize(nb_gauss_pts,NBVOLUMETET_L2_AINSWORTH_COLE(data.dataOnEntities[MBTET][0].getDataOrder()),false);
   data.dataOnEntities[MBTET][0].getDiffN(base).resize(nb_gauss_pts,3*NBVOLUMETET_L2_AINSWORTH_COLE(data.dataOnEntities[MBTET][0].getDataOrder()),false);
 
@@ -252,9 +245,6 @@ PetscErrorCode TetPolynomialBase::getValueHdiv(
   ) = cTx->basePolynomials;
 
   int nb_gauss_pts = pts.size2();
-
-  data.dataOnEntities[MBVERTEX][0].getDiffN(base).resize(4,3,false);
-  ierr = ShapeDiffMBTET(&*data.dataOnEntities[MBVERTEX][0].getDiffN(base).data().begin()); CHKERRQ(ierr);
 
   //face shape functions
 
@@ -514,6 +504,8 @@ PetscErrorCode TetPolynomialBase::getValue(
       ApproximationBaseNames[base]
     );
   }
+  data.dataOnEntities[MBVERTEX][0].getDiffN(base).resize(4,3,false);
+  ierr = ShapeDiffMBTET(&*data.dataOnEntities[MBVERTEX][0].getDiffN(base).data().begin()); CHKERRQ(ierr);
 
   switch (cTx->sPace) {
     case H1:

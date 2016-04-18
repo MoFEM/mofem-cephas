@@ -45,6 +45,8 @@ int main(int argc, char *argv[]) {
     L2TET,
     H1TRI,
     HDIVTRI,
+    HCURLTRI,
+    L2TRI,
     H1EDGE,
     H1FLATPRIS,
     H1FATPRISM,
@@ -59,7 +61,9 @@ int main(int argc, char *argv[]) {
     "hcurltet",
     "l2tet",
     "h1tri",
-    "hdiftri",
+    "hdivtri",
+    "hcurltri",
+    "l2tri",
     "h1edge",
     "h1flatprism",
     "h1fatprism"
@@ -160,11 +164,13 @@ int main(int argc, char *argv[]) {
   cblas_dcopy(
     nb_gauss_pts,&QUAD_3D_TABLE[tet_rule]->points[3],4,&pts_tet(2,0),1
   );
-  tet_data.dataOnEntities[MBVERTEX][0].getN(AINSWORTH_COLE_BASE).resize(nb_gauss_pts,4,false);
-  double *shape_ptr = tet_data.dataOnEntities[MBVERTEX][0].getN(AINSWORTH_COLE_BASE).data().begin();
-  cblas_dcopy(
-    4*nb_gauss_pts,QUAD_3D_TABLE[tet_rule]->points,1,shape_ptr,1
-  );
+  tet_data.dataOnEntities[MBVERTEX][0].getN(NOBASE).resize(nb_gauss_pts,4,false);
+  {
+    double *shape_ptr = tet_data.dataOnEntities[MBVERTEX][0].getN(NOBASE).data().begin();
+    cblas_dcopy(
+      4*nb_gauss_pts,QUAD_3D_TABLE[tet_rule]->points,1,shape_ptr,1
+    );
+  }
   tet_data.facesNodes.resize(4,3);
   const int cannonical_tet_face[4][3] = { {0,1,3}, {1,2,3}, {0,3,2}, {0,2,1} };
   for(int ff = 0;ff<4;ff++) {
@@ -317,11 +323,104 @@ int main(int argc, char *argv[]) {
     }
   }
 
+  DataForcesAndSurcesCore tri_data(MBTRI);
+  for(int type = MBVERTEX;type!=MBMAXTYPE;type++) {
+    tri_data.spacesOnEntities[type].set(L2);
+    tri_data.spacesOnEntities[type].set(H1);
+    tri_data.spacesOnEntities[type].set(HDIV);
+  }
+  tri_data.dataOnEntities[MBVERTEX].resize(1);
+  tri_data.dataOnEntities[MBVERTEX][0].getDataOrder() = 1;
+  tri_data.dataOnEntities[MBEDGE].resize(3);
+  for(int ee = 0;ee<3;ee++) {
+    tri_data.dataOnEntities[MBEDGE][ee].getDataOrder() = 3;
+    tri_data.dataOnEntities[MBEDGE][ee].getSense() = 1;
+  }
+  tri_data.dataOnEntities[MBTRI].resize(1);
+  tri_data.dataOnEntities[MBTRI][0].getDataOrder() = 4;
+
+  ublas::matrix<double> pts_tri;
+  int tri_rule = 2;
+  nb_gauss_pts = QUAD_2D_TABLE[tri_rule]->npoints;
+  pts_tri.resize(2,nb_gauss_pts,false);
+  cblas_dcopy(
+    nb_gauss_pts,&QUAD_2D_TABLE[tri_rule]->points[1],4,&pts_tri(0,0),1
+  );
+  cblas_dcopy(
+    nb_gauss_pts,&QUAD_2D_TABLE[tri_rule]->points[2],4,&pts_tri(1,0),1
+  );
+  tri_data.dataOnEntities[MBVERTEX][0].getN(NOBASE).resize(nb_gauss_pts,3,false);
+  {
+    double *shape_ptr = tri_data.dataOnEntities[MBVERTEX][0].getN(NOBASE).data().begin();
+    cblas_dcopy(
+      3*nb_gauss_pts,QUAD_2D_TABLE[tri_rule]->points,1,shape_ptr,1
+    );
+  }
+
   if(choise_value==H1TRI) {
-    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"wrong result");
+    ierr = TriPolynomialBase().getValue(
+      pts_tri,
+      boost::shared_ptr<BaseFunctionCtx>(
+        new TriPolynomialBaseCtx(tri_data,H1,AINSWORTH_COLE_BASE,NOBASE)
+      )
+    ); CHKERRQ(ierr);
+    if(
+      tri_data.dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE).get()!=
+      tri_data.dataOnEntities[MBVERTEX][0].getNSharedPtr(AINSWORTH_COLE_BASE).get()
+    ) {
+      SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"Different pointers");
+    }
+    double sum = 0,diff_sum = 0;
+    cout << "Edges\n";
+    for(int ee = 0;ee<3;ee++) {
+      cout << tri_data.dataOnEntities[MBEDGE][ee].getN(AINSWORTH_COLE_BASE) << endl;
+      cout << tri_data.dataOnEntities[MBEDGE][ee].getDiffN(AINSWORTH_COLE_BASE) << endl;
+      sum += sum_matrix(tri_data.dataOnEntities[MBEDGE][ee].getN(AINSWORTH_COLE_BASE));
+      diff_sum += sum_matrix(tri_data.dataOnEntities[MBEDGE][ee].getDiffN(AINSWORTH_COLE_BASE));
+    }
+    cout << "Face\n";
+    cout << tri_data.dataOnEntities[MBTRI][0].getN(AINSWORTH_COLE_BASE) << endl;
+    cout << tri_data.dataOnEntities[MBTRI][0].getDiffN(AINSWORTH_COLE_BASE) << endl;
+    sum += sum_matrix(tri_data.dataOnEntities[MBTRI][0].getN(AINSWORTH_COLE_BASE));
+    diff_sum += sum_matrix(tri_data.dataOnEntities[MBTRI][0].getDiffN(AINSWORTH_COLE_BASE));
+    cout << "sum  " << sum << endl;
+    cout << "diff_sum " << diff_sum << endl;
+    if(fabs(0.805556-sum)>eps) {
+      SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"wrong result");
+    }
+    if(fabs(0.0833333-diff_sum)>eps) {
+      SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"wrong result");
+    }
   }
 
   if(choise_value==HDIVTRI) {
+    ierr = TriPolynomialBase().getValue(
+      pts_tri,
+      boost::shared_ptr<BaseFunctionCtx>(
+        new TriPolynomialBaseCtx(tri_data,HDIV,AINSWORTH_COLE_BASE,NOBASE)
+      )
+    ); CHKERRQ(ierr);
+    if(
+      tri_data.dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE).get()!=
+      tri_data.dataOnEntities[MBVERTEX][0].getNSharedPtr(AINSWORTH_COLE_BASE).get()
+    ) {
+      SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"Different pointers");
+    }
+    double sum = 0;
+    cout << "Face\n";
+    cout << tri_data.dataOnEntities[MBTRI][0].getN(AINSWORTH_COLE_BASE) << endl;
+    sum += sum_matrix(tri_data.dataOnEntities[MBTRI][0].getN(AINSWORTH_COLE_BASE));
+    cout << "sum  " << sum << endl;
+    if(fabs(1.93056-sum)>eps) {
+      SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"wrong result");
+    }
+  }
+
+  if(choise_value==HCURLTRI) {
+    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"wrong result");
+  }
+
+  if(choise_value==L2TRI) {
     SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"wrong result");
   }
 
