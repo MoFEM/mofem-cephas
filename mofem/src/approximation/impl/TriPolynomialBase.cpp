@@ -36,6 +36,9 @@ using namespace MoFEM;
 #include <DofsMultiIndices.hpp>
 #include <FEMMultiIndices.hpp>
 #include <DataStructures.hpp>
+#include <ProblemsMultiIndices.hpp>
+#include <AdjacencyMultiIndices.hpp>
+#include <LoopMethods.hpp>
 
 #include <BaseFunction.hpp>
 #include <EntPolynomialBaseCtx.hpp>

@@ -36,6 +36,9 @@ using namespace MoFEM;
 #include <DofsMultiIndices.hpp>
 #include <FEMMultiIndices.hpp>
 #include <DataStructures.hpp>
+#include <ProblemsMultiIndices.hpp>
+#include <AdjacencyMultiIndices.hpp>
+#include <LoopMethods.hpp>
 
 #include <BaseFunction.hpp>
 #include <EntPolynomialBaseCtx.hpp>
@@ -48,7 +51,8 @@ PetscErrorCode EntPolynomialBaseCtx::queryInterface(
   *iface = NULL;
   if(
     uuid == IDD_TET_BASE_FUNCTION ||
-    uuid == IDD_TRI_BASE_FUNCTION
+    uuid == IDD_TRI_BASE_FUNCTION ||
+    uuid == IDD_EDGE_BASE_FUNCTION
   ) {
     *iface = dynamic_cast<EntPolynomialBaseCtx*>(this);
     PetscFunctionReturn(0);
@@ -69,6 +73,16 @@ dAta(data),
 sPace(space),
 bAse(base),
 copyNodeBase(copy_node_base) {
+  PetscErrorCode ierr;
+  ierr = setBase(); CHKERRABORT(PETSC_COMM_WORLD,ierr);
+}
+
+
+EntPolynomialBaseCtx::~EntPolynomialBaseCtx() {
+}
+
+PetscErrorCode EntPolynomialBaseCtx::setBase() {
+  PetscFunctionBegin;
   switch(bAse) {
     case AINSWORTH_COLE_BASE:
     basePolynomials = Legendre_polynomials;
@@ -77,9 +91,12 @@ copyNodeBase(copy_node_base) {
     basePolynomials = Lobatto_polynomials;
     break;
     default:
-    THROW_MESSAGE("Not implemented for this base")
+    SETERRQ1(
+      PETSC_COMM_SELF,
+      MOFEM_NOT_IMPLEMENTED,
+      "Not implemented for this base <%s>",
+      ApproximationBaseNames[bAse]
+    );
   }
-}
-
-EntPolynomialBaseCtx::~EntPolynomialBaseCtx() {
+  PetscFunctionReturn(0);
 }

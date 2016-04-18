@@ -53,6 +53,9 @@
 #include <DataStructures.hpp>
 #include <DataOperators.hpp>
 #include <ElementsOnEntities.hpp>
+#include <BaseFunction.hpp>
+#include <EntPolynomialBaseCtx.hpp>
+#include <FlatPrismPolynomialBase.hpp>
 #include <FlatPrismElementForcesAndSurcesCore.hpp>
 
 #ifdef __cplusplus
@@ -67,7 +70,6 @@ extern "C" {
 #endif
 
 namespace MoFEM {
-
 
 PetscErrorCode FlatPrismElementForcesAndSurcesCore::operator()() {
   PetscFunctionBegin;
@@ -173,35 +175,45 @@ PetscErrorCode FlatPrismElementForcesAndSurcesCore::operator()() {
         }
       }
     }
-    vector<FieldApproximationBase> shape_functions_for_bases;
-    if(dataH1.bAse.test(AINSWORTH_COLE_BASE)) {
-      dataH1.dataOnEntities[MBVERTEX][0].getBase() = AINSWORTH_COLE_BASE;
-      shape_functions_for_bases.push_back(AINSWORTH_COLE_BASE);
-      ierr = shapeFlatPRISMFunctions_H1(
-        dataH1,&gaussPts(0,0),&gaussPts(1,0),nb_gauss_pts,AINSWORTH_COLE_BASE,Legendre_polynomials
-      ); CHKERRQ(ierr);
-      if(dataH1.spacesOnEntities[MBTRI].test(HDIV)) {
-        ierr = shapeFlatPRISMFunctions_Hdiv(
-          dataHdiv,&gaussPts(0,0),&gaussPts(1,0),nb_gauss_pts,AINSWORTH_COLE_BASE,Legendre_polynomials
-        ); CHKERRQ(ierr); CHKERRQ(ierr);
+
+    try {
+
+      vector<FieldApproximationBase> shape_functions_for_bases;
+      for(int b = AINSWORTH_COLE_BASE;b!=LASTBASE;b++) {
+        if(dataH1.bAse.test(b)) {
+          switch (ApproximationBaseArray[b]) {
+            case AINSWORTH_COLE_BASE:
+            case LOBATTO_BASE:
+            if(dataH1.spacesOnEntities[MBVERTEX].test(H1)) {
+              ierr = FlatPrismPolynomialBase().getValue(
+                gaussPts,
+                boost::shared_ptr<BaseFunctionCtx>(
+                  new PrismPolynomialBaseCtx(
+                    dataH1,mField.get_moab(),fePtr,H1,ApproximationBaseArray[b],NOBASE
+                  )
+                )
+              ); CHKERRQ(ierr);
+            }
+            if(dataH1.spacesOnEntities[MBTRI].test(HDIV)) {
+              SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"Not yet implemented");
+            }
+            if(dataH1.spacesOnEntities[MBEDGE].test(HCURL)) {
+              SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"Not yet implemented");
+            }
+            if(dataH1.spacesOnEntities[MBTET].test(L2)) {
+              SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"Not yet implemented");
+            }
+            break;
+            default:
+            SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"Not yet implemented");
+          }
+        }
       }
-    }
-    if(dataH1.bAse.test(LOBATTO_BASE)) {
-      dataH1.dataOnEntities[MBVERTEX][0].getBase() = LOBATTO_BASE;
-      shape_functions_for_bases.push_back(LOBATTO_BASE);
-      dataH1.dataOnEntities[MBVERTEX][0].getBase() = AINSWORTH_COLE_BASE;
-      shape_functions_for_bases.push_back(AINSWORTH_COLE_BASE);
-      ierr = shapeFlatPRISMFunctions_H1(
-        dataH1,&gaussPts(0,0),&gaussPts(1,0),nb_gauss_pts,LOBATTO_BASE,Lobatto_polynomials
-      ); CHKERRQ(ierr);
-      if(dataH1.spacesOnEntities[MBTRI].test(HDIV)) {
-        ierr = shapeFlatPRISMFunctions_Hdiv(
-          dataHdiv,&gaussPts(0,0),&gaussPts(1,0),nb_gauss_pts,LOBATTO_BASE,Lobatto_polynomials
-        ); CHKERRQ(ierr); CHKERRQ(ierr);
-      }
-    }
-    if(dataH1.bAse.test(BERNSTEIN_BEZIER_BASE)) {
-      SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented");
+
+    } catch (exception& ex) {
+      ostringstream ss;
+      ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
+      SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
     }
 
     try {

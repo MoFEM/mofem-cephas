@@ -25,6 +25,7 @@ add_library(mofem_approx
   impl/TriPolynomialBase.cpp
   impl/TetPolynomialBase.cpp
   impl/EdgePolynomialBase.cpp
+  impl/FlatPrismPolynomialBase.cpp
   c_impl/base_functions.c
   c_impl/fem_tools.c
   c_impl/h1.c

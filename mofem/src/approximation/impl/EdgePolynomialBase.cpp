@@ -1,5 +1,6 @@
 /** \file EdgePolynomialBase.cpp
 \brief Implementation of Ainsworth-Cole H1 base on edge
+*/
 
 /* This file is part of MoFEM.
 * MoFEM is free software: you can redistribute it and/or modify it under
@@ -34,6 +35,9 @@ using namespace MoFEM;
 #include <DofsMultiIndices.hpp>
 #include <FEMMultiIndices.hpp>
 #include <DataStructures.hpp>
+#include <ProblemsMultiIndices.hpp>
+#include <AdjacencyMultiIndices.hpp>
+#include <LoopMethods.hpp>
 
 #include <BaseFunction.hpp>
 #include <EntPolynomialBaseCtx.hpp>
@@ -45,7 +49,7 @@ PetscErrorCode EdgePolynomialBase::queryInterface(
   PetscErrorCode ierr;
   PetscFunctionBegin;
   *iface = NULL;
-  if(uuid == IDD_TET_BASE_FUNCTION) {
+  if(uuid == IDD_EDGE_BASE_FUNCTION) {
     *iface = dynamic_cast<EdgePolynomialBase*>(this);
     PetscFunctionReturn(0);
   } else {
@@ -143,7 +147,7 @@ PetscErrorCode EdgePolynomialBase::getValueH1(ublas::matrix<double> &pts) {
   //cerr << data.dataOnEntities[MBVERTEX][0].getN(base) << endl;
   //cerr << data.dataOnEntities[MBVERTEX][0].getDiffN(base) << endl;
   //
-  cerr << pts << endl;
+  // cerr << pts << endl;
 
   const int side_number = 0;
   int sense = data.dataOnEntities[MBEDGE][side_number].getSense();

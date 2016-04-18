@@ -67,6 +67,7 @@
 #include <TetPolynomialBase.hpp> // Base functions on tet
 #include <TriPolynomialBase.hpp> // Base functions on tri
 #include <EdgePolynomialBase.hpp> // Base functions on tri
+#include <FlatPrismPolynomialBase.hpp> // Base functions on tri
 #include <DataOperators.hpp>
 #include <ElementsOnEntities.hpp>
 #include <VolumeElementForcesAndSourcesCore.hpp>

@@ -310,30 +310,6 @@ struct ForcesAndSurcesCore: public FEMethod {
   ublas::vector<MatrixDouble > diffN_volume_face;
   MatrixDouble diffN_volume_bubble;
 
-  /** \brief computes approximation functions for prism and H1 space
-    * FIXME: This functions should be in separate class in approximation folder
-    */
-  PetscErrorCode shapeFlatPRISMFunctions_H1(
-    DataForcesAndSurcesCore &data,
-    const double *G_X,
-    const double *G_Y,
-    const int G_DIM,
-    const FieldApproximationBase base,
-    PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
-  );
-
-  /** \brief computes approximation functions for prism and H1 space
-    * FIXME: This functions should be in separate class in approximation folder
-    */
-  PetscErrorCode shapeFlatPRISMFunctions_Hdiv(
-    DataForcesAndSurcesCore &data,
-    const double *G_X,
-    const double *G_Y,
-    const int G_DIM,
-    const FieldApproximationBase base,
-    PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
-  );
-
   /// \brief It could be be removed in the future use other variant
   virtual int getRule(int order) { return 2*order; };
 
