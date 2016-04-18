@@ -310,42 +310,6 @@ struct ForcesAndSurcesCore: public FEMethod {
   ublas::vector<MatrixDouble > diffN_volume_face;
   MatrixDouble diffN_volume_bubble;
 
-  /** \brief computes approximation functions for triangle and H1 space
-    * FIXME: This functions should be in separate class in approximation folder
-    */
-  PetscErrorCode shapeTRIFunctions_H1(
-    DataForcesAndSurcesCore &data,
-    const double *G_X,
-    const double *G_Y,
-    const int G_DIM,
-    const FieldApproximationBase base,
-    PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
-  );
-
-  /** \brief computes approximation functions for triangle and H1 space
-    * FIXME: This functions should be in separate class in approximation folder
-    */
-  PetscErrorCode shapeTRIFunctions_Hdiv(
-    DataForcesAndSurcesCore &data,
-    const double *G_X,
-    const double *G_Y,
-    const int G_DIM,
-    const FieldApproximationBase base,
-    PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
-  );
-
-  /** \brief computes approximation functions for edge and H1 space
-    * FIXME: This functions should be in separate class in approximation folder
-    */
-  PetscErrorCode shapeEDGEFunctions_H1(
-    DataForcesAndSurcesCore &data,
-    int side_number,
-    const double *G_X,
-    const int G_DIM,
-    const FieldApproximationBase base,
-    PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
-  );
-
   /** \brief computes approximation functions for prism and H1 space
     * FIXME: This functions should be in separate class in approximation folder
     */

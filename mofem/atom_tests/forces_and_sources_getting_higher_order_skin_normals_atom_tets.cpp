@@ -186,12 +186,24 @@ int main(int argc, char *argv[]) {
       ierr = getEdgesFieldData(data,"FIELD1"); CHKERRQ(ierr);
       ierr = getTrisFieldData(data,"FIELD1"); CHKERRQ(ierr);
 
-      data.dataOnEntities[MBVERTEX][0].getN(AINSWORTH_COLE_BASE).resize(4,3,false);
+      data.dataOnEntities[MBVERTEX][0].getN(NOBASE).resize(4,3,false);
       ierr = ShapeMBTRI(
-        &*data.dataOnEntities[MBVERTEX][0].getN(AINSWORTH_COLE_BASE).data().begin(),
+        &*data.dataOnEntities[MBVERTEX][0].getN(NOBASE).data().begin(),
         G_TRI_X4,G_TRI_Y4,4
       ); CHKERRQ(ierr);
-      ierr = shapeTRIFunctions_H1(data,G_TRI_X4,G_TRI_Y4,4,AINSWORTH_COLE_BASE,Legendre_polynomials); CHKERRQ(ierr);
+
+      MatrixDouble gauss_pts(2,4,false);
+      for(int gg = 0;gg<4;gg++) {
+        gauss_pts(0,gg) = G_TRI_X4[gg];
+        gauss_pts(1,gg) = G_TRI_Y4[gg];
+      }
+
+      ierr = TriPolynomialBase().getValue(
+        gauss_pts,
+        boost::shared_ptr<BaseFunctionCtx>(
+          new EntPolynomialBaseCtx(data,H1,AINSWORTH_COLE_BASE,NOBASE)
+        )
+      ); CHKERRQ(ierr);
 
       nOrmals_at_GaussPt.resize(4,3);
       tAngent1_at_GaussPt.resize(4,3);
