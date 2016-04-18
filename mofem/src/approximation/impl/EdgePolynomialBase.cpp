@@ -1,7 +1,5 @@
 /** \file EdgePolynomialBase.cpp
-\brief Implementation of Ainsworth-Cole H1 base on tetrahedral
-
-*/
+\brief Implementation of Ainsworth-Cole H1 base on edge
 
 /* This file is part of MoFEM.
 * MoFEM is free software: you can redistribute it and/or modify it under

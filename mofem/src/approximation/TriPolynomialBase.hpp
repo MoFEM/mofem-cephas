@@ -1,5 +1,5 @@
 /** \file TriPolynomialBase.hpp
-\brief Implementation of Ainsworth-Cole H1 base on tetrahedral
+\brief Implementation of Ainsworth-Cole H1 base on triangle
 
 */
 
