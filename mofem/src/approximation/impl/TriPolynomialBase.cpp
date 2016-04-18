@@ -315,6 +315,22 @@ PetscErrorCode TriPolynomialBase::getValue(
   data.dataOnEntities[MBVERTEX][0].getDiffN(base).resize(3,2,false);
   ierr = ShapeDiffMBTRI(&*data.dataOnEntities[MBVERTEX][0].getDiffN(base).data().begin()); CHKERRQ(ierr);
 
+  if(cTx->sPace==H1) {
+    // In linear geometry derivatives are constant,
+    // this in expense of efficiency makes implementation
+    // constant between vertices and other types of entities
+    MatrixDouble diffN(nb_gauss_pts,6);
+    for(int gg = 0;gg<nb_gauss_pts;gg++) {
+      for(int nn = 0;nn<3;nn++) {
+        for(int dd = 0;dd<2;dd++) {
+          diffN(gg,nn*2+dd) = data.dataOnEntities[MBVERTEX][0].getDiffN(base)(nn,dd);
+        }
+      }
+    }
+    data.dataOnEntities[MBVERTEX][0].getDiffN(base).resize(diffN.size1(),diffN.size2(),false);
+    data.dataOnEntities[MBVERTEX][0].getDiffN(base).data().swap(diffN.data());
+  }
+
   switch (cTx->sPace) {
     case H1:
     ierr = getValueH1(pts); CHKERRQ(ierr);

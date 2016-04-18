@@ -506,6 +506,18 @@ PetscErrorCode TetPolynomialBase::getValue(
   }
   data.dataOnEntities[MBVERTEX][0].getDiffN(base).resize(4,3,false);
   ierr = ShapeDiffMBTET(&*data.dataOnEntities[MBVERTEX][0].getDiffN(base).data().begin()); CHKERRQ(ierr);
+  // if(cTx->sPace==H1) {
+  //   MatrixDouble diffN(nb_gauss_pts,12);
+  //   for(int gg = 0;gg<nb_gauss_pts;gg++) {
+  //     for(int nn = 0;nn<4;nn++) {
+  //       for(int dd = 0;dd<3;dd++) {
+  //         diffN(gg,nn*3+dd) = data.dataOnEntities[MBVERTEX][0].getDiffN(base)(nn,dd);
+  //       }
+  //     }
+  //   }
+  //   data.dataOnEntities[MBVERTEX][0].getDiffN(base).resize(diffN.size1(),diffN.size2(),false);
+  //   data.dataOnEntities[MBVERTEX][0].getDiffN(base).data().swap(diffN.data());
+  // }
 
   switch (cTx->sPace) {
     case H1:
