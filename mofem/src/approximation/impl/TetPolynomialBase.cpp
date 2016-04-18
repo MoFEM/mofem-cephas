@@ -38,23 +38,8 @@ using namespace MoFEM;
 #include <DataStructures.hpp>
 
 #include <BaseFunction.hpp>
+#include <EntPolynomialBaseCtx.hpp>
 #include <TetPolynomialBase.hpp>
-
-PetscErrorCode TetPolynomialBaseCtx::queryInterface(
-  const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface
-) {
-  PetscErrorCode ierr;
-  PetscFunctionBegin;
-  *iface = NULL;
-  if(uuid == IDD_H1TET_BASE_FUNCTION) {
-    *iface = dynamic_cast<TetPolynomialBaseCtx*>(this);
-    PetscFunctionReturn(0);
-  } else {
-    SETERRQ(PETSC_COMM_WORLD,MOFEM_DATA_INCONSISTENCY,"wrong interference");
-  }
-  ierr = BaseFunctionCtx::queryInterface(uuid,iface); CHKERRQ(ierr);
-  PetscFunctionReturn(0);
-}
 
 PetscErrorCode TetPolynomialBase::queryInterface(
   const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface
@@ -62,7 +47,7 @@ PetscErrorCode TetPolynomialBase::queryInterface(
   PetscErrorCode ierr;
   PetscFunctionBegin;
   *iface = NULL;
-  if(uuid == IDD_H1TET_BASE_FUNCTION) {
+  if(uuid == IDD_TET_BASE_FUNCTION) {
     *iface = dynamic_cast<TetPolynomialBase*>(this);
     PetscFunctionReturn(0);
   } else {
@@ -70,31 +55,6 @@ PetscErrorCode TetPolynomialBase::queryInterface(
   }
   ierr = BaseFunction::queryInterface(uuid,iface); CHKERRQ(ierr);
   PetscFunctionReturn(0);
-}
-
-TetPolynomialBaseCtx::TetPolynomialBaseCtx(
-  DataForcesAndSurcesCore &data,
-  const FieldSpace space,
-  const FieldApproximationBase base,
-  const FieldApproximationBase copy_node_base
-):
-dAta(data),
-sPace(space),
-bAse(base),
-copyNodeBase(copy_node_base) {
-  switch(bAse) {
-    case AINSWORTH_COLE_BASE:
-    basePolynomials = Legendre_polynomials;
-    break;
-    case LOBATTO_BASE:
-    basePolynomials = Lobatto_polynomials;
-    break;
-    default:
-    THROW_MESSAGE("Not implemented for this base")
-  }
-}
-
-TetPolynomialBaseCtx::~TetPolynomialBaseCtx() {
 }
 
 TetPolynomialBase::~TetPolynomialBase() {}
@@ -466,8 +426,8 @@ PetscErrorCode TetPolynomialBase::getValue(
   PetscFunctionBegin;
 
   MoFEM::UnknownInterface *iface;
-  ierr = ctx_ptr->queryInterface(IDD_H1TET_BASE_FUNCTION,&iface); CHKERRQ(ierr);
-  cTx = reinterpret_cast<TetPolynomialBaseCtx*>(iface);
+  ierr = ctx_ptr->queryInterface(IDD_TET_BASE_FUNCTION,&iface); CHKERRQ(ierr);
+  cTx = reinterpret_cast<EntPolynomialBaseCtx*>(iface);
 
   int nb_gauss_pts = pts.size2();
   if(!nb_gauss_pts) {

@@ -55,6 +55,7 @@
 #include <LobattoPolynomial.hpp>
 
 #include <DataStructures.hpp>
+#include <EntPolynomialBaseCtx.hpp>
 #include <TetPolynomialBase.hpp> // Base functions on tet
 #include <DataOperators.hpp>
 #include <ElementsOnEntities.hpp>
@@ -221,7 +222,7 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::operator()() {
               ierr = TetPolynomialBase().getValue(
                 gaussPts,
                 boost::shared_ptr<BaseFunctionCtx>(
-                  new TetPolynomialBaseCtx(dataH1,H1,ApproximationBaseArray[b],NOBASE)
+                  new EntPolynomialBaseCtx(dataH1,H1,ApproximationBaseArray[b],NOBASE)
                 )
               ); CHKERRQ(ierr);
             }
@@ -229,7 +230,7 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::operator()() {
               ierr = TetPolynomialBase().getValue(
                 gaussPts,
                 boost::shared_ptr<BaseFunctionCtx>(
-                  new TetPolynomialBaseCtx(dataHdiv,HDIV,ApproximationBaseArray[b],NOBASE)
+                  new EntPolynomialBaseCtx(dataHdiv,HDIV,ApproximationBaseArray[b],NOBASE)
                 )
               ); CHKERRQ(ierr);
             }
@@ -237,7 +238,7 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::operator()() {
               ierr = TetPolynomialBase().getValue(
                 gaussPts,
                 boost::shared_ptr<BaseFunctionCtx>(
-                  new TetPolynomialBaseCtx(dataHcurl,HCURL,ApproximationBaseArray[b],NOBASE)
+                  new EntPolynomialBaseCtx(dataHcurl,HCURL,ApproximationBaseArray[b],NOBASE)
                 )
               ); CHKERRQ(ierr);
             }
@@ -245,7 +246,7 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::operator()() {
               ierr = TetPolynomialBase().getValue(
                 gaussPts,
                 boost::shared_ptr<BaseFunctionCtx>(
-                  new TetPolynomialBaseCtx(dataL2,L2,ApproximationBaseArray[b],NOBASE)
+                  new EntPolynomialBaseCtx(dataL2,L2,ApproximationBaseArray[b],NOBASE)
                 )
               ); CHKERRQ(ierr);
             }

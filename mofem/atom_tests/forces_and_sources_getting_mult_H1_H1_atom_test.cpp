@@ -278,13 +278,13 @@ int main(int argc, char *argv[]) {
       ierr = TetPolynomialBase().getValue(
         gauss_pts,
         boost::shared_ptr<BaseFunctionCtx>(
-          new TetPolynomialBaseCtx(data_row,H1,AINSWORTH_COLE_BASE)
+          new EntPolynomialBaseCtx(data_row,H1,AINSWORTH_COLE_BASE)
         )
       ); CHKERRQ(ierr);
       ierr = TetPolynomialBase().getValue(
         gauss_pts,
         boost::shared_ptr<BaseFunctionCtx>(
-          new TetPolynomialBaseCtx(data_col,H1,AINSWORTH_COLE_BASE)
+          new EntPolynomialBaseCtx(data_col,H1,AINSWORTH_COLE_BASE)
         )
       ); CHKERRQ(ierr);
 

@@ -193,7 +193,7 @@ int main(int argc, char *argv[]) {
     ierr = TetPolynomialBase().getValue(
       pts_tet,
       boost::shared_ptr<BaseFunctionCtx>(
-        new TetPolynomialBaseCtx(tet_data,H1,AINSWORTH_COLE_BASE,NOBASE)
+        new EntPolynomialBaseCtx(tet_data,H1,AINSWORTH_COLE_BASE,NOBASE)
       )
     ); CHKERRQ(ierr);
     if(
@@ -237,7 +237,7 @@ int main(int argc, char *argv[]) {
     ierr = TetPolynomialBase().getValue(
       pts_tet,
       boost::shared_ptr<BaseFunctionCtx>(
-        new TetPolynomialBaseCtx(tet_data,HDIV,AINSWORTH_COLE_BASE)
+        new EntPolynomialBaseCtx(tet_data,HDIV,AINSWORTH_COLE_BASE)
       )
     ); CHKERRQ(ierr);
     double sum = 0,diff_sum = 0;
@@ -267,7 +267,7 @@ int main(int argc, char *argv[]) {
     ierr = TetPolynomialBase().getValue(
       pts_tet,
       boost::shared_ptr<BaseFunctionCtx>(
-        new TetPolynomialBaseCtx(tet_data,HCURL,AINSWORTH_COLE_BASE)
+        new EntPolynomialBaseCtx(tet_data,HCURL,AINSWORTH_COLE_BASE)
       )
     ); CHKERRQ(ierr);
     double sum = 0,diff_sum = 0;
@@ -304,7 +304,7 @@ int main(int argc, char *argv[]) {
     ierr = TetPolynomialBase().getValue(
       pts_tet,
       boost::shared_ptr<BaseFunctionCtx>(
-        new TetPolynomialBaseCtx(tet_data,L2,AINSWORTH_COLE_BASE)
+        new EntPolynomialBaseCtx(tet_data,L2,AINSWORTH_COLE_BASE)
       )
     ); CHKERRQ(ierr);
     double sum = 0,diff_sum = 0;
@@ -361,7 +361,7 @@ int main(int argc, char *argv[]) {
     ierr = TriPolynomialBase().getValue(
       pts_tri,
       boost::shared_ptr<BaseFunctionCtx>(
-        new TriPolynomialBaseCtx(tri_data,H1,AINSWORTH_COLE_BASE,NOBASE)
+        new EntPolynomialBaseCtx(tri_data,H1,AINSWORTH_COLE_BASE,NOBASE)
       )
     ); CHKERRQ(ierr);
     if(
@@ -397,7 +397,7 @@ int main(int argc, char *argv[]) {
     ierr = TriPolynomialBase().getValue(
       pts_tri,
       boost::shared_ptr<BaseFunctionCtx>(
-        new TriPolynomialBaseCtx(tri_data,HDIV,AINSWORTH_COLE_BASE,NOBASE)
+        new EntPolynomialBaseCtx(tri_data,HDIV,AINSWORTH_COLE_BASE,NOBASE)
       )
     ); CHKERRQ(ierr);
     if(

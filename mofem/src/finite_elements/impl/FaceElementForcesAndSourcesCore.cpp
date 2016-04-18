@@ -56,6 +56,7 @@
 #include <FaceElementForcesAndSourcesCore.hpp>
 
 #include <BaseFunction.hpp>
+#include <EntPolynomialBaseCtx.hpp>
 #include <TriPolynomialBase.hpp>
 
 #ifdef __cplusplus
@@ -189,7 +190,7 @@ PetscErrorCode FaceElementForcesAndSourcesCore::operator()() {
             ierr = TriPolynomialBase().getValue(
               gaussPts,
               boost::shared_ptr<BaseFunctionCtx>(
-                new TriPolynomialBaseCtx(dataH1,H1,ApproximationBaseArray[b],NOBASE)
+                new EntPolynomialBaseCtx(dataH1,H1,ApproximationBaseArray[b],NOBASE)
               )
             ); CHKERRQ(ierr);
           }
@@ -197,7 +198,7 @@ PetscErrorCode FaceElementForcesAndSourcesCore::operator()() {
             ierr = TriPolynomialBase().getValue(
               gaussPts,
               boost::shared_ptr<BaseFunctionCtx>(
-                new TriPolynomialBaseCtx(dataHdiv,HDIV,ApproximationBaseArray[b],NOBASE)
+                new EntPolynomialBaseCtx(dataHdiv,HDIV,ApproximationBaseArray[b],NOBASE)
               )
             ); CHKERRQ(ierr);
           }
@@ -205,7 +206,7 @@ PetscErrorCode FaceElementForcesAndSourcesCore::operator()() {
             ierr = TriPolynomialBase().getValue(
               gaussPts,
               boost::shared_ptr<BaseFunctionCtx>(
-                new TriPolynomialBaseCtx(dataHcurl,HCURL,ApproximationBaseArray[b],NOBASE)
+                new EntPolynomialBaseCtx(dataHcurl,HCURL,ApproximationBaseArray[b],NOBASE)
               )
             ); CHKERRQ(ierr);
           }
@@ -213,7 +214,7 @@ PetscErrorCode FaceElementForcesAndSourcesCore::operator()() {
             ierr = TriPolynomialBase().getValue(
               gaussPts,
               boost::shared_ptr<BaseFunctionCtx>(
-                new TriPolynomialBaseCtx(dataL2,L2,ApproximationBaseArray[b],NOBASE)
+                new EntPolynomialBaseCtx(dataL2,L2,ApproximationBaseArray[b],NOBASE)
               )
             ); CHKERRQ(ierr);
           }

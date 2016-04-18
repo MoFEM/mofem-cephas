@@ -22,30 +22,6 @@
 
 namespace MoFEM {
 
-  static const MOFEMuuid IDD_H1TET_BASE_FUNCTION = MOFEMuuid(BitIntefaceId(H1TET_BASE_FUNCTION_INTERFACE));
-
-  struct TetPolynomialBaseCtx: public BaseFunctionCtx {
-
-    PetscErrorCode queryInterface(const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface);
-
-    PetscErrorCode (*basePolynomials)(
-      int p,double s,double *diff_s,double *L,double *diffL,const int dim
-    );
-    DataForcesAndSurcesCore &dAta;
-    const FieldSpace sPace;
-    const FieldApproximationBase bAse;
-    const FieldApproximationBase copyNodeBase;
-
-    TetPolynomialBaseCtx(
-      DataForcesAndSurcesCore &data,
-      const FieldSpace space,
-      const FieldApproximationBase base,
-      const FieldApproximationBase copy_node_base = LASTBASE
-    );
-    ~TetPolynomialBaseCtx();
-
-  };
-
   struct TetPolynomialBase: public BaseFunction {
 
     PetscErrorCode queryInterface(const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface);
@@ -60,7 +36,7 @@ namespace MoFEM {
 
   private:
 
-    TetPolynomialBaseCtx *cTx;
+    EntPolynomialBaseCtx *cTx;
 
     PetscErrorCode getValueH1(
       ublas::matrix<double> &pts
