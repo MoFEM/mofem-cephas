@@ -315,7 +315,7 @@ PetscErrorCode FatPrismElementForcesAndSurcesCore::operator()() {
     for(int dd = 0;dd<6;dd++) {
       int gg = 0;
       for(int ggf = 0;ggf<nb_gauss_pts_on_faces;ggf++) {
-        int ddd = dd>2? ddd = dd-3 : dd;
+        int ddd = dd>2? dd-3 : dd;
         double tri_n = dataH1TrianglesOnly.dataOnEntities[MBVERTEX][0].getN(NOBASE)(ggf,ddd);
         double dksi_tri_n = dataH1TrianglesOnly.dataOnEntities[MBVERTEX][0].getDiffN(NOBASE)(0,2*ddd+0);
         double deta_tri_n = dataH1TrianglesOnly.dataOnEntities[MBVERTEX][0].getDiffN(NOBASE)(0,2*ddd+1);

@@ -363,15 +363,22 @@ PetscErrorCode PostProcVolumeOnRefinedMesh::setGaussPts(int order) {
 
     //cerr << commonData.tEts.size() << endl;
 
-    EntityHandle meshset;
-    rval = postProcMesh.create_meshset(MESHSET_SET|MESHSET_TRACK_OWNER,meshset); CHKERRQ_MOAB(rval);
-    rval = postProcMesh.add_entities(meshset,commonData.tEts); CHKERRQ_MOAB(rval);
-    //create higher order entities
-    if(tenNodesPostProcTets) {
-      rval = postProcMesh.convert_entities(meshset,true,false,false); CHKERRQ_MOAB(rval);
+    {
+      EntityHandle meshset;
+      rval = postProcMesh.create_meshset(MESHSET_SET|MESHSET_TRACK_OWNER,meshset); CHKERRQ_MOAB(rval);
+      rval = postProcMesh.add_entities(meshset,commonData.tEts); CHKERRQ_MOAB(rval);
+      Range edges;
+      rval = postProcMesh.get_adjacencies(commonData.tEts,1,true,edges); CHKERRQ_MOAB(rval);
+      rval = postProcMesh.add_entities(meshset,edges); CHKERRQ_MOAB(rval);
+      //create higher order entities
+      if(tenNodesPostProcTets) {
+        rval = postProcMesh.convert_entities(meshset,true,false,false); CHKERRQ_MOAB(rval);
+      }
+      commonData.tEts.clear();
+      rval = postProcMesh.get_entities_by_type(meshset,MBTET,commonData.tEts,true); CHKERRQ_MOAB(rval);
+      rval = postProcMesh.delete_entities(&meshset,1);
+      rval = postProcMesh.delete_entities(edges);
     }
-    commonData.tEts.clear();
-    rval = postProcMesh.get_entities_by_type(meshset,MBTET,commonData.tEts,true); CHKERRQ_MOAB(rval);
 
     //cerr << "<-- " << commonData.tEts.size() << endl;
     Range nodes;
