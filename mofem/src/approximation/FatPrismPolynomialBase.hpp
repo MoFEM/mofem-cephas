@@ -78,9 +78,9 @@ namespace MoFEM {
 
     FatPrismPolynomialBaseCtx *cTx;
 
-    PetscErrorCode getValueH1TrianglesOnly(ublas::matrix<double> &pts);
+    PetscErrorCode getValueH1TrianglesOnly();
 
-    PetscErrorCode getValueH1ThroughThickness(ublas::matrix<double> &pts);
+    PetscErrorCode getValueH1ThroughThickness();
 
     PetscErrorCode getValueH1(ublas::matrix<double> &pts);
 

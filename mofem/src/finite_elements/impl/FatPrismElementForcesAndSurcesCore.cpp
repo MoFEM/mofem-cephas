@@ -353,7 +353,7 @@ PetscErrorCode FatPrismElementForcesAndSurcesCore::operator()() {
         case AINSWORTH_COLE_BASE:
         case LOBATTO_BASE:
         if(dataH1.spacesOnEntities[MBVERTEX].test(H1)) {
-          ierr = FlatPrismPolynomialBase().getValue(
+          ierr = FatPrismPolynomialBase().getValue(
             gaussPts,
             boost::shared_ptr<BaseFunctionCtx>(
               new FatPrismPolynomialBaseCtx(

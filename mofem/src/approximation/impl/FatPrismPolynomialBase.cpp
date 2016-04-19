@@ -91,7 +91,7 @@ PetscErrorCode FatPrismPolynomialBase::queryInterface(
   PetscErrorCode ierr;
   PetscFunctionBegin;
   *iface = NULL;
-  if(uuid == IDD_FLATPRISM_BASE_FUNCTION) {
+  if(uuid == IDD_FATPRISM_BASE_FUNCTION) {
     *iface = dynamic_cast<FatPrismPolynomialBase*>(this);
     PetscFunctionReturn(0);
   } else {
@@ -112,7 +112,7 @@ PetscErrorCode FatPrismPolynomialBase::getValue(
   PetscFunctionBegin;
 
   MoFEM::UnknownInterface *iface;
-  ierr = ctx_ptr->queryInterface(IDD_FLATPRISM_BASE_FUNCTION,&iface); CHKERRQ(ierr);
+  ierr = ctx_ptr->queryInterface(IDD_FATPRISM_BASE_FUNCTION,&iface); CHKERRQ(ierr);
   cTx = reinterpret_cast<FatPrismPolynomialBaseCtx*>(iface);
   if(!cTx->fePtr) {
     SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,
@@ -162,6 +162,8 @@ PetscErrorCode FatPrismPolynomialBase::getValue(
 
   switch (cTx->sPace) {
     case H1:
+    ierr = getValueH1TrianglesOnly(); CHKERRQ(ierr);
+    ierr = getValueH1ThroughThickness(); CHKERRQ(ierr);
     ierr = getValueH1(pts); CHKERRQ(ierr);
     break;
     case HDIV:
@@ -180,7 +182,7 @@ PetscErrorCode FatPrismPolynomialBase::getValue(
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode FatPrismPolynomialBase::getValueH1TrianglesOnly(ublas::matrix<double> &pts) {
+PetscErrorCode FatPrismPolynomialBase::getValueH1TrianglesOnly() {
   PetscErrorCode ierr;
   PetscFunctionBegin;
 
@@ -201,7 +203,7 @@ PetscErrorCode FatPrismPolynomialBase::getValueH1TrianglesOnly(ublas::matrix<dou
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode FatPrismPolynomialBase::getValueH1ThroughThickness(ublas::matrix<double> &pts) {
+PetscErrorCode FatPrismPolynomialBase::getValueH1ThroughThickness() {
   PetscErrorCode ierr;
   PetscFunctionBegin;
 
@@ -275,7 +277,7 @@ PetscErrorCode FatPrismPolynomialBase::getValueH1(ublas::matrix<double> &pts) {
         int nb_dofs = NBEDGE_H1_AINSWORTH_COLE(order);
         if((unsigned int)nb_dofs!=cTx->dataTroughThickness.dataOnEntities[MBEDGE][ee].getN(base).size2()) {
           SETERRQ2(
-            PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"nb_dofs != nb_dofs",
+            PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"nb_dofs != nb_dofs %d != %d",
             nb_dofs,cTx->dataTroughThickness.dataOnEntities[MBEDGE][ee].getN(base).size2()
           );
         }
