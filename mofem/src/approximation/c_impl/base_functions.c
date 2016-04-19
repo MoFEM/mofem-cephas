@@ -125,7 +125,8 @@ PetscErrorCode Lobatto_polynomials(
     // Functions
     bzero(&L[2],(p+1)*sizeof(double));
     int nb_gauss_pts = QUAD_1D_TABLE[p]->npoints;
-    for(int gg = 0;gg<nb_gauss_pts;gg++) {
+    int gg = 0;
+    for(;gg<nb_gauss_pts;gg++) {
       double ksi = QUAD_1D_TABLE[p]->points[1]-QUAD_1D_TABLE[p]->points[0];
       ierr = Legendre_polynomials(
         p,ksi,NULL,l,NULL,1
