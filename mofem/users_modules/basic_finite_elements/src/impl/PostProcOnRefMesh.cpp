@@ -287,7 +287,7 @@ PetscErrorCode PostProcVolumeOnRefinedMesh::generateReferenceElementMesh() {
   EntityHandle tet;
   rval = moab_ref.create_element(MBTET,nodes,4,tet); CHKERRQ_MOAB(rval);
 
-  MoFEM::Core m_core_ref(moab_ref,PETSC_COMM_SELF,-2);
+  MoFEM::Core m_core_ref(moab_ref,PETSC_COMM_SELF,MB_TAG_DENSE,-2);
   FieldInterface& m_field_ref = m_core_ref;
 
   ierr = m_field_ref.seed_ref_level_3D(0,BitRefLevel().set(0)); CHKERRQ(ierr);
@@ -363,15 +363,22 @@ PetscErrorCode PostProcVolumeOnRefinedMesh::setGaussPts(int order) {
 
     //cerr << commonData.tEts.size() << endl;
 
-    EntityHandle meshset;
-    rval = postProcMesh.create_meshset(MESHSET_SET|MESHSET_TRACK_OWNER,meshset); CHKERRQ_MOAB(rval);
-    rval = postProcMesh.add_entities(meshset,commonData.tEts); CHKERRQ_MOAB(rval);
-    //create higher order entities
-    if(tenNodesPostProcTets) {
-      rval = postProcMesh.convert_entities(meshset,true,false,false); CHKERRQ_MOAB(rval);
+    {
+      EntityHandle meshset;
+      rval = postProcMesh.create_meshset(MESHSET_SET|MESHSET_TRACK_OWNER,meshset); CHKERRQ_MOAB(rval);
+      rval = postProcMesh.add_entities(meshset,commonData.tEts); CHKERRQ_MOAB(rval);
+      Range edges;
+      rval = postProcMesh.get_adjacencies(commonData.tEts,1,true,edges); CHKERRQ_MOAB(rval);
+      rval = postProcMesh.add_entities(meshset,edges); CHKERRQ_MOAB(rval);
+      //create higher order entities
+      if(tenNodesPostProcTets) {
+        rval = postProcMesh.convert_entities(meshset,true,false,false); CHKERRQ_MOAB(rval);
+      }
+      commonData.tEts.clear();
+      rval = postProcMesh.get_entities_by_type(meshset,MBTET,commonData.tEts,true); CHKERRQ_MOAB(rval);
+      rval = postProcMesh.delete_entities(&meshset,1);
+      rval = postProcMesh.delete_entities(edges);
     }
-    commonData.tEts.clear();
-    rval = postProcMesh.get_entities_by_type(meshset,MBTET,commonData.tEts,true); CHKERRQ_MOAB(rval);
 
     //cerr << "<-- " << commonData.tEts.size() << endl;
     Range nodes;

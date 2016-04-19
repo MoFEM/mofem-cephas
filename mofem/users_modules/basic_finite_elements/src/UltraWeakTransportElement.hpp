@@ -394,7 +394,7 @@ struct UltraWeakTransportElement {
             w *= getHoGaussPtsDetJac()(gg);
           }
 
-          ierr = getDivergenceMatrixOperato_Hdiv(side,type,data,gg,div_vec); CHKERRQ(ierr);
+          ierr = getDivergenceMatrixOperator_Hdiv(side,type,data,gg,div_vec); CHKERRQ(ierr);
 
           noalias(Nf) -= w*div_vec*cTx.valuesAtGaussPts[gg];
 
@@ -476,7 +476,7 @@ struct UltraWeakTransportElement {
             w *= getHoGaussPtsDetJac()(gg);
           }
 
-          ierr = getDivergenceMatrixOperato_Hdiv(
+          ierr = getDivergenceMatrixOperator_Hdiv(
             col_side,col_type,col_data,gg,div_vec); CHKERRQ(ierr);
 
             //FIXME this multiplication should be done in blas or ublas
@@ -888,7 +888,7 @@ struct UltraWeakTransportElement {
       div_vec.resize(nb_dofs);
       for(int gg = 0;gg<nb_gauss_pts;gg++) {
 
-        ierr = getDivergenceMatrixOperato_Hdiv(side,type,data,gg,div_vec); CHKERRQ(ierr);
+        ierr = getDivergenceMatrixOperator_Hdiv(side,type,data,gg,div_vec); CHKERRQ(ierr);
         cTx.divergenceAtGaussPts[gg] += inner_prod(div_vec,data.getFieldData());
         noalias(cTx.fluxesAtGaussPts[gg]) += prod( trans(data.getHdivN(gg)), data.getFieldData());
 

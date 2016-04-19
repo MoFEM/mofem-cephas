@@ -52,6 +52,10 @@ struct FaceElementForcesAndSourcesCore: public ForcesAndSurcesCore {
   DerivedDataForcesAndSurcesCore derivedDataH1;
   DataForcesAndSurcesCore dataHdiv;
   DerivedDataForcesAndSurcesCore derivedDataHdiv;
+  DataForcesAndSurcesCore dataHcurl;
+  DerivedDataForcesAndSurcesCore derivedDataHcurl;
+  DataForcesAndSurcesCore dataL2;
+  DerivedDataForcesAndSurcesCore derivedDataL2;
   DataForcesAndSurcesCore dataNoField,dataNoFieldCol;
 
   string meshPositionsFieldName;
@@ -67,6 +71,8 @@ struct FaceElementForcesAndSourcesCore: public ForcesAndSurcesCore {
     ForcesAndSurcesCore(m_field),
     dataH1(MBTRI),derivedDataH1(dataH1),
     dataHdiv(MBTRI),derivedDataHdiv(dataHdiv),
+    dataHcurl(MBTRI),derivedDataHcurl(dataHdiv),
+    dataL2(MBTRI),derivedDataL2(dataHdiv),
     dataNoField(MBTRI),dataNoFieldCol(MBTRI),
     meshPositionsFieldName("MESH_NODE_POSITIONS"),
     opHOCoordsAndNormals(

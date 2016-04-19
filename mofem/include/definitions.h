@@ -46,6 +46,29 @@ enum MoFEMInterfaces {
   PRISMSFROMSURFACE_INTERFACE = 1<<3|1<<8 ///< create prisms from surface elements
 };
 
+/**
+ * \brief interfaces for PETSc DM interfaces
+ */
+enum DMInterfaces {
+  UNKNOWN_DM_INTERFACE = 1<<0,
+  DMCTX_INTERFACE = 1<<1
+};
+
+/**
+ * \brief Interfaces uses to manage base functions
+ */
+enum BaseIntefaces {
+  UNKNOWN_BASE_FUNCTION_INTERFACE = 1<<0,
+  LEGENDRE_BASE_FUNCTION_INTERFACE = 1<<1,
+  LOBATTO_BASE_FUNCTION_INTERFACE = 1<<2,
+  ENT_BASE_FUNCTION_INTERFACE = 1<<3,
+  TET_BASE_FUNCTION_INTERFACE = 1<<1|1<<2|1<<3,
+  TRI_BASE_FUNCTION_INTERFACE = 1<<1|1<<2|1<<4,
+  EDGE_BASE_FUNCTION_INTERFACE = 1<<1|1<<2|1<<5,
+  FATPRISM_BASE_FUNCTION_INTERFACE = 1<<1|1<<2|1<<6,
+  FLATPRISM_BASE_FUNCTION_INTERFACE = 1<<1|1<<2|1<<7
+};
+
 /** \brief Error handling
   *
   * This is complementary to PETSC error codes. The numerical values for
@@ -70,32 +93,47 @@ enum MoFEMErrorCodes {
 
 /// \brief approximation base
 enum FieldApproximationBase {
-  AINSWORTH_COLE_BASE = 1, ///< Ainsworth Cole approx. base \cite NME:NME847
+  NOBASE = 0,
+  AINSWORTH_COLE_BASE = 1, ///< Ainsworth Cole (Legendre) approx. base \cite NME:NME847
+  LOBATTO_BASE, ///< Like AINSWORTH_COLE_BASE but with Lobatto base instead Legendre \cite beriot2015efficient
   BERNSTEIN_BEZIER_BASE, ///< Not yet implemented, in implementation we will follow \cite ainsworth2011bernstein
   USER_BASE, ///< user implemented approximation base
-  LASTBASE 	///< FieldSpace in [ 0, LASTBASE )
+  LASTBASE
 };
 
 const static char * const ApproximationBaseNames[] = {
-  "", // empty space
+  "NOBASE",
   "AINSWORTH_COLE_BASE",
+  "LOBATTO_BASE",
   "BERNSTEIN_BEZIER_BASE",
-  "USER_BASE"
+  "USER_BASE",
   "LASTBASE"
 };
 
+#ifdef __cplusplus
+const static FieldApproximationBase ApproximationBaseArray[] = {
+  NOBASE,
+  AINSWORTH_COLE_BASE,
+  LOBATTO_BASE,
+  BERNSTEIN_BEZIER_BASE,
+  USER_BASE,
+  LASTBASE
+};
+#endif // __cplusplus
+
 /// \brief approximation spaces
 enum FieldSpace {
+  NOSPACE = 0,
   NOFIELD = 1, 	///< scalar or vector of scalars describe (no true field)
-  H1, 		///< continuous field
-  HDIV,		///< field with continuous normal traction
-  HCURL,	///< field with continuous tangents
-  L2,		///< field with C-1 continuity
-  LASTSPACE 	///< FieldSpace in [ 0, LASTSPACE )
+  H1, 		      ///< continuous field
+  HDIV,		      ///< field with continuous normal traction
+  HCURL,	      ///< field with continuous tangents
+  L2,		        ///< field with C-1 continuity
+  LASTSPACE 	  ///< FieldSpace in [ 0, LASTSPACE )
 };
 
 const static char * const FieldSpaceNames[] = {
-  "", // empty space
+  "NOSPACE",
   "NOFIELD",
   "H1",
   "HDIV",

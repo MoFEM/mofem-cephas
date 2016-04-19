@@ -2,6 +2,9 @@
  * \brief Core FieldInterface class for user interface
  *
  * Low level data structures not used directly by user
+ *
+ * FIXME It is a mess with names of core cpp files need better organization
+ *
  */
 
 /*
@@ -29,8 +32,7 @@ namespace MoFEM {
   without interfering with users modules programmer work.
 
  */
-struct Core:
-  public FieldInterface, MeshRefinment, PrismInterface, SeriesRecorder {
+struct Core: public FieldInterface, MeshRefinment, PrismInterface, SeriesRecorder {
 
   PetscErrorCode queryInterface(const MOFEMuuid& uuid, UnknownInterface** iface);
   PetscErrorCode query_interface_type(const std::type_info& iface_type, void*& ptr);
@@ -38,7 +40,7 @@ struct Core:
   Interface& moab;
   MPI_Comm comm;
 
-  Core(Interface& _moab,MPI_Comm _comm = PETSC_COMM_WORLD,int _verbose = 1);
+  Core(Interface& _moab,MPI_Comm _comm = PETSC_COMM_WORLD,TagType _tag_type = MB_TAG_SPARSE,int _verbose = 1);
   ~Core();
 
   Tag get_th_RefParentHandle() { return th_RefParentHandle; }
@@ -180,17 +182,16 @@ struct Core:
   PetscErrorCode check_number_of_ents_in_ents_finite_element();
   PetscErrorCode rebuild_database(int verb = -1);
 
-
   //cubit meshsets
-  bool check_msId_meshset(const int msId,const CubitBCType cubit_bc_type);
-  PetscErrorCode add_cubit_msId(const CubitBCType cubit_bc_type,const int msId);
-  PetscErrorCode delete_cubit_msId(const CubitBCType cubit_bc_type,const int msId);
-  PetscErrorCode get_cubit_msId(const int msId,const CubitBCType cubit_bc_type,const CubitMeshSets **cubit_meshset_ptr);
-  PetscErrorCode get_cubit_msId_entities_by_dimension(const int msId,const CubitBCType cubit_bc_type, const int dimension,Range &entities,const bool recursive = false);
-  PetscErrorCode get_cubit_msId_entities_by_dimension(const int msId,const CubitBCType cubit_bc_type, Range &entities,const bool recursive = false);
-  PetscErrorCode get_cubit_msId_entities_by_dimension(const int msId,const unsigned int cubit_bc_type, const int dimension,Range &entities,const bool recursive = false);
-  PetscErrorCode get_cubit_msId_entities_by_dimension(const int msId,const unsigned int cubit_bc_type, Range &entities,const bool recursive = false);
-  PetscErrorCode get_cubit_msId_meshset(const int msId,const unsigned int cubit_bc_type,EntityHandle &meshset);
+  bool check_msId_meshset(const int ms_id,const CubitBCType cubit_bc_type);
+  PetscErrorCode add_cubit_msId(const CubitBCType cubit_bc_type,const int ms_id,const string name = "");
+  PetscErrorCode delete_cubit_msId(const CubitBCType cubit_bc_type,const int ms_id);
+  PetscErrorCode get_cubit_msId(const int ms_id,const CubitBCType cubit_bc_type,const CubitMeshSets **cubit_meshset_ptr);
+  PetscErrorCode get_cubit_msId_entities_by_dimension(const int ms_id,const CubitBCType cubit_bc_type, const int dimension,Range &entities,const bool recursive = false);
+  PetscErrorCode get_cubit_msId_entities_by_dimension(const int ms_id,const CubitBCType cubit_bc_type, Range &entities,const bool recursive = false);
+  PetscErrorCode get_cubit_msId_entities_by_dimension(const int ms_id,const unsigned int cubit_bc_type, const int dimension,Range &entities,const bool recursive = false);
+  PetscErrorCode get_cubit_msId_entities_by_dimension(const int ms_id,const unsigned int cubit_bc_type, Range &entities,const bool recursive = false);
+  PetscErrorCode get_cubit_msId_meshset(const int ms_id,const unsigned int cubit_bc_type,EntityHandle &meshset);
   PetscErrorCode get_cubit_meshsets(const unsigned int cubit_bc_type,Range &meshsets);
   CubitMeshSet_multiIndex::iterator get_cubit_meshsets_begin() { return cubitMeshsets.begin(); }
   CubitMeshSet_multiIndex::iterator get_cubit_meshsets_end() { return cubitMeshsets.end(); }
@@ -357,13 +358,34 @@ struct Core:
   PetscErrorCode synchronise_field_entities(const BitFieldId id,int verb = -1);
   PetscErrorCode synchronise_field_entities(const string& name,int verb = -1);
 
-  //field
+  /**
+   * \brief Add filed
+   * @param  name           Field name
+   * @param  space          Space L2,H1,Hdiv,Hcurl
+   * @param  base           Approximation base AINSWORTH_COLE_BASE, BERNSTEIN_BEZIER_BASE ...
+   * @param  nb_cooficients Number of field coefficients
+   * @param  tag_type       Tag type, MB_TAG_DENSE or MB_TAG_SPARSE (default)
+   * @param  bh             Control behavior, if MF_EXCL throws error if exist
+   * @param  verb           Verbosity level
+   * @return                Return error code
+
+   TODO: \todo MB_TAG_DENSE will not work properly in general case. It is need to separate field
+   tags for each entity separately. That will allow for HO orders but homogenous approx. order
+   on each entity. Need some discussion what is optimal solution. MB_TAG_SPARSE gives flexibility,
+   but it not memory efficient. MB_TAG_DENSE uses memory more efficient and in principle allow
+   for better efficiency if properly utilized.
+
+   FIXME: \bug Need to resolve problem of dense tags at this stage of development will make only problems
+
+   */
   PetscErrorCode add_field(
     const string& name,
     const FieldSpace space,
     const FieldApproximationBase base,
     const FieldCoefficientsNumber nb_cooficients,
-    enum MoFEMTypes bh = MF_EXCL,int verb = -1
+    const TagType tag_type = MB_TAG_SPARSE,
+    const enum MoFEMTypes bh = MF_EXCL,
+    int verb = -1
   );
 
   PetscErrorCode add_ents_to_field_by_VERTICEs(const Range &nodes,const BitFieldId id,int verb = -1);

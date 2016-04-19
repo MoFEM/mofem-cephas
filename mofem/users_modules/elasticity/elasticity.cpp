@@ -566,4 +566,5 @@ int main(int argc, char *argv[]) {
 
   PetscFinalize();
 
+  return 0;
 }

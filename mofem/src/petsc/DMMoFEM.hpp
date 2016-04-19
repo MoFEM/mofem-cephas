@@ -416,7 +416,6 @@ PetscErrorCode DMLocalToGlobalEnd_MoFEM(DM,Vec,InsertMode,Vec);
 
 namespace MoFEM {
 
-  static const int DMCTX_INTERFACE = 1<<0;
   static const MOFEMuuid IDD_DMCTX = MOFEMuuid(BitIntefaceId(DMCTX_INTERFACE));
 
   /**

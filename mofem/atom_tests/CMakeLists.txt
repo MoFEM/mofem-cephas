@@ -11,25 +11,26 @@
 # You should have received a copy of the GNU Lesser General Public
 # License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 
-include_directories("${PROJECT_SOURCE_DIR}/include")
-include_directories("${PROJECT_SOURCE_DIR}/third_party")
-include_directories("${PROJECT_SOURCE_DIR}/third_party/cblas")
+include_directories(${PROJECT_SOURCE_DIR}/include)
+include_directories(${PROJECT_SOURCE_DIR}/third_party)
+include_directories(${PROJECT_SOURCE_DIR}/third_party/cblas)
+include_directories(${PROJECT_SOURCE_DIR}/third_party/phg-quadrule)
 
-include_directories("${PROJECT_SOURCE_DIR}/src/approximation")
-include_directories("${PROJECT_SOURCE_DIR}/src/approximation/c")
-link_directories("${PROJECT_BINARY_DIR}/src/approximation")
+include_directories(${PROJECT_SOURCE_DIR}/src/approximation)
+include_directories(${PROJECT_SOURCE_DIR}/src/approximation/c)
+link_directories(${PROJECT_BINARY_DIR}/src/approximation)
 
-include_directories("${PROJECT_SOURCE_DIR}/src/multi_indices")
-link_directories("${PROJECT_BINARY_DIR}/src/multi_indices")
+include_directories(${PROJECT_SOURCE_DIR}/src/multi_indices)
+link_directories(${PROJECT_BINARY_DIR}/src/multi_indices)
 
-include_directories("${PROJECT_SOURCE_DIR}/src/interfaces")
-link_directories("${PROJECT_BINARY_DIR}/src/interfaces")
+include_directories(${PROJECT_SOURCE_DIR}/src/interfaces)
+link_directories(${PROJECT_BINARY_DIR}/src/interfaces)
 
-include_directories("${PROJECT_SOURCE_DIR}/src/petsc")
-link_directories("${PROJECT_BINARY_DIR}/src/petsc")
+include_directories(${PROJECT_SOURCE_DIR}/src/petsc)
+link_directories(${PROJECT_BINARY_DIR}/src/petsc)
 
-include_directories("${PROJECT_SOURCE_DIR}/src/finite_elements")
-link_directories("${PROJECT_BINARY_DIR}/src/finite_elements")
+include_directories(${PROJECT_SOURCE_DIR}/src/finite_elements)
+link_directories(${PROJECT_BINARY_DIR}/src/finite_elements)
 
 # cubit_bc_test
 cm_export_file("../meshes/disp01.h5m" export_atom_tests)
@@ -649,6 +650,38 @@ target_link_libraries(partition_mesh
 add_test(partition_mesh ${MPI_RUN} -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/partition_mesh -my_file disp01.h5m
 )
+
+add_executable(testing_base_functions testing_base_functions.cpp)
+target_link_libraries(testing_base_functions
+  mofem_finite_elements
+  mofem_interfaces
+  mofem_multi_indices
+  mofem_petsc
+  mofem_approx
+  mofem_cblas
+  mofem_third_party
+  ${PROJECT_LIBS}
+)
+list(INSERT testing_base_list
+  0
+  legendre
+  lobatto
+  h1tet
+  hcurltet
+  hdivtet
+  l2tet
+  h1tri
+  hdivtri
+  hcurltri
+  l2tri
+  h1edge
+)
+foreach(test_base ${testing_base_list})
+  add_test(testing_base_functions_${test_base}
+    ${MPI_RUN} -np 1
+    ${CMAKE_CURRENT_BINARY_DIR}/testing_base_functions -base ${test_base}
+  )
+endforeach(test_base IN testing_base_list)
 
 
 if(WITH_ADOL-C)

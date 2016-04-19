@@ -161,7 +161,7 @@ int main(int argc, char *argv[]) {
 
       int gg = 0;
       for(;gg<nb_gauss_pts;gg++) {
-        ierr = getDivergenceMatrixOperato_Hdiv(side,type,data,gg,div_vec); CHKERRQ(ierr);
+        ierr = getDivergenceMatrixOperator_Hdiv(side,type,data,gg,div_vec); CHKERRQ(ierr);
         //cout << std::fixed << div_vec << endl;
         unsigned int dd = 0;
         for(;dd<div_vec.size();dd++) {
@@ -207,7 +207,8 @@ int main(int argc, char *argv[]) {
     PetscErrorCode doWork(
       int side,
       EntityType type,
-      DataForcesAndSurcesCore::EntData &data) {
+      DataForcesAndSurcesCore::EntData &data
+    ) {
       PetscFunctionBegin;
 
       if(type != MBTRI) PetscFunctionReturn(0);

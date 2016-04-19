@@ -23,6 +23,7 @@
 #include <definitions.h>
 #include <Common.hpp>
 
+#include <base_functions.h>
 #include <h1_hdiv_hcurl_l2.h>
 #include <fem_tools.h>
 
@@ -49,7 +50,13 @@
 #include <SeriesRecorder.hpp>
 #include <Core.hpp>
 
+#include <BaseFunction.hpp>
+#include <LegendrePolynomial.hpp>
+#include <LobattoPolynomial.hpp>
+
 #include <DataStructures.hpp>
+#include <EntPolynomialBaseCtx.hpp>
+#include <EdgePolynomialBase.hpp> // Base functions on tet
 #include <DataOperators.hpp>
 #include <ElementsOnEntities.hpp>
 #include <EdgeElementForcesAndSurcesCore.hpp>
@@ -72,8 +79,21 @@ PetscErrorCode EdgeElementForcesAndSurcesCore::operator()() {
 
   if(fePtr->get_ent_type() != MBEDGE) PetscFunctionReturn(0);
 
-  //PetscAttachDebugger();
+  EntityHandle ent = fePtr->get_ent();
+  {
+    int num_nodes;
+    const EntityHandle* conn;
+    rval = mField.get_moab().get_connectivity(ent,conn,num_nodes,true); CHKERRQ_MOAB(rval);
+    cOords.resize(num_nodes*3,false);
+    rval = mField.get_moab().get_coords(conn,num_nodes,&*cOords.data().begin()); CHKERRQ_MOAB(rval);
+    dIrection.resize(3,false);
+    cblas_dcopy(3,&cOords[3],1,&*dIrection.data().begin(),1);
+    cblas_daxpy(3,-1.,&cOords[0],1,&*dIrection.data().begin(),1);
+    lEngth = cblas_dnrm2(3,&*dIrection.data().begin(),1);
+  }
 
+  //PetscAttachDebugger();
+  ierr = getSpacesAndBaseOnEntities(dataH1); CHKERRQ(ierr);
   ierr = getEdgesDataOrder(dataH1,H1); CHKERRQ(ierr);
   ierr = getEdgesDataOrder(dataH1,H1); CHKERRQ(ierr);
 
@@ -103,8 +123,8 @@ PetscErrorCode EdgeElementForcesAndSurcesCore::operator()() {
       cblas_dcopy(
         nb_gauss_pts,QUAD_1D_TABLE[rule]->weights,1,&gaussPts(1,0),1
       );
-      dataH1.dataOnEntities[MBVERTEX][0].getN().resize(nb_gauss_pts,2,false);
-      double *shape_ptr = &*dataH1.dataOnEntities[MBVERTEX][0].getN().data().begin();
+      dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE).resize(nb_gauss_pts,2,false);
+      double *shape_ptr = &*dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE).data().begin();
       cblas_dcopy(
         2*nb_gauss_pts,QUAD_1D_TABLE[rule]->points,1,shape_ptr,1
       );
@@ -116,27 +136,6 @@ PetscErrorCode EdgeElementForcesAndSurcesCore::operator()() {
       nb_gauss_pts = 0;
     }
   }
-  // {
-  //   nb_gauss_pts = gm_rule_size(rule,1);
-  //   gaussPts.resize(2,nb_gauss_pts,false);
-  //   ierr = Grundmann_Moeller_integration_points_1D_EDGE(
-  //     rule,&gaussPts(0,0),&gaussPts(1,0)
-  //   ); CHKERRQ(ierr);
-  // }
-
-  ierr = shapeEDGEFunctions_H1(dataH1,0,&gaussPts(0,0),nb_gauss_pts); CHKERRQ(ierr);
-
-  EntityHandle ent = fePtr->get_ent();
-  int num_nodes;
-  const EntityHandle* conn;
-  rval = mField.get_moab().get_connectivity(ent,conn,num_nodes,true); CHKERRQ_MOAB(rval);
-  cOords.resize(num_nodes*3,false);
-  rval = mField.get_moab().get_coords(conn,num_nodes,&*cOords.data().begin()); CHKERRQ_MOAB(rval);
-
-  dIrection.resize(3,false);
-  cblas_dcopy(3,&cOords[3],1,&*dIrection.data().begin(),1);
-  cblas_daxpy(3,-1.,&cOords[0],1,&*dIrection.data().begin(),1);
-  lEngth = cblas_dnrm2(3,&*dIrection.data().begin(),1);
 
   coordsAtGaussPts.resize(nb_gauss_pts,3,false);
   for(int gg = 0;gg<nb_gauss_pts;gg++) {
@@ -144,16 +143,50 @@ PetscErrorCode EdgeElementForcesAndSurcesCore::operator()() {
       coordsAtGaussPts(gg,dd) = N_MBEDGE0(gaussPts(0,gg))*cOords[dd] + N_MBEDGE1(gaussPts(0,gg))*cOords[3+dd];
     }
   }
-  //cerr << coordsAtGaussPts << endl;
+
+  try {
+
+    for(int b = AINSWORTH_COLE_BASE;b!=LASTBASE;b++) {
+      if(dataH1.bAse.test(b)) {
+        switch (ApproximationBaseArray[b]) {
+          case AINSWORTH_COLE_BASE:
+          case LOBATTO_BASE:
+          if(dataH1.spacesOnEntities[MBVERTEX].test(H1)) {
+            ierr = EdgePolynomialBase().getValue(
+              gaussPts,
+              boost::shared_ptr<BaseFunctionCtx>(
+                new EntPolynomialBaseCtx(dataH1,H1,ApproximationBaseArray[b],NOBASE)
+              )
+            ); CHKERRQ(ierr);
+          }
+          if(dataH1.spacesOnEntities[MBTRI].test(HDIV)) {
+            SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"Not yet implemented");
+          }
+          if(dataH1.spacesOnEntities[MBEDGE].test(HCURL)) {
+            SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"Not yet implemented");
+          }
+          if(dataH1.spacesOnEntities[MBTET].test(L2)) {
+            SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"Not yet implemented");
+          }
+          break;
+          default:
+          SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"Not yet implemented");
+        }
+      }
+    }
+  } catch (exception& ex) {
+    ostringstream ss;
+    ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
+    SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
+  }
 
   if(
     dataPtr->get<FieldName_mi_tag>().find(meshPositionsFieldName)!=
     dataPtr->get<FieldName_mi_tag>().end()
   ) {
 
-    ierr = getEdgesDataOrder(dataH1,meshPositionsFieldName); CHKERRQ(ierr);
+    ierr = getEdgesDataOrderSpaceAndBase(dataH1,meshPositionsFieldName); CHKERRQ(ierr);
     ierr = getNodesFieldData(dataH1,meshPositionsFieldName); CHKERRQ(ierr);
-    ierr = getEdgesFieldData(dataH1,meshPositionsFieldName); CHKERRQ(ierr);
     try {
       ierr = opGetHoTangentOnEdge.opRhs(dataH1); CHKERRQ(ierr);
     } catch (exception& ex) {
@@ -171,6 +204,7 @@ PetscErrorCode EdgeElementForcesAndSurcesCore::operator()() {
   vector<string> last_eval_field_name(2);
   DataForcesAndSurcesCore *op_data[2];
   FieldSpace space[2];
+  FieldApproximationBase base[2];
 
   boost::ptr_vector<UserDataOperator>::iterator oit,hi_oit;
   oit = opPtrVector.begin();
@@ -183,7 +217,9 @@ PetscErrorCode EdgeElementForcesAndSurcesCore::operator()() {
     for(int ss = 0;ss!=2;ss++) {
 
       string field_name = !ss ? oit->rowFieldName : oit->colFieldName;
-      BitFieldId data_id = mField.get_field_structure(field_name)->get_id();
+      const MoFEMField* field_struture = mField.get_field_structure(field_name);
+      BitFieldId data_id = field_struture->get_id();
+
       if((oit->getMoFEMFEPtr()->get_BitFieldId_data()&data_id).none()) {
         SETERRQ2(
           PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"no data field < %s > on finite element < %s >",
@@ -193,9 +229,10 @@ PetscErrorCode EdgeElementForcesAndSurcesCore::operator()() {
 
       if(oit->getOpType()&types[ss] || oit->getOpType()&UserDataOperator::OPROWCOL) {
 
-        space[ss] = mField.get_field_structure(field_name)->get_space();
-
+        space[ss] = field_struture->get_space();
         switch(space[ss]) {
+          case NOSPACE:
+          SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"unknown space");
           case H1:
           op_data[ss] = !ss ? &dataH1 : &derivedDataH1;
           break;
@@ -216,9 +253,21 @@ PetscErrorCode EdgeElementForcesAndSurcesCore::operator()() {
           break;
         }
 
-        if(last_eval_field_name[ss]!=field_name) {
+        base[ss] = field_struture->get_approx_base();
+        switch(base[ss]) {
+          case AINSWORTH_COLE_BASE:
+          break;
+          case LOBATTO_BASE:
+          break;
+          default:
+          SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"unknown or not implemented base");
+          break;
+        }
 
+        if(last_eval_field_name[ss]!=field_name) {
           switch(space[ss]) {
+            case NOSPACE:
+            SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"unknown space");
             case H1:
             if(!ss) {
               ierr = getRowNodesIndices(*op_data[ss],field_name); CHKERRQ(ierr);
@@ -232,7 +281,7 @@ PetscErrorCode EdgeElementForcesAndSurcesCore::operator()() {
             } else {
               ierr = getEdgesColIndices(*op_data[ss],field_name); CHKERRQ(ierr);
             }
-            ierr = getEdgesDataOrder(*op_data[ss],field_name); CHKERRQ(ierr);
+            ierr = getEdgesDataOrderSpaceAndBase(*op_data[ss],field_name); CHKERRQ(ierr);
             ierr = getEdgesFieldData(*op_data[ss],field_name); CHKERRQ(ierr);
             break;
             case HDIV:

@@ -67,7 +67,7 @@ int main(int argc, char *argv[]) {
   //rval = pcomm->resolve_shared_ents(0,3,1); CHKERRQ_MOAB(rval);
   //rval = pcomm->resolve_shared_ents(0,3,2); CHKERRQ_MOAB(rval);
 
-  MoFEM::Core core(moab);
+  MoFEM::Core core(moab,PETSC_COMM_WORLD,MB_TAG_DENSE);
   FieldInterface& m_field = core;
 
   EntityHandle root_set = moab.get_root_set();
@@ -82,7 +82,7 @@ int main(int argc, char *argv[]) {
   #else
   ierr = PetscOptionsGetInt(PETSC_NULL,"-my_field_rank",&field_rank,&flg); CHKERRQ(ierr);
   #endif
-  ierr = m_field.add_field("FIELD",H1,field_rank); CHKERRQ(ierr);
+  ierr = m_field.add_field("FIELD",H1,AINSWORTH_COLE_BASE,field_rank); CHKERRQ(ierr);
   //add entities to field
   ierr = m_field.add_ents_to_field_by_TETs(root_set,"FIELD"); CHKERRQ(ierr);
   //set app. order

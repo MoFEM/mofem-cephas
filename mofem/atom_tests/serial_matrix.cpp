@@ -77,7 +77,7 @@ int main(int argc, char *argv[]) {
   //Create MoFEM (Joseph) database
   //second argument set communicator for sequential problem
   //last argument make mofem quaiet
-  MoFEM::Core core(moab,PETSC_COMM_SELF,-1);
+  MoFEM::Core core(moab,PETSC_COMM_SELF,MB_TAG_DENSE,-1);
   FieldInterface& m_field = core;
 
   //ref meshset ref level 0
@@ -95,8 +95,8 @@ int main(int argc, char *argv[]) {
   //Define problem
 
   //Fields
-  ierr = m_field.add_field("FIELD_A",H1,3); CHKERRQ(ierr);
-  ierr = m_field.add_field("FIELD_B",L2,1); CHKERRQ(ierr);
+  ierr = m_field.add_field("FIELD_A",H1,AINSWORTH_COLE_BASE,3,MB_TAG_DENSE); CHKERRQ(ierr);
+  ierr = m_field.add_field("FIELD_B",L2,AINSWORTH_COLE_BASE,1,MB_TAG_DENSE); CHKERRQ(ierr);
 
   ierr = m_field.add_ents_to_field_by_TETs(0,"FIELD_A"); CHKERRQ(ierr);
   ierr = m_field.add_ents_to_field_by_TETs(0,"FIELD_B"); CHKERRQ(ierr);

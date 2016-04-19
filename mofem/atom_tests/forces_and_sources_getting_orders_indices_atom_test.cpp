@@ -155,7 +155,8 @@ int main(int argc, char *argv[]) {
       ForcesAndSurcesCore(_m_field),
       ofs("forces_and_sources_getting_orders_indices_atom_test.txt"),
       my_tee(cout, ofs),my_split(my_tee),
-      data(MBTET),derived_data(data) {};
+      data(MBTET),
+      derived_data(data) {};
 
     PetscErrorCode preProcess() {
       PetscFunctionBegin;
@@ -167,36 +168,52 @@ int main(int argc, char *argv[]) {
 
       my_split << "\n\nNEXT ELEM\n\n";
 
-      ierr = getSpacesOnEntities(data); CHKERRQ(ierr);
+      ierr = getSpacesAndBaseOnEntities(data); CHKERRQ(ierr);
 
       ierr = getEdgesSense(data); CHKERRQ(ierr);
       ierr = getTrisSense(data); CHKERRQ(ierr);
       ierr = getEdgesDataOrder(data,H1); CHKERRQ(ierr);
       ierr = getTrisDataOrder(data,H1); CHKERRQ(ierr);
-      ierr = getTetsDataOrder(data,H1); CHKERRQ(ierr);
+      ierr = getTetDataOrder(data,H1); CHKERRQ(ierr);
       ierr = getFaceTriNodes(data); CHKERRQ(ierr);
 
-      data.dataOnEntities[MBVERTEX][0].getN().resize(4,4,false);
-      ierr = ShapeMBTET(
-        &*data.dataOnEntities[MBVERTEX][0].getN().data().begin(),G_TET_X4,G_TET_Y4,G_TET_Z4,4
+      MatrixDouble gauss_pts(4,4);
+      for(int gg = 0;gg<4;gg++) {
+        gauss_pts(0,gg) = G_TET_X4[gg];
+        gauss_pts(1,gg) = G_TET_Y4[gg];
+        gauss_pts(2,gg) = G_TET_Z4[gg];
+        gauss_pts(3,gg) = G_TET_W4[gg];
+      }
+      ierr = TetPolynomialBase().getValue(
+        gauss_pts,
+        boost::shared_ptr<BaseFunctionCtx>(
+          new EntPolynomialBaseCtx(data,H1,AINSWORTH_COLE_BASE)
+        )
       ); CHKERRQ(ierr);
-      ierr = shapeTETFunctions_H1(data,G_TET_X4,G_TET_Y4,G_TET_Z4,4); CHKERRQ(ierr);
 
+      ierr = getEdgesDataOrderSpaceAndBase(data,"FIELD1"); CHKERRQ(ierr);
+      ierr = getTrisDataOrderSpaceAndBase(data,"FIELD1"); CHKERRQ(ierr);
+      ierr = getTetDataOrderSpaceAndBase(data,"FIELD1"); CHKERRQ(ierr);
       ierr = getRowNodesIndices(data,"FIELD1"); CHKERRQ(ierr);
       ierr = getEdgesRowIndices(data,"FIELD1"); CHKERRQ(ierr);
       ierr = getTrisRowIndices(data,"FIELD1"); CHKERRQ(ierr);
       ierr = getTetsRowIndices(data,"FIELD1"); CHKERRQ(ierr);
+      ierr = getNodesFieldData(data,"FIELD1"); CHKERRQ(ierr);
+      data.dataOnEntities[MBVERTEX][0].getFieldData().resize(0);
 
       my_split << "FIELD1:\n";
       my_split << data << endl;
 
-      ierr = getEdgesDataOrder(derived_data,"FIELD2"); CHKERRQ(ierr);
-      ierr = getTrisDataOrder(derived_data,"FIELD2"); CHKERRQ(ierr);
-      ierr = getTetsDataOrder(derived_data,"FIELD2"); CHKERRQ(ierr);
+      derived_data.dataOnEntities[MBVERTEX][0].getBase() = AINSWORTH_COLE_BASE;
+      ierr = getEdgesDataOrderSpaceAndBase(derived_data,"FIELD2"); CHKERRQ(ierr);
+      ierr = getTrisDataOrderSpaceAndBase(derived_data,"FIELD2"); CHKERRQ(ierr);
+      ierr = getTetDataOrderSpaceAndBase(derived_data,"FIELD2"); CHKERRQ(ierr);
       ierr = getColNodesIndices(derived_data,"FIELD2"); CHKERRQ(ierr);
       ierr = getEdgesColIndices(derived_data,"FIELD2"); CHKERRQ(ierr);
       ierr = getTrisColIndices(derived_data,"FIELD2"); CHKERRQ(ierr);
       ierr = getTetsColIndices(derived_data,"FIELD2"); CHKERRQ(ierr);
+      ierr = getNodesFieldData(derived_data,"FIELD2"); CHKERRQ(ierr);
+      derived_data.dataOnEntities[MBVERTEX][0].getFieldData().resize(0);
 
       my_split << "FIELD2:\n";
       my_split << derived_data << endl;

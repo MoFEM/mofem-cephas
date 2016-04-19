@@ -106,6 +106,8 @@ PetscErrorCode VertexElementForcesAndSourcesCore::operator()() {
         space[ss] = mField.get_field_structure(field_name)->get_space();
 
         switch(space[ss]) {
+          case NOSPACE:
+          SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"unknown space");
           case H1:
           op_data[ss] = !ss ? &data : &derivedData;
           break;
@@ -129,6 +131,8 @@ PetscErrorCode VertexElementForcesAndSourcesCore::operator()() {
         if(last_eval_field_name[ss]!=field_name) {
 
           switch(space[ss]) {
+            case NOSPACE:
+            SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"unknown space");
             case H1:
             if(!ss) {
               ierr = getRowNodesIndices(*op_data[ss],field_name); CHKERRQ(ierr);

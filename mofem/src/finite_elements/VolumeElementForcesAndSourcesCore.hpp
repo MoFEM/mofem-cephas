@@ -45,7 +45,10 @@ struct VolumeElementForcesAndSourcesCore: public ForcesAndSurcesCore {
   DerivedDataForcesAndSurcesCore derivedDataL2;
   DataForcesAndSurcesCore dataHdiv;
   DerivedDataForcesAndSurcesCore derivedDataHdiv;
-  DataForcesAndSurcesCore dataNoField,dataNoFieldCol;
+  DataForcesAndSurcesCore dataHcurl;
+  DerivedDataForcesAndSurcesCore derivedDataHcurl;
+  DataForcesAndSurcesCore dataNoField;
+  DataForcesAndSurcesCore dataNoFieldCol;
 
   OpSetInvJacH1 opSetInvJacH1;
   OpSetPiolaTransform opPiolaTransform;
@@ -63,18 +66,26 @@ struct VolumeElementForcesAndSourcesCore: public ForcesAndSurcesCore {
   OpSetHoInvJacHdiv opSetHoInvJacHdiv;
 
   VolumeElementForcesAndSourcesCore(FieldInterface &m_field,const EntityType type = MBTET):
-    ForcesAndSurcesCore(m_field),
-    dataH1(type),derivedDataH1(dataH1),
-    dataL2(type),derivedDataL2(dataL2),
-    dataHdiv(type),derivedDataHdiv(dataHdiv),
-    dataNoField(type),dataNoFieldCol(type),
-    opSetInvJacH1(invJac),
-    opPiolaTransform(vOlume,Jac),opSetInvJacHdiv(invJac),
-    meshPositionsFieldName("MESH_NODE_POSITIONS"),
-    opHOatGaussPoints(hoCoordsAtGaussPts,hoGaussPtsJac,3,3),
-    opSetHoInvJacH1(hoGaussPtsInvJac),
-    opSetHoPiolaTransform(hoGaussPtsDetJac,hoGaussPtsJac),
-    opSetHoInvJacHdiv(hoGaussPtsInvJac) {};
+  ForcesAndSurcesCore(m_field),
+  dataH1(type),
+  derivedDataH1(dataH1),
+  dataL2(type),
+  derivedDataL2(dataL2),
+  dataHdiv(type),
+  derivedDataHdiv(dataHdiv),
+  dataHcurl(type),
+  derivedDataHcurl(dataHcurl),
+  dataNoField(type),
+  dataNoFieldCol(type),
+  opSetInvJacH1(invJac),
+  opPiolaTransform(vOlume,Jac),
+  opSetInvJacHdiv(invJac),
+  meshPositionsFieldName("MESH_NODE_POSITIONS"),
+  opHOatGaussPoints(hoCoordsAtGaussPts,hoGaussPtsJac,3,3),
+  opSetHoInvJacH1(hoGaussPtsInvJac),
+  opSetHoPiolaTransform(hoGaussPtsDetJac,hoGaussPtsJac),
+  opSetHoInvJacHdiv(hoGaussPtsInvJac) {
+  };
 
   virtual ~VolumeElementForcesAndSourcesCore() {}
 
@@ -145,7 +156,7 @@ struct VolumeElementForcesAndSourcesCore: public ForcesAndSurcesCore {
     DEPRECATED inline const VolumeElementForcesAndSourcesCore* getTetFE() { return ptrFE; }
 
     //differential operators
-    PetscErrorCode getDivergenceMatrixOperato_Hdiv(
+    PetscErrorCode getDivergenceMatrixOperator_Hdiv(
       int side,EntityType type,DataForcesAndSurcesCore::EntData &data,
       int gg,VectorDouble &div);
 

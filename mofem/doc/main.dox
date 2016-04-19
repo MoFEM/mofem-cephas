@@ -79,7 +79,8 @@ Contributions are welcome and is an important part of the open spirit of the
 project. It's hoped a community will develop around the project whose
 contributions will improve it further.
 
-Contact: <cmatgu@googlegroups.com>
+- Contact: <cmatgu@googlegroups.com>
+- Discussion channel: <https://mofem.slack.com/>
 
 \subsection twitter_and_google_plus Recent developments and news
 
@@ -127,10 +128,11 @@ University are under the same license agreement as main MoFEM library.
 
 List is generated automatically at time when documentation is build based on
 contributions to main git repository. Note that particular module can have
-spearte contributors list. If one author uses more than one name the same person
+separate contributors list. If one author uses more than one name the same person
 can appear more than one.
 
 \verbinclude doc/contributors_list
+\verbinclude users_modules/doc/contributors_list_modules
 
 List is generated with command,
 \code

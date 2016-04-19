@@ -99,11 +99,12 @@ struct FieldInterface: public UnknownInterface {
     * \ingroup mofem_bc
 
     *
-    * \param  see CubitBC (NODESET, SIDESET or BLOCKSET and more)
-    * \param msId id of the BLOCKSET/SIDESET/BLOCKSET: from CUBIT
-    *
+    * \param see CubitBC (NODESET, SIDESET or BLOCKSET and more)
+    * \param ms_id id of the BLOCKSET/SIDESET/BLOCKSET
+    * \param name of set
+
     */
-  virtual PetscErrorCode add_cubit_msId(const CubitBCType cubit_bc_tyep,const int msId) = 0;
+  virtual PetscErrorCode add_cubit_msId(const CubitBCType cubit_bc_tyep,const int msId,const string name = "") = 0;
 
   /**
     * \brief delete cubit meshset
@@ -576,10 +577,11 @@ struct FieldInterface: public UnknownInterface {
    * \brief Add field
    * @param  name              name of the filed
    * @param  space             space (L2,H1,Hdiv,Hcurl)
-   * @param  base              approximation base (AINSWORTH_COLE_BASE, BERNSTEIN_BEZIER_BASE)
+   * @param  base              approximation base (AINSWORTH_COLE_BASE, LOBATTO, BERNSTEIN_BEZIER_BASE, ... see FieldApproximationBase)
    * @param  nb_of_cooficients number of field coefficients
+   * @param  tag_type          type of the tag MB_TAG_DENSE or MB_TAG_SPARSE (DENSE is faster and uses less memory, SPARSE is more flexible if you define field on subdomains)
    * @param  bh                if MF_EXCL throws error if field exits, MF_ZERO no error if field exist
-   * @param  verb              verbosity level
+   * @param  verb              verbosity leve
    * @return                   error code
    */
   virtual PetscErrorCode add_field(
@@ -587,12 +589,14 @@ struct FieldInterface: public UnknownInterface {
     const FieldSpace space,
     const FieldApproximationBase base,
     const FieldCoefficientsNumber nb_of_cooficients,
-    enum MoFEMTypes bh = MF_EXCL,
+    const TagType tag_type = MB_TAG_SPARSE,
+    const enum MoFEMTypes bh = MF_EXCL,
     int verb = -1
   ) = 0;
 
   /**
   * \brief Add field with default AINSWORTH_COLE_BASE approximation base
+  *
   * @param  name              name of the filed
   * @param  space             space (L2,H1,Hdiv,Hcurl)
   * @param  nb_of_cooficients number of field coefficients
@@ -604,12 +608,12 @@ struct FieldInterface: public UnknownInterface {
     const string& name,
     const FieldSpace space,
     const FieldCoefficientsNumber nb_of_cooficients,
-    enum MoFEMTypes bh = MF_EXCL,
+    const enum MoFEMTypes bh = MF_EXCL,
     int verb = -1
   ) {
     PetscErrorCode ierr;
     PetscFunctionBegin;
-    ierr = add_field(name,space,AINSWORTH_COLE_BASE,nb_of_cooficients,bh,verb); CHKERRQ(ierr);
+    ierr = add_field(name,space,AINSWORTH_COLE_BASE,nb_of_cooficients,MB_TAG_SPARSE,bh,verb); CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }
 

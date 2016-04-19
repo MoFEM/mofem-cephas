@@ -27,7 +27,7 @@ namespace MoFEM {
  */
 struct CubitMeshSets {
   EntityHandle meshset;
-  CubitBCType cubit_bc_type; 	///< type of meshset from cubit NodeSet, BlockSet, SideSet and more
+  CubitBCType cubitBcType; 	///< type of meshset from cubit NodeSet, BlockSet, SideSet and more
   vector<Tag> tag_handles;	///< vector of tag handles to types of data passed from cubit
   int *msId;			///< cubit meshset ID
   char* tag_bc_data;
@@ -41,11 +41,11 @@ struct CubitMeshSets {
   CubitMeshSets(Interface &moab,const CubitBCType _cubit_bc_type,const int _msId);
 
   inline int get_msId() const { return *msId; }
-  inline CubitBCType get_cubit_bc_type() const { return cubit_bc_type; }
+  inline CubitBCType get_cubit_bc_type() const { return cubitBcType; }
   inline EntityHandle get_meshset() const { return meshset; }
-  inline unsigned long int get_cubit_bc_type_ulong() const { return cubit_bc_type.to_ulong(); }
-  inline unsigned long int get_cubit_bc_type_mask_meshset_types_ulong() const { return (cubit_bc_type&meshsets_mask).to_ulong(); }
-  inline unsigned long int get_cubit_bc_type_bc_data_types_ulong() const { return (cubit_bc_type&(~meshsets_mask)).to_ulong(); }
+  inline unsigned long int get_cubit_bc_type_ulong() const { return cubitBcType.to_ulong(); }
+  inline unsigned long int get_cubit_bc_type_mask_meshset_types_ulong() const { return (cubitBcType&meshsets_mask).to_ulong(); }
+  inline unsigned long int get_cubit_bc_type_bc_data_types_ulong() const { return (cubitBcType&(~meshsets_mask)).to_ulong(); }
 
   PetscErrorCode get_cubit_msId_entities_by_dimension(Interface &moab,const int dimension,Range &entities,const bool recursive = false) const;
   PetscErrorCode get_cubit_msId_entities_by_dimension(Interface &moab,Range &entities,const bool recursive = false)  const;
@@ -123,7 +123,7 @@ struct CubitMeshSets {
   PetscErrorCode get_bc_data_structure(_CUBIT_BC_DATA_TYPE_& data) const {
     PetscFunctionBegin;
     PetscErrorCode ierr;
-    if((cubit_bc_type&data.type).none()) {
+    if((cubitBcType&data.type).none()) {
       SETERRQ(PETSC_COMM_SELF,1,"bc_data are not for _CUBIT_BC_DATA_TYPE_ structure");
     }
     vector<char> bc_data;
@@ -249,7 +249,7 @@ struct CubitMeshSets {
   PetscErrorCode get_attribute_data_structure(_ATTRIBUTE_TYPE_ &data) const {
     PetscFunctionBegin;
     PetscErrorCode ierr;
-    if((cubit_bc_type&data.type).none()) {
+    if((cubitBcType&data.type).none()) {
         SETERRQ(PETSC_COMM_SELF,1,"attributes are not for _ATTRIBUTE_TYPE_ structure");
     }
     vector<double> attributes;
@@ -261,7 +261,7 @@ struct CubitMeshSets {
   PetscErrorCode set_attribute_data_structure(_ATTRIBUTE_TYPE_ &data) const {
     PetscFunctionBegin;
     PetscErrorCode ierr;
-    if((cubit_bc_type&data.type).none()) {
+    if((cubitBcType&data.type).none()) {
         SETERRQ(PETSC_COMM_SELF,1,"attributes are not for _ATTRIBUTE_TYPE_ structure");
     }
     double *ptr = const_cast<double*>(tag_block_attributes);
@@ -271,7 +271,6 @@ struct CubitMeshSets {
 
   friend ostream& operator<<(ostream& os,const CubitMeshSets& e);
 
-  private:
   Tag nsTag,ssTag,nsTag_data,ssTag_data,bhTag,bhTag_header,block_attribs,entityNameTag;
   PetscErrorCode get_tags_hanlders(Interface &moab);
 
@@ -306,8 +305,18 @@ typedef multi_index_container<
     CubitBCType bit;
     CubitMeshSets_change_add_bit_to_cubit_bc_type(const CubitBCType &_bit): bit(_bit) {};
     void operator()(CubitMeshSets &e) {
-      e.cubit_bc_type |= bit;
+      e.cubitBcType |= bit;
     }
+  };
+
+  struct CubitMeshSets_change_name {
+    Interface &mOab;
+    string nAme;
+    CubitMeshSets_change_name(Interface &moab,const string &name):
+    mOab(moab),
+    nAme(name) {
+    };
+    void operator()(CubitMeshSets &e);
   };
 
 }
