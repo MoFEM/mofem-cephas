@@ -1,4 +1,4 @@
-/** \file FlatPrismPolynomialBase.hpp
+/** \file FatPrismPolynomialBase.hpp
 \brief Implementation of Ainsworth-Cole H1 base on tetrahedral
 
 */
@@ -17,26 +17,36 @@
 * You should have received a copy of the GNU Lesser General Public
 * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef __FLATPRISMPOLYNOMIALBASE_HPP__
-#define __FLATPRISMPOLYNOMIALBASE_HPP__
+#ifndef __FATPRISMPOLYNOMIALBASE_HPP__
+#define __FATPRISMPOLYNOMIALBASE_HPP__
 
 namespace MoFEM {
 
-  static const MOFEMuuid IDD_FLATPRISM_BASE_FUNCTION = MOFEMuuid(BitIntefaceId(FLATPRISM_BASE_FUNCTION_INTERFACE));
+  static const MOFEMuuid IDD_FATPRISM_BASE_FUNCTION = MOFEMuuid(BitIntefaceId(FATPRISM_BASE_FUNCTION_INTERFACE));
 
   /**
   * \brief Class used to pass that about element to class calculating base functions on prism
   * \ingroup mofem_base_functions
   */
-  struct FlatPrismPolynomialBaseCtx: public EntPolynomialBaseCtx {
+  struct FatPrismPolynomialBaseCtx: public EntPolynomialBaseCtx {
 
     PetscErrorCode queryInterface(const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface);
+
+    DataForcesAndSurcesCore& dataTrianglesOnly;
+    DataForcesAndSurcesCore& dataTroughThickness;
+
+    ublas::matrix<double>& gaussPtsTrianglesOnly;
+    ublas::matrix<double>& gaussPtsThroughThickness;
 
     moab::Interface &mOab;
     const NumeredMoFEMFiniteElement *fePtr;
 
-    FlatPrismPolynomialBaseCtx(
+    FatPrismPolynomialBaseCtx(
       DataForcesAndSurcesCore &data,
+      DataForcesAndSurcesCore &data_triangles_only,
+      DataForcesAndSurcesCore &data_trough_thickness,
+      ublas::matrix<double>& gauss_pts_triangles_only,
+      ublas::matrix<double>& gauss_pts_through_thickness,
       moab::Interface &moab,
       const NumeredMoFEMFiniteElement *fe_ptr,
       const FieldSpace space,
@@ -44,7 +54,7 @@ namespace MoFEM {
       const FieldApproximationBase copy_node_base = LASTBASE
     );
 
-    ~FlatPrismPolynomialBaseCtx();
+    ~FatPrismPolynomialBaseCtx();
 
   };
 
@@ -53,12 +63,12 @@ namespace MoFEM {
   * \brief Calculate base functions on tetrahedral
   * \ingroup mofem_base_functions
   */
-  struct FlatPrismPolynomialBase: public BaseFunction {
+  struct FatPrismPolynomialBase: public BaseFunction {
 
     PetscErrorCode queryInterface(const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface);
 
-    FlatPrismPolynomialBase();
-    ~FlatPrismPolynomialBase();
+    FatPrismPolynomialBase();
+    ~FatPrismPolynomialBase();
 
     PetscErrorCode getValue(
       ublas::matrix<double> &pts,boost::shared_ptr<BaseFunctionCtx> ctx_ptr
@@ -67,6 +77,10 @@ namespace MoFEM {
   private:
 
     FlatPrismPolynomialBaseCtx *cTx;
+
+    PetscErrorCode getValueH1TrianglesOnly(ublas::matrix<double> &pts);
+
+    PetscErrorCode getValueH1ThroughThickness(ublas::matrix<double> &pts);
 
     PetscErrorCode getValueH1(ublas::matrix<double> &pts);
 
@@ -88,4 +102,4 @@ namespace MoFEM {
 
 }
 
-#endif //__FLATPRISMPOLYNOMIALBASE_HPP__
+#endif //__FATPRISMPOLYNOMIALBASE_HPP__

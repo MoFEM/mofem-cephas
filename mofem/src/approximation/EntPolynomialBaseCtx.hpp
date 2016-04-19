@@ -25,7 +25,6 @@ namespace MoFEM {
   static const MOFEMuuid IDD_TET_BASE_FUNCTION = MOFEMuuid(BitIntefaceId(TET_BASE_FUNCTION_INTERFACE));
   static const MOFEMuuid IDD_TRI_BASE_FUNCTION = MOFEMuuid(BitIntefaceId(TRI_BASE_FUNCTION_INTERFACE));
   static const MOFEMuuid IDD_EDGE_BASE_FUNCTION = MOFEMuuid(BitIntefaceId(EDGE_BASE_FUNCTION_INTERFACE));
-  static const MOFEMuuid IDD_FATPRISM_BASE_FUNCTION = MOFEMuuid(BitIntefaceId(FATPRISM_BASE_FUNCTION_INTERFACE));
 
   /**
    * \brief Class used to pass that about element to class calculating base functions on tet,triangle,edge

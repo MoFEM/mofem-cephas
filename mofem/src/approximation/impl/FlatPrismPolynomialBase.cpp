@@ -43,14 +43,14 @@ using namespace MoFEM;
 #include <EntPolynomialBaseCtx.hpp>
 #include <FlatPrismPolynomialBase.hpp>
 
-PetscErrorCode PrismPolynomialBaseCtx::queryInterface(const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface) {
+PetscErrorCode FlatPrismPolynomialBaseCtx::queryInterface(const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface) {
   PetscErrorCode ierr;
   PetscFunctionBegin;
   *iface = NULL;
   if(
-    uuid == IDD_FATPRISM_BASE_FUNCTION
+    uuid == IDD_FLATPRISM_BASE_FUNCTION
   ) {
-    *iface = dynamic_cast<PrismPolynomialBaseCtx*>(this);
+    *iface = dynamic_cast<FlatPrismPolynomialBaseCtx*>(this);
     PetscFunctionReturn(0);
   } else {
     SETERRQ(PETSC_COMM_WORLD,MOFEM_DATA_INCONSISTENCY,"wrong interference");
@@ -59,7 +59,7 @@ PetscErrorCode PrismPolynomialBaseCtx::queryInterface(const MOFEMuuid& uuid,MoFE
   PetscFunctionReturn(0);
 }
 
-PrismPolynomialBaseCtx::PrismPolynomialBaseCtx(
+FlatPrismPolynomialBaseCtx::FlatPrismPolynomialBaseCtx(
   DataForcesAndSurcesCore &data,
   moab::Interface &moab,
   const NumeredMoFEMFiniteElement *fe_ptr,
@@ -73,7 +73,7 @@ fePtr(fe_ptr) {
   PetscErrorCode ierr;
   ierr = setBase(); CHKERRABORT(PETSC_COMM_WORLD,ierr);
 }
-PrismPolynomialBaseCtx::~PrismPolynomialBaseCtx() {
+FlatPrismPolynomialBaseCtx::~FlatPrismPolynomialBaseCtx() {
 }
 
 PetscErrorCode FlatPrismPolynomialBase::queryInterface(
@@ -82,7 +82,7 @@ PetscErrorCode FlatPrismPolynomialBase::queryInterface(
   PetscErrorCode ierr;
   PetscFunctionBegin;
   *iface = NULL;
-  if(uuid == IDD_FATPRISM_BASE_FUNCTION) {
+  if(uuid == IDD_FLATPRISM_BASE_FUNCTION) {
     *iface = dynamic_cast<FlatPrismPolynomialBase*>(this);
     PetscFunctionReturn(0);
   } else {
@@ -103,8 +103,8 @@ PetscErrorCode FlatPrismPolynomialBase::getValue(
   PetscFunctionBegin;
 
   MoFEM::UnknownInterface *iface;
-  ierr = ctx_ptr->queryInterface(IDD_FATPRISM_BASE_FUNCTION,&iface); CHKERRQ(ierr);
-  cTx = reinterpret_cast<PrismPolynomialBaseCtx*>(iface);
+  ierr = ctx_ptr->queryInterface(IDD_FLATPRISM_BASE_FUNCTION,&iface); CHKERRQ(ierr);
+  cTx = reinterpret_cast<FlatPrismPolynomialBaseCtx*>(iface);
   if(!cTx->fePtr) {
     SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,
       "Pointer to element should be given "

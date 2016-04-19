@@ -346,46 +346,39 @@ PetscErrorCode FatPrismElementForcesAndSurcesCore::operator()() {
     }
   }
 
-  try {
-
-    vector<FieldApproximationBase> shape_functions_for_bases;
-    for(int b = AINSWORTH_COLE_BASE;b!=LASTBASE;b++) {
-      if(dataH1.bAse.test(b)) {
-        switch (ApproximationBaseArray[b]) {
-          case AINSWORTH_COLE_BASE:
-          case LOBATTO_BASE:
-          if(dataH1.spacesOnEntities[MBVERTEX].test(H1)) {
-            ierr = FlatPrismPolynomialBase().getValue(
-              gaussPts,
-              boost::shared_ptr<BaseFunctionCtx>(
-                new PrismPolynomialBaseCtx(
-                  dataH1TrianglesOnly,mField.get_moab(),fePtr,H1,ApproximationBaseArray[b],NOBASE
-                )
+  // Set bases on triangles
+  for(int b = AINSWORTH_COLE_BASE;b!=LASTBASE;b++) {
+    if(dataH1.bAse.test(b)) {
+      switch (ApproximationBaseArray[b]) {
+        case AINSWORTH_COLE_BASE:
+        case LOBATTO_BASE:
+        if(dataH1.spacesOnEntities[MBVERTEX].test(H1)) {
+          ierr = FlatPrismPolynomialBase().getValue(
+            gaussPts,
+            boost::shared_ptr<BaseFunctionCtx>(
+              new FlatPrismPolynomialBaseCtx(
+                dataH1TrianglesOnly,mField.get_moab(),fePtr,H1,ApproximationBaseArray[b],NOBASE
               )
-            ); CHKERRQ(ierr);
-          }
-          if(dataH1.spacesOnEntities[MBTRI].test(HDIV)) {
-            SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"Not yet implemented");
-          }
-          if(dataH1.spacesOnEntities[MBEDGE].test(HCURL)) {
-            SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"Not yet implemented");
-          }
-          if(dataH1.spacesOnEntities[MBTET].test(L2)) {
-            SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"Not yet implemented");
-          }
-          break;
-          default:
+            )
+          ); CHKERRQ(ierr);
+        }
+        if(dataH1.spacesOnEntities[MBTRI].test(HDIV)) {
           SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"Not yet implemented");
         }
+        if(dataH1.spacesOnEntities[MBEDGE].test(HCURL)) {
+          SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"Not yet implemented");
+        }
+        if(dataH1.spacesOnEntities[MBTET].test(L2)) {
+          SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"Not yet implemented");
+        }
+        break;
+        default:
+        SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"Not yet implemented");
       }
     }
-
-  } catch (exception& ex) {
-    ostringstream ss;
-    ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
-    SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
   }
 
+  // Set bases through thickness
   for(int b = AINSWORTH_COLE_BASE; b!=USER_BASE; b++) {
 
     FieldApproximationBase base = ApproximationBaseArray[b];
@@ -432,15 +425,25 @@ PetscErrorCode FatPrismElementForcesAndSurcesCore::operator()() {
       }
     }
 
-    // // Calculate shape functions on triangles
-    // ierr = shapeFlatPRISMFunctions_H1(
-    //   dataH1TrianglesOnly,
-    //   &gaussPtsTrianglesOnly(0,0),
-    //   &gaussPtsTrianglesOnly(1,0),
-    //   nb_gauss_pts_on_faces,
-    //   base,
-    //   base_polynomials
-    // ); CHKERRQ(ierr);
+  }
+
+  for(int b = AINSWORTH_COLE_BASE; b!=USER_BASE; b++) {
+
+    FieldApproximationBase base = ApproximationBaseArray[b];
+    if(!dataH1.bAse.test(base)) continue;
+
+    PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim);
+
+    switch(base) {
+      case AINSWORTH_COLE_BASE:
+      base_polynomials = Legendre_polynomials;
+      break;
+      case LOBATTO_BASE:
+      base_polynomials = Lobatto_polynomials;
+      break;
+      default:
+      SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"base not implemented");
+    }
 
     // Build prism approx.
     try {

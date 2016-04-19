@@ -188,7 +188,7 @@ PetscErrorCode FlatPrismElementForcesAndSurcesCore::operator()() {
               ierr = FlatPrismPolynomialBase().getValue(
                 gaussPts,
                 boost::shared_ptr<BaseFunctionCtx>(
-                  new PrismPolynomialBaseCtx(
+                  new FlatPrismPolynomialBaseCtx(
                     dataH1,mField.get_moab(),fePtr,H1,ApproximationBaseArray[b],NOBASE
                   )
                 )
