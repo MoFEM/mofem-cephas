@@ -62,6 +62,31 @@ extern "C" {
 
 namespace MoFEM {
 
+DataForcesAndSurcesCore::EntData::EntData():
+sEnse(0),
+oRder(0),
+bAse(NOBASE) {
+  N.resize(LASTBASE);
+  diffN.resize(LASTBASE);
+  for(
+    ShapeFunctionBasesVector::iterator nit = N.begin();
+    nit!=N.end();
+    nit++
+  ) {
+    nit->reset(new MatrixDouble());
+  }
+  for(
+    ShapeFunctionBasesVector::iterator nit = diffN.begin();
+    nit!=diffN.end();
+    nit++
+  ) {
+    nit->reset(new MatrixDouble());
+  }
+}
+
+DataForcesAndSurcesCore::EntData::~EntData() {
+}
+
 template<class T>
 void cOnstructor(DataForcesAndSurcesCore *data,EntityType type,T) {
 

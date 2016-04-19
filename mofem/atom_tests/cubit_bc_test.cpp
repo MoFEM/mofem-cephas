@@ -192,6 +192,7 @@ int main(int argc, char *argv[]) {
       else SETERRQ(PETSC_COMM_SELF,1,"Error: Unrecognizable BC type");
   }
 
+
   cout << "<<<< BLOCKSETs >>>>>" << endl;
   //BLOCKSETs
   for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,BLOCKSET,it))
@@ -247,6 +248,22 @@ int main(int argc, char *argv[]) {
       myfile << mydata;
     } else SETERRQ(PETSC_COMM_SELF,1,"Error: Unrecognizable Material type");
 
+  }
+
+  bool add_block_is_there = false;
+  ierr = m_field.add_cubit_msId(BLOCKSET,1000,"ADD_BLOCK_SET"); CHKERRQ(ierr);
+  for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,BLOCKSET,it)) {
+    //Get block name
+    string name = it->get_name();
+    if (name.compare(0,13,"ADD_BLOCK_SET") == 0) {
+      add_block_is_there = true;
+      vector<double> attributes;
+      it->get_attributes(attributes);
+    }
+  }
+
+  if(!add_block_is_there) {
+    SETERRQ(PETSC_COMM_WORLD,MOFEM_OPERATION_UNSUCCESSFUL,"no added block set");
   }
 
   //Close mesh_file_name.txt

@@ -600,41 +600,48 @@ PetscErrorCode Core::partition_mesh(Range &ents,int dim,int adj_dim,int n_parts,
 
       rval = pcomm->assign_global_ids(0,dim,0,false); CHKERR_MOAB(rval);
 
+      // get lower dimension entities on each part
+      for(int pp = 0;pp!=n_parts;pp++) {
+        Range dim_ents = parts_ents[pp].subset_by_dimension(dim);
+        for(int dd = dim-1;dd!=-1;dd--) {
+          Range adj_ents;
+          if(dim > 0 ) {
+            rval = moab.get_adjacencies(
+              dim_ents,dd,false,adj_ents,Interface::UNION
+            ); CHKERRQ_MOAB(rval);
+          } else {
+            rval = moab.get_connectivity(dim_ents,adj_ents,true); CHKERRQ_MOAB(rval);
+          }
+          parts_ents[pp].merge(adj_ents);
+          // cerr << pp << " add " << parts_ents[pp].size() << endl;
+        }
+      }
+      for(int pp = 1;pp!=n_parts;pp++) {
+        for(int ppp = 0;ppp!=pp;ppp++) {
+          // cerr << pp << "<-" << ppp << " " << parts_ents[pp].size() << " " << parts_ents[ppp].size();
+          parts_ents[pp] = subtract(parts_ents[pp],parts_ents[ppp]);
+          // cerr << " " << parts_ents[pp].size() << endl;
+        }
+      }
+      for(int pp = 0;pp!=n_parts;pp++) {
+        rval = moab.add_entities(tagged_sets[pp],parts_ents[pp]); CHKERR_MOAB(rval);
+      }
 
-      // // get lower dimension entities on each part
-      // for(int pp = 0;pp!=n_parts;pp++) {
-      //   Range dim_ents = parts_ents[pp].subset_by_dimension(dim);
-      //   for(int dd = dim-1;dd!=-1;dd--) {
-      //     Range adj_ents;
-      //     rval = moab.get_adjacencies(
-      //       dim_ents,dd,false,adj_ents,Interface::UNION
-      //     ); CHKERRQ_MOAB(rval);
-      //     parts_ents[pp].merge(adj_ents);
-      //     // cerr << pp << " add " << parts_ents[pp].size() << endl;
-      //   }
-      // }
-      // for(int pp = 1;pp!=n_parts;pp++) {
-      //   for(int ppp = 0;ppp!=pp;ppp++) {
-      //     // cerr << pp << "<-" << ppp << " " << parts_ents[pp].size() << " " << parts_ents[ppp].size();
-      //     parts_ents[pp] = subtract(parts_ents[pp],parts_ents[ppp]);
-      //     // cerr << " " << parts_ents[pp].size() << endl;
-      //   }
-      // }
-      // // set gid to lower dimension entities
-      // for(int dd = 0;dd<dim;dd++) {
-      //   int gid = 0; // moab indexing from 1
-      //   for(int pp = 0;pp!=n_parts;pp++) {
-      //     Range dim_ents = parts_ents[pp].subset_by_dimension(dd);
-      //     // cerr << dim_ents.size() << " " << dd  << " " << pp << endl;
-      //     for(Range::iterator eit = dim_ents.begin();eit!=dim_ents.end();eit++) {
-      //       // if(dd>0) {
-      //       //   rval = moab.tag_set_data(part_tag,&*eit,1,&pp); CHKERRQ_MOAB(rval);
-      //       // }
-      //       // rval = moab.tag_set_data(gid_tag,&*eit,1,&gid); CHKERRQ_MOAB(rval);
-      //       gid++;
-      //     }
-      //   }
-      // }
+      // set gid to lower dimension entities
+      for(int dd = 0;dd<dim;dd++) {
+        int gid = 0; // moab indexing from 1
+        for(int pp = 0;pp!=n_parts;pp++) {
+          Range dim_ents = parts_ents[pp].subset_by_dimension(dd);
+          // cerr << dim_ents.size() << " " << dd  << " " << pp << endl;
+          for(Range::iterator eit = dim_ents.begin();eit!=dim_ents.end();eit++) {
+            if(dd>0) {
+              rval = moab.tag_set_data(part_tag,&*eit,1,&pp); CHKERRQ_MOAB(rval);
+            }
+            rval = moab.tag_set_data(gid_tag,&*eit,1,&gid); CHKERRQ_MOAB(rval);
+            gid++;
+          }
+        }
+      }
 
     }
 

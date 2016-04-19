@@ -212,7 +212,6 @@ int main(int argc, char *argv[]) {
       my_split << "col side: " << col_side << " col_type: " << col_type << endl;
       my_split << row_data << endl;
 
-
       PetscErrorCode ierr;
       VectorInt row_indices,col_indices;
       ierr = getPorblemRowIndices("FIELD1",row_type,row_side,row_indices); CHKERRQ(ierr);

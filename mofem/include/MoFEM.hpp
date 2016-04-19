@@ -21,11 +21,17 @@
 #include <version.h>
 #include <config.h>
 #include <definitions.h>
-#include <h1_hdiv_hcurl_l2.h>
-#include <fem_tools.h>
 
 #include <Common.hpp>
 #include <UnknownInterface.hpp>
+
+//SRC/APPROXIMATION
+#include <base_functions.h>
+#include <h1_hdiv_hcurl_l2.h>
+#include <fem_tools.h>
+#include <BaseFunction.hpp>
+#include <LegendrePolynomial.hpp>
+#include <LobattoPolynomial.hpp>
 
 //SRC/MULTI-INDICES
 #include <MaterialBlocks.hpp>
@@ -56,6 +62,20 @@
 #include <DMMoFEM.hpp>
 
 //SRC/FINITE_ELEMENTS
-#include <ForcesAndSurcesCore.hpp>
+#include <DataStructures.hpp>
+#include <EntPolynomialBaseCtx.hpp>
+#include <TetPolynomialBase.hpp> // Base functions on tet
+#include <TriPolynomialBase.hpp> // Base functions on tri
+#include <EdgePolynomialBase.hpp> // Base functions on tri
+#include <FlatPrismPolynomialBase.hpp> // Base functions on tri
+#include <DataOperators.hpp>
+#include <ElementsOnEntities.hpp>
+#include <VolumeElementForcesAndSourcesCore.hpp>
+#include <FaceElementForcesAndSourcesCore.hpp>
+#include <EdgeElementForcesAndSurcesCore.hpp>
+#include <VertexElementForcesAndSourcesCore.hpp>
+#include <FlatPrismElementForcesAndSurcesCore.hpp>
+#include <FatPrismElementForcesAndSurcesCore.hpp>
+
 
 #endif //MOFEM_HPP__

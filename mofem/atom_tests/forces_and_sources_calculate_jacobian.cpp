@@ -187,20 +187,18 @@ int main(int argc, char *argv[]) {
     PetscErrorCode operator()() {
       PetscFunctionBegin;
 
-      ierr = getSpacesOnEntities(data); CHKERRQ(ierr);
+      ierr = getSpacesAndBaseOnEntities(data); CHKERRQ(ierr);
 
       ierr = getEdgesSense(data); CHKERRQ(ierr);
       ierr = getTrisSense(data); CHKERRQ(ierr);
       ierr = getEdgesDataOrder(data,H1); CHKERRQ(ierr);
       ierr = getTrisDataOrder(data,H1); CHKERRQ(ierr);
-      ierr = getTetsDataOrder(data,H1); CHKERRQ(ierr);
+      ierr = getTetDataOrder(data,H1); CHKERRQ(ierr);
       ierr = getFaceTriNodes(data); CHKERRQ(ierr);
 
-      data.dataOnEntities[MBVERTEX][0].getN().resize(4,4,false);
-      ierr = ShapeMBTET(
-        &*data.dataOnEntities[MBVERTEX][0].getN().data().begin(),G_TET_X4,G_TET_Y4,G_TET_Z4,4
-      ); CHKERRQ(ierr);
-      ierr = shapeTETFunctions_H1(data,G_TET_X4,G_TET_Y4,G_TET_Z4,4); CHKERRQ(ierr);
+      ierr = getEdgesDataOrderSpaceAndBase(data,"FIELD1"); CHKERRQ(ierr);
+      ierr = getTrisDataOrderSpaceAndBase(data,"FIELD1"); CHKERRQ(ierr);
+      ierr = getTetDataOrderSpaceAndBase(data,"FIELD1"); CHKERRQ(ierr);
 
       ierr = getRowNodesIndices(data,"FIELD1"); CHKERRQ(ierr);
       ierr = getEdgesRowIndices(data,"FIELD1"); CHKERRQ(ierr);
@@ -212,6 +210,20 @@ int main(int argc, char *argv[]) {
       ierr = getTrisFieldData(data,"FIELD1"); CHKERRQ(ierr);
       ierr = getTetsFieldData(data,"FIELD1"); CHKERRQ(ierr);
 
+      MatrixDouble gauss_pts(4,4);
+      for(int gg = 0;gg<4;gg++) {
+        gauss_pts(0,gg) = G_TET_X4[gg];
+        gauss_pts(1,gg) = G_TET_Y4[gg];
+        gauss_pts(2,gg) = G_TET_Z4[gg];
+        gauss_pts(3,gg) = G_TET_W4[gg];
+      }
+      ierr = TetPolynomialBase().getValue(
+        gauss_pts,
+        boost::shared_ptr<BaseFunctionCtx>(
+          new EntPolynomialBaseCtx(data,H1,AINSWORTH_COLE_BASE)
+        )
+      ); CHKERRQ(ierr);
+
       EntityHandle ent = fePtr->get_ent();
       int num_nodes;
       const EntityHandle* conn;
@@ -220,7 +232,9 @@ int main(int argc, char *argv[]) {
       rval = mField.get_moab().get_coords(conn,num_nodes,&*coords.data().begin()); CHKERRQ_MOAB(rval);
 
       invJac.resize(3,3);
-      ierr = ShapeJacMBTET(&*data.dataOnEntities[MBVERTEX][0].getDiffN().data().begin(),&*coords.begin(),&*invJac.data().begin()); CHKERRQ(ierr);
+      ierr = ShapeJacMBTET(
+        &*data.dataOnEntities[MBVERTEX][0].getDiffN().data().begin(),&*coords.begin(),&*invJac.data().begin()
+      ); CHKERRQ(ierr);
       ierr = ShapeInvJacVolume(&*invJac.data().begin()); CHKERRQ(ierr);
 
       try {

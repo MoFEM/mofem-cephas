@@ -19,20 +19,13 @@ if(DOXYGEN_FOUND)
   if(GIT_FOUND)
 
     # Get list of contributors
-
-    configure_file(
-      ${PROJECT_SOURCE_DIR}/scripts/git_contributors.sh.in
-      ${PROJECT_SOURCE_DIR}/scripts/git_contributors.sh
-      @ONLY
-    )
-    file(COPY ${PROJECT_SOURCE_DIR}/scripts/git_contributors.sh
-      DESTINATION ${PROJECT_BINARY_DIR}/scripts/
-      FILE_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_EXECUTE
-    )
     add_custom_target(doc_get_contributors
-      ${PROJECT_BINARY_DIR}/scripts/git_contributors.sh
+      COMMAND echo "MoFEM lib contributors" > ${PROJECT_SOURCE_DIR}/doc/contributors_list
+      COMMAND echo >> ${PROJECT_SOURCE_DIR}/doc/contributors_list
+      COMMAND ${GIT_EXECUTABLE} shortlog -s -e -n | sed "s/\@/ at /g" >> ${PROJECT_SOURCE_DIR}/doc/contributors_list
+      COMMAND touch ${PROJECT_SOURCE_DIR}/users_modules/doc/contributors_list_modules
       WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
-      COMMENT "Publish (likask) doxygen documentation" VERBATIM
+      COMMENT "Get MoFEM contributors list" VERBATIM
     )
 
   endif(GIT_FOUND)

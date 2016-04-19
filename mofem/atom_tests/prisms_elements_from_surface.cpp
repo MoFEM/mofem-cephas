@@ -73,6 +73,10 @@ int main(int argc, char *argv[]) {
     rval = moab.get_entities_by_type(0,MBTRI,tris,false); CHKERRQ_MOAB(rval);
     Range prisms;
     ierr = prisms_from_surface_interface->createPrisms(tris,prisms); CHKERRQ(ierr);
+    prisms_from_surface_interface->createdVertices.clear();
+    Range add_prims_layer;
+    ierr = prisms_from_surface_interface->createPrismsFromPrisms(prisms,true,add_prims_layer); CHKERRQ(ierr);
+    prisms.merge(add_prims_layer);
 
     EntityHandle meshset;
     rval = moab.create_meshset(MESHSET_SET,meshset); CHKERRQ_MOAB(rval);
@@ -96,7 +100,7 @@ int main(int argc, char *argv[]) {
     const DofMoFEMEntity_multiIndex *dofs_ptr;
     ierr = m_field.get_dofs(&dofs_ptr); CHKERRQ(ierr);
     PetscPrintf(PETSC_COMM_WORLD,"dofs_ptr.size() = %d\n",dofs_ptr->size());
-    if(dofs_ptr->size()!=564) {
+    if(dofs_ptr->size()!=887) {
       SETERRQ1(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency 323!=%d",dofs_ptr->size());
     }
 
@@ -105,7 +109,7 @@ int main(int argc, char *argv[]) {
     ierr = m_field.build_fields(10); CHKERRQ(ierr);
 
     PetscPrintf(PETSC_COMM_WORLD,"dofs_ptr.size() = %d\n",dofs_ptr->size());
-    if(dofs_ptr->size()!=724) {
+    if(dofs_ptr->size()!=1207) {
       SETERRQ1(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency 483!=%d",dofs_ptr->size());
     }
 

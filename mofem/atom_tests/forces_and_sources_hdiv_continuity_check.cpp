@@ -221,8 +221,6 @@ int main(int argc, char *argv[]) {
           t_ptr[dd] += sense*t[dd];
         }
 
-
-
       }
 
       PetscFunctionReturn(0);
@@ -241,25 +239,25 @@ int main(int argc, char *argv[]) {
 
       try {
 
-	N_tri.resize(1,3);
-	ierr = ShapeMBTRI(&N_tri(0,0),G_TRI_X1,G_TRI_Y1,1); CHKERRQ(ierr);
+        N_tri.resize(1,3);
+        ierr = ShapeMBTRI(&N_tri(0,0),G_TRI_X1,G_TRI_Y1,1); CHKERRQ(ierr);
 
-	gaussPts.resize(4,4);
-	int ff = 0;
-	for(;ff<4;ff++) {
-	  int dd = 0;
-	  for(;dd<3;dd++) {
-	    gaussPts(dd,ff) = cblas_ddot(3,&N_tri(0,0),1,&face_coords[ff][dd],3);
-	  }
-	  gaussPts(3,ff) = G_TRI_W1[0];
-	}
+        gaussPts.resize(4,4);
+        int ff = 0;
+        for(;ff<4;ff++) {
+          int dd = 0;
+          for(;dd<3;dd++) {
+            gaussPts(dd,ff) = cblas_ddot(3,&N_tri(0,0),1,&face_coords[ff][dd],3);
+          }
+          gaussPts(3,ff) = G_TRI_W1[0];
+        }
 
-	//cerr << gaussPts << endl;
+        //cerr << gaussPts << endl;
 
       } catch (exception& ex) {
-	ostringstream ss;
-	ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
-	SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
+        ostringstream ss;
+        ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
+        SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
       }
 
       PetscFunctionReturn(0);
