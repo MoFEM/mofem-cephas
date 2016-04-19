@@ -675,8 +675,6 @@ list(INSERT testing_base_list
   hcurltri
   l2tri
   h1edge
-  h1flatprism
-  h1fatprism
 )
 foreach(test_base ${testing_base_list})
   add_test(testing_base_functions_${test_base}

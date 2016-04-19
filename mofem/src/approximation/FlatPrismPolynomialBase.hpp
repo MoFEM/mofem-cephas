@@ -27,6 +27,7 @@ namespace MoFEM {
   /**
   * \brief Class used to pass that about element to class calculating base functions on prism
   * \ingroup mofem_base_functions
+  * FIXME: Need moab and mofem finite element structure to work (that not perfect)
   */
   struct FlatPrismPolynomialBaseCtx: public EntPolynomialBaseCtx {
 
@@ -52,6 +53,7 @@ namespace MoFEM {
   /**
   * \brief Calculate base functions on tetrahedral
   * \ingroup mofem_base_functions
+  * FIXME: Need moab and mofem finite element structure to work (that not perfect)
   */
   struct FlatPrismPolynomialBase: public BaseFunction {
 

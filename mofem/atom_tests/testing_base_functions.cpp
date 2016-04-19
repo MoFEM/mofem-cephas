@@ -480,14 +480,6 @@ int main(int argc, char *argv[]) {
     }
   }
 
-  if(choise_value==H1FLATPRIS) {
-    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"wrong result");
-  }
-
-  if(choise_value==H1FATPRISM) {
-    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"wrong result");
-  }
-
   PetscFinalize();
 
 }
