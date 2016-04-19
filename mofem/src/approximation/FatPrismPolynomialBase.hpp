@@ -76,7 +76,7 @@ namespace MoFEM {
 
   private:
 
-    FlatPrismPolynomialBaseCtx *cTx;
+    FatPrismPolynomialBaseCtx *cTx;
 
     PetscErrorCode getValueH1TrianglesOnly(ublas::matrix<double> &pts);
 

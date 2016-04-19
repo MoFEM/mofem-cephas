@@ -73,7 +73,7 @@ FatPrismPolynomialBaseCtx::FatPrismPolynomialBaseCtx(
   const FieldApproximationBase copy_node_base
 ):
 EntPolynomialBaseCtx(data,space,base,copy_node_base),
-dataTrianglesOnly(dataTrianglesOnly),
+dataTrianglesOnly(data_triangles_only),
 dataTroughThickness(data_trough_thickness),
 gaussPtsTrianglesOnly(gauss_pts_triangles_only),
 gaussPtsThroughThickness(gauss_pts_through_thickness),
@@ -138,8 +138,8 @@ PetscErrorCode FatPrismPolynomialBase::getValue(
   const FieldApproximationBase base = cTx->bAse;
   DataForcesAndSurcesCore& data = cTx->dAta;
 
-
   if(cTx->copyNodeBase==LASTBASE) {
+    SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"It is assumed that base for vertices is calcuated");
   } else {
     data.dataOnEntities[MBVERTEX][0].getNSharedPtr(base) = data.dataOnEntities[MBVERTEX][0].getNSharedPtr(cTx->copyNodeBase);
   }
@@ -152,6 +152,12 @@ PetscErrorCode FatPrismPolynomialBase::getValue(
       "Base functions or nodes has wrong number of integration points for base %s",
       ApproximationBaseNames[base]
     );
+  }
+  if(
+    cTx->gaussPtsTrianglesOnly.size2()*cTx->gaussPtsThroughThickness.size2()!=
+    pts.size2()
+  ) {
+    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
   }
 
   switch (cTx->sPace) {
@@ -187,7 +193,7 @@ PetscErrorCode FatPrismPolynomialBase::getValueH1TrianglesOnly(ublas::matrix<dou
     cTx->gaussPtsTrianglesOnly,
     boost::shared_ptr<BaseFunctionCtx>(
       new FlatPrismPolynomialBaseCtx(
-        cTx->dataTrianglesOnly,mField.get_moab(),cTx->fePtr,H1,base,NOBASE
+        cTx->dataTrianglesOnly,cTx->mOab,cTx->fePtr,H1,base,NOBASE
       )
     )
   ); CHKERRQ(ierr);
@@ -249,6 +255,8 @@ PetscErrorCode FatPrismPolynomialBase::getValueH1(ublas::matrix<double> &pts) {
   ) = cTx->basePolynomials;
 
   int nb_gauss_pts = pts.size2();
+  int nb_gauss_pts_on_faces = cTx->gaussPtsTrianglesOnly.size2();
+  int nb_gauss_pts_through_thickness = cTx->gaussPtsThroughThickness.size2();
 
   try {
     // nodes
@@ -285,7 +293,7 @@ PetscErrorCode FatPrismPolynomialBase::getValueH1(ublas::matrix<double> &pts) {
             dksi_tri_n[kk] = cTx->dataTrianglesOnly.dataOnEntities[MBVERTEX][0].getDiffN(base)(ggf,2*prism_edge_map[ee][0]+kk);
           }
           for(int ggt = 0;ggt<nb_gauss_pts_through_thickness;ggt++,gg++) {
-            double zeta = gaussPtsThroughThickness(0,ggt);
+            double zeta = cTx->gaussPtsThroughThickness(0,ggt);
             double n0 = N_MBEDGE0(zeta);
             double n1 = N_MBEDGE1(zeta);
             double n0n1 = n0*n1;
@@ -315,7 +323,7 @@ PetscErrorCode FatPrismPolynomialBase::getValueH1(ublas::matrix<double> &pts) {
             double dksi_tri_n = cTx->dataTrianglesOnly.dataOnEntities[MBEDGE][ee].getDiffN(base)(ggf,2*dd+0);
             double deta_tri_n = cTx->dataTrianglesOnly.dataOnEntities[MBEDGE][ee].getDiffN(base)(ggf,2*dd+1);
             for(int ggt = 0;ggt<nb_gauss_pts_through_thickness;ggt++,gg++) {
-              double zeta = gaussPtsThroughThickness(0,ggt);
+              double zeta = cTx->gaussPtsThroughThickness(0,ggt);
               double dzeta,edge_shape;
               if(ee<3) {
                 dzeta = diffN_MBEDGE0;
@@ -349,7 +357,7 @@ PetscErrorCode FatPrismPolynomialBase::getValueH1(ublas::matrix<double> &pts) {
             dksi_tri_n[kk] = cTx->dataTrianglesOnly.dataOnEntities[MBTRI][ff].getDiffN(base)(ggf,2*dd+kk);
           }
           for(int ggt = 0;ggt<nb_gauss_pts_through_thickness;ggt++,gg++) {
-            double zeta = gaussPtsThroughThickness(0,ggt);
+            double zeta = cTx->gaussPtsThroughThickness(0,ggt);
             double dzeta,edge_shape;
             if(ff == 3) {
               dzeta = diffN_MBEDGE0;
@@ -370,16 +378,19 @@ PetscErrorCode FatPrismPolynomialBase::getValueH1(ublas::matrix<double> &pts) {
     // quads
     // higher order edges and zeta
     {
+      MoABErrorCode rval;
       int quads_nodes[3*4];
       int quad_order[3];
       double *quad_n[3],*diff_quad_n[3];
-      SideNumber_multiIndex& side_table = const_cast<SideNumber_multiIndex&>(fePtr->get_side_number_table());
+      SideNumber_multiIndex& side_table = const_cast<SideNumber_multiIndex&>(cTx->fePtr->get_side_number_table());
       SideNumber_multiIndex::nth_index<1>::type::iterator siit;
       siit = side_table.get<1>().lower_bound(boost::make_tuple(MBQUAD,0));
       SideNumber_multiIndex::nth_index<1>::type::iterator hi_siit;
       hi_siit = side_table.get<1>().upper_bound(boost::make_tuple(MBQUAD,3));
-      EntityHandle ent = fePtr->get_ent();
-      rval = mField.get_moab().get_connectivity(ent,conn,num_nodes,true); CHKERRQ_MOAB(rval);
+      EntityHandle ent = cTx->fePtr->get_ent();
+      int num_nodes;
+      const EntityHandle *conn;
+      rval = cTx->mOab.get_connectivity(ent,conn,num_nodes,true); CHKERRQ_MOAB(rval);
       // cerr << "\n\n" << endl;
       // const int quad_nodes[3][4] = { {0,1,4,3}, {1,2,5,4}, {0,2,5,3} };
       for(;siit!=hi_siit;siit++) {
@@ -387,7 +398,7 @@ PetscErrorCode FatPrismPolynomialBase::getValueH1(ublas::matrix<double> &pts) {
         int num_nodes_quad;
         const EntityHandle *conn_quad;
         EntityHandle quad = siit->ent;
-        rval = mField.get_moab().get_connectivity(
+        rval = cTx->mOab.get_connectivity(
           quad,conn_quad,num_nodes_quad,true
         ); CHKERRQ_MOAB(rval);
         for(int nn = 0;nn<num_nodes_quad;nn++) {

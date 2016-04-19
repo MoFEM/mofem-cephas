@@ -21,6 +21,7 @@ extern "C" {
 
 /**
 \brief Calculate Legendre approximation basis
+\ingroup mofem_base_functions
 
 Lagrange polynomial is given by
 \f[
@@ -52,7 +53,8 @@ PetscErrorCode Legendre_polynomials(
 
 
 /**
- * \brief Calculate Lobatto base functions
+ \brief Calculate Lobatto base functions
+ \ingroup mofem_base_functions
 
  \param p is approximation order
  \param s is position \f$s\in[-1,1]\f$
