@@ -136,7 +136,7 @@ PetscErrorCode FlatPrismPolynomialBase::getValue(
   }
   data.dataOnEntities[MBVERTEX][0].getN(base).resize(nb_gauss_pts,6,false);
   data.dataOnEntities[MBVERTEX][0].getDiffN(base).resize(nb_gauss_pts,12,false);
-  if(data.dataOnEntities[MBVERTEX][0].getN(base).size1()!=nb_gauss_pts) {
+  if(data.dataOnEntities[MBVERTEX][0].getN(base).size1()!=(unsigned int)nb_gauss_pts) {
     SETERRQ1(
       PETSC_COMM_SELF,
       MOFEM_DATA_INCONSISTENCY,

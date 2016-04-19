@@ -127,16 +127,16 @@ PetscErrorCode TriPolynomialBase::getValueH1(ublas::matrix<double> &pts) {
 PetscErrorCode TriPolynomialBase::getValueL2(
   ublas::matrix<double> &pts
 ) {
-  PetscErrorCode ierr;
+  // PetscErrorCode ierr;
   PetscFunctionBegin;
 
-  DataForcesAndSurcesCore& data = cTx->dAta;
-  const FieldApproximationBase base = cTx->bAse;
-  PetscErrorCode (*base_polynomials)(
-    int p,double s,double *diff_s,double *L,double *diffL,const int dim
-  ) = cTx->basePolynomials;
-
-  int nb_gauss_pts = pts.size2();
+  // DataForcesAndSurcesCore& data = cTx->dAta;
+  // const FieldApproximationBase base = cTx->bAse;
+  // PetscErrorCode (*base_polynomials)(
+  //   int p,double s,double *diff_s,double *L,double *diffL,const int dim
+  // ) = cTx->basePolynomials;
+  //
+  // int nb_gauss_pts = pts.size2();
 
   SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"Not yet implemented (You can do it)");
 
@@ -214,16 +214,16 @@ PetscErrorCode TriPolynomialBase::getValueHdiv(
 PetscErrorCode TriPolynomialBase::getValueHCurl(
   ublas::matrix<double> &pts
 ) {
-  PetscErrorCode ierr;
+  // PetscErrorCode ierr;
   PetscFunctionBegin;
 
-  DataForcesAndSurcesCore& data = cTx->dAta;
-  const FieldApproximationBase base = cTx->bAse;
-  PetscErrorCode (*base_polynomials)(
-    int p,double s,double *diff_s,double *L,double *diffL,const int dim
-  ) = cTx->basePolynomials;
-
-  int nb_gauss_pts = pts.size2();
+  // DataForcesAndSurcesCore& data = cTx->dAta;
+  // const FieldApproximationBase base = cTx->bAse;
+  // PetscErrorCode (*base_polynomials)(
+  //   int p,double s,double *diff_s,double *L,double *diffL,const int dim
+  // ) = cTx->basePolynomials;
+  //
+  // int nb_gauss_pts = pts.size2();
 
   SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"Not yet implemented (You can do it)");
 
