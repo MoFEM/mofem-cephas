@@ -173,9 +173,9 @@ PetscErrorCode TetPolynomialBase::getValueL2(
 
   DataForcesAndSurcesCore& data = cTx->dAta;
   const FieldApproximationBase base = cTx->bAse;
-  PetscErrorCode (*base_polynomials)(
-    int p,double s,double *diff_s,double *L,double *diffL,const int dim
-  ) = cTx->basePolynomials;
+  // PetscErrorCode (*base_polynomials)(
+  //   int p,double s,double *diff_s,double *L,double *diffL,const int dim
+  // ) = cTx->basePolynomials;
 
   int nb_gauss_pts = pts.size2();
 
@@ -405,16 +405,16 @@ PetscErrorCode TetPolynomialBase::getValueHdiv(
 PetscErrorCode TetPolynomialBase::getValueHCurl(
   ublas::matrix<double> &pts
 ) {
-  PetscErrorCode ierr;
+  // PetscErrorCode ierr;
   PetscFunctionBegin;
 
-  DataForcesAndSurcesCore& data = cTx->dAta;
-  const FieldApproximationBase base = cTx->bAse;
-  PetscErrorCode (*base_polynomials)(
-    int p,double s,double *diff_s,double *L,double *diffL,const int dim
-  ) = cTx->basePolynomials;
-
-  int nb_gauss_pts = pts.size2();
+  // DataForcesAndSurcesCore& data = cTx->dAta;
+  // const FieldApproximationBase base = cTx->bAse;
+  // PetscErrorCode (*base_polynomials)(
+  //   int p,double s,double *diff_s,double *L,double *diffL,const int dim
+  // ) = cTx->basePolynomials;
+  //
+  // int nb_gauss_pts = pts.size2();
 
   SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"Not yet implemented (You can do it)");
 
@@ -459,7 +459,7 @@ PetscErrorCode TetPolynomialBase::getValue(
   } else {
     data.dataOnEntities[MBVERTEX][0].getNSharedPtr(base) = data.dataOnEntities[MBVERTEX][0].getNSharedPtr(cTx->copyNodeBase);
   }
-  if(data.dataOnEntities[MBVERTEX][0].getN(base).size1()!=nb_gauss_pts) {
+  if(data.dataOnEntities[MBVERTEX][0].getN(base).size1()!=(unsigned int)nb_gauss_pts) {
     SETERRQ1(
       PETSC_COMM_SELF,
       MOFEM_DATA_INCONSISTENCY,

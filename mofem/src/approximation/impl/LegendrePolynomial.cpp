@@ -75,7 +75,7 @@ PetscErrorCode LegendrePolynomial::getValue(
   double *diff_l = NULL;
   if(ctx->baseFunPtr) l = &*ctx->baseFunPtr->data().begin();
   if(ctx->baseDiffFunPtr) diff_l = &*ctx->baseDiffFunPtr->data().begin();
-  for(int gg = 0;gg<pts.size2();gg++) {
+  for(unsigned int gg = 0;gg<pts.size2();gg++) {
     ierr = (ctx->basePolynomials)(ctx->P,pts(0,gg),ctx->diffS,l,diff_l,ctx->dIm); CHKERRQ(ierr);
   }
   PetscFunctionReturn(0);

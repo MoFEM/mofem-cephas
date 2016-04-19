@@ -24,8 +24,8 @@ static char help[] = "testing interface inserting algorithm\n\n";
 
 static double sum_matrix(ublas::matrix<double> &m) {
   double s = 0;
-  for(int ii = 0;ii<m.size1();ii++) {
-    for(int jj = 0;jj<m.size2();jj++) {
+  for(unsigned int ii = 0;ii<m.size1();ii++) {
+    for(unsigned int jj = 0;jj<m.size2();jj++) {
       s +=m (ii,jj);
     }
   }

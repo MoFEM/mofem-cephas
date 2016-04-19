@@ -145,7 +145,7 @@ PetscErrorCode FatPrismPolynomialBase::getValue(
   }
   data.dataOnEntities[MBVERTEX][0].getN(base).resize(nb_gauss_pts,6,false);
   data.dataOnEntities[MBVERTEX][0].getDiffN(base).resize(nb_gauss_pts,12,false);
-  if(data.dataOnEntities[MBVERTEX][0].getN(base).size1()!=nb_gauss_pts) {
+  if(data.dataOnEntities[MBVERTEX][0].getN(base).size1()!=(unsigned int)nb_gauss_pts) {
     SETERRQ1(
       PETSC_COMM_SELF,
       MOFEM_DATA_INCONSISTENCY,
@@ -187,9 +187,9 @@ PetscErrorCode FatPrismPolynomialBase::getValueH1TrianglesOnly() {
   PetscFunctionBegin;
 
   const FieldApproximationBase base = cTx->bAse;
-  PetscErrorCode (*base_polynomials)(
-    int p,double s,double *diff_s,double *L,double *diffL,const int dim
-  ) = cTx->basePolynomials;
+  // PetscErrorCode (*base_polynomials)(
+  //   int p,double s,double *diff_s,double *L,double *diffL,const int dim
+  // ) = cTx->basePolynomials;
 
   ierr = FlatPrismPolynomialBase().getValue(
     cTx->gaussPtsTrianglesOnly,
@@ -207,7 +207,7 @@ PetscErrorCode FatPrismPolynomialBase::getValueH1ThroughThickness() {
   PetscErrorCode ierr;
   PetscFunctionBegin;
 
-  DataForcesAndSurcesCore& data = cTx->dAta;
+  // DataForcesAndSurcesCore& data = cTx->dAta;
   const FieldApproximationBase base = cTx->bAse;
   PetscErrorCode (*base_polynomials)(
     int p,double s,double *diff_s,double *L,double *diffL,const int dim
@@ -252,9 +252,9 @@ PetscErrorCode FatPrismPolynomialBase::getValueH1(ublas::matrix<double> &pts) {
 
   DataForcesAndSurcesCore& data = cTx->dAta;
   const FieldApproximationBase base = cTx->bAse;
-  PetscErrorCode (*base_polynomials)(
-    int p,double s,double *diff_s,double *L,double *diffL,const int dim
-  ) = cTx->basePolynomials;
+  // PetscErrorCode (*base_polynomials)(
+  //   int p,double s,double *diff_s,double *L,double *diffL,const int dim
+  // ) = cTx->basePolynomials;
 
   int nb_gauss_pts = pts.size2();
   int nb_gauss_pts_on_faces = cTx->gaussPtsTrianglesOnly.size2();
