@@ -50,21 +50,19 @@ PetscErrorCode L2_FaceShapeFunctions_MBTRI(int p,double *N,double *diffN,double 
     for(;oo<=p;oo++) {
       int pp0 = 0;
       for(;pp0<=oo;pp0++) {
-	int pp1 = oo-pp0;
-	if(pp1>=0) {
-
-	  if(L2N!=NULL) {
-	    L2N[shift+jj] = L01[pp0]*L20[pp1];
-	  }
-	  if(diff_L2N!=NULL) {
-	    int dd = 0;
-	    for(;dd<2;dd++) {
-	      diff_L2N[2*shift+2*jj+dd] = diffL01[dd*(p+1)+pp0]*L20[pp1]+L01[pp0]*diffL20[dd*(p+1)+pp1];
-	    }
-	  }
-	  jj++;
-
-	}
+        int pp1 = oo-pp0;
+        if(pp1>=0) {
+          if(L2N!=NULL) {
+            L2N[shift+jj] = L01[pp0]*L20[pp1];
+          }
+          if(diff_L2N!=NULL) {
+            int dd = 0;
+            for(;dd<2;dd++) {
+              diff_L2N[2*shift+2*jj+dd] = diffL01[dd*(p+1)+pp0]*L20[pp1]+L01[pp0]*diffL20[dd*(p+1)+pp1];
+            }
+          }
+          jj++;
+        }
       }
     }
     if(jj!=P) SETERRQ1(PETSC_COMM_SELF,1,"wrong order %d",jj);
@@ -98,31 +96,27 @@ PetscErrorCode L2_ShapeFunctions_MBTET(int p,double *N,double *diffN,double *L2N
     int jj = 0;
     int oo = 0;
     for(;oo<=p;oo++) {
-
       int pp0 = 0;
       for(;pp0<=oo;pp0++) {
-	int pp1 = 0;
-	for(;(pp0+pp1)<=oo;pp1++) {
-	  int pp2 = oo - pp0 - pp1;
-	  if(pp2>=0) {
-
-	    if(L2N!=NULL) {
-	      L2N[shift+jj] = L0[pp0]*L1[pp1]*L2[pp2];
-	    }
-	    if(diff_L2N!=NULL) {
-	      int dd = 0;
-	      for(;dd<3;dd++) {
-		diff_L2N[3*shift+3*jj+dd] =
-		  diffL0[dd*(p+1)+pp0]*L1[pp1]*L2[pp2]+L0[pp0]*diffL1[dd*(p+1)+pp1]
-		  *L2[pp2]+L0[pp0]*L1[pp1]*diffL2[dd*(p+1)+pp2];
-	      }
-	    }
-	    jj++;
-
-	  }
-	}
+        int pp1 = 0;
+        for(;(pp0+pp1)<=oo;pp1++) {
+          int pp2 = oo - pp0 - pp1;
+          if(pp2>=0) {
+            if(L2N!=NULL) {
+              L2N[shift+jj] = L0[pp0]*L1[pp1]*L2[pp2];
+            }
+            if(diff_L2N!=NULL) {
+              int dd = 0;
+              for(;dd<3;dd++) {
+                diff_L2N[3*shift+3*jj+dd] =
+                diffL0[dd*(p+1)+pp0]*L1[pp1]*L2[pp2]+L0[pp0]*diffL1[dd*(p+1)+pp1]
+                *L2[pp2]+L0[pp0]*L1[pp1]*diffL2[dd*(p+1)+pp2];
+              }
+            }
+            jj++;
+          }
+        }
       }
-
     }
     if(jj!=P) SETERRQ2(PETSC_COMM_SELF,1,"wrong order %d != %d",jj,P);
   }
