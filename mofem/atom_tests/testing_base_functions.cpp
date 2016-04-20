@@ -100,18 +100,24 @@ int main(int argc, char *argv[]) {
     ); CHKERRQ(ierr);
 
     cout << "LegendrePolynomial\n";
+    cout << pts_1d << endl;
     cout << *base_ptr << endl;
     cout << *diff_base_ptr << endl;
     double sum = sum_matrix(*base_ptr);
     double diff_sum = sum_matrix(*diff_base_ptr);
     cout << sum << endl;
     cout << diff_sum << endl;
-    if(fabs(0.648438-sum)>eps) {
+    if(fabs(2.04688-sum)>eps) {
       SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"wrong result");
     }
-    if(fabs(1.3125-diff_sum)>eps) {
+    if(fabs(2.25-diff_sum)>eps) {
       SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"wrong result");
     }
+  }
+
+  pts_1d.resize(1,11,false);
+  for(int ii = 0;ii!=11;ii++) {
+    pts_1d(0,ii) = 2*((double)ii/10)-1;
   }
 
   if(choise_value==LOBATTOPOLYNOMIAL) {
@@ -119,13 +125,24 @@ int main(int argc, char *argv[]) {
     ierr = LobattoPolynomial().getValue(
       pts_1d,
       boost::shared_ptr<BaseFunctionCtx>(
-        new LobattoPolynomialCtx(4,&diff_s,1,base_ptr,diff_base_ptr)
+        new LobattoPolynomialCtx(7,&diff_s,1,base_ptr,diff_base_ptr)
       )
     ); CHKERRQ(ierr);
+    for(int ii = 0;ii!=11;ii++) {
+      cerr << "lobatto_plot " << pts_1d(0,ii) << " " << (*base_ptr)(ii,2) << " " << (*diff_base_ptr)(ii,2) << endl;
+    }
     cout << "LobattoPolynomial\n";
+    cout << pts_1d << endl;
     cout << *base_ptr << endl;
     cout << *diff_base_ptr << endl;
-    if(1) {
+    double sum = sum_matrix(*base_ptr);
+    double diff_sum = sum_matrix(*diff_base_ptr);
+    cout << sum << endl;
+    cout << diff_sum << endl;
+    if(fabs(-3.90717-sum)>eps) {
+      SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"wrong result");
+    }
+    if(fabs(19.8261-diff_sum)>eps) {
       SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"wrong result");
     }
   }

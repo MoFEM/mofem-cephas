@@ -129,7 +129,6 @@ PetscErrorCode FlatPrismPolynomialBase::getValue(
   const FieldApproximationBase base = cTx->bAse;
   DataForcesAndSurcesCore& data = cTx->dAta;
 
-
   if(cTx->copyNodeBase==LASTBASE) {
   } else {
     data.dataOnEntities[MBVERTEX][0].getNSharedPtr(base) = data.dataOnEntities[MBVERTEX][0].getNSharedPtr(cTx->copyNodeBase);

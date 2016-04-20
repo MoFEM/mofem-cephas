@@ -14,6 +14,7 @@
 
 #include <petscsys.h>
 #include <phg-quadrule/quad.h>
+#include <cblas.h>
 
 PetscErrorCode Legendre_polynomials(
   int p,double s,double *diff_s,double *L,double *diffL,const int dim
@@ -100,22 +101,23 @@ PetscErrorCode Lobatto_polynomials(
       }
     }
   }
-  if(p==1) PetscFunctionReturn(0);
+  if(p == 1) PetscFunctionReturn(0);
   double l[p+1];
   ierr = Legendre_polynomials(p,s,NULL,l,NULL,1); CHKERRQ(ierr);
   {
     // Derivatives
-    int k = 1;
-    for(;k<p;k++) {
+    int k = 2;
+    for(;k<=p;k++) {
       if(diffL!=NULL) {
         if(diff_s==NULL) {
           SETERRQ(PETSC_COMM_SELF,1,"diff_s == NULL");
         }
-        diffL[0*(p+1)+k+1] = l[k+1]*diff_s[1];
+        double a = l[k-1];
+        diffL[0*(p+1)+k] = a*diff_s[0];
         if(dim >= 2) {
-          diffL[1*(p+1)+k+1] = l[k+1]*diff_s[1];
+          diffL[1*(p+1)+k] = a*diff_s[1];
           if(dim == 3) {
-            diffL[2*(p+1)+k+1] = l[k+1]*diff_s[1];
+            diffL[2*(p+1)+k] = a*diff_s[2];
           }
         }
       }
@@ -123,19 +125,26 @@ PetscErrorCode Lobatto_polynomials(
   }
   {
     // Functions
-    bzero(&L[2],(p+1-2)*sizeof(double));
+    bzero(L,(p+1)*sizeof(double));
     int nb_gauss_pts = QUAD_1D_TABLE[p]->npoints;
+    double *points = QUAD_1D_TABLE[p]->points;
+    double *weights = QUAD_1D_TABLE[p]->weights;
+    s = s+1;
     int gg = 0;
-    for(;gg<nb_gauss_pts;gg++) {
-      double ksi = QUAD_1D_TABLE[p]->points[1]-QUAD_1D_TABLE[p]->points[0];
-      ierr = Legendre_polynomials(
-        p,ksi,NULL,l,NULL,1
-      ); CHKERRQ(ierr);
-      double w = 2*QUAD_2D_TABLE[p]->weights[gg];
-      int k = 1;
-      for(;k<p;k++) {
-        L[k+1] += w*l[k+1];
-      }
+    for(;gg!=nb_gauss_pts;gg++) {
+      double ksi = points[2*gg+1];
+      double zeta = s*ksi-1;
+      ierr = Legendre_polynomials(p,zeta,NULL,l,NULL,1); CHKERRQ(ierr);
+      double w = s*weights[gg];
+      cblas_daxpy(p-2,w,&l[1],1,&L[2],1);
+    }
+  }
+  {
+    int k = 2;
+    for(;k<=p;k++) {
+      double a = sqrt(k-0.5);
+      if(L!=NULL) L[k] *= a;
+      if(diffL!=NULL) diffL[k] *= a;
     }
   }
   PetscFunctionReturn(0);
