@@ -163,7 +163,7 @@ int main(int argc, char *argv[]) {
     my_split << *sit << endl;
 
     for(_IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(m_field2,"FIELD_B",dof)) {
-      my_split << *dof << "\n";
+      my_split << *(*dof) << "\n";
     }
 
   }
@@ -175,10 +175,10 @@ int main(int argc, char *argv[]) {
 
     my_split << "next step:\n";
     for(_IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(m_field2,"FIELD_A",dof)) {
-      my_split << *dof << "\n";
+      my_split << *(*dof) << "\n";
     }
     for(_IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(m_field2,"FIELD_B",dof)) {
-      my_split << *dof << "\n";
+      my_split << *(*dof) << "\n";
     }
 
 

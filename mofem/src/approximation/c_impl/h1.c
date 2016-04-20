@@ -89,7 +89,7 @@ PetscErrorCode H1_EdgeShapeFunctions_MBTRI(
           //diffX
           cblas_daxpy(P[0],N[node_shift+0]*N[node_shift+1],&diffL01[0*(p[0]+1)],1,&diff_edgeN01[2*shift+0],2);
           cblas_daxpy(P[0],diffN[2*0+0]*N[node_shift+1]+N[node_shift+0]*diffN[2*1+0],L01,1,&diff_edgeN01[2*shift+0],2);
-          //diffY
+          //diff  Y
           cblas_daxpy(P[0],N[node_shift+0]*N[node_shift+1],&diffL01[1*(p[0]+1)],1,&diff_edgeN01[2*shift+1],2);
           cblas_daxpy(P[0],diffN[2*0+1]*N[node_shift+1]+N[node_shift+0]*diffN[2*1+1],L01,1,&diff_edgeN01[2*shift+1],2);
         }
