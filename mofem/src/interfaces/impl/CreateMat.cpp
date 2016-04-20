@@ -975,10 +975,10 @@ PetscErrorCode Core::partition_check_matrix_fill_in(const string &problem_name,i
   for(;fe!=hi_fe;fe++) {
 
     if(verb>0) {
-      PetscPrintf(comm,"\tcheck element %s\n",fe->get_name().c_str());
+      PetscPrintf(comm,"\tcheck element %s\n",(*fe)->get_name().c_str());
     }
 
-    ierr = loop_finite_elements(problem_name,fe->get_name(),method,verb);  CHKERRQ(ierr);
+    ierr = loop_finite_elements(problem_name,(*fe)->get_name(),method,verb);  CHKERRQ(ierr);
 
   }
 

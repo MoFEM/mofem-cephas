@@ -522,7 +522,7 @@ typedef multi_index_container<
   \ingroup fe_multi_indices
  */
 typedef multi_index_container<
-  NumeredMoFEMFiniteElement,
+  boost::shared_ptr<NumeredMoFEMFiniteElement>,
   indexed_by<
     ordered_unique<
       tag<Unique_mi_tag>, const_mem_fun<NumeredMoFEMFiniteElement::interface_type_EntMoFEMFiniteElement,GlobalUId,&NumeredMoFEMFiniteElement::get_global_unique_id> >,
@@ -569,8 +569,8 @@ typedef multi_index_container<
 struct NumeredMoFEMFiniteElement_change_part {
   unsigned int part;
   NumeredMoFEMFiniteElement_change_part(unsigned int _part): part(_part) {};
-  void operator()(NumeredMoFEMFiniteElement &MoFEMFiniteElement) {
-    MoFEMFiniteElement.part = part;
+  void operator()(boost::shared_ptr<NumeredMoFEMFiniteElement> &fe) {
+    fe->part = part;
   }
 };
 

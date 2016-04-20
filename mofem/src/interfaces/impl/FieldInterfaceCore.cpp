@@ -2097,9 +2097,9 @@ PetscErrorCode Core::partition_finite_elements(
   for(;miit2!=hi_miit2;miit2++) {
     if((miit2->get_id()&p_miit->get_BitFEId()).none()) continue; // if element is not part of problem
     if((miit2->get_BitRefLevel()&p_miit->get_BitRefLevel())!=p_miit->get_BitRefLevel()) continue; // if entity is not problem refinement level
-    NumeredMoFEMFiniteElement numered_fe(&*miit2);
-    FENumeredDofMoFEMEntity_multiIndex &rows_dofs = numered_fe.rows_dofs;
-    FENumeredDofMoFEMEntity_multiIndex &cols_dofs = numered_fe.cols_dofs;
+    boost::shared_ptr<NumeredMoFEMFiniteElement> numered_fe(new NumeredMoFEMFiniteElement(&*miit2));
+    FENumeredDofMoFEMEntity_multiIndex &rows_dofs = numered_fe->rows_dofs;
+    FENumeredDofMoFEMEntity_multiIndex &cols_dofs = numered_fe->cols_dofs;
     rows_dofs.clear();
     cols_dofs.clear();
     {
@@ -2121,8 +2121,8 @@ PetscErrorCode Core::partition_finite_elements(
         NumeredMoFEMFiniteElement_change_part(max_part).operator()(numered_fe);
       }
       if(
-        (numered_fe.get_part()>=(unsigned int)low_proc)&&
-        (numered_fe.get_part()<=(unsigned int)hi_proc)
+        (numered_fe->get_part()>=(unsigned int)low_proc)&&
+        (numered_fe->get_part()<=(unsigned int)hi_proc)
       ) {
         //rows element dof multi-indices
         viit_rows = rows_view.begin();
@@ -2161,10 +2161,10 @@ PetscErrorCode Core::partition_finite_elements(
         ss << *p_miit << endl;
         ss << *p.first << endl;
         typedef FENumeredDofMoFEMEntity_multiIndex::index<Unique_mi_tag>::type FENumeredDofMoFEMEntity_multiIndex_by_Unique_mi_tag;
-        FENumeredDofMoFEMEntity_multiIndex_by_Unique_mi_tag::iterator miit = p.first->rows_dofs.get<Unique_mi_tag>().begin();
-        for(;miit!= p.first->rows_dofs.get<Unique_mi_tag>().end();miit++) ss << "rows: " << *miit << endl;
-        miit = p.first->cols_dofs.get<Unique_mi_tag>().begin();
-        for(;miit!=p.first->cols_dofs.get<Unique_mi_tag>().end();miit++) ss << "cols: " << *miit << endl;
+        FENumeredDofMoFEMEntity_multiIndex_by_Unique_mi_tag::iterator miit = (*p.first)->rows_dofs.get<Unique_mi_tag>().begin();
+        for(;miit!= (*p.first)->rows_dofs.get<Unique_mi_tag>().end();miit++) ss << "rows: " << *(*miit) << endl;
+        miit = (*p.first)->cols_dofs.get<Unique_mi_tag>().begin();
+        for(;miit!=(*p.first)->cols_dofs.get<Unique_mi_tag>().end();miit++) ss << "cols: " << *(*miit) << endl;
         PetscSynchronizedPrintf(comm,ss.str().c_str());
       }
     }
@@ -2209,19 +2209,19 @@ PetscErrorCode Core::partition_ghost_dofs(const string &name,int verb) {
     hi_fe_it = p_miit->numeredFiniteElements.get<FiniteElement_Part_mi_tag>().upper_bound(rAnk);
     for(;fe_it!=hi_fe_it;fe_it++) {
       typedef FENumeredDofMoFEMEntity_multiIndex::iterator dof_it;
-      if(fe_it->rows_dofs.size()>0) {
+      if((*fe_it)->rows_dofs.size()>0) {
         dof_it rowdofit,hi_rowdofit;
-        rowdofit = fe_it->rows_dofs.begin();
-        hi_rowdofit = fe_it->rows_dofs.end();
+        rowdofit = (*fe_it)->rows_dofs.begin();
+        hi_rowdofit = (*fe_it)->rows_dofs.end();
         for(;rowdofit!=hi_rowdofit;rowdofit++) {
           if((*rowdofit)->get_part()==(unsigned int)rAnk) continue;
           ghost_idx_row_view.insert((*rowdofit)->get_NumeredDofMoFEMEntity_ptr());
         }
       }
-      if(fe_it->cols_dofs.size()>0) {
+      if((*fe_it)->cols_dofs.size()>0) {
         dof_it coldofit,hi_coldofit;
-        coldofit = fe_it->cols_dofs.begin();
-        hi_coldofit = fe_it->cols_dofs.end();
+        coldofit = (*fe_it)->cols_dofs.begin();
+        hi_coldofit = (*fe_it)->cols_dofs.end();
         for(;coldofit!=hi_coldofit;coldofit++) {
           if((*coldofit)->get_part()==(unsigned int)rAnk) continue;
           ghost_idx_col_view.insert((*coldofit)->get_NumeredDofMoFEMEntity_ptr());
@@ -2645,9 +2645,9 @@ PetscErrorCode Core::get_problem_finite_elements_entities(const string &problem_
   NumeredMoFEMFiniteElement_multiIndex &numeredFiniteElements = const_cast<NumeredMoFEMFiniteElement_multiIndex&>(p_miit->numeredFiniteElements);
   NumeredMoFEMFiniteElement_multiIndex::index<FiniteElement_name_mi_tag>::type::iterator miit = numeredFiniteElements.get<FiniteElement_name_mi_tag>().lower_bound(fe_name);
   for(;miit!=numeredFiniteElements.get<FiniteElement_name_mi_tag>().upper_bound(fe_name);miit++) {
-    EntityHandle ent = miit->get_ent();
+    EntityHandle ent = (*miit)->get_ent();
     rval = moab.add_entities(meshset,&ent,1); CHKERRQ_MOAB(rval);
-    int part = miit->get_part();
+    int part = (*miit)->get_part();
     rval = moab.tag_set_data(th_Part,&ent,1,&part); CHKERRQ_MOAB(rval);
   }
   PetscFunctionReturn(0);
@@ -2856,10 +2856,10 @@ PetscErrorCode Core::loop_finite_elements(
   for(int nn = 0;miit!=hi_miit;miit++,nn++) {
 
     method.nInTheLoop = nn;
-    method.fePtr = &*miit;
-    method.dataPtr = const_cast<FEDofMoFEMEntity_multiIndex*>(&(miit->fe_ptr->data_dofs));
-    method.rowPtr = const_cast<FENumeredDofMoFEMEntity_multiIndex*>(&(miit->rows_dofs));
-    method.colPtr = const_cast<FENumeredDofMoFEMEntity_multiIndex*>(&(miit->cols_dofs));
+    method.fePtr = &*(*miit);
+    method.dataPtr = const_cast<FEDofMoFEMEntity_multiIndex*>(&((*miit)->fe_ptr->data_dofs));
+    method.rowPtr = const_cast<FENumeredDofMoFEMEntity_multiIndex*>(&((*miit)->rows_dofs));
+    method.colPtr = const_cast<FENumeredDofMoFEMEntity_multiIndex*>(&((*miit)->cols_dofs));
 
     try {
       PetscLogEventBegin(USER_EVENT_operator,0,0,0,0);
