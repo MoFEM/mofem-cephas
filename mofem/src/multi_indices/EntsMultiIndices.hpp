@@ -77,7 +77,17 @@ struct BasicMoFEMEntity {
   int *sharing_procs_ptr;
   EntityHandle *sharing_handlers_ptr;
 
+  BasicMoFEMEntity();
   BasicMoFEMEntity(Interface &moab,const EntityHandle _ent);
+
+  PetscErrorCode iterateBasicMoFEMEntity(
+    EntityHandle _ent,
+    int _owner_proc,
+    EntityHandle _moab_owner_handle,
+    unsigned char *_pstatus_val_ptr,
+    int *_sharing_procs_ptr,
+    EntityHandle *_sharing_handlers_ptr
+  );
 
   /// get entity type
   inline EntityType get_ent_type() const { return (EntityType)((ent&MB_TYPE_MASK)>>MB_ID_WIDTH); }
@@ -168,9 +178,25 @@ struct BasicMoFEMEntity {
  */
 struct RefMoFEMEntity: public BasicMoFEMEntity {
   EntityHandle *tag_parent_ent;
-  int tag_parent_ent_size;
   BitRefLevel *tag_BitRefLevel;
+
+  RefMoFEMEntity();
   RefMoFEMEntity(Interface &moab,const EntityHandle _ent);
+
+  PetscErrorCode iterateRefMoFEMEntity(
+    EntityHandle _ent,
+    int _owner_proc,
+    EntityHandle _moab_owner_handle,
+    unsigned char *_pstatus_val_ptr,
+    int *_sharing_procs_ptr,
+    EntityHandle *_sharing_handlers_ptr,
+    EntityHandle *_tag_parent_ent,
+    BitRefLevel *_tag_BitRefLevel
+  );
+
+  static PetscErrorCode getPatentEnt(Interface &moab,Range ents,vector<EntityHandle> vec_patent_ent);
+  static PetscErrorCode getBitRefLevel(Interface &moab,Range ents,vector<BitRefLevel> vec_bit_ref_level);
+
   /// get entity
   inline EntityHandle get_ref_ent() const { return ent; }
   /// get patent entity

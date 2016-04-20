@@ -1031,7 +1031,12 @@ PetscErrorCode Core::dofs_NoField(const BitFieldId id,map<EntityType,int> &dof_c
   }
   PetscFunctionReturn(0);
 }
-PetscErrorCode Core::dofs_L2H1HcurlHdiv(const BitFieldId id,map<EntityType,int> &dof_counter,map<EntityType,int> &inactive_dof_counter,int verb) {
+PetscErrorCode Core::dofs_L2H1HcurlHdiv(
+  const BitFieldId id,
+  map<EntityType,int> &dof_counter,
+  map<EntityType,int> &inactive_dof_counter,
+  int verb
+) {
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
   //field it
@@ -1053,6 +1058,7 @@ PetscErrorCode Core::dofs_L2H1HcurlHdiv(const BitFieldId id,map<EntityType,int> 
   //create dofsField
   Range::iterator eit = ents_of_id_meshset.begin();
   for(;eit!=ents_of_id_meshset.end();eit++) {
+
     // check if ent is in ref meshset
     RefMoFEMEntity_multiIndex::index<Ent_mi_tag>::type::iterator miit_ref_ent;
     miit_ref_ent = refinedEntities.get<Ent_mi_tag>().find(*eit);

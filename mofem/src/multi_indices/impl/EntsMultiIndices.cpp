@@ -29,16 +29,22 @@
 #include <EntsMultiIndices.hpp>
 #include <DofsMultiIndices.hpp>
 #include <FEMMultiIndices.hpp>
-// #include <ProblemsMultiIndices.hpp>
-// #include <AdjacencyMultiIndices.hpp>
-// #include <BCMultiIndices.hpp>
-// #include <CoreDataStructures.hpp>
 
 namespace MoFEM {
 
+BasicMoFEMEntity::BasicMoFEMEntity():
+ent(0),
+owner_proc(-1),
+moab_owner_handle(0),
+sharing_procs_ptr(NULL),
+sharing_handlers_ptr(NULL) {
+}
+
 //basic moab ent
 BasicMoFEMEntity::BasicMoFEMEntity(Interface &moab,const EntityHandle _ent):
-  ent(_ent),sharing_procs_ptr(NULL),sharing_handlers_ptr(NULL) {
+ent(_ent),
+sharing_procs_ptr(NULL),
+sharing_handlers_ptr(NULL) {
   switch (get_ent_type()) {
     case MBVERTEX:
     case MBEDGE:
@@ -49,10 +55,10 @@ BasicMoFEMEntity::BasicMoFEMEntity(Interface &moab,const EntityHandle _ent):
     case MBENTITYSET:
     break;
     default:
-      THROW_MESSAGE("this entity type is currently not implemented");
+    THROW_MESSAGE("this entity type is currently not implemented");
   }
   ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
-  ErrorCode rval;
+  MoABErrorCode rval;
   rval = pcomm->get_owner_handle(ent,owner_proc,moab_owner_handle); MOAB_THROW(rval);
   rval = moab.tag_get_by_ptr(pcomm->pstatus_tag(),&ent,1,(const void **)&pstatus_val_ptr); CHKERR_MOAB(rval);
 
@@ -65,20 +71,100 @@ BasicMoFEMEntity::BasicMoFEMEntity(Interface &moab,const EntityHandle _ent):
     rval = moab.tag_get_by_ptr(pcomm->sharedp_tag(),&ent,1,(const void **)&sharing_procs_ptr); CHKERR_MOAB(rval);
     rval = moab.tag_get_by_ptr(pcomm->sharedh_tag(),&ent,1,(const void **)&sharing_handlers_ptr); CHKERR_MOAB(rval);
   }
-
 }
+PetscErrorCode BasicMoFEMEntity::iterateBasicMoFEMEntity(
+  EntityHandle _ent,
+  int _owner_proc,
+  EntityHandle _moab_owner_handle,
+  unsigned char *_pstatus_val_ptr,
+  int *_sharing_procs_ptr,
+  EntityHandle *_sharing_handlers_ptr
+) {
+  PetscFunctionBegin;
+  ent = _ent;
+  switch (get_ent_type()) {
+    case MBVERTEX:
+    case MBEDGE:
+    case MBTRI:
+    case MBQUAD:
+    case MBTET:
+    case MBPRISM:
+    case MBENTITYSET:
+    break;
+    default:
+    SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"this entity type is currently not implemented");
+  }
+  owner_proc = _owner_proc;
+  moab_owner_handle = _moab_owner_handle;
+  pstatus_val_ptr = _pstatus_val_ptr;
+  sharing_procs_ptr = _sharing_procs_ptr;
+  sharing_handlers_ptr = _sharing_handlers_ptr;
+  PetscFunctionReturn(0);
+}
+
 //ref moab ent
 BitRefEdges MoFEM::RefMoFEMElement::DummyBitRefEdges = BitRefEdges(0);
-RefMoFEMEntity::RefMoFEMEntity(
-  Interface &moab,const EntityHandle _ent):
-    BasicMoFEMEntity(moab,_ent),tag_parent_ent(NULL),tag_BitRefLevel(NULL) {
-  ErrorCode rval;
+RefMoFEMEntity::RefMoFEMEntity():
+BasicMoFEMEntity(),
+tag_parent_ent(NULL),
+tag_BitRefLevel(NULL) {
+}
+RefMoFEMEntity::RefMoFEMEntity(Interface &moab, const EntityHandle _ent):
+BasicMoFEMEntity(moab,_ent),
+tag_parent_ent(NULL),
+tag_BitRefLevel(NULL) {
+  MoABErrorCode rval;
   Tag th_RefParentHandle,th_RefBitLevel;
   rval = moab.tag_get_handle("_RefParentHandle",th_RefParentHandle); MOAB_THROW(rval);
   rval = moab.tag_get_handle("_RefBitLevel",th_RefBitLevel); MOAB_THROW(rval);
   rval = moab.tag_get_by_ptr(th_RefParentHandle,&ent,1,(const void **)&tag_parent_ent); MOAB_THROW(rval);
   rval = moab.tag_get_by_ptr(th_RefBitLevel,&ent,1,(const void **)&tag_BitRefLevel); MOAB_THROW(rval);
 }
+PetscErrorCode RefMoFEMEntity::iterateRefMoFEMEntity(
+  EntityHandle _ent,
+  int _owner_proc,
+  EntityHandle _moab_owner_handle,
+  unsigned char *_pstatus_val_ptr,
+  int *_sharing_procs_ptr,
+  EntityHandle *_sharing_handlers_ptr,
+  EntityHandle *_tag_parent_ent,
+  BitRefLevel *_tag_BitRefLevel
+) {
+  PetscErrorCode ierr;
+  PetscFunctionBegin;
+  ierr = iterateBasicMoFEMEntity(
+    _ent,
+    _owner_proc,
+    _moab_owner_handle,
+    _pstatus_val_ptr,
+    _sharing_procs_ptr,
+    _sharing_handlers_ptr
+  ); CHKERRQ(ierr);
+  tag_parent_ent = _tag_parent_ent;
+  tag_BitRefLevel = _tag_BitRefLevel;
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode getPatentEnt(Interface &moab,Range ents,vector<EntityHandle> vec_patent_ent) {
+  MoABErrorCode rval;
+  PetscFunctionBegin;
+  Tag th_ref_parent_handle;
+  rval = moab.tag_get_handle("_RefParentHandle",th_ref_parent_handle); CHKERRQ_MOAB(rval);
+  vec_patent_ent.resize(ents.size());
+  rval = moab.tag_get_data(th_ref_parent_handle,ents,&*vec_patent_ent.begin()); CHKERRQ_MOAB(rval);
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode RefMoFEMEntity::getBitRefLevel(Interface &moab,Range ents,vector<BitRefLevel> vec_bit_ref_level) {
+  MoABErrorCode rval;
+  PetscFunctionBegin;
+  Tag th_ref_bit_level;
+  rval = moab.tag_get_handle("_RefBitLevel",th_ref_bit_level); MOAB_THROW(rval);
+  vec_bit_ref_level.resize(ents.size());
+  rval = moab.tag_get_data(th_ref_bit_level,ents,&*vec_bit_ref_level.begin()); CHKERRQ_MOAB(rval);
+  PetscFunctionReturn(0);
+}
+
 ostream& operator<<(ostream& os,const RefMoFEMEntity& e) {
   os << "ent " << e.ent;
   os << " pstatus "<< bitset<8>(e.get_pstatus());
@@ -95,7 +181,7 @@ ostream& operator<<(ostream& os,const RefMoFEMEntity& e) {
 MoFEMEntity::MoFEMEntity(Interface &moab,const MoFEMField *_field_ptr,const RefMoFEMEntity *_ref_ent_ptr):
   interface_MoFEMField<MoFEMField>(_field_ptr),interface_RefMoFEMEntity<RefMoFEMEntity>(_ref_ent_ptr),ref_mab_ent_ptr(_ref_ent_ptr),
   tag_order_data(NULL),tag_FieldData(NULL),tag_FieldData_size(0),tag_dof_order_data(NULL),tag_dof_rank_data(NULL) {
-  ErrorCode rval;
+  MoABErrorCode rval;
   EntityHandle ent = get_ent();
   rval = moab.tag_get_by_ptr(field_ptr->th_AppOrder,&ent,1,(const void **)&tag_order_data); MOAB_THROW(rval);
   local_uid = get_local_unique_id_calculate();
@@ -121,7 +207,7 @@ ostream& operator<<(ostream& os,const MoFEMEntity& e) {
   return os;
 }
 void MoFEMEntity_change_order::operator()(MoFEMEntity &e) {
-  ErrorCode rval;
+  MoABErrorCode rval;
   int nb_dofs = e.get_order_nb_dofs(order)*e.get_nb_of_coeffs();
   ApproximationOrder& ent_order = *((ApproximationOrder*)e.tag_order_data);
   ent_order = order;
