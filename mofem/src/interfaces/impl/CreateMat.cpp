@@ -109,7 +109,7 @@ PetscErrorCode CreateRowComressedADJMatrix::getEntityAdjacenies(
   PetscFunctionBegin;
 
   // get adjeacent element
-  mofem_ent_ptr = const_cast<MoFEMEntity*>(mit_row->get_MoFEMEntity_ptr());
+  mofem_ent_ptr = const_cast<MoFEMEntity*>((*mit_row)->get_MoFEMEntity_ptr());
 
   AdjByEnt::iterator adj_miit,hi_adj_miit;
   adj_miit = entFEAdjacencies.get<Unique_mi_tag>().lower_bound(mofem_ent_ptr->get_global_unique_id());
@@ -122,7 +122,7 @@ PetscErrorCode CreateRowComressedADJMatrix::getEntityAdjacenies(
         // if element is not part of problem
         continue;
       }
-      if ((adj_miit->EntMoFEMFiniteElement_ptr->get_BitRefLevel()&mit_row->get_BitRefLevel()).none()) {
+      if ((adj_miit->EntMoFEMFiniteElement_ptr->get_BitRefLevel()&(*mit_row)->get_BitRefLevel()).none()) {
         // if entity is not problem refinement level
         continue;
       }
@@ -223,15 +223,15 @@ PetscErrorCode CreateRowComressedADJMatrix::createMatArrays(
       // Get entity adjacencies, no need to repeat that operation for dofs when
       // are on the same entity. For simplicity is assumed that those sheered the
       // same adjacencies.
-      unsigned char pstatus = mit_row->get_pstatus();
+      unsigned char pstatus = (*mit_row)->get_pstatus();
       if((pstatus & PSTATUS_NOT_OWNED) && (pstatus&(PSTATUS_SHARED|PSTATUS_MULTISHARED))) {
 
-        if( (mofem_ent_ptr == NULL) ? 1 : mofem_ent_ptr->get_global_unique_id() != mit_row->get_MoFEMEntity_ptr()->get_global_unique_id() ) {
+        if( (mofem_ent_ptr == NULL) ? 1 : mofem_ent_ptr->get_global_unique_id() != (*mit_row)->get_MoFEMEntity_ptr()->get_global_unique_id() ) {
           // get entity adjacencies
           ierr = getEntityAdjacenies<TAG>(p_miit,mit_row,mofem_ent_ptr,dofs_col_view,verb); CHKERRQ(ierr);
           // Add that row. Patterns is that first index is row index, second is
           // size of adjacencies after that follows column adjacencies.
-          int owner = mit_row->get_owner_proc();
+          int owner = (*mit_row)->get_owner_proc();
           dofs_vec[owner].push_back(TAG::get_index(mit_row)); 	// row index
           dofs_vec[owner].push_back(dofs_col_view.size()); 	// nb. of column adjacencies
           // add adjacent cools
@@ -239,7 +239,7 @@ PetscErrorCode CreateRowComressedADJMatrix::createMatArrays(
           cvit = dofs_col_view.begin();
           for(; cvit!=dofs_col_view.end(); cvit++) {
 
-            int col_idx = TAG::get_index(*cvit);
+            int col_idx = TAG::get_index(cvit);
             if(col_idx<0) {
               ostringstream zz;
               zz << "rank " << rAnk << " ";
@@ -383,7 +383,7 @@ PetscErrorCode CreateRowComressedADJMatrix::createMatArrays(
     i.push_back(j.size());
     if(strcmp(type,MATMPIADJ)==0) {
       DofIdx idx = TAG::get_index(miit_row);
-      if(dofs_col_by_idx.find(idx)->get_global_unique_id()!=miit_row->get_global_unique_id()) {
+      if((*dofs_col_by_idx.find(idx))->get_global_unique_id()!=(*miit_row)->get_global_unique_id()) {
         SETERRQ(PETSC_COMM_SELF,PETSC_ERR_ARG_SIZ,"data inconsistency");
       }
     }
@@ -391,7 +391,7 @@ PetscErrorCode CreateRowComressedADJMatrix::createMatArrays(
     // Get entity adjacencies, no need to repeat that operation for dofs when
     // are on the same entity. For simplicity is assumed that those share the
     // same adjacencies.
-    if( (mofem_ent_ptr == NULL) ? 1 : (mofem_ent_ptr->get_global_unique_id() != miit_row->get_MoFEMEntity_ptr()->get_global_unique_id()) ) {
+    if( (mofem_ent_ptr == NULL) ? 1 : (mofem_ent_ptr->get_global_unique_id() != (*miit_row)->get_MoFEMEntity_ptr()->get_global_unique_id()) ) {
 
       // get entity adjacencies
       ierr = getEntityAdjacenies<TAG>(p_miit,miit_row,mofem_ent_ptr,dofs_col_view,verb); CHKERRQ(ierr);
@@ -403,7 +403,7 @@ PetscErrorCode CreateRowComressedADJMatrix::createMatArrays(
       cvit = dofs_col_view.begin();
       for(;cvit!=dofs_col_view.end();cvit++) {
 
-        int idx = TAG::get_index(*cvit);
+        int idx = TAG::get_index(cvit);
         dofs_vec.push_back(idx);
 
         if(idx<0) {
@@ -429,7 +429,7 @@ PetscErrorCode CreateRowComressedADJMatrix::createMatArrays(
 
       }
 
-      unsigned char pstatus = miit_row->get_pstatus();
+      unsigned char pstatus = (*miit_row)->get_pstatus();
       if( pstatus>0 ) {
         map<int,vector<int> >::iterator mit;
         mit = adjacent_dofs_on_other_parts.find(row_last_evaluated_idx);
@@ -726,25 +726,25 @@ PetscErrorCode Core::partition_problem(const string &name,int verb) {
       if(miit_dofs_col==dofs_col_by_idx_no_const.end()) {
         SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"check finite element definition, nb. of rows is not equal to number for columns");
       }
-      if(miit_dofs_row->get_global_unique_id()!=miit_dofs_col->get_global_unique_id()) {
+      if((*miit_dofs_row)->get_global_unique_id()!=(*miit_dofs_col)->get_global_unique_id()) {
         SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"check finite element definition, nb. of rows is not equal to columns");
       }
-      if(miit_dofs_row->dof_idx!=miit_dofs_col->dof_idx) {
+      if((*miit_dofs_row)->dof_idx!=(*miit_dofs_col)->dof_idx) {
         SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"check finite element definition, nb. of rows is not equal to columns");
       }
-      assert(petsc_idx[miit_dofs_row->dof_idx]>=0);
-      assert(petsc_idx[miit_dofs_row->dof_idx]<(int)p_miit->get_nb_dofs_row());
-      bool success = dofs_row_by_idx_no_const.modify(miit_dofs_row,NumeredDofMoFEMEntity_part_change(part_number[miit_dofs_row->dof_idx],petsc_idx[miit_dofs_row->dof_idx]));
+      assert(petsc_idx[(*miit_dofs_row)->dof_idx]>=0);
+      assert(petsc_idx[(*miit_dofs_row)->dof_idx]<(int)p_miit->get_nb_dofs_row());
+      bool success = dofs_row_by_idx_no_const.modify(miit_dofs_row,NumeredDofMoFEMEntity_part_change(part_number[(*miit_dofs_row)->dof_idx],petsc_idx[(*miit_dofs_row)->dof_idx]));
       if(!success) {
         SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
       }
-      success = dofs_col_by_idx_no_const.modify(miit_dofs_col,NumeredDofMoFEMEntity_part_change(part_number[miit_dofs_col->dof_idx],petsc_idx[miit_dofs_col->dof_idx]));
+      success = dofs_col_by_idx_no_const.modify(miit_dofs_col,NumeredDofMoFEMEntity_part_change(part_number[(*miit_dofs_col)->dof_idx],petsc_idx[(*miit_dofs_col)->dof_idx]));
       if(!success) {
         SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
       }
-      if(miit_dofs_row->part == (unsigned int)rAnk) {
-        assert(miit_dofs_row->part==miit_dofs_col->part);
-        assert(miit_dofs_row->petsc_gloabl_dof_idx==miit_dofs_col->petsc_gloabl_dof_idx);
+      if((*miit_dofs_row)->part == (unsigned int)rAnk) {
+        assert((*miit_dofs_row)->part==(*miit_dofs_col)->part);
+        assert((*miit_dofs_row)->petsc_gloabl_dof_idx==(*miit_dofs_col)->petsc_gloabl_dof_idx);
         success = dofs_row_by_idx_no_const.modify(miit_dofs_row,NumeredDofMoFEMEntity_local_idx_change(nb_row_local_dofs++));
         if(!success) {
           SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");

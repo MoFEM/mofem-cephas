@@ -526,8 +526,8 @@ struct ProblemFiniteElementChangeBitUnSet {
   * \ingroup problems_multi_indices
   */
 struct ProblemAddRowDof {
-  const DofMoFEMEntity *dof_ptr;
-  ProblemAddRowDof(const DofMoFEMEntity *_dof_ptr);
+  const boost::shared_ptr<DofMoFEMEntity> dof_ptr;
+  ProblemAddRowDof(const boost::shared_ptr<DofMoFEMEntity> _dof_ptr);
   pair<NumeredDofMoFEMEntity_multiIndex::iterator,bool> p;
   void operator()(MoFEMProblem &e);
 };
@@ -536,8 +536,8 @@ struct ProblemAddRowDof {
   * \ingroup problems_multi_indices
   */
 struct ProblemAddColDof {
-  const DofMoFEMEntity *dof_ptr;
-  ProblemAddColDof(const DofMoFEMEntity *_dof_ptr);
+  const boost::shared_ptr<DofMoFEMEntity> dof_ptr;
+  ProblemAddColDof(const boost::shared_ptr<DofMoFEMEntity> _dof_ptr);
   pair<NumeredDofMoFEMEntity_multiIndex::iterator,bool> p;
   void operator()(MoFEMProblem &e);
 };

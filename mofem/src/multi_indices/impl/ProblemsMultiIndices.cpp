@@ -91,7 +91,7 @@ PetscErrorCode MoFEMProblem::get_row_dofs_by_petsc_gloabl_dof_idx(DofIdx idx,con
   if(dit==numered_dofs_rows.get<PetscGlobalIdx_mi_tag>().end()) {
     SETERRQ1(PETSC_COMM_SELF,MOFEM_NOT_FOUND,"row dof <%d> not found",idx);
   }
-  *dof_ptr = &*dit;
+  *dof_ptr = &*(*dit);
   PetscFunctionReturn(0);
 }
 
@@ -102,7 +102,7 @@ PetscErrorCode MoFEMProblem::get_col_dofs_by_petsc_gloabl_dof_idx(DofIdx idx,con
   if(dit==numered_dofs_cols.get<PetscGlobalIdx_mi_tag>().end()) {
     SETERRQ1(PETSC_COMM_SELF,MOFEM_NOT_FOUND,"row dof <%d> not found",idx);
   }
-  *dof_ptr = &*dit;
+  *dof_ptr = &*(*dit);
   PetscFunctionReturn(0);
 }
 
@@ -146,18 +146,18 @@ void ProblemFiniteElementChangeBitAdd::operator()(MoFEMProblem &p) {
 void ProblemFiniteElementChangeBitUnSet::operator()(MoFEMProblem &p) {
   *(p.tag_BitFEId_data) &= ~f_id;
 }
-ProblemAddRowDof::ProblemAddRowDof(const DofMoFEMEntity *_dof_ptr): dof_ptr(_dof_ptr) {
+ProblemAddRowDof::ProblemAddRowDof(const boost::shared_ptr<DofMoFEMEntity> _dof_ptr): dof_ptr(_dof_ptr) {
   assert(dof_ptr->active);
 }
 void ProblemAddRowDof::operator()(MoFEMProblem &e) {
-  p = e.numered_dofs_rows.insert(NumeredDofMoFEMEntity(dof_ptr));
+  p = e.numered_dofs_rows.insert(boost::shared_ptr<NumeredDofMoFEMEntity>(new NumeredDofMoFEMEntity(dof_ptr)));
   if(p.second) {
     (*(DofIdx*)e.tag_nbdof_data_row)++;
   }
 }
-ProblemAddColDof::ProblemAddColDof(const DofMoFEMEntity *_dof_ptr): dof_ptr(_dof_ptr) {}
+ProblemAddColDof::ProblemAddColDof(const boost::shared_ptr<DofMoFEMEntity> _dof_ptr): dof_ptr(_dof_ptr) {}
 void ProblemAddColDof::operator()(MoFEMProblem &e) {
-  p = e.numered_dofs_cols.insert(NumeredDofMoFEMEntity(dof_ptr));
+  p = e.numered_dofs_cols.insert(boost::shared_ptr<NumeredDofMoFEMEntity>(new NumeredDofMoFEMEntity(dof_ptr)));
   if(p.second) {
     (*(DofIdx*)e.tag_nbdof_data_col)++;
   }

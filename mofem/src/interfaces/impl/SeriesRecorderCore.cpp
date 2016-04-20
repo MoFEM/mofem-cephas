@@ -130,12 +130,12 @@ PetscErrorCode Core::record_field(const string& serie_name,const string& field_n
   }
   DofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator hi_dit = dofsField.get<FieldName_mi_tag>().upper_bound(field_name);
   for(;dit!=hi_dit;dit++) {
-    const BitRefLevel &dof_bit = dit->get_BitRefLevel();
+    const BitRefLevel &dof_bit = (*dit)->get_BitRefLevel();
     if((dof_bit&mask) != dof_bit) continue;
     if((dof_bit&bit).any()) {
-      EntityHandle ent = dit->get_ent();
-      ShortId uid = dit->get_non_nonunique_short_id();
-      FieldData val = dit->get_FieldData();
+      EntityHandle ent = (*dit)->get_ent();
+      ShortId uid = (*dit)->get_non_nonunique_short_id();
+      FieldData val = (*dit)->get_FieldData();
       ierr = const_cast<MoFEMSeries*>(&*sit)->push_dofs(ent,uid,val); CHKERRQ(ierr);
     }
   }

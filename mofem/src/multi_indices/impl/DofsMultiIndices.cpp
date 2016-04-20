@@ -84,13 +84,13 @@ ostream& operator<<(ostream& os,const DofMoFEMEntity& e) {
 }
 
 DofMoFEMEntity_active_change::DofMoFEMEntity_active_change(bool _active): active(_active) {}
-void DofMoFEMEntity_active_change::operator()(DofMoFEMEntity &_dof_) {
-  _dof_.active = active;
-  assert((_dof_.get_dof_order()<=_dof_.get_max_order()));
+void DofMoFEMEntity_active_change::operator()(boost::shared_ptr<DofMoFEMEntity> &_dof_) {
+  _dof_->active = active;
+  assert((_dof_->get_dof_order()<=_dof_->get_max_order()));
 }
 
 //numered dof
-NumeredDofMoFEMEntity::NumeredDofMoFEMEntity(const DofMoFEMEntity* _DofMoFEMEntity_ptr):
+NumeredDofMoFEMEntity::NumeredDofMoFEMEntity(const boost::shared_ptr<DofMoFEMEntity> _DofMoFEMEntity_ptr):
 interface_DofMoFEMEntity<DofMoFEMEntity>(_DofMoFEMEntity_ptr),
 dof_idx(-1),
 petsc_gloabl_dof_idx(-1),
@@ -106,16 +106,17 @@ ostream& operator<<(ostream& os,const NumeredDofMoFEMEntity& e) {
   return os;
 }
 
-FEDofMoFEMEntity::FEDofMoFEMEntity(boost::tuple<SideNumber *,const DofMoFEMEntity *> t):
+FEDofMoFEMEntity::FEDofMoFEMEntity(boost::tuple<SideNumber *,const boost::shared_ptr<DofMoFEMEntity> > t):
 BaseFEDofMoFEMEntity(t.get<0>()), interface_DofMoFEMEntity<DofMoFEMEntity>(t.get<1>()) {
 }
 
 
 FEDofMoFEMEntity::FEDofMoFEMEntity(
   SideNumber *_side_number_ptr,
-  const DofMoFEMEntity *_DofMoFEMEntity_ptr
+  const boost::shared_ptr<DofMoFEMEntity> _DofMoFEMEntity_ptr
 ):
-BaseFEDofMoFEMEntity(_side_number_ptr), interface_DofMoFEMEntity<DofMoFEMEntity>(_DofMoFEMEntity_ptr) {
+BaseFEDofMoFEMEntity(_side_number_ptr),
+interface_DofMoFEMEntity<DofMoFEMEntity>(_DofMoFEMEntity_ptr) {
 }
 
 ostream& operator<<(ostream& os,const FEDofMoFEMEntity& e) {
@@ -128,14 +129,14 @@ ostream& operator<<(ostream& os,const FEDofMoFEMEntity& e) {
 
 FENumeredDofMoFEMEntity::FENumeredDofMoFEMEntity(
   SideNumber *_side_number_ptr,
-  const NumeredDofMoFEMEntity *_NumeredDofMoFEMEntity_ptr
+  const boost::shared_ptr<NumeredDofMoFEMEntity> _NumeredDofMoFEMEntity_ptr
 ):
 BaseFEDofMoFEMEntity(_side_number_ptr),
 interface_NumeredDofMoFEMEntity<NumeredDofMoFEMEntity>(_NumeredDofMoFEMEntity_ptr) {
 }
 
 FENumeredDofMoFEMEntity::FENumeredDofMoFEMEntity(
-  boost::tuple<SideNumber *,const NumeredDofMoFEMEntity *> t
+  boost::tuple<SideNumber *,const boost::shared_ptr<NumeredDofMoFEMEntity> > t
 ):
 BaseFEDofMoFEMEntity(t.get<0>()), interface_NumeredDofMoFEMEntity<NumeredDofMoFEMEntity>(t.get<1>()) {
 }

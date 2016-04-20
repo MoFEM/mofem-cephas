@@ -833,14 +833,14 @@ static PetscErrorCode get_fe_MoFEMFiniteElement_dof_view(
     for(;it!=it_end;it++) {
       const GlobalUId &global_uid = (*it)->get_global_unique_id();
       if(mofem_it != mofem_it_end) {
-        if(mofem_it->get_global_unique_id() != global_uid) {
+        if((*mofem_it)->get_global_unique_id() != global_uid) {
           mofem_it = mofem_dofs.template get<Unique_mi_tag>().find(global_uid);
         }  // else lucky guess
       } else {
         mofem_it = mofem_dofs.template get<Unique_mi_tag>().find(global_uid);
       }
       if(mofem_it != mofem_it_end) {
-        mofem_dofs_view.insert(mofem_dofs_view.end(),&*mofem_it);
+        mofem_dofs_view.insert(mofem_dofs_view.end(),*mofem_it);
         mofem_it++;
       }
     }

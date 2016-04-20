@@ -103,7 +103,7 @@ int main(int argc, char *argv[]) {
   for(_IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(m_field,"FIELD_A",dof_ptr)) {
 
     for(int alpha = 0;alpha<4;alpha++) {
-      cs_dim[alpha] = dof_ptr->getCoordSysDim(alpha);
+      cs_dim[alpha] = (*dof_ptr)->getCoordSysDim(alpha);
     }
 
     if(cs_dim[1]!=3) {

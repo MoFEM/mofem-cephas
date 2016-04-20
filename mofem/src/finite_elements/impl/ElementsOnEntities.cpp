@@ -602,10 +602,10 @@ PetscErrorCode ForcesAndSurcesCore::getProblemNodesIndices(const string &field_n
     if(dit!=hi_dit) {
 
       if(!nn) {
-        nodes_indices.resize(dit->get_nb_of_coeffs()*distance(siit,hi_siit));
+        nodes_indices.resize((*dit)->get_nb_of_coeffs()*distance(siit,hi_siit));
       }
       for(;dit!=hi_dit;dit++) {
-        nodes_indices[siit->side_number*dit->get_nb_of_coeffs()+dit->get_dof_coeff_idx()] = dit->get_petsc_gloabl_dof_idx();
+        nodes_indices[siit->side_number*(*dit)->get_nb_of_coeffs()+(*dit)->get_dof_coeff_idx()] = (*dit)->get_petsc_gloabl_dof_idx();
       }
 
     }
@@ -640,7 +640,7 @@ PetscErrorCode ForcesAndSurcesCore::getProblemTypeIndices(
     indices.resize(distance(dit,hi_dit));
     for(;dit!=hi_dit;dit++) {
 
-      indices[dit->get_EntDofIdx()] = dit->get_petsc_gloabl_dof_idx();
+      indices[(*dit)->get_EntDofIdx()] = (*dit)->get_petsc_gloabl_dof_idx();
 
     }
 
