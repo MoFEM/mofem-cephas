@@ -204,7 +204,8 @@ struct FEDofMoFEMEntity: public BaseFEDofMoFEMEntity,interface_DofMoFEMEntity<Do
   typedef interface_RefMoFEMEntity<RefMoFEMEntity> interface_type_RefMoFEMEntity;
   FEDofMoFEMEntity(
     SideNumber *_side_number_ptr,
-    const DofMoFEMEntity *_DofMoFEMEntity_ptr);
+    const DofMoFEMEntity *_DofMoFEMEntity_ptr
+  );
   FEDofMoFEMEntity(boost::tuple<SideNumber *,const DofMoFEMEntity *> t);
   friend ostream& operator<<(ostream& os,const FEDofMoFEMEntity& e);
 };
@@ -213,18 +214,23 @@ struct FEDofMoFEMEntity: public BaseFEDofMoFEMEntity,interface_DofMoFEMEntity<Do
  * \brief keeps information about indexed dofs for the finite element
  * \ingroup dof_multi_indices
  */
-struct FENumeredDofMoFEMEntity: public BaseFEDofMoFEMEntity,interface_NumeredDofMoFEMEntity<NumeredDofMoFEMEntity> {
-  typedef interface_MoFEMField<NumeredDofMoFEMEntity> interface_type_MoFEMField;
-  typedef interface_DofMoFEMEntity<NumeredDofMoFEMEntity> interface_type_DofMoFEMEntity;
-  typedef interface_RefMoFEMEntity<RefMoFEMEntity> interface_type_RefMoFEMEntity;
-  typedef interface_NumeredDofMoFEMEntity<NumeredDofMoFEMEntity> interface_type_NumeredDofMoFEMEntity;
-  FENumeredDofMoFEMEntity(
-    SideNumber *_side_number_ptr,
-    const NumeredDofMoFEMEntity *_NumeredDofMoFEMEntity_ptr);
-  FENumeredDofMoFEMEntity(
-    boost::tuple<SideNumber *,const NumeredDofMoFEMEntity *> t);
-  friend ostream& operator<<(ostream& os,const FENumeredDofMoFEMEntity& e);
-};
+ struct FENumeredDofMoFEMEntity:
+ public
+ BaseFEDofMoFEMEntity,
+ interface_NumeredDofMoFEMEntity<NumeredDofMoFEMEntity> {
+   typedef interface_MoFEMField<NumeredDofMoFEMEntity> interface_type_MoFEMField;
+   typedef interface_DofMoFEMEntity<NumeredDofMoFEMEntity> interface_type_DofMoFEMEntity;
+   typedef interface_RefMoFEMEntity<RefMoFEMEntity> interface_type_RefMoFEMEntity;
+   typedef interface_NumeredDofMoFEMEntity<NumeredDofMoFEMEntity> interface_type_NumeredDofMoFEMEntity;
+   FENumeredDofMoFEMEntity(
+     SideNumber *_side_number_ptr,
+     const NumeredDofMoFEMEntity *_NumeredDofMoFEMEntity_ptr
+   );
+   FENumeredDofMoFEMEntity(
+     boost::tuple<SideNumber *,const NumeredDofMoFEMEntity *> t
+   );
+   friend ostream& operator<<(ostream& os,const FENumeredDofMoFEMEntity& e);
+ };
 
 /**
  * @relates multi_index_container
@@ -335,7 +341,7 @@ typedef multi_index_container<
 
  */
 typedef multi_index_container<
-  FEDofMoFEMEntity,
+  boost::shared_ptr<FEDofMoFEMEntity>,
   indexed_by<
     ordered_unique<
       tag<Unique_mi_tag>, const_mem_fun<FEDofMoFEMEntity::interface_type_DofMoFEMEntity,const GlobalUId&,&FEDofMoFEMEntity::get_global_unique_id> >,
@@ -386,7 +392,7 @@ typedef multi_index_container<
  *
  */
 typedef multi_index_container<
-  FENumeredDofMoFEMEntity,
+  boost::shared_ptr<FENumeredDofMoFEMEntity>,
   indexed_by<
     ordered_unique<
       tag<Unique_mi_tag>, const_mem_fun<FENumeredDofMoFEMEntity::interface_type_DofMoFEMEntity,const GlobalUId&,&FENumeredDofMoFEMEntity::get_global_unique_id> >,

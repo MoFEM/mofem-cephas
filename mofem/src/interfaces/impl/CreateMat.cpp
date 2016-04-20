@@ -812,20 +812,20 @@ PetscErrorCode Core::partition_check_matrix_fill_in(const string &problem_name,i
       FENumeredDofMoFEMEntity_multiIndex::iterator rit = rowPtr->begin();
       for(;rit!=rowPtr->end();rit++) {
 
-        if(refinedEntitiesPtr->find(rit->get_ent())==refinedEntitiesPtr->end()) {
+        if(refinedEntitiesPtr->find((*rit)->get_ent())==refinedEntitiesPtr->end()) {
           SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
         }
-        if(!rit->get_active()) {
+        if(!(*rit)->get_active()) {
           SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
         }
 
         MoFEMEntityEntMoFEMFiniteElementAdjacencyMap_multiIndex::index<Composite_Unique_mi_tag>::type::iterator ait;
-        ait = adjacenciesPtr->get<Composite_Unique_mi_tag>().find(boost::make_tuple(rit->get_MoFEMEntity_ptr()->get_global_unique_id(),fePtr->get_global_unique_id()));
+        ait = adjacenciesPtr->get<Composite_Unique_mi_tag>().find(boost::make_tuple((*rit)->get_MoFEMEntity_ptr()->get_global_unique_id(),fePtr->get_global_unique_id()));
         if(ait==adjacenciesPtr->end()) {
           ostringstream ss;
-          ss << *rit << endl;
+          ss << *(*rit) << endl;
           ss << *fePtr << endl;
-          ss << "dof: " << rit->get_BitRefLevel() << endl;
+          ss << "dof: " << (*rit)->get_BitRefLevel() << endl;
           ss << "fe: " << fePtr->get_BitRefLevel() << endl;
           ss << "problem: " << problemPtr->get_BitRefLevel() << endl;
           PetscPrintf(mFieldPtr->get_comm(),"%s",ss.str().c_str());
@@ -835,23 +835,23 @@ PetscErrorCode Core::partition_check_matrix_fill_in(const string &problem_name,i
           if(entitiesPtr->find(uid) == entitiesPtr->end()) {
             SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
           }
-          if(dofsPtr->find(rit->get_global_unique_id())==dofsPtr->end()) {
+          if(dofsPtr->find((*rit)->get_global_unique_id())==dofsPtr->end()) {
             SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
           }
         }
-        int row = rit->get_petsc_gloabl_dof_idx();
+        int row = (*rit)->get_petsc_gloabl_dof_idx();
 
         FENumeredDofMoFEMEntity_multiIndex::iterator cit = colPtr->begin();
         for(;cit!=colPtr->end();cit++) {
 
-          if(refinedEntitiesPtr->find(cit->get_ent())==refinedEntitiesPtr->end()) {
+          if(refinedEntitiesPtr->find((*cit)->get_ent())==refinedEntitiesPtr->end()) {
             SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
           }
-          if(!cit->get_active()) {
+          if(!(*cit)->get_active()) {
             SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
           }
-          int col = cit->get_petsc_gloabl_dof_idx();
-          ait = adjacenciesPtr->get<Composite_Unique_mi_tag>().find(boost::make_tuple(cit->get_MoFEMEntity_ptr()->get_global_unique_id(),fePtr->get_global_unique_id()));
+          int col = (*cit)->get_petsc_gloabl_dof_idx();
+          ait = adjacenciesPtr->get<Composite_Unique_mi_tag>().find(boost::make_tuple((*cit)->get_MoFEMEntity_ptr()->get_global_unique_id(),fePtr->get_global_unique_id()));
           if(ait==adjacenciesPtr->end()) {
             SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"adjacencies data inconsistency");
           } else {
@@ -859,7 +859,7 @@ PetscErrorCode Core::partition_check_matrix_fill_in(const string &problem_name,i
             if(entitiesPtr->find(uid) == entitiesPtr->end()) {
               SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
             }
-            if(dofsPtr->find(cit->get_global_unique_id())==dofsPtr->end()) {
+            if(dofsPtr->find((*cit)->get_global_unique_id())==dofsPtr->end()) {
               SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
             }
           }
@@ -868,12 +868,12 @@ PetscErrorCode Core::partition_check_matrix_fill_in(const string &problem_name,i
 
             ostringstream ss;
             ss << "fe:\n" << *fePtr << endl;
-            ss << "row:\n" << *rit << endl;
-            ss << "col:\n" << *cit << endl;
+            ss << "row:\n" << *(*rit) << endl;
+            ss << "col:\n" << *(*cit) << endl;
 
             ss << "fe:\n" << fePtr->get_BitRefLevel() << endl;
-            ss << "row:\n" << rit->get_BitRefLevel() << endl;
-            ss << "col:\n" << cit->get_BitRefLevel() << endl;
+            ss << "row:\n" << (*rit)->get_BitRefLevel() << endl;
+            ss << "col:\n" << (*cit)->get_BitRefLevel() << endl;
 
             cerr << ss.str() << endl;
 
@@ -883,35 +883,35 @@ PetscErrorCode Core::partition_check_matrix_fill_in(const string &problem_name,i
 
           ierr = MatSetValue(A,row,col,1,INSERT_VALUES);
 
-          if(cit->get_ent_type()!=MBVERTEX) {
+          if((*cit)->get_ent_type()!=MBVERTEX) {
 
 
             FENumeredDofMoFEMEntity_multiIndex::index<Composite_Name_Type_And_Side_Number_mi_tag>::type::iterator dit,hi_dit;
-            dit = colPtr->get<Composite_Name_Type_And_Side_Number_mi_tag>().lower_bound(boost::make_tuple(cit->get_name(),cit->get_ent_type(),cit->side_number_ptr->side_number));
-            hi_dit = colPtr->get<Composite_Name_Type_And_Side_Number_mi_tag>().upper_bound(boost::make_tuple(cit->get_name(),cit->get_ent_type(),cit->side_number_ptr->side_number));
+            dit = colPtr->get<Composite_Name_Type_And_Side_Number_mi_tag>().lower_bound(boost::make_tuple((*cit)->get_name(),(*cit)->get_ent_type(),(*cit)->side_number_ptr->side_number));
+            hi_dit = colPtr->get<Composite_Name_Type_And_Side_Number_mi_tag>().upper_bound(boost::make_tuple((*cit)->get_name(),(*cit)->get_ent_type(),(*cit)->side_number_ptr->side_number));
             int nb_dofs_on_ent = distance(dit,hi_dit);
 
-            int max_order = cit->get_max_order();
-            if(cit->get_nb_of_coeffs()*cit->get_order_nb_dofs(max_order)!=nb_dofs_on_ent) {
+            int max_order = (*cit)->get_max_order();
+            if((*cit)->get_nb_of_coeffs()*(*cit)->get_order_nb_dofs(max_order)!=nb_dofs_on_ent) {
               cerr << "Warning: Number of Dofs in Col diffrent than number of dofs for given entity order "
-              << cit->get_nb_of_coeffs()*cit->get_order_nb_dofs(max_order) << " " << nb_dofs_on_ent  << endl;
+              << (*cit)->get_nb_of_coeffs()*(*cit)->get_order_nb_dofs(max_order) << " " << nb_dofs_on_ent  << endl;
             }
 
           }
 
         }
 
-        if(rit->get_ent_type()!=MBVERTEX) {
+        if((*rit)->get_ent_type()!=MBVERTEX) {
 
           FENumeredDofMoFEMEntity_multiIndex::index<Composite_Name_Type_And_Side_Number_mi_tag>::type::iterator dit,hi_dit;
-          dit = rowPtr->get<Composite_Name_Type_And_Side_Number_mi_tag>().lower_bound(boost::make_tuple(rit->get_name(),rit->get_ent_type(),rit->side_number_ptr->side_number));
-          hi_dit = rowPtr->get<Composite_Name_Type_And_Side_Number_mi_tag>().upper_bound(boost::make_tuple(rit->get_name(),rit->get_ent_type(),rit->side_number_ptr->side_number));
+          dit = rowPtr->get<Composite_Name_Type_And_Side_Number_mi_tag>().lower_bound(boost::make_tuple((*rit)->get_name(),(*rit)->get_ent_type(),(*rit)->side_number_ptr->side_number));
+          hi_dit = rowPtr->get<Composite_Name_Type_And_Side_Number_mi_tag>().upper_bound(boost::make_tuple((*rit)->get_name(),(*rit)->get_ent_type(),(*rit)->side_number_ptr->side_number));
           int nb_dofs_on_ent = distance(dit,hi_dit);
 
-          int max_order = rit->get_max_order();
-          if(rit->get_nb_of_coeffs()*rit->get_order_nb_dofs(max_order) != nb_dofs_on_ent) {
+          int max_order = (*rit)->get_max_order();
+          if((*rit)->get_nb_of_coeffs()*(*rit)->get_order_nb_dofs(max_order) != nb_dofs_on_ent) {
             cerr << "Warning: Number of Dofs in Row diffrent than number of dofs for given entity order "
-            << rit->get_nb_of_coeffs()*rit->get_order_nb_dofs(max_order) << " " << nb_dofs_on_ent << endl;
+            << (*rit)->get_nb_of_coeffs()*(*rit)->get_order_nb_dofs(max_order) << " " << nb_dofs_on_ent << endl;
           }
 
         }

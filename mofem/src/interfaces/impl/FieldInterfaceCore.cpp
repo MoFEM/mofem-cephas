@@ -1794,7 +1794,7 @@ PetscErrorCode Core::build_finite_element_data_dofs(EntMoFEMFiniteElement &ent_f
         {
           SideNumber *side_number_ptr = ent_fe.get_side_number_ptr(moab,(*viit_data)->get_ent());
           //add dofs to finite element multi_index database
-          data_dofs.get<Unique_mi_tag>().insert(data_dofs.end(),boost::make_tuple(side_number_ptr,&**viit_data));
+          data_dofs.get<Unique_mi_tag>().insert(data_dofs.end(),boost::shared_ptr<FEDofMoFEMEntity>(new FEDofMoFEMEntity(side_number_ptr,&**viit_data)));
         }
         break;
         default:
@@ -2129,7 +2129,7 @@ PetscErrorCode Core::partition_finite_elements(
         for(;viit_rows!=rows_view.end();viit_rows++) {
           try {
             SideNumber *side_number_ptr = miit2->get_side_number_ptr(moab,(*viit_rows)->get_ent());
-            rows_dofs.insert(boost::make_tuple(side_number_ptr,&**viit_rows));
+            rows_dofs.insert(boost::shared_ptr<FENumeredDofMoFEMEntity>(new FENumeredDofMoFEMEntity(side_number_ptr,&**viit_rows)));
           } catch (MoFEMException const &e) {
             SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
           }
@@ -2145,7 +2145,7 @@ PetscErrorCode Core::partition_finite_elements(
         for(;viit_cols!=cols_view.end();viit_cols++) {
           try {
             SideNumber *side_number_ptr = miit2->get_side_number_ptr(moab,(*viit_cols)->get_ent());
-            cols_dofs.insert(boost::make_tuple(side_number_ptr,&**viit_cols));
+            cols_dofs.insert(boost::shared_ptr<FENumeredDofMoFEMEntity>(new FENumeredDofMoFEMEntity(side_number_ptr,&**viit_cols)));
           } catch (MoFEMException const &e) {
             SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
           }
@@ -2214,8 +2214,8 @@ PetscErrorCode Core::partition_ghost_dofs(const string &name,int verb) {
         rowdofit = fe_it->rows_dofs.begin();
         hi_rowdofit = fe_it->rows_dofs.end();
         for(;rowdofit!=hi_rowdofit;rowdofit++) {
-          if(rowdofit->get_part()==(unsigned int)rAnk) continue;
-          ghost_idx_row_view.insert(rowdofit->get_NumeredDofMoFEMEntity_ptr());
+          if((*rowdofit)->get_part()==(unsigned int)rAnk) continue;
+          ghost_idx_row_view.insert((*rowdofit)->get_NumeredDofMoFEMEntity_ptr());
         }
       }
       if(fe_it->cols_dofs.size()>0) {
@@ -2223,8 +2223,8 @@ PetscErrorCode Core::partition_ghost_dofs(const string &name,int verb) {
         coldofit = fe_it->cols_dofs.begin();
         hi_coldofit = fe_it->cols_dofs.end();
         for(;coldofit!=hi_coldofit;coldofit++) {
-          if(coldofit->get_part()==(unsigned int)rAnk) continue;
-          ghost_idx_col_view.insert(coldofit->get_NumeredDofMoFEMEntity_ptr());
+          if((*coldofit)->get_part()==(unsigned int)rAnk) continue;
+          ghost_idx_col_view.insert((*coldofit)->get_NumeredDofMoFEMEntity_ptr());
         }
       }
     }

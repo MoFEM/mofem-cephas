@@ -941,7 +941,7 @@ PetscErrorCode NumeredMoFEMFiniteElement::get_row_dofs_by_petsc_gloabl_dof_idx(D
   if(dit == rows_dofs.get<PetscGlobalIdx_mi_tag>().end()) {
     SETERRQ1(PETSC_COMM_SELF,MOFEM_NOT_FOUND,"dof which index < %d > not found",idx);
   }
-  *dof_ptr = &*dit;
+  *dof_ptr = &*dit->get();
   PetscFunctionReturn(0);
 }
 
@@ -952,7 +952,7 @@ PetscErrorCode NumeredMoFEMFiniteElement::get_col_dofs_by_petsc_gloabl_dof_idx(D
   if(dit == rows_dofs.get<PetscGlobalIdx_mi_tag>().end()) {
     SETERRQ1(PETSC_COMM_SELF,MOFEM_NOT_FOUND,"dof which index < %d > not found",idx);
   }
-  *dof_ptr = &*dit;
+  *dof_ptr = &*dit->get();
   PetscFunctionReturn(0);
 }
 
