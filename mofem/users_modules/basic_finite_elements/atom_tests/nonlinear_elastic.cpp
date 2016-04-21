@@ -104,7 +104,7 @@ int main(int argc, char *argv[]) {
     MyMat(Interface& moab): moAB(moab) {};
     PetscErrorCode calculateP_PiolaKirchhoffI(
      const BlockData block_data,
-     const NumeredMoFEMFiniteElement *fe_ptr) {
+     const NumeredEntFiniteElement *fe_ptr) {
      PetscFunctionBegin;
      //my stuff
      PetscFunctionReturn(0);

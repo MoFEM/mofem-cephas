@@ -211,19 +211,19 @@ struct RefMoFEMElement_change_parent {
   }
 };
 
-struct EntMoFEMFiniteElement;
+struct EntFiniteElement;
 
 /** \brief user adjacency function table
   * \ingroup fe_multi_indices
   */
 typedef PetscErrorCode (*ElementAdjacencyTable[MBMAXTYPE])(
-  Interface &moab,const MoFEMField *field_ptr,const EntMoFEMFiniteElement *fe_ptr,Range &adjacency);
+  Interface &moab,const MoFEMField *field_ptr,const EntFiniteElement *fe_ptr,Range &adjacency);
 
 /** \brief user adjacency function
   * \ingroup fe_multi_indices
   */
 typedef PetscErrorCode (*ElementAdjacencyFunct)(
-  Interface &moab,const MoFEMField *field_ptr,const EntMoFEMFiniteElement *fe_ptr,Range &adjacency);
+  Interface &moab,const MoFEMField *field_ptr,const EntFiniteElement *fe_ptr,Range &adjacency);
 
 /**
  * \brief Finite element definition
@@ -263,12 +263,12 @@ struct MoFEMFiniteElement {
   */
 struct DefaultElementAdjacency {
 
-  static PetscErrorCode defaultVertex(Interface &moab,const MoFEMField *field_ptr,const EntMoFEMFiniteElement *fe_ptr,Range &adjacency);
-  static PetscErrorCode defaultEdge(Interface &moab,const MoFEMField *field_ptr,const EntMoFEMFiniteElement *fe_ptr,Range &adjacency);
-  static PetscErrorCode defaultTri(Interface &moab,const MoFEMField *field_ptr,const EntMoFEMFiniteElement *fe_ptr,Range &adjacency);
-  static PetscErrorCode defaultTet(Interface &moab,const MoFEMField *field_ptr,const EntMoFEMFiniteElement *fe_ptr,Range &adjacency);
-  static PetscErrorCode defaultPrism(Interface &moab,const MoFEMField *field_ptr,const EntMoFEMFiniteElement *fe_ptr,Range &adjacency);
-  static PetscErrorCode defaultMeshset(Interface &moab,const MoFEMField *field_ptr,const EntMoFEMFiniteElement *fe_ptr,Range &adjacency);
+  static PetscErrorCode defaultVertex(Interface &moab,const MoFEMField *field_ptr,const EntFiniteElement *fe_ptr,Range &adjacency);
+  static PetscErrorCode defaultEdge(Interface &moab,const MoFEMField *field_ptr,const EntFiniteElement *fe_ptr,Range &adjacency);
+  static PetscErrorCode defaultTri(Interface &moab,const MoFEMField *field_ptr,const EntFiniteElement *fe_ptr,Range &adjacency);
+  static PetscErrorCode defaultTet(Interface &moab,const MoFEMField *field_ptr,const EntFiniteElement *fe_ptr,Range &adjacency);
+  static PetscErrorCode defaultPrism(Interface &moab,const MoFEMField *field_ptr,const EntFiniteElement *fe_ptr,Range &adjacency);
+  static PetscErrorCode defaultMeshset(Interface &moab,const MoFEMField *field_ptr,const EntFiniteElement *fe_ptr,Range &adjacency);
 
 };
 
@@ -294,7 +294,10 @@ struct interface_MoFEMFiniteElement {
  * \brief Finite element data for entitiy
  * \ingroup fe_multi_indices
  */
-struct EntMoFEMFiniteElement: public interface_MoFEMFiniteElement<MoFEMFiniteElement>,interface_RefMoFEMElement<RefMoFEMElement> {
+struct EntFiniteElement:
+public
+interface_MoFEMFiniteElement<MoFEMFiniteElement>,
+interface_RefMoFEMElement<RefMoFEMElement> {
   typedef interface_RefMoFEMEntity<RefMoFEMElement> interface_type_RefMoFEMEntity;
   typedef interface_RefMoFEMElement<RefMoFEMElement> interface_type_RefMoFEMElement;
   typedef interface_MoFEMFiniteElement<MoFEMFiniteElement> interface_type_MoFEMFiniteElement;
@@ -303,7 +306,7 @@ struct EntMoFEMFiniteElement: public interface_MoFEMFiniteElement<MoFEMFiniteEle
   DofMoFEMEntity_multiIndex_uid_view data_dof_view;
   FEDofMoFEMEntity_multiIndex data_dofs;
   GlobalUId global_uid;
-  EntMoFEMFiniteElement(Interface &moab,const RefMoFEMElement *_ref_MoFEMFiniteElement,const MoFEMFiniteElement *_MoFEMFiniteElement_ptr);
+  EntFiniteElement(Interface &moab,const RefMoFEMElement *_ref_MoFEMFiniteElement,const MoFEMFiniteElement *_MoFEMFiniteElement_ptr);
   inline const MoFEMFiniteElement* get_MoFEMFiniteElementPtr() { return interface_MoFEMFiniteElement<MoFEMFiniteElement>::fe_ptr; };
   const GlobalUId& get_global_unique_id() const { return global_uid; }
   GlobalUId get_global_unique_id_calculate() const {
@@ -317,7 +320,7 @@ struct EntMoFEMFiniteElement: public interface_MoFEMFiniteElement<MoFEMFiniteEle
   inline DofIdx get_nb_dofs_col() const { return col_dof_view.size(); }
   inline DofIdx get_nb_dofs_data() const { return data_dof_view.size(); }
   inline const FEDofMoFEMEntity_multiIndex& get_data_dofs() const { return data_dofs; };
-  friend ostream& operator<<(ostream& os,const EntMoFEMFiniteElement& e);
+  friend ostream& operator<<(ostream& os,const EntFiniteElement& e);
   PetscErrorCode get_MoFEMFiniteElement_row_dof_view(
     const DofMoFEMEntity_multiIndex &dofs,DofMoFEMEntity_multiIndex_active_view &dofs_view,
     const int operation_type = Interface::UNION) const;
@@ -349,7 +352,7 @@ struct EntMoFEMFiniteElement: public interface_MoFEMFiniteElement<MoFEMFiniteEle
   PetscErrorCode get_element_adjacency(Interface &moab,const MoFEMField *field_ptr,Range &adjacency) {
     PetscFunctionBegin;
     PetscErrorCode ierr;
-    const EntMoFEMFiniteElement *this_fe_ptr = this;
+    const EntFiniteElement *this_fe_ptr = this;
     if(get_MoFEMFiniteElementPtr()->element_adjacency_table[get_ent_type()] == NULL) {
       SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented");
     }
@@ -362,44 +365,59 @@ struct EntMoFEMFiniteElement: public interface_MoFEMFiniteElement<MoFEMFiniteEle
 };
 
 /**
- * \brief interface to EntMoFEMFiniteElement
+ * \brief interface to EntFiniteElement
  * \ingroup fe_multi_indices
  */
 template <typename T>
-struct interface_EntMoFEMFiniteElement:public interface_MoFEMFiniteElement<T>,interface_RefMoFEMElement<T> {
-  interface_EntMoFEMFiniteElement(const T *_ptr): interface_MoFEMFiniteElement<T>(_ptr),interface_RefMoFEMElement<T>(_ptr) {};
-  inline const MoFEMFiniteElement* get_MoFEMFiniteElementPtr() { return interface_MoFEMFiniteElement<T>::get_MoFEMFiniteElementPtr(); };
-  inline EntityID get_ent_id() const { return interface_MoFEMFiniteElement<T>::fe_ptr->get_ent_id(); }
-  inline EntityType get_ent_type() const { return interface_MoFEMFiniteElement<T>::fe_ptr->get_ent_type(); }
+struct interface_EntFiniteElement:public interface_MoFEMFiniteElement<T>,interface_RefMoFEMElement<T> {
+
+  const boost::shared_ptr<T> sPtr;
+
+  interface_EntFiniteElement(const boost::shared_ptr<T> sptr):
+  interface_MoFEMFiniteElement<T>(sptr.get()),
+  interface_RefMoFEMElement<T>(sptr.get()),
+  sPtr(sptr) {
+  };
+
+  inline const MoFEMFiniteElement* get_MoFEMFiniteElementPtr() { return this->get_MoFEMFiniteElementPtr(); };
+
+  inline EntityID get_ent_id() const { return this->sPtr->get_ent_id(); }
+  inline EntityType get_ent_type() const { return this->sPtr->get_ent_type(); }
   //
-  inline const FEDofMoFEMEntity_multiIndex& get_data_dofs() const { return interface_MoFEMFiniteElement<T>::fe_ptr->get_data_dofs(); };
-  inline DofIdx get_nb_dofs_row() const { return interface_MoFEMFiniteElement<T>::fe_ptr->get_nb_dofs_row(); }
-  inline DofIdx get_nb_dofs_col() const { return interface_MoFEMFiniteElement<T>::fe_ptr->get_nb_dofs_col(); }
-  inline DofIdx get_nb_dofs_data() const { return interface_MoFEMFiniteElement<T>::fe_ptr->get_nb_dofs_data(); }
-  inline EntityHandle get_ent() const { return interface_MoFEMFiniteElement<T>::fe_ptr->get_ref_ent(); };
-  inline GlobalUId get_global_unique_id() const { return interface_MoFEMFiniteElement<T>::fe_ptr->get_global_unique_id(); }
+  inline const FEDofMoFEMEntity_multiIndex& get_data_dofs() const { return this->sPtr->get_data_dofs(); };
+  inline DofIdx get_nb_dofs_row() const { return this->sPtr->get_nb_dofs_row(); }
+  inline DofIdx get_nb_dofs_col() const { return this->sPtr->get_nb_dofs_col(); }
+  inline DofIdx get_nb_dofs_data() const { return this->sPtr->get_nb_dofs_data(); }
+  inline EntityHandle get_ent() const { return this->sPtr->get_ref_ent(); };
+  inline GlobalUId get_global_unique_id() const { return this->sPtr->get_global_unique_id(); }
   //
-  SideNumber_multiIndex &get_side_number_table() const { return interface_MoFEMFiniteElement<T>::fe_ptr->get_side_number_table(); }
-  SideNumber* get_side_number_ptr(Interface &moab,EntityHandle ent) const { return interface_MoFEMFiniteElement<T>::fe_ptr->get_side_number_ptr(moab,ent); }
+  SideNumber_multiIndex &get_side_number_table() const { return this->sPtr->get_side_number_table(); }
+  SideNumber* get_side_number_ptr(Interface &moab,EntityHandle ent) const { return this->sPtr->get_side_number_ptr(moab,ent); }
   //
   inline PetscErrorCode get_element_adjacency(Interface &moab,const MoFEMField *field_ptr,Range &adjacency) {
     PetscFunctionBegin;
     PetscErrorCode ierr;
-    ierr = interface_MoFEMFiniteElement<T>::get_element_adjacency(moab,field_ptr,adjacency); CHKERRQ(ierr);
+    ierr = this->get_element_adjacency(moab,field_ptr,adjacency); CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }
+
 };
 
 /** \brief Partitioned Finite Element in Problem
  * \ingroup fe_multi_indices
  */
-struct NumeredMoFEMFiniteElement: public interface_EntMoFEMFiniteElement<EntMoFEMFiniteElement> {
-  typedef interface_MoFEMFiniteElement<EntMoFEMFiniteElement> interface_type_MoFEMFiniteElement;
-  typedef interface_EntMoFEMFiniteElement<EntMoFEMFiniteElement> interface_type_EntMoFEMFiniteElement;
+struct NumeredEntFiniteElement: public interface_EntFiniteElement<EntFiniteElement> {
+
+  typedef interface_MoFEMFiniteElement<EntFiniteElement> interface_type_MoFEMFiniteElement;
+  typedef interface_EntFiniteElement<EntFiniteElement> interface_type_EntFiniteElement;
   unsigned int part;
   FENumeredDofMoFEMEntity_multiIndex rows_dofs;
   FENumeredDofMoFEMEntity_multiIndex cols_dofs;
-  NumeredMoFEMFiniteElement(const EntMoFEMFiniteElement *EntMoFEMFiniteElement_ptr): interface_EntMoFEMFiniteElement<EntMoFEMFiniteElement>(EntMoFEMFiniteElement_ptr),part(-1) {};
+
+  NumeredEntFiniteElement(const boost::shared_ptr<EntFiniteElement> sptr):
+  interface_EntFiniteElement<EntFiniteElement>(sptr),
+  part(-1) {};
+
   inline unsigned int get_part() const { return part; };
 
   /** \brief get FE dof
@@ -422,14 +440,14 @@ struct NumeredMoFEMFiniteElement: public interface_EntMoFEMFiniteElement<EntMoFE
     */
   PetscErrorCode get_col_dofs_by_petsc_gloabl_dof_idx(DofIdx idx,const FENumeredDofMoFEMEntity **dof_ptr) const;
 
-  friend ostream& operator<<(ostream& os,const NumeredMoFEMFiniteElement& e) {
+  friend ostream& operator<<(ostream& os,const NumeredEntFiniteElement& e) {
     os << "part " << e.part << " " << *(e.fe_ptr);
     return os;
   }
 
   /**
    * Loop over DOFs in row on element
-   * @param  FEPTR pointer to element structure \ref NumeredMoFEMFiniteElement
+   * @param  FEPTR pointer to element structure \ref NumeredEntFiniteElement
    * @param  IT    iterator
    * @return       user return in for(_IT_FENUMEREDDOFMOFEMENTITY_ROW_FOR_LOOP_(FEPTR,IT))
    * \ingroup fe_multi_indices
@@ -440,7 +458,7 @@ struct NumeredMoFEMFiniteElement: public interface_EntMoFEMFiniteElement<EntMoFE
 
   /**
    * Loop over DOFs in col on element
-   * @param  FEPTR pointer to element structure \ref NumeredMoFEMFiniteElement
+   * @param  FEPTR pointer to element structure \ref NumeredEntFiniteElement
    * @param  IT    iterator
    * @return       user return in for(_IT_FENUMEREDDOFMOFEMENTITY_COL_FOR_LOOP_(FEPTR,IT))
    * \ingroup fe_multi_indices
@@ -451,7 +469,7 @@ struct NumeredMoFEMFiniteElement: public interface_EntMoFEMFiniteElement<EntMoFE
 
   /**
    * Loop over DOFs in row on element for particular filed
-   * @param  FEPTR pointer to element structure \ref NumeredMoFEMFiniteElement
+   * @param  FEPTR pointer to element structure \ref NumeredEntFiniteElement
    * @param  NAME  name of filed
    * @param  IT    iterator
    * @return       user return in for(_IT_FENUMEREDDOFMOFEMENTITY_BY_NAME_ROW_FOR_LOOP_(FEPTR,NAME,IT))
@@ -463,7 +481,7 @@ struct NumeredMoFEMFiniteElement: public interface_EntMoFEMFiniteElement<EntMoFE
 
   /**
    * Loop over DOFs in col on element for particular filed
-   * @param  FEPTR pointer to element structure \ref NumeredMoFEMFiniteElement
+   * @param  FEPTR pointer to element structure \ref NumeredEntFiniteElement
    * @param  NAME  name of filed
    * @param  IT    iterator
    * @return       user return in for(_IT_FENUMEREDDOFMOFEMENTITY_BY_NAME_COL_FOR_LOOP_(FEPTR,NAME,IT))
@@ -477,76 +495,77 @@ struct NumeredMoFEMFiniteElement: public interface_EntMoFEMFiniteElement<EntMoFE
 
 };
 
-/** \brief interface for NumeredMoFEMFiniteElement
+/** \brief interface for NumeredEntFiniteElement
  * \ingroup fe_multi_indices
  */
 template <typename T>
-struct interface_NumeredMoFEMFiniteElement: public interface_EntMoFEMFiniteElement<T> {
-  const T *ptr;
-  interface_NumeredMoFEMFiniteElement(const T *_ptr): interface_EntMoFEMFiniteElement<T>(_ptr) {};
-  inline unsigned int get_part() const { return ptr->get_part(); }
-  inline const FENumeredDofMoFEMEntity_multiIndex& get_rows_dofs() const { return ptr->get_rows_dofs(); };
-  inline const FENumeredDofMoFEMEntity_multiIndex& get_cols_dofs() const { return ptr->get_cols_dofs(); };
+struct interface_NumeredEntFiniteElement: public interface_EntFiniteElement<T> {
+
+  interface_NumeredEntFiniteElement(const boost::shared_ptr<T> sptr): interface_EntFiniteElement<T>(sptr) {};
+
+  inline unsigned int get_part() const { return this->sPtr->get_part(); }
+  inline const FENumeredDofMoFEMEntity_multiIndex& get_rows_dofs() const { return this->sPtr->get_rows_dofs(); };
+  inline const FENumeredDofMoFEMEntity_multiIndex& get_cols_dofs() const { return this->sPtr->get_cols_dofs(); };
 };
 
 /**
  * @relates multi_index_container
- * \brief MultiIndex container for EntMoFEMFiniteElement
+ * \brief MultiIndex container for EntFiniteElement
  * \ingroup fe_multi_indices
  *
  */
 typedef multi_index_container<
-  EntMoFEMFiniteElement,
+  boost::shared_ptr<EntFiniteElement>,
   indexed_by<
     ordered_unique<
-      tag<Unique_mi_tag>, member<EntMoFEMFiniteElement,GlobalUId,&EntMoFEMFiniteElement::global_uid> >,
+      tag<Unique_mi_tag>, member<EntFiniteElement,GlobalUId,&EntFiniteElement::global_uid> >,
     ordered_non_unique<
-      tag<Ent_mi_tag>, const_mem_fun<EntMoFEMFiniteElement,EntityHandle,&EntMoFEMFiniteElement::get_ent> >,
+      tag<Ent_mi_tag>, const_mem_fun<EntFiniteElement,EntityHandle,&EntFiniteElement::get_ent> >,
     ordered_non_unique<
-      tag<FiniteElement_name_mi_tag>, const_mem_fun<EntMoFEMFiniteElement::interface_type_MoFEMFiniteElement,boost::string_ref,&EntMoFEMFiniteElement::get_name_ref> >,
+      tag<FiniteElement_name_mi_tag>, const_mem_fun<EntFiniteElement::interface_type_MoFEMFiniteElement,boost::string_ref,&EntFiniteElement::get_name_ref> >,
     ordered_non_unique<
-      tag<BitFEId_mi_tag>, const_mem_fun<EntMoFEMFiniteElement::interface_type_MoFEMFiniteElement,BitFEId,&EntMoFEMFiniteElement::get_id>, LtBit<BitFEId> >,
+      tag<BitFEId_mi_tag>, const_mem_fun<EntFiniteElement::interface_type_MoFEMFiniteElement,BitFEId,&EntFiniteElement::get_id>, LtBit<BitFEId> >,
     ordered_non_unique<
-      tag<EntType_mi_tag>, const_mem_fun<EntMoFEMFiniteElement::interface_type_RefMoFEMEntity,EntityType,&EntMoFEMFiniteElement::get_ent_type> >,
+      tag<EntType_mi_tag>, const_mem_fun<EntFiniteElement::interface_type_RefMoFEMEntity,EntityType,&EntFiniteElement::get_ent_type> >,
     ordered_non_unique<
       tag<Composite_Name_And_Ent_mi_tag>,
       composite_key<
-	EntMoFEMFiniteElement,
-	const_mem_fun<EntMoFEMFiniteElement::interface_type_MoFEMFiniteElement,boost::string_ref,&EntMoFEMFiniteElement::get_name_ref>,
-	const_mem_fun<EntMoFEMFiniteElement,EntityHandle,&EntMoFEMFiniteElement::get_ent> > >
-  > > EntMoFEMFiniteElement_multiIndex;
+	EntFiniteElement,
+	const_mem_fun<EntFiniteElement::interface_type_MoFEMFiniteElement,boost::string_ref,&EntFiniteElement::get_name_ref>,
+	const_mem_fun<EntFiniteElement,EntityHandle,&EntFiniteElement::get_ent> > >
+  > > EntFiniteElement_multiIndex;
 
 /**
   @relates multi_index_container
-  \brief MultiIndex for entities for NumeredMoFEMFiniteElement
+  \brief MultiIndex for entities for NumeredEntFiniteElement
   \ingroup fe_multi_indices
  */
 typedef multi_index_container<
-  boost::shared_ptr<NumeredMoFEMFiniteElement>,
+  boost::shared_ptr<NumeredEntFiniteElement>,
   indexed_by<
     ordered_unique<
-      tag<Unique_mi_tag>, const_mem_fun<NumeredMoFEMFiniteElement::interface_type_EntMoFEMFiniteElement,GlobalUId,&NumeredMoFEMFiniteElement::get_global_unique_id> >,
+      tag<Unique_mi_tag>, const_mem_fun<NumeredEntFiniteElement::interface_type_EntFiniteElement,GlobalUId,&NumeredEntFiniteElement::get_global_unique_id> >,
     ordered_non_unique<
-      tag<Part_mi_tag>, member<NumeredMoFEMFiniteElement,unsigned int,&NumeredMoFEMFiniteElement::part> >,
+      tag<Part_mi_tag>, member<NumeredEntFiniteElement,unsigned int,&NumeredEntFiniteElement::part> >,
     ordered_non_unique<
-      tag<FiniteElement_name_mi_tag>, const_mem_fun<NumeredMoFEMFiniteElement::interface_type_MoFEMFiniteElement,boost::string_ref,&NumeredMoFEMFiniteElement::get_name_ref> >,
+      tag<FiniteElement_name_mi_tag>, const_mem_fun<NumeredEntFiniteElement::interface_type_MoFEMFiniteElement,boost::string_ref,&NumeredEntFiniteElement::get_name_ref> >,
     ordered_non_unique<
-      tag<FiniteElement_Part_mi_tag>, member<NumeredMoFEMFiniteElement,unsigned int,&NumeredMoFEMFiniteElement::part> >,
+      tag<FiniteElement_Part_mi_tag>, member<NumeredEntFiniteElement,unsigned int,&NumeredEntFiniteElement::part> >,
     ordered_non_unique<
-      tag<Ent_mi_tag>, const_mem_fun<NumeredMoFEMFiniteElement::interface_type_EntMoFEMFiniteElement,EntityHandle,&NumeredMoFEMFiniteElement::get_ent> >,
+      tag<Ent_mi_tag>, const_mem_fun<NumeredEntFiniteElement::interface_type_EntFiniteElement,EntityHandle,&NumeredEntFiniteElement::get_ent> >,
     ordered_non_unique<
       tag<Composite_Name_And_Ent_mi_tag>,
       composite_key<
-      NumeredMoFEMFiniteElement,
-      const_mem_fun<NumeredMoFEMFiniteElement::interface_type_MoFEMFiniteElement,boost::string_ref,&NumeredMoFEMFiniteElement::get_name_ref>,
-      const_mem_fun<NumeredMoFEMFiniteElement::interface_type_EntMoFEMFiniteElement,EntityHandle,&NumeredMoFEMFiniteElement::get_ent> > >,
+      NumeredEntFiniteElement,
+      const_mem_fun<NumeredEntFiniteElement::interface_type_MoFEMFiniteElement,boost::string_ref,&NumeredEntFiniteElement::get_name_ref>,
+      const_mem_fun<NumeredEntFiniteElement::interface_type_EntFiniteElement,EntityHandle,&NumeredEntFiniteElement::get_ent> > >,
     ordered_non_unique<
       tag<Composite_Name_And_Part_mi_tag>,
       composite_key<
-      NumeredMoFEMFiniteElement,
-      const_mem_fun<NumeredMoFEMFiniteElement::interface_type_MoFEMFiniteElement,boost::string_ref,&NumeredMoFEMFiniteElement::get_name_ref>,
-      member<NumeredMoFEMFiniteElement,unsigned int,&NumeredMoFEMFiniteElement::part> > >
-  > > NumeredMoFEMFiniteElement_multiIndex;
+      NumeredEntFiniteElement,
+      const_mem_fun<NumeredEntFiniteElement::interface_type_MoFEMFiniteElement,boost::string_ref,&NumeredEntFiniteElement::get_name_ref>,
+      member<NumeredEntFiniteElement,unsigned int,&NumeredEntFiniteElement::part> > >
+  > > NumeredEntFiniteElement_multiIndex;
 
 /**
   @relates multi_index_container
@@ -566,10 +585,10 @@ typedef multi_index_container<
 
 // modificators
 
-struct NumeredMoFEMFiniteElement_change_part {
+struct NumeredEntFiniteElement_change_part {
   unsigned int part;
-  NumeredMoFEMFiniteElement_change_part(unsigned int _part): part(_part) {};
-  void operator()(boost::shared_ptr<NumeredMoFEMFiniteElement> &fe) {
+  NumeredEntFiniteElement_change_part(unsigned int _part): part(_part) {};
+  void operator()(boost::shared_ptr<NumeredEntFiniteElement> &fe) {
     fe->part = part;
   }
 };
@@ -577,33 +596,33 @@ struct NumeredMoFEMFiniteElement_change_part {
 struct MoFEMFiniteElement_col_change_bit_add {
   BitFieldId f_id_col;
   MoFEMFiniteElement_col_change_bit_add(const BitFieldId _f_id_col): f_id_col(_f_id_col) {};
-  void operator()(MoFEMFiniteElement &MoFEMFiniteElement);
+  void operator()(MoFEMFiniteElement &fe);
 };
 struct MoFEMFiniteElement_row_change_bit_add {
   BitFieldId f_id_row;
   MoFEMFiniteElement_row_change_bit_add(const BitFieldId _f_id_row): f_id_row(_f_id_row) {};
-  void operator()(MoFEMFiniteElement &MoFEMFiniteElement);
+  void operator()(MoFEMFiniteElement &fe);
 };
-struct EntMoFEMFiniteElement_change_bit_add {
+struct MoFEMFiniteElement_change_bit_add {
   BitFieldId f_id_data;
-  EntMoFEMFiniteElement_change_bit_add(const BitFieldId _f_id_data): f_id_data(_f_id_data) {};
-  void operator()(MoFEMFiniteElement &MoFEMFiniteElement);
+  MoFEMFiniteElement_change_bit_add(const BitFieldId _f_id_data): f_id_data(_f_id_data) {};
+  void operator()(MoFEMFiniteElement &fe);
 };
 
 struct MoFEMFiniteElement_col_change_bit_off {
   BitFieldId f_id_col;
   MoFEMFiniteElement_col_change_bit_off(const BitFieldId _f_id_col): f_id_col(_f_id_col) {};
-  void operator()(MoFEMFiniteElement &MoFEMFiniteElement);
+  void operator()(MoFEMFiniteElement &fe);
 };
 struct MoFEMFiniteElement_row_change_bit_off {
   BitFieldId f_id_row;
   MoFEMFiniteElement_row_change_bit_off(const BitFieldId _f_id_row): f_id_row(_f_id_row) {};
-  void operator()(MoFEMFiniteElement &MoFEMFiniteElement);
+  void operator()(MoFEMFiniteElement &fe);
 };
-struct EntMoFEMFiniteElement_change_bit_off {
+struct MoFEMFiniteElement_change_bit_off {
   BitFieldId f_id_data;
-  EntMoFEMFiniteElement_change_bit_off(const BitFieldId _f_id_data): f_id_data(_f_id_data) {};
-  void operator()(MoFEMFiniteElement &MoFEMFiniteElement);
+  MoFEMFiniteElement_change_bit_off(const BitFieldId _f_id_data): f_id_data(_f_id_data) {};
+  void operator()(MoFEMFiniteElement &fe);
 };
 
 }

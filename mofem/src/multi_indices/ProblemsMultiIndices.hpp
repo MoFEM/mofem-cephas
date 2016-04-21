@@ -43,7 +43,7 @@ struct MoFEMProblem {
   BitRefLevel* tag_BitRefLevel_DofMask;
   NumeredDofMoFEMEntity_multiIndex numered_dofs_rows;
   NumeredDofMoFEMEntity_multiIndex numered_dofs_cols;
-  NumeredMoFEMFiniteElement_multiIndex numeredFiniteElements;
+  NumeredEntFiniteElement_multiIndex numeredFiniteElements;
 
   /**
     * use with loops to iterate problem fes
@@ -55,14 +55,14 @@ struct MoFEMProblem {
     *
     */
   #define _IT_NUMEREDFEMOFEMENTITY_BY_NAME_FOR_LOOP_(MOFEMPROBLEM,NAME,IT) \
-    NumeredMoFEMFiniteElement_multiIndex::index<FiniteElement_name_mi_tag>::type::iterator IT = MOFEMPROBLEM->get_numered_fes_begin(NAME); \
+    NumeredEntFiniteElement_multiIndex::index<FiniteElement_name_mi_tag>::type::iterator IT = MOFEMPROBLEM->get_numered_fes_begin(NAME); \
     IT!=MOFEMPROBLEM->get_numered_fes_end(NAME); IT++
 
-  NumeredMoFEMFiniteElement_multiIndex::index<FiniteElement_name_mi_tag>::type::iterator get_numered_fes_begin(string fe_name) const {
+  NumeredEntFiniteElement_multiIndex::index<FiniteElement_name_mi_tag>::type::iterator get_numered_fes_begin(string fe_name) const {
     return numeredFiniteElements.get<FiniteElement_name_mi_tag>().lower_bound(fe_name);
   }
 
-  NumeredMoFEMFiniteElement_multiIndex::index<FiniteElement_name_mi_tag>::type::iterator get_numered_fes_end(string fe_name) const {
+  NumeredEntFiniteElement_multiIndex::index<FiniteElement_name_mi_tag>::type::iterator get_numered_fes_end(string fe_name) const {
     return numeredFiniteElements.get<FiniteElement_name_mi_tag>().upper_bound(fe_name);
   }
 
@@ -78,14 +78,14 @@ struct MoFEMProblem {
     *
     */
   #define _IT_NUMEREDFEMOFEMENTITY_BY_NAME_AND_PART_FOR_LOOP_(MOFEMPROBLEM,NAME,PART,IT) \
-    NumeredMoFEMFiniteElement_multiIndex::index<Composite_Name_And_Part_mi_tag>::type::iterator IT = MOFEMPROBLEM->get_numered_fes_begin(NAME,PART); \
+    NumeredEntFiniteElement_multiIndex::index<Composite_Name_And_Part_mi_tag>::type::iterator IT = MOFEMPROBLEM->get_numered_fes_begin(NAME,PART); \
     IT!=MOFEMPROBLEM->get_numered_fes_end(NAME,PART); IT++
 
-  NumeredMoFEMFiniteElement_multiIndex::index<Composite_Name_And_Part_mi_tag>::type::iterator get_numered_fes_begin(string fe_name,int part) const {
+  NumeredEntFiniteElement_multiIndex::index<Composite_Name_And_Part_mi_tag>::type::iterator get_numered_fes_begin(string fe_name,int part) const {
     return numeredFiniteElements.get<Composite_Name_And_Part_mi_tag>().lower_bound(boost::make_tuple(fe_name,part));
   }
 
-  NumeredMoFEMFiniteElement_multiIndex::index<Composite_Name_And_Part_mi_tag>::type::iterator get_numered_fes_end(string fe_name,int part) const {
+  NumeredEntFiniteElement_multiIndex::index<Composite_Name_And_Part_mi_tag>::type::iterator get_numered_fes_end(string fe_name,int part) const {
     return numeredFiniteElements.get<Composite_Name_And_Part_mi_tag>().upper_bound(boost::make_tuple(fe_name,part));
   }
 

@@ -165,7 +165,7 @@ struct VolumeLengthQuality: public NonlinearElasticElement::FunctionsToCalculate
       */
     virtual PetscErrorCode calculateP_PiolaKirchhoffI(
       const NonlinearElasticElement::BlockData block_data,
-      const NumeredMoFEMFiniteElement *fe_ptr
+      const NumeredEntFiniteElement *fe_ptr
     ) {
       PetscFunctionBegin;
 

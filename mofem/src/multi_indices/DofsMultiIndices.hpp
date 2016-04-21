@@ -123,35 +123,35 @@ struct DofMoFEMEntity: public interface_MoFEMEntity<MoFEMEntity> {
  */
 template <typename T>
 struct interface_DofMoFEMEntity: public interface_MoFEMEntity<T> {
-  const boost::shared_ptr<T> sptr; // FIXME: This will be moved down inherence tree
+  const boost::shared_ptr<T> sPtr; // FIXME: This will be moved down inherence tree
 
-  interface_DofMoFEMEntity(const boost::shared_ptr<T> _sptr):
-  interface_MoFEMEntity<T>(&*_sptr),
-  sptr(_sptr) {
+  interface_DofMoFEMEntity(const boost::shared_ptr<T> sptr):
+  interface_MoFEMEntity<T>(&*sptr),
+  sPtr(sptr) {
 
   };
 
-  inline const LocalUId& get_local_unique_id() const { return this->sptr->get_local_unique_id(); }
-  inline const GlobalUId& get_global_unique_id() const { return this->sptr->get_global_unique_id(); }
-  inline ShortId get_non_nonunique_short_id() const { return this->sptr->get_non_nonunique_short_id(); }
-  inline DofIdx get_EntDofIdx() const { return this->sptr->get_EntDofIdx(); }
-  inline FieldData& get_FieldData() const { return this->sptr->get_FieldData(); }
-  inline EntityHandle get_ent() const { return this->sptr->get_ent(); };
-  inline ApproximationOrder get_dof_order() const { return this->sptr->get_dof_order(); };
+  inline const LocalUId& get_local_unique_id() const { return this->sPtr->get_local_unique_id(); }
+  inline const GlobalUId& get_global_unique_id() const { return this->sPtr->get_global_unique_id(); }
+  inline ShortId get_non_nonunique_short_id() const { return this->sPtr->get_non_nonunique_short_id(); }
+  inline DofIdx get_EntDofIdx() const { return this->sPtr->get_EntDofIdx(); }
+  inline FieldData& get_FieldData() const { return this->sPtr->get_FieldData(); }
+  inline EntityHandle get_ent() const { return this->sPtr->get_ent(); };
+  inline ApproximationOrder get_dof_order() const { return this->sPtr->get_dof_order(); };
 
   DEPRECATED inline FieldCoefficientsNumber get_dof_rank() const {
-    return this->sptr->get_dof_coeff_idx();
+    return this->sPtr->get_dof_coeff_idx();
   };
 
   inline FieldCoefficientsNumber get_dof_coeff_idx() const {
-    return this->sptr->get_dof_coeff_idx();
+    return this->sPtr->get_dof_coeff_idx();
   };
 
-  inline char get_active() const { return this->sptr->get_active(); }
+  inline char get_active() const { return this->sPtr->get_active(); }
   inline const boost::shared_ptr<DofMoFEMEntity> get_DofMoFEMEntity_ptr() const {
-    return this->sptr;
+    return this->sPtr;
   };
-  
+
 };
 
 /**
@@ -182,13 +182,13 @@ struct NumeredDofMoFEMEntity: public interface_DofMoFEMEntity<DofMoFEMEntity> {
  */
 template <typename T>
 struct interface_NumeredDofMoFEMEntity: public interface_DofMoFEMEntity<T> {
-  interface_NumeredDofMoFEMEntity(const boost::shared_ptr<T> _sptr): interface_DofMoFEMEntity<T>(_sptr) {};
-  inline DofIdx get_dof_idx() const { return this->sptr->get_dof_idx(); }
-  inline DofIdx get_petsc_gloabl_dof_idx() const { return this->sptr->get_petsc_gloabl_dof_idx();  }
-  inline DofIdx get_petsc_local_dof_idx() const { return this->sptr->get_petsc_local_dof_idx(); }
-  inline unsigned int get_part() const { return this->sptr->get_part();  }
-  inline bool get_has_local_index() const { return this->sptr->get_has_local_index(); }
-  inline boost::shared_ptr<NumeredDofMoFEMEntity> get_NumeredDofMoFEMEntity_ptr() const { return this->sptr; };
+  interface_NumeredDofMoFEMEntity(const boost::shared_ptr<T> sptr): interface_DofMoFEMEntity<T>(sptr) {};
+  inline DofIdx get_dof_idx() const { return this->sPtr->get_dof_idx(); }
+  inline DofIdx get_petsc_gloabl_dof_idx() const { return this->sPtr->get_petsc_gloabl_dof_idx();  }
+  inline DofIdx get_petsc_local_dof_idx() const { return this->sPtr->get_petsc_local_dof_idx(); }
+  inline unsigned int get_part() const { return this->sPtr->get_part();  }
+  inline bool get_has_local_index() const { return this->sPtr->get_has_local_index(); }
+  inline boost::shared_ptr<NumeredDofMoFEMEntity> get_NumeredDofMoFEMEntity_ptr() const { return this->sPtr; };
 };
 
 /**

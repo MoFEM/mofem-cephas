@@ -158,17 +158,17 @@ ostream& operator<<(ostream& os,const MoFEMField& e) {
   return os;
 }
 
-//MoFEMEntityEntMoFEMFiniteElementAdjacencyMap
-MoFEMEntityEntMoFEMFiniteElementAdjacencyMap::MoFEMEntityEntMoFEMFiniteElementAdjacencyMap(
-  const MoFEMEntity *_MoFEMEntity_ptr,const EntMoFEMFiniteElement *_EntMoFEMFiniteElement_ptr
+//MoFEMEntityEntFiniteElementAdjacencyMap
+MoFEMEntityEntFiniteElementAdjacencyMap::MoFEMEntityEntFiniteElementAdjacencyMap(
+  const MoFEMEntity *_MoFEMEntity_ptr,const EntFiniteElement *_EntFiniteElement_ptr
 ):
 by_other(0),
 MoFEMEntity_ptr(_MoFEMEntity_ptr),
-EntMoFEMFiniteElement_ptr(_EntMoFEMFiniteElement_ptr) {}
+EntFiniteElement_ptr(_EntFiniteElement_ptr) {}
 
-ostream& operator<<(ostream& os,const MoFEMEntityEntMoFEMFiniteElementAdjacencyMap& e) {
+ostream& operator<<(ostream& os,const MoFEMEntityEntFiniteElementAdjacencyMap& e) {
   os << "by_other " << bitset<3>(e.by_other) << " "
-    << *e.MoFEMEntity_ptr << endl << *e.EntMoFEMFiniteElement_ptr->fe_ptr;
+    << *e.MoFEMEntity_ptr << endl << *e.EntFiniteElement_ptr->fe_ptr;
   return os;
 }
 

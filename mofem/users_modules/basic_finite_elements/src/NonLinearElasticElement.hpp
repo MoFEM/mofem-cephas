@@ -238,7 +238,7 @@ struct NonlinearElasticElement {
       */
     virtual PetscErrorCode calculateP_PiolaKirchhoffI(
       const BlockData block_data,
-      const NumeredMoFEMFiniteElement *fe_ptr
+      const NumeredEntFiniteElement *fe_ptr
     ) {
       PetscFunctionBegin;
       PetscErrorCode ierr;
@@ -271,7 +271,7 @@ struct NonlinearElasticElement {
       */
     virtual PetscErrorCode calculateElasticEnergy(
       const BlockData block_data,
-      const NumeredMoFEMFiniteElement *fe_ptr
+      const NumeredEntFiniteElement *fe_ptr
     ) {
       PetscFunctionBegin;
       PetscErrorCode ierr;
@@ -296,7 +296,7 @@ struct NonlinearElasticElement {
     */
     virtual PetscErrorCode calculateSiGma_EshelbyStress(
       const BlockData block_data,
-      const NumeredMoFEMFiniteElement *fe_ptr
+      const NumeredEntFiniteElement *fe_ptr
     ) {
       PetscFunctionBegin;
       PetscErrorCode ierr;

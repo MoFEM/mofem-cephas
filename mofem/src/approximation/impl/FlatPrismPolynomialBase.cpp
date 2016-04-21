@@ -62,7 +62,7 @@ PetscErrorCode FlatPrismPolynomialBaseCtx::queryInterface(const MOFEMuuid& uuid,
 FlatPrismPolynomialBaseCtx::FlatPrismPolynomialBaseCtx(
   DataForcesAndSurcesCore &data,
   moab::Interface &moab,
-  const NumeredMoFEMFiniteElement *fe_ptr,
+  const NumeredEntFiniteElement *fe_ptr,
   const FieldSpace space,
   const FieldApproximationBase base,
   const FieldApproximationBase copy_node_base

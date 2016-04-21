@@ -65,7 +65,7 @@ struct NitscheMethod {
   struct CommonData {
     int nbActiveFaces;
     vector<EntityHandle> fAces;
-    vector<const NumeredMoFEMFiniteElement *> facesFePtr;
+    vector<const NumeredEntFiniteElement *> facesFePtr;
     vector<VectorDouble> cOords;
     vector<MatrixDouble> faceNormals;
     vector<MatrixDouble> faceGaussPts;
@@ -266,7 +266,7 @@ struct NitscheMethod {
         commonData.facesFePtr.resize(4);
         for(int ff = 0;ff<4;ff++) {
           if(commonData.fAces[ff] != 0) {
-            NumeredMoFEMFiniteElement_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type::iterator it,hi_it;
+            NumeredEntFiniteElement_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type::iterator it,hi_it;
             it = problemPtr->numeredFiniteElements.get<Composite_Name_And_Ent_mi_tag>().
               lower_bound(boost::make_tuple(blockData.faceElemName,commonData.fAces[ff]));
             hi_it = problemPtr->numeredFiniteElements.get<Composite_Name_And_Ent_mi_tag>().
@@ -288,7 +288,7 @@ struct NitscheMethod {
         commonData.inTetFaceGaussPtsNumber.resize(4);
         for(int ff = 0;ff<4;ff++) {
           if(commonData.facesFePtr[ff]!=NULL) {
-            const NumeredMoFEMFiniteElement *faceFEPtr = commonData.facesFePtr[ff];
+            const NumeredEntFiniteElement *faceFEPtr = commonData.facesFePtr[ff];
             faceFE.copy_basic_method(*this);
             faceFE.feName = blockData.faceElemName;
             faceFE.nInTheLoop = ff;

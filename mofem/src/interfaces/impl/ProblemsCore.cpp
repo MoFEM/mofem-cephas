@@ -93,17 +93,17 @@ PetscErrorCode Core::build_partitioned_problem(MoFEMProblem *problem_ptr,bool sq
   DofMoFEMEntity_multiIndex_active_view dofs_rows,dofs_cols;
   {
     //fe_miit iterator for finite elements
-    EntMoFEMFiniteElement_multiIndex::iterator fe_miit = entsFiniteElements.begin();
-    EntMoFEMFiniteElement_multiIndex::iterator hi_fe_miit = entsFiniteElements.end();
+    EntFiniteElement_multiIndex::iterator fe_miit = entsFiniteElements.begin();
+    EntFiniteElement_multiIndex::iterator hi_fe_miit = entsFiniteElements.end();
     //iterate all finite elemen entities in database
     for(;fe_miit!=hi_fe_miit;fe_miit++) {
       //if element is in problem
-      if((fe_miit->get_id()&problem_ptr->get_BitFEId()).any()) {
+      if(((*fe_miit)->get_id()&problem_ptr->get_BitFEId()).any()) {
         //if finite element bit level has all refined bits sets
-        if((fe_miit->get_BitRefLevel()&problem_ptr->get_BitRefLevel())==problem_ptr->get_BitRefLevel()) {
+        if(((*fe_miit)->get_BitRefLevel()&problem_ptr->get_BitRefLevel())==problem_ptr->get_BitRefLevel()) {
           //get dof uids for rows and columns
-          ierr = fe_miit->get_MoFEMFiniteElement_row_dof_view(dofsField,dofs_rows); CHKERRQ(ierr);
-          ierr = fe_miit->get_MoFEMFiniteElement_col_dof_view(dofsField,dofs_cols); CHKERRQ(ierr);
+          ierr = (*fe_miit)->get_MoFEMFiniteElement_row_dof_view(dofsField,dofs_rows); CHKERRQ(ierr);
+          ierr = (*fe_miit)->get_MoFEMFiniteElement_col_dof_view(dofsField,dofs_cols); CHKERRQ(ierr);
         }
       }
     }
@@ -674,19 +674,19 @@ PetscErrorCode Core::build_problem(MoFEMProblem *problem_ptr,int verb) {
   //zero finite elements
   problem_ptr->numeredFiniteElements.clear();
   //miit2 iterator for finite elements
-  EntMoFEMFiniteElement_multiIndex::iterator miit2 = entsFiniteElements.begin();
-  EntMoFEMFiniteElement_multiIndex::iterator hi_miit2 = entsFiniteElements.end();
+  EntFiniteElement_multiIndex::iterator miit2 = entsFiniteElements.begin();
+  EntFiniteElement_multiIndex::iterator hi_miit2 = entsFiniteElements.end();
   DofMoFEMEntity_multiIndex_active_view dofs_rows,dofs_cols;
-  EntMoFEMFiniteElement_multiIndex::iterator miit3 = miit2;
+  EntFiniteElement_multiIndex::iterator miit3 = miit2;
   //iterate all finite element entities in database
   for(;miit3!=hi_miit2;miit3++) {
     //if element is in problem
-    if((miit3->get_id()&problem_ptr->get_BitFEId()).any()) {
+    if(((*miit3)->get_id()&problem_ptr->get_BitFEId()).any()) {
       //if finite element bit level has all refined bits sets
-      if((miit3->get_BitRefLevel()&problem_ptr->get_BitRefLevel())==problem_ptr->get_BitRefLevel()) {
+      if(((*miit3)->get_BitRefLevel()&problem_ptr->get_BitRefLevel())==problem_ptr->get_BitRefLevel()) {
         //get dof uids for rows and columns
-        ierr = miit3->get_MoFEMFiniteElement_row_dof_view(dofsField,dofs_rows); CHKERRQ(ierr);
-        ierr = miit3->get_MoFEMFiniteElement_col_dof_view(dofsField,dofs_cols); CHKERRQ(ierr);
+        ierr = (*miit3)->get_MoFEMFiniteElement_row_dof_view(dofsField,dofs_rows); CHKERRQ(ierr);
+        ierr = (*miit3)->get_MoFEMFiniteElement_col_dof_view(dofsField,dofs_cols); CHKERRQ(ierr);
       }
     }
   }
@@ -735,7 +735,7 @@ PetscErrorCode Core::build_problem(MoFEMProblem *problem_ptr,int verb) {
     problem_ptr->numered_dofs_rows.size(),problem_ptr->numered_dofs_cols.size());
   }
   if(verb>1) {
-    EntMoFEMFiniteElement_multiIndex::iterator miit_ss = miit2;
+    EntFiniteElement_multiIndex::iterator miit_ss = miit2;
     ostringstream ss;
     ss << "rank " << rAnk << " ";
     ss << "FEs data for problem " << *problem_ptr << endl;

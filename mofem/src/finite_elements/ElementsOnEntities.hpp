@@ -457,9 +457,9 @@ struct ForcesAndSurcesCore: public FEMethod {
       ptrFE(NULL) {}
       virtual ~UserDataOperator() {}
 
-    /** \brief return pointer to NumeredMoFEMFiniteElement
+    /** \brief return pointer to NumeredEntFiniteElement
      */
-    inline const NumeredMoFEMFiniteElement* getMoFEMFEPtr() { return ptrFE->fePtr; };
+    inline const NumeredEntFiniteElement* getMoFEMFEPtr() { return ptrFE->fePtr; };
 
     /** \brief Get row indices
 

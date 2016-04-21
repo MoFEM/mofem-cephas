@@ -59,7 +59,7 @@ struct CreateRowComressedADJMatrix: public Core {
   ):
   Core(moab,_comm,_tag_type,_verbose) {};
 
-  typedef MoFEMEntityEntMoFEMFiniteElementAdjacencyMap_multiIndex::index<Unique_mi_tag>::type AdjByEnt;
+  typedef MoFEMEntityEntFiniteElementAdjacencyMap_multiIndex::index<Unique_mi_tag>::type AdjByEnt;
   typedef MoFEMProblem_multiIndex::index<Problem_mi_tag>::type ProblemsByName;
   typedef NumeredDofMoFEMEntity_multiIndex::index<PetscGlobalIdx_mi_tag>::type DofByGlobalPetscIndex;
 
@@ -118,11 +118,11 @@ PetscErrorCode CreateRowComressedADJMatrix::getEntityAdjacenies(
   dofs_col_view.clear();
   for (; adj_miit != hi_adj_miit; adj_miit++) {
     if (adj_miit->by_other&BYROW) {
-      if ((adj_miit->EntMoFEMFiniteElement_ptr->get_id()&p_miit->get_BitFEId()).none()) {
+      if ((adj_miit->EntFiniteElement_ptr->get_id()&p_miit->get_BitFEId()).none()) {
         // if element is not part of problem
         continue;
       }
-      if ((adj_miit->EntMoFEMFiniteElement_ptr->get_BitRefLevel()&(*mit_row)->get_BitRefLevel()).none()) {
+      if ((adj_miit->EntFiniteElement_ptr->get_BitRefLevel()&(*mit_row)->get_BitRefLevel()).none()) {
         // if entity is not problem refinement level
         continue;
       }
@@ -132,8 +132,8 @@ PetscErrorCode CreateRowComressedADJMatrix::getEntityAdjacenies(
 
           ss << "rank " << rAnk << ":  numered_dofs_cols" << endl;
           DofMoFEMEntity_multiIndex_uid_view::iterator dit, hi_dit;
-          dit = adj_miit->EntMoFEMFiniteElement_ptr->col_dof_view.begin();
-          hi_dit = adj_miit->EntMoFEMFiniteElement_ptr->col_dof_view.end();
+          dit = adj_miit->EntFiniteElement_ptr->col_dof_view.begin();
+          hi_dit = adj_miit->EntFiniteElement_ptr->col_dof_view.end();
 
           for (; dit != hi_dit; dit++) {
             ss << "\t" << **dit << endl;
@@ -141,7 +141,7 @@ PetscErrorCode CreateRowComressedADJMatrix::getEntityAdjacenies(
           PetscSynchronizedPrintf(comm, "%s", ss.str().c_str());
       }
 
-      ierr = adj_miit->EntMoFEMFiniteElement_ptr->
+      ierr = adj_miit->EntFiniteElement_ptr->
         get_MoFEMFiniteElement_col_dof_view(
           p_miit->numered_dofs_cols,
           dofs_col_view,
@@ -819,7 +819,7 @@ PetscErrorCode Core::partition_check_matrix_fill_in(const string &problem_name,i
           SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
         }
 
-        MoFEMEntityEntMoFEMFiniteElementAdjacencyMap_multiIndex::index<Composite_Unique_mi_tag>::type::iterator ait;
+        MoFEMEntityEntFiniteElementAdjacencyMap_multiIndex::index<Composite_Unique_mi_tag>::type::iterator ait;
         ait = adjacenciesPtr->get<Composite_Unique_mi_tag>().find(boost::make_tuple((*rit)->get_MoFEMEntity_ptr()->get_global_unique_id(),fePtr->get_global_unique_id()));
         if(ait==adjacenciesPtr->end()) {
           ostringstream ss;
@@ -970,8 +970,8 @@ PetscErrorCode Core::partition_check_matrix_fill_in(const string &problem_name,i
   }
 
   //Loop all elements in problem and check if assemble is without error
-  NumeredMoFEMFiniteElement_multiIndex::iterator fe = p_miit->numeredFiniteElements.begin();
-  NumeredMoFEMFiniteElement_multiIndex::iterator hi_fe = p_miit->numeredFiniteElements.end();
+  NumeredEntFiniteElement_multiIndex::iterator fe = p_miit->numeredFiniteElements.begin();
+  NumeredEntFiniteElement_multiIndex::iterator hi_fe = p_miit->numeredFiniteElements.end();
   for(;fe!=hi_fe;fe++) {
 
     if(verb>0) {

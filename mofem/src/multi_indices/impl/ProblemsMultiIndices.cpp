@@ -114,7 +114,7 @@ PetscErrorCode MoFEMProblem::getNumberOfElementsByNameAndPart(MPI_Comm comm,cons
   MPI_Comm_rank(comm,&rank);
   ierr = PetscLayoutCreate(comm,layout); CHKERRQ(ierr);
   ierr = PetscLayoutSetBlockSize(*layout,1); CHKERRQ(ierr);
-  typedef NumeredMoFEMFiniteElement_multiIndex::index<Composite_Name_And_Part_mi_tag>::type FeByNameAndPart;
+  typedef NumeredEntFiniteElement_multiIndex::index<Composite_Name_And_Part_mi_tag>::type FeByNameAndPart;
   const FeByNameAndPart &fe_by_name_and_part = numeredFiniteElements.get<Composite_Name_And_Part_mi_tag>();
   int nb_elems;
   nb_elems = fe_by_name_and_part.count(boost::make_tuple(name,rank));
@@ -131,7 +131,7 @@ PetscErrorCode MoFEMProblem::getNumberOfElementsByPart(MPI_Comm comm,PetscLayout
   MPI_Comm_rank(comm,&rank);
   ierr = PetscLayoutCreate(comm,layout); CHKERRQ(ierr);
   ierr = PetscLayoutSetBlockSize(*layout,1); CHKERRQ(ierr);
-  typedef NumeredMoFEMFiniteElement_multiIndex::index<Part_mi_tag>::type FeByPart;
+  typedef NumeredEntFiniteElement_multiIndex::index<Part_mi_tag>::type FeByPart;
   const FeByPart &fe_by_part = numeredFiniteElements.get<Part_mi_tag>();
   int nb_elems;
   nb_elems = fe_by_part.count(rank);

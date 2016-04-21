@@ -86,9 +86,9 @@ struct Core: public FieldInterface, MeshRefinment, PrismInterface, SeriesRecorde
   DofMoFEMEntity_multiIndex dofsField;		///< dofs on fiels
   //finite element
   MoFEMFiniteElement_multiIndex finiteElements;		///< finite elements
-  EntMoFEMFiniteElement_multiIndex entsFiniteElements;			///< finite element entities
+  EntFiniteElement_multiIndex entsFiniteElements;			///< finite element entities
   //entFEAdjacencies
-  MoFEMEntityEntMoFEMFiniteElementAdjacencyMap_multiIndex entFEAdjacencies;	///< adjacencies of elements to dofs
+  MoFEMEntityEntFiniteElementAdjacencyMap_multiIndex entFEAdjacencies;	///< adjacencies of elements to dofs
   //pRoblems
   MoFEMProblem_multiIndex pRoblems;					///< problems
   //cubit
@@ -495,8 +495,8 @@ struct Core: public FieldInterface, MeshRefinment, PrismInterface, SeriesRecorde
 
   ///add entity EntFe to finite element data databse and resolve dofs on that entity
   //loop over all finite elements, resolve its meshsets, and resolve dofs on that entitie
-  PetscErrorCode build_finite_element_data_dofs(EntMoFEMFiniteElement &ent_fe,int verb = -1);
-  PetscErrorCode build_finite_element_uids_view(EntMoFEMFiniteElement &ent_fe,int verb = -1);
+  PetscErrorCode build_finite_element_data_dofs(EntFiniteElement &ent_fe,int verb = -1);
+  PetscErrorCode build_finite_element_uids_view(EntFiniteElement &ent_fe,int verb = -1);
   PetscErrorCode build_finite_elements(int verb = -1);
   PetscErrorCode clear_finite_elements(const BitRefLevel &bit,const BitRefLevel &mask,int verb = -1);
   PetscErrorCode clear_finite_elements(const string &name,const Range &ents,int verb = -1);
@@ -619,8 +619,8 @@ struct Core: public FieldInterface, MeshRefinment, PrismInterface, SeriesRecorde
   DofMoFEMEntity_multiIndex::index<Composite_Name_And_Type_mi_tag>::type::iterator get_dofs_by_name_and_type_begin(const string &field_name,const EntityType type);
   DofMoFEMEntity_multiIndex::index<Composite_Name_And_Type_mi_tag>::type::iterator get_dofs_by_name_and_type_end(const string &field_name,const EntityType ent);
 
-  EntMoFEMFiniteElement_multiIndex::index<FiniteElement_name_mi_tag>::type::iterator get_fe_by_name_begin(const string &fe_name);
-  EntMoFEMFiniteElement_multiIndex::index<FiniteElement_name_mi_tag>::type::iterator get_fe_by_name_end(const string &fe_name);
+  EntFiniteElement_multiIndex::index<FiniteElement_name_mi_tag>::type::iterator get_fe_by_name_begin(const string &fe_name);
+  EntFiniteElement_multiIndex::index<FiniteElement_name_mi_tag>::type::iterator get_fe_by_name_end(const string &fe_name);
 
   //Copy field values to another field
   PetscErrorCode field_axpy(const double alpha,const string& fiel_name_x,const string& field_name_y,bool error_if_missing = false,bool creat_if_missing = false);

@@ -399,7 +399,7 @@ ostream& operator<<(ostream& os,const RefMoFEMElement_VERTEX& e) {
   return os;
 }
 
-PetscErrorCode DefaultElementAdjacency::defaultVertex(Interface &moab,const MoFEMField *field_ptr,const EntMoFEMFiniteElement *fe_ptr,Range &adjacency) {
+PetscErrorCode DefaultElementAdjacency::defaultVertex(Interface &moab,const MoFEMField *field_ptr,const EntFiniteElement *fe_ptr,Range &adjacency) {
   PetscFunctionBegin;
   MoABErrorCode rval;
   switch (field_ptr->get_space()) {
@@ -421,7 +421,7 @@ PetscErrorCode DefaultElementAdjacency::defaultVertex(Interface &moab,const MoFE
   }
   PetscFunctionReturn(0);
 }
-PetscErrorCode DefaultElementAdjacency::defaultEdge(Interface &moab,const MoFEMField *field_ptr,const EntMoFEMFiniteElement *fe_ptr,Range &adjacency) {
+PetscErrorCode DefaultElementAdjacency::defaultEdge(Interface &moab,const MoFEMField *field_ptr,const EntFiniteElement *fe_ptr,Range &adjacency) {
   PetscFunctionBegin;
   ErrorCode rval;
   EntityHandle fe_ent = fe_ptr->get_ent();
@@ -457,7 +457,7 @@ PetscErrorCode DefaultElementAdjacency::defaultEdge(Interface &moab,const MoFEMF
   }
   PetscFunctionReturn(0);
 }
-PetscErrorCode DefaultElementAdjacency::defaultTri(Interface &moab,const MoFEMField *field_ptr,const EntMoFEMFiniteElement *fe_ptr,Range &adjacency) {
+PetscErrorCode DefaultElementAdjacency::defaultTri(Interface &moab,const MoFEMField *field_ptr,const EntFiniteElement *fe_ptr,Range &adjacency) {
   PetscFunctionBegin;
   ErrorCode rval;
   Range nodes,edges;
@@ -507,7 +507,7 @@ PetscErrorCode DefaultElementAdjacency::defaultTri(Interface &moab,const MoFEMFi
   }
   PetscFunctionReturn(0);
 }
-PetscErrorCode DefaultElementAdjacency::defaultTet(Interface &moab,const MoFEMField *field_ptr,const EntMoFEMFiniteElement *fe_ptr,Range &adjacency) {
+PetscErrorCode DefaultElementAdjacency::defaultTet(Interface &moab,const MoFEMField *field_ptr,const EntFiniteElement *fe_ptr,Range &adjacency) {
   PetscFunctionBegin;
   ErrorCode rval;
   Range nodes,edges,faces;
@@ -560,7 +560,7 @@ PetscErrorCode DefaultElementAdjacency::defaultTet(Interface &moab,const MoFEMFi
   PetscFunctionReturn(0);
 }
 PetscErrorCode DefaultElementAdjacency::defaultPrism(
-  Interface &moab,const MoFEMField *field_ptr,const EntMoFEMFiniteElement *fe_ptr,Range &adjacency
+  Interface &moab,const MoFEMField *field_ptr,const EntFiniteElement *fe_ptr,Range &adjacency
 ) {
   PetscFunctionBegin;
   ErrorCode rval;
@@ -685,7 +685,7 @@ PetscErrorCode DefaultElementAdjacency::defaultPrism(
   PetscFunctionReturn(0);
 }
 PetscErrorCode DefaultElementAdjacency::defaultMeshset(
-  Interface &moab,const MoFEMField *field_ptr,const EntMoFEMFiniteElement *fe_ptr,Range &adjacency
+  Interface &moab,const MoFEMField *field_ptr,const EntFiniteElement *fe_ptr,Range &adjacency
 ) {
   PetscFunctionBegin;
   ErrorCode rval;
@@ -756,32 +756,32 @@ ostream& operator<<(ostream& os,const MoFEMFiniteElement& e) {
     return os;
 }
 
-void MoFEMFiniteElement_col_change_bit_add::operator()(MoFEMFiniteElement &MoFEMFiniteElement) {
-  *((BitFieldId*)(MoFEMFiniteElement.tag_BitFieldId_col_data)) |= f_id_col;
+void MoFEMFiniteElement_col_change_bit_add::operator()(MoFEMFiniteElement &fe) {
+  *((BitFieldId*)(fe.tag_BitFieldId_col_data)) |= f_id_col;
 }
 
-void MoFEMFiniteElement_row_change_bit_add::operator()(MoFEMFiniteElement &MoFEMFiniteElement) {
-  *((BitFieldId*)(MoFEMFiniteElement.tag_BitFieldId_row_data)) |= f_id_row;
+void MoFEMFiniteElement_row_change_bit_add::operator()(MoFEMFiniteElement &fe) {
+  *((BitFieldId*)(fe.tag_BitFieldId_row_data)) |= f_id_row;
 }
 
-void EntMoFEMFiniteElement_change_bit_add::operator()(MoFEMFiniteElement &MoFEMFiniteElement) {
+void MoFEMFiniteElement_change_bit_add::operator()(MoFEMFiniteElement &MoFEMFiniteElement) {
   *((BitFieldId*)(MoFEMFiniteElement.tag_BitFieldId_data)) |= f_id_data;
 }
 
-void MoFEMFiniteElement_col_change_bit_off::operator()(MoFEMFiniteElement &MoFEMFiniteElement) {
-  *((BitFieldId*)(MoFEMFiniteElement.tag_BitFieldId_col_data)) &= f_id_col.flip();
+void MoFEMFiniteElement_col_change_bit_off::operator()(MoFEMFiniteElement &fe) {
+  *((BitFieldId*)(fe.tag_BitFieldId_col_data)) &= f_id_col.flip();
 }
 
-void MoFEMFiniteElement_row_change_bit_off::operator()(MoFEMFiniteElement &MoFEMFiniteElement) {
-  *((BitFieldId*)(MoFEMFiniteElement.tag_BitFieldId_row_data)) &= f_id_row.flip();
+void MoFEMFiniteElement_row_change_bit_off::operator()(MoFEMFiniteElement &fe) {
+  *((BitFieldId*)(fe.tag_BitFieldId_row_data)) &= f_id_row.flip();
 }
 
-void EntMoFEMFiniteElement_change_bit_off::operator()(MoFEMFiniteElement &MoFEMFiniteElement) {
-  *((BitFieldId*)(MoFEMFiniteElement.tag_BitFieldId_data)) &= f_id_data.flip();
+void MoFEMFiniteElement_change_bit_off::operator()(MoFEMFiniteElement &fe) {
+  *((BitFieldId*)(fe.tag_BitFieldId_data)) &= f_id_data.flip();
 }
 
 //MoFEMFiniteElement data
-EntMoFEMFiniteElement::EntMoFEMFiniteElement(Interface &moab,const RefMoFEMElement *_ref_MoFEMFiniteElement,const MoFEMFiniteElement *_MoFEMFiniteElement_ptr):
+EntFiniteElement::EntFiniteElement(Interface &moab,const RefMoFEMElement *_ref_MoFEMFiniteElement,const MoFEMFiniteElement *_MoFEMFiniteElement_ptr):
   interface_MoFEMFiniteElement<MoFEMFiniteElement>(_MoFEMFiniteElement_ptr),interface_RefMoFEMElement<RefMoFEMElement>(_ref_MoFEMFiniteElement) {
   //get finite element entity
   global_uid =  get_global_unique_id_calculate();
@@ -791,7 +791,7 @@ EntMoFEMFiniteElement::EntMoFEMFiniteElement(Interface &moab,const RefMoFEMEleme
   //ierr = moab.add_entities(meshset,&ent,1); CHKERRABORT(PETSC_COMM_WORLD,ierr);
 }
 
-ostream& operator<<(ostream& os,const EntMoFEMFiniteElement& e) {
+ostream& operator<<(ostream& os,const EntFiniteElement& e) {
   os << *e.fe_ptr << endl;
   os << *e.ref_ptr << endl;
   os << "row dof_uids ";
@@ -850,7 +850,7 @@ static PetscErrorCode get_fe_MoFEMFiniteElement_dof_view(
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode EntMoFEMFiniteElement::get_MoFEMFiniteElement_row_dof_view(
+PetscErrorCode EntFiniteElement::get_MoFEMFiniteElement_row_dof_view(
   const DofMoFEMEntity_multiIndex &dofs,DofMoFEMEntity_multiIndex_active_view &dofs_view,
   const int operation_type
 ) const {
@@ -859,7 +859,7 @@ PetscErrorCode EntMoFEMFiniteElement::get_MoFEMFiniteElement_row_dof_view(
   ierr = get_fe_MoFEMFiniteElement_dof_view(row_dof_view,dofs,dofs_view,operation_type); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
-PetscErrorCode EntMoFEMFiniteElement::get_MoFEMFiniteElement_col_dof_view(
+PetscErrorCode EntFiniteElement::get_MoFEMFiniteElement_col_dof_view(
   const DofMoFEMEntity_multiIndex &dofs,DofMoFEMEntity_multiIndex_active_view &dofs_view,
   const int operation_type
 ) const {
@@ -868,7 +868,7 @@ PetscErrorCode EntMoFEMFiniteElement::get_MoFEMFiniteElement_col_dof_view(
   ierr = get_fe_MoFEMFiniteElement_dof_view(col_dof_view,dofs,dofs_view,operation_type); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
-PetscErrorCode EntMoFEMFiniteElement::get_MoFEMFiniteElement_data_dof_view(
+PetscErrorCode EntFiniteElement::get_MoFEMFiniteElement_data_dof_view(
   const DofMoFEMEntity_multiIndex &dofs,DofMoFEMEntity_multiIndex_active_view &dofs_view,
   const int operation_type
 ) const {
@@ -877,7 +877,7 @@ PetscErrorCode EntMoFEMFiniteElement::get_MoFEMFiniteElement_data_dof_view(
   ierr = get_fe_MoFEMFiniteElement_dof_view(data_dof_view,dofs,dofs_view,operation_type); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
-PetscErrorCode EntMoFEMFiniteElement::get_MoFEMFiniteElement_row_dof_view(
+PetscErrorCode EntFiniteElement::get_MoFEMFiniteElement_row_dof_view(
   const DofMoFEMEntity_multiIndex &dofs,DofMoFEMEntity_multiIndex_uid_view &dofs_view,
   const int operation_type
 ) const {
@@ -886,7 +886,7 @@ PetscErrorCode EntMoFEMFiniteElement::get_MoFEMFiniteElement_row_dof_view(
   ierr = get_fe_MoFEMFiniteElement_dof_view(row_dof_view,dofs,dofs_view,operation_type); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
-PetscErrorCode EntMoFEMFiniteElement::get_MoFEMFiniteElement_col_dof_view(
+PetscErrorCode EntFiniteElement::get_MoFEMFiniteElement_col_dof_view(
   const DofMoFEMEntity_multiIndex &dofs,DofMoFEMEntity_multiIndex_uid_view &dofs_view,
   const int operation_type
 ) const {
@@ -896,7 +896,7 @@ PetscErrorCode EntMoFEMFiniteElement::get_MoFEMFiniteElement_col_dof_view(
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode EntMoFEMFiniteElement::get_MoFEMFiniteElement_row_dof_view(
+PetscErrorCode EntFiniteElement::get_MoFEMFiniteElement_row_dof_view(
   const NumeredDofMoFEMEntity_multiIndex &dofs,NumeredDofMoFEMEntity_multiIndex_uid_view_ordered &dofs_view,
   const int operation_type
 ) const {
@@ -906,7 +906,7 @@ PetscErrorCode EntMoFEMFiniteElement::get_MoFEMFiniteElement_row_dof_view(
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode EntMoFEMFiniteElement::get_MoFEMFiniteElement_col_dof_view(
+PetscErrorCode EntFiniteElement::get_MoFEMFiniteElement_col_dof_view(
   const NumeredDofMoFEMEntity_multiIndex &dofs,NumeredDofMoFEMEntity_multiIndex_uid_view_ordered &dofs_view,
   const int operation_type
 ) const {
@@ -915,7 +915,7 @@ PetscErrorCode EntMoFEMFiniteElement::get_MoFEMFiniteElement_col_dof_view(
   ierr = get_fe_MoFEMFiniteElement_dof_view(col_dof_view,dofs,dofs_view,operation_type); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
-PetscErrorCode EntMoFEMFiniteElement::get_MoFEMFiniteElement_row_dof_view(
+PetscErrorCode EntFiniteElement::get_MoFEMFiniteElement_row_dof_view(
   const NumeredDofMoFEMEntity_multiIndex &dofs,NumeredDofMoFEMEntity_multiIndex_uid_view_hashed &dofs_view,
   const int operation_type
 ) const {
@@ -925,7 +925,7 @@ PetscErrorCode EntMoFEMFiniteElement::get_MoFEMFiniteElement_row_dof_view(
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode EntMoFEMFiniteElement::get_MoFEMFiniteElement_col_dof_view(
+PetscErrorCode EntFiniteElement::get_MoFEMFiniteElement_col_dof_view(
     const NumeredDofMoFEMEntity_multiIndex &dofs,NumeredDofMoFEMEntity_multiIndex_uid_view_hashed &dofs_view,
     const int operation_type) const {
   PetscFunctionBegin;
@@ -934,7 +934,7 @@ PetscErrorCode EntMoFEMFiniteElement::get_MoFEMFiniteElement_col_dof_view(
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode NumeredMoFEMFiniteElement::get_row_dofs_by_petsc_gloabl_dof_idx(DofIdx idx,const FENumeredDofMoFEMEntity **dof_ptr) const {
+PetscErrorCode NumeredEntFiniteElement::get_row_dofs_by_petsc_gloabl_dof_idx(DofIdx idx,const FENumeredDofMoFEMEntity **dof_ptr) const {
   PetscFunctionBegin;
   FENumeredDofMoFEMEntity_multiIndex::index<PetscGlobalIdx_mi_tag>::type::iterator dit;
   dit = rows_dofs.get<PetscGlobalIdx_mi_tag>().find(idx);
@@ -945,7 +945,7 @@ PetscErrorCode NumeredMoFEMFiniteElement::get_row_dofs_by_petsc_gloabl_dof_idx(D
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode NumeredMoFEMFiniteElement::get_col_dofs_by_petsc_gloabl_dof_idx(DofIdx idx,const FENumeredDofMoFEMEntity **dof_ptr) const {
+PetscErrorCode NumeredEntFiniteElement::get_col_dofs_by_petsc_gloabl_dof_idx(DofIdx idx,const FENumeredDofMoFEMEntity **dof_ptr) const {
   PetscFunctionBegin;
   FENumeredDofMoFEMEntity_multiIndex::index<PetscGlobalIdx_mi_tag>::type::iterator dit;
   dit = rows_dofs.get<PetscGlobalIdx_mi_tag>().find(idx);
