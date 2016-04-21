@@ -789,7 +789,7 @@ EntFiniteElement::EntFiniteElement(
   const boost::shared_ptr<RefElement> ref_finite_element,
   const boost::shared_ptr<FiniteElement> fe_ptr
 ):
-interface_MoFEMFiniteElement<FiniteElement>(fe_ptr),
+interface_FiniteElement<FiniteElement>(fe_ptr),
 interface_RefElement<RefElement>(ref_finite_element) {
 
   //get finite element entity

@@ -268,10 +268,10 @@ struct DefaultElementAdjacency {
  * \ingroup fe_multi_indices
  */
 template <typename T>
-struct interface_MoFEMFiniteElement {
+struct interface_FiniteElement {
 
   const boost::shared_ptr<T> sFePtr;
-  interface_MoFEMFiniteElement(const boost::shared_ptr<T> ptr): sFePtr(ptr) {};
+  interface_FiniteElement(const boost::shared_ptr<T> ptr): sFePtr(ptr) {};
 
   inline const boost::shared_ptr<FiniteElement> get_MoFEMFiniteElementPtr() { return this->sFePtr; };
 
@@ -292,11 +292,11 @@ struct interface_MoFEMFiniteElement {
  */
 struct EntFiniteElement:
 public
-interface_MoFEMFiniteElement<FiniteElement>,
+interface_FiniteElement<FiniteElement>,
 interface_RefElement<RefElement> {
   typedef interface_RefMoFEMEntity<RefElement> interface_type_RefMoFEMEntity;
   typedef interface_RefElement<RefElement> interface_type_RefElement;
-  typedef interface_MoFEMFiniteElement<FiniteElement> interface_type_MoFEMFiniteElement;
+  typedef interface_FiniteElement<FiniteElement> interface_type_MoFEMFiniteElement;
   DofMoFEMEntity_multiIndex_uid_view row_dof_view;
   DofMoFEMEntity_multiIndex_uid_view col_dof_view;
   DofMoFEMEntity_multiIndex_uid_view data_dof_view;
@@ -372,11 +372,11 @@ interface_RefElement<RefElement> {
 template <typename T>
 struct interface_EntFiniteElement:
 public
-interface_MoFEMFiniteElement<T>,
+interface_FiniteElement<T>,
 interface_RefElement<T> {
 
   interface_EntFiniteElement(const boost::shared_ptr<T> sptr):
-  interface_MoFEMFiniteElement<T>(sptr),
+  interface_FiniteElement<T>(sptr),
   interface_RefElement<T>(sptr) {
   };
 
@@ -407,7 +407,7 @@ interface_RefElement<T> {
  */
 struct NumeredEntFiniteElement: public interface_EntFiniteElement<EntFiniteElement> {
 
-  typedef interface_MoFEMFiniteElement<EntFiniteElement> interface_type_MoFEMFiniteElement;
+  typedef interface_FiniteElement<EntFiniteElement> interface_type_MoFEMFiniteElement;
   typedef interface_EntFiniteElement<EntFiniteElement> interface_type_EntFiniteElement;
   unsigned int part;
   FENumeredDofMoFEMEntity_multiIndex rows_dofs;
