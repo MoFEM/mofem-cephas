@@ -462,7 +462,9 @@ PetscErrorCode Core::refine_TET(const Range &_tets,const BitRefLevel &bit,const 
           //add refined element
           pair<RefElement_multiIndex::iterator,bool> p_MoFEMFiniteElement;
           try {
-            p_MoFEMFiniteElement = refinedFiniteElements.insert(ptrWrapperRefElement(new RefElement_TET(moab,&*p_MoFEMEntity.first)));
+            p_MoFEMFiniteElement = refinedFiniteElements.insert(ptrWrapperRefElement(
+              boost::shared_ptr<RefElement>(new RefElement_TET(moab,&*p_MoFEMEntity.first)))
+            );
           } catch (MoFEMException const &e) {
             SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
           }
@@ -800,7 +802,9 @@ PetscErrorCode Core::refine_PRISM(const EntityHandle meshset,const BitRefLevel &
 	  pair<RefMoFEMEntity_multiIndex::iterator,bool> p_ent = refinedEntities.insert(RefMoFEMEntity(moab,ref_prisms[pp]));
 	  pair<RefElement_multiIndex::iterator,bool> p_MoFEMFiniteElement;
 	  try {
-	    p_MoFEMFiniteElement = refinedFiniteElements.insert(ptrWrapperRefElement(new RefElement_PRISM(moab,&*p_ent.first)));
+	    p_MoFEMFiniteElement = refinedFiniteElements.insert(ptrWrapperRefElement(
+        boost::shared_ptr<RefElement>(new RefElement_PRISM(moab,&*p_ent.first)))
+      );
 	  } catch (MoFEMException const &e) {
 	    SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
 	  }
@@ -809,12 +813,12 @@ PetscErrorCode Core::refine_PRISM(const EntityHandle meshset,const BitRefLevel &
 	  if(verb>2) {
 	    ostringstream ss;
 	    ss << "add prism: " << *(p_MoFEMFiniteElement.first->get_RefElement()) << endl;
-	    if(verb>7) {
-	      for(int nn = 0;nn<6;nn++) {
-		ss << new_prism_conn[nn] << " ";
-	      }
-	      ss << endl;
-	    }
+      if(verb>7) {
+        for(int nn = 0;nn<6;nn++) {
+          ss << new_prism_conn[nn] << " ";
+        }
+        ss << endl;
+      }
 	    PetscPrintf(comm,ss.str().c_str());
 	  }
 	}

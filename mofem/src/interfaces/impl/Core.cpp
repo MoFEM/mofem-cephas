@@ -605,7 +605,7 @@ PetscErrorCode Core::addPrismToDatabase(const EntityHandle prism,int verb) {
     if(p_ent.second) {
       pair<RefElement_multiIndex::iterator,bool> p_MoFEMFiniteElement;
       p_MoFEMFiniteElement = refinedFiniteElements.insert(
-	      ptrWrapperRefElement(new RefElement_PRISM(moab,&*p_ent.first))
+	      ptrWrapperRefElement(boost::shared_ptr<RefElement>(new RefElement_PRISM(moab,&*p_ent.first)))
       );
       int num_nodes;
       const EntityHandle* conn;
@@ -979,23 +979,35 @@ PetscErrorCode Core::initialiseDatabseInformationFromMesh(int verb) {
         try {
           switch (moab.type_from_handle(*eit)) {
             case MBVERTEX:
-            p_MoFEMFiniteElement = refinedFiniteElements.insert(ptrWrapperRefElement(new RefElement_VERTEX(moab,&*p_ref_ent.first)));
+            p_MoFEMFiniteElement = refinedFiniteElements.insert(ptrWrapperRefElement(
+              boost::shared_ptr<RefElement>(new RefElement_VERTEX(moab,&*p_ref_ent.first)))
+            );
             break;
             case MBEDGE:
-            p_MoFEMFiniteElement = refinedFiniteElements.insert(ptrWrapperRefElement(new RefElement_EDGE(moab,&*p_ref_ent.first)));
+            p_MoFEMFiniteElement = refinedFiniteElements.insert(ptrWrapperRefElement(
+              boost::shared_ptr<RefElement>(new RefElement_EDGE(moab,&*p_ref_ent.first)))
+            );
             break;
             case MBTRI:
-            p_MoFEMFiniteElement = refinedFiniteElements.insert(ptrWrapperRefElement(new RefElement_TRI(moab,&*p_ref_ent.first)));
+            p_MoFEMFiniteElement = refinedFiniteElements.insert(ptrWrapperRefElement(
+              boost::shared_ptr<RefElement>(new RefElement_TRI(moab,&*p_ref_ent.first)))
+            );
             break;
             case MBTET:
-            p_MoFEMFiniteElement = refinedFiniteElements.insert(ptrWrapperRefElement(new RefElement_TET(moab,&*p_ref_ent.first)));
+            p_MoFEMFiniteElement = refinedFiniteElements.insert(ptrWrapperRefElement(
+              boost::shared_ptr<RefElement>(new RefElement_TET(moab,&*p_ref_ent.first)))
+            );
             break;
             case MBPRISM:
             ierr = addPrismToDatabase(*eit,verb); CHKERRQ(ierr);
-            p_MoFEMFiniteElement = refinedFiniteElements.insert(ptrWrapperRefElement(new RefElement_PRISM(moab,&*p_ref_ent.first)));
+            p_MoFEMFiniteElement = refinedFiniteElements.insert(ptrWrapperRefElement(
+              boost::shared_ptr<RefElement>(new RefElement_PRISM(moab,&*p_ref_ent.first)))
+            );
             break;
             case MBENTITYSET:
-            p_MoFEMFiniteElement = refinedFiniteElements.insert(ptrWrapperRefElement(new RefElement_MESHSET(moab,&*p_ref_ent.first)));
+            p_MoFEMFiniteElement = refinedFiniteElements.insert(ptrWrapperRefElement(
+              boost::shared_ptr<RefElement>(new RefElement_MESHSET(moab,&*p_ref_ent.first)))
+            );
             break;
             default:
             SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"Only finite elements of type MBTET, MBPRISM and MBENTITYSET are implemented");

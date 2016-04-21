@@ -1957,7 +1957,9 @@ PetscErrorCode Core::build_finite_elements(int verb) {
         SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,ss.str().c_str());
       }
       boost::shared_ptr<EntFiniteElement> ent_fe =
-      boost::shared_ptr<EntFiniteElement>(new EntFiniteElement(moab,ref_MoFEMFiniteElement_miit->get_RefElement(),&*MoFEMFiniteElement_miit));
+      boost::shared_ptr<EntFiniteElement>(
+        new EntFiniteElement(moab,ref_MoFEMFiniteElement_miit->get_RefElement(),&*MoFEMFiniteElement_miit)
+      );
       pair<EntFiniteElement_multiIndex::iterator,bool> p = entsFiniteElements.insert(ent_fe);
       ierr = build_finite_element_uids_view(const_cast<EntFiniteElement&>(*(*p.first)),verb); CHKERRQ(ierr);
       ierr = build_finite_element_data_dofs(const_cast<EntFiniteElement&>(*(*p.first)),verb); CHKERRQ(ierr);
@@ -2293,19 +2295,29 @@ PetscErrorCode Core::seed_finite_elements(const Range &entities,int verb) {
     pair<RefElement_multiIndex::iterator,bool> p_MoFEMFiniteElement;
     switch (eiit->get_ent_type()) {
       case MBVERTEX:
-      p_MoFEMFiniteElement = refinedFiniteElements.insert(ptrWrapperRefElement(new RefElement_VERTEX(moab,&*eiit)));
+      p_MoFEMFiniteElement = refinedFiniteElements.insert(ptrWrapperRefElement(
+        boost::shared_ptr<RefElement>(new RefElement_VERTEX(moab,&*eiit)))
+      );
       break;
       case MBEDGE:
-      p_MoFEMFiniteElement = refinedFiniteElements.insert(ptrWrapperRefElement(new RefElement_EDGE(moab,&*eiit)));
+      p_MoFEMFiniteElement = refinedFiniteElements.insert(ptrWrapperRefElement(
+        boost::shared_ptr<RefElement>(new RefElement_EDGE(moab,&*eiit)))
+      );
       break;
       case MBTRI:
-      p_MoFEMFiniteElement = refinedFiniteElements.insert(ptrWrapperRefElement(new RefElement_TRI(moab,&*eiit)));
+      p_MoFEMFiniteElement = refinedFiniteElements.insert(ptrWrapperRefElement(
+        boost::shared_ptr<RefElement>(new RefElement_TRI(moab,&*eiit)))
+      );
       break;
       case MBTET:
-      p_MoFEMFiniteElement = refinedFiniteElements.insert(ptrWrapperRefElement(new RefElement_TET(moab,&*eiit)));
+      p_MoFEMFiniteElement = refinedFiniteElements.insert(ptrWrapperRefElement(
+        boost::shared_ptr<RefElement>(new RefElement_TET(moab,&*eiit)))
+      );
       break;
       case MBPRISM:
-      p_MoFEMFiniteElement = refinedFiniteElements.insert(ptrWrapperRefElement(new RefElement_PRISM(moab,&*eiit)));
+      p_MoFEMFiniteElement = refinedFiniteElements.insert(ptrWrapperRefElement(
+        boost::shared_ptr<RefElement>(new RefElement_PRISM(moab,&*eiit)))
+      );
       break;
       default:
       SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"not implemented");
@@ -2347,26 +2359,38 @@ PetscErrorCode Core::seed_ref_level(const Range &ents,const BitRefLevel &bit,int
       pair<RefElement_multiIndex::iterator,bool> p_MoFEMFiniteElement;
       switch (p_ent.first->get_ent_type()) {
         case MBVERTEX:
-        p_MoFEMFiniteElement = refinedFiniteElements.insert(ptrWrapperRefElement(new RefElement_VERTEX(moab,&*p_ent.first)));
+        p_MoFEMFiniteElement = refinedFiniteElements.insert(ptrWrapperRefElement(
+          boost::shared_ptr<RefElement>(new RefElement_VERTEX(moab,&*p_ent.first)))
+        );
         seeded_ents.insert(*tit);
         break;
         case MBEDGE:
-        p_MoFEMFiniteElement = refinedFiniteElements.insert(ptrWrapperRefElement(new RefElement_EDGE(moab,&*p_ent.first)));
+        p_MoFEMFiniteElement = refinedFiniteElements.insert(ptrWrapperRefElement(
+          boost::shared_ptr<RefElement>(new RefElement_EDGE(moab,&*p_ent.first)))
+        );
         seeded_ents.insert(*tit);
         break;
         case MBTRI:
-        p_MoFEMFiniteElement = refinedFiniteElements.insert(ptrWrapperRefElement(new RefElement_TRI(moab,&*p_ent.first)));
+        p_MoFEMFiniteElement = refinedFiniteElements.insert(ptrWrapperRefElement(
+          boost::shared_ptr<RefElement>(new RefElement_TRI(moab,&*p_ent.first)))
+        );
         seeded_ents.insert(*tit);
         break;
         case MBTET:
-        p_MoFEMFiniteElement = refinedFiniteElements.insert(ptrWrapperRefElement(new RefElement_TET(moab,&*p_ent.first)));
+        p_MoFEMFiniteElement = refinedFiniteElements.insert(ptrWrapperRefElement(
+          boost::shared_ptr<RefElement>(new RefElement_TET(moab,&*p_ent.first)))
+        );
         seeded_ents.insert(*tit);
         break;
         case MBPRISM:
-        p_MoFEMFiniteElement = refinedFiniteElements.insert(ptrWrapperRefElement(new RefElement_PRISM(moab,&*p_ent.first)));
+        p_MoFEMFiniteElement = refinedFiniteElements.insert(ptrWrapperRefElement(
+          boost::shared_ptr<RefElement>(new RefElement_PRISM(moab,&*p_ent.first)))
+        );
         break;
         case MBENTITYSET:
-        p_MoFEMFiniteElement = refinedFiniteElements.insert(ptrWrapperRefElement(new RefElement_MESHSET(moab,&*p_ent.first)));
+        p_MoFEMFiniteElement = refinedFiniteElements.insert(ptrWrapperRefElement(
+          boost::shared_ptr<RefElement>(new RefElement_MESHSET(moab,&*p_ent.first)))
+        );
         break;
         default:
         SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented");
@@ -2420,7 +2444,9 @@ PetscErrorCode Core::seed_ref_level_MESHSET(const EntityHandle meshset,const Bit
   if(verb==-1) verb = verbose;
   pair<RefMoFEMEntity_multiIndex::iterator,bool> p_ent = refinedEntities.insert(RefMoFEMEntity(moab,meshset));
   refinedEntities.modify(p_ent.first,RefMoFEMEntity_change_add_bit(bit));
-  ptrWrapperRefElement pack_fe(new RefElement_MESHSET(moab,&*p_ent.first));
+  ptrWrapperRefElement pack_fe(
+    boost::shared_ptr<RefElement>(new RefElement_MESHSET(moab,&*p_ent.first))
+  );
   pair<RefElement_multiIndex::iterator,bool> p_MoFEMFiniteElement = refinedFiniteElements.insert(pack_fe);
   if(verbose > 0) {
     ostringstream ss;

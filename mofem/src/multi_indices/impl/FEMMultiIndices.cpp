@@ -58,7 +58,10 @@ SideNumber* RefElement_MESHSET::get_side_number_ptr(Interface &moab,EntityHandle
   THROW_MESSAGE("not implemented");
   return NULL;
 }
-RefElement_PRISM::RefElement_PRISM(Interface &moab,const RefMoFEMEntity *_RefMoFEMEntity_ptr): RefElement(moab,_RefMoFEMEntity_ptr) {
+RefElement_PRISM::RefElement_PRISM(
+  Interface &moab,const RefMoFEMEntity *_RefMoFEMEntity_ptr
+):
+RefElement(moab,_RefMoFEMEntity_ptr) {
   ErrorCode rval;
   Tag th_RefBitEdge;
   rval = moab.tag_get_handle("_RefBitEdge",th_RefBitEdge); MOAB_THROW(rval);
@@ -781,8 +784,14 @@ void MoFEMFiniteElement_change_bit_off::operator()(MoFEMFiniteElement &fe) {
 }
 
 //MoFEMFiniteElement data
-EntFiniteElement::EntFiniteElement(Interface &moab,const RefElement *_ref_MoFEMFiniteElement,const MoFEMFiniteElement *_MoFEMFiniteElement_ptr):
-  interface_MoFEMFiniteElement<MoFEMFiniteElement>(_MoFEMFiniteElement_ptr),interface_RefElement<RefElement>(_ref_MoFEMFiniteElement) {
+EntFiniteElement::EntFiniteElement(
+  Interface &moab,
+  const boost::shared_ptr<RefElement> ref_finite_element,
+  const MoFEMFiniteElement *fe_ptr
+):
+interface_MoFEMFiniteElement<MoFEMFiniteElement>(fe_ptr),
+interface_RefElement<RefElement>(ref_finite_element) {
+
   //get finite element entity
   global_uid =  get_global_unique_id_calculate();
   //add ents to meshset

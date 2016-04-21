@@ -1,5 +1,5 @@
 /** \file FEMMultiIndices.hpp
- * \brief Myltindex contains, data structures for mofem finite elements and other low-level functions
+ * \brief Myltiindex contains, data structures for mofem finite elements and other low-level functions
  */
 
 /* MoFEM is free software: you can redistribute it and/or modify it under
@@ -40,8 +40,9 @@ struct RefElement: public interface_RefMoFEMEntity<RefMoFEMEntity> {
     NOT_USED(ent);
     return NULL;
   };
-  const RefElement* get_RefElement() const { return this; }
+
   friend ostream& operator<<(ostream& os,const RefElement& e);
+
 };
 
 /**
@@ -50,7 +51,6 @@ struct RefElement: public interface_RefMoFEMEntity<RefMoFEMEntity> {
  */
 struct RefElement_MESHSET: public RefElement {
   RefElement_MESHSET(Interface &moab,const RefMoFEMEntity *_RefMoFEMEntity_ptr);
-  const RefElement* get_RefElement() const { return this; }
   SideNumber* get_side_number_ptr(Interface &moab,EntityHandle ent) const;
 };
 
@@ -61,7 +61,6 @@ struct RefElement_MESHSET: public RefElement {
 struct RefElement_PRISM: public RefElement {
   BitRefEdges *tag_BitRefEdges;
   RefElement_PRISM(Interface &moab,const RefMoFEMEntity *_RefMoFEMEntity_ptr);
-  const RefElement* get_RefElement() const { return this; }
   SideNumber* get_side_number_ptr(Interface &moab,EntityHandle ent) const;
   const BitRefEdges& get_BitRefEdges() const { return *tag_BitRefEdges; }
   int get_BitRefEdges_ulong() const { return get_BitRefEdges().to_ulong(); }
@@ -75,7 +74,6 @@ struct RefElement_TET: public RefElement {
   BitRefEdges *tag_BitRefEdges;
   const int* tag_type_data;
   RefElement_TET(Interface &moab,const RefMoFEMEntity *_RefMoFEMEntity_ptr);
-  const RefElement* get_RefElement() const { return this; }
   SideNumber* get_side_number_ptr(Interface &moab,EntityHandle ent) const;
   SideNumber_multiIndex &get_side_number_table() const { return const_cast<SideNumber_multiIndex&>(side_number_table); };
   const BitRefEdges& get_BitRefEdges() const { return *tag_BitRefEdges; }
@@ -91,7 +89,6 @@ struct RefElement_TET: public RefElement {
  */
 struct RefElement_TRI: public RefElement {
   RefElement_TRI(Interface &moab,const RefMoFEMEntity *_RefMoFEMEntity_ptr);
-  const RefElement* get_RefElement() const { return this; }
   SideNumber* get_side_number_ptr(Interface &moab,EntityHandle ent) const;
   friend ostream& operator<<(ostream& os,const RefElement_TRI& e);
 };
@@ -102,7 +99,6 @@ struct RefElement_TRI: public RefElement {
  */
 struct RefElement_EDGE: public RefElement {
   RefElement_EDGE(Interface &moab,const RefMoFEMEntity *_RefMoFEMEntity_ptr);
-  const RefElement* get_RefElement() const { return this; }
   SideNumber* get_side_number_ptr(Interface &moab,EntityHandle ent) const;
   friend ostream& operator<<(ostream& os,const RefElement_EDGE& e);
 };
@@ -113,7 +109,6 @@ struct RefElement_EDGE: public RefElement {
  */
 struct RefElement_VERTEX: public RefElement {
   RefElement_VERTEX(Interface &moab,const RefMoFEMEntity *_RefMoFEMEntity_ptr);
-  const RefElement* get_RefElement() const { return this; }
   SideNumber* get_side_number_ptr(Interface &moab,EntityHandle ent) const;
   friend ostream& operator<<(ostream& os,const RefElement_VERTEX& e);
 };
@@ -124,30 +119,26 @@ struct RefElement_VERTEX: public RefElement {
  */
 template<typename T>
 struct interface_RefElement: interface_RefMoFEMEntity<T> {
-  interface_RefElement(const T *_ref_ptr): interface_RefMoFEMEntity<T>(_ref_ptr) {}
-  int get_BitRefEdges_ulong() const { return interface_RefMoFEMEntity<T>::ref_ptr->get_BitRefEdges_ulong(); }
-  SideNumber_multiIndex &get_side_number_table() const { return interface_RefMoFEMEntity<T>::ref_ptr->get_side_number_table(); }
-  SideNumber* get_side_number_ptr(Interface &moab,EntityHandle ent) const { return interface_RefMoFEMEntity<T>::ref_ptr->get_side_number_ptr(moab,ent); }
-  inline const RefElement* get_RefElement() const { return interface_RefMoFEMEntity<T>::ref_ptr->get_RefElement(); }
+
+  typedef interface_RefMoFEMEntity<T> interface_type_RefMoFEMEntity;
+  typedef interface_RefElement<T> interface_type_RefElement;
+
+  const boost::shared_ptr<T> sPtr;
+
+  interface_RefElement(const boost::shared_ptr<T> sptr):
+  interface_RefMoFEMEntity<T>(sptr.get()),
+  sPtr(sptr) {
+  }
+
+  int get_BitRefEdges_ulong() const { return this->sPtr->get_BitRefEdges_ulong(); }
+  SideNumber_multiIndex &get_side_number_table() const { return this->sPtr->get_side_number_table(); }
+  SideNumber* get_side_number_ptr(Interface &moab,EntityHandle ent) const { return this->sPtr->get_side_number_ptr(moab,ent); }
+  inline const boost::shared_ptr<T> get_RefElement() const { return this->sPtr; }
   virtual ~interface_RefElement() {}
+
 };
 
-struct ptrWrapperRefElement: public interface_RefElement<RefElement> {
-  typedef interface_RefMoFEMEntity<RefElement> interface_type_RefMoFEMEntity;
-  typedef interface_RefElement<RefElement> interface_type_RefElement;
-  int wrapp;
-  ptrWrapperRefElement(const RefElement *__ptr): interface_RefElement<RefElement>(__ptr),wrapp(1) {}
-  ptrWrapperRefElement(const ptrWrapperRefElement &ref): interface_RefElement<RefElement>(ref) {
-    wrapp = 1;
-    assert(ref.wrapp == 1);
-    (const_cast<ptrWrapperRefElement&>(ref)).wrapp++;
-  }
-  virtual ~ptrWrapperRefElement() {
-    if(wrapp == 1) {
-      delete interface_RefMoFEMEntity<RefElement>::ref_ptr;
-    }
-  }
-};
+typedef interface_RefElement<RefElement> ptrWrapperRefElement;
 
 /**
  * \typedef RefElement_multiIndex
@@ -306,8 +297,15 @@ interface_RefElement<RefElement> {
   DofMoFEMEntity_multiIndex_uid_view data_dof_view;
   FEDofMoFEMEntity_multiIndex data_dofs;
   GlobalUId global_uid;
-  EntFiniteElement(Interface &moab,const RefElement *_ref_MoFEMFiniteElement,const MoFEMFiniteElement *_MoFEMFiniteElement_ptr);
+
+  EntFiniteElement(
+    Interface &moab,
+    const boost::shared_ptr<RefElement> ref_finite_element,
+    const MoFEMFiniteElement *fe_ptr
+  );
+
   inline const MoFEMFiniteElement* get_MoFEMFiniteElementPtr() { return interface_MoFEMFiniteElement<MoFEMFiniteElement>::fe_ptr; };
+
   const GlobalUId& get_global_unique_id() const { return global_uid; }
   GlobalUId get_global_unique_id_calculate() const {
     char bit_number = get_bit_number();
@@ -369,14 +367,14 @@ interface_RefElement<RefElement> {
  * \ingroup fe_multi_indices
  */
 template <typename T>
-struct interface_EntFiniteElement:public interface_MoFEMFiniteElement<T>,interface_RefElement<T> {
-
-  const boost::shared_ptr<T> sPtr;
+struct interface_EntFiniteElement:
+public
+interface_MoFEMFiniteElement<T>,
+interface_RefElement<T> {
 
   interface_EntFiniteElement(const boost::shared_ptr<T> sptr):
   interface_MoFEMFiniteElement<T>(sptr.get()),
-  interface_RefElement<T>(sptr.get()),
-  sPtr(sptr) {
+  interface_RefElement<T>(sptr) {
   };
 
   inline const MoFEMFiniteElement* get_MoFEMFiniteElementPtr() { return this->get_MoFEMFiniteElementPtr(); };
