@@ -147,7 +147,7 @@ struct BasicMethod: public UnknownInterface,KspMethod,SnesMethod,TSMethod {
   const RefMoFEMEntity_multiIndex *refinedEntitiesPtr;
   const RefElement_multiIndex *refinedFiniteElementsPtr;
   const MoFEMProblem *problemPtr;
-  const MoFEMField_multiIndex *fieldsPtr;
+  const Field_multiIndex *fieldsPtr;
   const MoFEMEntity_multiIndex *entitiesPtr;
   const DofMoFEMEntity_multiIndex *dofsPtr;
   const FiniteElement_multiIndex *finiteElementsPtr;

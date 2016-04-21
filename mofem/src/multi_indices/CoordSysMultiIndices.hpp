@@ -39,7 +39,7 @@ namespace MoFEM {
   of its coordinate system.
 
   In this data structure a generic two-point tensors are considered,
-  see \cite  marsden1994mathematical. To each field \ref MoFEM::MoFEMField a CoordSys data
+  see \cite  marsden1994mathematical. To each field \ref MoFEM::Field a CoordSys data
   structure can be attached, carrying information about tensor structure
   approximated by the field.
 

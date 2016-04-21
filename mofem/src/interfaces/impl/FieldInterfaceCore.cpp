@@ -62,7 +62,7 @@ PetscErrorCode Core::add_field(
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
   *build_MoFEM = 0;
-  MoFEMField_multiIndex::index<FieldName_mi_tag>::type::iterator fit;
+  Field_multiIndex::index<FieldName_mi_tag>::type::iterator fit;
   fit = fIelds.get<FieldName_mi_tag>().find(name);
   if(fit != fIelds.get<FieldName_mi_tag>().end() ) {
     if(bh == MF_EXCL) {
@@ -140,7 +140,7 @@ PetscErrorCode Core::add_field(
       NULL
     ); CHKERRQ_MOAB(rval);
     //add meshset
-    pair<MoFEMField_multiIndex::iterator,bool> p;
+    pair<Field_multiIndex::iterator,bool> p;
     try {
       CoordSys_multiIndex::index<CoordSysName_mi_tag>::type::iterator undefined_cs_it;
       undefined_cs_it = coordinateSystems.get<CoordSysName_mi_tag>().find("UNDEFINED");
@@ -149,12 +149,12 @@ PetscErrorCode Core::add_field(
       }
       EntityHandle coord_sys_id = undefined_cs_it->getMeshSet();
       rval = moab.tag_set_data(th_CoordSysMeshSet,&meshset,1,&coord_sys_id); CHKERRQ_MOAB(rval);
-      p = fIelds.insert(MoFEMField(moab,meshset,&*undefined_cs_it));
+      p = fIelds.insert(Field(moab,meshset,&*undefined_cs_it));
       if(bh == MF_EXCL) {
         if(!p.second) SETERRQ1(
           PETSC_COMM_SELF,1,
           "field not inserted %s (top tip, it could be already there)",
-          MoFEMField(moab,meshset,&*undefined_cs_it).get_name().c_str()
+          Field(moab,meshset,&*undefined_cs_it).get_name().c_str()
         );
       }
     } catch (MoFEMException const &e) {
@@ -736,7 +736,7 @@ PetscErrorCode Core::set_field_order(const Range &ents,const BitFieldId id,const
   *build_MoFEM = 0;
 
   //check field & meshset
-  typedef MoFEMField_multiIndex::index<BitFieldId_mi_tag>::type field_set_by_id;
+  typedef Field_multiIndex::index<BitFieldId_mi_tag>::type field_set_by_id;
   const field_set_by_id &set_id = fIelds.get<BitFieldId_mi_tag>();
   field_set_by_id::iterator miit = set_id.find(id);
   if(miit==set_id.end()) SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_FOUND,"no filed found");
@@ -951,7 +951,7 @@ PetscErrorCode Core::dofs_NoField(const BitFieldId id,map<EntityType,int> &dof_c
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
   //field it
-  typedef MoFEMField_multiIndex::index<BitFieldId_mi_tag>::type field_set_by_id;
+  typedef Field_multiIndex::index<BitFieldId_mi_tag>::type field_set_by_id;
   const field_set_by_id &set_id = fIelds.get<BitFieldId_mi_tag>();
   //find fiels
   field_set_by_id::iterator miit = set_id.find(id);
@@ -1040,7 +1040,7 @@ PetscErrorCode Core::dofs_L2H1HcurlHdiv(
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
   //field it
-  typedef MoFEMField_multiIndex::index<BitFieldId_mi_tag>::type field_set_by_id;
+  typedef Field_multiIndex::index<BitFieldId_mi_tag>::type field_set_by_id;
   //find field
   const field_set_by_id &set_id = fIelds.get<BitFieldId_mi_tag>();
   field_set_by_id::iterator miit = set_id.find(id);
@@ -1164,7 +1164,7 @@ PetscErrorCode Core::dofs_L2H1HcurlHdiv(
 PetscErrorCode Core::build_fields(int verb) {
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
-  typedef MoFEMField_multiIndex::index<BitFieldId_mi_tag>::type field_set_by_id;
+  typedef Field_multiIndex::index<BitFieldId_mi_tag>::type field_set_by_id;
   field_set_by_id &set_id = fIelds.get<BitFieldId_mi_tag>();
   field_set_by_id::iterator miit = set_id.begin();
   for(;miit!=set_id.end();miit++) {
@@ -1245,7 +1245,7 @@ PetscErrorCode Core::list_dofs_by_field_name(const string &field_name) const {
 }
 PetscErrorCode Core::list_fields() const {
   PetscFunctionBegin;
-  typedef MoFEMField_multiIndex::index<BitFieldId_mi_tag>::type field_set_by_id;
+  typedef Field_multiIndex::index<BitFieldId_mi_tag>::type field_set_by_id;
   const field_set_by_id &set_id = fIelds.get<BitFieldId_mi_tag>();
   field_set_by_id::iterator miit = set_id.begin();
   for(;miit!=set_id.end();miit++) {
@@ -1819,7 +1819,7 @@ PetscErrorCode Core::build_finite_element_data_dofs(EntFiniteElement &ent_fe,int
 PetscErrorCode Core::build_finite_element_uids_view(EntFiniteElement &ent_fe,int verb) {
   PetscFunctionBegin;
   if(!(*build_MoFEM)&(1<<0)) SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_FOUND,"fields not build");
-  typedef MoFEMField_multiIndex::index<BitFieldId_mi_tag>::type field_by_id;
+  typedef Field_multiIndex::index<BitFieldId_mi_tag>::type field_by_id;
   typedef RefMoFEMEntity_multiIndex::index<Ent_mi_tag>::type ref_ent_by_ent;
   typedef DofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type dof_set_type;
   field_by_id &fIelds_by_id = fIelds.get<BitFieldId_mi_tag>();
@@ -2644,7 +2644,7 @@ PetscErrorCode Core::update_meshset_by_entities_children(
 }
 PetscErrorCode Core::update_field_meshset_by_entities_children(const BitRefLevel &child_bit,int verb) {
   PetscFunctionBegin;
-  MoFEMField_multiIndex::iterator fit = fIelds.begin();
+  Field_multiIndex::iterator fit = fIelds.begin();
   for(;fit!=fIelds.end();fit++) {
     EntityHandle meshset = fit->get_meshset();
     ierr = update_meshset_by_entities_children(meshset,child_bit,meshset,MBTET,false,verb);  CHKERRQ(ierr);
@@ -2656,7 +2656,7 @@ PetscErrorCode Core::update_field_meshset_by_entities_children(const BitRefLevel
 }
 PetscErrorCode Core::update_field_meshset_by_entities_children(const string name,const BitRefLevel &child_bit,int verb) {
   PetscFunctionBegin;
-  MoFEMField_multiIndex::index<FieldName_mi_tag>::type::iterator miit;
+  Field_multiIndex::index<FieldName_mi_tag>::type::iterator miit;
   miit = fIelds.get<FieldName_mi_tag>().find(name);
   EntityHandle meshset = miit->get_meshset();
   ierr = update_meshset_by_entities_children(meshset,child_bit,meshset,MBTET,false,verb);  CHKERRQ(ierr);
@@ -3077,7 +3077,7 @@ EntFiniteElement_multiIndex::index<FiniteElement_name_mi_tag>::type::iterator Co
 }
 PetscErrorCode Core::check_number_of_ents_in_ents_field(const string& name) {
   PetscFunctionBegin;
-  MoFEMField_multiIndex::index<FieldName_mi_tag>::type::iterator it = fIelds.get<FieldName_mi_tag>().find(name);
+  Field_multiIndex::index<FieldName_mi_tag>::type::iterator it = fIelds.get<FieldName_mi_tag>().find(name);
   if(it == fIelds.get<FieldName_mi_tag>().end()) {
     SETERRQ1(PETSC_COMM_SELF,1,"field not found < %s >",name.c_str());
   }
@@ -3092,7 +3092,7 @@ PetscErrorCode Core::check_number_of_ents_in_ents_field(const string& name) {
 }
 PetscErrorCode Core::check_number_of_ents_in_ents_field() {
   PetscFunctionBegin;
-  MoFEMField_multiIndex::index<FieldName_mi_tag>::type::iterator it = fIelds.get<FieldName_mi_tag>().begin();
+  Field_multiIndex::index<FieldName_mi_tag>::type::iterator it = fIelds.get<FieldName_mi_tag>().begin();
   for(;it!=fIelds.get<FieldName_mi_tag>().end();it++) {
     if(it->get_space() == NOFIELD) continue; //FIXME: should be treated properly, not test is just skipped for this NOFIELD space
     EntityHandle meshset = it->get_meshset();
@@ -3370,7 +3370,7 @@ PetscErrorCode Core::remove_ents_from_field_by_bit_ref(const BitRefLevel &bit,co
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
   ierr = clear_ents_fields(bit,mask,verb); CHKERRQ(ierr);
-  MoFEMField_multiIndex::iterator f_it = fIelds.begin();
+  Field_multiIndex::iterator f_it = fIelds.begin();
   for(;f_it!=fIelds.end();f_it++) {
     EntityHandle meshset = f_it->get_meshset();
     Range ents_to_remove;

@@ -81,7 +81,7 @@ struct Core: public FieldInterface, MeshRefinment, PrismInterface, SeriesRecorde
   //coordinate sysrems
   CoordSys_multiIndex coordinateSystems;
   //field
-  MoFEMField_multiIndex fIelds;			///< field
+  Field_multiIndex fIelds;			///< field
   MoFEMEntity_multiIndex entsFields;			///< entities on field
   DofMoFEMEntity_multiIndex dofsField;		///< dofs on fiels
   //finite element
@@ -440,7 +440,7 @@ struct Core: public FieldInterface, MeshRefinment, PrismInterface, SeriesRecorde
   EntityHandle get_field_meshset(const BitFieldId id) const;
   EntityHandle get_field_meshset(const string& name) const;
     bool check_field(const string& name) const;
-  const MoFEMField* get_field_structure(const string& name);
+  const Field* get_field_structure(const string& name);
 
   //FiniteElement
   PetscErrorCode add_finite_element(const string &fe_name,enum MoFEMTypes bh = MF_EXCL);

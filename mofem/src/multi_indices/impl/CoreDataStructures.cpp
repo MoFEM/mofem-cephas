@@ -43,7 +43,7 @@ const bool PetscLocalIdx_mi_tag::IamNotPartitioned = false;
 const bool Part_mi_tag::IamNotPartitioned = false;
 
 //fields
-MoFEMField::MoFEMField(Interface &moab,const EntityHandle meshset,const CoordSys *coord_sys_ptr):
+Field::Field(Interface &moab,const EntityHandle meshset,const CoordSys *coord_sys_ptr):
   meshSet(meshset),
   coordSysPtr(coord_sys_ptr),
   tag_id_data(NULL),
@@ -146,7 +146,7 @@ MoFEMField::MoFEMField(Interface &moab,const EntityHandle meshset,const CoordSys
   }
 }
 
-ostream& operator<<(ostream& os,const MoFEMField& e) {
+ostream& operator<<(ostream& os,const Field& e) {
   os
   << "name " <<e.get_name_ref()
   << " BitFieldId "<< e.get_id().to_ulong()

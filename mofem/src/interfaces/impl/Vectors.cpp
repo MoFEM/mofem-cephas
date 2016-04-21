@@ -505,7 +505,7 @@ PetscErrorCode Core::set_other_local_ghost_vector(
     default:
      SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented");
   }
-  MoFEMField_multiIndex::index<FieldName_mi_tag>::type::iterator cpy_fit = fIelds.get<FieldName_mi_tag>().find(cpy_field_name);
+  Field_multiIndex::index<FieldName_mi_tag>::type::iterator cpy_fit = fIelds.get<FieldName_mi_tag>().find(cpy_field_name);
   if(cpy_fit==fIelds.get<FieldName_mi_tag>().end()) {
     SETERRQ1(PETSC_COMM_SELF,MOFEM_NOT_FOUND,"cpy field < %s > not found, (top tip: check spelling)",cpy_field_name.c_str());
   }
@@ -619,7 +619,7 @@ PetscErrorCode Core::set_other_global_ghost_vector(
     default:
      SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"not implemented");
   }
-  MoFEMField_multiIndex::index<FieldName_mi_tag>::type::iterator cpy_fit = fIelds.get<FieldName_mi_tag>().find(cpy_field_name);
+  Field_multiIndex::index<FieldName_mi_tag>::type::iterator cpy_fit = fIelds.get<FieldName_mi_tag>().find(cpy_field_name);
   if(cpy_fit==fIelds.get<FieldName_mi_tag>().end()) {
     SETERRQ1(PETSC_COMM_SELF,MOFEM_NOT_FOUND,"cpy field < %s > not found, (top tip: check spelling)",cpy_field_name.c_str());
   }
@@ -670,7 +670,7 @@ PetscErrorCode Core::set_other_global_ghost_vector(
           pair<MoFEMEntity_multiIndex::iterator,bool> p_e_miit;
           try {
             boost::shared_ptr<MoFEMEntity> moabent(
-              new MoFEMEntity(moab,cpy_fit->get_MoFEMField_ptr(),(*miit)->get_RefMoFEMEntity_ptr())
+              new MoFEMEntity(moab,cpy_fit->get_Field_ptr(),(*miit)->get_RefMoFEMEntity_ptr())
             );
             p_e_miit = entsFields.insert(moabent);
           } catch (const std::exception& ex) {

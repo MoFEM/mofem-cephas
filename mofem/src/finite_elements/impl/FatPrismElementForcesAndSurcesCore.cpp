@@ -451,7 +451,7 @@ PetscErrorCode FatPrismElementForcesAndSurcesCore::operator()() {
       for(int ss = 0;ss!=2;ss++) {
 
         string field_name = !ss ? oit->rowFieldName : oit->colFieldName;
-        const MoFEMField* field_struture = mField.get_field_structure(field_name);
+        const Field* field_struture = mField.get_field_structure(field_name);
         BitFieldId data_id = field_struture->get_id();
 
         if((oit->getMoFEMFEPtr()->get_BitFieldId_data()&data_id).none()) {

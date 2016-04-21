@@ -53,11 +53,11 @@ namespace MoFEM {
 PetscErrorCode Core::field_axpy(const double alpha,const string& field_name_x,const string& field_name_y,
   bool error_if_missing,bool creat_if_missing) {
   PetscFunctionBegin;
-  MoFEMField_multiIndex::index<FieldName_mi_tag>::type::iterator x_fit = fIelds.get<FieldName_mi_tag>().find(field_name_x);
+  Field_multiIndex::index<FieldName_mi_tag>::type::iterator x_fit = fIelds.get<FieldName_mi_tag>().find(field_name_x);
   if(x_fit==fIelds.get<FieldName_mi_tag>().end()) {
     SETERRQ1(PETSC_COMM_SELF,1,"x field < %s > not found, (top tip: check spelling)",field_name_x.c_str());
   }
-  MoFEMField_multiIndex::index<FieldName_mi_tag>::type::iterator y_fit = fIelds.get<FieldName_mi_tag>().find(field_name_y);
+  Field_multiIndex::index<FieldName_mi_tag>::type::iterator y_fit = fIelds.get<FieldName_mi_tag>().find(field_name_y);
   if(y_fit==fIelds.get<FieldName_mi_tag>().end()) {
     SETERRQ1(PETSC_COMM_SELF,1,"y field < %s > not found, (top tip: check spelling)",field_name_y.c_str());
   }

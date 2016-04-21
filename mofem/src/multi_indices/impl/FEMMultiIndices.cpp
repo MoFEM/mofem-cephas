@@ -402,7 +402,7 @@ ostream& operator<<(ostream& os,const RefElement_VERTEX& e) {
   return os;
 }
 
-PetscErrorCode DefaultElementAdjacency::defaultVertex(Interface &moab,const MoFEMField *field_ptr,const EntFiniteElement *fe_ptr,Range &adjacency) {
+PetscErrorCode DefaultElementAdjacency::defaultVertex(Interface &moab,const Field *field_ptr,const EntFiniteElement *fe_ptr,Range &adjacency) {
   PetscFunctionBegin;
   MoABErrorCode rval;
   switch (field_ptr->get_space()) {
@@ -424,7 +424,7 @@ PetscErrorCode DefaultElementAdjacency::defaultVertex(Interface &moab,const MoFE
   }
   PetscFunctionReturn(0);
 }
-PetscErrorCode DefaultElementAdjacency::defaultEdge(Interface &moab,const MoFEMField *field_ptr,const EntFiniteElement *fe_ptr,Range &adjacency) {
+PetscErrorCode DefaultElementAdjacency::defaultEdge(Interface &moab,const Field *field_ptr,const EntFiniteElement *fe_ptr,Range &adjacency) {
   PetscFunctionBegin;
   ErrorCode rval;
   EntityHandle fe_ent = fe_ptr->get_ent();
@@ -460,7 +460,7 @@ PetscErrorCode DefaultElementAdjacency::defaultEdge(Interface &moab,const MoFEMF
   }
   PetscFunctionReturn(0);
 }
-PetscErrorCode DefaultElementAdjacency::defaultTri(Interface &moab,const MoFEMField *field_ptr,const EntFiniteElement *fe_ptr,Range &adjacency) {
+PetscErrorCode DefaultElementAdjacency::defaultTri(Interface &moab,const Field *field_ptr,const EntFiniteElement *fe_ptr,Range &adjacency) {
   PetscFunctionBegin;
   ErrorCode rval;
   Range nodes,edges;
@@ -510,7 +510,7 @@ PetscErrorCode DefaultElementAdjacency::defaultTri(Interface &moab,const MoFEMFi
   }
   PetscFunctionReturn(0);
 }
-PetscErrorCode DefaultElementAdjacency::defaultTet(Interface &moab,const MoFEMField *field_ptr,const EntFiniteElement *fe_ptr,Range &adjacency) {
+PetscErrorCode DefaultElementAdjacency::defaultTet(Interface &moab,const Field *field_ptr,const EntFiniteElement *fe_ptr,Range &adjacency) {
   PetscFunctionBegin;
   ErrorCode rval;
   Range nodes,edges,faces;
@@ -563,7 +563,7 @@ PetscErrorCode DefaultElementAdjacency::defaultTet(Interface &moab,const MoFEMFi
   PetscFunctionReturn(0);
 }
 PetscErrorCode DefaultElementAdjacency::defaultPrism(
-  Interface &moab,const MoFEMField *field_ptr,const EntFiniteElement *fe_ptr,Range &adjacency
+  Interface &moab,const Field *field_ptr,const EntFiniteElement *fe_ptr,Range &adjacency
 ) {
   PetscFunctionBegin;
   ErrorCode rval;
@@ -688,7 +688,7 @@ PetscErrorCode DefaultElementAdjacency::defaultPrism(
   PetscFunctionReturn(0);
 }
 PetscErrorCode DefaultElementAdjacency::defaultMeshset(
-  Interface &moab,const MoFEMField *field_ptr,const EntFiniteElement *fe_ptr,Range &adjacency
+  Interface &moab,const Field *field_ptr,const EntFiniteElement *fe_ptr,Range &adjacency
 ) {
   PetscFunctionBegin;
   ErrorCode rval;

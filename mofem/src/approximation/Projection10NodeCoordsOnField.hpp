@@ -133,7 +133,7 @@ struct ProjectionFieldOn10NodeTet: public Projection10NodeCoordsOnField {
   }
 
   Tag th;
-  MoFEMField_multiIndex::index<FieldName_mi_tag>::type::iterator field_it;
+  Field_multiIndex::index<FieldName_mi_tag>::type::iterator field_it;
   ublas::vector<double> L;
   PetscErrorCode preProcess() {
     PetscFunctionBegin;

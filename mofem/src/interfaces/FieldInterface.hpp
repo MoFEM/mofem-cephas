@@ -828,10 +828,10 @@ struct FieldInterface: public UnknownInterface {
    * \ingroup mofem_field
    *
    * \param name field name
-   * \return const MoFEMField*
+   * \return const Field*
    *
    */
-  virtual const MoFEMField* get_field_structure(const string& name) = 0;
+  virtual const Field* get_field_structure(const string& name) = 0;
 
   /**
     * \brief add finite element

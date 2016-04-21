@@ -517,7 +517,7 @@ MPI_Comm Core::get_comm() {
   return comm;
 }
 BitFieldId Core::get_BitFieldId(const string& name) const {
-  typedef MoFEMField_multiIndex::index<FieldName_mi_tag>::type field_set_by_name;
+  typedef Field_multiIndex::index<FieldName_mi_tag>::type field_set_by_name;
   const field_set_by_name &set = fIelds.get<FieldName_mi_tag>();
   field_set_by_name::iterator miit = set.find(name);
   if(miit==set.end()) {
@@ -526,13 +526,13 @@ BitFieldId Core::get_BitFieldId(const string& name) const {
   return miit->get_id();
 }
 string Core::get_BitFieldId_name(const BitFieldId id) const {
-  typedef MoFEMField_multiIndex::index<BitFieldId_mi_tag>::type field_set_by_id;
+  typedef Field_multiIndex::index<BitFieldId_mi_tag>::type field_set_by_id;
   const field_set_by_id &set = fIelds.get<BitFieldId_mi_tag>();
   field_set_by_id::iterator miit = set.find(id);
   return miit->get_name();
 }
 EntityHandle Core::get_field_meshset(const BitFieldId id) const {
-  typedef MoFEMField_multiIndex::index<BitFieldId_mi_tag>::type field_set_by_id;
+  typedef Field_multiIndex::index<BitFieldId_mi_tag>::type field_set_by_id;
   const field_set_by_id &set = fIelds.get<BitFieldId_mi_tag>();
   field_set_by_id::iterator miit = set.find(id);
   if(miit==set.end()) THROW_MESSAGE("field not in database (top tip: check spelling)");
@@ -543,14 +543,14 @@ EntityHandle Core::get_field_meshset(const string& name) const {
 }
 
 bool Core::check_field(const string &name) const {
-  typedef MoFEMField_multiIndex::index<FieldName_mi_tag>::type field_set_by_name;
+  typedef Field_multiIndex::index<FieldName_mi_tag>::type field_set_by_name;
   const field_set_by_name &set = fIelds.get<FieldName_mi_tag>();
   field_set_by_name::iterator miit = set.find(name);
   if(miit==set.end()) return false;
   return true;
 }
-const MoFEMField* Core::get_field_structure(const string& name) {
-  typedef MoFEMField_multiIndex::index<FieldName_mi_tag>::type field_set_by_name;
+const Field* Core::get_field_structure(const string& name) {
+  typedef Field_multiIndex::index<FieldName_mi_tag>::type field_set_by_name;
   const field_set_by_name &set = fIelds.get<FieldName_mi_tag>();
   field_set_by_name::iterator miit = set.find(name);
   if(miit==set.end()) {
@@ -905,7 +905,7 @@ PetscErrorCode Core::initialiseDatabseInformationFromMesh(int verb) {
     rval = moab.tag_get_data(th_FieldId,&*mit,1,&field_id); CHKERRQ_MOAB(rval);
     // Check if meshset if field meshset
     if(field_id!=0) {
-      pair<MoFEMField_multiIndex::iterator,bool> p;
+      pair<Field_multiIndex::iterator,bool> p;
       try {
         EntityHandle coord_sys_id;
         rval = moab.tag_get_data(th_CoordSysMeshSet,&*mit,1,&coord_sys_id); CHKERRQ_MOAB(rval);
@@ -918,7 +918,7 @@ PetscErrorCode Core::initialiseDatabseInformationFromMesh(int verb) {
         } else {
           cs_it = coordinateSystems.project<Meshset_mi_tag>(undefined_cs_it);
         }
-        p = fIelds.insert(MoFEMField(moab,*mit,&*cs_it));
+        p = fIelds.insert(Field(moab,*mit,&*cs_it));
         if(verb > 0) {
           ostringstream ss;
           ss << "read field " << *p.first << endl;;
@@ -1118,7 +1118,7 @@ PetscErrorCode Core::add_coordinate_system(const int cs_dim[],const string name)
 
 PetscErrorCode Core::set_field_coordinate_system(const string field_name,const string cs_name) {
   PetscFunctionBegin;
-  MoFEMField_multiIndex::index<FieldName_mi_tag>::type::iterator field_it;
+  Field_multiIndex::index<FieldName_mi_tag>::type::iterator field_it;
   field_it = fIelds.get<FieldName_mi_tag>().find(field_name);
   if(field_it==fIelds.get<FieldName_mi_tag>().end()) {
     SETERRQ1(
@@ -1175,7 +1175,7 @@ PetscErrorCode Core::set_field_coordinate_system(const string field_name,const s
     case LASTSPACE:
     {};
   }
-  bool success = fIelds.modify(fIelds.project<0>(field_it),MoFEMFieldChangeCoordinateSystem(&*cs_it));
+  bool success = fIelds.modify(fIelds.project<0>(field_it),FieldChangeCoordinateSystem(&*cs_it));
   if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
   PetscFunctionReturn(0);
 }

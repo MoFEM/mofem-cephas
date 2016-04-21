@@ -423,8 +423,8 @@ struct RefMoFEMEntity_change_set_nth_bit {
   * \brief struct keeps handle to entity in the field.
   * \ingroup ent_multi_indices
   */
-struct MoFEMEntity: public interface_MoFEMField<MoFEMField>, interface_RefMoFEMEntity<RefMoFEMEntity> {
-  typedef interface_MoFEMField<MoFEMField> interface_type_MoFEMField;
+struct MoFEMEntity: public interface_Field<Field>, interface_RefMoFEMEntity<RefMoFEMEntity> {
+  typedef interface_Field<Field> interface_type_Field;
   typedef interface_RefMoFEMEntity<RefMoFEMEntity> interface_type_RefMoFEMEntity;
   const RefMoFEMEntity *ref_mab_ent_ptr;
   const ApproximationOrder* tag_order_data;
@@ -434,12 +434,12 @@ struct MoFEMEntity: public interface_MoFEMField<MoFEMField>, interface_RefMoFEME
   const FieldCoefficientsNumber* tag_dof_rank_data;
   LocalUId local_uid;
   GlobalUId global_uid;
-  MoFEMEntity(Interface &moab,const MoFEMField *_field_ptr,const RefMoFEMEntity *_ref_mab_ent_ptr);
+  MoFEMEntity(Interface &moab,const Field *_field_ptr,const RefMoFEMEntity *_ref_mab_ent_ptr);
   ~MoFEMEntity();
   inline EntityHandle get_ent() const { return get_ref_ent(); }
   inline int get_nb_dofs_on_ent() const { return tag_FieldData_size/sizeof(FieldData); }
   inline FieldData* get_ent_FieldData() const { return const_cast<FieldData*>(tag_FieldData); }
-  inline int get_order_nb_dofs(int order) const { return (interface_MoFEMField<MoFEMField>::field_ptr->forder_table[get_ent_type()])(order); }
+  inline int get_order_nb_dofs(int order) const { return (interface_Field<Field>::field_ptr->forder_table[get_ent_type()])(order); }
   inline int get_order_nb_dofs_diff(int order) const { return get_order_nb_dofs(order)-get_order_nb_dofs(order-1); }
   inline ApproximationOrder get_max_order() const { return *((ApproximationOrder*)tag_order_data); }
   inline const RefMoFEMEntity* get_RefMoFEMEntity_ptr() const { return ref_mab_ent_ptr; }
@@ -475,13 +475,13 @@ struct MoFEMEntity: public interface_MoFEMField<MoFEMField>, interface_RefMoFEME
 template <typename T>
 struct interface_MoFEMEntity:
 public
-interface_MoFEMField<T>,
+interface_Field<T>,
 interface_RefMoFEMEntity<RefMoFEMEntity> {
 
   const boost::shared_ptr<T> sPtr; // FIXME: This will be moved down inherence tree
 
   interface_MoFEMEntity(const boost::shared_ptr<T> sptr):
-  interface_MoFEMField<T>(sptr.get()),
+  interface_Field<T>(sptr.get()),
   interface_RefMoFEMEntity<RefMoFEMEntity>(sptr->get_RefMoFEMEntity_ptr()),
   sPtr(sptr) {
   };
@@ -529,16 +529,16 @@ typedef multi_index_container<
     ordered_non_unique<
       tag<Ent_ParallelStatus>, const_mem_fun<MoFEMEntity::interface_type_RefMoFEMEntity,unsigned char,&MoFEMEntity::get_pstatus> >,
     ordered_non_unique<
-      tag<BitFieldId_mi_tag>, const_mem_fun<MoFEMEntity::interface_type_MoFEMField,const BitFieldId&,&MoFEMEntity::get_id>, LtBit<BitFieldId> >,
+      tag<BitFieldId_mi_tag>, const_mem_fun<MoFEMEntity::interface_type_Field,const BitFieldId&,&MoFEMEntity::get_id>, LtBit<BitFieldId> >,
     ordered_non_unique<
-      tag<FieldName_mi_tag>, const_mem_fun<MoFEMEntity::interface_type_MoFEMField,boost::string_ref,&MoFEMEntity::get_name_ref> >,
+      tag<FieldName_mi_tag>, const_mem_fun<MoFEMEntity::interface_type_Field,boost::string_ref,&MoFEMEntity::get_name_ref> >,
     hashed_non_unique<
       tag<Ent_mi_tag>, const_mem_fun<MoFEMEntity,EntityHandle,&MoFEMEntity::get_ent> >,
     ordered_non_unique<
       tag<Composite_Name_And_Ent_mi_tag>,
       composite_key<
       	MoFEMEntity,
-      	const_mem_fun<MoFEMEntity::interface_type_MoFEMField,boost::string_ref,&MoFEMEntity::get_name_ref>,
+      	const_mem_fun<MoFEMEntity::interface_type_Field,boost::string_ref,&MoFEMEntity::get_name_ref>,
       	const_mem_fun<MoFEMEntity,EntityHandle,&MoFEMEntity::get_ent>
       > >
   > > MoFEMEntity_multiIndex;

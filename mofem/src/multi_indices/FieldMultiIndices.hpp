@@ -34,7 +34,7 @@ typedef int (*FieldOrderFunct)(const int order);
   * \brief Provide data structure for (tensor) field approximation.
   * \ingroup dof_multi_indices
 
-  The MoFEMField is intended to provide support for fields, with a strong bias
+  The Field is intended to provide support for fields, with a strong bias
   towards supporting first and best the capabilities required for scientific
   computing applications. Since we work with discrete spaces, data structure
   has to carry information about type of approximation space, its regularity
@@ -43,7 +43,7 @@ typedef int (*FieldOrderFunct)(const int order);
   <https://redmine.scorec.rpi.edu/anonsvn/itaps/software/trunk/tools/doxygen/html/ifield.html>
 
   */
-struct MoFEMField {
+struct Field {
 
   EntityHandle meshSet; 		///< keeps entities for this meshset
   const CoordSys *coordSysPtr;
@@ -66,7 +66,7 @@ struct MoFEMField {
     *
     * \param meshset which keeps entities for this field
     */
-  MoFEMField(Interface &moab,const EntityHandle meshset,const CoordSys *coord_sys_ptr);
+  Field(Interface &moab,const EntityHandle meshset,const CoordSys *coord_sys_ptr);
 
   inline EntityHandle get_meshset() const { return meshSet; };
 
@@ -128,18 +128,18 @@ struct MoFEMField {
     }
     return 0;
   }
-  const MoFEMField* get_MoFEMField_ptr() const { return this; };
-  friend ostream& operator<<(ostream& os,const MoFEMField& e);
+  const Field* get_Field_ptr() const { return this; };
+  friend ostream& operator<<(ostream& os,const Field& e);
 };
 
 /**
- * \brief interface for MoFEMField
+ * \brief interface for Field
  * \ingroup dof_multi_indices
  */
 template <typename T>
-struct interface_MoFEMField {
+struct interface_Field {
   const T *field_ptr;
-  interface_MoFEMField(const T *_field_ptr): field_ptr(_field_ptr) {};
+  interface_Field(const T *_field_ptr): field_ptr(_field_ptr) {};
   inline EntityHandle get_meshset() const { return field_ptr->get_meshset(); };
 
   inline int getCoordSysId() const { return field_ptr->getCoordSysId(); }
@@ -187,44 +187,44 @@ struct interface_MoFEMField {
   inline FieldCoefficientsNumber get_nb_of_coeffs() const { return field_ptr->get_nb_of_coeffs(); };
 
 
-  inline const MoFEMField* get_MoFEMField_ptr() const { return field_ptr->get_MoFEMField_ptr(); };
+  inline const Field* get_Field_ptr() const { return field_ptr->get_Field_ptr(); };
 };
 
 /**
  * @relates multi_index_container
- * \brief MoFEMField_multiIndex for MoFEMField
+ * \brief Field_multiIndex for Field
  *
  */
 typedef multi_index_container<
-  MoFEMField,
+  Field,
   indexed_by<
     hashed_unique<
-      tag<BitFieldId_mi_tag>, const_mem_fun<MoFEMField,const BitFieldId&,&MoFEMField::get_id>, HashBit<BitFieldId>, EqBit<BitFieldId> >,
+      tag<BitFieldId_mi_tag>, const_mem_fun<Field,const BitFieldId&,&Field::get_id>, HashBit<BitFieldId>, EqBit<BitFieldId> >,
     ordered_unique<
-      tag<Meshset_mi_tag>, member<MoFEMField,EntityHandle,&MoFEMField::meshSet> >,
+      tag<Meshset_mi_tag>, member<Field,EntityHandle,&Field::meshSet> >,
     ordered_unique<
-      tag<FieldName_mi_tag>, const_mem_fun<MoFEMField,boost::string_ref,&MoFEMField::get_name_ref> >,
+      tag<FieldName_mi_tag>, const_mem_fun<Field,boost::string_ref,&Field::get_name_ref> >,
     ordered_non_unique<
-      tag<BitFieldId_space_mi_tag>, const_mem_fun<MoFEMField,FieldSpace,&MoFEMField::get_space> >
-  > > MoFEMField_multiIndex;
+      tag<BitFieldId_space_mi_tag>, const_mem_fun<Field,FieldSpace,&Field::get_space> >
+  > > Field_multiIndex;
 
 typedef multi_index_container<
-  const MoFEMField*,
+  const Field*,
   indexed_by<
     ordered_unique<
-      tag<BitFieldId_mi_tag>, const_mem_fun<MoFEMField,const BitFieldId&,&MoFEMField::get_id>, LtBit<BitFieldId>
+      tag<BitFieldId_mi_tag>, const_mem_fun<Field,const BitFieldId&,&Field::get_id>, LtBit<BitFieldId>
     >
-> > MoFEMField_multiIndex_view;
+> > Field_multiIndex_view;
 
 /** \brief Set field coordinate system
  * \ingroup ent_multi_indices
   */
-struct MoFEMFieldChangeCoordinateSystem {
+struct FieldChangeCoordinateSystem {
   const CoordSys *csPtr;
-  MoFEMFieldChangeCoordinateSystem(const CoordSys *cs_ptr):
+  FieldChangeCoordinateSystem(const CoordSys *cs_ptr):
   csPtr(cs_ptr) {
   }
-  void operator()(MoFEMField &e) {
+  void operator()(Field &e) {
     e.coordSysPtr = csPtr;
   }
 };
