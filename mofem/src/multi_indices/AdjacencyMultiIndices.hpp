@@ -27,17 +27,20 @@ namespace MoFEM {
   */
 struct MoFEMEntityEntFiniteElementAdjacencyMap {
   unsigned int by_other;
-  const MoFEMEntity *MoFEMEntity_ptr; ///< field entity
-  const EntFiniteElement *EntFiniteElement_ptr; ///< finite element entity
-  MoFEMEntityEntFiniteElementAdjacencyMap(const MoFEMEntity *_MoFEMEntity_ptr,const EntFiniteElement *_EntFiniteElement_ptr);
-  inline GlobalUId get_MoFEMFiniteElement_unique_id() const { return EntFiniteElement_ptr->get_global_unique_id(); }
-  inline EntityHandle get_MoFEMFiniteElement_meshset() const { return EntFiniteElement_ptr->get_meshset(); }
-  inline EntityHandle get_MoFEMFiniteElement_entity_handle() const { return EntFiniteElement_ptr->get_ent(); }
-  inline GlobalUId get_ent_unique_id() const { return MoFEMEntity_ptr->get_global_unique_id(); };
-  inline EntityHandle get_ent_meshset() const { return MoFEMEntity_ptr->get_meshset(); };
-  inline EntityHandle get_ent_entity_handle() const { return MoFEMEntity_ptr->get_ent(); };
-  BitFieldId get_ent_id() const { return MoFEMEntity_ptr->get_id(); }
-  BitFEId get_BitFEId() const { return EntFiniteElement_ptr->get_id(); }
+  const boost::shared_ptr<MoFEMEntity> mofemEntPtr; ///< field entity
+  const boost::shared_ptr<EntFiniteElement> entFePtr; ///< finite element entity
+  MoFEMEntityEntFiniteElementAdjacencyMap(
+    const boost::shared_ptr<MoFEMEntity> mofem_ent_ptr,
+    const boost::shared_ptr<EntFiniteElement> ent_fe_ptr
+  );
+  inline GlobalUId get_MoFEMFiniteElement_unique_id() const { return entFePtr->get_global_unique_id(); }
+  inline EntityHandle get_MoFEMFiniteElement_meshset() const { return entFePtr->get_meshset(); }
+  inline EntityHandle get_MoFEMFiniteElement_entity_handle() const { return entFePtr->get_ent(); }
+  inline GlobalUId get_ent_unique_id() const { return mofemEntPtr->get_global_unique_id(); };
+  inline EntityHandle get_ent_meshset() const { return mofemEntPtr->get_meshset(); };
+  inline EntityHandle get_ent_entity_handle() const { return mofemEntPtr->get_ent(); };
+  BitFieldId get_ent_id() const { return mofemEntPtr->get_id(); }
+  BitFEId get_BitFEId() const { return entFePtr->get_id(); }
   friend ostream& operator<<(ostream& os,const MoFEMEntityEntFiniteElementAdjacencyMap &e);
 };
 

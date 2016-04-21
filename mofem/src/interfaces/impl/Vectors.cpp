@@ -669,14 +669,16 @@ PetscErrorCode Core::set_other_global_ghost_vector(
           ApproximationOrder order = (*miit)->get_max_order();
           pair<MoFEMEntity_multiIndex::iterator,bool> p_e_miit;
           try {
-            MoFEMEntity moabent(moab,cpy_fit->get_MoFEMField_ptr(),(*miit)->get_RefMoFEMEntity_ptr());
+            boost::shared_ptr<MoFEMEntity> moabent(
+              new MoFEMEntity(moab,cpy_fit->get_MoFEMField_ptr(),(*miit)->get_RefMoFEMEntity_ptr())
+            );
             p_e_miit = entsFields.insert(moabent);
           } catch (const std::exception& ex) {
             ostringstream ss;
             ss << "throw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__ << endl;
             SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,ss.str().c_str());
           }
-          if(p_e_miit.first->get_max_order()<order) {
+          if((*p_e_miit.first)->get_max_order()<order) {
             bool success = entsFields.modify(p_e_miit.first,MoFEMEntity_change_order(moab,order));
             if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
           }
@@ -688,7 +690,7 @@ PetscErrorCode Core::set_other_global_ghost_vector(
             boost::shared_ptr<DofMoFEMEntity> mdof =
             boost::shared_ptr<DofMoFEMEntity>(
               new DofMoFEMEntity(
-                &*(p_e_miit.first),
+                *(p_e_miit.first),
                 (*diit)->get_dof_order(),
                 (*diit)->get_dof_coeff_idx(),
                 (*diit)->get_EntDofIdx()

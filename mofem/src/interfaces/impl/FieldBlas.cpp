@@ -70,14 +70,14 @@ PetscErrorCode Core::field_axpy(const double alpha,const string& field_name_x,co
   MoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator x_eit;
   x_eit = entsFields.get<FieldName_mi_tag>().lower_bound(field_name_x.c_str());
   for(;x_eit!=entsFields.get<FieldName_mi_tag>().upper_bound(field_name_x.c_str());x_eit++) {
-    int nb_dofs_on_x_entity = x_eit->tag_FieldData_size/sizeof(FieldData);
+    int nb_dofs_on_x_entity = (*x_eit)->tag_FieldData_size/sizeof(FieldData);
     for(int dd = 0;dd<nb_dofs_on_x_entity;dd++) {
-      ApproximationOrder dof_order = x_eit->tag_dof_order_data[dd];
-      FieldCoefficientsNumber dof_rank = x_eit->tag_dof_rank_data[dd];
-      FieldData data = x_eit->tag_FieldData[dd];
+      ApproximationOrder dof_order = (*x_eit)->tag_dof_order_data[dd];
+      FieldCoefficientsNumber dof_rank = (*x_eit)->tag_dof_rank_data[dd];
+      FieldData data = (*x_eit)->tag_FieldData[dd];
       DofMoFEMEntity_multiIndex::index<Composite_Name_Ent_Order_And_CoeffIdx_mi_tag>::type::iterator dit;
       dit = dofsField.get<Composite_Name_Ent_Order_And_CoeffIdx_mi_tag>().find(
-        boost::make_tuple(field_name_y.c_str(),x_eit->get_ent(),dof_order,dof_rank)
+        boost::make_tuple(field_name_y.c_str(),(*x_eit)->get_ent(),dof_order,dof_rank)
       );
       if(dit == dofsField.get<Composite_Name_Ent_Order_And_CoeffIdx_mi_tag>().end()) {
         if(creat_if_missing) {
@@ -85,7 +85,7 @@ PetscErrorCode Core::field_axpy(const double alpha,const string& field_name_x,co
         } else {
           if(error_if_missing) {
             ostringstream ss;
-            ss << "dof on ent " << x_eit->get_ent() << " order " << dof_order << " rank " << dof_rank << " does not exist";
+            ss << "dof on ent " << (*x_eit)->get_ent() << " order " << dof_order << " rank " << dof_rank << " does not exist";
             SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,ss.str().c_str());
           } else {
             continue;

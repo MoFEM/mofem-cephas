@@ -944,7 +944,7 @@ PetscErrorCode Core::initialiseDatabseInformationFromMesh(int verb) {
         for(;eit!=ents.end();eit++) {
           pair<RefMoFEMEntity_multiIndex::iterator,bool> p_ref_ent = refinedEntities.insert(RefMoFEMEntity(moab,*eit));
           try {
-            MoFEMEntity moabent(moab,&*p.first,&*p_ref_ent.first);
+            boost::shared_ptr<MoFEMEntity> moabent(new MoFEMEntity(moab,&*p.first,&*p_ref_ent.first));
             pair<MoFEMEntity_multiIndex::iterator,bool> p_ent = entsFields.insert(moabent);
             NOT_USED(p_ent);
           } catch (const std::exception& ex) {

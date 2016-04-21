@@ -94,8 +94,10 @@ struct CreateRowComressedADJMatrix: public Core {
   PetscErrorCode getEntityAdjacenies(
     ProblemsByName::iterator p_miit,
     typename boost::multi_index::index<NumeredDofMoFEMEntity_multiIndex,TAG>::type::iterator mit_row,
-    MoFEMEntity* &mofem_ent_ptr,NumeredDofMoFEMEntity_multiIndex_uid_view_hashed &dofs_col_view,int verb);
-
+    boost::shared_ptr<MoFEMEntity>& mofem_ent_ptr,
+    NumeredDofMoFEMEntity_multiIndex_uid_view_hashed &dofs_col_view,
+    int verb
+  );
 
 };
 
@@ -103,13 +105,14 @@ template<typename TAG>
 PetscErrorCode CreateRowComressedADJMatrix::getEntityAdjacenies(
   ProblemsByName::iterator p_miit,
   typename boost::multi_index::index<NumeredDofMoFEMEntity_multiIndex,TAG>::type::iterator mit_row,
-  MoFEMEntity* &mofem_ent_ptr,NumeredDofMoFEMEntity_multiIndex_uid_view_hashed &dofs_col_view,
+  boost::shared_ptr<MoFEMEntity>& mofem_ent_ptr,
+  NumeredDofMoFEMEntity_multiIndex_uid_view_hashed &dofs_col_view,
   int verb
 ) {
   PetscFunctionBegin;
 
   // get adjeacent element
-  mofem_ent_ptr = const_cast<MoFEMEntity*>((*mit_row)->get_MoFEMEntity_ptr());
+  mofem_ent_ptr = (*mit_row)->get_MoFEMEntity_ptr();
 
   AdjByEnt::iterator adj_miit,hi_adj_miit;
   adj_miit = entFEAdjacencies.get<Unique_mi_tag>().lower_bound(mofem_ent_ptr->get_global_unique_id());
@@ -118,11 +121,11 @@ PetscErrorCode CreateRowComressedADJMatrix::getEntityAdjacenies(
   dofs_col_view.clear();
   for (; adj_miit != hi_adj_miit; adj_miit++) {
     if (adj_miit->by_other&BYROW) {
-      if ((adj_miit->EntFiniteElement_ptr->get_id()&p_miit->get_BitFEId()).none()) {
+      if ((adj_miit->entFePtr->get_id()&p_miit->get_BitFEId()).none()) {
         // if element is not part of problem
         continue;
       }
-      if ((adj_miit->EntFiniteElement_ptr->get_BitRefLevel()&(*mit_row)->get_BitRefLevel()).none()) {
+      if ((adj_miit->entFePtr->get_BitRefLevel()&(*mit_row)->get_BitRefLevel()).none()) {
         // if entity is not problem refinement level
         continue;
       }
@@ -132,8 +135,8 @@ PetscErrorCode CreateRowComressedADJMatrix::getEntityAdjacenies(
 
           ss << "rank " << rAnk << ":  numered_dofs_cols" << endl;
           DofMoFEMEntity_multiIndex_uid_view::iterator dit, hi_dit;
-          dit = adj_miit->EntFiniteElement_ptr->col_dof_view.begin();
-          hi_dit = adj_miit->EntFiniteElement_ptr->col_dof_view.end();
+          dit = adj_miit->entFePtr->col_dof_view.begin();
+          hi_dit = adj_miit->entFePtr->col_dof_view.end();
 
           for (; dit != hi_dit; dit++) {
             ss << "\t" << **dit << endl;
@@ -141,11 +144,11 @@ PetscErrorCode CreateRowComressedADJMatrix::getEntityAdjacenies(
           PetscSynchronizedPrintf(comm, "%s", ss.str().c_str());
       }
 
-      ierr = adj_miit->EntFiniteElement_ptr->
-        get_MoFEMFiniteElement_col_dof_view(
-          p_miit->numered_dofs_cols,
-          dofs_col_view,
-          Interface::UNION); CHKERRQ(ierr);
+      ierr = adj_miit->entFePtr->get_MoFEMFiniteElement_col_dof_view(
+        p_miit->numered_dofs_cols,
+        dofs_col_view,
+        Interface::UNION
+      ); CHKERRQ(ierr);
 
     }
 
@@ -210,7 +213,7 @@ PetscErrorCode CreateRowComressedADJMatrix::createMatArrays(
     //get adjacent nodes on other partitions
     vector<vector<int> > dofs_vec(sIze);
 
-    MoFEMEntity *mofem_ent_ptr = NULL;
+    boost::shared_ptr<MoFEMEntity> mofem_ent_ptr;
     NumeredDofMoFEMEntity_multiIndex_uid_view_hashed dofs_col_view;
 
     typename boost::multi_index::index<NumeredDofMoFEMEntity_multiIndex,TAG>::type::iterator mit_row,hi_mit_row;
@@ -226,7 +229,7 @@ PetscErrorCode CreateRowComressedADJMatrix::createMatArrays(
       unsigned char pstatus = (*mit_row)->get_pstatus();
       if((pstatus & PSTATUS_NOT_OWNED) && (pstatus&(PSTATUS_SHARED|PSTATUS_MULTISHARED))) {
 
-        if( (mofem_ent_ptr == NULL) ? 1 : mofem_ent_ptr->get_global_unique_id() != (*mit_row)->get_MoFEMEntity_ptr()->get_global_unique_id() ) {
+        if( (!mofem_ent_ptr) ? 1 : mofem_ent_ptr->get_global_unique_id() != (*mit_row)->get_MoFEMEntity_ptr()->get_global_unique_id() ) {
           // get entity adjacencies
           ierr = getEntityAdjacenies<TAG>(p_miit,mit_row,mofem_ent_ptr,dofs_col_view,verb); CHKERRQ(ierr);
           // Add that row. Patterns is that first index is row index, second is
@@ -369,7 +372,7 @@ PetscErrorCode CreateRowComressedADJMatrix::createMatArrays(
   }
 
   int nb_loc_row_from_iterators = distance(miit_row,hi_miit_row);
-  MoFEMEntity *mofem_ent_ptr = NULL;
+  boost::shared_ptr<MoFEMEntity> mofem_ent_ptr;
   int row_last_evaluated_idx = -1;
 
   vector<DofIdx> dofs_vec;
@@ -391,7 +394,7 @@ PetscErrorCode CreateRowComressedADJMatrix::createMatArrays(
     // Get entity adjacencies, no need to repeat that operation for dofs when
     // are on the same entity. For simplicity is assumed that those share the
     // same adjacencies.
-    if( (mofem_ent_ptr == NULL) ? 1 : (mofem_ent_ptr->get_global_unique_id() != (*miit_row)->get_MoFEMEntity_ptr()->get_global_unique_id()) ) {
+    if( (!mofem_ent_ptr) ? 1 : (mofem_ent_ptr->get_global_unique_id() != (*miit_row)->get_MoFEMEntity_ptr()->get_global_unique_id()) ) {
 
       // get entity adjacencies
       ierr = getEntityAdjacenies<TAG>(p_miit,miit_row,mofem_ent_ptr,dofs_col_view,verb); CHKERRQ(ierr);

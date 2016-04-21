@@ -160,15 +160,16 @@ ostream& operator<<(ostream& os,const MoFEMField& e) {
 
 //MoFEMEntityEntFiniteElementAdjacencyMap
 MoFEMEntityEntFiniteElementAdjacencyMap::MoFEMEntityEntFiniteElementAdjacencyMap(
-  const MoFEMEntity *_MoFEMEntity_ptr,const EntFiniteElement *_EntFiniteElement_ptr
+  const boost::shared_ptr<MoFEMEntity> mofem_ent_ptr,
+  const boost::shared_ptr<EntFiniteElement> ent_fe_ptr
 ):
 by_other(0),
-MoFEMEntity_ptr(_MoFEMEntity_ptr),
-EntFiniteElement_ptr(_EntFiniteElement_ptr) {}
+mofemEntPtr(mofem_ent_ptr),
+entFePtr(ent_fe_ptr) {}
 
 ostream& operator<<(ostream& os,const MoFEMEntityEntFiniteElementAdjacencyMap& e) {
   os << "by_other " << bitset<3>(e.by_other) << " "
-    << *e.MoFEMEntity_ptr << endl << *e.EntFiniteElement_ptr->sFePtr;
+    << *e.mofemEntPtr << endl << *e.entFePtr->sFePtr;
   return os;
 }
 

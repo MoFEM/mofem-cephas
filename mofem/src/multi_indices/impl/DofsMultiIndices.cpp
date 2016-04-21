@@ -39,7 +39,7 @@ namespace MoFEM {
 
 //moab dof
 DofMoFEMEntity::DofMoFEMEntity(
-  const MoFEMEntity *entity_ptr,
+  const boost::shared_ptr<MoFEMEntity> entity_ptr,
   const ApproximationOrder dof_order,
   const FieldCoefficientsNumber dof_rank,
   const DofIdx _dof
@@ -47,6 +47,16 @@ DofMoFEMEntity::DofMoFEMEntity(
 interface_MoFEMEntity<MoFEMEntity>(entity_ptr),
 dof(_dof),
 active(false) {
+
+  if(!entity_ptr) {
+    THROW_MESSAGE("MoFEMEntity pinter not initialized");
+  }
+  if(!sPtr) {
+    THROW_MESSAGE("MoFEMEntity pinter not initialized");
+  }
+  if(!get_MoFEMEntity_ptr()) {
+    THROW_MESSAGE("MoFEMEntity pinter not initialized");
+  }
 
   if(field_ptr->tag_dof_order_data==NULL) {
     ostringstream ss;

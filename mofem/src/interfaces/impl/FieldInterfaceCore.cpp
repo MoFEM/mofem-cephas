@@ -763,7 +763,7 @@ PetscErrorCode Core::set_field_order(const Range &ents,const BitFieldId id,const
   if(eiit != set.end()) {
     ent_set_by_id::iterator hi_eiit = set.upper_bound(id);
     for(;eiit!=hi_eiit;eiit++) {
-      ents_id_view.insert(&*eiit);
+      ents_id_view.insert(*eiit);
     }
   }
   if(verb>1) {
@@ -810,8 +810,8 @@ PetscErrorCode Core::set_field_order(const Range &ents,const BitFieldId id,const
       const ApproximationOrder old_approximation_order = (*vit)->get_max_order();
       if(old_approximation_order==order) continue;
       MoFEMEntity_multiIndex::iterator miit = entsFields.get<Unique_mi_tag>().find((*vit)->get_global_unique_id());
-      if(miit->get_max_order()<order) nb_ents_set_order_up++;
-      if(miit->get_max_order()>order) nb_ents_set_order_down++;
+      if((*miit)->get_max_order()<order) nb_ents_set_order_up++;
+      if((*miit)->get_max_order()>order) nb_ents_set_order_down++;
 
       {
 
@@ -821,8 +821,8 @@ PetscErrorCode Core::set_field_order(const Range &ents,const BitFieldId id,const
 
         typedef DofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type dof_set_type;
         dof_set_type& set_set = dofsField.get<Composite_Name_And_Ent_mi_tag>();
-        dof_set_type::iterator dit = set_set.lower_bound(boost::make_tuple(miit->get_name_ref(),miit->get_ent()));
-        dof_set_type::iterator hi_dit = set_set.upper_bound(boost::make_tuple(miit->get_name_ref(),miit->get_ent()));
+        dof_set_type::iterator dit = set_set.lower_bound(boost::make_tuple((*miit)->get_name_ref(),(*miit)->get_ent()));
+        dof_set_type::iterator hi_dit = set_set.upper_bound(boost::make_tuple((*miit)->get_name_ref(),(*miit)->get_ent()));
 
         for(;dit!=hi_dit;dit++) {
           if((*dit)->get_dof_order()<=order) continue;
@@ -854,7 +854,7 @@ PetscErrorCode Core::set_field_order(const Range &ents,const BitFieldId id,const
       try {
 
         // increase order
-        MoFEMEntity moabent(moab,&*miit,&*miit_ref_ent);
+        boost::shared_ptr<MoFEMEntity> moabent(new MoFEMEntity(moab,&*miit,&*miit_ref_ent));
         pair<MoFEMEntity_multiIndex::iterator,bool> e_miit = entsFields.insert(moabent);
         bool success = entsFields.modify(e_miit.first,MoFEMEntity_change_order(moab,order));
         if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
@@ -980,7 +980,7 @@ PetscErrorCode Core::dofs_NoField(const BitFieldId id,map<EntityType,int> &dof_c
     pair<MoFEMEntity_multiIndex::iterator,bool> e_miit;
     try {
       //create database entity
-      MoFEMEntity moabent(moab,&*miit,&*miit_ref_ent);
+      boost::shared_ptr<MoFEMEntity> moabent(new MoFEMEntity(moab,&*miit,&*miit_ref_ent));
       e_miit = entsFields.insert(moabent);
     } catch (MoFEMException const &e) {
       SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
@@ -994,16 +994,16 @@ PetscErrorCode Core::dofs_NoField(const BitFieldId id,map<EntityType,int> &dof_c
     if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
     FieldCoefficientsNumber rank = 0;
     //create dofs on this entity (nb. of dofs is equal to rank)
-    for(;rank<e_miit.first->get_nb_of_coeffs();rank++) {
+    for(;rank<(*e_miit.first)->get_nb_of_coeffs();rank++) {
       pair<DofMoFEMEntity_multiIndex::iterator,bool> d_miit;
       //check if dof is in darabase
       d_miit.first = dofsField.project<0>(
-        dofsField.get<Unique_mi_tag>().find(DofMoFEMEntity::get_global_unique_id_calculate(rank,&*(e_miit.first)))
+        dofsField.get<Unique_mi_tag>().find(DofMoFEMEntity::get_global_unique_id_calculate(rank,*(e_miit.first)))
       );
       //if dof is not in databse
       if(d_miit.first==dofsField.end()) {
         //insert dof
-        d_miit = dofsField.insert(boost::shared_ptr<DofMoFEMEntity>(new DofMoFEMEntity(&*(e_miit.first),0,rank,rank)));
+        d_miit = dofsField.insert(boost::shared_ptr<DofMoFEMEntity>(new DofMoFEMEntity(*(e_miit.first),0,rank,rank)));
         if(d_miit.second) {
           dof_counter[MBENTITYSET]++; // Count entities in the meshset
         }
@@ -1011,8 +1011,8 @@ PetscErrorCode Core::dofs_NoField(const BitFieldId id,map<EntityType,int> &dof_c
         if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
       }
       //check consistency
-      assert((*d_miit.first)->get_ent_type()==e_miit.first->get_ent_type());
-      assert((*d_miit.first)->get_id()==e_miit.first->get_id());
+      assert((*d_miit.first)->get_ent_type()==(*e_miit.first)->get_ent_type());
+      assert((*d_miit.first)->get_id()==(*e_miit.first)->get_id());
       assert((*d_miit.first)->get_max_order()==0);
     }
   }
@@ -1087,7 +1087,7 @@ PetscErrorCode Core::dofs_L2H1HcurlHdiv(
       rval = moab.tag_set_data(miit->th_AppOrder,&*eit,1,&order); CHKERRQ_MOAB(rval);
       pair<MoFEMEntity_multiIndex::iterator,bool> p_e_miit;
       try {
-        MoFEMEntity moabent(moab,&*miit,&*miit_ref_ent);
+        boost::shared_ptr<MoFEMEntity> moabent(new MoFEMEntity(moab,&*miit,&*miit_ref_ent));
         p_e_miit = entsFields.insert(moabent);
       } catch (MoFEMException const &e) {
         SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
@@ -1102,19 +1102,19 @@ PetscErrorCode Core::dofs_L2H1HcurlHdiv(
       e_miit = p_e_miit.first;
     }
     // insert dofmoabent into mofem databse
-    int nb_dofs_on_ent = e_miit->get_nb_dofs_on_ent();
-    int nb_active_dosf_on_ent = e_miit->get_nb_of_coeffs()*e_miit->get_order_nb_dofs(e_miit->get_max_order());
+    int nb_dofs_on_ent = (*e_miit)->get_nb_dofs_on_ent();
+    int nb_active_dosf_on_ent = (*e_miit)->get_nb_of_coeffs()*(*e_miit)->get_order_nb_dofs((*e_miit)->get_max_order());
     int DD = 0;
     int oo = 0;
     // loop orders (loop until max entity order is set)
-    for(;oo<=e_miit->get_max_order()||DD<nb_dofs_on_ent;oo++) {
+    for(;oo<=(*e_miit)->get_max_order()||DD<nb_dofs_on_ent;oo++) {
       //loop nb. dofs at order oo
-      for(int dd = 0;dd<e_miit->get_order_nb_dofs_diff(oo);dd++) {
+      for(int dd = 0;dd<(*e_miit)->get_order_nb_dofs_diff(oo);dd++) {
         //loop rank
-        for(int rr = 0;rr<e_miit->get_nb_of_coeffs();rr++,DD++) {
+        for(int rr = 0;rr<(*e_miit)->get_nb_of_coeffs();rr++,DD++) {
           pair<DofMoFEMEntity_multiIndex::iterator,bool> d_miit;
           try {
-            boost::shared_ptr<DofMoFEMEntity> mdof(new DofMoFEMEntity(&*(e_miit),oo,rr,DD));
+            boost::shared_ptr<DofMoFEMEntity> mdof(new DofMoFEMEntity(*(e_miit),oo,rr,DD));
             d_miit = dofsField.insert(mdof);
             if(d_miit.second) {
               bool is_active;
@@ -1129,13 +1129,13 @@ PetscErrorCode Core::dofs_L2H1HcurlHdiv(
               if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
             }
             //check ent
-            if((*d_miit.first)->get_ent()!=e_miit->get_ent()) {
+            if((*d_miit.first)->get_ent()!=(*e_miit)->get_ent()) {
               SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
             }
-            if((*d_miit.first)->get_ent_type()!=e_miit->get_ent_type()) {
+            if((*d_miit.first)->get_ent_type()!=(*e_miit)->get_ent_type()) {
               SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
             }
-            if((*d_miit.first)->get_id()!=e_miit->get_id()) {
+            if((*d_miit.first)->get_id()!=(*e_miit)->get_id()) {
               SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
             }
             //check dof
@@ -1146,7 +1146,7 @@ PetscErrorCode Core::dofs_L2H1HcurlHdiv(
               ss << "but is " << *(*d_miit.first) << endl;
               SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,ss.str().c_str());
             }
-            if((*d_miit.first)->get_max_order()!=e_miit->get_max_order()) {
+            if((*d_miit.first)->get_max_order()!=(*e_miit)->get_max_order()) {
               SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
             }
           } catch (MoFEMException const &e) {
@@ -1155,7 +1155,7 @@ PetscErrorCode Core::dofs_L2H1HcurlHdiv(
         }
       }
     }
-    if(DD != e_miit->get_nb_dofs_on_ent()) {
+    if(DD != (*e_miit)->get_nb_dofs_on_ent()) {
       SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
     }
   }
@@ -2013,7 +2013,9 @@ PetscErrorCode Core::build_adjacencies(const Range &ents,int verb) {
       if( ent_uid == (*rvit)->get_MoFEMEntity_ptr()->get_global_unique_id()) continue;
       ent_uid = (*rvit)->get_MoFEMEntity_ptr()->get_global_unique_id();
       pair<MoFEMEntityEntFiniteElementAdjacencyMap_multiIndex::iterator,bool> p;
-      p = entFEAdjacencies.insert(MoFEMEntityEntFiniteElementAdjacencyMap((*rvit)->get_MoFEMEntity_ptr(),&*(*fit)));
+      p = entFEAdjacencies.insert(
+        MoFEMEntityEntFiniteElementAdjacencyMap((*rvit)->get_MoFEMEntity_ptr(),*fit)
+      );
       bool success = entFEAdjacencies.modify(p.first,MoFEMEntityEntFiniteElementAdjacencyMap_change_ByWhat(BYROW));
       if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
     }
@@ -2024,7 +2026,9 @@ PetscErrorCode Core::build_adjacencies(const Range &ents,int verb) {
       if( ent_uid == (*cvit)->get_MoFEMEntity_ptr()->get_global_unique_id()) continue;
       ent_uid = (*cvit)->get_MoFEMEntity_ptr()->get_global_unique_id();
       pair<MoFEMEntityEntFiniteElementAdjacencyMap_multiIndex::iterator,bool> p;
-      p = entFEAdjacencies.insert(MoFEMEntityEntFiniteElementAdjacencyMap((*cvit)->get_MoFEMEntity_ptr(),&*(*fit)));
+      p = entFEAdjacencies.insert(
+        MoFEMEntityEntFiniteElementAdjacencyMap((*cvit)->get_MoFEMEntity_ptr(),*fit)
+      );
       bool success = entFEAdjacencies.modify(p.first,MoFEMEntityEntFiniteElementAdjacencyMap_change_ByWhat(BYCOL));
       if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
     }
@@ -2035,7 +2039,9 @@ PetscErrorCode Core::build_adjacencies(const Range &ents,int verb) {
       if( ent_uid == (*dvit)->get_MoFEMEntity_ptr()->get_global_unique_id()) continue;
       ent_uid = (*dvit)->get_MoFEMEntity_ptr()->get_global_unique_id();
       pair<MoFEMEntityEntFiniteElementAdjacencyMap_multiIndex::iterator,bool> p;
-      p = entFEAdjacencies.insert(MoFEMEntityEntFiniteElementAdjacencyMap((*dvit)->get_MoFEMEntity_ptr(),&**fit));
+      p = entFEAdjacencies.insert(
+        MoFEMEntityEntFiniteElementAdjacencyMap((*dvit)->get_MoFEMEntity_ptr(),*fit)
+      );
       bool success = entFEAdjacencies.modify(p.first,MoFEMEntityEntFiniteElementAdjacencyMap_change_ByWhat(BYDATA));
       if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
     }
@@ -3158,12 +3164,12 @@ PetscErrorCode Core::clear_dofs_fields(const BitRefLevel &bit,const BitRefLevel 
       ait = entFEAdjacencies.get<Unique_mi_tag>().lower_bound((*dit)->get_MoFEMEntity_ptr()->get_global_unique_id());
       hi_ait = entFEAdjacencies.get<Unique_mi_tag>().upper_bound((*dit)->get_MoFEMEntity_ptr()->get_global_unique_id());
       for(;ait!=hi_ait;ait++) {
-        EntFiniteElement *EntFiniteElement_ptr;
-        EntFiniteElement_ptr = const_cast<EntFiniteElement *>(ait->EntFiniteElement_ptr);
-        EntFiniteElement_ptr->row_dof_view.erase((*dit)->get_global_unique_id());
-        EntFiniteElement_ptr->col_dof_view.erase((*dit)->get_global_unique_id());
-        EntFiniteElement_ptr->data_dof_view.erase((*dit)->get_global_unique_id());
-        EntFiniteElement_ptr->data_dofs.get<Unique_mi_tag>().erase((*dit)->get_global_unique_id());
+        boost::shared_ptr<EntFiniteElement> ent_fe_ptr;
+        ent_fe_ptr = ait->entFePtr;
+        ent_fe_ptr->row_dof_view.erase((*dit)->get_global_unique_id());
+        ent_fe_ptr->col_dof_view.erase((*dit)->get_global_unique_id());
+        ent_fe_ptr->data_dof_view.erase((*dit)->get_global_unique_id());
+        ent_fe_ptr->data_dofs.get<Unique_mi_tag>().erase((*dit)->get_global_unique_id());
       }
       dit = dofsField.erase(dit);
     }
@@ -3183,12 +3189,12 @@ PetscErrorCode Core::clear_dofs_fields(const string &name,const Range ents,int v
       ait = entFEAdjacencies.get<Unique_mi_tag>().lower_bound((*dit)->get_MoFEMEntity_ptr()->get_global_unique_id());
       hi_ait = entFEAdjacencies.get<Unique_mi_tag>().upper_bound((*dit)->get_MoFEMEntity_ptr()->get_global_unique_id());
       for(;ait!=hi_ait;ait++) {
-        EntFiniteElement *EntFiniteElement_ptr;
-        EntFiniteElement_ptr = const_cast<EntFiniteElement *>(ait->EntFiniteElement_ptr);
-        EntFiniteElement_ptr->row_dof_view.erase((*dit)->get_global_unique_id());
-        EntFiniteElement_ptr->col_dof_view.erase((*dit)->get_global_unique_id());
-        EntFiniteElement_ptr->data_dof_view.erase((*dit)->get_global_unique_id());
-        EntFiniteElement_ptr->data_dofs.get<Unique_mi_tag>().erase((*dit)->get_global_unique_id());
+        boost::shared_ptr<EntFiniteElement> ent_fe_ptr;
+        ent_fe_ptr = ait->entFePtr;
+        ent_fe_ptr->row_dof_view.erase((*dit)->get_global_unique_id());
+        ent_fe_ptr->col_dof_view.erase((*dit)->get_global_unique_id());
+        ent_fe_ptr->data_dof_view.erase((*dit)->get_global_unique_id());
+        ent_fe_ptr->data_dofs.get<Unique_mi_tag>().erase((*dit)->get_global_unique_id());
       }
       dit = dofsField.get<Composite_Name_And_Ent_mi_tag>().erase(dit);
     }
@@ -3203,11 +3209,11 @@ PetscErrorCode Core::clear_ents_fields(const BitRefLevel &bit,const BitRefLevel 
   MoFEMEntity_multiIndex::iterator eit;
   eit = entsFields.begin();
   for(;eit!=entsFields.end();) {
-    if(eit->get_ent_type()==MBENTITYSET) {
+    if((*eit)->get_ent_type()==MBENTITYSET) {
       eit++;
       continue;
     }
-    BitRefLevel bit2 = eit->get_BitRefLevel();
+    BitRefLevel bit2 = (*eit)->get_BitRefLevel();
     if((bit2&mask)!=bit2) {
       eit++;
       continue;
@@ -3216,10 +3222,10 @@ PetscErrorCode Core::clear_ents_fields(const BitRefLevel &bit,const BitRefLevel 
       eit++;
       continue;
     }
-    EntityHandle ent = eit->get_ent();
-    rval = moab.tag_delete_data(eit->field_ptr->th_AppOrder,&ent,1); CHKERRQ_MOAB(rval);
-    if(eit->tag_FieldData_size>0) {
-      rval = moab.tag_delete_data(eit->field_ptr->th_FieldData,&ent,1); CHKERRQ_MOAB(rval);
+    EntityHandle ent = (*eit)->get_ent();
+    rval = moab.tag_delete_data((*eit)->field_ptr->th_AppOrder,&ent,1); CHKERRQ_MOAB(rval);
+    if((*eit)->tag_FieldData_size>0) {
+      rval = moab.tag_delete_data((*eit)->field_ptr->th_FieldData,&ent,1); CHKERRQ_MOAB(rval);
     }
     eit = entsFields.erase(eit);
   }
@@ -3284,8 +3290,8 @@ PetscErrorCode Core::clear_adjacencies_finite_elements(const BitRefLevel &bit,co
   MoFEMEntityEntFiniteElementAdjacencyMap_multiIndex::iterator ait;
   ait = entFEAdjacencies.begin();
   for(;ait!=entFEAdjacencies.end();) {
-    BitRefLevel bit2 = ait->EntFiniteElement_ptr->get_BitRefLevel();
-    if(ait->EntFiniteElement_ptr->get_ent_type()==MBENTITYSET) {
+    BitRefLevel bit2 = ait->entFePtr->get_BitRefLevel();
+    if(ait->entFePtr->get_ent_type()==MBENTITYSET) {
       ait++;
       continue;
     }
@@ -3310,10 +3316,10 @@ PetscErrorCode Core::clear_adjacencies_finite_elements(const string &name,const 
     ait = entFEAdjacencies.get<FEEnt_mi_tag>().lower_bound(*eit);
     hi_ait = entFEAdjacencies.get<FEEnt_mi_tag>().upper_bound(*eit);
     for(;ait!=hi_ait;) {
-      if(ait->EntFiniteElement_ptr->get_name() == name) {
-	ait = entFEAdjacencies.get<FEEnt_mi_tag>().erase(ait);
+      if(ait->entFePtr->get_name() == name) {
+        ait = entFEAdjacencies.get<FEEnt_mi_tag>().erase(ait);
       } else {
-	ait++;
+        ait++;
       }
     }
   }
@@ -3325,8 +3331,8 @@ PetscErrorCode Core::clear_adjacencies_entities(const BitRefLevel &bit,const Bit
   MoFEMEntityEntFiniteElementAdjacencyMap_multiIndex::iterator ait;
   ait = entFEAdjacencies.begin();
   for(;ait!=entFEAdjacencies.end();) {
-    BitRefLevel bit2 = ait->MoFEMEntity_ptr->get_BitRefLevel();
-    if(ait->MoFEMEntity_ptr->get_ent_type()==MBENTITYSET) {
+    BitRefLevel bit2 = ait->mofemEntPtr->get_BitRefLevel();
+    if(ait->mofemEntPtr->get_ent_type()==MBENTITYSET) {
       ait++;
       continue;
     }
@@ -3351,7 +3357,7 @@ PetscErrorCode Core::clear_adjacencies_entities(const string &name,const Range &
     ait = entFEAdjacencies.get<Ent_mi_tag>().lower_bound(*eit);
     hi_ait = entFEAdjacencies.get<Ent_mi_tag>().upper_bound(*eit);
     for(;ait!=hi_ait;) {
-      if(ait->MoFEMEntity_ptr->get_name() == name) {
+      if(ait->mofemEntPtr->get_name() == name) {
         ait = entFEAdjacencies.get<Ent_mi_tag>().erase(ait);
       } else {
         ait++;

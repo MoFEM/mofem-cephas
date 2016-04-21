@@ -212,7 +212,7 @@ struct RefMoFEMEntity: public BasicMoFEMEntity {
     if(tag_parent_ent == NULL) return 0;
     return *tag_parent_ent;
   }
-  const RefMoFEMEntity* get_RefMoFEMEntity_ptr() { return this; }
+
   friend ostream& operator<<(ostream& os,const RefMoFEMEntity& e);
 };
 
@@ -225,19 +225,21 @@ template <typename T>
 struct interface_RefMoFEMEntity {
   const T *ref_ptr;
   interface_RefMoFEMEntity(const T *_ref_ptr): ref_ptr(_ref_ptr) {}
-  inline EntityHandle get_ref_ent() const { return ref_ptr->get_ref_ent(); }
-  inline EntityHandle get_parent_ent() const { return ref_ptr->get_parent_ent(); }
-  inline const BitRefLevel& get_BitRefLevel() const { return ref_ptr->get_BitRefLevel(); }
-  inline EntityType get_ent_type() const { return ref_ptr->get_ent_type(); };
-  inline EntityType get_parent_ent_type() const { return ref_ptr->get_parent_ent_type(); };
-  inline EntityID get_ent_id() const { return ref_ptr->get_ent_id(); };
-  inline const RefMoFEMEntity* get_RefMoFEMEntity_ptr() { return ref_ptr->get_RefMoFEMEntity_ptr(); }
-  inline unsigned char get_pstatus() const { return ref_ptr->get_pstatus(); }
-  inline EntityHandle get_owner_ent() const { return ref_ptr->get_owner_ent(); }
-  inline EntityHandle get_owner_proc() const { return ref_ptr->get_owner_proc(); }
-  inline int* get_sharing_procs_ptr() const { return ref_ptr->get_sharing_procs_ptr(); }
-  inline EntityHandle* get_sharing_handlers_ptr() const { return ref_ptr->get_sharing_handlers_ptr(); }
+
+  inline EntityHandle get_ref_ent() const { return this->ref_ptr->get_ref_ent(); }
+  inline EntityHandle get_parent_ent() const { return this->ref_ptr->get_parent_ent(); }
+  inline const BitRefLevel& get_BitRefLevel() const { return this->ref_ptr->get_BitRefLevel(); }
+  inline EntityType get_ent_type() const { return this->ref_ptr->get_ent_type(); };
+  inline EntityType get_parent_ent_type() const { return this->ref_ptr->get_parent_ent_type(); };
+  inline EntityID get_ent_id() const { return this->ref_ptr->get_ent_id(); };
+  inline const RefMoFEMEntity* get_RefMoFEMEntity_ptr() { return this->ref_ptr; }
+  inline unsigned char get_pstatus() const { return this->ref_ptr->get_pstatus(); }
+  inline EntityHandle get_owner_ent() const { return this->ref_ptr->get_owner_ent(); }
+  inline EntityHandle get_owner_proc() const { return this->ref_ptr->get_owner_proc(); }
+  inline int* get_sharing_procs_ptr() const { return this->ref_ptr->get_sharing_procs_ptr(); }
+  inline EntityHandle* get_sharing_handlers_ptr() const { return this->ref_ptr->get_sharing_handlers_ptr(); }
   virtual ~interface_RefMoFEMEntity() {}
+
 };
 
 /**
@@ -461,7 +463,6 @@ struct MoFEMEntity: public interface_MoFEMField<MoFEMField>, interface_RefMoFEME
     _uid_ |= (UId)ref_ptr->owner_proc << 5+8*sizeof(EntityHandle);
     return _uid_;
   }
-  const MoFEMEntity* get_MoFEMEntity_ptr() const { return this; };
   friend ostream& operator<<(ostream& os,const MoFEMEntity& e);
 };
 
@@ -472,18 +473,30 @@ struct MoFEMEntity: public interface_MoFEMField<MoFEMField>, interface_RefMoFEME
  * interface to MoFEMEntity
  */
 template <typename T>
-struct interface_MoFEMEntity: public interface_MoFEMField<T>,interface_RefMoFEMEntity<RefMoFEMEntity> {
-  interface_MoFEMEntity(const T *_ptr): interface_MoFEMField<T>(_ptr),interface_RefMoFEMEntity<RefMoFEMEntity>(_ptr->get_RefMoFEMEntity_ptr()) {};
-  inline EntityHandle get_ent() const { return interface_MoFEMField<T>::get_ent(); }
-  inline int get_nb_dofs_on_ent() const { return interface_MoFEMField<T>::field_ptr->get_nb_dofs_on_ent(); }
-  inline FieldData* get_ent_FieldData() const { return interface_MoFEMField<T>::field_ptr->get_FieldData(); }
-  inline int get_order_nb_dofs(int order) const { return interface_MoFEMField<T>::field_ptr->get_order_nb_dofs(order); }
-  inline int get_order_nb_dofs_diff(int order) const { return interface_MoFEMField<T>::field_ptr->get_order_nb_dofs_diff(order); }
-  inline ApproximationOrder get_max_order() const { return interface_MoFEMField<T>::field_ptr->get_max_order(); }
-  inline const LocalUId& get_local_unique_id() const { return interface_MoFEMField<T>::field_ptr->get_local_unique_id(); }
-  inline const GlobalUId& get_global_unique_id() const { return interface_MoFEMField<T>::field_ptr->get_global_unique_id(); }
-  inline const MoFEMEntity* get_MoFEMEntity_ptr() const { return interface_MoFEMField<T>::field_ptr->get_MoFEMEntity_ptr(); };
-  inline const RefMoFEMEntity* get_RefMoFEMEntity_ptr() const { return interface_MoFEMField<T>::field_ptr->get_RefMoFEMEntity_ptr(); }
+struct interface_MoFEMEntity:
+public
+interface_MoFEMField<T>,
+interface_RefMoFEMEntity<RefMoFEMEntity> {
+
+  const boost::shared_ptr<T> sPtr; // FIXME: This will be moved down inherence tree
+
+  interface_MoFEMEntity(const boost::shared_ptr<T> sptr):
+  interface_MoFEMField<T>(sptr.get()),
+  interface_RefMoFEMEntity<RefMoFEMEntity>(sptr->get_RefMoFEMEntity_ptr()),
+  sPtr(sptr) {
+  };
+  inline EntityHandle get_ent() const { return this->sPtr->get_ent(); }
+
+  inline int get_nb_dofs_on_ent() const { return this->sPtr->get_nb_dofs_on_ent(); }
+  inline FieldData* get_ent_FieldData() const { return this->sPtr->get_FieldData(); }
+  inline int get_order_nb_dofs(int order) const { return this->sPtr->get_order_nb_dofs(order); }
+  inline int get_order_nb_dofs_diff(int order) const { return this->sPtr->get_order_nb_dofs_diff(order); }
+  inline ApproximationOrder get_max_order() const { return this->sPtr->get_max_order(); }
+  inline const LocalUId& get_local_unique_id() const { return this->sPtr->get_local_unique_id(); }
+  inline const GlobalUId& get_global_unique_id() const { return this->sPtr->get_global_unique_id(); }
+
+  inline const boost::shared_ptr<MoFEMEntity> get_MoFEMEntity_ptr() const { return this->sPtr; };
+
 };
 
 /**
@@ -496,8 +509,10 @@ struct MoFEMEntity_change_order {
   vector<FieldData> data;
   vector<ApproximationOrder> data_dof_order;
   vector<FieldCoefficientsNumber> data_dof_rank;
-  MoFEMEntity_change_order(Interface& _moab,ApproximationOrder _order): moab(_moab),order(_order) {};
-  void operator()(MoFEMEntity &e);
+  MoFEMEntity_change_order(Interface& _moab,ApproximationOrder _order):
+  moab(_moab),
+  order(_order) {};
+  void operator()(boost::shared_ptr<MoFEMEntity> &e);
 };
 
 /**
@@ -507,7 +522,7 @@ struct MoFEMEntity_change_order {
  *
  */
 typedef multi_index_container<
-  MoFEMEntity,
+  boost::shared_ptr<MoFEMEntity>,
   indexed_by<
     ordered_unique<
       tag<Unique_mi_tag>, member<MoFEMEntity,GlobalUId,&MoFEMEntity::global_uid> >,
@@ -529,7 +544,7 @@ typedef multi_index_container<
   > > MoFEMEntity_multiIndex;
 
   typedef multi_index_container<
-    const MoFEMEntity*,
+    boost::shared_ptr<MoFEMEntity>,
     indexed_by<
       hashed_non_unique<
         tag<Ent_mi_tag>, const_mem_fun<MoFEMEntity,EntityHandle,&MoFEMEntity::get_ent> >

@@ -33,22 +33,22 @@ struct DofMoFEMEntity: public interface_MoFEMEntity<MoFEMEntity> {
   typedef interface_MoFEMEntity<MoFEMEntity> interface_type_MoFEMEntity;
   typedef interface_RefMoFEMEntity<RefMoFEMEntity> interface_type_RefMoFEMEntity;
 
-  static LocalUId get_local_unique_id_calculate(const DofIdx _dof_,const MoFEMEntity *_ent_ptr_) {
+  static LocalUId get_local_unique_id_calculate(const DofIdx _dof_,const boost::shared_ptr<MoFEMEntity> ent_ptr) {
     if(_dof_>=512) THROW_MESSAGE("_dof>=512");
-    LocalUId _uid_ = ((UId)_dof_)|((_ent_ptr_->get_local_unique_id())<<9);
+    LocalUId _uid_ = ((UId)_dof_)|((ent_ptr->get_local_unique_id())<<9);
     return _uid_;
   }
 
-  static GlobalUId get_global_unique_id_calculate(const DofIdx _dof_,const MoFEMEntity *_ent_ptr_) {
+  static GlobalUId get_global_unique_id_calculate(const DofIdx _dof_,const boost::shared_ptr<MoFEMEntity> ent_ptr) {
     if(_dof_>=512) THROW_MESSAGE("_dof>=512");
-    GlobalUId _uid_ = ((UId)_dof_)|((_ent_ptr_->get_global_unique_id())<<9);
+    GlobalUId _uid_ = ((UId)_dof_)|((ent_ptr->get_global_unique_id())<<9);
     return _uid_;
   }
 
-  static ShortId get_non_nonunique_short_id(const DofIdx _dof_,const MoFEMEntity *_ent_ptr_) {
+  static ShortId get_non_nonunique_short_id(const DofIdx _dof_,const boost::shared_ptr<MoFEMEntity> ent_ptr) {
     if(_dof_>=512) THROW_MESSAGE("_dof>=512")
     if(sizeof(ShortId) < sizeof(char)+2) THROW_MESSAGE("sizeof(ShortId)< sizeof(char)+2")
-    char bit_number = _ent_ptr_->get_bit_number();
+    char bit_number = ent_ptr->get_bit_number();
     ShortId _uid_ = ((ShortId)_dof_)|(((ShortId)bit_number)<<9);
     return _uid_;
   }
@@ -60,7 +60,7 @@ struct DofMoFEMEntity: public interface_MoFEMEntity<MoFEMEntity> {
   ShortId short_uid;
 
   DofMoFEMEntity(
-    const MoFEMEntity *entity_ptr,
+    const boost::shared_ptr<MoFEMEntity> entity_ptr,
     const ApproximationOrder dof_order,
     const FieldCoefficientsNumber dof_rank,
     const DofIdx _dof
@@ -123,12 +123,9 @@ struct DofMoFEMEntity: public interface_MoFEMEntity<MoFEMEntity> {
  */
 template <typename T>
 struct interface_DofMoFEMEntity: public interface_MoFEMEntity<T> {
-  const boost::shared_ptr<T> sPtr; // FIXME: This will be moved down inherence tree
 
   interface_DofMoFEMEntity(const boost::shared_ptr<T> sptr):
-  interface_MoFEMEntity<T>(&*sptr),
-  sPtr(sptr) {
-
+  interface_MoFEMEntity<T>(sptr) {
   };
 
   inline const LocalUId& get_local_unique_id() const { return this->sPtr->get_local_unique_id(); }
@@ -151,6 +148,11 @@ struct interface_DofMoFEMEntity: public interface_MoFEMEntity<T> {
   inline const boost::shared_ptr<DofMoFEMEntity> get_DofMoFEMEntity_ptr() const {
     return this->sPtr;
   };
+
+  inline const boost::shared_ptr<MoFEMEntity> get_MoFEMEntity_ptr() const {
+    return this->sPtr->get_MoFEMEntity_ptr();
+  };
+
 
 };
 
