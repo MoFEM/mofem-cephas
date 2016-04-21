@@ -402,20 +402,22 @@ ostream& operator<<(ostream& os,const RefElement_VERTEX& e) {
   return os;
 }
 
-PetscErrorCode DefaultElementAdjacency::defaultVertex(Interface &moab,const Field *field_ptr,const EntFiniteElement *fe_ptr,Range &adjacency) {
+PetscErrorCode DefaultElementAdjacency::defaultVertex(
+  Interface &moab,const Field &field_ptr,const EntFiniteElement &fe_ptr,Range &adjacency
+) {
   PetscFunctionBegin;
   MoABErrorCode rval;
-  switch (field_ptr->get_space()) {
+  switch (field_ptr.get_space()) {
     case H1:
-    adjacency.insert(fe_ptr->get_ent());
+    adjacency.insert(fe_ptr.get_ent());
     break;
     case NOFIELD:
     {
       Range ents;
-      rval = moab.get_entities_by_handle(field_ptr->get_meshset(),ents,false); CHKERRQ_MOAB(rval);
+      rval = moab.get_entities_by_handle(field_ptr.get_meshset(),ents,false); CHKERRQ_MOAB(rval);
       adjacency.merge(ents);
       for(Range::iterator eit = ents.begin();eit!=ents.end();eit++) {
-        const_cast<SideNumber_multiIndex&>(fe_ptr->get_side_number_table()).insert(SideNumber(*eit,-1,0,0));
+        const_cast<SideNumber_multiIndex&>(fe_ptr.get_side_number_table()).insert(SideNumber(*eit,-1,0,0));
       }
     }
     break;
@@ -424,12 +426,14 @@ PetscErrorCode DefaultElementAdjacency::defaultVertex(Interface &moab,const Fiel
   }
   PetscFunctionReturn(0);
 }
-PetscErrorCode DefaultElementAdjacency::defaultEdge(Interface &moab,const Field *field_ptr,const EntFiniteElement *fe_ptr,Range &adjacency) {
+PetscErrorCode DefaultElementAdjacency::defaultEdge(
+  Interface &moab,const Field &field_ptr,const EntFiniteElement &fe_ptr,Range &adjacency
+) {
   PetscFunctionBegin;
   ErrorCode rval;
-  EntityHandle fe_ent = fe_ptr->get_ent();
+  EntityHandle fe_ent = fe_ptr.get_ent();
   Range nodes;
-  switch (field_ptr->get_space()) {
+  switch (field_ptr.get_space()) {
     case H1:
     //moab.get_connectivity(&fe_ent,1,nodes,true);
     //use get adjacencies, this will allow take in account adjacencies set user
@@ -448,10 +452,10 @@ PetscErrorCode DefaultElementAdjacency::defaultEdge(Interface &moab,const Field 
     case NOFIELD:
     {
       Range ents;
-      rval = moab.get_entities_by_handle(field_ptr->get_meshset(),ents,false); CHKERRQ_MOAB(rval);
+      rval = moab.get_entities_by_handle(field_ptr.get_meshset(),ents,false); CHKERRQ_MOAB(rval);
       adjacency.merge(ents);
       for(Range::iterator eit = ents.begin();eit!=ents.end();eit++) {
-        const_cast<SideNumber_multiIndex&>(fe_ptr->get_side_number_table()).insert(SideNumber(*eit,-1,0,0));
+        const_cast<SideNumber_multiIndex&>(fe_ptr.get_side_number_table()).insert(SideNumber(*eit,-1,0,0));
       }
     }
     break;
@@ -460,12 +464,14 @@ PetscErrorCode DefaultElementAdjacency::defaultEdge(Interface &moab,const Field 
   }
   PetscFunctionReturn(0);
 }
-PetscErrorCode DefaultElementAdjacency::defaultTri(Interface &moab,const Field *field_ptr,const EntFiniteElement *fe_ptr,Range &adjacency) {
+PetscErrorCode DefaultElementAdjacency::defaultTri(
+  Interface &moab,const Field &field_ptr,const EntFiniteElement &fe_ptr,Range &adjacency
+) {
   PetscFunctionBegin;
   ErrorCode rval;
   Range nodes,edges;
-  EntityHandle fe_ent = fe_ptr->get_ent();
-  switch (field_ptr->get_space()) {
+  EntityHandle fe_ent = fe_ptr.get_ent();
+  switch (field_ptr.get_space()) {
     case H1:
     //moab.get_connectivity(&fe_ent,1,nodes,true);
     //use get adjacencies, this will allow take in account adjacencies set user
@@ -482,7 +488,7 @@ PetscErrorCode DefaultElementAdjacency::defaultTri(Interface &moab,const Field *
     rval = moab.get_adjacencies(&fe_ent,1,1,false,edges); CHKERRQ_MOAB(rval);
     adjacency.insert(edges.begin(),edges.end());
     for(Range::iterator eeit = edges.begin();eeit!=edges.end();eeit++) {
-      fe_ptr->get_side_number_ptr(moab,*eeit);
+      fe_ptr.get_side_number_ptr(moab,*eeit);
     }
     //add faces
     adjacency.insert(fe_ent);
@@ -493,10 +499,10 @@ PetscErrorCode DefaultElementAdjacency::defaultTri(Interface &moab,const Field *
     case NOFIELD:
     {
       Range ents;
-      rval = moab.get_entities_by_handle(field_ptr->get_meshset(),ents,false); CHKERRQ_MOAB(rval);
+      rval = moab.get_entities_by_handle(field_ptr.get_meshset(),ents,false); CHKERRQ_MOAB(rval);
       adjacency.merge(ents);
       for(Range::iterator eit = ents.begin();eit!=ents.end();eit++) {
-        const_cast<SideNumber_multiIndex&>(fe_ptr->get_side_number_table()).insert(SideNumber(*eit,-1,0,0));
+        const_cast<SideNumber_multiIndex&>(fe_ptr.get_side_number_table()).insert(SideNumber(*eit,-1,0,0));
       }
     }
     break;
@@ -510,12 +516,14 @@ PetscErrorCode DefaultElementAdjacency::defaultTri(Interface &moab,const Field *
   }
   PetscFunctionReturn(0);
 }
-PetscErrorCode DefaultElementAdjacency::defaultTet(Interface &moab,const Field *field_ptr,const EntFiniteElement *fe_ptr,Range &adjacency) {
+PetscErrorCode DefaultElementAdjacency::defaultTet(
+  Interface &moab,const Field &field_ptr,const EntFiniteElement &fe_ptr,Range &adjacency
+) {
   PetscFunctionBegin;
   ErrorCode rval;
   Range nodes,edges,faces;
-  EntityHandle fe_ent = fe_ptr->get_ent();
-  switch (field_ptr->get_space()) {
+  EntityHandle fe_ent = fe_ptr.get_ent();
+  switch (field_ptr.get_space()) {
     case H1:
     //moab.get_connectivity(&fe_ent,1,nodes,true);
     //use get adjacencies, this will allow take in account adjacencies set user
@@ -536,13 +544,13 @@ PetscErrorCode DefaultElementAdjacency::defaultTet(Interface &moab,const Field *
     rval = moab.get_adjacencies(&fe_ent,1,1,false,edges); CHKERRQ_MOAB(rval);
     adjacency.insert(edges.begin(),edges.end());
     for(Range::iterator eeit = edges.begin();eeit!=edges.end();eeit++) {
-      fe_ptr->get_side_number_ptr(moab,*eeit);
+      fe_ptr.get_side_number_ptr(moab,*eeit);
     }
     case HDIV:
     rval = moab.get_adjacencies(&fe_ent,1,2,false,faces); CHKERRQ_MOAB(rval);
     adjacency.insert(faces.begin(),faces.end());
     for(Range::iterator fit = faces.begin();fit!=faces.end();fit++) {
-      fe_ptr->get_side_number_ptr(moab,*fit);
+      fe_ptr.get_side_number_ptr(moab,*fit);
     }
     case L2:
     adjacency.insert(fe_ent);
@@ -550,10 +558,10 @@ PetscErrorCode DefaultElementAdjacency::defaultTet(Interface &moab,const Field *
     case NOFIELD:
     {
       Range ents;
-      rval = moab.get_entities_by_handle(field_ptr->get_meshset(),ents,false); CHKERRQ_MOAB(rval);
+      rval = moab.get_entities_by_handle(field_ptr.get_meshset(),ents,false); CHKERRQ_MOAB(rval);
       adjacency.merge(ents);
       for(Range::iterator eit = ents.begin();eit!=ents.end();eit++) {
-        const_cast<SideNumber_multiIndex&>(fe_ptr->get_side_number_table()).insert(SideNumber(*eit,-1,0,0));
+        const_cast<SideNumber_multiIndex&>(fe_ptr.get_side_number_table()).insert(SideNumber(*eit,-1,0,0));
       }
     }
     break;
@@ -563,11 +571,11 @@ PetscErrorCode DefaultElementAdjacency::defaultTet(Interface &moab,const Field *
   PetscFunctionReturn(0);
 }
 PetscErrorCode DefaultElementAdjacency::defaultPrism(
-  Interface &moab,const Field *field_ptr,const EntFiniteElement *fe_ptr,Range &adjacency
+  Interface &moab,const Field &field_ptr,const EntFiniteElement &fe_ptr,Range &adjacency
 ) {
   PetscFunctionBegin;
   ErrorCode rval;
-  EntityHandle fe_ent = fe_ptr->get_ent();
+  EntityHandle fe_ent = fe_ptr.get_ent();
   Range nodes;
   //initialize side sets
   try {
@@ -575,8 +583,8 @@ PetscErrorCode DefaultElementAdjacency::defaultPrism(
     EntityHandle face_side3,face_side4;
     rval = moab.side_element(prism,2,3,face_side3); CHKERRQ_MOAB(rval);
     rval = moab.side_element(prism,2,4,face_side4); CHKERRQ_MOAB(rval);
-    fe_ptr->get_RefElement()->get_side_number_ptr(moab,face_side3);
-    fe_ptr->get_RefElement()->get_side_number_ptr(moab,face_side4);
+    fe_ptr.get_RefElement()->get_side_number_ptr(moab,face_side3);
+    fe_ptr.get_RefElement()->get_side_number_ptr(moab,face_side4);
     for(int qq = 0;qq<3;qq++) {
       EntityHandle quad = 0;
       rval = moab.side_element(prism,2,qq,quad);
@@ -584,7 +592,7 @@ PetscErrorCode DefaultElementAdjacency::defaultPrism(
       int side_number,sense,offset;
       rval = moab.side_number(prism,quad,side_number,sense,offset);
       if(side_number==-1 || rval != MB_SUCCESS) continue;
-      const_cast<SideNumber_multiIndex&>(fe_ptr->get_side_number_table()).insert(
+      const_cast<SideNumber_multiIndex&>(fe_ptr.get_side_number_table()).insert(
         SideNumber(quad,side_number,sense,offset)
       );
     }
@@ -592,12 +600,12 @@ PetscErrorCode DefaultElementAdjacency::defaultPrism(
     for(;ee<3;ee++) {
       EntityHandle edge = 0;
       rval = moab.side_element(prism,1,ee,edge); CHKERRQ_MOAB(rval);
-      SideNumber *side_ptr = fe_ptr->get_RefElement()->get_side_number_ptr(moab,edge);
+      SideNumber *side_ptr = fe_ptr.get_RefElement()->get_side_number_ptr(moab,edge);
       if(side_ptr->side_number!=ee) {
         SETERRQ1(PETSC_COMM_SELF,1,"data insistency for edge %d",ee);
       }
       rval = moab.side_element(prism,1,6+ee,edge); CHKERRQ_MOAB(rval);
-      side_ptr = fe_ptr->get_RefElement()->get_side_number_ptr(moab,edge);
+      side_ptr = fe_ptr.get_RefElement()->get_side_number_ptr(moab,edge);
       if(side_ptr->side_number!=ee+6) {
         if(side_ptr->side_number!=ee) {
           SETERRQ1(PETSC_COMM_SELF,1,"data insistency for edge %d",ee);
@@ -613,7 +621,7 @@ PetscErrorCode DefaultElementAdjacency::defaultPrism(
       int side_number,sense,offset;
       rval = moab.side_number(prism,edge,side_number,sense,offset);
       if(side_number==-1 || rval != MB_SUCCESS) continue;
-      const_cast<SideNumber_multiIndex&>(fe_ptr->get_side_number_table()).insert(
+      const_cast<SideNumber_multiIndex&>(fe_ptr.get_side_number_table()).insert(
         SideNumber(edge,side_number,sense,offset)
       );
     }
@@ -621,12 +629,12 @@ PetscErrorCode DefaultElementAdjacency::defaultPrism(
     for(;nn<3;nn++) {
       EntityHandle node;
       rval = moab.side_element(prism,0,nn,node); CHKERRQ_MOAB(rval);
-      SideNumber *side_ptr = fe_ptr->get_RefElement()->get_side_number_ptr(moab,node);
+      SideNumber *side_ptr = fe_ptr.get_RefElement()->get_side_number_ptr(moab,node);
       if(side_ptr->side_number!=nn) {
         SETERRQ1(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data insistency for node %d",nn);
       }
       rval = moab.side_element(prism,0,nn+3,node); CHKERRQ_MOAB(rval);
-      side_ptr = fe_ptr->get_RefElement()->get_side_number_ptr(moab,node);
+      side_ptr = fe_ptr.get_RefElement()->get_side_number_ptr(moab,node);
       if(side_ptr->side_number!=nn+3) {
         if(side_ptr->side_number!=nn) {
           SETERRQ1(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data insistency for node %d",nn);
@@ -639,8 +647,8 @@ PetscErrorCode DefaultElementAdjacency::defaultPrism(
     SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
   }
   //get adjacencies
-  SideNumber_multiIndex &side_table = fe_ptr->get_RefElement()->get_side_number_table();
-  switch(field_ptr->get_space()) {
+  SideNumber_multiIndex &side_table = fe_ptr.get_RefElement()->get_side_number_table();
+  switch(field_ptr.get_space()) {
     case H1:
     //moab.get_connectivity(&fe_ent,1,nodes,true);
     //use get adjacencies, this will allow take in account adjacencies set user
@@ -675,10 +683,10 @@ PetscErrorCode DefaultElementAdjacency::defaultPrism(
     case NOFIELD:
     {
       Range ents;
-      rval = moab.get_entities_by_handle(field_ptr->get_meshset(),ents,false); CHKERRQ_MOAB(rval);
+      rval = moab.get_entities_by_handle(field_ptr.get_meshset(),ents,false); CHKERRQ_MOAB(rval);
       adjacency.merge(ents);
       for(Range::iterator eit = ents.begin();eit!=ents.end();eit++) {
-        const_cast<SideNumber_multiIndex&>(fe_ptr->get_side_number_table()).insert(SideNumber(*eit,-1,0,0));
+        const_cast<SideNumber_multiIndex&>(fe_ptr.get_side_number_table()).insert(SideNumber(*eit,-1,0,0));
       }
     }
     break;
@@ -688,18 +696,18 @@ PetscErrorCode DefaultElementAdjacency::defaultPrism(
   PetscFunctionReturn(0);
 }
 PetscErrorCode DefaultElementAdjacency::defaultMeshset(
-  Interface &moab,const Field *field_ptr,const EntFiniteElement *fe_ptr,Range &adjacency
+  Interface &moab,const Field &field_ptr,const EntFiniteElement &fe_ptr,Range &adjacency
 ) {
   PetscFunctionBegin;
   ErrorCode rval;
-  EntityHandle fe_ent = fe_ptr->get_ent();
+  EntityHandle fe_ent = fe_ptr.get_ent();
   //get all meshsets in finite element meshset
   Range ent_ents_meshset;
   rval = moab.get_entities_by_type(fe_ent,MBENTITYSET,ent_ents_meshset,false); CHKERRQ_MOAB(rval);
   //resolve recursively all ents in the meshset
   Range ent_ents;
   rval = moab.get_entities_by_handle(fe_ent,ent_ents,true); CHKERRQ_MOAB(rval);
-  switch (field_ptr->get_space()) {
+  switch (field_ptr.get_space()) {
     case H1:
     adjacency.merge(ent_ents.subset_by_type(MBVERTEX));
     case HCURL:
@@ -712,10 +720,10 @@ PetscErrorCode DefaultElementAdjacency::defaultMeshset(
     case NOFIELD:
     {
       Range ents;
-      rval = moab.get_entities_by_handle(field_ptr->get_meshset(),ents,false); CHKERRQ_MOAB(rval);
+      rval = moab.get_entities_by_handle(field_ptr.get_meshset(),ents,false); CHKERRQ_MOAB(rval);
       adjacency.merge(ents);
       for(Range::iterator eit = ents.begin();eit!=ents.end();eit++) {
-        const_cast<SideNumber_multiIndex&>(fe_ptr->get_side_number_table()).insert(SideNumber(*eit,-1,0,0));
+        const_cast<SideNumber_multiIndex&>(fe_ptr.get_side_number_table()).insert(SideNumber(*eit,-1,0,0));
       }
     }
     break;

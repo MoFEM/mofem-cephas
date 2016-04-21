@@ -128,7 +128,7 @@ struct Field {
     }
     return 0;
   }
-  const Field* get_Field_ptr() const { return this; };
+
   friend ostream& operator<<(ostream& os,const Field& e);
 };
 
@@ -138,11 +138,13 @@ struct Field {
  */
 template <typename T>
 struct interface_Field {
-  const T *field_ptr;
-  interface_Field(const T *_field_ptr): field_ptr(_field_ptr) {};
-  inline EntityHandle get_meshset() const { return field_ptr->get_meshset(); };
+  const boost::shared_ptr<T> sFieldPtr;
 
-  inline int getCoordSysId() const { return field_ptr->getCoordSysId(); }
+  interface_Field(const boost::shared_ptr<T> field_ptr): sFieldPtr(field_ptr) {};
+
+  inline EntityHandle get_meshset() const { return this->sFieldPtr->get_meshset(); };
+
+  inline int getCoordSysId() const { return this->sFieldPtr->getCoordSysId(); }
 
   /**
     * \brief Get dimension of general two-point tensor \ref MoFEM::CoordSys::getDim
@@ -150,44 +152,44 @@ struct interface_Field {
     See details here \ref MoFEM::CoordSys::getDim
 
     */
-  inline int getCoordSysDim(const int d = 0) const { return field_ptr->getCoordSysDim(d); }
+  inline int getCoordSysDim(const int d = 0) const { return this->sFieldPtr->getCoordSysDim(d); }
   inline PetscErrorCode get_E_Base(const double m[]) const {
     PetscFunctionBegin;
-    PetscFunctionReturn(field_ptr->get_E_Base(m));
+    PetscFunctionReturn(this->sFieldPtr->get_E_Base(m));
   }
   inline PetscErrorCode get_E_DualBase(const double m[]) const {
     PetscFunctionBegin;
-    PetscFunctionReturn(field_ptr->get_E_DualBase(m));
+    PetscFunctionReturn(this->sFieldPtr->get_E_DualBase(m));
   }
   inline PetscErrorCode get_e_Base(const double m[]) const {
     PetscFunctionBegin;
-    PetscFunctionReturn(field_ptr->get_e_Base(m));
+    PetscFunctionReturn(this->sFieldPtr->get_e_Base(m));
   }
   inline PetscErrorCode get_e_DualBase(const double m[]) const {
     PetscFunctionBegin;
-    PetscFunctionReturn(field_ptr->get_e_DualBase(m));
+    PetscFunctionReturn(this->sFieldPtr->get_e_DualBase(m));
   }
-  inline EntityHandle getCoordSysMeshSet() const { return field_ptr->getCoordSysMeshSet(); }
-  inline string getCoordSysName() const { return field_ptr->getCoordSysName(); };
+  inline EntityHandle getCoordSysMeshSet() const { return this->sFieldPtr->getCoordSysMeshSet(); }
+  inline string getCoordSysName() const { return this->sFieldPtr->getCoordSysName(); };
   inline boost::string_ref getCoordSysNameRef() const {
-    return field_ptr->getCoordSysNameRef();
+    return this->sFieldPtr->getCoordSysNameRef();
   };
 
-  inline const BitFieldId& get_id() const { return field_ptr->get_id(); };
-  inline unsigned int get_bit_number() const { return field_ptr->get_bit_number(); }
-  inline boost::string_ref get_name_ref() const { return field_ptr->get_name_ref(); };
-  inline string get_name() const { return field_ptr->get_name(); };
-  inline FieldSpace get_space() const { return field_ptr->get_space(); };
-  inline FieldApproximationBase get_approx_base() const { return field_ptr->get_approx_base(); };
+  inline const BitFieldId& get_id() const { return this->sFieldPtr->get_id(); };
+  inline unsigned int get_bit_number() const { return this->sFieldPtr->get_bit_number(); }
+  inline boost::string_ref get_name_ref() const { return this->sFieldPtr->get_name_ref(); };
+  inline string get_name() const { return this->sFieldPtr->get_name(); };
+  inline FieldSpace get_space() const { return this->sFieldPtr->get_space(); };
+  inline FieldApproximationBase get_approx_base() const { return this->sFieldPtr->get_approx_base(); };
 
-  DEPRECATED inline FieldCoefficientsNumber get_max_rank() const { return field_ptr->get_nb_of_coeffs(); };
+  DEPRECATED inline FieldCoefficientsNumber get_max_rank() const { return this->sFieldPtr->get_nb_of_coeffs(); };
 
   /* \brief get number of field coefficients
   */
-  inline FieldCoefficientsNumber get_nb_of_coeffs() const { return field_ptr->get_nb_of_coeffs(); };
+  inline FieldCoefficientsNumber get_nb_of_coeffs() const { return this->sFieldPtr->get_nb_of_coeffs(); };
 
+  inline const boost::shared_ptr<Field> get_Field_ptr() const { return this->sFieldPtr; };
 
-  inline const Field* get_Field_ptr() const { return field_ptr->get_Field_ptr(); };
 };
 
 /**
@@ -196,7 +198,7 @@ struct interface_Field {
  *
  */
 typedef multi_index_container<
-  Field,
+  boost::shared_ptr<Field>,
   indexed_by<
     hashed_unique<
       tag<BitFieldId_mi_tag>, const_mem_fun<Field,const BitFieldId&,&Field::get_id>, HashBit<BitFieldId>, EqBit<BitFieldId> >,
@@ -209,7 +211,7 @@ typedef multi_index_container<
   > > Field_multiIndex;
 
 typedef multi_index_container<
-  const Field*,
+  boost::shared_ptr<Field>,
   indexed_by<
     ordered_unique<
       tag<BitFieldId_mi_tag>, const_mem_fun<Field,const BitFieldId&,&Field::get_id>, LtBit<BitFieldId>
@@ -224,8 +226,8 @@ struct FieldChangeCoordinateSystem {
   FieldChangeCoordinateSystem(const CoordSys *cs_ptr):
   csPtr(cs_ptr) {
   }
-  void operator()(Field &e) {
-    e.coordSysPtr = csPtr;
+  void operator()(boost::shared_ptr<Field> &e) {
+    e->coordSysPtr = csPtr;
   }
 };
 

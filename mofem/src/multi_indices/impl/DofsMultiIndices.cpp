@@ -58,10 +58,10 @@ active(false) {
     THROW_MESSAGE("MoFEMEntity pinter not initialized");
   }
 
-  if(field_ptr->tag_dof_order_data==NULL) {
+  if(sFieldPtr->tag_dof_order_data==NULL) {
     ostringstream ss;
     ss << "at " << __LINE__ << " in " << __FILE__;
-    ss << " field_ptr->tag_dof_order_data==NULL";
+    ss << " sFieldPtr->tag_dof_order_data==NULL";
     ss << " (top tip: check if order set to vertices is 1)";
     //throw(ss.str().c_str());
     PetscTraceBackErrorHandler(
@@ -74,9 +74,9 @@ active(false) {
       MOFEM_DATA_INCONSISTENCY,PETSC_ERROR_INITIAL,ss.str().c_str(),PETSC_NULL
     );
   }
-  assert(field_ptr->tag_dof_rank_data!=NULL);
-  ((ApproximationOrder*)field_ptr->tag_dof_order_data)[dof] = dof_order;
-  ((FieldCoefficientsNumber*)field_ptr->tag_dof_rank_data)[dof] = dof_rank;
+  assert(sFieldPtr->tag_dof_rank_data!=NULL);
+  ((ApproximationOrder*)sFieldPtr->tag_dof_order_data)[dof] = dof_order;
+  ((FieldCoefficientsNumber*)sFieldPtr->tag_dof_rank_data)[dof] = dof_rank;
   local_uid = get_local_unique_id_calculate();
   global_uid = get_global_unique_id_calculate();
   short_uid = get_non_nonunique_short_id_calculate();
@@ -89,7 +89,7 @@ ostream& operator<<(ostream& os,const DofMoFEMEntity& e) {
   << " dof_rank " << e.get_dof_coeff_idx()
   << " dof " << e.dof
   << " active " << e.active
-  << " " << *(e.field_ptr);
+  << " " << *(e.sFieldPtr);
   return os;
 }
 
@@ -112,7 +112,7 @@ ostream& operator<<(ostream& os,const NumeredDofMoFEMEntity& e) {
   os << "idx " << e.dof_idx << " part " << e.part
   << " petsc idx " << e.petsc_gloabl_dof_idx
   << " ( " << e.petsc_local_dof_idx <<  " ) "
-  << *e.field_ptr;
+  << *e.sFieldPtr;
   return os;
 }
 
@@ -133,7 +133,7 @@ ostream& operator<<(ostream& os,const FEDofMoFEMEntity& e) {
   os << "local dof FiniteElement idx "
     << "side_number " << e.side_number_ptr->side_number << " "
     << "sense " << e.side_number_ptr->sense << " "
-    << *e.field_ptr;
+    << *e.sFieldPtr;
   return os;
 }
 
@@ -155,7 +155,7 @@ ostream& operator<<(ostream& os,const FENumeredDofMoFEMEntity& e) {
   os << "local dof FiniteElement idx "
     << "side_number " << e.side_number_ptr->side_number << " "
     << "sense " << e.side_number_ptr->sense << " "
-    << *e.field_ptr;
+    << *e.sFieldPtr;
   return os;
 }
 

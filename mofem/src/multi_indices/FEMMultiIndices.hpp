@@ -208,13 +208,13 @@ struct EntFiniteElement;
   * \ingroup fe_multi_indices
   */
 typedef PetscErrorCode (*ElementAdjacencyTable[MBMAXTYPE])(
-  Interface &moab,const Field *field_ptr,const EntFiniteElement *fe_ptr,Range &adjacency);
+  Interface &moab,const Field &field_ptr,const EntFiniteElement &fe_ptr,Range &adjacency);
 
 /** \brief user adjacency function
   * \ingroup fe_multi_indices
   */
 typedef PetscErrorCode (*ElementAdjacencyFunct)(
-  Interface &moab,const Field *field_ptr,const EntFiniteElement *fe_ptr,Range &adjacency);
+  Interface &moab,const Field &field_ptr,const EntFiniteElement &fe_ptr,Range &adjacency);
 
 /**
  * \brief Finite element definition
@@ -254,12 +254,24 @@ struct FiniteElement {
   */
 struct DefaultElementAdjacency {
 
-  static PetscErrorCode defaultVertex(Interface &moab,const Field *field_ptr,const EntFiniteElement *fe_ptr,Range &adjacency);
-  static PetscErrorCode defaultEdge(Interface &moab,const Field *field_ptr,const EntFiniteElement *fe_ptr,Range &adjacency);
-  static PetscErrorCode defaultTri(Interface &moab,const Field *field_ptr,const EntFiniteElement *fe_ptr,Range &adjacency);
-  static PetscErrorCode defaultTet(Interface &moab,const Field *field_ptr,const EntFiniteElement *fe_ptr,Range &adjacency);
-  static PetscErrorCode defaultPrism(Interface &moab,const Field *field_ptr,const EntFiniteElement *fe_ptr,Range &adjacency);
-  static PetscErrorCode defaultMeshset(Interface &moab,const Field *field_ptr,const EntFiniteElement *fe_ptr,Range &adjacency);
+  static PetscErrorCode defaultVertex(
+    Interface &moab,const Field& field_ptr,const EntFiniteElement& fe_ptr,Range &adjacency
+  );
+  static PetscErrorCode defaultEdge(
+    Interface &moab,const Field& field_ptr,const EntFiniteElement& fe_ptr,Range &adjacency
+  );
+  static PetscErrorCode defaultTri(
+    Interface &moab,const Field& field_ptr,const EntFiniteElement& fe_ptr,Range &adjacency
+  );
+  static PetscErrorCode defaultTet(
+    Interface &moab,const Field& field_ptr,const EntFiniteElement& fe_ptr,Range &adjacency
+  );
+  static PetscErrorCode defaultPrism(
+    Interface &moab,const Field& field_ptr,const EntFiniteElement& fe_ptr,Range &adjacency
+  );
+  static PetscErrorCode defaultMeshset(
+    Interface &moab,const Field& field_ptr,const EntFiniteElement& fe_ptr,Range &adjacency
+  );
 
 };
 
@@ -350,7 +362,9 @@ interface_RefElement<RefElement> {
     const NumeredDofMoFEMEntity_multiIndex &dofs,NumeredDofMoFEMEntity_multiIndex_uid_view_hashed &dofs_view,
     const int operation_type = Interface::UNION) const;
 
-  PetscErrorCode get_element_adjacency(Interface &moab,const Field *field_ptr,Range &adjacency) {
+  PetscErrorCode get_element_adjacency(
+    Interface &moab,const boost::shared_ptr<Field> field_ptr,Range &adjacency
+  ) {
     PetscFunctionBegin;
     PetscErrorCode ierr;
     const EntFiniteElement *this_fe_ptr = this;
@@ -358,7 +372,7 @@ interface_RefElement<RefElement> {
       SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented");
     }
     ierr = (get_MoFEMFiniteElementPtr()->element_adjacency_table[get_ent_type()])(
-      moab,field_ptr,this_fe_ptr,adjacency
+      moab,*field_ptr,*this_fe_ptr,adjacency
     ); CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }

@@ -514,17 +514,17 @@ PetscErrorCode Core::set_other_local_ghost_vector(
     SETERRQ1(PETSC_COMM_SELF,MOFEM_NOT_FOUND,"cpy field < %s > not found, (top tip: check spelling)",field_name.c_str());
   }
   DofsByNameAndLocalIdx::iterator hi_miit = dofs->upper_bound(boost::make_tuple(field_name,1));
-  if((*miit)->get_space() != cpy_fit->get_space()) {
+  if((*miit)->get_space() != (*cpy_fit)->get_space()) {
     SETERRQ4(
       PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,
       "fields have to have same space (%s) %s != (%s) %s",
       (*miit)->get_name().c_str(),
       FieldSpaceNames[(*miit)->get_space()],
       cpy_field_name.c_str(),
-      FieldSpaceNames[cpy_fit->get_space()]
+      FieldSpaceNames[(*cpy_fit)->get_space()]
     );
   }
-  if((*miit)->get_nb_of_coeffs() != cpy_fit->get_nb_of_coeffs()) {
+  if((*miit)->get_nb_of_coeffs() != (*cpy_fit)->get_nb_of_coeffs()) {
     SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"fields have to have same rank");
   }
   switch(scatter_mode) {
@@ -628,10 +628,10 @@ PetscErrorCode Core::set_other_global_ghost_vector(
     SETERRQ1(PETSC_COMM_SELF,MOFEM_NOT_FOUND,"problem field < %s > not found, (top tip: check spelling)",field_name.c_str());
   }
   dofs_by_name::iterator hi_miit = dofs->upper_bound(field_name);
-  if((*miit)->get_space() != cpy_fit->get_space()) {
+  if((*miit)->get_space() != (*cpy_fit)->get_space()) {
     SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"fields have to have same space");
   }
-  if((*miit)->get_nb_of_coeffs() != cpy_fit->get_nb_of_coeffs()) {
+  if((*miit)->get_nb_of_coeffs() != (*cpy_fit)->get_nb_of_coeffs()) {
     SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"fields have to have same rank");
   }
   switch (scatter_mode) {
@@ -664,13 +664,13 @@ PetscErrorCode Core::set_other_global_ghost_vector(
         diiiit = dofsField.get<Composite_Name_And_Ent_And_EndDofIdx_mi_tag>().find(boost::make_tuple(cpy_field_name,(*miit)->get_ent(),(*miit)->get_EntDofIdx()));
         if(diiiit==dofsField.get<Composite_Name_And_Ent_And_EndDofIdx_mi_tag>().end()) {
           EntityHandle ent = (*miit)->get_ent();
-          rval = moab.add_entities(cpy_fit->get_meshset(),&ent,1); CHKERRQ_MOAB(rval);
+          rval = moab.add_entities((*cpy_fit)->get_meshset(),&ent,1); CHKERRQ_MOAB(rval);
           //create field moabent
           ApproximationOrder order = (*miit)->get_max_order();
           pair<MoFEMEntity_multiIndex::iterator,bool> p_e_miit;
           try {
             boost::shared_ptr<MoFEMEntity> moabent(
-              new MoFEMEntity(moab,cpy_fit->get_Field_ptr(),(*miit)->get_RefMoFEMEntity_ptr())
+              new MoFEMEntity(moab,*cpy_fit,(*miit)->get_RefMoFEMEntity_ptr())
             );
             p_e_miit = entsFields.insert(moabent);
           } catch (const std::exception& ex) {

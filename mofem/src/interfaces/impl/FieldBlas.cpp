@@ -61,10 +61,10 @@ PetscErrorCode Core::field_axpy(const double alpha,const string& field_name_x,co
   if(y_fit==fIelds.get<FieldName_mi_tag>().end()) {
     SETERRQ1(PETSC_COMM_SELF,1,"y field < %s > not found, (top tip: check spelling)",field_name_y.c_str());
   }
-  if(x_fit->get_space() != y_fit->get_space()) {
+  if((*x_fit)->get_space() != (*y_fit)->get_space()) {
     SETERRQ2(PETSC_COMM_SELF,1,"space for field < %s > and field <%s> are not compatible",field_name_x.c_str(),field_name_y.c_str());
   }
-  if(x_fit->get_nb_of_coeffs() != y_fit->get_nb_of_coeffs()) {
+  if((*x_fit)->get_nb_of_coeffs() != (*y_fit)->get_nb_of_coeffs()) {
     SETERRQ2(PETSC_COMM_SELF,1,"rank for field < %s > and field <%s> are not compatible",field_name_x.c_str(),field_name_y.c_str());
   }
   MoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator x_eit;
