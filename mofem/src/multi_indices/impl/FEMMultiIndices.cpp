@@ -757,27 +757,27 @@ ostream& operator<<(ostream& os,const MoFEMFiniteElement& e) {
 }
 
 void MoFEMFiniteElement_col_change_bit_add::operator()(MoFEMFiniteElement &fe) {
-  *((BitFieldId*)(fe.tag_BitFieldId_col_data)) |= f_id_col;
+  *((BitFieldId*)(fe.tag_BitFieldId_col_data)) |= fIdCol;
 }
 
 void MoFEMFiniteElement_row_change_bit_add::operator()(MoFEMFiniteElement &fe) {
-  *((BitFieldId*)(fe.tag_BitFieldId_row_data)) |= f_id_row;
+  *((BitFieldId*)(fe.tag_BitFieldId_row_data)) |= fIdRow;
 }
 
 void MoFEMFiniteElement_change_bit_add::operator()(MoFEMFiniteElement &MoFEMFiniteElement) {
-  *((BitFieldId*)(MoFEMFiniteElement.tag_BitFieldId_data)) |= f_id_data;
+  *((BitFieldId*)(MoFEMFiniteElement.tag_BitFieldId_data)) |= fIdData;
 }
 
 void MoFEMFiniteElement_col_change_bit_off::operator()(MoFEMFiniteElement &fe) {
-  *((BitFieldId*)(fe.tag_BitFieldId_col_data)) &= f_id_col.flip();
+  *((BitFieldId*)(fe.tag_BitFieldId_col_data)) &= fIdCol.flip();
 }
 
 void MoFEMFiniteElement_row_change_bit_off::operator()(MoFEMFiniteElement &fe) {
-  *((BitFieldId*)(fe.tag_BitFieldId_row_data)) &= f_id_row.flip();
+  *((BitFieldId*)(fe.tag_BitFieldId_row_data)) &= fIdRow.flip();
 }
 
 void MoFEMFiniteElement_change_bit_off::operator()(MoFEMFiniteElement &fe) {
-  *((BitFieldId*)(fe.tag_BitFieldId_data)) &= f_id_data.flip();
+  *((BitFieldId*)(fe.tag_BitFieldId_data)) &= fIdData.flip();
 }
 
 //MoFEMFiniteElement data

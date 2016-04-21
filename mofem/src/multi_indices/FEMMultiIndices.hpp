@@ -586,42 +586,42 @@ typedef multi_index_container<
 // modificators
 
 struct NumeredEntFiniteElement_change_part {
-  unsigned int part;
-  NumeredEntFiniteElement_change_part(unsigned int _part): part(_part) {};
+  unsigned int pArt;
+  NumeredEntFiniteElement_change_part(unsigned int part): pArt(part) {};
   void operator()(boost::shared_ptr<NumeredEntFiniteElement> &fe) {
-    fe->part = part;
+    fe->part = pArt;
   }
 };
 
 struct MoFEMFiniteElement_col_change_bit_add {
-  BitFieldId f_id_col;
-  MoFEMFiniteElement_col_change_bit_add(const BitFieldId _f_id_col): f_id_col(_f_id_col) {};
+  BitFieldId fIdCol;
+  MoFEMFiniteElement_col_change_bit_add(const BitFieldId f_id_col): fIdCol(f_id_col) {};
   void operator()(MoFEMFiniteElement &fe);
 };
 struct MoFEMFiniteElement_row_change_bit_add {
-  BitFieldId f_id_row;
-  MoFEMFiniteElement_row_change_bit_add(const BitFieldId _f_id_row): f_id_row(_f_id_row) {};
+  BitFieldId fIdRow;
+  MoFEMFiniteElement_row_change_bit_add(const BitFieldId f_id_row): fIdRow(f_id_row) {};
   void operator()(MoFEMFiniteElement &fe);
 };
 struct MoFEMFiniteElement_change_bit_add {
-  BitFieldId f_id_data;
-  MoFEMFiniteElement_change_bit_add(const BitFieldId _f_id_data): f_id_data(_f_id_data) {};
+  BitFieldId fIdData;
+  MoFEMFiniteElement_change_bit_add(const BitFieldId f_id_data): fIdData(f_id_data) {};
   void operator()(MoFEMFiniteElement &fe);
 };
 
 struct MoFEMFiniteElement_col_change_bit_off {
-  BitFieldId f_id_col;
-  MoFEMFiniteElement_col_change_bit_off(const BitFieldId _f_id_col): f_id_col(_f_id_col) {};
+  BitFieldId fIdCol;
+  MoFEMFiniteElement_col_change_bit_off(const BitFieldId f_id_col): fIdCol(f_id_col) {};
   void operator()(MoFEMFiniteElement &fe);
 };
 struct MoFEMFiniteElement_row_change_bit_off {
-  BitFieldId f_id_row;
-  MoFEMFiniteElement_row_change_bit_off(const BitFieldId _f_id_row): f_id_row(_f_id_row) {};
+  BitFieldId fIdRow;
+  MoFEMFiniteElement_row_change_bit_off(const BitFieldId f_id_row): fIdRow(f_id_row) {};
   void operator()(MoFEMFiniteElement &fe);
 };
 struct MoFEMFiniteElement_change_bit_off {
-  BitFieldId f_id_data;
-  MoFEMFiniteElement_change_bit_off(const BitFieldId _f_id_data): f_id_data(_f_id_data) {};
+  BitFieldId fIdData;
+  MoFEMFiniteElement_change_bit_off(const BitFieldId f_id_data): fIdData(f_id_data) {};
   void operator()(MoFEMFiniteElement &fe);
 };
 
