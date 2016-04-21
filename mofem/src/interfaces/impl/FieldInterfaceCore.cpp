@@ -147,14 +147,14 @@ PetscErrorCode Core::add_field(
       if(undefined_cs_it==coordinateSystems.get<CoordSysName_mi_tag>().end()) {
         SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"Undefined system not found");
       }
-      EntityHandle coord_sys_id = undefined_cs_it->getMeshSet();
+      EntityHandle coord_sys_id = (*undefined_cs_it)->getMeshSet();
       rval = moab.tag_set_data(th_CoordSysMeshSet,&meshset,1,&coord_sys_id); CHKERRQ_MOAB(rval);
-      p = fIelds.insert(boost::shared_ptr<Field>(new Field(moab,meshset,&*undefined_cs_it)));
+      p = fIelds.insert(boost::shared_ptr<Field>(new Field(moab,meshset,*undefined_cs_it)));
       if(bh == MF_EXCL) {
         if(!p.second) SETERRQ1(
           PETSC_COMM_SELF,1,
           "field not inserted %s (top tip, it could be already there)",
-          Field(moab,meshset,&*undefined_cs_it).get_name().c_str()
+          Field(moab,meshset,*undefined_cs_it).get_name().c_str()
         );
       }
     } catch (MoFEMException const &e) {

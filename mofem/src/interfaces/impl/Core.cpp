@@ -841,8 +841,8 @@ PetscErrorCode Core::initialiseDatabseInformationFromMesh(int verb) {
         th_CoordSysName,&*mit,1,(const void **)&cs_name,&cs_name_size
       );
       if(rval == MB_SUCCESS && cs_name_size) {
-        CoordSys coord_sys(moab,*mit);
-        pair<CoordSys_multiIndex ::iterator,bool> p = coordinateSystems.insert(coord_sys);
+        boost::shared_ptr<CoordSys> coord_sys(new CoordSys(moab,*mit));
+        pair<CoordSys_multiIndex::iterator,bool> p = coordinateSystems.insert(coord_sys);
         if(!p.second) {
           SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"meshset to coord system not inserted");
         }
@@ -866,7 +866,7 @@ PetscErrorCode Core::initialiseDatabseInformationFromMesh(int verb) {
       rval = moab.tag_set_by_ptr(
         th_CoordSysName,&meshset,1,sys_name,sys_name_size
       ); CHKERRQ_MOAB(rval);
-      CoordSys coord_sys(moab,meshset);
+      boost::shared_ptr<CoordSys> coord_sys(new CoordSys(moab,meshset));
       pair<CoordSys_multiIndex ::iterator,bool> p = coordinateSystems.insert(coord_sys);
       if(!p.second) {
         SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"MeshSet to coord system not inserted");
@@ -885,7 +885,7 @@ PetscErrorCode Core::initialiseDatabseInformationFromMesh(int verb) {
       rval = moab.tag_set_by_ptr(
         th_CoordSysName,&meshset,1,sys_name,sys_name_size
       ); CHKERRQ_MOAB(rval);
-      CoordSys coord_sys(moab,meshset);
+      boost::shared_ptr<CoordSys> coord_sys(new CoordSys(moab,meshset));
       pair<CoordSys_multiIndex ::iterator,bool> p = coordinateSystems.insert(coord_sys);
       if(!p.second) {
         SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"MeshSet to coord system not inserted");
@@ -918,7 +918,7 @@ PetscErrorCode Core::initialiseDatabseInformationFromMesh(int verb) {
         } else {
           cs_it = coordinateSystems.project<Meshset_mi_tag>(undefined_cs_it);
         }
-        p = fIelds.insert(boost::shared_ptr<Field>(new Field(moab,*mit,&*cs_it)));
+        p = fIelds.insert(boost::shared_ptr<Field>(new Field(moab,*mit,*cs_it)));
         if(verb > 0) {
           ostringstream ss;
           ss << "read field " << *p.first << endl;;
@@ -1108,7 +1108,7 @@ PetscErrorCode Core::add_coordinate_system(const int cs_dim[],const string name)
   rval = moab.tag_set_by_ptr(
     th_CoordSysName,&meshset,1,sys_name,sys_name_size
   ); CHKERRQ_MOAB(rval);
-  CoordSys coord_sys(moab,meshset);
+  boost::shared_ptr<CoordSys> coord_sys(new CoordSys(moab,meshset));
   pair<CoordSys_multiIndex ::iterator,bool> p = coordinateSystems.insert(coord_sys);
   if(!p.second) {
     SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"MeshSet to coord system not inserted");
@@ -1134,8 +1134,8 @@ PetscErrorCode Core::set_field_coordinate_system(const string field_name,const s
   }
   int dim = 1;
   for(int alpha = 0;alpha<4;alpha++) {
-    if(cs_it->getDim(alpha)>0) {
-      dim *= cs_it->getDim(alpha);
+    if((*cs_it)->getDim(alpha)>0) {
+      dim *= (*cs_it)->getDim(alpha);
     }
   }
   switch((*field_it)->get_space()) {
@@ -1175,7 +1175,7 @@ PetscErrorCode Core::set_field_coordinate_system(const string field_name,const s
     case LASTSPACE:
     {};
   }
-  bool success = fIelds.modify(fIelds.project<0>(field_it),FieldChangeCoordinateSystem(&*cs_it));
+  bool success = fIelds.modify(fIelds.project<0>(field_it),FieldChangeCoordinateSystem(*cs_it));
   if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
   PetscFunctionReturn(0);
 }

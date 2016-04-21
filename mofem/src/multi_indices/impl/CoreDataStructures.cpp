@@ -43,14 +43,18 @@ const bool PetscLocalIdx_mi_tag::IamNotPartitioned = false;
 const bool Part_mi_tag::IamNotPartitioned = false;
 
 //fields
-Field::Field(Interface &moab,const EntityHandle meshset,const CoordSys *coord_sys_ptr):
-  meshSet(meshset),
-  coordSysPtr(coord_sys_ptr),
-  tag_id_data(NULL),
-  tag_space_data(NULL),
-  tag_nb_coeff_data(NULL),
-  tag_name_data(NULL),
-  tag_name_size(0) {
+Field::Field(
+  Interface &moab,
+  const EntityHandle meshset,
+  const boost::shared_ptr<CoordSys> coord_sys_ptr
+):
+meshSet(meshset),
+coordSysPtr(coord_sys_ptr),
+tag_id_data(NULL),
+tag_space_data(NULL),
+tag_nb_coeff_data(NULL),
+tag_name_data(NULL),
+tag_name_size(0) {
   //Change those tags only by modifiers
   ErrorCode rval;
   //id

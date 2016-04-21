@@ -127,7 +127,7 @@ namespace MoFEM {
   };
 
   typedef multi_index_container<
-    CoordSys,
+    boost::shared_ptr<CoordSys>,
     indexed_by<
       ordered_unique<
         tag<Meshset_mi_tag>, member<CoordSys,EntityHandle,&CoordSys::meshSet>

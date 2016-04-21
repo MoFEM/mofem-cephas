@@ -46,7 +46,7 @@ typedef int (*FieldOrderFunct)(const int order);
 struct Field {
 
   EntityHandle meshSet; 		///< keeps entities for this meshset
-  const CoordSys *coordSysPtr;
+  boost::shared_ptr<CoordSys> coordSysPtr;
 
   Tag th_FieldData,th_AppOrder;
   Tag th_AppDofOrder,th_DofRank;
@@ -66,7 +66,7 @@ struct Field {
     *
     * \param meshset which keeps entities for this field
     */
-  Field(Interface &moab,const EntityHandle meshset,const CoordSys *coord_sys_ptr);
+  Field(Interface &moab,const EntityHandle meshset,const boost::shared_ptr<CoordSys> coord_sys_ptr);
 
   inline EntityHandle get_meshset() const { return meshSet; };
 
@@ -222,8 +222,8 @@ typedef multi_index_container<
  * \ingroup ent_multi_indices
   */
 struct FieldChangeCoordinateSystem {
-  const CoordSys *csPtr;
-  FieldChangeCoordinateSystem(const CoordSys *cs_ptr):
+  boost::shared_ptr<CoordSys> csPtr;
+  FieldChangeCoordinateSystem(boost::shared_ptr<CoordSys> cs_ptr):
   csPtr(cs_ptr) {
   }
   void operator()(boost::shared_ptr<Field> &e) {
