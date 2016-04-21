@@ -442,7 +442,7 @@ struct Core: public FieldInterface, MeshRefinment, PrismInterface, SeriesRecorde
     bool check_field(const string& name) const;
   const MoFEMField* get_field_structure(const string& name);
 
-  //MoFEMFiniteElement
+  //FiniteElement
   PetscErrorCode add_finite_element(const string &MoFEMFiniteElement_name,enum MoFEMTypes bh = MF_EXCL);
   PetscErrorCode modify_finite_element_adjacency_table(const string &MoFEMFiniteElement_name,const EntityType type,ElementAdjacencyFunct function);
   PetscErrorCode modify_finite_element_add_field_data(const string &MoFEMFiniteElement_name,const string &name_filed);

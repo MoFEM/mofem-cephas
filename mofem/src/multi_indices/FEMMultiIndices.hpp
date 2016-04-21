@@ -220,7 +220,7 @@ typedef PetscErrorCode (*ElementAdjacencyFunct)(
  * \brief Finite element definition
  * \ingroup fe_multi_indices
  */
-struct MoFEMFiniteElement {
+struct FiniteElement {
   EntityHandle meshset;     ///< meshset stores FE ents
   BitFEId* tag_id_data;     ///< ptr to tag storing FE id
   void* tag_name_data;      ///< ptr to tag storing FE name
@@ -228,7 +228,7 @@ struct MoFEMFiniteElement {
   BitFieldId* tag_BitFieldId_col_data;  ///< tag stores col id_id for fields
   BitFieldId* tag_BitFieldId_row_data;  ///< tag stores row id_id for fields
   BitFieldId* tag_BitFieldId_data;      ///< tag stores data id_id for fields
-  MoFEMFiniteElement(Interface &moab,const EntityHandle _meshset);
+  FiniteElement(Interface &moab,const EntityHandle _meshset);
   inline BitFEId get_id() const { return *tag_id_data; };
   /// get meshset
   inline EntityHandle get_meshset() const { return meshset; }
@@ -246,7 +246,7 @@ struct MoFEMFiniteElement {
 
   ElementAdjacencyTable element_adjacency_table;  //<- allow to add user specific adjacency map
 
-  friend ostream& operator<<(ostream& os, const MoFEMFiniteElement& e);
+  friend ostream& operator<<(ostream& os, const FiniteElement& e);
 };
 
 /** \brief default adjacency map
@@ -287,11 +287,11 @@ struct interface_MoFEMFiniteElement {
  */
 struct EntFiniteElement:
 public
-interface_MoFEMFiniteElement<MoFEMFiniteElement>,
+interface_MoFEMFiniteElement<FiniteElement>,
 interface_RefElement<RefElement> {
   typedef interface_RefMoFEMEntity<RefElement> interface_type_RefMoFEMEntity;
   typedef interface_RefElement<RefElement> interface_type_RefElement;
-  typedef interface_MoFEMFiniteElement<MoFEMFiniteElement> interface_type_MoFEMFiniteElement;
+  typedef interface_MoFEMFiniteElement<FiniteElement> interface_type_MoFEMFiniteElement;
   DofMoFEMEntity_multiIndex_uid_view row_dof_view;
   DofMoFEMEntity_multiIndex_uid_view col_dof_view;
   DofMoFEMEntity_multiIndex_uid_view data_dof_view;
@@ -301,10 +301,10 @@ interface_RefElement<RefElement> {
   EntFiniteElement(
     Interface &moab,
     const boost::shared_ptr<RefElement> ref_finite_element,
-    const MoFEMFiniteElement *fe_ptr
+    const FiniteElement *fe_ptr
   );
 
-  inline const MoFEMFiniteElement* get_MoFEMFiniteElementPtr() { return interface_MoFEMFiniteElement<MoFEMFiniteElement>::fe_ptr; };
+  inline const FiniteElement* get_MoFEMFiniteElementPtr() { return interface_MoFEMFiniteElement<FiniteElement>::fe_ptr; };
 
   const GlobalUId& get_global_unique_id() const { return global_uid; }
   GlobalUId get_global_unique_id_calculate() const {
@@ -377,7 +377,7 @@ interface_RefElement<T> {
   interface_RefElement<T>(sptr) {
   };
 
-  inline const MoFEMFiniteElement* get_MoFEMFiniteElementPtr() { return this->get_MoFEMFiniteElementPtr(); };
+  inline const FiniteElement* get_MoFEMFiniteElementPtr() { return this->get_MoFEMFiniteElementPtr(); };
 
   inline EntityID get_ent_id() const { return this->sPtr->get_ent_id(); }
   inline EntityType get_ent_type() const { return this->sPtr->get_ent_type(); }
@@ -567,18 +567,18 @@ typedef multi_index_container<
 
 /**
   @relates multi_index_container
-  \brief MultiIndex for entities for MoFEMFiniteElement
+  \brief MultiIndex for entities for FiniteElement
   \ingroup fe_multi_indices
  */
 typedef multi_index_container<
-  MoFEMFiniteElement,
+  FiniteElement,
   indexed_by<
     hashed_unique<
-      tag<FiniteElement_Meshset_mi_tag>, member<MoFEMFiniteElement,EntityHandle,&MoFEMFiniteElement::meshset> >,
+      tag<FiniteElement_Meshset_mi_tag>, member<FiniteElement,EntityHandle,&FiniteElement::meshset> >,
     hashed_unique<
-      tag<BitFEId_mi_tag>, const_mem_fun<MoFEMFiniteElement,BitFEId,&MoFEMFiniteElement::get_id>, HashBit<BitFEId>, EqBit<BitFEId> >,
+      tag<BitFEId_mi_tag>, const_mem_fun<FiniteElement,BitFEId,&FiniteElement::get_id>, HashBit<BitFEId>, EqBit<BitFEId> >,
     ordered_unique<
-      tag<FiniteElement_name_mi_tag>, const_mem_fun<MoFEMFiniteElement,boost::string_ref,&MoFEMFiniteElement::get_name_ref> >
+      tag<FiniteElement_name_mi_tag>, const_mem_fun<FiniteElement,boost::string_ref,&FiniteElement::get_name_ref> >
   > > MoFEMFiniteElement_multiIndex;
 
 // modificators
@@ -594,33 +594,33 @@ struct NumeredEntFiniteElement_change_part {
 struct MoFEMFiniteElement_col_change_bit_add {
   BitFieldId fIdCol;
   MoFEMFiniteElement_col_change_bit_add(const BitFieldId f_id_col): fIdCol(f_id_col) {};
-  void operator()(MoFEMFiniteElement &fe);
+  void operator()(FiniteElement &fe);
 };
 struct MoFEMFiniteElement_row_change_bit_add {
   BitFieldId fIdRow;
   MoFEMFiniteElement_row_change_bit_add(const BitFieldId f_id_row): fIdRow(f_id_row) {};
-  void operator()(MoFEMFiniteElement &fe);
+  void operator()(FiniteElement &fe);
 };
 struct MoFEMFiniteElement_change_bit_add {
   BitFieldId fIdData;
   MoFEMFiniteElement_change_bit_add(const BitFieldId f_id_data): fIdData(f_id_data) {};
-  void operator()(MoFEMFiniteElement &fe);
+  void operator()(FiniteElement &fe);
 };
 
 struct MoFEMFiniteElement_col_change_bit_off {
   BitFieldId fIdCol;
   MoFEMFiniteElement_col_change_bit_off(const BitFieldId f_id_col): fIdCol(f_id_col) {};
-  void operator()(MoFEMFiniteElement &fe);
+  void operator()(FiniteElement &fe);
 };
 struct MoFEMFiniteElement_row_change_bit_off {
   BitFieldId fIdRow;
   MoFEMFiniteElement_row_change_bit_off(const BitFieldId f_id_row): fIdRow(f_id_row) {};
-  void operator()(MoFEMFiniteElement &fe);
+  void operator()(FiniteElement &fe);
 };
 struct MoFEMFiniteElement_change_bit_off {
   BitFieldId fIdData;
   MoFEMFiniteElement_change_bit_off(const BitFieldId f_id_data): fIdData(f_id_data) {};
-  void operator()(MoFEMFiniteElement &fe);
+  void operator()(FiniteElement &fe);
 };
 
 }

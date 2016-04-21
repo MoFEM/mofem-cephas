@@ -75,7 +75,7 @@ MoFEMProblem::MoFEMProblem(Interface &moab,const EntityHandle _meshset): meshset
 
 ostream& operator<<(ostream& os,const MoFEMProblem& e) {
   os << "problem id " << e.get_id()
-    << " MoFEMFiniteElement id " << e.get_BitFEId()
+    << " FiniteElement id " << e.get_BitFEId()
     << " name "<<e.get_name();
   return os;
 }

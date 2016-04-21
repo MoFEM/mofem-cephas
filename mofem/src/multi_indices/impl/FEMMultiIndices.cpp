@@ -33,7 +33,7 @@
 
 namespace MoFEM {
 
-//ref moab MoFEMFiniteElement
+//ref moab FiniteElement
 RefElement::RefElement(Interface &moab,const RefMoFEMEntity *_RefMoFEMEntity_ptr):
   interface_RefMoFEMEntity<RefMoFEMEntity>(_RefMoFEMEntity_ptr) {}
 ostream& operator<<(ostream& os,const RefElement& e) {
@@ -725,8 +725,8 @@ PetscErrorCode DefaultElementAdjacency::defaultMeshset(
   PetscFunctionReturn(0);
 }
 
-//MoFEMFiniteElement
-MoFEMFiniteElement::MoFEMFiniteElement(Interface &moab,const EntityHandle _meshset): meshset(_meshset) {
+//FiniteElement
+FiniteElement::FiniteElement(Interface &moab,const EntityHandle _meshset): meshset(_meshset) {
   ErrorCode rval;
   Tag th_FEId;
   rval = moab.tag_get_handle("_FEId",th_FEId); CHKERR_MOAB(rval);
@@ -753,43 +753,43 @@ MoFEMFiniteElement::MoFEMFiniteElement(Interface &moab,const EntityHandle _meshs
   element_adjacency_table[MBENTITYSET] = DefaultElementAdjacency::defaultMeshset;
 }
 
-ostream& operator<<(ostream& os,const MoFEMFiniteElement& e) {
+ostream& operator<<(ostream& os,const FiniteElement& e) {
     os << "id " << e.get_id() << " name " << e.get_name_ref() << " f_id_row " << e.get_BitFieldId_row()
     << " f_id_col " << e.get_BitFieldId_col() << " BitFEId_data " << e.get_BitFieldId_data();
     return os;
 }
 
-void MoFEMFiniteElement_col_change_bit_add::operator()(MoFEMFiniteElement &fe) {
+void MoFEMFiniteElement_col_change_bit_add::operator()(FiniteElement &fe) {
   *((BitFieldId*)(fe.tag_BitFieldId_col_data)) |= fIdCol;
 }
 
-void MoFEMFiniteElement_row_change_bit_add::operator()(MoFEMFiniteElement &fe) {
+void MoFEMFiniteElement_row_change_bit_add::operator()(FiniteElement &fe) {
   *((BitFieldId*)(fe.tag_BitFieldId_row_data)) |= fIdRow;
 }
 
-void MoFEMFiniteElement_change_bit_add::operator()(MoFEMFiniteElement &MoFEMFiniteElement) {
-  *((BitFieldId*)(MoFEMFiniteElement.tag_BitFieldId_data)) |= fIdData;
+void MoFEMFiniteElement_change_bit_add::operator()(FiniteElement &FiniteElement) {
+  *((BitFieldId*)(FiniteElement.tag_BitFieldId_data)) |= fIdData;
 }
 
-void MoFEMFiniteElement_col_change_bit_off::operator()(MoFEMFiniteElement &fe) {
+void MoFEMFiniteElement_col_change_bit_off::operator()(FiniteElement &fe) {
   *((BitFieldId*)(fe.tag_BitFieldId_col_data)) &= fIdCol.flip();
 }
 
-void MoFEMFiniteElement_row_change_bit_off::operator()(MoFEMFiniteElement &fe) {
+void MoFEMFiniteElement_row_change_bit_off::operator()(FiniteElement &fe) {
   *((BitFieldId*)(fe.tag_BitFieldId_row_data)) &= fIdRow.flip();
 }
 
-void MoFEMFiniteElement_change_bit_off::operator()(MoFEMFiniteElement &fe) {
+void MoFEMFiniteElement_change_bit_off::operator()(FiniteElement &fe) {
   *((BitFieldId*)(fe.tag_BitFieldId_data)) &= fIdData.flip();
 }
 
-//MoFEMFiniteElement data
+//FiniteElement data
 EntFiniteElement::EntFiniteElement(
   Interface &moab,
   const boost::shared_ptr<RefElement> ref_finite_element,
-  const MoFEMFiniteElement *fe_ptr
+  const FiniteElement *fe_ptr
 ):
-interface_MoFEMFiniteElement<MoFEMFiniteElement>(fe_ptr),
+interface_MoFEMFiniteElement<FiniteElement>(fe_ptr),
 interface_RefElement<RefElement>(ref_finite_element) {
 
   //get finite element entity

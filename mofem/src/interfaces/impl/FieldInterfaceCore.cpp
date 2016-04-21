@@ -1278,9 +1278,9 @@ PetscErrorCode Core::add_finite_element(const string &MoFEMFiniteElement_name,en
   void const* tag_data[] = { MoFEMFiniteElement_name.c_str() };
   int tag_sizes[1]; tag_sizes[0] = MoFEMFiniteElement_name.size();
   rval = moab.tag_set_by_ptr(th_FEName,&meshset,1,tag_data,tag_sizes); CHKERRQ_MOAB(rval);
-  //add MoFEMFiniteElement
-  pair<MoFEMFiniteElement_multiIndex::iterator,bool> p = finiteElements.insert(MoFEMFiniteElement(moab,meshset));
-  if(!p.second) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"MoFEMFiniteElement not inserted");
+  //add FiniteElement
+  pair<MoFEMFiniteElement_multiIndex::iterator,bool> p = finiteElements.insert(FiniteElement(moab,meshset));
+  if(!p.second) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"FiniteElement not inserted");
   if(verbose>0) {
     ostringstream ss;
     ss << "add finite element: " << MoFEMFiniteElement_name << endl;
@@ -1295,8 +1295,8 @@ PetscErrorCode Core::modify_finite_element_adjacency_table(const string &MoFEMFi
   typedef MoFEMFiniteElement_multiIndex::index<FiniteElement_name_mi_tag>::type finiteElements_by_name;
   finiteElements_by_name &MoFEMFiniteElement_name_set = finiteElements.get<FiniteElement_name_mi_tag>();
   finiteElements_by_name::iterator it_MoFEMFiniteElement = MoFEMFiniteElement_name_set.find(MoFEMFiniteElement_name);
-  if(it_MoFEMFiniteElement==MoFEMFiniteElement_name_set.end()) SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_FOUND,"this MoFEMFiniteElement is there");
-  const_cast<MoFEMFiniteElement*>(&*it_MoFEMFiniteElement)->element_adjacency_table[type] = function;
+  if(it_MoFEMFiniteElement==MoFEMFiniteElement_name_set.end()) SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_FOUND,"this FiniteElement is there");
+  const_cast<FiniteElement*>(&*it_MoFEMFiniteElement)->element_adjacency_table[type] = function;
   PetscFunctionReturn(0);
 }
 PetscErrorCode Core::modify_finite_element_add_field_data(const string &MoFEMFiniteElement_name,const string &name_data) {
@@ -1305,7 +1305,7 @@ PetscErrorCode Core::modify_finite_element_add_field_data(const string &MoFEMFin
   typedef MoFEMFiniteElement_multiIndex::index<FiniteElement_name_mi_tag>::type finiteElements_by_name;
   finiteElements_by_name &MoFEMFiniteElement_name_set = finiteElements.get<FiniteElement_name_mi_tag>();
   finiteElements_by_name::iterator it_MoFEMFiniteElement = MoFEMFiniteElement_name_set.find(MoFEMFiniteElement_name);
-  if(it_MoFEMFiniteElement==MoFEMFiniteElement_name_set.end()) SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_FOUND,"this MoFEMFiniteElement is there");
+  if(it_MoFEMFiniteElement==MoFEMFiniteElement_name_set.end()) SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_FOUND,"this FiniteElement is there");
   try {
     bool success = MoFEMFiniteElement_name_set.modify(it_MoFEMFiniteElement,MoFEMFiniteElement_change_bit_add(get_BitFieldId(name_data)));
     if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
@@ -1335,7 +1335,7 @@ PetscErrorCode Core::modify_finite_element_add_field_col(const string &MoFEMFini
   typedef MoFEMFiniteElement_multiIndex::index<FiniteElement_name_mi_tag>::type finiteElements_by_name;
   finiteElements_by_name &MoFEMFiniteElement_name_set = finiteElements.get<FiniteElement_name_mi_tag>();
   finiteElements_by_name::iterator it_MoFEMFiniteElement = MoFEMFiniteElement_name_set.find(MoFEMFiniteElement_name);
-  if(it_MoFEMFiniteElement==MoFEMFiniteElement_name_set.end()) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"this MoFEMFiniteElement is there");
+  if(it_MoFEMFiniteElement==MoFEMFiniteElement_name_set.end()) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"this FiniteElement is there");
   try {
     bool success = MoFEMFiniteElement_name_set.modify(it_MoFEMFiniteElement,MoFEMFiniteElement_col_change_bit_add(get_BitFieldId(name_col)));
     if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
@@ -1350,7 +1350,7 @@ PetscErrorCode Core::modify_finite_element_off_field_data(const string &MoFEMFin
   typedef MoFEMFiniteElement_multiIndex::index<FiniteElement_name_mi_tag>::type finiteElements_by_name;
   finiteElements_by_name &MoFEMFiniteElement_name_set = finiteElements.get<FiniteElement_name_mi_tag>();
   finiteElements_by_name::iterator it_MoFEMFiniteElement = MoFEMFiniteElement_name_set.find(MoFEMFiniteElement_name);
-  if(it_MoFEMFiniteElement==MoFEMFiniteElement_name_set.end()) SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_FOUND,"this MoFEMFiniteElement is there");
+  if(it_MoFEMFiniteElement==MoFEMFiniteElement_name_set.end()) SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_FOUND,"this FiniteElement is there");
   try {
     bool success = MoFEMFiniteElement_name_set.modify(it_MoFEMFiniteElement,MoFEMFiniteElement_change_bit_off(get_BitFieldId(name_data)));
     if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
@@ -1380,7 +1380,7 @@ PetscErrorCode Core::modify_finite_element_off_field_col(const string &MoFEMFini
   typedef MoFEMFiniteElement_multiIndex::index<FiniteElement_name_mi_tag>::type finiteElements_by_name;
   finiteElements_by_name &MoFEMFiniteElement_name_set = finiteElements.get<FiniteElement_name_mi_tag>();
   finiteElements_by_name::iterator it_MoFEMFiniteElement = MoFEMFiniteElement_name_set.find(MoFEMFiniteElement_name);
-  if(it_MoFEMFiniteElement==MoFEMFiniteElement_name_set.end()) SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_FOUND,"this MoFEMFiniteElement is there");
+  if(it_MoFEMFiniteElement==MoFEMFiniteElement_name_set.end()) SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_FOUND,"this FiniteElement is there");
   try {
     bool success = MoFEMFiniteElement_name_set.modify(it_MoFEMFiniteElement,MoFEMFiniteElement_col_change_bit_off(get_BitFieldId(name_col)));
     if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
@@ -1951,7 +1951,7 @@ PetscErrorCode Core::build_finite_elements(int verb) {
       ref_MoFEMFiniteElement_miit = refinedFiniteElements.get<Ent_mi_tag>().find(*eit);
       if(ref_MoFEMFiniteElement_miit == refinedFiniteElements.get<Ent_mi_tag>().end()) {
         ostringstream ss;
-        ss << "ref MoFEMFiniteElement not in database ent = " << *eit;
+        ss << "ref FiniteElement not in database ent = " << *eit;
         ss << " type " << moab.type_from_handle(*eit);
         ss << " " << *MoFEMFiniteElement_miit;
         SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,ss.str().c_str());
@@ -2094,7 +2094,7 @@ PetscErrorCode Core::partition_finite_elements(
   NumeredEntFiniteElement_multiIndex& numeredFiniteElements
   = const_cast<NumeredEntFiniteElement_multiIndex&>(p_miit->numeredFiniteElements);
   numeredFiniteElements.clear();
-  //MoFEMFiniteElement set
+  //FiniteElement set
   EntFiniteElement_multiIndex::iterator miit2 = entsFiniteElements.begin();
   EntFiniteElement_multiIndex::iterator hi_miit2 = entsFiniteElements.end();
   for(;miit2!=hi_miit2;miit2++) {

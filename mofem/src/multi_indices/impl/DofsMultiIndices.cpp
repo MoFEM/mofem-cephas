@@ -120,7 +120,7 @@ interface_DofMoFEMEntity<DofMoFEMEntity>(_DofMoFEMEntity_ptr) {
 }
 
 ostream& operator<<(ostream& os,const FEDofMoFEMEntity& e) {
-  os << "local dof MoFEMFiniteElement idx "
+  os << "local dof FiniteElement idx "
     << "side_number " << e.side_number_ptr->side_number << " "
     << "sense " << e.side_number_ptr->sense << " "
     << *e.field_ptr;
@@ -142,7 +142,7 @@ BaseFEDofMoFEMEntity(t.get<0>()), interface_NumeredDofMoFEMEntity<NumeredDofMoFE
 }
 
 ostream& operator<<(ostream& os,const FENumeredDofMoFEMEntity& e) {
-  os << "local dof MoFEMFiniteElement idx "
+  os << "local dof FiniteElement idx "
     << "side_number " << e.side_number_ptr->side_number << " "
     << "sense " << e.side_number_ptr->sense << " "
     << *e.field_ptr;
