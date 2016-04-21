@@ -579,7 +579,7 @@ typedef multi_index_container<
       tag<BitFEId_mi_tag>, const_mem_fun<FiniteElement,BitFEId,&FiniteElement::get_id>, HashBit<BitFEId>, EqBit<BitFEId> >,
     ordered_unique<
       tag<FiniteElement_name_mi_tag>, const_mem_fun<FiniteElement,boost::string_ref,&FiniteElement::get_name_ref> >
-  > > MoFEMFiniteElement_multiIndex;
+  > > FiniteElement_multiIndex;
 
 // modificators
 

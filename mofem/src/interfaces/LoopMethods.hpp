@@ -150,7 +150,7 @@ struct BasicMethod: public UnknownInterface,KspMethod,SnesMethod,TSMethod {
   const MoFEMField_multiIndex *fieldsPtr;
   const MoFEMEntity_multiIndex *entitiesPtr;
   const DofMoFEMEntity_multiIndex *dofsPtr;
-  const MoFEMFiniteElement_multiIndex *finiteElementsPtr;
+  const FiniteElement_multiIndex *finiteElementsPtr;
   const EntFiniteElement_multiIndex *finiteElementsEntitiesPtr;
   const MoFEMEntityEntFiniteElementAdjacencyMap_multiIndex *adjacenciesPtr;
   virtual ~BasicMethod() {};

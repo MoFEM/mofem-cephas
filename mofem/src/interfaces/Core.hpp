@@ -85,7 +85,7 @@ struct Core: public FieldInterface, MeshRefinment, PrismInterface, SeriesRecorde
   MoFEMEntity_multiIndex entsFields;			///< entities on field
   DofMoFEMEntity_multiIndex dofsField;		///< dofs on fiels
   //finite element
-  MoFEMFiniteElement_multiIndex finiteElements;		///< finite elements
+  FiniteElement_multiIndex finiteElements;		///< finite elements
   EntFiniteElement_multiIndex entsFiniteElements;			///< finite element entities
   //entFEAdjacencies
   MoFEMEntityEntFiniteElementAdjacencyMap_multiIndex entFEAdjacencies;	///< adjacencies of elements to dofs
@@ -607,7 +607,7 @@ struct Core: public FieldInterface, MeshRefinment, PrismInterface, SeriesRecorde
   PetscErrorCode get_ref_finite_elements(const RefElement_multiIndex **refined_finite_elements_ptr);
   PetscErrorCode get_problem(const string &problem_name,const MoFEMProblem **problem_ptr);
   PetscErrorCode get_dofs(const DofMoFEMEntity_multiIndex **dofs_ptr);
-  PetscErrorCode get_finite_elements(const MoFEMFiniteElement_multiIndex **finiteElements_ptr);
+  PetscErrorCode get_finite_elements(const FiniteElement_multiIndex **finiteElements_ptr);
 
   MoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator get_ent_moabfield_by_name_begin(const string &field_name);
   MoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator get_ent_moabfield_by_name_end(const string &field_name);

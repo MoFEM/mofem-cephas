@@ -2092,7 +2092,7 @@ struct FieldInterface: public UnknownInterface {
     * \ingroup mofem_access
     *
     */
-  virtual PetscErrorCode get_finite_elements(const MoFEMFiniteElement_multiIndex **finiteElementsPtr_ptr) = 0;
+  virtual PetscErrorCode get_finite_elements(const FiniteElement_multiIndex **finiteElementsPtr_ptr) = 0;
 
   /**
     * \brief get begin iterator of finite elements of given name (instead you can use _IT_GET_FES_BY_NAME_FOR_LOOP_(MFIELD,NAME,IT)

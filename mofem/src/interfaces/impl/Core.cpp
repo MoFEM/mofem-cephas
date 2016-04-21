@@ -961,7 +961,7 @@ PetscErrorCode Core::initialiseDatabseInformationFromMesh(int verb) {
     rval = moab.tag_get_data(th_FEId,&*mit,1,&fe_id); CHKERRQ_MOAB(rval);
     //check if meshset is finite element meshset
     if(fe_id!=0) {
-      pair<MoFEMFiniteElement_multiIndex::iterator,bool> p = finiteElements.insert(FiniteElement(moab,*mit));
+      pair<FiniteElement_multiIndex::iterator,bool> p = finiteElements.insert(FiniteElement(moab,*mit));
       if(verb > 0) {
         ostringstream ss;
         ss << "read finite element " << *p.first << endl;;
