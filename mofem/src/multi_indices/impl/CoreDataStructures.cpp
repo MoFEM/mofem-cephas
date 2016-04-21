@@ -168,7 +168,7 @@ EntFiniteElement_ptr(_EntFiniteElement_ptr) {}
 
 ostream& operator<<(ostream& os,const MoFEMEntityEntFiniteElementAdjacencyMap& e) {
   os << "by_other " << bitset<3>(e.by_other) << " "
-    << *e.MoFEMEntity_ptr << endl << *e.EntFiniteElement_ptr->fe_ptr;
+    << *e.MoFEMEntity_ptr << endl << *e.EntFiniteElement_ptr->sFePtr;
   return os;
 }
 

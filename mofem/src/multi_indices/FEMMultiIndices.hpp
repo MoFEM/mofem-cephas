@@ -269,16 +269,21 @@ struct DefaultElementAdjacency {
  */
 template <typename T>
 struct interface_MoFEMFiniteElement {
-  const T *fe_ptr;
-  interface_MoFEMFiniteElement(const T *_ptr): fe_ptr(_ptr) {};
-  inline BitFEId get_id() const { return fe_ptr->get_id(); }
-  inline EntityHandle get_meshset() const { return fe_ptr->get_meshset(); }
-  inline boost::string_ref get_name_ref() const { return fe_ptr->get_name_ref(); }
-  inline string get_name() const { return fe_ptr->get_name(); }
-  inline BitFieldId get_BitFieldId_col() const { return fe_ptr->get_BitFieldId_col(); }
-  inline BitFieldId get_BitFieldId_row() const { return fe_ptr->get_BitFieldId_row(); }
-  inline BitFieldId get_BitFieldId_data() const { return fe_ptr->get_BitFieldId_data(); }
-  inline unsigned int get_bit_number() const { return fe_ptr->get_bit_number(); }
+
+  const boost::shared_ptr<T> sFePtr;
+  interface_MoFEMFiniteElement(const boost::shared_ptr<T> ptr): sFePtr(ptr) {};
+
+  inline const boost::shared_ptr<FiniteElement> get_MoFEMFiniteElementPtr() { return this->sFePtr; };
+
+  inline BitFEId get_id() const { return this->sFePtr->get_id(); }
+  inline EntityHandle get_meshset() const { return this->sFePtr->get_meshset(); }
+  inline boost::string_ref get_name_ref() const { return this->sFePtr->get_name_ref(); }
+  inline string get_name() const { return this->sFePtr->get_name(); }
+  inline BitFieldId get_BitFieldId_col() const { return this->sFePtr->get_BitFieldId_col(); }
+  inline BitFieldId get_BitFieldId_row() const { return this->sFePtr->get_BitFieldId_row(); }
+  inline BitFieldId get_BitFieldId_data() const { return this->sFePtr->get_BitFieldId_data(); }
+  inline unsigned int get_bit_number() const { return this->sFePtr->get_bit_number(); }
+
 };
 
 /**
@@ -301,10 +306,8 @@ interface_RefElement<RefElement> {
   EntFiniteElement(
     Interface &moab,
     const boost::shared_ptr<RefElement> ref_finite_element,
-    const FiniteElement *fe_ptr
+    const boost::shared_ptr<FiniteElement> fe_ptr
   );
-
-  inline const FiniteElement* get_MoFEMFiniteElementPtr() { return interface_MoFEMFiniteElement<FiniteElement>::fe_ptr; };
 
   const GlobalUId& get_global_unique_id() const { return global_uid; }
   GlobalUId get_global_unique_id_calculate() const {
@@ -373,11 +376,9 @@ interface_MoFEMFiniteElement<T>,
 interface_RefElement<T> {
 
   interface_EntFiniteElement(const boost::shared_ptr<T> sptr):
-  interface_MoFEMFiniteElement<T>(sptr.get()),
+  interface_MoFEMFiniteElement<T>(sptr),
   interface_RefElement<T>(sptr) {
   };
-
-  inline const FiniteElement* get_MoFEMFiniteElementPtr() { return this->get_MoFEMFiniteElementPtr(); };
 
   inline EntityID get_ent_id() const { return this->sPtr->get_ent_id(); }
   inline EntityType get_ent_type() const { return this->sPtr->get_ent_type(); }
@@ -439,7 +440,7 @@ struct NumeredEntFiniteElement: public interface_EntFiniteElement<EntFiniteEleme
   PetscErrorCode get_col_dofs_by_petsc_gloabl_dof_idx(DofIdx idx,const FENumeredDofMoFEMEntity **dof_ptr) const;
 
   friend ostream& operator<<(ostream& os,const NumeredEntFiniteElement& e) {
-    os << "part " << e.part << " " << *(e.fe_ptr);
+    os << "part " << e.part << " " << *(e.sFePtr);
     return os;
   }
 
@@ -571,7 +572,7 @@ typedef multi_index_container<
   \ingroup fe_multi_indices
  */
 typedef multi_index_container<
-  FiniteElement,
+  boost::shared_ptr<FiniteElement>,
   indexed_by<
     hashed_unique<
       tag<FiniteElement_Meshset_mi_tag>, member<FiniteElement,EntityHandle,&FiniteElement::meshset> >,
@@ -594,33 +595,33 @@ struct NumeredEntFiniteElement_change_part {
 struct MoFEMFiniteElement_col_change_bit_add {
   BitFieldId fIdCol;
   MoFEMFiniteElement_col_change_bit_add(const BitFieldId f_id_col): fIdCol(f_id_col) {};
-  void operator()(FiniteElement &fe);
+  void operator()(boost::shared_ptr<FiniteElement> &fe);
 };
 struct MoFEMFiniteElement_row_change_bit_add {
   BitFieldId fIdRow;
   MoFEMFiniteElement_row_change_bit_add(const BitFieldId f_id_row): fIdRow(f_id_row) {};
-  void operator()(FiniteElement &fe);
+  void operator()(boost::shared_ptr<FiniteElement> &fe);
 };
 struct MoFEMFiniteElement_change_bit_add {
   BitFieldId fIdData;
   MoFEMFiniteElement_change_bit_add(const BitFieldId f_id_data): fIdData(f_id_data) {};
-  void operator()(FiniteElement &fe);
+  void operator()(boost::shared_ptr<FiniteElement> &fe);
 };
 
 struct MoFEMFiniteElement_col_change_bit_off {
   BitFieldId fIdCol;
   MoFEMFiniteElement_col_change_bit_off(const BitFieldId f_id_col): fIdCol(f_id_col) {};
-  void operator()(FiniteElement &fe);
+  void operator()(boost::shared_ptr<FiniteElement> &fe);
 };
 struct MoFEMFiniteElement_row_change_bit_off {
   BitFieldId fIdRow;
   MoFEMFiniteElement_row_change_bit_off(const BitFieldId f_id_row): fIdRow(f_id_row) {};
-  void operator()(FiniteElement &fe);
+  void operator()(boost::shared_ptr<FiniteElement> &fe);
 };
 struct MoFEMFiniteElement_change_bit_off {
   BitFieldId fIdData;
   MoFEMFiniteElement_change_bit_off(const BitFieldId f_id_data): fIdData(f_id_data) {};
-  void operator()(FiniteElement &fe);
+  void operator()(boost::shared_ptr<FiniteElement> &fe);
 };
 
 }

@@ -843,7 +843,7 @@ struct FieldInterface: public UnknownInterface {
       ierr = mField.add_finite_element("PLASTIC"); CHKERRQ(ierr);
    \endcode
     */
-  virtual PetscErrorCode add_finite_element(const string &MoFEMFiniteElement_name,enum MoFEMTypes bh = MF_EXCL) = 0;
+  virtual PetscErrorCode add_finite_element(const string &fe_name,enum MoFEMTypes bh = MF_EXCL) = 0;
 
   /**
     * \brief modify finite element table, only for advanced user
@@ -852,7 +852,7 @@ struct FieldInterface: public UnknownInterface {
     * Using that functions means that you like to do something not usual.
     *
     */
-  virtual PetscErrorCode modify_finite_element_adjacency_table(const string &MoFEMFiniteElement_name,const EntityType type,ElementAdjacencyFunct function) = 0;
+  virtual PetscErrorCode modify_finite_element_adjacency_table(const string &fe_name,const EntityType type,ElementAdjacencyFunct function) = 0;
 
 
   /** \brief set finite element field data
@@ -863,7 +863,7 @@ struct FieldInterface: public UnknownInterface {
    *
    * This function will set memory in the form of a vector
    */
-  virtual PetscErrorCode modify_finite_element_add_field_data(const string &MoFEMFiniteElement_name,const string &name_filed) = 0;
+  virtual PetscErrorCode modify_finite_element_add_field_data(const string &fe_name,const string &name_filed) = 0;
 
   /** \brief unset finite element field data
    * \ingroup mofem_fe
@@ -873,7 +873,7 @@ struct FieldInterface: public UnknownInterface {
    *
    * This function will set memory in the form of a vector
    */
-  virtual PetscErrorCode modify_finite_element_off_field_data(const string &MoFEMFiniteElement_name,const string &name_filed) = 0;
+  virtual PetscErrorCode modify_finite_element_off_field_data(const string &fe_name,const string &name_filed) = 0;
 
     /** \brief set field row which finite element use
      * \ingroup mofem_fe
@@ -881,7 +881,7 @@ struct FieldInterface: public UnknownInterface {
      * \param name finite element name
      * \param name field name
      */
-  virtual PetscErrorCode modify_finite_element_add_field_row(const string &MoFEMFiniteElement_name,const string &name_row) = 0;
+  virtual PetscErrorCode modify_finite_element_add_field_row(const string &fe_name,const string &name_row) = 0;
 
     /** \brief unset field row which finite element use
      * \ingroup mofem_fe
@@ -889,7 +889,7 @@ struct FieldInterface: public UnknownInterface {
      * \param name finite element name
      * \param name field name
      */
-  virtual PetscErrorCode modify_finite_element_off_field_row(const string &MoFEMFiniteElement_name,const string &name_row) = 0;
+  virtual PetscErrorCode modify_finite_element_off_field_row(const string &fe_name,const string &name_row) = 0;
 
 
     /** \brief set field col which finite element use
@@ -897,7 +897,7 @@ struct FieldInterface: public UnknownInterface {
      * \param name finite element name
      * \param name field name
      */
-  virtual PetscErrorCode modify_finite_element_add_field_col(const string &MoFEMFiniteElement_name,const string &name_row) = 0;
+  virtual PetscErrorCode modify_finite_element_add_field_col(const string &fe_name,const string &name_row) = 0;
 
     /** \brief unset field col which finite element use
      * \ingroup mofem_fe
@@ -905,7 +905,7 @@ struct FieldInterface: public UnknownInterface {
      * \param name finite element name
      * \param name field name
      */
-  virtual PetscErrorCode modify_finite_element_off_field_col(const string &MoFEMFiniteElement_name,const string &name_row) = 0;
+  virtual PetscErrorCode modify_finite_element_off_field_col(const string &fe_name,const string &name_row) = 0;
 
   /** \brief add EDGES entities from range to finite element database given by name
    * \ingroup mofem_fe
@@ -1060,7 +1060,7 @@ struct FieldInterface: public UnknownInterface {
    * \param name Problem name
    * \param name Finite Element name
    */
-  virtual PetscErrorCode modify_problem_add_finite_element(const string &name_problem,const string &MoFEMFiniteElement_name) = 0;
+  virtual PetscErrorCode modify_problem_add_finite_element(const string &name_problem,const string &fe_name) = 0;
 
   /** \brief unset finite element from problem, this remove entities assigned to finite element to a particular problem
    * \ingroup mofem_problems
@@ -1070,7 +1070,7 @@ struct FieldInterface: public UnknownInterface {
    * \param name Problem name
    * \param name Finite Element name
    */
-  virtual PetscErrorCode modify_problem_unset_finite_element(const string &name_problem,const string &MoFEMFiniteElement_name) = 0;
+  virtual PetscErrorCode modify_problem_unset_finite_element(const string &name_problem,const string &fe_name) = 0;
 
 
   /** \brief add ref level to problem

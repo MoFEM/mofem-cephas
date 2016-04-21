@@ -961,14 +961,16 @@ PetscErrorCode Core::initialiseDatabseInformationFromMesh(int verb) {
     rval = moab.tag_get_data(th_FEId,&*mit,1,&fe_id); CHKERRQ_MOAB(rval);
     //check if meshset is finite element meshset
     if(fe_id!=0) {
-      pair<FiniteElement_multiIndex::iterator,bool> p = finiteElements.insert(FiniteElement(moab,*mit));
+      pair<FiniteElement_multiIndex::iterator,bool> p = finiteElements.insert(
+        boost::shared_ptr<FiniteElement>(new FiniteElement(moab,*mit))
+      );
       if(verb > 0) {
         ostringstream ss;
         ss << "read finite element " << *p.first << endl;;
         PetscPrintf(comm,ss.str().c_str());
       }
       NOT_USED(p);
-      assert(p.first->meshset == *mit);
+      assert((*p.first)->meshset == *mit);
       Range ents;
       rval = moab.get_entities_by_type(*mit,MBENTITYSET,ents,false); CHKERRQ_MOAB(rval);
       rval = moab.get_entities_by_handle(*mit,ents,true); CHKERRQ_MOAB(rval);

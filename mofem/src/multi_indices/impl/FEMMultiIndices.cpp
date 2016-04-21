@@ -759,35 +759,35 @@ ostream& operator<<(ostream& os,const FiniteElement& e) {
     return os;
 }
 
-void MoFEMFiniteElement_col_change_bit_add::operator()(FiniteElement &fe) {
-  *((BitFieldId*)(fe.tag_BitFieldId_col_data)) |= fIdCol;
+void MoFEMFiniteElement_col_change_bit_add::operator()(boost::shared_ptr<FiniteElement> &fe) {
+  *((BitFieldId*)(fe->tag_BitFieldId_col_data)) |= fIdCol;
 }
 
-void MoFEMFiniteElement_row_change_bit_add::operator()(FiniteElement &fe) {
-  *((BitFieldId*)(fe.tag_BitFieldId_row_data)) |= fIdRow;
+void MoFEMFiniteElement_row_change_bit_add::operator()(boost::shared_ptr<FiniteElement> &fe) {
+  *((BitFieldId*)(fe->tag_BitFieldId_row_data)) |= fIdRow;
 }
 
-void MoFEMFiniteElement_change_bit_add::operator()(FiniteElement &FiniteElement) {
-  *((BitFieldId*)(FiniteElement.tag_BitFieldId_data)) |= fIdData;
+void MoFEMFiniteElement_change_bit_add::operator()(boost::shared_ptr<FiniteElement> &fe) {
+  *((BitFieldId*)(fe->tag_BitFieldId_data)) |= fIdData;
 }
 
-void MoFEMFiniteElement_col_change_bit_off::operator()(FiniteElement &fe) {
-  *((BitFieldId*)(fe.tag_BitFieldId_col_data)) &= fIdCol.flip();
+void MoFEMFiniteElement_col_change_bit_off::operator()(boost::shared_ptr<FiniteElement> &fe) {
+  *((BitFieldId*)(fe->tag_BitFieldId_col_data)) &= fIdCol.flip();
 }
 
-void MoFEMFiniteElement_row_change_bit_off::operator()(FiniteElement &fe) {
-  *((BitFieldId*)(fe.tag_BitFieldId_row_data)) &= fIdRow.flip();
+void MoFEMFiniteElement_row_change_bit_off::operator()(boost::shared_ptr<FiniteElement> &fe) {
+  *((BitFieldId*)(fe->tag_BitFieldId_row_data)) &= fIdRow.flip();
 }
 
-void MoFEMFiniteElement_change_bit_off::operator()(FiniteElement &fe) {
-  *((BitFieldId*)(fe.tag_BitFieldId_data)) &= fIdData.flip();
+void MoFEMFiniteElement_change_bit_off::operator()(boost::shared_ptr<FiniteElement> &fe) {
+  *((BitFieldId*)(fe->tag_BitFieldId_data)) &= fIdData.flip();
 }
 
 //FiniteElement data
 EntFiniteElement::EntFiniteElement(
   Interface &moab,
   const boost::shared_ptr<RefElement> ref_finite_element,
-  const FiniteElement *fe_ptr
+  const boost::shared_ptr<FiniteElement> fe_ptr
 ):
 interface_MoFEMFiniteElement<FiniteElement>(fe_ptr),
 interface_RefElement<RefElement>(ref_finite_element) {
@@ -801,7 +801,7 @@ interface_RefElement<RefElement>(ref_finite_element) {
 }
 
 ostream& operator<<(ostream& os,const EntFiniteElement& e) {
-  os << *e.fe_ptr << endl;
+  os << *e.sFePtr << endl;
   os << *e.ref_ptr << endl;
   os << "row dof_uids ";
   DofMoFEMEntity_multiIndex_uid_view::iterator rit;

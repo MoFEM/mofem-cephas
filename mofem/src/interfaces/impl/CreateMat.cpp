@@ -820,7 +820,9 @@ PetscErrorCode Core::partition_check_matrix_fill_in(const string &problem_name,i
         }
 
         MoFEMEntityEntFiniteElementAdjacencyMap_multiIndex::index<Composite_Unique_mi_tag>::type::iterator ait;
-        ait = adjacenciesPtr->get<Composite_Unique_mi_tag>().find(boost::make_tuple((*rit)->get_MoFEMEntity_ptr()->get_global_unique_id(),fePtr->get_global_unique_id()));
+        ait = adjacenciesPtr->get<Composite_Unique_mi_tag>().find(
+          boost::make_tuple((*rit)->get_MoFEMEntity_ptr()->get_global_unique_id(),fePtr->get_global_unique_id())
+        );
         if(ait==adjacenciesPtr->end()) {
           ostringstream ss;
           ss << *(*rit) << endl;
@@ -851,7 +853,9 @@ PetscErrorCode Core::partition_check_matrix_fill_in(const string &problem_name,i
             SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
           }
           int col = (*cit)->get_petsc_gloabl_dof_idx();
-          ait = adjacenciesPtr->get<Composite_Unique_mi_tag>().find(boost::make_tuple((*cit)->get_MoFEMEntity_ptr()->get_global_unique_id(),fePtr->get_global_unique_id()));
+          ait = adjacenciesPtr->get<Composite_Unique_mi_tag>().find(
+            boost::make_tuple((*cit)->get_MoFEMEntity_ptr()->get_global_unique_id(),fePtr->get_global_unique_id())
+          );
           if(ait==adjacenciesPtr->end()) {
             SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"adjacencies data inconsistency");
           } else {
@@ -918,11 +922,11 @@ PetscErrorCode Core::partition_check_matrix_fill_in(const string &problem_name,i
 
       }
 
-      if(fePtr->fe_ptr->row_dof_view.size()!=fePtr->rows_dofs.size()) {
+      if(fePtr->sPtr->row_dof_view.size()!=fePtr->rows_dofs.size()) {
         cerr << "Warning: FEDof Row size != NumeredFEDof RowSize" << endl;
       }
 
-      if(fePtr->fe_ptr->col_dof_view.size()!=fePtr->cols_dofs.size()) {
+      if(fePtr->sPtr->col_dof_view.size()!=fePtr->cols_dofs.size()) {
         cerr << "Warning: FEDof Row size != NumeredFEDof RowSize" << endl;
       }
 
