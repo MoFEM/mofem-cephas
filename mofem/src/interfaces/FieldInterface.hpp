@@ -1911,7 +1911,7 @@ struct FieldInterface: public UnknownInterface {
   /** \brief Get ref finite elements multi-index form database
     * \ingroup mofem_access
     */
-  virtual PetscErrorCode get_ref_finite_elements(const RefMoFEMElement_multiIndex **refined_finite_elements_ptr) = 0;
+  virtual PetscErrorCode get_ref_finite_elements(const RefElement_multiIndex **refined_finite_elements_ptr) = 0;
 
   /** \brief Get problem database (data structure)
     * \ingroup mofem_problems

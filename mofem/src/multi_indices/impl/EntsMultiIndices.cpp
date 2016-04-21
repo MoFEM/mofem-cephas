@@ -103,7 +103,7 @@ PetscErrorCode BasicMoFEMEntity::iterateBasicMoFEMEntity(
 }
 
 //ref moab ent
-BitRefEdges MoFEM::RefMoFEMElement::DummyBitRefEdges = BitRefEdges(0);
+BitRefEdges MoFEM::RefElement::DummyBitRefEdges = BitRefEdges(0);
 RefMoFEMEntity::RefMoFEMEntity():
 BasicMoFEMEntity(),
 tag_parent_ent(NULL),

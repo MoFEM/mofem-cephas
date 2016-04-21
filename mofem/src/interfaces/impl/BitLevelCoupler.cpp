@@ -384,14 +384,14 @@ PetscErrorCode BitLevelCouplerInterface::chanegParent(RefMoFEMEntity_multiIndex:
   if(element) {
     EntityHandle ent;
     ent = it->get_ref_ent();
-    const RefMoFEMElement_multiIndex *refined_finite_elements_ptr;
+    const RefElement_multiIndex *refined_finite_elements_ptr;
     ierr = m_field.get_ref_finite_elements(&refined_finite_elements_ptr); CHKERRQ(ierr);
-    RefMoFEMElement_multiIndex::index<Ent_mi_tag>::type::iterator eit;
+    RefElement_multiIndex::index<Ent_mi_tag>::type::iterator eit;
     eit = refined_finite_elements_ptr->get<Ent_mi_tag>().find(ent);
     if(eit!=refined_finite_elements_ptr->get<Ent_mi_tag>().end()) {
-      RefMoFEMElement_change_parent modifier(m_field.get_moab(),refined_ptr,it,parent);
+      RefElement_change_parent modifier(m_field.get_moab(),refined_ptr,it,parent);
       bool success;
-      success = const_cast<RefMoFEMElement_multiIndex*>(refined_finite_elements_ptr)->modify(refined_finite_elements_ptr->project<0>(eit),modifier);
+      success = const_cast<RefElement_multiIndex*>(refined_finite_elements_ptr)->modify(refined_finite_elements_ptr->project<0>(eit),modifier);
       if(!success) {
 	SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"unsuccessful operation");
       }

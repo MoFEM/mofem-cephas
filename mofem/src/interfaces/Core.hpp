@@ -77,7 +77,7 @@ struct Core: public FieldInterface, MeshRefinment, PrismInterface, SeriesRecorde
 
   //ref
   RefMoFEMEntity_multiIndex refinedEntities;		///< refined entities
-  RefMoFEMElement_multiIndex refinedFiniteElements;	///< refined elements
+  RefElement_multiIndex refinedFiniteElements;	///< refined elements
   //coordinate sysrems
   CoordSys_multiIndex coordinateSystems;
   //field
@@ -604,7 +604,7 @@ struct Core: public FieldInterface, MeshRefinment, PrismInterface, SeriesRecorde
 
   //get multi_index form database
   PetscErrorCode get_ref_ents(const RefMoFEMEntity_multiIndex **refined_entities_ptr);
-  PetscErrorCode get_ref_finite_elements(const RefMoFEMElement_multiIndex **refined_finite_elements_ptr);
+  PetscErrorCode get_ref_finite_elements(const RefElement_multiIndex **refined_finite_elements_ptr);
   PetscErrorCode get_problem(const string &problem_name,const MoFEMProblem **problem_ptr);
   PetscErrorCode get_dofs(const DofMoFEMEntity_multiIndex **dofs_ptr);
   PetscErrorCode get_finite_elements(const MoFEMFiniteElement_multiIndex **finiteElements_ptr);

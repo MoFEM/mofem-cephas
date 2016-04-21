@@ -1653,7 +1653,7 @@ PetscErrorCode Core::add_ents_to_finite_element_EntType_by_bit_ref(const BitRefL
     *build_MoFEM &= 1<<0;
     const BitFEId id = get_BitFEId(name);
     const EntityHandle idm = get_finite_element_meshset(id);
-    typedef RefMoFEMElement_multiIndex::index<EntType_mi_tag>::type refMoabFE_by_type;
+    typedef RefElement_multiIndex::index<EntType_mi_tag>::type refMoabFE_by_type;
     refMoabFE_by_type &ref_MoFEMFiniteElement = refinedFiniteElements.get<EntType_mi_tag>();
     refMoabFE_by_type::iterator miit = ref_MoFEMFiniteElement.lower_bound(type);
     refMoabFE_by_type::iterator hi_miit = ref_MoFEMFiniteElement.upper_bound(type);
@@ -1931,7 +1931,7 @@ PetscErrorCode Core::build_finite_elements(int verb) {
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
 
-  typedef RefMoFEMElement_multiIndex::index<Ent_mi_tag>::type ref_MoFEMFiniteElement_by_ent;
+  typedef RefElement_multiIndex::index<Ent_mi_tag>::type ref_MoFEMFiniteElement_by_ent;
   MoFEMFiniteElement_multiIndex::iterator MoFEMFiniteElement_miit = finiteElements.begin();
   // loop Finite Elements
   for(;MoFEMFiniteElement_miit!=finiteElements.end();MoFEMFiniteElement_miit++) {
@@ -1957,7 +1957,7 @@ PetscErrorCode Core::build_finite_elements(int verb) {
         SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,ss.str().c_str());
       }
       boost::shared_ptr<EntFiniteElement> ent_fe =
-      boost::shared_ptr<EntFiniteElement>(new EntFiniteElement(moab,ref_MoFEMFiniteElement_miit->get_RefMoFEMElement(),&*MoFEMFiniteElement_miit));
+      boost::shared_ptr<EntFiniteElement>(new EntFiniteElement(moab,ref_MoFEMFiniteElement_miit->get_RefElement(),&*MoFEMFiniteElement_miit));
       pair<EntFiniteElement_multiIndex::iterator,bool> p = entsFiniteElements.insert(ent_fe);
       ierr = build_finite_element_uids_view(const_cast<EntFiniteElement&>(*(*p.first)),verb); CHKERRQ(ierr);
       ierr = build_finite_element_data_dofs(const_cast<EntFiniteElement&>(*(*p.first)),verb); CHKERRQ(ierr);
@@ -2290,22 +2290,22 @@ PetscErrorCode Core::seed_finite_elements(const Range &entities,int verb) {
       SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_FOUND,"entity is not in database");
     }
     if(eiit->get_BitRefLevel().none()) continue;
-    pair<RefMoFEMElement_multiIndex::iterator,bool> p_MoFEMFiniteElement;
+    pair<RefElement_multiIndex::iterator,bool> p_MoFEMFiniteElement;
     switch (eiit->get_ent_type()) {
       case MBVERTEX:
-      p_MoFEMFiniteElement = refinedFiniteElements.insert(ptrWrapperRefMoFEMElement(new RefMoFEMElement_VERTEX(moab,&*eiit)));
+      p_MoFEMFiniteElement = refinedFiniteElements.insert(ptrWrapperRefElement(new RefElement_VERTEX(moab,&*eiit)));
       break;
       case MBEDGE:
-      p_MoFEMFiniteElement = refinedFiniteElements.insert(ptrWrapperRefMoFEMElement(new RefMoFEMElement_EDGE(moab,&*eiit)));
+      p_MoFEMFiniteElement = refinedFiniteElements.insert(ptrWrapperRefElement(new RefElement_EDGE(moab,&*eiit)));
       break;
       case MBTRI:
-      p_MoFEMFiniteElement = refinedFiniteElements.insert(ptrWrapperRefMoFEMElement(new RefMoFEMElement_TRI(moab,&*eiit)));
+      p_MoFEMFiniteElement = refinedFiniteElements.insert(ptrWrapperRefElement(new RefElement_TRI(moab,&*eiit)));
       break;
       case MBTET:
-      p_MoFEMFiniteElement = refinedFiniteElements.insert(ptrWrapperRefMoFEMElement(new RefMoFEMElement_TET(moab,&*eiit)));
+      p_MoFEMFiniteElement = refinedFiniteElements.insert(ptrWrapperRefElement(new RefElement_TET(moab,&*eiit)));
       break;
       case MBPRISM:
-      p_MoFEMFiniteElement = refinedFiniteElements.insert(ptrWrapperRefMoFEMElement(new RefMoFEMElement_PRISM(moab,&*eiit)));
+      p_MoFEMFiniteElement = refinedFiniteElements.insert(ptrWrapperRefElement(new RefElement_PRISM(moab,&*eiit)));
       break;
       default:
       SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"not implemented");
@@ -2344,36 +2344,36 @@ PetscErrorCode Core::seed_ref_level(const Range &ents,const BitRefLevel &bit,int
         ss << *(p_ent.first);
         PetscSynchronizedPrintf(comm,"%s\n",ss.str().c_str());
       }
-      pair<RefMoFEMElement_multiIndex::iterator,bool> p_MoFEMFiniteElement;
+      pair<RefElement_multiIndex::iterator,bool> p_MoFEMFiniteElement;
       switch (p_ent.first->get_ent_type()) {
         case MBVERTEX:
-        p_MoFEMFiniteElement = refinedFiniteElements.insert(ptrWrapperRefMoFEMElement(new RefMoFEMElement_VERTEX(moab,&*p_ent.first)));
+        p_MoFEMFiniteElement = refinedFiniteElements.insert(ptrWrapperRefElement(new RefElement_VERTEX(moab,&*p_ent.first)));
         seeded_ents.insert(*tit);
         break;
         case MBEDGE:
-        p_MoFEMFiniteElement = refinedFiniteElements.insert(ptrWrapperRefMoFEMElement(new RefMoFEMElement_EDGE(moab,&*p_ent.first)));
+        p_MoFEMFiniteElement = refinedFiniteElements.insert(ptrWrapperRefElement(new RefElement_EDGE(moab,&*p_ent.first)));
         seeded_ents.insert(*tit);
         break;
         case MBTRI:
-        p_MoFEMFiniteElement = refinedFiniteElements.insert(ptrWrapperRefMoFEMElement(new RefMoFEMElement_TRI(moab,&*p_ent.first)));
+        p_MoFEMFiniteElement = refinedFiniteElements.insert(ptrWrapperRefElement(new RefElement_TRI(moab,&*p_ent.first)));
         seeded_ents.insert(*tit);
         break;
         case MBTET:
-        p_MoFEMFiniteElement = refinedFiniteElements.insert(ptrWrapperRefMoFEMElement(new RefMoFEMElement_TET(moab,&*p_ent.first)));
+        p_MoFEMFiniteElement = refinedFiniteElements.insert(ptrWrapperRefElement(new RefElement_TET(moab,&*p_ent.first)));
         seeded_ents.insert(*tit);
         break;
         case MBPRISM:
-        p_MoFEMFiniteElement = refinedFiniteElements.insert(ptrWrapperRefMoFEMElement(new RefMoFEMElement_PRISM(moab,&*p_ent.first)));
+        p_MoFEMFiniteElement = refinedFiniteElements.insert(ptrWrapperRefElement(new RefElement_PRISM(moab,&*p_ent.first)));
         break;
         case MBENTITYSET:
-        p_MoFEMFiniteElement = refinedFiniteElements.insert(ptrWrapperRefMoFEMElement(new RefMoFEMElement_MESHSET(moab,&*p_ent.first)));
+        p_MoFEMFiniteElement = refinedFiniteElements.insert(ptrWrapperRefElement(new RefElement_MESHSET(moab,&*p_ent.first)));
         break;
         default:
         SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented");
       }
       if(verb>3) {
         ostringstream ss;
-        ss << *(p_MoFEMFiniteElement.first->get_RefMoFEMElement());
+        ss << *(p_MoFEMFiniteElement.first->get_RefElement());
         PetscSynchronizedPrintf(comm,"%s\n",ss.str().c_str());
       }
     }
@@ -2420,11 +2420,11 @@ PetscErrorCode Core::seed_ref_level_MESHSET(const EntityHandle meshset,const Bit
   if(verb==-1) verb = verbose;
   pair<RefMoFEMEntity_multiIndex::iterator,bool> p_ent = refinedEntities.insert(RefMoFEMEntity(moab,meshset));
   refinedEntities.modify(p_ent.first,RefMoFEMEntity_change_add_bit(bit));
-  ptrWrapperRefMoFEMElement pack_fe(new RefMoFEMElement_MESHSET(moab,&*p_ent.first));
-  pair<RefMoFEMElement_multiIndex::iterator,bool> p_MoFEMFiniteElement = refinedFiniteElements.insert(pack_fe);
+  ptrWrapperRefElement pack_fe(new RefElement_MESHSET(moab,&*p_ent.first));
+  pair<RefElement_multiIndex::iterator,bool> p_MoFEMFiniteElement = refinedFiniteElements.insert(pack_fe);
   if(verbose > 0) {
     ostringstream ss;
-    ss << "add meshset as ref_ent " << *(p_MoFEMFiniteElement.first->get_RefMoFEMElement()) << endl;
+    ss << "add meshset as ref_ent " << *(p_MoFEMFiniteElement.first->get_RefElement()) << endl;
     PetscPrintf(comm,ss.str().c_str());
   }
   PetscFunctionReturn(0);
@@ -2976,7 +2976,7 @@ PetscErrorCode Core::get_ref_ents(const RefMoFEMEntity_multiIndex **refined_enti
   *refined_entities_ptr = &refinedEntities;
   PetscFunctionReturn(0);
 }
-PetscErrorCode Core::get_ref_finite_elements(const RefMoFEMElement_multiIndex **refined_finite_elements_ptr) {
+PetscErrorCode Core::get_ref_finite_elements(const RefElement_multiIndex **refined_finite_elements_ptr) {
   PetscFunctionBegin;
   *refined_finite_elements_ptr = &refinedFiniteElements;
   PetscFunctionReturn(0);
@@ -3575,7 +3575,7 @@ PetscErrorCode Core::delete_finite_elements_by_bit_ref(
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
   ierr = remove_ents_from_finite_element_by_bit_ref(bit,mask,verb); CHKERRQ(ierr);
-  RefMoFEMElement_multiIndex::iterator fe_it = refinedFiniteElements.begin();
+  RefElement_multiIndex::iterator fe_it = refinedFiniteElements.begin();
   for(;fe_it!=refinedFiniteElements.end();) {
     BitRefLevel bit2 = fe_it->get_BitRefLevel();
     if(fe_it->get_ent_type()==MBENTITYSET) {

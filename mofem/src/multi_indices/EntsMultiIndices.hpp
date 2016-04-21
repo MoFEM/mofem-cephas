@@ -323,7 +323,7 @@ struct RefMoFEMEntity_change_remove_parent {
 
   Known dependent multi-indices (verify if that list is full):
   - RefMoFEMEntity_multiIndex
-  - RefMoFEMElement_multiIndex
+  - RefElement_multiIndex
 
   */
 struct RefMoFEMEntity_change_parent {

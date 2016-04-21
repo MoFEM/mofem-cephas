@@ -414,7 +414,7 @@ PetscErrorCode Core::get_msId_3dENTS_split_sides(
     //here is created new or prism is on inteface
     EntityHandle existing_ent = 0;
     /* check if tet element whith new connectivity is in database*/
-    RefMoFEMElement_multiIndex::index<Ent_Ent_mi_tag>::type::iterator child_iit,hi_child_iit;
+    RefElement_multiIndex::index<Ent_Ent_mi_tag>::type::iterator child_iit,hi_child_iit;
     child_iit = refinedFiniteElements.get<Ent_Ent_mi_tag>().lower_bound(*eit3d);
     hi_child_iit = refinedFiniteElements.get<Ent_Ent_mi_tag>().upper_bound(*eit3d);
     for(;child_iit!=hi_child_iit;child_iit++) {
@@ -444,7 +444,7 @@ PetscErrorCode Core::get_msId_3dENTS_split_sides(
             rval = moab.create_element(MBTET,new_conn,4,tet); CHKERRQ_MOAB(rval);
             rval = moab.tag_set_data(th_RefParentHandle,&tet,1,&*eit3d); CHKERRQ_MOAB(rval);
           } else {
-            RefMoFEMElement_multiIndex::index<Ent_mi_tag>::type::iterator rit,new_rit;
+            RefElement_multiIndex::index<Ent_mi_tag>::type::iterator rit,new_rit;
             rit = refinedFiniteElements.get<Ent_mi_tag>().find(*eit3d);
             if(rit==refinedFiniteElements.get<Ent_mi_tag>().end()) {
               SETERRQ(PETSC_COMM_SELF,1,"can't find this in database");
