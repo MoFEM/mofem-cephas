@@ -149,7 +149,7 @@ PetscErrorCode PrismsFromSurfaceInterface::seedPrismsEntities(Range &prisms,cons
       Range::iterator eit = ents.begin();
       for(;eit!=ents.end();eit++) {
         pair<RefMoFEMEntity_multiIndex::iterator,bool> p_ent = refined_entities_ptr->insert(
-          RefMoFEMEntity(m_field.get_moab(),*eit)
+          boost::shared_ptr<RefMoFEMEntity>(new RefMoFEMEntity(m_field.get_moab(),*eit))
         );
         bool success = refined_entities_ptr->modify(p_ent.first,RefMoFEMEntity_change_add_bit(bit));
         if(!success) {

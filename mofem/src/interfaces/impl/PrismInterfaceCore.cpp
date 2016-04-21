@@ -303,10 +303,10 @@ PetscErrorCode Core::get_msId_3dENTS_split_sides(
     miit = ref_ents.lower_bound(boost::make_tuple(MBVERTEX,MBVERTEX));
     hi_miit = ref_ents.upper_bound(boost::make_tuple(MBVERTEX,MBVERTEX));
     for(;miit!=hi_miit;miit++) {
-      if((miit->get_BitRefLevel()&inheret_from_bit_level_mask) == miit->get_BitRefLevel()) {
-        if((miit->get_BitRefLevel()&inheret_from_bit_level).any()) {
+      if(((*miit)->get_BitRefLevel()&inheret_from_bit_level_mask) == (*miit)->get_BitRefLevel()) {
+        if(((*miit)->get_BitRefLevel()&inheret_from_bit_level).any()) {
           pair<RefMoFEMEntity_multiIndex_view_by_parent_entity::iterator,bool> p_ref_ent_view;
-          p_ref_ent_view = ref_parent_ents_view.insert(&*miit);
+          p_ref_ent_view = ref_parent_ents_view.insert(*miit);
           if(!p_ref_ent_view.second) {
             SETERRQ(PETSC_COMM_SELF,1,"non uniqe insertion");
           }
@@ -334,11 +334,11 @@ PetscErrorCode Core::get_msId_3dENTS_split_sides(
     child_iit = ref_parent_ents_view.find(*nit);
     if(child_iit != ref_parent_ents_view.end()) {
       child_it = refinedEntities.find((*child_iit)->get_ref_ent());
-      BitRefLevel bit_child = child_it->get_BitRefLevel();
+      BitRefLevel bit_child = (*child_it)->get_BitRefLevel();
       if( (inheret_from_bit_level&bit_child).none() ) {
         SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
       }
-      child_entity = child_it->get_ref_ent();
+      child_entity = (*child_it)->get_ref_ent();
     }
     //
     bool success;
@@ -350,7 +350,9 @@ PetscErrorCode Core::get_msId_3dENTS_split_sides(
       //create new node on "father" side
       //parent is node on "mather" side
       rval = moab.tag_set_data(th_RefParentHandle,&new_node,1,&*nit); CHKERRQ_MOAB(rval);
-      pair<RefMoFEMEntity_multiIndex::iterator,bool> p_ref_ent = refinedEntities.insert(RefMoFEMEntity(moab,new_node));
+      pair<RefMoFEMEntity_multiIndex::iterator,bool> p_ref_ent = refinedEntities.insert(
+        boost::shared_ptr<RefMoFEMEntity>(new RefMoFEMEntity(moab,new_node))
+      );
       //set ref bit level to node on "father" side
       success = refinedEntities.modify(p_ref_ent.first,RefMoFEMEntity_change_add_bit(bit));
       if(!success) SETERRQ(PETSC_COMM_SELF,1,"modification unsucceeded");
@@ -596,7 +598,9 @@ PetscErrorCode Core::get_msId_3dENTS_split_sides(
     //set parent
     rval = moab.tag_set_data(th_RefParentHandle,&*new_ent.begin(),1,&*eit); CHKERRQ_MOAB(rval);
     //add to database
-    pair<RefMoFEMEntity_multiIndex::iterator,bool> p_ref_ent = refinedEntities.insert(RefMoFEMEntity(moab,new_ent[0]));
+    pair<RefMoFEMEntity_multiIndex::iterator,bool> p_ref_ent = refinedEntities.insert(
+      boost::shared_ptr<RefMoFEMEntity>(new RefMoFEMEntity(moab,new_ent[0]))
+    );
     refinedEntities.modify(p_ref_ent.first,RefMoFEMEntity_change_add_bit(bit));
     new_ents_in_database.insert(new_ent.begin(),new_ent.end());
   }
@@ -650,7 +654,9 @@ PetscErrorCode Core::get_msId_3dENTS_split_sides(
     //add entity to mofem database
     rval = moab.tag_set_data(th_RefParentHandle,&*new_ent.begin(),1,&*eit); CHKERRQ_MOAB(rval);
     pair<RefMoFEMEntity_multiIndex::iterator,bool> p_ref_ent
-      = refinedEntities.insert(RefMoFEMEntity(moab,new_ent[0]));
+    = refinedEntities.insert(
+      boost::shared_ptr<RefMoFEMEntity>(new RefMoFEMEntity(moab,new_ent[0]))
+    );
     refinedEntities.modify(p_ref_ent.first,RefMoFEMEntity_change_add_bit(bit));
     if(verb>3) PetscPrintf(comm,"new_ent %u\n",new_ent.size());
     new_ents_in_database.insert(new_ent.begin(),new_ent.end());
@@ -708,14 +714,14 @@ PetscErrorCode Core::get_msId_3dENTS_split_sides(
       EntityHandle parent_tri;
       rval = moab.tag_get_data(th_RefParentHandle,&face[ff],1,&parent_tri); CHKERRQ_MOAB(rval);
       if(parent_tri != parent_face[ff]) {
-	SETERRQ1(PETSC_COMM_SELF,1,"wrong parent %lu",parent_tri);
+        SETERRQ1(PETSC_COMM_SELF,1,"wrong parent %lu",parent_tri);
       }
       if(new_ents_in_database.find(face[ff])==new_ents_in_database.end()) {
-	RefMoFEMEntity_multiIndex::index<Ent_mi_tag>::type::iterator miit_ref_ent
-	    = refinedEntities.get<Ent_mi_tag>().find(face[ff]);
-	if(miit_ref_ent==refinedEntities.get<Ent_mi_tag>().end()) {
-	  SETERRQ(PETSC_COMM_SELF,1,"this is not in database, but should not be");
-	}
+        RefMoFEMEntity_multiIndex::index<Ent_mi_tag>::type::iterator miit_ref_ent
+        = refinedEntities.get<Ent_mi_tag>().find(face[ff]);
+        if(miit_ref_ent==refinedEntities.get<Ent_mi_tag>().end()) {
+          SETERRQ(PETSC_COMM_SELF,1,"this is not in database, but should not be");
+        }
       }
     }
   }

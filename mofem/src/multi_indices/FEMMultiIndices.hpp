@@ -26,12 +26,13 @@ namespace MoFEM {
  * \ingroup fe_multi_indices
  */
 struct RefElement: public interface_RefMoFEMEntity<RefMoFEMEntity> {
+
   typedef interface_RefMoFEMEntity<RefMoFEMEntity> interface_type_RefMoFEMEntity;
 
   static BitRefEdges DummyBitRefEdges;
 
   SideNumber_multiIndex side_number_table;
-  RefElement(Interface &moab,const RefMoFEMEntity *_RefMoFEMEntity_ptr);
+  RefElement(Interface &moab,const boost::shared_ptr<RefMoFEMEntity> ref_ent_ptr);
   virtual const BitRefEdges& get_BitRefEdges() const { return DummyBitRefEdges; }
   virtual int get_BitRefEdges_ulong() const { return 0; }
   SideNumber_multiIndex &get_side_number_table() const { return const_cast<SideNumber_multiIndex&>(side_number_table); };
@@ -50,7 +51,7 @@ struct RefElement: public interface_RefMoFEMEntity<RefMoFEMEntity> {
  * \ingroup fe_multi_indices
  */
 struct RefElement_MESHSET: public RefElement {
-  RefElement_MESHSET(Interface &moab,const RefMoFEMEntity *_RefMoFEMEntity_ptr);
+  RefElement_MESHSET(Interface &moab,const boost::shared_ptr<RefMoFEMEntity> ref_ent_ptr);
   SideNumber* get_side_number_ptr(Interface &moab,EntityHandle ent) const;
 };
 
@@ -60,7 +61,7 @@ struct RefElement_MESHSET: public RefElement {
  */
 struct RefElement_PRISM: public RefElement {
   BitRefEdges *tag_BitRefEdges;
-  RefElement_PRISM(Interface &moab,const RefMoFEMEntity *_RefMoFEMEntity_ptr);
+  RefElement_PRISM(Interface &moab,const boost::shared_ptr<RefMoFEMEntity> ref_ent_ptr);
   SideNumber* get_side_number_ptr(Interface &moab,EntityHandle ent) const;
   const BitRefEdges& get_BitRefEdges() const { return *tag_BitRefEdges; }
   int get_BitRefEdges_ulong() const { return get_BitRefEdges().to_ulong(); }
@@ -73,7 +74,7 @@ struct RefElement_PRISM: public RefElement {
 struct RefElement_TET: public RefElement {
   BitRefEdges *tag_BitRefEdges;
   const int* tag_type_data;
-  RefElement_TET(Interface &moab,const RefMoFEMEntity *_RefMoFEMEntity_ptr);
+  RefElement_TET(Interface &moab,const boost::shared_ptr<RefMoFEMEntity> ref_ent_ptr);
   SideNumber* get_side_number_ptr(Interface &moab,EntityHandle ent) const;
   SideNumber_multiIndex &get_side_number_table() const { return const_cast<SideNumber_multiIndex&>(side_number_table); };
   const BitRefEdges& get_BitRefEdges() const { return *tag_BitRefEdges; }
@@ -88,7 +89,7 @@ struct RefElement_TET: public RefElement {
  * \ingroup fe_multi_indices
  */
 struct RefElement_TRI: public RefElement {
-  RefElement_TRI(Interface &moab,const RefMoFEMEntity *_RefMoFEMEntity_ptr);
+  RefElement_TRI(Interface &moab,const boost::shared_ptr<RefMoFEMEntity> ref_ent_ptr);
   SideNumber* get_side_number_ptr(Interface &moab,EntityHandle ent) const;
   friend ostream& operator<<(ostream& os,const RefElement_TRI& e);
 };
@@ -98,7 +99,7 @@ struct RefElement_TRI: public RefElement {
  * \ingroup fe_multi_indices
  */
 struct RefElement_EDGE: public RefElement {
-  RefElement_EDGE(Interface &moab,const RefMoFEMEntity *_RefMoFEMEntity_ptr);
+  RefElement_EDGE(Interface &moab,const boost::shared_ptr<RefMoFEMEntity> ref_ent_ptr);
   SideNumber* get_side_number_ptr(Interface &moab,EntityHandle ent) const;
   friend ostream& operator<<(ostream& os,const RefElement_EDGE& e);
 };
@@ -108,7 +109,7 @@ struct RefElement_EDGE: public RefElement {
  * \ingroup fe_multi_indices
  */
 struct RefElement_VERTEX: public RefElement {
-  RefElement_VERTEX(Interface &moab,const RefMoFEMEntity *_RefMoFEMEntity_ptr);
+  RefElement_VERTEX(Interface &moab,const boost::shared_ptr<RefMoFEMEntity> ref_ent_ptr);
   SideNumber* get_side_number_ptr(Interface &moab,EntityHandle ent) const;
   friend ostream& operator<<(ostream& os,const RefElement_VERTEX& e);
 };
@@ -126,7 +127,7 @@ struct interface_RefElement: interface_RefMoFEMEntity<T> {
   const boost::shared_ptr<T> sPtr;
 
   interface_RefElement(const boost::shared_ptr<T> sptr):
-  interface_RefMoFEMEntity<T>(sptr.get()),
+  interface_RefMoFEMEntity<T>(sptr),
   sPtr(sptr) {
   }
 
@@ -247,6 +248,7 @@ struct FiniteElement {
   ElementAdjacencyTable element_adjacency_table;  //<- allow to add user specific adjacency map
 
   friend ostream& operator<<(ostream& os, const FiniteElement& e);
+
 };
 
 /** \brief default adjacency map
@@ -325,7 +327,7 @@ interface_RefElement<RefElement> {
   GlobalUId get_global_unique_id_calculate() const {
     char bit_number = get_bit_number();
     assert(bit_number<=32);
-    GlobalUId _uid_ = (ref_ptr->get_ref_ent())|(((GlobalUId)bit_number)<<(8*sizeof(EntityHandle)));
+    GlobalUId _uid_ = (sPtr->get_ref_ent())|(((GlobalUId)bit_number)<<(8*sizeof(EntityHandle)));
     return _uid_;
   }
   inline EntityHandle get_ent() const { return get_ref_ent(); }
@@ -377,6 +379,8 @@ interface_RefElement<RefElement> {
     PetscFunctionReturn(0);
   }
 
+  inline const boost::shared_ptr<RefElement> get_RefElement() const { return this->sPtr; }
+
 };
 
 /**
@@ -413,6 +417,8 @@ interface_RefElement<T> {
     ierr = this->get_element_adjacency(moab,field_ptr,adjacency); CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }
+
+  inline const boost::shared_ptr<T> get_RefElement() const { return this->sPtr->get_RefElement(); }
 
 };
 

@@ -34,15 +34,18 @@
 namespace MoFEM {
 
 //ref moab FiniteElement
-RefElement::RefElement(Interface &moab,const RefMoFEMEntity *_RefMoFEMEntity_ptr):
-  interface_RefMoFEMEntity<RefMoFEMEntity>(_RefMoFEMEntity_ptr) {}
+RefElement::RefElement(Interface &moab,const boost::shared_ptr<RefMoFEMEntity> ref_ent_ptr):
+interface_RefMoFEMEntity<RefMoFEMEntity>(ref_ent_ptr) {}
+
 ostream& operator<<(ostream& os,const RefElement& e) {
   os << " ref egdes " << e.get_BitRefEdges();
-  os << " " << *e.ref_ptr;
+  os << " " << *(e.sPtr);
   return os;
 }
-RefElement_MESHSET::RefElement_MESHSET(Interface &moab,const RefMoFEMEntity *_RefMoFEMEntity_ptr): RefElement(moab,_RefMoFEMEntity_ptr) {
-  switch (ref_ptr->get_ent_type()) {
+
+RefElement_MESHSET::RefElement_MESHSET(Interface &moab,const boost::shared_ptr<RefMoFEMEntity> ref_ent_ptr):
+RefElement(moab,ref_ent_ptr) {
+  switch (ref_ent_ptr->get_ent_type()) {
     case MBENTITYSET:
     break;
     default:
@@ -59,14 +62,14 @@ SideNumber* RefElement_MESHSET::get_side_number_ptr(Interface &moab,EntityHandle
   return NULL;
 }
 RefElement_PRISM::RefElement_PRISM(
-  Interface &moab,const RefMoFEMEntity *_RefMoFEMEntity_ptr
+  Interface &moab,const boost::shared_ptr<RefMoFEMEntity> ref_ent_ptr
 ):
-RefElement(moab,_RefMoFEMEntity_ptr) {
+RefElement(moab,ref_ent_ptr) {
   ErrorCode rval;
   Tag th_RefBitEdge;
   rval = moab.tag_get_handle("_RefBitEdge",th_RefBitEdge); MOAB_THROW(rval);
-  rval = moab.tag_get_by_ptr(th_RefBitEdge,&ref_ptr->ent,1,(const void **)&tag_BitRefEdges); MOAB_THROW(rval);
-  switch (ref_ptr->get_ent_type()) {
+  rval = moab.tag_get_by_ptr(th_RefBitEdge,&ref_ent_ptr->ent,1,(const void **)&tag_BitRefEdges); MOAB_THROW(rval);
+  switch (ref_ent_ptr->get_ent_type()) {
     case MBPRISM:
     break;
     default:
@@ -88,7 +91,7 @@ SideNumber* RefElement_PRISM::get_side_number_ptr(Interface &moab,EntityHandle e
   if(miit!=side_number_table.end()) return const_cast<SideNumber*>(&*miit);
 
   // if ent is a this prism
-  if(ref_ptr->ent == ent) {
+  if(sPtr->ent == ent) {
     miit = const_cast<SideNumber_multiIndex&>(side_number_table).insert(SideNumber(ent,0,0,0)).first;
     return const_cast<SideNumber*>(&*miit);
   }
@@ -102,7 +105,7 @@ SideNumber* RefElement_PRISM::get_side_number_ptr(Interface &moab,EntityHandle e
   // use moab to get sense, side and offset
   MoABErrorCode rval;
   int side_number,sense,offset;
-  rval = moab.side_number(ref_ptr->ent,ent,side_number,sense,offset); MOAB_THROW(rval);
+  rval = moab.side_number(sPtr->ent,ent,side_number,sense,offset); MOAB_THROW(rval);
 
   // it has to be degenerated prism, get sense from nodes topology
   if(side_number==-1) {
@@ -114,7 +117,7 @@ SideNumber* RefElement_PRISM::get_side_number_ptr(Interface &moab,EntityHandle e
     //get prism connectivity
     int num_nodes;
     const EntityHandle* conn;
-    rval = moab.get_connectivity(ref_ptr->ent,conn,num_nodes,true); MOAB_THROW(rval);
+    rval = moab.get_connectivity(sPtr->ent,conn,num_nodes,true); MOAB_THROW(rval);
     assert(num_nodes==6);
     //get ent connectivity
     const EntityHandle* conn_ent;
@@ -247,14 +250,14 @@ SideNumber* RefElement_PRISM::get_side_number_ptr(Interface &moab,EntityHandle e
   THROW_MESSAGE("not implemented");
   return NULL;
 }
-RefElement_TET::RefElement_TET(Interface &moab,const RefMoFEMEntity *_RefMoFEMEntity_ptr):
-RefElement(moab,_RefMoFEMEntity_ptr),tag_BitRefEdges(NULL) {
+RefElement_TET::RefElement_TET(Interface &moab,const boost::shared_ptr<RefMoFEMEntity> ref_ent_ptr):
+RefElement(moab,ref_ent_ptr),tag_BitRefEdges(NULL) {
   ErrorCode rval;
   Tag th_RefBitEdge;
   rval = moab.tag_get_handle("_RefBitEdge",th_RefBitEdge); MOAB_THROW(rval);
-  rval = moab.tag_get_by_ptr(th_RefBitEdge,&ref_ptr->ent,1,(const void **)&tag_BitRefEdges); MOAB_THROW(rval);
+  rval = moab.tag_get_by_ptr(th_RefBitEdge,&ref_ent_ptr->ent,1,(const void **)&tag_BitRefEdges); MOAB_THROW(rval);
   Tag th_RefType;
-  switch (ref_ptr->get_ent_type()) {
+  switch (ref_ent_ptr->get_ent_type()) {
     case MBTET:
     break;
     default:
@@ -267,13 +270,13 @@ RefElement(moab,_RefMoFEMEntity_ptr),tag_BitRefEdges(NULL) {
     THROW_MESSAGE("this work only for TETs");
   }
   rval = moab.tag_get_handle("_RefType",th_RefType); MOAB_THROW(rval);
-  rval = moab.tag_get_by_ptr(th_RefType,&ref_ptr->ent,1,(const void **)&tag_type_data); MOAB_THROW(rval);
-  const_cast<SideNumber_multiIndex&>(side_number_table).insert(SideNumber(ref_ptr->ent,0,0,0));
+  rval = moab.tag_get_by_ptr(th_RefType,&sPtr->ent,1,(const void **)&tag_type_data); MOAB_THROW(rval);
+  const_cast<SideNumber_multiIndex&>(side_number_table).insert(SideNumber(sPtr->ent,0,0,0));
 }
 SideNumber* RefElement_TET::get_side_number_ptr(Interface &moab,EntityHandle ent) const {
   SideNumber_multiIndex::iterator miit = side_number_table.find(ent);
   if(miit!=side_number_table.end()) return const_cast<SideNumber*>(&*miit);
-  if(ref_ptr->ent == ent) {
+  if(sPtr->ent == ent) {
     miit = const_cast<SideNumber_multiIndex&>(side_number_table).insert(SideNumber(ent,0,0,0)).first;
     return const_cast<SideNumber*>(&*miit);
   }
@@ -283,7 +286,7 @@ SideNumber* RefElement_TET::get_side_number_ptr(Interface &moab,EntityHandle ent
   }
   ErrorCode rval;
   int side_number,sense,offset;
-  rval = moab.side_number(ref_ptr->ent,ent,side_number,sense,offset); MOAB_THROW(rval);
+  rval = moab.side_number(sPtr->ent,ent,side_number,sense,offset); MOAB_THROW(rval);
   pair<SideNumber_multiIndex::iterator,bool> p_miit;
   p_miit = const_cast<SideNumber_multiIndex&>(side_number_table).insert(SideNumber(ent,side_number,sense,offset));
   miit = p_miit.first;
@@ -296,11 +299,13 @@ SideNumber* RefElement_TET::get_side_number_ptr(Interface &moab,EntityHandle ent
 ostream& operator<<(ostream& os,const RefElement_TET& e) {
   os << "ref type " << e.tag_type_data[0] << " ref sub type " << e.tag_type_data[1];
   os << " ref egdes " << e.get_BitRefEdges();
-  os << " " << *e.ref_ptr;
+  os << " " << *e.sPtr;
   return os;
 }
-RefElement_TRI::RefElement_TRI(Interface &moab,const RefMoFEMEntity *_RefMoFEMEntity_ptr): RefElement(moab,_RefMoFEMEntity_ptr) {
-  switch (ref_ptr->get_ent_type()) {
+
+RefElement_TRI::RefElement_TRI(Interface &moab,const boost::shared_ptr<RefMoFEMEntity> ref_ent_ptr):
+RefElement(moab,ref_ent_ptr) {
+  switch (ref_ent_ptr->get_ent_type()) {
     case MBTRI:
     break;
     default:
@@ -326,7 +331,7 @@ RefElement_TRI::RefElement_TRI(Interface &moab,const RefMoFEMEntity *_RefMoFEMEn
 SideNumber* RefElement_TRI::get_side_number_ptr(Interface &moab,EntityHandle ent) const {
   SideNumber_multiIndex::iterator miit = side_number_table.find(ent);
   if(miit!=side_number_table.end()) return const_cast<SideNumber*>(&*miit);
-  if(ref_ptr->ent == ent) {
+  if(sPtr->ent == ent) {
     miit = const_cast<SideNumber_multiIndex&>(side_number_table).insert(SideNumber(ent,0,0,0)).first;
     return const_cast<SideNumber*>(&*miit);
   }
@@ -336,17 +341,18 @@ SideNumber* RefElement_TRI::get_side_number_ptr(Interface &moab,EntityHandle ent
   }
   ErrorCode rval;
   int side_number,sense,offset;
-  rval = moab.side_number(ref_ptr->ent,ent,side_number,sense,offset); MOAB_THROW(rval);
+  rval = moab.side_number(sPtr->ent,ent,side_number,sense,offset); MOAB_THROW(rval);
   miit = const_cast<SideNumber_multiIndex&>(side_number_table).insert(SideNumber(ent,side_number,sense,offset)).first;
   //cerr << side_number << " " << sense << " " << offset << endl;
   return const_cast<SideNumber*>(&*miit);
 }
 ostream& operator<<(ostream& os,const RefElement_TRI& e) {
-  os << *e.ref_ptr;
+  os << *e.sPtr;
   return os;
 }
-RefElement_EDGE::RefElement_EDGE(Interface &moab,const RefMoFEMEntity *_RefMoFEMEntity_ptr): RefElement(moab,_RefMoFEMEntity_ptr) {
-  switch (ref_ptr->get_ent_type()) {
+RefElement_EDGE::RefElement_EDGE(Interface &moab,const boost::shared_ptr<RefMoFEMEntity> ref_ent_ptr):
+RefElement(moab,ref_ent_ptr) {
+  switch (ref_ent_ptr->get_ent_type()) {
     case MBEDGE:
     break;
     default:
@@ -356,7 +362,7 @@ RefElement_EDGE::RefElement_EDGE(Interface &moab,const RefMoFEMEntity *_RefMoFEM
 SideNumber* RefElement_EDGE::get_side_number_ptr(Interface &moab,EntityHandle ent) const {
   SideNumber_multiIndex::iterator miit = side_number_table.find(ent);
   if(miit!=side_number_table.end()) return const_cast<SideNumber*>(&*miit);
-  if(ref_ptr->ent == ent) {
+  if(sPtr->ent == ent) {
     miit = const_cast<SideNumber_multiIndex&>(side_number_table).insert(SideNumber(ent,0,0,0)).first;
     return const_cast<SideNumber*>(&*miit);
   }
@@ -366,17 +372,18 @@ SideNumber* RefElement_EDGE::get_side_number_ptr(Interface &moab,EntityHandle en
   }
   ErrorCode rval;
   int side_number,sense,offset;
-  rval = moab.side_number(ref_ptr->ent,ent,side_number,sense,offset); MOAB_THROW(rval);
+  rval = moab.side_number(sPtr->ent,ent,side_number,sense,offset); MOAB_THROW(rval);
   miit = const_cast<SideNumber_multiIndex&>(side_number_table).insert(SideNumber(ent,side_number,sense,offset)).first;
   //cerr << side_number << " " << sense << " " << offset << endl;
   return const_cast<SideNumber*>(&*miit);
 }
 ostream& operator<<(ostream& os,const RefElement_EDGE& e) {
-  os << *e.ref_ptr;
+  os << *e.sPtr;
   return os;
 }
-RefElement_VERTEX::RefElement_VERTEX(Interface &moab,const RefMoFEMEntity *_RefMoFEMEntity_ptr): RefElement(moab,_RefMoFEMEntity_ptr) {
-  switch (ref_ptr->get_ent_type()) {
+RefElement_VERTEX::RefElement_VERTEX(Interface &moab,const boost::shared_ptr<RefMoFEMEntity> ref_ent_ptr):
+RefElement(moab,ref_ent_ptr) {
+  switch (ref_ent_ptr->get_ent_type()) {
     case MBVERTEX:
     break;
     default:
@@ -386,7 +393,7 @@ RefElement_VERTEX::RefElement_VERTEX(Interface &moab,const RefMoFEMEntity *_RefM
 SideNumber* RefElement_VERTEX::get_side_number_ptr(Interface &moab,EntityHandle ent) const {
   SideNumber_multiIndex::iterator miit = side_number_table.find(ent);
   if(miit!=side_number_table.end()) return const_cast<SideNumber*>(&*miit);
-  if(ref_ptr->ent == ent) {
+  if(sPtr->ent == ent) {
     miit = const_cast<SideNumber_multiIndex&>(side_number_table).insert(SideNumber(ent,0,0,0)).first;
     return const_cast<SideNumber*>(&*miit);
   }
@@ -398,7 +405,7 @@ SideNumber* RefElement_VERTEX::get_side_number_ptr(Interface &moab,EntityHandle 
   return NULL;
 }
 ostream& operator<<(ostream& os,const RefElement_VERTEX& e) {
-  os << *e.ref_ptr;
+  os << *e.sPtr;
   return os;
 }
 
@@ -810,7 +817,7 @@ interface_RefElement<RefElement>(ref_finite_element) {
 
 ostream& operator<<(ostream& os,const EntFiniteElement& e) {
   os << *e.sFePtr << endl;
-  os << *e.ref_ptr << endl;
+  os << *e.sPtr << endl;
   os << "row dof_uids ";
   DofMoFEMEntity_multiIndex_uid_view::iterator rit;
   rit = e.row_dof_view.begin();

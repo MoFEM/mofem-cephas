@@ -601,11 +601,12 @@ PetscErrorCode Core::addPrismToDatabase(const EntityHandle prism,int verb) {
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
   try {
-    pair<RefMoFEMEntity_multiIndex::iterator,bool> p_ent = refinedEntities.insert(RefMoFEMEntity(moab,prism));
+    pair<RefMoFEMEntity_multiIndex::iterator,bool> p_ent;
+    p_ent = refinedEntities.insert(boost::shared_ptr<RefMoFEMEntity>(new RefMoFEMEntity(moab,prism)));
     if(p_ent.second) {
       pair<RefElement_multiIndex::iterator,bool> p_MoFEMFiniteElement;
       p_MoFEMFiniteElement = refinedFiniteElements.insert(
-	      ptrWrapperRefElement(boost::shared_ptr<RefElement>(new RefElement_PRISM(moab,&*p_ent.first)))
+	      ptrWrapperRefElement(boost::shared_ptr<RefElement>(new RefElement_PRISM(moab,*p_ent.first)))
       );
       int num_nodes;
       const EntityHandle* conn;
@@ -645,7 +646,7 @@ PetscErrorCode Core::synchronise_entities(Range &ents,int verb) {
         rAnk,*eit);
     }
 
-    unsigned char pstatus = meit->get_pstatus();
+    unsigned char pstatus = (*meit)->get_pstatus();
 
     if(pstatus == 0) continue;
 
@@ -655,18 +656,18 @@ PetscErrorCode Core::synchronise_entities(Range &ents,int verb) {
       PetscSynchronizedPrintf(comm,"%s",zz.str().c_str());
     }
 
-    for(int proc = 0; proc<MAX_SHARING_PROCS && -1 != meit->get_sharing_procs_ptr()[proc]; proc++) {
-      if(meit->get_sharing_procs_ptr()[proc] == -1) {
+    for(int proc = 0; proc<MAX_SHARING_PROCS && -1 != (*meit)->get_sharing_procs_ptr()[proc]; proc++) {
+      if((*meit)->get_sharing_procs_ptr()[proc] == -1) {
         SETERRQ(PETSC_COMM_SELF,MOFEM_IMPOSIBLE_CASE,"sharing processor not set");
       }
-      if(meit->get_sharing_procs_ptr()[proc] == rAnk) {
+      if((*meit)->get_sharing_procs_ptr()[proc] == rAnk) {
         continue;
       }
-      EntityHandle handle_on_sharing_proc = meit->get_sharing_handlers_ptr()[proc];
-      sbuffer[meit->get_sharing_procs_ptr()[proc]].push_back(handle_on_sharing_proc);
+      EntityHandle handle_on_sharing_proc = (*meit)->get_sharing_handlers_ptr()[proc];
+      sbuffer[(*meit)->get_sharing_procs_ptr()[proc]].push_back(handle_on_sharing_proc);
       if(verb>1) {
         PetscSynchronizedPrintf(comm,"send %lu (%lu) to %d at %d\n",
-        meit->get_ref_ent(),handle_on_sharing_proc,meit->get_sharing_procs_ptr()[proc],rAnk);
+        (*meit)->get_ref_ent(),handle_on_sharing_proc,(*meit)->get_sharing_procs_ptr()[proc],rAnk);
       }
       if(!(pstatus&PSTATUS_MULTISHARED)) {
         break;
@@ -768,9 +769,9 @@ PetscErrorCode Core::synchronise_entities(Range &ents,int verb) {
           "rank %d entity %lu not exist on database, local entity can not be found for this owner",rAnk,ent);
         }
         if(verb>2) {
-          PetscSynchronizedPrintf(comm,"received %ul (%ul) from %d at %d\n",meit->get_ref_ent(),ent,onodes[kk],rAnk);
+          PetscSynchronizedPrintf(comm,"received %ul (%ul) from %d at %d\n",(*meit)->get_ref_ent(),ent,onodes[kk],rAnk);
         }
-        ents.insert(meit->get_ref_ent());
+        ents.insert((*meit)->get_ref_ent());
 
       }
 
@@ -930,7 +931,8 @@ PetscErrorCode Core::initialiseDatabseInformationFromMesh(int verb) {
       if((*p.first)->get_space()==NOFIELD) {
         assert((*p.first)->meshSet == *mit);
         //add field to ref ents
-        pair<RefMoFEMEntity_multiIndex::iterator,bool> p_ref_ent = refinedEntities.insert(RefMoFEMEntity(moab,*mit));
+        pair<RefMoFEMEntity_multiIndex::iterator,bool> p_ref_ent;
+        p_ref_ent = refinedEntities.insert(boost::shared_ptr<RefMoFEMEntity>(new RefMoFEMEntity(moab,*mit)));
         NOT_USED(p_ref_ent);
       } else {
         Range ents;
@@ -942,9 +944,10 @@ PetscErrorCode Core::initialiseDatabseInformationFromMesh(int verb) {
         }
         Range::iterator eit = ents.begin();
         for(;eit!=ents.end();eit++) {
-          pair<RefMoFEMEntity_multiIndex::iterator,bool> p_ref_ent = refinedEntities.insert(RefMoFEMEntity(moab,*eit));
+          pair<RefMoFEMEntity_multiIndex::iterator,bool> p_ref_ent;
+          p_ref_ent = refinedEntities.insert(boost::shared_ptr<RefMoFEMEntity>(new RefMoFEMEntity(moab,*eit)));
           try {
-            boost::shared_ptr<MoFEMEntity> moabent(new MoFEMEntity(moab,*p.first,&*p_ref_ent.first));
+            boost::shared_ptr<MoFEMEntity> moabent(new MoFEMEntity(moab,*p.first,*p_ref_ent.first));
             pair<MoFEMEntity_multiIndex::iterator,bool> p_ent = entsFields.insert(moabent);
             NOT_USED(p_ent);
           } catch (const std::exception& ex) {
@@ -976,39 +979,40 @@ PetscErrorCode Core::initialiseDatabseInformationFromMesh(int verb) {
       rval = moab.get_entities_by_handle(*mit,ents,true); CHKERRQ_MOAB(rval);
       Range::iterator eit = ents.begin();
       for(;eit!=ents.end();eit++) {
-        pair<RefMoFEMEntity_multiIndex::iterator,bool> p_ref_ent = refinedEntities.insert(RefMoFEMEntity(moab,*eit));
+        pair<RefMoFEMEntity_multiIndex::iterator,bool> p_ref_ent;
+        p_ref_ent = refinedEntities.insert(boost::shared_ptr<RefMoFEMEntity>(new RefMoFEMEntity(moab,*eit)));
         pair<RefElement_multiIndex::iterator,bool> p_MoFEMFiniteElement;
         try {
           switch (moab.type_from_handle(*eit)) {
             case MBVERTEX:
             p_MoFEMFiniteElement = refinedFiniteElements.insert(ptrWrapperRefElement(
-              boost::shared_ptr<RefElement>(new RefElement_VERTEX(moab,&*p_ref_ent.first)))
+              boost::shared_ptr<RefElement>(new RefElement_VERTEX(moab,*p_ref_ent.first)))
             );
             break;
             case MBEDGE:
             p_MoFEMFiniteElement = refinedFiniteElements.insert(ptrWrapperRefElement(
-              boost::shared_ptr<RefElement>(new RefElement_EDGE(moab,&*p_ref_ent.first)))
+              boost::shared_ptr<RefElement>(new RefElement_EDGE(moab,*p_ref_ent.first)))
             );
             break;
             case MBTRI:
             p_MoFEMFiniteElement = refinedFiniteElements.insert(ptrWrapperRefElement(
-              boost::shared_ptr<RefElement>(new RefElement_TRI(moab,&*p_ref_ent.first)))
+              boost::shared_ptr<RefElement>(new RefElement_TRI(moab,*p_ref_ent.first)))
             );
             break;
             case MBTET:
             p_MoFEMFiniteElement = refinedFiniteElements.insert(ptrWrapperRefElement(
-              boost::shared_ptr<RefElement>(new RefElement_TET(moab,&*p_ref_ent.first)))
+              boost::shared_ptr<RefElement>(new RefElement_TET(moab,*p_ref_ent.first)))
             );
             break;
             case MBPRISM:
             ierr = addPrismToDatabase(*eit,verb); CHKERRQ(ierr);
             p_MoFEMFiniteElement = refinedFiniteElements.insert(ptrWrapperRefElement(
-              boost::shared_ptr<RefElement>(new RefElement_PRISM(moab,&*p_ref_ent.first)))
+              boost::shared_ptr<RefElement>(new RefElement_PRISM(moab,*p_ref_ent.first)))
             );
             break;
             case MBENTITYSET:
             p_MoFEMFiniteElement = refinedFiniteElements.insert(ptrWrapperRefElement(
-              boost::shared_ptr<RefElement>(new RefElement_MESHSET(moab,&*p_ref_ent.first)))
+              boost::shared_ptr<RefElement>(new RefElement_MESHSET(moab,*p_ref_ent.first)))
             );
             break;
             default:
@@ -1066,8 +1070,8 @@ PetscErrorCode Core::initialiseDatabseInformationFromMesh(int verb) {
         default:
         continue;
       }
-      RefMoFEMEntity mofem_ent(moab,*eit);
-      BitRefLevel bit = mofem_ent.get_BitRefLevel();
+      boost::shared_ptr<RefMoFEMEntity> mofem_ent(new RefMoFEMEntity(moab,*eit));
+      BitRefLevel bit = mofem_ent->get_BitRefLevel();
       if(bit.none()) {
         continue;
       }

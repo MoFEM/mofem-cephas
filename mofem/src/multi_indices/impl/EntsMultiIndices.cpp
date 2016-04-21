@@ -179,11 +179,12 @@ ostream& operator<<(ostream& os,const RefMoFEMEntity& e) {
 
 //moab ent
 MoFEMEntity::MoFEMEntity(
-  Interface &moab,const boost::shared_ptr<Field> field_ptr,const RefMoFEMEntity *_ref_ent_ptr
+  Interface &moab,
+  const boost::shared_ptr<Field> field_ptr,
+  const boost::shared_ptr<RefMoFEMEntity> ref_ent_ptr
 ):
 interface_Field<Field>(field_ptr),
-interface_RefMoFEMEntity<RefMoFEMEntity>(_ref_ent_ptr),
-ref_mab_ent_ptr(_ref_ent_ptr),
+interface_RefMoFEMEntity<RefMoFEMEntity>(ref_ent_ptr),
 tag_order_data(NULL),
 tag_FieldData(NULL),
 tag_FieldData_size(0),

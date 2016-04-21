@@ -31,7 +31,7 @@ struct DofMoFEMEntity: public interface_MoFEMEntity<MoFEMEntity> {
 
   typedef interface_Field<MoFEMEntity> interface_type_Field;
   typedef interface_MoFEMEntity<MoFEMEntity> interface_type_MoFEMEntity;
-  typedef interface_RefMoFEMEntity<RefMoFEMEntity> interface_type_RefMoFEMEntity;
+  typedef interface_RefMoFEMEntity<MoFEMEntity> interface_type_RefMoFEMEntity;
 
   static LocalUId get_local_unique_id_calculate(const DofIdx _dof_,const boost::shared_ptr<MoFEMEntity> ent_ptr) {
     if(_dof_>=512) THROW_MESSAGE("_dof>=512");
@@ -67,7 +67,7 @@ struct DofMoFEMEntity: public interface_MoFEMEntity<MoFEMEntity> {
   );
 
   inline DofIdx get_EntDofIdx() const { return dof; }
-  inline FieldData& get_FieldData() const { return const_cast<FieldData&>(this->sFieldPtr->tag_FieldData[dof]); }
+  inline FieldData& get_FieldData() const { return const_cast<FieldData&>(this->sPtr->tag_FieldData[dof]); }
 
   /** \brief unique dof id
     */
@@ -95,20 +95,19 @@ struct DofMoFEMEntity: public interface_MoFEMEntity<MoFEMEntity> {
     */
   inline ShortId get_non_nonunique_short_id() const  { return short_uid; }
   inline ShortId get_non_nonunique_short_id_calculate() const { return get_non_nonunique_short_id(dof,get_MoFEMEntity_ptr()); }
-  inline EntityHandle get_ent() const { return this->sFieldPtr->get_ent(); };
-  //inline EntityType get_ent_type() const { return this->sFieldPtr->get_ent_type(); };
+  inline EntityHandle get_ent() const { return this->sPtr->get_ent(); };
   inline ApproximationOrder get_dof_order() const {
-    return ((ApproximationOrder*)this->sFieldPtr->tag_dof_order_data)[dof];
+    return ((ApproximationOrder*)this->sPtr->tag_dof_order_data)[dof];
   };
 
   DEPRECATED inline FieldCoefficientsNumber get_dof_rank() const {
-    return ((FieldCoefficientsNumber*)this->sFieldPtr->tag_dof_rank_data)[dof];
+    return ((FieldCoefficientsNumber*)this->sPtr->tag_dof_rank_data)[dof];
   };
 
   /** \brief Get dof coefficient
   */
   inline FieldCoefficientsNumber get_dof_coeff_idx() const {
-    return ((FieldCoefficientsNumber*)this->sFieldPtr->tag_dof_rank_data)[dof];
+    return ((FieldCoefficientsNumber*)this->sPtr->tag_dof_rank_data)[dof];
   };
 
   //check if node is active
@@ -208,7 +207,7 @@ struct BaseFEDofMoFEMEntity {
 struct FEDofMoFEMEntity: public BaseFEDofMoFEMEntity,interface_DofMoFEMEntity<DofMoFEMEntity> {
   typedef interface_Field<DofMoFEMEntity> interface_type_Field;
   typedef interface_DofMoFEMEntity<DofMoFEMEntity> interface_type_DofMoFEMEntity;
-  typedef interface_RefMoFEMEntity<RefMoFEMEntity> interface_type_RefMoFEMEntity;
+  typedef interface_RefMoFEMEntity<DofMoFEMEntity> interface_type_RefMoFEMEntity;
   FEDofMoFEMEntity(
     SideNumber *_side_number_ptr,
     const boost::shared_ptr<DofMoFEMEntity> _DofMoFEMEntity_ptr
@@ -227,7 +226,7 @@ struct FEDofMoFEMEntity: public BaseFEDofMoFEMEntity,interface_DofMoFEMEntity<Do
  interface_NumeredDofMoFEMEntity<NumeredDofMoFEMEntity> {
    typedef interface_Field<NumeredDofMoFEMEntity> interface_type_Field;
    typedef interface_DofMoFEMEntity<NumeredDofMoFEMEntity> interface_type_DofMoFEMEntity;
-   typedef interface_RefMoFEMEntity<RefMoFEMEntity> interface_type_RefMoFEMEntity;
+   typedef interface_RefMoFEMEntity<NumeredDofMoFEMEntity> interface_type_RefMoFEMEntity;
    typedef interface_NumeredDofMoFEMEntity<NumeredDofMoFEMEntity> interface_type_NumeredDofMoFEMEntity;
    FENumeredDofMoFEMEntity(
      SideNumber *_side_number_ptr,
