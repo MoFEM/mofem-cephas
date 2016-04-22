@@ -64,12 +64,12 @@ typedef multi_index_container<
  * \brief this struct keeps basic methods for moab entity
  * \ingroup ent_multi_indices
 
-  \todo BasicMoFEMEntity in should be linked to directly to MoAB data structures
+  \todo BasicEntity in should be linked to directly to MoAB data structures
   such that connectivity and nodal coordinates could be quickly accessed,
   without need of using native MoAB functions.
 
  */
-struct BasicMoFEMEntity {
+struct BasicEntity {
   EntityHandle ent;
   int owner_proc;
   EntityHandle moab_owner_handle;
@@ -77,10 +77,10 @@ struct BasicMoFEMEntity {
   int *sharing_procs_ptr;
   EntityHandle *sharing_handlers_ptr;
 
-  BasicMoFEMEntity();
-  BasicMoFEMEntity(Interface &moab,const EntityHandle _ent);
+  BasicEntity();
+  BasicEntity(Interface &moab,const EntityHandle _ent);
 
-  PetscErrorCode iterateBasicMoFEMEntity(
+  PetscErrorCode iterateBasicEntity(
     EntityHandle _ent,
     int _owner_proc,
     EntityHandle _moab_owner_handle,
@@ -125,7 +125,7 @@ struct BasicMoFEMEntity {
   DO NOT MODIFY LIST.
 
 \code
-  BasicMoFEMEntity *ent_ptr = BasicMoFEMEntity(moan,entity_handle);
+  BasicEntity *ent_ptr = BasicEntity(moan,entity_handle);
   for(int proc = 0; proc<MAX_SHARING_PROCS && -1 != ent_ptr->get_sharing_procs_ptr[proc]; proc++) {
       if(ent_ptr->get_sharing_procs_ptr[proc] == -1) {
 	// End of the list
@@ -149,7 +149,7 @@ struct BasicMoFEMEntity {
   DO NOT MODIFY LIST.
 
 \code
-  BasicMoFEMEntity *ent_ptr = BasicMoFEMEntity(moan,entity_handle);
+  BasicEntity *ent_ptr = BasicEntity(moan,entity_handle);
   for(int proc = 0; proc<MAX_SHARING_PROCS && -1 != ent_ptr->get_sharing_procs_ptr[proc]; proc++) {
       if(ent_ptr->get_sharing_procs_ptr[proc] == -1) {
 	// End of the list
@@ -176,7 +176,7 @@ struct BasicMoFEMEntity {
   waste of space.
 
  */
-struct RefMoFEMEntity: public BasicMoFEMEntity {
+struct RefMoFEMEntity: public BasicEntity {
   EntityHandle *tag_parent_ent;
   BitRefLevel *tag_BitRefLevel;
 
@@ -265,31 +265,31 @@ typedef multi_index_container<
   boost::shared_ptr<RefMoFEMEntity>,
   indexed_by<
     hashed_unique<
-      tag<Ent_mi_tag>, member<RefMoFEMEntity::BasicMoFEMEntity,EntityHandle,&RefMoFEMEntity::ent> >,
+      tag<Ent_mi_tag>, member<RefMoFEMEntity::BasicEntity,EntityHandle,&RefMoFEMEntity::ent> >,
     hashed_non_unique<
-      tag<Ent_Owner_mi_tag>, member<RefMoFEMEntity::BasicMoFEMEntity,EntityHandle,&RefMoFEMEntity::moab_owner_handle> >,
+      tag<Ent_Owner_mi_tag>, member<RefMoFEMEntity::BasicEntity,EntityHandle,&RefMoFEMEntity::moab_owner_handle> >,
     ordered_non_unique<
-      tag<Proc_mi_tag>, member<RefMoFEMEntity::BasicMoFEMEntity,int,&RefMoFEMEntity::owner_proc> >,
+      tag<Proc_mi_tag>, member<RefMoFEMEntity::BasicEntity,int,&RefMoFEMEntity::owner_proc> >,
     ordered_non_unique<
-      tag<Ent_ParallelStatus>, const_mem_fun<RefMoFEMEntity::BasicMoFEMEntity,unsigned char,&RefMoFEMEntity::get_pstatus> >,
+      tag<Ent_ParallelStatus>, const_mem_fun<RefMoFEMEntity::BasicEntity,unsigned char,&RefMoFEMEntity::get_pstatus> >,
     ordered_non_unique<
       tag<Ent_Ent_mi_tag>, const_mem_fun<RefMoFEMEntity,EntityHandle,&RefMoFEMEntity::get_parent_ent> >,
     ordered_non_unique<
-      tag<EntType_mi_tag>, const_mem_fun<RefMoFEMEntity::BasicMoFEMEntity,EntityType,&RefMoFEMEntity::get_ent_type> >,
+      tag<EntType_mi_tag>, const_mem_fun<RefMoFEMEntity::BasicEntity,EntityType,&RefMoFEMEntity::get_ent_type> >,
     ordered_non_unique<
       tag<ParentEntType_mi_tag>, const_mem_fun<RefMoFEMEntity,EntityType,&RefMoFEMEntity::get_parent_ent_type> >,
     ordered_non_unique<
       tag<Composite_EntType_and_ParentEntType_mi_tag>,
       composite_key<
       	RefMoFEMEntity,
-      	const_mem_fun<RefMoFEMEntity::BasicMoFEMEntity,EntityType,&RefMoFEMEntity::get_ent_type>,
+      	const_mem_fun<RefMoFEMEntity::BasicEntity,EntityType,&RefMoFEMEntity::get_ent_type>,
       	const_mem_fun<RefMoFEMEntity,EntityType,&RefMoFEMEntity::get_parent_ent_type> > >,
     ordered_non_unique<
       tag<Composite_Ent_And_ParentEntType_mi_tag>,
       composite_key<
       	RefMoFEMEntity,
       	const_mem_fun<RefMoFEMEntity,EntityHandle,&RefMoFEMEntity::get_parent_ent>,
-      	const_mem_fun<RefMoFEMEntity::BasicMoFEMEntity,EntityType,&RefMoFEMEntity::get_ent_type> > >
+      	const_mem_fun<RefMoFEMEntity::BasicEntity,EntityType,&RefMoFEMEntity::get_ent_type> > >
   > > RefMoFEMEntity_multiIndex;
 
 /** \brief multi-index view of RefMoFEMEntity by parent entity

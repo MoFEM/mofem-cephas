@@ -32,7 +32,7 @@
 
 namespace MoFEM {
 
-BasicMoFEMEntity::BasicMoFEMEntity():
+BasicEntity::BasicEntity():
 ent(0),
 owner_proc(-1),
 moab_owner_handle(0),
@@ -41,7 +41,7 @@ sharing_handlers_ptr(NULL) {
 }
 
 //basic moab ent
-BasicMoFEMEntity::BasicMoFEMEntity(Interface &moab,const EntityHandle _ent):
+BasicEntity::BasicEntity(Interface &moab,const EntityHandle _ent):
 ent(_ent),
 sharing_procs_ptr(NULL),
 sharing_handlers_ptr(NULL) {
@@ -72,7 +72,7 @@ sharing_handlers_ptr(NULL) {
     rval = moab.tag_get_by_ptr(pcomm->sharedh_tag(),&ent,1,(const void **)&sharing_handlers_ptr); CHKERR_MOAB(rval);
   }
 }
-PetscErrorCode BasicMoFEMEntity::iterateBasicMoFEMEntity(
+PetscErrorCode BasicEntity::iterateBasicEntity(
   EntityHandle _ent,
   int _owner_proc,
   EntityHandle _moab_owner_handle,
@@ -105,12 +105,12 @@ PetscErrorCode BasicMoFEMEntity::iterateBasicMoFEMEntity(
 //ref moab ent
 BitRefEdges MoFEM::RefElement::DummyBitRefEdges = BitRefEdges(0);
 RefMoFEMEntity::RefMoFEMEntity():
-BasicMoFEMEntity(),
+BasicEntity(),
 tag_parent_ent(NULL),
 tag_BitRefLevel(NULL) {
 }
 RefMoFEMEntity::RefMoFEMEntity(Interface &moab, const EntityHandle _ent):
-BasicMoFEMEntity(moab,_ent),
+BasicEntity(moab,_ent),
 tag_parent_ent(NULL),
 tag_BitRefLevel(NULL) {
   MoABErrorCode rval;
@@ -132,7 +132,7 @@ PetscErrorCode RefMoFEMEntity::iterateRefMoFEMEntity(
 ) {
   PetscErrorCode ierr;
   PetscFunctionBegin;
-  ierr = iterateBasicMoFEMEntity(
+  ierr = iterateBasicEntity(
     _ent,
     _owner_proc,
     _moab_owner_handle,
