@@ -138,7 +138,6 @@ if(DOXYGEN_FOUND)
         WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
         COMMENT "Generate git-stats" VERBATIM
       )
-      add_dependencies(doc git_stats)
     endif(GITSTATS)
   endif(GIT_FOUND)
 
