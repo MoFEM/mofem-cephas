@@ -486,6 +486,10 @@ struct MoFEMEntity:
   inline const boost::shared_ptr<RefMoFEMEntity> get_RefMoFEMEntity_ptr() {
     return this->sPtr;
   }
+  inline const boost::shared_ptr<Field> get_Field_ptr() const {
+    return this->sFieldPtr;
+  }
+
 
 };
 
@@ -518,6 +522,9 @@ interface_RefMoFEMEntity<T> {
   inline const boost::shared_ptr<MoFEMEntity> get_MoFEMEntity_ptr() const { return this->sPtr; };
   inline const boost::shared_ptr<RefMoFEMEntity> get_RefMoFEMEntity_ptr() {
     return this->sPtr->get_RefMoFEMEntity_ptr();
+  }
+  inline const boost::shared_ptr<Field> get_Field_ptr() const {
+    return this->sFieldPtr->get_Field_ptr();
   }
 
 };

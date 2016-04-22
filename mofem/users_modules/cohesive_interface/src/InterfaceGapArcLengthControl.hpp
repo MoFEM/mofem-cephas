@@ -126,13 +126,13 @@ struct ArcLengthIntElemFEMethod: public FEMethod {
     ierr = VecGetArray(GhostLambdaInt,&array_int_lambda); CHKERRQ(ierr);
     array_int_lambda[0] = 0;
     for(;dit!=hi_dit;dit++) {
-      if(dit->get_ent_type() != MBVERTEX) continue;
-      if(pcomm->rank() != dit->get_part()) continue;
-      if(Nodes3.find(dit->get_ent())!=Nodes3.end()) {
-        array_int_lambda[0] += array[dit->petsc_local_dof_idx];
+      if(dit->get()->get_ent_type() != MBVERTEX) continue;
+      if(pcomm->rank() != dit->get()->get_part()) continue;
+      if(Nodes3.find(dit->get()->get_ent())!=Nodes3.end()) {
+        array_int_lambda[0] += array[dit->get()->petsc_local_dof_idx];
       }
-      if(Nodes4.find(dit->get_ent())!=Nodes4.end()) {
-        array_int_lambda[0] -= array[dit->petsc_local_dof_idx];
+      if(Nodes4.find(dit->get()->get_ent())!=Nodes4.end()) {
+        array_int_lambda[0] -= array[dit->get()->petsc_local_dof_idx];
       }
     }
     //PetscSynchronizedPrintf(PETSC_COMM_WORLD,
@@ -166,15 +166,15 @@ struct ArcLengthIntElemFEMethod: public FEMethod {
     double *array;
     ierr = VecGetArray(arcPtr->db,&array); CHKERRQ(ierr);
     for(;dit!=hi_dit;dit++) {
-      if(dit->get_ent_type() != MBVERTEX) {
-        array[dit->petsc_local_dof_idx] = 0;
+      if(dit->get()->get_ent_type() != MBVERTEX) {
+        array[dit->get()->petsc_local_dof_idx] = 0;
         continue;
       }
-      if(Nodes3.find(dit->get_ent())!=Nodes3.end()) {
-        array[dit->petsc_local_dof_idx] = +arcPtr->alpha;
-      } else if(Nodes4.find(dit->get_ent())!=Nodes4.end()) {
-        array[dit->petsc_local_dof_idx] = -arcPtr->alpha;
-      } else array[dit->petsc_local_dof_idx] = 0;
+      if(Nodes3.find(dit->get()->get_ent())!=Nodes3.end()) {
+        array[dit->get()->petsc_local_dof_idx] = +arcPtr->alpha;
+      } else if(Nodes4.find(dit->get()->get_ent())!=Nodes4.end()) {
+        array[dit->get()->petsc_local_dof_idx] = -arcPtr->alpha;
+      } else array[dit->get()->petsc_local_dof_idx] = 0;
     }
     ierr = VecRestoreArray(arcPtr->db,&array); CHKERRQ(ierr);
     PetscFunctionReturn(0);

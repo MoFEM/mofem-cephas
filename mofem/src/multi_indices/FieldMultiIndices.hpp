@@ -173,22 +173,22 @@ struct interface_Field {
   inline string getCoordSysName() const { return this->sFieldPtr->getCoordSysName(); };
   inline boost::string_ref getCoordSysNameRef() const {
     return this->sFieldPtr->getCoordSysNameRef();
-  };
+  }
 
-  inline const BitFieldId& get_id() const { return this->sFieldPtr->get_id(); };
+  inline const BitFieldId& get_id() const { return this->sFieldPtr->get_id(); }
   inline unsigned int get_bit_number() const { return this->sFieldPtr->get_bit_number(); }
-  inline boost::string_ref get_name_ref() const { return this->sFieldPtr->get_name_ref(); };
-  inline string get_name() const { return this->sFieldPtr->get_name(); };
-  inline FieldSpace get_space() const { return this->sFieldPtr->get_space(); };
-  inline FieldApproximationBase get_approx_base() const { return this->sFieldPtr->get_approx_base(); };
+  inline boost::string_ref get_name_ref() const { return this->sFieldPtr->get_name_ref(); }
+  inline string get_name() const { return this->sFieldPtr->get_name(); }
+  inline FieldSpace get_space() const { return this->sFieldPtr->get_space(); }
+  inline FieldApproximationBase get_approx_base() const { return this->sFieldPtr->get_approx_base(); }
 
-  DEPRECATED inline FieldCoefficientsNumber get_max_rank() const { return this->sFieldPtr->get_nb_of_coeffs(); };
+  DEPRECATED inline FieldCoefficientsNumber get_max_rank() const { return this->sFieldPtr->get_nb_of_coeffs(); }
 
   /* \brief get number of field coefficients
   */
-  inline FieldCoefficientsNumber get_nb_of_coeffs() const { return this->sFieldPtr->get_nb_of_coeffs(); };
+  inline FieldCoefficientsNumber get_nb_of_coeffs() const { return this->sFieldPtr->get_nb_of_coeffs(); }
 
-  inline const boost::shared_ptr<Field> get_Field_ptr() const { return this->sFieldPtr; };
+  inline const boost::shared_ptr<T> get_Field_ptr() const { return this->sFieldPtr; }
 
 };
 

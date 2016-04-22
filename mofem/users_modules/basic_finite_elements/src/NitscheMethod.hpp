@@ -277,7 +277,7 @@ struct NitscheMethod {
                 blockData.faceElemName.c_str()
               );
             }
-            commonData.facesFePtr[ff] = &*it;
+            commonData.facesFePtr[ff] = &*(*it);
           } else {
             commonData.facesFePtr[ff] = NULL;
           }
@@ -293,9 +293,9 @@ struct NitscheMethod {
             faceFE.feName = blockData.faceElemName;
             faceFE.nInTheLoop = ff;
             faceFE.fePtr = faceFEPtr;
-            faceFE.dataPtr = const_cast<FEDofMoFEMEntity_multiIndex*>(&faceFEPtr->fe_ptr->data_dofs);
-            faceFE.rowPtr = const_cast<FENumeredDofMoFEMEntity_multiIndex*>(&faceFEPtr->rows_dofs);
-            faceFE.colPtr = const_cast<FENumeredDofMoFEMEntity_multiIndex*>(&faceFEPtr->cols_dofs);
+            faceFE.dataPtr = &faceFEPtr->sPtr->data_dofs;
+            faceFE.rowPtr = &faceFEPtr->rows_dofs;
+            faceFE.colPtr = &faceFEPtr->cols_dofs;
             faceFE.addToRule = addToRule;
             ierr = faceFE(); CHKERRQ(ierr);
           }

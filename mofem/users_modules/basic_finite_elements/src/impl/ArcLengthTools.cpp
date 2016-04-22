@@ -72,7 +72,7 @@ ArcLengthCtx::ArcLengthCtx(FieldInterface &m_field,const string &problem_name):
       "can not find unique LAMBDA (load factor)",PETSC_NULL
     );
   }
-  if((unsigned int)mField.getCommRank()==dIt->get_part()) {
+  if((unsigned int)mField.getCommRank()==(*dIt)->get_part()) {
     ierr = VecCreateGhostWithArray(
       mField.get_comm(),1,1,0,PETSC_NULL,&dLambda,&ghosTdLambda
     ); CHKERRABORT(PETSC_COMM_WORLD,ierr);
