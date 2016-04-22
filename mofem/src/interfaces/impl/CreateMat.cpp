@@ -229,9 +229,13 @@ PetscErrorCode CreateRowComressedADJMatrix::createMatArrays(
       unsigned char pstatus = (*mit_row)->get_pstatus();
       if((pstatus & PSTATUS_NOT_OWNED) && (pstatus&(PSTATUS_SHARED|PSTATUS_MULTISHARED))) {
 
-        if( (!mofem_ent_ptr) ? 1 : mofem_ent_ptr->get_global_unique_id() != (*mit_row)->get_MoFEMEntity_ptr()->get_global_unique_id() ) {
+        if(
+          (!mofem_ent_ptr)?1:mofem_ent_ptr->get_global_unique_id()!=(*mit_row)->get_MoFEMEntity_ptr()->get_global_unique_id()
+        ) {
           // get entity adjacencies
-          ierr = getEntityAdjacenies<TAG>(p_miit,mit_row,mofem_ent_ptr,dofs_col_view,verb); CHKERRQ(ierr);
+          ierr = getEntityAdjacenies<TAG>(
+            p_miit,mit_row,mofem_ent_ptr,dofs_col_view,verb
+          ); CHKERRQ(ierr);
           // Add that row. Patterns is that first index is row index, second is
           // size of adjacencies after that follows column adjacencies.
           int owner = (*mit_row)->get_owner_proc();
@@ -394,10 +398,14 @@ PetscErrorCode CreateRowComressedADJMatrix::createMatArrays(
     // Get entity adjacencies, no need to repeat that operation for dofs when
     // are on the same entity. For simplicity is assumed that those share the
     // same adjacencies.
-    if( (!mofem_ent_ptr) ? 1 : (mofem_ent_ptr->get_global_unique_id() != (*miit_row)->get_MoFEMEntity_ptr()->get_global_unique_id()) ) {
+    if(
+      (!mofem_ent_ptr)?1:(mofem_ent_ptr->get_global_unique_id()!=(*miit_row)->get_MoFEMEntity_ptr()->get_global_unique_id())
+    ) {
 
       // get entity adjacencies
-      ierr = getEntityAdjacenies<TAG>(p_miit,miit_row,mofem_ent_ptr,dofs_col_view,verb); CHKERRQ(ierr);
+      ierr = getEntityAdjacenies<TAG>(
+        p_miit,miit_row,mofem_ent_ptr,dofs_col_view,verb
+      ); CHKERRQ(ierr);
       row_last_evaluated_idx = TAG::get_index(miit_row);
 
       dofs_vec.resize(0);
@@ -888,10 +896,9 @@ PetscErrorCode Core::partition_check_matrix_fill_in(const string &problem_name,i
 
           }
 
-          ierr = MatSetValue(A,row,col,1,INSERT_VALUES);
+          ierr = MatSetValue(A,row,col,1,INSERT_VALUES); CHKERRQ(ierr);
 
           if((*cit)->get_ent_type()!=MBVERTEX) {
-
 
             FENumeredDofEntity_multiIndex::index<Composite_Name_Type_And_Side_Number_mi_tag>::type::iterator dit,hi_dit;
             dit = colPtr->get<Composite_Name_Type_And_Side_Number_mi_tag>().lower_bound(boost::make_tuple((*cit)->get_name(),(*cit)->get_ent_type(),(*cit)->side_number_ptr->side_number));

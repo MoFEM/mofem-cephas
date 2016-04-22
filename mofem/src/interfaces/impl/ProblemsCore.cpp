@@ -938,7 +938,9 @@ PetscErrorCode Core::partition_compose_problem(const string &name,const string &
   //find p_miit
   MoFEMProblem_multiIndex_by_name &pRoblems_set = pRoblems.get<Problem_mi_tag>();
   MoFEMProblem_multiIndex_by_name::iterator p_miit = pRoblems_set.find(name);
-  if(p_miit==pRoblems_set.end()) SETERRQ1(PETSC_COMM_SELF,1,"problem with name < %s > not defined (top tip check spelling)",name.c_str());
+  if(p_miit==pRoblems_set.end()) {
+    SETERRQ1(PETSC_COMM_SELF,1,"problem with name < %s > not defined (top tip check spelling)",name.c_str());
+  }
   if(verb>0) {
     PetscPrintf(
       comm,"Compose problem %s from rows of %s and columns of %s\n",
@@ -957,7 +959,8 @@ PetscErrorCode Core::partition_compose_problem(const string &name,const string &
   bool copy[] = { copy_rows, copy_cols };
   NumeredDofEntity_multiIndex* composed_dofs[] = {
     const_cast<NumeredDofEntity_multiIndex*>(&p_miit->numered_dofs_rows),
-    const_cast<NumeredDofEntity_multiIndex*>(&p_miit->numered_dofs_cols) };
+    const_cast<NumeredDofEntity_multiIndex*>(&p_miit->numered_dofs_cols)
+  };
 
   int* nb_local_dofs[] = { p_miit->tag_local_nbdof_data_row, p_miit->tag_local_nbdof_data_col };
   int* nb_dofs[] = { p_miit->tag_nbdof_data_row, p_miit->tag_nbdof_data_col };
@@ -977,7 +980,11 @@ PetscErrorCode Core::partition_compose_problem(const string &name,const string &
 
         NumeredDofEntitys_by_uid::iterator diit = dofs_by_uid.find((*dit)->get_global_unique_id());
         if(diit==dofs_by_uid.end()) {
-          SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency, could not find dof in composite problem");
+          SETERRQ(
+            PETSC_COMM_SELF,
+            MOFEM_DATA_INCONSISTENCY,
+            "data inconsistency, could not find dof in composite problem"
+          );
         }
         int part_number = (*diit)->get_part(); // get part number
         int petsc_global_dof = (*diit)->get_petsc_gloabl_dof_idx();
@@ -998,9 +1005,7 @@ PetscErrorCode Core::partition_compose_problem(const string &name,const string &
       // apply local to global mapping
       is_local.resize(0);
       for(NumeredDofEntity_multiIndex::iterator dit = composed_dofs[ss]->begin();dit!=composed_dofs[ss]->end();dit++) {
-
         is_local.push_back((*dit)->get_petsc_gloabl_dof_idx());
-
       }
       ierr = AOPetscToApplication(ao,is_local.size(),&is_local[0]); CHKERRQ(ierr);
       int idx2 = 0;
