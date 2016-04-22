@@ -1798,9 +1798,13 @@ PetscErrorCode Core::build_finite_element_data_dofs(EntFiniteElement &ent_fe,int
         case L2:
         case NOFIELD:
         {
-          SideNumber *side_number_ptr = ent_fe.get_side_number_ptr(moab,(*viit_data)->get_ent());
+          boost::shared_ptr<SideNumber> side_number_ptr = ent_fe.get_side_number_ptr(moab,(*viit_data)->get_ent());
           //add dofs to finite element multi_index database
-          data_dofs.get<Unique_mi_tag>().insert(data_dofs.end(),boost::shared_ptr<FEDofEntity>(new FEDofEntity(side_number_ptr,*viit_data)));
+          data_dofs.get<Unique_mi_tag>().insert(
+            data_dofs.end(),boost::shared_ptr<FEDofEntity>(
+              new FEDofEntity(side_number_ptr,*viit_data)
+            )
+          );
         }
         break;
         default:
@@ -2119,13 +2123,15 @@ PetscErrorCode Core::partition_finite_elements(
     cols_dofs.clear();
     {
       NumeredDofEntity_multiIndex_uid_view_ordered rows_view;
-      //rows_view
-      ierr = (*miit2)->get_MoFEMFiniteElement_row_dof_view(p_miit->numered_dofs_rows,rows_view,Interface::UNION); CHKERRQ(ierr);
       NumeredDofEntity_multiIndex_uid_view_ordered::iterator viit_rows;
       if(part_from_moab) {
         int proc = (*miit2)->get_owner_proc();
         NumeredEntFiniteElement_change_part(proc).operator()(numered_fe);
       } else {
+        //rows_view
+        ierr = (*miit2)->get_MoFEMFiniteElement_row_dof_view(
+          p_miit->numered_dofs_rows,rows_view,Interface::UNION
+        ); CHKERRQ(ierr);
         vector<int> parts(sIze,0);
         viit_rows = rows_view.begin();
         for(;viit_rows!=rows_view.end();viit_rows++) {
@@ -2139,11 +2145,17 @@ PetscErrorCode Core::partition_finite_elements(
         (numered_fe->get_part()>=(unsigned int)low_proc)&&
         (numered_fe->get_part()<=(unsigned int)hi_proc)
       ) {
+        if(part_from_moab) {
+          //rows_view
+          ierr = (*miit2)->get_MoFEMFiniteElement_row_dof_view(
+            p_miit->numered_dofs_rows,rows_view,Interface::UNION
+          ); CHKERRQ(ierr);
+        }
         //rows element dof multi-indices
         viit_rows = rows_view.begin();
         for(;viit_rows!=rows_view.end();viit_rows++) {
           try {
-            SideNumber *side_number_ptr = (*miit2)->get_side_number_ptr(moab,(*viit_rows)->get_ent());
+            boost::shared_ptr<SideNumber> side_number_ptr = (*miit2)->get_side_number_ptr(moab,(*viit_rows)->get_ent());
             rows_dofs.insert(boost::shared_ptr<FENumeredDofEntity>(new FENumeredDofEntity(side_number_ptr,*viit_rows)));
           } catch (MoFEMException const &e) {
             SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
@@ -2159,7 +2171,7 @@ PetscErrorCode Core::partition_finite_elements(
         viit_cols = cols_view.begin();
         for(;viit_cols!=cols_view.end();viit_cols++) {
           try {
-            SideNumber *side_number_ptr = (*miit2)->get_side_number_ptr(moab,(*viit_cols)->get_ent());
+            boost::shared_ptr<SideNumber> side_number_ptr = (*miit2)->get_side_number_ptr(moab,(*viit_cols)->get_ent());
             cols_dofs.insert(boost::shared_ptr<FENumeredDofEntity>(new FENumeredDofEntity(side_number_ptr,*viit_cols)));
           } catch (MoFEMException const &e) {
             SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);

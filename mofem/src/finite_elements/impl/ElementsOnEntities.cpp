@@ -107,12 +107,12 @@ PetscErrorCode ForcesAndSurcesCore::getSense(EntityType type,boost::ptr_vector<D
     SideNumber_multiIndex::nth_index<2>::type::iterator siit = side_table.get<2>().lower_bound(type);
     SideNumber_multiIndex::nth_index<2>::type::iterator hi_siit = side_table.get<2>().upper_bound(type);
     for(;siit!=hi_siit;siit++) {
-      data[siit->side_number].getSense() = siit->sense;
-      if(siit->brother_side_number!=-1) {
-        if(data.size() < (unsigned)siit->brother_side_number) {
+      data[siit->get()->side_number].getSense() = siit->get()->sense;
+      if(siit->get()->brother_side_number!=-1) {
+        if(data.size() < (unsigned)siit->get()->brother_side_number) {
           SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
         }
-        data[siit->brother_side_number].getSense() = siit->sense;
+        data[siit->get()->brother_side_number].getSense() = siit->get()->sense;
       }
     }
   } catch (exception& ex) {
@@ -194,16 +194,16 @@ PetscErrorCode ForcesAndSurcesCore::getDataOrder(const EntityType type,const Fie
     hi_dit = data_dofs.upper_bound(boost::make_tuple(type,space));
     for(;dit!=hi_dit;dit++) {
       ApproximationOrder ent_order = (*dit)->get_max_order();
-      int side_number = (*dit)->side_number_ptr->side_number;
+      int side_number = (*dit)->sideNumberPtr->side_number;
       if(side_number < 0) {
         SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
       }
       data[side_number].getDataOrder() = data[side_number].getDataOrder() > ent_order ? data[side_number].getDataOrder() : ent_order;
-      if((*dit)->side_number_ptr->brother_side_number!=-1) {
-        if(data.size() < (unsigned int)(*dit)->side_number_ptr->brother_side_number) {
+      if((*dit)->sideNumberPtr->brother_side_number!=-1) {
+        if(data.size() < (unsigned int)(*dit)->sideNumberPtr->brother_side_number) {
           SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
         }
-        data[(*dit)->side_number_ptr->brother_side_number].getDataOrder() = data[side_number].getDataOrder();
+        data[(*dit)->sideNumberPtr->brother_side_number].getDataOrder() = data[side_number].getDataOrder();
       }
     }
   } catch (exception& ex) {
@@ -277,7 +277,7 @@ PetscErrorCode ForcesAndSurcesCore::getDataOrderSpaceAndBase(
 
     // cerr << ApproximationBaseNames[dit->get_approx_base()] << endl;
 
-    int side_number = (*dit)->side_number_ptr->side_number;
+    int side_number = (*dit)->sideNumberPtr->side_number;
     if(data[side_number].getDataOrder()) continue;
 
     ApproximationOrder ent_order = (*dit)->get_max_order();
@@ -287,13 +287,13 @@ PetscErrorCode ForcesAndSurcesCore::getDataOrderSpaceAndBase(
     data[side_number].getBase() = (*dit)->get_approx_base();
     data[side_number].getSpace() = (*dit)->get_space();
     data[side_number].getDataOrder() = data[side_number].getDataOrder() > ent_order ? data[side_number].getDataOrder() : ent_order;
-    if((*dit)->side_number_ptr->brother_side_number!=-1) {
-      if(data.size() < (unsigned int)(*dit)->side_number_ptr->brother_side_number) {
+    if((*dit)->sideNumberPtr->brother_side_number!=-1) {
+      if(data.size() < (unsigned int)(*dit)->sideNumberPtr->brother_side_number) {
         SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
       }
-      data[(*dit)->side_number_ptr->brother_side_number].getBase() = data[side_number].getBase();
-      data[(*dit)->side_number_ptr->brother_side_number].getSpace() = data[side_number].getSpace();
-      data[(*dit)->side_number_ptr->brother_side_number].getDataOrder() = data[side_number].getDataOrder();
+      data[(*dit)->sideNumberPtr->brother_side_number].getBase() = data[side_number].getBase();
+      data[(*dit)->sideNumberPtr->brother_side_number].getSpace() = data[side_number].getSpace();
+      data[(*dit)->sideNumberPtr->brother_side_number].getDataOrder() = data[side_number].getDataOrder();
     }
 
   }
@@ -363,11 +363,11 @@ PetscErrorCode ForcesAndSurcesCore::getNodesIndices(
   for(;dit!=hi_dit;dit++) {
     int idx = (*dit)->get_petsc_gloabl_dof_idx();
     int local_idx = (*dit)->get_petsc_local_dof_idx();
-    int side_number = (*dit)->side_number_ptr->side_number;
+    int side_number = (*dit)->sideNumberPtr->side_number;
     int pos = side_number*(*dit)->get_nb_of_coeffs()+(*dit)->get_dof_coeff_idx();
     nodes_indices[pos] = idx;
     local_nodes_indices[pos] = local_idx;
-    int  brother_side_number = (*dit)->side_number_ptr->brother_side_number;
+    int  brother_side_number = (*dit)->sideNumberPtr->brother_side_number;
     if(brother_side_number!=-1) {
       if(nodes_indices.size()<(unsigned int)(brother_side_number*(*dit)->get_nb_of_coeffs()+(*dit)->get_nb_of_coeffs())) {
         nodes_indices.resize(brother_side_number*(*dit)->get_nb_of_coeffs()+(*dit)->get_nb_of_coeffs());
@@ -432,11 +432,11 @@ PetscErrorCode ForcesAndSurcesCore::getTypeIndices(
   SideNumber_multiIndex::nth_index<2>::type::iterator hi_siit = side_table.get<2>().upper_bound(type);
   for(;siit!=hi_siit;siit++) {
     ierr = getTypeIndices(
-      field_name,dofs,type,siit->side_number,data[siit->side_number].getIndices(),data[siit->side_number].getLocalIndices()
+      field_name,dofs,type,siit->get()->side_number,data[siit->get()->side_number].getIndices(),data[siit->get()->side_number].getLocalIndices()
     ); CHKERRQ(ierr);
-    if(siit->brother_side_number!=-1) {
+    if(siit->get()->brother_side_number!=-1) {
       ierr = getTypeIndices(
-        field_name,dofs,type,siit->side_number,data[siit->brother_side_number].getIndices(),data[siit->brother_side_number].getLocalIndices()
+        field_name,dofs,type,siit->get()->side_number,data[siit->get()->brother_side_number].getIndices(),data[siit->get()->brother_side_number].getLocalIndices()
       ); CHKERRQ(ierr);
     }
   }
@@ -592,9 +592,9 @@ PetscErrorCode ForcesAndSurcesCore::getProblemNodesIndices(const string &field_n
   int nn = 0;
   for(;siit!=hi_siit;siit++,nn++) {
 
-    if(siit->side_number == -1) continue;
+    if(siit->get()->side_number == -1) continue;
 
-    const EntityHandle ent = siit->ent;
+    const EntityHandle ent = siit->get()->ent;
     NumeredDofEntity_multiIndex::index<Composite_Name_And_Ent_And_EndDofIdx_mi_tag>::type::iterator dit,hi_dit;
     dit = dofs.get<Composite_Name_And_Ent_And_EndDofIdx_mi_tag>().lower_bound(boost::make_tuple(field_name,ent,0));
     hi_dit = dofs.get<Composite_Name_And_Ent_And_EndDofIdx_mi_tag>().upper_bound(boost::make_tuple(field_name,ent,10000));  /// very large number
@@ -605,7 +605,7 @@ PetscErrorCode ForcesAndSurcesCore::getProblemNodesIndices(const string &field_n
         nodes_indices.resize((*dit)->get_nb_of_coeffs()*distance(siit,hi_siit));
       }
       for(;dit!=hi_dit;dit++) {
-        nodes_indices[siit->side_number*(*dit)->get_nb_of_coeffs()+(*dit)->get_dof_coeff_idx()] = (*dit)->get_petsc_gloabl_dof_idx();
+        nodes_indices[siit->get()->side_number*(*dit)->get_nb_of_coeffs()+(*dit)->get_dof_coeff_idx()] = (*dit)->get_petsc_gloabl_dof_idx();
       }
 
     }
@@ -630,9 +630,9 @@ PetscErrorCode ForcesAndSurcesCore::getProblemTypeIndices(
 
   for(;siit!=hi_siit;siit++) {
 
-    if(siit->side_number == -1) continue;
+    if(siit->get()->side_number == -1) continue;
 
-    const EntityHandle ent = siit->ent;
+    const EntityHandle ent = siit->get()->ent;
     NumeredDofEntity_multiIndex::index<Composite_Name_And_Ent_And_EndDofIdx_mi_tag>::type::iterator dit,hi_dit;
     dit = dofs.get<Composite_Name_And_Ent_And_EndDofIdx_mi_tag>().lower_bound(boost::make_tuple(field_name,ent,0));
     hi_dit = dofs.get<Composite_Name_And_Ent_And_EndDofIdx_mi_tag>().upper_bound(boost::make_tuple(field_name,ent,10000));  /// very large number
@@ -717,14 +717,14 @@ PetscErrorCode ForcesAndSurcesCore::getNodesFieldData(
 
     for(;dit!=hi_dit;dit++) {
       FieldData val = (*dit)->get_FieldData();
-      int side_number = (*dit)->side_number_ptr->side_number;
+      int side_number = (*dit)->sideNumberPtr->side_number;
       if(side_number == -1) {
         SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
       }
       int pos = side_number*(*dit)->get_nb_of_coeffs()+(*dit)->get_dof_coeff_idx();
       nodes_data[pos] = val;
       nodes_dofs[pos] = &*(*dit);
-      int  brother_side_number = (*dit)->side_number_ptr->brother_side_number;
+      int  brother_side_number = (*dit)->sideNumberPtr->brother_side_number;
       if(brother_side_number!=-1) {
         if(nodes_data.size()<(unsigned int)(brother_side_number*(*dit)->get_nb_of_coeffs()+(*dit)->get_nb_of_coeffs())) {
           nodes_data.resize(brother_side_number*(*dit)->get_nb_of_coeffs()+(*dit)->get_nb_of_coeffs());
@@ -801,18 +801,18 @@ PetscErrorCode ForcesAndSurcesCore::getTypeFieldData(
   for(;siit!=hi_siit;siit++) {
     ierr = getTypeFieldData(
       field_name,dofs,type,
-      siit->side_number,
-      data[siit->side_number].getFieldData(),
-      data[siit->side_number].getFieldDofs()
+      siit->get()->side_number,
+      data[siit->get()->side_number].getFieldData(),
+      data[siit->get()->side_number].getFieldDofs()
     ); CHKERRQ(ierr);
-    if(siit->brother_side_number!=-1) {
-      if(data.size() < (unsigned int)siit->brother_side_number) {
+    if(siit->get()->brother_side_number!=-1) {
+      if(data.size() < (unsigned int)siit->get()->brother_side_number) {
         SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
       }
       ierr = getTypeFieldData(
-        field_name,dofs,type,siit->side_number,
-        data[siit->brother_side_number].getFieldData(),
-        data[siit->brother_side_number].getFieldDofs()
+        field_name,dofs,type,siit->get()->side_number,
+        data[siit->get()->brother_side_number].getFieldData(),
+        data[siit->get()->brother_side_number].getFieldDofs()
       ); CHKERRQ(ierr);
     }
   }
@@ -926,7 +926,7 @@ PetscErrorCode ForcesAndSurcesCore::getFaceTriNodes(DataForcesAndSurcesCore &dat
   const int cannonical_face_sense_p1[4][3] = { {0,1,3}, {1,2,3}, {0,3,2}/**/, {0,2,1}/**/ }; //secon index is offset (positive sense)
   const int cannonical_face_sense_m1[4][3] = { {0,3,1}, {1,3,2}, {0,2,3}, {0,1,2} }; //second index is offset (negative sense
   for(;siit!=hi_siit;siit++) {
-    const SideNumber* side = &*siit;
+    const boost::shared_ptr<SideNumber> side = *siit;
     int face_conn[3] = {-1,-1,-1};
     if(side->offset == 0) {
       face_conn[0] = side->sense == 1 ? cannonical_face_sense_p1[side->side_number][0] : cannonical_face_sense_m1[side->side_number][0];

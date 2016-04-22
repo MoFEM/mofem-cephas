@@ -44,7 +44,7 @@ struct SideNumber {
  *
  */
 typedef multi_index_container<
-  SideNumber,
+  boost::shared_ptr<SideNumber>,
   indexed_by<
     hashed_unique<
       member<SideNumber,EntityHandle,&SideNumber::ent>

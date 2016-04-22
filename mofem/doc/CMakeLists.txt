@@ -130,4 +130,16 @@ if(DOXYGEN_FOUND)
 
   endif(RSYNC)
 
+  if(GIT_FOUND)
+    find_program(GITSTATS NAMES gitstats)
+    if(GITSTATS)
+      add_custom_target(git_stats
+        GITSTATS ${PROJECT_SOURCE_DIR} ${PROJECT_BINARY_DIR}/html/git-stats
+        WORKING_DIRECTORY ${PROJECT_BINARY_DIR}
+        COMMENT "Generate git-stats" VERBATIM
+      )
+    endif(GITSTATS)
+  endif(GIT_FOUND)
+
+
 endif(DOXYGEN_FOUND)

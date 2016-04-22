@@ -131,6 +131,8 @@ contributions to main git repository. Note that particular module can have
 separate contributors list. If one author uses more than one name the same person
 can appear more than one.
 
+Detailed git-statistic for core lib only <http://mofem.eng.gla.ac.uk/mofem/html/git-stats> 
+
 \verbinclude doc/contributors_list
 \verbinclude users_modules/doc/contributors_list_modules
 
@@ -138,5 +140,6 @@ List is generated with command,
 \code
 git shortlog -s -e -n
 \endcode
+
 
 */

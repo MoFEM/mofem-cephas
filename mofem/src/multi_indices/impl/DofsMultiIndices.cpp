@@ -116,45 +116,49 @@ ostream& operator<<(ostream& os,const NumeredDofEntity& e) {
   return os;
 }
 
-FEDofEntity::FEDofEntity(boost::tuple<SideNumber *,const boost::shared_ptr<DofEntity> > t):
-BaseFEDofEntity(t.get<0>()), interface_DofEntity<DofEntity>(t.get<1>()) {
+FEDofEntity::FEDofEntity(
+  boost::tuple<boost::shared_ptr<SideNumber>,const boost::shared_ptr<DofEntity> > t
+):
+BaseFEDofEntity(t.get<0>()),
+interface_DofEntity<DofEntity>(t.get<1>()) {
 }
 
 
 FEDofEntity::FEDofEntity(
-  SideNumber *_side_number_ptr,
-  const boost::shared_ptr<DofEntity> _DofEntity_ptr
+  boost::shared_ptr<SideNumber> side_number_ptr,
+  const boost::shared_ptr<DofEntity> dof_ptr
 ):
-BaseFEDofEntity(_side_number_ptr),
-interface_DofEntity<DofEntity>(_DofEntity_ptr) {
+BaseFEDofEntity(side_number_ptr),
+interface_DofEntity<DofEntity>(dof_ptr) {
 }
 
 ostream& operator<<(ostream& os,const FEDofEntity& e) {
   os << "local dof FiniteElement idx "
-    << "side_number " << e.side_number_ptr->side_number << " "
-    << "sense " << e.side_number_ptr->sense << " "
+    << "side_number " << e.sideNumberPtr->side_number << " "
+    << "sense " << e.sideNumberPtr->sense << " "
     << *e.sFieldPtr;
   return os;
 }
 
 FENumeredDofEntity::FENumeredDofEntity(
-  SideNumber *_side_number_ptr,
-  const boost::shared_ptr<NumeredDofEntity> _NumeredDofEntity_ptr
+  boost::shared_ptr<SideNumber> side_number_ptr,
+  const boost::shared_ptr<NumeredDofEntity> dof_ptr
 ):
-BaseFEDofEntity(_side_number_ptr),
-interface_NumeredDofEntity<NumeredDofEntity>(_NumeredDofEntity_ptr) {
+BaseFEDofEntity(side_number_ptr),
+interface_NumeredDofEntity<NumeredDofEntity>(dof_ptr) {
 }
 
 FENumeredDofEntity::FENumeredDofEntity(
-  boost::tuple<SideNumber *,const boost::shared_ptr<NumeredDofEntity> > t
+  boost::tuple<boost::shared_ptr<SideNumber>,const boost::shared_ptr<NumeredDofEntity> > t
 ):
-BaseFEDofEntity(t.get<0>()), interface_NumeredDofEntity<NumeredDofEntity>(t.get<1>()) {
+BaseFEDofEntity(t.get<0>()),
+interface_NumeredDofEntity<NumeredDofEntity>(t.get<1>()) {
 }
 
 ostream& operator<<(ostream& os,const FENumeredDofEntity& e) {
   os << "local dof FiniteElement idx "
-    << "side_number " << e.side_number_ptr->side_number << " "
-    << "sense " << e.side_number_ptr->sense << " "
+    << "side_number " << e.sideNumberPtr->side_number << " "
+    << "sense " << e.sideNumberPtr->sense << " "
     << *e.sFieldPtr;
   return os;
 }

@@ -159,8 +159,8 @@ PetscErrorCode FlatPrismPolynomialBase::getValue(
   SideNumber_multiIndex::nth_index<1>::type::iterator siit4 = side_table.get<1>().find(boost::make_tuple(MBTRI,4));
   if(siit3==side_table.get<1>().end()) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
   if(siit4==side_table.get<1>().end()) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
-  rval = cTx->mOab.get_connectivity(siit3->ent,connFace3,numNodes,true); CHKERRQ_MOAB(rval);
-  rval = cTx->mOab.get_connectivity(siit4->ent,connFace4,numNodes,true); CHKERRQ_MOAB(rval);
+  rval = cTx->mOab.get_connectivity(siit3->get()->ent,connFace3,numNodes,true); CHKERRQ_MOAB(rval);
+  rval = cTx->mOab.get_connectivity(siit4->get()->ent,connFace4,numNodes,true); CHKERRQ_MOAB(rval);
 
   for(int nn = 0;nn<3;nn++) {
     faceNodes[0][nn] = distance(connPrism,find(connPrism,connPrism+3,connFace3[nn]));
