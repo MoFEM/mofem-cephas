@@ -99,7 +99,7 @@ struct ArcLengthCtx {
   ArcLengthCtx(FieldInterface &m_field,const string &problem_name);
   virtual ~ArcLengthCtx();
 
-  NumeredDofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator dIt;
+  NumeredDofEntity_multiIndex::index<FieldName_mi_tag>::type::iterator dIt;
 
   /** \brief Get global index of load factor
   */

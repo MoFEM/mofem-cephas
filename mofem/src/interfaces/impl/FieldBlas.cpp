@@ -75,7 +75,7 @@ PetscErrorCode Core::field_axpy(const double alpha,const string& field_name_x,co
       ApproximationOrder dof_order = (*x_eit)->tag_dof_order_data[dd];
       FieldCoefficientsNumber dof_rank = (*x_eit)->tag_dof_rank_data[dd];
       FieldData data = (*x_eit)->tag_FieldData[dd];
-      DofMoFEMEntity_multiIndex::index<Composite_Name_Ent_Order_And_CoeffIdx_mi_tag>::type::iterator dit;
+      DofEntity_multiIndex::index<Composite_Name_Ent_Order_And_CoeffIdx_mi_tag>::type::iterator dit;
       dit = dofsField.get<Composite_Name_Ent_Order_And_CoeffIdx_mi_tag>().find(
         boost::make_tuple(field_name_y.c_str(),(*x_eit)->get_ent(),dof_order,dof_rank)
       );
@@ -99,7 +99,7 @@ PetscErrorCode Core::field_axpy(const double alpha,const string& field_name_x,co
 }
 PetscErrorCode Core::set_field(const double val,const EntityType type,const string& field_name) {
   PetscFunctionBegin;
-  DofMoFEMEntity_multiIndex::index<Composite_Name_And_Type_mi_tag >::type::iterator dit,hi_dit;
+  DofEntity_multiIndex::index<Composite_Name_And_Type_mi_tag >::type::iterator dit,hi_dit;
   dit = dofsField.get<Composite_Name_And_Type_mi_tag >().lower_bound(boost::make_tuple(field_name,type));
   hi_dit = dofsField.get<Composite_Name_And_Type_mi_tag >().upper_bound(boost::make_tuple(field_name,type));
   for(;dit!=hi_dit;dit++) {
@@ -109,7 +109,7 @@ PetscErrorCode Core::set_field(const double val,const EntityType type,const stri
 }
 PetscErrorCode Core::set_field(const double val,const EntityType type,const Range &ents,const string& field_name) {
   PetscFunctionBegin;
-  DofMoFEMEntity_multiIndex::index<Composite_Name_And_Type_mi_tag >::type::iterator dit,hi_dit;
+  DofEntity_multiIndex::index<Composite_Name_And_Type_mi_tag >::type::iterator dit,hi_dit;
   dit = dofsField.get<Composite_Name_And_Type_mi_tag >().lower_bound(boost::make_tuple(field_name,type));
   hi_dit = dofsField.get<Composite_Name_And_Type_mi_tag >().upper_bound(boost::make_tuple(field_name,type));
   EntityHandle ent,last = 0;
@@ -131,7 +131,7 @@ PetscErrorCode Core::set_field(const double val,const EntityType type,const Rang
 }
 PetscErrorCode Core::field_scale(const double alpha,const string& field_name) {
   PetscFunctionBegin;
-  DofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator dit,hi_dit;
+  DofEntity_multiIndex::index<FieldName_mi_tag>::type::iterator dit,hi_dit;
   dit = dofsField.get<FieldName_mi_tag>().lower_bound(field_name);
   hi_dit = dofsField.get<FieldName_mi_tag>().upper_bound(field_name);
   for(;dit!=hi_dit;dit++) {

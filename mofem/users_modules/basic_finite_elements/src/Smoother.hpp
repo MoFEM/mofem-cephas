@@ -206,8 +206,8 @@ struct Smoother {
         }
         frontIndices.resize(nb_dofs,false);
         noalias(frontIndices) = row_data.getIndices();
-        ublas::vector<const FEDofMoFEMEntity*>& dofs = row_data.getFieldDofs();
-        ublas::vector<const FEDofMoFEMEntity*>::iterator dit = dofs.begin();
+        ublas::vector<const FEDofEntity*>& dofs = row_data.getFieldDofs();
+        ublas::vector<const FEDofEntity*>::iterator dit = dofs.begin();
         for(int ii = 0;dit!=dofs.end();dit++,ii++) {
           if(dAta.forcesOnlyOnEntitiesRow.find((*dit)->get_ent())!=dAta.forcesOnlyOnEntitiesRow.end()) {
             iNdices[ii] = -1;
@@ -281,8 +281,8 @@ struct Smoother {
         }
         rowFrontIndices.resize(nb_row,false);
         noalias(rowFrontIndices) = row_data.getIndices();
-        ublas::vector<const FEDofMoFEMEntity*>& dofs = row_data.getFieldDofs();
-        ublas::vector<const FEDofMoFEMEntity*>::iterator dit = dofs.begin();
+        ublas::vector<const FEDofEntity*>& dofs = row_data.getFieldDofs();
+        ublas::vector<const FEDofEntity*>::iterator dit = dofs.begin();
         for(int ii = 0;dit!=dofs.end();dit++,ii++) {
           if(dAta.forcesOnlyOnEntitiesRow.find((*dit)->get_ent())!=dAta.forcesOnlyOnEntitiesRow.end()) {
             rowIndices[ii] = -1;
@@ -306,7 +306,7 @@ struct Smoother {
         ierr = VecGetArray(smootherData.tangentFrontF,&f_tangent_front_mesh_array); CHKERRQ(ierr);
         for(int nn = 0;nn<4;nn++) {
 
-          FENumeredDofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type::iterator dit,hi_dit;
+          FENumeredDofEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type::iterator dit,hi_dit;
           dit = getFEMethod()->rowPtr->get<Composite_Name_And_Ent_mi_tag>().
           lower_bound(boost::make_tuple("LAMBDA_CRACK_TANGENT_CONSTRAIN",getConn()[nn]));
           hi_dit = getFEMethod()->rowPtr->get<Composite_Name_And_Ent_mi_tag>().
@@ -314,7 +314,7 @@ struct Smoother {
 
           if(distance(dit,hi_dit)>0) {
 
-            FENumeredDofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type::iterator diit,hi_diit;
+            FENumeredDofEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type::iterator diit,hi_diit;
 
             diit = getFEMethod()->rowPtr->get<Composite_Name_And_Ent_mi_tag>().
             lower_bound(boost::make_tuple("MESH_NODE_POSITIONS",getConn()[nn]));

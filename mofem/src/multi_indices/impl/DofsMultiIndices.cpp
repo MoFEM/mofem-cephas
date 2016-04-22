@@ -38,7 +38,7 @@
 namespace MoFEM {
 
 //moab dof
-DofMoFEMEntity::DofMoFEMEntity(
+DofEntity::DofEntity(
   const boost::shared_ptr<MoFEMEntity> entity_ptr,
   const ApproximationOrder dof_order,
   const FieldCoefficientsNumber dof_rank,
@@ -83,7 +83,7 @@ active(false) {
 
 }
 
-ostream& operator<<(ostream& os,const DofMoFEMEntity& e) {
+ostream& operator<<(ostream& os,const DofEntity& e) {
   os << "dof_uid " << e.get_global_unique_id()
   << " dof_order " << e.get_dof_order()
   << " dof_rank " << e.get_dof_coeff_idx()
@@ -93,22 +93,22 @@ ostream& operator<<(ostream& os,const DofMoFEMEntity& e) {
   return os;
 }
 
-DofMoFEMEntity_active_change::DofMoFEMEntity_active_change(bool _active): active(_active) {}
-void DofMoFEMEntity_active_change::operator()(boost::shared_ptr<DofMoFEMEntity> &_dof_) {
+DofEntity_active_change::DofEntity_active_change(bool _active): active(_active) {}
+void DofEntity_active_change::operator()(boost::shared_ptr<DofEntity> &_dof_) {
   _dof_->active = active;
   assert((_dof_->get_dof_order()<=_dof_->get_max_order()));
 }
 
 //numered dof
-NumeredDofMoFEMEntity::NumeredDofMoFEMEntity(const boost::shared_ptr<DofMoFEMEntity> _DofMoFEMEntity_ptr):
-interface_DofMoFEMEntity<DofMoFEMEntity>(_DofMoFEMEntity_ptr),
+NumeredDofEntity::NumeredDofEntity(const boost::shared_ptr<DofEntity> _DofEntity_ptr):
+interface_DofEntity<DofEntity>(_DofEntity_ptr),
 dof_idx(-1),
 petsc_gloabl_dof_idx(-1),
 petsc_local_dof_idx(-1),
 part(-1) {
 }
 
-ostream& operator<<(ostream& os,const NumeredDofMoFEMEntity& e) {
+ostream& operator<<(ostream& os,const NumeredDofEntity& e) {
   os << "idx " << e.dof_idx << " part " << e.part
   << " petsc idx " << e.petsc_gloabl_dof_idx
   << " ( " << e.petsc_local_dof_idx <<  " ) "
@@ -116,20 +116,20 @@ ostream& operator<<(ostream& os,const NumeredDofMoFEMEntity& e) {
   return os;
 }
 
-FEDofMoFEMEntity::FEDofMoFEMEntity(boost::tuple<SideNumber *,const boost::shared_ptr<DofMoFEMEntity> > t):
-BaseFEDofMoFEMEntity(t.get<0>()), interface_DofMoFEMEntity<DofMoFEMEntity>(t.get<1>()) {
+FEDofEntity::FEDofEntity(boost::tuple<SideNumber *,const boost::shared_ptr<DofEntity> > t):
+BaseFEDofEntity(t.get<0>()), interface_DofEntity<DofEntity>(t.get<1>()) {
 }
 
 
-FEDofMoFEMEntity::FEDofMoFEMEntity(
+FEDofEntity::FEDofEntity(
   SideNumber *_side_number_ptr,
-  const boost::shared_ptr<DofMoFEMEntity> _DofMoFEMEntity_ptr
+  const boost::shared_ptr<DofEntity> _DofEntity_ptr
 ):
-BaseFEDofMoFEMEntity(_side_number_ptr),
-interface_DofMoFEMEntity<DofMoFEMEntity>(_DofMoFEMEntity_ptr) {
+BaseFEDofEntity(_side_number_ptr),
+interface_DofEntity<DofEntity>(_DofEntity_ptr) {
 }
 
-ostream& operator<<(ostream& os,const FEDofMoFEMEntity& e) {
+ostream& operator<<(ostream& os,const FEDofEntity& e) {
   os << "local dof FiniteElement idx "
     << "side_number " << e.side_number_ptr->side_number << " "
     << "sense " << e.side_number_ptr->sense << " "
@@ -137,21 +137,21 @@ ostream& operator<<(ostream& os,const FEDofMoFEMEntity& e) {
   return os;
 }
 
-FENumeredDofMoFEMEntity::FENumeredDofMoFEMEntity(
+FENumeredDofEntity::FENumeredDofEntity(
   SideNumber *_side_number_ptr,
-  const boost::shared_ptr<NumeredDofMoFEMEntity> _NumeredDofMoFEMEntity_ptr
+  const boost::shared_ptr<NumeredDofEntity> _NumeredDofEntity_ptr
 ):
-BaseFEDofMoFEMEntity(_side_number_ptr),
-interface_NumeredDofMoFEMEntity<NumeredDofMoFEMEntity>(_NumeredDofMoFEMEntity_ptr) {
+BaseFEDofEntity(_side_number_ptr),
+interface_NumeredDofEntity<NumeredDofEntity>(_NumeredDofEntity_ptr) {
 }
 
-FENumeredDofMoFEMEntity::FENumeredDofMoFEMEntity(
-  boost::tuple<SideNumber *,const boost::shared_ptr<NumeredDofMoFEMEntity> > t
+FENumeredDofEntity::FENumeredDofEntity(
+  boost::tuple<SideNumber *,const boost::shared_ptr<NumeredDofEntity> > t
 ):
-BaseFEDofMoFEMEntity(t.get<0>()), interface_NumeredDofMoFEMEntity<NumeredDofMoFEMEntity>(t.get<1>()) {
+BaseFEDofEntity(t.get<0>()), interface_NumeredDofEntity<NumeredDofEntity>(t.get<1>()) {
 }
 
-ostream& operator<<(ostream& os,const FENumeredDofMoFEMEntity& e) {
+ostream& operator<<(ostream& os,const FENumeredDofEntity& e) {
   os << "local dof FiniteElement idx "
     << "side_number " << e.side_number_ptr->side_number << " "
     << "sense " << e.side_number_ptr->sense << " "

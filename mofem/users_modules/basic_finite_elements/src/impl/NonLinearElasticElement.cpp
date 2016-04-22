@@ -417,8 +417,8 @@ PetscErrorCode NonlinearElasticElement::OpRhsPiolaKirchhoff::aSemble(
     iNdices.resize(nb_dofs,false);
     noalias(iNdices) = row_data.getIndices();
     indices_ptr = &iNdices[0];
-    ublas::vector<const FEDofMoFEMEntity*>& dofs = row_data.getFieldDofs();
-    ublas::vector<const FEDofMoFEMEntity*>::iterator dit = dofs.begin();
+    ublas::vector<const FEDofEntity*>& dofs = row_data.getFieldDofs();
+    ublas::vector<const FEDofEntity*>::iterator dit = dofs.begin();
     for(int ii = 0;dit!=dofs.end();dit++,ii++) {
       if(dAta.forcesOnlyOnEntitiesRow.find((*dit)->get_ent())==dAta.forcesOnlyOnEntitiesRow.end()) {
         iNdices[ii] = -1;
@@ -597,8 +597,8 @@ PetscErrorCode NonlinearElasticElement::OpLhsPiolaKirchhoff_dx::aSemble(
     rowIndices.resize(nb_row,false);
     noalias(rowIndices) = row_data.getIndices();
     row_indices_ptr = &rowIndices[0];
-    ublas::vector<const FEDofMoFEMEntity*>& dofs = row_data.getFieldDofs();
-    ublas::vector<const FEDofMoFEMEntity*>::iterator dit = dofs.begin();
+    ublas::vector<const FEDofEntity*>& dofs = row_data.getFieldDofs();
+    ublas::vector<const FEDofEntity*>::iterator dit = dofs.begin();
     for(int ii = 0;dit!=dofs.end();dit++,ii++) {
       if(dAta.forcesOnlyOnEntitiesRow.find((*dit)->get_ent())==dAta.forcesOnlyOnEntitiesRow.end()) {
         rowIndices[ii] = -1;
@@ -610,8 +610,8 @@ PetscErrorCode NonlinearElasticElement::OpLhsPiolaKirchhoff_dx::aSemble(
     colIndices.resize(nb_col,false);
     noalias(colIndices) = col_data.getIndices();
     col_indices_ptr = &colIndices[0];
-    ublas::vector<const FEDofMoFEMEntity*>& dofs = col_data.getFieldDofs();
-    ublas::vector<const FEDofMoFEMEntity*>::iterator dit = dofs.begin();
+    ublas::vector<const FEDofEntity*>& dofs = col_data.getFieldDofs();
+    ublas::vector<const FEDofEntity*>::iterator dit = dofs.begin();
     for(int ii = 0;dit!=dofs.end();dit++,ii++) {
       if(dAta.forcesOnlyOnEntitiesCol.find((*dit)->get_ent())==dAta.forcesOnlyOnEntitiesCol.end()) {
         colIndices[ii] = -1;
@@ -636,8 +636,8 @@ PetscErrorCode NonlinearElasticElement::OpLhsPiolaKirchhoff_dx::aSemble(
       rowIndices.resize(nb_row,false);
       noalias(rowIndices) = row_data.getIndices();
       row_indices_ptr = &rowIndices[0];
-      ublas::vector<const FEDofMoFEMEntity*>& dofs = row_data.getFieldDofs();
-      ublas::vector<const FEDofMoFEMEntity*>::iterator dit = dofs.begin();
+      ublas::vector<const FEDofEntity*>& dofs = row_data.getFieldDofs();
+      ublas::vector<const FEDofEntity*>::iterator dit = dofs.begin();
       for(int ii = 0;dit!=dofs.end();dit++,ii++) {
         if(dAta.forcesOnlyOnEntitiesCol.find((*dit)->get_ent())==dAta.forcesOnlyOnEntitiesCol.end()) {
           rowIndices[ii] = -1;
@@ -649,8 +649,8 @@ PetscErrorCode NonlinearElasticElement::OpLhsPiolaKirchhoff_dx::aSemble(
       colIndices.resize(nb_col,false);
       noalias(colIndices) = col_data.getIndices();
       col_indices_ptr = &colIndices[0];
-      ublas::vector<const FEDofMoFEMEntity*>& dofs = col_data.getFieldDofs();
-      ublas::vector<const FEDofMoFEMEntity*>::iterator dit = dofs.begin();
+      ublas::vector<const FEDofEntity*>& dofs = col_data.getFieldDofs();
+      ublas::vector<const FEDofEntity*>::iterator dit = dofs.begin();
       for(int ii = 0;dit!=dofs.end();dit++,ii++) {
         if(dAta.forcesOnlyOnEntitiesRow.find((*dit)->get_ent())==dAta.forcesOnlyOnEntitiesRow.end()) {
           colIndices[ii] = -1;
@@ -775,8 +775,8 @@ PetscErrorCode NonlinearElasticElement::OpLhsPiolaKirchhoff_dX::aSemble(
     rowIndices.resize(nb_row,false);
     noalias(rowIndices) = row_data.getIndices();
     row_indices_ptr = &rowIndices[0];
-    ublas::vector<const FEDofMoFEMEntity*>& dofs = row_data.getFieldDofs();
-    ublas::vector<const FEDofMoFEMEntity*>::iterator dit = dofs.begin();
+    ublas::vector<const FEDofEntity*>& dofs = row_data.getFieldDofs();
+    ublas::vector<const FEDofEntity*>::iterator dit = dofs.begin();
     for(int ii = 0;dit!=dofs.end();dit++,ii++) {
       if(dAta.forcesOnlyOnEntitiesRow.find((*dit)->get_ent())==dAta.forcesOnlyOnEntitiesRow.end()) {
         rowIndices[ii] = -1;
@@ -789,8 +789,8 @@ PetscErrorCode NonlinearElasticElement::OpLhsPiolaKirchhoff_dX::aSemble(
     colIndices.resize(nb_col,false);
     noalias(colIndices) = col_data.getIndices();
     col_indices_ptr = &colIndices[0];
-    ublas::vector<const FEDofMoFEMEntity*>& dofs = col_data.getFieldDofs();
-    ublas::vector<const FEDofMoFEMEntity*>::iterator dit = dofs.begin();
+    ublas::vector<const FEDofEntity*>& dofs = col_data.getFieldDofs();
+    ublas::vector<const FEDofEntity*>::iterator dit = dofs.begin();
     for(int ii = 0;dit!=dofs.end();dit++,ii++) {
       if(dAta.forcesOnlyOnEntitiesCol.find((*dit)->get_ent())==dAta.forcesOnlyOnEntitiesCol.end()) {
         colIndices[ii] = -1;

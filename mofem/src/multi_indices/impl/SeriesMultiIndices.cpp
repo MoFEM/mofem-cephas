@@ -234,7 +234,7 @@ MoFEMSeriesStep::MoFEMSeriesStep(Interface &moab,const MoFEMSeries *_MoFEMSeries
   ierr = get_time_init(moab); CHKERRABORT(PETSC_COMM_WORLD,ierr);
 }
 
-PetscErrorCode MoFEMSeriesStep::get(Interface &moab,DofMoFEMEntity_multiIndex &dofsField) const {
+PetscErrorCode MoFEMSeriesStep::get(Interface &moab,DofEntity_multiIndex &dofsField) const {
   PetscFunctionBegin;
   ErrorCode rval;
 
@@ -270,7 +270,7 @@ PetscErrorCode MoFEMSeriesStep::get(Interface &moab,DofMoFEMEntity_multiIndex &d
     EntityHandle ent = handles_ptr[ii];
     ShortId uid = uids_ptr[ii];
     FieldData val = data_ptr[ii];
-    DofMoFEMEntity_multiIndex::index<Composite_Ent_and_ShortId_mi_tag>::type::iterator dit;
+    DofEntity_multiIndex::index<Composite_Ent_and_ShortId_mi_tag>::type::iterator dit;
     dit = dofsField.get<Composite_Ent_and_ShortId_mi_tag>().find(boost::make_tuple(ent,uid));
     if(dit!=dofsField.get<Composite_Ent_and_ShortId_mi_tag>().end()) {
       //cerr << *dit << endl;

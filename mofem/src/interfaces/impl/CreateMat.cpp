@@ -61,7 +61,7 @@ struct CreateRowComressedADJMatrix: public Core {
 
   typedef MoFEMEntityEntFiniteElementAdjacencyMap_multiIndex::index<Unique_mi_tag>::type AdjByEnt;
   typedef MoFEMProblem_multiIndex::index<Problem_mi_tag>::type ProblemsByName;
-  typedef NumeredDofMoFEMEntity_multiIndex::index<PetscGlobalIdx_mi_tag>::type DofByGlobalPetscIndex;
+  typedef NumeredDofEntity_multiIndex::index<PetscGlobalIdx_mi_tag>::type DofByGlobalPetscIndex;
 
   /** \brief Create matrix adjacencies
 
@@ -93,9 +93,9 @@ struct CreateRowComressedADJMatrix: public Core {
   template<typename TAG>
   PetscErrorCode getEntityAdjacenies(
     ProblemsByName::iterator p_miit,
-    typename boost::multi_index::index<NumeredDofMoFEMEntity_multiIndex,TAG>::type::iterator mit_row,
+    typename boost::multi_index::index<NumeredDofEntity_multiIndex,TAG>::type::iterator mit_row,
     boost::shared_ptr<MoFEMEntity>& mofem_ent_ptr,
-    NumeredDofMoFEMEntity_multiIndex_uid_view_hashed &dofs_col_view,
+    NumeredDofEntity_multiIndex_uid_view_hashed &dofs_col_view,
     int verb
   );
 
@@ -104,9 +104,9 @@ struct CreateRowComressedADJMatrix: public Core {
 template<typename TAG>
 PetscErrorCode CreateRowComressedADJMatrix::getEntityAdjacenies(
   ProblemsByName::iterator p_miit,
-  typename boost::multi_index::index<NumeredDofMoFEMEntity_multiIndex,TAG>::type::iterator mit_row,
+  typename boost::multi_index::index<NumeredDofEntity_multiIndex,TAG>::type::iterator mit_row,
   boost::shared_ptr<MoFEMEntity>& mofem_ent_ptr,
-  NumeredDofMoFEMEntity_multiIndex_uid_view_hashed &dofs_col_view,
+  NumeredDofEntity_multiIndex_uid_view_hashed &dofs_col_view,
   int verb
 ) {
   PetscFunctionBegin;
@@ -134,7 +134,7 @@ PetscErrorCode CreateRowComressedADJMatrix::getEntityAdjacenies(
           stringstream ss;
 
           ss << "rank " << rAnk << ":  numered_dofs_cols" << endl;
-          DofMoFEMEntity_multiIndex_uid_view::iterator dit, hi_dit;
+          DofEntity_multiIndex_uid_view::iterator dit, hi_dit;
           dit = adj_miit->entFePtr->col_dof_view.begin();
           hi_dit = adj_miit->entFePtr->col_dof_view.end();
 
@@ -168,11 +168,11 @@ PetscErrorCode CreateRowComressedADJMatrix::createMatArrays(
   PetscLogEventBegin(USER_EVENT_createMat,0,0,0,0);
   if(verb==-1) verb = verbose;
 
-  typedef typename boost::multi_index::index<NumeredDofMoFEMEntity_multiIndex,TAG>::type NumeredDofMoFEMEntitysByIdx;
+  typedef typename boost::multi_index::index<NumeredDofEntity_multiIndex,TAG>::type NumeredDofEntitysByIdx;
 
   // Get multi-indices for rows and columns
-  const NumeredDofMoFEMEntitysByIdx &dofs_row_by_idx = p_miit->numered_dofs_rows.get<TAG>();
-  const NumeredDofMoFEMEntitysByIdx &dofs_col_by_idx = p_miit->numered_dofs_cols.get<TAG>();
+  const NumeredDofEntitysByIdx &dofs_row_by_idx = p_miit->numered_dofs_rows.get<TAG>();
+  const NumeredDofEntitysByIdx &dofs_col_by_idx = p_miit->numered_dofs_cols.get<TAG>();
   DofIdx nb_dofs_row = p_miit->get_nb_dofs_row();
   if(nb_dofs_row == 0) {
     SETERRQ1(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"problem <%s> has zero rows",p_miit->get_name().c_str());
@@ -185,7 +185,7 @@ PetscErrorCode CreateRowComressedADJMatrix::createMatArrays(
   // adjacencies form other parts. Note if algebra is only partitioned no need
   // to collect adjacencies form other entities. Those are already on mesh
   // which is assumed that is on each processor the same.
-  typename boost::multi_index::index<NumeredDofMoFEMEntity_multiIndex,TAG>::type::iterator miit_row,hi_miit_row;
+  typename boost::multi_index::index<NumeredDofEntity_multiIndex,TAG>::type::iterator miit_row,hi_miit_row;
   if(TAG::IamNotPartitioned) {
 
     // Get range of local indices
@@ -214,9 +214,9 @@ PetscErrorCode CreateRowComressedADJMatrix::createMatArrays(
     vector<vector<int> > dofs_vec(sIze);
 
     boost::shared_ptr<MoFEMEntity> mofem_ent_ptr;
-    NumeredDofMoFEMEntity_multiIndex_uid_view_hashed dofs_col_view;
+    NumeredDofEntity_multiIndex_uid_view_hashed dofs_col_view;
 
-    typename boost::multi_index::index<NumeredDofMoFEMEntity_multiIndex,TAG>::type::iterator mit_row,hi_mit_row;
+    typename boost::multi_index::index<NumeredDofEntity_multiIndex,TAG>::type::iterator mit_row,hi_mit_row;
     mit_row = dofs_row_by_idx.begin();
     hi_mit_row = dofs_row_by_idx.end();
     for(;mit_row!=hi_mit_row;mit_row++) {
@@ -238,7 +238,7 @@ PetscErrorCode CreateRowComressedADJMatrix::createMatArrays(
           dofs_vec[owner].push_back(TAG::get_index(mit_row)); 	// row index
           dofs_vec[owner].push_back(dofs_col_view.size()); 	// nb. of column adjacencies
           // add adjacent cools
-          NumeredDofMoFEMEntity_multiIndex_uid_view_hashed::iterator cvit;
+          NumeredDofEntity_multiIndex_uid_view_hashed::iterator cvit;
           cvit = dofs_col_view.begin();
           for(; cvit!=dofs_col_view.end(); cvit++) {
 
@@ -376,7 +376,7 @@ PetscErrorCode CreateRowComressedADJMatrix::createMatArrays(
   int row_last_evaluated_idx = -1;
 
   vector<DofIdx> dofs_vec;
-  NumeredDofMoFEMEntity_multiIndex_uid_view_hashed dofs_col_view;
+  NumeredDofEntity_multiIndex_uid_view_hashed dofs_col_view;
   // loop local rows
   unsigned int rows_to_fill = distance(miit_row,hi_miit_row);
   i.reserve( rows_to_fill+1 );
@@ -401,7 +401,7 @@ PetscErrorCode CreateRowComressedADJMatrix::createMatArrays(
       row_last_evaluated_idx = TAG::get_index(miit_row);
 
       dofs_vec.resize(0);
-      NumeredDofMoFEMEntity_multiIndex_uid_view_hashed::iterator cvit;
+      NumeredDofEntity_multiIndex_uid_view_hashed::iterator cvit;
 
       cvit = dofs_col_view.begin();
       for(;cvit!=dofs_col_view.end();cvit++) {
@@ -631,7 +631,7 @@ PetscErrorCode Core::partition_problem(const string &name,int verb) {
     PetscPrintf(comm,"Partition problem %s\n",name.c_str());
   }
 
-  typedef NumeredDofMoFEMEntity_multiIndex::index<Idx_mi_tag>::type NumeredDofMoFEMEntitysByIdx;
+  typedef NumeredDofEntity_multiIndex::index<Idx_mi_tag>::type NumeredDofEntitysByIdx;
   typedef MoFEMProblem_multiIndex::index<Problem_mi_tag>::type ProblemsByName;
 
   // Find problem pointer by name
@@ -707,8 +707,8 @@ PetscErrorCode Core::partition_problem(const string &name,int verb) {
   }
 
   //set petsc global indicies
-  NumeredDofMoFEMEntitysByIdx &dofs_row_by_idx_no_const = const_cast<NumeredDofMoFEMEntitysByIdx&>(p_miit->numered_dofs_rows.get<Idx_mi_tag>());
-  NumeredDofMoFEMEntitysByIdx &dofs_col_by_idx_no_const = const_cast<NumeredDofMoFEMEntitysByIdx&>(p_miit->numered_dofs_cols.get<Idx_mi_tag>());
+  NumeredDofEntitysByIdx &dofs_row_by_idx_no_const = const_cast<NumeredDofEntitysByIdx&>(p_miit->numered_dofs_rows.get<Idx_mi_tag>());
+  NumeredDofEntitysByIdx &dofs_col_by_idx_no_const = const_cast<NumeredDofEntitysByIdx&>(p_miit->numered_dofs_cols.get<Idx_mi_tag>());
   DofIdx &nb_row_local_dofs = *((DofIdx*)p_miit->tag_local_nbdof_data_row);
   DofIdx &nb_col_local_dofs = *((DofIdx*)p_miit->tag_local_nbdof_data_col);
   nb_row_local_dofs = 0;
@@ -717,8 +717,8 @@ PetscErrorCode Core::partition_problem(const string &name,int verb) {
   DofIdx &nb_col_ghost_dofs = *((DofIdx*)p_miit->tag_ghost_nbdof_data_col);
   nb_row_ghost_dofs = 0;
   nb_col_ghost_dofs = 0;
-  NumeredDofMoFEMEntitysByIdx::iterator miit_dofs_row = dofs_row_by_idx_no_const.begin();
-  NumeredDofMoFEMEntitysByIdx::iterator miit_dofs_col = dofs_col_by_idx_no_const.begin();
+  NumeredDofEntitysByIdx::iterator miit_dofs_row = dofs_row_by_idx_no_const.begin();
+  NumeredDofEntitysByIdx::iterator miit_dofs_col = dofs_col_by_idx_no_const.begin();
   if(verb>1) {
     PetscPrintf(comm,"\tloop problem dofs");
   }
@@ -737,22 +737,22 @@ PetscErrorCode Core::partition_problem(const string &name,int verb) {
       }
       assert(petsc_idx[(*miit_dofs_row)->dof_idx]>=0);
       assert(petsc_idx[(*miit_dofs_row)->dof_idx]<(int)p_miit->get_nb_dofs_row());
-      bool success = dofs_row_by_idx_no_const.modify(miit_dofs_row,NumeredDofMoFEMEntity_part_change(part_number[(*miit_dofs_row)->dof_idx],petsc_idx[(*miit_dofs_row)->dof_idx]));
+      bool success = dofs_row_by_idx_no_const.modify(miit_dofs_row,NumeredDofEntity_part_change(part_number[(*miit_dofs_row)->dof_idx],petsc_idx[(*miit_dofs_row)->dof_idx]));
       if(!success) {
         SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
       }
-      success = dofs_col_by_idx_no_const.modify(miit_dofs_col,NumeredDofMoFEMEntity_part_change(part_number[(*miit_dofs_col)->dof_idx],petsc_idx[(*miit_dofs_col)->dof_idx]));
+      success = dofs_col_by_idx_no_const.modify(miit_dofs_col,NumeredDofEntity_part_change(part_number[(*miit_dofs_col)->dof_idx],petsc_idx[(*miit_dofs_col)->dof_idx]));
       if(!success) {
         SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
       }
       if((*miit_dofs_row)->part == (unsigned int)rAnk) {
         assert((*miit_dofs_row)->part==(*miit_dofs_col)->part);
         assert((*miit_dofs_row)->petsc_gloabl_dof_idx==(*miit_dofs_col)->petsc_gloabl_dof_idx);
-        success = dofs_row_by_idx_no_const.modify(miit_dofs_row,NumeredDofMoFEMEntity_local_idx_change(nb_row_local_dofs++));
+        success = dofs_row_by_idx_no_const.modify(miit_dofs_row,NumeredDofEntity_local_idx_change(nb_row_local_dofs++));
         if(!success) {
           SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
         }
-        success = dofs_col_by_idx_no_const.modify(miit_dofs_col,NumeredDofMoFEMEntity_local_idx_change(nb_col_local_dofs++));
+        success = dofs_col_by_idx_no_const.modify(miit_dofs_col,NumeredDofEntity_local_idx_change(nb_col_local_dofs++));
         if(!success) {
           SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
         }
@@ -812,7 +812,7 @@ PetscErrorCode Core::partition_check_matrix_fill_in(const string &problem_name,i
         SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
       }
 
-      FENumeredDofMoFEMEntity_multiIndex::iterator rit = rowPtr->begin();
+      FENumeredDofEntity_multiIndex::iterator rit = rowPtr->begin();
       for(;rit!=rowPtr->end();rit++) {
 
         if(refinedEntitiesPtr->find((*rit)->get_ent())==refinedEntitiesPtr->end()) {
@@ -846,7 +846,7 @@ PetscErrorCode Core::partition_check_matrix_fill_in(const string &problem_name,i
         }
         int row = (*rit)->get_petsc_gloabl_dof_idx();
 
-        FENumeredDofMoFEMEntity_multiIndex::iterator cit = colPtr->begin();
+        FENumeredDofEntity_multiIndex::iterator cit = colPtr->begin();
         for(;cit!=colPtr->end();cit++) {
 
           if(refinedEntitiesPtr->find((*cit)->get_ent())==refinedEntitiesPtr->end()) {
@@ -893,7 +893,7 @@ PetscErrorCode Core::partition_check_matrix_fill_in(const string &problem_name,i
           if((*cit)->get_ent_type()!=MBVERTEX) {
 
 
-            FENumeredDofMoFEMEntity_multiIndex::index<Composite_Name_Type_And_Side_Number_mi_tag>::type::iterator dit,hi_dit;
+            FENumeredDofEntity_multiIndex::index<Composite_Name_Type_And_Side_Number_mi_tag>::type::iterator dit,hi_dit;
             dit = colPtr->get<Composite_Name_Type_And_Side_Number_mi_tag>().lower_bound(boost::make_tuple((*cit)->get_name(),(*cit)->get_ent_type(),(*cit)->side_number_ptr->side_number));
             hi_dit = colPtr->get<Composite_Name_Type_And_Side_Number_mi_tag>().upper_bound(boost::make_tuple((*cit)->get_name(),(*cit)->get_ent_type(),(*cit)->side_number_ptr->side_number));
             int nb_dofs_on_ent = distance(dit,hi_dit);
@@ -910,7 +910,7 @@ PetscErrorCode Core::partition_check_matrix_fill_in(const string &problem_name,i
 
         if((*rit)->get_ent_type()!=MBVERTEX) {
 
-          FENumeredDofMoFEMEntity_multiIndex::index<Composite_Name_Type_And_Side_Number_mi_tag>::type::iterator dit,hi_dit;
+          FENumeredDofEntity_multiIndex::index<Composite_Name_Type_And_Side_Number_mi_tag>::type::iterator dit,hi_dit;
           dit = rowPtr->get<Composite_Name_Type_And_Side_Number_mi_tag>().lower_bound(boost::make_tuple((*rit)->get_name(),(*rit)->get_ent_type(),(*rit)->side_number_ptr->side_number));
           hi_dit = rowPtr->get<Composite_Name_Type_And_Side_Number_mi_tag>().upper_bound(boost::make_tuple((*rit)->get_name(),(*rit)->get_ent_type(),(*rit)->side_number_ptr->side_number));
           int nb_dofs_on_ent = distance(dit,hi_dit);

@@ -311,10 +311,10 @@ interface_RefElement<RefElement> {
   typedef interface_RefEntity<RefElement> interface_type_RefEntity;
   typedef interface_RefElement<RefElement> interface_type_RefElement;
   typedef interface_FiniteElement<FiniteElement> interface_type_MoFEMFiniteElement;
-  DofMoFEMEntity_multiIndex_uid_view row_dof_view;
-  DofMoFEMEntity_multiIndex_uid_view col_dof_view;
-  DofMoFEMEntity_multiIndex_uid_view data_dof_view;
-  FEDofMoFEMEntity_multiIndex data_dofs;
+  DofEntity_multiIndex_uid_view row_dof_view;
+  DofEntity_multiIndex_uid_view col_dof_view;
+  DofEntity_multiIndex_uid_view data_dof_view;
+  FEDofEntity_multiIndex data_dofs;
   GlobalUId global_uid;
 
   EntFiniteElement(
@@ -334,34 +334,34 @@ interface_RefElement<RefElement> {
   inline DofIdx get_nb_dofs_row() const { return row_dof_view.size(); }
   inline DofIdx get_nb_dofs_col() const { return col_dof_view.size(); }
   inline DofIdx get_nb_dofs_data() const { return data_dof_view.size(); }
-  inline const FEDofMoFEMEntity_multiIndex& get_data_dofs() const { return data_dofs; };
+  inline const FEDofEntity_multiIndex& get_data_dofs() const { return data_dofs; };
   friend ostream& operator<<(ostream& os,const EntFiniteElement& e);
   PetscErrorCode get_MoFEMFiniteElement_row_dof_view(
-    const DofMoFEMEntity_multiIndex &dofs,DofMoFEMEntity_multiIndex_active_view &dofs_view,
+    const DofEntity_multiIndex &dofs,DofEntity_multiIndex_active_view &dofs_view,
     const int operation_type = Interface::UNION) const;
   PetscErrorCode get_MoFEMFiniteElement_col_dof_view(
-    const DofMoFEMEntity_multiIndex &dofs,DofMoFEMEntity_multiIndex_active_view &dofs_view,
+    const DofEntity_multiIndex &dofs,DofEntity_multiIndex_active_view &dofs_view,
     const int operation_type = Interface::UNION) const;
   PetscErrorCode get_MoFEMFiniteElement_data_dof_view(
-    const DofMoFEMEntity_multiIndex &dofs,DofMoFEMEntity_multiIndex_active_view &dofs_view,
+    const DofEntity_multiIndex &dofs,DofEntity_multiIndex_active_view &dofs_view,
     const int operation_type = Interface::UNION) const;
   PetscErrorCode get_MoFEMFiniteElement_row_dof_view(
-    const DofMoFEMEntity_multiIndex &dofs,DofMoFEMEntity_multiIndex_uid_view &dofs_view,
+    const DofEntity_multiIndex &dofs,DofEntity_multiIndex_uid_view &dofs_view,
     const int operation_type = Interface::UNION) const;
   PetscErrorCode get_MoFEMFiniteElement_col_dof_view(
-    const DofMoFEMEntity_multiIndex &dofs,DofMoFEMEntity_multiIndex_uid_view &dofs_view,
+    const DofEntity_multiIndex &dofs,DofEntity_multiIndex_uid_view &dofs_view,
     const int operation_type = Interface::UNION) const;
   PetscErrorCode get_MoFEMFiniteElement_row_dof_view(
-    const NumeredDofMoFEMEntity_multiIndex &dofs,NumeredDofMoFEMEntity_multiIndex_uid_view_ordered &dofs_view,
+    const NumeredDofEntity_multiIndex &dofs,NumeredDofEntity_multiIndex_uid_view_ordered &dofs_view,
     const int operation_type = Interface::UNION) const;
   PetscErrorCode get_MoFEMFiniteElement_col_dof_view(
-    const NumeredDofMoFEMEntity_multiIndex &dofs,NumeredDofMoFEMEntity_multiIndex_uid_view_ordered &dofs_view,
+    const NumeredDofEntity_multiIndex &dofs,NumeredDofEntity_multiIndex_uid_view_ordered &dofs_view,
     const int operation_type = Interface::UNION) const;
   PetscErrorCode get_MoFEMFiniteElement_row_dof_view(
-    const NumeredDofMoFEMEntity_multiIndex &dofs,NumeredDofMoFEMEntity_multiIndex_uid_view_hashed &dofs_view,
+    const NumeredDofEntity_multiIndex &dofs,NumeredDofEntity_multiIndex_uid_view_hashed &dofs_view,
     const int operation_type = Interface::UNION) const;
   PetscErrorCode get_MoFEMFiniteElement_col_dof_view(
-    const NumeredDofMoFEMEntity_multiIndex &dofs,NumeredDofMoFEMEntity_multiIndex_uid_view_hashed &dofs_view,
+    const NumeredDofEntity_multiIndex &dofs,NumeredDofEntity_multiIndex_uid_view_hashed &dofs_view,
     const int operation_type = Interface::UNION) const;
 
   PetscErrorCode get_element_adjacency(
@@ -401,7 +401,7 @@ interface_RefElement<T> {
   inline EntityID get_ent_id() const { return this->sPtr->get_ent_id(); }
   inline EntityType get_ent_type() const { return this->sPtr->get_ent_type(); }
   //
-  inline const FEDofMoFEMEntity_multiIndex& get_data_dofs() const { return this->sPtr->get_data_dofs(); };
+  inline const FEDofEntity_multiIndex& get_data_dofs() const { return this->sPtr->get_data_dofs(); };
   inline DofIdx get_nb_dofs_row() const { return this->sPtr->get_nb_dofs_row(); }
   inline DofIdx get_nb_dofs_col() const { return this->sPtr->get_nb_dofs_col(); }
   inline DofIdx get_nb_dofs_data() const { return this->sPtr->get_nb_dofs_data(); }
@@ -430,8 +430,8 @@ struct NumeredEntFiniteElement: public interface_EntFiniteElement<EntFiniteEleme
   typedef interface_FiniteElement<EntFiniteElement> interface_type_MoFEMFiniteElement;
   typedef interface_EntFiniteElement<EntFiniteElement> interface_type_EntFiniteElement;
   unsigned int part;
-  FENumeredDofMoFEMEntity_multiIndex rows_dofs;
-  FENumeredDofMoFEMEntity_multiIndex cols_dofs;
+  FENumeredDofEntity_multiIndex rows_dofs;
+  FENumeredDofEntity_multiIndex cols_dofs;
 
   NumeredEntFiniteElement(const boost::shared_ptr<EntFiniteElement> sptr):
   interface_EntFiniteElement<EntFiniteElement>(sptr),
@@ -442,22 +442,22 @@ struct NumeredEntFiniteElement: public interface_EntFiniteElement<EntFiniteEleme
   /** \brief get FE dof
     * \ingroup mofem_dofs
     */
-  inline const FENumeredDofMoFEMEntity_multiIndex& get_rows_dofs() const { return rows_dofs; };
+  inline const FENumeredDofEntity_multiIndex& get_rows_dofs() const { return rows_dofs; };
 
   /** \brief get FE dof
     * \ingroup mofem_dofs
     */
-  inline const FENumeredDofMoFEMEntity_multiIndex& get_cols_dofs() const { return cols_dofs; };
+  inline const FENumeredDofEntity_multiIndex& get_cols_dofs() const { return cols_dofs; };
 
   /** \brief get FE dof by petsc index
     * \ingroup mofem_dofs
     */
-  PetscErrorCode get_row_dofs_by_petsc_gloabl_dof_idx(DofIdx idx,const FENumeredDofMoFEMEntity **dof_ptr) const;
+  PetscErrorCode get_row_dofs_by_petsc_gloabl_dof_idx(DofIdx idx,const FENumeredDofEntity **dof_ptr) const;
 
   /** \brief get FE dof by petsc index
     * \ingroup mofem_dofs
     */
-  PetscErrorCode get_col_dofs_by_petsc_gloabl_dof_idx(DofIdx idx,const FENumeredDofMoFEMEntity **dof_ptr) const;
+  PetscErrorCode get_col_dofs_by_petsc_gloabl_dof_idx(DofIdx idx,const FENumeredDofEntity **dof_ptr) const;
 
   friend ostream& operator<<(ostream& os,const NumeredEntFiniteElement& e) {
     os << "part " << e.part << " " << *(e.sFePtr);
@@ -472,7 +472,7 @@ struct NumeredEntFiniteElement: public interface_EntFiniteElement<EntFiniteEleme
    * \ingroup fe_multi_indices
    */
   #define _IT_FENUMEREDDOFMOFEMENTITY_ROW_FOR_LOOP_(FEPTR,IT) \
-  FENumeredDofMoFEMEntity_multiIndex::iterator IT = FEPTR->rows_dofs.begin(); \
+  FENumeredDofEntity_multiIndex::iterator IT = FEPTR->rows_dofs.begin(); \
   IT!=FEPTR->rows_dofs.end(); IT++
 
   /**
@@ -483,7 +483,7 @@ struct NumeredEntFiniteElement: public interface_EntFiniteElement<EntFiniteEleme
    * \ingroup fe_multi_indices
    */
   #define _IT_FENUMEREDDOFMOFEMENTITY_COL_FOR_LOOP_(FEPTR,IT) \
-  FENumeredDofMoFEMEntity_multiIndex::iterator IT = FEPTR->cols_dofs.begin(); \
+  FENumeredDofEntity_multiIndex::iterator IT = FEPTR->cols_dofs.begin(); \
   IT!=FEPTR->cols_dofs.end(); IT++
 
   /**
@@ -495,7 +495,7 @@ struct NumeredEntFiniteElement: public interface_EntFiniteElement<EntFiniteEleme
    * \ingroup fe_multi_indices
    */
   #define _IT_FENUMEREDDOFMOFEMENTITY_BY_NAME_ROW_FOR_LOOP_(FEPTR,NAME,IT) \
-  FENumeredDofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator IT = FEPTR->rows_dofs.get<FieldName_mi_tag>().lower_bound(NAME); \
+  FENumeredDofEntity_multiIndex::index<FieldName_mi_tag>::type::iterator IT = FEPTR->rows_dofs.get<FieldName_mi_tag>().lower_bound(NAME); \
   IT!=FEPTR->rows_dofs.get<FieldName_mi_tag>().upper_bound(NAME); IT++
 
   /**
@@ -507,7 +507,7 @@ struct NumeredEntFiniteElement: public interface_EntFiniteElement<EntFiniteEleme
    * \ingroup fe_multi_indices
    */
   #define _IT_FENUMEREDDOFMOFEMENTITY_BY_NAME_COL_FOR_LOOP_(FEPTR,NAME,IT) \
-  FENumeredDofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator IT = FEPTR->cols_dofs.get<FieldName_mi_tag>().lower_bound(NAME); \
+  FENumeredDofEntity_multiIndex::index<FieldName_mi_tag>::type::iterator IT = FEPTR->cols_dofs.get<FieldName_mi_tag>().lower_bound(NAME); \
   IT!=FEPTR->cols_dofs.get<FieldName_mi_tag>().upper_bound(NAME); IT++
 
 
@@ -523,8 +523,8 @@ struct interface_NumeredEntFiniteElement: public interface_EntFiniteElement<T> {
   interface_NumeredEntFiniteElement(const boost::shared_ptr<T> sptr): interface_EntFiniteElement<T>(sptr) {};
 
   inline unsigned int get_part() const { return this->sPtr->get_part(); }
-  inline const FENumeredDofMoFEMEntity_multiIndex& get_rows_dofs() const { return this->sPtr->get_rows_dofs(); };
-  inline const FENumeredDofMoFEMEntity_multiIndex& get_cols_dofs() const { return this->sPtr->get_cols_dofs(); };
+  inline const FENumeredDofEntity_multiIndex& get_rows_dofs() const { return this->sPtr->get_rows_dofs(); };
+  inline const FENumeredDofEntity_multiIndex& get_cols_dofs() const { return this->sPtr->get_cols_dofs(); };
 };
 
 /**

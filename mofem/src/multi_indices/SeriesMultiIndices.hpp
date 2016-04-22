@@ -105,7 +105,7 @@ struct MoFEMSeriesStep: public interface_MoFEMSeries<MoFEMSeries> {
   MoFEMSeriesStep(Interface &moab,const MoFEMSeries *_MoFEMSeries_ptr,const int _step_number);
 
   inline int get_step_number() const { return step_number; };
-  PetscErrorCode get(Interface &moab,DofMoFEMEntity_multiIndex &dofsField) const;
+  PetscErrorCode get(Interface &moab,DofEntity_multiIndex &dofsField) const;
 
   double time;
   PetscErrorCode get_time_init(Interface &moab);

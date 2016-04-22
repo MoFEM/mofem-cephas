@@ -82,13 +82,13 @@ struct ArcLengthElement: public ArcLengthIntElemFEMethod {
     PetscFunctionBegin;
     FILE *datafile;
     PetscFOpen(PETSC_COMM_SELF,DATAFILENAME,"a+",&datafile);
-    NumeredDofMoFEMEntity_multiIndex &numered_dofs_rows = const_cast<NumeredDofMoFEMEntity_multiIndex&>(problemPtr->numered_dofs_rows);
-    NumeredDofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator lit;
+    NumeredDofEntity_multiIndex &numered_dofs_rows = const_cast<NumeredDofEntity_multiIndex&>(problemPtr->numered_dofs_rows);
+    NumeredDofEntity_multiIndex::index<FieldName_mi_tag>::type::iterator lit;
     lit = numered_dofs_rows.get<FieldName_mi_tag>().find("LAMBDA");
     if(lit == numered_dofs_rows.get<FieldName_mi_tag>().end()) PetscFunctionReturn(0);
     Range::iterator nit = PostProcNodes.begin();
     for(;nit!=PostProcNodes.end();nit++) {
-      NumeredDofMoFEMEntity_multiIndex::index<Ent_mi_tag>::type::iterator dit,hi_dit;
+      NumeredDofEntity_multiIndex::index<Ent_mi_tag>::type::iterator dit,hi_dit;
       dit = numered_dofs_rows.get<Ent_mi_tag>().lower_bound(*nit);
       hi_dit = numered_dofs_rows.get<Ent_mi_tag>().upper_bound(*nit);
       double coords[3];
