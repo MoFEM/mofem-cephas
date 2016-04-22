@@ -410,15 +410,15 @@ int main(int argc, char *argv[]) {
 
     PetscErrorCode potsProcessLoadPath() {
       PetscFunctionBegin;
-      NumeredDofMoFEMEntity_multiIndex &numered_dofs_rows = const_cast<NumeredDofMoFEMEntity_multiIndex&>(problemPtr->numered_dofs_rows);
+      NumeredDofEntity_multiIndex &numered_dofs_rows = const_cast<NumeredDofEntity_multiIndex&>(problemPtr->numered_dofs_rows);
       Range::iterator nit = nodeSet.begin();
       for(;nit!=nodeSet.end();nit++) {
-        NumeredDofMoFEMEntity_multiIndex::index<Ent_mi_tag>::type::iterator dit,hi_dit;
+        NumeredDofEntity_multiIndex::index<Ent_mi_tag>::type::iterator dit,hi_dit;
         dit = numered_dofs_rows.get<Ent_mi_tag>().lower_bound(*nit);
         hi_dit = numered_dofs_rows.get<Ent_mi_tag>().upper_bound(*nit);
         for(;dit!=hi_dit;dit++) {
           PetscPrintf(PETSC_COMM_WORLD,"%s [ %d ] %6.4e -> ","LAMBDA",0,arcPtr->getFieldData());
-          PetscPrintf(PETSC_COMM_WORLD,"%s [ %d ] %6.4e\n",dit->get_name().c_str(),dit->get_dof_coeff_idx(),dit->get_FieldData());
+          PetscPrintf(PETSC_COMM_WORLD,"%s [ %d ] %6.4e\n",dit->get()->get_name().c_str(),dit->get()->get_dof_coeff_idx(),dit->get()->get_FieldData());
         }
       }
       PetscFunctionReturn(0);

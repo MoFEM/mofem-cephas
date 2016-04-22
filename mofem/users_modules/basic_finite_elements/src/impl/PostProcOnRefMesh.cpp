@@ -51,7 +51,7 @@ PetscErrorCode PostProcCommonOnRefMesh::OpGetFieldValues::doWork(
     it = data.getFieldDofs().begin();
     hi_it = data.getFieldDofs().end();
     for(int ii = 0;it!=hi_it;it++,ii++) {
-      int local_idx = getFEMethod()->rowPtr->find((*it)->get_global_unique_id())->get_petsc_local_dof_idx();
+      int local_idx = getFEMethod()->rowPtr->find((*it)->get_global_unique_id())->get()->get_petsc_local_dof_idx();
       vAlues[ii] = a[local_idx];
     }
     ierr = VecRestoreArray(V,&a); CHKERRQ(ierr);
@@ -60,7 +60,7 @@ PetscErrorCode PostProcCommonOnRefMesh::OpGetFieldValues::doWork(
     vAluesPtr = &data.getFieldData();
   }
 
-  const MoFEM::FEDofMoFEMEntity *dof_ptr = data.getFieldDofs()[0];
+  const MoFEM::FEDofEntity *dof_ptr = data.getFieldDofs()[0];
   int rank = dof_ptr->get_nb_of_coeffs();
 
   int tag_length = rank;
@@ -180,7 +180,7 @@ PetscErrorCode PostProcCommonOnRefMesh::OpGetFieldGradientValues::doWork(
     it = data.getFieldDofs().begin();
     hi_it = data.getFieldDofs().end();
     for(int ii = 0;it!=hi_it;it++,ii++) {
-      int local_idx = getFEMethod()->rowPtr->find((*it)->get_global_unique_id())->get_petsc_local_dof_idx();
+      int local_idx = getFEMethod()->rowPtr->find((*it)->get_global_unique_id())->get()->get_petsc_local_dof_idx();
       vAlues[ii] = a[local_idx];
     }
     ierr = VecRestoreArray(V,&a); CHKERRQ(ierr);
@@ -189,7 +189,7 @@ PetscErrorCode PostProcCommonOnRefMesh::OpGetFieldGradientValues::doWork(
     vAluesPtr = &data.getFieldData();
   }
 
-  const MoFEM::FEDofMoFEMEntity *dof_ptr = data.getFieldDofs()[0];
+  const MoFEM::FEDofEntity *dof_ptr = data.getFieldDofs()[0];
   int rank = dof_ptr->get_nb_of_coeffs();
 
   int tag_length = rank*3;

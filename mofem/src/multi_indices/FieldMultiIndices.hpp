@@ -34,7 +34,7 @@ typedef int (*FieldOrderFunct)(const int order);
   * \brief Provide data structure for (tensor) field approximation.
   * \ingroup dof_multi_indices
 
-  The MoFEMField is intended to provide support for fields, with a strong bias
+  The Field is intended to provide support for fields, with a strong bias
   towards supporting first and best the capabilities required for scientific
   computing applications. Since we work with discrete spaces, data structure
   has to carry information about type of approximation space, its regularity
@@ -43,10 +43,10 @@ typedef int (*FieldOrderFunct)(const int order);
   <https://redmine.scorec.rpi.edu/anonsvn/itaps/software/trunk/tools/doxygen/html/ifield.html>
 
   */
-struct MoFEMField {
+struct Field {
 
   EntityHandle meshSet; 		///< keeps entities for this meshset
-  const CoordSys *coordSysPtr;
+  boost::shared_ptr<CoordSys> coordSysPtr;
 
   Tag th_FieldData,th_AppOrder;
   Tag th_AppDofOrder,th_DofRank;
@@ -66,7 +66,7 @@ struct MoFEMField {
     *
     * \param meshset which keeps entities for this field
     */
-  MoFEMField(Interface &moab,const EntityHandle meshset,const CoordSys *coord_sys_ptr);
+  Field(Interface &moab,const EntityHandle meshset,const boost::shared_ptr<CoordSys> coord_sys_ptr);
 
   inline EntityHandle get_meshset() const { return meshSet; };
 
@@ -128,21 +128,23 @@ struct MoFEMField {
     }
     return 0;
   }
-  const MoFEMField* get_MoFEMField_ptr() const { return this; };
-  friend ostream& operator<<(ostream& os,const MoFEMField& e);
+
+  friend ostream& operator<<(ostream& os,const Field& e);
 };
 
 /**
- * \brief interface for MoFEMField
+ * \brief interface for Field
  * \ingroup dof_multi_indices
  */
 template <typename T>
-struct interface_MoFEMField {
-  const T *field_ptr;
-  interface_MoFEMField(const T *_field_ptr): field_ptr(_field_ptr) {};
-  inline EntityHandle get_meshset() const { return field_ptr->get_meshset(); };
+struct interface_Field {
+  const boost::shared_ptr<T> sFieldPtr;
 
-  inline int getCoordSysId() const { return field_ptr->getCoordSysId(); }
+  interface_Field(const boost::shared_ptr<T> field_ptr): sFieldPtr(field_ptr) {};
+
+  inline EntityHandle get_meshset() const { return this->sFieldPtr->get_meshset(); };
+
+  inline int getCoordSysId() const { return this->sFieldPtr->getCoordSysId(); }
 
   /**
     * \brief Get dimension of general two-point tensor \ref MoFEM::CoordSys::getDim
@@ -150,82 +152,82 @@ struct interface_MoFEMField {
     See details here \ref MoFEM::CoordSys::getDim
 
     */
-  inline int getCoordSysDim(const int d = 0) const { return field_ptr->getCoordSysDim(d); }
+  inline int getCoordSysDim(const int d = 0) const { return this->sFieldPtr->getCoordSysDim(d); }
   inline PetscErrorCode get_E_Base(const double m[]) const {
     PetscFunctionBegin;
-    PetscFunctionReturn(field_ptr->get_E_Base(m));
+    PetscFunctionReturn(this->sFieldPtr->get_E_Base(m));
   }
   inline PetscErrorCode get_E_DualBase(const double m[]) const {
     PetscFunctionBegin;
-    PetscFunctionReturn(field_ptr->get_E_DualBase(m));
+    PetscFunctionReturn(this->sFieldPtr->get_E_DualBase(m));
   }
   inline PetscErrorCode get_e_Base(const double m[]) const {
     PetscFunctionBegin;
-    PetscFunctionReturn(field_ptr->get_e_Base(m));
+    PetscFunctionReturn(this->sFieldPtr->get_e_Base(m));
   }
   inline PetscErrorCode get_e_DualBase(const double m[]) const {
     PetscFunctionBegin;
-    PetscFunctionReturn(field_ptr->get_e_DualBase(m));
+    PetscFunctionReturn(this->sFieldPtr->get_e_DualBase(m));
   }
-  inline EntityHandle getCoordSysMeshSet() const { return field_ptr->getCoordSysMeshSet(); }
-  inline string getCoordSysName() const { return field_ptr->getCoordSysName(); };
+  inline EntityHandle getCoordSysMeshSet() const { return this->sFieldPtr->getCoordSysMeshSet(); }
+  inline string getCoordSysName() const { return this->sFieldPtr->getCoordSysName(); };
   inline boost::string_ref getCoordSysNameRef() const {
-    return field_ptr->getCoordSysNameRef();
-  };
+    return this->sFieldPtr->getCoordSysNameRef();
+  }
 
-  inline const BitFieldId& get_id() const { return field_ptr->get_id(); };
-  inline unsigned int get_bit_number() const { return field_ptr->get_bit_number(); }
-  inline boost::string_ref get_name_ref() const { return field_ptr->get_name_ref(); };
-  inline string get_name() const { return field_ptr->get_name(); };
-  inline FieldSpace get_space() const { return field_ptr->get_space(); };
-  inline FieldApproximationBase get_approx_base() const { return field_ptr->get_approx_base(); };
+  inline const BitFieldId& get_id() const { return this->sFieldPtr->get_id(); }
+  inline unsigned int get_bit_number() const { return this->sFieldPtr->get_bit_number(); }
+  inline boost::string_ref get_name_ref() const { return this->sFieldPtr->get_name_ref(); }
+  inline string get_name() const { return this->sFieldPtr->get_name(); }
+  inline FieldSpace get_space() const { return this->sFieldPtr->get_space(); }
+  inline FieldApproximationBase get_approx_base() const { return this->sFieldPtr->get_approx_base(); }
 
-  DEPRECATED inline FieldCoefficientsNumber get_max_rank() const { return field_ptr->get_nb_of_coeffs(); };
+  DEPRECATED inline FieldCoefficientsNumber get_max_rank() const { return this->sFieldPtr->get_nb_of_coeffs(); }
 
   /* \brief get number of field coefficients
   */
-  inline FieldCoefficientsNumber get_nb_of_coeffs() const { return field_ptr->get_nb_of_coeffs(); };
+  inline FieldCoefficientsNumber get_nb_of_coeffs() const { return this->sFieldPtr->get_nb_of_coeffs(); }
 
+  inline const boost::shared_ptr<T> get_Field_ptr() const { return this->sFieldPtr; }
 
-  inline const MoFEMField* get_MoFEMField_ptr() const { return field_ptr->get_MoFEMField_ptr(); };
 };
 
 /**
  * @relates multi_index_container
- * \brief MoFEMField_multiIndex for MoFEMField
+ * \brief Field_multiIndex for Field
  *
  */
 typedef multi_index_container<
-  MoFEMField,
+  boost::shared_ptr<Field>,
   indexed_by<
     hashed_unique<
-      tag<BitFieldId_mi_tag>, const_mem_fun<MoFEMField,const BitFieldId&,&MoFEMField::get_id>, HashBit<BitFieldId>, EqBit<BitFieldId> >,
+      tag<BitFieldId_mi_tag>, const_mem_fun<Field,const BitFieldId&,&Field::get_id>, HashBit<BitFieldId>, EqBit<BitFieldId> >,
     ordered_unique<
-      tag<Meshset_mi_tag>, member<MoFEMField,EntityHandle,&MoFEMField::meshSet> >,
+      tag<Meshset_mi_tag>, member<Field,EntityHandle,&Field::meshSet> >,
     ordered_unique<
-      tag<FieldName_mi_tag>, const_mem_fun<MoFEMField,boost::string_ref,&MoFEMField::get_name_ref> >,
+      tag<FieldName_mi_tag>, const_mem_fun<Field,boost::string_ref,&Field::get_name_ref> >,
     ordered_non_unique<
-      tag<BitFieldId_space_mi_tag>, const_mem_fun<MoFEMField,FieldSpace,&MoFEMField::get_space> >
-  > > MoFEMField_multiIndex;
+      tag<BitFieldId_space_mi_tag>, const_mem_fun<Field,FieldSpace,&Field::get_space> >
+  > > Field_multiIndex;
 
 typedef multi_index_container<
-  const MoFEMField*,
+  boost::shared_ptr<Field>,
   indexed_by<
     ordered_unique<
-      tag<BitFieldId_mi_tag>, const_mem_fun<MoFEMField,const BitFieldId&,&MoFEMField::get_id>, LtBit<BitFieldId>
+      tag<BitFieldId_mi_tag>, const_mem_fun<Field,const BitFieldId&,&Field::get_id>, LtBit<BitFieldId>
     >
-> > MoFEMField_multiIndex_view;
+> > Field_multiIndex_view;
 
 /** \brief Set field coordinate system
  * \ingroup ent_multi_indices
   */
-struct MoFEMFieldChangeCoordinateSystem {
-  const CoordSys *csPtr;
-  MoFEMFieldChangeCoordinateSystem(const CoordSys *cs_ptr):
+struct FieldChangeCoordinateSystem {
+  boost::shared_ptr<CoordSys> csPtr;
+  FieldChangeCoordinateSystem(boost::shared_ptr<CoordSys> cs_ptr):
   csPtr(cs_ptr) {
   }
-  void operator()(MoFEMField &e) {
-    e.coordSysPtr = csPtr;
+  void operator()(boost::shared_ptr<Field> &e) {
+    e->coordSysPtr = csPtr;
   }
 };
 

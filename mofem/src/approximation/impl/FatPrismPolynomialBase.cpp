@@ -67,7 +67,7 @@ FatPrismPolynomialBaseCtx::FatPrismPolynomialBaseCtx(
   ublas::matrix<double>& gauss_pts_triangles_only,
   ublas::matrix<double>& gauss_pts_through_thickness,
   moab::Interface &moab,
-  const NumeredMoFEMFiniteElement *fe_ptr,
+  const NumeredEntFiniteElement *fe_ptr,
   const FieldSpace space,
   const FieldApproximationBase base,
   const FieldApproximationBase copy_node_base

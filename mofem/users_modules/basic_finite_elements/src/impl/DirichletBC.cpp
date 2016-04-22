@@ -74,7 +74,8 @@ PetscErrorCode DisplacementBCFEMethodPreAndPostProc::iNitalize() {
           ents.insert(_nodes.begin(),_nodes.end());
         }
         for(Range::iterator eit = ents.begin();eit!=ents.end();eit++) {
-          for(_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_NAME_ENT_PART_FOR_LOOP_(problemPtr,fieldName,*eit,pcomm->rank(),dof)) {
+          for(_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_NAME_ENT_PART_FOR_LOOP_(problemPtr,fieldName,*eit,pcomm->rank(),dof_ptr)) {
+            NumeredDofEntity *dof = dof_ptr->get();
             bitset<8> pstatus(dof->get_pstatus());
             if(pstatus.test(0)) continue; //only local
             if(dof->get_ent_type() == MBVERTEX) {
@@ -266,7 +267,8 @@ PetscErrorCode SpatialPositionsBCFEMethodPreAndPostProc::iNitalize() {
           ents.insert(_nodes.begin(),_nodes.end());
         }
         for(Range::iterator eit = ents.begin();eit!=ents.end();eit++) {
-          for(_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_NAME_ENT_PART_FOR_LOOP_(problemPtr,fieldName,*eit,pcomm->rank(),dof)) {
+          for(_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_NAME_ENT_PART_FOR_LOOP_(problemPtr,fieldName,*eit,pcomm->rank(),dof_ptr)) {
+            NumeredDofEntity *dof = dof_ptr->get();
             if(dof->get_ent_type() == MBVERTEX) {
               EntityHandle node = dof->get_ent();
               cOords.resize(3);
@@ -293,7 +295,8 @@ PetscErrorCode SpatialPositionsBCFEMethodPreAndPostProc::iNitalize() {
             }
           }
           for(vector<string>::iterator fit = fixFields.begin();fit!=fixFields.end();fit++) {
-            for(_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_NAME_ENT_PART_FOR_LOOP_(problemPtr,*fit,*eit,pcomm->rank(),dof)) {
+            for(_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_NAME_ENT_PART_FOR_LOOP_(problemPtr,*fit,*eit,pcomm->rank(),dof_ptr)) {
+              NumeredDofEntity *dof = dof_ptr->get();
               mapZeroRows[dof->get_petsc_gloabl_dof_idx()] = dof->get_FieldData();
             }
           }
@@ -336,7 +339,8 @@ PetscErrorCode TemperatureBCFEMethodPreAndPostProc::iNitalize() {
           ents.insert(_nodes.begin(),_nodes.end());
         }
         for(Range::iterator eit = ents.begin();eit!=ents.end();eit++) {
-          for(_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_NAME_ENT_PART_FOR_LOOP_(problemPtr,fieldName,*eit,pcomm->rank(),dof)) {
+          for(_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_NAME_ENT_PART_FOR_LOOP_(problemPtr,fieldName,*eit,pcomm->rank(),dof_ptr)) {
+            NumeredDofEntity *dof = dof_ptr->get();
             if(dof->get_ent_type() == MBVERTEX) {
               mapZeroRows[dof->get_petsc_gloabl_dof_idx()] = scaled_values[0];
             } else {
@@ -363,7 +367,8 @@ PetscErrorCode FixBcAtEntities::iNitalize() {
   if(mapZeroRows.empty()) {
     for(vector<string>::iterator fit = fieldNames.begin();fit!=fieldNames.end();fit++) {
       for(Range::iterator eit = eNts.begin();eit!=eNts.end();eit++) {
-        for(_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_NAME_ENT_PART_FOR_LOOP_(problemPtr,*fit,*eit,mField.getCommRank(),dof)) {
+        for(_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_NAME_ENT_PART_FOR_LOOP_(problemPtr,*fit,*eit,mField.getCommRank(),dof_ptr)) {
+          NumeredDofEntity *dof = dof_ptr->get();
           mapZeroRows[dof->get_petsc_gloabl_dof_idx()] = 0;
         }
       }
@@ -487,7 +492,8 @@ PetscErrorCode DirichletBCFromBlockSetFEMethodPreAndPostProc::iNitalize() {
             ents.insert(nodes.begin(),nodes.end());
           }
           for(Range::iterator eit = ents.begin();eit!=ents.end();eit++) {
-            for(_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_NAME_ENT_PART_FOR_LOOP_(problemPtr,fieldName,*eit,pcomm->rank(),dof)) {
+            for(_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_NAME_ENT_PART_FOR_LOOP_(problemPtr,fieldName,*eit,pcomm->rank(),dof_ptr)) {
+              NumeredDofEntity *dof = dof_ptr->get();
               if(dof->get_ent_type() == MBVERTEX) {
                 if(dof->get_dof_coeff_idx() == 0) {
                   mapZeroRows[dof->get_petsc_gloabl_dof_idx()] = scaled_values[0];

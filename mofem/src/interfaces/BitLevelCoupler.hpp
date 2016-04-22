@@ -121,8 +121,8 @@ struct BitLevelCouplerInterface: public UnknownInterface {
 
   private:
 
-  PetscErrorCode chanegParent(RefMoFEMEntity_multiIndex::iterator it,EntityHandle parent,bool element);
-  PetscErrorCode verifyParent(RefMoFEMEntity_multiIndex::iterator it,EntityHandle parent);
+  PetscErrorCode chanegParent(RefEntity_multiIndex::iterator it,EntityHandle parent,bool element);
+  PetscErrorCode verifyParent(RefEntity_multiIndex::iterator it,EntityHandle parent);
 
   double cOords[12+3];
   double diffN[12],N[4];

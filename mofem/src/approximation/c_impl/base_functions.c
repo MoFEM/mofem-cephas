@@ -77,42 +77,17 @@ PetscErrorCode Lobatto_polynomials(
   if(dim < 1) SETERRQ(PETSC_COMM_SELF,1,"dim < 1");
   if(dim > 3) SETERRQ(PETSC_COMM_SELF,1,"dim > 3");
   if(p<0) SETERRQ(PETSC_COMM_SELF,1,"p < 0");
-  L[0] = 1;
-  if(diffL!=NULL) {
-    diffL[0*(p+1)+0] = 0;
-    if(dim >= 2) {
-      diffL[1*(p+1)+0] = 0;
-      if(dim == 3) {
-        diffL[2*(p+1)+0] = 0;
-      }
-    }
-  }
-  if(p==0) PetscFunctionReturn(0);
-  L[1] = s;
-  if(diffL != NULL) {
-    if(diff_s == NULL) {
-      SETERRQ(PETSC_COMM_SELF,1,"diff_s == NULL");
-    }
-    diffL[0*(p+1)+1] = diff_s[0];
-    if(dim >= 2) {
-      diffL[1*(p+1)+1] = diff_s[1];
-      if(dim == 3) {
-        diffL[2*(p+1)+1] = diff_s[2];
-      }
-    }
-  }
-  if(p == 1) PetscFunctionReturn(0);
-  double l[p+1];
-  ierr = Legendre_polynomials(p,s,NULL,l,NULL,1); CHKERRQ(ierr);
+  double l[p+2];
+  ierr = Legendre_polynomials(p+1,s,NULL,l,NULL,1); CHKERRQ(ierr);
   {
     // Derivatives
-    int k = 2;
+    int k = 0;
     for(;k<=p;k++) {
       if(diffL!=NULL) {
         if(diff_s==NULL) {
           SETERRQ(PETSC_COMM_SELF,1,"diff_s == NULL");
         }
-        double a = l[k-1];
+        double a = l[k+1];
         diffL[0*(p+1)+k] = a*diff_s[0];
         if(dim >= 2) {
           diffL[1*(p+1)+k] = a*diff_s[1];
@@ -125,24 +100,24 @@ PetscErrorCode Lobatto_polynomials(
   }
   {
     // Functions
-    bzero(L,(p+1)*sizeof(double));
-    int nb_gauss_pts = QUAD_1D_TABLE[p]->npoints;
-    double *points = QUAD_1D_TABLE[p]->points;
-    double *weights = QUAD_1D_TABLE[p]->weights;
+    bzero(L,(p+2)*sizeof(double));
+    int nb_gauss_pts = QUAD_1D_TABLE[p+2]->npoints;
+    double *points = QUAD_1D_TABLE[p+2]->points;
+    double *weights = QUAD_1D_TABLE[p+2]->weights;
     s = s+1;
     int gg = 0;
     for(;gg!=nb_gauss_pts;gg++) {
       double ksi = points[2*gg+1];
       double zeta = s*ksi-1;
-      ierr = Legendre_polynomials(p,zeta,NULL,l,NULL,1); CHKERRQ(ierr);
+      ierr = Legendre_polynomials(p+1,zeta,NULL,l,NULL,1); CHKERRQ(ierr);
       double w = s*weights[gg];
-      cblas_daxpy(p-2,w,&l[1],1,&L[2],1);
+      cblas_daxpy(p,w,&l[1],1,&L[0],1);
     }
   }
   {
-    int k = 2;
+    int k = 0;
     for(;k<=p;k++) {
-      double a = sqrt(k-0.5);
+      double a = sqrt(k+2-0.5);
       if(L!=NULL) L[k] *= a;
       if(diffL!=NULL) diffL[k] *= a;
     }

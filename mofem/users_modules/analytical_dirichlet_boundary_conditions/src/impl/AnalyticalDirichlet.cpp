@@ -81,7 +81,7 @@ PetscErrorCode AnalyticalDirichletBC::ApproxField::OpLhs::doWork(
 
   PetscErrorCode ierr;
 
-  const FENumeredDofMoFEMEntity *dof_ptr;
+  const FENumeredDofEntity *dof_ptr;
   ierr = getMoFEMFEPtr()->get_row_dofs_by_petsc_gloabl_dof_idx(row_data.getIndices()[0],&dof_ptr); CHKERRQ(ierr);
   int rank = dof_ptr->get_nb_of_coeffs();
 
@@ -224,7 +224,7 @@ PetscErrorCode AnalyticalDirichletBC::ApproxField::OpLhs::doWork(
     ents.merge(tris);
     for(Range::iterator eit = ents.begin();eit!=ents.end();eit++) {
       for(_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_NAME_ENT_PART_FOR_LOOP_(problemPtr,fieldName,*eit,pcomm->rank(),dof)) {
-        mapZeroRows[dof->get_petsc_gloabl_dof_idx()] = dof->get_FieldData();
+        mapZeroRows[dof->get()->get_petsc_gloabl_dof_idx()] = dof->get()->get_FieldData();
       }
     }
     dofsIndices.resize(mapZeroRows.size());

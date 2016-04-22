@@ -22,23 +22,26 @@
 namespace MoFEM {
 
 /**
-  * \brief MoFEMEntityEntMoFEMFiniteElementAdjacencyMap of mofem finite element and entities
+  * \brief MoFEMEntityEntFiniteElementAdjacencyMap of mofem finite element and entities
   *
   */
-struct MoFEMEntityEntMoFEMFiniteElementAdjacencyMap {
+struct MoFEMEntityEntFiniteElementAdjacencyMap {
   unsigned int by_other;
-  const MoFEMEntity *MoFEMEntity_ptr; ///< field entity
-  const EntMoFEMFiniteElement *EntMoFEMFiniteElement_ptr; ///< finite element entity
-  MoFEMEntityEntMoFEMFiniteElementAdjacencyMap(const MoFEMEntity *_MoFEMEntity_ptr,const EntMoFEMFiniteElement *_EntMoFEMFiniteElement_ptr);
-  inline GlobalUId get_MoFEMFiniteElement_unique_id() const { return EntMoFEMFiniteElement_ptr->get_global_unique_id(); }
-  inline EntityHandle get_MoFEMFiniteElement_meshset() const { return EntMoFEMFiniteElement_ptr->get_meshset(); }
-  inline EntityHandle get_MoFEMFiniteElement_entity_handle() const { return EntMoFEMFiniteElement_ptr->get_ent(); }
-  inline GlobalUId get_ent_unique_id() const { return MoFEMEntity_ptr->get_global_unique_id(); };
-  inline EntityHandle get_ent_meshset() const { return MoFEMEntity_ptr->get_meshset(); };
-  inline EntityHandle get_ent_entity_handle() const { return MoFEMEntity_ptr->get_ent(); };
-  BitFieldId get_ent_id() const { return MoFEMEntity_ptr->get_id(); }
-  BitFEId get_BitFEId() const { return EntMoFEMFiniteElement_ptr->get_id(); }
-  friend ostream& operator<<(ostream& os,const MoFEMEntityEntMoFEMFiniteElementAdjacencyMap &e);
+  const boost::shared_ptr<MoFEMEntity> mofemEntPtr; ///< field entity
+  const boost::shared_ptr<EntFiniteElement> entFePtr; ///< finite element entity
+  MoFEMEntityEntFiniteElementAdjacencyMap(
+    const boost::shared_ptr<MoFEMEntity> mofem_ent_ptr,
+    const boost::shared_ptr<EntFiniteElement> ent_fe_ptr
+  );
+  inline GlobalUId get_MoFEMFiniteElement_unique_id() const { return entFePtr->get_global_unique_id(); }
+  inline EntityHandle get_MoFEMFiniteElement_meshset() const { return entFePtr->get_meshset(); }
+  inline EntityHandle get_MoFEMFiniteElement_entity_handle() const { return entFePtr->get_ent(); }
+  inline GlobalUId get_ent_unique_id() const { return mofemEntPtr->get_global_unique_id(); };
+  inline EntityHandle get_ent_meshset() const { return mofemEntPtr->get_meshset(); };
+  inline EntityHandle get_ent_entity_handle() const { return mofemEntPtr->get_ent(); };
+  BitFieldId get_ent_id() const { return mofemEntPtr->get_id(); }
+  BitFEId get_BitFEId() const { return entFePtr->get_id(); }
+  friend ostream& operator<<(ostream& os,const MoFEMEntityEntFiniteElementAdjacencyMap &e);
 };
 
 /**
@@ -47,26 +50,26 @@ struct MoFEMEntityEntMoFEMFiniteElementAdjacencyMap {
 
  */
 typedef multi_index_container<
-  MoFEMEntityEntMoFEMFiniteElementAdjacencyMap,
+  MoFEMEntityEntFiniteElementAdjacencyMap,
   indexed_by<
     ordered_unique<
       tag<Composite_Unique_mi_tag>,
       composite_key<
-	MoFEMEntityEntMoFEMFiniteElementAdjacencyMap,
-	const_mem_fun<MoFEMEntityEntMoFEMFiniteElementAdjacencyMap,GlobalUId,&MoFEMEntityEntMoFEMFiniteElementAdjacencyMap::get_ent_unique_id>,
-	const_mem_fun<MoFEMEntityEntMoFEMFiniteElementAdjacencyMap,GlobalUId,&MoFEMEntityEntMoFEMFiniteElementAdjacencyMap::get_MoFEMFiniteElement_unique_id> > >,
+	MoFEMEntityEntFiniteElementAdjacencyMap,
+	const_mem_fun<MoFEMEntityEntFiniteElementAdjacencyMap,GlobalUId,&MoFEMEntityEntFiniteElementAdjacencyMap::get_ent_unique_id>,
+	const_mem_fun<MoFEMEntityEntFiniteElementAdjacencyMap,GlobalUId,&MoFEMEntityEntFiniteElementAdjacencyMap::get_MoFEMFiniteElement_unique_id> > >,
     ordered_non_unique<
-      tag<Unique_mi_tag>, const_mem_fun<MoFEMEntityEntMoFEMFiniteElementAdjacencyMap,GlobalUId,&MoFEMEntityEntMoFEMFiniteElementAdjacencyMap::get_ent_unique_id> >,
+      tag<Unique_mi_tag>, const_mem_fun<MoFEMEntityEntFiniteElementAdjacencyMap,GlobalUId,&MoFEMEntityEntFiniteElementAdjacencyMap::get_ent_unique_id> >,
     ordered_non_unique<
-      tag<FEEnt_mi_tag>, const_mem_fun<MoFEMEntityEntMoFEMFiniteElementAdjacencyMap,EntityHandle,&MoFEMEntityEntMoFEMFiniteElementAdjacencyMap::get_MoFEMFiniteElement_entity_handle> >,
+      tag<FEEnt_mi_tag>, const_mem_fun<MoFEMEntityEntFiniteElementAdjacencyMap,EntityHandle,&MoFEMEntityEntFiniteElementAdjacencyMap::get_MoFEMFiniteElement_entity_handle> >,
     ordered_non_unique<
-      tag<Ent_mi_tag>, const_mem_fun<MoFEMEntityEntMoFEMFiniteElementAdjacencyMap,EntityHandle,&MoFEMEntityEntMoFEMFiniteElementAdjacencyMap::get_ent_entity_handle> >
-  > > MoFEMEntityEntMoFEMFiniteElementAdjacencyMap_multiIndex;
+      tag<Ent_mi_tag>, const_mem_fun<MoFEMEntityEntFiniteElementAdjacencyMap,EntityHandle,&MoFEMEntityEntFiniteElementAdjacencyMap::get_ent_entity_handle> >
+  > > MoFEMEntityEntFiniteElementAdjacencyMap_multiIndex;
 
-  struct MoFEMEntityEntMoFEMFiniteElementAdjacencyMap_change_ByWhat {
+  struct MoFEMEntityEntFiniteElementAdjacencyMap_change_ByWhat {
     ByWhat by;
-    MoFEMEntityEntMoFEMFiniteElementAdjacencyMap_change_ByWhat(const ByWhat _by): by(_by) {}
-    void operator()(MoFEMEntityEntMoFEMFiniteElementAdjacencyMap &e) { e.by_other |= by; }
+    MoFEMEntityEntFiniteElementAdjacencyMap_change_ByWhat(const ByWhat _by): by(_by) {}
+    void operator()(MoFEMEntityEntFiniteElementAdjacencyMap &e) { e.by_other |= by; }
   };
 
 }

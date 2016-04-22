@@ -104,7 +104,7 @@ int main(int argc, char *argv[]) {
     MyMat(Interface& moab): moAB(moab) {};
     PetscErrorCode calculateP_PiolaKirchhoffI(
      const BlockData block_data,
-     const NumeredMoFEMFiniteElement *fe_ptr) {
+     const NumeredEntFiniteElement *fe_ptr) {
      PetscFunctionBegin;
      //my stuff
      PetscFunctionReturn(0);
@@ -129,10 +129,10 @@ int main(int argc, char *argv[]) {
     EntityHandle node = 0;
     double coords[3];
     for(_IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(m_field,"SPATIAL_POSITION",dof_ptr)) {
-      if(dof_ptr->get_ent_type()!=MBVERTEX) continue;
-      EntityHandle ent = dof_ptr->get_ent();
-      int dof_rank = dof_ptr->get_dof_coeff_idx();
-      double &fval = dof_ptr->get_FieldData();
+      if(dof_ptr->get()->get_ent_type()!=MBVERTEX) continue;
+      EntityHandle ent = dof_ptr->get()->get_ent();
+      int dof_rank = dof_ptr->get()->get_dof_coeff_idx();
+      double &fval = dof_ptr->get()->get_FieldData();
       if(node!=ent) {
         rval = moab.get_coords(&ent,1,coords); CHKERRQ_MOAB(rval);
         node = ent;
