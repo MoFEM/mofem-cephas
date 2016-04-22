@@ -2903,7 +2903,7 @@ PetscErrorCode Core::loop_finite_elements(
     method.fePtr = &*(*miit);
     method.dataPtr = &((*miit)->sPtr->data_dofs);
     method.rowPtr = &((*miit)->rows_dofs);
-    method.colPtr = &((*miit)->rows_dofs);
+    method.colPtr = &((*miit)->cols_dofs);
 
     try {
       PetscLogEventBegin(USER_EVENT_operator,0,0,0,0);
