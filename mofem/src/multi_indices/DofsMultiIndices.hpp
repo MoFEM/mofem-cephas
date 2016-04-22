@@ -537,32 +537,32 @@ struct DofEntity_active_change {
 };
 
 struct NumeredDofEntity_part_change {
-  unsigned int part;
-  DofIdx petsc_gloabl_dof_idx;
-  NumeredDofEntity_part_change(const unsigned int _part,const DofIdx _petsc_gloabl_dof_idx):
-    part(_part),
-    petsc_gloabl_dof_idx(_petsc_gloabl_dof_idx) {};
+  unsigned int pArt;
+  DofIdx petscGloablDofIdx;
+  NumeredDofEntity_part_change(const unsigned int part,const DofIdx petsc_gloabl_dof_idx):
+  pArt(part),
+  petscGloablDofIdx(petsc_gloabl_dof_idx) {};
   void operator()(boost::shared_ptr<NumeredDofEntity> &dof) {
-    dof->part = part;
-    dof->petsc_gloabl_dof_idx = petsc_gloabl_dof_idx;
+    dof->part = pArt;
+    dof->petsc_gloabl_dof_idx = petscGloablDofIdx;
   }
 };
 
 struct NumeredDofEntity_local_idx_change {
-  DofIdx petsc_local_dof_idx;
-  NumeredDofEntity_local_idx_change(const DofIdx _petsc_local_dof_idx):
-    petsc_local_dof_idx(_petsc_local_dof_idx) {};
+  DofIdx petscLocalDofIdx;
+  NumeredDofEntity_local_idx_change(const DofIdx petsc_local_dof_idx):
+  petscLocalDofIdx(petsc_local_dof_idx) {};
   void operator()(boost::shared_ptr<NumeredDofEntity> &dof) {
-    dof->petsc_local_dof_idx = petsc_local_dof_idx;
+    dof->petsc_local_dof_idx = petscLocalDofIdx;
   }
 };
 
 struct NumeredDofEntity_mofem_index_change {
-  DofIdx mofem_idx;
-  NumeredDofEntity_mofem_index_change(const DofIdx _mofem_idx):
-    mofem_idx(_mofem_idx) {};
+  DofIdx mofemIdx;
+  NumeredDofEntity_mofem_index_change(const DofIdx mofem_idx):
+  mofemIdx(mofem_idx) {};
   void operator()(boost::shared_ptr<NumeredDofEntity> &dof) {
-    dof->dof_idx = mofem_idx;
+    dof->dof_idx = mofemIdx;
   }
 };
 
