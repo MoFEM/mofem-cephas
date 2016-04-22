@@ -1337,7 +1337,8 @@ struct FieldInterface: public UnknownInterface {
    * \param name problem name
    */
   virtual PetscErrorCode partition_finite_elements(const string &name,
-    bool part_from_moab = false,int low_proc = -1,int hi_proc = -1,int verb = -1) = 0;
+    bool part_from_moab = false,int low_proc = -1,int hi_proc = -1,int verb = -1
+  ) = 0;
 
   /** \brief check if matrix fill in correspond to finite element indices
 

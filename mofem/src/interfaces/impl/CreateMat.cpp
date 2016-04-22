@@ -901,8 +901,12 @@ PetscErrorCode Core::partition_check_matrix_fill_in(const string &problem_name,i
           if((*cit)->get_ent_type()!=MBVERTEX) {
 
             FENumeredDofEntity_multiIndex::index<Composite_Name_Type_And_Side_Number_mi_tag>::type::iterator dit,hi_dit;
-            dit = colPtr->get<Composite_Name_Type_And_Side_Number_mi_tag>().lower_bound(boost::make_tuple((*cit)->get_name(),(*cit)->get_ent_type(),(*cit)->side_number_ptr->side_number));
-            hi_dit = colPtr->get<Composite_Name_Type_And_Side_Number_mi_tag>().upper_bound(boost::make_tuple((*cit)->get_name(),(*cit)->get_ent_type(),(*cit)->side_number_ptr->side_number));
+            dit = colPtr->get<Composite_Name_Type_And_Side_Number_mi_tag>().lower_bound(
+              boost::make_tuple((*cit)->get_name(),(*cit)->get_ent_type(),(*cit)->sideNumberPtr->side_number)
+            );
+            hi_dit = colPtr->get<Composite_Name_Type_And_Side_Number_mi_tag>().upper_bound(
+              boost::make_tuple((*cit)->get_name(),(*cit)->get_ent_type(),(*cit)->sideNumberPtr->side_number)
+            );
             int nb_dofs_on_ent = distance(dit,hi_dit);
 
             int max_order = (*cit)->get_max_order();
@@ -918,8 +922,12 @@ PetscErrorCode Core::partition_check_matrix_fill_in(const string &problem_name,i
         if((*rit)->get_ent_type()!=MBVERTEX) {
 
           FENumeredDofEntity_multiIndex::index<Composite_Name_Type_And_Side_Number_mi_tag>::type::iterator dit,hi_dit;
-          dit = rowPtr->get<Composite_Name_Type_And_Side_Number_mi_tag>().lower_bound(boost::make_tuple((*rit)->get_name(),(*rit)->get_ent_type(),(*rit)->side_number_ptr->side_number));
-          hi_dit = rowPtr->get<Composite_Name_Type_And_Side_Number_mi_tag>().upper_bound(boost::make_tuple((*rit)->get_name(),(*rit)->get_ent_type(),(*rit)->side_number_ptr->side_number));
+          dit = rowPtr->get<Composite_Name_Type_And_Side_Number_mi_tag>().lower_bound(
+            boost::make_tuple((*rit)->get_name(),(*rit)->get_ent_type(),(*rit)->sideNumberPtr->side_number)
+          );
+          hi_dit = rowPtr->get<Composite_Name_Type_And_Side_Number_mi_tag>().upper_bound(
+            boost::make_tuple((*rit)->get_name(),(*rit)->get_ent_type(),(*rit)->sideNumberPtr->side_number)
+          );
           int nb_dofs_on_ent = distance(dit,hi_dit);
 
           int max_order = (*rit)->get_max_order();

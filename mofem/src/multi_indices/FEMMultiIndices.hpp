@@ -36,10 +36,10 @@ struct RefElement: public interface_RefEntity<RefEntity> {
   virtual const BitRefEdges& get_BitRefEdges() const { return DummyBitRefEdges; }
   virtual int get_BitRefEdges_ulong() const { return 0; }
   SideNumber_multiIndex &get_side_number_table() const { return const_cast<SideNumber_multiIndex&>(side_number_table); };
-  virtual SideNumber* get_side_number_ptr(Interface &moab,EntityHandle ent) const {
+  virtual boost::shared_ptr<SideNumber> get_side_number_ptr(Interface &moab,EntityHandle ent) const {
     NOT_USED(moab);
     NOT_USED(ent);
-    return NULL;
+    return boost::shared_ptr<SideNumber>();
   };
 
   friend ostream& operator<<(ostream& os,const RefElement& e);
@@ -52,7 +52,7 @@ struct RefElement: public interface_RefEntity<RefEntity> {
  */
 struct RefElement_MESHSET: public RefElement {
   RefElement_MESHSET(Interface &moab,const boost::shared_ptr<RefEntity> ref_ent_ptr);
-  SideNumber* get_side_number_ptr(Interface &moab,EntityHandle ent) const;
+  boost::shared_ptr<SideNumber> get_side_number_ptr(Interface &moab,EntityHandle ent) const;
 };
 
 /**
@@ -62,7 +62,7 @@ struct RefElement_MESHSET: public RefElement {
 struct RefElement_PRISM: public RefElement {
   BitRefEdges *tag_BitRefEdges;
   RefElement_PRISM(Interface &moab,const boost::shared_ptr<RefEntity> ref_ent_ptr);
-  SideNumber* get_side_number_ptr(Interface &moab,EntityHandle ent) const;
+  boost::shared_ptr<SideNumber> get_side_number_ptr(Interface &moab,EntityHandle ent) const;
   const BitRefEdges& get_BitRefEdges() const { return *tag_BitRefEdges; }
   int get_BitRefEdges_ulong() const { return get_BitRefEdges().to_ulong(); }
 };
@@ -75,7 +75,7 @@ struct RefElement_TET: public RefElement {
   BitRefEdges *tag_BitRefEdges;
   const int* tag_type_data;
   RefElement_TET(Interface &moab,const boost::shared_ptr<RefEntity> ref_ent_ptr);
-  SideNumber* get_side_number_ptr(Interface &moab,EntityHandle ent) const;
+  boost::shared_ptr<SideNumber> get_side_number_ptr(Interface &moab,EntityHandle ent) const;
   SideNumber_multiIndex &get_side_number_table() const { return const_cast<SideNumber_multiIndex&>(side_number_table); };
   const BitRefEdges& get_BitRefEdges() const { return *tag_BitRefEdges; }
   int get_BitRefEdges_ulong() const { return get_BitRefEdges().to_ulong(); }
@@ -90,7 +90,7 @@ struct RefElement_TET: public RefElement {
  */
 struct RefElement_TRI: public RefElement {
   RefElement_TRI(Interface &moab,const boost::shared_ptr<RefEntity> ref_ent_ptr);
-  SideNumber* get_side_number_ptr(Interface &moab,EntityHandle ent) const;
+  boost::shared_ptr<SideNumber> get_side_number_ptr(Interface &moab,EntityHandle ent) const;
   friend ostream& operator<<(ostream& os,const RefElement_TRI& e);
 };
 
@@ -100,7 +100,7 @@ struct RefElement_TRI: public RefElement {
  */
 struct RefElement_EDGE: public RefElement {
   RefElement_EDGE(Interface &moab,const boost::shared_ptr<RefEntity> ref_ent_ptr);
-  SideNumber* get_side_number_ptr(Interface &moab,EntityHandle ent) const;
+  boost::shared_ptr<SideNumber> get_side_number_ptr(Interface &moab,EntityHandle ent) const;
   friend ostream& operator<<(ostream& os,const RefElement_EDGE& e);
 };
 
@@ -110,7 +110,7 @@ struct RefElement_EDGE: public RefElement {
  */
 struct RefElement_VERTEX: public RefElement {
   RefElement_VERTEX(Interface &moab,const boost::shared_ptr<RefEntity> ref_ent_ptr);
-  SideNumber* get_side_number_ptr(Interface &moab,EntityHandle ent) const;
+  boost::shared_ptr<SideNumber> get_side_number_ptr(Interface &moab,EntityHandle ent) const;
   friend ostream& operator<<(ostream& os,const RefElement_VERTEX& e);
 };
 
@@ -133,7 +133,9 @@ struct interface_RefElement: interface_RefEntity<T> {
 
   int get_BitRefEdges_ulong() const { return this->sPtr->get_BitRefEdges_ulong(); }
   SideNumber_multiIndex &get_side_number_table() const { return this->sPtr->get_side_number_table(); }
-  SideNumber* get_side_number_ptr(Interface &moab,EntityHandle ent) const { return this->sPtr->get_side_number_ptr(moab,ent); }
+  boost::shared_ptr<SideNumber> get_side_number_ptr(Interface &moab,EntityHandle ent) const {
+    return this->sPtr->get_side_number_ptr(moab,ent);
+  }
   inline const boost::shared_ptr<T> get_RefElement() const { return this->sPtr; }
   virtual ~interface_RefElement() {}
 
@@ -409,7 +411,9 @@ interface_RefElement<T> {
   inline GlobalUId get_global_unique_id() const { return this->sPtr->get_global_unique_id(); }
   //
   SideNumber_multiIndex &get_side_number_table() const { return this->sPtr->get_side_number_table(); }
-  SideNumber* get_side_number_ptr(Interface &moab,EntityHandle ent) const { return this->sPtr->get_side_number_ptr(moab,ent); }
+  boost::shared_ptr<SideNumber> get_side_number_ptr(Interface &moab,EntityHandle ent) const {
+    return this->sPtr->get_side_number_ptr(moab,ent);
+  }
   //
   inline PetscErrorCode get_element_adjacency(Interface &moab,const Field *field_ptr,Range &adjacency) {
     PetscFunctionBegin;
