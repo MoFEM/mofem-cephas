@@ -210,9 +210,9 @@ PetscErrorCode BitLevelCouplerInterface::buidlAdjacenciesVerticesOnTets(const Bi
 
   //find parents of all nodes, if node has no parent then tetrahedral containing that node is searched
   //node on tetrahedra my by part of face or edge on that tetrahedral, this need to be verified
-  const RefMoFEMEntity_multiIndex *refined_ptr;
+  const RefEntity_multiIndex *refined_ptr;
   ierr = m_field.get_ref_ents(&refined_ptr); CHKERRQ(ierr);
-  RefMoFEMEntity_multiIndex::index<EntType_mi_tag>::type::iterator it,hi_it;
+  RefEntity_multiIndex::index<EntType_mi_tag>::type::iterator it,hi_it;
   it = refined_ptr->get<EntType_mi_tag>().lower_bound(MBVERTEX);
   hi_it = refined_ptr->get<EntType_mi_tag>().upper_bound(MBVERTEX);
 
@@ -229,7 +229,7 @@ PetscErrorCode BitLevelCouplerInterface::buidlAdjacenciesVerticesOnTets(const Bi
     //check if vertex has a parent and parent is on parent bit level
     EntityHandle parent_ent;
     parent_ent = (*it)->get_parent_ent();
-    const RefMoFEMEntity ref_parent_ent(m_field.get_moab(),parent_ent);
+    const RefEntity ref_parent_ent(m_field.get_moab(),parent_ent);
     if((ref_parent_ent.get_BitRefLevel()&parent_level).any()) {
       continue;
     }
@@ -273,7 +273,7 @@ PetscErrorCode BitLevelCouplerInterface::buidlAdjacenciesEdgesFacesVolumes(
   FieldInterface& m_field = cOre;
 
   //access to ref dofs multi-index
-  const RefMoFEMEntity_multiIndex *refined_ptr;
+  const RefEntity_multiIndex *refined_ptr;
   ierr = m_field.get_ref_ents(&refined_ptr); CHKERRQ(ierr);
 
   vector<EntityHandle> conn_parents;
@@ -296,7 +296,7 @@ PetscErrorCode BitLevelCouplerInterface::buidlAdjacenciesEdgesFacesVolumes(
     }
 
     //get ref entity iterator
-    RefMoFEMEntity_multiIndex::index<Ent_mi_tag>::type::iterator it;
+    RefEntity_multiIndex::index<Ent_mi_tag>::type::iterator it;
     it = refined_ptr->get<Ent_mi_tag>().find(*eit);
     //that entity is on parent bit level, no need to process
     if(((*it)->get_BitRefLevel()&parent_level).any()) {
@@ -310,7 +310,7 @@ PetscErrorCode BitLevelCouplerInterface::buidlAdjacenciesEdgesFacesVolumes(
     //check if entity has a parent and parent is on parent bit level
     EntityHandle parent_ent;
     parent_ent = (*it)->get_parent_ent();
-    const RefMoFEMEntity ref_parent_ent(m_field.get_moab(),parent_ent);
+    const RefEntity ref_parent_ent(m_field.get_moab(),parent_ent);
     if((ref_parent_ent.get_BitRefLevel()&parent_level).any()) {
       if(!vErify) continue;
     }
@@ -322,9 +322,9 @@ PetscErrorCode BitLevelCouplerInterface::buidlAdjacenciesEdgesFacesVolumes(
     ierr = m_field.get_moab().get_connectivity(*eit,conn,num_nodes); CHKERRQ(ierr);
     conn_parents.resize(num_nodes);
     for(int nn = 0;nn<num_nodes;nn++) {
-      const RefMoFEMEntity ent(m_field.get_moab(),conn[nn]);
+      const RefEntity ent(m_field.get_moab(),conn[nn]);
       conn_parents[nn] = ent.get_parent_ent();
-      RefMoFEMEntity_multiIndex::index<Ent_mi_tag>::type::iterator cit;
+      RefEntity_multiIndex::index<Ent_mi_tag>::type::iterator cit;
       cit = refined_ptr->get<Ent_mi_tag>().find(conn_parents[nn]);
       if(cit == refined_ptr->end()) {
         conn_parents[nn] = conn[nn];
@@ -370,11 +370,11 @@ PetscErrorCode BitLevelCouplerInterface::buidlAdjacenciesEdgesFacesVolumes(
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode BitLevelCouplerInterface::chanegParent(RefMoFEMEntity_multiIndex::iterator it,EntityHandle parent,bool element) {
+PetscErrorCode BitLevelCouplerInterface::chanegParent(RefEntity_multiIndex::iterator it,EntityHandle parent,bool element) {
   PetscFunctionBegin;
 
   FieldInterface& m_field = cOre;
-  const RefMoFEMEntity_multiIndex *refined_ptr;
+  const RefEntity_multiIndex *refined_ptr;
   ierr = m_field.get_ref_ents(&refined_ptr); CHKERRQ(ierr);
 
   if(vErify) {
@@ -401,8 +401,8 @@ PetscErrorCode BitLevelCouplerInterface::chanegParent(RefMoFEMEntity_multiIndex:
   }
 
   if(!parent_is_set) {
-    RefMoFEMEntity_change_parent modifier(m_field.get_moab(),parent);
-    bool success = const_cast<RefMoFEMEntity_multiIndex*>(refined_ptr)->modify(it,modifier);
+    RefEntity_change_parent modifier(m_field.get_moab(),parent);
+    bool success = const_cast<RefEntity_multiIndex*>(refined_ptr)->modify(it,modifier);
     if(!success) {
       SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"unsuccessful operation");
     }
@@ -418,7 +418,7 @@ PetscErrorCode BitLevelCouplerInterface::resetParents(Range &children,bool eleme
   FieldInterface& m_field = cOre;
 
   //access to ref dofs multi-index
-  const RefMoFEMEntity_multiIndex *refined_ptr;
+  const RefEntity_multiIndex *refined_ptr;
   ierr = m_field.get_ref_ents(&refined_ptr); CHKERRQ(ierr);
 
   Range::iterator eit,hi_eit;
@@ -427,7 +427,7 @@ PetscErrorCode BitLevelCouplerInterface::resetParents(Range &children,bool eleme
   for(;eit!=hi_eit;eit++) {
 
     //get ref entity iterator
-    RefMoFEMEntity_multiIndex::index<Ent_mi_tag>::type::iterator it;
+    RefEntity_multiIndex::index<Ent_mi_tag>::type::iterator it;
     it = refined_ptr->get<Ent_mi_tag>().find(*eit);
 
     //resent entity parent
@@ -439,7 +439,7 @@ PetscErrorCode BitLevelCouplerInterface::resetParents(Range &children,bool eleme
 }
 
 
-PetscErrorCode BitLevelCouplerInterface::verifyParent(RefMoFEMEntity_multiIndex::iterator it,EntityHandle parent) {
+PetscErrorCode BitLevelCouplerInterface::verifyParent(RefEntity_multiIndex::iterator it,EntityHandle parent) {
   PetscFunctionBegin;
 
   if(parent != (*it)->get_parent_ent()) {

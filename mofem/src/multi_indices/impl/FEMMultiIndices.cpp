@@ -34,8 +34,8 @@
 namespace MoFEM {
 
 //ref moab FiniteElement
-RefElement::RefElement(Interface &moab,const boost::shared_ptr<RefMoFEMEntity> ref_ent_ptr):
-interface_RefMoFEMEntity<RefMoFEMEntity>(ref_ent_ptr) {}
+RefElement::RefElement(Interface &moab,const boost::shared_ptr<RefEntity> ref_ent_ptr):
+interface_RefEntity<RefEntity>(ref_ent_ptr) {}
 
 ostream& operator<<(ostream& os,const RefElement& e) {
   os << " ref egdes " << e.get_BitRefEdges();
@@ -43,7 +43,7 @@ ostream& operator<<(ostream& os,const RefElement& e) {
   return os;
 }
 
-RefElement_MESHSET::RefElement_MESHSET(Interface &moab,const boost::shared_ptr<RefMoFEMEntity> ref_ent_ptr):
+RefElement_MESHSET::RefElement_MESHSET(Interface &moab,const boost::shared_ptr<RefEntity> ref_ent_ptr):
 RefElement(moab,ref_ent_ptr) {
   switch (ref_ent_ptr->get_ent_type()) {
     case MBENTITYSET:
@@ -62,7 +62,7 @@ SideNumber* RefElement_MESHSET::get_side_number_ptr(Interface &moab,EntityHandle
   return NULL;
 }
 RefElement_PRISM::RefElement_PRISM(
-  Interface &moab,const boost::shared_ptr<RefMoFEMEntity> ref_ent_ptr
+  Interface &moab,const boost::shared_ptr<RefEntity> ref_ent_ptr
 ):
 RefElement(moab,ref_ent_ptr) {
   ErrorCode rval;
@@ -250,7 +250,7 @@ SideNumber* RefElement_PRISM::get_side_number_ptr(Interface &moab,EntityHandle e
   THROW_MESSAGE("not implemented");
   return NULL;
 }
-RefElement_TET::RefElement_TET(Interface &moab,const boost::shared_ptr<RefMoFEMEntity> ref_ent_ptr):
+RefElement_TET::RefElement_TET(Interface &moab,const boost::shared_ptr<RefEntity> ref_ent_ptr):
 RefElement(moab,ref_ent_ptr),tag_BitRefEdges(NULL) {
   ErrorCode rval;
   Tag th_RefBitEdge;
@@ -303,7 +303,7 @@ ostream& operator<<(ostream& os,const RefElement_TET& e) {
   return os;
 }
 
-RefElement_TRI::RefElement_TRI(Interface &moab,const boost::shared_ptr<RefMoFEMEntity> ref_ent_ptr):
+RefElement_TRI::RefElement_TRI(Interface &moab,const boost::shared_ptr<RefEntity> ref_ent_ptr):
 RefElement(moab,ref_ent_ptr) {
   switch (ref_ent_ptr->get_ent_type()) {
     case MBTRI:
@@ -350,7 +350,7 @@ ostream& operator<<(ostream& os,const RefElement_TRI& e) {
   os << *e.sPtr;
   return os;
 }
-RefElement_EDGE::RefElement_EDGE(Interface &moab,const boost::shared_ptr<RefMoFEMEntity> ref_ent_ptr):
+RefElement_EDGE::RefElement_EDGE(Interface &moab,const boost::shared_ptr<RefEntity> ref_ent_ptr):
 RefElement(moab,ref_ent_ptr) {
   switch (ref_ent_ptr->get_ent_type()) {
     case MBEDGE:
@@ -381,7 +381,7 @@ ostream& operator<<(ostream& os,const RefElement_EDGE& e) {
   os << *e.sPtr;
   return os;
 }
-RefElement_VERTEX::RefElement_VERTEX(Interface &moab,const boost::shared_ptr<RefMoFEMEntity> ref_ent_ptr):
+RefElement_VERTEX::RefElement_VERTEX(Interface &moab,const boost::shared_ptr<RefEntity> ref_ent_ptr):
 RefElement(moab,ref_ent_ptr) {
   switch (ref_ent_ptr->get_ent_type()) {
     case MBVERTEX:

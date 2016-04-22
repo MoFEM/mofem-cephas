@@ -144,7 +144,7 @@ struct BasicMethod: public UnknownInterface,KspMethod,SnesMethod,TSMethod {
   virtual PetscErrorCode postProcess() = 0;
 
   int rAnk,sIze;
-  const RefMoFEMEntity_multiIndex *refinedEntitiesPtr;
+  const RefEntity_multiIndex *refinedEntitiesPtr;
   const RefElement_multiIndex *refinedFiniteElementsPtr;
   const MoFEMProblem *problemPtr;
   const Field_multiIndex *fieldsPtr;

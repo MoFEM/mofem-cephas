@@ -601,8 +601,8 @@ PetscErrorCode Core::addPrismToDatabase(const EntityHandle prism,int verb) {
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
   try {
-    pair<RefMoFEMEntity_multiIndex::iterator,bool> p_ent;
-    p_ent = refinedEntities.insert(boost::shared_ptr<RefMoFEMEntity>(new RefMoFEMEntity(moab,prism)));
+    pair<RefEntity_multiIndex::iterator,bool> p_ent;
+    p_ent = refinedEntities.insert(boost::shared_ptr<RefEntity>(new RefEntity(moab,prism)));
     if(p_ent.second) {
       pair<RefElement_multiIndex::iterator,bool> p_MoFEMFiniteElement;
       p_MoFEMFiniteElement = refinedFiniteElements.insert(
@@ -637,7 +637,7 @@ PetscErrorCode Core::synchronise_entities(Range &ents,int verb) {
   Range::iterator eit = ents.begin();
   for(;eit!=ents.end();eit++) {
 
-    RefMoFEMEntity_multiIndex::iterator meit;
+    RefEntity_multiIndex::iterator meit;
     meit = refinedEntities.get<Ent_mi_tag>().find(*eit);
     if(meit == refinedEntities.get<Ent_mi_tag>().end()) {
       continue;
@@ -762,7 +762,7 @@ PetscErrorCode Core::synchronise_entities(Range &ents,int verb) {
 
       EntityHandle ent;
       bcopy(&data_from_proc[ee],&ent,sizeof(EntityHandle));
-      RefMoFEMEntity_multiIndex::index<Ent_mi_tag>::type::iterator meit;
+      RefEntity_multiIndex::index<Ent_mi_tag>::type::iterator meit;
       meit = refinedEntities.get<Ent_mi_tag>().find(ent);
       if(meit == refinedEntities.get<Ent_mi_tag>().end()) {
         SETERRQ2(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,
@@ -931,8 +931,8 @@ PetscErrorCode Core::initialiseDatabseInformationFromMesh(int verb) {
       if((*p.first)->get_space()==NOFIELD) {
         assert((*p.first)->meshSet == *mit);
         //add field to ref ents
-        pair<RefMoFEMEntity_multiIndex::iterator,bool> p_ref_ent;
-        p_ref_ent = refinedEntities.insert(boost::shared_ptr<RefMoFEMEntity>(new RefMoFEMEntity(moab,*mit)));
+        pair<RefEntity_multiIndex::iterator,bool> p_ref_ent;
+        p_ref_ent = refinedEntities.insert(boost::shared_ptr<RefEntity>(new RefEntity(moab,*mit)));
         NOT_USED(p_ref_ent);
       } else {
         Range ents;
@@ -944,8 +944,8 @@ PetscErrorCode Core::initialiseDatabseInformationFromMesh(int verb) {
         }
         Range::iterator eit = ents.begin();
         for(;eit!=ents.end();eit++) {
-          pair<RefMoFEMEntity_multiIndex::iterator,bool> p_ref_ent;
-          p_ref_ent = refinedEntities.insert(boost::shared_ptr<RefMoFEMEntity>(new RefMoFEMEntity(moab,*eit)));
+          pair<RefEntity_multiIndex::iterator,bool> p_ref_ent;
+          p_ref_ent = refinedEntities.insert(boost::shared_ptr<RefEntity>(new RefEntity(moab,*eit)));
           try {
             boost::shared_ptr<MoFEMEntity> moabent(new MoFEMEntity(moab,*p.first,*p_ref_ent.first));
             pair<MoFEMEntity_multiIndex::iterator,bool> p_ent = entsFields.insert(moabent);
@@ -979,8 +979,8 @@ PetscErrorCode Core::initialiseDatabseInformationFromMesh(int verb) {
       rval = moab.get_entities_by_handle(*mit,ents,true); CHKERRQ_MOAB(rval);
       Range::iterator eit = ents.begin();
       for(;eit!=ents.end();eit++) {
-        pair<RefMoFEMEntity_multiIndex::iterator,bool> p_ref_ent;
-        p_ref_ent = refinedEntities.insert(boost::shared_ptr<RefMoFEMEntity>(new RefMoFEMEntity(moab,*eit)));
+        pair<RefEntity_multiIndex::iterator,bool> p_ref_ent;
+        p_ref_ent = refinedEntities.insert(boost::shared_ptr<RefEntity>(new RefEntity(moab,*eit)));
         pair<RefElement_multiIndex::iterator,bool> p_MoFEMFiniteElement;
         try {
           switch (moab.type_from_handle(*eit)) {
@@ -1070,12 +1070,12 @@ PetscErrorCode Core::initialiseDatabseInformationFromMesh(int verb) {
         default:
         continue;
       }
-      boost::shared_ptr<RefMoFEMEntity> mofem_ent(new RefMoFEMEntity(moab,*eit));
+      boost::shared_ptr<RefEntity> mofem_ent(new RefEntity(moab,*eit));
       BitRefLevel bit = mofem_ent->get_BitRefLevel();
       if(bit.none()) {
         continue;
       }
-      pair<RefMoFEMEntity_multiIndex::iterator,bool> p;
+      pair<RefEntity_multiIndex::iterator,bool> p;
       p = refinedEntities.insert(mofem_ent);
     }
   }

@@ -670,7 +670,7 @@ PetscErrorCode Core::set_other_global_ghost_vector(
           pair<MoFEMEntity_multiIndex::iterator,bool> p_e_miit;
           try {
             boost::shared_ptr<MoFEMEntity> moabent(
-              new MoFEMEntity(moab,*cpy_fit,(*miit)->get_RefMoFEMEntity_ptr())
+              new MoFEMEntity(moab,*cpy_fit,(*miit)->get_RefEntity_ptr())
             );
             p_e_miit = entsFields.insert(moabent);
           } catch (const std::exception& ex) {

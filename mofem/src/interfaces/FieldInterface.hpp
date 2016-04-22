@@ -1906,7 +1906,7 @@ struct FieldInterface: public UnknownInterface {
   /** \brief Get ref entities multi-index from database
     * \ingroup mofem_access
     */
-  virtual PetscErrorCode get_ref_ents(const RefMoFEMEntity_multiIndex **refinedEntitiesPtr_ptr) = 0;
+  virtual PetscErrorCode get_ref_ents(const RefEntity_multiIndex **refinedEntitiesPtr_ptr) = 0;
 
   /** \brief Get ref finite elements multi-index form database
     * \ingroup mofem_access

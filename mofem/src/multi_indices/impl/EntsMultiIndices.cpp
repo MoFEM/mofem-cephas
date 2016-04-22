@@ -104,12 +104,12 @@ PetscErrorCode BasicEntity::iterateBasicEntity(
 
 //ref moab ent
 BitRefEdges MoFEM::RefElement::DummyBitRefEdges = BitRefEdges(0);
-RefMoFEMEntity::RefMoFEMEntity():
+RefEntity::RefEntity():
 BasicEntity(),
 tag_parent_ent(NULL),
 tag_BitRefLevel(NULL) {
 }
-RefMoFEMEntity::RefMoFEMEntity(Interface &moab, const EntityHandle _ent):
+RefEntity::RefEntity(Interface &moab, const EntityHandle _ent):
 BasicEntity(moab,_ent),
 tag_parent_ent(NULL),
 tag_BitRefLevel(NULL) {
@@ -120,7 +120,7 @@ tag_BitRefLevel(NULL) {
   rval = moab.tag_get_by_ptr(th_RefParentHandle,&ent,1,(const void **)&tag_parent_ent); MOAB_THROW(rval);
   rval = moab.tag_get_by_ptr(th_RefBitLevel,&ent,1,(const void **)&tag_BitRefLevel); MOAB_THROW(rval);
 }
-PetscErrorCode RefMoFEMEntity::iterateRefMoFEMEntity(
+PetscErrorCode RefEntity::iterateRefEntity(
   EntityHandle _ent,
   int _owner_proc,
   EntityHandle _moab_owner_handle,
@@ -155,7 +155,7 @@ PetscErrorCode getPatentEnt(Interface &moab,Range ents,vector<EntityHandle> vec_
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode RefMoFEMEntity::getBitRefLevel(Interface &moab,Range ents,vector<BitRefLevel> vec_bit_ref_level) {
+PetscErrorCode RefEntity::getBitRefLevel(Interface &moab,Range ents,vector<BitRefLevel> vec_bit_ref_level) {
   MoABErrorCode rval;
   PetscFunctionBegin;
   Tag th_ref_bit_level;
@@ -165,7 +165,7 @@ PetscErrorCode RefMoFEMEntity::getBitRefLevel(Interface &moab,Range ents,vector<
   PetscFunctionReturn(0);
 }
 
-ostream& operator<<(ostream& os,const RefMoFEMEntity& e) {
+ostream& operator<<(ostream& os,const RefEntity& e) {
   os << "ent " << e.ent;
   os << " pstatus "<< bitset<8>(e.get_pstatus());
   os << " owner ent " << e.get_owner_ent();
@@ -181,10 +181,10 @@ ostream& operator<<(ostream& os,const RefMoFEMEntity& e) {
 MoFEMEntity::MoFEMEntity(
   Interface &moab,
   const boost::shared_ptr<Field> field_ptr,
-  const boost::shared_ptr<RefMoFEMEntity> ref_ent_ptr
+  const boost::shared_ptr<RefEntity> ref_ent_ptr
 ):
 interface_Field<Field>(field_ptr),
-interface_RefMoFEMEntity<RefMoFEMEntity>(ref_ent_ptr),
+interface_RefEntity<RefEntity>(ref_ent_ptr),
 tag_order_data(NULL),
 tag_FieldData(NULL),
 tag_FieldData_size(0),

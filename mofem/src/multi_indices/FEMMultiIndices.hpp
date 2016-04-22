@@ -25,14 +25,14 @@ namespace MoFEM {
  * \brief keeps data about abstract refined finite element
  * \ingroup fe_multi_indices
  */
-struct RefElement: public interface_RefMoFEMEntity<RefMoFEMEntity> {
+struct RefElement: public interface_RefEntity<RefEntity> {
 
-  typedef interface_RefMoFEMEntity<RefMoFEMEntity> interface_type_RefMoFEMEntity;
+  typedef interface_RefEntity<RefEntity> interface_type_RefEntity;
 
   static BitRefEdges DummyBitRefEdges;
 
   SideNumber_multiIndex side_number_table;
-  RefElement(Interface &moab,const boost::shared_ptr<RefMoFEMEntity> ref_ent_ptr);
+  RefElement(Interface &moab,const boost::shared_ptr<RefEntity> ref_ent_ptr);
   virtual const BitRefEdges& get_BitRefEdges() const { return DummyBitRefEdges; }
   virtual int get_BitRefEdges_ulong() const { return 0; }
   SideNumber_multiIndex &get_side_number_table() const { return const_cast<SideNumber_multiIndex&>(side_number_table); };
@@ -51,7 +51,7 @@ struct RefElement: public interface_RefMoFEMEntity<RefMoFEMEntity> {
  * \ingroup fe_multi_indices
  */
 struct RefElement_MESHSET: public RefElement {
-  RefElement_MESHSET(Interface &moab,const boost::shared_ptr<RefMoFEMEntity> ref_ent_ptr);
+  RefElement_MESHSET(Interface &moab,const boost::shared_ptr<RefEntity> ref_ent_ptr);
   SideNumber* get_side_number_ptr(Interface &moab,EntityHandle ent) const;
 };
 
@@ -61,7 +61,7 @@ struct RefElement_MESHSET: public RefElement {
  */
 struct RefElement_PRISM: public RefElement {
   BitRefEdges *tag_BitRefEdges;
-  RefElement_PRISM(Interface &moab,const boost::shared_ptr<RefMoFEMEntity> ref_ent_ptr);
+  RefElement_PRISM(Interface &moab,const boost::shared_ptr<RefEntity> ref_ent_ptr);
   SideNumber* get_side_number_ptr(Interface &moab,EntityHandle ent) const;
   const BitRefEdges& get_BitRefEdges() const { return *tag_BitRefEdges; }
   int get_BitRefEdges_ulong() const { return get_BitRefEdges().to_ulong(); }
@@ -74,7 +74,7 @@ struct RefElement_PRISM: public RefElement {
 struct RefElement_TET: public RefElement {
   BitRefEdges *tag_BitRefEdges;
   const int* tag_type_data;
-  RefElement_TET(Interface &moab,const boost::shared_ptr<RefMoFEMEntity> ref_ent_ptr);
+  RefElement_TET(Interface &moab,const boost::shared_ptr<RefEntity> ref_ent_ptr);
   SideNumber* get_side_number_ptr(Interface &moab,EntityHandle ent) const;
   SideNumber_multiIndex &get_side_number_table() const { return const_cast<SideNumber_multiIndex&>(side_number_table); };
   const BitRefEdges& get_BitRefEdges() const { return *tag_BitRefEdges; }
@@ -89,7 +89,7 @@ struct RefElement_TET: public RefElement {
  * \ingroup fe_multi_indices
  */
 struct RefElement_TRI: public RefElement {
-  RefElement_TRI(Interface &moab,const boost::shared_ptr<RefMoFEMEntity> ref_ent_ptr);
+  RefElement_TRI(Interface &moab,const boost::shared_ptr<RefEntity> ref_ent_ptr);
   SideNumber* get_side_number_ptr(Interface &moab,EntityHandle ent) const;
   friend ostream& operator<<(ostream& os,const RefElement_TRI& e);
 };
@@ -99,7 +99,7 @@ struct RefElement_TRI: public RefElement {
  * \ingroup fe_multi_indices
  */
 struct RefElement_EDGE: public RefElement {
-  RefElement_EDGE(Interface &moab,const boost::shared_ptr<RefMoFEMEntity> ref_ent_ptr);
+  RefElement_EDGE(Interface &moab,const boost::shared_ptr<RefEntity> ref_ent_ptr);
   SideNumber* get_side_number_ptr(Interface &moab,EntityHandle ent) const;
   friend ostream& operator<<(ostream& os,const RefElement_EDGE& e);
 };
@@ -109,7 +109,7 @@ struct RefElement_EDGE: public RefElement {
  * \ingroup fe_multi_indices
  */
 struct RefElement_VERTEX: public RefElement {
-  RefElement_VERTEX(Interface &moab,const boost::shared_ptr<RefMoFEMEntity> ref_ent_ptr);
+  RefElement_VERTEX(Interface &moab,const boost::shared_ptr<RefEntity> ref_ent_ptr);
   SideNumber* get_side_number_ptr(Interface &moab,EntityHandle ent) const;
   friend ostream& operator<<(ostream& os,const RefElement_VERTEX& e);
 };
@@ -119,15 +119,15 @@ struct RefElement_VERTEX: public RefElement {
  * \ingroup fe_multi_indices
  */
 template<typename T>
-struct interface_RefElement: interface_RefMoFEMEntity<T> {
+struct interface_RefElement: interface_RefEntity<T> {
 
-  typedef interface_RefMoFEMEntity<T> interface_type_RefMoFEMEntity;
+  typedef interface_RefEntity<T> interface_type_RefEntity;
   typedef interface_RefElement<T> interface_type_RefElement;
 
   const boost::shared_ptr<T> sPtr;
 
   interface_RefElement(const boost::shared_ptr<T> sptr):
-  interface_RefMoFEMEntity<T>(sptr),
+  interface_RefEntity<T>(sptr),
   sPtr(sptr) {
   }
 
@@ -155,23 +155,23 @@ typedef multi_index_container<
   ptrWrapperRefElement,
   indexed_by<
     hashed_unique<
-      tag<Ent_mi_tag>, const_mem_fun<ptrWrapperRefElement::interface_type_RefMoFEMEntity,EntityHandle,&ptrWrapperRefElement::get_ref_ent> >,
+      tag<Ent_mi_tag>, const_mem_fun<ptrWrapperRefElement::interface_type_RefEntity,EntityHandle,&ptrWrapperRefElement::get_ref_ent> >,
     ordered_non_unique<
-      tag<Ent_Ent_mi_tag>, const_mem_fun<ptrWrapperRefElement::interface_type_RefMoFEMEntity,EntityHandle,&ptrWrapperRefElement::get_parent_ent> >,
+      tag<Ent_Ent_mi_tag>, const_mem_fun<ptrWrapperRefElement::interface_type_RefEntity,EntityHandle,&ptrWrapperRefElement::get_parent_ent> >,
     ordered_non_unique<
-      tag<EntType_mi_tag>, const_mem_fun<ptrWrapperRefElement::interface_type_RefMoFEMEntity,EntityType,&ptrWrapperRefElement::get_ent_type> >,
+      tag<EntType_mi_tag>, const_mem_fun<ptrWrapperRefElement::interface_type_RefEntity,EntityType,&ptrWrapperRefElement::get_ent_type> >,
     ordered_non_unique<
       tag<Composite_ParentEnt_And_BitsOfRefinedEdges_mi_tag>,
       composite_key<
 	ptrWrapperRefElement,
-	const_mem_fun<ptrWrapperRefElement::interface_type_RefMoFEMEntity,EntityHandle,&ptrWrapperRefElement::get_parent_ent>,
+	const_mem_fun<ptrWrapperRefElement::interface_type_RefEntity,EntityHandle,&ptrWrapperRefElement::get_parent_ent>,
 	const_mem_fun<ptrWrapperRefElement::interface_type_RefElement,int,&ptrWrapperRefElement::get_BitRefEdges_ulong> > >,
     hashed_unique<
       tag<Composite_EntType_and_ParentEntType_mi_tag>,
       composite_key<
 	ptrWrapperRefElement,
-	const_mem_fun<ptrWrapperRefElement::interface_type_RefMoFEMEntity,EntityHandle,&ptrWrapperRefElement::get_ref_ent>,
-	const_mem_fun<ptrWrapperRefElement::interface_type_RefMoFEMEntity,EntityHandle,&ptrWrapperRefElement::get_parent_ent> > >
+	const_mem_fun<ptrWrapperRefElement::interface_type_RefEntity,EntityHandle,&ptrWrapperRefElement::get_ref_ent>,
+	const_mem_fun<ptrWrapperRefElement::interface_type_RefEntity,EntityHandle,&ptrWrapperRefElement::get_parent_ent> > >
   > > RefElement_multiIndex;
 
 /** \brief change parent
@@ -180,26 +180,26 @@ typedef multi_index_container<
   * Using this function with care. Some other multi-indices can deponent on this.
 
   Known dependent multi-indices (verify if that list is full):
-  - RefMoFEMEntity_multiIndex
+  - RefEntity_multiIndex
   - RefElement_multiIndex
 
   */
 struct RefElement_change_parent {
   Interface &mOab;
-  const RefMoFEMEntity_multiIndex *refEntPtr;
-  RefMoFEMEntity_multiIndex::iterator refEntIt;
+  const RefEntity_multiIndex *refEntPtr;
+  RefEntity_multiIndex::iterator refEntIt;
   EntityHandle pArent;
   ErrorCode rval;
   RefElement_change_parent(Interface &moab,
-    const RefMoFEMEntity_multiIndex *ref_ent_ptr,
-    RefMoFEMEntity_multiIndex::iterator ref_ent_it,
+    const RefEntity_multiIndex *ref_ent_ptr,
+    RefEntity_multiIndex::iterator ref_ent_it,
     EntityHandle parent):
     mOab(moab),
     refEntPtr(ref_ent_ptr),
     refEntIt(ref_ent_it),
     pArent(parent) {}
   void operator()(ptrWrapperRefElement &e) {
-    const_cast<RefMoFEMEntity_multiIndex*>(refEntPtr)->modify(refEntIt,RefMoFEMEntity_change_parent(mOab,pArent));
+    const_cast<RefEntity_multiIndex*>(refEntPtr)->modify(refEntIt,RefEntity_change_parent(mOab,pArent));
   }
 };
 
@@ -308,7 +308,7 @@ struct EntFiniteElement:
 public
 interface_FiniteElement<FiniteElement>,
 interface_RefElement<RefElement> {
-  typedef interface_RefMoFEMEntity<RefElement> interface_type_RefMoFEMEntity;
+  typedef interface_RefEntity<RefElement> interface_type_RefEntity;
   typedef interface_RefElement<RefElement> interface_type_RefElement;
   typedef interface_FiniteElement<FiniteElement> interface_type_MoFEMFiniteElement;
   DofMoFEMEntity_multiIndex_uid_view row_dof_view;
@@ -545,7 +545,7 @@ typedef multi_index_container<
     ordered_non_unique<
       tag<BitFEId_mi_tag>, const_mem_fun<EntFiniteElement::interface_type_MoFEMFiniteElement,BitFEId,&EntFiniteElement::get_id>, LtBit<BitFEId> >,
     ordered_non_unique<
-      tag<EntType_mi_tag>, const_mem_fun<EntFiniteElement::interface_type_RefMoFEMEntity,EntityType,&EntFiniteElement::get_ent_type> >,
+      tag<EntType_mi_tag>, const_mem_fun<EntFiniteElement::interface_type_RefEntity,EntityType,&EntFiniteElement::get_ent_type> >,
     ordered_non_unique<
       tag<Composite_Name_And_Ent_mi_tag>,
       composite_key<

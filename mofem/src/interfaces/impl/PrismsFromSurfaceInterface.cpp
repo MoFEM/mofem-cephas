@@ -136,11 +136,11 @@ PetscErrorCode PrismsFromSurfaceInterface::seedPrismsEntities(Range &prisms,cons
   PetscErrorCode ierr;
   MoABErrorCode rval;
   FieldInterface& m_field = cOre;
-  const RefMoFEMEntity_multiIndex *const_refined_entities_ptr;
+  const RefEntity_multiIndex *const_refined_entities_ptr;
   ierr = m_field.get_ref_ents(&const_refined_entities_ptr); CHKERRQ(ierr);
   MPI_Comm comm = m_field.get_comm();
-  RefMoFEMEntity_multiIndex *refined_entities_ptr;
-  refined_entities_ptr = const_cast<RefMoFEMEntity_multiIndex *>(const_refined_entities_ptr);
+  RefEntity_multiIndex *refined_entities_ptr;
+  refined_entities_ptr = const_cast<RefEntity_multiIndex *>(const_refined_entities_ptr);
   if(!prisms.empty()) {
     int dim = m_field.get_moab().dimension_from_handle(prisms[0]);
     for(int dd = 0;dd<=dim;dd++) {
@@ -148,10 +148,10 @@ PetscErrorCode PrismsFromSurfaceInterface::seedPrismsEntities(Range &prisms,cons
       rval = m_field.get_moab().get_adjacencies(prisms,dd,true,ents,Interface::UNION); CHKERRQ_MOAB(rval);
       Range::iterator eit = ents.begin();
       for(;eit!=ents.end();eit++) {
-        pair<RefMoFEMEntity_multiIndex::iterator,bool> p_ent = refined_entities_ptr->insert(
-          boost::shared_ptr<RefMoFEMEntity>(new RefMoFEMEntity(m_field.get_moab(),*eit))
+        pair<RefEntity_multiIndex::iterator,bool> p_ent = refined_entities_ptr->insert(
+          boost::shared_ptr<RefEntity>(new RefEntity(m_field.get_moab(),*eit))
         );
-        bool success = refined_entities_ptr->modify(p_ent.first,RefMoFEMEntity_change_add_bit(bit));
+        bool success = refined_entities_ptr->modify(p_ent.first,RefEntity_change_add_bit(bit));
         if(!success) {
           SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
         }

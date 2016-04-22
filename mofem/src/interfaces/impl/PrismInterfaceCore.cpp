@@ -290,10 +290,10 @@ PetscErrorCode Core::get_msId_3dENTS_split_sides(
     PetscPrintf(comm,"side_ents3d %u\n",side_ents3d.size());
     PetscPrintf(comm,"nodes %u\n",nodes.size());
   }
-  typedef RefMoFEMEntity_multiIndex::index<Ent_mi_tag>::type ref_ents_by_ent_type;
-  typedef RefMoFEMEntity_multiIndex::index<Composite_EntType_and_ParentEntType_mi_tag>::type ref_ents_by_composite;
+  typedef RefEntity_multiIndex::index<Ent_mi_tag>::type ref_ents_by_ent_type;
+  typedef RefEntity_multiIndex::index<Composite_EntType_and_ParentEntType_mi_tag>::type ref_ents_by_composite;
   ref_ents_by_ent_type &ref_ents_by_ent = refinedEntities.get<Ent_mi_tag>();
-  RefMoFEMEntity_multiIndex_view_by_parent_entity ref_parent_ents_view;
+  RefEntity_multiIndex_view_by_parent_entity ref_parent_ents_view;
   //create view index by parent entity
   {
     ref_ents_by_composite &ref_ents = refinedEntities.get<Composite_EntType_and_ParentEntType_mi_tag>();
@@ -305,7 +305,7 @@ PetscErrorCode Core::get_msId_3dENTS_split_sides(
     for(;miit!=hi_miit;miit++) {
       if(((*miit)->get_BitRefLevel()&inheret_from_bit_level_mask) == (*miit)->get_BitRefLevel()) {
         if(((*miit)->get_BitRefLevel()&inheret_from_bit_level).any()) {
-          pair<RefMoFEMEntity_multiIndex_view_by_parent_entity::iterator,bool> p_ref_ent_view;
+          pair<RefEntity_multiIndex_view_by_parent_entity::iterator,bool> p_ref_ent_view;
           p_ref_ent_view = ref_parent_ents_view.insert(*miit);
           if(!p_ref_ent_view.second) {
             SETERRQ(PETSC_COMM_SELF,1,"non uniqe insertion");
@@ -329,8 +329,8 @@ PetscErrorCode Core::get_msId_3dENTS_split_sides(
       SETERRQ(PETSC_COMM_SELF,1,"can not find node in MoFEM database");
     }
     EntityHandle child_entity = 0;
-    RefMoFEMEntity_multiIndex::iterator child_it;
-    RefMoFEMEntity_multiIndex_view_by_parent_entity::iterator child_iit;
+    RefEntity_multiIndex::iterator child_it;
+    RefEntity_multiIndex_view_by_parent_entity::iterator child_iit;
     child_iit = ref_parent_ents_view.find(*nit);
     if(child_iit != ref_parent_ents_view.end()) {
       child_it = refinedEntities.find((*child_iit)->get_ref_ent());
@@ -350,20 +350,20 @@ PetscErrorCode Core::get_msId_3dENTS_split_sides(
       //create new node on "father" side
       //parent is node on "mather" side
       rval = moab.tag_set_data(th_RefParentHandle,&new_node,1,&*nit); CHKERRQ_MOAB(rval);
-      pair<RefMoFEMEntity_multiIndex::iterator,bool> p_ref_ent = refinedEntities.insert(
-        boost::shared_ptr<RefMoFEMEntity>(new RefMoFEMEntity(moab,new_node))
+      pair<RefEntity_multiIndex::iterator,bool> p_ref_ent = refinedEntities.insert(
+        boost::shared_ptr<RefEntity>(new RefEntity(moab,new_node))
       );
       //set ref bit level to node on "father" side
-      success = refinedEntities.modify(p_ref_ent.first,RefMoFEMEntity_change_add_bit(bit));
+      success = refinedEntities.modify(p_ref_ent.first,RefEntity_change_add_bit(bit));
       if(!success) SETERRQ(PETSC_COMM_SELF,1,"modification unsucceeded");
     } else {
       map_nodes[*nit] = child_entity;
       //set ref bit level to node on "father" side
-      success = refinedEntities.modify(child_it,RefMoFEMEntity_change_add_bit(bit));
+      success = refinedEntities.modify(child_it,RefEntity_change_add_bit(bit));
       if(!success) SETERRQ(PETSC_COMM_SELF,1,"modification unsucceeded");
     }
     //set ref bit level to node on "mather" side
-    success = refinedEntities.modify(miit_ref_ent,RefMoFEMEntity_change_add_bit(bit));
+    success = refinedEntities.modify(miit_ref_ent,RefEntity_change_add_bit(bit));
     if(!success) SETERRQ(PETSC_COMM_SELF,1,"modification unsucceeded");
   }
   //crete meshset for new mesh bit level
@@ -378,7 +378,7 @@ PetscErrorCode Core::get_msId_3dENTS_split_sides(
     rval = moab.add_entities(meshset_for_bit_level,ents_dd); CHKERRQ_MOAB(rval);
   }
   //
-  //typedef RefMoFEMEntity_multiIndex::index<Composite_Ent_And_ParentEntType_mi_tag>::type ref_ent_by_composite;
+  //typedef RefEntity_multiIndex::index<Composite_Ent_And_ParentEntType_mi_tag>::type ref_ent_by_composite;
   //ref_ent_by_composite &by_composite = refinedEntities.get<Composite_Ent_And_ParentEntType_mi_tag>();
   //create new 3d ents on "father" side
   Range new_3d_ents;
@@ -598,10 +598,10 @@ PetscErrorCode Core::get_msId_3dENTS_split_sides(
     //set parent
     rval = moab.tag_set_data(th_RefParentHandle,&*new_ent.begin(),1,&*eit); CHKERRQ_MOAB(rval);
     //add to database
-    pair<RefMoFEMEntity_multiIndex::iterator,bool> p_ref_ent = refinedEntities.insert(
-      boost::shared_ptr<RefMoFEMEntity>(new RefMoFEMEntity(moab,new_ent[0]))
+    pair<RefEntity_multiIndex::iterator,bool> p_ref_ent = refinedEntities.insert(
+      boost::shared_ptr<RefEntity>(new RefEntity(moab,new_ent[0]))
     );
-    refinedEntities.modify(p_ref_ent.first,RefMoFEMEntity_change_add_bit(bit));
+    refinedEntities.modify(p_ref_ent.first,RefEntity_change_add_bit(bit));
     new_ents_in_database.insert(new_ent.begin(),new_ent.end());
   }
   //all other entities, some ents like triangles and faces on the side of tets
@@ -653,11 +653,11 @@ PetscErrorCode Core::get_msId_3dENTS_split_sides(
     }
     //add entity to mofem database
     rval = moab.tag_set_data(th_RefParentHandle,&*new_ent.begin(),1,&*eit); CHKERRQ_MOAB(rval);
-    pair<RefMoFEMEntity_multiIndex::iterator,bool> p_ref_ent
+    pair<RefEntity_multiIndex::iterator,bool> p_ref_ent
     = refinedEntities.insert(
-      boost::shared_ptr<RefMoFEMEntity>(new RefMoFEMEntity(moab,new_ent[0]))
+      boost::shared_ptr<RefEntity>(new RefEntity(moab,new_ent[0]))
     );
-    refinedEntities.modify(p_ref_ent.first,RefMoFEMEntity_change_add_bit(bit));
+    refinedEntities.modify(p_ref_ent.first,RefEntity_change_add_bit(bit));
     if(verb>3) PetscPrintf(comm,"new_ent %u\n",new_ent.size());
     new_ents_in_database.insert(new_ent.begin(),new_ent.end());
   }
@@ -717,7 +717,7 @@ PetscErrorCode Core::get_msId_3dENTS_split_sides(
         SETERRQ1(PETSC_COMM_SELF,1,"wrong parent %lu",parent_tri);
       }
       if(new_ents_in_database.find(face[ff])==new_ents_in_database.end()) {
-        RefMoFEMEntity_multiIndex::index<Ent_mi_tag>::type::iterator miit_ref_ent
+        RefEntity_multiIndex::index<Ent_mi_tag>::type::iterator miit_ref_ent
         = refinedEntities.get<Ent_mi_tag>().find(face[ff]);
         if(miit_ref_ent==refinedEntities.get<Ent_mi_tag>().end()) {
           SETERRQ(PETSC_COMM_SELF,1,"this is not in database, but should not be");
