@@ -18,6 +18,27 @@ cmake_minimum_required(VERSION 2.8.7)
 find_package(MoFEM 0.3.6
   REQUIRED HINTS ${MOFEM_DIR} ../ ../../ $ENV{MOFEM_DIR}
 )
+message(STATUS "MoFEM version ${MoFEM_VERSION}")
+
+macro(CHECK_MOFEM_VERSION VERSION_MAJOR VERSION_MINOR VERSION_PATCH)
+
+  if(${MoFEM_VERSION_MAJOR} LESS ${VERSION_MAJOR})
+    SET(WRONG_MOFEM_VERSION 1)
+  elseif(${MoFEM_VERSION_MINOR} LESS ${VERSION_MINOR})
+    SET(WRONG_MOFEM_VERSION 1)
+  elseif(${MoFEM_VERSION_PATCH} LESS ${VERSION_PATCH})
+    SET(WRONG_MOFEM_VERSION 1)
+  endif(${MoFEM_VERSION_MAJOR} LESS ${VERSION_MAJOR})
+
+  if(WRONG_MOFEM_VERSION)
+    message(
+      FATAL_ERROR
+      "(Update MoFEM) Wrong MoFEM version: "
+      "${MoFEM_VERSION} < ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}"
+    )
+  endif(WRONG_MOFEM_VERSION)
+
+endmacro(CHECK_MOFEM_VERSION)
 
 find_package(Git)
 # find_package(PythonInterp)
