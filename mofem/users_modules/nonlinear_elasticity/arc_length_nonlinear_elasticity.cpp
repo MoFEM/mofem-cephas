@@ -90,9 +90,6 @@ int main(int argc, char *argv[]) {
     const char *option;
     option = "PARALLEL=BCAST_DELETE;PARALLEL_RESOLVE_SHARED_ENTS;PARTITION=PARALLEL_PARTITION;";
     rval = moab.load_file(mesh_file_name, 0, option); CHKERRQ_MOAB(rval);
-    rval = pcomm->resolve_shared_ents(0,3,0); CHKERRQ_MOAB(rval);
-    rval = pcomm->resolve_shared_ents(0,3,1); CHKERRQ_MOAB(rval);
-    rval = pcomm->resolve_shared_ents(0,3,2); CHKERRQ_MOAB(rval);
   } else {
     const char *option;
     option = "";

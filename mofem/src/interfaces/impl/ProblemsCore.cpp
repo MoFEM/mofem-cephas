@@ -66,14 +66,14 @@ const static int debug = 1;
 PetscErrorCode Core::build_partitioned_problem(const string &name,bool square_matrix,int verb) {
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
-  if(!(*build_MoFEM&(1<<0))) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"fields not build");
-  if(!(*build_MoFEM&(1<<1))) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"FEs not build");
-  if(!(*build_MoFEM&(1<<2))) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"entFEAdjacencies not build");
+  if(!(*buildMoFEM)&BUILD_FIELD) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"fields not build");
+  if(!(*buildMoFEM)&BUILD_FE) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"FEs not build");
+  if(!(*buildMoFEM)&BUILD_ADJ) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"adjacencies not build");
   const MoFEMProblem *problem_ptr;
   ierr = get_problem(name,&problem_ptr); CHKERRQ(ierr);
   ierr = build_partitioned_problem(const_cast<MoFEMProblem*>(problem_ptr),square_matrix,verb); CHKERRQ(ierr);
-  *build_MoFEM |= 1<<3;
-  *build_MoFEM |= 1<<4; // It is assumed that user who uses this function knows what he is doing
+  *buildMoFEM |= BUILD_PROBLEM;
+  *buildMoFEM |= PARTITION_PROBLEM;
   PetscFunctionReturn(0);
 }
 PetscErrorCode Core::build_partitioned_problem(MoFEMProblem *problem_ptr,bool square_matrix,int verb) {
@@ -423,8 +423,8 @@ PetscErrorCode Core::build_partitioned_problem(MoFEMProblem *problem_ptr,bool sq
   ierr = printPartitionedProblem(problem_ptr,verb); CHKERRQ(ierr);
   ierr = debugPartitionedProblem(problem_ptr,verb); CHKERRQ(ierr);
 
-  *build_MoFEM |= 1<<3;
-  *build_MoFEM |= 1<<4; // It is assumed that user who uses this function knows what he is doing
+  *buildMoFEM |= BUILD_PROBLEM;
+  *buildMoFEM |= PARTITION_PROBLEM; // It is assumed that user who uses this function knows what he is doing
 
   PetscLogEventEnd(USER_EVENT_buildProblem,0,0,0,0);
 
@@ -443,7 +443,6 @@ PetscErrorCode Core::build_partitioned_problems(int verb) {
 PetscErrorCode Core::partition_mesh(Range &ents,int dim,int adj_dim,int n_parts,int verb) {
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
-
 
   //get layout
   int rstart,rend,nb_elems;
@@ -655,6 +654,8 @@ PetscErrorCode Core::partition_mesh(Range &ents,int dim,int adj_dim,int n_parts,
     ierr = MatDestroy(&Adj); CHKERRQ(ierr);
   }
 
+  *(buildMoFEM) |= PARTITION_MESH;
+
   PetscFunctionReturn(0);
 }
 PetscErrorCode Core::build_problem(MoFEMProblem *problem_ptr,int verb) {
@@ -763,7 +764,7 @@ PetscErrorCode Core::build_problem(MoFEMProblem *problem_ptr,int verb) {
   if(verb>0) {
     PetscSynchronizedFlush(comm,PETSC_STDOUT);
   }
-  *build_MoFEM |= 1<<3; // It is assumed that user who uses this function knows what he is doing
+  *buildMoFEM |= BUILD_PROBLEM; // It is assumed that user who uses this function knows what he is doing
 
   PetscLogEventEnd(USER_EVENT_buildProblem,0,0,0,0);
 
@@ -772,13 +773,13 @@ PetscErrorCode Core::build_problem(MoFEMProblem *problem_ptr,int verb) {
 PetscErrorCode Core::build_problem(const string &problem_name,int verb) {
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
-  if(!(*build_MoFEM&(1<<0))) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"fields not build");
-  if(!(*build_MoFEM&(1<<1))) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"FEs not build");
-  if(!(*build_MoFEM&(1<<2))) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"entFEAdjacencies not build");
+  if(!(*buildMoFEM&(1<<0))) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"fields not build");
+  if(!(*buildMoFEM&(1<<1))) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"FEs not build");
+  if(!(*buildMoFEM&(1<<2))) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"adjacencies not build");
   const MoFEMProblem *problem_ptr;
   ierr = get_problem(problem_name,&problem_ptr); CHKERRQ(ierr);
   ierr = build_problem(const_cast<MoFEMProblem*>(problem_ptr),verb); CHKERRQ(ierr);
-  *build_MoFEM |= 1<<3; // It is assumed that user who uses this function knows what he is doing
+  *buildMoFEM |= 1<<3; // It is assumed that user who uses this function knows what he is doing
   PetscFunctionReturn(0);
 }
 PetscErrorCode Core::clear_problem(const string &problem_name,int verb) {
@@ -807,16 +808,16 @@ PetscErrorCode Core::clear_problem(const string &problem_name,int verb) {
 PetscErrorCode Core::build_problems(int verb) {
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
-  if(!(*build_MoFEM&(1<<0))) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"fields not build");
-  if(!(*build_MoFEM&(1<<1))) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"FEs not build");
-  if(!(*build_MoFEM&(1<<2))) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"entFEAdjacencies not build");
+  if(!(*buildMoFEM)&BUILD_FIELD) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"fields not build");
+  if(!(*buildMoFEM)&BUILD_FE) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"FEs not build");
+  if(!(*buildMoFEM)&BUILD_ADJ) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"adjacencies not build");
   //iterate problems
   MoFEMProblem_multiIndex::iterator p_miit = pRoblems.begin();
   for(;p_miit!=pRoblems.end();p_miit++) {
     MoFEMProblem *problem_ptr =  const_cast<MoFEMProblem*>(&*p_miit);
     ierr = build_problem(problem_ptr,verb); CHKERRQ(ierr);
   }
-  *build_MoFEM |= 1<<3;
+  *buildMoFEM |= BUILD_PROBLEM;
   PetscFunctionReturn(0);
 }
 PetscErrorCode Core::clear_problems(int verb) {
@@ -840,10 +841,10 @@ PetscErrorCode Core::clear_problems(int verb) {
 PetscErrorCode Core::partition_simple_problem(const string &name,int verb) {
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
-  if(!(*build_MoFEM&(1<<0))) SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_FOUND,"fields not build");
-  if(!(*build_MoFEM&(1<<1))) SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_FOUND,"FEs not build");
-  if(!(*build_MoFEM&(1<<2))) SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_FOUND,"entFEAdjacencies not build");
-  if(!(*build_MoFEM&(1<<3))) SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_FOUND,"pRoblems not build");
+  if(!(*buildMoFEM&BUILD_FIELD)) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"fields not build");
+  if(!(*buildMoFEM&BUILD_FE)) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"FEs not build");
+  if(!(*buildMoFEM&BUILD_ADJ)) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"adjacencies not build");
+  if(!(*buildMoFEM&BUILD_PROBLEM)) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"adjacencies not build");
   if(verb>0) {
     PetscPrintf(comm,"Simple partition problem %s\n",name.c_str());
   }
@@ -921,16 +922,16 @@ PetscErrorCode Core::partition_simple_problem(const string &name,int verb) {
     ierr = PetscLayoutDestroy(&layout_row); CHKERRQ(ierr);
     ierr = PetscLayoutDestroy(&layout_col); CHKERRQ(ierr);
     ierr = printPartitionedProblem(&*p_miit,verb); CHKERRQ(ierr);
-    *build_MoFEM |= 1<<4;
+    *buildMoFEM |= PARTITION_PROBLEM;
     PetscFunctionReturn(0);
 }
 PetscErrorCode Core::partition_compose_problem(const string &name,const string &problem_for_rows,bool copy_rows,const string &problem_for_cols,bool copy_cols,int verb) {
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
-  if(!(*build_MoFEM&(1<<0))) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"fields not build");
-  if(!(*build_MoFEM&(1<<1))) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"FEs not build");
-  if(!(*build_MoFEM&(1<<2))) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"entFEAdjacencies not build");
-  if(!(*build_MoFEM&(1<<3))) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"pRoblems not build");
+  if(!(*buildMoFEM&BUILD_FIELD)) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"fields not build");
+  if(!(*buildMoFEM&BUILD_FE)) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"FEs not build");
+  if(!(*buildMoFEM&BUILD_ADJ)) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"adjacencies not build");
+  if(!(*buildMoFEM&BUILD_PROBLEM)) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"pRoblems not build");
 
   typedef MoFEMProblem_multiIndex::index<Problem_mi_tag>::type MoFEMProblem_multiIndex_by_name;
   typedef NumeredDofEntity_multiIndex::index<Unique_mi_tag>::type NumeredDofEntitys_by_uid;

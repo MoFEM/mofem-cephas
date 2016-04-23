@@ -631,10 +631,10 @@ PetscErrorCode Core::MatCreateSeqAIJWithArrays(const string &name,Mat *Aij,Petsc
 PetscErrorCode Core::partition_problem(const string &name,int verb) {
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
-  if(!(*build_MoFEM&(1<<0))) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"fields not build");
-  if(!(*build_MoFEM&(1<<1))) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"FEs not build");
-  if(!(*build_MoFEM&(1<<2))) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"entFEAdjacencies not build");
-  if(!(*build_MoFEM&(1<<3))) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"pRoblems not build");
+  if(!(*buildMoFEM&(1<<0))) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"fields not build");
+  if(!(*buildMoFEM&(1<<1))) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"FEs not build");
+  if(!(*buildMoFEM&(1<<2))) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"entFEAdjacencies not build");
+  if(!(*buildMoFEM&(1<<3))) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"pRoblems not build");
   if(verb>0) {
     PetscPrintf(comm,"Partition problem %s\n",name.c_str());
   }
@@ -788,7 +788,7 @@ PetscErrorCode Core::partition_problem(const string &name,int verb) {
   ierr = MatPartitioningDestroy(&part); CHKERRQ(ierr);
   ierr = MatDestroy(&Adj); CHKERRQ(ierr);
   ierr = printPartitionedProblem(&*p_miit,verb); CHKERRQ(ierr);
-  *build_MoFEM |= 1<<4;
+  *buildMoFEM |= 1<<4;
   PetscFunctionReturn(0);
 }
 PetscErrorCode Core::partition_check_matrix_fill_in(const string &problem_name,int row_print,int col_print,int verb) {

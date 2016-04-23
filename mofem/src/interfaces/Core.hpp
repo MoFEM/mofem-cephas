@@ -99,7 +99,16 @@ struct Core: public FieldInterface, MeshRefinment, PrismInterface, SeriesRecorde
 
   //safety nets
   Tag th_MoFEMBuild;
-  int *build_MoFEM;
+  int *buildMoFEM;
+
+  enum SemaphoresBuildMofem {
+    BUILD_FIELD = 1<<0,
+    BUILD_FE = 1<<1,
+    BUILD_ADJ = 1<<2,
+    BUILD_PROBLEM = 1<<3,
+    PARTITION_PROBLEM = 1<<4,
+    PARTITION_MESH = 1<<5
+  };
 
   //core methods
   PetscErrorCode clearMap();
