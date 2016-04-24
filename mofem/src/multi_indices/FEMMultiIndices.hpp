@@ -479,8 +479,8 @@ struct NumeredEntFiniteElement: public interface_EntFiniteElement<EntFiniteEleme
    * \ingroup fe_multi_indices
    */
   #define _IT_FENUMEREDDOFMOFEMENTITY_ROW_FOR_LOOP_(FEPTR,IT) \
-  FENumeredDofEntity_multiIndex::iterator IT = FEPTR->rows_dofs.begin(); \
-  IT!=FEPTR->rows_dofs.end(); IT++
+  FENumeredDofEntity_multiIndex::iterator IT = FEPTR->rows_dofs->begin(); \
+  IT!=FEPTR->rows_dofs->end(); IT++
 
   /**
    * Loop over DOFs in col on element
@@ -490,8 +490,8 @@ struct NumeredEntFiniteElement: public interface_EntFiniteElement<EntFiniteEleme
    * \ingroup fe_multi_indices
    */
   #define _IT_FENUMEREDDOFMOFEMENTITY_COL_FOR_LOOP_(FEPTR,IT) \
-  FENumeredDofEntity_multiIndex::iterator IT = FEPTR->cols_dofs.begin(); \
-  IT!=FEPTR->cols_dofs.end(); IT++
+  FENumeredDofEntity_multiIndex::iterator IT = FEPTR->cols_dofs->begin(); \
+  IT!=FEPTR->cols_dofs->end(); IT++
 
   /**
    * Loop over DOFs in row on element for particular filed
@@ -502,8 +502,8 @@ struct NumeredEntFiniteElement: public interface_EntFiniteElement<EntFiniteEleme
    * \ingroup fe_multi_indices
    */
   #define _IT_FENUMEREDDOFMOFEMENTITY_BY_NAME_ROW_FOR_LOOP_(FEPTR,NAME,IT) \
-  FENumeredDofEntity_multiIndex::index<FieldName_mi_tag>::type::iterator IT = FEPTR->rows_dofs.get<FieldName_mi_tag>().lower_bound(NAME); \
-  IT!=FEPTR->rows_dofs.get<FieldName_mi_tag>().upper_bound(NAME); IT++
+  FENumeredDofEntity_multiIndex::index<FieldName_mi_tag>::type::iterator IT = FEPTR->rows_dofs->get<FieldName_mi_tag>().lower_bound(NAME); \
+  IT!=FEPTR->rows_dofs->get<FieldName_mi_tag>().upper_bound(NAME); IT++
 
   /**
    * Loop over DOFs in col on element for particular filed
@@ -514,8 +514,8 @@ struct NumeredEntFiniteElement: public interface_EntFiniteElement<EntFiniteEleme
    * \ingroup fe_multi_indices
    */
   #define _IT_FENUMEREDDOFMOFEMENTITY_BY_NAME_COL_FOR_LOOP_(FEPTR,NAME,IT) \
-  FENumeredDofEntity_multiIndex::index<FieldName_mi_tag>::type::iterator IT = FEPTR->cols_dofs.get<FieldName_mi_tag>().lower_bound(NAME); \
-  IT!=FEPTR->cols_dofs.get<FieldName_mi_tag>().upper_bound(NAME); IT++
+  FENumeredDofEntity_multiIndex::index<FieldName_mi_tag>::type::iterator IT = FEPTR->cols_dofs->get<FieldName_mi_tag>().lower_bound(NAME); \
+  IT!=FEPTR->cols_dofs->get<FieldName_mi_tag>().upper_bound(NAME); IT++
 
 
 
