@@ -313,9 +313,9 @@ interface_RefElement<RefElement> {
   typedef interface_RefEntity<RefElement> interface_type_RefEntity;
   typedef interface_RefElement<RefElement> interface_type_RefElement;
   typedef interface_FiniteElement<FiniteElement> interface_type_MoFEMFiniteElement;
-  DofEntity_multiIndex_uid_view row_dof_view;
-  DofEntity_multiIndex_uid_view col_dof_view;
-  DofEntity_multiIndex_uid_view data_dof_view;
+  boost::shared_ptr<DofEntity_multiIndex_uid_view> row_dof_view;
+  boost::shared_ptr<DofEntity_multiIndex_uid_view> col_dof_view;
+  boost::shared_ptr<DofEntity_multiIndex_uid_view> data_dof_view;
   FEDofEntity_multiIndex data_dofs;
   GlobalUId global_uid;
 
@@ -333,9 +333,9 @@ interface_RefElement<RefElement> {
     return _uid_;
   }
   inline EntityHandle get_ent() const { return get_ref_ent(); }
-  inline DofIdx get_nb_dofs_row() const { return row_dof_view.size(); }
-  inline DofIdx get_nb_dofs_col() const { return col_dof_view.size(); }
-  inline DofIdx get_nb_dofs_data() const { return data_dof_view.size(); }
+  inline DofIdx get_nb_dofs_row() const { return row_dof_view->size(); }
+  inline DofIdx get_nb_dofs_col() const { return col_dof_view->size(); }
+  inline DofIdx get_nb_dofs_data() const { return data_dof_view->size(); }
   inline const FEDofEntity_multiIndex& get_data_dofs() const { return data_dofs; };
   friend ostream& operator<<(ostream& os,const EntFiniteElement& e);
   PetscErrorCode get_MoFEMFiniteElement_row_dof_view(
@@ -434,24 +434,27 @@ struct NumeredEntFiniteElement: public interface_EntFiniteElement<EntFiniteEleme
   typedef interface_FiniteElement<EntFiniteElement> interface_type_MoFEMFiniteElement;
   typedef interface_EntFiniteElement<EntFiniteElement> interface_type_EntFiniteElement;
   unsigned int part;
-  FENumeredDofEntity_multiIndex rows_dofs;
-  FENumeredDofEntity_multiIndex cols_dofs;
+  boost::shared_ptr<FENumeredDofEntity_multiIndex> rows_dofs;
+  boost::shared_ptr<FENumeredDofEntity_multiIndex> cols_dofs;
 
   NumeredEntFiniteElement(const boost::shared_ptr<EntFiniteElement> sptr):
   interface_EntFiniteElement<EntFiniteElement>(sptr),
-  part(-1) {};
+  part(-1),
+  rows_dofs(boost::shared_ptr<FENumeredDofEntity_multiIndex>(new FENumeredDofEntity_multiIndex())),
+  cols_dofs(boost::shared_ptr<FENumeredDofEntity_multiIndex>(new FENumeredDofEntity_multiIndex())) {
+  };
 
   inline unsigned int get_part() const { return part; };
 
   /** \brief get FE dof
     * \ingroup mofem_dofs
     */
-  inline const FENumeredDofEntity_multiIndex& get_rows_dofs() const { return rows_dofs; };
+  inline const FENumeredDofEntity_multiIndex& get_rows_dofs() const { return *(rows_dofs.get()); };
 
   /** \brief get FE dof
     * \ingroup mofem_dofs
     */
-  inline const FENumeredDofEntity_multiIndex& get_cols_dofs() const { return cols_dofs; };
+  inline const FENumeredDofEntity_multiIndex& get_cols_dofs() const { return *(cols_dofs.get()); };
 
   /** \brief get FE dof by petsc index
     * \ingroup mofem_dofs
@@ -476,8 +479,8 @@ struct NumeredEntFiniteElement: public interface_EntFiniteElement<EntFiniteEleme
    * \ingroup fe_multi_indices
    */
   #define _IT_FENUMEREDDOFMOFEMENTITY_ROW_FOR_LOOP_(FEPTR,IT) \
-  FENumeredDofEntity_multiIndex::iterator IT = FEPTR->rows_dofs.begin(); \
-  IT!=FEPTR->rows_dofs.end(); IT++
+  FENumeredDofEntity_multiIndex::iterator IT = FEPTR->rows_dofs->begin(); \
+  IT!=FEPTR->rows_dofs->end(); IT++
 
   /**
    * Loop over DOFs in col on element
@@ -487,8 +490,8 @@ struct NumeredEntFiniteElement: public interface_EntFiniteElement<EntFiniteEleme
    * \ingroup fe_multi_indices
    */
   #define _IT_FENUMEREDDOFMOFEMENTITY_COL_FOR_LOOP_(FEPTR,IT) \
-  FENumeredDofEntity_multiIndex::iterator IT = FEPTR->cols_dofs.begin(); \
-  IT!=FEPTR->cols_dofs.end(); IT++
+  FENumeredDofEntity_multiIndex::iterator IT = FEPTR->cols_dofs->begin(); \
+  IT!=FEPTR->cols_dofs->end(); IT++
 
   /**
    * Loop over DOFs in row on element for particular filed
@@ -499,8 +502,8 @@ struct NumeredEntFiniteElement: public interface_EntFiniteElement<EntFiniteEleme
    * \ingroup fe_multi_indices
    */
   #define _IT_FENUMEREDDOFMOFEMENTITY_BY_NAME_ROW_FOR_LOOP_(FEPTR,NAME,IT) \
-  FENumeredDofEntity_multiIndex::index<FieldName_mi_tag>::type::iterator IT = FEPTR->rows_dofs.get<FieldName_mi_tag>().lower_bound(NAME); \
-  IT!=FEPTR->rows_dofs.get<FieldName_mi_tag>().upper_bound(NAME); IT++
+  FENumeredDofEntity_multiIndex::index<FieldName_mi_tag>::type::iterator IT = FEPTR->rows_dofs->get<FieldName_mi_tag>().lower_bound(NAME); \
+  IT!=FEPTR->rows_dofs->get<FieldName_mi_tag>().upper_bound(NAME); IT++
 
   /**
    * Loop over DOFs in col on element for particular filed
@@ -511,8 +514,8 @@ struct NumeredEntFiniteElement: public interface_EntFiniteElement<EntFiniteEleme
    * \ingroup fe_multi_indices
    */
   #define _IT_FENUMEREDDOFMOFEMENTITY_BY_NAME_COL_FOR_LOOP_(FEPTR,NAME,IT) \
-  FENumeredDofEntity_multiIndex::index<FieldName_mi_tag>::type::iterator IT = FEPTR->cols_dofs.get<FieldName_mi_tag>().lower_bound(NAME); \
-  IT!=FEPTR->cols_dofs.get<FieldName_mi_tag>().upper_bound(NAME); IT++
+  FENumeredDofEntity_multiIndex::index<FieldName_mi_tag>::type::iterator IT = FEPTR->cols_dofs->get<FieldName_mi_tag>().lower_bound(NAME); \
+  IT!=FEPTR->cols_dofs->get<FieldName_mi_tag>().upper_bound(NAME); IT++
 
 
 

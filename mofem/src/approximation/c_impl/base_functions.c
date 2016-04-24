@@ -100,7 +100,7 @@ PetscErrorCode Lobatto_polynomials(
   }
   {
     // Functions
-    bzero(L,(p+2)*sizeof(double));
+    bzero(L,(p+1)*sizeof(double));
     int nb_gauss_pts = QUAD_1D_TABLE[p+2]->npoints;
     double *points = QUAD_1D_TABLE[p+2]->points;
     double *weights = QUAD_1D_TABLE[p+2]->weights;

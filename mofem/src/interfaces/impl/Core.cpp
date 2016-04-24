@@ -164,7 +164,7 @@ PetscErrorCode Core::query_interface_type(const std::type_info& type,void*& ptr)
   } else if(type == typeid(PrismInterface)) {
     ptr = static_cast<PrismInterface*>(this);
   } else {
-    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"unknown inteface");
+    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"unknown interface");
   }
   PetscFunctionReturn(0);
 }
@@ -459,7 +459,7 @@ Core::Core(Interface& _moab,MPI_Comm _comm,TagType _tag_type,int _verbose):
   int def_bool = 0;
   rval = moab.tag_get_handle("_MoFEMBuild",1,MB_TYPE_INTEGER,th_MoFEMBuild,MB_TAG_CREAT|MB_TAG_MESH,&def_bool);
   if(rval==MB_ALREADY_ALLOCATED) rval = MB_SUCCESS;
-  rval = moab.tag_get_by_ptr(th_MoFEMBuild,&root_meshset,1,(const void **)&build_MoFEM); MOAB_THROW(rval);
+  rval = moab.tag_get_by_ptr(th_MoFEMBuild,&root_meshset,1,(const void **)&buildMoFEM); MOAB_THROW(rval);
   //Meshsets
   int default_val = -1;
   rval = moab.tag_get_handle(DIRICHLET_SET_TAG_NAME,1, MB_TYPE_INTEGER,

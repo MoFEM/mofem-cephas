@@ -99,7 +99,16 @@ struct Core: public FieldInterface, MeshRefinment, PrismInterface, SeriesRecorde
 
   //safety nets
   Tag th_MoFEMBuild;
-  int *build_MoFEM;
+  int *buildMoFEM;
+
+  enum SemaphoresBuildMofem {
+    BUILD_FIELD = 1<<0,
+    BUILD_FE = 1<<1,
+    BUILD_ADJ = 1<<2,
+    BUILD_PROBLEM = 1<<3,
+    PARTITION_PROBLEM = 1<<4,
+    PARTITION_MESH = 1<<5
+  };
 
   //core methods
   PetscErrorCode clearMap();
@@ -513,9 +522,10 @@ struct Core: public FieldInterface, MeshRefinment, PrismInterface, SeriesRecorde
   PetscErrorCode list_adjacencies() const;
 
   //problem building
-  PetscErrorCode build_partitioned_problems(int verb = -1);
-  PetscErrorCode build_partitioned_problem(const string &name,bool square_matrix = true,int verb = -1);
-  PetscErrorCode build_partitioned_problem(MoFEMProblem *problem_ptr,bool square_matrix = true,int verb = -1);
+  PetscErrorCode build_problem_on_partitioned_mesh(MoFEMProblem *problem_ptr,bool square_matrix = true,int verb = -1);
+  PetscErrorCode build_problem_on_distributed_meshs(int verb = -1);
+  PetscErrorCode build_problem_on_distributed_mesh(const string &name,bool square_matrix = true,int verb = -1);
+  PetscErrorCode build_problem_on_distributed_mesh(MoFEMProblem *problem_ptr,bool square_matrix = true,int verb = -1);
   PetscErrorCode partition_mesh(Range &ents,int dim,int adj_dim,int n_parts,int verb = -1);
   PetscErrorCode build_problem(const string &name,int verb = -1);
   PetscErrorCode clear_problem(const string &name,int verb = -1);

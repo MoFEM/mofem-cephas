@@ -94,14 +94,18 @@ PetscErrorCode Core::record_problem(const string& serie_name,const MoFEMProblem 
   PetscErrorCode ierr;
   Series_multiIndex::index<SeriesName_mi_tag>::type::iterator sit = sEries.get<SeriesName_mi_tag>().find(serie_name);
   if(sit==sEries.get<SeriesName_mi_tag>().end()) {
-    SETERRQ1(PETSC_COMM_SELF,1,"serie recorder <%s> not exist",serie_name.c_str());
+    SETERRQ1(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"series recorder <%s> not exist",serie_name.c_str());
   }
   switch (rc) {
     case ROW:
-      ierr = const_cast<MoFEMSeries*>(&*sit)->push_dofs(problemPtr->numered_dofs_rows.begin(),problemPtr->numered_dofs_rows.end()); CHKERRQ(ierr);
+      ierr = const_cast<MoFEMSeries*>(&*sit)->push_dofs(
+        problemPtr->numered_dofs_rows->begin(),problemPtr->numered_dofs_rows->end()
+      ); CHKERRQ(ierr);
       break;
     case COL:
-      ierr = const_cast<MoFEMSeries*>(&*sit)->push_dofs(problemPtr->numered_dofs_cols.begin(),problemPtr->numered_dofs_cols.end()); CHKERRQ(ierr);
+      ierr = const_cast<MoFEMSeries*>(&*sit)->push_dofs(
+        problemPtr->numered_dofs_cols->begin(),problemPtr->numered_dofs_cols->end()
+      ); CHKERRQ(ierr);
       break;
     default:
       SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
