@@ -940,11 +940,11 @@ PetscErrorCode Core::partition_check_matrix_fill_in(const string &problem_name,i
 
       }
 
-      if(fePtr->sPtr->row_dof_view.size()!=fePtr->rows_dofs.size()) {
+      if(fePtr->sPtr->row_dof_view.size()!=fePtr->rows_dofs->size()) {
         cerr << "Warning: FEDof Row size != NumeredFEDof RowSize" << endl;
       }
 
-      if(fePtr->sPtr->col_dof_view.size()!=fePtr->cols_dofs.size()) {
+      if(fePtr->sPtr->col_dof_view.size()!=fePtr->cols_dofs->size()) {
         cerr << "Warning: FEDof Row size != NumeredFEDof RowSize" << endl;
       }
 

@@ -1025,8 +1025,8 @@ PetscErrorCode EntFiniteElement::get_MoFEMFiniteElement_col_dof_view(
 PetscErrorCode NumeredEntFiniteElement::get_row_dofs_by_petsc_gloabl_dof_idx(DofIdx idx,const FENumeredDofEntity **dof_ptr) const {
   PetscFunctionBegin;
   FENumeredDofEntity_multiIndex::index<PetscGlobalIdx_mi_tag>::type::iterator dit;
-  dit = rows_dofs.get<PetscGlobalIdx_mi_tag>().find(idx);
-  if(dit == rows_dofs.get<PetscGlobalIdx_mi_tag>().end()) {
+  dit = rows_dofs->get<PetscGlobalIdx_mi_tag>().find(idx);
+  if(dit == rows_dofs->get<PetscGlobalIdx_mi_tag>().end()) {
     SETERRQ1(PETSC_COMM_SELF,MOFEM_NOT_FOUND,"dof which index < %d > not found",idx);
   }
   *dof_ptr = &*dit->get();
@@ -1036,8 +1036,8 @@ PetscErrorCode NumeredEntFiniteElement::get_row_dofs_by_petsc_gloabl_dof_idx(Dof
 PetscErrorCode NumeredEntFiniteElement::get_col_dofs_by_petsc_gloabl_dof_idx(DofIdx idx,const FENumeredDofEntity **dof_ptr) const {
   PetscFunctionBegin;
   FENumeredDofEntity_multiIndex::index<PetscGlobalIdx_mi_tag>::type::iterator dit;
-  dit = rows_dofs.get<PetscGlobalIdx_mi_tag>().find(idx);
-  if(dit == rows_dofs.get<PetscGlobalIdx_mi_tag>().end()) {
+  dit = rows_dofs->get<PetscGlobalIdx_mi_tag>().find(idx);
+  if(dit == rows_dofs->get<PetscGlobalIdx_mi_tag>().end()) {
     SETERRQ1(PETSC_COMM_SELF,MOFEM_NOT_FOUND,"dof which index < %d > not found",idx);
   }
   *dof_ptr = &*dit->get();

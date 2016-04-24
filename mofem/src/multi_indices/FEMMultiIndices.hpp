@@ -434,24 +434,27 @@ struct NumeredEntFiniteElement: public interface_EntFiniteElement<EntFiniteEleme
   typedef interface_FiniteElement<EntFiniteElement> interface_type_MoFEMFiniteElement;
   typedef interface_EntFiniteElement<EntFiniteElement> interface_type_EntFiniteElement;
   unsigned int part;
-  FENumeredDofEntity_multiIndex rows_dofs;
-  FENumeredDofEntity_multiIndex cols_dofs;
+  boost::shared_ptr<FENumeredDofEntity_multiIndex> rows_dofs;
+  boost::shared_ptr<FENumeredDofEntity_multiIndex> cols_dofs;
 
   NumeredEntFiniteElement(const boost::shared_ptr<EntFiniteElement> sptr):
   interface_EntFiniteElement<EntFiniteElement>(sptr),
-  part(-1) {};
+  part(-1),
+  rows_dofs(boost::shared_ptr<FENumeredDofEntity_multiIndex>(new FENumeredDofEntity_multiIndex())),
+  cols_dofs(boost::shared_ptr<FENumeredDofEntity_multiIndex>(new FENumeredDofEntity_multiIndex())) {
+  };
 
   inline unsigned int get_part() const { return part; };
 
   /** \brief get FE dof
     * \ingroup mofem_dofs
     */
-  inline const FENumeredDofEntity_multiIndex& get_rows_dofs() const { return rows_dofs; };
+  inline const FENumeredDofEntity_multiIndex& get_rows_dofs() const { return *(rows_dofs.get()); };
 
   /** \brief get FE dof
     * \ingroup mofem_dofs
     */
-  inline const FENumeredDofEntity_multiIndex& get_cols_dofs() const { return cols_dofs; };
+  inline const FENumeredDofEntity_multiIndex& get_cols_dofs() const { return *(cols_dofs.get()); };
 
   /** \brief get FE dof by petsc index
     * \ingroup mofem_dofs
