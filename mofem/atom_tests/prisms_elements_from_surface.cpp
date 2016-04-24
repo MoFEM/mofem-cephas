@@ -97,7 +97,7 @@ int main(int argc, char *argv[]) {
 
     // ierr = m_field.list_dofs_by_field_name("FIELD1"); CHKERRQ(ierr);
 
-    const DofMoFEMEntity_multiIndex *dofs_ptr;
+    const DofEntity_multiIndex *dofs_ptr;
     ierr = m_field.get_dofs(&dofs_ptr); CHKERRQ(ierr);
     PetscPrintf(PETSC_COMM_WORLD,"dofs_ptr.size() = %d\n",dofs_ptr->size());
     if(dofs_ptr->size()!=887) {

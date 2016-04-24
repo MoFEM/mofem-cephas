@@ -67,7 +67,7 @@ FatPrismPolynomialBaseCtx::FatPrismPolynomialBaseCtx(
   ublas::matrix<double>& gauss_pts_triangles_only,
   ublas::matrix<double>& gauss_pts_through_thickness,
   moab::Interface &moab,
-  const NumeredMoFEMFiniteElement *fe_ptr,
+  const NumeredEntFiniteElement *fe_ptr,
   const FieldSpace space,
   const FieldApproximationBase base,
   const FieldApproximationBase copy_node_base
@@ -399,12 +399,12 @@ PetscErrorCode FatPrismPolynomialBase::getValueH1(ublas::matrix<double> &pts) {
         //  cerr << "sn " << siit->side_number << endl;
         int num_nodes_quad;
         const EntityHandle *conn_quad;
-        EntityHandle quad = siit->ent;
+        EntityHandle quad = siit->get()->ent;
         rval = cTx->mOab.get_connectivity(
           quad,conn_quad,num_nodes_quad,true
         ); CHKERRQ_MOAB(rval);
         for(int nn = 0;nn<num_nodes_quad;nn++) {
-          quads_nodes[4*siit->side_number+nn] = distance(conn,find(conn,conn+6,conn_quad[nn]));
+          quads_nodes[4*siit->get()->side_number+nn] = distance(conn,find(conn,conn+6,conn_quad[nn]));
           // cerr
           // << "quad " << quad
           // << " side number " << siit->side_number
@@ -413,16 +413,16 @@ PetscErrorCode FatPrismPolynomialBase::getValueH1(ublas::matrix<double> &pts) {
           // << " " << conn_quad[nn]
           // << endl;
         }
-        int order = data.dataOnEntities[MBQUAD][siit->side_number].getDataOrder();
-        quad_order[siit->side_number] = order;
-        data.dataOnEntities[MBQUAD][siit->side_number].getN(base).resize(nb_gauss_pts,NBFACEQUAD_H1_AINSWORTH_COLE(order),false);
-        data.dataOnEntities[MBQUAD][siit->side_number].getDiffN(base).resize(nb_gauss_pts,3*NBFACEQUAD_H1_AINSWORTH_COLE(order),false);
-        if(data.dataOnEntities[MBQUAD][siit->side_number].getN(base).size2()>0) {
-          quad_n[siit->side_number] = &*data.dataOnEntities[MBQUAD][siit->side_number].getN(base).data().begin();
-          diff_quad_n[siit->side_number] = &*data.dataOnEntities[MBQUAD][siit->side_number].getDiffN(base).data().begin();
+        int order = data.dataOnEntities[MBQUAD][siit->get()->side_number].getDataOrder();
+        quad_order[siit->get()->side_number] = order;
+        data.dataOnEntities[MBQUAD][siit->get()->side_number].getN(base).resize(nb_gauss_pts,NBFACEQUAD_H1_AINSWORTH_COLE(order),false);
+        data.dataOnEntities[MBQUAD][siit->get()->side_number].getDiffN(base).resize(nb_gauss_pts,3*NBFACEQUAD_H1_AINSWORTH_COLE(order),false);
+        if(data.dataOnEntities[MBQUAD][siit->get()->side_number].getN(base).size2()>0) {
+          quad_n[siit->get()->side_number] = &*data.dataOnEntities[MBQUAD][siit->get()->side_number].getN(base).data().begin();
+          diff_quad_n[siit->get()->side_number] = &*data.dataOnEntities[MBQUAD][siit->get()->side_number].getDiffN(base).data().begin();
         } else {
-          quad_n[siit->side_number] = NULL;
-          diff_quad_n[siit->side_number] = NULL;
+          quad_n[siit->get()->side_number] = NULL;
+          diff_quad_n[siit->get()->side_number] = NULL;
         }
       }
       {

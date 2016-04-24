@@ -123,10 +123,10 @@ int main(int argc, char *argv[]) {
 
   //set temerature at nodes
   for(_IT_GET_DOFS_FIELD_BY_NAME_AND_TYPE_FOR_LOOP_(m_field,"TEMP",MBVERTEX,dof)) {
-    EntityHandle ent = dof->get_ent();
+    EntityHandle ent = dof->get()->get_ent();
     ublas::vector<double> coords(3);
     rval = moab.get_coords(&ent,1,&coords[0]); CHKERRQ_MOAB(rval);
-    dof->get_FieldData() = 1;
+    dof->get()->get_FieldData() = 1;
   }
 
   Vec F;

@@ -114,9 +114,9 @@ struct ArcLengthIntElemFEMethod: public FEMethod {
   PetscErrorCode calculate_lambda_int(double &_lambda_int_) {
     PetscFunctionBegin;
     ParallelComm* pcomm = ParallelComm::get_pcomm(&mOab,MYPCOMM_INDEX);
-    NumeredDofMoFEMEntity_multiIndex::index<PetscLocalIdx_mi_tag>::type::iterator dit,hi_dit;
-    dit = problemPtr->numered_dofs_rows.get<PetscLocalIdx_mi_tag>().lower_bound(0);
-    hi_dit = problemPtr->numered_dofs_rows.get<PetscLocalIdx_mi_tag>().upper_bound(problemPtr->get_nb_local_dofs_row());
+    NumeredDofEntity_multiIndex::index<PetscLocalIdx_mi_tag>::type::iterator dit,hi_dit;
+    dit = problemPtr->numered_dofs_rows->get<PetscLocalIdx_mi_tag>().lower_bound(0);
+    hi_dit = problemPtr->numered_dofs_rows->get<PetscLocalIdx_mi_tag>().upper_bound(problemPtr->get_nb_local_dofs_row());
     double *array;
     double *array_int_lambda;
     ierr = VecZeroEntries(GhostLambdaInt); CHKERRQ(ierr);
@@ -126,13 +126,13 @@ struct ArcLengthIntElemFEMethod: public FEMethod {
     ierr = VecGetArray(GhostLambdaInt,&array_int_lambda); CHKERRQ(ierr);
     array_int_lambda[0] = 0;
     for(;dit!=hi_dit;dit++) {
-      if(dit->get_ent_type() != MBVERTEX) continue;
-      if(pcomm->rank() != dit->get_part()) continue;
-      if(Nodes3.find(dit->get_ent())!=Nodes3.end()) {
-        array_int_lambda[0] += array[dit->petsc_local_dof_idx];
+      if(dit->get()->get_ent_type() != MBVERTEX) continue;
+      if(pcomm->rank() != dit->get()->get_part()) continue;
+      if(Nodes3.find(dit->get()->get_ent())!=Nodes3.end()) {
+        array_int_lambda[0] += array[dit->get()->petsc_local_dof_idx];
       }
-      if(Nodes4.find(dit->get_ent())!=Nodes4.end()) {
-        array_int_lambda[0] -= array[dit->petsc_local_dof_idx];
+      if(Nodes4.find(dit->get()->get_ent())!=Nodes4.end()) {
+        array_int_lambda[0] -= array[dit->get()->petsc_local_dof_idx];
       }
     }
     //PetscSynchronizedPrintf(PETSC_COMM_WORLD,
@@ -158,23 +158,23 @@ struct ArcLengthIntElemFEMethod: public FEMethod {
     ierr = VecZeroEntries(arcPtr->db); CHKERRQ(ierr);
     ierr = VecGhostUpdateBegin(arcPtr->db,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
     ierr = VecGhostUpdateEnd(arcPtr->db,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-    NumeredDofMoFEMEntity_multiIndex::index<PetscLocalIdx_mi_tag>::type::iterator dit,hi_dit;
-    dit = problemPtr->numered_dofs_rows.get<PetscLocalIdx_mi_tag>().lower_bound(0);
-    hi_dit = problemPtr->numered_dofs_rows.get<PetscLocalIdx_mi_tag>().upper_bound(
+    NumeredDofEntity_multiIndex::index<PetscLocalIdx_mi_tag>::type::iterator dit,hi_dit;
+    dit = problemPtr->numered_dofs_rows->get<PetscLocalIdx_mi_tag>().lower_bound(0);
+    hi_dit = problemPtr->numered_dofs_rows->get<PetscLocalIdx_mi_tag>().upper_bound(
       problemPtr->get_nb_local_dofs_row()+problemPtr->get_nb_ghost_dofs_row()
     );
     double *array;
     ierr = VecGetArray(arcPtr->db,&array); CHKERRQ(ierr);
     for(;dit!=hi_dit;dit++) {
-      if(dit->get_ent_type() != MBVERTEX) {
-        array[dit->petsc_local_dof_idx] = 0;
+      if(dit->get()->get_ent_type() != MBVERTEX) {
+        array[dit->get()->petsc_local_dof_idx] = 0;
         continue;
       }
-      if(Nodes3.find(dit->get_ent())!=Nodes3.end()) {
-        array[dit->petsc_local_dof_idx] = +arcPtr->alpha;
-      } else if(Nodes4.find(dit->get_ent())!=Nodes4.end()) {
-        array[dit->petsc_local_dof_idx] = -arcPtr->alpha;
-      } else array[dit->petsc_local_dof_idx] = 0;
+      if(Nodes3.find(dit->get()->get_ent())!=Nodes3.end()) {
+        array[dit->get()->petsc_local_dof_idx] = +arcPtr->alpha;
+      } else if(Nodes4.find(dit->get()->get_ent())!=Nodes4.end()) {
+        array[dit->get()->petsc_local_dof_idx] = -arcPtr->alpha;
+      } else array[dit->get()->petsc_local_dof_idx] = 0;
     }
     ierr = VecRestoreArray(arcPtr->db,&array); CHKERRQ(ierr);
     PetscFunctionReturn(0);

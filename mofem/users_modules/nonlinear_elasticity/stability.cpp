@@ -64,7 +64,7 @@ struct MyMat_double: public NonlinearElasticElement::FunctionsToCalculatePiolaKi
 
   virtual PetscErrorCode calculateP_PiolaKirchhoffI(
     const NonlinearElasticElement::BlockData block_data,
-    const NumeredMoFEMFiniteElement *fe_ptr) {
+    const NumeredEntFiniteElement *fe_ptr) {
     PetscFunctionBegin;
 
     try {
@@ -349,7 +349,7 @@ int main(int argc, char *argv[]) {
 
   //build database
   if(is_partitioned) {
-    ierr = m_field.build_partitioned_problems(true); CHKERRQ(ierr);
+    ierr = m_field.build_problem_on_distributed_mesh(true); CHKERRQ(ierr);
     ierr = m_field.partition_finite_elements("ELASTIC_MECHANICS",true,0,pcomm->size(),1); CHKERRQ(ierr);
   } else {
     ierr = m_field.build_problems(); CHKERRQ(ierr);

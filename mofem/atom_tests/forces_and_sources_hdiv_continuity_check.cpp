@@ -198,11 +198,10 @@ int main(int argc, char *argv[]) {
 
       if(type == MBTRI) {
 
-        const NumeredMoFEMFiniteElement *mofem_fe = getMoFEMFEPtr();
+        const NumeredEntFiniteElement *mofem_fe = getMoFEMFEPtr();
         SideNumber_multiIndex &side_table = mofem_fe->get_side_number_table();
-        EntityHandle face = side_table.get<1>().find(boost::make_tuple(type,side))->ent;
-
-        int sense = side_table.get<1>().find(boost::make_tuple(type,side))->sense;
+        EntityHandle face = side_table.get<1>().find(boost::make_tuple(type,side))->get()->ent;
+        int sense = side_table.get<1>().find(boost::make_tuple(type,side))->get()->sense;
 
         ublas::vector<FieldData> t(3,0);
         int dd = 0;

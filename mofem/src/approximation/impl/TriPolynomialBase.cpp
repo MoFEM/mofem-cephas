@@ -94,7 +94,7 @@ PetscErrorCode TriPolynomialBase::getValueH1(ublas::matrix<double> &pts) {
       H1edgeN[ee] = &*data.dataOnEntities[MBEDGE][ee].getN(base).data().begin();
       diffH1edgeN[ee] = &*data.dataOnEntities[MBEDGE][ee].getDiffN(base).data().begin();
     }
-    ierr = H1_EdgeShapeFunctions_MBTRI(sense,order,
+    ierr = H1_EdgeShapeFunctions_MBTRI(cTx->bobbleBase,sense,order,
       &*data.dataOnEntities[MBVERTEX][0].getN(base).data().begin(),
       &*data.dataOnEntities[MBVERTEX][0].getDiffN(base).data().begin(),
       H1edgeN,diffH1edgeN,nb_gauss_pts,base_polynomials
@@ -111,6 +111,7 @@ PetscErrorCode TriPolynomialBase::getValueH1(ublas::matrix<double> &pts) {
     data.dataOnEntities[MBTRI][0].getDiffN(base).resize(nb_gauss_pts,2*nb_dofs,false);
     const int face_nodes[] = { 0,1,2 };
     ierr = H1_FaceShapeFunctions_MBTRI(
+      cTx->bobbleBase,
       face_nodes,
       data.dataOnEntities[MBTRI][0].getDataOrder(),
       &*data.dataOnEntities[MBVERTEX][0].getN(base).data().begin(),
@@ -267,7 +268,7 @@ PetscErrorCode TriPolynomialBase::getValue(
   } else {
     data.dataOnEntities[MBVERTEX][0].getNSharedPtr(base) = data.dataOnEntities[MBVERTEX][0].getNSharedPtr(cTx->copyNodeBase);
   }
-  if(data.dataOnEntities[MBVERTEX][0].getN(base).size1()!=nb_gauss_pts) {
+  if(data.dataOnEntities[MBVERTEX][0].getN(base).size1()!=(unsigned int)nb_gauss_pts) {
     SETERRQ1(
       PETSC_COMM_SELF,
       MOFEM_DATA_INCONSISTENCY,

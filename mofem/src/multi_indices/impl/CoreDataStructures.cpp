@@ -43,14 +43,18 @@ const bool PetscLocalIdx_mi_tag::IamNotPartitioned = false;
 const bool Part_mi_tag::IamNotPartitioned = false;
 
 //fields
-MoFEMField::MoFEMField(Interface &moab,const EntityHandle meshset,const CoordSys *coord_sys_ptr):
-  meshSet(meshset),
-  coordSysPtr(coord_sys_ptr),
-  tag_id_data(NULL),
-  tag_space_data(NULL),
-  tag_nb_coeff_data(NULL),
-  tag_name_data(NULL),
-  tag_name_size(0) {
+Field::Field(
+  Interface &moab,
+  const EntityHandle meshset,
+  const boost::shared_ptr<CoordSys> coord_sys_ptr
+):
+meshSet(meshset),
+coordSysPtr(coord_sys_ptr),
+tag_id_data(NULL),
+tag_space_data(NULL),
+tag_nb_coeff_data(NULL),
+tag_name_data(NULL),
+tag_name_size(0) {
   //Change those tags only by modifiers
   ErrorCode rval;
   //id
@@ -146,7 +150,7 @@ MoFEMField::MoFEMField(Interface &moab,const EntityHandle meshset,const CoordSys
   }
 }
 
-ostream& operator<<(ostream& os,const MoFEMField& e) {
+ostream& operator<<(ostream& os,const Field& e) {
   os
   << "name " <<e.get_name_ref()
   << " BitFieldId "<< e.get_id().to_ulong()
@@ -158,17 +162,18 @@ ostream& operator<<(ostream& os,const MoFEMField& e) {
   return os;
 }
 
-//MoFEMEntityEntMoFEMFiniteElementAdjacencyMap
-MoFEMEntityEntMoFEMFiniteElementAdjacencyMap::MoFEMEntityEntMoFEMFiniteElementAdjacencyMap(
-  const MoFEMEntity *_MoFEMEntity_ptr,const EntMoFEMFiniteElement *_EntMoFEMFiniteElement_ptr
+//MoFEMEntityEntFiniteElementAdjacencyMap
+MoFEMEntityEntFiniteElementAdjacencyMap::MoFEMEntityEntFiniteElementAdjacencyMap(
+  const boost::shared_ptr<MoFEMEntity> mofem_ent_ptr,
+  const boost::shared_ptr<EntFiniteElement> ent_fe_ptr
 ):
 by_other(0),
-MoFEMEntity_ptr(_MoFEMEntity_ptr),
-EntMoFEMFiniteElement_ptr(_EntMoFEMFiniteElement_ptr) {}
+mofemEntPtr(mofem_ent_ptr),
+entFePtr(ent_fe_ptr) {}
 
-ostream& operator<<(ostream& os,const MoFEMEntityEntMoFEMFiniteElementAdjacencyMap& e) {
+ostream& operator<<(ostream& os,const MoFEMEntityEntFiniteElementAdjacencyMap& e) {
   os << "by_other " << bitset<3>(e.by_other) << " "
-    << *e.MoFEMEntity_ptr << endl << *e.EntMoFEMFiniteElement_ptr->fe_ptr;
+    << *e.mofemEntPtr << endl << *e.entFePtr->sFePtr;
   return os;
 }
 

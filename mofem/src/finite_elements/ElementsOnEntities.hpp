@@ -153,63 +153,63 @@ struct ForcesAndSurcesCore: public FEMethod {
 
   /// \brief get node indices
   PetscErrorCode getNodesIndices(const string &field_name,
-    FENumeredDofMoFEMEntity_multiIndex &dofs,
+    FENumeredDofEntity_multiIndex &dofs,
     VectorInt &nodes_indices,
     VectorInt &local_nodes_indices
   );
 
   /// \brief get indices by type (generic function)
   PetscErrorCode getTypeIndices(const string &field_name,
-    FENumeredDofMoFEMEntity_multiIndex &dofs,EntityType type,int side_number,
+    FENumeredDofEntity_multiIndex &dofs,EntityType type,int side_number,
     VectorInt &indices,
     VectorInt &local_indices
   );
 
   /// \brief get indices by type (generic function)
   PetscErrorCode getTypeIndices(
-    const string &field_name,FENumeredDofMoFEMEntity_multiIndex &dofs,
+    const string &field_name,FENumeredDofEntity_multiIndex &dofs,
     EntityType type,boost::ptr_vector<DataForcesAndSurcesCore::EntData> &data
   );
 
-  /// \brief get row node indices from FENumeredDofMoFEMEntity_multiIndex
+  /// \brief get row node indices from FENumeredDofEntity_multiIndex
   PetscErrorCode getRowNodesIndices(DataForcesAndSurcesCore &data,const string &field_name);
 
-  /// \brief get col node indices from FENumeredDofMoFEMEntity_multiIndex
+  /// \brief get col node indices from FENumeredDofEntity_multiIndex
   PetscErrorCode getColNodesIndices(DataForcesAndSurcesCore &data,const string &field_name);
 
-  /// \brief get Edges row indices from FENumeredDofMoFEMEntity_multiIndex
+  /// \brief get Edges row indices from FENumeredDofEntity_multiIndex
   PetscErrorCode getEdgesRowIndices(DataForcesAndSurcesCore &data,const string &field_name);
 
-  /// \brief get Edges col indices from FENumeredDofMoFEMEntity_multiIndex
+  /// \brief get Edges col indices from FENumeredDofEntity_multiIndex
   PetscErrorCode getEdgesColIndices(DataForcesAndSurcesCore &data,const string &field_name);
 
-  /// \brief get Tris row indices from FENumeredDofMoFEMEntity_multiIndex
+  /// \brief get Tris row indices from FENumeredDofEntity_multiIndex
   PetscErrorCode getTrisRowIndices(DataForcesAndSurcesCore &data,const string &field_name);
 
-  /// \brief get Tris col indices from FENumeredDofMoFEMEntity_multiIndex
+  /// \brief get Tris col indices from FENumeredDofEntity_multiIndex
   PetscErrorCode getTrisColIndices(DataForcesAndSurcesCore &data,const string &field_name);
 
-  /// \brief get Tets row indices from FENumeredDofMoFEMEntity_multiIndex
+  /// \brief get Tets row indices from FENumeredDofEntity_multiIndex
   PetscErrorCode getTetsRowIndices(DataForcesAndSurcesCore &data,const string &field_name);
 
-  /// \brief get Tets col indices from FENumeredDofMoFEMEntity_multiIndex
+  /// \brief get Tets col indices from FENumeredDofEntity_multiIndex
   PetscErrorCode getTetsColIndices(DataForcesAndSurcesCore &data,const string &field_name);
 
-  /// \brief get Quad row indices from FENumeredDofMoFEMEntity_multiIndex
+  /// \brief get Quad row indices from FENumeredDofEntity_multiIndex
   PetscErrorCode getQuadRowIndices(DataForcesAndSurcesCore &data,const string &field_name);
 
-  /// \brief get Quad col indices from FENumeredDofMoFEMEntity_multiIndex
+  /// \brief get Quad col indices from FENumeredDofEntity_multiIndex
   PetscErrorCode getQuadColIndices(DataForcesAndSurcesCore &data,const string &field_name);
 
-  /// \brief get Prism row indices from FENumeredDofMoFEMEntity_multiIndex
+  /// \brief get Prism row indices from FENumeredDofEntity_multiIndex
   PetscErrorCode getPrismRowIndices(DataForcesAndSurcesCore &data,const string &field_name);
 
-  /// \brief get Prism col indices from FENumeredDofMoFEMEntity_multiIndex
+  /// \brief get Prism col indices from FENumeredDofEntity_multiIndex
   PetscErrorCode getPrismColIndices(DataForcesAndSurcesCore &data,const string &field_name);
 
   /// \brief get NoField indices
   PetscErrorCode getNoFieldIndices(
-    const string &field_name,FENumeredDofMoFEMEntity_multiIndex &dofs,VectorInt &nodes_indices
+    const string &field_name,FENumeredDofEntity_multiIndex &dofs,VectorInt &nodes_indices
   );
 
   /// \brief get col NoField indices
@@ -222,7 +222,7 @@ struct ForcesAndSurcesCore: public FEMethod {
 
   PetscErrorCode getNodesFieldData(
     const string &field_name,
-    FEDofMoFEMEntity_multiIndex &dofs,
+    FEDofEntity_multiIndex &dofs,
     VectorDouble &nodes_data,
     VectorDofs &nodes_dofs,
     FieldSpace &space,
@@ -231,7 +231,7 @@ struct ForcesAndSurcesCore: public FEMethod {
 
   PetscErrorCode getTypeFieldData(
     const string &field_name,
-    FEDofMoFEMEntity_multiIndex &dofs,
+    FEDofEntity_multiIndex &dofs,
     EntityType type,
     int side_number,
     VectorDouble &ent_field_data,
@@ -240,14 +240,14 @@ struct ForcesAndSurcesCore: public FEMethod {
 
   PetscErrorCode getTypeFieldData(
     const string &field_name,
-    FEDofMoFEMEntity_multiIndex &dofs,
+    FEDofEntity_multiIndex &dofs,
     EntityType type,
     boost::ptr_vector<DataForcesAndSurcesCore::EntData> &data
   );
 
   PetscErrorCode getNoFieldFieldData(
     const string &field_name,
-    FEDofMoFEMEntity_multiIndex &dofs,
+    FEDofEntity_multiIndex &dofs,
     VectorDouble &ent_field_data,
     VectorDofs &ent_field_dofs
   );
@@ -282,14 +282,14 @@ struct ForcesAndSurcesCore: public FEMethod {
     PetscFunctionReturn(0);
   }
 
-  // ** Data form NumeredDofMoFEMEntity_multiIndex **
+  // ** Data form NumeredDofEntity_multiIndex **
 
   /// \brief get indices of nodal indices which are declared for problem but not this particular element
-  PetscErrorCode getProblemNodesIndices(const string &field_name,const NumeredDofMoFEMEntity_multiIndex &dofs,VectorInt &nodes_indices) const;
+  PetscErrorCode getProblemNodesIndices(const string &field_name,const NumeredDofEntity_multiIndex &dofs,VectorInt &nodes_indices) const;
 
   /// \brief get indices by type (generic function) which are declared for problem but not this particular element
   PetscErrorCode getProblemTypeIndices(
-    const string &field_name,const NumeredDofMoFEMEntity_multiIndex &dofs,
+    const string &field_name,const NumeredDofEntity_multiIndex &dofs,
     EntityType type,int side_number,VectorInt &indices
   ) const;
 
@@ -457,9 +457,9 @@ struct ForcesAndSurcesCore: public FEMethod {
       ptrFE(NULL) {}
       virtual ~UserDataOperator() {}
 
-    /** \brief return pointer to NumeredMoFEMFiniteElement
+    /** \brief return pointer to NumeredEntFiniteElement
      */
-    inline const NumeredMoFEMFiniteElement* getMoFEMFEPtr() { return ptrFE->fePtr; };
+    inline const NumeredEntFiniteElement* getMoFEMFEPtr() { return ptrFE->fePtr; };
 
     /** \brief Get row indices
 

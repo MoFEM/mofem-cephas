@@ -115,7 +115,7 @@ struct ThermalStressElement {
 
           PetscErrorCode ierr;
 
-          const FENumeredDofMoFEMEntity *dof_ptr;
+          const FENumeredDofEntity *dof_ptr;
           ierr = getMoFEMFEPtr()->get_row_dofs_by_petsc_gloabl_dof_idx(data.getIndices()[0],&dof_ptr); CHKERRQ(ierr);
           int rank = dof_ptr->get_nb_of_coeffs();
           if(rank != 3) {

@@ -82,23 +82,23 @@ struct ArcLengthElement: public ArcLengthIntElemFEMethod {
     PetscFunctionBegin;
     FILE *datafile;
     PetscFOpen(PETSC_COMM_SELF,DATAFILENAME,"a+",&datafile);
-    NumeredDofMoFEMEntity_multiIndex &numered_dofs_rows = const_cast<NumeredDofMoFEMEntity_multiIndex&>(problemPtr->numered_dofs_rows);
-    NumeredDofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator lit;
-    lit = numered_dofs_rows.get<FieldName_mi_tag>().find("LAMBDA");
-    if(lit == numered_dofs_rows.get<FieldName_mi_tag>().end()) PetscFunctionReturn(0);
+    boost::shared_ptr<NumeredDofEntity_multiIndex> numered_dofs_rows = problemPtr->numered_dofs_rows;
+    NumeredDofEntity_multiIndex::index<FieldName_mi_tag>::type::iterator lit;
+    lit = numered_dofs_rows->get<FieldName_mi_tag>().find("LAMBDA");
+    if(lit == numered_dofs_rows->get<FieldName_mi_tag>().end()) PetscFunctionReturn(0);
     Range::iterator nit = PostProcNodes.begin();
     for(;nit!=PostProcNodes.end();nit++) {
-      NumeredDofMoFEMEntity_multiIndex::index<Ent_mi_tag>::type::iterator dit,hi_dit;
-      dit = numered_dofs_rows.get<Ent_mi_tag>().lower_bound(*nit);
-      hi_dit = numered_dofs_rows.get<Ent_mi_tag>().upper_bound(*nit);
+      NumeredDofEntity_multiIndex::index<Ent_mi_tag>::type::iterator dit,hi_dit;
+      dit = numered_dofs_rows->get<Ent_mi_tag>().lower_bound(*nit);
+      hi_dit = numered_dofs_rows->get<Ent_mi_tag>().upper_bound(*nit);
       double coords[3];
       rval = mOab.get_coords(&*nit,1,coords);  MOAB_THROW(rval);
       for(;dit!=hi_dit;dit++) {
-        PetscPrintf(PETSC_COMM_WORLD,"%s [ %d ] %6.4e -> ",lit->get_name().c_str(),lit->get_dof_coeff_idx(),lit->get_FieldData());
-        PetscPrintf(PETSC_COMM_WORLD,"%s [ %d ] %6.4e ",dit->get_name().c_str(),dit->get_dof_coeff_idx(),dit->get_FieldData());
+        PetscPrintf(PETSC_COMM_WORLD,"%s [ %d ] %6.4e -> ",lit->get()->get_name().c_str(),lit->get()->get_dof_coeff_idx(),lit->get()->get_FieldData());
+        PetscPrintf(PETSC_COMM_WORLD,"%s [ %d ] %6.4e ",dit->get()->get_name().c_str(),dit->get()->get_dof_coeff_idx(),dit->get()->get_FieldData());
         PetscPrintf(PETSC_COMM_WORLD,"-> %3.4f %3.4f %3.4f\n",coords[0],coords[1],coords[2]);
-        if (dit->get_dof_coeff_idx()==0) {//print displacement and load factor in x-dir
-          PetscFPrintf(PETSC_COMM_WORLD,datafile,"%6.4e %6.4e ",dit->get_FieldData(),lit->get_FieldData());
+        if (dit->get()->get_dof_coeff_idx()==0) {//print displacement and load factor in x-dir
+          PetscFPrintf(PETSC_COMM_WORLD,datafile,"%6.4e %6.4e ",dit->get()->get_FieldData(),lit->get()->get_FieldData());
         }
       }
     }

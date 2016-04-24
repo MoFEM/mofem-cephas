@@ -76,19 +76,19 @@ struct Core: public FieldInterface, MeshRefinment, PrismInterface, SeriesRecorde
   int verbose;
 
   //ref
-  RefMoFEMEntity_multiIndex refinedEntities;		///< refined entities
-  RefMoFEMElement_multiIndex refinedFiniteElements;	///< refined elements
+  RefEntity_multiIndex refinedEntities;		///< refined entities
+  RefElement_multiIndex refinedFiniteElements;	///< refined elements
   //coordinate sysrems
   CoordSys_multiIndex coordinateSystems;
   //field
-  MoFEMField_multiIndex fIelds;			///< field
+  Field_multiIndex fIelds;			///< field
   MoFEMEntity_multiIndex entsFields;			///< entities on field
-  DofMoFEMEntity_multiIndex dofsField;		///< dofs on fiels
+  DofEntity_multiIndex dofsField;		///< dofs on fiels
   //finite element
-  MoFEMFiniteElement_multiIndex finiteElements;		///< finite elements
-  EntMoFEMFiniteElement_multiIndex entsFiniteElements;			///< finite element entities
+  FiniteElement_multiIndex finiteElements;		///< finite elements
+  EntFiniteElement_multiIndex entsFiniteElements;			///< finite element entities
   //entFEAdjacencies
-  MoFEMEntityEntMoFEMFiniteElementAdjacencyMap_multiIndex entFEAdjacencies;	///< adjacencies of elements to dofs
+  MoFEMEntityEntFiniteElementAdjacencyMap_multiIndex entFEAdjacencies;	///< adjacencies of elements to dofs
   //pRoblems
   MoFEMProblem_multiIndex pRoblems;					///< problems
   //cubit
@@ -99,7 +99,16 @@ struct Core: public FieldInterface, MeshRefinment, PrismInterface, SeriesRecorde
 
   //safety nets
   Tag th_MoFEMBuild;
-  int *build_MoFEM;
+  int *buildMoFEM;
+
+  enum SemaphoresBuildMofem {
+    BUILD_FIELD = 1<<0,
+    BUILD_FE = 1<<1,
+    BUILD_ADJ = 1<<2,
+    BUILD_PROBLEM = 1<<3,
+    PARTITION_PROBLEM = 1<<4,
+    PARTITION_MESH = 1<<5
+  };
 
   //core methods
   PetscErrorCode clearMap();
@@ -440,17 +449,17 @@ struct Core: public FieldInterface, MeshRefinment, PrismInterface, SeriesRecorde
   EntityHandle get_field_meshset(const BitFieldId id) const;
   EntityHandle get_field_meshset(const string& name) const;
     bool check_field(const string& name) const;
-  const MoFEMField* get_field_structure(const string& name);
+  const Field* get_field_structure(const string& name);
 
-  //MoFEMFiniteElement
-  PetscErrorCode add_finite_element(const string &MoFEMFiniteElement_name,enum MoFEMTypes bh = MF_EXCL);
-  PetscErrorCode modify_finite_element_adjacency_table(const string &MoFEMFiniteElement_name,const EntityType type,ElementAdjacencyFunct function);
-  PetscErrorCode modify_finite_element_add_field_data(const string &MoFEMFiniteElement_name,const string &name_filed);
-  PetscErrorCode modify_finite_element_add_field_row(const string &MoFEMFiniteElement_name,const string &name_row);
-  PetscErrorCode modify_finite_element_add_field_col(const string &MoFEMFiniteElement_name,const string &name_col);
-  PetscErrorCode modify_finite_element_off_field_data(const string &MoFEMFiniteElement_name,const string &name_filed);
-  PetscErrorCode modify_finite_element_off_field_row(const string &MoFEMFiniteElement_name,const string &name_row);
-  PetscErrorCode modify_finite_element_off_field_col(const string &MoFEMFiniteElement_name,const string &name_col);
+  //FiniteElement
+  PetscErrorCode add_finite_element(const string &fe_name,enum MoFEMTypes bh = MF_EXCL);
+  PetscErrorCode modify_finite_element_adjacency_table(const string &fe_name,const EntityType type,ElementAdjacencyFunct function);
+  PetscErrorCode modify_finite_element_add_field_data(const string &fe_name,const string &name_filed);
+  PetscErrorCode modify_finite_element_add_field_row(const string &fe_name,const string &name_row);
+  PetscErrorCode modify_finite_element_add_field_col(const string &fe_name,const string &name_col);
+  PetscErrorCode modify_finite_element_off_field_data(const string &fe_name,const string &name_filed);
+  PetscErrorCode modify_finite_element_off_field_row(const string &fe_name,const string &name_row);
+  PetscErrorCode modify_finite_element_off_field_col(const string &fe_name,const string &name_col);
   PetscErrorCode add_ents_to_finite_element_by_VERTICEs(const Range& vert,const BitFEId id);
   PetscErrorCode add_ents_to_finite_element_by_VERTICEs(const Range& vert,const string &name);
   PetscErrorCode add_ents_to_finite_element_by_EDGEs(const Range& vert,const BitFEId id);
@@ -495,8 +504,8 @@ struct Core: public FieldInterface, MeshRefinment, PrismInterface, SeriesRecorde
 
   ///add entity EntFe to finite element data databse and resolve dofs on that entity
   //loop over all finite elements, resolve its meshsets, and resolve dofs on that entitie
-  PetscErrorCode build_finite_element_data_dofs(EntMoFEMFiniteElement &ent_fe,int verb = -1);
-  PetscErrorCode build_finite_element_uids_view(EntMoFEMFiniteElement &ent_fe,int verb = -1);
+  PetscErrorCode build_finite_element_data_dofs(EntFiniteElement &ent_fe,int verb = -1);
+  PetscErrorCode build_finite_element_uids_view(EntFiniteElement &ent_fe,int verb = -1);
   PetscErrorCode build_finite_elements(int verb = -1);
   PetscErrorCode clear_finite_elements(const BitRefLevel &bit,const BitRefLevel &mask,int verb = -1);
   PetscErrorCode clear_finite_elements(const string &name,const Range &ents,int verb = -1);
@@ -513,9 +522,10 @@ struct Core: public FieldInterface, MeshRefinment, PrismInterface, SeriesRecorde
   PetscErrorCode list_adjacencies() const;
 
   //problem building
-  PetscErrorCode build_partitioned_problems(int verb = -1);
-  PetscErrorCode build_partitioned_problem(const string &name,bool square_matrix = true,int verb = -1);
-  PetscErrorCode build_partitioned_problem(MoFEMProblem *problem_ptr,bool square_matrix = true,int verb = -1);
+  PetscErrorCode build_problem_on_partitioned_mesh(MoFEMProblem *problem_ptr,bool square_matrix = true,int verb = -1);
+  PetscErrorCode build_problem_on_distributed_mesh(int verb = -1);
+  PetscErrorCode build_problem_on_distributed_mesh(const string &name,bool square_matrix = true,int verb = -1);
+  PetscErrorCode build_problem_on_distributed_mesh(MoFEMProblem *problem_ptr,bool square_matrix = true,int verb = -1);
   PetscErrorCode partition_mesh(Range &ents,int dim,int adj_dim,int n_parts,int verb = -1);
   PetscErrorCode build_problem(const string &name,int verb = -1);
   PetscErrorCode clear_problem(const string &name,int verb = -1);
@@ -603,24 +613,24 @@ struct Core: public FieldInterface, MeshRefinment, PrismInterface, SeriesRecorde
   PetscErrorCode loop_dofs(const string &field_name,EntMethod &method,int verb = -1);
 
   //get multi_index form database
-  PetscErrorCode get_ref_ents(const RefMoFEMEntity_multiIndex **refined_entities_ptr);
-  PetscErrorCode get_ref_finite_elements(const RefMoFEMElement_multiIndex **refined_finite_elements_ptr);
+  PetscErrorCode get_ref_ents(const RefEntity_multiIndex **refined_entities_ptr);
+  PetscErrorCode get_ref_finite_elements(const RefElement_multiIndex **refined_finite_elements_ptr);
   PetscErrorCode get_problem(const string &problem_name,const MoFEMProblem **problem_ptr);
-  PetscErrorCode get_dofs(const DofMoFEMEntity_multiIndex **dofs_ptr);
-  PetscErrorCode get_finite_elements(const MoFEMFiniteElement_multiIndex **finiteElements_ptr);
+  PetscErrorCode get_dofs(const DofEntity_multiIndex **dofs_ptr);
+  PetscErrorCode get_finite_elements(const FiniteElement_multiIndex **finiteElements_ptr);
 
   MoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator get_ent_moabfield_by_name_begin(const string &field_name);
   MoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator get_ent_moabfield_by_name_end(const string &field_name);
 
-  DofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator get_dofs_by_name_begin(const string &field_name) const;
-  DofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator get_dofs_by_name_end(const string &field_name) const;
-  DofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type::iterator get_dofs_by_name_and_ent_begin(const string &field_name,const EntityHandle ent);
-  DofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type::iterator get_dofs_by_name_and_ent_end(const string &field_name,const EntityHandle ent);
-  DofMoFEMEntity_multiIndex::index<Composite_Name_And_Type_mi_tag>::type::iterator get_dofs_by_name_and_type_begin(const string &field_name,const EntityType type);
-  DofMoFEMEntity_multiIndex::index<Composite_Name_And_Type_mi_tag>::type::iterator get_dofs_by_name_and_type_end(const string &field_name,const EntityType ent);
+  DofEntity_multiIndex::index<FieldName_mi_tag>::type::iterator get_dofs_by_name_begin(const string &field_name) const;
+  DofEntity_multiIndex::index<FieldName_mi_tag>::type::iterator get_dofs_by_name_end(const string &field_name) const;
+  DofEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type::iterator get_dofs_by_name_and_ent_begin(const string &field_name,const EntityHandle ent);
+  DofEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type::iterator get_dofs_by_name_and_ent_end(const string &field_name,const EntityHandle ent);
+  DofEntity_multiIndex::index<Composite_Name_And_Type_mi_tag>::type::iterator get_dofs_by_name_and_type_begin(const string &field_name,const EntityType type);
+  DofEntity_multiIndex::index<Composite_Name_And_Type_mi_tag>::type::iterator get_dofs_by_name_and_type_end(const string &field_name,const EntityType ent);
 
-  EntMoFEMFiniteElement_multiIndex::index<FiniteElement_name_mi_tag>::type::iterator get_fe_by_name_begin(const string &fe_name);
-  EntMoFEMFiniteElement_multiIndex::index<FiniteElement_name_mi_tag>::type::iterator get_fe_by_name_end(const string &fe_name);
+  EntFiniteElement_multiIndex::index<FiniteElement_name_mi_tag>::type::iterator get_fe_by_name_begin(const string &fe_name);
+  EntFiniteElement_multiIndex::index<FiniteElement_name_mi_tag>::type::iterator get_fe_by_name_end(const string &fe_name);
 
   //Copy field values to another field
   PetscErrorCode field_axpy(const double alpha,const string& fiel_name_x,const string& field_name_y,bool error_if_missing = false,bool creat_if_missing = false);

@@ -133,7 +133,7 @@ struct ProjectionFieldOn10NodeTet: public Projection10NodeCoordsOnField {
   }
 
   Tag th;
-  MoFEMField_multiIndex::index<FieldName_mi_tag>::type::iterator field_it;
+  Field_multiIndex::index<FieldName_mi_tag>::type::iterator field_it;
   ublas::vector<double> L;
   PetscErrorCode preProcess() {
     PetscFunctionBegin;
@@ -145,17 +145,18 @@ struct ProjectionFieldOn10NodeTet: public Projection10NodeCoordsOnField {
       if(field_it == fieldsPtr->get<FieldName_mi_tag>().end()) {
         SETERRQ1(PETSC_COMM_SELF,1,"field not found %s",field_name.c_str());
       }
-      int field_rank = field_it->get_nb_of_coeffs();
+      int field_rank = (*field_it)->get_nb_of_coeffs();
       ublas::vector<double> def_VAL = ublas::zero_vector<double>(field_rank);
       rval = mField.get_moab().tag_get_handle(
         onTag.c_str(),field_rank,MB_TYPE_DOUBLE,
-        th,MB_TAG_CREAT|MB_TAG_SPARSE,&*def_VAL.data().begin()); MOAB_THROW(rval);
-      }
-
-      L.resize(maxApproximationOrder+1);
-      ierr = Legendre_polynomials(maxApproximationOrder,0.,NULL,&*L.data().begin(),NULL,3); CHKERRQ(ierr);
-      PetscFunctionReturn(0);
+        th,MB_TAG_CREAT|MB_TAG_SPARSE,&*def_VAL.data().begin()
+      ); MOAB_THROW(rval);
     }
+
+    L.resize(maxApproximationOrder+1);
+    ierr = Legendre_polynomials(maxApproximationOrder,0.,NULL,&*L.data().begin(),NULL,3); CHKERRQ(ierr);
+    PetscFunctionReturn(0);
+  }
 
   PetscErrorCode operator()() {
     PetscFunctionBegin;
@@ -169,7 +170,7 @@ struct ProjectionFieldOn10NodeTet: public Projection10NodeCoordsOnField {
           coords[dofPtr->get_dof_coeff_idx()] = dofPtr->get_FieldData();
           rval = mField.get_moab().set_coords(&node,1,&*coords.data().begin());  CHKERR_MOAB(rval);
         } else {
-          int field_rank = field_it->get_nb_of_coeffs();
+          int field_rank = (*field_it)->get_nb_of_coeffs();
           if(field_rank != dofPtr->get_nb_of_coeffs()) {
             SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
           }

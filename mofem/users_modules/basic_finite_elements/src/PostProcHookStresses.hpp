@@ -80,7 +80,7 @@ struct PostPorcStress: public VolumeElementForcesAndSourcesCore::UserDataOperato
     ErrorCode rval;
     PetscErrorCode ierr;
 
-    //const MoFEM::FEDofMoFEMEntity *dof_ptr = data.getFieldDofs()[0];
+    //const MoFEM::FEDofEntity *dof_ptr = data.getFieldDofs()[0];
 
     int id;
     double lambda,mu;

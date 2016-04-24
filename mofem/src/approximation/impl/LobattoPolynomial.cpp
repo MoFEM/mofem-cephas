@@ -68,15 +68,15 @@ PetscErrorCode LobattoPolynomial::getValue(
   PetscErrorCode ierr;
   PetscFunctionBegin;
   MoFEM::UnknownInterface *iface;
-  ierr = ctx_ptr->queryInterface(IDD_LOBATTO_BASE_FUNCTION,&iface); CHKERRQ(ierr);
-  LobattoPolynomialCtx *ctx = reinterpret_cast<LobattoPolynomialCtx*>(iface);
-  ctx->baseFunPtr->resize(1,ctx->P+1,false);
-  ctx->baseDiffFunPtr->resize(ctx->dIm,ctx->P+1,false);
+  ierr = ctx_ptr->queryInterface(IDD_LEGENDRE_BASE_FUNCTION,&iface); CHKERRQ(ierr);
+  LegendrePolynomialCtx *ctx = reinterpret_cast<LegendrePolynomialCtx*>(iface);
+  ctx->baseFunPtr->resize(pts.size2(),ctx->P+1,false);
+  ctx->baseDiffFunPtr->resize(pts.size2(),ctx->dIm*(ctx->P+1),false);
   double *l = NULL;
   double *diff_l = NULL;
-  if(ctx->baseFunPtr) l = &*ctx->baseFunPtr->data().begin();
-  if(ctx->baseDiffFunPtr) diff_l = &*ctx->baseDiffFunPtr->data().begin();
   for(unsigned int gg = 0;gg<pts.size2();gg++) {
+    if(ctx->baseFunPtr) l = &((*ctx->baseFunPtr)(gg,0));
+    if(ctx->baseDiffFunPtr) diff_l = &((*ctx->baseDiffFunPtr)(gg,0));
     ierr = (ctx->basePolynomials)(ctx->P,pts(0,gg),ctx->diffS,l,diff_l,ctx->dIm); CHKERRQ(ierr);
   }
   PetscFunctionReturn(0);

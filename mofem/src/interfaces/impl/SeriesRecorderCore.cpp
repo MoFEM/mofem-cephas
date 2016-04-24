@@ -94,14 +94,18 @@ PetscErrorCode Core::record_problem(const string& serie_name,const MoFEMProblem 
   PetscErrorCode ierr;
   Series_multiIndex::index<SeriesName_mi_tag>::type::iterator sit = sEries.get<SeriesName_mi_tag>().find(serie_name);
   if(sit==sEries.get<SeriesName_mi_tag>().end()) {
-    SETERRQ1(PETSC_COMM_SELF,1,"serie recorder <%s> not exist",serie_name.c_str());
+    SETERRQ1(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"series recorder <%s> not exist",serie_name.c_str());
   }
   switch (rc) {
     case ROW:
-      ierr = const_cast<MoFEMSeries*>(&*sit)->push_dofs(problemPtr->numered_dofs_rows.begin(),problemPtr->numered_dofs_rows.end()); CHKERRQ(ierr);
+      ierr = const_cast<MoFEMSeries*>(&*sit)->push_dofs(
+        problemPtr->numered_dofs_rows->begin(),problemPtr->numered_dofs_rows->end()
+      ); CHKERRQ(ierr);
       break;
     case COL:
-      ierr = const_cast<MoFEMSeries*>(&*sit)->push_dofs(problemPtr->numered_dofs_cols.begin(),problemPtr->numered_dofs_cols.end()); CHKERRQ(ierr);
+      ierr = const_cast<MoFEMSeries*>(&*sit)->push_dofs(
+        problemPtr->numered_dofs_cols->begin(),problemPtr->numered_dofs_cols->end()
+      ); CHKERRQ(ierr);
       break;
     default:
       SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
@@ -124,18 +128,18 @@ PetscErrorCode Core::record_field(const string& serie_name,const string& field_n
   if(sit==sEries.get<SeriesName_mi_tag>().end()) {
     SETERRQ1(PETSC_COMM_SELF,1,"serie recorder <%s> not exist",serie_name.c_str());
   }
-  DofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator dit = dofsField.get<FieldName_mi_tag>().lower_bound(field_name);
+  DofEntity_multiIndex::index<FieldName_mi_tag>::type::iterator dit = dofsField.get<FieldName_mi_tag>().lower_bound(field_name);
   if(dit == dofsField.get<FieldName_mi_tag>().end()) {
     SETERRQ1(PETSC_COMM_SELF,1,"field <%s> not exist",field_name.c_str());
   }
-  DofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator hi_dit = dofsField.get<FieldName_mi_tag>().upper_bound(field_name);
+  DofEntity_multiIndex::index<FieldName_mi_tag>::type::iterator hi_dit = dofsField.get<FieldName_mi_tag>().upper_bound(field_name);
   for(;dit!=hi_dit;dit++) {
-    const BitRefLevel &dof_bit = dit->get_BitRefLevel();
+    const BitRefLevel &dof_bit = (*dit)->get_BitRefLevel();
     if((dof_bit&mask) != dof_bit) continue;
     if((dof_bit&bit).any()) {
-      EntityHandle ent = dit->get_ent();
-      ShortId uid = dit->get_non_nonunique_short_id();
-      FieldData val = dit->get_FieldData();
+      EntityHandle ent = (*dit)->get_ent();
+      ShortId uid = (*dit)->get_non_nonunique_short_id();
+      FieldData val = (*dit)->get_FieldData();
       ierr = const_cast<MoFEMSeries*>(&*sit)->push_dofs(ent,uid,val); CHKERRQ(ierr);
     }
   }

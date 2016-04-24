@@ -211,8 +211,8 @@ int main(int argc, char *argv[]) {
 
     my_split.precision(3);
     my_split.setf(std::ios::fixed);
-    double val = fabs(dit->get_FieldData())<eps ? 0.0 : dit->get_FieldData();
-    my_split << dit->get_petsc_gloabl_dof_idx() << " " << val << endl;
+    double val = fabs(dit->get()->get_FieldData())<eps ? 0.0 : dit->get()->get_FieldData();
+    my_split << dit->get()->get_petsc_gloabl_dof_idx() << " " << val << endl;
 
   }
 

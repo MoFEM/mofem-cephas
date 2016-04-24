@@ -559,8 +559,12 @@ PetscErrorCode DMSetUp_MoFEM(DM dm) {
   PetscFunctionBegin;
   DMCtx *dm_field = (DMCtx*)dm->data;
   if(dm_field->isPartitioned) {
-    ierr = dm_field->mField_ptr->build_partitioned_problem(dm_field->problemName,dm_field->isSquareMatrix); CHKERRQ(ierr);
-    ierr = dm_field->mField_ptr->partition_finite_elements(dm_field->problemName,true,0,dm_field->sIze,1); CHKERRQ(ierr);
+    ierr = dm_field->mField_ptr->build_problem_on_distributed_mesh(
+      dm_field->problemName,dm_field->isSquareMatrix
+    ); CHKERRQ(ierr);
+    ierr = dm_field->mField_ptr->partition_finite_elements(
+      dm_field->problemName,true,0,dm_field->sIze,1
+    ); CHKERRQ(ierr);
     dm_field->isProblemBuild = PETSC_TRUE;
   } else {
     ierr = dm_field->mField_ptr->build_problem(dm_field->problemName); CHKERRQ(ierr);

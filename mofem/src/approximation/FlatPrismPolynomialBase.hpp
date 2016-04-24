@@ -34,12 +34,12 @@ namespace MoFEM {
     PetscErrorCode queryInterface(const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface);
 
     moab::Interface &mOab;
-    const NumeredMoFEMFiniteElement *fePtr;
+    const NumeredEntFiniteElement *fePtr;
 
     FlatPrismPolynomialBaseCtx(
       DataForcesAndSurcesCore &data,
       moab::Interface &moab,
-      const NumeredMoFEMFiniteElement *fe_ptr,
+      const NumeredEntFiniteElement *fe_ptr,
       const FieldSpace space,
       const FieldApproximationBase base,
       const FieldApproximationBase copy_node_base = LASTBASE

@@ -136,6 +136,8 @@ git clone https://likask@bitbucket.org/likask/mofem_um_homogenisation.git homoge
 In user module directory directory should be file file, \em
 InstalledAddModule.cmake, with content,
 \code
+# Check monimimal version of MoFEM with this module works
+check_mofem_version(0 3 6)
 add_subdirectory(${PROJECT_SOURCE_DIR}/homogenisation)
 \endcode
 

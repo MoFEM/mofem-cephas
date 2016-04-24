@@ -62,7 +62,7 @@ PetscErrorCode FlatPrismPolynomialBaseCtx::queryInterface(const MOFEMuuid& uuid,
 FlatPrismPolynomialBaseCtx::FlatPrismPolynomialBaseCtx(
   DataForcesAndSurcesCore &data,
   moab::Interface &moab,
-  const NumeredMoFEMFiniteElement *fe_ptr,
+  const NumeredEntFiniteElement *fe_ptr,
   const FieldSpace space,
   const FieldApproximationBase base,
   const FieldApproximationBase copy_node_base
@@ -129,7 +129,6 @@ PetscErrorCode FlatPrismPolynomialBase::getValue(
   const FieldApproximationBase base = cTx->bAse;
   DataForcesAndSurcesCore& data = cTx->dAta;
 
-
   if(cTx->copyNodeBase==LASTBASE) {
   } else {
     data.dataOnEntities[MBVERTEX][0].getNSharedPtr(base) = data.dataOnEntities[MBVERTEX][0].getNSharedPtr(cTx->copyNodeBase);
@@ -160,8 +159,8 @@ PetscErrorCode FlatPrismPolynomialBase::getValue(
   SideNumber_multiIndex::nth_index<1>::type::iterator siit4 = side_table.get<1>().find(boost::make_tuple(MBTRI,4));
   if(siit3==side_table.get<1>().end()) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
   if(siit4==side_table.get<1>().end()) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
-  rval = cTx->mOab.get_connectivity(siit3->ent,connFace3,numNodes,true); CHKERRQ_MOAB(rval);
-  rval = cTx->mOab.get_connectivity(siit4->ent,connFace4,numNodes,true); CHKERRQ_MOAB(rval);
+  rval = cTx->mOab.get_connectivity(siit3->get()->ent,connFace3,numNodes,true); CHKERRQ_MOAB(rval);
+  rval = cTx->mOab.get_connectivity(siit4->get()->ent,connFace4,numNodes,true); CHKERRQ_MOAB(rval);
 
   for(int nn = 0;nn<3;nn++) {
     faceNodes[0][nn] = distance(connPrism,find(connPrism,connPrism+3,connFace3[nn]));
@@ -234,6 +233,7 @@ PetscErrorCode FlatPrismPolynomialBase::getValueH1(ublas::matrix<double> &pts) {
     }
     //shape functions on face 3
     ierr = H1_EdgeShapeFunctions_MBTRI(
+      cTx->bobbleBase,
       &sense[0],
       &order[0],
       &*N.data().begin(),
@@ -244,6 +244,7 @@ PetscErrorCode FlatPrismPolynomialBase::getValueH1(ublas::matrix<double> &pts) {
     ); CHKERRQ(ierr);
     //shape functions on face 4
     ierr = H1_EdgeShapeFunctions_MBTRI(
+      cTx->bobbleBase,
       &sense[6],
       &order[6],
       &*N.data().begin(),
@@ -264,6 +265,7 @@ PetscErrorCode FlatPrismPolynomialBase::getValueH1(ublas::matrix<double> &pts) {
       data.dataOnEntities[MBTRI][ff].getN(base).resize(nb_gauss_pts,nb_dofs,false);
       data.dataOnEntities[MBTRI][ff].getDiffN(base).resize(nb_gauss_pts,2*nb_dofs,false);
       ierr = H1_FaceShapeFunctions_MBTRI(
+        cTx->bobbleBase,
         faceNodes[ff-3],
         data.dataOnEntities[MBTRI][ff].getDataOrder(),
         &*N.data().begin(),

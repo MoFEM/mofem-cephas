@@ -828,10 +828,10 @@ struct FieldInterface: public UnknownInterface {
    * \ingroup mofem_field
    *
    * \param name field name
-   * \return const MoFEMField*
+   * \return const Field*
    *
    */
-  virtual const MoFEMField* get_field_structure(const string& name) = 0;
+  virtual const Field* get_field_structure(const string& name) = 0;
 
   /**
     * \brief add finite element
@@ -843,7 +843,7 @@ struct FieldInterface: public UnknownInterface {
       ierr = mField.add_finite_element("PLASTIC"); CHKERRQ(ierr);
    \endcode
     */
-  virtual PetscErrorCode add_finite_element(const string &MoFEMFiniteElement_name,enum MoFEMTypes bh = MF_EXCL) = 0;
+  virtual PetscErrorCode add_finite_element(const string &fe_name,enum MoFEMTypes bh = MF_EXCL) = 0;
 
   /**
     * \brief modify finite element table, only for advanced user
@@ -852,7 +852,7 @@ struct FieldInterface: public UnknownInterface {
     * Using that functions means that you like to do something not usual.
     *
     */
-  virtual PetscErrorCode modify_finite_element_adjacency_table(const string &MoFEMFiniteElement_name,const EntityType type,ElementAdjacencyFunct function) = 0;
+  virtual PetscErrorCode modify_finite_element_adjacency_table(const string &fe_name,const EntityType type,ElementAdjacencyFunct function) = 0;
 
 
   /** \brief set finite element field data
@@ -863,7 +863,7 @@ struct FieldInterface: public UnknownInterface {
    *
    * This function will set memory in the form of a vector
    */
-  virtual PetscErrorCode modify_finite_element_add_field_data(const string &MoFEMFiniteElement_name,const string &name_filed) = 0;
+  virtual PetscErrorCode modify_finite_element_add_field_data(const string &fe_name,const string &name_filed) = 0;
 
   /** \brief unset finite element field data
    * \ingroup mofem_fe
@@ -873,7 +873,7 @@ struct FieldInterface: public UnknownInterface {
    *
    * This function will set memory in the form of a vector
    */
-  virtual PetscErrorCode modify_finite_element_off_field_data(const string &MoFEMFiniteElement_name,const string &name_filed) = 0;
+  virtual PetscErrorCode modify_finite_element_off_field_data(const string &fe_name,const string &name_filed) = 0;
 
     /** \brief set field row which finite element use
      * \ingroup mofem_fe
@@ -881,7 +881,7 @@ struct FieldInterface: public UnknownInterface {
      * \param name finite element name
      * \param name field name
      */
-  virtual PetscErrorCode modify_finite_element_add_field_row(const string &MoFEMFiniteElement_name,const string &name_row) = 0;
+  virtual PetscErrorCode modify_finite_element_add_field_row(const string &fe_name,const string &name_row) = 0;
 
     /** \brief unset field row which finite element use
      * \ingroup mofem_fe
@@ -889,7 +889,7 @@ struct FieldInterface: public UnknownInterface {
      * \param name finite element name
      * \param name field name
      */
-  virtual PetscErrorCode modify_finite_element_off_field_row(const string &MoFEMFiniteElement_name,const string &name_row) = 0;
+  virtual PetscErrorCode modify_finite_element_off_field_row(const string &fe_name,const string &name_row) = 0;
 
 
     /** \brief set field col which finite element use
@@ -897,7 +897,7 @@ struct FieldInterface: public UnknownInterface {
      * \param name finite element name
      * \param name field name
      */
-  virtual PetscErrorCode modify_finite_element_add_field_col(const string &MoFEMFiniteElement_name,const string &name_row) = 0;
+  virtual PetscErrorCode modify_finite_element_add_field_col(const string &fe_name,const string &name_row) = 0;
 
     /** \brief unset field col which finite element use
      * \ingroup mofem_fe
@@ -905,7 +905,7 @@ struct FieldInterface: public UnknownInterface {
      * \param name finite element name
      * \param name field name
      */
-  virtual PetscErrorCode modify_finite_element_off_field_col(const string &MoFEMFiniteElement_name,const string &name_row) = 0;
+  virtual PetscErrorCode modify_finite_element_off_field_col(const string &fe_name,const string &name_row) = 0;
 
   /** \brief add EDGES entities from range to finite element database given by name
    * \ingroup mofem_fe
@@ -1060,7 +1060,7 @@ struct FieldInterface: public UnknownInterface {
    * \param name Problem name
    * \param name Finite Element name
    */
-  virtual PetscErrorCode modify_problem_add_finite_element(const string &name_problem,const string &MoFEMFiniteElement_name) = 0;
+  virtual PetscErrorCode modify_problem_add_finite_element(const string &name_problem,const string &fe_name) = 0;
 
   /** \brief unset finite element from problem, this remove entities assigned to finite element to a particular problem
    * \ingroup mofem_problems
@@ -1070,7 +1070,7 @@ struct FieldInterface: public UnknownInterface {
    * \param name Problem name
    * \param name Finite Element name
    */
-  virtual PetscErrorCode modify_problem_unset_finite_element(const string &name_problem,const string &MoFEMFiniteElement_name) = 0;
+  virtual PetscErrorCode modify_problem_unset_finite_element(const string &name_problem,const string &fe_name) = 0;
 
 
   /** \brief add ref level to problem
@@ -1250,29 +1250,80 @@ struct FieldInterface: public UnknownInterface {
    */
   virtual PetscErrorCode clear_problems(int verb = -1) = 0;
 
-  /** \brief build problem data structures, assuming that mesh is partitioned (collective)
+  /** \brief build problem data structures, assuming that mesh is partitioned and not distributed (collective)
    * \ingroup mofem_problems
 
-   collective - need tu be run on all processors in communicator
+   Mesh partitioned, that means that to each finite element in the problem is part of partition, it belongs to
+   partition meshsets/has tag indicating to which partition it belongs.
+
+   Collective - need to be run on all processors in communicator, i.e. each
+   function has to call this function.
 
    */
-  virtual PetscErrorCode build_partitioned_problem(const string &name,bool square_matrix = true,int verb = -1) = 0;
+  virtual PetscErrorCode build_problem_on_partitioned_mesh(MoFEMProblem *problem_ptr,bool square_matrix = true,int verb = -1) = 0;
 
-  /** \brief build problem data structures, assuming that mesh is partitioned (collective)
+  /** \brief build problem data structures, assuming that mesh is distributed (collective)
    * \ingroup mofem_problems
 
-   collective - need tu be run on all processors in communicator
+   Mesh is distributed, that means that each processor keeps only own part of
+   the mesh and shared entities.
+
+   Collective - need to be run on all processors in communicator, i.e. each
+   function has to call this function.
 
    */
-  virtual PetscErrorCode build_partitioned_problem(MoFEMProblem *problem_ptr,bool square_matrix = true,int verb = -1) = 0;
+  virtual PetscErrorCode build_problem_on_distributed_mesh(const string &name,bool square_matrix = true,int verb = -1) = 0;
 
-  /** \brief build problem data structures, assuming that mesh is partitioned (collective)
+  /** \brief build problem data structures, assuming that mesh is distributed (collective)
    * \ingroup mofem_problems
 
-   collective - need tu be run on all processors in communicator
+   Mesh is distributed, that means that each processor keeps only own part of
+   the mesh and shared entities.
+
+   Collective - need to be run on all processors in communicator, i.e. each
+   function has to call this function.
 
    */
-  virtual PetscErrorCode build_partitioned_problems(int verb = -1) = 0;
+  virtual PetscErrorCode build_problem_on_distributed_mesh(MoFEMProblem *problem_ptr,bool square_matrix = true,int verb = -1) = 0;
+
+  /** \brief build problem data structures, assuming that mesh is distributed (collective)
+   * \ingroup mofem_problems
+
+   Mesh is distributed, that means that each processor keeps only own part of
+   the mesh and shared entities.
+
+   Collective - need to be run on all processors in communicator, i.e. each
+   function has to call this function.
+
+   */
+  virtual PetscErrorCode build_problem_on_distributed_mesh(int verb = -1) = 0;
+
+  /** \brief This is deprecated, use function build_problem_on_distributed_mesh instead
+  */
+  DEPRECATED inline PetscErrorCode build_partitioned_problem(const string &name,bool square_matrix = true,int verb = -1) {
+    PetscErrorCode ierr;
+    PetscFunctionBegin;
+    ierr = build_problem_on_distributed_mesh(name,square_matrix,verb); CHKERRQ(ierr);
+    PetscFunctionReturn(0);
+  }
+
+  /** \brief This is deprecated, use function build_problem_on_distributed_mesh instead
+  */
+  DEPRECATED inline PetscErrorCode build_partitioned_problem(MoFEMProblem *problem_ptr,bool square_matrix = true,int verb = -1) {
+    PetscErrorCode ierr;
+    PetscFunctionBegin;
+    ierr = build_problem_on_distributed_mesh(problem_ptr,square_matrix,verb); CHKERRQ(ierr);
+    PetscFunctionReturn(0);
+  }
+
+  /** \brief This is deprecated, use function build_problem_on_distributed_mesh instead
+  */
+  DEPRECATED inline PetscErrorCode build_partitioned_problem(int verb = -1) {
+    PetscErrorCode ierr;
+    PetscFunctionBegin;
+    ierr = build_problem_on_distributed_mesh(verb); CHKERRQ(ierr);
+    PetscFunctionReturn(0);
+  }
 
   /**
    * \brief Set partition tag to each finite element in the problem
@@ -1337,7 +1388,8 @@ struct FieldInterface: public UnknownInterface {
    * \param name problem name
    */
   virtual PetscErrorCode partition_finite_elements(const string &name,
-    bool part_from_moab = false,int low_proc = -1,int hi_proc = -1,int verb = -1) = 0;
+    bool part_from_moab = false,int low_proc = -1,int hi_proc = -1,int verb = -1
+  ) = 0;
 
   /** \brief check if matrix fill in correspond to finite element indices
 
@@ -1906,12 +1958,12 @@ struct FieldInterface: public UnknownInterface {
   /** \brief Get ref entities multi-index from database
     * \ingroup mofem_access
     */
-  virtual PetscErrorCode get_ref_ents(const RefMoFEMEntity_multiIndex **refinedEntitiesPtr_ptr) = 0;
+  virtual PetscErrorCode get_ref_ents(const RefEntity_multiIndex **refinedEntitiesPtr_ptr) = 0;
 
   /** \brief Get ref finite elements multi-index form database
     * \ingroup mofem_access
     */
-  virtual PetscErrorCode get_ref_finite_elements(const RefMoFEMElement_multiIndex **refined_finite_elements_ptr) = 0;
+  virtual PetscErrorCode get_ref_finite_elements(const RefElement_multiIndex **refined_finite_elements_ptr) = 0;
 
   /** \brief Get problem database (data structure)
     * \ingroup mofem_problems
@@ -1922,7 +1974,7 @@ struct FieldInterface: public UnknownInterface {
     * \ingroup mofem_field
     *
     */
-  virtual PetscErrorCode get_dofs(const DofMoFEMEntity_multiIndex **dofs_ptr) = 0;
+  virtual PetscErrorCode get_dofs(const DofEntity_multiIndex **dofs_ptr) = 0;
 
   /**
     * \brief get begin iterator of filed ents of given name (instead you can use _IT_GET_ENT_FIELD_BY_NAME_FOR_LOOP_(MFIELD,NAME,IT)
@@ -1965,7 +2017,7 @@ struct FieldInterface: public UnknownInterface {
     *
     * \param field_name
     */
-  virtual DofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator get_dofs_by_name_begin(const string &field_name) const = 0;
+  virtual DofEntity_multiIndex::index<FieldName_mi_tag>::type::iterator get_dofs_by_name_begin(const string &field_name) const = 0;
 
   /**
     * \brief get begin iterator of filed dofs of given name (instead you can use _IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(MFIELD,NAME,IT)
@@ -1977,13 +2029,13 @@ struct FieldInterface: public UnknownInterface {
     *
     * \param field_name
     */
-  virtual DofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator get_dofs_by_name_end(const string &field_name) const = 0;
+  virtual DofEntity_multiIndex::index<FieldName_mi_tag>::type::iterator get_dofs_by_name_end(const string &field_name) const = 0;
 
   /** loop over all dofs from a moFEM field and particular field
     * \ingroup mofem_field
     */
   #define _IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(MFIELD,NAME,IT) \
-    DofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator IT = MFIELD.get_dofs_by_name_begin(NAME); \
+    DofEntity_multiIndex::index<FieldName_mi_tag>::type::iterator IT = MFIELD.get_dofs_by_name_begin(NAME); \
       IT != MFIELD.get_dofs_by_name_end(NAME); IT++
 
   /**
@@ -1996,7 +2048,7 @@ struct FieldInterface: public UnknownInterface {
     *
     * \param field_name
     */
-  virtual DofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type::iterator get_dofs_by_name_and_ent_begin(const string &field_name,const EntityHandle ent) = 0;
+  virtual DofEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type::iterator get_dofs_by_name_and_ent_begin(const string &field_name,const EntityHandle ent) = 0;
 
   /**
     * \brief get begin iterator of filed dofs of given name and ent (instead you can use _IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(MFIELD,NAME,ENT,IT)
@@ -2008,13 +2060,13 @@ struct FieldInterface: public UnknownInterface {
     *
     * \param field_name
     */
-  virtual DofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type::iterator get_dofs_by_name_and_ent_end(const string &field_name,const EntityHandle ent) = 0;
+  virtual DofEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type::iterator get_dofs_by_name_and_ent_end(const string &field_name,const EntityHandle ent) = 0;
 
   /** \brief loop over all dofs from a moFEM field and particular field
     * \ingroup mofem_access
     */
   #define _IT_GET_DOFS_FIELD_BY_NAME_AND_ENT_FOR_LOOP_(MFIELD,NAME,ENT,IT) \
-    DofMoFEMEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type::iterator IT = MFIELD.get_dofs_by_name_and_ent_begin(NAME,ENT); \
+    DofEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type::iterator IT = MFIELD.get_dofs_by_name_and_ent_begin(NAME,ENT); \
       IT != MFIELD.get_dofs_by_name_and_ent_end(NAME,ENT); IT++
 
   /**
@@ -2030,8 +2082,8 @@ struct FieldInterface: public UnknownInterface {
     if(count!=NULL) *count = 0;
     for(int nn = 0;nn<num_ents;nn++) {
       for(_IT_GET_DOFS_FIELD_BY_NAME_AND_ENT_FOR_LOOP_((*this),name,ent[nn],it)) {
-	*(dit++) = it->get_FieldData();
-	if(count!=NULL) (*count)++;
+        *(dit++) = (*it)->get_FieldData();
+        if(count!=NULL) (*count)++;
       }
     }
     PetscFunctionReturn(0);
@@ -2050,8 +2102,8 @@ struct FieldInterface: public UnknownInterface {
     if(count!=NULL) *count = 0;
     for(Range::const_iterator eit = ents.begin();eit!=ents.end();eit++) {
       for(_IT_GET_DOFS_FIELD_BY_NAME_AND_ENT_FOR_LOOP_((*this),name,*eit,it)) {
-	*(dit++) = it->get_FieldData();
-	if(count!=NULL) (*count)++;
+        *(dit++) = (*it)->get_FieldData();
+        if(count!=NULL) (*count)++;
       }
     }
     PetscFunctionReturn(0);
@@ -2067,7 +2119,7 @@ struct FieldInterface: public UnknownInterface {
     *
     * \param field_name
     */
-  virtual DofMoFEMEntity_multiIndex::index<Composite_Name_And_Type_mi_tag>::type::iterator get_dofs_by_name_and_type_begin(const string &field_name,const EntityType type) = 0;
+  virtual DofEntity_multiIndex::index<Composite_Name_And_Type_mi_tag>::type::iterator get_dofs_by_name_and_type_begin(const string &field_name,const EntityType type) = 0;
 
   /**
     * \brief get begin iterator of filed dofs of given name end ent type(instead you can use _IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(MFIELD,NAME,TYPE,IT)
@@ -2079,20 +2131,20 @@ struct FieldInterface: public UnknownInterface {
     *
     * \param field_name
     */
-  virtual DofMoFEMEntity_multiIndex::index<Composite_Name_And_Type_mi_tag>::type::iterator get_dofs_by_name_and_type_end(const string &field_name,const EntityType type) = 0;
+  virtual DofEntity_multiIndex::index<Composite_Name_And_Type_mi_tag>::type::iterator get_dofs_by_name_and_type_end(const string &field_name,const EntityType type) = 0;
 
   /** \brief loop over all dofs from a moFEM field and particular field
     * \ingroup mofem_field
     */
   #define _IT_GET_DOFS_FIELD_BY_NAME_AND_TYPE_FOR_LOOP_(MFIELD,NAME,TYPE,IT) \
-    DofMoFEMEntity_multiIndex::index<Composite_Name_And_Type_mi_tag>::type::iterator IT = MFIELD.get_dofs_by_name_and_type_begin(NAME,TYPE); \
+    DofEntity_multiIndex::index<Composite_Name_And_Type_mi_tag>::type::iterator IT = MFIELD.get_dofs_by_name_and_type_begin(NAME,TYPE); \
       IT != MFIELD.get_dofs_by_name_and_type_end(NAME,TYPE); IT++
 
   /** \brief Get finite elements multi index
     * \ingroup mofem_access
     *
     */
-  virtual PetscErrorCode get_finite_elements(const MoFEMFiniteElement_multiIndex **finiteElementsPtr_ptr) = 0;
+  virtual PetscErrorCode get_finite_elements(const FiniteElement_multiIndex **finiteElementsPtr_ptr) = 0;
 
   /**
     * \brief get begin iterator of finite elements of given name (instead you can use _IT_GET_FES_BY_NAME_FOR_LOOP_(MFIELD,NAME,IT)
@@ -2104,7 +2156,7 @@ struct FieldInterface: public UnknownInterface {
     *
     * \param fe_name
     */
-  virtual EntMoFEMFiniteElement_multiIndex::index<FiniteElement_name_mi_tag>::type::iterator get_fe_by_name_begin(const string &fe_name) = 0;
+  virtual EntFiniteElement_multiIndex::index<FiniteElement_name_mi_tag>::type::iterator get_fe_by_name_begin(const string &fe_name) = 0;
 
   /**
     * \brief get end iterator of finite elements of given name (instead you can use _IT_GET_FES_BY_NAME_FOR_LOOP_(MFIELD,NAME,IT)
@@ -2116,13 +2168,13 @@ struct FieldInterface: public UnknownInterface {
     *
     * \param fe_name
     */
-  virtual EntMoFEMFiniteElement_multiIndex::index<FiniteElement_name_mi_tag>::type::iterator get_fe_by_name_end(const string &fe_name) = 0;
+  virtual EntFiniteElement_multiIndex::index<FiniteElement_name_mi_tag>::type::iterator get_fe_by_name_end(const string &fe_name) = 0;
 
   /** \brief loop over all finite elements from a moFEM field and FE
     * \ingroup mofem_access
     */
   #define _IT_GET_FES_BY_NAME_FOR_LOOP_(MFIELD,NAME,IT) \
-    EntMoFEMFiniteElement_multiIndex::index<FiniteElement_name_mi_tag>::type::iterator IT = MFIELD.get_fe_by_name_begin(NAME); \
+    EntFiniteElement_multiIndex::index<FiniteElement_name_mi_tag>::type::iterator IT = MFIELD.get_fe_by_name_begin(NAME); \
       IT != MFIELD.get_fe_by_name_end(NAME); IT++
 
 
