@@ -107,7 +107,9 @@ struct Core: public FieldInterface, MeshRefinment, PrismInterface, SeriesRecorde
     BUILD_ADJ = 1<<2,
     BUILD_PROBLEM = 1<<3,
     PARTITION_PROBLEM = 1<<4,
-    PARTITION_MESH = 1<<5
+    PARTITION_FE = 1<<5,
+    PARTITION_GHOST_DOFS = 1<<6,
+    PARTITION_MESH = 1<<7
   };
 
   //core methods
