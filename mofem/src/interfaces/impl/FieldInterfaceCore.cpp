@@ -2052,6 +2052,7 @@ PetscErrorCode Core::build_adjacencies(const Range &ents,int verb) {
     int by = BYROW;
     if((*fit)->get_BitFieldId_row()!=(*fit)->get_BitFieldId_col()) by |= BYCOL;
     if((*fit)->get_BitFieldId_row()!=(*fit)->get_BitFieldId_data()) by |= BYDATA;
+    MoFEMEntityEntFiniteElementAdjacencyMap_change_ByWhat modify_row(by);
     GlobalUId ent_uid = UId(0);
     DofEntity_multiIndex_uid_view::iterator rvit;
     rvit = (*fit)->row_dof_view->begin();
@@ -2062,12 +2063,13 @@ PetscErrorCode Core::build_adjacencies(const Range &ents,int verb) {
       p = entFEAdjacencies.insert(
         MoFEMEntityEntFiniteElementAdjacencyMap((*rvit)->get_MoFEMEntity_ptr(),*fit)
       );
-      bool success = entFEAdjacencies.modify(p.first,MoFEMEntityEntFiniteElementAdjacencyMap_change_ByWhat(by));
+      bool success = entFEAdjacencies.modify(p.first,modify_row);
       if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
     }
     if((*fit)->get_BitFieldId_row()!=(*fit)->get_BitFieldId_col()) {
       int by = BYCOL;
       if((*fit)->get_BitFieldId_col()!=(*fit)->get_BitFieldId_data()) by |= BYDATA;
+      MoFEMEntityEntFiniteElementAdjacencyMap_change_ByWhat modify_col(by);
       ent_uid = UId(0);
       DofEntity_multiIndex_uid_view::iterator cvit;
       cvit = (*fit)->col_dof_view->begin();
@@ -2078,7 +2080,7 @@ PetscErrorCode Core::build_adjacencies(const Range &ents,int verb) {
         p = entFEAdjacencies.insert(
           MoFEMEntityEntFiniteElementAdjacencyMap((*cvit)->get_MoFEMEntity_ptr(),*fit)
         );
-        bool success = entFEAdjacencies.modify(p.first,MoFEMEntityEntFiniteElementAdjacencyMap_change_ByWhat(by));
+        bool success = entFEAdjacencies.modify(p.first,modify_col);
         if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
       }
     }
@@ -2086,6 +2088,7 @@ PetscErrorCode Core::build_adjacencies(const Range &ents,int verb) {
       (*fit)->get_BitFieldId_row()!=(*fit)->get_BitFieldId_data()||
       (*fit)->get_BitFieldId_col()!=(*fit)->get_BitFieldId_data()
     ) {
+      MoFEMEntityEntFiniteElementAdjacencyMap_change_ByWhat modify_data(BYDATA);
       ent_uid = UId(0);
       DofEntity_multiIndex_uid_view::iterator dvit;
       dvit = (*fit)->data_dof_view->begin();
@@ -2096,7 +2099,7 @@ PetscErrorCode Core::build_adjacencies(const Range &ents,int verb) {
         p = entFEAdjacencies.insert(
           MoFEMEntityEntFiniteElementAdjacencyMap((*dvit)->get_MoFEMEntity_ptr(),*fit)
         );
-        bool success = entFEAdjacencies.modify(p.first,MoFEMEntityEntFiniteElementAdjacencyMap_change_ByWhat(BYDATA));
+        bool success = entFEAdjacencies.modify(p.first,modify_data);
         if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
       }
     }
