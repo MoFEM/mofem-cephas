@@ -304,7 +304,7 @@ PetscErrorCode BitLevelCouplerInterface::buidlAdjacenciesEdgesFacesVolumes(
     }
 
     if(verb>1) {
-      cout << "before: " << *it << endl;
+      cout << "before: " << **it << endl;
     }
 
     //check if entity has a parent and parent is on parent bit level
@@ -350,7 +350,7 @@ PetscErrorCode BitLevelCouplerInterface::buidlAdjacenciesEdgesFacesVolumes(
         if(!parent_ents.empty()) {
           ierr = chanegParent(refined_ptr->project<0>(it),*parent_ents.begin(),elements); CHKERRQ(ierr);
           if(verb > 1) {
-            cout << "after " << *it << endl << endl;
+            cout << "after: " << **it << endl << endl;
           }
           break;
         }

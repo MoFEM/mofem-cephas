@@ -445,7 +445,7 @@ PetscErrorCode Core::build_problem_on_distributed_mesh(MoFEMProblem *problem_ptr
 
   PetscFunctionReturn(0);
 }
-PetscErrorCode Core::build_problem_on_distributed_meshs(int verb) {
+PetscErrorCode Core::build_problem_on_distributed_mesh(int verb) {
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
   DofEntity_multiIndex_active_view dofs_rows,dofs_cols;

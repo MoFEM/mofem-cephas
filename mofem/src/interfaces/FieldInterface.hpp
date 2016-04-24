@@ -1296,14 +1296,14 @@ struct FieldInterface: public UnknownInterface {
    function has to call this function.
 
    */
-  virtual PetscErrorCode build_problem_on_distributed_meshs(int verb = -1) = 0;
+  virtual PetscErrorCode build_problem_on_distributed_mesh(int verb = -1) = 0;
 
   /** \brief This is deprecated, use function build_problem_on_distributed_mesh instead
   */
   DEPRECATED inline PetscErrorCode build_partitioned_problem(const string &name,bool square_matrix = true,int verb = -1) {
     PetscErrorCode ierr;
     PetscFunctionBegin;
-    ierr = build_partitioned_problem(name,square_matrix,verb); CHKERRQ(ierr);
+    ierr = build_problem_on_distributed_mesh(name,square_matrix,verb); CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }
 
@@ -1312,7 +1312,7 @@ struct FieldInterface: public UnknownInterface {
   DEPRECATED inline PetscErrorCode build_partitioned_problem(MoFEMProblem *problem_ptr,bool square_matrix = true,int verb = -1) {
     PetscErrorCode ierr;
     PetscFunctionBegin;
-    ierr = build_partitioned_problem(problem_ptr,square_matrix,verb); CHKERRQ(ierr);
+    ierr = build_problem_on_distributed_mesh(problem_ptr,square_matrix,verb); CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }
 
@@ -1321,7 +1321,7 @@ struct FieldInterface: public UnknownInterface {
   DEPRECATED inline PetscErrorCode build_partitioned_problem(int verb = -1) {
     PetscErrorCode ierr;
     PetscFunctionBegin;
-    ierr = build_partitioned_problem(verb); CHKERRQ(ierr);
+    ierr = build_problem_on_distributed_mesh(verb); CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }
 
