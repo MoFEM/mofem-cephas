@@ -313,9 +313,9 @@ interface_RefElement<RefElement> {
   typedef interface_RefEntity<RefElement> interface_type_RefEntity;
   typedef interface_RefElement<RefElement> interface_type_RefElement;
   typedef interface_FiniteElement<FiniteElement> interface_type_MoFEMFiniteElement;
-  DofEntity_multiIndex_uid_view row_dof_view;
-  DofEntity_multiIndex_uid_view col_dof_view;
-  DofEntity_multiIndex_uid_view data_dof_view;
+  boost::shared_ptr<DofEntity_multiIndex_uid_view> row_dof_view;
+  boost::shared_ptr<DofEntity_multiIndex_uid_view> col_dof_view;
+  boost::shared_ptr<DofEntity_multiIndex_uid_view> data_dof_view;
   FEDofEntity_multiIndex data_dofs;
   GlobalUId global_uid;
 
@@ -333,9 +333,9 @@ interface_RefElement<RefElement> {
     return _uid_;
   }
   inline EntityHandle get_ent() const { return get_ref_ent(); }
-  inline DofIdx get_nb_dofs_row() const { return row_dof_view.size(); }
-  inline DofIdx get_nb_dofs_col() const { return col_dof_view.size(); }
-  inline DofIdx get_nb_dofs_data() const { return data_dof_view.size(); }
+  inline DofIdx get_nb_dofs_row() const { return row_dof_view->size(); }
+  inline DofIdx get_nb_dofs_col() const { return col_dof_view->size(); }
+  inline DofIdx get_nb_dofs_data() const { return data_dof_view->size(); }
   inline const FEDofEntity_multiIndex& get_data_dofs() const { return data_dofs; };
   friend ostream& operator<<(ostream& os,const EntFiniteElement& e);
   PetscErrorCode get_MoFEMFiniteElement_row_dof_view(

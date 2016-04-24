@@ -1839,14 +1839,12 @@ PetscErrorCode Core::build_finite_element_uids_view(EntFiniteElement &ent_fe,int
   const BitRefLevel& bit_ref_MoFEMFiniteElement = ent_fe.get_BitRefLevel();
   Range tets,faces,edges,nodes,meshsets,adj_ents,ent_ents;
   Range::iterator eit_eit;
-  DofEntity_multiIndex_uid_view* MoFEMFiniteElement_dof_uid_view[Last] = {
-    &ent_fe.row_dof_view,
-    &ent_fe.col_dof_view,
-    &ent_fe.data_dof_view
+  boost::shared_ptr<DofEntity_multiIndex_uid_view> dofs_view_list[Last] = {
+    ent_fe.row_dof_view, ent_fe.col_dof_view, ent_fe.data_dof_view
   };
   unsigned int nb_view_dofs[Last];
   for(int ss = 0;ss<Last;ss++) {
-    MoFEMFiniteElement_dof_uid_view[ss]->clear();
+    dofs_view_list[ss]->clear();
     nb_view_dofs[ss] = 0;
   }
   //lopp over all fields in database
@@ -1867,7 +1865,7 @@ PetscErrorCode Core::build_finite_element_uids_view(EntFiniteElement &ent_fe,int
     // uids on finite element tag
     ierr = ent_fe.get_element_adjacency(moab,*miit,adj_ents); CHKERRQ(ierr);
     //loop over adjacent to finite entities, and find dofs on those entities
-    //this part is to build MoFEMFiniteElement_dof_uid_view
+    //this part is to build dofs_view_list
     Range::iterator eit2 = adj_ents.begin();
     for(;eit2!=adj_ents.end();eit2++) {
       ref_ent_by_ent::iterator ref_ent_miit = refinedEntities.get<Ent_mi_tag>().find(*eit2);
@@ -1904,7 +1902,7 @@ PetscErrorCode Core::build_finite_element_uids_view(EntFiniteElement &ent_fe,int
         if( !(FEAdj_fields[ss].test(ii)) ) continue;
         dof_set_type::iterator ents_miit3 = ents_miit2;
         for(;ents_miit3!=ents_hi_miit2;ents_miit3++) {
-          MoFEMFiniteElement_dof_uid_view[ss]->insert(*ents_miit3);
+          dofs_view_list[ss]->insert(*ents_miit3);
           nb_view_dofs[ss]++;
         }
       }
@@ -1912,7 +1910,7 @@ PetscErrorCode Core::build_finite_element_uids_view(EntFiniteElement &ent_fe,int
   }
 
   for(int ss = 0;ss<Last;ss++) {
-    if(nb_view_dofs[ss] != MoFEMFiniteElement_dof_uid_view[ss]->size()) {
+    if(nb_view_dofs[ss] != dofs_view_list[ss]->size()) {
       SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data insonsistency");
     }
   }
@@ -2012,8 +2010,8 @@ PetscErrorCode Core::build_adjacencies(const Range &ents,int verb) {
     }
     GlobalUId ent_uid = UId(0);
     DofEntity_multiIndex_uid_view::iterator rvit;
-    rvit = (*fit)->row_dof_view.begin();
-    for(;rvit!=(*fit)->row_dof_view.end();rvit++) {
+    rvit = (*fit)->row_dof_view->begin();
+    for(;rvit!=(*fit)->row_dof_view->end();rvit++) {
       if( ent_uid == (*rvit)->get_MoFEMEntity_ptr()->get_global_unique_id()) continue;
       ent_uid = (*rvit)->get_MoFEMEntity_ptr()->get_global_unique_id();
       pair<MoFEMEntityEntFiniteElementAdjacencyMap_multiIndex::iterator,bool> p;
@@ -2025,8 +2023,8 @@ PetscErrorCode Core::build_adjacencies(const Range &ents,int verb) {
     }
     ent_uid = UId(0);
     DofEntity_multiIndex_uid_view::iterator cvit;
-    cvit = (*fit)->col_dof_view.begin();
-    for(;cvit!=(*fit)->col_dof_view.end();cvit++) {
+    cvit = (*fit)->col_dof_view->begin();
+    for(;cvit!=(*fit)->col_dof_view->end();cvit++) {
       if( ent_uid == (*cvit)->get_MoFEMEntity_ptr()->get_global_unique_id()) continue;
       ent_uid = (*cvit)->get_MoFEMEntity_ptr()->get_global_unique_id();
       pair<MoFEMEntityEntFiniteElementAdjacencyMap_multiIndex::iterator,bool> p;
@@ -2038,8 +2036,8 @@ PetscErrorCode Core::build_adjacencies(const Range &ents,int verb) {
     }
     ent_uid = UId(0);
     DofEntity_multiIndex_uid_view::iterator dvit;
-    dvit = (*fit)->data_dof_view.begin();
-    for(;dvit!=(*fit)->data_dof_view.end();dvit++) {
+    dvit = (*fit)->data_dof_view->begin();
+    for(;dvit!=(*fit)->data_dof_view->end();dvit++) {
       if( ent_uid == (*dvit)->get_MoFEMEntity_ptr()->get_global_unique_id()) continue;
       ent_uid = (*dvit)->get_MoFEMEntity_ptr()->get_global_unique_id();
       pair<MoFEMEntityEntFiniteElementAdjacencyMap_multiIndex::iterator,bool> p;
@@ -3182,9 +3180,16 @@ PetscErrorCode Core::clear_dofs_fields(const BitRefLevel &bit,const BitRefLevel 
       for(;ait!=hi_ait;ait++) {
         boost::shared_ptr<EntFiniteElement> ent_fe_ptr;
         ent_fe_ptr = ait->entFePtr;
-        ent_fe_ptr->row_dof_view.erase((*dit)->get_global_unique_id());
-        ent_fe_ptr->col_dof_view.erase((*dit)->get_global_unique_id());
-        ent_fe_ptr->data_dof_view.erase((*dit)->get_global_unique_id());
+        ent_fe_ptr->row_dof_view->erase((*dit)->get_global_unique_id());
+        if(ent_fe_ptr->row_dof_view!=ent_fe_ptr->col_dof_view) {
+          ent_fe_ptr->col_dof_view->erase((*dit)->get_global_unique_id());
+        }
+        if(
+          ent_fe_ptr->row_dof_view!=ent_fe_ptr->data_dof_view||
+          ent_fe_ptr->col_dof_view!=ent_fe_ptr->data_dof_view
+        ) {
+          ent_fe_ptr->data_dof_view->erase((*dit)->get_global_unique_id());
+        }
         ent_fe_ptr->data_dofs.get<Unique_mi_tag>().erase((*dit)->get_global_unique_id());
       }
       dit = dofsField.erase(dit);
@@ -3207,9 +3212,16 @@ PetscErrorCode Core::clear_dofs_fields(const string &name,const Range ents,int v
       for(;ait!=hi_ait;ait++) {
         boost::shared_ptr<EntFiniteElement> ent_fe_ptr;
         ent_fe_ptr = ait->entFePtr;
-        ent_fe_ptr->row_dof_view.erase((*dit)->get_global_unique_id());
-        ent_fe_ptr->col_dof_view.erase((*dit)->get_global_unique_id());
-        ent_fe_ptr->data_dof_view.erase((*dit)->get_global_unique_id());
+        ent_fe_ptr->row_dof_view->erase((*dit)->get_global_unique_id());
+        if(ent_fe_ptr->row_dof_view!=ent_fe_ptr->col_dof_view) {
+          ent_fe_ptr->col_dof_view->erase((*dit)->get_global_unique_id());
+        }
+        if(
+          ent_fe_ptr->row_dof_view!=ent_fe_ptr->data_dof_view||
+          ent_fe_ptr->col_dof_view!=ent_fe_ptr->data_dof_view
+        ) {
+          ent_fe_ptr->data_dof_view->erase((*dit)->get_global_unique_id());
+        }
         ent_fe_ptr->data_dofs.get<Unique_mi_tag>().erase((*dit)->get_global_unique_id());
       }
       dit = dofsField.get<Composite_Name_And_Ent_mi_tag>().erase(dit);

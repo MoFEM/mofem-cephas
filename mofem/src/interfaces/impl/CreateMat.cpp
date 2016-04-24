@@ -135,8 +135,8 @@ PetscErrorCode CreateRowComressedADJMatrix::getEntityAdjacenies(
 
           ss << "rank " << rAnk << ":  numered_dofs_cols" << endl;
           DofEntity_multiIndex_uid_view::iterator dit, hi_dit;
-          dit = adj_miit->entFePtr->col_dof_view.begin();
-          hi_dit = adj_miit->entFePtr->col_dof_view.end();
+          dit = adj_miit->entFePtr->col_dof_view->begin();
+          hi_dit = adj_miit->entFePtr->col_dof_view->end();
 
           for (; dit != hi_dit; dit++) {
             ss << "\t" << **dit << endl;
@@ -940,11 +940,11 @@ PetscErrorCode Core::partition_check_matrix_fill_in(const string &problem_name,i
 
       }
 
-      if(fePtr->sPtr->row_dof_view.size()!=fePtr->rows_dofs->size()) {
+      if(fePtr->sPtr->row_dof_view->size()!=fePtr->rows_dofs->size()) {
         cerr << "Warning: FEDof Row size != NumeredFEDof RowSize" << endl;
       }
 
-      if(fePtr->sPtr->col_dof_view.size()!=fePtr->cols_dofs->size()) {
+      if(fePtr->sPtr->col_dof_view->size()!=fePtr->cols_dofs->size()) {
         cerr << "Warning: FEDof Row size != NumeredFEDof RowSize" << endl;
       }
 
