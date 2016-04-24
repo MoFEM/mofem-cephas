@@ -82,15 +82,15 @@ struct ArcLengthElement: public ArcLengthIntElemFEMethod {
     PetscFunctionBegin;
     FILE *datafile;
     PetscFOpen(PETSC_COMM_SELF,DATAFILENAME,"a+",&datafile);
-    NumeredDofEntity_multiIndex &numered_dofs_rows = const_cast<NumeredDofEntity_multiIndex&>(problemPtr->numered_dofs_rows);
+    boost::shared_ptr<NumeredDofEntity_multiIndex> numered_dofs_rows = problemPtr->numered_dofs_rows;
     NumeredDofEntity_multiIndex::index<FieldName_mi_tag>::type::iterator lit;
-    lit = numered_dofs_rows.get<FieldName_mi_tag>().find("LAMBDA");
-    if(lit == numered_dofs_rows.get<FieldName_mi_tag>().end()) PetscFunctionReturn(0);
+    lit = numered_dofs_rows->get<FieldName_mi_tag>().find("LAMBDA");
+    if(lit == numered_dofs_rows->get<FieldName_mi_tag>().end()) PetscFunctionReturn(0);
     Range::iterator nit = PostProcNodes.begin();
     for(;nit!=PostProcNodes.end();nit++) {
       NumeredDofEntity_multiIndex::index<Ent_mi_tag>::type::iterator dit,hi_dit;
-      dit = numered_dofs_rows.get<Ent_mi_tag>().lower_bound(*nit);
-      hi_dit = numered_dofs_rows.get<Ent_mi_tag>().upper_bound(*nit);
+      dit = numered_dofs_rows->get<Ent_mi_tag>().lower_bound(*nit);
+      hi_dit = numered_dofs_rows->get<Ent_mi_tag>().upper_bound(*nit);
       double coords[3];
       rval = mOab.get_coords(&*nit,1,coords);  MOAB_THROW(rval);
       for(;dit!=hi_dit;dit++) {

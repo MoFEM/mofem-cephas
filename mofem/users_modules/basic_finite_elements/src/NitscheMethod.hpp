@@ -294,8 +294,8 @@ struct NitscheMethod {
             faceFE.nInTheLoop = ff;
             faceFE.fePtr = faceFEPtr;
             faceFE.dataPtr = &faceFEPtr->sPtr->data_dofs;
-            faceFE.rowPtr = &faceFEPtr->rows_dofs;
-            faceFE.colPtr = &faceFEPtr->cols_dofs;
+            faceFE.rowPtr = &*faceFEPtr->rows_dofs;
+            faceFE.colPtr = &*faceFEPtr->cols_dofs;
             faceFE.addToRule = addToRule;
             ierr = faceFE(); CHKERRQ(ierr);
           }
