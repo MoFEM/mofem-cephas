@@ -1253,7 +1253,7 @@ struct FieldInterface: public UnknownInterface {
   /** \brief build problem data structures, assuming that mesh is partitioned (collective)
    * \ingroup mofem_problems
 
-   collective - need tu be run on all processors in communicator
+   collective - need to be run on all processors in communicator
 
    */
   virtual PetscErrorCode build_problem_on_distributed_mesh(const string &name,bool square_matrix = true,int verb = -1) = 0;
@@ -1261,7 +1261,7 @@ struct FieldInterface: public UnknownInterface {
   /** \brief build problem data structures, assuming that mesh is partitioned (collective)
    * \ingroup mofem_problems
 
-   collective - need tu be run on all processors in communicator
+   collective - need to be run on all processors in communicator
 
    */
   virtual PetscErrorCode build_problem_on_distributed_mesh(MoFEMProblem *problem_ptr,bool square_matrix = true,int verb = -1) = 0;
@@ -1269,11 +1269,13 @@ struct FieldInterface: public UnknownInterface {
   /** \brief build problem data structures, assuming that mesh is partitioned (collective)
    * \ingroup mofem_problems
 
-   collective - need tu be run on all processors in communicator
+   collective - need to be run on all processors in communicator
 
    */
   virtual PetscErrorCode build_problem_on_distributed_meshs(int verb = -1) = 0;
 
+  /** \brief This is deprecated, use function build_problem_on_distributed_mesh instead
+  */
   DEPRECATED inline PetscErrorCode build_partitioned_problem(const string &name,bool square_matrix = true,int verb = -1) {
     PetscErrorCode ierr;
     PetscFunctionBegin;
@@ -1281,6 +1283,8 @@ struct FieldInterface: public UnknownInterface {
     PetscFunctionReturn(0);
   }
 
+  /** \brief This is deprecated, use function build_problem_on_distributed_mesh instead
+  */
   DEPRECATED inline PetscErrorCode build_partitioned_problem(MoFEMProblem *problem_ptr,bool square_matrix = true,int verb = -1) {
     PetscErrorCode ierr;
     PetscFunctionBegin;
@@ -1288,6 +1292,8 @@ struct FieldInterface: public UnknownInterface {
     PetscFunctionReturn(0);
   }
 
+  /** \brief This is deprecated, use function build_problem_on_distributed_mesh instead
+  */
   DEPRECATED inline PetscErrorCode build_partitioned_problem(int verb = -1) {
     PetscErrorCode ierr;
     PetscFunctionBegin;
