@@ -522,6 +522,7 @@ struct Core: public FieldInterface, MeshRefinment, PrismInterface, SeriesRecorde
   PetscErrorCode list_adjacencies() const;
 
   //problem building
+  PetscErrorCode build_problem_on_partitioned_mesh(MoFEMProblem *problem_ptr,bool square_matrix = true,int verb = -1);
   PetscErrorCode build_problem_on_distributed_meshs(int verb = -1);
   PetscErrorCode build_problem_on_distributed_mesh(const string &name,bool square_matrix = true,int verb = -1);
   PetscErrorCode build_problem_on_distributed_mesh(MoFEMProblem *problem_ptr,bool square_matrix = true,int verb = -1);

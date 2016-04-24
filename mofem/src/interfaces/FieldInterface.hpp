@@ -1250,26 +1250,50 @@ struct FieldInterface: public UnknownInterface {
    */
   virtual PetscErrorCode clear_problems(int verb = -1) = 0;
 
-  /** \brief build problem data structures, assuming that mesh is partitioned (collective)
+  /** \brief build problem data structures, assuming that mesh is partitioned and not distributed (collective)
    * \ingroup mofem_problems
 
-   collective - need to be run on all processors in communicator
+   Mesh partitioned, that means that to each finite element in the problem is part of partition, it belongs to
+   partition meshsets/has tag indicating to which partition it belongs.
+
+   Collective - need to be run on all processors in communicator, i.e. each
+   function has to call this function.
+
+   */
+  virtual PetscErrorCode build_problem_on_partitioned_mesh(MoFEMProblem *problem_ptr,bool square_matrix = true,int verb = -1) = 0;
+
+  /** \brief build problem data structures, assuming that mesh is distributed (collective)
+   * \ingroup mofem_problems
+
+   Mesh is distributed, that means that each processor keeps only own part of
+   the mesh and shared entities.
+
+   Collective - need to be run on all processors in communicator, i.e. each
+   function has to call this function.
 
    */
   virtual PetscErrorCode build_problem_on_distributed_mesh(const string &name,bool square_matrix = true,int verb = -1) = 0;
 
-  /** \brief build problem data structures, assuming that mesh is partitioned (collective)
+  /** \brief build problem data structures, assuming that mesh is distributed (collective)
    * \ingroup mofem_problems
 
-   collective - need to be run on all processors in communicator
+   Mesh is distributed, that means that each processor keeps only own part of
+   the mesh and shared entities.
+
+   Collective - need to be run on all processors in communicator, i.e. each
+   function has to call this function.
 
    */
   virtual PetscErrorCode build_problem_on_distributed_mesh(MoFEMProblem *problem_ptr,bool square_matrix = true,int verb = -1) = 0;
 
-  /** \brief build problem data structures, assuming that mesh is partitioned (collective)
+  /** \brief build problem data structures, assuming that mesh is distributed (collective)
    * \ingroup mofem_problems
 
-   collective - need to be run on all processors in communicator
+   Mesh is distributed, that means that each processor keeps only own part of
+   the mesh and shared entities.
+
+   Collective - need to be run on all processors in communicator, i.e. each
+   function has to call this function.
 
    */
   virtual PetscErrorCode build_problem_on_distributed_meshs(int verb = -1) = 0;

@@ -2130,7 +2130,7 @@ PetscErrorCode Core::partition_finite_elements(
       } else {
         //rows_view
         ierr = (*miit2)->get_MoFEMFiniteElement_row_dof_view(
-          p_miit->numered_dofs_rows,rows_view,Interface::UNION
+          *(p_miit->numered_dofs_rows),rows_view,Interface::UNION
         ); CHKERRQ(ierr);
         vector<int> parts(sIze,0);
         viit_rows = rows_view.begin();
@@ -2148,7 +2148,7 @@ PetscErrorCode Core::partition_finite_elements(
         if(part_from_moab) {
           //rows_view
           ierr = (*miit2)->get_MoFEMFiniteElement_row_dof_view(
-            p_miit->numered_dofs_rows,rows_view,Interface::UNION
+            *(p_miit->numered_dofs_rows),rows_view,Interface::UNION
           ); CHKERRQ(ierr);
         }
         //rows element dof multi-indices
@@ -2164,7 +2164,7 @@ PetscErrorCode Core::partition_finite_elements(
         //cols_views
         NumeredDofEntity_multiIndex_uid_view_ordered cols_view;
         ierr = (*miit2)->get_MoFEMFiniteElement_col_dof_view(
-          p_miit->numered_dofs_cols,cols_view,Interface::UNION
+          *(p_miit->numered_dofs_cols),cols_view,Interface::UNION
         ); CHKERRQ(ierr);
         //cols element dof multi-indices
         NumeredDofEntity_multiIndex_uid_view_ordered::iterator viit_cols;;
@@ -2260,8 +2260,8 @@ PetscErrorCode Core::partition_ghost_dofs(const string &name,int verb) {
     NumeredDofEntity_multiIndex_uid_view_ordered *ghost_idx_view[2] = { &ghost_idx_col_view, &ghost_idx_row_view };
     typedef NumeredDofEntity_multiIndex::index<Unique_mi_tag>::type NumeredDofEntitys_by_unique_id;
     NumeredDofEntitys_by_unique_id *dof_by_uid_no_const[2] = {
-      const_cast<NumeredDofEntitys_by_unique_id*>(&p_miit->numered_dofs_cols.get<Unique_mi_tag>()),
-      const_cast<NumeredDofEntitys_by_unique_id*>(&p_miit->numered_dofs_rows.get<Unique_mi_tag>())
+      const_cast<NumeredDofEntitys_by_unique_id*>(&p_miit->numered_dofs_cols->get<Unique_mi_tag>()),
+      const_cast<NumeredDofEntitys_by_unique_id*>(&p_miit->numered_dofs_rows->get<Unique_mi_tag>())
     };
     for(int ss = 0;ss<2;ss++) {
       NumeredDofEntity_multiIndex_uid_view_ordered::iterator ghost_idx_miit = ghost_idx_view[ss]->begin();
@@ -2287,8 +2287,8 @@ PetscErrorCode Core::partition_ghost_dofs(const string &name,int verb) {
     << " Nb. row ghost dof " << p_miit->get_nb_ghost_dofs_row()
     << " Nb. local dof " << p_miit->get_nb_local_dofs_row() << endl;
     if(verb>1) {
-      NumeredDofEntity_multiIndex::iterator miit_dd_col = p_miit->numered_dofs_cols.begin();
-      for(;miit_dd_col!=p_miit->numered_dofs_cols.end();miit_dd_col++) {
+      NumeredDofEntity_multiIndex::iterator miit_dd_col = p_miit->numered_dofs_cols->begin();
+      for(;miit_dd_col!=p_miit->numered_dofs_cols->end();miit_dd_col++) {
         if((*miit_dd_col)->part==(unsigned int)rAnk) continue;
         if((*miit_dd_col)->petsc_local_dof_idx==(DofIdx)-1) continue;
         ss<<*(*miit_dd_col)<<endl;
@@ -2958,10 +2958,10 @@ PetscErrorCode Core::loop_dofs(
   numerd_dofs *dofs;
   switch (rc) {
     case ROW:
-      dofs = const_cast<numerd_dofs*>(&problem_ptr->numered_dofs_rows.get<Composite_Name_And_Part_mi_tag>());
+      dofs = const_cast<numerd_dofs*>(&problem_ptr->numered_dofs_rows->get<Composite_Name_And_Part_mi_tag>());
       break;
     case COL:
-      dofs = const_cast<numerd_dofs*>(&problem_ptr->numered_dofs_cols.get<Composite_Name_And_Part_mi_tag>());
+      dofs = const_cast<numerd_dofs*>(&problem_ptr->numered_dofs_cols->get<Composite_Name_And_Part_mi_tag>());
       break;
     default:
      SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"not implemented");

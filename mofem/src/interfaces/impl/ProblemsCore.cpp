@@ -63,6 +63,23 @@ struct __attribute__ ((__packed__)) IdxDataType {
 
 const static int debug = 1;
 
+PetscErrorCode Core::build_problem_on_partitioned_mesh(MoFEMProblem *problem_ptr,bool square_matrix,int verb) {
+  PetscFunctionBegin;
+
+  SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not yet implemented");
+
+  if(verb==-1) verb = verbose;
+  if(problem_ptr->get_BitRefLevel().none()) {
+    SETERRQ1(PETSC_COMM_SELF,1,"problem <%s> refinement level not set",problem_ptr->get_name().c_str());
+  }
+  //zero finite elements
+  ProblemClearNumeredFiniteElementsChange().operator()(*problem_ptr);
+
+
+  PetscFunctionReturn(0);
+}
+
+
 PetscErrorCode Core::build_problem_on_distributed_mesh(const string &name,bool square_matrix,int verb) {
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
@@ -86,8 +103,6 @@ PetscErrorCode Core::build_problem_on_distributed_mesh(MoFEMProblem *problem_ptr
   }
   //zero finite elements
   ProblemClearNumeredFiniteElementsChange().operator()(*problem_ptr);
-  //bool success = pRoblems.modify(p_miit,ProblemClearNumeredFiniteElementsChange());
-  //if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
 
   //get rows and cols dofs view based on data on elements
   DofEntity_multiIndex_active_view dofs_rows,dofs_cols;
@@ -114,8 +129,8 @@ PetscErrorCode Core::build_problem_on_distributed_mesh(MoFEMProblem *problem_ptr
 
   //add dofs for rows and cols and set ownership
   DofEntity_multiIndex_active_view* dofs_ptr[] = { &dofs_rows, &dofs_cols };
-  NumeredDofEntity_multiIndex *numered_dofs_ptr[] = {
-    &(problem_ptr->numered_dofs_rows), &(problem_ptr->numered_dofs_cols)
+  boost::shared_ptr<NumeredDofEntity_multiIndex> numered_dofs_ptr[] = {
+    problem_ptr->numered_dofs_rows, problem_ptr->numered_dofs_cols
   };
   int* nbdof_ptr[] = {
     problem_ptr->tag_nbdof_data_row, problem_ptr->tag_nbdof_data_col
@@ -696,12 +711,12 @@ PetscErrorCode Core::build_problem(MoFEMProblem *problem_ptr,int verb) {
   *problem_ptr->tag_nbdof_data_row = 0;
   *problem_ptr->tag_local_nbdof_data_row = 0;
   *problem_ptr->tag_ghost_nbdof_data_row = 0;
-  problem_ptr->numered_dofs_rows.clear();
+  problem_ptr->numered_dofs_rows->clear();
   //zero cols
   *problem_ptr->tag_nbdof_data_col = 0;
   *problem_ptr->tag_local_nbdof_data_col = 0;
   *problem_ptr->tag_ghost_nbdof_data_col = 0;
-  problem_ptr->numered_dofs_cols.clear();
+  problem_ptr->numered_dofs_cols->clear();
 
   //add dofs for rows
   DofEntity_multiIndex_active_view::nth_index<1>::type::iterator miit4,hi_miit4;
@@ -733,7 +748,7 @@ PetscErrorCode Core::build_problem(MoFEMProblem *problem_ptr,int verb) {
   if(verbose>0) {
     PetscSynchronizedPrintf(comm,"Problem %s Nb. rows %u Nb. cols %u\n",
     problem_ptr->get_name().c_str(),
-    problem_ptr->numered_dofs_rows.size(),problem_ptr->numered_dofs_cols.size());
+    problem_ptr->numered_dofs_rows->size(),problem_ptr->numered_dofs_cols->size());
   }
   if(verb>1) {
     EntFiniteElement_multiIndex::iterator miit_ss = miit2;
@@ -746,15 +761,15 @@ PetscErrorCode Core::build_problem(MoFEMProblem *problem_ptr,int verb) {
     }
     ss << "rank " << rAnk << " ";
     ss << "FEs row dofs "<< *problem_ptr << " Nb. row dof " << problem_ptr->get_nb_dofs_row() << endl;
-    NumeredDofEntity_multiIndex::iterator miit_dd_row = problem_ptr->numered_dofs_rows.begin();
-    for(;miit_dd_row!=problem_ptr->numered_dofs_rows.end();miit_dd_row++) {
+    NumeredDofEntity_multiIndex::iterator miit_dd_row = problem_ptr->numered_dofs_rows->begin();
+    for(;miit_dd_row!=problem_ptr->numered_dofs_rows->end();miit_dd_row++) {
       ss << "rank " << rAnk << " ";
       ss<<*miit_dd_row<<endl;
     }
     ss << "rank " << rAnk << " ";
     ss << "FEs col dofs "<< *problem_ptr << " Nb. col dof " << problem_ptr->get_nb_dofs_col() << endl;
-    NumeredDofEntity_multiIndex::iterator miit_dd_col = problem_ptr->numered_dofs_cols.begin();
-    for(;miit_dd_col!=problem_ptr->numered_dofs_cols.end();miit_dd_col++) {
+    NumeredDofEntity_multiIndex::iterator miit_dd_col = problem_ptr->numered_dofs_cols->begin();
+    for(;miit_dd_col!=problem_ptr->numered_dofs_cols->end();miit_dd_col++) {
       ss << "rank " << rAnk << " ";
       ss<<*miit_dd_col<<endl;
     }
@@ -854,8 +869,8 @@ PetscErrorCode Core::partition_simple_problem(const string &name,int verb) {
   MoFEMProblem_multiIndex_by_name::iterator p_miit = pRoblems_set.find(name);
   if(p_miit==pRoblems_set.end()) SETERRQ1(PETSC_COMM_SELF,1,"problem < %s > is not found (top tip: check spelling)",name.c_str());
   typedef boost::multi_index::index<NumeredDofEntity_multiIndex,Idx_mi_tag>::type NumeredDofEntitys_by_idx;
-  NumeredDofEntitys_by_idx &dofs_row_by_idx = const_cast<NumeredDofEntitys_by_idx&>(p_miit->numered_dofs_rows.get<Idx_mi_tag>());
-  NumeredDofEntitys_by_idx &dofs_col_by_idx = const_cast<NumeredDofEntitys_by_idx&>(p_miit->numered_dofs_cols.get<Idx_mi_tag>());
+  NumeredDofEntitys_by_idx &dofs_row_by_idx = const_cast<NumeredDofEntitys_by_idx&>(p_miit->numered_dofs_rows->get<Idx_mi_tag>());
+  NumeredDofEntitys_by_idx &dofs_col_by_idx = const_cast<NumeredDofEntitys_by_idx&>(p_miit->numered_dofs_cols->get<Idx_mi_tag>());
   boost::multi_index::index<NumeredDofEntity_multiIndex,Idx_mi_tag>::type::iterator miit_row,hi_miit_row;
   boost::multi_index::index<NumeredDofEntity_multiIndex,Idx_mi_tag>::type::iterator miit_col,hi_miit_col;
   DofIdx &nb_row_local_dofs = *((DofIdx*)p_miit->tag_local_nbdof_data_row);
@@ -951,21 +966,34 @@ PetscErrorCode Core::partition_compose_problem(const string &name,const string &
 
   //find p_miit_row
   MoFEMProblem_multiIndex_by_name::iterator p_miit_row = pRoblems_set.find(problem_for_rows);
-  if(p_miit_row==pRoblems_set.end()) SETERRQ1(PETSC_COMM_SELF,1,"problem with name < %s > not defined (top tip check spelling)",problem_for_rows.c_str());
-  const NumeredDofEntity_multiIndex &dofs_row = p_miit_row->numered_dofs_rows;
+  if(p_miit_row==pRoblems_set.end()) {
+    SETERRQ1(
+      PETSC_COMM_SELF,
+      MOFEM_DATA_INCONSISTENCY,
+      "problem with name < %s > not defined (top tip check spelling)",
+      problem_for_rows.c_str()
+    );
+  }
+  const boost::shared_ptr<NumeredDofEntity_multiIndex> dofs_row = p_miit_row->numered_dofs_rows;
   //find p_mit_col
   MoFEMProblem_multiIndex_by_name::iterator p_miit_col = pRoblems_set.find(problem_for_cols);
-  if(p_miit_col==pRoblems_set.end()) SETERRQ1(PETSC_COMM_SELF,1,"problem with name < %s > not defined (top tip check spelling)",problem_for_cols.c_str());
-  const NumeredDofEntity_multiIndex &dofs_col = p_miit_col->numered_dofs_cols;
+  if(p_miit_col==pRoblems_set.end()) {
+    SETERRQ1(
+      PETSC_COMM_SELF,
+      MOFEM_DATA_INCONSISTENCY,
+      "problem with name < %s > not defined (top tip check spelling)",
+      problem_for_cols.c_str());
+  }
+  const boost::shared_ptr<NumeredDofEntity_multiIndex> dofs_col = p_miit_col->numered_dofs_cols;
+
   bool copy[] = { copy_rows, copy_cols };
-  NumeredDofEntity_multiIndex* composed_dofs[] = {
-    const_cast<NumeredDofEntity_multiIndex*>(&p_miit->numered_dofs_rows),
-    const_cast<NumeredDofEntity_multiIndex*>(&p_miit->numered_dofs_cols)
+  boost::shared_ptr<NumeredDofEntity_multiIndex> composed_dofs[] = {
+    p_miit->numered_dofs_rows, p_miit->numered_dofs_cols
   };
 
   int* nb_local_dofs[] = { p_miit->tag_local_nbdof_data_row, p_miit->tag_local_nbdof_data_col };
   int* nb_dofs[] = { p_miit->tag_nbdof_data_row, p_miit->tag_nbdof_data_col };
-  const NumeredDofEntity_multiIndex* copied_dofs[] = { &dofs_row, &dofs_col };
+  const boost::shared_ptr<NumeredDofEntity_multiIndex> copied_dofs[] = { dofs_row, dofs_col };
 
   for(int ss = 0; ss<2;ss++) {
 
@@ -1067,14 +1095,14 @@ PetscErrorCode Core::printPartitionedProblem(const MoFEMProblem *problem_ptr,int
     ostringstream ss;
     ss << "rank = " << rAnk << " FEs row dofs "<< *problem_ptr << " Nb. row dof " << problem_ptr->get_nb_dofs_row()
     << " Nb. local dof " << problem_ptr->get_nb_local_dofs_row() << endl;
-    NumeredDofEntity_multiIndex::iterator miit_dd_row = problem_ptr->numered_dofs_rows.begin();
-    for(;miit_dd_row!=problem_ptr->numered_dofs_rows.end();miit_dd_row++) {
+    NumeredDofEntity_multiIndex::iterator miit_dd_row = problem_ptr->numered_dofs_rows->begin();
+    for(;miit_dd_row!=problem_ptr->numered_dofs_rows->end();miit_dd_row++) {
       ss<<*miit_dd_row<<endl;
     }
     ss << "rank = " << rAnk << " FEs col dofs "<< *problem_ptr << " Nb. col dof " << problem_ptr->get_nb_dofs_col()
     << " Nb. local dof " << problem_ptr->get_nb_local_dofs_col() << endl;
-    NumeredDofEntity_multiIndex::iterator miit_dd_col = problem_ptr->numered_dofs_cols.begin();
-    for(;miit_dd_col!=problem_ptr->numered_dofs_cols.end();miit_dd_col++) {
+    NumeredDofEntity_multiIndex::iterator miit_dd_col = problem_ptr->numered_dofs_cols->begin();
+    for(;miit_dd_col!=problem_ptr->numered_dofs_cols->end();miit_dd_col++) {
       ss<<*miit_dd_col<<endl;
     }
     PetscSynchronizedPrintf(comm,ss.str().c_str());
@@ -1090,7 +1118,7 @@ PetscErrorCode Core::debugPartitionedProblem(const MoFEMProblem *problem_ptr,int
     typedef NumeredDofEntity_multiIndex::index<Idx_mi_tag>::type NumeredDofEntitys_by_idx;
     NumeredDofEntitys_by_idx::iterator dit,hi_dit;
     const NumeredDofEntitys_by_idx* numered_dofs_ptr[] = {
-      &(problem_ptr->numered_dofs_rows.get<Idx_mi_tag>()), &(problem_ptr->numered_dofs_rows.get<Idx_mi_tag>())
+      &(problem_ptr->numered_dofs_rows->get<Idx_mi_tag>()), &(problem_ptr->numered_dofs_rows->get<Idx_mi_tag>())
     };
 
     int* nbdof_ptr[] = {
@@ -1103,7 +1131,7 @@ PetscErrorCode Core::debugPartitionedProblem(const MoFEMProblem *problem_ptr,int
     for(int ss = 0;ss<2;ss++) {
 
       dit = numered_dofs_ptr[ss]->begin();
-      hi_dit = problem_ptr->numered_dofs_rows.get<Idx_mi_tag>().end();
+      hi_dit = problem_ptr->numered_dofs_rows->get<Idx_mi_tag>().end();
       for(;dit!=hi_dit;dit++) {
         if((*dit)->get_part()==(unsigned int)rAnk) {
           if((*dit)->get_petsc_local_dof_idx()<0) {

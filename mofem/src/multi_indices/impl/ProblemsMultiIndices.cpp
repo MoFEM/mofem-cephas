@@ -36,7 +36,10 @@
 namespace MoFEM {
 
 //moab problem
-MoFEMProblem::MoFEMProblem(Interface &moab,const EntityHandle _meshset): meshset(_meshset) {
+MoFEMProblem::MoFEMProblem(Interface &moab,const EntityHandle _meshset):
+meshset(_meshset),
+numered_dofs_rows(boost::shared_ptr<NumeredDofEntity_multiIndex>(new NumeredDofEntity_multiIndex())),
+numered_dofs_cols(boost::shared_ptr<NumeredDofEntity_multiIndex>(new NumeredDofEntity_multiIndex())) {
   ErrorCode rval;
   Tag th_ProblemId;
   rval = moab.tag_get_handle("_ProblemId",th_ProblemId); CHKERR_MOAB(rval);
@@ -87,8 +90,8 @@ BitFEId MoFEMProblem::get_BitFEId() const {
 PetscErrorCode MoFEMProblem::get_row_dofs_by_petsc_gloabl_dof_idx(DofIdx idx,const NumeredDofEntity **dof_ptr) const {
   PetscFunctionBegin;
   NumeredDofEntity_multiIndex::index<PetscGlobalIdx_mi_tag>::type::iterator dit;
-  dit = numered_dofs_rows.get<PetscGlobalIdx_mi_tag>().find(idx);
-  if(dit==numered_dofs_rows.get<PetscGlobalIdx_mi_tag>().end()) {
+  dit = numered_dofs_rows->get<PetscGlobalIdx_mi_tag>().find(idx);
+  if(dit==numered_dofs_rows->get<PetscGlobalIdx_mi_tag>().end()) {
     SETERRQ1(PETSC_COMM_SELF,MOFEM_NOT_FOUND,"row dof <%d> not found",idx);
   }
   *dof_ptr = &*(*dit);
@@ -98,8 +101,8 @@ PetscErrorCode MoFEMProblem::get_row_dofs_by_petsc_gloabl_dof_idx(DofIdx idx,con
 PetscErrorCode MoFEMProblem::get_col_dofs_by_petsc_gloabl_dof_idx(DofIdx idx,const NumeredDofEntity **dof_ptr) const {
   PetscFunctionBegin;
   NumeredDofEntity_multiIndex::index<PetscGlobalIdx_mi_tag>::type::iterator dit;
-  dit = numered_dofs_cols.get<PetscGlobalIdx_mi_tag>().find(idx);
-  if(dit==numered_dofs_cols.get<PetscGlobalIdx_mi_tag>().end()) {
+  dit = numered_dofs_cols->get<PetscGlobalIdx_mi_tag>().find(idx);
+  if(dit==numered_dofs_cols->get<PetscGlobalIdx_mi_tag>().end()) {
     SETERRQ1(PETSC_COMM_SELF,MOFEM_NOT_FOUND,"row dof <%d> not found",idx);
   }
   *dof_ptr = &*(*dit);
@@ -150,14 +153,14 @@ ProblemAddRowDof::ProblemAddRowDof(const boost::shared_ptr<DofEntity> _dof_ptr):
   assert(dof_ptr->active);
 }
 void ProblemAddRowDof::operator()(MoFEMProblem &e) {
-  p = e.numered_dofs_rows.insert(boost::shared_ptr<NumeredDofEntity>(new NumeredDofEntity(dof_ptr)));
+  p = e.numered_dofs_rows->insert(boost::shared_ptr<NumeredDofEntity>(new NumeredDofEntity(dof_ptr)));
   if(p.second) {
     (*(DofIdx*)e.tag_nbdof_data_row)++;
   }
 }
 ProblemAddColDof::ProblemAddColDof(const boost::shared_ptr<DofEntity> _dof_ptr): dof_ptr(_dof_ptr) {}
 void ProblemAddColDof::operator()(MoFEMProblem &e) {
-  p = e.numered_dofs_cols.insert(boost::shared_ptr<NumeredDofEntity>(new NumeredDofEntity(dof_ptr)));
+  p = e.numered_dofs_cols->insert(boost::shared_ptr<NumeredDofEntity>(new NumeredDofEntity(dof_ptr)));
   if(p.second) {
     (*(DofIdx*)e.tag_nbdof_data_col)++;
   }
@@ -166,24 +169,24 @@ void ProblemZeroNbRowsChange::operator()(MoFEMProblem &e) {
   (*(DofIdx*)e.tag_nbdof_data_row) = 0;
   (*(DofIdx*)e.tag_local_nbdof_data_row) = 0;
   (*(DofIdx*)e.tag_ghost_nbdof_data_row) = 0;
-  e.numered_dofs_rows.clear();
+  e.numered_dofs_rows->clear();
 }
 void ProblemZeroNbColsChange::operator()(MoFEMProblem &e) {
   (*(DofIdx*)e.tag_nbdof_data_col) = 0;
   (*(DofIdx*)e.tag_local_nbdof_data_col) = 0;
   (*(DofIdx*)e.tag_ghost_nbdof_data_col) = 0;
-  e.numered_dofs_cols.clear();
+  e.numered_dofs_cols->clear();
 }
 void ProblemClearNumeredFiniteElementsChange::operator()(MoFEMProblem &e) {
   e.numeredFiniteElements.clear();
 }
 void ProblemRowNumberChange::operator()(MoFEMProblem &e) {
   NumeredDofEntity_multiIndex::index<Unique_mi_tag>::type::iterator dit;
-  dit = e.numered_dofs_rows.get<Unique_mi_tag>().begin();
+  dit = e.numered_dofs_rows->get<Unique_mi_tag>().begin();
   int idx = 0;
-  for(;dit!=e.numered_dofs_rows.get<Unique_mi_tag>().end();dit++,idx++) {
+  for(;dit!=e.numered_dofs_rows->get<Unique_mi_tag>().end();dit++,idx++) {
     bool success =
-      e.numered_dofs_rows.modify(dit,NumeredDofEntity_mofem_index_change(idx));
+      e.numered_dofs_rows->modify(dit,NumeredDofEntity_mofem_index_change(idx));
     if(!success) {
       throw "modification unsuccessful";
     }
@@ -191,11 +194,11 @@ void ProblemRowNumberChange::operator()(MoFEMProblem &e) {
 }
 void ProblemColNumberChange::operator()(MoFEMProblem &e) {
   NumeredDofEntity_multiIndex::index<Unique_mi_tag>::type::iterator dit;
-  dit = e.numered_dofs_cols.get<Unique_mi_tag>().begin();
+  dit = e.numered_dofs_cols->get<Unique_mi_tag>().begin();
   int idx = 0;
-  for(;dit!=e.numered_dofs_cols.get<Unique_mi_tag>().end();dit++,idx++) {
+  for(;dit!=e.numered_dofs_cols->get<Unique_mi_tag>().end();dit++,idx++) {
     bool success =
-      e.numered_dofs_cols.modify(dit,NumeredDofEntity_mofem_index_change(idx));
+      e.numered_dofs_cols->modify(dit,NumeredDofEntity_mofem_index_change(idx));
     if(!success) {
       throw "modification unsuccessful";
     }

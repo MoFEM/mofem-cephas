@@ -145,7 +145,7 @@ PetscErrorCode CreateRowComressedADJMatrix::getEntityAdjacenies(
       }
 
       ierr = adj_miit->entFePtr->get_MoFEMFiniteElement_col_dof_view(
-        p_miit->numered_dofs_cols,
+        *(p_miit->numered_dofs_cols),
         dofs_col_view,
         Interface::UNION
       ); CHKERRQ(ierr);
@@ -171,8 +171,8 @@ PetscErrorCode CreateRowComressedADJMatrix::createMatArrays(
   typedef typename boost::multi_index::index<NumeredDofEntity_multiIndex,TAG>::type NumeredDofEntitysByIdx;
 
   // Get multi-indices for rows and columns
-  const NumeredDofEntitysByIdx &dofs_row_by_idx = p_miit->numered_dofs_rows.get<TAG>();
-  const NumeredDofEntitysByIdx &dofs_col_by_idx = p_miit->numered_dofs_cols.get<TAG>();
+  const NumeredDofEntitysByIdx &dofs_row_by_idx = p_miit->numered_dofs_rows->get<TAG>();
+  const NumeredDofEntitysByIdx &dofs_col_by_idx = p_miit->numered_dofs_cols->get<TAG>();
   DofIdx nb_dofs_row = p_miit->get_nb_dofs_row();
   if(nb_dofs_row == 0) {
     SETERRQ1(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"problem <%s> has zero rows",p_miit->get_name().c_str());
@@ -347,8 +347,8 @@ PetscErrorCode CreateRowComressedADJMatrix::createMatArrays(
         if(debug) {
 
           DofByGlobalPetscIndex::iterator dit;
-          dit = p_miit->numered_dofs_rows.get<PetscGlobalIdx_mi_tag>().find(row_idx);
-          if(dit==p_miit->numered_dofs_rows.get<PetscGlobalIdx_mi_tag>().end()) {
+          dit = p_miit->numered_dofs_rows->get<PetscGlobalIdx_mi_tag>().find(row_idx);
+          if(dit==p_miit->numered_dofs_rows->get<PetscGlobalIdx_mi_tag>().end()) {
             SETERRQ1(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"dof %d can not be found in problem",row_idx);
           }
 
@@ -715,8 +715,8 @@ PetscErrorCode Core::partition_problem(const string &name,int verb) {
   }
 
   //set petsc global indicies
-  NumeredDofEntitysByIdx &dofs_row_by_idx_no_const = const_cast<NumeredDofEntitysByIdx&>(p_miit->numered_dofs_rows.get<Idx_mi_tag>());
-  NumeredDofEntitysByIdx &dofs_col_by_idx_no_const = const_cast<NumeredDofEntitysByIdx&>(p_miit->numered_dofs_cols.get<Idx_mi_tag>());
+  NumeredDofEntitysByIdx &dofs_row_by_idx_no_const = const_cast<NumeredDofEntitysByIdx&>(p_miit->numered_dofs_rows->get<Idx_mi_tag>());
+  NumeredDofEntitysByIdx &dofs_col_by_idx_no_const = const_cast<NumeredDofEntitysByIdx&>(p_miit->numered_dofs_cols->get<Idx_mi_tag>());
   DofIdx &nb_row_local_dofs = *((DofIdx*)p_miit->tag_local_nbdof_data_row);
   DofIdx &nb_col_local_dofs = *((DofIdx*)p_miit->tag_local_nbdof_data_col);
   nb_row_local_dofs = 0;
