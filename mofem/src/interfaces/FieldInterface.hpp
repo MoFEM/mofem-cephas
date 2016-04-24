@@ -1256,7 +1256,7 @@ struct FieldInterface: public UnknownInterface {
    collective - need tu be run on all processors in communicator
 
    */
-  virtual PetscErrorCode build_partitioned_problem(const string &name,bool square_matrix = true,int verb = -1) = 0;
+  virtual PetscErrorCode build_problem_on_distributed_mesh(const string &name,bool square_matrix = true,int verb = -1) = 0;
 
   /** \brief build problem data structures, assuming that mesh is partitioned (collective)
    * \ingroup mofem_problems
@@ -1264,7 +1264,7 @@ struct FieldInterface: public UnknownInterface {
    collective - need tu be run on all processors in communicator
 
    */
-  virtual PetscErrorCode build_partitioned_problem(MoFEMProblem *problem_ptr,bool square_matrix = true,int verb = -1) = 0;
+  virtual PetscErrorCode build_problem_on_distributed_mesh(MoFEMProblem *problem_ptr,bool square_matrix = true,int verb = -1) = 0;
 
   /** \brief build problem data structures, assuming that mesh is partitioned (collective)
    * \ingroup mofem_problems
@@ -1272,7 +1272,28 @@ struct FieldInterface: public UnknownInterface {
    collective - need tu be run on all processors in communicator
 
    */
-  virtual PetscErrorCode build_partitioned_problems(int verb = -1) = 0;
+  virtual PetscErrorCode build_problem_on_distributed_meshs(int verb = -1) = 0;
+
+  DEPRECATED inline PetscErrorCode build_partitioned_problem(const string &name,bool square_matrix = true,int verb = -1) {
+    PetscErrorCode ierr;
+    PetscFunctionBegin;
+    ierr = build_partitioned_problem(name,square_matrix,verb); CHKERRQ(ierr);
+    PetscFunctionReturn(0);
+  }
+
+  DEPRECATED inline PetscErrorCode build_partitioned_problem(MoFEMProblem *problem_ptr,bool square_matrix = true,int verb = -1) {
+    PetscErrorCode ierr;
+    PetscFunctionBegin;
+    ierr = build_partitioned_problem(problem_ptr,square_matrix,verb); CHKERRQ(ierr);
+    PetscFunctionReturn(0);
+  }
+
+  DEPRECATED inline PetscErrorCode build_partitioned_problem(int verb = -1) {
+    PetscErrorCode ierr;
+    PetscFunctionBegin;
+    ierr = build_partitioned_problem(verb); CHKERRQ(ierr);
+    PetscFunctionReturn(0);
+  }
 
   /**
    * \brief Set partition tag to each finite element in the problem

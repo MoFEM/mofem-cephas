@@ -471,7 +471,7 @@ int main(int argc, char *argv[]) {
     ierr = m_field.modify_problem_add_finite_element("Kuu","FLUID_PRESSURE_FE"); CHKERRQ(ierr);
     ierr = m_field.modify_problem_ref_level_add_bit("Kuu",bit_level0); CHKERRQ(ierr);
     if(is_partitioned) {
-      ierr = m_field.build_partitioned_problem("Kuu"); CHKERRQ(ierr);
+      ierr = m_field.build_problem_on_distributed_mesh("Kuu"); CHKERRQ(ierr);
       ierr = m_field.partition_finite_elements("Kuu",true,0,pcomm->size()); CHKERRQ(ierr);
     } else {
       ierr = m_field.build_problem("Kuu"); CHKERRQ(ierr);
@@ -496,7 +496,7 @@ int main(int argc, char *argv[]) {
   ierr = m_field.modify_problem_ref_level_add_bit("DYNAMICS",bit_level0); CHKERRQ(ierr);
 
   if(is_partitioned) {
-    ierr = m_field.build_partitioned_problem("DYNAMICS"); CHKERRQ(ierr);
+    ierr = m_field.build_problem_on_distributed_mesh("DYNAMICS"); CHKERRQ(ierr);
     ierr = m_field.partition_finite_elements("DYNAMICS",true,0,pcomm->size()); CHKERRQ(ierr);
   } else {
     ierr = m_field.build_problem("DYNAMICS"); CHKERRQ(ierr);

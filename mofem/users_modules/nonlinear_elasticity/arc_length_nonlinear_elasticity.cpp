@@ -284,7 +284,7 @@ int main(int argc, char *argv[]) {
   //build database
   if(is_partitioned) {
     SETERRQ(PETSC_COMM_SELF,1,"Not implemented, problem with arc-length force multiplayer");
-    //ierr = m_field.build_partitioned_problems(PETSC_COMM_WORLD,1); CHKERRQ(ierr);
+    //ierr = m_field.build_problem_on_distributed_meshs(PETSC_COMM_WORLD,1); CHKERRQ(ierr);
     //ierr = m_field.partition_finite_elements("ELASTIC_MECHANICS",true,0,pcomm->size(),1); CHKERRQ(ierr);
   } else {
     ierr = m_field.build_problems(); CHKERRQ(ierr);

@@ -63,7 +63,7 @@ struct __attribute__ ((__packed__)) IdxDataType {
 
 const static int debug = 1;
 
-PetscErrorCode Core::build_partitioned_problem(const string &name,bool square_matrix,int verb) {
+PetscErrorCode Core::build_problem_on_distributed_mesh(const string &name,bool square_matrix,int verb) {
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
   if(!(*buildMoFEM)&BUILD_FIELD) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"fields not build");
@@ -71,12 +71,12 @@ PetscErrorCode Core::build_partitioned_problem(const string &name,bool square_ma
   if(!(*buildMoFEM)&BUILD_ADJ) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"adjacencies not build");
   const MoFEMProblem *problem_ptr;
   ierr = get_problem(name,&problem_ptr); CHKERRQ(ierr);
-  ierr = build_partitioned_problem(const_cast<MoFEMProblem*>(problem_ptr),square_matrix,verb); CHKERRQ(ierr);
+  ierr = build_problem_on_distributed_mesh(const_cast<MoFEMProblem*>(problem_ptr),square_matrix,verb); CHKERRQ(ierr);
   *buildMoFEM |= BUILD_PROBLEM;
   *buildMoFEM |= PARTITION_PROBLEM;
   PetscFunctionReturn(0);
 }
-PetscErrorCode Core::build_partitioned_problem(MoFEMProblem *problem_ptr,bool square_matrix,int verb) {
+PetscErrorCode Core::build_problem_on_distributed_mesh(MoFEMProblem *problem_ptr,bool square_matrix,int verb) {
   PetscFunctionBegin;
   PetscLogEventBegin(USER_EVENT_buildProblem,0,0,0,0);
 
@@ -430,13 +430,13 @@ PetscErrorCode Core::build_partitioned_problem(MoFEMProblem *problem_ptr,bool sq
 
   PetscFunctionReturn(0);
 }
-PetscErrorCode Core::build_partitioned_problems(int verb) {
+PetscErrorCode Core::build_problem_on_distributed_meshs(int verb) {
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
   DofEntity_multiIndex_active_view dofs_rows,dofs_cols;
   MoFEMProblem_multiIndex::iterator p_miit = pRoblems.begin();
   for(;p_miit!=pRoblems.end();p_miit++) {
-    ierr = build_partitioned_problem(const_cast<MoFEMProblem*>(&*p_miit),verb); CHKERRQ(ierr);
+    ierr = build_problem_on_distributed_mesh(const_cast<MoFEMProblem*>(&*p_miit),verb); CHKERRQ(ierr);
   }
   PetscFunctionReturn(0);
 }
