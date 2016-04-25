@@ -41,7 +41,9 @@ PetscErrorCode H1_EdgeShapeFunctions_MBTRI(
   }
   int P[3];
   int ee = 0;
-  for(;ee<3; ee++) P[ee] = NBEDGE_H1_AINSWORTH_COLE(p[ee]);
+  for(;ee<3;ee++) {
+    P[ee] = NBEDGE_H1_AINSWORTH_COLE(p[ee]);
+  }
   int dd = 0;
   double diff_ksi01[2],diff_ksi12[2],diff_ksi20[2];
   if(diff_edgeN!=NULL) {
@@ -201,7 +203,7 @@ PetscErrorCode H1_FaceShapeFunctions_MBTRI(
   PetscFunctionReturn(0);
 }
 PetscErrorCode H1_EdgeShapeFunctions_MBTET(
-  int *sense,int *p,double *N,double *diffN,double *edgeN[],double *diff_edgeN[],int GDIM,
+  const int bubble,int *sense,int *p,double *N,double *diffN,double *edgeN[],double *diff_edgeN[],int GDIM,
   PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
 ) {
   PetscFunctionBegin;
@@ -230,11 +232,17 @@ PetscErrorCode H1_EdgeShapeFunctions_MBTET(
       if(P[ee]==0) continue;
       double L[p[ee]+1],diffL[3*(p[ee]+1)];
       ierr = base_polynomials(p[ee],edges_ksi[ee],edges_diff_ksi[ee],L,diffL,3);  CHKERRQ(ierr);
+      double v = 1;
+      if(!bubble) {
+        v = N[node_shift+edges_nodes[2*ee+0]]*N[node_shift+edges_nodes[2*ee+1]];
+      }
       if(edgeN != NULL)
       if(edgeN[ee] != NULL) {
         int shift = ii*P[ee];
         cblas_dcopy(P[ee],L,1,&edgeN[ee][shift],1);
-        cblas_dscal(P[ee],N[node_shift+edges_nodes[2*ee+0]]*N[node_shift+edges_nodes[2*ee+1]],&edgeN[ee][shift],1);
+        if(!bubble) {
+          cblas_dscal(P[ee],N[node_shift+edges_nodes[2*ee+0]]*N[node_shift+edges_nodes[2*ee+1]],&edgeN[ee][shift],1);
+        }
       }
       if(diff_edgeN != NULL)
       if(diff_edgeN[ee] != NULL) {
@@ -243,11 +251,14 @@ PetscErrorCode H1_EdgeShapeFunctions_MBTET(
         int dd = 0;
         for(; dd<3; dd++) {
           cblas_daxpy(
-            P[ee],N[node_shift+edges_nodes[2*ee+0]]*N[node_shift+edges_nodes[2*ee+1]],&diffL[dd*(p[ee]+1)],1,&diff_edgeN[ee][3*shift+dd],3
+            P[ee],v,&diffL[dd*(p[ee]+1)],1,&diff_edgeN[ee][3*shift+dd],3
           );
-          cblas_daxpy(P[ee],diffN[3*edges_nodes[2*ee+0]+dd]*N[node_shift+edges_nodes[2*ee+1]]
-            +N[node_shift+edges_nodes[2*ee+0]]*diffN[3*edges_nodes[2*ee+1]+dd],L,1,&diff_edgeN[ee][3*shift+dd],3
-          );
+          if(!bubble) {
+            cblas_daxpy(
+              P[ee],diffN[3*edges_nodes[2*ee+0]+dd]*N[node_shift+edges_nodes[2*ee+1]]
+              +N[node_shift+edges_nodes[2*ee+0]]*diffN[3*edges_nodes[2*ee+1]+dd],L,1,&diff_edgeN[ee][3*shift+dd],3
+            );
+          }
         }
       }
     }

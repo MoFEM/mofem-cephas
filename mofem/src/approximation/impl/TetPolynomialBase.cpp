@@ -95,7 +95,7 @@ PetscErrorCode TetPolynomialBase::getValueH1(ublas::matrix<double> &pts) {
       _diffH1edgeN_[ee] = &*data.dataOnEntities[MBEDGE][ee].getDiffN(base).data().begin();
     }
     ierr = H1_EdgeShapeFunctions_MBTET(
-      _sense_,_order_,
+      cTx->bubbleBase,_sense_,_order_,
       &*data.dataOnEntities[MBVERTEX][0].getN(base).data().begin(),
       &*data.dataOnEntities[MBVERTEX][0].getDiffN(base).data().begin(),
       _H1edgeN_,_diffH1edgeN_,nb_gauss_pts,base_polynomials

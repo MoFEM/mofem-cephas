@@ -129,7 +129,7 @@ int main(int argc, char *argv[]) {
       )
     ); CHKERRQ(ierr);
     for(int ii = 0;ii!=11;ii++) {
-      cerr << "lobatto_plot " << pts_1d(0,ii) << " " << (*base_ptr)(ii,2) << " " << (*diff_base_ptr)(ii,2) << endl;
+      cerr << "lobatto_plot " << pts_1d(0,ii) << " " << (*base_ptr)(ii,0) << " " << (*diff_base_ptr)(ii,0) << endl;
     }
     cout << "LobattoPolynomial\n";
     cout << pts_1d << endl;
