@@ -72,7 +72,7 @@ PetscErrorCode H1_FaceShapeFunctions_MBTET(
   PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
 );
 PetscErrorCode H1_VolumeShapeFunctions_MBTET(
-  int p,double *N,double *diffN,double *volumeN,double *diff_volumeN,int GDIM,
+  const int bubble,int p,double *N,double *diffN,double *volumeN,double *diff_volumeN,int GDIM,
   PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
 );
 PetscErrorCode H1_EdgeShapeDiffMBTETinvJ(int *base_p,int *p,double *edge_diffN[],double *invJac,double *edge_diffNinvJac[],int GDIM);

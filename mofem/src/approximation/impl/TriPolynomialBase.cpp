@@ -300,12 +300,21 @@ PetscErrorCode TriPolynomialBase::getValue(
     ierr = getValueH1(pts); CHKERRQ(ierr);
     break;
     case HDIV:
+    if(cTx->bubbleBase) {
+      SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"Not yet implemented");
+    }
     ierr = getValueHdiv(pts); CHKERRQ(ierr);
     break;
     case HCURL:
+    if(cTx->bubbleBase) {
+      SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"Not yet implemented");
+    }
     ierr = getValueHCurl(pts); CHKERRQ(ierr);
     break;
     case L2:
+    if(cTx->bubbleBase) {
+      SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"Not yet implemented");
+    }
     ierr = getValueL2(pts); CHKERRQ(ierr);
     break;
     default:

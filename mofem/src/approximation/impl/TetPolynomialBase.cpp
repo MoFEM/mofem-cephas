@@ -152,6 +152,7 @@ PetscErrorCode TetPolynomialBase::getValueH1(ublas::matrix<double> &pts) {
     data.dataOnEntities[MBTET][0].getN(base).resize(nb_gauss_pts,nb_vol_dofs,false);
     data.dataOnEntities[MBTET][0].getDiffN(base).resize(nb_gauss_pts,3*nb_vol_dofs,false);
     ierr = H1_VolumeShapeFunctions_MBTET(
+      cTx->bubbleBase,
       data.dataOnEntities[MBTET][0].getDataOrder(),
       &*data.dataOnEntities[MBVERTEX][0].getN(base).data().begin(),
       &*data.dataOnEntities[MBVERTEX][0].getDiffN(base).data().begin(),
@@ -488,12 +489,21 @@ PetscErrorCode TetPolynomialBase::getValue(
     ierr = getValueH1(pts); CHKERRQ(ierr);
     break;
     case HDIV:
+    if(cTx->bubbleBase) {
+      SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"Not yet implemented");
+    }
     ierr = getValueHdiv(pts); CHKERRQ(ierr);
     break;
     case HCURL:
+    if(cTx->bubbleBase) {
+      SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"Not yet implemented");
+    }
     ierr = getValueHCurl(pts); CHKERRQ(ierr);
     break;
     case L2:
+    if(cTx->bubbleBase) {
+      SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"Not yet implemented");
+    }
     ierr = getValueL2(pts); CHKERRQ(ierr);
     break;
     default:

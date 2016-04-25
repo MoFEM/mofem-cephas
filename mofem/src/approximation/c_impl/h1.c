@@ -348,7 +348,7 @@ PetscErrorCode H1_FaceShapeFunctions_MBTET(
   PetscFunctionReturn(0);
 }
 PetscErrorCode H1_VolumeShapeFunctions_MBTET(
-  int p,double *N,double *diffN,double *volumeN,double *diff_volumeN,int GDIM,
+  const int bubble,int p,double *N,double *diffN,double *volumeN,double *diff_volumeN,int GDIM,
   PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
 ) {
   PetscFunctionBegin;
@@ -373,12 +373,17 @@ PetscErrorCode H1_VolumeShapeFunctions_MBTET(
     ierr = base_polynomials(p,ksiL0,diff_ksiL0,L0,diffL0,3); CHKERRQ(ierr);
     ierr = base_polynomials(p,ksiL1,diff_ksiL1,L1,diffL1,3); CHKERRQ(ierr);
     ierr = base_polynomials(p,ksiL2,diff_ksiL2,L2,diffL2,3); CHKERRQ(ierr);
-    double v = N[node_shift+0]*N[node_shift+1]*N[node_shift+2]*N[node_shift+3];
-    double v2[3];
-    dd = 0;
-    for(;dd<3;dd++) {
-      v2[dd] = diffN[3*0+dd]*N[node_shift+1]*N[node_shift+2]*N[node_shift+3] + N[node_shift+0]*diffN[3*1+dd]*N[node_shift+2]*N[node_shift+3]+
-		  N[node_shift+0]*N[node_shift+1]*diffN[3*2+dd]*N[node_shift+3] + N[node_shift+0]*N[node_shift+1]*N[node_shift+2]*diffN[3*3+dd];
+    double v = 1;
+    if(!bubble) {
+      v = N[node_shift+0]*N[node_shift+1]*N[node_shift+2]*N[node_shift+3];
+    }
+    double v2[3] = {0,0,0};
+    if(!bubble) {
+      dd = 0;
+      for(;dd<3;dd++) {
+        v2[dd] = diffN[3*0+dd]*N[node_shift+1]*N[node_shift+2]*N[node_shift+3] + N[node_shift+0]*diffN[3*1+dd]*N[node_shift+2]*N[node_shift+3]+
+        N[node_shift+0]*N[node_shift+1]*diffN[3*2+dd]*N[node_shift+3] + N[node_shift+0]*N[node_shift+1]*N[node_shift+2]*diffN[3*3+dd];
+      }
     }
     int shift = ii*P;
     int jj = 0;
@@ -397,8 +402,10 @@ PetscErrorCode H1_VolumeShapeFunctions_MBTET(
               dd = 0;
               for(;dd<3;dd++) {
                 diff_volumeN[3*shift+3*jj+dd] =
-                ( diffL0[dd*(p+1)+pp0]*L1[pp1]*L2[pp2] + L0[pp0]*diffL1[dd*(p+1)+pp1]*L2[pp2] + L0[pp0]*L1[pp1]*diffL2[dd*(p+1)+pp2] )*v +
-                L0[pp0]*L1[pp1]*L2[pp2]*v2[dd];
+                ( diffL0[dd*(p+1)+pp0]*L1[pp1]*L2[pp2] + L0[pp0]*diffL1[dd*(p+1)+pp1]*L2[pp2] + L0[pp0]*L1[pp1]*diffL2[dd*(p+1)+pp2] )*v;
+                if(!bubble) {
+                  diff_volumeN[3*shift+3*jj+dd] += L0[pp0]*L1[pp1]*L2[pp2]*v2[dd];
+                }
               }
             }
             jj++;
