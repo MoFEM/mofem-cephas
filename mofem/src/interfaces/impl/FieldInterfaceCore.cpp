@@ -2168,6 +2168,11 @@ PetscErrorCode Core::partition_finite_elements(
   = const_cast<NumeredEntFiniteElement_multiIndex&>(p_miit->numeredFiniteElements);
   numeredFiniteElements.clear();
 
+  bool do_cols_prob = true;
+  if(p_miit->numered_dofs_rows == p_miit->numered_dofs_cols) {
+    do_cols_prob = false;
+  }
+
   //FiniteElement set
   EntFiniteElement_multiIndex::iterator miit2 = entsFiniteElements.begin();
   EntFiniteElement_multiIndex::iterator hi_miit2 = entsFiniteElements.end();
@@ -2175,10 +2180,19 @@ PetscErrorCode Core::partition_finite_elements(
     if(((*miit2)->get_id()&p_miit->get_BitFEId()).none()) continue; // if element is not part of problem
     if(((*miit2)->get_BitRefLevel()&p_miit->get_BitRefLevel())!=p_miit->get_BitRefLevel()) continue; // if entity is not problem refinement level
     boost::shared_ptr<NumeredEntFiniteElement> numered_fe(new NumeredEntFiniteElement(*miit2));
+    bool do_cols_fe = true;
+    if(numered_fe->sPtr->row_dof_view == numered_fe->sPtr->col_dof_view && do_cols_prob) {
+      do_cols_fe = false;
+      numered_fe->cols_dofs = numered_fe->rows_dofs;
+    } else {
+      numered_fe->cols_dofs = boost::shared_ptr<FENumeredDofEntity_multiIndex>(new FENumeredDofEntity_multiIndex());
+    }
     boost::shared_ptr<FENumeredDofEntity_multiIndex> rows_dofs = numered_fe->rows_dofs;
     boost::shared_ptr<FENumeredDofEntity_multiIndex> cols_dofs = numered_fe->cols_dofs;
     rows_dofs->clear();
-    cols_dofs->clear();
+    if(do_cols_fe) {
+      cols_dofs->clear();
+    }
     {
       NumeredDofEntity_multiIndex_uid_view_ordered rows_view;
       NumeredDofEntity_multiIndex_uid_view_ordered::iterator viit_rows;
@@ -2219,20 +2233,22 @@ PetscErrorCode Core::partition_finite_elements(
             SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
           }
         }
-        //cols_views
-        NumeredDofEntity_multiIndex_uid_view_ordered cols_view;
-        ierr = (*miit2)->get_MoFEMFiniteElement_col_dof_view(
-          *(p_miit->numered_dofs_cols),cols_view,Interface::UNION
-        ); CHKERRQ(ierr);
-        //cols element dof multi-indices
-        NumeredDofEntity_multiIndex_uid_view_ordered::iterator viit_cols;;
-        viit_cols = cols_view.begin();
-        for(;viit_cols!=cols_view.end();viit_cols++) {
-          try {
-            boost::shared_ptr<SideNumber> side_number_ptr = (*miit2)->get_side_number_ptr(moab,(*viit_cols)->get_ent());
-            cols_dofs->insert(boost::shared_ptr<FENumeredDofEntity>(new FENumeredDofEntity(side_number_ptr,*viit_cols)));
-          } catch (MoFEMException const &e) {
-            SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
+        if(do_cols_fe) {
+          //cols_views
+          NumeredDofEntity_multiIndex_uid_view_ordered cols_view;
+          ierr = (*miit2)->get_MoFEMFiniteElement_col_dof_view(
+            *(p_miit->numered_dofs_cols),cols_view,Interface::UNION
+          ); CHKERRQ(ierr);
+          //cols element dof multi-indices
+          NumeredDofEntity_multiIndex_uid_view_ordered::iterator viit_cols;;
+          viit_cols = cols_view.begin();
+          for(;viit_cols!=cols_view.end();viit_cols++) {
+            try {
+              boost::shared_ptr<SideNumber> side_number_ptr = (*miit2)->get_side_number_ptr(moab,(*viit_cols)->get_ent());
+              cols_dofs->insert(boost::shared_ptr<FENumeredDofEntity>(new FENumeredDofEntity(side_number_ptr,*viit_cols)));
+            } catch (MoFEMException const &e) {
+              SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
+            }
           }
         }
       }
@@ -2321,7 +2337,11 @@ PetscErrorCode Core::partition_ghost_dofs(const string &name,int verb) {
       const_cast<NumeredDofEntitys_by_unique_id*>(&p_miit->numered_dofs_cols->get<Unique_mi_tag>()),
       const_cast<NumeredDofEntitys_by_unique_id*>(&p_miit->numered_dofs_rows->get<Unique_mi_tag>())
     };
-    for(int ss = 0;ss<2;ss++) {
+    int loop_size = 2;
+    if(p_miit->numered_dofs_cols==p_miit->numered_dofs_rows) {
+      loop_size = 1;
+    }
+    for(int ss = 0;ss<loop_size;ss++) {
       NumeredDofEntity_multiIndex_uid_view_ordered::iterator ghost_idx_miit = ghost_idx_view[ss]->begin();
       for(;ghost_idx_miit!=ghost_idx_view[ss]->end();ghost_idx_miit++) {
         NumeredDofEntitys_by_unique_id::iterator diit = dof_by_uid_no_const[ss]->find((*ghost_idx_miit)->get_global_unique_id());
@@ -2332,6 +2352,9 @@ PetscErrorCode Core::partition_ghost_dofs(const string &name,int verb) {
         if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
         (*nb_ghost_dofs[ss])++;
       }
+    }
+    if(loop_size==1) {
+      (*nb_ghost_dofs[1]) = (*nb_ghost_dofs[0]);
     }
   }
   if(verb>0) {

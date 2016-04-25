@@ -101,8 +101,19 @@ PetscErrorCode Core::build_problem_on_distributed_mesh(MoFEMProblem *problem_ptr
   if(problem_ptr->get_BitRefLevel().none()) {
     SETERRQ1(PETSC_COMM_SELF,1,"problem <%s> refinement level not set",problem_ptr->get_name().c_str());
   }
+
   //zero finite elements
   ProblemClearNumeredFiniteElementsChange().operator()(*problem_ptr);
+
+  int loop_size = 2;
+  bool do_cols = true;
+  if(square_matrix) {
+    loop_size = 1;
+    do_cols = false;
+    problem_ptr->numered_dofs_cols = problem_ptr->numered_dofs_rows;
+  } else if(problem_ptr->numered_dofs_cols == problem_ptr->numered_dofs_rows) {
+    problem_ptr->numered_dofs_cols = boost::shared_ptr<NumeredDofEntity_multiIndex>(new NumeredDofEntity_multiIndex());
+  }
 
   //get rows and cols dofs view based on data on elements
   DofEntity_multiIndex_active_view dofs_rows,dofs_cols;
@@ -118,7 +129,9 @@ PetscErrorCode Core::build_problem_on_distributed_mesh(MoFEMProblem *problem_ptr
         if(((*fe_miit)->get_BitRefLevel()&problem_ptr->get_BitRefLevel())==problem_ptr->get_BitRefLevel()) {
           //get dof uids for rows and columns
           ierr = (*fe_miit)->get_MoFEMFiniteElement_row_dof_view(dofsField,dofs_rows); CHKERRQ(ierr);
-          ierr = (*fe_miit)->get_MoFEMFiniteElement_col_dof_view(dofsField,dofs_cols); CHKERRQ(ierr);
+          if(do_cols) {
+            ierr = (*fe_miit)->get_MoFEMFiniteElement_col_dof_view(dofsField,dofs_cols); CHKERRQ(ierr);
+          }
         }
       }
     }
@@ -141,13 +154,15 @@ PetscErrorCode Core::build_problem_on_distributed_mesh(MoFEMProblem *problem_ptr
   int* ghost_nbdof_ptr[] = {
     problem_ptr->tag_ghost_nbdof_data_row, problem_ptr->tag_ghost_nbdof_data_col
   };
-  //Loop over dofs on rows and columns and add to multi-indices in dofs problem structure,
-  //set partition for each dof
-  int nb_local_dofs[] = { 0,0 };
   for(int ss = 0;ss<2;ss++) {
     *(nbdof_ptr[ss]) = 0;
     *(local_nbdof_ptr[ss]) = 0;
     *(ghost_nbdof_ptr[ss]) = 0;
+  }
+  //Loop over dofs on rows and columns and add to multi-indices in dofs problem structure,
+  //set partition for each dof
+  int nb_local_dofs[] = { 0,0 };
+  for(int ss = 0;ss<loop_size;ss++) {
     DofEntity_multiIndex_active_view::nth_index<1>::type::iterator miit,hi_miit;
     miit = dofs_ptr[ss]->get<1>().lower_bound(1);
     hi_miit = dofs_ptr[ss]->get<1>().upper_bound(1);
@@ -177,7 +192,7 @@ PetscErrorCode Core::build_problem_on_distributed_mesh(MoFEMProblem *problem_ptr
 
   //get layout
   int start_ranges[2],end_ranges[2];
-  for(int ss = 0;ss<2;ss++) {
+  for(int ss = 0;ss!=loop_size;ss++) {
     PetscLayout layout;
     ierr = PetscLayoutCreate(comm,&layout); CHKERRQ(ierr);
     ierr = PetscLayoutSetBlockSize(layout,1); CHKERRQ(ierr);
@@ -186,6 +201,10 @@ PetscErrorCode Core::build_problem_on_distributed_mesh(MoFEMProblem *problem_ptr
     ierr = PetscLayoutGetSize(layout,&*nbdof_ptr[ss]); CHKERRQ(ierr); // get global size
     ierr = PetscLayoutGetRange(layout,&start_ranges[ss],&end_ranges[ss]); CHKERRQ(ierr); //get ranges
     ierr = PetscLayoutDestroy(&layout); CHKERRQ(ierr);
+  }
+  if(!do_cols) {
+    nbdof_ptr[1] = nbdof_ptr[0];
+    nb_local_dofs[1] = nb_local_dofs[0];
   }
 
   // if(sizeof(UId) != SIZEOFUID) {
@@ -206,7 +225,7 @@ PetscErrorCode Core::build_problem_on_distributed_mesh(MoFEMProblem *problem_ptr
 
   //ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
   // Loop over dofs on this processor and prepare those dofs to send on another proc
-  for(int ss = 0;ss<2;ss++) {
+  for(int ss = 0;ss<loop_size;ss++) {
 
     NumeredDofEntity_multiIndex::index<Part_mi_tag>::type::iterator mit,hi_mit;
     mit = numered_dofs_ptr[ss]->get<Part_mi_tag>().lower_bound(rAnk);
@@ -242,6 +261,9 @@ PetscErrorCode Core::build_problem_on_distributed_mesh(MoFEMProblem *problem_ptr
       }
     }
 
+  }
+  if(!do_cols) {
+    local_nbdof_ptr[1] = local_nbdof_ptr[0];
   }
 
   int nsends_rows = 0,nsends_cols = 0;
@@ -370,7 +392,7 @@ PetscErrorCode Core::build_problem_on_distributed_mesh(MoFEMProblem *problem_ptr
   }
 
   // set values received from other processors
-  for(int ss = 0;ss<2;ss++) {
+  for(int ss = 0;ss<loop_size;ss++) {
 
     int nrecvs;
     int *olengths;
@@ -424,6 +446,11 @@ PetscErrorCode Core::build_problem_on_distributed_mesh(MoFEMProblem *problem_ptr
 
   }
 
+  if(square_matrix) {
+    *(problem_ptr->tag_nbdof_data_col) = *(problem_ptr->tag_nbdof_data_row);
+    *(problem_ptr->tag_local_nbdof_data_col) = *(problem_ptr->tag_local_nbdof_data_row);
+  }
+
   ierr = PetscFree(olengths_rows); CHKERRQ(ierr);
   ierr = PetscFree(rbuf_row[0]); CHKERRQ(ierr);
   ierr = PetscFree(rbuf_row); CHKERRQ(ierr);
@@ -434,6 +461,24 @@ PetscErrorCode Core::build_problem_on_distributed_mesh(MoFEMProblem *problem_ptr
   }
 
   ierr = PetscFree(status); CHKERRQ(ierr);
+
+  if(square_matrix) {
+    if(numered_dofs_ptr[0]->size()!=numered_dofs_ptr[1]->size()) {
+      SETERRQ2(
+        PETSC_COMM_SELF,
+        MOFEM_DATA_INCONSISTENCY,
+        "data inconsistency for square_matrix %d!=%d",
+        numered_dofs_ptr[0]->size(),numered_dofs_ptr[1]->size()
+      );
+    }
+    if(problem_ptr->numered_dofs_rows!=problem_ptr->numered_dofs_cols) {
+      SETERRQ(
+        PETSC_COMM_SELF,
+        MOFEM_DATA_INCONSISTENCY,
+        "data inconsistency for square_matrix"
+      );
+    }
+  }
 
   ierr = printPartitionedProblem(problem_ptr,verb); CHKERRQ(ierr);
   ierr = debugPartitionedProblem(problem_ptr,verb); CHKERRQ(ierr);
@@ -1136,23 +1181,23 @@ PetscErrorCode Core::debugPartitionedProblem(const MoFEMProblem *problem_ptr,int
         if((*dit)->get_part()==(unsigned int)rAnk) {
           if((*dit)->get_petsc_local_dof_idx()<0) {
             ostringstream zz;
-            zz << "rank " << rAnk << " " << *dit;
+            zz << "rank " << rAnk << " " << **dit;
             SETERRQ2(PETSC_COMM_SELF,MOFEM_IMPOSIBLE_CASE,"local dof index for %d (0-row, 1-col) not set, i.e. has negative value\n %s",ss,zz.str().c_str());
           }
           if((*dit)->get_petsc_local_dof_idx()>=*local_nbdof_ptr[ss]) {
             ostringstream zz;
-            zz << "rank " << rAnk << " " << *dit;
+            zz << "rank " << rAnk << " " << **dit;
             SETERRQ2(PETSC_COMM_SELF,MOFEM_IMPOSIBLE_CASE,"local dofs for %d (0-row, 1-col) out of range\n %s",ss,zz.str().c_str());
           }
         } else {
           if((*dit)->get_petsc_gloabl_dof_idx()<0) {
             ostringstream zz;
-            zz << "rank " << rAnk << " " << *dit;
+            zz << "rank " << rAnk << " " << **dit;
             SETERRQ2(PETSC_COMM_SELF,MOFEM_IMPOSIBLE_CASE,"global dof index for %d (0-row, 1-col) row not set, i.e. has negative value\n %s",ss,zz.str().c_str());
           }
           if((*dit)->get_petsc_gloabl_dof_idx()>=*nbdof_ptr[ss]) {
             ostringstream zz;
-            zz << "rank " << rAnk << " " << *dit;
+            zz << "rank " << rAnk << " " << **dit;
             SETERRQ2(PETSC_COMM_SELF,MOFEM_IMPOSIBLE_CASE,"global dofs for %d (0-row, 1-col) out of range\n %s",ss,zz.str().c_str());
           }
         }
