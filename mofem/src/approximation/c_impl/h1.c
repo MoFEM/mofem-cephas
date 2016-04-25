@@ -22,7 +22,7 @@
 #include <h1_hdiv_hcurl_l2.h>
 
 PetscErrorCode H1_EdgeShapeFunctions_MBTRI(
-  const int bobble,int *sense,int *p,double *N,double *diffN,double *edgeN[3],double *diff_edgeN[3],int GDIM,
+  const int bubble,int *sense,int *p,double *N,double *diffN,double *edgeN[3],double *diff_edgeN[3],int GDIM,
   PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
 ) {
   PetscFunctionBegin;
@@ -67,21 +67,21 @@ PetscErrorCode H1_EdgeShapeFunctions_MBTRI(
       //edge01
       shift = ii*(P[0]);
       cblas_dcopy(P[0],L01,1,&edgeN01[shift],1);
-      if(!bobble) cblas_dscal(P[0],N[node_shift+0]*N[node_shift+1],&edgeN01[shift],1);
+      if(!bubble) cblas_dscal(P[0],N[node_shift+0]*N[node_shift+1],&edgeN01[shift],1);
       //edge12
       shift = ii*(P[1]);
       cblas_dcopy(P[1],L12,1,&edgeN12[shift],1);
-      if(!bobble) cblas_dscal(P[1],N[node_shift+1]*N[node_shift+2],&edgeN12[shift],1);
+      if(!bubble) cblas_dscal(P[1],N[node_shift+1]*N[node_shift+2],&edgeN12[shift],1);
       //edge20
       shift = ii*(P[2]);
       cblas_dcopy(P[2],L20,1,&edgeN20[shift],1);
-      if(!bobble) cblas_dscal(P[2],N[node_shift+0]*N[node_shift+2],&edgeN20[shift],1);
+      if(!bubble) cblas_dscal(P[2],N[node_shift+0]*N[node_shift+2],&edgeN20[shift],1);
     }
     if(diff_edgeN!=NULL) {
       if(P[0]>0) {
         //edge01
         shift = ii*(P[0]);
-        if(bobble) {
+        if(bubble) {
           cblas_dcopy(P[0],&diffL01[0*(p[0]+1)],1,&diff_edgeN01[2*shift+0],2);
           cblas_dcopy(P[0],&diffL01[1*(p[0]+1)],1,&diff_edgeN01[2*shift+1],2);
         } else {
@@ -97,7 +97,7 @@ PetscErrorCode H1_EdgeShapeFunctions_MBTRI(
       if(P[1]>0) {
         //edge12
         shift = ii*(P[1]);
-        if(bobble) {
+        if(bubble) {
           cblas_dcopy(P[1],&diffL12[0*(p[1]+1)],1,&diff_edgeN12[2*shift+0],2);
           cblas_dcopy(P[1],&diffL12[1*(p[1]+1)],1,&diff_edgeN12[2*shift+1],2);
         } else {
@@ -113,7 +113,7 @@ PetscErrorCode H1_EdgeShapeFunctions_MBTRI(
       if(P[2]>0) {
         //edge20
         shift = ii*(P[2]);
-        if(bobble) {
+        if(bubble) {
           cblas_dcopy(P[2],&diffL20[0*(p[2]+1)],1,&diff_edgeN20[2*shift+0],2);
           cblas_dcopy(P[2],&diffL20[1*(p[2]+1)],1,&diff_edgeN20[2*shift+1],2);
         } else {
@@ -131,7 +131,7 @@ PetscErrorCode H1_EdgeShapeFunctions_MBTRI(
   PetscFunctionReturn(0);
 }
 PetscErrorCode H1_FaceShapeFunctions_MBTRI(
-  const int bobble,const int *face_nodes,int p,double *N,double *diffN,double *faceN,double *diff_faceN,int GDIM,
+  const int bubble,const int *face_nodes,int p,double *N,double *diffN,double *faceN,double *diff_faceN,int GDIM,
   PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
 ) {
   PetscFunctionBegin;
@@ -158,11 +158,11 @@ PetscErrorCode H1_FaceShapeFunctions_MBTRI(
     ierr = base_polynomials(p,ksi_faces[0],diff_ksi_faces[0],L0,diffL0,2); CHKERRQ(ierr);
     ierr = base_polynomials(p,ksi_faces[1],diff_ksi_faces[1],L1,diffL1,2); CHKERRQ(ierr);
     double v = 1;
-    if(!bobble) {
+    if(!bubble) {
       v = N[node_shift+face_nodes[0]]*N[node_shift+face_nodes[1]]*N[node_shift+face_nodes[2]];
     }
     double v2[2] = { 0,0 };
-    if(!bobble) {
+    if(!bubble) {
       if(diff_faceN!=NULL) {
         dd = 0;
         for(;dd<2;dd++) {
@@ -189,7 +189,7 @@ PetscErrorCode H1_FaceShapeFunctions_MBTRI(
             for(;dd<2;dd++) {
               double *val = &diff_faceN[2*shift+2*jj+dd];
               *val = ( L0[pp0]*diffL1[dd*(p+1)+pp1] + diffL0[dd*(p+1)+pp0]*L1[pp1] )*v;
-              if(!bobble) *val += L0[pp0]*L1[pp1]*v2[dd];
+              if(!bubble) *val += L0[pp0]*L1[pp1]*v2[dd];
             }
           }
           jj++;

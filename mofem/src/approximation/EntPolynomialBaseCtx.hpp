@@ -42,7 +42,7 @@ namespace MoFEM {
     const FieldApproximationBase bAse;
     const FieldApproximationBase copyNodeBase;
     const FEMethod *fePtr;
-    bool bobbleBase;
+    bool bubbleBase;
 
     EntPolynomialBaseCtx(
       DataForcesAndSurcesCore &data,
