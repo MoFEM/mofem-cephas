@@ -67,9 +67,11 @@ typedef multi_index_container<
   > > MoFEMEntityEntFiniteElementAdjacencyMap_multiIndex;
 
   struct MoFEMEntityEntFiniteElementAdjacencyMap_change_ByWhat {
-    ByWhat by;
-    MoFEMEntityEntFiniteElementAdjacencyMap_change_ByWhat(const ByWhat _by): by(_by) {}
-    void operator()(MoFEMEntityEntFiniteElementAdjacencyMap &e) { e.by_other |= by; }
+    int bY;
+    MoFEMEntityEntFiniteElementAdjacencyMap_change_ByWhat(const int by): bY(by) {}
+    void operator()(MoFEMEntityEntFiniteElementAdjacencyMap &e) {
+      e.by_other |= bY;
+    }
   };
 
 }
