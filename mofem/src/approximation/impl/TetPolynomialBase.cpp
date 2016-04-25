@@ -127,6 +127,7 @@ PetscErrorCode TetPolynomialBase::getValueH1(ublas::matrix<double> &pts) {
       SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
     }
     ierr = H1_FaceShapeFunctions_MBTET(
+      cTx->bubbleBase,
       &*data.facesNodes.data().begin(),
       _order_,
       &*data.dataOnEntities[MBVERTEX][0].getN(base).data().begin(),

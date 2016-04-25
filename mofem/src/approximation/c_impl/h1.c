@@ -266,7 +266,7 @@ PetscErrorCode H1_EdgeShapeFunctions_MBTET(
   PetscFunctionReturn(0);
 }
 PetscErrorCode H1_FaceShapeFunctions_MBTET(
-  int *faces_nodes,int *p,double *N,double *diffN,double *faceN[],double *diff_faceN[],int GDIM,
+  int const bubble,int *faces_nodes,int *p,double *N,double *diffN,double *faceN[],double *diff_faceN[],int GDIM,
   PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
 ) {
   PetscFunctionBegin;
@@ -301,14 +301,19 @@ PetscErrorCode H1_FaceShapeFunctions_MBTET(
       double diffL0[ 3*(p[ff]+1) ],diffL1[ 3*(p[ff]+1) ];
       ierr = base_polynomials(p[ff],ksi_faces[ff*2+0],diff_ksi_faces[ff*2+0],L0,diffL0,3);  CHKERRQ(ierr);
       ierr = base_polynomials(p[ff],ksi_faces[ff*2+1],diff_ksi_faces[ff*2+1],L1,diffL1,3);  CHKERRQ(ierr);
-      double v = N[node_shift+faces_nodes[3*ff+0]]*N[node_shift+faces_nodes[3*ff+1]]*N[node_shift+faces_nodes[3*ff+2]];
-      double v2[3];
-      dd = 0;
-      for(;dd<3;dd++) {
-        v2[dd] =
-        diffN[3*faces_nodes[3*ff+0]+dd]*N[node_shift+faces_nodes[3*ff+1]]*N[node_shift+faces_nodes[3*ff+2]]+
-        N[node_shift+faces_nodes[3*ff+0]]*diffN[3*faces_nodes[3*ff+1]+dd]*N[node_shift+faces_nodes[3*ff+2]]+
-        N[node_shift+faces_nodes[3*ff+0]]*N[node_shift+faces_nodes[3*ff+1]]*diffN[3*faces_nodes[3*ff+2]+dd];
+      double v = 1;
+      if(!bubble) {
+        v = N[node_shift+faces_nodes[3*ff+0]]*N[node_shift+faces_nodes[3*ff+1]]*N[node_shift+faces_nodes[3*ff+2]];
+      }
+      double v2[3] = {0,0,0};
+      if(!bubble) {
+        dd = 0;
+        for(;dd<3;dd++) {
+          v2[dd] =
+          diffN[3*faces_nodes[3*ff+0]+dd]*N[node_shift+faces_nodes[3*ff+1]]*N[node_shift+faces_nodes[3*ff+2]]+
+          N[node_shift+faces_nodes[3*ff+0]]*diffN[3*faces_nodes[3*ff+1]+dd]*N[node_shift+faces_nodes[3*ff+2]]+
+          N[node_shift+faces_nodes[3*ff+0]]*N[node_shift+faces_nodes[3*ff+1]]*diffN[3*faces_nodes[3*ff+2]+dd];
+        }
       }
       shift = ii*P[ff];
       int jj = 0;
@@ -327,7 +332,10 @@ PetscErrorCode H1_FaceShapeFunctions_MBTET(
               dd = 0;
               for(;dd<3;dd++) {
                 diff_faceN[ff][3*shift+3*jj+dd] =
-                ( L0[pp0]*diffL1[dd*(p[ff]+1)+pp1] + diffL0[dd*(p[ff]+1)+pp0]*L1[pp1] )*v + L0[pp0]*L1[pp1]*v2[dd];
+                ( L0[pp0]*diffL1[dd*(p[ff]+1)+pp1] + diffL0[dd*(p[ff]+1)+pp0]*L1[pp1] )*v;
+                if(!bubble) {
+                  diff_faceN[ff][3*shift+3*jj+dd] += L0[pp0]*L1[pp1]*v2[dd];
+                }
               }
             }
             jj++;
