@@ -184,18 +184,25 @@ PetscErrorCode EdgePolynomialBase::getValueH1(ublas::matrix<double> &pts) {
       for(unsigned int pp = 0;pp<data.dataOnEntities[MBEDGE][side_number].getN(base).size2();pp++) {
 
         // Calculate edge shape functions N0*N1*L(p), where N0 and N1 are nodal shape functions
-        data.dataOnEntities[MBEDGE][side_number].getN(base)(gg,pp) =
-          data.dataOnEntities[MBVERTEX][0].getN(base)(gg,0)*
-          data.dataOnEntities[MBVERTEX][0].getN(base)(gg,1)*L(pp);
+        double v = 1;
+        if(!cTx->bubbleBase) {
+          v = data.dataOnEntities[MBVERTEX][0].getN(base)(gg,0)*data.dataOnEntities[MBVERTEX][0].getN(base)(gg,1);
+        }
+        data.dataOnEntities[MBEDGE][side_number].getN(base)(gg,pp) = v*L(pp);
 
-        // Calculate derivative edge shape functions
-        // dN/dksi = dN0/dxi*N1*L + N0*dN1/ksi*L + N0*N1*dL/dxi
-        data.dataOnEntities[MBEDGE][side_number].getDiffN(base)(gg,pp) =
+        if(cTx->bubbleBase) {
+          data.dataOnEntities[MBEDGE][side_number].getDiffN(base)(gg,pp) = v*diffL(pp);
+        } else {
+          // Calculate derivative edge shape functions
+          // dN/dksi = dN0/dxi*N1*L + N0*dN1/ksi*L + N0*N1*dL/dxi
+          data.dataOnEntities[MBEDGE][side_number].getDiffN(base)(gg,pp) =
           ((+1.)*data.dataOnEntities[MBVERTEX][0].getN(base)(gg,1)
           +
           data.dataOnEntities[MBVERTEX][0].getN(base)(gg,0)*(-1.))*L(pp)
           +
-          data.dataOnEntities[MBVERTEX][0].getN(base)(gg,0)*data.dataOnEntities[MBVERTEX][0].getN(base)(gg,1)*diffL(pp);
+          v*diffL(pp);
+        }
+        
       }
     }
   }
