@@ -21,9 +21,9 @@ PetscErrorCode Legendre_polynomials(
   int p,double s,double *diff_s,double *L,double *diffL,const int dim
 ) {
   PetscFunctionBegin;
-  if(dim < 1) SETERRQ(PETSC_COMM_SELF,1,"dim < 1");
-  if(dim > 3) SETERRQ(PETSC_COMM_SELF,1,"dim > 3");
-  if(p<0) SETERRQ(PETSC_COMM_SELF,1,"p < 0");
+  if(dim < 1) SETERRQ(PETSC_COMM_SELF,MOFEM_INVALID_DATA,"dim < 1");
+  if(dim > 3) SETERRQ(PETSC_COMM_SELF,MOFEM_INVALID_DATA,"dim > 3");
+  if(p<0) SETERRQ(PETSC_COMM_SELF,MOFEM_INVALID_DATA,"p < 0");
   L[0] = 1;
   if(diffL!=NULL) {
     diffL[0*(p+1)+0] = 0;
@@ -38,7 +38,7 @@ PetscErrorCode Legendre_polynomials(
   L[1] = s;
   if(diffL != NULL) {
     if(diff_s == NULL) {
-      SETERRQ(PETSC_COMM_SELF,1,"diff_s == NULL");
+      SETERRQ(PETSC_COMM_SELF,MOFEM_INVALID_DATA,"diff_s == NULL");
     }
     diffL[0*(p+1)+1] = diff_s[0];
     if(dim >= 2) {
@@ -56,7 +56,7 @@ PetscErrorCode Legendre_polynomials(
     L[l+1] = A*s*L[l] - B*L[l-1];
     if(diffL!=NULL) {
       if(diff_s==NULL) {
-        SETERRQ(PETSC_COMM_SELF,1,"diff_s == NULL");
+        SETERRQ(PETSC_COMM_SELF,MOFEM_INVALID_DATA,"diff_s == NULL");
       }
       diffL[0*(p+1)+l+1] = A*(s*diffL[0*(p+1)+l] + diff_s[0]*L[l]) - B*diffL[0*(p+1)+l-1];
       if(dim >= 2) {
@@ -76,9 +76,9 @@ PetscErrorCode Lobatto_polynomials(
 ) {
   PetscErrorCode ierr;
   PetscFunctionBegin;
-  if(dim < 1) SETERRQ(PETSC_COMM_SELF,1,"dim < 1");
-  if(dim > 3) SETERRQ(PETSC_COMM_SELF,1,"dim > 3");
-  if(p<2) SETERRQ(PETSC_COMM_SELF,1,"p < 2");
+  if(dim < 1) SETERRQ(PETSC_COMM_SELF,MOFEM_INVALID_DATA,"dim < 1");
+  if(dim > 3) SETERRQ(PETSC_COMM_SELF,MOFEM_INVALID_DATA,"dim > 3");
+  if(p<2) SETERRQ(PETSC_COMM_SELF,MOFEM_INVALID_DATA,"p < 2");
   p -= 2; // polynomial order starts from 2
   double l[p+2];
   ierr = Legendre_polynomials(p+1,s,NULL,l,NULL,1); CHKERRQ(ierr);
@@ -88,7 +88,7 @@ PetscErrorCode Lobatto_polynomials(
     for(;k<=p;k++) {
       if(diffL!=NULL) {
         if(diff_s==NULL) {
-          SETERRQ(PETSC_COMM_SELF,1,"diff_s == NULL");
+          SETERRQ(PETSC_COMM_SELF,MOFEM_INVALID_DATA,"diff_s == NULL");
         }
         double a = l[k+1];
         diffL[0*(p+1)+k] = a*diff_s[0];
@@ -221,10 +221,14 @@ PetscErrorCode LobattoKernel_polynomials(
   int p,double s,double *diff_s,double *L,double *diffL,const int dim
 ) {
   PetscFunctionBegin;
-  if(dim < 1) SETERRQ(PETSC_COMM_SELF,1,"dim < 1");
-  if(dim > 3) SETERRQ(PETSC_COMM_SELF,1,"dim > 3");
-  if(p<0) SETERRQ(PETSC_COMM_SELF,1,"p < 0");
-  if(p>9) SETERRQ(PETSC_COMM_SELF,1,"p > 9");
+  if(dim < 1) SETERRQ(PETSC_COMM_SELF,MOFEM_INVALID_DATA,"dim < 1");
+  if(dim > 3) SETERRQ(PETSC_COMM_SELF,MOFEM_INVALID_DATA,"dim > 3");
+  if(p<0) SETERRQ(PETSC_COMM_SELF,MOFEM_INVALID_DATA,"p < 0");
+  if(p>9) SETERRQ(
+    PETSC_COMM_SELF,
+    MOFEM_NOT_IMPLEMENTED,
+    "Polynomial beyond order 9 is not implemented"
+  );
   if(L) {
     int l = 0;
     for(;l!=p+1;l++) {
@@ -233,7 +237,7 @@ PetscErrorCode LobattoKernel_polynomials(
   }
   if(diffL!=NULL) {
     if(diff_s==NULL) {
-      SETERRQ(PETSC_COMM_SELF,1,"diff_s == NULL");
+      SETERRQ(PETSC_COMM_SELF,MOFEM_INVALID_DATA,"diff_s == NULL");
     }
     int l = 0;
     for(;l!=p+1;l++) {

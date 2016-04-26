@@ -27,7 +27,8 @@ namespace MoFEM {
   static const MOFEMuuid IDD_EDGE_BASE_FUNCTION = MOFEMuuid(BitIntefaceId(EDGE_BASE_FUNCTION_INTERFACE));
 
   /**
-   * \brief Class used to pass that about element to class calculating base functions on tet,triangle,edge
+   * \brief Class used to pass element data to calculate base functions on tet,triangle,edge
+   * 
    * \ingroup mofem_base_functions
    */
   struct EntPolynomialBaseCtx: public BaseFunctionCtx {

@@ -25,7 +25,8 @@ namespace MoFEM {
   static const MOFEMuuid IDD_FLATPRISM_BASE_FUNCTION = MOFEMuuid(BitIntefaceId(FLATPRISM_BASE_FUNCTION_INTERFACE));
 
   /**
-  * \brief Class used to pass that about element to class calculating base functions on prism
+  * \brief Class used to pass element data to calculate base functions on flat prism
+  *
   * \ingroup mofem_base_functions
   * FIXME: Need moab and mofem finite element structure to work (that not perfect)
   */
