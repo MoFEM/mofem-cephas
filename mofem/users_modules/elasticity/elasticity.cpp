@@ -137,8 +137,8 @@ int main(int argc, char *argv[]) {
   //Define problem
 
   //Fields
-  ierr = m_field.add_field("DISPLACEMENT",H1,3,MF_ZERO); CHKERRQ(ierr);
-  ierr = m_field.add_field("MESH_NODE_POSITIONS",H1,3,MF_ZERO); CHKERRQ(ierr);
+  ierr = m_field.add_field("DISPLACEMENT",H1,LOBATTO_BASE,3,MB_TAG_SPARSE,MF_ZERO); CHKERRQ(ierr);
+  ierr = m_field.add_field("MESH_NODE_POSITIONS",H1,LOBATTO_BASE,3,MB_TAG_SPARSE,MF_ZERO); CHKERRQ(ierr);
 
   //Declare problem
 
@@ -155,9 +155,9 @@ int main(int argc, char *argv[]) {
   ierr = m_field.set_field_order(0,MBTRI,"DISPLACEMENT",order); CHKERRQ(ierr);
   ierr = m_field.set_field_order(0,MBEDGE,"DISPLACEMENT",order); CHKERRQ(ierr);
   ierr = m_field.set_field_order(0,MBVERTEX,"DISPLACEMENT",1); CHKERRQ(ierr);
-  ierr = m_field.set_field_order(0,MBTET,"MESH_NODE_POSITIONS",2); CHKERRQ(ierr);
-  ierr = m_field.set_field_order(0,MBTRI,"MESH_NODE_POSITIONS",2); CHKERRQ(ierr);
-  ierr = m_field.set_field_order(0,MBEDGE,"MESH_NODE_POSITIONS",2); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(0,MBTET,"MESH_NODE_POSITIONS",1); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(0,MBTRI,"MESH_NODE_POSITIONS",1); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(0,MBEDGE,"MESH_NODE_POSITIONS",1); CHKERRQ(ierr);
   ierr = m_field.set_field_order(0,MBVERTEX,"MESH_NODE_POSITIONS",1); CHKERRQ(ierr);
 
   // configure blocks by parsing config file

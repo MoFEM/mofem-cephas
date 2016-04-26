@@ -100,6 +100,7 @@ tag_name_size(0) {
   }
   switch(*tag_base_data) {
     case AINSWORTH_COLE_BASE:
+    case LOBATTO_BASE:
     switch(*tag_space_data) {
       case H1:
       forder_table[MBVERTEX] = fNBVERTEX_H1_AINSWORTH_COLE;
