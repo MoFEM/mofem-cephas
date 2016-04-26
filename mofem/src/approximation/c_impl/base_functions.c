@@ -12,10 +12,12 @@
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 */
 
+#include <definitions.h>
 #include <petscsys.h>
 #include <phg-quadrule/quad.h>
 #include <cblas.h>
 #include <base_functions.h>
+
 
 PetscErrorCode Legendre_polynomials(
   int p,double s,double *diff_s,double *L,double *diffL,const int dim
