@@ -1,3 +1,10 @@
+/** \file Projection10NodeCoordsOnField.hpp
+
+FIXME: Move code to cpp file.
+
+*/
+
+
 /* This file is part of MoFEM.
  * MoFEM is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the
@@ -168,8 +175,8 @@ struct ProjectionFieldOn10NodeTet: public Projection10NodeCoordsOnField {
 
     L.resize(maxApproximationOrder+1);
     ierr = Legendre_polynomials(maxApproximationOrder,0.,NULL,&*L.data().begin(),NULL,3); CHKERRQ(ierr);
-    K.resize(maxApproximationOrder+1);
-    ierr = LobattoKernel_polynomials(maxApproximationOrder,0.,NULL,&*K.data().begin(),NULL,3); CHKERRQ(ierr);
+    K.resize(10);
+    ierr = LobattoKernel_polynomials(9,0.,NULL,&*K.data().begin(),NULL,3); CHKERRQ(ierr);
 
     PetscFunctionReturn(0);
   }
