@@ -128,31 +128,31 @@ PetscErrorCode Lobatto_polynomials(
   PetscFunctionReturn(0);
 }
 
-static double f_phi0(double x) { return phi0(x); }
-static double f_phi1(double x) { return phi1(x); }
-static double f_phi2(double x) { return phi2(x); }
-static double f_phi3(double x) { return phi3(x); }
-static double f_phi4(double x) { return phi4(x); }
-static double f_phi5(double x) { return phi5(x); }
-static double f_phi6(double x) { return phi6(x); }
-static double f_phi7(double x) { return phi7(x); }
-static double f_phi8(double x) { return phi8(x); }
-static double f_phi9(double x) { return phi9(x); }
+static double f_phi0(double x) { return PHI0(x); }
+static double f_phi1(double x) { return PHI1(x); }
+static double f_phi2(double x) { return PHI2(x); }
+static double f_phi3(double x) { return PHI3(x); }
+static double f_phi4(double x) { return PHI4(x); }
+static double f_phi5(double x) { return PHI5(x); }
+static double f_phi6(double x) { return PHI6(x); }
+static double f_phi7(double x) { return PHI7(x); }
+static double f_phi8(double x) { return PHI8(x); }
+static double f_phi9(double x) { return PHI9(x); }
 
 static double (*f_phi[])(double x) = {
   f_phi0, f_phi1, f_phi2, f_phi3, f_phi4, f_phi5, f_phi6, f_phi7, f_phi8, f_phi9
 };
 
-static double f_phi0x(double x) { return phi0x(x); }
-static double f_phi1x(double x) { return phi1x(x); }
-static double f_phi2x(double x) { return phi2x(x); }
-static double f_phi3x(double x) { return phi3x(x); }
-static double f_phi4x(double x) { return phi4x(x); }
-static double f_phi5x(double x) { return phi5x(x); }
-static double f_phi6x(double x) { return phi6x(x); }
-static double f_phi7x(double x) { return phi7x(x); }
-static double f_phi8x(double x) { return phi8x(x); }
-static double f_phi9x(double x) { return phi9x(x); }
+static double f_phi0x(double x) { return PHI0X(x); }
+static double f_phi1x(double x) { return PHI1X(x); }
+static double f_phi2x(double x) { return PHI2X(x); }
+static double f_phi3x(double x) { return PHI3X(x); }
+static double f_phi4x(double x) { return PHI4X(x); }
+static double f_phi5x(double x) { return PHI5X(x); }
+static double f_phi6x(double x) { return PHI6X(x); }
+static double f_phi7x(double x) { return PHI7X(x); }
+static double f_phi8x(double x) { return PHI8X(x); }
+static double f_phi9x(double x) { return PHI9X(x); }
 
 static double (*f_phix[])(double x) = {
   f_phi0x, f_phi1x, f_phi2x, f_phi3x, f_phi4x, f_phi5x, f_phi6x, f_phi7x, f_phi8x, f_phi9x
