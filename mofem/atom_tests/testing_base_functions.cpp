@@ -160,10 +160,10 @@ int main(int argc, char *argv[]) {
       double diff_sum = sum_matrix(*diff_base_ptr);
       cout << sum << endl;
       cout << diff_sum << endl;
-      if(fabs(-3.83789-sum)>eps) {
+      if(fabs(-3.83789*4-sum)>eps) {
         SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"wrong result");
       }
-      if(fabs(14.8077-diff_sum)>eps) {
+      if(fabs(14.8077*4-diff_sum)>eps) {
         SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"wrong result");
       }
     }
@@ -172,10 +172,10 @@ int main(int argc, char *argv[]) {
       double diff_sum = sum_matrix(*diff_kernel_base_ptr);
       cout << sum << endl;
       cout << diff_sum << endl;
-      if(fabs(-13.9906-sum)>eps) {
+      if(fabs(-13.9906*4-sum)>eps) {
         SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"wrong result");
       }
-      if(fabs(-101.678-diff_sum)>eps) {
+      if(fabs(-101.678*4-diff_sum)>eps) {
         SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"wrong result");
       }
     }

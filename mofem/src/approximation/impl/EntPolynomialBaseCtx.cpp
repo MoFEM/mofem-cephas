@@ -88,7 +88,7 @@ PetscErrorCode EntPolynomialBaseCtx::setBase() {
     basePolynomials = Legendre_polynomials;
     break;
     case LOBATTO_BASE:
-    basePolynomials = Lobatto_polynomials;
+    basePolynomials = LobattoKernel_polynomials;
     break;
     default:
     SETERRQ1(

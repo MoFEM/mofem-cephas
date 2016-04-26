@@ -90,9 +90,20 @@ struct Projection10NodeCoordsOnField: public EntMethod {
         mid_node_coord[dd] = ave_mid_coord[dd];
       }
     }
+    double edge_shape_function_val = 0.25;
+    FieldApproximationBase base = dofPtr->get_approx_base();
+    switch (base) {
+      case AINSWORTH_COLE_BASE:
+      break;
+      case LOBATTO_BASE:
+      edge_shape_function_val *= phi0(0);
+      break;
+      default:
+      SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not yet implemented");
+    }
+
     diff_node_coord.resize(3);
     ublas::noalias(diff_node_coord) = mid_node_coord-ave_mid_coord;
-    double edge_shape_function_val = 0.25;
     // Dof*edge_shape_function_val + ave_mid_coord = mid_node_coord
     // Dof = (mid_node_coord-ave_mid_coord)/edge_shape_function_val
     Dof.resize(3);
@@ -135,6 +146,8 @@ struct ProjectionFieldOn10NodeTet: public Projection10NodeCoordsOnField {
   Tag th;
   Field_multiIndex::index<FieldName_mi_tag>::type::iterator field_it;
   ublas::vector<double> L;
+  ublas::vector<double> K;
+
   PetscErrorCode preProcess() {
     PetscFunctionBegin;
     if(!onCoords) {
@@ -155,6 +168,9 @@ struct ProjectionFieldOn10NodeTet: public Projection10NodeCoordsOnField {
 
     L.resize(maxApproximationOrder+1);
     ierr = Legendre_polynomials(maxApproximationOrder,0.,NULL,&*L.data().begin(),NULL,3); CHKERRQ(ierr);
+    K.resize(maxApproximationOrder+1);
+    ierr = LobattoKernel_polynomials(maxApproximationOrder,0.,NULL,&*K.data().begin(),NULL,3); CHKERRQ(ierr);
+
     PetscFunctionReturn(0);
   }
 
@@ -206,7 +222,17 @@ struct ProjectionFieldOn10NodeTet: public Projection10NodeCoordsOnField {
     if(dofPtr->get_dof_order()>=maxApproximationOrder) {
       SETERRQ(PETSC_COMM_SELF,1,"too big approximation order, increase constant max_ApproximationOrder");
     }
-    double approx_val = 0.25*L[dofPtr->get_dof_order()-2]*dofPtr->get_FieldData();
+    FieldApproximationBase base = dofPtr->get_approx_base();
+    switch (base) {
+      case AINSWORTH_COLE_BASE:
+      break;
+      case LOBATTO_BASE:
+      break;
+      default:
+      SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not yet implemented");
+    }
+
+    double approx_val = 0.25*K[dofPtr->get_dof_order()-2]*dofPtr->get_FieldData();
     if(onCoords) {
       coords.resize(num_nodes*3);
       rval = mField.get_moab().get_coords(conn,num_nodes,&*coords.data().begin()); CHKERR_MOAB(rval);
