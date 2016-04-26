@@ -51,10 +51,11 @@ PetscErrorCode Legendre_polynomials(
   int p,double s,double *diff_s,double *L,double *diffL,const int dim
 );
 
-
 /**
  \brief Calculate Lobatto base functions
  \ingroup mofem_base_functions
+
+ The order of first function is 2;
 
  \param p is approximation order
  \param s is position \f$s\in[-1,1]\f$
@@ -68,6 +69,26 @@ PetscErrorCode Legendre_polynomials(
 PetscErrorCode Lobatto_polynomials(
   int p,double s,double *diff_s,double *L,double *diffL,const int dim
 );
+
+/**
+ \brief Calculate Kernel Lobatto base functions
+ \ingroup mofem_base_functions
+
+ The order of first function is 2;
+
+ \param p is approximation order
+ \param s is position \f$s\in[-1,1]\f$
+ \param diff_s derivatives of shape functions, i.e. \f$\frac{\partial s}{\partial \xi_i}\f$
+ \retval L approximation functions
+ \retval diffL derivatives, i.e. \f$\frac{\partial L}{\partial \xi_i}\f$
+ \param dim dimension
+ \return error code
+
+*/
+PetscErrorCode LobattoKernel_polynomials(
+  int p,double s,double *diff_s,double *L,double *diffL,const int dim
+);
+
 
 #ifdef __cplusplus
 }
