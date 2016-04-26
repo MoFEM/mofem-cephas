@@ -23,8 +23,8 @@
 namespace MoFEM {
 
   /**
-   * \brief Class used to pass element data to calculate base functions on tet,triangle,edge
-   * 
+   * \brief Calculate base functions on tetrahedral
+   *
    * \ingroup mofem_base_functions
    */
   struct TetPolynomialBase: public BaseFunction {
