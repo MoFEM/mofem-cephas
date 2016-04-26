@@ -21,6 +21,7 @@ extern "C" {
 
 /**
 \brief Calculate Legendre approximation basis
+
 \ingroup mofem_base_functions
 
 Lagrange polynomial is given by
@@ -52,10 +53,11 @@ PetscErrorCode Legendre_polynomials(
 );
 
 /**
- \brief Calculate Lobatto base functions
+ \brief Calculate Lobatto base functions.
+
  \ingroup mofem_base_functions
 
- The order of first function is 2;
+ Order of first function is 2.
 
  \param p is approximation order
  \param s is position \f$s\in[-1,1]\f$
@@ -71,10 +73,12 @@ PetscErrorCode Lobatto_polynomials(
 );
 
 /**
- \brief Calculate Kernel Lobatto base functions
+ \brief Calculate Kernel Lobatto base functions.
+
  \ingroup mofem_base_functions
 
- The order of first function is 2;
+ This is implemented using definitions from Hermes2d <https://github.com/hpfem/hermes> following book by Pavel
+ Solin et al \cite solin2003higher.
 
  \param p is approximation order
  \param s is position \f$s\in[-1,1]\f$

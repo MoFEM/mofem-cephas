@@ -24,6 +24,7 @@ namespace MoFEM {
 
   /**
    * \brief Calculate base functions on triangle
+   * 
    * \ingroup mofem_base_functions
    */
   struct TriPolynomialBase: public BaseFunction {

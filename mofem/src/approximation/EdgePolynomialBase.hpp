@@ -23,6 +23,7 @@ namespace MoFEM {
 
   /**
    * \brief Calculate base functions on tetrahedral
+   * 
    * \ingroup mofem_base_functions
    */
   struct EdgePolynomialBase: public BaseFunction {
