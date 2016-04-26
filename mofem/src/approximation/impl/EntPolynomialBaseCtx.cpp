@@ -86,11 +86,9 @@ PetscErrorCode EntPolynomialBaseCtx::setBase() {
   switch(bAse) {
     case AINSWORTH_COLE_BASE:
     basePolynomials = Legendre_polynomials;
-    bubbleBase = false;
     break;
     case LOBATTO_BASE:
     basePolynomials = Lobatto_polynomials;
-    bubbleBase = true;
     break;
     default:
     SETERRQ1(

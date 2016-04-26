@@ -306,22 +306,13 @@ PetscErrorCode FatPrismPolynomialBase::getValueH1(ublas::matrix<double> &pts) {
               double l = cTx->dataTroughThickness.dataOnEntities[MBEDGE][ee].getN(base)(ggt,dd);
               double diff_l = cTx->dataTroughThickness.dataOnEntities[MBEDGE][ee].getDiffN(base)(ggt,dd);
 
-              if(cTx->bubbleBase) {
-                double dzeta_edge_m = diff_l;
-                data.dataOnEntities[MBEDGE][ee].getN(base)(gg,dd) = tri_n*l;
-                for(int kk = 0;kk<2;kk++) {
-                  data.dataOnEntities[MBEDGE][ee].getDiffN(base)(gg,3*dd+kk) = dksi_tri_n[kk]*l;
-                }
-                data.dataOnEntities[MBEDGE][ee].getDiffN(base)(gg,3*dd+2) = tri_n*dzeta_edge_m;
-              } else {
-                double edge_m = n0n1*l;
-                double dzeta_edge_m = (diffN_MBEDGE0*n1+n0*diffN_MBEDGE1)*l + n0n1*diff_l;
-                data.dataOnEntities[MBEDGE][ee].getN(base)(gg,dd) = tri_n*edge_m;
-                for(int kk = 0;kk<2;kk++) {
-                  data.dataOnEntities[MBEDGE][ee].getDiffN(base)(gg,3*dd+kk) = dksi_tri_n[kk]*edge_m;
-                }
-                data.dataOnEntities[MBEDGE][ee].getDiffN(base)(gg,3*dd+2) = tri_n*dzeta_edge_m;
+              double edge_m = n0n1*l;
+              double dzeta_edge_m = (diffN_MBEDGE0*n1+n0*diffN_MBEDGE1)*l + n0n1*diff_l;
+              data.dataOnEntities[MBEDGE][ee].getN(base)(gg,dd) = tri_n*edge_m;
+              for(int kk = 0;kk<2;kk++) {
+                data.dataOnEntities[MBEDGE][ee].getDiffN(base)(gg,3*dd+kk) = dksi_tri_n[kk]*edge_m;
               }
+              data.dataOnEntities[MBEDGE][ee].getDiffN(base)(gg,3*dd+2) = tri_n*dzeta_edge_m;
 
             }
           }
@@ -443,7 +434,7 @@ PetscErrorCode FatPrismPolynomialBase::getValueH1(ublas::matrix<double> &pts) {
         double *vertex_n = &*data.dataOnEntities[MBVERTEX][0].getN(base).data().begin();
         double *diff_vertex_n = &*data.dataOnEntities[MBVERTEX][0].getDiffN(base).data().begin();
         ierr = H1_QuadShapeFunctions_MBPRISM(
-          cTx->bubbleBase,quads_nodes,quad_order,vertex_n,diff_vertex_n,quad_n,diff_quad_n,nb_gauss_pts,Legendre_polynomials
+          quads_nodes,quad_order,vertex_n,diff_vertex_n,quad_n,diff_quad_n,nb_gauss_pts,Legendre_polynomials
         ); CHKERRQ(ierr);
       }
     }
@@ -456,7 +447,6 @@ PetscErrorCode FatPrismPolynomialBase::getValueH1(ublas::matrix<double> &pts) {
       data.dataOnEntities[MBPRISM][0].getDiffN(base).resize(nb_gauss_pts,3*NBVOLUMEPRISM_H1_AINSWORTH_COLE(order),false);
       if(NBVOLUMEPRISM_H1_AINSWORTH_COLE(order)>0) {
         ierr = H1_VolumeShapeFunctions_MBPRISM(
-          cTx->bubbleBase,
           order,
           vertex_n,
           diff_vertex_n,

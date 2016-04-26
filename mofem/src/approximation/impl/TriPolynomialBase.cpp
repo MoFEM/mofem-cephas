@@ -94,7 +94,8 @@ PetscErrorCode TriPolynomialBase::getValueH1(ublas::matrix<double> &pts) {
       H1edgeN[ee] = &*data.dataOnEntities[MBEDGE][ee].getN(base).data().begin();
       diffH1edgeN[ee] = &*data.dataOnEntities[MBEDGE][ee].getDiffN(base).data().begin();
     }
-    ierr = H1_EdgeShapeFunctions_MBTRI(cTx->bubbleBase,sense,order,
+    ierr = H1_EdgeShapeFunctions_MBTRI(
+      sense,order,
       &*data.dataOnEntities[MBVERTEX][0].getN(base).data().begin(),
       &*data.dataOnEntities[MBVERTEX][0].getDiffN(base).data().begin(),
       H1edgeN,diffH1edgeN,nb_gauss_pts,base_polynomials
@@ -111,7 +112,6 @@ PetscErrorCode TriPolynomialBase::getValueH1(ublas::matrix<double> &pts) {
     data.dataOnEntities[MBTRI][0].getDiffN(base).resize(nb_gauss_pts,2*nb_dofs,false);
     const int face_nodes[] = { 0,1,2 };
     ierr = H1_FaceShapeFunctions_MBTRI(
-      cTx->bubbleBase,
       face_nodes,
       data.dataOnEntities[MBTRI][0].getDataOrder(),
       &*data.dataOnEntities[MBVERTEX][0].getN(base).data().begin(),
@@ -300,21 +300,12 @@ PetscErrorCode TriPolynomialBase::getValue(
     ierr = getValueH1(pts); CHKERRQ(ierr);
     break;
     case HDIV:
-    if(cTx->bubbleBase) {
-      SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"Not yet implemented");
-    }
     ierr = getValueHdiv(pts); CHKERRQ(ierr);
     break;
     case HCURL:
-    if(cTx->bubbleBase) {
-      SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"Not yet implemented");
-    }
     ierr = getValueHCurl(pts); CHKERRQ(ierr);
     break;
     case L2:
-    if(cTx->bubbleBase) {
-      SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"Not yet implemented");
-    }
     ierr = getValueL2(pts); CHKERRQ(ierr);
     break;
     default:

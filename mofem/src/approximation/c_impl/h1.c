@@ -22,7 +22,7 @@
 #include <h1_hdiv_hcurl_l2.h>
 
 PetscErrorCode H1_EdgeShapeFunctions_MBTRI(
-  const int bubble,int *sense,int *p,double *N,double *diffN,double *edgeN[3],double *diff_edgeN[3],int GDIM,
+  int *sense,int *p,double *N,double *diffN,double *edgeN[3],double *diff_edgeN[3],int GDIM,
   PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
 ) {
   PetscFunctionBegin;
@@ -69,71 +69,56 @@ PetscErrorCode H1_EdgeShapeFunctions_MBTRI(
       //edge01
       shift = ii*(P[0]);
       cblas_dcopy(P[0],L01,1,&edgeN01[shift],1);
-      if(!bubble) cblas_dscal(P[0],N[node_shift+0]*N[node_shift+1],&edgeN01[shift],1);
+      cblas_dscal(P[0],N[node_shift+0]*N[node_shift+1],&edgeN01[shift],1);
       //edge12
       shift = ii*(P[1]);
       cblas_dcopy(P[1],L12,1,&edgeN12[shift],1);
-      if(!bubble) cblas_dscal(P[1],N[node_shift+1]*N[node_shift+2],&edgeN12[shift],1);
+      cblas_dscal(P[1],N[node_shift+1]*N[node_shift+2],&edgeN12[shift],1);
       //edge20
       shift = ii*(P[2]);
       cblas_dcopy(P[2],L20,1,&edgeN20[shift],1);
-      if(!bubble) cblas_dscal(P[2],N[node_shift+0]*N[node_shift+2],&edgeN20[shift],1);
+      cblas_dscal(P[2],N[node_shift+0]*N[node_shift+2],&edgeN20[shift],1);
     }
     if(diff_edgeN!=NULL) {
       if(P[0]>0) {
         //edge01
         shift = ii*(P[0]);
-        if(bubble) {
-          cblas_dcopy(P[0],&diffL01[0*(p[0]+1)],1,&diff_edgeN01[2*shift+0],2);
-          cblas_dcopy(P[0],&diffL01[1*(p[0]+1)],1,&diff_edgeN01[2*shift+1],2);
-        } else {
-          bzero(&diff_edgeN01[2*shift],sizeof(double)*2*(P[0]));
-          //diffX
-          cblas_daxpy(P[0],N[node_shift+0]*N[node_shift+1],&diffL01[0*(p[0]+1)],1,&diff_edgeN01[2*shift+0],2);
-          cblas_daxpy(P[0],diffN[2*0+0]*N[node_shift+1]+N[node_shift+0]*diffN[2*1+0],L01,1,&diff_edgeN01[2*shift+0],2);
-          //diff  Y
-          cblas_daxpy(P[0],N[node_shift+0]*N[node_shift+1],&diffL01[1*(p[0]+1)],1,&diff_edgeN01[2*shift+1],2);
-          cblas_daxpy(P[0],diffN[2*0+1]*N[node_shift+1]+N[node_shift+0]*diffN[2*1+1],L01,1,&diff_edgeN01[2*shift+1],2);
-        }
+        bzero(&diff_edgeN01[2*shift],sizeof(double)*2*(P[0]));
+        //diffX
+        cblas_daxpy(P[0],N[node_shift+0]*N[node_shift+1],&diffL01[0*(p[0]+1)],1,&diff_edgeN01[2*shift+0],2);
+        cblas_daxpy(P[0],diffN[2*0+0]*N[node_shift+1]+N[node_shift+0]*diffN[2*1+0],L01,1,&diff_edgeN01[2*shift+0],2);
+        //diff  Y
+        cblas_daxpy(P[0],N[node_shift+0]*N[node_shift+1],&diffL01[1*(p[0]+1)],1,&diff_edgeN01[2*shift+1],2);
+        cblas_daxpy(P[0],diffN[2*0+1]*N[node_shift+1]+N[node_shift+0]*diffN[2*1+1],L01,1,&diff_edgeN01[2*shift+1],2);
       }
       if(P[1]>0) {
         //edge12
         shift = ii*(P[1]);
-        if(bubble) {
-          cblas_dcopy(P[1],&diffL12[0*(p[1]+1)],1,&diff_edgeN12[2*shift+0],2);
-          cblas_dcopy(P[1],&diffL12[1*(p[1]+1)],1,&diff_edgeN12[2*shift+1],2);
-        } else {
-          bzero(&diff_edgeN12[2*shift],sizeof(double)*2*(P[1]));
-          //diffX
-          cblas_daxpy(P[1],N[node_shift+1]*N[node_shift+2],&diffL12[0*(p[1]+1)],1,&diff_edgeN12[2*shift+0],2);
-          cblas_daxpy(P[1],diffN[2*1+0]*N[node_shift+2]+N[node_shift+1]*diffN[2*2+0],L12,1,&diff_edgeN12[2*shift+0],2);
-          //diffY
-          cblas_daxpy(P[1],N[node_shift+1]*N[node_shift+2],&diffL12[1*(p[1]+1)],1,&diff_edgeN12[2*shift+1],2);
-          cblas_daxpy(P[1],diffN[2*1+1]*N[node_shift+2]+N[node_shift+1]*diffN[2*2+1],L12,1,&diff_edgeN12[2*shift+1],2);
-        }
+        bzero(&diff_edgeN12[2*shift],sizeof(double)*2*(P[1]));
+        //diffX
+        cblas_daxpy(P[1],N[node_shift+1]*N[node_shift+2],&diffL12[0*(p[1]+1)],1,&diff_edgeN12[2*shift+0],2);
+        cblas_daxpy(P[1],diffN[2*1+0]*N[node_shift+2]+N[node_shift+1]*diffN[2*2+0],L12,1,&diff_edgeN12[2*shift+0],2);
+        //diffY
+        cblas_daxpy(P[1],N[node_shift+1]*N[node_shift+2],&diffL12[1*(p[1]+1)],1,&diff_edgeN12[2*shift+1],2);
+        cblas_daxpy(P[1],diffN[2*1+1]*N[node_shift+2]+N[node_shift+1]*diffN[2*2+1],L12,1,&diff_edgeN12[2*shift+1],2);
       }
       if(P[2]>0) {
         //edge20
         shift = ii*(P[2]);
-        if(bubble) {
-          cblas_dcopy(P[2],&diffL20[0*(p[2]+1)],1,&diff_edgeN20[2*shift+0],2);
-          cblas_dcopy(P[2],&diffL20[1*(p[2]+1)],1,&diff_edgeN20[2*shift+1],2);
-        } else {
-          bzero(&diff_edgeN20[2*shift],sizeof(double)*2*(P[2]));
-          //diffX
-          cblas_daxpy(P[2],N[node_shift+0]*N[node_shift+2],&diffL20[0*(p[2]+1)],1,&diff_edgeN20[2*shift+0],2);
-          cblas_daxpy(P[2],diffN[2*0+0]*N[node_shift+2]+N[node_shift+0]*diffN[2*2+0],L20,1,&diff_edgeN20[2*shift+0],2);
-          //diffY
-          cblas_daxpy(P[2],N[node_shift+0]*N[node_shift+2],&diffL20[1*(p[2]+1)],1,&diff_edgeN20[2*shift+1],2);
-          cblas_daxpy(P[2],diffN[2*0+1]*N[node_shift+2]+N[node_shift+0]*diffN[2*2+1],L20,1,&diff_edgeN20[2*shift+1],2);
-        }
+        bzero(&diff_edgeN20[2*shift],sizeof(double)*2*(P[2]));
+        //diffX
+        cblas_daxpy(P[2],N[node_shift+0]*N[node_shift+2],&diffL20[0*(p[2]+1)],1,&diff_edgeN20[2*shift+0],2);
+        cblas_daxpy(P[2],diffN[2*0+0]*N[node_shift+2]+N[node_shift+0]*diffN[2*2+0],L20,1,&diff_edgeN20[2*shift+0],2);
+        //diffY
+        cblas_daxpy(P[2],N[node_shift+0]*N[node_shift+2],&diffL20[1*(p[2]+1)],1,&diff_edgeN20[2*shift+1],2);
+        cblas_daxpy(P[2],diffN[2*0+1]*N[node_shift+2]+N[node_shift+0]*diffN[2*2+1],L20,1,&diff_edgeN20[2*shift+1],2);
       }
     }
   }
   PetscFunctionReturn(0);
 }
 PetscErrorCode H1_FaceShapeFunctions_MBTRI(
-  const int bubble,const int *face_nodes,int p,double *N,double *diffN,double *faceN,double *diff_faceN,int GDIM,
+  const int *face_nodes,int p,double *N,double *diffN,double *faceN,double *diff_faceN,int GDIM,
   PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
 ) {
   PetscFunctionBegin;
@@ -159,20 +144,15 @@ PetscErrorCode H1_FaceShapeFunctions_MBTRI(
     double diffL0[ 2*(p+1) ],diffL1[ 2*(p+1) ];
     ierr = base_polynomials(p,ksi_faces[0],diff_ksi_faces[0],L0,diffL0,2); CHKERRQ(ierr);
     ierr = base_polynomials(p,ksi_faces[1],diff_ksi_faces[1],L1,diffL1,2); CHKERRQ(ierr);
-    double v = 1;
-    if(!bubble) {
-      v = N[node_shift+face_nodes[0]]*N[node_shift+face_nodes[1]]*N[node_shift+face_nodes[2]];
-    }
+    double v = N[node_shift+face_nodes[0]]*N[node_shift+face_nodes[1]]*N[node_shift+face_nodes[2]];
     double v2[2] = { 0,0 };
-    if(!bubble) {
-      if(diff_faceN!=NULL) {
-        dd = 0;
-        for(;dd<2;dd++) {
-          v2[dd] =
-          diffN[face_nodes[0]*2+dd]*N[node_shift+face_nodes[1]]*N[node_shift+face_nodes[2]]+
-          N[node_shift+face_nodes[0]]*diffN[face_nodes[1]*2+dd]*N[node_shift+face_nodes[2]]+
-          N[node_shift+face_nodes[0]]*N[node_shift+face_nodes[1]]*diffN[face_nodes[2]*2+dd];
-        }
+    if(diff_faceN!=NULL) {
+      dd = 0;
+      for(;dd<2;dd++) {
+        v2[dd] =
+        diffN[face_nodes[0]*2+dd]*N[node_shift+face_nodes[1]]*N[node_shift+face_nodes[2]]+
+        N[node_shift+face_nodes[0]]*diffN[face_nodes[1]*2+dd]*N[node_shift+face_nodes[2]]+
+        N[node_shift+face_nodes[0]]*N[node_shift+face_nodes[1]]*diffN[face_nodes[2]*2+dd];
       }
     }
     int shift = ii*P;
@@ -191,7 +171,7 @@ PetscErrorCode H1_FaceShapeFunctions_MBTRI(
             for(;dd<2;dd++) {
               double *val = &diff_faceN[2*shift+2*jj+dd];
               *val = ( L0[pp0]*diffL1[dd*(p+1)+pp1] + diffL0[dd*(p+1)+pp0]*L1[pp1] )*v;
-              if(!bubble) *val += L0[pp0]*L1[pp1]*v2[dd];
+              *val += L0[pp0]*L1[pp1]*v2[dd];
             }
           }
           jj++;
@@ -203,7 +183,7 @@ PetscErrorCode H1_FaceShapeFunctions_MBTRI(
   PetscFunctionReturn(0);
 }
 PetscErrorCode H1_EdgeShapeFunctions_MBTET(
-  const int bubble,int *sense,int *p,double *N,double *diffN,double *edgeN[],double *diff_edgeN[],int GDIM,
+  int *sense,int *p,double *N,double *diffN,double *edgeN[],double *diff_edgeN[],int GDIM,
   PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
 ) {
   PetscFunctionBegin;
@@ -232,17 +212,12 @@ PetscErrorCode H1_EdgeShapeFunctions_MBTET(
       if(P[ee]==0) continue;
       double L[p[ee]+1],diffL[3*(p[ee]+1)];
       ierr = base_polynomials(p[ee],edges_ksi[ee],edges_diff_ksi[ee],L,diffL,3);  CHKERRQ(ierr);
-      double v = 1;
-      if(!bubble) {
-        v = N[node_shift+edges_nodes[2*ee+0]]*N[node_shift+edges_nodes[2*ee+1]];
-      }
+      double v = N[node_shift+edges_nodes[2*ee+0]]*N[node_shift+edges_nodes[2*ee+1]];
       if(edgeN != NULL)
       if(edgeN[ee] != NULL) {
         int shift = ii*P[ee];
         cblas_dcopy(P[ee],L,1,&edgeN[ee][shift],1);
-        if(!bubble) {
-          cblas_dscal(P[ee],N[node_shift+edges_nodes[2*ee+0]]*N[node_shift+edges_nodes[2*ee+1]],&edgeN[ee][shift],1);
-        }
+        cblas_dscal(P[ee],N[node_shift+edges_nodes[2*ee+0]]*N[node_shift+edges_nodes[2*ee+1]],&edgeN[ee][shift],1);
       }
       if(diff_edgeN != NULL)
       if(diff_edgeN[ee] != NULL) {
@@ -253,12 +228,10 @@ PetscErrorCode H1_EdgeShapeFunctions_MBTET(
           cblas_daxpy(
             P[ee],v,&diffL[dd*(p[ee]+1)],1,&diff_edgeN[ee][3*shift+dd],3
           );
-          if(!bubble) {
-            cblas_daxpy(
-              P[ee],diffN[3*edges_nodes[2*ee+0]+dd]*N[node_shift+edges_nodes[2*ee+1]]
-              +N[node_shift+edges_nodes[2*ee+0]]*diffN[3*edges_nodes[2*ee+1]+dd],L,1,&diff_edgeN[ee][3*shift+dd],3
-            );
-          }
+          cblas_daxpy(
+            P[ee],diffN[3*edges_nodes[2*ee+0]+dd]*N[node_shift+edges_nodes[2*ee+1]]
+            +N[node_shift+edges_nodes[2*ee+0]]*diffN[3*edges_nodes[2*ee+1]+dd],L,1,&diff_edgeN[ee][3*shift+dd],3
+          );
         }
       }
     }
@@ -266,7 +239,7 @@ PetscErrorCode H1_EdgeShapeFunctions_MBTET(
   PetscFunctionReturn(0);
 }
 PetscErrorCode H1_FaceShapeFunctions_MBTET(
-  int const bubble,int *faces_nodes,int *p,double *N,double *diffN,double *faceN[],double *diff_faceN[],int GDIM,
+  int *faces_nodes,int *p,double *N,double *diffN,double *faceN[],double *diff_faceN[],int GDIM,
   PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
 ) {
   PetscFunctionBegin;
@@ -301,19 +274,14 @@ PetscErrorCode H1_FaceShapeFunctions_MBTET(
       double diffL0[ 3*(p[ff]+1) ],diffL1[ 3*(p[ff]+1) ];
       ierr = base_polynomials(p[ff],ksi_faces[ff*2+0],diff_ksi_faces[ff*2+0],L0,diffL0,3);  CHKERRQ(ierr);
       ierr = base_polynomials(p[ff],ksi_faces[ff*2+1],diff_ksi_faces[ff*2+1],L1,diffL1,3);  CHKERRQ(ierr);
-      double v = 1;
-      if(!bubble) {
-        v = N[node_shift+faces_nodes[3*ff+0]]*N[node_shift+faces_nodes[3*ff+1]]*N[node_shift+faces_nodes[3*ff+2]];
-      }
+      double v = N[node_shift+faces_nodes[3*ff+0]]*N[node_shift+faces_nodes[3*ff+1]]*N[node_shift+faces_nodes[3*ff+2]];
       double v2[3] = {0,0,0};
-      if(!bubble) {
-        dd = 0;
-        for(;dd<3;dd++) {
-          v2[dd] =
-          diffN[3*faces_nodes[3*ff+0]+dd]*N[node_shift+faces_nodes[3*ff+1]]*N[node_shift+faces_nodes[3*ff+2]]+
-          N[node_shift+faces_nodes[3*ff+0]]*diffN[3*faces_nodes[3*ff+1]+dd]*N[node_shift+faces_nodes[3*ff+2]]+
-          N[node_shift+faces_nodes[3*ff+0]]*N[node_shift+faces_nodes[3*ff+1]]*diffN[3*faces_nodes[3*ff+2]+dd];
-        }
+      dd = 0;
+      for(;dd<3;dd++) {
+        v2[dd] =
+        diffN[3*faces_nodes[3*ff+0]+dd]*N[node_shift+faces_nodes[3*ff+1]]*N[node_shift+faces_nodes[3*ff+2]]+
+        N[node_shift+faces_nodes[3*ff+0]]*diffN[3*faces_nodes[3*ff+1]+dd]*N[node_shift+faces_nodes[3*ff+2]]+
+        N[node_shift+faces_nodes[3*ff+0]]*N[node_shift+faces_nodes[3*ff+1]]*diffN[3*faces_nodes[3*ff+2]+dd];
       }
       shift = ii*P[ff];
       int jj = 0;
@@ -333,9 +301,7 @@ PetscErrorCode H1_FaceShapeFunctions_MBTET(
               for(;dd<3;dd++) {
                 diff_faceN[ff][3*shift+3*jj+dd] =
                 ( L0[pp0]*diffL1[dd*(p[ff]+1)+pp1] + diffL0[dd*(p[ff]+1)+pp0]*L1[pp1] )*v;
-                if(!bubble) {
-                  diff_faceN[ff][3*shift+3*jj+dd] += L0[pp0]*L1[pp1]*v2[dd];
-                }
+                diff_faceN[ff][3*shift+3*jj+dd] += L0[pp0]*L1[pp1]*v2[dd];
               }
             }
             jj++;
@@ -348,7 +314,7 @@ PetscErrorCode H1_FaceShapeFunctions_MBTET(
   PetscFunctionReturn(0);
 }
 PetscErrorCode H1_VolumeShapeFunctions_MBTET(
-  const int bubble,int p,double *N,double *diffN,double *volumeN,double *diff_volumeN,int GDIM,
+  int p,double *N,double *diffN,double *volumeN,double *diff_volumeN,int GDIM,
   PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
 ) {
   PetscFunctionBegin;
@@ -373,17 +339,12 @@ PetscErrorCode H1_VolumeShapeFunctions_MBTET(
     ierr = base_polynomials(p,ksiL0,diff_ksiL0,L0,diffL0,3); CHKERRQ(ierr);
     ierr = base_polynomials(p,ksiL1,diff_ksiL1,L1,diffL1,3); CHKERRQ(ierr);
     ierr = base_polynomials(p,ksiL2,diff_ksiL2,L2,diffL2,3); CHKERRQ(ierr);
-    double v = 1;
-    if(!bubble) {
-      v = N[node_shift+0]*N[node_shift+1]*N[node_shift+2]*N[node_shift+3];
-    }
+    double v = N[node_shift+0]*N[node_shift+1]*N[node_shift+2]*N[node_shift+3];
     double v2[3] = {0,0,0};
-    if(!bubble) {
-      dd = 0;
-      for(;dd<3;dd++) {
-        v2[dd] = diffN[3*0+dd]*N[node_shift+1]*N[node_shift+2]*N[node_shift+3] + N[node_shift+0]*diffN[3*1+dd]*N[node_shift+2]*N[node_shift+3]+
-        N[node_shift+0]*N[node_shift+1]*diffN[3*2+dd]*N[node_shift+3] + N[node_shift+0]*N[node_shift+1]*N[node_shift+2]*diffN[3*3+dd];
-      }
+    dd = 0;
+    for(;dd<3;dd++) {
+      v2[dd] = diffN[3*0+dd]*N[node_shift+1]*N[node_shift+2]*N[node_shift+3] + N[node_shift+0]*diffN[3*1+dd]*N[node_shift+2]*N[node_shift+3]+
+      N[node_shift+0]*N[node_shift+1]*diffN[3*2+dd]*N[node_shift+3] + N[node_shift+0]*N[node_shift+1]*N[node_shift+2]*diffN[3*3+dd];
     }
     int shift = ii*P;
     int jj = 0;
@@ -403,9 +364,7 @@ PetscErrorCode H1_VolumeShapeFunctions_MBTET(
               for(;dd<3;dd++) {
                 diff_volumeN[3*shift+3*jj+dd] =
                 ( diffL0[dd*(p+1)+pp0]*L1[pp1]*L2[pp2] + L0[pp0]*diffL1[dd*(p+1)+pp1]*L2[pp2] + L0[pp0]*L1[pp1]*diffL2[dd*(p+1)+pp2] )*v;
-                if(!bubble) {
-                  diff_volumeN[3*shift+3*jj+dd] += L0[pp0]*L1[pp1]*L2[pp2]*v2[dd];
-                }
+                diff_volumeN[3*shift+3*jj+dd] += L0[pp0]*L1[pp1]*L2[pp2]*v2[dd];
               }
             }
             jj++;
@@ -480,7 +439,7 @@ PetscErrorCode H1_VolumeGradientOfDeformation_hierachical(int p,double *diffN,do
   PetscFunctionReturn(0);
 }
 PetscErrorCode H1_QuadShapeFunctions_MBPRISM(
-  const int bubble,int *faces_nodes,int *p,double *N,double *diffN,double *faceN[],double *diff_faceN[],int GDIM,
+  int *faces_nodes,int *p,double *N,double *diffN,double *faceN[],double *diff_faceN[],int GDIM,
   PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
 ) {
   PetscFunctionBegin;
@@ -535,18 +494,13 @@ PetscErrorCode H1_QuadShapeFunctions_MBPRISM(
       ierr = base_polynomials(
         p[ff],ksi_faces[e1],diff_ksi_faces[e1],L1,diffL1,3
       ); CHKERRQ(ierr);
-      double v = 1;
-      if(!bubble) {
-        v = N[node_shift+n0]*N[node_shift+n2];
-      }
+      double v = v = N[node_shift+n0]*N[node_shift+n2];
       double v2[3] = {0,0,0};
-      if(!bubble) {
-        dd = 0;
-        for(;dd<3;dd++) {
-          v2[dd] =
-          diffN[node_diff_shift+3*n0+dd]*N[node_shift+n2]+
-          N[node_shift+n0]*diffN[node_diff_shift+3*n2+dd];
-        }
+      dd = 0;
+      for(;dd<3;dd++) {
+        v2[dd] =
+        diffN[node_diff_shift+3*n0+dd]*N[node_shift+n2]+
+        N[node_shift+n0]*diffN[node_diff_shift+3*n2+dd];
       }
       int shift;
       shift = ii*P[ff];
@@ -571,9 +525,7 @@ PetscErrorCode H1_QuadShapeFunctions_MBPRISM(
                     L0[pp0]*diffL1[dd*(p[ff]+1)+pp1]+
                     diffL0[dd*(p[ff]+1)+pp0]*L1[pp1]
                   )*v;
-                  if(!bubble) {
-                    diff_faceN[ff][3*shift+3*jj+dd] += L0[pp0]*L1[pp1]*v2[dd];
-                  }
+                  diff_faceN[ff][3*shift+3*jj+dd] += L0[pp0]*L1[pp1]*v2[dd];
                 }
               }
             }
@@ -587,7 +539,7 @@ PetscErrorCode H1_QuadShapeFunctions_MBPRISM(
   PetscFunctionReturn(0);
 }
 PetscErrorCode H1_VolumeShapeFunctions_MBPRISM(
-  const int bubble,int p,double *N,double *diffN,double *volumeN,double *diff_volumeN,int GDIM,
+  int p,double *N,double *diffN,double *volumeN,double *diff_volumeN,int GDIM,
   PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
 ) {
   PetscFunctionBegin;
@@ -614,21 +566,16 @@ PetscErrorCode H1_VolumeShapeFunctions_MBPRISM(
     ierr = base_polynomials(p,ksiL1,diff_ksiL1,L1,diffL1,3); CHKERRQ(ierr);
     ierr = base_polynomials(p,ksiL2,diff_ksiL2,L2,diffL2,3); CHKERRQ(ierr);
     double t0 = (N[node_shift+2]+N[node_shift+5]);
-    double v = 1;
-    if(!bubble) {
-     v = N[node_shift+0]*N[node_shift+4]*t0;
-    }
+    double v = N[node_shift+0]*N[node_shift+4]*t0;
     double v2[3] = {0,0,0};
-    if(!bubble) {
-      dd = 0;
-      for(;dd<3;dd++) {
-        v2[dd] =
-        diffN[node_diff_shift+3*0+dd]*N[node_shift+4]*t0+
-        N[node_shift+0]*diffN[node_diff_shift+3*4+dd]*t0+
-        N[node_shift+0]*N[node_shift+4]*(
-          diffN[node_diff_shift+3*2+dd]+diffN[node_diff_shift+3*5+dd]
-        );
-      }
+    dd = 0;
+    for(;dd<3;dd++) {
+      v2[dd] =
+      diffN[node_diff_shift+3*0+dd]*N[node_shift+4]*t0+
+      N[node_shift+0]*diffN[node_diff_shift+3*4+dd]*t0+
+      N[node_shift+0]*N[node_shift+4]*(
+        diffN[node_diff_shift+3*2+dd]+diffN[node_diff_shift+3*5+dd]
+      );
     }
     int shift = ii*P;
     int jj = 0;
@@ -652,9 +599,7 @@ PetscErrorCode H1_VolumeShapeFunctions_MBPRISM(
                   L0[pp0]*diffL1[dd*(p+1)+pp1]*L2[pp2]+
                   L0[pp0]*L1[pp1]*diffL2[dd*(p+1)+pp2]
                 )*v;
-                if(!bubble) {
-                  diff_volumeN[3*shift+3*jj+dd] += L0[pp0]*L1[pp1]*L2[pp2]*v2[dd];
-                }
+                diff_volumeN[3*shift+3*jj+dd] += L0[pp0]*L1[pp1]*L2[pp2]*v2[dd];
               }
             }
             jj++;

@@ -56,23 +56,23 @@ PetscErrorCode L2_VolumeShapeDiffMBTETinvJ(int base_p,int p,double *volume_diffN
  * \param p of edges
  */
 PetscErrorCode H1_EdgeShapeFunctions_MBTRI(
-  const int bubble,int *sense,int *p,double *N,double *diffN,double *edgeN[3],double *diff_edgeN[3],int GDIM,
+  int *sense,int *p,double *N,double *diffN,double *edgeN[3],double *diff_edgeN[3],int GDIM,
   PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
 );
 PetscErrorCode H1_FaceShapeFunctions_MBTRI(
-  const int bubble,const int *face_nodes,int p,double *N,double *diffN,double *faceN,double *diff_faceN,int GDIM,
+  const int *face_nodes,int p,double *N,double *diffN,double *faceN,double *diff_faceN,int GDIM,
   PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
 );
 PetscErrorCode H1_EdgeShapeFunctions_MBTET(
-  const int bubble,int *sense,int *p,double *N,double *diffN,double *edgeN[],double *diff_edgeN[],int GDIM,
+  int *sense,int *p,double *N,double *diffN,double *edgeN[],double *diff_edgeN[],int GDIM,
   PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
 );
 PetscErrorCode H1_FaceShapeFunctions_MBTET(
-  const int bubble,int *faces_nodes,int *p,double *N,double *diffN,double *faceN[],double *diff_faceN[],int GDIM,
+  int *faces_nodes,int *p,double *N,double *diffN,double *faceN[],double *diff_faceN[],int GDIM,
   PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
 );
 PetscErrorCode H1_VolumeShapeFunctions_MBTET(
-  const int bubble,int p,double *N,double *diffN,double *volumeN,double *diff_volumeN,int GDIM,
+  int p,double *N,double *diffN,double *volumeN,double *diff_volumeN,int GDIM,
   PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
 );
 PetscErrorCode H1_EdgeShapeDiffMBTETinvJ(int *base_p,int *p,double *edge_diffN[],double *invJac,double *edge_diffNinvJac[],int GDIM);
@@ -82,11 +82,11 @@ PetscErrorCode H1_EdgeGradientOfDeformation_hierachical(int p,double *diffN,doub
 PetscErrorCode H1_FaceGradientOfDeformation_hierachical(int p,double *diffN,double *dofs,double *F);
 PetscErrorCode H1_VolumeGradientOfDeformation_hierachical(int p,double *diffN,double *dofs,double *F);
 PetscErrorCode H1_QuadShapeFunctions_MBPRISM(
-  const int bubble,int *faces_nodes,int *p,double *N,double *diffN,double *faceN[],double *diff_faceN[],int GDIM,
+  int *faces_nodes,int *p,double *N,double *diffN,double *faceN[],double *diff_faceN[],int GDIM,
   PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
 );
 PetscErrorCode H1_VolumeShapeFunctions_MBPRISM(
-  const int bubble,int p,double *N,double *diffN,double *volumeN,double *diff_volumeN,int GDIM,
+  int p,double *N,double *diffN,double *volumeN,double *diff_volumeN,int GDIM,
   PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
 );
 
