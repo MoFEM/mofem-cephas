@@ -295,13 +295,17 @@ PetscErrorCode FatPrismPolynomialBase::getValueH1(ublas::matrix<double> &pts) {
             dksi_tri_n[kk] = cTx->dataTrianglesOnly.dataOnEntities[MBVERTEX][0].getDiffN(base)(ggf,2*prism_edge_map[ee][0]+kk);
           }
           for(int ggt = 0;ggt<nb_gauss_pts_through_thickness;ggt++,gg++) {
+
             double zeta = cTx->gaussPtsThroughThickness(0,ggt);
             double n0 = N_MBEDGE0(zeta);
             double n1 = N_MBEDGE1(zeta);
             double n0n1 = n0*n1;
+
             for(int dd = 0;dd<nb_dofs;dd++) {
+
               double l = cTx->dataTroughThickness.dataOnEntities[MBEDGE][ee].getN(base)(ggt,dd);
               double diff_l = cTx->dataTroughThickness.dataOnEntities[MBEDGE][ee].getDiffN(base)(ggt,dd);
+
               double edge_m = n0n1*l;
               double dzeta_edge_m = (diffN_MBEDGE0*n1+n0*diffN_MBEDGE1)*l + n0n1*diff_l;
               data.dataOnEntities[MBEDGE][ee].getN(base)(gg,dd) = tri_n*edge_m;
@@ -309,6 +313,7 @@ PetscErrorCode FatPrismPolynomialBase::getValueH1(ublas::matrix<double> &pts) {
                 data.dataOnEntities[MBEDGE][ee].getDiffN(base)(gg,3*dd+kk) = dksi_tri_n[kk]*edge_m;
               }
               data.dataOnEntities[MBEDGE][ee].getDiffN(base)(gg,3*dd+2) = tri_n*dzeta_edge_m;
+
             }
           }
         }
