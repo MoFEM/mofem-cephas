@@ -175,8 +175,8 @@ struct ProjectionFieldOn10NodeTet: public Projection10NodeCoordsOnField {
 
     L.resize(maxApproximationOrder+1);
     ierr = Legendre_polynomials(maxApproximationOrder,0.,NULL,&*L.data().begin(),NULL,3); CHKERRQ(ierr);
-    K.resize(9);
-    ierr = LobattoKernel_polynomials(maxApproximationOrder,0.,NULL,&*K.data().begin(),NULL,3); CHKERRQ(ierr);
+    K.resize(10);
+    ierr = LobattoKernel_polynomials(9,0.,NULL,&*K.data().begin(),NULL,3); CHKERRQ(ierr);
 
     PetscFunctionReturn(0);
   }
