@@ -22,7 +22,8 @@
 
 namespace MoFEM {
 
-  static const MOFEMuuid IDD_LOBATTO_BASE_FUNCTION = MOFEMuuid(BitIntefaceId(LEGENDRE_BASE_FUNCTION_INTERFACE));
+  static const MOFEMuuid IDD_LOBATTO_BASE_FUNCTION = MOFEMuuid(BitIntefaceId(LOBATTO_BASE_FUNCTION_INTERFACE));
+  static const MOFEMuuid IDD_KERNEL_BASE_FUNCTION = MOFEMuuid(BitIntefaceId(KERNEL_BASE_FUNCTION_INTERFACE));
 
   /**
    * \brief Class used to give arguments to Lobatto base functions
@@ -64,6 +65,46 @@ namespace MoFEM {
 
   };
 
+  /**
+   * \brief Class used to give arguments to Kernel Lobatto base functions
+   * \ingroup mofem_base_functions
+   */
+  struct KernelLobattoPolynomialCtx: public LegendrePolynomialCtx {
+
+    PetscErrorCode queryInterface(const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface);
+
+    KernelLobattoPolynomialCtx(
+      int p,
+      double *diff_s,
+      int dim,
+      boost::shared_ptr<ublas::matrix<double> > base_fun_ptr,
+      boost::shared_ptr<ublas::matrix<double> > base_diff_fun_ptr
+    ):
+    LegendrePolynomialCtx(p,diff_s,dim,base_fun_ptr,base_diff_fun_ptr) {
+      basePolynomials = LobattoKernel_polynomials;
+    }
+    ~KernelLobattoPolynomialCtx() {}
+
+  };
+
+  /**
+   * \brief Calculating Lobatto base functions
+   * \ingroup mofem_base_functions
+   */
+  struct KernelLobattoPolynomial: public LegendrePolynomial {
+
+    PetscErrorCode queryInterface(const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface);
+
+    KernelLobattoPolynomial() {}
+    ~KernelLobattoPolynomial() {}
+
+    PetscErrorCode getValue(
+      ublas::matrix<double> &pts,
+      boost::shared_ptr<BaseFunctionCtx> ctx_ptr
+    );
+
+  };
+  
 }
 
 #endif

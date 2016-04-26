@@ -1,8 +1,5 @@
 /*! \mainpage Index Page
 
-Search for any phrase in documentation:
-\htmlinclude doc/google_search_widget.html
-
 \htmlinclude doc/search_tags.html
 
 \section introduction Introduction
@@ -29,7 +26,9 @@ provided by MoAB.  The current version of MoFEM has full support for
 CUBIT/TRELIS, TetGEN, NetGEN for pre-processing and ParaView for
 post-processing.
 
-\subsection Motivation
+\tableofcontents
+
+\section Motivation
 
 Building a scientific simulation environment for finite element methods is a
 complicated task. The greatest part of finite element code development is often
@@ -58,10 +57,12 @@ add industry. Since each \em user \em module is implemented with MoFEM, using
 its internal database, data between modules can be exchanged without prior
 knowledge how each module is developed.
 
-\subsection download_repository MoFEM repository, user modules and testing
+\section download_repository MoFEM repository
 
 - Version repository <https://bitbucket.org/likask/mofem-cephas>
 - Testing webpage (CDash) <http://cdash.eng.gla.ac.uk/cdash/>
+
+\section users_modules User modules
 
 List of some user modules,
 - Obsolete (Elements and methods used by some modules no longer developed, not recommend
@@ -73,7 +74,7 @@ to use in new developments) <https://bitbucket.org/likask/mofem_um_obsolete>
 - Solid Shell Prism Element <https://bitbucket.org/likask/mofem_um_solid_shell_prism_element>
 - Minimal surface equation <https://bitbucket.org/likask/mofem_um_minimal_surface_equation>
 
-\subsection contact Contact us and get involved
+\section contact Contact us and get involved
 
 Contributions are welcome and is an important part of the open spirit of the
 project. It's hoped a community will develop around the project whose
@@ -82,13 +83,13 @@ contributions will improve it further.
 - Contact: <cmatgu@googlegroups.com>
 - Discussion channel: <https://mofem.slack.com/>
 
-\subsection twitter_and_google_plus Recent developments and news
+\section twitter_and_google_plus Recent developments and news
 
 \htmlinclude doc/twitter_widged.html
 
 See as well Google+ <https://plus.google.com/110439315415517980382/posts>
 
-\subsection thrid_party Third party libraries
+\section thrid_party Third party libraries
 
 List of third party libraries and packages used by MoFEM:
 
@@ -101,7 +102,7 @@ List of third party libraries and packages used by MoFEM:
 - CMake <http://www.cmake.org>
 - ParaView <http://www.paraview.org>
 
-\subsection legal_stuff Legal stuff
+\section legal_stuff Legal stuff
 
 MoFEM is free software: you can redistribute it and/or modify it under the terms
 of the GNU Lesser General Public License as published by the Free Software
@@ -115,7 +116,7 @@ PARTICULAR PURPOSE.  See the GNU Lesser General Public License for more details.
 You should have received a copy of the GNU Lesser General Public License along
 with MoFEM. If not, see <http://www.gnu.org/licenses/>
 
-\subsection contributors Contributors list
+\section contributors Contributors list
 
 MoFEM is copyright by Lukasz Kaczmarczyk (Lukasz.Kaczmarczyk at glasgow.ac.uk)
 and has received contributions by several people. MoFEM can be used freely for
@@ -131,7 +132,7 @@ contributions to main git repository. Note that particular module can have
 separate contributors list. If one author uses more than one name the same person
 can appear more than one.
 
-Detailed git-statistic for core lib only <http://mofem.eng.gla.ac.uk/mofem/html/git-stats> 
+Detailed git-statistic for core lib only <http://mofem.eng.gla.ac.uk/mofem/html/git-stats>
 
 \verbinclude doc/contributors_list
 \verbinclude users_modules/doc/contributors_list_modules
@@ -140,6 +141,5 @@ List is generated with command,
 \code
 git shortlog -s -e -n
 \endcode
-
 
 */

@@ -68,8 +68,61 @@ PetscErrorCode LobattoPolynomial::getValue(
   PetscErrorCode ierr;
   PetscFunctionBegin;
   MoFEM::UnknownInterface *iface;
-  ierr = ctx_ptr->queryInterface(IDD_LEGENDRE_BASE_FUNCTION,&iface); CHKERRQ(ierr);
-  LegendrePolynomialCtx *ctx = reinterpret_cast<LegendrePolynomialCtx*>(iface);
+  ierr = ctx_ptr->queryInterface(IDD_LOBATTO_BASE_FUNCTION,&iface); CHKERRQ(ierr);
+  LobattoPolynomialCtx *ctx = reinterpret_cast<LobattoPolynomialCtx*>(iface);
+  ctx->baseFunPtr->resize(pts.size2(),ctx->P+1,false);
+  ctx->baseDiffFunPtr->resize(pts.size2(),ctx->dIm*(ctx->P+1),false);
+  double *l = NULL;
+  double *diff_l = NULL;
+  for(unsigned int gg = 0;gg<pts.size2();gg++) {
+    if(ctx->baseFunPtr) l = &((*ctx->baseFunPtr)(gg,0));
+    if(ctx->baseDiffFunPtr) diff_l = &((*ctx->baseDiffFunPtr)(gg,0));
+    ierr = (ctx->basePolynomials)(ctx->P,pts(0,gg),ctx->diffS,l,diff_l,ctx->dIm); CHKERRQ(ierr);
+  }
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode KernelLobattoPolynomialCtx::queryInterface(
+  const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface
+) {
+  PetscErrorCode ierr;
+  PetscFunctionBegin;
+  *iface = NULL;
+  if(uuid == IDD_KERNEL_BASE_FUNCTION) {
+    *iface = dynamic_cast<KernelLobattoPolynomialCtx*>(this);
+    PetscFunctionReturn(0);
+  } else {
+    SETERRQ(PETSC_COMM_WORLD,MOFEM_DATA_INCONSISTENCY,"wrong interference");
+  }
+  ierr = LegendrePolynomialCtx::queryInterface(uuid,iface); CHKERRQ(ierr);
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode KernelLobattoPolynomial::queryInterface(
+  const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface
+) {
+  PetscErrorCode ierr;
+  PetscFunctionBegin;
+  *iface = NULL;
+  if(uuid == IDD_KERNEL_BASE_FUNCTION) {
+    *iface = dynamic_cast<KernelLobattoPolynomial*>(this);
+    PetscFunctionReturn(0);
+  } else {
+    SETERRQ(PETSC_COMM_WORLD,MOFEM_DATA_INCONSISTENCY,"wrong interference");
+  }
+  ierr = LegendrePolynomial::queryInterface(uuid,iface); CHKERRQ(ierr);
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode KernelLobattoPolynomial::getValue(
+  ublas::matrix<double> &pts,
+  boost::shared_ptr<BaseFunctionCtx> ctx_ptr
+) {
+  PetscErrorCode ierr;
+  PetscFunctionBegin;
+  MoFEM::UnknownInterface *iface;
+  ierr = ctx_ptr->queryInterface(IDD_KERNEL_BASE_FUNCTION,&iface); CHKERRQ(ierr);
+  LobattoPolynomialCtx *ctx = reinterpret_cast<LobattoPolynomialCtx*>(iface);
   ctx->baseFunPtr->resize(pts.size2(),ctx->P+1,false);
   ctx->baseDiffFunPtr->resize(pts.size2(),ctx->dIm*(ctx->P+1),false);
   double *l = NULL;

@@ -88,7 +88,8 @@ int main(int argc, char *argv[]) {
   boost::shared_ptr<ublas::matrix<double> > base_ptr(new ublas::matrix<double>);
   boost::shared_ptr<ublas::matrix<double> > diff_base_ptr(new ublas::matrix<double>);
 
-  const double eps = 1e-4;
+
+  const double eps = 1e-3;
 
   if(choise_value==LEGENDREPOLYNOMIAL) {
     double diff_s = 1;
@@ -120,30 +121,63 @@ int main(int argc, char *argv[]) {
     pts_1d(0,ii) = 2*((double)ii/10)-1;
   }
 
+  boost::shared_ptr<ublas::matrix<double> > kernel_base_ptr(new ublas::matrix<double>);
+  boost::shared_ptr<ublas::matrix<double> > diff_kernel_base_ptr(new ublas::matrix<double>);
+
   if(choise_value==LOBATTOPOLYNOMIAL) {
     double diff_s = 1;
     ierr = LobattoPolynomial().getValue(
       pts_1d,
       boost::shared_ptr<BaseFunctionCtx>(
-        new LobattoPolynomialCtx(7,&diff_s,1,base_ptr,diff_base_ptr)
+        new LobattoPolynomialCtx(7+2,&diff_s,1,base_ptr,diff_base_ptr)
+      )
+    ); CHKERRQ(ierr);
+    ierr = KernelLobattoPolynomial().getValue(
+      pts_1d,
+      boost::shared_ptr<BaseFunctionCtx>(
+        new KernelLobattoPolynomialCtx(7,&diff_s,1,kernel_base_ptr,diff_kernel_base_ptr)
       )
     ); CHKERRQ(ierr);
     for(int ii = 0;ii!=11;ii++) {
-      cerr << "lobatto_plot " << pts_1d(0,ii) << " " << (*base_ptr)(ii,2) << " " << (*diff_base_ptr)(ii,2) << endl;
+      double s = pts_1d(0,ii);
+      cerr
+      << "lobatto_plot "
+      << s << " "
+      << (*base_ptr)(ii,1) << " "
+      << (*diff_base_ptr)(ii,1) << " "
+      << (*kernel_base_ptr)(ii,1) << " "
+      << (*diff_kernel_base_ptr)(ii,1) << " "
+      << (*kernel_base_ptr)(ii,1)*(1-s*s) << " "
+      << (*kernel_base_ptr)(ii,1)*(-2*s)+(*diff_kernel_base_ptr)(ii,1)*(1-s*s) << " "
+      << endl;
     }
     cout << "LobattoPolynomial\n";
     cout << pts_1d << endl;
     cout << *base_ptr << endl;
     cout << *diff_base_ptr << endl;
-    double sum = sum_matrix(*base_ptr);
-    double diff_sum = sum_matrix(*diff_base_ptr);
-    cout << sum << endl;
-    cout << diff_sum << endl;
-    if(fabs(-3.90717-sum)>eps) {
-      SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"wrong result");
+    {
+      double sum = sum_matrix(*base_ptr);
+      double diff_sum = sum_matrix(*diff_base_ptr);
+      cout << sum << endl;
+      cout << diff_sum << endl;
+      if(fabs(-3.83789*4-sum)>eps) {
+        SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"wrong result");
+      }
+      if(fabs(14.8077*4-diff_sum)>eps) {
+        SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"wrong result");
+      }
     }
-    if(fabs(19.8261-diff_sum)>eps) {
-      SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"wrong result");
+    {
+      double sum = sum_matrix(*kernel_base_ptr);
+      double diff_sum = sum_matrix(*diff_kernel_base_ptr);
+      cout << sum << endl;
+      cout << diff_sum << endl;
+      if(fabs(-13.9906*4-sum)>eps) {
+        SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"wrong result");
+      }
+      if(fabs(-101.678*4-diff_sum)>eps) {
+        SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"wrong result");
+      }
     }
   }
 

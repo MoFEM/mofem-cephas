@@ -21,6 +21,7 @@ extern "C" {
 
 /**
 \brief Calculate Legendre approximation basis
+
 \ingroup mofem_base_functions
 
 Lagrange polynomial is given by
@@ -51,10 +52,12 @@ PetscErrorCode Legendre_polynomials(
   int p,double s,double *diff_s,double *L,double *diffL,const int dim
 );
 
-
 /**
- \brief Calculate Lobatto base functions
+ \brief Calculate Lobatto base functions.
+
  \ingroup mofem_base_functions
+
+ Order of first function is 2.
 
  \param p is approximation order
  \param s is position \f$s\in[-1,1]\f$
@@ -68,6 +71,53 @@ PetscErrorCode Legendre_polynomials(
 PetscErrorCode Lobatto_polynomials(
   int p,double s,double *diff_s,double *L,double *diffL,const int dim
 );
+
+/**
+ \brief Calculate Kernel Lobatto base functions.
+
+ \ingroup mofem_base_functions
+
+ This is implemented using definitions from Hermes2d <https://github.com/hpfem/hermes> following book by Pavel
+ Solin et al \cite solin2003higher.
+
+ \param p is approximation order
+ \param s is position \f$s\in[-1,1]\f$
+ \param diff_s derivatives of shape functions, i.e. \f$\frac{\partial s}{\partial \xi_i}\f$
+ \retval L approximation functions
+ \retval diffL derivatives, i.e. \f$\frac{\partial L}{\partial \xi_i}\f$
+ \param dim dimension
+ \return error code
+
+*/
+PetscErrorCode LobattoKernel_polynomials(
+  int p,double s,double *diff_s,double *L,double *diffL,const int dim
+);
+
+/// Definitions taken from Hermes2d code
+
+/// kernel functions
+#define PHI0(x) (-2.0 * 1.22474487139158904909864203735)
+#define PHI1(x) (-2.0 * 1.58113883008418966599944677222 * (x))
+#define PHI2(x) (-1.0 / 2.0 * 1.87082869338697069279187436616 * (5 * (x) * (x) - 1))
+#define PHI3(x) (-1.0 / 2.0 * 2.12132034355964257320253308631 * (7 * (x) * (x) - 3) * (x))
+#define PHI4(x) (-1.0 / 4.0 * 2.34520787991171477728281505677 * (21 * (x) * (x) * (x) * (x) - 14 * (x) * (x) + 1))
+#define PHI5(x) (-1.0 / 4.0 * 2.54950975679639241501411205451 * ((33 * (x) * (x) - 30) * (x) * (x) + 5) * (x))
+#define PHI6(x) (-1.0 / 32.0 * 2.73861278752583056728484891400 * (((429 * (x) * (x) - 495) * (x) * (x) + 135) * (x) * (x) - 5))
+#define PHI7(x) (-1.0 / 32.0 * 2.91547594742265023543707643877 * (((715 * (x) * (x) - 1001) * (x) * (x) + 385) * (x) * (x) - 35) * (x))
+#define PHI8(x) (-1.0 / 64.0 * 3.08220700148448822512509619073 * ((((2431 * (x) * (x) - 4004) * (x) * (x) + 2002) * (x) * (x) - 308) * (x) * (x) + 7))
+#define PHI9(x) (-1.0 / 128.0 * 6.4807406984078603784382721642 * ((((4199 * (x) * (x) - 7956) * (x) * (x) + 4914) * (x) * (x) - 1092) * (x) * (x) + 63) * (x))
+
+/// derivatives of kernel functions
+#define PHI0X(x) (0)
+#define PHI1X(x) (-2.0 * 1.58113883008418966599944677222)
+#define PHI2X(x) (-1.0 / 2.0 * 1.87082869338697069279187436616 * (10 * (x)))
+#define PHI3X(x) (-1.0 / 2.0 * 2.12132034355964257320253308631 * (21.0*(x)*(x)-3.0))
+#define PHI4X(x) (-1.0 / 4.0 * 2.34520787991171477728281505677 * ((84.0*(x)*(x)-28.0)*(x)))
+#define PHI5X(x) (-1.0 / 4.0 * 2.54950975679639241501411205451 * ((165.0*(x)*(x)-90.0)*(x)*(x)+5.0))
+#define PHI6X(x) (-1.0 / 32.0 * 2.73861278752583056728484891400 * (((2574.0*(x)*(x)-1980.0)*(x)*(x)+270.0)*(x)))
+#define PHI7X(x) (-1.0 / 32.0 * 2.91547594742265023543707643877 * (((5005.0*(x)*(x)-5005.0)*(x)*(x)+1155.0)*(x)*(x)-35.0))
+#define PHI8X(x) (-1.0 / 64.0 * 3.08220700148448822512509619073 * ((((19448.0*(x)*(x)-24024.0)*(x)*(x)+8008.0)*(x)*(x)-616.0)*(x)))
+#define PHI9X(x) (-1.0 / 128.0 * 6.4807406984078603784382721642 * ((((37791.0*(x)*(x)-55692.0)*(x)*(x)+24570.0)*(x)*(x)-3276.0)*(x)*(x)-63.0))
 
 #ifdef __cplusplus
 }
