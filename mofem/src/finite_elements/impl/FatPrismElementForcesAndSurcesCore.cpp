@@ -490,6 +490,7 @@ PetscErrorCode FatPrismElementForcesAndSurcesCore::operator()() {
           base[ss] = field_struture->get_approx_base();
           switch(base[ss]) {
             case AINSWORTH_COLE_BASE:
+            case LOBATTO_BASE:
             break;
             default:
             SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"unknown or not implemented base");
