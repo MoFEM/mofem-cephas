@@ -226,7 +226,8 @@ PetscErrorCode LobattoKernel_polynomials(
   if(p<0) SETERRQ(PETSC_COMM_SELF,1,"p < 0");
   if(p>9) SETERRQ(PETSC_COMM_SELF,1,"p > 9");
   if(L) {
-    for(int l = 0;l!=p+1;l++) {
+    int l = 0;
+    for(;l!=p+1;l++) {
       L[l] = f_phi[l](s);
     }
   }
@@ -234,7 +235,8 @@ PetscErrorCode LobattoKernel_polynomials(
     if(diff_s==NULL) {
       SETERRQ(PETSC_COMM_SELF,1,"diff_s == NULL");
     }
-    for(int l = 0;l!=p+1;l++) {
+    int l = 0;
+    for(;l!=p+1;l++) {
       double a = f_phix[l](s);
       diffL[0*(p+1)+l] = diff_s[0]*a;
       if(dim >= 2) {
