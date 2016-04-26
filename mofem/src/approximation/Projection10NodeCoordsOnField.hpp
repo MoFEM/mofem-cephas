@@ -222,17 +222,19 @@ struct ProjectionFieldOn10NodeTet: public Projection10NodeCoordsOnField {
     if(dofPtr->get_dof_order()>=maxApproximationOrder) {
       SETERRQ(PETSC_COMM_SELF,1,"too big approximation order, increase constant max_ApproximationOrder");
     }
+    double approx_val = 0;
     FieldApproximationBase base = dofPtr->get_approx_base();
     switch (base) {
       case AINSWORTH_COLE_BASE:
+      approx_val = 0.25*L[dofPtr->get_dof_order()-2]*dofPtr->get_FieldData();
       break;
       case LOBATTO_BASE:
+      approx_val = 0.25*K[dofPtr->get_dof_order()-2]*dofPtr->get_FieldData();
       break;
       default:
       SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not yet implemented");
     }
 
-    double approx_val = 0.25*K[dofPtr->get_dof_order()-2]*dofPtr->get_FieldData();
     if(onCoords) {
       coords.resize(num_nodes*3);
       rval = mField.get_moab().get_coords(conn,num_nodes,&*coords.data().begin()); CHKERR_MOAB(rval);
