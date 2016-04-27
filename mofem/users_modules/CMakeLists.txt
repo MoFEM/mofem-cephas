@@ -47,6 +47,11 @@ find_package(Git)
 #   include_directories ( ${PYTHON_INCLUDE_DIRS} )
 # endif(PYTHON_INCLUDE_DIRS)
 
+find_program(
+  MBCONVERT NAMES mbconvert
+  PATH ${MoFEM_PETSC_DIR}/${MoFEM_PETSC_ARCH}/bin
+)
+
 include(ExternalProject)
 include(${MoFEM_PROJECT_SOURCE_DIR}/cmake/ExportFile.cmake)
 

@@ -969,7 +969,7 @@ PetscErrorCode Core::initialiseDatabseInformationFromMesh(int verb) {
       );
       if(verb > 0) {
         ostringstream ss;
-        ss << "read finite element " << *p.first << endl;;
+        ss << "read finite element " << **p.first << endl;;
         PetscPrintf(comm,ss.str().c_str());
       }
       NOT_USED(p);
