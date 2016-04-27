@@ -113,7 +113,7 @@ PetscErrorCode Core::set_field(const double val,const EntityType type,const Rang
   dit = dofsField.get<Composite_Name_And_Type_mi_tag >().lower_bound(boost::make_tuple(field_name,type));
   hi_dit = dofsField.get<Composite_Name_And_Type_mi_tag >().upper_bound(boost::make_tuple(field_name,type));
   EntityHandle ent,last = 0;
-  bool cont;
+  bool cont = true;
   for(;dit!=hi_dit;dit++) {
     ent = (*dit)->get_ent();
     if(ent != last) {

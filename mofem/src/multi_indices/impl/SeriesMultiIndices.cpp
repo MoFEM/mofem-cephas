@@ -214,14 +214,14 @@ PetscErrorCode MoFEMSeries::save(Interface &moab) const {
   //uids
   for(unsigned int ii = 1;ii<ia.size();ii++) {
     void const* tag_data[] = { &uids[ia[ii-1]] };
-    int tag_sizes[] = { (ia[ii]-ia[ii-1])*sizeof(ShortId) };
+    int tag_sizes[] = { (ia[ii]-ia[ii-1])*(int)sizeof(ShortId) };
     rval = moab.tag_set_by_ptr(th_SeriesDataUIDs,&contained[ii-1],1,tag_data,tag_sizes); CHKERRQ_MOAB(rval);
   }
 
   //data
   for(unsigned int ii = 1;ii<ia.size();ii++) {
     void const* tag_data[] = { &data[ia[ii-1]] };
-    int tag_sizes[] = { (ia[ii]-ia[ii-1])*sizeof(FieldData) };
+    int tag_sizes[] = { (ia[ii]-ia[ii-1])*(int)sizeof(FieldData) };
     rval = moab.tag_set_by_ptr(th_SeriesData,&contained[ii-1],1,tag_data,tag_sizes); CHKERRQ_MOAB(rval);
   }
 

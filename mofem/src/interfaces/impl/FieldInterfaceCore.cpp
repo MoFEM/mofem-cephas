@@ -1821,7 +1821,7 @@ PetscErrorCode Core::build_finite_element_data_dofs(EntFiniteElement &ent_fe,int
 }
 PetscErrorCode Core::build_finite_element_uids_view(EntFiniteElement &ent_fe,int verb) {
   PetscFunctionBegin;
-  if(!(*buildMoFEM)&BUILD_FIELD) SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_FOUND,"fields not build");
+  if(!((*buildMoFEM)&BUILD_FIELD)) SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_FOUND,"fields not build");
   typedef Field_multiIndex::index<BitFieldId_mi_tag>::type field_by_id;
   typedef RefEntity_multiIndex::index<Ent_mi_tag>::type ref_ent_by_ent;
   typedef DofEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type dof_set_type;
@@ -2039,8 +2039,8 @@ PetscErrorCode Core::build_finite_elements(int verb) {
 PetscErrorCode Core::build_adjacencies(const Range &ents,int verb) {
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
-  if(!(*buildMoFEM)&(1<<0)) SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_FOUND,"field not build");
-  if(!(*buildMoFEM)&(1<<1)) SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_FOUND,"fe not build");
+  if(!((*buildMoFEM)&(1<<0))) SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_FOUND,"field not build");
+  if(!((*buildMoFEM)&(1<<1))) SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_FOUND,"fe not build");
   //typedef MoFEMEntity_multiIndex::index<Unique_mi_tag>::type ents_by_uid;
   EntFiniteElement_multiIndex::iterator fit = entsFiniteElements.begin();
   for(;fit!=entsFiniteElements.end();fit++) {
