@@ -36,12 +36,6 @@ git checkout tags/v$PETSC_VERSION
 wget ftp://ftp.unidata.ucar.edu/pub/netcdf/netcdf-4.3.3.1.tar.gz
 ./configure --with-mpi=1 --with-debugging=0 --download-superlu_dist=1 --download-metis=1 --download-parmetis=1 --download-hypre=1 --download-mumps=1 --download-scalapack=1 --download-zoltan=1 --download-blacs=1 --download-moab=1 --download-ptscotch=1 --with-hdf5=1 --with-hdf5-dir=/usr --download-netcdf=$MOFEM_INSTALL_DIR/petsc/netcdf-4.3.3.1.tar.gz --with-shared-libraries=1
 make PETSC_DIR=$PWD PETSC_ARCH=arch-linux2-c-opt all
-
-# Building code (assuming that you have computer with 4 cores):
-make -j4 install
-
-# Testing and publishing results on MoFEM CDashTesting WebPage:
-ctest -D Experimental
 ~~~~~~
 
 Note: PETSc is compiled with debugging switch off for efficiency. If you
