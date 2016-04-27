@@ -683,8 +683,7 @@ foreach(test_base ${testing_base_list})
   )
 endforeach(test_base IN testing_base_list)
 
-
-if(WITH_ADOL-C)
+if(ADOL-C_LIBRARY)
   add_executable(adol-c_atom adol-c_atom.cpp)
   target_link_libraries(adol-c_atom ${PROJECT_LIBS})
   if(WITH_ADOL-C)
@@ -694,4 +693,4 @@ if(WITH_ADOL-C)
     adol-c_atom_test ${MPI_RUN} -np 1
     ${CMAKE_CURRENT_BINARY_DIR}/adol-c_atom
   )
-endif(WITH_ADOL-C)
+endif(ADOL-C_LIBRARY)
