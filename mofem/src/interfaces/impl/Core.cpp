@@ -922,7 +922,7 @@ PetscErrorCode Core::initialiseDatabseInformationFromMesh(int verb) {
         p = fIelds.insert(boost::shared_ptr<Field>(new Field(moab,*mit,*cs_it)));
         if(verb > 0) {
           ostringstream ss;
-          ss << "read field " << *p.first << endl;;
+          ss << "read field " << **p.first << endl;;
           PetscPrintf(comm,ss.str().c_str());
         }
       } catch (MoFEMException const &e) {
