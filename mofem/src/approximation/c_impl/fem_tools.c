@@ -16,6 +16,7 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
+#include <definitions.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
@@ -846,7 +847,9 @@ PetscErrorCode ShapeMBTETQ_inverse(
     A[2+3*1] = cblas_ddot(10,&diffN[0*3+1],3,&elem_coords[0*3+2],3);
     A[2+3*2] = cblas_ddot(10,&diffN[0*3+2],3,&elem_coords[0*3+2],3);
     R[2] = glob_coords[2] - cblas_ddot(10,&N[0],1,&elem_coords[2],3);
-    assert( lapack_dgesv(3,1,&A[0],3,(__CLPK_integer*)IPIV,R,3) == 0 );
+    int info = lapack_dgesv(3,1,&A[0],3,(__CLPK_integer*)IPIV,R,3);
+    assert(info == 0);
+    NOT_USED(info);
     cblas_daxpy(3,1.,R,1,loc_coords,1);
     NORM_dR = cblas_dnrm2(3,&R[0],1);
     ShapeMBTETQ(N,loc_coords[0],loc_coords[1],loc_coords[2]);

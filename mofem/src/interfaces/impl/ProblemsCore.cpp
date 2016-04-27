@@ -83,9 +83,9 @@ PetscErrorCode Core::build_problem_on_partitioned_mesh(MoFEMProblem *problem_ptr
 PetscErrorCode Core::build_problem_on_distributed_mesh(const string &name,bool square_matrix,int verb) {
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
-  if(!(*buildMoFEM)&BUILD_FIELD) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"fields not build");
-  if(!(*buildMoFEM)&BUILD_FE) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"FEs not build");
-  if(!(*buildMoFEM)&BUILD_ADJ) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"adjacencies not build");
+  if(!((*buildMoFEM)&BUILD_FIELD)) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"fields not build");
+  if(!((*buildMoFEM)&BUILD_FE)) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"FEs not build");
+  if(!((*buildMoFEM)&BUILD_ADJ)) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"adjacencies not build");
   const MoFEMProblem *problem_ptr;
   ierr = get_problem(name,&problem_ptr); CHKERRQ(ierr);
   ierr = build_problem_on_distributed_mesh(const_cast<MoFEMProblem*>(problem_ptr),square_matrix,verb); CHKERRQ(ierr);
@@ -868,9 +868,9 @@ PetscErrorCode Core::clear_problem(const string &problem_name,int verb) {
 PetscErrorCode Core::build_problems(int verb) {
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
-  if(!(*buildMoFEM)&BUILD_FIELD) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"fields not build");
-  if(!(*buildMoFEM)&BUILD_FE) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"FEs not build");
-  if(!(*buildMoFEM)&BUILD_ADJ) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"adjacencies not build");
+  if(!((*buildMoFEM)&BUILD_FIELD)) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"fields not build");
+  if(!((*buildMoFEM)&BUILD_FE)) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"FEs not build");
+  if(!((*buildMoFEM)&BUILD_ADJ)) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"adjacencies not build");
   //iterate problems
   MoFEMProblem_multiIndex::iterator p_miit = pRoblems.begin();
   for(;p_miit!=pRoblems.end();p_miit++) {
