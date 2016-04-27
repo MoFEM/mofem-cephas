@@ -209,10 +209,42 @@ struct DataForcesAndSurcesCore {
     virtual FieldSpace& getSpace() { return sPace; }
 
     /// \brief get shape functions at Gauss pts
-    inline const VectorAdaptor getN(int gg) {
-      int size = getN().size2();
-      double *data = &getN()(gg,0);
+    virtual const VectorAdaptor getN(const FieldApproximationBase base,const int gg) {
+      int size = getN(base).size2();
+      double *data = &getN(base)(gg,0);
       return VectorAdaptor(size,ublas::shallow_array_adaptor<double>(size,data));
+    }
+
+    /// \brief get shape functions at Gauss pts
+    virtual const VectorAdaptor getN(const int gg) { return getN(bAse,gg); }
+
+    /** \brief get derivative of shape functions at Gauss pts
+
+    * returned matrix on rows has shape functions, in column its derivatives.
+    *
+    * \param base Approximation base
+    * \param gg Nb. of Gauss pts.
+    *
+    */
+    virtual const MatrixAdaptor getDiffN(const FieldApproximationBase base,const int gg) {
+      if(getN(base).size1() == getDiffN(base).size1()) {
+        int size = getN(base).size2();
+        int dim = getDiffN(base).size2()/size;
+        double *data = &getDiffN(base)(gg,0);
+        return MatrixAdaptor(
+          getN(base).size2(),dim,ublas::shallow_array_adaptor<double>(getDiffN(base).size2(),data)
+        );
+      } else {
+        // in some cases, f.e. for derivatives of nodal shape functions at only one
+        // gauss point is needed
+        return MatrixAdaptor(
+          getN(base).size1(),
+          getN(base).size2(),
+          ublas::shallow_array_adaptor<double>(
+            getDiffN(base).data().size(),&getDiffN(base).data()[0]
+          )
+        );
+      }
     }
 
     /** \brief get derivative of shape functions at Gauss pts
@@ -222,17 +254,24 @@ struct DataForcesAndSurcesCore {
     * \param gg nb. of Gauss pts.
     *
     */
-    inline const MatrixAdaptor getDiffN(int gg) {
-      if(getN().size1() == getDiffN().size1()) {
-        int size = getN().size2();
-        int dim = getDiffN().size2()/size;
-        double *data = &getDiffN()(gg,0);
-        return MatrixAdaptor(getN().size2(),dim,ublas::shallow_array_adaptor<double>(getDiffN().size2(),data));
-      } else {
-        // in some cases, f.e. for derivatives of nodal shape functions at only one
-        // gauss point is needed
-        return MatrixAdaptor(getN().size1(),getN().size2(),ublas::shallow_array_adaptor<double>(getDiffN().data().size(),&getDiffN().data()[0]));
-      }
+    virtual const MatrixAdaptor getDiffN(const int gg) { return getDiffN(bAse,gg); }
+
+    /** \brief get shape functions at Gauss pts
+
+    * Note that multi field element, two different field can have different
+    * approximation orders. Since we use hierarchical approximation basis,
+    * shape functions are calculated once for element, using maximal
+    * approximation order on given entity.
+    *
+    * \param base Approximation base
+    * \param gg number of Gauss point
+    * \param nb_dofs number of of shape functions returned
+
+    */
+    virtual const VectorAdaptor getN(const FieldApproximationBase base,const int gg,const int nb_dofs) {
+      (void)getN()(gg,nb_dofs-1); // throw error if nb_dofs is to big
+      double *data = &getN(base)(gg,0);
+      return VectorAdaptor(nb_dofs,ublas::shallow_array_adaptor<double>(nb_dofs,data));
     }
 
     /** \brief get shape functions at Gauss pts
@@ -246,10 +285,40 @@ struct DataForcesAndSurcesCore {
     * \param nb_dofs number of of shape functions returned
 
     */
-    inline const VectorAdaptor getN(int gg,const int nb_dofs) {
-      (void)getN()(gg,nb_dofs-1); // throw error if nb_dofs is to big
-      double *data = &getN()(gg,0);
-      return VectorAdaptor(nb_dofs,ublas::shallow_array_adaptor<double>(nb_dofs,data));
+    virtual const VectorAdaptor getN(const int gg,const int nb_dofs) {
+      return  getN(bAse,gg,nb_dofs);
+    }
+
+    /** \brief get derivatives of shape functions at Gauss pts
+    *
+    * Note that multi field element, two different field can have different
+    * approximation orders. Since we use hierarchical approximation basis,
+    * shape functions are calculated once for element, using maximal
+    * approximation order on given entity.
+    *
+    * \param base Approximation base
+    * \param gg nb. of Gauss point
+    * \param nb_dofs number of of shape functions
+    *
+    */
+    virtual const MatrixAdaptor getDiffN(const FieldApproximationBase base,const int gg,const int nb_dofs) {
+      if(getN(base).size1() == getDiffN(base).size1()) {
+        (void)getN(base)(gg,nb_dofs-1); // throw error if nb_dofs is to big
+        int dim = getDiffN(base).size2()/getN(base).size2();
+        double *data = &getDiffN(base)(gg,0);
+        return MatrixAdaptor(nb_dofs,dim,ublas::shallow_array_adaptor<double>(dim*nb_dofs,data));
+      } else {
+        // in some cases, f.e. for derivatives of nodal shape functions only one
+        // gauss point is needed
+        return MatrixAdaptor(
+          getN(base).size1(),
+          getN(base).size2(),
+          ublas::shallow_array_adaptor<double>(
+            getDiffN(base).data().size(),
+            &getDiffN(base).data()[0]
+          )
+        );
+      }
     }
 
     /** \brief get derivatives of shape functions at Gauss pts
@@ -263,39 +332,45 @@ struct DataForcesAndSurcesCore {
     * \param nb_dofs number of of shape functions
     *
     */
-    inline const MatrixAdaptor getDiffN(int gg,const int nb_dofs) {
-      if(getN().size1() == getDiffN().size1()) {
-        (void)getN()(gg,nb_dofs-1); // throw error if nb_dofs is to big
-        int dim = getDiffN().size2()/getN().size2();
-        double *data = &getDiffN()(gg,0);
-        return MatrixAdaptor(nb_dofs,dim,ublas::shallow_array_adaptor<double>(dim*nb_dofs,data));
-      } else {
-        // in some cases, f.e. for derivatives of nodal shape functions only one
-        // gauss point is needed
-        return MatrixAdaptor(getN().size1(),getN().size2(),ublas::shallow_array_adaptor<double>(getDiffN().data().size(),&getDiffN().data()[0]));
-      }
+    virtual const MatrixAdaptor getDiffN(const int gg,const int nb_dofs) {
+      return getDiffN(bAse,gg,nb_dofs);
     }
 
-    inline const MatrixDouble&  getHdivN(const FieldApproximationBase base) const { return getN(base); };
-    inline const MatrixDouble&  getDiffHdivN(const FieldApproximationBase base) const { return getDiffN(base); };
-    inline MatrixDouble&  getHdivN(const FieldApproximationBase base) { return getN(base); };
-    inline MatrixDouble&  getDiffHdivN(const FieldApproximationBase base) { return getDiffN(base); };
+
+    virtual const MatrixDouble&  getHdivN(const FieldApproximationBase base) const { return getN(base); };
+    virtual const MatrixDouble&  getDiffHdivN(const FieldApproximationBase base) const { return getDiffN(base); };
+    virtual MatrixDouble&  getHdivN(const FieldApproximationBase base) { return getN(base); };
+    virtual MatrixDouble&  getDiffHdivN(const FieldApproximationBase base) { return getDiffN(base); };
 
     /** \brief get shape functions for Hdiv space
     */
-    inline const MatrixDouble&  getHdivN() const { return getN(bAse); };
+    virtual const MatrixDouble&  getHdivN() const { return getN(bAse); };
 
     /** \brief get derivatives of shape functions for Hdiv space
     */
-    inline const MatrixDouble&  getDiffHdivN() const { return getDiffN(); };
+    virtual const MatrixDouble&  getDiffHdivN() const { return getDiffN(bAse); };
 
     /** \brief get shape functions for Hdiv space
     */
-    inline MatrixDouble&  getHdivN() { return getN(); };
+    virtual MatrixDouble&  getHdivN() { return getN(bAse); };
 
     /** \brief get derivatives of shape functions for Hdiv space
     */
-    inline MatrixDouble&  getDiffHdivN() { return getDiffN(); };
+    virtual MatrixDouble&  getDiffHdivN() { return getDiffN(bAse); };
+
+    /** \brief get Hdiv of shape functions at Gauss pts
+    *
+    * \param base Approximation base
+    * \param gg nb. of Gauss point
+    * \param number of of shape functions
+    *
+    */
+    virtual const MatrixAdaptor getHdivN(const FieldApproximationBase base,const int gg) {
+      int dim = 3;
+      int nb_dofs = getHdivN(base).size2()/dim;
+      double *data = &getHdivN(base)(gg,0);
+      return MatrixAdaptor(nb_dofs,dim,ublas::shallow_array_adaptor<double>(dim*nb_dofs,data));
+    }
 
     /** \brief get Hdiv of shape functions at Gauss pts
     *
@@ -303,22 +378,20 @@ struct DataForcesAndSurcesCore {
     * \param number of of shape functions
     *
     */
-    inline const MatrixAdaptor getHdivN(int gg) {
-      int dim = 3;
-      int nb_dofs = getHdivN().size2()/dim;
-      double *data = &getHdivN()(gg,0);
-      return MatrixAdaptor(nb_dofs,dim,ublas::shallow_array_adaptor<double>(dim*nb_dofs,data));
+    virtual const MatrixAdaptor getHdivN(const int gg) {
+      return getHdivN(bAse,gg);
     }
 
     /** \brief get DiffHdiv of shape functions at Gauss pts
     *
+    * \param base Approximation base
     * \param gg nb. of Gauss point
     * \param number of of shape functions
     *
     */
-    inline const MatrixAdaptor getDiffHdivN(int gg) {
-      int nb_dofs = getDiffHdivN().size2()/9;
-      double *data = &getDiffHdivN()(gg,0);
+    virtual const MatrixAdaptor getDiffHdivN(FieldApproximationBase base,const int gg) {
+      int nb_dofs = getDiffHdivN(base).size2()/9;
+      double *data = &getDiffHdivN(base)(gg,0);
       return MatrixAdaptor(nb_dofs,9,ublas::shallow_array_adaptor<double>(9*nb_dofs,data));
     }
 
@@ -328,9 +401,33 @@ struct DataForcesAndSurcesCore {
     * \param number of of shape functions
     *
     */
-    inline const MatrixAdaptor getDiffHdivN(int dof,int gg) {
-      double *data = &getDiffHdivN()(gg,9*dof);
+    virtual const MatrixAdaptor getDiffHdivN(const int gg) {
+      return getDiffHdivN(bAse,gg);
+    }
+
+    /** \brief get DiffHdiv of shape functions at Gauss pts
+    *
+    * \param base Approximation base
+    * \param gg nb. of Gauss point
+    * \param number of of shape functions
+    *
+    */
+    virtual const MatrixAdaptor getDiffHdivN(
+      const FieldApproximationBase base,const int dof,const int gg
+    ) {
+      double *data = &getDiffHdivN(base)(gg,9*dof);
       return MatrixAdaptor(3,3,ublas::shallow_array_adaptor<double>(9,data));
+    }
+
+
+    /** \brief get DiffHdiv of shape functions at Gauss pts
+    *
+    * \param gg nb. of Gauss point
+    * \param number of of shape functions
+    *
+    */
+    virtual const MatrixAdaptor getDiffHdivN(const int dof,const int gg) {
+      return getDiffHdivN(bAse,dof,gg);
     }
 
     friend ostream& operator<<(ostream& os,const DataForcesAndSurcesCore::EntData &e);
@@ -384,13 +481,29 @@ struct DerivedDataForcesAndSurcesCore: public DataForcesAndSurcesCore  {
     DerivedEntData(DataForcesAndSurcesCore::EntData &ent_data):
     entData(ent_data) {}
 
-    inline int getSense() const { return entData.getSense(); }
-    inline const MatrixDouble& getN() const { return entData.getN(bAse); }
-    inline const MatrixDouble& getDiffN() const { return entData.getDiffN(bAse); }
-    inline MatrixDouble& getN() { return entData.getN(bAse); }
-    inline MatrixDouble& getDiffN() { return entData.getDiffN(bAse); }
-    inline const MatrixDouble&  getHdivN() const { return entData.getHdivN(bAse); };
-    inline MatrixDouble&  getHdivN() { return entData.getHdivN(bAse); };
+    int getSense() const { return entData.getSense(); }
+    const MatrixDouble& getN() const { return entData.getN(bAse); }
+    const MatrixDouble& getDiffN() const { return entData.getDiffN(bAse); }
+    MatrixDouble& getN() { return entData.getN(bAse); }
+    MatrixDouble& getDiffN() { return entData.getDiffN(bAse); }
+
+    const VectorAdaptor getN(const int gg) { return entData.getN(bAse,gg); }
+    const MatrixAdaptor getDiffN(const int gg) { return entData.getDiffN(bAse,gg); }
+
+    const VectorAdaptor getN(const int gg,const int nb_dofs) {
+      return entData.getN(bAse,gg,nb_dofs);
+    }
+    const MatrixAdaptor getDiffN(const int gg,const int nb_dofs) {
+      return entData.getDiffN(bAse,gg,nb_dofs);
+    }
+
+    const MatrixDouble&  getHdivN() const { return entData.getHdivN(bAse); };
+    MatrixDouble&  getHdivN() { return entData.getHdivN(bAse); };
+    const MatrixAdaptor getHdivN(const int gg) { return entData.getHdivN(bAse,gg); }
+    const MatrixAdaptor getDiffHdivN(const int gg) { return entData.getDiffHdivN(bAse,gg); }
+    const MatrixAdaptor getDiffHdivN(const FieldApproximationBase base,const int dof,const int gg) {
+      return getDiffHdivN(bAse,dof,gg);
+    }
 
   };
 

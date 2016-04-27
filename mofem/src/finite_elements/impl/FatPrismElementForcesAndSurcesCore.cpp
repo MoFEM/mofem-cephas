@@ -577,6 +577,7 @@ PetscErrorCode FatPrismElementForcesAndSurcesCore::operator()() {
         } catch (exception& ex) {
           ostringstream ss;
           ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
+          ss << " operator on row field name " << oit->rowFieldName;
           SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
         }
       }
