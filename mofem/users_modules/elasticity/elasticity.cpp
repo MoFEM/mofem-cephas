@@ -171,7 +171,7 @@ int main(int argc, char *argv[]) {
       po::options_description config_file_options;
       for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,BLOCKSET,it)) {
         ostringstream str_order;
-        str_order << "block_" << it->get_msId() << ".displacemet_order";
+        str_order << "block_" << it->get_msId() << ".displacement_order";
         config_file_options.add_options()
         (str_order.str().c_str(),po::value<int>(&block_data[it->get_msId()].oRder)->default_value(order));
         ostringstream str_cond;
