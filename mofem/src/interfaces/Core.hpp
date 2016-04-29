@@ -437,6 +437,7 @@ struct Core: public FieldInterface, MeshRefinment, PrismInterface, SeriesRecorde
     const BitFieldId id,map<EntityType,int> &dof_counter,map<EntityType,int> &inactive_dof_counter,int verb = -1
   );
   PetscErrorCode build_fields(int verb = -1);
+  PetscErrorCode clear_inactive_dofs(int verb = -1);
   PetscErrorCode clear_dofs_fields(const BitRefLevel &bit,const BitRefLevel &mask,int verb = -1);
   PetscErrorCode clear_ents_fields(const BitRefLevel &bit,const BitRefLevel &mask,int verb = -1);
   PetscErrorCode clear_dofs_fields(const string &name,const Range ents,int verb = -1);
