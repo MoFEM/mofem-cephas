@@ -667,7 +667,8 @@ PetscErrorCode DefaultElementAdjacency::defaultPrism(
     for(;ee<3;ee++) {
       EntityHandle edge = 0;
       rval = moab.side_element(prism,1,ee,edge); CHKERRQ_MOAB(rval);
-      boost::shared_ptr<SideNumber> side_ptr = fe_ptr.get_RefElement()->get_side_number_ptr(moab,edge);
+      boost::shared_ptr<SideNumber> side_ptr =
+      fe_ptr.get_RefElement()->get_side_number_ptr(moab,edge);
       if(side_ptr->side_number!=ee) {
         SETERRQ1(PETSC_COMM_SELF,1,"data insistency for edge %d",ee);
       }

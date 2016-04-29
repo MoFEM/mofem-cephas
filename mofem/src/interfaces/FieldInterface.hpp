@@ -1133,22 +1133,27 @@ struct FieldInterface: public UnknownInterface {
    */
   virtual PetscErrorCode list_dofs_by_field_name(const string &name) const = 0;
 
-  /** clear fields
+  /** Clear inactive dofs
+    * \ingroup mofem_field
+   */
+  virtual PetscErrorCode clear_inactive_dofs(int verb = -1) = 0;
+
+  /** Clear dofs by bit level
     * \ingroup mofem_field
    */
   virtual PetscErrorCode clear_dofs_fields(const BitRefLevel &bit,const BitRefLevel &mask,int verb = -1) = 0;
 
-  /** clear fields
+  /** Clear ents by bit level
     * \ingroup mofem_field
    */
   virtual PetscErrorCode clear_ents_fields(const BitRefLevel &bit,const BitRefLevel &mask,int verb = -1) = 0;
 
-  /** clear fields
+  /** Clear dofs by field name
     * \ingroup mofem_field
    */
   virtual PetscErrorCode clear_dofs_fields(const string &name,const Range ents,int verb = -1) = 0;
 
-  /** clear fields
+  /** Clear entities by field name
     * \ingroup mofem_field
    */
   virtual PetscErrorCode clear_ents_fields(const string &name,const Range enst,int verb = -1) = 0;
@@ -1971,7 +1976,8 @@ struct FieldInterface: public UnknownInterface {
   virtual PetscErrorCode get_problem(const string &problem_name,const MoFEMProblem **problem_ptr) = 0;
 
   /** \brief Get dofs multi index
-    * \ingroup mofem_field
+    *
+    * \ingroup mofem_access
     *
     */
   virtual PetscErrorCode get_dofs(const DofEntity_multiIndex **dofs_ptr) = 0;

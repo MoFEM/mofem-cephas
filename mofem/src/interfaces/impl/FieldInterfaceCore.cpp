@@ -1116,8 +1116,8 @@ PetscErrorCode Core::dofs_L2H1HcurlHdiv(
           try {
             boost::shared_ptr<DofEntity> mdof(new DofEntity(*(e_miit),oo,rr,DD));
             d_miit = dofsField.insert(mdof);
+            bool is_active;
             if(d_miit.second) {
-              bool is_active;
               if(DD<nb_active_dosf_on_ent) {
                 is_active = true;
                 dof_counter[(*d_miit.first)->get_ent_type()]++;
@@ -1127,6 +1127,16 @@ PetscErrorCode Core::dofs_L2H1HcurlHdiv(
               }
               bool success = dofsField.modify(d_miit.first,DofEntity_active_change(is_active));
               if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
+            } else {
+              if(DD<nb_active_dosf_on_ent) {
+              } else {
+                if((*d_miit.first)->get_active()) {
+                  is_active = false;
+                  inactive_dof_counter[(*d_miit.first)->get_ent_type()]++;
+                  bool success = dofsField.modify(d_miit.first,DofEntity_active_change(is_active));
+                  if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
+                }
+              }
             }
             //check ent
             if((*d_miit.first)->get_ent()!=(*e_miit)->get_ent()) {
@@ -3236,6 +3246,38 @@ PetscErrorCode Core::check_number_of_ents_in_ents_finite_element() {
 }
 
 //clear,remove and delete
+
+PetscErrorCode Core::clear_inactive_dofs(int verb) {
+  PetscFunctionBegin;
+  if(verb==-1) verb = verbose;
+  DofEntity_multiIndex::iterator dit;
+  dit = dofsField.begin();
+  for(;dit!=dofsField.end();dit++) {
+    if(!(*dit)->get_active()) {
+      MoFEMEntityEntFiniteElementAdjacencyMap_multiIndex::index<Unique_mi_tag>::type::iterator ait,hi_ait;
+      ait = entFEAdjacencies.get<Unique_mi_tag>().lower_bound((*dit)->get_MoFEMEntity_ptr()->get_global_unique_id());
+      hi_ait = entFEAdjacencies.get<Unique_mi_tag>().upper_bound((*dit)->get_MoFEMEntity_ptr()->get_global_unique_id());
+      for(;ait!=hi_ait;ait++) {
+        boost::shared_ptr<EntFiniteElement> ent_fe_ptr;
+        ent_fe_ptr = ait->entFePtr;
+        ent_fe_ptr->row_dof_view->erase((*dit)->get_global_unique_id());
+        if(ent_fe_ptr->row_dof_view!=ent_fe_ptr->col_dof_view) {
+          ent_fe_ptr->col_dof_view->erase((*dit)->get_global_unique_id());
+        }
+        if(
+          ent_fe_ptr->row_dof_view!=ent_fe_ptr->data_dof_view||
+          ent_fe_ptr->col_dof_view!=ent_fe_ptr->data_dof_view
+        ) {
+          ent_fe_ptr->data_dof_view->erase((*dit)->get_global_unique_id());
+        }
+        ent_fe_ptr->data_dofs.get<Unique_mi_tag>().erase((*dit)->get_global_unique_id());
+      }
+      dit = dofsField.erase(dit);
+      if(dit==dofsField.end()) break;
+    }
+  }
+  PetscFunctionReturn(0);
+}
 
 PetscErrorCode Core::clear_dofs_fields(const BitRefLevel &bit,const BitRefLevel &mask,int verb) {
   PetscFunctionBegin;
