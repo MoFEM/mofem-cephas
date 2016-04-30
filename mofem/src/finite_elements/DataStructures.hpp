@@ -1,4 +1,4 @@
-/** \file DataStructures.hpp
+  /** \file DataStructures.hpp
 
   \brief Data structures for accessing information about finite element and its
   degrees of freedom.
@@ -68,13 +68,13 @@ struct DataForcesAndSurcesCore {
     virtual int getSense() const { return sEnse; }
 
     /// \brief get approximation order
-    virtual ApproximationOrder getOrder() const { return oRder; }
+    inline ApproximationOrder getOrder() const { return oRder; }
 
     /// \brief get global indices of dofs on entity
-    virtual const VectorInt& getIndices() const { return iNdices; }
+    inline const VectorInt& getIndices() const { return iNdices; }
 
     /// \brief get global indices of dofs on entity up to given order
-    virtual const VectorIntAdaptor getIndicesUpToOrder(int order) {
+    inline const VectorIntAdaptor getIndicesUpToOrder(int order) {
       unsigned int size = 0;
       if(iNdices.size()) {
         size = dOfs[0]->get_order_nb_dofs(order)*dOfs[0]->get_nb_of_coeffs();
@@ -85,10 +85,10 @@ struct DataForcesAndSurcesCore {
     }
 
     /// \brief get local indices of dofs on entity
-    virtual const VectorInt& getLocalIndices() const { return localIndices; }
+    inline const VectorInt& getLocalIndices() const { return localIndices; }
 
     /// \brief get local indices of dofs on entity up to given order
-    virtual const VectorIntAdaptor getLocalIndicesUpToOrder(int order) {
+    inline const VectorIntAdaptor getLocalIndicesUpToOrder(int order) {
       unsigned int size = 0;
       if(localIndices.size()) {
         size = dOfs[0]->get_order_nb_dofs(order)*dOfs[0]->get_nb_of_coeffs();
@@ -99,10 +99,10 @@ struct DataForcesAndSurcesCore {
     }
 
     /// \brief get dofs values
-    virtual const VectorDouble& getFieldData() const { return fieldData; }
+    inline const VectorDouble& getFieldData() const { return fieldData; }
 
     /// \brief get dofs values up to given order
-    virtual const VectorAdaptor getFieldDataUpToOrder(int order) {
+    inline const VectorAdaptor getFieldDataUpToOrder(int order) {
       unsigned int size = 0;
       if(fieldData.size()) {
         size = dOfs[0]->get_order_nb_dofs(order)*dOfs[0]->get_nb_of_coeffs();
@@ -113,17 +113,64 @@ struct DataForcesAndSurcesCore {
     }
 
     /// \brief get dofs data stature FEDofEntity
-    virtual const VectorDofs& getFieldDofs() const { return dOfs; }
+    inline const VectorDofs& getFieldDofs() const { return dOfs; }
 
-    /** \brief get shape functions
-      * this return matrix (nb. of rows is equal to nb. of Gauss pts, nb. of
-      * columns is equal to number of shape functions on this entity
-      */
-    virtual const MatrixDouble& getN(const FieldApproximationBase base) const {
-      return *(N[base]);
+    inline int& getSense() { return sEnse; }
+    inline ApproximationOrder& getDataOrder() { return oRder; }
+    inline VectorInt& getIndices() { return iNdices; }
+    inline VectorInt& getLocalIndices() { return localIndices; }
+    inline VectorDouble& getFieldData() { return fieldData; }
+    inline VectorDofs& getFieldDofs() { return dOfs; }
+
+    /**
+     * \brief Get approximation base
+     * @return Approximation base
+     */
+    inline FieldApproximationBase& getBase() { return bAse; }
+
+    /**
+     * \brief Get field space
+     * @return Field space
+     */
+    inline FieldSpace& getSpace() { return sPace; }
+
+    /**
+     * Get shared pointer to base shape functions
+     */
+    virtual boost::shared_ptr<MatrixDouble>& getNSharedPtr(const FieldApproximationBase base) {
+      return N[base];
     }
 
-    virtual const MatrixDouble& getN() const { return getN(bAse); }
+    /**
+     * Get shared pointer to base shape functions
+     */
+    virtual const boost::shared_ptr<MatrixDouble>& getNSharedPtr(const FieldApproximationBase base) const {
+      return N[base];
+    }
+
+    /**
+    * Get shared pointer to derivatives of base shape functions
+    */
+    virtual boost::shared_ptr<MatrixDouble>& getDiffNSharedPtr(const FieldApproximationBase base) {
+      return diffN[base];
+    }
+
+    /**
+    * Get shared pointer to derivatives of base shape functions
+    */
+    virtual const boost::shared_ptr<MatrixDouble>& getDiffNSharedPtr(const FieldApproximationBase base) const {
+      return diffN[base];
+    }
+
+    /** \brief get shape functions
+    * this return matrix (nb. of rows is equal to nb. of Gauss pts, nb. of
+    * columns is equal to number of shape functions on this entity
+    */
+    virtual const MatrixDouble& getN(const FieldApproximationBase base) const {
+      return *(getNSharedPtr(base));
+    }
+
+    inline const MatrixDouble& getN() const { return getN(bAse); }
 
     /** \brief get derivatives of shape functions
      *
@@ -142,29 +189,17 @@ struct DataForcesAndSurcesCore {
      *
      */
     virtual const MatrixDouble& getDiffN(const FieldApproximationBase base) const {
-      return *(diffN[base]);
+      return *(getDiffNSharedPtr(base));
     }
 
-    virtual const MatrixDouble& getDiffN() const { return getDiffN(bAse); }
-
-    virtual int& getSense() { return sEnse; }
-    virtual ApproximationOrder& getDataOrder() { return oRder; }
-    virtual VectorInt& getIndices() { return iNdices; }
-    virtual VectorInt& getLocalIndices() { return localIndices; }
-    virtual VectorDouble& getFieldData() { return fieldData; }
-    virtual VectorDofs& getFieldDofs() { return dOfs; }
+    inline const MatrixDouble& getDiffN() const { return getDiffN(bAse); }
 
     /**
      * \brief Get shape functions
      * @param  base Approximation base
      * @return      Error code
      */
-    virtual MatrixDouble& getN(const FieldApproximationBase base) { return *(N[base]); }
-
-    /**
-     * Get shared pointer to base shape functions
-     */
-    virtual boost::shared_ptr<MatrixDouble>& getNSharedPtr(const FieldApproximationBase base) { return N[base]; }
+    inline MatrixDouble& getN(const FieldApproximationBase base) { return *(getNSharedPtr(base)); }
 
     /**
      * \brief Get shape functions
@@ -173,19 +208,14 @@ struct DataForcesAndSurcesCore {
      *
      * @return Error code
      */
-    virtual MatrixDouble& getN() { return getN(bAse); }
+     inline MatrixDouble& getN() { return getN(bAse); }
 
     /**
      * \brief Get derivatives of shape functions
      * @param  base Approximation base
      * @return      Error code
      */
-    virtual MatrixDouble& getDiffN(const FieldApproximationBase base) { return *(diffN[base]); }
-
-    /**
-     * Get shared pointer to derivatives of base shape functions
-     */
-    virtual boost::shared_ptr<MatrixDouble>& getDiffNSharedPtr(const FieldApproximationBase base) { return diffN[base]; }
+     inline MatrixDouble& getDiffN(const FieldApproximationBase base) { return *(getDiffNSharedPtr(base)); }
 
     /**
      * \brief Get derivatives of shape functions
@@ -194,29 +224,17 @@ struct DataForcesAndSurcesCore {
      *
      * @return Error code
      */
-    virtual MatrixDouble& getDiffN() { return getDiffN(bAse); }
-
-    /**
-     * \brief Get approximation base
-     * @return Approximation base
-     */
-    virtual FieldApproximationBase& getBase() { return bAse; }
-
-    /**
-     * \brief Get field space
-     * @return Field space
-     */
-    virtual FieldSpace& getSpace() { return sPace; }
+     inline MatrixDouble& getDiffN() { return getDiffN(bAse); }
 
     /// \brief get shape functions at Gauss pts
-    virtual const VectorAdaptor getN(const FieldApproximationBase base,const int gg) {
+    inline const VectorAdaptor getN(const FieldApproximationBase base,const int gg) {
       int size = getN(base).size2();
       double *data = &getN(base)(gg,0);
       return VectorAdaptor(size,ublas::shallow_array_adaptor<double>(size,data));
     }
 
     /// \brief get shape functions at Gauss pts
-    virtual const VectorAdaptor getN(const int gg) { return getN(bAse,gg); }
+    inline const VectorAdaptor getN(const int gg) { return getN(bAse,gg); }
 
     /** \brief get derivative of shape functions at Gauss pts
 
@@ -226,7 +244,7 @@ struct DataForcesAndSurcesCore {
     * \param gg Nb. of Gauss pts.
     *
     */
-    virtual const MatrixAdaptor getDiffN(const FieldApproximationBase base,const int gg) {
+    inline const MatrixAdaptor getDiffN(const FieldApproximationBase base,const int gg) {
       if(getN(base).size1() == getDiffN(base).size1()) {
         int size = getN(base).size2();
         int dim = getDiffN(base).size2()/size;
@@ -254,7 +272,7 @@ struct DataForcesAndSurcesCore {
     * \param gg nb. of Gauss pts.
     *
     */
-    virtual const MatrixAdaptor getDiffN(const int gg) { return getDiffN(bAse,gg); }
+    inline const MatrixAdaptor getDiffN(const int gg) { return getDiffN(bAse,gg); }
 
     /** \brief get shape functions at Gauss pts
 
@@ -268,7 +286,7 @@ struct DataForcesAndSurcesCore {
     * \param nb_dofs number of of shape functions returned
 
     */
-    virtual const VectorAdaptor getN(const FieldApproximationBase base,const int gg,const int nb_dofs) {
+    inline const VectorAdaptor getN(const FieldApproximationBase base,const int gg,const int nb_dofs) {
       (void)getN()(gg,nb_dofs-1); // throw error if nb_dofs is to big
       double *data = &getN(base)(gg,0);
       return VectorAdaptor(nb_dofs,ublas::shallow_array_adaptor<double>(nb_dofs,data));
@@ -285,8 +303,8 @@ struct DataForcesAndSurcesCore {
     * \param nb_dofs number of of shape functions returned
 
     */
-    virtual const VectorAdaptor getN(const int gg,const int nb_dofs) {
-      return  getN(bAse,gg,nb_dofs);
+    inline const VectorAdaptor getN(const int gg,const int nb_dofs) {
+      return getN(bAse,gg,nb_dofs);
     }
 
     /** \brief get derivatives of shape functions at Gauss pts
@@ -301,7 +319,7 @@ struct DataForcesAndSurcesCore {
     * \param nb_dofs number of of shape functions
     *
     */
-    virtual const MatrixAdaptor getDiffN(const FieldApproximationBase base,const int gg,const int nb_dofs) {
+    inline const MatrixAdaptor getDiffN(const FieldApproximationBase base,const int gg,const int nb_dofs) {
       if(getN(base).size1() == getDiffN(base).size1()) {
         (void)getN(base)(gg,nb_dofs-1); // throw error if nb_dofs is to big
         int dim = getDiffN(base).size2()/getN(base).size2();
@@ -332,31 +350,31 @@ struct DataForcesAndSurcesCore {
     * \param nb_dofs number of of shape functions
     *
     */
-    virtual const MatrixAdaptor getDiffN(const int gg,const int nb_dofs) {
+    inline const MatrixAdaptor getDiffN(const int gg,const int nb_dofs) {
       return getDiffN(bAse,gg,nb_dofs);
     }
 
 
-    virtual const MatrixDouble&  getHdivN(const FieldApproximationBase base) const { return getN(base); };
-    virtual const MatrixDouble&  getDiffHdivN(const FieldApproximationBase base) const { return getDiffN(base); };
-    virtual MatrixDouble&  getHdivN(const FieldApproximationBase base) { return getN(base); };
-    virtual MatrixDouble&  getDiffHdivN(const FieldApproximationBase base) { return getDiffN(base); };
+    inline const MatrixDouble& getHdivN(const FieldApproximationBase base) const { return getN(base); };
+    inline const MatrixDouble& getDiffHdivN(const FieldApproximationBase base) const { return getDiffN(base); };
+    inline MatrixDouble& getHdivN(const FieldApproximationBase base) { return getN(base); };
+    inline MatrixDouble& getDiffHdivN(const FieldApproximationBase base) { return getDiffN(base); };
 
     /** \brief get shape functions for Hdiv space
     */
-    virtual const MatrixDouble&  getHdivN() const { return getN(bAse); };
+    inline const MatrixDouble& getHdivN() const { return getN(bAse); };
 
     /** \brief get derivatives of shape functions for Hdiv space
     */
-    virtual const MatrixDouble&  getDiffHdivN() const { return getDiffN(bAse); };
+    inline const MatrixDouble& getDiffHdivN() const { return getDiffN(bAse); };
 
     /** \brief get shape functions for Hdiv space
     */
-    virtual MatrixDouble&  getHdivN() { return getN(bAse); };
+    inline MatrixDouble& getHdivN() { return getN(bAse); };
 
     /** \brief get derivatives of shape functions for Hdiv space
     */
-    virtual MatrixDouble&  getDiffHdivN() { return getDiffN(bAse); };
+    inline MatrixDouble& getDiffHdivN() { return getDiffN(bAse); };
 
     /** \brief get Hdiv of shape functions at Gauss pts
     *
@@ -365,7 +383,7 @@ struct DataForcesAndSurcesCore {
     * \param number of of shape functions
     *
     */
-    virtual const MatrixAdaptor getHdivN(const FieldApproximationBase base,const int gg) {
+    inline const MatrixAdaptor getHdivN(const FieldApproximationBase base,const int gg) {
       int dim = 3;
       int nb_dofs = getHdivN(base).size2()/dim;
       double *data = &getHdivN(base)(gg,0);
@@ -378,7 +396,7 @@ struct DataForcesAndSurcesCore {
     * \param number of of shape functions
     *
     */
-    virtual const MatrixAdaptor getHdivN(const int gg) {
+    inline const MatrixAdaptor getHdivN(const int gg) {
       return getHdivN(bAse,gg);
     }
 
@@ -389,7 +407,7 @@ struct DataForcesAndSurcesCore {
     * \param number of of shape functions
     *
     */
-    virtual const MatrixAdaptor getDiffHdivN(FieldApproximationBase base,const int gg) {
+    inline const MatrixAdaptor getDiffHdivN(FieldApproximationBase base,const int gg) {
       int nb_dofs = getDiffHdivN(base).size2()/9;
       double *data = &getDiffHdivN(base)(gg,0);
       return MatrixAdaptor(nb_dofs,9,ublas::shallow_array_adaptor<double>(9*nb_dofs,data));
@@ -401,7 +419,7 @@ struct DataForcesAndSurcesCore {
     * \param number of of shape functions
     *
     */
-    virtual const MatrixAdaptor getDiffHdivN(const int gg) {
+    inline const MatrixAdaptor getDiffHdivN(const int gg) {
       return getDiffHdivN(bAse,gg);
     }
 
@@ -412,7 +430,7 @@ struct DataForcesAndSurcesCore {
     * \param number of of shape functions
     *
     */
-    virtual const MatrixAdaptor getDiffHdivN(
+    inline const MatrixAdaptor getDiffHdivN(
       const FieldApproximationBase base,const int dof,const int gg
     ) {
       double *data = &getDiffHdivN(base)(gg,9*dof);
@@ -426,7 +444,7 @@ struct DataForcesAndSurcesCore {
     * \param number of of shape functions
     *
     */
-    virtual const MatrixAdaptor getDiffHdivN(const int dof,const int gg) {
+    inline const MatrixAdaptor getDiffHdivN(const int dof,const int gg) {
       return getDiffHdivN(bAse,dof,gg);
     }
 
@@ -466,11 +484,11 @@ struct DataForcesAndSurcesCore {
   * \ingroup mofem_forces_and_sources
   *
   *
-  * It behaves like normal data structure it is used to share information with
-  * other data structures about shape functions. Dofs values, approx. order and
+  * It behaves like normal data structure it is used to share base functions with
+  * other data structures. Dofs values, approx. order and
   * indices are not shared.
   *
-  * shape functions, senses are shared with other data structure.
+  * Shape functions, senses are shared with other data structure.
   *
   */
 struct DerivedDataForcesAndSurcesCore: public DataForcesAndSurcesCore  {
@@ -479,31 +497,24 @@ struct DerivedDataForcesAndSurcesCore: public DataForcesAndSurcesCore  {
 
     DataForcesAndSurcesCore::EntData &entData;
     DerivedEntData(DataForcesAndSurcesCore::EntData &ent_data):
-    entData(ent_data) {}
+    entData(ent_data) {
+    }
 
     int getSense() const { return entData.getSense(); }
-    const MatrixDouble& getN() const { return entData.getN(bAse); }
-    const MatrixDouble& getDiffN() const { return entData.getDiffN(bAse); }
-    MatrixDouble& getN() { return entData.getN(bAse); }
-    MatrixDouble& getDiffN() { return entData.getDiffN(bAse); }
 
-    const VectorAdaptor getN(const int gg) { return entData.getN(bAse,gg); }
-    const MatrixAdaptor getDiffN(const int gg) { return entData.getDiffN(bAse,gg); }
+    boost::shared_ptr<MatrixDouble>& getNSharedPtr(const FieldApproximationBase base) {
+      return entData.getNSharedPtr(base);
+    }
+    boost::shared_ptr<MatrixDouble>& getDiffNSharedPtr(const FieldApproximationBase base) {
+      return entData.getDiffNSharedPtr(base);
+    }
+    const boost::shared_ptr<MatrixDouble>& getNSharedPtr(const FieldApproximationBase base) const {
+      return entData.getNSharedPtr(base);
+    }
+    const boost::shared_ptr<MatrixDouble>& getDiffNSharedPtr(const FieldApproximationBase base) const {
+      return entData.getDiffNSharedPtr(base);
+    }
 
-    const VectorAdaptor getN(const int gg,const int nb_dofs) {
-      return entData.getN(bAse,gg,nb_dofs);
-    }
-    const MatrixAdaptor getDiffN(const int gg,const int nb_dofs) {
-      return entData.getDiffN(bAse,gg,nb_dofs);
-    }
-
-    const MatrixDouble&  getHdivN() const { return entData.getHdivN(bAse); };
-    MatrixDouble&  getHdivN() { return entData.getHdivN(bAse); };
-    const MatrixAdaptor getHdivN(const int gg) { return entData.getHdivN(bAse,gg); }
-    const MatrixAdaptor getDiffHdivN(const int gg) { return entData.getDiffHdivN(bAse,gg); }
-    const MatrixAdaptor getDiffHdivN(const FieldApproximationBase base,const int dof,const int gg) {
-      return getDiffHdivN(bAse,dof,gg);
-    }
 
   };
 

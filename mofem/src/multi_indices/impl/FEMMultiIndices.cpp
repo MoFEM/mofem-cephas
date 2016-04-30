@@ -119,7 +119,9 @@ boost::shared_ptr<SideNumber> RefElement_PRISM::get_side_number_ptr(Interface &m
   if(side_number==-1) {
 
     if(moab.type_from_handle(ent)==MBVERTEX) {
-      THROW_MESSAGE("Huston we have problem, vertex (specified by ent) is not part of prism, that is impossible (top tip: check your prisms)");
+      THROW_MESSAGE(
+        "Huston we have problem, vertex (specified by ent) is not part of prism, that is impossible (top tip: check your prisms)"
+      );
     }
 
     //get prism connectivity
@@ -140,7 +142,7 @@ boost::shared_ptr<SideNumber> RefElement_PRISM::get_side_number_ptr(Interface &m
     // }
     // cerr << endl;
 
-    //buttom face
+    //bottom face
     EntityHandle face3[3] = { conn[0], conn[1], conn[2] };
     //top face
     EntityHandle face4[3] = { conn[3], conn[4], conn[5] };

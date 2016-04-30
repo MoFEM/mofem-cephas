@@ -538,7 +538,8 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::operator()() {
 PetscErrorCode VolumeElementForcesAndSourcesCore::UserDataOperator::getDivergenceMatrixOperator_Hdiv(
   int side,EntityType type,
   DataForcesAndSurcesCore::EntData &data,
-  int gg,VectorDouble &div
+  int gg,
+  VectorDouble &div
 ) {
   PetscFunctionBegin;
 
@@ -546,7 +547,15 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::UserDataOperator::getDivergenc
 
     int nb_dofs = data.getFieldData().size();
     if((unsigned int)nb_dofs != data.getDiffHdivN().size2()/9) {
-      SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
+      cerr << "side " << side << " type " << type << endl;
+      SETERRQ3(
+        PETSC_COMM_SELF,
+        MOFEM_DATA_INCONSISTENCY,
+        "data inconsistency base = %s "
+        "%d != %d/9",
+        FieldSpaceNames[data.getSpace()],
+        nb_dofs,data.getDiffHdivN().size2()
+      );
     }
 
     if(nb_dofs == 0) PetscFunctionReturn(0);
