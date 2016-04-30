@@ -434,8 +434,8 @@ struct UltraWeakTransportElement {
     ),
     cTx(ctx),Aij(_Aij),F(_F) {
 
-      //this operator is not symmetric settig this varible makes element
-      //operator to loop over element entities (subsimplicies) without
+      //this operator is not symmetric setting this variable makes element
+      //operator to loop over element entities without
       //assumption that off-diagonal matrices are symmetric.
       sYmm = false;
 
@@ -477,87 +477,88 @@ struct UltraWeakTransportElement {
           }
 
           ierr = getDivergenceMatrixOperator_Hdiv(
-            col_side,col_type,col_data,gg,div_vec); CHKERRQ(ierr);
+            col_side,col_type,col_data,gg,div_vec
+          ); CHKERRQ(ierr);
 
-            //FIXME this multiplication should be done in blas or ublas
-            for(int rr = 0;rr<nb_row;rr++) {
-              for(int cc = 0;cc<nb_col;cc++) {
-                NN(rr,cc) -= w*(row_data.getN(gg)[rr]*div_vec[cc]);
-              }
+          //FIXME this multiplication should be done in blas or ublas
+          for(int rr = 0;rr<nb_row;rr++) {
+            for(int cc = 0;cc<nb_col;cc++) {
+              NN(rr,cc) -= w*(row_data.getN(gg)[rr]*div_vec[cc]);
             }
-
           }
 
-          ierr = MatSetValues(
-            Aij,
-            nb_row,&row_data.getIndices()[0],
-            nb_col,&col_data.getIndices()[0],
-            &NN(0,0),ADD_VALUES
-          ); CHKERRQ(ierr);
-
-          transNN.resize(nb_col,nb_row);
-          ublas::noalias(transNN) = trans(NN);
-          ierr = MatSetValues(
-            Aij,
-            nb_col,&col_data.getIndices()[0],
-            nb_row,&row_data.getIndices()[0],
-            &transNN(0,0),ADD_VALUES
-          ); CHKERRQ(ierr);
-
-
-        } catch (const std::exception& ex) {
-          ostringstream ss;
-          ss << "throw in method: " << ex.what() << endl;
-          SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
         }
 
-        PetscFunctionReturn(0);
+        ierr = MatSetValues(
+          Aij,
+          nb_row,&row_data.getIndices()[0],
+          nb_col,&col_data.getIndices()[0],
+          &NN(0,0),ADD_VALUES
+        ); CHKERRQ(ierr);
+
+        transNN.resize(nb_col,nb_row);
+        ublas::noalias(transNN) = trans(NN);
+        ierr = MatSetValues(
+          Aij,
+          nb_col,&col_data.getIndices()[0],
+          nb_row,&row_data.getIndices()[0],
+          &transNN(0,0),ADD_VALUES
+        ); CHKERRQ(ierr);
+
+
+      } catch (const std::exception& ex) {
+        ostringstream ss;
+        ss << "throw in method: " << ex.what() << endl;
+        SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
       }
 
-      PetscErrorCode doWork(
-        int side,EntityType type,
-        DataForcesAndSurcesCore::EntData &data
-      ) {
-        PetscFunctionBegin;
+      PetscFunctionReturn(0);
+    }
 
-        PetscErrorCode ierr;
+    PetscErrorCode doWork(
+      int side,EntityType type,
+      DataForcesAndSurcesCore::EntData &data
+    ) {
+      PetscFunctionBegin;
 
-        try {
+      PetscErrorCode ierr;
 
-          if(data.getIndices().size()==0) PetscFunctionReturn(0);
-          if(data.getIndices().size()!=data.getN().size2()) {
-            SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
-          }
+      try {
 
-          int nb_row = data.getIndices().size();
-          Nf.resize(nb_row);
-          bzero(&*Nf.data().begin(),Nf.data().size()*sizeof(FieldData));
-
-          int nb_gauss_pts = data.getN().size1();
-          int gg = 0;
-          for(;gg<nb_gauss_pts;gg++) {
-
-            double w = getGaussPts()(3,gg)*getVolume();
-            if(getHoGaussPtsDetJac().size()>0) {
-              w *= getHoGaussPtsDetJac()(gg);
-            }
-
-            noalias(Nf) -= w*data.getN(gg)*cTx.divergenceAtGaussPts[gg];
-
-          }
-
-          ierr = VecSetValues(
-            F,nb_row,&data.getIndices()[0],
-            &Nf[0],ADD_VALUES
-          ); CHKERRQ(ierr);
-
-        } catch (const std::exception& ex) {
-          ostringstream ss;
-          ss << "throw in method: " << ex.what() << endl;
-          SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+        if(data.getIndices().size()==0) PetscFunctionReturn(0);
+        if(data.getIndices().size()!=data.getN().size2()) {
+          SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
         }
 
-        PetscFunctionReturn(0);
+        int nb_row = data.getIndices().size();
+        Nf.resize(nb_row);
+        bzero(&*Nf.data().begin(),Nf.data().size()*sizeof(FieldData));
+
+        int nb_gauss_pts = data.getN().size1();
+        int gg = 0;
+        for(;gg<nb_gauss_pts;gg++) {
+
+          double w = getGaussPts()(3,gg)*getVolume();
+          if(getHoGaussPtsDetJac().size()>0) {
+            w *= getHoGaussPtsDetJac()(gg);
+          }
+
+          noalias(Nf) -= w*data.getN(gg)*cTx.divergenceAtGaussPts[gg];
+
+        }
+
+        ierr = VecSetValues(
+          F,nb_row,&data.getIndices()[0],
+          &Nf[0],ADD_VALUES
+        ); CHKERRQ(ierr);
+
+      } catch (const std::exception& ex) {
+        ostringstream ss;
+        ss << "throw in method: " << ex.what() << endl;
+        SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+      }
+
+      PetscFunctionReturn(0);
     }
 
   };
