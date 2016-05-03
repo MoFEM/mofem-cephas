@@ -262,6 +262,8 @@ PetscErrorCode ForcesAndSurcesCore::getDataOrderSpaceAndBase(
 
   for(unsigned int side = 0;side<data.size();side++) {
     data[side].getDataOrder() = 0;
+    data[side].getBase() = NOBASE;
+    data[side].getSpace() = NOSPACE;
   }
 
   FEDofEntity_multiIndex::index<Composite_Name_And_Type_mi_tag>::type &data_dofs =
