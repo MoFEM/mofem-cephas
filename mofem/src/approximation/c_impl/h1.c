@@ -148,11 +148,14 @@ PetscErrorCode H1_FaceShapeFunctions_MBTRI(
     double v2[2] = { 0,0 };
     if(diff_faceN!=NULL) {
       dd = 0;
+      double n1n2 = N[node_shift+face_nodes[1]]*N[node_shift+face_nodes[2]];
+      double n0n2 = N[node_shift+face_nodes[0]]*N[node_shift+face_nodes[2]];
+      double n0n1 = N[node_shift+face_nodes[0]]*N[node_shift+face_nodes[1]];
       for(;dd<2;dd++) {
         v2[dd] =
-        diffN[face_nodes[0]*2+dd]*N[node_shift+face_nodes[1]]*N[node_shift+face_nodes[2]]+
-        N[node_shift+face_nodes[0]]*diffN[face_nodes[1]*2+dd]*N[node_shift+face_nodes[2]]+
-        N[node_shift+face_nodes[0]]*N[node_shift+face_nodes[1]]*diffN[face_nodes[2]*2+dd];
+        diffN[face_nodes[0]*2+dd]*n1n2+
+        diffN[face_nodes[1]*2+dd]*n0n2+
+        diffN[face_nodes[2]*2+dd]*n0n1;
       }
     }
     int shift = ii*P;
@@ -229,8 +232,11 @@ PetscErrorCode H1_EdgeShapeFunctions_MBTET(
             P[ee],v,&diffL[dd*(p[ee]+1)],1,&diff_edgeN[ee][3*shift+dd],3
           );
           cblas_daxpy(
-            P[ee],diffN[3*edges_nodes[2*ee+0]+dd]*N[node_shift+edges_nodes[2*ee+1]]
-            +N[node_shift+edges_nodes[2*ee+0]]*diffN[3*edges_nodes[2*ee+1]+dd],L,1,&diff_edgeN[ee][3*shift+dd],3
+            P[ee],
+            diffN[3*edges_nodes[2*ee+0]+dd]*N[node_shift+edges_nodes[2*ee+1]]
+            +N[node_shift+edges_nodes[2*ee+0]]*diffN[3*edges_nodes[2*ee+1]+dd],
+            L,1,
+            &diff_edgeN[ee][3*shift+dd],3
           );
         }
       }
@@ -277,11 +283,14 @@ PetscErrorCode H1_FaceShapeFunctions_MBTET(
       double v = N[node_shift+faces_nodes[3*ff+0]]*N[node_shift+faces_nodes[3*ff+1]]*N[node_shift+faces_nodes[3*ff+2]];
       double v2[3] = {0,0,0};
       dd = 0;
+      double n1n2 = N[node_shift+faces_nodes[3*ff+1]]*N[node_shift+faces_nodes[3*ff+2]];
+      double n0n2 = N[node_shift+faces_nodes[3*ff+0]]*N[node_shift+faces_nodes[3*ff+2]];
+      double n0n1 = N[node_shift+faces_nodes[3*ff+0]]*N[node_shift+faces_nodes[3*ff+1]];
       for(;dd<3;dd++) {
         v2[dd] =
-        diffN[3*faces_nodes[3*ff+0]+dd]*N[node_shift+faces_nodes[3*ff+1]]*N[node_shift+faces_nodes[3*ff+2]]+
-        N[node_shift+faces_nodes[3*ff+0]]*diffN[3*faces_nodes[3*ff+1]+dd]*N[node_shift+faces_nodes[3*ff+2]]+
-        N[node_shift+faces_nodes[3*ff+0]]*N[node_shift+faces_nodes[3*ff+1]]*diffN[3*faces_nodes[3*ff+2]+dd];
+        diffN[3*faces_nodes[3*ff+0]+dd]*n1n2+
+        diffN[3*faces_nodes[3*ff+1]+dd]*n0n2+
+        diffN[3*faces_nodes[3*ff+2]+dd]*n0n1;
       }
       shift = ii*P[ff];
       int jj = 0;
@@ -298,10 +307,11 @@ PetscErrorCode H1_FaceShapeFunctions_MBTET(
             if(diff_faceN!=NULL)
             if(diff_faceN[ff]!=NULL) {
               dd = 0;
+              double L0L1 = L0[pp0]*L1[pp1];
               for(;dd<3;dd++) {
                 diff_faceN[ff][3*shift+3*jj+dd] =
                 ( L0[pp0]*diffL1[dd*(p[ff]+1)+pp1] + diffL0[dd*(p[ff]+1)+pp0]*L1[pp1] )*v;
-                diff_faceN[ff][3*shift+3*jj+dd] += L0[pp0]*L1[pp1]*v2[dd];
+                diff_faceN[ff][3*shift+3*jj+dd] += L0L1*v2[dd];
               }
             }
             jj++;

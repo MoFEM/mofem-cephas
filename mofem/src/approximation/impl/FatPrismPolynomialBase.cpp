@@ -292,7 +292,9 @@ PetscErrorCode FatPrismPolynomialBase::getValueH1(ublas::matrix<double> &pts) {
           double tri_n = cTx->dataTrianglesOnly.dataOnEntities[MBVERTEX][0].getN(base)(ggf,prism_edge_map[ee][0]);
           double dksi_tri_n[2];
           for(int kk = 0;kk<2;kk++) {
-            dksi_tri_n[kk] = cTx->dataTrianglesOnly.dataOnEntities[MBVERTEX][0].getDiffN(base)(ggf,2*prism_edge_map[ee][0]+kk);
+            dksi_tri_n[kk] = cTx->dataTrianglesOnly.dataOnEntities[MBVERTEX][0].getDiffN(base)(
+              ggf,2*prism_edge_map[ee][0]+kk
+            );
           }
           for(int ggt = 0;ggt<nb_gauss_pts_through_thickness;ggt++,gg++) {
 

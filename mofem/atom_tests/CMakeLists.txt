@@ -547,6 +547,20 @@ target_link_libraries(build_problems
   ${PROJECT_LIBS})
 add_test(build_problems_atom ${MPI_RUN} -np 2 ${CMAKE_CURRENT_BINARY_DIR}/build_problems -my_file disp01.h5m)
 
+#test inactivating and clearing inactive dofs
+add_executable(activate_deactivate_dofs activate_deactivate_dofs.cpp)
+target_link_libraries(activate_deactivate_dofs
+  mofem_finite_elements
+  mofem_interfaces
+  mofem_multi_indices
+  mofem_petsc
+  mofem_approx
+  mofem_cblas
+  mofem_third_party
+  ${PROJECT_LIBS})
+add_test(activate_deactivate_dofs ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/activate_deactivate_dofs -my_file disp01.h5m)
+
+
 # Projection form and to 10 node tets
 add_executable(projection_from_10node_tet_atom projection_from_10node_tet.cpp)
 target_link_libraries(projection_from_10node_tet_atom
@@ -683,8 +697,7 @@ foreach(test_base ${testing_base_list})
   )
 endforeach(test_base IN testing_base_list)
 
-
-if(WITH_ADOL-C)
+if(ADOL-C_LIBRARY)
   add_executable(adol-c_atom adol-c_atom.cpp)
   target_link_libraries(adol-c_atom ${PROJECT_LIBS})
   if(WITH_ADOL-C)
@@ -694,4 +707,4 @@ if(WITH_ADOL-C)
     adol-c_atom_test ${MPI_RUN} -np 1
     ${CMAKE_CURRENT_BINARY_DIR}/adol-c_atom
   )
-endif(WITH_ADOL-C)
+endif(ADOL-C_LIBRARY)

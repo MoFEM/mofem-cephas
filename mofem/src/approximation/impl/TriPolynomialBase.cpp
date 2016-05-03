@@ -95,10 +95,14 @@ PetscErrorCode TriPolynomialBase::getValueH1(ublas::matrix<double> &pts) {
       diffH1edgeN[ee] = &*data.dataOnEntities[MBEDGE][ee].getDiffN(base).data().begin();
     }
     ierr = H1_EdgeShapeFunctions_MBTRI(
-      sense,order,
+      sense,
+      order,
       &*data.dataOnEntities[MBVERTEX][0].getN(base).data().begin(),
       &*data.dataOnEntities[MBVERTEX][0].getDiffN(base).data().begin(),
-      H1edgeN,diffH1edgeN,nb_gauss_pts,base_polynomials
+      H1edgeN,
+      diffH1edgeN,
+      nb_gauss_pts,
+      base_polynomials
     ); CHKERRQ(ierr);
   }
 

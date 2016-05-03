@@ -243,7 +243,8 @@ PetscErrorCode Hdiv_VolumeBubbleShapeFunctions_MBTET(
     double ksi_0i = N[ node_shift+1 ] - N[ node_shift+0 ];
     double ksi_0j = N[ node_shift+2 ] - N[ node_shift+0 ];
     double ksi_0k = N[ node_shift+3 ] - N[ node_shift+0 ];
-    double diff_Beta_0ijk[3],diff_ksi_0i[3],diff_ksi_0j[3],diff_ksi_0k[3];
+    double diff_Beta_0ijk[3] = {0,0,0};
+    double diff_ksi_0i[3],diff_ksi_0j[3],diff_ksi_0k[3];
     double Psi_l[p+1],Psi_m[p+1],Psi_n[p+1];
     double diff_Psi_l[3*(p+1)],diff_Psi_m[3*(p+1)],diff_Psi_n[3*(p+1)];
     if(diffPHI_v != NULL) {

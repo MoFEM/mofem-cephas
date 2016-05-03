@@ -87,12 +87,11 @@ PetscErrorCode FatPrismElementForcesAndSurcesCore::operator()() {
   {
     coords.resize(num_nodes*3,false);
     rval = mField.get_moab().get_coords(conn,num_nodes,&*coords.data().begin()); CHKERRQ_MOAB(rval);
-
     double diff_n[6];
     ierr = ShapeDiffMBTRI(diff_n); CHKERRQ(ierr);
     normal.resize(6,false);
     ierr = ShapeFaceNormalMBTRI(diff_n,&coords[0],&normal[0]); CHKERRQ(ierr);
-    ierr = ShapeFaceNormalMBTRI(diff_n, &coords[9],&normal[3]); CHKERRQ(ierr);
+    ierr = ShapeFaceNormalMBTRI(diff_n,&coords[9],&normal[3]); CHKERRQ(ierr);
     aRea[0] = cblas_dnrm2(3,&normal[0],1)*0.5;
     aRea[1] = cblas_dnrm2(3,&normal[3],1)*0.5;
   }
@@ -309,9 +308,11 @@ PetscErrorCode FatPrismElementForcesAndSurcesCore::operator()() {
     }
     // linear for xi,eta and zeta
     dataH1TrianglesOnly.dataOnEntities[MBVERTEX][0].getDiffN(NOBASE).resize(1,6);
-    ierr = ShapeDiffMBTRI(&dataH1TrianglesOnly.dataOnEntities[MBVERTEX][0].getDiffN(NOBASE)(0,0)); CHKERRQ(ierr);
+    ierr = ShapeDiffMBTRI(
+      &*dataH1TrianglesOnly.dataOnEntities[MBVERTEX][0].getDiffN(NOBASE).data().begin()
+    ); CHKERRQ(ierr);
     dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE).resize(nb_gauss_pts,6,false);
-    dataH1.dataOnEntities[MBVERTEX][0].getDiffN(NOBASE).resize(nb_gauss_pts,18);
+    dataH1.dataOnEntities[MBVERTEX][0].getDiffN(NOBASE).resize(nb_gauss_pts,18,false);
     for(int dd = 0;dd<6;dd++) {
       int gg = 0;
       for(int ggf = 0;ggf<nb_gauss_pts_on_faces;ggf++) {
@@ -517,7 +518,6 @@ PetscErrorCode FatPrismElementForcesAndSurcesCore::operator()() {
               }
               ierr = getEdgesDataOrderSpaceAndBase(*op_data[ss],field_name); CHKERRQ(ierr);
               ierr = getEdgesFieldData(*op_data[ss],field_name); CHKERRQ(ierr);
-              // ierr = getEdgesFieldDofs(*op_data[ss],field_name); CHKERRQ(ierr);
               case HDIV:
               if(!ss) {
                 ierr = getTrisRowIndices(*op_data[ss],field_name); CHKERRQ(ierr);

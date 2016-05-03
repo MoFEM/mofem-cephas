@@ -119,7 +119,9 @@ boost::shared_ptr<SideNumber> RefElement_PRISM::get_side_number_ptr(Interface &m
   if(side_number==-1) {
 
     if(moab.type_from_handle(ent)==MBVERTEX) {
-      THROW_MESSAGE("Huston we have problem, vertex (specified by ent) is not part of prism, that is impossible (top tip: check your prisms)");
+      THROW_MESSAGE(
+        "Huston we have problem, vertex (specified by ent) is not part of prism, that is impossible (top tip: check your prisms)"
+      );
     }
 
     //get prism connectivity
@@ -140,7 +142,7 @@ boost::shared_ptr<SideNumber> RefElement_PRISM::get_side_number_ptr(Interface &m
     // }
     // cerr << endl;
 
-    //buttom face
+    //bottom face
     EntityHandle face3[3] = { conn[0], conn[1], conn[2] };
     //top face
     EntityHandle face4[3] = { conn[3], conn[4], conn[5] };
@@ -667,7 +669,8 @@ PetscErrorCode DefaultElementAdjacency::defaultPrism(
     for(;ee<3;ee++) {
       EntityHandle edge = 0;
       rval = moab.side_element(prism,1,ee,edge); CHKERRQ_MOAB(rval);
-      boost::shared_ptr<SideNumber> side_ptr = fe_ptr.get_RefElement()->get_side_number_ptr(moab,edge);
+      boost::shared_ptr<SideNumber> side_ptr =
+      fe_ptr.get_RefElement()->get_side_number_ptr(moab,edge);
       if(side_ptr->side_number!=ee) {
         SETERRQ1(PETSC_COMM_SELF,1,"data insistency for edge %d",ee);
       }

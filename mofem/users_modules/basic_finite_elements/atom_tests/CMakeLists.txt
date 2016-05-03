@@ -177,7 +177,7 @@ target_link_libraries(ultra_weak_transport
 add_test(ultra_weak_transport_atom ${MoFEM_MPI_RUN} -np 2
   ${CMAKE_CURRENT_BINARY_DIR}/ultra_weak_transport -my_file simple_thermal_problem.h5m
   -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package mumps -ksp_monitor
-  -my_max_post_proc_ref_level 1 -my_order 0
+  -my_max_post_proc_ref_level 0 -my_order 0
 )
 add_test(ultra_weak_transport_atom_compare ${CMAKE_COMMAND} -E compare_files
   ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_ultra_weak_transport.txt
