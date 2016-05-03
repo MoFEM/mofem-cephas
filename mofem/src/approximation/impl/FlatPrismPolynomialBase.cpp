@@ -130,6 +130,7 @@ PetscErrorCode FlatPrismPolynomialBase::getValue(
   DataForcesAndSurcesCore& data = cTx->dAta;
 
   if(cTx->copyNodeBase==LASTBASE) {
+    SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"Not implemented");
   } else {
     data.dataOnEntities[MBVERTEX][0].getNSharedPtr(base) = data.dataOnEntities[MBVERTEX][0].getNSharedPtr(cTx->copyNodeBase);
   }
