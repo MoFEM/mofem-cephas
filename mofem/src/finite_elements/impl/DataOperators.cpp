@@ -482,43 +482,104 @@ PetscErrorCode DataOperator::opLhs(
 
 PetscErrorCode DataOperator::opRhs(
   DataForcesAndSurcesCore &data,
-  const bool doVertices,
-  const bool doEdges,
-  const bool doQuads,
-  const bool doTris,
-  const bool doTets,
-  const bool doPrisms
+  const bool do_vertices,
+  const bool do_edges,
+  const bool do_quads,
+  const bool do_tris,
+  const bool do_tets,
+  const bool do_prisms,
+  const bool error_if_no_base
 ) {
   PetscFunctionBegin;
   PetscErrorCode ierr;
 
-  if(doVertices) {
+  if(do_vertices) {
     for(unsigned int nn = 0;nn<data.dataOnEntities[MBVERTEX].size();nn++) {
+      if(
+        error_if_no_base&&
+        data.dataOnEntities[MBVERTEX][nn].getFieldData().size()&&
+        (
+          data.dataOnEntities[MBVERTEX][nn].getBase()==NOBASE||
+          data.dataOnEntities[MBVERTEX][nn].getBase()==LASTBASE
+        )
+      ) {
+        SETERRQ1(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"No base on Vertex and side %d",nn);
+      }
       ierr = doWork(nn,MBVERTEX,data.dataOnEntities[MBVERTEX][nn]); CHKERRQ(ierr);
     }
   }
-  if(doEdges) {
+  if(do_edges) {
     for(unsigned int ee = 0;ee<data.dataOnEntities[MBEDGE].size();ee++) {
+      if(
+        error_if_no_base&&
+        data.dataOnEntities[MBEDGE][ee].getFieldData().size()&&
+        (
+          data.dataOnEntities[MBEDGE][ee].getBase()==NOBASE||
+          data.dataOnEntities[MBEDGE][ee].getBase()==LASTBASE
+        )
+      ) {
+        SETERRQ1(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"No base on Edge and side %d",ee);
+      }
       ierr = doWork(ee,MBEDGE,data.dataOnEntities[MBEDGE][ee]); CHKERRQ(ierr);
     }
   }
-  if(doTris) {
+  if(do_tris) {
     for(unsigned int ff = 0;ff<data.dataOnEntities[MBTRI].size();ff++) {
+      if(
+        error_if_no_base&&
+        data.dataOnEntities[MBTRI][ff].getFieldData().size()&&
+        (
+          data.dataOnEntities[MBTRI][ff].getBase()==NOBASE||
+          data.dataOnEntities[MBTRI][ff].getBase()==LASTBASE
+        )
+      ) {
+        SETERRQ1(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"No base on Triangle and side %d",ff);
+      }
       ierr = doWork(ff,MBTRI,data.dataOnEntities[MBTRI][ff]); CHKERRQ(ierr);
     }
   }
-  if(doQuads) {
+  if(do_quads) {
     for(unsigned int qq = 0;qq<data.dataOnEntities[MBQUAD].size();qq++) {
+      if(
+        error_if_no_base&&
+        data.dataOnEntities[MBQUAD][qq].getFieldData().size()&&
+        (
+          data.dataOnEntities[MBQUAD][qq].getBase()==NOBASE||
+          data.dataOnEntities[MBQUAD][qq].getBase()==LASTBASE
+        )
+      ) {
+        SETERRQ1(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"No base on Quad and side %d",qq);
+      }
       ierr = doWork(qq,MBQUAD,data.dataOnEntities[MBQUAD][qq]); CHKERRQ(ierr);
     }
   }
-  if(doTets) {
+  if(do_tets) {
     for(unsigned int vv = 0;vv<data.dataOnEntities[MBTET].size();vv++) {
+      if(
+        error_if_no_base&&
+        data.dataOnEntities[MBTET][vv].getFieldData().size()&&
+        (
+          data.dataOnEntities[MBTET][vv].getBase()==NOBASE&&
+          data.dataOnEntities[MBTET][vv].getBase()==LASTBASE
+        )
+      ) {
+        SETERRQ1(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"No base on Tet and side %d",vv);
+      }
       ierr = doWork(vv,MBTET,data.dataOnEntities[MBTET][vv]); CHKERRQ(ierr);
     }
   }
-  if(doPrisms) {
+  if(do_prisms) {
     for(unsigned int pp = 0;pp<data.dataOnEntities[MBPRISM].size();pp++) {
+      if(
+        error_if_no_base&&
+        data.dataOnEntities[MBPRISM][pp].getFieldData().size()&&
+        (
+          data.dataOnEntities[MBPRISM][pp].getBase()==NOBASE||
+          data.dataOnEntities[MBPRISM][pp].getBase()==LASTBASE
+        )
+      ) {
+        SETERRQ1(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"No base on Prism and side %d",pp);
+      }
       ierr = doWork(pp,MBPRISM,data.dataOnEntities[MBPRISM][pp]); CHKERRQ(ierr);
     }
   }

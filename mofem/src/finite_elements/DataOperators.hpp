@@ -49,7 +49,11 @@ struct DataOperator {
     PetscFunctionReturn(0);
   }
 
-  virtual PetscErrorCode opLhs(DataForcesAndSurcesCore &row_data,DataForcesAndSurcesCore &col_data,bool symm = true);
+  virtual PetscErrorCode opLhs(
+    DataForcesAndSurcesCore &row_data,
+    DataForcesAndSurcesCore &col_data,
+    bool symm = true
+  );
 
   /** \brief Operator for linear form, usually to calculate values on left hand side
     */
@@ -64,12 +68,13 @@ struct DataOperator {
 
   virtual PetscErrorCode opRhs(
     DataForcesAndSurcesCore &data,
-    const bool doVertices = true,
-    const bool doEdges = true,
-    const bool doQuads = true,
-    const bool doTris = true,
-    const bool doTets = true,
-    const bool doPrisms = true
+    const bool do_vertices = true,
+    const bool do_edges = true,
+    const bool do_quads = true,
+    const bool do_tris = true,
+    const bool do_tets = true,
+    const bool do_prisms = true,
+    const bool er_ror_if_no_base = true
   );
 
 };
