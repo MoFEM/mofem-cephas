@@ -23,5 +23,5 @@ make doc | tee $MOFEM_BUILD/$LOG_DIR/$DATE/doc_build_log
 cd $MOFEM_INSTALL_PREFIX
 echo `pwd`
 
-make clean
+make update_users_modules
 make -j 4 2>&1 | tee $MOFEM_BUILD/$LOG_DIR/$DATE/build_users_modules_log
