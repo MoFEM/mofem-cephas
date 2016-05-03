@@ -130,6 +130,7 @@ PetscErrorCode FlatPrismPolynomialBase::getValue(
   DataForcesAndSurcesCore& data = cTx->dAta;
 
   if(cTx->copyNodeBase==LASTBASE) {
+    SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"Not implemented");
   } else {
     data.dataOnEntities[MBVERTEX][0].getNSharedPtr(base) = data.dataOnEntities[MBVERTEX][0].getNSharedPtr(cTx->copyNodeBase);
   }
@@ -177,6 +178,15 @@ PetscErrorCode FlatPrismPolynomialBase::getValue(
       data.dataOnEntities[MBVERTEX][0].getDiffN(base)(gg,6+2*nn+1) = val_y;
     }
   }
+  // for(int nn = 0;nn<3;nn++) {
+  //   if(faceNodes[0][nn]!=faceNodes[1][nn]) {
+  //     SETERRQ(
+  //       PETSC_COMM_SELF,
+  //       MOFEM_DATA_INCONSISTENCY,
+  //       "Node order different on both faces"
+  //     );
+  //   }
+  // }
 
   switch (cTx->sPace) {
     case H1:

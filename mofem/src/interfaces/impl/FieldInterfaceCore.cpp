@@ -2999,8 +2999,11 @@ PetscErrorCode Core::loop_finite_elements(
   FEByComposite::iterator miit = numeredFiniteElements.lower_bound(boost::make_tuple(fe_name,lower_rank));
   FEByComposite::iterator hi_miit = numeredFiniteElements.upper_bound(boost::make_tuple(fe_name,upper_rank));
 
+  // FEByComposite::iterator back_miit = hi_miit;
   method.loopSize = distance(miit,hi_miit);
   for(int nn = 0;miit!=hi_miit;miit++,nn++) {
+
+    // back_miit--;
 
     method.nInTheLoop = nn;
     method.fePtr = &*(*miit);

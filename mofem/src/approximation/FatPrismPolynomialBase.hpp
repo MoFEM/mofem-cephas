@@ -93,10 +93,6 @@ namespace MoFEM {
 
     PetscErrorCode getValueHCurl(ublas::matrix<double> &pts);
 
-    int numNodes;
-    const EntityHandle *connPrism;
-    const EntityHandle *connFace3;
-    const EntityHandle *connFace4;
     int faceNodes[2][3];
     ublas::matrix<double> N;
     ublas::matrix<double> diffN;

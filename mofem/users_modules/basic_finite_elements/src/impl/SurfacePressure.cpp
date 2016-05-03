@@ -55,7 +55,9 @@ PetscErrorCode NeummanForcesSurface::OpNeumannForce::doWork(
   PetscErrorCode ierr;
 
   const FENumeredDofEntity *dof_ptr;
-  ierr = getMoFEMFEPtr()->get_row_dofs_by_petsc_gloabl_dof_idx(data.getIndices()[0],&dof_ptr); CHKERRQ(ierr);
+  ierr = getMoFEMFEPtr()->get_row_dofs_by_petsc_gloabl_dof_idx(
+    data.getIndices()[0],&dof_ptr
+  ); CHKERRQ(ierr);
   int rank = dof_ptr->get_nb_of_coeffs();
   int nb_row_dofs = data.getIndices().size()/rank;
 
@@ -98,7 +100,9 @@ PetscErrorCode NeummanForcesSurface::OpNeumannForce::doWork(
     } else {
       my_f = F;
     }
-    ierr = VecSetValues(my_f,data.getIndices().size(), &data.getIndices()[0], &Nf[0], ADD_VALUES); CHKERRQ(ierr);
+    ierr = VecSetValues(
+      my_f,data.getIndices().size(),&data.getIndices()[0],&Nf[0],ADD_VALUES
+    ); CHKERRQ(ierr);
   }
 
   PetscFunctionReturn(0);
