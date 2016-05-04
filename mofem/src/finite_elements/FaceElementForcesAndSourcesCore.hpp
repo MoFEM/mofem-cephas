@@ -58,7 +58,7 @@ struct FaceElementForcesAndSourcesCore: public ForcesAndSurcesCore {
   DerivedDataForcesAndSurcesCore derivedDataL2;
   DataForcesAndSurcesCore dataNoField,dataNoFieldCol;
 
-  string meshPositionsFieldName;
+  std::string meshPositionsFieldName;
 
   MatrixDouble hoCoordsAtGaussPts;
   MatrixDouble nOrmals_at_GaussPt;
@@ -85,11 +85,11 @@ struct FaceElementForcesAndSourcesCore: public ForcesAndSurcesCore {
     */
   struct UserDataOperator: public ForcesAndSurcesCore::UserDataOperator {
 
-    UserDataOperator(const string &field_name,const char type):
+    UserDataOperator(const std::string &field_name,const char type):
     ForcesAndSurcesCore::UserDataOperator(field_name,type) {}
 
     UserDataOperator(
-      const string &row_field_name,const string &col_field_name,const char type):
+      const std::string &row_field_name,const std::string &col_field_name,const char type):
       ForcesAndSurcesCore::UserDataOperator(row_field_name,col_field_name,type) {};
 
     inline double getArea() { return ptrFE->aRea; }
@@ -201,7 +201,7 @@ struct FaceElementForcesAndSourcesCore: public ForcesAndSurcesCore {
 */
 struct OpCalculateInvJacForFace: public FaceElementForcesAndSourcesCore::UserDataOperator {
   MatrixDouble &invJac;
-  OpCalculateInvJacForFace(const string &field_name,MatrixDouble &inv_jac):
+  OpCalculateInvJacForFace(const std::string &field_name,MatrixDouble &inv_jac):
   FaceElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROW),
   invJac(inv_jac) {}
   PetscErrorCode doWork(
@@ -216,7 +216,7 @@ It is used for 2d problems.
 */
 struct OpSetInvJacH1ForFace: public FaceElementForcesAndSourcesCore::UserDataOperator {
   MatrixDouble &invJac;
-  OpSetInvJacH1ForFace(const string &field_name,MatrixDouble &inv_jac):
+  OpSetInvJacH1ForFace(const std::string &field_name,MatrixDouble &inv_jac):
   FaceElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROW),
   invJac(inv_jac) {}
   MatrixDouble diffNinvJac;

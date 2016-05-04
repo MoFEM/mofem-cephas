@@ -153,11 +153,11 @@ int main(int argc, char *argv[]) {
     //what are ghost nodes, see Petsc Manual
     ierr = m_field.partition_ghost_dofs("TEST_PROBLEM"); CHKERRQ(ierr);
 
-    typedef tee_device<ostream, ofstream> TeeDevice;
+    typedef tee_device<std::ostream, std::ofstream> TeeDevice;
     typedef stream<TeeDevice> TeeStream;
 
-    ofstream ofs("prisms_elements_from_surface.txt");
-    TeeDevice my_tee(cout, ofs);
+    std::ofstream ofs("prisms_elements_from_surface.txt");
+    TeeDevice my_tee(std::cout, ofs);
     TeeStream my_split(my_tee);
 
     struct MyOp: public FatPrismElementForcesAndSurcesCore::UserDataOperator {
@@ -223,30 +223,30 @@ int main(int argc, char *argv[]) {
         //   *it = fabs(*it)<eps ? 0.0 : *it;
         // }
         //
-        mySplit << "NH1" << endl;
-        mySplit << "side: " << side << " type: " << type << endl;
+        mySplit << "NH1" << std::endl;
+        mySplit << "side: " << side << " type: " << type << std::endl;
         data.getN() *= 1e4;
         data.getDiffN() *= 1e4;
-        mySplit << data << endl;
-        mySplit << "getTroughThicknessDataStructure" << endl;
-        mySplit << getTroughThicknessDataStructure().dataOnEntities[type][side] << endl;
+        mySplit << data << std::endl;
+        mySplit << "getTroughThicknessDataStructure" << std::endl;
+        mySplit << getTroughThicknessDataStructure().dataOnEntities[type][side] << std::endl;
 
-        // mySplit << "integration pts " << getGaussPts() << endl;
-        // mySplit << "coords at integration pts " << getCoordsAtGaussPts() << endl;
-        mySplit << endl << endl;
+        // mySplit << "integration pts " << getGaussPts() << std::endl;
+        // mySplit << "coords at integration pts " << getCoordsAtGaussPts() << std::endl;
+        mySplit << std::endl << std::endl;
 
-        // mySplit << setprecision(3) << getCoords() << endl;
-        // mySplit << setprecision(3) << getCoordsAtGaussPts() << endl;
-        // mySplit << setprecision(3) << getArea(0) << endl;
-        // mySplit << setprecision(3) << getArea(1) << endl;
-        // mySplit << setprecision(3) << "normal F3 " << getNormalF3() << endl;
-        // mySplit << setprecision(3) << "normal F4 " << getNormalF4() << endl;
-        // mySplit << setprecision(3) << "normal at Gauss pt F3 " << getNormals_at_GaussPtF3() << endl;
-        // mySplit << setprecision(3) << getTangent1_at_GaussPtF3() << endl;
-        // mySplit << setprecision(3) << getTangent2_at_GaussPtF3() << endl;
-        // mySplit << setprecision(3) << "normal at Gauss pt F4 " << getNormals_at_GaussPtF4() << endl;
-        // mySplit << setprecision(3) << getTangent1_at_GaussPtF4() << endl;
-        // mySplit << setprecision(3) << getTangent2_at_GaussPtF4() << endl;
+        // mySplit << std::setprecision(3) << getCoords() << std::endl;
+        // mySplit << std::setprecision(3) << getCoordsAtGaussPts() << std::endl;
+        // mySplit << std::setprecision(3) << getArea(0) << std::endl;
+        // mySplit << std::setprecision(3) << getArea(1) << std::endl;
+        // mySplit << std::setprecision(3) << "normal F3 " << getNormalF3() << std::endl;
+        // mySplit << std::setprecision(3) << "normal F4 " << getNormalF4() << std::endl;
+        // mySplit << std::setprecision(3) << "normal at Gauss pt F3 " << getNormals_at_GaussPtF3() << std::endl;
+        // mySplit << std::setprecision(3) << getTangent1_at_GaussPtF3() << std::endl;
+        // mySplit << std::setprecision(3) << getTangent2_at_GaussPtF3() << std::endl;
+        // mySplit << std::setprecision(3) << "normal at Gauss pt F4 " << getNormals_at_GaussPtF4() << std::endl;
+        // mySplit << std::setprecision(3) << getTangent1_at_GaussPtF4() << std::endl;
+        // mySplit << std::setprecision(3) << getTangent2_at_GaussPtF4() << std::endl;
         PetscFunctionReturn(0);
       }
 
@@ -260,12 +260,12 @@ int main(int argc, char *argv[]) {
 
         // if(row_data.getFieldData().empty()) PetscFunctionReturn(0);
         //
-        // mySplit << "NH1NH1" << endl;
-        // mySplit << "row side: " << row_side << " row_type: " << row_type << endl;
-        // mySplit << row_data << endl;
-        // mySplit << "NH1NH1" << endl;
-        // mySplit << "col side: " << col_side << " col_type: " << col_type << endl;
-        // mySplit << row_data << endl;
+        // mySplit << "NH1NH1" << std::endl;
+        // mySplit << "row side: " << row_side << " row_type: " << row_type << std::endl;
+        // mySplit << row_data << std::endl;
+        // mySplit << "NH1NH1" << std::endl;
+        // mySplit << "col side: " << col_side << " col_type: " << col_type << std::endl;
+        // mySplit << row_data << std::endl;
 
         PetscFunctionReturn(0);
       }

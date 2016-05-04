@@ -44,9 +44,9 @@ double roundn(double n)
 //        n/=10;
 //    }
     // case where n approximates zero, set n to "positive" zero
-    if (abs(intp)==0)
+    if (std::abs(intp)==0)
     {
-        if(abs(fract)<=RND_EPS)
+        if(std::abs(fract)<=RND_EPS)
            {
                n=0.000;
            }
@@ -136,7 +136,7 @@ int main(int argc, char *argv[]) {
   ierr = mField.field_scale(-0.5,"FIELD_B"); CHKERRQ(ierr);
 
   //Open mesh_file_name.txt for writing
-  ofstream myfile;
+  std::ofstream myfile;
   myfile.open("field_axpy_test.txt");
 
   for(_IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(mField,"FIELD_A",dof_ptr))
@@ -147,22 +147,22 @@ int main(int argc, char *argv[]) {
         {
             //Round and truncate to 3 decimal places
             double fval = (*dof_ptr)->get_FieldData();
-            cout << boost::format("%.3lf") % roundn(fval) << "  ";
+            std::cout << boost::format("%.3lf") % roundn(fval) << "  ";
             myfile << boost::format("%.3lf") % roundn(fval) << "  ";
         }
         if((*dof_ptr)->get_dof_coeff_idx()==1)
         {
             //Round and truncate to 3 decimal places
             double fval = (*dof_ptr)->get_FieldData();
-            cout << boost::format("%.3lf") % roundn(fval) << "  ";
+            std::cout << boost::format("%.3lf") % roundn(fval) << "  ";
             myfile << boost::format("%.3lf") % roundn(fval) << "  ";
         }
         if((*dof_ptr)->get_dof_coeff_idx()==2)
         {
             //Round and truncate to 3 decimal places
             double fval = (*dof_ptr)->get_FieldData();
-            cout << boost::format("%.3lf") % roundn(fval) << endl;
-            myfile << boost::format("%.3lf") % roundn(fval) << endl;
+            std::cout << boost::format("%.3lf") % roundn(fval) << std::endl;
+            myfile << boost::format("%.3lf") % roundn(fval) << std::endl;
         }
 
     }
@@ -174,22 +174,22 @@ int main(int argc, char *argv[]) {
         {
             //Round and truncate to 3 decimal places
             double fval = (*dof_ptr)->get_FieldData();
-            cout << boost::format("%.3lf") % roundn(fval) << "  ";
+            std::cout << boost::format("%.3lf") % roundn(fval) << "  ";
             myfile << boost::format("%.3lf") % roundn(fval) << "  ";
         }
         if((*dof_ptr)->get_dof_coeff_idx()==1)
         {
             //Round and truncate to 3 decimal places
             double fval = (*dof_ptr)->get_FieldData();
-            cout << boost::format("%.3lf") % roundn(fval) << "  ";
+            std::cout << boost::format("%.3lf") % roundn(fval) << "  ";
             myfile << boost::format("%.3lf") % roundn(fval) << "  ";
         }
         if((*dof_ptr)->get_dof_coeff_idx()==2)
         {
             //Round and truncate to 3 decimal places
             double fval = (*dof_ptr)->get_FieldData();
-            cout << boost::format("%.3lf") % roundn(fval) << endl;
-            myfile << boost::format("%.3lf") % roundn(fval) << endl;
+            std::cout << boost::format("%.3lf") % roundn(fval) << std::endl;
+            myfile << boost::format("%.3lf") % roundn(fval) << std::endl;
         }
 
     }

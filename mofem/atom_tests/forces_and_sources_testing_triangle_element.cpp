@@ -154,11 +154,11 @@ int main(int argc, char *argv[]) {
   //what are ghost nodes, see Petsc Manual
   ierr = m_field.partition_ghost_dofs("TEST_PROBLEM"); CHKERRQ(ierr);
 
-  typedef tee_device<ostream, ofstream> TeeDevice;
+  typedef tee_device<std::ostream, std::ofstream> TeeDevice;
   typedef stream<TeeDevice> TeeStream;
 
-  ofstream ofs("forces_and_sources_testing_triangle_element.txt");
-  TeeDevice my_tee(cout, ofs);
+  std::ofstream ofs("forces_and_sources_testing_triangle_element.txt");
+  TeeDevice my_tee(std::cout, ofs);
   TeeStream my_split(my_tee);
 
   struct MyOp1: public FaceElementForcesAndSourcesCore::UserDataOperator {
@@ -182,18 +182,18 @@ int main(int argc, char *argv[]) {
         *it = fabs(*it)<eps ? 0.0 : *it;
       }
 
-      my_split << "NH1" << endl;
-      my_split << "side: " << side << " type: " << type << endl;
-      my_split << "data: " << data << endl;
-      my_split << setprecision(3) << getCoords() << endl;
-      my_split << setprecision(3) << getCoordsAtGaussPts() << endl;
-      my_split << setprecision(3) << getArea() << endl;
-      my_split << setprecision(3) << getNormal() << endl;
-      my_split << setprecision(3) << getHoCoordsAtGaussPts() << endl;
-      my_split << setprecision(3) << getNormals_at_GaussPt() << endl;
-      my_split << setprecision(3) << getTangent1_at_GaussPt() << endl;
-      my_split << setprecision(3) << getTangent2_at_GaussPt() << endl;
-      my_split << endl;
+      my_split << "NH1" << std::endl;
+      my_split << "side: " << side << " type: " << type << std::endl;
+      my_split << "data: " << data << std::endl;
+      my_split << std::setprecision(3) << getCoords() << std::endl;
+      my_split << std::setprecision(3) << getCoordsAtGaussPts() << std::endl;
+      my_split << std::setprecision(3) << getArea() << std::endl;
+      my_split << std::setprecision(3) << getNormal() << std::endl;
+      my_split << std::setprecision(3) << getHoCoordsAtGaussPts() << std::endl;
+      my_split << std::setprecision(3) << getNormals_at_GaussPt() << std::endl;
+      my_split << std::setprecision(3) << getTangent1_at_GaussPt() << std::endl;
+      my_split << std::setprecision(3) << getTangent2_at_GaussPt() << std::endl;
+      my_split << std::endl;
       PetscFunctionReturn(0);
     }
 
@@ -205,12 +205,12 @@ int main(int argc, char *argv[]) {
     ) {
 
       PetscFunctionBegin;
-      my_split << "NH1NH1" << endl;
-      my_split << "row side: " << row_side << " row_type: " << row_type << endl;
-      my_split << row_data << endl;
-      my_split << "NH1NH1" << endl;
-      my_split << "col side: " << col_side << " col_type: " << col_type << endl;
-      my_split << row_data << endl;
+      my_split << "NH1NH1" << std::endl;
+      my_split << "row side: " << row_side << " row_type: " << row_type << std::endl;
+      my_split << row_data << std::endl;
+      my_split << "NH1NH1" << std::endl;
+      my_split << "col side: " << col_side << " col_type: " << col_type << std::endl;
+      my_split << row_data << std::endl;
 
       PetscErrorCode ierr;
       VectorInt row_indices,col_indices;
@@ -227,21 +227,21 @@ int main(int argc, char *argv[]) {
 
       for(unsigned int rr = 0;rr<row_indices.size();rr++) {
         if(row_indices[rr] != row_data.getIndices()[rr]) {
-          cerr << row_indices << endl;
-          cerr << row_data.getIndices() << endl;
+          std::cerr << row_indices << std::endl;
+          std::cerr << row_data.getIndices() << std::endl;
           SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"row inconsistency");
         }
       }
 
       for(unsigned int cc = 0;cc<col_indices.size();cc++) {
         if(col_indices[cc] != col_data.getIndices()[cc]) {
-          cerr << col_indices << endl;
-          cerr << col_data.getIndices() << endl;
+          std::cerr << col_indices << std::endl;
+          std::cerr << col_data.getIndices() << std::endl;
           SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"row inconsistency");
         }
       }
 
-      my_split << row_data << endl;
+      my_split << row_data << std::endl;
 
       PetscFunctionReturn(0);
     }
@@ -263,9 +263,9 @@ int main(int argc, char *argv[]) {
 
       if(type != MBENTITYSET) PetscFunctionReturn(0);
 
-      my_split << "NOFIELD" << endl;
-      my_split << "side: " << side << " type: " << type << endl;
-      my_split << data << endl;
+      my_split << "NOFIELD" << std::endl;
+      my_split << "side: " << side << " type: " << type << std::endl;
+      my_split << data << std::endl;
       PetscFunctionReturn(0);
     }
 
@@ -280,11 +280,11 @@ int main(int argc, char *argv[]) {
 
       if(row_type != MBENTITYSET) PetscFunctionReturn(0);
 
-      my_split << "NOFILEDH1" << endl;
-      my_split << "row side: " << row_side << " row_type: " << row_type << endl;
-      my_split << row_data << endl;
-      my_split << "col side: " << col_side << " col_type: " << col_type << endl;
-      my_split << col_data << endl;
+      my_split << "NOFILEDH1" << std::endl;
+      my_split << "row side: " << row_side << " row_type: " << row_type << std::endl;
+      my_split << row_data << std::endl;
+      my_split << "col side: " << col_side << " col_type: " << col_type << std::endl;
+      my_split << col_data << std::endl;
 
       PetscFunctionReturn(0);
     }

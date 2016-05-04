@@ -67,7 +67,7 @@ struct NeoHookean: public NonlinearElasticElement::FunctionsToCalculatePiolaKirc
       ierr = this->NeoHooke_PiolaKirchhoffII(); CHKERRQ(ierr);
       this->P.resize(3,3);
       noalias(this->P) = prod(this->F,this->S);
-      //cerr << "P: " << P << endl;
+      //std::cerr << "P: " << P << std::endl;
       PetscFunctionReturn(0);
     }
 

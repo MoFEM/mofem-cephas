@@ -105,7 +105,7 @@ struct ThermalElement {
     double cApacity;   // rou * c_p == material density multiple heat capacity
     Range tEts; ///< contains elements in block set
   };
-  map<int,BlockData> setOfBlocks; ///< maps block set id with appropriate BlockData
+  std::map<int,BlockData> setOfBlocks; ///< maps block set id with appropriate BlockData
 
   /** \brief data for calculation heat flux
     * \infroup mofem_thermal_elem
@@ -114,7 +114,7 @@ struct ThermalElement {
     HeatFluxCubitBcData dAta; ///< for more details look to BCMultiIndices.hpp to see details of HeatFluxCubitBcData
     Range tRis; ///< surface triangles where hate flux is applied
   };
-  map<int,FluxData> setOfFluxes; ///< maps side set id with appropriate FluxData
+  std::map<int,FluxData> setOfFluxes; ///< maps side set id with appropriate FluxData
 
 
   /** \brief data for convection
@@ -125,7 +125,7 @@ struct ThermalElement {
     double tEmperature; /*Ambient temperature of the area contains the black body */
     Range tRis; ///< those will be on body skin, except this with contact with other body where temperature is applied
   };
-  map<int,ConvectionData> setOfConvection; //< maps block set id with appropriate data
+  std::map<int,ConvectionData> setOfConvection; //< maps block set id with appropriate data
 
   /** \brief data for radiation
     * \infroup mofem_thermal_elem
@@ -137,7 +137,7 @@ struct ThermalElement {
         double aMbienttEmp; /* The incident radiant heat flow per unit surface area; or the ambient temperature of space*/
         Range tRis; ///< those will be on body skin, except this with contact with other body where temperature is applied
   };
-  map<int,RadiationData> setOfRadiation; //< maps block set id with appropriate data
+  std::map<int,RadiationData> setOfRadiation; //< maps block set id with appropriate data
 
   /** \brief common data used by volume elements
     * \infroup mofem_thermal_elem
@@ -156,7 +156,7 @@ struct ThermalElement {
   struct OpGetGradAtGaussPts: public VolumeElementForcesAndSourcesCore::UserDataOperator {
 
     CommonData &commonData;
-    OpGetGradAtGaussPts(const string field_name,CommonData &common_data):
+    OpGetGradAtGaussPts(const std::string field_name,CommonData &common_data):
       VolumeElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROW),
       commonData(common_data) {}
 
@@ -175,7 +175,7 @@ struct ThermalElement {
   struct OpGetFieldAtGaussPts: public OP::UserDataOperator {
 
     ublas::vector<double> &fieldAtGaussPts;
-    OpGetFieldAtGaussPts(const string field_name,ublas::vector<double> &field_at_gauss_pts):
+    OpGetFieldAtGaussPts(const std::string field_name,ublas::vector<double> &field_at_gauss_pts):
       OP::UserDataOperator(field_name,OP::UserDataOperator::OPROW),
       fieldAtGaussPts(field_at_gauss_pts) {}
 
@@ -198,7 +198,7 @@ struct ThermalElement {
           //loop over shape functions on entities always start from
           //vertices, so if nodal shape functions are processed, vector of
           //field values is zero at initialization
-          fill(fieldAtGaussPts.begin(),fieldAtGaussPts.end(),0);
+          std::fill(fieldAtGaussPts.begin(),fieldAtGaussPts.end(),0);
         }
 
         for(int gg = 0;gg<nb_gauss_pts;gg++) {
@@ -207,8 +207,8 @@ struct ThermalElement {
         }
 
       } catch (const std::exception& ex) {
-        ostringstream ss;
-        ss << "throw in method: " << ex.what() << endl;
+        std::ostringstream ss;
+        ss << "throw in method: " << ex.what() << std::endl;
         SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
       }
 
@@ -221,7 +221,7 @@ struct ThermalElement {
     * \infroup mofem_thermal_elem
     */
   struct OpGetTetTemperatureAtGaussPts: public OpGetFieldAtGaussPts<VolumeElementForcesAndSourcesCore> {
-    OpGetTetTemperatureAtGaussPts(const string field_name,CommonData &common_data):
+    OpGetTetTemperatureAtGaussPts(const std::string field_name,CommonData &common_data):
       OpGetFieldAtGaussPts<VolumeElementForcesAndSourcesCore>(field_name,common_data.temperatureAtGaussPts) {}
   };
 
@@ -229,7 +229,7 @@ struct ThermalElement {
     * \infroup mofem_thermal_elem
     */
   struct OpGetTriTemperatureAtGaussPts: public OpGetFieldAtGaussPts<FaceElementForcesAndSourcesCore> {
-    OpGetTriTemperatureAtGaussPts(const string field_name,CommonData &common_data):
+    OpGetTriTemperatureAtGaussPts(const std::string field_name,CommonData &common_data):
       OpGetFieldAtGaussPts<FaceElementForcesAndSourcesCore>(field_name,common_data.temperatureAtGaussPts) {}
   };
 
@@ -237,7 +237,7 @@ struct ThermalElement {
     * \infroup mofem_thermal_elem
     */
   struct OpGetTetRateAtGaussPts: public OpGetFieldAtGaussPts<VolumeElementForcesAndSourcesCore> {
-    OpGetTetRateAtGaussPts(const string field_name,CommonData &common_data):
+    OpGetTetRateAtGaussPts(const std::string field_name,CommonData &common_data):
       OpGetFieldAtGaussPts<VolumeElementForcesAndSourcesCore>(field_name,common_data.temperatureRateAtGaussPts) {}
   };
 
@@ -249,7 +249,7 @@ struct ThermalElement {
     BlockData &dAta;
     CommonData &commonData;
     bool useTsF;
-    OpThermalRhs(const string field_name,BlockData &data,CommonData &common_data):
+    OpThermalRhs(const std::string field_name,BlockData &data,CommonData &common_data):
     VolumeElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROW),
     dAta(data),
     commonData(common_data),
@@ -257,7 +257,7 @@ struct ThermalElement {
     }
 
     Vec F;
-    OpThermalRhs(const string field_name,Vec _F,BlockData &data,CommonData &common_data):
+    OpThermalRhs(const std::string field_name,Vec _F,BlockData &data,CommonData &common_data):
     VolumeElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROW),
     dAta(data),
     commonData(common_data),
@@ -284,7 +284,7 @@ struct ThermalElement {
     BlockData &dAta;
     CommonData &commonData;
     bool useTsB;
-    OpThermalLhs(const string field_name,BlockData &data,CommonData &common_data):
+    OpThermalLhs(const std::string field_name,BlockData &data,CommonData &common_data):
     VolumeElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROWCOL),
     dAta(data),
     commonData(common_data),
@@ -292,7 +292,7 @@ struct ThermalElement {
     }
 
     Mat A;
-    OpThermalLhs(const string field_name,Mat _A,BlockData &data,CommonData &common_data):
+    OpThermalLhs(const std::string field_name,Mat _A,BlockData &data,CommonData &common_data):
     VolumeElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROWCOL),
     dAta(data),
     commonData(common_data),
@@ -322,7 +322,7 @@ struct ThermalElement {
 
     BlockData &dAta;
     CommonData &commonData;
-    OpHeatCapacityRhs(const string field_name,BlockData &data,CommonData &common_data):
+    OpHeatCapacityRhs(const std::string field_name,BlockData &data,CommonData &common_data):
     VolumeElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROW),
     dAta(data),
     commonData(common_data) {
@@ -346,7 +346,7 @@ struct ThermalElement {
 
     BlockData &dAta;
     CommonData &commonData;
-    OpHeatCapacityLhs(const string field_name,BlockData &data,CommonData &common_data):
+    OpHeatCapacityLhs(const std::string field_name,BlockData &data,CommonData &common_data):
       VolumeElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROWCOL),
       dAta(data),commonData(common_data) {}
 
@@ -376,14 +376,14 @@ struct ThermalElement {
     FluxData &dAta;
     bool hoGeometry;
     bool useTsF;
-    OpHeatFlux(const string field_name,FluxData &data,bool ho_geometry = false):
+    OpHeatFlux(const std::string field_name,FluxData &data,bool ho_geometry = false):
     FaceElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROW),
     dAta(data),
     hoGeometry(ho_geometry),
     useTsF(true) { }
 
     Vec F;
-    OpHeatFlux(const string field_name,Vec _F,FluxData &data,bool ho_geometry = false):
+    OpHeatFlux(const std::string field_name,Vec _F,FluxData &data,bool ho_geometry = false):
     FaceElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROW),
     dAta(data),
     hoGeometry(ho_geometry),
@@ -414,7 +414,7 @@ struct ThermalElement {
     bool hoGeometry;
     bool useTsB;
 
-    OpRadiationLhs(const string field_name,RadiationData &data,CommonData &common_data,bool ho_geometry = false):
+    OpRadiationLhs(const std::string field_name,RadiationData &data,CommonData &common_data,bool ho_geometry = false):
     FaceElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROWCOL),
     commonData(common_data),
     dAta(data),
@@ -423,7 +423,7 @@ struct ThermalElement {
     }
 
     Mat A;
-    OpRadiationLhs(const string field_name,Mat _A,RadiationData &data,CommonData &common_data,bool ho_geometry = false):
+    OpRadiationLhs(const std::string field_name,Mat _A,RadiationData &data,CommonData &common_data,bool ho_geometry = false):
     FaceElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROWCOL),
     commonData(common_data),
     dAta(data),
@@ -457,7 +457,7 @@ struct ThermalElement {
     RadiationData &dAta;
     bool hoGeometry;
     bool useTsF;
-    OpRadiationRhs(const string field_name,RadiationData &data,CommonData &common_data,bool ho_geometry = false):
+    OpRadiationRhs(const std::string field_name,RadiationData &data,CommonData &common_data,bool ho_geometry = false):
     FaceElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROW),
     commonData(common_data),
     dAta(data),
@@ -465,7 +465,7 @@ struct ThermalElement {
     useTsF(true) {}
 
     Vec F;
-    OpRadiationRhs(const string field_name,Vec _F,RadiationData &data,CommonData &common_data,bool ho_geometry = false):
+    OpRadiationRhs(const std::string field_name,Vec _F,RadiationData &data,CommonData &common_data,bool ho_geometry = false):
     FaceElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROW),
     commonData(common_data),
     dAta(data),
@@ -492,7 +492,7 @@ struct ThermalElement {
     ConvectionData &dAta;
     bool hoGeometry;
     bool useTsF;
-    OpConvectionRhs(const string field_name,ConvectionData &data,CommonData &common_data,bool ho_geometry = false):
+    OpConvectionRhs(const std::string field_name,ConvectionData &data,CommonData &common_data,bool ho_geometry = false):
     FaceElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROW),
     commonData(common_data),dAta(data),
     hoGeometry(ho_geometry),
@@ -501,7 +501,7 @@ struct ThermalElement {
     }
 
     Vec F;
-    OpConvectionRhs(const string field_name,Vec _F,ConvectionData &data,CommonData &common_data,bool ho_geometry = false):
+    OpConvectionRhs(const std::string field_name,Vec _F,ConvectionData &data,CommonData &common_data,bool ho_geometry = false):
     FaceElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROW),
     commonData(common_data),
     dAta(data),
@@ -529,7 +529,7 @@ struct ThermalElement {
     bool hoGeometry;
     bool useTsB;
 
-    OpConvectionLhs(const string field_name,
+    OpConvectionLhs(const std::string field_name,
       ConvectionData &data,bool ho_geometry = false
     ):
     FaceElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROWCOL),
@@ -539,7 +539,7 @@ struct ThermalElement {
     }
 
     Mat A;
-    OpConvectionLhs(const string field_name,Mat _A,
+    OpConvectionLhs(const std::string field_name,Mat _A,
       ConvectionData &data,bool ho_geometry = false
     ):
     FaceElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROWCOL),
@@ -571,11 +571,11 @@ struct ThermalElement {
   struct UpdateAndControl: public FEMethod {
 
     FieldInterface& mField;
-    const string tempName;
-    const string rateName;
+    const std::string tempName;
+    const std::string rateName;
 
     UpdateAndControl(FieldInterface& m_field,
-      const string temp_name,const string rate_name):
+      const std::string temp_name,const std::string rate_name):
       mField(m_field),
       tempName(temp_name),
       rateName(rate_name) {
@@ -592,11 +592,11 @@ struct ThermalElement {
   struct TimeSeriesMonitor: public FEMethod {
 
     FieldInterface &mField;
-    const string seriesName;
-    const string tempName;
+    const std::string seriesName;
+    const std::string tempName;
     BitRefLevel mask;
 
-    TimeSeriesMonitor(FieldInterface &m_field,const string series_name,const string temp_name):
+    TimeSeriesMonitor(FieldInterface &m_field,const std::string series_name,const std::string temp_name):
       mField(m_field),seriesName(series_name),tempName(temp_name) {
       mask.set();
     }
@@ -613,7 +613,7 @@ struct ThermalElement {
     * \param field name
     * \param name of mesh nodal positions (if not defined nodal coordinates are used)
     */
-  PetscErrorCode addThermalElements(const string field_name,const string mesh_nodals_positions = "MESH_NODE_POSITIONS");
+  PetscErrorCode addThermalElements(const std::string field_name,const std::string mesh_nodals_positions = "MESH_NODE_POSITIONS");
 
   /** \brief add heat flux element
     * \infroup mofem_thermal_elem
@@ -624,7 +624,7 @@ struct ThermalElement {
     * \param field name
     * \param name of mesh nodal positions (if not defined nodal coordinates are used)
     */
-  PetscErrorCode addThermalFluxElement(const string field_name,const string mesh_nodals_positions = "MESH_NODE_POSITIONS");
+  PetscErrorCode addThermalFluxElement(const std::string field_name,const std::string mesh_nodals_positions = "MESH_NODE_POSITIONS");
 
 
   /** \brief add convection element
@@ -636,7 +636,7 @@ struct ThermalElement {
   * \param field name
   * \param name of mesh nodal positions (if not defined nodal coordinates are used)
   */
-  PetscErrorCode addThermalConvectionElement(const string field_name,const string mesh_nodals_positions = "MESH_NODE_POSITIONS");
+  PetscErrorCode addThermalConvectionElement(const std::string field_name,const std::string mesh_nodals_positions = "MESH_NODE_POSITIONS");
 
   /** \brief add Non-linear Radiation element
   * \infroup mofem_thermal_elem
@@ -647,7 +647,7 @@ struct ThermalElement {
   * \param field name
   * \param name of mesh nodal positions (if not defined nodal coordinates are used)
   */
-  PetscErrorCode addThermalRadiationElement(const string field_name,const string mesh_nodals_positions = "MESH_NODE_POSITIONS");
+  PetscErrorCode addThermalRadiationElement(const std::string field_name,const std::string mesh_nodals_positions = "MESH_NODE_POSITIONS");
 
   /** \brief this function is used in case of stationary problem to set elements for rhs
     * \infroup mofem_thermal_elem
@@ -662,25 +662,25 @@ struct ThermalElement {
   /** \brief this function is used in case of stationary problem for heat flux terms
     * \infroup mofem_thermal_elem
     */
-  PetscErrorCode setThermalFluxFiniteElementRhsOperators(string field_name,Vec &F,const string mesh_nodals_positions = "MESH_NODE_POSITIONS");
+  PetscErrorCode setThermalFluxFiniteElementRhsOperators(string field_name,Vec &F,const std::string mesh_nodals_positions = "MESH_NODE_POSITIONS");
 
   /* \brief linear Steady convection terms in lhs
    */
-  PetscErrorCode setThermalConvectionFiniteElementRhsOperators(string field_name,Vec &F,const string mesh_nodals_positions = "MESH_NODE_POSITIONS");
+  PetscErrorCode setThermalConvectionFiniteElementRhsOperators(string field_name,Vec &F,const std::string mesh_nodals_positions = "MESH_NODE_POSITIONS");
 
   /* \brief linear Steady convection terms in rhs
    */
-  PetscErrorCode setThermalConvectionFiniteElementLhsOperators(string field_name,Mat A,const string mesh_nodals_positions = "MESH_NODE_POSITIONS");
+  PetscErrorCode setThermalConvectionFiniteElementLhsOperators(string field_name,Mat A,const std::string mesh_nodals_positions = "MESH_NODE_POSITIONS");
 
   /** \brief set up operators for unsteady heat flux; convection; radiation problem
     * \infroup mofem_thermal_elem
     */
-  PetscErrorCode setTimeSteppingProblem(string field_name,string rate_name,const string mesh_nodals_positions = "MESH_NODE_POSITIONS");
+  PetscErrorCode setTimeSteppingProblem(string field_name,string rate_name,const std::string mesh_nodals_positions = "MESH_NODE_POSITIONS");
 
   /** \brief set up operators for unsteady heat flux; convection; radiation problem
     * \infroup mofem_thermal_elem
     */
-  PetscErrorCode setTimeSteppingProblem(TsCtx &ts_ctx,string field_name,string rate_name,const string mesh_nodals_positions = "MESH_NODE_POSITIONS");
+  PetscErrorCode setTimeSteppingProblem(TsCtx &ts_ctx,string field_name,string rate_name,const std::string mesh_nodals_positions = "MESH_NODE_POSITIONS");
 
 };
 

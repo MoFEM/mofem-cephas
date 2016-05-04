@@ -59,7 +59,7 @@ active(false) {
   }
 
   if(sFieldPtr->tag_dof_order_data==NULL) {
-    ostringstream ss;
+    std::ostringstream ss;
     ss << "at " << __LINE__ << " in " << __FILE__;
     ss << " sFieldPtr->tag_dof_order_data==NULL";
     ss << " (top tip: check if order set to vertices is 1)";
@@ -83,7 +83,7 @@ active(false) {
 
 }
 
-ostream& operator<<(ostream& os,const DofEntity& e) {
+std::ostream& operator<<(std::ostream& os,const DofEntity& e) {
   os << "dof_uid " << e.get_global_unique_id()
   << " dof_order " << e.get_dof_order()
   << " dof_rank " << e.get_dof_coeff_idx()
@@ -108,7 +108,7 @@ petsc_local_dof_idx(-1),
 part(-1) {
 }
 
-ostream& operator<<(ostream& os,const NumeredDofEntity& e) {
+std::ostream& operator<<(std::ostream& os,const NumeredDofEntity& e) {
   os << "idx " << e.dof_idx << " part " << e.part
   << " petsc idx " << e.petsc_gloabl_dof_idx
   << " ( " << e.petsc_local_dof_idx <<  " ) "
@@ -132,7 +132,7 @@ BaseFEDofEntity(side_number_ptr),
 interface_DofEntity<DofEntity>(dof_ptr) {
 }
 
-ostream& operator<<(ostream& os,const FEDofEntity& e) {
+std::ostream& operator<<(std::ostream& os,const FEDofEntity& e) {
   os << "local dof FiniteElement idx "
     << "side_number " << e.sideNumberPtr->side_number << " "
     << "sense " << e.sideNumberPtr->sense << " "
@@ -155,7 +155,7 @@ BaseFEDofEntity(t.get<0>()),
 interface_NumeredDofEntity<NumeredDofEntity>(t.get<1>()) {
 }
 
-ostream& operator<<(ostream& os,const FENumeredDofEntity& e) {
+std::ostream& operator<<(std::ostream& os,const FENumeredDofEntity& e) {
   os << "local dof FiniteElement idx "
     << "side_number " << e.sideNumberPtr->side_number << " "
     << "sense " << e.sideNumberPtr->sense << " "

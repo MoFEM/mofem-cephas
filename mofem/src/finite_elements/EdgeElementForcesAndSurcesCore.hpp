@@ -42,7 +42,7 @@ struct EdgeElementForcesAndSurcesCore: public ForcesAndSurcesCore {
   DataForcesAndSurcesCore dataH1;
   DerivedDataForcesAndSurcesCore derivedDataH1;
   DataForcesAndSurcesCore dataNoField,dataNoFieldCol;
-  string meshPositionsFieldName;
+  std::string meshPositionsFieldName;
 
   MatrixDouble tAngent_at_GaussPt;
   OpGetHoTangentOnEdge opGetHoTangentOnEdge;
@@ -70,11 +70,11 @@ struct EdgeElementForcesAndSurcesCore: public ForcesAndSurcesCore {
   struct UserDataOperator: public ForcesAndSurcesCore::UserDataOperator {
 
     UserDataOperator(
-      const string &field_name,const char type):
+      const std::string &field_name,const char type):
       ForcesAndSurcesCore::UserDataOperator(field_name,type) {}
 
     UserDataOperator(
-      const string &row_field_name,const string &col_field_name,const char type):
+      const std::string &row_field_name,const std::string &col_field_name,const char type):
       ForcesAndSurcesCore::UserDataOperator(row_field_name,col_field_name,type) {}
 
     inline double getLength() { return ptrFE->lEngth; }

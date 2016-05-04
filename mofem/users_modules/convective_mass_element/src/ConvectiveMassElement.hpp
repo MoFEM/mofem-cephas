@@ -109,7 +109,7 @@ struct ConvectiveMassElement {
     ublas::vector<double> a0; ///< constant acceleration
     Range tEts; ///< elements in block set
   };
-  map<int,BlockData> setOfBlocks; ///< maps block set id with appropriate BlockData
+  std::map<int,BlockData> setOfBlocks; ///< maps block set id with appropriate BlockData
 
   /** \brief common data used by volume elements
     * \ingroup user_modules
@@ -124,20 +124,20 @@ struct ConvectiveMassElement {
     }
 
 
-    map<string,vector<ublas::vector<double> > > dataAtGaussPts;
-    map<string,vector<ublas::matrix<double> > > gradAtGaussPts;
+    std::map<std::string,std::vector<ublas::vector<double> > > dataAtGaussPts;
+    std::map<std::string,std::vector<ublas::matrix<double> > > gradAtGaussPts;
     string spatialPositions;
     string meshPositions;
     string spatialVelocities;
-    vector<ublas::vector<double> > valVel;
-    vector<vector<double*> > jacVelRowPtr;
-    vector<ublas::matrix<double> > jacVel;
-    vector<ublas::vector<double> > valMass;
-    vector<vector<double*> > jacMassRowPtr;
-    vector<ublas::matrix<double> > jacMass;
-    vector<ublas::vector<double> > valT;
-    vector<vector<double*> > jacTRowPtr;
-    vector<ublas::matrix<double> > jacT;
+    std::vector<ublas::vector<double> > valVel;
+    std::vector<std::vector<double*> > jacVelRowPtr;
+    std::vector<ublas::matrix<double> > jacVel;
+    std::vector<ublas::vector<double> > valMass;
+    std::vector<std::vector<double*> > jacMassRowPtr;
+    std::vector<ublas::matrix<double> > jacMass;
+    std::vector<ublas::vector<double> > valT;
+    std::vector<std::vector<double*> > jacTRowPtr;
+    std::vector<ublas::matrix<double> > jacT;
 
 
   };
@@ -147,13 +147,13 @@ struct ConvectiveMassElement {
 
   struct OpGetDataAtGaussPts: public VolumeElementForcesAndSourcesCore::UserDataOperator {
 
-    vector<ublas::vector<double> > &valuesAtGaussPts;
-    vector<ublas::matrix<double> > &gradientAtGaussPts;
+    std::vector<ublas::vector<double> > &valuesAtGaussPts;
+    std::vector<ublas::matrix<double> > &gradientAtGaussPts;
     const EntityType zeroAtType;
 
-    OpGetDataAtGaussPts(const string field_name,
-      vector<ublas::vector<double> > &values_at_gauss_pts,
-      vector<ublas::matrix<double> > &gardient_at_gauss_pts
+    OpGetDataAtGaussPts(const std::string field_name,
+      std::vector<ublas::vector<double> > &values_at_gauss_pts,
+      std::vector<ublas::matrix<double> > &gardient_at_gauss_pts
     );
 
     /** \brief operator calculating deformation gradient
@@ -166,7 +166,7 @@ struct ConvectiveMassElement {
   };
 
   struct OpGetCommonDataAtGaussPts: public OpGetDataAtGaussPts {
-    OpGetCommonDataAtGaussPts(const string field_name,CommonData &common_data);
+    OpGetCommonDataAtGaussPts(const std::string field_name,CommonData &common_data);
   };
 
   struct CommonFunctions {
@@ -225,7 +225,7 @@ struct ConvectiveMassElement {
     boost::ptr_vector<MethodForForceScaling> &methodsOp;
 
     OpMassJacobian(
-      const string field_name,
+      const std::string field_name,
       BlockData &data,
       CommonData &common_data,
       boost::ptr_vector<MethodForForceScaling> &methods_op,
@@ -235,7 +235,7 @@ struct ConvectiveMassElement {
 
     ublas::vector<adouble> a,dot_W,dp_dt,a_res;
     ublas::matrix<adouble> h,H,invH,F,g,G;
-    vector<double> active;
+    std::vector<double> active;
 
     PetscErrorCode doWork(
       int row_side,EntityType row_type,DataForcesAndSurcesCore::EntData &row_data
@@ -248,7 +248,7 @@ struct ConvectiveMassElement {
     BlockData &dAta;
     CommonData &commonData;
 
-    OpMassRhs(const string field_name,BlockData &data,CommonData &common_data);
+    OpMassRhs(const std::string field_name,BlockData &data,CommonData &common_data);
 
     ublas::vector<double> nf;
 
@@ -265,7 +265,7 @@ struct ConvectiveMassElement {
     Range forcesOnlyOnEntities;
 
     OpMassLhs_dM_dv(
-      const string vel_field,const string field_name,BlockData &data,CommonData &common_data,Range *forcesonlyonentities_ptr = NULL
+      const std::string vel_field,const std::string field_name,BlockData &data,CommonData &common_data,Range *forcesonlyonentities_ptr = NULL
     );
 
     ublas::matrix<double> k,jac;
@@ -284,7 +284,7 @@ struct ConvectiveMassElement {
 
   struct OpMassLhs_dM_dx: public OpMassLhs_dM_dv {
 
-    OpMassLhs_dM_dx(const string field_name,const string col_field,BlockData &data,CommonData &common_data);
+    OpMassLhs_dM_dx(const std::string field_name,const std::string col_field,BlockData &data,CommonData &common_data);
 
     PetscErrorCode getJac(DataForcesAndSurcesCore::EntData &col_data,int gg);
 
@@ -292,7 +292,7 @@ struct ConvectiveMassElement {
 
   struct OpMassLhs_dM_dX: public OpMassLhs_dM_dv  {
 
-    OpMassLhs_dM_dX(const string field_name,const string col_field,BlockData &data,CommonData &common_data);
+    OpMassLhs_dM_dX(const std::string field_name,const std::string col_field,BlockData &data,CommonData &common_data);
 
     PetscErrorCode getJac(DataForcesAndSurcesCore::EntData &col_data,int gg);
 
@@ -305,7 +305,7 @@ struct ConvectiveMassElement {
     Vec *Vptr;
     bool &lInear;
 
-    OpEnergy(const string field_name,BlockData &data,CommonData &common_data,Vec *v_ptr);
+    OpEnergy(const std::string field_name,BlockData &data,CommonData &common_data,Vec *v_ptr);
 
     ublas::matrix<double> h,H,invH,F;
     ublas::vector<double> v;
@@ -323,7 +323,7 @@ struct ConvectiveMassElement {
     int tAg;
     bool jAcobian,fieldDisp;
 
-    OpVelocityJacobian(const string field_name,BlockData &data,CommonData &common_data,int tag,bool jacobian = true);
+    OpVelocityJacobian(const std::string field_name,BlockData &data,CommonData &common_data,int tag,bool jacobian = true);
 
     ublas::vector<adouble> a_res;
     ublas::vector<adouble> v,dot_w,dot_W;
@@ -331,7 +331,7 @@ struct ConvectiveMassElement {
     ublas::vector<adouble> dot_u;
     adouble detH;
 
-    vector<double> active;
+    std::vector<double> active;
 
     PetscErrorCode doWork(
       int row_side,EntityType row_type,DataForcesAndSurcesCore::EntData &row_data
@@ -344,7 +344,7 @@ struct ConvectiveMassElement {
     BlockData &dAta;
     CommonData &commonData;
 
-    OpVelocityRhs(const string field_name,BlockData &data,CommonData &common_data);
+    OpVelocityRhs(const std::string field_name,BlockData &data,CommonData &common_data);
 
     ublas::vector<double> nf;
 
@@ -356,7 +356,7 @@ struct ConvectiveMassElement {
 
   struct OpVelocityLhs_dV_dv: public OpMassLhs_dM_dv {
 
-    OpVelocityLhs_dV_dv(const string vel_field,const string field_name,BlockData &data,CommonData &common_data);
+    OpVelocityLhs_dV_dv(const std::string vel_field,const std::string field_name,BlockData &data,CommonData &common_data);
 
     virtual PetscErrorCode getJac(DataForcesAndSurcesCore::EntData &col_data,int gg);
 
@@ -364,7 +364,7 @@ struct ConvectiveMassElement {
 
   struct OpVelocityLhs_dV_dx: public OpVelocityLhs_dV_dv {
 
-    OpVelocityLhs_dV_dx(const string vel_field,const string field_name,BlockData &data,CommonData &common_data);
+    OpVelocityLhs_dV_dx(const std::string vel_field,const std::string field_name,BlockData &data,CommonData &common_data);
 
     virtual PetscErrorCode getJac(DataForcesAndSurcesCore::EntData &col_data,int gg);
 
@@ -373,7 +373,7 @@ struct ConvectiveMassElement {
 
   struct OpVelocityLhs_dV_dX: public OpVelocityLhs_dV_dv {
 
-    OpVelocityLhs_dV_dX(const string vel_field,const string field_name,BlockData &data,CommonData &common_data);
+    OpVelocityLhs_dV_dX(const std::string vel_field,const std::string field_name,BlockData &data,CommonData &common_data);
 
     virtual PetscErrorCode getJac(DataForcesAndSurcesCore::EntData &col_data,int gg);
 
@@ -388,7 +388,7 @@ struct ConvectiveMassElement {
     bool fieldDisp;
 
     OpEshelbyDynamicMaterialMomentumJacobian(
-      const string field_name,BlockData &data,CommonData &common_data,int tag,bool jacobian = true
+      const std::string field_name,BlockData &data,CommonData &common_data,int tag,bool jacobian = true
     );
 
     ublas::vector<adouble> a,v,a_T;
@@ -408,7 +408,7 @@ struct ConvectiveMassElement {
     Range forcesOnlyOnEntities;
 
     OpEshelbyDynamicMaterialMomentumRhs(
-      const string field_name,BlockData &data,CommonData &common_data,Range *forcesonlyonentities_ptr
+      const std::string field_name,BlockData &data,CommonData &common_data,Range *forcesonlyonentities_ptr
     );
 
     ublas::vector<double> nf;
@@ -422,7 +422,7 @@ struct ConvectiveMassElement {
   struct OpEshelbyDynamicMaterialMomentumLhs_dv: public OpMassLhs_dM_dv {
 
     OpEshelbyDynamicMaterialMomentumLhs_dv(
-      const string vel_field,const string field_name,BlockData &data,CommonData &common_data,Range *forcesonlyonentities_ptr
+      const std::string vel_field,const std::string field_name,BlockData &data,CommonData &common_data,Range *forcesonlyonentities_ptr
     );
 
     virtual PetscErrorCode getJac(DataForcesAndSurcesCore::EntData &col_data,int gg);
@@ -432,7 +432,7 @@ struct ConvectiveMassElement {
   struct OpEshelbyDynamicMaterialMomentumLhs_dx: public OpEshelbyDynamicMaterialMomentumLhs_dv {
 
     OpEshelbyDynamicMaterialMomentumLhs_dx(
-      const string vel_field,const string field_name,BlockData &data,CommonData &common_data,Range *forcesonlyonentities_ptr
+      const std::string vel_field,const std::string field_name,BlockData &data,CommonData &common_data,Range *forcesonlyonentities_ptr
     );
 
     virtual PetscErrorCode getJac(DataForcesAndSurcesCore::EntData &col_data,int gg);
@@ -442,7 +442,7 @@ struct ConvectiveMassElement {
   struct OpEshelbyDynamicMaterialMomentumLhs_dX: public OpEshelbyDynamicMaterialMomentumLhs_dv {
 
     OpEshelbyDynamicMaterialMomentumLhs_dX(
-      const string vel_field,const string field_name,BlockData &data,CommonData &common_data,Range *forcesonlyonentities_ptr
+      const std::string vel_field,const std::string field_name,BlockData &data,CommonData &common_data,Range *forcesonlyonentities_ptr
     );
 
     virtual PetscErrorCode getJac(DataForcesAndSurcesCore::EntData &col_data,int gg);
@@ -453,13 +453,13 @@ struct ConvectiveMassElement {
 
     FieldInterface& mField;
     TS tS;
-    const string velocityField;
-    const string spatialPositionField;
+    const std::string velocityField;
+    const std::string spatialPositionField;
 
     int jacobianLag;
     UpdateAndControl(FieldInterface& m_field,TS _ts,
-      const string velocity_field,
-      const string spatial_position_field
+      const std::string velocity_field,
+      const std::string spatial_position_field
     );
 
     PetscErrorCode preProcess();
@@ -740,8 +740,8 @@ struct ConvectiveMassElement {
     FieldInterface &mField;
     ShellMatrixElement(FieldInterface &m_field);
 
-    typedef pair<string,FEMethod*> LoopPairType;
-    typedef vector<LoopPairType > LoopsToDoType;
+    typedef std::pair<std::string,FEMethod*> LoopPairType;
+    typedef std::vector<LoopPairType > LoopsToDoType;
     LoopsToDoType loopK; 	///< methods to calculate K shell matrix
     LoopsToDoType loopM; 	///< methods to calculate M shell matrix
     LoopsToDoType loopAuxM; 	///< methods to calculate derivatives of inertia forces over displacements shell matrix

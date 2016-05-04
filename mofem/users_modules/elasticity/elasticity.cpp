@@ -162,27 +162,27 @@ int main(int argc, char *argv[]) {
 
   // configure blocks by parsing config file
   // it allow to set approximation order for each block independently
-  map<int,BlockOptionData> block_data;
+  std::map<int,BlockOptionData> block_data;
   if(flg_block_config) {
     try {
       ifstream ini_file(block_config_file);
-      //cerr << block_config_file << endl;
+      //std::cerr << block_config_file << std::endl;
       po::variables_map vm;
       po::options_description config_file_options;
       for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,BLOCKSET,it)) {
-        ostringstream str_order;
+        std::ostringstream str_order;
         str_order << "block_" << it->get_msId() << ".displacement_order";
         config_file_options.add_options()
         (str_order.str().c_str(),po::value<int>(&block_data[it->get_msId()].oRder)->default_value(order));
-        ostringstream str_cond;
+        std::ostringstream str_cond;
         str_cond << "block_" << it->get_msId() << ".young_modulus";
         config_file_options.add_options()
         (str_cond.str().c_str(),po::value<double>(&block_data[it->get_msId()].yOung)->default_value(-1));
-        ostringstream str_capa;
+        std::ostringstream str_capa;
         str_capa << "block_" << it->get_msId() << ".poisson_ratio";
         config_file_options.add_options()
         (str_capa.str().c_str(),po::value<double>(&block_data[it->get_msId()].pOisson)->default_value(-1));
-        ostringstream str_init_temp;
+        std::ostringstream str_init_temp;
         str_init_temp << "block_" << it->get_msId() << ".initial_temperature";
         config_file_options.add_options()
         (str_init_temp.str().c_str(),po::value<double>(&block_data[it->get_msId()].initTemp)->default_value(0));
@@ -204,15 +204,15 @@ int main(int argc, char *argv[]) {
         ierr = m_field.synchronise_entities(ents_to_set_order); CHKERRQ(ierr);
         ierr = m_field.set_field_order(ents_to_set_order,"DISPLACEMENT",block_data[it->get_msId()].oRder); CHKERRQ(ierr);
       }
-      vector<string> additional_parameters;
+      std::vector<std::string> additional_parameters;
       additional_parameters = collect_unrecognized(parsed.options,po::include_positional);
-      for(vector<string>::iterator vit = additional_parameters.begin();
+      for(std::vector<std::string>::iterator vit = additional_parameters.begin();
       vit!=additional_parameters.end();vit++) {
         ierr = PetscPrintf(PETSC_COMM_WORLD,"** WARNING Unrecognised option %s\n",vit->c_str()); CHKERRQ(ierr);
       }
     } catch (const std::exception& ex) {
-      ostringstream ss;
-      ss << ex.what() << endl;
+      std::ostringstream ss;
+      ss << ex.what() << std::endl;
       SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
     }
   }
@@ -362,28 +362,28 @@ int main(int argc, char *argv[]) {
   ierr = DMoFEMLoopFiniteElements(dm,"ELASTIC",&elastic.getLoopFeLhs()); CHKERRQ(ierr);
 
   //forces and pressures on surface
-  boost::ptr_map<string,NeummanForcesSurface> neumann_forces;
+  boost::ptr_map<std::string,NeummanForcesSurface> neumann_forces;
   ierr = MetaNeummanForces::setNeumannFiniteElementOperators(m_field,neumann_forces,F,"DISPLACEMENT"); CHKERRQ(ierr);
   {
-    boost::ptr_map<string,NeummanForcesSurface>::iterator mit = neumann_forces.begin();
+    boost::ptr_map<std::string,NeummanForcesSurface>::iterator mit = neumann_forces.begin();
     for(;mit!=neumann_forces.end();mit++) {
       ierr = DMoFEMLoopFiniteElements(dm,mit->first.c_str(),&mit->second->getLoopFe()); CHKERRQ(ierr);
     }
   }
   //noadl forces
-  boost::ptr_map<string,NodalForce> nodal_forces;
+  boost::ptr_map<std::string,NodalForce> nodal_forces;
   ierr = MetaNodalForces::setOperators(m_field,nodal_forces,F,"DISPLACEMENT"); CHKERRQ(ierr);
   {
-    boost::ptr_map<string,NodalForce>::iterator fit = nodal_forces.begin();
+    boost::ptr_map<std::string,NodalForce>::iterator fit = nodal_forces.begin();
     for(;fit!=nodal_forces.end();fit++) {
       ierr = DMoFEMLoopFiniteElements(dm,fit->first.c_str(),&fit->second->getLoopFe()); CHKERRQ(ierr);
     }
   }
   //edge forces
-  boost::ptr_map<string,EdgeForce> edge_forces;
+  boost::ptr_map<std::string,EdgeForce> edge_forces;
   ierr = MetaEdgeForces::setOperators(m_field,edge_forces,F,"DISPLACEMENT"); CHKERRQ(ierr);
   {
-    boost::ptr_map<string,EdgeForce>::iterator fit = edge_forces.begin();
+    boost::ptr_map<std::string,EdgeForce>::iterator fit = edge_forces.begin();
     for(;fit!=edge_forces.end();fit++) {
       ierr = DMoFEMLoopFiniteElements(dm,fit->first.c_str(),&fit->second->getLoopFe()); CHKERRQ(ierr);
     }
@@ -500,7 +500,7 @@ int main(int argc, char *argv[]) {
         ierr = DMoFEMMeshToLocalVector(dm,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
         ierr = DMoFEMPreProcessFiniteElements(dm,&dirichlet_bc); CHKERRQ(ierr);
         ierr = DMoFEMLoopFiniteElements(dm,"ELASTIC",&post_proc); CHKERRQ(ierr);
-        ostringstream o1;
+        std::ostringstream o1;
         o1 << "out_" << sit->step_number << ".h5m";
         ierr = post_proc.writeFile(o1.str().c_str()); CHKERRQ(ierr);
       }

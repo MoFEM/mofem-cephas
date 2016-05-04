@@ -30,7 +30,7 @@
 struct PostPorcStress: public VolumeElementForcesAndSourcesCore::UserDataOperator {
 
   Interface &postProcMesh;
-  vector<EntityHandle> &mapGaussPts;
+  std::vector<EntityHandle> &mapGaussPts;
 
   NonlinearElasticElement::BlockData &dAta;
   PostProcVolumeOnRefinedMesh::CommonData &commonData;
@@ -38,8 +38,8 @@ struct PostPorcStress: public VolumeElementForcesAndSourcesCore::UserDataOperato
 
   PostPorcStress(
     Interface &post_proc_mesh,
-    vector<EntityHandle> &map_gauss_pts,
-    const string field_name,
+    std::vector<EntityHandle> &map_gauss_pts,
+    const std::string field_name,
     NonlinearElasticElement::BlockData &data,
     PostProcVolumeOnRefinedMesh::CommonData &common_data,
     bool field_disp = false

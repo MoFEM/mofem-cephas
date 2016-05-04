@@ -33,8 +33,8 @@ struct DMMGViaApproxOrdersCtx: public MoFEM::DMCtx {
   ~DMMGViaApproxOrdersCtx();
 
   AO aO;
-  vector<IS> coarseningIS;   ///< Coarsening IS
-  vector<Mat> kspOperators;  ///< Get KSP operators
+  std::vector<IS> coarseningIS;   ///< Coarsening IS
+  std::vector<Mat> kspOperators;  ///< Get KSP operators
 
 };
 

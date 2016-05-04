@@ -28,7 +28,7 @@ namespace MoFEM {
 struct CubitMeshSets {
   EntityHandle meshset;
   CubitBCType cubitBcType; 	///< type of meshset from cubit NodeSet, BlockSet, SideSet and more
-  vector<Tag> tag_handles;	///< vector of tag handles to types of data passed from cubit
+  std::vector<Tag> tag_handles;	///< vector of tag handles to types of data passed from cubit
   int *msId;			///< cubit meshset ID
   char* tag_bc_data;
   int tag_bc_size;
@@ -54,7 +54,7 @@ struct CubitMeshSets {
   /**
    *  \brief Function that returns the CubitBCType type of the contents of bc_data
    */
-  PetscErrorCode get_type_from_bc_data(const vector<char> &bc_data,CubitBCType &type) const;
+  PetscErrorCode get_type_from_bc_data(const std::vector<char> &bc_data,CubitBCType &type) const;
 
   /**
    *  \brief Function that returns the CubitBCType type of the contents of bc_data
@@ -66,9 +66,9 @@ struct CubitMeshSets {
    *
    * \param bc_data is the in/out vector were bc_data will be stored
    */
-  PetscErrorCode get_bc_data(vector<char>& bc_data) const;
+  PetscErrorCode get_bc_data(std::vector<char>& bc_data) const;
 
-  DEPRECATED PetscErrorCode get_Cubit_bc_data(vector<char>& bc_data) const {
+  DEPRECATED PetscErrorCode get_Cubit_bc_data(std::vector<char>& bc_data) const {
     PetscFunctionBegin;
     PetscErrorCode ierr;
     ierr = get_bc_data(bc_data); CHKERRQ(ierr);
@@ -80,9 +80,9 @@ struct CubitMeshSets {
   *
   * \param material_data is the in/out vector were the material data will be stored
   */
-  PetscErrorCode get_block_header_data(vector<unsigned int>& material_data) const;
+  PetscErrorCode get_block_header_data(std::vector<unsigned int>& material_data) const;
 
-  DEPRECATED PetscErrorCode get_Cubit_block_header_data(vector<unsigned int>& material_data) const {
+  DEPRECATED PetscErrorCode get_Cubit_block_header_data(std::vector<unsigned int>& material_data) const {
     PetscFunctionBegin;
     PetscErrorCode ierr;
     ierr = get_block_header_data(material_data); CHKERRQ(ierr);
@@ -93,11 +93,11 @@ struct CubitMeshSets {
   * \brief print material_data int stream given by os
   *
   * f.e. it->print_Cubit_material_data(cout), i.e. printing to standard output
-  * f.e. it->print_Cubit_material_data(cerr), i.e. printing to standard error output
+  * f.e. it->print_Cubit_material_data(std::cerr), i.e. printing to standard error output
   */
-  PetscErrorCode print_block_header_data(ostream& os) const;
+  PetscErrorCode print_block_header_data(std::ostream& os) const;
 
-  DEPRECATED PetscErrorCode print_Cubit_block_header_data(ostream& os) const {
+  DEPRECATED PetscErrorCode print_Cubit_block_header_data(std::ostream& os) const {
     PetscFunctionBegin;
     PetscErrorCode ierr;
     ierr = print_block_header_data(os); CHKERRQ(ierr);
@@ -108,11 +108,11 @@ struct CubitMeshSets {
    * \brief print bc_data int stream given by os
    *
    * f.e. it->print_bc_data(cout), i.e. printing to standard output
-   * f.e. it->print_bc_data(cerr), i.e. printing to standard error output
+   * f.e. it->print_bc_data(std::cerr), i.e. printing to standard error output
    */
-  PetscErrorCode print_bc_data(ostream& os) const;
+  PetscErrorCode print_bc_data(std::ostream& os) const;
 
-  DEPRECATED PetscErrorCode print_Cubit_bc_data(ostream& os) const {
+  DEPRECATED PetscErrorCode print_Cubit_bc_data(std::ostream& os) const {
     PetscFunctionBegin;
     PetscErrorCode ierr;
     ierr = print_bc_data(os); CHKERRQ(ierr);
@@ -126,7 +126,7 @@ struct CubitMeshSets {
     if((cubitBcType&data.type).none()) {
       SETERRQ(PETSC_COMM_SELF,1,"bc_data are not for _CUBIT_BC_DATA_TYPE_ structure");
     }
-    vector<char> bc_data;
+    std::vector<char> bc_data;
     get_bc_data(bc_data);
     ierr = data.fill_data(bc_data); CHKERRQ(ierr);
     PetscFunctionReturn(0);
@@ -144,9 +144,9 @@ struct CubitMeshSets {
   /**
    *  \brief Function that returns the CubitBCType type of the block name, sideset name etc.
    */
-  PetscErrorCode get_type_from_name(const string &name,CubitBCType &type) const;
+  PetscErrorCode get_type_from_name(const std::string &name,CubitBCType &type) const;
 
-  DEPRECATED PetscErrorCode get_type_from_Cubit_name(const string &name,CubitBCType &type) const {
+  DEPRECATED PetscErrorCode get_type_from_Cubit_name(const std::string &name,CubitBCType &type) const {
     PetscFunctionBegin;
     PetscErrorCode ierr;
     ierr = get_type_from_name(name,type); CHKERRQ(ierr);
@@ -170,9 +170,9 @@ struct CubitMeshSets {
    *
    * \param attributes is the vector where the block attribute data will be stored
    */
-  PetscErrorCode get_attributes(vector<double> &attributes) const;
+  PetscErrorCode get_attributes(std::vector<double> &attributes) const;
 
-  DEPRECATED PetscErrorCode get_Cubit_attributes(vector<double> &attributes) const {
+  DEPRECATED PetscErrorCode get_Cubit_attributes(std::vector<double> &attributes) const {
     PetscFunctionBegin;
     PetscErrorCode ierr;
     ierr = get_attributes(attributes); CHKERRQ(ierr);
@@ -183,11 +183,11 @@ struct CubitMeshSets {
    * \brief print the attributes vector
    *
    * f.e. it->print_attributes(cout), i.e. printing to standard output
-   * f.e. it->print_attributes(cerr), i.e. printing to standard error output
+   * f.e. it->print_attributes(std::cerr), i.e. printing to standard error output
    */
-  PetscErrorCode print_attributes(ostream& os) const;
+  PetscErrorCode print_attributes(std::ostream& os) const;
 
-  DEPRECATED PetscErrorCode print_Cubit_attributes(ostream& os) const {
+  DEPRECATED PetscErrorCode print_Cubit_attributes(std::ostream& os) const {
     PetscFunctionBegin;
     PetscErrorCode ierr;
     ierr = print_attributes(os); CHKERRQ(ierr);
@@ -224,9 +224,9 @@ struct CubitMeshSets {
    *
    * To be extended as appropriate
    */
-  string get_name() const;
+  std::string get_name() const;
 
-  DEPRECATED string get_Cubit_name() const {
+  DEPRECATED std::string get_Cubit_name() const {
     return get_name();
   }
 
@@ -234,11 +234,11 @@ struct CubitMeshSets {
    * \brief print name of block, sideset etc. (this is set in Cubit setting properties)
    *
    * e.g. it->print_name(cout), i.e. printing to standard output
-   * e.g it->print_name(cerr), i.e. printing to standard error output
+   * e.g it->print_name(std::cerr), i.e. printing to standard error output
    */
-  PetscErrorCode print_name(ostream& os) const;
+  PetscErrorCode print_name(std::ostream& os) const;
 
-  DEPRECATED PetscErrorCode print_Cubit_name(ostream& os) const {
+  DEPRECATED PetscErrorCode print_Cubit_name(std::ostream& os) const {
     PetscFunctionBegin;
     PetscErrorCode ierr;
     ierr = print_name(os); CHKERRQ(ierr);
@@ -252,7 +252,7 @@ struct CubitMeshSets {
     if((cubitBcType&data.type).none()) {
         SETERRQ(PETSC_COMM_SELF,1,"attributes are not for _ATTRIBUTE_TYPE_ structure");
     }
-    vector<double> attributes;
+    std::vector<double> attributes;
     ierr = get_attributes(attributes); CHKERRQ(ierr);
     ierr = data.fill_data(attributes); CHKERRQ(ierr);
     PetscFunctionReturn(0);
@@ -269,7 +269,7 @@ struct CubitMeshSets {
     PetscFunctionReturn(0);
   }
 
-  friend ostream& operator<<(ostream& os,const CubitMeshSets& e);
+  friend std::ostream& operator<<(std::ostream& os,const CubitMeshSets& e);
 
   Tag nsTag,ssTag,nsTag_data,ssTag_data,bhTag,bhTag_header,block_attribs,entityNameTag;
   PetscErrorCode get_tags_hanlders(Interface &moab);
@@ -292,7 +292,7 @@ typedef multi_index_container<
     ordered_non_unique<
       tag<CubitMeshSets_bc_data_mi_tag>, const_mem_fun<CubitMeshSets,unsigned long int,&CubitMeshSets::get_cubit_bc_type_bc_data_types_ulong> >,
     ordered_non_unique<
-      tag<CubitMeshSets_name>, const_mem_fun<CubitMeshSets,string,&CubitMeshSets::get_name> >,
+      tag<CubitMeshSets_name>, const_mem_fun<CubitMeshSets,std::string,&CubitMeshSets::get_name> >,
     hashed_unique<
       tag<Composite_Cubit_msId_And_MeshSetType_mi_tag>,
       composite_key<
@@ -311,8 +311,8 @@ typedef multi_index_container<
 
   struct CubitMeshSets_change_name {
     Interface &mOab;
-    string nAme;
-    CubitMeshSets_change_name(Interface &moab,const string &name):
+    std::string nAme;
+    CubitMeshSets_change_name(Interface &moab,const std::string &name):
     mOab(moab),
     nAme(name) {
     };

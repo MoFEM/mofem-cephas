@@ -40,7 +40,7 @@ struct MoFEMSeries {
   /// get string_ref of series
   inline boost::string_ref get_name_ref() const { return boost::string_ref((char *)tag_name_data,tag_name_size); }
   /// get series name
-  inline string get_name() const { return string((char *)tag_name_data,tag_name_size); }
+  inline std::string get_name() const { return std::string((char *)tag_name_data,tag_name_size); }
 
   Tag th_SeriesData;
   Tag th_SeriesDataUIDs;
@@ -49,11 +49,11 @@ struct MoFEMSeries {
 
   PetscErrorCode get_nb_steps(Interface &moab,int &nb_setps) const;
 
-  vector<int> ia;
-  vector<double> time;
-  vector<EntityHandle> handles;
-  vector<ShortId> uids;
-  vector<FieldData> data;
+  std::vector<int> ia;
+  std::vector<double> time;
+  std::vector<EntityHandle> handles;
+  std::vector<ShortId> uids;
+  std::vector<FieldData> data;
 
   PetscErrorCode set_time(double time);
   PetscErrorCode push_dofs(const EntityHandle ent,const ShortId uid,const FieldData val);
@@ -75,7 +75,7 @@ struct MoFEMSeries {
 
   inline const MoFEMSeries* get_MoFEMSeries_ptr() const { return const_cast<MoFEMSeries*>(this); };
 
-  friend ostream& operator<<(ostream& os,const MoFEMSeries& e);
+  friend std::ostream& operator<<(std::ostream& os,const MoFEMSeries& e);
 
 
 };
@@ -91,7 +91,7 @@ struct interface_MoFEMSeries {
   /// get string_ref of series
   inline boost::string_ref get_name_ref() const { return ptr->get_name_ref(); }
   /// get series name
-  inline string get_name() const { return ptr->get_name(); }
+  inline std::string get_name() const { return ptr->get_name(); }
 
   inline const MoFEMSeries* get_MoFEMSeries_ptr() const { return ptr->get_MoFEMSeries_ptr(); };
 
@@ -111,7 +111,7 @@ struct MoFEMSeriesStep: public interface_MoFEMSeries<MoFEMSeries> {
   PetscErrorCode get_time_init(Interface &moab);
   inline double get_time() const { return time; }
 
-  friend ostream& operator<<(ostream& os,const MoFEMSeriesStep& e);
+  friend std::ostream& operator<<(std::ostream& os,const MoFEMSeriesStep& e);
 
 };
 

@@ -150,9 +150,9 @@ int main(int argc, char *argv[]) {
     DataForcesAndSurcesCore data;
     OpGetCoordsAndNormalsOnFace op;
 
-    typedef tee_device<ostream, ofstream> TeeDevice;
+    typedef tee_device<std::ostream, std::ofstream> TeeDevice;
     typedef stream<TeeDevice> TeeStream;
-    ofstream ofs;
+    std::ofstream ofs;
     TeeDevice my_tee;
     TeeStream my_split;
 
@@ -162,7 +162,7 @@ int main(int argc, char *argv[]) {
         hoCoords_at_GaussPt,nOrmals_at_GaussPt,tAngent1_at_GaussPt,tAngent2_at_GaussPt
       ),
       ofs("forces_and_sources_getting_higher_order_skin_normals_atom.txt"),
-      my_tee(cout,ofs),my_split(my_tee) {};
+      my_tee(std::cout,ofs),my_split(my_tee) {};
 
     PetscErrorCode preProcess() {
       PetscFunctionBegin;
@@ -212,17 +212,17 @@ int main(int argc, char *argv[]) {
       try {
         ierr = op.opRhs(data); CHKERRQ(ierr);
         ierr = op.calculateNormals(); CHKERRQ(ierr);
-      } catch (exception& ex) {
-        ostringstream ss;
-        ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__ << endl;
+      } catch (std::exception& ex) {
+        std::ostringstream ss;
+        ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__ << std::endl;
         SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
 
       my_split.precision(3);
-      my_split << "coords: " << hoCoords_at_GaussPt << endl;
-      my_split << "normals: " << nOrmals_at_GaussPt << endl;
-      my_split << "tangent1: " << tAngent1_at_GaussPt << endl;
-      my_split << "tangent2: " << tAngent2_at_GaussPt << endl;
+      my_split << "coords: " << hoCoords_at_GaussPt << std::endl;
+      my_split << "normals: " << nOrmals_at_GaussPt << std::endl;
+      my_split << "tangent1: " << tAngent1_at_GaussPt << std::endl;
+      my_split << "tangent2: " << tAngent2_at_GaussPt << std::endl;
 
       PetscFunctionReturn(0);
     }

@@ -148,9 +148,9 @@ mField(m_field),tAg(tag) {
 
 }
 
-ConvectiveMassElement::OpGetDataAtGaussPts::OpGetDataAtGaussPts(const string field_name,
-  vector<ublas::vector<double> > &values_at_gauss_pts,
-  vector<ublas::matrix<double> > &gardient_at_gauss_pts
+ConvectiveMassElement::OpGetDataAtGaussPts::OpGetDataAtGaussPts(const std::string field_name,
+  std::vector<ublas::vector<double> > &values_at_gauss_pts,
+  std::vector<ublas::matrix<double> > &gardient_at_gauss_pts
 ):
 VolumeElementForcesAndSourcesCore::UserDataOperator(field_name,ForcesAndSurcesCore::UserDataOperator::OPROW),
 valuesAtGaussPts(values_at_gauss_pts),gradientAtGaussPts(gardient_at_gauss_pts),
@@ -186,7 +186,7 @@ PetscErrorCode ConvectiveMassElement::OpGetDataAtGaussPts::doWork(
       }
     }
 
-    //cerr << valuesAtGaussPts[0] << " : ";
+    //std::cerr << valuesAtGaussPts[0] << " : ";
 
     for(int gg = 0;gg<nb_gauss_pts;gg++) {
       ublas::vector<double> N = data.getN(gg,nb_dofs/3);
@@ -201,15 +201,15 @@ PetscErrorCode ConvectiveMassElement::OpGetDataAtGaussPts::doWork(
       }
     }
   } catch (const std::exception& ex) {
-    ostringstream ss;
-    ss << "throw in method: " << ex.what() << endl;
+    std::ostringstream ss;
+    ss << "throw in method: " << ex.what() << std::endl;
     SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
   }
 
   PetscFunctionReturn(0);
 }
 
-ConvectiveMassElement::OpGetCommonDataAtGaussPts::OpGetCommonDataAtGaussPts(const string field_name,CommonData &common_data):
+ConvectiveMassElement::OpGetCommonDataAtGaussPts::OpGetCommonDataAtGaussPts(const std::string field_name,CommonData &common_data):
 OpGetDataAtGaussPts(field_name,
   common_data.dataAtGaussPts[field_name],
   common_data.gradAtGaussPts[field_name]
@@ -218,7 +218,7 @@ OpGetDataAtGaussPts(field_name,
 }
 
 ConvectiveMassElement::OpMassJacobian::OpMassJacobian(
-  const string field_name,
+  const std::string field_name,
   BlockData &data,
   CommonData &common_data,
   boost::ptr_vector<MethodForForceScaling> &methods_op,
@@ -417,8 +417,8 @@ PetscErrorCode ConvectiveMassElement::OpMassJacobian::doWork(
       }
 
     } catch (const std::exception& ex) {
-      ostringstream ss;
-      ss << "throw in method: " << ex.what() << endl;
+      std::ostringstream ss;
+      ss << "throw in method: " << ex.what() << std::endl;
       SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
     }
 
@@ -426,7 +426,7 @@ PetscErrorCode ConvectiveMassElement::OpMassJacobian::doWork(
   }
 
   ConvectiveMassElement::OpMassRhs::OpMassRhs(
-    const string field_name,BlockData &data,CommonData &common_data
+    const std::string field_name,BlockData &data,CommonData &common_data
   ):
   VolumeElementForcesAndSourcesCore::UserDataOperator(field_name,ForcesAndSurcesCore::UserDataOperator::OPROW),
   dAta(data),
@@ -452,7 +452,7 @@ PetscErrorCode ConvectiveMassElement::OpMassJacobian::doWork(
 
       for(unsigned int gg = 0;gg<row_data.getN().size1();gg++) {
         ublas::vector<double>& res = commonData.valMass[gg];
-        //cerr << res << endl;
+        //std::cerr << res << std::endl;
         for(int dd = 0;dd<nb_dofs/3;dd++) {
           for(int rr = 0;rr<3;rr++) {
             nf[3*dd+rr] += row_data.getN()(gg,dd)*res[rr];
@@ -469,8 +469,8 @@ PetscErrorCode ConvectiveMassElement::OpMassJacobian::doWork(
       ); CHKERRQ(ierr);
 
     } catch (const std::exception& ex) {
-      ostringstream ss;
-      ss << "throw in method: " << ex.what() << endl;
+      std::ostringstream ss;
+      ss << "throw in method: " << ex.what() << std::endl;
       SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
     }
 
@@ -478,7 +478,7 @@ PetscErrorCode ConvectiveMassElement::OpMassJacobian::doWork(
   }
 
   ConvectiveMassElement::OpMassLhs_dM_dv::OpMassLhs_dM_dv(
-    const string vel_field,const string field_name,BlockData &data,CommonData &common_data,Range *forcesonlyonentities_ptr
+    const std::string vel_field,const std::string field_name,BlockData &data,CommonData &common_data,Range *forcesonlyonentities_ptr
   ):
   VolumeElementForcesAndSourcesCore::UserDataOperator(vel_field,field_name,ForcesAndSurcesCore::UserDataOperator::OPROWCOL),
   dAta(data),
@@ -496,8 +496,8 @@ PetscErrorCode ConvectiveMassElement::OpMassJacobian::doWork(
     try {
       int nb_col = col_data.getIndices().size();
       jac.clear();
-      //cerr << commonData.jacMass[gg] << endl;
-      //cerr << jac << endl;
+      //std::cerr << commonData.jacMass[gg] << std::endl;
+      //std::cerr << jac << std::endl;
       ublas::vector<double> N = col_data.getN(gg,nb_col/3);
       for(int dd = 0;dd<nb_col/3;dd++) {
         for(int nn = 0;nn<3;nn++) {
@@ -524,8 +524,8 @@ PetscErrorCode ConvectiveMassElement::OpMassJacobian::doWork(
         }
       }
     } catch (const std::exception& ex) {
-      ostringstream ss;
-      ss << "throw in method: " << ex.what() << endl;
+      std::ostringstream ss;
+      ss << "throw in method: " << ex.what() << std::endl;
       SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
     }
     PetscFunctionReturn(0);
@@ -561,8 +561,8 @@ PetscErrorCode ConvectiveMassElement::OpMassJacobian::doWork(
         try {
           ierr = getJac(col_data,gg); CHKERRQ(ierr);
         } catch (const std::exception& ex) {
-          ostringstream ss;
-          ss << "throw in method: " << ex.what() << endl;
+          std::ostringstream ss;
+          ss << "throw in method: " << ex.what() << std::endl;
           SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
         }
 
@@ -599,8 +599,8 @@ PetscErrorCode ConvectiveMassElement::OpMassJacobian::doWork(
       }
 
     } catch (const std::exception& ex) {
-      ostringstream ss;
-      ss << "throw in method: " << ex.what() << endl;
+      std::ostringstream ss;
+      ss << "throw in method: " << ex.what() << std::endl;
       SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
     }
 
@@ -609,7 +609,7 @@ PetscErrorCode ConvectiveMassElement::OpMassJacobian::doWork(
 
 
   ConvectiveMassElement::OpMassLhs_dM_dx::OpMassLhs_dM_dx(
-    const string field_name,const string col_field,BlockData &data,CommonData &common_data
+    const std::string field_name,const std::string col_field,BlockData &data,CommonData &common_data
   ):
   OpMassLhs_dM_dv(field_name,col_field,data,common_data) {}
 
@@ -634,15 +634,15 @@ PetscErrorCode ConvectiveMassElement::OpMassJacobian::doWork(
         jac(2,3*dd+2) += commonData.jacMass[gg](2,3+3*2+2)*diffN(dd,2);
       }
     } catch (const std::exception& ex) {
-      ostringstream ss;
-      ss << "throw in method: " << ex.what() << endl;
+      std::ostringstream ss;
+      ss << "throw in method: " << ex.what() << std::endl;
       SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
     }
     PetscFunctionReturn(0);
   }
 
   ConvectiveMassElement::OpMassLhs_dM_dX::OpMassLhs_dM_dX(
-    const string field_name,const string col_field,BlockData &data,CommonData &common_data
+    const std::string field_name,const std::string col_field,BlockData &data,CommonData &common_data
   ):
   OpMassLhs_dM_dv(field_name,col_field,data,common_data) {
 
@@ -653,8 +653,8 @@ PetscErrorCode ConvectiveMassElement::OpMassJacobian::doWork(
     try {
       int nb_col = col_data.getIndices().size();
       jac.clear();
-      //cerr << commonData.jacVel[gg] << endl;
-      //cerr << jac << endl;
+      //std::cerr << commonData.jacVel[gg] << std::endl;
+      //std::cerr << jac << std::endl;
       ublas::vector<double> N = col_data.getN(gg,nb_col/3);
       for(int dd = 0;dd<nb_col/3;dd++) {
         for(int nn = 0;nn<3;nn++) {
@@ -679,8 +679,8 @@ PetscErrorCode ConvectiveMassElement::OpMassJacobian::doWork(
         jac(2,3*dd+2) += commonData.jacMass[gg](2,3+9+9+3+3*2+2)*diffN(dd,2);
       }
     } catch (const std::exception& ex) {
-      ostringstream ss;
-      ss << "throw in method: " << ex.what() << endl;
+      std::ostringstream ss;
+      ss << "throw in method: " << ex.what() << std::endl;
       SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
     }
     PetscFunctionReturn(0);
@@ -688,7 +688,7 @@ PetscErrorCode ConvectiveMassElement::OpMassJacobian::doWork(
 
 
 ConvectiveMassElement::OpEnergy::OpEnergy(
-  const string field_name,BlockData &data,CommonData &common_data,Vec *v_ptr
+  const std::string field_name,BlockData &data,CommonData &common_data,Vec *v_ptr
 ):
 VolumeElementForcesAndSourcesCore::UserDataOperator(field_name,ForcesAndSurcesCore::UserDataOperator::OPROW),
 dAta(data),
@@ -748,8 +748,8 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
       }
 
     } catch (const std::exception& ex) {
-      ostringstream ss;
-      ss << "throw in method: " << ex.what() << endl;
+      std::ostringstream ss;
+      ss << "throw in method: " << ex.what() << std::endl;
       SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
     }
 
@@ -757,7 +757,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
   }
 
   ConvectiveMassElement::OpVelocityJacobian::OpVelocityJacobian(
-    const string field_name,BlockData &data,CommonData &common_data,int tag,bool jacobian
+    const std::string field_name,BlockData &data,CommonData &common_data,int tag,bool jacobian
   ):
   VolumeElementForcesAndSourcesCore::UserDataOperator(field_name,ForcesAndSurcesCore::UserDataOperator::OPROW),
   dAta(data),
@@ -930,13 +930,13 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
               val *= getHoGaussPtsDetJac()[gg]; ///< higher order geometry
             }
             commonData.jacVel[gg] *= val;
-            //cerr << gg << " : " << commonData.jacVel[gg] << endl;
+            //std::cerr << gg << " : " << commonData.jacVel[gg] << std::endl;
           }
         }
 
       } catch (const std::exception& ex) {
-        ostringstream ss;
-        ss << "throw in method: " << ex.what() << endl;
+        std::ostringstream ss;
+        ss << "throw in method: " << ex.what() << std::endl;
         SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
 
@@ -944,7 +944,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
     }
 
     ConvectiveMassElement::OpVelocityRhs::OpVelocityRhs(
-      const string field_name,BlockData &data,CommonData &common_data
+      const std::string field_name,BlockData &data,CommonData &common_data
     ):
     VolumeElementForcesAndSourcesCore::UserDataOperator(field_name,ForcesAndSurcesCore::UserDataOperator::OPROW),
     dAta(data),
@@ -984,8 +984,8 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
         &row_data.getIndices()[0],&nf[0],ADD_VALUES); CHKERRQ(ierr);
 
       } catch (const std::exception& ex) {
-        ostringstream ss;
-        ss << "throw in method: " << ex.what() << endl;
+        std::ostringstream ss;
+        ss << "throw in method: " << ex.what() << std::endl;
         SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
 
@@ -994,7 +994,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
 
 
     ConvectiveMassElement::OpVelocityLhs_dV_dv::OpVelocityLhs_dV_dv(
-      const string vel_field,const string field_name,BlockData &data,CommonData &common_data
+      const std::string vel_field,const std::string field_name,BlockData &data,CommonData &common_data
     ):
     OpMassLhs_dM_dv(vel_field,field_name,data,common_data) {
     }
@@ -1006,7 +1006,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
       int nb_col = col_data.getIndices().size();
       jac.clear();
       ublas::vector<double> N = col_data.getN(gg,nb_col/3);
-      //cerr << commonData.jacVel[gg] << endl;
+      //std::cerr << commonData.jacVel[gg] << std::endl;
       for(int dd = 0;dd<nb_col/3;dd++) {
         for(int nn = 0;nn<3;nn++) {
           jac(0,3*dd+nn) = commonData.jacVel[gg](0,nn)*N(dd);
@@ -1018,7 +1018,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
     }
 
     ConvectiveMassElement::OpVelocityLhs_dV_dx::OpVelocityLhs_dV_dx(
-      const string vel_field,const string field_name,BlockData &data,CommonData &common_data
+      const std::string vel_field,const std::string field_name,BlockData &data,CommonData &common_data
     ):
     OpVelocityLhs_dV_dv(vel_field,field_name,data,common_data) {
     }
@@ -1029,8 +1029,8 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
       PetscFunctionBegin;
       int nb_col = col_data.getIndices().size();
       jac.clear();
-      //cerr << commonData.jacVel[gg] << endl;
-      //cerr << jac << endl;
+      //std::cerr << commonData.jacVel[gg] << std::endl;
+      //std::cerr << jac << std::endl;
       ublas::vector<double> N = col_data.getN(gg,nb_col/3);
       for(int dd = 0;dd<nb_col/3;dd++) {
         for(int nn = 0;nn<3;nn++) {
@@ -1056,12 +1056,12 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
           jac(2,3*dd+2) += commonData.jacVel[gg](2,3+3+3*2+2)*diffN(dd,2);
         }
       }
-      //cerr << row_field_name << " " << col_field_name << endl;
+      //std::cerr << row_field_name << " " << col_field_name << std::endl;
       PetscFunctionReturn(0);
     }
 
     ConvectiveMassElement::OpVelocityLhs_dV_dX::OpVelocityLhs_dV_dX(
-      const string vel_field,const string field_name,BlockData &data,CommonData &common_data
+      const std::string vel_field,const std::string field_name,BlockData &data,CommonData &common_data
     ):
     OpVelocityLhs_dV_dv(vel_field,field_name,data,common_data) {}
 
@@ -1071,8 +1071,8 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
       PetscFunctionBegin;
       int nb_col = col_data.getIndices().size();
       jac.clear();
-      //cerr << commonData.jacVel[gg] << endl;
-      //cerr << jac << endl;
+      //std::cerr << commonData.jacVel[gg] << std::endl;
+      //std::cerr << jac << std::endl;
       ublas::vector<double> N = col_data.getN(gg,nb_col/3);
       for(int dd = 0;dd<nb_col/3;dd++) {
         for(int nn = 0;nn<3;nn++) {
@@ -1097,13 +1097,13 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
         jac(2,3*dd+2) += commonData.jacVel[gg](2,3+3+9+3+3*2+2)*diffN(dd,2);
       }
 
-      //cerr << row_field_name << " " << col_field_name << endl;
+      //std::cerr << row_field_name << " " << col_field_name << std::endl;
 
       PetscFunctionReturn(0);
     }
 
     ConvectiveMassElement::OpEshelbyDynamicMaterialMomentumJacobian::OpEshelbyDynamicMaterialMomentumJacobian(
-      const string field_name,BlockData &data,CommonData &common_data,int tag,bool jacobian
+      const std::string field_name,BlockData &data,CommonData &common_data,int tag,bool jacobian
     ):
     VolumeElementForcesAndSourcesCore::UserDataOperator(field_name,ForcesAndSurcesCore::UserDataOperator::OPROW),
     dAta(data),
@@ -1274,8 +1274,8 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
           }
 
         } catch (const std::exception& ex) {
-          ostringstream ss;
-          ss << "throw in method: " << ex.what() << endl;
+          std::ostringstream ss;
+          ss << "throw in method: " << ex.what() << std::endl;
           SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
         }
 
@@ -1283,7 +1283,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
     }
 
     ConvectiveMassElement::OpEshelbyDynamicMaterialMomentumRhs::OpEshelbyDynamicMaterialMomentumRhs(
-      const string field_name,BlockData &data,CommonData &common_data,Range *forcesonlyonentities_ptr
+      const std::string field_name,BlockData &data,CommonData &common_data,Range *forcesonlyonentities_ptr
     ):
     VolumeElementForcesAndSourcesCore::UserDataOperator(field_name,ForcesAndSurcesCore::UserDataOperator::OPROW),
     dAta(data),
@@ -1311,7 +1311,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
 
         for(unsigned int gg = 0;gg<row_data.getN().size1();gg++) {
           ublas::vector<double>& res = commonData.valT[gg];
-          //cerr << res << endl;
+          //std::cerr << res << std::endl;
           for(int dd = 0;dd<nb_dofs/3;dd++) {
             for(int rr = 0;rr<3;rr++) {
               nf[3*dd+rr] += row_data.getN()(gg,dd)*res[rr];
@@ -1328,11 +1328,11 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
           ublas::vector<const FEDofEntity*>::iterator dit = dofs.begin();
           for(int ii = 0;dit!=dofs.end();dit++,ii++) {
             if(forcesOnlyOnEntities.find((*dit)->get_ent())==forcesOnlyOnEntities.end()) {
-              //cerr << **dit << endl;
+              //std::cerr << **dit << std::endl;
               indices[ii] = -1;
             }
           }
-          //cerr << indices << endl;
+          //std::cerr << indices << std::endl;
           ierr = VecSetValues(getFEMethod()->ts_F,indices.size(),&indices[0],&nf[0],ADD_VALUES); CHKERRQ(ierr);
         } else {
           ierr = VecSetValues(getFEMethod()->ts_F,row_data.getIndices().size(),
@@ -1340,8 +1340,8 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
         }
 
       } catch (const std::exception& ex) {
-        ostringstream ss;
-        ss << "throw in method: " << ex.what() << endl;
+        std::ostringstream ss;
+        ss << "throw in method: " << ex.what() << std::endl;
         SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
 
@@ -1349,7 +1349,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
     }
 
     ConvectiveMassElement::OpEshelbyDynamicMaterialMomentumLhs_dv::OpEshelbyDynamicMaterialMomentumLhs_dv(
-      const string vel_field,const string field_name,BlockData &data,CommonData &common_data,
+      const std::string vel_field,const std::string field_name,BlockData &data,CommonData &common_data,
       Range *forcesonlyonentities_ptr
     ):
     ConvectiveMassElement::OpMassLhs_dM_dv(
@@ -1365,8 +1365,8 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
       PetscFunctionBegin;
       int nb_col = col_data.getIndices().size();
       jac.clear();
-      //cerr << commonData.jacT[gg] << endl;
-      //cerr << jac << endl;
+      //std::cerr << commonData.jacT[gg] << std::endl;
+      //std::cerr << jac << std::endl;
       ublas::vector<double> N = col_data.getN(gg,nb_col/3);
       for(int dd = 0;dd<nb_col/3;dd++) {
         for(int nn = 0;nn<3;nn++) {
@@ -1401,7 +1401,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
     }
 
     ConvectiveMassElement::OpEshelbyDynamicMaterialMomentumLhs_dx::OpEshelbyDynamicMaterialMomentumLhs_dx(
-      const string vel_field,const string field_name,BlockData &data,CommonData &common_data,Range *forcesonlyonentities_ptr
+      const std::string vel_field,const std::string field_name,BlockData &data,CommonData &common_data,Range *forcesonlyonentities_ptr
     ):
     ConvectiveMassElement::OpEshelbyDynamicMaterialMomentumLhs_dv(
       vel_field,field_name,data,common_data,forcesonlyonentities_ptr
@@ -1415,8 +1415,8 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
       PetscFunctionBegin;
       int nb_col = col_data.getIndices().size();
       jac.clear();
-      //cerr << commonData.jacT[gg] << endl;
-      //cerr << jac << endl;
+      //std::cerr << commonData.jacT[gg] << std::endl;
+      //std::cerr << jac << std::endl;
       ublas::matrix<double> diffN = col_data.getDiffN(gg,nb_col/3);
       for(int dd = 0;dd<nb_col/3;dd++) {
         //h00 //h01 //h02
@@ -1437,7 +1437,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
 
 
     ConvectiveMassElement::OpEshelbyDynamicMaterialMomentumLhs_dX::OpEshelbyDynamicMaterialMomentumLhs_dX(
-      const string vel_field,const string field_name,BlockData &data,CommonData &common_data,Range *forcesonlyonentities_ptr
+      const std::string vel_field,const std::string field_name,BlockData &data,CommonData &common_data,Range *forcesonlyonentities_ptr
     ):
     ConvectiveMassElement::OpEshelbyDynamicMaterialMomentumLhs_dv(
       vel_field,field_name,data,common_data,forcesonlyonentities_ptr
@@ -1449,8 +1449,8 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
       PetscFunctionBegin;
       int nb_col = col_data.getIndices().size();
       jac.clear();
-      //cerr << commonData.jacT[gg] << endl;
-      //cerr << jac << endl;
+      //std::cerr << commonData.jacT[gg] << std::endl;
+      //std::cerr << jac << std::endl;
       ublas::matrix<double> diffN = col_data.getDiffN(gg,nb_col/3);
       for(int dd = 0;dd<nb_col/3;dd++) {
         //h00 //h01 //h02
@@ -1472,8 +1472,8 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
 
     ConvectiveMassElement::UpdateAndControl::UpdateAndControl(
       FieldInterface& m_field,TS _ts,
-      const string velocity_field,
-      const string spatial_position_field
+      const std::string velocity_field,
+      const std::string spatial_position_field
     ):
     mField(m_field),tS(_ts),
     velocityField(velocity_field),
@@ -1537,7 +1537,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
         setOfBlocks[id].a0[0] = mydata.data.acceleration_x;
         setOfBlocks[id].a0[1] = mydata.data.acceleration_y;
         setOfBlocks[id].a0[2] = mydata.data.acceleration_z;
-        //cerr << setOfBlocks[id].tEts << endl;
+        //std::cerr << setOfBlocks[id].tEts << std::endl;
       }
 
       for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BLOCKSET|MAT_ELASTICSET,it)) {
@@ -1556,7 +1556,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
         setOfBlocks[-id].a0[0] = mydata.data.User2;
         setOfBlocks[-id].a0[1] = mydata.data.User3;
         setOfBlocks[-id].a0[2] = mydata.data.User4;
-        //cerr << setOfBlocks[id].tEts << endl;
+        //std::cerr << setOfBlocks[id].tEts << std::endl;
       }
 
       PetscFunctionReturn(0);
@@ -1596,7 +1596,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
       ierr = mField.get_entities_by_type_and_ref_level(bit,BitRefLevel().set(),MBTET,tets); CHKERRQ(ierr);
     }
 
-    map<int,BlockData>::iterator sit = setOfBlocks.begin();
+    std::map<int,BlockData>::iterator sit = setOfBlocks.begin();
     for(;sit!=setOfBlocks.end();sit++) {
       Range add_tets = sit->second.tEts;
       if(!tets.empty()) {
@@ -1639,7 +1639,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
         ierr = mField.get_entities_by_type_and_ref_level(bit,BitRefLevel().set(),MBTET,tets); CHKERRQ(ierr);
       }
 
-      map<int,BlockData>::iterator sit = setOfBlocks.begin();
+      std::map<int,BlockData>::iterator sit = setOfBlocks.begin();
       for(;sit!=setOfBlocks.end();sit++) {
         Range add_tets = sit->second.tEts;
         if(!tets.empty()) {
@@ -1692,7 +1692,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
       }
     }
 
-    map<int,BlockData>::iterator sit = setOfBlocks.begin();
+    std::map<int,BlockData>::iterator sit = setOfBlocks.begin();
     for(;sit!=setOfBlocks.end();sit++) {
       Range add_tets = sit->second.tEts;
       if(!tets.empty()) {
@@ -1731,7 +1731,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
         feMassRhs.meshPositionsFieldName = material_position_field_name;
       }
     }
-    map<int,BlockData>::iterator sit = setOfBlocks.begin();
+    std::map<int,BlockData>::iterator sit = setOfBlocks.begin();
     for(;sit!=setOfBlocks.end();sit++) {
       feMassRhs.getOpPtrVector().push_back(new OpMassJacobian(
         spatial_position_field_name,sit->second,commonData,methodsOp,tAg,false
@@ -1808,7 +1808,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
         feVelRhs.meshPositionsFieldName = material_position_field_name;
       }
     }
-    map<int,BlockData>::iterator sit = setOfBlocks.begin();
+    std::map<int,BlockData>::iterator sit = setOfBlocks.begin();
     for(;sit!=setOfBlocks.end();sit++) {
       feVelRhs.getOpPtrVector().push_back(new OpVelocityJacobian(velocity_field_name,sit->second,commonData,tAg,false));
       feVelRhs.getOpPtrVector().push_back(new OpVelocityRhs(velocity_field_name,sit->second,commonData));
@@ -1863,7 +1863,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
     feTRhs.getOpPtrVector().push_back(new OpGetCommonDataAtGaussPts(material_position_field_name,commonData));
     feTRhs.getOpPtrVector().push_back(new OpGetCommonDataAtGaussPts("DOT_"+velocity_field_name,commonData));
 
-    map<int,BlockData>::iterator sit = setOfBlocks.begin();
+    std::map<int,BlockData>::iterator sit = setOfBlocks.begin();
     for(;sit!=setOfBlocks.end();sit++) {
       feTRhs.getOpPtrVector().push_back(
         new OpEshelbyDynamicMaterialMomentumJacobian(material_position_field_name,sit->second,commonData,tAg,false)
@@ -1914,7 +1914,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
       feMassRhs.getOpPtrVector().push_back(new OpGetCommonDataAtGaussPts(material_position_field_name,commonData));
       feMassRhs.meshPositionsFieldName = material_position_field_name;
     }
-    map<int,BlockData>::iterator sit = setOfBlocks.begin();
+    std::map<int,BlockData>::iterator sit = setOfBlocks.begin();
     for(;sit!=setOfBlocks.end();sit++) {
       feMassRhs.getOpPtrVector().push_back(new OpMassJacobian(
         spatial_position_field_name,sit->second,commonData,methodsOp,tAg,false

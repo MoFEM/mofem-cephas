@@ -54,7 +54,7 @@ struct VolumeElementForcesAndSourcesCore: public ForcesAndSurcesCore {
   OpSetPiolaTransform opPiolaTransform;
   OpSetInvJacHdiv opSetInvJacHdiv;
 
-  string meshPositionsFieldName;
+  std::string meshPositionsFieldName;
   MatrixDouble hoCoordsAtGaussPts;
   MatrixDouble hoGaussPtsJac;
   MatrixDouble hoGaussPtsInvJac;
@@ -108,11 +108,11 @@ struct VolumeElementForcesAndSourcesCore: public ForcesAndSurcesCore {
   struct UserDataOperator: public ForcesAndSurcesCore::UserDataOperator {
 
     UserDataOperator(
-      const string &field_name,const char type):
+      const std::string &field_name,const char type):
       ForcesAndSurcesCore::UserDataOperator(field_name,type) {}
 
     UserDataOperator(
-      const string &row_field_name,const string &col_field_name,const char type):
+      const std::string &row_field_name,const std::string &col_field_name,const char type):
       ForcesAndSurcesCore::UserDataOperator(row_field_name,col_field_name,type) {};
 
     /** \brief get element number of nodes

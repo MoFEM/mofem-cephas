@@ -141,10 +141,10 @@ int main(int argc, char *argv[]) {
     ErrorCode rval;
     PetscErrorCode ierr;
 
-    typedef tee_device<ostream, ofstream> TeeDevice;
+    typedef tee_device<std::ostream, std::ofstream> TeeDevice;
     typedef stream<TeeDevice> TeeStream;
 
-    ofstream ofs;
+    std::ofstream ofs;
     TeeDevice my_tee;
     TeeStream my_split;
 
@@ -154,7 +154,7 @@ int main(int argc, char *argv[]) {
     ForcesAndSurcesCore_TestFE(FieldInterface &_m_field):
       ForcesAndSurcesCore(_m_field),
       ofs("forces_and_sources_getting_orders_indices_atom_test.txt"),
-      my_tee(cout, ofs),my_split(my_tee),
+      my_tee(std::cout, ofs),my_split(my_tee),
       data(MBTET),
       derived_data(data) {};
 
@@ -202,7 +202,7 @@ int main(int argc, char *argv[]) {
       data.dataOnEntities[MBVERTEX][0].getFieldData().resize(0);
 
       my_split << "FIELD1:\n";
-      my_split << data << endl;
+      my_split << data << std::endl;
 
       derived_data.dataOnEntities[MBVERTEX][0].getBase() = AINSWORTH_COLE_BASE;
       ierr = getEdgesDataOrderSpaceAndBase(derived_data,"FIELD2"); CHKERRQ(ierr);
@@ -216,7 +216,7 @@ int main(int argc, char *argv[]) {
       derived_data.dataOnEntities[MBVERTEX][0].getFieldData().resize(0);
 
       my_split << "FIELD2:\n";
-      my_split << derived_data << endl;
+      my_split << derived_data << std::endl;
 
       PetscFunctionReturn(0);
     }

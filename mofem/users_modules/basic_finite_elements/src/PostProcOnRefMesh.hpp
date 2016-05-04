@@ -25,23 +25,23 @@
 struct PostProcCommonOnRefMesh {
 
   struct CommonData {
-    map<string,vector<ublas::vector<double> > > fieldMap;
-    map<string,vector<ublas::matrix<double> > > gradMap;
+    std::map<std::string,std::vector<ublas::vector<double> > > fieldMap;
+    std::map<std::string,std::vector<ublas::matrix<double> > > gradMap;
   };
 
   struct OpGetFieldValues: public ForcesAndSurcesCore::UserDataOperator {
 
     Interface &postProcMesh;
-    vector<EntityHandle> &mapGaussPts;
+    std::vector<EntityHandle> &mapGaussPts;
     CommonData &commonData;
-    const string tagName;
+    const std::string tagName;
     Vec V;
 
     OpGetFieldValues(
       Interface &post_proc_mesh,
-      vector<EntityHandle> &map_gauss_pts,
-      const string field_name,
-      const string tag_name,
+      std::vector<EntityHandle> &map_gauss_pts,
+      const std::string field_name,
+      const std::string tag_name,
       CommonData &common_data,
       Vec v = PETSC_NULL
     ):
@@ -66,16 +66,16 @@ struct PostProcCommonOnRefMesh {
   struct OpGetFieldGradientValues: public ForcesAndSurcesCore::UserDataOperator {
 
     Interface &postProcMesh;
-    vector<EntityHandle> &mapGaussPts;
+    std::vector<EntityHandle> &mapGaussPts;
     CommonData &commonData;
-    const string tagName;
+    const std::string tagName;
     Vec V;
 
     OpGetFieldGradientValues(
       Interface &post_proc_mesh,
-      vector<EntityHandle> &map_gauss_pts,
-      const string field_name,
-      const string tag_name,
+      std::vector<EntityHandle> &map_gauss_pts,
+      const std::string field_name,
+      const std::string tag_name,
       CommonData &common_data,
       Vec v = PETSC_NULL
     ):
@@ -105,7 +105,7 @@ struct PostProcTemplateOnRefineMesh: public ELEMENT {
 
   moab::Core coreMesh;
   Interface &postProcMesh;
-  vector<EntityHandle> mapGaussPts;
+  std::vector<EntityHandle> mapGaussPts;
 
   PostProcTemplateOnRefineMesh(FieldInterface &m_field):
   ELEMENT(m_field),
@@ -125,7 +125,7 @@ struct PostProcTemplateOnRefineMesh: public ELEMENT {
     Name of the tag to store values on post-process mesh is the same as field name
 
   */
-  PetscErrorCode addFieldValuesPostProc(const string field_name,Vec v = PETSC_NULL) {
+  PetscErrorCode addFieldValuesPostProc(const std::string field_name,Vec v = PETSC_NULL) {
     PetscFunctionBegin;
     ELEMENT::getOpPtrVector().push_back(
       new PostProcCommonOnRefMesh::OpGetFieldValues(
@@ -142,7 +142,7 @@ struct PostProcTemplateOnRefineMesh: public ELEMENT {
     \param v If vector is given, values from vector are used to set tags on mesh
 
   */
-  PetscErrorCode addFieldValuesPostProc(const string field_name,const string tag_name,Vec v = PETSC_NULL) {
+  PetscErrorCode addFieldValuesPostProc(const std::string field_name,const std::string tag_name,Vec v = PETSC_NULL) {
     PetscFunctionBegin;
     ELEMENT::getOpPtrVector().push_back(
       new PostProcCommonOnRefMesh::OpGetFieldValues(
@@ -162,7 +162,7 @@ struct PostProcTemplateOnRefineMesh: public ELEMENT {
     Name of the tag to store values on post-process mesh is the same as field name
 
   */
-  PetscErrorCode addFieldValuesGradientPostProc(const string field_name,Vec v = PETSC_NULL) {
+  PetscErrorCode addFieldValuesGradientPostProc(const std::string field_name,Vec v = PETSC_NULL) {
     PetscFunctionBegin;
     ELEMENT::getOpPtrVector().push_back(
       new PostProcCommonOnRefMesh::OpGetFieldGradientValues(
@@ -179,7 +179,7 @@ struct PostProcTemplateOnRefineMesh: public ELEMENT {
     \param v If vector is given, values from vector are used to set tags on mesh
 
   */
-  PetscErrorCode addFieldValuesGradientPostProc(const string field_name,const string tag_name,Vec v = PETSC_NULL) {
+  PetscErrorCode addFieldValuesGradientPostProc(const std::string field_name,const std::string tag_name,Vec v = PETSC_NULL) {
     PetscFunctionBegin;
     ELEMENT::getOpPtrVector().push_back(
       new PostProcCommonOnRefMesh::OpGetFieldGradientValues(
@@ -264,21 +264,21 @@ struct PostProcVolumeOnRefinedMesh: public PostProcTemplateOnRefineMesh<VolumeEl
 
   PetscErrorCode postProcess();
 
-  PetscErrorCode writeFile(const string file_name);
+  PetscErrorCode writeFile(const std::string file_name);
 
   /** \brief Add operator to post-process Hdiv field
   */
-  PetscErrorCode addHdivFunctionsPostProc(const string field_name);
+  PetscErrorCode addHdivFunctionsPostProc(const std::string field_name);
 
   struct OpHdivFunctions: public VolumeElementForcesAndSourcesCore::UserDataOperator {
 
     Interface &postProcMesh;
-    vector<EntityHandle> &mapGaussPts;
+    std::vector<EntityHandle> &mapGaussPts;
 
     OpHdivFunctions(
       Interface &post_proc_mesh,
-      vector<EntityHandle> &map_gauss_pts,
-      const string field_name
+      std::vector<EntityHandle> &map_gauss_pts,
+      const std::string field_name
     ):
     VolumeElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPCOL),
     postProcMesh(post_proc_mesh),
@@ -323,7 +323,7 @@ struct PostProcFatPrismOnRefinedMesh: public PostProcTemplateOnRefineMesh<FatPri
   PetscErrorCode setGaussPtsThroughThickness(int order_thickness);
   PetscErrorCode generateReferenceElementMesh();
 
-  map<EntityHandle,EntityHandle> elementsMap;
+  std::map<EntityHandle,EntityHandle> elementsMap;
 
   PetscErrorCode preProcess();
   PetscErrorCode postProcess();
@@ -363,7 +363,7 @@ struct PostProcFaceOnRefinedMesh: public PostProcTemplateOnRefineMesh<FaceElemen
   PetscErrorCode generateReferenceElementMesh();
   PetscErrorCode setGaussPts(int order);
 
-  map<EntityHandle,EntityHandle> elementsMap;
+  std::map<EntityHandle,EntityHandle> elementsMap;
 
   PetscErrorCode preProcess();
   PetscErrorCode postProcess();

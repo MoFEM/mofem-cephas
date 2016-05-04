@@ -127,9 +127,9 @@ NonlinearElasticElement::NonlinearElasticElement(
   feEnergy(m_field),
   mField(m_field),tAg(tag) {}
 
-NonlinearElasticElement::OpGetDataAtGaussPts::OpGetDataAtGaussPts(const string field_name,
-  vector<VectorDouble > &values_at_gauss_pts,
-  vector<MatrixDouble > &gardient_at_gauss_pts):
+NonlinearElasticElement::OpGetDataAtGaussPts::OpGetDataAtGaussPts(const std::string field_name,
+  std::vector<VectorDouble > &values_at_gauss_pts,
+  std::vector<MatrixDouble > &gardient_at_gauss_pts):
   VolumeElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROW),
   valuesAtGaussPts(values_at_gauss_pts),
   gradientAtGaussPts(gardient_at_gauss_pts),
@@ -163,7 +163,7 @@ PetscErrorCode NonlinearElasticElement::OpGetDataAtGaussPts::doWork(
     }
 
     VectorDouble& values = data.getFieldData();
-    //cerr << valuesAtGaussPts[0] << " : ";
+    //std::cerr << valuesAtGaussPts[0] << " : ";
     for(int gg = 0;gg<nb_gauss_pts;gg++) {
       VectorAdaptor N = data.getN(gg,nb_dofs/rank);
       MatrixAdaptor diffN = data.getDiffN(gg,nb_dofs/rank);
@@ -177,27 +177,27 @@ PetscErrorCode NonlinearElasticElement::OpGetDataAtGaussPts::doWork(
       }
     }
 
-    //cerr << row_field_name << " " << col_field_name << endl;
-    //cerr << side << " " << type << endl;
-    //cerr << values << endl;
-    //cerr << valuesAtGaussPts[0] << endl;
+    //std::cerr << row_field_name << " " << col_field_name << std::endl;
+    //std::cerr << side << " " << type << std::endl;
+    //std::cerr << values << std::endl;
+    //std::cerr << valuesAtGaussPts[0] << std::endl;
 
   } catch (const std::exception& ex) {
-    ostringstream ss;
-    ss << "throw in method: " << ex.what() << endl;
+    std::ostringstream ss;
+    ss << "throw in method: " << ex.what() << std::endl;
     SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
   }
 
   PetscFunctionReturn(0);
 }
 
-NonlinearElasticElement::OpGetCommonDataAtGaussPts::OpGetCommonDataAtGaussPts(const string field_name,CommonData &common_data):
+NonlinearElasticElement::OpGetCommonDataAtGaussPts::OpGetCommonDataAtGaussPts(const std::string field_name,CommonData &common_data):
   OpGetDataAtGaussPts(field_name,
   common_data.dataAtGaussPts[field_name],
   common_data.gradAtGaussPts[field_name]) {}
 
 NonlinearElasticElement::OpJacobianPiolaKirchhoffStress::OpJacobianPiolaKirchhoffStress(
-  const string field_name,
+  const std::string field_name,
   BlockData &data,
   CommonData &common_data,
   int tag,
@@ -230,10 +230,10 @@ PetscErrorCode NonlinearElasticElement::OpJacobianPiolaKirchhoffStress::calculat
         dAta.materialAdoublePtr->P(dd1,dd2) >>= (commonData.sTress[0])(dd1,dd2);
       }
     }
-    //cerr << "P " << dAta.materialAdoublePtr->P << endl;
+    //std::cerr << "P " << dAta.materialAdoublePtr->P << std::endl;
   } catch (const std::exception& ex) {
-    ostringstream ss;
-    ss << "throw in method: " << ex.what() << endl;
+    std::ostringstream ss;
+    ss << "throw in method: " << ex.what() << std::endl;
     SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
   }
   PetscFunctionReturn(0);
@@ -342,7 +342,7 @@ PetscErrorCode NonlinearElasticElement::OpJacobianPiolaKirchhoffStress::doWork(
             activeVariables(dd1*3+dd2) = (*ptrh)[gg](dd1,dd2);
           }
         }
-        //cerr << activeVariables << endl;
+        //std::cerr << activeVariables << std::endl;
       } else {
         for(int dd1 = 0;dd1<3;dd1++) {
           for(int dd2 = 0;dd2<3;dd2++) {
@@ -390,15 +390,15 @@ PetscErrorCode NonlinearElasticElement::OpJacobianPiolaKirchhoffStress::doWork(
     }
 
   } catch (const std::exception& ex) {
-    ostringstream ss;
-    ss << "throw in method: " << ex.what() << endl;
+    std::ostringstream ss;
+    ss << "throw in method: " << ex.what() << std::endl;
     SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
   }
 
   PetscFunctionReturn(0);
 }
 
-NonlinearElasticElement::OpRhsPiolaKirchhoff::OpRhsPiolaKirchhoff(const string field_name,BlockData &data,CommonData &common_data):
+NonlinearElasticElement::OpRhsPiolaKirchhoff::OpRhsPiolaKirchhoff(const std::string field_name,BlockData &data,CommonData &common_data):
   VolumeElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROW),
   dAta(data),
   commonData(common_data),
@@ -467,7 +467,7 @@ PetscErrorCode NonlinearElasticElement::OpRhsPiolaKirchhoff::doWork(
       for(int dd = 0;dd<nb_dofs/3;dd++) {
         for(int rr = 0;rr<3;rr++) {
           for(int nn = 0;nn<3;nn++) {
-            //cerr << "stress : " << stress << endl;
+            //std::cerr << "stress : " << stress << std::endl;
             nf[3*dd+rr] += val*diffN(dd,nn)*stress(rr,nn);
           }
         }
@@ -479,19 +479,19 @@ PetscErrorCode NonlinearElasticElement::OpRhsPiolaKirchhoff::doWork(
       SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
     }
 
-    //cerr << "nf : " << nf << endl;
+    //std::cerr << "nf : " << nf << std::endl;
     ierr = aSemble(row_side,row_type,row_data); CHKERRQ(ierr);
 
   } catch (const std::exception& ex) {
-    ostringstream ss;
-    ss << "throw in method: " << ex.what() << endl;
+    std::ostringstream ss;
+    ss << "throw in method: " << ex.what() << std::endl;
     SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
   }
 
   PetscFunctionReturn(0);
 }
 
-NonlinearElasticElement::OpEnergy::OpEnergy(const string field_name,BlockData &data,CommonData &common_data,Vec *v_ptr,bool field_disp):
+NonlinearElasticElement::OpEnergy::OpEnergy(const std::string field_name,BlockData &data,CommonData &common_data,Vec *v_ptr,bool field_disp):
   VolumeElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROW),
   dAta(data),commonData(common_data),
   Vptr(v_ptr),
@@ -510,7 +510,7 @@ PetscErrorCode NonlinearElasticElement::OpEnergy::doWork(
 
   try {
 
-    vector<MatrixDouble > &F = (commonData.gradAtGaussPts[commonData.spatialPositions]);
+    std::vector<MatrixDouble > &F = (commonData.gradAtGaussPts[commonData.spatialPositions]);
 
     for(unsigned int gg = 0;gg<row_data.getN().size1();gg++) {
       double val = getVolume()*getGaussPts()(3,gg);
@@ -531,8 +531,8 @@ PetscErrorCode NonlinearElasticElement::OpEnergy::doWork(
     }
 
   } catch (const std::exception& ex) {
-    ostringstream ss;
-    ss << "throw in method: " << ex.what() << endl;
+    std::ostringstream ss;
+    ss << "throw in method: " << ex.what() << std::endl;
     SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
   }
 
@@ -541,7 +541,7 @@ PetscErrorCode NonlinearElasticElement::OpEnergy::doWork(
 
 
 NonlinearElasticElement::OpLhsPiolaKirchhoff_dx::OpLhsPiolaKirchhoff_dx(
-  const string vel_field,const string field_name,BlockData &data,CommonData &common_data
+  const std::string vel_field,const std::string field_name,BlockData &data,CommonData &common_data
 ):
 VolumeElementForcesAndSourcesCore::UserDataOperator(vel_field,field_name,UserDataOperator::OPROWCOL),
 dAta(data),
@@ -724,12 +724,12 @@ PetscErrorCode NonlinearElasticElement::OpLhsPiolaKirchhoff_dx::doWork(
 
     }
 
-    //cerr << "N " << getMoFEMFEPtr()->get_ref_ent() << endl << k << endl;
+    //std::cerr << "N " << getMoFEMFEPtr()->get_ref_ent() << std::endl << k << std::endl;
     ierr = aSemble(row_side,col_side,row_type,col_type,row_data,col_data); CHKERRQ(ierr);
 
   } catch (const std::exception& ex) {
-    ostringstream ss;
-    ss << "throw in method: " << ex.what() << endl;
+    std::ostringstream ss;
+    ss << "throw in method: " << ex.what() << std::endl;
     SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
   }
 
@@ -737,7 +737,7 @@ PetscErrorCode NonlinearElasticElement::OpLhsPiolaKirchhoff_dx::doWork(
 }
 
 NonlinearElasticElement::OpLhsPiolaKirchhoff_dX::OpLhsPiolaKirchhoff_dX(
-  const string vel_field,const string field_name,BlockData &data,CommonData &common_data):
+  const std::string vel_field,const std::string field_name,BlockData &data,CommonData &common_data):
   OpLhsPiolaKirchhoff_dx(vel_field,field_name,data,common_data)
   { sYmm = false; }
 
@@ -817,7 +817,7 @@ PetscErrorCode NonlinearElasticElement::OpLhsPiolaKirchhoff_dX::aSemble(
 }
 
 NonlinearElasticElement::OpJacobianEshelbyStress::OpJacobianEshelbyStress(
-  const string field_name,
+  const std::string field_name,
   BlockData &data,
   CommonData &common_data,
   int tag,
@@ -846,8 +846,8 @@ PetscErrorCode NonlinearElasticElement::OpJacobianEshelbyStress::calculateStress
     }
 
   } catch (const std::exception& ex) {
-    ostringstream ss;
-    ss << "throw in method: " << ex.what() << endl;
+    std::ostringstream ss;
+    ss << "throw in method: " << ex.what() << std::endl;
     SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
   }
 
@@ -855,13 +855,13 @@ PetscErrorCode NonlinearElasticElement::OpJacobianEshelbyStress::calculateStress
 }
 
 NonlinearElasticElement::OpRhsEshelbyStrees::OpRhsEshelbyStrees(
-  const string field_name,BlockData &data,CommonData &common_data
+  const std::string field_name,BlockData &data,CommonData &common_data
 ):
 OpRhsPiolaKirchhoff(field_name,data,common_data)
 {}
 
 NonlinearElasticElement::OpLhsEshelby_dx::OpLhsEshelby_dx(
-  const string vel_field,const string field_name,BlockData &data,CommonData &common_data
+  const std::string vel_field,const std::string field_name,BlockData &data,CommonData &common_data
 ):
 OpLhsPiolaKirchhoff_dX(vel_field,field_name,data,common_data) {}
 
@@ -883,7 +883,7 @@ PetscErrorCode NonlinearElasticElement::OpLhsEshelby_dx::getJac(DataForcesAndSur
 }
 
 NonlinearElasticElement::OpLhsEshelby_dX::OpLhsEshelby_dX(
-  const string vel_field,const string field_name,BlockData &data,CommonData &common_data
+  const std::string vel_field,const std::string field_name,BlockData &data,CommonData &common_data
 ):
 OpLhsPiolaKirchhoff_dx(vel_field,field_name,data,common_data)
 {}
@@ -923,7 +923,7 @@ PetscErrorCode NonlinearElasticElement::setBlocks(
     setOfBlocks[id].PoissonRatio = mydata.data.Poisson;
     setOfBlocks[id].materialDoublePtr = materialDoublePtr;
     setOfBlocks[id].materialAdoublePtr = materialAdoublePtr;
-    //cerr << setOfBlocks[id].tEts << endl;
+    //std::cerr << setOfBlocks[id].tEts << std::endl;
   }
 
   PetscFunctionReturn(0);
@@ -949,7 +949,7 @@ PetscErrorCode NonlinearElasticElement::addElement(string element_name,
     ierr = mField.modify_finite_element_add_field_data(element_name,material_position_field_name); CHKERRQ(ierr);
   }
 
-  map<int,BlockData>::iterator sit = setOfBlocks.begin();
+  std::map<int,BlockData>::iterator sit = setOfBlocks.begin();
   for(;sit!=setOfBlocks.end();sit++) {
     ierr = mField.add_ents_to_finite_element_by_TETs(sit->second.tEts,element_name); CHKERRQ(ierr);
   }
@@ -972,7 +972,7 @@ PetscErrorCode NonlinearElasticElement::setOperators(
   if(mField.check_field(material_position_field_name)) {
     feRhs.getOpPtrVector().push_back(new OpGetCommonDataAtGaussPts(material_position_field_name,commonData));
   }
-  map<int,BlockData>::iterator sit = setOfBlocks.begin();
+  std::map<int,BlockData>::iterator sit = setOfBlocks.begin();
   for(;sit!=setOfBlocks.end();sit++) {
     feRhs.getOpPtrVector().push_back(
       new OpJacobianPiolaKirchhoffStress(spatial_position_field_name,sit->second,commonData,tAg,false,ale,field_disp)

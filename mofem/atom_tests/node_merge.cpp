@@ -85,7 +85,7 @@ int main(int argc, char *argv[]) {
     rval = moab.create_meshset(MESHSET_SET,meshset_level1); CHKERRQ_MOAB(rval);
     ierr = m_field.get_entities_by_type_and_ref_level(bit_level1,BitRefLevel().set(),MBTET,meshset_level1); CHKERRQ(ierr);
 
-    ostringstream ss;
+    std::ostringstream ss;
     ss << "node_merger_" << ii << ".vtk";
 
     if(debug) rval = moab.write_file(ss.str().c_str(),"VTK","",&meshset_level1,1); CHKERRQ_MOAB(rval);
@@ -97,7 +97,7 @@ int main(int argc, char *argv[]) {
   Range tets;
   ierr = m_field.get_entities_by_type_and_ref_level(BitRefLevel().set(ii-1),BitRefLevel().set(),MBTET,tets); CHKERRQ(ierr);
 
-  cout << tets << endl;
+  std::cout << tets << std::endl;
   if(tets.size()!=10) {
     SETERRQ1(PETSC_COMM_SELF,MOFEM_ATOM_TEST_INVALID,"diffrent number of tets than expected = %u",tets.size());
   }

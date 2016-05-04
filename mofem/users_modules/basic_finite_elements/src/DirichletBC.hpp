@@ -43,24 +43,24 @@ using namespace boost::numeric;
 struct DisplacementBCFEMethodPreAndPostProc: public FEMethod {
 
   FieldInterface& mField;
-  const string fieldName;			///< field name to set Dirichlet BC
+  const std::string fieldName;			///< field name to set Dirichlet BC
   double dIag;					      ///< diagonal value set on zeroed column and rows
 
   DisplacementBCFEMethodPreAndPostProc(
-    FieldInterface& m_field,const string &field_name,
+    FieldInterface& m_field,const std::string &field_name,
     Mat Aij,Vec X,Vec F
   );
   DisplacementBCFEMethodPreAndPostProc(
-    FieldInterface& m_field,const string &field_name
+    FieldInterface& m_field,const std::string &field_name
   );
 
   PetscErrorCode ierr;
   ErrorCode rval;
 
-  map<DofIdx,FieldData> mapZeroRows;
-  vector<int> dofsIndices;
-  vector<double> dofsValues;
-  vector<double> dofsXValues;
+  std::map<DofIdx,FieldData> mapZeroRows;
+  std::vector<int> dofsIndices;
+  std::vector<double> dofsValues;
+  std::vector<double> dofsXValues;
   virtual PetscErrorCode iNitalize();
 
   PetscErrorCode preProcess();
@@ -76,14 +76,14 @@ struct DisplacementBCFEMethodPreAndPostProc: public FEMethod {
 struct SpatialPositionsBCFEMethodPreAndPostProc: public DisplacementBCFEMethodPreAndPostProc {
 
   SpatialPositionsBCFEMethodPreAndPostProc(
-    FieldInterface& m_field,const string &field_name,Mat aij,Vec x,Vec f):
+    FieldInterface& m_field,const std::string &field_name,Mat aij,Vec x,Vec f):
     DisplacementBCFEMethodPreAndPostProc(m_field,field_name,aij,x,f) {}
 
   SpatialPositionsBCFEMethodPreAndPostProc(
-    FieldInterface& m_field,const string &field_name):
+    FieldInterface& m_field,const std::string &field_name):
     DisplacementBCFEMethodPreAndPostProc(m_field,field_name) {}
 
-  vector<string> fixFields;
+  std::vector<std::string> fixFields;
 
   ublas::vector<double> cOords;
   PetscErrorCode iNitalize();
@@ -93,11 +93,11 @@ struct SpatialPositionsBCFEMethodPreAndPostProc: public DisplacementBCFEMethodPr
 struct TemperatureBCFEMethodPreAndPostProc: public DisplacementBCFEMethodPreAndPostProc {
 
   TemperatureBCFEMethodPreAndPostProc(
-    FieldInterface& m_field,const string &field_name,Mat aij,Vec x,Vec f):
+    FieldInterface& m_field,const std::string &field_name,Mat aij,Vec x,Vec f):
     DisplacementBCFEMethodPreAndPostProc(m_field,field_name,aij,x,f) {}
 
   TemperatureBCFEMethodPreAndPostProc(
-    FieldInterface& m_field,const string &field_name):
+    FieldInterface& m_field,const std::string &field_name):
     DisplacementBCFEMethodPreAndPostProc(m_field,field_name) {}
 
   PetscErrorCode iNitalize();
@@ -110,10 +110,10 @@ struct TemperatureBCFEMethodPreAndPostProc: public DisplacementBCFEMethodPreAndP
 struct FixBcAtEntities: public DisplacementBCFEMethodPreAndPostProc {
 
   Range &eNts;
-  vector<string> fieldNames;
+  std::vector<std::string> fieldNames;
   FixBcAtEntities(
     FieldInterface& m_field,
-    const string &field_name,
+    const std::string &field_name,
     Mat aij,Vec x,Vec f,
     Range &ents
   ):
@@ -122,7 +122,7 @@ struct FixBcAtEntities: public DisplacementBCFEMethodPreAndPostProc {
   }
 
   FixBcAtEntities(
-    FieldInterface& m_field,const string &field_name,Range &ents
+    FieldInterface& m_field,const std::string &field_name,Range &ents
   ):
   DisplacementBCFEMethodPreAndPostProc(m_field,field_name),eNts(ents) {
     fieldNames.push_back(fieldName);
@@ -144,16 +144,16 @@ struct FixBcAtEntities: public DisplacementBCFEMethodPreAndPostProc {
 **/
 struct DirichletBCFromBlockSetFEMethodPreAndPostProc: public DisplacementBCFEMethodPreAndPostProc {
 
-  const string blocksetName;
+  const std::string blocksetName;
   DirichletBCFromBlockSetFEMethodPreAndPostProc(
-    FieldInterface& m_field,const string &field_name,const string &blockset_name,Mat aij,Vec x,Vec f
+    FieldInterface& m_field,const std::string &field_name,const std::string &blockset_name,Mat aij,Vec x,Vec f
   ):
   DisplacementBCFEMethodPreAndPostProc(m_field,field_name,aij,x,f),
   blocksetName(blockset_name) {
   }
 
   DirichletBCFromBlockSetFEMethodPreAndPostProc(
-    FieldInterface& m_field,const string &field_name,const string &blockset_name
+    FieldInterface& m_field,const std::string &field_name,const std::string &blockset_name
   ):
   DisplacementBCFEMethodPreAndPostProc(m_field,field_name),
   blocksetName(blockset_name) {

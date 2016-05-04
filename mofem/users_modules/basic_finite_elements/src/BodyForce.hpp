@@ -51,7 +51,7 @@ struct BodyFroceConstantField {
     Vec F;
     Block_BodyForces &dAta;
     Range blockTets;
-    OpBodyForce(const string field_name,Vec _F,Block_BodyForces &data,Range block_tets):
+    OpBodyForce(const std::string field_name,Vec _F,Block_BodyForces &data,Range block_tets):
       VolumeElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROW),
       F(_F),dAta(data),blockTets(block_tets) {}
 
@@ -98,11 +98,11 @@ struct BodyFroceConstantField {
 
         }
       }
-      // cerr << dAta.data.acceleration_x << endl;
-      // cerr << dAta.data.acceleration_y << endl;
-      // cerr << dAta.data.acceleration_z << endl;
-      // cerr << dAta.data.density << endl;
-      // cerr << Nf << endl;
+      // std::cerr << dAta.data.acceleration_x << std::endl;
+      // std::cerr << dAta.data.acceleration_y << std::endl;
+      // std::cerr << dAta.data.acceleration_z << std::endl;
+      // std::cerr << dAta.data.density << std::endl;
+      // std::cerr << Nf << std::endl;
 
       ierr = VecSetValues(F,data.getIndices().size(),
         &data.getIndices()[0],&Nf[0],ADD_VALUES
@@ -114,7 +114,7 @@ struct BodyFroceConstantField {
 
   };
 
-  PetscErrorCode addBlock(const string field_name,Vec &F,int ms_id) {
+  PetscErrorCode addBlock(const std::string field_name,Vec &F,int ms_id) {
     PetscFunctionBegin;
     PetscErrorCode ierr;
     ErrorCode rval;
@@ -131,7 +131,7 @@ struct BodyFroceConstantField {
 
   private:
 
-  map<int,Block_BodyForces> mapData;
+  std::map<int,Block_BodyForces> mapData;
 
 };
 

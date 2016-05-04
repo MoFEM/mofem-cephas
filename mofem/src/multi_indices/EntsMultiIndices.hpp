@@ -194,8 +194,8 @@ struct RefEntity: public BasicEntity {
     BitRefLevel *_tag_BitRefLevel
   );
 
-  static PetscErrorCode getPatentEnt(Interface &moab,Range ents,vector<EntityHandle> vec_patent_ent);
-  static PetscErrorCode getBitRefLevel(Interface &moab,Range ents,vector<BitRefLevel> vec_bit_ref_level);
+  static PetscErrorCode getPatentEnt(Interface &moab,Range ents,std::vector<EntityHandle> vec_patent_ent);
+  static PetscErrorCode getBitRefLevel(Interface &moab,Range ents,std::vector<BitRefLevel> vec_bit_ref_level);
 
   /// get entity
   inline EntityHandle get_ref_ent() const { return ent; }
@@ -213,7 +213,7 @@ struct RefEntity: public BasicEntity {
     return *tag_parent_ent;
   }
 
-  friend ostream& operator<<(ostream& os,const RefEntity& e);
+  friend std::ostream& operator<<(std::ostream& os,const RefEntity& e);
 
 };
 
@@ -481,7 +481,7 @@ struct MoFEMEntity:
     _uid_ |= (UId)sPtr->owner_proc << 5+8*sizeof(EntityHandle);
     return _uid_;
   }
-  friend ostream& operator<<(ostream& os,const MoFEMEntity& e);
+  friend std::ostream& operator<<(std::ostream& os,const MoFEMEntity& e);
 
   inline const boost::shared_ptr<RefEntity> get_RefEntity_ptr() {
     return this->sPtr;
@@ -536,9 +536,9 @@ interface_RefEntity<T> {
 struct MoFEMEntity_change_order {
   Interface& moab;
   ApproximationOrder order;
-  vector<FieldData> data;
-  vector<ApproximationOrder> data_dof_order;
-  vector<FieldCoefficientsNumber> data_dof_rank;
+  std::vector<FieldData> data;
+  std::vector<ApproximationOrder> data_dof_order;
+  std::vector<FieldCoefficientsNumber> data_dof_rank;
   MoFEMEntity_change_order(Interface& _moab,ApproximationOrder _order):
   moab(_moab),
   order(_order) {};

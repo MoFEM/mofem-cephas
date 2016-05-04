@@ -50,7 +50,7 @@ namespace MoFEM {
 
 // const static int debug = 1;
 
-PetscErrorCode Core::field_axpy(const double alpha,const string& field_name_x,const string& field_name_y,
+PetscErrorCode Core::field_axpy(const double alpha,const std::string& field_name_x,const std::string& field_name_y,
   bool error_if_missing,bool creat_if_missing) {
   PetscFunctionBegin;
   Field_multiIndex::index<FieldName_mi_tag>::type::iterator x_fit = fIelds.get<FieldName_mi_tag>().find(field_name_x);
@@ -84,7 +84,7 @@ PetscErrorCode Core::field_axpy(const double alpha,const string& field_name_x,co
           SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"not yet implemented");
         } else {
           if(error_if_missing) {
-            ostringstream ss;
+            std::ostringstream ss;
             ss << "dof on ent " << (*x_eit)->get_ent() << " order " << dof_order << " rank " << dof_rank << " does not exist";
             SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,ss.str().c_str());
           } else {
@@ -97,7 +97,7 @@ PetscErrorCode Core::field_axpy(const double alpha,const string& field_name_x,co
   }
   PetscFunctionReturn(0);
 }
-PetscErrorCode Core::set_field(const double val,const EntityType type,const string& field_name) {
+PetscErrorCode Core::set_field(const double val,const EntityType type,const std::string& field_name) {
   PetscFunctionBegin;
   DofEntity_multiIndex::index<Composite_Name_And_Type_mi_tag >::type::iterator dit,hi_dit;
   dit = dofsField.get<Composite_Name_And_Type_mi_tag >().lower_bound(boost::make_tuple(field_name,type));
@@ -107,7 +107,7 @@ PetscErrorCode Core::set_field(const double val,const EntityType type,const stri
   }
   PetscFunctionReturn(0);
 }
-PetscErrorCode Core::set_field(const double val,const EntityType type,const Range &ents,const string& field_name) {
+PetscErrorCode Core::set_field(const double val,const EntityType type,const Range &ents,const std::string& field_name) {
   PetscFunctionBegin;
   DofEntity_multiIndex::index<Composite_Name_And_Type_mi_tag >::type::iterator dit,hi_dit;
   dit = dofsField.get<Composite_Name_And_Type_mi_tag >().lower_bound(boost::make_tuple(field_name,type));
@@ -129,7 +129,7 @@ PetscErrorCode Core::set_field(const double val,const EntityType type,const Rang
   }
   PetscFunctionReturn(0);
 }
-PetscErrorCode Core::field_scale(const double alpha,const string& field_name) {
+PetscErrorCode Core::field_scale(const double alpha,const std::string& field_name) {
   PetscFunctionBegin;
   DofEntity_multiIndex::index<FieldName_mi_tag>::type::iterator dit,hi_dit;
   dit = dofsField.get<FieldName_mi_tag>().lower_bound(field_name);

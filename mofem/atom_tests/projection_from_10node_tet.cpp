@@ -31,8 +31,8 @@ double roundn(double n) {
     fract = modf(n,&intp);
 
     // case where n approximates zero, set n to "positive" zero
-    if (abs(intp)==0) {
-      if(abs(fract)<=RND_EPS) {
+    if (std::abs(intp)==0) {
+      if(std::abs(fract)<=RND_EPS) {
 	n=0.000;
       }
     }
@@ -134,12 +134,12 @@ int main(int argc, char *argv[]) {
   ierr = m_field.loop_dofs("MESH_NODE_POSITIONS",ent_method); CHKERRQ(ierr);
 
     //Open mesh_file_name.txt for writing
-    ofstream myfile;
+    std::ofstream myfile;
     myfile.open ("10node_sphere.txt");
 
     //Output displacements
-    cout << "<<<< Dofs (X-Translation, Y-Translation, Z-Translation) >>>>>" << endl;
-    myfile << "<<<< Dofs (X-Translation, Y-Translation, Z-Translation) >>>>>" << endl;
+    std::cout << "<<<< Dofs (X-Translation, Y-Translation, Z-Translation) >>>>>" << std::endl;
+    myfile << "<<<< Dofs (X-Translation, Y-Translation, Z-Translation) >>>>>" << std::endl;
 
     for(_IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(m_field,"MESH_NODE_POSITIONS",dof_ptr))
     {
@@ -149,22 +149,22 @@ int main(int argc, char *argv[]) {
         {
             //Round and truncate to 3 decimal places
             double fval = (*dof_ptr)->get_FieldData();
-            cout << boost::format("%.3lf") % roundn(fval) << "  ";
+            std::cout << boost::format("%.3lf") % roundn(fval) << "  ";
             myfile << boost::format("%.3lf") % roundn(fval) << "  ";
         }
         if((*dof_ptr)->get_dof_coeff_idx()==1)
         {
             //Round and truncate to 3 decimal places
             double fval = (*dof_ptr)->get_FieldData();
-            cout << boost::format("%.3lf") % roundn(fval) << "  ";
+            std::cout << boost::format("%.3lf") % roundn(fval) << "  ";
             myfile << boost::format("%.3lf") % roundn(fval) << "  ";
         }
         if((*dof_ptr)->get_dof_coeff_idx()==2)
         {
             //Round and truncate to 3 decimal places
             double fval = (*dof_ptr)->get_FieldData();
-            cout << boost::format("%.3lf") % roundn(fval) << endl;
-            myfile << boost::format("%.3lf") % roundn(fval) << endl;
+            std::cout << boost::format("%.3lf") % roundn(fval) << std::endl;
+            myfile << boost::format("%.3lf") % roundn(fval) << std::endl;
         }
 
     }
@@ -173,8 +173,8 @@ int main(int argc, char *argv[]) {
   } catch (MoFEMException const &e) {
     SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
   } catch (const std::exception& ex) {
-    ostringstream ss;
-    ss << "thorw in method: " << ex.what() << endl;
+    std::ostringstream ss;
+    ss << "thorw in method: " << ex.what() << std::endl;
     SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
   }
 

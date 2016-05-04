@@ -117,74 +117,74 @@ PetscErrorCode BitLevelCouplerInterface::getParent(const double *coords,EntityHa
       if(!tet_only) {
 	//vertices
 	if(fabs(N[0]-1) < inside_tol && fabs(N[1])<inside_tol && fabs(N[2])<inside_tol && fabs(N[3])<inside_tol) {
-	  if(verb>1) cout << "node 0 found " << endl;
+	  if(verb>1) std::cout << "node 0 found " << std::endl;
 	  rval = m_field.get_moab().side_element(*tit,0,0,parent); CHKERRQ_MOAB(rval);
 	  PetscFunctionReturn(0);
 	}
 	if(fabs(N[0]) < inside_tol && fabs(N[1]-1)<inside_tol && fabs(N[2])<inside_tol && fabs(N[3])<inside_tol) {
-	  if(verb>1) cout << "node 1 found " << endl;
+	  if(verb>1) std::cout << "node 1 found " << std::endl;
 	  rval = m_field.get_moab().side_element(*tit,0,1,parent); CHKERRQ_MOAB(rval);
 	  PetscFunctionReturn(0);
 	}
 	if(fabs(N[0]) < inside_tol && fabs(N[1])<inside_tol && fabs(N[2]-2)<inside_tol && fabs(N[3])<inside_tol) {
-	  if(verb>1) cout << "node 2 found " << endl;
+	  if(verb>1) std::cout << "node 2 found " << std::endl;
 	  rval = m_field.get_moab().side_element(*tit,0,2,parent); CHKERRQ_MOAB(rval);
 	  PetscFunctionReturn(0);
 	}
 	if(fabs(N[0]) < inside_tol && fabs(N[1])<inside_tol && fabs(N[2])<inside_tol && fabs(N[3]-1)<inside_tol) {
-	  if(verb>1) cout << "node 3 found " << endl;
+	  if(verb>1) std::cout << "node 3 found " << std::endl;
 	  rval = m_field.get_moab().side_element(*tit,0,3,parent); CHKERRQ_MOAB(rval);
 	  PetscFunctionReturn(0);
 	}
 	//edges
 	if(fabs(N[0])>inside_tol && fabs(N[1])>inside_tol && fabs(N[2])<inside_tol && fabs(N[3])<inside_tol) {
-	  if(verb>1) cout << "edge 0 found " << endl;
+	  if(verb>1) std::cout << "edge 0 found " << std::endl;
 	  rval = m_field.get_moab().side_element(*tit,1,0,parent); CHKERRQ_MOAB(rval);
 	  PetscFunctionReturn(0);
 	}
 	if(fabs(N[0])<inside_tol && fabs(N[1])>inside_tol && fabs(N[2])>inside_tol && fabs(N[3])<inside_tol) {
-	  if(verb>1) cout << "edge 1 found " << endl;
+	  if(verb>1) std::cout << "edge 1 found " << std::endl;
 	  rval = m_field.get_moab().side_element(*tit,1,1,parent); CHKERRQ_MOAB(rval);
 	  PetscFunctionReturn(0);
 	}
 	if(fabs(N[0])>inside_tol && fabs(N[1])<inside_tol && fabs(N[2])>inside_tol && fabs(N[3])<inside_tol) {
-	  if(verb>1) cout << "edge 2 found " << endl;
+	  if(verb>1) std::cout << "edge 2 found " << std::endl;
 	  rval = m_field.get_moab().side_element(*tit,1,2,parent); CHKERRQ_MOAB(rval);
 	  PetscFunctionReturn(0);
 	}
 	if(fabs(N[0])>inside_tol && fabs(N[1])<inside_tol && fabs(N[2])<inside_tol && fabs(N[3])>inside_tol) {
-	  if(verb>1) cout << "edge 3 found " << endl;
+	  if(verb>1) std::cout << "edge 3 found " << std::endl;
 	  rval = m_field.get_moab().side_element(*tit,1,3,parent); CHKERRQ_MOAB(rval);
 	  PetscFunctionReturn(0);
 	}
 	if(fabs(N[0])<inside_tol && fabs(N[1])>inside_tol && fabs(N[2])<inside_tol && fabs(N[3])>inside_tol) {
-	  if(verb>1) cout << "edge 4 found " << endl;
+	  if(verb>1) std::cout << "edge 4 found " << std::endl;
 	  rval = m_field.get_moab().side_element(*tit,1,4,parent); CHKERRQ_MOAB(rval);
 	  PetscFunctionReturn(0);
 	}
 	if(fabs(N[0])<inside_tol && fabs(N[1])<inside_tol && fabs(N[2])>inside_tol && fabs(N[3])>inside_tol) {
-	  if(verb>1) cout << "edge 5 found " << endl;
+	  if(verb>1) std::cout << "edge 5 found " << std::endl;
 	  rval = m_field.get_moab().side_element(*tit,1,5,parent); CHKERRQ_MOAB(rval);
 	  PetscFunctionReturn(0);
 	}
 	//faces
 	if(fabs(N[0])>inside_tol && fabs(N[1])>inside_tol && fabs(N[2])<inside_tol && fabs(N[3])>inside_tol) {
-	  if(verb>1) cout << "face 0 found " << endl;
+	  if(verb>1) std::cout << "face 0 found " << std::endl;
 	  rval = m_field.get_moab().side_element(*tit,2,0,parent); CHKERRQ_MOAB(rval);
 	  PetscFunctionReturn(0);
 	}
 	if(fabs(N[0])<inside_tol && fabs(N[1])>inside_tol && fabs(N[2])>inside_tol && fabs(N[3])>inside_tol) {
-	  if(verb>1) cout << "face 1 found " << endl;
+	  if(verb>1) std::cout << "face 1 found " << std::endl;
 	  rval = m_field.get_moab().side_element(*tit,2,1,parent); CHKERRQ_MOAB(rval);
 	  PetscFunctionReturn(0);
 	}
 	if(fabs(N[0])>inside_tol && fabs(N[1])<inside_tol && fabs(N[2])>inside_tol && fabs(N[3])>inside_tol) {
-	  if(verb>1) cout << "face 2 found " << endl;
+	  if(verb>1) std::cout << "face 2 found " << std::endl;
 	  rval = m_field.get_moab().side_element(*tit,2,2,parent); CHKERRQ_MOAB(rval);
 	  PetscFunctionReturn(0);
 	}
 	if(fabs(N[0])>inside_tol && fabs(N[1])>inside_tol && fabs(N[2])>inside_tol && fabs(N[3])<inside_tol) {
-	  if(verb>1) cout << "face 3 found " << endl;
+	  if(verb>1) std::cout << "face 3 found " << std::endl;
 	  rval = m_field.get_moab().side_element(*tit,2,2,parent); CHKERRQ_MOAB(rval);
 	  PetscFunctionReturn(0);
 	}
@@ -193,7 +193,7 @@ PetscErrorCode BitLevelCouplerInterface::getParent(const double *coords,EntityHa
 	  break;
 	}
       }
-      if(verb>1) cout << "tet found " << endl;
+      if(verb>1) std::cout << "tet found " << std::endl;
       parent = *tit;
       break;
     }
@@ -222,7 +222,7 @@ PetscErrorCode BitLevelCouplerInterface::buidlAdjacenciesVerticesOnTets(const Bi
     if(((*it)->get_BitRefLevel()&parent_level).any()) continue;
 
     if(verb > 1) {
-      cout << *it << " " << (*it)->get_BitRefLevel() << endl;
+      std::cout << *it << " " << (*it)->get_BitRefLevel() << std::endl;
     }
 
     //that vertex is on parent bit level, no need to process
@@ -268,7 +268,7 @@ PetscErrorCode BitLevelCouplerInterface::buidlAdjacenciesEdgesFacesVolumes(
   const BitRefLevel &parent_level,Range &children,bool elements,int verb) {
   PetscFunctionBegin;
 
-  if(verb>2) cout << children << endl;
+  if(verb>2) std::cout << children << std::endl;
 
   FieldInterface& m_field = cOre;
 
@@ -276,7 +276,7 @@ PetscErrorCode BitLevelCouplerInterface::buidlAdjacenciesEdgesFacesVolumes(
   const RefEntity_multiIndex *refined_ptr;
   ierr = m_field.get_ref_ents(&refined_ptr); CHKERRQ(ierr);
 
-  vector<EntityHandle> conn_parents;
+  std::vector<EntityHandle> conn_parents;
 
   Range::iterator eit,hi_eit;
   eit = children.begin();
@@ -304,7 +304,7 @@ PetscErrorCode BitLevelCouplerInterface::buidlAdjacenciesEdgesFacesVolumes(
     }
 
     if(verb>1) {
-      cout << "before: " << **it << endl;
+      std::cout << "before: " << **it << std::endl;
     }
 
     //check if entity has a parent and parent is on parent bit level
@@ -337,7 +337,7 @@ PetscErrorCode BitLevelCouplerInterface::buidlAdjacenciesEdgesFacesVolumes(
       max_dim = ent_dim > max_dim ? ent_dim : max_dim;
     }
 
-    if(verb>1) cout << "max_dim " << max_dim << endl;
+    if(verb>1) std::cout << "max_dim " << max_dim << std::endl;
 
     if(max_dim > 0) {
 
@@ -350,7 +350,7 @@ PetscErrorCode BitLevelCouplerInterface::buidlAdjacenciesEdgesFacesVolumes(
         if(!parent_ents.empty()) {
           ierr = chanegParent(refined_ptr->project<0>(it),*parent_ents.begin(),elements); CHKERRQ(ierr);
           if(verb > 1) {
-            cout << "after: " << **it << endl << endl;
+            std::cout << "after: " << **it << std::endl << std::endl;
           }
           break;
         }
@@ -359,7 +359,7 @@ PetscErrorCode BitLevelCouplerInterface::buidlAdjacenciesEdgesFacesVolumes(
       if(!vErify && max_dim>3) {
         ierr = chanegParent(refined_ptr->project<0>(it),0,elements); CHKERRQ(ierr);
         if(verb > 1) {
-          cout << "parent not found\n";
+          std::cout << "parent not found\n";
         }
       }
 
@@ -474,7 +474,7 @@ PetscErrorCode BitLevelCouplerInterface::getLocCoordsOnTet(EntityHandle tet,cons
   ierr = ShapeMBTET(N,&locCoords[0],&locCoords[1],&locCoords[2],1);; CHKERRQ(ierr);
 
   if(verb>1) {
-    cout << "N " << N[0] << " " << N[1] << " " << N[2] << " " << N[3] << endl;
+    std::cout << "N " << N[0] << " " << N[1] << " " << N[2] << " " << N[3] << std::endl;
   }
 
   PetscFunctionReturn(0);

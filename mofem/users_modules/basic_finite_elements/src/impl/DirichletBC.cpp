@@ -21,7 +21,7 @@ using namespace MoFEM;
 using namespace boost::numeric;
 
 DisplacementBCFEMethodPreAndPostProc::DisplacementBCFEMethodPreAndPostProc(
-  FieldInterface& m_field,const string &field_name,Mat Aij,Vec X,Vec F
+  FieldInterface& m_field,const std::string &field_name,Mat Aij,Vec X,Vec F
 ):
 mField(m_field),
 fieldName(field_name),
@@ -35,7 +35,7 @@ dIag(1) {
 };
 
 DisplacementBCFEMethodPreAndPostProc::DisplacementBCFEMethodPreAndPostProc(
-  FieldInterface& m_field,const string &field_name
+  FieldInterface& m_field,const std::string &field_name
 ):
 mField(m_field),
 fieldName(field_name),
@@ -76,7 +76,7 @@ PetscErrorCode DisplacementBCFEMethodPreAndPostProc::iNitalize() {
         for(Range::iterator eit = ents.begin();eit!=ents.end();eit++) {
           for(_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_NAME_ENT_PART_FOR_LOOP_(problemPtr,fieldName,*eit,pcomm->rank(),dof_ptr)) {
             NumeredDofEntity *dof = dof_ptr->get();
-            bitset<8> pstatus(dof->get_pstatus());
+            std::bitset<8> pstatus(dof->get_pstatus());
             if(pstatus.test(0)) continue; //only local
             if(dof->get_ent_type() == MBVERTEX) {
               if(dof->get_dof_coeff_idx() == 0 && mydata.data.flag1) {
@@ -106,11 +106,11 @@ PetscErrorCode DisplacementBCFEMethodPreAndPostProc::iNitalize() {
     dofsIndices.resize(mapZeroRows.size());
     dofsValues.resize(mapZeroRows.size());
     int ii = 0;
-    map<DofIdx,FieldData>::iterator mit = mapZeroRows.begin();
+    std::map<DofIdx,FieldData>::iterator mit = mapZeroRows.begin();
     for(;mit!=mapZeroRows.end();mit++,ii++) {
       dofsIndices[ii] = mit->first;
       dofsValues[ii] = mit->second;
-      //cerr << dofsIndices[ii] << " " << dofsValues[ii] << endl;
+      //std::cerr << dofsIndices[ii] << " " << dofsValues[ii] << std::endl;
     }
   }
   PetscFunctionReturn(0);
@@ -178,7 +178,7 @@ PetscErrorCode DisplacementBCFEMethodPreAndPostProc::postProcess() {
     if(snes_f) {
       ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
       ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
-      for(vector<int>::iterator vit = dofsIndices.begin();vit!=dofsIndices.end();vit++) {
+      for(std::vector<int>::iterator vit = dofsIndices.begin();vit!=dofsIndices.end();vit++) {
         ierr = VecSetValue(snes_f,*vit,0,INSERT_VALUES); CHKERRQ(ierr);
       }
       ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
@@ -202,7 +202,7 @@ PetscErrorCode DisplacementBCFEMethodPreAndPostProc::postProcess() {
       ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
       if(!dofsIndices.empty()) {
         int ii = 0;
-        for(vector<int>::iterator vit = dofsIndices.begin();vit!=dofsIndices.end();vit++,ii++) {
+        for(std::vector<int>::iterator vit = dofsIndices.begin();vit!=dofsIndices.end();vit++,ii++) {
           double val = 0;
           if(!dofsXValues.empty()) {
             val += dofsXValues[ii];
@@ -294,7 +294,7 @@ PetscErrorCode SpatialPositionsBCFEMethodPreAndPostProc::iNitalize() {
               }
             }
           }
-          for(vector<string>::iterator fit = fixFields.begin();fit!=fixFields.end();fit++) {
+          for(std::vector<std::string>::iterator fit = fixFields.begin();fit!=fixFields.end();fit++) {
             for(_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_NAME_ENT_PART_FOR_LOOP_(problemPtr,*fit,*eit,pcomm->rank(),dof_ptr)) {
               NumeredDofEntity *dof = dof_ptr->get();
               mapZeroRows[dof->get_petsc_gloabl_dof_idx()] = dof->get_FieldData();
@@ -306,7 +306,7 @@ PetscErrorCode SpatialPositionsBCFEMethodPreAndPostProc::iNitalize() {
     dofsIndices.resize(mapZeroRows.size());
     dofsValues.resize(mapZeroRows.size());
     int ii = 0;
-    map<DofIdx,FieldData>::iterator mit = mapZeroRows.begin();
+    std::map<DofIdx,FieldData>::iterator mit = mapZeroRows.begin();
     for(;mit!=mapZeroRows.end();mit++,ii++) {
       dofsIndices[ii] = mit->first;
       dofsValues[ii] = mit->second;
@@ -353,7 +353,7 @@ PetscErrorCode TemperatureBCFEMethodPreAndPostProc::iNitalize() {
     dofsIndices.resize(mapZeroRows.size());
     dofsValues.resize(mapZeroRows.size());
     int ii = 0;
-    map<DofIdx,FieldData>::iterator mit = mapZeroRows.begin();
+    std::map<DofIdx,FieldData>::iterator mit = mapZeroRows.begin();
     for(;mit!=mapZeroRows.end();mit++,ii++) {
       dofsIndices[ii] = mit->first;
       dofsValues[ii] = mit->second;
@@ -365,7 +365,7 @@ PetscErrorCode TemperatureBCFEMethodPreAndPostProc::iNitalize() {
 PetscErrorCode FixBcAtEntities::iNitalize() {
   PetscFunctionBegin;
   if(mapZeroRows.empty()) {
-    for(vector<string>::iterator fit = fieldNames.begin();fit!=fieldNames.end();fit++) {
+    for(std::vector<std::string>::iterator fit = fieldNames.begin();fit!=fieldNames.end();fit++) {
       for(Range::iterator eit = eNts.begin();eit!=eNts.end();eit++) {
         for(_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_NAME_ENT_PART_FOR_LOOP_(problemPtr,*fit,*eit,mField.getCommRank(),dof_ptr)) {
           NumeredDofEntity *dof = dof_ptr->get();
@@ -376,7 +376,7 @@ PetscErrorCode FixBcAtEntities::iNitalize() {
     dofsIndices.resize(mapZeroRows.size());
     dofsValues.resize(mapZeroRows.size());
     int ii = 0;
-    map<DofIdx,FieldData>::iterator mit = mapZeroRows.begin();
+    std::map<DofIdx,FieldData>::iterator mit = mapZeroRows.begin();
     for(;mit!=mapZeroRows.end();mit++,ii++) {
       dofsIndices[ii] = mit->first;
       dofsValues[ii] = mit->second;
@@ -422,7 +422,7 @@ PetscErrorCode FixBcAtEntities::postProcess() {
       ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
       ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
       int ii = 0;
-      for(vector<int>::iterator vit = dofsIndices.begin();vit!=dofsIndices.end();vit++,ii++) {
+      for(std::vector<int>::iterator vit = dofsIndices.begin();vit!=dofsIndices.end();vit++,ii++) {
         ierr = VecSetValue(snes_f,*vit,dofsValues[ii],INSERT_VALUES); CHKERRQ(ierr);
       }
       ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
@@ -437,7 +437,7 @@ PetscErrorCode FixBcAtEntities::postProcess() {
       ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
       ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
       int ii = 0;
-      for(vector<int>::iterator vit = dofsIndices.begin();vit!=dofsIndices.end();vit++,ii++) {
+      for(std::vector<int>::iterator vit = dofsIndices.begin();vit!=dofsIndices.end();vit++,ii++) {
         ierr = VecSetValue(snes_f,*vit,dofsValues[ii],INSERT_VALUES); CHKERRQ(ierr);
       }
       ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
@@ -471,7 +471,7 @@ PetscErrorCode DirichletBCFromBlockSetFEMethodPreAndPostProc::iNitalize() {
     ParallelComm* pcomm = ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
     for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BLOCKSET,it)) {
       if(it->get_name().compare(0,blocksetName.length(),blocksetName) == 0) {
-        vector<double> mydata;
+        std::vector<double> mydata;
         ierr = it->get_attributes(mydata); CHKERRQ(ierr);
         ublas::vector<double> scaled_values(mydata.size());
         for(unsigned int ii = 0;ii<mydata.size();ii++) {
@@ -523,7 +523,7 @@ PetscErrorCode DirichletBCFromBlockSetFEMethodPreAndPostProc::iNitalize() {
     dofsIndices.resize(mapZeroRows.size());
     dofsValues.resize(mapZeroRows.size());
     int ii = 0;
-    map<DofIdx,FieldData>::iterator mit = mapZeroRows.begin();
+    std::map<DofIdx,FieldData>::iterator mit = mapZeroRows.begin();
     for(;mit!=mapZeroRows.end();mit++,ii++) {
       dofsIndices[ii] = mit->first;
       dofsValues[ii] = mit->second;

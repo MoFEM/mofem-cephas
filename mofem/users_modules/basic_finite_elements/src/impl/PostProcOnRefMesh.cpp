@@ -247,8 +247,8 @@ PetscErrorCode PostProcCommonOnRefMesh::OpGetFieldGradientValues::doWork(
       SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"field with that space is not implemented");
     }
 
-  } catch (exception& ex) {
-    ostringstream ss;
+  } catch (std::exception& ex) {
+    std::ostringstream ss;
     ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
     SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
   }
@@ -307,7 +307,7 @@ PetscErrorCode PostProcVolumeOnRefinedMesh::generateReferenceElementMesh() {
   Range elem_nodes;
   ierr = m_field_ref.get_entities_by_type_and_ref_level(BitRefLevel().set(max_level),BitRefLevel().set(),MBVERTEX,elem_nodes); CHKERRQ(ierr);
 
-  map<EntityHandle,int> little_map;
+  std::map<EntityHandle,int> little_map;
   gaussPts_FirstOrder.resize(elem_nodes.size(),4,0);
   Range::iterator nit = elem_nodes.begin();
   for(int gg = 0;nit!=elem_nodes.end();nit++,gg++) {
@@ -361,7 +361,7 @@ PetscErrorCode PostProcVolumeOnRefinedMesh::setGaussPts(int order) {
       commonData.tEts.insert(tet);
     }
 
-    //cerr << commonData.tEts.size() << endl;
+    //std::cerr << commonData.tEts.size() << std::endl;
 
     {
       EntityHandle meshset;
@@ -380,7 +380,7 @@ PetscErrorCode PostProcVolumeOnRefinedMesh::setGaussPts(int order) {
       rval = postProcMesh.delete_entities(edges);
     }
 
-    //cerr << "<-- " << commonData.tEts.size() << endl;
+    //std::cerr << "<-- " << commonData.tEts.size() << std::endl;
     Range nodes;
     rval = postProcMesh.get_connectivity(commonData.tEts,nodes,false); CHKERRQ_MOAB(rval);
 
@@ -392,14 +392,14 @@ PetscErrorCode PostProcVolumeOnRefinedMesh::setGaussPts(int order) {
     }
     gaussPts = trans(gaussPts);
 
-    //cerr << gaussPts << endl;
+    //std::cerr << gaussPts << std::endl;
 
     ublas::matrix<double> N;
     N.resize(nodes.size(),4);
     ierr = ShapeMBTET(
       &*N.data().begin(),&gaussPts(0,0),&gaussPts(1,0),&gaussPts(2,0),nodes.size()
     ); CHKERRQ(ierr);
-    //cerr << N << endl;
+    //std::cerr << N << std::endl;
 
     ublas::matrix<double> coords_at_gauss_pts;
     coords_at_gauss_pts.resize(nodes.size(),3);
@@ -413,7 +413,7 @@ PetscErrorCode PostProcVolumeOnRefinedMesh::setGaussPts(int order) {
       mField.get_moab().get_connectivity(fe_ent,conn,num_nodes,false);
       coords.resize(3*num_nodes);
       rval = mField.get_moab().get_coords(conn,num_nodes,&coords[0]); CHKERRQ_MOAB(rval);
-      //cerr << coords << endl;
+      //std::cerr << coords << std::endl;
     }
 
     for(unsigned int gg = 0;gg<nodes.size();gg++) {
@@ -422,7 +422,7 @@ PetscErrorCode PostProcVolumeOnRefinedMesh::setGaussPts(int order) {
       }
     }
 
-    //cerr << coords_at_gauss_pts << endl;
+    //std::cerr << coords_at_gauss_pts << std::endl;
 
     mapGaussPts.resize(nodes.size());
     nit = nodes.begin();
@@ -433,10 +433,10 @@ PetscErrorCode PostProcVolumeOnRefinedMesh::setGaussPts(int order) {
 
     //tEts.clear();
     //rval = postProcMesh.get_entities_by_type(0,MBTET,tEts,true); CHKERRQ_MOAB(rval);
-    //ce  rr << "<--- <--- " << tEts.size() << endl;
+    //ce  rr << "<--- <--- " << tEts.size() << std::endl;
 
-  } catch (exception& ex) {
-    ostringstream ss;
+  } catch (std::exception& ex) {
+    std::ostringstream ss;
     ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
     SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
   }
@@ -480,7 +480,7 @@ PetscErrorCode PostProcVolumeOnRefinedMesh::postProcess() {
   Range tets;
   rval = postProcMesh.get_entities_by_type(0,MBTET,tets,false);  CHKERRQ_MOAB(rval);
 
-  //cerr << "total tets size " << tets.size() << endl;
+  //std::cerr << "total tets size " << tets.size() << std::endl;
 
   int rank = pcomm->rank();
   Range::iterator tit = tets.begin();
@@ -501,7 +501,7 @@ PetscErrorCode PostProcVolumeOnRefinedMesh::postProcess() {
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode PostProcVolumeOnRefinedMesh::writeFile(const string file_name) {
+PetscErrorCode PostProcVolumeOnRefinedMesh::writeFile(const std::string file_name) {
  PetscFunctionBegin;
  ErrorCode rval;
  #ifdef MOAB_HDF5_PARALLEL
@@ -526,7 +526,7 @@ PetscErrorCode PostProcVolumeOnRefinedMesh::OpHdivFunctions::doWork(
   ErrorCode rval;
   PetscErrorCode ierr;
 
-  vector<Tag> th;
+  std::vector<Tag> th;
   th.resize(data.getFieldData().size());
 
   double def_VAL[9] = { 0,0,0 };
@@ -534,14 +534,14 @@ PetscErrorCode PostProcVolumeOnRefinedMesh::OpHdivFunctions::doWork(
   switch(type) {
     case MBTRI:
     for(unsigned int dd = 0;dd<data.getHdivN().size2()/3;dd++) {
-      ostringstream ss;
+      std::ostringstream ss;
       ss << "HDIV_FACE_" << side << "_" << dd;
       rval = postProcMesh.tag_get_handle(ss.str().c_str(),3,MB_TYPE_DOUBLE,th[dd],MB_TAG_CREAT|MB_TAG_SPARSE,def_VAL); CHKERRQ_MOAB(rval);
     }
     break;
     case MBTET:
     for(unsigned int dd = 0;dd<data.getHdivN().size2()/3;dd++) {
-      ostringstream ss;
+      std::ostringstream ss;
       ss << "HDIV_TET_" << dd;
       rval = postProcMesh.tag_get_handle(ss.str().c_str(),3,MB_TYPE_DOUBLE,th[dd],MB_TAG_CREAT|MB_TAG_SPARSE,def_VAL); CHKERRQ_MOAB(rval);
     }
@@ -559,7 +559,7 @@ PetscErrorCode PostProcVolumeOnRefinedMesh::OpHdivFunctions::doWork(
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode PostProcVolumeOnRefinedMesh::addHdivFunctionsPostProc(const string field_name) {
+PetscErrorCode PostProcVolumeOnRefinedMesh::addHdivFunctionsPostProc(const std::string field_name) {
   PetscFunctionBegin;
   getOpPtrVector().push_back(new OpHdivFunctions(postProcMesh,mapGaussPts,field_name));
   PetscFunctionReturn(0);
@@ -738,7 +738,7 @@ PetscErrorCode PostProcFatPrismOnRefinedMesh::setGaussPtsTrianglesOnly(int order
     }
 
     mapGaussPts.resize(nb_through_thickness*nb_on_triangle);
-    fill(mapGaussPts.begin(),mapGaussPts.end(),0);
+    std::fill(mapGaussPts.begin(),mapGaussPts.end(),0);
     {
       int gg = 0;
       for(unsigned int ggf = 0;ggf!=gaussPtsTrianglesOnly.size2();ggf++) {
@@ -788,7 +788,7 @@ PetscErrorCode PostProcFatPrismOnRefinedMesh::postProcess() {
   }
   Range prims;
   rval = postProcMesh.get_entities_by_type(0,MBPRISM,prims,false);  CHKERRQ_MOAB(rval);
-  //cerr << "total prims size " << prims.size() << endl;
+  //std::cerr << "total prims size " << prims.size() << std::endl;
   int rank = pcomm->rank();
   Range::iterator pit = prims.begin();
   for(;pit!=prims.end();pit++) {

@@ -95,14 +95,14 @@ struct Field {
   }
 
   inline EntityHandle getCoordSysMeshSet() const { return coordSysPtr->getMeshSet(); }
-  inline string getCoordSysName() const { return coordSysPtr->getName(); };
+  inline std::string getCoordSysName() const { return coordSysPtr->getName(); };
   inline boost::string_ref getCoordSysNameRef() const {
     return coordSysPtr->getNameRef();
   };
 
   inline const BitFieldId& get_id() const { return *((BitFieldId*)tag_id_data); };
   inline boost::string_ref get_name_ref() const { return boost::string_ref((char *)tag_name_data,tag_name_size); };
-  inline string get_name() const { return string((char *)tag_name_data,tag_name_size); };
+  inline std::string get_name() const { return std::string((char *)tag_name_data,tag_name_size); };
   inline FieldSpace get_space() const { return *tag_space_data; };
   inline FieldApproximationBase get_approx_base() const { return *tag_base_data; };
 
@@ -129,7 +129,7 @@ struct Field {
     return 0;
   }
 
-  friend ostream& operator<<(ostream& os,const Field& e);
+  friend std::ostream& operator<<(std::ostream& os,const Field& e);
 };
 
 /**
@@ -170,7 +170,7 @@ struct interface_Field {
     PetscFunctionReturn(this->sFieldPtr->get_e_DualBase(m));
   }
   inline EntityHandle getCoordSysMeshSet() const { return this->sFieldPtr->getCoordSysMeshSet(); }
-  inline string getCoordSysName() const { return this->sFieldPtr->getCoordSysName(); };
+  inline std::string getCoordSysName() const { return this->sFieldPtr->getCoordSysName(); };
   inline boost::string_ref getCoordSysNameRef() const {
     return this->sFieldPtr->getCoordSysNameRef();
   }
@@ -178,7 +178,7 @@ struct interface_Field {
   inline const BitFieldId& get_id() const { return this->sFieldPtr->get_id(); }
   inline unsigned int get_bit_number() const { return this->sFieldPtr->get_bit_number(); }
   inline boost::string_ref get_name_ref() const { return this->sFieldPtr->get_name_ref(); }
-  inline string get_name() const { return this->sFieldPtr->get_name(); }
+  inline std::string get_name() const { return this->sFieldPtr->get_name(); }
   inline FieldSpace get_space() const { return this->sFieldPtr->get_space(); }
   inline FieldApproximationBase get_approx_base() const { return this->sFieldPtr->get_approx_base(); }
 

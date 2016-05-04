@@ -78,7 +78,7 @@ PetscErrorCode VertexElementForcesAndSourcesCore::operator()() {
   const UserDataOperator::OpType types[2] = {
     UserDataOperator::OPROW, UserDataOperator::OPCOL
   };
-  vector<string> last_eval_field_name(2);
+  std::vector<std::string> last_eval_field_name(2);
   DataForcesAndSurcesCore *op_data[2];
   FieldSpace space[2];
 
@@ -92,7 +92,7 @@ PetscErrorCode VertexElementForcesAndSourcesCore::operator()() {
 
     for(int ss = 0;ss!=2;ss++) {
 
-      string field_name = !ss ? oit->rowFieldName : oit->colFieldName;
+      std::string field_name = !ss ? oit->rowFieldName : oit->colFieldName;
       BitFieldId data_id = mField.get_field_structure(field_name)->get_id();
       if((oit->getMoFEMFEPtr()->get_BitFieldId_data()&data_id).none()) {
         SETERRQ2(
@@ -182,8 +182,8 @@ PetscErrorCode VertexElementForcesAndSourcesCore::operator()() {
           false,
           false
         ); CHKERRQ(ierr);
-      } catch (exception& ex) {
-        ostringstream ss;
+      } catch (std::exception& ex) {
+        std::ostringstream ss;
         ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
         SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
       }
@@ -201,8 +201,8 @@ PetscErrorCode VertexElementForcesAndSourcesCore::operator()() {
           false,
           false
         ); CHKERRQ(ierr);
-      } catch (exception& ex) {
-        ostringstream ss;
+      } catch (std::exception& ex) {
+        std::ostringstream ss;
         ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
         SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
       }
@@ -212,8 +212,8 @@ PetscErrorCode VertexElementForcesAndSourcesCore::operator()() {
     if(oit->getOpType()&UserDataOperator::OPROWCOL) {
       try {
         ierr = oit->opLhs(*op_data[0],*op_data[1],oit->sYmm); CHKERRQ(ierr);
-      } catch (exception& ex) {
-        ostringstream ss;
+      } catch (std::exception& ex) {
+        std::ostringstream ss;
         ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
         SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
       }

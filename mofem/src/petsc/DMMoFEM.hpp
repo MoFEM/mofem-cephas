@@ -436,7 +436,7 @@ namespace MoFEM {
 
     FieldInterface *mField_ptr; 		///< MoFEM interface
     PetscBool isProblemBuild;      ///< True if problem is build
-    string problemName;			        ///< Problem name
+    std::string problemName;			        ///< Problem name
 
     KspCtx *kspCtx;			  ///< data structure KSP
     SnesCtx *snesCtx;			///< data structure SNES

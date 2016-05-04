@@ -33,7 +33,7 @@ PetscErrorCode ThermalElement::OpGetGradAtGaussPts::doWork(int side,EntityType t
     //initialize
     commonData.gradAtGaussPts.resize(nb_gauss_pts,3);
     if(type == MBVERTEX) {
-      fill(commonData.gradAtGaussPts.data().begin(),commonData.gradAtGaussPts.data().end(),0);
+      std::fill(commonData.gradAtGaussPts.data().begin(),commonData.gradAtGaussPts.data().end(),0);
     }
 
     for(int gg = 0;gg<nb_gauss_pts;gg++) {
@@ -41,8 +41,8 @@ PetscErrorCode ThermalElement::OpGetGradAtGaussPts::doWork(int side,EntityType t
     }
 
   } catch (const std::exception& ex) {
-    ostringstream ss;
-    ss << "throw in method: " << ex.what() << endl;
+    std::ostringstream ss;
+    ss << "throw in method: " << ex.what() << std::endl;
     SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
   }
 
@@ -66,8 +66,8 @@ PetscErrorCode ThermalElement::OpThermalRhs::doWork(int side,EntityType type,Dat
     int nb_row_dofs = data.getIndices().size();
     Nf.resize(nb_row_dofs);
     Nf.clear();
-    //cerr << data.getIndices() << endl;
-    //cerr << data.getDiffN() << endl;
+    //std::cerr << data.getIndices() << std::endl;
+    //std::cerr << data.getDiffN() << std::endl;
 
     for(unsigned int gg = 0;gg<data.getN().size1();gg++) {
 
@@ -77,10 +77,10 @@ PetscErrorCode ThermalElement::OpThermalRhs::doWork(int side,EntityType type,Dat
         val *= getHoGaussPtsDetJac()[gg]; ///< higher order geometry
       }
 
-      //cerr << val << endl;
-      //cerr << data.getDiffN() << endl;
-      //cerr << data.getIndices() << endl;
-      //cerr << commonData.gradAtGaussPts << endl;
+      //std::cerr << val << std::endl;
+      //std::cerr << data.getDiffN() << std::endl;
+      //std::cerr << data.getIndices() << std::endl;
+      //std::cerr << commonData.gradAtGaussPts << std::endl;
       //cblas
       //cblas_dgemv(CblasRowMajor,CblasNoTrans,nb_row_dofs,3,val,
       //&data.getDiffN()(gg,0),3,&commonData.gradAtGaussPts(gg,0),1,
@@ -91,7 +91,7 @@ PetscErrorCode ThermalElement::OpThermalRhs::doWork(int side,EntityType type,Dat
 
     }
 
-    //cerr << Nf << endl;
+    //std::cerr << Nf << std::endl;
     if(useTsF) {
       ierr = VecSetValues(getFEMethod()->ts_F,data.getIndices().size(),&data.getIndices()[0],&Nf[0],ADD_VALUES); CHKERRQ(ierr);
     } else {
@@ -100,8 +100,8 @@ PetscErrorCode ThermalElement::OpThermalRhs::doWork(int side,EntityType type,Dat
     }
 
   } catch (const std::exception& ex) {
-    ostringstream ss;
-    ss << "throw in method: " << ex.what() << endl;
+    std::ostringstream ss;
+    ss << "throw in method: " << ex.what() << std::endl;
     SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
   }
 
@@ -172,8 +172,8 @@ PetscErrorCode ThermalElement::OpThermalLhs::doWork(
 
 
   } catch (const std::exception& ex) {
-    ostringstream ss;
-    ss << "throw in method: " << ex.what() << endl;
+    std::ostringstream ss;
+    ss << "throw in method: " << ex.what() << std::endl;
     SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
   }
 
@@ -208,8 +208,8 @@ PetscErrorCode ThermalElement::OpHeatCapacityRhs::doWork(int side,EntityType typ
 
 
   } catch (const std::exception& ex) {
-    ostringstream ss;
-    ss << "throw in method: " << ex.what() << endl;
+    std::ostringstream ss;
+    ss << "throw in method: " << ex.what() << std::endl;
     SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
   }
 
@@ -275,8 +275,8 @@ PetscErrorCode ThermalElement::OpHeatCapacityLhs::doWork(
 
 
   } catch (const std::exception& ex) {
-    ostringstream ss;
-    ss << "throw in method: " << ex.what() << endl;
+    std::ostringstream ss;
+    ss << "throw in method: " << ex.what() << std::endl;
     SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
   }
 
@@ -300,8 +300,8 @@ PetscErrorCode ThermalElement::OpHeatFlux::doWork(int side,EntityType type,DataF
 
   Nf.resize(data.getIndices().size());
   Nf.clear();
-  //cerr << getNormal() << endl;
-  //cerr << getNormals_at_GaussPt() << endl;
+  //std::cerr << getNormal() << std::endl;
+  //std::cerr << getNormals_at_GaussPt() << std::endl;
 
   for(unsigned int gg = 0;gg<data.getN().size1();gg++) {
 
@@ -318,9 +318,9 @@ PetscErrorCode ThermalElement::OpHeatFlux::doWork(int side,EntityType type,DataF
 
   }
 
-  //cerr << "VecSetValues\n";
-  //cerr << Nf << endl;
-  //cerr << data.getIndices() << endl;
+  //std::cerr << "VecSetValues\n";
+  //std::cerr << Nf << std::endl;
+  //std::cerr << data.getIndices() << std::endl;
 
   if(useTsF) {
     ierr = VecSetValues(getFEMethod()->ts_F,data.getIndices().size(),
@@ -390,8 +390,8 @@ PetscErrorCode ThermalElement::OpRadiationLhs::doWork(
     }
 
   } catch (const std::exception& ex) {
-    ostringstream ss;
-    ss << "throw in method: " << ex.what() << endl;
+    std::ostringstream ss;
+    ss << "throw in method: " << ex.what() << std::endl;
     SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
   }
 
@@ -413,8 +413,8 @@ PetscErrorCode ThermalElement::OpRadiationRhs::doWork(int side,EntityType type,D
 
   Nf.resize(data.getIndices().size());
   Nf.clear();
-  //cerr << getNormal() << endl;
-  //cerr << getNormals_at_GaussPt() << endl;
+  //std::cerr << getNormal() << std::endl;
+  //std::cerr << getNormals_at_GaussPt() << std::endl;
 
   for(unsigned int gg = 0;gg<data.getN().size1();gg++) {
 
@@ -439,9 +439,9 @@ PetscErrorCode ThermalElement::OpRadiationRhs::doWork(int side,EntityType type,D
 
   }
 
-  //cerr << "VecSetValues\n";
-  //cerr << Nf << endl;
-  //cerr << data.getIndices() << endl;
+  //std::cerr << "VecSetValues\n";
+  //std::cerr << Nf << std::endl;
+  //std::cerr << data.getIndices() << std::endl;
 
   if(useTsF) {
     ierr = VecSetValues(getFEMethod()->ts_F,data.getIndices().size(),&data.getIndices()[0],&Nf[0],ADD_VALUES); CHKERRQ(ierr);
@@ -470,9 +470,9 @@ PetscErrorCode ThermalElement::OpConvectionRhs::doWork(
 
   Nf.resize(data.getIndices().size());
   Nf.clear();
-  //fill(Nf.begin(),Nf.end(),0);
-  //cerr << getNormal() << endl;
-  //cerr << getNormals_at_GaussPt() << endl;
+  //std::fill(Nf.begin(),Nf.end(),0);
+  //std::cerr << getNormal() << std::endl;
+  //std::cerr << getNormals_at_GaussPt() << std::endl;
 
   for(unsigned int gg = 0;gg<data.getN().size1();gg++) {
 
@@ -489,9 +489,9 @@ PetscErrorCode ThermalElement::OpConvectionRhs::doWork(
 
   }
 
-  //cerr << "VecSetValues\n";
-  //cerr << Nf << endl;
-  //cerr << data.getIndices() << endl;
+  //std::cerr << "VecSetValues\n";
+  //std::cerr << Nf << std::endl;
+  //std::cerr << data.getIndices() << std::endl;
 
   if(useTsF) {
     ierr = VecSetValues(
@@ -567,8 +567,8 @@ PetscErrorCode ThermalElement::OpConvectionLhs::doWork(
 
 
   } catch (const std::exception& ex) {
-    ostringstream ss;
-    ss << "throw in method: " << ex.what() << endl;
+    std::ostringstream ss;
+    ss << "throw in method: " << ex.what() << std::endl;
     SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
   }
 
@@ -608,7 +608,7 @@ PetscErrorCode ThermalElement::TimeSeriesMonitor::postProcess() {
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode ThermalElement::addThermalElements(const string field_name,const string mesh_nodals_positions) {
+PetscErrorCode ThermalElement::addThermalElements(const std::string field_name,const std::string mesh_nodals_positions) {
   PetscFunctionBegin;
 
   PetscErrorCode ierr;
@@ -646,7 +646,7 @@ PetscErrorCode ThermalElement::addThermalElements(const string field_name,const 
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode ThermalElement::addThermalFluxElement(const string field_name,const string mesh_nodals_positions) {
+PetscErrorCode ThermalElement::addThermalFluxElement(const std::string field_name,const std::string mesh_nodals_positions) {
   PetscFunctionBegin;
 
   PetscErrorCode ierr;
@@ -670,7 +670,7 @@ PetscErrorCode ThermalElement::addThermalFluxElement(const string field_name,con
   //not elegant, but good enough
   for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BLOCKSET,it)) {
     if(it->get_name().compare(0,9,"HEAT_FLUX") == 0) {
-      vector<double> data;
+      std::vector<double> data;
       ierr = it->get_attributes(data); CHKERRQ(ierr);
       if(data.size()!=1) {
         SETERRQ(PETSC_COMM_SELF,1,"Data inconsistency");
@@ -678,7 +678,7 @@ PetscErrorCode ThermalElement::addThermalFluxElement(const string field_name,con
       strcpy(setOfFluxes[it->get_msId()].dAta.data.name,"HeatFlu");
       setOfFluxes[it->get_msId()].dAta.data.flag1 = 1;
       setOfFluxes[it->get_msId()].dAta.data.value1 = data[0];
-      //cerr << setOfFluxes[it->get_msId()].dAta << endl;
+      //std::cerr << setOfFluxes[it->get_msId()].dAta << std::endl;
       rval = mField.get_moab().get_entities_by_type(it->meshset,MBTRI,setOfFluxes[it->get_msId()].tRis,true); CHKERRQ_MOAB(rval);
       ierr = mField.add_ents_to_finite_element_by_TRIs(setOfFluxes[it->get_msId()].tRis,"THERMAL_FLUX_FE"); CHKERRQ(ierr);
     }
@@ -688,7 +688,7 @@ PetscErrorCode ThermalElement::addThermalFluxElement(const string field_name,con
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode ThermalElement::addThermalConvectionElement(const string field_name,const string mesh_nodals_positions) {
+PetscErrorCode ThermalElement::addThermalConvectionElement(const std::string field_name,const std::string mesh_nodals_positions) {
   PetscFunctionBegin;
 
   PetscErrorCode ierr;
@@ -707,14 +707,14 @@ PetscErrorCode ThermalElement::addThermalConvectionElement(const string field_na
   for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BLOCKSET,it)) {
     if(it->get_name().compare(0,10,"CONVECTION") == 0) {
 
-      vector<double> data;
+      std::vector<double> data;
       ierr = it->get_attributes(data); CHKERRQ(ierr);
       if(data.size()!=2) {
         SETERRQ(PETSC_COMM_SELF,1,"Data inconsistency");
       }
       setOfConvection[it->get_msId()].cOnvection = data[0];
       setOfConvection[it->get_msId()].tEmperature = data[1];
-      //cerr << setOfFluxes[it->get_msId()].dAta << endl;
+      //std::cerr << setOfFluxes[it->get_msId()].dAta << std::endl;
       rval = mField.get_moab().get_entities_by_type(it->meshset,MBTRI,setOfConvection[it->get_msId()].tRis,true); CHKERRQ_MOAB(rval);
       ierr = mField.add_ents_to_finite_element_by_TRIs(setOfConvection[it->get_msId()].tRis,"THERMAL_CONVECTION_FE"); CHKERRQ(ierr);
 
@@ -724,7 +724,7 @@ PetscErrorCode ThermalElement::addThermalConvectionElement(const string field_na
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode ThermalElement::addThermalRadiationElement(const string field_name,const string mesh_nodals_positions) {
+PetscErrorCode ThermalElement::addThermalRadiationElement(const std::string field_name,const std::string mesh_nodals_positions) {
   PetscFunctionBegin;
 
   PetscErrorCode ierr;
@@ -742,7 +742,7 @@ PetscErrorCode ThermalElement::addThermalRadiationElement(const string field_nam
   //not elegant, but good enough
   for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BLOCKSET,it)) {
     if(it->get_name().compare(0,9,"RADIATION") == 0) {
-      vector<double> data;
+      std::vector<double> data;
       ierr = it->get_attributes(data); CHKERRQ(ierr);
       if(data.size()!=3) {
         SETERRQ(PETSC_COMM_SELF,1,"Data inconsistency");
@@ -751,7 +751,7 @@ PetscErrorCode ThermalElement::addThermalRadiationElement(const string field_nam
       setOfRadiation[it->get_msId()].eMissivity = data[1];
       //setOfRadiation[it->get_msId()].aBsorption = data[2];
       setOfRadiation[it->get_msId()].aMbienttEmp = data[2];
-      //cerr << setOfFluxes[it->get_msId()].dAta << endl;
+      //std::cerr << setOfFluxes[it->get_msId()].dAta << std::endl;
       rval = mField.get_moab().get_entities_by_type(it->meshset,MBTRI,setOfRadiation[it->get_msId()].tRis,true); CHKERRQ_MOAB(rval);
       ierr = mField.add_ents_to_finite_element_by_TRIs(setOfRadiation[it->get_msId()].tRis,"THERMAL_RADIATION_FE"); CHKERRQ(ierr);
 
@@ -763,7 +763,7 @@ PetscErrorCode ThermalElement::addThermalRadiationElement(const string field_nam
 
 PetscErrorCode ThermalElement::setThermalFiniteElementRhsOperators(string field_name,Vec &F) {
   PetscFunctionBegin;
-  map<int,BlockData>::iterator sit = setOfBlocks.begin();
+  std::map<int,BlockData>::iterator sit = setOfBlocks.begin();
   feRhs.getOpPtrVector().push_back(new OpGetGradAtGaussPts(field_name,commonData));
   for(;sit!=setOfBlocks.end();sit++) {
     //add finite element
@@ -774,7 +774,7 @@ PetscErrorCode ThermalElement::setThermalFiniteElementRhsOperators(string field_
 
 PetscErrorCode ThermalElement::setThermalFiniteElementLhsOperators(string field_name,Mat A) {
   PetscFunctionBegin;
-  map<int,BlockData>::iterator sit = setOfBlocks.begin();
+  std::map<int,BlockData>::iterator sit = setOfBlocks.begin();
   for(;sit!=setOfBlocks.end();sit++) {
     //add finite elemen
     feLhs.getOpPtrVector().push_back(new OpThermalLhs(field_name,A,sit->second,commonData));
@@ -782,13 +782,13 @@ PetscErrorCode ThermalElement::setThermalFiniteElementLhsOperators(string field_
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode ThermalElement::setThermalFluxFiniteElementRhsOperators(string field_name,Vec &F,const string mesh_nodals_positions) {
+PetscErrorCode ThermalElement::setThermalFluxFiniteElementRhsOperators(string field_name,Vec &F,const std::string mesh_nodals_positions) {
   PetscFunctionBegin;
   bool hoGeometry = false;
   if(mField.check_field(mesh_nodals_positions)) {
     hoGeometry = true;
   }
-  map<int,FluxData>::iterator sit = setOfFluxes.begin();
+  std::map<int,FluxData>::iterator sit = setOfFluxes.begin();
   for(;sit!=setOfFluxes.end();sit++) {
     //add finite element
     feFlux.getOpPtrVector().push_back(new OpHeatFlux(field_name,F,sit->second,hoGeometry));
@@ -796,13 +796,13 @@ PetscErrorCode ThermalElement::setThermalFluxFiniteElementRhsOperators(string fi
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode ThermalElement::setThermalConvectionFiniteElementRhsOperators(string field_name,Vec &F,const string mesh_nodals_positions) {
+PetscErrorCode ThermalElement::setThermalConvectionFiniteElementRhsOperators(string field_name,Vec &F,const std::string mesh_nodals_positions) {
   PetscFunctionBegin;
   bool hoGeometry = false;
   if(mField.check_field(mesh_nodals_positions)) {
     hoGeometry = true;
   }
-  map<int,ConvectionData>::iterator sit = setOfConvection.begin();
+  std::map<int,ConvectionData>::iterator sit = setOfConvection.begin();
   for(;sit!=setOfConvection.end();sit++) {
     //add finite element
     feConvectionRhs.getOpPtrVector().push_back(new OpGetTriTemperatureAtGaussPts(field_name,commonData));
@@ -811,13 +811,13 @@ PetscErrorCode ThermalElement::setThermalConvectionFiniteElementRhsOperators(str
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode ThermalElement::setThermalConvectionFiniteElementLhsOperators(string field_name,Mat A,const string mesh_nodals_positions) {
+PetscErrorCode ThermalElement::setThermalConvectionFiniteElementLhsOperators(string field_name,Mat A,const std::string mesh_nodals_positions) {
   PetscFunctionBegin;
   bool hoGeometry = false;
   if(mField.check_field(mesh_nodals_positions)) {
     hoGeometry = true;
   }
-  map<int,ConvectionData>::iterator sit = setOfConvection.begin();
+  std::map<int,ConvectionData>::iterator sit = setOfConvection.begin();
   for(;sit!=setOfConvection.end();sit++) {
     //add finite element
     feConvectionLhs.getOpPtrVector().push_back(new OpConvectionLhs(field_name,A,sit->second,hoGeometry));
@@ -825,7 +825,7 @@ PetscErrorCode ThermalElement::setThermalConvectionFiniteElementLhsOperators(str
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode ThermalElement::setTimeSteppingProblem(string field_name,string rate_name,const string mesh_nodals_positions) {
+PetscErrorCode ThermalElement::setTimeSteppingProblem(string field_name,string rate_name,const std::string mesh_nodals_positions) {
   PetscFunctionBegin;
 
   bool hoGeometry = false;
@@ -834,7 +834,7 @@ PetscErrorCode ThermalElement::setTimeSteppingProblem(string field_name,string r
   }
 
   {
-    map<int,BlockData>::iterator sit = setOfBlocks.begin();
+    std::map<int,BlockData>::iterator sit = setOfBlocks.begin();
     for(;sit!=setOfBlocks.end();sit++) {
       //add finite element
       //those methods are to calculate matrices on Lhs
@@ -852,7 +852,7 @@ PetscErrorCode ThermalElement::setTimeSteppingProblem(string field_name,string r
 
   //Flux
   {
-    map<int,FluxData>::iterator sit = setOfFluxes.begin();
+    std::map<int,FluxData>::iterator sit = setOfFluxes.begin();
     for(;sit!=setOfFluxes.end();sit++) {
       feFlux.getOpPtrVector().push_back(new OpHeatFlux(field_name,sit->second,hoGeometry));
     }
@@ -860,14 +860,14 @@ PetscErrorCode ThermalElement::setTimeSteppingProblem(string field_name,string r
 
   // Convection
   {
-    map<int,ConvectionData>::iterator sit = setOfConvection.begin();
+    std::map<int,ConvectionData>::iterator sit = setOfConvection.begin();
     for(;sit!=setOfConvection.end();sit++) {
       feConvectionRhs.getOpPtrVector().push_back(new OpGetTriTemperatureAtGaussPts(field_name,commonData));
       feConvectionRhs.getOpPtrVector().push_back(new OpConvectionRhs(field_name,sit->second,commonData,hoGeometry));
     }
   }
   {
-    map<int,ConvectionData>::iterator sit = setOfConvection.begin();
+    std::map<int,ConvectionData>::iterator sit = setOfConvection.begin();
     for(;sit!=setOfConvection.end();sit++) {
       feConvectionLhs.getOpPtrVector().push_back(new OpConvectionLhs(field_name,sit->second,hoGeometry));
     }
@@ -875,14 +875,14 @@ PetscErrorCode ThermalElement::setTimeSteppingProblem(string field_name,string r
 
   //Radiation
   {
-    map<int,RadiationData>::iterator sit = setOfRadiation.begin();
+    std::map<int,RadiationData>::iterator sit = setOfRadiation.begin();
     for(;sit!=setOfRadiation.end();sit++) {
       feRadiationRhs.getOpPtrVector().push_back(new OpGetTriTemperatureAtGaussPts(field_name,commonData));
       feRadiationRhs.getOpPtrVector().push_back(new OpRadiationRhs(field_name,sit->second,commonData,hoGeometry));
     }
   }
   {
-    map<int,RadiationData>::iterator sit = setOfRadiation.begin();
+    std::map<int,RadiationData>::iterator sit = setOfRadiation.begin();
     for(;sit!=setOfRadiation.end();sit++) {
       feRadiationLhs.getOpPtrVector().push_back(new OpGetTriTemperatureAtGaussPts(field_name,commonData));
       feRadiationLhs.getOpPtrVector().push_back(new OpRadiationLhs(field_name,sit->second,commonData,hoGeometry));
@@ -894,7 +894,7 @@ PetscErrorCode ThermalElement::setTimeSteppingProblem(string field_name,string r
 }
 
 
-PetscErrorCode ThermalElement::setTimeSteppingProblem(TsCtx &ts_ctx,string field_name,string rate_name,const string mesh_nodals_positions) {
+PetscErrorCode ThermalElement::setTimeSteppingProblem(TsCtx &ts_ctx,string field_name,string rate_name,const std::string mesh_nodals_positions) {
   PetscFunctionBegin;
 
   PetscErrorCode ierr;

@@ -171,10 +171,10 @@ int main(int argc, char *argv[]) {
   //what are ghost nodes, see Petsc Manual
   ierr = m_field.partition_ghost_dofs("TEST_PROBLEM"); CHKERRQ(ierr);
 
-  typedef tee_device<ostream, ofstream> TeeDevice;
+  typedef tee_device<std::ostream, std::ofstream> TeeDevice;
   typedef stream<TeeDevice> TeeStream;
-  ofstream ofs("forces_and_sources_hdiv_continuity_check.txt");
-  TeeDevice my_tee(cout, ofs);
+  std::ofstream ofs("forces_and_sources_hdiv_continuity_check.txt");
+  TeeDevice my_tee(std::cout, ofs);
   TeeStream my_split(my_tee);
 
   struct OpTetFluxes: public VolumeElementForcesAndSourcesCore::UserDataOperator {
@@ -251,10 +251,10 @@ int main(int argc, char *argv[]) {
           gaussPts(3,ff) = G_TRI_W1[0];
         }
 
-        //cerr << gaussPts << endl;
+        //std::cerr << gaussPts << std::endl;
 
-      } catch (exception& ex) {
-        ostringstream ss;
+      } catch (std::exception& ex) {
+        std::ostringstream ss;
         ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
         SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
       }
@@ -305,7 +305,7 @@ int main(int argc, char *argv[]) {
 
       mySplit.precision(5);
 
-      mySplit << face << " " << std::fixed << fabs(*tn_ptr) << endl;
+      mySplit << face << " " << std::fixed << fabs(*tn_ptr) << std::endl;
 
       PetscFunctionReturn(0);
     }
@@ -343,7 +343,7 @@ int main(int argc, char *argv[]) {
 
       mySplit.precision(5);
 
-      mySplit << face << " " << std::fixed << fabs(*tn_ptr) << endl;
+      mySplit << face << " " << std::fixed << fabs(*tn_ptr) << std::endl;
 
       PetscFunctionReturn(0);
     }

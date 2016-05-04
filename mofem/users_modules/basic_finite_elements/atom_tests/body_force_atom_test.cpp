@@ -144,10 +144,10 @@ int main(int argc, char *argv[]) {
   Vec F;
   ierr = m_field.VecCreateGhost("TEST_PROBLEM",ROW,&F); CHKERRQ(ierr);
 
-  typedef tee_device<ostream, ofstream> TeeDevice;
+  typedef tee_device<std::ostream, std::ofstream> TeeDevice;
   typedef stream<TeeDevice> TeeStream;
-  ofstream ofs("body_force_atom_test.txt");
-  TeeDevice my_tee(cout, ofs);
+  std::ofstream ofs("body_force_atom_test.txt");
+  TeeDevice my_tee(std::cout, ofs);
   TeeStream my_split(my_tee);
 
   ierr = VecZeroEntries(F); CHKERRQ(ierr);
@@ -156,7 +156,7 @@ int main(int argc, char *argv[]) {
   for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,BLOCKSET|BODYFORCESSET,it)) {
     Block_BodyForces mydata;
     ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
-    my_split << mydata << endl;
+    my_split << mydata << std::endl;
     ierr = body_forces_methods.addBlock("DISPLACEMENT",F,it->get_msId()); CHKERRQ(ierr);
   }
   ierr = m_field.loop_finite_elements("TEST_PROBLEM","TEST_FE",body_forces_methods.getLoopFe()); CHKERRQ(ierr);
@@ -167,20 +167,20 @@ int main(int argc, char *argv[]) {
 
   const MoFEMProblem *problemPtr;
   ierr = m_field.get_problem("TEST_PROBLEM",&problemPtr); CHKERRQ(ierr);
-  map<EntityHandle,double> m0,m1,m2;
+  std::map<EntityHandle,double> m0,m1,m2;
   for(_IT_NUMEREDDOFMOFEMENTITY_ROW_FOR_LOOP_(problemPtr,dit)) {
 
     if(dit->get()->get_dof_coeff_idx()!=1) continue;
 
     my_split.precision(3);
     my_split.setf(std::ios::fixed);
-    my_split << dit->get()->get_petsc_gloabl_dof_idx() << " " << dit->get()->get_FieldData() << endl;
+    my_split << dit->get()->get_petsc_gloabl_dof_idx() << " " << dit->get()->get_FieldData() << std::endl;
 
   }
 
   double sum = 0;
   ierr = VecSum(F,&sum); CHKERRQ(ierr);
-  my_split << endl << "Sum : " << setprecision(3) << sum << endl;
+  my_split << std::endl << "Sum : " << std::setprecision(3) << sum << std::endl;
 
   ierr = VecDestroy(&F); CHKERRQ(ierr);
 

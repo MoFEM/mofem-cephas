@@ -58,9 +58,9 @@ struct FluidPressure {
     VectorDouble aCCeleration; ///< acceleration [m/s^2]
     VectorDouble zEroPressure; ///< fluid level of reference zero pressure.
     Range tRis; ///< range of surface elemennt to which fluid pressure is applied
-    friend ostream& operator<<(ostream& os,const FluidPressure::FluidData &e);
+    friend std::ostream& operator<<(std::ostream& os,const FluidPressure::FluidData &e);
   };
-  map<MeshSetId,FluidData> setOfFluids;
+  std::map<MeshSetId,FluidData> setOfFluids;
 
   boost::ptr_vector<MethodForForceScaling> methodsOp;
 
@@ -76,7 +76,7 @@ struct FluidPressure {
     bool hoGeometry;
 
     OpCalculatePressure(
-      const string field_name,
+      const std::string field_name,
       Vec _F,
       FluidData &data,
       boost::ptr_vector<MethodForForceScaling> &methods_op,
@@ -126,10 +126,10 @@ struct FluidPressure {
         dist = ublas::matrix_row<MatrixDouble >(getCoordsAtGaussPts(),gg);
         dist -= zero_pressure;
         double dot = cblas_ddot(3,&dist[0],1,&dAta.aCCeleration[0],1);
-        // cerr << dot << " " << dAta.aCCeleration << " " << dist << endl;
+        // std::cerr << dot << " " << dAta.aCCeleration << " " << dist << std::endl;
         if(!allowNegativePressure) dot = fmax(0,dot);
         double pressure = dot*dAta.dEnsity;
-        // cerr << dot << " " << dAta.dEnsity << " " << pressure << endl;
+        // std::cerr << dot << " " << dAta.dEnsity << " " << pressure << std::endl;
 
         for(int rr = 0;rr<rank;rr++) {
           double force;
@@ -145,8 +145,8 @@ struct FluidPressure {
 
       }
 
-      // cerr << Nf << endl;
-      // cerr << endl;
+      // std::cerr << Nf << std::endl;
+      // std::cerr << std::endl;
 
       bool set = false;
       switch(getFEMethod()->ts_ctx) {
@@ -185,7 +185,7 @@ struct FluidPressure {
   };
 
   PetscErrorCode addNeumannFluidPressureBCElements(
-    const string field_name,const string mesh_nodals_positions = "MESH_NODE_POSITIONS"
+    const std::string field_name,const std::string mesh_nodals_positions = "MESH_NODE_POSITIONS"
   ) {
     PetscFunctionBegin;
 
@@ -205,7 +205,7 @@ struct FluidPressure {
       if(bit->get_name().compare(0,14,"FLUID_PRESSURE") == 0) {
 
         //get block attributes
-        vector<double> attributes;
+        std::vector<double> attributes;
         ierr = bit->get_attributes(attributes); CHKERRQ(ierr);
         if(attributes.size()<7) {
           SETERRQ1(PETSC_COMM_SELF,1,"not enough block attributes to deffine fluid pressure element, attributes.size() = %d ",attributes.size());
@@ -228,8 +228,8 @@ struct FluidPressure {
         Range tets_skin_tris;
         rval = skin.find_skin(0,tets,false,tets_skin_tris); CHKERR_MOAB(rval);
         setOfFluids[bit->get_msId()].tRis.merge(tets_skin_tris);
-        ostringstream ss;
-        ss << setOfFluids[bit->get_msId()] << endl;
+        std::ostringstream ss;
+        ss << setOfFluids[bit->get_msId()] << std::endl;
         PetscPrintf(mField.get_comm(),ss.str().c_str());
 
         ierr = mField.add_ents_to_finite_element_by_TRIs(setOfFluids[bit->get_msId()].tRis,"FLUID_PRESSURE_FE"); CHKERRQ(ierr);
@@ -245,7 +245,7 @@ struct FluidPressure {
   PetscErrorCode setNeumannFluidPressureFiniteElementOperators(string field_name,Vec F,
     bool allow_negative_pressure = true,bool ho_geometry = false) {
     PetscFunctionBegin;
-    map<MeshSetId,FluidData>::iterator sit = setOfFluids.begin();
+    std::map<MeshSetId,FluidData>::iterator sit = setOfFluids.begin();
     for(;sit!=setOfFluids.end();sit++) {
       //add finite element
       fe.getOpPtrVector().push_back(new OpCalculatePressure(
@@ -257,10 +257,10 @@ struct FluidPressure {
 
 };
 
-ostream& operator<<(ostream& os,const FluidPressure::FluidData &e) {
-  os << "dEnsity " << e.dEnsity << endl;
-  os << "aCCeleration " << e.aCCeleration << endl;
-  os << "zEroPressure " << e.zEroPressure << endl;
+std::ostream& operator<<(std::ostream& os,const FluidPressure::FluidData &e) {
+  os << "dEnsity " << e.dEnsity << std::endl;
+  os << "aCCeleration " << e.aCCeleration << std::endl;
+  os << "zEroPressure " << e.zEroPressure << std::endl;
   return os;
 }
 

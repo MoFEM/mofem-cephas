@@ -27,7 +27,7 @@ using namespace MoFEM;
 #include <boost/numeric/ublas/vector_proxy.hpp>
 #include <AnalyticalDirichlet.hpp>
 
-AnalyticalDirichletBC::ApproxField::OpHoCoord::OpHoCoord(const string field_name,ublas::matrix<double> &ho_coords):
+AnalyticalDirichletBC::ApproxField::OpHoCoord::OpHoCoord(const std::string field_name,ublas::matrix<double> &ho_coords):
 FaceElementForcesAndSourcesCore::UserDataOperator(field_name,ForcesAndSurcesCore::UserDataOperator::OPROW),
 hoCoords(ho_coords) {}
 
@@ -53,15 +53,15 @@ PetscErrorCode AnalyticalDirichletBC::ApproxField::OpHoCoord::doWork(
     }
 
   } catch (const std::exception& ex) {
-    ostringstream ss;
-    ss << "throw in method: " << ex.what() << endl;
+    std::ostringstream ss;
+    ss << "throw in method: " << ex.what() << std::endl;
     SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
   }
 
   PetscFunctionReturn(0);
 }
 
-AnalyticalDirichletBC::ApproxField::OpLhs::OpLhs(const string field_name,ublas::matrix<double> &ho_coords):
+AnalyticalDirichletBC::ApproxField::OpLhs::OpLhs(const std::string field_name,ublas::matrix<double> &ho_coords):
 FaceElementForcesAndSourcesCore::UserDataOperator(field_name,ForcesAndSurcesCore::UserDataOperator::OPROWCOL),
 hoCoords(ho_coords)
 {
@@ -187,7 +187,7 @@ PetscErrorCode AnalyticalDirichletBC::ApproxField::OpLhs::doWork(
   }
 
   AnalyticalDirichletBC::DirichletBC::DirichletBC(
-    FieldInterface& m_field,const string &field,Mat A,Vec X,Vec F
+    FieldInterface& m_field,const std::string &field,Mat A,Vec X,Vec F
   ):
   DisplacementBCFEMethodPreAndPostProc(m_field,field,A,X,F),
   tRis_ptr(NULL)
@@ -196,7 +196,7 @@ PetscErrorCode AnalyticalDirichletBC::ApproxField::OpLhs::doWork(
   }
 
   AnalyticalDirichletBC::DirichletBC::DirichletBC(
-    FieldInterface& m_field,const string &field
+    FieldInterface& m_field,const std::string &field
   ):
   DisplacementBCFEMethodPreAndPostProc(m_field,field),
   tRis_ptr(NULL) {
@@ -230,7 +230,7 @@ PetscErrorCode AnalyticalDirichletBC::ApproxField::OpLhs::doWork(
     dofsIndices.resize(mapZeroRows.size());
     dofsValues.resize(mapZeroRows.size());
     int ii = 0;
-    map<DofIdx,FieldData>::iterator mit = mapZeroRows.begin();
+    std::map<DofIdx,FieldData>::iterator mit = mapZeroRows.begin();
     for(;mit!=mapZeroRows.end();mit++,ii++) {
       dofsIndices[ii] = mit->first;
       dofsValues[ii] = mit->second;
