@@ -87,7 +87,7 @@ extern "C" {
 
 //Name spaces
 using namespace moab;
-// using namespace std;
+using namespace std;
 using boost::multi_index_container;
 using namespace boost::multi_index;
 using namespace boost::multiprecision;

@@ -146,15 +146,15 @@ add_dependencies(get_modules_contributors get_modules_contributors_init)
 
 # Recognise that module is installed
 foreach(LOOP_MODULE ${INSTLLED_MODULES})
-  std::string(REGEX REPLACE
+  string(REGEX REPLACE
     "/+InstalledAddModule.cmake" ""
     MODULE_DIRECTORY ${LOOP_MODULE}
   )
-  std::string(REGEX REPLACE
+  string(REGEX REPLACE
     ".*/+" ""
     MODULE_NAME ${MODULE_DIRECTORY}
   )
-  std::string(TOUPPER ${MODULE_NAME} MODULE_NAME)
+  string(TOUPPER ${MODULE_NAME} MODULE_NAME)
   message(STATUS "Add definitions to the compiler command -DWITH_MODULE_${MODULE_NAME}")
   add_definitions(-DWITH_MODULE_${MODULE_NAME})
 endforeach(LOOP_MODULE)
@@ -162,12 +162,12 @@ endforeach(LOOP_MODULE)
 # Add custom tags for all modules
 foreach(LOOP_MODULE ${INSTLLED_MODULES})
   # message(STATUS "${LOOP_MODULE}")
-  std::string(REGEX REPLACE
+  string(REGEX REPLACE
     "/+InstalledAddModule.cmake" ""
     MODULE_DIRECTORY ${LOOP_MODULE}
   )
   message(STATUS "Add module ... ${MODULE_DIRECTORY}")
-  std::string(REGEX REPLACE
+  string(REGEX REPLACE
     ".*/+" ""
     MODULE_NAME ${MODULE_DIRECTORY}
   )
