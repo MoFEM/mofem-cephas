@@ -151,7 +151,7 @@ int main(int argc, char *argv[]) {
 
       if(data.getFieldData().size()==0) PetscFunctionReturn(0);
 
-      //cout << "type " << type << " side " << side << endl;
+      //cout << "type " << type << " side " << side << std::endl;
 
       int nb_gauss_pts = data.getDiffHdivN().size1();
       int nb_dofs = data.getFieldData().size();
@@ -162,7 +162,7 @@ int main(int argc, char *argv[]) {
       int gg = 0;
       for(;gg<nb_gauss_pts;gg++) {
         ierr = getDivergenceMatrixOperator_Hdiv(side,type,data,gg,div_vec); CHKERRQ(ierr);
-        //cout << std::fixed << div_vec << endl;
+        //cout << std::fixed << div_vec << std::endl;
         unsigned int dd = 0;
         for(;dd<div_vec.size();dd++) {
           double w = getGaussPts()(3,gg)*getVolume();
@@ -171,11 +171,11 @@ int main(int argc, char *argv[]) {
           }
           dIv += div_vec[dd]*w;
         }
-        //cout << std::fixed << data.getDiffHdivN(gg) << endl;
+        //cout << std::fixed << data.getDiffHdivN(gg) << std::endl;
       }
 
-      //cout << std::fixed << data.getDiffHdivN() << endl;
-      //cout << endl;
+      //cout << std::fixed << data.getDiffHdivN() << std::endl;
+      //cout << std::endl;
 
 
       PetscFunctionReturn(0);
@@ -236,7 +236,7 @@ int main(int argc, char *argv[]) {
           n[2]*data.getHdivN(gg)(dd,2) )
           *getGaussPts()(2,gg)*area;
         }
-        //cout << getNormal() << endl;
+        //cout << getNormal() << std::endl;
       }
 
       PetscFunctionReturn(0);
@@ -257,10 +257,10 @@ int main(int argc, char *argv[]) {
   ierr = m_field.loop_finite_elements("TEST_PROBLEM","TET_FE",tet_fe);  CHKERRQ(ierr);
   ierr = m_field.loop_finite_elements("TEST_PROBLEM","SKIN_FE",skin_fe);  CHKERRQ(ierr);
 
-  cout.precision(12);
+  std::cout.precision(12);
 
-  cout << "divergence_vol " << divergence_vol << endl;
-  cout << "divergence_skin " << divergence_skin << endl;
+  std::cout << "divergence_vol " << divergence_vol << std::endl;
+  std::cout << "divergence_skin " << divergence_skin << std::endl;
 
   const double eps = 1e-6;
   if(fabs(divergence_vol-1.-1./3)>eps) {
@@ -310,10 +310,10 @@ int main(int argc, char *argv[]) {
   ierr = m_field.loop_finite_elements("TEST_PROBLEM","TET_FE",tet_fe);  CHKERRQ(ierr);
   ierr = m_field.loop_finite_elements("TEST_PROBLEM","SKIN_FE",skin_fe);  CHKERRQ(ierr);
 
-  cout.precision(12);
+  std::cout.precision(12);
 
-  cout << "divergence_vol " << divergence_vol << endl;
-  cout << "divergence_skin " << divergence_skin << endl;
+  std::cout << "divergence_vol " << divergence_vol << std::endl;
+  std::cout << "divergence_skin " << divergence_skin << std::endl;
 
   if(fabs(divergence_skin-divergence_vol)>eps) {
      SETERRQ2(PETSC_COMM_SELF,MOFEM_ATOM_TEST_INVALID,"invalid surface flux or divergence or both\n",

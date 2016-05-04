@@ -62,15 +62,15 @@ int main(int argc, char *argv[]) {
   FieldInterface& m_field = core;
 
   //Open mesh_file_name.txt for writing
-  ofstream myfile;
-  myfile.open ((string(mesh_file_name)+".txt").c_str());
+  std::ofstream myfile;
+  myfile.open ((std::string(mesh_file_name)+".txt").c_str());
 
-  cout << "<<<< NODESETs >>>>>" << endl;
+  std::cout << "<<<< NODESETs >>>>>" << std::endl;
   //NODESETs
   for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,NODESET,it)) {
-    cout << *it << endl;
-    ierr = it->print_bc_data(cout); CHKERRQ(ierr);
-    vector<char> bc_data;
+    std::cout << *it << std::endl;
+    ierr = it->print_bc_data(std::cout); CHKERRQ(ierr);
+    std::vector<char> bc_data;
     ierr = it->get_bc_data(bc_data); CHKERRQ(ierr);
     if(bc_data.empty()) continue;
 
@@ -80,7 +80,7 @@ int main(int argc, char *argv[]) {
           DisplacementCubitBcData mydata;
           ierr = it->get_bc_data_structure(mydata); CHKERRQ(ierr);
           //Print data
-          cout << mydata;
+          std::cout << mydata;
           myfile << mydata;
       }
 
@@ -90,7 +90,7 @@ int main(int argc, char *argv[]) {
           ForceCubitBcData mydata;
           ierr = it->get_bc_data_structure(mydata); CHKERRQ(ierr);
           //Print data
-          cout << mydata;
+          std::cout << mydata;
           myfile << mydata;
       }
 
@@ -100,7 +100,7 @@ int main(int argc, char *argv[]) {
           VelocityCubitBcData mydata;
           ierr = it->get_bc_data_structure(mydata); CHKERRQ(ierr);
           //Print data
-          cout << mydata;
+          std::cout << mydata;
           myfile << mydata;
       }
 
@@ -110,7 +110,7 @@ int main(int argc, char *argv[]) {
           AccelerationCubitBcData mydata;
           ierr = it->get_bc_data_structure(mydata); CHKERRQ(ierr);
           //Print data
-          cout << mydata;
+          std::cout << mydata;
           myfile << mydata;
       }
 
@@ -120,7 +120,7 @@ int main(int argc, char *argv[]) {
           TemperatureCubitBcData mydata;
           ierr = it->get_bc_data_structure(mydata); CHKERRQ(ierr);
           //Print data
-          cout << mydata;
+          std::cout << mydata;
           myfile << mydata;
       }
 
@@ -128,12 +128,12 @@ int main(int argc, char *argv[]) {
 
   }
 
-  cout << "<<<< SIDESETs >>>>>" << endl;
+  std::cout << "<<<< SIDESETs >>>>>" << std::endl;
   //SIDESETs
   for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,SIDESET,it)) {
-    cout << *it << endl;
-    ierr = it->print_bc_data(cout); CHKERRQ(ierr);
-    vector<char> bc_data;
+    std::cout << *it << std::endl;
+    ierr = it->print_bc_data(std::cout); CHKERRQ(ierr);
+    std::vector<char> bc_data;
     ierr = it->get_bc_data(bc_data); CHKERRQ(ierr);
     if(bc_data.empty()) continue;
 
@@ -143,7 +143,7 @@ int main(int argc, char *argv[]) {
           PressureCubitBcData mydata;
           ierr = it->get_bc_data_structure(mydata); CHKERRQ(ierr);
           //Print data
-          cout << mydata;
+          std::cout << mydata;
           myfile << mydata;
       }
 
@@ -153,7 +153,7 @@ int main(int argc, char *argv[]) {
           HeatFluxCubitBcData mydata;
           ierr = it->get_bc_data_structure(mydata); CHKERRQ(ierr);
           //Print data
-          cout << mydata;
+          std::cout << mydata;
           myfile << mydata;
       }
 
@@ -166,25 +166,25 @@ int main(int argc, char *argv[]) {
           //Interface bc (Hex:6 Dec:6)
           if (mydata.data.type == 6) {  // 6 is the decimal value of the corresponding value (hex) in bc_data
               //Print data
-              cout << endl << "Interface" << endl;
-              myfile << endl << "Interface" << endl;
-              cout << mydata;
+              std::cout << std::endl << "Interface" << std::endl;
+              myfile << std::endl << "Interface" << std::endl;
+              std::cout << mydata;
               myfile << mydata;
           }
           //Pressure inlet (Hex:f Dec:15)
           else if (mydata.data.type == 15) {  // 15 is the decimal value of the corresponding value (hex) in bc_data
               //Print data
-              cout << endl << "Pressure Inlet" << endl;
-              myfile << endl << "Pressure Inlet" << endl;
-              cout << mydata;
+              std::cout << std::endl << "Pressure Inlet" << std::endl;
+              myfile << std::endl << "Pressure Inlet" << std::endl;
+              std::cout << mydata;
               myfile << mydata;
           }
           //Pressure outlet (Hex:10 Dec:16)
           else if (mydata.data.type == 16) {  // 16 is the decimal value of the corresponding value (hex) in bc_data
               //Print data
-              cout << endl << "Pressure Outlet" << endl;
-              myfile << endl << "Pressure Outlet" << endl;
-              cout << mydata;
+              std::cout << std::endl << "Pressure Outlet" << std::endl;
+              myfile << std::endl << "Pressure Outlet" << std::endl;
+              std::cout << mydata;
               myfile << mydata;
           }
       }
@@ -193,21 +193,21 @@ int main(int argc, char *argv[]) {
   }
 
 
-  cout << "<<<< BLOCKSETs >>>>>" << endl;
+  std::cout << "<<<< BLOCKSETs >>>>>" << std::endl;
   //BLOCKSETs
   for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,BLOCKSET,it))
   {
-      cout << endl << *it << endl;
+      std::cout << std::endl << *it << std::endl;
 
       //Get and print block name
-      ierr = it->print_name(cout); CHKERRQ(ierr);
+      ierr = it->print_name(std::cout); CHKERRQ(ierr);
       ierr = it->print_name(myfile); CHKERRQ(ierr);
 
 
       //Get and print block attributes
-      vector<double> attributes;
+      std::vector<double> attributes;
       ierr = it->get_attributes(attributes); CHKERRQ(ierr);
-      ierr = it->print_attributes(cout); CHKERRQ(ierr);
+      ierr = it->print_attributes(std::cout); CHKERRQ(ierr);
       ierr = it->print_attributes(myfile); CHKERRQ(ierr);
   }
 
@@ -222,29 +222,29 @@ int main(int argc, char *argv[]) {
 
   for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,BLOCKSET,it)) {
 
-    cout << endl << *it << endl;
+    std::cout << std::endl << *it << std::endl;
 
     //Get block name
-    string name = it->get_name();
+    std::string name = it->get_name();
 
     //Elastic material
     if (name.compare(0,20,"MAT_ELASTIC_TRANSISO") == 0) {
       Mat_Elastic_TransIso mydata;
       ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
       //Print data
-      cout << mydata;
+      std::cout << mydata;
       myfile << mydata;
     } else if (name.compare(0,11,"MAT_ELASTIC") == 0) {
       Mat_Elastic mydata;
       ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
       //Print data
-      cout << mydata;
+      std::cout << mydata;
       myfile << mydata;
     } else if (name.compare(0,10,"MAT_INTERF") == 0) {
       Mat_Interf mydata;
       ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
       //Print data
-      cout << mydata;
+      std::cout << mydata;
       myfile << mydata;
     } else SETERRQ(PETSC_COMM_SELF,1,"Error: Unrecognizable Material type");
 
@@ -254,10 +254,10 @@ int main(int argc, char *argv[]) {
   ierr = m_field.add_cubit_msId(BLOCKSET,1000,"ADD_BLOCK_SET"); CHKERRQ(ierr);
   for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,BLOCKSET,it)) {
     //Get block name
-    string name = it->get_name();
+    std::string name = it->get_name();
     if (name.compare(0,13,"ADD_BLOCK_SET") == 0) {
       add_block_is_there = true;
-      vector<double> attributes;
+      std::vector<double> attributes;
       it->get_attributes(attributes);
     }
   }

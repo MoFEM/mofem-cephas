@@ -43,12 +43,12 @@ struct NeummanForcesSurface {
     ForceCubitBcData data;
     Range tRis;
   };
-  map<int,bCForce> mapForce;
+  std::map<int,bCForce> mapForce;
   struct bCPreassure {
     PressureCubitBcData data;
     Range tRis;
   };
-  map<int,bCPreassure> mapPreassure;
+  std::map<int,bCPreassure> mapPreassure;
 
   boost::ptr_vector<MethodForForceScaling> methodsOp;
 
@@ -61,7 +61,7 @@ struct NeummanForcesSurface {
     bool hoGeometry;
 
     OpNeumannForce(
-      const string field_name,Vec _F,bCForce &data,
+      const std::string field_name,Vec _F,bCForce &data,
       boost::ptr_vector<MethodForForceScaling> &methods_op,
       bool ho_geometry = false
     );
@@ -81,7 +81,7 @@ struct NeummanForcesSurface {
     bool hoGeometry;
 
     OpNeumannPreassure(
-      const string field_name,Vec _F,
+      const std::string field_name,Vec _F,
       bCPreassure &data,
       boost::ptr_vector<MethodForForceScaling> &methods_op,
       bool ho_geometry = false
@@ -102,7 +102,7 @@ struct NeummanForcesSurface {
     bool hoGeometry;
 
     OpNeumannFlux(
-      const string field_name,Vec _F,
+      const std::string field_name,Vec _F,
       bCPreassure &data,
       boost::ptr_vector<MethodForForceScaling> &methods_op,
       bool ho_geometry
@@ -115,13 +115,13 @@ struct NeummanForcesSurface {
   };
 
   /// Add force element operator  (integration on face)
-  PetscErrorCode addForce(const string field_name,Vec F,int ms_id,bool ho_geometry = false);
+  PetscErrorCode addForce(const std::string field_name,Vec F,int ms_id,bool ho_geometry = false);
 
   /// Add pressure element operator (integration on face)
-  PetscErrorCode addPreassure(const string field_name,Vec F,int ms_id,bool ho_geometry = false);
+  PetscErrorCode addPreassure(const std::string field_name,Vec F,int ms_id,bool ho_geometry = false);
 
   /// Add flux element operator (integration on face)
-  PetscErrorCode addFlux(const string field_name,Vec F,int ms_id,bool ho_geometry = false);
+  PetscErrorCode addFlux(const std::string field_name,Vec F,int ms_id,bool ho_geometry = false);
 
 };
 
@@ -130,8 +130,8 @@ struct MetaNeummanForces {
 
   static PetscErrorCode addNeumannBCElements(
     FieldInterface &mField,
-    const string field_name,
-    const string mesh_nodals_positions = "MESH_NODE_POSITIONS") {
+    const std::string field_name,
+    const std::string mesh_nodals_positions = "MESH_NODE_POSITIONS") {
     PetscFunctionBegin;
     PetscErrorCode ierr;
     ErrorCode rval;
@@ -168,8 +168,8 @@ struct MetaNeummanForces {
 
   static PetscErrorCode setNeumannFiniteElementOperators(
     FieldInterface &mField,
-    boost::ptr_map<string,NeummanForcesSurface> &neumann_forces,
-    Vec F,const string field_name,const string mesh_nodals_positions = "MESH_NODE_POSITIONS") {
+    boost::ptr_map<std::string,NeummanForcesSurface> &neumann_forces,
+    Vec F,const std::string field_name,const std::string mesh_nodals_positions = "MESH_NODE_POSITIONS") {
     PetscFunctionBegin;
     PetscErrorCode ierr;
     string fe_name;
@@ -180,8 +180,8 @@ struct MetaNeummanForces {
       ierr = neumann_forces.at(fe_name).addForce(field_name,F,it->get_msId(),ho_geometry);  CHKERRQ(ierr);
       /*ForceCubitBcData data;
       ierr = it->get_bc_data_structure(data); CHKERRQ(ierr);
-      my_split << *it << endl;
-      my_split << data << endl;*/
+      my_split << *it << std::endl;
+      my_split << data << std::endl;*/
     }
     fe_name = "PRESSURE_FE";
     neumann_forces.insert(fe_name,new NeummanForcesSurface(mField));
@@ -189,16 +189,16 @@ struct MetaNeummanForces {
       ierr =  neumann_forces.at(fe_name).addPreassure(field_name,F,it->get_msId(),ho_geometry); CHKERRQ(ierr);
       /*PressureCubitBcData data;
       ierr = it->get_bc_data_structure(data); CHKERRQ(ierr);
-      my_split << *it << endl;
-      my_split << data << endl;*/
+      my_split << *it << std::endl;
+      my_split << data << std::endl;*/
     }
     PetscFunctionReturn(0);
   }
 
   static PetscErrorCode addNeumannFluxBCElements(
     FieldInterface &mField,
-    const string field_name,
-    const string mesh_nodals_positions = "MESH_NODE_POSITIONS") {
+    const std::string field_name,
+    const std::string mesh_nodals_positions = "MESH_NODE_POSITIONS") {
     PetscFunctionBegin;
     PetscErrorCode ierr;
     ErrorCode rval;
@@ -222,8 +222,8 @@ struct MetaNeummanForces {
 
   static PetscErrorCode setNeumannFluxFiniteElementOperators(
     FieldInterface &mField,
-    boost::ptr_map<string,NeummanForcesSurface> &neumann_forces,
-    Vec F,const string field_name,const string mesh_nodals_positions = "MESH_NODE_POSITIONS") {
+    boost::ptr_map<std::string,NeummanForcesSurface> &neumann_forces,
+    Vec F,const std::string field_name,const std::string mesh_nodals_positions = "MESH_NODE_POSITIONS") {
     PetscFunctionBegin;
     PetscErrorCode ierr;
     string fe_name;
@@ -234,8 +234,8 @@ struct MetaNeummanForces {
       ierr = neumann_forces.at(fe_name).addFlux(field_name,F,it->get_msId(),ho_geometry); CHKERRQ(ierr);
       /*PressureCubitBcData data;
       ierr = it->get_bc_data_structure(data); CHKERRQ(ierr);
-      my_split << *it << endl;
-      my_split << data << endl;*/
+      my_split << *it << std::endl;
+      my_split << data << std::endl;*/
     }
     PetscFunctionReturn(0);
   }

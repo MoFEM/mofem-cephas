@@ -40,7 +40,7 @@ using namespace MoFEM;
 DMMGViaApproxOrdersCtx::DMMGViaApproxOrdersCtx():
   MoFEM::DMCtx(),
   aO(PETSC_NULL) {
-    // cerr << "create dm\n";
+    // std::cerr << "create dm\n";
 }
 DMMGViaApproxOrdersCtx::~DMMGViaApproxOrdersCtx() {
   PetscErrorCode ierr;
@@ -51,10 +51,10 @@ DMMGViaApproxOrdersCtx::~DMMGViaApproxOrdersCtx() {
     ierr = MatDestroy(&kspOperators[ii]); CHKERRABORT(PETSC_COMM_WORLD,ierr);
   }
   if(aO) {
-    // cerr << "destroy ao\n";
+    // std::cerr << "destroy ao\n";
     ierr = AODestroy(&aO); CHKERRABORT(PETSC_COMM_WORLD,ierr);
   }
-  // cerr << "destroy dm\n";
+  // std::cerr << "destroy dm\n";
 }
 
 PetscErrorCode DMMGViaApproxOrdersCtx::queryInterface(const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface) {
@@ -82,13 +82,13 @@ PetscErrorCode DMMGViaApproxOrdersSetAO(DM dm,AO ao) {
   PetscFunctionBegin;
   GET_DM_FIELD(dm);
   if(dm_field->aO) {
-    //cerr << dm_field->aO << endl;
+    //std::cerr << dm_field->aO << std::endl;
     ierr = AODestroy(&dm_field->aO); CHKERRQ(ierr);
-    // cerr << "destroy ao when adding\n";
+    // std::cerr << "destroy ao when adding\n";
   }
   dm_field->aO = ao;
   ierr = PetscObjectReference((PetscObject)ao); CHKERRQ(ierr);
-  // cerr << "add ao\n";
+  // std::cerr << "add ao\n";
   PetscFunctionReturn(0);
 }
 
@@ -160,7 +160,7 @@ PetscErrorCode DMMGViaApproxOrdersReplaceCoarseningIS(DM dm,IS *is_vec,int nb_el
   int nb_replaced = 0;
   int nb_deleted = 0;
   int nb_added = 0;
-  vector<IS>::iterator it;
+  std::vector<IS>::iterator it;
   it = dm_field->coarseningIS.begin();
   int ii = 0;
   for(;it!=dm_field->coarseningIS.end();it++,ii++) {
@@ -585,8 +585,8 @@ PetscErrorCode PCMGSetUpViaApproxOrdersCtx::buildProlongationOperator(PC pc,int 
     PetscPrintf(comm,"set MG levels %u\n",nbLevels);
   }
 
-  vector<IS> is_vec(nbLevels+1);
-  vector<int> is_glob_size(nbLevels+1),is_loc_size(nbLevels+1);
+  std::vector<IS> is_vec(nbLevels+1);
+  std::vector<int> is_glob_size(nbLevels+1),is_loc_size(nbLevels+1);
 
   for(int kk = 0;kk<nbLevels;kk++) {
 

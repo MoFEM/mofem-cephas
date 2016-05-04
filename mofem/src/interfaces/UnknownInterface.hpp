@@ -54,7 +54,7 @@ struct UnknownInterface {
   virtual int getInterfaceMajorVersion() const { return MoFEM_VERSION_MAJOR; }
   virtual int getInterfaceMinorVersion() const { return MoFEM_VERSION_MINOR; }
   virtual int getIntefaceBuild() const { return MoFEM_VERSION_BUILD; }
-  virtual string getGitIDCommitName() const { return string(GIT_SHA1_NAME); }
+  virtual std::string getGitIDCommitName() const { return std::string(GIT_SHA1_NAME); }
 };
 
 }

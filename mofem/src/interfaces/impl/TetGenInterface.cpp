@@ -80,8 +80,8 @@ PetscErrorCode TetGenInterface::queryInterface(const MOFEMuuid& uuid, UnknownInt
 
 PetscErrorCode TetGenInterface::inData(
     Range& ents,tetgenio& in,
-    map<EntityHandle,unsigned long>& moab_tetgen_map,
-    map<unsigned long,EntityHandle>& tetgen_moab_map) {
+    std::map<EntityHandle,unsigned long>& moab_tetgen_map,
+    std::map<unsigned long,EntityHandle>& tetgen_moab_map) {
   PetscFunctionBegin;
 
   FieldInterface& m_field = cOre;
@@ -138,7 +138,7 @@ PetscErrorCode TetGenInterface::inData(
   if(in.numberoftrifaces) {
     in.trifacelist = new int[3*in.numberoftrifaces];
     in.trifacemarkerlist = new int[in.numberoftrifaces];
-    //fill(&in.trifacemarkerlist[0],&in.trifacemarkerlist[in.numberoftrifaces],1);
+    //std::fill(&in.trifacemarkerlist[0],&in.trifacemarkerlist[in.numberoftrifaces],1);
     rval = m_field.get_moab().tag_get_data(th_marker,tris,in.trifacemarkerlist); CHKERRQ_MOAB(rval);
     it = tris.begin();
     for(int ii = 0;it!=tris.end();it++,ii++) {
@@ -175,7 +175,7 @@ PetscErrorCode TetGenInterface::inData(
   if(in.numberofedges>0) {
     in.edgelist = new int[2*in.numberofedges];
     in.edgemarkerlist = new int[in.numberofedges];
-    //fill(&in.edgemarkerlist[0],&in.edgemarkerlist[in.numberofedges],1);
+    //std::fill(&in.edgemarkerlist[0],&in.edgemarkerlist[in.numberofedges],1);
     rval = m_field.get_moab().tag_get_data(th_marker,edges,in.edgemarkerlist); CHKERRQ_MOAB(rval);
     it = edges.begin();
     for(int ii = 0;it!=edges.end();it++,ii++) {
@@ -200,7 +200,7 @@ PetscErrorCode TetGenInterface::setGeomData(
     tetgenio& in,
     moabTetGen_Map& moab_tetgen_map,
     tetGenMoab_Map& tetgen_moab_map,
-    map<int,Range> &type_ents) {
+    std::map<int,Range> &type_ents) {
   PetscFunctionBegin;
 
   FieldInterface& m_field = cOre;
@@ -208,7 +208,7 @@ PetscErrorCode TetGenInterface::setGeomData(
   //ErrorCode rval;
 
   in.pointparamlist = new tetgenio::pointparam[in.numberofpoints];
-  map<int,Range>::iterator mit = type_ents.begin();
+  std::map<int,Range>::iterator mit = type_ents.begin();
   for(;mit!=type_ents.end();mit++) {
     if(mit->first < 0 && mit->first > 3) {
       SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
@@ -231,8 +231,8 @@ PetscErrorCode TetGenInterface::setGeomData(
 
 PetscErrorCode TetGenInterface::outData(
   tetgenio& in,tetgenio& out,
-  map<EntityHandle,unsigned long>& moab_tetgen_map,
-  map<unsigned long,EntityHandle>& tetgen_moab_map,
+  std::map<EntityHandle,unsigned long>& moab_tetgen_map,
+  std::map<unsigned long,EntityHandle>& tetgen_moab_map,
   Range *ents,bool id_in_tags,bool error_if_created) {
   PetscFunctionBegin;
 
@@ -325,30 +325,30 @@ PetscErrorCode TetGenInterface::outData(
 }
 PetscErrorCode TetGenInterface::outData(
   tetgenio& in,tetgenio& out,
-  map<EntityHandle,unsigned long>& moab_tetgen_map,
-  map<unsigned long,EntityHandle>& tetgen_moab_map,
+  std::map<EntityHandle,unsigned long>& moab_tetgen_map,
+  std::map<unsigned long,EntityHandle>& tetgen_moab_map,
   BitRefLevel bit,bool id_in_tags,bool error_if_created) {
   PetscFunctionBegin;
   PetscErrorCode ierr;
   Range ents;
   ierr = outData(in,out,moab_tetgen_map,tetgen_moab_map,&ents,id_in_tags,error_if_created); CHKERRQ(ierr);
-  //cerr << ents.size() << endl;
+  //std::cerr << ents.size() << std::endl;
   FieldInterface& m_field = cOre;
   ierr = m_field.seed_ref_level(ents.subset_by_type(MBTET),bit); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 PetscErrorCode TetGenInterface::setFaceData(
-  vector<pair<Range,int> >& markers,
+  std::vector<std::pair<Range,int> >& markers,
   tetgenio& in,
-  map<EntityHandle,unsigned long>& moab_tetgen_map,
-  map<unsigned long,EntityHandle>& tetgen_moab_map) {
+  std::map<EntityHandle,unsigned long>& moab_tetgen_map,
+  std::map<unsigned long,EntityHandle>& tetgen_moab_map) {
   PetscFunctionBegin;
   ErrorCode rval;
   FieldInterface& m_field = cOre;
   in.numberoffacets = markers.size();
   in.facetlist = new tetgenio::facet[in.numberoffacets];
   in.facetmarkerlist = new int[in.numberoffacets];
-  vector<pair<Range,int> >::iterator mit = markers.begin();
+  std::vector<std::pair<Range,int> >::iterator mit = markers.begin();
   for(int ii = 0;mit!=markers.end();mit++,ii++) {
     in.facetmarkerlist[ii] = mit->second;
     Range& faces = mit->first;
@@ -393,7 +393,7 @@ PetscErrorCode TetGenInterface::setFaceData(
   PetscFunctionReturn(0);
 }
 PetscErrorCode TetGenInterface::getTriangleMarkers(
-  map<EntityHandle,unsigned long>& tetgen_moab_map,tetgenio& out,
+  std::map<EntityHandle,unsigned long>& tetgen_moab_map,tetgenio& out,
   Range *ents,idxRange_Map *ents_map,bool only_non_zero) {
   PetscFunctionBegin;
   ErrorCode rval;
@@ -430,14 +430,14 @@ PetscErrorCode TetGenInterface::getTriangleMarkers(
   }
   PetscFunctionReturn(0);
 }
-PetscErrorCode TetGenInterface::setReginData(vector<pair<EntityHandle,int> >& regions,tetgenio& in) {
+PetscErrorCode TetGenInterface::setReginData(std::vector<std::pair<EntityHandle,int> >& regions,tetgenio& in) {
   PetscFunctionBegin;
   ErrorCode rval;
   FieldInterface& m_field = cOre;
   in.numberofregions = regions.size();
   in.regionlist = new double[5*in.numberofregions];
   int kk = 0;
-  vector<pair<EntityHandle,int> >::iterator it = regions.begin();
+  std::vector<std::pair<EntityHandle,int> >::iterator it = regions.begin();
   for(int ii = 0;it!=regions.end();it++,ii++) {
     double coords[3];
     switch(m_field.get_moab().type_from_handle(it->first)) {
@@ -468,7 +468,7 @@ PetscErrorCode TetGenInterface::setReginData(vector<pair<EntityHandle,int> >& re
   PetscFunctionReturn(0);
 }
 PetscErrorCode TetGenInterface::getReginData(
-  map<EntityHandle,unsigned long>& tetgen_moab_map,tetgenio& out,
+  std::map<EntityHandle,unsigned long>& tetgen_moab_map,tetgenio& out,
   Range *ents,idxRange_Map *ents_map) {
   PetscFunctionBegin;
   ErrorCode rval;
@@ -544,11 +544,11 @@ PetscErrorCode TetGenInterface::checkPlanar_Trinagle(double coords[],bool *resul
     sqrt( pow(pb[0]-pc[0],2)+pow(pb[1]-pc[1],2)+pow(pb[2]-pc[2],2) ) +
     sqrt( pow(pb[0]-pd[0],2)+pow(pb[1]-pd[1],2)+pow(pb[2]-pd[2],2) ) +
     sqrt( pow(pc[0]-pd[0],2)+pow(pc[1]-pd[1],2)+pow(pc[2]-pd[2],2) );
-  //cerr << fabs(v/pow(l,3)) << " ";
+  //std::cerr << fabs(v/pow(l,3)) << " ";
   *result = fabs(v/pow(l,3)) < eps ? true : false;
   PetscFunctionReturn(0);
 }
-PetscErrorCode TetGenInterface::groupPlanar_Triangle(Range &tris,vector<Range> &sorted,const double eps) {
+PetscErrorCode TetGenInterface::groupPlanar_Triangle(Range &tris,std::vector<Range> &sorted,const double eps) {
   PetscFunctionBegin;
 
   FieldInterface& m_field = cOre;
@@ -560,7 +560,7 @@ PetscErrorCode TetGenInterface::groupPlanar_Triangle(Range &tris,vector<Range> &
   for(;;) {
 
     Range noplanar_to_anyother;
-    vector<Range>::iterator vit = sorted.begin();
+    std::vector<Range>::iterator vit = sorted.begin();
 
     do {
 
@@ -654,7 +654,7 @@ PetscErrorCode TetGenInterface::groupPlanar_Triangle(Range &tris,vector<Range> &
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode TetGenInterface::groupRegion_Triangle(Range &tris,vector<vector<Range> > &sorted,const double eps) {
+PetscErrorCode TetGenInterface::groupRegion_Triangle(Range &tris,std::vector<std::vector<Range> > &sorted,const double eps) {
   PetscFunctionBegin;
 
   PetscErrorCode ierr;
@@ -664,12 +664,12 @@ PetscErrorCode TetGenInterface::groupRegion_Triangle(Range &tris,vector<vector<R
   Range seed;
   seed.insert(tris[0]);
   tris.erase(tris[0]);
-  vector<Range> vec_seed;
+  std::vector<Range> vec_seed;
   vec_seed.push_back(seed);
   sorted.push_back(vec_seed);
 
   for(;;) {
-    vector<Range> &vec =  sorted.back();
+    std::vector<Range> &vec =  sorted.back();
     ierr = groupPlanar_Triangle(tris,vec,eps); CHKERRQ(ierr);
     if(tris.empty()) {
       PetscFunctionReturn(0);
@@ -677,7 +677,7 @@ PetscErrorCode TetGenInterface::groupRegion_Triangle(Range &tris,vector<vector<R
       Range seed;
       seed.insert(tris[0]);
       tris.erase(tris[0]);
-      vector<Range> vec_seed;
+      std::vector<Range> vec_seed;
       vec_seed.push_back(seed);
       sorted.push_back(vec_seed);
     }
@@ -705,7 +705,7 @@ PetscErrorCode TetGenInterface::makePolygonFacet(Range &ents,Range &polygons,
   Range skin_edges;
   rval = skin.find_skin(0,ents,false,skin_edges); CHKERR_MOAB(rval);
 
-  vector<EntityHandle> polygon_nodes;
+  std::vector<EntityHandle> polygon_nodes;
   EntityHandle seed = skin_edges[0];
   Range seen_edges;
   seen_edges.insert(seed);
@@ -714,8 +714,8 @@ PetscErrorCode TetGenInterface::makePolygonFacet(Range &ents,Range &polygons,
   const EntityHandle* conn;
   rval = m_field.get_moab().get_connectivity(seed,conn,num_nodes,true); CHKERRQ_MOAB(rval);
   polygon_nodes.push_back(conn[0]);
-  //cerr << endl;
-  //cerr << conn[0] << " " << conn[1] << endl;
+  //std::cerr << std::endl;
+  //std::cerr << conn[0] << " " << conn[1] << std::endl;
   do {
     EntityHandle last_node = polygon_nodes.back();
     Range adj_edges;
@@ -732,13 +732,13 @@ PetscErrorCode TetGenInterface::makePolygonFacet(Range &ents,Range &polygons,
     rval = m_field.get_moab().get_connectivity(adj_edges[0],conn,num_nodes,true); CHKERRQ_MOAB(rval);
     EntityHandle add_node = (last_node == conn[0]) ? conn[1] : conn[0];
     polygon_nodes.push_back(add_node);
-    //cerr << "\t" << add_node << endl;
+    //std::cerr << "\t" << add_node << std::endl;
   } while(1);
 
   if(reduce_edges) {
-    //cerr << "polygon " << polygon_nodes.size();
-    vector<EntityHandle>::iterator pit = polygon_nodes.begin();
-    //cerr << endl;
+    //std::cerr << "polygon " << polygon_nodes.size();
+    std::vector<EntityHandle>::iterator pit = polygon_nodes.begin();
+    //std::cerr << std::endl;
     for(;pit!=polygon_nodes.end();) {
       if(not_reducable_nodes!=NULL) {
         if(not_reducable_nodes->find(*pit)!=not_reducable_nodes->end()) {
@@ -770,22 +770,22 @@ PetscErrorCode TetGenInterface::makePolygonFacet(Range &ents,Range &polygons,
       double l0 = cblas_dnrm2(3,&coords[3*0],1);
       cblas_dgemv(CblasRowMajor,CblasNoTrans,3,3,1./l0,spin,3,&coords[3*2],1,0.,&coords[3*1],1);
       double dot = cblas_dnrm2(3,&coords[3*1],1);
-      //cerr << mm << " " << mc << " " << mp << " " << dot << endl;
+      //std::cerr << mm << " " << mc << " " << mp << " " << dot << std::endl;
       if(dot<eps) {
 	polygon_nodes.erase(pit);
 	pit = polygon_nodes.begin();
-	//cerr << endl;
+	//std::cerr << std::endl;
       } else {
 	pit++;
       }
     }
   }
-  //cerr << " " << polygon_nodes.size() << endl;
+  //std::cerr << " " << polygon_nodes.size() << std::endl;
   /*pit = polygon_nodes.begin();
   for(;pit!=polygon_nodes.end();pit++) {
     double coords[3];
     rval = m_field.get_moab().get_coords(&*pit,1,coords); CHKERRQ_MOAB(rval);
-    cerr << *pit << " " << coords[0] << " " << coords[1] << " " << coords[2] << endl;
+    std::cerr << *pit << " " << coords[0] << " " << coords[1] << " " << coords[2] << std::endl;
   }*/
 
   Range existing_polygon;

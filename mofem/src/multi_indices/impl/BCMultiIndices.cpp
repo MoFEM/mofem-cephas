@@ -35,8 +35,8 @@ PetscErrorCode CubitMeshSets::get_tags_hanlders(Interface &moab) {
   ErrorCode rval;
   rval = moab.tag_get_handle(DIRICHLET_SET_TAG_NAME,nsTag); CHKERR_MOAB(rval);MOAB_THROW(rval);
   rval = moab.tag_get_handle(NEUMANN_SET_TAG_NAME,ssTag); CHKERR_MOAB(rval);MOAB_THROW(rval);
-  rval = moab.tag_get_handle((string(DIRICHLET_SET_TAG_NAME)+"__BC_DATA").c_str(),nsTag_data); CHKERR_MOAB(rval);MOAB_THROW(rval);
-  rval = moab.tag_get_handle((string(NEUMANN_SET_TAG_NAME)+"__BC_DATA").c_str(),ssTag_data); CHKERR_MOAB(rval);MOAB_THROW(rval);
+  rval = moab.tag_get_handle((std::string(DIRICHLET_SET_TAG_NAME)+"__BC_DATA").c_str(),nsTag_data); CHKERR_MOAB(rval);MOAB_THROW(rval);
+  rval = moab.tag_get_handle((std::string(NEUMANN_SET_TAG_NAME)+"__BC_DATA").c_str(),ssTag_data); CHKERR_MOAB(rval);MOAB_THROW(rval);
   rval = moab.tag_get_handle(MATERIAL_SET_TAG_NAME,bhTag); CHKERR_MOAB(rval);MOAB_THROW(rval);
   rval = moab.tag_get_handle(BLOCK_HEADER,bhTag_header); CHKERR_MOAB(rval);MOAB_THROW(rval);
   rval = moab.tag_get_handle(BLOCK_ATTRIBUTES,block_attribs); CHKERR_MOAB(rval); MOAB_THROW(rval);
@@ -54,7 +54,7 @@ CubitMeshSets::CubitMeshSets(Interface &moab,const EntityHandle _meshset):
   ierr = get_tags_hanlders(moab); CHKERRABORT(PETSC_COMM_WORLD,ierr);
   ErrorCode rval;
   rval = moab.tag_get_tags_on_entity(meshset,tag_handles); CHKERR_MOAB(rval);MOAB_THROW(rval);
-  vector<Tag>::iterator tit = tag_handles.begin();
+  std::vector<Tag>::iterator tit = tag_handles.begin();
   for(;tit!=tag_handles.end();tit++) {
     if(
       *tit == nsTag ||
@@ -96,7 +96,7 @@ CubitMeshSets::CubitMeshSets(Interface &moab,const EntityHandle _meshset):
     if(*tit == block_attribs) {
       rval = moab.tag_get_by_ptr(*tit,&meshset,1,(const void **)&tag_block_attributes,&tag_block_attributes_size); CHKERR_MOAB(rval); MOAB_THROW(rval);
       //for(int ii = 0;ii<tag_block_attributes_size;ii++) {
-      //cerr << "RRRRR " << tag_block_attributes[ii] << endl;
+      //std::cerr << "RRRRR " << tag_block_attributes[ii] << std::endl;
       //}
     }
     if(*tit == entityNameTag) {
@@ -171,8 +171,8 @@ PetscErrorCode CubitMeshSets::get_cubit_msId_entities_by_dimension(Interface &mo
   //rval = moab.list_entity(meshset); CHKERRQ_MOAB(rval);
   rval = moab.get_entities_by_dimension(meshset,dimension,entities,recursive);
   if(rval !=  MB_SUCCESS) {
-    ostringstream ss;
-    ss << "bc set " << *this << endl;
+    std::ostringstream ss;
+    ss << "bc set " << *this << std::endl;
     PetscPrintf(PETSC_COMM_WORLD,ss.str().c_str());
   }
   CHKERRQ_MOAB(rval);
@@ -198,31 +198,31 @@ PetscErrorCode CubitMeshSets::get_cubit_msId_entities_by_type(Interface &moab,co
   //rval = moab.list_entity(meshset); CHKERRQ_MOAB(rval);
   rval = moab.get_entities_by_type(meshset,type,entities,recursive);
   if(rval !=  MB_SUCCESS) {
-    ostringstream ss;
-    ss << "bc set " << *this << endl;
+    std::ostringstream ss;
+    ss << "bc set " << *this << std::endl;
     PetscPrintf(PETSC_COMM_WORLD,ss.str().c_str());
   }
   CHKERRQ_MOAB(rval);
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode CubitMeshSets::get_bc_data(vector<char>& bc_data) const {
+PetscErrorCode CubitMeshSets::get_bc_data(std::vector<char>& bc_data) const {
   PetscFunctionBegin;
   bc_data.resize(tag_bc_size);
   copy(&tag_bc_data[0],&tag_bc_data[tag_bc_size],bc_data.begin());
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode CubitMeshSets::get_block_header_data(vector<unsigned int>& material_data) const {
+PetscErrorCode CubitMeshSets::get_block_header_data(std::vector<unsigned int>& material_data) const {
     PetscFunctionBegin;
     material_data.resize(3);
     copy(&tag_block_header_data[0],&tag_block_header_data[3],material_data.begin());
     PetscFunctionReturn(0);
 }
 
-PetscErrorCode CubitMeshSets::print_block_header_data(ostream& os) const {
+PetscErrorCode CubitMeshSets::print_block_header_data(std::ostream& os) const {
     PetscFunctionBegin;
-    vector<unsigned int> material_data;
+    std::vector<unsigned int> material_data;
     get_block_header_data(material_data);
     os << "block_header_data = ";
     std::vector<unsigned int>::iterator vit = material_data.begin();
@@ -238,23 +238,23 @@ PetscErrorCode CubitMeshSets::print_block_header_data(ostream& os) const {
     PetscFunctionReturn(0);
 }
 
-string CubitMeshSets::get_name() const {
+std::string CubitMeshSets::get_name() const {
   if(tag_name_data!=NULL) {
-    return string(tag_name_data);
+    return std::string(tag_name_data);
   } else {
     return "NoNameSet";
   }
 }
 
-PetscErrorCode CubitMeshSets::print_name(ostream& os) const {
+PetscErrorCode CubitMeshSets::print_name(std::ostream& os) const {
     PetscFunctionBegin;
-    string name = get_name();
-    os << endl;
-    os << "Block name:  " << name << endl;
+    std::string name = get_name();
+    os << std::endl;
+    os << "Block name:  " << name << std::endl;
     PetscFunctionReturn(0);
 }
 
-PetscErrorCode CubitMeshSets::get_type_from_bc_data(const vector<char> &bc_data,CubitBCType &type) const {
+PetscErrorCode CubitMeshSets::get_type_from_bc_data(const std::vector<char> &bc_data,CubitBCType &type) const {
     PetscFunctionBegin;
 
     //See CubitBCType in common.hpp
@@ -285,14 +285,14 @@ PetscErrorCode CubitMeshSets::get_type_from_bc_data(const vector<char> &bc_data,
 PetscErrorCode CubitMeshSets::get_type_from_bc_data(CubitBCType &type) const {
   PetscFunctionBegin;
   PetscErrorCode ierr;
-  vector<char> bc_data;
+  std::vector<char> bc_data;
   ierr = get_bc_data(bc_data); CHKERRQ(ierr);
   ierr = get_type_from_bc_data(bc_data,type); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
-PetscErrorCode CubitMeshSets::print_bc_data(ostream& os) const {
+PetscErrorCode CubitMeshSets::print_bc_data(std::ostream& os) const {
   PetscFunctionBegin;
-  vector<char> bc_data;
+  std::vector<char> bc_data;
   get_bc_data(bc_data);
   os << "bc_data = ";
   std::vector<char>::iterator vit = bc_data.begin();
@@ -307,7 +307,7 @@ PetscErrorCode CubitMeshSets::print_bc_data(ostream& os) const {
   os << std::endl;
   PetscFunctionReturn(0);
 }
-PetscErrorCode CubitMeshSets::get_attributes(vector<double>& attributes) const {
+PetscErrorCode CubitMeshSets::get_attributes(std::vector<double>& attributes) const {
   PetscFunctionBegin;
   attributes.resize(tag_block_attributes_size);
   if(tag_block_attributes_size>0) {
@@ -316,22 +316,22 @@ PetscErrorCode CubitMeshSets::get_attributes(vector<double>& attributes) const {
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode CubitMeshSets::print_attributes(ostream& os) const {
+PetscErrorCode CubitMeshSets::print_attributes(std::ostream& os) const {
     PetscFunctionBegin;
-    vector<double> attributes;
+    std::vector<double> attributes;
     get_attributes(attributes);
-    os << endl;
-    os << "Block attributes" << endl;
-    os << "----------------" << endl;
+    os << std::endl;
+    os << "Block attributes" << std::endl;
+    os << "----------------" << std::endl;
     for(unsigned int ii = 0;ii<attributes.size();ii++)
         {
-            os << "attr. no: " << ii+1 << "   value: " << attributes[ii] << endl;
+            os << "attr. no: " << ii+1 << "   value: " << attributes[ii] << std::endl;
         }
-    os << endl;
+    os << std::endl;
     PetscFunctionReturn(0);
 }
 
-PetscErrorCode CubitMeshSets::get_type_from_name(const string &name,CubitBCType &type) const {
+PetscErrorCode CubitMeshSets::get_type_from_name(const std::string &name,CubitBCType &type) const {
     PetscFunctionBegin;
 
     //See CubitBCType in common.hpp
@@ -356,12 +356,12 @@ PetscErrorCode CubitMeshSets::get_type_from_name(const string &name,CubitBCType 
 PetscErrorCode CubitMeshSets::get_type_from_name(CubitBCType &type) const {
     PetscFunctionBegin;
     PetscErrorCode ierr;
-    string name = get_name();
+    std::string name = get_name();
     ierr = get_type_from_name(name,type); CHKERRQ(ierr);
     PetscFunctionReturn(0);
 }
 
-ostream& operator<<(ostream& os,const CubitMeshSets& e) {
+std::ostream& operator<<(std::ostream& os,const CubitMeshSets& e) {
   os << "meshset " << e.meshset << " type " << e.cubitBcType;
   if(e.msId != NULL) os << " msId " << *(e.msId);
   if(e.tag_name_data!=NULL) {
@@ -376,7 +376,7 @@ ostream& operator<<(ostream& os,const CubitMeshSets& e) {
   return os;
 }
 
-ostream& operator<<(ostream& os,const DisplacementCubitBcData& e) {
+std::ostream& operator<<(std::ostream& os,const DisplacementCubitBcData& e) {
     os << "\n";
     os << "D i s p l a c e m e n t \n \n";
     os << "Flag for X-Translation (0/1): " << (int)e.data.flag1 << "\n";
@@ -407,7 +407,7 @@ ostream& operator<<(ostream& os,const DisplacementCubitBcData& e) {
     return os;
 }
 
-ostream& operator<<(ostream& os,const ForceCubitBcData& e) {
+std::ostream& operator<<(std::ostream& os,const ForceCubitBcData& e) {
     os << "\n";
     os << "F o r c e \n \n";
     os << "Force magnitude: " << e.data.value1 << "\n";
@@ -421,7 +421,7 @@ ostream& operator<<(ostream& os,const ForceCubitBcData& e) {
     return os;
 }
 
-ostream& operator<<(ostream& os,const VelocityCubitBcData& e) {
+std::ostream& operator<<(std::ostream& os,const VelocityCubitBcData& e) {
     os << "\n";
     os << "V e l o c i t y \n \n";
     if (e.data.flag1 == 1)
@@ -445,7 +445,7 @@ ostream& operator<<(ostream& os,const VelocityCubitBcData& e) {
     return os;
 }
 
-ostream& operator<<(ostream& os,const AccelerationCubitBcData& e) {
+std::ostream& operator<<(std::ostream& os,const AccelerationCubitBcData& e) {
     os << "\n";
     os << "A c c e l e r a t i o n \n \n";
     if (e.data.flag1 == 1)
@@ -469,7 +469,7 @@ ostream& operator<<(ostream& os,const AccelerationCubitBcData& e) {
     return os;
 }
 
-ostream& operator<<(ostream& os,const TemperatureCubitBcData& e) {
+std::ostream& operator<<(std::ostream& os,const TemperatureCubitBcData& e) {
     os << "\n";
     os << "T e m p e r a t u r e \n \n";
     if (e.data.flag1 == 1)
@@ -490,14 +490,14 @@ ostream& operator<<(ostream& os,const TemperatureCubitBcData& e) {
     return os;
 }
 
-ostream& operator<<(ostream& os,const PressureCubitBcData& e) {
+std::ostream& operator<<(std::ostream& os,const PressureCubitBcData& e) {
     os << "\n";
     os << "P r e s s u r e \n \n";
     os << "Pressure value: " << e.data.value1 << "\n \n";
     return os;
 }
 
-ostream& operator<<(ostream& os,const HeatFluxCubitBcData& e) {
+std::ostream& operator<<(std::ostream& os,const HeatFluxCubitBcData& e) {
     os << "\n";
     os << "H e a t  F l u x \n \n";
     if (e.data.flag1 == 1)
@@ -512,133 +512,133 @@ ostream& operator<<(ostream& os,const HeatFluxCubitBcData& e) {
     return os;
 }
 
-ostream& operator<<(ostream& os,const CfgCubitBcData& e) {
+std::ostream& operator<<(std::ostream& os,const CfgCubitBcData& e) {
     os << "\n";
     os << "CFD BC \n \n";
     return os;
 }
 
-ostream& operator<<(ostream& os,const BlockSetAttributes& e)
+std::ostream& operator<<(std::ostream& os,const BlockSetAttributes& e)
   {
-    os << endl << "Blcok attributes" << endl;
-    os << "-------------------" << endl;
-    os << "User attribute 1 = " << e.data.User1 << endl;
-    os << "User attribute 2 = " << e.data.User2 << endl;
-    os << "User attribute 3 = " << e.data.User3 << endl;
-    os << "User attribute 4 = " << e.data.User4 << endl;
-    os << "User attribute 5 = " << e.data.User5 << endl;
-    os << "User attribute 6 = " << e.data.User6 << endl;
-    os << "User attribute 7 = " << e.data.User7 << endl;
-    os << "User attribute 8 = " << e.data.User7 << endl;
-    os << "User attribute 9 = " << e.data.User7 << endl;
-    os << "User attribute 10 = " << e.data.User10 << endl << endl;
+    os << std::endl << "Blcok attributes" << std::endl;
+    os << "-------------------" << std::endl;
+    os << "User attribute 1 = " << e.data.User1 << std::endl;
+    os << "User attribute 2 = " << e.data.User2 << std::endl;
+    os << "User attribute 3 = " << e.data.User3 << std::endl;
+    os << "User attribute 4 = " << e.data.User4 << std::endl;
+    os << "User attribute 5 = " << e.data.User5 << std::endl;
+    os << "User attribute 6 = " << e.data.User6 << std::endl;
+    os << "User attribute 7 = " << e.data.User7 << std::endl;
+    os << "User attribute 8 = " << e.data.User7 << std::endl;
+    os << "User attribute 9 = " << e.data.User7 << std::endl;
+    os << "User attribute 10 = " << e.data.User10 << std::endl << std::endl;
     return os;
   }
 
-ostream& operator<<(ostream& os,const Mat_Elastic& e)
+std::ostream& operator<<(std::ostream& os,const Mat_Elastic& e)
     {
-        os << endl << "Material Properties" << endl;
-        os << "-------------------" << endl;
-        os << "Young's modulus  = " << e.data.Young << endl;
-        os << "Poisson's ratio  = " << e.data.Poisson << endl;
-        os << "Thermal expansion = " << e.data.ThermalExpansion << endl;
-        os << "User attribute 1 = " << e.data.User1 << endl;
-        os << "User attribute 2 = " << e.data.User2 << endl;
-        os << "User attribute 3 = " << e.data.User3 << endl;
-        os << "User attribute 4 = " << e.data.User4 << endl;
-        os << "User attribute 5 = " << e.data.User5 << endl;
-        os << "User attribute 6 = " << e.data.User6 << endl;
-        os << "User attribute 7 = " << e.data.User7 << endl << endl;
+        os << std::endl << "Material Properties" << std::endl;
+        os << "-------------------" << std::endl;
+        os << "Young's modulus  = " << e.data.Young << std::endl;
+        os << "Poisson's ratio  = " << e.data.Poisson << std::endl;
+        os << "Thermal expansion = " << e.data.ThermalExpansion << std::endl;
+        os << "User attribute 1 = " << e.data.User1 << std::endl;
+        os << "User attribute 2 = " << e.data.User2 << std::endl;
+        os << "User attribute 3 = " << e.data.User3 << std::endl;
+        os << "User attribute 4 = " << e.data.User4 << std::endl;
+        os << "User attribute 5 = " << e.data.User5 << std::endl;
+        os << "User attribute 6 = " << e.data.User6 << std::endl;
+        os << "User attribute 7 = " << e.data.User7 << std::endl << std::endl;
         return os;
     }
 
-ostream& operator<<(ostream& os,const Mat_Elastic_EberleinHolzapfel1& e)
+std::ostream& operator<<(std::ostream& os,const Mat_Elastic_EberleinHolzapfel1& e)
     {
-        os << endl << "Material Properties" << endl;
-        os << "-------------------" << endl;
-        os << "Young's modulus  = " << e.data.Young << endl;
-        os << "Poisson's ratio  = " << e.data.Poisson << endl;
-        os << "k1 = " << e.data.k1 << endl;
-        os << "k2 = " << e.data.k2 << endl;
-        os << "a0_x = " << e.data.a0x << endl;
-        os << "a0_y = " << e.data.a0y << endl;
-        os << "a0_z = " << e.data.a0z << endl;
-        os << "a1_x = " << e.data.a1x << endl;
-        os << "a1_y = " << e.data.a1y << endl;
-        os << "a1_Z = " << e.data.a1z << endl << endl;
-        return os;
-    }
-
-
-ostream& operator<<(ostream& os,const Mat_Thermal& e)
-    {
-        os << endl << "Material Properties" << endl;
-        os << "-------------------" << endl;
-        os << "Conductivity  = " << e.data.Conductivity << endl;
-        os << "User attribute 1 = " << e.data.HeatCapacity << endl;
-        os << "User attribute 2 = " << e.data.User2 << endl;
-        os << "User attribute 3 = " << e.data.User3 << endl;
-        os << "User attribute 4 = " << e.data.User4 << endl;
-        os << "User attribute 5 = " << e.data.User5 << endl;
-        os << "User attribute 6 = " << e.data.User6 << endl;
-        os << "User attribute 7 = " << e.data.User7 << endl;
-        os << "User attribute 8 = " << e.data.User8 << endl << endl;
+        os << std::endl << "Material Properties" << std::endl;
+        os << "-------------------" << std::endl;
+        os << "Young's modulus  = " << e.data.Young << std::endl;
+        os << "Poisson's ratio  = " << e.data.Poisson << std::endl;
+        os << "k1 = " << e.data.k1 << std::endl;
+        os << "k2 = " << e.data.k2 << std::endl;
+        os << "a0_x = " << e.data.a0x << std::endl;
+        os << "a0_y = " << e.data.a0y << std::endl;
+        os << "a0_z = " << e.data.a0z << std::endl;
+        os << "a1_x = " << e.data.a1x << std::endl;
+        os << "a1_y = " << e.data.a1y << std::endl;
+        os << "a1_Z = " << e.data.a1z << std::endl << std::endl;
         return os;
     }
 
 
+std::ostream& operator<<(std::ostream& os,const Mat_Thermal& e)
+    {
+        os << std::endl << "Material Properties" << std::endl;
+        os << "-------------------" << std::endl;
+        os << "Conductivity  = " << e.data.Conductivity << std::endl;
+        os << "User attribute 1 = " << e.data.HeatCapacity << std::endl;
+        os << "User attribute 2 = " << e.data.User2 << std::endl;
+        os << "User attribute 3 = " << e.data.User3 << std::endl;
+        os << "User attribute 4 = " << e.data.User4 << std::endl;
+        os << "User attribute 5 = " << e.data.User5 << std::endl;
+        os << "User attribute 6 = " << e.data.User6 << std::endl;
+        os << "User attribute 7 = " << e.data.User7 << std::endl;
+        os << "User attribute 8 = " << e.data.User8 << std::endl << std::endl;
+        return os;
+    }
 
-ostream& operator<<(ostream& os,const Mat_Moisture& e) {
-  os << endl << "Material Properties" << endl;
-  os << "-------------------" << endl;
-  os << "Diffusivity  = " << e.data.Diffusivity << endl;
-  os << "Viscosity = " << e.data.Viscosity << endl;
-  os << "Permeability = " << e.data.Permeability << endl;
-  os << "User attribute 3 = " << e.data.User3 << endl;
-  os << "User attribute 4 = " << e.data.User4 << endl;
-  os << "User attribute 5 = " << e.data.User5 << endl;
-  os << "User attribute 6 = " << e.data.User6 << endl;
-  os << "User attribute 7 = " << e.data.User7 << endl;
-  os << "User attribute 8 = " << e.data.User8 << endl << endl;
+
+
+std::ostream& operator<<(std::ostream& os,const Mat_Moisture& e) {
+  os << std::endl << "Material Properties" << std::endl;
+  os << "-------------------" << std::endl;
+  os << "Diffusivity  = " << e.data.Diffusivity << std::endl;
+  os << "Viscosity = " << e.data.Viscosity << std::endl;
+  os << "Permeability = " << e.data.Permeability << std::endl;
+  os << "User attribute 3 = " << e.data.User3 << std::endl;
+  os << "User attribute 4 = " << e.data.User4 << std::endl;
+  os << "User attribute 5 = " << e.data.User5 << std::endl;
+  os << "User attribute 6 = " << e.data.User6 << std::endl;
+  os << "User attribute 7 = " << e.data.User7 << std::endl;
+  os << "User attribute 8 = " << e.data.User8 << std::endl << std::endl;
   return os;
 }
 
 
 
-ostream& operator<<(ostream& os,const Block_BodyForces& e) {
-  os << endl << "Block Body Forces" << endl;
-  os << "-------------------" << endl;
-  os << "density  = " << e.data.density << endl;
-  os << "acceleration_x = " << e.data.acceleration_x << endl;
-  os << "acceleration_y = " << e.data.acceleration_y << endl;
-  os << "acceleration_z = " << e.data.acceleration_z << endl;
-  os << "User attribute 4 = " << e.data.User4 << endl;
-  os << "User attribute 5 = " << e.data.User5 << endl;
-  os << "User attribute 6 = " << e.data.User6 << endl;
-  os << "User attribute 7 = " << e.data.User7 << endl;
-  os << "User attribute 8 = " << e.data.User8 << endl << endl;
+std::ostream& operator<<(std::ostream& os,const Block_BodyForces& e) {
+  os << std::endl << "Block Body Forces" << std::endl;
+  os << "-------------------" << std::endl;
+  os << "density  = " << e.data.density << std::endl;
+  os << "acceleration_x = " << e.data.acceleration_x << std::endl;
+  os << "acceleration_y = " << e.data.acceleration_y << std::endl;
+  os << "acceleration_z = " << e.data.acceleration_z << std::endl;
+  os << "User attribute 4 = " << e.data.User4 << std::endl;
+  os << "User attribute 5 = " << e.data.User5 << std::endl;
+  os << "User attribute 6 = " << e.data.User6 << std::endl;
+  os << "User attribute 7 = " << e.data.User7 << std::endl;
+  os << "User attribute 8 = " << e.data.User8 << std::endl << std::endl;
   return os;
 }
 
 
-ostream& operator<<(ostream& os,const Mat_Elastic_TransIso& e) {
-    os << endl << "Material Properties" << endl;
-    os << "-------------------" << endl;
-    os << "Young's modulus in xy plane (Ep)     = " << e.data.Youngp << endl;
-    os << "Young's modulus in z-direction (Ez)  = " << e.data.Youngz << endl;
-    os << "Poisson's ratio in xy plane (vp)     = " << e.data.Poissonp << endl;
-    os << "Poisson's ratio in z-direction (vpz) = " << e.data.Poissonpz << endl;
-    os << "Shear modulus in z-direction (Gzp)   = " << e.data.Shearzp << endl << endl;
+std::ostream& operator<<(std::ostream& os,const Mat_Elastic_TransIso& e) {
+    os << std::endl << "Material Properties" << std::endl;
+    os << "-------------------" << std::endl;
+    os << "Young's modulus in xy plane (Ep)     = " << e.data.Youngp << std::endl;
+    os << "Young's modulus in z-direction (Ez)  = " << e.data.Youngz << std::endl;
+    os << "Poisson's ratio in xy plane (vp)     = " << e.data.Poissonp << std::endl;
+    os << "Poisson's ratio in z-direction (vpz) = " << e.data.Poissonpz << std::endl;
+    os << "Shear modulus in z-direction (Gzp)   = " << e.data.Shearzp << std::endl << std::endl;
     return os;
 }
 
-ostream& operator<<(ostream& os,const Mat_Interf& e) {
-    os << endl << "Material Properties" << endl;
-    os << "-------------------" << endl;
-    os << "Elastic module	= " << e.data.alpha << endl << endl;
-    os << "Damage coupling	= " << e.data.beta << endl << endl;
-    os << "Strengh		= " << e.data.ft << endl << endl;
-    os << "Fracture energy	= " << e.data.Gf << endl << endl;
+std::ostream& operator<<(std::ostream& os,const Mat_Interf& e) {
+    os << std::endl << "Material Properties" << std::endl;
+    os << "-------------------" << std::endl;
+    os << "Elastic module	= " << e.data.alpha << std::endl << std::endl;
+    os << "Damage coupling	= " << e.data.beta << std::endl << std::endl;
+    os << "Strengh		= " << e.data.ft << std::endl << std::endl;
+    os << "Fracture energy	= " << e.data.Gf << std::endl << std::endl;
 
     return os;
 }

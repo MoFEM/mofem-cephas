@@ -30,7 +30,7 @@ namespace MoFEM {
 struct GenericAttributeData {
     PetscErrorCode ierr;
 
-    virtual PetscErrorCode fill_data(const vector<double>& attributes) {
+    virtual PetscErrorCode fill_data(const std::vector<double>& attributes) {
       PetscFunctionBegin;
       SETERRQ(PETSC_COMM_SELF,1,"It makes no sense for the generic attribute type");
       PetscFunctionReturn(0);
@@ -69,7 +69,7 @@ struct BlockSetAttributes: public GenericAttributeData {
     const unsigned int min_number_of_atributes;
     BlockSetAttributes(): type(BLOCKSET),min_number_of_atributes(0) {};
 
-    virtual PetscErrorCode fill_data(const vector<double>& attributes) {
+    virtual PetscErrorCode fill_data(const std::vector<double>& attributes) {
       PetscFunctionBegin;
       if(8*attributes.size()>sizeof(data)) {
 	SETERRQ(PETSC_COMM_SELF,1,
@@ -91,7 +91,7 @@ struct BlockSetAttributes: public GenericAttributeData {
 
     /*! \brief Print data
      */
-    friend ostream& operator<<(ostream& os,const BlockSetAttributes& e);
+    friend std::ostream& operator<<(std::ostream& os,const BlockSetAttributes& e);
 
 };
 
@@ -122,7 +122,7 @@ struct Mat_Elastic: public GenericAttributeData {
     const unsigned int min_number_of_atributes;
     Mat_Elastic(): type(MAT_ELASTICSET),min_number_of_atributes(2) {};
 
-    virtual PetscErrorCode fill_data(const vector<double>& attributes) {
+    virtual PetscErrorCode fill_data(const std::vector<double>& attributes) {
         PetscFunctionBegin;
         if(attributes.size()<min_number_of_atributes) {
 	  SETERRQ(PETSC_COMM_SELF,1,"Young modulus and/or Poisson ratio is not defined. (top tip: check number of ELASTIC block atributes)");
@@ -146,7 +146,7 @@ struct Mat_Elastic: public GenericAttributeData {
 
     /*! \brief Print Mat_Elastic data
      */
-    friend ostream& operator<<(ostream& os,const Mat_Elastic& e);
+    friend std::ostream& operator<<(std::ostream& os,const Mat_Elastic& e);
 
 };
 
@@ -178,7 +178,7 @@ struct Mat_Thermal: public GenericAttributeData {
   const unsigned int min_number_of_atributes;
   Mat_Thermal(): type(MAT_THERMALSET),min_number_of_atributes(2) {};
 
-  virtual PetscErrorCode fill_data(const vector<double>& attributes) {
+  virtual PetscErrorCode fill_data(const std::vector<double>& attributes) {
     PetscFunctionBegin;
     if(attributes.size()<min_number_of_atributes) {
       SETERRQ(PETSC_COMM_SELF,1,"Thermal conductivity is not defined. (top tip: check number of THERMAL block atributes)");
@@ -202,7 +202,7 @@ struct Mat_Thermal: public GenericAttributeData {
 
   /*! \brief Print Mat_Elastic data
   */
-  friend ostream& operator<<(ostream& os,const Mat_Thermal& e);
+  friend std::ostream& operator<<(std::ostream& os,const Mat_Thermal& e);
 };
 
 
@@ -234,7 +234,7 @@ struct Mat_Moisture: public GenericAttributeData {
   const unsigned int min_number_of_atributes;
   Mat_Moisture(): type(MAT_MOISTURESET),min_number_of_atributes(1) {};
 
-  virtual PetscErrorCode fill_data(const vector<double>& attributes) {
+  virtual PetscErrorCode fill_data(const std::vector<double>& attributes) {
     PetscFunctionBegin;
     if(attributes.size()<min_number_of_atributes) {
       SETERRQ(PETSC_COMM_SELF,1,"moisture diffusivity is not defined. (top tip: check number of MOISTURE block atributes)");
@@ -249,7 +249,7 @@ struct Mat_Moisture: public GenericAttributeData {
 
   /*! \brief Print Mat_Elastic data
    */
-  friend ostream& operator<<(ostream& os,const Mat_Moisture& e);
+  friend std::ostream& operator<<(std::ostream& os,const Mat_Moisture& e);
 };
 
 
@@ -279,7 +279,7 @@ struct Block_BodyForces: public GenericAttributeData {
   const unsigned int min_number_of_atributes;
   Block_BodyForces(): type(BODYFORCESSET),min_number_of_atributes(4) {};
 
-  virtual PetscErrorCode fill_data(const vector<double>& attributes) {
+  virtual PetscErrorCode fill_data(const std::vector<double>& attributes) {
     PetscFunctionBegin;
     if(attributes.size()<min_number_of_atributes) {
       SETERRQ(PETSC_COMM_SELF,1,"Material density and/or acceleration is not defined. (top tip: check number of THERMAL block atributes)");
@@ -303,7 +303,7 @@ struct Block_BodyForces: public GenericAttributeData {
 
   /*! \brief Print Mat_Elastic data
   */
-  friend ostream& operator<<(ostream& os,const Block_BodyForces& e);
+  friend std::ostream& operator<<(std::ostream& os,const Block_BodyForces& e);
 };
 
 
@@ -329,7 +329,7 @@ struct Block_BodyForces: public GenericAttributeData {
     const unsigned int min_number_of_atributes;
     Mat_Elastic_TransIso(): Mat_Elastic(),min_number_of_atributes(5) {};
 
-    virtual PetscErrorCode fill_data(const vector<double>& attributes) {
+    virtual PetscErrorCode fill_data(const std::vector<double>& attributes) {
       PetscFunctionBegin;
       //Fill data
       if(attributes.size()<min_number_of_atributes) {
@@ -354,7 +354,7 @@ struct Block_BodyForces: public GenericAttributeData {
 
     /*! \brief Print Mat_Elastic_TransIso data
      */
-    friend ostream& operator<<(ostream& os,const Mat_Elastic_TransIso& e);
+    friend std::ostream& operator<<(std::ostream& os,const Mat_Elastic_TransIso& e);
 
   };
 
@@ -378,7 +378,7 @@ struct Mat_Interf: public GenericAttributeData {
   const CubitBCType type;
   Mat_Interf(): type(MAT_INTERFSET) {};
 
-  virtual PetscErrorCode fill_data(const vector<double>& attributes) {
+  virtual PetscErrorCode fill_data(const std::vector<double>& attributes) {
     PetscFunctionBegin;
     //Fill data
     if(8*attributes.size()!=sizeof(data)) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency, please review the number of material properties defined");
@@ -397,7 +397,7 @@ struct Mat_Interf: public GenericAttributeData {
 
   /*! \brief Print Mat_Interf data
     */
-  friend ostream& operator<<(ostream& os,const Mat_Interf& e);
+  friend std::ostream& operator<<(std::ostream& os,const Mat_Interf& e);
 };
 
 /** \brief Mat_Elastic with Fibres
@@ -426,7 +426,7 @@ struct Mat_Elastic_EberleinHolzapfel1: public Mat_Elastic {
     const unsigned int min_number_of_atributes;
     Mat_Elastic_EberleinHolzapfel1(): Mat_Elastic(),min_number_of_atributes(10) {};
 
-    virtual PetscErrorCode fill_data(const vector<double>& attributes) {
+    virtual PetscErrorCode fill_data(const std::vector<double>& attributes) {
         PetscFunctionBegin;
         if(attributes.size()<min_number_of_atributes) {
 	  SETERRQ(PETSC_COMM_SELF,1,"All material data not defined");
@@ -442,7 +442,7 @@ struct Mat_Elastic_EberleinHolzapfel1: public Mat_Elastic {
 
     /*! \brief Print Mat_Elastic data
      */
-    friend ostream& operator<<(ostream& os,const Mat_Elastic_EberleinHolzapfel1& e);
+    friend std::ostream& operator<<(std::ostream& os,const Mat_Elastic_EberleinHolzapfel1& e);
 
 };
 

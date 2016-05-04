@@ -145,7 +145,7 @@ PetscErrorCode RefEntity::iterateRefEntity(
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode getPatentEnt(Interface &moab,Range ents,vector<EntityHandle> vec_patent_ent) {
+PetscErrorCode getPatentEnt(Interface &moab,Range ents,std::vector<EntityHandle> vec_patent_ent) {
   MoABErrorCode rval;
   PetscFunctionBegin;
   Tag th_ref_parent_handle;
@@ -155,7 +155,7 @@ PetscErrorCode getPatentEnt(Interface &moab,Range ents,vector<EntityHandle> vec_
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode RefEntity::getBitRefLevel(Interface &moab,Range ents,vector<BitRefLevel> vec_bit_ref_level) {
+PetscErrorCode RefEntity::getBitRefLevel(Interface &moab,Range ents,std::vector<BitRefLevel> vec_bit_ref_level) {
   MoABErrorCode rval;
   PetscFunctionBegin;
   Tag th_ref_bit_level;
@@ -165,9 +165,9 @@ PetscErrorCode RefEntity::getBitRefLevel(Interface &moab,Range ents,vector<BitRe
   PetscFunctionReturn(0);
 }
 
-ostream& operator<<(ostream& os,const RefEntity& e) {
+std::ostream& operator<<(std::ostream& os,const RefEntity& e) {
   os << "ent " << e.ent;
-  os << " pstatus "<< bitset<8>(e.get_pstatus());
+  os << " pstatus "<< std::bitset<8>(e.get_pstatus());
   os << " owner ent " << e.get_owner_ent();
   os << " owner proc " << e.get_owner_proc();
   os << " parent ent " << e.get_parent_ent();
@@ -207,11 +207,11 @@ tag_dof_rank_data(NULL) {
   }
 }
 MoFEMEntity::~MoFEMEntity() {}
-ostream& operator<<(ostream& os,const MoFEMEntity& e) {
+std::ostream& operator<<(std::ostream& os,const MoFEMEntity& e) {
   os << "ent_global_uid " << (UId)e.get_global_unique_id()
     << " ent_local_uid " << (UId)e.get_local_unique_id()
     << " entity "<< e.get_ent() << " type " << e.get_ent_type()
-    << " pstatus "<< bitset<8>(e.get_pstatus()) << " owner handle " << e.get_owner_ent() << " owner proc " << e.get_owner_proc()
+    << " pstatus "<< std::bitset<8>(e.get_pstatus()) << " owner handle " << e.get_owner_ent() << " owner proc " << e.get_owner_proc()
     << " order "<<e.get_max_order()<<" "<< *e.sFieldPtr;
   return os;
 }

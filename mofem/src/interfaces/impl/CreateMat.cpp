@@ -76,13 +76,13 @@ struct CreateRowComressedADJMatrix: public Core {
   PetscErrorCode createMatArrays(
     ProblemsByName::iterator p_miit,
     const MatType type,
-    vector<PetscInt> &i,vector<PetscInt> &j,
+    std::vector<PetscInt> &i,std::vector<PetscInt> &j,
     const bool no_diagonals = true,int verb = -1
   );
 
   template<typename TAG>
   PetscErrorCode createMat(
-    const string &name,Mat *M,const MatType type,
+    const std::string &name,Mat *M,const MatType type,
     PetscInt **_i,PetscInt **_j,PetscScalar **_v,
     const bool no_diagonals = true,int verb = -1
   );
@@ -131,15 +131,15 @@ PetscErrorCode CreateRowComressedADJMatrix::getEntityAdjacenies(
       }
 
       if (verb > 2) {
-          stringstream ss;
+          std::stringstream ss;
 
-          ss << "rank " << rAnk << ":  numered_dofs_cols" << endl;
+          ss << "rank " << rAnk << ":  numered_dofs_cols" << std::endl;
           DofEntity_multiIndex_uid_view::iterator dit, hi_dit;
           dit = adj_miit->entFePtr->col_dof_view->begin();
           hi_dit = adj_miit->entFePtr->col_dof_view->end();
 
           for (; dit != hi_dit; dit++) {
-            ss << "\t" << **dit << endl;
+            ss << "\t" << **dit << std::endl;
           }
           PetscSynchronizedPrintf(comm, "%s", ss.str().c_str());
       }
@@ -161,7 +161,7 @@ template<typename TAG>
 PetscErrorCode CreateRowComressedADJMatrix::createMatArrays(
   ProblemsByName::iterator p_miit,
   const MatType type,
-  vector<PetscInt> &i,vector<PetscInt> &j,
+  std::vector<PetscInt> &i,std::vector<PetscInt> &j,
   const bool no_diagonals,int verb
 ) {
   PetscFunctionBegin;
@@ -179,7 +179,7 @@ PetscErrorCode CreateRowComressedADJMatrix::createMatArrays(
   }
 
   // Get adjacencies form other processors
-  map<int, vector<int> > adjacent_dofs_on_other_parts;
+  std::map<int, std::vector<int> > adjacent_dofs_on_other_parts;
 
   // If not partitioned set petsc layout for matrix. If partitioned need to get
   // adjacencies form other parts. Note if algebra is only partitioned no need
@@ -211,7 +211,7 @@ PetscErrorCode CreateRowComressedADJMatrix::createMatArrays(
     }
   } else {
     //get adjacent nodes on other partitions
-    vector<vector<int> > dofs_vec(sIze);
+    std::vector<std::vector<int> > dofs_vec(sIze);
 
     boost::shared_ptr<MoFEMEntity> mofem_ent_ptr;
     NumeredDofEntity_multiIndex_uid_view_hashed dofs_col_view;
@@ -248,15 +248,15 @@ PetscErrorCode CreateRowComressedADJMatrix::createMatArrays(
 
             int col_idx = TAG::get_index(cvit);
             if(col_idx<0) {
-              ostringstream zz;
+              std::ostringstream zz;
               zz << "rank " << rAnk << " ";
-              zz << *(*cvit) << endl;
+              zz << *(*cvit) << std::endl;
               SETERRQ(PETSC_COMM_SELF,PETSC_ERR_ARG_SIZ,zz.str().c_str());
             }
             if(col_idx>=p_miit->get_nb_dofs_col()) {
-              ostringstream zz;
+              std::ostringstream zz;
               zz << "rank " << rAnk << " ";
-              zz << *(*cvit) << endl;
+              zz << *(*cvit) << std::endl;
               SETERRQ(PETSC_COMM_SELF,PETSC_ERR_ARG_SIZ,zz.str().c_str());
             }
             dofs_vec[owner].push_back(col_idx);
@@ -269,7 +269,7 @@ PetscErrorCode CreateRowComressedADJMatrix::createMatArrays(
     ierr = PetscCommDuplicate(comm,&comm,NULL); CHKERRQ(ierr);
 
     int nsends = 0; 			// number of messages to send
-    vector<int> dofs_vec_length(sIze);	// length of the message to proc
+    std::vector<int> dofs_vec_length(sIze);	// length of the message to proc
     for(int proc = 0;proc<sIze;proc++) {
 
       if(!dofs_vec[proc].empty()) {
@@ -285,7 +285,7 @@ PetscErrorCode CreateRowComressedADJMatrix::createMatArrays(
 
     }
 
-    vector<MPI_Status> status(sIze);
+    std::vector<MPI_Status> status(sIze);
 
     // Computes the number of messages a node expects to receive
     int nrecvs;	// number of messages received
@@ -379,7 +379,7 @@ PetscErrorCode CreateRowComressedADJMatrix::createMatArrays(
   boost::shared_ptr<MoFEMEntity> mofem_ent_ptr;
   int row_last_evaluated_idx = -1;
 
-  vector<DofIdx> dofs_vec;
+  std::vector<DofIdx> dofs_vec;
   NumeredDofEntity_multiIndex_uid_view_hashed dofs_col_view;
   // loop local rows
   unsigned int rows_to_fill = distance(miit_row,hi_miit_row);
@@ -426,9 +426,9 @@ PetscErrorCode CreateRowComressedADJMatrix::createMatArrays(
         }
         if(idx>=p_miit->get_nb_dofs_col()) {
 
-          ostringstream ss;
-          ss << "Notes: " << endl;
-          ss << *(*cvit) << endl;
+          std::ostringstream ss;
+          ss << "Notes: " << std::endl;
+          ss << *(*cvit) << std::endl;
           PetscPrintf(comm,"%s\n",ss.str().c_str());
           SETERRQ1(
             PETSC_COMM_SELF,PETSC_ERR_ARG_SIZ,
@@ -442,10 +442,10 @@ PetscErrorCode CreateRowComressedADJMatrix::createMatArrays(
 
       unsigned char pstatus = (*miit_row)->get_pstatus();
       if( pstatus>0 ) {
-        map<int,vector<int> >::iterator mit;
+        std::map<int,std::vector<int> >::iterator mit;
         mit = adjacent_dofs_on_other_parts.find(row_last_evaluated_idx);
         if(mit == adjacent_dofs_on_other_parts.end()) {
-          cerr << *miit_row << endl;
+          std::cerr << *miit_row << std::endl;
           SETERRQ1(
             PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,
             "data inconsistency row_last_evaluated_idx = %d",
@@ -457,12 +457,12 @@ PetscErrorCode CreateRowComressedADJMatrix::createMatArrays(
       }
 
       sort(dofs_vec.begin(),dofs_vec.end());
-      vector<DofIdx>::iterator new_end = unique(dofs_vec.begin(),dofs_vec.end());
+      std::vector<DofIdx>::iterator new_end = unique(dofs_vec.begin(),dofs_vec.end());
       int new_size = distance(dofs_vec.begin(),new_end);
       dofs_vec.resize(new_size);
       if(verb>2) {
-        stringstream ss;
-        ss << "rank " << rAnk << ": dofs_vec for " << *mofem_ent_ptr << endl;
+        std::stringstream ss;
+        ss << "rank " << rAnk << ": dofs_vec for " << *mofem_ent_ptr << std::endl;
         PetscSynchronizedPrintf(comm,"%s",ss.str().c_str());
       }
 
@@ -483,7 +483,7 @@ PetscErrorCode CreateRowComressedADJMatrix::createMatArrays(
     if(verb>1) {
       PetscSynchronizedPrintf(comm,"rank %d: ",rAnk);
     }
-    vector<DofIdx>::iterator diit,hi_diit;
+    std::vector<DofIdx>::iterator diit,hi_diit;
     diit = dofs_vec.begin();
     hi_diit = dofs_vec.end();
     for(;diit!=hi_diit;diit++) {
@@ -555,7 +555,7 @@ PetscErrorCode CreateRowComressedADJMatrix::createMatArrays(
 
 template<typename TAG>
 PetscErrorCode CreateRowComressedADJMatrix::createMat(
-  const string &name,Mat *M,const MatType type,PetscInt **_i,PetscInt **_j,PetscScalar **_v,
+  const std::string &name,Mat *M,const MatType type,PetscInt **_i,PetscInt **_j,PetscScalar **_v,
   const bool no_diagonals,int verb
 ) {
   PetscFunctionBegin;
@@ -566,7 +566,7 @@ PetscErrorCode CreateRowComressedADJMatrix::createMat(
     SETERRQ1(PETSC_COMM_SELF,MOFEM_NOT_FOUND,"problem < %s > is not found (top tip: check spelling)",name.c_str());
   }
 
-  vector<PetscInt> i,j;
+  std::vector<PetscInt> i,j;
   ierr = createMatArrays<TAG>(p_miit,type,i,j,no_diagonals,verb); CHKERRQ(ierr);
 
   ierr = PetscMalloc(i.size()*sizeof(PetscInt),_i); CHKERRQ(ierr);
@@ -610,7 +610,7 @@ PetscErrorCode CreateRowComressedADJMatrix::createMat(
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode Core::MatCreateMPIAIJWithArrays(const string &name,Mat *Aij,int verb) {
+PetscErrorCode Core::MatCreateMPIAIJWithArrays(const std::string &name,Mat *Aij,int verb) {
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
   int *_i,*_j;
@@ -620,7 +620,7 @@ PetscErrorCode Core::MatCreateMPIAIJWithArrays(const string &name,Mat *Aij,int v
   ierr = PetscFree(_j); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
-PetscErrorCode Core::MatCreateSeqAIJWithArrays(const string &name,Mat *Aij,PetscInt **i,PetscInt **j,PetscScalar **v,int verb) {
+PetscErrorCode Core::MatCreateSeqAIJWithArrays(const std::string &name,Mat *Aij,PetscInt **i,PetscInt **j,PetscScalar **v,int verb) {
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
   CreateRowComressedADJMatrix *core_ptr = static_cast<CreateRowComressedADJMatrix*>(const_cast<Core*>(this));
@@ -628,7 +628,7 @@ PetscErrorCode Core::MatCreateSeqAIJWithArrays(const string &name,Mat *Aij,Petsc
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode Core::partition_problem(const string &name,int verb) {
+PetscErrorCode Core::partition_problem(const std::string &name,int verb) {
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
   if(!(*buildMoFEM&(1<<0))) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"fields not build");
@@ -660,8 +660,8 @@ PetscErrorCode Core::partition_problem(const string &name,int verb) {
   } catch (MoFEMException const &e) {
     SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
   } catch (const std::exception& ex) {
-    ostringstream ss;
-    ss << "throw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__ << endl;
+    std::ostringstream ss;
+    ss << "throw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__ << std::endl;
     SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
   }
 
@@ -770,8 +770,8 @@ PetscErrorCode Core::partition_problem(const string &name,int verb) {
   } catch (MoFEMException const &e) {
     SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
   } catch (const std::exception& ex) {
-    ostringstream ss;
-    ss << "throw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__ << endl;
+    std::ostringstream ss;
+    ss << "throw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__ << std::endl;
     SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
   }
 
@@ -791,7 +791,7 @@ PetscErrorCode Core::partition_problem(const string &name,int verb) {
   *buildMoFEM |= 1<<4;
   PetscFunctionReturn(0);
 }
-PetscErrorCode Core::partition_check_matrix_fill_in(const string &problem_name,int row_print,int col_print,int verb) {
+PetscErrorCode Core::partition_check_matrix_fill_in(const std::string &problem_name,int row_print,int col_print,int verb) {
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
 
@@ -835,12 +835,12 @@ PetscErrorCode Core::partition_check_matrix_fill_in(const string &problem_name,i
           boost::make_tuple((*rit)->get_MoFEMEntity_ptr()->get_global_unique_id(),fePtr->get_global_unique_id())
         );
         if(ait==adjacenciesPtr->end()) {
-          ostringstream ss;
-          ss << *(*rit) << endl;
-          ss << *fePtr << endl;
-          ss << "dof: " << (*rit)->get_BitRefLevel() << endl;
-          ss << "fe: " << fePtr->get_BitRefLevel() << endl;
-          ss << "problem: " << problemPtr->get_BitRefLevel() << endl;
+          std::ostringstream ss;
+          ss << *(*rit) << std::endl;
+          ss << *fePtr << std::endl;
+          ss << "dof: " << (*rit)->get_BitRefLevel() << std::endl;
+          ss << "fe: " << fePtr->get_BitRefLevel() << std::endl;
+          ss << "problem: " << problemPtr->get_BitRefLevel() << std::endl;
           PetscPrintf(mFieldPtr->get_comm(),"%s",ss.str().c_str());
           SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"adjacencies data inconsistency");
         } else {
@@ -881,16 +881,16 @@ PetscErrorCode Core::partition_check_matrix_fill_in(const string &problem_name,i
 
           if(row == rowPrint && col == colPrint) {
 
-            ostringstream ss;
-            ss << "fe:\n" << *fePtr << endl;
-            ss << "row:\n" << *(*rit) << endl;
-            ss << "col:\n" << *(*cit) << endl;
+            std::ostringstream ss;
+            ss << "fe:\n" << *fePtr << std::endl;
+            ss << "row:\n" << *(*rit) << std::endl;
+            ss << "col:\n" << *(*cit) << std::endl;
 
-            ss << "fe:\n" << fePtr->get_BitRefLevel() << endl;
-            ss << "row:\n" << (*rit)->get_BitRefLevel() << endl;
-            ss << "col:\n" << (*cit)->get_BitRefLevel() << endl;
+            ss << "fe:\n" << fePtr->get_BitRefLevel() << std::endl;
+            ss << "row:\n" << (*rit)->get_BitRefLevel() << std::endl;
+            ss << "col:\n" << (*cit)->get_BitRefLevel() << std::endl;
 
-            cerr << ss.str() << endl;
+            std::cerr << ss.str() << std::endl;
 
             //PetscPrintf(mFieldPtr->get_comm(),"%s\n",ss.str().c_str());
 
@@ -911,8 +911,8 @@ PetscErrorCode Core::partition_check_matrix_fill_in(const string &problem_name,i
 
             int max_order = (*cit)->get_max_order();
             if((*cit)->get_nb_of_coeffs()*(*cit)->get_order_nb_dofs(max_order)!=nb_dofs_on_ent) {
-              cerr << "Warning: Number of Dofs in Col diffrent than number of dofs for given entity order "
-              << (*cit)->get_nb_of_coeffs()*(*cit)->get_order_nb_dofs(max_order) << " " << nb_dofs_on_ent  << endl;
+              std::cerr << "Warning: Number of Dofs in Col diffrent than number of dofs for given entity order "
+              << (*cit)->get_nb_of_coeffs()*(*cit)->get_order_nb_dofs(max_order) << " " << nb_dofs_on_ent  << std::endl;
             }
 
           }
@@ -932,8 +932,8 @@ PetscErrorCode Core::partition_check_matrix_fill_in(const string &problem_name,i
 
           int max_order = (*rit)->get_max_order();
           if((*rit)->get_nb_of_coeffs()*(*rit)->get_order_nb_dofs(max_order) != nb_dofs_on_ent) {
-            cerr << "Warning: Number of Dofs in Row diffrent than number of dofs for given entity order "
-            << (*rit)->get_nb_of_coeffs()*(*rit)->get_order_nb_dofs(max_order) << " " << nb_dofs_on_ent << endl;
+            std::cerr << "Warning: Number of Dofs in Row diffrent than number of dofs for given entity order "
+            << (*rit)->get_nb_of_coeffs()*(*rit)->get_order_nb_dofs(max_order) << " " << nb_dofs_on_ent << std::endl;
           }
 
         }
@@ -941,11 +941,11 @@ PetscErrorCode Core::partition_check_matrix_fill_in(const string &problem_name,i
       }
 
       if(fePtr->sPtr->row_dof_view->size()!=fePtr->rows_dofs->size()) {
-        cerr << "Warning: FEDof Row size != NumeredFEDof RowSize" << endl;
+        std::cerr << "Warning: FEDof Row size != NumeredFEDof RowSize" << std::endl;
       }
 
       if(fePtr->sPtr->col_dof_view->size()!=fePtr->cols_dofs->size()) {
-        cerr << "Warning: FEDof Row size != NumeredFEDof RowSize" << endl;
+        std::cerr << "Warning: FEDof Row size != NumeredFEDof RowSize" << std::endl;
       }
 
       PetscFunctionReturn(0);

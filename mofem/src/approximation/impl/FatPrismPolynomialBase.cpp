@@ -400,10 +400,10 @@ PetscErrorCode FatPrismPolynomialBase::getValueH1(ublas::matrix<double> &pts) {
       int num_nodes;
       const EntityHandle *conn;
       rval = cTx->mOab.get_connectivity(ent,conn,num_nodes,true); CHKERRQ_MOAB(rval);
-      // cerr << "\n\n" << endl;
+      // std::cerr << "\n\n" << std::endl;
       // const int quad_nodes[3][4] = { {0,1,4,3}, {1,2,5,4}, {0,2,5,3} };
       for(;siit!=hi_siit;siit++) {
-        //  cerr << "sn " << siit->side_number << endl;
+        //  std::cerr << "sn " << siit->side_number << std::endl;
         int num_nodes_quad;
         const EntityHandle *conn_quad;
         EntityHandle quad = siit->get()->ent;
@@ -411,14 +411,14 @@ PetscErrorCode FatPrismPolynomialBase::getValueH1(ublas::matrix<double> &pts) {
           quad,conn_quad,num_nodes_quad,true
         ); CHKERRQ_MOAB(rval);
         for(int nn = 0;nn<num_nodes_quad;nn++) {
-          quads_nodes[4*siit->get()->side_number+nn] = distance(conn,find(conn,conn+6,conn_quad[nn]));
-          // cerr
+          quads_nodes[4*siit->get()->side_number+nn] = std::distance(conn,std::find(conn,conn+6,conn_quad[nn]));
+          // std::cerr
           // << "quad " << quad
           // << " side number " << siit->side_number
           // << " " << quads_nodes[4*siit->side_number+nn]
           // << " " << conn[quads_nodes[4*siit->side_number+nn]]
           // << " " << conn_quad[nn]
-          // << endl;
+          // << std::endl;
         }
         int order = data.dataOnEntities[MBQUAD][siit->get()->side_number].getDataOrder();
         quad_order[siit->get()->side_number] = order;
@@ -461,8 +461,8 @@ PetscErrorCode FatPrismPolynomialBase::getValueH1(ublas::matrix<double> &pts) {
     }
   } catch (MoFEMException const &e) {
     SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
-  } catch (exception& ex) {
-    ostringstream ss;
+  } catch (std::exception& ex) {
+    std::ostringstream ss;
     ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
     SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
   }

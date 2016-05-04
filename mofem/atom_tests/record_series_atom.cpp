@@ -145,22 +145,22 @@ int main(int argc, char *argv[]) {
   //build field
   ierr = m_field2.build_fields(); CHKERRQ(ierr);
 
-  typedef tee_device<ostream, ofstream> TeeDevice;
+  typedef tee_device<std::ostream, std::ofstream> TeeDevice;
   typedef stream<TeeDevice> TeeStream;
-  ofstream ofs("record_series_atom.txt");
-  TeeDevice my_tee(cout, ofs);
+  std::ofstream ofs("record_series_atom.txt");
+  TeeDevice my_tee(std::cout, ofs);
   TeeStream my_split(my_tee);
 
   SeriesRecorder& recorder2 = core2;
   ierr = recorder2.print_series_steps(); CHKERRQ(ierr);
 
-  my_split << "TEST_SERIES1" << endl;
+  my_split << "TEST_SERIES1" << std::endl;
   for(_IT_SERIES_STEPS_BY_NAME_FOR_LOOP_((&recorder2),"TEST_SERIES1",sit)) {
 
     ierr = recorder2.load_series_data("TEST_SERIES1",sit->get_step_number()); CHKERRQ(ierr);
 
     my_split << "next step:\n";
-    my_split << *sit << endl;
+    my_split << *sit << std::endl;
 
     for(_IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(m_field2,"FIELD_B",dof)) {
       my_split << *(*dof) << "\n";
@@ -168,7 +168,7 @@ int main(int argc, char *argv[]) {
 
   }
 
-  my_split << "TEST_SERIES2" << endl;
+  my_split << "TEST_SERIES2" << std::endl;
   for(_IT_SERIES_STEPS_BY_NAME_FOR_LOOP_((&recorder2),"TEST_SERIES2",sit)) {
 
     ierr = recorder2.load_series_data("TEST_SERIES2",sit->get_step_number()); CHKERRQ(ierr);

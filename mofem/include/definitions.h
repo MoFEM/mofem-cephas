@@ -262,7 +262,7 @@ DEPRECATED void macro_is_depracted_using_deprecated_function();
 #define CHKERR_MOAB(a) do { \
   ErrorCode val = (a); \
   if (MB_SUCCESS != val) { \
-    cerr << "Error code  " << val << " at " << __FILE__ << ":" << __LINE__ << std::endl; \
+    std::cerr << "Error code  " << val << " at " << __FILE__ << ":" << __LINE__ << std::endl; \
     assert(1); \
   } \
 } while (false)
@@ -275,7 +275,7 @@ DEPRECATED void macro_is_depracted_using_deprecated_function();
   do { \
   ErrorCode val = (a); \
   if (MB_SUCCESS != val) { \
-    cerr << "Error code  " << val << " at " << __FILE__ << ":" << __LINE__ << std::endl; \
+    std::cerr << "Error code  " << val << " at " << __FILE__ << ":" << __LINE__ << std::endl; \
     assert(1); \
   } \
 } while (false)

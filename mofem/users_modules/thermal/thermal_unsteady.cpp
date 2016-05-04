@@ -114,7 +114,7 @@ struct MonitorPostProc: public FEMethod {
     ErrorCode rval;
     if((step)%pRT==0) {
       ierr = mField.loop_finite_elements("DMTHERMAL","THERMAL_FE",postProc); CHKERRQ(ierr);
-      ostringstream sss;
+      std::ostringstream sss;
       sss << "out_thermal_" << step << ".h5m";
       ierr = postProc.writeFile(sss.str().c_str()); CHKERRQ(ierr);
     }
@@ -218,28 +218,28 @@ int main(int argc, char *argv[]) {
   PetscBool block_config;
   char block_config_file[255];
   ierr = PetscOptionsGetString(PETSC_NULL,"-my_block_config",block_config_file,255,&block_config); CHKERRQ(ierr);
-  map<int,BlockOptionData> block_data;
+  std::map<int,BlockOptionData> block_data;
   bool solar_radiation = false;
   if(block_config) {
     try {
       ifstream ini_file(block_config_file);
-      //cerr << block_config_file << endl;
+      //std::cerr << block_config_file << std::endl;
       po::variables_map vm;
       po::options_description config_file_options;
       for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,BLOCKSET,it)) {
-        ostringstream str_order;
+        std::ostringstream str_order;
         str_order << "block_" << it->get_msId() << ".temperature_order";
         config_file_options.add_options()
         (str_order.str().c_str(),po::value<int>(&block_data[it->get_msId()].oRder)->default_value(order));
-        ostringstream str_cond;
+        std::ostringstream str_cond;
         str_cond << "block_" << it->get_msId() << ".heat_conductivity";
         config_file_options.add_options()
         (str_cond.str().c_str(),po::value<double>(&block_data[it->get_msId()].cOnductivity)->default_value(-1));
-        ostringstream str_capa;
+        std::ostringstream str_capa;
         str_capa << "block_" << it->get_msId() << ".heat_capacity";
         config_file_options.add_options()
         (str_capa.str().c_str(),po::value<double>(&block_data[it->get_msId()].cApacity)->default_value(-1));
-        ostringstream str_init_temp;
+        std::ostringstream str_init_temp;
         str_init_temp << "block_" << it->get_msId() << ".initail_temperature";
         config_file_options.add_options()
         (str_init_temp.str().c_str(),po::value<double>(&block_data[it->get_msId()].initTemp)->default_value(0));
@@ -263,15 +263,15 @@ int main(int argc, char *argv[]) {
         ierr = m_field.set_field_order(ents_to_set_order,"TEMP",block_data[it->get_msId()].oRder); CHKERRQ(ierr);
         ierr = m_field.set_field_order(ents_to_set_order,"TEMP_RATE",block_data[it->get_msId()].oRder); CHKERRQ(ierr);
       }
-      vector<string> additional_parameters;
+      std::vector<std::string> additional_parameters;
       additional_parameters = collect_unrecognized(parsed.options,po::include_positional);
-      for(vector<string>::iterator vit = additional_parameters.begin();
+      for(std::vector<std::string>::iterator vit = additional_parameters.begin();
       vit!=additional_parameters.end();vit++) {
         ierr = PetscPrintf(PETSC_COMM_WORLD,"** WARRNING Unrecognised option %s\n",vit->c_str()); CHKERRQ(ierr);
       }
     } catch (const std::exception& ex) {
-      ostringstream ss;
-      ss << ex.what() << endl;
+      std::ostringstream ss;
+      ss << ex.what() << std::endl;
       SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
     }
   }
@@ -288,11 +288,11 @@ int main(int argc, char *argv[]) {
   ierr = thermal_elements.setTimeSteppingProblem("TEMP","TEMP_RATE"); CHKERRQ(ierr);
 
   //set block material data from opetion file
-  map<int,ThermalElement::BlockData>::iterator mit;
+  std::map<int,ThermalElement::BlockData>::iterator mit;
   mit = thermal_elements.setOfBlocks.begin();
   for(;mit!=thermal_elements.setOfBlocks.end();mit++) {
-    //cerr << mit->first << endl;
-    //cerr << block_data[mit->first].cOnductivity  << " " << block_data[mit->first].cApacity << endl;
+    //std::cerr << mit->first << std::endl;
+    //std::cerr << block_data[mit->first].cOnductivity  << " " << block_data[mit->first].cApacity << std::endl;
     if(block_data[mit->first].cOnductivity != -1) {
       PetscPrintf(PETSC_COMM_WORLD,"Set block %d heat conductivity to %3.2e\n",
       mit->first,block_data[mit->first].cOnductivity);

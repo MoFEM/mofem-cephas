@@ -121,7 +121,7 @@ int main(int argc, char *argv[]) {
 
   //ref meshset ref level 0
   ierr = m_field.seed_ref_level_3D(0,BitRefLevel().set(0)); CHKERRQ(ierr);
-  vector<BitRefLevel> bit_levels;
+  std::vector<BitRefLevel> bit_levels;
   bit_levels.push_back(BitRefLevel().set(0));
   BitRefLevel problem_bit_level;
 
@@ -250,7 +250,7 @@ int main(int argc, char *argv[]) {
   ierr = post_proc.addFieldValuesPostProc("SPATIAL_POSITION"); CHKERRQ(ierr);
   ierr = post_proc.addFieldValuesPostProc("MESH_NODE_POSITIONS"); CHKERRQ(ierr);
   ierr = post_proc.addFieldValuesGradientPostProc("SPATIAL_POSITION"); CHKERRQ(ierr);
-  map<int,NonlinearElasticElement::BlockData>::iterator sit = elastic.setOfBlocks.begin();
+  std::map<int,NonlinearElasticElement::BlockData>::iterator sit = elastic.setOfBlocks.begin();
   for(;sit!=elastic.setOfBlocks.end();sit++) {
     post_proc.getOpPtrVector().push_back(
 	  new PostPorcStress(
@@ -454,7 +454,7 @@ int main(int argc, char *argv[]) {
           ierr = VecGhostUpdateEnd(arcPtr->F_lambda,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
           ierr = VecAssemblyBegin(arcPtr->F_lambda); CHKERRQ(ierr);
           ierr = VecAssemblyEnd(arcPtr->F_lambda); CHKERRQ(ierr);
-          for(vector<int>::iterator vit = bC->dofsIndices.begin();vit!=bC->dofsIndices.end();vit++) {
+          for(std::vector<int>::iterator vit = bC->dofsIndices.begin();vit!=bC->dofsIndices.end();vit++) {
             ierr = VecSetValue(arcPtr->F_lambda,*vit,0,INSERT_VALUES); CHKERRQ(ierr);
           }
           ierr = VecAssemblyBegin(arcPtr->F_lambda); CHKERRQ(ierr);
@@ -532,13 +532,13 @@ int main(int argc, char *argv[]) {
   //surface forces and pressures
   loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("NEUAMNN_FE",&fe_neumann));
   //nodal forces
-  boost::ptr_map<string,NodalForce> nodal_forces;
+  boost::ptr_map<std::string,NodalForce> nodal_forces;
   string fe_name_str ="FORCE_FE";
   nodal_forces.insert(fe_name_str,new NodalForce(m_field));
   for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,NODESET|FORCESET,it)) {
     ierr = nodal_forces.at(fe_name_str).addForce("SPATIAL_POSITION",arc_ctx->F_lambda,it->get_msId());  CHKERRQ(ierr);
   }
-  boost::ptr_map<string,NodalForce>::iterator fit = nodal_forces.begin();
+  boost::ptr_map<std::string,NodalForce>::iterator fit = nodal_forces.begin();
   for(;fit!=nodal_forces.end();fit++) {
     loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type(fit->first,&fit->second->getLoopFe()));
   }
@@ -723,7 +723,7 @@ int main(int argc, char *argv[]) {
     if(step % 1 == 0) {
       //Save restart file
       // #ifdef MOAB_HDF5_PARALLEL
-      //   ostringstream sss;
+      //   std::ostringstream sss;
       //   sss << "restart_" << step << ".h5m";
       //   rval = moab.write_file(sss.str().c_str(),"MOAB","PARALLEL=WRITE_PART"); CHKERRQ_MOAB(rval);
       // #else
@@ -731,7 +731,7 @@ int main(int argc, char *argv[]) {
       // #endif
       //Save data on mesh
       ierr = m_field.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",post_proc); CHKERRQ(ierr);
-      ostringstream o1;
+      std::ostringstream o1;
       o1 << "out_" << step << ".h5m";
       ierr = post_proc.writeFile(o1.str().c_str()); CHKERRQ(ierr);
     }

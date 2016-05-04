@@ -127,11 +127,11 @@ int main(int argc, char *argv[]) {
   //what are ghost nodes, see Petsc Manual
   ierr = m_field.partition_ghost_dofs("TEST_PROBLEM"); CHKERRQ(ierr);
 
-  typedef tee_device<ostream, ofstream> TeeDevice;
+  typedef tee_device<std::ostream, std::ofstream> TeeDevice;
   typedef stream<TeeDevice> TeeStream;
 
-  ofstream ofs("forces_and_sources_hdiv_approximation_functions.txt");
-  TeeDevice my_tee(cout, ofs);
+  std::ofstream ofs("forces_and_sources_hdiv_approximation_functions.txt");
+  TeeDevice my_tee(std::cout, ofs);
   TeeStream my_split(my_tee);
 
 
@@ -152,7 +152,7 @@ int main(int argc, char *argv[]) {
 
       if(data.getFieldData().size()==0) PetscFunctionReturn(0);
 
-      mySplit << endl << "type " << type << " side " << side << endl;
+      mySplit << std::endl << "type " << type << " side " << side << std::endl;
       mySplit.precision(5);
 
       const double eps = 1e-6;
@@ -162,7 +162,7 @@ int main(int argc, char *argv[]) {
         if(fabs(data.getHdivN().data()[dd])<eps) data.getHdivN().data()[dd] = 0;
       }
 
-      mySplit << std::fixed << data.getHdivN() << endl;
+      mySplit << std::fixed << data.getHdivN() << std::endl;
 
 
       PetscFunctionReturn(0);

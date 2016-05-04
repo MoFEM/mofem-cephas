@@ -35,9 +35,9 @@ static char help[] = "...\n\n";
 /// Example approx. function
 struct MyFunApprox {
 
-  vector<ublas::vector<double> > result;
+  std::vector<ublas::vector<double> > result;
 
-  vector<ublas::vector<double> >& operator()(double x, double y, double z) {
+  std::vector<ublas::vector<double> >& operator()(double x, double y, double z) {
     result.resize(1);
     result[0].resize(3);
     (result[0])[0] = x;
@@ -170,7 +170,7 @@ int main(int argc, char *argv[]) {
   ierr = m_field.VecCreateGhost("TEST_PROBLEM",ROW,&F); CHKERRQ(ierr);
   ierr = m_field.VecCreateGhost("TEST_PROBLEM",COL,&D); CHKERRQ(ierr);
 
-  vector<Vec> vec_F;
+  std::vector<Vec> vec_F;
   vec_F.push_back(F);
 
   {
@@ -228,10 +228,10 @@ int main(int argc, char *argv[]) {
     rval = moab.delete_entities(&out_meshset,1); CHKERRQ_MOAB(rval);
   }
 
-  typedef tee_device<ostream, ofstream> TeeDevice;
+  typedef tee_device<std::ostream, std::ofstream> TeeDevice;
   typedef stream<TeeDevice> TeeStream;
 
-  ofstream ofs("field_approximation.txt");
+  std::ofstream ofs("field_approximation.txt");
   TeeDevice tee(cout, ofs);
   TeeStream my_split(tee);
 
@@ -251,17 +251,17 @@ int main(int argc, char *argv[]) {
     it!=nodes_vals.data().end();it++) {
     *it = fabs(*it)<eps ? 0.0 : *it;
   }
-  my_split << nodes_vals << endl;
+  my_split << nodes_vals << std::endl;
 
   const MoFEMProblem *problemPtr;
   ierr = m_field.get_problem("TEST_PROBLEM",&problemPtr); CHKERRQ(ierr);
-  map<EntityHandle,double> m0,m1,m2;
+  std::map<EntityHandle,double> m0,m1,m2;
   for(_IT_NUMEREDDOFMOFEMENTITY_ROW_FOR_LOOP_(problemPtr,dit)) {
 
     my_split.precision(3);
     my_split.setf(std::ios::fixed);
     double val = fabs(dit->get()->get_FieldData())<eps ? 0.0 : dit->get()->get_FieldData();
-    my_split << dit->get()->get_petsc_gloabl_dof_idx() << " " << val << endl;
+    my_split << dit->get()->get_petsc_gloabl_dof_idx() << " " << val << std::endl;
 
   }
 

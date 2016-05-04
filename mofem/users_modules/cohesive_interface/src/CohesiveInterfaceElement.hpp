@@ -221,7 +221,7 @@ struct CohesiveInterfaceElement {
       double kappa = fmax(g-g0,kappaPtr[gg]);
       double omega = 0;
       ierr = calcOmega(kappa,omega); CHKERRQ(ierr);
-      //cerr << gg << " " << omega << endl;
+      //std::cerr << gg << " " << omega << std::endl;
       ierr = calcDglob(omega,common_data.R[gg]); CHKERRQ(ierr);
       traction.resize(3);
       ublas::matrix_row<ublas::matrix<double> > gap_glob(common_data.gapGlob,gg);
@@ -250,7 +250,7 @@ struct CohesiveInterfaceElement {
         double kappa = fmax(g-g0,kappaPtr[gg]);
         double omega = 0;
         ierr = calcOmega(kappa,omega); CHKERRQ(ierr);
-        //cerr << gg << " " << omega << endl;
+        //std::cerr << gg << " " << omega << std::endl;
         int iter;
         ierr = SNESGetIterationNumber(fe_method->snes,&iter); CHKERRQ(ierr);
         if((kappa <= kappaPtr[gg])||(kappa>=kappa1)||(iter <= 1)) {
@@ -261,10 +261,10 @@ struct CohesiveInterfaceElement {
         }
         tangent_matrix.resize(3,3);
         noalias(tangent_matrix) = Dglob;
-        //cerr << "t " << tangent_matrix << endl;
+        //std::cerr << "t " << tangent_matrix << std::endl;
       } catch (const std::exception& ex) {
-        ostringstream ss;
-        ss << "throw in method: " << ex.what() << endl;
+        std::ostringstream ss;
+        ss << "throw in method: " << ex.what() << std::endl;
         SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
       PetscFunctionReturn(0);
@@ -309,7 +309,7 @@ struct CohesiveInterfaceElement {
     */
   struct OpSetSignToShapeFunctions: public FlatPrismElementForcesAndSurcesCore::UserDataOperator {
 
-    OpSetSignToShapeFunctions(const string field_name):
+    OpSetSignToShapeFunctions(const std::string field_name):
     FlatPrismElementForcesAndSurcesCore::UserDataOperator(field_name,ForcesAndSurcesCore::UserDataOperator::OPROW) {}
 
     PetscErrorCode doWork(int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
@@ -345,7 +345,7 @@ struct CohesiveInterfaceElement {
   struct OpCalculateGapGlobal: public FlatPrismElementForcesAndSurcesCore::UserDataOperator {
 
     CommonData &commonData;
-    OpCalculateGapGlobal(const string field_name,CommonData &common_data):
+    OpCalculateGapGlobal(const std::string field_name,CommonData &common_data):
       FlatPrismElementForcesAndSurcesCore::UserDataOperator(field_name,ForcesAndSurcesCore::UserDataOperator::OPROW),
       commonData(common_data) {}
 
@@ -389,8 +389,8 @@ struct CohesiveInterfaceElement {
             }
           }
         } catch (const std::exception& ex) {
-          ostringstream ss;
-          ss << "throw in method: " << ex.what() << endl;
+          std::ostringstream ss;
+          ss << "throw in method: " << ex.what() << std::endl;
           SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
         }
       PetscFunctionReturn(0);
@@ -403,7 +403,7 @@ struct CohesiveInterfaceElement {
   struct OpCalculateGapLocal: public FlatPrismElementForcesAndSurcesCore::UserDataOperator {
 
     CommonData &commonData;
-    OpCalculateGapLocal(const string field_name,CommonData &common_data):
+    OpCalculateGapLocal(const std::string field_name,CommonData &common_data):
       FlatPrismElementForcesAndSurcesCore::UserDataOperator(field_name,ForcesAndSurcesCore::UserDataOperator::OPROW),
       commonData(common_data) {}
 
@@ -420,8 +420,8 @@ struct CohesiveInterfaceElement {
           }
         }
       } catch (const std::exception& ex) {
-        ostringstream ss;
-        ss << "throw in method: " << ex.what() << endl;
+        std::ostringstream ss;
+        ss << "throw in method: " << ex.what() << std::endl;
         SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
       PetscFunctionReturn(0);
@@ -435,7 +435,7 @@ struct CohesiveInterfaceElement {
 
     CommonData &commonData;
     PhysicalEquation &physicalEqations;
-    OpRhs(const string field_name,CommonData &common_data,PhysicalEquation &physical_eqations):
+    OpRhs(const std::string field_name,CommonData &common_data,PhysicalEquation &physical_eqations):
       FlatPrismElementForcesAndSurcesCore::UserDataOperator(field_name,ForcesAndSurcesCore::UserDataOperator::OPROW),
       commonData(common_data),physicalEqations(physical_eqations) {}
 
@@ -464,8 +464,8 @@ struct CohesiveInterfaceElement {
         ierr = VecSetValues(getFEMethod()->snes_f,
         data.getIndices().size(),&data.getIndices()[0],&Nf[0],ADD_VALUES); CHKERRQ(ierr);
       } catch (const std::exception& ex) {
-        ostringstream ss;
-        ss << "throw in method: " << ex.what() << endl;
+        std::ostringstream ss;
+        ss << "throw in method: " << ex.what() << std::endl;
         SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
       PetscFunctionReturn(0);
@@ -479,7 +479,7 @@ struct CohesiveInterfaceElement {
 
     CommonData &commonData;
     PhysicalEquation &physicalEqations;
-    OpLhs(const string field_name,CommonData &common_data,PhysicalEquation &physical_eqations):
+    OpLhs(const std::string field_name,CommonData &common_data,PhysicalEquation &physical_eqations):
     FlatPrismElementForcesAndSurcesCore::UserDataOperator(field_name,ForcesAndSurcesCore::UserDataOperator::OPROWCOL),
     commonData(common_data),physicalEqations(physical_eqations) { sYmm = false; }
 
@@ -501,8 +501,8 @@ struct CohesiveInterfaceElement {
         == physicalEqations.pRisms.end()) {
           PetscFunctionReturn(0);
         }
-        //cerr << row_side << " " << row_type << " " << row_data.getN() << endl;
-        //cerr << col_side << " " << col_type << " " << col_data.getN() << endl;
+        //std::cerr << row_side << " " << row_type << " " << row_data.getN() << std::endl;
+        //std::cerr << col_side << " " << col_type << " " << col_data.getN() << std::endl;
         ND.resize(nb_row,3);
         K.resize(nb_row,nb_col);
         K.clear();
@@ -534,8 +534,8 @@ struct CohesiveInterfaceElement {
           &K(0,0),ADD_VALUES
         ); CHKERRQ(ierr);
       } catch (const std::exception& ex) {
-        ostringstream ss;
-        ss << "throw in method: " << ex.what() << endl;
+        std::ostringstream ss;
+        ss << "throw in method: " << ex.what() << std::endl;
         SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
       PetscFunctionReturn(0);
@@ -549,7 +549,7 @@ struct CohesiveInterfaceElement {
 
     CommonData &commonData;
     PhysicalEquation &physicalEqations;
-    OpHistory(const string field_name,CommonData &common_data,PhysicalEquation &physical_eqations):
+    OpHistory(const std::string field_name,CommonData &common_data,PhysicalEquation &physical_eqations):
       FlatPrismElementForcesAndSurcesCore::UserDataOperator(field_name,ForcesAndSurcesCore::UserDataOperator::OPROW),
       commonData(common_data),physicalEqations(physical_eqations) {}
 
@@ -568,7 +568,7 @@ struct CohesiveInterfaceElement {
 
   /** \brief Driver function settting all operators needed for interface element
   */
-  PetscErrorCode addOps(const string field_name,boost::ptr_vector<CohesiveInterfaceElement::PhysicalEquation> &interfaces) {
+  PetscErrorCode addOps(const std::string field_name,boost::ptr_vector<CohesiveInterfaceElement::PhysicalEquation> &interfaces) {
     PetscFunctionBegin;
 
     //Rhs

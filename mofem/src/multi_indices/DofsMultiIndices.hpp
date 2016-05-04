@@ -112,7 +112,7 @@ struct DofEntity: public interface_MoFEMEntity<MoFEMEntity> {
 
   //check if node is active
   inline char get_active() const { return active ? 1 : 0; }
-  friend ostream& operator<<(ostream& os,const DofEntity& e);
+  friend std::ostream& operator<<(std::ostream& os,const DofEntity& e);
 
 };
 
@@ -174,7 +174,7 @@ struct NumeredDofEntity: public interface_DofEntity<DofEntity> {
   inline bool get_has_local_index() const { return !signbit(petsc_local_dof_idx); }
   NumeredDofEntity(const boost::shared_ptr<DofEntity> _DofEntity_ptr);
   inline bool operator<(const NumeredDofEntity& _dof) const { return (UId)get_global_unique_id()<(UId)_dof.get_global_unique_id(); }
-  friend ostream& operator<<(ostream& os,const NumeredDofEntity& e);
+  friend std::ostream& operator<<(std::ostream& os,const NumeredDofEntity& e);
 };
 
 /**
@@ -216,7 +216,7 @@ struct FEDofEntity: public BaseFEDofEntity,interface_DofEntity<DofEntity> {
   FEDofEntity(
     boost::tuple<boost::shared_ptr<SideNumber>,const boost::shared_ptr<DofEntity> > t
   );
-  friend ostream& operator<<(ostream& os,const FEDofEntity& e);
+  friend std::ostream& operator<<(std::ostream& os,const FEDofEntity& e);
 };
 
 /**
@@ -238,7 +238,7 @@ struct FEDofEntity: public BaseFEDofEntity,interface_DofEntity<DofEntity> {
    FENumeredDofEntity(
      boost::tuple<boost::shared_ptr<SideNumber>,const boost::shared_ptr<NumeredDofEntity> > t
    );
-   friend ostream& operator<<(ostream& os,const FENumeredDofEntity& e);
+   friend std::ostream& operator<<(std::ostream& os,const FENumeredDofEntity& e);
  };
 
 /**

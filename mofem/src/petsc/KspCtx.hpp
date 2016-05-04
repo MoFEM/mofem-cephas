@@ -32,14 +32,14 @@ struct KspCtx {
   FieldInterface &mField;
   Interface &moab;
 
-  string problemName;
+  std::string problemName;
 
-  typedef pair<string,FEMethod*> loop_pair_type;
-  typedef vector<loop_pair_type > loops_to_do_type;
+  typedef std::pair<std::string,FEMethod*> loop_pair_type;
+  typedef std::vector<loop_pair_type > loops_to_do_type;
   loops_to_do_type loops_to_do_Mat;
   loops_to_do_type loops_to_do_Rhs;
 
-  typedef vector<BasicMethod*> basic_method_to_do;
+  typedef std::vector<BasicMethod*> basic_method_to_do;
   basic_method_to_do preProcess_Mat;
   basic_method_to_do postProcess_Mat;
   basic_method_to_do preProcess_Rhs;
@@ -48,7 +48,7 @@ struct KspCtx {
   PetscLogEvent USER_EVENT_KspRhs;
   PetscLogEvent USER_EVENT_KspMat;
 
-  KspCtx(FieldInterface &m_field,const string &_problem_name):
+  KspCtx(FieldInterface &m_field,const std::string &_problem_name):
     mField(m_field),moab(m_field.get_moab()),problemName(_problem_name) {
     PetscLogEventRegister("LoopKSPRhs",0,&USER_EVENT_KspRhs);
     PetscLogEventRegister("LoopKSPMat",0,&USER_EVENT_KspMat);

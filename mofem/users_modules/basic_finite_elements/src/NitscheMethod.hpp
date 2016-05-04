@@ -64,15 +64,15 @@ struct NitscheMethod {
   */
   struct CommonData {
     int nbActiveFaces;
-    vector<EntityHandle> fAces;
-    vector<const NumeredEntFiniteElement *> facesFePtr;
-    vector<VectorDouble> cOords;
-    vector<MatrixDouble> faceNormals;
-    vector<MatrixDouble> faceGaussPts;
-    vector<vector<int> > inTetFaceGaussPtsNumber;
-    vector<MatrixDouble> coordsAtGaussPts;
-    vector<MatrixDouble> hoCoordsAtGaussPts;
-    vector<VectorDouble> rAy;
+    std::vector<EntityHandle> fAces;
+    std::vector<const NumeredEntFiniteElement *> facesFePtr;
+    std::vector<VectorDouble> cOords;
+    std::vector<MatrixDouble> faceNormals;
+    std::vector<MatrixDouble> faceGaussPts;
+    std::vector<std::vector<int> > inTetFaceGaussPtsNumber;
+    std::vector<MatrixDouble> coordsAtGaussPts;
+    std::vector<MatrixDouble> hoCoordsAtGaussPts;
+    std::vector<VectorDouble> rAy;
     int nbTetGaussPts;
 
     /** \brief projection matrix
@@ -81,14 +81,14 @@ struct NitscheMethod {
       projection matrix 3x3
 
     */
-    vector<vector<MatrixDouble > > P;
+    std::vector<std::vector<MatrixDouble > > P;
 
     /** \brief derivative of projection matrix in respect DoFs
      This is EntityType, face, gauss point at face.
      Matrix has 3 rows (components of displacements)
      Matrix has columns equal to number of DoFs on entity
     */
-    map<EntityType,vector<vector<MatrixDouble> > > dP;
+    std::map<EntityType,std::vector<std::vector<MatrixDouble> > > dP;
 
     CommonData() {
     }
@@ -169,17 +169,17 @@ struct NitscheMethod {
           commonData.rAy[faceInRespectToTet] /= norm_2(getNormal());
         }
       } catch (const std::exception& ex) {
-        ostringstream ss;
-        ss << "throw in method: " << ex.what() << endl;
+        std::ostringstream ss;
+        ss << "throw in method: " << ex.what() << std::endl;
         SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
 
       try {
         for(int fgg = 0;fgg<nb_face_gauss_pts;fgg++) {
           int gg = commonData.inTetFaceGaussPtsNumber[faceInRespectToTet][fgg];
-          // cerr << fgg << " " << gg << " " << side << " " << type << endl;
+          // std::cerr << fgg << " " << gg << " " << side << " " << type << std::endl;
           CommonData::MultiIndexData gauss_pt_data(gg,side,type);
-          pair<CommonData::Container::iterator,bool> p;
+          std::pair<CommonData::Container::iterator,bool> p;
           p = commonData.facesContainer.insert(gauss_pt_data);
           if(!p.second) {
             SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data not inserted");
@@ -188,7 +188,7 @@ struct NitscheMethod {
           VectorDouble &shape_fun = p_data.shapeFunctions;
           int nb_shape_fun = data.getN().size2();
           shape_fun.resize(nb_shape_fun);
-          // cerr << "nb_shape_fun " << nb_shape_fun << endl;
+          // std::cerr << "nb_shape_fun " << nb_shape_fun << std::endl;
           if(nb_shape_fun) {
             cblas_dcopy(nb_shape_fun,&data.getN()(fgg,0),1,&shape_fun[0],1);
           }
@@ -197,11 +197,11 @@ struct NitscheMethod {
           for(unsigned int dd = 0;dd<data.getFieldDofs().size();dd++) {
             p_data.dofOrders[dd] = data.getFieldDofs()[dd]->get_dof_order();
           }
-          // cerr << shape_fun << endl;
+          // std::cerr << shape_fun << std::endl;
         }
       } catch (const std::exception& ex) {
-        ostringstream ss;
-        ss << "throw in method: " << ex.what() << endl;
+        std::ostringstream ss;
+        ss << "throw in method: " << ex.what() << std::endl;
         SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
       PetscFunctionReturn(0);
@@ -257,8 +257,8 @@ struct NitscheMethod {
           }
         }
       } catch (const std::exception& ex) {
-        ostringstream ss;
-        ss << "throw in method: " << ex.what() << endl;
+        std::ostringstream ss;
+        ss << "throw in method: " << ex.what() << std::endl;
         SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
 
@@ -301,8 +301,8 @@ struct NitscheMethod {
           }
         }
       } catch (const std::exception& ex) {
-        ostringstream ss;
-        ss << "throw in method: " << ex.what() << endl;
+        std::ostringstream ss;
+        ss << "throw in method: " << ex.what() << std::endl;
         SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
 
@@ -318,13 +318,13 @@ struct NitscheMethod {
         for(int ff = 0;ff<4;ff++) {
           if(commonData.facesFePtr[ff]==NULL) continue;
           int nb_gauss_face_pts = commonData.faceGaussPts[ff].size2();
-          //cerr << "nb_gauss_face_pts " << nb_gauss_face_pts << endl;
+          //std::cerr << "nb_gauss_face_pts " << nb_gauss_face_pts << std::endl;
           for(int fgg = 0;fgg<nb_gauss_face_pts;fgg++,gg++) {
-            //cerr << ff << " gg " << gg << " fgg " << fgg << endl;
+            //std::cerr << ff << " gg " << gg << " fgg " << fgg << std::endl;
             CommonData::Container::nth_index<3>::type::iterator sit;
             sit = commonData.facesContainer.get<3>().find(boost::make_tuple(gg,0,MBVERTEX));
             const VectorDouble &shape_fun = sit->shapeFunctions;
-            //cerr << shape_fun << endl;
+            //std::cerr << shape_fun << std::endl;
             for(int dd = 0;dd<3;dd++) {
               gaussPts(dd,gg) =
               shape_fun[0]*coords_tet[3*dataH1.facesNodes(ff,0)+dd]+
@@ -335,8 +335,8 @@ struct NitscheMethod {
           }
         }
       } catch (const std::exception& ex) {
-        ostringstream ss;
-        ss << "throw in method: " << ex.what() << endl;
+        std::ostringstream ss;
+        ss << "throw in method: " << ex.what() << std::endl;
         SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
 
@@ -356,7 +356,7 @@ struct NitscheMethod {
     bool fieldDisp;
 
     OpBasicCommon(
-      const string field_name,
+      const std::string field_name,
       BlockData &nitsche_block_data,
       CommonData &nitsche_common_data,
       bool field_disp,
@@ -399,7 +399,7 @@ struct NitscheMethod {
     NonlinearElasticElement::CommonData &commonData;
 
     OpCommon(
-      const string field_name,
+      const std::string field_name,
       BlockData &nitsche_block_data,
       CommonData &nitsche_common_data,
       NonlinearElasticElement::BlockData &data,
@@ -446,8 +446,8 @@ struct NitscheMethod {
           }
         }
       } catch (const std::exception& ex) {
-        ostringstream ss;
-        ss << "throw in method: " << ex.what() << endl;
+        std::ostringstream ss;
+        ss << "throw in method: " << ex.what() << std::endl;
         SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
       PetscFunctionReturn(0);
@@ -473,8 +473,8 @@ struct NitscheMethod {
           }
         }
       } catch (const std::exception& ex) {
-        ostringstream ss;
-        ss << "throw in method: " << ex.what() << endl;
+        std::ostringstream ss;
+        ss << "throw in method: " << ex.what() << std::endl;
         SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
       PetscFunctionReturn(0);
@@ -488,7 +488,7 @@ struct NitscheMethod {
   struct OpLhsNormal: public OpCommon {
 
     OpLhsNormal(
-        const string field_name,
+        const std::string field_name,
       BlockData &nitsche_block_data,
       CommonData &nitsche_common_data,
       NonlinearElasticElement::BlockData &data,
@@ -507,7 +507,7 @@ struct NitscheMethod {
     }
 
     MatrixDouble kMatrix,kMatrix0,kMatrix1;
-    vector<MatrixDouble> kMatrixFace,kMatrixFace0,kMatrixFace1;
+    std::vector<MatrixDouble> kMatrixFace,kMatrixFace0,kMatrixFace1;
 
     PetscErrorCode doWork(
       int row_side,int col_side,
@@ -648,8 +648,8 @@ struct NitscheMethod {
         ); CHKERRQ(ierr);
 
       } catch (const std::exception& ex) {
-        ostringstream ss;
-        ss << "throw in method: " << ex.what() << endl;
+        std::ostringstream ss;
+        ss << "throw in method: " << ex.what() << std::endl;
         SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
 
@@ -665,7 +665,7 @@ struct NitscheMethod {
   struct OpRhsNormal: public OpCommon {
 
     OpRhsNormal(
-        const string field_name,
+        const std::string field_name,
       BlockData &nitsche_block_data,
       CommonData &nitsche_common_data,
       NonlinearElasticElement::BlockData &data,
@@ -745,8 +745,8 @@ struct NitscheMethod {
         ); CHKERRQ(ierr);
 
       } catch (const std::exception& ex) {
-        ostringstream ss;
-        ss << "throw in method: " << ex.what() << endl;
+        std::ostringstream ss;
+        ss << "throw in method: " << ex.what() << std::endl;
         SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
 

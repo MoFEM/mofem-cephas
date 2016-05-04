@@ -97,7 +97,7 @@ int main(int argc, char *argv[]) {
   ierr = m_field.build_fields(); CHKERRQ(ierr);
 
   int cs_dim[4];
-  string cs_name;
+  std::string cs_name;
 
   //Open mesh_file_name.txt for writing
   for(_IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(m_field,"FIELD_A",dof_ptr)) {

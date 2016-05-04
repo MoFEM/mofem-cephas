@@ -76,7 +76,7 @@ numered_dofs_cols(boost::shared_ptr<NumeredDofEntity_multiIndex>(new NumeredDofE
   rval = moab.tag_get_by_ptr(th_RefBitLevel_Mask,&meshset,1,(const void **)&tag_BitRefLevel_DofMask); CHKERR_MOAB(rval);
 }
 
-ostream& operator<<(ostream& os,const MoFEMProblem& e) {
+std::ostream& operator<<(std::ostream& os,const MoFEMProblem& e) {
   os << "problem id " << e.get_id()
     << " FiniteElement id " << e.get_BitFEId()
     << " name "<<e.get_name();
@@ -109,7 +109,7 @@ PetscErrorCode MoFEMProblem::get_col_dofs_by_petsc_gloabl_dof_idx(DofIdx idx,con
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode MoFEMProblem::getNumberOfElementsByNameAndPart(MPI_Comm comm,const string name,PetscLayout *layout) const {
+PetscErrorCode MoFEMProblem::getNumberOfElementsByNameAndPart(MPI_Comm comm,const std::string name,PetscLayout *layout) const {
   PetscFunctionBegin;
   PetscErrorCode ierr;
   int size, rank;

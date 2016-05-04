@@ -44,8 +44,8 @@ struct ElasticMaterials {
     iNitialized(false) {}
 
 
-  boost::ptr_map<string,NonlinearElasticElement::FunctionsToCalculatePiolaKirchhoffI<adouble> > aDoubleMaterialModel;
-  boost::ptr_map<string,NonlinearElasticElement::FunctionsToCalculatePiolaKirchhoffI<double> > doubleMaterialModel;
+  boost::ptr_map<std::string,NonlinearElasticElement::FunctionsToCalculatePiolaKirchhoffI<adouble> > aDoubleMaterialModel;
+  boost::ptr_map<std::string,NonlinearElasticElement::FunctionsToCalculatePiolaKirchhoffI<double> > doubleMaterialModel;
 
   struct BlockOptionData {
     string mAterial;
@@ -69,7 +69,7 @@ struct ElasticMaterials {
     aZ(0) {
     }
   };
-  map<int,BlockOptionData> blockData;
+  std::map<int,BlockOptionData> blockData;
 
   PetscBool isConfigFileSet;
   po::variables_map vM;
@@ -88,9 +88,9 @@ struct ElasticMaterials {
     mat_name = MAT_NEOHOOKEAN;
     aDoubleMaterialModel.insert(mat_name,new NeoHookean<adouble>());
     doubleMaterialModel.insert(mat_name,new NeoHookean<double>());
-    ostringstream avilable_materials;
+    std::ostringstream avilable_materials;
     avilable_materials << "set elastic material < ";
-    boost::ptr_map<string,NonlinearElasticElement::FunctionsToCalculatePiolaKirchhoffI<double> >::iterator mit;
+    boost::ptr_map<std::string,NonlinearElasticElement::FunctionsToCalculatePiolaKirchhoffI<double> >::iterator mit;
     mit = doubleMaterialModel.begin();
     for(;mit!=doubleMaterialModel.end();mit++) {
       avilable_materials << mit->first << " ";
@@ -153,52 +153,52 @@ struct ElasticMaterials {
       po::options_description config_file_options;
       for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BLOCKSET,it)) {
 
-        ostringstream str_order;
+        std::ostringstream str_order;
         str_order << "block_" << it->get_msId() << ".displacemet_order";
         config_file_options.add_options()
         (str_order.str().c_str(),po::value<int>(&blockData[it->get_msId()].oRder)->default_value(-1));
 
-        ostringstream str_material;
+        std::ostringstream str_material;
         str_material << "block_" << it->get_msId() << ".material";
         config_file_options.add_options()
-        (str_material.str().c_str(),po::value<string>(&blockData[it->get_msId()].mAterial)->default_value(defMaterial));
+        (str_material.str().c_str(),po::value<std::string>(&blockData[it->get_msId()].mAterial)->default_value(defMaterial));
 
-        ostringstream str_ym;
+        std::ostringstream str_ym;
         str_ym << "block_" << it->get_msId() << ".young_modulus";
         config_file_options.add_options()
         (str_ym.str().c_str(),po::value<double>(&blockData[it->get_msId()].yOung)->default_value(-1));
 
-        ostringstream str_pr;
+        std::ostringstream str_pr;
         str_pr << "block_" << it->get_msId() << ".poisson_ratio";
         config_file_options.add_options()
         (str_pr.str().c_str(),po::value<double>(&blockData[it->get_msId()].pOisson)->default_value(-2));
 
-        ostringstream str_density;
+        std::ostringstream str_density;
         str_density << "block_" << it->get_msId() << ".density";
         config_file_options.add_options()
         (str_density.str().c_str(),po::value<double>(&blockData[it->get_msId()].dEnsity)->default_value(-1));
 
-        ostringstream str_dashG;
+        std::ostringstream str_dashG;
         str_dashG << "block_" << it->get_msId() << ".dashG";
         config_file_options.add_options()
         (str_dashG.str().c_str(),po::value<double>(&blockData[it->get_msId()].dashG)->default_value(-1));
 
-        ostringstream str_dashPoisson;
+        std::ostringstream str_dashPoisson;
         str_dashPoisson << "block_" << it->get_msId() << ".dashPoisson";
         config_file_options.add_options()
         (str_dashPoisson.str().c_str(),po::value<double>(&blockData[it->get_msId()].dashPoisson)->default_value(-2));
 
-        ostringstream str_ax;
+        std::ostringstream str_ax;
         str_ax << "block_" << it->get_msId() << ".a_x";
         config_file_options.add_options()
         (str_ax.str().c_str(),po::value<double>(&blockData[it->get_msId()].aX)->default_value(0));
 
-        ostringstream str_ay;
+        std::ostringstream str_ay;
         str_ay << "block_" << it->get_msId() << ".a_y";
         config_file_options.add_options()
         (str_ay.str().c_str(),po::value<double>(&blockData[it->get_msId()].aY)->default_value(0));
 
-        ostringstream str_az;
+        std::ostringstream str_az;
         str_az << "block_" << it->get_msId() << ".a_z";
         config_file_options.add_options()
         (str_az.str().c_str(),po::value<double>(&blockData[it->get_msId()].aZ)->default_value(0));
@@ -212,13 +212,13 @@ struct ElasticMaterials {
       po::parsed_options parsed = parse_config_file(file,config_file_options,true);
       store(parsed,vM);
       po::notify(vM);
-      vector<string> additional_parameters;
+      std::vector<std::string> additional_parameters;
       additional_parameters = collect_unrecognized(parsed.options,po::include_positional);
-      for(vector<string>::iterator vit = additional_parameters.begin();
+      for(std::vector<std::string>::iterator vit = additional_parameters.begin();
       vit!=additional_parameters.end();vit++) {
         ierr = PetscPrintf(PETSC_COMM_WORLD,"** WARNING Unrecognized option %s\n",vit->c_str()); CHKERRQ(ierr);
       }
-    } catch (exception& ex) {
+    } catch (std::exception& ex) {
       SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,"error parsing material elastic configuration file");
     }
     PetscFunctionReturn(0);
@@ -265,7 +265,7 @@ struct ElasticMaterials {
 
   #ifdef __NONLINEAR_ELASTIC_HPP
 
-  virtual PetscErrorCode setBlocks(map<int,NonlinearElasticElement::BlockData> &set_of_blocks) {
+  virtual PetscErrorCode setBlocks(std::map<int,NonlinearElasticElement::BlockData> &set_of_blocks) {
     PetscFunctionBegin;
     ErrorCode rval;
     PetscErrorCode ierr;
@@ -309,7 +309,7 @@ struct ElasticMaterials {
 
   #ifdef __CONVECTIVE_MASS_ELEMENT_HPP
 
-  PetscErrorCode setBlocks(map<int,ConvectiveMassElement::BlockData> &set_of_blocks) {
+  PetscErrorCode setBlocks(std::map<int,ConvectiveMassElement::BlockData> &set_of_blocks) {
     PetscFunctionBegin;
     ErrorCode rval;
     PetscErrorCode ierr;
@@ -332,11 +332,11 @@ struct ElasticMaterials {
       set_of_blocks[id].a0[2] = mydata.data.acceleration_z;
       if(blockData[id].dEnsity>=0) {
         set_of_blocks[id].rho0 = blockData[id].dEnsity;
-        ostringstream str_ax;
+        std::ostringstream str_ax;
         str_ax << "block_" << it->get_msId() << ".a_x";
-        ostringstream str_ay;
+        std::ostringstream str_ay;
         str_ay << "block_" << it->get_msId() << ".a_y";
-        ostringstream str_az;
+        std::ostringstream str_az;
         str_az << "block_" << it->get_msId() << ".a_z";
         if(vM.count(str_ax.str().c_str())) {
           set_of_blocks[id].a0[0] = blockData[id].aX;
@@ -361,7 +361,7 @@ struct ElasticMaterials {
 
   #ifdef __KELVIN_VOIGT_DAMPER_HPP__
 
-  PetscErrorCode setBlocks(map<int,KelvinVoigtDamper::BlockMaterialData> &set_of_blocks) {
+  PetscErrorCode setBlocks(std::map<int,KelvinVoigtDamper::BlockMaterialData> &set_of_blocks) {
     PetscFunctionBegin;
     ErrorCode rval;
     PetscErrorCode ierr;
@@ -379,7 +379,7 @@ struct ElasticMaterials {
       EntityHandle meshset = it->get_meshset();
       if(it->get_name().compare(0,6,"DAMPER") == 0) {
         set = true;
-        vector<double> data;
+        std::vector<double> data;
         ierr = it->get_attributes(data); CHKERRQ(ierr);
         if(data.size()<2) {
           SETERRQ(PETSC_COMM_SELF,1,"Data inconsistency");

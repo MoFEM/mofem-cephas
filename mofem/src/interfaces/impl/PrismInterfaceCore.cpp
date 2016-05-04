@@ -191,7 +191,7 @@ PetscErrorCode Core::get_msId_3dENTS_sides(const EntityHandle SIDESET,const BitR
   rval = moab.get_adjacencies(side_ents3d.subset_by_type(MBTET),1,false,side_edges,Interface::UNION); CHKERRQ_MOAB(rval);
   skin_edges_boundary = intersect(skin_edges_boundary,side_edges);
   //make child meshsets
-  vector<EntityHandle> children;
+  std::vector<EntityHandle> children;
   rval = moab.get_child_meshsets(SIDESET,children);  CHKERRQ_MOAB(rval);
   if(children.empty()) {
     children.resize(3);
@@ -257,7 +257,7 @@ PetscErrorCode Core::get_msId_3dENTS_split_sides(
   int verb) {
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
-  vector<EntityHandle> children;
+  std::vector<EntityHandle> children;
   //get children meshsets
   rval = moab.get_child_meshsets(SIDESET,children);  CHKERRQ_MOAB(rval);
   if(children.size()!=3) {
@@ -305,7 +305,7 @@ PetscErrorCode Core::get_msId_3dENTS_split_sides(
     for(;miit!=hi_miit;miit++) {
       if(((*miit)->get_BitRefLevel()&inheret_from_bit_level_mask) == (*miit)->get_BitRefLevel()) {
         if(((*miit)->get_BitRefLevel()&inheret_from_bit_level).any()) {
-          pair<RefEntity_multiIndex_view_by_parent_entity::iterator,bool> p_ref_ent_view;
+          std::pair<RefEntity_multiIndex_view_by_parent_entity::iterator,bool> p_ref_ent_view;
           p_ref_ent_view = ref_parent_ents_view.insert(*miit);
           if(!p_ref_ent_view.second) {
             SETERRQ(PETSC_COMM_SELF,1,"non uniqe insertion");
@@ -315,7 +315,7 @@ PetscErrorCode Core::get_msId_3dENTS_split_sides(
     }
   }
   //maps nodes on "father" and "mather" side
-  map<
+  std::map<
     EntityHandle, /*node on "mather" side*/
     EntityHandle /*node on "father" side*/
     > map_nodes;
@@ -350,7 +350,7 @@ PetscErrorCode Core::get_msId_3dENTS_split_sides(
       //create new node on "father" side
       //parent is node on "mather" side
       rval = moab.tag_set_data(th_RefParentHandle,&new_node,1,&*nit); CHKERRQ_MOAB(rval);
-      pair<RefEntity_multiIndex::iterator,bool> p_ref_ent = refinedEntities.insert(
+      std::pair<RefEntity_multiIndex::iterator,bool> p_ref_ent = refinedEntities.insert(
         boost::shared_ptr<RefEntity>(new RefEntity(moab,new_node))
       );
       //set ref bit level to node on "father" side
@@ -393,7 +393,7 @@ PetscErrorCode Core::get_msId_3dENTS_split_sides(
     int nb_new_conn = 0;
     int ii = 0;
     for(; ii<num_nodes; ii++) {
-      map<EntityHandle,EntityHandle>::iterator mit = map_nodes.find(conn[ii]);
+      std::map<EntityHandle,EntityHandle>::iterator mit = map_nodes.find(conn[ii]);
       if(mit != map_nodes.end()) {
         new_conn[ii] = mit->second;
         nb_new_conn++;
@@ -456,14 +456,14 @@ PetscErrorCode Core::get_msId_3dENTS_split_sides(
               SETERRQ(PETSC_COMM_SELF,1,"can't find this in database");
             }
             tet = *new_conn_tet.begin();
-            /*ostringstream ss;
-            ss << "nb new conns: " << nb_new_conn << endl;
-            ss << "new_conn_tets.size() " << new_conn_tet.size() << endl;
+            /*std::ostringstream ss;
+            ss << "nb new conns: " << nb_new_conn << std::endl;
+            ss << "new_conn_tets.size() " << new_conn_tet.size() << std::endl;
             ss << "data inconsistency\n";
             ss << "this ent:\n";
-            ss << *rit->ref_ptr << endl;
+            ss << *rit->ref_ptr << std::endl;
             ss << "found this ent:\n";
-            ss << *new_rit->ref_ptr << endl;
+            ss << *new_rit->ref_ptr << std::endl;
             SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());*/
           }
         } else {
@@ -521,7 +521,7 @@ PetscErrorCode Core::get_msId_3dENTS_split_sides(
     int nb_new_conn = 0;
     int ii = 0;
     for(;ii<num_nodes; ii++) {
-      map<EntityHandle,EntityHandle>::iterator mit = map_nodes.find(conn[ii]);
+      std::map<EntityHandle,EntityHandle>::iterator mit = map_nodes.find(conn[ii]);
       if(mit != map_nodes.end()) {
 	new_conn[ii] = mit->second;
 	nb_new_conn++;
@@ -598,7 +598,7 @@ PetscErrorCode Core::get_msId_3dENTS_split_sides(
     //set parent
     rval = moab.tag_set_data(th_RefParentHandle,&*new_ent.begin(),1,&*eit); CHKERRQ_MOAB(rval);
     //add to database
-    pair<RefEntity_multiIndex::iterator,bool> p_ref_ent = refinedEntities.insert(
+    std::pair<RefEntity_multiIndex::iterator,bool> p_ref_ent = refinedEntities.insert(
       boost::shared_ptr<RefEntity>(new RefEntity(moab,new_ent[0]))
     );
     refinedEntities.modify(p_ref_ent.first,RefEntity_change_add_bit(bit));
@@ -619,7 +619,7 @@ PetscErrorCode Core::get_msId_3dENTS_split_sides(
     int nb_new_conn = 0;
     int ii = 0;
     for(;ii<num_nodes; ii++) {
-      map<EntityHandle,EntityHandle>::iterator mit = map_nodes.find(conn[ii]);
+      std::map<EntityHandle,EntityHandle>::iterator mit = map_nodes.find(conn[ii]);
       if(mit != map_nodes.end()) {
 	new_conn[ii] = mit->second;
 	nb_new_conn++;
@@ -653,7 +653,7 @@ PetscErrorCode Core::get_msId_3dENTS_split_sides(
     }
     //add entity to mofem database
     rval = moab.tag_set_data(th_RefParentHandle,&*new_ent.begin(),1,&*eit); CHKERRQ_MOAB(rval);
-    pair<RefEntity_multiIndex::iterator,bool> p_ref_ent
+    std::pair<RefEntity_multiIndex::iterator,bool> p_ref_ent
     = refinedEntities.insert(
       boost::shared_ptr<RefEntity>(new RefEntity(moab,new_ent[0]))
     );
@@ -701,7 +701,7 @@ PetscErrorCode Core::get_msId_3dENTS_split_sides(
       SETERRQ(PETSC_COMM_SELF,1,"face4 is missing");
     }
     //
-    vector<EntityHandle> face(2),parent_face(2);
+    std::vector<EntityHandle> face(2),parent_face(2);
     face[0] = *face_side3.begin();
     face[1] = *face_side4.begin();
     parent_face[0] = *face_side3_parent.begin();

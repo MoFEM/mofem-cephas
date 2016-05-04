@@ -49,7 +49,7 @@ struct ThermalStressElement {
     BlockData(): refTemperature(0) {}
     Range tEts;
   };
-  map<int,BlockData> setOfBlocks;
+  std::map<int,BlockData> setOfBlocks;
 
   struct CommonData {
     ublas::vector<double> temperatureAtGaussPts;
@@ -60,7 +60,7 @@ struct ThermalStressElement {
 
     CommonData &commonData;
     int verb;
-    OpGetTemperatureAtGaussPts(const string field_name,CommonData &common_data,int _verb = 0):
+    OpGetTemperatureAtGaussPts(const std::string field_name,CommonData &common_data,int _verb = 0):
     VolumeElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROW),
     commonData(common_data),
     verb(_verb) {}
@@ -74,14 +74,14 @@ struct ThermalStressElement {
         //initialize
         commonData.temperatureAtGaussPts.resize(nb_gauss_pts);
         if(type == MBVERTEX) {
-          fill(commonData.temperatureAtGaussPts.begin(),commonData.temperatureAtGaussPts.end(),0);
+          std::fill(commonData.temperatureAtGaussPts.begin(),commonData.temperatureAtGaussPts.end(),0);
         }
         for(int gg = 0;gg<nb_gauss_pts;gg++) {
           commonData.temperatureAtGaussPts[gg] += inner_prod(data.getN(gg,nb_dofs),data.getFieldData());
         }
       } catch (const std::exception& ex) {
-        ostringstream ss;
-        ss << "throw in method: " << ex.what() << endl;
+        std::ostringstream ss;
+        ss << "throw in method: " << ex.what() << std::endl;
         SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
       PetscFunctionReturn(0);
@@ -96,7 +96,7 @@ struct ThermalStressElement {
     BlockData &dAta;
     CommonData &commonData;
     int verb;
-    OpThermalStressRhs(const string field_name,Vec _F,BlockData &data,CommonData &common_data,int _verb = 0):
+    OpThermalStressRhs(const std::string field_name,Vec _F,BlockData &data,CommonData &common_data,int _verb = 0):
     VolumeElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROW),
     F(_F),
     dAta(data),
@@ -136,8 +136,8 @@ struct ThermalStressElement {
 
             if(verb > 0) {
               if(type == MBVERTEX) {
-                cout << commonData.temperatureAtGaussPts << endl;
-                cout << "thermal expansion " << dAta.thermalExpansion << endl;
+                cout << commonData.temperatureAtGaussPts << std::endl;
+                cout << "thermal expansion " << dAta.thermalExpansion << std::endl;
               }
             }
 
@@ -173,8 +173,8 @@ struct ThermalStressElement {
         &data.getIndices()[0],&Nf[0],ADD_VALUES); CHKERRQ(ierr);
 
       } catch (const std::exception& ex) {
-        ostringstream ss;
-        ss << "throw in method: " << ex.what() << endl;
+        std::ostringstream ss;
+        ss << "throw in method: " << ex.what() << std::endl;
         SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
       }
 
@@ -184,8 +184,8 @@ struct ThermalStressElement {
   };
 
   PetscErrorCode addThermalSterssElement(
-    const string fe_name,const string field_name,const string thermal_field_name,
-    const string mesh_nodals_positions = "MESH_NODE_POSITIONS"
+    const std::string fe_name,const std::string field_name,const std::string thermal_field_name,
+    const std::string mesh_nodals_positions = "MESH_NODE_POSITIONS"
   ) {
     PetscFunctionBegin;
     if(mField.check_field(thermal_field_name)) {
@@ -222,7 +222,7 @@ struct ThermalStressElement {
   PetscErrorCode setThermalStressRhsOperators(string field_name,string thermal_field_name,Vec &F,int verb = 0) {
     PetscFunctionBegin;
     if(mField.check_field(thermal_field_name)) {
-      map<int,BlockData>::iterator sit = setOfBlocks.begin();
+      std::map<int,BlockData>::iterator sit = setOfBlocks.begin();
       for(;sit!=setOfBlocks.end();sit++) {
         //add finite elemen
         feThermalStressRhs.getOpPtrVector().push_back(new OpGetTemperatureAtGaussPts(thermal_field_name,commonData,verb));

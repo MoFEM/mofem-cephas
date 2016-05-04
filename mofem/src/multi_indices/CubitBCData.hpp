@@ -30,7 +30,7 @@ namespace MoFEM {
 struct GenericCubitBcData {
     PetscErrorCode ierr;
 
-    virtual PetscErrorCode fill_data(const vector<char>& bc_data) {
+    virtual PetscErrorCode fill_data(const std::vector<char>& bc_data) {
         PetscFunctionBegin;
         SETERRQ(PETSC_COMM_SELF,1,"It makes no sense for the generic bc type");
         PetscFunctionReturn(0);
@@ -69,7 +69,7 @@ struct DisplacementCubitBcData: public GenericCubitBcData {
     const CubitBCType type;
     DisplacementCubitBcData(): type(DISPLACEMENTSET) {};
 
-    virtual PetscErrorCode fill_data(const vector<char>& bc_data) {
+    virtual PetscErrorCode fill_data(const std::vector<char>& bc_data) {
         PetscFunctionBegin;
         //Fill data
 	if(bc_data.size()!=sizeof(data)) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
@@ -79,7 +79,7 @@ struct DisplacementCubitBcData: public GenericCubitBcData {
 
     /*! \brief Print displacement bc data
      */
-    friend ostream& operator<<(ostream& os,const DisplacementCubitBcData& e);
+    friend std::ostream& operator<<(std::ostream& os,const DisplacementCubitBcData& e);
 
 };
 
@@ -106,7 +106,7 @@ struct ForceCubitBcData: public GenericCubitBcData {
     const CubitBCType type;
     ForceCubitBcData(): type(FORCESET) {};
 
-    virtual PetscErrorCode fill_data(const vector<char>& bc_data) {
+    virtual PetscErrorCode fill_data(const std::vector<char>& bc_data) {
         PetscFunctionBegin;
         //Fill data
 	if(bc_data.size()!=sizeof(data)) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
@@ -116,7 +116,7 @@ struct ForceCubitBcData: public GenericCubitBcData {
 
     /*! \brief Print force bc data
     */
-    friend ostream& operator<<(ostream& os,const ForceCubitBcData& e);
+    friend std::ostream& operator<<(std::ostream& os,const ForceCubitBcData& e);
 
 };
 
@@ -147,7 +147,7 @@ struct VelocityCubitBcData: public GenericCubitBcData {
     const CubitBCType type;
     VelocityCubitBcData(): type(VELOCITYSET) {};
 
-    virtual PetscErrorCode fill_data(const vector<char>& bc_data) {
+    virtual PetscErrorCode fill_data(const std::vector<char>& bc_data) {
         PetscFunctionBegin;
         //Fill data
 	if(bc_data.size()!=sizeof(data)) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
@@ -157,7 +157,7 @@ struct VelocityCubitBcData: public GenericCubitBcData {
 
     /*! \brief Print velocity bc data
     */
-    friend ostream& operator<<(ostream& os,const VelocityCubitBcData& e);
+    friend std::ostream& operator<<(std::ostream& os,const VelocityCubitBcData& e);
 
 };
 
@@ -188,7 +188,7 @@ struct AccelerationCubitBcData: public GenericCubitBcData {
     const CubitBCType type;
     AccelerationCubitBcData(): type(ACCELERATIONSET) {};
 
-    virtual PetscErrorCode fill_data(const vector<char>& bc_data) {
+    virtual PetscErrorCode fill_data(const std::vector<char>& bc_data) {
         PetscFunctionBegin;
         //Fill data
 	if(bc_data.size()!=sizeof(data)) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
@@ -198,7 +198,7 @@ struct AccelerationCubitBcData: public GenericCubitBcData {
 
     /*! \brief Print acceleration bc data
     */
-    friend ostream& operator<<(ostream& os,const AccelerationCubitBcData& e);
+    friend std::ostream& operator<<(std::ostream& os,const AccelerationCubitBcData& e);
 
 };
 
@@ -229,7 +229,7 @@ struct TemperatureCubitBcData: public GenericCubitBcData {
     const CubitBCType type;
     TemperatureCubitBcData(): type(TEMPERATURESET) {};
 
-    virtual PetscErrorCode fill_data(const vector<char>& bc_data) {
+    virtual PetscErrorCode fill_data(const std::vector<char>& bc_data) {
       PetscFunctionBegin;
       //Fill data
       if(bc_data.size()!=sizeof(data)) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
@@ -239,7 +239,7 @@ struct TemperatureCubitBcData: public GenericCubitBcData {
 
     /*! \brief Print temperature bc data
     */
-    friend ostream& operator<<(ostream& os,const TemperatureCubitBcData& e);
+    friend std::ostream& operator<<(std::ostream& os,const TemperatureCubitBcData& e);
 };
 
 /*! \struct PressureCubitBcData
@@ -259,7 +259,7 @@ struct PressureCubitBcData: public GenericCubitBcData {
     const CubitBCType type;
     PressureCubitBcData(): type(PRESSURESET) {};
 
-    virtual PetscErrorCode fill_data(const vector<char>& bc_data) {
+    virtual PetscErrorCode fill_data(const std::vector<char>& bc_data) {
         PetscFunctionBegin;
         //Fill data
 	if(bc_data.size()!=sizeof(data)) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
@@ -269,7 +269,7 @@ struct PressureCubitBcData: public GenericCubitBcData {
 
     /*! \brief Print pressure bc data
     */
-    friend ostream& operator<<(ostream& os,const PressureCubitBcData& e);
+    friend std::ostream& operator<<(std::ostream& os,const PressureCubitBcData& e);
 
 };
 
@@ -294,7 +294,7 @@ struct HeatFluxCubitBcData: public GenericCubitBcData {
     const CubitBCType type;
     HeatFluxCubitBcData(): type(HEATFLUXSET) {};
 
-    virtual PetscErrorCode fill_data(const vector<char>& bc_data) {
+    virtual PetscErrorCode fill_data(const std::vector<char>& bc_data) {
         PetscFunctionBegin;
         //Fill data
 	if(bc_data.size()!=sizeof(data)) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
@@ -304,7 +304,7 @@ struct HeatFluxCubitBcData: public GenericCubitBcData {
 
     /*! \brief Print heat flux bc data
     */
-    friend ostream& operator<<(ostream& os,const HeatFluxCubitBcData& e);
+    friend std::ostream& operator<<(std::ostream& os,const HeatFluxCubitBcData& e);
 
 };
 
@@ -323,7 +323,7 @@ struct CfgCubitBcData: public GenericCubitBcData {
     const CubitBCType type;
     CfgCubitBcData(): type(INTERFACESET) {};
 
-    virtual PetscErrorCode fill_data(const vector<char>& bc_data) {
+    virtual PetscErrorCode fill_data(const std::vector<char>& bc_data) {
         PetscFunctionBegin;
         //Fill data
         if(bc_data.size()!=sizeof(data)) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
@@ -333,7 +333,7 @@ struct CfgCubitBcData: public GenericCubitBcData {
 
     /*! \brief Print cfd_bc data
      */
-    friend ostream& operator<<(ostream& os,const CfgCubitBcData& e);
+    friend std::ostream& operator<<(std::ostream& os,const CfgCubitBcData& e);
 
 };
 

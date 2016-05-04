@@ -38,7 +38,7 @@ struct NodalForce {
     ForceCubitBcData data;
     Range nOdes;
   };
-  map<int,bCForce> mapForce;
+  std::map<int,bCForce> mapForce;
 
   boost::ptr_vector<MethodForForceScaling> methodsOp;
 
@@ -50,7 +50,7 @@ struct NodalForce {
     bCForce &dAta;
     boost::ptr_vector<MethodForForceScaling> &methodsOp;
 
-    OpNodalForce(const string field_name,Vec _F,bCForce &data,
+    OpNodalForce(const std::string field_name,Vec _F,bCForce &data,
       boost::ptr_vector<MethodForForceScaling> &methods_op,
       bool use_snes_f = false);
 
@@ -63,7 +63,7 @@ struct NodalForce {
 
   };
 
-  PetscErrorCode addForce(const string field_name,Vec F,int ms_id,bool use_snes_f = false);
+  PetscErrorCode addForce(const std::string field_name,Vec F,int ms_id,bool use_snes_f = false);
 
 };
 
@@ -85,7 +85,7 @@ struct MetaNodalForces {
   };
 
   /// Add element taking information from NODESET
-  static PetscErrorCode addElement (FieldInterface &m_field,const string field_name) {
+  static PetscErrorCode addElement (FieldInterface &m_field,const std::string field_name) {
     PetscFunctionBegin;
     PetscErrorCode ierr;
     ErrorCode rval;
@@ -113,7 +113,7 @@ struct MetaNodalForces {
 
   /// Set integration point operators
   static PetscErrorCode setOperators(
-    FieldInterface &m_field, boost::ptr_map<string,NodalForce> &nodal_forces, Vec F,const string field_name
+    FieldInterface &m_field, boost::ptr_map<std::string,NodalForce> &nodal_forces, Vec F,const std::string field_name
   ) {
     PetscFunctionBegin;
     PetscErrorCode ierr;

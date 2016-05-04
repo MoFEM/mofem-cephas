@@ -93,7 +93,7 @@ int main(int argc, char *argv[]) {
 
   for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,NODESET|FORCESET,it)) {
 
-    ostringstream fe_name;
+    std::ostringstream fe_name;
     fe_name << "FORCE_FE_" << it->get_msId();
     ierr = m_field.add_finite_element(fe_name.str()); CHKERRQ(ierr);
     ierr = m_field.modify_finite_element_add_field_row(fe_name.str(),"DISPLACEMENT"); CHKERRQ(ierr);
@@ -109,7 +109,7 @@ int main(int argc, char *argv[]) {
 
   for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,SIDESET|PRESSURESET,it)) {
 
-    ostringstream fe_name;
+    std::ostringstream fe_name;
     fe_name << "PRESSURE_FE_" << it->get_msId();
     ierr = m_field.add_finite_element(fe_name.str()); CHKERRQ(ierr);
     ierr = m_field.modify_finite_element_add_field_row(fe_name.str(),"DISPLACEMENT"); CHKERRQ(ierr);
@@ -162,39 +162,39 @@ int main(int argc, char *argv[]) {
   Vec F;
   ierr = m_field.VecCreateGhost("TEST_PROBLEM",ROW,&F); CHKERRQ(ierr);
 
-  typedef tee_device<ostream, ofstream> TeeDevice;
+  typedef tee_device<std::ostream, std::ofstream> TeeDevice;
   typedef stream<TeeDevice> TeeStream;
-  ostringstream txt_name;
+  std::ostringstream txt_name;
   txt_name << "forces_and_sources_" << mesh_file_name << ".txt";
-  ofstream ofs(txt_name.str().c_str());
-  TeeDevice my_tee(cout, ofs);
+  std::ofstream ofs(txt_name.str().c_str());
+  TeeDevice my_tee(std::cout, ofs);
   TeeStream my_split(my_tee);
 
   ierr = VecZeroEntries(F); CHKERRQ(ierr);
-  boost::ptr_map<string,NeummanForcesSurface> neumann_forces;
+  boost::ptr_map<std::string,NeummanForcesSurface> neumann_forces;
   for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,NODESET|FORCESET,it)) {
-    ostringstream fe_name;
+    std::ostringstream fe_name;
     fe_name << "FORCE_FE_" << it->get_msId();
     string fe_name_str = fe_name.str();
     neumann_forces.insert(fe_name_str,new NeummanForcesSurface(m_field));
     neumann_forces.at(fe_name_str).addForce("DISPLACEMENT",F,it->get_msId()); CHKERRQ(ierr);
     ForceCubitBcData data;
     ierr = it->get_bc_data_structure(data); CHKERRQ(ierr);
-    my_split << *it << endl;
-    my_split << data << endl;
+    my_split << *it << std::endl;
+    my_split << data << std::endl;
   }
   for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,SIDESET|PRESSURESET,it)) {
-    ostringstream fe_name;
+    std::ostringstream fe_name;
     fe_name << "PRESSURE_FE_" << it->get_msId();
     string fe_name_str = fe_name.str();
     neumann_forces.insert(fe_name_str,new NeummanForcesSurface(m_field));
     neumann_forces.at(fe_name_str).addPreassure("DISPLACEMENT",F,it->get_msId()); CHKERRQ(ierr);
     PressureCubitBcData data;
     ierr = it->get_bc_data_structure(data); CHKERRQ(ierr);
-    my_split << *it << endl;
-    my_split << data << endl;
+    my_split << *it << std::endl;
+    my_split << data << std::endl;
   }
-  boost::ptr_map<string,NeummanForcesSurface>::iterator mit = neumann_forces.begin();
+  boost::ptr_map<std::string,NeummanForcesSurface>::iterator mit = neumann_forces.begin();
   for(;mit!=neumann_forces.end();mit++) {
     ierr = m_field.loop_finite_elements("TEST_PROBLEM",mit->first,mit->second->getLoopFe()); CHKERRQ(ierr);
   }
@@ -212,14 +212,14 @@ int main(int argc, char *argv[]) {
     my_split.precision(3);
     my_split.setf(std::ios::fixed);
     double val = fabs(dit->get()->get_FieldData())<eps ? 0.0 : dit->get()->get_FieldData();
-    my_split << dit->get()->get_petsc_gloabl_dof_idx() << " " << val << endl;
+    my_split << dit->get()->get_petsc_gloabl_dof_idx() << " " << val << std::endl;
 
   }
 
   double sum = 0;
   ierr = VecSum(F,&sum); CHKERRQ(ierr);
   sum = fabs(sum)<eps ? 0.0 : sum;
-  my_split << endl << "Sum : " << setprecision(3) << sum << endl;
+  my_split << std::endl << "Sum : " << std::setprecision(3) << sum << std::endl;
 
   ierr = VecDestroy(&F); CHKERRQ(ierr);
 

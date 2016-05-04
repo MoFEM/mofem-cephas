@@ -45,23 +45,23 @@ MoFEMSeries::MoFEMSeries(Interface &moab,const EntityHandle _meshset):
   const int def_val_len = 0;
 
   //time
-  string Tag_SeriesTime = "_SeriesTime_"+get_name();
+  std::string Tag_SeriesTime = "_SeriesTime_"+get_name();
   double def_time = 0;
   rval = moab.tag_get_handle(Tag_SeriesTime.c_str(),1,MB_TYPE_DOUBLE,
     th_SeriesTime,MB_TAG_CREAT|MB_TAG_SPARSE,&def_time); MOAB_THROW(rval);
 
   //handles
-  string Tag_DataHandles_SeriesName = "_SeriesDataHandles_"+get_name();
+  std::string Tag_DataHandles_SeriesName = "_SeriesDataHandles_"+get_name();
   rval = moab.tag_get_handle(Tag_DataHandles_SeriesName.c_str(),def_val_len,MB_TYPE_HANDLE,
     th_SeriesDataHandles,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_VARLEN,NULL); MOAB_THROW(rval);
 
   //uids
-  string Tag_DataUIDs_SeriesName = "_SeriesDataUIDs_"+get_name();
+  std::string Tag_DataUIDs_SeriesName = "_SeriesDataUIDs_"+get_name();
   rval = moab.tag_get_handle(Tag_DataUIDs_SeriesName.c_str(),def_val_len,MB_TYPE_OPAQUE,
     th_SeriesDataUIDs,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES|MB_TAG_VARLEN,NULL); MOAB_THROW(rval);
 
   //data
-  string Tag_Data_SeriesName = "_SeriesData_"+get_name();
+  std::string Tag_Data_SeriesName = "_SeriesData_"+get_name();
   rval = moab.tag_get_handle(Tag_Data_SeriesName.c_str(),def_val_len,MB_TYPE_OPAQUE,
     th_SeriesData,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES|MB_TAG_VARLEN,NULL); MOAB_THROW(rval);
 
@@ -117,7 +117,7 @@ PetscErrorCode MoFEMSeries::read(Interface &moab) {
     SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"all series data will be lost");
   }
 
-  vector<EntityHandle> contained;
+  std::vector<EntityHandle> contained;
   rval = moab.get_contained_meshsets(meshset,contained); CHKERRQ_MOAB(rval);
   ia.resize(0);
   time.resize(0);
@@ -179,7 +179,7 @@ PetscErrorCode MoFEMSeries::save(Interface &moab) const {
   }
 
   ErrorCode rval;
-  vector<EntityHandle> contained;
+  std::vector<EntityHandle> contained;
   rval = moab.get_contained_meshsets(meshset,contained); CHKERRQ_MOAB(rval);
   unsigned int nb_contained = contained.size();
   if(nb_contained < ia.size()-1) {
@@ -238,7 +238,7 @@ PetscErrorCode MoFEMSeriesStep::get(Interface &moab,DofEntity_multiIndex &dofsFi
   PetscFunctionBegin;
   ErrorCode rval;
 
-  vector<EntityHandle> contained;
+  std::vector<EntityHandle> contained;
   rval = moab.get_contained_meshsets(ptr->meshset,contained); CHKERRQ_MOAB(rval);
   if(contained.size()<=(unsigned int)step_number) {
     SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
@@ -273,7 +273,7 @@ PetscErrorCode MoFEMSeriesStep::get(Interface &moab,DofEntity_multiIndex &dofsFi
     DofEntity_multiIndex::index<Composite_Ent_and_ShortId_mi_tag>::type::iterator dit;
     dit = dofsField.get<Composite_Ent_and_ShortId_mi_tag>().find(boost::make_tuple(ent,uid));
     if(dit!=dofsField.get<Composite_Ent_and_ShortId_mi_tag>().end()) {
-      //cerr << *dit << endl;
+      //std::cerr << *dit << std::endl;
       (*dit)->get_FieldData() = val;
     } else {
       SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_FOUND,
@@ -287,7 +287,7 @@ PetscErrorCode MoFEMSeriesStep::get(Interface &moab,DofEntity_multiIndex &dofsFi
 PetscErrorCode MoFEMSeriesStep::get_time_init(Interface &moab) {
   PetscFunctionBegin;
   ErrorCode rval;
-  vector<EntityHandle> contained;
+  std::vector<EntityHandle> contained;
   rval = moab.get_contained_meshsets(ptr->meshset,contained); CHKERRQ_MOAB(rval);
   if(contained.size()<=(unsigned int)step_number) {
     SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
@@ -299,12 +299,12 @@ PetscErrorCode MoFEMSeriesStep::get_time_init(Interface &moab) {
   PetscFunctionReturn(0);
 }
 
-ostream& operator<<(ostream& os,const MoFEMSeries& e) {
+std::ostream& operator<<(std::ostream& os,const MoFEMSeries& e) {
   os << "name " << e.get_name() << " meshset " << e.get_meshset();
   return os;
 }
 
-ostream& operator<<(ostream& os,const MoFEMSeriesStep& e) {
+std::ostream& operator<<(std::ostream& os,const MoFEMSeriesStep& e) {
   os << *(e.get_MoFEMSeries_ptr()) << " step number " << e.step_number << " time " << e.get_time();
   return os;
 }

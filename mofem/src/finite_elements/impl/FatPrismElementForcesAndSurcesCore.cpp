@@ -134,8 +134,8 @@ PetscErrorCode FatPrismElementForcesAndSurcesCore::operator()() {
 
   } catch (MoFEMException const &e) {
     SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
-  } catch (exception& ex) {
-    ostringstream ss;
+  } catch (std::exception& ex) {
+    std::ostringstream ss;
     ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
     SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
   }
@@ -147,21 +147,21 @@ PetscErrorCode FatPrismElementForcesAndSurcesCore::operator()() {
     int valid_edges[] = { 1,1,1, 0,0,0, 1,1,1 };
     for(unsigned int ee = 0;ee<9;ee++) {
       if(!valid_edges[ee]) continue;
-      order_triangles_only = max(
+      order_triangles_only = std::max(
         order_triangles_only,dataH1TrianglesOnly.dataOnEntities[MBEDGE][ee].getDataOrder()
       );
     }
     for(unsigned int ff = 3;ff<=4;ff++) {
-      order_triangles_only = max(
+      order_triangles_only = std::max(
         order_triangles_only,dataH1TrianglesOnly.dataOnEntities[MBTRI][ff].getDataOrder()
       );
     }
     for(unsigned int qq = 0;qq<3;qq++) {
-      order_triangles_only = max(
+      order_triangles_only = std::max(
         order_triangles_only,dataH1TroughThickness.dataOnEntities[MBQUAD][qq].getDataOrder()
       );
     }
-    order_triangles_only = max(
+    order_triangles_only = std::max(
       order_triangles_only,dataH1TroughThickness.dataOnEntities[MBPRISM][0].getDataOrder()
     );
     // integration pts on the triangles surfaces
@@ -216,8 +216,8 @@ PetscErrorCode FatPrismElementForcesAndSurcesCore::operator()() {
     }
   } catch (MoFEMException const &e) {
     SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
-  } catch (exception& ex) {
-    ostringstream ss;
+  } catch (std::exception& ex) {
+    std::ostringstream ss;
     ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
     SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
   }
@@ -227,16 +227,16 @@ PetscErrorCode FatPrismElementForcesAndSurcesCore::operator()() {
   try {
     int order_thickness = 1;
     for(unsigned int ee = 3;ee<=5;ee++) {
-      order_thickness = max(
+      order_thickness = std::max(
         order_thickness,dataH1TroughThickness.dataOnEntities[MBEDGE][ee].getDataOrder()
       );
     }
     for(unsigned int qq = 0;qq<3;qq++) {
-      order_thickness = max(
+      order_thickness = std::max(
         order_thickness,dataH1TroughThickness.dataOnEntities[MBQUAD][qq].getDataOrder()
       );
     }
-    order_thickness = max(
+    order_thickness = std::max(
       order_thickness,dataH1TroughThickness.dataOnEntities[MBPRISM][0].getDataOrder()
     );
     // integration points
@@ -274,8 +274,8 @@ PetscErrorCode FatPrismElementForcesAndSurcesCore::operator()() {
     if(nb_gauss_pts_through_thickness == 0) PetscFunctionReturn(0);
   } catch (MoFEMException const &e) {
     SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
-  } catch (exception& ex) {
-    ostringstream ss;
+  } catch (std::exception& ex) {
+    std::ostringstream ss;
     ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
     SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
   }
@@ -412,8 +412,8 @@ PetscErrorCode FatPrismElementForcesAndSurcesCore::operator()() {
         try {
           ierr = opHOCoordsAndNormals.opRhs(dataH1TrianglesOnly); CHKERRQ(ierr);
           ierr = opHOCoordsAndNormals.calculateNormals(); CHKERRQ(ierr);
-        } catch (exception& ex) {
-          ostringstream ss;
+        } catch (std::exception& ex) {
+          std::ostringstream ss;
           ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
           SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
         }
@@ -427,8 +427,8 @@ PetscErrorCode FatPrismElementForcesAndSurcesCore::operator()() {
         tAngent1_at_GaussPtF4.resize(0,0,false);
         tAngent2_at_GaussPtF4.resize(0,0,false);
       }
-    } catch (exception& ex) {
-      ostringstream ss;
+    } catch (std::exception& ex) {
+      std::ostringstream ss;
       ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
       SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
     }
@@ -436,7 +436,7 @@ PetscErrorCode FatPrismElementForcesAndSurcesCore::operator()() {
     const UserDataOperator::OpType types[2] = {
       UserDataOperator::OPROW, UserDataOperator::OPCOL
     };
-    vector<string> last_eval_field_name(2);
+    std::vector<std::string> last_eval_field_name(2);
     DataForcesAndSurcesCore *op_data[2];
     FieldSpace space[2];
     FieldApproximationBase base[2];
@@ -451,7 +451,7 @@ PetscErrorCode FatPrismElementForcesAndSurcesCore::operator()() {
 
       for(int ss = 0;ss!=2;ss++) {
 
-        string field_name = !ss ? oit->rowFieldName : oit->colFieldName;
+        std::string field_name = !ss ? oit->rowFieldName : oit->colFieldName;
         const Field* field_struture = mField.get_field_structure(field_name);
         BitFieldId data_id = field_struture->get_id();
 
@@ -574,8 +574,8 @@ PetscErrorCode FatPrismElementForcesAndSurcesCore::operator()() {
             false,
             oit->doPrismsRow
           ); CHKERRQ(ierr);
-        } catch (exception& ex) {
-          ostringstream ss;
+        } catch (std::exception& ex) {
+          std::ostringstream ss;
           ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
           ss << " operator on row field name " << oit->rowFieldName;
           SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
@@ -593,8 +593,8 @@ PetscErrorCode FatPrismElementForcesAndSurcesCore::operator()() {
             false,
             oit->doPrismsCol
           ); CHKERRQ(ierr);
-        } catch (exception& ex) {
-          ostringstream ss;
+        } catch (std::exception& ex) {
+          std::ostringstream ss;
           ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
           SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
         }
@@ -603,8 +603,8 @@ PetscErrorCode FatPrismElementForcesAndSurcesCore::operator()() {
       if(oit->getOpType()&UserDataOperator::OPROWCOL) {
         try {
           ierr = oit->opLhs(*op_data[0],*op_data[1],oit->sYmm); CHKERRQ(ierr);
-        } catch (exception& ex) {
-          ostringstream ss;
+        } catch (std::exception& ex) {
+          std::ostringstream ss;
           ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
           SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
         }
@@ -614,8 +614,8 @@ PetscErrorCode FatPrismElementForcesAndSurcesCore::operator()() {
 
   } catch (MoFEMException const &e) {
     SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
-  } catch (exception& ex) {
-    ostringstream ss;
+  } catch (std::exception& ex) {
+    std::ostringstream ss;
     ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
     SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
   }

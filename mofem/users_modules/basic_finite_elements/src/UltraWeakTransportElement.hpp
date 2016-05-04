@@ -64,7 +64,7 @@ struct UltraWeakTransportElement {
   set<PetscInt> bcIndices;
   PetscErrorCode getDirichletBCIndices(IS *is) {
     PetscFunctionBegin;
-    vector<PetscInt> ids;
+    std::vector<PetscInt> ids;
     ids.insert(ids.begin(),bcIndices.begin(),bcIndices.end());
     PetscErrorCode ierr;
     IS is_local;
@@ -124,12 +124,12 @@ struct UltraWeakTransportElement {
     double cApacity;
     Range tEts; ///< constatins elements in block set
   };
-  map<int,BlockData> setOfBlocks; ///< maps block set id with appropiate BlockData
+  std::map<int,BlockData> setOfBlocks; ///< maps block set id with appropiate BlockData
 
   /// \brief add finite elements
   PetscErrorCode addFiniteElements(
-    const string &fluxes_name,const string &values_name,
-    const string &error_name,const string mesh_nodals_positions = "MESH_NODE_POSITIONS") {
+    const std::string &fluxes_name,const std::string &values_name,
+    const std::string &error_name,const std::string mesh_nodals_positions = "MESH_NODE_POSITIONS") {
     PetscFunctionBegin;
 
     PetscErrorCode ierr;
@@ -199,7 +199,7 @@ struct UltraWeakTransportElement {
 
     OpTauDotSigma_HdivHdiv(
       UltraWeakTransportElement &ctx,
-      const string field_name,Mat _Aij,Vec _F
+      const std::string field_name,Mat _Aij,Vec _F
     ):
     VolumeElementForcesAndSourcesCore::UserDataOperator(
       field_name,
@@ -274,8 +274,8 @@ struct UltraWeakTransportElement {
 
 
       } catch (const std::exception& ex) {
-        ostringstream ss;
-        ss << "throw in method: " << ex.what() << endl;
+        std::ostringstream ss;
+        ss << "throw in method: " << ex.what() << std::endl;
         SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
       }
 
@@ -326,8 +326,8 @@ struct UltraWeakTransportElement {
         ); CHKERRQ(ierr);
 
       } catch (const std::exception& ex) {
-        ostringstream ss;
-        ss << "throw in method: " << ex.what() << endl;
+        std::ostringstream ss;
+        ss << "throw in method: " << ex.what() << std::endl;
         SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
       }
 
@@ -346,7 +346,7 @@ struct UltraWeakTransportElement {
 
     OpDivTauU_HdivL2(
       UltraWeakTransportElement &ctx,
-      const string field_name_row,string field_name_col,Mat _Aij,Vec _F
+      const std::string field_name_row,string field_name_col,Mat _Aij,Vec _F
     ):
     VolumeElementForcesAndSourcesCore::UserDataOperator(
       field_name_row,field_name_col,
@@ -406,8 +406,8 @@ struct UltraWeakTransportElement {
         ); CHKERRQ(ierr);
 
       } catch (const std::exception& ex) {
-        ostringstream ss;
-        ss << "throw in method: " << ex.what() << endl;
+        std::ostringstream ss;
+        ss << "throw in method: " << ex.what() << std::endl;
         SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
       }
 
@@ -426,7 +426,7 @@ struct UltraWeakTransportElement {
 
     OpVDotDivSigma_L2Hdiv(
       UltraWeakTransportElement &ctx,
-      const string field_name_row,string field_name_col,Mat _Aij,Vec _F
+      const std::string field_name_row,string field_name_col,Mat _Aij,Vec _F
     ):
     VolumeElementForcesAndSourcesCore::UserDataOperator(
       field_name_row,field_name_col,
@@ -507,8 +507,8 @@ struct UltraWeakTransportElement {
 
 
       } catch (const std::exception& ex) {
-        ostringstream ss;
-        ss << "throw in method: " << ex.what() << endl;
+        std::ostringstream ss;
+        ss << "throw in method: " << ex.what() << std::endl;
         SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
       }
 
@@ -553,8 +553,8 @@ struct UltraWeakTransportElement {
         ); CHKERRQ(ierr);
 
       } catch (const std::exception& ex) {
-        ostringstream ss;
-        ss << "throw in method: " << ex.what() << endl;
+        std::ostringstream ss;
+        ss << "throw in method: " << ex.what() << std::endl;
         SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
 
@@ -572,7 +572,7 @@ struct UltraWeakTransportElement {
 
     OpL2Source(
       UltraWeakTransportElement &ctx,
-      const string field_name,Vec _F
+      const std::string field_name,Vec _F
     ):
     VolumeElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROW),
     cTx(ctx),
@@ -624,8 +624,8 @@ struct UltraWeakTransportElement {
           ); CHKERRQ(ierr);
 
         } catch (const std::exception& ex) {
-          ostringstream ss;
-          ss << "throw in method: " << ex.what() << endl;
+          std::ostringstream ss;
+          ss << "throw in method: " << ex.what() << std::endl;
           SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
         }
 
@@ -642,7 +642,7 @@ struct UltraWeakTransportElement {
     Vec F;
 
     OpRhsBcOnValues(
-      UltraWeakTransportElement &ctx,const string field_name,Vec _F):
+      UltraWeakTransportElement &ctx,const std::string field_name,Vec _F):
       FaceElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROW),
       cTx(ctx),F(_F) {}
 
@@ -681,14 +681,14 @@ struct UltraWeakTransportElement {
 
         }
 
-        //cerr << Nf << endl << endl;
+        //std::cerr << Nf << std::endl << std::endl;
 
         ierr = VecSetValues(F,data.getIndices().size(),
         &data.getIndices()[0],&Nf[0],ADD_VALUES); CHKERRQ(ierr);
 
       } catch (const std::exception& ex) {
-        ostringstream ss;
-        ss << "throw in method: " << ex.what() << endl;
+        std::ostringstream ss;
+        ss << "throw in method: " << ex.what() << std::endl;
         SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
       }
 
@@ -703,7 +703,7 @@ struct UltraWeakTransportElement {
     Vec X;
 
     OpEvaluateBcOnFluxes(
-      UltraWeakTransportElement &ctx,const string field_name,Vec _X):
+      UltraWeakTransportElement &ctx,const std::string field_name,Vec _X):
       FaceElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROW),
       cTx(ctx),X(_X) {}
     virtual ~OpEvaluateBcOnFluxes() {}
@@ -739,7 +739,7 @@ struct UltraWeakTransportElement {
           double flux;
           ierr = cTx.getBcOnFluxes(fe_ent,x,y,z,flux); CHKERRQ(ierr);
 
-          //cerr << data.getHdivN() << endl;
+          //std::cerr << data.getHdivN() << std::endl;
 
           double area;
           if(getNormals_at_GaussPt().size1() == (unsigned int)nb_gauss_pts) {
@@ -764,8 +764,8 @@ struct UltraWeakTransportElement {
         ierr = VecSetValues(X,data.getIndices().size(),&data.getIndices()[0],&Nf[0],INSERT_VALUES); CHKERRQ(ierr);
 
       } catch (const std::exception& ex) {
-        ostringstream ss;
-        ss << "throw in method: " << ex.what() << endl;
+        std::ostringstream ss;
+        ss << "throw in method: " << ex.what() << std::endl;
         SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
 
@@ -780,7 +780,7 @@ struct UltraWeakTransportElement {
 
     OpValuesAtGaussPts(
       UltraWeakTransportElement &ctx,
-      const string field_name
+      const std::string field_name
     ):
     VolumeElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROW),
     cTx(ctx) {}
@@ -801,8 +801,8 @@ struct UltraWeakTransportElement {
         }
 
       } catch (const std::exception& ex) {
-        ostringstream ss;
-        ss << "throw in method: " << ex.what() << endl;
+        std::ostringstream ss;
+        ss << "throw in method: " << ex.what() << std::endl;
         SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
 
@@ -817,7 +817,7 @@ struct UltraWeakTransportElement {
 
     OpValuesGradientAtGaussPts(
       UltraWeakTransportElement &ctx,
-      const string field_name
+      const std::string field_name
     ):
     VolumeElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROW),
     cTx(ctx) {}
@@ -841,8 +841,8 @@ struct UltraWeakTransportElement {
         }
 
       } catch (const std::exception& ex) {
-        ostringstream ss;
-        ss << "throw in method: " << ex.what() << endl;
+        std::ostringstream ss;
+        ss << "throw in method: " << ex.what() << std::endl;
         SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
 
@@ -857,7 +857,7 @@ struct UltraWeakTransportElement {
 
     OpFluxDivergenceAtGaussPts(
       UltraWeakTransportElement &ctx,
-      const string field_name
+      const std::string field_name
     ):
     VolumeElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROW),
     cTx(ctx) {}
@@ -896,8 +896,8 @@ struct UltraWeakTransportElement {
       }
 
     } catch (const std::exception& ex) {
-      ostringstream ss;
-      ss << "throw in method: " << ex.what() << endl;
+      std::ostringstream ss;
+      ss << "throw in method: " << ex.what() << std::endl;
       SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
     }
 
@@ -915,7 +915,7 @@ struct UltraWeakTransportElement {
 
     OpError_L2Norm(
       UltraWeakTransportElement &ctx,
-      const string field_name):
+      const std::string field_name):
       VolumeElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROW),
       cTx(ctx) {}
     virtual ~OpError_L2Norm() {}
@@ -970,7 +970,7 @@ struct UltraWeakTransportElement {
           noalias(deltaFlux) = cTx.fluxesAtGaussPts[gg]+cTx.valuesGradientAtGaussPts[gg];
           *error_flux_ptr += w*( inner_prod(deltaFlux,deltaFlux) );
 
-          //cerr << cTx.fluxesAtGaussPts[gg] << " " << cTx.valuesGradientAtGaussPts[gg] << endl;
+          //std::cerr << cTx.fluxesAtGaussPts[gg] << " " << cTx.valuesGradientAtGaussPts[gg] << std::endl;
 
         }
 
@@ -986,8 +986,8 @@ struct UltraWeakTransportElement {
         dof_ptr->get_FieldData() = *error_flux_ptr;
 
       } catch (const std::exception& ex) {
-        ostringstream ss;
-        ss << "throw in method: " << ex.what() << endl;
+        std::ostringstream ss;
+        ss << "throw in method: " << ex.what() << std::endl;
         SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
 

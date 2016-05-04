@@ -42,7 +42,7 @@ struct RefElement: public interface_RefEntity<RefEntity> {
     return boost::shared_ptr<SideNumber>();
   };
 
-  friend ostream& operator<<(ostream& os,const RefElement& e);
+  friend std::ostream& operator<<(std::ostream& os,const RefElement& e);
 
 };
 
@@ -81,7 +81,7 @@ struct RefElement_TET: public RefElement {
   int get_BitRefEdges_ulong() const { return get_BitRefEdges().to_ulong(); }
   inline int get_ref_type() const { return tag_type_data[0]; }
   inline int get_ref_sub_type() const { return tag_type_data[1]; }
-  friend ostream& operator<<(ostream& os,const RefElement_TET& e);
+  friend std::ostream& operator<<(std::ostream& os,const RefElement_TET& e);
 };
 
 /**
@@ -91,7 +91,7 @@ struct RefElement_TET: public RefElement {
 struct RefElement_TRI: public RefElement {
   RefElement_TRI(Interface &moab,const boost::shared_ptr<RefEntity> ref_ent_ptr);
   boost::shared_ptr<SideNumber> get_side_number_ptr(Interface &moab,EntityHandle ent) const;
-  friend ostream& operator<<(ostream& os,const RefElement_TRI& e);
+  friend std::ostream& operator<<(std::ostream& os,const RefElement_TRI& e);
 };
 
 /**
@@ -101,7 +101,7 @@ struct RefElement_TRI: public RefElement {
 struct RefElement_EDGE: public RefElement {
   RefElement_EDGE(Interface &moab,const boost::shared_ptr<RefEntity> ref_ent_ptr);
   boost::shared_ptr<SideNumber> get_side_number_ptr(Interface &moab,EntityHandle ent) const;
-  friend ostream& operator<<(ostream& os,const RefElement_EDGE& e);
+  friend std::ostream& operator<<(std::ostream& os,const RefElement_EDGE& e);
 };
 
 /**
@@ -111,7 +111,7 @@ struct RefElement_EDGE: public RefElement {
 struct RefElement_VERTEX: public RefElement {
   RefElement_VERTEX(Interface &moab,const boost::shared_ptr<RefEntity> ref_ent_ptr);
   boost::shared_ptr<SideNumber> get_side_number_ptr(Interface &moab,EntityHandle ent) const;
-  friend ostream& operator<<(ostream& os,const RefElement_VERTEX& e);
+  friend std::ostream& operator<<(std::ostream& os,const RefElement_VERTEX& e);
 };
 
 /**
@@ -237,7 +237,7 @@ struct FiniteElement {
   inline EntityHandle get_meshset() const { return meshset; }
   /// get FE name
   inline boost::string_ref get_name_ref() const { return boost::string_ref((char *)tag_name_data,tag_name_size); }
-  inline string get_name() const { return string((char *)tag_name_data,tag_name_size); }
+  inline std::string get_name() const { return std::string((char *)tag_name_data,tag_name_size); }
   /// get BitFieldId col
   inline BitFieldId get_BitFieldId_col() const { return *((BitFieldId*)tag_BitFieldId_col_data); }
   /// get BitFieldId row
@@ -249,7 +249,7 @@ struct FiniteElement {
 
   ElementAdjacencyTable element_adjacency_table;  //<- allow to add user specific adjacency map
 
-  friend ostream& operator<<(ostream& os, const FiniteElement& e);
+  friend std::ostream& operator<<(std::ostream& os, const FiniteElement& e);
 
 };
 
@@ -294,7 +294,7 @@ struct interface_FiniteElement {
   inline BitFEId get_id() const { return this->sFePtr->get_id(); }
   inline EntityHandle get_meshset() const { return this->sFePtr->get_meshset(); }
   inline boost::string_ref get_name_ref() const { return this->sFePtr->get_name_ref(); }
-  inline string get_name() const { return this->sFePtr->get_name(); }
+  inline std::string get_name() const { return this->sFePtr->get_name(); }
   inline BitFieldId get_BitFieldId_col() const { return this->sFePtr->get_BitFieldId_col(); }
   inline BitFieldId get_BitFieldId_row() const { return this->sFePtr->get_BitFieldId_row(); }
   inline BitFieldId get_BitFieldId_data() const { return this->sFePtr->get_BitFieldId_data(); }
@@ -337,7 +337,7 @@ interface_RefElement<RefElement> {
   inline DofIdx get_nb_dofs_col() const { return col_dof_view->size(); }
   inline DofIdx get_nb_dofs_data() const { return data_dof_view->size(); }
   inline const FEDofEntity_multiIndex& get_data_dofs() const { return data_dofs; };
-  friend ostream& operator<<(ostream& os,const EntFiniteElement& e);
+  friend std::ostream& operator<<(std::ostream& os,const EntFiniteElement& e);
   PetscErrorCode get_MoFEMFiniteElement_row_dof_view(
     const DofEntity_multiIndex &dofs,DofEntity_multiIndex_active_view &dofs_view,
     const int operation_type = Interface::UNION) const;
@@ -466,7 +466,7 @@ struct NumeredEntFiniteElement: public interface_EntFiniteElement<EntFiniteEleme
     */
   PetscErrorCode get_col_dofs_by_petsc_gloabl_dof_idx(DofIdx idx,const FENumeredDofEntity **dof_ptr) const;
 
-  friend ostream& operator<<(ostream& os,const NumeredEntFiniteElement& e) {
+  friend std::ostream& operator<<(std::ostream& os,const NumeredEntFiniteElement& e) {
     os << "part " << e.part << " " << *(e.sFePtr);
     return os;
   }

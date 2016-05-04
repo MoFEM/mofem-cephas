@@ -27,7 +27,7 @@ struct VolumeCalculation: public VolumeElementForcesAndSourcesCore::UserDataOper
 
   Vec volumeVec;
 
-  VolumeCalculation(const string &field_name,Vec volume_vec):
+  VolumeCalculation(const std::string &field_name,Vec volume_vec):
   VolumeElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROW),
   volumeVec(volume_vec) {
   }

@@ -43,7 +43,7 @@ struct VertexElementForcesAndSourcesCore: public ForcesAndSurcesCore {
   DataForcesAndSurcesCore data;
   DerivedDataForcesAndSurcesCore derivedData;
   DataForcesAndSurcesCore dataNoField,dataNoFieldCol;
-  string meshPositionsFieldName;
+  std::string meshPositionsFieldName;
 
   VertexElementForcesAndSourcesCore(FieldInterface &m_field):
     ForcesAndSurcesCore(m_field),
@@ -62,11 +62,11 @@ struct VertexElementForcesAndSourcesCore: public ForcesAndSurcesCore {
   struct UserDataOperator: public ForcesAndSurcesCore::UserDataOperator {
 
     UserDataOperator(
-      const string &field_name,const char type):
+      const std::string &field_name,const char type):
       ForcesAndSurcesCore::UserDataOperator(field_name,type) {}
 
     UserDataOperator(
-      const string &row_field_name,const string &col_field_name,const char type):
+      const std::string &row_field_name,const std::string &col_field_name,const char type):
       ForcesAndSurcesCore::UserDataOperator(row_field_name,col_field_name,type) {}
 
     inline VectorDouble& getCoords() { return ptrFE->coords; }

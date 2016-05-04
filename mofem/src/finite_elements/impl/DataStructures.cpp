@@ -166,33 +166,33 @@ DerivedDataForcesAndSurcesCore::DerivedDataForcesAndSurcesCore(DataForcesAndSurc
   }
 }
 
-ostream& operator<<(ostream& os,const DataForcesAndSurcesCore::EntData &e) {
+std::ostream& operator<<(std::ostream& os,const DataForcesAndSurcesCore::EntData &e) {
   os <<
-    "sEnse: " << e.getSense() << endl <<
-    "oRder: " << e.getOrder() << endl <<
-    "global indices: " << e.getIndices() << endl <<
-    "local indices: " << e.getLocalIndices() << endl;
+    "sEnse: " << e.getSense() << std::endl <<
+    "oRder: " << e.getOrder() << std::endl <<
+    "global indices: " << e.getIndices() << std::endl <<
+    "local indices: " << e.getLocalIndices() << std::endl;
   os.precision(2);
   os <<
-    "fieldData: " << std::fixed << e.getFieldData() << endl;
+    "fieldData: " << std::fixed << e.getFieldData() << std::endl;
   os <<
-    "N: " << std::fixed << e.getN() << endl <<
+    "N: " << std::fixed << e.getN() << std::endl <<
     "diffN: " << std::fixed << e.getDiffN();
   return os;
 }
 
-ostream& operator<<(ostream& os,const DataForcesAndSurcesCore &e) {
+std::ostream& operator<<(std::ostream& os,const DataForcesAndSurcesCore &e) {
   for(unsigned int nn = 0;nn < e.dataOnEntities[MBVERTEX].size(); nn++) {
-    os << "dataOnEntities[MBVERTEX][" << nn << "]" << endl << e.dataOnEntities[MBVERTEX][nn] << endl;
+    os << "dataOnEntities[MBVERTEX][" << nn << "]" << std::endl << e.dataOnEntities[MBVERTEX][nn] << std::endl;
   }
   for(unsigned int ee = 0;ee < e.dataOnEntities[MBEDGE].size(); ee++) {
-    os << "dataOnEntities[MBEDGE][" << ee << "]" << endl << e.dataOnEntities[MBEDGE][ee] << endl;
+    os << "dataOnEntities[MBEDGE][" << ee << "]" << std::endl << e.dataOnEntities[MBEDGE][ee] << std::endl;
   }
   for(unsigned int ff = 0;ff < e.dataOnEntities[MBTRI].size(); ff++) {
-    os << "dataOnEntities[MBTRI][" << ff << "] " << endl << e.dataOnEntities[MBTRI][ff] << endl;
+    os << "dataOnEntities[MBTRI][" << ff << "] " << std::endl << e.dataOnEntities[MBTRI][ff] << std::endl;
   }
   for(unsigned int vv = 0;vv < e.dataOnEntities[MBTET].size(); vv++) {
-    os << "dataOnEntities[MBTET][" << vv << "]" << endl << e.dataOnEntities[MBTET][vv] << endl;
+    os << "dataOnEntities[MBTET][" << vv << "]" << std::endl << e.dataOnEntities[MBTET][vv] << std::endl;
   }
   return os;
 }

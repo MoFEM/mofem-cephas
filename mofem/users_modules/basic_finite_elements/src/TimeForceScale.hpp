@@ -27,7 +27,7 @@
 struct TimeForceScale: public MethodForForceScaling {
   //Hassan: This function to read data file (once) and save it in a pair vector ts
 
-  map<double,double> tSeries;
+  std::map<double,double> tSeries;
   int readFile,debug;
   string nAme;
   bool errorIfFileNotGiven;
@@ -77,7 +77,7 @@ struct TimeForceScale: public MethodForForceScaling {
     }
     int r = fclose(time_data);
     if(debug) {
-      map<double, double>::iterator tit = tSeries.begin();
+      std::map<double, double>::iterator tit = tSeries.begin();
       for(;tit!=tSeries.end();tit++) {
         PetscPrintf(PETSC_COMM_WORLD,"** read time series %3.2e time %3.2e\n",tit->first,tit->second);
       }
@@ -100,7 +100,7 @@ struct TimeForceScale: public MethodForForceScaling {
     }
     scale = 0;
     double t0 = 0,t1,s0 = tSeries[0],s1,dt;
-    map<double, double>::iterator tit = tSeries.begin();
+    std::map<double, double>::iterator tit = tSeries.begin();
     for(;tit!=tSeries.end();tit++) {
       if(tit->first > ts_t) {
         t1 = tit->first;
@@ -130,7 +130,7 @@ struct TimeForceScale: public MethodForForceScaling {
 
 struct TimeAccelerogram: public MethodForForceScaling {
 
-  map<double,ublas::vector<double> > tSeries;
+  std::map<double,ublas::vector<double> > tSeries;
   int readFile,debug;
   string nAme;
 
@@ -173,7 +173,7 @@ struct TimeAccelerogram: public MethodForForceScaling {
     }
     int r = fclose(time_data);
     if(debug) {
-      map<double,ublas::vector<double> >::iterator tit = tSeries.begin();
+      std::map<double,ublas::vector<double> >::iterator tit = tSeries.begin();
       for(;tit!=tSeries.end();tit++) {
         PetscPrintf(
           PETSC_COMM_WORLD,
@@ -198,7 +198,7 @@ struct TimeAccelerogram: public MethodForForceScaling {
     ublas::vector<double> acc(3);
     ublas::vector<double> acc0 = tSeries[0],acc1(3);
     double t0 = 0,t1,dt;
-    map<double,ublas::vector<double> >::iterator tit = tSeries.begin();
+    std::map<double,ublas::vector<double> >::iterator tit = tSeries.begin();
     for(;tit!=tSeries.end();tit++) {
       if(tit->first > ts_t) {
         t1 = tit->first;

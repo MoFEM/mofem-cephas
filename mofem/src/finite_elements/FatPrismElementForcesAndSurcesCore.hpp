@@ -92,11 +92,11 @@ struct FatPrismElementForcesAndSurcesCore: public VolumeElementForcesAndSourcesC
     */
   struct UserDataOperator: public VolumeElementForcesAndSourcesCore::UserDataOperator {
 
-    UserDataOperator(const string &field_name,const char type):
+    UserDataOperator(const std::string &field_name,const char type):
     VolumeElementForcesAndSourcesCore::UserDataOperator(field_name,type) {}
 
     UserDataOperator(
-      const string &row_field_name,const string &col_field_name,const char type
+      const std::string &row_field_name,const std::string &col_field_name,const char type
     ):
     VolumeElementForcesAndSourcesCore::UserDataOperator(row_field_name,col_field_name,type) {
     }

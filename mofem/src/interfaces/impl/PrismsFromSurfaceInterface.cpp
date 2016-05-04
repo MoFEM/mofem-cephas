@@ -148,7 +148,7 @@ PetscErrorCode PrismsFromSurfaceInterface::seedPrismsEntities(Range &prisms,cons
       rval = m_field.get_moab().get_adjacencies(prisms,dd,true,ents,Interface::UNION); CHKERRQ_MOAB(rval);
       Range::iterator eit = ents.begin();
       for(;eit!=ents.end();eit++) {
-        pair<RefEntity_multiIndex::iterator,bool> p_ent = refined_entities_ptr->insert(
+        std::pair<RefEntity_multiIndex::iterator,bool> p_ent = refined_entities_ptr->insert(
           boost::shared_ptr<RefEntity>(new RefEntity(m_field.get_moab(),*eit))
         );
         bool success = refined_entities_ptr->modify(p_ent.first,RefEntity_change_add_bit(bit));
@@ -156,7 +156,7 @@ PetscErrorCode PrismsFromSurfaceInterface::seedPrismsEntities(Range &prisms,cons
           SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
         }
         if(verb>2) {
-          ostringstream ss;
+          std::ostringstream ss;
           ss << *(p_ent.first);
           PetscSynchronizedPrintf(comm,"%s\n",ss.str().c_str());
         }

@@ -77,23 +77,23 @@ tag_name_size(0) {
   Tag th_field_name_data_name_prefix;
   rval = moab.tag_get_handle("_FieldName_DataNamePrefix",th_field_name_data_name_prefix); CHKERR_MOAB(rval);
   rval = moab.tag_get_by_ptr(th_field_name_data_name_prefix,&meshSet,1,(const void **)&tag_name_prefix_data,&tag_name_prefix_size); MOAB_THROW(rval);
-  string name_data_prefix((char *)tag_name_prefix_data,tag_name_prefix_size);
+  std::string name_data_prefix((char *)tag_name_prefix_data,tag_name_prefix_size);
   //data
-  string tag_data_name = name_data_prefix+get_name();
+  std::string tag_data_name = name_data_prefix+get_name();
   rval = moab.tag_get_handle(tag_data_name.c_str(),th_FieldData); MOAB_THROW(rval);
   //order
-  string tag_approximation_order_name = "_App_Order_"+get_name();
+  std::string tag_approximation_order_name = "_App_Order_"+get_name();
   rval = moab.tag_get_handle(tag_approximation_order_name.c_str(),th_AppOrder); MOAB_THROW(rval);
   //dof order
-  string tag_dof_approximation_order_name = "_App_Dof_Order"+get_name();
+  std::string tag_dof_approximation_order_name = "_App_Dof_Order"+get_name();
   rval = moab.tag_get_handle(tag_dof_approximation_order_name.c_str(),th_AppDofOrder); MOAB_THROW(rval);
   //rank
   Tag th_rank;
-  string Tag_rank_name = "_Field_Rank_"+get_name();
+  std::string Tag_rank_name = "_Field_Rank_"+get_name();
   rval = moab.tag_get_handle(Tag_rank_name.c_str(),th_rank); MOAB_THROW(rval);
   rval = moab.tag_get_by_ptr(th_rank,&meshSet,1,(const void **)&tag_nb_coeff_data); MOAB_THROW(rval);
   //dof rank
-  string Tag_dof_rank_name = "_Field_Dof_Rank_"+get_name();
+  std::string Tag_dof_rank_name = "_Field_Dof_Rank_"+get_name();
   rval = moab.tag_get_handle(Tag_dof_rank_name.c_str(),th_DofRank); MOAB_THROW(rval);
   for(int tt = 0;tt<MBMAXTYPE;tt++) {
     forder_table[tt] = NULL;
@@ -151,7 +151,7 @@ tag_name_size(0) {
   }
 }
 
-ostream& operator<<(ostream& os,const Field& e) {
+std::ostream& operator<<(std::ostream& os,const Field& e) {
   os
   << "name " <<e.get_name_ref()
   << " BitFieldId "<< e.get_id().to_ulong()
@@ -172,9 +172,9 @@ by_other(0),
 mofemEntPtr(mofem_ent_ptr),
 entFePtr(ent_fe_ptr) {}
 
-ostream& operator<<(ostream& os,const MoFEMEntityEntFiniteElementAdjacencyMap& e) {
-  os << "by_other " << bitset<3>(e.by_other) << " "
-    << *e.mofemEntPtr << endl << *e.entFePtr->sFePtr;
+std::ostream& operator<<(std::ostream& os,const MoFEMEntityEntFiniteElementAdjacencyMap& e) {
+  os << "by_other " << std::bitset<3>(e.by_other) << " "
+    << *e.mofemEntPtr << std::endl << *e.entFePtr->sFePtr;
   return os;
 }
 

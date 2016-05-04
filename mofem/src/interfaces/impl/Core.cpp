@@ -215,7 +215,7 @@ PetscErrorCode mofem_error_handler(MPI_Comm comm,int line,const char *fun,const 
 
     if(ismain || isunknown) {
 
-      stringstream strs_version;
+      std::stringstream strs_version;
       strs_version << "MoFEM_version_" << MoFEM_VERSION_MAJOR << "." << MoFEM_VERSION_MINOR << "." << MoFEM_VERSION_BUILD;
 
       error_printf_hilight();
@@ -255,9 +255,9 @@ Core::Core(Interface& _moab,MPI_Comm _comm,TagType _tag_type,int _verbose):
 
   // Version
   Tag th_version;
-  stringstream strs_version;
+  std::stringstream strs_version;
   strs_version << "MoFEM_version_" << MoFEM_VERSION_MAJOR << "." << MoFEM_VERSION_MINOR << "." << MoFEM_VERSION_BUILD;
-  string version = strs_version.str();
+  std::string version = strs_version.str();
   rval = moab.tag_get_handle(
     "_MoFEM_VERSION",
     version.size()*sizeof(char),
@@ -516,7 +516,7 @@ Interface& Core::get_moab() {
 MPI_Comm Core::get_comm() {
   return comm;
 }
-BitFieldId Core::get_BitFieldId(const string& name) const {
+BitFieldId Core::get_BitFieldId(const std::string& name) const {
   typedef Field_multiIndex::index<FieldName_mi_tag>::type field_set_by_name;
   const field_set_by_name &set = fIelds.get<FieldName_mi_tag>();
   field_set_by_name::iterator miit = set.find(name);
@@ -525,7 +525,7 @@ BitFieldId Core::get_BitFieldId(const string& name) const {
   }
   return (*miit)->get_id();
 }
-string Core::get_BitFieldId_name(const BitFieldId id) const {
+std::string Core::get_BitFieldId_name(const BitFieldId id) const {
   typedef Field_multiIndex::index<BitFieldId_mi_tag>::type field_set_by_id;
   const field_set_by_id &set = fIelds.get<BitFieldId_mi_tag>();
   field_set_by_id::iterator miit = set.find(id);
@@ -538,25 +538,25 @@ EntityHandle Core::get_field_meshset(const BitFieldId id) const {
   if(miit==set.end()) THROW_MESSAGE("field not in database (top tip: check spelling)");
   return (*miit)->meshSet;
 }
-EntityHandle Core::get_field_meshset(const string& name) const {
+EntityHandle Core::get_field_meshset(const std::string& name) const {
   return get_field_meshset(get_BitFieldId(name));
 }
 
-bool Core::check_field(const string &name) const {
+bool Core::check_field(const std::string &name) const {
   typedef Field_multiIndex::index<FieldName_mi_tag>::type field_set_by_name;
   const field_set_by_name &set = fIelds.get<FieldName_mi_tag>();
   field_set_by_name::iterator miit = set.find(name);
   if(miit==set.end()) return false;
   return true;
 }
-const Field* Core::get_field_structure(const string& name) {
+const Field* Core::get_field_structure(const std::string& name) {
   typedef Field_multiIndex::index<FieldName_mi_tag>::type field_set_by_name;
   const field_set_by_name &set = fIelds.get<FieldName_mi_tag>();
   field_set_by_name::iterator miit = set.find(name);
   if(miit==set.end()) {
     throw MoFEMException(
       MOFEM_NOT_FOUND,
-      string("field < "+name+" > not in databse (top tip: check spelling)").c_str()
+      std::string("field < "+name+" > not in databse (top tip: check spelling)").c_str()
     );
   }
   return miit->get();
@@ -601,10 +601,10 @@ PetscErrorCode Core::addPrismToDatabase(const EntityHandle prism,int verb) {
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
   try {
-    pair<RefEntity_multiIndex::iterator,bool> p_ent;
+    std::pair<RefEntity_multiIndex::iterator,bool> p_ent;
     p_ent = refinedEntities.insert(boost::shared_ptr<RefEntity>(new RefEntity(moab,prism)));
     if(p_ent.second) {
-      pair<RefElement_multiIndex::iterator,bool> p_MoFEMFiniteElement;
+      std::pair<RefElement_multiIndex::iterator,bool> p_MoFEMFiniteElement;
       p_MoFEMFiniteElement = refinedFiniteElements.insert(
 	      ptrWrapperRefElement(boost::shared_ptr<RefElement>(new RefElement_PRISM(moab,*p_ent.first)))
       );
@@ -632,7 +632,7 @@ PetscErrorCode Core::synchronise_entities(Range &ents,int verb) {
   //ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
 
   //make a buffer
-  vector<vector<EntityHandle> > sbuffer(sIze);
+  std::vector<std::vector<EntityHandle> > sbuffer(sIze);
 
   Range::iterator eit = ents.begin();
   for(;eit!=ents.end();eit++) {
@@ -651,8 +651,8 @@ PetscErrorCode Core::synchronise_entities(Range &ents,int verb) {
     if(pstatus == 0) continue;
 
     if(verb>1) {
-      ostringstream zz;
-      zz << "pstatus " <<  bitset<8>(pstatus) << " ";
+      std::ostringstream zz;
+      zz << "pstatus " <<  std::bitset<8>(pstatus) << " ";
       PetscSynchronizedPrintf(comm,"%s",zz.str().c_str());
     }
 
@@ -678,7 +678,7 @@ PetscErrorCode Core::synchronise_entities(Range &ents,int verb) {
   }
 
   int nsends = 0; 			// number of messages to send
-  vector<int> sbuffer_lengths(sIze); 	// length of the message to proc
+  std::vector<int> sbuffer_lengths(sIze); 	// length of the message to proc
   const size_t block_size = sizeof(EntityHandle)/sizeof(int);
   for(int proc  = 0;proc<sIze;proc++) {
 
@@ -698,7 +698,7 @@ PetscErrorCode Core::synchronise_entities(Range &ents,int verb) {
   // Make sure it is a PETSc comm
   ierr = PetscCommDuplicate(comm,&comm,NULL); CHKERRQ(ierr);
 
-  vector<MPI_Status> status(sIze);
+  std::vector<MPI_Status> status(sIze);
 
   // Computes the number of messages a node expects to receive
   int nrecvs;	// number of messages received
@@ -817,13 +817,13 @@ PetscErrorCode Core::initialiseDatabseInformationFromMesh(int verb) {
       //check if meshset is cubit meshset
       CubitMeshSets base_meshset(moab,*mit);
       if((base_meshset.cubitBcType&CubitBCType(NODESET|SIDESET|BLOCKSET)).any()) {
-        pair<CubitMeshSet_multiIndex::iterator,bool> p = cubitMeshsets.insert(base_meshset);
+        std::pair<CubitMeshSet_multiIndex::iterator,bool> p = cubitMeshsets.insert(base_meshset);
         if(!p.second) {
           SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"meshset not inserted");
         }
         if(verb > 0) {
-          ostringstream ss;
-          ss << "read cubit" << base_meshset << endl;
+          std::ostringstream ss;
+          ss << "read cubit" << base_meshset << std::endl;
           //PetscSynchronizedPrintf(comm,ss.str().c_str());
           PetscPrintf(comm,ss.str().c_str());
         }
@@ -843,7 +843,7 @@ PetscErrorCode Core::initialiseDatabseInformationFromMesh(int verb) {
       );
       if(rval == MB_SUCCESS && cs_name_size) {
         boost::shared_ptr<CoordSys> coord_sys(new CoordSys(moab,*mit));
-        pair<CoordSys_multiIndex::iterator,bool> p = coordinateSystems.insert(coord_sys);
+        std::pair<CoordSys_multiIndex::iterator,bool> p = coordinateSystems.insert(coord_sys);
         if(!p.second) {
           SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"meshset to coord system not inserted");
         }
@@ -860,7 +860,7 @@ PetscErrorCode Core::initialiseDatabseInformationFromMesh(int verb) {
       rval = moab.create_meshset(MESHSET_SET|MESHSET_TRACK_OWNER,meshset); CHKERRQ_MOAB(rval);
       int dim[] = { 3,0,0,0 };
       rval = moab.tag_set_data(th_CoordSysDim,&meshset,1,dim); CHKERRQ_MOAB(rval);
-      string sys_name_str = "CARTESIAN3D";
+      std::string sys_name_str = "CARTESIAN3D";
       void const* sys_name[] = { sys_name_str.c_str() };
       int sys_name_size[1];
       sys_name_size[0] = sys_name_str.size();
@@ -868,7 +868,7 @@ PetscErrorCode Core::initialiseDatabseInformationFromMesh(int verb) {
         th_CoordSysName,&meshset,1,sys_name,sys_name_size
       ); CHKERRQ_MOAB(rval);
       boost::shared_ptr<CoordSys> coord_sys(new CoordSys(moab,meshset));
-      pair<CoordSys_multiIndex ::iterator,bool> p = coordinateSystems.insert(coord_sys);
+      std::pair<CoordSys_multiIndex ::iterator,bool> p = coordinateSystems.insert(coord_sys);
       if(!p.second) {
         SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"MeshSet to coord system not inserted");
       }
@@ -879,7 +879,7 @@ PetscErrorCode Core::initialiseDatabseInformationFromMesh(int verb) {
       rval = moab.create_meshset(MESHSET_SET|MESHSET_TRACK_OWNER,meshset); CHKERRQ_MOAB(rval);
       int dim[] = { -1,0,0,0 };
       rval = moab.tag_set_data(th_CoordSysDim,&meshset,1,dim); CHKERRQ_MOAB(rval);
-      string sys_name_str = "UNDEFINED";
+      std::string sys_name_str = "UNDEFINED";
       void const* sys_name[] = { sys_name_str.c_str() };
       int sys_name_size[1];
       sys_name_size[0] = sys_name_str.size();
@@ -887,7 +887,7 @@ PetscErrorCode Core::initialiseDatabseInformationFromMesh(int verb) {
         th_CoordSysName,&meshset,1,sys_name,sys_name_size
       ); CHKERRQ_MOAB(rval);
       boost::shared_ptr<CoordSys> coord_sys(new CoordSys(moab,meshset));
-      pair<CoordSys_multiIndex ::iterator,bool> p = coordinateSystems.insert(coord_sys);
+      std::pair<CoordSys_multiIndex ::iterator,bool> p = coordinateSystems.insert(coord_sys);
       if(!p.second) {
         SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"MeshSet to coord system not inserted");
       }
@@ -906,7 +906,7 @@ PetscErrorCode Core::initialiseDatabseInformationFromMesh(int verb) {
     rval = moab.tag_get_data(th_FieldId,&*mit,1,&field_id); CHKERRQ_MOAB(rval);
     // Check if meshset if field meshset
     if(field_id!=0) {
-      pair<Field_multiIndex::iterator,bool> p;
+      std::pair<Field_multiIndex::iterator,bool> p;
       try {
         EntityHandle coord_sys_id;
         rval = moab.tag_get_data(th_CoordSysMeshSet,&*mit,1,&coord_sys_id); CHKERRQ_MOAB(rval);
@@ -921,8 +921,8 @@ PetscErrorCode Core::initialiseDatabseInformationFromMesh(int verb) {
         }
         p = fIelds.insert(boost::shared_ptr<Field>(new Field(moab,*mit,*cs_it)));
         if(verb > 0) {
-          ostringstream ss;
-          ss << "read field " << **p.first << endl;;
+          std::ostringstream ss;
+          ss << "read field " << **p.first << std::endl;;
           PetscPrintf(comm,ss.str().c_str());
         }
       } catch (MoFEMException const &e) {
@@ -931,28 +931,28 @@ PetscErrorCode Core::initialiseDatabseInformationFromMesh(int verb) {
       if((*p.first)->get_space()==NOFIELD) {
         assert((*p.first)->meshSet == *mit);
         //add field to ref ents
-        pair<RefEntity_multiIndex::iterator,bool> p_ref_ent;
+        std::pair<RefEntity_multiIndex::iterator,bool> p_ref_ent;
         p_ref_ent = refinedEntities.insert(boost::shared_ptr<RefEntity>(new RefEntity(moab,*mit)));
         NOT_USED(p_ref_ent);
       } else {
         Range ents;
         rval = moab.get_entities_by_handle(*mit,ents,false); CHKERRQ_MOAB(rval);
         if(verb > 1) {
-          ostringstream ss;
-          ss << "read field ents " << ents.size() << endl;;
+          std::ostringstream ss;
+          ss << "read field ents " << ents.size() << std::endl;;
           PetscPrintf(comm,ss.str().c_str());
         }
         Range::iterator eit = ents.begin();
         for(;eit!=ents.end();eit++) {
-          pair<RefEntity_multiIndex::iterator,bool> p_ref_ent;
+          std::pair<RefEntity_multiIndex::iterator,bool> p_ref_ent;
           p_ref_ent = refinedEntities.insert(boost::shared_ptr<RefEntity>(new RefEntity(moab,*eit)));
           try {
             boost::shared_ptr<MoFEMEntity> moabent(new MoFEMEntity(moab,*p.first,*p_ref_ent.first));
-            pair<MoFEMEntity_multiIndex::iterator,bool> p_ent = entsFields.insert(moabent);
+            std::pair<MoFEMEntity_multiIndex::iterator,bool> p_ent = entsFields.insert(moabent);
             NOT_USED(p_ent);
           } catch (const std::exception& ex) {
-            ostringstream ss;
-            ss << ex.what() << endl;
+            std::ostringstream ss;
+            ss << ex.what() << std::endl;
             SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
           }
         }
@@ -964,12 +964,12 @@ PetscErrorCode Core::initialiseDatabseInformationFromMesh(int verb) {
     rval = moab.tag_get_data(th_FEId,&*mit,1,&fe_id); CHKERRQ_MOAB(rval);
     //check if meshset is finite element meshset
     if(fe_id!=0) {
-      pair<FiniteElement_multiIndex::iterator,bool> p = finiteElements.insert(
+      std::pair<FiniteElement_multiIndex::iterator,bool> p = finiteElements.insert(
         boost::shared_ptr<FiniteElement>(new FiniteElement(moab,*mit))
       );
       if(verb > 0) {
-        ostringstream ss;
-        ss << "read finite element " << **p.first << endl;;
+        std::ostringstream ss;
+        ss << "read finite element " << **p.first << std::endl;;
         PetscPrintf(comm,ss.str().c_str());
       }
       NOT_USED(p);
@@ -979,9 +979,9 @@ PetscErrorCode Core::initialiseDatabseInformationFromMesh(int verb) {
       rval = moab.get_entities_by_handle(*mit,ents,true); CHKERRQ_MOAB(rval);
       Range::iterator eit = ents.begin();
       for(;eit!=ents.end();eit++) {
-        pair<RefEntity_multiIndex::iterator,bool> p_ref_ent;
+        std::pair<RefEntity_multiIndex::iterator,bool> p_ref_ent;
         p_ref_ent = refinedEntities.insert(boost::shared_ptr<RefEntity>(new RefEntity(moab,*eit)));
-        pair<RefElement_multiIndex::iterator,bool> p_MoFEMFiniteElement;
+        std::pair<RefElement_multiIndex::iterator,bool> p_MoFEMFiniteElement;
         try {
           switch (moab.type_from_handle(*eit)) {
             case MBVERTEX:
@@ -1032,10 +1032,10 @@ PetscErrorCode Core::initialiseDatabseInformationFromMesh(int verb) {
     rval = moab.tag_get_data(th_ProblemId,&*mit,1,&problem_id); CHKERRQ_MOAB(rval);
     //check if meshset if problem meshset
     if(problem_id!=0) {
-      pair<MoFEMProblem_multiIndex::iterator,bool> p = pRoblems.insert(MoFEMProblem(moab,*mit));
+      std::pair<MoFEMProblem_multiIndex::iterator,bool> p = pRoblems.insert(MoFEMProblem(moab,*mit));
       if(verb > 0) {
-        ostringstream ss;
-        ss << "read problem " << *p.first << endl;;
+        std::ostringstream ss;
+        ss << "read problem " << *p.first << std::endl;;
         PetscPrintf(comm,ss.str().c_str());
       }
     }
@@ -1045,10 +1045,10 @@ PetscErrorCode Core::initialiseDatabseInformationFromMesh(int verb) {
       int tag_name_size;
       rval = moab.tag_get_by_ptr(th_SeriesName,&*mit,1,(const void **)&tag_name_data,&tag_name_size);
       if(rval == MB_SUCCESS) {
-        pair<Series_multiIndex::iterator,bool> p = sEries.insert(MoFEMSeries(moab,*mit));
+        std::pair<Series_multiIndex::iterator,bool> p = sEries.insert(MoFEMSeries(moab,*mit));
         if(verb > 0) {
-          ostringstream ss;
-          ss << "read series " << *p.first << endl;
+          std::ostringstream ss;
+          ss << "read series " << *p.first << std::endl;
           PetscPrintf(comm,ss.str().c_str());
         }
       }
@@ -1075,7 +1075,7 @@ PetscErrorCode Core::initialiseDatabseInformationFromMesh(int verb) {
       if(bit.none()) {
         continue;
       }
-      pair<RefEntity_multiIndex::iterator,bool> p;
+      std::pair<RefEntity_multiIndex::iterator,bool> p;
       p = refinedEntities.insert(mofem_ent);
     }
   }
@@ -1085,10 +1085,10 @@ PetscErrorCode Core::initialiseDatabseInformationFromMesh(int verb) {
     ierr = sit->get_nb_steps(moab,nb_steps); CHKERRQ(ierr);
     int ss = 0;
     for(;ss<nb_steps;ss++) {
-      pair<SeriesStep_multiIndex::iterator,bool> p = seriesSteps.insert(MoFEMSeriesStep(moab,&*sit,ss));
+      std::pair<SeriesStep_multiIndex::iterator,bool> p = seriesSteps.insert(MoFEMSeriesStep(moab,&*sit,ss));
       if(verb > 0) {
-        ostringstream ss;
-        ss << "add series step " << *p.first << endl;
+        std::ostringstream ss;
+        ss << "add series step " << *p.first << std::endl;
         PetscPrintf(comm,ss.str().c_str());
       }
     }
@@ -1101,7 +1101,7 @@ PetscErrorCode Core::initialiseDatabseInformationFromMesh(int verb) {
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode Core::add_coordinate_system(const int cs_dim[],const string name) {
+PetscErrorCode Core::add_coordinate_system(const int cs_dim[],const std::string name) {
   PetscFunctionBegin;
   EntityHandle meshset;
   rval = moab.create_meshset(MESHSET_SET|MESHSET_TRACK_OWNER,meshset); CHKERRQ_MOAB(rval);
@@ -1113,14 +1113,14 @@ PetscErrorCode Core::add_coordinate_system(const int cs_dim[],const string name)
     th_CoordSysName,&meshset,1,sys_name,sys_name_size
   ); CHKERRQ_MOAB(rval);
   boost::shared_ptr<CoordSys> coord_sys(new CoordSys(moab,meshset));
-  pair<CoordSys_multiIndex ::iterator,bool> p = coordinateSystems.insert(coord_sys);
+  std::pair<CoordSys_multiIndex ::iterator,bool> p = coordinateSystems.insert(coord_sys);
   if(!p.second) {
     SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"MeshSet to coord system not inserted");
   }
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode Core::set_field_coordinate_system(const string field_name,const string cs_name) {
+PetscErrorCode Core::set_field_coordinate_system(const std::string field_name,const std::string cs_name) {
   PetscFunctionBegin;
   Field_multiIndex::index<FieldName_mi_tag>::type::iterator field_it;
   field_it = fIelds.get<FieldName_mi_tag>().find(field_name);

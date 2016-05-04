@@ -151,16 +151,16 @@ int main(int argc, char *argv[]) {
   ierr = VecSum(F,&sum); CHKERRQ(ierr);
   ierr = PetscPrintf(PETSC_COMM_WORLD,"sum  = %4.3f\n",sum); CHKERRQ(ierr);
 
-  // map<EntityHandle,ublas::vector<double> > tags_vals;
+  // std::map<EntityHandle,ublas::vector<double> > tags_vals;
   // for(_IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(m_field,"DISPLACEMENT",dof)) {
   //   tags_vals[dof->get_ent()].resize(3);
   //   tags_vals[dof->get_ent()][dof->get_dof_coeff_idx()] = dof->get_FieldData();
   // }
-  // vector<EntityHandle> ents;
+  // std::vector<EntityHandle> ents;
   // ents.resize(tags_vals.size());
-  // vector<double> vals(3*tags_vals.size());
+  // std::vector<double> vals(3*tags_vals.size());
   // int idx = 0;
-  // for(map<EntityHandle,ublas::vector<double> >::iterator mit = tags_vals.begin();
+  // for(std::map<EntityHandle,ublas::vector<double> >::iterator mit = tags_vals.begin();
   //   mit!=tags_vals.end();mit++,idx++) {
   //   ents[idx] = mit->first;
   //   vals[3*idx + 0] = mit->second[0];

@@ -31,7 +31,7 @@ FaceElementForcesAndSourcesCore(m_field) {
 }
 
 NeummanForcesSurface::OpNeumannForce::OpNeumannForce(
-  const string field_name,Vec _F,bCForce &data,
+  const std::string field_name,Vec _F,bCForce &data,
   boost::ptr_vector<MethodForForceScaling> &methods_op,
   bool ho_geometry
 ):
@@ -109,7 +109,7 @@ PetscErrorCode NeummanForcesSurface::OpNeumannForce::doWork(
 }
 
 NeummanForcesSurface::OpNeumannPreassure::OpNeumannPreassure(
-  const string field_name, Vec _F,bCPreassure &data,boost::ptr_vector<MethodForForceScaling> &methods_op,bool ho_geometry
+  const std::string field_name, Vec _F,bCPreassure &data,boost::ptr_vector<MethodForForceScaling> &methods_op,bool ho_geometry
 ):
 FaceElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROW),
 F(_F),
@@ -136,8 +136,8 @@ PetscErrorCode NeummanForcesSurface::OpNeumannPreassure::doWork(
   Nf.resize(data.getIndices().size(),false);
   Nf.clear();
 
-  //cerr << getNormal() << endl;
-  //cerr << getNormals_at_GaussPt() << endl;
+  //std::cerr << getNormal() << std::endl;
+  //std::cerr << getNormals_at_GaussPt() << std::endl;
 
   for(unsigned int gg = 0;gg<data.getN().size1();gg++) {
 
@@ -157,14 +157,14 @@ PetscErrorCode NeummanForcesSurface::OpNeumannPreassure::doWork(
   }
 
   // if(type == MBTRI) {
-  //   cerr << "Tri " << getMoFEMFEPtr()->get_ent() << " getN " << data.getN() << endl;
-  //   cerr << "Tri " << getMoFEMFEPtr()->get_ent() << " getDiffN " << data.getDiffN() << endl;
-  //   cerr << "Tri " << getMoFEMFEPtr()->get_ent() << " Indices " << data.getIndices() << endl;
+  //   std::cerr << "Tri " << getMoFEMFEPtr()->get_ent() << " getN " << data.getN() << std::endl;
+  //   std::cerr << "Tri " << getMoFEMFEPtr()->get_ent() << " getDiffN " << data.getDiffN() << std::endl;
+  //   std::cerr << "Tri " << getMoFEMFEPtr()->get_ent() << " Indices " << data.getIndices() << std::endl;
   // }
 
-  /*cerr << "VecSetValues\n";
-  cerr << Nf << endl;
-  cerr << data.getIndices() << endl;*/
+  /*std::cerr << "VecSetValues\n";
+  std::cerr << Nf << std::endl;
+  std::cerr << data.getIndices() << std::endl;*/
   ierr = MethodForForceScaling::applyScale(getFEMethod(),methodsOp,Nf); CHKERRQ(ierr);
   {
     Vec my_f;
@@ -182,7 +182,7 @@ PetscErrorCode NeummanForcesSurface::OpNeumannPreassure::doWork(
 }
 
 NeummanForcesSurface::OpNeumannFlux::OpNeumannFlux(
-  const string field_name,Vec _F,
+  const std::string field_name,Vec _F,
   bCPreassure &data,boost::ptr_vector<MethodForForceScaling> &methods_op,
   bool ho_geometry
 ):
@@ -210,8 +210,8 @@ PetscErrorCode NeummanForcesSurface::OpNeumannFlux::doWork(
 
   Nf.resize(data.getIndices().size(),false);
   Nf.clear();
-  //cerr << getNormal() << endl;
-  //cerr << getNormals_at_GaussPt() << endl;
+  //std::cerr << getNormal() << std::endl;
+  //std::cerr << getNormals_at_GaussPt() << std::endl;
 
   for(unsigned int gg = 0;gg<data.getN().size1();gg++) {
 
@@ -227,9 +227,9 @@ PetscErrorCode NeummanForcesSurface::OpNeumannFlux::doWork(
 
   }
 
-  //cerr << "VecSetValues\n";
-  //cerr << Nf << endl;
-  //cerr << data.getIndices() << endl;
+  //std::cerr << "VecSetValues\n";
+  //std::cerr << Nf << std::endl;
+  //std::cerr << data.getIndices() << std::endl;
   ierr = MethodForForceScaling::applyScale(getFEMethod(), methodsOp, Nf); CHKERRQ(ierr);
   {
     Vec my_f;
@@ -245,7 +245,7 @@ PetscErrorCode NeummanForcesSurface::OpNeumannFlux::doWork(
 }
 
 
-PetscErrorCode NeummanForcesSurface::addForce(const string field_name,Vec F,int ms_id,bool ho_geometry) {
+PetscErrorCode NeummanForcesSurface::addForce(const std::string field_name,Vec F,int ms_id,bool ho_geometry) {
   PetscFunctionBegin;
   PetscErrorCode ierr;
   ErrorCode rval;
@@ -257,7 +257,7 @@ PetscErrorCode NeummanForcesSurface::addForce(const string field_name,Vec F,int 
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode NeummanForcesSurface::addPreassure(const string field_name,Vec F,int ms_id,bool ho_geometry) {
+PetscErrorCode NeummanForcesSurface::addPreassure(const std::string field_name,Vec F,int ms_id,bool ho_geometry) {
   PetscFunctionBegin;
   PetscErrorCode ierr;
   ErrorCode rval;
@@ -269,7 +269,7 @@ PetscErrorCode NeummanForcesSurface::addPreassure(const string field_name,Vec F,
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode NeummanForcesSurface::addFlux(const string field_name,Vec F,int ms_id,bool ho_geometry) {
+PetscErrorCode NeummanForcesSurface::addFlux(const std::string field_name,Vec F,int ms_id,bool ho_geometry) {
   PetscFunctionBegin;
   PetscErrorCode ierr;
   ErrorCode rval;

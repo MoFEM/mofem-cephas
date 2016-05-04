@@ -67,7 +67,7 @@ struct MonitorPostProc: public FEMethod {
 
   FieldInterface &mField;
   PostProcVolumeOnRefinedMesh postProc;
-  map<int, NonlinearElasticElement::BlockData> &setOfBlocks;
+  std::map<int, NonlinearElasticElement::BlockData> &setOfBlocks;
   NonlinearElasticElement::MyVolumeFE &feElasticEnergy;   ///< calculate elastic energy
   ConvectiveMassElement::MyVolumeFE &feKineticEnergy;     ///< calculate elastic energy
 
@@ -78,7 +78,7 @@ struct MonitorPostProc: public FEMethod {
 
   MonitorPostProc(
     FieldInterface &m_field,
-    map<int,NonlinearElasticElement::BlockData> &set_of_blocks,
+    std::map<int,NonlinearElasticElement::BlockData> &set_of_blocks,
     NonlinearElasticElement::MyVolumeFE &fe_elastic_energy,
     ConvectiveMassElement::MyVolumeFE &fe_kinetic_energy
   ):
@@ -122,7 +122,7 @@ struct MonitorPostProc: public FEMethod {
       ierr = postProc.addFieldValuesPostProc("MESH_NODE_POSITIONS"); CHKERRQ(ierr);
       ierr = postProc.addFieldValuesGradientPostProc("SPATIAL_POSITION"); CHKERRQ(ierr);
 
-      map<int,NonlinearElasticElement::BlockData>::iterator sit = setOfBlocks.begin();
+      std::map<int,NonlinearElasticElement::BlockData>::iterator sit = setOfBlocks.begin();
       for (; sit != setOfBlocks.end(); sit++) {
         postProc.getOpPtrVector().push_back(
           new PostPorcStress(
@@ -139,7 +139,7 @@ struct MonitorPostProc: public FEMethod {
 
       if((*step)%pRT==0) {
         ierr = mField.loop_finite_elements("DYNAMICS","MASS_ELEMENT",postProc); CHKERRQ(ierr);
-        ostringstream sss;
+        std::ostringstream sss;
         sss << "out_values_" << (*step) << ".h5m";
         ierr = postProc.writeFile(sss.str().c_str()); CHKERRQ(ierr);
       }
@@ -219,7 +219,7 @@ struct MonitorRestart: public FEMethod {
     (*time) = ts_t;
     // if(pRT>0) {
     //   if((*step)%pRT==0) {
-    //     ostringstream ss;
+    //     std::ostringstream ss;
     //     ss << "restart_" << (*step) << ".h5m";
     //     rval = mField.get_moab().write_file(ss.str().c_str()/*,"MOAB","PARALLEL=WRITE_PART"*/); CHKERRQ_MOAB(rval);
     //   }
@@ -416,7 +416,7 @@ int main(int argc, char *argv[]) {
     if(m_field.check_field("MESH_NODE_POSITIONS")) {
       ierr = m_field.modify_finite_element_add_field_data("DAMPER","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
     }
-    map<int,KelvinVoigtDamper::BlockMaterialData>::iterator bit = damper.blockMaterialDataMap.begin();
+    std::map<int,KelvinVoigtDamper::BlockMaterialData>::iterator bit = damper.blockMaterialDataMap.begin();
     for(;bit!=damper.blockMaterialDataMap.end();bit++) {
       bit->second.lInear = linear;
       int id = bit->first;
@@ -605,7 +605,7 @@ int main(int argc, char *argv[]) {
   #endif
 
   //nodal forces
-  boost::ptr_map<string,NodalForce> nodal_forces;
+  boost::ptr_map<std::string,NodalForce> nodal_forces;
   string fe_name_str ="FORCE_FE";
   nodal_forces.insert(fe_name_str,new NodalForce(m_field));
   for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,NODESET|FORCESET,it)) {
@@ -628,7 +628,7 @@ int main(int argc, char *argv[]) {
   loops_to_do_Rhs.push_back(TsCtx::loop_pair_type("ELASTIC",&elastic.getLoopFeRhs()));
   loops_to_do_Rhs.push_back(TsCtx::loop_pair_type("DAMPER",&damper.feRhs));
   loops_to_do_Rhs.push_back(TsCtx::loop_pair_type("NEUMANN_FE",&surface_force));
-  boost::ptr_map<string,NodalForce>::iterator fit = nodal_forces.begin();
+  boost::ptr_map<std::string,NodalForce>::iterator fit = nodal_forces.begin();
   for(;fit!=nodal_forces.end();fit++) {
     loops_to_do_Rhs.push_back(TsCtx::loop_pair_type(fit->first,&fit->second->getLoopFe()));
   }
@@ -738,7 +738,7 @@ int main(int argc, char *argv[]) {
     loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("FLUID_PRESSURE_FE",&fluid_pressure_fe.getLoopFe()));
     surface_force.ts_t = 0;
     loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("NEUMANN_FE",&surface_force));
-    boost::ptr_map<string,NodalForce>::iterator fit = nodal_forces.begin();
+    boost::ptr_map<std::string,NodalForce>::iterator fit = nodal_forces.begin();
     for(;fit!=nodal_forces.end();fit++) {
       fit->second->getLoopFe().ts_t = 0;
       loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type(fit->first,&fit->second->getLoopFe()));

@@ -214,7 +214,7 @@ int main(int argc, char *argv[]) {
   }
 
   //Check if new start or restart. If new start, delete previous load_disp.txt
-  if (string(mesh_file_name).find("restart") == std::string::npos) {
+  if (std::string(mesh_file_name).find("restart") == std::string::npos) {
     remove(DATAFILENAME);
   }
 
@@ -263,7 +263,7 @@ int main(int argc, char *argv[]) {
   if(step == 1) {
     //ref meshset ref level 0
     ierr = m_field.seed_ref_level_3D(0,BitRefLevel().set(0)); CHKERRQ(ierr);
-    vector<BitRefLevel> bit_levels;
+    std::vector<BitRefLevel> bit_levels;
     bit_levels.push_back(BitRefLevel().set(0));
 
     int ll = 1;
@@ -478,7 +478,7 @@ int main(int argc, char *argv[]) {
   //FIXME this in fact allow only for one type of interface,
   //problem is Young Modulus in interface mayoung_modulusterial
   for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,BLOCKSET,it)) {
-    cout << endl << *it << endl;
+    cout << std::endl << *it << std::endl;
 
     //Get block name
     string name = it->get_name();
@@ -573,7 +573,7 @@ int main(int argc, char *argv[]) {
   ierr = VecAssemblyEnd(F_body_force); CHKERRQ(ierr);
 
   //surface forces
-  boost::ptr_map<string,NeummanForcesSurface> neumann_forces;
+  boost::ptr_map<std::string,NeummanForcesSurface> neumann_forces;
   string fe_name_str = "FORCE_FE";
   neumann_forces.insert(fe_name_str,new NeummanForcesSurface(m_field));
   for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,NODESET|FORCESET,it)) {
@@ -585,7 +585,7 @@ int main(int argc, char *argv[]) {
     ierr = neumann_forces.at(fe_name_str).addPreassure("DISPLACEMENT",arc_ctx->F_lambda,it->get_msId()); CHKERRQ(ierr);
   }
   //add nodal forces
-  boost::ptr_map<string,NodalForce> nodal_forces;
+  boost::ptr_map<std::string,NodalForce> nodal_forces;
   fe_name_str ="FORCE_FE";
   nodal_forces.insert(fe_name_str,new NodalForce(m_field));
   for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,NODESET|FORCESET,it)) {
@@ -636,7 +636,7 @@ int main(int argc, char *argv[]) {
     step++;
   }
 
-  boost::ptr_map<string,NeummanForcesSurface>::iterator mit = neumann_forces.begin();
+  boost::ptr_map<std::string,NeummanForcesSurface>::iterator mit = neumann_forces.begin();
   ierr = VecZeroEntries(arc_ctx->F_lambda); CHKERRQ(ierr);
   ierr = VecGhostUpdateBegin(arc_ctx->F_lambda,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(arc_ctx->F_lambda,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
@@ -647,7 +647,7 @@ int main(int argc, char *argv[]) {
   ierr = VecGhostUpdateEnd(arc_ctx->F_lambda,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   ierr = VecAssemblyBegin(arc_ctx->F_lambda); CHKERRQ(ierr);
   ierr = VecAssemblyEnd(arc_ctx->F_lambda); CHKERRQ(ierr);
-  for(vector<int>::iterator vit = my_dirichlet_bc.dofsIndices.begin();
+  for(std::vector<int>::iterator vit = my_dirichlet_bc.dofsIndices.begin();
     vit!=my_dirichlet_bc.dofsIndices.end();vit++) {
     ierr = VecSetValue(arc_ctx->F_lambda,*vit,0,INSERT_VALUES); CHKERRQ(ierr);
   }
@@ -778,13 +778,13 @@ int main(int argc, char *argv[]) {
     if(step % 1 == 0) {
 
       // if(pcomm->rank()==0) {
-      //   ostringstream sss;
+      //   std::ostringstream sss;
       //   sss << "restart_" << step << ".h5m";
       //   rval = moab.write_file(sss.str().c_str()); CHKERRQ_MOAB(rval);
       // }
 
       ierr = m_field.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",post_proc); CHKERRQ(ierr);
-      ostringstream ss;
+      std::ostringstream ss;
       ss << "out_values_" << step << ".h5m";
       ierr = post_proc.writeFile(ss.str().c_str()); CHKERRQ(ierr);
 

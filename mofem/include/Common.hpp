@@ -33,56 +33,18 @@ namespace MoFEM {
 
   //typedefs
   const EntityHandle no_handle = 0;
+  //typedef checked_uint128_t UId;
   typedef uint128_t UId;
-  //typedef checked_uint128_tUId;
+  typedef UId LocalUId; ///< Local unique id
+  typedef UId GlobalUId; ///< Global unique id
   typedef int ShortId;
 
-  /** \brief local unique id
-  *
-  * It is based on local entity handle
-  */
-  struct LocalUId: public UId {
-    LocalUId(): UId() {}
-    LocalUId(const UId &u): UId(u) {}
-    friend bool operator< (const LocalUId& lhs, const LocalUId& rhs);
-    friend bool operator> (const LocalUId& lhs, const LocalUId& rhs);
-    friend bool operator==(const LocalUId& lhs, const LocalUId& rhs);
-    friend bool operator!=(const LocalUId& lhs, const LocalUId& rhs);
-  };
-
-  inline bool operator< (const LocalUId& lhs, const LocalUId& rhs){ return (UId)rhs > (UId)lhs; }
-  inline bool operator> (const LocalUId& lhs, const LocalUId& rhs){ return rhs < lhs; }
-  inline bool operator==(const LocalUId& lhs, const LocalUId& rhs) { return (UId)lhs == (UId)rhs; }
-  inline bool operator!=(const LocalUId& lhs, const LocalUId& rhs) { return !(lhs == rhs); }
-
-
-  /** \brief local unique id
-  *
-  * It is based on owner entity handle. Each entity is own by some
-  * proc/partition, which own set entity handles, which are not unique across
-  * mesh on different processors.
-  *
-  */
-  struct GlobalUId: public UId {
-    GlobalUId(): UId() {}
-    GlobalUId(const UId &u): UId(u) {}
-    friend bool operator< (const GlobalUId& lhs, const GlobalUId& rhs);
-    friend bool operator> (const GlobalUId& lhs, const GlobalUId& rhs);
-    friend bool operator==(const GlobalUId& lhs, const GlobalUId& rhs);
-    friend bool operator!=(const GlobalUId& lhs, const GlobalUId& rhs);
-  };
-
-  inline bool operator< (const GlobalUId& lhs, const GlobalUId& rhs){ return (UId)rhs > (UId)lhs; }
-  inline bool operator> (const GlobalUId& lhs, const GlobalUId& rhs){ return rhs < lhs; }
-  inline bool operator==(const GlobalUId& lhs, const GlobalUId& rhs) { return (UId)lhs == (UId)rhs; }
-  inline bool operator!=(const GlobalUId& lhs, const GlobalUId& rhs) { return !(lhs == rhs); }
-
-  typedef bitset<BITREFEDGES_SIZE> BitRefEdges;
-  typedef bitset<BITREFLEVEL_SIZE> BitRefLevel;
-  typedef bitset<BITFIELDID_SIZE> BitFieldId;
-  typedef bitset<BITFEID_SIZE> BitFEId;
-  typedef bitset<BITPROBLEMID_SIZE> BitProblemId;
-  typedef bitset<BITINTERFACEUID_SIZE> BitIntefaceId;
+  typedef std::bitset<BITREFEDGES_SIZE> BitRefEdges;
+  typedef std::bitset<BITREFLEVEL_SIZE> BitRefLevel;
+  typedef std::bitset<BITFIELDID_SIZE> BitFieldId;
+  typedef std::bitset<BITFEID_SIZE> BitFEId;
+  typedef std::bitset<BITPROBLEMID_SIZE> BitProblemId;
+  typedef std::bitset<BITINTERFACEUID_SIZE> BitIntefaceId;
 
   //AUX STRUCTURES
 
@@ -154,10 +116,10 @@ namespace MoFEM {
   * bc & material meshsets
   *
   */
-  typedef bitset<32> CubitBCType;
+  typedef std::bitset<32> CubitBCType;
 
   #if PETSC_VERSION_GE(3,6,4)
-  
+
   DEPRECATED inline PetscErrorCode  PetscOptionsGetInt(PetscOptions *,const char pre[],const char name[],PetscInt *ivalue,PetscBool  *set) {
     PetscErrorCode ierr;
     PetscFunctionBegin;

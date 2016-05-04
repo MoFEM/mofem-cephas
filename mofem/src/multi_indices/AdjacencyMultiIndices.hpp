@@ -41,7 +41,7 @@ struct MoFEMEntityEntFiniteElementAdjacencyMap {
   inline EntityHandle get_ent_entity_handle() const { return mofemEntPtr->get_ent(); };
   BitFieldId get_ent_id() const { return mofemEntPtr->get_id(); }
   BitFEId get_BitFEId() const { return entFePtr->get_id(); }
-  friend ostream& operator<<(ostream& os,const MoFEMEntityEntFiniteElementAdjacencyMap &e);
+  friend std::ostream& operator<<(std::ostream& os,const MoFEMEntityEntFiniteElementAdjacencyMap &e);
 };
 
 /**
