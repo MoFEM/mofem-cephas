@@ -210,7 +210,7 @@ struct FEMethod: public BasicMethod {
    */
   PetscErrorCode postProcess();
 
-  string feName;
+  std::string feName;
   const NumeredEntFiniteElement *fePtr;
   const FEDofEntity_multiIndex *dataPtr;
   const FENumeredDofEntity_multiIndex *rowPtr;
@@ -237,12 +237,12 @@ struct FEMethod: public BasicMethod {
 
   template<class MULTIINDEX>
   typename MULTIINDEX::iterator get_begin(const MULTIINDEX &index,
-    const string &field_name,const EntityType type,const int side_number) const {
+    const std::string &field_name,const EntityType type,const int side_number) const {
     return index.lower_bound(boost::make_tuple(field_name,type,side_number));
   }
   template<class MULTIINDEX>
   typename MULTIINDEX::iterator get_end(const MULTIINDEX &index,
-    const string &field_name,const EntityType type,const int side_number) const {
+    const std::string &field_name,const EntityType type,const int side_number) const {
     return index.upper_bound(boost::make_tuple(field_name,type,side_number));
   }
 
@@ -277,11 +277,11 @@ struct FEMethod: public BasicMethod {
     IT != FE->get_end<FEDofEntity_multiIndex::index<Composite_mi_tag>::type>(FE->dataPtr->get<Composite_mi_tag>(),NAME,TYPE,SIDE); IT++
 
   template<class MULTIINDEX>
-  typename MULTIINDEX::iterator get_begin(const MULTIINDEX &index,const string &field_name,const EntityType type) const {
+  typename MULTIINDEX::iterator get_begin(const MULTIINDEX &index,const std::string &field_name,const EntityType type) const {
     return index.lower_bound(boost::make_tuple(field_name,type));
   }
   template<class MULTIINDEX>
-  typename MULTIINDEX::iterator get_end(const MULTIINDEX &index,const string &field_name,const EntityType type) const {
+  typename MULTIINDEX::iterator get_end(const MULTIINDEX &index,const std::string &field_name,const EntityType type) const {
     return index.upper_bound(boost::make_tuple(field_name,type));
   }
 
@@ -310,11 +310,11 @@ struct FEMethod: public BasicMethod {
     IT != FE->get_end<FEDofEntity_multiIndex::index<Composite_Name_And_Type_mi_tag>::type>(FE->dataPtr->get<Composite_Name_And_Type_mi_tag>(),NAME,TYPE); IT++
 
   template<class MULTIINDEX>
-  typename MULTIINDEX::iterator get_begin(const MULTIINDEX &index,const string &field_name) const {
+  typename MULTIINDEX::iterator get_begin(const MULTIINDEX &index,const std::string &field_name) const {
     return index.lower_bound(field_name);
   }
   template<class MULTIINDEX>
-  typename MULTIINDEX::iterator get_end(const MULTIINDEX &index,const string &field_name) const {
+  typename MULTIINDEX::iterator get_end(const MULTIINDEX &index,const std::string &field_name) const {
     return index.upper_bound(field_name);
   }
 
@@ -376,11 +376,11 @@ struct FEMethod: public BasicMethod {
     IT != FE->get_end<FEDofEntity_multiIndex::index<Ent_mi_tag>::type>(FE->dataPtr->get<Ent_mi_tag>(),ENT); IT++
 
   template<class MULTIINDEX>
-  typename MULTIINDEX::iterator get_begin(const MULTIINDEX &index,const string &field_name,const EntityHandle ent) const {
+  typename MULTIINDEX::iterator get_begin(const MULTIINDEX &index,const std::string &field_name,const EntityHandle ent) const {
     return index.lower_bound(boost::make_tuple(field_name,ent));
   }
   template<class MULTIINDEX>
-  typename MULTIINDEX::iterator get_end(const MULTIINDEX &index,const string &field_name,const EntityHandle ent) const {
+  typename MULTIINDEX::iterator get_end(const MULTIINDEX &index,const std::string &field_name,const EntityHandle ent) const {
     return index.upper_bound(boost::make_tuple(field_name,ent));
   }
 

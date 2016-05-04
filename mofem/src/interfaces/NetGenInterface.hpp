@@ -36,12 +36,12 @@ struct NetGenInterface: public UnknownInterface {
   PetscErrorCode stlSetSurfaceTriangles(Ng_STL_Geometry *stl_geom,Range &ents,double *nv = NULL,int verb = 0);
   PetscErrorCode stlSetSurfaceEdges(Ng_STL_Geometry *stl_geom,Range &ents,int verb = 0);
 
-  PetscErrorCode setPoints(Ng_Mesh *mesh,vector<EntityHandle> &pts,int verb = 0);
-  PetscErrorCode setSurfaceElements(Ng_Mesh *mesh,vector<EntityHandle> &pts,vector<EntityHandle> &elms,Range *tets = NULL,int verb = 0);
+  PetscErrorCode setPoints(Ng_Mesh *mesh,std::vector<EntityHandle> &pts,int verb = 0);
+  PetscErrorCode setSurfaceElements(Ng_Mesh *mesh,std::vector<EntityHandle> &pts,std::vector<EntityHandle> &elms,Range *tets = NULL,int verb = 0);
 
-  PetscErrorCode getPoints(Ng_Mesh *mesh,vector<EntityHandle> &pts);
-  PetscErrorCode getSurfaceElements(Ng_Mesh *mesh,vector<EntityHandle> &pts,vector<EntityHandle> &elms);
-  PetscErrorCode getVolumeElements(Ng_Mesh *mesh,vector<EntityHandle> &pts,vector<EntityHandle> &elms);
+  PetscErrorCode getPoints(Ng_Mesh *mesh,std::vector<EntityHandle> &pts);
+  PetscErrorCode getSurfaceElements(Ng_Mesh *mesh,std::vector<EntityHandle> &pts,std::vector<EntityHandle> &elms);
+  PetscErrorCode getVolumeElements(Ng_Mesh *mesh,std::vector<EntityHandle> &pts,std::vector<EntityHandle> &elms);
 
 };
 

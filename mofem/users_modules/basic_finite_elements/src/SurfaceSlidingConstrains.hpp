@@ -296,7 +296,7 @@ struct SurfaceSlidingConstrains {
     double aRea;
     double lAmbda;
 
-    vector<bool> nodesWithoutLambda;
+    std::vector<bool> nodesWithoutLambda;
 
     static PetscErrorCode calcSpin(
       ublas::matrix<double> &spin,ublas::vector<double> &vec
@@ -328,8 +328,8 @@ struct SurfaceSlidingConstrains {
         }
 
       } catch (const std::exception& ex) {
-        ostringstream ss;
-        ss << "throw in method: " << ex.what() << endl;
+        std::ostringstream ss;
+        ss << "throw in method: " << ex.what() << std::endl;
         SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
       PetscFunctionReturn(0);
@@ -354,8 +354,8 @@ struct SurfaceSlidingConstrains {
           }
         }
       } catch (const std::exception& ex) {
-        ostringstream ss;
-        ss << "throw in method: " << ex.what() << endl;
+        std::ostringstream ss;
+        ss << "throw in method: " << ex.what() << std::endl;
         SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
       PetscFunctionReturn(0);
@@ -371,24 +371,24 @@ struct SurfaceSlidingConstrains {
         noalias(nOrmal) = 0.5*prod(sPin,dXdEta);
         aRea = norm_2(nOrmal);
       } catch (const std::exception& ex) {
-        ostringstream ss;
-        ss << "throw in method: " << ex.what() << endl;
+        std::ostringstream ss;
+        ss << "throw in method: " << ex.what() << std::endl;
         SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
       PetscFunctionReturn(0);
     }
   };
 
-  vector<AuxFunctions> cUrrent;
+  std::vector<AuxFunctions> cUrrent;
 
   /** \brief Operator calculate material positions and tangent vectors to element surface
    */
   struct OpPositions: public FaceElementForcesAndSourcesCore::UserDataOperator {
 
-    vector<AuxFunctions> &aUx;
+    std::vector<AuxFunctions> &aUx;
     DriverElementOrientation &oRientation;
 
-    OpPositions(const string field_name,vector<AuxFunctions> &aux,DriverElementOrientation &orientation):
+    OpPositions(const std::string field_name,std::vector<AuxFunctions> &aux,DriverElementOrientation &orientation):
     FaceElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPCOL),
     aUx(aux),
     oRientation(orientation)
@@ -429,8 +429,8 @@ struct SurfaceSlidingConstrains {
 
 
       } catch (const std::exception& ex) {
-        ostringstream ss;
-        ss << "throw in method: " << ex.what() << endl;
+        std::ostringstream ss;
+        ss << "throw in method: " << ex.what() << std::endl;
         SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
 
@@ -443,9 +443,9 @@ struct SurfaceSlidingConstrains {
   */
   struct OpLambda: public FaceElementForcesAndSourcesCore::UserDataOperator {
 
-    vector<AuxFunctions> &aUx;
+    std::vector<AuxFunctions> &aUx;
 
-    OpLambda(const string field_name,vector <AuxFunctions> &aux):
+    OpLambda(const std::string field_name,vector <AuxFunctions> &aux):
     FaceElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROW),
     aUx(aux) {
     }
@@ -491,8 +491,8 @@ struct SurfaceSlidingConstrains {
         }
 
       } catch (const std::exception& ex) {
-        ostringstream ss;
-        ss << "throw in method: " << ex.what() << endl;
+        std::ostringstream ss;
+        ss << "throw in method: " << ex.what() << std::endl;
         SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
       }
 
@@ -505,10 +505,10 @@ struct SurfaceSlidingConstrains {
   */
   struct OpF: public FaceElementForcesAndSourcesCore::UserDataOperator {
 
-    vector<AuxFunctions> &aUx;
+    std::vector<AuxFunctions> &aUx;
     DriverElementOrientation &oRientation;
 
-    OpF(const string field_name,vector<AuxFunctions> &aux,DriverElementOrientation &orientation):
+    OpF(const std::string field_name,std::vector<AuxFunctions> &aux,DriverElementOrientation &orientation):
     FaceElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROW),
     aUx(aux),
     oRientation(orientation)
@@ -584,8 +584,8 @@ struct SurfaceSlidingConstrains {
 
 
       } catch (const std::exception& ex) {
-        ostringstream ss;
-        ss << "throw in method: " << ex.what() << endl;
+        std::ostringstream ss;
+        ss << "throw in method: " << ex.what() << std::endl;
         SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
 
@@ -596,10 +596,10 @@ struct SurfaceSlidingConstrains {
 
   struct OpG: public FaceElementForcesAndSourcesCore::UserDataOperator {
 
-    vector<AuxFunctions> &aUx;
+    std::vector<AuxFunctions> &aUx;
     DriverElementOrientation &oRientation;
 
-    OpG(const string field_name,vector<AuxFunctions> &aux,DriverElementOrientation &orientation):
+    OpG(const std::string field_name,std::vector<AuxFunctions> &aux,DriverElementOrientation &orientation):
     FaceElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROW),
     aUx(aux),
     oRientation(orientation)
@@ -664,8 +664,8 @@ struct SurfaceSlidingConstrains {
         ); CHKERRQ(ierr);
 
       } catch (const std::exception& ex) {
-        ostringstream ss;
-        ss << "throw in method: " << ex.what() << endl;
+        std::ostringstream ss;
+        ss << "throw in method: " << ex.what() << std::endl;
         SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
 
@@ -678,14 +678,14 @@ struct SurfaceSlidingConstrains {
   */
   struct OpC: public FaceElementForcesAndSourcesCore::UserDataOperator {
 
-    vector<AuxFunctions> &aUx;
+    std::vector<AuxFunctions> &aUx;
     DriverElementOrientation &oRientation;
     bool assembleTranspose;
 
     OpC(
-      const string lambda_field_name,
-      const string positions_field_name,
-      vector<AuxFunctions> &aux,
+      const std::string lambda_field_name,
+      const std::string positions_field_name,
+      std::vector<AuxFunctions> &aux,
       DriverElementOrientation &orientation,
       bool assemble_transpose):
     FaceElementForcesAndSourcesCore::UserDataOperator(
@@ -796,8 +796,8 @@ struct SurfaceSlidingConstrains {
         }
 
       } catch (const std::exception& ex) {
-        ostringstream ss;
-        ss << "throw in method: " << ex.what() << endl;
+        std::ostringstream ss;
+        ss << "throw in method: " << ex.what() << std::endl;
         SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
       PetscFunctionReturn(0);
@@ -809,10 +809,10 @@ struct SurfaceSlidingConstrains {
   */
   struct OpB: public FaceElementForcesAndSourcesCore::UserDataOperator {
 
-    vector<AuxFunctions> &aUx;
+    std::vector<AuxFunctions> &aUx;
     DriverElementOrientation &oRientation;
 
-    OpB(const string field_name,vector<AuxFunctions> &aux,DriverElementOrientation &orientation):
+    OpB(const std::string field_name,std::vector<AuxFunctions> &aux,DriverElementOrientation &orientation):
     FaceElementForcesAndSourcesCore::UserDataOperator(
       field_name,field_name,UserDataOperator::OPROWCOL
     ),
@@ -901,8 +901,8 @@ struct SurfaceSlidingConstrains {
 
 
       } catch (const std::exception& ex) {
-        ostringstream ss;
-        ss << "throw in method: " << ex.what() << endl;
+        std::ostringstream ss;
+        ss << "throw in method: " << ex.what() << std::endl;
         SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
 
@@ -915,13 +915,13 @@ struct SurfaceSlidingConstrains {
   */
   struct OpA: public FaceElementForcesAndSourcesCore::UserDataOperator {
 
-    vector<AuxFunctions> &aUx;
+    std::vector<AuxFunctions> &aUx;
     DriverElementOrientation &oRientation;
 
     OpA(
-      const string lagrange_multipliers_field_name,
-      const string field_name,
-      vector<AuxFunctions> &aux,
+      const std::string lagrange_multipliers_field_name,
+      const std::string field_name,
+      std::vector<AuxFunctions> &aux,
       DriverElementOrientation &orientation
     ):
     FaceElementForcesAndSourcesCore::UserDataOperator(
@@ -1005,8 +1005,8 @@ struct SurfaceSlidingConstrains {
 
 
       } catch (const std::exception& ex) {
-        ostringstream ss;
-        ss << "throw in method: " << ex.what() << endl;
+        std::ostringstream ss;
+        ss << "throw in method: " << ex.what() << std::endl;
         SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
 
@@ -1018,8 +1018,8 @@ struct SurfaceSlidingConstrains {
   /** \brief Driver function setting operators to calculate \b C matrix only
   */
   PetscErrorCode setOperatorsCOnly(
-    const string lagrange_multipliers_field_name,
-    const string material_field_name) {
+    const std::string lagrange_multipliers_field_name,
+    const std::string material_field_name) {
     PetscFunctionBegin;
 
     // Adding operators to calculate the left hand side
@@ -1042,8 +1042,8 @@ struct SurfaceSlidingConstrains {
   /** \brief Driver function setting operators to calculate nonlinear problems with sliding points on the surface
   */
   PetscErrorCode setOperatorsWithLinearGeometry(
-    const string lagrange_multipliers_field_name,
-    const string material_field_name,
+    const std::string lagrange_multipliers_field_name,
+    const std::string material_field_name,
     bool assemble_transpose,
     bool add_nonlinear_term
   ) {

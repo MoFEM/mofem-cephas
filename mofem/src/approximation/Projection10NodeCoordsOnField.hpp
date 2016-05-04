@@ -31,10 +31,10 @@ namespace MoFEM {
 struct Projection10NodeCoordsOnField: public EntMethod {
 
   FieldInterface& mField;
-  string field_name;
+  std::string field_name;
   int vErbose;
 
-  Projection10NodeCoordsOnField(FieldInterface& m_field,string _field_name,int verb = 0):
+  Projection10NodeCoordsOnField(FieldInterface& m_field,std::string _field_name,int verb = 0):
     mField(m_field),field_name(_field_name),vErbose(verb) {
   }
 
@@ -136,12 +136,12 @@ struct ProjectionFieldOn10NodeTet: public Projection10NodeCoordsOnField {
 
   bool setNodes;
   bool onCoords;
-  string onTag;
+  std::string onTag;
 
   const int maxApproximationOrder;
 
   ProjectionFieldOn10NodeTet(
-    FieldInterface& m_field,string _field_name,bool set_nodes,bool on_coords,string on_tag = "NoNE"
+    FieldInterface& m_field,std::string _field_name,bool set_nodes,bool on_coords,std::string on_tag = "NoNE"
   ):
   Projection10NodeCoordsOnField(m_field,_field_name),
   setNodes(set_nodes),

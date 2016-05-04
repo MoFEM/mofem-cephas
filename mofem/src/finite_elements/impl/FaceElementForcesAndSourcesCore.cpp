@@ -224,8 +224,8 @@ PetscErrorCode FaceElementForcesAndSourcesCore::operator()() {
         }
       }
     }
-  } catch (exception& ex) {
-    ostringstream ss;
+  } catch (std::exception& ex) {
+    std::ostringstream ss;
     ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
     SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
   }
@@ -249,8 +249,8 @@ PetscErrorCode FaceElementForcesAndSourcesCore::operator()() {
     try {
       ierr = opHOCoordsAndNormals.opRhs(dataH1); CHKERRQ(ierr);
       ierr = opHOCoordsAndNormals.calculateNormals(); CHKERRQ(ierr);
-    } catch (exception& ex) {
-      ostringstream ss;
+    } catch (std::exception& ex) {
+      std::ostringstream ss;
       ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
       SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
     }
@@ -268,7 +268,7 @@ PetscErrorCode FaceElementForcesAndSourcesCore::operator()() {
   const UserDataOperator::OpType types[2] = {
     UserDataOperator::OPROW, UserDataOperator::OPCOL
   };
-  vector<string> last_eval_field_name(2);
+  std::vector<std::string> last_eval_field_name(2);
   DataForcesAndSurcesCore *op_data[2];
   FieldSpace space[2];
   FieldApproximationBase base[2];
@@ -283,7 +283,7 @@ PetscErrorCode FaceElementForcesAndSourcesCore::operator()() {
 
     for(int ss = 0;ss!=2;ss++) {
 
-      string field_name = !ss ? oit->rowFieldName : oit->colFieldName;
+      std::string field_name = !ss ? oit->rowFieldName : oit->colFieldName;
       const Field* field_struture = mField.get_field_structure(field_name);
       BitFieldId data_id = field_struture->get_id();
 
@@ -393,8 +393,8 @@ PetscErrorCode FaceElementForcesAndSourcesCore::operator()() {
           false,
           false
         ); CHKERRQ(ierr);
-      } catch (exception& ex) {
-        ostringstream ss;
+      } catch (std::exception& ex) {
+        std::ostringstream ss;
         ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
         SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
       }
@@ -412,8 +412,8 @@ PetscErrorCode FaceElementForcesAndSourcesCore::operator()() {
           false,
           false
         ); CHKERRQ(ierr);
-      } catch (exception& ex) {
-        ostringstream ss;
+      } catch (std::exception& ex) {
+        std::ostringstream ss;
         ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
         SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
       }
@@ -423,8 +423,8 @@ PetscErrorCode FaceElementForcesAndSourcesCore::operator()() {
     if(oit->getOpType()&UserDataOperator::OPROWCOL) {
       try {
         ierr = oit->opLhs(*op_data[0],*op_data[1],oit->sYmm); CHKERRQ(ierr);
-      } catch (exception& ex) {
-        ostringstream ss;
+      } catch (std::exception& ex) {
+        std::ostringstream ss;
         ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
         SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
       }
@@ -468,8 +468,8 @@ PetscErrorCode OpCalculateInvJacForFace::doWork(
       invJac(1,0) = -j10/det;
       invJac(1,1) = j00/det;
     }
-  } catch (exception& ex) {
-    ostringstream ss;
+  } catch (std::exception& ex) {
+    std::ostringstream ss;
     ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
     SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
   }
@@ -507,9 +507,9 @@ PetscErrorCode OpSetInvJacH1ForFace::doWork(
       }
     }
 
-    //cerr << type << endl;
-    //cerr << data.getDiffN() << endl;
-    //cerr << endl;
+    //std::cerr << type << std::endl;
+    //std::cerr << data.getDiffN() << std::endl;
+    //std::cerr << std::endl;
     switch (type) {
       case MBVERTEX:
       case MBEDGE:
@@ -531,8 +531,8 @@ PetscErrorCode OpSetInvJacH1ForFace::doWork(
       SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented");
     }
 
-  } catch (exception& ex) {
-    ostringstream ss;
+  } catch (std::exception& ex) {
+    std::ostringstream ss;
     ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
     SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
   }

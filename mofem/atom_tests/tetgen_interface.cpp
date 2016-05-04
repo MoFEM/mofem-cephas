@@ -80,8 +80,8 @@ int main(int argc, char *argv[]) {
 
   //mapping between MoAB and TetGen
   tetgenio in,out;
-  map<EntityHandle,unsigned long> moab_tetgen_map;
-  map<unsigned long,EntityHandle> tetgen_moab_map;
+  std::map<EntityHandle,unsigned long> moab_tetgen_map;
+  std::map<unsigned long,EntityHandle> tetgen_moab_map;
 
   //get TetGen interface
   TetGenInterface *tetgen_iface;
@@ -89,7 +89,7 @@ int main(int argc, char *argv[]) {
 
   //set MoAB nodes to TetGen data structure
   ierr = tetgen_iface->inData(nodes,in,moab_tetgen_map,tetgen_moab_map); CHKERRQ(ierr);
-  map<int,Range> types_ents;
+  std::map<int,Range> types_ents;
   types_ents[TetGenInterface::RIDGEVERTEX].merge(nodes);
   ierr = tetgen_iface->setGeomData(in,moab_tetgen_map,tetgen_moab_map,types_ents); CHKERRQ(ierr);
 
@@ -134,26 +134,26 @@ int main(int argc, char *argv[]) {
   }
 
   outer_surface_skin = subtract(outer_surface_skin,side_set_faces);
-  vector<vector<Range> > sorted_outer_surface_skin;
+  std::vector<std::vector<Range> > sorted_outer_surface_skin;
   int nb_ents = outer_surface_skin.size();
   //sort surface elements in planar groups
   ierr = tetgen_iface->groupRegion_Triangle(outer_surface_skin,sorted_outer_surface_skin,1e-10); CHKERRQ(ierr);
   if(debug>0) {
-    cout << " number of triangle entities " << nb_ents
-      << " number of faces disjoint regions " << sorted_outer_surface_skin.size() << endl;
+    std::cout << " number of triangle entities " << nb_ents
+    << " number of faces disjoint regions " << sorted_outer_surface_skin.size() << std::endl;
     for(unsigned int vv = 0;vv<sorted_outer_surface_skin.size();vv++) {
-      cout << "\tnb of disjoint region " << vv
-	<< " nb of no-planar subregions " << sorted_outer_surface_skin[vv].size() << endl;
+      std::cout << "\tnb of disjoint region " << vv
+      << " nb of no-planar subregions " << sorted_outer_surface_skin[vv].size() << std::endl;
       for(unsigned int vvv = 0;vvv<sorted_outer_surface_skin[vv].size();vvv++) {
-	cout << "\t\tnb. of subregion " << vvv << " nb. elements in subregion " << sorted_outer_surface_skin[vv][vvv].size() << endl;
+        std::cout << "\t\tnb. of subregion " << vvv << " nb. elements in subregion " << sorted_outer_surface_skin[vv][vvv].size() << std::endl;
       }
     }
   }
 
-  vector<pair<Range,int> > markers; // set markers to surface elements
-  vector<vector<Range> >::iterator vit = sorted_outer_surface_skin.begin();
+  std::vector<std::pair<Range,int> > markers; // set markers to surface elements
+  std::vector<std::vector<Range> >::iterator vit = sorted_outer_surface_skin.begin();
   for(;vit!=sorted_outer_surface_skin.end();vit++) {
-    vector<Range>::iterator viit = vit->begin();
+    std::vector<Range>::iterator viit = vit->begin();
     for(;viit!=vit->end();viit++) {
       Range polygons;
       ierr = tetgen_iface->makePolygonFacet(*viit,polygons); CHKERRQ(ierr);
@@ -170,8 +170,8 @@ int main(int argc, char *argv[]) {
 	  faces,1,false,faces_edges,Interface::UNION); CHKERRQ_MOAB(rval);
 	aa.merge(intersect(faces_edges,viit_edges));
       }
-      markers.push_back(pair<Range,int>(unite(polygons,aa),-1));
-      //markers.push_back(pair<Range,int>(polygons,-1));
+      markers.push_back(std::pair<Range,int>(unite(polygons,aa),-1));
+      //markers.push_back(std::pair<Range,int>(polygons,-1));
     }
   }
 
@@ -180,19 +180,19 @@ int main(int argc, char *argv[]) {
     int id = sit->get_msId();
     Range faces;
     rval = moab.get_entities_by_type(sit->meshset,MBTRI,faces,true); CHKERRQ_MOAB(rval);
-    markers.push_back(pair<Range,int>(faces,id));
+    markers.push_back(std::pair<Range,int>(faces,id));
   }
 
   //ierr = tetgen_iface->inData(nodes,in,moab_tetgen_map,tetgen_moab_map); CHKERRQ(ierr);
   //set face markers
   ierr = tetgen_iface->setFaceData(markers,in,moab_tetgen_map,tetgen_moab_map); CHKERRQ(ierr);
 
-  vector<pair<EntityHandle,int> > regions; // list of regions
+  std::vector<std::pair<EntityHandle,int> > regions; // list of regions
   for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,BLOCKSET,bit)) {
     int id = bit->get_msId();
     Range tets;
     rval = moab.get_entities_by_type(bit->meshset,MBTET,tets,true); CHKERRQ_MOAB(rval);
-    regions.push_back(pair<EntityHandle,int>(*tets.begin(),-id));
+    regions.push_back(std::pair<EntityHandle,int>(*tets.begin(),-id));
   }
   //set volume regions
   ierr = tetgen_iface->setReginData(regions,in);  CHKERRQ(ierr);

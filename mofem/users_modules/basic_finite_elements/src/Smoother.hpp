@@ -36,7 +36,7 @@ struct Smoother {
   };
   SmootherBlockData smootherData;
 
-  map<int,NonlinearElasticElement::BlockData> setOfBlocks;
+  std::map<int,NonlinearElasticElement::BlockData> setOfBlocks;
   NonlinearElasticElement::CommonData commonData;
 
   struct MyVolumeFE: public NonlinearElasticElement::MyVolumeFE {
@@ -136,7 +136,7 @@ struct Smoother {
   struct OpJacobianSmoother: public NonlinearElasticElement::OpJacobianPiolaKirchhoffStress {
 
     OpJacobianSmoother(
-      const string field_name,
+      const std::string field_name,
       NonlinearElasticElement::BlockData &data,
       NonlinearElasticElement::CommonData &common_data,
       int tag,
@@ -162,8 +162,8 @@ struct Smoother {
         }
 
       } catch (const std::exception& ex) {
-        ostringstream ss;
-        ss << "throw in method: " << ex.what() << endl;
+        std::ostringstream ss;
+        ss << "throw in method: " << ex.what() << std::endl;
         SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
 
@@ -177,7 +177,7 @@ struct Smoother {
     SmootherBlockData &smootherData;
 
     OpRhsSmoother(
-      const string field_name,
+      const std::string field_name,
       NonlinearElasticElement::BlockData &data,
       NonlinearElasticElement::CommonData &common_data,
       SmootherBlockData &smoother_data
@@ -247,8 +247,8 @@ struct Smoother {
     SmootherBlockData &smootherData;
 
     OpLhsSmoother(
-      const string vel_field,
-      const string field_name,
+      const std::string vel_field,
+      const std::string field_name,
       NonlinearElasticElement::BlockData &data,
       NonlinearElasticElement::CommonData &common_data,
       SmootherBlockData &smoother_data

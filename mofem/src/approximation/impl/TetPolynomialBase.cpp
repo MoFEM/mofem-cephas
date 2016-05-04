@@ -137,9 +137,9 @@ PetscErrorCode TetPolynomialBase::getValueH1(ublas::matrix<double> &pts) {
       base_polynomials
     ); CHKERRQ(ierr);
 
-    // cerr << "Aaaaa2\n";
-    // cerr << data.dataOnEntities[MBVERTEX][0].getN(base) << endl;
-    // cerr << ApproximationBaseNames[base] << endl;
+    // std::cerr << "Aaaaa2\n";
+    // std::cerr << data.dataOnEntities[MBVERTEX][0].getN(base) << std::endl;
+    // std::cerr << ApproximationBaseNames[base] << std::endl;
 
   }
 

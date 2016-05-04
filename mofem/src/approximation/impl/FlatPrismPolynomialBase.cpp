@@ -164,8 +164,8 @@ PetscErrorCode FlatPrismPolynomialBase::getValue(
   rval = cTx->mOab.get_connectivity(siit4->get()->ent,connFace4,numNodes,true); CHKERRQ_MOAB(rval);
 
   for(int nn = 0;nn<3;nn++) {
-    faceNodes[0][nn] = distance(connPrism,find(connPrism,connPrism+3,connFace3[nn]));
-    faceNodes[1][nn] = distance(connPrism+3,find(connPrism+3,connPrism+6,connFace4[nn]));
+    faceNodes[0][nn] = std::distance(connPrism,std::find(connPrism,connPrism+3,connFace3[nn]));
+    faceNodes[1][nn] = std::distance(connPrism+3,std::find(connPrism+3,connPrism+6,connFace4[nn]));
     for(int gg = 0;gg<nb_gauss_pts;gg++) {
       double val = N(gg,nn);
       double val_x = diffN(nn,0);

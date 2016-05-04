@@ -43,7 +43,7 @@ struct EdgeForce {
       ForceCubitBcData data;
       Range eDges;
     };
-    map<int,bCForce> mapForce;
+    std::map<int,bCForce> mapForce;
 
     boost::ptr_vector<MethodForForceScaling> methodsOp;
 
@@ -55,7 +55,7 @@ struct EdgeForce {
       bool useSnesF;
 
       OpEdgeForce(
-        const string field_name,Vec f,bCForce &data,
+        const std::string field_name,Vec f,bCForce &data,
         boost::ptr_vector<MethodForForceScaling> &methods_op,
         bool use_snes_f = false
       );
@@ -69,14 +69,14 @@ struct EdgeForce {
 
     };
 
-    PetscErrorCode addForce(const string field_name,Vec F,int ms_id,bool use_snes_f = false);
+    PetscErrorCode addForce(const std::string field_name,Vec F,int ms_id,bool use_snes_f = false);
 
   };
 
   struct MetaEdgeForces {
 
     /// Add element taking information from NODESET
-    static PetscErrorCode addElement (FieldInterface &m_field,const string field_name) {
+    static PetscErrorCode addElement (FieldInterface &m_field,const std::string field_name) {
       PetscFunctionBegin;
       PetscErrorCode ierr;
       ErrorCode rval;
@@ -103,8 +103,8 @@ struct EdgeForce {
     /// Set integration point operators
     static PetscErrorCode setOperators(
       FieldInterface &m_field,
-      boost::ptr_map<string,EdgeForce> &edge_forces,
-      Vec F,const string field_name
+      boost::ptr_map<std::string,EdgeForce> &edge_forces,
+      Vec F,const std::string field_name
     ) {
       PetscFunctionBegin;
       PetscErrorCode ierr;

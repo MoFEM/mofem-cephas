@@ -24,7 +24,7 @@ using namespace MoFEM;
 #include <EdgeForce.hpp>
 
 EdgeForce::OpEdgeForce::OpEdgeForce(
-  const string field_name,Vec f,bCForce &data,
+  const std::string field_name,Vec f,bCForce &data,
   boost::ptr_vector<MethodForForceScaling> &methods_op,
   bool use_snes_f
 ):
@@ -116,7 +116,7 @@ PetscErrorCode EdgeForce::OpEdgeForce::doWork(int side,EntityType type,DataForce
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode EdgeForce::addForce(const string field_name,Vec F,int ms_id,bool use_snes_f) {
+PetscErrorCode EdgeForce::addForce(const std::string field_name,Vec F,int ms_id,bool use_snes_f) {
   PetscFunctionBegin;
   PetscErrorCode ierr;
   ErrorCode rval;

@@ -650,8 +650,8 @@ PetscErrorCode OpSetInvJacH1::doWork(
 
     }
 
-  } catch (exception& ex) {
-    ostringstream ss;
+  } catch (std::exception& ex) {
+    std::ostringstream ss;
     ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
     SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
   }
@@ -699,8 +699,8 @@ PetscErrorCode OpSetInvJacHdiv::doWork(
 
     data.getBase() = base;
 
-  } catch (exception& ex) {
-    ostringstream ss;
+  } catch (std::exception& ex) {
+    std::ostringstream ss;
     ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
     SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
   }
@@ -755,8 +755,8 @@ PetscErrorCode OpSetPiolaTransform::doWork(
 
     data.getBase() = base;
 
-  } catch (exception& ex) {
-    ostringstream ss;
+  } catch (std::exception& ex) {
+    std::ostringstream ss;
     ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
     SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
   }
@@ -808,8 +808,8 @@ PetscErrorCode OpSetHoInvJacH1::doWork(
 
       data.getBase() = base;
 
-    } catch (exception& ex) {
-      ostringstream ss;
+    } catch (std::exception& ex) {
+      std::ostringstream ss;
       ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
       SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
     }
@@ -858,8 +858,8 @@ PetscErrorCode OpSetHoInvJacH1::doWork(
 
       data.getBase() = base;
 
-    } catch (exception& ex) {
-      ostringstream ss;
+    } catch (std::exception& ex) {
+      std::ostringstream ss;
       ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
       SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
     }
@@ -913,8 +913,8 @@ PetscErrorCode OpSetHoInvJacH1::doWork(
 
       data.getBase() = base;
 
-    } catch (exception& ex) {
-      ostringstream ss;
+    } catch (std::exception& ex) {
+      std::ostringstream ss;
       ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
       SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
     }
@@ -941,9 +941,9 @@ PetscErrorCode OpGetDataAndGradient::doWork(
       );
     }
     if(nb_dofs/rank > data.getN().size2()) {
-      cerr << side << " " << type << " " << ApproximationBaseNames[data.getBase()] << endl;
-      cerr << data.getN() << endl;
-      cerr << data.getN(NOBASE) << endl;
+      std::cerr << side << " " << type << " " << ApproximationBaseNames[data.getBase()] << std::endl;
+      std::cerr << data.getN() << std::endl;
+      std::cerr << data.getN(NOBASE) << std::endl;
       SETERRQ2(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,
         "data inconsistency nb_dofs >= data.N.size2() %u >= %u",nb_dofs,data.getN().size2()
       );
@@ -987,8 +987,8 @@ PetscErrorCode OpGetDataAndGradient::doWork(
       }
     }
 
-  } catch (exception& ex) {
-    ostringstream ss;
+  } catch (std::exception& ex) {
+    std::ostringstream ss;
     ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
     SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
   }
@@ -1009,7 +1009,7 @@ PetscErrorCode OpGetCoordsAndNormalsOnFace::doWork(int side,EntityType type,Data
   tAngent1_at_GaussPt.resize(nb_gauss_pts,3,false);
   tAngent2_at_GaussPt.resize(nb_gauss_pts,3,false);
 
-  // cerr << type << " " << side << " " << ApproximationBaseNames[data.getBase()] << endl;
+  // std::cerr << type << " " << side << " " << ApproximationBaseNames[data.getBase()] << std::endl;
 
   switch (type) {
     case MBVERTEX: {
@@ -1134,8 +1134,8 @@ PetscErrorCode OpGetCoordsAndNormalsOnPrism::doWork(int side,EntityType type,Dat
       SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented");
     }
 
-  } catch (exception& ex) {
-    ostringstream ss;
+  } catch (std::exception& ex) {
+    std::ostringstream ss;
     ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
     SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
   }
@@ -1169,8 +1169,8 @@ PetscErrorCode OpGetCoordsAndNormalsOnPrism::calculateNormals() {
         &nOrmals_at_GaussPtF4(gg,0),1
       );
     }
-  } catch (exception& ex) {
-    ostringstream ss;
+  } catch (std::exception& ex) {
+    std::ostringstream ss;
     ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
     SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
   }
@@ -1266,8 +1266,8 @@ PetscErrorCode OpGetHoTangentOnEdge::doWork(int side,EntityType type,DataForcesA
     }
 
 
-  } catch (exception& ex) {
-    ostringstream ss;
+  } catch (std::exception& ex) {
+    std::ostringstream ss;
     ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
     SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
   }

@@ -142,7 +142,7 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::operator()() {
     int order_row = getMaxRowOrder();
     int order_col = getMaxColOrder();
     int rule = getRule(order_row,order_col,order_data);
-    // cerr << order_data << " " << order_row << " " << order_col << " " << rule << endl;
+    // std::cerr << order_data << " " << order_row << " " << order_col << " " << rule << std::endl;
     int nb_gauss_pts;
     if(rule >= 0) {
       if(rule<QUAD_3D_TABLE_SIZE) {
@@ -212,7 +212,7 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::operator()() {
 
     try {
 
-      vector<FieldApproximationBase> shape_functions_for_bases;
+      std::vector<FieldApproximationBase> shape_functions_for_bases;
       for(int b = AINSWORTH_COLE_BASE;b!=LASTBASE;b++) {
         if(dataH1.bAse.test(b)) {
           switch (ApproximationBaseArray[b]) {
@@ -257,8 +257,8 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::operator()() {
         }
       }
 
-    } catch (exception& ex) {
-      ostringstream ss;
+    } catch (std::exception& ex) {
+      std::ostringstream ss;
       ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
       SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
     }
@@ -272,8 +272,8 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::operator()() {
         ierr = opPiolaTransform.opRhs(dataHdiv); CHKERRQ(ierr);
         ierr = opSetInvJacHdiv.opRhs(dataHdiv); CHKERRQ(ierr);
       }
-    } catch (exception& ex) {
-      ostringstream ss;
+    } catch (std::exception& ex) {
+      std::ostringstream ss;
       ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
       SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
     }
@@ -321,8 +321,8 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::operator()() {
           ierr = opSetHoPiolaTransform.opRhs(dataHdiv); CHKERRQ(ierr);
           ierr = opSetHoInvJacHdiv.opRhs(dataHdiv); CHKERRQ(ierr);
         }
-      } catch (exception& ex) {
-        ostringstream ss;
+      } catch (std::exception& ex) {
+        std::ostringstream ss;
         ss << "problem with indices in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
         SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
       }
@@ -345,8 +345,8 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::operator()() {
           dataH1.dataOnEntities[MBVERTEX][0].getDiffN(ApproximationBaseArray[b]).resize(diffN.size1(),diffN.size2(),false);
           dataH1.dataOnEntities[MBVERTEX][0].getDiffN(ApproximationBaseArray[b]).data().swap(diffN.data());
         }
-      } catch (exception& ex) {
-        ostringstream ss;
+      } catch (std::exception& ex) {
+        std::ostringstream ss;
         ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
         SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
       }
@@ -355,7 +355,7 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::operator()() {
     const UserDataOperator::OpType types[2] = {
       UserDataOperator::OPROW, UserDataOperator::OPCOL
     };
-    vector<string> last_eval_field_name(2);
+    std::vector<std::string> last_eval_field_name(2);
     DataForcesAndSurcesCore *op_data[2];
     FieldSpace space[2];
     FieldApproximationBase base[2];
@@ -370,7 +370,7 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::operator()() {
 
       for(int ss = 0;ss!=2;ss++) {
 
-        string field_name = !ss ? oit->rowFieldName : oit->colFieldName;
+        std::string field_name = !ss ? oit->rowFieldName : oit->colFieldName;
         const Field* field_struture = mField.get_field_structure(field_name);
         BitFieldId data_id = field_struture->get_id();
 
@@ -489,8 +489,8 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::operator()() {
             oit->doTetsRow,
             false
           ); CHKERRQ(ierr);
-        } catch (exception& ex) {
-          ostringstream ss;
+        } catch (std::exception& ex) {
+          std::ostringstream ss;
           ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
           SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
         }
@@ -507,8 +507,8 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::operator()() {
             oit->doTetsCol,
             false
           ); CHKERRQ(ierr);
-        } catch (exception& ex) {
-          ostringstream ss;
+        } catch (std::exception& ex) {
+          std::ostringstream ss;
           ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
           SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
         }
@@ -517,8 +517,8 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::operator()() {
       if(oit->getOpType()&UserDataOperator::OPROWCOL) {
         try {
           ierr = oit->opLhs(*op_data[0],*op_data[1],oit->sYmm); CHKERRQ(ierr);
-        } catch (exception& ex) {
-          ostringstream ss;
+        } catch (std::exception& ex) {
+          std::ostringstream ss;
           ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
           SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
         }
@@ -526,8 +526,8 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::operator()() {
 
     }
 
-  } catch (exception& ex) {
-    ostringstream ss;
+  } catch (std::exception& ex) {
+    std::ostringstream ss;
     ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
     SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
   }
@@ -547,7 +547,7 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::UserDataOperator::getDivergenc
 
     int nb_dofs = data.getFieldData().size();
     if((unsigned int)nb_dofs != data.getDiffHdivN().size2()/9) {
-      cerr << "side " << side << " type " << type << endl;
+      std::cerr << "side " << side << " type " << type << std::endl;
       SETERRQ3(
         PETSC_COMM_SELF,
         MOFEM_DATA_INCONSISTENCY,
@@ -568,8 +568,8 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::UserDataOperator::getDivergenc
       (data.getDiffHdivN(dd,gg))(2,2);
     }
 
-  } catch (exception& ex) {
-    ostringstream ss;
+  } catch (std::exception& ex) {
+    std::ostringstream ss;
     ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
     SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
   }

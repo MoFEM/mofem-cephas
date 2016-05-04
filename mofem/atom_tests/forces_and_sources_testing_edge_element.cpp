@@ -151,11 +151,11 @@ int main(int argc, char *argv[]) {
 
   EdgeElementForcesAndSurcesCore fe1(m_field);
 
-  typedef tee_device<ostream, ofstream> TeeDevice;
+  typedef tee_device<std::ostream, std::ofstream> TeeDevice;
   typedef stream<TeeDevice> TeeStream;
 
-  ofstream ofs("forces_and_sources_testing_edge_element.txt");
-  TeeDevice my_tee(cout, ofs);
+  std::ofstream ofs("forces_and_sources_testing_edge_element.txt");
+  TeeDevice my_tee(std::cout, ofs);
   TeeStream my_split(my_tee);
 
   struct MyOp: public EdgeElementForcesAndSurcesCore::UserDataOperator {
@@ -171,17 +171,17 @@ int main(int argc, char *argv[]) {
       DataForcesAndSurcesCore::EntData &data) {
       PetscFunctionBegin;
 
-      my_split << "NH1" << endl;
-      my_split << "side: " << side << " type: " << type << endl;
-      my_split << "data: " << data << endl;
-      my_split << "coords: " << setprecision(3) << getCoords() << endl;
-      my_split << "getCoordsAtGaussPts: " << setprecision(3) << getCoordsAtGaussPts() << endl;
-      my_split << "length: " << setprecision(3) << getLength() << endl;
-      my_split << "direction: " << setprecision(3) << getDirection() << endl;
+      my_split << "NH1" << std::endl;
+      my_split << "side: " << side << " type: " << type << std::endl;
+      my_split << "data: " << data << std::endl;
+      my_split << "coords: " << std::setprecision(3) << getCoords() << std::endl;
+      my_split << "getCoordsAtGaussPts: " << std::setprecision(3) << getCoordsAtGaussPts() << std::endl;
+      my_split << "length: " << std::setprecision(3) << getLength() << std::endl;
+      my_split << "direction: " << std::setprecision(3) << getDirection() << std::endl;
 
       int nb_gauss_pts = data.getN().size1();
       for(int gg = 0;gg<nb_gauss_pts;gg++) {
-        my_split << "tangent " << gg << " " << getTangetAtGaussPtrs() << endl;
+        my_split << "tangent " << gg << " " << getTangetAtGaussPtrs() << std::endl;
       }
 
       PetscFunctionReturn(0);
@@ -193,12 +193,12 @@ int main(int argc, char *argv[]) {
       DataForcesAndSurcesCore::EntData &row_data,
       DataForcesAndSurcesCore::EntData &col_data) {
       PetscFunctionBegin;
-      my_split << "ROW NH1NH1" << endl;
-      my_split << "row side: " << row_side << " row_type: " << row_type << endl;
-      my_split << row_data << endl;
-      my_split << "COL NH1NH1" << endl;
-      my_split << "col side: " << col_side << " col_type: " << col_type << endl;
-      my_split << col_data << endl;
+      my_split << "ROW NH1NH1" << std::endl;
+      my_split << "row side: " << row_side << " row_type: " << row_type << std::endl;
+      my_split << row_data << std::endl;
+      my_split << "COL NH1NH1" << std::endl;
+      my_split << "col side: " << col_side << " col_type: " << col_type << std::endl;
+      my_split << col_data << std::endl;
       PetscFunctionReturn(0);
     }
 

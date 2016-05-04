@@ -58,11 +58,11 @@ struct MoFEMProblem {
     NumeredEntFiniteElement_multiIndex::index<FiniteElement_name_mi_tag>::type::iterator IT = MOFEMPROBLEM->get_numered_fes_begin(NAME); \
     IT!=MOFEMPROBLEM->get_numered_fes_end(NAME); IT++
 
-  NumeredEntFiniteElement_multiIndex::index<FiniteElement_name_mi_tag>::type::iterator get_numered_fes_begin(string fe_name) const {
+  NumeredEntFiniteElement_multiIndex::index<FiniteElement_name_mi_tag>::type::iterator get_numered_fes_begin(std::string fe_name) const {
     return numeredFiniteElements.get<FiniteElement_name_mi_tag>().lower_bound(fe_name);
   }
 
-  NumeredEntFiniteElement_multiIndex::index<FiniteElement_name_mi_tag>::type::iterator get_numered_fes_end(string fe_name) const {
+  NumeredEntFiniteElement_multiIndex::index<FiniteElement_name_mi_tag>::type::iterator get_numered_fes_end(std::string fe_name) const {
     return numeredFiniteElements.get<FiniteElement_name_mi_tag>().upper_bound(fe_name);
   }
 
@@ -81,11 +81,11 @@ struct MoFEMProblem {
     NumeredEntFiniteElement_multiIndex::index<Composite_Name_And_Part_mi_tag>::type::iterator IT = MOFEMPROBLEM->get_numered_fes_begin(NAME,PART); \
     IT!=MOFEMPROBLEM->get_numered_fes_end(NAME,PART); IT++
 
-  NumeredEntFiniteElement_multiIndex::index<Composite_Name_And_Part_mi_tag>::type::iterator get_numered_fes_begin(string fe_name,int part) const {
+  NumeredEntFiniteElement_multiIndex::index<Composite_Name_And_Part_mi_tag>::type::iterator get_numered_fes_begin(std::string fe_name,int part) const {
     return numeredFiniteElements.get<Composite_Name_And_Part_mi_tag>().lower_bound(boost::make_tuple(fe_name,part));
   }
 
-  NumeredEntFiniteElement_multiIndex::index<Composite_Name_And_Part_mi_tag>::type::iterator get_numered_fes_end(string fe_name,int part) const {
+  NumeredEntFiniteElement_multiIndex::index<Composite_Name_And_Part_mi_tag>::type::iterator get_numered_fes_end(std::string fe_name,int part) const {
     return numeredFiniteElements.get<Composite_Name_And_Part_mi_tag>().upper_bound(boost::make_tuple(fe_name,part));
   }
 
@@ -273,19 +273,19 @@ struct MoFEMProblem {
     IT!=MOFEMPROBLEM->get_numered_dofs_cols_end(NAME); IT++
 
   /// get begin iterator for numered_dofs_rows (insted you can use #_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_NAME_FOR_LOOP_ for loops)
-  NumeredDofEntity_multiIndex::index<FieldName_mi_tag>::type::iterator get_numered_dofs_rows_begin(const string& name) const
+  NumeredDofEntity_multiIndex::index<FieldName_mi_tag>::type::iterator get_numered_dofs_rows_begin(const std::string& name) const
     { return numered_dofs_rows->get<FieldName_mi_tag>().lower_bound(name); }
 
   /// get end iterator for numered_dofs_rows (insted you can use #_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_NAME_FOR_LOOP_ for loops)
-  NumeredDofEntity_multiIndex::index<FieldName_mi_tag>::type::iterator get_numered_dofs_rows_end(const string& name) const
+  NumeredDofEntity_multiIndex::index<FieldName_mi_tag>::type::iterator get_numered_dofs_rows_end(const std::string& name) const
     { return numered_dofs_rows->get<FieldName_mi_tag>().upper_bound(name); }
 
   /// get begin iterator for numered_dofs_cols (insted you can use #_IT_NUMEREDDOFMOFEMENTITY_COL_BY_NAME_FOR_LOOP_ for loops)
-  NumeredDofEntity_multiIndex::index<FieldName_mi_tag>::type::iterator get_numered_dofs_cols_begin(const string& name) const
+  NumeredDofEntity_multiIndex::index<FieldName_mi_tag>::type::iterator get_numered_dofs_cols_begin(const std::string& name) const
     { return numered_dofs_cols->get<FieldName_mi_tag>().lower_bound(name); }
 
   /// get end iterator for numered_dofs_cols (insted you can use #_IT_NUMEREDDOFMOFEMENTITY_COL_BY_NAME_FOR_LOOP_ for loops)
-  NumeredDofEntity_multiIndex::index<FieldName_mi_tag>::type::iterator get_numered_dofs_cols_end(const string& name) const
+  NumeredDofEntity_multiIndex::index<FieldName_mi_tag>::type::iterator get_numered_dofs_cols_end(const std::string& name) const
     { return numered_dofs_cols->get<FieldName_mi_tag>().upper_bound(name); }
 
   /**
@@ -319,22 +319,22 @@ struct MoFEMProblem {
     IT!=MOFEMPROBLEM->get_numered_dofs_cols_end(NAME,ENT,PART); IT++
 
   /// get begin iterator for numered_dofs_rows (insted you can use #_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_NAME_ENT_PART_FOR_LOOP_ for loops)
-  NumeredDofEntity_multiIndex::index<Composite_Name_Ent_And_Part_mi_tag>::type::iterator get_numered_dofs_rows_begin(const string& name,const EntityHandle ent,const int part) const {
+  NumeredDofEntity_multiIndex::index<Composite_Name_Ent_And_Part_mi_tag>::type::iterator get_numered_dofs_rows_begin(const std::string& name,const EntityHandle ent,const int part) const {
     return numered_dofs_rows->get<Composite_Name_Ent_And_Part_mi_tag>().lower_bound(boost::make_tuple(name,ent,part));
   }
 
   /// get end iterator for numered_dofs_rows (insted you can use #_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_NAME_ENT_PART_FOR_LOOP_ for loops)
-  NumeredDofEntity_multiIndex::index<Composite_Name_Ent_And_Part_mi_tag>::type::iterator get_numered_dofs_rows_end(const string& name,const EntityHandle ent,const int part) const {
+  NumeredDofEntity_multiIndex::index<Composite_Name_Ent_And_Part_mi_tag>::type::iterator get_numered_dofs_rows_end(const std::string& name,const EntityHandle ent,const int part) const {
     return numered_dofs_rows->get<Composite_Name_Ent_And_Part_mi_tag>().upper_bound(boost::make_tuple(name,ent,part));
   }
 
   /// get begin iterator for numered_dofs_cols (insted you can use #_IT_NUMEREDDOFMOFEMENTITY_COL_BY_NAME_ENT_PART_FOR_LOOP_ for loops)
-  NumeredDofEntity_multiIndex::index<Composite_Name_Ent_And_Part_mi_tag>::type::iterator get_numered_dofs_cols_begin(const string& name,const EntityHandle ent,const int part) const {
+  NumeredDofEntity_multiIndex::index<Composite_Name_Ent_And_Part_mi_tag>::type::iterator get_numered_dofs_cols_begin(const std::string& name,const EntityHandle ent,const int part) const {
     return numered_dofs_cols->get<Composite_Name_Ent_And_Part_mi_tag>().lower_bound(boost::make_tuple(name,ent,part));
   }
 
   /// get end iterator for numered_dofs_cols (insted you can use #_IT_NUMEREDDOFMOFEMENTITY_COL_BY_NAME_ENT_PART_FOR_LOOP_ for loops)
-  NumeredDofEntity_multiIndex::index<Composite_Name_Ent_And_Part_mi_tag>::type::iterator get_numered_dofs_cols_end(const string& name,const EntityHandle ent,const int part) const {
+  NumeredDofEntity_multiIndex::index<Composite_Name_Ent_And_Part_mi_tag>::type::iterator get_numered_dofs_cols_end(const std::string& name,const EntityHandle ent,const int part) const {
     return numered_dofs_cols->get<Composite_Name_Ent_And_Part_mi_tag>().upper_bound(boost::make_tuple(name,ent,part));
   }
 
@@ -398,7 +398,7 @@ struct MoFEMProblem {
   MoFEMProblem(Interface &moab,const EntityHandle _meshset);
   inline BitProblemId get_id() const { return *((BitProblemId*)tag_id_data); }
 
-  inline string get_name() const { return string((char *)tag_name_data,tag_name_size); }
+  inline std::string get_name() const { return std::string((char *)tag_name_data,tag_name_size); }
   inline DofIdx get_nb_dofs_row() const { return *((DofIdx*)tag_nbdof_data_row); }
   inline DofIdx get_nb_dofs_col() const { return *((DofIdx*)tag_nbdof_data_col); }
   inline DofIdx get_nb_local_dofs_row() const { return *((DofIdx*)tag_local_nbdof_data_row); }
@@ -410,7 +410,7 @@ struct MoFEMProblem {
   PetscErrorCode get_row_dofs_by_petsc_gloabl_dof_idx(DofIdx idx,const NumeredDofEntity **dof_ptr) const;
   PetscErrorCode get_col_dofs_by_petsc_gloabl_dof_idx(DofIdx idx,const NumeredDofEntity **dof_ptr) const;
   BitFEId get_BitFEId() const;
-  friend ostream& operator<<(ostream& os,const MoFEMProblem& e);
+  friend std::ostream& operator<<(std::ostream& os,const MoFEMProblem& e);
 
   /**
    * \brief Get number of finite elements by name on processors
@@ -434,7 +434,7 @@ struct MoFEMProblem {
    * @param  layout Get number of elements on each processor
    * @return      error code
    */
-  PetscErrorCode getNumberOfElementsByNameAndPart(MPI_Comm comm,const string name,PetscLayout *layout) const;
+  PetscErrorCode getNumberOfElementsByNameAndPart(MPI_Comm comm,const std::string name,PetscLayout *layout) const;
 
   /**
    * \brief Get number of finite elements on processors
@@ -474,7 +474,7 @@ typedef multi_index_container<
     hashed_unique<
       tag<BitProblemId_mi_tag>, const_mem_fun<MoFEMProblem,BitProblemId,&MoFEMProblem::get_id>, HashBit<BitProblemId>, EqBit<BitProblemId> >,
     hashed_unique<
-      tag<Problem_mi_tag>, const_mem_fun<MoFEMProblem,string,&MoFEMProblem::get_name> >
+      tag<Problem_mi_tag>, const_mem_fun<MoFEMProblem,std::string,&MoFEMProblem::get_name> >
   > > MoFEMProblem_multiIndex;
 
 /** \brief add ref level to problem
@@ -528,7 +528,7 @@ struct ProblemFiniteElementChangeBitUnSet {
 struct ProblemAddRowDof {
   const boost::shared_ptr<DofEntity> dof_ptr;
   ProblemAddRowDof(const boost::shared_ptr<DofEntity> _dof_ptr);
-  pair<NumeredDofEntity_multiIndex::iterator,bool> p;
+  std::pair<NumeredDofEntity_multiIndex::iterator,bool> p;
   void operator()(MoFEMProblem &e);
 };
 
@@ -538,7 +538,7 @@ struct ProblemAddRowDof {
 struct ProblemAddColDof {
   const boost::shared_ptr<DofEntity> dof_ptr;
   ProblemAddColDof(const boost::shared_ptr<DofEntity> _dof_ptr);
-  pair<NumeredDofEntity_multiIndex::iterator,bool> p;
+  std::pair<NumeredDofEntity_multiIndex::iterator,bool> p;
   void operator()(MoFEMProblem &e);
 };
 

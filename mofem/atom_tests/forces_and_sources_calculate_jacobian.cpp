@@ -133,10 +133,10 @@ int main(int argc, char *argv[]) {
     ErrorCode rval;
     PetscErrorCode ierr;
 
-    typedef tee_device<ostream, ofstream> TeeDevice;
+    typedef tee_device<std::ostream, std::ofstream> TeeDevice;
     typedef stream<TeeDevice> TeeStream;
 
-    ofstream ofs;
+    std::ofstream ofs;
     TeeDevice my_tee;
     TeeStream my_split;
 
@@ -152,7 +152,7 @@ int main(int argc, char *argv[]) {
       PetscErrorCode doWork(
         int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
           PetscFunctionBegin;
-          my_split << "side: " << side << " type: " << type << data.getDiffN() << endl;
+          my_split << "side: " << side << " type: " << type << data.getDiffN() << std::endl;
           PetscFunctionReturn(0);
         }
 
@@ -169,7 +169,7 @@ int main(int argc, char *argv[]) {
     ForcesAndSurcesCore_TestFE(FieldInterface &_m_field):
     ForcesAndSurcesCore(_m_field),
     ofs("forces_and_sources_calculate_jacobian.txt"),
-    my_tee(cout, ofs),
+    my_tee(std::cout, ofs),
     my_split(my_tee),
     opPrintJac(my_split),
     opSetInvJac(invJac),
@@ -241,16 +241,16 @@ int main(int argc, char *argv[]) {
         ierr = opSetInvJac.opRhs(data); CHKERRQ(ierr);
         ierr = opPrintJac.opRhs(data); CHKERRQ(ierr);
         ierr = opGetData_FIELD1.opRhs(data); CHKERRQ(ierr);
-      } catch (exception& ex) {
-        ostringstream ss;
-        ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__ << endl;
+      } catch (std::exception& ex) {
+        std::ostringstream ss;
+        ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__ << std::endl;
         SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
 
-      my_split << "data FIELD1:" << endl;
-      my_split << dataFIELD1 << endl;
-      my_split << "data diff FIELD1:" << endl;
-      my_split << dataDiffFIELD1 << endl;
+      my_split << "data FIELD1:" << std::endl;
+      my_split << dataFIELD1 << std::endl;
+      my_split << "data diff FIELD1:" << std::endl;
+      my_split << dataDiffFIELD1 << std::endl;
 
       PetscFunctionReturn(0);
     }

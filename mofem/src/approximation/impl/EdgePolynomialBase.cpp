@@ -144,10 +144,10 @@ PetscErrorCode EdgePolynomialBase::getValueH1(ublas::matrix<double> &pts) {
   int nb_gauss_pts = pts.size2();
 
 
-  //cerr << data.dataOnEntities[MBVERTEX][0].getN(base) << endl;
-  //cerr << data.dataOnEntities[MBVERTEX][0].getDiffN(base) << endl;
+  //std::cerr << data.dataOnEntities[MBVERTEX][0].getN(base) << std::endl;
+  //std::cerr << data.dataOnEntities[MBVERTEX][0].getDiffN(base) << std::endl;
   //
-  // cerr << pts << endl;
+  // std::cerr << pts << std::endl;
 
   const int side_number = 0;
   int sense = data.dataOnEntities[MBEDGE][side_number].getSense();
@@ -161,7 +161,7 @@ PetscErrorCode EdgePolynomialBase::getValueH1(ublas::matrix<double> &pts) {
   L.resize(NBEDGE_H1_AINSWORTH_COLE(order),false);
   diffL.resize(NBEDGE_H1_AINSWORTH_COLE(order),false);
 
-  // cerr << data.dataOnEntities[MBVERTEX][0].getN(base) << endl;
+  // std::cerr << data.dataOnEntities[MBVERTEX][0].getN(base) << std::endl;
 
   if(data.dataOnEntities[MBEDGE][side_number].getDataOrder()>1) {
 
@@ -179,7 +179,7 @@ PetscErrorCode EdgePolynomialBase::getValueH1(ublas::matrix<double> &pts) {
         NBEDGE_H1_AINSWORTH_COLE(order)-1,s,&diff_s,&*L.data().begin(),&*diffL.data().begin(),1
       ); CHKERRQ(ierr);
 
-      // cerr << "s " << s << " " << L << endl;
+      // std::cerr << "s " << s << " " << L << std::endl;
 
       for(unsigned int pp = 0;pp<data.dataOnEntities[MBEDGE][side_number].getN(base).size2();pp++) {
 
@@ -200,8 +200,8 @@ PetscErrorCode EdgePolynomialBase::getValueH1(ublas::matrix<double> &pts) {
     }
   }
 
-  // cerr << data.dataOnEntities[MBEDGE][0].getN(base) << endl;
-  //cerr << data.dataOnEntities[MBEDGE][0].getDiffN(base) << endl;
+  // std::cerr << data.dataOnEntities[MBEDGE][0].getN(base) << std::endl;
+  //std::cerr << data.dataOnEntities[MBEDGE][0].getDiffN(base) << std::endl;
 
   PetscFunctionReturn(0);
 }

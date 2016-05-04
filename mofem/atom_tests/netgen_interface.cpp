@@ -76,7 +76,7 @@ int main(int argc, char *argv[]) {
 
   NetGenInterface *netgen_iface;
   ierr = m_field.query_interface(netgen_iface); CHKERRQ(ierr);
-  vector<EntityHandle> pts;
+  std::vector<EntityHandle> pts;
   EntityHandle meshset_out;
 
   BitRefLevel bit_level0;
@@ -98,39 +98,39 @@ int main(int argc, char *argv[]) {
   outer_surface_skin = unite(outer_surface_skin,tets);
   ierr = netgen_iface->stlSetSurfaceTriangles(stl_geom,outer_surface_skin,NULL,1);  CHKERRQ(ierr);
   
-  cout << "Initialise the STL Geometry structure...." << endl;
+  cout << "Initialise the STL Geometry structure...." << std::endl;
   ng_res = Ng_STL_InitSTLGeometry(stl_geom);
   if(ng_res != NG_OK) {
-    cout << "Error Initialising the STL Geometry....Aborting!!" << endl;
+    cout << "Error Initialising the STL Geometry....Aborting!!" << std::endl;
     return 1;
   }
 
-  cout << "Start Edge Meshing...." << endl;
+  cout << "Start Edge Meshing...." << std::endl;
   ng_res = Ng_STL_MakeEdges(stl_geom, mesh, &mp);
   if(ng_res != NG_OK) {
-    cout << "Error in Edge Meshing....Aborting!!" << endl;
+    cout << "Error in Edge Meshing....Aborting!!" << std::endl;
     return 1;
   }
 
 
-  cout << "Start Surface Meshing...." << endl;
+  cout << "Start Surface Meshing...." << std::endl;
   ng_res = Ng_STL_GenerateSurfaceMesh(stl_geom, mesh, &mp);
   if(ng_res != NG_OK) {
-    cout << "Error in Surface Meshing....Aborting!!" << endl;
+    cout << "Error in Surface Meshing....Aborting!!" << std::endl;
     return 1;
   }
  
   // volume mesh output
   int np;
   np = Ng_GetNP(mesh);
-  cout << "Points: " << np << endl;
+  cout << "Points: " << np << std::endl;
 
   int ne;
   ne = Ng_GetNSE(mesh);
-  cout << "Elements Surface: " << ne << " (" << outer_surface_skin.size() << ") " << endl;
+  cout << "Elements Surface: " << ne << " (" << outer_surface_skin.size() << ") " << std::endl;
 
   ierr = netgen_iface->getPoints(mesh,pts); CHKERRQ(ierr);
-  vector<EntityHandle> surface_elems;
+  std::vector<EntityHandle> surface_elems;
   ierr = netgen_iface->getSurfaceElements(mesh,pts,surface_elems); CHKERRQ(ierr);
 
   rval = moab.create_meshset(MESHSET_SET,meshset_out); CHKERRQ_MOAB(rval);
@@ -152,25 +152,25 @@ int main(int argc, char *argv[]) {
   ierr = netgen_iface->setSurfaceElements(mesh,pts,surface_elems); CHKERRQ(ierr);
 
   np = Ng_GetNP(mesh);
-  cout << "Points: " << np << endl;
+  cout << "Points: " << np << std::endl;
   ne = Ng_GetNSE(mesh);
-  cout << "Elements Surface: " << ne << " (" << outer_surface_skin.size() << ") " << endl;
+  cout << "Elements Surface: " << ne << " (" << outer_surface_skin.size() << ") " << std::endl;
 
-  cout << "Start Volume Meshing...." << endl;
+  cout << "Start Volume Meshing...." << std::endl;
   ng_res = Ng_GenerateVolumeMesh (mesh, &mp);
   if(ng_res != NG_OK) {
-    cout << "Error in Volume Meshing....Aborting!!" << endl;
+    cout << "Error in Volume Meshing....Aborting!!" << std::endl;
     return 1;
   }
-  cout << "Meshing successfully completed....!!" << endl;
+  cout << "Meshing successfully completed....!!" << std::endl;
 
   np = Ng_GetNP(mesh);
-  cout << "Points: " << np << endl;
+  cout << "Points: " << np << std::endl;
   ne = Ng_GetNE(mesh);
-  cout << "Elements Volume: " << ne << endl;
+  cout << "Elements Volume: " << ne << std::endl;
 
   ierr = netgen_iface->getPoints(mesh,pts); CHKERRQ(ierr);
-  vector<EntityHandle> volume_elems;
+  std::vector<EntityHandle> volume_elems;
   ierr = netgen_iface->getVolumeElements(mesh,pts,volume_elems); CHKERRQ(ierr);
 
   rval = moab.create_meshset(MESHSET_SET,meshset_out); CHKERRQ_MOAB(rval);

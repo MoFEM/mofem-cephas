@@ -190,8 +190,8 @@ struct VolumeLengthQuality: public NonlinearElasticElement::FunctionsToCalculate
         currentVolume = detF*this->opPtr->getVolume();
         q = 6.*sqrt(2.)*currentVolume/(lrmsSquared*sqrt(lrmsSquared));
 
-        //cerr << "b " << b << endl;
-        //cerr << "q " << q << endl;
+        //std::cerr << "b " << b << std::endl;
+        //std::cerr << "q " << q << std::endl;
 
         if(this->P.size1()!=3) {
           this->P.resize(3,3);
@@ -225,8 +225,8 @@ struct VolumeLengthQuality: public NonlinearElasticElement::FunctionsToCalculate
         this->P *= aLpha/this->opPtr->getVolume();
 
       } catch (const std::exception& ex) {
-        ostringstream ss;
-        ss << "throw in method: " << ex.what() << endl;
+        std::ostringstream ss;
+        ss << "throw in method: " << ex.what() << std::endl;
         SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
 

@@ -168,7 +168,7 @@ PetscErrorCode DMMoFEMCreateMoFEM(
   ierr = PetscObjectGetComm((PetscObject)dm,&comm); CHKERRQ(ierr);
   int result = 0;
   MPI_Comm_compare(comm,m_field_ptr->get_comm(),&result);
-  //cerr << result << " " << MPI_IDENT << " " << MPI_CONGRUENT << " " << MPI_SIMILAR << " " << MPI_UNEQUAL << endl;
+  //std::cerr << result << " " << MPI_IDENT << " " << MPI_CONGRUENT << " " << MPI_SIMILAR << " " << MPI_UNEQUAL << std::endl;
   if(result > MPI_CONGRUENT) {
     SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"MoFEM and DM using different communicators");
   }

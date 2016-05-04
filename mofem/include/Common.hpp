@@ -39,12 +39,12 @@ namespace MoFEM {
   typedef UId GlobalUId; ///< Global unique id
   typedef int ShortId;
 
-  typedef bitset<BITREFEDGES_SIZE> BitRefEdges;
-  typedef bitset<BITREFLEVEL_SIZE> BitRefLevel;
-  typedef bitset<BITFIELDID_SIZE> BitFieldId;
-  typedef bitset<BITFEID_SIZE> BitFEId;
-  typedef bitset<BITPROBLEMID_SIZE> BitProblemId;
-  typedef bitset<BITINTERFACEUID_SIZE> BitIntefaceId;
+  typedef std::bitset<BITREFEDGES_SIZE> BitRefEdges;
+  typedef std::bitset<BITREFLEVEL_SIZE> BitRefLevel;
+  typedef std::bitset<BITFIELDID_SIZE> BitFieldId;
+  typedef std::bitset<BITFEID_SIZE> BitFEId;
+  typedef std::bitset<BITPROBLEMID_SIZE> BitProblemId;
+  typedef std::bitset<BITINTERFACEUID_SIZE> BitIntefaceId;
 
   //AUX STRUCTURES
 
@@ -116,7 +116,7 @@ namespace MoFEM {
   * bc & material meshsets
   *
   */
-  typedef bitset<32> CubitBCType;
+  typedef std::bitset<32> CubitBCType;
 
   #if PETSC_VERSION_GE(3,6,4)
 

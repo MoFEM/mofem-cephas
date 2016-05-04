@@ -82,7 +82,7 @@ int main(int argc, char *argv[]) {
   //PetscAttachDebugger ();
   //ierr = m_field.shift_right_bit_ref(1); CHKERRQ(ierr);
 
-  ofstream myfile;
+  std::ofstream myfile;
   myfile.open("mesh_refine.txt");
 
   EntityHandle out_meshset_tet;
@@ -101,8 +101,8 @@ int main(int argc, char *argv[]) {
         //cout << conn[nn] << " ";
         myfile << conn[nn] << " ";
       }
-      //cout << endl;
-      myfile << endl;
+      //cout << std::endl;
+      myfile << std::endl;
       if(ii>25) break;
     }
   }

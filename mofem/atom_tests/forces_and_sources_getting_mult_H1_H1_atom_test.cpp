@@ -143,18 +143,18 @@ int main(int argc, char *argv[]) {
     ErrorCode rval;
     PetscErrorCode ierr;
 
-    typedef tee_device<ostream, ofstream> TeeDevice;
+    typedef tee_device<std::ostream, std::ofstream> TeeDevice;
     typedef stream<TeeDevice> TeeStream;
 
     struct my_mult_H1_H1: public DataOperator {
 
-      ofstream ofs;
+      std::ofstream ofs;
       TeeDevice my_tee;
       TeeStream my_split;
 
       my_mult_H1_H1():
       ofs("forces_and_sources_getting_mult_H1_H1_atom_test.txt"),
-      my_tee(cout, ofs),my_split(my_tee
+      my_tee(std::cout, ofs),my_split(my_tee
       ) {};
 
       ~my_mult_H1_H1() {
@@ -176,14 +176,14 @@ int main(int argc, char *argv[]) {
           int nb_row_dofs = row_data.getN().size2();
           int nb_col_dofs = col_data.getN().size2();
 
-          my_split << row_side << " " << col_side << " " << row_type << " " << col_type << endl;
-          my_split << "nb_row_dofs " << nb_row_dofs << " nb_col_dofs " << nb_col_dofs << endl;
+          my_split << row_side << " " << col_side << " " << row_type << " " << col_type << std::endl;
+          my_split << "nb_row_dofs " << nb_row_dofs << " nb_col_dofs " << nb_col_dofs << std::endl;
           NN.resize(nb_row_dofs,nb_col_dofs);
 
 
           my_split.precision(2);
-          my_split << row_data.getN() << endl;
-          my_split << col_data.getN() << endl;
+          my_split << row_data.getN() << std::endl;
+          my_split << col_data.getN() << std::endl;
 
           for(unsigned int gg = 0;gg<row_data.getN().size1();gg++) {
 
@@ -196,24 +196,24 @@ int main(int argc, char *argv[]) {
 
               my_split << "gg " << gg << " : ";
               my_split.precision(2);
-              //my_split << NN << endl;
-              my_split << NN - outer_prod(row_data.getN(gg),col_data.getN(gg)) << endl;
+              //my_split << NN << std::endl;
+              my_split << NN - outer_prod(row_data.getN(gg),col_data.getN(gg)) << std::endl;
               if(row_type != MBVERTEX) {
-                my_split << row_data.getDiffN(gg) << endl;
+                my_split << row_data.getDiffN(gg) << std::endl;
               }
 
               if(row_type == MBVERTEX) {
-                my_split << row_data.getDiffN() << endl;
+                my_split << row_data.getDiffN() << std::endl;
               } else {
                 typedef ublas::array_adaptor<FieldData> storage_t;
                 storage_t st(nb_row_dofs*3,&row_data.getDiffN()(gg,0));
                 ublas::matrix<FieldData,ublas::row_major,storage_t> digNatGaussPt(nb_row_dofs,3,st);
-                my_split << endl << digNatGaussPt << endl;
+                my_split << std::endl << digNatGaussPt << std::endl;
               }
 
             }
 
-            my_split << endl;
+            my_split << std::endl;
 
             PetscFunctionReturn(0);
           }
@@ -290,9 +290,9 @@ int main(int argc, char *argv[]) {
 
       try {
         ierr = op.opLhs(data_row,data_col,true); CHKERRQ(ierr);
-      } catch (exception& ex) {
-        ostringstream ss;
-        ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__ << endl;
+      } catch (std::exception& ex) {
+        std::ostringstream ss;
+        ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__ << std::endl;
         SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
 

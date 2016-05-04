@@ -32,15 +32,15 @@ struct TsCtx {
   FieldInterface &mField;
   Interface &moab;
 
-  string problemName;
+  std::string problemName;
 
-  typedef pair<string,FEMethod*> loop_pair_type;
-  typedef vector<loop_pair_type > loops_to_do_type;
+  typedef std::pair<std::string,FEMethod*> loop_pair_type;
+  typedef std::vector<loop_pair_type > loops_to_do_type;
   loops_to_do_type loops_to_do_IJacobian;
   loops_to_do_type loops_to_do_IFunction;
   loops_to_do_type loops_to_do_Monitor;
 
-  typedef vector<BasicMethod*> basic_method_to_do;
+  typedef std::vector<BasicMethod*> basic_method_to_do;
   basic_method_to_do preProcess_IJacobian;
   basic_method_to_do postProcess_IJacobian;
   basic_method_to_do preProcess_IFunction;
@@ -55,7 +55,7 @@ struct TsCtx {
   PetscLogEvent USER_EVENT_TsCtxMonitor;
 
   bool zeroMatrix;
-  TsCtx(FieldInterface &m_field,const string &problem_name):
+  TsCtx(FieldInterface &m_field,const std::string &problem_name):
     mField(m_field),moab(m_field.get_moab()),
     problemName(problem_name),
     zeroMatrix(true) {

@@ -29,7 +29,7 @@ using namespace boost::numeric;
 struct FieldApproximationH1 {
 
   FieldInterface &mField;
-  const string problemName;
+  const std::string problemName;
   VolumeElementForcesAndSourcesCore feVolume;
   FaceElementForcesAndSourcesCore feFace;
 
@@ -48,17 +48,17 @@ struct FieldApproximationH1 {
   struct OpApproxVolume: public VolumeElementForcesAndSourcesCore::UserDataOperator {
 
     Mat A;
-    vector<Vec> &vecF;
+    std::vector<Vec> &vecF;
     FUNEVAL &functionEvaluator;
 
-    OpApproxVolume(const string &field_name,Mat _A,vector<Vec> &vec_F,FUNEVAL &function_evaluator):
+    OpApproxVolume(const std::string &field_name,Mat _A,std::vector<Vec> &vec_F,FUNEVAL &function_evaluator):
       VolumeElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROW|UserDataOperator::OPROWCOL),
       A(_A),vecF(vec_F),functionEvaluator(function_evaluator) {}
     virtual ~OpApproxVolume() {}
 
     MatrixDouble NN;
     MatrixDouble transNN;
-    vector<VectorDouble > Nf;
+    std::vector<VectorDouble > Nf;
 
     /** \brief calculate matrix
       */
@@ -214,13 +214,13 @@ struct FieldApproximationH1 {
           z = getCoordsAtGaussPts()(gg,2);
         }
 
-        vector<ublas::vector<double> > fun_val;
+        std::vector<ublas::vector<double> > fun_val;
         try {
 
           fun_val = functionEvaluator(x,y,z);
 
-        } catch (exception& ex) {
-          ostringstream ss;
+        } catch (std::exception& ex) {
+          std::ostringstream ss;
           ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
           SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
         }
@@ -270,10 +270,10 @@ struct FieldApproximationH1 {
   struct OpApproxFace: public FaceElementForcesAndSourcesCore::UserDataOperator {
 
     Mat A;
-    vector<Vec> &vecF;
+    std::vector<Vec> &vecF;
     FUNEVAL &functionEvaluator;
 
-    OpApproxFace(const string &field_name,Mat _A,vector<Vec> &vec_F,FUNEVAL &function_evaluator):
+    OpApproxFace(const std::string &field_name,Mat _A,std::vector<Vec> &vec_F,FUNEVAL &function_evaluator):
       FaceElementForcesAndSourcesCore::UserDataOperator(
         field_name,UserDataOperator::OPROW|UserDataOperator::OPROWCOL
       ),
@@ -284,7 +284,7 @@ struct FieldApproximationH1 {
 
     ublas::matrix<double> NN;
     ublas::matrix<double> transNN;
-    vector<ublas::vector<double> > Nf;
+    std::vector<ublas::vector<double> > Nf;
 
     /** \brief calculate matrix
       */
@@ -440,12 +440,12 @@ struct FieldApproximationH1 {
          noalias(normal) = getNormal();
        }
 
-        vector<ublas::vector<double> > fun_val;
+        std::vector<ublas::vector<double> > fun_val;
         try {
           EntityHandle ent = getFEMethod()->fePtr->get_ent();
           fun_val = functionEvaluator(ent,x,y,z,normal,tangent1,tangent2);
-        } catch (exception& ex) {
-          ostringstream ss;
+        } catch (std::exception& ex) {
+          std::ostringstream ss;
           ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
           SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
         }
@@ -488,9 +488,9 @@ struct FieldApproximationH1 {
   */
   template<typename FUNEVAL>
   PetscErrorCode setOperatorsVolume(
-    const string &field_name,
+    const std::string &field_name,
     Mat A,
-    vector<Vec> &vec_F,
+    std::vector<Vec> &vec_F,
     FUNEVAL &function_evaluator
   ) {
     PetscFunctionBegin;
@@ -507,9 +507,9 @@ struct FieldApproximationH1 {
   */
   template<typename FUNEVAL>
   PetscErrorCode setOperatorsFace(
-    const string &field_name,
+    const std::string &field_name,
     Mat A,
-    vector<Vec> &vec_F,
+    std::vector<Vec> &vec_F,
     FUNEVAL &function_evaluator
   ) {
     PetscFunctionBegin;
@@ -526,10 +526,10 @@ struct FieldApproximationH1 {
     */
   template<typename FUNEVAL>
   PetscErrorCode loopMatrixAndVectorVolume(
-    const string &problem_name,
-    const string &fe_name,
-    const string &field_name,
-    Mat A,vector<Vec> &vec_F,
+    const std::string &problem_name,
+    const std::string &fe_name,
+    const std::string &field_name,
+    Mat A,std::vector<Vec> &vec_F,
     FUNEVAL &function_evaluator
   ) {
     PetscFunctionBegin;
@@ -553,10 +553,10 @@ struct FieldApproximationH1 {
 
   template<typename FUNEVAL>
   DEPRECATED PetscErrorCode loopMatrixAndVector(
-    const string &problem_name,
-    const string &fe_name,
-    const string &field_name,
-    Mat A,vector<Vec> &vec_F,
+    const std::string &problem_name,
+    const std::string &fe_name,
+    const std::string &field_name,
+    Mat A,std::vector<Vec> &vec_F,
     FUNEVAL &function_evaluator
   ) {
     PetscFunctionBegin;

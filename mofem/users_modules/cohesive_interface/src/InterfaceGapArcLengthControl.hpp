@@ -78,10 +78,10 @@ struct ArcLengthIntElemFEMethod: public FEMethod {
     PetscFunctionBegin;
     Range prisms;
     rval = mOab.get_entities_by_type(0,MBPRISM,prisms,false); CHKERRQ_MOAB(rval);
-    vector<int> is_prism_damaged(prisms.size());
+    std::vector<int> is_prism_damaged(prisms.size());
     rval = mOab.tag_get_data(thDamagedPrism,prisms,&*is_prism_damaged.begin()); CHKERRQ_MOAB(rval);
     Range::iterator pit = prisms.begin();
-    vector<int>::iterator vit = is_prism_damaged.begin();
+    std::vector<int>::iterator vit = is_prism_damaged.begin();
     for(;pit!=prisms.end();pit++,vit++) {
       if(*vit>0) {
         Range nodes;
@@ -255,7 +255,7 @@ struct ArcLengthIntElemFEMethod: public FEMethod {
     );
     double a = *dlambda;
     if(a - a != 0) {
-      ostringstream sss;
+      std::ostringstream sss;
       sss << "s " << arcPtr->s << " " << arcPtr->beta << " " << arcPtr->F_lambda2;
       SETERRQ(PETSC_COMM_SELF,1,sss.str().c_str());
     }
@@ -271,7 +271,7 @@ struct ArcLengthIntElemFEMethod: public FEMethod {
       ierr = VecGetArray(x,&array); CHKERRQ(ierr);
       double lambda_old = array[arcPtr->getPetscLocalDofIdx()];
       if(!(dlambda == dlambda)) {
-        ostringstream sss;
+        std::ostringstream sss;
         sss << "s " << arcPtr->s << " " << arcPtr->beta << " " << arcPtr->F_lambda2;
         SETERRQ(PETSC_COMM_SELF,1,sss.str().c_str());
       }

@@ -123,7 +123,7 @@ namespace MoFEM {
 
     inline EntityHandle getMeshSet() const { return meshSet; };
     inline boost::string_ref getNameRef() const { return boost::string_ref((char *)tagCoordSysName,tagCoordSysNameSize); };
-    inline string getName() const { return string((char *)tagCoordSysName,tagCoordSysNameSize); };
+    inline std::string getName() const { return std::string((char *)tagCoordSysName,tagCoordSysNameSize); };
   };
 
   typedef multi_index_container<

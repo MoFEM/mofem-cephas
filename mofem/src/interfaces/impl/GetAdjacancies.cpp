@@ -52,14 +52,14 @@ namespace MoFEM {
 PetscErrorCode Core::get_adjacencies_equality(const EntityHandle from_entiti,const int to_dimension,Range &adj_entities) {
   PetscFunctionBegin;
   RefEntity from_ref_entiti(moab,from_entiti);
-  //cerr << "from:\n";
-  //cerr << from_ref_entiti << endl;
+  //std::cerr << "from:\n";
+  //std::cerr << from_ref_entiti << std::endl;
   rval = moab.get_adjacencies(&from_entiti,1,to_dimension,false,adj_entities); CHKERRQ_MOAB(rval);
   Range::iterator eit = adj_entities.begin();
-  //cerr << "to:\n";
+  //std::cerr << "to:\n";
   for(;eit!=adj_entities.end();) {
     RefEntity adj_entiti(moab,*eit);
-    //cerr << "\t" << adj_entiti << endl;
+    //std::cerr << "\t" << adj_entiti << std::endl;
     if(from_ref_entiti.get_BitRefLevel() != adj_entiti.get_BitRefLevel()) {
       eit = adj_entities.erase(eit);
     } else {
@@ -71,14 +71,14 @@ PetscErrorCode Core::get_adjacencies_equality(const EntityHandle from_entiti,con
 PetscErrorCode Core::get_adjacencies_any(const EntityHandle from_entiti,const int to_dimension,Range &adj_entities) {
   PetscFunctionBegin;
   RefEntity from_ref_entiti(moab,from_entiti);
-  //cerr << "from:\n";
-  //cerr << from_ref_entiti << endl;
+  //std::cerr << "from:\n";
+  //std::cerr << from_ref_entiti << std::endl;
   rval = moab.get_adjacencies(&from_entiti,1,to_dimension,false,adj_entities); CHKERRQ_MOAB(rval);
   Range::iterator eit = adj_entities.begin();
-  //cerr << "to:\n";
+  //std::cerr << "to:\n";
   for(;eit!=adj_entities.end();) {
     RefEntity adj_entiti(moab,*eit);
-    //cerr << "\t" << adj_entiti << endl;
+    //std::cerr << "\t" << adj_entiti << std::endl;
     if(!(from_ref_entiti.get_BitRefLevel()&adj_entiti.get_BitRefLevel()).any()) {
       eit = adj_entities.erase(eit);
     } else {
@@ -101,18 +101,18 @@ PetscErrorCode Core::get_adjacencies(
     const EntityHandle *from_entities,const int num_netities,const int to_dimension,Range &adj_entities,const int operation_type,const int verb) {
   PetscFunctionBegin;
   if(verb>0) {
-    ostringstream ss;
-    ss << "from: " << bit << endl << "to: " << endl;
+    std::ostringstream ss;
+    ss << "from: " << bit << std::endl << "to: " << std::endl;
     PetscPrintf(comm,ss.str().c_str());
   }
   rval = moab.get_adjacencies(from_entities,num_netities,to_dimension,false,adj_entities,operation_type); CHKERRQ_MOAB(rval);
   Range::iterator eit = adj_entities.begin();
-  //cerr << "to:\n";
+  //std::cerr << "to:\n";
   for(;eit!=adj_entities.end();) {
     RefEntity adj_entiti(moab,*eit);
     if(verb>0) {
-      ostringstream ss;
-      ss << "\t" << adj_entiti << endl;
+      std::ostringstream ss;
+      ss << "\t" << adj_entiti << std::endl;
       PetscPrintf(comm,ss.str().c_str());
     }
     if(!(adj_entiti.get_BitRefLevel()&bit).any() ) {

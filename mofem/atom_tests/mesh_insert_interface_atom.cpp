@@ -54,7 +54,7 @@ int main(int argc, char *argv[]) {
   PrismInterface& interface = core;
 
   ierr = m_field.seed_ref_level_3D(0,BitRefLevel().set(0)); CHKERRQ(ierr);
-  vector<BitRefLevel> bit_levels;
+  std::vector<BitRefLevel> bit_levels;
   bit_levels.push_back(BitRefLevel().set(0));
 
   int ll = 1;
@@ -117,7 +117,7 @@ int main(int argc, char *argv[]) {
   //add problems
   //set problem for all last two levels, only for testing pruposes
   for(int lll = ll-2;lll<ll;lll++) {
-    stringstream problem_name;
+    std::stringstream problem_name;
     problem_name << "PROBLEM_SCALAR_" << lll;
     ierr = m_field.add_problem(problem_name.str()); CHKERRQ(ierr);
     //define problems and finite elements
@@ -127,10 +127,10 @@ int main(int argc, char *argv[]) {
 
   //set problem level
   for(int lll = ll-2;lll<ll;lll++) {
-    stringstream problem_name;
+    std::stringstream problem_name;
     problem_name << "PROBLEM_SCALAR_" << lll;
-    stringstream message;
-    message << "set problem problem < " << problem_name.str() << " > bit level " << bit_levels[lll] << endl;
+    std::stringstream message;
+    message << "set problem problem < " << problem_name.str() << " > bit level " << bit_levels[lll] << std::endl;
     ierr = PetscPrintf(PETSC_COMM_WORLD,message.str().c_str()); CHKERRQ(ierr);
     ierr = m_field.modify_problem_ref_level_add_bit(problem_name.str(),bit_levels[lll]); CHKERRQ(ierr);
   }
@@ -156,7 +156,7 @@ int main(int argc, char *argv[]) {
 
     BlockSetAttributes mydata;
     ierr = cit->get_attribute_data_structure(mydata); CHKERRQ(ierr);
-    cout << mydata << endl;
+    std::cout << mydata << std::endl;
 
     Range tets;
     rval = moab.get_entities_by_type(cubit_meshset,MBTET,tets,true); CHKERRQ_MOAB(rval);
@@ -177,14 +177,14 @@ int main(int argc, char *argv[]) {
 
   //partition
   for(int lll = ll-2;lll<ll;lll++) {
-    stringstream problem_name;
+    std::stringstream problem_name;
     problem_name << "PROBLEM_SCALAR_" << lll;
     ierr = m_field.partition_problem(problem_name.str()); CHKERRQ(ierr);
     ierr = m_field.partition_finite_elements(problem_name.str()); CHKERRQ(ierr);
     ierr = m_field.partition_ghost_dofs(problem_name.str()); CHKERRQ(ierr);
   }
 
-  ofstream myfile;
+  std::ofstream myfile;
   myfile.open("mesh_insert_interface.txt");
 
   EntityHandle out_meshset_tet;
@@ -200,11 +200,11 @@ int main(int argc, char *argv[]) {
     rval = moab.get_connectivity(*tit,conn,num_nodes,true); CHKERRQ_MOAB(rval);
 
     for(int nn = 0;nn<num_nodes;nn++) {
-      cout << conn[nn] << " ";
+      std::cout << conn[nn] << " ";
       myfile << conn[nn] << " ";
     }
-    cout << endl;
-    myfile << endl;
+    std::cout << std::endl;
+    myfile << std::endl;
 
   }
   EntityHandle out_meshset_prism;
@@ -218,11 +218,11 @@ int main(int argc, char *argv[]) {
     rval = moab.get_connectivity(*pit,conn,num_nodes,true); CHKERRQ_MOAB(rval);
 
     for(int nn = 0;nn<num_nodes;nn++) {
-      cout << conn[nn] << " ";
+      std::cout << conn[nn] << " ";
       myfile << conn[nn] << " ";
     }
-    cout << endl;
-    myfile << endl;
+    std::cout << std::endl;
+    myfile << std::endl;
 
   }
   myfile.close();
@@ -240,7 +240,7 @@ int main(int argc, char *argv[]) {
   rval = moab.create_meshset(MESHSET_SET,out_meshset_tris); CHKERRQ_MOAB(rval);
   Range tris;
   rval = moab.get_adjacencies(prisms,2,false,tris,Interface::UNION); CHKERRQ_MOAB(rval);
-  cerr << tris.size() << " : " << prisms.size() << endl;
+  std::cerr << tris.size() << " : " << prisms.size() << std::endl;
   rval = moab.add_entities(out_meshset_tris,tris); CHKERRQ_MOAB(rval);
   rval = moab.write_file("out_tris.vtk","VTK","",&out_meshset_tris,1); CHKERRQ_MOAB(rval);
 

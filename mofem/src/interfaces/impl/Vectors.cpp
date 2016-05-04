@@ -50,7 +50,7 @@ namespace MoFEM {
 
 // const static int debug = 1;
 
-PetscErrorCode Core::VecCreateSeq(const string &name,RowColData rc,Vec *V) {
+PetscErrorCode Core::VecCreateSeq(const std::string &name,RowColData rc,Vec *V) {
   PetscFunctionBegin;
   typedef MoFEMProblem_multiIndex::index<Problem_mi_tag>::type pRoblems_by_name;
   //typedef NumeredDofEntity_multiIndex::index<PetscLocalIdx_mi_tag>::type dofs_by_local_idx;
@@ -73,7 +73,7 @@ PetscErrorCode Core::VecCreateSeq(const string &name,RowColData rc,Vec *V) {
   ierr = ::VecCreateSeq(PETSC_COMM_SELF,nb_local_dofs+nb_ghost_dofs,V); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
-PetscErrorCode Core::VecCreateGhost(const string &name,RowColData rc,Vec *V) {
+PetscErrorCode Core::VecCreateGhost(const std::string &name,RowColData rc,Vec *V) {
   PetscFunctionBegin;
   typedef MoFEMProblem_multiIndex::index<Problem_mi_tag>::type pRoblems_by_name;
   typedef NumeredDofEntity_multiIndex::index<PetscLocalIdx_mi_tag>::type dofs_by_local_idx;
@@ -102,13 +102,13 @@ PetscErrorCode Core::VecCreateGhost(const string &name,RowColData rc,Vec *V) {
   dofs_by_local_idx::iterator hi_miit = dofs->upper_bound(nb_local_dofs+nb_ghost_dofs);
   int count = distance(miit,hi_miit);
   if(count != nb_ghost_dofs) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
-  vector<DofIdx> ghost_idx(count);
-  vector<DofIdx>::iterator vit = ghost_idx.begin();
+  std::vector<DofIdx> ghost_idx(count);
+  std::vector<DofIdx>::iterator vit = ghost_idx.begin();
   for(;miit!=hi_miit;miit++,vit++) *vit = (*miit)->petsc_gloabl_dof_idx;
   ierr = ::VecCreateGhost(comm,nb_local_dofs,nb_dofs,nb_ghost_dofs,&ghost_idx[0],V); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
-PetscErrorCode Core::ISCreateProblemOrder(const string &problem,RowColData rc,int min_order,int max_order,IS *is,int verb) {
+PetscErrorCode Core::ISCreateProblemOrder(const std::string &problem,RowColData rc,int min_order,int max_order,IS *is,int verb) {
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
   typedef MoFEMProblem_multiIndex::index<Problem_mi_tag>::type pRoblems_by_name;
@@ -131,7 +131,7 @@ PetscErrorCode Core::ISCreateProblemOrder(const string &problem,RowColData rc,in
   }
   NumeredDofEntity_multiIndex_petsc_local_dof_view_ordered_non_unique dof_loc_idx_view;
   for(;it!=hi_it;it++) {
-    pair<NumeredDofEntity_multiIndex_petsc_local_dof_view_ordered_non_unique::iterator,bool> p;
+    std::pair<NumeredDofEntity_multiIndex_petsc_local_dof_view_ordered_non_unique::iterator,bool> p;
     if((*it)->get_part()!=(unsigned int)rAnk) continue;
     p = dof_loc_idx_view.insert(*it);
   }
@@ -148,7 +148,7 @@ PetscErrorCode Core::ISCreateProblemOrder(const string &problem,RowColData rc,in
   PetscFunctionReturn(0);
 }
 PetscErrorCode Core::ISCreateProblemFieldAndRank(
-  const string &problem,RowColData rc,const string &field,int min_coeff_idx,int max_coeff_idx,IS *is,int verb
+  const std::string &problem,RowColData rc,const std::string &field,int min_coeff_idx,int max_coeff_idx,IS *is,int verb
 ) {
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
@@ -174,7 +174,7 @@ PetscErrorCode Core::ISCreateProblemFieldAndRank(
 
   NumeredDofEntity_multiIndex_petsc_local_dof_view_ordered_non_unique dof_loc_idx_view;
   for(;it!=hi_it;it++) {
-    pair<NumeredDofEntity_multiIndex_petsc_local_dof_view_ordered_non_unique::iterator,bool> p;
+    std::pair<NumeredDofEntity_multiIndex_petsc_local_dof_view_ordered_non_unique::iterator,bool> p;
     if((*it)->get_part()!=(unsigned int)rAnk) continue;
     if((*it)->get_name_ref() != field) continue;
     p = dof_loc_idx_view.insert(*it);
@@ -195,9 +195,9 @@ PetscErrorCode Core::ISCreateProblemFieldAndRank(
   PetscFunctionReturn(0);
 }
 PetscErrorCode Core::ISCreateFromProblemFieldToOtherProblemField(
-    const string &x_problem,const string &x_field_name,RowColData x_rc,
-    const string &y_problem,const string &y_field_name,RowColData y_rc,
-    vector<int> &idx,vector<int> &idy,int verb) {
+    const std::string &x_problem,const std::string &x_field_name,RowColData x_rc,
+    const std::string &y_problem,const std::string &y_field_name,RowColData y_rc,
+    std::vector<int> &idx,std::vector<int> &idy,int verb) {
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
   typedef MoFEMProblem_multiIndex::index<Problem_mi_tag>::type pRoblems_by_name;
@@ -244,11 +244,11 @@ PetscErrorCode Core::ISCreateFromProblemFieldToOtherProblemField(
   PetscFunctionReturn(0);
 }
 PetscErrorCode Core::ISCreateFromProblemFieldToOtherProblemField(
-  const string &x_problem,const string &x_field_name,RowColData x_rc,
-  const string &y_problem,const string &y_field_name,RowColData y_rc,
+  const std::string &x_problem,const std::string &x_field_name,RowColData x_rc,
+  const std::string &y_problem,const std::string &y_field_name,RowColData y_rc,
   IS *ix,IS *iy,int verb) {
   PetscFunctionBegin;
-  vector<int> idx(0),idy(0);
+  std::vector<int> idx(0),idy(0);
   ierr = ISCreateFromProblemFieldToOtherProblemField(
     x_problem,x_field_name,x_rc,y_problem,y_field_name,y_rc,
     idx,idy,verb); CHKERRQ(ierr);
@@ -260,11 +260,11 @@ PetscErrorCode Core::ISCreateFromProblemFieldToOtherProblemField(
   }
   PetscFunctionReturn(0);
 }
-PetscErrorCode Core::VecScatterCreate(Vec xin,const string &x_problem,const string &x_field_name,RowColData x_rc,
-  Vec yin,const string &y_problem,const string &y_field_name,RowColData y_rc,VecScatter *newctx,int verb) {
+PetscErrorCode Core::VecScatterCreate(Vec xin,const std::string &x_problem,const std::string &x_field_name,RowColData x_rc,
+  Vec yin,const std::string &y_problem,const std::string &y_field_name,RowColData y_rc,VecScatter *newctx,int verb) {
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
-  vector<int> idx(0),idy(0);
+  std::vector<int> idx(0),idy(0);
   ierr = ISCreateFromProblemFieldToOtherProblemField(
     x_problem,x_field_name,x_rc,y_problem,y_field_name,y_rc,
     idx,idy,verb); CHKERRQ(ierr);
@@ -277,7 +277,7 @@ PetscErrorCode Core::VecScatterCreate(Vec xin,const string &x_problem,const stri
   PetscFunctionReturn(0);
 }
 PetscErrorCode Core::ISCreateFromProblemToOtherProblem(
-  const string &x_problem,RowColData x_rc,const string &y_problem,RowColData y_rc,vector<int> &idx,vector<int> &idy,int verb) {
+  const std::string &x_problem,RowColData x_rc,const std::string &y_problem,RowColData y_rc,std::vector<int> &idx,std::vector<int> &idy,int verb) {
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
   typedef MoFEMProblem_multiIndex::index<Problem_mi_tag>::type pRoblems_by_name;
@@ -323,9 +323,9 @@ PetscErrorCode Core::ISCreateFromProblemToOtherProblem(
   PetscFunctionReturn(0);
 }
 PetscErrorCode Core::ISCreateFromProblemToOtherProblem(
-  const string &x_problem,RowColData x_rc,const string &y_problem,RowColData y_rc,IS *ix,IS *iy,int verb) {
+  const std::string &x_problem,RowColData x_rc,const std::string &y_problem,RowColData y_rc,IS *ix,IS *iy,int verb) {
   PetscFunctionBegin;
-  vector<int> idx(0),idy(0);
+  std::vector<int> idx(0),idy(0);
   ierr = ISCreateFromProblemToOtherProblem(x_problem,x_rc,y_problem,y_rc,idx,idy,verb); CHKERRQ(ierr);
   ierr = ISCreateGeneral(comm,idx.size(),&idx[0],PETSC_COPY_VALUES,ix); CHKERRQ(ierr);
   ierr = ISCreateGeneral(comm,idy.size(),&idy[0],PETSC_COPY_VALUES,iy); CHKERRQ(ierr);
@@ -335,10 +335,10 @@ PetscErrorCode Core::ISCreateFromProblemToOtherProblem(
   }
   PetscFunctionReturn(0);
 }
-PetscErrorCode Core::VecScatterCreate(Vec xin,const string &x_problem,RowColData x_rc,Vec yin,const string &y_problem,RowColData y_rc,VecScatter *newctx,int verb) {
+PetscErrorCode Core::VecScatterCreate(Vec xin,const std::string &x_problem,RowColData x_rc,Vec yin,const std::string &y_problem,RowColData y_rc,VecScatter *newctx,int verb) {
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
-  vector<int> idx(0),idy(0);
+  std::vector<int> idx(0),idy(0);
   ierr = ISCreateFromProblemToOtherProblem(x_problem,x_rc,y_problem,y_rc,idx,idy,verb); CHKERRQ(ierr);
   IS ix,iy;
   ierr = ISCreateGeneral(comm,idx.size(),&idx[0],PETSC_USE_POINTER,&ix); CHKERRQ(ierr);
@@ -400,8 +400,8 @@ PetscErrorCode Core::set_local_ghost_vector(const MoFEMProblem *problem_ptr,RowC
     switch (mode) {
       case INSERT_VALUES:
       for(;miit!=hi_miit;miit++,ii++) {
-        //cerr << *miit << endl;
-        //cerr << array[ii] << endl;
+        //std::cerr << *miit << std::endl;
+        //std::cerr << array[ii] << std::endl;
         (*miit)->get_FieldData() = array[ii];
       }
       break;
@@ -419,7 +419,7 @@ PetscErrorCode Core::set_local_ghost_vector(const MoFEMProblem *problem_ptr,RowC
   VecDestroy(&Vlocal);
   PetscFunctionReturn(0);
 }
-PetscErrorCode Core::set_local_ghost_vector(const string &name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode) {
+PetscErrorCode Core::set_local_ghost_vector(const std::string &name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode) {
   PetscFunctionBegin;
   typedef MoFEMProblem_multiIndex::index<Problem_mi_tag>::type pRoblems_by_name;
   pRoblems_by_name &pRoblems_set = pRoblems.get<Problem_mi_tag>();
@@ -481,7 +481,7 @@ PetscErrorCode Core::set_global_ghost_vector(const MoFEMProblem *problem_ptr,Row
   }
   PetscFunctionReturn(0);
 }
-PetscErrorCode Core::set_global_ghost_vector(const string &name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode) {
+PetscErrorCode Core::set_global_ghost_vector(const std::string &name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode) {
   PetscFunctionBegin;
   typedef MoFEMProblem_multiIndex::index<Problem_mi_tag>::type pRoblems_by_name;
   pRoblems_by_name &pRoblems_set = pRoblems.get<Problem_mi_tag>();
@@ -491,7 +491,7 @@ PetscErrorCode Core::set_global_ghost_vector(const string &name,RowColData rc,Ve
   PetscFunctionReturn(0);
 }
 PetscErrorCode Core::set_other_local_ghost_vector(
-  const MoFEMProblem *problem_ptr,const string& field_name,const string& cpy_field_name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode,int verb) {
+  const MoFEMProblem *problem_ptr,const std::string& field_name,const std::string& cpy_field_name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode,int verb) {
   PetscFunctionBegin;
   typedef NumeredDofEntity_multiIndex::index<Composite_Name_And_HasLocalIdx_mi_tag>::type DofsByNameAndLocalIdx;
   DofsByNameAndLocalIdx *dofs;
@@ -588,7 +588,7 @@ PetscErrorCode Core::set_other_local_ghost_vector(
   PetscFunctionReturn(0);
 }
 PetscErrorCode Core::set_other_local_ghost_vector(
-  const string &name,const string& field_name,const string& cpy_field_name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode,int verb
+  const std::string &name,const std::string& field_name,const std::string& cpy_field_name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode,int verb
 ) {
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
@@ -600,7 +600,7 @@ PetscErrorCode Core::set_other_local_ghost_vector(
   PetscFunctionReturn(0);
 }
 PetscErrorCode Core::set_other_global_ghost_vector(
-  const MoFEMProblem *problem_ptr,const string& field_name,const string& cpy_field_name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode,
+  const MoFEMProblem *problem_ptr,const std::string& field_name,const std::string& cpy_field_name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode,
   int verb) {
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
@@ -667,15 +667,15 @@ PetscErrorCode Core::set_other_global_ghost_vector(
           rval = moab.add_entities((*cpy_fit)->get_meshset(),&ent,1); CHKERRQ_MOAB(rval);
           //create field moabent
           ApproximationOrder order = (*miit)->get_max_order();
-          pair<MoFEMEntity_multiIndex::iterator,bool> p_e_miit;
+          std::pair<MoFEMEntity_multiIndex::iterator,bool> p_e_miit;
           try {
             boost::shared_ptr<MoFEMEntity> moabent(
               new MoFEMEntity(moab,*cpy_fit,(*miit)->get_RefEntity_ptr())
             );
             p_e_miit = entsFields.insert(moabent);
           } catch (const std::exception& ex) {
-            ostringstream ss;
-            ss << "throw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__ << endl;
+            std::ostringstream ss;
+            ss << "throw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__ << std::endl;
             SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,ss.str().c_str());
           }
           if((*p_e_miit.first)->get_max_order()<order) {
@@ -696,7 +696,7 @@ PetscErrorCode Core::set_other_global_ghost_vector(
                 (*diit)->get_EntDofIdx()
               )
             );
-            pair<DofEntity_multiIndex::iterator,bool> cpy_p_diit;
+            std::pair<DofEntity_multiIndex::iterator,bool> cpy_p_diit;
             cpy_p_diit = dofsField.insert(mdof);
             if(cpy_p_diit.second) {
               bool success = dofsField.modify(cpy_p_diit.first,DofEntity_active_change(true));
@@ -709,8 +709,8 @@ PetscErrorCode Core::set_other_global_ghost_vector(
         if(alpha) (*diiiit)->get_FieldData() = 0;
         (*diiiit)->get_FieldData() += array[(*miit)->get_petsc_gloabl_dof_idx()];
         if(verb > 1) {
-          ostringstream ss;
-          ss << *(*diiiit) << "set " << array[(*miit)->get_petsc_gloabl_dof_idx()] << endl;
+          std::ostringstream ss;
+          ss << *(*diiiit) << "set " << array[(*miit)->get_petsc_gloabl_dof_idx()] << std::endl;
           PetscPrintf(comm,ss.str().c_str());
         }
       }
@@ -739,7 +739,7 @@ PetscErrorCode Core::set_other_global_ghost_vector(
   PetscFunctionReturn(0);
 }
 PetscErrorCode Core::set_other_global_ghost_vector(
-  const string &name,const string& field_name,const string& cpy_field_name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode,
+  const std::string &name,const std::string& field_name,const std::string& cpy_field_name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode,
   int verb) {
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;

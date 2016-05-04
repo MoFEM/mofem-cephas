@@ -40,7 +40,7 @@ PetscErrorCode ArcLengthCtx::setAlphaBeta(double alpha,double beta) {
   PetscFunctionReturn(0);
 }
 
-ArcLengthCtx::ArcLengthCtx(FieldInterface &m_field,const string &problem_name):
+ArcLengthCtx::ArcLengthCtx(FieldInterface &m_field,const std::string &problem_name):
   mField(m_field),
   dx2(0),
   F_lambda2(0),
@@ -245,7 +245,7 @@ PetscErrorCode PCApplyArcLength(PC pc,Vec pc_f,Vec pc_x) {
   ierr = mat_ctx->setLambda(pc_f,&res_lambda,SCATTER_FORWARD); CHKERRQ(ierr);
   double ddlambda = (res_lambda - db_dot_pc_x)/denominator;
   if(ddlambda != ddlambda || denominator == 0) {
-    ostringstream ss;
+    std::ostringstream ss;
     ss
     << "problem with ddlambda=" << res_lambda
     << " ddlamnda=" << ddlambda
@@ -417,7 +417,7 @@ PetscErrorCode SphericalArcLengthControl::calculateInitDlambda(double *dlambda) 
   PetscFunctionBegin;
   *dlambda = sqrt(pow(arcPtr->s,2)/(pow(arcPtr->beta,2)*arcPtr->F_lambda2));
   if(!(*dlambda == *dlambda)) {
-    ostringstream sss;
+    std::ostringstream sss;
     sss << "s " << arcPtr->s << " " << arcPtr->beta << " " << arcPtr->F_lambda2;
     SETERRQ(PETSC_COMM_SELF,MOFEM_IMPOSIBLE_CASE,sss.str().c_str());
   }
@@ -432,7 +432,7 @@ PetscErrorCode SphericalArcLengthControl::setDlambdaToX(Vec x,double dlambda) {
     ierr = VecGetArray(x,&array); CHKERRQ(ierr);
     double lambda_old = array[arcPtr->getPetscLocalDofIdx()];
     if(!(dlambda == dlambda)) {
-      ostringstream sss;
+      std::ostringstream sss;
       sss << "s " << arcPtr->s << " " << arcPtr->beta << " " << arcPtr->F_lambda2;
       SETERRQ(PETSC_COMM_SELF,1,sss.str().c_str());
     }

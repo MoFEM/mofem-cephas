@@ -30,7 +30,7 @@ struct PrismsFromSurfaceInterface: public UnknownInterface {
   MoFEM::Core& cOre;
   PrismsFromSurfaceInterface(MoFEM::Core& core): cOre(core) {};
 
-  map<EntityHandle,EntityHandle> createdVertices;
+  std::map<EntityHandle,EntityHandle> createdVertices;
 
   /**
    * \brief Make prisms from triangles

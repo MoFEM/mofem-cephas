@@ -46,7 +46,7 @@ namespace MoFEM {
   typedef ublas::matrix<double,ublas::row_major,ublas::shallow_array_adaptor<double> > MatrixAdaptor;
   typedef ublas::vector<int,ublas::shallow_array_adaptor<int> > VectorIntAdaptor;
 
-  typedef vector<boost::shared_ptr<MatrixDouble> > ShapeFunctionBasesVector;
+  typedef std::vector<boost::shared_ptr<MatrixDouble> > ShapeFunctionBasesVector;
 
 /** \brief data structure for finite element entity
   * \ingroup mofem_forces_and_sources
@@ -448,7 +448,7 @@ struct DataForcesAndSurcesCore {
       return getDiffHdivN(bAse,dof,gg);
     }
 
-    friend ostream& operator<<(ostream& os,const DataForcesAndSurcesCore::EntData &e);
+    friend std::ostream& operator<<(std::ostream& os,const DataForcesAndSurcesCore::EntData &e);
 
   protected:
     int sEnse;                    ///< Entity sense (orientation)
@@ -463,17 +463,17 @@ struct DataForcesAndSurcesCore {
     ShapeFunctionBasesVector diffN; ///< Derivatives of base functions
   };
 
-  bitset<LASTSPACE> sPace;   ///< spaces on element
-  bitset<LASTBASE> bAse;    ///< bases on element
+  std::bitset<LASTSPACE> sPace;   ///< spaces on element
+  std::bitset<LASTBASE> bAse;    ///< bases on element
   ublas::matrix<int> facesNodes; 			                  ///< nodes on finite element faces
-  bitset<LASTSPACE> spacesOnEntities[MBMAXTYPE]; 	      ///< spaces on entity types
-  bitset<LASTBASE> basesOnEntities[MBMAXTYPE]; 	        ///< bases on entity types
+  std::bitset<LASTSPACE> spacesOnEntities[MBMAXTYPE]; 	      ///< spaces on entity types
+  std::bitset<LASTBASE> basesOnEntities[MBMAXTYPE]; 	        ///< bases on entity types
   boost::ptr_vector<EntData> dataOnEntities[MBMAXTYPE]; ///< data on nodes, shape function, dofs values, etc.
 
   DataForcesAndSurcesCore(EntityType type);
   virtual ~DataForcesAndSurcesCore() {}
 
-  friend ostream& operator<<(ostream& os,const DataForcesAndSurcesCore &e);
+  friend std::ostream& operator<<(std::ostream& os,const DataForcesAndSurcesCore &e);
 
   protected:
   DataForcesAndSurcesCore() {}

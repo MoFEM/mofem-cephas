@@ -107,7 +107,7 @@ struct MyMat_double: public NonlinearElasticElement::FunctionsToCalculatePiolaKi
         this->P(0,1) = this->P(1,0) = sTress[3];
         this->P(1,2) = this->P(2,1) = sTress[4];
         this->P(0,2) = this->P(2,0) = sTress[5];
-        //cerr << this->P << endl;
+        //std::cerr << this->P << std::endl;
       } else {
         adouble J;
         ierr = this->dEterminatnt(this->F,J); CHKERRQ(ierr);
@@ -122,14 +122,14 @@ struct MyMat_double: public NonlinearElasticElement::FunctionsToCalculatePiolaKi
         CauchyStress(0,1) = CauchyStress(1,0) = sTress[3];
         CauchyStress(1,2) = CauchyStress(2,1) = sTress[4];
         CauchyStress(0,2) = CauchyStress(2,0) = sTress[5];
-        //cerr << D << endl;
-        //cerr << CauchyStress << endl;
+        //std::cerr << D << std::endl;
+        //std::cerr << CauchyStress << std::endl;
         noalias(this->P) = J*prod(CauchyStress,trans(invF));
       }
 
     } catch (const std::exception& ex) {
-      ostringstream ss;
-      ss << "throw in method: " << ex.what() << endl;
+      std::ostringstream ss;
+      ss << "throw in method: " << ex.what() << std::endl;
       SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
     }
 
@@ -161,8 +161,8 @@ struct MyMat: public MyMat_double<TYPE> {
       nb_active_variables += 6;
 
     } catch (const std::exception& ex) {
-      ostringstream ss;
-      ss << "throw in method: " << ex.what() << endl;
+      std::ostringstream ss;
+      ss << "throw in method: " << ex.what() << std::endl;
       SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
     }
 
@@ -185,8 +185,8 @@ struct MyMat: public MyMat_double<TYPE> {
       active_varibles[shift+5] = G0(0,2)+G0(2,0);
 
     } catch (const std::exception& ex) {
-      ostringstream ss;
-      ss << "throw in method: " << ex.what() << endl;
+      std::ostringstream ss;
+      ss << "throw in method: " << ex.what() << std::endl;
       SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
     }
 
@@ -397,11 +397,11 @@ int main(int argc, char *argv[]) {
   ierr = m_field.set_local_ghost_vector("ELASTIC_MECHANICS",COL,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   //elem loops
   //noadl forces
-  boost::ptr_map<string,NodalForce> nodal_forces;
+  boost::ptr_map<std::string,NodalForce> nodal_forces;
   string fe_name_str ="FORCE_FE";
   nodal_forces.insert(fe_name_str,new NodalForce(m_field));
   ierr = MetaNodalForces::setOperators(m_field,nodal_forces,F,"SPATIAL_POSITION"); CHKERRQ(ierr);
-  boost::ptr_map<string,NodalForce>::iterator fit = nodal_forces.begin();
+  boost::ptr_map<std::string,NodalForce>::iterator fit = nodal_forces.begin();
   for(;fit!=nodal_forces.end();fit++) {
     ierr = m_field.loop_finite_elements("ELASTIC_MECHANICS",fit->first,fit->second->getLoopFe()); CHKERRQ(ierr);
   }
@@ -571,7 +571,7 @@ int main(int argc, char *argv[]) {
     ierr = EPSGetEigenpair(eps,nn,&eigr,&eigi,D,PETSC_NULL); CHKERRQ(ierr);
     ierr = VecNorm(D,NORM_2,&nrm2r); CHKERRQ(ierr);
     PetscPrintf(PETSC_COMM_WORLD," ncov = %D eigr = %.4g eigi = %.4g (inv eigr = %.4g) nrm2r = %.4g\n",nn,eigr,eigi,1./eigr,nrm2r);
-    ostringstream o1;
+    std::ostringstream o1;
     o1 << "eig_" << nn << ".h5m";
     ierr = m_field.set_other_global_ghost_vector(
       "ELASTIC_MECHANICS","SPATIAL_POSITION","EIGEN_VECTOR",COL,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);

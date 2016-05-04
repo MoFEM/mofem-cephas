@@ -168,11 +168,11 @@ int main(int argc, char *argv[]) {
   ierr = m_field.loop_dofs("MESH_NODE_POSITIONS",ent_method); CHKERRQ(ierr);
 
 
-  typedef tee_device<ostream, ofstream> TeeDevice;
+  typedef tee_device<std::ostream, std::ofstream> TeeDevice;
   typedef stream<TeeDevice> TeeStream;
 
-  ofstream ofs("forces_and_sources_testing_volume_element.txt");
-  TeeDevice my_tee(cout, ofs);
+  std::ofstream ofs("forces_and_sources_testing_volume_element.txt");
+  TeeDevice my_tee(std::cout, ofs);
   TeeStream my_split(my_tee);
 
   struct MyOp1: public VolumeElementForcesAndSourcesCore::UserDataOperator {
@@ -187,12 +187,12 @@ int main(int argc, char *argv[]) {
       EntityType type,
       DataForcesAndSurcesCore::EntData &data) {
       PetscFunctionBegin;
-      my_split << "NH1" << endl;
-      my_split << "side: " << side << " type: " << type << endl;
-      my_split << data << endl;
-      my_split << setprecision(3) << getVolume() << endl;
-      my_split << setprecision(3) << getCoords() << endl;
-      my_split << setprecision(3) << getCoordsAtGaussPts() << endl;
+      my_split << "NH1" << std::endl;
+      my_split << "side: " << side << " type: " << type << std::endl;
+      my_split << data << std::endl;
+      my_split << std::setprecision(3) << getVolume() << std::endl;
+      my_split << std::setprecision(3) << getCoords() << std::endl;
+      my_split << std::setprecision(3) << getCoordsAtGaussPts() << std::endl;
       PetscFunctionReturn(0);
     }
 
@@ -202,12 +202,12 @@ int main(int argc, char *argv[]) {
       DataForcesAndSurcesCore::EntData &row_data,
       DataForcesAndSurcesCore::EntData &col_data) {
       PetscFunctionBegin;
-      my_split << "NH1NH1" << endl;
-      my_split << "row side: " << row_side << " row_type: " << row_type << endl;
-      my_split << row_data << endl;
-      my_split << "NH1NH1" << endl;
-      my_split << "col side: " << col_side << " col_type: " << col_type << endl;
-      my_split << col_data << endl;
+      my_split << "NH1NH1" << std::endl;
+      my_split << "row side: " << row_side << " row_type: " << row_type << std::endl;
+      my_split << row_data << std::endl;
+      my_split << "NH1NH1" << std::endl;
+      my_split << "col side: " << col_side << " col_type: " << col_type << std::endl;
+      my_split << col_data << std::endl;
 
       PetscErrorCode ierr;
       VectorInt row_indices,col_indices;
@@ -215,8 +215,8 @@ int main(int argc, char *argv[]) {
       ierr = getPorblemColIndices("FIELD2",col_type,col_side,col_indices); CHKERRQ(ierr);
 
       if(row_indices.size()!=row_data.getIndices().size()) {
-        cerr << row_indices << endl;
-        cerr << row_data.getIndices() << endl;
+        std::cerr << row_indices << std::endl;
+        std::cerr << row_data.getIndices() << std::endl;
         SETERRQ2(
           PETSC_COMM_SELF,
           MOFEM_DATA_INCONSISTENCY,
@@ -238,16 +238,16 @@ int main(int argc, char *argv[]) {
 
       for(unsigned int rr = 0;rr<row_indices.size();rr++) {
         if(row_indices[rr] != row_data.getIndices()[rr]) {
-          cerr << row_indices << endl;
-          cerr << row_data.getIndices() << endl;
+          std::cerr << row_indices << std::endl;
+          std::cerr << row_data.getIndices() << std::endl;
           SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"row inconsistency");
         }
       }
 
       for(unsigned int cc = 0;cc<col_indices.size();cc++) {
         if(col_indices[cc] != col_data.getIndices()[cc]) {
-          cerr << col_indices << endl;
-          cerr << col_data.getIndices() << endl;
+          std::cerr << col_indices << std::endl;
+          std::cerr << col_data.getIndices() << std::endl;
           SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"row inconsistency");
         }
       }
@@ -272,9 +272,9 @@ int main(int argc, char *argv[]) {
 
       if(type != MBENTITYSET) PetscFunctionReturn(0);
 
-      my_split << "NOFIELD" << endl;
-      my_split << "side: " << side << " type: " << type << endl;
-      my_split << data << endl;
+      my_split << "NOFIELD" << std::endl;
+      my_split << "side: " << side << " type: " << type << std::endl;
+      my_split << data << std::endl;
       PetscFunctionReturn(0);
     }
 
@@ -289,11 +289,11 @@ int main(int argc, char *argv[]) {
 
       if(row_type != MBENTITYSET) PetscFunctionReturn(0);
 
-      my_split << "NOFILEDH1" << endl;
-      my_split << "row side: " << row_side << " row_type: " << row_type << endl;
-      my_split << row_data << endl;
-      my_split << "col side: " << col_side << " col_type: " << col_type << endl;
-      my_split << col_data << endl;
+      my_split << "NOFILEDH1" << std::endl;
+      my_split << "row side: " << row_side << " row_type: " << row_type << std::endl;
+      my_split << row_data << std::endl;
+      my_split << "col side: " << col_side << " col_type: " << col_type << std::endl;
+      my_split << col_data << std::endl;
 
       PetscFunctionReturn(0);
     }

@@ -36,9 +36,9 @@ struct TetGenInterface: public UnknownInterface {
   MoFEM::Core& cOre;
   TetGenInterface(MoFEM::Core& core): cOre(core) {};
 
-  typedef map<EntityHandle,unsigned long> moabTetGen_Map;
-  typedef map<unsigned long,EntityHandle> tetGenMoab_Map;
-  typedef map<int,Range> idxRange_Map;
+  typedef std::map<EntityHandle,unsigned long> moabTetGen_Map;
+  typedef std::map<unsigned long,EntityHandle> tetGenMoab_Map;
+  typedef std::map<int,Range> idxRange_Map;
 
 
   /** \brief create TetGen data structure form range of moab entities
@@ -65,7 +65,7 @@ struct TetGenInterface: public UnknownInterface {
   Set type of entity, look in TetGen manual for details
 
   \code
-  map<int,Range> types_ents;
+  std::map<int,Range> types_ents;
   //RIDGEVERTEX
   types_ents[TetGenInterface::RIDGEVERTEX].merge(region_tets_skin_without_boundary_nodes);
   //FREESEGVERTEX
@@ -86,7 +86,7 @@ struct TetGenInterface: public UnknownInterface {
     tetgenio& in,
     moabTetGen_Map& moab_tetgen_map,
     tetGenMoab_Map& tetgen_moab_map,
-    map<int,Range> &type_ents);
+    std::map<int,Range> &type_ents);
 
   /** \brief get entities for TetGen data structure
 
@@ -135,7 +135,7 @@ struct TetGenInterface: public UnknownInterface {
 
     */
   PetscErrorCode setFaceData(
-    vector<pair<Range,int> >& markers,
+    std::vector<std::pair<Range,int> >& markers,
     tetgenio& in,
     moabTetGen_Map& moab_tetgen_map,
     tetGenMoab_Map& tetgen_moab_map);
@@ -155,7 +155,7 @@ struct TetGenInterface: public UnknownInterface {
 
   /** \brief set region data to tetrahedral
     */
-  PetscErrorCode setReginData(vector<pair<EntityHandle,int> >& regions,tetgenio& in);
+  PetscErrorCode setReginData(std::vector<std::pair<EntityHandle,int> >& regions,tetgenio& in);
 
 
   /** \brief get region data to tetrahedral
@@ -175,7 +175,7 @@ struct TetGenInterface: public UnknownInterface {
   //Tools for TetGen, i.e. geometry reconstruction from mesh
 
   PetscErrorCode checkPlanar_Trinagle(double coords[],bool *result,const double eps = 1e-9);
-  PetscErrorCode groupPlanar_Triangle(Range &tris,vector<Range> &sorted,const double eps = 1e-9);
+  PetscErrorCode groupPlanar_Triangle(Range &tris,std::vector<Range> &sorted,const double eps = 1e-9);
 
   /** \brief Group surface triangles in planar regions
 
@@ -184,7 +184,7 @@ struct TetGenInterface: public UnknownInterface {
     \param eps tolerance
 
   */
-  PetscErrorCode groupRegion_Triangle(Range &tris,vector<vector<Range> > &sorted,const double eps = 1e-9);
+  PetscErrorCode groupRegion_Triangle(Range &tris,std::vector<std::vector<Range> > &sorted,const double eps = 1e-9);
 
   /** make planar polygon facet
 

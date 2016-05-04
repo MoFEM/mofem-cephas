@@ -179,7 +179,7 @@ int main(int argc, char *argv[]) {
     }
 
     // attach tags for each recorder
-    vector<int> tags;
+    std::vector<int> tags;
     tags.push_back(1);
 
     KelvinVoigtDamper::ConstitutiveEquation<adouble> &ce = damper.constitutiveEquationMap.at(id);

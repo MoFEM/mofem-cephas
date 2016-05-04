@@ -48,7 +48,7 @@ struct Hooke: public NonlinearElasticElement::FunctionsToCalculatePiolaKirchhoff
       //PetscErrorCode ierr;
       this->lambda = LAMBDA(block_data.E,block_data.PoissonRatio);
       this->mu = MU(block_data.E,block_data.PoissonRatio);
-      //cerr << block_data.E << " " << block_data.PoissonRatio << endl;
+      //std::cerr << block_data.E << " " << block_data.PoissonRatio << std::endl;
       ePs.resize(3,3,false);
       noalias(ePs) = this->F;
       for(int dd = 0;dd<3;dd++) {
@@ -65,7 +65,7 @@ struct Hooke: public NonlinearElasticElement::FunctionsToCalculatePiolaKirchhoff
       for(int dd =0;dd<3;dd++) {
         this->P(dd,dd) += this->lambda*tR;
       }
-      //cerr << ePs << " : " << this->P << endl << endl;
+      //std::cerr << ePs << " : " << this->P << std::endl << std::endl;
       PetscFunctionReturn(0);
     }
 
@@ -88,7 +88,7 @@ struct Hooke: public NonlinearElasticElement::FunctionsToCalculatePiolaKirchhoff
       }
       ePs += trans(ePs);
       ePs *= 0.5;
-      // cerr << this->F << " : " << ePs << endl;
+      // std::cerr << this->F << " : " << ePs << std::endl;
       this->eNergy = 0;
       tR = 0;
       for(int dd = 0;dd<3;dd++) {

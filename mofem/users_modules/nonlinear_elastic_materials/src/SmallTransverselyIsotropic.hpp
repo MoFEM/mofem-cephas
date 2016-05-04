@@ -348,8 +348,8 @@ struct SmallStrainTranverslyIsotropic: public NonlinearElasticElement::Functions
       axAngleDouble = asin(nrm2_ax_vector);
 
     } catch (const std::exception& ex) {
-      ostringstream ss;
-      ss << "throw in method: " << ex.what() << endl;
+      std::ostringstream ss;
+      ss << "throw in method: " << ex.what() << std::endl;
       SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
     }
 
@@ -376,16 +376,16 @@ struct SmallStrainTranverslyIsotropicDouble: public SmallStrainTranverslyIsotrop
       axAngle = axAngleDouble;
 
     } catch (const std::exception& ex) {
-      ostringstream ss;
-      ss << "throw in method: " << ex.what() << endl;
+      std::ostringstream ss;
+      ss << "throw in method: " << ex.what() << std::endl;
       SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
     }
     PetscFunctionReturn(0);
   }
 
   virtual PetscErrorCode getDataOnPostProcessor(
-    map<string,vector<ublas::vector<double> > > &field_map,
-    map<string,vector<ublas::matrix<double> > > &grad_map
+    std::map<std::string,std::vector<ublas::vector<double> > > &field_map,
+    std::map<std::string,std::vector<ublas::matrix<double> > > &grad_map
   ) {
     PetscFunctionBegin;
     int nb_gauss_pts = grad_map["POTENTIAL_FIELD"].size();
@@ -425,8 +425,8 @@ struct SmallStrainTranverslyIsotropicADouble: public SmallStrainTranverslyIsotro
       nb_active_variables += 4;
 
     } catch (const std::exception& ex) {
-      ostringstream ss;
-      ss << "throw in method: " << ex.what() << endl;
+      std::ostringstream ss;
+      ss << "throw in method: " << ex.what() << std::endl;
       SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
     }
 
@@ -447,8 +447,8 @@ struct SmallStrainTranverslyIsotropicADouble: public SmallStrainTranverslyIsotro
       active_varibles[shift+3] = axAngleDouble;
 
     } catch (const std::exception& ex) {
-      ostringstream ss;
-      ss << "throw in method: " << ex.what() << endl;
+      std::ostringstream ss;
+      ss << "throw in method: " << ex.what() << std::endl;
       SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
     }
 
