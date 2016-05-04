@@ -96,7 +96,7 @@ int main(int argc, char *argv[]) {
 
   const DofEntity_multiIndex *dofs_ptr;
   ierr = m_field.get_dofs(&dofs_ptr); CHKERRQ(ierr);
-  const int expected_size = 744;
+  const unsigned int expected_size = 744;
   if(dofs_ptr->size()!=expected_size) {
     SETERRQ1(
       PETSC_COMM_SELF,
