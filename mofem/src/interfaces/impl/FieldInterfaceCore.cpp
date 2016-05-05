@@ -3120,23 +3120,23 @@ PetscErrorCode Core::loop_dofs(const std::string &field_name,EntMethod &method,i
   ierr = method.postProcess(); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
-PetscErrorCode Core::get_ref_ents(const RefEntity_multiIndex **refined_entities_ptr) {
+PetscErrorCode Core::get_ref_ents(const RefEntity_multiIndex **refined_entities_ptr) const {
   PetscFunctionBegin;
   *refined_entities_ptr = &refinedEntities;
   PetscFunctionReturn(0);
 }
-PetscErrorCode Core::get_ref_finite_elements(const RefElement_multiIndex **refined_finite_elements_ptr) {
+PetscErrorCode Core::get_ref_finite_elements(const RefElement_multiIndex **refined_finite_elements_ptr) const {
   PetscFunctionBegin;
   *refined_finite_elements_ptr = &refinedFiniteElements;
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode Core::get_problem(const std::string &problem_name,const MoFEMProblem **problem_ptr) {
+PetscErrorCode Core::get_problem(const std::string &problem_name,const MoFEMProblem **problem_ptr) const {
   PetscFunctionBegin;
-  typedef MoFEMProblem_multiIndex::index<Problem_mi_tag>::type mofem_problems_by_name;
-  mofem_problems_by_name &pRoblems_set = pRoblems.get<Problem_mi_tag>();
-  mofem_problems_by_name::iterator p_miit = pRoblems_set.find(problem_name);
-  if(p_miit == pRoblems_set.end()) {
+  typedef MoFEMProblem_multiIndex::index<Problem_mi_tag>::type ProblemsByName;
+  const ProblemsByName &problems = pRoblems.get<Problem_mi_tag>();
+  ProblemsByName::iterator p_miit = problems.find(problem_name);
+  if(p_miit == problems.end()) {
     SETERRQ1(
       PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,
       "problem < %s > not found, (top tip: check spelling)",problem_name.c_str()
@@ -3145,15 +3145,20 @@ PetscErrorCode Core::get_problem(const std::string &problem_name,const MoFEMProb
   *problem_ptr = &*p_miit;
   PetscFunctionReturn(0);
 }
-PetscErrorCode Core::get_dofs(const DofEntity_multiIndex **dofs_ptr) {
+PetscErrorCode Core::get_field_ents(const MoFEMEntity_multiIndex **field_ents) const {
+  PetscFunctionBegin;
+  *field_ents = &entsFields;
+  PetscFunctionReturn(0);
+}
+PetscErrorCode Core::get_dofs(const DofEntity_multiIndex **dofs_ptr) const {
   PetscFunctionBegin;
   *dofs_ptr = &dofsField;
   PetscFunctionReturn(0);
 }
-MoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator Core::get_ent_moabfield_by_name_begin(const std::string &field_name) {
+MoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator Core::get_ent_moabfield_by_name_begin(const std::string &field_name) const {
   return entsFields.get<FieldName_mi_tag>().lower_bound(field_name);
 }
-MoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator Core::get_ent_moabfield_by_name_end(const std::string &field_name) {
+MoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator Core::get_ent_moabfield_by_name_end(const std::string &field_name) const {
   return entsFields.get<FieldName_mi_tag>().upper_bound(field_name);
 }
 DofEntity_multiIndex::index<FieldName_mi_tag>::type::iterator Core::get_dofs_by_name_begin(const std::string &field_name) const {
@@ -3162,37 +3167,45 @@ DofEntity_multiIndex::index<FieldName_mi_tag>::type::iterator Core::get_dofs_by_
 DofEntity_multiIndex::index<FieldName_mi_tag>::type::iterator Core::get_dofs_by_name_end(const std::string &field_name) const {
   return dofsField.get<FieldName_mi_tag>().upper_bound(field_name);
 }
-DofEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type::iterator Core::get_dofs_by_name_and_ent_begin(const std::string &field_name,const EntityHandle ent) {
+DofEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type::iterator
+Core::get_dofs_by_name_and_ent_begin(const std::string &field_name,const EntityHandle ent) const {
   return dofsField.get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple(field_name,ent));
 }
-DofEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type::iterator Core::get_dofs_by_name_and_ent_end(const std::string &field_name,const EntityHandle ent) {
+DofEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type::iterator
+Core::get_dofs_by_name_and_ent_end(const std::string &field_name,const EntityHandle ent) const {
   return dofsField.get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple(field_name,ent));
 }
-DofEntity_multiIndex::index<Composite_Name_And_Type_mi_tag>::type::iterator Core::get_dofs_by_name_and_type_begin(const std::string &field_name,const EntityType type) {
+DofEntity_multiIndex::index<Composite_Name_And_Type_mi_tag>::type::iterator
+Core::get_dofs_by_name_and_type_begin(const std::string &field_name,const EntityType type) const {
   return dofsField.get<Composite_Name_And_Type_mi_tag>().lower_bound(boost::make_tuple(field_name,type));
 }
-DofEntity_multiIndex::index<Composite_Name_And_Type_mi_tag>::type::iterator Core::get_dofs_by_name_and_type_end(const std::string &field_name,const EntityType type) {
+DofEntity_multiIndex::index<Composite_Name_And_Type_mi_tag>::type::iterator
+Core::get_dofs_by_name_and_type_end(const std::string &field_name,const EntityType type) const {
   return dofsField.get<Composite_Name_And_Type_mi_tag>().upper_bound(boost::make_tuple(field_name,type));
 }
-PetscErrorCode Core::get_finite_elements(const FiniteElement_multiIndex **finiteElements_ptr) {
+PetscErrorCode Core::get_finite_elements(const FiniteElement_multiIndex **finiteElements_ptr) const {
   PetscFunctionBegin;
   *finiteElements_ptr = &finiteElements;
   PetscFunctionReturn(0);
 }
-EntFiniteElement_multiIndex::index<FiniteElement_name_mi_tag>::type::iterator Core::get_fe_by_name_begin(const std::string &fe_name) {
+EntFiniteElement_multiIndex::index<FiniteElement_name_mi_tag>::type::iterator
+Core::get_fe_by_name_begin(const std::string &fe_name) const {
   return entsFiniteElements.get<FiniteElement_name_mi_tag>().lower_bound(fe_name);
 }
-EntFiniteElement_multiIndex::index<FiniteElement_name_mi_tag>::type::iterator Core::get_fe_by_name_end(const std::string &fe_name) {
+EntFiniteElement_multiIndex::index<FiniteElement_name_mi_tag>::type::iterator
+Core::get_fe_by_name_end(const std::string &fe_name) const {
   return entsFiniteElements.get<FiniteElement_name_mi_tag>().upper_bound(fe_name);
 }
-PetscErrorCode Core::check_number_of_ents_in_ents_field(const std::string& name) {
+PetscErrorCode Core::check_number_of_ents_in_ents_field(const std::string& name) const {
   PetscFunctionBegin;
   Field_multiIndex::index<FieldName_mi_tag>::type::iterator it = fIelds.get<FieldName_mi_tag>().find(name);
   if(it == fIelds.get<FieldName_mi_tag>().end()) {
     SETERRQ1(PETSC_COMM_SELF,1,"field not found < %s >",name.c_str());
   }
   EntityHandle meshset = (*it)->get_meshset();
+
   int num_entities;
+  MoABErrorCode rval;
   rval = moab.get_number_entities_by_handle(meshset,num_entities); CHKERRQ_MOAB(rval);
   if(entsFields.get<FieldName_mi_tag>().count((*it)->get_name())
     != (unsigned int)num_entities) {
@@ -3200,12 +3213,13 @@ PetscErrorCode Core::check_number_of_ents_in_ents_field(const std::string& name)
   }
   PetscFunctionReturn(0);
 }
-PetscErrorCode Core::check_number_of_ents_in_ents_field() {
+PetscErrorCode Core::check_number_of_ents_in_ents_field() const {
   PetscFunctionBegin;
   Field_multiIndex::index<FieldName_mi_tag>::type::iterator it = fIelds.get<FieldName_mi_tag>().begin();
   for(;it!=fIelds.get<FieldName_mi_tag>().end();it++) {
     if((*it)->get_space() == NOFIELD) continue; //FIXME: should be treated properly, not test is just skipped for this NOFIELD space
     EntityHandle meshset = (*it)->get_meshset();
+    MoABErrorCode rval;
     int num_entities;
     rval = moab.get_number_entities_by_handle(meshset,num_entities); CHKERRQ_MOAB(rval);
     if(entsFields.get<FieldName_mi_tag>().count((*it)->get_name()) != (unsigned int)num_entities) {
@@ -3214,7 +3228,7 @@ PetscErrorCode Core::check_number_of_ents_in_ents_field() {
   }
   PetscFunctionReturn(0);
 }
-PetscErrorCode Core::check_number_of_ents_in_ents_finite_element(const std::string& name) {
+PetscErrorCode Core::check_number_of_ents_in_ents_finite_element(const std::string& name) const {
   PetscFunctionBegin;
   FiniteElement_multiIndex::index<FiniteElement_name_mi_tag>::type::iterator it;
   it = finiteElements.get<FiniteElement_name_mi_tag>().find(name);
@@ -3222,6 +3236,7 @@ PetscErrorCode Core::check_number_of_ents_in_ents_finite_element(const std::stri
     SETERRQ1(PETSC_COMM_SELF,1,"finite element not found < %s >",name.c_str());
   }
   EntityHandle meshset = (*it)->get_meshset();
+  MoABErrorCode rval;
   int num_entities;
   rval = moab.get_number_entities_by_handle(meshset,num_entities); CHKERRQ_MOAB(rval);
   if(
@@ -3232,12 +3247,13 @@ PetscErrorCode Core::check_number_of_ents_in_ents_finite_element(const std::stri
   }
   PetscFunctionReturn(0);
 }
-PetscErrorCode Core::check_number_of_ents_in_ents_finite_element() {
+PetscErrorCode Core::check_number_of_ents_in_ents_finite_element() const {
   PetscFunctionBegin;
   FiniteElement_multiIndex::index<FiniteElement_name_mi_tag>::type::iterator it;
   it = finiteElements.get<FiniteElement_name_mi_tag>().begin();
   for(;it!=finiteElements.get<FiniteElement_name_mi_tag>().end();it++) {
     EntityHandle meshset = (*it)->get_meshset();
+    MoABErrorCode rval;
     int num_entities;
     rval = moab.get_number_entities_by_handle(meshset,num_entities); CHKERRQ_MOAB(rval);
     if(entsFiniteElements.get<FiniteElement_name_mi_tag>().count((*it)->get_name().c_str())

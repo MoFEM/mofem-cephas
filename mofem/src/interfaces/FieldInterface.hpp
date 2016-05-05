@@ -62,25 +62,25 @@ struct FieldInterface: public UnknownInterface {
     * \brief check data consistency in entitiesPtr
     *
     */
-  virtual PetscErrorCode check_number_of_ents_in_ents_field(const std::string& name) = 0;
+  virtual PetscErrorCode check_number_of_ents_in_ents_field(const std::string& name) const = 0;
 
   /**
     * \brief check data consistency in entitiesPtr
     *
     */
-  virtual PetscErrorCode check_number_of_ents_in_ents_field() = 0;
+  virtual PetscErrorCode check_number_of_ents_in_ents_field() const = 0;
 
   /**
     * \brief check data consistency in entsFiniteElements
     *
     */
-  virtual PetscErrorCode check_number_of_ents_in_ents_finite_element(const std::string& name) = 0;
+  virtual PetscErrorCode check_number_of_ents_in_ents_finite_element(const std::string& name) const = 0;
 
   /**
     * \brief check data consistency in entsFiniteElements
     *
     */
-  virtual PetscErrorCode check_number_of_ents_in_ents_finite_element() = 0;
+  virtual PetscErrorCode check_number_of_ents_in_ents_finite_element() const = 0;
 
   /**
     * \brief check for CUBIT Id and CUBIT type
@@ -1963,24 +1963,31 @@ struct FieldInterface: public UnknownInterface {
   /** \brief Get ref entities multi-index from database
     * \ingroup mofem_access
     */
-  virtual PetscErrorCode get_ref_ents(const RefEntity_multiIndex **refinedEntitiesPtr_ptr) = 0;
+  virtual PetscErrorCode get_ref_ents(const RefEntity_multiIndex **refinedEntitiesPtr_ptr) const = 0;
 
   /** \brief Get ref finite elements multi-index form database
     * \ingroup mofem_access
     */
-  virtual PetscErrorCode get_ref_finite_elements(const RefElement_multiIndex **refined_finite_elements_ptr) = 0;
+  virtual PetscErrorCode get_ref_finite_elements(const RefElement_multiIndex **refined_finite_elements_ptr) const = 0;
 
   /** \brief Get problem database (data structure)
     * \ingroup mofem_problems
     */
-  virtual PetscErrorCode get_problem(const std::string &problem_name,const MoFEMProblem **problem_ptr) = 0;
+  virtual PetscErrorCode get_problem(const std::string &problem_name,const MoFEMProblem **problem_ptr) const = 0;
+
+  /** \brief Get field multi index
+    *
+    * \ingroup mofem_access
+    *
+    */
+  virtual PetscErrorCode get_field_ents(const MoFEMEntity_multiIndex **field_ents) const = 0;
 
   /** \brief Get dofs multi index
     *
     * \ingroup mofem_access
     *
     */
-  virtual PetscErrorCode get_dofs(const DofEntity_multiIndex **dofs_ptr) = 0;
+  virtual PetscErrorCode get_dofs(const DofEntity_multiIndex **dofs_ptr) const = 0;
 
   /**
     * \brief get begin iterator of filed ents of given name (instead you can use _IT_GET_ENT_FIELD_BY_NAME_FOR_LOOP_(MFIELD,NAME,IT)
@@ -1992,7 +1999,7 @@ struct FieldInterface: public UnknownInterface {
     *
     * \param field_name
     */
-  virtual MoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator get_ent_moabfield_by_name_begin(const std::string &field_name) = 0;
+  virtual MoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator get_ent_moabfield_by_name_begin(const std::string &field_name) const = 0;
 
   /**
     * \brief get begin iterator of filed dofs of given name (instead you can use _IT_GET_ENT_FIELD_BY_NAME_FOR_LOOP_(MFIELD,NAME,IT)
@@ -2004,7 +2011,7 @@ struct FieldInterface: public UnknownInterface {
     *
     * \param field_name
     */
-  virtual MoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator get_ent_moabfield_by_name_end(const std::string &field_name) = 0;
+  virtual MoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator get_ent_moabfield_by_name_end(const std::string &field_name) const = 0;
 
   /** \brief loop over all dofs from a moFEM field and particular field
     * \ingroup mofem_field
@@ -2054,7 +2061,8 @@ struct FieldInterface: public UnknownInterface {
     *
     * \param field_name
     */
-  virtual DofEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type::iterator get_dofs_by_name_and_ent_begin(const std::string &field_name,const EntityHandle ent) = 0;
+  virtual DofEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type::iterator
+  get_dofs_by_name_and_ent_begin(const std::string &field_name,const EntityHandle ent) const = 0;
 
   /**
     * \brief get begin iterator of filed dofs of given name and ent (instead you can use _IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(MFIELD,NAME,ENT,IT)
@@ -2066,7 +2074,8 @@ struct FieldInterface: public UnknownInterface {
     *
     * \param field_name
     */
-  virtual DofEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type::iterator get_dofs_by_name_and_ent_end(const std::string &field_name,const EntityHandle ent) = 0;
+  virtual DofEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type::iterator
+  get_dofs_by_name_and_ent_end(const std::string &field_name,const EntityHandle ent) const = 0;
 
   /** \brief loop over all dofs from a moFEM field and particular field
     * \ingroup mofem_access
@@ -2125,7 +2134,8 @@ struct FieldInterface: public UnknownInterface {
     *
     * \param field_name
     */
-  virtual DofEntity_multiIndex::index<Composite_Name_And_Type_mi_tag>::type::iterator get_dofs_by_name_and_type_begin(const std::string &field_name,const EntityType type) = 0;
+  virtual DofEntity_multiIndex::index<Composite_Name_And_Type_mi_tag>::type::iterator
+  get_dofs_by_name_and_type_begin(const std::string &field_name,const EntityType type) const = 0;
 
   /**
     * \brief get begin iterator of filed dofs of given name end ent type(instead you can use _IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(MFIELD,NAME,TYPE,IT)
@@ -2137,7 +2147,8 @@ struct FieldInterface: public UnknownInterface {
     *
     * \param field_name
     */
-  virtual DofEntity_multiIndex::index<Composite_Name_And_Type_mi_tag>::type::iterator get_dofs_by_name_and_type_end(const std::string &field_name,const EntityType type) = 0;
+  virtual DofEntity_multiIndex::index<Composite_Name_And_Type_mi_tag>::type::iterator
+  get_dofs_by_name_and_type_end(const std::string &field_name,const EntityType type) const = 0;
 
   /** \brief loop over all dofs from a moFEM field and particular field
     * \ingroup mofem_field
@@ -2150,7 +2161,7 @@ struct FieldInterface: public UnknownInterface {
     * \ingroup mofem_access
     *
     */
-  virtual PetscErrorCode get_finite_elements(const FiniteElement_multiIndex **finiteElementsPtr_ptr) = 0;
+  virtual PetscErrorCode get_finite_elements(const FiniteElement_multiIndex **finiteElementsPtr_ptr) const = 0;
 
   /**
     * \brief get begin iterator of finite elements of given name (instead you can use _IT_GET_FES_BY_NAME_FOR_LOOP_(MFIELD,NAME,IT)
@@ -2162,7 +2173,8 @@ struct FieldInterface: public UnknownInterface {
     *
     * \param fe_name
     */
-  virtual EntFiniteElement_multiIndex::index<FiniteElement_name_mi_tag>::type::iterator get_fe_by_name_begin(const std::string &fe_name) = 0;
+  virtual EntFiniteElement_multiIndex::index<FiniteElement_name_mi_tag>::type::iterator
+  get_fe_by_name_begin(const std::string &fe_name) const = 0;
 
   /**
     * \brief get end iterator of finite elements of given name (instead you can use _IT_GET_FES_BY_NAME_FOR_LOOP_(MFIELD,NAME,IT)
@@ -2174,7 +2186,8 @@ struct FieldInterface: public UnknownInterface {
     *
     * \param fe_name
     */
-  virtual EntFiniteElement_multiIndex::index<FiniteElement_name_mi_tag>::type::iterator get_fe_by_name_end(const std::string &fe_name) = 0;
+  virtual EntFiniteElement_multiIndex::index<FiniteElement_name_mi_tag>::type::iterator
+  get_fe_by_name_end(const std::string &fe_name) const = 0;
 
   /** \brief loop over all finite elements from a moFEM field and FE
     * \ingroup mofem_access

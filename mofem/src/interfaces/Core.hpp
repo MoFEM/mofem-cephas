@@ -187,10 +187,11 @@ struct Core: public FieldInterface, MeshRefinment, PrismInterface, SeriesRecorde
   //FiedlInterface
 
   //check consistency
-  PetscErrorCode check_number_of_ents_in_ents_field(const std::string& name);
-  PetscErrorCode check_number_of_ents_in_ents_field();
-  PetscErrorCode check_number_of_ents_in_ents_finite_element(const std::string& name);
-  PetscErrorCode check_number_of_ents_in_ents_finite_element();
+  PetscErrorCode check_number_of_ents_in_ents_field(const std::string& name) const;
+  PetscErrorCode check_number_of_ents_in_ents_field() const;
+  PetscErrorCode check_number_of_ents_in_ents_finite_element(const std::string& name) const;
+  PetscErrorCode check_number_of_ents_in_ents_finite_element() const;
+
   PetscErrorCode rebuild_database(int verb = -1);
 
   //cubit meshsets
@@ -229,9 +230,10 @@ struct Core: public FieldInterface, MeshRefinment, PrismInterface, SeriesRecorde
   template<class _CUBIT_BC_DATA_TYPE_>
   PetscErrorCode printCubitSet(_CUBIT_BC_DATA_TYPE_& data,unsigned long int type) {
     PetscFunctionBegin;
+    //FIXME: This method should be const method. Printing is not changing state
     try {
-      FieldInterface& thism_field = *this;
-      for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(thism_field,type,it)) {
+      FieldInterface& this_field = *this;
+      for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(this_field,type,it)) {
         ierr = it->get_bc_data_structure(data); CHKERRQ(ierr);
         std::ostringstream ss;
         ss << *it << std::endl;
@@ -616,24 +618,25 @@ struct Core: public FieldInterface, MeshRefinment, PrismInterface, SeriesRecorde
   PetscErrorCode loop_dofs(const std::string &field_name,EntMethod &method,int verb = -1);
 
   //get multi_index form database
-  PetscErrorCode get_ref_ents(const RefEntity_multiIndex **refined_entities_ptr);
-  PetscErrorCode get_ref_finite_elements(const RefElement_multiIndex **refined_finite_elements_ptr);
-  PetscErrorCode get_problem(const std::string &problem_name,const MoFEMProblem **problem_ptr);
-  PetscErrorCode get_dofs(const DofEntity_multiIndex **dofs_ptr);
-  PetscErrorCode get_finite_elements(const FiniteElement_multiIndex **finiteElements_ptr);
+  PetscErrorCode get_ref_ents(const RefEntity_multiIndex **refined_entities_ptr) const;
+  PetscErrorCode get_ref_finite_elements(const RefElement_multiIndex **refined_finite_elements_ptr) const;
+  PetscErrorCode get_problem(const std::string &problem_name,const MoFEMProblem **problem_ptr) const;
+  PetscErrorCode get_field_ents(const MoFEMEntity_multiIndex **field_ents) const;
+  PetscErrorCode get_dofs(const DofEntity_multiIndex **dofs_ptr) const ;
+  PetscErrorCode get_finite_elements(const FiniteElement_multiIndex **finiteElements_ptr) const;
 
-  MoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator get_ent_moabfield_by_name_begin(const std::string &field_name);
-  MoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator get_ent_moabfield_by_name_end(const std::string &field_name);
+  MoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator get_ent_moabfield_by_name_begin(const std::string &field_name) const;
+  MoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator get_ent_moabfield_by_name_end(const std::string &field_name) const;
 
   DofEntity_multiIndex::index<FieldName_mi_tag>::type::iterator get_dofs_by_name_begin(const std::string &field_name) const;
   DofEntity_multiIndex::index<FieldName_mi_tag>::type::iterator get_dofs_by_name_end(const std::string &field_name) const;
-  DofEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type::iterator get_dofs_by_name_and_ent_begin(const std::string &field_name,const EntityHandle ent);
-  DofEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type::iterator get_dofs_by_name_and_ent_end(const std::string &field_name,const EntityHandle ent);
-  DofEntity_multiIndex::index<Composite_Name_And_Type_mi_tag>::type::iterator get_dofs_by_name_and_type_begin(const std::string &field_name,const EntityType type);
-  DofEntity_multiIndex::index<Composite_Name_And_Type_mi_tag>::type::iterator get_dofs_by_name_and_type_end(const std::string &field_name,const EntityType ent);
+  DofEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type::iterator get_dofs_by_name_and_ent_begin(const std::string &field_name,const EntityHandle ent) const;
+  DofEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type::iterator get_dofs_by_name_and_ent_end(const std::string &field_name,const EntityHandle ent) const;
+  DofEntity_multiIndex::index<Composite_Name_And_Type_mi_tag>::type::iterator get_dofs_by_name_and_type_begin(const std::string &field_name,const EntityType type) const;
+  DofEntity_multiIndex::index<Composite_Name_And_Type_mi_tag>::type::iterator get_dofs_by_name_and_type_end(const std::string &field_name,const EntityType ent) const;
 
-  EntFiniteElement_multiIndex::index<FiniteElement_name_mi_tag>::type::iterator get_fe_by_name_begin(const std::string &fe_name);
-  EntFiniteElement_multiIndex::index<FiniteElement_name_mi_tag>::type::iterator get_fe_by_name_end(const std::string &fe_name);
+  EntFiniteElement_multiIndex::index<FiniteElement_name_mi_tag>::type::iterator get_fe_by_name_begin(const std::string &fe_name) const;
+  EntFiniteElement_multiIndex::index<FiniteElement_name_mi_tag>::type::iterator get_fe_by_name_end(const std::string &fe_name) const;
 
   //Copy field values to another field
   PetscErrorCode field_axpy(const double alpha,const std::string& fiel_name_x,const std::string& field_name_y,bool error_if_missing = false,bool creat_if_missing = false);
