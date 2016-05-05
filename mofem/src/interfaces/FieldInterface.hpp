@@ -53,10 +53,10 @@ struct FieldInterface: public UnknownInterface {
   virtual MPI_Comm get_comm() = 0;
 
   /// get communicator size
-  virtual int getCommSize() = 0;
+  virtual int getCommSize() const = 0;
 
   /// get communicator rank
-  virtual int getCommRank() = 0;
+  virtual int getCommRank() const = 0;
 
   /**
     * \brief check data consistency in entitiesPtr
@@ -184,7 +184,7 @@ struct FieldInterface: public UnknownInterface {
     * }
     *
     */
-  virtual CubitMeshSet_multiIndex::iterator get_cubit_meshsets_begin() = 0;
+  virtual CubitMeshSet_multiIndex::iterator get_cubit_meshsets_begin() const = 0;
 
    /**
     * \ingroup mofem_bc
@@ -195,7 +195,7 @@ struct FieldInterface: public UnknownInterface {
     * }
     *
     */
-  virtual CubitMeshSet_multiIndex::iterator get_cubit_meshsets_end() = 0;
+  virtual CubitMeshSet_multiIndex::iterator get_cubit_meshsets_end() const = 0;
 
     /**
      * \brief Iterator that loops over all the Cubit MeshSets in a moFEM field
@@ -219,7 +219,8 @@ struct FieldInterface: public UnknownInterface {
     *
     * \param  type of meshset (NODESET, SIDESET or BLOCKSET and more)
     */
-  virtual CubitMeshSet_multiIndex::index<CubitMeshSets_mi_tag>::type::iterator get_cubit_meshsets_begin(const unsigned int ) = 0;
+  virtual CubitMeshSet_multiIndex::index<CubitMeshSets_mi_tag>::type::iterator
+  get_cubit_meshsets_begin(const unsigned int ) const = 0;
 
   /**
     * \brief get end iterator of cubit mehset of given type (instead you can use _IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(MFIELD,CUBITBCTYPE,IT)
@@ -232,7 +233,8 @@ struct FieldInterface: public UnknownInterface {
     *
     * \param  type of meshset (NODESET, SIDESET or BLOCKSET and more)
     */
-  virtual CubitMeshSet_multiIndex::index<CubitMeshSets_mi_tag>::type::iterator get_cubit_meshsets_end(const unsigned int ) = 0;
+  virtual CubitMeshSet_multiIndex::index<CubitMeshSets_mi_tag>::type::iterator
+  get_cubit_meshsets_end(const unsigned int ) const = 0;
 
     /**
       * \brief Iterator that loops over a specific Cubit MeshSet in a moFEM field
@@ -258,7 +260,8 @@ struct FieldInterface: public UnknownInterface {
     *
     * \param  type of meshset (NODESET, SIDESET or BLOCKSET and more)
     */
-  virtual CubitMeshSet_multiIndex::index<CubitMeshSets_mask_meshset_mi_tag>::type::iterator get_CubitMeshSets_bySetType_begin(const unsigned int ) = 0;
+  virtual CubitMeshSet_multiIndex::index<CubitMeshSets_mask_meshset_mi_tag>::type::iterator
+  get_CubitMeshSets_bySetType_begin(const unsigned int ) const = 0;
 
   /**
     * \brief get end iterator of cubit mehset of given type (instead you can use _IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(MFIELD,CUBITBCTYPE,IT)
@@ -271,7 +274,8 @@ struct FieldInterface: public UnknownInterface {
     *
     * \param  type of meshset (NODESET, SIDESET or BLOCKSET and more)
     */
-  virtual CubitMeshSet_multiIndex::index<CubitMeshSets_mask_meshset_mi_tag>::type::iterator get_CubitMeshSets_bySetType_end(const unsigned int ) = 0;
+  virtual CubitMeshSet_multiIndex::index<CubitMeshSets_mask_meshset_mi_tag>::type::iterator
+  get_CubitMeshSets_bySetType_end(const unsigned int ) const = 0;
 
   /**
    * \brief Iterator that loops over a specific Cubit MeshSet having a particular BC meshset in a moFEM field
@@ -292,8 +296,10 @@ struct FieldInterface: public UnknownInterface {
     IT!=MFIELD.get_CubitMeshSets_bySetType_end(CUBITBCTYPE); IT++
 
 
-  virtual CubitMeshSet_multiIndex::index<CubitMeshSets_name>::type::iterator get_CubitMeshSets_byName_begin(const std::string& name) = 0;
-  virtual CubitMeshSet_multiIndex::index<CubitMeshSets_name>::type::iterator get_CubitMeshSets_byName_end(const std::string& name) = 0;
+  virtual CubitMeshSet_multiIndex::index<CubitMeshSets_name>::type::iterator
+  get_CubitMeshSets_byName_begin(const std::string& name) const = 0;
+  virtual CubitMeshSet_multiIndex::index<CubitMeshSets_name>::type::iterator
+  get_CubitMeshSets_byName_end(const std::string& name) const = 0;
 
   /**
     * \brief Iterator that loops over Cubit BlockSet having a particular name
@@ -313,10 +319,10 @@ struct FieldInterface: public UnknownInterface {
     CubitMeshSet_multiIndex::index<CubitMeshSets_name>::type::iterator IT = MFIELD.get_CubitMeshSets_byName_begin(NAME); \
     IT!=MFIELD.get_CubitMeshSets_byName_end(NAME); IT++
 
-  virtual PetscErrorCode print_cubit_displacement_set() = 0;
-  virtual PetscErrorCode print_cubit_pressure_set() = 0;
-  virtual PetscErrorCode print_cubit_force_set() = 0;
-  virtual PetscErrorCode print_cubit_materials_set() = 0;
+  virtual PetscErrorCode print_cubit_displacement_set() const = 0;
+  virtual PetscErrorCode print_cubit_pressure_set() const = 0;
+  virtual PetscErrorCode print_cubit_force_set() const = 0;
+  virtual PetscErrorCode print_cubit_materials_set() const = 0;
 
   virtual PetscErrorCode rebuild_database(int verb = -1) = 0;
 

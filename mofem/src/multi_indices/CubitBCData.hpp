@@ -70,11 +70,11 @@ struct DisplacementCubitBcData: public GenericCubitBcData {
     DisplacementCubitBcData(): type(DISPLACEMENTSET) {};
 
     virtual PetscErrorCode fill_data(const std::vector<char>& bc_data) {
-        PetscFunctionBegin;
-        //Fill data
-	if(bc_data.size()!=sizeof(data)) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
-        memcpy(&data, &bc_data[0], sizeof(data));
-        PetscFunctionReturn(0);
+      PetscFunctionBegin;
+      //Fill data
+      if(bc_data.size()!=sizeof(data)) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+      memcpy(&data, &bc_data[0], sizeof(data));
+      PetscFunctionReturn(0);
     }
 
     /*! \brief Print displacement bc data
@@ -107,11 +107,11 @@ struct ForceCubitBcData: public GenericCubitBcData {
     ForceCubitBcData(): type(FORCESET) {};
 
     virtual PetscErrorCode fill_data(const std::vector<char>& bc_data) {
-        PetscFunctionBegin;
-        //Fill data
-	if(bc_data.size()!=sizeof(data)) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
-        memcpy(&data, &bc_data[0], sizeof(data));
-        PetscFunctionReturn(0);
+      PetscFunctionBegin;
+      //Fill data
+      if(bc_data.size()!=sizeof(data)) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+      memcpy(&data, &bc_data[0], sizeof(data));
+      PetscFunctionReturn(0);
     }
 
     /*! \brief Print force bc data

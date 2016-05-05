@@ -205,34 +205,40 @@ struct Core: public FieldInterface, MeshRefinment, PrismInterface, SeriesRecorde
   PetscErrorCode get_cubit_msId_entities_by_dimension(const int ms_id,const unsigned int cubit_bc_type, Range &entities,const bool recursive = false);
   PetscErrorCode get_cubit_msId_meshset(const int ms_id,const unsigned int cubit_bc_type,EntityHandle &meshset);
   PetscErrorCode get_cubit_meshsets(const unsigned int cubit_bc_type,Range &meshsets);
-  CubitMeshSet_multiIndex::iterator get_cubit_meshsets_begin() { return cubitMeshsets.begin(); }
-  CubitMeshSet_multiIndex::iterator get_cubit_meshsets_end() { return cubitMeshsets.end(); }
-  CubitMeshSet_multiIndex::index<CubitMeshSets_mi_tag>::type::iterator get_cubit_meshsets_begin(const unsigned int cubit_bc_type) {
+  CubitMeshSet_multiIndex::iterator get_cubit_meshsets_begin() const { return cubitMeshsets.begin(); }
+  CubitMeshSet_multiIndex::iterator get_cubit_meshsets_end() const { return cubitMeshsets.end(); }
+  CubitMeshSet_multiIndex::index<CubitMeshSets_mi_tag>::type::iterator
+  get_cubit_meshsets_begin(const unsigned int cubit_bc_type) const {
     return cubitMeshsets.get<CubitMeshSets_mi_tag>().lower_bound(cubit_bc_type);
   }
-  CubitMeshSet_multiIndex::index<CubitMeshSets_mi_tag>::type::iterator get_cubit_meshsets_end(const unsigned int cubit_bc_type) {
+  CubitMeshSet_multiIndex::index<CubitMeshSets_mi_tag>::type::iterator
+  get_cubit_meshsets_end(const unsigned int cubit_bc_type) const {
     return cubitMeshsets.get<CubitMeshSets_mi_tag>().upper_bound(cubit_bc_type);
   }
-  CubitMeshSet_multiIndex::index<CubitMeshSets_mask_meshset_mi_tag>::type::iterator get_CubitMeshSets_bySetType_begin(const unsigned int cubit_bc_type) {
+  CubitMeshSet_multiIndex::index<CubitMeshSets_mask_meshset_mi_tag>::type::iterator
+  get_CubitMeshSets_bySetType_begin(const unsigned int cubit_bc_type) const {
     return cubitMeshsets.get<CubitMeshSets_mask_meshset_mi_tag>().lower_bound(cubit_bc_type);
   }
-  CubitMeshSet_multiIndex::index<CubitMeshSets_mask_meshset_mi_tag>::type::iterator get_CubitMeshSets_bySetType_end(const unsigned int cubit_bc_type) {
+  CubitMeshSet_multiIndex::index<CubitMeshSets_mask_meshset_mi_tag>::type::iterator
+  get_CubitMeshSets_bySetType_end(const unsigned int cubit_bc_type) const {
     return cubitMeshsets.get<CubitMeshSets_mask_meshset_mi_tag>().upper_bound(cubit_bc_type);
   }
-  CubitMeshSet_multiIndex::index<CubitMeshSets_name>::type::iterator get_CubitMeshSets_byName_begin(const std::string& name) {
+  CubitMeshSet_multiIndex::index<CubitMeshSets_name>::type::iterator
+  get_CubitMeshSets_byName_begin(const std::string& name) const {
     return cubitMeshsets.get<CubitMeshSets_name>().lower_bound(name);
   }
-  CubitMeshSet_multiIndex::index<CubitMeshSets_name>::type::iterator get_CubitMeshSets_byName_end(const std::string& name) {
+  CubitMeshSet_multiIndex::index<CubitMeshSets_name>::type::iterator
+  get_CubitMeshSets_byName_end(const std::string& name) const {
     return cubitMeshsets.get<CubitMeshSets_name>().upper_bound(name);
   }
-  PetscErrorCode find_cubit_meshset_structure(const std::string name,CubitMeshSets *cubit_meshset_ptr);
 
   template<class _CUBIT_BC_DATA_TYPE_>
-  PetscErrorCode printCubitSet(_CUBIT_BC_DATA_TYPE_& data,unsigned long int type) {
+  PetscErrorCode printCubitSet(_CUBIT_BC_DATA_TYPE_& data,unsigned long int type) const {
     PetscFunctionBegin;
-    //FIXME: This method should be const method. Printing is not changing state
     try {
-      FieldInterface& this_field = *this;
+      PetscErrorCode ierr;
+      MoABErrorCode rval;
+      const FieldInterface& this_field = *this;
       for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(this_field,type,it)) {
         ierr = it->get_bc_data_structure(data); CHKERRQ(ierr);
         std::ostringstream ss;
@@ -257,44 +263,51 @@ struct Core: public FieldInterface, MeshRefinment, PrismInterface, SeriesRecorde
     PetscFunctionReturn(0);
   }
 
-  PetscErrorCode print_cubit_displacement_set() {
+  PetscErrorCode print_cubit_displacement_set() const {
     PetscFunctionBegin;
+    PetscErrorCode ierr;
     DisplacementCubitBcData mydata;
     ierr = printCubitSet(mydata,NODESET|mydata.type.to_ulong()); CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }
 
-  PetscErrorCode print_cubit_pressure_set() {
+  PetscErrorCode print_cubit_pressure_set() const {
     PetscFunctionBegin;
+    PetscErrorCode ierr;
     PressureCubitBcData mydata;
     ierr = printCubitSet(mydata,SIDESET|mydata.type.to_ulong()); CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }
 
-  PetscErrorCode print_cubit_force_set() {
+  PetscErrorCode print_cubit_force_set() const {
     PetscFunctionBegin;
+    PetscErrorCode ierr;
     ForceCubitBcData mydata;
     ierr = printCubitSet(mydata,NODESET|mydata.type.to_ulong()); CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }
 
-  PetscErrorCode print_cubit_temperature() {
+  PetscErrorCode print_cubit_temperature() const {
     PetscFunctionBegin;
+    PetscErrorCode ierr;
     TemperatureCubitBcData mydata;
     ierr = printCubitSet(mydata,NODESET|mydata.type.to_ulong()); CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }
 
-  PetscErrorCode print_cubit_heat_flux_set() {
+  PetscErrorCode print_cubit_heat_flux_set() const {
+    PetscErrorCode ierr;
     PetscFunctionBegin;
     HeatFluxCubitBcData mydata;
     ierr = printCubitSet(mydata,SIDESET|mydata.type.to_ulong()); CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }
 
-  PetscErrorCode print_cubit_materials_set() {
+  PetscErrorCode print_cubit_materials_set() const {
+    MoABErrorCode rval;
+    PetscErrorCode ierr;
     PetscFunctionBegin;
-    FieldInterface& thism_field = *this;
+    const FieldInterface& thism_field = *this;
     for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(thism_field,BLOCKSET|MAT_ELASTICSET,it)) {
       Mat_Elastic data;
       ierr = it->get_attribute_data_structure(data); CHKERRQ(ierr);
@@ -680,8 +693,8 @@ struct Core: public FieldInterface, MeshRefinment, PrismInterface, SeriesRecorde
 
   // size and rank of communicator
   int sIze,rAnk;
-  int getCommSize() { return sIze; }
-  int getCommRank() { return rAnk; }
+  int getCommSize() const { return sIze; }
+  int getCommRank() const { return rAnk; }
 
   private:
 
