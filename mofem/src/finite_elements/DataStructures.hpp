@@ -27,26 +27,8 @@ using namespace boost::numeric;
 
 namespace MoFEM {
 
-  // array with std allocators (i.e. concept of capaity is useful here)
-  typedef ublas::unbounded_array<int,std::allocator<int> > IntAllacator;
-  typedef ublas::unbounded_array<const FEDofEntity*,std::allocator<const FEDofEntity*> > DofsAllacator;
-  typedef ublas::unbounded_array<double,std::allocator<double> > DoubleAllacator;
-  typedef ublas::unbounded_array<double,std::allocator<double> > DoubleMatrixAllacator;
-
-  // bounded vector
-  typedef ublas::vector<int,IntAllacator > VectorInt;
-  typedef ublas::vector<const FEDofEntity*,DofsAllacator > VectorDofs;
-  typedef ublas::vector<double,DoubleAllacator > VectorDouble;
-  typedef ublas::matrix<double,ublas::row_major, DoubleMatrixAllacator > MatrixDouble;
-  typedef ublas::matrix<double,ublas::row_major,ublas::bounded_array<double,9> > MatrixDouble3by3;
-  typedef ublas::vector<double,ublas::bounded_array<double,3> > VectorDouble3;
-
-  // shallow adaptor classes
-  typedef ublas::vector<double,ublas::shallow_array_adaptor<double> > VectorAdaptor;
-  typedef ublas::matrix<double,ublas::row_major,ublas::shallow_array_adaptor<double> > MatrixAdaptor;
-  typedef ublas::vector<int,ublas::shallow_array_adaptor<int> > VectorIntAdaptor;
-
-  typedef std::vector<boost::shared_ptr<MatrixDouble> > ShapeFunctionBasesVector;
+typedef ublas::unbounded_array<const FEDofEntity*,std::allocator<const FEDofEntity*> > DofsAllacator;
+typedef ublas::vector<const FEDofEntity*,DofsAllacator > VectorDofs;
 
 /** \brief data structure for finite element entity
   * \ingroup mofem_forces_and_sources
