@@ -576,37 +576,74 @@ struct Core: public FieldInterface, MeshRefinment, PrismInterface, SeriesRecorde
 
   PetscErrorCode VecCreateSeq(const std::string &name,RowColData rc,Vec *V);
   PetscErrorCode VecCreateGhost(const std::string &name,RowColData rc,Vec *V);
-  PetscErrorCode set_local_ghost_vector(const MoFEMProblem *problem_ptr,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode);
-  PetscErrorCode set_local_ghost_vector(const std::string &name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode);
-  PetscErrorCode set_global_ghost_vector(const MoFEMProblem *problem_ptr,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode);
-  PetscErrorCode set_global_ghost_vector(const std::string &name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode);
+
+  PetscErrorCode set_local_ghost_vector(const MoFEMProblem *problem_ptr,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode) const;
+  PetscErrorCode set_local_ghost_vector(const std::string &name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode) const;
+  PetscErrorCode set_global_ghost_vector(const MoFEMProblem *problem_ptr,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode) const;
+  PetscErrorCode set_global_ghost_vector(const std::string &name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode) const;
 
   /// get IS for order
-  PetscErrorCode ISCreateProblemOrder(const std::string &problem,RowColData rc,int min_order,int max_order,IS *is,int verb = -1);
+  PetscErrorCode ISCreateProblemOrder(
+    const std::string &problem,RowColData rc,int min_order,int max_order,IS *is,int verb = -1
+  ) const;
   /// get IS for field and rank
   PetscErrorCode ISCreateProblemFieldAndRank(
-    const std::string &problem,RowColData rc,const std::string &field,int min_coeff_idx,int max_coeff_idx,IS *is,int verb = -1
-  );
+    const std::string &problem,
+    RowColData rc,
+    const std::string &field,
+    int min_coeff_idx,
+    int max_coeff_idx,
+    IS *is,
+    int verb = -1
+  ) const;
 
   //scatter from problem filed to other problem field
   PetscErrorCode ISCreateFromProblemFieldToOtherProblemField(
     const std::string &x_problem,const std::string &x_field_name,RowColData x_rc,
     const std::string &y_problem,const std::string &y_field_name,RowColData y_rc,
-    std::vector<int> &idx,std::vector<int> &idy,int verb = -1);
+    std::vector<int> &idx,std::vector<int> &idy,int verb = -1
+  ) const;
   PetscErrorCode ISCreateFromProblemFieldToOtherProblemField(
     const std::string &x_problem,const std::string &x_field_name,RowColData x_rc,
     const std::string &y_problem,const std::string &y_field_name,RowColData y_rc,
-    IS *ix,IS *iy,int verb = -1);
+    IS *ix,IS *iy,int verb = -1
+  ) const;
   PetscErrorCode VecScatterCreate(
     Vec xin,const std::string &x_problem,const std::string &x_field_name,RowColData x_rc,
-    Vec yin,const std::string &y_problem,const std::string &y_field_name,RowColData y_rc,VecScatter *newctx,int verb = -1);
+    Vec yin,const std::string &y_problem,const std::string &y_field_name,RowColData y_rc,
+    VecScatter *newctx,int verb = -1
+  ) const;
 
   //scatter from problem to other problem
   PetscErrorCode ISCreateFromProblemToOtherProblem(
-    const std::string &x_problem,RowColData x_rc,const std::string &y_problem,RowColData y_rc,std::vector<int> &idx,std::vector<int> &idy,int verb = -1);
+    const std::string &x_problem,
+    RowColData x_rc,
+    const std::string &y_problem,
+    RowColData y_rc,
+    std::vector<int> &idx,
+    std::vector<int> &idy,
+    int verb = -1
+  ) const;
   PetscErrorCode ISCreateFromProblemToOtherProblem(
-    const std::string &x_problem,RowColData x_rc,const std::string &y_problem,RowColData y_rc,IS *ix,IS *iy,int verb = -1);
-    PetscErrorCode VecScatterCreate(Vec xin,const std::string &x_problem,RowColData x_rc,Vec yin,const std::string &y_problem,RowColData y_rc,VecScatter *newctx,int verb = -1);
+    const std::string &x_problem,
+    RowColData x_rc,
+    const std::string &y_problem,
+    RowColData y_rc,
+    IS *ix,
+    IS *iy,
+    int verb = -1
+  ) const;
+  PetscErrorCode VecScatterCreate(
+    Vec xin,
+    const std::string &x_problem,
+    RowColData x_rc,
+    Vec yin,
+    const std::string &y_problem,
+    RowColData y_rc,
+    VecScatter *newctx,
+    int verb = -1
+  ) const;
+
   //local
   PetscErrorCode set_other_local_ghost_vector(
     const MoFEMProblem *problem_ptr,const std::string& fiel_name,const std::string& cpy_field_name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode,int verb = -1);
@@ -614,9 +651,25 @@ struct Core: public FieldInterface, MeshRefinment, PrismInterface, SeriesRecorde
     const std::string &name,const std::string& fiel_name,const std::string& cpy_field_name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode,int verb = -1);
   //global
   PetscErrorCode set_other_global_ghost_vector(
-    const MoFEMProblem *problem_ptr,const std::string& fiel_name,const std::string& cpy_field_name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode,int verb = -1);
+    const MoFEMProblem *problem_ptr,
+    const std::string& fiel_name,
+    const std::string& cpy_field_name,
+    RowColData rc,
+    Vec V,
+    InsertMode mode,
+    ScatterMode scatter_mode,
+    int verb = -1
+  );
   PetscErrorCode set_other_global_ghost_vector(
-    const std::string &name,const std::string& fiel_name,const std::string& cpy_field_name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode,int verb = -1);
+    const std::string &name,
+    const std::string& fiel_name,
+    const std::string& cpy_field_name,
+    RowColData rc,
+    Vec V,
+    InsertMode mode,
+    ScatterMode scatter_mode,
+    int verb = -1
+  );
 
   //loops
   PetscErrorCode problem_basic_method_preProcess(const MoFEMProblem *problem_ptr,BasicMethod &method,int verb = -1);
