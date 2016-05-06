@@ -116,7 +116,7 @@ PetscErrorCode Lobatto_polynomials(
       double zeta = s*ksi-1;
       ierr = Legendre_polynomials(p+1,zeta,NULL,l,NULL,1); CHKERRQ(ierr);
       double w = s*weights[gg];
-      cblas_daxpy(p,w,&l[1],1,&L[0],1);
+      cblas_daxpy(p+1,w,&l[1],1,&L[0],1);
     }
   }
   {
