@@ -648,7 +648,17 @@ struct FieldInterface: public UnknownInterface {
     * \ingroup mofem_field
     *
     * The lower dimension entities are added depending on the space type
-    * \param meshset contains set triangles
+    * \param tange contains set edges
+    * \param name of the field
+    */
+  virtual PetscErrorCode add_ents_to_field_by_EDGEs(const Range &edges,const std::string& name,int verb = -1) = 0;
+
+  /**
+    * \brief set field entities form adjacencies of edges
+    * \ingroup mofem_field
+    *
+    * The lower dimension entities are added depending on the space type
+    * \param meshset contains set edges
     * \param name of the field
     */
   virtual PetscErrorCode add_ents_to_field_by_EDGEs(const EntityHandle meshset,const std::string& name,int verb = -1) = 0;

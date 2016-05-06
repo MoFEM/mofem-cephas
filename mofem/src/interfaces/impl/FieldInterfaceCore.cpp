@@ -166,11 +166,11 @@ PetscErrorCode Core::add_field(
       PetscPrintf(comm,ss.str().c_str());
     }
   }
-  //
+  //unt
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode Core::add_ents_to_field_by_EDGEs(const EntityHandle meshset,const BitFieldId id,int verb) {
+PetscErrorCode Core::add_ents_to_field_by_EDGEs(const Range &edges,const BitFieldId id,int verb) {
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
   *buildMoFEM = 0;
@@ -182,8 +182,7 @@ PetscErrorCode Core::add_ents_to_field_by_EDGEs(const EntityHandle meshset,const
   }
   FieldSpace space;
   rval = moab.tag_get_data(th_FieldSpace,&idm,1,&space); CHKERRQ_MOAB(rval);
-  Range nodes,edges;
-  rval = moab.get_entities_by_type(meshset,MBEDGE,edges,true); CHKERRQ_MOAB(rval);
+  Range nodes;
   switch (space) {
     case L2:
       rval = moab.add_entities(idm,edges); CHKERRQ_MOAB(rval);
@@ -226,6 +225,30 @@ PetscErrorCode Core::add_ents_to_field_by_EDGEs(const EntityHandle meshset,const
       break;
     default:
       SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"add_ents_to_field_by_EDGEs this field not work for EDGEs");
+  }
+  PetscFunctionReturn(0);
+}
+PetscErrorCode Core::add_ents_to_field_by_EDGEs(const Range &edges,const std::string& name,int verb) {
+  PetscFunctionBegin;
+  if(verb==-1) verb = verbose;
+  *buildMoFEM = 0;
+  try {
+    ierr = add_ents_to_field_by_EDGEs(edges,get_BitFieldId(name),verb);  CHKERRQ(ierr);
+  } catch (MoFEMException const &e) {
+    SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
+  }
+  PetscFunctionReturn(0);
+}
+PetscErrorCode Core::add_ents_to_field_by_EDGEs(const EntityHandle meshset,const BitFieldId id,int verb) {
+  PetscFunctionBegin;
+  if(verb==-1) verb = verbose;
+  *buildMoFEM = 0;
+  Range edges;
+  rval = moab.get_entities_by_type(meshset,MBEDGE,edges,true); CHKERRQ_MOAB(rval);
+  try {
+    ierr = add_ents_to_field_by_EDGEs(edges,id,verb); CHKERRQ(ierr);
+  } catch (MoFEMException const &e) {
+    SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
   }
   PetscFunctionReturn(0);
 }

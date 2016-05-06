@@ -103,7 +103,7 @@ struct Projection10NodeCoordsOnField: public EntMethod {
       case AINSWORTH_COLE_BASE:
       break;
       case LOBATTO_BASE:
-      edge_shape_function_val *= PHI0(0);
+      edge_shape_function_val *= LOBATTO_PHI0(0);
       break;
       default:
       SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not yet implemented");
