@@ -5,7 +5,7 @@
 
 All new finite elements or modification or finite elements are implemented in
 users modules (UM). In future it will be always single version of MoFEM library but
-many UM forks. Some UM can be in developed independently from MoFEM library
+many UM forks. UM are developed independently from MoFEM library
 repository. How to add user modules see \ref adding_user_module
 
 \section Making Repository Commits
@@ -30,7 +30,7 @@ leaks.
 Some guidance about branches:
 - Make often updates (git pull)
 - Do not commits to other people branch. You can commit only to branches created by yourself.
-- If you like to commit to other (not own created) branch, do pull request.
+- If you like to commit to other (not own created) branch you have to do pull request.
 - Before marking pull request, pull from branch to which you like to commit.
 - Pull regularly form CDashTesting branch.
 - If you working on two different tasks make two different branches. This simplifies code revision.
@@ -135,10 +135,10 @@ if (...) {
 
   - If variable is a pointer, it should have name as follows \code
 class A {
-  double *valPtr; ///< class member variable
+  boost::shared_ptr<double> valPtr; ///< class member variable
 };
 
-double *val_ptr; ///< local variable
+boost::shared_ptr<double> val_ptr; ///< local variable
 \endcode
 
 
@@ -228,6 +228,9 @@ Star Forest Bipartite Graph     5              5         4136     0
               Viewer     1              0            0     0
 \endcode
 
-
+- Make member function of class constant. Constant member function does not change
+state of the class. So it does not influences results or actions of other members
+of that class. That simplifies searching for bug, testing and overall limits likelihood
+of the error.
 
 */
