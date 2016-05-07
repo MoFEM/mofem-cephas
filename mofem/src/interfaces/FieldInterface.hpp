@@ -441,7 +441,9 @@ struct FieldInterface: public UnknownInterface {
     * \retval EntityHandle meshset
     *
     */
-  virtual PetscErrorCode get_entities_by_type_and_ref_level(const BitRefLevel &bit,const BitRefLevel &mask,const EntityType type,const EntityHandle meshset,int verb = -1) = 0;
+  virtual PetscErrorCode get_entities_by_type_and_ref_level(
+    const BitRefLevel &bit,const BitRefLevel &mask,const EntityType type,const EntityHandle meshset,int verb = -1
+  ) = 0;
 
   /**\brief add all ents from ref level given by bit to meshset
    * \ingroup mofem_ref_ents
@@ -452,7 +454,9 @@ struct FieldInterface: public UnknownInterface {
    * \retval ents
    *
    */
-  virtual PetscErrorCode get_entities_by_type_and_ref_level(const BitRefLevel &bit,const BitRefLevel &mask,const EntityType type,Range &ents,int verb = -1) = 0;
+  virtual PetscErrorCode get_entities_by_type_and_ref_level(
+    const BitRefLevel &bit,const BitRefLevel &mask,const EntityType type,Range &ents,int verb = -1
+  ) = 0;
 
 
   /**\brief add all ents from ref level given by bit to meshset
@@ -497,14 +501,14 @@ struct FieldInterface: public UnknownInterface {
     *
     * bit ref level of adjacent entities is equal to bit ref level of adjacent entities
     */
-  virtual PetscErrorCode get_adjacencies_equality(const EntityHandle from_entiti,const int to_dimension,Range &adj_entities) = 0;
+  virtual PetscErrorCode get_adjacencies_equality(const EntityHandle from_entiti,const int to_dimension,Range &adj_entities) const = 0;
 
   /** \brief Get the adjacencies associated with a entity to entities of a specified dimension.
     * \ingroup mofem_ref_ents
     *
     * bit ref level of adjacent entities is any of bit ref level of adjacent entities
     */
-  virtual PetscErrorCode get_adjacencies_any(const EntityHandle from_entiti,const int to_dimension,Range &adj_entities) = 0;
+  virtual PetscErrorCode get_adjacencies_any(const EntityHandle from_entiti,const int to_dimension,Range &adj_entities) const = 0;
 
   /** \brief Get the adjacencies associated with a entity to entities of a specified dimension.
     * \ingroup mofem_ref_ents
@@ -513,7 +517,13 @@ struct FieldInterface: public UnknownInterface {
     */
   virtual PetscErrorCode get_adjacencies(
     const MoFEMProblem *problem_ptr,
-    const EntityHandle *from_entities,const int num_netities,const int to_dimension,Range &adj_entities,const int operation_type = Interface::INTERSECT,const int verb = 0) = 0;
+    const EntityHandle *from_entities,
+    const int num_netities,
+    const int to_dimension,
+    Range &adj_entities,
+    const int operation_type = Interface::INTERSECT,
+    const int verb = 0
+  ) const = 0;
 
   /** \brief Get the adjacencies associated with a entity to entities of a specified dimension.
     * \ingroup mofem_ref_ents
@@ -522,7 +532,13 @@ struct FieldInterface: public UnknownInterface {
     */
   virtual PetscErrorCode get_adjacencies(
     const BitRefLevel &bit,
-    const EntityHandle *from_entities,const int num_netities,const int to_dimension,Range &adj_entities,const int operation_type = Interface::INTERSECT,const int verb = 0) = 0;
+    const EntityHandle *from_entities,
+    const int num_netities,
+    const int to_dimension,
+    Range &adj_entities,
+    const int operation_type = Interface::INTERSECT,
+    const int verb = 0
+  ) const = 0;
 
 
   /** \brief Get childed entities form meshset containing parent entities
