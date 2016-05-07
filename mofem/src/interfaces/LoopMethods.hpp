@@ -1,7 +1,9 @@
 /** \file LoopMethods.hpp
  * \brief MoFEM interface
  *
- * Low level data structures not used directly by user
+ * Data structures for making loops over finite elements and entities in the problem
+ * or MoFEM database.
+ *
  */
 
 /*
@@ -142,6 +144,7 @@ struct TSMethod: virtual public UnknownInterface  {
  * \ingroup mofem_loops
  *
  * It allows to exchange data between MoFEM and user functions. It stores information about multi-indices.
+ *
  */
 struct BasicMethod:
 public
@@ -198,6 +201,15 @@ TSMethod {
   * \ingroup mofem_loops
   *
   * It can be used to calculate stiffness matrices, residuals, load vectors etc.
+  * It is low level class however in some class users looking for speed and efficiency,
+  * can use it directly.
+  *
+  * This class is used with FieldInterface::loop_finite_elements, where
+  * user overloaded operator FEMethod::operator() is executed for each element in
+  * the problem. Class have to additional methods which are overloaded by user,
+  * FEMethod::preProcess() and FEMethod::postProcess() executed at beginning and end
+  * of the loop over problem elements, respectively.
+  *
   */
 struct FEMethod: public BasicMethod {
 
@@ -442,10 +454,10 @@ struct FEMethod: public BasicMethod {
 };
 
 /**
- * \brief Data strutucture to exchange data between mofem and User Loop Methods on Entirties.
+ * \brief Data structure to exchange data between mofem and User Loop Methods on entities.
  * \ingroup mofem_loops
  *
- * It allows to exchange data between MoFEM and user functoions. It stores informaton about multi-indices.
+ * It allows to exchange data between MoFEM and user functions. It stores information about multi-indices.
  */
 struct EntMethod: public BasicMethod {
 
