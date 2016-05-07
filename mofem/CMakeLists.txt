@@ -74,7 +74,7 @@ include(cmake/ExportFile.cmake)
 
 set(MoFEM_VERSION_MAJOR 0)
 set(MoFEM_VERSION_MINOR 3)
-set(MoFEM_VERSION_BUILD 8)
+set(MoFEM_VERSION_BUILD 10)
 
 #git revision
 include(cmake/GetGitRevisionDescription.cmake)
@@ -158,10 +158,10 @@ configure_file(
 install(FILES ${PROJECT_BINARY_DIR}/MoFEMConfig.cmake DESTINATION ${CMAKE_INSTALL_PREFIX})
 install(FILES ${PROJECT_BINARY_DIR}/MoFEMConfig-version.cmake DESTINATION ${CMAKE_INSTALL_PREFIX})
 
-add_subdirectory("${PROJECT_SOURCE_DIR}/scripts")
-add_subdirectory("${PROJECT_SOURCE_DIR}/third_party")
-add_subdirectory("${PROJECT_SOURCE_DIR}/include")
-add_subdirectory("${PROJECT_SOURCE_DIR}/src")
-add_subdirectory("${PROJECT_SOURCE_DIR}/atom_tests")
-add_subdirectory("${PROJECT_SOURCE_DIR}/users_modules.in")
-add_subdirectory("${PROJECT_SOURCE_DIR}/doc")
+add_subdirectory(${PROJECT_SOURCE_DIR}/scripts)
+add_subdirectory(${PROJECT_SOURCE_DIR}/third_party)
+add_subdirectory(${PROJECT_SOURCE_DIR}/include)
+add_subdirectory(${PROJECT_SOURCE_DIR}/src)
+add_subdirectory(${PROJECT_SOURCE_DIR}/atom_tests)
+add_subdirectory(${PROJECT_SOURCE_DIR}/users_modules.in)
+add_subdirectory(${PROJECT_SOURCE_DIR}/doc)

@@ -241,7 +241,7 @@ PetscErrorCode ConvectiveMassElement::OpMassJacobian::doWork(
   PetscFunctionBegin;
 
   PetscErrorCode ierr;
-  if(dAta.tEts.find(getMoFEMFEPtr()->get_ent()) == dAta.tEts.end()) {
+  if(dAta.tEts.find(getNumeredEntFiniteElementPtr()->get_ent()) == dAta.tEts.end()) {
     PetscFunctionReturn(0);
   }
 
@@ -439,7 +439,7 @@ PetscErrorCode ConvectiveMassElement::OpMassJacobian::doWork(
     PetscFunctionBegin;
 
     PetscErrorCode ierr;
-    if(dAta.tEts.find(getMoFEMFEPtr()->get_ent()) == dAta.tEts.end()) {
+    if(dAta.tEts.find(getNumeredEntFiniteElementPtr()->get_ent()) == dAta.tEts.end()) {
       PetscFunctionReturn(0);
     }
     if(row_data.getIndices().size()==0) PetscFunctionReturn(0);
@@ -541,7 +541,7 @@ PetscErrorCode ConvectiveMassElement::OpMassJacobian::doWork(
 
     PetscErrorCode ierr;
 
-    if(dAta.tEts.find(getMoFEMFEPtr()->get_ent()) == dAta.tEts.end()) {
+    if(dAta.tEts.find(getNumeredEntFiniteElementPtr()->get_ent()) == dAta.tEts.end()) {
       PetscFunctionReturn(0);
     }
 
@@ -706,7 +706,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
     if(row_type != MBVERTEX) {
       PetscFunctionReturn(0);
     }
-    if(dAta.tEts.find(getMoFEMFEPtr()->get_ent()) == dAta.tEts.end()) {
+    if(dAta.tEts.find(getNumeredEntFiniteElementPtr()->get_ent()) == dAta.tEts.end()) {
       PetscFunctionReturn(0);
     }
 
@@ -772,7 +772,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
     PetscFunctionBegin;
 
     PetscErrorCode ierr;
-    if(dAta.tEts.find(getMoFEMFEPtr()->get_ent()) == dAta.tEts.end()) {
+    if(dAta.tEts.find(getNumeredEntFiniteElementPtr()->get_ent()) == dAta.tEts.end()) {
       PetscFunctionReturn(0);
     }
 
@@ -957,7 +957,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
       PetscFunctionBegin;
 
       PetscErrorCode ierr;
-      if(dAta.tEts.find(getMoFEMFEPtr()->get_ent()) == dAta.tEts.end()) {
+      if(dAta.tEts.find(getNumeredEntFiniteElementPtr()->get_ent()) == dAta.tEts.end()) {
         PetscFunctionReturn(0);
       }
       int nb_dofs = row_data.getIndices().size();
@@ -1118,7 +1118,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
       PetscFunctionBegin;
 
       PetscErrorCode ierr;
-      if(dAta.tEts.find(getMoFEMFEPtr()->get_ent()) == dAta.tEts.end()) {
+      if(dAta.tEts.find(getNumeredEntFiniteElementPtr()->get_ent()) == dAta.tEts.end()) {
         PetscFunctionReturn(0);
       }
 
@@ -1298,7 +1298,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
       PetscFunctionBegin;
 
       PetscErrorCode ierr;
-      if(dAta.tEts.find(getMoFEMFEPtr()->get_ent()) == dAta.tEts.end()) {
+      if(dAta.tEts.find(getNumeredEntFiniteElementPtr()->get_ent()) == dAta.tEts.end()) {
         PetscFunctionReturn(0);
       }
       int nb_dofs = row_data.getIndices().size();

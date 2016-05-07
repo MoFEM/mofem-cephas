@@ -228,7 +228,7 @@ struct UltraWeakTransportElement {
         if(row_data.getFieldData().size()==0) PetscFunctionReturn(0);
         if(col_data.getFieldData().size()==0) PetscFunctionReturn(0);
 
-        EntityHandle fe_ent = getMoFEMFEPtr()->get_ent();
+        EntityHandle fe_ent = getNumeredEntFiniteElementPtr()->get_ent();
 
         int nb_row = row_data.getFieldData().size();
         int nb_col = col_data.getFieldData().size();
@@ -294,7 +294,7 @@ struct UltraWeakTransportElement {
 
         if(data.getFieldData().size()==0) PetscFunctionReturn(0);
 
-        EntityHandle fe_ent = getMoFEMFEPtr()->get_ent();
+        EntityHandle fe_ent = getNumeredEntFiniteElementPtr()->get_ent();
 
         int nb_row = data.getFieldData().size();
         Nf.resize(nb_row);
@@ -590,7 +590,7 @@ struct UltraWeakTransportElement {
         try {
 
           if(data.getFieldData().size()==0) PetscFunctionReturn(0);
-          EntityHandle fe_ent = getMoFEMFEPtr()->get_ent();
+          EntityHandle fe_ent = getNumeredEntFiniteElementPtr()->get_ent();
 
           int nb_row = data.getFieldData().size();
           Nf.resize(nb_row);
@@ -657,7 +657,7 @@ struct UltraWeakTransportElement {
       try {
 
         if(data.getFieldData().size()==0) PetscFunctionReturn(0);
-        EntityHandle fe_ent = getMoFEMFEPtr()->get_ent();
+        EntityHandle fe_ent = getNumeredEntFiniteElementPtr()->get_ent();
 
         Nf.resize(data.getIndices().size());
         bzero(&*Nf.data().begin(),Nf.size()*sizeof(FieldData));
@@ -717,7 +717,7 @@ struct UltraWeakTransportElement {
       try {
 
         if(data.getFieldData().size()==0) PetscFunctionReturn(0);
-        EntityHandle fe_ent = getMoFEMFEPtr()->get_ent();
+        EntityHandle fe_ent = getNumeredEntFiniteElementPtr()->get_ent();
 
         int nb_dofs = data.getFieldData().size();
         NN.resize(nb_dofs,nb_dofs);
@@ -932,7 +932,7 @@ struct UltraWeakTransportElement {
 
         if(data.getFieldData().size() == 0)  PetscFunctionReturn(0);
         int nb_gauss_pts = data.getN().size1();
-        EntityHandle fe_ent = getMoFEMFEPtr()->get_ent();
+        EntityHandle fe_ent = getNumeredEntFiniteElementPtr()->get_ent();
 
         double def_VAL = 0;
         Tag th_error_div_sigma;
@@ -980,7 +980,7 @@ struct UltraWeakTransportElement {
         }
 
         const FENumeredDofEntity *dof_ptr;
-        ierr = getMoFEMFEPtr()->get_row_dofs_by_petsc_gloabl_dof_idx(
+        ierr = getNumeredEntFiniteElementPtr()->get_row_dofs_by_petsc_gloabl_dof_idx(
           data.getIndices()[0],&dof_ptr
         ); CHKERRQ(ierr);
         dof_ptr->get_FieldData() = *error_flux_ptr;

@@ -41,7 +41,7 @@ PetscErrorCode EdgeForce::OpEdgeForce::doWork(int side,EntityType type,DataForce
   if(data.getIndices().size()==0) {
     PetscFunctionReturn(0);
   }
-  EntityHandle ent = getMoFEMFEPtr()->get_ent();
+  EntityHandle ent = getNumeredEntFiniteElementPtr()->get_ent();
   if(dAta.eDges.find(ent)==dAta.eDges.end()) {
     PetscFunctionReturn(0);
   }
@@ -50,7 +50,7 @@ PetscErrorCode EdgeForce::OpEdgeForce::doWork(int side,EntityType type,DataForce
 
   // Get pointer to DOF and its rank
   const FENumeredDofEntity *dof_ptr;
-  ierr = getMoFEMFEPtr()->get_row_dofs_by_petsc_gloabl_dof_idx(data.getIndices()[0],&dof_ptr); CHKERRQ(ierr);
+  ierr = getNumeredEntFiniteElementPtr()->get_row_dofs_by_petsc_gloabl_dof_idx(data.getIndices()[0],&dof_ptr); CHKERRQ(ierr);
   int rank = dof_ptr->get_nb_of_coeffs();
 
   int nb_dofs =  data.getIndices().size();

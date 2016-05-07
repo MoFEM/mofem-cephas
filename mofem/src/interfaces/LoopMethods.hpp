@@ -1,7 +1,9 @@
 /** \file LoopMethods.hpp
  * \brief MoFEM interface
  *
- * Low level data structures not used directly by user
+ * Data structures for making loops over finite elements and entities in the problem
+ * or MoFEM database.
+ *
  */
 
 /*
@@ -19,18 +21,29 @@
 
 namespace MoFEM {
 
+static const MOFEMuuid IDD_MOFEMKspMethod = MOFEMuuid( BitIntefaceId(KSP_METHOD) );
+static const MOFEMuuid IDD_MOFEMSnesMethod = MOFEMuuid( BitIntefaceId(SNES_METHOD) );
+static const MOFEMuuid IDD_MOFEMTsMethod = MOFEMuuid( BitIntefaceId(TS_METHOD) );
 static const MOFEMuuid IDD_MOFEMBasicMethod = MOFEMuuid( BitIntefaceId(BASIC_METHOD) );
 static const MOFEMuuid IDD_MOFEMFEMethod = MOFEMuuid( BitIntefaceId(FE_METHOD) );
 static const MOFEMuuid IDD_MOFEMEntMethod = MOFEMuuid( BitIntefaceId(ENT_METHOD) );
 
 /**
- * \brief data structure for ksp (nlinear solver) context
+ * \brief data structure for ksp (linear solver) context
  * \ingroup mofem_loops
  *
- * Struture stores context data which are set in finctions run by PETSc SNES functions.
+ * Struture stores context data which are set in functions run by PETSc SNES functions.
  *
  */
-struct KspMethod {
+struct KspMethod: virtual public UnknownInterface  {
+
+  PetscErrorCode queryInterface (const MOFEMuuid& uuid, UnknownInterface** iface) {
+    if(uuid == IDD_MOFEMKspMethod) {
+      *iface = dynamic_cast<KspMethod*>(this);
+      PetscFunctionReturn(0);
+    }
+    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"unknown interface");
+  }
 
   enum KSPContext { CTX_SETFUNCTION, CTX_OPERATORS, CTX_KSPNONE };
 
@@ -56,7 +69,15 @@ struct KspMethod {
  * Structure stores context data which are set in functions run by PETSc SNES functions.
  *
  */
-struct SnesMethod {
+struct SnesMethod: virtual public UnknownInterface {
+
+  PetscErrorCode queryInterface (const MOFEMuuid& uuid, UnknownInterface** iface) {
+    if(uuid == IDD_MOFEMSnesMethod) {
+      *iface = dynamic_cast<SnesMethod*>(this);
+      PetscFunctionReturn(0);
+    }
+    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"unknown interface");
+  }
 
   enum SNESContext { CTX_SNESSETFUNCTION, CTX_SNESSETJACOBIAN, CTX_SNESNONE };
 
@@ -76,12 +97,20 @@ struct SnesMethod {
 };
 
 /**
- * \brief data structure for ts (time stepping) context
+ * \brief data structure for TS (time stepping) context
  * \ingroup mofem_loops
  *
  * Structure stores context data which are set in functions run by PETSc Time Stepping functions.
  */
-struct TSMethod {
+struct TSMethod: virtual public UnknownInterface  {
+
+  PetscErrorCode queryInterface (const MOFEMuuid& uuid, UnknownInterface** iface) {
+    if(uuid == IDD_MOFEMTsMethod) {
+      *iface = dynamic_cast<TSMethod*>(this);
+      PetscFunctionReturn(0);
+    }
+    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"unknown interface");
+  }
 
   enum TSContext {
     CTX_TSSETRHSFUNCTION,
@@ -115,15 +144,20 @@ struct TSMethod {
  * \ingroup mofem_loops
  *
  * It allows to exchange data between MoFEM and user functions. It stores information about multi-indices.
+ *
  */
-struct BasicMethod: public UnknownInterface,KspMethod,SnesMethod,TSMethod {
+struct BasicMethod:
+public
+KspMethod,
+SnesMethod,
+TSMethod {
 
   PetscErrorCode queryInterface (const MOFEMuuid& uuid, UnknownInterface** iface) {
     if(uuid == IDD_MOFEMBasicMethod) {
       *iface = dynamic_cast<BasicMethod*>(this);
       PetscFunctionReturn(0);
     }
-    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"unknown inteface");
+    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"unknown interface");
   }
 
   BasicMethod();
@@ -167,6 +201,15 @@ struct BasicMethod: public UnknownInterface,KspMethod,SnesMethod,TSMethod {
   * \ingroup mofem_loops
   *
   * It can be used to calculate stiffness matrices, residuals, load vectors etc.
+  * It is low level class however in some class users looking for speed and efficiency,
+  * can use it directly.
+  *
+  * This class is used with FieldInterface::loop_finite_elements, where
+  * user overloaded operator FEMethod::operator() is executed for each element in
+  * the problem. Class have to additional methods which are overloaded by user,
+  * FEMethod::preProcess() and FEMethod::postProcess() executed at beginning and end
+  * of the loop over problem elements, respectively.
+  *
   */
 struct FEMethod: public BasicMethod {
 
@@ -186,7 +229,7 @@ struct FEMethod: public BasicMethod {
   /** \brief function is run at the beginning of loop
    *
    * It is used to zeroing matrices and vectors, calculation of shape
-   * functions on reference element, preporocessing boundary conditions, etc.
+   * functions on reference element, preprocessing boundary conditions, etc.
    */
   PetscErrorCode preProcess();
 
@@ -411,10 +454,10 @@ struct FEMethod: public BasicMethod {
 };
 
 /**
- * \brief Data strutucture to exchange data between mofem and User Loop Methods on Entirties.
+ * \brief Data structure to exchange data between mofem and User Loop Methods on entities.
  * \ingroup mofem_loops
  *
- * It allows to exchange data between MoFEM and user functoions. It stores informaton about multi-indices.
+ * It allows to exchange data between MoFEM and user functions. It stores information about multi-indices.
  */
 struct EntMethod: public BasicMethod {
 

@@ -42,7 +42,7 @@ struct PostPorcStress: public VolumeElementForcesAndSourcesCore::UserDataOperato
     *_lambda = 1;
     *_mu = 1;
 
-    EntityHandle ent = getMoFEMFEPtr()->get_ent();
+    EntityHandle ent = getNumeredEntFiniteElementPtr()->get_ent();
     for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BLOCKSET|MAT_ELASTICSET,it)) {
       Mat_Elastic mydata;
       ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);

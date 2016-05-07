@@ -49,13 +49,13 @@ PetscErrorCode NeummanForcesSurface::OpNeumannForce::doWork(
   PetscFunctionBegin;
 
   if(data.getIndices().size()==0) PetscFunctionReturn(0);
-  EntityHandle ent = getMoFEMFEPtr()->get_ent();
+  EntityHandle ent = getNumeredEntFiniteElementPtr()->get_ent();
   if(dAta.tRis.find(ent)==dAta.tRis.end()) PetscFunctionReturn(0);
 
   PetscErrorCode ierr;
 
   const FENumeredDofEntity *dof_ptr;
-  ierr = getMoFEMFEPtr()->get_row_dofs_by_petsc_gloabl_dof_idx(
+  ierr = getNumeredEntFiniteElementPtr()->get_row_dofs_by_petsc_gloabl_dof_idx(
     data.getIndices()[0],&dof_ptr
   ); CHKERRQ(ierr);
   int rank = dof_ptr->get_nb_of_coeffs();
@@ -123,12 +123,12 @@ PetscErrorCode NeummanForcesSurface::OpNeumannPreassure::doWork(
   PetscFunctionBegin;
 
   if(data.getIndices().size()==0) PetscFunctionReturn(0);
-  if(dAta.tRis.find(getMoFEMFEPtr()->get_ent())==dAta.tRis.end()) PetscFunctionReturn(0);
+  if(dAta.tRis.find(getNumeredEntFiniteElementPtr()->get_ent())==dAta.tRis.end()) PetscFunctionReturn(0);
 
   PetscErrorCode ierr;
 
   const FENumeredDofEntity *dof_ptr;
-  ierr = getMoFEMFEPtr()->get_row_dofs_by_petsc_gloabl_dof_idx(data.getIndices()[0],&dof_ptr); CHKERRQ(ierr);
+  ierr = getNumeredEntFiniteElementPtr()->get_row_dofs_by_petsc_gloabl_dof_idx(data.getIndices()[0],&dof_ptr); CHKERRQ(ierr);
   int rank = dof_ptr->get_nb_of_coeffs();
 
   int nb_row_dofs = data.getIndices().size()/rank;
@@ -157,9 +157,9 @@ PetscErrorCode NeummanForcesSurface::OpNeumannPreassure::doWork(
   }
 
   // if(type == MBTRI) {
-  //   std::cerr << "Tri " << getMoFEMFEPtr()->get_ent() << " getN " << data.getN() << std::endl;
-  //   std::cerr << "Tri " << getMoFEMFEPtr()->get_ent() << " getDiffN " << data.getDiffN() << std::endl;
-  //   std::cerr << "Tri " << getMoFEMFEPtr()->get_ent() << " Indices " << data.getIndices() << std::endl;
+  //   std::cerr << "Tri " << getNumeredEntFiniteElementPtr()->get_ent() << " getN " << data.getN() << std::endl;
+  //   std::cerr << "Tri " << getNumeredEntFiniteElementPtr()->get_ent() << " getDiffN " << data.getDiffN() << std::endl;
+  //   std::cerr << "Tri " << getNumeredEntFiniteElementPtr()->get_ent() << " Indices " << data.getIndices() << std::endl;
   // }
 
   /*std::cerr << "VecSetValues\n";
@@ -198,12 +198,12 @@ PetscErrorCode NeummanForcesSurface::OpNeumannFlux::doWork(
   PetscFunctionBegin;
 
   if(data.getIndices().size()==0) PetscFunctionReturn(0);
-  if(dAta.tRis.find(getMoFEMFEPtr()->get_ent())==dAta.tRis.end()) PetscFunctionReturn(0);
+  if(dAta.tRis.find(getNumeredEntFiniteElementPtr()->get_ent())==dAta.tRis.end()) PetscFunctionReturn(0);
 
   PetscErrorCode ierr;
 
   const FENumeredDofEntity *dof_ptr;
-  ierr = getMoFEMFEPtr()->get_row_dofs_by_petsc_gloabl_dof_idx(data.getIndices()[0],&dof_ptr); CHKERRQ(ierr);
+  ierr = getNumeredEntFiniteElementPtr()->get_row_dofs_by_petsc_gloabl_dof_idx(data.getIndices()[0],&dof_ptr); CHKERRQ(ierr);
   int rank = dof_ptr->get_nb_of_coeffs();
 
   int nb_row_dofs = data.getIndices().size()/rank;

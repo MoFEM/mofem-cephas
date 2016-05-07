@@ -455,7 +455,13 @@ struct MoFEMEntity:
   ~MoFEMEntity();
   inline EntityHandle get_ent() const { return get_ref_ent(); }
   inline int get_nb_dofs_on_ent() const { return tag_FieldData_size/sizeof(FieldData); }
-  inline FieldData* get_ent_FieldData() const { return const_cast<FieldData*>(tag_FieldData); }
+  // inline FieldData* get_ent_FieldData() const { return const_cast<FieldData*>(tag_FieldData); }
+
+  inline VectorAdaptor get_ent_FieldData() const {
+    int size = get_nb_dofs_on_ent();
+    double* ptr = const_cast<FieldData*>(tag_FieldData);
+    return VectorAdaptor(size,ublas::shallow_array_adaptor<FieldData>(size,ptr));
+  }
 
   inline int get_order_nb_dofs(int order) const { return (this->sFieldPtr->forder_table[get_ent_type()])(order); }
   inline int get_order_nb_dofs_diff(int order) const { return get_order_nb_dofs(order)-get_order_nb_dofs(order-1); }
@@ -512,7 +518,7 @@ interface_RefEntity<T> {
   inline EntityHandle get_ent() const { return this->sPtr->get_ent(); }
 
   inline int get_nb_dofs_on_ent() const { return this->sPtr->get_nb_dofs_on_ent(); }
-  inline FieldData* get_ent_FieldData() const { return this->sPtr->get_FieldData(); }
+  inline VectorAdaptor get_ent_FieldData() const { return this->sPtr->get_FieldData(); }
   inline int get_order_nb_dofs(int order) const { return this->sFieldPtr->get_order_nb_dofs(order); }
   inline int get_order_nb_dofs_diff(int order) const { return this->sPtr->get_order_nb_dofs_diff(order); }
   inline ApproximationOrder get_max_order() const { return this->sPtr->get_max_order(); }

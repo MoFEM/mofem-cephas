@@ -457,9 +457,13 @@ struct ForcesAndSurcesCore: public FEMethod {
       ptrFE(NULL) {}
       virtual ~UserDataOperator() {}
 
-    /** \brief return pointer to NumeredEntFiniteElement
+    /** \brief Return raw pointer to NumeredEntFiniteElement
      */
-    inline const NumeredEntFiniteElement* getMoFEMFEPtr() { return ptrFE->fePtr; };
+    inline const NumeredEntFiniteElement* getNumeredEntFiniteElementPtr() { return ptrFE->fePtr; };
+
+    /** \brief DEPRECATED pleas use getNumeredEntFiniteElementPtr() instead
+    */
+    DEPRECATED inline const NumeredEntFiniteElement* getMoFEMFEPtr() { return ptrFE->fePtr; };
 
     /** \brief Get row indices
 
@@ -495,7 +499,7 @@ struct ForcesAndSurcesCore: public FEMethod {
       PetscFunctionReturn(0);
     }
 
-    /** \brief return pointer to Generic Finite Element object
+    /** \brief Return raw pointer to Finite Element Method object
      */
     inline const FEMethod* getFEMethod() { return ptrFE; }
 

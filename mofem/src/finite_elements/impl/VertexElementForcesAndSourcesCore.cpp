@@ -94,7 +94,7 @@ PetscErrorCode VertexElementForcesAndSourcesCore::operator()() {
 
       std::string field_name = !ss ? oit->rowFieldName : oit->colFieldName;
       BitFieldId data_id = mField.get_field_structure(field_name)->get_id();
-      if((oit->getMoFEMFEPtr()->get_BitFieldId_data()&data_id).none()) {
+      if((oit->getNumeredEntFiniteElementPtr()->get_BitFieldId_data()&data_id).none()) {
         SETERRQ2(
           PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"no data field < %s > on finite element < %s >",
           field_name.c_str(),feName.c_str()

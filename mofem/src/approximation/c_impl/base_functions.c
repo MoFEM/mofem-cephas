@@ -116,7 +116,7 @@ PetscErrorCode Lobatto_polynomials(
       double zeta = s*ksi-1;
       ierr = Legendre_polynomials(p+1,zeta,NULL,l,NULL,1); CHKERRQ(ierr);
       double w = s*weights[gg];
-      cblas_daxpy(p,w,&l[1],1,&L[0],1);
+      cblas_daxpy(p+1,w,&l[1],1,&L[0],1);
     }
   }
   {
@@ -130,31 +130,31 @@ PetscErrorCode Lobatto_polynomials(
   PetscFunctionReturn(0);
 }
 
-static double f_phi0(double x) { return PHI0(x); }
-static double f_phi1(double x) { return PHI1(x); }
-static double f_phi2(double x) { return PHI2(x); }
-static double f_phi3(double x) { return PHI3(x); }
-static double f_phi4(double x) { return PHI4(x); }
-static double f_phi5(double x) { return PHI5(x); }
-static double f_phi6(double x) { return PHI6(x); }
-static double f_phi7(double x) { return PHI7(x); }
-static double f_phi8(double x) { return PHI8(x); }
-static double f_phi9(double x) { return PHI9(x); }
+static double f_phi0(double x) { return LOBATTO_PHI0(x); }
+static double f_phi1(double x) { return LOBATTO_PHI1(x); }
+static double f_phi2(double x) { return LOBATTO_PHI2(x); }
+static double f_phi3(double x) { return LOBATTO_PHI3(x); }
+static double f_phi4(double x) { return LOBATTO_PHI4(x); }
+static double f_phi5(double x) { return LOBATTO_PHI5(x); }
+static double f_phi6(double x) { return LOBATTO_PHI6(x); }
+static double f_phi7(double x) { return LOBATTO_PHI7(x); }
+static double f_phi8(double x) { return LOBATTO_PHI8(x); }
+static double f_phi9(double x) { return LOBATTO_PHI9(x); }
 
 static double (*f_phi[])(double x) = {
   f_phi0, f_phi1, f_phi2, f_phi3, f_phi4, f_phi5, f_phi6, f_phi7, f_phi8, f_phi9
 };
 
-static double f_phi0x(double x) { return PHI0X(x); }
-static double f_phi1x(double x) { return PHI1X(x); }
-static double f_phi2x(double x) { return PHI2X(x); }
-static double f_phi3x(double x) { return PHI3X(x); }
-static double f_phi4x(double x) { return PHI4X(x); }
-static double f_phi5x(double x) { return PHI5X(x); }
-static double f_phi6x(double x) { return PHI6X(x); }
-static double f_phi7x(double x) { return PHI7X(x); }
-static double f_phi8x(double x) { return PHI8X(x); }
-static double f_phi9x(double x) { return PHI9X(x); }
+static double f_phi0x(double x) { return LOBATTO_PHI0X(x); }
+static double f_phi1x(double x) { return LOBATTO_PHI1X(x); }
+static double f_phi2x(double x) { return LOBATTO_PHI2X(x); }
+static double f_phi3x(double x) { return LOBATTO_PHI3X(x); }
+static double f_phi4x(double x) { return LOBATTO_PHI4X(x); }
+static double f_phi5x(double x) { return LOBATTO_PHI5X(x); }
+static double f_phi6x(double x) { return LOBATTO_PHI6X(x); }
+static double f_phi7x(double x) { return LOBATTO_PHI7X(x); }
+static double f_phi8x(double x) { return LOBATTO_PHI8X(x); }
+static double f_phi9x(double x) { return LOBATTO_PHI9X(x); }
 
 static double (*f_phix[])(double x) = {
   f_phi0x, f_phi1x, f_phi2x, f_phi3x, f_phi4x, f_phi5x, f_phi6x, f_phi7x, f_phi8x, f_phi9x
