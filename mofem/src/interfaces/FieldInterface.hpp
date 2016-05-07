@@ -792,7 +792,13 @@ struct FieldInterface: public UnknownInterface {
     * \param type selected type of the entities f.e. MBTET, MBTRI, MBEDGE, MBVERTEX, see moab documentation
     * \param order approximation order
     */
-  virtual PetscErrorCode set_field_order(const EntityHandle meshset,const EntityType type,const std::string& name,const ApproximationOrder order,int verb = -1) = 0;
+  virtual PetscErrorCode set_field_order(
+    const EntityHandle meshset,
+    const EntityType type,
+    const std::string& name,
+    const ApproximationOrder order,
+    int verb = -1
+  ) = 0;
 
   /**
     * \brief Set order approximation of the entities in the field
@@ -802,7 +808,12 @@ struct FieldInterface: public UnknownInterface {
     * \param type selected type of the entities f.e. MBTET, MBTRI, MBEDGE, MBVERTEX, see moab documentation
     * \param order approximation order
     */
-  virtual PetscErrorCode set_field_order(const Range &ents,const std::string& name,const ApproximationOrder order,int verb = -1) = 0;
+  virtual PetscErrorCode set_field_order(
+    const Range &ents,
+    const std::string& name,
+    const ApproximationOrder order,
+    int verb = -1
+  ) = 0;
 
   /**
     * \brief Set order approximation of the entities in the field
@@ -813,7 +824,14 @@ struct FieldInterface: public UnknownInterface {
     * \param type selected type of the entities f.e. MBTET, MBTRI, MBEDGE, MBVERTEX, see moab documentation
     * \param order approximation order
     */
-  virtual PetscErrorCode set_field_order_by_entity_type_and_bit_ref(const BitRefLevel &bit,const BitRefLevel &mask,const EntityType type,const std::string& name,const ApproximationOrder order,int verb = -1) = 0;
+  virtual PetscErrorCode set_field_order_by_entity_type_and_bit_ref(
+    const BitRefLevel &bit,
+    const BitRefLevel &mask,
+    const EntityType type,
+    const std::string& name,
+    const ApproximationOrder order,
+    int verb = -1
+  ) = 0;
 
 
   /** \brief list entities in the field
@@ -1507,7 +1525,7 @@ struct FieldInterface: public UnknownInterface {
    * \param RowColData specify what data is taken from Row, Col or Data
    * \param Vec the vector where data is stored
    */
-  virtual PetscErrorCode VecCreateSeq(const std::string &name,RowColData rc,Vec *V) = 0;
+  virtual PetscErrorCode VecCreateSeq(const std::string &name,RowColData rc,Vec *V) const = 0;
 
   /** \brief create ghost vector for problem (collective)
    * \ingroup mofem_vectors
@@ -1518,7 +1536,7 @@ struct FieldInterface: public UnknownInterface {
    * \param RowColData specify what data is taken from Row, Col or Data
    * \param Vec the vector where data is stored
    */
-  virtual PetscErrorCode VecCreateGhost(const std::string &name,RowColData rc,Vec *V) = 0;
+  virtual PetscErrorCode VecCreateGhost(const std::string &name,RowColData rc,Vec *V) const = 0;
 
   /**
     * \brief create Mat (MPIAIJ) for problem (collective)
@@ -1553,7 +1571,8 @@ struct FieldInterface: public UnknownInterface {
   virtual PetscErrorCode ISCreateFromProblemFieldToOtherProblemField(
     const std::string &x_problem,const std::string &x_field_name,RowColData x_rc,
     const std::string &y_problem,const std::string &y_field_name,RowColData y_rc,
-    std::vector<int> &idx,std::vector<int> &idy,int verb = -1) = 0;
+    std::vector<int> &idx,std::vector<int> &idy,int verb = -1
+  ) const = 0;
 
   /** \brief create IS for give two problems and field
     * \ingroup mofem_vectors
@@ -1574,7 +1593,8 @@ struct FieldInterface: public UnknownInterface {
   virtual PetscErrorCode ISCreateFromProblemFieldToOtherProblemField(
     const std::string &x_problem,const std::string &x_field_name,RowColData x_rc,
     const std::string &y_problem,const std::string &y_field_name,RowColData y_rc,
-    IS *ix,IS *iy,int verb = -1) = 0;
+    IS *ix,IS *iy,int verb = -1
+  ) const = 0;
 
   /**
     * \brief create IS for given order range (collective)
@@ -1587,7 +1607,9 @@ struct FieldInterface: public UnknownInterface {
     * \retval is out value
 
     */
-  virtual PetscErrorCode ISCreateProblemOrder(const std::string &problem,RowColData rc,int min_order,int max_order,IS *is,int verb = -1) = 0;
+  virtual PetscErrorCode ISCreateProblemOrder(
+    const std::string &problem,RowColData rc,int min_order,int max_order,IS *is,int verb = -1
+  ) const = 0;
 
   /**
     * \brief create IS for given problem, field and rank range (collective)
@@ -1602,8 +1624,14 @@ struct FieldInterface: public UnknownInterface {
 
     */
   virtual PetscErrorCode ISCreateProblemFieldAndRank(
-    const std::string &problem,RowColData rc,const std::string &field,int min_coeff_idx,int max_coeff_idx,IS *is,int verb = -1
-  ) = 0;
+    const std::string &problem,
+    RowColData rc,
+    const std::string &field,
+    int min_coeff_idx,
+    int max_coeff_idx,
+    IS *is,
+    int verb = -1
+  ) const = 0;
 
   /**
     * \brief create scatter for vectors form one to another problem (collective)
@@ -1623,8 +1651,17 @@ struct FieldInterface: public UnknownInterface {
 
     */
   virtual PetscErrorCode VecScatterCreate(
-    Vec xin,const std::string &x_problem,const std::string &x_field_name,RowColData x_rc,
-    Vec yin,const std::string &y_problem,const std::string &y_field_name,RowColData y_rc,VecScatter *newctx,int verb = -1) = 0;
+    Vec xin,
+    const std::string &x_problem,
+    const std::string &x_field_name,
+    RowColData x_rc,
+    Vec yin,
+    const std::string &y_problem,
+    const std::string &y_field_name,
+    RowColData y_rc,
+    VecScatter *newctx,
+    int verb = -1
+  ) const = 0;
 
   /**
     * \brief create scatter for vectors form one to another problem (collective)
@@ -1637,7 +1674,15 @@ struct FieldInterface: public UnknownInterface {
     * \retval newctx scatter
 
     */
-  virtual PetscErrorCode VecScatterCreate(Vec xin,const std::string &x_problem,RowColData x_rc,Vec yin,const std::string &y_problem,RowColData y_rc,VecScatter *newctx,int verb = -1) = 0;
+  virtual PetscErrorCode VecScatterCreate(
+    Vec xin,const std::string &x_problem,
+    RowColData x_rc,
+    Vec yin,
+    const std::string &y_problem,
+    RowColData y_rc,
+    VecScatter *newctx,
+    int verb = -1
+  ) const = 0;
 
   /**
     * \brief set values of vector from/to meshdatabase
@@ -1654,7 +1699,9 @@ struct FieldInterface: public UnknownInterface {
     * SCATTER_FORWARD set vector V from data field entities
     *
     */
-  virtual PetscErrorCode set_local_ghost_vector(const MoFEMProblem *problem_ptr,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode) = 0;
+  virtual PetscErrorCode set_local_ghost_vector(
+    const MoFEMProblem *problem_ptr,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode
+  ) const = 0;
 
   /**
     * \brief set values of vector from/to meshdatabase
@@ -1671,7 +1718,9 @@ struct FieldInterface: public UnknownInterface {
     * SCATTER_FORWARD set vector V from data field entities
     *
     */
-  virtual PetscErrorCode set_local_ghost_vector(const std::string &name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode) = 0;
+  virtual PetscErrorCode set_local_ghost_vector(
+    const std::string &name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode
+  ) const = 0;
 
   /**
     * \brief set values of vector from/to mesh database (collective)
@@ -1688,7 +1737,9 @@ struct FieldInterface: public UnknownInterface {
     * SCATTER_REVERSE set data to field entities form V vector.
     *
     */
-  virtual PetscErrorCode set_global_ghost_vector(const MoFEMProblem *problem_ptr,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode) = 0;
+  virtual PetscErrorCode set_global_ghost_vector(
+    const MoFEMProblem *problem_ptr,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode
+  ) const = 0;
 
   /**
     * \brief set values of vector from/to mesh database (collective)
@@ -1705,7 +1756,9 @@ struct FieldInterface: public UnknownInterface {
     * SCATTER_REVERSE set data to field entities form V vector.
     *
     */
-  virtual PetscErrorCode set_global_ghost_vector(const std::string &name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode) = 0;
+  virtual PetscErrorCode set_global_ghost_vector(
+    const std::string &name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode
+  ) const = 0;
 
   /** \brief Copy vector to field which is not part of the problem
     * \ingroup mofem_vectors
@@ -1722,7 +1775,15 @@ struct FieldInterface: public UnknownInterface {
     *
     */
   virtual PetscErrorCode set_other_local_ghost_vector(
-    const MoFEMProblem *problem_ptr,const std::string& fiel_name,const std::string& cpy_field_name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode,int verb = -1) = 0;
+    const MoFEMProblem *problem_ptr,
+    const std::string& fiel_name,
+    const std::string& cpy_field_name,
+    RowColData rc,
+    Vec V,
+    InsertMode mode,
+    ScatterMode scatter_mode,
+    int verb = -1
+  ) = 0;
 
   /** \brief Copy vector to field which is not part of the problem
     * \ingroup mofem_vectors
@@ -1739,7 +1800,15 @@ struct FieldInterface: public UnknownInterface {
     *
     */
   virtual PetscErrorCode set_other_local_ghost_vector(
-    const std::string &name,const std::string& field_name,const std::string& cpy_field_name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode,int verb = -1) = 0;
+    const std::string &name,
+    const std::string& field_name,
+    const std::string& cpy_field_name,
+    RowColData rc,
+    Vec V,
+    InsertMode mode,
+    ScatterMode scatter_mode,
+    int verb = -1
+  ) = 0;
 
   /** \brief Copy vector to field which is not part of the problem (collective)
     * \ingroup mofem_vectors
@@ -1758,7 +1827,15 @@ struct FieldInterface: public UnknownInterface {
     *
     */
   virtual PetscErrorCode set_other_global_ghost_vector(
-    const MoFEMProblem *problem_ptr,const std::string& field_name,const std::string& cpy_field_name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode,int verb = -1) = 0;
+    const MoFEMProblem *problem_ptr,
+    const std::string& field_name,
+    const std::string& cpy_field_name,
+    RowColData rc,
+    Vec V,
+    InsertMode mode,
+    ScatterMode scatter_mode,
+    int verb = -1
+  ) = 0;
 
   /** \brief Copy vector to field which is not part of the problem (collective)
     * \ingroup mofem_vectors
@@ -1777,7 +1854,15 @@ struct FieldInterface: public UnknownInterface {
     *
     */
   virtual PetscErrorCode set_other_global_ghost_vector(
-    const std::string &name,const std::string& field_name,const std::string& cpy_field_name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode,int verb = -1) = 0;
+    const std::string &name,
+    const std::string& field_name,
+    const std::string& cpy_field_name,
+    RowColData rc,
+    Vec V,
+    InsertMode mode,
+    ScatterMode scatter_mode,
+    int verb = -1
+  ) = 0;
 
   /** \brief axpy fields
     * \ingroup mofem_field_algebra

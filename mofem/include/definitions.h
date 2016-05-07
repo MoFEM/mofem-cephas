@@ -34,16 +34,22 @@ enum MoFEMInterfaces {
   MESH_REFINE = 1<<1|1<<2,
   PRISM_INTEFACE = 1<<1|1<<3,
   SERIES_RECORDER = 1<<1|1<<4,
-  //Loop Methods
-  BASIC_METHOD = 1<<2|1<<3|1<<4,
-  FE_METHOD = 1<<2|1<<3|1<<4|1<<5,
-  ENT_METHOD = 1<<2|1<<3|1<<4|1<<6,
   //Independet Interfaces
   TETGEN_INTERFACE = 1<<3|1<<4,		///< used to generate mesh using TetGen
   NETGEN_INTERFACE = 1<<3|1<<5,		///< used to generate mesh using NetGen
   NODEMERGER_INTERFACE = 1<<3|1<<6,	///< used to merge nodes
   BITLEVELCOUPLER_INTERFACE = 1<<3|1<<7, ///< used to couple bit levels by finding parent children relation
   PRISMSFROMSURFACE_INTERFACE = 1<<3|1<<8 ///< create prisms from surface elements
+};
+
+enum LoopInterfaces {
+  //Loop Methods
+  KSP_METHOD = 1<<0,
+  SNES_METHOD = 1<<1,
+  TS_METHOD = 1<<2,
+  BASIC_METHOD = 1<<0|1<<1|1<<2,
+  FE_METHOD = 1<<0|1<<1|1<<2|1<<3,
+  ENT_METHOD = 1<<0|1<<1|1<<2|1<<4
 };
 
 /**

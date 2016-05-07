@@ -61,7 +61,7 @@ struct PostPorcStress: public VolumeElementForcesAndSourcesCore::UserDataOperato
 
     if(type != MBVERTEX) PetscFunctionReturn(0);
     if(data.getIndices().size()==0) PetscFunctionReturn(0);
-    if(dAta.tEts.find(getMoFEMFEPtr()->get_ent()) == dAta.tEts.end()) {
+    if(dAta.tEts.find(getNumeredEntFiniteElementPtr()->get_ent()) == dAta.tEts.end()) {
       PetscFunctionReturn(0);
     }
 
@@ -69,7 +69,7 @@ struct PostPorcStress: public VolumeElementForcesAndSourcesCore::UserDataOperato
     PetscErrorCode ierr;
 
     const FENumeredDofEntity *dof_ptr;
-    ierr = getMoFEMFEPtr()->get_row_dofs_by_petsc_gloabl_dof_idx(data.getIndices()[0],&dof_ptr); CHKERRQ(ierr);
+    ierr = getNumeredEntFiniteElementPtr()->get_row_dofs_by_petsc_gloabl_dof_idx(data.getIndices()[0],&dof_ptr); CHKERRQ(ierr);
 
     int id  = dAta.iD;
 
@@ -133,9 +133,9 @@ struct PostPorcStress: public VolumeElementForcesAndSourcesCore::UserDataOperato
         noalias(dAta.materialDoublePtr->F) = prod(dAta.materialDoublePtr->F,invH);
       }
 
-      ierr = dAta.materialDoublePtr->calculateP_PiolaKirchhoffI(dAta,getMoFEMFEPtr()); CHKERRQ(ierr);
+      ierr = dAta.materialDoublePtr->calculateP_PiolaKirchhoffI(dAta,getNumeredEntFiniteElementPtr()); CHKERRQ(ierr);
       rval = postProcMesh.tag_set_data(th_piola1,&mapGaussPts[gg],1,&dAta.materialDoublePtr->P(0,0)); CHKERRQ_MOAB(rval);
-      dAta.materialDoublePtr->calculateElasticEnergy(dAta,getMoFEMFEPtr()); CHKERRQ(ierr);
+      dAta.materialDoublePtr->calculateElasticEnergy(dAta,getNumeredEntFiniteElementPtr()); CHKERRQ(ierr);
       rval = postProcMesh.tag_set_data(th_energy,&mapGaussPts[gg],1,&dAta.materialDoublePtr->eNergy); CHKERRQ_MOAB(rval);
 
     }

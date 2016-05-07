@@ -113,12 +113,12 @@ struct AnalyticalDirichletBC {
 
           unsigned int nb_row = data.getIndices().size();
           if(nb_row==0) PetscFunctionReturn(0);
-          if(tRis.find(getMoFEMFEPtr()->get_ent()) == tRis.end()) {
+          if(tRis.find(getNumeredEntFiniteElementPtr()->get_ent()) == tRis.end()) {
             PetscFunctionReturn(0);
           }
 
           const FENumeredDofEntity *dof_ptr;
-          ierr = getMoFEMFEPtr()->get_row_dofs_by_petsc_gloabl_dof_idx(data.getIndices()[0],&dof_ptr); CHKERRQ(ierr);
+          ierr = getNumeredEntFiniteElementPtr()->get_row_dofs_by_petsc_gloabl_dof_idx(data.getIndices()[0],&dof_ptr); CHKERRQ(ierr);
           unsigned int rank = dof_ptr->get_nb_of_coeffs();
 
           NTf.resize(nb_row/rank);
