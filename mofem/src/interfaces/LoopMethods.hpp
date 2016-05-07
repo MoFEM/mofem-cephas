@@ -97,7 +97,7 @@ struct SnesMethod: virtual public UnknownInterface {
 };
 
 /**
- * \brief data structure for ts (time stepping) context
+ * \brief data structure for TS (time stepping) context
  * \ingroup mofem_loops
  *
  * Structure stores context data which are set in functions run by PETSc Time Stepping functions.
