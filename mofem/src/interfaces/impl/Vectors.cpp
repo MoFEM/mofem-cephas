@@ -227,7 +227,7 @@ PetscErrorCode Core::ISCreateFromProblemFieldToOtherProblemField(
   const std::string &y_problem,const std::string &y_field_name,RowColData y_rc,
   std::vector<int> &idx,std::vector<int> &idy,int verb
 ) const {
-  PetscErrorCode ierr;
+  //PetscErrorCode ierr;
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
   typedef MoFEMProblem_multiIndex::index<Problem_mi_tag>::type ProblemsByName;
@@ -322,7 +322,7 @@ PetscErrorCode Core::ISCreateFromProblemToOtherProblem(
   std::vector<int> &idy,
   int verb
 ) const {
-  PetscErrorCode ierr;
+  //PetscErrorCode ierr;
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
   typedef MoFEMProblem_multiIndex::index<Problem_mi_tag>::type ProblemsByName;

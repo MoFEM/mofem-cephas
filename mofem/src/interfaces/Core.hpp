@@ -744,8 +744,8 @@ struct Core: public FieldInterface, MeshRefinment, PrismInterface, SeriesRecorde
   PetscErrorCode set_field(const double val,const EntityType type,const Range &ents,const std::string& field_name);
 
   //Get adjacencies
-  PetscErrorCode get_adjacencies_equality(const EntityHandle from_entiti,const int to_dimension,Range &adj_entities);
-  PetscErrorCode get_adjacencies_any(const EntityHandle from_entiti,const int to_dimension,Range &adj_entities);
+  PetscErrorCode get_adjacencies_equality(const EntityHandle from_entiti,const int to_dimension,Range &adj_entities) const;
+  PetscErrorCode get_adjacencies_any(const EntityHandle from_entiti,const int to_dimension,Range &adj_entities) const;
   PetscErrorCode get_adjacencies(
     const MoFEMProblem *problem_ptr,
     const EntityHandle *from_entities,
@@ -754,7 +754,7 @@ struct Core: public FieldInterface, MeshRefinment, PrismInterface, SeriesRecorde
     Range &adj_entities,
     const int operation_type = Interface::INTERSECT,
     const int verb = 0
-  );
+  ) const;
   PetscErrorCode get_adjacencies(
     const BitRefLevel &bit,
     const EntityHandle *from_entities,
@@ -763,7 +763,7 @@ struct Core: public FieldInterface, MeshRefinment, PrismInterface, SeriesRecorde
     Range &adj_entities,
     const int operation_type = Interface::INTERSECT,
     const int verb = 0
-  );
+  ) const;
 
   //Coordinate systems
   PetscErrorCode add_coordinate_system(const int cs_dim[],const std::string name);
