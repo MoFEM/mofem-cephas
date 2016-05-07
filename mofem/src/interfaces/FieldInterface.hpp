@@ -792,7 +792,13 @@ struct FieldInterface: public UnknownInterface {
     * \param type selected type of the entities f.e. MBTET, MBTRI, MBEDGE, MBVERTEX, see moab documentation
     * \param order approximation order
     */
-  virtual PetscErrorCode set_field_order(const EntityHandle meshset,const EntityType type,const std::string& name,const ApproximationOrder order,int verb = -1) = 0;
+  virtual PetscErrorCode set_field_order(
+    const EntityHandle meshset,
+    const EntityType type,
+    const std::string& name,
+    const ApproximationOrder order,
+    int verb = -1
+  ) = 0;
 
   /**
     * \brief Set order approximation of the entities in the field
@@ -802,7 +808,12 @@ struct FieldInterface: public UnknownInterface {
     * \param type selected type of the entities f.e. MBTET, MBTRI, MBEDGE, MBVERTEX, see moab documentation
     * \param order approximation order
     */
-  virtual PetscErrorCode set_field_order(const Range &ents,const std::string& name,const ApproximationOrder order,int verb = -1) = 0;
+  virtual PetscErrorCode set_field_order(
+    const Range &ents,
+    const std::string& name,
+    const ApproximationOrder order,
+    int verb = -1
+  ) = 0;
 
   /**
     * \brief Set order approximation of the entities in the field
@@ -813,7 +824,14 @@ struct FieldInterface: public UnknownInterface {
     * \param type selected type of the entities f.e. MBTET, MBTRI, MBEDGE, MBVERTEX, see moab documentation
     * \param order approximation order
     */
-  virtual PetscErrorCode set_field_order_by_entity_type_and_bit_ref(const BitRefLevel &bit,const BitRefLevel &mask,const EntityType type,const std::string& name,const ApproximationOrder order,int verb = -1) = 0;
+  virtual PetscErrorCode set_field_order_by_entity_type_and_bit_ref(
+    const BitRefLevel &bit,
+    const BitRefLevel &mask,
+    const EntityType type,
+    const std::string& name,
+    const ApproximationOrder order,
+    int verb = -1
+  ) = 0;
 
 
   /** \brief list entities in the field
@@ -1507,7 +1525,7 @@ struct FieldInterface: public UnknownInterface {
    * \param RowColData specify what data is taken from Row, Col or Data
    * \param Vec the vector where data is stored
    */
-  virtual PetscErrorCode VecCreateSeq(const std::string &name,RowColData rc,Vec *V) = 0;
+  virtual PetscErrorCode VecCreateSeq(const std::string &name,RowColData rc,Vec *V) const = 0;
 
   /** \brief create ghost vector for problem (collective)
    * \ingroup mofem_vectors
@@ -1518,7 +1536,7 @@ struct FieldInterface: public UnknownInterface {
    * \param RowColData specify what data is taken from Row, Col or Data
    * \param Vec the vector where data is stored
    */
-  virtual PetscErrorCode VecCreateGhost(const std::string &name,RowColData rc,Vec *V) = 0;
+  virtual PetscErrorCode VecCreateGhost(const std::string &name,RowColData rc,Vec *V) const = 0;
 
   /**
     * \brief create Mat (MPIAIJ) for problem (collective)

@@ -166,23 +166,27 @@ struct Core: public FieldInterface, MeshRefinment, PrismInterface, SeriesRecorde
     const int msId,
     const CubitBCType cubit_bc_type,
     const BitRefLevel mesh_bit_level,
-    const bool recursive,int verb = -1);
+    const bool recursive,int verb = -1
+  );
   PetscErrorCode get_msId_3dENTS_sides(
     const EntityHandle SIDESET,
     const BitRefLevel mesh_bit_level,
-    const bool recursive,int verb = -1);
+    const bool recursive,int verb = -1
+  );
   PetscErrorCode get_msId_3dENTS_split_sides(
     const EntityHandle meshset,const BitRefLevel &bit,
     const int msId,const CubitBCType cubit_bc_type,
-    const bool add_iterfece_entities,const bool recursive = false,int verb = -1);
+    const bool add_iterfece_entities,const bool recursive = false,int verb = -1
+  );
   PetscErrorCode get_msId_3dENTS_split_sides(
     const EntityHandle meshset,const BitRefLevel &bit,
-    const EntityHandle SIDESET,const bool add_iterfece_entities,const bool recursive = false,int verb = -1);
+    const EntityHandle SIDESET,const bool add_iterfece_entities,const bool recursive = false,int verb = -1
+  );
   PetscErrorCode get_msId_3dENTS_split_sides(
     const EntityHandle meshset,const BitRefLevel &bit,
     const BitRefLevel &inheret_from_bit_level,const BitRefLevel &inheret_from_bit_level_mask,
-    const EntityHandle SIDESET,const bool add_iterfece_entities,const bool recursive = false,int verb = -1);
-
+    const EntityHandle SIDESET,const bool add_iterfece_entities,const bool recursive = false,int verb = -1
+  );
 
   //FiedlInterface
 
@@ -443,11 +447,37 @@ struct Core: public FieldInterface, MeshRefinment, PrismInterface, SeriesRecorde
 
   //set apprix oorder
   PetscErrorCode set_field_order(const Range &ents,const BitFieldId id,const ApproximationOrder order,int verb = -1);
-  PetscErrorCode set_field_order(const EntityHandle meshset,const EntityType type,const BitFieldId id,const ApproximationOrder order,int verb = -1);
+  PetscErrorCode set_field_order(
+    const EntityHandle meshset,
+    const EntityType type,
+    const BitFieldId id,
+    const ApproximationOrder order,
+    int verb = -1
+  );
   PetscErrorCode set_field_order(const Range &ents,const std::string& name,const ApproximationOrder order,int verb = -1);
-  PetscErrorCode set_field_order(const EntityHandle meshset,const EntityType type,const std::string& name,const ApproximationOrder order,int verb = -1);
-  PetscErrorCode set_field_order_by_entity_type_and_bit_ref(const BitRefLevel &bit,const BitRefLevel &mask,const EntityType type,const BitFieldId id,const ApproximationOrder order,int verb = -1);
-  PetscErrorCode set_field_order_by_entity_type_and_bit_ref(const BitRefLevel &bit,const BitRefLevel &mask,const EntityType type,const std::string& name,const ApproximationOrder order,int verb = -1);
+  PetscErrorCode set_field_order(
+    const EntityHandle meshset,
+    const EntityType type,
+    const std::string& name,
+    const ApproximationOrder order,
+    int verb = -1
+  );
+  PetscErrorCode set_field_order_by_entity_type_and_bit_ref(
+    const BitRefLevel &bit,
+    const BitRefLevel &mask,
+    const EntityType type,
+    const BitFieldId id,
+    const ApproximationOrder order,
+    int verb = -1
+  );
+  PetscErrorCode set_field_order_by_entity_type_and_bit_ref(
+    const BitRefLevel &bit,
+    const BitRefLevel &mask,
+    const EntityType type,
+    const std::string& name,
+    const ApproximationOrder order,
+    int verb = -1
+  );
 
   //build fiels
   PetscErrorCode dofs_NoField(const BitFieldId id,std::map<EntityType,int> &dof_counter,int verb = -1);
@@ -574,8 +604,8 @@ struct Core: public FieldInterface, MeshRefinment, PrismInterface, SeriesRecorde
   PetscErrorCode MatCreateMPIAIJWithArrays(const std::string &name,Mat *Aij,int verb = -1);
   PetscErrorCode MatCreateSeqAIJWithArrays(const std::string &name,Mat *Aij,PetscInt **i,PetscInt **j,PetscScalar **v,int verb = -1);
 
-  PetscErrorCode VecCreateSeq(const std::string &name,RowColData rc,Vec *V);
-  PetscErrorCode VecCreateGhost(const std::string &name,RowColData rc,Vec *V);
+  PetscErrorCode VecCreateSeq(const std::string &name,RowColData rc,Vec *V) const;
+  PetscErrorCode VecCreateGhost(const std::string &name,RowColData rc,Vec *V) const;
 
   PetscErrorCode set_local_ghost_vector(const MoFEMProblem *problem_ptr,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode) const;
   PetscErrorCode set_local_ghost_vector(const std::string &name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode) const;

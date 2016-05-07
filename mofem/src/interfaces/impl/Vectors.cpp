@@ -1,5 +1,5 @@
 /** \file Vectors.cpp
- * \brief Mylti-index containers, data structures and other low-level functions
+ * \brief Managing Vec, IS and Scatter
  */
 
 /* MoFEM is free software: you can redistribute it and/or modify it under
@@ -50,13 +50,20 @@ namespace MoFEM {
 
 // const static int debug = 1;
 
-PetscErrorCode Core::VecCreateSeq(const std::string &name,RowColData rc,Vec *V) {
+PetscErrorCode Core::VecCreateSeq(const std::string &name,RowColData rc,Vec *V) const {
+  PetscErrorCode ierr;
   PetscFunctionBegin;
-  typedef MoFEMProblem_multiIndex::index<Problem_mi_tag>::type pRoblems_by_name;
-  //typedef NumeredDofEntity_multiIndex::index<PetscLocalIdx_mi_tag>::type dofs_by_local_idx;
-  pRoblems_by_name &pRoblems_set = pRoblems.get<Problem_mi_tag>();
-  pRoblems_by_name::iterator p_miit = pRoblems_set.find(name);
-  if(p_miit==pRoblems_set.end()) SETERRQ1(PETSC_COMM_SELF,1,"no such problem %s (top tip check spelling)",name.c_str());
+  typedef MoFEMProblem_multiIndex::index<Problem_mi_tag>::type ProblemsByName;
+  const ProblemsByName &problems_set = pRoblems.get<Problem_mi_tag>();
+  ProblemsByName::iterator p_miit = problems_set.find(name);
+  if(p_miit==problems_set.end()) {
+    SETERRQ1(
+      PETSC_COMM_SELF,
+      MOFEM_DATA_INCONSISTENCY,
+      "No such problem %s (top tip check spelling)",
+      name.c_str()
+    );
+  }
   DofIdx nb_local_dofs,nb_ghost_dofs;
   switch (rc) {
     case ROW:
@@ -68,43 +75,55 @@ PetscErrorCode Core::VecCreateSeq(const std::string &name,RowColData rc,Vec *V) 
       nb_ghost_dofs = p_miit->get_nb_ghost_dofs_col();
       break;
     default:
-     SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented");
+     SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"Not implemented");
   }
   ierr = ::VecCreateSeq(PETSC_COMM_SELF,nb_local_dofs+nb_ghost_dofs,V); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
-PetscErrorCode Core::VecCreateGhost(const std::string &name,RowColData rc,Vec *V) {
+PetscErrorCode Core::VecCreateGhost(const std::string &name,RowColData rc,Vec *V) const {
+  PetscErrorCode ierr;
   PetscFunctionBegin;
-  typedef MoFEMProblem_multiIndex::index<Problem_mi_tag>::type pRoblems_by_name;
-  typedef NumeredDofEntity_multiIndex::index<PetscLocalIdx_mi_tag>::type dofs_by_local_idx;
-  pRoblems_by_name &pRoblems_set = pRoblems.get<Problem_mi_tag>();
-  pRoblems_by_name::iterator p_miit = pRoblems_set.find(name);
-  if(p_miit==pRoblems_set.end()) SETERRQ1(PETSC_COMM_SELF,1,"no such problem %s (top tip check spelling)",name.c_str());
+  typedef MoFEMProblem_multiIndex::index<Problem_mi_tag>::type ProblemsByName;
+  typedef NumeredDofEntity_multiIndex::index<PetscLocalIdx_mi_tag>::type DofsByLocalIdx;
+  const ProblemsByName &problems_set = pRoblems.get<Problem_mi_tag>();
+  ProblemsByName::iterator p_miit = problems_set.find(name);
+  if(p_miit==problems_set.end()) {
+    SETERRQ1(
+      PETSC_COMM_SELF,
+      MOFEM_DATA_INCONSISTENCY,
+      "No such problem %s (top tip check spelling)",
+      name.c_str()
+    );
+  }
   DofIdx nb_dofs,nb_local_dofs,nb_ghost_dofs;
-  dofs_by_local_idx *dofs;
+  DofsByLocalIdx *dofs;
   switch (rc) {
     case ROW:
       nb_dofs = p_miit->get_nb_dofs_row();
       nb_local_dofs = p_miit->get_nb_local_dofs_row();
       nb_ghost_dofs = p_miit->get_nb_ghost_dofs_row();
-      dofs = const_cast<dofs_by_local_idx*>(&p_miit->numered_dofs_rows->get<PetscLocalIdx_mi_tag>());
+      dofs = const_cast<DofsByLocalIdx*>(&p_miit->numered_dofs_rows->get<PetscLocalIdx_mi_tag>());
       break;
     case COL:
       nb_dofs = p_miit->get_nb_dofs_col();
       nb_local_dofs = p_miit->get_nb_local_dofs_col();
       nb_ghost_dofs = p_miit->get_nb_ghost_dofs_col();
-      dofs = const_cast<dofs_by_local_idx*>(&p_miit->numered_dofs_cols->get<PetscLocalIdx_mi_tag>());
+      dofs = const_cast<DofsByLocalIdx*>(&p_miit->numered_dofs_cols->get<PetscLocalIdx_mi_tag>());
       break;
     default:
      SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented");
   }
-  dofs_by_local_idx::iterator miit = dofs->lower_bound(nb_local_dofs);
-  dofs_by_local_idx::iterator hi_miit = dofs->upper_bound(nb_local_dofs+nb_ghost_dofs);
+  DofsByLocalIdx::iterator miit = dofs->lower_bound(nb_local_dofs);
+  DofsByLocalIdx::iterator hi_miit = dofs->upper_bound(nb_local_dofs+nb_ghost_dofs);
   int count = distance(miit,hi_miit);
-  if(count != nb_ghost_dofs) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
+  if(count != nb_ghost_dofs) {
+    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
+  }
   std::vector<DofIdx> ghost_idx(count);
   std::vector<DofIdx>::iterator vit = ghost_idx.begin();
-  for(;miit!=hi_miit;miit++,vit++) *vit = (*miit)->petsc_gloabl_dof_idx;
+  for(;miit!=hi_miit;miit++,vit++) {
+    *vit = (*miit)->petsc_gloabl_dof_idx;
+  }
   ierr = ::VecCreateGhost(comm,nb_local_dofs,nb_dofs,nb_ghost_dofs,&ghost_idx[0],V); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }

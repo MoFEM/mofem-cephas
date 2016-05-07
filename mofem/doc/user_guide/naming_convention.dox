@@ -228,9 +228,16 @@ Star Forest Bipartite Graph     5              5         4136     0
               Viewer     1              0            0     0
 \endcode
 
-- Make member function of class constant. Constant member function does not change
+- Make member functions of class constant always when possible. Try to code that you can
+create such class members. Constant member function does not change
 state of the class. So it does not influences results or actions of other members
 of that class. That simplifies searching for bug, testing and overall limits likelihood
-of the error.
+of the error. Example of constant class member
+\code
+struct {
+  PetscErrorCode someFunction(const int some_argument,const double &some_return_value) const {
+  }
+};
+\endcode
 
 */
