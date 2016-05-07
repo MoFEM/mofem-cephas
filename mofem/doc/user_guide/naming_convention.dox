@@ -101,7 +101,7 @@ if (...) {
   - It is advised that names of vectors should start with "v", e.g. VectorDouble v_coordinate_vector;
     VectorDouble vCoordinateVector, respectively for local variables and class members.
 
-  - It is advised names of vectors should start with "m", e.g. MatrixDouble m_deformation_gradient;
+  - It is advised names of matrices should start with "m", e.g. MatrixDouble m_deformation_gradient;
     MatrixDouble mDeformationGradient, respectively for local variables and class members.
 
   - Use a verb-noun method to name routines that perform some
