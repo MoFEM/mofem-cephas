@@ -52,14 +52,14 @@ PetscErrorCode ThermalElement::OpGetGradAtGaussPts::doWork(int side,EntityType t
 PetscErrorCode ThermalElement::OpThermalRhs::doWork(int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
   PetscFunctionBegin;
 
-  if(dAta.tEts.find(getMoFEMFEPtr()->get_ent()) == dAta.tEts.end()) {
+  if(dAta.tEts.find(getNumeredEntFiniteElementPtr()->get_ent()) == dAta.tEts.end()) {
     PetscFunctionReturn(0);
   }
 
   try {
 
     if(data.getIndices().size()==0) PetscFunctionReturn(0);
-    if(dAta.tEts.find(getMoFEMFEPtr()->get_ent())==dAta.tEts.end()) PetscFunctionReturn(0);
+    if(dAta.tEts.find(getNumeredEntFiniteElementPtr()->get_ent())==dAta.tEts.end()) PetscFunctionReturn(0);
 
     PetscErrorCode ierr;
 
@@ -116,7 +116,7 @@ PetscErrorCode ThermalElement::OpThermalLhs::doWork(
 ) {
   PetscFunctionBegin;
 
-  if(dAta.tEts.find(getMoFEMFEPtr()->get_ent()) == dAta.tEts.end()) {
+  if(dAta.tEts.find(getNumeredEntFiniteElementPtr()->get_ent()) == dAta.tEts.end()) {
     PetscFunctionReturn(0);
   }
 
@@ -288,12 +288,12 @@ PetscErrorCode ThermalElement::OpHeatFlux::doWork(int side,EntityType type,DataF
   PetscFunctionBegin;
 
   if(data.getIndices().size()==0) PetscFunctionReturn(0);
-  if(dAta.tRis.find(getMoFEMFEPtr()->get_ent())==dAta.tRis.end()) PetscFunctionReturn(0);
+  if(dAta.tRis.find(getNumeredEntFiniteElementPtr()->get_ent())==dAta.tRis.end()) PetscFunctionReturn(0);
 
   PetscErrorCode ierr;
 
   const FENumeredDofEntity *dof_ptr;
-  ierr = getMoFEMFEPtr()->get_row_dofs_by_petsc_gloabl_dof_idx(data.getIndices()[0],&dof_ptr); CHKERRQ(ierr);
+  ierr = getNumeredEntFiniteElementPtr()->get_row_dofs_by_petsc_gloabl_dof_idx(data.getIndices()[0],&dof_ptr); CHKERRQ(ierr);
   int rank = dof_ptr->get_nb_of_coeffs();
 
   int nb_dofs = data.getIndices().size()/rank;
@@ -402,12 +402,12 @@ PetscErrorCode ThermalElement::OpRadiationRhs::doWork(int side,EntityType type,D
   PetscFunctionBegin;
 
   if(data.getIndices().size()==0) PetscFunctionReturn(0);
-  if(dAta.tRis.find(getMoFEMFEPtr()->get_ent())==dAta.tRis.end()) PetscFunctionReturn(0);
+  if(dAta.tRis.find(getNumeredEntFiniteElementPtr()->get_ent())==dAta.tRis.end()) PetscFunctionReturn(0);
 
   PetscErrorCode ierr;
 
   const FENumeredDofEntity *dof_ptr;
-  ierr = getMoFEMFEPtr()->get_row_dofs_by_petsc_gloabl_dof_idx(data.getIndices()[0],&dof_ptr); CHKERRQ(ierr);
+  ierr = getNumeredEntFiniteElementPtr()->get_row_dofs_by_petsc_gloabl_dof_idx(data.getIndices()[0],&dof_ptr); CHKERRQ(ierr);
   int rank = dof_ptr->get_nb_of_coeffs();
   int nb_row_dofs = data.getIndices().size()/rank;
 
@@ -458,12 +458,12 @@ PetscErrorCode ThermalElement::OpConvectionRhs::doWork(
   PetscFunctionBegin;
 
   if(data.getIndices().size()==0) PetscFunctionReturn(0);
-  if(dAta.tRis.find(getMoFEMFEPtr()->get_ent())==dAta.tRis.end()) PetscFunctionReturn(0);
+  if(dAta.tRis.find(getNumeredEntFiniteElementPtr()->get_ent())==dAta.tRis.end()) PetscFunctionReturn(0);
 
   PetscErrorCode ierr;
 
   const FENumeredDofEntity *dof_ptr;
-  ierr = getMoFEMFEPtr()->get_row_dofs_by_petsc_gloabl_dof_idx(data.getIndices()[0],&dof_ptr); CHKERRQ(ierr);
+  ierr = getNumeredEntFiniteElementPtr()->get_row_dofs_by_petsc_gloabl_dof_idx(data.getIndices()[0],&dof_ptr); CHKERRQ(ierr);
   int rank = dof_ptr->get_nb_of_coeffs();
 
   int nb_row_dofs = data.getIndices().size()/rank;

@@ -601,7 +601,7 @@ struct KelvinVoigtDamper {
       nbGaussPts = row_data.getN().size1();
 
       commonData.skipThis = false;
-      if(cE.dAta.tEts.find(getMoFEMFEPtr()->get_ent())==cE.dAta.tEts.end()) {
+      if(cE.dAta.tEts.find(getNumeredEntFiniteElementPtr()->get_ent())==cE.dAta.tEts.end()) {
         commonData.skipThis =true;
         PetscFunctionReturn(0);
       }
@@ -832,7 +832,7 @@ struct KelvinVoigtDamper {
             }
           }
         }
-        //std::cerr << "G " << getMoFEMFEPtr()->get_ref_ent() << std::endl << K << std::endl;
+        //std::cerr << "G " << getNumeredEntFiniteElementPtr()->get_ref_ent() << std::endl << K << std::endl;
         ierr = aSemble(
           row_side,col_side,row_type,col_type,row_data,col_data
         ); CHKERRQ(ierr);
@@ -930,7 +930,7 @@ struct KelvinVoigtDamper {
             }
           }
         }
-        //std::cerr << "G " << getMoFEMFEPtr()->get_ref_ent() << std::endl << K << std::endl;
+        //std::cerr << "G " << getNumeredEntFiniteElementPtr()->get_ref_ent() << std::endl << K << std::endl;
         ierr = aSemble(
           row_side,col_side,row_type,col_type,row_data,col_data
         ); CHKERRQ(ierr);

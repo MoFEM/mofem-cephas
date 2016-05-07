@@ -40,13 +40,13 @@ NodalForce::OpNodalForce::OpNodalForce(const std::string field_name,Vec _F,bCFor
     PetscFunctionBegin;
 
     if(data.getIndices().size()==0) PetscFunctionReturn(0);
-    EntityHandle ent = getMoFEMFEPtr()->get_ent();
+    EntityHandle ent = getNumeredEntFiniteElementPtr()->get_ent();
     if(dAta.nOdes.find(ent)==dAta.nOdes.end()) PetscFunctionReturn(0);
 
     PetscErrorCode ierr;
 
     const FENumeredDofEntity *dof_ptr;
-    ierr = getMoFEMFEPtr()->get_row_dofs_by_petsc_gloabl_dof_idx(data.getIndices()[0],&dof_ptr); CHKERRQ(ierr);
+    ierr = getNumeredEntFiniteElementPtr()->get_row_dofs_by_petsc_gloabl_dof_idx(data.getIndices()[0],&dof_ptr); CHKERRQ(ierr);
     int rank = dof_ptr->get_nb_of_coeffs();
 
     if(data.getIndices().size()!=(unsigned int)rank) {

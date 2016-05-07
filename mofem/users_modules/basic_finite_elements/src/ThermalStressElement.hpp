@@ -111,12 +111,12 @@ struct ThermalStressElement {
         try {
 
           if(data.getIndices().size()==0) PetscFunctionReturn(0);
-          if(dAta.tEts.find(getMoFEMFEPtr()->get_ent())==dAta.tEts.end()) PetscFunctionReturn(0);
+          if(dAta.tEts.find(getNumeredEntFiniteElementPtr()->get_ent())==dAta.tEts.end()) PetscFunctionReturn(0);
 
           PetscErrorCode ierr;
 
           const FENumeredDofEntity *dof_ptr;
-          ierr = getMoFEMFEPtr()->get_row_dofs_by_petsc_gloabl_dof_idx(data.getIndices()[0],&dof_ptr); CHKERRQ(ierr);
+          ierr = getNumeredEntFiniteElementPtr()->get_row_dofs_by_petsc_gloabl_dof_idx(data.getIndices()[0],&dof_ptr); CHKERRQ(ierr);
           int rank = dof_ptr->get_nb_of_coeffs();
           if(rank != 3) {
             SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");

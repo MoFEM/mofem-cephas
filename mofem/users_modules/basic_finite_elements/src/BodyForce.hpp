@@ -62,12 +62,12 @@ struct BodyFroceConstantField {
       PetscFunctionBegin;
 
       if(data.getIndices().size()==0) PetscFunctionReturn(0);
-      if(blockTets.find(getMoFEMFEPtr()->get_ent())==blockTets.end()) PetscFunctionReturn(0);
+      if(blockTets.find(getNumeredEntFiniteElementPtr()->get_ent())==blockTets.end()) PetscFunctionReturn(0);
 
       PetscErrorCode ierr;
 
       const FENumeredDofEntity *dof_ptr;
-      ierr = getMoFEMFEPtr()->get_row_dofs_by_petsc_gloabl_dof_idx(data.getIndices()[0],&dof_ptr); CHKERRQ(ierr);
+      ierr = getNumeredEntFiniteElementPtr()->get_row_dofs_by_petsc_gloabl_dof_idx(data.getIndices()[0],&dof_ptr); CHKERRQ(ierr);
       int rank = dof_ptr->get_nb_of_coeffs();
 
       int nb_row_dofs = data.getIndices().size()/rank;

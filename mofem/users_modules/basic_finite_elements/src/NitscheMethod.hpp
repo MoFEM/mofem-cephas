@@ -517,7 +517,7 @@ struct NitscheMethod {
       PetscFunctionBegin;
 
       PetscErrorCode ierr;
-      if(dAta.tEts.find(getMoFEMFEPtr()->get_ent()) == dAta.tEts.end()) {
+      if(dAta.tEts.find(getNumeredEntFiniteElementPtr()->get_ent()) == dAta.tEts.end()) {
         PetscFunctionReturn(0);
       }
       if(row_data.getIndices().size()==0) PetscFunctionReturn(0);
@@ -691,7 +691,7 @@ struct NitscheMethod {
       PetscFunctionBegin;
 
       PetscErrorCode ierr;
-      if(dAta.tEts.find(getMoFEMFEPtr()->get_ent()) == dAta.tEts.end()) {
+      if(dAta.tEts.find(getNumeredEntFiniteElementPtr()->get_ent()) == dAta.tEts.end()) {
         PetscFunctionReturn(0);
       }
       if(row_data.getIndices().size()==0) PetscFunctionReturn(0);

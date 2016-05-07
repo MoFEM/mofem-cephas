@@ -198,7 +198,7 @@ int main(int argc, char *argv[]) {
 
       if(type == MBTRI) {
 
-        const NumeredEntFiniteElement *mofem_fe = getMoFEMFEPtr();
+        const NumeredEntFiniteElement *mofem_fe = getNumeredEntFiniteElementPtr();
         SideNumber_multiIndex &side_table = mofem_fe->get_side_number_table();
         EntityHandle face = side_table.get<1>().find(boost::make_tuple(type,side))->get()->ent;
         int sense = side_table.get<1>().find(boost::make_tuple(type,side))->get()->sense;
@@ -285,7 +285,7 @@ int main(int argc, char *argv[]) {
 
       if(type != MBTRI) PetscFunctionReturn(0);
 
-      EntityHandle face = getMoFEMFEPtr()->get_ent();
+      EntityHandle face = getNumeredEntFiniteElementPtr()->get_ent();
 
       double *t_ptr;
       rval = m_field.get_moab().tag_get_by_ptr(tH1,&face,1,(const void **)&t_ptr); CHKERRQ_MOAB(rval);
@@ -332,7 +332,7 @@ int main(int argc, char *argv[]) {
 
       if(type != MBTRI) PetscFunctionReturn(0);
 
-      EntityHandle face = getMoFEMFEPtr()->get_ent();
+      EntityHandle face = getNumeredEntFiniteElementPtr()->get_ent();
 
       double *t_ptr;
       rval = m_field.get_moab().tag_get_by_ptr(tH1,&face,1,(const void **)&t_ptr); CHKERRQ_MOAB(rval);

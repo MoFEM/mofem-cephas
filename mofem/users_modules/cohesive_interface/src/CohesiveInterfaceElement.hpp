@@ -446,7 +446,7 @@ struct CohesiveInterfaceElement {
       try {
         int nb_dofs = data.getIndices().size();
         if(nb_dofs == 0) PetscFunctionReturn(0);
-        if(physicalEqations.pRisms.find(getMoFEMFEPtr()->get_ent()) == physicalEqations.pRisms.end()) {
+        if(physicalEqations.pRisms.find(getNumeredEntFiniteElementPtr()->get_ent()) == physicalEqations.pRisms.end()) {
           PetscFunctionReturn(0);
         }
         Nf.resize(nb_dofs);
@@ -497,7 +497,7 @@ struct CohesiveInterfaceElement {
         if(nb_row == 0) PetscFunctionReturn(0);
         int nb_col = col_data.getIndices().size();
         if(nb_col == 0) PetscFunctionReturn(0);
-        if(physicalEqations.pRisms.find(getMoFEMFEPtr()->get_ent())
+        if(physicalEqations.pRisms.find(getNumeredEntFiniteElementPtr()->get_ent())
         == physicalEqations.pRisms.end()) {
           PetscFunctionReturn(0);
         }
@@ -557,7 +557,7 @@ struct CohesiveInterfaceElement {
         PetscFunctionBegin;
         PetscErrorCode ierr;
         if(type != MBVERTEX) PetscFunctionReturn(0);
-        if(physicalEqations.pRisms.find(getMoFEMFEPtr()->get_ent()) == physicalEqations.pRisms.end()) {
+        if(physicalEqations.pRisms.find(getNumeredEntFiniteElementPtr()->get_ent()) == physicalEqations.pRisms.end()) {
           PetscFunctionReturn(0);
         }
         ierr = physicalEqations.updateHistory(commonData,getFEMethod()); CHKERRQ(ierr);

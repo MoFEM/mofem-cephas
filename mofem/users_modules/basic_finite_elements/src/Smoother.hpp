@@ -152,7 +152,7 @@ struct Smoother {
       try {
 
         PetscErrorCode ierr;
-        ierr = dAta.materialAdoublePtr->calculateP_PiolaKirchhoffI(dAta,getMoFEMFEPtr()); CHKERRQ(ierr);
+        ierr = dAta.materialAdoublePtr->calculateP_PiolaKirchhoffI(dAta,getNumeredEntFiniteElementPtr()); CHKERRQ(ierr);
 
         commonData.sTress[0].resize(3,3,false);
         for(int dd1 = 0;dd1<3;dd1++) {

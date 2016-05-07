@@ -97,11 +97,11 @@ struct FluidPressure {
       int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
       PetscFunctionBegin;
       if(data.getIndices().size()==0) PetscFunctionReturn(0);
-      EntityHandle ent = getMoFEMFEPtr()->get_ent();
+      EntityHandle ent = getNumeredEntFiniteElementPtr()->get_ent();
       if(dAta.tRis.find(ent)==dAta.tRis.end()) PetscFunctionReturn(0);
 
       const FENumeredDofEntity *dof_ptr;
-      ierr = getMoFEMFEPtr()->get_row_dofs_by_petsc_gloabl_dof_idx(data.getIndices()[0],&dof_ptr); CHKERRQ(ierr);
+      ierr = getNumeredEntFiniteElementPtr()->get_row_dofs_by_petsc_gloabl_dof_idx(data.getIndices()[0],&dof_ptr); CHKERRQ(ierr);
       int rank = dof_ptr->get_nb_of_coeffs();
       int nb_row_dofs = data.getIndices().size()/rank;
 
