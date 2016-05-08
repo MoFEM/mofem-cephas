@@ -1,5 +1,5 @@
 #include <iostream>
-#include "../../FTensor.hpp"
+#include "FTensor.hpp"
 
 using namespace FTensor;
 

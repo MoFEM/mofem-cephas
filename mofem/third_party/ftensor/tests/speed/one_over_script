@@ -3,7 +3,7 @@
 # Make the files if they aren't already.  Useful if running this test
 # multiple times.
 
-make one_over one_over_fast
+#make one_over one_over_fast
 
 # Run the tests, putting the output into files to see that they
 # performed the same computation.
@@ -101,4 +101,3 @@ if diff output9 output_fast9; then
 else
     echo FAIL: one_over_9_minus_x9
 fi
-

@@ -1,4 +1,4 @@
-#include "../../FTensor.hpp"
+#include "FTensor.hpp"
 using namespace FTensor;
 
 inline void func1(Tensor1<double,3> &y, Tensor1<double,3> &a1)

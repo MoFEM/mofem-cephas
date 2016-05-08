@@ -4,7 +4,7 @@
 #include <vector>
 using namespace std;
 
-#include "../../FTensor.hpp"
+#include "FTensor.hpp"
 
 void initial(double P1[], double P2[], double P3[],
 	     double c[], const int N)
@@ -12,7 +12,7 @@ void initial(double P1[], double P2[], double P3[],
   int cr = N/2-1;
   int cc = 7.0*N/8.0-1;
   float s2 = 64.0 * 9.0 / pow(N/2.0,2.0);
-  
+
   for(int i=0;i<N;++i)
     for(int j=0;j<N;++j)
       {
@@ -44,7 +44,7 @@ void FTen(double P1_[], double P2_[], double P3_[],
 	    double c_[], const int N)
 {
   FTensor::Tensor0<double*> P1(P1_), P2(P2_), P3(P3_), c(c_);
-  
+
   FTensor::Tensor1<int,2> d_ijk(1,N);
   FTensor::Tensor1<double,2> d_xyz(1,1);
   FTensor::Index<'l',2> l;
@@ -95,7 +95,7 @@ int main(int argc, char *argv[])
   const int niters=atoi(argv[2]);
 
   for(int i=0;i<niters;++i)
-    {    
+    {
 //        simple(&P1[0],&P2[0],&P3[0],&c[0],N);
 //        simple(&P2[0],&P3[0],&P1[0],&c[0],N);
 //        simple(&P3[0],&P1[0],&P2[0],&c[0],N);
@@ -104,5 +104,3 @@ int main(int argc, char *argv[])
       FTen(&P3[0],&P1[0],&P2[0],&c[0],N);
     }
 }
-
-

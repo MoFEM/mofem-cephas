@@ -1,5 +1,5 @@
 #include <iostream>
-#include "../../FTensor.hpp"
+#include "FTensor.hpp"
 
 using namespace FTensor;
 
@@ -36,4 +36,3 @@ int main()
     }
   std::cout << y(0) << " " << y(1) << " " << y(2) << std::endl;
 }
-
