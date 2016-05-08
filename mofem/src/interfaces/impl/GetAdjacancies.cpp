@@ -111,7 +111,6 @@ PetscErrorCode Core::get_adjacencies(
   const int verb
 ) const {
   PetscErrorCode ierr;
-  MoABErrorCode rval;
   PetscFunctionBegin;
   BitRefLevel bit = problem_ptr->get_BitRefLevel();
   ierr = get_adjacencies(bit,from_entities,num_netities,to_dimension,adj_entities,operation_type); CHKERRQ(ierr);
