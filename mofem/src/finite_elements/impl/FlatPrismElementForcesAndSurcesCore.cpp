@@ -50,6 +50,7 @@
 #include <SeriesRecorder.hpp>
 #include <Core.hpp>
 
+#include <FTensor.hpp>
 #include <DataStructures.hpp>
 #include <DataOperators.hpp>
 #include <ElementsOnEntities.hpp>

@@ -54,6 +54,7 @@
 #include <LegendrePolynomial.hpp>
 #include <LobattoPolynomial.hpp>
 
+#include <FTensor.hpp>
 #include <DataStructures.hpp>
 #include <EntPolynomialBaseCtx.hpp>
 #include <TetPolynomialBase.hpp> // Base functions on tet

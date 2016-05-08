@@ -13,8 +13,6 @@
 
 cmake_minimum_required (VERSION 2.8.7)
 
-
-
 #petsc and moab configuration are used to confiugre mofem
 include(cmake/FindPETSC.cmake)
 include(cmake/FindMOAB.cmake)

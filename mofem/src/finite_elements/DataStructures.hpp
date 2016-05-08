@@ -19,7 +19,6 @@
 * You should have received a copy of the GNU Lesser General Public
 * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
-
 #ifndef __DATASTRUCTURES_HPP
 #define __DATASTRUCTURES_HPP
 
@@ -429,6 +428,12 @@ struct DataForcesAndSurcesCore {
     inline const MatrixAdaptor getDiffHdivN(const int dof,const int gg) {
       return getDiffHdivN(bAse,dof,gg);
     }
+
+    inline FTensor::Tensor0<double*> getFTensorN(const FieldApproximationBase base) {
+      double *ptr = &*getN(base).data().begin();
+      return FTensor::Tensor0<double*>(ptr);
+    }
+
 
     friend std::ostream& operator<<(std::ostream& os,const DataForcesAndSurcesCore::EntData &e);
 

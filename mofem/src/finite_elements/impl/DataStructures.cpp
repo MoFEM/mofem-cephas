@@ -48,6 +48,7 @@
 #include <SeriesRecorder.hpp>
 #include <Core.hpp>
 
+#include <FTensor.hpp>
 #include <DataStructures.hpp>
 
 #ifdef __cplusplus
