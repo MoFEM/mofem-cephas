@@ -1,4 +1,4 @@
-# MoFEM is free software: you can redistribute it and/or modify it under
+  # MoFEM is free software: you can redistribute it and/or modify it under
 # the terms of the GNU Lesser General Public License as published by the
 # Free Software Foundation, either version 3 of the License, or (at your
 # option) any later version.
@@ -12,6 +12,8 @@
 # License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 
 cmake_minimum_required (VERSION 2.8.7)
+
+
 
 #petsc and moab configuration are used to confiugre mofem
 include(cmake/FindPETSC.cmake)
@@ -32,7 +34,20 @@ project(MoFEM C Fortran CXX)
 
 set(MoFEM_VERSION_MAJOR 0)
 set(MoFEM_VERSION_MINOR 3)
-set(MoFEM_VERSION_BUILD 11)
+set(MoFEM_VERSION_BUILD 12)
+
+include(CheckCXXSourceCompiles)
+CHECK_CXX_SOURCE_COMPILES(
+  "int main() { double * __restrict__ x;}\n"
+  SYMM_RESTRICT
+)
+if(SYMM_RESTRICT)
+  set(DEFINE_RESTRICT "-Drestrict=__restrict__")
+else(SYMM_RESTRICT)
+  set(DEFINE_RESTRICT "-Drestrict=")
+  add_definitions("-Drestrict=")
+endif(SYMM_RESTRICT)
+add_definitions(${DEFINE_RESTRICT})
 
 # Installing extermal packages
 include(ExternalProject)

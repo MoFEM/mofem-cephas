@@ -22,6 +22,8 @@
 #include <config.h>
 #include <definitions.h>
 
+//FTensor
+#include <FTensor.hpp>
 #include <Common.hpp>
 #include <UnknownInterface.hpp>
 
