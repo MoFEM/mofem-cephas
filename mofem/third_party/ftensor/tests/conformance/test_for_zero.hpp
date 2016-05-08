@@ -15,7 +15,7 @@ void test_for_zero(const T &t, const char *s)
   }
 }
 
-#elif
+#else
 
 template<class T>
 void test_for_zero(const T &t, const char *s)

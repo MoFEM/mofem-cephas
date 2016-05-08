@@ -11,6 +11,18 @@
 # You should have received a copy of the GNU Lesser General Public
 # License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 
+include(CheckCXXSourceCompiles)
+
+CHECK_CXX_SOURCE_COMPILES(
+  "int main() { double * __restrict__ x;}\n"
+  SYMM_RESTRICT
+)
+if(SYMM_RESTRICT)
+  add_definitions("-Drestrict=__restrict__")
+else(SYMM_RESTRICT)
+  add_definitions("-Drestrict=")
+endif(SYMM_RESTRICT)
+
 #include subdirectory
 
 include_directories(${PROJECT_SOURCE_DIR}/third_party)
@@ -32,8 +44,14 @@ add_subdirectory("${PROJECT_SOURCE_DIR}/third_party/cblas")
 install(TARGETS mofem_third_party DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
 
 # FTensor
-
+file(GLOB_RECURSE FTENSOR_CONFORMANCE_TEST_FILES
+  ${PROJECT_SOURCE_DIR}/third_party/ftensor/tests/conformance/test_*.cpp
+)
 add_executable(
   ftensor_conformance_test
   ${PROJECT_SOURCE_DIR}/third_party/ftensor/tests/conformance/main.cpp
+  ${FTENSOR_CONFORMANCE_TEST_FILES}
+)
+add_test(
+  ftensor_conformance_test ${CMAKE_CURRENT_BINARY_DIR}/ftensor_conformance_test
 )
