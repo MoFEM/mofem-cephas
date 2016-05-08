@@ -13,9 +13,10 @@
 
 #include subdirectory
 
-include_directories("${PROJECT_SOURCE_DIR}/third_party")
-include_directories("${PROJECT_SOURCE_DIR}/third_party/cblas")
-include_directories("${PROJECT_SOURCE_DIR}/third_party/phg-quadrule")
+include_directories(${PROJECT_SOURCE_DIR}/third_party)
+include_directories(${PROJECT_SOURCE_DIR}/third_party/cblas)
+include_directories(${PROJECT_SOURCE_DIR}/third_party/ftensor/src)
+include_directories(${PROJECT_SOURCE_DIR}/third_party/phg-quadrule)
 
 add_library(mofem_third_party
   # triangle_ncc_rule.c
@@ -29,3 +30,10 @@ add_library(mofem_third_party
 
 add_subdirectory("${PROJECT_SOURCE_DIR}/third_party/cblas")
 install(TARGETS mofem_third_party DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
+
+# FTensor
+
+add_executable(
+  ftensor_conformance_test
+  ${PROJECT_SOURCE_DIR}/third_party/ftensor/tests/conformance/main.cpp
+)

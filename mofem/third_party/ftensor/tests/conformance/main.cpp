@@ -3,6 +3,8 @@
 using namespace FTensor;
 using namespace std;
 
+#define FTENOR_MOFEMTESTING 1
+
 #include "test_T0.hpp"
 #include "test_T1.hpp"
 #include "test_T2.hpp"
