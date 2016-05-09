@@ -432,7 +432,23 @@ struct DataForcesAndSurcesCore {
     inline FTensor::Tensor0<double*> getFTensorN(const FieldApproximationBase base) {
       double *ptr = &*getN(base).data().begin();
       return FTensor::Tensor0<double*>(ptr);
-    }
+    };
+
+    inline FTensor::Tensor0<double*> getFTensorN() {
+      return getFTensorN(bAse);
+    };
+
+    inline FTensor::Tensor0<double*> getFTensorN(
+      const FieldApproximationBase base,const int gg
+    ) {
+      double *ptr = &getN(base)(gg,0);
+      return FTensor::Tensor0<double*>(ptr);
+    };
+
+    inline FTensor::Tensor0<double*> getFTensorN(const int gg) {
+      return getFTensorN(bAse,gg);
+    };
+
 
 
     friend std::ostream& operator<<(std::ostream& os,const DataForcesAndSurcesCore::EntData &e);
