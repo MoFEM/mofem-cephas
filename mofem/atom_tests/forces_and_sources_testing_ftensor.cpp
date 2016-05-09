@@ -12,6 +12,8 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
+#define FTENSOR_DEBUG
+
 #include <MoFEM.hpp>
 #include <Projection10NodeCoordsOnField.hpp>
 
@@ -72,46 +74,20 @@ int main(int argc, char *argv[]) {
   ierr = m_field.seed_ref_level_3D(0,bit_level0); CHKERRQ(ierr);
 
   //Fields
-  ierr = m_field.add_field("FIELD1",H1,1); CHKERRQ(ierr);
-  ierr = m_field.add_field("FIELD2",H1,3); CHKERRQ(ierr);
-  ierr = m_field.add_field("FIELD3",NOFIELD,3); CHKERRQ(ierr);
-  ierr = m_field.add_field("MESH_NODE_POSITIONS",H1,3); CHKERRQ(ierr);
-
-  {
-    // Creating and adding no field entities.
-    const double coords[] = {0,0,0};
-    EntityHandle no_field_vertex;
-    rval = m_field.get_moab().create_vertex(coords,no_field_vertex); CHKERRQ_MOAB(rval);
-    Range range_no_field_vertex;
-    range_no_field_vertex.insert(no_field_vertex);
-    ierr = m_field.seed_ref_level(range_no_field_vertex,BitRefLevel().set()); CHKERRQ(ierr);
-    EntityHandle meshset = m_field.get_field_meshset("FIELD3");
-    rval = m_field.get_moab().add_entities(meshset,range_no_field_vertex); CHKERRQ_MOAB(rval);
-  }
+  ierr = m_field.add_field("FIELD1",H1,3); CHKERRQ(ierr);
 
   //FE
   ierr = m_field.add_finite_element("TEST_FE1"); CHKERRQ(ierr);
-  ierr = m_field.add_finite_element("TEST_FE2"); CHKERRQ(ierr);
 
   //Define rows/cols and element data
-  ierr = m_field.modify_finite_element_add_field_row("TEST_FE1","FIELD1"); CHKERRQ(ierr);
-  ierr = m_field.modify_finite_element_add_field_col("TEST_FE1","FIELD2"); CHKERRQ(ierr);
+  ierr = m_field.modify_finite_element_add_field_col("TEST_FE1","FIELD1"); CHKERRQ(ierr);
   ierr = m_field.modify_finite_element_add_field_data("TEST_FE1","FIELD1"); CHKERRQ(ierr);
-  ierr = m_field.modify_finite_element_add_field_data("TEST_FE1","FIELD2"); CHKERRQ(ierr);
-  ierr = m_field.modify_finite_element_add_field_data("TEST_FE1","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
-
-  ierr = m_field.modify_finite_element_add_field_row("TEST_FE2","FIELD3"); CHKERRQ(ierr);
-  ierr = m_field.modify_finite_element_add_field_col("TEST_FE2","FIELD1"); CHKERRQ(ierr);
-  ierr = m_field.modify_finite_element_add_field_data("TEST_FE2","FIELD1"); CHKERRQ(ierr);
-  ierr = m_field.modify_finite_element_add_field_data("TEST_FE2","FIELD3"); CHKERRQ(ierr);
-  ierr = m_field.modify_finite_element_add_field_data("TEST_FE2","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
 
   //Problem
   ierr = m_field.add_problem("TEST_PROBLEM"); CHKERRQ(ierr);
 
   //set finite elements for problem
   ierr = m_field.modify_problem_add_finite_element("TEST_PROBLEM","TEST_FE1"); CHKERRQ(ierr);
-  ierr = m_field.modify_problem_add_finite_element("TEST_PROBLEM","TEST_FE2"); CHKERRQ(ierr);
   //set refinment level for problem
   ierr = m_field.modify_problem_ref_level_add_bit("TEST_PROBLEM",bit_level0); CHKERRQ(ierr);
 
@@ -120,12 +96,9 @@ int main(int argc, char *argv[]) {
   EntityHandle root_set = moab.get_root_set();
   //add entities to field
   ierr = m_field.add_ents_to_field_by_TETs(root_set,"FIELD1"); CHKERRQ(ierr);
-  ierr = m_field.add_ents_to_field_by_TETs(root_set,"FIELD2"); CHKERRQ(ierr);
-  ierr = m_field.add_ents_to_field_by_TETs(root_set,"MESH_NODE_POSITIONS"); CHKERRQ(ierr);
 
   //add entities to finite element
   ierr = m_field.add_ents_to_finite_element_by_TETs(root_set,"TEST_FE1"); CHKERRQ(ierr);
-  ierr = m_field.add_ents_to_finite_element_by_TETs(root_set,"TEST_FE2"); CHKERRQ(ierr);
 
   //set app. order
   //see Hierarchic Finite Element Bases on Unstructured Tetrahedral Meshes (Mark Ainsworth & Joe Coyle)
@@ -134,15 +107,6 @@ int main(int argc, char *argv[]) {
   ierr = m_field.set_field_order(root_set,MBTRI,"FIELD1",order); CHKERRQ(ierr);
   ierr = m_field.set_field_order(root_set,MBEDGE,"FIELD1",order); CHKERRQ(ierr);
   ierr = m_field.set_field_order(root_set,MBVERTEX,"FIELD1",1); CHKERRQ(ierr);
-  ierr = m_field.set_field_order(root_set,MBTET,"FIELD2",order); CHKERRQ(ierr);
-  ierr = m_field.set_field_order(root_set,MBTRI,"FIELD2",order); CHKERRQ(ierr);
-  ierr = m_field.set_field_order(root_set,MBEDGE,"FIELD2",order); CHKERRQ(ierr);
-  ierr = m_field.set_field_order(root_set,MBVERTEX,"FIELD2",1); CHKERRQ(ierr);
-
-  ierr = m_field.set_field_order(root_set,MBTET,"MESH_NODE_POSITIONS",2); CHKERRQ(ierr);
-  ierr = m_field.set_field_order(root_set,MBTRI,"MESH_NODE_POSITIONS",2); CHKERRQ(ierr);
-  ierr = m_field.set_field_order(root_set,MBEDGE,"MESH_NODE_POSITIONS",2); CHKERRQ(ierr);
-  ierr = m_field.set_field_order(root_set,MBVERTEX,"MESH_NODE_POSITIONS",1); CHKERRQ(ierr);
 
   /****/
   //build database
@@ -163,11 +127,6 @@ int main(int argc, char *argv[]) {
   //what are ghost nodes, see Petsc Manual
   ierr = m_field.partition_ghost_dofs("TEST_PROBLEM"); CHKERRQ(ierr);
 
-  //set from positions of 10 node tets
-  Projection10NodeCoordsOnField ent_method(m_field,"MESH_NODE_POSITIONS");
-  ierr = m_field.loop_dofs("MESH_NODE_POSITIONS",ent_method); CHKERRQ(ierr);
-
-
   typedef tee_device<std::ostream, std::ofstream> TeeDevice;
   typedef stream<TeeDevice> TeeStream;
 
@@ -179,8 +138,9 @@ int main(int argc, char *argv[]) {
 
     TeeStream &my_split;
     MyOp1(TeeStream &_my_split,char type):
-    VolumeElementForcesAndSourcesCore::UserDataOperator("FIELD1","FIELD2",type),
+    VolumeElementForcesAndSourcesCore::UserDataOperator("FIELD1","FIELD1",type),
     my_split(_my_split) {}
+
 
     PetscErrorCode doWork(
       int side,
@@ -188,12 +148,18 @@ int main(int argc, char *argv[]) {
       DataForcesAndSurcesCore::EntData &data) {
       PetscFunctionBegin;
 
+      FTensor::Tensor2<double,3,3,row_major> t2;
       const int nb_gauss_pts = data.getN().size1();
       const int nb_base_functions = data.getN().size2();
 
       FTensor::Tensor0<double*> base_function = data.getFTensorN();
+      Tensor1<double*,3> diff_base = data.getFTensorDiffNDim3();
 
       for(int gg = 0;gg!=nb_gauss_pts;gg++) {
+
+        Tensor0<double*> base_function_at_gg = data.getFTensorN(gg);
+        Tensor1<double*,3> diff_base_at_gg = data.getFTensorDiffNDim3(gg);
+
         for(int bb = 0;bb!=nb_base_functions;bb++) {
 
           double base_val = base_function;
@@ -202,6 +168,82 @@ int main(int argc, char *argv[]) {
             SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"Data inconsistency");
           }
           ++base_function;
+
+          if(base_function_at_gg!=data.getN(gg)[bb]) {
+            SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"Data inconsistency");
+          }
+          ++base_function_at_gg;
+
+          Tensor1<double*,3> diff_base_at_gg_and_bb = data.getFTensorDiffNDim3(gg,bb);
+          for(int dd = 0;dd<3;dd++) {
+            if(diff_base_at_gg_and_bb(dd)!=data.getDiffN()(gg,3*bb+dd)) {
+              SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"Data inconsistency");
+            }
+          }
+
+          for(int dd = 0;dd<3;dd++) {
+            if(diff_base_at_gg(dd)!=data.getDiffN()(gg,3*bb+dd)) {
+              SETERRQ2(
+                PETSC_COMM_SELF,
+                MOFEM_DATA_INCONSISTENCY,
+                "Data inconsistency gg = %d bb = %d",
+                gg,
+                bb
+              );
+            }
+          }
+
+          // Just checking if casting from one to another is possible
+          FTensor::Tensor1<double*,3> copy_t1 = diff_base_at_gg;
+          for(int dd = 0;dd<3;dd++) {
+            if(copy_t1(dd)!=data.getDiffN()(gg,3*bb+dd)) {
+              SETERRQ2(
+                PETSC_COMM_SELF,
+                MOFEM_DATA_INCONSISTENCY,
+                "Data inconsistency gg = %d bb = %d",
+                gg,
+                bb
+              );
+            }
+          }
+
+          ++diff_base_at_gg;
+
+          for(int dd = 0;dd<3;dd++) {
+            if(diff_base(dd)!=data.getDiffN()(gg,3*bb+dd)) {
+              SETERRQ2(
+                PETSC_COMM_SELF,
+                MOFEM_DATA_INCONSISTENCY,
+                "Data inconsistency gg = %d bb = %d",
+                gg,
+                bb
+              );
+            }
+          }
+
+          FTensor::Index<'I',3> I;
+          FTensor::Index<'J',3> J;
+
+          t2(I,J) = diff_base(I)*diff_base(J);
+
+          MatrixAdaptor mat = MatrixAdaptor(3,3,ublas::shallow_array_adaptor<double>(9,&t2(0,0)));
+
+          for(int II = 0;II!=3;II++) {
+            for(int JJ = 0;JJ!=3;JJ++) {
+              if(t2(II,JJ)-mat(II,JJ)!=0) {
+                SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"Data inconsistency");
+              }
+              //my_split << t2(II,JJ)-mat(II,JJ) << " ";
+            }
+            //my_split << endl;
+          }
+          //my_split << endl;
+          //
+          // double t0;
+          // t0 = t2(I,I);
+          // my_split << "trace " << t0 << endl;
+
+          ++diff_base;
 
         }
       }
@@ -217,58 +259,88 @@ int main(int argc, char *argv[]) {
       PetscFunctionBegin;
       PetscErrorCode ierr;
 
+      const int nb_gauss_pts = row_data.getN().size1();
+      const int nb_base_functions_row = col_data.getN().size2();
+      const int nb_base_functions_col = col_data.getN().size2();
 
+      FTensor::Tensor0<double*> base_row = row_data.getFTensorN();
+      Tensor1<double*,3> diff_base_row = row_data.getFTensorDiffNDim3();
+
+      FTensor::Index<'I',3> I;
+      FTensor::Index<'J',3> J;
+
+      FTensor::Tensor2_symmetric<double,3> mass,grad_grad;
+      FTensor::Tensor2<double,3,3,row_major> grad_u,grad_v;
+      FTensor::Tensor1<double,3> u,v;
+
+      FTensor::Number<0> N0;
+      FTensor::Number<1> N1;
+      FTensor::Number<2> N2;
+
+      // FTensor::Tensor1<double,3> base_u,base_v;
+
+      mass(I,J) = 0;
+      grad_grad(I,J) = 0;
+
+      for(int gg = 0;gg!=nb_gauss_pts;gg++) {
+        double vol = getVolume();
+        double weight = getGaussPts()(3,gg);
+
+        for(int bb_row = 0;bb_row!=nb_base_functions_row;bb_row++) {
+          FTensor::Tensor0<double*> base_col = col_data.getFTensorN(gg);
+          Tensor1<double*,3> diff_base_col = col_data.getFTensorDiffNDim3(gg);
+          for(int bb_col = 0;bb_col!=nb_base_functions_row;bb_col++) {
+
+            for(int dd_row = 0;dd_row!=3;dd_row++) {
+
+              u(I) = 0;
+              u(dd_row) = base_row;
+              if(dd_row == 0) {
+                grad_u(N0,J) = diff_base_row(J);
+              } else if(dd_row == 1) {
+                grad_u(N1,J) = diff_base_row(J);
+              } else {
+                grad_u(N2,J) = diff_base_row(J);
+              }
+              u(dd_row) = base_row;
+
+              for(int dd_col = 0;dd_col!=3;dd_col++) {
+                u(I) = 0;
+                v(dd_col) = base_col;
+                if(dd_col == 0) {
+                  grad_v(N0,J) = diff_base_col(J);
+                } else if(dd_col == 1) {
+                  grad_v(N1,J) = diff_base_col(J);
+                } else {
+                  grad_v(N2,J) = diff_base_col(J);
+                }
+                mass(I,J) += u(I)*v(I);
+                grad_grad(I,J) += grad_v(I,J)*grad_u(I,J);
+              }
+
+            }
+
+
+
+            ++base_col;
+            ++diff_base_col;
+          }
+          ++base_row;
+          ++base_col;
+        }
+      }
 
       PetscFunctionReturn(0);
     }
 
   };
 
-  struct MyOp2: public VolumeElementForcesAndSourcesCore::UserDataOperator {
-
-    TeeStream &my_split;
-    MyOp2(TeeStream &_my_split,char type):
-      VolumeElementForcesAndSourcesCore::UserDataOperator("FIELD3","FIELD1",type),
-      my_split(_my_split) {}
-
-    PetscErrorCode doWork(
-      int side,
-      EntityType type,
-      DataForcesAndSurcesCore::EntData &data
-    ) {
-      PetscFunctionBegin;
-
-      if(type != MBENTITYSET) PetscFunctionReturn(0);
-
-      PetscFunctionReturn(0);
-    }
-
-    PetscErrorCode doWork(
-      int row_side,int col_side,
-      EntityType row_type,EntityType col_type,
-      DataForcesAndSurcesCore::EntData &row_data,
-      DataForcesAndSurcesCore::EntData &col_data) {
-      PetscFunctionBegin;
-
-      unSetSymm();
-
-      if(row_type != MBENTITYSET) PetscFunctionReturn(0);
-
-      PetscFunctionReturn(0);
-    }
-
-  };
 
   VolumeElementForcesAndSourcesCore fe1(m_field);
   fe1.getOpPtrVector().push_back(new MyOp1(my_split,ForcesAndSurcesCore::UserDataOperator::OPROW));
   fe1.getOpPtrVector().push_back(new MyOp1(my_split,ForcesAndSurcesCore::UserDataOperator::OPROWCOL));
 
-  VolumeElementForcesAndSourcesCore fe2(m_field);
-  fe2.getOpPtrVector().push_back(new MyOp2(my_split,ForcesAndSurcesCore::UserDataOperator::OPROW));
-  fe2.getOpPtrVector().push_back(new MyOp2(my_split,ForcesAndSurcesCore::UserDataOperator::OPROWCOL));
-
   ierr = m_field.loop_finite_elements("TEST_PROBLEM","TEST_FE1",fe1);  CHKERRQ(ierr);
-  ierr = m_field.loop_finite_elements("TEST_PROBLEM","TEST_FE2",fe2);  CHKERRQ(ierr);
 
   ierr = PetscFinalize(); CHKERRQ(ierr);
 

@@ -317,7 +317,11 @@ target_link_libraries(forces_and_sources_testing_ftensor
   mofem_third_party
   ${PROJECT_LIBS}
 )
-
+add_test(
+  forces_and_sources_testing_ftensor
+  ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_testing_ftensor
+  -my_file elasticity_atom_test_01X_pressure.h5m
+)
 
 add_executable(forces_and_sources_getting_higher_order_skin_normals_atom forces_and_sources_getting_higher_order_skin_normals_atom_tets.cpp)
 target_link_libraries(forces_and_sources_getting_higher_order_skin_normals_atom

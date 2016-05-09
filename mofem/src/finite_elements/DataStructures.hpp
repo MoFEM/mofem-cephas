@@ -29,6 +29,58 @@ namespace MoFEM {
 typedef ublas::unbounded_array<const FEDofEntity*,std::allocator<const FEDofEntity*> > DofsAllacator;
 typedef ublas::vector<const FEDofEntity*,DofsAllacator > VectorDofs;
 
+template <class T>
+class Tensor0: public FTensor::Tensor0<T> {
+};
+
+template <class T>
+class Tensor0<T*>: public FTensor::Tensor0<T*> {
+public:
+  Tensor0(T *d): FTensor::Tensor0<T*>(d) {
+  }
+};
+
+template <class T, int Tensor_Dim>
+class Tensor1: public FTensor::Tensor1<T,Tensor_Dim> {
+public:
+  Tensor1(T d0, T d1): FTensor::Tensor1<T,Tensor_Dim>(d0,d1) {
+  }
+  Tensor1(T d0, T d1, T d2): FTensor::Tensor1<T,Tensor_Dim>(d0,d1,d2) {
+  }
+  Tensor1(T d0, T d1, T d2, T d3): FTensor::Tensor1<T,Tensor_Dim>(d0,d1,d2,d3) {
+  }
+};
+
+/**
+ * \brief Tenor1 implementation modifying how pointers are incremented.
+ *
+ */
+template <class T, int Tensor_Dim>
+class Tensor1<T*,Tensor_Dim>: public FTensor::Tensor1<T*,Tensor_Dim> {
+public:
+  Tensor1(T *d0, T *d1): FTensor::Tensor1<T*,Tensor_Dim>(d0,d1) {
+  }
+  Tensor1(T *d0, T *d1, T *d2): FTensor::Tensor1<T*,Tensor_Dim>(d0,d1,d2) {
+  }
+  Tensor1(T *d0, T *d1, T *d2, T *d3): FTensor::Tensor1<T*,Tensor_Dim>(d0,d1,d2,d3) {
+  }
+
+  /**
+   * \brief Increments are equal to dimension.
+   *
+   * Values are stored in matrix nb_gauss_pts x (nb_dimension x nb_base_functions)
+   *
+   */
+  const Tensor1 & operator++() const
+  {
+    for(int i=0;i<Tensor_Dim;++i) {
+      FTensor::Tensor1<T*,Tensor_Dim>::data[i] += Tensor_Dim;
+    }
+    return *this;
+  }
+
+};
+
 /** \brief data structure for finite element entity
   * \ingroup mofem_forces_and_sources
   *
@@ -429,27 +481,139 @@ struct DataForcesAndSurcesCore {
       return getDiffHdivN(bAse,dof,gg);
     }
 
-    inline FTensor::Tensor0<double*> getFTensorN(const FieldApproximationBase base) {
+    /**
+     * \brief Get base function as Tensor0
+     *
+     * \param base
+     * \return Tensor0
+     *
+     */
+    inline Tensor0<double*> getFTensorN(const FieldApproximationBase base) {
       double *ptr = &*getN(base).data().begin();
-      return FTensor::Tensor0<double*>(ptr);
+      return Tensor0<double*>(ptr);
     };
 
-    inline FTensor::Tensor0<double*> getFTensorN() {
+    /**
+     * \brief Get base function as Tensor0
+     *
+     * Return base functions for field base
+     *
+     * \return Tensor0
+     *
+     */
+    inline Tensor0<double*> getFTensorN() {
       return getFTensorN(bAse);
     };
 
-    inline FTensor::Tensor0<double*> getFTensorN(
+    /**
+     * \brief Get base function as Tensor0
+     *
+     * \param base
+     * \parma gauss point
+     * \return Tensor0
+     *
+     */
+    inline Tensor0<double*> getFTensorN(
       const FieldApproximationBase base,const int gg
     ) {
       double *ptr = &getN(base)(gg,0);
-      return FTensor::Tensor0<double*>(ptr);
+      return Tensor0<double*>(ptr);
     };
 
-    inline FTensor::Tensor0<double*> getFTensorN(const int gg) {
+    /**
+     * \brief Get base function as Tensor0
+     *
+     * Return base functions for field base
+     *
+     * \parma gauss point
+     * \return Tensor0
+     *
+     */
+    inline Tensor0<double*> getFTensorN(const int gg) {
       return getFTensorN(bAse,gg);
     };
 
+    inline Tensor1<double*,3> getFTensorDiffNDim3(
+      const FieldApproximationBase base,
+      const int gg,
+      const int bb
+    ) {
+      double *ptr[3];
+      for(int dd = 0;dd<3;dd++) {
+        ptr[dd] = &getDiffN(base)(gg,3*bb+dd);
+      }
+      return Tensor1<double*,3>(ptr[0],ptr[1],ptr[2]);
+    }
 
+    inline Tensor1<double*,3> getFTensorDiffNDim3(
+      const int gg,
+      const int bb
+    ) {
+      return getFTensorDiffNDim3(bAse,gg,bb);
+    }
+
+    inline Tensor1<double*,3> getFTensorDiffNDim3(
+      const FieldApproximationBase base,
+      const int gg
+    ) {
+      return getFTensorDiffNDim3(base,gg,0);
+    }
+
+    inline Tensor1<double*,3> getFTensorDiffNDim3(const int gg) {
+      return getFTensorDiffNDim3(bAse,gg,0);
+    }
+
+    inline Tensor1<double*,3> getFTensorDiffNDim3(
+      const FieldApproximationBase base
+    ) {
+      return getFTensorDiffNDim3(base,0,0);
+    }
+
+    inline Tensor1<double*,3> getFTensorDiffNDim3() {
+      return getFTensorDiffNDim3(bAse,0,0);
+    }
+
+    inline Tensor1<double*,2> getFTensorDiffNDim2(
+      const FieldApproximationBase base,
+      const int gg,
+      const int bb
+    ) {
+      double *ptr[2];
+      for(int dd = 0;dd<2;dd++) {
+        ptr[dd] = &getDiffN(base)(gg,2*bb+dd);
+      }
+      return Tensor1<double*,2>(ptr[0],ptr[1]);
+    }
+
+    inline Tensor1<double*,2> getFTensorDiffNDim2(
+      const int gg,
+      const int bb
+    ) {
+      return getFTensorDiffNDim2(bAse,gg,bb);
+    }
+
+    inline Tensor1<double*,2> getFTensorDiffNDim2(
+      const FieldApproximationBase base,
+      const int gg
+    ) {
+      return getFTensorDiffNDim2(base,gg,0);
+    }
+
+    inline Tensor1<double*,2> getFTensorDiffNDim2(
+      const int gg
+    ) {
+      return getFTensorDiffNDim2(bAse,gg,0);
+    }
+
+    inline Tensor1<double*,2> getFTensorDiffNDim2(
+      const FieldApproximationBase base
+    ) {
+      return getFTensorDiffNDim2(base,0,0);
+    }
+
+    inline Tensor1<double*,2> getFTensorDiffNDim2() {
+      return getFTensorDiffNDim2(bAse,0,0);
+    }
 
     friend std::ostream& operator<<(std::ostream& os,const DataForcesAndSurcesCore::EntData &e);
 
