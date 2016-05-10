@@ -566,9 +566,42 @@ struct DataForcesAndSurcesCore {
       return getFTensorN(bAse);
     };
 
+    /**
+     * \brief Get derivatives of base functions
+     *
+     * For volume element like tetrahedral or prism,
+     * \code
+     * Tensor1<double*,3> diff_base = data.getFTensorDiffN<3>();
+     * \endcode
+     *
+     * For face element like triangle or quad
+     * \code
+     * Tensor1<double*,2> diff_base = data.getFTensorDiffN<2>();
+     * \endcode
+     *
+     * \param base functions
+     * \return Tensor rank 1 (vector)
+     *
+     */
     template<int Tensor_Dim>
     Tensor1<double*,Tensor_Dim> getFTensorDiffN(const FieldApproximationBase base);
 
+    /**
+     * \brief Get derivatives of base functions
+     *
+     * For volume element like tetrahedral or prism,
+     * \code
+     * Tensor1<double*,3> diff_base = data.getFTensorDiffN<3>();
+     * \endcode
+     *
+     * For face element like triangle or quad
+     * \code
+     * Tensor1<double*,2> diff_base = data.getFTensorDiffN<2>();
+     * \endcode
+     *
+     * \return Tensor rank 1 (vector)
+     *
+     */
     template<int Tensor_Dim>
     Tensor1<double*,Tensor_Dim> getFTensorDiffN();
 
