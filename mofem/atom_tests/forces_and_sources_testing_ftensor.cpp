@@ -153,12 +153,9 @@ int main(int argc, char *argv[]) {
       const int nb_base_functions = data.getN().size2();
 
       FTensor::Tensor0<double*> base_function = data.getFTensorN();
-      Tensor1<double*,3> diff_base = data.getFTensorDiffNDim3();
+      Tensor1<double*,3> diff_base = data.getFTensorDiffN<3>();
 
       for(int gg = 0;gg!=nb_gauss_pts;gg++) {
-
-        Tensor0<double*> base_function_at_gg = data.getFTensorN(gg);
-        Tensor1<double*,3> diff_base_at_gg = data.getFTensorDiffNDim3(gg);
 
         for(int bb = 0;bb!=nb_base_functions;bb++) {
 
@@ -168,46 +165,6 @@ int main(int argc, char *argv[]) {
             SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"Data inconsistency");
           }
           ++base_function;
-
-          if(base_function_at_gg!=data.getN(gg)[bb]) {
-            SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"Data inconsistency");
-          }
-          ++base_function_at_gg;
-
-          Tensor1<double*,3> diff_base_at_gg_and_bb = data.getFTensorDiffNDim3(gg,bb);
-          for(int dd = 0;dd<3;dd++) {
-            if(diff_base_at_gg_and_bb(dd)!=data.getDiffN()(gg,3*bb+dd)) {
-              SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"Data inconsistency");
-            }
-          }
-
-          for(int dd = 0;dd<3;dd++) {
-            if(diff_base_at_gg(dd)!=data.getDiffN()(gg,3*bb+dd)) {
-              SETERRQ2(
-                PETSC_COMM_SELF,
-                MOFEM_DATA_INCONSISTENCY,
-                "Data inconsistency gg = %d bb = %d",
-                gg,
-                bb
-              );
-            }
-          }
-
-          // Just checking if casting from one to another is possible
-          FTensor::Tensor1<double*,3> copy_t1 = diff_base_at_gg;
-          for(int dd = 0;dd<3;dd++) {
-            if(copy_t1(dd)!=data.getDiffN()(gg,3*bb+dd)) {
-              SETERRQ2(
-                PETSC_COMM_SELF,
-                MOFEM_DATA_INCONSISTENCY,
-                "Data inconsistency gg = %d bb = %d",
-                gg,
-                bb
-              );
-            }
-          }
-
-          ++diff_base_at_gg;
 
           for(int dd = 0;dd<3;dd++) {
             if(diff_base(dd)!=data.getDiffN()(gg,3*bb+dd)) {
@@ -263,71 +220,23 @@ int main(int argc, char *argv[]) {
       const int nb_base_functions_row = col_data.getN().size2();
       const int nb_base_functions_col = col_data.getN().size2();
 
-      FTensor::Tensor0<double*> base_row = row_data.getFTensorN();
-      Tensor1<double*,3> diff_base_row = row_data.getFTensorDiffNDim3();
-
-      FTensor::Index<'I',3> I;
-      FTensor::Index<'J',3> J;
-
-      FTensor::Tensor2_symmetric<double,3> mass,grad_grad;
-      FTensor::Tensor2<double,3,3,row_major> grad_u,grad_v;
-      FTensor::Tensor1<double,3> u,v;
-
       FTensor::Number<0> N0;
       FTensor::Number<1> N1;
       FTensor::Number<2> N2;
 
-      // FTensor::Tensor1<double,3> base_u,base_v;
-
-      mass(I,J) = 0;
-      grad_grad(I,J) = 0;
+      FTensor::Index<'I',3> I;
+      FTensor::Index<'J',3> J;
 
       for(int gg = 0;gg!=nb_gauss_pts;gg++) {
+
         double vol = getVolume();
         double weight = getGaussPts()(3,gg);
 
         for(int bb_row = 0;bb_row!=nb_base_functions_row;bb_row++) {
-          FTensor::Tensor0<double*> base_col = col_data.getFTensorN(gg);
-          Tensor1<double*,3> diff_base_col = col_data.getFTensorDiffNDim3(gg);
-          for(int bb_col = 0;bb_col!=nb_base_functions_row;bb_col++) {
-
-            for(int dd_row = 0;dd_row!=3;dd_row++) {
-
-              u(I) = 0;
-              u(dd_row) = base_row;
-              if(dd_row == 0) {
-                grad_u(N0,J) = diff_base_row(J);
-              } else if(dd_row == 1) {
-                grad_u(N1,J) = diff_base_row(J);
-              } else {
-                grad_u(N2,J) = diff_base_row(J);
-              }
-              u(dd_row) = base_row;
-
-              for(int dd_col = 0;dd_col!=3;dd_col++) {
-                u(I) = 0;
-                v(dd_col) = base_col;
-                if(dd_col == 0) {
-                  grad_v(N0,J) = diff_base_col(J);
-                } else if(dd_col == 1) {
-                  grad_v(N1,J) = diff_base_col(J);
-                } else {
-                  grad_v(N2,J) = diff_base_col(J);
-                }
-                mass(I,J) += u(I)*v(I);
-                grad_grad(I,J) += grad_v(I,J)*grad_u(I,J);
-              }
-
-            }
 
 
-
-            ++base_col;
-            ++diff_base_col;
-          }
-          ++base_row;
-          ++base_col;
         }
+
       }
 
       PetscFunctionReturn(0);
