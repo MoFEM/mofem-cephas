@@ -29,7 +29,7 @@ using namespace boost::numeric;
 namespace MoFEM {
 
 /** \brief Volume finite element
- \ingroup mofem_forces_and_sources_tet_element
+ \ingroup mofem_forces_and_sources_volume_element
 
  User is implementing own operator at Gauss point level, by own object
  derived from VolumeElementForcesAndSourcesCore::UserDataOperator.  Arbitrary
@@ -103,17 +103,21 @@ struct VolumeElementForcesAndSourcesCore: public ForcesAndSurcesCore {
   MatrixDouble coordsAtGaussPts;
 
   /** \brief default operator for TET element
-    * \ingroup mofem_forces_and_sources_tet_element
+    * \ingroup mofem_forces_and_sources_volume_element
     */
   struct UserDataOperator: public ForcesAndSurcesCore::UserDataOperator {
 
     UserDataOperator(
-      const std::string &field_name,const char type):
-      ForcesAndSurcesCore::UserDataOperator(field_name,type) {}
+      const std::string &field_name,const char type
+    ):
+    ForcesAndSurcesCore::UserDataOperator(field_name,type) {
+    }
 
     UserDataOperator(
-      const std::string &row_field_name,const std::string &col_field_name,const char type):
-      ForcesAndSurcesCore::UserDataOperator(row_field_name,col_field_name,type) {};
+      const std::string &row_field_name,const std::string &col_field_name,const char type
+    ):
+    ForcesAndSurcesCore::UserDataOperator(row_field_name,col_field_name,type) {
+    }
 
     /** \brief get element number of nodes
     */
@@ -188,3 +192,8 @@ struct VolumeElementForcesAndSourcesCore: public ForcesAndSurcesCore {
 }
 
 #endif //__VOLUMEELEMENTFORCESANDSOURCESCORE_HPP__
+
+/***************************************************************************//**
+ * \defgroup mofem_forces_and_sources_volume_element Volume Element
+ * \ingroup mofem_forces_and_sources
+ ******************************************************************************/

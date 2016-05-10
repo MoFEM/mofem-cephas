@@ -97,3 +97,8 @@ struct VertexElementForcesAndSourcesCore: public ForcesAndSurcesCore {
 }
 
 #endif //__VERTEXELEMENTFORCESANDSOURCESCORE_HPP__
+
+/***************************************************************************//**
+ * \defgroup mofem_forces_and_sources_vertex_element Vertex Element
+ * \ingroup mofem_forces_and_sources
+ ******************************************************************************/

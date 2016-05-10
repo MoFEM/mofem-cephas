@@ -222,3 +222,8 @@ struct FlatPrismElementForcesAndSurcesCore: public ForcesAndSurcesCore {
 }
 
 #endif //__FLATPRISMELEMENTFORCESANDSURCESCORE_HPP__
+
+/***************************************************************************//**
+ * \defgroup mofem_forces_and_sources_prism_element Prism Element
+ * \ingroup mofem_forces_and_sources
+ ******************************************************************************/

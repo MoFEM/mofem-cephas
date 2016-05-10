@@ -230,3 +230,8 @@ struct OpSetInvJacH1ForFace: public FaceElementForcesAndSourcesCore::UserDataOpe
 }
 
 #endif //__FACEELEMENTFORCESANDSOURCESCORE_HPP__
+
+/***************************************************************************//**
+ * \defgroup mofem_forces_and_sources_tri_element Face Element
+ * \ingroup mofem_forces_and_sources
+ ******************************************************************************/

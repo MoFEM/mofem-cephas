@@ -544,28 +544,3 @@ struct ForcesAndSurcesCore: public FEMethod {
  * \defgroup mofem_forces_and_sources Forces and sources
  * \ingroup mofem
  ******************************************************************************/
-
-/***************************************************************************//**
- * \defgroup mofem_forces_and_sources_tet_element Volume Element
- * \ingroup mofem_forces_and_sources
- ******************************************************************************/
-
-/***************************************************************************//**
- * \defgroup mofem_forces_and_sources_tri_element Face Element
- * \ingroup mofem_forces_and_sources
- ******************************************************************************/
-
-/***************************************************************************//**
- * \defgroup mofem_forces_and_sources_prism_element Prism Element
- * \ingroup mofem_forces_and_sources
- ******************************************************************************/
-
-/***************************************************************************//**
- * \defgroup mofem_forces_and_sources_edge_element Edge Element
- * \ingroup mofem_forces_and_sources
- ******************************************************************************/
-
-/***************************************************************************//**
- * \defgroup mofem_forces_and_sources_vertex_element Vertex Element
- * \ingroup mofem_forces_and_sources
- ******************************************************************************/

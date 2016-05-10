@@ -295,7 +295,6 @@ struct OpGetHoTangentOnEdge: public DataOperator {
 
 };
 
-
 }
 
 #endif //__DATAOPERATORS_HPP
