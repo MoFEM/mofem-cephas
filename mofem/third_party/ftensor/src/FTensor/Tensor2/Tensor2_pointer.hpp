@@ -4,6 +4,7 @@ template <class T, int Tensor_Dim0, int Tensor_Dim1,
 	  Layout layout>
 class Tensor2<T*,Tensor_Dim0,Tensor_Dim1,layout>
 {
+protected:
   mutable T * restrict data[(layout==column_major) ? Tensor_Dim0 : Tensor_Dim1]
   [(layout==column_major) ? Tensor_Dim1 : Tensor_Dim0];
 public:
@@ -151,7 +152,7 @@ public:
       TensorExpr;
     return Tensor1_Expr<TensorExpr,T,Dim,i>(TensorExpr(*this));
   }
-  
+
   /* The ++ operator increments the pointer, not the number that the
      pointer points to.  This allows iterating over a grid. */
 

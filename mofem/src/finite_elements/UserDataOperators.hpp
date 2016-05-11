@@ -268,7 +268,7 @@ PetscErrorCode OpCalculateVectorFieldValues_General<Tensor_Dim,double,ublas::row
   FTensor::Tensor1<double*,Tensor_Dim> values_at_gauss_pts = getTensor1FormData<Tensor_Dim>(dataPtr);
   FTensor::Index<'I',Tensor_Dim> I;
   for(int gg = 0;gg!=nb_gauss_pts;gg++) {
-    Tensor1<double*,Tensor_Dim> field_data = data.getFTensor1FieldData<3>();
+    Tensor1<double*,Tensor_Dim> field_data = data.getFTensor1FieldData<Tensor_Dim>();
     for(int bb = 0;bb!=nb_base_functions;bb++) {
       if(bb*Tensor_Dim < nb_dofs) { // Number of dofs can be smaller than number of 3 x base functions
         values_at_gauss_pts(I) = field_data(I)*base_function;
@@ -299,6 +299,82 @@ public OpCalculateVectorFieldValues_General<Tensor_Dim,double,ublas::row_major,u
   }
 
 };
+
+/** \brief Calculate field values for tenor field rank 2.
+* \ingroup mofem_forces_and_sources_user_data_operators
+*/
+template<int Tensor_Dim0,int Tensor_Dim1, class T, class L, class A>
+struct OpCalculateTensor2FieldValues_General: public ForcesAndSurcesCore::UserDataOperator {
+
+  boost::shared_ptr<ublas::matrix<T,L,A> > dataPtr;
+  EntityHandle zeroType;
+
+  OpCalculateTensor2FieldValues_General(
+    const std::string &field_name,
+    boost::shared_ptr<ublas::matrix<T,L,A> > data_ptr,
+    EntityType zero_type = MBVERTEX
+  ):
+  ForcesAndSurcesCore::UserDataOperator(field_name,ForcesAndSurcesCore::UserDataOperator::OPROW),
+  dataPtr(data_ptr),
+  zeroType(zero_type) {
+  }
+
+  PetscErrorCode doWork(
+    int side,EntityType type,DataForcesAndSurcesCore::EntData &data
+  );
+
+};
+
+template<int Tensor_Dim0, int Tensor_Dim1, class T, class L, class A>
+PetscErrorCode OpCalculateTensor2FieldValues_General<Tensor_Dim0,Tensor_Dim1,T,L,A>::doWork(
+  int side,EntityType type,DataForcesAndSurcesCore::EntData &data
+) {
+  PetscFunctionBegin;
+  SETERRQ3(
+    PETSC_COMM_SELF,
+    MOFEM_NOT_IMPLEMENTED,
+    "Not implemented for T = %s, dim0 = %d and dim1 = %d",
+    typeid(T).name(),
+    Tensor_Dim0,
+    Tensor_Dim1
+  );
+  PetscFunctionReturn(0);
+}
+
+template<int Tensor_Dim0,int Tensor_Dim1>
+struct OpCalculateTensor2FieldValues_General<
+Tensor_Dim0,Tensor_Dim1,double,ublas::row_major,ublas::unbounded_array<double>
+>: public ForcesAndSurcesCore::UserDataOperator {
+
+  boost::shared_ptr<ublas::matrix<double,ublas::row_major,ublas::unbounded_array<double> > > dataPtr;
+  EntityHandle zeroType;
+
+  OpCalculateTensor2FieldValues_General(
+    const std::string &field_name,
+    boost::shared_ptr<ublas::matrix<double,ublas::row_major,ublas::unbounded_array<double> > > data_ptr,
+    EntityType zero_type = MBVERTEX
+  ):
+  ForcesAndSurcesCore::UserDataOperator(field_name,ForcesAndSurcesCore::UserDataOperator::OPROW),
+  dataPtr(data_ptr),
+  zeroType(zero_type) {
+  }
+
+  PetscErrorCode doWork(
+    int side,EntityType type,DataForcesAndSurcesCore::EntData &data
+  );
+
+};
+
+template<int Tensor_Dim0,int Tensor_Dim1>
+PetscErrorCode OpCalculateTensor2FieldValues_General<
+Tensor_Dim0,Tensor_Dim1, double, ublas::row_major, ublas::unbounded_array<double>
+>::doWork(
+  int side,EntityType type,DataForcesAndSurcesCore::EntData &data
+) {
+  PetscFunctionBegin;
+  SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"Not implemented yet");
+  PetscFunctionReturn(0);
+}
 
 // GET GRADIENTS AT GAUSS POINTS
 
@@ -401,7 +477,6 @@ public OpCalculateScalarFieldGradient_General<Tensor_Dim,double,ublas::row_major
   }
 
 };
-
 
 }
 

@@ -70,8 +70,7 @@ public:
   change the value, and one for consts that doesn't.
   */
 
-  T & operator()(const int N)
-  {
+  T & operator()(const int N) {
     #ifdef FTENSOR_DEBUG
     if(N>=Tensor_Dim || N<0)
     {
@@ -86,8 +85,7 @@ public:
     }
     return *FTensor::Tensor1<T*,Tensor_Dim>::data[N];
   }
-  T operator()(const int N) const
-  {
+  T operator()(const int N) const {
     #ifdef FTENSOR_DEBUG
     if(N>=Tensor_Dim || N<0)
     {
@@ -108,15 +106,13 @@ public:
 
   template<char i, int Dim>
   FTensor::Tensor1_Expr<Tensor1<T*,Tensor_Dim>,T,Dim,i>
-  operator()(const FTensor::Index<i,Dim> &index)
-  {
+  operator()(const FTensor::Index<i,Dim> &index) {
     return FTensor::Tensor1_Expr<Tensor1<T*,Tensor_Dim>,T,Dim,i>(*this);
   }
 
   template<char i, int Dim>
   FTensor::Tensor1_Expr<const Tensor1<T*,Tensor_Dim>,T,Dim,i>
-  operator()(const FTensor::Index<i,Dim> &index) const
-  {
+  operator()(const FTensor::Index<i,Dim> &index) const {
     return FTensor::Tensor1_Expr<const Tensor1<T*,Tensor_Dim>,T,Dim,i>(*this);
   }
 
@@ -126,8 +122,7 @@ public:
    * Values are stored in matrix nb_gauss_pts x (nb_dimension x nb_base_functions)
    *
    */
-  const Tensor1 & operator++() const
-  {
+  const Tensor1 & operator++() const {
     for(int i=0;i<Tensor_Dim;++i) {
       if(FTensor::Tensor1<T*,Tensor_Dim>::data[i]) {
         FTensor::Tensor1<T*,Tensor_Dim>::data[i] += iNc;
@@ -220,7 +215,6 @@ struct DataForcesAndSurcesCore {
     }
 
     Tensor0<double*> getFTensor0FieldData();
-
 
     inline VectorDofs& getFieldDofs() { return dOfs; }
 
