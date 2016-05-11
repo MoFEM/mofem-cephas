@@ -114,5 +114,8 @@ struct EdgeElementForcesAndSurcesCore: public ForcesAndSurcesCore {
 
 /***************************************************************************//**
  * \defgroup mofem_forces_and_sources_edge_element Edge Element
+ *
+ * \brief Implementation of general edge element.
+ *
  * \ingroup mofem_forces_and_sources
  ******************************************************************************/

@@ -68,6 +68,13 @@ extern "C" {
 namespace MoFEM {
 
 template<>
+FTensor::Tensor0<double*> getTensor0FormData<double,ublas::unbounded_array<double> >(
+  boost::shared_ptr<ublas::vector<double,ublas::unbounded_array<double> > > data_ptr
+) {
+  return FTensor::Tensor0<double*>(&*data_ptr->data().begin());
+}
+
+template<>
 FTensor::Tensor1<double*,3> getTensor1FormData<3,double,ublas::row_major,ublas::unbounded_array<double> >(
   boost::shared_ptr<ublas::matrix<double,ublas::row_major,ublas::unbounded_array<double> > > data_ptr
 ) {
@@ -81,7 +88,7 @@ FTensor::Tensor1<double*,3> getTensor1FormData<3,double,ublas::row_major,ublas::
 
 template<>
 FTensor::Tensor1<double*,2> getTensor1FormData<2,double,ublas::row_major,ublas::unbounded_array<double> >(
-  boost::shared_ptr<ublas::matrix<double,ublas::row_major,ublas::unbounded_array<double> > > data_ptr
+  boost::shared_ptr<MatrixDouble> data_ptr
 ) {
   if(data_ptr->size1()!=2) {
     THROW_MESSAGE("Wrong size of data matrix");
@@ -91,17 +98,21 @@ FTensor::Tensor1<double*,2> getTensor1FormData<2,double,ublas::row_major,ublas::
   );
 }
 
-// / static MoABErrorCode rval;
-
 template<>
-FTensor::Tensor0<double*> getTensor0FormData<double,ublas::unbounded_array<double> >(
-  boost::shared_ptr<ublas::vector<double,ublas::unbounded_array<double> > > data_ptr
+FTensor::Tensor2<double*,3,3> getTensor1FormData(
+  boost::shared_ptr<MatrixDouble> data_ptr
 ) {
-  return FTensor::Tensor0<double*>(&*data_ptr->data().begin());
+  if(data_ptr->size1()!=9) {
+    THROW_MESSAGE("Wrong size of data matrix");
+  }
+  MatrixDouble &mat = *data_ptr;
+  return FTensor::Tensor2<double*,3,3>(
+    &mat(0,0),&mat(1,0),&mat(2,0),&mat(3,0),&mat(4,0),&mat(5,0),&mat(6,0),&mat(7,0),&mat(8,0)
+  );
 }
 
 template<>
-PetscErrorCode OpCalculateFieldValues_Tensor0_General<double,ublas::unbounded_array<double> >::doWork(
+PetscErrorCode OpCalculateScalarFieldVaues_General<double,ublas::unbounded_array<double> >::doWork(
   int side,EntityType type,DataForcesAndSurcesCore::EntData &data
 ) {
   PetscFunctionBegin;
@@ -143,12 +154,12 @@ PetscErrorCode OpCalculateFieldValues_Tensor0_General<double,ublas::unbounded_ar
   PetscFunctionReturn(0);
 }
 
-OpCalculateFieldValues_Tensor0::OpCalculateFieldValues_Tensor0(
+OpCalculateScalarFieldVaues::OpCalculateScalarFieldVaues(
   const std::string &field_name,
   boost::shared_ptr<VectorDouble> data_ptr,
   EntityType zero_type
 ):
-OpCalculateFieldValues_Tensor0_General<double,ublas::unbounded_array<double> >(
+OpCalculateScalarFieldVaues_General<double,ublas::unbounded_array<double> >(
   field_name,data_ptr,zero_type
 ) {
 }

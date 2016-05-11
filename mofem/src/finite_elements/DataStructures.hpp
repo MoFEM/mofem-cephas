@@ -697,4 +697,7 @@ struct DerivedDataForcesAndSurcesCore: public DataForcesAndSurcesCore  {
 
 /***************************************************************************//**
  * \defgroup mofem_forces_and_sources Forces and sources
+ *
+ * \brief Manages complexities related to assembly of vector and matrices at single finite element level.
+ *
  ******************************************************************************/

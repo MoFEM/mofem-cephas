@@ -266,10 +266,13 @@ int main(int argc, char *argv[]) {
 
   boost::shared_ptr<MatrixDouble> values1_at_gauss_pts_ptr = boost::shared_ptr<MatrixDouble>(new MatrixDouble() );
   boost::shared_ptr<VectorDouble> values2_at_gauss_pts_ptr = boost::shared_ptr<VectorDouble>(new VectorDouble() );
+  boost::shared_ptr<MatrixDouble> grad2_at_gauss_pts_ptr = boost::shared_ptr<MatrixDouble>(new MatrixDouble() );
+
 
   VolumeElementForcesAndSourcesCore fe1(m_field);
-  fe1.getOpPtrVector().push_back(new OpCalculateFieldValues_Tensor1<3>("FIELD1",values1_at_gauss_pts_ptr));
-  fe1.getOpPtrVector().push_back(new OpCalculateFieldValues_Tensor0("FIELD2",values2_at_gauss_pts_ptr));
+  fe1.getOpPtrVector().push_back(new OpCalculateVectorFieldValues<3>("FIELD1",values1_at_gauss_pts_ptr));
+  fe1.getOpPtrVector().push_back(new OpCalculateScalarFieldVaues("FIELD2",values2_at_gauss_pts_ptr));
+  fe1.getOpPtrVector().push_back(new OpCalculateScalarFieldGradient<3>("FIELD2",grad2_at_gauss_pts_ptr));
 
   fe1.getOpPtrVector().push_back(new MyOp1(values1_at_gauss_pts_ptr,my_split,ForcesAndSurcesCore::UserDataOperator::OPROW));
   fe1.getOpPtrVector().push_back(new MyOp1(values1_at_gauss_pts_ptr,my_split,ForcesAndSurcesCore::UserDataOperator::OPROWCOL));
