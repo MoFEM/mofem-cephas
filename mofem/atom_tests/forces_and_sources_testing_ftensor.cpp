@@ -75,13 +75,17 @@ int main(int argc, char *argv[]) {
 
   //Fields
   ierr = m_field.add_field("FIELD1",H1,3); CHKERRQ(ierr);
+  ierr = m_field.add_field("FIELD2",H1,1); CHKERRQ(ierr);
+
 
   //FE
   ierr = m_field.add_finite_element("TEST_FE1"); CHKERRQ(ierr);
 
   //Define rows/cols and element data
+  ierr = m_field.modify_finite_element_add_field_row("TEST_FE1","FIELD1"); CHKERRQ(ierr);
   ierr = m_field.modify_finite_element_add_field_col("TEST_FE1","FIELD1"); CHKERRQ(ierr);
   ierr = m_field.modify_finite_element_add_field_data("TEST_FE1","FIELD1"); CHKERRQ(ierr);
+  ierr = m_field.modify_finite_element_add_field_data("TEST_FE1","FIELD2"); CHKERRQ(ierr);
 
   //Problem
   ierr = m_field.add_problem("TEST_PROBLEM"); CHKERRQ(ierr);
@@ -96,6 +100,8 @@ int main(int argc, char *argv[]) {
   EntityHandle root_set = moab.get_root_set();
   //add entities to field
   ierr = m_field.add_ents_to_field_by_TETs(root_set,"FIELD1"); CHKERRQ(ierr);
+  ierr = m_field.add_ents_to_field_by_TETs(root_set,"FIELD2"); CHKERRQ(ierr);
+
 
   //add entities to finite element
   ierr = m_field.add_ents_to_finite_element_by_TETs(root_set,"TEST_FE1"); CHKERRQ(ierr);
@@ -107,6 +113,11 @@ int main(int argc, char *argv[]) {
   ierr = m_field.set_field_order(root_set,MBTRI,"FIELD1",order); CHKERRQ(ierr);
   ierr = m_field.set_field_order(root_set,MBEDGE,"FIELD1",order); CHKERRQ(ierr);
   ierr = m_field.set_field_order(root_set,MBVERTEX,"FIELD1",1); CHKERRQ(ierr);
+
+  ierr = m_field.set_field_order(root_set,MBTET,"FIELD2",order); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(root_set,MBTRI,"FIELD2",order); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(root_set,MBEDGE,"FIELD2",order); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(root_set,MBVERTEX,"FIELD2",1); CHKERRQ(ierr);
 
   /****/
   //build database
@@ -136,9 +147,12 @@ int main(int argc, char *argv[]) {
 
   struct MyOp1: public VolumeElementForcesAndSourcesCore::UserDataOperator {
 
+    boost::shared_ptr<MatrixDouble> fieldValuesDataPtr;
+
     TeeStream &my_split;
-    MyOp1(TeeStream &_my_split,char type):
-    VolumeElementForcesAndSourcesCore::UserDataOperator("FIELD1","FIELD1",type),
+    MyOp1(boost::shared_ptr<MatrixDouble> field_values_data_ptr,TeeStream &_my_split,char type):
+    fieldValuesDataPtr(field_values_data_ptr),
+    VolumeElementForcesAndSourcesCore::UserDataOperator("FIELD1","FIELD2",type),
     my_split(_my_split) {}
 
 
@@ -154,6 +168,7 @@ int main(int argc, char *argv[]) {
 
       FTensor::Tensor0<double*> base_function = data.getFTensor0N();
       Tensor1<double*,3> diff_base = data.getFTensor1DiffN<3>();
+      FTensor::Tensor1<double*,3> field_values = getTensor1FormData<3>(fieldValuesDataPtr);
 
       for(int gg = 0;gg!=nb_gauss_pts;gg++) {
 
@@ -190,19 +205,19 @@ int main(int argc, char *argv[]) {
               if(t2(II,JJ)-mat(II,JJ)!=0) {
                 SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"Data inconsistency");
               }
-              //my_split << t2(II,JJ)-mat(II,JJ) << " ";
             }
-            //my_split << endl;
           }
-          //my_split << endl;
-          //
-          // double t0;
-          // t0 = t2(I,I);
-          // my_split << "trace " << t0 << endl;
+
 
           ++diff_base;
 
         }
+
+        VectorAdaptor vec = VectorAdaptor(3,ublas::shallow_array_adaptor<double>(3,&field_values(0)));
+        // my_split << vec << endl;
+
+        ++field_values;
+
       }
       PetscFunctionReturn(0);
     }
@@ -232,10 +247,15 @@ int main(int argc, char *argv[]) {
         double vol = getVolume();
         double weight = getGaussPts()(3,gg);
 
+        FTensor::Tensor0<double*> t0 = col_data.getFTensor0FieldData();
+
         for(int bb_row = 0;bb_row!=nb_base_functions_row;bb_row++) {
 
 
         }
+
+
+        ++t0;
 
       }
 
@@ -244,12 +264,15 @@ int main(int argc, char *argv[]) {
 
   };
 
-  boost::shared_ptr<MatrixDouble> values_at_gauss_pts_ptr = boost::shared_ptr<MatrixDouble>(new MatrixDouble);
+  boost::shared_ptr<MatrixDouble> values1_at_gauss_pts_ptr = boost::shared_ptr<MatrixDouble>(new MatrixDouble() );
+  boost::shared_ptr<VectorDouble> values2_at_gauss_pts_ptr = boost::shared_ptr<VectorDouble>(new VectorDouble() );
 
   VolumeElementForcesAndSourcesCore fe1(m_field);
-  fe1.getOpPtrVector().push_back(new OpCalculateFieldValues_Tensor1<3>("FIELD1",values_at_gauss_pts_ptr));
-  fe1.getOpPtrVector().push_back(new MyOp1(my_split,ForcesAndSurcesCore::UserDataOperator::OPROW));
-  fe1.getOpPtrVector().push_back(new MyOp1(my_split,ForcesAndSurcesCore::UserDataOperator::OPROWCOL));
+  fe1.getOpPtrVector().push_back(new OpCalculateFieldValues_Tensor1<3>("FIELD1",values1_at_gauss_pts_ptr));
+  fe1.getOpPtrVector().push_back(new OpCalculateFieldValues_Tensor0("FIELD2",values2_at_gauss_pts_ptr));
+
+  fe1.getOpPtrVector().push_back(new MyOp1(values1_at_gauss_pts_ptr,my_split,ForcesAndSurcesCore::UserDataOperator::OPROW));
+  fe1.getOpPtrVector().push_back(new MyOp1(values1_at_gauss_pts_ptr,my_split,ForcesAndSurcesCore::UserDataOperator::OPROWCOL));
 
   ierr = m_field.loop_finite_elements("TEST_PROBLEM","TEST_FE1",fe1);  CHKERRQ(ierr);
 

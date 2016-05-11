@@ -198,15 +198,25 @@ std::ostream& operator<<(std::ostream& os,const DataForcesAndSurcesCore &e) {
   return os;
 }
 
-template<int Tensor_Dim>
-Tensor1<double*,Tensor_Dim> DataForcesAndSurcesCore::EntData::getFTensor1FieldData() {
-  THROW_MESSAGE("Not implemented for this dimension");
-  return Tensor1<double*,Tensor_Dim>();
-}
-
 template<>
 Tensor1<double*,3> DataForcesAndSurcesCore::EntData::getFTensor1FieldData() {
+  if(dOfs[0]->get_nb_of_coeffs()!=3) {
+    std::stringstream s;
+    s << "Wrong number of coefficents is " << dOfs[0]->get_nb_of_coeffs();
+    s << " but you ask for tensor rank 1 dimension 3";
+    THROW_MESSAGE(s.str());
+  }
   return Tensor1<double*,3>(&fieldData[0],&fieldData[1],&fieldData[2],3);
+}
+
+Tensor0<double*> DataForcesAndSurcesCore::EntData::getFTensor0FieldData() {
+  if(dOfs[0]->get_nb_of_coeffs()!=1) {
+    std::stringstream s;
+    s << "Wrong number of coefficents is " << dOfs[0]->get_nb_of_coeffs();
+    s << " but expected scalar field, tensor of rank 0";
+    THROW_MESSAGE(s.str());
+  }
+  return Tensor0<double*>(&*fieldData.data().begin());
 }
 
 template<int Tensor_Dim>

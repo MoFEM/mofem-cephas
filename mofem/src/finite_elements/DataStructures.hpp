@@ -212,7 +212,15 @@ struct DataForcesAndSurcesCore {
     inline VectorDouble& getFieldData() { return fieldData; }
 
     template<int Tensor_Dim>
-    Tensor1<double*,Tensor_Dim> getFTensor1FieldData();
+    Tensor1<double*,Tensor_Dim> getFTensor1FieldData()  {
+      std::stringstream s;
+      s << "Not implemented for this dimension dim = " << Tensor_Dim;
+      THROW_MESSAGE(s.str());
+      // return Tensor1<double*,Tensor_Dim>();
+    }
+
+    Tensor0<double*> getFTensor0FieldData();
+
 
     inline VectorDofs& getFieldDofs() { return dOfs; }
 

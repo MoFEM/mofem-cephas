@@ -21,6 +21,79 @@
 
 namespace MoFEM {
 
+template<class T, class A>
+FTensor::Tensor0<T*> getTensor0FormData(
+  boost::shared_ptr<ublas::vector<T,A> > data_ptr
+) {
+  std::stringstream s;
+  s << "Not implemented for T = " << typeid(T).name();
+  THROW_MESSAGE(s.str());
+  // return FTensor::Tensor0<T*>();
+}
+
+template<>
+FTensor::Tensor0<double*> getTensor0FormData<double,ublas::unbounded_array<double> >(
+  boost::shared_ptr<ublas::vector<double,ublas::unbounded_array<double> > > data_ptr
+);
+
+/** \brief Calculate field values
+*/
+template<class T, class A>
+struct OpCalculateFieldValues_Tensor0_General: public ForcesAndSurcesCore::UserDataOperator {
+
+  boost::shared_ptr<ublas::vector<T,A> > dataPtr;
+  EntityHandle zeroType;
+
+  OpCalculateFieldValues_Tensor0_General(
+    const std::string &field_name,
+    boost::shared_ptr<ublas::vector<T,A> > data_ptr,
+    EntityType zero_type = MBVERTEX
+  ):
+  ForcesAndSurcesCore::UserDataOperator(field_name,ForcesAndSurcesCore::UserDataOperator::OPROW),
+  dataPtr(data_ptr),
+  zeroType(zero_type) {
+  }
+
+  PetscErrorCode doWork(
+    int side,EntityType type,DataForcesAndSurcesCore::EntData &data
+  );
+
+};
+
+template<class T, class A>
+PetscErrorCode OpCalculateFieldValues_Tensor0_General<T,A>::doWork(
+  int side,EntityType type,DataForcesAndSurcesCore::EntData &data
+) {
+  PetscFunctionBegin;
+  SETERRQ1(
+    PETSC_COMM_SELF,
+    MOFEM_NOT_IMPLEMENTED,
+    "Not implemented for T = %s",
+    typeid(T).name()
+  );
+  PetscFunctionReturn(0);
+}
+
+template<>
+PetscErrorCode OpCalculateFieldValues_Tensor0_General<double,ublas::unbounded_array<double> >::doWork(
+  int side,EntityType type,DataForcesAndSurcesCore::EntData &data
+);
+
+struct OpCalculateFieldValues_Tensor0:
+public OpCalculateFieldValues_Tensor0_General<double,ublas::unbounded_array<double> > {
+
+  OpCalculateFieldValues_Tensor0(
+    const std::string &field_name,
+    boost::shared_ptr<VectorDouble> data_ptr,
+    EntityType zero_type = MBVERTEX
+  );
+
+};
+
+
+/**
+ * \brief Get tensor form data matrix
+ */
 template<int Tensor_Dim, class T, class L, class A>
 FTensor::Tensor1<T*,Tensor_Dim> getTensor1FormData(
   boost::shared_ptr<ublas::matrix<T,L,A> > data_ptr
@@ -44,15 +117,12 @@ FTensor::Tensor1<double*,Tensor_Dim> getTensor1FormData(
 template<>
 FTensor::Tensor1<double*,3> getTensor1FormData<3,double,ublas::row_major,ublas::unbounded_array<double> >(
   boost::shared_ptr<ublas::matrix<double,ublas::row_major,ublas::unbounded_array<double> > > data_ptr
-) {
-  PetscFunctionBegin;
-  if(data_ptr->size1()!=3) {
-    THROW_MESSAGE("Wrong size of data matrix");
-  }
-  return FTensor::Tensor1<double*,3>(
-    &(*data_ptr)(0,0),&(*data_ptr)(1,0),&(*data_ptr)(2,0)
-  );
-}
+);
+
+template<>
+FTensor::Tensor1<double*,2> getTensor1FormData<2,double,ublas::row_major,ublas::unbounded_array<double> >(
+  boost::shared_ptr<ublas::matrix<double,ublas::row_major,ublas::unbounded_array<double> > > data_ptr
+);
 
 /** \brief Calculate field values
 */
@@ -75,18 +145,6 @@ struct OpCalculateFieldValues_Tensor1_General: public ForcesAndSurcesCore::UserD
   PetscErrorCode doWork(
     int side,EntityType type,DataForcesAndSurcesCore::EntData &data
   );
-
-  // {
-  //   PetscFunctionBegin;
-  //   SETERRQ2(
-  //     PETSC_COMM_SELF,
-  //     MOFEM_NOT_IMPLEMENTED,
-  //     "Not implemented for T = %s and dim = %d",
-  //     typeid(T).name(),
-  //     Tensor_Dim
-  //   );
-  //   PetscFunctionReturn(0);
-  // }
 
 };
 

@@ -67,6 +67,91 @@ extern "C" {
 
 namespace MoFEM {
 
-// static MoABErrorCode rval;
+template<>
+FTensor::Tensor1<double*,3> getTensor1FormData<3,double,ublas::row_major,ublas::unbounded_array<double> >(
+  boost::shared_ptr<ublas::matrix<double,ublas::row_major,ublas::unbounded_array<double> > > data_ptr
+) {
+  if(data_ptr->size1()!=3) {
+    THROW_MESSAGE("Wrong size of data matrix");
+  }
+  return FTensor::Tensor1<double*,3>(
+    &(*data_ptr)(0,0),&(*data_ptr)(1,0),&(*data_ptr)(2,0)
+  );
+}
+
+template<>
+FTensor::Tensor1<double*,2> getTensor1FormData<2,double,ublas::row_major,ublas::unbounded_array<double> >(
+  boost::shared_ptr<ublas::matrix<double,ublas::row_major,ublas::unbounded_array<double> > > data_ptr
+) {
+  if(data_ptr->size1()!=2) {
+    THROW_MESSAGE("Wrong size of data matrix");
+  }
+  return FTensor::Tensor1<double*,2>(
+    &(*data_ptr)(0,0),&(*data_ptr)(1,0)
+  );
+}
+
+// / static MoABErrorCode rval;
+
+template<>
+FTensor::Tensor0<double*> getTensor0FormData<double,ublas::unbounded_array<double> >(
+  boost::shared_ptr<ublas::vector<double,ublas::unbounded_array<double> > > data_ptr
+) {
+  return FTensor::Tensor0<double*>(&*data_ptr->data().begin());
+}
+
+template<>
+PetscErrorCode OpCalculateFieldValues_Tensor0_General<double,ublas::unbounded_array<double> >::doWork(
+  int side,EntityType type,DataForcesAndSurcesCore::EntData &data
+) {
+  PetscFunctionBegin;
+
+  const int nb_dofs = data.getFieldData().size();
+  if(!nb_dofs) {
+    dataPtr->resize(0,false);
+    PetscFunctionReturn(0);
+  }
+
+  const int nb_gauss_pts = data.getN().size1();
+  const int nb_base_functions = data.getN().size2();
+
+  VectorDouble &vec = *dataPtr;
+  if(type == zeroType) {
+    vec.resize(nb_gauss_pts,false);
+    vec.clear();
+  }
+
+  FTensor::Tensor0<double*> base_function = data.getFTensor0N();
+  FTensor::Tensor0<double*> values_at_gauss_pts = getTensor0FormData(dataPtr);
+
+  for(int gg = 0;gg<nb_gauss_pts;gg++) {
+
+    Tensor0<double*> field_data = data.getFTensor0FieldData();
+
+    for(int bb = 0;bb<nb_base_functions;bb++) {
+       if(bb < nb_dofs) { // Number of dofs can be smaller than number of base functions
+         values_at_gauss_pts += field_data*base_function;
+         ++field_data;
+       }
+       ++base_function;
+    }
+
+    ++values_at_gauss_pts;
+
+  }
+
+  PetscFunctionReturn(0);
+}
+
+OpCalculateFieldValues_Tensor0::OpCalculateFieldValues_Tensor0(
+  const std::string &field_name,
+  boost::shared_ptr<VectorDouble> data_ptr,
+  EntityType zero_type
+):
+OpCalculateFieldValues_Tensor0_General<double,ublas::unbounded_array<double> >(
+  field_name,data_ptr,zero_type
+) {
+}
+
 
 }
