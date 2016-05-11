@@ -209,6 +209,17 @@ Tensor1<double*,3> DataForcesAndSurcesCore::EntData::getFTensor1FieldData() {
   return Tensor1<double*,3>(&fieldData[0],&fieldData[1],&fieldData[2],3);
 }
 
+template<>
+Tensor1<double*,2> DataForcesAndSurcesCore::EntData::getFTensor1FieldData() {
+  if(dOfs[0]->get_nb_of_coeffs()!=2) {
+    std::stringstream s;
+    s << "Wrong number of coefficents is " << dOfs[0]->get_nb_of_coeffs();
+    s << " but you ask for tensor rank 1 dimension 3";
+    THROW_MESSAGE(s.str());
+  }
+  return Tensor1<double*,2>(&fieldData[0],&fieldData[1],2);
+}
+
 Tensor0<double*> DataForcesAndSurcesCore::EntData::getFTensor0FieldData() {
   if(dOfs[0]->get_nb_of_coeffs()!=1) {
     std::stringstream s;

@@ -31,11 +31,6 @@ FTensor::Tensor0<T*> getTensor0FormData(
   // return FTensor::Tensor0<T*>();
 }
 
-template<>
-FTensor::Tensor0<double*> getTensor0FormData<double,ublas::unbounded_array<double> >(
-  boost::shared_ptr<ublas::vector<double,ublas::unbounded_array<double> > > data_ptr
-);
-
 /** \brief Calculate field values
 */
 template<class T, class A>
@@ -113,16 +108,6 @@ FTensor::Tensor1<double*,Tensor_Dim> getTensor1FormData(
   Tensor_Dim,double,ublas::row_major,ublas::unbounded_array<double>
   >(data_ptr);
 }
-
-template<>
-FTensor::Tensor1<double*,3> getTensor1FormData<3,double,ublas::row_major,ublas::unbounded_array<double> >(
-  boost::shared_ptr<ublas::matrix<double,ublas::row_major,ublas::unbounded_array<double> > > data_ptr
-);
-
-template<>
-FTensor::Tensor1<double*,2> getTensor1FormData<2,double,ublas::row_major,ublas::unbounded_array<double> >(
-  boost::shared_ptr<ublas::matrix<double,ublas::row_major,ublas::unbounded_array<double> > > data_ptr
-);
 
 /** \brief Calculate field values
 */
