@@ -1,5 +1,5 @@
 /** \file FTensor.hpp
-* \brief Tensors class implemented by Walter Landry wlandry@caltech.edu.
+* \brief Tensors class implemented by Walter Landry.
 * \ingroup ftensor
 
 *
@@ -28,7 +28,7 @@
 #include "FTensor/Layout.hpp"
 
 /**
- * \brief Tensors class implemented by Walter Landry wlandry@caltech.edu
+ * \brief Tensors class implemented by Walter Landry.
  * \ingroup ftensor
 
 

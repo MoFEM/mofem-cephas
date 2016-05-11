@@ -210,6 +210,10 @@ struct DataForcesAndSurcesCore {
     inline VectorInt& getIndices() { return iNdices; }
     inline VectorInt& getLocalIndices() { return localIndices; }
     inline VectorDouble& getFieldData() { return fieldData; }
+
+    template<int Tensor_Dim>
+    Tensor1<double*,Tensor_Dim> getFTensor1FieldData();
+
     inline VectorDofs& getFieldDofs() { return dOfs; }
 
     /**
@@ -549,7 +553,7 @@ struct DataForcesAndSurcesCore {
      * \return Tensor0
      *
      */
-    inline Tensor0<double*> getFTensorN(const FieldApproximationBase base) {
+    inline Tensor0<double*> getFTensor0N(const FieldApproximationBase base) {
       double *ptr = &*getN(base).data().begin();
       return Tensor0<double*>(ptr);
     };
@@ -562,8 +566,8 @@ struct DataForcesAndSurcesCore {
      * \return Tensor0
      *
      */
-    inline Tensor0<double*> getFTensorN() {
-      return getFTensorN(bAse);
+    inline Tensor0<double*> getFTensor0N() {
+      return getFTensor0N(bAse);
     };
 
     /**
@@ -571,12 +575,12 @@ struct DataForcesAndSurcesCore {
      *
      * For volume element like tetrahedral or prism,
      * \code
-     * Tensor1<double*,3> diff_base = data.getFTensorDiffN<3>();
+     * Tensor1<double*,3> diff_base = data.getFTensor1DiffN<3>();
      * \endcode
      *
      * For face element like triangle or quad
      * \code
-     * Tensor1<double*,2> diff_base = data.getFTensorDiffN<2>();
+     * Tensor1<double*,2> diff_base = data.getFTensor1DiffN<2>();
      * \endcode
      *
      * \param base functions
@@ -584,26 +588,26 @@ struct DataForcesAndSurcesCore {
      *
      */
     template<int Tensor_Dim>
-    Tensor1<double*,Tensor_Dim> getFTensorDiffN(const FieldApproximationBase base);
+    Tensor1<double*,Tensor_Dim> getFTensor1DiffN(const FieldApproximationBase base);
 
     /**
      * \brief Get derivatives of base functions
      *
      * For volume element like tetrahedral or prism,
      * \code
-     * Tensor1<double*,3> diff_base = data.getFTensorDiffN<3>();
+     * Tensor1<double*,3> diff_base = data.getFTensor1DiffN<3>();
      * \endcode
      *
      * For face element like triangle or quad
      * \code
-     * Tensor1<double*,2> diff_base = data.getFTensorDiffN<2>();
+     * Tensor1<double*,2> diff_base = data.getFTensor1DiffN<2>();
      * \endcode
      *
      * \return Tensor rank 1 (vector)
      *
      */
     template<int Tensor_Dim>
-    Tensor1<double*,Tensor_Dim> getFTensorDiffN();
+    Tensor1<double*,Tensor_Dim> getFTensor1DiffN();
 
     friend std::ostream& operator<<(std::ostream& os,const DataForcesAndSurcesCore::EntData &e);
 

@@ -152,8 +152,8 @@ int main(int argc, char *argv[]) {
       const int nb_gauss_pts = data.getN().size1();
       const int nb_base_functions = data.getN().size2();
 
-      FTensor::Tensor0<double*> base_function = data.getFTensorN();
-      Tensor1<double*,3> diff_base = data.getFTensorDiffN<3>();
+      FTensor::Tensor0<double*> base_function = data.getFTensor0N();
+      Tensor1<double*,3> diff_base = data.getFTensor1DiffN<3>();
 
       for(int gg = 0;gg!=nb_gauss_pts;gg++) {
 
@@ -217,7 +217,7 @@ int main(int argc, char *argv[]) {
       PetscErrorCode ierr;
 
       const int nb_gauss_pts = row_data.getN().size1();
-      const int nb_base_functions_row = col_data.getN().size2();
+      const int nb_base_functions_row = row_data.getN().size2();
       const int nb_base_functions_col = col_data.getN().size2();
 
       FTensor::Number<0> N0;
@@ -244,8 +244,10 @@ int main(int argc, char *argv[]) {
 
   };
 
+  boost::shared_ptr<MatrixDouble> values_at_gauss_pts_ptr = boost::shared_ptr<MatrixDouble>(new MatrixDouble);
 
   VolumeElementForcesAndSourcesCore fe1(m_field);
+  fe1.getOpPtrVector().push_back(new OpCalculateFieldValues_Tensor1<3>("FIELD1",values_at_gauss_pts_ptr));
   fe1.getOpPtrVector().push_back(new MyOp1(my_split,ForcesAndSurcesCore::UserDataOperator::OPROW));
   fe1.getOpPtrVector().push_back(new MyOp1(my_split,ForcesAndSurcesCore::UserDataOperator::OPROWCOL));
 

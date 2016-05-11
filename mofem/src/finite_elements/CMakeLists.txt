@@ -19,6 +19,7 @@ add_library(mofem_finite_elements
   impl/DataStructures.cpp
   impl/DataOperators.cpp
   impl/ElementsOnEntities.cpp
+  impl/UserDataOperators.cpp
   impl/VolumeElementForcesAndSourcesCore.cpp
   impl/FaceElementForcesAndSourcesCore.cpp
   impl/EdgeElementForcesAndSurcesCore.cpp
