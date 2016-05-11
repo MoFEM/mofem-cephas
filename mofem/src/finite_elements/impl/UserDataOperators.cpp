@@ -131,7 +131,7 @@ PetscErrorCode OpCalculateScalarFieldVaues_General<double,ublas::unbounded_array
   FTensor::Tensor0<double*> base_function = data.getFTensor0N();
   FTensor::Tensor0<double*> values_at_gauss_pts = getTensor0FormData(dataPtr);
   for(int gg = 0;gg<nb_gauss_pts;gg++) {
-    Tensor0<double*> field_data = data.getFTensor0FieldData();
+    FTensor::Tensor0<double*> field_data = data.getFTensor0FieldData();
     for(int bb = 0;bb<nb_base_functions;bb++) {
        if(bb < nb_dofs) { // Number of dofs can be smaller than number of base functions
          values_at_gauss_pts += field_data*base_function;

@@ -199,48 +199,48 @@ std::ostream& operator<<(std::ostream& os,const DataForcesAndSurcesCore &e) {
 }
 
 template<>
-Tensor1<double*,3> DataForcesAndSurcesCore::EntData::getFTensor1FieldData() {
+ FTensor::Tensor1<double*,3> DataForcesAndSurcesCore::EntData::getFTensor1FieldData() {
   if(dOfs[0]->get_nb_of_coeffs()!=3) {
     std::stringstream s;
     s << "Wrong number of coefficents is " << dOfs[0]->get_nb_of_coeffs();
     s << " but you ask for tensor rank 1 dimension 3";
     THROW_MESSAGE(s.str());
   }
-  return Tensor1<double*,3>(&fieldData[0],&fieldData[1],&fieldData[2],3);
+  return FTensor::Tensor1<double*,3>(&fieldData[0],&fieldData[1],&fieldData[2],3);
 }
 
 template<>
-Tensor1<double*,2> DataForcesAndSurcesCore::EntData::getFTensor1FieldData() {
+FTensor::Tensor1<double*,2> DataForcesAndSurcesCore::EntData::getFTensor1FieldData() {
   if(dOfs[0]->get_nb_of_coeffs()!=2) {
     std::stringstream s;
     s << "Wrong number of coefficents is " << dOfs[0]->get_nb_of_coeffs();
     s << " but you ask for tensor rank 1 dimension 3";
     THROW_MESSAGE(s.str());
   }
-  return Tensor1<double*,2>(&fieldData[0],&fieldData[1],2);
+  return FTensor::Tensor1<double*,2>(&fieldData[0],&fieldData[1],2);
 }
 
-Tensor0<double*> DataForcesAndSurcesCore::EntData::getFTensor0FieldData() {
+FTensor::Tensor0<double*> DataForcesAndSurcesCore::EntData::getFTensor0FieldData() {
   if(dOfs[0]->get_nb_of_coeffs()!=1) {
     std::stringstream s;
     s << "Wrong number of coefficents is " << dOfs[0]->get_nb_of_coeffs();
     s << " but expected scalar field, tensor of rank 0";
     THROW_MESSAGE(s.str());
   }
-  return Tensor0<double*>(&*fieldData.data().begin());
+  return FTensor::Tensor0<double*>(&*fieldData.data().begin());
 }
 
 template<int Tensor_Dim>
-Tensor1<double*,Tensor_Dim> DataForcesAndSurcesCore::EntData::getFTensor1DiffN(const FieldApproximationBase base) {
+FTensor::Tensor1<double*,Tensor_Dim> DataForcesAndSurcesCore::EntData::getFTensor1DiffN(const FieldApproximationBase base) {
   std::stringstream s;
   s << "Template for tensor dimension "
   << Tensor_Dim << " not implemented";
   THROW_MESSAGE(s.str());
-  return Tensor1<double*,Tensor_Dim>();
+  return FTensor::Tensor1<double*,Tensor_Dim>();
 }
 
 template<int Tensor_Dim>
-Tensor1<double*,Tensor_Dim> DataForcesAndSurcesCore::EntData::getFTensor1DiffN(
+FTensor::Tensor1<double*,Tensor_Dim> DataForcesAndSurcesCore::EntData::getFTensor1DiffN(
 ) {
   return getFTensor1DiffN<Tensor_Dim>(bAse);
 }
@@ -249,7 +249,7 @@ Tensor1<double*,Tensor_Dim> DataForcesAndSurcesCore::EntData::getFTensor1DiffN(
  * \brief Get spatial derivative of base function tensor for dimension 3d
  */
 template<>
-Tensor1<double*,3> DataForcesAndSurcesCore::EntData::getFTensor1DiffN(
+FTensor::Tensor1<double*,3> DataForcesAndSurcesCore::EntData::getFTensor1DiffN(
   const FieldApproximationBase base
 ) {
   double *ptr[3];
@@ -257,14 +257,14 @@ Tensor1<double*,3> DataForcesAndSurcesCore::EntData::getFTensor1DiffN(
     ptr[dd] = &getDiffN(base)(0,dd);
   }
   int inc = getDiffN(base).size2()/getN(base).size2();
-  return Tensor1<double*,3>(ptr[0],ptr[1],ptr[2],inc);
+  return FTensor::Tensor1<double*,3>(ptr[0],ptr[1],ptr[2],inc);
 }
 
 /**
   * \brief Get spatial derivative of base function tensor for dimension 3d
  */
 template<>
-Tensor1<double*,3> DataForcesAndSurcesCore::EntData::getFTensor1DiffN() {
+FTensor::Tensor1<double*,3> DataForcesAndSurcesCore::EntData::getFTensor1DiffN() {
   return getFTensor1DiffN<3>(bAse);
 }
 
@@ -272,7 +272,7 @@ Tensor1<double*,3> DataForcesAndSurcesCore::EntData::getFTensor1DiffN() {
   * \brief Get spatial derivative of base function tensor for dimension 2d
  */
 template<>
-Tensor1<double*,2> DataForcesAndSurcesCore::EntData::getFTensor1DiffN(
+FTensor::Tensor1<double*,2> DataForcesAndSurcesCore::EntData::getFTensor1DiffN(
   const FieldApproximationBase base
 ) {
   double *ptr[2];
@@ -280,14 +280,14 @@ Tensor1<double*,2> DataForcesAndSurcesCore::EntData::getFTensor1DiffN(
     ptr[dd] = &getDiffN(base)(0,dd);
   }
   int inc = getDiffN(base).size2()/getN(base).size2();
-  return Tensor1<double*,2>(ptr[0],ptr[1],inc);
+  return FTensor::Tensor1<double*,2>(ptr[0],ptr[1],inc);
 }
 
 /**
   * \brief Get spatial derivative of base function tensor for dimension 2d
  */
 template<>
-Tensor1<double*,2> DataForcesAndSurcesCore::EntData::getFTensor1DiffN() {
+FTensor::Tensor1<double*,2> DataForcesAndSurcesCore::EntData::getFTensor1DiffN() {
   return getFTensor1DiffN<2>(bAse);
 }
 

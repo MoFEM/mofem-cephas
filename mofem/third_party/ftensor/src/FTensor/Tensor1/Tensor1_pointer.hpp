@@ -7,22 +7,22 @@ class Tensor1<T*,Tensor_Dim>
 protected:
   /* Note that the T *'s are mutable, so the pointer can change,
      allowing iterating over a array. */
-
+  const int inc;
   mutable T * restrict data[Tensor_Dim];
 public:
   /* Initializations for varying numbers of elements, with each one
      defined for a particular Tensor_Dim.  To initialize a different
      dimension, just add the appropriate constructor and call to
      the Tensor1_constructor constructor. */
-  Tensor1(T *d0, T *d1)
+  Tensor1(T *d0, T *d1,const int i = 1): inc(i)
   {
     Tensor1_constructor<T* restrict,Tensor_Dim>(data,d0,d1);
   }
-  Tensor1(T *d0, T *d1, T *d2)
+  Tensor1(T *d0, T *d1, T *d2,const int i = 1): inc(i)
   {
     Tensor1_constructor<T* restrict,Tensor_Dim>(data,d0,d1,d2);
   }
-  Tensor1(T *d0, T *d1, T *d2, T *d3)
+  Tensor1(T *d0, T *d1, T *d2, T *d3,const int i = 1): inc(i)
   {
     Tensor1_constructor<T* restrict,Tensor_Dim>(data,d0,d1,d2,d3);
   }
@@ -30,43 +30,46 @@ public:
   /* There are two operator(int)'s, one for non-consts that lets you
      change the value, and one for consts that doesn't. */
 
-  T & operator()(const int N)
-  {
-#ifdef FTENSOR_DEBUG
+  T & operator()(const int N) {
+    #ifdef FTENSOR_DEBUG
     if(N>=Tensor_Dim || N<0)
-      {
-	std::stringstream s;
-        s << "Bad index in Tensor1<T*," << Tensor_Dim
-          << ">.operator(" << N << ")" << std::endl;
-        throw std::runtime_error(s.str());
-      }
-#endif
+    {
+      std::stringstream s;
+      s << "Bad index in Tensor1<T*," << Tensor_Dim
+      << ">.operator(" << N << ")" << std::endl;
+      throw std::runtime_error(s.str());
+    }
+    #endif
+    if(!data[N]) {
+      std::stringstream s;
+      s << "Null pointer in Tensor1<T*," << Tensor_Dim
+      << ">.operator(" << N << ")" << std::endl;
+      throw std::runtime_error(s.str());
+    }
     return *data[N];
   }
-  T operator()(const int N) const
-  {
-#ifdef FTENSOR_DEBUG
+  T operator()(const int N) const {
+    #ifdef FTENSOR_DEBUG
     if(N>=Tensor_Dim || N<0)
-      {
-	std::stringstream s;
-        s << "Bad index in Tensor1<T*," << Tensor_Dim
-          << ">.operator(" << N << ") const" << std::endl;
-        throw std::runtime_error(s.str());
-      }
-#endif
-    return *data[N];
+    {
+      std::stringstream s;
+      s << "Bad index in Tensor1<T*," << Tensor_Dim
+      << ">.operator(" << N << ") const" << std::endl;
+      throw std::runtime_error(s.str());
+    }
+    #endif
+    return data[N] ? *data[N] : 0;
   }
-  T * ptr(const int N) const
-  {
-#ifdef FTENSOR_DEBUG
+  T * ptr(const int N) const {
+    #ifdef FTENSOR_DEBUG
     if(N>=Tensor_Dim || N<0)
-      {
-	std::stringstream s;
-        s << "Bad index in Tensor1<T*," << Tensor_Dim
-          << ">.ptr(" << N << ")" << std::endl;
-        throw std::runtime_error(s.str());
-      }
-#endif
+    {
+      std::stringstream s;
+      s << "Bad index in Tensor1<T*," << Tensor_Dim
+      << ">.ptr(" << N << ")" << std::endl;
+      throw std::runtime_error(s.str());
+    }
+    #endif
     return data[N];
   }
 
@@ -95,7 +98,9 @@ public:
   const Tensor1 & operator++() const
   {
     for(int i=0;i<Tensor_Dim;++i)
-      ++data[i];
+      if(data[i]) {
+        data[i]+=inc;
+      }
     return *this;
   }
 };

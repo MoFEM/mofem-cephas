@@ -177,7 +177,7 @@ int main(int argc, char *argv[]) {
       const int nb_base_functions = data.getN().size2();
 
       FTensor::Tensor0<double*> base_function = data.getFTensor0N();
-      Tensor1<double*,3> diff_base = data.getFTensor1DiffN<3>();
+      FTensor::Tensor1<double*,3> diff_base = data.getFTensor1DiffN<3>();
       // FTensor::Tensor1<double*,3> field_values = getTensor1FormData<3>(field1ValuesDataPtr);
 
       for(int gg = 0;gg!=nb_gauss_pts;gg++) {
