@@ -4,6 +4,7 @@
 template <class T, int Tensor_Dim>
 class Tensor1<T*,Tensor_Dim>
 {
+protected:
   /* Note that the T *'s are mutable, so the pointer can change,
      allowing iterating over a array. */
 

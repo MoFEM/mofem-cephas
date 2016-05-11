@@ -28,6 +28,7 @@
 #include <UnknownInterface.hpp>
 using namespace MoFEM;
 
+#include <FTensor.hpp>
 #include <TagMultiIndices.hpp>
 #include <CoordSysMultiIndices.hpp>
 #include <FieldMultiIndices.hpp>

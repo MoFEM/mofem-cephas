@@ -14,6 +14,7 @@
 include_directories(${PROJECT_SOURCE_DIR}/include)
 include_directories(${PROJECT_SOURCE_DIR}/third_party)
 include_directories(${PROJECT_SOURCE_DIR}/third_party/cblas)
+include_directories(${PROJECT_SOURCE_DIR}/third_party/ftensor/src)
 include_directories(${PROJECT_SOURCE_DIR}/third_party/phg-quadrule)
 
 include_directories(${PROJECT_SOURCE_DIR}/src/approximation)
@@ -296,11 +297,30 @@ target_link_libraries(forces_and_sources_testing_volume_element
   ${PROJECT_LIBS}
 )
 
-add_test(forces_and_sources_testing_volume_element_test
-  ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_testing_volume_element -my_file elasticity_atom_test_01X_pressure.h5m)
+add_test(
+  forces_and_sources_testing_volume_element_test
+  ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_testing_volume_element
+  -my_file elasticity_atom_test_01X_pressure.h5m
+)
 add_test(forces_and_sources_testing_volume_element_test_compare ${CMAKE_COMMAND} -E compare_files
   ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/forces_and_sources_testing_volume_element.txt
   ${CMAKE_BINARY_DIR}/atom_tests/forces_and_sources_testing_volume_element.txt
+)
+
+add_executable(forces_and_sources_testing_ftensor forces_and_sources_testing_ftensor.cpp)
+target_link_libraries(forces_and_sources_testing_ftensor
+  mofem_finite_elements
+  mofem_interfaces
+  mofem_multi_indices
+  mofem_approx
+  mofem_cblas
+  mofem_third_party
+  ${PROJECT_LIBS}
+)
+add_test(
+  forces_and_sources_testing_ftensor
+  ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_testing_ftensor
+  -my_file elasticity_atom_test_01X_pressure.h5m
 )
 
 add_executable(forces_and_sources_getting_higher_order_skin_normals_atom forces_and_sources_getting_higher_order_skin_normals_atom_tets.cpp)

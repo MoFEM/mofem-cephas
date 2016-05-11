@@ -1,3 +1,17 @@
+/** \file FTensor.hpp
+* \brief Tensors class implemented by Walter Landry.
+* \ingroup ftensor
+
+*
+* The main repository is available under link <https://bitbucket.org/wlandry/ftensor>.
+* For more details look at reference \cite landry2003implementing.
+* See link <http://www.wlandry.net/Presentations/FTensor.pdf>.
+*
+* Note this implementation is modified for proposes of MoFEM.
+*
+*/
+
+
 /* Include file for the Fast Tensor classes (FTensor).  Everything is
    in namespace FTensor. */
 
@@ -12,7 +26,21 @@
 #include <sstream>
 #endif
 #include "FTensor/Layout.hpp"
+
+/**
+ * \brief Tensors class implemented by Walter Landry.
+ * \ingroup ftensor
+
+
+ * The main repository is available under link <https://bitbucket.org/wlandry/ftensor>.
+ * For more details look at reference \cite landry2003implementing.
+ * See link <http://www.wlandry.net/Presentations/FTensor.pdf>.
+ *
+ * Note this implementation is modified for proposes of MoFEM.
+
+ */
 namespace FTensor {
+
   template <class T> class Tensor0;
 
   template <class T, int Dim> class Tensor1;
@@ -96,3 +124,7 @@ namespace FTensor {
 }
 
 #endif
+
+/***************************************************************************//**
+ * \defgroup ftensor Tensor template library
+ ******************************************************************************/

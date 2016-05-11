@@ -22,6 +22,8 @@
 #include <config.h>
 #include <definitions.h>
 
+//FTensor
+#include <FTensor.hpp>
 #include <Common.hpp>
 #include <UnknownInterface.hpp>
 
@@ -70,6 +72,7 @@
 #include <FlatPrismPolynomialBase.hpp> // Base functions on tri
 #include <DataOperators.hpp>
 #include <ElementsOnEntities.hpp>
+#include <UserDataOperators.hpp>
 #include <VolumeElementForcesAndSourcesCore.hpp>
 #include <FaceElementForcesAndSourcesCore.hpp>
 #include <EdgeElementForcesAndSurcesCore.hpp>

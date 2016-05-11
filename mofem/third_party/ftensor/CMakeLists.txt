@@ -11,18 +11,6 @@
 # You should have received a copy of the GNU Lesser General Public
 # License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 
-include(CheckCXXSourceCompiles)
-
-CHECK_CXX_SOURCE_COMPILES(
-  "int main() { double * __restrict__ x;}\n"
-  SYMM_RESTRICT
-)
-if(SYMM_RESTRICT)
-  add_definitions("-Drestrict=__restrict__")
-else(SYMM_RESTRICT)
-  add_definitions("-Drestrict=")
-endif(SYMM_RESTRICT)
-
 # FTensor
 file(GLOB_RECURSE FTENSOR_CONFORMANCE_TEST_FILES
   ${PROJECT_SOURCE_DIR}/third_party/ftensor/tests/conformance/test_*.cpp

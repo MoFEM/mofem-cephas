@@ -417,45 +417,49 @@ struct ForcesAndSurcesCore: public FEMethod {
     inline void addOpType(const OpType type) { opType |= type; }
 
     UserDataOperator(const std::string &field_name,const char type):
-      rowFieldName(field_name),
-      colFieldName(field_name),
-      doVerticesRow(true),
-      doEdgesRow(true),
-      doQuadsRow(true),
-      doTrisRow(true),
-      doTetsRow(true),
-      doPrismsRow(true),
-      doVerticesCol(true),
-      doEdgesCol(true),
-      doQuadsCol(true),
-      doTrisCol(true),
-      doTetsCol(true),
-      doPrismsCol(true),
-      sYmm(true),
-      opType(type),
-      ptrFE(NULL) {};
+    rowFieldName(field_name),
+    colFieldName(field_name),
+    doVerticesRow(true),
+    doEdgesRow(true),
+    doQuadsRow(true),
+    doTrisRow(true),
+    doTetsRow(true),
+    doPrismsRow(true),
+    doVerticesCol(true),
+    doEdgesCol(true),
+    doQuadsCol(true),
+    doTrisCol(true),
+    doTetsCol(true),
+    doPrismsCol(true),
+    sYmm(true),
+    opType(type),
+    ptrFE(NULL) {
 
-      UserDataOperator(
-        const std::string &_row_field_name,const std::string &_col_field_name,const char type
-      ):
-      rowFieldName(_row_field_name),
-      colFieldName(_col_field_name),
-      doVerticesRow(true),
-      doEdgesRow(true),
-      doQuadsRow(true),
-      doTrisRow(true),
-      doTetsRow(true),
-      doPrismsRow(true),
-      doVerticesCol(true),
-      doEdgesCol(true),
-      doQuadsCol(true),
-      doTrisCol(true),
-      doTetsCol(true),
-      doPrismsCol(true),
-      sYmm(true),
-      opType(type),
-      ptrFE(NULL) {}
-      virtual ~UserDataOperator() {}
+    };
+
+    UserDataOperator(
+      const std::string &_row_field_name,const std::string &_col_field_name,const char type
+    ):
+    rowFieldName(_row_field_name),
+    colFieldName(_col_field_name),
+    doVerticesRow(true),
+    doEdgesRow(true),
+    doQuadsRow(true),
+    doTrisRow(true),
+    doTetsRow(true),
+    doPrismsRow(true),
+    doVerticesCol(true),
+    doEdgesCol(true),
+    doQuadsCol(true),
+    doTrisCol(true),
+    doTetsCol(true),
+    doPrismsCol(true),
+    sYmm(true),
+    opType(type),
+    ptrFE(NULL) {}
+    virtual ~UserDataOperator() {
+
+    }
 
     /** \brief Return raw pointer to NumeredEntFiniteElement
      */
@@ -539,29 +543,4 @@ struct ForcesAndSurcesCore: public FEMethod {
 /***************************************************************************//**
  * \defgroup mofem_forces_and_sources Forces and sources
  * \ingroup mofem
- ******************************************************************************/
-
-/***************************************************************************//**
- * \defgroup mofem_forces_and_sources_tet_element Volume Element
- * \ingroup mofem_forces_and_sources
- ******************************************************************************/
-
-/***************************************************************************//**
- * \defgroup mofem_forces_and_sources_tri_element Face Element
- * \ingroup mofem_forces_and_sources
- ******************************************************************************/
-
-/***************************************************************************//**
- * \defgroup mofem_forces_and_sources_prism_element Prism Element
- * \ingroup mofem_forces_and_sources
- ******************************************************************************/
-
-/***************************************************************************//**
- * \defgroup mofem_forces_and_sources_edge_element Edge Element
- * \ingroup mofem_forces_and_sources
- ******************************************************************************/
-
-/***************************************************************************//**
- * \defgroup mofem_forces_and_sources_vertex_element Vertex Element
- * \ingroup mofem_forces_and_sources
  ******************************************************************************/
