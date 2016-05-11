@@ -147,11 +147,21 @@ int main(int argc, char *argv[]) {
 
   struct MyOp1: public VolumeElementForcesAndSourcesCore::UserDataOperator {
 
-    boost::shared_ptr<MatrixDouble> fieldValuesDataPtr;
-
+    boost::shared_ptr<MatrixDouble> field1ValuesDataPtr;
+    boost::shared_ptr<VectorDouble> field2ValuesDataPtr;
+    boost::shared_ptr<MatrixDouble> grad2ValuesDataPtr;
     TeeStream &my_split;
-    MyOp1(boost::shared_ptr<MatrixDouble> field_values_data_ptr,TeeStream &_my_split,char type):
-    fieldValuesDataPtr(field_values_data_ptr),
+
+    MyOp1(
+      boost::shared_ptr<MatrixDouble> field1_values_data_ptr,
+      boost::shared_ptr<VectorDouble> field2_values_data_ptr,
+      boost::shared_ptr<MatrixDouble> grad2_values_data_ptr,
+      TeeStream &_my_split,
+      char type
+    ):
+    field1ValuesDataPtr(field1_values_data_ptr),
+    field2ValuesDataPtr(field2_values_data_ptr),
+    grad2ValuesDataPtr(grad2_values_data_ptr),
     VolumeElementForcesAndSourcesCore::UserDataOperator("FIELD1","FIELD2",type),
     my_split(_my_split) {}
 
@@ -168,7 +178,7 @@ int main(int argc, char *argv[]) {
 
       FTensor::Tensor0<double*> base_function = data.getFTensor0N();
       Tensor1<double*,3> diff_base = data.getFTensor1DiffN<3>();
-      FTensor::Tensor1<double*,3> field_values = getTensor1FormData<3>(fieldValuesDataPtr);
+      // FTensor::Tensor1<double*,3> field_values = getTensor1FormData<3>(field1ValuesDataPtr);
 
       for(int gg = 0;gg!=nb_gauss_pts;gg++) {
 
@@ -213,10 +223,10 @@ int main(int argc, char *argv[]) {
 
         }
 
-        VectorAdaptor vec = VectorAdaptor(3,ublas::shallow_array_adaptor<double>(3,&field_values(0)));
+        // VectorAdaptor vec = VectorAdaptor(3,ublas::shallow_array_adaptor<double>(3,&field_values(0)));
         // my_split << vec << endl;
 
-        ++field_values;
+        // ++field_values;
 
       }
       PetscFunctionReturn(0);
@@ -242,6 +252,12 @@ int main(int argc, char *argv[]) {
       FTensor::Index<'I',3> I;
       FTensor::Index<'J',3> J;
 
+      FTensor::Tensor1<double*,3> field1_values = getTensor1FormData<3>(field1ValuesDataPtr);
+      FTensor::Tensor0<double*> field2_values = getTensor0FormData(field2ValuesDataPtr);
+      FTensor::Tensor1<double*,3> grad2_values = getTensor1FormData<3>(grad2ValuesDataPtr);
+
+      FTensor::Tensor2<double,3,3> t2;
+
       for(int gg = 0;gg!=nb_gauss_pts;gg++) {
 
         double vol = getVolume();
@@ -249,13 +265,17 @@ int main(int argc, char *argv[]) {
 
         FTensor::Tensor0<double*> t0 = col_data.getFTensor0FieldData();
 
-        for(int bb_row = 0;bb_row!=nb_base_functions_row;bb_row++) {
+        t2(I,J) = grad2_values(I)*field1_values(J)*field2_values;
 
+        // for(int bb_row = 0;bb_row!=nb_base_functions_row;bb_row++) {
+        //
+        //
+        // }
 
-        }
-
-
-        ++t0;
+        ++field1_values;
+        // ++field2_values;
+        // ++grad2_values;
+        // ++t0;
 
       }
 
@@ -270,12 +290,29 @@ int main(int argc, char *argv[]) {
 
 
   VolumeElementForcesAndSourcesCore fe1(m_field);
+
   fe1.getOpPtrVector().push_back(new OpCalculateVectorFieldValues<3>("FIELD1",values1_at_gauss_pts_ptr));
   fe1.getOpPtrVector().push_back(new OpCalculateScalarFieldVaues("FIELD2",values2_at_gauss_pts_ptr));
   fe1.getOpPtrVector().push_back(new OpCalculateScalarFieldGradient<3>("FIELD2",grad2_at_gauss_pts_ptr));
 
-  fe1.getOpPtrVector().push_back(new MyOp1(values1_at_gauss_pts_ptr,my_split,ForcesAndSurcesCore::UserDataOperator::OPROW));
-  fe1.getOpPtrVector().push_back(new MyOp1(values1_at_gauss_pts_ptr,my_split,ForcesAndSurcesCore::UserDataOperator::OPROWCOL));
+  fe1.getOpPtrVector().push_back(
+    new MyOp1(
+      values1_at_gauss_pts_ptr,
+      values2_at_gauss_pts_ptr,
+      grad2_at_gauss_pts_ptr,
+      my_split,
+      ForcesAndSurcesCore::UserDataOperator::OPROW
+    )
+  );
+  fe1.getOpPtrVector().push_back(
+    new MyOp1(
+      values1_at_gauss_pts_ptr,
+      values2_at_gauss_pts_ptr,
+      grad2_at_gauss_pts_ptr,
+      my_split,
+      ForcesAndSurcesCore::UserDataOperator::OPROWCOL
+    )
+  );
 
   ierr = m_field.loop_finite_elements("TEST_PROBLEM","TEST_FE1",fe1);  CHKERRQ(ierr);
 

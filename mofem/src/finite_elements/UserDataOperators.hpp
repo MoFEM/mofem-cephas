@@ -35,6 +35,11 @@ FTensor::Tensor0<T*> getTensor0FormData(
   // return FTensor::Tensor0<T*>();
 }
 
+template<>
+FTensor::Tensor0<double*> getTensor0FormData<double,ublas::unbounded_array<double> >(
+  boost::shared_ptr<ublas::vector<double,ublas::unbounded_array<double> > > data_ptr
+);
+
 /**
  * \brief Get tensor rank 1 (vector) form data matrix
  * \ingroup mofem_forces_and_sources_user_data_operators
@@ -63,6 +68,16 @@ FTensor::Tensor1<double*,Tensor_Dim> getTensor1FormData(
   >(data_ptr);
 }
 
+template<>
+FTensor::Tensor1<double*,3> getTensor1FormData<3,double,ublas::row_major,ublas::unbounded_array<double> >(
+  boost::shared_ptr<ublas::matrix<double,ublas::row_major,ublas::unbounded_array<double> > > data_ptr
+);
+
+template<>
+FTensor::Tensor1<double*,2> getTensor1FormData<2,double,ublas::row_major,ublas::unbounded_array<double> >(
+  boost::shared_ptr<MatrixDouble> data_ptr
+);
+
 /**
  * \brief Get tensor rank 2 (matrix) form data matrix
  * \ingroup mofem_forces_and_sources_user_data_operators
@@ -78,6 +93,11 @@ FTensor::Tensor2<T*,Tensor_Dim0,Tensor_Dim1> getTensor2FormData(
   THROW_MESSAGE(s.str());
   // return FTensor::Tensor1<T*,Tensor_Dim>();
 }
+
+template<>
+FTensor::Tensor2<double*,3,3> getTensor2FormData(
+  boost::shared_ptr<MatrixDouble> data_ptr
+);
 
 /**
  * \brief Get tensor rank 2 (matrix) form data matrix (specialization)
@@ -232,41 +252,32 @@ PetscErrorCode OpCalculateVectorFieldValues_General<Tensor_Dim,double,ublas::row
   int side,EntityType type,DataForcesAndSurcesCore::EntData &data
 ) {
   PetscFunctionBegin;
-
   const int nb_dofs = data.getFieldData().size();
   if(!nb_dofs) {
     dataPtr->resize(Tensor_Dim,0,false);
     PetscFunctionReturn(0);
   }
-
   const int nb_gauss_pts = data.getN().size1();
   const int nb_base_functions = data.getN().size2();
-
-  ublas::matrix<double,ublas::row_major,ublas::unbounded_array<double> > &mat = *dataPtr;
+  MatrixDouble &mat = *dataPtr;
   if(type == zeroType) {
     mat.resize(Tensor_Dim,nb_gauss_pts,false);
     mat.clear();
   }
-
   FTensor::Tensor0<double*> base_function = data.getFTensor0N();
   FTensor::Tensor1<double*,Tensor_Dim> values_at_gauss_pts = getTensor1FormData<Tensor_Dim>(dataPtr);
-
   FTensor::Index<'I',Tensor_Dim> I;
-
-  for(int gg = 0;gg<nb_gauss_pts;gg++) {
-
+  for(int gg = 0;gg!=nb_gauss_pts;gg++) {
     Tensor1<double*,Tensor_Dim> field_data = data.getFTensor1FieldData<3>();
-    for(int bb = 0;bb<nb_base_functions;bb++) {
+    for(int bb = 0;bb!=nb_base_functions;bb++) {
       if(bb*Tensor_Dim < nb_dofs) { // Number of dofs can be smaller than number of 3 x base functions
-        values_at_gauss_pts(I) += field_data(I)*base_function;
+        values_at_gauss_pts(I) = field_data(I)*base_function;
         ++field_data;
       }
       ++base_function;
     }
     ++values_at_gauss_pts;
-
   }
-
   PetscFunctionReturn(0);
 }
 
@@ -343,29 +354,22 @@ PetscErrorCode OpCalculateScalarFieldGradient_General<Tensor_Dim,double,ublas::r
   int side,EntityType type,DataForcesAndSurcesCore::EntData &data
 ) {
   PetscFunctionBegin;
-
   const int nb_dofs = data.getFieldData().size();
   if(!nb_dofs) {
     this->dataPtr->resize(Tensor_Dim,0,false);
     PetscFunctionReturn(0);
   }
-
   const int nb_gauss_pts = data.getN().size1();
   const int nb_base_functions = data.getN().size2();
-
   ublas::matrix<double,ublas::row_major,ublas::unbounded_array<double> > &mat = *this->dataPtr;
   if(type == this->zeroType) {
     mat.resize(Tensor_Dim,nb_gauss_pts,false);
     mat.clear();
   }
-
   Tensor1<double*,Tensor_Dim> diff_base_function = data.getFTensor1DiffN<Tensor_Dim>();
   FTensor::Tensor1<double*,Tensor_Dim> gradients_at_gauss_pts = getTensor1FormData<Tensor_Dim>(this->dataPtr);
-
   FTensor::Index<'I',Tensor_Dim> I;
-
   for(int gg = 0;gg<nb_gauss_pts;gg++) {
-
     FTensor::Tensor0<double*> field_data = data.getFTensor0FieldData();
     for(int bb = 0;bb<nb_base_functions;bb++) {
       if(bb*Tensor_Dim < nb_dofs) { // Number of dofs can be smaller than number of 3 x base functions
@@ -375,9 +379,7 @@ PetscErrorCode OpCalculateScalarFieldGradient_General<Tensor_Dim,double,ublas::r
       ++diff_base_function;
     }
     ++gradients_at_gauss_pts;
-
   }
-
   PetscFunctionReturn(0);
 }
 

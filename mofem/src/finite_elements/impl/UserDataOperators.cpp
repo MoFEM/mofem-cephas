@@ -99,7 +99,7 @@ FTensor::Tensor1<double*,2> getTensor1FormData<2,double,ublas::row_major,ublas::
 }
 
 template<>
-FTensor::Tensor2<double*,3,3> getTensor1FormData(
+FTensor::Tensor2<double*,3,3> getTensor2FormData(
   boost::shared_ptr<MatrixDouble> data_ptr
 ) {
   if(data_ptr->size1()!=9) {
@@ -116,29 +116,22 @@ PetscErrorCode OpCalculateScalarFieldVaues_General<double,ublas::unbounded_array
   int side,EntityType type,DataForcesAndSurcesCore::EntData &data
 ) {
   PetscFunctionBegin;
-
   const int nb_dofs = data.getFieldData().size();
   if(!nb_dofs) {
     dataPtr->resize(0,false);
     PetscFunctionReturn(0);
   }
-
   const int nb_gauss_pts = data.getN().size1();
   const int nb_base_functions = data.getN().size2();
-
   VectorDouble &vec = *dataPtr;
   if(type == zeroType) {
     vec.resize(nb_gauss_pts,false);
     vec.clear();
   }
-
   FTensor::Tensor0<double*> base_function = data.getFTensor0N();
   FTensor::Tensor0<double*> values_at_gauss_pts = getTensor0FormData(dataPtr);
-
   for(int gg = 0;gg<nb_gauss_pts;gg++) {
-
     Tensor0<double*> field_data = data.getFTensor0FieldData();
-
     for(int bb = 0;bb<nb_base_functions;bb++) {
        if(bb < nb_dofs) { // Number of dofs can be smaller than number of base functions
          values_at_gauss_pts += field_data*base_function;
@@ -146,11 +139,8 @@ PetscErrorCode OpCalculateScalarFieldVaues_General<double,ublas::unbounded_array
        }
        ++base_function;
     }
-
     ++values_at_gauss_pts;
-
   }
-
   PetscFunctionReturn(0);
 }
 
