@@ -267,15 +267,20 @@ PetscErrorCode OpCalculateVectorFieldValues_General<Tensor_Dim,double,ublas::row
   FTensor::Tensor0<double*> base_function = data.getFTensor0N();
   FTensor::Tensor1<double*,Tensor_Dim> values_at_gauss_pts = getTensor1FormData<Tensor_Dim>(mat);
   FTensor::Index<'I',Tensor_Dim> I;
+  const int size = nb_dofs/Tensor_Dim;
+  if(nb_dofs % Tensor_Dim) {
+    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"Data inconsistency");
+  }
   for(int gg = 0;gg!=nb_gauss_pts;gg++) {
     FTensor::Tensor1<double*,Tensor_Dim> field_data = data.getFTensor1FieldData<Tensor_Dim>();
-    for(int bb = 0;bb!=nb_base_functions;bb++) {
-      if(bb*Tensor_Dim < nb_dofs) { // Number of dofs can be smaller than number of 3 x base functions
-        values_at_gauss_pts(I) = field_data(I)*base_function;
-        ++field_data;
-      }
+    int bb = 0;
+    for(;bb!=size;bb++) {
+      values_at_gauss_pts(I) = field_data(I)*base_function;
+      ++field_data;
       ++base_function;
     }
+    // Number of dofs can be smaller than number of Tensor_Dim x base functions
+    for(;bb!=nb_base_functions;bb++) ++base_function;
     ++values_at_gauss_pts;
   }
   PetscFunctionReturn(0);
@@ -447,13 +452,14 @@ PetscErrorCode OpCalculateScalarFieldGradient_General<Tensor_Dim,double,ublas::r
   FTensor::Index<'I',Tensor_Dim> I;
   for(int gg = 0;gg<nb_gauss_pts;gg++) {
     FTensor::Tensor0<double*> field_data = data.getFTensor0FieldData();
-    for(int bb = 0;bb<nb_base_functions;bb++) {
-      if(bb*Tensor_Dim < nb_dofs) { // Number of dofs can be smaller than number of 3 x base functions
-        gradients_at_gauss_pts(I) += field_data*diff_base_function(I);
-        ++field_data;
-      }
+    int bb = 0;
+    for(;bb<nb_dofs;bb++) {
+      gradients_at_gauss_pts(I) += field_data*diff_base_function(I);
+      ++field_data;
       ++diff_base_function;
     }
+    // Number of dofs can be smaller than number of 3 x base functions
+    for(;bb!=nb_base_functions;bb++) ++diff_base_function;
     ++gradients_at_gauss_pts;
   }
   PetscFunctionReturn(0);
