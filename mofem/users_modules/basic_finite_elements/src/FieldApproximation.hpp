@@ -567,6 +567,22 @@ struct FieldApproximationH1 {
     PetscFunctionReturn(0);
   }
 
+  template<>
+  PetscErrorCode invertTensor2<
+  3,double,ublas::row_major,ublas::unbounded_array<double>
+  >(
+    const MatrixDouble &jac_data,
+    MatrixDouble &det_data,
+    MatrixDouble &inv_jac_data
+  ) {
+    PetscFunctionBegin;
+    FTensor::Tensor2<double*,3,3> jac = getTensor2FormData<3,3>(jac_data);
+
+
+    PetscFunctionReturn(0);
+  }
+
+
 };
 
 #endif //__FILEDAPPROXIMATION_HPP

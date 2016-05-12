@@ -589,8 +589,26 @@ public OpCalculateVectorFieldGradient_General<Tensor_Dim0,Tensor_Dim1,double,ubl
 
 };
 
+/**
+ * \brief Calculate inverse of tensor rank 2 at integration points
+ */
+template<int Tensor_Dim,class T,class L,class A>
+PetscErrorCode invertTensor2(
+   ublas::matrix<T,L,A> &jac_data,
+  ublas::vector<T,A> &det_data,
+  ublas::matrix<T,L,A> &inv_jac_data
+) {
+  PetscFunctionBegin;
+  SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"Specialization for this template not yet implemented");
+  PetscFunctionReturn(0);
+}
 
-
+template<>
+PetscErrorCode invertTensor2<3,double,ublas::row_major,ublas::unbounded_array<double> >(
+  MatrixDouble &jac_data,
+  VectorDouble &det_data,
+  MatrixDouble &inv_jac_data
+);
 
 }
 

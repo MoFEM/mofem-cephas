@@ -150,5 +150,39 @@ OpCalculateScalarFieldVaues_General<double,ublas::unbounded_array<double> >(
 ) {
 }
 
+template<>
+PetscErrorCode invertTensor2<3,double,ublas::row_major,ublas::unbounded_array<double> >(
+  MatrixDouble &jac_data,
+  VectorDouble &det_data,
+  MatrixDouble &inv_jac_data
+) {
+  PetscFunctionBegin;
+  FTensor::Tensor2<double*,3,3> A = getTensor2FormData<3,3>(jac_data);
+  int nb_gauss_pts = jac_data.size2();
+  det_data.resize(nb_gauss_pts,false);
+  inv_jac_data.resize(3,nb_gauss_pts,false);
+  FTensor::Tensor0<double*> det = getTensor0FormData(det_data);
+  FTensor::Tensor2<double*,3,3> I = getTensor2FormData<3,3>(inv_jac_data);
+  for(int gg = 0;gg!=nb_gauss_pts;gg++) {
+
+    double det =
+    A(0,0)*A(1,1)*A(2,2) + A(1,0)*A(2,1)*A(0,2)
+    + A(2,0)*A(0,1)*A(1,2) - A(0,0)*A(2,1)*A(1,2)
+    - A(1,0)*A(0,1)*A(2,2) - A(2,0)*A(1,1)*A(0,2);
+
+    I(0,0)= (A(1,1)*A(2,2) - A(1,2)*A(1,2))/det;
+    I(0,1)= (A(0,2)*A(1,2) - A(0,1)*A(2,2))/det;
+    I(0,2)= (A(0,1)*A(1,2) - A(0,2)*A(1,1))/det;
+    I(1,1)= (A(0,0)*A(2,2) - A(0,2)*A(0,2))/det;
+    I(1,2)= (A(0,2)*A(0,1) - A(0,0)*A(1,2))/det;
+    I(2,2)= (A(1,1)*A(0,0) - A(1,0)*A(1,0))/det;
+
+    ++A;
+    ++det;
+    ++I;
+
+  }
+  PetscFunctionReturn(0);
+}
 
 }

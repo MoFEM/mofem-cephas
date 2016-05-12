@@ -39,13 +39,13 @@ public:
       << ">.operator(" << N << ")" << std::endl;
       throw std::runtime_error(s.str());
     }
-    #endif
     if(!data[N]) {
       std::stringstream s;
       s << "Null pointer in Tensor1<T*," << Tensor_Dim
       << ">.operator(" << N << ")" << std::endl;
       throw std::runtime_error(s.str());
     }
+    #endif
     return *data[N];
   }
   T operator()(const int N) const {
