@@ -69,45 +69,40 @@ namespace MoFEM {
 
 template<>
 FTensor::Tensor0<double*> getTensor0FormData<double,ublas::unbounded_array<double> >(
-  boost::shared_ptr<ublas::vector<double,ublas::unbounded_array<double> > > data_ptr
+  ublas::vector<double,ublas::unbounded_array<double> > &data
 ) {
-  return FTensor::Tensor0<double*>(&*data_ptr->data().begin());
+  return FTensor::Tensor0<double*>(&*data.data().begin());
 }
 
 template<>
 FTensor::Tensor1<double*,3> getTensor1FormData<3,double,ublas::row_major,ublas::unbounded_array<double> >(
-  boost::shared_ptr<ublas::matrix<double,ublas::row_major,ublas::unbounded_array<double> > > data_ptr
+  MatrixDouble &data
 ) {
-  if(data_ptr->size1()!=3) {
+  if(data.size1()!=3) {
     THROW_MESSAGE("Wrong size of data matrix");
   }
-  return FTensor::Tensor1<double*,3>(
-    &(*data_ptr)(0,0),&(*data_ptr)(1,0),&(*data_ptr)(2,0)
-  );
+  return FTensor::Tensor1<double*,3>(&data(0,0),&data(1,0),&data(2,0));
 }
 
 template<>
 FTensor::Tensor1<double*,2> getTensor1FormData<2,double,ublas::row_major,ublas::unbounded_array<double> >(
-  boost::shared_ptr<MatrixDouble> data_ptr
+  MatrixDouble &data
 ) {
-  if(data_ptr->size1()!=2) {
+  if(data.size1()!=2) {
     THROW_MESSAGE("Wrong size of data matrix");
   }
-  return FTensor::Tensor1<double*,2>(
-    &(*data_ptr)(0,0),&(*data_ptr)(1,0)
-  );
+  return FTensor::Tensor1<double*,2>(&data(0,0),&data(1,0));
 }
 
 template<>
-FTensor::Tensor2<double*,3,3> getTensor2FormData(
-  boost::shared_ptr<MatrixDouble> data_ptr
+FTensor::Tensor2<double*,3,3> getTensor2FormData<3,3,double,ublas::row_major,ublas::unbounded_array<double> >(
+  MatrixDouble &data
 ) {
-  if(data_ptr->size1()!=9) {
+  if(data.size1()!=9) {
     THROW_MESSAGE("Wrong size of data matrix");
   }
-  MatrixDouble &mat = *data_ptr;
   return FTensor::Tensor2<double*,3,3>(
-    &mat(0,0),&mat(1,0),&mat(2,0),&mat(3,0),&mat(4,0),&mat(5,0),&mat(6,0),&mat(7,0),&mat(8,0)
+    &data(0,0),&data(1,0),&data(2,0),&data(3,0),&data(4,0),&data(5,0),&data(6,0),&data(7,0),&data(8,0)
   );
 }
 
@@ -129,16 +124,17 @@ PetscErrorCode OpCalculateScalarFieldVaues_General<double,ublas::unbounded_array
     vec.clear();
   }
   FTensor::Tensor0<double*> base_function = data.getFTensor0N();
-  FTensor::Tensor0<double*> values_at_gauss_pts = getTensor0FormData(dataPtr);
+  FTensor::Tensor0<double*> values_at_gauss_pts = getTensor0FormData(vec);
   for(int gg = 0;gg<nb_gauss_pts;gg++) {
-    Tensor0<double*> field_data = data.getFTensor0FieldData();
-    for(int bb = 0;bb<nb_base_functions;bb++) {
-       if(bb < nb_dofs) { // Number of dofs can be smaller than number of base functions
-         values_at_gauss_pts += field_data*base_function;
-         ++field_data;
-       }
-       ++base_function;
+    FTensor::Tensor0<double*> field_data = data.getFTensor0FieldData();
+    int bb = 0;
+    for(;bb<nb_dofs;bb++) {
+      values_at_gauss_pts += field_data*base_function;
+      ++field_data;
+      ++base_function;
     }
+    // It is possible to have more base functions than dofs
+    for(;bb!=nb_base_functions;bb++) ++base_function;
     ++values_at_gauss_pts;
   }
   PetscFunctionReturn(0);

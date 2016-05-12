@@ -29,115 +29,6 @@ namespace MoFEM {
 typedef ublas::unbounded_array<const FEDofEntity*,std::allocator<const FEDofEntity*> > DofsAllacator;
 typedef ublas::vector<const FEDofEntity*,DofsAllacator > VectorDofs;
 
-template <class T>
-class Tensor0: public FTensor::Tensor0<T> {
-};
-
-template <class T>
-class Tensor0<T*>: public FTensor::Tensor0<T*> {
-public:
-  Tensor0(T *d): FTensor::Tensor0<T*>(d) {
-  }
-};
-
-template <class T, int Tensor_Dim>
-class Tensor1: public FTensor::Tensor1<T,Tensor_Dim> {
-public:
-  Tensor1(T d0, T d1): FTensor::Tensor1<T,Tensor_Dim>(d0,d1) {
-  }
-  Tensor1(T d0, T d1, T d2): FTensor::Tensor1<T,Tensor_Dim>(d0,d1,d2) {
-  }
-  Tensor1(T d0, T d1, T d2, T d3): FTensor::Tensor1<T,Tensor_Dim>(d0,d1,d2,d3) {
-  }
-};
-
-/**
- * \brief Tenor1 implementation modifying how pointers are incremented.
- *
- */
-template <class T, int Tensor_Dim>
-class Tensor1<T*,Tensor_Dim>: public FTensor::Tensor1<T*,Tensor_Dim> {
-  const int iNc; ///< Pointer increment
-public:
-  Tensor1(T *d0, T *d1,const int inc): FTensor::Tensor1<T*,Tensor_Dim>(d0,d1),iNc(inc) {
-  }
-  Tensor1(T *d0, T *d1, T *d2,const int inc): FTensor::Tensor1<T*,Tensor_Dim>(d0,d1,d2),iNc(inc) {
-  }
-  Tensor1(T *d0, T *d1, T *d2, T *d3,const int inc): FTensor::Tensor1<T*,Tensor_Dim>(d0,d1,d2,d3),iNc(inc) {
-  }
-
-  /* There are two operator(int)'s, one for non-consts that lets you
-  change the value, and one for consts that doesn't.
-  */
-
-  T & operator()(const int N)
-  {
-    #ifdef FTENSOR_DEBUG
-    if(N>=Tensor_Dim || N<0)
-    {
-      std::stringstream s;
-      s << "Bad index in Tensor1<T*," << Tensor_Dim
-      << ">.operator(" << N << ")" << std::endl;
-      THROW_MESSAGE(s.str());
-    }
-    #endif
-    if(!FTensor::Tensor1<T*,Tensor_Dim>::data[N]) {
-      THROW_MESSAGE("Can not reference this index");
-    }
-    return *FTensor::Tensor1<T*,Tensor_Dim>::data[N];
-  }
-  T operator()(const int N) const
-  {
-    #ifdef FTENSOR_DEBUG
-    if(N>=Tensor_Dim || N<0)
-    {
-      std::stringstream s;
-      s << "Bad index in Tensor1<T*," << Tensor_Dim
-      << ">.operator(" << N << ") const" << std::endl;
-      THROW_MESSAGE(s.str());
-    }
-    #endif
-    return FTensor::Tensor1<T*,Tensor_Dim>::data[N] ? *FTensor::Tensor1<T*,Tensor_Dim>::data[N] : 0;
-  }
-
-  /* These operator()'s are the first part in constructing template
-     expressions.  They can be used to slice off lower dimensional
-     parts. They are not entirely safe, since you can accidently use a
-     higher dimension than what is really allowed (like Dim=5).
-  */
-
-  template<char i, int Dim>
-  FTensor::Tensor1_Expr<Tensor1<T*,Tensor_Dim>,T,Dim,i>
-  operator()(const FTensor::Index<i,Dim> &index)
-  {
-    return FTensor::Tensor1_Expr<Tensor1<T*,Tensor_Dim>,T,Dim,i>(*this);
-  }
-
-  template<char i, int Dim>
-  FTensor::Tensor1_Expr<const Tensor1<T*,Tensor_Dim>,T,Dim,i>
-  operator()(const FTensor::Index<i,Dim> &index) const
-  {
-    return FTensor::Tensor1_Expr<const Tensor1<T*,Tensor_Dim>,T,Dim,i>(*this);
-  }
-
-  /**
-   * \brief Increments are equal to dimension.
-   *
-   * Values are stored in matrix nb_gauss_pts x (nb_dimension x nb_base_functions)
-   *
-   */
-  const Tensor1 & operator++() const
-  {
-    for(int i=0;i<Tensor_Dim;++i) {
-      if(FTensor::Tensor1<T*,Tensor_Dim>::data[i]) {
-        FTensor::Tensor1<T*,Tensor_Dim>::data[i] += iNc;
-      }
-    }
-    return *this;
-  }
-
-};
-
 /** \brief data structure for finite element entity
   * \ingroup mofem_forces_and_sources
   *
@@ -212,15 +103,14 @@ struct DataForcesAndSurcesCore {
     inline VectorDouble& getFieldData() { return fieldData; }
 
     template<int Tensor_Dim>
-    Tensor1<double*,Tensor_Dim> getFTensor1FieldData()  {
+    FTensor::Tensor1<double*,Tensor_Dim> getFTensor1FieldData()  {
       std::stringstream s;
       s << "Not implemented for this dimension dim = " << Tensor_Dim;
       THROW_MESSAGE(s.str());
       // return Tensor1<double*,Tensor_Dim>();
     }
 
-    Tensor0<double*> getFTensor0FieldData();
-
+    FTensor::Tensor0<double*> getFTensor0FieldData();
 
     inline VectorDofs& getFieldDofs() { return dOfs; }
 
@@ -561,9 +451,9 @@ struct DataForcesAndSurcesCore {
      * \return Tensor0
      *
      */
-    inline Tensor0<double*> getFTensor0N(const FieldApproximationBase base) {
+    inline FTensor::Tensor0<double*> getFTensor0N(const FieldApproximationBase base) {
       double *ptr = &*getN(base).data().begin();
-      return Tensor0<double*>(ptr);
+      return FTensor::Tensor0<double*>(ptr);
     };
 
     /**
@@ -574,7 +464,7 @@ struct DataForcesAndSurcesCore {
      * \return Tensor0
      *
      */
-    inline Tensor0<double*> getFTensor0N() {
+    inline FTensor::Tensor0<double*> getFTensor0N() {
       return getFTensor0N(bAse);
     };
 
@@ -596,7 +486,7 @@ struct DataForcesAndSurcesCore {
      *
      */
     template<int Tensor_Dim>
-    Tensor1<double*,Tensor_Dim> getFTensor1DiffN(const FieldApproximationBase base);
+    FTensor::Tensor1<double*,Tensor_Dim> getFTensor1DiffN(const FieldApproximationBase base);
 
     /**
      * \brief Get derivatives of base functions
@@ -615,7 +505,7 @@ struct DataForcesAndSurcesCore {
      *
      */
     template<int Tensor_Dim>
-    Tensor1<double*,Tensor_Dim> getFTensor1DiffN();
+    FTensor::Tensor1<double*,Tensor_Dim> getFTensor1DiffN();
 
     friend std::ostream& operator<<(std::ostream& os,const DataForcesAndSurcesCore::EntData &e);
 

@@ -16,9 +16,10 @@ class Tensor0
 template <class T>
 class Tensor0<T*>
 {
+  const int inc;
   mutable T * restrict data;
 public:
-  Tensor0(T *d): data(d) {}
+  Tensor0(T *d,const int i = 1): inc(i),data(d) {}
 
   const Tensor0 & operator=(const Tensor0 &a)
   {
@@ -76,7 +77,7 @@ public:
 
   const Tensor0<T*> & operator++() const
   {
-    ++data;
+    data+=inc;
     return *this;
   }
 };

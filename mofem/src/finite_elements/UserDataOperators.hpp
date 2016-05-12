@@ -27,7 +27,7 @@ namespace MoFEM {
 */
 template<class T, class A>
 FTensor::Tensor0<T*> getTensor0FormData(
-  boost::shared_ptr<ublas::vector<T,A> > data_ptr
+  ublas::vector<T,A> &data
 ) {
   std::stringstream s;
   s << "Not implemented for T = " << typeid(T).name();
@@ -37,7 +37,7 @@ FTensor::Tensor0<T*> getTensor0FormData(
 
 template<>
 FTensor::Tensor0<double*> getTensor0FormData<double,ublas::unbounded_array<double> >(
-  boost::shared_ptr<ublas::vector<double,ublas::unbounded_array<double> > > data_ptr
+  ublas::vector<double,ublas::unbounded_array<double> > &data
 );
 
 /**
@@ -46,7 +46,7 @@ FTensor::Tensor0<double*> getTensor0FormData<double,ublas::unbounded_array<doubl
  */
 template<int Tensor_Dim, class T, class L, class A>
 FTensor::Tensor1<T*,Tensor_Dim> getTensor1FormData(
-  boost::shared_ptr<ublas::matrix<T,L,A> > data_ptr
+  ublas::matrix<T,L,A> &data
 ) {
   std::stringstream s;
   s << "Not implemented for T = " << typeid(T).name();
@@ -61,21 +61,21 @@ FTensor::Tensor1<T*,Tensor_Dim> getTensor1FormData(
  */
 template<int Tensor_Dim>
 FTensor::Tensor1<double*,Tensor_Dim> getTensor1FormData(
-  boost::shared_ptr<ublas::matrix<double,ublas::row_major,ublas::unbounded_array<double> > > data_ptr
+  MatrixDouble &data
 ) {
   return getTensor1FormData<
   Tensor_Dim,double,ublas::row_major,ublas::unbounded_array<double>
-  >(data_ptr);
+  >(data);
 }
 
 template<>
 FTensor::Tensor1<double*,3> getTensor1FormData<3,double,ublas::row_major,ublas::unbounded_array<double> >(
-  boost::shared_ptr<ublas::matrix<double,ublas::row_major,ublas::unbounded_array<double> > > data_ptr
+  MatrixDouble &data
 );
 
 template<>
 FTensor::Tensor1<double*,2> getTensor1FormData<2,double,ublas::row_major,ublas::unbounded_array<double> >(
-  boost::shared_ptr<MatrixDouble> data_ptr
+  MatrixDouble &data
 );
 
 /**
@@ -84,7 +84,7 @@ FTensor::Tensor1<double*,2> getTensor1FormData<2,double,ublas::row_major,ublas::
  */
 template<int Tensor_Dim0, int Tensor_Dim1, class T, class L, class A>
 FTensor::Tensor2<T*,Tensor_Dim0,Tensor_Dim1> getTensor2FormData(
-  boost::shared_ptr<ublas::matrix<T,L,A> > data_ptr
+  ublas::matrix<T,L,A> &data
 ) {
   std::stringstream s;
   s << "Not implemented for T = " << typeid(T).name();
@@ -96,7 +96,7 @@ FTensor::Tensor2<T*,Tensor_Dim0,Tensor_Dim1> getTensor2FormData(
 
 template<>
 FTensor::Tensor2<double*,3,3> getTensor2FormData(
-  boost::shared_ptr<MatrixDouble> data_ptr
+  MatrixDouble &data
 );
 
 /**
@@ -104,12 +104,12 @@ FTensor::Tensor2<double*,3,3> getTensor2FormData(
  * \ingroup mofem_forces_and_sources_user_data_operators
  */
 template<int Tensor_Dim0, int Tensor_Dim1>
-FTensor::Tensor2<double*,Tensor_Dim0,Tensor_Dim1> getTensor1FormData(
-  boost::shared_ptr<ublas::matrix<double,ublas::row_major,ublas::unbounded_array<double> > > data_ptr
+FTensor::Tensor2<double*,Tensor_Dim0,Tensor_Dim1> getTensor2FormData(
+  MatrixDouble &data
 ) {
   return getTensor2FormData<
   Tensor_Dim0,Tensor_Dim1,double,ublas::row_major,ublas::unbounded_array<double>
-  >(data_ptr);
+  >(data);
 }
 
 // GET VALUES AT GAUSS PTS
@@ -265,17 +265,22 @@ PetscErrorCode OpCalculateVectorFieldValues_General<Tensor_Dim,double,ublas::row
     mat.clear();
   }
   FTensor::Tensor0<double*> base_function = data.getFTensor0N();
-  FTensor::Tensor1<double*,Tensor_Dim> values_at_gauss_pts = getTensor1FormData<Tensor_Dim>(dataPtr);
+  FTensor::Tensor1<double*,Tensor_Dim> values_at_gauss_pts = getTensor1FormData<Tensor_Dim>(mat);
   FTensor::Index<'I',Tensor_Dim> I;
+  const int size = nb_dofs/Tensor_Dim;
+  if(nb_dofs % Tensor_Dim) {
+    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"Data inconsistency");
+  }
   for(int gg = 0;gg!=nb_gauss_pts;gg++) {
-    Tensor1<double*,Tensor_Dim> field_data = data.getFTensor1FieldData<3>();
-    for(int bb = 0;bb!=nb_base_functions;bb++) {
-      if(bb*Tensor_Dim < nb_dofs) { // Number of dofs can be smaller than number of 3 x base functions
-        values_at_gauss_pts(I) = field_data(I)*base_function;
-        ++field_data;
-      }
+    FTensor::Tensor1<double*,Tensor_Dim> field_data = data.getFTensor1FieldData<Tensor_Dim>();
+    int bb = 0;
+    for(;bb!=size;bb++) {
+      values_at_gauss_pts(I) = field_data(I)*base_function;
+      ++field_data;
       ++base_function;
     }
+    // Number of dofs can be smaller than number of Tensor_Dim x base functions
+    for(;bb!=nb_base_functions;bb++) ++base_function;
     ++values_at_gauss_pts;
   }
   PetscFunctionReturn(0);
@@ -299,6 +304,82 @@ public OpCalculateVectorFieldValues_General<Tensor_Dim,double,ublas::row_major,u
   }
 
 };
+
+/** \brief Calculate field values for tenor field rank 2.
+* \ingroup mofem_forces_and_sources_user_data_operators
+*/
+template<int Tensor_Dim0,int Tensor_Dim1, class T, class L, class A>
+struct OpCalculateTensor2FieldValues_General: public ForcesAndSurcesCore::UserDataOperator {
+
+  boost::shared_ptr<ublas::matrix<T,L,A> > dataPtr;
+  EntityHandle zeroType;
+
+  OpCalculateTensor2FieldValues_General(
+    const std::string &field_name,
+    boost::shared_ptr<ublas::matrix<T,L,A> > data_ptr,
+    EntityType zero_type = MBVERTEX
+  ):
+  ForcesAndSurcesCore::UserDataOperator(field_name,ForcesAndSurcesCore::UserDataOperator::OPROW),
+  dataPtr(data_ptr),
+  zeroType(zero_type) {
+  }
+
+  PetscErrorCode doWork(
+    int side,EntityType type,DataForcesAndSurcesCore::EntData &data
+  );
+
+};
+
+template<int Tensor_Dim0, int Tensor_Dim1, class T, class L, class A>
+PetscErrorCode OpCalculateTensor2FieldValues_General<Tensor_Dim0,Tensor_Dim1,T,L,A>::doWork(
+  int side,EntityType type,DataForcesAndSurcesCore::EntData &data
+) {
+  PetscFunctionBegin;
+  SETERRQ3(
+    PETSC_COMM_SELF,
+    MOFEM_NOT_IMPLEMENTED,
+    "Not implemented for T = %s, dim0 = %d and dim1 = %d",
+    typeid(T).name(),
+    Tensor_Dim0,
+    Tensor_Dim1
+  );
+  PetscFunctionReturn(0);
+}
+
+template<int Tensor_Dim0,int Tensor_Dim1>
+struct OpCalculateTensor2FieldValues_General<
+Tensor_Dim0,Tensor_Dim1,double,ublas::row_major,ublas::unbounded_array<double>
+>: public ForcesAndSurcesCore::UserDataOperator {
+
+  boost::shared_ptr<ublas::matrix<double,ublas::row_major,ublas::unbounded_array<double> > > dataPtr;
+  EntityHandle zeroType;
+
+  OpCalculateTensor2FieldValues_General(
+    const std::string &field_name,
+    boost::shared_ptr<ublas::matrix<double,ublas::row_major,ublas::unbounded_array<double> > > data_ptr,
+    EntityType zero_type = MBVERTEX
+  ):
+  ForcesAndSurcesCore::UserDataOperator(field_name,ForcesAndSurcesCore::UserDataOperator::OPROW),
+  dataPtr(data_ptr),
+  zeroType(zero_type) {
+  }
+
+  PetscErrorCode doWork(
+    int side,EntityType type,DataForcesAndSurcesCore::EntData &data
+  );
+
+};
+
+template<int Tensor_Dim0,int Tensor_Dim1>
+PetscErrorCode OpCalculateTensor2FieldValues_General<
+Tensor_Dim0,Tensor_Dim1, double, ublas::row_major, ublas::unbounded_array<double>
+>::doWork(
+  int side,EntityType type,DataForcesAndSurcesCore::EntData &data
+) {
+  PetscFunctionBegin;
+  SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"Not implemented yet");
+  PetscFunctionReturn(0);
+}
 
 // GET GRADIENTS AT GAUSS POINTS
 
@@ -366,18 +447,19 @@ PetscErrorCode OpCalculateScalarFieldGradient_General<Tensor_Dim,double,ublas::r
     mat.resize(Tensor_Dim,nb_gauss_pts,false);
     mat.clear();
   }
-  Tensor1<double*,Tensor_Dim> diff_base_function = data.getFTensor1DiffN<Tensor_Dim>();
-  FTensor::Tensor1<double*,Tensor_Dim> gradients_at_gauss_pts = getTensor1FormData<Tensor_Dim>(this->dataPtr);
+  FTensor::Tensor1<double*,Tensor_Dim> diff_base_function = data.getFTensor1DiffN<Tensor_Dim>();
+  FTensor::Tensor1<double*,Tensor_Dim> gradients_at_gauss_pts = getTensor1FormData<Tensor_Dim>(mat);
   FTensor::Index<'I',Tensor_Dim> I;
   for(int gg = 0;gg<nb_gauss_pts;gg++) {
     FTensor::Tensor0<double*> field_data = data.getFTensor0FieldData();
-    for(int bb = 0;bb<nb_base_functions;bb++) {
-      if(bb*Tensor_Dim < nb_dofs) { // Number of dofs can be smaller than number of 3 x base functions
-        gradients_at_gauss_pts(I) += field_data*diff_base_function(I);
-        ++field_data;
-      }
+    int bb = 0;
+    for(;bb<nb_dofs;bb++) {
+      gradients_at_gauss_pts(I) += field_data*diff_base_function(I);
+      ++field_data;
       ++diff_base_function;
     }
+    // Number of dofs can be smaller than number of base functions
+    for(;bb!=nb_base_functions;bb++) ++diff_base_function;
     ++gradients_at_gauss_pts;
   }
   PetscFunctionReturn(0);
@@ -401,6 +483,113 @@ public OpCalculateScalarFieldGradient_General<Tensor_Dim,double,ublas::row_major
   }
 
 };
+
+/**
+ * \brief Evaluate field gradient values for vector field, i.e. gradient is tensor rank 2
+ * \ingroup mofem_forces_and_sources_user_data_operators
+ */
+template<int Tensor_Dim0,int Tensor_Dim1, class T, class L, class A>
+struct OpCalculateVectorFieldGradient_General:
+public OpCalculateTensor2FieldValues_General<Tensor_Dim0,Tensor_Dim1,T,L,A> {
+
+  OpCalculateVectorFieldGradient_General(
+    const std::string &field_name,
+    boost::shared_ptr<MatrixDouble> data_ptr,
+    EntityType zero_type = MBVERTEX
+  ):
+  OpCalculateTensor2FieldValues_General<Tensor_Dim0,Tensor_Dim1,T,L,A>(
+    field_name,data_ptr,zero_type
+  ) {
+  }
+
+};
+
+template<int Tensor_Dim0,int Tensor_Dim1>
+struct OpCalculateVectorFieldGradient_General<Tensor_Dim0,Tensor_Dim1,double,ublas::row_major,ublas::unbounded_array<double> >:
+public OpCalculateTensor2FieldValues_General<Tensor_Dim0,Tensor_Dim1,double,ublas::row_major,ublas::unbounded_array<double> > {
+
+  OpCalculateVectorFieldGradient_General(
+    const std::string &field_name,
+    boost::shared_ptr<MatrixDouble> data_ptr,
+    EntityType zero_type = MBVERTEX
+  ):
+  OpCalculateTensor2FieldValues_General<Tensor_Dim0,Tensor_Dim1,double,ublas::row_major,ublas::unbounded_array<double> >(
+    field_name,data_ptr,zero_type
+  ) {
+  }
+
+  PetscErrorCode doWork(
+    int side,EntityType type,DataForcesAndSurcesCore::EntData &data
+  );
+
+};
+
+/**
+ * \brief Member function specialization calculating vector field gradients for tenor field rank 2
+ * \ingroup mofem_forces_and_sources_user_data_operators
+ */
+template<int Tensor_Dim0,int Tensor_Dim1>
+PetscErrorCode OpCalculateVectorFieldGradient_General<
+Tensor_Dim0,Tensor_Dim1,double,ublas::row_major,ublas::unbounded_array<double>
+>::doWork(
+  int side,EntityType type,DataForcesAndSurcesCore::EntData &data
+) {
+  PetscFunctionBegin;
+  const int nb_dofs = data.getFieldData().size();
+  if(!nb_dofs) {
+    this->dataPtr->resize(Tensor_Dim0*Tensor_Dim1,0,false);
+    PetscFunctionReturn(0);
+  }
+  const int nb_gauss_pts = data.getN().size1();
+  const int nb_base_functions = data.getN().size2();
+  ublas::matrix<double,ublas::row_major,ublas::unbounded_array<double> > &mat = *this->dataPtr;
+  if(type == this->zeroType) {
+    mat.resize(Tensor_Dim0*Tensor_Dim1,nb_gauss_pts,false);
+    mat.clear();
+  }
+  FTensor::Tensor1<double*,Tensor_Dim1> diff_base_function = data.getFTensor1DiffN<Tensor_Dim1>();
+  FTensor::Tensor2<double*,Tensor_Dim0,Tensor_Dim1> gradients_at_gauss_pts = getTensor2FormData<Tensor_Dim0,Tensor_Dim1>(mat);
+  FTensor::Index<'I',Tensor_Dim0> I;
+  FTensor::Index<'J',Tensor_Dim1> J;
+  int size = nb_dofs/Tensor_Dim0;
+  if(nb_dofs % Tensor_Dim0) {
+    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"Data inconsistency");
+  }
+  for(int gg = 0;gg<nb_gauss_pts;gg++) {
+    FTensor::Tensor1<double*,Tensor_Dim0> field_data = data.getFTensor1FieldData<Tensor_Dim0>();
+    int bb = 0;
+    for(;bb<size;bb++) {
+      gradients_at_gauss_pts(I,J) += field_data(I)*diff_base_function(J);
+      ++field_data;
+      ++diff_base_function;
+    }
+    // Number of dofs can be smaller than number of Tensor_Dim0 x base functions
+    for(;bb!=nb_base_functions;bb++) ++diff_base_function;
+    ++gradients_at_gauss_pts;
+  }
+  PetscFunctionReturn(0);
+}
+
+/** \brief Get field gradients at integration pts for scalar filed rank 0, i.e. vector field
+* \ingroup mofem_forces_and_sources_user_data_operators
+*/
+template<int Tensor_Dim0,int Tensor_Dim1>
+struct OpCalculateVectorFieldGradient:
+public OpCalculateVectorFieldGradient_General<Tensor_Dim0,Tensor_Dim1,double,ublas::row_major,ublas::unbounded_array<double> > {
+
+  OpCalculateVectorFieldGradient(
+    const std::string &field_name,
+    boost::shared_ptr<MatrixDouble> data_ptr,
+    EntityType zero_type = MBVERTEX
+  ):
+  OpCalculateVectorFieldGradient_General<
+  Tensor_Dim0,Tensor_Dim1,double,ublas::row_major,ublas::unbounded_array<double>
+  >(field_name,data_ptr,zero_type) {
+  }
+
+};
+
+
 
 
 }
