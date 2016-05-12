@@ -149,18 +149,21 @@ int main(int argc, char *argv[]) {
 
     boost::shared_ptr<MatrixDouble> field1ValuesDataPtr;
     boost::shared_ptr<VectorDouble> field2ValuesDataPtr;
+    boost::shared_ptr<MatrixDouble> grad1ValuesDataPtr;
     boost::shared_ptr<MatrixDouble> grad2ValuesDataPtr;
     TeeStream &my_split;
 
     MyOp1(
       boost::shared_ptr<MatrixDouble> field1_values_data_ptr,
       boost::shared_ptr<VectorDouble> field2_values_data_ptr,
+      boost::shared_ptr<MatrixDouble> grad1_values_data_ptr,
       boost::shared_ptr<MatrixDouble> grad2_values_data_ptr,
       TeeStream &_my_split,
       char type
     ):
     field1ValuesDataPtr(field1_values_data_ptr),
     field2ValuesDataPtr(field2_values_data_ptr),
+    grad1ValuesDataPtr(grad1_values_data_ptr),
     grad2ValuesDataPtr(grad2_values_data_ptr),
     VolumeElementForcesAndSourcesCore::UserDataOperator("FIELD1","FIELD2",type),
     my_split(_my_split) {}
@@ -242,8 +245,8 @@ int main(int argc, char *argv[]) {
       PetscErrorCode ierr;
 
       const int nb_gauss_pts = row_data.getN().size1();
-      const int nb_base_functions_row = row_data.getN().size2();
-      const int nb_base_functions_col = col_data.getN().size2();
+      // const int nb_base_functions_row = row_data.getN().size2();
+      // const int nb_base_functions_col = col_data.getN().size2();
 
       FTensor::Number<0> N0;
       FTensor::Number<1> N1;
@@ -251,21 +254,23 @@ int main(int argc, char *argv[]) {
 
       FTensor::Index<'I',3> I;
       FTensor::Index<'J',3> J;
+      FTensor::Index<'K',3> K;
 
       FTensor::Tensor1<double*,3> field1_values = getTensor1FormData<3>(*field1ValuesDataPtr);
       FTensor::Tensor0<double*> field2_values = getTensor0FormData(*field2ValuesDataPtr);
+      FTensor::Tensor2<double*,3,3> grad1_values = getTensor2FormData<3,3>(*grad1ValuesDataPtr);
       FTensor::Tensor1<double*,3> grad2_values = getTensor1FormData<3>(*grad2ValuesDataPtr);
 
       FTensor::Tensor2<double,3,3> t2;
+      FTensor::Tensor3<double,3,3,3> t3;
 
       for(int gg = 0;gg!=nb_gauss_pts;gg++) {
 
         double vol = getVolume();
         double weight = getGaussPts()(3,gg);
 
-        FTensor::Tensor0<double*> t0 = col_data.getFTensor0FieldData();
-
         t2(I,J) = grad2_values(I)*field1_values(J)*field2_values;
+        t3(I,J,K) = grad1_values(I,J)*field1_values(K)*field2_values;
 
         // for(int bb_row = 0;bb_row!=nb_base_functions_row;bb_row++) {
         //
@@ -273,9 +278,9 @@ int main(int argc, char *argv[]) {
         // }
 
         ++field1_values;
-        // ++field2_values;
-        // ++grad2_values;
-        // ++t0;
+        ++field2_values;
+        ++grad1_values;
+        ++grad2_values;
 
       }
 
@@ -301,6 +306,7 @@ int main(int argc, char *argv[]) {
     new MyOp1(
       values1_at_gauss_pts_ptr,
       values2_at_gauss_pts_ptr,
+      grad1_at_gauss_pts_ptr,
       grad2_at_gauss_pts_ptr,
       my_split,
       ForcesAndSurcesCore::UserDataOperator::OPROW
@@ -310,6 +316,7 @@ int main(int argc, char *argv[]) {
     new MyOp1(
       values1_at_gauss_pts_ptr,
       values2_at_gauss_pts_ptr,
+      grad1_at_gauss_pts_ptr,
       grad2_at_gauss_pts_ptr,
       my_split,
       ForcesAndSurcesCore::UserDataOperator::OPROWCOL
