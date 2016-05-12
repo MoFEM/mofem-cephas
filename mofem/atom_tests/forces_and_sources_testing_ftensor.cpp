@@ -252,9 +252,9 @@ int main(int argc, char *argv[]) {
       FTensor::Index<'I',3> I;
       FTensor::Index<'J',3> J;
 
-      FTensor::Tensor1<double*,3> field1_values = getTensor1FormData<3>(field1ValuesDataPtr);
-      FTensor::Tensor0<double*> field2_values = getTensor0FormData(field2ValuesDataPtr);
-      FTensor::Tensor1<double*,3> grad2_values = getTensor1FormData<3>(grad2ValuesDataPtr);
+      FTensor::Tensor1<double*,3> field1_values = getTensor1FormData<3>(*field1ValuesDataPtr);
+      FTensor::Tensor0<double*> field2_values = getTensor0FormData(*field2ValuesDataPtr);
+      FTensor::Tensor1<double*,3> grad2_values = getTensor1FormData<3>(*grad2ValuesDataPtr);
 
       FTensor::Tensor2<double,3,3> t2;
 

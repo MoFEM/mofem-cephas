@@ -27,7 +27,7 @@ namespace MoFEM {
 */
 template<class T, class A>
 FTensor::Tensor0<T*> getTensor0FormData(
-  boost::shared_ptr<ublas::vector<T,A> > data_ptr
+  ublas::vector<T,A> &data
 ) {
   std::stringstream s;
   s << "Not implemented for T = " << typeid(T).name();
@@ -37,7 +37,7 @@ FTensor::Tensor0<T*> getTensor0FormData(
 
 template<>
 FTensor::Tensor0<double*> getTensor0FormData<double,ublas::unbounded_array<double> >(
-  boost::shared_ptr<ublas::vector<double,ublas::unbounded_array<double> > > data_ptr
+  ublas::vector<double,ublas::unbounded_array<double> > &data
 );
 
 /**
@@ -46,7 +46,7 @@ FTensor::Tensor0<double*> getTensor0FormData<double,ublas::unbounded_array<doubl
  */
 template<int Tensor_Dim, class T, class L, class A>
 FTensor::Tensor1<T*,Tensor_Dim> getTensor1FormData(
-  boost::shared_ptr<ublas::matrix<T,L,A> > data_ptr
+  ublas::matrix<T,L,A> &data
 ) {
   std::stringstream s;
   s << "Not implemented for T = " << typeid(T).name();
@@ -61,21 +61,21 @@ FTensor::Tensor1<T*,Tensor_Dim> getTensor1FormData(
  */
 template<int Tensor_Dim>
 FTensor::Tensor1<double*,Tensor_Dim> getTensor1FormData(
-  boost::shared_ptr<ublas::matrix<double,ublas::row_major,ublas::unbounded_array<double> > > data_ptr
+  MatrixDouble &data
 ) {
   return getTensor1FormData<
   Tensor_Dim,double,ublas::row_major,ublas::unbounded_array<double>
-  >(data_ptr);
+  >(data);
 }
 
 template<>
 FTensor::Tensor1<double*,3> getTensor1FormData<3,double,ublas::row_major,ublas::unbounded_array<double> >(
-  boost::shared_ptr<ublas::matrix<double,ublas::row_major,ublas::unbounded_array<double> > > data_ptr
+  MatrixDouble &data
 );
 
 template<>
 FTensor::Tensor1<double*,2> getTensor1FormData<2,double,ublas::row_major,ublas::unbounded_array<double> >(
-  boost::shared_ptr<MatrixDouble> data_ptr
+  MatrixDouble &data
 );
 
 /**
@@ -84,7 +84,7 @@ FTensor::Tensor1<double*,2> getTensor1FormData<2,double,ublas::row_major,ublas::
  */
 template<int Tensor_Dim0, int Tensor_Dim1, class T, class L, class A>
 FTensor::Tensor2<T*,Tensor_Dim0,Tensor_Dim1> getTensor2FormData(
-  boost::shared_ptr<ublas::matrix<T,L,A> > data_ptr
+  ublas::matrix<T,L,A> &data
 ) {
   std::stringstream s;
   s << "Not implemented for T = " << typeid(T).name();
@@ -96,7 +96,7 @@ FTensor::Tensor2<T*,Tensor_Dim0,Tensor_Dim1> getTensor2FormData(
 
 template<>
 FTensor::Tensor2<double*,3,3> getTensor2FormData(
-  boost::shared_ptr<MatrixDouble> data_ptr
+  MatrixDouble &data
 );
 
 /**
@@ -104,12 +104,12 @@ FTensor::Tensor2<double*,3,3> getTensor2FormData(
  * \ingroup mofem_forces_and_sources_user_data_operators
  */
 template<int Tensor_Dim0, int Tensor_Dim1>
-FTensor::Tensor2<double*,Tensor_Dim0,Tensor_Dim1> getTensor1FormData(
-  boost::shared_ptr<ublas::matrix<double,ublas::row_major,ublas::unbounded_array<double> > > data_ptr
+FTensor::Tensor2<double*,Tensor_Dim0,Tensor_Dim1> getTensor2FormData(
+  MatrixDouble &data
 ) {
   return getTensor2FormData<
   Tensor_Dim0,Tensor_Dim1,double,ublas::row_major,ublas::unbounded_array<double>
-  >(data_ptr);
+  >(data);
 }
 
 // GET VALUES AT GAUSS PTS
@@ -265,7 +265,7 @@ PetscErrorCode OpCalculateVectorFieldValues_General<Tensor_Dim,double,ublas::row
     mat.clear();
   }
   FTensor::Tensor0<double*> base_function = data.getFTensor0N();
-  FTensor::Tensor1<double*,Tensor_Dim> values_at_gauss_pts = getTensor1FormData<Tensor_Dim>(dataPtr);
+  FTensor::Tensor1<double*,Tensor_Dim> values_at_gauss_pts = getTensor1FormData<Tensor_Dim>(mat);
   FTensor::Index<'I',Tensor_Dim> I;
   for(int gg = 0;gg!=nb_gauss_pts;gg++) {
     FTensor::Tensor1<double*,Tensor_Dim> field_data = data.getFTensor1FieldData<Tensor_Dim>();
@@ -443,7 +443,7 @@ PetscErrorCode OpCalculateScalarFieldGradient_General<Tensor_Dim,double,ublas::r
     mat.clear();
   }
   FTensor::Tensor1<double*,Tensor_Dim> diff_base_function = data.getFTensor1DiffN<Tensor_Dim>();
-  FTensor::Tensor1<double*,Tensor_Dim> gradients_at_gauss_pts = getTensor1FormData<Tensor_Dim>(this->dataPtr);
+  FTensor::Tensor1<double*,Tensor_Dim> gradients_at_gauss_pts = getTensor1FormData<Tensor_Dim>(mat);
   FTensor::Index<'I',Tensor_Dim> I;
   for(int gg = 0;gg<nb_gauss_pts;gg++) {
     FTensor::Tensor0<double*> field_data = data.getFTensor0FieldData();
