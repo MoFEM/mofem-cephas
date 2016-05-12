@@ -29,6 +29,97 @@ namespace MoFEM {
 typedef ublas::unbounded_array<const FEDofEntity*,std::allocator<const FEDofEntity*> > DofsAllacator;
 typedef ublas::vector<const FEDofEntity*,DofsAllacator > VectorDofs;
 
+/**
+* \brief Get tensor rank 0 (scalar) form data vcetor
+* \ingroup mofem_forces_and_sources_user_data_operators
+*/
+template<class T, class A>
+FTensor::Tensor0<T*> getTensor0FormData(
+  ublas::vector<T,A> &data
+) {
+  std::stringstream s;
+  s << "Not implemented for T = " << typeid(T).name();
+  THROW_MESSAGE(s.str());
+  // return FTensor::Tensor0<T*>();
+}
+
+template<>
+FTensor::Tensor0<double*> getTensor0FormData<double,ublas::unbounded_array<double> >(
+  ublas::vector<double,ublas::unbounded_array<double> > &data
+);
+
+/**
+ * \brief Get tensor rank 1 (vector) form data matrix
+ * \ingroup mofem_forces_and_sources_user_data_operators
+ */
+template<int Tensor_Dim, class T, class L, class A>
+FTensor::Tensor1<T*,Tensor_Dim> getTensor1FormData(
+  ublas::matrix<T,L,A> &data
+) {
+  std::stringstream s;
+  s << "Not implemented for T = " << typeid(T).name();
+  s << " and dim = " << Tensor_Dim;
+  THROW_MESSAGE(s.str());
+  // return FTensor::Tensor1<T*,Tensor_Dim>();
+}
+
+/**
+ * \brief Get tensor rank 1 (vector) form data matrix (specialization)
+ * \ingroup mofem_forces_and_sources_user_data_operators
+ */
+template<int Tensor_Dim>
+FTensor::Tensor1<double*,Tensor_Dim> getTensor1FormData(
+  MatrixDouble &data
+) {
+  return getTensor1FormData<
+  Tensor_Dim,double,ublas::row_major,ublas::unbounded_array<double>
+  >(data);
+}
+
+template<>
+FTensor::Tensor1<double*,3> getTensor1FormData<3,double,ublas::row_major,ublas::unbounded_array<double> >(
+  MatrixDouble &data
+);
+
+template<>
+FTensor::Tensor1<double*,2> getTensor1FormData<2,double,ublas::row_major,ublas::unbounded_array<double> >(
+  MatrixDouble &data
+);
+
+/**
+ * \brief Get tensor rank 2 (matrix) form data matrix
+ * \ingroup mofem_forces_and_sources_user_data_operators
+ */
+template<int Tensor_Dim0, int Tensor_Dim1, class T, class L, class A>
+FTensor::Tensor2<T*,Tensor_Dim0,Tensor_Dim1> getTensor2FormData(
+  ublas::matrix<T,L,A> &data
+) {
+  std::stringstream s;
+  s << "Not implemented for T = " << typeid(T).name();
+  s << " and dim0 = " << Tensor_Dim0;
+  s << " dim1 = " << Tensor_Dim1;
+  THROW_MESSAGE(s.str());
+  // return FTensor::Tensor1<T*,Tensor_Dim>();
+}
+
+template<>
+FTensor::Tensor2<double*,3,3> getTensor2FormData(
+  MatrixDouble &data
+);
+
+/**
+ * \brief Get tensor rank 2 (matrix) form data matrix (specialization)
+ * \ingroup mofem_forces_and_sources_user_data_operators
+ */
+template<int Tensor_Dim0, int Tensor_Dim1>
+FTensor::Tensor2<double*,Tensor_Dim0,Tensor_Dim1> getTensor2FormData(
+  MatrixDouble &data
+) {
+  return getTensor2FormData<
+  Tensor_Dim0,Tensor_Dim1,double,ublas::row_major,ublas::unbounded_array<double>
+  >(data);
+}
+
 /** \brief data structure for finite element entity
   * \ingroup mofem_forces_and_sources
   *

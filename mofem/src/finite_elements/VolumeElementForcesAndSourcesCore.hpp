@@ -65,28 +65,7 @@ struct VolumeElementForcesAndSourcesCore: public ForcesAndSurcesCore {
   OpSetHoPiolaTransform opSetHoPiolaTransform;
   OpSetHoInvJacHdiv opSetHoInvJacHdiv;
 
-  VolumeElementForcesAndSourcesCore(FieldInterface &m_field,const EntityType type = MBTET):
-  ForcesAndSurcesCore(m_field),
-  dataH1(type),
-  derivedDataH1(dataH1),
-  dataL2(type),
-  derivedDataL2(dataL2),
-  dataHdiv(type),
-  derivedDataHdiv(dataHdiv),
-  dataHcurl(type),
-  derivedDataHcurl(dataHcurl),
-  dataNoField(type),
-  dataNoFieldCol(type),
-  opSetInvJacH1(invJac),
-  opPiolaTransform(vOlume,Jac),
-  opSetInvJacHdiv(invJac),
-  meshPositionsFieldName("MESH_NODE_POSITIONS"),
-  opHOatGaussPoints(hoCoordsAtGaussPts,hoGaussPtsJac,3,3),
-  opSetHoInvJacH1(hoGaussPtsInvJac),
-  opSetHoPiolaTransform(hoGaussPtsDetJac,hoGaussPtsJac),
-  opSetHoInvJacHdiv(hoGaussPtsInvJac) {
-  };
-
+  VolumeElementForcesAndSourcesCore(FieldInterface &m_field,const EntityType type = MBTET);
   virtual ~VolumeElementForcesAndSourcesCore() {}
 
   MoABErrorCode rval;
@@ -96,8 +75,10 @@ struct VolumeElementForcesAndSourcesCore: public ForcesAndSurcesCore {
   const EntityHandle* conn;
   VectorDouble coords;
 
-  MatrixDouble Jac;;
+  MatrixDouble jAc;
   MatrixDouble invJac;
+  FTensor::Tensor2<double*,3,3> tJac;
+  FTensor::Tensor2<double*,3,3> tInvJac;
 
   MatrixDouble gaussPts;
   MatrixDouble coordsAtGaussPts;

@@ -28,9 +28,4 @@ add_library(mofem_finite_elements
   impl/FatPrismElementForcesAndSurcesCore.cpp
 )
 
-#install(FILES
-#  ForcesAndSurcesCore.hpp
-#  PostProcOnRefMesh.hpp
-#  DESTINATION ${CMAKE_INSTALL_PREFIX}/include)
-
 install(TARGETS mofem_finite_elements DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)

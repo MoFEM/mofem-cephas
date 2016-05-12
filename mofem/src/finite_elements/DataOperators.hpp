@@ -79,6 +79,60 @@ struct DataOperator {
 
 };
 
+/**
+ * \brief Calculate inverse of tensor rank 2 at integration points
+ */
+template<int Tensor_Dim,class T,class L,class A>
+PetscErrorCode invertTensor2(
+  ublas::matrix<T,L,A> &jac_data,
+  ublas::vector<T,A> &det_data,
+  ublas::matrix<T,L,A> &inv_jac_data
+) {
+  PetscFunctionBegin;
+  SETERRQ(
+    PETSC_COMM_SELF,
+    MOFEM_NOT_IMPLEMENTED,
+    "Specialization for this template not yet implemented"
+  );
+  PetscFunctionReturn(0);
+}
+
+template<>
+PetscErrorCode invertTensor2<3,double,ublas::row_major,ublas::unbounded_array<double> >(
+  MatrixDouble &jac_data,
+  VectorDouble &det_data,
+  MatrixDouble &inv_jac_data
+);
+
+template<int Tensor_Dim,class T1,class T2>
+inline PetscErrorCode determinantTensor2(
+  FTensor::Tensor2<T1,Tensor_Dim,Tensor_Dim> &t,T2 &det
+) {
+  PetscFunctionBegin;
+  det =
+    +t(0,0)*t(1,1)*t(2,2) + t(1,0)*t(2,1)*t(0,2)
+    +t(2,0)*t(0,1)*t(1,2) - t(0,0)*t(2,1)*t(1,2)
+    -t(2,0)*t(1,1)*t(0,2) - t(1,0)*t(0,1)*t(2,2);
+  PetscFunctionReturn(0);
+}
+
+template<int Tensor_Dim,class T1,class T2>
+inline PetscErrorCode invertTensor2(
+  FTensor::Tensor2<T1,Tensor_Dim,Tensor_Dim> &t,T2 &det,FTensor::Tensor2<T1,3,3> &inv_t
+) {
+  PetscFunctionBegin;
+  inv_t(0,0) = (t(1,1)*t(2,2)-t(1,2)*t(2,1))/det;
+  inv_t(0,1) = (t(0,2)*t(2,1)-t(0,1)*t(2,2))/det;
+  inv_t(0,2) = (t(0,1)*t(1,2)-t(0,2)*t(1,1))/det;
+  inv_t(1,0) = (t(1,2)*t(2,0)-t(1,0)*t(2,2))/det;
+  inv_t(1,1) = (t(0,0)*t(2,2)-t(0,2)*t(2,0))/det;
+  inv_t(1,2) = (t(0,2)*t(1,0)-t(0,0)*t(1,2))/det;
+  inv_t(2,0) = (t(1,0)*t(2,1)-t(1,1)*t(2,0))/det;
+  inv_t(2,1) = (t(0,1)*t(2,0)-t(0,0)*t(2,1))/det;
+  inv_t(2,2) = (t(0,0)*t(1,1)-t(0,1)*t(1,0))/det;
+  PetscFunctionReturn(0);
+}
+
 /// \brief Transform local reference derivatives of shape function to global derivatives
 struct OpSetInvJacH1: public DataOperator {
 
