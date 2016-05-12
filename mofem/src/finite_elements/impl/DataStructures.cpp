@@ -63,6 +63,45 @@ extern "C" {
 
 namespace MoFEM {
 
+template<>
+FTensor::Tensor0<double*> getTensor0FormData<double,ublas::unbounded_array<double> >(
+  ublas::vector<double,ublas::unbounded_array<double> > &data
+) {
+  return FTensor::Tensor0<double*>(&*data.data().begin());
+}
+
+template<>
+FTensor::Tensor1<double*,3> getTensor1FormData<3,double,ublas::row_major,ublas::unbounded_array<double> >(
+  MatrixDouble &data
+) {
+  if(data.size1()!=3) {
+    THROW_MESSAGE("Wrong size of data matrix");
+  }
+  return FTensor::Tensor1<double*,3>(&data(0,0),&data(1,0),&data(2,0));
+}
+
+template<>
+FTensor::Tensor1<double*,2> getTensor1FormData<2,double,ublas::row_major,ublas::unbounded_array<double> >(
+  MatrixDouble &data
+) {
+  if(data.size1()!=2) {
+    THROW_MESSAGE("Wrong size of data matrix");
+  }
+  return FTensor::Tensor1<double*,2>(&data(0,0),&data(1,0));
+}
+
+template<>
+FTensor::Tensor2<double*,3,3> getTensor2FormData<3,3,double,ublas::row_major,ublas::unbounded_array<double> >(
+  MatrixDouble &data
+) {
+  if(data.size1()!=9) {
+    THROW_MESSAGE("Wrong size of data matrix");
+  }
+  return FTensor::Tensor2<double*,3,3>(
+    &data(0,0),&data(1,0),&data(2,0),&data(3,0),&data(4,0),&data(5,0),&data(6,0),&data(7,0),&data(8,0)
+  );
+}
+
 DataForcesAndSurcesCore::EntData::EntData():
 sEnse(0),
 oRder(0),

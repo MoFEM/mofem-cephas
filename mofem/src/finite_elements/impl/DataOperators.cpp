@@ -481,6 +481,30 @@ PetscErrorCode DataOperator::opLhs(
   PetscFunctionReturn(0);
 }
 
+template<>
+PetscErrorCode invertTensor2<3,double,ublas::row_major,ublas::unbounded_array<double> >(
+  MatrixDouble &jac_data,
+  VectorDouble &det_data,
+  MatrixDouble &inv_jac_data
+) {
+  PetscErrorCode ierr;
+  PetscFunctionBegin;
+  FTensor::Tensor2<double*,3,3> A = getTensor2FormData<3,3>(jac_data);
+  int nb_gauss_pts = jac_data.size2();
+  det_data.resize(nb_gauss_pts,false);
+  inv_jac_data.resize(3,nb_gauss_pts,false);
+  FTensor::Tensor0<double*> det = getTensor0FormData(det_data);
+  FTensor::Tensor2<double*,3,3> I = getTensor2FormData<3,3>(inv_jac_data);
+  for(int gg = 0;gg!=nb_gauss_pts;gg++) {
+    ierr = determinantTensor2<3,double*,FTensor::Tensor0<double*> >(A,det); CHKERRQ(ierr);
+    ierr = invertTensor2<3,double*,FTensor::Tensor0<double*> >(A,det,I); CHKERRQ(ierr);
+    ++A;
+    ++det;
+    ++I;
+  }
+  PetscFunctionReturn(0);
+}
+
 PetscErrorCode DataOperator::opRhs(
   DataForcesAndSurcesCore &data,
   const bool do_vertices,

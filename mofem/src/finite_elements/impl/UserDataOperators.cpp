@@ -68,45 +68,6 @@ extern "C" {
 namespace MoFEM {
 
 template<>
-FTensor::Tensor0<double*> getTensor0FormData<double,ublas::unbounded_array<double> >(
-  ublas::vector<double,ublas::unbounded_array<double> > &data
-) {
-  return FTensor::Tensor0<double*>(&*data.data().begin());
-}
-
-template<>
-FTensor::Tensor1<double*,3> getTensor1FormData<3,double,ublas::row_major,ublas::unbounded_array<double> >(
-  MatrixDouble &data
-) {
-  if(data.size1()!=3) {
-    THROW_MESSAGE("Wrong size of data matrix");
-  }
-  return FTensor::Tensor1<double*,3>(&data(0,0),&data(1,0),&data(2,0));
-}
-
-template<>
-FTensor::Tensor1<double*,2> getTensor1FormData<2,double,ublas::row_major,ublas::unbounded_array<double> >(
-  MatrixDouble &data
-) {
-  if(data.size1()!=2) {
-    THROW_MESSAGE("Wrong size of data matrix");
-  }
-  return FTensor::Tensor1<double*,2>(&data(0,0),&data(1,0));
-}
-
-template<>
-FTensor::Tensor2<double*,3,3> getTensor2FormData<3,3,double,ublas::row_major,ublas::unbounded_array<double> >(
-  MatrixDouble &data
-) {
-  if(data.size1()!=9) {
-    THROW_MESSAGE("Wrong size of data matrix");
-  }
-  return FTensor::Tensor2<double*,3,3>(
-    &data(0,0),&data(1,0),&data(2,0),&data(3,0),&data(4,0),&data(5,0),&data(6,0),&data(7,0),&data(8,0)
-  );
-}
-
-template<>
 PetscErrorCode OpCalculateScalarFieldVaues_General<double,ublas::unbounded_array<double> >::doWork(
   int side,EntityType type,DataForcesAndSurcesCore::EntData &data
 ) {
@@ -148,41 +109,6 @@ OpCalculateScalarFieldVaues::OpCalculateScalarFieldVaues(
 OpCalculateScalarFieldVaues_General<double,ublas::unbounded_array<double> >(
   field_name,data_ptr,zero_type
 ) {
-}
-
-template<>
-PetscErrorCode invertTensor2<3,double,ublas::row_major,ublas::unbounded_array<double> >(
-  MatrixDouble &jac_data,
-  VectorDouble &det_data,
-  MatrixDouble &inv_jac_data
-) {
-  PetscFunctionBegin;
-  FTensor::Tensor2<double*,3,3> A = getTensor2FormData<3,3>(jac_data);
-  int nb_gauss_pts = jac_data.size2();
-  det_data.resize(nb_gauss_pts,false);
-  inv_jac_data.resize(3,nb_gauss_pts,false);
-  FTensor::Tensor0<double*> det = getTensor0FormData(det_data);
-  FTensor::Tensor2<double*,3,3> I = getTensor2FormData<3,3>(inv_jac_data);
-  for(int gg = 0;gg!=nb_gauss_pts;gg++) {
-
-    double det =
-    A(0,0)*A(1,1)*A(2,2) + A(1,0)*A(2,1)*A(0,2)
-    + A(2,0)*A(0,1)*A(1,2) - A(0,0)*A(2,1)*A(1,2)
-    - A(1,0)*A(0,1)*A(2,2) - A(2,0)*A(1,1)*A(0,2);
-
-    I(0,0)= (A(1,1)*A(2,2) - A(1,2)*A(1,2))/det;
-    I(0,1)= (A(0,2)*A(1,2) - A(0,1)*A(2,2))/det;
-    I(0,2)= (A(0,1)*A(1,2) - A(0,2)*A(1,1))/det;
-    I(1,1)= (A(0,0)*A(2,2) - A(0,2)*A(0,2))/det;
-    I(1,2)= (A(0,2)*A(0,1) - A(0,0)*A(1,2))/det;
-    I(2,2)= (A(1,1)*A(0,0) - A(1,0)*A(1,0))/det;
-
-    ++A;
-    ++det;
-    ++I;
-
-  }
-  PetscFunctionReturn(0);
 }
 
 }
