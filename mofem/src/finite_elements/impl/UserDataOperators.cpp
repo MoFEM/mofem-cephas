@@ -95,7 +95,7 @@ FTensor::Tensor1<double*,2> getTensor1FormData<2,double,ublas::row_major,ublas::
 }
 
 template<>
-FTensor::Tensor2<double*,3,3> getTensor2FormData(
+FTensor::Tensor2<double*,3,3> getTensor2FormData<3,3,double,ublas::row_major,ublas::unbounded_array<double> >(
   MatrixDouble &data
 ) {
   if(data.size1()!=9) {

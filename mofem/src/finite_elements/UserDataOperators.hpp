@@ -458,7 +458,7 @@ PetscErrorCode OpCalculateScalarFieldGradient_General<Tensor_Dim,double,ublas::r
       ++field_data;
       ++diff_base_function;
     }
-    // Number of dofs can be smaller than number of 3 x base functions
+    // Number of dofs can be smaller than number of base functions
     for(;bb!=nb_base_functions;bb++) ++diff_base_function;
     ++gradients_at_gauss_pts;
   }
@@ -483,6 +483,114 @@ public OpCalculateScalarFieldGradient_General<Tensor_Dim,double,ublas::row_major
   }
 
 };
+
+/**
+ * \brief Evaluate field gradient values for vector field, i.e. gradient is tensor rank 2
+ * \ingroup mofem_forces_and_sources_user_data_operators
+ */
+template<int Tensor_Dim0,int Tensor_Dim1, class T, class L, class A>
+struct OpCalculateVectorFieldGradient_General:
+public OpCalculateTensor2FieldValues_General<Tensor_Dim0,Tensor_Dim1,T,L,A> {
+
+  OpCalculateVectorFieldGradient_General(
+    const std::string &field_name,
+    boost::shared_ptr<MatrixDouble> data_ptr,
+    EntityType zero_type = MBVERTEX
+  ):
+  OpCalculateTensor2FieldValues_General<Tensor_Dim0,Tensor_Dim1,T,L,A>(
+    field_name,data_ptr,zero_type
+  ) {
+  }
+
+};
+
+template<int Tensor_Dim0,int Tensor_Dim1>
+struct OpCalculateVectorFieldGradient_General<Tensor_Dim0,Tensor_Dim1,double,ublas::row_major,ublas::unbounded_array<double> >:
+public OpCalculateTensor2FieldValues_General<Tensor_Dim0,Tensor_Dim1,double,ublas::row_major,ublas::unbounded_array<double> > {
+
+  OpCalculateVectorFieldGradient_General(
+    const std::string &field_name,
+    boost::shared_ptr<MatrixDouble> data_ptr,
+    EntityType zero_type = MBVERTEX
+  ):
+  OpCalculateTensor2FieldValues_General<Tensor_Dim0,Tensor_Dim1,double,ublas::row_major,ublas::unbounded_array<double> >(
+    field_name,data_ptr,zero_type
+  ) {
+  }
+
+  PetscErrorCode doWork(
+    int side,EntityType type,DataForcesAndSurcesCore::EntData &data
+  );
+
+};
+
+/**
+ * \brief Member function specialization calculating vector field gradients for tenor field rank 2
+ * \ingroup mofem_forces_and_sources_user_data_operators
+ */
+template<int Tensor_Dim0,int Tensor_Dim1>
+PetscErrorCode OpCalculateVectorFieldGradient_General<
+Tensor_Dim0,Tensor_Dim1,double,ublas::row_major,ublas::unbounded_array<double>
+>::doWork(
+  int side,EntityType type,DataForcesAndSurcesCore::EntData &data
+) {
+  PetscFunctionBegin;
+  const int nb_dofs = data.getFieldData().size();
+  if(!nb_dofs) {
+    this->dataPtr->resize(Tensor_Dim0*Tensor_Dim1,0,false);
+    PetscFunctionReturn(0);
+  }
+  const int nb_gauss_pts = data.getN().size1();
+  const int nb_base_functions = data.getN().size2();
+  ublas::matrix<double,ublas::row_major,ublas::unbounded_array<double> > &mat = *this->dataPtr;
+  if(type == this->zeroType) {
+    mat.resize(Tensor_Dim0*Tensor_Dim1,nb_gauss_pts,false);
+    mat.clear();
+  }
+  FTensor::Tensor1<double*,Tensor_Dim1> diff_base_function = data.getFTensor1DiffN<Tensor_Dim1>();
+  FTensor::Tensor2<double*,Tensor_Dim0,Tensor_Dim1> gradients_at_gauss_pts = getTensor2FormData<Tensor_Dim0,Tensor_Dim1>(mat);
+  FTensor::Index<'I',Tensor_Dim0> I;
+  FTensor::Index<'J',Tensor_Dim1> J;
+  int size = nb_dofs/Tensor_Dim0;
+  if(nb_dofs % Tensor_Dim0) {
+    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"Data inconsistency");
+  }
+  for(int gg = 0;gg<nb_gauss_pts;gg++) {
+    FTensor::Tensor1<double*,Tensor_Dim0> field_data = data.getFTensor1FieldData<Tensor_Dim0>();
+    int bb = 0;
+    for(;bb<size;bb++) {
+      gradients_at_gauss_pts(I,J) += field_data(I)*diff_base_function(J);
+      ++field_data;
+      ++diff_base_function;
+    }
+    // Number of dofs can be smaller than number of Tensor_Dim0 x base functions
+    for(;bb!=nb_base_functions;bb++) ++diff_base_function;
+    ++gradients_at_gauss_pts;
+  }
+  PetscFunctionReturn(0);
+}
+
+/** \brief Get field gradients at integration pts for scalar filed rank 0, i.e. vector field
+* \ingroup mofem_forces_and_sources_user_data_operators
+*/
+template<int Tensor_Dim0,int Tensor_Dim1>
+struct OpCalculateVectorFieldGradient:
+public OpCalculateVectorFieldGradient_General<Tensor_Dim0,Tensor_Dim1,double,ublas::row_major,ublas::unbounded_array<double> > {
+
+  OpCalculateVectorFieldGradient(
+    const std::string &field_name,
+    boost::shared_ptr<MatrixDouble> data_ptr,
+    EntityType zero_type = MBVERTEX
+  ):
+  OpCalculateVectorFieldGradient_General<
+  Tensor_Dim0,Tensor_Dim1,double,ublas::row_major,ublas::unbounded_array<double>
+  >(field_name,data_ptr,zero_type) {
+  }
+
+};
+
+
+
 
 }
 
