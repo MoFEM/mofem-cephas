@@ -75,6 +75,66 @@ extern "C" {
 
 namespace MoFEM {
 
+PetscErrorCode VolumeElementForcesAndSourcesCore::setIntegartionPts() {
+  PetscFunctionBegin;
+  int order_data = getMaxDataOrder();
+  int order_row = getMaxRowOrder();
+  int order_col = getMaxColOrder();
+  int rule = getRule(order_row,order_col,order_data);
+  // std::cerr << order_data << " " << order_row << " " << order_col << " " << rule << std::endl;
+  if(rule >= 0) {
+    if(rule<QUAD_3D_TABLE_SIZE) {
+      if(QUAD_3D_TABLE[rule]->dim!=3) {
+        SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"wrong dimension");
+      }
+      if(QUAD_3D_TABLE[rule]->order<rule) {
+        SETERRQ2(
+          PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"wrong order %d != %d",
+          QUAD_3D_TABLE[rule]->order,rule
+        );
+      }
+      nbGaussPts = QUAD_3D_TABLE[rule]->npoints;
+      gaussPts.resize(4,nbGaussPts,false);
+      cblas_dcopy(
+        nbGaussPts,&QUAD_3D_TABLE[rule]->points[1],4,&gaussPts(0,0),1
+      );
+      cblas_dcopy(
+        nbGaussPts,&QUAD_3D_TABLE[rule]->points[2],4,&gaussPts(1,0),1
+      );
+      cblas_dcopy(
+        nbGaussPts,&QUAD_3D_TABLE[rule]->points[3],4,&gaussPts(2,0),1
+      );
+      cblas_dcopy(
+        nbGaussPts,QUAD_3D_TABLE[rule]->weights,1,&gaussPts(3,0),1
+      );
+      dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE).resize(nbGaussPts,4,false);
+      double *shape_ptr = dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE).data().begin();
+      cblas_dcopy(
+        4*nbGaussPts,QUAD_3D_TABLE[rule]->points,1,shape_ptr,1
+      );
+    } else {
+      SETERRQ2(
+        PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"rule > quadrature order %d < %d",
+        rule,QUAD_3D_TABLE_SIZE
+      );
+      nbGaussPts = 0;
+    }
+  } else {
+    ierr = setGaussPts(order_row,order_col,order_data); CHKERRQ(ierr);
+    nbGaussPts = gaussPts.size2();
+    dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE).resize(nbGaussPts,4,false);
+    if(nbGaussPts>0) {
+      ierr = ShapeMBTET(
+        &*dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE).data().begin(),
+        &gaussPts(0,0),&gaussPts(1,0),&gaussPts(2,0),nbGaussPts
+      ); CHKERRQ(ierr);
+    }
+  }
+  if(nbGaussPts == 0) PetscFunctionReturn(0);
+  PetscFunctionReturn(0);
+}
+
+
 VolumeElementForcesAndSourcesCore::VolumeElementForcesAndSourcesCore(
   FieldInterface &m_field,const EntityType type
 ):
@@ -180,61 +240,7 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::operator()() {
       ierr = getTetDataOrder(dataL2,L2); CHKERRQ(ierr);
     }
 
-    int order_data = getMaxDataOrder();
-    int order_row = getMaxRowOrder();
-    int order_col = getMaxColOrder();
-    int rule = getRule(order_row,order_col,order_data);
-    // std::cerr << order_data << " " << order_row << " " << order_col << " " << rule << std::endl;
-    int nb_gauss_pts;
-    if(rule >= 0) {
-      if(rule<QUAD_3D_TABLE_SIZE) {
-        if(QUAD_3D_TABLE[rule]->dim!=3) {
-          SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"wrong dimension");
-        }
-        if(QUAD_3D_TABLE[rule]->order<rule) {
-          SETERRQ2(
-            PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"wrong order %d != %d",
-            QUAD_3D_TABLE[rule]->order,rule
-          );
-        }
-        nb_gauss_pts = QUAD_3D_TABLE[rule]->npoints;
-        gaussPts.resize(4,nb_gauss_pts,false);
-        cblas_dcopy(
-          nb_gauss_pts,&QUAD_3D_TABLE[rule]->points[1],4,&gaussPts(0,0),1
-        );
-        cblas_dcopy(
-          nb_gauss_pts,&QUAD_3D_TABLE[rule]->points[2],4,&gaussPts(1,0),1
-        );
-        cblas_dcopy(
-          nb_gauss_pts,&QUAD_3D_TABLE[rule]->points[3],4,&gaussPts(2,0),1
-        );
-        cblas_dcopy(
-          nb_gauss_pts,QUAD_3D_TABLE[rule]->weights,1,&gaussPts(3,0),1
-        );
-        dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE).resize(nb_gauss_pts,4,false);
-        double *shape_ptr = dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE).data().begin();
-        cblas_dcopy(
-          4*nb_gauss_pts,QUAD_3D_TABLE[rule]->points,1,shape_ptr,1
-        );
-      } else {
-        SETERRQ2(
-          PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"rule > quadrature order %d < %d",
-          rule,QUAD_3D_TABLE_SIZE
-        );
-        nb_gauss_pts = 0;
-      }
-    } else {
-      ierr = setGaussPts(order_row,order_col,order_data); CHKERRQ(ierr);
-      nb_gauss_pts = gaussPts.size2();
-      dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE).resize(nb_gauss_pts,4,false);
-      if(nb_gauss_pts>0) {
-        ierr = ShapeMBTET(
-          &*dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE).data().begin(),
-          &gaussPts(0,0),&gaussPts(1,0),&gaussPts(2,0),nb_gauss_pts
-        ); CHKERRQ(ierr);
-      }
-    }
-    if(nb_gauss_pts == 0) PetscFunctionReturn(0);
+    ierr = setIntegartionPts(); CHKERRQ(ierr);
 
     /// Use the some node base
     dataHdiv.dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE) = dataH1.dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE);
@@ -245,13 +251,13 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::operator()() {
     {
       FTensor::Index<'i',3> i;
       double *shape_functions_ptr = &*dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE).data().begin();
-      coordsAtGaussPts.resize(nb_gauss_pts,3,false);
+      coordsAtGaussPts.resize(nbGaussPts,3,false);
       coordsAtGaussPts.clear();
       FTensor::Tensor1<double*,3> t_coords_at_gauss_ptr(
         &coordsAtGaussPts(0,0),&coordsAtGaussPts(0,1),&coordsAtGaussPts(0,2),3
       );
       FTensor::Tensor0<double*> t_shape_functions(shape_functions_ptr);
-      for(int gg = 0;gg<nb_gauss_pts;gg++) {
+      for(int gg = 0;gg<nbGaussPts;gg++) {
         FTensor::Tensor1<double*,3> t_coords(&coords[0],&coords[1],&coords[2],3);
         for(int bb = 0;bb<4;bb++) {
           t_coords_at_gauss_ptr(i) += t_coords(i)*t_shape_functions;
@@ -356,8 +362,8 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::operator()() {
         hoGaussPtsInvJac.resize(hoGaussPtsJac.size1(),hoGaussPtsJac.size2(),false);
         ublas::noalias(hoGaussPtsInvJac) = hoGaussPtsJac;
         MatrixDouble jac(3,3);
-        hoGaussPtsDetJac.resize(nb_gauss_pts,false);
-        for(int gg = 0;gg<nb_gauss_pts;gg++) {
+        hoGaussPtsDetJac.resize(nbGaussPts,false);
+        for(int gg = 0;gg<nbGaussPts;gg++) {
           cblas_dcopy(9,&hoGaussPtsJac(gg,0),1,&jac(0,0),1);
           hoGaussPtsDetJac[gg] = ShapeDetJacVolume(&jac(0,0));
           if(hoGaussPtsDetJac[gg]<0) {
@@ -386,8 +392,8 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::operator()() {
         for(int b = AINSWORTH_COLE_BASE;b!=LASTBASE;b++) {
           if(dataH1.dataOnEntities[MBVERTEX][0].getDiffN(ApproximationBaseArray[b]).size1()!=4) continue;
           if(dataH1.dataOnEntities[MBVERTEX][0].getDiffN(ApproximationBaseArray[b]).size2()!=3) continue;
-          MatrixDouble diffN(nb_gauss_pts,12);
-          for(int gg = 0;gg<nb_gauss_pts;gg++) {
+          MatrixDouble diffN(nbGaussPts,12);
+          for(int gg = 0;gg<nbGaussPts;gg++) {
             for(int nn = 0;nn<4;nn++) {
               for(int dd = 0;dd<3;dd++) {
                 diffN(gg,nn*3+dd) = dataH1.dataOnEntities[MBVERTEX][0].getDiffN(ApproximationBaseArray[b])(nn,dd);

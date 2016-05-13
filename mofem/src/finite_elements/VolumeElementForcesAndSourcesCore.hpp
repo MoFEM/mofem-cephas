@@ -157,6 +157,8 @@ struct VolumeElementForcesAndSourcesCore: public ForcesAndSurcesCore {
 
   };
 
+  int nbGaussPts;
+  virtual PetscErrorCode setIntegartionPts();
 
   PetscErrorCode preProcess() {
     PetscFunctionBegin;
