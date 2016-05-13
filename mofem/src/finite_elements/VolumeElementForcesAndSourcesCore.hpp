@@ -161,6 +161,8 @@ struct VolumeElementForcesAndSourcesCore: public ForcesAndSurcesCore {
   virtual PetscErrorCode setIntegartionPts();
   virtual PetscErrorCode calculateVolumeAndJacobian();
   virtual PetscErrorCode calculateCoordinatesAtGaussPts();
+  virtual PetscErrorCode getSpaceBaseAndOrderOnElement();
+  virtual PetscErrorCode calculateBaseFunctionsOnElement();
 
   PetscErrorCode preProcess() {
     PetscFunctionBegin;
