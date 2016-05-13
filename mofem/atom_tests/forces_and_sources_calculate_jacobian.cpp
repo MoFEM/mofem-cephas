@@ -158,7 +158,7 @@ int main(int argc, char *argv[]) {
 
       };
 
-    MatrixDouble invJac;
+    MatrixDouble3by3 invJac;
     MatrixDouble dataFIELD1;
     MatrixDouble dataDiffFIELD1;
     VectorDouble coords;

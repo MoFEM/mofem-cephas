@@ -78,10 +78,10 @@ namespace MoFEM {
 VolumeElementForcesAndSourcesCore::VolumeElementForcesAndSourcesCore(
   FieldInterface &m_field,const EntityType type
 ):
+ForcesAndSurcesCore(m_field),
 coords(12),
 jAc(3,3),
 invJac(3,3),
-ForcesAndSurcesCore(m_field),
 dataH1(type),
 derivedDataH1(dataH1),
 dataL2(type),

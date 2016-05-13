@@ -40,8 +40,8 @@ namespace MoFEM {
 struct VolumeElementForcesAndSourcesCore: public ForcesAndSurcesCore {
 
   VectorDouble coords;
-  MatrixDouble jAc;
-  MatrixDouble invJac;
+  MatrixDouble3by3 jAc;
+  MatrixDouble3by3 invJac;
 
   DataForcesAndSurcesCore dataH1;
   DerivedDataForcesAndSurcesCore derivedDataH1;

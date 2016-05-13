@@ -291,12 +291,9 @@ template<>
 FTensor::Tensor1<double*,3> DataForcesAndSurcesCore::EntData::getFTensor1DiffN(
   const FieldApproximationBase base
 ) {
-  double *ptr[3];
-  for(int dd = 0;dd<3;dd++) {
-    ptr[dd] = &getDiffN(base)(0,dd);
-  }
+  double *ptr = &*getDiffN(base).data().begin();
   int inc = getDiffN(base).size2()/getN(base).size2();
-  return FTensor::Tensor1<double*,3>(ptr[0],ptr[1],ptr[2],inc);
+  return FTensor::Tensor1<double*,3>(ptr,&ptr[1],&ptr[2],inc);
 }
 
 /**
@@ -314,12 +311,9 @@ template<>
 FTensor::Tensor1<double*,2> DataForcesAndSurcesCore::EntData::getFTensor1DiffN(
   const FieldApproximationBase base
 ) {
-  double *ptr[2];
-  for(int dd = 0;dd<2;dd++) {
-    ptr[dd] = &getDiffN(base)(0,dd);
-  }
+  double *ptr = &*getDiffN(base).data().begin();
   int inc = getDiffN(base).size2()/getN(base).size2();
-  return FTensor::Tensor1<double*,2>(ptr[0],ptr[1],inc);
+  return FTensor::Tensor1<double*,2>(ptr,&ptr[1],inc);
 }
 
 /**

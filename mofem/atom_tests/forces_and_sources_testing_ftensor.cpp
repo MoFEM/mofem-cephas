@@ -161,11 +161,11 @@ int main(int argc, char *argv[]) {
       TeeStream &_my_split,
       char type
     ):
+    VolumeElementForcesAndSourcesCore::UserDataOperator("FIELD1","FIELD2",type),
     field1ValuesDataPtr(field1_values_data_ptr),
     field2ValuesDataPtr(field2_values_data_ptr),
     grad1ValuesDataPtr(grad1_values_data_ptr),
     grad2ValuesDataPtr(grad2_values_data_ptr),
-    VolumeElementForcesAndSourcesCore::UserDataOperator("FIELD1","FIELD2",type),
     my_split(_my_split) {}
 
 
