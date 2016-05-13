@@ -75,6 +75,43 @@ extern "C" {
 
 namespace MoFEM {
 
+VolumeElementForcesAndSourcesCore::VolumeElementForcesAndSourcesCore(
+  FieldInterface &m_field,const EntityType type
+):
+ForcesAndSurcesCore(m_field),
+dataH1(type),
+derivedDataH1(dataH1),
+dataL2(type),
+derivedDataL2(dataL2),
+dataHdiv(type),
+derivedDataHdiv(dataHdiv),
+dataHcurl(type),
+derivedDataHcurl(dataHcurl),
+dataNoField(type),
+dataNoFieldCol(type),
+opSetInvJacH1(invJac),
+opPiolaTransform(vOlume,jAc),
+opSetInvJacHdiv(invJac),
+meshPositionsFieldName("MESH_NODE_POSITIONS"),
+opHOatGaussPoints(hoCoordsAtGaussPts,hoGaussPtsJac,3,3),
+opSetHoInvJacH1(hoGaussPtsInvJac),
+opSetHoPiolaTransform(hoGaussPtsDetJac,hoGaussPtsJac),
+opSetHoInvJacHdiv(hoGaussPtsInvJac),
+coords(12),
+jAc(3,3),
+invJac(3,3),
+tJac(
+  &jAc(0,0),&jAc(0,1),&jAc(0,2),
+  &jAc(1,0),&jAc(1,1),&jAc(1,2),
+  &jAc(2,0),&jAc(2,1),&jAc(2,2)
+),
+tInvJac(
+  &invJac(0,0),&invJac(0,1),&invJac(0,2),
+  &invJac(1,0),&invJac(1,1),&invJac(1,2),
+  &invJac(2,0),&invJac(2,1),&invJac(2,2)
+) {
+}
+
 PetscErrorCode VolumeElementForcesAndSourcesCore::setIntegartionPts() {
   PetscFunctionBegin;
   int order_data = getMaxDataOrder();
@@ -134,43 +171,51 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::setIntegartionPts() {
   PetscFunctionReturn(0);
 }
 
+PetscErrorCode VolumeElementForcesAndSourcesCore::calculateVolumeAndJacobian() {
+  PetscFunctionBegin;
+  EntityHandle ent = fePtr->get_ent();
+  rval = mField.get_moab().get_connectivity(ent,conn,num_nodes,true); CHKERRQ_MOAB(rval);
+  rval = mField.get_moab().get_coords(conn,num_nodes,&*coords.data().begin()); CHKERRQ_MOAB(rval);
+  double diff_n[12];
+  ierr = ShapeDiffMBTET(diff_n); CHKERRQ(ierr);
+  FTensor::Tensor1<double*,3> t_diff_n(&diff_n[0],&diff_n[1],&diff_n[2],3);
+  FTensor::Tensor1<double*,3> t_coords(&coords[0],&coords[1],&coords[2],3);
+  FTensor::Index<'i',3> i;
+  FTensor::Index<'j',3> j;
+  jAc.clear();
+  for(int nn = 0;nn!=4;nn++) {
+    tJac(i,j) += t_coords(i)*t_diff_n(j);
+    ++t_coords;
+    ++t_diff_n;
+  }
+  ierr = determinantTensor2<3,double*,double>(tJac,vOlume); CHKERRQ(ierr);
+  ierr = invertTensor2<3,double*,double>(tJac,vOlume,tInvJac); CHKERRQ(ierr);
+  vOlume *= G_TET_W1[0]/6.;
+  PetscFunctionReturn(0);
+}
 
-VolumeElementForcesAndSourcesCore::VolumeElementForcesAndSourcesCore(
-  FieldInterface &m_field,const EntityType type
-):
-ForcesAndSurcesCore(m_field),
-dataH1(type),
-derivedDataH1(dataH1),
-dataL2(type),
-derivedDataL2(dataL2),
-dataHdiv(type),
-derivedDataHdiv(dataHdiv),
-dataHcurl(type),
-derivedDataHcurl(dataHcurl),
-dataNoField(type),
-dataNoFieldCol(type),
-opSetInvJacH1(invJac),
-opPiolaTransform(vOlume,jAc),
-opSetInvJacHdiv(invJac),
-meshPositionsFieldName("MESH_NODE_POSITIONS"),
-opHOatGaussPoints(hoCoordsAtGaussPts,hoGaussPtsJac,3,3),
-opSetHoInvJacH1(hoGaussPtsInvJac),
-opSetHoPiolaTransform(hoGaussPtsDetJac,hoGaussPtsJac),
-opSetHoInvJacHdiv(hoGaussPtsInvJac),
-coords(12),
-jAc(3,3),
-invJac(3,3),
-tJac(
-  &jAc(0,0),&jAc(0,1),&jAc(0,2),
-  &jAc(1,0),&jAc(1,1),&jAc(1,2),
-  &jAc(2,0),&jAc(2,1),&jAc(2,2)
-),
-tInvJac(
-  &invJac(0,0),&invJac(0,1),&invJac(0,2),
-  &invJac(1,0),&invJac(1,1),&invJac(1,2),
-  &invJac(2,0),&invJac(2,1),&invJac(2,2)
-) {
-};
+PetscErrorCode VolumeElementForcesAndSourcesCore::calculateCoordinatesAtGaussPts() {
+  PetscFunctionBegin;
+  // Get coords at Gauss points
+  FTensor::Index<'i',3> i;
+  double *shape_functions_ptr = &*dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE).data().begin();
+  coordsAtGaussPts.resize(nbGaussPts,3,false);
+  coordsAtGaussPts.clear();
+  FTensor::Tensor1<double*,3> t_coords_at_gauss_ptr(
+    &coordsAtGaussPts(0,0),&coordsAtGaussPts(0,1),&coordsAtGaussPts(0,2),3
+  );
+  FTensor::Tensor0<double*> t_shape_functions(shape_functions_ptr);
+  for(int gg = 0;gg<nbGaussPts;gg++) {
+    FTensor::Tensor1<double*,3> t_coords(&coords[0],&coords[1],&coords[2],3);
+    for(int bb = 0;bb<4;bb++) {
+      t_coords_at_gauss_ptr(i) += t_coords(i)*t_shape_functions;
+      ++t_coords;
+      ++t_shape_functions;
+    };
+    ++t_coords_at_gauss_ptr;
+  }
+  PetscFunctionReturn(0);
+}
 
 PetscErrorCode VolumeElementForcesAndSourcesCore::operator()() {
   PetscFunctionBegin;
@@ -180,26 +225,7 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::operator()() {
     if(fePtr->get_ent_type() != MBTET) PetscFunctionReturn(0);
 
     // Calculate volume and inverse jacobian
-    {
-      EntityHandle ent = fePtr->get_ent();
-      rval = mField.get_moab().get_connectivity(ent,conn,num_nodes,true); CHKERRQ_MOAB(rval);
-      rval = mField.get_moab().get_coords(conn,num_nodes,&*coords.data().begin()); CHKERRQ_MOAB(rval);
-      double diff_n[12];
-      ierr = ShapeDiffMBTET(diff_n); CHKERRQ(ierr);
-      FTensor::Tensor1<double*,3> t_diff_n(&diff_n[0],&diff_n[1],&diff_n[2],3);
-      FTensor::Tensor1<double*,3> t_coords(&coords[0],&coords[1],&coords[2],3);
-      FTensor::Index<'i',3> i;
-      FTensor::Index<'j',3> j;
-      jAc.clear();
-      for(int nn = 0;nn!=4;nn++) {
-        tJac(i,j) += t_coords(i)*t_diff_n(j);
-        ++t_coords;
-        ++t_diff_n;
-      }
-      ierr = determinantTensor2<3,double*,double>(tJac,vOlume); CHKERRQ(ierr);
-      ierr = invertTensor2<3,double*,double>(tJac,vOlume,tInvJac); CHKERRQ(ierr);
-      vOlume *= G_TET_W1[0]/6.;
-    }
+    ierr = calculateVolumeAndJacobian(); CHKERRQ(ierr);
 
     ierr = getSpacesAndBaseOnEntities(dataH1); CHKERRQ(ierr);
     ierr = getFaceTriNodes(dataH1); CHKERRQ(ierr);
@@ -247,26 +273,7 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::operator()() {
     dataHcurl.dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE) = dataH1.dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE);
     dataL2.dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE) = dataH1.dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE);
 
-    // Get coords at Gauss points
-    {
-      FTensor::Index<'i',3> i;
-      double *shape_functions_ptr = &*dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE).data().begin();
-      coordsAtGaussPts.resize(nbGaussPts,3,false);
-      coordsAtGaussPts.clear();
-      FTensor::Tensor1<double*,3> t_coords_at_gauss_ptr(
-        &coordsAtGaussPts(0,0),&coordsAtGaussPts(0,1),&coordsAtGaussPts(0,2),3
-      );
-      FTensor::Tensor0<double*> t_shape_functions(shape_functions_ptr);
-      for(int gg = 0;gg<nbGaussPts;gg++) {
-        FTensor::Tensor1<double*,3> t_coords(&coords[0],&coords[1],&coords[2],3);
-        for(int bb = 0;bb<4;bb++) {
-          t_coords_at_gauss_ptr(i) += t_coords(i)*t_shape_functions;
-          ++t_coords;
-          ++t_shape_functions;
-        };
-        ++t_coords_at_gauss_ptr;
-      }
-    }
+    ierr = calculateCoordinatesAtGaussPts(); CHKERRQ(ierr);
 
     try {
 
