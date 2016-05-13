@@ -171,6 +171,7 @@ int main(int argc, char *argv[]) {
     ofs("forces_and_sources_calculate_jacobian.txt"),
     my_tee(std::cout, ofs),
     my_split(my_tee),
+    invJac(3,3),
     opPrintJac(my_split),
     opSetInvJac(invJac),
     opGetData_FIELD1(dataFIELD1,dataDiffFIELD1,1),
@@ -231,7 +232,6 @@ int main(int argc, char *argv[]) {
       coords.resize(num_nodes*3);
       rval = mField.get_moab().get_coords(conn,num_nodes,&*coords.data().begin()); CHKERRQ_MOAB(rval);
 
-      invJac.resize(3,3);
       ierr = ShapeJacMBTET(
         &*data.dataOnEntities[MBVERTEX][0].getDiffN().data().begin(),&*coords.begin(),&*invJac.data().begin()
       ); CHKERRQ(ierr);

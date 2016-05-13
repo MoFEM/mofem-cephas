@@ -39,6 +39,10 @@ namespace MoFEM {
  */
 struct VolumeElementForcesAndSourcesCore: public ForcesAndSurcesCore {
 
+  VectorDouble coords;
+  MatrixDouble jAc;
+  MatrixDouble invJac;
+
   DataForcesAndSurcesCore dataH1;
   DerivedDataForcesAndSurcesCore derivedDataH1;
   DataForcesAndSurcesCore dataL2;
@@ -73,10 +77,6 @@ struct VolumeElementForcesAndSourcesCore: public ForcesAndSurcesCore {
 
   int num_nodes;
   const EntityHandle* conn;
-  VectorDouble coords;
-
-  MatrixDouble jAc;
-  MatrixDouble invJac;
   FTensor::Tensor2<double*,3,3> tJac;
   FTensor::Tensor2<double*,3,3> tInvJac;
 

@@ -625,7 +625,7 @@ PetscErrorCode OpSetInvJacH1::doWork(
     DataForcesAndSurcesCore::EntData &data
   ) {
   PetscFunctionBegin;
-  PetscErrorCode ierr;
+  // PetscErrorCode ierr;
 
   try {
 
@@ -634,44 +634,55 @@ PetscErrorCode OpSetInvJacH1::doWork(
       FieldApproximationBase base = ApproximationBaseArray[b];
       if(data.getDiffN(base).size2()==0) continue;
 
-      diffNinvJac.resize(data.getDiffN(base).size1(),data.getDiffN(base).size2(),false);
-      unsigned int nb_gauss_pts = data.getN(base).size1();
-      unsigned int nb_dofs = data.getN(base).size2();
+      const unsigned int nb_gauss_pts = data.getN(base).size1();
+      const unsigned int nb_base_functions = data.getN(base).size2();
       if(type!=MBVERTEX) {
-        if(nb_dofs != data.getDiffN(base).size2()/3) {
+        if(nb_base_functions != data.getDiffN(base).size2()/3) {
           SETERRQ2(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,
-            "data inconsistency nb_dofs != data.diffN.size2()/3 ( %u != %u/3 )",
-            nb_dofs,data.getDiffN(base).size2()
+            "data inconsistency nb_base_functions != data.diffN.size2()/3 ( %u != %u/3 )",
+            nb_base_functions,data.getDiffN(base).size2()
           );
         }
       }
 
+      diffNinvJac.resize(nb_gauss_pts,data.getDiffN(base).size2(),false);
+
+      FTensor::Tensor1<double*,3> t_diff_n(
+        &data.getDiffN(base)(0,0),&data.getDiffN(base)(0,1),&data.getDiffN(base)(0,2),3
+      );
+      FTensor::Tensor1<double*,3> t_inv_diff_n(
+        &diffNinvJac(0,0),&diffNinvJac(0,1),&diffNinvJac(0,2),3
+      );
+
       switch (type) {
 
         case MBVERTEX: {
-          ierr = ShapeDiffMBTETinvJ(
-            &*data.getDiffN(base).data().begin(),&*invJac.data().begin(),&*diffNinvJac.data().begin()
-          ); CHKERRQ(ierr);
+          for(unsigned int bb = 0;bb!=nb_base_functions;bb++) {
+            t_inv_diff_n(i) = t_diff_n(j)*tInvJac(j,i);
+            ++t_diff_n;
+            ++t_inv_diff_n;
+          }
         }
         break;
         case MBEDGE:
         case MBTRI:
         case MBTET: {
           for(unsigned int gg = 0;gg<nb_gauss_pts;gg++) {
-            for(unsigned int dd = 0;dd<nb_dofs;dd++) {
-              cblas_dgemv(CblasRowMajor,CblasTrans,3,3,1.,
-                &*invJac.data().begin(),3,&data.getDiffN(base)(gg,3*dd),1,0.,&diffNinvJac(gg,3*dd),1
-              );
+            for(unsigned int bb = 0;bb!=nb_base_functions;bb++) {
+              t_inv_diff_n(i) = t_diff_n(j)*tInvJac(j,i);
+              ++t_diff_n;
+              ++t_inv_diff_n;
             }
           }
+
         }
         break;
         default:
         SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented");
-
       }
 
       data.getDiffN(base).data().swap(diffNinvJac.data());
+
 
     }
 

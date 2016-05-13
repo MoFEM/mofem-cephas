@@ -78,6 +78,9 @@ namespace MoFEM {
 VolumeElementForcesAndSourcesCore::VolumeElementForcesAndSourcesCore(
   FieldInterface &m_field,const EntityType type
 ):
+coords(12),
+jAc(3,3),
+invJac(3,3),
 ForcesAndSurcesCore(m_field),
 dataH1(type),
 derivedDataH1(dataH1),
@@ -97,9 +100,6 @@ opHOatGaussPoints(hoCoordsAtGaussPts,hoGaussPtsJac,3,3),
 opSetHoInvJacH1(hoGaussPtsInvJac),
 opSetHoPiolaTransform(hoGaussPtsDetJac,hoGaussPtsJac),
 opSetHoInvJacHdiv(hoGaussPtsInvJac),
-coords(12),
-jAc(3,3),
-invJac(3,3),
 tJac(
   &jAc(0,0),&jAc(0,1),&jAc(0,2),
   &jAc(1,0),&jAc(1,1),&jAc(1,2),
