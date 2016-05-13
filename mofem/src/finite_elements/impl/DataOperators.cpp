@@ -766,6 +766,7 @@ PetscErrorCode OpSetPiolaTransform::doWork(
       const double c = 1./6.;
       const unsigned int nb_gauss_pts = data.getHdivN().size1();
       const unsigned int nb_base_functions = data.getHdivN().size2()/3;
+      if(nb_base_functions) continue;
 
       piolaN.resize(nb_gauss_pts,data.getHdivN().size2(),false);
       piolaDiffN.resize(nb_gauss_pts,data.getDiffHdivN().size2(),false);
