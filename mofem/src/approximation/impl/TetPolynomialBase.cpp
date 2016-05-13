@@ -310,8 +310,8 @@ PetscErrorCode TetPolynomialBase::getValueHdiv(
     base_polynomials
   ); CHKERRQ(ierr);
 
-  // Set shape functions into data strucrure Shape functions hast to be put
-  // in arrays in order which guarantee hierarhical series of digrees of
+  // Set shape functions into data structure Shape functions hast to be put
+  // in arrays in order which guarantee hierarchical series of degrees of
   // freedom, i.e. in other words dofs form sub-entities has to be group
   // by order.
 
@@ -331,7 +331,7 @@ PetscErrorCode TetPolynomialBase::getValueHdiv(
             data.dataOnEntities[MBTRI][ff].getHdivN(base)(gg,col) = N_face_edge(ff,ee)(gg,dd);
           }
         }
-        //direvatives
+        //derivatives
         for(int dd = 9*NBFACETRI_EDGE_HDIV_AINSWORTH_COLE(oo);dd<9*NBFACETRI_EDGE_HDIV_AINSWORTH_COLE(oo+1);dd++,diff_col++) {
           for(int gg = 0;gg!=nb_gauss_pts;gg++) {
             data.dataOnEntities[MBTRI][ff].getDiffHdivN(base)(gg,diff_col) = diffN_face_edge(ff,ee)(gg,dd);
@@ -344,7 +344,7 @@ PetscErrorCode TetPolynomialBase::getValueHdiv(
           data.dataOnEntities[MBTRI][ff].getHdivN(base)(gg,col) = N_face_bubble[ff](gg,dd);
         }
       }
-      //direvatives
+      //derivatives
       for(int dd = 9*NBFACETRI_FACE_HDIV_AINSWORTH_COLE(oo);dd<9*NBFACETRI_FACE_HDIV_AINSWORTH_COLE(oo+1);dd++,diff_col++) {
         for(int gg = 0;gg!=nb_gauss_pts;gg++) {
           data.dataOnEntities[MBTRI][ff].getDiffHdivN(base)(gg,diff_col) = diffN_face_bubble[ff](gg,dd);

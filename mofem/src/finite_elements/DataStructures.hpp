@@ -129,6 +129,27 @@ FTensor::Tensor2<double*,Tensor_Dim0,Tensor_Dim1> getTensor2FormData(
   */
 struct DataForcesAndSurcesCore {
 
+  /**
+   * \brief Format of rows in gradients of H1 base functions
+   */
+  enum H1DiffFormating {
+    H1_0,H1_1,H1_2
+  };
+
+  /**
+   * \brief Format in rows of Hdiv base functions
+   */
+  enum HDivFormatting {
+    HDIV0 = 0,HDIV1,HDIV2
+  };
+
+  /**
+   * \brief Format in rows of Hdiv gradients of base functions
+   */
+  enum HDivDiffFormatting {
+    HDIV0_0 = 0,HDIV1_0,HDIV2_0,HDIV0_1,HDIV1_1,HDIV2_1,HDIV0_2,HDIV1_2,HDIV2_2
+  };
+
   /** \brief data on single entity
     */
   struct EntData {
@@ -452,6 +473,15 @@ struct DataForcesAndSurcesCore {
     inline const MatrixDouble& getHdivN() const { return getN(bAse); };
 
     /** \brief get derivatives of base functions for Hdiv space
+    *
+    * Note: In rows ale integration pts, columns are formatted that that
+    * components of vectors over, then derivatives, for example row for given
+    * integration points is formatted in array
+    * \f[
+    * t_{0,0}, t_{1,0}, t_{1,0}, t_{0,1}, t_{1,1}, t_{1,1}, t_{0,2}, t_{1,2}, t_{1,2}
+    * \f]
+    * where comma express derivative, i.e. \f$t_{2,1} = \frac{\partial t_2}{\partial \xi_1}\f$
+    *
     */
     inline const MatrixDouble& getDiffHdivN() const { return getDiffN(bAse); };
 
@@ -459,7 +489,8 @@ struct DataForcesAndSurcesCore {
     */
     inline MatrixDouble& getHdivN() { return getN(bAse); };
 
-    /** \brief get derivatives of base functions for Hdiv space
+    /** \brief Get derivatives of base functions for Hdiv space
+    *
     */
     inline MatrixDouble& getDiffHdivN() { return getDiffN(bAse); };
 

@@ -167,7 +167,6 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::setIntegartionPts() {
       ); CHKERRQ(ierr);
     }
   }
-  if(nbGaussPts == 0) PetscFunctionReturn(0);
   PetscFunctionReturn(0);
 }
 
@@ -196,74 +195,87 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::calculateVolumeAndJacobian() {
 
 PetscErrorCode VolumeElementForcesAndSourcesCore::calculateCoordinatesAtGaussPts() {
   PetscFunctionBegin;
-  // Get coords at Gauss points
-  FTensor::Index<'i',3> i;
-  double *shape_functions_ptr = &*dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE).data().begin();
-  coordsAtGaussPts.resize(nbGaussPts,3,false);
-  coordsAtGaussPts.clear();
-  FTensor::Tensor1<double*,3> t_coords_at_gauss_ptr(
-    &coordsAtGaussPts(0,0),&coordsAtGaussPts(0,1),&coordsAtGaussPts(0,2),3
-  );
-  FTensor::Tensor0<double*> t_shape_functions(shape_functions_ptr);
-  for(int gg = 0;gg<nbGaussPts;gg++) {
-    FTensor::Tensor1<double*,3> t_coords(&coords[0],&coords[1],&coords[2],3);
-    for(int bb = 0;bb<4;bb++) {
-      t_coords_at_gauss_ptr(i) += t_coords(i)*t_shape_functions;
-      ++t_coords;
-      ++t_shape_functions;
-    };
-    ++t_coords_at_gauss_ptr;
+  try {
+    // Get coords at Gauss points
+    FTensor::Index<'i',3> i;
+    double *shape_functions_ptr = &*dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE).data().begin();
+    coordsAtGaussPts.resize(nbGaussPts,3,false);
+    coordsAtGaussPts.clear();
+    FTensor::Tensor1<double*,3> t_coords_at_gauss_ptr(
+      &coordsAtGaussPts(0,0),&coordsAtGaussPts(0,1),&coordsAtGaussPts(0,2),3
+    );
+    FTensor::Tensor0<double*> t_shape_functions(shape_functions_ptr);
+    for(int gg = 0;gg<nbGaussPts;gg++) {
+      FTensor::Tensor1<double*,3> t_coords(&coords[0],&coords[1],&coords[2],3);
+      for(int bb = 0;bb<4;bb++) {
+        t_coords_at_gauss_ptr(i) += t_coords(i)*t_shape_functions;
+        ++t_coords;
+        ++t_shape_functions;
+      };
+      ++t_coords_at_gauss_ptr;
+    }
+
+  } catch (std::exception& ex) {
+    std::ostringstream ss;
+    ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
+    SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
   }
   PetscFunctionReturn(0);
 }
 
 PetscErrorCode VolumeElementForcesAndSourcesCore::getSpaceBaseAndOrderOnElement() {
   PetscFunctionBegin;
-  ierr = getSpacesAndBaseOnEntities(dataH1); CHKERRQ(ierr);
-  ierr = getFaceTriNodes(dataH1); CHKERRQ(ierr);
-  //H1
-  if((dataH1.spacesOnEntities[MBEDGE]).test(H1)) {
-    ierr = getEdgesSense(dataH1); CHKERRQ(ierr);
-  }
-  if((dataH1.spacesOnEntities[MBTRI]).test(H1)) {
-    ierr = getTrisSense(dataH1); CHKERRQ(ierr);
-  }
-  //Hdiv
-  if((dataH1.spacesOnEntities[MBTRI]).test(HDIV)) {
-    ierr = getTrisSense(dataHdiv); CHKERRQ(ierr);
-    ierr = getFaceTriNodes(dataHdiv); CHKERRQ(ierr);
-  }
-  //H1
-  if((dataH1.spacesOnEntities[MBEDGE]).test(H1)) {
-    ierr = getEdgesDataOrder(dataH1,H1); CHKERRQ(ierr);
-  }
-  if((dataH1.spacesOnEntities[MBTRI]).test(H1)) {
-    ierr = getTrisDataOrder(dataH1,H1); CHKERRQ(ierr);
-  }
-  if((dataH1.spacesOnEntities[MBTET]).test(H1)) {
-    ierr = getTetDataOrder(dataH1,H1); CHKERRQ(ierr);
-  }
-  //Hdiv
-  if((dataH1.spacesOnEntities[MBTRI]).test(HDIV)) {
-    ierr = getTrisSense(dataHdiv); CHKERRQ(ierr);
-    ierr = getTrisDataOrder(dataHdiv,HDIV); CHKERRQ(ierr);
-    ierr = getTetDataOrder(dataHdiv,HDIV); CHKERRQ(ierr);
-    ierr = getFaceTriNodes(dataHdiv); CHKERRQ(ierr);
-  }
-  //L2
-  if((dataH1.spacesOnEntities[MBTET]).test(L2)) {
-    ierr = getTetDataOrder(dataL2,L2); CHKERRQ(ierr);
+  try {
+    ierr = getSpacesAndBaseOnEntities(dataH1); CHKERRQ(ierr);
+    ierr = getFaceTriNodes(dataH1); CHKERRQ(ierr);
+    //H1
+    if((dataH1.spacesOnEntities[MBEDGE]).test(H1)) {
+      ierr = getEdgesSense(dataH1); CHKERRQ(ierr);
+    }
+    if((dataH1.spacesOnEntities[MBTRI]).test(H1)) {
+      ierr = getTrisSense(dataH1); CHKERRQ(ierr);
+    }
+    //Hdiv
+    if((dataH1.spacesOnEntities[MBTRI]).test(HDIV)) {
+      ierr = getTrisSense(dataHdiv); CHKERRQ(ierr);
+      ierr = getFaceTriNodes(dataHdiv); CHKERRQ(ierr);
+    }
+    //H1
+    if((dataH1.spacesOnEntities[MBEDGE]).test(H1)) {
+      ierr = getEdgesDataOrder(dataH1,H1); CHKERRQ(ierr);
+    }
+    if((dataH1.spacesOnEntities[MBTRI]).test(H1)) {
+      ierr = getTrisDataOrder(dataH1,H1); CHKERRQ(ierr);
+    }
+    if((dataH1.spacesOnEntities[MBTET]).test(H1)) {
+      ierr = getTetDataOrder(dataH1,H1); CHKERRQ(ierr);
+    }
+    //Hdiv
+    if((dataH1.spacesOnEntities[MBTRI]).test(HDIV)) {
+      ierr = getTrisSense(dataHdiv); CHKERRQ(ierr);
+      ierr = getTrisDataOrder(dataHdiv,HDIV); CHKERRQ(ierr);
+      ierr = getTetDataOrder(dataHdiv,HDIV); CHKERRQ(ierr);
+      ierr = getFaceTriNodes(dataHdiv); CHKERRQ(ierr);
+    }
+    //L2
+    if((dataH1.spacesOnEntities[MBTET]).test(L2)) {
+      ierr = getTetDataOrder(dataL2,L2); CHKERRQ(ierr);
+    }
+  } catch (std::exception& ex) {
+    std::ostringstream ss;
+    ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
+    SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
   }
   PetscFunctionReturn(0);
 }
 
 PetscErrorCode VolumeElementForcesAndSourcesCore::calculateBaseFunctionsOnElement() {
   PetscFunctionBegin;
-  /// Use the some node base
-  dataHdiv.dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE) = dataH1.dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE);
-  dataHcurl.dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE) = dataH1.dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE);
-  dataL2.dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE) = dataH1.dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE);
   try {
+    /// Use the some node base
+    dataHdiv.dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE) = dataH1.dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE);
+    dataHcurl.dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE) = dataH1.dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE);
+    dataL2.dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE) = dataH1.dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE);
     std::vector<FieldApproximationBase> shape_functions_for_bases;
     for(int b = AINSWORTH_COLE_BASE;b!=LASTBASE;b++) {
       if(dataH1.bAse.test(b)) {
@@ -326,6 +338,7 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::operator()() {
     ierr = calculateVolumeAndJacobian(); CHKERRQ(ierr);
     ierr = getSpaceBaseAndOrderOnElement(); CHKERRQ(ierr);
     ierr = setIntegartionPts(); CHKERRQ(ierr);
+    if(nbGaussPts == 0) PetscFunctionReturn(0);
     ierr = calculateCoordinatesAtGaussPts(); CHKERRQ(ierr);
     ierr = calculateBaseFunctionsOnElement(); CHKERRQ(ierr);
 
@@ -558,6 +571,7 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::operator()() {
         } catch (std::exception& ex) {
           std::ostringstream ss;
           ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
+          ss << " operator number " << std::distance<boost::ptr_vector<UserDataOperator>::iterator>(opPtrVector.begin(),oit);
           SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
         }
       }
@@ -576,6 +590,7 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::operator()() {
         } catch (std::exception& ex) {
           std::ostringstream ss;
           ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
+          ss << " operator number " << std::distance<boost::ptr_vector<UserDataOperator>::iterator>(opPtrVector.begin(),oit);
           SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
         }
       }
@@ -586,6 +601,7 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::operator()() {
         } catch (std::exception& ex) {
           std::ostringstream ss;
           ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
+          ss << " operator number " << std::distance<boost::ptr_vector<UserDataOperator>::iterator>(opPtrVector.begin(),oit);
           SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
         }
       }
