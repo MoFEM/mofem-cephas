@@ -254,7 +254,8 @@ struct FEMethod: public BasicMethod {
   PetscErrorCode postProcess();
 
   std::string feName;
-  const NumeredEntFiniteElement *fePtr;
+  // const NumeredEntFiniteElement *fePtr;
+  const NumeredEntFiniteElement *numeredEntFiniteElementPtr;
   const FEDofEntity_multiIndex *dataPtr;
   const FENumeredDofEntity_multiIndex *rowPtr;
   const FENumeredDofEntity_multiIndex *colPtr;

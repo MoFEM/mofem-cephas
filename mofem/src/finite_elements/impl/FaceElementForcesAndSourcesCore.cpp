@@ -76,10 +76,10 @@ namespace MoFEM {
 PetscErrorCode FaceElementForcesAndSourcesCore::operator()() {
   PetscFunctionBegin;
 
-  if(fePtr->get_ent_type() != MBTRI) PetscFunctionReturn(0);
+  if(numeredEntFiniteElementPtr->get_ent_type() != MBTRI) PetscFunctionReturn(0);
 
   {
-    EntityHandle ent = fePtr->get_ent();
+    EntityHandle ent = numeredEntFiniteElementPtr->get_ent();
     rval = mField.get_moab().get_connectivity(ent,conn,num_nodes,true); CHKERRQ_MOAB(rval);
     coords.resize(num_nodes*3,false);
     rval = mField.get_moab().get_coords(conn,num_nodes,&*coords.data().begin()); CHKERRQ_MOAB(rval);
@@ -238,7 +238,7 @@ PetscErrorCode FaceElementForcesAndSourcesCore::operator()() {
     const Field* field_struture = mField.get_field_structure(meshPositionsFieldName);
     BitFieldId id = field_struture->get_id();
 
-    if((fePtr->get_BitFieldId_data()&id).none()) {
+    if((numeredEntFiniteElementPtr->get_BitFieldId_data()&id).none()) {
       SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_FOUND,"no MESH_NODE_POSITIONS in element data");
     }
 

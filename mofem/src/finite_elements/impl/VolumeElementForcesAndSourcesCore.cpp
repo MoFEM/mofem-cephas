@@ -172,7 +172,7 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::setIntegartionPts() {
 
 PetscErrorCode VolumeElementForcesAndSourcesCore::calculateVolumeAndJacobian() {
   PetscFunctionBegin;
-  EntityHandle ent = fePtr->get_ent();
+  EntityHandle ent = numeredEntFiniteElementPtr->get_ent();
   rval = mField.get_moab().get_connectivity(ent,conn,num_nodes,true); CHKERRQ_MOAB(rval);
   rval = mField.get_moab().get_coords(conn,num_nodes,&*coords.data().begin()); CHKERRQ_MOAB(rval);
   double diff_n[12];
@@ -333,7 +333,7 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::operator()() {
 
   try {
 
-    if(fePtr->get_ent_type() != MBTET) PetscFunctionReturn(0);
+    if(numeredEntFiniteElementPtr->get_ent_type() != MBTET) PetscFunctionReturn(0);
 
     ierr = calculateVolumeAndJacobian(); CHKERRQ(ierr);
     ierr = getSpaceBaseAndOrderOnElement(); CHKERRQ(ierr);
@@ -364,7 +364,7 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::operator()() {
       const Field* field_struture = mField.get_field_structure(meshPositionsFieldName);
       BitFieldId id = field_struture->get_id();
 
-      if((fePtr->get_BitFieldId_data()&id).none()) {
+      if((numeredEntFiniteElementPtr->get_BitFieldId_data()&id).none()) {
         SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_FOUND,"no MESH_NODE_POSITIONS in element data");
       }
 
