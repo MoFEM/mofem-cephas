@@ -102,58 +102,71 @@ struct VolumeElementForcesAndSourcesCore: public ForcesAndSurcesCore {
 
     /** \brief get element number of nodes
     */
-    inline int getNumNodes() { return ptrFE->num_nodes; }
+    inline int getNumNodes() {
+      return dynamic_cast<VolumeElementForcesAndSourcesCore*>(ptrFE)->num_nodes;
+    }
 
     /** \brief get element connectivity
      */
-    inline const EntityHandle* getConn() { return ptrFE->conn; }
+    inline const EntityHandle* getConn() {
+      return dynamic_cast<VolumeElementForcesAndSourcesCore*>(ptrFE)->conn;
+    }
 
     /** \brief element volume (linear geometry)
       */
-    inline double getVolume() { return ptrFE->vOlume; }
+    inline double getVolume() {
+      return dynamic_cast<VolumeElementForcesAndSourcesCore*>(ptrFE)->vOlume;
+    }
 
     /** \brief nodal coordinates
       */
-    inline VectorDouble& getCoords() { return ptrFE->coords; }
+    inline VectorDouble& getCoords() { return
+      dynamic_cast<VolumeElementForcesAndSourcesCore*>(ptrFE)->coords;
+    }
 
     /** \brief matrix of Gauss pts
       */
-    inline MatrixDouble& getGaussPts() { return ptrFE->gaussPts; }
+    inline MatrixDouble& getGaussPts() {
+      return dynamic_cast<VolumeElementForcesAndSourcesCore*>(ptrFE)->gaussPts;
+    }
 
     /** \brief Gauss points and weight, matrix (nb. of points x 4)
 
       Column 0-3 and 4 represents Gauss pts coordinate and weight, respectively.
 
       */
-    inline MatrixDouble& getCoordsAtGaussPts() { return ptrFE->coordsAtGaussPts; }
+    inline MatrixDouble& getCoordsAtGaussPts() {
+      return dynamic_cast<VolumeElementForcesAndSourcesCore*>(ptrFE)->coordsAtGaussPts;
+    }
 
     /** \brief coordinate at Gauss points (if hierarchical approximation of element geometry)
       */
-    inline MatrixDouble& getHoCoordsAtGaussPts() { return ptrFE->hoCoordsAtGaussPts; }
+    inline MatrixDouble& getHoCoordsAtGaussPts() {
+      return dynamic_cast<VolumeElementForcesAndSourcesCore*>(ptrFE)->hoCoordsAtGaussPts;
+    }
 
-    inline MatrixDouble& getHoGaussPtsInvJac() { return ptrFE->hoGaussPtsInvJac; }
-    inline VectorDouble& getHoGaussPtsDetJac() { return ptrFE->hoGaussPtsDetJac; }
+    inline MatrixDouble& getHoGaussPtsInvJac() {
+      return dynamic_cast<VolumeElementForcesAndSourcesCore*>(ptrFE)->hoGaussPtsInvJac;
+    }
+    inline VectorDouble& getHoGaussPtsDetJac() {
+      return dynamic_cast<VolumeElementForcesAndSourcesCore*>(ptrFE)->hoGaussPtsDetJac;
+    }
 
     /** \brief return pointer to Generic Volume Finite Element object
      */
-    inline const VolumeElementForcesAndSourcesCore* getVolumeFE() { return ptrFE; }
+    inline const VolumeElementForcesAndSourcesCore* getVolumeFE() {
+      return dynamic_cast<VolumeElementForcesAndSourcesCore*>(ptrFE);
+    }
 
-    DEPRECATED inline const VolumeElementForcesAndSourcesCore* getTetFE() { return ptrFE; }
+    DEPRECATED inline const VolumeElementForcesAndSourcesCore* getTetFE() {
+      return dynamic_cast<VolumeElementForcesAndSourcesCore*>(ptrFE);
+    }
 
     //differential operators
     PetscErrorCode getDivergenceMatrixOperator_Hdiv(
       int side,EntityType type,DataForcesAndSurcesCore::EntData &data,
-      int gg,VectorDouble &div);
-
-    PetscErrorCode setPtrFE(ForcesAndSurcesCore *ptr) {
-      PetscFunctionBegin;
-      ForcesAndSurcesCore::UserDataOperator::setPtrFE(ptr);
-      ptrFE = dynamic_cast<VolumeElementForcesAndSourcesCore*>(ptr);
-      PetscFunctionReturn(0);
-    }
-
-    private:
-    VolumeElementForcesAndSourcesCore *ptrFE;
+      int gg,VectorDouble &div
+    );
 
   };
 
