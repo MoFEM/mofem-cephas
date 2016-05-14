@@ -181,7 +181,11 @@ PetscErrorCode OpCalculateVectorFieldValues_General<Tensor_Dim,double,ublas::row
     SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"Data inconsistency");
   }
   for(int gg = 0;gg!=nb_gauss_pts;gg++) {
-    FTensor::Tensor1<double*,Tensor_Dim> field_data = data.getFTensor1FieldData<Tensor_Dim>();
+    // double *ptr = &(data.getFieldData()[0]);
+    // FTensor::Tensor1<double*,Tensor_Dim> field_data(
+    //   ptr,&ptr[1],&ptr[2],3
+    // );
+    FTensor::Tensor1<double*,Tensor_Dim> field_data = data.getFTensor1FieldData<3>();
     int bb = 0;
     for(;bb!=size;bb++) {
       values_at_gauss_pts(I) = field_data(I)*base_function;

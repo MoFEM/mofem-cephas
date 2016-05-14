@@ -219,7 +219,6 @@ struct DataForcesAndSurcesCore {
       std::stringstream s;
       s << "Not implemented for this dimension dim = " << Tensor_Dim;
       THROW_MESSAGE(s.str());
-      // return Tensor1<double*,Tensor_Dim>();
     }
 
     FTensor::Tensor0<double*> getFTensor0FieldData();
@@ -660,6 +659,31 @@ struct DataForcesAndSurcesCore {
   DataForcesAndSurcesCore() {}
 
 };
+
+template<>
+FTensor::Tensor1<double*,3> DataForcesAndSurcesCore::EntData::getFTensor1FieldData<3>();
+template<>
+FTensor::Tensor1<double*,2> DataForcesAndSurcesCore::EntData::getFTensor1FieldData<2>();
+
+template<>
+FTensor::Tensor1<double*,3> DataForcesAndSurcesCore::EntData::getFTensor1DiffN<3>(
+  const FieldApproximationBase base
+);
+template<>
+FTensor::Tensor1<double*,3> DataForcesAndSurcesCore::EntData::getFTensor1DiffN<3>();
+
+template<>
+FTensor::Tensor1<double*,2> DataForcesAndSurcesCore::EntData::getFTensor1DiffN<2>(
+  const FieldApproximationBase base
+);
+template<>
+FTensor::Tensor1<double*,2> DataForcesAndSurcesCore::EntData::getFTensor1DiffN<2>();
+
+
+
+
+
+
 
 /** \brief this class derive data form other data structure
   * \ingroup mofem_forces_and_sources
