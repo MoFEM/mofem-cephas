@@ -507,7 +507,7 @@ struct ForcesAndSurcesCore: public FEMethod {
      */
     inline const FEMethod* getFEMethod() { return ptrFE; }
 
-    private:
+  protected:
     ForcesAndSurcesCore *ptrFE;
 
   };

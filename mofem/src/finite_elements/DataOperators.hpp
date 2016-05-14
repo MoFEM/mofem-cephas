@@ -136,8 +136,17 @@ inline PetscErrorCode invertTensor2(
 /// \brief Transform local reference derivatives of shape function to global derivatives
 struct OpSetInvJacH1: public DataOperator {
 
-  MatrixDouble &invJac;
-  OpSetInvJacH1(MatrixDouble &inv_jac): invJac(inv_jac) {}
+  FTensor::Tensor2<double*,3,3> tInvJac;
+  FTensor::Index<'i',3> i;
+  FTensor::Index<'j',3> j;
+
+  OpSetInvJacH1(MatrixDouble3by3 &inv_jac):
+  tInvJac(
+    &inv_jac(0,0),&inv_jac(0,1),&inv_jac(0,2),
+    &inv_jac(1,0),&inv_jac(1,1),&inv_jac(1,2),
+    &inv_jac(2,0),&inv_jac(2,1),&inv_jac(2,2)
+  ) {
+  }
 
   MatrixDouble diffNinvJac;
   PetscErrorCode doWork(
@@ -149,8 +158,8 @@ struct OpSetInvJacH1: public DataOperator {
 /// \brief Transform local reference derivatives of shape function to global derivatives
 struct OpSetInvJacHdiv: public DataOperator {
 
-  MatrixDouble &invJac;
-  OpSetInvJacHdiv(MatrixDouble &_invJac): invJac(_invJac) {}
+  MatrixDouble3by3 &invJac;
+  OpSetInvJacHdiv(MatrixDouble3by3 &_invJac): invJac(_invJac) {}
 
   MatrixDouble diffHdiv_invJac;
   PetscErrorCode doWork(
@@ -184,16 +193,39 @@ struct OpSetHoInvJacHdiv: public DataOperator {
 };
 
 /** \brief apply covariant (Piola) transfer for Hdiv space
+
+Contravariant Piola transformation
+\f[
+\psi_i|_t = \frac{1}{\textrm{det}(J)}J_{ij}\hat{\psi}_j\\
+\left.\frac{\partial \psi_i}{\partial \xi_j}\right|_t
+=
+\frac{1}{\textrm{det}(J)}J_{ik}\frac{\partial \hat{\psi}_k}{\partial \xi_j}
+\f]
+
 */
 struct OpSetPiolaTransform: public DataOperator {
 
   double &vOlume;
-  MatrixDouble &Jac;
-  OpSetPiolaTransform(double &_vOlume,MatrixDouble &_Jac):
-  vOlume(_vOlume),Jac(_Jac) {}
+  // MatrixDouble3by3 &jAc;
+
+  FTensor::Tensor2<double*,3,3> tJac;
+  FTensor::Index<'i',3> i;
+  FTensor::Index<'j',3> j;
+  FTensor::Index<'k',3> k;
+
+  OpSetPiolaTransform(double &volume,MatrixDouble3by3 &jac):
+  vOlume(volume),
+  // jAc(jac),
+  tJac(
+    &jac(0,0),&jac(0,1),&jac(0,2),
+    &jac(1,0),&jac(1,1),&jac(1,2),
+    &jac(2,0),&jac(2,1),&jac(2,2)
+  ) {
+  }
 
   MatrixDouble piolaN;
   MatrixDouble piolaDiffN;
+
   PetscErrorCode doWork(int side,EntityType type,DataForcesAndSurcesCore::EntData &data);
 
 };

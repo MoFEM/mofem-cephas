@@ -13,12 +13,12 @@ public:
      defined for a particular Tensor_Dim.  To initialize a different
      dimension, just add the appropriate constructor and call to
      the Tensor2_constructor constructor. */
-  Tensor2(T* d00, T* d01,T* d10, T* d11,const int i = 0):
+  Tensor2(T* d00, T* d01,T* d10, T* d11,const int i = 1):
 	inc(i) {
     Tensor2_constructor<T* restrict,Tensor_Dim0,Tensor_Dim1,layout>
       (data,d00,d01,d10,d11);
   }
-  Tensor2(T* d00, T* d01, T* d10, T* d11, T* d20, T* d21,const int i = 0):
+  Tensor2(T* d00, T* d01, T* d10, T* d11, T* d20, T* d21,const int i = 1):
 	inc(i)
   {
     Tensor2_constructor<T* restrict,Tensor_Dim0,Tensor_Dim1,layout>
@@ -26,7 +26,7 @@ public:
   }
   Tensor2(
 		T* d00, T* d01, T* d02, T* d10, T* d11, T* d12, T* d20, T* d21, T* d22,
-		const int i = 0
+		const int i = 1
 	): inc(i)
   {
     Tensor2_constructor<T* restrict,Tensor_Dim0,Tensor_Dim1,layout>
@@ -34,7 +34,7 @@ public:
   }
   Tensor2(T* d00, T* d01, T* d02, T* d03, T* d10, T* d11, T* d12, T* d13,
 	  T* d20, T* d21, T* d22, T* d23, T* d30, T* d31, T* d32, T* d33,
-		const int i = 0
+		const int i = 1
 	): inc(i)
   {
     Tensor2_constructor<T* restrict,Tensor_Dim0,Tensor_Dim1,layout>
@@ -166,7 +166,7 @@ public:
 	const Tensor2<T*,Tensor_Dim0,Tensor_Dim1,layout> & operator++() const {
 		for(int i=0;i<Tensor_Dim0;++i) {
 			for(int j=0;j<Tensor_Dim1;++j) {
-				((layout==column_major) ? data[i][j]+=inc : ++data[j][i])+=inc;
+				((layout==column_major) ? data[i][j]+=inc : data[j][i]+=inc);
 			}
 		}
 		return *this;

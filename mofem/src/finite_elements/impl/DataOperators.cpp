@@ -625,53 +625,76 @@ PetscErrorCode OpSetInvJacH1::doWork(
     DataForcesAndSurcesCore::EntData &data
   ) {
   PetscFunctionBegin;
-  PetscErrorCode ierr;
+  // PetscErrorCode ierr;
 
   try {
 
     for(int b = AINSWORTH_COLE_BASE; b!=USER_BASE; b++) {
 
       FieldApproximationBase base = ApproximationBaseArray[b];
-      if(data.getDiffN(base).size2()==0) continue;
+      const unsigned int nb_base_functions = data.getN(base).size2();
+      if(!nb_base_functions) continue;
+      const unsigned int nb_gauss_pts = data.getN(base).size1();
+      if(!nb_gauss_pts) continue;
 
-      diffNinvJac.resize(data.getDiffN(base).size1(),data.getDiffN(base).size2(),false);
-      unsigned int nb_gauss_pts = data.getN(base).size1();
-      unsigned int nb_dofs = data.getN(base).size2();
       if(type!=MBVERTEX) {
-        if(nb_dofs != data.getDiffN(base).size2()/3) {
+        if(nb_base_functions != data.getDiffN(base).size2()/3) {
           SETERRQ2(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,
-            "data inconsistency nb_dofs != data.diffN.size2()/3 ( %u != %u/3 )",
-            nb_dofs,data.getDiffN(base).size2()
+            "Data inconsistency nb_base_functions != data.diffN.size2()/3 ( %u != %u/3 )",
+            nb_base_functions,data.getDiffN(base).size2()
           );
         }
+      } else {
+        if(
+          data.getDiffN(base).size1()!=4||
+          data.getDiffN(base).size2()!=3
+        ) {
+          SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"Data inconsistency");
+        }
       }
+
+      diffNinvJac.resize(
+        data.getDiffN(base).size1(),data.getDiffN(base).size2(),false
+      );
+
+      double *t_diff_n_ptr = &*data.getDiffN(base).data().begin();
+      FTensor::Tensor1<double*,3> t_diff_n(
+        t_diff_n_ptr,&t_diff_n_ptr[1],&t_diff_n_ptr[2],3
+      );
+      double *t_inv_n_ptr = &*diffNinvJac.data().begin();
+      FTensor::Tensor1<double*,3> t_inv_diff_n(
+        t_inv_n_ptr,&t_inv_n_ptr[1],&t_inv_n_ptr[2],3
+      );
 
       switch (type) {
 
         case MBVERTEX: {
-          ierr = ShapeDiffMBTETinvJ(
-            &*data.getDiffN(base).data().begin(),&*invJac.data().begin(),&*diffNinvJac.data().begin()
-          ); CHKERRQ(ierr);
+          for(unsigned int bb = 0;bb!=nb_base_functions;bb++) {
+            t_inv_diff_n(i) = t_diff_n(j)*tInvJac(j,i);
+            ++t_diff_n;
+            ++t_inv_diff_n;
+          }
         }
         break;
         case MBEDGE:
         case MBTRI:
         case MBTET: {
           for(unsigned int gg = 0;gg<nb_gauss_pts;gg++) {
-            for(unsigned int dd = 0;dd<nb_dofs;dd++) {
-              cblas_dgemv(CblasRowMajor,CblasTrans,3,3,1.,
-                &*invJac.data().begin(),3,&data.getDiffN(base)(gg,3*dd),1,0.,&diffNinvJac(gg,3*dd),1
-              );
+            for(unsigned int bb = 0;bb!=nb_base_functions;bb++) {
+              t_inv_diff_n(i) = t_diff_n(j)*tInvJac(j,i);
+              ++t_diff_n;
+              ++t_inv_diff_n;
             }
           }
+
         }
         break;
         default:
         SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented");
-
       }
 
       data.getDiffN(base).data().swap(diffNinvJac.data());
+
 
     }
 
@@ -744,41 +767,69 @@ PetscErrorCode OpSetPiolaTransform::doWork(
 
   try {
 
-    FieldApproximationBase base = data.getBase();
 
     for(int b = AINSWORTH_COLE_BASE; b!=USER_BASE; b++) {
 
-      data.getBase() = ApproximationBaseArray[b];
+      FieldApproximationBase base = ApproximationBaseArray[b];
+
+      const unsigned int nb_base_functions = data.getHdivN(base).size2()/3;
+      if(!nb_base_functions) continue;
 
       const double c = 1./6.;
+      const unsigned int nb_gauss_pts = data.getHdivN(base).size1();
+      piolaN.resize(nb_gauss_pts,data.getHdivN(base).size2(),false);
+      piolaDiffN.resize(nb_gauss_pts,data.getDiffHdivN(base).size2(),false);
 
-      unsigned int nb_gauss_pts = data.getHdivN().size1();
-      unsigned int nb_dofs = data.getHdivN().size2()/3;
-      unsigned int gg = 0;
-      piolaN.resize(nb_gauss_pts,data.getHdivN().size2(),false);
-      piolaDiffN.resize(nb_gauss_pts,data.getDiffHdivN().size2(),false);
-      for(;gg<nb_gauss_pts;gg++) {
-        unsigned int dd = 0;
-        for(;dd<nb_dofs;dd++) {
-          cblas_dgemv(
-            CblasRowMajor,CblasNoTrans,3,3,c/vOlume,
-            &*Jac.data().begin(),3,&data.getHdivN()(gg,3*dd),1,0.,&piolaN(gg,3*dd),1
-          );
-          int kk = 0;
-          for(;kk<3;kk++) {
-            cblas_dgemv(
-              CblasRowMajor,CblasNoTrans,3,3,c/vOlume,
-              &*Jac.data().begin(),3,&data.getDiffHdivN()(gg,9*dd+3*kk),1,0.,&piolaDiffN(gg,9*dd+3*kk),1
-            );
-          }
+      double *t_n_ptr = &*data.getHdivN(base).data().begin();
+      FTensor::Tensor1<double*,3> t_n(
+        t_n_ptr,&t_n_ptr[1],&t_n_ptr[2],3
+      );
+      double *t_transformed_n_ptr = &*piolaN.data().begin();
+      FTensor::Tensor1<double*,3> t_transformed_n(
+        t_transformed_n_ptr,&t_transformed_n_ptr[1],&t_transformed_n_ptr[2],3
+      );
+      double *t_diff_n_ptr = &*data.getDiffHdivN(base).data().begin();
+      FTensor::Tensor2<double*,3,3> t_diff_n(
+        t_diff_n_ptr,
+        &t_diff_n_ptr[DataForcesAndSurcesCore::HDIV0_1],
+        &t_diff_n_ptr[DataForcesAndSurcesCore::HDIV0_2],
+        &t_diff_n_ptr[DataForcesAndSurcesCore::HDIV1_0],
+        &t_diff_n_ptr[DataForcesAndSurcesCore::HDIV1_1],
+        &t_diff_n_ptr[DataForcesAndSurcesCore::HDIV1_2],
+        &t_diff_n_ptr[DataForcesAndSurcesCore::HDIV2_0],
+        &t_diff_n_ptr[DataForcesAndSurcesCore::HDIV2_1],
+        &t_diff_n_ptr[DataForcesAndSurcesCore::HDIV2_2],9
+      );
+      double *t_transformed_diff_n_ptr = &*piolaDiffN.data().begin();
+      FTensor::Tensor2<double*,3,3> t_transformed_diff_n(
+        t_transformed_diff_n_ptr,
+        &t_transformed_diff_n_ptr[DataForcesAndSurcesCore::HDIV0_1],
+        &t_transformed_diff_n_ptr[DataForcesAndSurcesCore::HDIV0_2],
+        &t_transformed_diff_n_ptr[DataForcesAndSurcesCore::HDIV1_0],
+        &t_transformed_diff_n_ptr[DataForcesAndSurcesCore::HDIV1_1],
+        &t_transformed_diff_n_ptr[DataForcesAndSurcesCore::HDIV1_2],
+        &t_transformed_diff_n_ptr[DataForcesAndSurcesCore::HDIV2_0],
+        &t_transformed_diff_n_ptr[DataForcesAndSurcesCore::HDIV2_1],
+        &t_transformed_diff_n_ptr[DataForcesAndSurcesCore::HDIV2_2],9
+      );
+
+      double const a = c/vOlume;
+      for(unsigned int gg = 0;gg!=nb_gauss_pts;gg++) {
+        for(unsigned int bb = 0;bb!=nb_base_functions;bb++) {
+          t_transformed_n(i) = a*tJac(i,k)*t_n(k);
+          t_transformed_diff_n(i,k) = a*tJac(i,j)*t_diff_n(j,k);
+          ++t_n;
+          ++t_transformed_n;
+          ++t_diff_n;
+          ++t_transformed_diff_n;
         }
       }
-      data.getHdivN().data().swap(piolaN.data());
-      data.getDiffHdivN().data().swap(piolaDiffN.data());
+      data.getHdivN(base).data().swap(piolaN.data());
+      data.getDiffHdivN(base).data().swap(piolaDiffN.data());
 
     }
 
-    data.getBase() = base;
+    // data.getBase() = base;
 
   } catch (std::exception& ex) {
     std::ostringstream ss;
