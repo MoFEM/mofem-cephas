@@ -182,6 +182,8 @@ struct OpSetInvJacHdiv: public DataOperator {
 struct OpSetHoInvJacH1: public DataOperator {
 
   MatrixDouble &invHoJac;
+  FTensor::Index<'i',3> i;
+  FTensor::Index<'j',3> j;
   OpSetHoInvJacH1(MatrixDouble &inv_ho_jac): invHoJac(inv_ho_jac) {}
 
   MatrixDouble diffNinvJac;

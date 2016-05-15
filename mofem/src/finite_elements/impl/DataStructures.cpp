@@ -217,8 +217,21 @@ std::ostream& operator<<(std::ostream& os,const DataForcesAndSurcesCore::EntData
   os.precision(2);
   os <<
     "fieldData: " << std::fixed << e.getFieldData() << std::endl;
+  MatrixDouble base = e.getN();
+  MatrixDouble diff_base = e.getDiffN();
+  const double eps = 1e-12;
+  for(unsigned int ii = 0;ii!=base.size1();ii++) {
+    for(unsigned int jj = 0;jj!=base.size2();jj++) {
+      if(fabs(base(ii,jj))<eps) base(ii,jj) = 0;
+    }
+  }
+  for(unsigned int ii = 0;ii!=diff_base.size1();ii++) {
+    for(unsigned int jj = 0;jj!=diff_base.size2();jj++) {
+      if(fabs(diff_base(ii,jj))<eps) diff_base(ii,jj) = 0;
+    }
+  }
   os <<
-    "N: " << std::fixed << e.getN() << std::endl <<
+    "N: " << std::fixed << base << std::endl <<
     "diffN: " << std::fixed << e.getDiffN();
   return os;
 }
@@ -298,7 +311,19 @@ FTensor::Tensor1<double*,3> DataForcesAndSurcesCore::EntData::getFTensor1DiffN<3
   const FieldApproximationBase base
 ) {
   double *ptr = &*getDiffN(base).data().begin();
-  int inc = getDiffN(base).size2()/getN(base).size2();
+  int inc;
+  if(getN(base).size1() == getDiffN(base).size1()) {
+    inc = getDiffN(base).size2()/getN(base).size2();
+    if(getDiffN(base).size2() % getN(base).size2() != 0) {
+      std::stringstream s;
+      s << "Data inconsistency "
+      << getDiffN(base).size2() << " "
+      << getN(base).size2();
+      THROW_MESSAGE(s.str());
+    }
+  } else {
+    inc = getDiffN(base).size2();
+  }
   return FTensor::Tensor1<double*,3>(ptr,&ptr[1],&ptr[2],inc);
 }
 

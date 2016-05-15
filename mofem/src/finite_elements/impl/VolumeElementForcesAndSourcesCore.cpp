@@ -641,6 +641,7 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::UserDataOperator::getDivergenc
     }
 
     if(nb_dofs == 0) PetscFunctionReturn(0);
+    div.resize(nb_dofs,false);
 
     int dd = 0;
     for(;dd<nb_dofs;dd++) {

@@ -845,40 +845,84 @@ PetscErrorCode OpSetHoInvJacH1::doWork(
 
     try {
 
-      FieldApproximationBase base = data.getBase();
       for(int b = AINSWORTH_COLE_BASE; b!=USER_BASE; b++) {
 
-        data.getBase() = ApproximationBaseArray[b];
-        if(data.getDiffN().size2()==0) continue;
+        FieldApproximationBase base = ApproximationBaseArray[b];
+        if(data.getDiffN(base).size2()==0) continue;
 
-        unsigned int nb_gauss_pts = data.getN().size1();
-        unsigned int nb_dofs = data.getN().size2();
+        unsigned int nb_gauss_pts = data.getN(base).size1();
+        if(nb_gauss_pts==0) continue;
+        unsigned int nb_base_functions = data.getN(base).size2();
+        if(nb_base_functions==0) continue;
+
         // Note for Vetex diffN row has size of number of dof
-        diffNinvJac.resize(nb_gauss_pts,3*nb_dofs,false);
+        diffNinvJac.resize(nb_gauss_pts,3*nb_base_functions,false);
 
-        unsigned int gg = 0;
-        for(;gg<nb_gauss_pts;gg++) {
-          double *inv_h = &invHoJac(gg,0);
-          for(unsigned dd = 0;dd<nb_dofs;dd++) {
-            double *diff_n;
-            if(type == MBVERTEX) {
-              diff_n = &data.getDiffN()(dd,0);
-            } else {
-              diff_n = &data.getDiffN()(gg,3*dd);
+        double *t_inv_n_ptr = &*diffNinvJac.data().begin();
+        FTensor::Tensor1<double*,3> t_inv_diff_n(
+          t_inv_n_ptr,&t_inv_n_ptr[1],&t_inv_n_ptr[2],3
+        );
+        double *t_inv_jac_ptr = &*invHoJac.data().begin();
+        FTensor::Tensor2<double*,3,3> t_inv_jac(
+          t_inv_jac_ptr,&t_inv_jac_ptr[1],&t_inv_jac_ptr[2],
+          &t_inv_jac_ptr[3],&t_inv_jac_ptr[4],&t_inv_jac_ptr[5],
+          &t_inv_jac_ptr[6],&t_inv_jac_ptr[7],&t_inv_jac_ptr[8],9
+        );
+
+        switch (type) {
+          case MBVERTEX: {
+            double *t_diff_n_ptr = &*data.getDiffN().data().begin();
+            for(int gg = 0;gg!=nb_gauss_pts;gg++) {
+              FTensor::Tensor1<double*,3> t_diff_n(
+                t_diff_n_ptr,&t_diff_n_ptr[1],&t_diff_n_ptr[2],3
+              );
+              for(unsigned int bb = 0;bb!=nb_base_functions;bb++) {
+                t_inv_diff_n(i) = t_diff_n(j)*t_inv_jac(j,i);
+                ++t_diff_n;
+                ++t_inv_diff_n;
+              }
+              ++t_inv_jac;
             }
-            double *diff_n_inv_jac = &diffNinvJac(gg,3*dd);
-            cblas_dgemv(CblasRowMajor,CblasTrans,3,3,1.,inv_h,3,diff_n,1,0.,diff_n_inv_jac,1);
           }
+          break;
+          case MBEDGE:
+          case MBTRI:
+          case MBTET: {
+            FTensor::Tensor1<double*,3> t_diff_n = data.getFTensor1DiffN<3>(base);
+            for(unsigned int gg = 0;gg<nb_gauss_pts;gg++) {
+              for(unsigned int bb = 0;bb!=nb_base_functions;bb++) {
+                t_inv_diff_n(i) = t_diff_n(j)*t_inv_jac(j,i);
+                ++t_diff_n;
+                ++t_inv_diff_n;
+              }
+              ++t_inv_jac;
+            }
+          }
+          break;
+          default:
+          SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented");
         }
 
+        // unsigned int gg = 0;
+        // for(;gg<nb_gauss_pts;gg++) {
+        //   double *inv_h = &invHoJac(gg,0);
+        //   for(unsigned dd = 0;dd<nb_base_functions;dd++) {
+        //     double *diff_n;
+        //     if(type == MBVERTEX) {
+        //       diff_n = &data.getDiffN(base)(dd,0);
+        //     } else {
+        //       diff_n = &data.getDiffN(base)(gg,3*dd);
+        //     }
+        //     double *diff_n_inv_jac = &diffNinvJac(gg,3*dd);
+        //     cblas_dgemv(CblasRowMajor,CblasTrans,3,3,1.,inv_h,3,diff_n,1,0.,diff_n_inv_jac,1);
+        //   }
+        // }
         if(type == MBVERTEX) {
-          data.getDiffN().resize(diffNinvJac.size1(),diffNinvJac.size2(),false);
+          data.getDiffN(base).resize(diffNinvJac.size1(),diffNinvJac.size2(),false);
         }
-        data.getDiffN().data().swap(diffNinvJac.data());
+        data.getDiffN(base).data().swap(diffNinvJac.data());
 
       }
-
-      data.getBase() = base;
 
     } catch (std::exception& ex) {
       std::ostringstream ss;
