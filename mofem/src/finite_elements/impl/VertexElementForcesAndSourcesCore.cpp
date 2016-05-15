@@ -70,9 +70,9 @@ namespace MoFEM {
 PetscErrorCode VertexElementForcesAndSourcesCore::operator()() {
   PetscFunctionBegin;
 
-  if(fePtr->get_ent_type() != MBVERTEX) PetscFunctionReturn(0);
+  if(numeredEntFiniteElementPtr->get_ent_type() != MBVERTEX) PetscFunctionReturn(0);
 
-  EntityHandle ent = fePtr->get_ent();
+  EntityHandle ent = numeredEntFiniteElementPtr->get_ent();
   coords.resize(3,false);
   rval = mField.get_moab().get_coords(&ent,1,&*coords.data().begin()); CHKERRQ_MOAB(rval);
 

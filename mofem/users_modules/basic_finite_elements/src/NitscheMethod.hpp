@@ -245,7 +245,7 @@ struct NitscheMethod {
       try {
         commonData.nbActiveFaces = 0;
         commonData.fAces.resize(4);
-        EntityHandle tet = fePtr->get_ent();
+        EntityHandle tet = numeredEntFiniteElementPtr->get_ent();
         for(int ff = 0;ff<4;ff++) {
           EntityHandle face;
           rval = mField.get_moab().side_element(tet,2,ff,face); CHKERRQ_MOAB(rval);
@@ -292,7 +292,7 @@ struct NitscheMethod {
             faceFE.copy_basic_method(*this);
             faceFE.feName = blockData.faceElemName;
             faceFE.nInTheLoop = ff;
-            faceFE.fePtr = faceFEPtr;
+            faceFE.numeredEntFiniteElementPtr = faceFEPtr;
             faceFE.dataPtr = &faceFEPtr->sPtr->data_dofs;
             faceFE.rowPtr = &*faceFEPtr->rows_dofs;
             faceFE.colPtr = &*faceFEPtr->cols_dofs;

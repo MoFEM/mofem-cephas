@@ -11,7 +11,7 @@ void test_for_zero(const T &t, const char *s)
     std::cout << "PASS: " << s << std::endl;
   } else {
     std::cout << "FAIL: " << s << " " << std::abs(t) << std::endl;
-    exit(1);
+    exit(-1);
   }
 }
 
