@@ -527,7 +527,9 @@ struct DataForcesAndSurcesCore {
     inline const MatrixAdaptor getDiffHdivN(FieldApproximationBase base,const int gg) {
       int nb_base_functions = getDiffHdivN(base).size2()/9;
       double *data = &getDiffHdivN(base)(gg,0);
-      return MatrixAdaptor(nb_base_functions,9,ublas::shallow_array_adaptor<double>(9*nb_base_functions,data));
+      return MatrixAdaptor(
+        nb_base_functions,9,ublas::shallow_array_adaptor<double>(9*nb_base_functions,data)
+      );
     }
 
     /** \brief get DiffHdiv of base functions at Gauss pts
@@ -553,7 +555,6 @@ struct DataForcesAndSurcesCore {
       double *data = &getDiffHdivN(base)(gg,9*dof);
       return MatrixAdaptor(3,3,ublas::shallow_array_adaptor<double>(9,data));
     }
-
 
     /** \brief get DiffHdiv of base functions at Gauss pts
     *
@@ -628,6 +629,26 @@ struct DataForcesAndSurcesCore {
     template<int Tensor_Dim>
     FTensor::Tensor1<double*,Tensor_Dim> getFTensor1DiffN();
 
+    /** \brief Get base functions for Hdiv space
+    */
+    template<int Tensor_Dim>
+    FTensor::Tensor1<double*,Tensor_Dim> getFTensor1HdivN(FieldApproximationBase base);
+
+    /** \brief Get base functions for Hdiv space
+    */
+    template<int Tensor_Dim>
+    FTensor::Tensor1<double*,Tensor_Dim> getFTensor1HdivN();
+
+    /** \brief Get derivatives of base functions for Hdiv space
+    */
+    template<int Tensor_Dim0,int Tensor_Dim1>
+    FTensor::Tensor2<double*,Tensor_Dim0,Tensor_Dim1> getFTensor2DiffHdivN(FieldApproximationBase base);
+
+    /** \brief Get derivatives of base functions for Hdiv space
+    */
+    template<int Tensor_Dim0,int Tensor_Dim1>
+    FTensor::Tensor2<double*,Tensor_Dim0,Tensor_Dim1> getFTensor2DiffHdivN();
+
     friend std::ostream& operator<<(std::ostream& os,const DataForcesAndSurcesCore::EntData &e);
 
   protected:
@@ -671,7 +692,6 @@ FTensor::Tensor1<double*,3> DataForcesAndSurcesCore::EntData::getFTensor1DiffN<3
 );
 template<>
 FTensor::Tensor1<double*,3> DataForcesAndSurcesCore::EntData::getFTensor1DiffN<3>();
-
 template<>
 FTensor::Tensor1<double*,2> DataForcesAndSurcesCore::EntData::getFTensor1DiffN<2>(
   const FieldApproximationBase base
@@ -679,11 +699,18 @@ FTensor::Tensor1<double*,2> DataForcesAndSurcesCore::EntData::getFTensor1DiffN<2
 template<>
 FTensor::Tensor1<double*,2> DataForcesAndSurcesCore::EntData::getFTensor1DiffN<2>();
 
-
-
-
-
-
+template<>
+FTensor::Tensor1<double*,3> DataForcesAndSurcesCore::EntData::getFTensor1HdivN<3>(
+  FieldApproximationBase base
+);
+template<>
+FTensor::Tensor1<double*,3> DataForcesAndSurcesCore::EntData::getFTensor1HdivN<3>();
+template<>
+FTensor::Tensor2<double*,3,3> DataForcesAndSurcesCore::EntData::getFTensor2DiffHdivN<3,3>(
+  FieldApproximationBase base
+);
+template<>
+FTensor::Tensor2<double*,3,3> DataForcesAndSurcesCore::EntData::getFTensor2DiffHdivN<3,3>();
 
 /** \brief this class derive data form other data structure
   * \ingroup mofem_forces_and_sources
