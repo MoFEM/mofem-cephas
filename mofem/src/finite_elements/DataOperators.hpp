@@ -196,11 +196,16 @@ struct OpSetHoInvJacH1: public DataOperator {
 struct OpSetHoInvJacHdiv: public DataOperator {
 
   MatrixDouble &invHoJac;
+  FTensor::Index<'i',3> i;
+  FTensor::Index<'j',3> j;
+  FTensor::Index<'k',3> k;
+
   OpSetHoInvJacHdiv(MatrixDouble &inv_ho_jac): invHoJac(inv_ho_jac) {}
 
-  MatrixDouble diffHdiv_invJac;
+  MatrixDouble diffHdivInvJac;
   PetscErrorCode doWork(
-    int side,EntityType type,DataForcesAndSurcesCore::EntData &data);
+    int side,EntityType type,DataForcesAndSurcesCore::EntData &data
+  );
 
 };
 
@@ -248,6 +253,10 @@ struct OpSetHoPiolaTransform: public DataOperator {
 
   VectorDouble &detHoJac;
   MatrixDouble &hoJac;
+  FTensor::Index<'i',3> i;
+  FTensor::Index<'j',3> j;
+  FTensor::Index<'k',3> k;
+
   OpSetHoPiolaTransform(VectorDouble &det_jac,MatrixDouble &jac):
   detHoJac(det_jac),hoJac(jac) {}
 
@@ -266,23 +275,25 @@ struct OpGetDataAndGradient: public DataOperator {
   MatrixDouble &data_at_GaussPt;
   MatrixDouble &dataGrad_at_GaussPt;
 
-  const unsigned int dim;
-  const FieldCoefficientsNumber rank;
+  const unsigned int dIm;
+  const FieldCoefficientsNumber rAnk;
 
   OpGetDataAndGradient(
     MatrixDouble &data_at_gauss_pt,
     MatrixDouble &data_grad_at_gauss_pt,
-    FieldCoefficientsNumber _rank,
-    unsigned int _dim = 3):
-      data_at_GaussPt(data_at_gauss_pt),
-      dataGrad_at_GaussPt(data_grad_at_gauss_pt),
-      dim(_dim),
-      rank(_rank) {}
+    FieldCoefficientsNumber rank,
+    int dim = 3
+  ):
+  data_at_GaussPt(data_at_gauss_pt),
+  dataGrad_at_GaussPt(data_grad_at_gauss_pt),
+  dIm(dim),
+  rAnk(rank) {}
 
   PetscErrorCode doWork(
     int side,
     EntityType type,
-    DataForcesAndSurcesCore::EntData &data);
+    DataForcesAndSurcesCore::EntData &data
+  );
 
 };
 

@@ -311,20 +311,7 @@ FTensor::Tensor1<double*,3> DataForcesAndSurcesCore::EntData::getFTensor1DiffN<3
   const FieldApproximationBase base
 ) {
   double *ptr = &*getDiffN(base).data().begin();
-  int inc;
-  if(getN(base).size1() == getDiffN(base).size1()) {
-    inc = getDiffN(base).size2()/getN(base).size2();
-    if(getDiffN(base).size2() % getN(base).size2() != 0) {
-      std::stringstream s;
-      s << "Data inconsistency "
-      << getDiffN(base).size2() << " "
-      << getN(base).size2();
-      THROW_MESSAGE(s.str());
-    }
-  } else {
-    inc = getDiffN(base).size2();
-  }
-  return FTensor::Tensor1<double*,3>(ptr,&ptr[1],&ptr[2],inc);
+  return FTensor::Tensor1<double*,3>(ptr,&ptr[1],&ptr[2],3);
 }
 
 /**
