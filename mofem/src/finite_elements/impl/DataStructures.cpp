@@ -330,8 +330,7 @@ FTensor::Tensor1<double*,2> DataForcesAndSurcesCore::EntData::getFTensor1DiffN<2
   const FieldApproximationBase base
 ) {
   double *ptr = &*getDiffN(base).data().begin();
-  int inc = getDiffN(base).size2()/getN(base).size2();
-  return FTensor::Tensor1<double*,2>(ptr,&ptr[1],inc);
+  return FTensor::Tensor1<double*,2>(ptr,&ptr[1],2);
 }
 
 /**
