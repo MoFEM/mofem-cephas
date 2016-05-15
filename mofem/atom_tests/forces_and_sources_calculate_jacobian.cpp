@@ -143,20 +143,33 @@ int main(int argc, char *argv[]) {
     struct PrintJacobian: public DataOperator {
 
       TeeStream &my_split;
-      PrintJacobian(TeeStream &_my_split): my_split(_my_split) {};
+      PrintJacobian(TeeStream &_my_split): my_split(_my_split) {
+
+      }
 
       ~PrintJacobian() {
         my_split.close();
       }
 
       PetscErrorCode doWork(
-        int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
-          PetscFunctionBegin;
-          my_split << "side: " << side << " type: " << type << data.getDiffN() << std::endl;
-          PetscFunctionReturn(0);
+        int side,EntityType type,DataForcesAndSurcesCore::EntData &data
+      ) {
+        PetscFunctionBegin;
+        const double eps = 1e-6;
+        for(unsigned int ii = 0;ii!=data.getDiffN().size1();ii++) {
+          for(unsigned int jj = 0;jj!=data.getDiffN().size2();jj++) {
+            if(fabs(data.getDiffN()(ii,jj))<eps) {
+              data.getDiffN()(ii,jj) = 0;
+            }
+          }
         }
+        my_split << "side: " << side << " type: " << type
+        << std::fixed << std::setprecision(4)
+        << data.getDiffN() << std::endl;
+        PetscFunctionReturn(0);
+      }
 
-      };
+    };
 
     MatrixDouble3by3 invJac;
     MatrixDouble dataFIELD1;
