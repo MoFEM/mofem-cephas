@@ -442,7 +442,7 @@ struct FieldApproximationH1 {
 
         std::vector<ublas::vector<double> > fun_val;
         try {
-          EntityHandle ent = getFEMethod()->fePtr->get_ent();
+          EntityHandle ent = getFEMethod()->numeredEntFiniteElementPtr->get_ent();
           fun_val = functionEvaluator(ent,x,y,z,normal,tangent1,tangent2);
         } catch (std::exception& ex) {
           std::ostringstream ss;
