@@ -217,8 +217,21 @@ std::ostream& operator<<(std::ostream& os,const DataForcesAndSurcesCore::EntData
   os.precision(2);
   os <<
     "fieldData: " << std::fixed << e.getFieldData() << std::endl;
+  MatrixDouble base = e.getN();
+  MatrixDouble diff_base = e.getDiffN();
+  const double eps = 1e-12;
+  for(unsigned int ii = 0;ii!=base.size1();ii++) {
+    for(unsigned int jj = 0;jj!=base.size2();jj++) {
+      if(fabs(base(ii,jj))<eps) base(ii,jj) = 0;
+    }
+  }
+  for(unsigned int ii = 0;ii!=diff_base.size1();ii++) {
+    for(unsigned int jj = 0;jj!=diff_base.size2();jj++) {
+      if(fabs(diff_base(ii,jj))<eps) diff_base(ii,jj) = 0;
+    }
+  }
   os <<
-    "N: " << std::fixed << e.getN() << std::endl <<
+    "N: " << std::fixed << base << std::endl <<
     "diffN: " << std::fixed << e.getDiffN();
   return os;
 }
@@ -298,8 +311,7 @@ FTensor::Tensor1<double*,3> DataForcesAndSurcesCore::EntData::getFTensor1DiffN<3
   const FieldApproximationBase base
 ) {
   double *ptr = &*getDiffN(base).data().begin();
-  int inc = getDiffN(base).size2()/getN(base).size2();
-  return FTensor::Tensor1<double*,3>(ptr,&ptr[1],&ptr[2],inc);
+  return FTensor::Tensor1<double*,3>(ptr,&ptr[1],&ptr[2],3);
 }
 
 /**
@@ -318,8 +330,7 @@ FTensor::Tensor1<double*,2> DataForcesAndSurcesCore::EntData::getFTensor1DiffN<2
   const FieldApproximationBase base
 ) {
   double *ptr = &*getDiffN(base).data().begin();
-  int inc = getDiffN(base).size2()/getN(base).size2();
-  return FTensor::Tensor1<double*,2>(ptr,&ptr[1],inc);
+  return FTensor::Tensor1<double*,2>(ptr,&ptr[1],2);
 }
 
 /**
@@ -328,6 +339,79 @@ FTensor::Tensor1<double*,2> DataForcesAndSurcesCore::EntData::getFTensor1DiffN<2
 template<>
 FTensor::Tensor1<double*,2> DataForcesAndSurcesCore::EntData::getFTensor1DiffN<2>() {
   return getFTensor1DiffN<2>(bAse);
+}
+
+template<int Tensor_Dim>
+FTensor::Tensor1<double*,Tensor_Dim> DataForcesAndSurcesCore::EntData::getFTensor1HdivN(
+  FieldApproximationBase base
+) {
+  std::stringstream s;
+  s << "Template for tensor dimension "
+  << Tensor_Dim << " not implemented";
+  THROW_MESSAGE(s.str());
+  return FTensor::Tensor1<double*,Tensor_Dim>();
+}
+
+template<int Tensor_Dim>
+FTensor::Tensor1<double*,Tensor_Dim> DataForcesAndSurcesCore::EntData::getFTensor1HdivN(
+) {
+  return getFTensor1HdivN<double*,Tensor_Dim>(bAse);
+}
+
+template<int Tensor_Dim0,int Tensor_Dim1>
+FTensor::Tensor2<double*,Tensor_Dim0,Tensor_Dim1>
+DataForcesAndSurcesCore::EntData::getFTensor2DiffHdivN(FieldApproximationBase base) {
+  std::stringstream s;
+  s << "Template for tensor dimension "
+  << Tensor_Dim0 << "x" << Tensor_Dim1 << " not implemented";
+  THROW_MESSAGE(s.str());
+  return FTensor::Tensor2<double*,Tensor_Dim0,Tensor_Dim1>();
+}
+
+template<int Tensor_Dim0,int Tensor_Dim1>
+FTensor::Tensor2<double*,Tensor_Dim0,Tensor_Dim1>
+DataForcesAndSurcesCore::EntData::getFTensor2DiffHdivN() {
+  return getFTensor2DiffHdivN<double*,Tensor_Dim0,Tensor_Dim1>(bAse);
+}
+
+template<>
+FTensor::Tensor1<double*,3> DataForcesAndSurcesCore::EntData::getFTensor1HdivN<3>(
+  FieldApproximationBase base
+) {
+  double *t_n_ptr = &*getHdivN(base).data().begin();
+  return FTensor::Tensor1<double*,3>(
+    t_n_ptr, //HDIV0
+    &t_n_ptr[DataForcesAndSurcesCore::HDIV1],
+    &t_n_ptr[DataForcesAndSurcesCore::HDIV2],3
+  );
+}
+
+template<>
+FTensor::Tensor1<double*,3> DataForcesAndSurcesCore::EntData::getFTensor1HdivN<3>() {
+  return getFTensor1HdivN<3>(bAse);
+}
+
+template<>
+FTensor::Tensor2<double*,3,3> DataForcesAndSurcesCore::EntData::getFTensor2DiffHdivN<3,3>(
+  FieldApproximationBase base
+) {
+  double *t_diff_n_ptr = &*getDiffHdivN(base).data().begin();
+  return FTensor::Tensor2<double*,3,3>(
+    t_diff_n_ptr,
+    &t_diff_n_ptr[DataForcesAndSurcesCore::HDIV0_1],
+    &t_diff_n_ptr[DataForcesAndSurcesCore::HDIV0_2],
+    &t_diff_n_ptr[DataForcesAndSurcesCore::HDIV1_0],
+    &t_diff_n_ptr[DataForcesAndSurcesCore::HDIV1_1],
+    &t_diff_n_ptr[DataForcesAndSurcesCore::HDIV1_2],
+    &t_diff_n_ptr[DataForcesAndSurcesCore::HDIV2_0],
+    &t_diff_n_ptr[DataForcesAndSurcesCore::HDIV2_1],
+    &t_diff_n_ptr[DataForcesAndSurcesCore::HDIV2_2],9
+  );
+}
+
+template<>
+FTensor::Tensor2<double*,3,3> DataForcesAndSurcesCore::EntData::getFTensor2DiffHdivN<3,3>() {
+  return getFTensor2DiffHdivN<3,3>(bAse);
 }
 
 }
