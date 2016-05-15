@@ -158,10 +158,20 @@ struct OpSetInvJacH1: public DataOperator {
 /// \brief Transform local reference derivatives of shape function to global derivatives
 struct OpSetInvJacHdiv: public DataOperator {
 
-  MatrixDouble3by3 &invJac;
-  OpSetInvJacHdiv(MatrixDouble3by3 &_invJac): invJac(_invJac) {}
+  FTensor::Tensor2<double*,3,3> tInvJac;
+  FTensor::Index<'i',3> i;
+  FTensor::Index<'j',3> j;
+  FTensor::Index<'k',3> k;
 
-  MatrixDouble diffHdiv_invJac;
+  OpSetInvJacHdiv(MatrixDouble3by3 &inv_jac):
+  tInvJac(
+    &inv_jac(0,0),&inv_jac(0,1),&inv_jac(0,2),
+    &inv_jac(1,0),&inv_jac(1,1),&inv_jac(1,2),
+    &inv_jac(2,0),&inv_jac(2,1),&inv_jac(2,2)
+  ) {
+  }
+
+  MatrixDouble diffHdivInvJac;
   PetscErrorCode doWork(
     int side,EntityType type,DataForcesAndSurcesCore::EntData &data);
 

@@ -717,35 +717,54 @@ PetscErrorCode OpSetInvJacHdiv::doWork(
 
   try {
 
-    FieldApproximationBase base = data.getBase();
-
     for(int b = AINSWORTH_COLE_BASE; b!=USER_BASE; b++) {
 
-      data.getBase() = ApproximationBaseArray[b];
-      diffHdiv_invJac.resize(data.getDiffHdivN().size1(),data.getDiffHdivN().size2(),false);
+      FieldApproximationBase base = ApproximationBaseArray[b];
 
-      unsigned int nb_gauss_pts = data.getDiffHdivN().size1();
-      unsigned int nb_dofs = data.getDiffHdivN().size2()/9;
+      const unsigned int nb_gauss_pts = data.getDiffHdivN(base).size1();
+      const unsigned int nb_base_functions = data.getDiffHdivN(base).size2()/9;
+      if(!nb_base_functions) continue;
 
-      unsigned int gg = 0;
-      for(;gg<nb_gauss_pts;gg++) {
-        unsigned int dd = 0;
-        for(;dd<nb_dofs;dd++) {
-          const double *DiffHdivN = &((data.getDiffHdivN(gg))(dd,0));
-          for(int kk = 0;kk<3;kk++) {
-            cblas_dgemv(CblasRowMajor,CblasTrans,3,3,1.,
-              &*invJac.data().begin(),3,&DiffHdivN[kk],3,
-              0.,&diffHdiv_invJac(gg,9*dd+kk),3
-            );
-          }
+      diffHdivInvJac.resize(
+        nb_gauss_pts,data.getDiffHdivN(base).size2(),false
+      );
+
+      double *t_diff_n_ptr = &*data.getDiffHdivN(base).data().begin();
+      FTensor::Tensor2<double*,3,3> t_diff_n(
+        t_diff_n_ptr,
+        &t_diff_n_ptr[DataForcesAndSurcesCore::HDIV0_1],
+        &t_diff_n_ptr[DataForcesAndSurcesCore::HDIV0_2],
+        &t_diff_n_ptr[DataForcesAndSurcesCore::HDIV1_0],
+        &t_diff_n_ptr[DataForcesAndSurcesCore::HDIV1_1],
+        &t_diff_n_ptr[DataForcesAndSurcesCore::HDIV1_2],
+        &t_diff_n_ptr[DataForcesAndSurcesCore::HDIV2_0],
+        &t_diff_n_ptr[DataForcesAndSurcesCore::HDIV2_1],
+        &t_diff_n_ptr[DataForcesAndSurcesCore::HDIV2_2],9
+      );
+      double *t_inv_diff_n_ptr = &*diffHdivInvJac.data().begin();
+      FTensor::Tensor2<double*,3,3> t_inv_diff_n(
+        t_inv_diff_n_ptr,
+        &t_inv_diff_n_ptr[DataForcesAndSurcesCore::HDIV0_1],
+        &t_inv_diff_n_ptr[DataForcesAndSurcesCore::HDIV0_2],
+        &t_inv_diff_n_ptr[DataForcesAndSurcesCore::HDIV1_0],
+        &t_inv_diff_n_ptr[DataForcesAndSurcesCore::HDIV1_1],
+        &t_inv_diff_n_ptr[DataForcesAndSurcesCore::HDIV1_2],
+        &t_inv_diff_n_ptr[DataForcesAndSurcesCore::HDIV2_0],
+        &t_inv_diff_n_ptr[DataForcesAndSurcesCore::HDIV2_1],
+        &t_inv_diff_n_ptr[DataForcesAndSurcesCore::HDIV2_2],9
+      );
+
+      for(unsigned int gg = 0;gg!=nb_gauss_pts;gg++) {
+        for(unsigned int bb = 0;bb!=nb_base_functions;bb++) {
+          t_inv_diff_n(k,i) = t_diff_n(k,j)*tInvJac(i,j);
+          ++t_diff_n;
+          ++t_inv_diff_n;
         }
       }
 
-      data.getDiffHdivN().data().swap(diffHdiv_invJac.data());
+      data.getDiffHdivN(base).data().swap(diffHdivInvJac.data());
 
     }
-
-    data.getBase() = base;
 
   } catch (std::exception& ex) {
     std::ostringstream ss;
