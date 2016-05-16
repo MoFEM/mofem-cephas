@@ -232,7 +232,7 @@ std::ostream& operator<<(std::ostream& os,const DataForcesAndSurcesCore::EntData
   }
   os <<
     "N: " << std::fixed << base << std::endl <<
-    "diffN: " << std::fixed << e.getDiffN();
+    "diffN: " << std::fixed << diff_base;
   return os;
 }
 
