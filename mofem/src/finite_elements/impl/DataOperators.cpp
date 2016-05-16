@@ -745,7 +745,7 @@ PetscErrorCode OpSetInvJacHdiv::doWork(
 
       for(unsigned int gg = 0;gg!=nb_gauss_pts;gg++) {
         for(unsigned int bb = 0;bb!=nb_base_functions;bb++) {
-          t_inv_diff_n(k,i) = t_diff_n(k,j)*tInvJac(i,j);
+          t_inv_diff_n(k,i) = t_diff_n(k,j)*tInvJac(j,i);
           ++t_diff_n;
           ++t_inv_diff_n;
         }
