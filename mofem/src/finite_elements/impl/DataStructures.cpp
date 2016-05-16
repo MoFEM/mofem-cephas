@@ -219,7 +219,7 @@ std::ostream& operator<<(std::ostream& os,const DataForcesAndSurcesCore::EntData
     "fieldData: " << std::fixed << e.getFieldData() << std::endl;
   MatrixDouble base = e.getN();
   MatrixDouble diff_base = e.getDiffN();
-  const double eps = 1e-12;
+  const double eps = 1e-6;
   for(unsigned int ii = 0;ii!=base.size1();ii++) {
     for(unsigned int jj = 0;jj!=base.size2();jj++) {
       if(fabs(base(ii,jj))<eps) base(ii,jj) = 0;
