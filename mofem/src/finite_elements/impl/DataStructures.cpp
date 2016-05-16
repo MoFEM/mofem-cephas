@@ -303,6 +303,24 @@ FTensor::Tensor1<double*,Tensor_Dim> DataForcesAndSurcesCore::EntData::getFTenso
   return getFTensor1DiffN<Tensor_Dim>(bAse);
 }
 
+template<int Tensor_Dim>
+FTensor::Tensor1<double*,Tensor_Dim> DataForcesAndSurcesCore::EntData::getFTensor1DiffN(
+  const FieldApproximationBase base,const int bb
+) {
+  std::stringstream s;
+  s << "Template for tensor dimension "
+  << Tensor_Dim << " not implemented";
+  THROW_MESSAGE(s.str());
+  return FTensor::Tensor1<double*,Tensor_Dim>();
+}
+
+template<int Tensor_Dim>
+FTensor::Tensor1<double*,Tensor_Dim> DataForcesAndSurcesCore::EntData::getFTensor1DiffN(
+  const int bb
+) {
+  return getFTensor1DiffN<Tensor_Dim>(bAse);
+}
+
 /**
  * \brief Get spatial derivative of base function tensor for dimension 3d
  */
@@ -323,6 +341,27 @@ FTensor::Tensor1<double*,3> DataForcesAndSurcesCore::EntData::getFTensor1DiffN<3
 }
 
 /**
+ * \brief Get spatial derivative of base function tensor for dimension 3d
+ */
+template<>
+FTensor::Tensor1<double*,3> DataForcesAndSurcesCore::EntData::getFTensor1DiffN<3>(
+  const FieldApproximationBase base,const int bb
+) {
+  double *ptr = &*getDiffN(base).data().begin();
+  return FTensor::Tensor1<double*,3>(ptr,&ptr[3*bb+1],&ptr[3*bb+2],getDiffN().size1());
+}
+
+/**
+  * \brief Get spatial derivative of base function tensor for dimension 3d
+ */
+template<>
+FTensor::Tensor1<double*,3> DataForcesAndSurcesCore::EntData::getFTensor1DiffN<3>(
+  const int bb
+) {
+  return getFTensor1DiffN<3>(bAse,bb);
+}
+
+/**
   * \brief Get spatial derivative of base function tensor for dimension 2d
  */
 template<>
@@ -339,6 +378,27 @@ FTensor::Tensor1<double*,2> DataForcesAndSurcesCore::EntData::getFTensor1DiffN<2
 template<>
 FTensor::Tensor1<double*,2> DataForcesAndSurcesCore::EntData::getFTensor1DiffN<2>() {
   return getFTensor1DiffN<2>(bAse);
+}
+
+/**
+ * \brief Get spatial derivative of base function tensor for dimension 3d
+ */
+template<>
+FTensor::Tensor1<double*,2> DataForcesAndSurcesCore::EntData::getFTensor1DiffN<2>(
+  const FieldApproximationBase base,const int bb
+) {
+  double *ptr = &*getDiffN(base).data().begin();
+  return FTensor::Tensor1<double*,2>(ptr,&ptr[2*bb+1],getDiffN().size1());
+}
+
+/**
+  * \brief Get spatial derivative of base function tensor for dimension 3d
+ */
+template<>
+FTensor::Tensor1<double*,2> DataForcesAndSurcesCore::EntData::getFTensor1DiffN<2>(
+  const int bb
+) {
+  return getFTensor1DiffN<2>(bAse,bb);
 }
 
 template<int Tensor_Dim>
