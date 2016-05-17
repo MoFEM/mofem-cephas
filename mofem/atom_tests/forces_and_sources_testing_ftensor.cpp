@@ -319,16 +319,16 @@ int main(int argc, char *argv[]) {
       ForcesAndSurcesCore::UserDataOperator::OPROW
     )
   );
-  // fe1.getOpPtrVector().push_back(
-  //   new MyOp1(
-  //     values1_at_gauss_pts_ptr,
-  //     values2_at_gauss_pts_ptr,
-  //     grad1_at_gauss_pts_ptr,
-  //     grad2_at_gauss_pts_ptr,
-  //     my_split,
-  //     ForcesAndSurcesCore::UserDataOperator::OPROWCOL
-  //   )
-  // );
+  fe1.getOpPtrVector().push_back(
+    new MyOp1(
+      values1_at_gauss_pts_ptr,
+      values2_at_gauss_pts_ptr,
+      grad1_at_gauss_pts_ptr,
+      grad2_at_gauss_pts_ptr,
+      my_split,
+      ForcesAndSurcesCore::UserDataOperator::OPROWCOL
+    )
+  );
 
   ierr = m_field.loop_finite_elements("TEST_PROBLEM","TEST_FE1",fe1);  CHKERRQ(ierr);
 
