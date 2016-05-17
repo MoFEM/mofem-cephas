@@ -245,8 +245,8 @@ int main(int argc, char *argv[]) {
       PetscErrorCode ierr;
 
       const int nb_gauss_pts = row_data.getN().size1();
-      // const int nb_base_functions_row = row_data.getN().size2();
-      // const int nb_base_functions_col = col_data.getN().size2();
+      const int nb_base_functions_row = row_data.getN().size2();
+      const int nb_base_functions_col = col_data.getN().size2();
 
       FTensor::Number<0> N0;
       FTensor::Number<1> N1;
@@ -256,31 +256,38 @@ int main(int argc, char *argv[]) {
       FTensor::Index<'J',3> J;
       FTensor::Index<'K',3> K;
 
-      FTensor::Tensor1<double*,3> field1_values = getTensor1FormData<3>(*field1ValuesDataPtr);
-      FTensor::Tensor0<double*> field2_values = getTensor0FormData(*field2ValuesDataPtr);
-      FTensor::Tensor2<double*,3,3> grad1_values = getTensor2FormData<3,3>(*grad1ValuesDataPtr);
-      FTensor::Tensor1<double*,3> grad2_values = getTensor1FormData<3>(*grad2ValuesDataPtr);
-
       FTensor::Tensor2<double,3,3> t2;
       FTensor::Tensor3<double,3,3,3> t3;
 
-      for(int gg = 0;gg!=nb_gauss_pts;gg++) {
+      for(int br = 0;br!=nb_base_functions_row;br++) {
+        FTensor::Tensor0<double*> base_row = row_data.getFTensor0N(br);
+        FTensor::Tensor1<double*,3> diff_base_row = row_data.getFTensor1DiffN<3>(br);
 
-        double vol = getVolume();
-        double weight = getGaussPts()(3,gg);
+        for(int bc = 0;bc!=nb_base_functions_col;bc++) {
+          FTensor::Tensor0<double*> base_col = col_data.getFTensor0N(bc);
+          FTensor::Tensor1<double*,3> diff_base_col= row_data.getFTensor1DiffN<3>(bc);
 
-        t2(I,J) = grad2_values(I)*field1_values(J)*field2_values;
-        t3(I,J,K) = grad1_values(I,J)*field1_values(K)*field2_values;
+          FTensor::Tensor1<double*,3> field1_values = getTensor1FormData<3>(*field1ValuesDataPtr);
+          FTensor::Tensor0<double*> field2_values = getTensor0FormData(*field2ValuesDataPtr);
+          FTensor::Tensor2<double*,3,3> grad1_values = getTensor2FormData<3,3>(*grad1ValuesDataPtr);
+          FTensor::Tensor1<double*,3> grad2_values = getTensor1FormData<3>(*grad2ValuesDataPtr);
 
-        // for(int bb_row = 0;bb_row!=nb_base_functions_row;bb_row++) {
-        //
-        //
-        // }
+          for(int gg = 0;gg!=nb_gauss_pts;gg++) {
+            // This make no sense (just do some calculations)
+            // FIXME: Some stuff can be calculated only in loop by integration pts for efficiency (I don't care for purpose of this test)
+            t2(I,J) = diff_base_row(I)*diff_base_col(J)*base_row*base_col;
+            t3(I,J,K) = grad1_values(I,J)*field1_values(K)*field2_values;
+            ++field1_values;
+            ++field2_values;
+            ++grad1_values;
+            ++grad2_values;
+          }
+          ++base_col;
+          ++diff_base_col;
 
-        ++field1_values;
-        ++field2_values;
-        ++grad1_values;
-        ++grad2_values;
+        }
+        ++base_row;
+        ++diff_base_row;
 
       }
 
@@ -312,16 +319,16 @@ int main(int argc, char *argv[]) {
       ForcesAndSurcesCore::UserDataOperator::OPROW
     )
   );
-  // fe1.getOpPtrVector().push_back(
-  //   new MyOp1(
-  //     values1_at_gauss_pts_ptr,
-  //     values2_at_gauss_pts_ptr,
-  //     grad1_at_gauss_pts_ptr,
-  //     grad2_at_gauss_pts_ptr,
-  //     my_split,
-  //     ForcesAndSurcesCore::UserDataOperator::OPROWCOL
-  //   )
-  // );
+  fe1.getOpPtrVector().push_back(
+    new MyOp1(
+      values1_at_gauss_pts_ptr,
+      values2_at_gauss_pts_ptr,
+      grad1_at_gauss_pts_ptr,
+      grad2_at_gauss_pts_ptr,
+      my_split,
+      ForcesAndSurcesCore::UserDataOperator::OPROWCOL
+    )
+  );
 
   ierr = m_field.loop_finite_elements("TEST_PROBLEM","TEST_FE1",fe1);  CHKERRQ(ierr);
 

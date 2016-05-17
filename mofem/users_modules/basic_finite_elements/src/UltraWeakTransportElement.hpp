@@ -24,8 +24,11 @@
 /** \brief Ultra weak transport problem
   \ingroup mofem_ultra_weak_transport_elem
 
-  Note to solve this system you need to use direct solver or propper preconditioner
+  Note to solve this system you need to use direct solver or proper preconditioner
   for saddle problem.
+
+  It is based on \cite arnold2006differential \cite arnold2012mixed
+  <https://www.researchgate.net/profile/Richard_Falk/publication/226454406_Differential_Complexes_and_Stability_of_Finite_Element_Methods_I._The_de_Rham_Complex/links/02e7e5214f0426ff77000000.pdf>
 
 */
 struct UltraWeakTransportElement {
@@ -124,7 +127,7 @@ struct UltraWeakTransportElement {
     double cApacity;
     Range tEts; ///< constatins elements in block set
   };
-  std::map<int,BlockData> setOfBlocks; ///< maps block set id with appropiate BlockData
+  std::map<int,BlockData> setOfBlocks; ///< maps block set id with appropriate BlockData
 
   /// \brief add finite elements
   PetscErrorCode addFiniteElements(
