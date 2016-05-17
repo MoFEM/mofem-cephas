@@ -216,6 +216,8 @@ struct PostProcVolumeOnRefinedMesh: public PostProcTemplateOnRefineMesh<VolumeEl
     }
   }
 
+  ublas::matrix<double> shapeFunctions;
+  ublas::matrix<double> coordsAtGaussPts;
   ublas::matrix<int> refTets;
   ublas::matrix<double> gaussPts_FirstOrder;
 
