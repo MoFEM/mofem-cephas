@@ -174,14 +174,18 @@ PetscErrorCode TetPolynomialBase::getValueL2(
 
   DataForcesAndSurcesCore& data = cTx->dAta;
   const FieldApproximationBase base = cTx->bAse;
-  // PetscErrorCode (*base_polynomials)(
-  //   int p,double s,double *diff_s,double *L,double *diffL,const int dim
-  // ) = cTx->basePolynomials;
+  PetscErrorCode (*base_polynomials)(
+    int p,double s,double *diff_s,double *L,double *diffL,const int dim
+  ) = cTx->basePolynomials;
 
   int nb_gauss_pts = pts.size2();
 
-  data.dataOnEntities[MBTET][0].getN(base).resize(nb_gauss_pts,NBVOLUMETET_L2_AINSWORTH_COLE(data.dataOnEntities[MBTET][0].getDataOrder()),false);
-  data.dataOnEntities[MBTET][0].getDiffN(base).resize(nb_gauss_pts,3*NBVOLUMETET_L2_AINSWORTH_COLE(data.dataOnEntities[MBTET][0].getDataOrder()),false);
+  data.dataOnEntities[MBTET][0].getN(base).resize(
+    nb_gauss_pts,NBVOLUMETET_L2_AINSWORTH_COLE(data.dataOnEntities[MBTET][0].getDataOrder()),false
+  );
+  data.dataOnEntities[MBTET][0].getDiffN(base).resize(
+    nb_gauss_pts,3*NBVOLUMETET_L2_AINSWORTH_COLE(data.dataOnEntities[MBTET][0].getDataOrder()),false
+  );
 
   ierr = L2_ShapeFunctions_MBTET(
     data.dataOnEntities[MBTET][0].getDataOrder(),
@@ -189,7 +193,8 @@ PetscErrorCode TetPolynomialBase::getValueL2(
     &*data.dataOnEntities[MBVERTEX][0].getDiffN(base).data().begin(),
     &*data.dataOnEntities[MBTET][0].getN(base).data().begin(),
     &*data.dataOnEntities[MBTET][0].getDiffN(base).data().begin(),
-    nb_gauss_pts
+    nb_gauss_pts,
+    base_polynomials
   ); CHKERRQ(ierr);
 
 
