@@ -69,7 +69,10 @@ PetscErrorCode L2_FaceShapeFunctions_MBTRI(int p,double *N,double *diffN,double 
   }
   PetscFunctionReturn(0);
 }
-PetscErrorCode L2_ShapeFunctions_MBTET(int p,double *N,double *diffN,double *L2N,double *diff_L2N,int GDIM) {
+PetscErrorCode L2_ShapeFunctions_MBTET(
+  int p,double *N,double *diffN,double *L2N,double *diff_L2N,int GDIM,
+  PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
+) {
   PetscFunctionBegin;
   PetscErrorCode ierr;
   int P = NBVOLUMETET_L2_AINSWORTH_COLE(p);
@@ -89,9 +92,9 @@ PetscErrorCode L2_ShapeFunctions_MBTET(int p,double *N,double *diffN,double *L2N
     double ksiL2 = N[ node_shift+3 ] - N[ node_shift + 0];
     double L0[ p+1 ],L1[ p+1 ],L2[ p+1 ];
     double diffL0[ 3*(p+1) ],diffL1[ 3*(p+1) ],diffL2[ 3*(p+1) ];
-    ierr = Legendre_polynomials(p,ksiL0,diff_ksiL0,L0,diffL0,3);  CHKERRQ(ierr);
-    ierr = Legendre_polynomials(p,ksiL1,diff_ksiL1,L1,diffL1,3);  CHKERRQ(ierr);
-    ierr = Legendre_polynomials(p,ksiL2,diff_ksiL2,L2,diffL2,3);  CHKERRQ(ierr);
+    ierr = base_polynomials(p,ksiL0,diff_ksiL0,L0,diffL0,3);  CHKERRQ(ierr);
+    ierr = base_polynomials(p,ksiL1,diff_ksiL1,L1,diffL1,3);  CHKERRQ(ierr);
+    ierr = base_polynomials(p,ksiL2,diff_ksiL2,L2,diffL2,3);  CHKERRQ(ierr);
     int shift = ii*P;
     int jj = 0;
     int oo = 0;

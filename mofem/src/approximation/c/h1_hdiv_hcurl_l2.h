@@ -46,7 +46,10 @@ extern "C" {
 #define NBVOLUMETET_VOLUME_HDIV_AINSWORTH_COLE(P) ((P>3) ? ((P-3)*(P-2)*(P-1)/2) : 0)
 
 PetscErrorCode L2_FaceShapeFunctions_MBTRI(int p,double *N,double *diffN,double *L2N,double *diff_L2N,int GDIM);
-PetscErrorCode L2_ShapeFunctions_MBTET(int p,double *N,double *diffN,double *L2N,double *diff_L2N,int GDIM);
+PetscErrorCode L2_ShapeFunctions_MBTET(
+  int p,double *N,double *diffN,double *L2N,double *diff_L2N,int GDIM,
+  PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
+);
 PetscErrorCode L2_VolumeShapeDiffMBTETinvJ(int base_p,int p,double *volume_diffN,double *invJac,double *volume_diffNinvJac,int GDIM);
 
 /**
