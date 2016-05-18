@@ -590,7 +590,8 @@ PetscErrorCode PostProcFatPrismOnRefinedMesh::setGaussPtsTrianglesOnly(int order
   //   SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"post-process mesh not generated");
   // }
 
-  //FIXME: Refinement not implement and inefficient implementation
+  //FIXME: Refinement not implement
+  //FIXME: This is inefficient implementation
 
   // PetscErrorCode ierr;
   MoABErrorCode rval;
