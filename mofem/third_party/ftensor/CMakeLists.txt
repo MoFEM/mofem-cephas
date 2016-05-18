@@ -1,0 +1,26 @@
+# MoFEM is free software: you can redistribute it and/or modify it under
+# the terms of the GNU Lesser General Public License as published by the
+# Free Software Foundation, either version 3 of the License, or (at your
+# option) any later version.
+#
+# MoFEM is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
+# License for more details.
+#
+# You should have received a copy of the GNU Lesser General Public
+# License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
+
+# FTensor
+file(GLOB_RECURSE FTENSOR_CONFORMANCE_TEST_FILES
+  ${PROJECT_SOURCE_DIR}/third_party/ftensor/tests/conformance/test_*.cpp
+)
+add_executable(
+  ftensor_conformance_test
+  ${PROJECT_SOURCE_DIR}/third_party/ftensor/tests/conformance/main.cpp
+  ${FTENSOR_CONFORMANCE_TEST_FILES}
+)
+add_test(
+  ftensor_conformance_test ${CMAKE_CURRENT_BINARY_DIR}/ftensor_conformance_test
+)
+add_subdirectory(${PROJECT_SOURCE_DIR}/third_party/ftensor/tests/speed)

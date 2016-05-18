@@ -106,7 +106,7 @@ struct CohesiveInterfaceElement {
     */
     PetscErrorCode getKappa(int nb_gauss_pts,const FEMethod *fe_method) {
       PetscFunctionBegin;
-      EntityHandle ent = fe_method->fePtr->get_ent();
+      EntityHandle ent = fe_method->numeredEntFiniteElementPtr->get_ent();
       ErrorCode rval;
       rval = mField.get_moab().tag_get_by_ptr(thKappa,&ent,1,(const void **)&kappaPtr,&kappaSize);
       if(rval != MB_SUCCESS || kappaSize != nb_gauss_pts) {
@@ -295,7 +295,7 @@ struct CohesiveInterfaceElement {
         //}
       }
       if(all_gauss_pts_damaged) {
-        EntityHandle ent = fe_method->fePtr->get_ent();
+        EntityHandle ent = fe_method->numeredEntFiniteElementPtr->get_ent();
         int set_prism_as_demaged = 1;
         rval = mField.get_moab().tag_set_data(thDamagedPrism,&ent,1,&set_prism_as_demaged); CHKERRQ_MOAB(rval);
       }

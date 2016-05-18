@@ -79,11 +79,74 @@ struct DataOperator {
 
 };
 
+/**
+ * \brief Calculate inverse of tensor rank 2 at integration points
+ */
+template<int Tensor_Dim,class T,class L,class A>
+PetscErrorCode invertTensor2(
+  ublas::matrix<T,L,A> &jac_data,
+  ublas::vector<T,A> &det_data,
+  ublas::matrix<T,L,A> &inv_jac_data
+) {
+  PetscFunctionBegin;
+  SETERRQ(
+    PETSC_COMM_SELF,
+    MOFEM_NOT_IMPLEMENTED,
+    "Specialization for this template not yet implemented"
+  );
+  PetscFunctionReturn(0);
+}
+
+template<>
+PetscErrorCode invertTensor2<3,double,ublas::row_major,ublas::unbounded_array<double> >(
+  MatrixDouble &jac_data,
+  VectorDouble &det_data,
+  MatrixDouble &inv_jac_data
+);
+
+template<int Tensor_Dim,class T1,class T2>
+inline PetscErrorCode determinantTensor2(
+  FTensor::Tensor2<T1,Tensor_Dim,Tensor_Dim> &t,T2 &det
+) {
+  PetscFunctionBegin;
+  det =
+    +t(0,0)*t(1,1)*t(2,2) + t(1,0)*t(2,1)*t(0,2)
+    +t(2,0)*t(0,1)*t(1,2) - t(0,0)*t(2,1)*t(1,2)
+    -t(2,0)*t(1,1)*t(0,2) - t(1,0)*t(0,1)*t(2,2);
+  PetscFunctionReturn(0);
+}
+
+template<int Tensor_Dim,class T1,class T2>
+inline PetscErrorCode invertTensor2(
+  FTensor::Tensor2<T1,Tensor_Dim,Tensor_Dim> &t,T2 &det,FTensor::Tensor2<T1,3,3> &inv_t
+) {
+  PetscFunctionBegin;
+  inv_t(0,0) = (t(1,1)*t(2,2)-t(1,2)*t(2,1))/det;
+  inv_t(0,1) = (t(0,2)*t(2,1)-t(0,1)*t(2,2))/det;
+  inv_t(0,2) = (t(0,1)*t(1,2)-t(0,2)*t(1,1))/det;
+  inv_t(1,0) = (t(1,2)*t(2,0)-t(1,0)*t(2,2))/det;
+  inv_t(1,1) = (t(0,0)*t(2,2)-t(0,2)*t(2,0))/det;
+  inv_t(1,2) = (t(0,2)*t(1,0)-t(0,0)*t(1,2))/det;
+  inv_t(2,0) = (t(1,0)*t(2,1)-t(1,1)*t(2,0))/det;
+  inv_t(2,1) = (t(0,1)*t(2,0)-t(0,0)*t(2,1))/det;
+  inv_t(2,2) = (t(0,0)*t(1,1)-t(0,1)*t(1,0))/det;
+  PetscFunctionReturn(0);
+}
+
 /// \brief Transform local reference derivatives of shape function to global derivatives
 struct OpSetInvJacH1: public DataOperator {
 
-  MatrixDouble &invJac;
-  OpSetInvJacH1(MatrixDouble &inv_jac): invJac(inv_jac) {}
+  FTensor::Tensor2<double*,3,3> tInvJac;
+  FTensor::Index<'i',3> i;
+  FTensor::Index<'j',3> j;
+
+  OpSetInvJacH1(MatrixDouble3by3 &inv_jac):
+  tInvJac(
+    &inv_jac(0,0),&inv_jac(0,1),&inv_jac(0,2),
+    &inv_jac(1,0),&inv_jac(1,1),&inv_jac(1,2),
+    &inv_jac(2,0),&inv_jac(2,1),&inv_jac(2,2)
+  ) {
+  }
 
   MatrixDouble diffNinvJac;
   PetscErrorCode doWork(
@@ -95,10 +158,20 @@ struct OpSetInvJacH1: public DataOperator {
 /// \brief Transform local reference derivatives of shape function to global derivatives
 struct OpSetInvJacHdiv: public DataOperator {
 
-  MatrixDouble &invJac;
-  OpSetInvJacHdiv(MatrixDouble &_invJac): invJac(_invJac) {}
+  FTensor::Tensor2<double*,3,3> tInvJac;
+  FTensor::Index<'i',3> i;
+  FTensor::Index<'j',3> j;
+  FTensor::Index<'k',3> k;
 
-  MatrixDouble diffHdiv_invJac;
+  OpSetInvJacHdiv(MatrixDouble3by3 &inv_jac):
+  tInvJac(
+    &inv_jac(0,0),&inv_jac(0,1),&inv_jac(0,2),
+    &inv_jac(1,0),&inv_jac(1,1),&inv_jac(1,2),
+    &inv_jac(2,0),&inv_jac(2,1),&inv_jac(2,2)
+  ) {
+  }
+
+  MatrixDouble diffHdivInvJac;
   PetscErrorCode doWork(
     int side,EntityType type,DataForcesAndSurcesCore::EntData &data);
 
@@ -109,6 +182,8 @@ struct OpSetInvJacHdiv: public DataOperator {
 struct OpSetHoInvJacH1: public DataOperator {
 
   MatrixDouble &invHoJac;
+  FTensor::Index<'i',3> i;
+  FTensor::Index<'j',3> j;
   OpSetHoInvJacH1(MatrixDouble &inv_ho_jac): invHoJac(inv_ho_jac) {}
 
   MatrixDouble diffNinvJac;
@@ -121,25 +196,53 @@ struct OpSetHoInvJacH1: public DataOperator {
 struct OpSetHoInvJacHdiv: public DataOperator {
 
   MatrixDouble &invHoJac;
+  FTensor::Index<'i',3> i;
+  FTensor::Index<'j',3> j;
+  FTensor::Index<'k',3> k;
+
   OpSetHoInvJacHdiv(MatrixDouble &inv_ho_jac): invHoJac(inv_ho_jac) {}
 
-  MatrixDouble diffHdiv_invJac;
+  MatrixDouble diffHdivInvJac;
   PetscErrorCode doWork(
-    int side,EntityType type,DataForcesAndSurcesCore::EntData &data);
+    int side,EntityType type,DataForcesAndSurcesCore::EntData &data
+  );
 
 };
 
 /** \brief apply covariant (Piola) transfer for Hdiv space
+
+Contravariant Piola transformation
+\f[
+\psi_i|_t = \frac{1}{\textrm{det}(J)}J_{ij}\hat{\psi}_j\\
+\left.\frac{\partial \psi_i}{\partial \xi_j}\right|_t
+=
+\frac{1}{\textrm{det}(J)}J_{ik}\frac{\partial \hat{\psi}_k}{\partial \xi_j}
+\f]
+
 */
 struct OpSetPiolaTransform: public DataOperator {
 
   double &vOlume;
-  MatrixDouble &Jac;
-  OpSetPiolaTransform(double &_vOlume,MatrixDouble &_Jac):
-  vOlume(_vOlume),Jac(_Jac) {}
+  // MatrixDouble3by3 &jAc;
+
+  FTensor::Tensor2<double*,3,3> tJac;
+  FTensor::Index<'i',3> i;
+  FTensor::Index<'j',3> j;
+  FTensor::Index<'k',3> k;
+
+  OpSetPiolaTransform(double &volume,MatrixDouble3by3 &jac):
+  vOlume(volume),
+  // jAc(jac),
+  tJac(
+    &jac(0,0),&jac(0,1),&jac(0,2),
+    &jac(1,0),&jac(1,1),&jac(1,2),
+    &jac(2,0),&jac(2,1),&jac(2,2)
+  ) {
+  }
 
   MatrixDouble piolaN;
   MatrixDouble piolaDiffN;
+
   PetscErrorCode doWork(int side,EntityType type,DataForcesAndSurcesCore::EntData &data);
 
 };
@@ -150,6 +253,10 @@ struct OpSetHoPiolaTransform: public DataOperator {
 
   VectorDouble &detHoJac;
   MatrixDouble &hoJac;
+  FTensor::Index<'i',3> i;
+  FTensor::Index<'j',3> j;
+  FTensor::Index<'k',3> k;
+
   OpSetHoPiolaTransform(VectorDouble &det_jac,MatrixDouble &jac):
   detHoJac(det_jac),hoJac(jac) {}
 
@@ -168,23 +275,25 @@ struct OpGetDataAndGradient: public DataOperator {
   MatrixDouble &data_at_GaussPt;
   MatrixDouble &dataGrad_at_GaussPt;
 
-  const unsigned int dim;
-  const FieldCoefficientsNumber rank;
+  const unsigned int dIm;
+  const FieldCoefficientsNumber rAnk;
 
   OpGetDataAndGradient(
     MatrixDouble &data_at_gauss_pt,
     MatrixDouble &data_grad_at_gauss_pt,
-    FieldCoefficientsNumber _rank,
-    unsigned int _dim = 3):
-      data_at_GaussPt(data_at_gauss_pt),
-      dataGrad_at_GaussPt(data_grad_at_gauss_pt),
-      dim(_dim),
-      rank(_rank) {}
+    FieldCoefficientsNumber rank,
+    int dim = 3
+  ):
+  data_at_GaussPt(data_at_gauss_pt),
+  dataGrad_at_GaussPt(data_grad_at_gauss_pt),
+  dIm(dim),
+  rAnk(rank) {}
 
   PetscErrorCode doWork(
     int side,
     EntityType type,
-    DataForcesAndSurcesCore::EntData &data);
+    DataForcesAndSurcesCore::EntData &data
+  );
 
 };
 
@@ -294,7 +403,6 @@ struct OpGetHoTangentOnEdge: public DataOperator {
   PetscErrorCode doWork(int side,EntityType type,DataForcesAndSurcesCore::EntData &data);
 
 };
-
 
 }
 

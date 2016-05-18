@@ -77,23 +77,28 @@ struct EdgeElementForcesAndSurcesCore: public ForcesAndSurcesCore {
       const std::string &row_field_name,const std::string &col_field_name,const char type):
       ForcesAndSurcesCore::UserDataOperator(row_field_name,col_field_name,type) {}
 
-    inline double getLength() { return ptrFE->lEngth; }
-    inline VectorDouble& getDirection() { return ptrFE->dIrection; }
-    inline VectorDouble& getCoords() { return ptrFE->cOords; }
-    inline MatrixDouble& getGaussPts() { return ptrFE->gaussPts; }
-    inline MatrixDouble& getCoordsAtGaussPts() { return ptrFE->coordsAtGaussPts; }
-    inline MatrixDouble& getTangetAtGaussPtrs() { return ptrFE->tAngent_at_GaussPt; }
-    inline const EdgeElementForcesAndSurcesCore* getEdgeFE() { return ptrFE; }
-
-    PetscErrorCode setPtrFE(ForcesAndSurcesCore *ptr) {
-      PetscFunctionBegin;
-      ptrFE = dynamic_cast<EdgeElementForcesAndSurcesCore*>(ptr);
-      ForcesAndSurcesCore::UserDataOperator::setPtrFE(ptr);
-      PetscFunctionReturn(0);
+    inline double getLength() {
+      return dynamic_cast<EdgeElementForcesAndSurcesCore*>(ptrFE)->lEngth;
+    }
+    inline VectorDouble& getDirection() {
+      return dynamic_cast<EdgeElementForcesAndSurcesCore*>(ptrFE)->dIrection;
+    }
+    inline VectorDouble& getCoords() {
+      return dynamic_cast<EdgeElementForcesAndSurcesCore*>(ptrFE)->cOords;
+    }
+    inline MatrixDouble& getGaussPts() {
+      return dynamic_cast<EdgeElementForcesAndSurcesCore*>(ptrFE)->gaussPts;
+    }
+    inline MatrixDouble& getCoordsAtGaussPts() {
+      return dynamic_cast<EdgeElementForcesAndSurcesCore*>(ptrFE)->coordsAtGaussPts;
+    }
+    inline MatrixDouble& getTangetAtGaussPtrs() {
+      return dynamic_cast<EdgeElementForcesAndSurcesCore*>(ptrFE)->tAngent_at_GaussPt;
+    }
+    inline const EdgeElementForcesAndSurcesCore* getEdgeFE() {
+      return dynamic_cast<EdgeElementForcesAndSurcesCore*>(ptrFE);
     }
 
-    private:
-    EdgeElementForcesAndSurcesCore *ptrFE;
   };
 
   PetscErrorCode preProcess() {
@@ -111,3 +116,11 @@ struct EdgeElementForcesAndSurcesCore: public ForcesAndSurcesCore {
 }
 
 #endif //__EDGEELEMENTFORCESANDSURCESCORE_HPP__
+
+/***************************************************************************//**
+ * \defgroup mofem_forces_and_sources_edge_element Edge Element
+ *
+ * \brief Implementation of general edge element.
+ *
+ * \ingroup mofem_forces_and_sources
+ ******************************************************************************/

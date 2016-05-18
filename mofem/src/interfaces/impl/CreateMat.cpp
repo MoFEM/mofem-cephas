@@ -816,7 +816,7 @@ PetscErrorCode Core::partition_check_matrix_fill_in(const std::string &problem_n
     PetscErrorCode operator()() {
       PetscFunctionBegin;
 
-      if(refinedFiniteElementsPtr->find(fePtr->get_ent())==refinedFiniteElementsPtr->end()) {
+      if(refinedFiniteElementsPtr->find(numeredEntFiniteElementPtr->get_ent())==refinedFiniteElementsPtr->end()) {
         SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
       }
 
@@ -832,14 +832,14 @@ PetscErrorCode Core::partition_check_matrix_fill_in(const std::string &problem_n
 
         MoFEMEntityEntFiniteElementAdjacencyMap_multiIndex::index<Composite_Unique_mi_tag>::type::iterator ait;
         ait = adjacenciesPtr->get<Composite_Unique_mi_tag>().find(
-          boost::make_tuple((*rit)->get_MoFEMEntity_ptr()->get_global_unique_id(),fePtr->get_global_unique_id())
+          boost::make_tuple((*rit)->get_MoFEMEntity_ptr()->get_global_unique_id(),numeredEntFiniteElementPtr->get_global_unique_id())
         );
         if(ait==adjacenciesPtr->end()) {
           std::ostringstream ss;
           ss << *(*rit) << std::endl;
-          ss << *fePtr << std::endl;
+          ss << *numeredEntFiniteElementPtr << std::endl;
           ss << "dof: " << (*rit)->get_BitRefLevel() << std::endl;
-          ss << "fe: " << fePtr->get_BitRefLevel() << std::endl;
+          ss << "fe: " << numeredEntFiniteElementPtr->get_BitRefLevel() << std::endl;
           ss << "problem: " << problemPtr->get_BitRefLevel() << std::endl;
           PetscPrintf(mFieldPtr->get_comm(),"%s",ss.str().c_str());
           SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"adjacencies data inconsistency");
@@ -865,7 +865,7 @@ PetscErrorCode Core::partition_check_matrix_fill_in(const std::string &problem_n
           }
           int col = (*cit)->get_petsc_gloabl_dof_idx();
           ait = adjacenciesPtr->get<Composite_Unique_mi_tag>().find(
-            boost::make_tuple((*cit)->get_MoFEMEntity_ptr()->get_global_unique_id(),fePtr->get_global_unique_id())
+            boost::make_tuple((*cit)->get_MoFEMEntity_ptr()->get_global_unique_id(),numeredEntFiniteElementPtr->get_global_unique_id())
           );
           if(ait==adjacenciesPtr->end()) {
             SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"adjacencies data inconsistency");
@@ -882,11 +882,11 @@ PetscErrorCode Core::partition_check_matrix_fill_in(const std::string &problem_n
           if(row == rowPrint && col == colPrint) {
 
             std::ostringstream ss;
-            ss << "fe:\n" << *fePtr << std::endl;
+            ss << "fe:\n" << *numeredEntFiniteElementPtr << std::endl;
             ss << "row:\n" << *(*rit) << std::endl;
             ss << "col:\n" << *(*cit) << std::endl;
 
-            ss << "fe:\n" << fePtr->get_BitRefLevel() << std::endl;
+            ss << "fe:\n" << numeredEntFiniteElementPtr->get_BitRefLevel() << std::endl;
             ss << "row:\n" << (*rit)->get_BitRefLevel() << std::endl;
             ss << "col:\n" << (*cit)->get_BitRefLevel() << std::endl;
 
@@ -940,11 +940,11 @@ PetscErrorCode Core::partition_check_matrix_fill_in(const std::string &problem_n
 
       }
 
-      if(fePtr->sPtr->row_dof_view->size()!=fePtr->rows_dofs->size()) {
+      if(numeredEntFiniteElementPtr->sPtr->row_dof_view->size()!=numeredEntFiniteElementPtr->rows_dofs->size()) {
         std::cerr << "Warning: FEDof Row size != NumeredFEDof RowSize" << std::endl;
       }
 
-      if(fePtr->sPtr->col_dof_view->size()!=fePtr->cols_dofs->size()) {
+      if(numeredEntFiniteElementPtr->sPtr->col_dof_view->size()!=numeredEntFiniteElementPtr->cols_dofs->size()) {
         std::cerr << "Warning: FEDof Row size != NumeredFEDof RowSize" << std::endl;
       }
 

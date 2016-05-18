@@ -50,6 +50,7 @@
 #include <SeriesRecorder.hpp>
 #include <Core.hpp>
 
+#include <FTensor.hpp>
 #include <DataStructures.hpp>
 #include <DataOperators.hpp>
 #include <ElementsOnEntities.hpp>
@@ -78,9 +79,9 @@ namespace MoFEM {
 PetscErrorCode FatPrismElementForcesAndSurcesCore::operator()() {
   PetscFunctionBegin;
 
-  if(fePtr->get_ent_type() != MBPRISM) PetscFunctionReturn(0);
+  if(numeredEntFiniteElementPtr->get_ent_type() != MBPRISM) PetscFunctionReturn(0);
 
-  EntityHandle ent = fePtr->get_ent();
+  EntityHandle ent = numeredEntFiniteElementPtr->get_ent();
   int num_nodes;
   const EntityHandle* conn;
   rval = mField.get_moab().get_connectivity(ent,conn,num_nodes,true); CHKERRQ_MOAB(rval);
@@ -364,7 +365,7 @@ PetscErrorCode FatPrismElementForcesAndSurcesCore::operator()() {
                 gaussPtsTrianglesOnly,
                 gaussPtsThroughThickness,
                 mField.get_moab(),
-                fePtr,
+                numeredEntFiniteElementPtr,
                 H1,
                 ApproximationBaseArray[b],
                 NOBASE

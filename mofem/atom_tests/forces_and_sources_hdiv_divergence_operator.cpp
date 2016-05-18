@@ -264,8 +264,12 @@ int main(int argc, char *argv[]) {
 
   const double eps = 1e-6;
   if(fabs(divergence_vol-1.-1./3)>eps) {
-     SETERRQ2(PETSC_COMM_SELF,MOFEM_ATOM_TEST_INVALID,"invalid divergence_vol = %6.4e, should be %6.4e\n",
-	divergence_vol,1+1./3.);
+    SETERRQ2(
+      PETSC_COMM_SELF,
+      MOFEM_ATOM_TEST_INVALID,
+      "invalid divergence_vol = %6.4e, should be %6.4e\n",
+      divergence_vol,1+1./3.
+    );
   }
   if(fabs(divergence_skin-1.-1./3)>eps) {
      SETERRQ2(PETSC_COMM_SELF,MOFEM_ATOM_TEST_INVALID,"invalid fluxes = %6.4e, should be %6.4e\n",

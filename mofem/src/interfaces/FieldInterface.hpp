@@ -2362,6 +2362,9 @@ struct FieldInterface: public UnknownInterface {
 
 /***************************************************************************//**
  * \defgroup mofem_loops Loops
+ *
+ * \brief Manages complexities for integrating over finite elements and dofs.
+ *
  * \ingroup mofem
  ******************************************************************************/
 

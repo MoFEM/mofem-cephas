@@ -2642,10 +2642,12 @@ PetscErrorCode Core::get_entities_by_type_and_ref_level(const BitRefLevel &bit,c
       eit = ents.erase(eit);
       continue;
     }
+    // Not masked
     if((bit2&mask) != bit2) {
       eit = ents.erase(eit);
       continue;
     }
+    // Not in bit
     if((bit2&bit).none()) {
       eit = ents.erase(eit);
       continue;
@@ -3029,7 +3031,7 @@ PetscErrorCode Core::loop_finite_elements(
     // back_miit--;
 
     method.nInTheLoop = nn;
-    method.fePtr = &*(*miit);
+    method.numeredEntFiniteElementPtr = &*(*miit);
     method.dataPtr = &((*miit)->sPtr->data_dofs);
     method.rowPtr = (*miit)->rows_dofs.get();
     method.colPtr = (*miit)->cols_dofs.get();

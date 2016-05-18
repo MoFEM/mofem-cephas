@@ -62,5 +62,8 @@ namespace MoFEM {
 
 /***************************************************************************//**
  * \defgroup mofem_base_functions Base functions
+ *
+ * \brief Calculation of base functions at integration points.
+ *
  * \ingroup mofem
  ******************************************************************************/

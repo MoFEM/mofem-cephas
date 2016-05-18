@@ -69,17 +69,10 @@ struct VertexElementForcesAndSourcesCore: public ForcesAndSurcesCore {
       const std::string &row_field_name,const std::string &col_field_name,const char type):
       ForcesAndSurcesCore::UserDataOperator(row_field_name,col_field_name,type) {}
 
-    inline VectorDouble& getCoords() { return ptrFE->coords; }
-
-    PetscErrorCode setPtrFE(ForcesAndSurcesCore *ptr) {
-      PetscFunctionBegin;
-      ptrFE = dynamic_cast<VertexElementForcesAndSourcesCore*>(ptr);
-      ForcesAndSurcesCore::UserDataOperator::setPtrFE(ptr);
-      PetscFunctionReturn(0);
+    inline VectorDouble& getCoords() {
+      return dynamic_cast<VertexElementForcesAndSourcesCore*>(ptrFE)->coords;
     }
 
-    private:
-    VertexElementForcesAndSourcesCore *ptrFE;
   };
 
   PetscErrorCode preProcess() {
@@ -97,3 +90,8 @@ struct VertexElementForcesAndSourcesCore: public ForcesAndSurcesCore {
 }
 
 #endif //__VERTEXELEMENTFORCESANDSOURCESCORE_HPP__
+
+/***************************************************************************//**
+ * \defgroup mofem_forces_and_sources_vertex_element Vertex Element
+ * \ingroup mofem_forces_and_sources
+ ******************************************************************************/

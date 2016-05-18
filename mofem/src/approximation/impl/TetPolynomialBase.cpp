@@ -29,6 +29,7 @@
 #include <UnknownInterface.hpp>
 using namespace MoFEM;
 
+#include <FTensor.hpp>
 #include <TagMultiIndices.hpp>
 #include <CoordSysMultiIndices.hpp>
 #include <FieldMultiIndices.hpp>
@@ -173,14 +174,18 @@ PetscErrorCode TetPolynomialBase::getValueL2(
 
   DataForcesAndSurcesCore& data = cTx->dAta;
   const FieldApproximationBase base = cTx->bAse;
-  // PetscErrorCode (*base_polynomials)(
-  //   int p,double s,double *diff_s,double *L,double *diffL,const int dim
-  // ) = cTx->basePolynomials;
+  PetscErrorCode (*base_polynomials)(
+    int p,double s,double *diff_s,double *L,double *diffL,const int dim
+  ) = cTx->basePolynomials;
 
   int nb_gauss_pts = pts.size2();
 
-  data.dataOnEntities[MBTET][0].getN(base).resize(nb_gauss_pts,NBVOLUMETET_L2_AINSWORTH_COLE(data.dataOnEntities[MBTET][0].getDataOrder()),false);
-  data.dataOnEntities[MBTET][0].getDiffN(base).resize(nb_gauss_pts,3*NBVOLUMETET_L2_AINSWORTH_COLE(data.dataOnEntities[MBTET][0].getDataOrder()),false);
+  data.dataOnEntities[MBTET][0].getN(base).resize(
+    nb_gauss_pts,NBVOLUMETET_L2_AINSWORTH_COLE(data.dataOnEntities[MBTET][0].getDataOrder()),false
+  );
+  data.dataOnEntities[MBTET][0].getDiffN(base).resize(
+    nb_gauss_pts,3*NBVOLUMETET_L2_AINSWORTH_COLE(data.dataOnEntities[MBTET][0].getDataOrder()),false
+  );
 
   ierr = L2_ShapeFunctions_MBTET(
     data.dataOnEntities[MBTET][0].getDataOrder(),
@@ -188,7 +193,8 @@ PetscErrorCode TetPolynomialBase::getValueL2(
     &*data.dataOnEntities[MBVERTEX][0].getDiffN(base).data().begin(),
     &*data.dataOnEntities[MBTET][0].getN(base).data().begin(),
     &*data.dataOnEntities[MBTET][0].getDiffN(base).data().begin(),
-    nb_gauss_pts
+    nb_gauss_pts,
+    base_polynomials
   ); CHKERRQ(ierr);
 
 
@@ -309,8 +315,8 @@ PetscErrorCode TetPolynomialBase::getValueHdiv(
     base_polynomials
   ); CHKERRQ(ierr);
 
-  // Set shape functions into data strucrure Shape functions hast to be put
-  // in arrays in order which guarantee hierarhical series of digrees of
+  // Set shape functions into data structure Shape functions hast to be put
+  // in arrays in order which guarantee hierarchical series of degrees of
   // freedom, i.e. in other words dofs form sub-entities has to be group
   // by order.
 
@@ -330,7 +336,7 @@ PetscErrorCode TetPolynomialBase::getValueHdiv(
             data.dataOnEntities[MBTRI][ff].getHdivN(base)(gg,col) = N_face_edge(ff,ee)(gg,dd);
           }
         }
-        //direvatives
+        //derivatives
         for(int dd = 9*NBFACETRI_EDGE_HDIV_AINSWORTH_COLE(oo);dd<9*NBFACETRI_EDGE_HDIV_AINSWORTH_COLE(oo+1);dd++,diff_col++) {
           for(int gg = 0;gg!=nb_gauss_pts;gg++) {
             data.dataOnEntities[MBTRI][ff].getDiffHdivN(base)(gg,diff_col) = diffN_face_edge(ff,ee)(gg,dd);
@@ -343,7 +349,7 @@ PetscErrorCode TetPolynomialBase::getValueHdiv(
           data.dataOnEntities[MBTRI][ff].getHdivN(base)(gg,col) = N_face_bubble[ff](gg,dd);
         }
       }
-      //direvatives
+      //derivatives
       for(int dd = 9*NBFACETRI_FACE_HDIV_AINSWORTH_COLE(oo);dd<9*NBFACETRI_FACE_HDIV_AINSWORTH_COLE(oo+1);dd++,diff_col++) {
         for(int gg = 0;gg!=nb_gauss_pts;gg++) {
           data.dataOnEntities[MBTRI][ff].getDiffHdivN(base)(gg,diff_col) = diffN_face_bubble[ff](gg,dd);

@@ -29,6 +29,7 @@
 #include <UnknownInterface.hpp>
 using namespace MoFEM;
 
+#include <FTensor.hpp>
 #include <TagMultiIndices.hpp>
 #include <CoordSysMultiIndices.hpp>
 #include <FieldMultiIndices.hpp>
@@ -88,7 +89,20 @@ PetscErrorCode EntPolynomialBaseCtx::setBase() {
     basePolynomials = Legendre_polynomials;
     break;
     case LOBATTO_BASE:
-    basePolynomials = LobattoKernel_polynomials;
+    switch (sPace) {
+      case NOSPACE:
+      case NOFIELD:
+      SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"Makes no sense");
+      case H1:
+      case HDIV:
+      case HCURL:
+      basePolynomials = LobattoKernel_polynomials;
+      break;
+      case L2:
+      SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"No implemented");
+      case LASTSPACE:
+      SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"Makes no sense");
+    }
     break;
     default:
     SETERRQ1(

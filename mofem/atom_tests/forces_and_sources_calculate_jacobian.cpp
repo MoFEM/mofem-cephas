@@ -143,22 +143,35 @@ int main(int argc, char *argv[]) {
     struct PrintJacobian: public DataOperator {
 
       TeeStream &my_split;
-      PrintJacobian(TeeStream &_my_split): my_split(_my_split) {};
+      PrintJacobian(TeeStream &_my_split): my_split(_my_split) {
+
+      }
 
       ~PrintJacobian() {
         my_split.close();
       }
 
       PetscErrorCode doWork(
-        int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
-          PetscFunctionBegin;
-          my_split << "side: " << side << " type: " << type << data.getDiffN() << std::endl;
-          PetscFunctionReturn(0);
+        int side,EntityType type,DataForcesAndSurcesCore::EntData &data
+      ) {
+        PetscFunctionBegin;
+        const double eps = 1e-6;
+        for(unsigned int ii = 0;ii!=data.getDiffN().size1();ii++) {
+          for(unsigned int jj = 0;jj!=data.getDiffN().size2();jj++) {
+            if(fabs(data.getDiffN()(ii,jj))<eps) {
+              data.getDiffN()(ii,jj) = 0;
+            }
+          }
         }
+        my_split << "side: " << side << " type: " << type
+        << std::fixed << std::setprecision(4)
+        << data.getDiffN() << std::endl;
+        PetscFunctionReturn(0);
+      }
 
-      };
+    };
 
-    MatrixDouble invJac;
+    MatrixDouble3by3 invJac;
     MatrixDouble dataFIELD1;
     MatrixDouble dataDiffFIELD1;
     VectorDouble coords;
@@ -171,6 +184,7 @@ int main(int argc, char *argv[]) {
     ofs("forces_and_sources_calculate_jacobian.txt"),
     my_tee(std::cout, ofs),
     my_split(my_tee),
+    invJac(3,3),
     opPrintJac(my_split),
     opSetInvJac(invJac),
     opGetData_FIELD1(dataFIELD1,dataDiffFIELD1,1),
@@ -224,14 +238,13 @@ int main(int argc, char *argv[]) {
         )
       ); CHKERRQ(ierr);
 
-      EntityHandle ent = fePtr->get_ent();
+      EntityHandle ent = numeredEntFiniteElementPtr->get_ent();
       int num_nodes;
       const EntityHandle* conn;
       rval = mField.get_moab().get_connectivity(ent,conn,num_nodes,true); CHKERRQ_MOAB(rval);
       coords.resize(num_nodes*3);
       rval = mField.get_moab().get_coords(conn,num_nodes,&*coords.data().begin()); CHKERRQ_MOAB(rval);
 
-      invJac.resize(3,3);
       ierr = ShapeJacMBTET(
         &*data.dataOnEntities[MBVERTEX][0].getDiffN().data().begin(),&*coords.begin(),&*invJac.data().begin()
       ); CHKERRQ(ierr);

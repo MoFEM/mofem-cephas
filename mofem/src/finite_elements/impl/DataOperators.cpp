@@ -49,6 +49,7 @@
 #include <SeriesRecorder.hpp>
 #include <Core.hpp>
 
+#include <FTensor.hpp>
 #include <DataStructures.hpp>
 #include <DataOperators.hpp>
 
@@ -480,6 +481,30 @@ PetscErrorCode DataOperator::opLhs(
   PetscFunctionReturn(0);
 }
 
+template<>
+PetscErrorCode invertTensor2<3,double,ublas::row_major,ublas::unbounded_array<double> >(
+  MatrixDouble &jac_data,
+  VectorDouble &det_data,
+  MatrixDouble &inv_jac_data
+) {
+  PetscErrorCode ierr;
+  PetscFunctionBegin;
+  FTensor::Tensor2<double*,3,3> A = getTensor2FormData<3,3>(jac_data);
+  int nb_gauss_pts = jac_data.size2();
+  det_data.resize(nb_gauss_pts,false);
+  inv_jac_data.resize(3,nb_gauss_pts,false);
+  FTensor::Tensor0<double*> det = getTensor0FormData(det_data);
+  FTensor::Tensor2<double*,3,3> I = getTensor2FormData<3,3>(inv_jac_data);
+  for(int gg = 0;gg!=nb_gauss_pts;gg++) {
+    ierr = determinantTensor2<3,double*,FTensor::Tensor0<double*> >(A,det); CHKERRQ(ierr);
+    ierr = invertTensor2<3,double*,FTensor::Tensor0<double*> >(A,det,I); CHKERRQ(ierr);
+    ++A;
+    ++det;
+    ++I;
+  }
+  PetscFunctionReturn(0);
+}
+
 PetscErrorCode DataOperator::opRhs(
   DataForcesAndSurcesCore &data,
   const bool do_vertices,
@@ -600,53 +625,76 @@ PetscErrorCode OpSetInvJacH1::doWork(
     DataForcesAndSurcesCore::EntData &data
   ) {
   PetscFunctionBegin;
-  PetscErrorCode ierr;
+  // PetscErrorCode ierr;
 
   try {
 
     for(int b = AINSWORTH_COLE_BASE; b!=USER_BASE; b++) {
 
       FieldApproximationBase base = ApproximationBaseArray[b];
-      if(data.getDiffN(base).size2()==0) continue;
+      const unsigned int nb_base_functions = data.getN(base).size2();
+      if(!nb_base_functions) continue;
+      const unsigned int nb_gauss_pts = data.getN(base).size1();
+      if(!nb_gauss_pts) continue;
 
-      diffNinvJac.resize(data.getDiffN(base).size1(),data.getDiffN(base).size2(),false);
-      unsigned int nb_gauss_pts = data.getN(base).size1();
-      unsigned int nb_dofs = data.getN(base).size2();
       if(type!=MBVERTEX) {
-        if(nb_dofs != data.getDiffN(base).size2()/3) {
+        if(nb_base_functions != data.getDiffN(base).size2()/3) {
           SETERRQ2(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,
-            "data inconsistency nb_dofs != data.diffN.size2()/3 ( %u != %u/3 )",
-            nb_dofs,data.getDiffN(base).size2()
+            "Data inconsistency nb_base_functions != data.diffN.size2()/3 ( %u != %u/3 )",
+            nb_base_functions,data.getDiffN(base).size2()
           );
         }
+      } else {
+        if(
+          data.getDiffN(base).size1()!=4||
+          data.getDiffN(base).size2()!=3
+        ) {
+          SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"Data inconsistency");
+        }
       }
+
+      diffNinvJac.resize(
+        data.getDiffN(base).size1(),data.getDiffN(base).size2(),false
+      );
+
+      double *t_diff_n_ptr = &*data.getDiffN(base).data().begin();
+      FTensor::Tensor1<double*,3> t_diff_n(
+        t_diff_n_ptr,&t_diff_n_ptr[1],&t_diff_n_ptr[2],3
+      );
+      double *t_inv_n_ptr = &*diffNinvJac.data().begin();
+      FTensor::Tensor1<double*,3> t_inv_diff_n(
+        t_inv_n_ptr,&t_inv_n_ptr[1],&t_inv_n_ptr[2],3
+      );
 
       switch (type) {
 
         case MBVERTEX: {
-          ierr = ShapeDiffMBTETinvJ(
-            &*data.getDiffN(base).data().begin(),&*invJac.data().begin(),&*diffNinvJac.data().begin()
-          ); CHKERRQ(ierr);
+          for(unsigned int bb = 0;bb!=nb_base_functions;bb++) {
+            t_inv_diff_n(i) = t_diff_n(j)*tInvJac(j,i);
+            ++t_diff_n;
+            ++t_inv_diff_n;
+          }
         }
         break;
         case MBEDGE:
         case MBTRI:
         case MBTET: {
           for(unsigned int gg = 0;gg<nb_gauss_pts;gg++) {
-            for(unsigned int dd = 0;dd<nb_dofs;dd++) {
-              cblas_dgemv(CblasRowMajor,CblasTrans,3,3,1.,
-                &*invJac.data().begin(),3,&data.getDiffN(base)(gg,3*dd),1,0.,&diffNinvJac(gg,3*dd),1
-              );
+            for(unsigned int bb = 0;bb!=nb_base_functions;bb++) {
+              t_inv_diff_n(i) = t_diff_n(j)*tInvJac(j,i);
+              ++t_diff_n;
+              ++t_inv_diff_n;
             }
           }
+
         }
         break;
         default:
         SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented");
-
       }
 
       data.getDiffN(base).data().swap(diffNinvJac.data());
+
 
     }
 
@@ -669,35 +717,43 @@ PetscErrorCode OpSetInvJacHdiv::doWork(
 
   try {
 
-    FieldApproximationBase base = data.getBase();
-
     for(int b = AINSWORTH_COLE_BASE; b!=USER_BASE; b++) {
 
-      data.getBase() = ApproximationBaseArray[b];
-      diffHdiv_invJac.resize(data.getDiffHdivN().size1(),data.getDiffHdivN().size2(),false);
+      FieldApproximationBase base = ApproximationBaseArray[b];
 
-      unsigned int nb_gauss_pts = data.getDiffHdivN().size1();
-      unsigned int nb_dofs = data.getDiffHdivN().size2()/9;
+      const unsigned int nb_gauss_pts = data.getDiffHdivN(base).size1();
+      const unsigned int nb_base_functions = data.getDiffHdivN(base).size2()/9;
+      if(!nb_base_functions) continue;
 
-      unsigned int gg = 0;
-      for(;gg<nb_gauss_pts;gg++) {
-        unsigned int dd = 0;
-        for(;dd<nb_dofs;dd++) {
-          const double *DiffHdivN = &((data.getDiffHdivN(gg))(dd,0));
-          for(int kk = 0;kk<3;kk++) {
-            cblas_dgemv(CblasRowMajor,CblasTrans,3,3,1.,
-              &*invJac.data().begin(),3,&DiffHdivN[kk],3,
-              0.,&diffHdiv_invJac(gg,9*dd+kk),3
-            );
-          }
+      diffHdivInvJac.resize(
+        nb_gauss_pts,data.getDiffHdivN(base).size2(),false
+      );
+
+      FTensor::Tensor2<double*,3,3> t_diff_n = data.getFTensor2DiffHdivN<3,3>(base);
+      double *t_inv_diff_n_ptr = &*diffHdivInvJac.data().begin();
+      FTensor::Tensor2<double*,3,3> t_inv_diff_n(
+        t_inv_diff_n_ptr,
+        &t_inv_diff_n_ptr[DataForcesAndSurcesCore::HDIV0_1],
+        &t_inv_diff_n_ptr[DataForcesAndSurcesCore::HDIV0_2],
+        &t_inv_diff_n_ptr[DataForcesAndSurcesCore::HDIV1_0],
+        &t_inv_diff_n_ptr[DataForcesAndSurcesCore::HDIV1_1],
+        &t_inv_diff_n_ptr[DataForcesAndSurcesCore::HDIV1_2],
+        &t_inv_diff_n_ptr[DataForcesAndSurcesCore::HDIV2_0],
+        &t_inv_diff_n_ptr[DataForcesAndSurcesCore::HDIV2_1],
+        &t_inv_diff_n_ptr[DataForcesAndSurcesCore::HDIV2_2],9
+      );
+
+      for(unsigned int gg = 0;gg!=nb_gauss_pts;gg++) {
+        for(unsigned int bb = 0;bb!=nb_base_functions;bb++) {
+          t_inv_diff_n(k,i) = t_diff_n(k,j)*tInvJac(j,i);
+          ++t_diff_n;
+          ++t_inv_diff_n;
         }
       }
 
-      data.getDiffHdivN().data().swap(diffHdiv_invJac.data());
+      data.getDiffHdivN(base).data().swap(diffHdivInvJac.data());
 
     }
-
-    data.getBase() = base;
 
   } catch (std::exception& ex) {
     std::ostringstream ss;
@@ -719,41 +775,57 @@ PetscErrorCode OpSetPiolaTransform::doWork(
 
   try {
 
-    FieldApproximationBase base = data.getBase();
 
     for(int b = AINSWORTH_COLE_BASE; b!=USER_BASE; b++) {
 
-      data.getBase() = ApproximationBaseArray[b];
+      FieldApproximationBase base = ApproximationBaseArray[b];
+
+      const unsigned int nb_base_functions = data.getHdivN(base).size2()/3;
+      if(!nb_base_functions) continue;
 
       const double c = 1./6.;
+      const unsigned int nb_gauss_pts = data.getHdivN(base).size1();
+      piolaN.resize(nb_gauss_pts,data.getHdivN(base).size2(),false);
+      piolaDiffN.resize(nb_gauss_pts,data.getDiffHdivN(base).size2(),false);
 
-      unsigned int nb_gauss_pts = data.getHdivN().size1();
-      unsigned int nb_dofs = data.getHdivN().size2()/3;
-      unsigned int gg = 0;
-      piolaN.resize(nb_gauss_pts,data.getHdivN().size2(),false);
-      piolaDiffN.resize(nb_gauss_pts,data.getDiffHdivN().size2(),false);
-      for(;gg<nb_gauss_pts;gg++) {
-        unsigned int dd = 0;
-        for(;dd<nb_dofs;dd++) {
-          cblas_dgemv(
-            CblasRowMajor,CblasNoTrans,3,3,c/vOlume,
-            &*Jac.data().begin(),3,&data.getHdivN()(gg,3*dd),1,0.,&piolaN(gg,3*dd),1
-          );
-          int kk = 0;
-          for(;kk<3;kk++) {
-            cblas_dgemv(
-              CblasRowMajor,CblasNoTrans,3,3,c/vOlume,
-              &*Jac.data().begin(),3,&data.getDiffHdivN()(gg,9*dd+3*kk),1,0.,&piolaDiffN(gg,9*dd+3*kk),1
-            );
-          }
+      FTensor::Tensor1<double*,3> t_n = data.getFTensor1HdivN<3>(base);
+      double *t_transformed_n_ptr = &*piolaN.data().begin();
+      FTensor::Tensor1<double*,3> t_transformed_n(
+        t_transformed_n_ptr, //HDIV0
+        &t_transformed_n_ptr[DataForcesAndSurcesCore::HDIV1],
+        &t_transformed_n_ptr[DataForcesAndSurcesCore::HDIV2],3
+      );
+      FTensor::Tensor2<double*,3,3> t_diff_n = data.getFTensor2DiffHdivN<3,3>(base);
+      double *t_transformed_diff_n_ptr = &*piolaDiffN.data().begin();
+      FTensor::Tensor2<double*,3,3> t_transformed_diff_n(
+        t_transformed_diff_n_ptr,
+        &t_transformed_diff_n_ptr[DataForcesAndSurcesCore::HDIV0_1],
+        &t_transformed_diff_n_ptr[DataForcesAndSurcesCore::HDIV0_2],
+        &t_transformed_diff_n_ptr[DataForcesAndSurcesCore::HDIV1_0],
+        &t_transformed_diff_n_ptr[DataForcesAndSurcesCore::HDIV1_1],
+        &t_transformed_diff_n_ptr[DataForcesAndSurcesCore::HDIV1_2],
+        &t_transformed_diff_n_ptr[DataForcesAndSurcesCore::HDIV2_0],
+        &t_transformed_diff_n_ptr[DataForcesAndSurcesCore::HDIV2_1],
+        &t_transformed_diff_n_ptr[DataForcesAndSurcesCore::HDIV2_2],9
+      );
+
+      double const a = c/vOlume;
+      for(unsigned int gg = 0;gg!=nb_gauss_pts;gg++) {
+        for(unsigned int bb = 0;bb!=nb_base_functions;bb++) {
+          t_transformed_n(i) = a*tJac(i,k)*t_n(k);
+          t_transformed_diff_n(i,k) = a*tJac(i,j)*t_diff_n(j,k);
+          ++t_n;
+          ++t_transformed_n;
+          ++t_diff_n;
+          ++t_transformed_diff_n;
         }
       }
-      data.getHdivN().data().swap(piolaN.data());
-      data.getDiffHdivN().data().swap(piolaDiffN.data());
+      data.getHdivN(base).data().swap(piolaN.data());
+      data.getDiffHdivN(base).data().swap(piolaDiffN.data());
 
     }
 
-    data.getBase() = base;
+    // data.getBase() = base;
 
   } catch (std::exception& ex) {
     std::ostringstream ss;
@@ -773,40 +845,84 @@ PetscErrorCode OpSetHoInvJacH1::doWork(
 
     try {
 
-      FieldApproximationBase base = data.getBase();
       for(int b = AINSWORTH_COLE_BASE; b!=USER_BASE; b++) {
 
-        data.getBase() = ApproximationBaseArray[b];
-        if(data.getDiffN().size2()==0) continue;
+        FieldApproximationBase base = ApproximationBaseArray[b];
+        if(data.getDiffN(base).size2()==0) continue;
 
-        unsigned int nb_gauss_pts = data.getN().size1();
-        unsigned int nb_dofs = data.getN().size2();
+        unsigned int nb_gauss_pts = data.getN(base).size1();
+        if(nb_gauss_pts==0) continue;
+        unsigned int nb_base_functions = data.getN(base).size2();
+        if(nb_base_functions==0) continue;
+
         // Note for Vetex diffN row has size of number of dof
-        diffNinvJac.resize(nb_gauss_pts,3*nb_dofs,false);
+        diffNinvJac.resize(nb_gauss_pts,3*nb_base_functions,false);
 
-        unsigned int gg = 0;
-        for(;gg<nb_gauss_pts;gg++) {
-          double *inv_h = &invHoJac(gg,0);
-          for(unsigned dd = 0;dd<nb_dofs;dd++) {
-            double *diff_n;
-            if(type == MBVERTEX) {
-              diff_n = &data.getDiffN()(dd,0);
-            } else {
-              diff_n = &data.getDiffN()(gg,3*dd);
+        double *t_inv_n_ptr = &*diffNinvJac.data().begin();
+        FTensor::Tensor1<double*,3> t_inv_diff_n(
+          t_inv_n_ptr,&t_inv_n_ptr[1],&t_inv_n_ptr[2],3
+        );
+        double *t_inv_jac_ptr = &*invHoJac.data().begin();
+        FTensor::Tensor2<double*,3,3> t_inv_jac(
+          t_inv_jac_ptr,&t_inv_jac_ptr[1],&t_inv_jac_ptr[2],
+          &t_inv_jac_ptr[3],&t_inv_jac_ptr[4],&t_inv_jac_ptr[5],
+          &t_inv_jac_ptr[6],&t_inv_jac_ptr[7],&t_inv_jac_ptr[8],9
+        );
+
+        switch (type) {
+          case MBVERTEX: {
+            double *t_diff_n_ptr = &*data.getDiffN().data().begin();
+            for(int gg = 0;gg!=nb_gauss_pts;gg++) {
+              FTensor::Tensor1<double*,3> t_diff_n(
+                t_diff_n_ptr,&t_diff_n_ptr[1],&t_diff_n_ptr[2],3
+              );
+              for(unsigned int bb = 0;bb!=nb_base_functions;bb++) {
+                t_inv_diff_n(i) = t_diff_n(j)*t_inv_jac(j,i);
+                ++t_diff_n;
+                ++t_inv_diff_n;
+              }
+              ++t_inv_jac;
             }
-            double *diff_n_inv_jac = &diffNinvJac(gg,3*dd);
-            cblas_dgemv(CblasRowMajor,CblasTrans,3,3,1.,inv_h,3,diff_n,1,0.,diff_n_inv_jac,1);
           }
+          break;
+          case MBEDGE:
+          case MBTRI:
+          case MBTET: {
+            FTensor::Tensor1<double*,3> t_diff_n = data.getFTensor1DiffN<3>(base);
+            for(unsigned int gg = 0;gg<nb_gauss_pts;gg++) {
+              for(unsigned int bb = 0;bb!=nb_base_functions;bb++) {
+                t_inv_diff_n(i) = t_diff_n(j)*t_inv_jac(j,i);
+                ++t_diff_n;
+                ++t_inv_diff_n;
+              }
+              ++t_inv_jac;
+            }
+          }
+          break;
+          default:
+          SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented");
         }
 
+        // unsigned int gg = 0;
+        // for(;gg<nb_gauss_pts;gg++) {
+        //   double *inv_h = &invHoJac(gg,0);
+        //   for(unsigned dd = 0;dd<nb_base_functions;dd++) {
+        //     double *diff_n;
+        //     if(type == MBVERTEX) {
+        //       diff_n = &data.getDiffN(base)(dd,0);
+        //     } else {
+        //       diff_n = &data.getDiffN(base)(gg,3*dd);
+        //     }
+        //     double *diff_n_inv_jac = &diffNinvJac(gg,3*dd);
+        //     cblas_dgemv(CblasRowMajor,CblasTrans,3,3,1.,inv_h,3,diff_n,1,0.,diff_n_inv_jac,1);
+        //   }
+        // }
         if(type == MBVERTEX) {
-          data.getDiffN().resize(diffNinvJac.size1(),diffNinvJac.size2(),false);
+          data.getDiffN(base).resize(diffNinvJac.size1(),diffNinvJac.size2(),false);
         }
-        data.getDiffN().data().swap(diffNinvJac.data());
+        data.getDiffN(base).data().swap(diffNinvJac.data());
 
       }
-
-      data.getBase() = base;
 
     } catch (std::exception& ex) {
       std::ostringstream ss;
@@ -828,35 +944,61 @@ PetscErrorCode OpSetHoInvJacH1::doWork(
 
     try {
 
-      FieldApproximationBase base = data.getBase();
-
       for(int b = AINSWORTH_COLE_BASE; b!=USER_BASE; b++) {
 
-        data.getBase() = ApproximationBaseArray[b];
+        FieldApproximationBase base = ApproximationBaseArray[b];
 
-        diffHdiv_invJac.resize(data.getDiffHdivN().size1(),data.getDiffHdivN().size2(),false);
+        diffHdivInvJac.resize(data.getDiffHdivN(base).size1(),data.getDiffHdivN(base).size2(),false);
 
-        unsigned int nb_gauss_pts = data.getDiffHdivN().size1();
-        unsigned int nb_dofs = data.getDiffHdivN().size2()/9;
+        unsigned int nb_gauss_pts = data.getDiffHdivN(base).size1();
+        unsigned int nb_base_functions = data.getDiffHdivN(base).size2()/9;
+        if(nb_base_functions == 0) continue;
 
-        unsigned int gg = 0;
-        for(;gg<nb_gauss_pts;gg++) {
-          double *inv_h = &invHoJac(gg,0);
-          for(unsigned dd = 0;dd<nb_dofs;dd++) {
-            const double *diff_hdiv = &(data.getDiffHdivN(gg)(dd,0));
-            double *diff_hdiv_inv_jac = &diffHdiv_invJac(gg,9*dd);
-            int kk = 0;
-            for(;kk<3;kk++) {
-              cblas_dgemv(CblasRowMajor,CblasTrans,3,3,1.,inv_h,3,&diff_hdiv[kk],3,0.,&diff_hdiv_inv_jac[kk],3);
-            }
+        FTensor::Tensor2<double*,3,3> t_diff_n = data.getFTensor2DiffHdivN<3,3>(base);
+        double *t_inv_diff_n_ptr = &*diffHdivInvJac.data().begin();
+        FTensor::Tensor2<double*,3,3> t_inv_diff_n(
+          t_inv_diff_n_ptr,
+          &t_inv_diff_n_ptr[DataForcesAndSurcesCore::HDIV0_1],
+          &t_inv_diff_n_ptr[DataForcesAndSurcesCore::HDIV0_2],
+          &t_inv_diff_n_ptr[DataForcesAndSurcesCore::HDIV1_0],
+          &t_inv_diff_n_ptr[DataForcesAndSurcesCore::HDIV1_1],
+          &t_inv_diff_n_ptr[DataForcesAndSurcesCore::HDIV1_2],
+          &t_inv_diff_n_ptr[DataForcesAndSurcesCore::HDIV2_0],
+          &t_inv_diff_n_ptr[DataForcesAndSurcesCore::HDIV2_1],
+          &t_inv_diff_n_ptr[DataForcesAndSurcesCore::HDIV2_2],9
+        );
+        double *t_inv_jac_ptr = invHoJac.data().begin();
+        FTensor::Tensor2<double*,3,3> t_inv_jac(
+          t_inv_jac_ptr,&t_inv_jac_ptr[1],&t_inv_jac_ptr[2],
+          &t_inv_jac_ptr[3],&t_inv_jac_ptr[4],&t_inv_jac_ptr[5],
+          &t_inv_jac_ptr[6],&t_inv_jac_ptr[7],&t_inv_jac_ptr[8],9
+        );
+
+        for(unsigned int gg = 0;gg!=nb_gauss_pts;gg++) {
+          for(unsigned int bb = 0;bb!=nb_base_functions;bb++) {
+            t_inv_diff_n(k,i) = t_diff_n(k,j)*t_inv_jac(i,j);
+            ++t_diff_n;
+            ++t_inv_diff_n;
           }
+          ++t_inv_jac;
         }
 
-        data.getDiffHdivN().data().swap(diffHdiv_invJac.data());
+        // unsigned int gg = 0;
+        // for(;gg<nb_gauss_pts;gg++) {
+        //   double *inv_h = &invHoJac(gg,0);
+        //   for(unsigned dd = 0;dd<nb_base_functions;dd++) {
+        //     const double *diff_hdiv = &(data.getDiffHdivN(base,gg)(dd,0));
+        //     double *diff_hdiv_inv_jac = &diffHdivInvJac(gg,9*dd);
+        //     int kk = 0;
+        //     for(;kk<3;kk++) {
+        //       cblas_dgemv(CblasRowMajor,CblasTrans,3,3,1.,inv_h,3,&diff_hdiv[kk],3,0.,&diff_hdiv_inv_jac[kk],3);
+        //     }
+        //   }
+        // }
+
+        data.getDiffHdivN(base).data().swap(diffHdivInvJac.data());
 
       }
-
-      data.getBase() = base;
 
     } catch (std::exception& ex) {
       std::ostringstream ss;
@@ -877,41 +1019,63 @@ PetscErrorCode OpSetHoInvJacH1::doWork(
 
     try {
 
-      FieldApproximationBase base = data.getBase();
 
       for(int b = AINSWORTH_COLE_BASE; b!=USER_BASE; b++) {
 
-        data.getBase() = ApproximationBaseArray[b];
+        FieldApproximationBase base = ApproximationBaseArray[b];
 
-        unsigned int nb_gauss_pts = data.getHdivN().size1();
-        unsigned int nb_dofs = data.getHdivN().size2()/3;
-        unsigned int gg = 0;
-        piolaN.resize(nb_gauss_pts,data.getHdivN().size2(),false);
-        piolaDiffN.resize(nb_gauss_pts,data.getDiffHdivN().size2(),false);
+        unsigned int nb_gauss_pts = data.getHdivN(base).size1();
+        unsigned int nb_base_functions = data.getHdivN(base).size2()/3;
+        piolaN.resize(nb_gauss_pts,data.getHdivN(base).size2(),false);
+        piolaDiffN.resize(nb_gauss_pts,data.getDiffHdivN(base).size2(),false);
 
-        for(;gg<nb_gauss_pts;gg++) {
-          unsigned int dd = 0;
-          for(;dd<nb_dofs;dd++) {
-            cblas_dgemv(
-              CblasRowMajor,CblasNoTrans,3,3,1./detHoJac[gg],
-              &hoJac(gg,0),3,&data.getHdivN()(gg,3*dd),1,0.,&piolaN(gg,3*dd),1
-            );
-            int kk = 0;
-            for(;kk<3;kk++) {
-              cblas_dgemv(
-                CblasRowMajor,CblasNoTrans,3,3,1./detHoJac[gg],
-                &hoJac(gg,0),3,&data.getDiffHdivN()(gg,9*dd+3*kk),1,0.,&piolaDiffN(gg,9*dd+3*kk),1
-              );
-            }
+        FTensor::Tensor1<double*,3> t_n = data.getFTensor1HdivN<3>(base);
+        double *t_transformed_n_ptr = &*piolaN.data().begin();
+        FTensor::Tensor1<double*,3> t_transformed_n(
+          t_transformed_n_ptr, //HDIV0
+          &t_transformed_n_ptr[DataForcesAndSurcesCore::HDIV1],
+          &t_transformed_n_ptr[DataForcesAndSurcesCore::HDIV2],3
+        );
+        FTensor::Tensor2<double*,3,3> t_diff_n = data.getFTensor2DiffHdivN<3,3>(base);
+        double *t_transformed_diff_n_ptr = &*piolaDiffN.data().begin();
+        FTensor::Tensor2<double*,3,3> t_transformed_diff_n(
+          t_transformed_diff_n_ptr,
+          &t_transformed_diff_n_ptr[DataForcesAndSurcesCore::HDIV0_1],
+          &t_transformed_diff_n_ptr[DataForcesAndSurcesCore::HDIV0_2],
+          &t_transformed_diff_n_ptr[DataForcesAndSurcesCore::HDIV1_0],
+          &t_transformed_diff_n_ptr[DataForcesAndSurcesCore::HDIV1_1],
+          &t_transformed_diff_n_ptr[DataForcesAndSurcesCore::HDIV1_2],
+          &t_transformed_diff_n_ptr[DataForcesAndSurcesCore::HDIV2_0],
+          &t_transformed_diff_n_ptr[DataForcesAndSurcesCore::HDIV2_1],
+          &t_transformed_diff_n_ptr[DataForcesAndSurcesCore::HDIV2_2],9
+        );
+
+        FTensor::Tensor0<double*> t_det(&*detHoJac.data().begin());
+        double *t_jac_ptr = hoJac.data().begin();
+        FTensor::Tensor2<double*,3,3> t_jac(
+          t_jac_ptr,&t_jac_ptr[1],&t_jac_ptr[2],
+          &t_jac_ptr[3],&t_jac_ptr[4],&t_jac_ptr[5],
+          &t_jac_ptr[6],&t_jac_ptr[7],&t_jac_ptr[8],9
+        );
+
+        for(unsigned int gg = 0;gg!=nb_gauss_pts;gg++) {
+          for(unsigned int bb = 0;bb!=nb_base_functions;bb++) {
+            const double a = 1./t_det;
+            t_transformed_n(i) = a*t_jac(i,k)*t_n(k);
+            t_transformed_diff_n(i,k) = a*t_jac(i,j)*t_diff_n(j,k);
+            ++t_n;
+            ++t_transformed_n;
+            ++t_diff_n;
+            ++t_transformed_diff_n;
           }
+          ++t_det;
+          ++t_jac;
         }
 
-        data.getHdivN().data().swap(piolaN.data());
-        data.getDiffHdivN().data().swap(piolaDiffN.data());
+        data.getHdivN(base).data().swap(piolaN.data());
+        data.getDiffHdivN(base).data().swap(piolaDiffN.data());
 
       }
-
-      data.getBase() = base;
 
     } catch (std::exception& ex) {
       std::ostringstream ss;
@@ -934,13 +1098,13 @@ PetscErrorCode OpGetDataAndGradient::doWork(
     }
 
     unsigned int nb_dofs = data.getFieldData().size();
-    if(nb_dofs % rank != 0) {
+    if(nb_dofs % rAnk != 0) {
       SETERRQ4(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,
-        "data inconsistency, type %d, side %d, nb_dofs %d, rank %d",
-        type,side,nb_dofs,rank
+        "data inconsistency, type %d, side %d, nb_dofs %d, rAnk %d",
+        type,side,nb_dofs,rAnk
       );
     }
-    if(nb_dofs/rank > data.getN().size2()) {
+    if(nb_dofs/rAnk > data.getN().size2()) {
       std::cerr << side << " " << type << " " << ApproximationBaseNames[data.getBase()] << std::endl;
       std::cerr << data.getN() << std::endl;
       std::cerr << data.getN(NOBASE) << std::endl;
@@ -949,15 +1113,16 @@ PetscErrorCode OpGetDataAndGradient::doWork(
       );
     }
 
-    data_at_GaussPt.resize(data.getN().size1(),rank,false);
-    dataGrad_at_GaussPt.resize(data.getN().size1(),rank*dim,false);
-
     if(type == MBVERTEX) {
-      bzero(&*data_at_GaussPt.data().begin(),data.getN().size1()*rank*sizeof(FieldData));
-      bzero(&*dataGrad_at_GaussPt.data().begin(),data.getN().size1()*rank*dim*sizeof(FieldData));
-      for(int rr = 0;rr<rank;rr++) {
-        for(unsigned int dd = 0;dd<dim;dd++) {
-          dataGrad_at_GaussPt(0,dim*rr+dd) = cblas_ddot(nb_dofs/rank,&data.getDiffN()(0,dd),dim,&data.getFieldData()[rr],rank);
+      data_at_GaussPt.resize(data.getN().size1(),rAnk,false);
+      dataGrad_at_GaussPt.resize(data.getN().size1(),rAnk*dIm,false);
+      data_at_GaussPt.clear();
+      dataGrad_at_GaussPt.clear();
+      // bzero(&*data_at_GaussPt.data().begin(),data.getN().size1()*rAnk*sizeof(FieldData));
+      // bzero(&*dataGrad_at_GaussPt.data().begin(),data.getN().size1()*rAnk*dIm*sizeof(FieldData));
+      for(int rr = 0;rr<rAnk;rr++) {
+        for(unsigned int dd = 0;dd<dIm;dd++) {
+          dataGrad_at_GaussPt(0,dIm*rr+dd) = cblas_ddot(nb_dofs/rAnk,&data.getDiffN()(0,dd),dIm,&data.getFieldData()[rr],rAnk);
         }
       }
     }
@@ -972,16 +1137,16 @@ PetscErrorCode OpGetDataAndGradient::doWork(
         diff_n_ptr  = &data.getDiffN()(0,0);
       }
 
-      for(int rr = 0;rr<rank;rr++,data_ptr++) {
-        data_at_GaussPt(gg,rr) += cblas_ddot(nb_dofs/rank,n_ptr,1,data_ptr,rank);
+      for(int rr = 0;rr<rAnk;rr++,data_ptr++) {
+        data_at_GaussPt(gg,rr) += cblas_ddot(nb_dofs/rAnk,n_ptr,1,data_ptr,rAnk);
         double *diff_n_ptr2 = diff_n_ptr;
 
-        for(unsigned int dd = 0;dd<dim;dd++,diff_n_ptr2++) {
+        for(unsigned int dd = 0;dd<dIm;dd++,diff_n_ptr2++) {
           if(type == MBVERTEX) {
             if(gg == 0) continue;
-            dataGrad_at_GaussPt(gg,dim*rr+dd) += dataGrad_at_GaussPt(0,dim*rr+dd);
+            dataGrad_at_GaussPt(gg,dIm*rr+dd) += dataGrad_at_GaussPt(0,dIm*rr+dd);
           } else {
-            dataGrad_at_GaussPt(gg,dim*rr+dd) += cblas_ddot(nb_dofs/rank,diff_n_ptr2,dim,data_ptr,rank);
+            dataGrad_at_GaussPt(gg,dIm*rr+dd) += cblas_ddot(nb_dofs/rAnk,diff_n_ptr2,dIm,data_ptr,rAnk);
           }
         }
       }

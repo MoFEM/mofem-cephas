@@ -297,15 +297,32 @@ PetscErrorCode PostProcVolumeOnRefinedMesh::generateReferenceElementMesh() {
     Range edges;
     ierr = m_field_ref.get_entities_by_type_and_ref_level(BitRefLevel().set(ll),BitRefLevel().set(),MBEDGE,edges); CHKERRQ(ierr);
     Range tets;
-    ierr = m_field_ref.get_entities_by_type_and_ref_level(BitRefLevel().set(ll),BitRefLevel().set(),MBTET,tets); CHKERRQ(ierr);
+    ierr = m_field_ref.get_entities_by_type_and_ref_level(BitRefLevel().set(ll),BitRefLevel(ll).set(),MBTET,tets); CHKERRQ(ierr);
     //refine mesh
     MeshRefinment& m_ref = m_core_ref;
     ierr = m_ref.add_verices_in_the_middel_of_edges(edges,BitRefLevel().set(ll+1)); CHKERRQ(ierr);
     ierr = m_ref.refine_TET(tets,BitRefLevel().set(ll+1)); CHKERRQ(ierr);
   }
 
+  Range tets;
+  ierr = m_field_ref.get_entities_by_type_and_ref_level(
+    BitRefLevel().set(max_level),BitRefLevel().set(max_level),MBTET,tets
+  ); CHKERRQ(ierr);
+
+  if(tenNodesPostProcTets) {
+    // Range edges;
+    // rval = moab_ref.get_adjacencies(tets,1,true,edges); CHKERRQ_MOAB(rval);
+    EntityHandle meshset;
+    rval = moab_ref.create_meshset(MESHSET_SET|MESHSET_TRACK_OWNER,meshset); CHKERRQ_MOAB(rval);
+    rval = moab_ref.add_entities(meshset,tets); CHKERRQ_MOAB(rval);
+    rval = moab_ref.convert_entities(meshset,true,false,false); CHKERRQ_MOAB(rval);
+  }
+
   Range elem_nodes;
-  ierr = m_field_ref.get_entities_by_type_and_ref_level(BitRefLevel().set(max_level),BitRefLevel().set(),MBVERTEX,elem_nodes); CHKERRQ(ierr);
+  rval = moab_ref.get_connectivity(tets,elem_nodes,false); CHKERRQ_MOAB(rval);
+  // ierr = m_field_ref.get_entities_by_type_and_ref_level(
+  //   BitRefLevel().set(max_level),BitRefLevel().set(),MBVERTEX,elem_nodes
+  // ); CHKERRQ(ierr);
 
   std::map<EntityHandle,int> little_map;
   gaussPts_FirstOrder.resize(elem_nodes.size(),4,0);
@@ -314,22 +331,36 @@ PetscErrorCode PostProcVolumeOnRefinedMesh::generateReferenceElementMesh() {
     rval = moab_ref.get_coords(&*nit,1,&gaussPts_FirstOrder(gg,0)); CHKERRQ_MOAB(rval);
     little_map[*nit] = gg;
   }
-  gaussPts_FirstOrder = trans(gaussPts_FirstOrder);
+  gaussPts = gaussPts_FirstOrder;
+  gaussPts = trans(gaussPts);
 
-  Range tets;
-  ierr = m_field_ref.get_entities_by_type_and_ref_level(BitRefLevel().set(max_level),BitRefLevel().set(),MBTET,tets); CHKERRQ(ierr);
-
-  refTets.resize(tets.size(),4);
   Range::iterator tit = tets.begin();
   for(int tt = 0;tit!=tets.end();tit++,tt++) {
     const EntityHandle *conn;
     int num_nodes;
     rval = moab_ref.get_connectivity(*tit,conn,num_nodes,false); CHKERRQ_MOAB(rval);
+    if(tt == 0) {
+      refTets.resize(tets.size(),num_nodes);
+    }
     for(int nn = 0;nn<num_nodes;nn++) {
       refTets(tt,nn) = little_map[conn[nn]];
     }
   }
 
+  ublas::matrix<double> N;
+  shapeFunctions.resize(elem_nodes.size(),4);
+  ierr = ShapeMBTET(
+    &*shapeFunctions.data().begin(),
+    &gaussPts(0,0),
+    &gaussPts(1,0),
+    &gaussPts(2,0),
+    elem_nodes.size()
+  ); CHKERRQ(ierr);
+
+  // EntityHandle meshset;
+  // rval = moab_ref.create_meshset(MESHSET_SET,meshset); CHKERRQ_MOAB(rval);
+  // rval = moab_ref.add_entities(meshset,tets); CHKERRQ_MOAB(rval);
+  // rval = moab_ref.write_file("test_reference_mesh.vtk","VTK","",&meshset,1); CHKERRQ_MOAB(rval);
   //moab_ref.list_entities(tets);
 
   PetscFunctionReturn(0);
@@ -340,100 +371,53 @@ PetscErrorCode PostProcVolumeOnRefinedMesh::setGaussPts(int order) {
 
   try {
 
-    PetscErrorCode ierr;
     ErrorCode rval;
 
-    gaussPts_FirstOrder = trans(gaussPts_FirstOrder);
     mapGaussPts.resize(gaussPts_FirstOrder.size1());
     for(unsigned int gg = 0;gg<gaussPts_FirstOrder.size1();gg++) {
-      rval = postProcMesh.create_vertex(&gaussPts_FirstOrder(gg,0),mapGaussPts[gg]); CHKERRQ_MOAB(rval);
+      rval = postProcMesh.create_vertex(
+        &gaussPts_FirstOrder(gg,0),mapGaussPts[gg]
+      ); CHKERRQ_MOAB(rval);
     }
-    gaussPts_FirstOrder = trans(gaussPts_FirstOrder);
 
     commonData.tEts.clear();
     for(unsigned int tt = 0;tt<refTets.size1();tt++) {
-      EntityHandle conn[] = {
-        mapGaussPts[refTets(tt,0)], mapGaussPts[refTets(tt,1)],
-        mapGaussPts[refTets(tt,2)], mapGaussPts[refTets(tt,3)]
-      };
+      int num_nodes = refTets.size2();
+      EntityHandle conn[num_nodes];
+      for(int nn = 0;nn!=num_nodes;nn++) {
+        conn[nn] = mapGaussPts[refTets(tt,nn)];
+      }
       EntityHandle tet;
-      rval = postProcMesh.create_element(MBTET,conn,4,tet); CHKERRQ_MOAB(rval);
+      rval = postProcMesh.create_element(MBTET,conn,num_nodes,tet); CHKERRQ_MOAB(rval);
       commonData.tEts.insert(tet);
     }
 
-    //std::cerr << commonData.tEts.size() << std::endl;
-
-    {
-      EntityHandle meshset;
-      rval = postProcMesh.create_meshset(MESHSET_SET|MESHSET_TRACK_OWNER,meshset); CHKERRQ_MOAB(rval);
-      rval = postProcMesh.add_entities(meshset,commonData.tEts); CHKERRQ_MOAB(rval);
-      Range edges;
-      rval = postProcMesh.get_adjacencies(commonData.tEts,1,true,edges); CHKERRQ_MOAB(rval);
-      rval = postProcMesh.add_entities(meshset,edges); CHKERRQ_MOAB(rval);
-      //create higher order entities
-      if(tenNodesPostProcTets) {
-        rval = postProcMesh.convert_entities(meshset,true,false,false); CHKERRQ_MOAB(rval);
-      }
-      commonData.tEts.clear();
-      rval = postProcMesh.get_entities_by_type(meshset,MBTET,commonData.tEts,true); CHKERRQ_MOAB(rval);
-      rval = postProcMesh.delete_entities(&meshset,1);
-      rval = postProcMesh.delete_entities(edges);
-    }
-
-    //std::cerr << "<-- " << commonData.tEts.size() << std::endl;
-    Range nodes;
-    rval = postProcMesh.get_connectivity(commonData.tEts,nodes,false); CHKERRQ_MOAB(rval);
-
-    gaussPts.resize(nodes.size(),4);
-    Range::iterator nit = nodes.begin();
-    for(int gg = 0;nit!=nodes.end();nit++,gg++) {
-      rval = postProcMesh.get_coords(&*nit,1,&gaussPts(gg,0)); CHKERRQ_MOAB(rval);
-      gaussPts(gg,3) = 0;
-    }
-    gaussPts = trans(gaussPts);
-
-    //std::cerr << gaussPts << std::endl;
-
-    ublas::matrix<double> N;
-    N.resize(nodes.size(),4);
-    ierr = ShapeMBTET(
-      &*N.data().begin(),&gaussPts(0,0),&gaussPts(1,0),&gaussPts(2,0),nodes.size()
-    ); CHKERRQ(ierr);
-    //std::cerr << N << std::endl;
-
-    ublas::matrix<double> coords_at_gauss_pts;
-    coords_at_gauss_pts.resize(nodes.size(),3);
-
-    EntityHandle fe_ent = fePtr->get_ent();
-
-    ublas::vector<double> coords(12);
+    EntityHandle fe_ent = numeredEntFiniteElementPtr->get_ent();
+    coords.resize(12,false);
     {
       const EntityHandle *conn;
       int num_nodes;
-      mField.get_moab().get_connectivity(fe_ent,conn,num_nodes,false);
-      coords.resize(3*num_nodes);
+      mField.get_moab().get_connectivity(fe_ent,conn,num_nodes,true);
+      // coords.resize(3*num_nodes,false);
       rval = mField.get_moab().get_coords(conn,num_nodes,&coords[0]); CHKERRQ_MOAB(rval);
-      //std::cerr << coords << std::endl;
     }
 
+    Range nodes;
+    rval = postProcMesh.get_connectivity(commonData.tEts,nodes,false); CHKERRQ_MOAB(rval);
+
+    coordsAtGaussPts.resize(nodes.size(),3,false);
     for(unsigned int gg = 0;gg<nodes.size();gg++) {
       for(int dd = 0;dd<3;dd++) {
-        coords_at_gauss_pts(gg,dd) = cblas_ddot(4,&N(gg,0),1,&coords[dd],3);
+        coordsAtGaussPts(gg,dd) = cblas_ddot(4,&shapeFunctions(gg,0),1,&coords[dd],3);
       }
     }
 
-    //std::cerr << coords_at_gauss_pts << std::endl;
-
     mapGaussPts.resize(nodes.size());
-    nit = nodes.begin();
+    Range::iterator nit = nodes.begin();
     for(int gg = 0;nit!=nodes.end();nit++,gg++) {
-      rval = postProcMesh.set_coords(&*nit,1,&coords_at_gauss_pts(gg,0)); CHKERRQ_MOAB(rval);
+      rval = postProcMesh.set_coords(&*nit,1,&coordsAtGaussPts(gg,0)); CHKERRQ_MOAB(rval);
       mapGaussPts[gg] = *nit;
     }
-
-    //tEts.clear();
-    //rval = postProcMesh.get_entities_by_type(0,MBTET,tEts,true); CHKERRQ_MOAB(rval);
-    //ce  rr << "<--- <--- " << tEts.size() << std::endl;
 
   } catch (std::exception& ex) {
     std::ostringstream ss;
@@ -606,7 +590,8 @@ PetscErrorCode PostProcFatPrismOnRefinedMesh::setGaussPtsTrianglesOnly(int order
   //   SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"post-process mesh not generated");
   // }
 
-  //FIXME: Refinement not implement and inefficient implementation
+  //FIXME: Refinement not implement
+  //FIXME: This is inefficient implementation
 
   // PetscErrorCode ierr;
   MoABErrorCode rval;
@@ -614,8 +599,8 @@ PetscErrorCode PostProcFatPrismOnRefinedMesh::setGaussPtsTrianglesOnly(int order
   int num_nodes;
   EntityHandle prism;
 
-  if(elementsMap.find(fePtr->get_ent())!=elementsMap.end()) {
-    prism = elementsMap[fePtr->get_ent()];
+  if(elementsMap.find(numeredEntFiniteElementPtr->get_ent())!=elementsMap.end()) {
+    prism = elementsMap[numeredEntFiniteElementPtr->get_ent()];
   } else {
 
     {
@@ -651,7 +636,7 @@ PetscErrorCode PostProcFatPrismOnRefinedMesh::setGaussPtsTrianglesOnly(int order
     }
     rval = postProcMesh.create_element(MBPRISM,&prism_conn[0],6,prism); CHKERRQ_MOAB(rval);
 
-    elementsMap[fePtr->get_ent()] = prism;
+    elementsMap[numeredEntFiniteElementPtr->get_ent()] = prism;
     // Range faces;
     // rval = postProcMesh.get_adjacencies(&prism,1,2,true,faces); CHKERRQ_MOAB(rval);
     Range edges;
@@ -669,7 +654,7 @@ PetscErrorCode PostProcFatPrismOnRefinedMesh::setGaussPtsTrianglesOnly(int order
     // rval = postProcMesh.delete_entities(faces); CHKERRQ_MOAB(rval);
 
     rval = mField.get_moab().get_connectivity(
-      fePtr->get_ent(),conn,num_nodes,true
+      numeredEntFiniteElementPtr->get_ent(),conn,num_nodes,true
     ); CHKERRQ_MOAB(rval);
     ublas::matrix<double> coords_prism(num_nodes,3);
     rval = mField.get_moab().get_coords(conn,num_nodes,&coords_prism(0,0));
@@ -865,13 +850,13 @@ PetscErrorCode PostProcFaceOnRefinedMesh::setGaussPts(int order) {
   int num_nodes;
   EntityHandle tri;
 
-  if(elementsMap.find(fePtr->get_ent())!=elementsMap.end()) {
-    tri = elementsMap[fePtr->get_ent()];
+  if(elementsMap.find(numeredEntFiniteElementPtr->get_ent())!=elementsMap.end()) {
+    tri = elementsMap[numeredEntFiniteElementPtr->get_ent()];
   } else {
     ublas::vector<EntityHandle> tri_conn(3);
     ublas::matrix<double> coords_tri(3,3);
     ublas::vector<double> coords(3);
-    rval = mField.get_moab().get_connectivity(fePtr->get_ent(),conn,num_nodes,true); CHKERRQ_MOAB(rval);
+    rval = mField.get_moab().get_connectivity(numeredEntFiniteElementPtr->get_ent(),conn,num_nodes,true); CHKERRQ_MOAB(rval);
     rval = mField.get_moab().get_coords(conn,num_nodes,&coords_tri(0,0));
     for(int gg = 0;gg!=3;gg++) {
       double ksi = gaussPts(0,gg);
@@ -889,7 +874,7 @@ PetscErrorCode PostProcFaceOnRefinedMesh::setGaussPts(int order) {
       ); CHKERRQ_MOAB(rval);
     }
     rval = postProcMesh.create_element(MBTRI,&tri_conn[0],3,tri); CHKERRQ_MOAB(rval);
-    elementsMap[fePtr->get_ent()] = tri;
+    elementsMap[numeredEntFiniteElementPtr->get_ent()] = tri;
     Range edges;
     rval = postProcMesh.get_adjacencies(&tri,1,1,true,edges); CHKERRQ_MOAB(rval);
     EntityHandle meshset;
