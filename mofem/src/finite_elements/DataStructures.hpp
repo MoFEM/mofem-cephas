@@ -150,7 +150,8 @@ struct DataForcesAndSurcesCore {
     HDIV0_0 = 0,HDIV1_0,HDIV2_0,HDIV0_1,HDIV1_1,HDIV2_1,HDIV0_2,HDIV1_2,HDIV2_2
   };
 
-  /** \brief data on single entity
+  /** \brief Data on single entity (This is passed as argument to DataOperator::doWork)
+    * \ingroup mofem_forces_and_sources_user_data_operators
     */
   struct EntData {
 
@@ -348,6 +349,8 @@ struct DataForcesAndSurcesCore {
     *
     */
     inline const MatrixAdaptor getDiffN(const FieldApproximationBase base,const int gg) {
+      //FIXME: That is bug, it will not work if number of integration pts is equal to number of nodes on entity.
+      //User who not implementing low level DataOperator will not experience this.
       if(getN(base).size1() == getDiffN(base).size1()) {
         int size = getN(base).size2();
         int dim = getDiffN(base).size2()/size;
@@ -423,6 +426,8 @@ struct DataForcesAndSurcesCore {
     *
     */
     inline const MatrixAdaptor getDiffN(const FieldApproximationBase base,const int gg,const int nb_base_functions) {
+      //FIXME: That is bug, it will not work if number of integration pts is equal to number of nodes on entity.
+      //User who not implementing low level DataOperator will not experience this.
       if(getN(base).size1() == getDiffN(base).size1()) {
         (void)getN(base)(gg,nb_base_functions-1); // throw error if nb_base_functions is to big
         int dim = getDiffN(base).size2()/getN(base).size2();
