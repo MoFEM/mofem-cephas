@@ -58,6 +58,27 @@ public:
     return *this;
   }
 
+  #ifdef ADOLC_ADOUBLE_H
+
+  /*
+  Assignments operator for ADOL-C
+  */
+  template<class U>
+  const Tensor0<T*> & operator>>=(U &d)
+  {
+    d >>= *data;
+    return *this;
+  }
+
+  template<class U>
+  const Tensor0<T*> & operator<<=(const U d)
+  {
+    *data<<=d;
+    return *this;
+  }
+
+  #endif
+
   /* Note that the conversion operator& to T * only works on
      consts, so it doesn't allow you to change the value of *data.
      You have to use the = operators to change that.  The idea is that
@@ -81,6 +102,10 @@ public:
     return *this;
   }
 };
+
+#ifdef ADOLC_ADOUBLE_H
+
+#endif
 
 #include "Tensor0/d_one_sided_Tensor0.hpp"
 #include "Tensor0/diffusion_Tensor0.hpp"
