@@ -25,8 +25,9 @@ namespace MoFEM {
 /** \brief Core FieldInterface class
  *  \ingroup mofem
 
-  This class is not used directly by the user. It is database with basic
-  functions to access data. Abstraction of this is MoFEM Interface structure.
+  This class is not used directly by the user. For internal use only.   It is
+  database with basic functions to access data. Abstraction of this is MoFEM
+  Interface structure.
 
   It is deign to hide come complexities for users and allow low development
   without interfering with users modules programmer work.
@@ -55,7 +56,7 @@ struct Core: public FieldInterface, MeshRefinment, PrismInterface, SeriesRecorde
   PetscErrorCode ierr;
 
   //Data and low level methods
-  Tag th_Part;
+  Tag th_Part;  ///< Tag for partition number
   Tag th_RefType,th_RefParentHandle,th_RefBitLevel,th_RefBitLevel_Mask,th_RefBitEdge,th_RefFEMeshset;
   Tag th_FieldId,th_FieldName,th_FieldName_DataNamePrefix,th_FieldSpace,th_FieldBase;
   Tag th_FEId,th_FEName;
@@ -66,11 +67,11 @@ struct Core: public FieldInterface, MeshRefinment, PrismInterface, SeriesRecorde
   Tag th_ProblemLocalNbDofCol,th_ProblemGhostNbDofCol;
   Tag th_ProblemShift,th_FieldShift,th_FEShift;
   Tag nsTag,ssTag,nsTag_data,ssTag_data,bhTag,bhTag_header;
-  Tag th_ElemType;
-  Tag th_SeriesName;
-  Tag th_CoordSysMeshSet;
-  Tag th_CoordSysName;
-  Tag th_CoordSysDim;
+  Tag th_ElemType;                    ///< Needed for VTK files
+  Tag th_SeriesName;                  ///< Recorded series name
+  Tag th_CoordSysMeshSet;             ///< Tag on field meshset pointing to coordinate system meshset
+  Tag th_CoordSysName;                ///< Name of coordinate system
+  Tag th_CoordSysDim;                 ///< Tag on cordsys meshset for dimension of coordinate system associated to fields
 
   int *fShift,*feShift,*pShift;
   int verbose;
@@ -101,6 +102,10 @@ struct Core: public FieldInterface, MeshRefinment, PrismInterface, SeriesRecorde
   Tag th_MoFEMBuild;
   int *buildMoFEM;
 
+  /**
+   * Is used to check consistency. I n future properly this will be removed and
+   * replaced by other solution. It is only for internal use.
+   */
   enum SemaphoresBuildMofem {
     BUILD_FIELD = 1<<0,
     BUILD_FE = 1<<1,
