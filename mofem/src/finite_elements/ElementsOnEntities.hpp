@@ -385,8 +385,8 @@ struct ForcesAndSurcesCore: public FEMethod {
 
     std::string rowFieldName;
     std::string colFieldName;
-    bool doVerticesRow;
-    bool doEdgesRow;
+    bool doVerticesRow; ///< If false skip vertices
+    bool doEdgesRow;    ///< If false skip edges
     bool doQuadsRow;
     bool doTrisRow;
     bool doTetsRow;
@@ -397,7 +397,7 @@ struct ForcesAndSurcesCore: public FEMethod {
     bool doTrisCol;
     bool doTetsCol;
     bool doPrismsCol;
-    bool sYmm;
+    bool sYmm;          ///< If true assume that matrix is symmetric structure
 
     /// set if operator is executed taking in account symmetry
     inline void setSymm() { sYmm = true; }
@@ -405,6 +405,18 @@ struct ForcesAndSurcesCore: public FEMethod {
     /// unset if operator is executed for  non symmetric problem
     inline void unSetSymm() { sYmm = false; }
 
+    /**
+     * \brief Controls loop over entities on element
+     *
+     * OPRWO is used if row vector is assembled
+     * OPCOL is usually ised if column vector is assembled
+     * OPROWCOL is usually used for assemble matrices.
+     *
+     * For typical problem like Bubnov-Galrekin OPROW and OPCOL are the same. In more
+     * general case for example for non-square matrices columns and rows could have
+     * different numeration and/or different set of field.
+     *
+     */
     enum OpType {
       OPROW = 1<<0,
       OPCOL = 1<<1,
@@ -412,8 +424,21 @@ struct ForcesAndSurcesCore: public FEMethod {
     };
     char opType;
 
+    /**
+     * \brief Get operator types
+     * @return Return operator type
+     */
     inline int getOpType() const { return opType; }
+
+    /**
+     * \brief Set operator type
+     * @param Operator type
+     */
     inline void setOpType(const OpType type) { opType = type; }
+
+    /**
+     * \brief Add operator type
+     */
     inline void addOpType(const OpType type) { opType |= type; }
 
     UserDataOperator(const std::string &field_name,const char type):
