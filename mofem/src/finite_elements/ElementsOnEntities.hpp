@@ -44,13 +44,23 @@ struct ForcesAndSurcesCore: public FEMethod {
 
   PetscErrorCode getNumberOfNodes(int &num_nodes) const;
 
-  /// \brief get max order of approximation for data fields
+  /** \brief Get max order of approximation for data fields
+
+  Method  getMaxDataOrder () return maximal order on entities, for
+  all data on the element. So for example if finite element is triangle, and
+  triangle base function have order 4 and on edges base function have order 2,
+  this function return 4.
+
+  If finite element has for example 2 or more approximated fields, for example
+  Pressure (order 3) and displacement field (order 5), this function returns 5.
+
+  */
   int getMaxDataOrder() const;
 
-  /// \brief get max order of approximation for field in rows
+  /// \brief Get max order of approximation for field in rows
   int getMaxRowOrder() const;
 
-  /// \brief get max order of approximation for field in columns
+  /// \brief Get max order of approximation for field in columns
   int getMaxColOrder() const;
 
   /**
@@ -220,6 +230,16 @@ struct ForcesAndSurcesCore: public FEMethod {
 
   // ** Data **
 
+  /**
+   * \brief Get field data on nodes
+   * @param  field_name Name of field
+   * @param  dofs       Dofs (element) multi index
+   * @param  nodes_data Returned DOFs values
+   * @param  nodes_dofs Vector of pointers to DOFs data structure
+   * @param  space      Get space on nodes (Only H! is valid)
+   * @param  base       Get base on nodes
+   * @return            Error code
+   */
   PetscErrorCode getNodesFieldData(
     const std::string &field_name,
     FEDofEntity_multiIndex &dofs,
@@ -229,6 +249,16 @@ struct ForcesAndSurcesCore: public FEMethod {
     FieldApproximationBase &base
   ) const;
 
+  /**
+   * \brief Get field data on entities
+   * @param  field_name     Field name
+   * @param  dofs           Dofs (element) multi index
+   * @param  type           Entity type
+   * @param  side_number    Side number (Local number of entity on element in canonical order)
+   * @param  ent_field_data Vector of DOFs values on entities
+   * @param  ent_field_dofs Vector of pointers to DOFs data structure
+   * @return                Error code
+   */
   PetscErrorCode getTypeFieldData(
     const std::string &field_name,
     FEDofEntity_multiIndex &dofs,
