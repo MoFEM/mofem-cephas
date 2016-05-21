@@ -46,11 +46,62 @@ operator=(const Tensor2_symmetric_Expr<B,U,Dim,i,j> &result)
 /* T2s=T2s_Expr(T2s) */
 
 template<class A, class T, int Tensor_Dim, int Dim, char i, char j> inline
-const Tensor2_symmetric_Expr<Tensor2_symmetric<A,Tensor_Dim>,T,Dim,i,j> & 
+const Tensor2_symmetric_Expr<Tensor2_symmetric<A,Tensor_Dim>,T,Dim,i,j> &
 Tensor2_symmetric_Expr<Tensor2_symmetric<A,Tensor_Dim>,T,Dim,i,j>::
 operator=(const Tensor2_symmetric_Expr<Tensor2_symmetric<A,Tensor_Dim>,T,Dim,i,j> &result)
 {
   return operator=<Tensor2_symmetric<A,Tensor_Dim>,T>(result);
+}
+
+/* ADOL-C T2s<<=T2s left */
+
+template<class A, class B, class U, int Dim, char i, char j,
+  int Current_Dim0, int Current_Dim1>
+inline void T2s_equals_adolc_left_T2s(A &iter,
+			   const Tensor2_symmetric_Expr<B,U,Dim,i,j> &result,
+			   const Number<Current_Dim0> &,
+			   const Number<Current_Dim1> &)
+{
+  iter(Current_Dim0-1,Current_Dim1-1)<<=result(Current_Dim0-1,Current_Dim1-1);
+  T2s_equals_adolc_left_T2s(iter,result,Number<Current_Dim0-1>(),Number<Current_Dim1>());
+}
+
+template<class A, class B, class U, int Dim, char i, char j, int Current_Dim1>
+inline void T2s_equals_adolc_left_T2s
+(A &iter, const Tensor2_symmetric_Expr<B,U,Dim,i,j> &result,
+ const Number<1> &, const Number<Current_Dim1> &)
+{
+  iter(0,Current_Dim1-1)<<=result(0,Current_Dim1-1);
+  T2s_equals_adolc_left_T2s(iter,result,Number<Current_Dim1-1>(),
+		 Number<Current_Dim1-1>());
+}
+
+template<class A, class B, class U, int Dim, char i, char j>
+inline void T2s_equals_adolc_left_T2s(A &iter,
+			   const Tensor2_symmetric_Expr<B,U,Dim,i,j> &result,
+			   const Number<1> &, const Number<1> &)
+{
+  iter(0,0)<<=result(0,0);
+}
+
+template<class A, class T, int Tensor_Dim, int Dim, char i, char j>
+template<class B, class U> inline
+const Tensor2_symmetric_Expr<Tensor2_symmetric<A,Tensor_Dim>,T,Dim,i,j> &
+Tensor2_symmetric_Expr<Tensor2_symmetric<A,Tensor_Dim>,T,Dim,i,j>::
+operator<<=(const Tensor2_symmetric_Expr<B,U,Dim,i,j> &result)
+{
+  T2s_equals_adolc_left_T2s(iter,result,Number<Dim>(),Number<Dim>());
+  return *this;
+}
+
+/* ADOL-C left T2s=T2s_Expr(T2s) */
+
+template<class A, class T, int Tensor_Dim, int Dim, char i, char j> inline
+const Tensor2_symmetric_Expr<Tensor2_symmetric<A,Tensor_Dim>,T,Dim,i,j> &
+Tensor2_symmetric_Expr<Tensor2_symmetric<A,Tensor_Dim>,T,Dim,i,j>::
+operator<<=(const Tensor2_symmetric_Expr<Tensor2_symmetric<A,Tensor_Dim>,T,Dim,i,j> &result)
+{
+  return operator<<=<Tensor2_symmetric<A,Tensor_Dim>,T>(result);
 }
 
 /* T2s+=T2s */
@@ -186,7 +237,7 @@ operator&=(const Tensor2_symmetric_Expr<B,U,Dim,i,j> &result)
 
 template<class A, class T, int Tensor_Dim, int Dim, char i, char j>
 template<class B, class U> inline
-const Tensor2_symmetric_Expr<Tensor2_symmetric<A,Tensor_Dim>,T,Dim,i,j> & 
+const Tensor2_symmetric_Expr<Tensor2_symmetric<A,Tensor_Dim>,T,Dim,i,j> &
 Tensor2_symmetric_Expr<Tensor2_symmetric<A,Tensor_Dim>,T,Dim,i,j>::
 operator=(const Tensor2_symmetric_Expr<B,U,Dim,j,i> &result)
 {
@@ -196,7 +247,7 @@ operator=(const Tensor2_symmetric_Expr<B,U,Dim,j,i> &result)
 
 template<class A, class T, int Tensor_Dim, int Dim, char i, char j>
 template<class B, class U> inline
-const Tensor2_symmetric_Expr<Tensor2_symmetric<A,Tensor_Dim>,T,Dim,i,j> & 
+const Tensor2_symmetric_Expr<Tensor2_symmetric<A,Tensor_Dim>,T,Dim,i,j> &
 Tensor2_symmetric_Expr<Tensor2_symmetric<A,Tensor_Dim>,T,Dim,i,j>::
 operator+=(const Tensor2_symmetric_Expr<B,U,Dim,j,i> &result)
 {
@@ -206,7 +257,7 @@ operator+=(const Tensor2_symmetric_Expr<B,U,Dim,j,i> &result)
 
 template<class A, class T, int Tensor_Dim, int Dim, char i, char j>
 template<class B, class U> inline
-const Tensor2_symmetric_Expr<Tensor2_symmetric<A,Tensor_Dim>,T,Dim,i,j> & 
+const Tensor2_symmetric_Expr<Tensor2_symmetric<A,Tensor_Dim>,T,Dim,i,j> &
 Tensor2_symmetric_Expr<Tensor2_symmetric<A,Tensor_Dim>,T,Dim,i,j>::
 operator-=(const Tensor2_symmetric_Expr<B,U,Dim,j,i> &result)
 {
@@ -249,6 +300,42 @@ Tensor2_symmetric_Expr<Tensor2_symmetric<A,Tensor_Dim>,T,Dim,i,j>::
 operator=(const U &u)
 {
   T2s_equals_generic(iter,u,Number<Dim>(),Number<Dim>());
+  return *this;
+}
+
+/* ADOL-C left T2s<<=U */
+
+template<class A, class U, int Current_Dim0, int Current_Dim1>
+inline void T2s_equals_adolc_left_generic(A &iter, const U &u,
+			   const Number<Current_Dim0> &,
+			   const Number<Current_Dim1> &)
+{
+  iter(Current_Dim0-1,Current_Dim1-1)<<=u;
+  T2s_equals_adolc_left_generic(iter,u,Number<Current_Dim0-1>(),Number<Current_Dim1>());
+}
+
+template<class A, class U, int Current_Dim1>
+inline void T2s_equals_adolc_left_generic(A &iter, const U &u,
+			   const Number<1> &, const Number<Current_Dim1> &)
+{
+  iter(0,Current_Dim1-1)<<=u;
+  T2s_equals_adolc_left_generic(iter,u,Number<Current_Dim1-1>(),Number<Current_Dim1-1>());
+}
+
+template<class A, class U>
+inline void T2s_equals_adolc_left_generic(A &iter, const U &u,
+			       const Number<1> &, const Number<1> &)
+{
+  iter(0,0)<<=u;
+}
+
+template<class A, class T, int Tensor_Dim, int Dim, char i, char j>
+template<class U> inline
+const Tensor2_symmetric_Expr<Tensor2_symmetric<A,Tensor_Dim>,T,Dim,i,j> &
+Tensor2_symmetric_Expr<Tensor2_symmetric<A,Tensor_Dim>,T,Dim,i,j>::
+operator<<=(const U &u)
+{
+  T2s_equals_adolc_left_generic(iter,u,Number<Dim>(),Number<Dim>());
   return *this;
 }
 
@@ -530,4 +617,3 @@ Tensor2_symmetric_Expr<Tensor4_ddg_number_rhs_01<A,T,N0,N1>,T,Dim,i,j>
 {
   return operator=<Tensor4_ddg_number_rhs_01<A,T,N0,N1>,T>(result);
 }
-

@@ -29,6 +29,58 @@ Tensor1_Expr<Tensor1<A,Tensor_Dim>,T,Dim,i>::operator=(const Tensor1_Expr<B,U,Di
   return *this;
 }
 
+/* <<=T1_Expr ADOL-C left */
+
+template<class A, class B, class U, int Dim, char i, int Current_Dim>
+inline void T1_equals_addolc_left_T1(A &iter, const Tensor1_Expr<B,U,Dim,i> result,
+			 const Number<Current_Dim> &)
+{
+  iter(Current_Dim-1)<<=result(Current_Dim-1);
+  T1_equals_addolc_left_T1(iter,result,Number<Current_Dim-1>());
+}
+
+template<class A, class B, class U, int Dim, char i>
+inline void T1_equals_addolc_left_T1(A &iter, const Tensor1_Expr<B,U,Dim,i> result,
+			 const Number<1> &)
+{
+  iter(0)<<=result(0);
+}
+
+template<class A, class T, int Tensor_Dim, int Dim, char i>
+template<class B, class U>
+inline const Tensor1_Expr<Tensor1<A,Tensor_Dim>,T,Dim,i> &
+Tensor1_Expr<Tensor1<A,Tensor_Dim>,T,Dim,i>::operator<<=(const Tensor1_Expr<B,U,Dim,i> &result)
+{
+  T1_equals_addolc_left_T1(iter,result,Number<Dim>());
+  return *this;
+}
+
+/* <<=T1_Expr ADOL-C right */
+
+template<class A, class B, class U, int Dim, char i, int Current_Dim>
+inline void T1_equals_addolc_right_T1(A &iter,Tensor1_Expr<B,U,Dim,i> result,
+			 const Number<Current_Dim> &)
+{
+  iter(Current_Dim-1)>>=result(Current_Dim-1);
+  T1_equals_addolc_right_T1(iter,result,Number<Current_Dim-1>());
+}
+
+template<class A, class B, class U, int Dim, char i>
+inline void T1_equals_addolc_right_T1(A &iter,Tensor1_Expr<B,U,Dim,i> result,
+			 const Number<1> &)
+{
+	iter(0)>>=result(0);
+}
+
+template<class A, class T, int Tensor_Dim, int Dim, char i>
+template<class B, class U>
+inline const Tensor1_Expr<Tensor1<A,Tensor_Dim>,T,Dim,i> &
+Tensor1_Expr<Tensor1<A,Tensor_Dim>,T,Dim,i>::operator>>=(const Tensor1_Expr<B,U,Dim,i> &result)
+{
+  T1_equals_addolc_right_T1(iter,result,Number<Dim>());
+  return *this;
+}
+
 /* =T1_Expr(T1) */
 
 template<class A, class T, int Tensor_Dim, int Dim, char i>
@@ -36,6 +88,24 @@ inline const Tensor1_Expr<Tensor1<A,Tensor_Dim>,T,Dim,i> &
 Tensor1_Expr<Tensor1<A,Tensor_Dim>,T,Dim,i>::operator=(const Tensor1_Expr<Tensor1<A,Tensor_Dim>,T,Dim,i> &result)
 {
   return operator=<Tensor1<A,Tensor_Dim>,T>(result);
+}
+
+/* <<=T1_Expr(T1) ADOL-C left */
+
+template<class A, class T, int Tensor_Dim, int Dim, char i>
+inline const Tensor1_Expr<Tensor1<A,Tensor_Dim>,T,Dim,i> &
+Tensor1_Expr<Tensor1<A,Tensor_Dim>,T,Dim,i>::operator<<=(const Tensor1_Expr<Tensor1<A,Tensor_Dim>,T,Dim,i> &result)
+{
+  return operator<<=<Tensor1<A,Tensor_Dim>,T>(result);
+}
+
+/* >>=T1_Expr(T1) ADOL-C right */
+
+template<class A, class T, int Tensor_Dim, int Dim, char i>
+inline const Tensor1_Expr<Tensor1<A,Tensor_Dim>,T,Dim,i> &
+Tensor1_Expr<Tensor1<A,Tensor_Dim>,T,Dim,i>::operator>>=(const Tensor1_Expr<Tensor1<A,Tensor_Dim>,T,Dim,i> &result)
+{
+  return operator>>=<Tensor1<A,Tensor_Dim>,T>(result);
 }
 
 /* +=T1 */
@@ -118,6 +188,56 @@ inline const Tensor1_Expr<Tensor1<A,Tensor_Dim>,T,Dim,i> &
 Tensor1_Expr<Tensor1<A,Tensor_Dim>,T,Dim,i>::operator=(const U &u)
 {
   T1_equals_generic(iter,u,Number<Dim>());
+  return *this;
+}
+
+/* <<=U ADOL-C left */
+
+template<class A, class U, int Current_Dim>
+inline void T1_equals_adolc_left_generic(A &iter, const U &u,
+			      const Number<Current_Dim> &)
+{
+  iter(Current_Dim-1)<<=u;
+  T1_equals_adolc_left_generic(iter,u,Number<Current_Dim-1>());
+}
+
+template<class A, class U>
+inline void T1_equals_adolc_left_generic(A &iter, const U &u,
+			      const Number<1> &)
+{
+  iter(0)<<=u;
+}
+
+template<class A, class T, int Tensor_Dim, int Dim, char i>
+template<class U>
+inline const Tensor1_Expr<Tensor1<A,Tensor_Dim>,T,Dim,i> &
+Tensor1_Expr<Tensor1<A,Tensor_Dim>,T,Dim,i>::operator<<=(const U &u)
+{
+  T1_equals_adolc_left_generic(iter,u,Number<Dim>());
+  return *this;
+}
+
+/* <<=U ADOL-C right */
+
+template<class A, class U, int Current_Dim>
+inline void T1_equals_adolc_right_generic(A &iter,const U &u,const Number<Current_Dim> &)
+{
+  u>>=iter(Current_Dim-1);
+  T1_equals_adolc_right_generic(iter,u,Number<Current_Dim-1>());
+}
+
+template<class A, class U>
+inline void T1_equals_adolc_right_generic(A &iter,const U &u,const Number<1> &)
+{
+  u>>=iter(0);
+}
+
+template<class A, class T, int Tensor_Dim, int Dim, char i>
+template<class U>
+inline const Tensor1_Expr<Tensor1<A,Tensor_Dim>,T,Dim,i> &
+Tensor1_Expr<Tensor1<A,Tensor_Dim>,T,Dim,i>::operator>>=(const U &u)
+{
+  T1_equals_adolc_right_generic(iter,u,Number<Dim>());
   return *this;
 }
 
@@ -248,7 +368,7 @@ inline void T2rhs0_equals_T1(A &iter, const Tensor1_Expr<B,U,Dim1,i> &result,
 
 template<class A, class T, int Dim1, char i, int N>
 template<class B, class U> inline
-const Tensor1_Expr<Tensor2_number_rhs_0<A,T,N>,T,Dim1,i> & 
+const Tensor1_Expr<Tensor2_number_rhs_0<A,T,N>,T,Dim1,i> &
 Tensor1_Expr<Tensor2_number_rhs_0<A,T,N>,T,Dim1,i>::operator=(const Tensor1_Expr<B,U,Dim1,i> &result)
 {
   T2rhs0_equals_T1(iter,result,Number<N>(),Number<Dim1>());
@@ -285,7 +405,7 @@ inline void T2rhs0_plus_equals_T1(A &iter,
 
 template<class A, class T, int Dim1, char i, int N>
 template<class B, class U> inline
-const Tensor1_Expr<Tensor2_number_rhs_0<A,T,N>,T,Dim1,i> & 
+const Tensor1_Expr<Tensor2_number_rhs_0<A,T,N>,T,Dim1,i> &
 Tensor1_Expr<Tensor2_number_rhs_0<A,T,N>,T,Dim1,i>::operator+=
 (const Tensor1_Expr<B,U,Dim1,i> &result)
 {
@@ -324,7 +444,7 @@ inline void T2rhs0_minus_equals_T1(A &iter,
 
 template<class A, class T, int Dim1, char i, int N>
 template<class B, class U> inline
-const Tensor1_Expr<Tensor2_number_rhs_0<A,T,N>,T,Dim1,i> & 
+const Tensor1_Expr<Tensor2_number_rhs_0<A,T,N>,T,Dim1,i> &
 Tensor1_Expr<Tensor2_number_rhs_0<A,T,N>,T,Dim1,i>::operator-=
 (const Tensor1_Expr<B,U,Dim1,i> &result)
 {
@@ -359,7 +479,7 @@ inline void T2rhs0_equals_generic(A &iter, const U &u, const Number<N> &,
 
 template<class A, class T, int Dim1, char i, int N>
 template<class U> inline
-const Tensor1_Expr<Tensor2_number_rhs_0<A,T,N>,T,Dim1,i> & 
+const Tensor1_Expr<Tensor2_number_rhs_0<A,T,N>,T,Dim1,i> &
 Tensor1_Expr<Tensor2_number_rhs_0<A,T,N>,T,Dim1,i>::operator=(const U &u)
 {
   T2rhs0_equals_generic(iter,u,Number<N>(),Number<Dim1>());
@@ -385,7 +505,7 @@ inline void T2rhs0_plus_equals_generic(A &iter, const U &u, const Number<N> &,
 
 template<class A, class T, int Dim1, char i, int N>
 template<class U> inline
-const Tensor1_Expr<Tensor2_number_rhs_0<A,T,N>,T,Dim1,i> & 
+const Tensor1_Expr<Tensor2_number_rhs_0<A,T,N>,T,Dim1,i> &
 Tensor1_Expr<Tensor2_number_rhs_0<A,T,N>,T,Dim1,i>::operator+=(const U &u)
 {
   T2rhs0_plus_equals_generic(iter,u,Number<N>(),Number<Dim1>());
@@ -411,7 +531,7 @@ inline void T2rhs0_minus_equals_generic(A &iter, const U &u, const Number<N> &,
 
 template<class A, class T, int Dim1, char i, int N>
 template<class U> inline
-const Tensor1_Expr<Tensor2_number_rhs_0<A,T,N>,T,Dim1,i> & 
+const Tensor1_Expr<Tensor2_number_rhs_0<A,T,N>,T,Dim1,i> &
 Tensor1_Expr<Tensor2_number_rhs_0<A,T,N>,T,Dim1,i>::operator-=(const U &u)
 {
   T2rhs0_minus_equals_generic(iter,u,Number<N>(),Number<Dim1>());
@@ -437,7 +557,7 @@ inline void T2rhs0_times_equals_generic(A &iter, const U &u, const Number<N> &,
 
 template<class A, class T, int Dim1, char i, int N>
 template<class U> inline
-const Tensor1_Expr<Tensor2_number_rhs_0<A,T,N>,T,Dim1,i> & 
+const Tensor1_Expr<Tensor2_number_rhs_0<A,T,N>,T,Dim1,i> &
 Tensor1_Expr<Tensor2_number_rhs_0<A,T,N>,T,Dim1,i>::operator*=(const U &u)
 {
   T2rhs0_times_equals_generic(iter,u,Number<N>(),Number<Dim1>());
@@ -464,7 +584,7 @@ inline void T2rhs0_divide_equals_generic(A &iter, const U &u, const Number<N> &,
 
 template<class A, class T, int Dim1, char i, int N>
 template<class U> inline
-const Tensor1_Expr<Tensor2_number_rhs_0<A,T,N>,T,Dim1,i> & 
+const Tensor1_Expr<Tensor2_number_rhs_0<A,T,N>,T,Dim1,i> &
 Tensor1_Expr<Tensor2_number_rhs_0<A,T,N>,T,Dim1,i>::operator/=(const U &u)
 {
   T2rhs0_divide_equals_generic(iter,u,Number<N>(),Number<Dim1>());
@@ -494,7 +614,7 @@ inline void T2rhs1_equals_T1(A &iter, const Tensor1_Expr<B,U,Dim1,i> &result,
 
 template<class A, class T, int Dim1, char i, int N>
 template<class B, class U> inline
-const Tensor1_Expr<Tensor2_number_rhs_1<A,T,N>,T,Dim1,i> & 
+const Tensor1_Expr<Tensor2_number_rhs_1<A,T,N>,T,Dim1,i> &
 Tensor1_Expr<Tensor2_number_rhs_1<A,T,N>,T,Dim1,i>::operator=(const Tensor1_Expr<B,U,Dim1,i> &result)
 {
   T2rhs1_equals_T1(iter,result,Number<N>(),Number<Dim1>());
@@ -529,7 +649,7 @@ inline void T2rhs1_plus_equals_T1(A &iter, const Tensor1_Expr<B,U,Dim1,i> &resul
 
 template<class A, class T, int Dim1, char i, int N>
 template<class B, class U> inline
-const Tensor1_Expr<Tensor2_number_rhs_1<A,T,N>,T,Dim1,i> & 
+const Tensor1_Expr<Tensor2_number_rhs_1<A,T,N>,T,Dim1,i> &
 Tensor1_Expr<Tensor2_number_rhs_1<A,T,N>,T,Dim1,i>::operator+=(const Tensor1_Expr<B,U,Dim1,i> &result)
 {
   T2rhs1_plus_equals_T1(iter,result,Number<N>(),Number<Dim1>());
@@ -564,7 +684,7 @@ inline void T2rhs1_minus_equals_T1(A &iter, const Tensor1_Expr<B,U,Dim1,i> &resu
 
 template<class A, class T, int Dim1, char i, int N>
 template<class B, class U> inline
-const Tensor1_Expr<Tensor2_number_rhs_1<A,T,N>,T,Dim1,i> & 
+const Tensor1_Expr<Tensor2_number_rhs_1<A,T,N>,T,Dim1,i> &
 Tensor1_Expr<Tensor2_number_rhs_1<A,T,N>,T,Dim1,i>::operator-=(const Tensor1_Expr<B,U,Dim1,i> &result)
 {
   T2rhs1_minus_equals_T1(iter,result,Number<N>(),Number<Dim1>());
@@ -597,7 +717,7 @@ inline void T2rhs1_equals_generic(A &iter, const U &u, const Number<N> &,
 
 template<class A, class T, int Dim1, char i, int N>
 template<class U> inline
-const Tensor1_Expr<Tensor2_number_rhs_1<A,T,N>,T,Dim1,i> & 
+const Tensor1_Expr<Tensor2_number_rhs_1<A,T,N>,T,Dim1,i> &
 Tensor1_Expr<Tensor2_number_rhs_1<A,T,N>,T,Dim1,i>::operator=(const U &u)
 {
   T2rhs1_equals_generic(iter,u,Number<N>(),Number<Dim1>());
@@ -623,7 +743,7 @@ inline void T2rhs1_plus_equals_generic(A &iter, const U &u, const Number<N> &,
 
 template<class A, class T, int Dim1, char i, int N>
 template<class U> inline
-const Tensor1_Expr<Tensor2_number_rhs_1<A,T,N>,T,Dim1,i> & 
+const Tensor1_Expr<Tensor2_number_rhs_1<A,T,N>,T,Dim1,i> &
 Tensor1_Expr<Tensor2_number_rhs_1<A,T,N>,T,Dim1,i>::operator+=(const U &u)
 {
   T2rhs1_plus_equals_generic(iter,u,Number<N>(),Number<Dim1>());
@@ -649,7 +769,7 @@ inline void T2rhs1_minus_equals_generic(A &iter, const U &u, const Number<N> &,
 
 template<class A, class T, int Dim1, char i, int N>
 template<class U> inline
-const Tensor1_Expr<Tensor2_number_rhs_1<A,T,N>,T,Dim1,i> & 
+const Tensor1_Expr<Tensor2_number_rhs_1<A,T,N>,T,Dim1,i> &
 Tensor1_Expr<Tensor2_number_rhs_1<A,T,N>,T,Dim1,i>::operator-=(const U &u)
 {
   T2rhs1_minus_equals_generic(iter,u,Number<N>(),Number<Dim1>());
@@ -675,7 +795,7 @@ inline void T2rhs1_times_equals_generic(A &iter, const U &u, const Number<N> &,
 
 template<class A, class T, int Dim1, char i, int N>
 template<class U> inline
-const Tensor1_Expr<Tensor2_number_rhs_1<A,T,N>,T,Dim1,i> & 
+const Tensor1_Expr<Tensor2_number_rhs_1<A,T,N>,T,Dim1,i> &
 Tensor1_Expr<Tensor2_number_rhs_1<A,T,N>,T,Dim1,i>::operator*=(const U &u)
 {
   T2rhs1_times_equals_generic(iter,u,Number<N>(),Number<Dim1>());
@@ -702,7 +822,7 @@ inline void T2rhs1_divide_equals_generic(A &iter, const U &u, const Number<N> &,
 
 template<class A, class T, int Dim1, char i, int N>
 template<class U> inline
-const Tensor1_Expr<Tensor2_number_rhs_1<A,T,N>,T,Dim1,i> & 
+const Tensor1_Expr<Tensor2_number_rhs_1<A,T,N>,T,Dim1,i> &
 Tensor1_Expr<Tensor2_number_rhs_1<A,T,N>,T,Dim1,i>::operator/=(const U &u)
 {
   T2rhs1_divide_equals_generic(iter,u,Number<N>(),Number<Dim1>());
@@ -735,7 +855,7 @@ inline void T3dgrhs12_equals_T1(A &iter,
 
 template<class A, class T, int Dim, char i, int N1, int N2>
 template<class B, class U> inline
-const Tensor1_Expr<Tensor3_dg_number_rhs_12<A,T,N1,N2>,T,Dim,i> & 
+const Tensor1_Expr<Tensor3_dg_number_rhs_12<A,T,N1,N2>,T,Dim,i> &
 Tensor1_Expr<Tensor3_dg_number_rhs_12<A,T,N1,N2>,T,Dim,i>
 ::operator=(const Tensor1_Expr<B,U,Dim,i> &result)
 {
@@ -778,7 +898,7 @@ inline void T3dgrhs01_equals_T1(A &iter,
 
 template<class A, class T, int Dim, char i, int N1, int N2>
 template<class B, class U> inline
-const Tensor1_Expr<Tensor3_dg_number_rhs_01<A,T,N1,N2>,T,Dim,i> & 
+const Tensor1_Expr<Tensor3_dg_number_rhs_01<A,T,N1,N2>,T,Dim,i> &
 Tensor1_Expr<Tensor3_dg_number_rhs_01<A,T,N1,N2>,T,Dim,i>
 ::operator=(const Tensor1_Expr<B,U,Dim,i> &result)
 {

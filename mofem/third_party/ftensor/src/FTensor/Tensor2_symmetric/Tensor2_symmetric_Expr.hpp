@@ -60,36 +60,36 @@ public:
      own and not use the template code. */
 
   template<class B, class U>
-  const Tensor2_symmetric_Expr<Tensor2_symmetric<A,Tensor_Dim>,T,Dim,i,j> & 
+  const Tensor2_symmetric_Expr<Tensor2_symmetric<A,Tensor_Dim>,T,Dim,i,j> &
   operator=(const Tensor2_symmetric_Expr<B,U,Dim,i,j> &result);
 
-  const Tensor2_symmetric_Expr<Tensor2_symmetric<A,Tensor_Dim>,T,Dim,i,j> & 
+  const Tensor2_symmetric_Expr<Tensor2_symmetric<A,Tensor_Dim>,T,Dim,i,j> &
   operator=(const Tensor2_symmetric_Expr<Tensor2_symmetric<A,Tensor_Dim>,T,Dim,i,j> &result);
 
   template<class B, class U> inline
-  const Tensor2_symmetric_Expr<Tensor2_symmetric<A,Tensor_Dim>,T,Dim,i,j> & 
+  const Tensor2_symmetric_Expr<Tensor2_symmetric<A,Tensor_Dim>,T,Dim,i,j> &
   operator+=(const Tensor2_symmetric_Expr<B,U,Dim,i,j> &result);
 
   template<class B, class U> inline
-  const Tensor2_symmetric_Expr<Tensor2_symmetric<A,Tensor_Dim>,T,Dim,i,j> & 
+  const Tensor2_symmetric_Expr<Tensor2_symmetric<A,Tensor_Dim>,T,Dim,i,j> &
   operator-=(const Tensor2_symmetric_Expr<B,U,Dim,i,j> &result);
-  
+
   template<class B, class U> inline
-  const Tensor2_symmetric_Expr<Tensor2_symmetric<A,Tensor_Dim>,T,Dim,i,j> & 
+  const Tensor2_symmetric_Expr<Tensor2_symmetric<A,Tensor_Dim>,T,Dim,i,j> &
   operator&=(const Tensor2_symmetric_Expr<B,U,Dim,i,j> &result);
 
   /* This is for when the indices are switched (i,j) -> (j,i). */
 
   template<class B, class U> inline
-  const Tensor2_symmetric_Expr<Tensor2_symmetric<A,Tensor_Dim>,T,Dim,i,j> & 
+  const Tensor2_symmetric_Expr<Tensor2_symmetric<A,Tensor_Dim>,T,Dim,i,j> &
   operator=(const Tensor2_symmetric_Expr<B,U,Dim,j,i> &result);
 
   template<class B, class U> inline
-  const Tensor2_symmetric_Expr<Tensor2_symmetric<A,Tensor_Dim>,T,Dim,i,j> & 
+  const Tensor2_symmetric_Expr<Tensor2_symmetric<A,Tensor_Dim>,T,Dim,i,j> &
   operator+=(const Tensor2_symmetric_Expr<B,U,Dim,j,i> &result);
 
   template<class B, class U> inline
-  const Tensor2_symmetric_Expr<Tensor2_symmetric<A,Tensor_Dim>,T,Dim,i,j> & 
+  const Tensor2_symmetric_Expr<Tensor2_symmetric<A,Tensor_Dim>,T,Dim,i,j> &
   operator-=(const Tensor2_symmetric_Expr<B,U,Dim,j,i> &result);
 
   /* Operations with just generics. */
@@ -104,6 +104,24 @@ public:
   const Tensor2_symmetric_Expr<Tensor2_symmetric<A,Tensor_Dim>,T,Dim,i,j> & operator*=(const U &d);
   template<class U> inline
   const Tensor2_symmetric_Expr<Tensor2_symmetric<A,Tensor_Dim>,T,Dim,i,j> & operator/=(const U &d);
+
+  /* ADOL-C operators. */
+
+  template<class B, class U>
+  const Tensor2_symmetric_Expr<Tensor2_symmetric<A,Tensor_Dim>,T,Dim,i,j> &
+  operator<<=(const Tensor2_symmetric_Expr<B,U,Dim,i,j> &result);
+
+  const Tensor2_symmetric_Expr<Tensor2_symmetric<A,Tensor_Dim>,T,Dim,i,j> &
+  operator<<=(const Tensor2_symmetric_Expr<Tensor2_symmetric<A,Tensor_Dim>,T,Dim,i,j> &result);
+
+  template<class B, class U> inline
+  const Tensor2_symmetric_Expr<Tensor2_symmetric<A,Tensor_Dim>,T,Dim,i,j> &
+  operator<<=(const Tensor2_symmetric_Expr<B,U,Dim,j,i> &result);
+
+  template<class U> inline
+  const Tensor2_symmetric_Expr<Tensor2_symmetric<A,Tensor_Dim>,T,Dim,i,j> & operator<<=(const U &d);
+
+
 };
 
 /* Specialized for Tensor3_dg_number_rhs_2 (Tensor3_dg with the

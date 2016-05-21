@@ -209,6 +209,7 @@ foreach(LOOP_MODULE ${INSTLLED_MODULES})
     WORKING_DIRECTORY ${MODULE_DIRECTORY}
     COMMENT "Get module contributors ${MODULE_NAME}" VERBATIM
   )
+  add_dependencies(get_module_contributors_${MODULE_NAME} get_modules_contributors_init)
   add_dependencies(get_modules_contributors get_module_contributors_${MODULE_NAME})
   # include module
   include(${LOOP_MODULE})
