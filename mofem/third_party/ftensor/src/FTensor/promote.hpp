@@ -1,8 +1,8 @@
 /* Traits that allow auto-promotion of int's to double's, double's to
    complex, etc.  Shamelessly stolen from
-   
+
    http://extreme.indiana.edu/~tveldhui/papers/techniques/
-   
+
    For now, only int, double, and complex<double> are covered.  If you
    want more, just insert a DECLARE_PROMOTE(A,B,C), where A and B are
    the two types, and C is what they should be coerced to.  */
