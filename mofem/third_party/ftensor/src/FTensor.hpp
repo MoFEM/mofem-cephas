@@ -127,4 +127,5 @@ namespace FTensor {
 
 /***************************************************************************//**
  * \defgroup ftensor Tensor template library
+ * \brief Efficient Template Tensor library 
  ******************************************************************************/

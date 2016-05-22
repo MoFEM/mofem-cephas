@@ -195,7 +195,6 @@ struct VolumeElementForcesAndSourcesCore: public ForcesAndSurcesCore {
 
 /***************************************************************************//**
  * \defgroup mofem_forces_and_sources_volume_element Volume Element
- *
  * \brief Implementation of general volume element.
  *
  * \ingroup mofem_forces_and_sources

@@ -77,6 +77,8 @@ PetscErrorCode KspMat(KSP ksp,Mat A,Mat B,void *ctx);
 
 /***************************************************************************//**
  * \defgroup petsc_context_struture Solver context structures
+ * \brief Context structures used to exchange information between PETSc and MoFEM
+ *
  * \ingroup mofem
  ******************************************************************************/
 
