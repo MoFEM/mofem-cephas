@@ -3,11 +3,26 @@
 template <class T, int Tensor_Dim01, int Tensor_Dim23>
 class Tensor4_ddg<T*,Tensor_Dim01,Tensor_Dim23>
 {
+  // Dropping restrict, is source of potential problems;
   mutable T * restrict data[(Tensor_Dim01*(Tensor_Dim01+1))/2][(Tensor_Dim23*(Tensor_Dim23+1))/2];
 public:
   /* There are two operator(int,int,int,int)'s, one for non-consts
      that lets you change the value, and one for consts that
      doesn't. */
+
+  Tensor4_ddg()
+  {
+  }
+
+  Tensor4_ddg(
+    T* d0000, T* d0010, T* d0011,
+    T* d1000, T* d1010, T* d1011,
+    T* d1100, T* d1110, T* d1111
+  ) {
+    ptr(0,0,0,0) = d0000; ptr(0,0,1,0) = d0010; ptr(0,0,1,1) = d0011;
+    ptr(1,0,0,0) = d1000; ptr(1,0,1,0) = d1010; ptr(1,0,1,1) = d1011;
+    ptr(1,1,0,0) = d1100; ptr(1,1,1,0) = d1110; ptr(1,1,1,1) = d1111;
+  }
 
   T & operator()(const int N1, const int N2, const int N3, const int N4)
   {
@@ -24,14 +39,17 @@ public:
         throw std::runtime_error(s.str());
       }
 #endif
-    return N1>N2 ? (N3>N4 ? *data[N1+(N2*(2*Tensor_Dim01-N2-1))/2]
-		    [N3+(N4*(2*Tensor_Dim23-N4-1))/2]
-		    : *data[N1+(N2*(2*Tensor_Dim01-N2-1))/2]
-		    [N4+(N3*(2*Tensor_Dim23-N3-1))/2])
-      : (N3>N4 ? *data[N2+(N1*(2*Tensor_Dim01-N1-1))/2]
-	 [N3+(N4*(2*Tensor_Dim23-N4-1))/2]
-	 : *data[N2+(N1*(2*Tensor_Dim01-N1-1))/2]
-	 [N4+(N3*(2*Tensor_Dim23-N3-1))/2]);
+    return
+    N1>N2 ? (
+      N3>N4
+      ? *data[N1+(N2*(2*Tensor_Dim01-N2-1))/2][N3+(N4*(2*Tensor_Dim23-N4-1))/2]
+      : *data[N1+(N2*(2*Tensor_Dim01-N2-1))/2][N4+(N3*(2*Tensor_Dim23-N3-1))/2]
+    )
+    : (
+      N3>N4
+      ? *data[N2+(N1*(2*Tensor_Dim01-N1-1))/2][N3+(N4*(2*Tensor_Dim23-N4-1))/2]
+      : *data[N2+(N1*(2*Tensor_Dim01-N1-1))/2][N4+(N3*(2*Tensor_Dim23-N3-1))/2]
+    );
   }
 
   T operator()(const int N1, const int N2, const int N3, const int N4)
@@ -83,6 +101,39 @@ public:
 	 [N3+(N4*(2*Tensor_Dim23-N4-1))/2]
 	 : data[N2+(N1*(2*Tensor_Dim01-N1-1))/2]
 	 [N4+(N3*(2*Tensor_Dim23-N3-1))/2]);
+  }
+
+  /* Return reference to pointer, that will allow to set internal
+  data pointer from storage structure.
+  */
+  T* restrict & ptr(const int N1, const int N2, const int N3, const int N4)
+  {
+    #ifdef FTENSOR_DEBUG
+    if(
+      N1>=Tensor_Dim01 || N1<0 || N2>=Tensor_Dim01 || N2<0
+      || N3>=Tensor_Dim23 || N3<0 || N4>=Tensor_Dim23 || N4<0
+    )
+    {
+      std::stringstream s;
+      s << "Bad index in Tensor3_dg<T,"
+      << Tensor_Dim01 << "," << Tensor_Dim23 << ">.ptr("
+      << N1 << "," << N2 << "," << N3 << "," << N4 << ")"
+      << std::endl;
+      throw std::runtime_error(s.str());
+    }
+    #endif
+    return
+    N1>N2 ?
+    (
+      N3>N4
+      ? data[N1+(N2*(2*Tensor_Dim01-N2-1))/2][N3+(N4*(2*Tensor_Dim23-N4-1))/2]
+      : data[N1+(N2*(2*Tensor_Dim01-N2-1))/2][N4+(N3*(2*Tensor_Dim23-N3-1))/2]
+    )
+    : (
+      N3>N4
+      ? data[N2+(N1*(2*Tensor_Dim01-N1-1))/2][N3+(N4*(2*Tensor_Dim23-N4-1))/2]
+      : data[N2+(N1*(2*Tensor_Dim01-N1-1))/2][N4+(N3*(2*Tensor_Dim23-N3-1))/2]
+    );
   }
 
   /* These operator()'s are the first part in constructing template
@@ -231,7 +282,7 @@ public:
 
   /* The ++ operator increments the pointer, not the number that the
      pointer points to.  This allows iterating over a grid. */
-  
+
   const Tensor4_ddg<T*,Tensor_Dim01,Tensor_Dim23> & operator++() const
   {
     for(int i=0;i<(Tensor_Dim01*(Tensor_Dim01+1))/2;++i)

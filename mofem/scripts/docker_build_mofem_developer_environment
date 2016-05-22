@@ -59,7 +59,7 @@ RUN echo "export VISIBLE=now" >> /etc/profile
 RUN mkdir root/.ssh
 
 # Set petesc version
-ENV PETSC_VERSION 3.6.4
+ENV PETSC_VERSION 3.6.3
 
 # Install petsc opt
 RUN cd /opt && git clone https://bitbucket.org/petsc/petsc.git && cd /opt/petsc && git checkout tags/v$PETSC_VERSION

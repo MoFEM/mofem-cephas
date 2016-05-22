@@ -14,6 +14,10 @@
 
 #define FTENSOR_DEBUG
 
+// #ifdef WITH_ADOL_C
+//   #include <adolc/adolc.h>
+// #endif
+
 #include <MoFEM.hpp>
 #include <Projection10NodeCoordsOnField.hpp>
 
@@ -179,9 +183,53 @@ int main(int argc, char *argv[]) {
       const int nb_gauss_pts = data.getN().size1();
       const int nb_base_functions = data.getN().size2();
 
+      FTensor::Index<'I',3> I;
+      FTensor::Index<'J',3> J;
+
+
       FTensor::Tensor0<double*> base_function = data.getFTensor0N();
       FTensor::Tensor1<double*,3> diff_base = data.getFTensor1DiffN<3>();
       // FTensor::Tensor1<double*,3> field_values = getTensor1FormData<3>(field1ValuesDataPtr);
+      // #ifdef WITH_ADOL_C
+      // adouble val;
+      // FTensor::Tensor0<adouble*> adouble_t0(&val);
+      // // cerr << endl;
+      // // cerr << base_function << endl;
+      // adouble_t0<<=base_function;
+      // adouble_t0>>=base_function;
+      // // cerr << adouble_t0 << " " << base_function << endl;
+      // if(adouble_t0 - base_function != 0) {
+      //   SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"Data inconsistency");
+      // }
+      // FTensor::Tensor1<adouble,3> adouble_t1;
+      // adouble_t1(I)<<=diff_base(I);
+      // adouble_t1(I)>>=diff_base(I);
+      // for(int II = 0;II!=3;II++) {
+      //   // cerr << adouble_t1(II) << " " << diff_base(II) << endl;
+      //   if(adouble_t1(II)-diff_base(II)!=0) {
+      //     SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"Data inconsistency");
+      //   }
+      // }
+      // FTensor::Tensor2<adouble,3,3> adouble_t2;
+      // FTensor::Tensor2<double,3,3> double_t2;
+      // double_t2(I,J) = diff_base(I)*diff_base(J);
+      // adouble_t2(I,J)<<=double_t2(I,J);
+      // adouble_t2(I,J)>>=double_t2(I,J);
+      // cerr << endl;
+      // for(int II = 0;II!=3;II++) {
+      //   for(int JJ = 0;JJ!=3;JJ++) {
+      //     cerr << adouble_t2(II,JJ) << " " << double_t2(II,JJ) << endl;
+      //     if(adouble_t2(II,JJ)-double_t2(II,JJ)!=0) {
+      //       SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"Data inconsistency");
+      //     }
+      //   }
+      // }
+      // adouble_t2(0,0)<<=1;
+      // adouble_t1(0)<<=1;
+      // double a;
+      // adouble_t2(0,0)>>=a;
+      // adouble_t1(0)>>=a;
+      // #endif
 
       for(int gg = 0;gg!=nb_gauss_pts;gg++) {
 
@@ -205,9 +253,6 @@ int main(int argc, char *argv[]) {
               );
             }
           }
-
-          FTensor::Index<'I',3> I;
-          FTensor::Index<'J',3> J;
 
           t2(I,J) = diff_base(I)*diff_base(J);
 

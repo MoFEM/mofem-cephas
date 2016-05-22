@@ -32,7 +32,7 @@ public:
 
   T & operator()(const int N1, const int N2)
   {
-#ifdef FTENSOR_DEBUG
+    #ifdef FTENSOR_DEBUG
     if(N1>=Tensor_Dim || N1<0 || N2>=Tensor_Dim || N2<0)
       {
         std::stringstream s;
@@ -42,9 +42,11 @@ public:
           << std::endl;
         throw std::runtime_error(s.str());
       }
-#endif
-    return N1>N2 ? *data[N1+(N2*(2*Tensor_Dim-N2-1))/2]
-      : *data[N2+(N1*(2*Tensor_Dim-N1-1))/2];
+    #endif
+    return
+    N1>N2
+    ? *data[N1+(N2*(2*Tensor_Dim-N2-1))/2]
+    : *data[N2+(N1*(2*Tensor_Dim-N1-1))/2];
   }
 
   T operator()(const int N1, const int N2) const
@@ -59,9 +61,11 @@ public:
           << std::endl;
         throw std::runtime_error(s.str());
       }
-#endif
-    return N1>N2 ? *data[N1+(N2*(2*Tensor_Dim-N2-1))/2]
-      : *data[N2+(N1*(2*Tensor_Dim-N1-1))/2];
+    #endif
+    return
+    N1>N2
+    ? *data[N1+(N2*(2*Tensor_Dim-N2-1))/2]
+    : *data[N2+(N1*(2*Tensor_Dim-N1-1))/2];
   }
 
   T* ptr(const int N1, const int N2) const
@@ -191,7 +195,7 @@ public:
       TensorExpr;
     return Tensor1_Expr<TensorExpr,T,Dim,i>(TensorExpr(*this,N));
   }
-  
+
   /* The ++ operator increments the pointer, not the number that the
      pointer points to.  This allows iterating over a grid. */
 
@@ -206,7 +210,7 @@ public:
      contractions, yielding a T.  I have to specify one for both
      const and non-const because otherwise the compiler will use the
      operator() which gives a Tensor2_Expr<>. */
-  
+
   template<char i, int Dim>
   T operator()(const Index<i,Dim> index1, const Index<i,Dim> index2)
   {

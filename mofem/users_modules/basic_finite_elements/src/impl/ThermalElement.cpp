@@ -322,7 +322,7 @@ PetscErrorCode ThermalElement::OpHeatFlux::doWork(int side,EntityType type,DataF
   //std::cerr << Nf << std::endl;
   //std::cerr << data.getIndices() << std::endl;
 
-  if(useTsF) {
+  if(useTsF||F==PETSC_NULL) {
     ierr = VecSetValues(getFEMethod()->ts_F,data.getIndices().size(),
     &data.getIndices()[0],&Nf[0],ADD_VALUES); CHKERRQ(ierr);
   } else {

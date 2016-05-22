@@ -857,11 +857,27 @@ PetscErrorCode OpSetHoInvJacH1::doWork(
 
         // Note for Vetex diffN row has size of number of dof
         diffNinvJac.resize(nb_gauss_pts,3*nb_base_functions,false);
-
         double *t_inv_n_ptr = &*diffNinvJac.data().begin();
         FTensor::Tensor1<double*,3> t_inv_diff_n(
           t_inv_n_ptr,&t_inv_n_ptr[1],&t_inv_n_ptr[2],3
         );
+        if(invHoJac.size2()!=9) {
+          SETERRQ1(
+            PETSC_COMM_SELF,
+            MOFEM_DATA_INCONSISTENCY,
+            "It looks that ho inverse of jacobian is not calculated %d != 9",
+            invHoJac.size2()
+          );
+        }
+        if(invHoJac.size1()!=nb_gauss_pts) {
+          SETERRQ2(
+            PETSC_COMM_SELF,
+            MOFEM_DATA_INCONSISTENCY,
+            "It looks that ho inverse of jacobian is not calculated %d != %d",
+            invHoJac.size1(),
+            nb_gauss_pts
+          );
+        }
         double *t_inv_jac_ptr = &*invHoJac.data().begin();
         FTensor::Tensor2<double*,3,3> t_inv_jac(
           t_inv_jac_ptr,&t_inv_jac_ptr[1],&t_inv_jac_ptr[2],
@@ -871,7 +887,8 @@ PetscErrorCode OpSetHoInvJacH1::doWork(
 
         switch (type) {
           case MBVERTEX: {
-            double *t_diff_n_ptr = &*data.getDiffN().data().begin();
+            // std::cerr << data.getDiffN(base) << std::endl;
+            double *t_diff_n_ptr = &*data.getDiffN(base).data().begin();
             for(int gg = 0;gg!=nb_gauss_pts;gg++) {
               FTensor::Tensor1<double*,3> t_diff_n(
                 t_diff_n_ptr,&t_diff_n_ptr[1],&t_diff_n_ptr[2],3
