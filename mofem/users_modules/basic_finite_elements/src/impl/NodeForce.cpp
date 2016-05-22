@@ -69,6 +69,16 @@ NodalForce::OpNodalForce::OpNodalForce(const std::string field_name,Vec _F,bCFor
     ierr = MethodForForceScaling::applyScale(getFEMethod(),methodsOp,Nf); CHKERRQ(ierr);
     Vec myF = F;
     if(useSnesF || F == PETSC_NULL) {
+      switch (getFEMethod()->ts_ctx) {
+        case FEMethod::CTX_TSSETIFUNCTION: {
+          const_cast<FEMethod*>(getFEMethod())->snes_ctx = FEMethod::CTX_SNESSETFUNCTION;
+          const_cast<FEMethod*>(getFEMethod())->snes_x = getFEMethod()->ts_u;
+          const_cast<FEMethod*>(getFEMethod())->snes_f = getFEMethod()->ts_F;
+          break;
+        }
+        default:
+        break;
+      }
       myF = getFEMethod()->snes_f;
     }
     ierr = VecSetValues(
