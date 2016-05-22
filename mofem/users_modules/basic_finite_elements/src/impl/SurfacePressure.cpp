@@ -169,6 +169,16 @@ PetscErrorCode NeummanForcesSurface::OpNeumannPreassure::doWork(
   {
     Vec my_f;
     if(F == PETSC_NULL) {
+      switch (getFEMethod()->ts_ctx) {
+        case FEMethod::CTX_TSSETIFUNCTION: {
+          const_cast<FEMethod*>(getFEMethod())->snes_ctx = FEMethod::CTX_SNESSETFUNCTION;
+          const_cast<FEMethod*>(getFEMethod())->snes_x = getFEMethod()->ts_u;
+          const_cast<FEMethod*>(getFEMethod())->snes_f = getFEMethod()->ts_F;
+          break;
+        }
+        default:
+        break;
+      }
       my_f = getFEMethod()->snes_f;
     } else {
       my_f = F;
@@ -234,6 +244,16 @@ PetscErrorCode NeummanForcesSurface::OpNeumannFlux::doWork(
   {
     Vec my_f;
     if(F == PETSC_NULL) {
+      switch (getFEMethod()->ts_ctx) {
+        case FEMethod::CTX_TSSETIFUNCTION: {
+          const_cast<FEMethod*>(getFEMethod())->snes_ctx = FEMethod::CTX_SNESSETFUNCTION;
+          const_cast<FEMethod*>(getFEMethod())->snes_x = getFEMethod()->ts_u;
+          const_cast<FEMethod*>(getFEMethod())->snes_f = getFEMethod()->ts_F;
+          break;
+        }
+        default:
+        break;
+      }
       my_f = getFEMethod()->snes_f;
     } else {
       my_f = F;

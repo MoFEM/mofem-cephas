@@ -93,5 +93,7 @@ struct VertexElementForcesAndSourcesCore: public ForcesAndSurcesCore {
 
 /***************************************************************************//**
  * \defgroup mofem_forces_and_sources_vertex_element Vertex Element
+ * \brief Finite element and operators for vertex entity
+ *
  * \ingroup mofem_forces_and_sources
  ******************************************************************************/

@@ -106,6 +106,16 @@ PetscErrorCode EdgeForce::OpEdgeForce::doWork(int side,EntityType type,DataForce
   // Assemble force into right-hand vector
   Vec myF = F;
   if(useSnesF || F == PETSC_NULL) {
+    switch (getFEMethod()->ts_ctx) {
+      case FEMethod::CTX_TSSETIFUNCTION: {
+        const_cast<FEMethod*>(getFEMethod())->snes_ctx = FEMethod::CTX_SNESSETFUNCTION;
+        const_cast<FEMethod*>(getFEMethod())->snes_x = getFEMethod()->ts_u;
+        const_cast<FEMethod*>(getFEMethod())->snes_f = getFEMethod()->ts_F;
+        break;
+      }
+      default:
+      break;
+    }
     myF = getFEMethod()->snes_f;
   }
   ierr = VecSetValues(
