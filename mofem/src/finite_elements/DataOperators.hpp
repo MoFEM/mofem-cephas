@@ -83,7 +83,7 @@ struct DataOperator {
  * \brief Calculate inverse of tensor rank 2 at integration points
  */
 template<int Tensor_Dim,class T,class L,class A>
-PetscErrorCode invertTensor2(
+PetscErrorCode invertTensor3by3(
   ublas::matrix<T,L,A> &jac_data,
   ublas::vector<T,A> &det_data,
   ublas::matrix<T,L,A> &inv_jac_data
@@ -98,15 +98,15 @@ PetscErrorCode invertTensor2(
 }
 
 template<>
-PetscErrorCode invertTensor2<3,double,ublas::row_major,ublas::unbounded_array<double> >(
+PetscErrorCode invertTensor3by3<3,double,ublas::row_major,ublas::unbounded_array<double> >(
   MatrixDouble &jac_data,
   VectorDouble &det_data,
   MatrixDouble &inv_jac_data
 );
 
-template<int Tensor_Dim,class T1,class T2>
-inline PetscErrorCode determinantTensor2(
-  FTensor::Tensor2<T1,Tensor_Dim,Tensor_Dim> &t,T2 &det
+template<class T1,class T2>
+inline PetscErrorCode determinantTensor3by3(
+  T1 &t,T2 &det
 ) {
   PetscFunctionBegin;
   det =
@@ -116,9 +116,9 @@ inline PetscErrorCode determinantTensor2(
   PetscFunctionReturn(0);
 }
 
-template<int Tensor_Dim,class T1,class T2>
-inline PetscErrorCode invertTensor2(
-  FTensor::Tensor2<T1,Tensor_Dim,Tensor_Dim> &t,T2 &det,FTensor::Tensor2<T1,3,3> &inv_t
+template<class T1,class T2>
+inline PetscErrorCode invertTensor3by3(
+  T1 &t,T2 &det,T1 &inv_t
 ) {
   PetscFunctionBegin;
   inv_t(0,0) = (t(1,1)*t(2,2)-t(1,2)*t(2,1))/det;

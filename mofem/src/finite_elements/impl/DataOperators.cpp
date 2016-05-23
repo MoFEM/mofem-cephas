@@ -482,7 +482,7 @@ PetscErrorCode DataOperator::opLhs(
 }
 
 template<>
-PetscErrorCode invertTensor2<3,double,ublas::row_major,ublas::unbounded_array<double> >(
+PetscErrorCode invertTensor3by3<3,double,ublas::row_major,ublas::unbounded_array<double> >(
   MatrixDouble &jac_data,
   VectorDouble &det_data,
   MatrixDouble &inv_jac_data
@@ -496,8 +496,8 @@ PetscErrorCode invertTensor2<3,double,ublas::row_major,ublas::unbounded_array<do
   FTensor::Tensor0<double*> det = getTensor0FormData(det_data);
   FTensor::Tensor2<double*,3,3> I = getTensor2FormData<3,3>(inv_jac_data);
   for(int gg = 0;gg!=nb_gauss_pts;gg++) {
-    ierr = determinantTensor2<3,double*,FTensor::Tensor0<double*> >(A,det); CHKERRQ(ierr);
-    ierr = invertTensor2<3,double*,FTensor::Tensor0<double*> >(A,det,I); CHKERRQ(ierr);
+    ierr = determinantTensor3by3(A,det); CHKERRQ(ierr);
+    ierr = invertTensor3by3(A,det,I); CHKERRQ(ierr);
     ++A;
     ++det;
     ++I;

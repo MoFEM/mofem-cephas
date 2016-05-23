@@ -187,8 +187,8 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::calculateVolumeAndJacobian() {
     ++t_coords;
     ++t_diff_n;
   }
-  ierr = determinantTensor2<3,double*,double>(tJac,vOlume); CHKERRQ(ierr);
-  ierr = invertTensor2<3,double*,double>(tJac,vOlume,tInvJac); CHKERRQ(ierr);
+  ierr = determinantTensor3by3(tJac,vOlume); CHKERRQ(ierr);
+  ierr = invertTensor3by3(tJac,vOlume,tInvJac); CHKERRQ(ierr);
   vOlume *= G_TET_W1[0]/6.;
   PetscFunctionReturn(0);
 }
