@@ -166,6 +166,9 @@ PetscErrorCode OpCalculateVectorFieldValues_General<Tensor_Dim,double,ublas::row
     dataPtr->resize(Tensor_Dim,0,false);
     PetscFunctionReturn(0);
   }
+  if(!nb_dofs) {
+    PetscFunctionReturn(0);
+  }
   const int nb_gauss_pts = data.getN().size1();
   const int nb_base_functions = data.getN().size2();
   MatrixDouble &mat = *dataPtr;
@@ -353,6 +356,9 @@ PetscErrorCode OpCalculateScalarFieldGradient_General<Tensor_Dim,double,ublas::r
     this->dataPtr->resize(Tensor_Dim,0,false);
     PetscFunctionReturn(0);
   }
+  if(!nb_dofs) {
+    PetscFunctionReturn(0);
+  }
   const int nb_gauss_pts = data.getN().size1();
   const int nb_base_functions = data.getN().size2();
   ublas::matrix<double,ublas::row_major,ublas::unbounded_array<double> > &mat = *this->dataPtr;
@@ -451,6 +457,9 @@ Tensor_Dim0,Tensor_Dim1,double,ublas::row_major,ublas::unbounded_array<double>
   const int nb_dofs = data.getFieldData().size();
   if(!nb_dofs && type == this->zeroType) {
     this->dataPtr->resize(Tensor_Dim0*Tensor_Dim1,0,false);
+    PetscFunctionReturn(0);
+  }
+  if(!nb_dofs) {
     PetscFunctionReturn(0);
   }
   const int nb_gauss_pts = data.getN().size1();
