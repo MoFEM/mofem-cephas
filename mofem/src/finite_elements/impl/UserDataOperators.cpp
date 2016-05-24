@@ -73,8 +73,11 @@ PetscErrorCode OpCalculateScalarFieldVaues_General<double,ublas::unbounded_array
 ) {
   PetscFunctionBegin;
   const int nb_dofs = data.getFieldData().size();
-  if(!nb_dofs) {
+  // cerr <<  data.getFieldData() << endl;
+  if(!nb_dofs && type == this->zeroType) {
     dataPtr->resize(0,false);
+  }
+  if(!nb_dofs) {
     PetscFunctionReturn(0);
   }
   const int nb_gauss_pts = data.getN().size1();

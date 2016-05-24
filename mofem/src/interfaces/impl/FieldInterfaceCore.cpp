@@ -1815,12 +1815,13 @@ PetscErrorCode Core::build_finite_element_data_dofs(EntFiniteElement &ent_fe,int
   FEDofEntity_multiIndex &data_dofs = const_cast<FEDofEntity_multiIndex&>(ent_fe.data_dofs);
   data_dofs.clear(); //clear data dofs multi-index //FIXME should be cleaned when dofs are cleaned form datasets
 
+  // Take only active dofs here, not all dofs ? That is the question.
   DofEntity_multiIndex_uid_view::iterator viit_data,hi_viit_data;
-
-  int nb_inactive_dofs = 0;
-  //loops over active dofs only
   viit_data = ent_fe.data_dof_view->begin();
   hi_viit_data = ent_fe.data_dof_view->end();
+
+  unsigned int nb_inactive_dofs = 0;
+  //loops over active dofs only
   unsigned int size = distance(viit_data,hi_viit_data);
   for(;viit_data!=hi_viit_data;viit_data++) {
     if(!(*viit_data)->get_active()) {
@@ -1954,10 +1955,10 @@ PetscErrorCode Core::build_finite_element_uids_view(EntFiniteElement &ent_fe,int
       const BitRefLevel& bit_ref_ent = (*ref_ent_miit)->get_BitRefLevel();
       if(!(bit_ref_finite_element&bit_ref_ent).any()) {
         std::ostringstream ss;
-        ss << "top tip: check if you seed mesh with the elements for bit ref level1" << std::endl;
-        ss << "inconsitency in database entity" << " type "
+        ss << "Top tip: check if you seed mesh with the elements for bit ref level1" << std::endl;
+        ss << "inconsistency in database entity" << " type "
         << moab.type_from_handle(*eit2) << " bits ENT " << bit_ref_ent << std::endl;
-        ss << "inconsitency in database entity" << " type "
+        ss << "inconsistency in database entity" << " type "
         << moab.type_from_handle(ent_fe.get_ent()) << " bits FE  " << bit_ref_finite_element << std::endl;
         ss << "element entity " << std::endl << **ref_ent_miit << std::endl;
         SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,ss.str().c_str());
