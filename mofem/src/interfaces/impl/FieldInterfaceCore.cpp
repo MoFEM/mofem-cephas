@@ -1817,12 +1817,16 @@ PetscErrorCode Core::build_finite_element_data_dofs(EntFiniteElement &ent_fe,int
 
   DofEntity_multiIndex_uid_view::iterator viit_data,hi_viit_data;
 
+  int nb_inactive_dofs = 0;
   //loops over active dofs only
   viit_data = ent_fe.data_dof_view->begin();
   hi_viit_data = ent_fe.data_dof_view->end();
   unsigned int size = distance(viit_data,hi_viit_data);
   for(;viit_data!=hi_viit_data;viit_data++) {
-    if(!(*viit_data)->get_active()) continue;
+    if(!(*viit_data)->get_active()) {
+      nb_inactive_dofs++;
+      continue;
+    }
     try {
       switch((*viit_data)->get_space()) {
         case H1:
@@ -1847,7 +1851,7 @@ PetscErrorCode Core::build_finite_element_data_dofs(EntFiniteElement &ent_fe,int
       SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
     }
   }
-  if(data_dofs.size()!=size) {
+  if(data_dofs.size()+nb_inactive_dofs!=size) {
     SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
   }
   PetscFunctionReturn(0);
