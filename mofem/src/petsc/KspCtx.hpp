@@ -21,7 +21,7 @@
 
 namespace MoFEM {
 
-/** \brief Interface for KSP solver
+/** \brief Interface for linear (KSP) solver
   * \ingroup petsc_context_struture
   */
 struct KspCtx {
@@ -32,7 +32,7 @@ struct KspCtx {
   FieldInterface &mField;
   Interface &moab;
 
-  std::string problemName;
+  std::string problemName;   ///< Problem name
 
   typedef std::pair<std::string,FEMethod*> loop_pair_type;
   typedef std::vector<loop_pair_type > loops_to_do_type;
