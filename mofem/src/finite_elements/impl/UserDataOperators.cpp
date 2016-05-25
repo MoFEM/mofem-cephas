@@ -68,7 +68,7 @@ extern "C" {
 namespace MoFEM {
 
 template<>
-PetscErrorCode OpCalculateScalarFieldVaues_General<double,ublas::unbounded_array<double> >::doWork(
+PetscErrorCode OpCalculateScalarFieldValues_General<double,ublas::unbounded_array<double> >::doWork(
   int side,EntityType type,DataForcesAndSurcesCore::EntData &data
 ) {
   PetscFunctionBegin;
@@ -104,12 +104,12 @@ PetscErrorCode OpCalculateScalarFieldVaues_General<double,ublas::unbounded_array
   PetscFunctionReturn(0);
 }
 
-OpCalculateScalarFieldVaues::OpCalculateScalarFieldVaues(
+OpCalculateScalarFieldValues::OpCalculateScalarFieldValues(
   const std::string &field_name,
   boost::shared_ptr<VectorDouble> data_ptr,
   EntityType zero_type
 ):
-OpCalculateScalarFieldVaues_General<double,ublas::unbounded_array<double> >(
+OpCalculateScalarFieldValues_General<double,ublas::unbounded_array<double> >(
   field_name,data_ptr,zero_type
 ) {
 }

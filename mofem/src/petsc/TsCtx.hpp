@@ -21,7 +21,7 @@
 
 namespace MoFEM {
 
-/** \brief Interface for KSP solver
+/** \brief Interface for Time Stepping (TS) solver
   * \ingroup petsc_context_struture
   */
 struct TsCtx {

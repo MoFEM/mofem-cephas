@@ -21,7 +21,7 @@
 
 namespace MoFEM {
 
-/** \brief Interface for KSP solver
+/** \brief Interface for nonlinear (SNES) solver
   * \ingroup petsc_context_struture
   */
 struct SnesCtx {
@@ -74,7 +74,20 @@ struct SnesCtx {
 
 };
 
+/**
+ * \brief This is MoFEM implementation for the right side evaluation in SNES solver
+ *
+ * For more information pleas look to PETSc manual, i.e. SNESSetFunction
+ * <http://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/SNES/SNESSetFunction.html>
+ *
+ * @param  snes SNES solver
+ * @param  x    Solution vector at current iteration
+ * @param  f    The right hand side vector
+ * @param  ctx  Pointer to context thata, i.e. SnesCtx
+ * @return      Error code
+ */
 PetscErrorCode SnesRhs(SNES snes,Vec x,Vec f,void *ctx);
+
 PetscErrorCode SnesMat(SNES snes,Vec x,Mat A,Mat B,void *ctx);
 
 }
