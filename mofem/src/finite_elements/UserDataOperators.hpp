@@ -29,12 +29,12 @@ namespace MoFEM {
 * \ingroup mofem_forces_and_sources_user_data_operators
 */
 template<class T, class A>
-struct OpCalculateScalarFieldVaues_General: public ForcesAndSurcesCore::UserDataOperator {
+struct OpCalculateScalarFieldValues_General: public ForcesAndSurcesCore::UserDataOperator {
 
   boost::shared_ptr<ublas::vector<T,A> > dataPtr;
   EntityHandle zeroType;
 
-  OpCalculateScalarFieldVaues_General(
+  OpCalculateScalarFieldValues_General(
     const std::string &field_name,
     boost::shared_ptr<ublas::vector<T,A> > data_ptr,
     EntityType zero_type = MBVERTEX
@@ -55,7 +55,7 @@ struct OpCalculateScalarFieldVaues_General: public ForcesAndSurcesCore::UserData
 * \ingroup mofem_forces_and_sources_user_data_operators
 */
 template<class T, class A>
-PetscErrorCode OpCalculateScalarFieldVaues_General<T,A>::doWork(
+PetscErrorCode OpCalculateScalarFieldValues_General<T,A>::doWork(
   int side,EntityType type,DataForcesAndSurcesCore::EntData &data
 ) {
   PetscFunctionBegin;
@@ -73,10 +73,10 @@ PetscErrorCode OpCalculateScalarFieldVaues_General<T,A>::doWork(
  * \brief Get value for scalar field
  * \ingroup mofem_forces_and_sources_user_data_operators
  */
-struct OpCalculateScalarFieldVaues:
-public OpCalculateScalarFieldVaues_General<double,ublas::unbounded_array<double> > {
+struct OpCalculateScalarFieldValues:
+public OpCalculateScalarFieldValues_General<double,ublas::unbounded_array<double> > {
 
-  OpCalculateScalarFieldVaues(
+  OpCalculateScalarFieldValues(
     const std::string &field_name,
     boost::shared_ptr<VectorDouble> data_ptr,
     EntityType zero_type = MBVERTEX
