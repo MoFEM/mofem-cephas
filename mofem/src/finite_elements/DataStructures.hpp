@@ -76,6 +76,7 @@ FTensor::Tensor1<double*,Tensor_Dim> getTensor1FormData(
   >(data);
 }
 
+
 template<>
 FTensor::Tensor1<double*,3> getTensor1FormData<3,double,ublas::row_major,ublas::unbounded_array<double> >(
   MatrixDouble &data
