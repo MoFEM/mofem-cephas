@@ -585,6 +585,10 @@ struct FieldInterface: public UnknownInterface {
     */
   virtual PetscErrorCode delete_finite_elements_by_bit_ref(const BitRefLevel &bit,const BitRefLevel &mask,int verb = -1) = 0;
 
+  /** \brief delete finite element from mofem database
+    */
+  virtual PetscErrorCode delete_finite_element(const std::string name,int verb = -1) = 0;
+
   /** \brief left shift bit ref level
     * this results of deletion of entities on far left side
     */
