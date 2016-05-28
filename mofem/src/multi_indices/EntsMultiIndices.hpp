@@ -26,15 +26,22 @@ namespace MoFEM {
  * \brief keeps information about side number for the finite element
  * \ingroup ent_multi_indices
  */
-struct SideNumber {
+struct __attribute__((__packed__))  SideNumber {
   EntityHandle ent;
-  int side_number;
-  int sense;
-  int offset;
-  int brother_side_number;
-  inline EntityType get_ent_type() const { return (EntityType)((ent&MB_TYPE_MASK)>>MB_ID_WIDTH); }
+  char side_number;
+  char sense;
+  char offset;
+  char brother_side_number;
+  inline EntityType get_ent_type() const {
+    return (EntityType)((ent&MB_TYPE_MASK)>>MB_ID_WIDTH);
+  }
   SideNumber(EntityHandle _ent,int _side_number,int _sense,int _offset):
-    ent(_ent),side_number(_side_number),sense(_sense),offset(_offset),brother_side_number(-1) {};
+  ent(_ent),
+  side_number(_side_number),
+  sense(_sense),
+  offset(_offset),
+  brother_side_number(-1) {
+  }
 };
 
 /**
@@ -53,7 +60,7 @@ typedef multi_index_container<
       composite_key<
       SideNumber,
       const_mem_fun<SideNumber,EntityType,&SideNumber::get_ent_type>,
-      member<SideNumber,int,&SideNumber::side_number> >
+      member<SideNumber,char,&SideNumber::side_number> >
     >,
     ordered_non_unique<
       const_mem_fun<SideNumber,EntityType,&SideNumber::get_ent_type>
@@ -74,20 +81,10 @@ struct BasicEntity {
   int owner_proc;
   EntityHandle moab_owner_handle;
   unsigned char *pstatus_val_ptr;
-  int *sharing_procs_ptr;
-  EntityHandle *sharing_handlers_ptr;
+  // int *sharing_procs_ptr;
+  // EntityHandle *sharing_handlers_ptr;
 
-  BasicEntity();
   BasicEntity(Interface &moab,const EntityHandle _ent);
-
-  PetscErrorCode iterateBasicEntity(
-    EntityHandle _ent,
-    int _owner_proc,
-    EntityHandle _moab_owner_handle,
-    unsigned char *_pstatus_val_ptr,
-    int *_sharing_procs_ptr,
-    EntityHandle *_sharing_handlers_ptr
-  );
 
   /// get entity type
   inline EntityType get_ent_type() const { return (EntityType)((ent&MB_TYPE_MASK)>>MB_ID_WIDTH); }
@@ -140,7 +137,19 @@ struct BasicEntity {
 \endcode
 
     */
-  inline int* get_sharing_procs_ptr() const { return sharing_procs_ptr; }
+  int* get_sharing_procs_ptr(Interface &moab) const {
+    MoABErrorCode rval;
+    int *sharing_procs_ptr = NULL;
+    ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
+    if(*pstatus_val_ptr & PSTATUS_MULTISHARED) {
+      // entity is multi shared
+      rval = moab.tag_get_by_ptr(pcomm->sharedps_tag(),&ent,1,(const void **)&sharing_procs_ptr); CHKERR_MOAB(rval);
+    } else if(*pstatus_val_ptr & PSTATUS_SHARED) {
+      // shared
+      rval = moab.tag_get_by_ptr(pcomm->sharedp_tag(),&ent,1,(const void **)&sharing_procs_ptr); CHKERR_MOAB(rval);
+    }
+    return sharing_procs_ptr;
+  }
 
   /** \berief get sharid entity handlers
 
@@ -164,7 +173,19 @@ struct BasicEntity {
 \endcode
 
     */
-  inline EntityHandle* get_sharing_handlers_ptr() const { return sharing_handlers_ptr; }
+  inline EntityHandle* get_sharing_handlers_ptr(Interface &moab) const {
+    MoABErrorCode rval;
+    EntityHandle *sharing_handlers_ptr = NULL;
+    ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
+    if(*pstatus_val_ptr & PSTATUS_MULTISHARED) {
+      // entity is multi shared
+      rval = moab.tag_get_by_ptr(pcomm->sharedhs_tag(),&ent,1,(const void **)&sharing_handlers_ptr); CHKERR_MOAB(rval);
+    } else if(*pstatus_val_ptr & PSTATUS_SHARED) {
+      // shared
+      rval = moab.tag_get_by_ptr(pcomm->sharedh_tag(),&ent,1,(const void **)&sharing_handlers_ptr); CHKERR_MOAB(rval);
+    }
+    return sharing_handlers_ptr;
+  }
 
 };
 
@@ -180,19 +201,7 @@ struct RefEntity: public BasicEntity {
   EntityHandle *tag_parent_ent;
   BitRefLevel *tag_BitRefLevel;
 
-  RefEntity();
   RefEntity(Interface &moab,const EntityHandle _ent);
-
-  PetscErrorCode iterateRefEntity(
-    EntityHandle _ent,
-    int _owner_proc,
-    EntityHandle _moab_owner_handle,
-    unsigned char *_pstatus_val_ptr,
-    int *_sharing_procs_ptr,
-    EntityHandle *_sharing_handlers_ptr,
-    EntityHandle *_tag_parent_ent,
-    BitRefLevel *_tag_BitRefLevel
-  );
 
   static PetscErrorCode getPatentEnt(Interface &moab,Range ents,std::vector<EntityHandle> vec_patent_ent);
   static PetscErrorCode getBitRefLevel(Interface &moab,Range ents,std::vector<BitRefLevel> vec_bit_ref_level);
@@ -238,8 +247,8 @@ struct interface_RefEntity {
   inline unsigned char get_pstatus() const { return this->sPtr->get_pstatus(); }
   inline EntityHandle get_owner_ent() const { return this->sPtr->get_owner_ent(); }
   inline EntityHandle get_owner_proc() const { return this->sPtr->get_owner_proc(); }
-  inline int* get_sharing_procs_ptr() const { return this->sPtr->get_sharing_procs_ptr(); }
-  inline EntityHandle* get_sharing_handlers_ptr() const { return this->sPtr->get_sharing_handlers_ptr(); }
+  inline int* get_sharing_procs_ptr(Interface &moab) const { return this->sPtr->get_sharing_procs_ptr(moab); }
+  inline EntityHandle* get_sharing_handlers_ptr(Interface &moab) const { return this->sPtr->get_sharing_handlers_ptr(moab); }
   virtual ~interface_RefEntity() {}
 
   inline const boost::shared_ptr<T> get_RefEntity_ptr() {

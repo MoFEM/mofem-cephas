@@ -367,7 +367,7 @@ typedef multi_index_container<
 	  const_mem_fun<FEDofEntity::interface_type_Field,boost::string_ref,&FEDofEntity::get_name_ref>,
 	  const_mem_fun<FEDofEntity::interface_type_RefEntity,EntityType,&FEDofEntity::get_ent_type>,
 	  KeyFromKey<
-	    member<SideNumber,int,&SideNumber::side_number>,
+	    member<SideNumber,char,&SideNumber::side_number>,
 	    member<FEDofEntity::BaseFEDofEntity,boost::shared_ptr<SideNumber>,&FEDofEntity::sideNumberPtr>
 	  >
       > >,
@@ -418,7 +418,7 @@ typedef multi_index_container<
 	  const_mem_fun<FENumeredDofEntity::interface_type_Field,boost::string_ref,&FENumeredDofEntity::get_name_ref>,
 	  const_mem_fun<FENumeredDofEntity::interface_type_RefEntity,EntityType,&FENumeredDofEntity::get_ent_type>,
 	  KeyFromKey<
-	    member<SideNumber,int,&SideNumber::side_number>,
+	    member<SideNumber,char,&SideNumber::side_number>,
 	    member<FENumeredDofEntity::BaseFEDofEntity,boost::shared_ptr<SideNumber>,&FENumeredDofEntity::sideNumberPtr>
 	  >
       > >,
