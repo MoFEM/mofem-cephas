@@ -32,19 +32,11 @@
 
 namespace MoFEM {
 
-BasicEntity::BasicEntity():
-ent(0),
-owner_proc(-1),
-moab_owner_handle(0),
-sharing_procs_ptr(NULL),
-sharing_handlers_ptr(NULL) {
-}
-
 //basic moab ent
 BasicEntity::BasicEntity(Interface &moab,const EntityHandle _ent):
-ent(_ent),
+ent(_ent)/*,
 sharing_procs_ptr(NULL),
-sharing_handlers_ptr(NULL) {
+sharing_handlers_ptr(NULL)*/ {
   switch (get_ent_type()) {
     case MBVERTEX:
     case MBEDGE:
@@ -61,54 +53,19 @@ sharing_handlers_ptr(NULL) {
   MoABErrorCode rval;
   rval = pcomm->get_owner_handle(ent,owner_proc,moab_owner_handle); MOAB_THROW(rval);
   rval = moab.tag_get_by_ptr(pcomm->pstatus_tag(),&ent,1,(const void **)&pstatus_val_ptr); CHKERR_MOAB(rval);
-
-  if(*pstatus_val_ptr & PSTATUS_MULTISHARED) {
-    // entity is multi shared
-    rval = moab.tag_get_by_ptr(pcomm->sharedps_tag(),&ent,1,(const void **)&sharing_procs_ptr); CHKERR_MOAB(rval);
-    rval = moab.tag_get_by_ptr(pcomm->sharedhs_tag(),&ent,1,(const void **)&sharing_handlers_ptr); CHKERR_MOAB(rval);
-  } else if(*pstatus_val_ptr & PSTATUS_SHARED) {
-    // shared
-    rval = moab.tag_get_by_ptr(pcomm->sharedp_tag(),&ent,1,(const void **)&sharing_procs_ptr); CHKERR_MOAB(rval);
-    rval = moab.tag_get_by_ptr(pcomm->sharedh_tag(),&ent,1,(const void **)&sharing_handlers_ptr); CHKERR_MOAB(rval);
-  }
-}
-PetscErrorCode BasicEntity::iterateBasicEntity(
-  EntityHandle _ent,
-  int _owner_proc,
-  EntityHandle _moab_owner_handle,
-  unsigned char *_pstatus_val_ptr,
-  int *_sharing_procs_ptr,
-  EntityHandle *_sharing_handlers_ptr
-) {
-  PetscFunctionBegin;
-  ent = _ent;
-  switch (get_ent_type()) {
-    case MBVERTEX:
-    case MBEDGE:
-    case MBTRI:
-    case MBQUAD:
-    case MBTET:
-    case MBPRISM:
-    case MBENTITYSET:
-    break;
-    default:
-    SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"this entity type is currently not implemented");
-  }
-  owner_proc = _owner_proc;
-  moab_owner_handle = _moab_owner_handle;
-  pstatus_val_ptr = _pstatus_val_ptr;
-  sharing_procs_ptr = _sharing_procs_ptr;
-  sharing_handlers_ptr = _sharing_handlers_ptr;
-  PetscFunctionReturn(0);
+  // if(*pstatus_val_ptr & PSTATUS_MULTISHARED) {
+  //   // entity is multi shared
+  //   rval = moab.tag_get_by_ptr(pcomm->sharedps_tag(),&ent,1,(const void **)&sharing_procs_ptr); CHKERR_MOAB(rval);
+  //   rval = moab.tag_get_by_ptr(pcomm->sharedhs_tag(),&ent,1,(const void **)&sharing_handlers_ptr); CHKERR_MOAB(rval);
+  // } else if(*pstatus_val_ptr & PSTATUS_SHARED) {
+  //   // shared
+  //   rval = moab.tag_get_by_ptr(pcomm->sharedp_tag(),&ent,1,(const void **)&sharing_procs_ptr); CHKERR_MOAB(rval);
+  //   rval = moab.tag_get_by_ptr(pcomm->sharedh_tag(),&ent,1,(const void **)&sharing_handlers_ptr); CHKERR_MOAB(rval);
+  // }
 }
 
 //ref moab ent
 BitRefEdges MoFEM::RefElement::DummyBitRefEdges = BitRefEdges(0);
-RefEntity::RefEntity():
-BasicEntity(),
-tag_parent_ent(NULL),
-tag_BitRefLevel(NULL) {
-}
 RefEntity::RefEntity(Interface &moab, const EntityHandle _ent):
 BasicEntity(moab,_ent),
 tag_parent_ent(NULL),
@@ -119,30 +76,6 @@ tag_BitRefLevel(NULL) {
   rval = moab.tag_get_handle("_RefBitLevel",th_RefBitLevel); MOAB_THROW(rval);
   rval = moab.tag_get_by_ptr(th_RefParentHandle,&ent,1,(const void **)&tag_parent_ent); MOAB_THROW(rval);
   rval = moab.tag_get_by_ptr(th_RefBitLevel,&ent,1,(const void **)&tag_BitRefLevel); MOAB_THROW(rval);
-}
-PetscErrorCode RefEntity::iterateRefEntity(
-  EntityHandle _ent,
-  int _owner_proc,
-  EntityHandle _moab_owner_handle,
-  unsigned char *_pstatus_val_ptr,
-  int *_sharing_procs_ptr,
-  EntityHandle *_sharing_handlers_ptr,
-  EntityHandle *_tag_parent_ent,
-  BitRefLevel *_tag_BitRefLevel
-) {
-  PetscErrorCode ierr;
-  PetscFunctionBegin;
-  ierr = iterateBasicEntity(
-    _ent,
-    _owner_proc,
-    _moab_owner_handle,
-    _pstatus_val_ptr,
-    _sharing_procs_ptr,
-    _sharing_handlers_ptr
-  ); CHKERRQ(ierr);
-  tag_parent_ent = _tag_parent_ent;
-  tag_BitRefLevel = _tag_BitRefLevel;
-  PetscFunctionReturn(0);
 }
 
 PetscErrorCode getPatentEnt(Interface &moab,Range ents,std::vector<EntityHandle> vec_patent_ent) {

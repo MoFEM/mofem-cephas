@@ -247,11 +247,11 @@ PetscErrorCode Core::build_problem_on_distributed_mesh(MoFEMProblem *problem_ptr
       //check id dof is shared
       if(pstatus>0) {
 
-        for(int proc = 0; proc<MAX_SHARING_PROCS && -1 != (*mit)->get_sharing_procs_ptr()[proc]; proc++) {
+        for(int proc = 0; proc<MAX_SHARING_PROCS && -1 != (*mit)->get_sharing_procs_ptr(moab)[proc]; proc++) {
           if(ss == 0) {
-            ids_data_packed_rows[(*mit)->get_sharing_procs_ptr()[proc]].push_back(IdxDataType((*mit)->get_global_unique_id(),glob_idx));
+            ids_data_packed_rows[(*mit)->get_sharing_procs_ptr(moab)[proc]].push_back(IdxDataType((*mit)->get_global_unique_id(),glob_idx));
           } else {
-            ids_data_packed_cols[(*mit)->get_sharing_procs_ptr()[proc]].push_back(IdxDataType((*mit)->get_global_unique_id(),glob_idx));
+            ids_data_packed_cols[(*mit)->get_sharing_procs_ptr(moab)[proc]].push_back(IdxDataType((*mit)->get_global_unique_id(),glob_idx));
           }
           if(!(pstatus&PSTATUS_MULTISHARED)) {
             break;
