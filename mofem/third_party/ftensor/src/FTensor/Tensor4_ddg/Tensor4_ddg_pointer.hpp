@@ -3,6 +3,7 @@
 template <class T, int Tensor_Dim01, int Tensor_Dim23>
 class Tensor4_ddg<T*,Tensor_Dim01,Tensor_Dim23>
 {
+  const int inc;
   // Dropping restrict, is source of potential problems;
   mutable T * restrict data[(Tensor_Dim01*(Tensor_Dim01+1))/2][(Tensor_Dim23*(Tensor_Dim23+1))/2];
 public:
@@ -13,8 +14,10 @@ public:
   Tensor4_ddg(
     T* d0000, T* d0010, T* d0011,
     T* d1000, T* d1010, T* d1011,
-    T* d1100, T* d1110, T* d1111
-  ) {
+    T* d1100, T* d1110, T* d1111,
+    const int i = 1
+  ):
+  inc(i) {
     ptr(0,0,0,0) = d0000; ptr(0,0,1,0) = d0010; ptr(0,0,1,1) = d0011;
     ptr(1,0,0,0) = d1000; ptr(1,0,1,0) = d1010; ptr(1,0,1,1) = d1011;
     ptr(1,1,0,0) = d1100; ptr(1,1,1,0) = d1110; ptr(1,1,1,1) = d1111;
@@ -26,8 +29,10 @@ public:
     T* d0200, T* d0201, T* d0202, T* d0211, T* d0212, T* d0222,
     T* d1100, T* d1101, T* d1102, T* d1111, T* d1112, T* d1122,
     T* d1200, T* d1201, T* d1202, T* d1211, T* d1212, T* d1222,
-    T* d2200, T* d2201, T* d2202, T* d2211, T* d2212, T* d2222
-  ) {
+    T* d2200, T* d2201, T* d2202, T* d2211, T* d2212, T* d2222,
+    const int i = 1
+  ):
+  inc(i) {
     ptr(0,0,0,0) = d0000; ptr(0,0,0,1) = d0001; ptr(0,0,0,2) = d0002; ptr(0,0,1,1) = d0011; ptr(0,0,1,2) = d0012; ptr(0,0,2,2) = d0022;
     ptr(0,1,0,0) = d0100; ptr(0,1,0,1) = d0101; ptr(0,1,0,2) = d0102; ptr(0,1,1,1) = d0111; ptr(0,1,1,2) = d0112; ptr(0,1,2,2) = d0122;
     ptr(0,2,0,0) = d0200; ptr(0,2,0,1) = d0201; ptr(0,2,0,2) = d0202; ptr(0,2,1,1) = d0211; ptr(0,2,1,2) = d0212; ptr(0,2,2,2) = d0222;
@@ -299,7 +304,7 @@ public:
   {
     for(int i=0;i<(Tensor_Dim01*(Tensor_Dim01+1))/2;++i)
       for(int j=0;j<(Tensor_Dim01*(Tensor_Dim01+1))/2;++j)
-	++data[i][j];
+	     data[i][j] += inc;
     return *this;
   }
 };
