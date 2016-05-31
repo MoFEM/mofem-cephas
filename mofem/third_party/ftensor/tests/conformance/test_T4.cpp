@@ -71,5 +71,10 @@ void test_T4(
     }
   }
 
+  t4_31(i,j,k,l) = t3(i,j,k)*t1_1(l);
+  FTensor::Tensor4<double,3,3,3,3> t4_13;
+  t4_13(i,j,k,l) = t1_1(i)*t3(j,k,l);
+
+
 
 }
