@@ -90,6 +90,8 @@ namespace FTensor {
   template <class A, class T, int Dim0, int Dim12, char i, char j, char k>
   class Tensor3_antisymmetric_Expr;
 
+  template <class T, int Tensor_Dim0, int Tensor_Dim1,
+  int Tensor_Dim2,int Tensor_Dim3 > class Tensor4;
   template <class A, class T, int Dim0, int Dim1, int Dim2, int Dim3,
     char i, char j, char k, char l> class Tensor4_Expr;
 
@@ -118,7 +120,7 @@ namespace FTensor {
 #include "FTensor/Tensor3_dg.hpp"
 #include "FTensor/Tensor3_christof.hpp"
 #include "FTensor/Tensor3_antisymmetric.hpp"
-#include "FTensor/Tensor4/Tensor4_Expr.hpp"
+#include "FTensor/Tensor4.hpp"
 #include "FTensor/Tensor4_ddg.hpp"
 #include "FTensor/Tensor4_Riemann.hpp"
 }
@@ -127,5 +129,5 @@ namespace FTensor {
 
 /***************************************************************************//**
  * \defgroup ftensor Tensor template library
- * \brief Efficient Template Tensor library 
+ * \brief Efficient Template Tensor library
  ******************************************************************************/
