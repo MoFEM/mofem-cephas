@@ -236,7 +236,7 @@ PetscErrorCode mofem_error_handler(MPI_Comm comm,int line,const char *fun,const 
 }
 
 Core::Core(Interface& _moab,MPI_Comm _comm,TagType _tag_type,int _verbose):
-  moab(_moab),comm(_comm),verbose(_verbose) {
+moab(_moab),comm(_comm),verbose(_verbose) {
 
   if(!isGloballyInitialised) {
     PetscPushErrorHandler(mofem_error_handler,PETSC_NULL);
