@@ -44,6 +44,14 @@ public:
   const Tensor4_Expr<Tensor4<A,Dim0,Dim1,Dim2,Dim3>,T,Dim0,Dim1,Dim2,Dim3,i,j,k,l> &
   operator=(const Tensor4_Expr<Tensor4<A,Dim0,Dim1,Dim2,Dim3>,T,Dim0,Dim1,Dim2,Dim3,i,j,k,l> &result);
 
+  // i,j,k,l ->
+  // j,i,k,l; j,k,i,l, j,k,l,i,
+  // k,j,l,i; k,l,j,i, k,l,i,j,
+  // l,k,i,j; l,i,k,j, l,i,j,k,
+  // i,l,j,k; i,j,l,k,
+  //
+  // l,i,j,k, k,i,j,l 
+
 
 
 };
