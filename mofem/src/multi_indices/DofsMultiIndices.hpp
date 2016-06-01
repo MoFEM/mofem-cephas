@@ -42,7 +42,7 @@ struct DofEntity: public interface_MoFEMEntity<MoFEMEntity> {
   static inline ShortId get_non_nonunique_short_id(const DofIdx dof,const boost::shared_ptr<MoFEMEntity> ent_ptr) {
     if(dof>=512) THROW_MESSAGE("_dof>=512")
     if(sizeof(ShortId) < sizeof(char)+2) THROW_MESSAGE("sizeof(ShortId)< sizeof(char)+2")
-    char bit_number = ent_ptr->get_bit_number();
+    const char bit_number = ent_ptr->get_bit_number();
     ShortId _uid_ = ((ShortId)dof)|(((ShortId)bit_number)<<9);
     return _uid_;
   }
