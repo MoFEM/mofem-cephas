@@ -126,7 +126,7 @@ struct ArcLengthIntElemFEMethod: public FEMethod {
     ierr = VecGetArray(GhostLambdaInt,&array_int_lambda); CHKERRQ(ierr);
     array_int_lambda[0] = 0;
     for(;dit!=hi_dit;dit++) {
-      if(dit->get()->get_ent_type() != MBVERTEX) continue;
+      if(dit->get()->getEntType() != MBVERTEX) continue;
       if(pcomm->rank() != dit->get()->get_part()) continue;
       if(Nodes3.find(dit->get()->get_ent())!=Nodes3.end()) {
         array_int_lambda[0] += array[dit->get()->petsc_local_dof_idx];
@@ -166,7 +166,7 @@ struct ArcLengthIntElemFEMethod: public FEMethod {
     double *array;
     ierr = VecGetArray(arcPtr->db,&array); CHKERRQ(ierr);
     for(;dit!=hi_dit;dit++) {
-      if(dit->get()->get_ent_type() != MBVERTEX) {
+      if(dit->get()->getEntType() != MBVERTEX) {
         array[dit->get()->petsc_local_dof_idx] = 0;
         continue;
       }

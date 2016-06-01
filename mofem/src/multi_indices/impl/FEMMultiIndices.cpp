@@ -45,7 +45,7 @@ std::ostream& operator<<(std::ostream& os,const RefElement& e) {
 
 RefElement_MESHSET::RefElement_MESHSET(Interface &moab,const boost::shared_ptr<RefEntity> ref_ent_ptr):
 RefElement(moab,ref_ent_ptr) {
-  switch (ref_ent_ptr->get_ent_type()) {
+  switch (ref_ent_ptr->getEntType()) {
     case MBENTITYSET:
     break;
     default:
@@ -71,7 +71,7 @@ RefElement(moab,ref_ent_ptr) {
   Tag th_RefBitEdge;
   rval = moab.tag_get_handle("_RefBitEdge",th_RefBitEdge); MOAB_THROW(rval);
   rval = moab.tag_get_by_ptr(th_RefBitEdge,&ref_ent_ptr->ent,1,(const void **)&tag_BitRefEdges); MOAB_THROW(rval);
-  switch (ref_ent_ptr->get_ent_type()) {
+  switch (ref_ent_ptr->getEntType()) {
     case MBPRISM:
     break;
     default:
@@ -279,7 +279,7 @@ RefElement(moab,ref_ent_ptr),tag_BitRefEdges(NULL) {
   rval = moab.tag_get_handle("_RefBitEdge",th_RefBitEdge); MOAB_THROW(rval);
   rval = moab.tag_get_by_ptr(th_RefBitEdge,&ref_ent_ptr->ent,1,(const void **)&tag_BitRefEdges); MOAB_THROW(rval);
   Tag th_RefType;
-  switch (ref_ent_ptr->get_ent_type()) {
+  switch (ref_ent_ptr->getEntType()) {
     case MBTET:
     break;
     default:
@@ -335,7 +335,7 @@ std::ostream& operator<<(std::ostream& os,const RefElement_TET& e) {
 
 RefElement_TRI::RefElement_TRI(Interface &moab,const boost::shared_ptr<RefEntity> ref_ent_ptr):
 RefElement(moab,ref_ent_ptr) {
-  switch (ref_ent_ptr->get_ent_type()) {
+  switch (ref_ent_ptr->getEntType()) {
     case MBTRI:
     break;
     default:
@@ -394,7 +394,7 @@ std::ostream& operator<<(std::ostream& os,const RefElement_TRI& e) {
 }
 RefElement_EDGE::RefElement_EDGE(Interface &moab,const boost::shared_ptr<RefEntity> ref_ent_ptr):
 RefElement(moab,ref_ent_ptr) {
-  switch (ref_ent_ptr->get_ent_type()) {
+  switch (ref_ent_ptr->getEntType()) {
     case MBEDGE:
     break;
     default:
@@ -431,7 +431,7 @@ std::ostream& operator<<(std::ostream& os,const RefElement_EDGE& e) {
 }
 RefElement_VERTEX::RefElement_VERTEX(Interface &moab,const boost::shared_ptr<RefEntity> ref_ent_ptr):
 RefElement(moab,ref_ent_ptr) {
-  switch (ref_ent_ptr->get_ent_type()) {
+  switch (ref_ent_ptr->getEntType()) {
     case MBVERTEX:
     break;
     default:

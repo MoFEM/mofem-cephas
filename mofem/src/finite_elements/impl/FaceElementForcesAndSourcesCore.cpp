@@ -76,7 +76,7 @@ namespace MoFEM {
 PetscErrorCode FaceElementForcesAndSourcesCore::operator()() {
   PetscFunctionBegin;
 
-  if(numeredEntFiniteElementPtr->get_ent_type() != MBTRI) PetscFunctionReturn(0);
+  if(numeredEntFiniteElementPtr->getEntType() != MBTRI) PetscFunctionReturn(0);
 
   {
     EntityHandle ent = numeredEntFiniteElementPtr->get_ent();

@@ -161,7 +161,7 @@ typedef multi_index_container<
     ordered_non_unique<
       tag<Ent_Ent_mi_tag>, const_mem_fun<ptrWrapperRefElement::interface_type_RefEntity,EntityHandle,&ptrWrapperRefElement::get_parent_ent> >,
     ordered_non_unique<
-      tag<EntType_mi_tag>, const_mem_fun<ptrWrapperRefElement::interface_type_RefEntity,EntityType,&ptrWrapperRefElement::get_ent_type> >,
+      tag<EntType_mi_tag>, const_mem_fun<ptrWrapperRefElement::interface_type_RefEntity,EntityType,&ptrWrapperRefElement::getEntType> >,
     ordered_non_unique<
       tag<Composite_ParentEnt_And_BitsOfRefinedEdges_mi_tag>,
       composite_key<
@@ -371,10 +371,10 @@ interface_RefElement<RefElement> {
     PetscFunctionBegin;
     PetscErrorCode ierr;
     const EntFiniteElement *this_fe_ptr = this;
-    if(get_MoFEMFiniteElementPtr()->element_adjacency_table[get_ent_type()] == NULL) {
+    if(get_MoFEMFiniteElementPtr()->element_adjacency_table[getEntType()] == NULL) {
       SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented");
     }
-    ierr = (get_MoFEMFiniteElementPtr()->element_adjacency_table[get_ent_type()])(
+    ierr = (get_MoFEMFiniteElementPtr()->element_adjacency_table[getEntType()])(
       moab,*field_ptr,*this_fe_ptr,adjacency
     ); CHKERRQ(ierr);
     PetscFunctionReturn(0);
@@ -399,8 +399,8 @@ interface_RefElement<T> {
   interface_RefElement<T>(sptr) {
   };
 
-  inline EntityID get_ent_id() const { return this->sPtr->get_ent_id(); }
-  inline EntityType get_ent_type() const { return this->sPtr->get_ent_type(); }
+  inline EntityID getEntId() const { return this->sPtr->getEntId(); }
+  inline EntityType getEntType() const { return this->sPtr->getEntType(); }
   //
   inline const FEDofEntity_multiIndex& get_data_dofs() const { return this->sPtr->get_data_dofs(); };
   inline DofIdx get_nb_dofs_row() const { return this->sPtr->get_nb_dofs_row(); }
@@ -551,7 +551,7 @@ typedef multi_index_container<
     ordered_non_unique<
       tag<BitFEId_mi_tag>, const_mem_fun<EntFiniteElement::interface_type_MoFEMFiniteElement,BitFEId,&EntFiniteElement::get_id>, LtBit<BitFEId> >,
     ordered_non_unique<
-      tag<EntType_mi_tag>, const_mem_fun<EntFiniteElement::interface_type_RefEntity,EntityType,&EntFiniteElement::get_ent_type> >,
+      tag<EntType_mi_tag>, const_mem_fun<EntFiniteElement::interface_type_RefEntity,EntityType,&EntFiniteElement::getEntType> >,
     ordered_non_unique<
       tag<Composite_Name_And_Ent_mi_tag>,
       composite_key<

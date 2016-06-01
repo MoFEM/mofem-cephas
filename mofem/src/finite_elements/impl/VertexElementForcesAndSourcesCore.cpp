@@ -70,7 +70,7 @@ namespace MoFEM {
 PetscErrorCode VertexElementForcesAndSourcesCore::operator()() {
   PetscFunctionBegin;
 
-  if(numeredEntFiniteElementPtr->get_ent_type() != MBVERTEX) PetscFunctionReturn(0);
+  if(numeredEntFiniteElementPtr->getEntType() != MBVERTEX) PetscFunctionReturn(0);
 
   EntityHandle ent = numeredEntFiniteElementPtr->get_ent();
   coords.resize(3,false);

@@ -75,7 +75,7 @@ namespace MoFEM {
 PetscErrorCode FlatPrismElementForcesAndSurcesCore::operator()() {
   PetscFunctionBegin;
 
-  if(numeredEntFiniteElementPtr->get_ent_type() != MBPRISM) PetscFunctionReturn(0);
+  if(numeredEntFiniteElementPtr->getEntType() != MBPRISM) PetscFunctionReturn(0);
 
   try {
 

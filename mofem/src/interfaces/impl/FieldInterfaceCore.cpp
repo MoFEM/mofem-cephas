@@ -1034,7 +1034,7 @@ PetscErrorCode Core::dofs_NoField(const BitFieldId id,std::map<EntityType,int> &
         if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
       }
       //check consistency
-      assert((*d_miit.first)->get_ent_type()==(*e_miit.first)->get_ent_type());
+      assert((*d_miit.first)->getEntType()==(*e_miit.first)->getEntType());
       assert((*d_miit.first)->get_id()==(*e_miit.first)->get_id());
       assert((*d_miit.first)->get_max_order()==0);
     }
@@ -1143,10 +1143,10 @@ PetscErrorCode Core::dofs_L2H1HcurlHdiv(
             if(d_miit.second) {
               if(DD<nb_active_dosf_on_ent) {
                 is_active = true;
-                dof_counter[(*d_miit.first)->get_ent_type()]++;
+                dof_counter[(*d_miit.first)->getEntType()]++;
               } else {
                 is_active = false;
-                inactive_dof_counter[(*d_miit.first)->get_ent_type()]++;
+                inactive_dof_counter[(*d_miit.first)->getEntType()]++;
               }
               bool success = dofsField.modify(d_miit.first,DofEntity_active_change(is_active));
               if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
@@ -1155,7 +1155,7 @@ PetscErrorCode Core::dofs_L2H1HcurlHdiv(
               } else {
                 if((*d_miit.first)->get_active()) {
                   is_active = false;
-                  inactive_dof_counter[(*d_miit.first)->get_ent_type()]++;
+                  inactive_dof_counter[(*d_miit.first)->getEntType()]++;
                   bool success = dofsField.modify(d_miit.first,DofEntity_active_change(is_active));
                   if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
                 }
@@ -1165,7 +1165,7 @@ PetscErrorCode Core::dofs_L2H1HcurlHdiv(
             if((*d_miit.first)->get_ent()!=(*e_miit)->get_ent()) {
               SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
             }
-            if((*d_miit.first)->get_ent_type()!=(*e_miit)->get_ent_type()) {
+            if((*d_miit.first)->getEntType()!=(*e_miit)->getEntType()) {
               SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
             }
             if((*d_miit.first)->get_id()!=(*e_miit)->get_id()) {
@@ -2264,7 +2264,7 @@ PetscErrorCode Core::partition_finite_elements(
       NumeredDofEntity_multiIndex_uid_view_ordered rows_view;
       NumeredDofEntity_multiIndex_uid_view_ordered::iterator viit_rows;
       if(part_from_moab) {
-        int proc = (*miit2)->get_owner_proc();
+        int proc = (*miit2)->getOwnerProc();
         NumeredEntFiniteElement_change_part(proc).operator()(numered_fe);
       } else {
         //rows_view
@@ -2465,7 +2465,7 @@ PetscErrorCode Core::seed_finite_elements(const Range &entities,int verb) {
     }
     if((*eiit)->get_BitRefLevel().none()) continue;
     std::pair<RefElement_multiIndex::iterator,bool> p_MoFEMFiniteElement;
-    switch ((*eiit)->get_ent_type()) {
+    switch ((*eiit)->getEntType()) {
       case MBVERTEX:
       p_MoFEMFiniteElement = refinedFiniteElements.insert(ptrWrapperRefElement(
         boost::shared_ptr<RefElement>(new RefElement_VERTEX(moab,*eiit)))
@@ -2515,7 +2515,7 @@ PetscErrorCode Core::seed_ref_level(const Range &ents,const BitRefLevel &bit,int
     Range::iterator tit = ents.begin();
     for(;tit!=ents.end();tit++) {
       boost::shared_ptr<RefEntity> ref_ent(new RefEntity(basicEntityDataPtr,*tit));
-      std::bitset<8> ent_pstat(ref_ent->get_pstatus());
+      std::bitset<8> ent_pstat(ref_ent->getPStatus());
       ent_pstat.flip(0);
       std::pair<RefEntity_multiIndex::iterator,bool> p_ent = refinedEntities.insert(ref_ent);
       if(debug > 0) {
@@ -2529,7 +2529,7 @@ PetscErrorCode Core::seed_ref_level(const Range &ents,const BitRefLevel &bit,int
         PetscSynchronizedPrintf(comm,"%s\n",ss.str().c_str());
       }
       std::pair<RefElement_multiIndex::iterator,bool> p_MoFEMFiniteElement;
-      switch((*p_ent.first)->get_ent_type()) {
+      switch((*p_ent.first)->getEntType()) {
         case MBVERTEX:
         p_MoFEMFiniteElement = refinedFiniteElements.insert(ptrWrapperRefElement(
           boost::shared_ptr<RefElement>(new RefElement_VERTEX(moab,*p_ent.first)))
@@ -3365,7 +3365,7 @@ PetscErrorCode Core::clear_dofs_fields(const BitRefLevel &bit,const BitRefLevel 
     dit = dofsField.begin();
     for(;dit!=dofsField.end();) {
       BitRefLevel bit2 = (*dit)->get_BitRefLevel();
-      if((*dit)->get_ent_type()==MBENTITYSET) {
+      if((*dit)->getEntType()==MBENTITYSET) {
         dit++;
         continue;
       }
@@ -3440,7 +3440,7 @@ PetscErrorCode Core::clear_ents_fields(const BitRefLevel &bit,const BitRefLevel 
   MoFEMEntity_multiIndex::iterator eit;
   eit = entsFields.begin();
   for(;eit!=entsFields.end();) {
-    if((*eit)->get_ent_type()==MBENTITYSET) {
+    if((*eit)->getEntType()==MBENTITYSET) {
       eit++;
       continue;
     }
@@ -3485,7 +3485,7 @@ PetscErrorCode Core::clear_finite_elements(const BitRefLevel &bit,const BitRefLe
   EntFiniteElement_multiIndex::iterator fe_it = entsFiniteElements.begin();
   for(;fe_it!=entsFiniteElements.end();) {
     BitRefLevel bit2 = (*fe_it)->get_BitRefLevel();
-    if((*fe_it)->get_ent_type()==MBENTITYSET) {
+    if((*fe_it)->getEntType()==MBENTITYSET) {
       fe_it++;
       continue;
     }
@@ -3522,7 +3522,7 @@ PetscErrorCode Core::clear_adjacencies_finite_elements(const BitRefLevel &bit,co
   ait = entFEAdjacencies.begin();
   for(;ait!=entFEAdjacencies.end();) {
     BitRefLevel bit2 = ait->entFePtr->get_BitRefLevel();
-    if(ait->entFePtr->get_ent_type()==MBENTITYSET) {
+    if(ait->entFePtr->getEntType()==MBENTITYSET) {
       ait++;
       continue;
     }
@@ -3563,7 +3563,7 @@ PetscErrorCode Core::clear_adjacencies_entities(const BitRefLevel &bit,const Bit
   ait = entFEAdjacencies.begin();
   for(;ait!=entFEAdjacencies.end();) {
     BitRefLevel bit2 = ait->mofemEntPtr->get_BitRefLevel();
-    if(ait->mofemEntPtr->get_ent_type()==MBENTITYSET) {
+    if(ait->mofemEntPtr->getEntType()==MBENTITYSET) {
       ait++;
       continue;
     }
@@ -3739,7 +3739,7 @@ PetscErrorCode Core::remove_ents_by_bit_ref(const BitRefLevel &bit,const BitRefL
   RefEntity_multiIndex::iterator ent_it = refinedEntities.begin();
   for(;ent_it!=refinedEntities.end();) {
     BitRefLevel bit2 = (*ent_it)->get_BitRefLevel();
-    if((*ent_it)->get_ent_type()==MBENTITYSET) {
+    if((*ent_it)->getEntType()==MBENTITYSET) {
       ent_it++;
       continue;
     }
@@ -3853,7 +3853,7 @@ PetscErrorCode Core::delete_finite_elements_by_bit_ref(
   RefElement_multiIndex::iterator fe_it = refinedFiniteElements.begin();
   for(;fe_it!=refinedFiniteElements.end();) {
     BitRefLevel bit2 = fe_it->get_BitRefLevel();
-    if(fe_it->get_ent_type()==MBENTITYSET) {
+    if(fe_it->getEntType()==MBENTITYSET) {
       fe_it++;
       continue;
     }

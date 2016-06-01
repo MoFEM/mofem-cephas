@@ -226,7 +226,7 @@ PetscErrorCode CreateRowComressedADJMatrix::createMatArrays(
       // Get entity adjacencies, no need to repeat that operation for dofs when
       // are on the same entity. For simplicity is assumed that those sheered the
       // same adjacencies.
-      unsigned char pstatus = (*mit_row)->get_pstatus();
+      unsigned char pstatus = (*mit_row)->getPStatus();
       if((pstatus & PSTATUS_NOT_OWNED) && (pstatus&(PSTATUS_SHARED|PSTATUS_MULTISHARED))) {
 
         if(
@@ -238,7 +238,7 @@ PetscErrorCode CreateRowComressedADJMatrix::createMatArrays(
           ); CHKERRQ(ierr);
           // Add that row. Patterns is that first index is row index, second is
           // size of adjacencies after that follows column adjacencies.
-          int owner = (*mit_row)->get_owner_proc();
+          int owner = (*mit_row)->getOwnerProc();
           dofs_vec[owner].push_back(TAG::get_index(mit_row)); 	// row index
           dofs_vec[owner].push_back(dofs_col_view.size()); 	// nb. of column adjacencies
           // add adjacent cools
@@ -440,7 +440,7 @@ PetscErrorCode CreateRowComressedADJMatrix::createMatArrays(
 
       }
 
-      unsigned char pstatus = (*miit_row)->get_pstatus();
+      unsigned char pstatus = (*miit_row)->getPStatus();
       if( pstatus>0 ) {
         std::map<int,std::vector<int> >::iterator mit;
         mit = adjacent_dofs_on_other_parts.find(row_last_evaluated_idx);
@@ -898,14 +898,14 @@ PetscErrorCode Core::partition_check_matrix_fill_in(const std::string &problem_n
 
           ierr = MatSetValue(A,row,col,1,INSERT_VALUES); CHKERRQ(ierr);
 
-          if((*cit)->get_ent_type()!=MBVERTEX) {
+          if((*cit)->getEntType()!=MBVERTEX) {
 
             FENumeredDofEntity_multiIndex::index<Composite_Name_Type_And_Side_Number_mi_tag>::type::iterator dit,hi_dit;
             dit = colPtr->get<Composite_Name_Type_And_Side_Number_mi_tag>().lower_bound(
-              boost::make_tuple((*cit)->get_name(),(*cit)->get_ent_type(),(*cit)->sideNumberPtr->side_number)
+              boost::make_tuple((*cit)->get_name(),(*cit)->getEntType(),(*cit)->sideNumberPtr->side_number)
             );
             hi_dit = colPtr->get<Composite_Name_Type_And_Side_Number_mi_tag>().upper_bound(
-              boost::make_tuple((*cit)->get_name(),(*cit)->get_ent_type(),(*cit)->sideNumberPtr->side_number)
+              boost::make_tuple((*cit)->get_name(),(*cit)->getEntType(),(*cit)->sideNumberPtr->side_number)
             );
             int nb_dofs_on_ent = distance(dit,hi_dit);
 
@@ -919,14 +919,14 @@ PetscErrorCode Core::partition_check_matrix_fill_in(const std::string &problem_n
 
         }
 
-        if((*rit)->get_ent_type()!=MBVERTEX) {
+        if((*rit)->getEntType()!=MBVERTEX) {
 
           FENumeredDofEntity_multiIndex::index<Composite_Name_Type_And_Side_Number_mi_tag>::type::iterator dit,hi_dit;
           dit = rowPtr->get<Composite_Name_Type_And_Side_Number_mi_tag>().lower_bound(
-            boost::make_tuple((*rit)->get_name(),(*rit)->get_ent_type(),(*rit)->sideNumberPtr->side_number)
+            boost::make_tuple((*rit)->get_name(),(*rit)->getEntType(),(*rit)->sideNumberPtr->side_number)
           );
           hi_dit = rowPtr->get<Composite_Name_Type_And_Side_Number_mi_tag>().upper_bound(
-            boost::make_tuple((*rit)->get_name(),(*rit)->get_ent_type(),(*rit)->sideNumberPtr->side_number)
+            boost::make_tuple((*rit)->get_name(),(*rit)->getEntType(),(*rit)->sideNumberPtr->side_number)
           );
           int nb_dofs_on_ent = distance(dit,hi_dit);
 

@@ -79,7 +79,7 @@ namespace MoFEM {
 PetscErrorCode FatPrismElementForcesAndSurcesCore::operator()() {
   PetscFunctionBegin;
 
-  if(numeredEntFiniteElementPtr->get_ent_type() != MBPRISM) PetscFunctionReturn(0);
+  if(numeredEntFiniteElementPtr->getEntType() != MBPRISM) PetscFunctionReturn(0);
 
   EntityHandle ent = numeredEntFiniteElementPtr->get_ent();
   int num_nodes;

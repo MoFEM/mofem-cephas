@@ -652,7 +652,7 @@ PetscErrorCode Core::synchronise_entities(Range &ents,int verb) {
         rAnk,*eit);
     }
 
-    unsigned char pstatus = (*meit)->get_pstatus();
+    unsigned char pstatus = (*meit)->getPStatus();
 
     if(pstatus == 0) continue;
 
@@ -662,18 +662,18 @@ PetscErrorCode Core::synchronise_entities(Range &ents,int verb) {
       PetscSynchronizedPrintf(comm,"%s",zz.str().c_str());
     }
 
-    for(int proc = 0; proc<MAX_SHARING_PROCS && -1 != (*meit)->get_sharing_procs_ptr()[proc]; proc++) {
-      if((*meit)->get_sharing_procs_ptr()[proc] == -1) {
+    for(int proc = 0; proc<MAX_SHARING_PROCS && -1 != (*meit)->getSharingProcsPtr()[proc]; proc++) {
+      if((*meit)->getSharingProcsPtr()[proc] == -1) {
         SETERRQ(PETSC_COMM_SELF,MOFEM_IMPOSIBLE_CASE,"sharing processor not set");
       }
-      if((*meit)->get_sharing_procs_ptr()[proc] == rAnk) {
+      if((*meit)->getSharingProcsPtr()[proc] == rAnk) {
         continue;
       }
-      EntityHandle handle_on_sharing_proc = (*meit)->get_sharing_handlers_ptr()[proc];
-      sbuffer[(*meit)->get_sharing_procs_ptr()[proc]].push_back(handle_on_sharing_proc);
+      EntityHandle handle_on_sharing_proc = (*meit)->getSharingHandlersPtr()[proc];
+      sbuffer[(*meit)->getSharingProcsPtr()[proc]].push_back(handle_on_sharing_proc);
       if(verb>1) {
         PetscSynchronizedPrintf(comm,"send %lu (%lu) to %d at %d\n",
-        (*meit)->get_ref_ent(),handle_on_sharing_proc,(*meit)->get_sharing_procs_ptr()[proc],rAnk);
+        (*meit)->get_ref_ent(),handle_on_sharing_proc,(*meit)->getSharingProcsPtr()[proc],rAnk);
       }
       if(!(pstatus&PSTATUS_MULTISHARED)) {
         break;

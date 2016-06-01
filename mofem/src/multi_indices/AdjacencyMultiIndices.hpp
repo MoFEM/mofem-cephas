@@ -39,7 +39,7 @@ struct MoFEMEntityEntFiniteElementAdjacencyMap {
   inline GlobalUId get_ent_unique_id() const { return mofemEntPtr->get_global_unique_id(); };
   inline EntityHandle get_ent_meshset() const { return mofemEntPtr->get_meshset(); };
   inline EntityHandle get_ent_entity_handle() const { return mofemEntPtr->get_ent(); };
-  BitFieldId get_ent_id() const { return mofemEntPtr->get_id(); }
+  BitFieldId getEntId() const { return mofemEntPtr->get_id(); }
   BitFEId get_BitFEId() const { return entFePtr->get_id(); }
   friend std::ostream& operator<<(std::ostream& os,const MoFEMEntityEntFiniteElementAdjacencyMap &e);
 };

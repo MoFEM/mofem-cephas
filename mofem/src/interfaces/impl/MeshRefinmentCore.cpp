@@ -169,7 +169,7 @@ PetscErrorCode Core::add_verices_in_the_middel_of_edges(const Range &_edges,cons
       }
     } else {
       const EntityHandle node = (*miit_view)->get_ref_ent();
-      if((*miit_view)->get_ent_type() != MBVERTEX) {
+      if((*miit_view)->getEntType() != MBVERTEX) {
         SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"child of edge should be vertex");
       }
       bool success = refinedEntities.modify(refinedEntities.get<Ent_mi_tag>().find(node),RefEntity_change_add_bit(bit));

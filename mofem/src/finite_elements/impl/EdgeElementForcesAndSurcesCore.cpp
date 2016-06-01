@@ -78,7 +78,7 @@ namespace MoFEM {
 PetscErrorCode EdgeElementForcesAndSurcesCore::operator()() {
   PetscFunctionBegin;
 
-  if(numeredEntFiniteElementPtr->get_ent_type() != MBEDGE) PetscFunctionReturn(0);
+  if(numeredEntFiniteElementPtr->getEntType() != MBEDGE) PetscFunctionReturn(0);
 
   EntityHandle ent = numeredEntFiniteElementPtr->get_ent();
   {
