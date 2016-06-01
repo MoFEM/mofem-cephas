@@ -53,15 +53,6 @@ sharing_handlers_ptr(NULL)*/ {
   MoABErrorCode rval;
   rval = pcomm->get_owner_handle(ent,owner_proc,moab_owner_handle); MOAB_THROW(rval);
   rval = moab.tag_get_by_ptr(pcomm->pstatus_tag(),&ent,1,(const void **)&pstatus_val_ptr); CHKERR_MOAB(rval);
-  // if(*pstatus_val_ptr & PSTATUS_MULTISHARED) {
-  //   // entity is multi shared
-  //   rval = moab.tag_get_by_ptr(pcomm->sharedps_tag(),&ent,1,(const void **)&sharing_procs_ptr); CHKERR_MOAB(rval);
-  //   rval = moab.tag_get_by_ptr(pcomm->sharedhs_tag(),&ent,1,(const void **)&sharing_handlers_ptr); CHKERR_MOAB(rval);
-  // } else if(*pstatus_val_ptr & PSTATUS_SHARED) {
-  //   // shared
-  //   rval = moab.tag_get_by_ptr(pcomm->sharedp_tag(),&ent,1,(const void **)&sharing_procs_ptr); CHKERR_MOAB(rval);
-  //   rval = moab.tag_get_by_ptr(pcomm->sharedh_tag(),&ent,1,(const void **)&sharing_handlers_ptr); CHKERR_MOAB(rval);
-  // }
 }
 
 //ref moab ent
