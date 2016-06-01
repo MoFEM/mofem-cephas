@@ -21,7 +21,7 @@
     </tab>
     <tab type="examples" visible="yes" title="" intro=""/>
     <tab type="user" url="https://bitbucket.org/likask/mofem-cephas" title="Repository"/>
-    <tab type="user" url="http://cdash.eng.gla.ac.uk/cdash" title="Tetsing"/>
+    <tab type="user" url="http://cdash.eng.gla.ac.uk/cdash" title="Testing"/>
   </navindex>
 
   <!-- Layout definition for a class page -->
