@@ -273,6 +273,7 @@ PetscErrorCode NonlinearElasticElement::OpJacobianPiolaKirchhoffStress::doWork(
 
       dAta.materialAdoublePtr->gG = gg;
 
+      //ADOL-C tape recorded for only the first Gauss point.
       if(gg == 0) {
 
         trace_on(tAg);
