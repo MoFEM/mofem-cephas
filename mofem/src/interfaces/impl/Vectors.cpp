@@ -761,7 +761,7 @@ PetscErrorCode Core::set_other_global_ghost_vector(
           std::pair<MoFEMEntity_multiIndex::iterator,bool> p_e_miit;
           try {
             boost::shared_ptr<MoFEMEntity> moabent(
-              new MoFEMEntity(moab,*cpy_fit,(*miit)->get_RefEntity_ptr())
+              new MoFEMEntity(*cpy_fit,(*miit)->get_RefEntity_ptr())
             );
             p_e_miit = entsFields.insert(moabent);
           } catch (const std::exception& ex) {
@@ -770,7 +770,7 @@ PetscErrorCode Core::set_other_global_ghost_vector(
             SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,ss.str().c_str());
           }
           if((*p_e_miit.first)->get_max_order()<order) {
-            bool success = entsFields.modify(p_e_miit.first,MoFEMEntity_change_order(moab,order));
+            bool success = entsFields.modify(p_e_miit.first,MoFEMEntity_change_order(order));
             if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
           }
           //create field moabdof

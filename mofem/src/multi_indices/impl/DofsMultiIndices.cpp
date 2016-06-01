@@ -45,8 +45,8 @@ DofEntity::DofEntity(
   const DofIdx dof
 ):
 interface_MoFEMEntity<MoFEMEntity>(entity_ptr),
-// dof(_dof),
-active(false) {
+active(false),
+dof(dof) {
 
   if(!entity_ptr) {
     THROW_MESSAGE("MoFEMEntity pinter not initialized");
@@ -77,8 +77,7 @@ active(false) {
   assert(sFieldPtr->tag_dof_rank_data!=NULL);
   ((ApproximationOrder*)sFieldPtr->tag_dof_order_data)[dof] = dof_order;
   ((FieldCoefficientsNumber*)sFieldPtr->tag_dof_rank_data)[dof] = dof_rank;
-  short_uid = get_non_nonunique_short_id_calculate(dof);
-
+  // short_uid = get_non_nonunique_short_id_calculate(dof);
 }
 
 std::ostream& operator<<(std::ostream& os,const DofEntity& e) {

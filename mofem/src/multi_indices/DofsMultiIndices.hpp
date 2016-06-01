@@ -48,7 +48,8 @@ struct DofEntity: public interface_MoFEMEntity<MoFEMEntity> {
   }
 
   bool active;
-  ShortId short_uid;
+  int dof;
+  // ShortId short_uid;
 
   DofEntity(
     const boost::shared_ptr<MoFEMEntity> entity_ptr,
@@ -57,12 +58,12 @@ struct DofEntity: public interface_MoFEMEntity<MoFEMEntity> {
     const DofIdx dof
   );
 
-  inline DofIdx get_EntDofIdx() const { return (DofIdx)(short_uid&UID_DOF_MAK); }
+  inline DofIdx get_EntDofIdx() const { return dof; }
   inline FieldData& get_FieldData() const { return const_cast<FieldData&>(this->sPtr->tag_FieldData[get_EntDofIdx()]); }
 
   /** \brief Get unique dof id
     */
-  inline const GlobalUId get_global_unique_id() const { return get_global_unique_id_calculate(get_EntDofIdx(),get_MoFEMEntity_ptr()); };
+  inline GlobalUId get_global_unique_id() const { return get_global_unique_id_calculate(get_EntDofIdx(),get_MoFEMEntity_ptr()); };
 
   // inline GlobalUId get_global_unique_id_calculate(const int dof) const { return get_global_unique_id_calculate(dof,get_MoFEMEntity_ptr()); }
 
@@ -81,14 +82,7 @@ struct DofEntity: public interface_MoFEMEntity<MoFEMEntity> {
     * reading those data using different MoAB instances.
     *
     */
-  inline ShortId get_non_nonunique_short_id() const  { return short_uid; }
-
-  /**
-   * \brief Calculate short_uid
-   * @param  dof DOF number on the entity
-   * @return     short_uid
-   */
-  inline ShortId get_non_nonunique_short_id_calculate(const int dof) const { return get_non_nonunique_short_id(dof,get_MoFEMEntity_ptr()); }
+  inline ShortId get_non_nonunique_short_id() const  { return get_non_nonunique_short_id(dof,get_MoFEMEntity_ptr()); }
 
   inline EntityHandle get_ent() const { return this->sPtr->get_ent(); };
   inline ApproximationOrder get_dof_order() const {
@@ -246,7 +240,7 @@ typedef multi_index_container<
   indexed_by<
     //uniqe
     ordered_unique<
-      tag<Unique_mi_tag>, const_mem_fun<DofEntity,const GlobalUId,&DofEntity::get_global_unique_id> >,
+      tag<Unique_mi_tag>, const_mem_fun<DofEntity,GlobalUId,&DofEntity::get_global_unique_id> >,
     ordered_unique<
       tag<Composite_Ent_and_ShortId_mi_tag>,
         composite_key<
@@ -303,7 +297,7 @@ typedef multi_index_container<
   boost::shared_ptr<DofEntity>,
   indexed_by<
     ordered_unique<
-      const_mem_fun<DofEntity,const GlobalUId,&DofEntity::get_global_unique_id>
+      const_mem_fun<DofEntity,GlobalUId,&DofEntity::get_global_unique_id>
     >
   > > DofEntity_multiIndex_uid_view;
 
@@ -314,7 +308,7 @@ typedef multi_index_container<
   boost::shared_ptr<DofEntity>,
   indexed_by<
     ordered_unique<
-      const_mem_fun<DofEntity,const GlobalUId,&DofEntity::get_global_unique_id> >,
+      const_mem_fun<DofEntity,GlobalUId,&DofEntity::get_global_unique_id> >,
     ordered_non_unique<
       const_mem_fun<DofEntity,char,&DofEntity::get_active> >
   > > DofEntity_multiIndex_active_view;

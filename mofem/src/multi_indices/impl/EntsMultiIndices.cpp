@@ -30,11 +30,46 @@
 #include <DofsMultiIndices.hpp>
 #include <FEMMultiIndices.hpp>
 
+#define IS_BUILDING_MB
+#include <moab/Error.hpp>
+#include <SparseTag.hpp>
+#include <DenseTag.hpp>
+
+
 namespace MoFEM {
 
+static MoABErrorCode rval;
+static moab::Error error;
+
+inline ApproximationOrder* get_tag_ptr(SequenceManager *sequence_manager,Tag th,EntityHandle ent,int *tag_size) {
+  ApproximationOrder *ret_val;
+  if(th->get_storage_type()==MB_TAG_SPARSE) {
+    rval = dynamic_cast<SparseTag*>(th)->get_data(
+      sequence_manager,&error,&ent,1,(const void**)&ret_val,tag_size
+    ); MOAB_THROW(rval);
+    return ret_val;
+  } else {
+    rval = dynamic_cast<DenseTag*>(th)->get_data(
+      sequence_manager,&error,&ent,1,(const void**)&ret_val,tag_size
+    ); MOAB_THROW(rval);
+    return ret_val;
+  }
+}
+
+BasicEntityData::BasicEntityData(moab::Interface &moab):
+moab(moab) {
+  rval = moab.tag_get_handle("_RefParentHandle",th_RefParentHandle); MOAB_THROW(rval);
+  rval = moab.tag_get_handle("_RefBitLevel",th_RefBitLevel); MOAB_THROW(rval);
+}
+BasicEntityData::~BasicEntityData() {
+}
+
 //basic moab ent
-BasicEntity::BasicEntity(Interface &moab,const EntityHandle _ent):
-ent(_ent)/*,
+BasicEntity::BasicEntity(
+  boost::shared_ptr<BasicEntityData> basic_data_ptr,const EntityHandle ent
+):
+basicDataPtr(basic_data_ptr),
+ent(ent)/*,
 sharing_procs_ptr(NULL),
 sharing_handlers_ptr(NULL)*/ {
   switch (get_ent_type()) {
@@ -49,24 +84,23 @@ sharing_handlers_ptr(NULL)*/ {
     default:
     THROW_MESSAGE("this entity type is currently not implemented");
   }
-  ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
-  MoABErrorCode rval;
+  ParallelComm* pcomm = ParallelComm::get_pcomm(&basicDataPtr->moab,MYPCOMM_INDEX);
   rval = pcomm->get_owner_handle(ent,owner_proc,moab_owner_handle); MOAB_THROW(rval);
-  rval = moab.tag_get_by_ptr(pcomm->pstatus_tag(),&ent,1,(const void **)&pstatus_val_ptr); CHKERR_MOAB(rval);
+  rval = basicDataPtr->moab.tag_get_by_ptr(pcomm->pstatus_tag(),&ent,1,(const void **)&pstatus_val_ptr); CHKERR_MOAB(rval);
 }
 
 //ref moab ent
 BitRefEdges MoFEM::RefElement::DummyBitRefEdges = BitRefEdges(0);
-RefEntity::RefEntity(Interface &moab, const EntityHandle _ent):
-BasicEntity(moab,_ent),
+RefEntity::RefEntity(boost::shared_ptr<BasicEntityData> basic_data_ptr, const EntityHandle ent):
+BasicEntity(basic_data_ptr,ent),
 tag_parent_ent(NULL),
 tag_BitRefLevel(NULL) {
-  MoABErrorCode rval;
-  Tag th_RefParentHandle,th_RefBitLevel;
-  rval = moab.tag_get_handle("_RefParentHandle",th_RefParentHandle); MOAB_THROW(rval);
-  rval = moab.tag_get_handle("_RefBitLevel",th_RefBitLevel); MOAB_THROW(rval);
-  rval = moab.tag_get_by_ptr(th_RefParentHandle,&ent,1,(const void **)&tag_parent_ent); MOAB_THROW(rval);
-  rval = moab.tag_get_by_ptr(th_RefBitLevel,&ent,1,(const void **)&tag_BitRefLevel); MOAB_THROW(rval);
+  rval = basicDataPtr->moab.tag_get_by_ptr(
+    basicDataPtr->th_RefParentHandle,&ent,1,(const void **)&tag_parent_ent
+  ); MOAB_THROW(rval);
+  rval = basicDataPtr->moab.tag_get_by_ptr(
+    basicDataPtr->th_RefBitLevel,&ent,1,(const void **)&tag_BitRefLevel
+  ); MOAB_THROW(rval);
 }
 
 PetscErrorCode getPatentEnt(Interface &moab,Range ents,std::vector<EntityHandle> vec_patent_ent) {
@@ -103,20 +137,19 @@ std::ostream& operator<<(std::ostream& os,const RefEntity& e) {
 
 //moab ent
 MoFEMEntity::MoFEMEntity(
-  Interface &moab,
   const boost::shared_ptr<Field> field_ptr,
   const boost::shared_ptr<RefEntity> ref_ent_ptr
 ):
 interface_Field<Field>(field_ptr),
 interface_RefEntity<RefEntity>(ref_ent_ptr),
-tag_order_data(NULL),
+// tag_order_data(NULL),
 tag_FieldData(NULL),
 tag_FieldData_size(0),
 tag_dof_order_data(NULL),
 tag_dof_rank_data(NULL) {
   MoABErrorCode rval;
   EntityHandle ent = get_ent();
-  rval = moab.tag_get_by_ptr(field_ptr->th_AppOrder,&ent,1,(const void **)&tag_order_data); MOAB_THROW(rval);
+  moab::Interface &moab = ref_ent_ptr->basicDataPtr->moab;
   rval = moab.tag_get_by_ptr(field_ptr->th_FieldData,&ent,1,(const void **)&tag_FieldData,&tag_FieldData_size);
   if(rval == MB_SUCCESS) {
     if( (unsigned int)tag_FieldData_size != 0 ) {
@@ -128,6 +161,19 @@ tag_dof_rank_data(NULL) {
     }
   }
 }
+
+ApproximationOrder* MoFEMEntity::get_max_order_ptr() {
+  return MoFEM::get_tag_ptr(
+    dynamic_cast<moab::Core*>(&sFieldPtr->moab)->sequence_manager(),sFieldPtr->th_AppOrder,sPtr->ent,NULL
+  );
+}
+ApproximationOrder MoFEMEntity::get_max_order() const {
+  return *MoFEM::get_tag_ptr(
+    dynamic_cast<moab::Core*>(&sFieldPtr->moab)->sequence_manager(),sFieldPtr->th_AppOrder,sPtr->ent,NULL
+  );
+
+}
+
 MoFEMEntity::~MoFEMEntity() {}
 std::ostream& operator<<(std::ostream& os,const MoFEMEntity& e) {
   os << "ent_global_uid " << (UId)e.get_global_unique_id()
@@ -139,8 +185,9 @@ std::ostream& operator<<(std::ostream& os,const MoFEMEntity& e) {
 }
 void MoFEMEntity_change_order::operator()(boost::shared_ptr<MoFEMEntity> &e) {
   MoABErrorCode rval;
+  moab::Interface &moab = e->sPtr->basicDataPtr->moab;
   int nb_dofs = e->get_order_nb_dofs(order)*e->get_nb_of_coeffs();
-  ApproximationOrder& ent_order = *((ApproximationOrder*)e->tag_order_data);
+  ApproximationOrder& ent_order = *(e->get_max_order_ptr());
   ent_order = order;
   EntityHandle ent = e->get_ent();
   rval = moab.tag_get_by_ptr(e->sFieldPtr->th_FieldData,&ent,1,(const void **)&e->tag_FieldData,&e->tag_FieldData_size);

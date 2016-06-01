@@ -45,6 +45,8 @@ typedef int (*FieldOrderFunct)(const int order);
   */
 struct Field {
 
+  moab::Interface &moab;
+
   EntityHandle meshSet; 		///< keeps entities for this meshset
   boost::shared_ptr<CoordSys> coordSysPtr;
 
@@ -61,6 +63,7 @@ struct Field {
   int tag_name_prefix_size; 		///< number of bits necessary to keep field name prefix
   FieldOrderTable forder_table;		///< nb. dofs table for entities
   unsigned int bit_number;
+
 
   /**
     * \brief constructor for moab field

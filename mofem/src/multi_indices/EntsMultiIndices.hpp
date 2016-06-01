@@ -67,6 +67,14 @@ typedef multi_index_container<
     >
   > > SideNumber_multiIndex;
 
+struct BasicEntityData {
+  moab::Interface &moab;
+  Tag th_RefParentHandle;
+  Tag th_RefBitLevel;
+  BasicEntityData(moab::Interface &mfield);
+  virtual ~BasicEntityData();
+};
+
 /**
  * \brief this struct keeps basic methods for moab entity
  * \ingroup ent_multi_indices
@@ -77,14 +85,17 @@ typedef multi_index_container<
 
  */
 struct BasicEntity {
+
+  boost::shared_ptr<BasicEntityData> basicDataPtr;
+
   EntityHandle ent;
   int owner_proc;
   EntityHandle moab_owner_handle;
   unsigned char *pstatus_val_ptr;
-  // int *sharing_procs_ptr;
-  // EntityHandle *sharing_handlers_ptr;
 
-  BasicEntity(Interface &moab,const EntityHandle _ent);
+  BasicEntity(
+    boost::shared_ptr<BasicEntityData> basic_data_ptr,const EntityHandle ent
+  );
 
   /// get entity type
   inline EntityType get_ent_type() const { return (EntityType)((ent&MB_TYPE_MASK)>>MB_ID_WIDTH); }
@@ -137,8 +148,9 @@ struct BasicEntity {
 \endcode
 
     */
-  int* get_sharing_procs_ptr(Interface &moab) const {
+  int* get_sharing_procs_ptr() const {
     MoABErrorCode rval;
+    moab::Interface &moab = basicDataPtr->moab;
     int *sharing_procs_ptr = NULL;
     ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
     if(*pstatus_val_ptr & PSTATUS_MULTISHARED) {
@@ -173,9 +185,10 @@ struct BasicEntity {
 \endcode
 
     */
-  inline EntityHandle* get_sharing_handlers_ptr(Interface &moab) const {
+  inline EntityHandle* get_sharing_handlers_ptr() const {
     MoABErrorCode rval;
     EntityHandle *sharing_handlers_ptr = NULL;
+    moab::Interface &moab = basicDataPtr->moab;
     ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
     if(*pstatus_val_ptr & PSTATUS_MULTISHARED) {
       // entity is multi shared
@@ -201,7 +214,7 @@ struct RefEntity: public BasicEntity {
   EntityHandle *tag_parent_ent;
   BitRefLevel *tag_BitRefLevel;
 
-  RefEntity(Interface &moab,const EntityHandle _ent);
+  RefEntity(boost::shared_ptr<BasicEntityData> basic_data_ptr,const EntityHandle _ent);
 
   static PetscErrorCode getPatentEnt(Interface &moab,Range ents,std::vector<EntityHandle> vec_patent_ent);
   static PetscErrorCode getBitRefLevel(Interface &moab,Range ents,std::vector<BitRefLevel> vec_bit_ref_level);
@@ -247,8 +260,8 @@ struct interface_RefEntity {
   inline unsigned char get_pstatus() const { return this->sPtr->get_pstatus(); }
   inline EntityHandle get_owner_ent() const { return this->sPtr->get_owner_ent(); }
   inline EntityHandle get_owner_proc() const { return this->sPtr->get_owner_proc(); }
-  inline int* get_sharing_procs_ptr(Interface &moab) const { return this->sPtr->get_sharing_procs_ptr(moab); }
-  inline EntityHandle* get_sharing_handlers_ptr(Interface &moab) const { return this->sPtr->get_sharing_handlers_ptr(moab); }
+  inline int* get_sharing_procs_ptr() const { return this->sPtr->get_sharing_procs_ptr(); }
+  inline EntityHandle* get_sharing_handlers_ptr() const { return this->sPtr->get_sharing_handlers_ptr(); }
   virtual ~interface_RefEntity() {}
 
   inline const boost::shared_ptr<T> get_RefEntity_ptr() {
@@ -321,16 +334,15 @@ typedef multi_index_container<
  * \ingroup ent_multi_indices
  */
 struct RefEntity_change_remove_parent {
-  Interface &mOab;
-  Tag th_RefParentHandle;
   ErrorCode rval;
-  RefEntity_change_remove_parent(Interface &moab): mOab(moab) {
-    rval = mOab.tag_get_handle("_RefParentHandle",th_RefParentHandle); MOAB_THROW(rval);
+  RefEntity_change_remove_parent() {
   }
   void operator()(boost::shared_ptr<RefEntity> &e) {
-    rval = mOab.tag_delete_data(th_RefParentHandle,&e->ent,1); MOAB_THROW(rval);
-    rval = mOab.tag_get_by_ptr(
-      th_RefParentHandle,&e->ent,1,(const void **)&(e->tag_parent_ent)
+    rval = e->basicDataPtr->moab.tag_delete_data(
+      e->basicDataPtr->th_RefParentHandle,&e->ent,1
+    ); MOAB_THROW(rval);
+    rval = e->basicDataPtr->moab.tag_get_by_ptr(
+      e->basicDataPtr->th_RefParentHandle,&e->ent,1,(const void **)&(e->tag_parent_ent)
     ); MOAB_THROW(rval);
   }
 };
@@ -346,16 +358,12 @@ struct RefEntity_change_remove_parent {
 
   */
 struct RefEntity_change_parent {
-  Interface &mOab;
   EntityHandle pArent;
-  Tag th_RefParentHandle;
   ErrorCode rval;
-  RefEntity_change_parent(Interface &moab,EntityHandle parent): mOab(moab),pArent(parent) {
-    rval = mOab.tag_get_handle("_RefParentHandle",th_RefParentHandle); MOAB_THROW(rval);
-  }
+  RefEntity_change_parent(EntityHandle parent): pArent(parent) {}
   void operator()(boost::shared_ptr<RefEntity> &e) {
-    rval = mOab.tag_get_by_ptr(
-      th_RefParentHandle,&e->ent,1,(const void **)&(e->tag_parent_ent)
+    rval = e->basicDataPtr->moab.tag_get_by_ptr(
+      e->basicDataPtr->th_RefParentHandle,&e->ent,1,(const void **)&(e->tag_parent_ent)
     ); MOAB_THROW(rval);
     *(e->tag_parent_ent) = pArent;
   }
@@ -449,21 +457,17 @@ struct MoFEMEntity:
 
   typedef interface_Field<Field> interface_type_Field;
   typedef interface_RefEntity<RefEntity> interface_type_RefEntity;
-  const ApproximationOrder* tag_order_data;
   const FieldData* tag_FieldData;
   int tag_FieldData_size;
   const ApproximationOrder* tag_dof_order_data;
   const FieldCoefficientsNumber* tag_dof_rank_data;
-  // GlobalUId global_uid;
   MoFEMEntity(
-    Interface &moab,
     const boost::shared_ptr<Field> field_ptr,
     const boost::shared_ptr<RefEntity> ref_ent_ptr
   );
   ~MoFEMEntity();
   inline EntityHandle get_ent() const { return get_ref_ent(); }
   inline int get_nb_dofs_on_ent() const { return tag_FieldData_size/sizeof(FieldData); }
-  // inline FieldData* get_ent_FieldData() const { return const_cast<FieldData*>(tag_FieldData); }
 
   inline VectorAdaptor get_ent_FieldData() const {
     int size = get_nb_dofs_on_ent();
@@ -474,7 +478,8 @@ struct MoFEMEntity:
   inline int get_order_nb_dofs(int order) const { return (this->sFieldPtr->forder_table[get_ent_type()])(order); }
   inline int get_order_nb_dofs_diff(int order) const { return get_order_nb_dofs(order)-get_order_nb_dofs(order-1); }
 
-  inline ApproximationOrder get_max_order() const { return *((ApproximationOrder*)tag_order_data); }
+  ApproximationOrder* get_max_order_ptr();
+  ApproximationOrder get_max_order() const;
 
   GlobalUId get_global_unique_id() const { return get_global_unique_id_calculate(); }
 
@@ -545,13 +550,11 @@ interface_RefEntity<T> {
  * \ingroup ent_multi_indices
  */
 struct MoFEMEntity_change_order {
-  Interface& moab;
   ApproximationOrder order;
   std::vector<FieldData> data;
   std::vector<ApproximationOrder> data_dof_order;
   std::vector<FieldCoefficientsNumber> data_dof_rank;
-  MoFEMEntity_change_order(Interface& _moab,ApproximationOrder _order):
-  moab(_moab),
+  MoFEMEntity_change_order(ApproximationOrder _order):
   order(_order) {};
   void operator()(boost::shared_ptr<MoFEMEntity> &e);
 };
