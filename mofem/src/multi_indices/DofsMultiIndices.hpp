@@ -33,50 +33,38 @@ struct DofEntity: public interface_MoFEMEntity<MoFEMEntity> {
   typedef interface_MoFEMEntity<MoFEMEntity> interface_type_MoFEMEntity;
   typedef interface_RefEntity<MoFEMEntity> interface_type_RefEntity;
 
-  static LocalUId get_local_unique_id_calculate(const DofIdx _dof_,const boost::shared_ptr<MoFEMEntity> ent_ptr) {
-    if(_dof_>=512) THROW_MESSAGE("_dof>=512");
-    LocalUId _uid_ = ((UId)_dof_)|((ent_ptr->get_local_unique_id())<<9);
+  static inline GlobalUId get_global_unique_id_calculate(const DofIdx dof,const boost::shared_ptr<MoFEMEntity> ent_ptr) {
+    if(dof>=512) THROW_MESSAGE("_dof>=512");
+    GlobalUId _uid_ = ((UId)dof)|((ent_ptr->get_global_unique_id())<<9);
     return _uid_;
   }
 
-  static GlobalUId get_global_unique_id_calculate(const DofIdx _dof_,const boost::shared_ptr<MoFEMEntity> ent_ptr) {
-    if(_dof_>=512) THROW_MESSAGE("_dof>=512");
-    GlobalUId _uid_ = ((UId)_dof_)|((ent_ptr->get_global_unique_id())<<9);
-    return _uid_;
-  }
-
-  static ShortId get_non_nonunique_short_id(const DofIdx _dof_,const boost::shared_ptr<MoFEMEntity> ent_ptr) {
-    if(_dof_>=512) THROW_MESSAGE("_dof>=512")
+  static inline ShortId get_non_nonunique_short_id(const DofIdx dof,const boost::shared_ptr<MoFEMEntity> ent_ptr) {
+    if(dof>=512) THROW_MESSAGE("_dof>=512")
     if(sizeof(ShortId) < sizeof(char)+2) THROW_MESSAGE("sizeof(ShortId)< sizeof(char)+2")
-    char bit_number = ent_ptr->get_bit_number();
-    ShortId _uid_ = ((ShortId)_dof_)|(((ShortId)bit_number)<<9);
+    const char bit_number = ent_ptr->get_bit_number();
+    ShortId _uid_ = ((ShortId)dof)|(((ShortId)bit_number)<<9);
     return _uid_;
   }
 
-  DofIdx dof;
   bool active;
-  LocalUId local_uid;
-  GlobalUId global_uid;
   ShortId short_uid;
 
   DofEntity(
     const boost::shared_ptr<MoFEMEntity> entity_ptr,
     const ApproximationOrder dof_order,
     const FieldCoefficientsNumber dof_rank,
-    const DofIdx _dof
+    const DofIdx dof
   );
 
-  inline DofIdx get_EntDofIdx() const { return dof; }
-  inline FieldData& get_FieldData() const { return const_cast<FieldData&>(this->sPtr->tag_FieldData[dof]); }
+  inline DofIdx get_EntDofIdx() const { return (DofIdx)(short_uid&UID_DOF_MAK); }
+  inline FieldData& get_FieldData() const { return const_cast<FieldData&>(this->sPtr->tag_FieldData[get_EntDofIdx()]); }
 
-  /** \brief unique dof id
+  /** \brief Get unique dof id
     */
-  inline const LocalUId& get_local_unique_id() const { return local_uid; };
-  inline LocalUId get_local_unique_id_calculate() const { return get_local_unique_id_calculate(dof,get_MoFEMEntity_ptr()); }
+  inline const GlobalUId get_global_unique_id() const { return get_global_unique_id_calculate(get_EntDofIdx(),get_MoFEMEntity_ptr()); };
 
-  inline const GlobalUId& get_global_unique_id() const { return global_uid; };
-  // inline GlobalUId get_global_unique_id() const { return global_uid; };
-  inline GlobalUId get_global_unique_id_calculate() const { return get_global_unique_id_calculate(dof,get_MoFEMEntity_ptr()); }
+  // inline GlobalUId get_global_unique_id_calculate(const int dof) const { return get_global_unique_id_calculate(dof,get_MoFEMEntity_ptr()); }
 
   /** \brief get short uid it is unique in combination with entity handle
     *
@@ -94,20 +82,27 @@ struct DofEntity: public interface_MoFEMEntity<MoFEMEntity> {
     *
     */
   inline ShortId get_non_nonunique_short_id() const  { return short_uid; }
-  inline ShortId get_non_nonunique_short_id_calculate() const { return get_non_nonunique_short_id(dof,get_MoFEMEntity_ptr()); }
+
+  /**
+   * \brief Calculate short_uid
+   * @param  dof DOF number on the entity
+   * @return     short_uid
+   */
+  inline ShortId get_non_nonunique_short_id_calculate(const int dof) const { return get_non_nonunique_short_id(dof,get_MoFEMEntity_ptr()); }
+
   inline EntityHandle get_ent() const { return this->sPtr->get_ent(); };
   inline ApproximationOrder get_dof_order() const {
-    return ((ApproximationOrder*)this->sPtr->tag_dof_order_data)[dof];
+    return ((ApproximationOrder*)this->sPtr->tag_dof_order_data)[get_EntDofIdx()];
   };
 
   DEPRECATED inline FieldCoefficientsNumber get_dof_rank() const {
-    return ((FieldCoefficientsNumber*)this->sPtr->tag_dof_rank_data)[dof];
+    return ((FieldCoefficientsNumber*)this->sPtr->tag_dof_rank_data)[get_EntDofIdx()];
   };
 
   /** \brief Get dof coefficient
   */
   inline FieldCoefficientsNumber get_dof_coeff_idx() const {
-    return ((FieldCoefficientsNumber*)this->sPtr->tag_dof_rank_data)[dof];
+    return ((FieldCoefficientsNumber*)this->sPtr->tag_dof_rank_data)[get_EntDofIdx()];
   };
 
   //check if node is active
@@ -127,8 +122,8 @@ struct interface_DofEntity: public interface_MoFEMEntity<T> {
   interface_MoFEMEntity<T>(sptr) {
   };
 
-  inline const LocalUId& get_local_unique_id() const { return this->sPtr->get_local_unique_id(); }
-  inline const GlobalUId& get_global_unique_id() const { return this->sPtr->get_global_unique_id(); }
+  // inline const LocalUId& get_local_unique_id() const { return this->sPtr->get_local_unique_id(); }
+  inline const GlobalUId get_global_unique_id() const { return this->sPtr->get_global_unique_id(); }
   inline ShortId get_non_nonunique_short_id() const { return this->sPtr->get_non_nonunique_short_id(); }
   inline DofIdx get_EntDofIdx() const { return this->sPtr->get_EntDofIdx(); }
   inline FieldData& get_FieldData() const { return this->sPtr->get_FieldData(); }
@@ -251,7 +246,7 @@ typedef multi_index_container<
   indexed_by<
     //uniqe
     ordered_unique<
-      tag<Unique_mi_tag>, const_mem_fun<DofEntity,const GlobalUId&,&DofEntity::get_global_unique_id> >,
+      tag<Unique_mi_tag>, const_mem_fun<DofEntity,const GlobalUId,&DofEntity::get_global_unique_id> >,
     ordered_unique<
       tag<Composite_Ent_and_ShortId_mi_tag>,
         composite_key<
@@ -308,7 +303,8 @@ typedef multi_index_container<
   boost::shared_ptr<DofEntity>,
   indexed_by<
     ordered_unique<
-      member<DofEntity,const GlobalUId,&DofEntity::global_uid> >
+      const_mem_fun<DofEntity,const GlobalUId,&DofEntity::get_global_unique_id>
+    >
   > > DofEntity_multiIndex_uid_view;
 
 /** \brief multi-index view on DofEntity activity
@@ -318,7 +314,7 @@ typedef multi_index_container<
   boost::shared_ptr<DofEntity>,
   indexed_by<
     ordered_unique<
-      const_mem_fun<DofEntity,const GlobalUId&,&DofEntity::get_global_unique_id> >,
+      const_mem_fun<DofEntity,const GlobalUId,&DofEntity::get_global_unique_id> >,
     ordered_non_unique<
       const_mem_fun<DofEntity,char,&DofEntity::get_active> >
   > > DofEntity_multiIndex_active_view;
@@ -353,7 +349,7 @@ typedef multi_index_container<
   boost::shared_ptr<FEDofEntity>,
   indexed_by<
     ordered_unique<
-      tag<Unique_mi_tag>, const_mem_fun<FEDofEntity::interface_type_DofEntity,const GlobalUId&,&FEDofEntity::get_global_unique_id> >,
+      tag<Unique_mi_tag>, const_mem_fun<FEDofEntity::interface_type_DofEntity,const GlobalUId,&FEDofEntity::get_global_unique_id> >,
     ordered_non_unique<
       tag<Ent_mi_tag>, const_mem_fun<FEDofEntity::interface_type_DofEntity,EntityHandle,&FEDofEntity::get_ent> >,
     ordered_non_unique<
@@ -404,7 +400,7 @@ typedef multi_index_container<
   boost::shared_ptr<FENumeredDofEntity>,
   indexed_by<
     ordered_unique<
-      tag<Unique_mi_tag>, const_mem_fun<FENumeredDofEntity::interface_type_DofEntity,const GlobalUId&,&FENumeredDofEntity::get_global_unique_id> >,
+      tag<Unique_mi_tag>, const_mem_fun<FENumeredDofEntity::interface_type_DofEntity,const GlobalUId,&FENumeredDofEntity::get_global_unique_id> >,
     ordered_non_unique<
       tag<Ent_mi_tag>, const_mem_fun<FENumeredDofEntity::interface_type_DofEntity,EntityHandle,&FENumeredDofEntity::get_ent> >,
     ordered_non_unique<
@@ -449,7 +445,7 @@ typedef multi_index_container<
   indexed_by<
     ordered_unique<
       tag<Unique_mi_tag>,
-      const_mem_fun<NumeredDofEntity::interface_type_DofEntity,const GlobalUId&,&NumeredDofEntity::get_global_unique_id> >,
+      const_mem_fun<NumeredDofEntity::interface_type_DofEntity,const GlobalUId,&NumeredDofEntity::get_global_unique_id> >,
     ordered_non_unique<
       tag<Composite_Name_And_Ent_And_EndDofIdx_mi_tag>,
       composite_key<

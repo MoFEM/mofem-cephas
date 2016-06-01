@@ -60,6 +60,7 @@ struct Field {
   const void* tag_name_prefix_data; 	///< tag keeps name prefix of the field
   int tag_name_prefix_size; 		///< number of bits necessary to keep field name prefix
   FieldOrderTable forder_table;		///< nb. dofs table for entities
+  unsigned int bit_number;
 
   /**
     * \brief constructor for moab field
@@ -114,10 +115,18 @@ struct Field {
 
 
   /**
-    * \brief get number of set bit in Field ID.
+    * \brief Get number of set bit in Field ID.
     * Each field has uid, get get_bit_number get number of bit set for given field. Field ID has only one bit set for each field.
     */
   inline unsigned int get_bit_number() const {
+    return bit_number;
+  }
+
+  /**
+    * \brief Calculate number of set bit in Field ID.
+    * Each field has uid, get get_bit_number get number of bit set for given field. Field ID has only one bit set for each field.
+    */
+  inline unsigned int get_bit_number_calculate() const {
     int b = ffsl(((BitFieldId*)tag_id_data)->to_ulong());
     if(b != 0) return b;
     for(int ll = 1;ll<BITFIELDID_SIZE/32;ll++) {

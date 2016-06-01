@@ -454,8 +454,7 @@ struct MoFEMEntity:
   int tag_FieldData_size;
   const ApproximationOrder* tag_dof_order_data;
   const FieldCoefficientsNumber* tag_dof_rank_data;
-  LocalUId local_uid;
-  GlobalUId global_uid;
+  // GlobalUId global_uid;
   MoFEMEntity(
     Interface &moab,
     const boost::shared_ptr<Field> field_ptr,
@@ -476,18 +475,15 @@ struct MoFEMEntity:
   inline int get_order_nb_dofs_diff(int order) const { return get_order_nb_dofs(order)-get_order_nb_dofs(order-1); }
 
   inline ApproximationOrder get_max_order() const { return *((ApproximationOrder*)tag_order_data); }
-  const LocalUId& get_local_unique_id() const { return local_uid; }
-  LocalUId get_local_unique_id_calculate() const {
-    char bit_number = get_bit_number();
-    assert(bit_number<32);
-    LocalUId _uid_ = (UId)0;
-    _uid_ |= (UId)sPtr->ent;
-    _uid_ |= (UId)bit_number << 8*sizeof(EntityHandle);
-    return _uid_;
-  }
-  const GlobalUId& get_global_unique_id() const { return global_uid; }
-  GlobalUId get_global_unique_id_calculate() const {
-    char bit_number = get_bit_number();
+
+  GlobalUId get_global_unique_id() const { return get_global_unique_id_calculate(); }
+
+  /**
+   * \brief Calculate global UId
+   * @return Global UId
+   */
+  inline GlobalUId get_global_unique_id_calculate() const {
+    const char bit_number = get_bit_number();
     assert(bit_number<32);
     assert(sPtr->owner_proc<1024);
     GlobalUId _uid_ = (UId)0;
@@ -496,6 +492,7 @@ struct MoFEMEntity:
     _uid_ |= (UId)sPtr->owner_proc << 5+8*sizeof(EntityHandle);
     return _uid_;
   }
+
   friend std::ostream& operator<<(std::ostream& os,const MoFEMEntity& e);
 
   inline const boost::shared_ptr<RefEntity> get_RefEntity_ptr() {
@@ -531,8 +528,7 @@ interface_RefEntity<T> {
   inline int get_order_nb_dofs(int order) const { return this->sFieldPtr->get_order_nb_dofs(order); }
   inline int get_order_nb_dofs_diff(int order) const { return this->sPtr->get_order_nb_dofs_diff(order); }
   inline ApproximationOrder get_max_order() const { return this->sPtr->get_max_order(); }
-  inline const LocalUId& get_local_unique_id() const { return this->sPtr->get_local_unique_id(); }
-  inline const GlobalUId& get_global_unique_id() const { return this->sPtr->get_global_unique_id(); }
+  inline GlobalUId get_global_unique_id() const { return this->sPtr->get_global_unique_id(); }
 
   inline const boost::shared_ptr<MoFEMEntity> get_MoFEMEntity_ptr() const { return this->sPtr; };
   inline const boost::shared_ptr<RefEntity> get_RefEntity_ptr() {
@@ -570,7 +566,7 @@ typedef multi_index_container<
   boost::shared_ptr<MoFEMEntity>,
   indexed_by<
     ordered_unique<
-      tag<Unique_mi_tag>, member<MoFEMEntity,GlobalUId,&MoFEMEntity::global_uid> >,
+      tag<Unique_mi_tag>, const_mem_fun<MoFEMEntity,GlobalUId,&MoFEMEntity::get_global_unique_id> >,
     ordered_non_unique<
       tag<Ent_ParallelStatus>, const_mem_fun<MoFEMEntity::interface_type_RefEntity,unsigned char,&MoFEMEntity::get_pstatus> >,
     ordered_non_unique<

@@ -1813,7 +1813,15 @@ PetscErrorCode Core::build_finite_element_data_dofs(EntFiniteElement &ent_fe,int
     SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_FOUND,"fields not build");
   }
   FEDofEntity_multiIndex &data_dofs = const_cast<FEDofEntity_multiIndex&>(ent_fe.data_dofs);
-  data_dofs.clear(); //clear data dofs multi-index //FIXME should be cleaned when dofs are cleaned form datasets
+  for(FEDofEntity_multiIndex::iterator dit = data_dofs.begin();dit!=data_dofs.end();dit++) {
+    int use_count = dit->use_count();
+    if(use_count<=1) {
+      dit = data_dofs.erase(dit);
+      if(dit==data_dofs.end()) {
+        break;
+      }
+    }
+  }
 
   // Take only active dofs here, not all dofs ? That is the question.
   DofEntity_multiIndex_uid_view::iterator viit_data,hi_viit_data;
@@ -1821,7 +1829,8 @@ PetscErrorCode Core::build_finite_element_data_dofs(EntFiniteElement &ent_fe,int
   hi_viit_data = ent_fe.data_dof_view->end();
 
   unsigned int nb_inactive_dofs = 0;
-  //loops over active dofs only
+
+  // Loops over active dofs only
   unsigned int size = distance(viit_data,hi_viit_data);
   for(;viit_data!=hi_viit_data;viit_data++) {
     if(!(*viit_data)->get_active()) {
@@ -1836,13 +1845,15 @@ PetscErrorCode Core::build_finite_element_data_dofs(EntFiniteElement &ent_fe,int
         case L2:
         case NOFIELD:
         {
-          boost::shared_ptr<SideNumber> side_number_ptr = ent_fe.get_side_number_ptr(moab,(*viit_data)->get_ent());
-          //add dofs to finite element multi_index database
-          data_dofs.get<Unique_mi_tag>().insert(
-            data_dofs.end(),boost::shared_ptr<FEDofEntity>(
-              new FEDofEntity(side_number_ptr,*viit_data)
-            )
-          );
+          if(data_dofs.get<Unique_mi_tag>().find((*viit_data)->get_global_unique_id())==data_dofs.get<Unique_mi_tag>().end()) {
+            boost::shared_ptr<SideNumber> side_number_ptr = ent_fe.get_side_number_ptr(moab,(*viit_data)->get_ent());
+            //add dofs to finite element multi_index database
+            data_dofs.get<Unique_mi_tag>().insert(
+              data_dofs.end(),boost::shared_ptr<FEDofEntity>(
+                new FEDofEntity(side_number_ptr,*viit_data)
+              )
+            );
+          }
         }
         break;
         default:
@@ -1911,31 +1922,47 @@ PetscErrorCode Core::build_finite_element_uids_view(EntFiniteElement &ent_fe,int
   unsigned int nb_view_dofs[LAST];
   for(int ss = 0;ss<LAST;ss++) {
     if(!dofs_to_skip[ss]) {
-      dofs_view_list[ss]->clear();
+      // dofs_view_list[ss]->clear();
+      for(
+        DofEntity_multiIndex_uid_view::iterator dit = dofs_view_list[ss]->begin();
+        dit!=dofs_view_list[ss]->end();
+        dit++
+      ) {
+        int use_count = dit->use_count();
+        if(use_count<=1) {
+          // cerr << *(*dit) << cerr << endl;
+          // cerr << "AAAAA " << use_count << endl;
+          // SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"Just testing");
+          dit = dofs_view_list[ss]->erase(dit);
+          if(dit==dofs_view_list[ss]->end()) {
+            break;
+          }
+        }
+      }
     }
     nb_view_dofs[ss] = 0;
   }
 
-  //lopp over all fields in database
+  // Lopp over all fields in database
   for(unsigned int ii = 0;ii<BitFieldId().size();ii++) {
-    // common field id for ROW, COL and DATA
+    // Common field id for ROW, COL and DATA
     BitFieldId id_common = 0;
-    // check if the field (ii) is added to finite element
+    // Check if the field (ii) is added to finite element
     for(int ss = 0;ss<LAST;ss++) {
       if(dofs_to_skip[ss]) continue;
       id_common |= fe_fields[ss]&BitFieldId().set(ii);
     }
     if( id_common.none() ) continue;
-    // find in database data associated with the field (ii)
+    // Find in database data associated with the field (ii)
     field_by_id::iterator miit = fields_by_id.find(BitFieldId().set(ii));
     if(miit==fields_by_id.end()) {
       SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
     }
-    // resolve entities on element, those entities are used to build tag with dof
+    // Resolve entities on element, those entities are used to build tag with dof
     // uids on finite element tag
     ierr = ent_fe.get_element_adjacency(moab,*miit,adj_ents); CHKERRQ(ierr);
-    //loop over adjacent to finite entities, and find dofs on those entities
-    //this part is to build dofs_view_list
+    // Loop over adjacent to finite entities, and find dofs on those entities
+    // this part is to build dofs_view_list
     Range::iterator eit2 = adj_ents.begin();
     for(;eit2!=adj_ents.end();eit2++) {
 
@@ -1963,20 +1990,22 @@ PetscErrorCode Core::build_finite_element_uids_view(EntFiniteElement &ent_fe,int
         ss << "element entity " << std::endl << **ref_ent_miit << std::endl;
         SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,ss.str().c_str());
       }
-      dof_set_type::iterator ents_miit2 = dof_set.lower_bound(
-        boost::make_tuple((*miit)->get_name_ref(),(*ref_ent_miit)->get_ref_ent())
-      );
-      dof_set_type::iterator ents_hi_miit2 = dof_set.upper_bound(
-        boost::make_tuple((*miit)->get_name_ref(),(*ref_ent_miit)->get_ref_ent())
-      );
+      const boost::tuple<boost::string_ref,EntityHandle> tuple
+      = boost::make_tuple((*miit)->get_name_ref(),(*ref_ent_miit)->get_ref_ent());
+      dof_set_type::iterator ents_miit2 = dof_set.lower_bound(tuple);
+      if(ents_miit2 == dof_set.end()) continue;
+      dof_set_type::iterator ents_hi_miit2 = dof_set.upper_bound(tuple);
       for(int ss = 0;ss<LAST;ss++) {
         if( !(fe_fields[ss].test(ii)) ) continue;
         dof_set_type::iterator ents_miit3 = ents_miit2;
-        for(;ents_miit3!=ents_hi_miit2;ents_miit3++) {
-          if(!dofs_to_skip[ss]) {
-            dofs_view_list[ss]->insert(*ents_miit3);
+        if(!dofs_to_skip[ss]) {
+          for(;ents_miit3!=ents_hi_miit2;ents_miit3++) {
+            std::pair<DofEntity_multiIndex_uid_view::iterator,bool> p;
+            p = dofs_view_list[ss]->insert(*ents_miit3);
+            nb_view_dofs[ss]++;
           }
-          nb_view_dofs[ss]++;
+        } else {
+          nb_view_dofs[ss] = dofs_view_list[ss]->size();
         }
       }
 

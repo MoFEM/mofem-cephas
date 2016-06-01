@@ -42,10 +42,10 @@ DofEntity::DofEntity(
   const boost::shared_ptr<MoFEMEntity> entity_ptr,
   const ApproximationOrder dof_order,
   const FieldCoefficientsNumber dof_rank,
-  const DofIdx _dof
+  const DofIdx dof
 ):
 interface_MoFEMEntity<MoFEMEntity>(entity_ptr),
-dof(_dof),
+// dof(_dof),
 active(false) {
 
   if(!entity_ptr) {
@@ -77,9 +77,7 @@ active(false) {
   assert(sFieldPtr->tag_dof_rank_data!=NULL);
   ((ApproximationOrder*)sFieldPtr->tag_dof_order_data)[dof] = dof_order;
   ((FieldCoefficientsNumber*)sFieldPtr->tag_dof_rank_data)[dof] = dof_rank;
-  local_uid = get_local_unique_id_calculate();
-  global_uid = get_global_unique_id_calculate();
-  short_uid = get_non_nonunique_short_id_calculate();
+  short_uid = get_non_nonunique_short_id_calculate(dof);
 
 }
 
@@ -87,7 +85,7 @@ std::ostream& operator<<(std::ostream& os,const DofEntity& e) {
   os << "dof_uid " << e.get_global_unique_id()
   << " dof_order " << e.get_dof_order()
   << " dof_rank " << e.get_dof_coeff_idx()
-  << " dof " << e.dof
+  << " dof " << e.get_EntDofIdx()
   << " active " << e.active
   << " " << *(e.sFieldPtr);
   return os;

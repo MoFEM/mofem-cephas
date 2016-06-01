@@ -39,6 +39,8 @@ namespace MoFEM {
   typedef UId GlobalUId; ///< Global unique id
   typedef int ShortId;
 
+  #define UID_DOF_MAK 0x1FF
+
   typedef std::bitset<BITREFEDGES_SIZE> BitRefEdges;
   typedef std::bitset<BITREFLEVEL_SIZE> BitRefLevel;
   typedef std::bitset<BITFIELDID_SIZE> BitFieldId;
