@@ -33,29 +33,21 @@ struct DofEntity: public interface_MoFEMEntity<MoFEMEntity> {
   typedef interface_MoFEMEntity<MoFEMEntity> interface_type_MoFEMEntity;
   typedef interface_RefEntity<MoFEMEntity> interface_type_RefEntity;
 
-  // static LocalUId get_local_unique_id_calculate(const DofIdx _dof_,const boost::shared_ptr<MoFEMEntity> ent_ptr) {
-  //   if(_dof_>=512) THROW_MESSAGE("_dof>=512");
-  //   LocalUId _uid_ = ((UId)_dof_)|((ent_ptr->get_local_unique_id())<<9);
-  //   return _uid_;
-  // }
-
-  static GlobalUId get_global_unique_id_calculate(const DofIdx _dof_,const boost::shared_ptr<MoFEMEntity> ent_ptr) {
-    if(_dof_>=512) THROW_MESSAGE("_dof>=512");
-    GlobalUId _uid_ = ((UId)_dof_)|((ent_ptr->get_global_unique_id())<<9);
+  static inline GlobalUId get_global_unique_id_calculate(const DofIdx dof,const boost::shared_ptr<MoFEMEntity> ent_ptr) {
+    if(dof>=512) THROW_MESSAGE("_dof>=512");
+    GlobalUId _uid_ = ((UId)dof)|((ent_ptr->get_global_unique_id())<<9);
     return _uid_;
   }
 
-  static ShortId get_non_nonunique_short_id(const DofIdx _dof_,const boost::shared_ptr<MoFEMEntity> ent_ptr) {
-    if(_dof_>=512) THROW_MESSAGE("_dof>=512")
+  static inline ShortId get_non_nonunique_short_id(const DofIdx dof,const boost::shared_ptr<MoFEMEntity> ent_ptr) {
+    if(dof>=512) THROW_MESSAGE("_dof>=512")
     if(sizeof(ShortId) < sizeof(char)+2) THROW_MESSAGE("sizeof(ShortId)< sizeof(char)+2")
     char bit_number = ent_ptr->get_bit_number();
-    ShortId _uid_ = ((ShortId)_dof_)|(((ShortId)bit_number)<<9);
+    ShortId _uid_ = ((ShortId)dof)|(((ShortId)bit_number)<<9);
     return _uid_;
   }
 
-  // DofIdx dof;
   bool active;
-  // LocalUId local_uid;
   GlobalUId global_uid;
   ShortId short_uid;
 
@@ -69,13 +61,10 @@ struct DofEntity: public interface_MoFEMEntity<MoFEMEntity> {
   inline DofIdx get_EntDofIdx() const { return (DofIdx)(short_uid&UID_DOF_MAK); }
   inline FieldData& get_FieldData() const { return const_cast<FieldData&>(this->sPtr->tag_FieldData[get_EntDofIdx()]); }
 
-  /** \brief unique dof id
+  /** \brief Get unique dof id
     */
-  // inline const LocalUId& get_local_unique_id() const { return local_uid; };
-  // inline LocalUId get_local_unique_id_calculate() const { return get_local_unique_id_calculate(dof,get_MoFEMEntity_ptr()); }
-
   inline const GlobalUId& get_global_unique_id() const { return global_uid; };
-  // inline GlobalUId get_global_unique_id() const { return global_uid; };
+
   inline GlobalUId get_global_unique_id_calculate(const int dof) const { return get_global_unique_id_calculate(dof,get_MoFEMEntity_ptr()); }
 
   /** \brief get short uid it is unique in combination with entity handle
@@ -94,7 +83,14 @@ struct DofEntity: public interface_MoFEMEntity<MoFEMEntity> {
     *
     */
   inline ShortId get_non_nonunique_short_id() const  { return short_uid; }
+
+  /**
+   * \brief Calculate short_uid
+   * @param  dof DOF number on the entity
+   * @return     short_uid
+   */
   inline ShortId get_non_nonunique_short_id_calculate(const int dof) const { return get_non_nonunique_short_id(dof,get_MoFEMEntity_ptr()); }
+
   inline EntityHandle get_ent() const { return this->sPtr->get_ent(); };
   inline ApproximationOrder get_dof_order() const {
     return ((ApproximationOrder*)this->sPtr->tag_dof_order_data)[get_EntDofIdx()];

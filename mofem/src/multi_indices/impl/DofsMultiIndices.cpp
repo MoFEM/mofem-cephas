@@ -77,7 +77,6 @@ active(false) {
   assert(sFieldPtr->tag_dof_rank_data!=NULL);
   ((ApproximationOrder*)sFieldPtr->tag_dof_order_data)[dof] = dof_order;
   ((FieldCoefficientsNumber*)sFieldPtr->tag_dof_rank_data)[dof] = dof_rank;
-  // local_uid = get_local_unique_id_calculate();
   global_uid = get_global_unique_id_calculate(dof);
   short_uid = get_non_nonunique_short_id_calculate(dof);
 
