@@ -53,7 +53,7 @@ struct DofEntity: public interface_MoFEMEntity<MoFEMEntity> {
     return _uid_;
   }
 
-  DofIdx dof;
+  // DofIdx dof;
   bool active;
   // LocalUId local_uid;
   GlobalUId global_uid;
@@ -63,11 +63,11 @@ struct DofEntity: public interface_MoFEMEntity<MoFEMEntity> {
     const boost::shared_ptr<MoFEMEntity> entity_ptr,
     const ApproximationOrder dof_order,
     const FieldCoefficientsNumber dof_rank,
-    const DofIdx _dof
+    const DofIdx dof
   );
 
-  inline DofIdx get_EntDofIdx() const { return dof; }
-  inline FieldData& get_FieldData() const { return const_cast<FieldData&>(this->sPtr->tag_FieldData[dof]); }
+  inline DofIdx get_EntDofIdx() const { return (DofIdx)(short_uid&UID_DOF_MAK); }
+  inline FieldData& get_FieldData() const { return const_cast<FieldData&>(this->sPtr->tag_FieldData[get_EntDofIdx()]); }
 
   /** \brief unique dof id
     */
@@ -76,7 +76,7 @@ struct DofEntity: public interface_MoFEMEntity<MoFEMEntity> {
 
   inline const GlobalUId& get_global_unique_id() const { return global_uid; };
   // inline GlobalUId get_global_unique_id() const { return global_uid; };
-  inline GlobalUId get_global_unique_id_calculate() const { return get_global_unique_id_calculate(dof,get_MoFEMEntity_ptr()); }
+  inline GlobalUId get_global_unique_id_calculate(const int dof) const { return get_global_unique_id_calculate(dof,get_MoFEMEntity_ptr()); }
 
   /** \brief get short uid it is unique in combination with entity handle
     *
@@ -94,20 +94,20 @@ struct DofEntity: public interface_MoFEMEntity<MoFEMEntity> {
     *
     */
   inline ShortId get_non_nonunique_short_id() const  { return short_uid; }
-  inline ShortId get_non_nonunique_short_id_calculate() const { return get_non_nonunique_short_id(dof,get_MoFEMEntity_ptr()); }
+  inline ShortId get_non_nonunique_short_id_calculate(const int dof) const { return get_non_nonunique_short_id(dof,get_MoFEMEntity_ptr()); }
   inline EntityHandle get_ent() const { return this->sPtr->get_ent(); };
   inline ApproximationOrder get_dof_order() const {
-    return ((ApproximationOrder*)this->sPtr->tag_dof_order_data)[dof];
+    return ((ApproximationOrder*)this->sPtr->tag_dof_order_data)[get_EntDofIdx()];
   };
 
   DEPRECATED inline FieldCoefficientsNumber get_dof_rank() const {
-    return ((FieldCoefficientsNumber*)this->sPtr->tag_dof_rank_data)[dof];
+    return ((FieldCoefficientsNumber*)this->sPtr->tag_dof_rank_data)[get_EntDofIdx()];
   };
 
   /** \brief Get dof coefficient
   */
   inline FieldCoefficientsNumber get_dof_coeff_idx() const {
-    return ((FieldCoefficientsNumber*)this->sPtr->tag_dof_rank_data)[dof];
+    return ((FieldCoefficientsNumber*)this->sPtr->tag_dof_rank_data)[get_EntDofIdx()];
   };
 
   //check if node is active
