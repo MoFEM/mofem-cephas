@@ -33,11 +33,11 @@ struct DofEntity: public interface_MoFEMEntity<MoFEMEntity> {
   typedef interface_MoFEMEntity<MoFEMEntity> interface_type_MoFEMEntity;
   typedef interface_RefEntity<MoFEMEntity> interface_type_RefEntity;
 
-  static LocalUId get_local_unique_id_calculate(const DofIdx _dof_,const boost::shared_ptr<MoFEMEntity> ent_ptr) {
-    if(_dof_>=512) THROW_MESSAGE("_dof>=512");
-    LocalUId _uid_ = ((UId)_dof_)|((ent_ptr->get_local_unique_id())<<9);
-    return _uid_;
-  }
+  // static LocalUId get_local_unique_id_calculate(const DofIdx _dof_,const boost::shared_ptr<MoFEMEntity> ent_ptr) {
+  //   if(_dof_>=512) THROW_MESSAGE("_dof>=512");
+  //   LocalUId _uid_ = ((UId)_dof_)|((ent_ptr->get_local_unique_id())<<9);
+  //   return _uid_;
+  // }
 
   static GlobalUId get_global_unique_id_calculate(const DofIdx _dof_,const boost::shared_ptr<MoFEMEntity> ent_ptr) {
     if(_dof_>=512) THROW_MESSAGE("_dof>=512");
@@ -55,7 +55,7 @@ struct DofEntity: public interface_MoFEMEntity<MoFEMEntity> {
 
   DofIdx dof;
   bool active;
-  LocalUId local_uid;
+  // LocalUId local_uid;
   GlobalUId global_uid;
   ShortId short_uid;
 
@@ -71,8 +71,8 @@ struct DofEntity: public interface_MoFEMEntity<MoFEMEntity> {
 
   /** \brief unique dof id
     */
-  inline const LocalUId& get_local_unique_id() const { return local_uid; };
-  inline LocalUId get_local_unique_id_calculate() const { return get_local_unique_id_calculate(dof,get_MoFEMEntity_ptr()); }
+  // inline const LocalUId& get_local_unique_id() const { return local_uid; };
+  // inline LocalUId get_local_unique_id_calculate() const { return get_local_unique_id_calculate(dof,get_MoFEMEntity_ptr()); }
 
   inline const GlobalUId& get_global_unique_id() const { return global_uid; };
   // inline GlobalUId get_global_unique_id() const { return global_uid; };
@@ -127,7 +127,7 @@ struct interface_DofEntity: public interface_MoFEMEntity<T> {
   interface_MoFEMEntity<T>(sptr) {
   };
 
-  inline const LocalUId& get_local_unique_id() const { return this->sPtr->get_local_unique_id(); }
+  // inline const LocalUId& get_local_unique_id() const { return this->sPtr->get_local_unique_id(); }
   inline const GlobalUId& get_global_unique_id() const { return this->sPtr->get_global_unique_id(); }
   inline ShortId get_non_nonunique_short_id() const { return this->sPtr->get_non_nonunique_short_id(); }
   inline DofIdx get_EntDofIdx() const { return this->sPtr->get_EntDofIdx(); }
