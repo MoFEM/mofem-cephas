@@ -95,6 +95,7 @@ tag_name_size(0) {
   //dof rank
   std::string Tag_dof_rank_name = "_Field_Dof_Rank_"+get_name();
   rval = moab.tag_get_handle(Tag_dof_rank_name.c_str(),th_DofRank); MOAB_THROW(rval);
+  bit_number = get_bit_number_calculate();
   for(int tt = 0;tt<MBMAXTYPE;tt++) {
     forder_table[tt] = NULL;
   }

@@ -454,7 +454,6 @@ struct MoFEMEntity:
   int tag_FieldData_size;
   const ApproximationOrder* tag_dof_order_data;
   const FieldCoefficientsNumber* tag_dof_rank_data;
-  // LocalUId local_uid;
   GlobalUId global_uid;
   MoFEMEntity(
     Interface &moab,
@@ -476,17 +475,14 @@ struct MoFEMEntity:
   inline int get_order_nb_dofs_diff(int order) const { return get_order_nb_dofs(order)-get_order_nb_dofs(order-1); }
 
   inline ApproximationOrder get_max_order() const { return *((ApproximationOrder*)tag_order_data); }
-  // const LocalUId& get_local_unique_id() const { return local_uid; }
-  // LocalUId get_local_unique_id_calculate() const {
-  //   char bit_number = get_bit_number();
-  //   assert(bit_number<32);
-  //   LocalUId _uid_ = (UId)0;
-  //   _uid_ |= (UId)sPtr->ent;
-  //   _uid_ |= (UId)bit_number << 8*sizeof(EntityHandle);
-  //   return _uid_;
-  // }
+
   const GlobalUId& get_global_unique_id() const { return global_uid; }
-  GlobalUId get_global_unique_id_calculate() const {
+
+  /**
+   * \brief Calculate global UId
+   * @return Global UId
+   */
+  inline GlobalUId get_global_unique_id_calculate() const {
     char bit_number = get_bit_number();
     assert(bit_number<32);
     assert(sPtr->owner_proc<1024);
@@ -496,6 +492,7 @@ struct MoFEMEntity:
     _uid_ |= (UId)sPtr->owner_proc << 5+8*sizeof(EntityHandle);
     return _uid_;
   }
+
   friend std::ostream& operator<<(std::ostream& os,const MoFEMEntity& e);
 
   inline const boost::shared_ptr<RefEntity> get_RefEntity_ptr() {
