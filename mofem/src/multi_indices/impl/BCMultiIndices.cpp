@@ -238,7 +238,7 @@ PetscErrorCode CubitMeshSets::print_block_header_data(std::ostream& os) const {
     PetscFunctionReturn(0);
 }
 
-std::string CubitMeshSets::get_name() const {
+std::string CubitMeshSets::getName() const {
   if(tag_name_data!=NULL) {
     return std::string(tag_name_data);
   } else {
@@ -248,7 +248,7 @@ std::string CubitMeshSets::get_name() const {
 
 PetscErrorCode CubitMeshSets::print_name(std::ostream& os) const {
     PetscFunctionBegin;
-    std::string name = get_name();
+    std::string name = getName();
     os << std::endl;
     os << "Block name:  " << name << std::endl;
     PetscFunctionReturn(0);
@@ -356,7 +356,7 @@ PetscErrorCode CubitMeshSets::get_type_from_name(const std::string &name,CubitBC
 PetscErrorCode CubitMeshSets::get_type_from_name(CubitBCType &type) const {
     PetscFunctionBegin;
     PetscErrorCode ierr;
-    std::string name = get_name();
+    std::string name = getName();
     ierr = get_type_from_name(name,type); CHKERRQ(ierr);
     PetscFunctionReturn(0);
 }
@@ -365,7 +365,7 @@ std::ostream& operator<<(std::ostream& os,const CubitMeshSets& e) {
   os << "meshset " << e.meshset << " type " << e.cubitBcType;
   if(e.msId != NULL) os << " msId " << *(e.msId);
   if(e.tag_name_data!=NULL) {
-    os << " name " << e.get_name();
+    os << " name " << e.getName();
   }
   if(e.tag_block_header_data != NULL) {
     os << " block header: ";

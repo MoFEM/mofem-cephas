@@ -271,7 +271,7 @@ struct Core: public FieldInterface, MeshRefinment, PrismInterface, SeriesRecorde
         rval = moab.get_entities_by_type(it->meshset,MBTRI,tris,true); CHKERRQ_MOAB(rval);
         rval = moab.get_entities_by_type(it->meshset,MBEDGE,edges,true); CHKERRQ_MOAB(rval);
         rval = moab.get_entities_by_type(it->meshset,MBVERTEX,nodes,true); CHKERRQ_MOAB(rval);
-        ss << "name "<< it->get_name() << std::endl;
+        ss << "name "<< it->getName() << std::endl;
         ss << "msId "<< it->get_msId() << " nb. tets " << tets.size() << std::endl;
         ss << "msId "<< it->get_msId() << " nb. tris " << tris.size() << std::endl;
         ss << "msId "<< it->get_msId() << " nb. edges " << edges.size() << std::endl;

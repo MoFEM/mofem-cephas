@@ -136,10 +136,10 @@ std::ostream& operator<<(std::ostream& os,const RefEntity& e) {
   os << " pstatus "<< std::bitset<8>(e.getPStatus());
   os << " owner ent " << e.getOwnerEnt();
   os << " owner proc " << e.getOwnerProc();
-  os << " parent ent " << e.get_parent_ent();
-  //os << " BitRefLevel " << e.get_BitRefLevel();
+  os << " parent ent " << e.getParentEnt();
+  //os << " BitRefLevel " << e.getBitRefLevel();
   os << " ent type " << e.getEntType();
-  os << " ent parent type " << e.get_parent_ent_type();
+  os << " ent parent type " << e.getParentEntType();
   return os;
 }
 
@@ -156,7 +156,7 @@ tag_FieldData_size(0),
 tag_dof_order_data(NULL),
 tag_dof_rank_data(NULL) {
   MoABErrorCode rval;
-  EntityHandle ent = get_ent();
+  EntityHandle ent = getEnt();
   moab::Interface &moab = ref_ent_ptr->basicDataPtr->moab;
   rval = moab.tag_get_by_ptr(field_ptr->th_FieldData,&ent,1,(const void **)&tag_FieldData,&tag_FieldData_size);
   if(rval == MB_SUCCESS) {
@@ -168,15 +168,15 @@ tag_dof_rank_data(NULL) {
       assert(tag_size[0]/sizeof(FieldCoefficientsNumber) == tag_FieldData_size/sizeof(FieldData));
     }
   }
-  global_uid = get_global_unique_id_calculate();
+  global_uid = getGlobalUniqueIdCalculate();
 }
 
-ApproximationOrder* MoFEMEntity::get_max_order_ptr() {
+ApproximationOrder* MoFEMEntity::getMaxOrderPtr() {
   return (ApproximationOrder*)MoFEM::get_tag_ptr(
     dynamic_cast<moab::Core*>(&sFieldPtr->moab)->sequence_manager(),sFieldPtr->th_AppOrder,sPtr->ent,NULL
   );
 }
-ApproximationOrder MoFEMEntity::get_max_order() const {
+ApproximationOrder MoFEMEntity::getMaxOrder() const {
   return *(ApproximationOrder*)MoFEM::get_tag_ptr(
     dynamic_cast<moab::Core*>(&sFieldPtr->moab)->sequence_manager(),sFieldPtr->th_AppOrder,sPtr->ent,NULL
   );
@@ -185,20 +185,20 @@ ApproximationOrder MoFEMEntity::get_max_order() const {
 
 MoFEMEntity::~MoFEMEntity() {}
 std::ostream& operator<<(std::ostream& os,const MoFEMEntity& e) {
-  os << "ent_global_uid " << (UId)e.get_global_unique_id()
+  os << "ent_global_uid " << (UId)e.getGlobalUniqueId()
     // << " ent_local_uid " << (UId)e.get_local_unique_id()
-    << " entity "<< e.get_ent() << " type " << e.getEntType()
+    << " entity "<< e.getEnt() << " type " << e.getEntType()
     << " pstatus "<< std::bitset<8>(e.getPStatus()) << " owner handle " << e.getOwnerEnt() << " owner proc " << e.getOwnerProc()
-    << " order "<<e.get_max_order()<<" "<< *e.sFieldPtr;
+    << " order "<<e.getMaxOrder()<<" "<< *e.sFieldPtr;
   return os;
 }
 void MoFEMEntity_change_order::operator()(boost::shared_ptr<MoFEMEntity> &e) {
   MoABErrorCode rval;
   moab::Interface &moab = e->sPtr->basicDataPtr->moab;
-  int nb_dofs = e->get_order_nb_dofs(order)*e->get_nb_of_coeffs();
-  ApproximationOrder& ent_order = *(e->get_max_order_ptr());
+  int nb_dofs = e->getOrderNbDofs(order)*e->getNbOfCoeffs();
+  ApproximationOrder& ent_order = *(e->getMaxOrderPtr());
   ent_order = order;
-  EntityHandle ent = e->get_ent();
+  EntityHandle ent = e->getEnt();
   rval = moab.tag_get_by_ptr(e->sFieldPtr->th_FieldData,&ent,1,(const void **)&e->tag_FieldData,&e->tag_FieldData_size);
   if(rval == MB_SUCCESS) {
     //data

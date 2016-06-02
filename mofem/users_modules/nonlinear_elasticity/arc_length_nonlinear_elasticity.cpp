@@ -324,7 +324,7 @@ int main(int argc, char *argv[]) {
 
   Range node_set;
   for(_IT_CUBITMESHSETS_BY_NAME_FOR_LOOP_(m_field,"LoadPath",cit)) {
-    EntityHandle meshset = cit->get_meshset();
+    EntityHandle meshset = cit->getMeshSet();
     Range nodes;
     rval = moab.get_entities_by_type(meshset,MBVERTEX,nodes,true); MOAB_THROW(rval);
     node_set.merge(nodes);
@@ -415,7 +415,7 @@ int main(int argc, char *argv[]) {
         hi_dit = numered_dofs_rows->get<Ent_mi_tag>().upper_bound(*nit);
         for(;dit!=hi_dit;dit++) {
           PetscPrintf(PETSC_COMM_WORLD,"%s [ %d ] %6.4e -> ","LAMBDA",0,arcPtr->getFieldData());
-          PetscPrintf(PETSC_COMM_WORLD,"%s [ %d ] %6.4e\n",dit->get()->get_name().c_str(),dit->get()->get_dof_coeff_idx(),dit->get()->get_FieldData());
+          PetscPrintf(PETSC_COMM_WORLD,"%s [ %d ] %6.4e\n",dit->get()->getName().c_str(),dit->get()->get_dof_coeff_idx(),dit->get()->get_FieldData());
         }
       }
       PetscFunctionReturn(0);

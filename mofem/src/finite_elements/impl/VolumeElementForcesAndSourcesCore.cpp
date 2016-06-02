@@ -172,7 +172,7 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::setIntegartionPts() {
 
 PetscErrorCode VolumeElementForcesAndSourcesCore::calculateVolumeAndJacobian() {
   PetscFunctionBegin;
-  EntityHandle ent = numeredEntFiniteElementPtr->get_ent();
+  EntityHandle ent = numeredEntFiniteElementPtr->getEnt();
   rval = mField.get_moab().get_connectivity(ent,conn,num_nodes,true); CHKERRQ_MOAB(rval);
   rval = mField.get_moab().get_coords(conn,num_nodes,&*coords.data().begin()); CHKERRQ_MOAB(rval);
   double diff_n[12];
@@ -362,7 +362,7 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::operator()() {
       dataPtr->get<FieldName_mi_tag>().end()
     ) {
       const Field* field_struture = mField.get_field_structure(meshPositionsFieldName);
-      BitFieldId id = field_struture->get_id();
+      BitFieldId id = field_struture->getId();
 
       if((numeredEntFiniteElementPtr->get_BitFieldId_data()&id).none()) {
         SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_FOUND,"no MESH_NODE_POSITIONS in element data");
@@ -451,7 +451,7 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::operator()() {
 
         std::string field_name = !ss ? oit->rowFieldName : oit->colFieldName;
         const Field* field_struture = mField.get_field_structure(field_name);
-        BitFieldId data_id = field_struture->get_id();
+        BitFieldId data_id = field_struture->getId();
 
         if((oit->getNumeredEntFiniteElementPtr()->get_BitFieldId_data()&data_id).none()) {
           SETERRQ2(
@@ -462,7 +462,7 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::operator()() {
 
         if(oit->getOpType()&types[ss] || oit->getOpType()&UserDataOperator::OPROWCOL) {
 
-          space[ss] = field_struture->get_space();
+          space[ss] = field_struture->getSpace();
           switch(space[ss]) {
             case NOSPACE:
             SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"unknown space");
@@ -487,7 +487,7 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::operator()() {
             break;
           }
 
-          base[ss] = field_struture->get_approx_base();
+          base[ss] = field_struture->getApproxBase();
           switch(base[ss]) {
             case AINSWORTH_COLE_BASE:
             break;

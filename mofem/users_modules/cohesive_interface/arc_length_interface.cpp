@@ -68,7 +68,7 @@ struct ArcLengthElement: public ArcLengthIntElemFEMethod {
   mField(m_field) {
 
     for(_IT_CUBITMESHSETS_BY_NAME_FOR_LOOP_(mField,"LoadPath",cit)) {
-      EntityHandle meshset = cit->get_meshset();
+      EntityHandle meshset = cit->getMeshSet();
       Range nodes;
       rval = mOab.get_entities_by_type(meshset,MBVERTEX,nodes,true); MOAB_THROW(rval);
       PostProcNodes.merge(nodes);
@@ -94,8 +94,8 @@ struct ArcLengthElement: public ArcLengthIntElemFEMethod {
       double coords[3];
       rval = mOab.get_coords(&*nit,1,coords);  MOAB_THROW(rval);
       for(;dit!=hi_dit;dit++) {
-        PetscPrintf(PETSC_COMM_WORLD,"%s [ %d ] %6.4e -> ",lit->get()->get_name().c_str(),lit->get()->get_dof_coeff_idx(),lit->get()->get_FieldData());
-        PetscPrintf(PETSC_COMM_WORLD,"%s [ %d ] %6.4e ",dit->get()->get_name().c_str(),dit->get()->get_dof_coeff_idx(),dit->get()->get_FieldData());
+        PetscPrintf(PETSC_COMM_WORLD,"%s [ %d ] %6.4e -> ",lit->get()->getName().c_str(),lit->get()->get_dof_coeff_idx(),lit->get()->get_FieldData());
+        PetscPrintf(PETSC_COMM_WORLD,"%s [ %d ] %6.4e ",dit->get()->getName().c_str(),dit->get()->get_dof_coeff_idx(),dit->get()->get_FieldData());
         PetscPrintf(PETSC_COMM_WORLD,"-> %3.4f %3.4f %3.4f\n",coords[0],coords[1],coords[2]);
         if (dit->get()->get_dof_coeff_idx()==0) {//print displacement and load factor in x-dir
           PetscFPrintf(PETSC_COMM_WORLD,datafile,"%6.4e %6.4e ",dit->get()->get_FieldData(),lit->get()->get_FieldData());
@@ -270,7 +270,7 @@ int main(int argc, char *argv[]) {
     for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,SIDESET|INTERFACESET,cit)) {
     //for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,SIDESET,cit)) {
       ierr = PetscPrintf(PETSC_COMM_WORLD,"Insert Interface %d\n",cit->get_msId()); CHKERRQ(ierr);
-      EntityHandle cubit_meshset = cit->get_meshset();
+      EntityHandle cubit_meshset = cit->getMeshSet();
       {
         //get tet enties form back bit_level
         EntityHandle ref_level_meshset = 0;
@@ -481,7 +481,7 @@ int main(int argc, char *argv[]) {
     cout << std::endl << *it << std::endl;
 
     //Get block name
-    string name = it->get_name();
+    string name = it->getName();
 
     if (name.compare(0,11,"MAT_ELASTIC") == 0) {
       Mat_Elastic mydata;
@@ -501,7 +501,7 @@ int main(int argc, char *argv[]) {
       interface_materials.back().ft = mydata.data.ft;
       interface_materials.back().Gf = mydata.data.Gf;
 
-      EntityHandle meshset = it->get_meshset();
+      EntityHandle meshset = it->getMeshSet();
       Range tris;
       rval = moab.get_entities_by_type(meshset,MBTRI,tris,true); CHKERRQ_MOAB(rval);
       Range ents3d;

@@ -254,9 +254,9 @@ std::ostream& operator<<(std::ostream& os,const DataForcesAndSurcesCore &e) {
 
 template<>
 FTensor::Tensor1<double*,3> DataForcesAndSurcesCore::EntData::getFTensor1FieldData<3>() {
-  if(dOfs[0]->get_nb_of_coeffs()!=3) {
+  if(dOfs[0]->getNbOfCoeffs()!=3) {
     std::stringstream s;
-    s << "Wrong number of coefficents is " << dOfs[0]->get_nb_of_coeffs();
+    s << "Wrong number of coefficents is " << dOfs[0]->getNbOfCoeffs();
     s << " but you ask for tensor rank 1 dimension 3";
     THROW_MESSAGE(s.str());
   }
@@ -266,9 +266,9 @@ FTensor::Tensor1<double*,3> DataForcesAndSurcesCore::EntData::getFTensor1FieldDa
 
 template<>
 FTensor::Tensor1<double*,2> DataForcesAndSurcesCore::EntData::getFTensor1FieldData<2>() {
-  if(dOfs[0]->get_nb_of_coeffs()!=2) {
+  if(dOfs[0]->getNbOfCoeffs()!=2) {
     std::stringstream s;
-    s << "Wrong number of coefficents is " << dOfs[0]->get_nb_of_coeffs();
+    s << "Wrong number of coefficents is " << dOfs[0]->getNbOfCoeffs();
     s << " but you ask for tensor rank 1 dimension 3";
     THROW_MESSAGE(s.str());
   }
@@ -277,9 +277,9 @@ FTensor::Tensor1<double*,2> DataForcesAndSurcesCore::EntData::getFTensor1FieldDa
 }
 
 FTensor::Tensor0<double*> DataForcesAndSurcesCore::EntData::getFTensor0FieldData() {
-  if(dOfs[0]->get_nb_of_coeffs()!=1) {
+  if(dOfs[0]->getNbOfCoeffs()!=1) {
     std::stringstream s;
-    s << "Wrong number of coefficents is " << dOfs[0]->get_nb_of_coeffs();
+    s << "Wrong number of coefficents is " << dOfs[0]->getNbOfCoeffs();
     s << " but expected scalar field, tensor of rank 0";
     THROW_MESSAGE(s.str());
   }

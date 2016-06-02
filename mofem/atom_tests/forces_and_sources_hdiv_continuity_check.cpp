@@ -285,7 +285,7 @@ int main(int argc, char *argv[]) {
 
       if(type != MBTRI) PetscFunctionReturn(0);
 
-      EntityHandle face = getNumeredEntFiniteElementPtr()->get_ent();
+      EntityHandle face = getNumeredEntFiniteElementPtr()->getEnt();
 
       double *t_ptr;
       rval = m_field.get_moab().tag_get_by_ptr(tH1,&face,1,(const void **)&t_ptr); CHKERRQ_MOAB(rval);
@@ -332,7 +332,7 @@ int main(int argc, char *argv[]) {
 
       if(type != MBTRI) PetscFunctionReturn(0);
 
-      EntityHandle face = getNumeredEntFiniteElementPtr()->get_ent();
+      EntityHandle face = getNumeredEntFiniteElementPtr()->getEnt();
 
       double *t_ptr;
       rval = m_field.get_moab().tag_get_by_ptr(tH1,&face,1,(const void **)&t_ptr); CHKERRQ_MOAB(rval);

@@ -77,9 +77,9 @@ numered_dofs_cols(boost::shared_ptr<NumeredDofEntity_multiIndex>(new NumeredDofE
 }
 
 std::ostream& operator<<(std::ostream& os,const MoFEMProblem& e) {
-  os << "problem id " << e.get_id()
+  os << "problem id " << e.getId()
     << " FiniteElement id " << e.get_BitFEId()
-    << " name "<<e.get_name();
+    << " name "<<e.getName();
   return os;
 }
 

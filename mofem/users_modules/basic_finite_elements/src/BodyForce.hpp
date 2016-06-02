@@ -62,13 +62,13 @@ struct BodyFroceConstantField {
       PetscFunctionBegin;
 
       if(data.getIndices().size()==0) PetscFunctionReturn(0);
-      if(blockTets.find(getNumeredEntFiniteElementPtr()->get_ent())==blockTets.end()) PetscFunctionReturn(0);
+      if(blockTets.find(getNumeredEntFiniteElementPtr()->getEnt())==blockTets.end()) PetscFunctionReturn(0);
 
       PetscErrorCode ierr;
 
       const FENumeredDofEntity *dof_ptr;
       ierr = getNumeredEntFiniteElementPtr()->get_row_dofs_by_petsc_gloabl_dof_idx(data.getIndices()[0],&dof_ptr); CHKERRQ(ierr);
-      int rank = dof_ptr->get_nb_of_coeffs();
+      int rank = dof_ptr->getNbOfCoeffs();
 
       int nb_row_dofs = data.getIndices().size()/rank;
 
@@ -121,7 +121,7 @@ struct BodyFroceConstantField {
     const CubitMeshSets *cubit_meshset_ptr;
     ierr = mField.get_cubit_msId(ms_id,BLOCKSET,&cubit_meshset_ptr); CHKERRQ(ierr);
     ierr = cubit_meshset_ptr->get_attribute_data_structure(mapData[ms_id]); CHKERRQ(ierr);
-    EntityHandle meshset = cubit_meshset_ptr->get_meshset();
+    EntityHandle meshset = cubit_meshset_ptr->getMeshSet();
     Range tets;
     rval = mField.get_moab().get_entities_by_type(meshset,MBTET,tets,true); CHKERRQ_MOAB(rval);
     fe.getOpPtrVector().push_back(new OpBodyForce(field_name,F,mapData[ms_id],tets));

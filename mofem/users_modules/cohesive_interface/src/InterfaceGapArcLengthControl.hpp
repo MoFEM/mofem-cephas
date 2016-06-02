@@ -128,10 +128,10 @@ struct ArcLengthIntElemFEMethod: public FEMethod {
     for(;dit!=hi_dit;dit++) {
       if(dit->get()->getEntType() != MBVERTEX) continue;
       if(pcomm->rank() != dit->get()->get_part()) continue;
-      if(Nodes3.find(dit->get()->get_ent())!=Nodes3.end()) {
+      if(Nodes3.find(dit->get()->getEnt())!=Nodes3.end()) {
         array_int_lambda[0] += array[dit->get()->petsc_local_dof_idx];
       }
-      if(Nodes4.find(dit->get()->get_ent())!=Nodes4.end()) {
+      if(Nodes4.find(dit->get()->getEnt())!=Nodes4.end()) {
         array_int_lambda[0] -= array[dit->get()->petsc_local_dof_idx];
       }
     }
@@ -170,9 +170,9 @@ struct ArcLengthIntElemFEMethod: public FEMethod {
         array[dit->get()->petsc_local_dof_idx] = 0;
         continue;
       }
-      if(Nodes3.find(dit->get()->get_ent())!=Nodes3.end()) {
+      if(Nodes3.find(dit->get()->getEnt())!=Nodes3.end()) {
         array[dit->get()->petsc_local_dof_idx] = +arcPtr->alpha;
-      } else if(Nodes4.find(dit->get()->get_ent())!=Nodes4.end()) {
+      } else if(Nodes4.find(dit->get()->getEnt())!=Nodes4.end()) {
         array[dit->get()->petsc_local_dof_idx] = -arcPtr->alpha;
       } else array[dit->get()->petsc_local_dof_idx] = 0;
     }

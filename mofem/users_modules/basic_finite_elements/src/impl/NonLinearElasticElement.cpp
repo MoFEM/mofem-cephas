@@ -146,7 +146,7 @@ PetscErrorCode NonlinearElasticElement::OpGetDataAtGaussPts::doWork(
       PetscFunctionReturn(0);
     }
     int nb_gauss_pts = data.getN().size1();
-    int rank = data.getFieldDofs()[0]->get_nb_of_coeffs();
+    int rank = data.getFieldDofs()[0]->getNbOfCoeffs();
 
     //initialize
     if(type == zeroAtType) {
@@ -248,7 +248,7 @@ PetscErrorCode NonlinearElasticElement::OpJacobianPiolaKirchhoffStress::doWork(
   if(row_type != MBVERTEX) PetscFunctionReturn(0);
 
   PetscErrorCode ierr;
-  if(dAta.tEts.find(getNumeredEntFiniteElementPtr()->get_ent()) == dAta.tEts.end()) {
+  if(dAta.tEts.find(getNumeredEntFiniteElementPtr()->getEnt()) == dAta.tEts.end()) {
     PetscFunctionReturn(0);
   }
 
@@ -421,7 +421,7 @@ PetscErrorCode NonlinearElasticElement::OpRhsPiolaKirchhoff::aSemble(
     ublas::vector<const FEDofEntity*>& dofs = row_data.getFieldDofs();
     ublas::vector<const FEDofEntity*>::iterator dit = dofs.begin();
     for(int ii = 0;dit!=dofs.end();dit++,ii++) {
-      if(dAta.forcesOnlyOnEntitiesRow.find((*dit)->get_ent())==dAta.forcesOnlyOnEntitiesRow.end()) {
+      if(dAta.forcesOnlyOnEntitiesRow.find((*dit)->getEnt())==dAta.forcesOnlyOnEntitiesRow.end()) {
         iNdices[ii] = -1;
       }
     }
@@ -444,7 +444,7 @@ PetscErrorCode NonlinearElasticElement::OpRhsPiolaKirchhoff::doWork(
   PetscFunctionBegin;
 
   PetscErrorCode ierr;
-  if(dAta.tEts.find(getNumeredEntFiniteElementPtr()->get_ent()) == dAta.tEts.end()) {
+  if(dAta.tEts.find(getNumeredEntFiniteElementPtr()->getEnt()) == dAta.tEts.end()) {
     PetscFunctionReturn(0);
   }
   if(row_data.getIndices().size()==0) PetscFunctionReturn(0);
@@ -505,7 +505,7 @@ PetscErrorCode NonlinearElasticElement::OpEnergy::doWork(
 
   PetscErrorCode ierr;
   if(row_type != MBVERTEX) PetscFunctionReturn(0);
-  if(dAta.tEts.find(getNumeredEntFiniteElementPtr()->get_ent()) == dAta.tEts.end()) {
+  if(dAta.tEts.find(getNumeredEntFiniteElementPtr()->getEnt()) == dAta.tEts.end()) {
     PetscFunctionReturn(0);
   }
 
@@ -601,7 +601,7 @@ PetscErrorCode NonlinearElasticElement::OpLhsPiolaKirchhoff_dx::aSemble(
     ublas::vector<const FEDofEntity*>& dofs = row_data.getFieldDofs();
     ublas::vector<const FEDofEntity*>::iterator dit = dofs.begin();
     for(int ii = 0;dit!=dofs.end();dit++,ii++) {
-      if(dAta.forcesOnlyOnEntitiesRow.find((*dit)->get_ent())==dAta.forcesOnlyOnEntitiesRow.end()) {
+      if(dAta.forcesOnlyOnEntitiesRow.find((*dit)->getEnt())==dAta.forcesOnlyOnEntitiesRow.end()) {
         rowIndices[ii] = -1;
       }
     }
@@ -614,7 +614,7 @@ PetscErrorCode NonlinearElasticElement::OpLhsPiolaKirchhoff_dx::aSemble(
     ublas::vector<const FEDofEntity*>& dofs = col_data.getFieldDofs();
     ublas::vector<const FEDofEntity*>::iterator dit = dofs.begin();
     for(int ii = 0;dit!=dofs.end();dit++,ii++) {
-      if(dAta.forcesOnlyOnEntitiesCol.find((*dit)->get_ent())==dAta.forcesOnlyOnEntitiesCol.end()) {
+      if(dAta.forcesOnlyOnEntitiesCol.find((*dit)->getEnt())==dAta.forcesOnlyOnEntitiesCol.end()) {
         colIndices[ii] = -1;
       }
     }
@@ -640,7 +640,7 @@ PetscErrorCode NonlinearElasticElement::OpLhsPiolaKirchhoff_dx::aSemble(
       ublas::vector<const FEDofEntity*>& dofs = row_data.getFieldDofs();
       ublas::vector<const FEDofEntity*>::iterator dit = dofs.begin();
       for(int ii = 0;dit!=dofs.end();dit++,ii++) {
-        if(dAta.forcesOnlyOnEntitiesCol.find((*dit)->get_ent())==dAta.forcesOnlyOnEntitiesCol.end()) {
+        if(dAta.forcesOnlyOnEntitiesCol.find((*dit)->getEnt())==dAta.forcesOnlyOnEntitiesCol.end()) {
           rowIndices[ii] = -1;
         }
       }
@@ -653,7 +653,7 @@ PetscErrorCode NonlinearElasticElement::OpLhsPiolaKirchhoff_dx::aSemble(
       ublas::vector<const FEDofEntity*>& dofs = col_data.getFieldDofs();
       ublas::vector<const FEDofEntity*>::iterator dit = dofs.begin();
       for(int ii = 0;dit!=dofs.end();dit++,ii++) {
-        if(dAta.forcesOnlyOnEntitiesRow.find((*dit)->get_ent())==dAta.forcesOnlyOnEntitiesRow.end()) {
+        if(dAta.forcesOnlyOnEntitiesRow.find((*dit)->getEnt())==dAta.forcesOnlyOnEntitiesRow.end()) {
           colIndices[ii] = -1;
         }
       }
@@ -687,7 +687,7 @@ PetscErrorCode NonlinearElasticElement::OpLhsPiolaKirchhoff_dx::doWork(
   if(nb_row == 0) PetscFunctionReturn(0);
   if(nb_col == 0) PetscFunctionReturn(0);
 
-  if(dAta.tEts.find(getNumeredEntFiniteElementPtr()->get_ent()) == dAta.tEts.end()) {
+  if(dAta.tEts.find(getNumeredEntFiniteElementPtr()->getEnt()) == dAta.tEts.end()) {
     PetscFunctionReturn(0);
   }
 
@@ -725,7 +725,7 @@ PetscErrorCode NonlinearElasticElement::OpLhsPiolaKirchhoff_dx::doWork(
 
     }
 
-    //std::cerr << "N " << getNumeredEntFiniteElementPtr()->get_ref_ent() << std::endl << k << std::endl;
+    //std::cerr << "N " << getNumeredEntFiniteElementPtr()->getRefEnt() << std::endl << k << std::endl;
     ierr = aSemble(row_side,col_side,row_type,col_type,row_data,col_data); CHKERRQ(ierr);
 
   } catch (const std::exception& ex) {
@@ -779,7 +779,7 @@ PetscErrorCode NonlinearElasticElement::OpLhsPiolaKirchhoff_dX::aSemble(
     ublas::vector<const FEDofEntity*>& dofs = row_data.getFieldDofs();
     ublas::vector<const FEDofEntity*>::iterator dit = dofs.begin();
     for(int ii = 0;dit!=dofs.end();dit++,ii++) {
-      if(dAta.forcesOnlyOnEntitiesRow.find((*dit)->get_ent())==dAta.forcesOnlyOnEntitiesRow.end()) {
+      if(dAta.forcesOnlyOnEntitiesRow.find((*dit)->getEnt())==dAta.forcesOnlyOnEntitiesRow.end()) {
         rowIndices[ii] = -1;
       }
     }
@@ -793,7 +793,7 @@ PetscErrorCode NonlinearElasticElement::OpLhsPiolaKirchhoff_dX::aSemble(
     ublas::vector<const FEDofEntity*>& dofs = col_data.getFieldDofs();
     ublas::vector<const FEDofEntity*>::iterator dit = dofs.begin();
     for(int ii = 0;dit!=dofs.end();dit++,ii++) {
-      if(dAta.forcesOnlyOnEntitiesCol.find((*dit)->get_ent())==dAta.forcesOnlyOnEntitiesCol.end()) {
+      if(dAta.forcesOnlyOnEntitiesCol.find((*dit)->getEnt())==dAta.forcesOnlyOnEntitiesCol.end()) {
         colIndices[ii] = -1;
       }
     }
@@ -917,7 +917,7 @@ PetscErrorCode NonlinearElasticElement::setBlocks(
     Mat_Elastic mydata;
     ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
     int id = it->get_msId();
-    EntityHandle meshset = it->get_meshset();
+    EntityHandle meshset = it->getMeshSet();
     rval = mField.get_moab().get_entities_by_type(meshset,MBTET,setOfBlocks[id].tEts,true); CHKERRQ_MOAB(rval);
     setOfBlocks[id].iD = id;
     setOfBlocks[id].E = mydata.data.Young;

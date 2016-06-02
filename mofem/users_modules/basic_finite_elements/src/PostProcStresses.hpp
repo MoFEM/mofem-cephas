@@ -61,7 +61,7 @@ struct PostPorcStress: public VolumeElementForcesAndSourcesCore::UserDataOperato
 
     if(type != MBVERTEX) PetscFunctionReturn(0);
     if(data.getIndices().size()==0) PetscFunctionReturn(0);
-    if(dAta.tEts.find(getNumeredEntFiniteElementPtr()->get_ent()) == dAta.tEts.end()) {
+    if(dAta.tEts.find(getNumeredEntFiniteElementPtr()->getEnt()) == dAta.tEts.end()) {
       PetscFunctionReturn(0);
     }
 
@@ -82,8 +82,8 @@ struct PostPorcStress: public VolumeElementForcesAndSourcesCore::UserDataOperato
       rval = postProcMesh.tag_set_data(th_id,&*tit,1,&id);  CHKERRQ_MOAB(rval);
     }
 
-    string tag_name_piola1 = dof_ptr->get_name()+"_PIOLA1_STRESS";
-    string tag_name_energy = dof_ptr->get_name()+"_ENERGY_DENSITY";
+    string tag_name_piola1 = dof_ptr->getName()+"_PIOLA1_STRESS";
+    string tag_name_energy = dof_ptr->getName()+"_ENERGY_DENSITY";
 
     int tag_length = 9;
     double def_VAL[tag_length];

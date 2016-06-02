@@ -97,12 +97,12 @@ struct FluidPressure {
       int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
       PetscFunctionBegin;
       if(data.getIndices().size()==0) PetscFunctionReturn(0);
-      EntityHandle ent = getNumeredEntFiniteElementPtr()->get_ent();
+      EntityHandle ent = getNumeredEntFiniteElementPtr()->getEnt();
       if(dAta.tRis.find(ent)==dAta.tRis.end()) PetscFunctionReturn(0);
 
       const FENumeredDofEntity *dof_ptr;
       ierr = getNumeredEntFiniteElementPtr()->get_row_dofs_by_petsc_gloabl_dof_idx(data.getIndices()[0],&dof_ptr); CHKERRQ(ierr);
-      int rank = dof_ptr->get_nb_of_coeffs();
+      int rank = dof_ptr->getNbOfCoeffs();
       int nb_row_dofs = data.getIndices().size()/rank;
 
       Nf.resize(data.getIndices().size());
@@ -202,7 +202,7 @@ struct FluidPressure {
     // loop over all blocksets and get data which name is FluidPressure
     for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BLOCKSET,bit)) {
 
-      if(bit->get_name().compare(0,14,"FLUID_PRESSURE") == 0) {
+      if(bit->getName().compare(0,14,"FLUID_PRESSURE") == 0) {
 
         //get block attributes
         std::vector<double> attributes;

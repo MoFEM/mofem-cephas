@@ -157,23 +157,23 @@ typedef multi_index_container<
   ptrWrapperRefElement,
   indexed_by<
     hashed_unique<
-      tag<Ent_mi_tag>, const_mem_fun<ptrWrapperRefElement::interface_type_RefEntity,EntityHandle,&ptrWrapperRefElement::get_ref_ent> >,
+      tag<Ent_mi_tag>, const_mem_fun<ptrWrapperRefElement::interface_type_RefEntity,EntityHandle,&ptrWrapperRefElement::getRefEnt> >,
     ordered_non_unique<
-      tag<Ent_Ent_mi_tag>, const_mem_fun<ptrWrapperRefElement::interface_type_RefEntity,EntityHandle,&ptrWrapperRefElement::get_parent_ent> >,
+      tag<Ent_Ent_mi_tag>, const_mem_fun<ptrWrapperRefElement::interface_type_RefEntity,EntityHandle,&ptrWrapperRefElement::getParentEnt> >,
     ordered_non_unique<
       tag<EntType_mi_tag>, const_mem_fun<ptrWrapperRefElement::interface_type_RefEntity,EntityType,&ptrWrapperRefElement::getEntType> >,
     ordered_non_unique<
       tag<Composite_ParentEnt_And_BitsOfRefinedEdges_mi_tag>,
       composite_key<
 	ptrWrapperRefElement,
-	const_mem_fun<ptrWrapperRefElement::interface_type_RefEntity,EntityHandle,&ptrWrapperRefElement::get_parent_ent>,
+	const_mem_fun<ptrWrapperRefElement::interface_type_RefEntity,EntityHandle,&ptrWrapperRefElement::getParentEnt>,
 	const_mem_fun<ptrWrapperRefElement::interface_type_RefElement,int,&ptrWrapperRefElement::get_BitRefEdges_ulong> > >,
     hashed_unique<
       tag<Composite_EntType_and_ParentEntType_mi_tag>,
       composite_key<
 	ptrWrapperRefElement,
-	const_mem_fun<ptrWrapperRefElement::interface_type_RefEntity,EntityHandle,&ptrWrapperRefElement::get_ref_ent>,
-	const_mem_fun<ptrWrapperRefElement::interface_type_RefEntity,EntityHandle,&ptrWrapperRefElement::get_parent_ent> > >
+	const_mem_fun<ptrWrapperRefElement::interface_type_RefEntity,EntityHandle,&ptrWrapperRefElement::getRefEnt>,
+	const_mem_fun<ptrWrapperRefElement::interface_type_RefEntity,EntityHandle,&ptrWrapperRefElement::getParentEnt> > >
   > > RefElement_multiIndex;
 
 /** \brief change parent
@@ -231,12 +231,12 @@ struct FiniteElement {
   BitFieldId* tag_BitFieldId_row_data;  ///< tag stores row id_id for fields
   BitFieldId* tag_BitFieldId_data;      ///< tag stores data id_id for fields
   FiniteElement(Interface &moab,const EntityHandle _meshset);
-  inline BitFEId get_id() const { return *tag_id_data; };
+  inline BitFEId getId() const { return *tag_id_data; };
   /// get meshset
-  inline EntityHandle get_meshset() const { return meshset; }
+  inline EntityHandle getMeshSet() const { return meshset; }
   /// get FE name
-  inline boost::string_ref get_name_ref() const { return boost::string_ref((char *)tag_name_data,tag_name_size); }
-  inline std::string get_name() const { return std::string((char *)tag_name_data,tag_name_size); }
+  inline boost::string_ref getNameRef() const { return boost::string_ref((char *)tag_name_data,tag_name_size); }
+  inline std::string getName() const { return std::string((char *)tag_name_data,tag_name_size); }
   /// get BitFieldId col
   inline BitFieldId get_BitFieldId_col() const { return *((BitFieldId*)tag_BitFieldId_col_data); }
   /// get BitFieldId row
@@ -244,7 +244,7 @@ struct FiniteElement {
   /// get BitFieldId data
   inline BitFieldId get_BitFieldId_data() const { return *((BitFieldId*)tag_BitFieldId_data); }
   /// get bit number
-  inline unsigned int get_bit_number() const { return ffsl(((BitFieldId*)tag_id_data)->to_ulong()); }
+  inline unsigned int getBitNumber() const { return ffsl(((BitFieldId*)tag_id_data)->to_ulong()); }
 
   ElementAdjacencyTable element_adjacency_table;  //<- allow to add user specific adjacency map
 
@@ -290,14 +290,14 @@ struct interface_FiniteElement {
 
   inline const boost::shared_ptr<FiniteElement> get_MoFEMFiniteElementPtr() { return this->sFePtr; };
 
-  inline BitFEId get_id() const { return this->sFePtr->get_id(); }
-  inline EntityHandle get_meshset() const { return this->sFePtr->get_meshset(); }
-  inline boost::string_ref get_name_ref() const { return this->sFePtr->get_name_ref(); }
-  inline std::string get_name() const { return this->sFePtr->get_name(); }
+  inline BitFEId getId() const { return this->sFePtr->getId(); }
+  inline EntityHandle getMeshSet() const { return this->sFePtr->getMeshSet(); }
+  inline boost::string_ref getNameRef() const { return this->sFePtr->getNameRef(); }
+  inline std::string getName() const { return this->sFePtr->getName(); }
   inline BitFieldId get_BitFieldId_col() const { return this->sFePtr->get_BitFieldId_col(); }
   inline BitFieldId get_BitFieldId_row() const { return this->sFePtr->get_BitFieldId_row(); }
   inline BitFieldId get_BitFieldId_data() const { return this->sFePtr->get_BitFieldId_data(); }
-  inline unsigned int get_bit_number() const { return this->sFePtr->get_bit_number(); }
+  inline unsigned int getBitNumber() const { return this->sFePtr->getBitNumber(); }
 
 };
 
@@ -324,14 +324,15 @@ interface_RefElement<RefElement> {
     const boost::shared_ptr<FiniteElement> fe_ptr
   );
 
-  const GlobalUId& get_global_unique_id() const { return global_uid; }
-  GlobalUId get_global_unique_id_calculate() const {
-    char bit_number = get_bit_number();
+  const GlobalUId& getGlobalUniqueId() const { return global_uid; }
+  GlobalUId getGlobalUniqueIdCalculate() const {
+    char bit_number = getBitNumber();
     assert(bit_number<=32);
-    GlobalUId _uid_ = (sPtr->get_ref_ent())|(((GlobalUId)bit_number)<<(8*sizeof(EntityHandle)));
+    GlobalUId _uid_ = (sPtr->getRefEnt())|(((GlobalUId)bit_number)<<(8*sizeof(EntityHandle)));
     return _uid_;
   }
-  inline EntityHandle get_ent() const { return get_ref_ent(); }
+  inline EntityHandle getEnt() const { return getRefEnt(); }
+  DEPRECATED inline EntityHandle get_ent() const { return getRefEnt(); }
   inline DofIdx get_nb_dofs_row() const { return row_dof_view->size(); }
   inline DofIdx get_nb_dofs_col() const { return col_dof_view->size(); }
   inline DofIdx get_nb_dofs_data() const { return data_dof_view->size(); }
@@ -406,8 +407,9 @@ interface_RefElement<T> {
   inline DofIdx get_nb_dofs_row() const { return this->sPtr->get_nb_dofs_row(); }
   inline DofIdx get_nb_dofs_col() const { return this->sPtr->get_nb_dofs_col(); }
   inline DofIdx get_nb_dofs_data() const { return this->sPtr->get_nb_dofs_data(); }
-  inline EntityHandle get_ent() const { return this->sPtr->get_ref_ent(); };
-  inline GlobalUId get_global_unique_id() const { return this->sPtr->get_global_unique_id(); }
+  inline EntityHandle getEnt() const { return this->sPtr->getRefEnt(); }
+  DEPRECATED inline EntityHandle get_ent() const { return getEnt(); }
+  inline GlobalUId getGlobalUniqueId() const { return this->sPtr->getGlobalUniqueId(); }
   //
   SideNumber_multiIndex &get_side_number_table() const { return this->sPtr->get_side_number_table(); }
   boost::shared_ptr<SideNumber> get_side_number_ptr(Interface &moab,EntityHandle ent) const {
@@ -545,19 +547,19 @@ typedef multi_index_container<
     ordered_unique<
       tag<Unique_mi_tag>, member<EntFiniteElement,GlobalUId,&EntFiniteElement::global_uid> >,
     ordered_non_unique<
-      tag<Ent_mi_tag>, const_mem_fun<EntFiniteElement,EntityHandle,&EntFiniteElement::get_ent> >,
+      tag<Ent_mi_tag>, const_mem_fun<EntFiniteElement,EntityHandle,&EntFiniteElement::getEnt> >,
     ordered_non_unique<
-      tag<FiniteElement_name_mi_tag>, const_mem_fun<EntFiniteElement::interface_type_MoFEMFiniteElement,boost::string_ref,&EntFiniteElement::get_name_ref> >,
+      tag<FiniteElement_name_mi_tag>, const_mem_fun<EntFiniteElement::interface_type_MoFEMFiniteElement,boost::string_ref,&EntFiniteElement::getNameRef> >,
     ordered_non_unique<
-      tag<BitFEId_mi_tag>, const_mem_fun<EntFiniteElement::interface_type_MoFEMFiniteElement,BitFEId,&EntFiniteElement::get_id>, LtBit<BitFEId> >,
+      tag<BitFEId_mi_tag>, const_mem_fun<EntFiniteElement::interface_type_MoFEMFiniteElement,BitFEId,&EntFiniteElement::getId>, LtBit<BitFEId> >,
     ordered_non_unique<
       tag<EntType_mi_tag>, const_mem_fun<EntFiniteElement::interface_type_RefEntity,EntityType,&EntFiniteElement::getEntType> >,
     ordered_non_unique<
       tag<Composite_Name_And_Ent_mi_tag>,
       composite_key<
 	EntFiniteElement,
-	const_mem_fun<EntFiniteElement::interface_type_MoFEMFiniteElement,boost::string_ref,&EntFiniteElement::get_name_ref>,
-	const_mem_fun<EntFiniteElement,EntityHandle,&EntFiniteElement::get_ent> > >
+	const_mem_fun<EntFiniteElement::interface_type_MoFEMFiniteElement,boost::string_ref,&EntFiniteElement::getNameRef>,
+	const_mem_fun<EntFiniteElement,EntityHandle,&EntFiniteElement::getEnt> > >
   > > EntFiniteElement_multiIndex;
 
 /**
@@ -569,26 +571,26 @@ typedef multi_index_container<
   boost::shared_ptr<NumeredEntFiniteElement>,
   indexed_by<
     ordered_unique<
-      tag<Unique_mi_tag>, const_mem_fun<NumeredEntFiniteElement::interface_type_EntFiniteElement,GlobalUId,&NumeredEntFiniteElement::get_global_unique_id> >,
+      tag<Unique_mi_tag>, const_mem_fun<NumeredEntFiniteElement::interface_type_EntFiniteElement,GlobalUId,&NumeredEntFiniteElement::getGlobalUniqueId> >,
     ordered_non_unique<
       tag<Part_mi_tag>, member<NumeredEntFiniteElement,unsigned int,&NumeredEntFiniteElement::part> >,
     ordered_non_unique<
-      tag<FiniteElement_name_mi_tag>, const_mem_fun<NumeredEntFiniteElement::interface_type_MoFEMFiniteElement,boost::string_ref,&NumeredEntFiniteElement::get_name_ref> >,
+      tag<FiniteElement_name_mi_tag>, const_mem_fun<NumeredEntFiniteElement::interface_type_MoFEMFiniteElement,boost::string_ref,&NumeredEntFiniteElement::getNameRef> >,
     ordered_non_unique<
       tag<FiniteElement_Part_mi_tag>, member<NumeredEntFiniteElement,unsigned int,&NumeredEntFiniteElement::part> >,
     ordered_non_unique<
-      tag<Ent_mi_tag>, const_mem_fun<NumeredEntFiniteElement::interface_type_EntFiniteElement,EntityHandle,&NumeredEntFiniteElement::get_ent> >,
+      tag<Ent_mi_tag>, const_mem_fun<NumeredEntFiniteElement::interface_type_EntFiniteElement,EntityHandle,&NumeredEntFiniteElement::getEnt> >,
     ordered_non_unique<
       tag<Composite_Name_And_Ent_mi_tag>,
       composite_key<
       NumeredEntFiniteElement,
-      const_mem_fun<NumeredEntFiniteElement::interface_type_MoFEMFiniteElement,boost::string_ref,&NumeredEntFiniteElement::get_name_ref>,
-      const_mem_fun<NumeredEntFiniteElement::interface_type_EntFiniteElement,EntityHandle,&NumeredEntFiniteElement::get_ent> > >,
+      const_mem_fun<NumeredEntFiniteElement::interface_type_MoFEMFiniteElement,boost::string_ref,&NumeredEntFiniteElement::getNameRef>,
+      const_mem_fun<NumeredEntFiniteElement::interface_type_EntFiniteElement,EntityHandle,&NumeredEntFiniteElement::getEnt> > >,
     ordered_non_unique<
       tag<Composite_Name_And_Part_mi_tag>,
       composite_key<
       NumeredEntFiniteElement,
-      const_mem_fun<NumeredEntFiniteElement::interface_type_MoFEMFiniteElement,boost::string_ref,&NumeredEntFiniteElement::get_name_ref>,
+      const_mem_fun<NumeredEntFiniteElement::interface_type_MoFEMFiniteElement,boost::string_ref,&NumeredEntFiniteElement::getNameRef>,
       member<NumeredEntFiniteElement,unsigned int,&NumeredEntFiniteElement::part> > >
   > > NumeredEntFiniteElement_multiIndex;
 
@@ -603,9 +605,9 @@ typedef multi_index_container<
     hashed_unique<
       tag<FiniteElement_Meshset_mi_tag>, member<FiniteElement,EntityHandle,&FiniteElement::meshset> >,
     hashed_unique<
-      tag<BitFEId_mi_tag>, const_mem_fun<FiniteElement,BitFEId,&FiniteElement::get_id>, HashBit<BitFEId>, EqBit<BitFEId> >,
+      tag<BitFEId_mi_tag>, const_mem_fun<FiniteElement,BitFEId,&FiniteElement::getId>, HashBit<BitFEId>, EqBit<BitFEId> >,
     ordered_unique<
-      tag<FiniteElement_name_mi_tag>, const_mem_fun<FiniteElement,boost::string_ref,&FiniteElement::get_name_ref> >
+      tag<FiniteElement_name_mi_tag>, const_mem_fun<FiniteElement,boost::string_ref,&FiniteElement::getNameRef> >
   > > FiniteElement_multiIndex;
 
 // modificators

@@ -72,7 +72,7 @@ PetscErrorCode VertexElementForcesAndSourcesCore::operator()() {
 
   if(numeredEntFiniteElementPtr->getEntType() != MBVERTEX) PetscFunctionReturn(0);
 
-  EntityHandle ent = numeredEntFiniteElementPtr->get_ent();
+  EntityHandle ent = numeredEntFiniteElementPtr->getEnt();
   coords.resize(3,false);
   rval = mField.get_moab().get_coords(&ent,1,&*coords.data().begin()); CHKERRQ_MOAB(rval);
 
@@ -94,7 +94,7 @@ PetscErrorCode VertexElementForcesAndSourcesCore::operator()() {
     for(int ss = 0;ss!=2;ss++) {
 
       std::string field_name = !ss ? oit->rowFieldName : oit->colFieldName;
-      BitFieldId data_id = mField.get_field_structure(field_name)->get_id();
+      BitFieldId data_id = mField.get_field_structure(field_name)->getId();
       if((oit->getNumeredEntFiniteElementPtr()->get_BitFieldId_data()&data_id).none()) {
         SETERRQ2(
           PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"no data field < %s > on finite element < %s >",
@@ -104,7 +104,7 @@ PetscErrorCode VertexElementForcesAndSourcesCore::operator()() {
 
       if(oit->getOpType()&types[ss] || oit->getOpType()&UserDataOperator::OPROWCOL) {
 
-        space[ss] = mField.get_field_structure(field_name)->get_space();
+        space[ss] = mField.get_field_structure(field_name)->getSpace();
 
         switch(space[ss]) {
           case NOSPACE:

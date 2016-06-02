@@ -45,23 +45,23 @@ MoFEMSeries::MoFEMSeries(Interface &moab,const EntityHandle _meshset):
   const int def_val_len = 0;
 
   //time
-  std::string Tag_SeriesTime = "_SeriesTime_"+get_name();
+  std::string Tag_SeriesTime = "_SeriesTime_"+getName();
   double def_time = 0;
   rval = moab.tag_get_handle(Tag_SeriesTime.c_str(),1,MB_TYPE_DOUBLE,
     th_SeriesTime,MB_TAG_CREAT|MB_TAG_SPARSE,&def_time); MOAB_THROW(rval);
 
   //handles
-  std::string Tag_DataHandles_SeriesName = "_SeriesDataHandles_"+get_name();
+  std::string Tag_DataHandles_SeriesName = "_SeriesDataHandles_"+getName();
   rval = moab.tag_get_handle(Tag_DataHandles_SeriesName.c_str(),def_val_len,MB_TYPE_HANDLE,
     th_SeriesDataHandles,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_VARLEN,NULL); MOAB_THROW(rval);
 
   //uids
-  std::string Tag_DataUIDs_SeriesName = "_SeriesDataUIDs_"+get_name();
+  std::string Tag_DataUIDs_SeriesName = "_SeriesDataUIDs_"+getName();
   rval = moab.tag_get_handle(Tag_DataUIDs_SeriesName.c_str(),def_val_len,MB_TYPE_OPAQUE,
     th_SeriesDataUIDs,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES|MB_TAG_VARLEN,NULL); MOAB_THROW(rval);
 
   //data
-  std::string Tag_Data_SeriesName = "_SeriesData_"+get_name();
+  std::string Tag_Data_SeriesName = "_SeriesData_"+getName();
   rval = moab.tag_get_handle(Tag_Data_SeriesName.c_str(),def_val_len,MB_TYPE_OPAQUE,
     th_SeriesData,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES|MB_TAG_VARLEN,NULL); MOAB_THROW(rval);
 
@@ -300,7 +300,7 @@ PetscErrorCode MoFEMSeriesStep::get_time_init(Interface &moab) {
 }
 
 std::ostream& operator<<(std::ostream& os,const MoFEMSeries& e) {
-  os << "name " << e.get_name() << " meshset " << e.get_meshset();
+  os << "name " << e.getName() << " meshset " << e.getMeshSet();
   return os;
 }
 
