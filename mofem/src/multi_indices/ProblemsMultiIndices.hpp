@@ -405,7 +405,7 @@ struct MoFEMProblem {
   inline DofIdx get_nb_local_dofs_col() const { return *((DofIdx*)tag_local_nbdof_data_col); }
   inline DofIdx get_nb_ghost_dofs_row() const { return *((DofIdx*)tag_ghost_nbdof_data_row); }
   inline DofIdx get_nb_ghost_dofs_col() const { return *((DofIdx*)tag_ghost_nbdof_data_col); }
-  inline BitRefLevel get_BitRefLevel() const { return *tag_BitRefLevel; }
+  inline BitRefLevel getBitRefLevel() const { return *tag_BitRefLevel; }
   inline BitRefLevel get_DofMask_BitRefLevel() const { return *tag_BitRefLevel_DofMask; }
   PetscErrorCode get_row_dofs_by_petsc_gloabl_dof_idx(DofIdx idx,const NumeredDofEntity **dof_ptr) const;
   PetscErrorCode get_col_dofs_by_petsc_gloabl_dof_idx(DofIdx idx,const NumeredDofEntity **dof_ptr) const;

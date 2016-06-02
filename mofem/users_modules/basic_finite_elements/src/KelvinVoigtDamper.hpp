@@ -832,7 +832,7 @@ struct KelvinVoigtDamper {
             }
           }
         }
-        //std::cerr << "G " << getNumeredEntFiniteElementPtr()->get_ref_ent() << std::endl << K << std::endl;
+        //std::cerr << "G " << getNumeredEntFiniteElementPtr()->getRefEnt() << std::endl << K << std::endl;
         ierr = aSemble(
           row_side,col_side,row_type,col_type,row_data,col_data
         ); CHKERRQ(ierr);
@@ -930,7 +930,7 @@ struct KelvinVoigtDamper {
             }
           }
         }
-        //std::cerr << "G " << getNumeredEntFiniteElementPtr()->get_ref_ent() << std::endl << K << std::endl;
+        //std::cerr << "G " << getNumeredEntFiniteElementPtr()->getRefEnt() << std::endl << K << std::endl;
         ierr = aSemble(
           row_side,col_side,row_type,col_type,row_data,col_data
         ); CHKERRQ(ierr);

@@ -235,25 +235,51 @@ struct RefEntity: public BasicEntity {
   static PetscErrorCode getPatentEnt(Interface &moab,Range ents,std::vector<EntityHandle> vec_patent_ent);
   static PetscErrorCode getBitRefLevel(Interface &moab,Range ents,std::vector<BitRefLevel> vec_bit_ref_level);
 
+  /**
+   * \brief Get pointer to parent entity tag.
+   *
+   * Each refined entity has his parent. Such information is stored on tags.
+   * This function get pinter to tag.
+   *
+   * @return Pointer to tag on entity
+   */
   EntityHandle* getParentEntPtr() const;
+
+  /**
+   * \brief Get pointer to bit ref level tag
+
+   * Every entity belongs to some refinement level or levels. Each level is marked
+   * by bit set in BitRefLevel() (bitset) structure.
+   * FIXME: Better explanation here needed.
+
+   * @return Return pointer to tag.
+   */
   BitRefLevel* getBitRefLevelPtr() const;
 
-  /// get entity
-  inline EntityHandle get_ref_ent() const { return ent; }
-  /// get patent entity
-  inline EntityType get_parent_ent_type() const {
+  /// \brief Get entity
+  inline EntityHandle getRefEnt() const { return ent; }
+  DEPRECATED inline EntityHandle get_ref_ent() const { return getRefEnt(); }
+
+
+  /// \brief Get patent entity
+  inline EntityType getParentEntType() const {
     EntityHandle* tag_parent_ent = getParentEntPtr();
     if(*tag_parent_ent == 0)  return MBMAXTYPE;
     return (EntityType)((*tag_parent_ent&MB_TYPE_MASK)>>MB_ID_WIDTH);
   }
-  /// get entity ref bit refinment signature
-  inline const BitRefLevel& get_BitRefLevel() const { return *getBitRefLevelPtr(); }
+  DEPRECATED inline EntityType get_parent_ent_type() const { return getParentEntType(); }
 
-  /// get parent entity, i.e. entity form one refinment level up
-  inline EntityHandle get_parent_ent() const {
+  /// \brief Get parent entity, i.e. entity form one refinment level up
+  inline EntityHandle getParentEnt() const {
     EntityHandle* tag_parent_ent = getParentEntPtr();
     return *tag_parent_ent;
   }
+  DEPRECATED inline EntityHandle get_parent_ent() const { return getParentEnt(); }
+
+  /// \brief Get entity ref bit refinment signature
+  inline const BitRefLevel& getBitRefLevel() const { return *getBitRefLevelPtr(); }
+  DEPRECATED inline const BitRefLevel& get_BitRefLevel() const { return getBitRefLevel(); }
+
 
   friend std::ostream& operator<<(std::ostream& os,const RefEntity& e);
 
@@ -271,11 +297,14 @@ struct interface_RefEntity {
   interface_RefEntity(const boost::shared_ptr<T> sptr):
   sPtr(sptr) {}
 
-  inline EntityHandle get_ref_ent() const { return this->sPtr->get_ref_ent(); }
-  inline EntityHandle get_parent_ent() const { return this->sPtr->get_parent_ent(); }
-  inline const BitRefLevel& get_BitRefLevel() const { return this->sPtr->get_BitRefLevel(); }
-  inline EntityType get_parent_ent_type() const { return this->sPtr->get_parent_ent_type(); };
-
+  inline EntityHandle getRefEnt() const { return this->sPtr->getRefEnt(); }
+  DEPRECATED inline EntityHandle get_ref_ent() const { return this->sPtr->getRefEnt(); }
+  inline EntityType getParentEntType() const { return this->sPtr->getParentEntType(); };
+  DEPRECATED inline EntityType get_parent_ent_type() const { return this->sPtr->getParentEntType(); };
+  inline EntityHandle getParentEnt() const { return this->sPtr->getParentEnt(); }
+  DEPRECATED inline EntityHandle get_parent_ent() const { return this->sPtr->getParentEnt(); }
+  inline const BitRefLevel& getBitRefLevel() const { return this->sPtr->getBitRefLevel(); }
+  DEPRECATED inline const BitRefLevel& get_BitRefLevel() const { return this->sPtr->getBitRefLevel(); }
   inline EntityType getEntType() const { return this->sPtr->getEntType(); };
   DEPRECATED inline EntityType get_ent_type() const { return this->sPtr->getEntType(); };
   inline EntityID getEntId() const { return this->sPtr->getEntId(); };
@@ -324,22 +353,22 @@ typedef multi_index_container<
     ordered_non_unique<
       tag<Ent_ParallelStatus>, const_mem_fun<RefEntity::BasicEntity,unsigned char,&RefEntity::getPStatus> >,
     ordered_non_unique<
-      tag<Ent_Ent_mi_tag>, const_mem_fun<RefEntity,EntityHandle,&RefEntity::get_parent_ent> >,
+      tag<Ent_Ent_mi_tag>, const_mem_fun<RefEntity,EntityHandle,&RefEntity::getParentEnt> >,
     ordered_non_unique<
       tag<EntType_mi_tag>, const_mem_fun<RefEntity::BasicEntity,EntityType,&RefEntity::getEntType> >,
     ordered_non_unique<
-      tag<ParentEntType_mi_tag>, const_mem_fun<RefEntity,EntityType,&RefEntity::get_parent_ent_type> >,
+      tag<ParentEntType_mi_tag>, const_mem_fun<RefEntity,EntityType,&RefEntity::getParentEntType> >,
     ordered_non_unique<
       tag<Composite_EntType_and_ParentEntType_mi_tag>,
       composite_key<
       	RefEntity,
       	const_mem_fun<RefEntity::BasicEntity,EntityType,&RefEntity::getEntType>,
-      	const_mem_fun<RefEntity,EntityType,&RefEntity::get_parent_ent_type> > >,
+      	const_mem_fun<RefEntity,EntityType,&RefEntity::getParentEntType> > >,
     ordered_non_unique<
       tag<Composite_Ent_And_ParentEntType_mi_tag>,
       composite_key<
       	RefEntity,
-      	const_mem_fun<RefEntity,EntityHandle,&RefEntity::get_parent_ent>,
+      	const_mem_fun<RefEntity,EntityHandle,&RefEntity::getParentEnt>,
       	const_mem_fun<RefEntity::BasicEntity,EntityType,&RefEntity::getEntType> > >
   > > RefEntity_multiIndex;
 
@@ -350,13 +379,13 @@ typedef multi_index_container<
   boost::shared_ptr<RefEntity>,
   indexed_by<
     hashed_unique<
-      const_mem_fun<RefEntity,EntityHandle,&RefEntity::get_parent_ent> >,
+      const_mem_fun<RefEntity,EntityHandle,&RefEntity::getParentEnt> >,
     hashed_unique<
       tag<Composite_EntType_and_ParentEntType_mi_tag>,
     composite_key<
 	    boost::shared_ptr<RefEntity>,
-	    const_mem_fun<RefEntity,EntityHandle,&RefEntity::get_ref_ent>,
-	    const_mem_fun<RefEntity,EntityHandle,&RefEntity::get_parent_ent> > >
+	    const_mem_fun<RefEntity,EntityHandle,&RefEntity::getRefEnt>,
+	    const_mem_fun<RefEntity,EntityHandle,&RefEntity::getParentEnt> > >
   > > RefEntity_multiIndex_view_by_parent_entity;
 
 /** \brief ref mofem entity, remove parent
@@ -489,7 +518,7 @@ struct MoFEMEntity:
     const boost::shared_ptr<RefEntity> ref_ent_ptr
   );
   ~MoFEMEntity();
-  inline EntityHandle get_ent() const { return get_ref_ent(); }
+  inline EntityHandle get_ent() const { return getRefEnt(); }
   inline int get_nb_dofs_on_ent() const { return tag_FieldData_size/sizeof(FieldData); }
 
   inline VectorAdaptor get_ent_FieldData() const {

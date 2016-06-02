@@ -157,23 +157,23 @@ typedef multi_index_container<
   ptrWrapperRefElement,
   indexed_by<
     hashed_unique<
-      tag<Ent_mi_tag>, const_mem_fun<ptrWrapperRefElement::interface_type_RefEntity,EntityHandle,&ptrWrapperRefElement::get_ref_ent> >,
+      tag<Ent_mi_tag>, const_mem_fun<ptrWrapperRefElement::interface_type_RefEntity,EntityHandle,&ptrWrapperRefElement::getRefEnt> >,
     ordered_non_unique<
-      tag<Ent_Ent_mi_tag>, const_mem_fun<ptrWrapperRefElement::interface_type_RefEntity,EntityHandle,&ptrWrapperRefElement::get_parent_ent> >,
+      tag<Ent_Ent_mi_tag>, const_mem_fun<ptrWrapperRefElement::interface_type_RefEntity,EntityHandle,&ptrWrapperRefElement::getParentEnt> >,
     ordered_non_unique<
       tag<EntType_mi_tag>, const_mem_fun<ptrWrapperRefElement::interface_type_RefEntity,EntityType,&ptrWrapperRefElement::getEntType> >,
     ordered_non_unique<
       tag<Composite_ParentEnt_And_BitsOfRefinedEdges_mi_tag>,
       composite_key<
 	ptrWrapperRefElement,
-	const_mem_fun<ptrWrapperRefElement::interface_type_RefEntity,EntityHandle,&ptrWrapperRefElement::get_parent_ent>,
+	const_mem_fun<ptrWrapperRefElement::interface_type_RefEntity,EntityHandle,&ptrWrapperRefElement::getParentEnt>,
 	const_mem_fun<ptrWrapperRefElement::interface_type_RefElement,int,&ptrWrapperRefElement::get_BitRefEdges_ulong> > >,
     hashed_unique<
       tag<Composite_EntType_and_ParentEntType_mi_tag>,
       composite_key<
 	ptrWrapperRefElement,
-	const_mem_fun<ptrWrapperRefElement::interface_type_RefEntity,EntityHandle,&ptrWrapperRefElement::get_ref_ent>,
-	const_mem_fun<ptrWrapperRefElement::interface_type_RefEntity,EntityHandle,&ptrWrapperRefElement::get_parent_ent> > >
+	const_mem_fun<ptrWrapperRefElement::interface_type_RefEntity,EntityHandle,&ptrWrapperRefElement::getRefEnt>,
+	const_mem_fun<ptrWrapperRefElement::interface_type_RefEntity,EntityHandle,&ptrWrapperRefElement::getParentEnt> > >
   > > RefElement_multiIndex;
 
 /** \brief change parent
@@ -328,10 +328,10 @@ interface_RefElement<RefElement> {
   GlobalUId get_global_unique_id_calculate() const {
     char bit_number = get_bit_number();
     assert(bit_number<=32);
-    GlobalUId _uid_ = (sPtr->get_ref_ent())|(((GlobalUId)bit_number)<<(8*sizeof(EntityHandle)));
+    GlobalUId _uid_ = (sPtr->getRefEnt())|(((GlobalUId)bit_number)<<(8*sizeof(EntityHandle)));
     return _uid_;
   }
-  inline EntityHandle get_ent() const { return get_ref_ent(); }
+  inline EntityHandle get_ent() const { return getRefEnt(); }
   inline DofIdx get_nb_dofs_row() const { return row_dof_view->size(); }
   inline DofIdx get_nb_dofs_col() const { return col_dof_view->size(); }
   inline DofIdx get_nb_dofs_data() const { return data_dof_view->size(); }
@@ -406,7 +406,7 @@ interface_RefElement<T> {
   inline DofIdx get_nb_dofs_row() const { return this->sPtr->get_nb_dofs_row(); }
   inline DofIdx get_nb_dofs_col() const { return this->sPtr->get_nb_dofs_col(); }
   inline DofIdx get_nb_dofs_data() const { return this->sPtr->get_nb_dofs_data(); }
-  inline EntityHandle get_ent() const { return this->sPtr->get_ref_ent(); };
+  inline EntityHandle get_ent() const { return this->sPtr->getRefEnt(); };
   inline GlobalUId get_global_unique_id() const { return this->sPtr->get_global_unique_id(); }
   //
   SideNumber_multiIndex &get_side_number_table() const { return this->sPtr->get_side_number_table(); }

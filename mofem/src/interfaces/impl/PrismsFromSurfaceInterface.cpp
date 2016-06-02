@@ -137,7 +137,7 @@ PetscErrorCode PrismsFromSurfaceInterface::seedPrismsEntities(Range &prisms,cons
   MoABErrorCode rval;
   FieldInterface& m_field = cOre;
   const RefEntity_multiIndex *const_refined_entities_ptr;
-  ierr = m_field.get_ref_ents(&const_refined_entities_ptr); CHKERRQ(ierr);
+  ierr = m_field.getRefEnts(&const_refined_entities_ptr); CHKERRQ(ierr);
   MPI_Comm comm = m_field.get_comm();
   RefEntity_multiIndex *refined_entities_ptr;
   refined_entities_ptr = const_cast<RefEntity_multiIndex *>(const_refined_entities_ptr);

@@ -725,7 +725,7 @@ PetscErrorCode NonlinearElasticElement::OpLhsPiolaKirchhoff_dx::doWork(
 
     }
 
-    //std::cerr << "N " << getNumeredEntFiniteElementPtr()->get_ref_ent() << std::endl << k << std::endl;
+    //std::cerr << "N " << getNumeredEntFiniteElementPtr()->getRefEnt() << std::endl << k << std::endl;
     ierr = aSemble(row_side,col_side,row_type,col_type,row_data,col_data); CHKERRQ(ierr);
 
   } catch (const std::exception& ex) {

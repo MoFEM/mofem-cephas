@@ -77,7 +77,7 @@ RefElement(moab,ref_ent_ptr) {
     default:
       THROW_MESSAGE("this work only for PRISMs");
   }
-  EntityHandle prism = get_ref_ent();
+  EntityHandle prism = getRefEnt();
   int num_nodes;
   const EntityHandle* conn;
   rval = moab.get_connectivity(prism,conn,num_nodes,true); MOAB_THROW(rval);
@@ -343,7 +343,7 @@ RefElement(moab,ref_ent_ptr) {
   }
   ErrorCode rval;
   int side_number,sense,offset;
-  EntityHandle tri = get_ref_ent();
+  EntityHandle tri = getRefEnt();
   int num_nodes;
   const EntityHandle* conn;
   rval = moab.get_connectivity(tri,conn,num_nodes,true); MOAB_THROW(rval);

@@ -597,7 +597,7 @@ PetscErrorCode ThermalElement::TimeSeriesMonitor::postProcess() {
     problemPtr,ROW,ts_u,INSERT_VALUES,SCATTER_REVERSE
   ); CHKERRQ(ierr);
 
-  BitRefLevel proble_bit_level = problemPtr->get_BitRefLevel();
+  BitRefLevel proble_bit_level = problemPtr->getBitRefLevel();
 
   SeriesRecorder *recorder_ptr = NULL;
   ierr = mField.query_interface(recorder_ptr); CHKERRQ(ierr);

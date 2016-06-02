@@ -303,8 +303,8 @@ PetscErrorCode Core::get_msId_3dENTS_split_sides(
     miit = ref_ents.lower_bound(boost::make_tuple(MBVERTEX,MBVERTEX));
     hi_miit = ref_ents.upper_bound(boost::make_tuple(MBVERTEX,MBVERTEX));
     for(;miit!=hi_miit;miit++) {
-      if(((*miit)->get_BitRefLevel()&inheret_from_bit_level_mask) == (*miit)->get_BitRefLevel()) {
-        if(((*miit)->get_BitRefLevel()&inheret_from_bit_level).any()) {
+      if(((*miit)->getBitRefLevel()&inheret_from_bit_level_mask) == (*miit)->getBitRefLevel()) {
+        if(((*miit)->getBitRefLevel()&inheret_from_bit_level).any()) {
           std::pair<RefEntity_multiIndex_view_by_parent_entity::iterator,bool> p_ref_ent_view;
           p_ref_ent_view = ref_parent_ents_view.insert(*miit);
           if(!p_ref_ent_view.second) {
@@ -333,12 +333,12 @@ PetscErrorCode Core::get_msId_3dENTS_split_sides(
     RefEntity_multiIndex_view_by_parent_entity::iterator child_iit;
     child_iit = ref_parent_ents_view.find(*nit);
     if(child_iit != ref_parent_ents_view.end()) {
-      child_it = refinedEntities.find((*child_iit)->get_ref_ent());
-      BitRefLevel bit_child = (*child_it)->get_BitRefLevel();
+      child_it = refinedEntities.find((*child_iit)->getRefEnt());
+      BitRefLevel bit_child = (*child_it)->getBitRefLevel();
       if( (inheret_from_bit_level&bit_child).none() ) {
         SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
       }
-      child_entity = (*child_it)->get_ref_ent();
+      child_entity = (*child_it)->getRefEnt();
     }
     //
     bool success;
@@ -421,7 +421,7 @@ PetscErrorCode Core::get_msId_3dENTS_split_sides(
     hi_child_iit = refinedFiniteElements.get<Ent_Ent_mi_tag>().upper_bound(*eit3d);
     for(;child_iit!=hi_child_iit;child_iit++) {
       const EntityHandle* conn_ref_tet;
-      rval = moab.get_connectivity(child_iit->get_ref_ent(),conn_ref_tet,num_nodes,true); CHKERRQ_MOAB(rval);
+      rval = moab.get_connectivity(child_iit->getRefEnt(),conn_ref_tet,num_nodes,true); CHKERRQ_MOAB(rval);
       int nn = 0;
       for(;nn<num_nodes;nn++) {
         if(conn_ref_tet[nn]!=new_conn[nn]) {
@@ -432,7 +432,7 @@ PetscErrorCode Core::get_msId_3dENTS_split_sides(
         if(existing_ent != 0) {
           SETERRQ(PETSC_COMM_SELF,1,"database inconsistency");
         }
-        existing_ent = child_iit->get_ref_ent();
+        existing_ent = child_iit->getRefEnt();
       }
     }
     switch (moab.type_from_handle(*eit3d)) {

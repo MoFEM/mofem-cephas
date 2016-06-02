@@ -673,7 +673,7 @@ PetscErrorCode Core::synchronise_entities(Range &ents,int verb) {
       sbuffer[(*meit)->getSharingProcsPtr()[proc]].push_back(handle_on_sharing_proc);
       if(verb>1) {
         PetscSynchronizedPrintf(comm,"send %lu (%lu) to %d at %d\n",
-        (*meit)->get_ref_ent(),handle_on_sharing_proc,(*meit)->getSharingProcsPtr()[proc],rAnk);
+        (*meit)->getRefEnt(),handle_on_sharing_proc,(*meit)->getSharingProcsPtr()[proc],rAnk);
       }
       if(!(pstatus&PSTATUS_MULTISHARED)) {
         break;
@@ -775,9 +775,9 @@ PetscErrorCode Core::synchronise_entities(Range &ents,int verb) {
           "rank %d entity %lu not exist on database, local entity can not be found for this owner",rAnk,ent);
         }
         if(verb>2) {
-          PetscSynchronizedPrintf(comm,"received %ul (%ul) from %d at %d\n",(*meit)->get_ref_ent(),ent,onodes[kk],rAnk);
+          PetscSynchronizedPrintf(comm,"received %ul (%ul) from %d at %d\n",(*meit)->getRefEnt(),ent,onodes[kk],rAnk);
         }
-        ents.insert((*meit)->get_ref_ent());
+        ents.insert((*meit)->getRefEnt());
 
       }
 
@@ -1085,7 +1085,7 @@ PetscErrorCode Core::initialiseDatabseInformationFromMesh(int verb) {
       boost::shared_ptr<RefEntity> mofem_ent(
         new RefEntity(basicEntityDataPtr,*eit)
       );
-      BitRefLevel bit = mofem_ent->get_BitRefLevel();
+      BitRefLevel bit = mofem_ent->getBitRefLevel();
       if(bit.none()) {
         continue;
       }

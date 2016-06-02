@@ -64,7 +64,7 @@ PetscErrorCode Core::get_adjacencies_equality(const EntityHandle from_entiti,con
   for(;eit!=adj_entities.end();b_it++) {
     //RefEntity adj_entiti(moab,*eit);
     //std::cerr << "\t" << adj_entiti << std::endl;
-    if(from_ref_entiti.get_BitRefLevel() != *b_it/*adj_entiti.get_BitRefLevel()*/) {
+    if(from_ref_entiti.getBitRefLevel() != *b_it/*adj_entiti.getBitRefLevel()*/) {
       eit = adj_entities.erase(eit);
     } else {
       eit++;
@@ -90,7 +90,7 @@ PetscErrorCode Core::get_adjacencies_any(const EntityHandle from_entiti,const in
   for(;eit!=adj_entities.end();b_it++) {
     // RefEntity adj_entiti(moab,*eit);
     //std::cerr << "\t" << adj_entiti << std::endl;
-    if(!(from_ref_entiti.get_BitRefLevel()&(*b_it)).any()/*adj_entiti.get_BitRefLevel()).any()*/) {
+    if(!(from_ref_entiti.getBitRefLevel()&(*b_it)).any()/*adj_entiti.getBitRefLevel()).any()*/) {
       eit = adj_entities.erase(eit);
     } else {
       eit++;
@@ -112,7 +112,7 @@ PetscErrorCode Core::get_adjacencies(
 ) const {
   PetscErrorCode ierr;
   PetscFunctionBegin;
-  BitRefLevel bit = problem_ptr->get_BitRefLevel();
+  BitRefLevel bit = problem_ptr->getBitRefLevel();
   ierr = get_adjacencies(bit,from_entities,num_netities,to_dimension,adj_entities,operation_type); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }

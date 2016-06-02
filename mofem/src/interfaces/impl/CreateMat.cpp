@@ -125,7 +125,7 @@ PetscErrorCode CreateRowComressedADJMatrix::getEntityAdjacenies(
         // if element is not part of problem
         continue;
       }
-      if ((adj_miit->entFePtr->get_BitRefLevel()&(*mit_row)->get_BitRefLevel()).none()) {
+      if ((adj_miit->entFePtr->getBitRefLevel()&(*mit_row)->getBitRefLevel()).none()) {
         // if entity is not problem refinement level
         continue;
       }
@@ -838,9 +838,9 @@ PetscErrorCode Core::partition_check_matrix_fill_in(const std::string &problem_n
           std::ostringstream ss;
           ss << *(*rit) << std::endl;
           ss << *numeredEntFiniteElementPtr << std::endl;
-          ss << "dof: " << (*rit)->get_BitRefLevel() << std::endl;
-          ss << "fe: " << numeredEntFiniteElementPtr->get_BitRefLevel() << std::endl;
-          ss << "problem: " << problemPtr->get_BitRefLevel() << std::endl;
+          ss << "dof: " << (*rit)->getBitRefLevel() << std::endl;
+          ss << "fe: " << numeredEntFiniteElementPtr->getBitRefLevel() << std::endl;
+          ss << "problem: " << problemPtr->getBitRefLevel() << std::endl;
           PetscPrintf(mFieldPtr->get_comm(),"%s",ss.str().c_str());
           SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"adjacencies data inconsistency");
         } else {
@@ -886,9 +886,9 @@ PetscErrorCode Core::partition_check_matrix_fill_in(const std::string &problem_n
             ss << "row:\n" << *(*rit) << std::endl;
             ss << "col:\n" << *(*cit) << std::endl;
 
-            ss << "fe:\n" << numeredEntFiniteElementPtr->get_BitRefLevel() << std::endl;
-            ss << "row:\n" << (*rit)->get_BitRefLevel() << std::endl;
-            ss << "col:\n" << (*cit)->get_BitRefLevel() << std::endl;
+            ss << "fe:\n" << numeredEntFiniteElementPtr->getBitRefLevel() << std::endl;
+            ss << "row:\n" << (*rit)->getBitRefLevel() << std::endl;
+            ss << "col:\n" << (*cit)->getBitRefLevel() << std::endl;
 
             std::cerr << ss.str() << std::endl;
 

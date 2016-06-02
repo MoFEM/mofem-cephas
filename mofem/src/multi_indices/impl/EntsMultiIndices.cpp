@@ -136,10 +136,10 @@ std::ostream& operator<<(std::ostream& os,const RefEntity& e) {
   os << " pstatus "<< std::bitset<8>(e.getPStatus());
   os << " owner ent " << e.getOwnerEnt();
   os << " owner proc " << e.getOwnerProc();
-  os << " parent ent " << e.get_parent_ent();
-  //os << " BitRefLevel " << e.get_BitRefLevel();
+  os << " parent ent " << e.getParentEnt();
+  //os << " BitRefLevel " << e.getBitRefLevel();
   os << " ent type " << e.getEntType();
-  os << " ent parent type " << e.get_parent_ent_type();
+  os << " ent parent type " << e.getParentEntType();
   return os;
 }
 

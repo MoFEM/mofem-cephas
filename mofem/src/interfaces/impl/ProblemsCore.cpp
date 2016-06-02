@@ -69,7 +69,7 @@ PetscErrorCode Core::build_problem_on_partitioned_mesh(MoFEMProblem *problem_ptr
   SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not yet implemented");
 
   if(verb==-1) verb = verbose;
-  if(problem_ptr->get_BitRefLevel().none()) {
+  if(problem_ptr->getBitRefLevel().none()) {
     SETERRQ1(PETSC_COMM_SELF,1,"problem <%s> refinement level not set",problem_ptr->get_name().c_str());
   }
   //zero finite elements
@@ -98,7 +98,7 @@ PetscErrorCode Core::build_problem_on_distributed_mesh(MoFEMProblem *problem_ptr
   PetscLogEventBegin(USER_EVENT_buildProblem,0,0,0,0);
 
   if(verb==-1) verb = verbose;
-  if(problem_ptr->get_BitRefLevel().none()) {
+  if(problem_ptr->getBitRefLevel().none()) {
     SETERRQ1(PETSC_COMM_SELF,1,"problem <%s> refinement level not set",problem_ptr->get_name().c_str());
   }
 
@@ -126,7 +126,7 @@ PetscErrorCode Core::build_problem_on_distributed_mesh(MoFEMProblem *problem_ptr
       //if element is in problem
       if(((*fe_miit)->get_id()&problem_ptr->get_BitFEId()).any()) {
         //if finite element bit level has all refined bits sets
-        if(((*fe_miit)->get_BitRefLevel()&problem_ptr->get_BitRefLevel())==problem_ptr->get_BitRefLevel()) {
+        if(((*fe_miit)->getBitRefLevel()&problem_ptr->getBitRefLevel())==problem_ptr->getBitRefLevel()) {
           //get dof uids for rows and columns
           ierr = (*fe_miit)->get_MoFEMFiniteElement_row_dof_view(dofsField,dofs_rows); CHKERRQ(ierr);
           if(do_cols) {
@@ -167,7 +167,7 @@ PetscErrorCode Core::build_problem_on_distributed_mesh(MoFEMProblem *problem_ptr
     miit = dofs_ptr[ss]->get<1>().lower_bound(1);
     hi_miit = dofs_ptr[ss]->get<1>().upper_bound(1);
     for(;miit!=hi_miit;miit++) {
-      const BitRefLevel &dof_bit_level = (*miit)->get_BitRefLevel();
+      const BitRefLevel &dof_bit_level = (*miit)->getBitRefLevel();
       if((dof_bit_level&problem_bit_level)!=dof_bit_level) {
         continue;
       }
@@ -723,10 +723,10 @@ PetscErrorCode Core::build_problem(MoFEMProblem *problem_ptr,int verb) {
   // Note: Only allowe changes on problem_ptr structure which not influence multindex
   // indexing are allowd.
   if(verb==-1) verb = verbose;
-  if(problem_ptr->get_BitRefLevel().none()) {
+  if(problem_ptr->getBitRefLevel().none()) {
     SETERRQ1(PETSC_COMM_SELF,1,"problem <%s> refinement level not set",problem_ptr->get_name().c_str());
   }
-  if(problem_ptr->get_BitRefLevel().none()) {
+  if(problem_ptr->getBitRefLevel().none()) {
     SETERRQ1(PETSC_COMM_SELF,1,"problem <%s> refinement level not set",problem_ptr->get_name().c_str());
   }
 
@@ -744,7 +744,7 @@ PetscErrorCode Core::build_problem(MoFEMProblem *problem_ptr,int verb) {
     //if element is in problem
     if(((*miit3)->get_id()&problem_ptr->get_BitFEId()).any()) {
       //if finite element bit level has all refined bits sets
-      if(((*miit3)->get_BitRefLevel()&problem_ptr->get_BitRefLevel())==problem_ptr->get_BitRefLevel()) {
+      if(((*miit3)->getBitRefLevel()&problem_ptr->getBitRefLevel())==problem_ptr->getBitRefLevel()) {
         //get dof uids for rows and columns
         ierr = (*miit3)->get_MoFEMFiniteElement_row_dof_view(dofsField,dofs_rows); CHKERRQ(ierr);
         ierr = (*miit3)->get_MoFEMFiniteElement_col_dof_view(dofsField,dofs_cols); CHKERRQ(ierr);
@@ -768,7 +768,7 @@ PetscErrorCode Core::build_problem(MoFEMProblem *problem_ptr,int verb) {
   miit4 = dofs_rows.get<1>().lower_bound(1);
   hi_miit4 = dofs_rows.get<1>().upper_bound(1);
   for(;miit4!=hi_miit4;miit4++) {
-    if(((*miit4)->get_BitRefLevel()&problem_ptr->get_DofMask_BitRefLevel())!=(*miit4)->get_BitRefLevel()) {
+    if(((*miit4)->getBitRefLevel()&problem_ptr->get_DofMask_BitRefLevel())!=(*miit4)->getBitRefLevel()) {
       continue;
     }
     ProblemAddRowDof(*miit4).operator()(*problem_ptr);
@@ -779,7 +779,7 @@ PetscErrorCode Core::build_problem(MoFEMProblem *problem_ptr,int verb) {
   miit5 = dofs_cols.get<1>().lower_bound(1);
   hi_miit5 = dofs_cols.get<1>().upper_bound(1);
   for(;miit5!=hi_miit5;miit5++) {
-    if(((*miit5)->get_BitRefLevel()&problem_ptr->get_DofMask_BitRefLevel())!=(*miit5)->get_BitRefLevel()) {
+    if(((*miit5)->getBitRefLevel()&problem_ptr->get_DofMask_BitRefLevel())!=(*miit5)->getBitRefLevel()) {
       continue;
     }
     ProblemAddColDof(*miit5).operator()(*problem_ptr);

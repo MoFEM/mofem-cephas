@@ -867,9 +867,9 @@ PetscErrorCode Core::set_field_order(const Range &ents,const BitFieldId id,const
 
         RefEntity ref_ent(basicEntityDataPtr,*eit);
         // FIXME: need some consistent policy in that case
-        if(ref_ent.get_BitRefLevel().none()) continue; // not on any mesh and not in database
+        if(ref_ent.getBitRefLevel().none()) continue; // not on any mesh and not in database
         std::cerr << ref_ent << std::endl;
-        std::cerr << "bit level " << ref_ent.get_BitRefLevel() << std::endl;
+        std::cerr << "bit level " << ref_ent.getBitRefLevel() << std::endl;
         SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"Try to add entities which are not seeded or added to database");
 
       }
@@ -1087,11 +1087,11 @@ PetscErrorCode Core::dofs_L2H1HcurlHdiv(
     miit_ref_ent = refinedEntities.get<Ent_mi_tag>().find(*eit);
     if(miit_ref_ent==refinedEntities.get<Ent_mi_tag>().end()) {
       RefEntity ref_ent(basicEntityDataPtr,*eit);
-      if(ref_ent.get_BitRefLevel().none()) {
+      if(ref_ent.getBitRefLevel().none()) {
         continue; // not on any mesh and not in database
       }
       std::cerr << ref_ent << std::endl;
-      std::cerr << "bit level " << ref_ent.get_BitRefLevel() << std::endl;
+      std::cerr << "bit level " << ref_ent.getBitRefLevel() << std::endl;
       SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"database inconsistency");
     }
     // create mofem entity linked to ref ent
@@ -1701,12 +1701,12 @@ PetscErrorCode Core::add_ents_to_finite_element_EntType_by_bit_ref(const BitRefL
     }
     int nb_add_FEs = 0;
     for(;miit!=hi_miit;miit++) {
-      BitRefLevel bit2 = miit->get_BitRefLevel();
+      BitRefLevel bit2 = miit->getBitRefLevel();
       //check if all bits in mask are ib fe bit2
-      //if((miit->get_BitRefLevel()&bit)!=bit) continue;
+      //if((miit->getBitRefLevel()&bit)!=bit) continue;
       if((bit2&mask) != bit2) continue;
       if((bit2&bit).any()) {
-        EntityHandle ent = miit->get_ref_ent();
+        EntityHandle ent = miit->getRefEnt();
         rval = moab.add_entities(idm,&ent,1); CHKERRQ_MOAB(rval);
         nb_add_FEs++;
       }
@@ -1912,7 +1912,7 @@ PetscErrorCode Core::build_finite_element_uids_view(EntFiniteElement &ent_fe,int
   }
 
   //get refinment level
-  const BitRefLevel& bit_ref_finite_element = ent_fe.get_BitRefLevel();
+  const BitRefLevel& bit_ref_finite_element = ent_fe.getBitRefLevel();
   Range tets,faces,edges,nodes,meshsets,adj_ents,ent_ents;
   Range::iterator eit_eit;
   boost::shared_ptr<DofEntity_multiIndex_uid_view> dofs_view_list[LAST] = {
@@ -1969,17 +1969,17 @@ PetscErrorCode Core::build_finite_element_uids_view(EntFiniteElement &ent_fe,int
       ref_ent_by_ent::iterator ref_ent_miit = refinedEntities.get<Ent_mi_tag>().find(*eit2);
       if(ref_ent_miit==refinedEntities.get<Ent_mi_tag>().end()) {
         RefEntity ref_ent(basicEntityDataPtr,*eit2);
-        if(!ref_ent.get_BitRefLevel().any()) {
+        if(!ref_ent.getBitRefLevel().any()) {
           continue;
         }
         std::cerr << adj_ents << std::endl;
         std::cerr << ent_fe << std::endl;
-        std::cerr << "bit level " << ent_fe.get_BitRefLevel() << std::endl;
+        std::cerr << "bit level " << ent_fe.getBitRefLevel() << std::endl;
         std::cerr << ref_ent << std::endl;
-        std::cerr << "bit level " << ref_ent.get_BitRefLevel() << std::endl;
+        std::cerr << "bit level " << ref_ent.getBitRefLevel() << std::endl;
         SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_FOUND,"ref ent not in database");
       }
-      const BitRefLevel& bit_ref_ent = (*ref_ent_miit)->get_BitRefLevel();
+      const BitRefLevel& bit_ref_ent = (*ref_ent_miit)->getBitRefLevel();
       if(!(bit_ref_finite_element&bit_ref_ent).any()) {
         std::ostringstream ss;
         ss << "Top tip: check if you seed mesh with the elements for bit ref level1" << std::endl;
@@ -1991,7 +1991,7 @@ PetscErrorCode Core::build_finite_element_uids_view(EntFiniteElement &ent_fe,int
         SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,ss.str().c_str());
       }
       const boost::tuple<boost::string_ref,EntityHandle> tuple
-      = boost::make_tuple((*miit)->get_name_ref(),(*ref_ent_miit)->get_ref_ent());
+      = boost::make_tuple((*miit)->get_name_ref(),(*ref_ent_miit)->getRefEnt());
       dof_set_type::iterator ents_miit2 = dof_set.lower_bound(tuple);
       if(ents_miit2 == dof_set.end()) continue;
       dof_set_type::iterator ents_hi_miit2 = dof_set.upper_bound(tuple);
@@ -2245,7 +2245,7 @@ PetscErrorCode Core::partition_finite_elements(
   EntFiniteElement_multiIndex::iterator hi_miit2 = entsFiniteElements.end();
   for(;miit2!=hi_miit2;miit2++) {
     if(((*miit2)->get_id()&p_miit->get_BitFEId()).none()) continue; // if element is not part of problem
-    if(((*miit2)->get_BitRefLevel()&p_miit->get_BitRefLevel())!=p_miit->get_BitRefLevel()) continue; // if entity is not problem refinement level
+    if(((*miit2)->getBitRefLevel()&p_miit->getBitRefLevel())!=p_miit->getBitRefLevel()) continue; // if entity is not problem refinement level
     boost::shared_ptr<NumeredEntFiniteElement> numered_fe(new NumeredEntFiniteElement(*miit2));
     bool do_cols_fe = true;
     if(numered_fe->sPtr->row_dof_view == numered_fe->sPtr->col_dof_view && do_cols_prob) {
@@ -2463,7 +2463,7 @@ PetscErrorCode Core::seed_finite_elements(const Range &entities,int verb) {
     if(eiit == refinedEntities.get<Ent_mi_tag>().end())  {
       SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_FOUND,"entity is not in database");
     }
-    if((*eiit)->get_BitRefLevel().none()) continue;
+    if((*eiit)->getBitRefLevel().none()) continue;
     std::pair<RefElement_multiIndex::iterator,bool> p_MoFEMFiniteElement;
     switch ((*eiit)->getEntType()) {
       case MBVERTEX:
@@ -2647,12 +2647,12 @@ PetscErrorCode Core::shift_right_bit_ref(const int shift,int verb) {
   RefEntity_multiIndex::iterator ent_it = refinedEntities.begin();
   for(;ent_it!=refinedEntities.end();ent_it++) {
     if(verb>5) {
-      std::cout << (*ent_it)->get_BitRefLevel() << " : ";
+      std::cout << (*ent_it)->getBitRefLevel() << " : ";
     }
     bool success = refinedEntities.modify(ent_it,RefEntity_change_right_shift(shift));
     if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"inconsistency in data");
     if(verb>5) {
-      std::cout << (*ent_it)->get_BitRefLevel() << std::endl;
+      std::cout << (*ent_it)->getBitRefLevel() << std::endl;
     }
   }
   PetscFunctionReturn(0);
@@ -2788,8 +2788,8 @@ PetscErrorCode Core::update_meshset_by_entities_children(
         ss << "any bit " << *miit << std::endl;;
         PetscPrintf(comm,ss.str().c_str());
       }
-      if(((*miit)->get_BitRefLevel()&child_bit).any()) {
-        EntityHandle ref_ent = (*miit)->get_ref_ent();
+      if(((*miit)->getBitRefLevel()&child_bit).any()) {
+        EntityHandle ref_ent = (*miit)->getRefEnt();
         if(ref_ent == *eit) continue;
         if(ref_ent == 0) {
           SETERRQ(PETSC_COMM_SELF,MOFEM_IMPOSIBLE_CASE,"this should not happen");
@@ -3179,7 +3179,7 @@ PetscErrorCode Core::loop_dofs(const std::string &field_name,EntMethod &method,i
   ierr = method.postProcess(); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
-PetscErrorCode Core::get_ref_ents(const RefEntity_multiIndex **refined_entities_ptr) const {
+PetscErrorCode Core::getRefEnts(const RefEntity_multiIndex **refined_entities_ptr) const {
   PetscFunctionBegin;
   *refined_entities_ptr = &refinedEntities;
   PetscFunctionReturn(0);
@@ -3364,7 +3364,7 @@ PetscErrorCode Core::clear_dofs_fields(const BitRefLevel &bit,const BitRefLevel 
     DofEntity_multiIndex::iterator dit;
     dit = dofsField.begin();
     for(;dit!=dofsField.end();) {
-      BitRefLevel bit2 = (*dit)->get_BitRefLevel();
+      BitRefLevel bit2 = (*dit)->getBitRefLevel();
       if((*dit)->getEntType()==MBENTITYSET) {
         dit++;
         continue;
@@ -3444,7 +3444,7 @@ PetscErrorCode Core::clear_ents_fields(const BitRefLevel &bit,const BitRefLevel 
       eit++;
       continue;
     }
-    BitRefLevel bit2 = (*eit)->get_BitRefLevel();
+    BitRefLevel bit2 = (*eit)->getBitRefLevel();
     if((bit2&mask)!=bit2) {
       eit++;
       continue;
@@ -3484,7 +3484,7 @@ PetscErrorCode Core::clear_finite_elements(const BitRefLevel &bit,const BitRefLe
   ierr = clear_adjacencies_finite_elements(bit,mask,verb); CHKERRQ(ierr);
   EntFiniteElement_multiIndex::iterator fe_it = entsFiniteElements.begin();
   for(;fe_it!=entsFiniteElements.end();) {
-    BitRefLevel bit2 = (*fe_it)->get_BitRefLevel();
+    BitRefLevel bit2 = (*fe_it)->getBitRefLevel();
     if((*fe_it)->getEntType()==MBENTITYSET) {
       fe_it++;
       continue;
@@ -3521,7 +3521,7 @@ PetscErrorCode Core::clear_adjacencies_finite_elements(const BitRefLevel &bit,co
   MoFEMEntityEntFiniteElementAdjacencyMap_multiIndex::iterator ait;
   ait = entFEAdjacencies.begin();
   for(;ait!=entFEAdjacencies.end();) {
-    BitRefLevel bit2 = ait->entFePtr->get_BitRefLevel();
+    BitRefLevel bit2 = ait->entFePtr->getBitRefLevel();
     if(ait->entFePtr->getEntType()==MBENTITYSET) {
       ait++;
       continue;
@@ -3562,7 +3562,7 @@ PetscErrorCode Core::clear_adjacencies_entities(const BitRefLevel &bit,const Bit
   MoFEMEntityEntFiniteElementAdjacencyMap_multiIndex::iterator ait;
   ait = entFEAdjacencies.begin();
   for(;ait!=entFEAdjacencies.end();) {
-    BitRefLevel bit2 = ait->mofemEntPtr->get_BitRefLevel();
+    BitRefLevel bit2 = ait->mofemEntPtr->getBitRefLevel();
     if(ait->mofemEntPtr->getEntType()==MBENTITYSET) {
       ait++;
       continue;
@@ -3738,7 +3738,7 @@ PetscErrorCode Core::remove_ents_by_bit_ref(const BitRefLevel &bit,const BitRefL
   ierr = remove_ents_from_field_by_bit_ref(bit,mask,verb); CHKERRQ(ierr);
   RefEntity_multiIndex::iterator ent_it = refinedEntities.begin();
   for(;ent_it!=refinedEntities.end();) {
-    BitRefLevel bit2 = (*ent_it)->get_BitRefLevel();
+    BitRefLevel bit2 = (*ent_it)->getBitRefLevel();
     if((*ent_it)->getEntType()==MBENTITYSET) {
       ent_it++;
       continue;
@@ -3788,7 +3788,7 @@ PetscErrorCode Core::delete_ents_by_bit_ref(
       pit = refinedEntities.get<Ent_Ent_mi_tag>().lower_bound(*eit);
       hi_pit = refinedEntities.get<Ent_Ent_mi_tag>().upper_bound(*eit);
       for(;pit!=hi_pit;pit++) {
-        EntityHandle ent = (*pit)->get_ref_ent();
+        EntityHandle ent = (*pit)->getRefEnt();
         if(ents_to_delete.find(ent) != ents_to_delete.end()) {
           continue;
         }
@@ -3852,7 +3852,7 @@ PetscErrorCode Core::delete_finite_elements_by_bit_ref(
   ierr = remove_ents_from_finite_element_by_bit_ref(bit,mask,verb); CHKERRQ(ierr);
   RefElement_multiIndex::iterator fe_it = refinedFiniteElements.begin();
   for(;fe_it!=refinedFiniteElements.end();) {
-    BitRefLevel bit2 = fe_it->get_BitRefLevel();
+    BitRefLevel bit2 = fe_it->getBitRefLevel();
     if(fe_it->getEntType()==MBENTITYSET) {
       fe_it++;
       continue;

@@ -168,7 +168,7 @@ PetscErrorCode Core::add_verices_in_the_middel_of_edges(const Range &_edges,cons
         PetscPrintf(comm,ss.str().c_str());
       }
     } else {
-      const EntityHandle node = (*miit_view)->get_ref_ent();
+      const EntityHandle node = (*miit_view)->getRefEnt();
       if((*miit_view)->getEntType() != MBVERTEX) {
         SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"child of edge should be vertex");
       }
@@ -242,9 +242,9 @@ PetscErrorCode Core::refine_TET(const Range &_tets,const BitRefLevel &bit,const 
       RefEntity_multiIndex_view_by_parent_entity::iterator miit_view;
       miit_view = ref_parent_ents_view.find(edge);
       if(miit_view != ref_parent_ents_view.end()) {
-        if(((*miit_view)->get_BitRefLevel()&bit).any()) {
-          edge_new_nodes[ee] = (*miit_view)->get_ref_ent();
-          map_ref_nodes_by_edges[(*miit_view)->get_parent_ent()] = &**miit_view;
+        if(((*miit_view)->getBitRefLevel()&bit).any()) {
+          edge_new_nodes[ee] = (*miit_view)->getRefEnt();
+          map_ref_nodes_by_edges[(*miit_view)->getParentEnt()] = &**miit_view;
           {
             const EntityHandle* conn_edge;
             int num_nodes;
@@ -396,7 +396,7 @@ PetscErrorCode Core::refine_TET(const Range &_tets,const BitRefLevel &bit,const 
     // }
     if(distance(miit_composite,hi_miit_composite)==(unsigned int)nb_new_tets) {
       for(int tt = 0;miit_composite!=hi_miit_composite;miit_composite++,tt++) {
-        EntityHandle tet = miit_composite->get_ref_ent();
+        EntityHandle tet = miit_composite->getRefEnt();
         //set ref tets entities
         ref_tets[tt] = tet;
         ref_tets_bit.set(tt,1);
@@ -518,7 +518,7 @@ PetscErrorCode Core::refine_TET(const Range &_tets,const BitRefLevel &bit,const 
       rval = moab.get_connectivity(&*eit,1,edges_nodes[ee],true); CHKERRQ_MOAB(rval);
       std::map<EntityHandle,const RefEntity*>::iterator map_miit = map_ref_nodes_by_edges.find(*eit);
       if(map_miit!=map_ref_nodes_by_edges.end()) {
-        edges_nodes[ee].insert(map_miit->second->get_ref_ent());
+        edges_nodes[ee].insert(map_miit->second->getRefEnt());
       }
     }
     //for faces - add ref nodes
@@ -531,7 +531,7 @@ PetscErrorCode Core::refine_TET(const Range &_tets,const BitRefLevel &bit,const 
       for(Range::iterator eit2 =  fit_edges.begin();eit2 != fit_edges.end();eit2++) {
         std::map<EntityHandle,const RefEntity*>::iterator map_miit = map_ref_nodes_by_edges.find(*eit2);
         if(map_miit!=map_ref_nodes_by_edges.end()) {
-          faces_nodes[ff].insert(map_miit->second->get_ref_ent());
+          faces_nodes[ff].insert(map_miit->second->getRefEnt());
         }
       }
     }
@@ -541,7 +541,7 @@ PetscErrorCode Core::refine_TET(const Range &_tets,const BitRefLevel &bit,const 
     rval = moab.get_connectivity(&*tit,1,tet_nodes,true); CHKERRQ_MOAB(rval);
     for(std::map<EntityHandle,const RefEntity*>::iterator map_miit = map_ref_nodes_by_edges.begin();
     map_miit != map_ref_nodes_by_edges.end();map_miit++) {
-      tet_nodes.insert(map_miit->second->get_ref_ent());
+      tet_nodes.insert(map_miit->second->getRefEnt());
     }
     Range ref_edges;
     //get all all edges of refined tets
@@ -749,8 +749,8 @@ PetscErrorCode Core::refine_PRISM(const EntityHandle meshset,const BitRefLevel &
     for(int ee = 0;ee<6;ee++) {
       RefEntity_multiIndex_view_by_parent_entity::iterator miit_view = ref_parent_ents_view.find(edges[ee]);
       if(miit_view != ref_parent_ents_view.end()) {
-	if(((*miit_view)->get_BitRefLevel()&bit).any()) {
-	  edge_nodes[ee] = (*miit_view)->get_ref_ent();
+	if(((*miit_view)->getBitRefLevel()&bit).any()) {
+	  edge_nodes[ee] = (*miit_view)->getRefEnt();
 	  split_edges.set(ee);
 	}
       }
@@ -803,7 +803,7 @@ PetscErrorCode Core::refine_PRISM(const EntityHandle meshset,const BitRefLevel &
     ref_fe_by_composite::iterator miit_composite2 = miit_composite;
     for(int pp = 0;miit_composite2!=hi_miit_composite;miit_composite2++,pp++) {
       //add this tet to this ref
-      refinedEntities.modify(refinedEntities.find(miit_composite2->get_ref_ent()),RefEntity_change_add_bit(bit));
+      refinedEntities.modify(refinedEntities.find(miit_composite2->getRefEnt()),RefEntity_change_add_bit(bit));
       ref_prism_bit.set(pp,1);
       if(verb>2) {
 	std::ostringstream ss;
