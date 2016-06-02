@@ -35,7 +35,7 @@ struct __attribute__((__packed__))  SideNumber {
   inline EntityType getEntType() const {
     return (EntityType)((ent&MB_TYPE_MASK)>>MB_ID_WIDTH);
   }
-  DEPRECATED EntityType get_ent_type() const { getEntType(); };
+  DEPRECATED EntityType get_ent_type() const { return getEntType(); };
   SideNumber(EntityHandle _ent,int _side_number,int _sense,int _offset):
   ent(_ent),
   side_number(_side_number),
