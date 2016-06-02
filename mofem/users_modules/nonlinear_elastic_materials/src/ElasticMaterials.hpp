@@ -279,7 +279,7 @@ struct ElasticMaterials {
       int id = it->get_msId();
       Mat_Elastic mydata;
       ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
-      EntityHandle meshset = it->get_meshset();
+      EntityHandle meshset = it->getMeshSet();
       rval = mField.get_moab().get_entities_by_type(meshset,MBTET,set_of_blocks[id].tEts,true); CHKERRQ_MOAB(rval);
       set_of_blocks[id].iD = id;
       set_of_blocks[id].E = mydata.data.Young;
@@ -321,7 +321,7 @@ struct ElasticMaterials {
     }
     for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BLOCKSET|BODYFORCESSET,it)) {
       int id = it->get_msId();
-      EntityHandle meshset = it->get_meshset();
+      EntityHandle meshset = it->getMeshSet();
       rval = mField.get_moab().get_entities_by_type(meshset,MBTET,set_of_blocks[id].tEts,true); CHKERRQ_MOAB(rval);
       Block_BodyForces mydata;
       ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
@@ -376,8 +376,8 @@ struct ElasticMaterials {
     for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BLOCKSET,it)) {
       bool set = false;
       int id = it->get_msId();
-      EntityHandle meshset = it->get_meshset();
-      if(it->get_name().compare(0,6,"DAMPER") == 0) {
+      EntityHandle meshset = it->getMeshSet();
+      if(it->getName().compare(0,6,"DAMPER") == 0) {
         set = true;
         std::vector<double> data;
         ierr = it->get_attributes(data); CHKERRQ(ierr);

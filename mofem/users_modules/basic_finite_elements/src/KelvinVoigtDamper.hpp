@@ -328,7 +328,7 @@ struct KelvinVoigtDamper {
         if(nb_dofs == 0) {
           PetscFunctionReturn(0);
         }
-        int rank = data.getFieldDofs()[0]->get_nb_of_coeffs();
+        int rank = data.getFieldDofs()[0]->getNbOfCoeffs();
         int nb_gauss_pts = data.getN().size1();
 
         // Initialize
@@ -601,7 +601,7 @@ struct KelvinVoigtDamper {
       nbGaussPts = row_data.getN().size1();
 
       commonData.skipThis = false;
-      if(cE.dAta.tEts.find(getNumeredEntFiniteElementPtr()->get_ent())==cE.dAta.tEts.end()) {
+      if(cE.dAta.tEts.find(getNumeredEntFiniteElementPtr()->getEnt())==cE.dAta.tEts.end()) {
         commonData.skipThis =true;
         PetscFunctionReturn(0);
       }
@@ -949,7 +949,7 @@ struct KelvinVoigtDamper {
     ErrorCode rval;
     PetscErrorCode ierr;
     for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BLOCKSET,it)) {
-      if(it->get_name().compare(0,6,"DAMPER") == 0) {
+      if(it->getName().compare(0,6,"DAMPER") == 0) {
         std::vector<double> data;
         ierr = it->get_attributes(data); CHKERRQ(ierr);
         if(data.size()<2) {

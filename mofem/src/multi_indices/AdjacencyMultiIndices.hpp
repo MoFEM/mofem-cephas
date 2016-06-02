@@ -33,14 +33,14 @@ struct MoFEMEntityEntFiniteElementAdjacencyMap {
     const boost::shared_ptr<MoFEMEntity> mofem_ent_ptr,
     const boost::shared_ptr<EntFiniteElement> ent_fe_ptr
   );
-  inline GlobalUId get_MoFEMFiniteElement_unique_id() const { return entFePtr->get_global_unique_id(); }
-  inline EntityHandle get_MoFEMFiniteElement_meshset() const { return entFePtr->get_meshset(); }
-  inline EntityHandle get_MoFEMFiniteElement_entity_handle() const { return entFePtr->get_ent(); }
-  inline GlobalUId get_ent_unique_id() const { return mofemEntPtr->get_global_unique_id(); };
-  inline EntityHandle get_ent_meshset() const { return mofemEntPtr->get_meshset(); };
-  inline EntityHandle get_ent_entity_handle() const { return mofemEntPtr->get_ent(); };
-  BitFieldId getEntId() const { return mofemEntPtr->get_id(); }
-  BitFEId get_BitFEId() const { return entFePtr->get_id(); }
+  inline GlobalUId get_MoFEMFiniteElement_unique_id() const { return entFePtr->getGlobalUniqueId(); }
+  inline EntityHandle get_MoFEMFiniteElement_meshset() const { return entFePtr->getMeshSet(); }
+  inline EntityHandle get_MoFEMFiniteElement_entity_handle() const { return entFePtr->getEnt(); }
+  inline GlobalUId get_ent_unique_id() const { return mofemEntPtr->getGlobalUniqueId(); };
+  inline EntityHandle get_ent_meshset() const { return mofemEntPtr->getMeshSet(); };
+  inline EntityHandle get_ent_entity_handle() const { return mofemEntPtr->getEnt(); };
+  BitFieldId getEntId() const { return mofemEntPtr->getId(); }
+  BitFEId get_BitFEId() const { return entFePtr->getId(); }
   friend std::ostream& operator<<(std::ostream& os,const MoFEMEntityEntFiniteElementAdjacencyMap &e);
 };
 

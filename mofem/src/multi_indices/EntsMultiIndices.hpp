@@ -1,5 +1,5 @@
 /** \file EntsMultiIndices.hpp
- * \brief Myltindex contains, for mofem entities data structures and other low-level functions
+ * \brief Multi-index contains, for mofem entities data structures and other low-level functions
  */
 
 /*
@@ -68,6 +68,9 @@ typedef multi_index_container<
     >
   > > SideNumber_multiIndex;
 
+/**
+ * \brief Basic data. like access to moab interface and basic tag handlers.
+ */
 struct BasicEntityData {
   moab::Interface &moab;
   Tag th_RefParentHandle;
@@ -97,24 +100,25 @@ struct BasicEntity {
     boost::shared_ptr<BasicEntityData> basic_data_ptr,const EntityHandle ent
   );
 
-  /// get entity type
+  /** \brief Get entity type
+  */
   inline EntityType getEntType() const { return (EntityType)((ent&MB_TYPE_MASK)>>MB_ID_WIDTH); }
 
   DEPRECATED inline EntityType get_ent_type() const { return getEntType(); }
 
-  /// get entity id
+  /** \brief get entity id
+  */
   inline EntityID getEntId() const { return (EntityID)(ent&MB_ID_MASK); };
 
   inline DEPRECATED EntityID get_ent_id() const { return getEntId(); };
 
-  /** \brief maob partitioning owner handle
+  /** \brief Owner handle on this or other processors
     */
   inline EntityHandle getOwnerEnt() const { return moab_owner_handle; }
-
   DEPRECATED inline EntityHandle get_owner_ent() const { return getOwnerEnt(); }
 
 
-  /** \brife moab get owner proc
+  /** \brief Get processor owning entity
     */
   inline EntityHandle getOwnerProc() const { return owner_proc; }
 
@@ -221,7 +225,7 @@ struct BasicEntity {
 };
 
 /**
- * \brief struct keeps handle to refined handle.
+ * \brief Struct keeps handle to refined handle.
  * \ingroup ent_multi_indices
 
   \todo th_RefType "_RefType" is set as two integers, need to be fixed, it is
@@ -256,12 +260,14 @@ struct RefEntity: public BasicEntity {
    */
   BitRefLevel* getBitRefLevelPtr() const;
 
-  /// \brief Get entity
+  /** \brief Get entity
+  */
   inline EntityHandle getRefEnt() const { return ent; }
   DEPRECATED inline EntityHandle get_ref_ent() const { return getRefEnt(); }
 
 
-  /// \brief Get patent entity
+  /** \brief Get patent entity
+  */
   inline EntityType getParentEntType() const {
     EntityHandle* tag_parent_ent = getParentEntPtr();
     if(*tag_parent_ent == 0)  return MBMAXTYPE;
@@ -269,14 +275,16 @@ struct RefEntity: public BasicEntity {
   }
   DEPRECATED inline EntityType get_parent_ent_type() const { return getParentEntType(); }
 
-  /// \brief Get parent entity, i.e. entity form one refinment level up
+  /** \brief Get parent entity, i.e. entity form one refinement level up
+  */
   inline EntityHandle getParentEnt() const {
     EntityHandle* tag_parent_ent = getParentEntPtr();
     return *tag_parent_ent;
   }
   DEPRECATED inline EntityHandle get_parent_ent() const { return getParentEnt(); }
 
-  /// \brief Get entity ref bit refinment signature
+  /** \brief Get entity ref bit refinement signature
+  */
   inline const BitRefLevel& getBitRefLevel() const { return *getBitRefLevelPtr(); }
   DEPRECATED inline const BitRefLevel& get_BitRefLevel() const { return getBitRefLevel(); }
 
@@ -322,7 +330,7 @@ struct interface_RefEntity {
 
   virtual ~interface_RefEntity() {}
 
-  inline const boost::shared_ptr<T> get_RefEntity_ptr() {
+  inline const boost::shared_ptr<T> getRefEntityPtr() {
     return this->sPtr;
   }
 
@@ -499,7 +507,7 @@ struct RefEntity_change_set_nth_bit {
 };
 
 /**
-  * \brief struct keeps handle to entity in the field.
+  * \brief Struct keeps handle to entity in the field.
   * \ingroup ent_multi_indices
   */
 struct MoFEMEntity:
@@ -518,30 +526,76 @@ struct MoFEMEntity:
     const boost::shared_ptr<RefEntity> ref_ent_ptr
   );
   ~MoFEMEntity();
-  inline EntityHandle get_ent() const { return getRefEnt(); }
-  inline int get_nb_dofs_on_ent() const { return tag_FieldData_size/sizeof(FieldData); }
 
-  inline VectorAdaptor get_ent_FieldData() const {
-    int size = get_nb_dofs_on_ent();
+  /**
+   * \brief Get entity handle
+   * @return EntityHandle
+   */
+  inline EntityHandle getEnt() const { return getRefEnt(); }
+  DEPRECATED EntityHandle get_ent() const { return getEnt(); }
+
+  /**
+   * \brief Get number of DOFs on entity
+   * @return Number of DOFs
+   */
+  inline int getNbDofsOnEnt() const { return tag_FieldData_size/sizeof(FieldData); }
+  DEPRECATED inline int get_nb_dofs_on_ent() const { return getNbDofsOnEnt(); }
+
+  /**
+   * \brief Get Vector of DOFs values on entity
+   * @return Vector of DOFs values
+   */
+  inline VectorAdaptor getEntFieldData() const {
+    int size = getNbDofsOnEnt();
     double* ptr = const_cast<FieldData*>(tag_FieldData);
     return VectorAdaptor(size,ublas::shallow_array_adaptor<FieldData>(size,ptr));
   }
+  DEPRECATED inline VectorAdaptor get_ent_FieldData() const { return getEntFieldData(); }
 
-  inline int get_order_nb_dofs(int order) const { return (this->sFieldPtr->forder_table[getEntType()])(order); }
-  inline int get_order_nb_dofs_diff(int order) const { return get_order_nb_dofs(order)-get_order_nb_dofs(order-1); }
+  /**
+   * \brief Get number of DOFs on entity for given order of approximation
+   * @param  order Order of approximation
+   * @return       Number of DOFs
+   */
+  inline int getOrderNbDofs(int order) const { return (this->sFieldPtr->forder_table[getEntType()])(order); }
+  DEPRECATED inline int get_order_nb_dofs(int order) const { return getOrderNbDofs(order); }
 
-  ApproximationOrder* get_max_order_ptr();
-  ApproximationOrder get_max_order() const;
+  /**
+   * \brief Get difference of number of DOFs between order and order-1
+   * @param  order Approximation order
+   * @return       Difference number of DOFs
+   */
+  inline int getOrderNbDofsDiff(int order) const { return getOrderNbDofs(order)-getOrderNbDofs(order-1); }
+  DEPRECATED inline int get_order_nb_dofs_diff(int order) const { return getOrderNbDofsDiff(order); }
 
-  GlobalUId global_uid;
-  const GlobalUId& get_global_unique_id() const { return global_uid; }
+  /**
+   * \brief Get pinter to Tag keeping approximation order
+   * @return Pointer to Tag
+   */
+  ApproximationOrder* getMaxOrderPtr();
+
+  /**
+   * \brief Get order set to the entity (Allocated tag size for such number)
+   * @return Approximation order
+   */
+  ApproximationOrder getMaxOrder() const;
+  DEPRECATED inline ApproximationOrder get_max_order() const { return getMaxOrder(); }
+
+  GlobalUId global_uid; ///< Global unique id for this entity
+
+  /**
+   * \brief Get global unique id
+   * @return Global UId
+   */
+  const GlobalUId& getGlobalUniqueId() const { return global_uid; }
+  DEPRECATED const GlobalUId& get_global_unique_id() const { return getGlobalUniqueId(); }
 
   /**
    * \brief Calculate global UId
    * @return Global UId
    */
-  inline GlobalUId get_global_unique_id_calculate() const {
-    const char bit_number = get_bit_number();
+  inline GlobalUId getGlobalUniqueIdCalculate() const {
+    const char bit_number = getBitNumber();
     assert(bit_number<32);
     assert(sPtr->owner_proc<1024);
     GlobalUId _uid_ = (UId)0;
@@ -551,20 +605,24 @@ struct MoFEMEntity:
     return _uid_;
   }
 
+  /**
+   * \brief Get pointer to RefEntity
+   */
+  inline const boost::shared_ptr<RefEntity> getRefEntityPtr() { return this->sPtr; }
+  DEPRECATED inline const boost::shared_ptr<RefEntity> get_RefEntity_ptr() { return this->sPtr; }
+
+  /**
+   * \brief Get pointer to Field data structure associated with this entity
+   */
+  inline const boost::shared_ptr<Field> getFieldPtr() const { return this->sFieldPtr; }
+  DEPRECATED inline const boost::shared_ptr<Field> get_Field_ptr() const { return this->sFieldPtr; }
+
   friend std::ostream& operator<<(std::ostream& os,const MoFEMEntity& e);
-
-  inline const boost::shared_ptr<RefEntity> get_RefEntity_ptr() {
-    return this->sPtr;
-  }
-  inline const boost::shared_ptr<Field> get_Field_ptr() const {
-    return this->sFieldPtr;
-  }
-
 
 };
 
 /**
- * \brief interface to MoFEMEntity
+ * \brief Interface to MoFEMEntity
  * \ingroup ent_multi_indices
  *
  * interface to MoFEMEntity
@@ -579,22 +637,27 @@ interface_RefEntity<T> {
   interface_Field<T>(sptr),
   interface_RefEntity<T>(sptr) {
   };
-  inline EntityHandle get_ent() const { return this->sPtr->get_ent(); }
+  inline EntityHandle getEnt() const { return this->sPtr->getEnt(); }
+  DEPRECATED inline EntityHandle get_ent() const { return this->sPtr->getEnt(); }
+  inline int getNbDofsOnEnt() const { return this->sPtr->getNbDofsOnEnt(); }
+  DEPRECATED inline int get_nb_dofs_on_ent() const { return this->sPtr->getNbDofsOnEnt(); }
+  inline VectorAdaptor getEntFieldData() const { return this->sPtr->getEntFieldData(); }
+  DEPRECATED inline VectorAdaptor get_ent_FieldData() const { return this->sPtr->getEntFieldData(); }
+  inline int getOrderNbDofs(int order) const { return this->sFieldPtr->getOrderNbDofs(order); }
+  DEPRECATED inline int get_order_nb_dofs(int order) const { return this->sFieldPtr->getOrderNbDofs(order); }
+  inline int getOrderNbDofsDiff(int order) const { return this->sPtr->getOrderNbDofsDiff(order); }
+  DEPRECATED inline int get_order_nb_dofs_diff(int order) const { return this->sPtr->getOrderNbDofsDiff(order); }
+  inline ApproximationOrder getMaxOrder() const { return this->sPtr->getMaxOrder(); }
+  DEPRECATED inline ApproximationOrder get_max_order() const { return this->sPtr->getMaxOrder(); }
+  inline GlobalUId getGlobalUniqueId() const { return this->sPtr->getGlobalUniqueId(); }
+  DEPRECATED inline GlobalUId get_global_unique_id() const { return this->sPtr->getGlobalUniqueId(); }
+  inline const boost::shared_ptr<RefEntity> getRefEntityPtr() { return this->sPtr->getRefEntityPtr(); }
+  DEPRECATED inline const boost::shared_ptr<RefEntity> get_RefEntity_ptr() { return this->sPtr->getRefEntityPtr(); }
+  inline const boost::shared_ptr<Field> getFieldPtr() const { return this->sFieldPtr->getFieldPtr(); }
+  DEPRECATED inline const boost::shared_ptr<Field> get_Field_ptr() const { return this->sFieldPtr->getFieldPtr(); }
 
-  inline int get_nb_dofs_on_ent() const { return this->sPtr->get_nb_dofs_on_ent(); }
-  inline VectorAdaptor get_ent_FieldData() const { return this->sPtr->get_FieldData(); }
-  inline int get_order_nb_dofs(int order) const { return this->sFieldPtr->get_order_nb_dofs(order); }
-  inline int get_order_nb_dofs_diff(int order) const { return this->sPtr->get_order_nb_dofs_diff(order); }
-  inline ApproximationOrder get_max_order() const { return this->sPtr->get_max_order(); }
-  inline GlobalUId get_global_unique_id() const { return this->sPtr->get_global_unique_id(); }
-
-  inline const boost::shared_ptr<MoFEMEntity> get_MoFEMEntity_ptr() const { return this->sPtr; };
-  inline const boost::shared_ptr<RefEntity> get_RefEntity_ptr() {
-    return this->sPtr->get_RefEntity_ptr();
-  }
-  inline const boost::shared_ptr<Field> get_Field_ptr() const {
-    return this->sFieldPtr->get_Field_ptr();
-  }
+  inline const boost::shared_ptr<MoFEMEntity> getMoFEMEntityPtr() const { return this->sPtr; };
+  DEPRECATED inline const boost::shared_ptr<MoFEMEntity> get_MoFEMEntity_ptrMoFEMEntityPtr() const { return getMoFEMEntityPtr(); };
 
 };
 
@@ -626,17 +689,17 @@ typedef multi_index_container<
     ordered_non_unique<
       tag<Ent_ParallelStatus>, const_mem_fun<MoFEMEntity::interface_type_RefEntity,unsigned char,&MoFEMEntity::getPStatus> >,
     ordered_non_unique<
-      tag<BitFieldId_mi_tag>, const_mem_fun<MoFEMEntity::interface_type_Field,const BitFieldId&,&MoFEMEntity::get_id>, LtBit<BitFieldId> >,
+      tag<BitFieldId_mi_tag>, const_mem_fun<MoFEMEntity::interface_type_Field,const BitFieldId&,&MoFEMEntity::getId>, LtBit<BitFieldId> >,
     ordered_non_unique<
-      tag<FieldName_mi_tag>, const_mem_fun<MoFEMEntity::interface_type_Field,boost::string_ref,&MoFEMEntity::get_name_ref> >,
+      tag<FieldName_mi_tag>, const_mem_fun<MoFEMEntity::interface_type_Field,boost::string_ref,&MoFEMEntity::getNameRef> >,
     hashed_non_unique<
-      tag<Ent_mi_tag>, const_mem_fun<MoFEMEntity,EntityHandle,&MoFEMEntity::get_ent> >,
+      tag<Ent_mi_tag>, const_mem_fun<MoFEMEntity,EntityHandle,&MoFEMEntity::getEnt> >,
     ordered_non_unique<
       tag<Composite_Name_And_Ent_mi_tag>,
       composite_key<
       	MoFEMEntity,
-      	const_mem_fun<MoFEMEntity::interface_type_Field,boost::string_ref,&MoFEMEntity::get_name_ref>,
-      	const_mem_fun<MoFEMEntity,EntityHandle,&MoFEMEntity::get_ent>
+      	const_mem_fun<MoFEMEntity::interface_type_Field,boost::string_ref,&MoFEMEntity::getNameRef>,
+      	const_mem_fun<MoFEMEntity,EntityHandle,&MoFEMEntity::getEnt>
       > >
   > > MoFEMEntity_multiIndex;
 
@@ -644,7 +707,7 @@ typedef multi_index_container<
     boost::shared_ptr<MoFEMEntity>,
     indexed_by<
       hashed_non_unique<
-        tag<Ent_mi_tag>, const_mem_fun<MoFEMEntity,EntityHandle,&MoFEMEntity::get_ent> >
+        tag<Ent_mi_tag>, const_mem_fun<MoFEMEntity,EntityHandle,&MoFEMEntity::getEnt> >
   > > MoFEMEntity_multiIndex_ent_view;
 
 }

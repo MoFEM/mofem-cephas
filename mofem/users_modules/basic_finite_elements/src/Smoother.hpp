@@ -209,7 +209,7 @@ struct Smoother {
         ublas::vector<const FEDofEntity*>& dofs = row_data.getFieldDofs();
         ublas::vector<const FEDofEntity*>::iterator dit = dofs.begin();
         for(int ii = 0;dit!=dofs.end();dit++,ii++) {
-          if(dAta.forcesOnlyOnEntitiesRow.find((*dit)->get_ent())!=dAta.forcesOnlyOnEntitiesRow.end()) {
+          if(dAta.forcesOnlyOnEntitiesRow.find((*dit)->getEnt())!=dAta.forcesOnlyOnEntitiesRow.end()) {
             iNdices[ii] = -1;
           } else {
             frontIndices[ii] = -1;
@@ -284,7 +284,7 @@ struct Smoother {
         ublas::vector<const FEDofEntity*>& dofs = row_data.getFieldDofs();
         ublas::vector<const FEDofEntity*>::iterator dit = dofs.begin();
         for(int ii = 0;dit!=dofs.end();dit++,ii++) {
-          if(dAta.forcesOnlyOnEntitiesRow.find((*dit)->get_ent())!=dAta.forcesOnlyOnEntitiesRow.end()) {
+          if(dAta.forcesOnlyOnEntitiesRow.find((*dit)->getEnt())!=dAta.forcesOnlyOnEntitiesRow.end()) {
             rowIndices[ii] = -1;
           } else {
             rowFrontIndices[ii] = -1;

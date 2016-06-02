@@ -238,7 +238,7 @@ int main(int argc, char *argv[]) {
         )
       ); CHKERRQ(ierr);
 
-      EntityHandle ent = numeredEntFiniteElementPtr->get_ent();
+      EntityHandle ent = numeredEntFiniteElementPtr->getEnt();
       int num_nodes;
       const EntityHandle* conn;
       rval = mField.get_moab().get_connectivity(ent,conn,num_nodes,true); CHKERRQ_MOAB(rval);

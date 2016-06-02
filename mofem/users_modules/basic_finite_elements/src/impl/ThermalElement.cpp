@@ -52,14 +52,14 @@ PetscErrorCode ThermalElement::OpGetGradAtGaussPts::doWork(int side,EntityType t
 PetscErrorCode ThermalElement::OpThermalRhs::doWork(int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
   PetscFunctionBegin;
 
-  if(dAta.tEts.find(getNumeredEntFiniteElementPtr()->get_ent()) == dAta.tEts.end()) {
+  if(dAta.tEts.find(getNumeredEntFiniteElementPtr()->getEnt()) == dAta.tEts.end()) {
     PetscFunctionReturn(0);
   }
 
   try {
 
     if(data.getIndices().size()==0) PetscFunctionReturn(0);
-    if(dAta.tEts.find(getNumeredEntFiniteElementPtr()->get_ent())==dAta.tEts.end()) PetscFunctionReturn(0);
+    if(dAta.tEts.find(getNumeredEntFiniteElementPtr()->getEnt())==dAta.tEts.end()) PetscFunctionReturn(0);
 
     PetscErrorCode ierr;
 
@@ -116,7 +116,7 @@ PetscErrorCode ThermalElement::OpThermalLhs::doWork(
 ) {
   PetscFunctionBegin;
 
-  if(dAta.tEts.find(getNumeredEntFiniteElementPtr()->get_ent()) == dAta.tEts.end()) {
+  if(dAta.tEts.find(getNumeredEntFiniteElementPtr()->getEnt()) == dAta.tEts.end()) {
     PetscFunctionReturn(0);
   }
 
@@ -288,13 +288,13 @@ PetscErrorCode ThermalElement::OpHeatFlux::doWork(int side,EntityType type,DataF
   PetscFunctionBegin;
 
   if(data.getIndices().size()==0) PetscFunctionReturn(0);
-  if(dAta.tRis.find(getNumeredEntFiniteElementPtr()->get_ent())==dAta.tRis.end()) PetscFunctionReturn(0);
+  if(dAta.tRis.find(getNumeredEntFiniteElementPtr()->getEnt())==dAta.tRis.end()) PetscFunctionReturn(0);
 
   PetscErrorCode ierr;
 
   const FENumeredDofEntity *dof_ptr;
   ierr = getNumeredEntFiniteElementPtr()->get_row_dofs_by_petsc_gloabl_dof_idx(data.getIndices()[0],&dof_ptr); CHKERRQ(ierr);
-  int rank = dof_ptr->get_nb_of_coeffs();
+  int rank = dof_ptr->getNbOfCoeffs();
 
   int nb_dofs = data.getIndices().size()/rank;
 
@@ -402,13 +402,13 @@ PetscErrorCode ThermalElement::OpRadiationRhs::doWork(int side,EntityType type,D
   PetscFunctionBegin;
 
   if(data.getIndices().size()==0) PetscFunctionReturn(0);
-  if(dAta.tRis.find(getNumeredEntFiniteElementPtr()->get_ent())==dAta.tRis.end()) PetscFunctionReturn(0);
+  if(dAta.tRis.find(getNumeredEntFiniteElementPtr()->getEnt())==dAta.tRis.end()) PetscFunctionReturn(0);
 
   PetscErrorCode ierr;
 
   const FENumeredDofEntity *dof_ptr;
   ierr = getNumeredEntFiniteElementPtr()->get_row_dofs_by_petsc_gloabl_dof_idx(data.getIndices()[0],&dof_ptr); CHKERRQ(ierr);
-  int rank = dof_ptr->get_nb_of_coeffs();
+  int rank = dof_ptr->getNbOfCoeffs();
   int nb_row_dofs = data.getIndices().size()/rank;
 
   Nf.resize(data.getIndices().size());
@@ -458,13 +458,13 @@ PetscErrorCode ThermalElement::OpConvectionRhs::doWork(
   PetscFunctionBegin;
 
   if(data.getIndices().size()==0) PetscFunctionReturn(0);
-  if(dAta.tRis.find(getNumeredEntFiniteElementPtr()->get_ent())==dAta.tRis.end()) PetscFunctionReturn(0);
+  if(dAta.tRis.find(getNumeredEntFiniteElementPtr()->getEnt())==dAta.tRis.end()) PetscFunctionReturn(0);
 
   PetscErrorCode ierr;
 
   const FENumeredDofEntity *dof_ptr;
   ierr = getNumeredEntFiniteElementPtr()->get_row_dofs_by_petsc_gloabl_dof_idx(data.getIndices()[0],&dof_ptr); CHKERRQ(ierr);
-  int rank = dof_ptr->get_nb_of_coeffs();
+  int rank = dof_ptr->getNbOfCoeffs();
 
   int nb_row_dofs = data.getIndices().size()/rank;
 
@@ -669,7 +669,7 @@ PetscErrorCode ThermalElement::addThermalFluxElement(const std::string field_nam
   //this is alternative method for setting boundary conditions, to bypass bu in cubit file reader.
   //not elegant, but good enough
   for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BLOCKSET,it)) {
-    if(it->get_name().compare(0,9,"HEAT_FLUX") == 0) {
+    if(it->getName().compare(0,9,"HEAT_FLUX") == 0) {
       std::vector<double> data;
       ierr = it->get_attributes(data); CHKERRQ(ierr);
       if(data.size()!=1) {
@@ -705,7 +705,7 @@ PetscErrorCode ThermalElement::addThermalConvectionElement(const std::string fie
   //this is alternative method for setting boundary conditions, to bypass bu in cubit file reader.
   //not elegant, but good enough
   for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BLOCKSET,it)) {
-    if(it->get_name().compare(0,10,"CONVECTION") == 0) {
+    if(it->getName().compare(0,10,"CONVECTION") == 0) {
 
       std::vector<double> data;
       ierr = it->get_attributes(data); CHKERRQ(ierr);
@@ -741,7 +741,7 @@ PetscErrorCode ThermalElement::addThermalRadiationElement(const std::string fiel
   //this is alternative method for setting boundary conditions, to bypass bu in cubit file reader.
   //not elegant, but good enough
   for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BLOCKSET,it)) {
-    if(it->get_name().compare(0,9,"RADIATION") == 0) {
+    if(it->getName().compare(0,9,"RADIATION") == 0) {
       std::vector<double> data;
       ierr = it->get_attributes(data); CHKERRQ(ierr);
       if(data.size()!=3) {

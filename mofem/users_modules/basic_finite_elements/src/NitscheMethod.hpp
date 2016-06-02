@@ -245,7 +245,7 @@ struct NitscheMethod {
       try {
         commonData.nbActiveFaces = 0;
         commonData.fAces.resize(4);
-        EntityHandle tet = numeredEntFiniteElementPtr->get_ent();
+        EntityHandle tet = numeredEntFiniteElementPtr->getEnt();
         for(int ff = 0;ff<4;ff++) {
           EntityHandle face;
           rval = mField.get_moab().side_element(tet,2,ff,face); CHKERRQ_MOAB(rval);
@@ -517,7 +517,7 @@ struct NitscheMethod {
       PetscFunctionBegin;
 
       PetscErrorCode ierr;
-      if(dAta.tEts.find(getNumeredEntFiniteElementPtr()->get_ent()) == dAta.tEts.end()) {
+      if(dAta.tEts.find(getNumeredEntFiniteElementPtr()->getEnt()) == dAta.tEts.end()) {
         PetscFunctionReturn(0);
       }
       if(row_data.getIndices().size()==0) PetscFunctionReturn(0);
@@ -691,7 +691,7 @@ struct NitscheMethod {
       PetscFunctionBegin;
 
       PetscErrorCode ierr;
-      if(dAta.tEts.find(getNumeredEntFiniteElementPtr()->get_ent()) == dAta.tEts.end()) {
+      if(dAta.tEts.find(getNumeredEntFiniteElementPtr()->getEnt()) == dAta.tEts.end()) {
         PetscFunctionReturn(0);
       }
       if(row_data.getIndices().size()==0) PetscFunctionReturn(0);

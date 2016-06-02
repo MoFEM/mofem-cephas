@@ -70,7 +70,7 @@ PetscErrorCode Core::build_problem_on_partitioned_mesh(MoFEMProblem *problem_ptr
 
   if(verb==-1) verb = verbose;
   if(problem_ptr->getBitRefLevel().none()) {
-    SETERRQ1(PETSC_COMM_SELF,1,"problem <%s> refinement level not set",problem_ptr->get_name().c_str());
+    SETERRQ1(PETSC_COMM_SELF,1,"problem <%s> refinement level not set",problem_ptr->getName().c_str());
   }
   //zero finite elements
   ProblemClearNumeredFiniteElementsChange().operator()(*problem_ptr);
@@ -99,7 +99,7 @@ PetscErrorCode Core::build_problem_on_distributed_mesh(MoFEMProblem *problem_ptr
 
   if(verb==-1) verb = verbose;
   if(problem_ptr->getBitRefLevel().none()) {
-    SETERRQ1(PETSC_COMM_SELF,1,"problem <%s> refinement level not set",problem_ptr->get_name().c_str());
+    SETERRQ1(PETSC_COMM_SELF,1,"problem <%s> refinement level not set",problem_ptr->getName().c_str());
   }
 
   //zero finite elements
@@ -124,7 +124,7 @@ PetscErrorCode Core::build_problem_on_distributed_mesh(MoFEMProblem *problem_ptr
     //iterate all finite elemen entities in database
     for(;fe_miit!=hi_fe_miit;fe_miit++) {
       //if element is in problem
-      if(((*fe_miit)->get_id()&problem_ptr->get_BitFEId()).any()) {
+      if(((*fe_miit)->getId()&problem_ptr->get_BitFEId()).any()) {
         //if finite element bit level has all refined bits sets
         if(((*fe_miit)->getBitRefLevel()&problem_ptr->getBitRefLevel())==problem_ptr->getBitRefLevel()) {
           //get dof uids for rows and columns
@@ -249,9 +249,9 @@ PetscErrorCode Core::build_problem_on_distributed_mesh(MoFEMProblem *problem_ptr
 
         for(int proc = 0; proc<MAX_SHARING_PROCS && -1 != (*mit)->getSharingProcsPtr()[proc]; proc++) {
           if(ss == 0) {
-            ids_data_packed_rows[(*mit)->getSharingProcsPtr()[proc]].push_back(IdxDataType((*mit)->get_global_unique_id(),glob_idx));
+            ids_data_packed_rows[(*mit)->getSharingProcsPtr()[proc]].push_back(IdxDataType((*mit)->getGlobalUniqueId(),glob_idx));
           } else {
-            ids_data_packed_cols[(*mit)->getSharingProcsPtr()[proc]].push_back(IdxDataType((*mit)->get_global_unique_id(),glob_idx));
+            ids_data_packed_cols[(*mit)->getSharingProcsPtr()[proc]].push_back(IdxDataType((*mit)->getGlobalUniqueId(),glob_idx));
           }
           if(!(pstatus&PSTATUS_MULTISHARED)) {
             break;
@@ -724,10 +724,10 @@ PetscErrorCode Core::build_problem(MoFEMProblem *problem_ptr,int verb) {
   // indexing are allowd.
   if(verb==-1) verb = verbose;
   if(problem_ptr->getBitRefLevel().none()) {
-    SETERRQ1(PETSC_COMM_SELF,1,"problem <%s> refinement level not set",problem_ptr->get_name().c_str());
+    SETERRQ1(PETSC_COMM_SELF,1,"problem <%s> refinement level not set",problem_ptr->getName().c_str());
   }
   if(problem_ptr->getBitRefLevel().none()) {
-    SETERRQ1(PETSC_COMM_SELF,1,"problem <%s> refinement level not set",problem_ptr->get_name().c_str());
+    SETERRQ1(PETSC_COMM_SELF,1,"problem <%s> refinement level not set",problem_ptr->getName().c_str());
   }
 
   PetscLogEventBegin(USER_EVENT_buildProblem,0,0,0,0);
@@ -742,7 +742,7 @@ PetscErrorCode Core::build_problem(MoFEMProblem *problem_ptr,int verb) {
   //iterate all finite element entities in database
   for(;miit3!=hi_miit2;miit3++) {
     //if element is in problem
-    if(((*miit3)->get_id()&problem_ptr->get_BitFEId()).any()) {
+    if(((*miit3)->getId()&problem_ptr->get_BitFEId()).any()) {
       //if finite element bit level has all refined bits sets
       if(((*miit3)->getBitRefLevel()&problem_ptr->getBitRefLevel())==problem_ptr->getBitRefLevel()) {
         //get dof uids for rows and columns
@@ -792,7 +792,7 @@ PetscErrorCode Core::build_problem(MoFEMProblem *problem_ptr,int verb) {
   //job done, some debugging and postprocessing
   if(verbose>0) {
     PetscSynchronizedPrintf(comm,"Problem %s Nb. rows %u Nb. cols %u\n",
-    problem_ptr->get_name().c_str(),
+    problem_ptr->getName().c_str(),
     problem_ptr->numered_dofs_rows->size(),problem_ptr->numered_dofs_cols->size());
   }
   if(verb>1) {
@@ -1005,7 +1005,7 @@ PetscErrorCode Core::partition_compose_problem(const std::string &name,const std
   if(verb>0) {
     PetscPrintf(
       comm,"Compose problem %s from rows of %s and columns of %s\n",
-      p_miit->get_name().c_str(),problem_for_rows.c_str(),problem_for_cols.c_str()
+      p_miit->getName().c_str(),problem_for_rows.c_str(),problem_for_cols.c_str()
     );
   }
 
@@ -1052,7 +1052,7 @@ PetscErrorCode Core::partition_compose_problem(const std::string &name,const std
       NumeredDofEntitys_by_uid &dofs_by_uid = const_cast<NumeredDofEntitys_by_uid&>(copied_dofs[ss]->get<Unique_mi_tag>());
       for(NumeredDofEntity_multiIndex::iterator dit = composed_dofs[ss]->begin();dit!=composed_dofs[ss]->end();dit++) {
 
-        NumeredDofEntitys_by_uid::iterator diit = dofs_by_uid.find((*dit)->get_global_unique_id());
+        NumeredDofEntitys_by_uid::iterator diit = dofs_by_uid.find((*dit)->getGlobalUniqueId());
         if(diit==dofs_by_uid.end()) {
           SETERRQ(
             PETSC_COMM_SELF,
@@ -1225,7 +1225,7 @@ PetscErrorCode Core::resolve_shared_ents(const MoFEMProblem *problem_ptr,const s
   ierr = PetscLayoutGetRange(layout,&gid,&last_gid); CHKERRQ(ierr);
   ierr = PetscLayoutDestroy(&layout); CHKERRQ(ierr);
   for(_IT_NUMEREDFEMOFEMENTITY_BY_NAME_FOR_LOOP_(problem_ptr,fe_name,fe_it)) {
-    EntityHandle ent = (*fe_it)->get_ent();
+    EntityHandle ent = (*fe_it)->getEnt();
     ents.insert(ent);
     unsigned int part = (*fe_it)->get_part();
     rval = moab.tag_set_data(pcomm->part_tag(),&ent,1,&part); CHKERRQ_MOAB(rval);

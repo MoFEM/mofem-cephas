@@ -76,7 +76,7 @@ PetscErrorCode Core::delete_recorder_series(const std::string& series_name) {
   if(sit == sEries.get<SeriesName_mi_tag>().end()) {
     SETERRQ1(PETSC_COMM_SELF,1,"serie recorder <%s> not exist and can be deleted",series_name.c_str());
   }
-  EntityHandle series_meshset = sit->get_meshset();
+  EntityHandle series_meshset = sit->getMeshSet();
   rval = moab.tag_delete(sit->th_SeriesTime); CHKERRQ_MOAB(rval);
   rval = moab.tag_delete(sit->th_SeriesDataHandles); CHKERRQ_MOAB(rval);
   rval = moab.tag_delete(sit->th_SeriesDataUIDs); CHKERRQ_MOAB(rval);
@@ -137,7 +137,7 @@ PetscErrorCode Core::record_field(const std::string& serie_name,const std::strin
     const BitRefLevel &dof_bit = (*dit)->getBitRefLevel();
     if((dof_bit&mask) != dof_bit) continue;
     if((dof_bit&bit).any()) {
-      EntityHandle ent = (*dit)->get_ent();
+      EntityHandle ent = (*dit)->getEnt();
       ShortId uid = (*dit)->get_non_nonunique_short_id();
       FieldData val = (*dit)->get_FieldData();
       ierr = const_cast<MoFEMSeries*>(&*sit)->push_dofs(ent,uid,val); CHKERRQ(ierr);

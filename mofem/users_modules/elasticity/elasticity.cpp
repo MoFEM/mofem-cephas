@@ -195,7 +195,7 @@ int main(int argc, char *argv[]) {
         if(block_data[it->get_msId()].oRder == order) continue;
         PetscPrintf(PETSC_COMM_WORLD,"Set block %d order to %d\n",it->get_msId(),block_data[it->get_msId()].oRder);
         Range block_ents;
-        rval = moab.get_entities_by_handle(it->get_meshset(),block_ents,true); CHKERRQ_MOAB(rval);
+        rval = moab.get_entities_by_handle(it->getMeshSet(),block_ents,true); CHKERRQ_MOAB(rval);
         Range ents_to_set_order;
         rval = moab.get_adjacencies(block_ents,3,false,ents_to_set_order,Interface::UNION); CHKERRQ_MOAB(rval);
         ents_to_set_order = ents_to_set_order.subset_by_type(MBTET);

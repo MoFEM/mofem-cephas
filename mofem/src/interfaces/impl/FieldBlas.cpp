@@ -61,10 +61,10 @@ PetscErrorCode Core::field_axpy(const double alpha,const std::string& field_name
   if(y_fit==fIelds.get<FieldName_mi_tag>().end()) {
     SETERRQ1(PETSC_COMM_SELF,1,"y field < %s > not found, (top tip: check spelling)",field_name_y.c_str());
   }
-  if((*x_fit)->get_space() != (*y_fit)->get_space()) {
+  if((*x_fit)->getSpace() != (*y_fit)->getSpace()) {
     SETERRQ2(PETSC_COMM_SELF,1,"space for field < %s > and field <%s> are not compatible",field_name_x.c_str(),field_name_y.c_str());
   }
-  if((*x_fit)->get_nb_of_coeffs() != (*y_fit)->get_nb_of_coeffs()) {
+  if((*x_fit)->getNbOfCoeffs() != (*y_fit)->getNbOfCoeffs()) {
     SETERRQ2(PETSC_COMM_SELF,1,"rank for field < %s > and field <%s> are not compatible",field_name_x.c_str(),field_name_y.c_str());
   }
   MoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator x_eit;
@@ -77,7 +77,7 @@ PetscErrorCode Core::field_axpy(const double alpha,const std::string& field_name
       FieldData data = (*x_eit)->tag_FieldData[dd];
       DofEntity_multiIndex::index<Composite_Name_Ent_Order_And_CoeffIdx_mi_tag>::type::iterator dit;
       dit = dofsField.get<Composite_Name_Ent_Order_And_CoeffIdx_mi_tag>().find(
-        boost::make_tuple(field_name_y.c_str(),(*x_eit)->get_ent(),dof_order,dof_rank)
+        boost::make_tuple(field_name_y.c_str(),(*x_eit)->getEnt(),dof_order,dof_rank)
       );
       if(dit == dofsField.get<Composite_Name_Ent_Order_And_CoeffIdx_mi_tag>().end()) {
         if(creat_if_missing) {
@@ -85,7 +85,7 @@ PetscErrorCode Core::field_axpy(const double alpha,const std::string& field_name
         } else {
           if(error_if_missing) {
             std::ostringstream ss;
-            ss << "dof on ent " << (*x_eit)->get_ent() << " order " << dof_order << " rank " << dof_rank << " does not exist";
+            ss << "dof on ent " << (*x_eit)->getEnt() << " order " << dof_order << " rank " << dof_rank << " does not exist";
             SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,ss.str().c_str());
           } else {
             continue;
@@ -115,7 +115,7 @@ PetscErrorCode Core::set_field(const double val,const EntityType type,const Rang
   EntityHandle ent,last = 0;
   bool cont = true;
   for(;dit!=hi_dit;dit++) {
-    ent = (*dit)->get_ent();
+    ent = (*dit)->getEnt();
     if(ent != last) {
       if(ents.find(ent)==ents.end()) {
         cont = true;

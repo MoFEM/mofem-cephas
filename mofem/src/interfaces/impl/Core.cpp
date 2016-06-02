@@ -529,13 +529,13 @@ BitFieldId Core::get_BitFieldId(const std::string& name) const {
   if(miit==set.end()) {
     THROW_MESSAGE("field < "+name+" > not in database (top tip: check spelling)");
   }
-  return (*miit)->get_id();
+  return (*miit)->getId();
 }
 std::string Core::get_BitFieldId_name(const BitFieldId id) const {
   typedef Field_multiIndex::index<BitFieldId_mi_tag>::type field_set_by_id;
   const field_set_by_id &set = fIelds.get<BitFieldId_mi_tag>();
   field_set_by_id::iterator miit = set.find(id);
-  return (*miit)->get_name();
+  return (*miit)->getName();
 }
 EntityHandle Core::get_field_meshset(const BitFieldId id) const {
   typedef Field_multiIndex::index<BitFieldId_mi_tag>::type field_set_by_id;
@@ -934,7 +934,7 @@ PetscErrorCode Core::initialiseDatabseInformationFromMesh(int verb) {
       } catch (MoFEMException const &e) {
         SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
       }
-      if((*p.first)->get_space()==NOFIELD) {
+      if((*p.first)->getSpace()==NOFIELD) {
         assert((*p.first)->meshSet == *mit);
         //add field to ref ents
         std::pair<RefEntity_multiIndex::iterator,bool> p_ref_ent;
@@ -1156,37 +1156,37 @@ PetscErrorCode Core::set_field_coordinate_system(const std::string field_name,co
       dim *= (*cs_it)->getDim(alpha);
     }
   }
-  switch((*field_it)->get_space()) {
+  switch((*field_it)->getSpace()) {
     case NOSPACE:
     SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"No space given");
     case H1:
-    if((*field_it)->get_nb_of_coeffs()!=dim) {
+    if((*field_it)->getNbOfCoeffs()!=dim) {
       SETERRQ2(
         PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,
         "dimension mismatch of field and coordinate system"
         "cs dim %d field rank %d",
-        dim,(*field_it)->get_nb_of_coeffs()
+        dim,(*field_it)->getNbOfCoeffs()
       );
     }
     break;
     case HDIV:
     case HCURL:
-    if(3*(*field_it)->get_nb_of_coeffs()!=dim) {
+    if(3*(*field_it)->getNbOfCoeffs()!=dim) {
       SETERRQ2(
         PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,
         "dimension mismatch of field and coordinate system"
         "cs dim %d field rank %d",
-        dim,(*field_it)->get_nb_of_coeffs()
+        dim,(*field_it)->getNbOfCoeffs()
       );
     }
     break;
     case L2:
-    if((*field_it)->get_nb_of_coeffs()!=dim) {
+    if((*field_it)->getNbOfCoeffs()!=dim) {
       SETERRQ2(
         PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,
         "dimension mismatch of field and coordinate system"
         "cs dim %d field rank %d",
-        dim,(*field_it)->get_nb_of_coeffs()
+        dim,(*field_it)->getNbOfCoeffs()
       );
     }
     case NOFIELD:
