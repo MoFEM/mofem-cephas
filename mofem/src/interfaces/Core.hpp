@@ -735,7 +735,7 @@ struct Core: public FieldInterface, MeshRefinment, PrismInterface, SeriesRecorde
   PetscErrorCode loop_dofs(const std::string &field_name,EntMethod &method,int verb = -1);
 
   //get multi_index form database
-  PetscErrorCode getRefEnts(const RefEntity_multiIndex **refined_entities_ptr) const;
+  PetscErrorCode get_ref_ents(const RefEntity_multiIndex **refined_entities_ptr) const;
   PetscErrorCode get_ref_finite_elements(const RefElement_multiIndex **refined_finite_elements_ptr) const;
   PetscErrorCode get_problem(const std::string &problem_name,const MoFEMProblem **problem_ptr) const;
   PetscErrorCode get_field_ents(const MoFEMEntity_multiIndex **field_ents) const;

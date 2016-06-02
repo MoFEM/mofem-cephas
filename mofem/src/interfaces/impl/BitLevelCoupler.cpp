@@ -211,7 +211,7 @@ PetscErrorCode BitLevelCouplerInterface::buidlAdjacenciesVerticesOnTets(const Bi
   //find parents of all nodes, if node has no parent then tetrahedral containing that node is searched
   //node on tetrahedra my by part of face or edge on that tetrahedral, this need to be verified
   const RefEntity_multiIndex *refined_ptr;
-  ierr = m_field.getRefEnts(&refined_ptr); CHKERRQ(ierr);
+  ierr = m_field.get_ref_ents(&refined_ptr); CHKERRQ(ierr);
   RefEntity_multiIndex::index<EntType_mi_tag>::type::iterator it,hi_it;
   it = refined_ptr->get<EntType_mi_tag>().lower_bound(MBVERTEX);
   hi_it = refined_ptr->get<EntType_mi_tag>().upper_bound(MBVERTEX);
@@ -274,7 +274,7 @@ PetscErrorCode BitLevelCouplerInterface::buidlAdjacenciesEdgesFacesVolumes(
 
   //access to ref dofs multi-index
   const RefEntity_multiIndex *refined_ptr;
-  ierr = m_field.getRefEnts(&refined_ptr); CHKERRQ(ierr);
+  ierr = m_field.get_ref_ents(&refined_ptr); CHKERRQ(ierr);
 
   std::vector<EntityHandle> conn_parents;
 
@@ -375,7 +375,7 @@ PetscErrorCode BitLevelCouplerInterface::chanegParent(RefEntity_multiIndex::iter
 
   FieldInterface& m_field = cOre;
   const RefEntity_multiIndex *refined_ptr;
-  ierr = m_field.getRefEnts(&refined_ptr); CHKERRQ(ierr);
+  ierr = m_field.get_ref_ents(&refined_ptr); CHKERRQ(ierr);
 
   if(vErify) {
     ierr = verifyParent(it,parent); CHKERRQ(ierr);
@@ -419,7 +419,7 @@ PetscErrorCode BitLevelCouplerInterface::resetParents(Range &children,bool eleme
 
   //access to ref dofs multi-index
   const RefEntity_multiIndex *refined_ptr;
-  ierr = m_field.getRefEnts(&refined_ptr); CHKERRQ(ierr);
+  ierr = m_field.get_ref_ents(&refined_ptr); CHKERRQ(ierr);
 
   Range::iterator eit,hi_eit;
   eit = children.begin();

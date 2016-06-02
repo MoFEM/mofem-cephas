@@ -332,6 +332,7 @@ interface_RefElement<RefElement> {
     return _uid_;
   }
   inline EntityHandle getEnt() const { return getRefEnt(); }
+  DEPRECATED inline EntityHandle get_ent() const { return getRefEnt(); }
   inline DofIdx get_nb_dofs_row() const { return row_dof_view->size(); }
   inline DofIdx get_nb_dofs_col() const { return col_dof_view->size(); }
   inline DofIdx get_nb_dofs_data() const { return data_dof_view->size(); }
@@ -406,7 +407,8 @@ interface_RefElement<T> {
   inline DofIdx get_nb_dofs_row() const { return this->sPtr->get_nb_dofs_row(); }
   inline DofIdx get_nb_dofs_col() const { return this->sPtr->get_nb_dofs_col(); }
   inline DofIdx get_nb_dofs_data() const { return this->sPtr->get_nb_dofs_data(); }
-  inline EntityHandle getEnt() const { return this->sPtr->getRefEnt(); };
+  inline EntityHandle getEnt() const { return this->sPtr->getRefEnt(); }
+  DEPRECATED inline EntityHandle get_ent() const { return getEnt(); }
   inline GlobalUId getGlobalUniqueId() const { return this->sPtr->getGlobalUniqueId(); }
   //
   SideNumber_multiIndex &get_side_number_table() const { return this->sPtr->get_side_number_table(); }

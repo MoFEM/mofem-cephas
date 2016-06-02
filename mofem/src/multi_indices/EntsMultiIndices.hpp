@@ -657,7 +657,7 @@ interface_RefEntity<T> {
   DEPRECATED inline const boost::shared_ptr<Field> get_Field_ptr() const { return this->sFieldPtr->getFieldPtr(); }
 
   inline const boost::shared_ptr<MoFEMEntity> getMoFEMEntityPtr() const { return this->sPtr; };
-  DEPRECATED inline const boost::shared_ptr<MoFEMEntity> get_MoFEMEntity_ptrMoFEMEntityPtr() const { return getMoFEMEntityPtr(); };
+  DEPRECATED inline const boost::shared_ptr<MoFEMEntity> get_MoFEMEntity_ptr() const { return getMoFEMEntityPtr(); };
 
 };
 

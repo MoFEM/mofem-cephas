@@ -3179,7 +3179,7 @@ PetscErrorCode Core::loop_dofs(const std::string &field_name,EntMethod &method,i
   ierr = method.postProcess(); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
-PetscErrorCode Core::getRefEnts(const RefEntity_multiIndex **refined_entities_ptr) const {
+PetscErrorCode Core::get_ref_ents(const RefEntity_multiIndex **refined_entities_ptr) const {
   PetscFunctionBegin;
   *refined_entities_ptr = &refinedEntities;
   PetscFunctionReturn(0);

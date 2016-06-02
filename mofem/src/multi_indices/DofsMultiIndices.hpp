@@ -88,20 +88,23 @@ struct DofEntity: public interface_MoFEMEntity<MoFEMEntity> {
     */
   inline ShortId get_non_nonunique_short_id() const  { return get_non_nonunique_short_id(dof,getMoFEMEntityPtr()); }
 
-  inline EntityHandle getEnt() const { return this->sPtr->getEnt(); };
+  inline EntityHandle getEnt() const { return this->sPtr->getEnt(); }
+  inline EntityHandle get_ent() const { return getEnt(); }
+
+
   inline ApproximationOrder get_dof_order() const {
     return ((ApproximationOrder*)this->sPtr->tag_dof_order_data)[get_EntDofIdx()];
-  };
+  }
 
   DEPRECATED inline FieldCoefficientsNumber get_dof_rank() const {
     return ((FieldCoefficientsNumber*)this->sPtr->tag_dof_rank_data)[get_EntDofIdx()];
-  };
+  }
 
   /** \brief Get dof coefficient
   */
   inline FieldCoefficientsNumber get_dof_coeff_idx() const {
     return ((FieldCoefficientsNumber*)this->sPtr->tag_dof_rank_data)[get_EntDofIdx()];
-  };
+  }
 
   //check if node is active
   inline char get_active() const { return active ? 1 : 0; }
@@ -118,7 +121,7 @@ struct interface_DofEntity: public interface_MoFEMEntity<T> {
 
   interface_DofEntity(const boost::shared_ptr<T> sptr):
   interface_MoFEMEntity<T>(sptr) {
-  };
+  }
 
   inline const GlobalUId getGlobalUniqueId() const { return this->sPtr->getGlobalUniqueId(); }
   DEPRECATED inline const GlobalUId get_global_unique_id() const { return this->sPtr->getGlobalUniqueId(); }
@@ -126,26 +129,31 @@ struct interface_DofEntity: public interface_MoFEMEntity<T> {
   inline ShortId get_non_nonunique_short_id() const { return this->sPtr->get_non_nonunique_short_id(); }
   inline DofIdx get_EntDofIdx() const { return this->sPtr->get_EntDofIdx(); }
   inline FieldData& get_FieldData() const { return this->sPtr->get_FieldData(); }
+
   inline EntityHandle getEnt() const { return this->sPtr->getEnt(); };
+  DEPRECATED inline EntityHandle get_ent() const { return getEnt(); };
+
   inline ApproximationOrder get_dof_order() const { return this->sPtr->get_dof_order(); };
 
   DEPRECATED inline FieldCoefficientsNumber get_dof_rank() const {
     return this->sPtr->get_dof_coeff_idx();
-  };
+  }
 
   inline FieldCoefficientsNumber get_dof_coeff_idx() const {
     return this->sPtr->get_dof_coeff_idx();
-  };
+  }
 
   inline char get_active() const { return this->sPtr->get_active(); }
   inline const boost::shared_ptr<DofEntity> get_DofEntity_ptr() const {
     return this->sPtr;
-  };
+  }
 
   inline const boost::shared_ptr<MoFEMEntity> getMoFEMEntityPtr() const {
     return this->sPtr->getMoFEMEntityPtr();
-  };
-
+  }
+  DEPRECATED inline const boost::shared_ptr<MoFEMEntity> get_MoFEMEntity_ptr() const {
+    return this->sPtr->getMoFEMEntityPtr();
+  }
 
 };
 
