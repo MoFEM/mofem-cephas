@@ -522,7 +522,7 @@ struct ForcesAndSurcesCore: public FEMethod {
 
     /** \brief DEPRECATED pleas use getNumeredEntFiniteElementPtr() instead
     */
-    DEPRECATED inline const NumeredEntFiniteElement* getMoFEMFEPtr() const { return ptrFE->numeredEntFiniteElementPtr; };
+    DEPRECATED inline const NumeredEntFiniteElement* getMoFEMFEPtr() const { return getNumeredEntFiniteElementPtr(); };
 
     /** \brief Get row indices
 
