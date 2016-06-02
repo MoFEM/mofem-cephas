@@ -52,7 +52,7 @@ namespace MoFEM {
 PetscErrorCode Core::get_adjacencies_equality(const EntityHandle from_entiti,const int to_dimension,Range &adj_entities) const {
   MoABErrorCode rval;
   PetscFunctionBegin;
-  RefEntity from_ref_entiti(moab,from_entiti);
+  RefEntity from_ref_entiti(basicEntityDataPtr,from_entiti);
   //std::cerr << "from:\n";
   //std::cerr << from_ref_entiti << std::endl;
   rval = moab.get_adjacencies(&from_entiti,1,to_dimension,false,adj_entities); CHKERRQ_MOAB(rval);
@@ -78,7 +78,7 @@ PetscErrorCode Core::get_adjacencies_equality(const EntityHandle from_entiti,con
 PetscErrorCode Core::get_adjacencies_any(const EntityHandle from_entiti,const int to_dimension,Range &adj_entities) const {
   MoABErrorCode rval;
   PetscFunctionBegin;
-  RefEntity from_ref_entiti(moab,from_entiti);
+  RefEntity from_ref_entiti(basicEntityDataPtr,from_entiti);
   //std::cerr << "from:\n";
   //std::cerr << from_ref_entiti << std::endl;
   rval = moab.get_adjacencies(&from_entiti,1,to_dimension,false,adj_entities); CHKERRQ_MOAB(rval);
@@ -142,7 +142,7 @@ PetscErrorCode Core::get_adjacencies(
   //std::cerr << "to:\n";
   for(;eit!=adj_entities.end();b_it++) {
     if(verb>0) {
-      RefEntity adj_entiti(moab,*eit);
+      RefEntity adj_entiti(basicEntityDataPtr,*eit);
       std::ostringstream ss;
       ss << "\t" << adj_entiti << std::endl;
       PetscPrintf(comm,ss.str().c_str());

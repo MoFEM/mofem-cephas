@@ -587,7 +587,7 @@ PetscErrorCode ForcesAndSurcesCore::getNoFieldIndices(
 PetscErrorCode ForcesAndSurcesCore::getNoFieldRowIndices(DataForcesAndSurcesCore &data,const std::string &field_name) const {
   PetscErrorCode ierr;
   PetscFunctionBegin;
-  //EntityType fe_type = numeredEntFiniteElementPtr->get_ent_type();
+  //EntityType fe_type = numeredEntFiniteElementPtr->getEntType();
   if(data.dataOnEntities[MBENTITYSET].size() == 0) {
     SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
   }
@@ -1024,9 +1024,9 @@ PetscErrorCode ForcesAndSurcesCore::getSpacesAndBaseOnEntities(DataForcesAndSurc
       // std::cerr << dof->get_approx_base() << " " << data.bAse.size() << std::endl;
       data.sPace.set((*dof)->get_space());
       data.bAse.set((*dof)->get_approx_base());
-      data.spacesOnEntities[(*dof)->get_ent_type()].set((*dof)->get_space());
-      data.basesOnEntities[(*dof)->get_ent_type()].set((*dof)->get_approx_base());
-      // std::cerr << "approx base " << ApproximationBaseNames[dof->get_approx_base()] << " " << data.basesOnEntities[dof->get_ent_type()] << std::endl;
+      data.spacesOnEntities[(*dof)->getEntType()].set((*dof)->get_space());
+      data.basesOnEntities[(*dof)->getEntType()].set((*dof)->get_approx_base());
+      // std::cerr << "approx base " << ApproximationBaseNames[dof->get_approx_base()] << " " << data.basesOnEntities[dof->getEntType()] << std::endl;
     }
   } catch (std::exception& ex) {
     std::ostringstream ss;

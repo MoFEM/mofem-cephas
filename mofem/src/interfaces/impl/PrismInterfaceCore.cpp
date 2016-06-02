@@ -351,7 +351,7 @@ PetscErrorCode Core::get_msId_3dENTS_split_sides(
       //parent is node on "mather" side
       rval = moab.tag_set_data(th_RefParentHandle,&new_node,1,&*nit); CHKERRQ_MOAB(rval);
       std::pair<RefEntity_multiIndex::iterator,bool> p_ref_ent = refinedEntities.insert(
-        boost::shared_ptr<RefEntity>(new RefEntity(moab,new_node))
+        boost::shared_ptr<RefEntity>(new RefEntity(basicEntityDataPtr,new_node))
       );
       //set ref bit level to node on "father" side
       success = refinedEntities.modify(p_ref_ent.first,RefEntity_change_add_bit(bit));
@@ -599,7 +599,7 @@ PetscErrorCode Core::get_msId_3dENTS_split_sides(
     rval = moab.tag_set_data(th_RefParentHandle,&*new_ent.begin(),1,&*eit); CHKERRQ_MOAB(rval);
     //add to database
     std::pair<RefEntity_multiIndex::iterator,bool> p_ref_ent = refinedEntities.insert(
-      boost::shared_ptr<RefEntity>(new RefEntity(moab,new_ent[0]))
+      boost::shared_ptr<RefEntity>(new RefEntity(basicEntityDataPtr,new_ent[0]))
     );
     refinedEntities.modify(p_ref_ent.first,RefEntity_change_add_bit(bit));
     new_ents_in_database.insert(new_ent.begin(),new_ent.end());
@@ -655,7 +655,7 @@ PetscErrorCode Core::get_msId_3dENTS_split_sides(
     rval = moab.tag_set_data(th_RefParentHandle,&*new_ent.begin(),1,&*eit); CHKERRQ_MOAB(rval);
     std::pair<RefEntity_multiIndex::iterator,bool> p_ref_ent
     = refinedEntities.insert(
-      boost::shared_ptr<RefEntity>(new RefEntity(moab,new_ent[0]))
+      boost::shared_ptr<RefEntity>(new RefEntity(basicEntityDataPtr,new_ent[0]))
     );
     refinedEntities.modify(p_ref_ent.first,RefEntity_change_add_bit(bit));
     if(verb>3) PetscPrintf(comm,"new_ent %u\n",new_ent.size());

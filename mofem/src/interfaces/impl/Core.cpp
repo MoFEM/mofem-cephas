@@ -236,7 +236,10 @@ PetscErrorCode mofem_error_handler(MPI_Comm comm,int line,const char *fun,const 
 }
 
 Core::Core(Interface& _moab,MPI_Comm _comm,TagType _tag_type,int _verbose):
-moab(_moab),comm(_comm),verbose(_verbose) {
+MeshRefinment(_moab),
+moab(_moab),
+comm(_comm),
+verbose(_verbose) {
 
   if(!isGloballyInitialised) {
     PetscPushErrorHandler(mofem_error_handler,PETSC_NULL);
@@ -278,11 +281,12 @@ moab(_moab),comm(_comm),verbose(_verbose) {
   //Tags Ref
   EntityHandle def_handle = 0;
   rval = moab.tag_get_handle(
-    "_RefParentHandle",1,MB_TYPE_HANDLE,th_RefParentHandle,MB_TAG_CREAT|MB_TAG_SPARSE,&def_handle
-  ); MOAB_THROW(rval);
-  const int def_type[] = {0,0};
-  rval = moab.tag_get_handle(
-    "_RefType",2,MB_TYPE_INTEGER,th_RefType,MB_TAG_CREAT|MB_TAG_SPARSE,def_type
+    "_RefParentHandle",
+    1,
+    MB_TYPE_HANDLE,
+    th_RefParentHandle,
+    MB_TAG_CREAT|MB_TAG_SPARSE,
+    &def_handle
   ); MOAB_THROW(rval);
   BitRefLevel def_bit_level = 0;
   rval = moab.tag_get_handle(
@@ -497,6 +501,8 @@ moab(_moab),comm(_comm),verbose(_verbose) {
   rval = moab.tag_get_handle(
     "ElemType",1,MB_TYPE_INTEGER,th_ElemType,MB_TAG_CREAT|MB_TAG_SPARSE,&def_elem_type
   ); MOAB_THROW(rval);
+
+  basicEntityDataPtr = boost::shared_ptr<BasicEntityData>(new BasicEntityData(moab));
   //
   clearMap();
   initialiseDatabseInformationFromMesh(verbose);
@@ -602,7 +608,7 @@ PetscErrorCode Core::addPrismToDatabase(const EntityHandle prism,int verb) {
   if(verb==-1) verb = verbose;
   try {
     std::pair<RefEntity_multiIndex::iterator,bool> p_ent;
-    p_ent = refinedEntities.insert(boost::shared_ptr<RefEntity>(new RefEntity(moab,prism)));
+    p_ent = refinedEntities.insert(boost::shared_ptr<RefEntity>(new RefEntity(basicEntityDataPtr,prism)));
     if(p_ent.second) {
       std::pair<RefElement_multiIndex::iterator,bool> p_MoFEMFiniteElement;
       p_MoFEMFiniteElement = refinedFiniteElements.insert(
@@ -646,7 +652,7 @@ PetscErrorCode Core::synchronise_entities(Range &ents,int verb) {
         rAnk,*eit);
     }
 
-    unsigned char pstatus = (*meit)->get_pstatus();
+    unsigned char pstatus = (*meit)->getPStatus();
 
     if(pstatus == 0) continue;
 
@@ -656,18 +662,18 @@ PetscErrorCode Core::synchronise_entities(Range &ents,int verb) {
       PetscSynchronizedPrintf(comm,"%s",zz.str().c_str());
     }
 
-    for(int proc = 0; proc<MAX_SHARING_PROCS && -1 != (*meit)->get_sharing_procs_ptr(moab)[proc]; proc++) {
-      if((*meit)->get_sharing_procs_ptr(moab)[proc] == -1) {
+    for(int proc = 0; proc<MAX_SHARING_PROCS && -1 != (*meit)->getSharingProcsPtr()[proc]; proc++) {
+      if((*meit)->getSharingProcsPtr()[proc] == -1) {
         SETERRQ(PETSC_COMM_SELF,MOFEM_IMPOSIBLE_CASE,"sharing processor not set");
       }
-      if((*meit)->get_sharing_procs_ptr(moab)[proc] == rAnk) {
+      if((*meit)->getSharingProcsPtr()[proc] == rAnk) {
         continue;
       }
-      EntityHandle handle_on_sharing_proc = (*meit)->get_sharing_handlers_ptr(moab)[proc];
-      sbuffer[(*meit)->get_sharing_procs_ptr(moab)[proc]].push_back(handle_on_sharing_proc);
+      EntityHandle handle_on_sharing_proc = (*meit)->getSharingHandlersPtr()[proc];
+      sbuffer[(*meit)->getSharingProcsPtr()[proc]].push_back(handle_on_sharing_proc);
       if(verb>1) {
         PetscSynchronizedPrintf(comm,"send %lu (%lu) to %d at %d\n",
-        (*meit)->get_ref_ent(),handle_on_sharing_proc,(*meit)->get_sharing_procs_ptr(moab)[proc],rAnk);
+        (*meit)->get_ref_ent(),handle_on_sharing_proc,(*meit)->getSharingProcsPtr()[proc],rAnk);
       }
       if(!(pstatus&PSTATUS_MULTISHARED)) {
         break;
@@ -932,7 +938,9 @@ PetscErrorCode Core::initialiseDatabseInformationFromMesh(int verb) {
         assert((*p.first)->meshSet == *mit);
         //add field to ref ents
         std::pair<RefEntity_multiIndex::iterator,bool> p_ref_ent;
-        p_ref_ent = refinedEntities.insert(boost::shared_ptr<RefEntity>(new RefEntity(moab,*mit)));
+        p_ref_ent = refinedEntities.insert(boost::shared_ptr<RefEntity>(
+          new RefEntity(basicEntityDataPtr,*mit))
+        );
         NOT_USED(p_ref_ent);
       } else {
         Range ents;
@@ -945,9 +953,11 @@ PetscErrorCode Core::initialiseDatabseInformationFromMesh(int verb) {
         Range::iterator eit = ents.begin();
         for(;eit!=ents.end();eit++) {
           std::pair<RefEntity_multiIndex::iterator,bool> p_ref_ent;
-          p_ref_ent = refinedEntities.insert(boost::shared_ptr<RefEntity>(new RefEntity(moab,*eit)));
+          p_ref_ent = refinedEntities.insert(boost::shared_ptr<
+            RefEntity>(new RefEntity(basicEntityDataPtr,*eit))
+          );
           try {
-            boost::shared_ptr<MoFEMEntity> moabent(new MoFEMEntity(moab,*p.first,*p_ref_ent.first));
+            boost::shared_ptr<MoFEMEntity> moabent(new MoFEMEntity(*p.first,*p_ref_ent.first));
             std::pair<MoFEMEntity_multiIndex::iterator,bool> p_ent = entsFields.insert(moabent);
             NOT_USED(p_ent);
           } catch (const std::exception& ex) {
@@ -980,7 +990,9 @@ PetscErrorCode Core::initialiseDatabseInformationFromMesh(int verb) {
       Range::iterator eit = ents.begin();
       for(;eit!=ents.end();eit++) {
         std::pair<RefEntity_multiIndex::iterator,bool> p_ref_ent;
-        p_ref_ent = refinedEntities.insert(boost::shared_ptr<RefEntity>(new RefEntity(moab,*eit)));
+        p_ref_ent = refinedEntities.insert(boost::shared_ptr<RefEntity>(
+          new RefEntity(basicEntityDataPtr,*eit))
+        );
         std::pair<RefElement_multiIndex::iterator,bool> p_MoFEMFiniteElement;
         try {
           switch (moab.type_from_handle(*eit)) {
@@ -1070,7 +1082,9 @@ PetscErrorCode Core::initialiseDatabseInformationFromMesh(int verb) {
         default:
         continue;
       }
-      boost::shared_ptr<RefEntity> mofem_ent(new RefEntity(moab,*eit));
+      boost::shared_ptr<RefEntity> mofem_ent(
+        new RefEntity(basicEntityDataPtr,*eit)
+      );
       BitRefLevel bit = mofem_ent->get_BitRefLevel();
       if(bit.none()) {
         continue;

@@ -57,7 +57,7 @@ struct Core: public FieldInterface, MeshRefinment, PrismInterface, SeriesRecorde
 
   //Data and low level methods
   Tag th_Part;  ///< Tag for partition number
-  Tag th_RefType,th_RefParentHandle,th_RefBitLevel,th_RefBitLevel_Mask,th_RefBitEdge,th_RefFEMeshset;
+  Tag th_RefParentHandle,th_RefBitLevel,th_RefBitLevel_Mask,th_RefBitEdge,th_RefFEMeshset;
   Tag th_FieldId,th_FieldName,th_FieldName_DataNamePrefix,th_FieldSpace,th_FieldBase;
   Tag th_FEId,th_FEName;
   Tag th_FEIdCol,th_FEIdRow,th_FEIdData;
@@ -72,6 +72,19 @@ struct Core: public FieldInterface, MeshRefinment, PrismInterface, SeriesRecorde
   Tag th_CoordSysMeshSet;             ///< Tag on field meshset pointing to coordinate system meshset
   Tag th_CoordSysName;                ///< Name of coordinate system
   Tag th_CoordSysDim;                 ///< Tag on cordsys meshset for dimension of coordinate system associated to fields
+
+  boost::shared_ptr<BasicEntityData> basicEntityDataPtr;
+
+  /**
+   * \brief Get pointer to basic entity data.
+   *
+   * This structure keeps data like tags handlers and other data used to construct
+   * mofem entities, dofs and finite elements.
+   *
+   */
+  boost::shared_ptr<BasicEntityData> get_basic_entity_data_ptr() {
+    return basicEntityDataPtr;
+  }
 
   int *fShift,*feShift,*pShift;
   int verbose;

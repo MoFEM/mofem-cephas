@@ -333,7 +333,7 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::operator()() {
 
   try {
 
-    if(numeredEntFiniteElementPtr->get_ent_type() != MBTET) PetscFunctionReturn(0);
+    if(numeredEntFiniteElementPtr->getEntType() != MBTET) PetscFunctionReturn(0);
 
     ierr = calculateVolumeAndJacobian(); CHKERRQ(ierr);
     ierr = getSpaceBaseAndOrderOnElement(); CHKERRQ(ierr);

@@ -143,7 +143,7 @@ int main(int argc, char *argv[]) {
 
     for(_IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(m_field,"MESH_NODE_POSITIONS",dof_ptr))
     {
-        //if(dof_ptr->get_ent_type()!=MBEDGE) continue;
+        //if(dof_ptr->getEntType()!=MBEDGE) continue;
 
         if((*dof_ptr)->get_dof_coeff_idx()==0)
         {

@@ -58,7 +58,7 @@ struct Projection10NodeCoordsOnField: public EntMethod {
       SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
     }
     if(dofPtr->get_name() != field_name) PetscFunctionReturn(0);
-    if(dofPtr->get_ent_type() == MBVERTEX) {
+    if(dofPtr->getEntType() == MBVERTEX) {
       EntityHandle node = dofPtr->get_ent();
       coords.resize(3);
       rval = mField.get_moab().get_coords(&node,1,&*coords.data().begin());  CHKERR_MOAB(rval);
@@ -68,7 +68,7 @@ struct Projection10NodeCoordsOnField: public EntMethod {
       }
       PetscFunctionReturn(0);
     }
-    if(dofPtr->get_ent_type() != MBEDGE) {
+    if(dofPtr->getEntType() != MBEDGE) {
       PetscFunctionReturn(0);
     }
     if(dofPtr->get_EntDofIdx() != dofPtr->get_dof_coeff_idx()) {
@@ -185,7 +185,7 @@ struct ProjectionFieldOn10NodeTet: public Projection10NodeCoordsOnField {
     PetscFunctionBegin;
     if(dofPtr->get_name() != field_name) PetscFunctionReturn(0);
     if(setNodes) {
-      if(dofPtr->get_ent_type() == MBVERTEX) {
+      if(dofPtr->getEntType() == MBVERTEX) {
         EntityHandle node = dofPtr->get_ent();
         if(onCoords) {
           coords.resize(3);
@@ -208,7 +208,7 @@ struct ProjectionFieldOn10NodeTet: public Projection10NodeCoordsOnField {
       }
       PetscFunctionReturn(0);
     }
-    if(dofPtr->get_ent_type() != MBEDGE) {
+    if(dofPtr->getEntType() != MBEDGE) {
       PetscFunctionReturn(0);
     }
     EntityHandle edge = dofPtr->get_ent();

@@ -173,7 +173,7 @@ PetscErrorCode Core::build_problem_on_distributed_mesh(MoFEMProblem *problem_ptr
       }
       boost::shared_ptr<NumeredDofEntity> dof(new NumeredDofEntity(*miit));
       std::pair<NumeredDofEntity_multiIndex::iterator,bool> p = numered_dofs_ptr[ss]->insert(dof);
-      int owner_proc = (*p.first)->get_owner_proc();
+      int owner_proc = (*p.first)->getOwnerProc();
       if(owner_proc<0) {
         SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
       }
@@ -242,16 +242,16 @@ PetscErrorCode Core::build_problem_on_distributed_mesh(MoFEMProblem *problem_ptr
       success = numered_dofs_ptr[ss]->modify( numered_dofs_ptr[ss]->project<0>(mit),NumeredDofEntity_part_change((*mit)->get_part(),glob_idx));
       if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
       local_idx++;
-      unsigned char pstatus = (*mit)->get_pstatus();
+      unsigned char pstatus = (*mit)->getPStatus();
 
       //check id dof is shared
       if(pstatus>0) {
 
-        for(int proc = 0; proc<MAX_SHARING_PROCS && -1 != (*mit)->get_sharing_procs_ptr(moab)[proc]; proc++) {
+        for(int proc = 0; proc<MAX_SHARING_PROCS && -1 != (*mit)->getSharingProcsPtr()[proc]; proc++) {
           if(ss == 0) {
-            ids_data_packed_rows[(*mit)->get_sharing_procs_ptr(moab)[proc]].push_back(IdxDataType((*mit)->get_global_unique_id(),glob_idx));
+            ids_data_packed_rows[(*mit)->getSharingProcsPtr()[proc]].push_back(IdxDataType((*mit)->get_global_unique_id(),glob_idx));
           } else {
-            ids_data_packed_cols[(*mit)->get_sharing_procs_ptr(moab)[proc]].push_back(IdxDataType((*mit)->get_global_unique_id(),glob_idx));
+            ids_data_packed_cols[(*mit)->getSharingProcsPtr()[proc]].push_back(IdxDataType((*mit)->get_global_unique_id(),glob_idx));
           }
           if(!(pstatus&PSTATUS_MULTISHARED)) {
             break;

@@ -49,6 +49,15 @@ struct FieldInterface: public UnknownInterface {
   /// get moab interface
   virtual Interface& get_moab() = 0;
 
+  /**
+   * \brief Get pointer to basic entity data.
+   *
+   * This structure keeps data like tags handlers and other data used to construct
+   * mofem entities, dofs and finite elements.
+   *
+   */
+  virtual boost::shared_ptr<BasicEntityData> get_basic_entity_data_ptr() = 0;
+
   /// get communicator
   virtual MPI_Comm get_comm() = 0;
 

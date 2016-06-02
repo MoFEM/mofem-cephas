@@ -1,6 +1,6 @@
 /** \file MeshRefinment.hpp
- * \brief MoFEM interface 
- * 
+ * \brief MoFEM interface
+ *
  * Low level data structures not used directly by user
  */
 
@@ -27,7 +27,7 @@ static const MOFEMuuid IDD_MOFEMMeshRefine = MOFEMuuid( BitIntefaceId(MESH_REFIN
 
   Currently this class is abstraction to Core interface. In future should be
   outsourced as independent interface.
-  
+
   \bug Not working on partitioned meshes
   \bug Need to be implemented as a stand alone interface not as a part of core
   structure which should be only basic database
@@ -35,6 +35,10 @@ static const MOFEMuuid IDD_MOFEMMeshRefine = MOFEMuuid( BitIntefaceId(MESH_REFIN
 
   */
 struct MeshRefinment: public UnknownInterface {
+
+  Tag th_RefType;
+
+  MeshRefinment(moab::Interface &moab);
 
   ///destructor
   virtual ~MeshRefinment() {}
@@ -58,7 +62,7 @@ struct MeshRefinment: public UnknownInterface {
    * Takes entities from meshsets and queried recursively (get entities from meshsets in meshsets, usually have to be used for CUBIT meshset).
    * If meshset does not contain any edges, get entities in dimension 3 and get edge adjacencies.
    *
-   * \param Range consisting edges for refine 
+   * \param Range consisting edges for refine
    * \param BitRefLevel bitLevel
    * \param recursive If true, meshsets containing meshsets are queried recursively.  Returns the contents of meshsets, but not the meshsets themselves if true.
    */
@@ -101,7 +105,3 @@ struct MeshRefinment: public UnknownInterface {
 }
 
 #endif // __MESHREFINE_HPP__
-
-
-
-
