@@ -350,7 +350,7 @@ int main(int argc, char *argv[]) {
   VolumeElementForcesAndSourcesCore fe1(m_field);
 
   fe1.getOpPtrVector().push_back(new OpCalculateVectorFieldValues<3>("FIELD1",values1_at_gauss_pts_ptr));
-  fe1.getOpPtrVector().push_back(new OpCalculateScalarFieldVaues("FIELD2",values2_at_gauss_pts_ptr));
+  fe1.getOpPtrVector().push_back(new OpCalculateScalarFieldValues("FIELD2",values2_at_gauss_pts_ptr));
   fe1.getOpPtrVector().push_back(new OpCalculateVectorFieldGradient<3,3>("FIELD1",grad1_at_gauss_pts_ptr));
   fe1.getOpPtrVector().push_back(new OpCalculateScalarFieldGradient<3>("FIELD2",grad2_at_gauss_pts_ptr));
 

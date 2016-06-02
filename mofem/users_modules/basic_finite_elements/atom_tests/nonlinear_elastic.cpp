@@ -129,8 +129,8 @@ int main(int argc, char *argv[]) {
     EntityHandle node = 0;
     double coords[3];
     for(_IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(m_field,"SPATIAL_POSITION",dof_ptr)) {
-      if(dof_ptr->get()->get_ent_type()!=MBVERTEX) continue;
-      EntityHandle ent = dof_ptr->get()->get_ent();
+      if(dof_ptr->get()->getEntType()!=MBVERTEX) continue;
+      EntityHandle ent = dof_ptr->get()->getEnt();
       int dof_rank = dof_ptr->get()->get_dof_coeff_idx();
       double &fval = dof_ptr->get()->get_FieldData();
       if(node!=ent) {

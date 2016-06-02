@@ -51,7 +51,7 @@ PetscErrorCode PostProcCommonOnRefMesh::OpGetFieldValues::doWork(
     it = data.getFieldDofs().begin();
     hi_it = data.getFieldDofs().end();
     for(int ii = 0;it!=hi_it;it++,ii++) {
-      int local_idx = getFEMethod()->rowPtr->find((*it)->get_global_unique_id())->get()->get_petsc_local_dof_idx();
+      int local_idx = getFEMethod()->rowPtr->find((*it)->getGlobalUniqueId())->get()->get_petsc_local_dof_idx();
       vAlues[ii] = a[local_idx];
     }
     ierr = VecRestoreArray(V,&a); CHKERRQ(ierr);
@@ -61,10 +61,10 @@ PetscErrorCode PostProcCommonOnRefMesh::OpGetFieldValues::doWork(
   }
 
   const MoFEM::FEDofEntity *dof_ptr = data.getFieldDofs()[0];
-  int rank = dof_ptr->get_nb_of_coeffs();
+  int rank = dof_ptr->getNbOfCoeffs();
 
   int tag_length = rank;
-  FieldSpace space = dof_ptr->get_space();
+  FieldSpace space = dof_ptr->getSpace();
   switch(space) {
     case L2:
     case H1:
@@ -180,7 +180,7 @@ PetscErrorCode PostProcCommonOnRefMesh::OpGetFieldGradientValues::doWork(
     it = data.getFieldDofs().begin();
     hi_it = data.getFieldDofs().end();
     for(int ii = 0;it!=hi_it;it++,ii++) {
-      int local_idx = getFEMethod()->rowPtr->find((*it)->get_global_unique_id())->get()->get_petsc_local_dof_idx();
+      int local_idx = getFEMethod()->rowPtr->find((*it)->getGlobalUniqueId())->get()->get_petsc_local_dof_idx();
       vAlues[ii] = a[local_idx];
     }
     ierr = VecRestoreArray(V,&a); CHKERRQ(ierr);
@@ -190,10 +190,10 @@ PetscErrorCode PostProcCommonOnRefMesh::OpGetFieldGradientValues::doWork(
   }
 
   const MoFEM::FEDofEntity *dof_ptr = data.getFieldDofs()[0];
-  int rank = dof_ptr->get_nb_of_coeffs();
+  int rank = dof_ptr->getNbOfCoeffs();
 
   int tag_length = rank*3;
-  FieldSpace space = dof_ptr->get_space();
+  FieldSpace space = dof_ptr->getSpace();
   switch(space) {
     case L2:
     case H1:
@@ -392,7 +392,7 @@ PetscErrorCode PostProcVolumeOnRefinedMesh::setGaussPts(int order) {
       commonData.tEts.insert(tet);
     }
 
-    EntityHandle fe_ent = numeredEntFiniteElementPtr->get_ent();
+    EntityHandle fe_ent = numeredEntFiniteElementPtr->getEnt();
     coords.resize(12,false);
     {
       const EntityHandle *conn;
@@ -599,8 +599,8 @@ PetscErrorCode PostProcFatPrismOnRefinedMesh::setGaussPtsTrianglesOnly(int order
   int num_nodes;
   EntityHandle prism;
 
-  if(elementsMap.find(numeredEntFiniteElementPtr->get_ent())!=elementsMap.end()) {
-    prism = elementsMap[numeredEntFiniteElementPtr->get_ent()];
+  if(elementsMap.find(numeredEntFiniteElementPtr->getEnt())!=elementsMap.end()) {
+    prism = elementsMap[numeredEntFiniteElementPtr->getEnt()];
   } else {
 
     {
@@ -636,7 +636,7 @@ PetscErrorCode PostProcFatPrismOnRefinedMesh::setGaussPtsTrianglesOnly(int order
     }
     rval = postProcMesh.create_element(MBPRISM,&prism_conn[0],6,prism); CHKERRQ_MOAB(rval);
 
-    elementsMap[numeredEntFiniteElementPtr->get_ent()] = prism;
+    elementsMap[numeredEntFiniteElementPtr->getEnt()] = prism;
     // Range faces;
     // rval = postProcMesh.get_adjacencies(&prism,1,2,true,faces); CHKERRQ_MOAB(rval);
     Range edges;
@@ -654,7 +654,7 @@ PetscErrorCode PostProcFatPrismOnRefinedMesh::setGaussPtsTrianglesOnly(int order
     // rval = postProcMesh.delete_entities(faces); CHKERRQ_MOAB(rval);
 
     rval = mField.get_moab().get_connectivity(
-      numeredEntFiniteElementPtr->get_ent(),conn,num_nodes,true
+      numeredEntFiniteElementPtr->getEnt(),conn,num_nodes,true
     ); CHKERRQ_MOAB(rval);
     ublas::matrix<double> coords_prism(num_nodes,3);
     rval = mField.get_moab().get_coords(conn,num_nodes,&coords_prism(0,0));
@@ -850,13 +850,13 @@ PetscErrorCode PostProcFaceOnRefinedMesh::setGaussPts(int order) {
   int num_nodes;
   EntityHandle tri;
 
-  if(elementsMap.find(numeredEntFiniteElementPtr->get_ent())!=elementsMap.end()) {
-    tri = elementsMap[numeredEntFiniteElementPtr->get_ent()];
+  if(elementsMap.find(numeredEntFiniteElementPtr->getEnt())!=elementsMap.end()) {
+    tri = elementsMap[numeredEntFiniteElementPtr->getEnt()];
   } else {
     ublas::vector<EntityHandle> tri_conn(3);
     ublas::matrix<double> coords_tri(3,3);
     ublas::vector<double> coords(3);
-    rval = mField.get_moab().get_connectivity(numeredEntFiniteElementPtr->get_ent(),conn,num_nodes,true); CHKERRQ_MOAB(rval);
+    rval = mField.get_moab().get_connectivity(numeredEntFiniteElementPtr->getEnt(),conn,num_nodes,true); CHKERRQ_MOAB(rval);
     rval = mField.get_moab().get_coords(conn,num_nodes,&coords_tri(0,0));
     for(int gg = 0;gg!=3;gg++) {
       double ksi = gaussPts(0,gg);
@@ -874,7 +874,7 @@ PetscErrorCode PostProcFaceOnRefinedMesh::setGaussPts(int order) {
       ); CHKERRQ_MOAB(rval);
     }
     rval = postProcMesh.create_element(MBTRI,&tri_conn[0],3,tri); CHKERRQ_MOAB(rval);
-    elementsMap[numeredEntFiniteElementPtr->get_ent()] = tri;
+    elementsMap[numeredEntFiniteElementPtr->getEnt()] = tri;
     Range edges;
     rval = postProcMesh.get_adjacencies(&tri,1,1,true,edges); CHKERRQ_MOAB(rval);
     EntityHandle meshset;

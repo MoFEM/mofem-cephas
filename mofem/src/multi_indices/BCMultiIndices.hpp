@@ -42,7 +42,9 @@ struct CubitMeshSets {
 
   inline int get_msId() const { return *msId; }
   inline CubitBCType get_cubit_bc_type() const { return cubitBcType; }
-  inline EntityHandle get_meshset() const { return meshset; }
+  inline EntityHandle getMeshSet() const { return meshset; }
+  DEPRECATED inline EntityHandle get_meshset() const { return getMeshSet(); }
+
   inline unsigned long int get_cubit_bc_type_ulong() const { return cubitBcType.to_ulong(); }
   inline unsigned long int get_cubit_bc_type_mask_meshset_types_ulong() const { return (cubitBcType&meshsets_mask).to_ulong(); }
   inline unsigned long int get_cubit_bc_type_bc_data_types_ulong() const { return (cubitBcType&(~meshsets_mask)).to_ulong(); }
@@ -224,11 +226,10 @@ struct CubitMeshSets {
    *
    * To be extended as appropriate
    */
-  std::string get_name() const;
+  std::string getName() const;
 
-  DEPRECATED std::string get_Cubit_name() const {
-    return get_name();
-  }
+  DEPRECATED std::string get_name() const { return getName(); }
+  DEPRECATED std::string get_Cubit_name() const { return getName(); }
 
   /**
    * \brief print name of block, sideset etc. (this is set in Cubit setting properties)
@@ -292,7 +293,7 @@ typedef multi_index_container<
     ordered_non_unique<
       tag<CubitMeshSets_bc_data_mi_tag>, const_mem_fun<CubitMeshSets,unsigned long int,&CubitMeshSets::get_cubit_bc_type_bc_data_types_ulong> >,
     ordered_non_unique<
-      tag<CubitMeshSets_name>, const_mem_fun<CubitMeshSets,std::string,&CubitMeshSets::get_name> >,
+      tag<CubitMeshSets_name>, const_mem_fun<CubitMeshSets,std::string,&CubitMeshSets::getName> >,
     hashed_unique<
       tag<Composite_Cubit_msId_And_MeshSetType_mi_tag>,
       composite_key<

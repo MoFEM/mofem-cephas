@@ -298,7 +298,7 @@ int main(int argc, char *argv[]) {
   ierr = m_field.partition_ghost_dofs("TEST_PROBLEM"); CHKERRQ(ierr);
 
   for(_IT_GET_DOFS_FIELD_BY_NAME_AND_TYPE_FOR_LOOP_(m_field,"MESH_NODE_POSITIONS",MBVERTEX,dof)) {
-    EntityHandle vert = (*dof)->get_ent();
+    EntityHandle vert = (*dof)->getEnt();
     double coords[3];
     rval = moab.get_coords(&vert,1,coords); CHKERR_MOAB(rval);
     coords[0] *= 2;

@@ -121,3 +121,52 @@ operator*(const Tensor1_Expr<B,U,Dim0,i> &b,
     (TensorExpr(a,b));
 }
 
+/* A(i,j,k)*B(l) -> Tensor4 */
+
+template<class A, class B, class T, class U, int Dim0, int Dim1, int Dim2,
+  int Dim3, char i, char j, char k, char l>
+class Tensor3_times_Tensor1_rhs
+{
+  const Tensor3_Expr<A,T,Dim0,Dim1,Dim2,i,j,k> iterA;
+  const Tensor1_Expr<B,U,Dim3,l> iterB;
+public:
+  Tensor3_times_Tensor1_rhs(const Tensor3_Expr<A,T,Dim0,Dim1,Dim2,i,j,k> &a,const Tensor1_Expr<B,U,Dim3,l> &b)
+  : iterA(a), iterB(b) {}
+  typename promote<T,U>::V operator()(const int N1, const int N2, const int N3, const int N4) const
+  {
+    return iterA(N1,N2,N3)*iterB(N4);
+  }
+};
+
+template<class A, class B, class T, class U, int Dim0, int Dim1, int Dim2, int Dim3, char i, char j, char k, char l>
+inline Tensor4_Expr <const Tensor3_times_Tensor1_rhs<A,B,T,U,Dim0,Dim1,Dim2,Dim3,i,j,k,l>,typename promote<T,U>::V,Dim0,Dim1,Dim2,Dim3,i,j,k,l>
+operator*(const Tensor3_Expr<A,T,Dim0,Dim1,Dim2,i,j,k> &a, const Tensor1_Expr<B,U,Dim3,l> &b)
+{
+  typedef const Tensor3_times_Tensor1_rhs<A,B,T,U,Dim0,Dim1,Dim2,Dim3,i,j,k,l> TensorExpr;
+  return Tensor4_Expr<TensorExpr,typename promote<T,U>::V,Dim0,Dim1,Dim2,Dim3,i,j,k,l>(TensorExpr(a,b));
+}
+
+/* B(i)*A(j,k,l) -> Tensor4 */
+
+template<class A, class B, class T, class U, int Dim0, int Dim1, int Dim2,
+  int Dim3, char i, char j, char k, char l>
+class Tensor3_times_Tensor1_lhs
+{
+  const Tensor1_Expr<B,U,Dim0,i> iterA;
+  const Tensor3_Expr<A,T,Dim1,Dim2,Dim3,j,k,l> iterB;
+public:
+  Tensor3_times_Tensor1_lhs(const Tensor1_Expr<B,U,Dim0,i> &a,const Tensor3_Expr<A,T,Dim1,Dim2,Dim3,j,k,l> &b)
+  : iterA(a), iterB(b) {}
+  typename promote<T,U>::V operator()(const int N1, const int N2, const int N3, const int N4) const
+  {
+    return iterA(N1)*iterB(N2,N3,N4);
+  }
+};
+
+template<class A, class B, class T, class U, int Dim0, int Dim1, int Dim2, int Dim3, char i, char j, char k, char l>
+inline Tensor4_Expr <const Tensor3_times_Tensor1_lhs<A,B,T,U,Dim0,Dim1,Dim2,Dim3,i,j,k,l>,typename promote<T,U>::V,Dim0,Dim1,Dim2,Dim3,i,j,k,l>
+operator*(const Tensor1_Expr<B,U,Dim3,i> &a,const Tensor3_Expr<A,T,Dim0,Dim1,Dim2,j,k,l> &b)
+{
+  typedef const Tensor3_times_Tensor1_lhs<A,B,T,U,Dim0,Dim1,Dim2,Dim3,i,j,k,l> TensorExpr;
+  return Tensor4_Expr<TensorExpr,typename promote<T,U>::V,Dim0,Dim1,Dim2,Dim3,i,j,k,l>(TensorExpr(a,b));
+}

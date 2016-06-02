@@ -29,12 +29,12 @@ namespace MoFEM {
 * \ingroup mofem_forces_and_sources_user_data_operators
 */
 template<class T, class A>
-struct OpCalculateScalarFieldVaues_General: public ForcesAndSurcesCore::UserDataOperator {
+struct OpCalculateScalarFieldValues_General: public ForcesAndSurcesCore::UserDataOperator {
 
   boost::shared_ptr<ublas::vector<T,A> > dataPtr;
   EntityHandle zeroType;
 
-  OpCalculateScalarFieldVaues_General(
+  OpCalculateScalarFieldValues_General(
     const std::string &field_name,
     boost::shared_ptr<ublas::vector<T,A> > data_ptr,
     EntityType zero_type = MBVERTEX
@@ -55,7 +55,7 @@ struct OpCalculateScalarFieldVaues_General: public ForcesAndSurcesCore::UserData
 * \ingroup mofem_forces_and_sources_user_data_operators
 */
 template<class T, class A>
-PetscErrorCode OpCalculateScalarFieldVaues_General<T,A>::doWork(
+PetscErrorCode OpCalculateScalarFieldValues_General<T,A>::doWork(
   int side,EntityType type,DataForcesAndSurcesCore::EntData &data
 ) {
   PetscFunctionBegin;
@@ -73,10 +73,10 @@ PetscErrorCode OpCalculateScalarFieldVaues_General<T,A>::doWork(
  * \brief Get value for scalar field
  * \ingroup mofem_forces_and_sources_user_data_operators
  */
-struct OpCalculateScalarFieldVaues:
-public OpCalculateScalarFieldVaues_General<double,ublas::unbounded_array<double> > {
+struct OpCalculateScalarFieldValues:
+public OpCalculateScalarFieldValues_General<double,ublas::unbounded_array<double> > {
 
-  OpCalculateScalarFieldVaues(
+  OpCalculateScalarFieldValues(
     const std::string &field_name,
     boost::shared_ptr<VectorDouble> data_ptr,
     EntityType zero_type = MBVERTEX
@@ -162,8 +162,11 @@ PetscErrorCode OpCalculateVectorFieldValues_General<Tensor_Dim,double,ublas::row
 ) {
   PetscFunctionBegin;
   const int nb_dofs = data.getFieldData().size();
-  if(!nb_dofs) {
+  if(!nb_dofs && type == this->zeroType) {
     dataPtr->resize(Tensor_Dim,0,false);
+    PetscFunctionReturn(0);
+  }
+  if(!nb_dofs) {
     PetscFunctionReturn(0);
   }
   const int nb_gauss_pts = data.getN().size1();
@@ -349,8 +352,11 @@ PetscErrorCode OpCalculateScalarFieldGradient_General<Tensor_Dim,double,ublas::r
 ) {
   PetscFunctionBegin;
   const int nb_dofs = data.getFieldData().size();
-  if(!nb_dofs) {
+  if(!nb_dofs && type == this->zeroType) {
     this->dataPtr->resize(Tensor_Dim,0,false);
+    PetscFunctionReturn(0);
+  }
+  if(!nb_dofs) {
     PetscFunctionReturn(0);
   }
   const int nb_gauss_pts = data.getN().size1();
@@ -449,8 +455,11 @@ Tensor_Dim0,Tensor_Dim1,double,ublas::row_major,ublas::unbounded_array<double>
 ) {
   PetscFunctionBegin;
   const int nb_dofs = data.getFieldData().size();
-  if(!nb_dofs) {
+  if(!nb_dofs && type == this->zeroType) {
     this->dataPtr->resize(Tensor_Dim0*Tensor_Dim1,0,false);
+    PetscFunctionReturn(0);
+  }
+  if(!nb_dofs) {
     PetscFunctionReturn(0);
   }
   const int nb_gauss_pts = data.getN().size1();

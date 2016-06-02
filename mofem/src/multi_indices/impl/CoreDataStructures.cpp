@@ -44,10 +44,11 @@ const bool Part_mi_tag::IamNotPartitioned = false;
 
 //fields
 Field::Field(
-  Interface &moab,
+  Interface &_moab,
   const EntityHandle meshset,
   const boost::shared_ptr<CoordSys> coord_sys_ptr
 ):
+moab(_moab),
 meshSet(meshset),
 coordSysPtr(coord_sys_ptr),
 tag_id_data(NULL),
@@ -79,22 +80,23 @@ tag_name_size(0) {
   rval = moab.tag_get_by_ptr(th_field_name_data_name_prefix,&meshSet,1,(const void **)&tag_name_prefix_data,&tag_name_prefix_size); MOAB_THROW(rval);
   std::string name_data_prefix((char *)tag_name_prefix_data,tag_name_prefix_size);
   //data
-  std::string tag_data_name = name_data_prefix+get_name();
+  std::string tag_data_name = name_data_prefix+getName();
   rval = moab.tag_get_handle(tag_data_name.c_str(),th_FieldData); MOAB_THROW(rval);
   //order
-  std::string tag_approximation_order_name = "_App_Order_"+get_name();
+  std::string tag_approximation_order_name = "_App_Order_"+getName();
   rval = moab.tag_get_handle(tag_approximation_order_name.c_str(),th_AppOrder); MOAB_THROW(rval);
   //dof order
-  std::string tag_dof_approximation_order_name = "_App_Dof_Order"+get_name();
+  std::string tag_dof_approximation_order_name = "_App_Dof_Order"+getName();
   rval = moab.tag_get_handle(tag_dof_approximation_order_name.c_str(),th_AppDofOrder); MOAB_THROW(rval);
   //rank
   Tag th_rank;
-  std::string Tag_rank_name = "_Field_Rank_"+get_name();
+  std::string Tag_rank_name = "_Field_Rank_"+getName();
   rval = moab.tag_get_handle(Tag_rank_name.c_str(),th_rank); MOAB_THROW(rval);
   rval = moab.tag_get_by_ptr(th_rank,&meshSet,1,(const void **)&tag_nb_coeff_data); MOAB_THROW(rval);
   //dof rank
-  std::string Tag_dof_rank_name = "_Field_Dof_Rank_"+get_name();
+  std::string Tag_dof_rank_name = "_Field_Dof_Rank_"+getName();
   rval = moab.tag_get_handle(Tag_dof_rank_name.c_str(),th_DofRank); MOAB_THROW(rval);
+  bit_number = getBitNumberCalculate();
   for(int tt = 0;tt<MBMAXTYPE;tt++) {
     forder_table[tt] = NULL;
   }
@@ -153,12 +155,12 @@ tag_name_size(0) {
 
 std::ostream& operator<<(std::ostream& os,const Field& e) {
   os
-  << "name " <<e.get_name_ref()
-  << " BitFieldId "<< e.get_id().to_ulong()
-  << " bit number " << e.get_bit_number()
-  << " space " << FieldSpaceNames[e.get_space()]
-  << " approximation base " << ApproximationBaseNames[e.get_approx_base()]
-  << " rank " << e.get_nb_of_coeffs()
+  << "name " <<e.getNameRef()
+  << " BitFieldId "<< e.getId().to_ulong()
+  << " bit number " << e.getBitNumber()
+  << " space " << FieldSpaceNames[e.getSpace()]
+  << " approximation base " << ApproximationBaseNames[e.getApproxBase()]
+  << " rank " << e.getNbOfCoeffs()
   << " meshset " << e.meshSet;
   return os;
 }

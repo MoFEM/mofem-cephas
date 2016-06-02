@@ -397,7 +397,7 @@ PetscErrorCode FatPrismPolynomialBase::getValueH1(ublas::matrix<double> &pts) {
       siit = side_table.get<1>().lower_bound(boost::make_tuple(MBQUAD,0));
       SideNumber_multiIndex::nth_index<1>::type::iterator hi_siit;
       hi_siit = side_table.get<1>().upper_bound(boost::make_tuple(MBQUAD,3));
-      EntityHandle ent = cTx->fePtr->get_ent();
+      EntityHandle ent = cTx->fePtr->getEnt();
       int num_nodes;
       const EntityHandle *conn;
       rval = cTx->mOab.get_connectivity(ent,conn,num_nodes,true); CHKERRQ_MOAB(rval);

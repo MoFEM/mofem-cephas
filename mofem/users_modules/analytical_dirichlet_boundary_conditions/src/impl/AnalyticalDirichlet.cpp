@@ -83,7 +83,7 @@ PetscErrorCode AnalyticalDirichletBC::ApproxField::OpLhs::doWork(
 
   const FENumeredDofEntity *dof_ptr;
   ierr = getNumeredEntFiniteElementPtr()->get_row_dofs_by_petsc_gloabl_dof_idx(row_data.getIndices()[0],&dof_ptr); CHKERRQ(ierr);
-  int rank = dof_ptr->get_nb_of_coeffs();
+  int rank = dof_ptr->getNbOfCoeffs();
 
   int nb_row_dofs = row_data.getIndices().size()/rank;
   int nb_col_dofs = col_data.getIndices().size()/rank;

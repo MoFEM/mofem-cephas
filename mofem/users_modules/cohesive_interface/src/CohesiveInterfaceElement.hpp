@@ -106,7 +106,7 @@ struct CohesiveInterfaceElement {
     */
     PetscErrorCode getKappa(int nb_gauss_pts,const FEMethod *fe_method) {
       PetscFunctionBegin;
-      EntityHandle ent = fe_method->numeredEntFiniteElementPtr->get_ent();
+      EntityHandle ent = fe_method->numeredEntFiniteElementPtr->getEnt();
       ErrorCode rval;
       rval = mField.get_moab().tag_get_by_ptr(thKappa,&ent,1,(const void **)&kappaPtr,&kappaSize);
       if(rval != MB_SUCCESS || kappaSize != nb_gauss_pts) {
@@ -295,7 +295,7 @@ struct CohesiveInterfaceElement {
         //}
       }
       if(all_gauss_pts_damaged) {
-        EntityHandle ent = fe_method->numeredEntFiniteElementPtr->get_ent();
+        EntityHandle ent = fe_method->numeredEntFiniteElementPtr->getEnt();
         int set_prism_as_demaged = 1;
         rval = mField.get_moab().tag_set_data(thDamagedPrism,&ent,1,&set_prism_as_demaged); CHKERRQ_MOAB(rval);
       }
@@ -446,7 +446,7 @@ struct CohesiveInterfaceElement {
       try {
         int nb_dofs = data.getIndices().size();
         if(nb_dofs == 0) PetscFunctionReturn(0);
-        if(physicalEqations.pRisms.find(getNumeredEntFiniteElementPtr()->get_ent()) == physicalEqations.pRisms.end()) {
+        if(physicalEqations.pRisms.find(getNumeredEntFiniteElementPtr()->getEnt()) == physicalEqations.pRisms.end()) {
           PetscFunctionReturn(0);
         }
         Nf.resize(nb_dofs);
@@ -497,7 +497,7 @@ struct CohesiveInterfaceElement {
         if(nb_row == 0) PetscFunctionReturn(0);
         int nb_col = col_data.getIndices().size();
         if(nb_col == 0) PetscFunctionReturn(0);
-        if(physicalEqations.pRisms.find(getNumeredEntFiniteElementPtr()->get_ent())
+        if(physicalEqations.pRisms.find(getNumeredEntFiniteElementPtr()->getEnt())
         == physicalEqations.pRisms.end()) {
           PetscFunctionReturn(0);
         }
@@ -557,7 +557,7 @@ struct CohesiveInterfaceElement {
         PetscFunctionBegin;
         PetscErrorCode ierr;
         if(type != MBVERTEX) PetscFunctionReturn(0);
-        if(physicalEqations.pRisms.find(getNumeredEntFiniteElementPtr()->get_ent()) == physicalEqations.pRisms.end()) {
+        if(physicalEqations.pRisms.find(getNumeredEntFiniteElementPtr()->getEnt()) == physicalEqations.pRisms.end()) {
           PetscFunctionReturn(0);
         }
         ierr = physicalEqations.updateHistory(commonData,getFEMethod()); CHKERRQ(ierr);

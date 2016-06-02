@@ -204,7 +204,7 @@ PetscErrorCode Core::ISCreateProblemFieldAndRank(
   for(;it!=hi_it;it++) {
     std::pair<NumeredDofEntity_multiIndex_petsc_local_dof_view_ordered_non_unique::iterator,bool> p;
     if((*it)->get_part()!=(unsigned int)rAnk) continue;
-    if((*it)->get_name_ref() != field) continue;
+    if((*it)->getNameRef() != field) continue;
     p = dof_loc_idx_view.insert(*it);
   }
   NumeredDofEntity_multiIndex_petsc_local_dof_view_ordered_non_unique::iterator vit,hi_vit;
@@ -264,9 +264,9 @@ PetscErrorCode Core::ISCreateFromProblemFieldToOtherProblemField(
   }
   for(;y_dit!=hi_y_dit;y_dit++) {
     if((*y_dit)->get_part()!=(unsigned int)rAnk) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
-    if((*y_dit)->get_name()!=y_field_name) continue;
+    if((*y_dit)->getName()!=y_field_name) continue;
     dofs_by_name_ent_dof::iterator x_dit;
-    x_dit = x_numered_dofs_by_ent_name_dof->find(boost::make_tuple(x_field_name,(*y_dit)->get_ent(),(*y_dit)->get_EntDofIdx()));
+    x_dit = x_numered_dofs_by_ent_name_dof->find(boost::make_tuple(x_field_name,(*y_dit)->getEnt(),(*y_dit)->get_EntDofIdx()));
     if(x_dit==x_numered_dofs_by_ent_name_dof->end()) continue;
     idx.push_back((*x_dit)->get_petsc_gloabl_dof_idx());
     idy.push_back((*y_dit)->get_petsc_gloabl_dof_idx());
@@ -360,7 +360,7 @@ PetscErrorCode Core::ISCreateFromProblemToOtherProblem(
   for(;y_dit!=hi_y_dit;y_dit++) {
     if((*y_dit)->get_part()!=(unsigned int)rAnk) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
     dofs_by_uid::iterator x_dit;
-    x_dit = x_numered_dofs_by_uid->find((*y_dit)->get_global_unique_id());
+    x_dit = x_numered_dofs_by_uid->find((*y_dit)->getGlobalUniqueId());
     if(x_dit==x_numered_dofs_by_uid->end()) continue;
     idx.push_back((*x_dit)->get_petsc_gloabl_dof_idx());
     idy.push_back((*y_dit)->get_petsc_gloabl_dof_idx());
@@ -596,17 +596,17 @@ PetscErrorCode Core::set_other_local_ghost_vector(
     SETERRQ1(PETSC_COMM_SELF,MOFEM_NOT_FOUND,"cpy field < %s > not found, (top tip: check spelling)",field_name.c_str());
   }
   DofsByNameAndLocalIdx::iterator hi_miit = dofs->upper_bound(boost::make_tuple(field_name,1));
-  if((*miit)->get_space() != (*cpy_fit)->get_space()) {
+  if((*miit)->getSpace() != (*cpy_fit)->getSpace()) {
     SETERRQ4(
       PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,
       "fields have to have same space (%s) %s != (%s) %s",
-      (*miit)->get_name().c_str(),
-      FieldSpaceNames[(*miit)->get_space()],
+      (*miit)->getName().c_str(),
+      FieldSpaceNames[(*miit)->getSpace()],
       cpy_field_name.c_str(),
-      FieldSpaceNames[(*cpy_fit)->get_space()]
+      FieldSpaceNames[(*cpy_fit)->getSpace()]
     );
   }
-  if((*miit)->get_nb_of_coeffs() != (*cpy_fit)->get_nb_of_coeffs()) {
+  if((*miit)->getNbOfCoeffs() != (*cpy_fit)->getNbOfCoeffs()) {
     SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"fields have to have same rank");
   }
   switch(scatter_mode) {
@@ -624,10 +624,10 @@ PetscErrorCode Core::set_other_local_ghost_vector(
       PetscScalar *array;
       VecGetArray(V,&array);
       for(;miit!=hi_miit;miit++) {
-        //if(miit->get_name_ref()!=field_name) continue;
+        //if(miit->getNameRef()!=field_name) continue;
         DofEntity_multiIndex::index<Composite_Name_And_Ent_And_EndDofIdx_mi_tag>::type::iterator diiiit;
         diiiit = dofsField.get<Composite_Name_And_Ent_And_EndDofIdx_mi_tag>().find(
-          boost::make_tuple(cpy_field_name,(*miit)->get_ent(),(*miit)->get_EntDofIdx())
+          boost::make_tuple(cpy_field_name,(*miit)->getEnt(),(*miit)->get_EntDofIdx())
         );
         if(diiiit==dofsField.get<Composite_Name_And_Ent_And_EndDofIdx_mi_tag>().end()) {
           SETERRQ(
@@ -646,10 +646,10 @@ PetscErrorCode Core::set_other_local_ghost_vector(
     break;
     case SCATTER_FORWARD: {
       for(;miit!=hi_miit;miit++) {
-        //if(miit->get_name_ref()!=field_name) continue;
+        //if(miit->getNameRef()!=field_name) continue;
         DofEntity_multiIndex::index<Composite_Name_And_Ent_And_EndDofIdx_mi_tag>::type::iterator diiiit;
         diiiit = dofsField.get<Composite_Name_And_Ent_And_EndDofIdx_mi_tag>().find(
-          boost::make_tuple(cpy_field_name,(*miit)->get_ent(),(*miit)->get_EntDofIdx())
+          boost::make_tuple(cpy_field_name,(*miit)->getEnt(),(*miit)->get_EntDofIdx())
         );
         if(diiiit==dofsField.get<Composite_Name_And_Ent_And_EndDofIdx_mi_tag>().end()) {
           SETERRQ(
@@ -719,10 +719,10 @@ PetscErrorCode Core::set_other_global_ghost_vector(
     SETERRQ1(PETSC_COMM_SELF,MOFEM_NOT_FOUND,"problem field < %s > not found, (top tip: check spelling)",field_name.c_str());
   }
   DofsByName::iterator hi_miit = dofs->upper_bound(field_name);
-  if((*miit)->get_space() != (*cpy_fit)->get_space()) {
+  if((*miit)->getSpace() != (*cpy_fit)->getSpace()) {
     SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"fields have to have same space");
   }
-  if((*miit)->get_nb_of_coeffs() != (*cpy_fit)->get_nb_of_coeffs()) {
+  if((*miit)->getNbOfCoeffs() != (*cpy_fit)->getNbOfCoeffs()) {
     SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"fields have to have same rank");
   }
   switch (scatter_mode) {
@@ -752,16 +752,16 @@ PetscErrorCode Core::set_other_global_ghost_vector(
           SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency: nb. of dofs and declared nb. dofs in database");
         }
         DofEntity_multiIndex::index<Composite_Name_And_Ent_And_EndDofIdx_mi_tag>::type::iterator diiiit;
-        diiiit = dofsField.get<Composite_Name_And_Ent_And_EndDofIdx_mi_tag>().find(boost::make_tuple(cpy_field_name,(*miit)->get_ent(),(*miit)->get_EntDofIdx()));
+        diiiit = dofsField.get<Composite_Name_And_Ent_And_EndDofIdx_mi_tag>().find(boost::make_tuple(cpy_field_name,(*miit)->getEnt(),(*miit)->get_EntDofIdx()));
         if(diiiit==dofsField.get<Composite_Name_And_Ent_And_EndDofIdx_mi_tag>().end()) {
-          EntityHandle ent = (*miit)->get_ent();
-          rval = moab.add_entities((*cpy_fit)->get_meshset(),&ent,1); CHKERRQ_MOAB(rval);
+          EntityHandle ent = (*miit)->getEnt();
+          rval = moab.add_entities((*cpy_fit)->getMeshSet(),&ent,1); CHKERRQ_MOAB(rval);
           //create field moabent
-          ApproximationOrder order = (*miit)->get_max_order();
+          ApproximationOrder order = (*miit)->getMaxOrder();
           std::pair<MoFEMEntity_multiIndex::iterator,bool> p_e_miit;
           try {
             boost::shared_ptr<MoFEMEntity> moabent(
-              new MoFEMEntity(moab,*cpy_fit,(*miit)->get_RefEntity_ptr())
+              new MoFEMEntity(*cpy_fit,(*miit)->getRefEntityPtr())
             );
             p_e_miit = entsFields.insert(moabent);
           } catch (const std::exception& ex) {
@@ -769,14 +769,14 @@ PetscErrorCode Core::set_other_global_ghost_vector(
             ss << "throw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__ << std::endl;
             SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,ss.str().c_str());
           }
-          if((*p_e_miit.first)->get_max_order()<order) {
-            bool success = entsFields.modify(p_e_miit.first,MoFEMEntity_change_order(moab,order));
+          if((*p_e_miit.first)->getMaxOrder()<order) {
+            bool success = entsFields.modify(p_e_miit.first,MoFEMEntity_change_order(order));
             if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
           }
           //create field moabdof
           DofEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type::iterator hi_diit,diit;
-          diit = dofsField.get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple(field_name,(*miit)->get_ent()));
-          hi_diit = dofsField.get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple(field_name,(*miit)->get_ent()));
+          diit = dofsField.get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple(field_name,(*miit)->getEnt()));
+          hi_diit = dofsField.get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple(field_name,(*miit)->getEnt()));
           for(;diit!=hi_diit;diit++) {
             boost::shared_ptr<DofEntity> mdof =
             boost::shared_ptr<DofEntity>(
@@ -794,7 +794,7 @@ PetscErrorCode Core::set_other_global_ghost_vector(
               if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
             }
           }
-          diiiit = dofsField.get<Composite_Name_And_Ent_And_EndDofIdx_mi_tag>().find(boost::make_tuple(cpy_field_name,(*miit)->get_ent(),(*miit)->get_EntDofIdx()));
+          diiiit = dofsField.get<Composite_Name_And_Ent_And_EndDofIdx_mi_tag>().find(boost::make_tuple(cpy_field_name,(*miit)->getEnt(),(*miit)->get_EntDofIdx()));
           if(diiiit==dofsField.get<Composite_Name_And_Ent_And_EndDofIdx_mi_tag>().end()) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
         }
         if(alpha) (*diiiit)->get_FieldData() = 0;
@@ -813,7 +813,7 @@ PetscErrorCode Core::set_other_global_ghost_vector(
     case SCATTER_FORWARD: {
       for(;miit!=hi_miit;miit++) {
         DofEntity_multiIndex::index<Composite_Name_And_Ent_And_EndDofIdx_mi_tag>::type::iterator diiiit;
-        diiiit = dofsField.get<Composite_Name_And_Ent_And_EndDofIdx_mi_tag>().find(boost::make_tuple(cpy_field_name,(*miit)->get_ent(),(*miit)->get_EntDofIdx()));
+        diiiit = dofsField.get<Composite_Name_And_Ent_And_EndDofIdx_mi_tag>().find(boost::make_tuple(cpy_field_name,(*miit)->getEnt(),(*miit)->get_EntDofIdx()));
         if(diiiit==dofsField.get<Composite_Name_And_Ent_And_EndDofIdx_mi_tag>().end()) {
           SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"no data to fill the vector (top tip: you want scatter forward or scatter reverse?)");
         }

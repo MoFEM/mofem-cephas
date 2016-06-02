@@ -71,7 +71,7 @@ static MoABErrorCode rval;
 PetscErrorCode ForcesAndSurcesCore::getNumberOfNodes(int &num_nodes) const {
   PetscFunctionBegin;
 
-  EntityHandle ent = numeredEntFiniteElementPtr->get_ent();
+  EntityHandle ent = numeredEntFiniteElementPtr->getEnt();
   switch(mField.get_moab().type_from_handle(ent)) {
     case MBVERTEX:
     num_nodes = 1;
@@ -149,7 +149,7 @@ PetscErrorCode ForcesAndSurcesCore::getQuadSense(DataForcesAndSurcesCore &data) 
 // ** Order **
 
 template<typename DOFMULTIINDEX>
-static int get_max_order(
+static int getMaxOrder(
   const DOFMULTIINDEX &dof_multi_index
 ) {
   int max_order = 0;
@@ -157,22 +157,22 @@ static int get_max_order(
   dit = dof_multi_index.begin();
   hi_dit = dof_multi_index.end();
   for(;dit!=hi_dit;dit++) {
-    int dit_max_order = (*dit)->get_max_order();
+    int dit_max_order = (*dit)->getMaxOrder();
     max_order = (max_order>dit_max_order) ? max_order : dit_max_order;
   }
   return max_order;
 }
 
 int ForcesAndSurcesCore::getMaxDataOrder() const {
-  return get_max_order(numeredEntFiniteElementPtr->get_data_dofs());
+  return getMaxOrder(numeredEntFiniteElementPtr->get_data_dofs());
 }
 
 int ForcesAndSurcesCore::getMaxRowOrder() const {
-  return get_max_order(numeredEntFiniteElementPtr->get_rows_dofs());
+  return getMaxOrder(numeredEntFiniteElementPtr->get_rows_dofs());
 }
 
 int ForcesAndSurcesCore::getMaxColOrder() const {
-  return get_max_order(numeredEntFiniteElementPtr->get_cols_dofs());
+  return getMaxOrder(numeredEntFiniteElementPtr->get_cols_dofs());
 }
 
 PetscErrorCode ForcesAndSurcesCore::getDataOrder(const EntityType type,const FieldSpace space,boost::ptr_vector<DataForcesAndSurcesCore::EntData> &data) const {
@@ -197,7 +197,7 @@ PetscErrorCode ForcesAndSurcesCore::getDataOrder(const EntityType type,const Fie
     dit = data_dofs.lower_bound(boost::make_tuple(type,space));
     hi_dit = data_dofs.upper_bound(boost::make_tuple(type,space));
     for(;dit!=hi_dit;dit++) {
-      ApproximationOrder ent_order = (*dit)->get_max_order();
+      ApproximationOrder ent_order = (*dit)->getMaxOrder();
       int side_number = (*dit)->sideNumberPtr->side_number;
       if(side_number < 0) {
         SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
@@ -286,17 +286,17 @@ PetscErrorCode ForcesAndSurcesCore::getDataOrderSpaceAndBase(
 
   for(;dit!=hi_dit;dit++) {
 
-    // std::cerr << ApproximationBaseNames[dit->get_approx_base()] << std::endl;
+    // std::cerr << ApproximationBaseNames[dit->getApproxBase()] << std::endl;
 
     int side_number = (*dit)->sideNumberPtr->side_number;
     if(data[side_number].getDataOrder()) continue;
 
-    ApproximationOrder ent_order = (*dit)->get_max_order();
+    ApproximationOrder ent_order = (*dit)->getMaxOrder();
     if(side_number < 0) {
       SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
     }
-    data[side_number].getBase() = (*dit)->get_approx_base();
-    data[side_number].getSpace() = (*dit)->get_space();
+    data[side_number].getBase() = (*dit)->getApproxBase();
+    data[side_number].getSpace() = (*dit)->getSpace();
     data[side_number].getDataOrder() = data[side_number].getDataOrder() > ent_order ? data[side_number].getDataOrder() : ent_order;
     if((*dit)->sideNumberPtr->brother_side_number!=-1) {
       if(data.size() < (unsigned int)(*dit)->sideNumberPtr->brother_side_number) {
@@ -362,7 +362,7 @@ PetscErrorCode ForcesAndSurcesCore::getNodesIndices(
   ierr = getNumberOfNodes(num_nodes); CHKERRQ(ierr);
   int max_nb_dofs = 0;
   if(dit!=hi_dit) {
-    max_nb_dofs = (*dit)->get_nb_of_coeffs()*num_nodes;
+    max_nb_dofs = (*dit)->getNbOfCoeffs()*num_nodes;
   }
 
   if(distance(dit,hi_dit)!=max_nb_dofs) {
@@ -381,15 +381,15 @@ PetscErrorCode ForcesAndSurcesCore::getNodesIndices(
     int idx = (*dit)->get_petsc_gloabl_dof_idx();
     int local_idx = (*dit)->get_petsc_local_dof_idx();
     int side_number = (*dit)->sideNumberPtr->side_number;
-    int pos = side_number*(*dit)->get_nb_of_coeffs()+(*dit)->get_dof_coeff_idx();
+    int pos = side_number*(*dit)->getNbOfCoeffs()+(*dit)->get_dof_coeff_idx();
     nodes_indices[pos] = idx;
     local_nodes_indices[pos] = local_idx;
     int  brother_side_number = (*dit)->sideNumberPtr->brother_side_number;
     if(brother_side_number!=-1) {
-      if(nodes_indices.size()<(unsigned int)(brother_side_number*(*dit)->get_nb_of_coeffs()+(*dit)->get_nb_of_coeffs())) {
-        nodes_indices.resize(brother_side_number*(*dit)->get_nb_of_coeffs()+(*dit)->get_nb_of_coeffs());
+      if(nodes_indices.size()<(unsigned int)(brother_side_number*(*dit)->getNbOfCoeffs()+(*dit)->getNbOfCoeffs())) {
+        nodes_indices.resize(brother_side_number*(*dit)->getNbOfCoeffs()+(*dit)->getNbOfCoeffs());
       }
-      int elem_idx = brother_side_number*(*dit)->get_nb_of_coeffs()+(*dit)->get_dof_coeff_idx();
+      int elem_idx = brother_side_number*(*dit)->getNbOfCoeffs()+(*dit)->get_dof_coeff_idx();
       nodes_indices[elem_idx] = idx;
       local_nodes_indices[elem_idx] = local_idx;
     }
@@ -426,8 +426,8 @@ PetscErrorCode ForcesAndSurcesCore::getTypeIndices(
   dit = dofs.get<Composite_Name_Type_And_Side_Number_mi_tag>().lower_bound(boost::make_tuple(field_name,type,side_number));
   hi_dit = dofs.get<Composite_Name_Type_And_Side_Number_mi_tag>().upper_bound(boost::make_tuple(field_name,type,side_number));
   if(dit!=hi_dit) {
-    indices.resize((*dit)->get_nb_dofs_on_ent(),false);
-    local_indices.resize((*dit)->get_nb_dofs_on_ent(),false);
+    indices.resize((*dit)->getNbDofsOnEnt(),false);
+    local_indices.resize((*dit)->getNbDofsOnEnt(),false);
     for(;dit!=hi_dit;dit++) {
       int idx = (*dit)->get_petsc_gloabl_dof_idx();
       int elemem_idx = (*dit)->get_EntDofIdx();
@@ -587,7 +587,7 @@ PetscErrorCode ForcesAndSurcesCore::getNoFieldIndices(
 PetscErrorCode ForcesAndSurcesCore::getNoFieldRowIndices(DataForcesAndSurcesCore &data,const std::string &field_name) const {
   PetscErrorCode ierr;
   PetscFunctionBegin;
-  //EntityType fe_type = numeredEntFiniteElementPtr->get_ent_type();
+  //EntityType fe_type = numeredEntFiniteElementPtr->getEntType();
   if(data.dataOnEntities[MBENTITYSET].size() == 0) {
     SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
   }
@@ -637,10 +637,10 @@ PetscErrorCode ForcesAndSurcesCore::getProblemNodesIndices(
     if(dit!=hi_dit) {
 
       if(!nn) {
-        nodes_indices.resize((*dit)->get_nb_of_coeffs()*distance(siit,hi_siit));
+        nodes_indices.resize((*dit)->getNbOfCoeffs()*distance(siit,hi_siit));
       }
       for(;dit!=hi_dit;dit++) {
-        nodes_indices[siit->get()->side_number*(*dit)->get_nb_of_coeffs()+(*dit)->get_dof_coeff_idx()] = (*dit)->get_petsc_gloabl_dof_idx();
+        nodes_indices[siit->get()->side_number*(*dit)->getNbOfCoeffs()+(*dit)->get_dof_coeff_idx()] = (*dit)->get_petsc_gloabl_dof_idx();
       }
 
     }
@@ -733,7 +733,7 @@ PetscErrorCode ForcesAndSurcesCore::getNodesFieldData(
     ierr = getNumberOfNodes(num_nodes); CHKERRQ(ierr);
     int max_nb_dofs = 0;
     if(dit!=hi_dit) {
-      max_nb_dofs = (*dit)->get_nb_of_coeffs()*num_nodes;
+      max_nb_dofs = (*dit)->getNbOfCoeffs()*num_nodes;
     }
 
     if(distance(dit,hi_dit)!=max_nb_dofs) {
@@ -747,8 +747,8 @@ PetscErrorCode ForcesAndSurcesCore::getNodesFieldData(
     }
 
     if(dit!=hi_dit) {
-      space = (*dit)->get_space();
-      base = (*dit)->get_approx_base();
+      space = (*dit)->getSpace();
+      base = (*dit)->getApproxBase();
     }
 
     for(;dit!=hi_dit;dit++) {
@@ -757,16 +757,16 @@ PetscErrorCode ForcesAndSurcesCore::getNodesFieldData(
       if(side_number == -1) {
         SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
       }
-      int pos = side_number*(*dit)->get_nb_of_coeffs()+(*dit)->get_dof_coeff_idx();
+      int pos = side_number*(*dit)->getNbOfCoeffs()+(*dit)->get_dof_coeff_idx();
       nodes_data[pos] = val;
       nodes_dofs[pos] = &*(*dit);
       int  brother_side_number = (*dit)->sideNumberPtr->brother_side_number;
       if(brother_side_number!=-1) {
-        if(nodes_data.size()<(unsigned int)(brother_side_number*(*dit)->get_nb_of_coeffs()+(*dit)->get_nb_of_coeffs())) {
-          nodes_data.resize(brother_side_number*(*dit)->get_nb_of_coeffs()+(*dit)->get_nb_of_coeffs());
-          nodes_dofs.resize(brother_side_number*(*dit)->get_nb_of_coeffs()+(*dit)->get_nb_of_coeffs());
+        if(nodes_data.size()<(unsigned int)(brother_side_number*(*dit)->getNbOfCoeffs()+(*dit)->getNbOfCoeffs())) {
+          nodes_data.resize(brother_side_number*(*dit)->getNbOfCoeffs()+(*dit)->getNbOfCoeffs());
+          nodes_dofs.resize(brother_side_number*(*dit)->getNbOfCoeffs()+(*dit)->getNbOfCoeffs());
         }
-        int brother_pos = brother_side_number*(*dit)->get_nb_of_coeffs()+(*dit)->get_dof_coeff_idx();
+        int brother_pos = brother_side_number*(*dit)->getNbOfCoeffs()+(*dit)->get_dof_coeff_idx();
         nodes_data[brother_pos] = val;
         nodes_dofs[brother_pos] = &*(*dit);
       }
@@ -808,8 +808,8 @@ PetscErrorCode ForcesAndSurcesCore::getTypeFieldData(
   dit = dofs.get<Composite_Name_Type_And_Side_Number_mi_tag>().lower_bound(boost::make_tuple(field_name,type,side_number));
   hi_dit = dofs.get<Composite_Name_Type_And_Side_Number_mi_tag>().upper_bound(boost::make_tuple(field_name,type,side_number));
   if(dit!=hi_dit) {
-    ent_field_data.resize((*dit)->get_nb_dofs_on_ent(),false);
-    ent_field_dofs.resize((*dit)->get_nb_dofs_on_ent(),false);
+    ent_field_data.resize((*dit)->getNbDofsOnEnt(),false);
+    ent_field_dofs.resize((*dit)->getNbDofsOnEnt(),false);
     for(;dit!=hi_dit;dit++) {
       FieldData val = (*dit)->get_FieldData();
       int idx = (*dit)->get_EntDofIdx();
@@ -994,7 +994,7 @@ PetscErrorCode ForcesAndSurcesCore::getFaceTriNodes(DataForcesAndSurcesCore &dat
     {
       const EntityHandle *conn_tet;
       int num_nodes_tet;
-      EntityHandle ent = numeredEntFiniteElementPtr->get_ent();
+      EntityHandle ent = numeredEntFiniteElementPtr->getEnt();
       rval = mField.get_moab().get_connectivity(ent,conn_tet,num_nodes_tet,true); CHKERRQ_MOAB(rval);
       if(num_nodes_tet != 4) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
       int num_nodes_face;
@@ -1020,13 +1020,13 @@ PetscErrorCode ForcesAndSurcesCore::getSpacesAndBaseOnEntities(DataForcesAndSurc
   try {
     for(_IT_GET_FEDATA_DOFS_FOR_LOOP_(this,dof)) {
       // std::cerr << *dof << std::endl;
-      // std::cerr << dof->get_space() << " " << data.sPace.size() << std::endl;
-      // std::cerr << dof->get_approx_base() << " " << data.bAse.size() << std::endl;
-      data.sPace.set((*dof)->get_space());
-      data.bAse.set((*dof)->get_approx_base());
-      data.spacesOnEntities[(*dof)->get_ent_type()].set((*dof)->get_space());
-      data.basesOnEntities[(*dof)->get_ent_type()].set((*dof)->get_approx_base());
-      // std::cerr << "approx base " << ApproximationBaseNames[dof->get_approx_base()] << " " << data.basesOnEntities[dof->get_ent_type()] << std::endl;
+      // std::cerr << dof->getSpace() << " " << data.sPace.size() << std::endl;
+      // std::cerr << dof->getApproxBase() << " " << data.bAse.size() << std::endl;
+      data.sPace.set((*dof)->getSpace());
+      data.bAse.set((*dof)->getApproxBase());
+      data.spacesOnEntities[(*dof)->getEntType()].set((*dof)->getSpace());
+      data.basesOnEntities[(*dof)->getEntType()].set((*dof)->getApproxBase());
+      // std::cerr << "approx base " << ApproximationBaseNames[dof->getApproxBase()] << " " << data.basesOnEntities[dof->getEntType()] << std::endl;
     }
   } catch (std::exception& ex) {
     std::ostringstream ss;

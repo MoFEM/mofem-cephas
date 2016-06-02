@@ -76,9 +76,9 @@ PetscErrorCode DisplacementBCFEMethodPreAndPostProc::iNitalize() {
         for(Range::iterator eit = ents.begin();eit!=ents.end();eit++) {
           for(_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_NAME_ENT_PART_FOR_LOOP_(problemPtr,fieldName,*eit,pcomm->rank(),dof_ptr)) {
             NumeredDofEntity *dof = dof_ptr->get();
-            std::bitset<8> pstatus(dof->get_pstatus());
+            std::bitset<8> pstatus(dof->getPStatus());
             if(pstatus.test(0)) continue; //only local
-            if(dof->get_ent_type() == MBVERTEX) {
+            if(dof->getEntType() == MBVERTEX) {
               if(dof->get_dof_coeff_idx() == 0 && mydata.data.flag1) {
                 mapZeroRows[dof->get_petsc_gloabl_dof_idx()] = scaled_values[0];
               }
@@ -269,8 +269,8 @@ PetscErrorCode SpatialPositionsBCFEMethodPreAndPostProc::iNitalize() {
         for(Range::iterator eit = ents.begin();eit!=ents.end();eit++) {
           for(_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_NAME_ENT_PART_FOR_LOOP_(problemPtr,fieldName,*eit,pcomm->rank(),dof_ptr)) {
             NumeredDofEntity *dof = dof_ptr->get();
-            if(dof->get_ent_type() == MBVERTEX) {
-              EntityHandle node = dof->get_ent();
+            if(dof->getEntType() == MBVERTEX) {
+              EntityHandle node = dof->getEnt();
               cOords.resize(3);
               rval = mField.get_moab().get_coords(&node,1,&*cOords.data().begin()); CHKERRQ_MOAB(rval);
               if(dof->get_dof_coeff_idx() == 0 && mydata.data.flag1) {
@@ -341,7 +341,7 @@ PetscErrorCode TemperatureBCFEMethodPreAndPostProc::iNitalize() {
         for(Range::iterator eit = ents.begin();eit!=ents.end();eit++) {
           for(_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_NAME_ENT_PART_FOR_LOOP_(problemPtr,fieldName,*eit,pcomm->rank(),dof_ptr)) {
             NumeredDofEntity *dof = dof_ptr->get();
-            if(dof->get_ent_type() == MBVERTEX) {
+            if(dof->getEntType() == MBVERTEX) {
               mapZeroRows[dof->get_petsc_gloabl_dof_idx()] = scaled_values[0];
             } else {
               mapZeroRows[dof->get_petsc_gloabl_dof_idx()] = 0;
@@ -470,7 +470,7 @@ PetscErrorCode DirichletBCFromBlockSetFEMethodPreAndPostProc::iNitalize() {
   if(mapZeroRows.empty() || !methodsOp.empty()) {
     ParallelComm* pcomm = ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
     for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BLOCKSET,it)) {
-      if(it->get_name().compare(0,blocksetName.length(),blocksetName) == 0) {
+      if(it->getName().compare(0,blocksetName.length(),blocksetName) == 0) {
         std::vector<double> mydata;
         ierr = it->get_attributes(mydata); CHKERRQ(ierr);
         ublas::vector<double> scaled_values(mydata.size());
@@ -494,7 +494,7 @@ PetscErrorCode DirichletBCFromBlockSetFEMethodPreAndPostProc::iNitalize() {
           for(Range::iterator eit = ents.begin();eit!=ents.end();eit++) {
             for(_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_NAME_ENT_PART_FOR_LOOP_(problemPtr,fieldName,*eit,pcomm->rank(),dof_ptr)) {
               NumeredDofEntity *dof = dof_ptr->get();
-              if(dof->get_ent_type() == MBVERTEX) {
+              if(dof->getEntType() == MBVERTEX) {
                 if(dof->get_dof_coeff_idx() == 0) {
                   mapZeroRows[dof->get_petsc_gloabl_dof_idx()] = scaled_values[0];
                 }

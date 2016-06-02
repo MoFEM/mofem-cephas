@@ -236,7 +236,10 @@ PetscErrorCode mofem_error_handler(MPI_Comm comm,int line,const char *fun,const 
 }
 
 Core::Core(Interface& _moab,MPI_Comm _comm,TagType _tag_type,int _verbose):
-  moab(_moab),comm(_comm),verbose(_verbose) {
+MeshRefinment(_moab),
+moab(_moab),
+comm(_comm),
+verbose(_verbose) {
 
   if(!isGloballyInitialised) {
     PetscPushErrorHandler(mofem_error_handler,PETSC_NULL);
@@ -278,11 +281,12 @@ Core::Core(Interface& _moab,MPI_Comm _comm,TagType _tag_type,int _verbose):
   //Tags Ref
   EntityHandle def_handle = 0;
   rval = moab.tag_get_handle(
-    "_RefParentHandle",1,MB_TYPE_HANDLE,th_RefParentHandle,MB_TAG_CREAT|MB_TAG_SPARSE,&def_handle
-  ); MOAB_THROW(rval);
-  const int def_type[] = {0,0};
-  rval = moab.tag_get_handle(
-    "_RefType",2,MB_TYPE_INTEGER,th_RefType,MB_TAG_CREAT|MB_TAG_SPARSE,def_type
+    "_RefParentHandle",
+    1,
+    MB_TYPE_HANDLE,
+    th_RefParentHandle,
+    MB_TAG_CREAT|MB_TAG_SPARSE,
+    &def_handle
   ); MOAB_THROW(rval);
   BitRefLevel def_bit_level = 0;
   rval = moab.tag_get_handle(
@@ -497,6 +501,8 @@ Core::Core(Interface& _moab,MPI_Comm _comm,TagType _tag_type,int _verbose):
   rval = moab.tag_get_handle(
     "ElemType",1,MB_TYPE_INTEGER,th_ElemType,MB_TAG_CREAT|MB_TAG_SPARSE,&def_elem_type
   ); MOAB_THROW(rval);
+
+  basicEntityDataPtr = boost::shared_ptr<BasicEntityData>(new BasicEntityData(moab));
   //
   clearMap();
   initialiseDatabseInformationFromMesh(verbose);
@@ -523,13 +529,13 @@ BitFieldId Core::get_BitFieldId(const std::string& name) const {
   if(miit==set.end()) {
     THROW_MESSAGE("field < "+name+" > not in database (top tip: check spelling)");
   }
-  return (*miit)->get_id();
+  return (*miit)->getId();
 }
 std::string Core::get_BitFieldId_name(const BitFieldId id) const {
   typedef Field_multiIndex::index<BitFieldId_mi_tag>::type field_set_by_id;
   const field_set_by_id &set = fIelds.get<BitFieldId_mi_tag>();
   field_set_by_id::iterator miit = set.find(id);
-  return (*miit)->get_name();
+  return (*miit)->getName();
 }
 EntityHandle Core::get_field_meshset(const BitFieldId id) const {
   typedef Field_multiIndex::index<BitFieldId_mi_tag>::type field_set_by_id;
@@ -602,7 +608,7 @@ PetscErrorCode Core::addPrismToDatabase(const EntityHandle prism,int verb) {
   if(verb==-1) verb = verbose;
   try {
     std::pair<RefEntity_multiIndex::iterator,bool> p_ent;
-    p_ent = refinedEntities.insert(boost::shared_ptr<RefEntity>(new RefEntity(moab,prism)));
+    p_ent = refinedEntities.insert(boost::shared_ptr<RefEntity>(new RefEntity(basicEntityDataPtr,prism)));
     if(p_ent.second) {
       std::pair<RefElement_multiIndex::iterator,bool> p_MoFEMFiniteElement;
       p_MoFEMFiniteElement = refinedFiniteElements.insert(
@@ -646,7 +652,7 @@ PetscErrorCode Core::synchronise_entities(Range &ents,int verb) {
         rAnk,*eit);
     }
 
-    unsigned char pstatus = (*meit)->get_pstatus();
+    unsigned char pstatus = (*meit)->getPStatus();
 
     if(pstatus == 0) continue;
 
@@ -656,18 +662,18 @@ PetscErrorCode Core::synchronise_entities(Range &ents,int verb) {
       PetscSynchronizedPrintf(comm,"%s",zz.str().c_str());
     }
 
-    for(int proc = 0; proc<MAX_SHARING_PROCS && -1 != (*meit)->get_sharing_procs_ptr()[proc]; proc++) {
-      if((*meit)->get_sharing_procs_ptr()[proc] == -1) {
+    for(int proc = 0; proc<MAX_SHARING_PROCS && -1 != (*meit)->getSharingProcsPtr()[proc]; proc++) {
+      if((*meit)->getSharingProcsPtr()[proc] == -1) {
         SETERRQ(PETSC_COMM_SELF,MOFEM_IMPOSIBLE_CASE,"sharing processor not set");
       }
-      if((*meit)->get_sharing_procs_ptr()[proc] == rAnk) {
+      if((*meit)->getSharingProcsPtr()[proc] == rAnk) {
         continue;
       }
-      EntityHandle handle_on_sharing_proc = (*meit)->get_sharing_handlers_ptr()[proc];
-      sbuffer[(*meit)->get_sharing_procs_ptr()[proc]].push_back(handle_on_sharing_proc);
+      EntityHandle handle_on_sharing_proc = (*meit)->getSharingHandlersPtr()[proc];
+      sbuffer[(*meit)->getSharingProcsPtr()[proc]].push_back(handle_on_sharing_proc);
       if(verb>1) {
         PetscSynchronizedPrintf(comm,"send %lu (%lu) to %d at %d\n",
-        (*meit)->get_ref_ent(),handle_on_sharing_proc,(*meit)->get_sharing_procs_ptr()[proc],rAnk);
+        (*meit)->getRefEnt(),handle_on_sharing_proc,(*meit)->getSharingProcsPtr()[proc],rAnk);
       }
       if(!(pstatus&PSTATUS_MULTISHARED)) {
         break;
@@ -769,9 +775,9 @@ PetscErrorCode Core::synchronise_entities(Range &ents,int verb) {
           "rank %d entity %lu not exist on database, local entity can not be found for this owner",rAnk,ent);
         }
         if(verb>2) {
-          PetscSynchronizedPrintf(comm,"received %ul (%ul) from %d at %d\n",(*meit)->get_ref_ent(),ent,onodes[kk],rAnk);
+          PetscSynchronizedPrintf(comm,"received %ul (%ul) from %d at %d\n",(*meit)->getRefEnt(),ent,onodes[kk],rAnk);
         }
-        ents.insert((*meit)->get_ref_ent());
+        ents.insert((*meit)->getRefEnt());
 
       }
 
@@ -928,11 +934,13 @@ PetscErrorCode Core::initialiseDatabseInformationFromMesh(int verb) {
       } catch (MoFEMException const &e) {
         SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
       }
-      if((*p.first)->get_space()==NOFIELD) {
+      if((*p.first)->getSpace()==NOFIELD) {
         assert((*p.first)->meshSet == *mit);
         //add field to ref ents
         std::pair<RefEntity_multiIndex::iterator,bool> p_ref_ent;
-        p_ref_ent = refinedEntities.insert(boost::shared_ptr<RefEntity>(new RefEntity(moab,*mit)));
+        p_ref_ent = refinedEntities.insert(boost::shared_ptr<RefEntity>(
+          new RefEntity(basicEntityDataPtr,*mit))
+        );
         NOT_USED(p_ref_ent);
       } else {
         Range ents;
@@ -945,9 +953,11 @@ PetscErrorCode Core::initialiseDatabseInformationFromMesh(int verb) {
         Range::iterator eit = ents.begin();
         for(;eit!=ents.end();eit++) {
           std::pair<RefEntity_multiIndex::iterator,bool> p_ref_ent;
-          p_ref_ent = refinedEntities.insert(boost::shared_ptr<RefEntity>(new RefEntity(moab,*eit)));
+          p_ref_ent = refinedEntities.insert(boost::shared_ptr<
+            RefEntity>(new RefEntity(basicEntityDataPtr,*eit))
+          );
           try {
-            boost::shared_ptr<MoFEMEntity> moabent(new MoFEMEntity(moab,*p.first,*p_ref_ent.first));
+            boost::shared_ptr<MoFEMEntity> moabent(new MoFEMEntity(*p.first,*p_ref_ent.first));
             std::pair<MoFEMEntity_multiIndex::iterator,bool> p_ent = entsFields.insert(moabent);
             NOT_USED(p_ent);
           } catch (const std::exception& ex) {
@@ -980,7 +990,9 @@ PetscErrorCode Core::initialiseDatabseInformationFromMesh(int verb) {
       Range::iterator eit = ents.begin();
       for(;eit!=ents.end();eit++) {
         std::pair<RefEntity_multiIndex::iterator,bool> p_ref_ent;
-        p_ref_ent = refinedEntities.insert(boost::shared_ptr<RefEntity>(new RefEntity(moab,*eit)));
+        p_ref_ent = refinedEntities.insert(boost::shared_ptr<RefEntity>(
+          new RefEntity(basicEntityDataPtr,*eit))
+        );
         std::pair<RefElement_multiIndex::iterator,bool> p_MoFEMFiniteElement;
         try {
           switch (moab.type_from_handle(*eit)) {
@@ -1070,8 +1082,10 @@ PetscErrorCode Core::initialiseDatabseInformationFromMesh(int verb) {
         default:
         continue;
       }
-      boost::shared_ptr<RefEntity> mofem_ent(new RefEntity(moab,*eit));
-      BitRefLevel bit = mofem_ent->get_BitRefLevel();
+      boost::shared_ptr<RefEntity> mofem_ent(
+        new RefEntity(basicEntityDataPtr,*eit)
+      );
+      BitRefLevel bit = mofem_ent->getBitRefLevel();
       if(bit.none()) {
         continue;
       }
@@ -1142,37 +1156,37 @@ PetscErrorCode Core::set_field_coordinate_system(const std::string field_name,co
       dim *= (*cs_it)->getDim(alpha);
     }
   }
-  switch((*field_it)->get_space()) {
+  switch((*field_it)->getSpace()) {
     case NOSPACE:
     SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"No space given");
     case H1:
-    if((*field_it)->get_nb_of_coeffs()!=dim) {
+    if((*field_it)->getNbOfCoeffs()!=dim) {
       SETERRQ2(
         PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,
         "dimension mismatch of field and coordinate system"
         "cs dim %d field rank %d",
-        dim,(*field_it)->get_nb_of_coeffs()
+        dim,(*field_it)->getNbOfCoeffs()
       );
     }
     break;
     case HDIV:
     case HCURL:
-    if(3*(*field_it)->get_nb_of_coeffs()!=dim) {
+    if(3*(*field_it)->getNbOfCoeffs()!=dim) {
       SETERRQ2(
         PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,
         "dimension mismatch of field and coordinate system"
         "cs dim %d field rank %d",
-        dim,(*field_it)->get_nb_of_coeffs()
+        dim,(*field_it)->getNbOfCoeffs()
       );
     }
     break;
     case L2:
-    if((*field_it)->get_nb_of_coeffs()!=dim) {
+    if((*field_it)->getNbOfCoeffs()!=dim) {
       SETERRQ2(
         PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,
         "dimension mismatch of field and coordinate system"
         "cs dim %d field rank %d",
-        dim,(*field_it)->get_nb_of_coeffs()
+        dim,(*field_it)->getNbOfCoeffs()
       );
     }
     case NOFIELD:

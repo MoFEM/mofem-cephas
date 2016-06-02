@@ -22,6 +22,19 @@
 #ifndef __POSTPROC_ON_REF_MESH_HPP
 #define __POSTPROC_ON_REF_MESH_HPP
 
+/** \brief Set of operators and data structures used for post-processing
+
+This set of functions works that for given problem a new MoAB instance is crated
+only used for post-processing. For each post-processed element  in the problem
+an element entity in post-processing mesh is created. Post-processed elements do
+not share nodes and any others entities between them, such that discontinuities
+between element could be shown.
+
+Post-processed entities could be represented by ho-elements, for example 10 node
+tetrahedrons. Moreover each element could be refined such that higher order
+polynomials  could be well represented.
+
+*/
 struct PostProcCommonOnRefMesh {
 
   struct CommonData {

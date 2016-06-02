@@ -141,7 +141,7 @@ int main(int argc, char *argv[]) {
 
   for(_IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(mField,"FIELD_A",dof_ptr))
     {
-        if((*dof_ptr)->get_ent_type()!=MBVERTEX) continue;
+        if((*dof_ptr)->getEntType()!=MBVERTEX) continue;
 
         if((*dof_ptr)->get_dof_coeff_idx()==0)
         {
@@ -168,7 +168,7 @@ int main(int argc, char *argv[]) {
     }
   for(_IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(mField,"FIELD_B",dof_ptr))
     {
-        if((*dof_ptr)->get_ent_type()!=MBVERTEX) continue;
+        if((*dof_ptr)->getEntType()!=MBVERTEX) continue;
 
         if((*dof_ptr)->get_dof_coeff_idx()==0)
         {

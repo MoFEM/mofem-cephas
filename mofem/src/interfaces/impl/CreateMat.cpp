@@ -112,20 +112,20 @@ PetscErrorCode CreateRowComressedADJMatrix::getEntityAdjacenies(
   PetscFunctionBegin;
 
   // get adjeacent element
-  mofem_ent_ptr = (*mit_row)->get_MoFEMEntity_ptr();
+  mofem_ent_ptr = (*mit_row)->getMoFEMEntityPtr();
 
   AdjByEnt::iterator adj_miit,hi_adj_miit;
-  adj_miit = entFEAdjacencies.get<Unique_mi_tag>().lower_bound(mofem_ent_ptr->get_global_unique_id());
-  hi_adj_miit = entFEAdjacencies.get<Unique_mi_tag>().upper_bound(mofem_ent_ptr->get_global_unique_id());
+  adj_miit = entFEAdjacencies.get<Unique_mi_tag>().lower_bound(mofem_ent_ptr->getGlobalUniqueId());
+  hi_adj_miit = entFEAdjacencies.get<Unique_mi_tag>().upper_bound(mofem_ent_ptr->getGlobalUniqueId());
 
   dofs_col_view.clear();
   for (; adj_miit != hi_adj_miit; adj_miit++) {
     if (adj_miit->by_other&BYROW) {
-      if ((adj_miit->entFePtr->get_id()&p_miit->get_BitFEId()).none()) {
+      if ((adj_miit->entFePtr->getId()&p_miit->get_BitFEId()).none()) {
         // if element is not part of problem
         continue;
       }
-      if ((adj_miit->entFePtr->get_BitRefLevel()&(*mit_row)->get_BitRefLevel()).none()) {
+      if ((adj_miit->entFePtr->getBitRefLevel()&(*mit_row)->getBitRefLevel()).none()) {
         // if entity is not problem refinement level
         continue;
       }
@@ -175,7 +175,7 @@ PetscErrorCode CreateRowComressedADJMatrix::createMatArrays(
   const NumeredDofEntitysByIdx &dofs_col_by_idx = p_miit->numered_dofs_cols->get<TAG>();
   DofIdx nb_dofs_row = p_miit->get_nb_dofs_row();
   if(nb_dofs_row == 0) {
-    SETERRQ1(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"problem <%s> has zero rows",p_miit->get_name().c_str());
+    SETERRQ1(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"problem <%s> has zero rows",p_miit->getName().c_str());
   }
 
   // Get adjacencies form other processors
@@ -226,11 +226,11 @@ PetscErrorCode CreateRowComressedADJMatrix::createMatArrays(
       // Get entity adjacencies, no need to repeat that operation for dofs when
       // are on the same entity. For simplicity is assumed that those sheered the
       // same adjacencies.
-      unsigned char pstatus = (*mit_row)->get_pstatus();
+      unsigned char pstatus = (*mit_row)->getPStatus();
       if((pstatus & PSTATUS_NOT_OWNED) && (pstatus&(PSTATUS_SHARED|PSTATUS_MULTISHARED))) {
 
         if(
-          (!mofem_ent_ptr)?1:mofem_ent_ptr->get_global_unique_id()!=(*mit_row)->get_MoFEMEntity_ptr()->get_global_unique_id()
+          (!mofem_ent_ptr)?1:mofem_ent_ptr->getGlobalUniqueId()!=(*mit_row)->getMoFEMEntityPtr()->getGlobalUniqueId()
         ) {
           // get entity adjacencies
           ierr = getEntityAdjacenies<TAG>(
@@ -238,7 +238,7 @@ PetscErrorCode CreateRowComressedADJMatrix::createMatArrays(
           ); CHKERRQ(ierr);
           // Add that row. Patterns is that first index is row index, second is
           // size of adjacencies after that follows column adjacencies.
-          int owner = (*mit_row)->get_owner_proc();
+          int owner = (*mit_row)->getOwnerProc();
           dofs_vec[owner].push_back(TAG::get_index(mit_row)); 	// row index
           dofs_vec[owner].push_back(dofs_col_view.size()); 	// nb. of column adjacencies
           // add adjacent cools
@@ -390,7 +390,7 @@ PetscErrorCode CreateRowComressedADJMatrix::createMatArrays(
     i.push_back(j.size());
     if(strcmp(type,MATMPIADJ)==0) {
       DofIdx idx = TAG::get_index(miit_row);
-      if((*dofs_col_by_idx.find(idx))->get_global_unique_id()!=(*miit_row)->get_global_unique_id()) {
+      if((*dofs_col_by_idx.find(idx))->getGlobalUniqueId()!=(*miit_row)->getGlobalUniqueId()) {
         SETERRQ(PETSC_COMM_SELF,PETSC_ERR_ARG_SIZ,"data inconsistency");
       }
     }
@@ -399,7 +399,7 @@ PetscErrorCode CreateRowComressedADJMatrix::createMatArrays(
     // are on the same entity. For simplicity is assumed that those share the
     // same adjacencies.
     if(
-      (!mofem_ent_ptr)?1:(mofem_ent_ptr->get_global_unique_id()!=(*miit_row)->get_MoFEMEntity_ptr()->get_global_unique_id())
+      (!mofem_ent_ptr)?1:(mofem_ent_ptr->getGlobalUniqueId()!=(*miit_row)->getMoFEMEntityPtr()->getGlobalUniqueId())
     ) {
 
       // get entity adjacencies
@@ -421,7 +421,7 @@ PetscErrorCode CreateRowComressedADJMatrix::createMatArrays(
           SETERRQ1(
             PETSC_COMM_SELF,PETSC_ERR_ARG_SIZ,
             "data inconsistency, dof index is smaller than 0, problem name < %s >",
-            p_miit->get_name().c_str()
+            p_miit->getName().c_str()
           );
         }
         if(idx>=p_miit->get_nb_dofs_col()) {
@@ -433,14 +433,14 @@ PetscErrorCode CreateRowComressedADJMatrix::createMatArrays(
           SETERRQ1(
             PETSC_COMM_SELF,PETSC_ERR_ARG_SIZ,
             "data inconsistency, dof index is bigger than size of problem, problem name < %s >",
-            p_miit->get_name().c_str()
+            p_miit->getName().c_str()
           );
 
         }
 
       }
 
-      unsigned char pstatus = (*miit_row)->get_pstatus();
+      unsigned char pstatus = (*miit_row)->getPStatus();
       if( pstatus>0 ) {
         std::map<int,std::vector<int> >::iterator mit;
         mit = adjacent_dofs_on_other_parts.find(row_last_evaluated_idx);
@@ -737,7 +737,7 @@ PetscErrorCode Core::partition_problem(const std::string &name,int verb) {
       if(miit_dofs_col==dofs_col_by_idx_no_const.end()) {
         SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"check finite element definition, nb. of rows is not equal to number for columns");
       }
-      if((*miit_dofs_row)->get_global_unique_id()!=(*miit_dofs_col)->get_global_unique_id()) {
+      if((*miit_dofs_row)->getGlobalUniqueId()!=(*miit_dofs_col)->getGlobalUniqueId()) {
         SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"check finite element definition, nb. of rows is not equal to columns");
       }
       if((*miit_dofs_row)->dof_idx!=(*miit_dofs_col)->dof_idx) {
@@ -816,14 +816,14 @@ PetscErrorCode Core::partition_check_matrix_fill_in(const std::string &problem_n
     PetscErrorCode operator()() {
       PetscFunctionBegin;
 
-      if(refinedFiniteElementsPtr->find(numeredEntFiniteElementPtr->get_ent())==refinedFiniteElementsPtr->end()) {
+      if(refinedFiniteElementsPtr->find(numeredEntFiniteElementPtr->getEnt())==refinedFiniteElementsPtr->end()) {
         SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
       }
 
       FENumeredDofEntity_multiIndex::iterator rit = rowPtr->begin();
       for(;rit!=rowPtr->end();rit++) {
 
-        if(refinedEntitiesPtr->find((*rit)->get_ent())==refinedEntitiesPtr->end()) {
+        if(refinedEntitiesPtr->find((*rit)->getEnt())==refinedEntitiesPtr->end()) {
           SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
         }
         if(!(*rit)->get_active()) {
@@ -832,15 +832,15 @@ PetscErrorCode Core::partition_check_matrix_fill_in(const std::string &problem_n
 
         MoFEMEntityEntFiniteElementAdjacencyMap_multiIndex::index<Composite_Unique_mi_tag>::type::iterator ait;
         ait = adjacenciesPtr->get<Composite_Unique_mi_tag>().find(
-          boost::make_tuple((*rit)->get_MoFEMEntity_ptr()->get_global_unique_id(),numeredEntFiniteElementPtr->get_global_unique_id())
+          boost::make_tuple((*rit)->getMoFEMEntityPtr()->getGlobalUniqueId(),numeredEntFiniteElementPtr->getGlobalUniqueId())
         );
         if(ait==adjacenciesPtr->end()) {
           std::ostringstream ss;
           ss << *(*rit) << std::endl;
           ss << *numeredEntFiniteElementPtr << std::endl;
-          ss << "dof: " << (*rit)->get_BitRefLevel() << std::endl;
-          ss << "fe: " << numeredEntFiniteElementPtr->get_BitRefLevel() << std::endl;
-          ss << "problem: " << problemPtr->get_BitRefLevel() << std::endl;
+          ss << "dof: " << (*rit)->getBitRefLevel() << std::endl;
+          ss << "fe: " << numeredEntFiniteElementPtr->getBitRefLevel() << std::endl;
+          ss << "problem: " << problemPtr->getBitRefLevel() << std::endl;
           PetscPrintf(mFieldPtr->get_comm(),"%s",ss.str().c_str());
           SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"adjacencies data inconsistency");
         } else {
@@ -848,7 +848,7 @@ PetscErrorCode Core::partition_check_matrix_fill_in(const std::string &problem_n
           if(entitiesPtr->find(uid) == entitiesPtr->end()) {
             SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
           }
-          if(dofsPtr->find((*rit)->get_global_unique_id())==dofsPtr->end()) {
+          if(dofsPtr->find((*rit)->getGlobalUniqueId())==dofsPtr->end()) {
             SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
           }
         }
@@ -857,7 +857,7 @@ PetscErrorCode Core::partition_check_matrix_fill_in(const std::string &problem_n
         FENumeredDofEntity_multiIndex::iterator cit = colPtr->begin();
         for(;cit!=colPtr->end();cit++) {
 
-          if(refinedEntitiesPtr->find((*cit)->get_ent())==refinedEntitiesPtr->end()) {
+          if(refinedEntitiesPtr->find((*cit)->getEnt())==refinedEntitiesPtr->end()) {
             SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
           }
           if(!(*cit)->get_active()) {
@@ -865,7 +865,7 @@ PetscErrorCode Core::partition_check_matrix_fill_in(const std::string &problem_n
           }
           int col = (*cit)->get_petsc_gloabl_dof_idx();
           ait = adjacenciesPtr->get<Composite_Unique_mi_tag>().find(
-            boost::make_tuple((*cit)->get_MoFEMEntity_ptr()->get_global_unique_id(),numeredEntFiniteElementPtr->get_global_unique_id())
+            boost::make_tuple((*cit)->getMoFEMEntityPtr()->getGlobalUniqueId(),numeredEntFiniteElementPtr->getGlobalUniqueId())
           );
           if(ait==adjacenciesPtr->end()) {
             SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"adjacencies data inconsistency");
@@ -874,7 +874,7 @@ PetscErrorCode Core::partition_check_matrix_fill_in(const std::string &problem_n
             if(entitiesPtr->find(uid) == entitiesPtr->end()) {
               SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
             }
-            if(dofsPtr->find((*cit)->get_global_unique_id())==dofsPtr->end()) {
+            if(dofsPtr->find((*cit)->getGlobalUniqueId())==dofsPtr->end()) {
               SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
             }
           }
@@ -886,9 +886,9 @@ PetscErrorCode Core::partition_check_matrix_fill_in(const std::string &problem_n
             ss << "row:\n" << *(*rit) << std::endl;
             ss << "col:\n" << *(*cit) << std::endl;
 
-            ss << "fe:\n" << numeredEntFiniteElementPtr->get_BitRefLevel() << std::endl;
-            ss << "row:\n" << (*rit)->get_BitRefLevel() << std::endl;
-            ss << "col:\n" << (*cit)->get_BitRefLevel() << std::endl;
+            ss << "fe:\n" << numeredEntFiniteElementPtr->getBitRefLevel() << std::endl;
+            ss << "row:\n" << (*rit)->getBitRefLevel() << std::endl;
+            ss << "col:\n" << (*cit)->getBitRefLevel() << std::endl;
 
             std::cerr << ss.str() << std::endl;
 
@@ -898,42 +898,42 @@ PetscErrorCode Core::partition_check_matrix_fill_in(const std::string &problem_n
 
           ierr = MatSetValue(A,row,col,1,INSERT_VALUES); CHKERRQ(ierr);
 
-          if((*cit)->get_ent_type()!=MBVERTEX) {
+          if((*cit)->getEntType()!=MBVERTEX) {
 
             FENumeredDofEntity_multiIndex::index<Composite_Name_Type_And_Side_Number_mi_tag>::type::iterator dit,hi_dit;
             dit = colPtr->get<Composite_Name_Type_And_Side_Number_mi_tag>().lower_bound(
-              boost::make_tuple((*cit)->get_name(),(*cit)->get_ent_type(),(*cit)->sideNumberPtr->side_number)
+              boost::make_tuple((*cit)->getName(),(*cit)->getEntType(),(*cit)->sideNumberPtr->side_number)
             );
             hi_dit = colPtr->get<Composite_Name_Type_And_Side_Number_mi_tag>().upper_bound(
-              boost::make_tuple((*cit)->get_name(),(*cit)->get_ent_type(),(*cit)->sideNumberPtr->side_number)
+              boost::make_tuple((*cit)->getName(),(*cit)->getEntType(),(*cit)->sideNumberPtr->side_number)
             );
             int nb_dofs_on_ent = distance(dit,hi_dit);
 
-            int max_order = (*cit)->get_max_order();
-            if((*cit)->get_nb_of_coeffs()*(*cit)->get_order_nb_dofs(max_order)!=nb_dofs_on_ent) {
+            int max_order = (*cit)->getMaxOrder();
+            if((*cit)->getNbOfCoeffs()*(*cit)->getOrderNbDofs(max_order)!=nb_dofs_on_ent) {
               std::cerr << "Warning: Number of Dofs in Col diffrent than number of dofs for given entity order "
-              << (*cit)->get_nb_of_coeffs()*(*cit)->get_order_nb_dofs(max_order) << " " << nb_dofs_on_ent  << std::endl;
+              << (*cit)->getNbOfCoeffs()*(*cit)->getOrderNbDofs(max_order) << " " << nb_dofs_on_ent  << std::endl;
             }
 
           }
 
         }
 
-        if((*rit)->get_ent_type()!=MBVERTEX) {
+        if((*rit)->getEntType()!=MBVERTEX) {
 
           FENumeredDofEntity_multiIndex::index<Composite_Name_Type_And_Side_Number_mi_tag>::type::iterator dit,hi_dit;
           dit = rowPtr->get<Composite_Name_Type_And_Side_Number_mi_tag>().lower_bound(
-            boost::make_tuple((*rit)->get_name(),(*rit)->get_ent_type(),(*rit)->sideNumberPtr->side_number)
+            boost::make_tuple((*rit)->getName(),(*rit)->getEntType(),(*rit)->sideNumberPtr->side_number)
           );
           hi_dit = rowPtr->get<Composite_Name_Type_And_Side_Number_mi_tag>().upper_bound(
-            boost::make_tuple((*rit)->get_name(),(*rit)->get_ent_type(),(*rit)->sideNumberPtr->side_number)
+            boost::make_tuple((*rit)->getName(),(*rit)->getEntType(),(*rit)->sideNumberPtr->side_number)
           );
           int nb_dofs_on_ent = distance(dit,hi_dit);
 
-          int max_order = (*rit)->get_max_order();
-          if((*rit)->get_nb_of_coeffs()*(*rit)->get_order_nb_dofs(max_order) != nb_dofs_on_ent) {
+          int max_order = (*rit)->getMaxOrder();
+          if((*rit)->getNbOfCoeffs()*(*rit)->getOrderNbDofs(max_order) != nb_dofs_on_ent) {
             std::cerr << "Warning: Number of Dofs in Row diffrent than number of dofs for given entity order "
-            << (*rit)->get_nb_of_coeffs()*(*rit)->get_order_nb_dofs(max_order) << " " << nb_dofs_on_ent << std::endl;
+            << (*rit)->getNbOfCoeffs()*(*rit)->getOrderNbDofs(max_order) << " " << nb_dofs_on_ent << std::endl;
           }
 
         }
@@ -997,10 +997,10 @@ PetscErrorCode Core::partition_check_matrix_fill_in(const std::string &problem_n
   for(;fe!=hi_fe;fe++) {
 
     if(verb>0) {
-      PetscPrintf(comm,"\tcheck element %s\n",(*fe)->get_name().c_str());
+      PetscPrintf(comm,"\tcheck element %s\n",(*fe)->getName().c_str());
     }
 
-    ierr = loop_finite_elements(problem_name,(*fe)->get_name(),method,verb);  CHKERRQ(ierr);
+    ierr = loop_finite_elements(problem_name,(*fe)->getName(),method,verb);  CHKERRQ(ierr);
 
   }
 

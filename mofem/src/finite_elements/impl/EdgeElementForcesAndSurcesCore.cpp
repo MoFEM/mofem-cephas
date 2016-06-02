@@ -78,9 +78,9 @@ namespace MoFEM {
 PetscErrorCode EdgeElementForcesAndSurcesCore::operator()() {
   PetscFunctionBegin;
 
-  if(numeredEntFiniteElementPtr->get_ent_type() != MBEDGE) PetscFunctionReturn(0);
+  if(numeredEntFiniteElementPtr->getEntType() != MBEDGE) PetscFunctionReturn(0);
 
-  EntityHandle ent = numeredEntFiniteElementPtr->get_ent();
+  EntityHandle ent = numeredEntFiniteElementPtr->getEnt();
   {
     int num_nodes;
     const EntityHandle* conn;
@@ -219,7 +219,7 @@ PetscErrorCode EdgeElementForcesAndSurcesCore::operator()() {
 
       std::string field_name = !ss ? oit->rowFieldName : oit->colFieldName;
       const Field* field_struture = mField.get_field_structure(field_name);
-      BitFieldId data_id = field_struture->get_id();
+      BitFieldId data_id = field_struture->getId();
 
       if((oit->getNumeredEntFiniteElementPtr()->get_BitFieldId_data()&data_id).none()) {
         SETERRQ2(
@@ -230,7 +230,7 @@ PetscErrorCode EdgeElementForcesAndSurcesCore::operator()() {
 
       if(oit->getOpType()&types[ss] || oit->getOpType()&UserDataOperator::OPROWCOL) {
 
-        space[ss] = field_struture->get_space();
+        space[ss] = field_struture->getSpace();
         switch(space[ss]) {
           case NOSPACE:
           SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"unknown space");
@@ -254,7 +254,7 @@ PetscErrorCode EdgeElementForcesAndSurcesCore::operator()() {
           break;
         }
 
-        base[ss] = field_struture->get_approx_base();
+        base[ss] = field_struture->getApproxBase();
         switch(base[ss]) {
           case AINSWORTH_COLE_BASE:
           break;

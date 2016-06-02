@@ -49,6 +49,15 @@ struct FieldInterface: public UnknownInterface {
   /// get moab interface
   virtual Interface& get_moab() = 0;
 
+  /**
+   * \brief Get pointer to basic entity data.
+   *
+   * This structure keeps data like tags handlers and other data used to construct
+   * mofem entities, dofs and finite elements.
+   *
+   */
+  virtual boost::shared_ptr<BasicEntityData> get_basic_entity_data_ptr() = 0;
+
   /// get communicator
   virtual MPI_Comm get_comm() = 0;
 
@@ -584,6 +593,10 @@ struct FieldInterface: public UnknownInterface {
   /** \brief remove finite element from mofem database
     */
   virtual PetscErrorCode delete_finite_elements_by_bit_ref(const BitRefLevel &bit,const BitRefLevel &mask,int verb = -1) = 0;
+
+  /** \brief delete finite element from mofem database
+    */
+  virtual PetscErrorCode delete_finite_element(const std::string name,int verb = -1) = 0;
 
   /** \brief left shift bit ref level
     * this results of deletion of entities on far left side

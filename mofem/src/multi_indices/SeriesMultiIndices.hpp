@@ -35,12 +35,12 @@ struct MoFEMSeries {
   MoFEMSeries(Interface &moab,const EntityHandle _meshset);
 
   /// get meshset
-  inline EntityHandle get_meshset() const { return meshset; }
+  inline EntityHandle getMeshSet() const { return meshset; }
   inline EntityID get_meshset_id() const { return (EntityID)(meshset&MB_ID_MASK); }
   /// get string_ref of series
-  inline boost::string_ref get_name_ref() const { return boost::string_ref((char *)tag_name_data,tag_name_size); }
+  inline boost::string_ref getNameRef() const { return boost::string_ref((char *)tag_name_data,tag_name_size); }
   /// get series name
-  inline std::string get_name() const { return std::string((char *)tag_name_data,tag_name_size); }
+  inline std::string getName() const { return std::string((char *)tag_name_data,tag_name_size); }
 
   Tag th_SeriesData;
   Tag th_SeriesDataUIDs;
@@ -63,7 +63,7 @@ struct MoFEMSeries {
     PetscFunctionBegin;
     PetscErrorCode ierr;
     for(;it!=hi_it;it++) {
-      ierr = push_dofs((*it)->get_ent(),(*it)->get_non_nonunique_short_id(),(*it)->get_FieldData()); CHKERRQ(ierr);
+      ierr = push_dofs((*it)->getEnt(),(*it)->get_non_nonunique_short_id(),(*it)->get_FieldData()); CHKERRQ(ierr);
     }
     PetscFunctionReturn(0);
   }
@@ -86,12 +86,12 @@ struct interface_MoFEMSeries {
   interface_MoFEMSeries(const T *_ptr): ptr(_ptr) {}
 
   /// get meshset
-  inline EntityHandle get_meshset() const { return ptr->get_meshset(); }
+  inline EntityHandle getMeshSet() const { return ptr->getMeshSet(); }
   inline EntityID get_meshset_id() const { return ptr->get_meshset_id(); }
   /// get string_ref of series
-  inline boost::string_ref get_name_ref() const { return ptr->get_name_ref(); }
+  inline boost::string_ref getNameRef() const { return ptr->getNameRef(); }
   /// get series name
-  inline std::string get_name() const { return ptr->get_name(); }
+  inline std::string getName() const { return ptr->getName(); }
 
   inline const MoFEMSeries* get_MoFEMSeries_ptr() const { return ptr->get_MoFEMSeries_ptr(); };
 
@@ -121,7 +121,7 @@ typedef multi_index_container<
   ordered_unique<
     tag<SeriesID_mi_tag>, const_mem_fun<MoFEMSeries,EntityID,&MoFEMSeries::get_meshset_id> >,
   ordered_unique<
-    tag<SeriesName_mi_tag>, const_mem_fun<MoFEMSeries,boost::string_ref,&MoFEMSeries::get_name_ref> >
+    tag<SeriesName_mi_tag>, const_mem_fun<MoFEMSeries,boost::string_ref,&MoFEMSeries::getNameRef> >
   > > Series_multiIndex;
 
 typedef multi_index_container<
@@ -138,16 +138,16 @@ typedef multi_index_container<
       tag<Composite_SeriesName_And_Step_mi_tag>,
       composite_key<
 	     MoFEMSeriesStep,
-	     const_mem_fun<MoFEMSeriesStep::interface_type_MoFEMSeries,boost::string_ref,&MoFEMSeriesStep::get_name_ref>,
+	     const_mem_fun<MoFEMSeriesStep::interface_type_MoFEMSeries,boost::string_ref,&MoFEMSeriesStep::getNameRef>,
 	     member<MoFEMSeriesStep,int,&MoFEMSeriesStep::step_number>
       > >,
     ordered_non_unique<
-      tag<SeriesName_mi_tag>, const_mem_fun<MoFEMSeriesStep::interface_type_MoFEMSeries,boost::string_ref,&MoFEMSeriesStep::get_name_ref> >,
+      tag<SeriesName_mi_tag>, const_mem_fun<MoFEMSeriesStep::interface_type_MoFEMSeries,boost::string_ref,&MoFEMSeriesStep::getNameRef> >,
         ordered_non_unique<
         tag<Composite_SeriesName_And_Time_mi_tag>,
       composite_key<
 	     MoFEMSeriesStep,
-	     const_mem_fun<MoFEMSeriesStep::interface_type_MoFEMSeries,boost::string_ref,&MoFEMSeriesStep::get_name_ref>,
+	     const_mem_fun<MoFEMSeriesStep::interface_type_MoFEMSeries,boost::string_ref,&MoFEMSeriesStep::getNameRef>,
 	     const_mem_fun<MoFEMSeriesStep,double,&MoFEMSeriesStep::get_time>
       > >
   > > SeriesStep_multiIndex;

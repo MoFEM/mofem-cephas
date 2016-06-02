@@ -225,7 +225,7 @@ int main(int argc, char *argv[]) {
     std::cout << std::endl << *it << std::endl;
 
     //Get block name
-    std::string name = it->get_name();
+    std::string name = it->getName();
 
     //Elastic material
     if (name.compare(0,20,"MAT_ELASTIC_TRANSISO") == 0) {
@@ -254,7 +254,7 @@ int main(int argc, char *argv[]) {
   ierr = m_field.add_cubit_msId(BLOCKSET,1000,"ADD_BLOCK_SET"); CHKERRQ(ierr);
   for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,BLOCKSET,it)) {
     //Get block name
-    std::string name = it->get_name();
+    std::string name = it->getName();
     if (name.compare(0,13,"ADD_BLOCK_SET") == 0) {
       add_block_is_there = true;
       std::vector<double> attributes;

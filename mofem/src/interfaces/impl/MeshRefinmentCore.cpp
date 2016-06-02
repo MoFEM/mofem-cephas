@@ -49,6 +49,20 @@
 
 namespace MoFEM {
 
+MeshRefinment::MeshRefinment(moab::Interface &moab) {
+  MoABErrorCode rval;
+  const int def_type[] = {0,0};
+  rval = moab.tag_get_handle(
+    "_RefType",
+    2,
+    MB_TYPE_INTEGER,
+    th_RefType,
+    MB_TAG_CREAT|MB_TAG_SPARSE,
+    def_type
+  ); MOAB_THROW(rval);
+}
+
+
 PetscErrorCode Core::add_verices_in_the_middel_of_edges(const EntityHandle meshset,const BitRefLevel &bit,const bool recursive,int verb) {
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
@@ -145,7 +159,7 @@ PetscErrorCode Core::add_verices_in_the_middel_of_edges(const Range &_edges,cons
       rval = moab.tag_set_data(th_RefParentHandle,&node,1,&*eit); CHKERRQ_MOAB(rval);
       rval = moab.tag_set_data(th_RefBitLevel,&node,1,&bit); CHKERRQ_MOAB(rval);
       std::pair<RefEntity_multiIndex::iterator,bool> p_ent = refinedEntities.insert(
-        boost::shared_ptr<RefEntity>(new RefEntity(moab,node))
+        boost::shared_ptr<RefEntity>(new RefEntity(basicEntityDataPtr,node))
       );
       if(!p_ent.second) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"this entity is there");
       if(verbose>2) {
@@ -154,8 +168,8 @@ PetscErrorCode Core::add_verices_in_the_middel_of_edges(const Range &_edges,cons
         PetscPrintf(comm,ss.str().c_str());
       }
     } else {
-      const EntityHandle node = (*miit_view)->get_ref_ent();
-      if((*miit_view)->get_ent_type() != MBVERTEX) {
+      const EntityHandle node = (*miit_view)->getRefEnt();
+      if((*miit_view)->getEntType() != MBVERTEX) {
         SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"child of edge should be vertex");
       }
       bool success = refinedEntities.modify(refinedEntities.get<Ent_mi_tag>().find(node),RefEntity_change_add_bit(bit));
@@ -228,9 +242,9 @@ PetscErrorCode Core::refine_TET(const Range &_tets,const BitRefLevel &bit,const 
       RefEntity_multiIndex_view_by_parent_entity::iterator miit_view;
       miit_view = ref_parent_ents_view.find(edge);
       if(miit_view != ref_parent_ents_view.end()) {
-        if(((*miit_view)->get_BitRefLevel()&bit).any()) {
-          edge_new_nodes[ee] = (*miit_view)->get_ref_ent();
-          map_ref_nodes_by_edges[(*miit_view)->get_parent_ent()] = &**miit_view;
+        if(((*miit_view)->getBitRefLevel()&bit).any()) {
+          edge_new_nodes[ee] = (*miit_view)->getRefEnt();
+          map_ref_nodes_by_edges[(*miit_view)->getParentEnt()] = &**miit_view;
           {
             const EntityHandle* conn_edge;
             int num_nodes;
@@ -382,7 +396,7 @@ PetscErrorCode Core::refine_TET(const Range &_tets,const BitRefLevel &bit,const 
     // }
     if(distance(miit_composite,hi_miit_composite)==(unsigned int)nb_new_tets) {
       for(int tt = 0;miit_composite!=hi_miit_composite;miit_composite++,tt++) {
-        EntityHandle tet = miit_composite->get_ref_ent();
+        EntityHandle tet = miit_composite->getRefEnt();
         //set ref tets entities
         ref_tets[tt] = tet;
         ref_tets_bit.set(tt,1);
@@ -461,7 +475,7 @@ PetscErrorCode Core::refine_TET(const Range &_tets,const BitRefLevel &bit,const 
           rval = moab.tag_set_data(th_RefBitEdge,&ref_tets[tt],1,&parent_edges_bit); CHKERRQ_MOAB(rval);
           //add refined entity
           std::pair<RefEntity_multiIndex::iterator,bool> p_MoFEMEntity = refinedEntities.insert(
-            boost::shared_ptr<RefEntity>(new RefEntity(moab,ref_tets[tt]))
+            boost::shared_ptr<RefEntity>(new RefEntity(basicEntityDataPtr,ref_tets[tt]))
           );
           //add refined element
           std::pair<RefElement_multiIndex::iterator,bool> p_MoFEMFiniteElement;
@@ -504,7 +518,7 @@ PetscErrorCode Core::refine_TET(const Range &_tets,const BitRefLevel &bit,const 
       rval = moab.get_connectivity(&*eit,1,edges_nodes[ee],true); CHKERRQ_MOAB(rval);
       std::map<EntityHandle,const RefEntity*>::iterator map_miit = map_ref_nodes_by_edges.find(*eit);
       if(map_miit!=map_ref_nodes_by_edges.end()) {
-        edges_nodes[ee].insert(map_miit->second->get_ref_ent());
+        edges_nodes[ee].insert(map_miit->second->getRefEnt());
       }
     }
     //for faces - add ref nodes
@@ -517,7 +531,7 @@ PetscErrorCode Core::refine_TET(const Range &_tets,const BitRefLevel &bit,const 
       for(Range::iterator eit2 =  fit_edges.begin();eit2 != fit_edges.end();eit2++) {
         std::map<EntityHandle,const RefEntity*>::iterator map_miit = map_ref_nodes_by_edges.find(*eit2);
         if(map_miit!=map_ref_nodes_by_edges.end()) {
-          faces_nodes[ff].insert(map_miit->second->get_ref_ent());
+          faces_nodes[ff].insert(map_miit->second->getRefEnt());
         }
       }
     }
@@ -527,7 +541,7 @@ PetscErrorCode Core::refine_TET(const Range &_tets,const BitRefLevel &bit,const 
     rval = moab.get_connectivity(&*tit,1,tet_nodes,true); CHKERRQ_MOAB(rval);
     for(std::map<EntityHandle,const RefEntity*>::iterator map_miit = map_ref_nodes_by_edges.begin();
     map_miit != map_ref_nodes_by_edges.end();map_miit++) {
-      tet_nodes.insert(map_miit->second->get_ref_ent());
+      tet_nodes.insert(map_miit->second->getRefEnt());
     }
     Range ref_edges;
     //get all all edges of refined tets
@@ -548,7 +562,7 @@ PetscErrorCode Core::refine_TET(const Range &_tets,const BitRefLevel &bit,const 
           EntityHandle edge = tit_edges[ee];
           rval = moab.tag_set_data(th_RefParentHandle,&*reit,1,&edge); CHKERRQ_MOAB(rval);
           std::pair<RefEntity_multiIndex::iterator,bool> p_ent = refinedEntities.insert(
-            boost::shared_ptr<RefEntity>(new RefEntity(moab,*reit))
+            boost::shared_ptr<RefEntity>(new RefEntity(basicEntityDataPtr,*reit))
           );
           bool success = refinedEntities.modify(p_ent.first,RefEntity_change_add_bit(bit));
           if(!success) SETERRQ(PETSC_COMM_SELF,1,"impossible to set edge pranet");
@@ -573,7 +587,7 @@ PetscErrorCode Core::refine_TET(const Range &_tets,const BitRefLevel &bit,const 
           rval = moab.tag_set_data(th_RefParentHandle,&*reit,1,&face); CHKERRQ_MOAB(rval);
           //add edge to refinedEntities
           std::pair<RefEntity_multiIndex::iterator,bool> p_ent = refinedEntities.insert(
-            boost::shared_ptr<RefEntity>(new RefEntity(moab,*reit))
+            boost::shared_ptr<RefEntity>(new RefEntity(basicEntityDataPtr,*reit))
           );
           bool success = refinedEntities.modify(p_ent.first,RefEntity_change_add_bit(bit));
           if(!success) SETERRQ(PETSC_COMM_SELF,1,"impossible to set edge parent");
@@ -593,7 +607,7 @@ PetscErrorCode Core::refine_TET(const Range &_tets,const BitRefLevel &bit,const 
         rval = moab.tag_set_data(th_RefParentHandle,&*reit,1,&*tit); CHKERRQ_MOAB(rval);
         //add edge to refinedEntities
         std::pair<RefEntity_multiIndex::iterator,bool> p_ent = refinedEntities.insert(
-          boost::shared_ptr<RefEntity>(new RefEntity(moab,*reit))
+          boost::shared_ptr<RefEntity>(new RefEntity(basicEntityDataPtr,*reit))
         );
         bool success = refinedEntities.modify(p_ent.first,RefEntity_change_add_bit(bit));
         if(!success) SETERRQ(PETSC_COMM_SELF,1,"impossible to set edge parent");
@@ -645,7 +659,7 @@ PetscErrorCode Core::refine_TET(const Range &_tets,const BitRefLevel &bit,const 
           rval = moab.tag_set_data(th_interface_side,&*rfit,1,&side); CHKERRQ_MOAB(rval);
           //add face to refinedEntities
           std::pair<RefEntity_multiIndex::iterator,bool> p_ent = refinedEntities.insert(
-            boost::shared_ptr<RefEntity>(new RefEntity(moab,*rfit))
+            boost::shared_ptr<RefEntity>(new RefEntity(basicEntityDataPtr,*rfit))
           );
           bool success = refinedEntities.modify(p_ent.first,RefEntity_change_add_bit(bit));
           if(!success) SETERRQ(PETSC_COMM_SELF,1,"impossible to set face parent");
@@ -665,7 +679,7 @@ PetscErrorCode Core::refine_TET(const Range &_tets,const BitRefLevel &bit,const 
       if(intersect(tet_nodes,ref_faces_nodes).size()==3) {
         rval = moab.tag_set_data(th_RefParentHandle,&*rfit,1,&*tit); CHKERRQ_MOAB(rval);
         std::pair<RefEntity_multiIndex::iterator,bool> p_ent = refinedEntities.insert(
-          boost::shared_ptr<RefEntity>(new RefEntity(moab,*rfit))
+          boost::shared_ptr<RefEntity>(new RefEntity(basicEntityDataPtr,*rfit))
         );
         //add face to refinedEntities
         bool success = refinedEntities.modify(p_ent.first,RefEntity_change_add_bit(bit));
@@ -735,8 +749,8 @@ PetscErrorCode Core::refine_PRISM(const EntityHandle meshset,const BitRefLevel &
     for(int ee = 0;ee<6;ee++) {
       RefEntity_multiIndex_view_by_parent_entity::iterator miit_view = ref_parent_ents_view.find(edges[ee]);
       if(miit_view != ref_parent_ents_view.end()) {
-	if(((*miit_view)->get_BitRefLevel()&bit).any()) {
-	  edge_nodes[ee] = (*miit_view)->get_ref_ent();
+	if(((*miit_view)->getBitRefLevel()&bit).any()) {
+	  edge_nodes[ee] = (*miit_view)->getRefEnt();
 	  split_edges.set(ee);
 	}
       }
@@ -789,7 +803,7 @@ PetscErrorCode Core::refine_PRISM(const EntityHandle meshset,const BitRefLevel &
     ref_fe_by_composite::iterator miit_composite2 = miit_composite;
     for(int pp = 0;miit_composite2!=hi_miit_composite;miit_composite2++,pp++) {
       //add this tet to this ref
-      refinedEntities.modify(refinedEntities.find(miit_composite2->get_ref_ent()),RefEntity_change_add_bit(bit));
+      refinedEntities.modify(refinedEntities.find(miit_composite2->getRefEnt()),RefEntity_change_add_bit(bit));
       ref_prism_bit.set(pp,1);
       if(verb>2) {
 	std::ostringstream ss;
@@ -814,7 +828,7 @@ PetscErrorCode Core::refine_PRISM(const EntityHandle meshset,const BitRefLevel &
 	  rval = moab.tag_set_data(th_RefBitLevel,&ref_prisms[pp],1,&bit); CHKERRQ_MOAB(rval);
 	  rval = moab.tag_set_data(th_RefBitEdge,&ref_prisms[pp],1,&split_edges); CHKERRQ_MOAB(rval);
 	  std::pair<RefEntity_multiIndex::iterator,bool> p_ent = refinedEntities.insert(
-      boost::shared_ptr<RefEntity>(new RefEntity(moab,ref_prisms[pp]))
+      boost::shared_ptr<RefEntity>(new RefEntity(basicEntityDataPtr,ref_prisms[pp]))
     );
 	  std::pair<RefElement_multiIndex::iterator,bool> p_MoFEMFiniteElement;
 	  try {

@@ -76,6 +76,7 @@ FTensor::Tensor1<double*,Tensor_Dim> getTensor1FormData(
   >(data);
 }
 
+
 template<>
 FTensor::Tensor1<double*,3> getTensor1FormData<3,double,ublas::row_major,ublas::unbounded_array<double> >(
   MatrixDouble &data
@@ -171,7 +172,7 @@ struct DataForcesAndSurcesCore {
     inline const VectorIntAdaptor getIndicesUpToOrder(int order) {
       unsigned int size = 0;
       if(iNdices.size()) {
-        size = dOfs[0]->get_order_nb_dofs(order)*dOfs[0]->get_nb_of_coeffs();
+        size = dOfs[0]->getOrderNbDofs(order)*dOfs[0]->getNbOfCoeffs();
         size = size < iNdices.size() ? size : iNdices.size();
       }
       int *data = &*iNdices.data().begin();
@@ -185,7 +186,7 @@ struct DataForcesAndSurcesCore {
     inline const VectorIntAdaptor getLocalIndicesUpToOrder(int order) {
       unsigned int size = 0;
       if(localIndices.size()) {
-        size = dOfs[0]->get_order_nb_dofs(order)*dOfs[0]->get_nb_of_coeffs();
+        size = dOfs[0]->getOrderNbDofs(order)*dOfs[0]->getNbOfCoeffs();
         size = size < localIndices.size() ? size : localIndices.size();
       }
       int *data = &*localIndices.data().begin();
@@ -199,7 +200,7 @@ struct DataForcesAndSurcesCore {
     inline const VectorAdaptor getFieldDataUpToOrder(int order) {
       unsigned int size = 0;
       if(fieldData.size()) {
-        size = dOfs[0]->get_order_nb_dofs(order)*dOfs[0]->get_nb_of_coeffs();
+        size = dOfs[0]->getOrderNbDofs(order)*dOfs[0]->getNbOfCoeffs();
         size = size < fieldData.size() ? size : fieldData.size();
       }
       double *data = &*fieldData.data().begin();
