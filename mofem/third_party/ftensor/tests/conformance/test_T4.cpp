@@ -44,6 +44,11 @@ void test_T4(
     }
   }
 
+  // t4(i,j,k,l) = t4_1(j,i,k,l);
+  // t4(i,j,k,l) = t4_1(j,k,i,l);
+  // t4(i,j,k,l) = t4_1(j,k,l,i);
+
+
   FTensor::Tensor2<double,3,3> t2;
   t2(i,j) = t1_1(i)*t1_1(j);
   FTensor::Tensor3<double,3,3,3> t3;
