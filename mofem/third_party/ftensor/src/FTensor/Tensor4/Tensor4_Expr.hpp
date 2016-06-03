@@ -80,7 +80,7 @@ public:
   EQUAL(Dim2,Dim0,Dim1,Dim3,k,i,j,l); // kijl
   EQUAL(Dim2,Dim0,Dim3,Dim1,k,i,l,j); // kilj
   EQUAL(Dim1,Dim3,Dim0,Dim2,j,l,i,k); // jlik
-  EQUAL(Dim1,Dim3,Dim2,Dim0,j,l,i,k); // jlki
+  EQUAL(Dim1,Dim3,Dim2,Dim0,j,l,k,i); // jlki
   EQUAL(Dim2,Dim1,Dim0,Dim3,k,j,i,l); // kjil
   EQUAL(Dim3,Dim1,Dim0,Dim2,l,j,i,k); // ljik
   EQUAL(Dim3,Dim1,Dim2,Dim0,l,j,k,i); // ljki

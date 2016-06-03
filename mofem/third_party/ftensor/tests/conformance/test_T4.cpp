@@ -44,9 +44,93 @@ void test_T4(
     }
   }
 
-  // t4(i,j,k,l) = t4_1(j,i,k,l);
-  // t4(i,j,k,l) = t4_1(j,k,i,l);
-  // t4(i,j,k,l) = t4_1(j,k,l,i);
+  #define TESTING_ASSIGMENT(I,J,K,L,II,JJ,KK,LL) \
+  t4(i,j,k,l) = t4_1(I,J,K,L); \
+  for(ii = 0;ii!=3;ii++) { \
+    for(jj = 0;jj!=3;jj++) { \
+      for(kk = 0;kk!=3;kk++) { \
+        for(int ll = 0;ll!=3;ll++) { \
+          test_for_zero(t4(ii,jj,kk,ll) - t4_1(II,JJ,KK,LL), \
+          "T4_equals_T4 Assignment_" # I # J # K # L \
+        ); \
+        } \
+      } \
+    } \
+  }
+
+  int ii,jj,kk,ll;
+
+  // jikl
+  TESTING_ASSIGMENT(j,i,k,l, jj,ii,kk,ll);
+
+  // jkil
+  TESTING_ASSIGMENT(j,k,i,l, jj,kk,ii,ll);
+
+  // jkli
+  TESTING_ASSIGMENT(j,k,l,i, jj,kk,ll,ii);
+
+  // kjli
+  TESTING_ASSIGMENT(k,j,l,i, kk,jj,ll,ii);
+
+  // klji
+  TESTING_ASSIGMENT(k,l,j,i, kk,ll,jj,ii);
+
+  // klij
+  TESTING_ASSIGMENT(k,l,i,j, kk,ll,ii,jj);
+
+  // lkij
+  TESTING_ASSIGMENT(l,k,i,j, ll,kk,ii,jj);
+
+  // likj
+  TESTING_ASSIGMENT(l,i,k,j, ll,ii,kk,jj);
+
+  // lijk
+  TESTING_ASSIGMENT(l,i,j,k, ll,ii,jj,kk);
+
+  // iljk
+  TESTING_ASSIGMENT(i,l,j,k, ii,ll,jj,kk);
+
+  // ijlk
+  TESTING_ASSIGMENT(i,j,l,k, ii,jj,ll,kk);
+
+  // lkji
+  TESTING_ASSIGMENT(l,k,j,i, ll,kk,jj,ii);
+
+  // ikjl
+  TESTING_ASSIGMENT(i,k,j,l, ii,kk,jj,ll);
+
+  // iklj
+  TESTING_ASSIGMENT(i,k,l,j, ii,kk,ll,jj);
+
+  // ilkj
+  TESTING_ASSIGMENT(i,l,k,j, ii,ll,kk,jj);
+
+  // jilk
+  TESTING_ASSIGMENT(j,i,l,k, jj,ii,ll,kk);
+
+  // kijl
+  TESTING_ASSIGMENT(k,i,j,l, kk,ii,jj,ll);
+
+  // kilj
+  TESTING_ASSIGMENT(k,i,j,l, kk,ii,jj,ll);
+
+  // jlik
+  TESTING_ASSIGMENT(j,l,i,k, jj,ll,ii,kk);
+
+  // jlki
+  TESTING_ASSIGMENT(j,l,k,i, jj,ll,kk,ii);
+
+  // kjil
+  TESTING_ASSIGMENT(k,j,i,l, kk,jj,ii,ll);
+
+  // ljik
+  TESTING_ASSIGMENT(l,j,i,k, ll,jj,ii,kk);
+
+  // ljki
+  TESTING_ASSIGMENT(l,j,k,i, ll,jj,kk,ii);
+
+
+  #undef TESTING_ASSIGMENT
 
 
   FTensor::Tensor2<double,3,3> t2;

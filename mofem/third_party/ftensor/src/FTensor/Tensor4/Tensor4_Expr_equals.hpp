@@ -272,10 +272,10 @@ operator=(const Tensor4_Expr<B,U,Dim0,Dim1,Dim2,Dim3,i,j,k,l> &result)
     T4_equals_T4_0312,
     Dim0,Dim3,Dim1,Dim2,
     i,l,j,k,
-    Current_Dim3-1,Current_Dim0-1,Current_Dim1-1,Current_Dim2-1,
-    Current_Dim3-1,0,Current_Dim1-1,Current_Dim2-1,
-    Current_Dim3-1,0,0,Current_Dim2-1,
-    Current_Dim3-1,0,0,0
+    Current_Dim0-1,Current_Dim3-1,Current_Dim1-1,Current_Dim2-1,
+    0,Current_Dim3-1,Current_Dim1-1,Current_Dim2-1,
+    0,Current_Dim3-1,0,Current_Dim2-1,
+    0,Current_Dim3-1,0,0
   );
 
   // ijlk
@@ -328,7 +328,7 @@ operator=(const Tensor4_Expr<B,U,Dim0,Dim1,Dim2,Dim3,i,j,k,l> &result)
     Dim0,Dim3,Dim2,Dim1,
     i,l,k,j,
     Current_Dim0-1,Current_Dim3-1,Current_Dim2-1,Current_Dim1-1,
-    0,Current_Dim2-1,Current_Dim3-1,Current_Dim1-1,
+    0,Current_Dim3-1,Current_Dim2-1,Current_Dim1-1,
     0,Current_Dim3-1,Current_Dim2-1,0,
     0,Current_Dim3-1,0,0
   );
@@ -381,7 +381,7 @@ operator=(const Tensor4_Expr<B,U,Dim0,Dim1,Dim2,Dim3,i,j,k,l> &result)
   EQUAL(
     T4_equals_T4_1320,
     Dim1,Dim3,Dim2,Dim0,
-    j,l,i,k,
+    j,l,k,i,
     Current_Dim1-1,Current_Dim3-1,Current_Dim2-1,Current_Dim0-1,
     Current_Dim1-1,Current_Dim3-1,Current_Dim2-1,0,
     0,Current_Dim3-1,Current_Dim2-1,0,
@@ -412,7 +412,7 @@ operator=(const Tensor4_Expr<B,U,Dim0,Dim1,Dim2,Dim3,i,j,k,l> &result)
 
   // ljki
   EQUAL(
-    T4_equals_T4_3102,
+    T4_equals_T4_3120,
     Dim3,Dim1,Dim2,Dim0,
     l,j,k,i,
     Current_Dim3-1,Current_Dim1-1,Current_Dim2-1,Current_Dim0-1,
