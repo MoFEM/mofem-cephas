@@ -87,6 +87,10 @@ public:
 
   #undef EQUAL
 
+  template <class U> inline
+  const Tensor4_Expr<Tensor4<A,Dim0,Dim1,Dim2,Dim3>,T,Dim0,Dim1,Dim2,Dim3,i,j,k,l> &
+  operator=(const U &d);
+
 };
 
 #include "Tensor4_Expr_equals.hpp"

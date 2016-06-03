@@ -132,7 +132,6 @@ void test_T4(
 
   #undef TESTING_ASSIGMENT
 
-
   FTensor::Tensor2<double,3,3> t2;
   t2(i,j) = t1_1(i)*t1_1(j);
   FTensor::Tensor3<double,3,3,3> t3;
@@ -163,6 +162,18 @@ void test_T4(
   t4_31(i,j,k,l) = t3(i,j,k)*t1_1(l);
   FTensor::Tensor4<double,3,3,3,3> t4_13;
   t4_13(i,j,k,l) = t1_1(i)*t3(j,k,l);
+
+  t4(i,j,k,l) = t4_1(i,j,k,l);
+  t4(i,j,k,l) = 1;
+  for(int ii = 0;ii!=3;ii++) {
+    for(int jj = 0;jj!=3;jj++) {
+      for(int kk = 0;kk!=3;kk++) {
+        for(int ll = 0;ll!=3;ll++) {
+          test_for_zero(t4(ii,jj,kk,ll) - 1,"T4_equals_generic");
+        }
+      }
+    }
+  }
 
 
 
