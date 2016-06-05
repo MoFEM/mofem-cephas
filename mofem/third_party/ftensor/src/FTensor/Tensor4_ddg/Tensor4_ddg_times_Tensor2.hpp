@@ -145,3 +145,58 @@ operator*(const Tensor2_Expr<B,U,Dim23,Dim23,l,k> &b,
   return Tensor2_symmetric_Expr<TensorExpr,typename promote<T,U>::V,Dim01,i,j>
     (TensorExpr(a,b));
 }
+
+/* This file has all of the declarations for expressions like
+   Tensor4_ddg*Tensor2 and Tensor2*Tensor4_ddg, yielding a
+   Tensor4. */
+
+// FIXME: That should create T4 with first two indices symmetric two other not.
+// At this point will not create ideal code.
+
+/* A(i,j,k,l)*B(l,m) */
+
+template<class A, class B, class T, class U, int Dim01, int Dim23, int Dim4,
+  char i, char j, char k, char l,char m>
+class Tensor4_ddg_times_Tensor2_3
+{
+  const Tensor4_ddg_Expr<A,T,Dim01,Dim23,i,j,k,l> iterA;
+  const Tensor2_Expr<B,U,Dim23,Dim4,l,m> iterB;
+
+  template<int Current_Dim0>
+  typename promote<T,U>::V eval(
+    const int N1, const int N2,const int N3,const int N4,
+		const Number<Current_Dim0> &
+  )  const {
+    return
+    iterA(N1,N2,N3,Current_Dim0-1)*iterB(Current_Dim0-1,N4)
+    + eval(N1,N2,N3,N4,Number<Current_Dim0-1>());
+  }
+  typename promote<T,U>::V eval(
+    const int N1, const int N2,const int N3,const int N4,
+		const Number<1> &
+  )  const {
+    return iterA(N1,N2,N3,0)*iterB(0,N4);
+  }
+public:
+  Tensor4_ddg_times_Tensor2_3(
+    const Tensor4_ddg_Expr<A,T,Dim01,Dim23,i,j,k,l> &a,
+    const Tensor2_Expr<B,U,Dim23,Dim4,l,m> &b
+  ): iterA(a), iterB(b) {}
+  typename promote<T,U>::V operator()(const int N1, const int N2,const int N3,const int N4) const
+  {
+    return eval(N1,N2,N3,N4,Number<Dim23>());
+  }
+};
+
+template<
+class A, class B, class T, class U, int Dim01, int Dim23, int Dim4,char i, char j, char k, char l,char m>
+inline const Tensor4_Expr
+<const Tensor4_ddg_times_Tensor2_3<A,B,T,U,Dim01,Dim23,Dim4,i,j,k,l,m>,typename promote<T,U>::V,Dim01,Dim01,Dim23,Dim4,i,j,k,m>
+operator*(
+  const Tensor4_ddg_Expr<A,T,Dim01,Dim23,i,j,k,l> &a,
+	const Tensor2_Expr<B,U,Dim23,Dim4,l,m> &b
+) {
+  typedef const Tensor4_ddg_times_Tensor2_3<A,B,T,U,Dim01,Dim23,Dim4,i,j,k,l,m> TensorExpr;
+  return Tensor4_Expr<TensorExpr,typename promote<T,U>::V,Dim01,Dim01,Dim23,Dim4,i,j,k,m>
+  (TensorExpr(a,b));
+}

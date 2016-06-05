@@ -1,7 +1,7 @@
 /*! \page ftenso_readme FTensor third-part library
 \ingroup ftensor
 
-This library is adapted to MoFEM needs. In addiction extension to tensor 4 is
+This library is adapted to MoFEM needs. Some new capabilities are
 added that philosophy and spirit of original implementation is preserved.
 
 FTensor\n

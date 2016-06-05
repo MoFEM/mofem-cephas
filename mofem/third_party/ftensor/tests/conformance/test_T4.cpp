@@ -7,6 +7,7 @@ using namespace std;
 void test_T4(
   const Tensor1<double,3> &t1_1,
   const Tensor2<double,3,3> &t2_1,
+  const Tensor2_symmetric<double,3>  &t2s_1,
   const Tensor4<double,3,3,3,3> &t4_1
 ) {
   Index<'i',3> i;
@@ -175,6 +176,30 @@ void test_T4(
     }
   }
 
+  Tensor4_ddg<double,3,3> t4ddg_1;
+  Tensor4<double,3,3,3,3> t4_222;
+  Tensor2<double,3,3> t2_cpy;
+  for(int ii = 0;ii!=3;ii++) {
+    for(int jj = 0;jj!=3;jj++) {
+      t2_cpy(ii,jj) = t2s_1(ii,jj);
+    }
+  }
+
+  t4ddg_1(i,j,k,l)=t2s_1(i,j)*t2s_1(k,l);
+  t4(i,j,k,m) = t4ddg_1(i,j,k,l)*t2_cpy(l,m);
+  t2(k,m) = t2s_1(k,l)*t2s_1(l,m);
+  t4_222(i,j,k,m) = t2_cpy(i,j)*t2(k,m);
+
+  for(int ii = 0;ii!=3;ii++) {
+    for(int jj = 0;jj!=3;jj++) {
+      for(int kk = 0;kk!=3;kk++) {
+        for(int ll = 0;ll!=3;ll++) {
+          std::cerr << t4(ii,jj,kk,ll) << " " << t4_222(ii,jj,kk,ll) << std::endl;
+          test_for_zero(t4(ii,jj,kk,ll) - t4_222(ii,jj,kk,ll),"Tensor4_ddg_times_Tensor2_3");
+        }
+      }
+    }
+  }
 
 
 }
