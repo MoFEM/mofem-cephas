@@ -66,8 +66,11 @@ struct DofEntity: public interface_MoFEMEntity<MoFEMEntity> {
 
   /** \brief Get unique dof id
     */
-  inline GlobalUId getGlobalUniqueId() const { return getGlobalUniqueIdCalculate(get_EntDofIdx(),getMoFEMEntityPtr()); };
-  DEPRECATED inline GlobalUId get_global_unique_id() const { return getGlobalUniqueId(); };
+  inline GlobalUId getGlobalUniqueId() const { return getGlobalUniqueIdCalculate(get_EntDofIdx(),getMoFEMEntityPtr()); }
+
+  /** deprecated \deprecated
+  */
+  DEPRECATED inline GlobalUId get_global_unique_id() const { return getGlobalUniqueId(); }
 
   // inline GlobalUId getGlobalUniqueIdCalculate(const int dof) const { return getGlobalUniqueIdCalculate(dof,getMoFEMEntityPtr()); }
 
@@ -96,6 +99,8 @@ struct DofEntity: public interface_MoFEMEntity<MoFEMEntity> {
     return ((ApproximationOrder*)this->sPtr->tag_dof_order_data)[get_EntDofIdx()];
   }
 
+  /** deprecated \deprecated
+  */
   DEPRECATED inline FieldCoefficientsNumber get_dof_rank() const {
     return ((FieldCoefficientsNumber*)this->sPtr->tag_dof_rank_data)[get_EntDofIdx()];
   }
@@ -124,6 +129,9 @@ struct interface_DofEntity: public interface_MoFEMEntity<T> {
   }
 
   inline const GlobalUId getGlobalUniqueId() const { return this->sPtr->getGlobalUniqueId(); }
+
+  /** deprecated \deprecated
+  */
   DEPRECATED inline const GlobalUId get_global_unique_id() const { return this->sPtr->getGlobalUniqueId(); }
 
   inline ShortId get_non_nonunique_short_id() const { return this->sPtr->get_non_nonunique_short_id(); }
@@ -131,10 +139,15 @@ struct interface_DofEntity: public interface_MoFEMEntity<T> {
   inline FieldData& get_FieldData() const { return this->sPtr->get_FieldData(); }
 
   inline EntityHandle getEnt() const { return this->sPtr->getEnt(); };
+
+  /** deprecated \deprecated
+  */
   DEPRECATED inline EntityHandle get_ent() const { return getEnt(); };
 
   inline ApproximationOrder get_dof_order() const { return this->sPtr->get_dof_order(); };
 
+  /** deprecated \deprecated
+  */
   DEPRECATED inline FieldCoefficientsNumber get_dof_rank() const {
     return this->sPtr->get_dof_coeff_idx();
   }
@@ -151,6 +164,9 @@ struct interface_DofEntity: public interface_MoFEMEntity<T> {
   inline const boost::shared_ptr<MoFEMEntity> getMoFEMEntityPtr() const {
     return this->sPtr->getMoFEMEntityPtr();
   }
+
+  /** Deprecated \deprecated
+  */
   DEPRECATED inline const boost::shared_ptr<MoFEMEntity> get_MoFEMEntity_ptr() const {
     return this->sPtr->getMoFEMEntityPtr();
   }

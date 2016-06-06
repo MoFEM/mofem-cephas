@@ -1,6 +1,9 @@
 /*! \page ftenso_readme FTensor third-part library
 \ingroup ftensor
 
+This library is adapted to MoFEM needs. Some new capabilities are
+added that philosophy and spirit of original implementation is preserved.
+
 FTensor\n
 February 6, 2013\n\n
 

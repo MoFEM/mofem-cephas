@@ -142,4 +142,6 @@ List is generated with command,
 git shortlog -s -e -n
 \endcode
 
+Note that contributions to forked module are not on the list.
+
 */
