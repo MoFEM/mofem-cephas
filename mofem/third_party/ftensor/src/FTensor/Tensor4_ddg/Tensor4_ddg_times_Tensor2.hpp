@@ -153,6 +153,7 @@ operator*(const Tensor2_Expr<B,U,Dim23,Dim23,l,k> &b,
 // FIXME: That should create T4 with first two indices symmetric two other not.
 // At this point will not create ideal code.
 // TODO: Not all possible permutations are included.
+// TODO: Check dimensions could be errors
 
 /* A(i,j,k,l)*B(l,m) */
 
@@ -311,14 +312,14 @@ public:
   ): iterA(a), iterB(b) {}
   typename promote<T,U>::V operator()(const int N1, const int N2,const int N3,const int N4) const
   {
-    return eval(N1,N2,N3,N4,Number<Dim23>());
+    return eval(N1,N2,N3,N4,Number<Dim01>());
   }
 };
 
 template<
 class A, class B, class T, class U, int Dim01, int Dim23, int Dim2,char i, char j, char k, char l,char m>
 inline const Tensor4_Expr
-<const Tensor4_ddg_times_Tensor2_1_0<A,B,T,U,Dim01,Dim23,Dim2,i,j,k,l,m>,typename promote<T,U>::V,Dim01,Dim01,Dim23,Dim2,i,m,k,l>
+<const Tensor4_ddg_times_Tensor2_1_0<A,B,T,U,Dim01,Dim23,Dim2,i,j,k,l,m>,typename promote<T,U>::V,Dim01,Dim2,Dim23,Dim23,i,m,k,l>
 operator*(
   const Tensor4_ddg_Expr<A,T,Dim01,Dim23,i,j,k,l> &a,
   const Tensor2_Expr<B,U,Dim01,Dim2,j,m> &b
@@ -333,7 +334,7 @@ operator*(
 template<
 class A, class B, class T, class U, int Dim01, int Dim23, int Dim2,char i, char j, char k, char l,char m>
 inline const Tensor4_Expr
-<const Tensor4_ddg_times_Tensor2_1_0<A,B,T,U,Dim01,Dim23,Dim2,i,j,k,l,m>,typename promote<T,U>::V,Dim01,Dim01,Dim23,Dim2,i,m,k,l>
+<const Tensor4_ddg_times_Tensor2_1_0<A,B,T,U,Dim01,Dim23,Dim2,i,j,k,l,m>,typename promote<T,U>::V,Dim01,Dim2,Dim23,Dim23,i,m,k,l>
 operator*(
   const Tensor2_Expr<B,U,Dim01,Dim2,j,m> &b,
   const Tensor4_ddg_Expr<A,T,Dim01,Dim23,i,j,k,l> &a
@@ -374,20 +375,20 @@ public:
   ): iterA(a), iterB(b) {}
   typename promote<T,U>::V operator()(const int N1, const int N2,const int N3,const int N4) const
   {
-    return eval(N1,N2,N3,N4,Number<Dim23>());
+    return eval(N1,N2,N3,N4,Number<Dim01>());
   }
 };
 
 template<
 class A, class B, class T, class U, int Dim01, int Dim23, int Dim2,char i, char j, char k, char l,char m>
 inline const Tensor4_Expr
-<const Tensor4_ddg_times_Tensor2_1_1<A,B,T,U,Dim01,Dim23,Dim2,i,j,k,l,m>,typename promote<T,U>::V,Dim01,Dim01,Dim23,Dim2,i,m,k,l>
+<const Tensor4_ddg_times_Tensor2_1_1<A,B,T,U,Dim01,Dim23,Dim2,i,j,k,l,m>,typename promote<T,U>::V,Dim01,Dim2,Dim23,Dim23,i,m,k,l>
 operator*(
   const Tensor4_ddg_Expr<A,T,Dim01,Dim23,i,j,k,l> &a,
   const Tensor2_Expr<B,U,Dim01,Dim2,m,j> &b
 ) {
   typedef const Tensor4_ddg_times_Tensor2_1_1<A,B,T,U,Dim01,Dim23,Dim2,i,j,k,l,m> TensorExpr;
-  return Tensor4_Expr<TensorExpr,typename promote<T,U>::V,Dim01,Dim01,Dim23,Dim2,i,m,k,l>
+  return Tensor4_Expr<TensorExpr,typename promote<T,U>::V,Dim01,Dim2,Dim23,Dim23,i,m,k,l>
   (TensorExpr(a,b));
 }
 
@@ -396,7 +397,7 @@ operator*(
 template<
 class A, class B, class T, class U, int Dim01, int Dim23, int Dim2,char i, char j, char k, char l,char m>
 inline const Tensor4_Expr
-<const Tensor4_ddg_times_Tensor2_1_1<A,B,T,U,Dim01,Dim23,Dim2,i,j,k,l,m>,typename promote<T,U>::V,Dim01,Dim01,Dim23,Dim2,i,m,k,l>
+<const Tensor4_ddg_times_Tensor2_1_1<A,B,T,U,Dim01,Dim23,Dim2,i,j,k,l,m>,typename promote<T,U>::V,Dim01,Dim2,Dim23,Dim23,i,m,k,l>
 operator*(
   const Tensor2_Expr<B,U,Dim01,Dim2,m,j> &b,
   const Tensor4_ddg_Expr<A,T,Dim01,Dim23,i,j,k,l> &a
@@ -437,20 +438,20 @@ public:
   ): iterA(a), iterB(b) {}
   typename promote<T,U>::V operator()(const int N1, const int N2,const int N3,const int N4) const
   {
-    return eval(N1,N2,N3,N4,Number<Dim23>());
+    return eval(N1,N2,N3,N4,Number<Dim01>());
   }
 };
 
 template<
 class A, class B, class T, class U, int Dim01, int Dim23, int Dim1,char i, char j, char k, char l,char m>
 inline const Tensor4_Expr
-<const Tensor4_ddg_times_Tensor2_0_0<A,B,T,U,Dim01,Dim23,Dim1,i,j,k,l,m>,typename promote<T,U>::V,Dim01,Dim01,Dim23,Dim1,m,j,k,l>
+<const Tensor4_ddg_times_Tensor2_0_0<A,B,T,U,Dim01,Dim23,Dim1,i,j,k,l,m>,typename promote<T,U>::V,Dim1,Dim01,Dim23,Dim23,m,j,k,l>
 operator*(
   const Tensor4_ddg_Expr<A,T,Dim01,Dim23,i,j,k,l> &a,
   const Tensor2_Expr<B,U,Dim01,Dim1,i,m> &b
 ) {
   typedef const Tensor4_ddg_times_Tensor2_0_0<A,B,T,U,Dim01,Dim23,Dim1,i,j,k,l,m> TensorExpr;
-  return Tensor4_Expr<TensorExpr,typename promote<T,U>::V,Dim01,Dim01,Dim23,Dim1,m,j,k,l>
+  return Tensor4_Expr<TensorExpr,typename promote<T,U>::V,Dim1,Dim01,Dim23,Dim23,m,j,k,l>
   (TensorExpr(a,b));
 }
 
@@ -465,7 +466,7 @@ operator*(
   const Tensor4_ddg_Expr<A,T,Dim01,Dim23,i,j,k,l> &a
 ) {
   typedef const Tensor4_ddg_times_Tensor2_0_0<A,B,T,U,Dim01,Dim23,Dim1,i,j,k,l,m> TensorExpr;
-  return Tensor4_Expr<TensorExpr,typename promote<T,U>::V,Dim01,Dim01,Dim23,Dim1,m,j,k,l>
+  return Tensor4_Expr<TensorExpr,typename promote<T,U>::V,Dim1,Dim01,Dim23,Dim23,m,j,k,l>
   (TensorExpr(a,b));
 }
 
@@ -500,14 +501,14 @@ public:
   ): iterA(a), iterB(b) {}
   typename promote<T,U>::V operator()(const int N1, const int N2,const int N3,const int N4) const
   {
-    return eval(N1,N2,N3,N4,Number<Dim23>());
+    return eval(N1,N2,N3,N4,Number<Dim01>());
   }
 };
 
 template<
 class A, class B, class T, class U, int Dim01, int Dim23, int Dim1,char i, char j, char k, char l,char m>
 inline const Tensor4_Expr
-<const Tensor4_ddg_times_Tensor2_0_1<A,B,T,U,Dim01,Dim23,Dim1,i,j,k,l,m>,typename promote<T,U>::V,Dim01,Dim01,Dim23,Dim1,m,j,k,l>
+<const Tensor4_ddg_times_Tensor2_0_1<A,B,T,U,Dim01,Dim23,Dim1,i,j,k,l,m>,typename promote<T,U>::V,Dim1,Dim01,Dim23,Dim23,m,j,k,l>
 operator*(
   const Tensor4_ddg_Expr<A,T,Dim01,Dim23,i,j,k,l> &a,
   const Tensor2_Expr<B,U,Dim01,Dim1,m,i> &b
@@ -522,12 +523,12 @@ operator*(
 template<
 class A, class B, class T, class U, int Dim01, int Dim23, int Dim1,char i, char j, char k, char l,char m>
 inline const Tensor4_Expr
-<const Tensor4_ddg_times_Tensor2_0_1<A,B,T,U,Dim01,Dim23,Dim1,i,j,k,l,m>,typename promote<T,U>::V,Dim01,Dim01,Dim23,Dim1,m,j,k,l>
+<const Tensor4_ddg_times_Tensor2_0_1<A,B,T,U,Dim01,Dim23,Dim1,i,j,k,l,m>,typename promote<T,U>::V,Dim1,Dim01,Dim23,Dim23,m,j,k,l>
 operator*(
   const Tensor2_Expr<B,U,Dim01,Dim1,m,i> &b,
   const Tensor4_ddg_Expr<A,T,Dim01,Dim23,i,j,k,l> &a
 ) {
   typedef const Tensor4_ddg_times_Tensor2_0_1<A,B,T,U,Dim01,Dim23,Dim1,i,j,k,l,m> TensorExpr;
-  return Tensor4_Expr<TensorExpr,typename promote<T,U>::V,Dim01,Dim01,Dim23,Dim1,m,j,k,l>
+  return Tensor4_Expr<TensorExpr,typename promote<T,U>::V,Dim1,Dim01,Dim23,Dim23,m,j,k,l>
   (TensorExpr(a,b));
 }
