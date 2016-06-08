@@ -571,4 +571,19 @@ void test_T4(
     }
   }
 
+  /* T4*=U */
+
+  t4(i,j,m,l) *= 4;
+
+  for(int ii = 0;ii!=3;ii++) {
+    for(int jj = 0;jj!=3;jj++) {
+      for(int kk = 0;kk!=3;kk++) {
+        for(int ll = 0;ll!=3;ll++) {
+          // std::cerr << t4(ii,jj,kk,ll) << " " << t4_222(ii,jj,kk,ll) << std::endl;
+          test_for_zero(t4(ii,jj,kk,ll) - 4*t4_222(ii,jj,kk,ll),"Tensor4_times_Tensor2_2_1");
+        }
+      }
+    }
+  }
+
 }
