@@ -10,7 +10,6 @@ list(APPEND CTEST_BUILD_OPTIONS "-DWITH_MODULE_MINIMAL_HELMHOLTZ=1")
 list(APPEND CTEST_BUILD_OPTIONS "-DCMAKE_CXX_FLAGS=-I/opt/local_boost_1_54_0/include")
 list(APPEND CTEST_BUILD_OPTIONS "-DCMAKE_EXE_LINKER_FLAGS=-L/opt/local_boost_1_54_0/lib")
 list(APPEND CTEST_BUILD_OPTIONS "/home/lukasz/tmp/cephas_users_modules/users_modules")
-)
 
 set(CTEST_SITE "rdb-srv1")
 set(CTEST_BUILD_NAME "Linux-mpicxx")
