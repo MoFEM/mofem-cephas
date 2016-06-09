@@ -76,30 +76,10 @@ struct ForcesAndSurcesCore: public FEMethod {
     const EntityType type,const FieldSpace space,boost::ptr_vector<DataForcesAndSurcesCore::EntData> &data
   ) const;
 
-  /// \brief do not use it it will be removed, use getDataOrder
-  DEPRECATED PetscErrorCode getOrder(
-    const EntityType type,const FieldSpace space,boost::ptr_vector<DataForcesAndSurcesCore::EntData> &data
-  ) const {
-    PetscFunctionBegin;
-    PetscErrorCode ierr;
-    ierr = getDataOrder(type,space,data); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
-  }
-
   /// \brief get maximal approximation order on entity
   PetscErrorCode getDataOrderSpaceAndBase(
     const std::string &field_name,const EntityType type,boost::ptr_vector<DataForcesAndSurcesCore::EntData> &data
   ) const;
-
-  /// \brief do not use it it will be removed, use getDataOrder
-  DEPRECATED PetscErrorCode getOrder(
-    const std::string &field_name,const EntityType type,boost::ptr_vector<DataForcesAndSurcesCore::EntData> &data
-  ) const {
-    PetscFunctionBegin;
-    PetscErrorCode ierr;
-    ierr = getDataOrderSpaceAndBase(field_name,type,data); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
-  }
 
   /**
    * get  edge sense )orientation) in respect finite element entity
@@ -127,37 +107,6 @@ struct ForcesAndSurcesCore: public FEMethod {
   PetscErrorCode getQuadDataOrderSpaceAndBase(DataForcesAndSurcesCore &data,const std::string &field_name) const;
   PetscErrorCode getTetDataOrderSpaceAndBase(DataForcesAndSurcesCore &data,const std::string &field_name) const;
   PetscErrorCode getPrismDataOrderSpaceAndBase(DataForcesAndSurcesCore &data,const std::string &field_name) const;
-
-  DEPRECATED PetscErrorCode getEdgesDataOrder(DataForcesAndSurcesCore &data,const std::string &field_name) const {
-    PetscErrorCode ierr;
-    PetscFunctionBegin;
-    ierr = getEdgesDataOrderSpaceAndBase(data,field_name); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
-  }
-  DEPRECATED PetscErrorCode getTrisDataOrder(DataForcesAndSurcesCore &data,const std::string &field_name) const {
-    PetscErrorCode ierr;
-    PetscFunctionBegin;
-    ierr = getTrisDataOrderSpaceAndBase(data,field_name); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
-  }
-  DEPRECATED PetscErrorCode getQuadDataOrder(DataForcesAndSurcesCore &data,const std::string &field_name) const {
-    PetscErrorCode ierr;
-    PetscFunctionBegin;
-    ierr = getQuadDataOrderSpaceAndBase(data,field_name); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
-  }
-  DEPRECATED PetscErrorCode getTetDataOrder(DataForcesAndSurcesCore &data,const std::string &field_name) const {
-    PetscErrorCode ierr;
-    PetscFunctionBegin;
-    ierr = getTetDataOrderSpaceAndBase(data,field_name); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
-  }
-  DEPRECATED PetscErrorCode getPrismDataOrder(DataForcesAndSurcesCore &data,const std::string &field_name) const {
-    PetscErrorCode ierr;
-    PetscFunctionBegin;
-    ierr = getPrismDataOrderSpaceAndBase(data,field_name); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
-  }
 
   // ** Indices **
 
@@ -304,13 +253,6 @@ struct ForcesAndSurcesCore: public FEMethod {
 
   /// \brief Get field approximation space and base on entities
   PetscErrorCode getSpacesAndBaseOnEntities(DataForcesAndSurcesCore &data) const;
-
-  DEPRECATED PetscErrorCode getSpacesOnEntities(DataForcesAndSurcesCore &data) const {
-    PetscErrorCode ierr;
-    PetscFunctionBegin;
-    ierr = getSpacesAndBaseOnEntities(data); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
-  }
 
   // ** Data form NumeredDofEntity_multiIndex **
 
@@ -519,10 +461,6 @@ struct ForcesAndSurcesCore: public FEMethod {
     /** \brief Return raw pointer to NumeredEntFiniteElement
      */
     inline const NumeredEntFiniteElement* getNumeredEntFiniteElementPtr() const { return ptrFE->numeredEntFiniteElementPtr; };
-
-    /** \brief DEPRECATED pleas use getNumeredEntFiniteElementPtr() instead
-    */
-    DEPRECATED inline const NumeredEntFiniteElement* getMoFEMFEPtr() const { return getNumeredEntFiniteElementPtr(); };
 
     /** \brief Get row indices
 

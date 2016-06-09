@@ -158,10 +158,6 @@ struct VolumeElementForcesAndSourcesCore: public ForcesAndSurcesCore {
       return dynamic_cast<VolumeElementForcesAndSourcesCore*>(ptrFE);
     }
 
-    DEPRECATED inline const VolumeElementForcesAndSourcesCore* getTetFE() {
-      return dynamic_cast<VolumeElementForcesAndSourcesCore*>(ptrFE);
-    }
-
     //differential operators
     PetscErrorCode getDivergenceMatrixOperator_Hdiv(
       int side,EntityType type,DataForcesAndSurcesCore::EntData &data,

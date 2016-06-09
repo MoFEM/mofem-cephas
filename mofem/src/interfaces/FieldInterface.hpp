@@ -1366,33 +1366,6 @@ struct FieldInterface: public UnknownInterface {
    */
   virtual PetscErrorCode build_problem_on_distributed_mesh(int verb = -1) = 0;
 
-  /** \brief This is deprecated, use function build_problem_on_distributed_mesh instead
-  */
-  DEPRECATED inline PetscErrorCode build_partitioned_problem(const std::string &name,bool square_matrix = true,int verb = -1) {
-    PetscErrorCode ierr;
-    PetscFunctionBegin;
-    ierr = build_problem_on_distributed_mesh(name,square_matrix,verb); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
-  }
-
-  /** \brief This is deprecated, use function build_problem_on_distributed_mesh instead
-  */
-  DEPRECATED inline PetscErrorCode build_partitioned_problem(MoFEMProblem *problem_ptr,bool square_matrix = true,int verb = -1) {
-    PetscErrorCode ierr;
-    PetscFunctionBegin;
-    ierr = build_problem_on_distributed_mesh(problem_ptr,square_matrix,verb); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
-  }
-
-  /** \brief This is deprecated, use function build_problem_on_distributed_mesh instead
-  */
-  DEPRECATED inline PetscErrorCode build_partitioned_problem(int verb = -1) {
-    PetscErrorCode ierr;
-    PetscFunctionBegin;
-    ierr = build_problem_on_distributed_mesh(verb); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
-  }
-
   /**
    * \brief Set partition tag to each finite element in the problem
    *

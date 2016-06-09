@@ -1,14 +1,5 @@
-set(
-  CTEST_BUILD_OPTIONS
-  "-DPETSC_DIR=/opt/petsc -DPETSC_ARCH=arch-linux2-c-debug \
-  -DMOAB_DIR=/opt/local_new_moab \
-  -DADOL-C_DIR=/opt/local_adol-c-2.5.2 \
-  -DTETGEN_DIR=/opt/tetgen1.5.0 \
-  -DSLEPC_DIR=/opt/slepc-3.5.3 \
-  -DCMAKE_INSTALL_PREFIX=/home/lukasz/tmp/cephas_users_modules \
-  /home/lukasz/mofem-cephas/mofem \
-  -DCMAKE_CXX_FLAGS=-I/opt/local_boost_1_54_0/include -DCMAKE_EXE_LINKER_FLAGS=-L/opt/local_boost_1_54_0/lib"
-)
+set(CTEST_BUILD_OPTIONS "-DPETSC_DIR=/opt/petsc -DPETSC_ARCH=arch-linux2-c-debug -DMOAB_DIR=/opt/local_new_moab -DADOL-C_DIR=/opt/local_adol-c-2.5.2 -DTETGEN_DIR=/opt/tetgen1.5.0 -DSLEPC_DIR=/opt/slepc-3.5.3 -DCMAKE_INSTALL_PREFIX=/home/lukasz/tmp/cephas_users_modules /home/lukasz/mofem-cephas/mofem -DCMAKE_CXX_FLAGS=-I/opt/local_boost_1_54_0/include -DCMAKE_EXE_LINKER_FLAGS=-L/opt/local_boost_1_54_0/lib")
+
 set(CTEST_SITE "rdb-srv1")
 set(CTEST_BUILD_NAME "Linux-mpicxx")
 set(CTEST_BRANCH "CDashTesting")
@@ -26,6 +17,5 @@ set(CTEST_MEMORYCHECK_SUPPRESSIONS_FILE "$ENV{HOME}/tmp/cephas/source/mofem/cmak
 set(GID_SOURCE_REPO "$ENV{HOME}/tmp/cephas/source")
 set(CTEST_SOURCE_DIRECTORY "${GID_SOURCE_REPO}/mofem")
 set(CTEST_BINARY_DIRECTORY "$ENV{HOME}/tmp/cephas/build")
-
 
 include(CTestScript.cmake)

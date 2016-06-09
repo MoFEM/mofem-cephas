@@ -551,6 +551,8 @@ struct FieldApproximationH1 {
     PetscFunctionReturn(0);
   }
 
+  /** Deprecated \deprecated
+  */
   template<typename FUNEVAL>
   DEPRECATED PetscErrorCode loopMatrixAndVector(
     const std::string &problem_name,

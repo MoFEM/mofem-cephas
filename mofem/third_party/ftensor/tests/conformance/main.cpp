@@ -73,5 +73,5 @@ int main()
   test_T3as(t1_2,t2_2,t3dg_1,t3dg_2,t3as_1,t3as_2,t3as_3);
   test_T4ddg(t1_1,t1_2,t2_1,t2_2,t2_3,t2s_1,t2s_2,t2s_3,t3dg_1,t3dg_2,t3dg_3);
   test_T4R();
-  test_T4(t1_1,t2_1,t4_1);
+  test_T4(t1_1,t2_1,t2s_1,t4_1);
 }
