@@ -106,3 +106,205 @@ Tensor4_ddg_Expr<Tensor4_ddg<A,Tensor_Dim01,Tensor_Dim23>,
   {
     return operator=<Tensor4_ddg<A,Tensor_Dim01,Tensor_Dim23>,T>(result);
   }
+
+
+/* This is for int's, double's, etc. */
+
+/* T4_ddg = U */
+
+template<class A, class U, int Dim01, int Dim23,
+  int Current_Dim0, int Current_Dim1, int Current_Dim2, int Current_Dim3>
+inline void T4_ddg_equals_generic(
+  A &iter, const U &u,
+  const Number<Current_Dim0> &,
+  const Number<Current_Dim1> &,
+  const Number<Current_Dim2> &,
+  const Number<Current_Dim3> &,
+  const Number<Dim01> &,
+  const Number<Dim23> &
+) {
+  iter(Current_Dim0-1,Current_Dim1-1,Current_Dim2-1,Current_Dim3-1)=u;
+  T4_ddg_equals_generic(
+    iter,u,
+    Number<Current_Dim0-1>(),Number<Current_Dim1>(),
+    Number<Current_Dim2>(),Number<Current_Dim3>(),
+    Number<Dim01>(),Number<Dim23>()
+  );
+}
+
+template<class A, class U, int Dim01, int Dim23,
+  int Current_Dim1, int Current_Dim2,int Current_Dim3>
+inline void T4_ddg_equals_generic(
+  A &iter, const U &u,
+  const Number<1> &,
+  const Number<Current_Dim1> &,
+  const Number<Current_Dim2> &,
+  const Number<Current_Dim3> &,
+  const Number<Dim01> &,
+  const Number<Dim23> &
+) {
+  iter(0,Current_Dim1-1,Current_Dim2-1,Current_Dim3-1)=u;
+  T4_ddg_equals_generic(
+    iter,u,
+    Number<Current_Dim1-1>(),Number<Current_Dim1-1>(),
+    Number<Current_Dim2>(),Number<Current_Dim3>(),
+    Number<Dim01>(),Number<Dim23>()
+  );
+}
+
+template<class A, class U, int Dim01, int Dim23, int Current_Dim2,int Current_Dim3>
+inline void T4_ddg_equals_generic(
+  A &iter, const U &u,
+  const Number<1> &, const Number<1> &,
+  const Number<Current_Dim2> &, const Number<Current_Dim3> &,
+  const Number<Dim01> &,
+  const Number<Dim23> &
+) {
+  iter(0,0,Current_Dim2-1,Current_Dim3-1)=u;
+  T4_ddg_equals_generic(
+    iter,u,
+    Number<Dim01>(),Number<Dim01>(),
+    Number<Current_Dim2-1>(),Number<Current_Dim3>(),
+    Number<Dim01>(),Number<Dim23>()
+  );
+}
+
+template<class A, class U, int Dim01, int Dim23, int Current_Dim3>
+inline void T4_ddg_equals_generic(
+  A &iter, const U &u,
+  const Number<1> &, const Number<1> &,
+  const Number<1> &, const Number<Current_Dim3> &,
+  const Number<Dim01> &,
+  const Number<Dim23> &
+) {
+  iter(0,0,0,Current_Dim3-1)=u;
+  T4_ddg_equals_generic(
+    iter,u,
+    Number<Dim01>(),Number<Dim01>(),
+    Number<Current_Dim3-1>(),Number<Current_Dim3-1>(),
+    Number<Dim01>(),Number<Dim23>()
+  );
+}
+
+template<class A, class U, int Dim01, int Dim23>
+inline void T4_ddg_equals_generic(
+  A &iter, const U &u,
+  const Number<1> &, const Number<1> &,
+  const Number<1> &, const Number<1> &,
+  const Number<Dim01> &,
+  const Number<Dim23> &
+) {
+  iter(0,0,0,0)=u;
+}
+
+
+template<class A, class T, int Tensor_Dim01, int Tensor_Dim23,
+  int Dim01, int Dim23, char i, char j, char k, char l>
+template <class U> inline
+const Tensor4_ddg_Expr<Tensor4_ddg<A,Tensor_Dim01,Tensor_Dim23>,T,Dim01,Dim23,i,j,k,l> &
+Tensor4_ddg_Expr<Tensor4_ddg<A,Tensor_Dim01,Tensor_Dim23>,T,Dim01,Dim23,i,j,k,l>::
+operator=(const U &u) {
+  T4_ddg_equals_generic(
+    iter,u,Number<Dim01>(),Number<Dim01>(),Number<Dim23>(),Number<Dim23>(),Number<Dim01>(),Number<Dim23>()
+  );
+  return *this;
+}
+
+/* T4_ddg *= U */
+
+template<class A, class U, int Dim01, int Dim23,
+  int Current_Dim0, int Current_Dim1, int Current_Dim2, int Current_Dim3>
+inline void T4_ddg_times_equals_generic(
+  A &iter, const U &u,
+  const Number<Current_Dim0> &,
+  const Number<Current_Dim1> &,
+  const Number<Current_Dim2> &,
+  const Number<Current_Dim3> &,
+  const Number<Dim01> &,
+  const Number<Dim23> &
+) {
+  iter(Current_Dim0-1,Current_Dim1-1,Current_Dim2-1,Current_Dim3-1)*=u;
+  T4_ddg_times_equals_generic(
+    iter,u,
+    Number<Current_Dim0-1>(),Number<Current_Dim1>(),
+    Number<Current_Dim2>(),Number<Current_Dim3>(),
+    Number<Dim01>(),Number<Dim23>()
+  );
+}
+
+template<class A, class U, int Dim01, int Dim23,
+  int Current_Dim1, int Current_Dim2,int Current_Dim3>
+inline void T4_ddg_times_equals_generic(
+  A &iter, const U &u,
+  const Number<1> &,
+  const Number<Current_Dim1> &,
+  const Number<Current_Dim2> &,
+  const Number<Current_Dim3> &,
+  const Number<Dim01> &,
+  const Number<Dim23> &
+) {
+  iter(0,Current_Dim1-1,Current_Dim2-1,Current_Dim3-1)*=u;
+  T4_ddg_times_equals_generic(
+    iter,u,
+    Number<Current_Dim1-1>(),Number<Current_Dim1-1>(),
+    Number<Current_Dim2>(),Number<Current_Dim3>(),
+    Number<Dim01>(),Number<Dim23>()
+  );
+}
+
+template<class A, class U, int Dim01, int Dim23, int Current_Dim2,int Current_Dim3>
+inline void T4_ddg_times_equals_generic(
+  A &iter, const U &u,
+  const Number<1> &, const Number<1> &,
+  const Number<Current_Dim2> &, const Number<Current_Dim3> &,
+  const Number<Dim01> &,
+  const Number<Dim23> &
+) {
+  iter(0,0,Current_Dim2-1,Current_Dim3-1)*=u;
+  T4_ddg_times_equals_generic(
+    iter,u,
+    Number<Dim01>(),Number<Dim01>(),
+    Number<Current_Dim2-1>(),Number<Current_Dim3>(),
+    Number<Dim01>(),Number<Dim23>()
+  );
+}
+
+template<class A, class U, int Dim01, int Dim23, int Current_Dim3>
+inline void T4_ddg_times_equals_generic(
+  A &iter, const U &u,
+  const Number<1> &, const Number<1> &,
+  const Number<1> &, const Number<Current_Dim3> &,
+  const Number<Dim01> &,
+  const Number<Dim23> &
+) {
+  iter(0,0,0,Current_Dim3-1)*=u;
+  T4_ddg_times_equals_generic(
+    iter,u,
+    Number<Dim01>(),Number<Dim01>(),
+    Number<Current_Dim3-1>(),Number<Current_Dim3-1>(),
+    Number<Dim01>(),Number<Dim23>()
+  );
+}
+
+template<class A, class U, int Dim01, int Dim23>
+inline void T4_ddg_times_equals_generic(
+  A &iter, const U &u,
+  const Number<1> &, const Number<1> &,
+  const Number<1> &, const Number<1> &,
+  const Number<Dim01> &,
+  const Number<Dim23> &
+) {
+  iter(0,0,0,0)*=u;
+}
+
+template<class A, class T, int Tensor_Dim01, int Tensor_Dim23,
+  int Dim01, int Dim23, char i, char j, char k, char l>
+template <class U> inline
+const Tensor4_ddg_Expr<Tensor4_ddg<A,Tensor_Dim01,Tensor_Dim23>,T,Dim01,Dim23,i,j,k,l> &
+Tensor4_ddg_Expr<Tensor4_ddg<A,Tensor_Dim01,Tensor_Dim23>,T,Dim01,Dim23,i,j,k,l>::
+operator*=(const U &u) {
+  T4_ddg_times_equals_generic(
+    iter,u,Number<Dim01>(),Number<Dim01>(),Number<Dim23>(),Number<Dim23>(),Number<Dim01>(),Number<Dim23>()
+  );
+  return *this;
+}
