@@ -44,6 +44,8 @@ public:
   const Tensor4_Expr<Tensor4<A,Dim0,Dim1,Dim2,Dim3>,T,Dim0,Dim1,Dim2,Dim3,i,j,k,l> &
   operator=(const Tensor4_Expr<Tensor4<A,Dim0,Dim1,Dim2,Dim3>,T,Dim0,Dim1,Dim2,Dim3,i,j,k,l> &result);
 
+  /* 24 permutations of assignment for tensor4 */
+
   #define EQUAL(D0,D1,D2,D3,I,J,K,L) \
   template<class B, class U> inline \
   const Tensor4_Expr<Tensor4<A,Dim0,Dim1,Dim2,Dim3>,T, \
@@ -87,18 +89,17 @@ public:
 
   #undef EQUAL
 
+  /* This is for int's, double's, etc. */
+
   template <class U> inline
   const Tensor4_Expr<Tensor4<A,Dim0,Dim1,Dim2,Dim3>,T,Dim0,Dim1,Dim2,Dim3,i,j,k,l> &
   operator=(const U &d);
 
+  template <class U> inline
+  const Tensor4_Expr<Tensor4<A,Dim0,Dim1,Dim2,Dim3>,T,Dim0,Dim1,Dim2,Dim3,i,j,k,l> &
+  operator*=(const U &d);
+
+
 };
 
 #include "Tensor4_Expr_equals.hpp"
-
-
-// template<class A, class T, int Dim0, int Dim1, int Dim2, int Dim3,
-//   char i, char j, char k, char l>
-// class Tensor4_Expr
-// {
-//
-// }

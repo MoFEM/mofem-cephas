@@ -527,3 +527,107 @@ operator=(const Tensor4_Expr<B,U,Dim0,Dim1,Dim2,Dim3,i,j,k,l> &result)
     );
     return *this;
   }
+
+  /* T3*=U */
+
+  template<class A, class U, int Dim0, int Dim1, int Dim2, int Dim3,
+    int Current_Dim0, int Current_Dim1, int Current_Dim2, int Current_Dim3>
+  inline void T4_times_equals_generic(A &iter, const U &u,
+          const Number<Current_Dim0> &,
+          const Number<Current_Dim1> &,
+          const Number<Current_Dim2> &,
+          const Number<Current_Dim3> &,
+          const Number<Dim0> &,
+          const Number<Dim1> &,
+          const Number<Dim2> &,
+          const Number<Dim3> &)
+  {
+    iter(Current_Dim0-1,Current_Dim1-1,Current_Dim2-1,Current_Dim3-1)*=u;
+    T4_times_equals_generic(
+      iter,u,
+      Number<Current_Dim0-1>(),Number<Current_Dim1>(),
+      Number<Current_Dim2>(),Number<Current_Dim3>(),
+      Number<Dim0>(),Number<Dim1>(),Number<Dim2>(),Number<Dim3>()
+    );
+  }
+
+  template<class A, class U, int Dim0, int Dim1, int Dim2, int Dim3,
+    int Current_Dim1, int Current_Dim2,int Current_Dim3>
+  inline void T4_times_equals_generic(A &iter, const U &u,
+          const Number<1> &,
+          const Number<Current_Dim1> &,
+          const Number<Current_Dim2> &,
+          const Number<Current_Dim3> &,
+          const Number<Dim0> &,
+          const Number<Dim1> &,
+          const Number<Dim2> &,
+          const Number<Dim3> &)
+  {
+    iter(0,Current_Dim1-1,Current_Dim2-1,Current_Dim3-1)*=u;
+    T4_times_equals_generic(
+      iter,u,
+      Number<Dim0>(),Number<Current_Dim1-1>(),
+      Number<Current_Dim2>(),Number<Current_Dim3>(),
+      Number<Dim0>(),Number<Dim1>(),Number<Dim2>(),Number<Dim3>()
+    );
+  }
+
+  template<class A, class U, int Dim0, int Dim1, int Dim2,int Dim3,int Current_Dim2,int Current_Dim3>
+  inline void T4_times_equals_generic(A &iter, const U &u,
+          const Number<1> &, const Number<1> &,
+          const Number<Current_Dim2> &, const Number<Current_Dim3> &,
+          const Number<Dim0> &,
+          const Number<Dim1> &,
+          const Number<Dim2> &,
+          const Number<Dim3> &)
+  {
+    iter(0,0,Current_Dim2-1,Current_Dim3-1)*=u;
+    T4_times_equals_generic(iter,u,
+        Number<Dim0>(),Number<Dim1>(),
+        Number<Current_Dim2-1>(),Number<Current_Dim3>(),
+        Number<Dim0>(),Number<Dim1>(),Number<Dim2>(),Number<Dim3>()
+      );
+  }
+
+  template<class A, class U, int Dim0, int Dim1, int Dim2,int Dim3 ,int Current_Dim3>
+  inline void T4_times_equals_generic(A &iter, const U &u,
+          const Number<1> &, const Number<1> &,
+          const Number<1> &, const Number<Current_Dim3> &,
+          const Number<Dim0> &,
+          const Number<Dim1> &,
+          const Number<Dim2> &,
+          const Number<Dim3> &)
+  {
+    iter(0,0,0,Current_Dim3-1)*=u;
+    T4_times_equals_generic(iter,u,
+            Number<Dim0>(),Number<Dim1>(),
+            Number<Dim2>(),Number<Current_Dim3-1>(),
+            Number<Dim0>(),Number<Dim1>(),
+            Number<Dim2>(),Number<Dim3>());
+  }
+
+  template<class A, class U, int Dim0, int Dim1, int Dim2,int Dim3>
+  inline void T4_times_equals_generic(A &iter, const U &u,
+          const Number<1> &, const Number<1> &,
+          const Number<1> &, const Number<1> &,
+          const Number<Dim0> &,
+          const Number<Dim1> &,
+          const Number<Dim2> &,
+          const Number<Dim3> &)
+  {
+    iter(0,0,0,0)*=u;
+  }
+
+  template<class A, class T, int Dim0, int Dim1,int Dim2,int Dim3, char i, char j, char k, char l>
+  template <class U> inline
+  const Tensor4_Expr<Tensor4<A,Dim0,Dim1,Dim2,Dim3>,T,Dim0,Dim1,Dim2,Dim3,i,j,k,l> &
+  Tensor4_Expr<Tensor4<A,Dim0,Dim1,Dim2,Dim3>,T,Dim0,Dim1,Dim2,Dim3,i,j,k,l>::
+  operator*=(const U &u)
+  {
+    T4_times_equals_generic(
+      iter,u,
+      Number<Dim0>(),Number<Dim1>(),Number<Dim2>(),Number<Dim3>(),
+      Number<Dim0>(),Number<Dim1>(),Number<Dim2>(),Number<Dim3>()
+    );
+    return *this;
+  }
