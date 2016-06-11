@@ -2,8 +2,8 @@
 
 #include "Tensor4_plus_Tensor4.hpp"
 #include "Tensor4_times_Tensor2_symmetric.hpp"
+#include "Tensor4_times_Tensor1.hpp"
 #include "Tensor4_times_Tensor2.hpp"
-
 
 template<class A, class T, int Dim0, int Dim1, int Dim2, int Dim3, char i, char j, char k, char l>
 class Tensor4_Expr
