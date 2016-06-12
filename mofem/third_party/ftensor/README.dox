@@ -265,4 +265,16 @@ Enjoy,
 Walter Landry
 wlandry@caltech.edu
 
+\todo Some operator for tensor4 and Tensor4_ddg are not tested for varied number
+of dimensions. For example first two indices has dimension 2 and last two 4.
+
+\todo Some operators for symmetric tensor 4 need to be implemented.
+
+\todo Some operators for symmetric tensor 3 on last two indices are not implemented.
+
+\todo Tensor4 symmetric on first two and last two, not implemented. And more combinations
+
+\todo More documentation and examples. Documentation of functions and very limited at this point
+
+
 */
