@@ -74,6 +74,11 @@ PetscErrorCode OpCalculateScalarFieldValues_General<double,ublas::unbounded_arra
   PetscFunctionBegin;
   const int nb_dofs = data.getFieldData().size();
   // cerr <<  data.getFieldData() << endl;
+
+  if(!dataPtr) {
+    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"Data pointer not allocated");
+  }
+
   if(!nb_dofs && type == this->zeroType) {
     dataPtr->resize(0,false);
   }
