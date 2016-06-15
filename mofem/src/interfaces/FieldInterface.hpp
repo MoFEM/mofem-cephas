@@ -901,7 +901,7 @@ struct FieldInterface: public UnknownInterface {
    * @param  name Name of finite element
    * @return      true if element is declared
    */
-  bool check_finite_element(const std::string& name) const;
+  bool check_finite_element(const std::string& name) const = 0;
 
   /**
     * \brief add finite element
