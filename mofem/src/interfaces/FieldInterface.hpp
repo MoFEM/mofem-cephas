@@ -897,6 +897,13 @@ struct FieldInterface: public UnknownInterface {
   virtual const Field* get_field_structure(const std::string& name) = 0;
 
   /**
+   * \brief Check if finite element is in database
+   * @param  name Name of finite element
+   * @return      true if element is declared
+   */
+  bool check_finite_element(const std::string& name) const;
+
+  /**
     * \brief add finite element
     * \ingroup mofem_fe
     * \param name finite element name

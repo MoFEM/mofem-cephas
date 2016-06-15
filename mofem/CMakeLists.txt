@@ -1,4 +1,4 @@
-  # MoFEM is free software: you can redistribute it and/or modify it under
+# MoFEM is free software: you can redistribute it and/or modify it under
 # the terms of the GNU Lesser General Public License as published by the
 # Free Software Foundation, either version 3 of the License, or (at your
 # option) any later version.
@@ -32,7 +32,7 @@ project(MoFEM C Fortran CXX)
 
 set(MoFEM_VERSION_MAJOR 0)
 set(MoFEM_VERSION_MINOR 3)
-set(MoFEM_VERSION_BUILD 22)
+set(MoFEM_VERSION_BUILD 23)
 
 include(CheckCXXSourceCompiles)
 # CHECK_CXX_SOURCE_COMPILES(
