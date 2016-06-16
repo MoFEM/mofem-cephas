@@ -138,7 +138,7 @@ int main(int argc, char *argv[]) {
 
   //Fields
   ierr = m_field.add_field("DISPLACEMENT",H1,LOBATTO_BASE,3,MB_TAG_SPARSE,MF_ZERO); CHKERRQ(ierr);
-  ierr = m_field.add_field("MESH_NODE_POSITIONS",H1,LOBATTO_BASE,3,MB_TAG_SPARSE,MF_ZERO); CHKERRQ(ierr);
+  ierr = m_field.add_field("MESH_NODE_POSITIONS",H1,AINSWORTH_COLE_BASE,3,MB_TAG_SPARSE,MF_ZERO); CHKERRQ(ierr);
 
   //Declare problem
 
@@ -363,7 +363,7 @@ int main(int argc, char *argv[]) {
 
   //forces and pressures on surface
   boost::ptr_map<std::string,NeummanForcesSurface> neumann_forces;
-  ierr = MetaNeummanForces::setNeumannFiniteElementOperators(m_field,neumann_forces,F,"DISPLACEMENT"); CHKERRQ(ierr);
+  ierr = MetaNeummanForces::setMomentumFluxOperators(m_field,neumann_forces,F,"DISPLACEMENT"); CHKERRQ(ierr);
   {
     boost::ptr_map<std::string,NeummanForcesSurface>::iterator mit = neumann_forces.begin();
     for(;mit!=neumann_forces.end();mit++) {
