@@ -9,20 +9,20 @@ public:
   Tensor2_symmetric() {}
 
   /* Tensor_Dim=2 */
-  Tensor2_symmetric(T* d00, T* d01, T* d11,const int i = 0): inc(i)
+  Tensor2_symmetric(T* d00, T* d01, T* d11,const int i = 1): inc(i)
   {
     Tensor2_symmetric_constructor<T* restrict,Tensor_Dim>(data,d00,d01,d11);
   }
 
   /* Tensor_Dim=3 */
-  Tensor2_symmetric(T* d00, T* d01, T* d02, T* d11, T* d12, T* d22,const int i = 0): inc(i)
+  Tensor2_symmetric(T* d00, T* d01, T* d02, T* d11, T* d12, T* d22,const int i = 1): inc(i)
   {
     Tensor2_symmetric_constructor<T* restrict,Tensor_Dim>(data,d00,d01,d02,d11,d12,d22);
   }
 
   /* Tensor_Dim=4 */
   Tensor2_symmetric(T* d00, T* d01, T* d02, T* d03, T* d11, T* d12, T* d13,
-		    T* d22, T* d23, T* d33,const int i = 0): inc(i)
+		    T* d22, T* d23, T* d33,const int i = 1): inc(i)
   {
     Tensor2_symmetric_constructor<T* restrict,Tensor_Dim>
       (data,d00,d01,d02,d03,d11,d12,d13,d22,d23,d33);
