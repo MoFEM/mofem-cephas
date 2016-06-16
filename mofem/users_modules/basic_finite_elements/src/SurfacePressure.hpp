@@ -151,7 +151,12 @@ struct MetaNeummanForces {
   /**
    * \brief Declare finite element
    *
-   * Search cubit sidesets and blocksets with pressure bc and declare surface element
+   * Search cubit sidesets and blocksets with pressure bc and declare surface elemen
+
+   * Block set has to have name “PRESSURE”. Can have name “PRESSURE_01” or any
+   * other name with prefix. The first attribute  of block set is pressure
+   * value.
+
    *
    * @param  m_field               Interface insurance
    * @param  field_name            Field name (f.e. DISPLACEMENT)
