@@ -1,8 +1,15 @@
-/*! \page ftenso_readme FTensor third-part library
+/*! \page ftenso_readme FTensor library
 \ingroup ftensor
 
 This library is adapted to MoFEM needs. Some new capabilities are
-added that philosophy and spirit of original implementation is preserved.
+added that philosophy and spirit of original implementation is preserved. Most
+of operators for tensor rank 4 are added.
+
+If some operator is not working because is not added, you can let us know, or pleas
+feel free to add it by yourself and make pull request to merge your contribution
+with the library.
+
+\n\n
 
 FTensor\n
 February 6, 2013\n\n
@@ -257,5 +264,17 @@ etc., feel free to send me an email. \n \n
 Enjoy,
 Walter Landry
 wlandry@caltech.edu
+
+\todo Some operator for tensor4 and Tensor4_ddg are not tested for varied number
+of dimensions. For example first two indices has dimension 2 and last two 4.
+
+\todo Some operators for symmetric tensor 4 need to be implemented.
+
+\todo Some operators for symmetric tensor 3 on last two indices are not implemented.
+
+\todo Tensor4 symmetric on first two and last two, not implemented. And more combinations
+
+\todo More documentation and examples. Documentation of functions and very limited at this point
+
 
 */

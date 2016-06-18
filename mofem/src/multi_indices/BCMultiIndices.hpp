@@ -44,7 +44,7 @@ struct CubitMeshSets {
   inline CubitBCType get_cubit_bc_type() const { return cubitBcType; }
   inline EntityHandle getMeshSet() const { return meshset; }
 
-  /** deprecated \deprecated
+  /** \deprecated Use getMeshSet() instead
   */
   DEPRECATED inline EntityHandle get_meshset() const { return getMeshSet(); }
 

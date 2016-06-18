@@ -138,7 +138,7 @@ int main(int argc, char *argv[]) {
 
   //Fields
   ierr = m_field.add_field("DISPLACEMENT",H1,LOBATTO_BASE,3,MB_TAG_SPARSE,MF_ZERO); CHKERRQ(ierr);
-  ierr = m_field.add_field("MESH_NODE_POSITIONS",H1,LOBATTO_BASE,3,MB_TAG_SPARSE,MF_ZERO); CHKERRQ(ierr);
+  ierr = m_field.add_field("MESH_NODE_POSITIONS",H1,AINSWORTH_COLE_BASE,3,MB_TAG_SPARSE,MF_ZERO); CHKERRQ(ierr);
 
   //Declare problem
 
@@ -155,9 +155,20 @@ int main(int argc, char *argv[]) {
   ierr = m_field.set_field_order(0,MBTRI,"DISPLACEMENT",order); CHKERRQ(ierr);
   ierr = m_field.set_field_order(0,MBEDGE,"DISPLACEMENT",order); CHKERRQ(ierr);
   ierr = m_field.set_field_order(0,MBVERTEX,"DISPLACEMENT",1); CHKERRQ(ierr);
-  ierr = m_field.set_field_order(0,MBTET,"MESH_NODE_POSITIONS",2); CHKERRQ(ierr);
-  ierr = m_field.set_field_order(0,MBTRI,"MESH_NODE_POSITIONS",2); CHKERRQ(ierr);
-  ierr = m_field.set_field_order(0,MBEDGE,"MESH_NODE_POSITIONS",2); CHKERRQ(ierr);
+
+  // Apply 2nd order only on skin
+  {
+    MoABErrorCode rval;
+    Skinner skin(&m_field.get_moab());
+    Range faces,tets;
+    rval = m_field.get_moab().get_entities_by_type(0,MBTET,tets); CHKERRQ_MOAB(rval);
+    rval = skin.find_skin(0,tets,false,faces); CHKERRQ_MOAB(rval);
+    Range edges;
+    rval = m_field.get_moab().get_adjacencies(
+      faces,1,false,edges,moab::Interface::UNION
+    ); CHKERRQ_MOAB(rval);
+    ierr = m_field.set_field_order(edges,"MESH_NODE_POSITIONS",2); CHKERRQ(ierr);
+  }
   ierr = m_field.set_field_order(0,MBVERTEX,"MESH_NODE_POSITIONS",1); CHKERRQ(ierr);
 
   // configure blocks by parsing config file
@@ -363,7 +374,7 @@ int main(int argc, char *argv[]) {
 
   //forces and pressures on surface
   boost::ptr_map<std::string,NeummanForcesSurface> neumann_forces;
-  ierr = MetaNeummanForces::setNeumannFiniteElementOperators(m_field,neumann_forces,F,"DISPLACEMENT"); CHKERRQ(ierr);
+  ierr = MetaNeummanForces::setMomentumFluxOperators(m_field,neumann_forces,F,"DISPLACEMENT"); CHKERRQ(ierr);
   {
     boost::ptr_map<std::string,NeummanForcesSurface>::iterator mit = neumann_forces.begin();
     for(;mit!=neumann_forces.end();mit++) {

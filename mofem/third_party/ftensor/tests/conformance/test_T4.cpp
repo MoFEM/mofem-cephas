@@ -571,8 +571,67 @@ void test_T4(
     }
   }
 
+  /* Tensor4 times Tensor1 yield Tensor3 */
+
+  /* A(i,j,k,l)*B(l) -> Tensor3 */
+
+  Tensor3<double,3,3,3> t3_1,t3_2;
+  t4_222(i,j,k,l) = t2_1(i,j)*t2_1(k,l);
+  t3_1(i,j,k) = t4_222(i,j,k,l)*t1_1(l);
+  t3_2(i,j,k) = t2_1(i,j)*(t2_1(k,l)*t1_1(l));
+
+  for(int ii = 0;ii!=3;ii++) {
+    for(int jj = 0;jj!=3;jj++) {
+      for(int kk = 0;kk!=3;kk++) {
+        // std::cerr << t4(ii,jj,kk,ll) << " " << t4_222(ii,jj,kk,ll) << std::endl;
+        test_for_zero(t3_1(ii,jj,kk) - t3_2(ii,jj,kk),"Tensor4_times_Tensor1_3");
+      }
+    }
+  }
+
+  /* A(i,j,k,l)*B(k) -> Tensor3 */
+
+  t3_1(i,j,l) = t4_222(i,j,k,l)*t1_1(k);
+  t3_2(i,j,l) = t2_1(i,j)*(t2_1(k,l)*t1_1(k));
+
+  for(int ii = 0;ii!=3;ii++) {
+    for(int jj = 0;jj!=3;jj++) {
+      for(int kk = 0;kk!=3;kk++) {
+        // std::cerr << t4(ii,jj,kk,ll) << " " << t4_222(ii,jj,kk,ll) << std::endl;
+        test_for_zero(t3_1(ii,jj,kk) - t3_2(ii,jj,kk),"Tensor4_times_Tensor1_2");
+      }
+    }
+  }
+
+  /* A(i,j,k,l)*B(j) -> Tensor3 */
+
+  t3_1(i,k,l) = t4_222(i,j,k,l)*t1_1(j);
+  t3_2(i,k,l) = (t2_1(i,j)*t1_1(j))*t2_1(k,l);
+
+  for(int ii = 0;ii!=3;ii++) {
+    for(int kk = 0;kk!=3;kk++) {
+      for(int ll = 0;ll!=3;ll++) {
+        test_for_zero(t3_1(ii,kk,ll) - t3_2(ii,kk,ll),"Tensor4_times_Tensor1_1");
+      }
+    }
+  }
+
+  /* A(i,j,k,l)*B(i) -> Tensor3 */
+
+  t3_1(j,k,l) = t4_222(i,j,k,l)*t1_1(i);
+  t3_2(j,k,l) = (t2_1(i,j)*t1_1(i))*t2_1(k,l);
+
+  for(int jj = 0;jj!=3;jj++) {
+    for(int kk = 0;kk!=3;kk++) {
+      for(int ll = 0;ll!=3;ll++) {
+        test_for_zero(t3_1(jj,kk,ll) - t3_2(jj,kk,ll),"Tensor4_times_Tensor1_0");
+      }
+    }
+  }
+
   /* T4*=U */
 
+  t4_222(i,j,m,l) = t2_1(i,j)*(t2_1(k,l)*t2_1(k,m));
   t4(i,j,m,l) *= 4;
 
   for(int ii = 0;ii!=3;ii++) {

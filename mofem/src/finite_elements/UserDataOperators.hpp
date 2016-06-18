@@ -162,6 +162,9 @@ PetscErrorCode OpCalculateVectorFieldValues_General<Tensor_Dim,double,ublas::row
 ) {
   PetscFunctionBegin;
   const int nb_dofs = data.getFieldData().size();
+  if(!dataPtr) {
+    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"Data pointer not allocated");
+  }
   if(!nb_dofs && type == this->zeroType) {
     dataPtr->resize(Tensor_Dim,0,false);
     PetscFunctionReturn(0);
@@ -352,6 +355,9 @@ PetscErrorCode OpCalculateScalarFieldGradient_General<Tensor_Dim,double,ublas::r
 ) {
   PetscFunctionBegin;
   const int nb_dofs = data.getFieldData().size();
+  if(!this->dataPtr) {
+    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"Data pointer not allocated");
+  }
   if(!nb_dofs && type == this->zeroType) {
     this->dataPtr->resize(Tensor_Dim,0,false);
     PetscFunctionReturn(0);

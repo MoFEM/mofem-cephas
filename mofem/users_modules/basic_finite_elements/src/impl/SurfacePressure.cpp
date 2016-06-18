@@ -265,27 +265,90 @@ PetscErrorCode NeummanForcesSurface::OpNeumannFlux::doWork(
 }
 
 
-PetscErrorCode NeummanForcesSurface::addForce(const std::string field_name,Vec F,int ms_id,bool ho_geometry) {
+PetscErrorCode NeummanForcesSurface::addForce(const std::string field_name,Vec F,int ms_id,bool ho_geometry,bool block_set) {
   PetscFunctionBegin;
   PetscErrorCode ierr;
   ErrorCode rval;
-  const CubitMeshSets *cubit_meshset_ptr;
-  ierr = mField.get_cubit_msId(ms_id,NODESET,&cubit_meshset_ptr); CHKERRQ(ierr);
-  ierr = cubit_meshset_ptr->get_bc_data_structure(mapForce[ms_id].data); CHKERRQ(ierr);
-  rval = mField.get_moab().get_entities_by_type(cubit_meshset_ptr->meshset,MBTRI,mapForce[ms_id].tRis,true); CHKERRQ_MOAB(rval);
-  fe.getOpPtrVector().push_back(new OpNeumannForce(field_name,F,mapForce[ms_id],methodsOp,ho_geometry));
+  if(block_set) {
+    //Add data from block set.
+    const CubitMeshSets *cubit_meshset_ptr;
+    ierr = mField.get_cubit_msId(ms_id,BLOCKSET,&cubit_meshset_ptr); CHKERRQ(ierr);
+    std::vector<double> mydata;
+    ierr = cubit_meshset_ptr->get_attributes(mydata); CHKERRQ(ierr);
+    ublas::vector<double> force(mydata.size());
+    for(unsigned int ii = 0;ii<mydata.size();ii++) {
+      force[ii] = mydata[ii];
+    }
+    //Read forces from BLOCKSET Force (if exists)
+    if(force.empty()) {
+      SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"Force not given");
+    }
+    //Assign values from BLOCKSET FORCE to RHS vector. Info about native Cubit BC data structure can be found in CubitBCData.hpp
+    const string name = "Force";
+    strncpy(mapForce[ms_id].data.data.name,name.c_str(),name.size()>5?5:name.size());
+    double magnitude = sqrt(force[0]*force[0] + force[1]*force[1] + force[2]*force[2]);
+    mapForce[ms_id].data.data.value1 = magnitude; //< Force magnitude
+    mapForce[ms_id].data.data.value2 = 0;
+    mapForce[ms_id].data.data.value3 = force[0] / magnitude; //< X-component of force vector
+    mapForce[ms_id].data.data.value4 = force[1] / magnitude; //< Y-component of force vector
+    mapForce[ms_id].data.data.value5 = force[2] / magnitude; //< Z-component of force vector
+    mapForce[ms_id].data.data.value6 = 0;
+    mapForce[ms_id].data.data.value7 = 0;
+    mapForce[ms_id].data.data.value8 = 0;
+    mapForce[ms_id].data.data.zero[0] = 0;
+    mapForce[ms_id].data.data.zero[1] = 0;
+    mapForce[ms_id].data.data.zero[2] = 0;
+    mapForce[ms_id].data.data.zero2 = 0;
+    // std::cout << "TETSING ONLY:" << std::endl;
+    // std::cout << mapForce[ms_id].data << std::endl;
+
+    rval = mField.get_moab().get_entities_by_type(cubit_meshset_ptr->meshset,MBTRI,mapForce[ms_id].tRis,true); CHKERRQ_MOAB(rval);
+    fe.getOpPtrVector().push_back(new OpNeumannForce(field_name,F,mapForce[ms_id],methodsOp,ho_geometry));
+
+    // SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"Not implemented");
+  } else {
+    const CubitMeshSets *cubit_meshset_ptr;
+    ierr = mField.get_cubit_msId(ms_id,NODESET,&cubit_meshset_ptr); CHKERRQ(ierr);
+    ierr = cubit_meshset_ptr->get_bc_data_structure(mapForce[ms_id].data); CHKERRQ(ierr);
+    rval = mField.get_moab().get_entities_by_type(cubit_meshset_ptr->meshset,MBTRI,mapForce[ms_id].tRis,true); CHKERRQ_MOAB(rval);
+    fe.getOpPtrVector().push_back(new OpNeumannForce(field_name,F,mapForce[ms_id],methodsOp,ho_geometry));
+  }
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode NeummanForcesSurface::addPreassure(const std::string field_name,Vec F,int ms_id,bool ho_geometry) {
+PetscErrorCode NeummanForcesSurface::addPreassure(const std::string field_name,Vec F,int ms_id,bool ho_geometry,bool block_set) {
   PetscFunctionBegin;
   PetscErrorCode ierr;
   ErrorCode rval;
-  const CubitMeshSets *cubit_meshset_ptr;
-  ierr = mField.get_cubit_msId(ms_id,SIDESET,&cubit_meshset_ptr); CHKERRQ(ierr);
-  ierr = cubit_meshset_ptr->get_bc_data_structure(mapPreassure[ms_id].data); CHKERRQ(ierr);
-  rval = mField.get_moab().get_entities_by_type(cubit_meshset_ptr->meshset,MBTRI,mapPreassure[ms_id].tRis,true); CHKERRQ_MOAB(rval);
-  fe.getOpPtrVector().push_back(new OpNeumannPreassure(field_name,F,mapPreassure[ms_id],methodsOp,ho_geometry));
+  if(block_set) {
+    const CubitMeshSets *cubit_meshset_ptr;
+    ierr = mField.get_cubit_msId(ms_id,BLOCKSET,&cubit_meshset_ptr); CHKERRQ(ierr);
+    std::vector<double> mydata;
+    ierr = cubit_meshset_ptr->get_attributes(mydata); CHKERRQ(ierr);
+    ublas::vector<double> pressure(mydata.size());
+    for(unsigned int ii = 0;ii<mydata.size();ii++) {
+      pressure[ii] = mydata[ii];
+    }
+    if(pressure.empty()) {
+      SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"Pressure not given");
+    }
+    const string name = "Pressure";
+    strncpy(mapPreassure[ms_id].data.data.name,name.c_str(),name.size()>8?8:name.size());
+    mapPreassure[ms_id].data.data.flag1 = 0;
+    mapPreassure[ms_id].data.data.flag2 = 1;
+    mapPreassure[ms_id].data.data.value1 = pressure[0];
+    mapPreassure[ms_id].data.data.zero = 0;
+    // std::cerr << "TETSING ONLY:" << std::endl;
+    // std::cerr << mapPreassure[ms_id].data << std::endl;
+    rval = mField.get_moab().get_entities_by_type(cubit_meshset_ptr->meshset,MBTRI,mapPreassure[ms_id].tRis,true); CHKERRQ_MOAB(rval);
+    fe.getOpPtrVector().push_back(new OpNeumannPreassure(field_name,F,mapPreassure[ms_id],methodsOp,ho_geometry));
+  } else {
+    const CubitMeshSets *cubit_meshset_ptr;
+    ierr = mField.get_cubit_msId(ms_id,SIDESET,&cubit_meshset_ptr); CHKERRQ(ierr);
+    ierr = cubit_meshset_ptr->get_bc_data_structure(mapPreassure[ms_id].data); CHKERRQ(ierr);
+    rval = mField.get_moab().get_entities_by_type(cubit_meshset_ptr->meshset,MBTRI,mapPreassure[ms_id].tRis,true); CHKERRQ_MOAB(rval);
+    fe.getOpPtrVector().push_back(new OpNeumannPreassure(field_name,F,mapPreassure[ms_id],methodsOp,ho_geometry));
+  }
   PetscFunctionReturn(0);
 }
 

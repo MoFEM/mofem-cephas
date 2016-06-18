@@ -604,8 +604,8 @@ struct DataForcesAndSurcesCore {
      *
      */
     inline FTensor::Tensor0<double*> getFTensor0N(const FieldApproximationBase base,const int bb) {
-      double *ptr = &*getN(base).data().begin();
-      return FTensor::Tensor0<double*>(&ptr[bb],getN(base).size1());
+      double *ptr = &getN(base)(0,bb);
+      return FTensor::Tensor0<double*>(ptr,getN(base).size2());
     };
 
     /**

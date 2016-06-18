@@ -1,6 +1,6 @@
 /* Declares a wrapper class for rank 4 Tensor expressions symmetric on
    the first two and last two indices. */
-					 
+
 #include "Tensor4_ddg_times_Tensor2_symmetric.hpp"
 #include "Tensor4_ddg_carat_Tensor2_symmetric.hpp"
 #include "Tensor4_ddg_and_Tensor2_symmetric.hpp"
@@ -54,6 +54,17 @@ public:
 
   const Tensor4_ddg_Expr<Tensor4_ddg<A,Tensor_Dim01,Tensor_Dim23>,T,Dim01,Dim23,i,j,k,l> &
   operator=(const Tensor4_ddg_Expr<Tensor4_ddg<A,Tensor_Dim01,Tensor_Dim23>,T,Dim01,Dim23,i,j,k,l> &result);
+
+  /* This is for int's, double's, etc. */
+
+  template <class U> inline
+  const Tensor4_ddg_Expr<Tensor4_ddg<A,Tensor_Dim01,Tensor_Dim23>,T,Dim01,Dim23,i,j,k,l> &
+  operator=(const U &d);
+
+  template <class U> inline
+  const Tensor4_ddg_Expr<Tensor4_ddg<A,Tensor_Dim01,Tensor_Dim23>,T,Dim01,Dim23,i,j,k,l> &
+  operator*=(const U &d);
+
 };
 
 #include "Tensor4_ddg_Expr_equals.hpp"

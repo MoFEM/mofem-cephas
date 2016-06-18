@@ -517,10 +517,11 @@ struct Core: public FieldInterface, MeshRefinment, PrismInterface, SeriesRecorde
   std::string get_BitFieldId_name(const BitFieldId id) const;
   EntityHandle get_field_meshset(const BitFieldId id) const;
   EntityHandle get_field_meshset(const std::string& name) const;
-    bool check_field(const std::string& name) const;
+  bool check_field(const std::string& name) const;
   const Field* get_field_structure(const std::string& name);
 
   //FiniteElement
+  bool check_finite_element(const std::string& name) const;
   PetscErrorCode add_finite_element(const std::string &fe_name,enum MoFEMTypes bh = MF_EXCL);
   PetscErrorCode modify_finite_element_adjacency_table(const std::string &fe_name,const EntityType type,ElementAdjacencyFunct function);
   PetscErrorCode modify_finite_element_add_field_data(const std::string &fe_name,const std::string &name_filed);

@@ -1,4 +1,4 @@
-  # MoFEM is free software: you can redistribute it and/or modify it under
+# MoFEM is free software: you can redistribute it and/or modify it under
 # the terms of the GNU Lesser General Public License as published by the
 # Free Software Foundation, either version 3 of the License, or (at your
 # option) any later version.
@@ -10,6 +10,10 @@
 #
 # You should have received a copy of the GNU Lesser General Public
 # License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
+
+set(MoFEM_VERSION_MAJOR 0)
+set(MoFEM_VERSION_MINOR 3)
+set(MoFEM_VERSION_BUILD 24)
 
 cmake_minimum_required (VERSION 2.8.7)
 
@@ -29,10 +33,6 @@ find_program(MPI_RUN mpirun HINTS ${MPI_BIN_PATH} /usr/bin PATH ${MPI_BIN_PATH})
 include(cmake/ResolveCompilerPaths.cmake)
 
 project(MoFEM C Fortran CXX)
-
-set(MoFEM_VERSION_MAJOR 0)
-set(MoFEM_VERSION_MINOR 3)
-set(MoFEM_VERSION_BUILD 21)
 
 include(CheckCXXSourceCompiles)
 # CHECK_CXX_SOURCE_COMPILES(
