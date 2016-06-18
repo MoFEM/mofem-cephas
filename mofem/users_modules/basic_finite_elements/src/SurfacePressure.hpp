@@ -165,7 +165,7 @@ struct MetaNeummanForces {
     PetscFunctionBegin;
     PetscErrorCode ierr;
     ErrorCode rval;
-
+    // Define boundary element that operates on rows, columns and data of a given field
     ierr = m_field.add_finite_element("FORCE_FE",MF_ZERO); CHKERRQ(ierr);
     ierr = m_field.modify_finite_element_add_field_row("FORCE_FE",field_name); CHKERRQ(ierr);
     ierr = m_field.modify_finite_element_add_field_col("FORCE_FE",field_name); CHKERRQ(ierr);
@@ -173,7 +173,7 @@ struct MetaNeummanForces {
     if(m_field.check_field(mesh_nodals_positions)) {
       ierr = m_field.modify_finite_element_add_field_data("FORCE_FE",mesh_nodals_positions); CHKERRQ(ierr);
     }
-
+    // Add entities to that element, here we add all triangles with FORCESET from cubit
     for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,NODESET|FORCESET,it)) {
       Range tris;
       rval = m_field.get_moab().get_entities_by_type(it->meshset,MBTRI,tris,true); CHKERRQ_MOAB(rval);
@@ -194,9 +194,10 @@ struct MetaNeummanForces {
       ierr = m_field.add_ents_to_finite_element_by_TRIs(tris,"PRESSURE_FE"); CHKERRQ(ierr);
     }
 
-    // TODO: Add reading forces from BLOCKSET
+    // Reading forces from BLOCKSET
 
     const string block_set_force_name("FORCE");
+    // search for block named FORCE and add its attributes to FORCE_FE element
     for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,BLOCKSET,it)) {
       if(it->getName().compare(0,block_set_force_name.length(),block_set_force_name) == 0) {
         std::vector<double> mydata;
@@ -211,9 +212,10 @@ struct MetaNeummanForces {
         Range tris;
         rval = m_field.get_moab().get_entities_by_type(it->meshset,MBTRI,tris,true); CHKERRQ_MOAB(rval);
         ierr = m_field.add_ents_to_finite_element_by_TRIs(tris,"FORCE_FE"); CHKERRQ(ierr);
+        //cerr << tris << endl;
       }
     }
-
+    // search for block named PRESSURE and add its attributes to PRESSURE_FE element
     const string block_set_pressure_name("PRESSURE");
     for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,BLOCKSET,it)) {
       if(it->getName().compare(0,block_set_pressure_name.length(),block_set_pressure_name) == 0) {
@@ -266,8 +268,7 @@ struct MetaNeummanForces {
       my_split << *it << std::endl;
       my_split << data << std::endl;*/
     }
-    // TODO: Add reading forces from BLOCKSET
-
+    // Reading forces from BLOCKSET
     const string block_set_force_name("FORCE");
     for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,BLOCKSET,it)) {
       if(it->getName().compare(0,block_set_force_name.length(),block_set_force_name) == 0) {
@@ -284,7 +285,7 @@ struct MetaNeummanForces {
       my_split << *it << std::endl;
       my_split << data << std::endl;*/
     }
-
+      // Reading pressures from BLOCKSET
     const string block_set_pressure_name("PRESSURE");
     for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,BLOCKSET,it)) {
       if(it->getName().compare(0,block_set_pressure_name.length(),block_set_pressure_name) == 0) {

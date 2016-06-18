@@ -270,7 +270,7 @@ PetscErrorCode NeummanForcesSurface::addForce(const std::string field_name,Vec F
   PetscErrorCode ierr;
   ErrorCode rval;
   if(block_set) {
-    //TODO: Add data from block set. Look to addPreassure how to do it. Remember that are 3 components of force vector
+    //Add data from block set.
     const CubitMeshSets *cubit_meshset_ptr;
     ierr = mField.get_cubit_msId(ms_id,BLOCKSET,&cubit_meshset_ptr); CHKERRQ(ierr);
     std::vector<double> mydata;
@@ -279,17 +279,19 @@ PetscErrorCode NeummanForcesSurface::addForce(const std::string field_name,Vec F
     for(unsigned int ii = 0;ii<mydata.size();ii++) {
       force[ii] = mydata[ii];
     }
+    //Read forces from BLOCKSET Force (if exists)
     if(force.empty()) {
       SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"Force not given");
     }
+    //Assign values from BLOCKSET FORCE to RHS vector. Info about native Cubit BC data structure can be found in CubitBCData.hpp
     const string name = "Force";
     strncpy(mapForce[ms_id].data.data.name,name.c_str(),name.size()>5?5:name.size());
     double magnitude = sqrt(force[0]*force[0] + force[1]*force[1] + force[2]*force[2]);
     mapForce[ms_id].data.data.value1 = magnitude; //< Force magnitude
     mapForce[ms_id].data.data.value2 = 0;
-    mapForce[ms_id].data.data.value3 = force[0] / magnitude; //< X-component of force direction vector
-    mapForce[ms_id].data.data.value4 = force[1] / magnitude; //< Y-component of force direction vector
-    mapForce[ms_id].data.data.value5 = force[2] / magnitude; //< Z-component of force direction vector
+    mapForce[ms_id].data.data.value3 = force[0] / magnitude; //< X-component of force vector
+    mapForce[ms_id].data.data.value4 = force[1] / magnitude; //< Y-component of force vector
+    mapForce[ms_id].data.data.value5 = force[2] / magnitude; //< Z-component of force vector
     mapForce[ms_id].data.data.value6 = 0;
     mapForce[ms_id].data.data.value7 = 0;
     mapForce[ms_id].data.data.value8 = 0;
