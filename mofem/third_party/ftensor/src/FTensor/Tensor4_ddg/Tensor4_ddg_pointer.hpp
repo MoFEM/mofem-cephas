@@ -85,14 +85,18 @@ public:
         throw std::runtime_error(s.str());
       }
 #endif
-    return N1>N2 ? (N3>N4 ? *data[N1+(N2*(2*Tensor_Dim01-N2-1))/2]
-		    [N3+(N4*(2*Tensor_Dim23-N4-1))/2]
-		    : *data[N1+(N2*(2*Tensor_Dim01-N2-1))/2]
-		    [N4+(N3*(2*Tensor_Dim23-N3-1))/2])
-      : (N3>N4 ? *data[N2+(N1*(2*Tensor_Dim01-N1-1))/2]
-	 [N3+(N4*(2*Tensor_Dim23-N4-1))/2]
-	 : *data[N2+(N1*(2*Tensor_Dim01-N1-1))/2]
-	 [N4+(N3*(2*Tensor_Dim23-N3-1))/2]);
+    return
+    N1>N2 ?
+    (
+      N3>N4
+      ? *data[N1+(N2*(2*Tensor_Dim01-N2-1))/2] [N3+(N4*(2*Tensor_Dim23-N4-1))/2]
+		  : *data[N1+(N2*(2*Tensor_Dim01-N2-1))/2] [N4+(N3*(2*Tensor_Dim23-N3-1))/2]
+    )
+    : (
+      N3>N4
+      ? *data[N2+(N1*(2*Tensor_Dim01-N1-1))/2] [N3+(N4*(2*Tensor_Dim23-N4-1))/2]
+	    : *data[N2+(N1*(2*Tensor_Dim01-N1-1))/2] [N4+(N3*(2*Tensor_Dim23-N3-1))/2]
+    );
   }
 
   T* ptr(const int N1, const int N2, const int N3, const int N4) const
@@ -109,14 +113,18 @@ public:
         throw std::runtime_error(s.str());
       }
 #endif
-    return N1>N2 ? (N3>N4 ? data[N1+(N2*(2*Tensor_Dim01-N2-1))/2]
-		    [N3+(N4*(2*Tensor_Dim23-N4-1))/2]
-		    : data[N1+(N2*(2*Tensor_Dim01-N2-1))/2]
-		    [N4+(N3*(2*Tensor_Dim23-N3-1))/2])
-      : (N3>N4 ? data[N2+(N1*(2*Tensor_Dim01-N1-1))/2]
-	 [N3+(N4*(2*Tensor_Dim23-N4-1))/2]
-	 : data[N2+(N1*(2*Tensor_Dim01-N1-1))/2]
-	 [N4+(N3*(2*Tensor_Dim23-N3-1))/2]);
+    return
+    N1>N2 ?
+    (
+      N3>N4
+      ? data[N1+(N2*(2*Tensor_Dim01-N2-1))/2] [N3+(N4*(2*Tensor_Dim23-N4-1))/2]
+      : data[N1+(N2*(2*Tensor_Dim01-N2-1))/2] [N4+(N3*(2*Tensor_Dim23-N3-1))/2]
+    )
+    : (
+      N3>N4
+      ? data[N2+(N1*(2*Tensor_Dim01-N1-1))/2] [N3+(N4*(2*Tensor_Dim23-N4-1))/2]
+      : data[N2+(N1*(2*Tensor_Dim01-N1-1))/2] [N4+(N3*(2*Tensor_Dim23-N3-1))/2]
+    );
   }
 
   /* Return reference to pointer, that will allow to set internal
