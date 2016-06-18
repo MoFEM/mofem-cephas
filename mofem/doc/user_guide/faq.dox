@@ -1,5 +1,62 @@
 /*! \page faqs Frequently Asked Questions
 
+\section policy_of_for_version How MoFEM version is changed?
+
+The current MoFEM version can be identified by \e Semantic \e Versioning and \e
+Git \e Commit \e Id. \e Git \e Commit \e Id is unique and points to particular
+code commit. \e Semantic \e Versioning is not unique, more that one commits to git
+repository can have the same version.
+
+Every execution of code which is build with MoFEM library result that first two lines look
+like that
+\code
+version 0.3.24  <---  (MAJOR_VERSION.MINOR_VERSION.BUILD_VERSION)
+git commit id 3d06924d27973df16e3260c6e962929330cf9348
+\endcode
+That allows to identify \em git commit id and human readable MoFEM version.
+
+MoFEM is developed continuously (see \ref validation_and_verfication) and any
+commit which introducing changes that directly have an impact on users
+modules implementation should result in increment \e build \e version. For
+example if new functionality is added, name of interface function changed or
+some function deprecated etc. that will result in incremented build version.
+Note that each users module has set minimal MoFEM version to which is
+compatible, see \ref adding_user_module for details.
+
+For other hand changes/improvements to core library like modification of local
+variable name or when local documentation added, that will result in new commit
+however will NOT result in new \e build \e version, since implementation of
+users modules is not influenced by changes in main library.
+
+Build version is in range from 0-100, at the end of the range minor version
+should be automatically incremented. Minor version is in the range from 0-10, at
+the end of the range major version should be automatically incremented. The
+minor or major version could be changed at any time when major/minor feature is
+initiated.
+
+In addition to above rules, the general principles could apply, in short,
+- 3.7.11 (bug fix)
+- 3.7.12 (partial new feature, hidden behind a Feature Toggle.)
+- 3.7.13 (performance improvement)
+- 3.8.0 (completed feature initiated in 3.7.12)
+- 4.0.0 (breaking changes in public API)
+
+The MoFEM version can be set in CMakeList.txt located in root source directory,
+in lines
+\code
+set(MoFEM_VERSION_MAJOR 0)
+set(MoFEM_VERSION_MINOR 3)
+set(MoFEM_VERSION_BUILD 24)
+\endcode
+
+\section validation_and_verfication How MoFEM is developed?
+
+MoFEM is developed continuously, i.e. any merged pull request to the
+\em CDashTesting branch triggers automatic testing on the development server. Code is
+verified during when pull request is accepted and merged and validated when
+test on the development server are passed. If tests are passed \em CDashBranch is
+merged to \em release branch.
+
 \section own_documentation How to generate this documentation on your local machine?
 
 In you library directory execute

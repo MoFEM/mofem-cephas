@@ -276,6 +276,8 @@ struct MetaNeummanForces {
     PetscFunctionReturn(0);
   }
 
+  /** \deprecated Use setMomentumFluxOperators() instead
+  */
   DEPRECATED static PetscErrorCode setNeumannFiniteElementOperators(
     FieldInterface &m_field,
     boost::ptr_map<std::string,NeummanForcesSurface> &neumann_forces,
@@ -335,6 +337,8 @@ struct MetaNeummanForces {
     PetscFunctionReturn(0);
   }
 
+  /** \deprecated Use setMassFluxOperators() instead
+  */
   DEPRECATED static PetscErrorCode setNeumannFluxFiniteElementOperators(
     FieldInterface &m_field,
     boost::ptr_map<std::string,NeummanForcesSurface> &neumann_forces,
