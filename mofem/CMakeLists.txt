@@ -11,10 +11,6 @@
 # You should have received a copy of the GNU Lesser General Public
 # License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 
-set(MoFEM_VERSION_MAJOR 0)
-set(MoFEM_VERSION_MINOR 3)
-set(MoFEM_VERSION_BUILD 24)
-
 cmake_minimum_required (VERSION 2.8.7)
 
 #petsc and moab configuration are used to confiugre mofem
@@ -33,6 +29,10 @@ find_program(MPI_RUN mpirun HINTS ${MPI_BIN_PATH} /usr/bin PATH ${MPI_BIN_PATH})
 include(cmake/ResolveCompilerPaths.cmake)
 
 project(MoFEM C Fortran CXX)
+
+set(MoFEM_VERSION_MAJOR 0)
+set(MoFEM_VERSION_MINOR 3)
+set(MoFEM_VERSION_BUILD 24)
 
 include(CheckCXXSourceCompiles)
 # CHECK_CXX_SOURCE_COMPILES(
