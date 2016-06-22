@@ -3,9 +3,10 @@
 cubit.cmd('new')
 
 autofactor=6; 
-cubit.cmd('brick x 1 y 1 z 1')
+cubit.cmd('brick x 1 y 1 z 0.2')
 
-cubit.cmd('cylinder height 1 rad 0.437') # Vf = 0.6
+#cubit.cmd('cylinder height 0.2 rad 0.437') # Vf = 0.6
+cubit.cmd('cylinder height 0.2 rad 0.45835') # Vf = 0.66
 
 cubit.cmd('subtract volume 2 from volume 1 keep')
 cubit.cmd('delete volume 2')
@@ -28,23 +29,31 @@ cubit.cmd('group "g4" add surface 12 19')
 cubit.cmd('group "g5" add surface 13') 
 cubit.cmd('group "g6" add surface 16') 
 
-cubit.cmd('surface 11 18 size auto factor 6')       
-cubit.cmd('surface 11 18 scheme trimesh')      
-cubit.cmd('mesh surface 11 18')      
-cubit.cmd('surface 12 19 scheme mirror source surface 11 18 source vertex 15 target vertex 20 nosmoothing')  
-cubit.cmd('mesh surface 12 19')  
+cubit.cmd('surface 11 size auto factor 6')       
+cubit.cmd('surface 11 scheme trimesh')      
+cubit.cmd('mesh surface 11')      
+cubit.cmd('surface 12 scheme copy source surface 11 source vertex 15 target vertex 20 source curve 18 target curve 24 nosmoothing')  
+cubit.cmd('mesh surface 12')  
+
+cubit.cmd('surface 18 size auto factor 6')       
+cubit.cmd('surface 18 scheme trimesh')      
+cubit.cmd('mesh surface 18')      
+cubit.cmd('surface 19 scheme mirror source surface 18 source vertex 15 target vertex 20 nosmoothing')  
+cubit.cmd('mesh surface 19')  
  
+
+
 cubit.cmd('surface 15 size auto factor 5')     
 cubit.cmd('surface 15 scheme trimesh')     
 cubit.cmd('mesh surface 15')     
-cubit.cmd('surface 13 scheme mirror source surface 15 source vertex 15 target vertex 16 nosmoothing') 
+cubit.cmd('surface 13 scheme copy source surface 15 source vertex 15 target vertex 16 source curve 18 target curve 20 nosmoothing') 
 cubit.cmd('mesh surface 13') 
 
-cubit.cmd('surface 16 size auto factor 5')    
-cubit.cmd('surface 16 scheme trimesh')    
-cubit.cmd('mesh surface 16')    
-cubit.cmd('surface 14 scheme mirror source surface 16 source vertex 15 target vertex 14 nosmoothing')
-cubit.cmd('mesh surface 14')
+cubit.cmd('surface 14 size auto factor 5')    
+cubit.cmd('surface 14 scheme trimesh')    
+cubit.cmd('mesh surface 14')    
+cubit.cmd('surface 16 scheme copy source surface 14 source vertex 15 target vertex 14 source curve 19 target curve 17 nosmoothing')
+cubit.cmd('mesh surface 16')
 
 #============================================================= 
 #Mesh volume 
@@ -71,7 +80,8 @@ for i in range(0, 3):
 cubit.cmd('block 1 attribute count 2')  
 #Em=3.5e3; Enu=0.3;  #gig to mega as we used dimension in mm
 #Em=4.2e3; Enu=0.34;  # 3501-6 Epoxy: WWFE
-Em=5.8e3; Enu=0.38;   # 3501-6 Epoxy: Gotsis & Chamis
+#Em=5.8e3; Enu=0.38;   # 3501-6 Epoxy: Gotsis & Chamis
+Em=3.45e3; Enu=0.35;   # Shaw 2010
 
 Elastic=[str(Em), str(Enu)]  
 for i in range(0, 2):  
@@ -88,7 +98,8 @@ for i in range(0, 2):
 cubit.cmd('block 2 attribute count 5')    
 #Ep=10*Em; Ez=20*Em; nup=0.26; nupz=0.26; Gzp=5*Em; 
 #Ep=15e3; Ez=225e3; nup=0.0714; nupz=0.0133; Gzp=15e3;           # AS4 carbon fibre: WWFE
-Ep=14.96e3; Ez=208.34e3; nup=0.0841; nupz=0.0144; Gzp=14.96e3;   # AS4 carbon fibre: Gotsis & Chamis
+#Ep=14.96e3; Ez=208.34e3; nup=0.0841; nupz=0.0144; Gzp=14.96e3;   # AS4 carbon fibre: Gotsis & Chamis
+Ep=13.8e3; Ez=213.7e3; nup=0.25; nupz=0.012915; Gzp=13.8e3;   # Shaw 2010
 
    
 TransIso=[str(Ep), str(Ez), str(nup), str(nupz), str(Gzp)]   
@@ -142,7 +153,7 @@ cubit.cmd('sideset 103 surface 12 19 13 16 11 18 15 14')  # all boundary surface
 #Definign zero proessrues for potential flow problem (This should be of the same order as PotentialFlow blocks )
 #============================================================= 
  
-zeroPressureNode=[109]
+zeroPressureNode=[436]
 for i in range(0, 1):  
     str1='nodeset ' + str(i+1) + ' node ' + str(zeroPressureNode[i]); cubit.cmd(str1) 
     str1='nodeset ' + str(i+1)+' name "ZeroPressure_' + str(i+1)+ '"'; cubit.cmd(str1)    
@@ -151,6 +162,4 @@ for i in range(0, 1):
 #Saving input RVE file  
 #============================================================= 
  
-cubit.cmd('save as "/Users/nxz6/MyBuild/mofem-cephas/mofem_v0.2/users_modules/stochastic/meshes/RVE_UD.cub" overwrite')    
-
-
+cubit.cmd('save as "/Users/nxz6/MyBuild/mofem-cephas/mofem_v0.2/users_modules/stochastic/meshes/RVE_UD_VF66.cub" overwrite')    

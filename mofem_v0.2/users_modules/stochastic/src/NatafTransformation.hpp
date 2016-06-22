@@ -36,9 +36,6 @@ struct NatafTransformation {
                                 ublas::vector<double> &u) {
     PetscFunctionBegin;
     
-    ErrorCode rval;
-    PetscErrorCode ierr;
-    
     ublas::vector<double> z(num_vars);
     u.resize(num_vars);u.clear();
     
@@ -144,10 +141,10 @@ struct NatafTransformation {
           break;
       }
       
-      if (i == 0) { cout<<"Value of 1st variable \t"<<z(i)<<endl; }
+      /*if (i == 0) { cout<<"Value of 1st variable \t"<<z(i)<<endl; }
       else if (i == 1) { cout<<"Value of 2nd variable \t"<<z(i)<<endl; }
       else if (i == 2) { cout<<"Value of 3rd variable \t"<<z(i)<<endl; }
-      else { cout<<"Value of "<<i+1<<"th variable \t"<<z(i)<<endl;}
+      else { cout<<"Value of "<<i+1<<"th variable \t"<<z(i)<<endl;}*/
     }
     u = prod(inv_Lo,z); // u = Lo^{-1} z
     
@@ -166,9 +163,6 @@ struct NatafTransformation {
                                 ublas::vector<double> &x,
                                 double &detj) {
     PetscFunctionBegin;
-    
-    ErrorCode rval;
-    PetscErrorCode ierr;
     
     x.resize(num_vars);
     ublas::vector<double> z(num_vars);
@@ -284,10 +278,10 @@ struct NatafTransformation {
           break;
       }
       
-      if (i == 0) { cout<<"Value of 1st variable \t"<<x(i)<<"\t"<<u(i)<<endl; }
+      /*if (i == 0) { cout<<"Value of 1st variable \t"<<x(i)<<"\t"<<u(i)<<endl; }
       else if (i == 1) { cout<<"Value of 2nd variable \t"<<x(i)<<"\t"<<u(i)<<endl; }
       else if (i == 2) { cout<<"Value of 3rd variable \t"<<x(i)<<"\t"<<u(i)<<endl; }
-      else { cout<<"Value of "<<i+1<<"th variable \t"<<x(i)<<"\t"<<u(i)<<endl;}
+      else { cout<<"Value of "<<i+1<<"th variable \t"<<x(i)<<"\t"<<u(i)<<endl;}*/
     }
     
     PetscFunctionReturn(0);
@@ -305,9 +299,6 @@ struct NatafTransformation {
                                       ublas::matrix<double> inv_Lo,
                                       ublas::matrix<double> &dudx) {
     PetscFunctionBegin;
-    
-    ErrorCode rval;
-    PetscErrorCode ierr;
     
     double imean, istd, iloc, ishape, iscale, ilambda, ilower, iupper;
     int dist_type;
@@ -398,9 +389,6 @@ struct NatafTransformation {
                                               ublas::matrix<double> CorrMat,
                                               ublas::matrix<double> &ModifiedCorrMat) {
     PetscFunctionBegin;
-    
-    ErrorCode rval;
-    PetscErrorCode ierr;
     
     /*
      * [Liu and Der Kiureghian, 1986] provided an empirical formula to calculate

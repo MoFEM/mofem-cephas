@@ -229,7 +229,7 @@ namespace MoFEM {
                                                           commonData(common_data),
                                                           numders(num_ders),
                                                           numvars(num_vars),
-                                                          stochastic_fields(_stochastic_fields)){}
+                                                          stochastic_fields(_stochastic_fields){}
       
       ~OpCalculate_RVEDmat(){
       }
@@ -1298,8 +1298,12 @@ namespace MoFEM {
       
     };
     
-    PetscErrorCode setRVE_DmatRhsOperators(FieldInterface &m_field_RVE, string field_name,
-                                           string wt_field_name,int numders,int numvars,
+    PetscErrorCode setRVE_DmatRhsOperators(FieldInterface &m_field_RVE,
+                                           string field_name,
+                                           string wt_field_name,
+                                           
+                                           int numders,
+                                           int numvars,
                                            vector<string> stochasticfields) {
       PetscFunctionBegin;
       //first calculate wt at each gauss point

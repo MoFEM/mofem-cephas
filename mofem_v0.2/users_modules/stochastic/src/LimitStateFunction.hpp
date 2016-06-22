@@ -76,9 +76,6 @@ namespace MoFEM {
                                           double &val_lsf) {
       PetscFunctionBegin;
       
-      ErrorCode rval;
-      PetscErrorCode ierr;
-      
       double X_T; // tensile strength in the fibre direction
       double X_C; // tensile strength in the transverse direction
       double Y_T; // compressive strength in the fibre direction
@@ -94,7 +91,7 @@ namespace MoFEM {
       S_23 = PlyStrength(5);
       
       // Update the values if the parameters are considered as random variables.
-      for (int i=1; i<=x.size();i++) {
+      for (unsigned i=1; i<=x.size();i++) {
         if (vars_name[i].compare(0,2,"XT") == 0) {
           X_T = x(i-1);
         }
@@ -139,9 +136,6 @@ namespace MoFEM {
                                           double &val_lsf) {
       PetscFunctionBegin;
       
-      ErrorCode rval;
-      PetscErrorCode ierr;
-      
       double X_T; // tensile strength in the fibre direction
       double X_C; // tensile strength in the transverse direction
       double Y_T; // compressive strength in the fibre direction
@@ -156,7 +150,7 @@ namespace MoFEM {
       S_12 = PlyStrength(4);
       
       // Update the values if the parameters are considered as random variables.
-      for (int i=1; i<=x.size();i++) {
+      for (unsigned i=1; i<=x.size();i++) {
         if (vars_name[i].compare(0,2,"XT") == 0) {
           X_T = x(i-1);
         }
@@ -184,7 +178,6 @@ namespace MoFEM {
       }
       
       PetscFunctionReturn(0);
-      
     }
     
     //------------------------------------------------------------------------------
@@ -199,15 +192,11 @@ namespace MoFEM {
                                              double &val_lsf) {
       PetscFunctionBegin;
       
-      ErrorCode rval;
-      PetscErrorCode ierr;
-      
       double X_T; // tensile strength in the fibre direction
       double X_C; // tensile strength in the transverse direction
       double Y_T; // compressive strength in the fibre direction
       double Y_C; // compressive strength in the transverse direction
       double S_12; // Longitudinal or axial shear strength
-      double S_23; // Transverse shear strength
       
       X_T  = PlyStrength(0);
       X_C  = PlyStrength(1);
@@ -216,7 +205,7 @@ namespace MoFEM {
       S_12 = PlyStrength(4);
       
       // Update the values if the parameters are considered as random variables.
-      for (int i=1; i<=x.size();i++) {
+      for (unsigned i=1; i<=x.size();i++) {
         if (vars_name[i].compare(0,2,"XT") == 0) {
           X_T = x(i-1);
         }
@@ -244,7 +233,6 @@ namespace MoFEM {
       }
       
       PetscFunctionReturn(0);
-      
     }
     
     //------------------------------------------------------------------------------
@@ -257,9 +245,6 @@ namespace MoFEM {
                                        ublas::matrix<double> StressGP,
                                        double &val_lsf) {
       PetscFunctionBegin;
-      
-      ErrorCode rval;
-      PetscErrorCode ierr;
       
       double X_T; // tensile strength in the fibre direction
       double X_C; // tensile strength in the transverse direction
@@ -276,7 +261,7 @@ namespace MoFEM {
       S_23 = PlyStrength(5);
       
       // Update the values if the parameters are considered as random variables.
-      for (int i=1; i<=x.size();i++) {
+      for (unsigned i=1; i<=x.size();i++) {
         if (vars_name[i].compare(0,2,"XT") == 0) {
           X_T = x(i-1);
         }
@@ -308,7 +293,6 @@ namespace MoFEM {
       }
       
       PetscFunctionReturn(0);
-      
     }
     
     //------------------------------------------------------------------------------
@@ -321,9 +305,6 @@ namespace MoFEM {
                                        ublas::matrix<double> StressGP,
                                        double &val_lsf) {
       PetscFunctionBegin;
-      
-      ErrorCode rval;
-      PetscErrorCode ierr;
       
       double X_T; // tensile strength in the fibre direction
       double X_C; // tensile strength in the transverse direction
@@ -340,7 +321,7 @@ namespace MoFEM {
       S_23 = PlyStrength(5);
       
       // Update the values if the parameters are considered as random variables.
-      for (int i=1; i<=x.size();i++) {
+      for (unsigned i=1; i<=x.size();i++) {
         if (vars_name[i].compare(0,2,"XT") == 0) {
           X_T = x(i-1);
         }
@@ -383,7 +364,6 @@ namespace MoFEM {
       }
       
       PetscFunctionReturn(0);
-      
     }
     
     
@@ -398,16 +378,13 @@ namespace MoFEM {
                                             double &val_lsf) {
       PetscFunctionBegin;
       
-      ErrorCode rval;
-      PetscErrorCode ierr;
-      
       double X_T; // tensile strength in the fibre direction
       double X_C; // tensile strength in the transverse direction
       double Y_T; // compressive strength in the fibre direction
       double Y_C; // compressive strength in the transverse direction
       double S_12; // Longitudinal or axial shear strength
       double S_23; // Transverse shear strength
-      double F1, F2, F3, F11, F22, F12, F44, F66;
+      double F1, F2, F11, F22, F12, F44, F66;
       
       X_T  = PlyStrength(0);
       X_C  = PlyStrength(1);
@@ -417,7 +394,7 @@ namespace MoFEM {
       S_23 = PlyStrength(5);
       
       // Update the values if the parameters are considered as random variables.
-      for (int i=1; i<=x.size();i++) {
+      for (unsigned i=1; i<=x.size();i++) {
         if (vars_name[i].compare(0,2,"XT") == 0) {
           X_T = x(i-1);
         }
@@ -456,7 +433,6 @@ namespace MoFEM {
                     + F12*StressGP(0,0)*(StressGP(1,1)+StressGP(2,2)));
       
       PetscFunctionReturn(0);
-      
     }
     
     //--------------------------------------------------------------------------
@@ -472,16 +448,11 @@ namespace MoFEM {
       
       PetscFunctionBegin;
       
-      ErrorCode rval;
-      PetscErrorCode ierr;
-      
       double X_T; // tensile strength in the fibre direction
       double X_C; // tensile strength in the transverse direction
       double Y_T; // compressive strength in the fibre direction
       double Y_C; // compressive strength in the transverse direction
       double S_12; // Longitudinal or axial shear strength
-      double X,Y;
-      
       
       ublas::matrix<double> dsdx(3,3);
       //cout<<"\nPly strength: "<<PlyStrength<<endl;
@@ -493,7 +464,7 @@ namespace MoFEM {
       
       
       // Update the values if the parameters are considered as random variables.
-      for (int i=1; i<=x.size();i++) {
+      for (unsigned i=1; i<=x.size();i++) {
         if (vars_name[i].compare(0,2,"XT") == 0) {
           X_T = x(i-1);
         }
@@ -541,16 +512,13 @@ namespace MoFEM {
                                             double &val_lsf) {
       PetscFunctionBegin;
       
-      ErrorCode rval;
-      PetscErrorCode ierr;
-      
       double X_T; // tensile strength in the fibre direction
       double X_C; // tensile strength in the transverse direction
       double Y_T; // compressive strength in the fibre direction
       double Y_C; // compressive strength in the transverse direction
       double S_12; // Longitudinal or axial shear strength
       double S_23; // Transverse shear strength
-      double F1, F2, F3, F11, F22, F44, F66, F12, F23;
+      double F1, F2, F11, F22, F44, F66, F12, F23;
       ublas::matrix<double> dsdx(3,3);
       //cout<<"\nPly strength: "<<PlyStrength<<endl;
       X_T  = MatStrength(0);
@@ -561,7 +529,7 @@ namespace MoFEM {
       S_23 = MatStrength(5);
       
       // Update the values if the parameters are considered as random variables.
-      for (int i=1; i<=x.size();i++) {
+      for (unsigned i=1; i<=x.size();i++) {
         if (vars_name[i].compare(0,2,"XT") == 0) {
           X_T = x(i-1);
         }
@@ -607,7 +575,6 @@ namespace MoFEM {
                     + 2*F23*StressGP(1,1)*StressGP(2,2));
       
       PetscFunctionReturn(0);
-      
     }
     
     //------------------------------------------------------------------------------
@@ -622,16 +589,13 @@ namespace MoFEM {
                                                         double &val_lsf) {
       PetscFunctionBegin;
       
-      ErrorCode rval;
-      PetscErrorCode ierr;
-      
       double X_T; // tensile strength in the fibre direction
       double X_C; // tensile strength in the transverse direction
       double Y_T; // compressive strength in the fibre direction
       double Y_C; // compressive strength in the transverse direction
       double S_12; // Longitudinal or axial shear strength
       double S_23; // Transverse shear strength
-      double F1, F2, F3, F11, F22, F44, F66, F12, F23;
+      double F1, F2, F11, F22, F44, F66, F12;
       ublas::matrix<double> dsdx(3,3);
       //cout<<"\nPly strength: "<<PlyStrength<<endl;
       X_T  = MatStrength(0);
@@ -642,7 +606,7 @@ namespace MoFEM {
       S_23 = MatStrength(5);
       
       // Update the values if the parameters are considered as random variables.
-      for (int i=1; i<=x.size();i++) {
+      for (unsigned i=1; i<=x.size();i++) {
         if (vars_name[i].compare(0,2,"XT") == 0) {
           X_T = x(i-1);
         }
@@ -685,7 +649,6 @@ namespace MoFEM {
                     + 2*F12*StressGP(0,0)*(StressGP(1,1)+StressGP(2,2)));
       
       PetscFunctionReturn(0);
-      
     }
     
     
@@ -702,9 +665,6 @@ namespace MoFEM {
       
       PetscFunctionBegin;
       
-      ErrorCode rval;
-      PetscErrorCode ierr;
-      
       double X_T; // tensile strength in the fibre direction
       double X_C; // tensile strength in the transverse direction
       double Y_T; // compressive strength in the fibre direction
@@ -720,7 +680,7 @@ namespace MoFEM {
       
       
       // Update the values if the parameters are considered as random variables.
-      for (int i=1; i<=x.size();i++) {
+      for (unsigned i=1; i<=x.size();i++) {
         if (vars_name[i].compare(0,2,"XT") == 0) {
           X_T = x(i-1);
         }
@@ -771,9 +731,6 @@ namespace MoFEM {
       
       PetscFunctionBegin;
       
-      ErrorCode rval;
-      PetscErrorCode ierr;
-      
       double X_T; // tensile strength in the fibre direction
       double X_C; // tensile strength in the transverse direction
       double Y_T; // compressive strength in the fibre direction
@@ -791,7 +748,7 @@ namespace MoFEM {
       
       
       // Update the values if the parameters are considered as random variables.
-      for (int i=1; i<=x.size();i++) {
+      for (unsigned i=1; i<=x.size();i++) {
         if (vars_name[i].compare(0,2,"XT") == 0) {
           X_T = x(i-1);
         }
@@ -848,7 +805,6 @@ namespace MoFEM {
                                         ublas::vector<double> PlyStrength,
                                         ublas::matrix<double> StressGP,
                                         double &val_lsf) {
-      
       PetscFunctionBegin;
       
       double T_11; // tensile strength in the fibre direction
@@ -856,17 +812,15 @@ namespace MoFEM {
       double C_11; // compressive strength in the fibre direction
       double C_22; // compressive strength in the transverse direction
       double S_12; // Longitudinal or axial shear strength
-      double S_23; // Transverse shear strength
 
       T_11 = PlyStrength(0);
       C_11 = PlyStrength(1);
       T_22 = PlyStrength(2);
       C_22 = PlyStrength(3);
       S_12 = PlyStrength(4);
-      S_23 = PlyStrength(5);
       
       // Update the values if the parameters are considered as random variables.
-      for (int i=1; i<=x.size();i++) {
+      for (unsigned i=1; i<=x.size();i++) {
         if (vars_name[i].compare(0,2,"XT") == 0) {
           T_11 = x(i-1);
         }
@@ -890,7 +844,6 @@ namespace MoFEM {
                      + 1/(T_11*C_11)*StressGP(0,0)*StressGP(0,0));
       
       PetscFunctionReturn(0);
-      
     }
     
     //------------------------------------------------------------------------------
@@ -903,7 +856,6 @@ namespace MoFEM {
                                         ublas::vector<double> PlyStrength,
                                         ublas::matrix<double> StressGP,
                                         double &val_lsf) {
-      
       PetscFunctionBegin;
       
       double T_11; // tensile strength in the fibre direction
@@ -921,7 +873,7 @@ namespace MoFEM {
       S_23 = PlyStrength(5);
       
       // Update the values if the parameters are considered as random variables.
-      for (int i=1; i<=x.size();i++) {
+      for (unsigned i=1; i<=x.size();i++) {
         if (vars_name[i].compare(0,2,"XT") == 0) {
           T_11 = x(i-1);
         }
@@ -954,7 +906,6 @@ namespace MoFEM {
                      + 1/(S_23*S_23)*(StressGP(1,2)*StressGP(1,2) - StressGP(1,1)*StressGP(2,2)));
       
       PetscFunctionReturn(0);
-      
     }
     
     //------------------------------------------------------------------------------
@@ -968,15 +919,11 @@ namespace MoFEM {
                                                double &val_lsf) {
       PetscFunctionBegin;
       
-      ErrorCode rval;
-      PetscErrorCode ierr;
-      
       double X_T; // tensile strength in the fibre direction
       double X_C; // tensile strength in the transverse direction
       double Y_T; // compressive strength in the fibre direction
       double Y_C; // compressive strength in the transverse direction
       double S_12; // Longitudinal or axial shear strength
-      double X,Y;
       
       X_T  = PlyStrength(0);
       X_C  = PlyStrength(1);
@@ -985,7 +932,7 @@ namespace MoFEM {
       S_12 = PlyStrength(4);
       
       // Update the values if the parameters are considered as random variables.
-      for (int i=1; i<=x.size();i++) {
+      for (unsigned i=1; i<=x.size();i++) {
         if (vars_name[i].compare(0,2,"XT") == 0) {
           X_T = x(i-1);
         }
@@ -1025,16 +972,12 @@ namespace MoFEM {
                                             double &val_lsf) {
       PetscFunctionBegin;
       
-      ErrorCode rval;
-      PetscErrorCode ierr;
-      
       double X_T; // tensile strength in the fibre direction
       double X_C; // tensile strength in the transverse direction
       double Y_T; // compressive strength in the fibre direction
       double Y_C; // compressive strength in the transverse direction
       double S_12; // Longitudinal or axial shear strength
       double S_23; // Transverse shear strength
-      double X,Y;
       
       X_T  = PlyStrength(0);
       X_C  = PlyStrength(1);
@@ -1045,7 +988,7 @@ namespace MoFEM {
       
       
       // Update the values if the parameters are considered as random variables.
-      for (int i=1; i<=x.size();i++) {
+      for (unsigned i=1; i<=x.size();i++) {
         if (vars_name[i].compare(0,2,"XT") == 0) {
           X_T = x(i-1);
         }
@@ -1082,7 +1025,6 @@ namespace MoFEM {
       
       PetscFunctionReturn(0);
     }
-    
   };
   
   struct LimitStateFunction {
@@ -1148,16 +1090,12 @@ namespace MoFEM {
                                           ublas::vector<double> &grad_lsf) {
       PetscFunctionBegin;
       
-      ErrorCode rval;
-      PetscErrorCode ierr;
-      
       double X_T; // tensile strength in the fibre direction
       double X_C; // tensile strength in the transverse direction
       double Y_T; // compressive strength in the fibre direction
       double Y_C; // compressive strength in the transverse direction
       double S_12; // Longitudinal or axial shear strength
       double S_23; // Transverse shear strength
-      double F1, F2, F3, F11, F22, F12, F44, F66;
       ublas::matrix<double> dsdx(3,3);
       
       X_T  = PlyStrength(0);
@@ -1168,7 +1106,7 @@ namespace MoFEM {
       S_23 = PlyStrength(5);
       
       // Update the values if the parameters are considered as random variables.
-      for (int i=1; i<=x.size();i++) {
+      for (unsigned i=1; i<=x.size();i++) {
         if (vars_name[i].compare(0,2,"XT") == 0) {
           X_T = x(i-1);
         }
@@ -1194,82 +1132,82 @@ namespace MoFEM {
         val_lsf = X_T - StressGP(0,0);
         
         // Evaluate the partial derovative of the LSF w.r.t. basic variables
-        for (int i=1; i<=x.size(); i++) {
+        for (unsigned i=1; i<=x.size(); i++) {
           cout<<"The variable name is "<<vars_name[i]<<endl;
           if (vars_name[i].compare(0,2,"Em") == 0) {
             // w.r.t. Em
             dsdx.clear(); dsdx = StressGP_r_Em;
-            grad_lsf(i-1) = - StressGP_r_Em(0,0);
+            grad_lsf(i-1) = - dsdx(0,0);
           }
           else if (vars_name[i].compare(0,3,"NUm") == 0) {
             // w.r.t. NUm
             dsdx.clear(); dsdx.resize(3,3); dsdx = StressGP_r_NUm;
-            grad_lsf(i-1) = - StressGP_r_NUm(0,0);
+            grad_lsf(i-1) = - dsdx(0,0);
           }
           else if (vars_name[i].compare(0,3,"NUp") == 0) {
             // w.r.t. NUp
             dsdx.clear(); dsdx.resize(3,3); dsdx = StressGP_r_NUp;
-            grad_lsf(i-1) = - StressGP_r_NUp(0,0);
+            grad_lsf(i-1) = - dsdx(0,0);
           }
           else if (vars_name[i].compare(0,3,"NUz") == 0) {
             // w.r.t. NUpz
             dsdx.clear(); dsdx.resize(3,3); dsdx = StressGP_r_NUpz;
-            grad_lsf(i-1) = - StressGP_r_NUpz(0,0);
+            grad_lsf(i-1) = - dsdx(0,0);
           }
           else if (vars_name[i].compare(0,2,"Ep") == 0) {
             // w.r.t. Ep
             dsdx.clear(); dsdx.resize(3,3); dsdx = StressGP_r_Ep;
-            grad_lsf(i-1) = - StressGP_r_Ep(0,0);
+            grad_lsf(i-1) = - dsdx(0,0);
           }
           else if (vars_name[i].compare(0,2,"Ez") == 0) {
             // w.r.t. Ez
             dsdx.clear(); dsdx.resize(3,3); dsdx = StressGP_r_Ez;
-            grad_lsf(i-1) = - StressGP_r_Ez(0,0);
+            grad_lsf(i-1) = - dsdx(0,0);
           }
           else if (vars_name[i].compare(0,3,"Gzp") == 0) {
             // w.r.t. Gzp
             dsdx.clear(); dsdx.resize(3,3); dsdx = StressGP_r_Gzp;
-            grad_lsf(i-1) = - StressGP_r_Gzp(0,0);
+            grad_lsf(i-1) = - dsdx(0,0);
           }
           else if (vars_name[i].compare(0,2,"Ef") == 0) {
             // w.r.t. Ef - fibre with isotropic material
             dsdx.clear(); dsdx = StressGP_r_Ef;
-            grad_lsf(i-1) = - StressGP_r_Ef(0,0);
+            grad_lsf(i-1) = - dsdx(0,0);
           }
           else if (vars_name[i].compare(0,3,"NUf") == 0) {
             // w.r.t. NUf - fibre with isotropic material
             dsdx.clear(); dsdx.resize(3,3); dsdx = StressGP_r_NUf;
-            grad_lsf(i-1) = - StressGP_r_NUf(0,0);
+            grad_lsf(i-1) = - dsdx(0,0);
           }
           else if (vars_name[i].compare(0,5,"force") == 0) {
             // w.r.t. Ez
             dsdx.clear(); dsdx.resize(3,3); dsdx = StressGP_r_F;
-            grad_lsf(i-1) = - StressGP_r_F(0,0);
+            grad_lsf(i-1) = - dsdx(0,0);
           }
           else if (vars_name[i].compare(0,11,"orientation") == 0) {
             // w.r.t. ply angle
             dsdx.clear(); dsdx.resize(3,3); dsdx = StressGP_r_Theta;
-            grad_lsf(i-1) = - StressGP_r_Theta(0,0);
+            grad_lsf(i-1) = - dsdx(0,0);
           }
           else if (vars_name[i].compare(0,6,"theta1") == 0) {
             // w.r.t. ply angle
             dsdx.clear(); dsdx.resize(3,3); dsdx = StressGP_r_Theta_1;
-            grad_lsf(i-1) = - StressGP_r_Theta(0,0);
+            grad_lsf(i-1) = - dsdx(0,0);
           }
           else if (vars_name[i].compare(0,6,"theta2") == 0) {
             // w.r.t. ply angle
             dsdx.clear(); dsdx.resize(3,3); dsdx = StressGP_r_Theta_2;
-            grad_lsf(i-1) = - StressGP_r_Theta(0,0);
+            grad_lsf(i-1) = - dsdx(0,0);
           }
           else if (vars_name[i].compare(0,6,"theta3") == 0) {
             // w.r.t. ply angle
             dsdx.clear(); dsdx.resize(3,3); dsdx = StressGP_r_Theta_3;
-            grad_lsf(i-1) = - StressGP_r_Theta(0,0);
+            grad_lsf(i-1) = - dsdx(0,0);
           }
           else if (vars_name[i].compare(0,6,"theta4") == 0) {
             // w.r.t. ply angle
             dsdx.clear(); dsdx.resize(3,3); dsdx = StressGP_r_Theta_4;
-            grad_lsf(i-1) = - StressGP_r_Theta(0,0);
+            grad_lsf(i-1) = - dsdx(0,0);
           }
           else if (vars_name[i].compare(0,2,"XT") == 0) {
             // w.r.t X_T
@@ -1297,7 +1235,7 @@ namespace MoFEM {
         // Evaluate the limit state function
         val_lsf = X_C + StressGP(0,0);
         // Evaluate the partial derovative of the LSF w.r.t. basic variables
-        for (int i=1; i<=x.size(); i++) {
+        for (unsigned i=1; i<=x.size(); i++) {
           cout<<"The variable name is "<<vars_name[i]<<endl;
           if (vars_name[i].compare(0,2,"Em") == 0) {
             // w.r.t. Em
@@ -1398,7 +1336,6 @@ namespace MoFEM {
       }
       
       PetscFunctionReturn(0);
-      
     }
     
     //------------------------------------------------------------------------------
@@ -1429,9 +1366,6 @@ namespace MoFEM {
                                           ublas::vector<double> &grad_lsf) {
       PetscFunctionBegin;
       
-      ErrorCode rval;
-      PetscErrorCode ierr;
-      
       double X_T; // tensile strength in the fibre direction
       double X_C; // tensile strength in the transverse direction
       double Y_T; // compressive strength in the fibre direction
@@ -1446,7 +1380,7 @@ namespace MoFEM {
       S_12 = PlyStrength(4);
       
       // Update the values if the parameters are considered as random variables.
-      for (int i=1; i<=x.size();i++) {
+      for (unsigned i=1; i<=x.size();i++) {
         if (vars_name[i].compare(0,2,"XT") == 0) {
           X_T = x(i-1);
         }
@@ -1468,7 +1402,7 @@ namespace MoFEM {
         // Evaluate limit state function
         val_lsf = Y_T - StressGP(1,1);
         // Evaluate the partial derovative of the LSF w.r.t. basic variables
-        for (int i=1; i<=x.size(); i++) {
+        for (unsigned i=1; i<=x.size(); i++) {
           cout<<"The variable name is "<<vars_name[i]<<endl;
           if (vars_name[i].compare(0,2,"Em") == 0) {
             // w.r.t. Em
@@ -1571,7 +1505,7 @@ namespace MoFEM {
         // Evaluate limit state function
         val_lsf = Y_C + StressGP(1,1);
         // Evaluate the partial derovative of the LSF w.r.t. basic variables
-        for (int i=1; i<=x.size(); i++) {
+        for (unsigned i=1; i<=x.size(); i++) {
           cout<<"The variable name is "<<vars_name[i]<<endl;
           if (vars_name[i].compare(0,2,"Em") == 0) {
             // w.r.t. Em
@@ -1672,7 +1606,6 @@ namespace MoFEM {
       }
       
       PetscFunctionReturn(0);
-      
     }
     
     //------------------------------------------------------------------------------
@@ -1703,15 +1636,11 @@ namespace MoFEM {
                                              ublas::vector<double> &grad_lsf) {
       PetscFunctionBegin;
       
-      ErrorCode rval;
-      PetscErrorCode ierr;
-      
       double X_T; // tensile strength in the fibre direction
       double X_C; // tensile strength in the transverse direction
       double Y_T; // compressive strength in the fibre direction
       double Y_C; // compressive strength in the transverse direction
       double S_12; // Longitudinal or axial shear strength
-      double S_23; // Transverse shear strength
       ublas::matrix<double> dsdx(3,3);
       
       X_T  = PlyStrength(0);
@@ -1721,7 +1650,7 @@ namespace MoFEM {
       S_12 = PlyStrength(4);
       
       // Update the values if the parameters are considered as random variables.
-      for (int i=1; i<=x.size();i++) {
+      for (unsigned i=1; i<=x.size();i++) {
         if (vars_name[i].compare(0,2,"XT") == 0) {
           X_T = x(i-1);
         }
@@ -1743,7 +1672,7 @@ namespace MoFEM {
         // Evaluate limit state function
         val_lsf = S_12 - StressGP(0,1);
         // Evaluate the partial derovative of the LSF w.r.t. basic variables
-        for (int i=1; i<=x.size(); i++) {
+        for (unsigned i=1; i<=x.size(); i++) {
           cout<<"The variable name is "<<vars_name[i]<<endl;
           if (vars_name[i].compare(0,2,"Em") == 0) {
             // w.r.t. Em
@@ -1846,7 +1775,7 @@ namespace MoFEM {
         // Evaluate limit state function
         val_lsf = S_12 + StressGP(0,1);
         // Evaluate the partial derovative of the LSF w.r.t. basic variables
-        for (int i=1; i<=x.size(); i++) {
+        for (unsigned i=1; i<=x.size(); i++) {
           cout<<"The variable name is "<<vars_name[i]<<endl;
           if (vars_name[i].compare(0,2,"Em") == 0) {
             // w.r.t. Em
@@ -1947,7 +1876,6 @@ namespace MoFEM {
       }
       
       PetscFunctionReturn(0);
-      
     }
     
     //------------------------------------------------------------------------------
@@ -1977,16 +1905,12 @@ namespace MoFEM {
                                        ublas::vector<double> &grad_lsf) {
       PetscFunctionBegin;
       
-      ErrorCode rval;
-      PetscErrorCode ierr;
-      
       double X_T; // tensile strength in the fibre direction
       double X_C; // tensile strength in the transverse direction
       double Y_T; // compressive strength in the fibre direction
       double Y_C; // compressive strength in the transverse direction
       double S_12; // Longitudinal or axial shear strength
       double S_23; // Transverse shear strength
-      double F1, F2, F3, F11, F22, F12, F44, F66;
       ublas::matrix<double> dsdx(3,3);
       
       X_T  = PlyStrength(0);
@@ -1997,7 +1921,7 @@ namespace MoFEM {
       S_23 = PlyStrength(5);
       
       // Update the values if the parameters are considered as random variables.
-      for (int i=1; i<=x.size();i++) {
+      for (unsigned i=1; i<=x.size();i++) {
         if (vars_name[i].compare(0,2,"XT") == 0) {
           X_T = x(i-1);
         }
@@ -2024,7 +1948,7 @@ namespace MoFEM {
         val_lsf = 1 - (1/(X_T*X_T)*pow(StressGP(0,0),2)
                        + 1/(S_12*S_12)*(StressGP(0,1)*StressGP(0,1) + StressGP(0,2)*StressGP(0,2)));
         // Evaluate the partial derovative of the LSF w.r.t. basic variables
-        for (int i=1; i<=x.size(); i++) {
+        for (unsigned i=1; i<=x.size(); i++) {
           cout<<"The variable name is "<<vars_name[i]<<endl;
           if (vars_name[i].compare(0,2,"Em") == 0) {
             // w.r.t. Em
@@ -2142,7 +2066,7 @@ namespace MoFEM {
         // Evaluate the limit state function
         val_lsf = 1 - (StressGP(0,0)*StressGP(0,0))/(X_C*X_C);
         // Evaluate the partial derovative of the LSF w.r.t. basic variables
-        for (int i=1; i<=x.size(); i++) {
+        for (unsigned i=1; i<=x.size(); i++) {
           cout<<"The variable name is "<<vars_name[i]<<endl;
           if (vars_name[i].compare(0,2,"Em") == 0) {
             // w.r.t. Em
@@ -2243,7 +2167,6 @@ namespace MoFEM {
       }
       
       PetscFunctionReturn(0);
-      
     }
     
     //------------------------------------------------------------------------------
@@ -2273,16 +2196,12 @@ namespace MoFEM {
                                        ublas::vector<double> &grad_lsf) {
       PetscFunctionBegin;
       
-      ErrorCode rval;
-      PetscErrorCode ierr;
-      
       double X_T; // tensile strength in the fibre direction
       double X_C; // tensile strength in the transverse direction
       double Y_T; // compressive strength in the fibre direction
       double Y_C; // compressive strength in the transverse direction
       double S_12; // Longitudinal or axial shear strength
       double S_23; // Transverse shear strength
-      double F1, F2, F3, F11, F22, F12, F44, F66;
       ublas::matrix<double> dsdx(3,3);
       
       X_T  = PlyStrength(0);
@@ -2293,7 +2212,7 @@ namespace MoFEM {
       S_23 = PlyStrength(5);
       
       // Update the values if the parameters are considered as random variables.
-      for (int i=1; i<=x.size();i++) {
+      for (unsigned i=1; i<=x.size();i++) {
         if (vars_name[i].compare(0,2,"XT") == 0) {
           X_T = x(i-1);
         }
@@ -2327,7 +2246,7 @@ namespace MoFEM {
                        + 1/(S_23*S_23)*(StressGP(1,2)*StressGP(1,2) - StressGP(1,1)*StressGP(2,2))
                        + 1/(S_12*S_12)*(StressGP(0,1)*StressGP(0,1) + StressGP(0,2)*StressGP(0,2)));
         // Evaluate the partial derovative of the LSF w.r.t. basic variables
-        for (int i=1; i<=x.size(); i++) {
+        for (unsigned i=1; i<=x.size(); i++) {
           cout<<"The variable name is "<<vars_name[i]<<endl;
           if (vars_name[i].compare(0,2,"Em") == 0) {
             // w.r.t. Em
@@ -2466,7 +2385,7 @@ namespace MoFEM {
                        + 1/(S_23*S_23)*(StressGP(1,2)*StressGP(1,2) - StressGP(1,1)*StressGP(2,2))
                        + 1/(S_12*S_12)*(StressGP(0,1)*StressGP(0,1) + StressGP(0,2)*StressGP(0,2)));
         // Evaluate the partial derovative of the LSF w.r.t. basic variables
-        for (int i=1; i<=x.size(); i++) {
+        for (unsigned i=1; i<=x.size(); i++) {
           cout<<"The variable name is "<<vars_name[i]<<endl;
           if (vars_name[i].compare(0,2,"Em") == 0) {
             // w.r.t. Em
@@ -2620,7 +2539,6 @@ namespace MoFEM {
       }
       
       PetscFunctionReturn(0);
-      
     }
     
     //--------------------------------------------------------------------------
@@ -2649,19 +2567,13 @@ namespace MoFEM {
                                                ublas::matrix<double> StressGP_r_Theta_4,
                                                double &val_lsf,
                                                ublas::vector<double> &grad_lsf) {
-      
       PetscFunctionBegin;
-      
-      ErrorCode rval;
-      PetscErrorCode ierr;
       
       double X_T; // tensile strength in the fibre direction
       double X_C; // tensile strength in the transverse direction
       double Y_T; // compressive strength in the fibre direction
       double Y_C; // compressive strength in the transverse direction
       double S_12; // Longitudinal or axial shear strength
-      double X,Y;
-      
       
       ublas::matrix<double> dsdx(3,3);
       //cout<<"\nPly strength: "<<PlyStrength<<endl;
@@ -2673,7 +2585,7 @@ namespace MoFEM {
       
       
       // Update the values if the parameters are considered as random variables.
-      for (int i=1; i<=x.size();i++) {
+      for (unsigned i=1; i<=x.size();i++) {
         if (vars_name[i].compare(0,2,"XT") == 0) {
           X_T = x(i-1);
         }
@@ -2707,7 +2619,7 @@ namespace MoFEM {
                     + 2*F12*StressGP(0,0)*StressGP(1,1));
       
       // Evaluate the partial derovative of the LSF w.r.t. basic variables
-      for (int i=1; i<=x.size(); i++) {
+      for (unsigned i=1; i<=x.size(); i++) {
         cout<<"The variable name is "<<vars_name[i]<<endl;
         if (vars_name[i].compare(0,2,"Em") == 0) {
           // w.r.t. Em
@@ -2932,16 +2844,13 @@ namespace MoFEM {
                                             ublas::vector<double> &grad_lsf) {
       PetscFunctionBegin;
       
-      ErrorCode rval;
-      PetscErrorCode ierr;
-      
       double X_T; // tensile strength in the fibre direction
       double X_C; // tensile strength in the transverse direction
       double Y_T; // compressive strength in the fibre direction
       double Y_C; // compressive strength in the transverse direction
       double S_12; // Longitudinal or axial shear strength
       double S_23; // Transverse shear strength
-      double F1, F2, F3, F11, F22, F44, F66, F12, F23;
+      double F1, F2, F11, F22, F44, F66, F12, F23;
       ublas::matrix<double> dsdx(3,3);
       //cout<<"\nPly strength: "<<PlyStrength<<endl;
       X_T  = MatStrength(0);
@@ -2952,7 +2861,7 @@ namespace MoFEM {
       S_23 = MatStrength(5);
       
       // Update the values if the parameters are considered as random variables.
-      for (int i=1; i<=x.size();i++) {
+      for (unsigned i=1; i<=x.size();i++) {
         if (vars_name[i].compare(0,2,"XT") == 0) {
           X_T = x(i-1);
         }
@@ -2998,7 +2907,7 @@ namespace MoFEM {
                     + 2*F23*StressGP(1,1)*StressGP(2,2));
       
       // Evaluate the partial derovative of the LSF w.r.t. basic variables
-      for (int i=1; i<=x.size(); i++) {
+      for (unsigned i=1; i<=x.size(); i++) {
         cout<<"The variable name is "<<vars_name[i]<<endl;
         if (vars_name[i].compare(0,2,"Em") == 0) {
           // w.r.t. Em
@@ -3263,7 +3172,6 @@ namespace MoFEM {
       }
       
       PetscFunctionReturn(0);
-      
     }
     
     //------------------------------------------------------------------------------
@@ -3294,16 +3202,13 @@ namespace MoFEM {
                                                         ublas::vector<double> &grad_lsf) {
       PetscFunctionBegin;
       
-      ErrorCode rval;
-      PetscErrorCode ierr;
-      
       double X_T; // tensile strength in the fibre direction
       double X_C; // tensile strength in the transverse direction
       double Y_T; // compressive strength in the fibre direction
       double Y_C; // compressive strength in the transverse direction
       double S_12; // Longitudinal or axial shear strength
       double S_23; // Transverse shear strength
-      double F1, F2, F3, F11, F22, F44, F66, F12, F23;
+      double F1, F2, F11, F22, F44, F66, F12;
       ublas::matrix<double> dsdx(3,3);
       //cout<<"\nPly strength: "<<PlyStrength<<endl;
       X_T  = MatStrength(0);
@@ -3314,7 +3219,7 @@ namespace MoFEM {
       S_23 = MatStrength(5);
       
       // Update the values if the parameters are considered as random variables.
-      for (int i=1; i<=x.size();i++) {
+      for (unsigned i=1; i<=x.size();i++) {
         if (vars_name[i].compare(0,2,"XT") == 0) {
           X_T = x(i-1);
         }
@@ -3357,7 +3262,7 @@ namespace MoFEM {
                     + 2*F12*StressGP(0,0)*(StressGP(1,1)+StressGP(2,2)));
       
       // Evaluate the partial derovative of the LSF w.r.t. basic variables
-      for (int i=1; i<=x.size(); i++) {
+      for (unsigned i=1; i<=x.size(); i++) {
         cout<<"The variable name is "<<vars_name[i]<<endl;
         if (vars_name[i].compare(0,2,"Em") == 0) {
           // w.r.t. Em
@@ -3593,7 +3498,6 @@ namespace MoFEM {
       }
       
       PetscFunctionReturn(0);
-      
     }
     
     //------------------------------------------------------------------------------
@@ -3625,9 +3529,6 @@ namespace MoFEM {
       
       PetscFunctionBegin;
       
-      ErrorCode rval;
-      PetscErrorCode ierr;
-      
       double X_T; // tensile strength in the fibre direction
       double X_C; // tensile strength in the transverse direction
       double Y_T; // compressive strength in the fibre direction
@@ -3646,7 +3547,7 @@ namespace MoFEM {
       
       
       // Update the values if the parameters are considered as random variables.
-      for (int i=1; i<=x.size();i++) {
+      for (unsigned i=1; i<=x.size();i++) {
         if (vars_name[i].compare(0,2,"XT") == 0) {
           X_T = x(i-1);
         }
@@ -3682,7 +3583,7 @@ namespace MoFEM {
                     - StressGP(0,0)*StressGP(1,1)/(X*X));
       
       // Evaluate the partial derovative of the LSF w.r.t. basic variables
-      for (int i=1; i<=x.size(); i++) {
+      for (unsigned i=1; i<=x.size(); i++) {
         cout<<"The variable name is "<<vars_name[i]<<endl;
         if (vars_name[i].compare(0,2,"Em") == 0) {
           // w.r.t. Em
@@ -3891,9 +3792,6 @@ namespace MoFEM {
       
       PetscFunctionBegin;
       
-      ErrorCode rval;
-      PetscErrorCode ierr;
-      
       double X_T; // tensile strength in the fibre direction
       double X_C; // tensile strength in the transverse direction
       double Y_T; // compressive strength in the fibre direction
@@ -3914,7 +3812,7 @@ namespace MoFEM {
       
       
       // Update the values if the parameters are considered as random variables.
-      for (int i=1; i<=x.size();i++) {
+      for (unsigned i=1; i<=x.size();i++) {
         if (vars_name[i].compare(0,2,"XT") == 0) {
           X_T = x(i-1);
         }
@@ -3959,7 +3857,7 @@ namespace MoFEM {
                     - (StressGP(0,0)*StressGP(1,1) + StressGP(0,0)*StressGP(2,2) - StressGP(1,1)*StressGP(2,2))/(X*X));
       
       // Evaluate the partial derovative of the LSF w.r.t. basic variables
-      for (int i=1; i<=x.size(); i++) {
+      for (unsigned i=1; i<=x.size(); i++) {
         cout<<"The variable name is "<<vars_name[i]<<endl;
         if (vars_name[i].compare(0,2,"Em") == 0) {
           // w.r.t. Em
@@ -4205,18 +4103,16 @@ namespace MoFEM {
       double C_11; // compressive strength in the fibre direction
       double C_22; // compressive strength in the transverse direction
       double S_12; // Longitudinal or axial shear strength
-      double S_23; // Transverse shear strength
       ublas::matrix<double> dsdx(3,3);
-      cout<<"\nPly strength: "<<PlyStrength<<endl;
+      //cout<<"\nPly strength: "<<PlyStrength<<endl;
       T_11 = PlyStrength(0);
       C_11 = PlyStrength(1);
       T_22 = PlyStrength(2);
       C_22 = PlyStrength(3);
       S_12 = PlyStrength(4);
-      S_23 = PlyStrength(5);
       
       // Update the values if the parameters are considered as random variables.
-      for (int i=1; i<=x.size();i++) {
+      for (unsigned i=1; i<=x.size();i++) {
         if (vars_name[i].compare(0,2,"XT") == 0) {
           T_11 = x(i-1);
         }
@@ -4240,7 +4136,7 @@ namespace MoFEM {
                      + 1/(T_11*C_11)*StressGP(0,0)*StressGP(0,0));
       
       // Evaluate the partial derovative of the LSF w.r.t. basic variables
-      for (int i=1; i<=x.size(); i++) {
+      for (unsigned i=1; i<=x.size(); i++) {
         cout<<"The variable name is "<<vars_name[i]<<endl;
         if (vars_name[i].compare(0,2,"Em") == 0) {
           // w.r.t. Em
@@ -4358,7 +4254,6 @@ namespace MoFEM {
       }
       
       PetscFunctionReturn(0);
-      
     }
     
     //------------------------------------------------------------------------------
@@ -4397,7 +4292,7 @@ namespace MoFEM {
       double S_12; // Longitudinal or axial shear strength
       double S_23; // Transverse shear strength
       ublas::matrix<double> dsdx(3,3);
-      cout<<"\nPly strength: "<<PlyStrength<<endl;
+      //cout<<"\nPly strength: "<<PlyStrength<<endl;
       T_11 = PlyStrength(0);
       C_11 = PlyStrength(1);
       T_22 = PlyStrength(2);
@@ -4406,7 +4301,7 @@ namespace MoFEM {
       S_23 = PlyStrength(5);
       
       // Update the values if the parameters are considered as random variables.
-      for (int i=1; i<=x.size();i++) {
+      for (unsigned i=1; i<=x.size();i++) {
         if (vars_name[i].compare(0,2,"XT") == 0) {
           T_11 = x(i-1);
         }
@@ -4439,7 +4334,7 @@ namespace MoFEM {
                      + 1/(S_23*S_23)*(StressGP(1,2)*StressGP(1,2) - StressGP(1,1)*StressGP(2,2)));
       
       // Evaluate the partial derovative of the LSF w.r.t. basic variables
-      for (int i=1; i<=x.size(); i++) {
+      for (unsigned i=1; i<=x.size(); i++) {
         cout<<"The variable name is "<<vars_name[i]<<endl;
         if (vars_name[i].compare(0,2,"Em") == 0) {
           // w.r.t. Em
@@ -4620,7 +4515,6 @@ namespace MoFEM {
       }
       
       PetscFunctionReturn(0);
-    
     }
     
     //------------------------------------------------------------------------------
@@ -4650,16 +4544,11 @@ namespace MoFEM {
                                                ublas::vector<double> &grad_lsf) {
       PetscFunctionBegin;
       
-      ErrorCode rval;
-      PetscErrorCode ierr;
-      
       double X_T; // tensile strength in the fibre direction
       double X_C; // tensile strength in the transverse direction
       double Y_T; // compressive strength in the fibre direction
       double Y_C; // compressive strength in the transverse direction
       double S_12; // Longitudinal or axial shear strength
-      double X,Y;
-      
       
       ublas::matrix<double> dsdx(3,3);
       //cout<<"\nPly strength: "<<PlyStrength<<endl;
@@ -4671,7 +4560,7 @@ namespace MoFEM {
       
       
       // Update the values if the parameters are considered as random variables.
-      for (int i=1; i<=x.size();i++) {
+      for (unsigned i=1; i<=x.size();i++) {
         if (vars_name[i].compare(0,2,"XT") == 0) {
           X_T = x(i-1);
         }
@@ -4698,7 +4587,7 @@ namespace MoFEM {
                      - StressGP(0,0)*StressGP(1,1)/(X_T*X_C));
       
       // Evaluate the partial derovative of the LSF w.r.t. basic variables
-      for (int i=1; i<=x.size(); i++) {
+      for (unsigned i=1; i<=x.size(); i++) {
         cout<<"The variable name is "<<vars_name[i]<<endl;
         if (vars_name[i].compare(0,2,"Em") == 0) {
           // w.r.t. Em
@@ -4923,17 +4812,12 @@ namespace MoFEM {
                                             ublas::vector<double> &grad_lsf) {
       PetscFunctionBegin;
       
-      ErrorCode rval;
-      PetscErrorCode ierr;
-      
       double X_T; // tensile strength in the fibre direction
       double X_C; // tensile strength in the transverse direction
       double Y_T; // compressive strength in the fibre direction
       double Y_C; // compressive strength in the transverse direction
       double S_12; // Longitudinal or axial shear strength
       double S_23; // Transverse shear strength
-      double X,Y;
-      
       
       ublas::matrix<double> dsdx(3,3);
       //cout<<"\nPly strength: "<<PlyStrength<<endl;
@@ -4946,7 +4830,7 @@ namespace MoFEM {
       
       
       // Update the values if the parameters are considered as random variables.
-      for (int i=1; i<=x.size();i++) {
+      for (unsigned i=1; i<=x.size();i++) {
         if (vars_name[i].compare(0,2,"XT") == 0) {
           X_T = x(i-1);
         }
@@ -4982,7 +4866,7 @@ namespace MoFEM {
                      - (StressGP(0,0)*StressGP(1,1) + StressGP(0,0)*StressGP(2,2) - StressGP(1,1)*StressGP(2,2))/(X_T*X_C));
       
       // Evaluate the partial derovative of the LSF w.r.t. basic variables
-      for (int i=1; i<=x.size(); i++) {
+      for (unsigned i=1; i<=x.size(); i++) {
         cout<<"The variable name is "<<vars_name[i]<<endl;
         if (vars_name[i].compare(0,2,"Em") == 0) {
           // w.r.t. Em

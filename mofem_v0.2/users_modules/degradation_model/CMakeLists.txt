@@ -133,6 +133,19 @@ mofem_cblas
 boost_program_options
 ${MoFEM_PROJECT_LIBS})
 
+add_executable(wt_unsteady_macro_derivative ${UM_SOURCE_DIR}/degradation_model/wt_unsteady_macro_derivative.cpp)
+target_link_libraries(wt_unsteady_macro_derivative
+users_modules
+mofem_finite_elements
+mofem_interfaces
+mofem_multi_indices
+mofem_petsc
+mofem_approx
+mofem_third_party
+mofem_cblas
+boost_program_options
+${MoFEM_PROJECT_LIBS})
+
 
 # ======== Mechanical with isomatric materials for RVE (both fibres and matrix) with displacement RVE BCs ======================
 add_executable(mech_macro_iso_Disp ${UM_SOURCE_DIR}/degradation_model/mech_macro_iso_Disp.cpp)
@@ -152,6 +165,19 @@ mofem_cblas ${MoFEM_PROJECT_LIBS})
 # ===================== Mechanical with RVE including trans-iso fibres (matrix isotropic) with displacement RVE BCs =================
 add_executable(mech_macro_transIso_Disp ${UM_SOURCE_DIR}/degradation_model/mech_macro_transIso_Disp.cpp)
 target_link_libraries(mech_macro_transIso_Disp
+users_modules_obsolete
+user_modules_homogenisation
+users_modules
+mofem_finite_elements
+mofem_interfaces
+mofem_multi_indices
+mofem_petsc
+mofem_approx
+mofem_third_party
+mofem_cblas ${MoFEM_PROJECT_LIBS})
+
+add_executable(mech_macro_transIso_Disp_Beta ${UM_SOURCE_DIR}/degradation_model/mech_macro_transIso_Disp_Beta.cpp)
+target_link_libraries(mech_macro_transIso_Disp_Beta
 users_modules_obsolete
 user_modules_homogenisation
 users_modules

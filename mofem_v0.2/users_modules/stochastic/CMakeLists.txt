@@ -109,6 +109,23 @@ target_link_libraries(
   mofem_third_party 
   mofem_cblas 
   ${MoFEM_PROJECT_LIBS})   
+  
+# 6. MCS - Linear displacement boundary condition
+
+  add_executable(MCS_RVE_Disp ${UM_SOURCE_DIR}/stochastic/MCS_RVE_Disp.cpp)
+target_link_libraries(
+  MCS_RVE_Disp
+  user_modules_homogenisation 
+  users_modules_obsolete
+  users_modules
+  mofem_finite_elements 
+  mofem_interfaces 
+  mofem_multi_indices 
+  mofem_petsc 
+  mofem_approx 
+  mofem_third_party 
+  mofem_cblas 
+  ${MoFEM_PROJECT_LIBS})    
 
 # =======================================================================================#
 #                                                                                        #
@@ -135,23 +152,23 @@ target_link_libraries(
   ${MoFEM_PROJECT_LIBS}
   ) 
 
-add_executable(PSFE2_TransIso_Disp 
-               ${UM_SOURCE_DIR}/stochastic/PSFE2_TransIso_Disp.cpp
-               )
-target_link_libraries(
-  PSFE2_TransIso_Disp
-  user_modules_homogenisation
-  users_modules_obsolete
-  users_modules
-  mofem_finite_elements 
-  mofem_interfaces 
-  mofem_multi_indices 
-  mofem_petsc 
-  mofem_approx 
-  mofem_third_party 
-  mofem_cblas 
-  ${MoFEM_PROJECT_LIBS}
-  )
+#add_executable(PSFE2_TransIso_Disp 
+#               ${UM_SOURCE_DIR}/stochastic/PSFE2_TransIso_Disp.cpp
+#               )
+#target_link_libraries(
+#  PSFE2_TransIso_Disp
+#  user_modules_homogenisation
+#  users_modules_obsolete
+#  users_modules
+#  mofem_finite_elements 
+#  mofem_interfaces 
+#  mofem_multi_indices 
+#  mofem_petsc 
+#  mofem_approx 
+#  mofem_third_party 
+#  mofem_cblas 
+#  ${MoFEM_PROJECT_LIBS}
+#  )
   
 add_executable(PSFE2_Composite_Laminate
 ${UM_SOURCE_DIR}/stochastic/PSFE2_Composite_Laminate.cpp
@@ -175,7 +192,7 @@ target_link_libraries(
 	
 	
 add_executable(FE2_Degradation_TransIso_Disp_REL 
-               ${UM_SOURCE_DIR}/stochastic/FE2_TransIso_Disp_REL.cpp
+               ${UM_SOURCE_DIR}/stochastic/FE2_Degradation_TransIso_Disp_REL.cpp
                )
 target_link_libraries(
   FE2_Degradation_TransIso_Disp_REL
@@ -246,24 +263,24 @@ target_link_libraries(
 #------------------------------------------ 
 # Case 1: Reliability analysis - Single Ply
 #------------------------------------------ 
-add_executable(MsFE_Reliability_Disp 
-               ${UM_SOURCE_DIR}/stochastic/MsFE_Reliability_Disp.cpp
-               )
-target_link_libraries(
-  MsFE_Reliability_Disp
-  user_modules_reliability
-  user_modules_homogenisation
-  users_modules_obsolete 
-  users_modules
-  mofem_finite_elements 
-  mofem_interfaces 
-  mofem_multi_indices 
-  mofem_petsc  
-  mofem_approx 
-  mofem_third_party 
-  mofem_cblas 
-  ${MoFEM_PROJECT_LIBS}
-  )
+#add_executable(MsFE_Reliability_Disp 
+#               ${UM_SOURCE_DIR}/stochastic/MsFE_Reliability_Disp.cpp
+#               )
+#target_link_libraries(
+#  MsFE_Reliability_Disp
+#  user_modules_reliability
+#  user_modules_homogenisation
+#  users_modules_obsolete 
+#  users_modules
+#  mofem_finite_elements 
+#  mofem_interfaces 
+#  mofem_multi_indices 
+#  mofem_petsc  
+#  mofem_approx 
+#  mofem_third_party 
+#  mofem_cblas 
+#  ${MoFEM_PROJECT_LIBS}
+#  )
 
 #---------------------------------------- 
 # Case 2: Reliability analysis - Laminate
@@ -287,7 +304,66 @@ target_link_libraries(
   mofem_cblas 
   ${MoFEM_PROJECT_LIBS}
   )   
+
+add_executable(MsFE_Reliability_Laminate_FORM_Disp 
+               ${UM_SOURCE_DIR}/stochastic/MsFE_Reliability_Laminate_FORM_Disp.cpp
+               ${UM_SOURCE_DIR}/elasticity/src/impl/PCMGSetUpViaApproxOrders.cpp
+               )
+target_link_libraries(
+  MsFE_Reliability_Laminate_FORM_Disp
+  user_modules_reliability
+  user_modules_homogenisation
+  users_modules_obsolete 
+  users_modules
+  mofem_finite_elements 
+  mofem_interfaces 
+  mofem_multi_indices 
+  mofem_petsc  
+  mofem_approx 
+  mofem_third_party 
+  mofem_cblas 
+  ${MoFEM_PROJECT_LIBS}
+  )
   
+add_executable(MsFE_Reliability_Laminate_Periodic 
+               ${UM_SOURCE_DIR}/stochastic/MsFE_Reliability_Laminate_Periodic.cpp
+               ${UM_SOURCE_DIR}/elasticity/src/impl/PCMGSetUpViaApproxOrders.cpp
+               )
+target_link_libraries(
+  MsFE_Reliability_Laminate_Periodic
+  user_modules_reliability
+  user_modules_homogenisation
+  users_modules_obsolete 
+  users_modules
+  mofem_finite_elements 
+  mofem_interfaces 
+  mofem_multi_indices 
+  mofem_petsc  
+  mofem_approx 
+  mofem_third_party 
+  mofem_cblas 
+  ${MoFEM_PROJECT_LIBS}
+  )
+    
+add_executable(MsFE_Reliability_Laminate_FORM_Periodic 
+               ${UM_SOURCE_DIR}/stochastic/MsFE_Reliability_Laminate_FORM_Periodic.cpp
+               ${UM_SOURCE_DIR}/elasticity/src/impl/PCMGSetUpViaApproxOrders.cpp
+               )
+target_link_libraries(
+  MsFE_Reliability_Laminate_FORM_Periodic
+  user_modules_reliability
+  user_modules_homogenisation
+  users_modules_obsolete 
+  users_modules
+  mofem_finite_elements 
+  mofem_interfaces 
+  mofem_multi_indices 
+  mofem_petsc  
+  mofem_approx 
+  mofem_third_party 
+  mofem_cblas 
+  ${MoFEM_PROJECT_LIBS}
+  )  
 
 #---------------------------------------- 
 # Case 3: Reliability analysis - Laminate

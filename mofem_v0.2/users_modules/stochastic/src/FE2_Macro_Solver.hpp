@@ -26,6 +26,16 @@
 #ifndef __FE2_MACRO_SOLVER_HPP
 #define __FE2_MACRO_SOLVER_HPP
 
+#include "ElasticFE_RVELagrange_Periodic.hpp"
+#include "ElasticFE_RVELagrange_RigidBodyTranslation.hpp"
+#include "ElasticFE_RVELagrange_Homogenized_Stress_Periodic.hpp"
+#include "ElasticFE_RVELagrange_Periodic_Multi_Rhs.hpp"
+#include "ElasticFE_RVELagrange_Homogenized_Stress_Periodic.hpp"
+
+#include <FE2_ElasticFEMethod.hpp>
+#include <FE2_Rhs_r_PSFEM.hpp>
+#include <FE2_Rhs_rs_PSFEM.hpp>
+
 namespace MoFEM {
   
   /*****************************************************************************
@@ -306,8 +316,7 @@ namespace MoFEM {
       ublas::matrix<FieldData> Mat4 = prod(trans(T_strain), Mat3);
       
       Dmat_xyz = Mat2 + Mat4;
-      
-      
+         
       PetscFunctionReturn(0);
     }
     
@@ -318,13 +327,543 @@ namespace MoFEM {
     //        Caculate RVE constitutive matrix Dmat
     //
     // =========================================================================
-    
-    virtual PetscErrorCode Micro_FE_Dmat(FieldInterface &m_field_RVE,
+	  PetscErrorCode RVE_Dmat_Periodic(FieldInterface &m_field_RVE,
                                              int &nvars, int &nders,
                                              vector<string> &stochastic_fields,
                                              ublas::vector<double> matprop,
                                              int num_rvars,
                                              vector<string> vars_name) {
+      PetscFunctionBegin;
+      cout <<"\nHi from RVE_Dmat_Periodic!"<<endl;
+      
+      ErrorCode rval;
+      PetscErrorCode ierr;
+      
+      Dmat.resize(6,6); Dmat.clear();
+      
+      Dmat_r_Em.resize(6,6);   Dmat_r_Em.clear();
+      Dmat_r_NUm.resize(6,6);  Dmat_r_NUm.clear();
+      Dmat_r_Ep.resize(6,6);   Dmat_r_Ep.clear();
+      Dmat_r_Ez.resize(6,6);   Dmat_r_Ez.clear();
+      Dmat_r_NUp.resize(6,6);  Dmat_r_NUp.clear();
+      Dmat_r_NUpz.resize(6,6); Dmat_r_NUpz.clear();
+      Dmat_r_Gzp.resize(6,6);  Dmat_r_Gzp.clear();
+      Dmat_r_Ef.resize(6,6);   Dmat_r_Ef.clear();
+      Dmat_r_NUf.resize(6,6);  Dmat_r_NUf.clear();
+      
+      Dmat_rs_EmEm.resize(6,6);     Dmat_rs_EmEm.clear();
+      Dmat_rs_NUmNUm.resize(6,6);   Dmat_rs_NUmNUm.clear();
+      Dmat_rs_EpEp.resize(6,6);     Dmat_rs_EpEp.clear();
+      Dmat_rs_EzEz.resize(6,6);     Dmat_rs_EzEz.clear();
+      Dmat_rs_NUpNUp.resize(6,6);   Dmat_rs_NUpNUp.clear();
+      Dmat_rs_NUpzNUpz.resize(6,6); Dmat_rs_NUpzNUpz.clear();
+      Dmat_rs_GzpGzp.resize(6,6);   Dmat_rs_GzpGzp.clear();
+      Dmat_rs_EfEf.resize(6,6);     Dmat_rs_EfEf.clear();
+      Dmat_rs_NUfNUf.resize(6,6);   Dmat_rs_NUfNUf.clear();
+      
+      /*****************************************************************************
+       *
+       *  0. PREPARATION FOR PROCESSING SOLVE
+       *
+       ****************************************************************************/
+      
+      //create matrices
+      Vec dF,ddF,D,dD,ddD;
+      
+      vector<Vec> F(6);
+      ierr = m_field_RVE.VecCreateGhost("ELASTIC_PROBLEM_RVE",ROW,&F[0]); CHKERRQ(ierr);
+      for(int ii = 1;ii<6;ii++) {
+        ierr = VecDuplicate(F[0],&F[ii]); CHKERRQ(ierr);
+      }
+      
+      ierr = m_field_RVE.VecCreateGhost("ELASTIC_PROBLEM_RVE",ROW,&dF); CHKERRQ(ierr);
+      ierr = m_field_RVE.VecCreateGhost("ELASTIC_PROBLEM_RVE",ROW,&ddF); CHKERRQ(ierr);
+      
+      ierr = m_field_RVE.VecCreateGhost("ELASTIC_PROBLEM_RVE",COL,&D); CHKERRQ(ierr);
+      ierr = m_field_RVE.VecCreateGhost("ELASTIC_PROBLEM_RVE",COL,&dD); CHKERRQ(ierr);
+      ierr = m_field_RVE.VecCreateGhost("ELASTIC_PROBLEM_RVE",COL,&ddD); CHKERRQ(ierr);
+      
+      /*************************************************************************
+       *
+       *  1. Assembling global stiffness matrix K
+       *     and external force vector F
+       ************************************************************************/
+      Mat Aij;
+      ierr = m_field_RVE.MatCreateMPIAIJWithArrays("ELASTIC_PROBLEM_RVE",&Aij); CHKERRQ(ierr);
+      
+      struct MyElasticFEMethod: public ElasticFEMethod {
+        MyElasticFEMethod(FieldInterface& _m_field,
+                          Mat& _Aij,Vec& _D,Vec& _F,double _lambda,double _mu, string _field_name = "DISPLACEMENT"):
+        ElasticFEMethod(_m_field,_Aij,_D,_F,_lambda,_mu,_field_name) {};
+        
+        PetscErrorCode Fint(Vec F_int) {
+          PetscFunctionBegin;
+          ierr = ElasticFEMethod::Fint(); CHKERRQ(ierr);
+          for(int rr = 0;rr<row_mat;rr++) {
+            if(RowGlob[rr].size()!=f_int[rr].size()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+            if(RowGlob[rr].size()==0) continue;
+            f_int[rr] *= -1; //This is not SNES we solve K*D = -RES
+            ierr = VecSetValues(F_int,RowGlob[rr].size(),&(RowGlob[rr])[0],&(f_int[rr].data()[0]),ADD_VALUES); CHKERRQ(ierr);
+          }
+          PetscFunctionReturn(0);
+        }
+      };
+      
+      //Assemble F and Aij
+      double YoungModulus = 3500;
+      double PoissonRatio = 0.3;
+      double YoungModulus_Fibre, PoissonRatio_Fibre;
+      double alpha;
+      int field_rank=3;
+      
+      /*************************************************************************
+       *
+       *  2. Get the volume of RVE
+       *
+       ************************************************************************/
+      double RVE_volume;    RVE_volume=0.0;  //RVE volume for full RVE We need this for stress calculation
+      Vec RVE_volume_Vec;
+      ParallelComm* pcomm = ParallelComm::get_pcomm(&m_field_RVE.get_moab(),MYPCOMM_INDEX);
+      ierr = VecCreateMPI(PETSC_COMM_WORLD, 1, pcomm->size(), &RVE_volume_Vec);  CHKERRQ(ierr);
+      ierr = VecZeroEntries(RVE_volume_Vec); CHKERRQ(ierr);
+      
+      RVEVolume MyRVEVol(m_field_RVE,Aij,D,F[0],LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio), RVE_volume_Vec);
+      RVEVolumeTrans MyRVEVolTrans(m_field_RVE,Aij,D,F[0], RVE_volume_Vec);
+      
+      ierr = m_field_RVE.loop_finite_elements("ELASTIC_PROBLEM_RVE","ELASTIC_FE_RVE",MyRVEVol);  CHKERRQ(ierr);
+      ierr = m_field_RVE.loop_finite_elements("ELASTIC_PROBLEM_RVE","TRAN_ISO_FE_RVE",MyRVEVolTrans);  CHKERRQ(ierr);
+      //ierr = VecView(RVE_volume_Vec,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
+      ierr = VecSum(RVE_volume_Vec, &RVE_volume);  CHKERRQ(ierr);
+      cout<<"Final RVE_volume = "<< RVE_volume <<endl;
+      
+      
+      /*****************************************************************************
+       *
+       *  3. SOLVE THE ZEROTH-ORDER FINITE ELEMENT EQUILIBRIUM EQUATION
+       *     [K][U] = [F]
+       *
+       ****************************************************************************/
+      
+      for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field_RVE,BLOCKSET,it)) {
+        cout << endl << *it << endl;
+        //Get block name
+        string name = it->get_name();
+        // ---------------------------------
+        //
+        // Modify matrix material properties
+        //
+        // ---------------------------------
+        if (name.compare(0,13,"MAT_ELASTIC_1") == 0) {
+          Mat_Elastic mydata;
+          ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
+          
+          string ParameterName;
+          for (int ii=1;ii<=num_rvars;ii++) {
+            ParameterName = vars_name[ii];
+            
+            if (ParameterName.compare(0,2,"Em") == 0) {//cout<<"the variable name is "<<ParameterName<<endl;
+              mydata.data.Young = matprop(ii-1);
+            }
+            else if (ParameterName.compare(0,3,"NUm") == 0) {//cout<<"the variable name is "<<ParameterName<<endl;
+              mydata.data.Poisson = matprop(ii-1);
+            }
+            ParameterName.clear();
+          }
+          
+          /*
+           mydata.data.Young   = matprop(0);
+           mydata.data.Poisson = matprop(1);
+           */
+          YoungModulus=mydata.data.Young;
+          PoissonRatio=mydata.data.Poisson;
+          ierr = it->set_attribute_data_structure(mydata); CHKERRQ(ierr);
+          cout << "Matrix material:\n" << mydata;
+        }
+        
+        // ---------------------------------
+        //
+        // Modify matrix fibre properties
+        // Case 1: Isotropic material
+        //
+        // ---------------------------------
+        if (name.compare(0,19,"MAT_FIBRE_ISOTROPIC") == 0) {
+          Mat_Elastic mydata;
+          ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
+          
+          string ParameterName;
+          for (int ii=1;ii<=num_rvars;ii++) {
+            ParameterName = vars_name[ii];
+            
+            if (ParameterName.compare(0,2,"Ef") == 0) {//cout<<"the variable name is "<<ParameterName<<endl;
+              mydata.data.Young = matprop(ii-1);
+            }
+            else if (ParameterName.compare(0,3,"NUf") == 0) {//cout<<"the variable name is "<<ParameterName<<endl;
+              mydata.data.Poisson = matprop(ii-1);
+            }
+            ParameterName.clear();
+          }
+          
+          /*
+           mydata.data.Young   = matprop(0);
+           mydata.data.Poisson = matprop(1);
+           */
+          YoungModulus_Fibre = mydata.data.Young;
+          PoissonRatio_Fibre = mydata.data.Poisson;
+          ierr = it->set_attribute_data_structure(mydata); CHKERRQ(ierr);
+          cout << "Fibre of isotropic material:\n" << mydata;
+        }
+        
+        // ---------------------------------
+        //
+        // Modify fibre material properties
+        // Case 2: Transversely isotropic material
+        //
+        // ---------------------------------
+        
+        if (name.compare(0,20,"MAT_ELASTIC_TRANSISO") == 0) {
+          Mat_Elastic_TransIso mydata;
+          ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
+          
+          string ParameterName;
+          for (int i=1;i<=num_rvars;i++) {
+            ParameterName = vars_name[i];
+            //cout<<"the variable name is "<<vars_name[i]<<endl;
+            if (ParameterName.compare(0,2,"Ez") == 0) {
+              mydata.data.Youngz = matprop(i-1);
+            }
+            else if (ParameterName.compare(0,2,"Ep") == 0) {
+              mydata.data.Youngp = matprop(i-1);
+            }
+            else if (ParameterName.compare(0,3,"NUp") == 0) {
+              mydata.data.Poissonp = matprop(i-1);
+            }
+            else if (ParameterName.compare(0,3,"NUz") == 0) {
+              mydata.data.Poissonpz = matprop(i-1);
+            }
+            else if (ParameterName.compare(0,3,"Gzp") == 0) {
+              mydata.data.Shearzp = matprop(i-1);
+            }
+            else if (ParameterName.compare(0,2,"Ef") == 0) {
+              mydata.data.Youngz = matprop(i-1);
+              mydata.data.Youngp = matprop(i-1);
+            }
+            else if (ParameterName.compare(0,3,"NUf") == 0) {
+              mydata.data.Poissonp  = matprop(i-1);
+              mydata.data.Poissonpz = matprop(i-1);
+            }
+            else if ((ParameterName.compare(0,3,"NUf") == 0) || (ParameterName.compare(0,2,"Ef") == 0)) {
+              mydata.data.Shearzp = mydata.data.Youngz/(2*(1+mydata.data.Poissonp));
+            }
+            ParameterName.clear();
+          }
+          
+          /*
+           mydata.data.Poissonp  = matprop(2);
+           mydata.data.Poissonpz = matprop(3);
+           mydata.data.Youngp    = matprop(4);
+           mydata.data.Youngz    = matprop(5);
+           mydata.data.Shearzp   = matprop(6);
+           */
+          ierr = it->set_attribute_data_structure(mydata); CHKERRQ(ierr);
+          cout << "Fibre of transversely isotropic material:\n" << mydata;
+        }
+      }
+      
+      ublas::vector<FieldData> applied_strain;  //it is not used in the calculation, it is required by ElasticFE_RVELagrange_Disp as input
+      applied_strain.resize(1.5*field_rank+1.5); applied_strain.clear();
+      //applied_strain.resize(6); applied_strain.clear(); applied_strain(0) = 1.0;
+      
+      MyElasticFEMethod MyFE(m_field_RVE,Aij,D,F[0],LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio),"DISP_RVE");
+      TranIsotropicFibreDirRotElasticFEMethod MyTIsotFE(m_field_RVE,Aij,D,F[0],"DISP_RVE");
+      
+      //ElasticFE_RVELagrange_Periodic MyFE_RVELagrangePeriodic(m_field_RVE,Aij,D,F[0],applied_strain,"DISP_RVE","Lagrange_mul_disp",field_rank);
+      ElasticFE_RVELagrange_Periodic_Multi_Rhs MyFE_RVELagrangePeriodic(m_field_RVE,Aij,D,F[0],F[1],F[2],F[3],F[4],F[5],applied_strain,"DISP_RVE","Lagrange_mul_disp",field_rank);
+      ElasticFE_RVELagrange_RigidBodyTranslation MyFE_RVELagrangeRigidBodyTrans(m_field_RVE,Aij,D,F[0],applied_strain,"DISP_RVE","Lagrange_mul_disp",field_rank,"Lagrange_mul_disp_rigid_trans");
+      
+      for(int ii = 0; ii<6; ii++) {
+        ierr = VecZeroEntries(F[ii]); CHKERRQ(ierr);
+        ierr = VecGhostUpdateBegin(F[ii],INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+        ierr = VecGhostUpdateEnd(F[ii],INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+      }
+      ierr = MatZeroEntries(Aij); CHKERRQ(ierr);
+      ierr = VecZeroEntries(D); CHKERRQ(ierr);
+      ierr = m_field_RVE.set_global_ghost_vector("ELASTIC_PROBLEM_RVE",ROW,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+      
+      ierr = m_field_RVE.loop_finite_elements("ELASTIC_PROBLEM_RVE","ELASTIC_FE_RVE",MyFE);  CHKERRQ(ierr);
+      ierr = m_field_RVE.loop_finite_elements("ELASTIC_PROBLEM_RVE","TRAN_ISO_FE_RVE",MyTIsotFE);  CHKERRQ(ierr);
+      ierr = m_field_RVE.loop_finite_elements("ELASTIC_PROBLEM_RVE","Lagrange_FE",MyFE_RVELagrangePeriodic);  CHKERRQ(ierr);
+      ierr = m_field_RVE.loop_finite_elements("ELASTIC_PROBLEM_RVE","Lagrange_FE_rigid_trans",MyFE_RVELagrangeRigidBodyTrans);  CHKERRQ(ierr);
+      
+      for(int ii = 0; ii<6; ii++) {
+        ierr = VecGhostUpdateBegin(F[ii],ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+        ierr = VecGhostUpdateEnd(F[ii],ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+        ierr = VecAssemblyBegin(F[ii]); CHKERRQ(ierr);
+        ierr = VecAssemblyEnd(F[ii]); CHKERRQ(ierr);
+      }
+      
+      ierr = MatAssemblyBegin(Aij,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+      ierr = MatAssemblyEnd(Aij,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+      
+      
+      
+      /*****************************************************************************
+       *
+       *  3. SOLVE THE ZEROTH-ORDER FINITE ELEMENT EQUILIBRIUM EQUATION
+       *     [K][U] = [F]
+       *
+       ****************************************************************************/
+      
+      //----------------------------------------------------------------------------
+      // 3.1 Solving the equation to get nodal displacement
+      //----------------------------------------------------------------------------
+      //Solver
+      KSP solver;
+      ierr = KSPCreate(PETSC_COMM_WORLD,&solver); CHKERRQ(ierr);
+      ierr = KSPSetOperators(solver,Aij,Aij); CHKERRQ(ierr);
+      ierr = KSPSetFromOptions(solver); CHKERRQ(ierr);
+      ierr = KSPSetUp(solver); CHKERRQ(ierr);
+      
+      //create a vector for 6 components of homogenized stress
+      Vec Stress_Homo;
+      ierr = VecCreateMPI(PETSC_COMM_WORLD, 6, 6*pcomm->size(), &Stress_Homo);  CHKERRQ(ierr);
+      Vec Stress_Homo_r;
+      ierr = VecCreateMPI(PETSC_COMM_WORLD, 6, 6*pcomm->size(), &Stress_Homo_r);  CHKERRQ(ierr);
+      
+      //ublas::matrix<double> Dmat(6,6); Dmat.clear();
+      ublas::vector<ublas::matrix<double> > Dmat_r(nvars);
+      ublas::vector<ublas::matrix<double> > Dmat_rs(nvars);
+      for(int irv=0; irv<nvars; irv++) {
+        Dmat_r(irv).resize(6,6);   Dmat_r(irv).clear();
+        Dmat_rs(irv).resize(6,6); Dmat_rs(irv).clear();
+      }
+      
+      string VariableName;
+      for(int ics = 0; ics<6; ics++) {
+        
+        cout<<"===============================================================\n";
+        switch (ics) {
+          case 0:
+            cout<<"        Applied strain [1 0 0 0 0 0]^T\n"; break;
+          case 1:
+            cout<<"        Applied strain [0 1 0 0 0 0]^T\n"; break;
+          case 2:
+            cout<<"        Applied strain [0 0 1 0 0 0]^T\n"; break;
+          case 3:
+            cout<<"        Applied strain [0 0 0 1 0 0]^T\n"; break;
+          case 4:
+            cout<<"        Applied strain [0 0 0 0 1 0]^T\n"; break;
+          case 5:
+            cout<<"        Applied strain [0 0 0 0 0 1]^T\n"; break;
+        }
+        cout<<"===============================================================\n";
+        
+        ierr = VecZeroEntries(D); CHKERRQ(ierr);
+        ierr = KSPSolve(solver,F[ics],D); CHKERRQ(ierr);
+        ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+        ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+        ierr = m_field_RVE.set_global_ghost_vector("ELASTIC_PROBLEM_RVE",ROW,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+        
+        //----------------------------------------------------------------------------
+        // 3.2 Calculating zeroth-order homogenized stress using volume averaging theorem
+        //----------------------------------------------------------------------------
+        
+        ierr = VecZeroEntries(Stress_Homo); CHKERRQ(ierr);
+        ElasticFE_RVELagrange_Homogenized_Stress_Periodic MyFE_RVEHomoStressPeriodic(m_field_RVE,Aij,D,F[ics],&RVE_volume, applied_strain, Stress_Homo,"DISP_RVE","Lagrange_mul_disp",field_rank);
+        ierr = m_field_RVE.loop_finite_elements("ELASTIC_PROBLEM_RVE","Lagrange_FE",MyFE_RVEHomoStressPeriodic);  CHKERRQ(ierr);
+        
+        if(pcomm->rank()==0) {
+          PetscScalar    *avec;
+          VecGetArray(Stress_Homo, &avec);
+          //cout<< "\nStress_Homo =\n";
+          for(int kk=0; kk<6; kk++) {
+            Dmat(kk,ics) = *avec;
+            //cout.precision(15);
+            //cout <<*avec<<endl;
+            avec++;
+          }
+          VecRestoreArray(Stress_Homo,&avec);
+        }
+        
+        //cout<< "\n\n";
+        
+        /*****************************************************************************
+         *  4. SOLVE THE FIRST-ORDER AND SECOND-ORDER FINITE ELEMENT EQUILIBRIUM EQUATION
+         *     1st order-[K][U_r] = -[K_r][U}
+         *     2nd order-[K][U_rs] = -[K_rs][U]-2[K_r][U_s]
+         *
+         ****************************************************************************/
+        
+        int mat_rv = 0, PSFE_order = 0, idx_sf =0;
+        for(int irv=1; irv <= num_rvars; irv++) {
+          
+          ierr = VecZeroEntries(dF); CHKERRQ(ierr);
+          ierr = VecZeroEntries(dD); CHKERRQ(ierr);
+          ierr = VecGhostUpdateBegin(dF,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+          ierr = VecGhostUpdateEnd(dF,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+          
+          VariableName = vars_name[irv]; //cout<<"\n variable name: "<<VariableName<<endl;
+          if (VariableName.compare(0,2,"Em") == 0) { // due to Young's modulus of matrix - isotropic
+            mat_rv = 1; PSFE_order = 1; idx_sf = 0;
+            Trans_Iso_Rhs_r_PSFEM my_fe_k_r_Em(m_field_RVE,Aij,D,dF,"DISP_RVE","Young","isotropic","matrix");
+            ierr = m_field_RVE.loop_finite_elements("ELASTIC_PROBLEM_RVE","ELASTIC_FE_RVE",my_fe_k_r_Em);  CHKERRQ(ierr);
+          }
+          else if (VariableName.compare(0,3,"NUm") == 0) { // due to Poisson's ratio in p-direction of fibre
+            mat_rv = 1; PSFE_order = 1; idx_sf = 1;
+            Trans_Iso_Rhs_r_PSFEM my_fe_k_r_NUm(m_field_RVE,Aij,D,dF,"DISP_RVE","Poisson","isotropic","matrix");
+            ierr = m_field_RVE.loop_finite_elements("ELASTIC_PROBLEM_RVE","ELASTIC_FE_RVE",my_fe_k_r_NUm);  CHKERRQ(ierr);
+          }
+          else if (VariableName.compare(0,3,"NUp") == 0) { // due to Poisson's ratio in p-direction of fibre
+            mat_rv = 1; PSFE_order = 1; idx_sf = 2;
+            Trans_Iso_Rhs_r_PSFEM my_fe_k_r_NUp(m_field_RVE,Aij,D,dF,"DISP_RVE","PoissonP","transversely_isotropic","reinforcement");
+            ierr = m_field_RVE.loop_finite_elements("ELASTIC_PROBLEM_RVE","TRAN_ISO_FE_RVE",my_fe_k_r_NUp);  CHKERRQ(ierr);
+          }
+          else if (VariableName.compare(0,3,"NUz") == 0) { // due to Poisson's ratio in p-direction of fibre
+            mat_rv = 1; PSFE_order = 1; idx_sf = 3;
+            Trans_Iso_Rhs_r_PSFEM my_fe_k_r_NUz(m_field_RVE,Aij,D,dF,"DISP_RVE","PoissonZ","transversely_isotropic","reinforcement");
+            ierr = m_field_RVE.loop_finite_elements("ELASTIC_PROBLEM_RVE","TRAN_ISO_FE_RVE",my_fe_k_r_NUz);  CHKERRQ(ierr);
+          }
+          else if (VariableName.compare(0,2,"Ep") == 0) { // due to Young's modulus in p-direction of fibre
+            mat_rv = 1; PSFE_order = 1; idx_sf = 4;
+            Trans_Iso_Rhs_r_PSFEM my_fe_k_r_Ep(m_field_RVE,Aij,D,dF,"DISP_RVE","YoungP","transversely_isotropic","reinforcement");
+            ierr = m_field_RVE.loop_finite_elements("ELASTIC_PROBLEM_RVE","TRAN_ISO_FE_RVE",my_fe_k_r_Ep);  CHKERRQ(ierr);
+          }
+          else if (VariableName.compare(0,2,"Ez") == 0) { // due to Young's modulus in longitudinal direction
+            mat_rv = 1; PSFE_order = 1; idx_sf = 5;
+            Trans_Iso_Rhs_r_PSFEM my_fe_k_r_Ez(m_field_RVE,Aij,D,dF,"DISP_RVE","YoungZ","transversely_isotropic","reinforcement");
+            ierr = m_field_RVE.loop_finite_elements("ELASTIC_PROBLEM_RVE","TRAN_ISO_FE_RVE",my_fe_k_r_Ez);  CHKERRQ(ierr);
+          }
+          else if (VariableName.compare(0,3,"Gzp") == 0) { // due to shear modulus in z-direction of fibre
+            mat_rv = 1; PSFE_order = 1; idx_sf = 6;
+            Trans_Iso_Rhs_r_PSFEM my_fe_k_r_Gzp(m_field_RVE,Aij,D,dF,"DISP_RVE","ShearZP","transversely_isotropic","reinforcement");
+            ierr = m_field_RVE.loop_finite_elements("ELASTIC_PROBLEM_RVE","TRAN_ISO_FE_RVE",my_fe_k_r_Gzp);  CHKERRQ(ierr);
+          }
+          VariableName.clear();
+          
+          if (mat_rv == 1) {
+            ostringstream ss_field;
+            ss_field << "DISP_RVE" << stochastic_fields[idx_sf];
+            if (PSFE_order == 1) { // solution for first-order problem
+              ierr = VecGhostUpdateBegin(dF,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+              ierr = VecGhostUpdateEnd(dF,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+              ierr = VecAssemblyBegin(dF); CHKERRQ(ierr);
+              ierr = VecAssemblyEnd(dF); CHKERRQ(ierr);
+              
+              ierr = KSPSolve(solver,dF,dD); CHKERRQ(ierr);
+              ierr = VecGhostUpdateBegin(dD,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+              ierr = VecGhostUpdateEnd(dD,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+              // ierr = VecView(dD,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
+              ierr = m_field_RVE.set_other_global_ghost_vector("ELASTIC_PROBLEM_RVE","DISP_RVE",ss_field.str().c_str(),ROW,dD,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+              ierr = m_field_RVE.set_other_global_ghost_vector("ELASTIC_PROBLEM_RVE","Lagrange_mul_disp","Lagrange_mul_disp",ROW,dD,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+            }
+            else if (PSFE_order == 2) { // solution for second-order problem
+              ierr = VecGhostUpdateBegin(ddF,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+              ierr = VecGhostUpdateEnd(ddF,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+              ierr = VecAssemblyBegin(ddF); CHKERRQ(ierr);
+              ierr = VecAssemblyEnd(ddF); CHKERRQ(ierr);
+              
+              ierr = KSPSolve(solver,ddF,ddD); CHKERRQ(ierr);
+              ierr = VecGhostUpdateBegin(ddD,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+              ierr = VecGhostUpdateEnd(ddD,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+              // ierr = VecView(dD,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
+              ierr = m_field_RVE.set_other_global_ghost_vector("ELASTIC_PROBLEM_RVE","DISP_RVE",ss_field.str().c_str(),ROW,ddD,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+              ierr = m_field_RVE.set_other_global_ghost_vector("ELASTIC_PROBLEM_RVE","Lagrange_mul_disp","Lagrange_mul_disp",ROW,ddD,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+            }
+            //----------------------------------------------------------------------------
+            // b. Calculating first-order homogenized stress
+            //----------------------------------------------------------------------------
+            ierr = VecZeroEntries(Stress_Homo_r); CHKERRQ(ierr);
+            
+            ElasticFE_RVELagrange_Homogenized_Stress_Periodic MyFE_RVEHomoStressPeriodic_r(m_field_RVE,Aij,dD,dF,&RVE_volume, applied_strain, Stress_Homo_r,"DISP_RVE","Lagrange_mul_disp",field_rank);
+            ierr = m_field_RVE.loop_finite_elements("ELASTIC_PROBLEM_RVE","Lagrange_FE",MyFE_RVEHomoStressPeriodic_r);  CHKERRQ(ierr);
+            
+            if(pcomm->rank()==0) {
+              PetscScalar    *avec_r;
+              VecGetArray(Stress_Homo_r, &avec_r);
+              //cout<<"\n"<<ss_field.str().c_str()<<" =\n"<<endl;
+              //cout<< "\n"<<ss_field<<" = \n\n";
+              for(int kk=0; kk<6; kk++) {
+                //cout.precision(15);
+                //cout<<*avec_r<<endl;
+                Dmat_r(irv-1)(kk,ics) = *avec_r;
+                avec_r++;
+              }
+              VecRestoreArray(Stress_Homo_r,&avec_r);
+            }
+          }
+          mat_rv = 0; PSFE_order = 0;
+        }
+      }
+      
+      // Asign results to corresponding matrix
+      for(int irv=1; irv <= num_rvars; irv++) {
+        VariableName = vars_name[irv];
+        if (VariableName.compare(0,2,"Em") == 0) { // due to Young's modulus of matrix - isotropic
+          Dmat_r_Em = Dmat_r(irv-1); //cout<<"\nDmat_r_Em: "<<Dmat_r_Em<<endl;
+        }
+        else if (VariableName.compare(0,3,"NUm") == 0) { // due to Poisson's ratio in p-direction of fibre
+          Dmat_r_NUm = Dmat_r(irv-1);
+        }
+        else if (VariableName.compare(0,3,"NUp") == 0) { // due to Poisson's ratio in p-direction of fibre
+          Dmat_r_NUp = Dmat_r(irv-1);
+        }
+        else if (VariableName.compare(0,3,"NUz") == 0) { // due to Poisson's ratio in p-direction of fibre
+          Dmat_r_NUpz = Dmat_r(irv-1);
+        }
+        else if (VariableName.compare(0,2,"Ep") == 0) { // due to Young's modulus in p-direction of fibre
+          Dmat_r_Ep = Dmat_r(irv-1);
+        }
+        else if (VariableName.compare(0,2,"Ez") == 0) { // due to Young's modulus in longitudinal direction
+          Dmat_r_Ez = Dmat_r(irv-1); //cout<<"\nDmat_r_Ez: "<<Dmat_r_Ez<<endl;
+        }
+        else if (VariableName.compare(0,3,"Gzp") == 0) { // due to shear modulus in z-direction of fibre
+          Dmat_r_Gzp = Dmat_r(irv-1);
+        }
+        VariableName.clear();
+      }
+      
+      //cout<<"\nDmat for periodic BC: "<<Dmat<<endl;
+      
+      /*************************************************************************
+       *
+       *  4. FINISH
+       *
+       ************************************************************************/
+      
+      //Destroy matrices and vectors
+      for(int ii = 0;ii<6;ii++) {
+        ierr = VecDestroy(&F[ii]); CHKERRQ(ierr);
+      }
+      
+      ierr = VecDestroy(&dF); CHKERRQ(ierr);
+      ierr = VecDestroy(&ddF); CHKERRQ(ierr);
+      
+      
+      ierr = VecDestroy(&D); CHKERRQ(ierr);
+      ierr = VecDestroy(&dD); CHKERRQ(ierr);
+      ierr = VecDestroy(&ddD); CHKERRQ(ierr);
+      
+      ierr = MatDestroy(&Aij); CHKERRQ(ierr);
+      ierr = KSPDestroy(&solver); CHKERRQ(ierr);
+      ierr = VecDestroy(&RVE_volume_Vec); CHKERRQ(ierr);
+      ierr = VecDestroy(&Stress_Homo); CHKERRQ(ierr);
+      ierr = VecDestroy(&Stress_Homo_r); CHKERRQ(ierr);
+      
+      PetscFunctionReturn(0);
+    
+  }
+    
+    // =========================================================================
+    //
+    //  A.VI. SOLUTION PHASE:
+    //        Caculate RVE constitutive matrix Dmat
+    //
+    // =========================================================================
+    virtual PetscErrorCode Micro_FE_Dmat(FieldInterface &m_field_RVE,
+                                         int &nvars, int &nders,
+                                         vector<string> &stochastic_fields,
+                                         ublas::vector<double> matprop,
+                                         int num_rvars,
+                                         vector<string> vars_name) {
       PetscFunctionBegin;
       cout <<"Hi from Calculate_RVEDmat"<<endl;
       
@@ -2286,7 +2825,7 @@ namespace MoFEM {
     //
     // =========================================================================
     
-    virtual PetscErrorCode Macro_FE_REL(FieldInterface &m_field_Macro,
+    PetscErrorCode Macro_FE_REL(FieldInterface &m_field_Macro,
                                         int &nvars, int &nders,
                                         vector<string> &stochastic_fields,
                                         ublas::vector<double> TheVariables,
@@ -2295,7 +2834,7 @@ namespace MoFEM {
                                         ublas::vector<double> PlyAngle,
                                         PetscInt NO_Layers) {
       PetscFunctionBegin;
-      
+      cout<<"\n Hi from macrolevel FE calculation!"<<endl;
       ErrorCode rval;
       PetscErrorCode ierr;
       
@@ -2344,7 +2883,7 @@ namespace MoFEM {
       
       Projection10NodeCoordsOnField ent_method_material_Macro(m_field_Macro,"MESH_NODE_POSITIONS");
       ierr = m_field_Macro.loop_dofs("MESH_NODE_POSITIONS",ent_method_material_Macro); CHKERRQ(ierr);
-      
+
       //Assemble F and A
       DisplacementBCFEMethodPreAndPostProc my_dirichlet_bc(m_field_Macro,"DISP_MACRO",A,D,F);
       
@@ -2364,7 +2903,7 @@ namespace MoFEM {
       Dmat(3,3) = 0.0660e5; Dmat(4,4) = 0.0393e5; Dmat(5,5) = 0.0660e5;*/
       // First-layer
       theta = PlyAngle(0)*(M_PI/180.0); //rotation angle about the Z-axis
-      Dmat_1st_Ply.resize(6,6);   Dmat_1st_Ply.clear();
+      Dmat_1st_Ply.resize(6,6);   Dmat_1st_Ply.clear();//cout<<"\nThe Dmat is: "<<Dmat<<endl;
       ierr = Dmat_Transformation(theta, Dmat, Dmat_1st_Ply); CHKERRQ(ierr);
       // Second-layer
       if (NO_Layers > 1) {
@@ -2389,7 +2928,7 @@ namespace MoFEM {
       MyElasticFEMethod_Macro my_fe_2nd_ply (m_field_Macro,A,D,F,Dmat_2nd_Ply,"DISP_MACRO");
       MyElasticFEMethod_Macro my_fe_3rd_ply (m_field_Macro,A,D,F,Dmat_3rd_Ply,"DISP_MACRO");
       MyElasticFEMethod_Macro my_fe_4th_ply (m_field_Macro,A,D,F,Dmat_4th_Ply,"DISP_MACRO");
-      
+
       ierr = VecZeroEntries(F); CHKERRQ(ierr);
       ierr = VecZeroEntries(D); CHKERRQ(ierr);
       ierr = VecGhostUpdateBegin(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
@@ -2416,7 +2955,6 @@ namespace MoFEM {
       if (NO_Layers > 3) {
         ierr = m_field_Macro.loop_finite_elements("ELASTIC_PROBLEM_MACRO","ELASTIC_4th_Ply", my_fe_4th_ply);  CHKERRQ(ierr);
       }
-      
       
       //forces and preassures on surface
       boost::ptr_map<string,NeummanForcesSurface> neumann_forces;
@@ -2460,9 +2998,6 @@ namespace MoFEM {
       ierr = VecAssemblyBegin(F); CHKERRQ(ierr);
       ierr = VecAssemblyEnd(F); CHKERRQ(ierr);
       
-      //VecCopy(ElemForce,F);
-      
-      
       /*************************************************************************
        *
        *  2. SOLVE THE FINITE ELEMENT EQUILIBRIUM EQUATION
@@ -2476,8 +3011,6 @@ namespace MoFEM {
       ierr = KSPSetFromOptions(solver_Macro); CHKERRQ(ierr);
       ierr = KSPSetUp(solver_Macro); CHKERRQ(ierr);
       
-      //MatView(A,PETSC_VIEWER_STDOUT_WORLD);//PETSC_VIEWER_STDOUT_WORLD);
-      
       // elastic analys
       ierr = KSPSolve(solver_Macro,F,D); CHKERRQ(ierr);
       ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
@@ -2488,6 +3021,7 @@ namespace MoFEM {
       
       //VecView(D,PETSC_VIEWER_STDOUT_WORLD);
       //VecView(F,PETSC_VIEWER_STDOUT_WORLD);
+      //MatView(A,PETSC_VIEWER_STDOUT_WORLD);//PETSC_VIEWER_STDOUT_WORLD);
       
       cout<<"Solving the zeroth-order equation is finish. \n";
       

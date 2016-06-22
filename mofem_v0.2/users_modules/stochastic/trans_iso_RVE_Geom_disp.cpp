@@ -111,8 +111,7 @@ PetscErrorCode write_soltion(FieldInterface &mField,const string out_file, const
 
 //  vector<string> stochastic_fields(args, args+10);
 
-  for(int ii=0; ii < nders; ii++ )
-  {
+  for(int ii=0; ii < nders; ii++ ) {
     ostringstream ss_field;
     ss_field << "DISP" << stochastic_fields[ii];
 
@@ -130,6 +129,7 @@ PetscErrorCode write_soltion(FieldInterface &mField,const string out_file, const
     rval = mField.get_moab().write_file(out_file.c_str(),"VTK","",&out_meshset,1); CHKERR_PETSC(rval);
     rval = mField.get_moab().delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
   }
+  
   PetscFunctionReturn(0);
 }
 
@@ -337,15 +337,7 @@ int main(int argc, char *argv[]) {
    * (total 14 field for 1st and 2nd order stochastic PSFEM)
    *
    ****************************************************************************/
-//  const char* args[] = {
-//    "_r_NUp",     "_r_NUpz",      "_r_Ep",    "_r_Ez",    "_r_Gzp",     // 1st order
-//    "_rs_NUpNUp", "_rs_NUpzNUpz", "_rs_EpEp", "_rs_EzEz", "_rs_GzpGzp", // 2nd order
-//    };
-
-//  vector<string> stochastic_fields(args, args+10);
-
-  for(int ii=0; ii < nders; ii++ )
-  {
+  for(int ii=0; ii < nders; ii++ ) {
     ostringstream ss_field;
     ss_field << "DISP" << stochastic_fields[ii];
     //cout<<ss_field.str().c_str()<<endl;
@@ -378,8 +370,7 @@ int main(int argc, char *argv[]) {
 
   //adding stochastic field to ELASTIC element
 
-  for(int ii=0; ii < nvars; ii++ )
-  {
+  for(int ii=0; ii < nvars; ii++ ) {
     ostringstream ss_field;
     ss_field << "DISP" << stochastic_fields[ii];
     //cout<<ss_field.str().c_str()<<endl;
@@ -393,14 +384,10 @@ int main(int argc, char *argv[]) {
   ierr = mField.modify_finite_element_add_field_data("TRAN_ISOTROPIC_ELASTIC","POTENTIAL_FIELD"); CHKERRQ(ierr);
 
   //adding stochastic field to TRAN_ISOTROPIC_ELASTIC element
-//  ierr = mField.modify_finite_element_add_field_data("TRAN_ISOTROPIC_ELASTIC","DISP_r_nup"); CHKERRQ(ierr);
-//  ierr = mField.modify_finite_element_add_field_data("TRAN_ISOTROPIC_ELASTIC","DISP_r_Ep"); CHKERRQ(ierr);
-
-  for(int ii=0; ii < nvars; ii++ )
-  {
+  for(int ii=0; ii < nvars; ii++ ) {
     ostringstream ss_field;
     ss_field << "DISP" << stochastic_fields[ii];
-//    cout<<ss_field.str().c_str()<<endl;
+    // cout<<ss_field.str().c_str()<<endl;
     ierr = mField.modify_finite_element_add_field_data("TRAN_ISOTROPIC_ELASTIC",ss_field.str().c_str()); CHKERRQ(ierr);
   }
 
@@ -445,8 +432,7 @@ int main(int argc, char *argv[]) {
    ****************************************************************************/
   ierr = mField.add_ents_to_field_by_TETs(0,"DISPLACEMENT"); CHKERRQ(ierr);
 
-  for(int ii=0; ii < nders; ii++ )
-  {
+  for(int ii=0; ii < nders; ii++ ) {
     ostringstream ss_field;
     ss_field << "DISP" << stochastic_fields[ii];
     ierr = mField.add_ents_to_field_by_TETs(0,ss_field.str().c_str()); CHKERRQ(ierr);
@@ -492,26 +478,14 @@ int main(int argc, char *argv[]) {
 
   int order_st=order;
 
-  for(int ii=0; ii < nders; ii++ )
-  {
-	ierr = PetscTime(&v3);CHKERRQ(ierr);
-	ierr = PetscGetCPUTime(&t3);CHKERRQ(ierr);
-
+  for(int ii=0; ii < nders; ii++ ) {
     ostringstream ss_field;
     ss_field << "DISP" << stochastic_fields[ii];
-//    cout<<ss_field.str().c_str()<<endl;
+    //    cout<<ss_field.str().c_str()<<endl;
     ierr = mField.set_field_order(0,MBTET,ss_field.str().c_str(),order_st); CHKERRQ(ierr);
     ierr = mField.set_field_order(0,MBTRI,ss_field.str().c_str(),order_st); CHKERRQ(ierr);
     ierr = mField.set_field_order(0,MBEDGE,ss_field.str().c_str(),order_st); CHKERRQ(ierr);
     ierr = mField.set_field_order(0,MBVERTEX,ss_field.str().c_str(),1); CHKERRQ(ierr);
-
-
-	ierr = PetscTime(&v2);CHKERRQ(ierr);
-	ierr = PetscGetCPUTime(&t2);CHKERRQ(ierr);
-
-	PetscSynchronizedPrintf(PETSC_COMM_WORLD,"Total Rank %d Time = %f CPU Time = %f\n",pcomm->rank(),v2-v3,t2-t3);
-	PetscSynchronizedFlush(PETSC_COMM_WORLD,PETSC_STDOUT);
-
   }
 
 
@@ -625,9 +599,7 @@ int main(int argc, char *argv[]) {
   MyElasticFEMethod MyFE(mField,Aij,D,F,LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio));
   //TranIsotropicFibreDirRotElasticFEMethod MyTIsotFE(mField,Aij,D,F);
   TranIso_FibreWavinessElasticFEMethod MyTIsotFE(mField,Aij,D,F);
-  ElasticFE_RVELagrange_Disp MyFE_RVELagrange(mField,Aij,D,F,applied_strain,
-											  "DISPLACEMENT","Lagrange_mul_disp",
-											  field_rank);
+  ElasticFE_RVELagrange_Disp MyFE_RVELagrange(mField,Aij,D,F,applied_strain,"DISPLACEMENT","Lagrange_mul_disp",field_rank);
 
   ierr = VecZeroEntries(F); CHKERRQ(ierr);
   ierr = VecGhostUpdateBegin(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
@@ -916,17 +888,17 @@ int main(int argc, char *argv[]) {
     if(pcomm->rank()==0){
       PetscScalar    *avec_r;
       VecGetArray(Stress_Homo_r, &avec_r);
-
+      
       cout<<"\n"<<ss_field.str().c_str()<<" =\n"<<endl;
-	  //TheFile<<ss_field.str().c_str()<<" =\n";
+      //TheFile<<ss_field.str().c_str()<<" =\n";
       //cout<< "\n"<<ss_field<<" = \n\n";
       for(int ii=0; ii<6; ii++){
-		// display results in command window
+        // display results in command window
         cout.precision(15);
         cout<<*avec_r<<endl;
-		// write result to output file
-		TheFile<<setprecision(15)<<*avec_r<<'\n';
-
+        // write result to output file
+        TheFile<<setprecision(15)<<*avec_r<<'\n';
+        
         avec_r++;
       }
     }
@@ -943,18 +915,6 @@ int main(int argc, char *argv[]) {
   // ===========================================================================
   // Save data on mesh
   ierr = write_soltion(mField,"out.vtk","out_post_proc.vtk");   CHKERRQ(ierr);
-
-
-/*  if(pcomm->rank()==0){
-    PetscScalar    *avec;
-    VecGetArray(Stress_Homo, &avec);
-
-    for(int ii=0; ii<6; ii++){
-      TheFile<<setprecision(15)<<*avec<<'\n';
-      avec++;
-    }
-  }
-  TheFile.close();*/
 
   // ===========================================================================
   //

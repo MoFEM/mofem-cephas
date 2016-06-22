@@ -1289,8 +1289,8 @@ int main(int argc, char *argv[]) {
         ierr = TheLSF.gfun_ply_Hoffman_2D(x,probdata.NameVars,probdata.MatStrength,StressGP_1st,val_G_Hoffman_2D); CHKERRQ(ierr);
         ierr = TheLSF.gfun_ply_Hoffman(x,probdata.NameVars,probdata.MatStrength,StressGP_1st,val_G_Hoffman); CHKERRQ(ierr);
         
-        MCSFile_MS<<setprecision(15)<<val_G_MS_LD<<"\t"<<val_G_MS_LD<<"\t"<<val_G_MS_LD<<"\t";
-        MCSFile_Hashin<<setprecision(15)<<val_G_HF<<"\t"<<val_G_HF<<"\t";
+        MCSFile_MS<<setprecision(15)<<val_G_MS_LD<<"\t"<<val_G_MS_TD<<"\t"<<val_G_MS_Shear<<"\t";
+        MCSFile_Hashin<<setprecision(15)<<val_G_HF<<"\t"<<val_G_HM<<"\t";
         MCSFile_TW<<setprecision(15)<<val_G_TW_2D<<"\t"<<val_G_TW<<"\t";
         MCSFile_TH<<setprecision(15)<<val_G_TH_2D<<"\t"<<val_G_TH<<"\t";
         MCSFile_RC<<setprecision(15)<<val_G_RCF<<"\t"<<val_G_RCM<<"\t";
@@ -1320,8 +1320,8 @@ int main(int argc, char *argv[]) {
         ierr = TheLSF.gfun_ply_Hoffman_2D(x,probdata.NameVars,probdata.MatStrength,StressGP_2nd,val_G_Hoffman_2D); CHKERRQ(ierr);
         ierr = TheLSF.gfun_ply_Hoffman(x,probdata.NameVars,probdata.MatStrength,StressGP_2nd,val_G_Hoffman); CHKERRQ(ierr);
         
-        MCSFile_MS<<setprecision(15)<<val_G_MS_LD<<"\t"<<val_G_MS_LD<<"\t"<<val_G_MS_LD<<"\t";
-        MCSFile_Hashin<<setprecision(15)<<val_G_HF<<"\t"<<val_G_HF<<"\t";
+        MCSFile_MS<<setprecision(15)<<val_G_MS_LD<<"\t"<<val_G_MS_TD<<"\t"<<val_G_MS_Shear<<"\t";
+        MCSFile_Hashin<<setprecision(15)<<val_G_HF<<"\t"<<val_G_HM<<"\t";
         MCSFile_TW<<setprecision(15)<<val_G_TW_2D<<"\t"<<val_G_TW<<"\t";
         MCSFile_TH<<setprecision(15)<<val_G_TH_2D<<"\t"<<val_G_TH<<"\t";
         MCSFile_RC<<setprecision(15)<<val_G_RCF<<"\t"<<val_G_RCM<<"\t";
@@ -1352,8 +1352,8 @@ int main(int argc, char *argv[]) {
         ierr = TheLSF.gfun_ply_Hoffman_2D(x,probdata.NameVars,probdata.MatStrength,StressGP_3rd,val_G_Hoffman_2D); CHKERRQ(ierr);
         ierr = TheLSF.gfun_ply_Hoffman(x,probdata.NameVars,probdata.MatStrength,StressGP_3rd,val_G_Hoffman); CHKERRQ(ierr);
         
-        MCSFile_MS<<setprecision(15)<<val_G_MS_LD<<"\t"<<val_G_MS_LD<<"\t"<<val_G_MS_LD<<"\t";
-        MCSFile_Hashin<<setprecision(15)<<val_G_HF<<"\t"<<val_G_HF<<"\t";
+        MCSFile_MS<<setprecision(15)<<val_G_MS_LD<<"\t"<<val_G_MS_TD<<"\t"<<val_G_MS_Shear<<"\t";
+        MCSFile_Hashin<<setprecision(15)<<val_G_HF<<"\t"<<val_G_HM<<"\t";
         MCSFile_TW<<setprecision(15)<<val_G_TW_2D<<"\t"<<val_G_TW<<"\t";
         MCSFile_TH<<setprecision(15)<<val_G_TH_2D<<"\t"<<val_G_TH<<"\t";
         MCSFile_RC<<setprecision(15)<<val_G_RCF<<"\t"<<val_G_RCM<<"\t";
@@ -1384,8 +1384,8 @@ int main(int argc, char *argv[]) {
         ierr = TheLSF.gfun_ply_Hoffman_2D(x,probdata.NameVars,probdata.MatStrength,StressGP_4th,val_G_Hoffman_2D); CHKERRQ(ierr);
         ierr = TheLSF.gfun_ply_Hoffman(x,probdata.NameVars,probdata.MatStrength,StressGP_4th,val_G_Hoffman); CHKERRQ(ierr);
         
-        MCSFile_MS<<setprecision(15)<<val_G_MS_LD<<"\t"<<val_G_MS_LD<<"\t"<<val_G_MS_LD<<"\n";
-        MCSFile_Hashin<<setprecision(15)<<val_G_HF<<"\t"<<val_G_HF<<"\n";
+        MCSFile_MS<<setprecision(15)<<val_G_MS_LD<<"\t"<<val_G_MS_TD<<"\t"<<val_G_MS_Shear<<"\n";
+        MCSFile_Hashin<<setprecision(15)<<val_G_HF<<"\t"<<val_G_HM<<"\n";
         MCSFile_TW<<setprecision(15)<<val_G_TW_2D<<"\t"<<val_G_TW<<"\n";
         MCSFile_TH<<setprecision(15)<<val_G_TH_2D<<"\t"<<val_G_TH<<"\n";
         MCSFile_RC<<setprecision(15)<<val_G_RCF<<"\t"<<val_G_RCM<<"\n";

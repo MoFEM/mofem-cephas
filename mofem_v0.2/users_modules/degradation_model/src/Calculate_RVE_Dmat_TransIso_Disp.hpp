@@ -70,6 +70,7 @@ namespace MoFEM {
     
     struct CommonData {
       ublas::vector<double> wtAtGaussPts;
+      //ublas::vector<double> tempAtGaussPts;
       map<EntityHandle, ublas::vector<ublas::matrix<double> > > Dmat_RVE;
     };
     CommonData commonData;
@@ -112,7 +113,7 @@ namespace MoFEM {
                             int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
         PetscFunctionBegin;
         try {
-//          cout<<"form OpGetFieldAtGaussPts "<<endl;
+          //cout<<"form OpGetFieldAtGaussPts "<<endl;
           
           if(data.getFieldData().size()==0) PetscFunctionReturn(0);
           int nb_dofs = data.getFieldData().size();
@@ -129,7 +130,7 @@ namespace MoFEM {
           
           for(int gg = 0;gg<nb_gauss_pts;gg++) {
             fieldAtGaussPts[gg] += inner_prod(data.getN(gg,nb_dofs),data.getFieldData());
-//            cout<<"fieldAtGaussPts[gg] "<<fieldAtGaussPts[gg] <<endl;
+            //cout<<"fieldAtGaussPts[gg] "<<fieldAtGaussPts[gg] <<endl;
           }
           
         } catch (const std::exception& ex) {
@@ -147,6 +148,11 @@ namespace MoFEM {
       OpGetWtAtGaussPts(const string wt_field_name,CommonData &common_data):
       OpGetFieldAtGaussPts<VolumeElementForcesAndSourcesCore>(wt_field_name,common_data.wtAtGaussPts) {}
     };
+    
+//    struct OpGetTempAtGaussPts: public OpGetFieldAtGaussPts<VolumeElementForcesAndSourcesCore> {
+//      OpGetTempAtGaussPts(const string temp_field_name,CommonData &common_data):
+//      OpGetFieldAtGaussPts<VolumeElementForcesAndSourcesCore>(temp_field_name,common_data.tempAtGaussPts) {}
+//    };
 
   
     struct OpCalculate_RVEDmat: public VolumeElementForcesAndSourcesCore::UserDataOperator {
@@ -209,8 +215,11 @@ namespace MoFEM {
               RVEVolume MyRVEVol(m_field_RVE,A,D1,F1,0.0,0.0, RVE_volume_Vec);
               
               //=============================================================================================================
-
-//              cout<<"gg Start =  "<<gg <<endl;
+              cout<<"\n\n";
+              cout<<"gg Start =  "<<gg <<endl;
+              cout<<"wt Start =  "<<commonData.wtAtGaussPts(gg) <<endl;
+              //cout<<"temp Start =  "<<commonData.tempAtGaussPts(gg) <<endl;
+              
               //We don't need to calculate internal forces for RVE, as ElasticFEMethod is used to assemble A matirx only
               //so noo need to create MyElasticFEMethod here
               ElasticFEMethod_Matrix my_fe_marix(m_field_RVE,A,D1,F1,0.0,0.0,commonData.wtAtGaussPts(gg),"DISP_RVE");
@@ -520,10 +529,11 @@ namespace MoFEM {
       
     };
     
-    PetscErrorCode setRVE_DmatRhsOperators(FieldInterface &m_field_RVE, string field_name,string wt_field_name) {
+    PetscErrorCode setRVE_DmatRhsOperators(FieldInterface &m_field_RVE, string field_name,string wt_field_name){//,string temp_field_name) {
       PetscFunctionBegin;
       //first calculate wt at each gauss point
       feRhs.getOpPtrVector().push_back(new OpGetWtAtGaussPts(wt_field_name,commonData));
+      //feRhs.getOpPtrVector().push_back(new OpGetTempAtGaussPts(temp_field_name,commonData));
       //At each gauss point run RVE with its own mesh
       feRhs.getOpPtrVector().push_back(new OpCalculate_RVEDmat(m_field_RVE,field_name,commonData));
 

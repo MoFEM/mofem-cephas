@@ -77,25 +77,31 @@ str1='create displacement on surface 20 26 32 38 dof 3 fix ' + str(0);  cubit.cm
 str1='create displacement on vertex  31 dof 1 dof 2 fix ' + str(0);  cubit.cmd(str1) 
 
 # Applied force
-Force = 150;
 # Case 1. uniaxial tension (x direction)
-str1 = 'create force 1 on surface 6 12 18 24 42 vector ' + str(Force) +' 0 0 0 0 0'; 
-str2 = 'create force 2 on surface 4 10 16 28 34 vector ' + str(-Force) +' 0 0 0 0 0';
-cubit.cmd(str1); cubit.cmd(str2);
+#Force = 150;
+#str1 = 'create force 1 on surface 6 12 18 24 42 vector ' + str(Force) +' 0 0 0 0 0'; 
+#str2 = 'create force 2 on surface 4 10 16 28 34 vector ' + str(-Force) +' 0 0 0 0 0';
+#cubit.cmd(str1); cubit.cmd(str2);
 
 #cubit.cmd('create force 1 on surface 6 12 18 24 42 vector 150 0 0 0 0 0') 
 #cubit.cmd('create force 2 on surface 4 10 16 28 34 vector -150 0 0 0 0 0')
 
 # Case 2. uniaxial compression (x direction)
+#Force = 250;
+#str1 = 'create force 1 on surface 6 12 18 24 42 vector ' + str(-Force) +' 0 0 0 0 0'; 
+#str2 = 'create force 2 on surface 4 10 16 28 34 vector ' + str(Force) +' 0 0 0 0 0';
+#cubit.cmd(str1); cubit.cmd(str2);
+
 #cubit.cmd('create force 1 on surface 6 12 18 24 42 vector -300 0 0 0 0 0') 
 #cubit.cmd('create force 2 on surface 4 10 16 28 34 vector 300 0 0 0 0 0') 
 
 # Case 3. biaxial tension 
-#str1 = 'create force 1 on surface 6 12 18 24 42 vector ' + str(Force) +' 0 0 0 0 0'; 
-#str2 = 'create force 2 on surface 4 10 16 28 34 vector ' + str(-Force) +' 0 0 0 0 0';
-#str3 = 'create force 3 on surface 5 11 17 23 29 vector 0 ' + str(Force) +' 0 0 0 0';
-#str4 = 'create force 4 on surface 3 9  15 33 39 vector 0 ' + str(-Force) +' 0 0 0 0';
-#cubit.cmd(str1); cubit.cmd(str2); cubit.cmd(str3); cubit.cmd(str4)
+Force = 150
+str1 = 'create force 1 on surface 6 12 18 24 42 vector ' + str(Force) +' 0 0 0 0 0'; 
+str2 = 'create force 2 on surface 4 10 16 28 34 vector ' + str(-Force) +' 0 0 0 0 0';
+str3 = 'create force 3 on surface 5 11 17 23 29 vector 0 ' + str(Force) +' 0 0 0 0';
+str4 = 'create force 4 on surface 3 9  15 33 39 vector 0 ' + str(-Force) +' 0 0 0 0';
+cubit.cmd(str1); cubit.cmd(str2); cubit.cmd(str3); cubit.cmd(str4)
 
 #cubit.cmd('create force 1 on surface 6 12 18 24 42 vector 85 0 0 0 0 0') 
 #cubit.cmd('create force 2 on surface 4 10 16 28 34 vector -85 0 0 0 0 0') 
@@ -111,4 +117,4 @@ cubit.cmd(str1); cubit.cmd(str2);
 #cubit.cmd('create force 2 on surface 5 11 17 23 vector 0 -900 0 0 0 0') 
 #cubit.cmd('create force 3 on surface 1      vector 90 0 0 0 0 0') 
 
-cubit.cmd('save as "/Users/nxz6/MyBuild/mofem-cephas/mofem_v0.2/users_modules/stochastic/meshes/WWFE_Laminate_Type_3.cub" overwrite')  
+cubit.cmd('save as "/Users/nxz6/MyBuild/mofem-cephas/mofem_v0.2/users_modules/stochastic/meshes/WWFE_Laminate_Type_3n.cub" overwrite')  

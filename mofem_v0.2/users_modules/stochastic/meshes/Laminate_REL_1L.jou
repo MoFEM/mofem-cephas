@@ -18,7 +18,8 @@ cubit.cmd('set duplicate block elements on')
 #  Case: FORM
 #
 cubit.cmd('block 1 volume 1')   
-cubit.cmd('block 1 name "MAT_ELASTIC_First"') 
+cubit.cmd('block 1 name "MAT_ELASTIC_First"')
+#cubit.cmd('block 1 name "MAT_ELASTIC_TRANSISO_First"')
 #
 #  Case: MCS
 # 
@@ -26,17 +27,23 @@ cubit.cmd('block 1 name "MAT_ELASTIC_First"')
 #cubit.cmd('block 1 tet 1 to 1335 and 1337 to 3160')
 #cubit.cmd('block 1 name "MAT_ELASTIC"') 
 
-cubit.cmd('block 1 attribute count 2') 
-cubit.cmd('block 1 attribute index 1 1')   #Young's modulus  (This will not be used in the calculation) 
-cubit.cmd('block 1 attribute index 2 0')   #Poisson's ratio (This will not be used in the calculation) 
+cubit.cmd('block 1 attribute count 5') 
+#E2=11.23e3; E1=136.0e3; NU23=0.168; NU21=0.0198; G12=9.58e3;   # CH-Disp
+E2=9.57e3; E1=135.92e3; NU23=0.256; NU21=0.0178; G12=4.75e3;   # CH-Periodic
+TransIso=[str(E2), str(E1), str(NU23), str(NU21), str(G12)]   
+for i in range(0, 5):   
+    str1='block 1 attribute index ' + str(i+1) +' '+TransIso[i]; cubit.cmd(str1) 
  
 #Reliability 
-##cubit.cmd('block 2 tet 2418') 
-cubit.cmd('block 2 tet 1336') 
+cubit.cmd('block 2 tet 1336') # mesh factor 6
+#cubit.cmd('block 2 tet 47') # mesh factor 10
 cubit.cmd('block 2 name "RELIABILITY"') 
-cubit.cmd('block 2 attribute count 2') 
+cubit.cmd('block 2 attribute count 5') 
 cubit.cmd('block 2 attribute index 1 1')   #Young's modulus  (This will not be used in the calculation) 
 cubit.cmd('block 2 attribute index 2 0')   #Poisson's ratio (This will not be used in the calculation) 
+cubit.cmd('block 2 attribute index 3 0')    
+cubit.cmd('block 2 attribute index 4 0')   
+cubit.cmd('block 2 attribute index 5 0')
 
 # --------------------------------------------
 # Loading case 1:
@@ -46,13 +53,13 @@ cubit.cmd('block 2 attribute index 2 0')   #Poisson's ratio (This will not be us
 # Applied displacement
 #str1='create displacement on surface 4 dof 1 fix ' + str(0);  cubit.cmd(str1) 
 #str1='create displacement on surface 3 dof 2 fix ' + str(0);  cubit.cmd(str1) 
-#str1='create displacement on surface 2 dof 3 fix ' + str(0);  cubit.cmd(str1) 
+str1='create displacement on surface 2 dof 3 fix ' + str(0);  cubit.cmd(str1) 
 
 # Applied force
 
 # Tension 0.7 XT
-#cubit.cmd('create force 1 on surface 6 vector 1378 0 0 0 0 0') 
-#cubit.cmd('create force 2 on surface 4 vector -1378 0 0 0 0 0')
+cubit.cmd('create force 1 on surface 6 vector 1378 0 0 0 0 0') 
+cubit.cmd('create force 2 on surface 4 vector -1378 0 0 0 0 0')
 
 # Compression 0.7 XC
 #cubit.cmd('create force 1 on surface 6 vector -1036 0 0 0 0 0') 
@@ -82,17 +89,17 @@ cubit.cmd('block 2 attribute index 2 0')   #Poisson's ratio (This will not be us
 # ----------------------------------------------
 
 # Applied displacement
-str1='create displacement on surface 4 dof 1 fix ' + str(0);  cubit.cmd(str1) 
-str1='create displacement on curve   9 dof 2 fix ' + str(0);  cubit.cmd(str1) 
+#str1='create displacement on surface 4 dof 1 fix ' + str(0);  cubit.cmd(str1) 
+#str1='create displacement on curve   9 dof 2 fix ' + str(0);  cubit.cmd(str1) 
 ##str1='create displacement on surface 4 dof 2 fix ' + str(0);  cubit.cmd(str1)
 ##str1='create displacement on surface 3 dof 2 fix ' + str(0);  cubit.cmd(str1) 
 ##str1='create displacement on surface 2 dof 3 fix ' + str(0);  cubit.cmd(str1) 
 
 # Applied force
-cubit.cmd('create force 1 on surface 6 vector 1378 0 0 0 0 0') 
-cubit.cmd('create force 2 on surface 5 vector -19.75  0 0 0 0 0') 
-cubit.cmd('create force 3 on surface 6 vector 0 19.75 0 0 0 0') 
-cubit.cmd('create force 4 on surface 3 vector 19.75 0 0 0 0 0') 
+#cubit.cmd('create force 1 on surface 6 vector 1378 0 0 0 0 0') 
+#cubit.cmd('create force 2 on surface 5 vector -19.75  0 0 0 0 0') 
+#cubit.cmd('create force 3 on surface 6 vector 0 19.75 0 0 0 0') 
+#cubit.cmd('create force 4 on surface 3 vector 19.75 0 0 0 0 0') 
 
 # ----------------------------------------------
 # Loading case 4:
@@ -107,8 +114,8 @@ cubit.cmd('create force 4 on surface 3 vector 19.75 0 0 0 0 0')
 # Applied force
 #cubit.cmd('create force 1 on surface 6 vector -1036 0 0 0 0 0') 
 #cubit.cmd('create force 2 on surface 5 vector 0 20.0 0 0 0 0') 
-#cubit.cmd('create force 3 on surface 1      vector 90 0 0 0 0 0') 
+#cubit.cmd('create force 3 on surface 1 vector 90 0 0 0 0 0') 
 
-#cubit.cmd('save as "/Users/nxz6/MyBuild/mofem-cephas/mofem_v0.2/users_modules/stochastic/meshes/Laminate_REL_1L.cub" overwrite') 
+cubit.cmd('save as "/Users/nxz6/MyBuild/mofem-cephas/mofem_v0.2/users_modules/stochastic/meshes/Laminate_REL_1L_Fine.cub" overwrite') 
 #cubit.cmd('save as "/Users/nxz6/MyBuild/mofem-cephas/mofem_v0.2/users_modules/stochastic/meshes/Laminate_REL_1L_LT.cub" overwrite')  
-cubit.cmd('save as "/Users/nxz6/MyBuild/mofem-cephas/mofem_v0.2/users_modules/stochastic/meshes/Laminate_REL_1L_LS.cub" overwrite') 
+#cubit.cmd('save as "/Users/nxz6/MyBuild/mofem-cephas/mofem_v0.2/users_modules/stochastic/meshes/Laminate_REL_1L_LS.cub" overwrite') 

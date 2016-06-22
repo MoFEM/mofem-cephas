@@ -28,11 +28,14 @@ struct ImportProbData {
   ublas::vector<double> MatStrength; // Material strength
   ublas::vector<double> PlyAngle;    // Ply angle of orientation
   vector<string> NameVars;           // Name of random variables
+  string HomoMethod;                 // Homogenization method
   int NumVars;                       // Number of variables
   int NumLayers;                     // Number of layers
   int ExaminedLayer;                 // Examined layer
   int TimePoint;                     // Time point for selection of wt in degradation analysis
   int FailureCriterion;              // Type of failure criterion
+  int AnalysisType;                  // Analysis type 10: FORM 20: SORM 30: MCS 31: MCIS
+  double SearchStep;                 // Search step size
   
   
   //------------------------------------------------------------------------------
@@ -91,7 +94,7 @@ struct ImportProbData {
     //ProbDataFile.open("//mnt//home//Dropbox//DURACOMP_Cal//009_MoFEM//04_ReliabilityAnalysis//Input_probdata.txt",ifstream::in);
     ProbDataFile.open(prob_data_file_name,ifstream::in);
     if (!ProbDataFile) {
-      cout << "\n\nFile does not exists!\n" << endl;
+      cout << "\n\nProbability data file does not exists!\n" << endl;
       exit(EXIT_FAILURE);
     }
     
@@ -102,8 +105,8 @@ struct ImportProbData {
     //int    *pos;
     ublas::vector<int> pos;
     int    cnt;
-    int    MAR_IX, COR_IX, STR_IX, ANG_IX, TIME_IX;
-    MAR_IX = 0; COR_IX = 0; STR_IX = 0; ANG_IX = 0; TIME_IX = 0;
+    int    MAR_IX, COR_IX, STR_IX, ANG_IX;
+    MAR_IX = 0; COR_IX = 0; STR_IX = 0; ANG_IX = 0;
     
     while (!ProbDataFile.eof()) {
       ProbDataFile.getline(buffer,200);
@@ -113,6 +116,14 @@ struct ImportProbData {
           if (stringbuf.compare(0,3,"NUM") == 0) {
             // cout<<"Next line is data for number of variables"<<endl;
             datatype = "NUMBER";
+          }
+          else if (stringbuf.compare(0,4,"STEP") == 0) {
+            // cout<<"Next line is data for size of search step"<<endl;
+            datatype = "STEP";
+          }
+          else if (stringbuf.compare(0,4,"HOMO") == 0) {
+            // cout<<"Next line is data for correlation matrix"<<endl;
+            datatype = "HOMOGENIZATION";
           }
           else if (stringbuf.compare(0,3,"COR") == 0) {
             // cout<<"Next line is data for correlation matrix"<<endl;
@@ -150,6 +161,10 @@ struct ImportProbData {
             // cout<<"Next lines are data for angle of orietations"<<endl;
             datatype = "TIME";
           }
+          else if (stringbuf.compare(0,8,"ANALYSIS") == 0) {
+            // cout<<"Next lines are data for angle of orietations"<<endl;
+            datatype = "ANALYSIS";
+          }
           stringbuf.clear();
         }
         else {
@@ -163,6 +178,10 @@ struct ImportProbData {
           if (datatype.compare(0,3,"NUM") == 0) { // number of variables
             substringbuf = stringbuf.substr(0,pos(1));
             NumVars = atoi(substringbuf.c_str());
+          }
+          else if (datatype.compare(0,4,"STEP") == 0) { // number of variables
+            substringbuf = stringbuf.substr(0,pos(1));
+            SearchStep = atof(substringbuf.c_str());
           }
           else if (datatype.compare(0,3,"MAR") == 0) { // marginal distribution
             // Declaration
@@ -221,6 +240,12 @@ struct ImportProbData {
               substringbuf.clear();
             }
           }
+          else if (datatype.compare(0,4,"HOMO") == 0) {
+            substringbuf = stringbuf.substr(pos(1)+1,pos(2)-pos(1)-1);
+            cout<<"Homogenization method: "<<substringbuf<<endl;
+            HomoMethod = substringbuf;
+            substringbuf.clear();
+          }
           else if (datatype.compare(0,4,"NAME") == 0) {
             // Insert data into probdata
             for (int i=1; i<=cnt;i++) {
@@ -242,7 +267,10 @@ struct ImportProbData {
             substringbuf = stringbuf.substr(0,pos(1));
             ExaminedLayer = atoi(substringbuf.c_str());
           }
-          else if (datatype.compare(0,4,"TIME") == 0) { // examined time point
+          else if (datatype.compare(0,8,"ANALYSIS") == 0) { // number of layers
+            substringbuf = stringbuf.substr(0,pos(1));
+            AnalysisType = atoi(substringbuf.c_str());
+          }          else if (datatype.compare(0,4,"TIME") == 0) { // examined time point
             substringbuf = stringbuf.substr(0,pos(1));
             TimePoint = atoi(substringbuf.c_str());
           }

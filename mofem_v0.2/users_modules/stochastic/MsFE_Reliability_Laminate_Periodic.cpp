@@ -36,26 +36,28 @@ using namespace MoFEM;
 #include <ElasticFEMethod.hpp>
 #include "ElasticFEMethodTransIso.hpp"
 
+using namespace ObosleteUsersModules;
+
 #include "ElasticFE_RVELagrange_Disp.hpp"
 #include "ElasticFE_RVELagrange_Disp_Multi_Rhs.hpp"
 #include "ElasticFE_RVELagrange_Homogenized_Stress_Disp.hpp"
+
+#include "ElasticFE_RVELagrange_Periodic.hpp"
+#include "ElasticFE_RVELagrange_RigidBodyTranslation.hpp"
+#include "ElasticFE_RVELagrange_Homogenized_Stress_Periodic.hpp"
+
 #include "RVEVolume.hpp"
 
-using namespace ObosleteUsersModules;
 #include "MaterialConstitutiveMatrix_FirstOrderDerivative.hpp"
 #include "MaterialConstitutiveMatrix_SecondOrderDerivative.hpp"
 #include "Trans_Iso_Rhs_r_PSFEM.hpp"
 #include "Trans_Iso_Rhs_rs_PSFEM.hpp"
 
 #include <FE2_ElasticFEMethod.hpp>
-
 #include <FE2_Rhs_r_PSFEM.hpp>
 #include <FE2_Rhs_rs_PSFEM.hpp>
-
 #include <Reliability_SurfacePressure.hpp>
-
 #include <FE2_Macro_Solver.hpp>
-
 #include <FE2_PostProcStressForReliability.hpp>
 
 using namespace boost::numeric;
@@ -87,25 +89,9 @@ extern "C" {
 #include <boost/numeric/ublas/triangular.hpp>
 #include <boost/numeric/ublas/io.hpp>
 
-//-----------------------
-// Monte Carlo simulation
-//-----------------------
-#include <boost/random.hpp>
-#include <boost/random/mersenne_twister.hpp>
-#include <boost/random/variate_generator.hpp>
-#include <boost/random/normal_distribution.hpp>
-#include <boost/random/lognormal_distribution.hpp>
-#include <boost/random/exponential_distribution.hpp>
-#include <boost/random/extreme_value_distribution.hpp>
-#include <boost/random/weibull_distribution.hpp>
-#include <boost/random/uniform_real.hpp>
-#include <boost/random/gamma_distribution.hpp>
-
 #include <MCS_RNG.hpp>
-
 #include <FE2_Macro_Solver_MCS.hpp>
 //-----------------------
-
 #include <cholesky.hpp>
 #include <MatrixInverse.hpp> // download from http://proteowizard.sourceforge.net/dox/_matrix_inverse_8hpp.html
 
@@ -133,7 +119,7 @@ struct Stochastic_Model {
   double R0_method;                      // Method for computation of the modified Nataf correlation matrix
   int flag_sens;                         // Flag for computation of sensitivities w.r.t. parameters
   int ExaminedPly;
-  int AnalysisType;                       // Analysis type 10: FORM 20: SORM 30: MCS 31: MCIS
+  int AnalysisType;
   vector<string> NameVars;               // Name of random variables
   ublas::matrix<double> correlation;     // Correlation matrix
   ublas::matrix<double> marg;            // Marginal distribution for each random variable
@@ -434,7 +420,51 @@ void REL_Stress_Transformation_Theta(double theta, ublas::matrix<double> Stress_
   
 }
 
-#include <Reliability_Methods.hpp>
+//==============================================================================
+//
+// Define class and multindex container to store data for triangles on the
+// boundary of the RVE (it cannot be defined within main)
+//
+//==============================================================================
+
+struct Face_CenPos_Handle {
+  double xcoord, ycoord, zcoord;
+  const EntityHandle  Tri_Hand;
+  Face_CenPos_Handle(double _xcoord, double _ycoord,  double _zcoord,  const EntityHandle _Tri_Hand):xcoord(_xcoord),
+  ycoord(_ycoord), zcoord(_zcoord), Tri_Hand(_Tri_Hand) {}
+};
+
+struct xcoord_tag {}; //tags to used in the multindex container
+struct ycoord_tag {};
+struct zcoord_tag {};
+struct Tri_Hand_tag {};
+struct Composite_xyzcoord {};
+
+typedef multi_index_container<
+Face_CenPos_Handle,
+indexed_by<
+ordered_non_unique<
+tag<xcoord_tag>, member<Face_CenPos_Handle,double,&Face_CenPos_Handle::xcoord> >,
+
+ordered_non_unique<
+tag<ycoord_tag>, member<Face_CenPos_Handle,double,&Face_CenPos_Handle::ycoord> >,
+
+ordered_non_unique<
+tag<zcoord_tag>, member<Face_CenPos_Handle,double,&Face_CenPos_Handle::zcoord> >,
+
+ordered_unique<
+tag<Tri_Hand_tag>, member<Face_CenPos_Handle,const EntityHandle,&Face_CenPos_Handle::Tri_Hand> >,
+
+ordered_unique<
+tag<Composite_xyzcoord>,
+composite_key<
+Face_CenPos_Handle,
+member<Face_CenPos_Handle,double,&Face_CenPos_Handle::xcoord>,
+member<Face_CenPos_Handle,double,&Face_CenPos_Handle::ycoord>,
+member<Face_CenPos_Handle,double,&Face_CenPos_Handle::zcoord> > >
+> > Face_CenPos_Handle_multiIndex;
+
+#include <Reliability_Methods_Periodic.hpp>
 
 int main(int argc, char *argv[]) {
   
@@ -483,7 +513,7 @@ int main(int argc, char *argv[]) {
   if(flg != PETSC_TRUE) {
     order_RVE = 1;
   }
-
+  
   /*****************************************************************************
    *
    * Transfer mesh data to MOAB database
@@ -499,7 +529,6 @@ int main(int argc, char *argv[]) {
   //Create MoFEM (Joseph) database
   MoFEM::Core core_RVE(moab_RVE);
   FieldInterface& m_field_RVE = core_RVE;
-  
   
   /*****************************************************************************
    *
@@ -557,12 +586,16 @@ int main(int argc, char *argv[]) {
   ///Getting No. of Fibres to be used for Potential Flow Problem
   int noOfFibres=0;
   for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field_RVE,BLOCKSET|UNKNOWNCUBITNAME,it)) {
-    
     std::size_t found=it->get_name().find("PotentialFlow");
     if (found==std::string::npos) continue;
     noOfFibres += 1;
   }
   cout<<"No. of Fibres for Potential Flow : "<<noOfFibres<<endl;
+  
+  //  vector<int> fibreList(noOfFibres,0);
+  //  for (int aa=0; aa<noOfFibres; aa++) {
+  //    fibreList[aa] = aa + 1;
+  //  }
   
   vector<Range> RangeFibre(noOfFibres);
   vector<EntityHandle> fibre_meshset(noOfFibres);
@@ -578,17 +611,15 @@ int main(int argc, char *argv[]) {
     }
   }
   
+  //rval = moab_RVE.write_file("meshset_Fibre.vtk","VTK","",&meshset_Fibre,1); CHKERR_PETSC(rval);
+  
   for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field_RVE,BLOCKSET,it)){
-    
     if(it->get_name() == "MAT_ELASTIC_1") {
       Range TetsInBlock;
       rval = moab_RVE.get_entities_by_type(it->meshset, MBTET,TetsInBlock,true); CHKERR_PETSC(rval);
       Range block_rope_bit_level = intersect(LatestRefinedTets,TetsInBlock);
-      
       cout<<"=============  TetsInBlock  "<< TetsInBlock.size() <<endl;
-      
       rval = moab_RVE.add_entities(meshset_Matrix,block_rope_bit_level);CHKERR_PETSC(rval);
-      
     }
   }
   ierr = m_field_RVE.seed_finite_elements(meshset_Matrix); CHKERRQ(ierr);
@@ -619,7 +650,8 @@ int main(int argc, char *argv[]) {
   // Deterministic fields
   int field_rank=3;
   ierr = m_field_RVE.add_field("DISP_RVE",H1,field_rank); CHKERRQ(ierr);
-  ierr = m_field_RVE.add_field("Lagrange_mul_disp",H1,field_rank); CHKERRQ(ierr);
+  ierr = m_field_RVE.add_field("Lagrange_mul_disp",H1,field_rank); CHKERRQ(ierr);  //For lagrange multipliers to control the periodic motion
+  ierr = m_field_RVE.add_field("Lagrange_mul_disp_rigid_trans",NOFIELD,3); CHKERRQ(ierr);  //To control the rigid body motion (3 Translations)
   
   // Stochastic fields for perturbation method
   for(int ii=0; ii < nders; ii++ ) {
@@ -629,7 +661,6 @@ int main(int argc, char *argv[]) {
     ierr = m_field_RVE.add_field(ss_field.str().c_str(),H1,field_rank,MF_ZERO); CHKERRQ(ierr);
   }
   
-  
   /*****************************************************************************
    *
    * Create finite element for the defined fields
@@ -638,7 +669,7 @@ int main(int argc, char *argv[]) {
   ierr = m_field_RVE.add_finite_element("ELASTIC_FE_RVE"); CHKERRQ(ierr);
   ierr = m_field_RVE.add_finite_element("TRAN_ISO_FE_RVE"); CHKERRQ(ierr);
   ierr = m_field_RVE.add_finite_element("Lagrange_FE"); CHKERRQ(ierr);
-  
+  ierr = m_field_RVE.add_finite_element("Lagrange_FE_rigid_trans"); CHKERRQ(ierr); //For rigid body control
   
   /*****************************************************************************
    *
@@ -676,8 +707,9 @@ int main(int argc, char *argv[]) {
     cout<<ss_field.str().c_str()<<endl;
     ierr = m_field_RVE.modify_finite_element_add_field_data("TRAN_ISO_FE_RVE",ss_field.str().c_str()); CHKERRQ(ierr);
   }
-  
-  //C and CT
+
+  //======================================================================================================
+  // Define rows/cols and element data for C and CT (for lagrange multipliers)
   //======================================================================================================
   //C row as Lagrange_mul_disp and col as DISPLACEMENT
   ierr = m_field_RVE.modify_finite_element_add_field_row("Lagrange_FE","Lagrange_mul_disp"); CHKERRQ(ierr);
@@ -690,8 +722,22 @@ int main(int argc, char *argv[]) {
   //data
   ierr = m_field_RVE.modify_finite_element_add_field_data("Lagrange_FE","Lagrange_mul_disp"); CHKERRQ(ierr);
   ierr = m_field_RVE.modify_finite_element_add_field_data("Lagrange_FE","DISP_RVE"); CHKERRQ(ierr);
+
   //======================================================================================================
+  // Define rows/cols and element data for C1 and C1T (for lagrange multipliers to contol the rigid body motion)
+  //======================================================================================================
+  //C row as Lagrange_mul_disp and col as DISPLACEMENT
+  ierr = m_field_RVE.modify_finite_element_add_field_row("Lagrange_FE_rigid_trans","Lagrange_mul_disp_rigid_trans"); CHKERRQ(ierr);
+  ierr = m_field_RVE.modify_finite_element_add_field_col("Lagrange_FE_rigid_trans","DISP_RVE"); CHKERRQ(ierr);
   
+  //CT col as Lagrange_mul_disp and row as DISPLACEMENT
+  ierr = m_field_RVE.modify_finite_element_add_field_col("Lagrange_FE_rigid_trans","Lagrange_mul_disp_rigid_trans"); CHKERRQ(ierr);
+  ierr = m_field_RVE.modify_finite_element_add_field_row("Lagrange_FE_rigid_trans","DISP_RVE"); CHKERRQ(ierr);
+  
+  //data
+  ierr = m_field_RVE.modify_finite_element_add_field_data("Lagrange_FE_rigid_trans","Lagrange_mul_disp_rigid_trans"); CHKERRQ(ierr);
+  ierr = m_field_RVE.modify_finite_element_add_field_data("Lagrange_FE_rigid_trans","DISP_RVE"); CHKERRQ(ierr);
+  //======================================================================================================
   
   //define problems
   ierr = m_field_RVE.add_problem("ELASTIC_PROBLEM_RVE"); CHKERRQ(ierr);
@@ -700,6 +746,7 @@ int main(int argc, char *argv[]) {
   ierr = m_field_RVE.modify_problem_add_finite_element("ELASTIC_PROBLEM_RVE","ELASTIC_FE_RVE"); CHKERRQ(ierr);
   ierr = m_field_RVE.modify_problem_add_finite_element("ELASTIC_PROBLEM_RVE","TRAN_ISO_FE_RVE"); CHKERRQ(ierr);
   ierr = m_field_RVE.modify_problem_add_finite_element("ELASTIC_PROBLEM_RVE","Lagrange_FE"); CHKERRQ(ierr);
+  ierr = m_field_RVE.modify_problem_add_finite_element("ELASTIC_PROBLEM_RVE","Lagrange_FE_rigid_trans"); CHKERRQ(ierr);
   
   //set refinment level for problem
   ierr = m_field_RVE.modify_problem_ref_level_add_bit("ELASTIC_PROBLEM_RVE",problem_bit_level_RVE); CHKERRQ(ierr); // problem_bit_level
@@ -731,17 +778,186 @@ int main(int argc, char *argv[]) {
   ierr = m_field_RVE.add_ents_to_finite_element_by_TETs(meshset_Matrix,"ELASTIC_FE_RVE",true); CHKERRQ(ierr);
   ierr = m_field_RVE.add_ents_to_finite_element_by_TETs(meshset_Fibre,"TRAN_ISO_FE_RVE",true); CHKERRQ(ierr);
   
-  Range SurfacesFaces;
-  ierr = m_field_RVE.get_cubit_msId_entities_by_dimension(103,SIDESET,2,SurfacesFaces,true); CHKERRQ(ierr);
-  ierr = PetscPrintf(PETSC_COMM_WORLD,"number of SideSet 103 = %d\n",SurfacesFaces.size()); CHKERRQ(ierr);
-  ierr = m_field_RVE.add_ents_to_finite_element_by_TRIs(SurfacesFaces,"Lagrange_FE"); CHKERRQ(ierr);
+  // Add finite element to lagrange element for rigid body translation
+  Range Tris_NewWholeMesh, Tri_OldNewSurf, SurfacesFaces;
+  ierr = m_field_RVE.get_entities_by_type_and_ref_level(bit_levels.back(),BitRefLevel().set(),MBTRI,Tris_NewWholeMesh); CHKERRQ(ierr);
+  ierr = m_field_RVE.get_cubit_msId_entities_by_dimension(103,SIDESET,2,Tri_OldNewSurf,true); CHKERRQ(ierr);
+  SurfacesFaces = intersect(Tris_NewWholeMesh,Tri_OldNewSurf);
+  ierr = PetscPrintf(PETSC_COMM_WORLD,"number of SIDESET 103 = %d\n",SurfacesFaces.size()); CHKERRQ(ierr);
   
-  //to create meshset from range
+  // Create meshset from range
   EntityHandle BoundFacesMeshset;
   rval = moab_RVE.create_meshset(MESHSET_SET,BoundFacesMeshset); CHKERR_PETSC(rval);
   rval = moab_RVE.add_entities(BoundFacesMeshset,SurfacesFaces); CHKERR_PETSC(rval);
   ierr = m_field_RVE.seed_ref_level_MESHSET(BoundFacesMeshset,BitRefLevel().set()); CHKERRQ(ierr);
-  ierr = m_field_RVE.add_ents_to_field_by_TRIs(BoundFacesMeshset,"Lagrange_mul_disp",2); CHKERRQ(ierr);
+
+  ierr = m_field_RVE.add_ents_to_finite_element_by_TRIs(SurfacesFaces,"Lagrange_FE_rigid_trans"); CHKERRQ(ierr);
+
+  //=======================================================================================================
+  // Add Periodic Prisms Between Triangles on -ve and +ve faces to implement periodic boundary conditions
+  //======================================================================================================= 
+  //if (choise_value == HOMOBCPERIODIC) {
+  //Populating the Multi-index container with -ve triangles
+    Range Tri_OldNewSurfNeg, SurTrisNeg;
+    ierr = m_field_RVE.get_cubit_msId_entities_by_dimension(101,SIDESET,2,Tri_OldNewSurfNeg,true); CHKERRQ(ierr);
+    SurTrisNeg = intersect(Tris_NewWholeMesh,Tri_OldNewSurfNeg);
+    ierr = PetscPrintf(PETSC_COMM_WORLD,"number of SIDESET 101 = %d\n",SurTrisNeg.size()); CHKERRQ(ierr);
+
+    Face_CenPos_Handle_multiIndex Face_CenPos_Handle_varNeg, Face_CenPos_Handle_varPos;
+    double TriCen[3], coords_Tri[9];
+
+    double roundfact=1000.0;
+    for(Range::iterator it = SurTrisNeg.begin(); it!=SurTrisNeg.end();  it++) {
+        // cout<<"count1 ="<<count1<<endl;
+        const EntityHandle* conn_face;  int num_nodes_Tri;
+
+        //get nodes attached to the face
+        rval = moab_RVE.get_connectivity(*it,conn_face,num_nodes_Tri,true); CHKERR_PETSC(rval);
+        //get nodal coordinates
+        rval = moab_RVE.get_coords(conn_face,num_nodes_Tri,coords_Tri); CHKERR_PETSC(rval);
+
+       //Find triangle centriod
+        TriCen[0]= (coords_Tri[0]+coords_Tri[3]+coords_Tri[6])/3.0;
+        TriCen[1]= (coords_Tri[1]+coords_Tri[4]+coords_Tri[7])/3.0;
+        TriCen[2]= (coords_Tri[2]+coords_Tri[5]+coords_Tri[8])/3.0;
+
+        //round values to 3 disimal places
+        if(TriCen[0]>=0) TriCen[0]=double(int(TriCen[0]*roundfact+0.5))/roundfact;  else TriCen[0]=double(int(TriCen[0]*roundfact-0.5))/roundfact; //-ve and +ve value
+        if(TriCen[1]>=0) TriCen[1]=double(int(TriCen[1]*roundfact+0.5))/roundfact;  else TriCen[1]=double(int(TriCen[1]*roundfact-0.5))/roundfact;
+        if(TriCen[2]>=0) TriCen[2]=double(int(TriCen[2]*roundfact+0.5))/roundfact;  else TriCen[2]=double(int(TriCen[2]*roundfact-0.5))/roundfact;
+         // cout<<"   TriCen[0]= "<<TriCen[0] << "   TriCen[1]= "<< TriCen[1] << "   TriCen[2]= "<< TriCen[2] <<endl;
+        //fill the multi-index container with centriod coordinates and triangle handles
+        Face_CenPos_Handle_varNeg.insert(Face_CenPos_Handle(TriCen[0], TriCen[1], TriCen[2], *it));
+    }
+
+    //Populating the Multi-index container with +ve triangles
+    Range Tri_OldNewSurfPos, SurTrisPos;
+    ierr = m_field_RVE.get_cubit_msId_entities_by_dimension(102,SIDESET,2,Tri_OldNewSurfPos,true); CHKERRQ(ierr);
+    SurTrisPos = intersect(Tris_NewWholeMesh,Tri_OldNewSurfPos);
+    ierr = PetscPrintf(PETSC_COMM_WORLD,"number of SIDESET 102 = %d\n",SurTrisPos.size()); CHKERRQ(ierr);
+
+    for(Range::iterator it = SurTrisPos.begin(); it!=SurTrisPos.end();  it++) {
+        const EntityHandle* conn_face;  int num_nodes_Tri;
+
+        //get nodes attached to the face
+        rval = moab_RVE.get_connectivity(*it,conn_face,num_nodes_Tri,true); CHKERR_PETSC(rval);
+        //get nodal coordinates
+        rval = moab_RVE.get_coords(conn_face,num_nodes_Tri,coords_Tri); CHKERR_PETSC(rval);
+
+        //Find triangle centriod
+        TriCen[0]= (coords_Tri[0]+coords_Tri[3]+coords_Tri[6])/3.0;
+        TriCen[1]= (coords_Tri[1]+coords_Tri[4]+coords_Tri[7])/3.0;
+        TriCen[2]= (coords_Tri[2]+coords_Tri[5]+coords_Tri[8])/3.0;
+
+        //round values to 3 disimal places
+        if(TriCen[0]>=0) TriCen[0]=double(int(TriCen[0]*roundfact+0.5))/roundfact;  else TriCen[0]=double(int(TriCen[0]*roundfact-0.5))/roundfact;
+        if(TriCen[1]>=0) TriCen[1]=double(int(TriCen[1]*roundfact+0.5))/roundfact;  else TriCen[1]=double(int(TriCen[1]*roundfact-0.5))/roundfact;
+        if(TriCen[2]>=0) TriCen[2]=double(int(TriCen[2]*roundfact+0.5))/roundfact;  else TriCen[2]=double(int(TriCen[2]*roundfact-0.5))/roundfact;
+       // cout<<"TriCen[0]= "<<TriCen[0] << "   TriCen[1]= "<< TriCen[1] << "   TriCen[2]= "<< TriCen[2] <<endl;
+
+        //fill the multi-index container with centriod coordinates and triangle handles
+        Face_CenPos_Handle_varPos.insert(Face_CenPos_Handle(TriCen[0], TriCen[1], TriCen[2], *it));
+    }
+
+    //Find minimum and maximum X, Y and Z coordinates of the RVE (using multi-index container)
+    double XcoordMin, YcoordMin, ZcoordMin, XcoordMax, YcoordMax, ZcoordMax;
+    typedef Face_CenPos_Handle_multiIndex::index<xcoord_tag>::type::iterator Tri_Xcoord_iterator;
+    typedef Face_CenPos_Handle_multiIndex::index<ycoord_tag>::type::iterator Tri_Ycoord_iterator;
+    typedef Face_CenPos_Handle_multiIndex::index<zcoord_tag>::type::iterator Tri_Zcoord_iterator;
+    Tri_Xcoord_iterator XcoordMin_it, XcoordMax_it;
+    Tri_Ycoord_iterator YcoordMin_it, YcoordMax_it;
+    Tri_Zcoord_iterator ZcoordMin_it, ZcoordMax_it;
+
+    //XcoordMax_it-- because .end() will point iterator after the data range but .begin() will point the iteratore to the first value of range
+    XcoordMin_it=Face_CenPos_Handle_varNeg.get<xcoord_tag>().begin();                  XcoordMin=XcoordMin_it->xcoord;
+    XcoordMax_it=Face_CenPos_Handle_varPos.get<xcoord_tag>().end();    XcoordMax_it--; XcoordMax=XcoordMax_it->xcoord;
+    YcoordMin_it=Face_CenPos_Handle_varNeg.get<ycoord_tag>().begin();                  YcoordMin=YcoordMin_it->ycoord;
+    YcoordMax_it=Face_CenPos_Handle_varPos.get<ycoord_tag>().end();    YcoordMax_it--; YcoordMax=YcoordMax_it->ycoord;
+    ZcoordMin_it=Face_CenPos_Handle_varNeg.get<zcoord_tag>().begin();                  ZcoordMin=ZcoordMin_it->zcoord;
+    ZcoordMax_it=Face_CenPos_Handle_varPos.get<zcoord_tag>().end();    ZcoordMax_it--; ZcoordMax=ZcoordMax_it->zcoord;
+
+    cout<<"XcoordMin "<<XcoordMin << "      XcoordMax "<<XcoordMax <<endl;
+    cout<<"YcoordMin "<<YcoordMin << "      YcoordMax "<<YcoordMax <<endl;
+    cout<<"ZcoordMin "<<ZcoordMin << "      ZcoordMax "<<ZcoordMax <<endl;
+
+    //Creating Prisims between triangles on -ve and +ve faces
+    typedef Face_CenPos_Handle_multiIndex::index<Tri_Hand_tag>::type::iterator Tri_Hand_iterator;
+    Tri_Hand_iterator Tri_Neg;
+    typedef Face_CenPos_Handle_multiIndex::index<Composite_xyzcoord>::type::iterator xyzcoord_iterator;
+    xyzcoord_iterator Tri_Pos;
+    Range PrismRange;
+    double XPos, YPos, ZPos;
+    //int count=0;
+
+    // loop over -ve triangles to create prisims elemenet between +ve and -ve triangles
+    // count1=1;
+  for(Range::iterator it = SurTrisNeg.begin(); it!=SurTrisNeg.end();  it++) {
+    //        cout<<"count1 ="<<count1<<endl;  count1++;
+    Tri_Neg=Face_CenPos_Handle_varNeg.get<Tri_Hand_tag>().find(*it);
+    //corresponding +ve triangle
+    if(Tri_Neg->xcoord==XcoordMin){XPos=XcoordMax;         YPos=Tri_Neg->ycoord;  ZPos=Tri_Neg->zcoord;};
+    if(Tri_Neg->ycoord==YcoordMin){XPos=Tri_Neg->xcoord;   YPos=YcoordMax;        ZPos=Tri_Neg->zcoord;};
+    if(Tri_Neg->zcoord==ZcoordMin){XPos=Tri_Neg->xcoord;   YPos=Tri_Neg->ycoord;  ZPos=ZcoordMax;      };
+    Tri_Pos=Face_CenPos_Handle_varPos.get<Composite_xyzcoord>().find(boost::make_tuple(XPos, YPos, ZPos));
+    EntityHandle PrismNodes[6];
+    vector<EntityHandle> TriNodesNeg, TriNodesPos;
+    double CoordNodeNeg[9], CoordNodePos[9];
+    rval = moab_RVE.get_connectivity(&(Tri_Neg->Tri_Hand),1,TriNodesNeg,true); CHKERR_PETSC(rval);
+    rval = moab_RVE.get_connectivity(&(Tri_Pos->Tri_Hand),1,TriNodesPos,true); CHKERR_PETSC(rval);
+    rval = moab_RVE.get_coords(&TriNodesNeg[0],3,CoordNodeNeg);  CHKERR_THROW(rval);
+    rval = moab_RVE.get_coords(&TriNodesPos[0],3,CoordNodePos);  CHKERR_THROW(rval);
+    for(int ii=0; ii<3; ii++){
+      PrismNodes[ii]=TriNodesNeg[ii];
+    }
+    
+    //Match exact nodes to each other to avoide the problem of twisted prisms
+    double XNodeNeg, YNodeNeg, ZNodeNeg, XNodePos, YNodePos, ZNodePos;
+    for(int ii=0; ii<3; ii++){
+      if(Tri_Neg->xcoord==XcoordMin){XNodeNeg=XcoordMax;          YNodeNeg=CoordNodeNeg[3*ii+1];   ZNodeNeg=CoordNodeNeg[3*ii+2];};
+      if(Tri_Neg->ycoord==YcoordMin){XNodeNeg=CoordNodeNeg[3*ii]; YNodeNeg=YcoordMax;              ZNodeNeg=CoordNodeNeg[3*ii+2];};
+      if(Tri_Neg->zcoord==ZcoordMin){XNodeNeg=CoordNodeNeg[3*ii]; YNodeNeg=CoordNodeNeg[3*ii+1];   ZNodeNeg=ZcoordMax;};
+      for(int jj=0; jj<3; jj++){
+        XNodePos=CoordNodePos[3*jj]; YNodePos=CoordNodePos[3*jj+1]; ZNodePos=CoordNodePos[3*jj+2];
+        
+        if(XNodeNeg==XNodePos  &&  YNodeNeg==YNodePos  &&  ZNodeNeg==ZNodePos){
+          PrismNodes[3+ii]=TriNodesPos[jj];
+          break;
+        }
+      }
+    }
+    //prism nodes and their coordinates
+    double CoordNodesPrisms[18];
+    rval = moab_RVE.get_coords(PrismNodes,6,CoordNodesPrisms);  CHKERR_THROW(rval);
+    EntityHandle PeriodicPrism;
+    rval = moab_RVE.create_element(MBPRISM,PrismNodes,6,PeriodicPrism); CHKERR_PETSC(rval);
+    PrismRange.insert(PeriodicPrism);
+  }
+//  }
+  //cout<<"\n Constructing Prisms"<<endl;
+  //cout<<"PrismRange "<<PrismRange<<endl;
+  //Saving prisms in interface.vtk
+  EntityHandle out_meshset1;
+  rval = moab_RVE.create_meshset(MESHSET_SET,out_meshset1); CHKERR_PETSC(rval);
+  rval = moab_RVE.add_entities(out_meshset1,PrismRange); CHKERR_PETSC(rval);
+  rval = moab_RVE.write_file("Prisms.vtk","VTK","",&out_meshset1,1); CHKERR_PETSC(rval);
+  cout << "Prisms.vtk output" <<endl;
+  
+  //Adding Prisims to Element Lagrange_elem (to loop over these prisims)
+  EntityHandle PrismRangeMeshset;
+  rval = moab_RVE.create_meshset(MESHSET_SET,PrismRangeMeshset); CHKERR_PETSC(rval);
+  rval = moab_RVE.add_entities(PrismRangeMeshset,PrismRange); CHKERR_PETSC(rval);
+  //    cout << PrismRange <<endl;
+  ierr = m_field_RVE.seed_ref_level_3D(PrismRangeMeshset,problem_bit_level_RVE); CHKERRQ(ierr);
+  //    mField.seed_finite_elements(PrismRange);
+  ierr = m_field_RVE.get_entities_by_ref_level(bit_levels.back(),BitRefLevel().set(),out_meshset); CHKERRQ(ierr);
+  ierr = m_field_RVE.add_ents_to_finite_element_by_PRISMs(PrismRange, "Lagrange_FE"); CHKERRQ(ierr);
+  
+  //Adding only -ve surfaces to the field Lagrange_mul_disp (in periodic boundary conditions size of C (3M/2 x 3N))
+  //to create meshset from range  SurTrisNeg
+  EntityHandle SurTrisNegMeshset;
+  rval = moab_RVE.create_meshset(MESHSET_SET,SurTrisNegMeshset); CHKERR_PETSC(rval);
+  rval = moab_RVE.add_entities(SurTrisNegMeshset,SurTrisNeg); CHKERR_PETSC(rval);
+  ierr = m_field_RVE.add_ents_to_field_by_TRIs(SurTrisNegMeshset,"Lagrange_mul_disp",2); CHKERRQ(ierr);
   
   /*****************************************************************************
    *
@@ -821,6 +1037,9 @@ int main(int argc, char *argv[]) {
   moab::Core mb_instance_Macro;
   Interface& moab_Macro = mb_instance_Macro;
   
+  //ParallelComm* pcomm_Macro = ParallelComm::get_pcomm(&moab_Macro,MYPCOMM_INDEX);
+  //if(pcomm == NULL) pcomm_Macro =  new ParallelComm(&moab_Macro,PETSC_COMM_WORLD);
+  
   /*****************************************************************************
    *
    * Read parameters from line command
@@ -842,8 +1061,7 @@ int main(int argc, char *argv[]) {
   if(flg != PETSC_TRUE) {
     NO_Layers = 1;
   }
-  cout<<"\n\nNumber of layers: "<<NO_Layers<<endl;
-  
+
   /*****************************************************************************
    *
    * Transfer mesh data to MOAB database
@@ -884,7 +1102,7 @@ int main(int argc, char *argv[]) {
     if(it->get_name() == "RELIABILITY") {
       rval = moab_Macro.get_entities_by_type(it->meshset, MBTET,TetsInBlock_Reliability,true); CHKERR_PETSC(rval);
     }
-  }
+  } 
   
   // ===========================================================================
   //
@@ -937,7 +1155,6 @@ int main(int argc, char *argv[]) {
   
   ierr = m_field_Macro.add_finite_element("ELASTIC_FE_MACRO_REL"); CHKERRQ(ierr);
  
-
   /*****************************************************************************
    *
    * set field data which finite element use
@@ -1102,7 +1319,6 @@ int main(int argc, char *argv[]) {
    * Add finite elements entities
    *
    ****************************************************************************/
-
   ierr = m_field_Macro.add_ents_to_finite_element_by_TETs(TetsInBlock_1st_Ply, "ELASTIC_1st_Ply"); CHKERRQ(ierr);
   if (NO_Layers > 1) {
     ierr = m_field_Macro.add_ents_to_finite_element_by_TETs(TetsInBlock_2nd_Ply,"ELASTIC_2nd_Ply"); CHKERRQ(ierr);
@@ -1173,7 +1389,7 @@ int main(int argc, char *argv[]) {
   ierr = m_field_Macro.set_field_order(0,MBEDGE,  "MESH_NODE_POSITIONS",2); CHKERRQ(ierr);
   ierr = m_field_Macro.set_field_order(0,MBVERTEX,"MESH_NODE_POSITIONS",1); CHKERRQ(ierr);
  
- //***************************************************************************
+  // load
   ierr = MetaNeummanForces::addNeumannBCElements(m_field_Macro,"DISP_MACRO"); CHKERRQ(ierr);
   ierr = m_field_Macro.modify_problem_add_finite_element("ELASTIC_PROBLEM_MACRO","FORCE_FE"); CHKERRQ(ierr);
   
@@ -1244,6 +1460,8 @@ int main(int argc, char *argv[]) {
   //                                                                          //
   //////////////////////////////////////////////////////////////////////////////
   
+  double beta;                    // Reliability index
+  
   /*
    *  Set reliability calculation options
    */
@@ -1254,34 +1472,42 @@ int main(int argc, char *argv[]) {
   ReliabOpt.istep_max     = 2000;    // Maximum number of interation allowed in the search algorithm
   ReliabOpt.e1            = 0.001;   // Tolerance on how close design point is to limit-state surface
   ReliabOpt.e2            = 0.001;   // Tolerance on how accurately the gradient points towards the origin
-  ReliabOpt.step_code     = 1.0;       // 0: step size by Armijo rule, otherwise: given value is the step size
+  ReliabOpt.step_code     = 1;       // 0: step size by Armijo rule, otherwise: given value is the step size
   ReliabOpt.Recorded_u    = 1;       // 0: u-vector not recorded at all iterations, 1: u-vector recorded at all iterations
   ReliabOpt.Recorded_x    = 1;       // 0: x-vector not recorded at all iterations, 1: x-vector recorded at all iterations
   ReliabOpt.Recorded_beta = 1;
   ReliabOpt.grad_G        = "PSFEM"; // "PSFEM": perturbation, "DDM": direct differentiation, 'ADM': automatic differentiation
   
-  //
-  // Read inputs' statistical properties from file to insert into <probdata>
-  //
+  int    echo_flag = ReliabOpt.echo_flag;
+  double e1        = ReliabOpt.e1;
+  double e2        = ReliabOpt.e2;
+  int    istep_max = ReliabOpt.istep_max;
+  double step_code = ReliabOpt.step_code;
+  int    beta_flag = ReliabOpt.Recorded_beta;
+  
+  /*
+   *  Read inputs' statistical properties from file to insert into <probdata>
+   */
   Stochastic_Model probdata;
   
   // Import data from textile file
   ImportProbData readprobdata;
   
   ierr = readprobdata.ProbdataFileIn(); CHKERRQ(ierr);
-  probdata.marg         = readprobdata.MargProb;
-  probdata.correlation  = readprobdata.CorrMat;
-  probdata.num_vars     = readprobdata.NumVars;
-  probdata.MatStrength  = readprobdata.MatStrength;
-  probdata.NameVars     = readprobdata.NameVars;
-  probdata.PlyAngle     = readprobdata.PlyAngle;
-  probdata.ExaminedPly  = readprobdata.ExaminedLayer;
+  probdata.marg        = readprobdata.MargProb;
+  probdata.correlation = readprobdata.CorrMat;
+  probdata.num_vars    = readprobdata.NumVars;
+  probdata.MatStrength = readprobdata.MatStrength;
+  probdata.NameVars    = readprobdata.NameVars;
+  probdata.PlyAngle    = readprobdata.PlyAngle;
+  probdata.ExaminedPly = readprobdata.ExaminedLayer;
   probdata.AnalysisType = readprobdata.AnalysisType;
   
   int FailureCriterion; // 1: Tsai-Wu, 2: Tsai-Hill
+  string NameOfFailureCriterion;
   FailureCriterion = readprobdata.FailureCriterion;
-  
   Reliability_Results MsFE_Reliability_Results;
+  step_code = readprobdata.SearchStep;
   
   switch (probdata.AnalysisType) {
     case 1: {
@@ -1291,24 +1517,24 @@ int main(int argc, char *argv[]) {
       cout<<"====================================="<<endl;
       cout<<"\n\n";
       
-      Reliability_Methods theREL;
+      Reliability_Methods_Periodic theREL;
       theREL.FORM(m_field_RVE,m_field_Macro,nvars,nders,stochastic_fields,
                   NO_Layers,probdata,ReliabOpt,FailureCriterion,
                   MsFE_Reliability_Results);
       break;
     }
-    case 2: {
-      cout<<"\n\n";
-      cout<<"====================================="<<endl;
-      cout<<"   Crude Monte Carlo simulation"<<endl;
-      cout<<"====================================="<<endl;
-      cout<<"\n\n";
-      
-      Reliability_Methods theREL;
-      theREL.Crude_MCS(m_field_RVE,m_field_Macro,NO_Layers,probdata,ReliabOpt,FailureCriterion,
-                       MsFE_Reliability_Results);
-      break;
-    }
+//    case 2: {
+//      cout<<"\n\n";
+//      cout<<"====================================="<<endl;
+//      cout<<"   Crude Monte Carlo simulation"<<endl;
+//      cout<<"====================================="<<endl;
+//      cout<<"\n\n";
+//      
+//      Reliability_Methods_Periodic theREL;
+//      theREL.Crude_MCS(m_field_RVE,m_field_Macro,NO_Layers,probdata,ReliabOpt,FailureCriterion,
+//                       MsFE_Reliability_Results);
+//      break;
+//    }
     case 3: {
       cout<<"\n\n";
       cout<<"====================================="<<endl;
@@ -1316,7 +1542,7 @@ int main(int argc, char *argv[]) {
       cout<<"====================================="<<endl;
       cout<<"\n\n";
       
-      Reliability_Methods theREL;
+      Reliability_Methods_Periodic theREL;
       //
       // Run FORM to get initial design point
       //
@@ -1329,106 +1555,14 @@ int main(int argc, char *argv[]) {
       
       break;
     }
-    case 4: {
-      cout<<"\n\n";
-      cout<<"==========================================="<<endl;
-      cout<<"   Multiple Importance sampling method"<<endl;
-      cout<<"==========================================="<<endl;
-      cout<<"\n\n";
       
-      Reliability_Methods theREL;
-      vector<Reliability_Results> the_Reliability_Results;
-      ublas::vector<int> Failure_Criterion(6);
-      
-      //
-      // Run FORM to get initial design point
-      //
-      
-      // Case 1. Maximum stress [F: 12013, M: 22013, S: 22014]
-      Failure_Criterion(0) = 22013;
-      FailureCriterion = Failure_Criterion(0);
-      theREL.FORM(m_field_RVE,m_field_Macro,nvars,nders,stochastic_fields,
-                  NO_Layers,probdata,ReliabOpt,FailureCriterion,
-                  MsFE_Reliability_Results);
-    
-      the_Reliability_Results.push_back(Reliability_Results());
-      the_Reliability_Results[0].beta_FORM              = MsFE_Reliability_Results.beta_FORM;
-      the_Reliability_Results[0].prob_failure_FORM      = MsFE_Reliability_Results.prob_failure_FORM;
-      the_Reliability_Results[0].NameOfFailureCriterion = MsFE_Reliability_Results.NameOfFailureCriterion;
-      the_Reliability_Results[0].DesignPoint            = MsFE_Reliability_Results.DesignPoint;
-      
-      // Case 2. Hashin
-      Failure_Criterion(1) = 23033; // [F: 13033 M: 23033]
-      FailureCriterion = Failure_Criterion(1);
-      theREL.FORM(m_field_RVE,m_field_Macro,nvars,nders,stochastic_fields,
-                  NO_Layers,probdata,ReliabOpt,FailureCriterion,
-                  MsFE_Reliability_Results);
-      
-      the_Reliability_Results.push_back(Reliability_Results());
-      the_Reliability_Results[1].beta_FORM              = MsFE_Reliability_Results.beta_FORM;
-      the_Reliability_Results[1].prob_failure_FORM      = MsFE_Reliability_Results.prob_failure_FORM;
-      the_Reliability_Results[1].NameOfFailureCriterion = MsFE_Reliability_Results.NameOfFailureCriterion;
-      the_Reliability_Results[1].DesignPoint            = MsFE_Reliability_Results.DesignPoint;
-      
-      // Case 3. Tsai-Wu
-      Failure_Criterion(2) = 43050; // [interaction]
-      FailureCriterion = Failure_Criterion(2);
-      theREL.FORM(m_field_RVE,m_field_Macro,nvars,nders,stochastic_fields,
-                  NO_Layers,probdata,ReliabOpt,FailureCriterion,
-                  MsFE_Reliability_Results);
-      
-      the_Reliability_Results.push_back(Reliability_Results());
-      the_Reliability_Results[2].beta_FORM              = MsFE_Reliability_Results.beta_FORM;
-      the_Reliability_Results[2].prob_failure_FORM      = MsFE_Reliability_Results.prob_failure_FORM;
-      the_Reliability_Results[2].NameOfFailureCriterion = MsFE_Reliability_Results.NameOfFailureCriterion;
-      the_Reliability_Results[2].DesignPoint            = MsFE_Reliability_Results.DesignPoint;
-      
-      // Case 4. Tsai-Hill
-      Failure_Criterion(3) = 43060; // [interaction]
-      FailureCriterion = Failure_Criterion(3);
-      theREL.FORM(m_field_RVE,m_field_Macro,nvars,nders,stochastic_fields,
-                  NO_Layers,probdata,ReliabOpt,FailureCriterion,
-                  MsFE_Reliability_Results);
-      
-      the_Reliability_Results.push_back(Reliability_Results());
-      the_Reliability_Results[3].beta_FORM              = MsFE_Reliability_Results.beta_FORM;
-      the_Reliability_Results[3].prob_failure_FORM      = MsFE_Reliability_Results.prob_failure_FORM;
-      the_Reliability_Results[3].NameOfFailureCriterion = MsFE_Reliability_Results.NameOfFailureCriterion;
-      the_Reliability_Results[3].DesignPoint            = MsFE_Reliability_Results.DesignPoint;
-      
-      // Case 5. Richard Christensen
-      Failure_Criterion(4) = 23073; // [F: 13073 M: 23073]
-      FailureCriterion = Failure_Criterion(4);
-      theREL.FORM(m_field_RVE,m_field_Macro,nvars,nders,stochastic_fields,
-                  NO_Layers,probdata,ReliabOpt,FailureCriterion,
-                  MsFE_Reliability_Results);
-      
-      the_Reliability_Results.push_back(Reliability_Results());
-      the_Reliability_Results[4].beta_FORM              = MsFE_Reliability_Results.beta_FORM;
-      the_Reliability_Results[4].prob_failure_FORM      = MsFE_Reliability_Results.prob_failure_FORM;
-      the_Reliability_Results[4].NameOfFailureCriterion = MsFE_Reliability_Results.NameOfFailureCriterion;
-      the_Reliability_Results[4].DesignPoint            = MsFE_Reliability_Results.DesignPoint;
-      
-      // Case 6. Hoffman
-      Failure_Criterion(5) = 43080; // [interaction]
-      FailureCriterion = Failure_Criterion(5);
-      theREL.FORM(m_field_RVE,m_field_Macro,nvars,nders,stochastic_fields,
-                  NO_Layers,probdata,ReliabOpt,FailureCriterion,
-                  MsFE_Reliability_Results);
-      
-      the_Reliability_Results.push_back(Reliability_Results());
-      the_Reliability_Results[5].beta_FORM              = MsFE_Reliability_Results.beta_FORM;
-      the_Reliability_Results[5].prob_failure_FORM      = MsFE_Reliability_Results.prob_failure_FORM;
-      the_Reliability_Results[5].NameOfFailureCriterion = MsFE_Reliability_Results.NameOfFailureCriterion;
-      the_Reliability_Results[5].DesignPoint            = MsFE_Reliability_Results.DesignPoint;
-      
-      // MCIS
-      theREL.Multi_MCIS(m_field_RVE,m_field_Macro,NO_Layers,probdata,ReliabOpt,
-                        Failure_Criterion,
-                        the_Reliability_Results);
-      break;
-    }
   }
+  
+  //////////////////////////////////////////////////////////////////////////////
+  //                                                                          //
+  //                               FINISH                                     //
+  //                                                                          //
+  //////////////////////////////////////////////////////////////////////////////
   
   finish_time = clock();
   total_time  = (double)(finish_time - start_time)/CLOCKS_PER_SEC;

@@ -189,7 +189,7 @@ int main(int argc, char *argv[]) {
 	ostringstream str_init_temp;
 
         (str_capa.str().c_str(),po::value<double>(&block_data[it->get_msId()].pOisson)->default_value(-1));
-        ostringstream str_init_temp;
+        //ostringstream str_init_temp;
 
         str_init_temp << "block_" << it->get_msId() << ".initial_temperature";
         config_file_options.add_options()
@@ -213,9 +213,9 @@ int main(int argc, char *argv[]) {
 	ierr = m_field.synchronise_entities(ents_to_set_order); CHKERRQ(ierr);
 
         PetscPrintf(PETSC_COMM_WORLD,"Set block %d order to %d\n",it->get_msId(),block_data[it->get_msId()].oRder);
-        Range block_ents;
+        //Range block_ents;
         rval = moab.get_entities_by_handle(it->get_meshset(),block_ents,true); CHKERR_PETSC(rval);
-        Range ents_to_set_order;
+        //Range ents_to_set_order;
         rval = moab.get_adjacencies(block_ents,3,false,ents_to_set_order,Interface::UNION); CHKERR_PETSC(rval);
         ents_to_set_order = ents_to_set_order.subset_by_type(MBTET);
         rval = moab.get_adjacencies(block_ents,2,false,ents_to_set_order,Interface::UNION); CHKERR_PETSC(rval);
@@ -227,10 +227,6 @@ int main(int argc, char *argv[]) {
       vector<string> additional_parameters;
       additional_parameters = collect_unrecognized(parsed.options,po::include_positional);
       for(vector<string>::iterator vit = additional_parameters.begin();
-
-	vit!=additional_parameters.end();vit++) {
-	ierr = PetscPrintf(PETSC_COMM_WORLD,"** WARNING Unrecognised option %s\n",vit->c_str()); CHKERRQ(ierr);
-
       vit!=additional_parameters.end();vit++) {
         ierr = PetscPrintf(PETSC_COMM_WORLD,"** WARNING Unrecognised option %s\n",vit->c_str()); CHKERRQ(ierr);
 
@@ -315,15 +311,6 @@ int main(int argc, char *argv[]) {
   if(m_field.check_field("TEMP")) {
     for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,BLOCKSET,it)) {
       if(block_data[it->get_msId()].initTemp!=0) {
-
-	PetscPrintf(PETSC_COMM_WORLD,"Set block %d temperature to %3.2g\n",
-	  it->get_msId(),block_data[it->get_msId()].initTemp);
-	Range block_ents;
-	rval = moab.get_entities_by_handle(it->meshset,block_ents,true); CHKERR(rval);
-	Range vertices;
-	rval = moab.get_connectivity(block_ents,vertices,true); CHKERR_PETSC(rval);
-	ierr = m_field.set_field(block_data[it->get_msId()].initTemp,MBVERTEX,vertices,"TEMP"); CHKERRQ(ierr);
-
         PetscPrintf(PETSC_COMM_WORLD,"Set block %d temperature to %3.2g\n",
         it->get_msId(),block_data[it->get_msId()].initTemp);
         Range block_ents;
@@ -634,9 +621,6 @@ int main(int argc, char *argv[]) {
   ierr = KSPDestroy(&solver); CHKERRQ(ierr);
 
   PetscFinalize();
-
-
-}
 
 
 }

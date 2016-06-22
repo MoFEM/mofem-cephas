@@ -62,21 +62,3 @@ block 6 attribute index 1 1   #Young's modulus  (This will not be used in the ca
 block 6 attribute index 2 0   #Poisson's ratio (This will not be used in the calculation) 
 
 save as "/Users/nxz6/MyBuild/mofem-cephas/mofem_v0.2/users_modules/degradation_model/meshes/Using_Textile_RVE/Macro_Plate.cub" overwrite
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

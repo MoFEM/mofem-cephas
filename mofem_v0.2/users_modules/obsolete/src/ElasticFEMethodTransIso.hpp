@@ -1395,19 +1395,19 @@ namespace ObosleteUsersModules {
       l_c = (vf*l_f*(k_m+m_m)+vm*l_m*(k_f+m_m))/(vf*(k_m+m_m)+vm*(p_f+p_m));
       n_c = vf*n_f+vm*n_m+(l_c-vf*l_f-vm*l_m)*(l_f-l_m)/(k_f-k_m);
 
-      double E1, E2, E3;
-      double NU12, NU13, NU23;
-      double G12, G13, G23;
+      double E1, E2;// E3;
+      double NU12, NU23; //NU13, NU23;
+      double G12; //G13, G23;
 
       E1 = n_c - l_c*l_c/k_c;
       E2 = 4*m_c*(k_c*n_c-l_c*l_c)/(n_c*(k_c+m_c)-l_c*l_c);
-      E3 = E2;
+      //E3 = E2;
       NU12 = l_c/k_c/2;
-      NU13 = NU12;
+      //NU13 = NU12;
       NU23 = (n_c*(k_c-m_c)-l_c*l_c)/(n_c*(k_c+m_c)-l_c*l_c);
       G12 = p_c;
-      G13 = G12;
-      G23 = m_c;
+      //G13 = G12;
+      //G23 = m_c;
 
 	  // case 1: fibre direction in x-axis
 //      ComplianceMatrix(0,0) = 1/E1;
