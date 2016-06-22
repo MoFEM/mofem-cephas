@@ -549,7 +549,6 @@ int main(int argc, char *argv[]) {
   //  IV. BUILD DATABASE
   //
   // ===========================================================================
-  
   //build field
   ierr = m_field.build_fields(); CHKERRQ(ierr);
 
@@ -647,7 +646,6 @@ int main(int argc, char *argv[]) {
       ierr = m_field.add_ents_to_finite_element_by_TETs(sit->second.tEts,"TRAN_ISOTROPIC_ELASTIC"); CHKERRQ(ierr);
     }
   }
-  
   if(trans_iso_blocks) {
     //Rhs
     trans_elastic.feRhs.getOpPtrVector().push_back(
@@ -734,12 +732,72 @@ int main(int argc, char *argv[]) {
     );
   }
 
+  struct MinMaxNodes {
+    enum MINAMX { C0,MAXLAST };
+    EntityHandle entMinMax[MAXLAST];
+    ublas::vector<int> rowIndices;
+    VectorDouble rHs[6];
+    MinMaxNodes() {
+      rowIndices.resize(3*MAXLAST);
+      for(int ii = 0;ii<6;ii++) {
+        rHs[ii].resize(3*MAXLAST);
+      }
+    }
+  };
+  MinMaxNodes minMaxNodes;
 
-  // ===========================================================================
-  //
-  //  IV. BUILD DATABASE
-  //
-  // ===========================================================================
+  if(choise_value == NITSCHE) { // Condensed traction/periodc BC
+    ierr = m_field.add_finite_element("SURFACE_ELEMENTS"); CHKERRQ(ierr);
+    ierr = m_field.modify_finite_element_add_field_row("SURFACE_ELEMENTS","DISPLACEMENT"); CHKERRQ(ierr);
+    ierr = m_field.modify_finite_element_add_field_col("SURFACE_ELEMENTS","DISPLACEMENT"); CHKERRQ(ierr);
+    ierr = m_field.modify_finite_element_add_field_data("SURFACE_ELEMENTS","DISPLACEMENT"); CHKERRQ(ierr);
+    ierr = m_field.modify_finite_element_add_field_data("SURFACE_ELEMENTS","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
+    EntityHandle condensed_traction_element_meshset;
+    rval = moab.create_meshset(MESHSET_TRACK_OWNER,condensed_traction_element_meshset); CHKERRQ(ierr);
+    Range nodes;
+    for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,SIDESET,it)) {
+      if(it->get_name().compare(0,12,"AllBoundSurf") == 0 || it->get_msId() == 103) {
+        Range tris;
+        rval = m_field.get_moab().get_entities_by_type(it->meshset,MBTRI,tris,true); CHKERR_PETSC(rval);
+        ierr = m_field.add_ents_to_finite_element_by_TRIs(tris,"SURFACE_ELEMENTS"); CHKERRQ(ierr);
+        Range tris_nodes;
+        rval = moab.get_connectivity(tris,nodes,true); CHKERR_PETSC(rval);
+        nodes.merge(tris_nodes);
+      }
+    }
+
+    {
+      ublas::vector<double> x,y,z;
+      x.resize(nodes.size(),false);
+      y.resize(nodes.size(),false);
+      z.resize(nodes.size(),false);
+      rval = moab.get_coords(nodes,&x[0],&y[0],&z[0]); CHKERR_PETSC(rval);
+      int bc_nb = 0;
+      for(int sx = -1; sx<=+1; sx+=2) {
+        for(int sy = -1; sy<=+1; sy+=2) {
+          for(int sz = -1; sz<=+1; sz+=2) {
+            if(bc_nb == MinMaxNodes::MAXLAST) break;
+            ublas::vector<double> dist_up_right;
+            dist_up_right.resize(x.size(),false);
+            dist_up_right.clear();
+            for(unsigned int nn = 0;nn<x.size();nn++) {
+              if(
+                ((sx*x[nn])>0)&&
+                ((sy*y[nn])>0)&&
+                ((sz*z[nn])>0)
+              ) {
+                dist_up_right[nn] = sx*x[nn]+sy*y[nn]+sz*z[nn];
+              }
+            }
+            ublas::vector<double>::iterator dist_it;
+            dist_it = max_element(dist_up_right.begin(),dist_up_right.end());
+            minMaxNodes.entMinMax[bc_nb++] = nodes[distance(dist_up_right.begin(),dist_it)];
+          }
+        }
+      }
+    }
+
+  }
 
   //build finite elements
   ierr = m_field.build_finite_elements(); CHKERRQ(ierr);
@@ -766,6 +824,9 @@ int main(int argc, char *argv[]) {
   if(choise_value == HOMOBCPERIODIC) {
     ierr = m_field.modify_problem_add_finite_element("ELASTIC_MECHANICS","LAGRANGE_ELEM"); CHKERRQ(ierr);
     ierr = m_field.modify_problem_add_finite_element("ELASTIC_MECHANICS","LAGRANGE_ELEM_TRANS"); CHKERRQ(ierr);
+  }
+  if(choise_value == NITSCHE) {
+    ierr = m_field.modify_problem_add_finite_element("ELASTIC_MECHANICS","SURFACE_ELEMENTS"); CHKERRQ(ierr);
   }
 
   //set refinment level for problem
@@ -842,6 +903,217 @@ int main(int argc, char *argv[]) {
   }
   ierr = MatZeroEntries(Aij); CHKERRQ(ierr);
 
+  NitscheMethod::BlockData nitsche_block_data;
+  NitscheMethod::CommonData nitsche_common_data;
+  PeriodicNitscheConstrains::CommonData periodic_common_data;
+  PeriodicNitscheConstrains::MyNitscheVolume nitsche_element_iso(
+    m_field,nitsche_block_data,nitsche_common_data,periodic_common_data
+  );
+  PeriodicNitscheConstrains::MyNitscheVolume nitsche_element_trans(
+    m_field,nitsche_block_data,nitsche_common_data,periodic_common_data
+  );
+
+  if(choise_value == NITSCHE) {
+
+    nitsche_block_data.faceElemName = "SURFACE_ELEMENTS";
+    for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,SIDESET,it)) {
+      if(it->get_name().compare(0,12,"AllBoundSurf") == 0 || it->get_msId() == 103) {
+        Range tris;
+        rval = m_field.get_moab().get_entities_by_type(it->meshset,MBTRI,tris,true); CHKERR_PETSC(rval);
+        nitsche_block_data.fAces.merge(tris);
+      }
+    }
+
+    for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,SIDESET,it)) {
+      if(it->get_name().compare(0,12,"AllBoundSurf") == 0 || it->get_msId() == 103) {
+        Range tris;
+        rval = m_field.get_moab().get_entities_by_type(it->meshset,MBTRI,tris,true); CHKERR_PETSC(rval);
+        periodic_common_data.skinFaces.merge(tris);
+      }
+    }
+
+    nitsche_block_data.gamma = 1e-7;
+    nitsche_block_data.phi = -1;
+    periodic_common_data.eps = 0;
+    ierr = PetscOptionsGetReal(
+      PETSC_NULL,"-my_gamma",&nitsche_block_data.gamma,PETSC_NULL
+    ); CHKERRQ(ierr);
+    ierr = PetscOptionsGetReal(
+      PETSC_NULL,"-my_phi",&nitsche_block_data.phi,PETSC_NULL
+    ); CHKERRQ(ierr);
+    ierr = PetscOptionsGetReal(
+      PETSC_NULL,"-my_eps",&periodic_common_data.eps,PETSC_NULL
+    ); CHKERRQ(ierr);
+    ierr = PetscPrintf(
+      PETSC_COMM_WORLD,
+      "Nitsche method gamma = %4.2e phi = %2.1f eps = %4.2e\n",
+      nitsche_block_data.gamma,nitsche_block_data.phi,periodic_common_data.eps
+    ); CHKERRQ(ierr);
+
+    for(
+      map<int,NonlinearElasticElement::BlockData>::iterator mit = iso_elastic.setOfBlocks.begin();
+      mit!=iso_elastic.setOfBlocks.end();
+      mit++
+    ) {
+      NonlinearElasticElement::CommonData &elastic_common_data = iso_elastic.commonData;
+      NonlinearElasticElement::BlockData &elastic_block_data = mit->second;
+      nitsche_element_iso.snes_B = Aij;
+
+      nitsche_element_iso.getOpPtrVector().push_back(
+        new NonlinearElasticElement::OpGetCommonDataAtGaussPts(
+          "DISPLACEMENT",elastic_common_data
+        )
+      );
+      nitsche_element_iso.getOpPtrVector().push_back(
+        new NonlinearElasticElement::OpGetCommonDataAtGaussPts(
+          "MESH_NODE_POSITIONS",elastic_common_data
+        )
+      );
+      nitsche_element_iso.getOpPtrVector().push_back(
+        new NonlinearElasticElement::OpJacobianPiolaKirchhoffStress(
+          "DISPLACEMENT",elastic_block_data,elastic_common_data,1,true,false,true
+        )
+      );
+      nitsche_element_iso.getOpPtrVector().push_back(
+        new PeriodicNitscheConstrains::OpLhsPeriodicNormal(
+          "DISPLACEMENT",nitsche_block_data,nitsche_common_data,
+          elastic_block_data,elastic_common_data,
+          periodic_common_data
+        )
+      );
+      nitsche_element_iso.getOpPtrVector().push_back(
+        new PeriodicNitscheConstrains::OpRhsPeriodicNormal(
+          "DISPLACEMENT",nitsche_block_data,nitsche_common_data,
+          elastic_block_data,elastic_common_data,
+          periodic_common_data,
+          F
+        )
+      );
+      nitsche_element_iso.getOpPtrVector().push_back(
+        new NitscheMethod::OpLhsNormal(
+          "DISPLACEMENT",nitsche_block_data,nitsche_common_data,
+          elastic_block_data,elastic_common_data,true
+        )
+      );
+
+      // this is to get data on opposite element
+      nitsche_element_iso.periodicVolume.getOpPtrVector().clear();
+      nitsche_element_iso.periodicVolume.getOpPtrVector().push_back(
+        new NonlinearElasticElement::OpGetCommonDataAtGaussPts(
+          "DISPLACEMENT",elastic_common_data
+        )
+      );
+      nitsche_element_iso.periodicVolume.getOpPtrVector().push_back(
+        new NonlinearElasticElement::OpGetCommonDataAtGaussPts(
+          "MESH_NODE_POSITIONS",elastic_common_data
+        )
+      );
+      nitsche_element_iso.periodicVolume.getOpPtrVector().push_back(
+        new NonlinearElasticElement::OpJacobianPiolaKirchhoffStress(
+          "DISPLACEMENT",elastic_block_data,elastic_common_data,1,true,false,true
+        )
+      );
+      nitsche_element_iso.periodicVolume.getOpPtrVector().push_back(
+        new PeriodicNitscheConstrains::OpGetVolumeData(
+          elastic_common_data,
+          periodic_common_data
+        )
+      );
+      periodic_common_data.volumeElemName = "ELASTIC";
+
+      nitsche_element_iso.addToRule = 1;
+      ierr = m_field.loop_finite_elements("ELASTIC_MECHANICS","ELASTIC",nitsche_element_iso); CHKERRQ(ierr);
+    }
+
+    for(
+      map<int,NonlinearElasticElement::BlockData>::iterator mit = trans_elastic.setOfBlocks.begin();
+      mit!=trans_elastic.setOfBlocks.end();
+      mit++
+    ) {
+      NonlinearElasticElement::CommonData &elastic_common_data = trans_elastic.commonData;
+      NonlinearElasticElement::BlockData &elastic_block_data = mit->second;
+      nitsche_element_trans.snes_B = Aij;
+
+      nitsche_element_trans.getOpPtrVector().push_back(
+        new NonlinearElasticElement::OpGetCommonDataAtGaussPts(
+          "DISPLACEMENT",elastic_common_data
+        )
+      );
+      nitsche_element_trans.getOpPtrVector().push_back(
+        new NonlinearElasticElement::OpGetCommonDataAtGaussPts(
+          "MESH_NODE_POSITIONS",elastic_common_data
+        )
+      );
+      nitsche_element_trans.getOpPtrVector().push_back(
+        new NonlinearElasticElement::OpGetCommonDataAtGaussPts(
+          "POTENTIAL_FIELD",elastic_common_data
+        )
+      );
+      nitsche_element_trans.getOpPtrVector().push_back(
+        new NonlinearElasticElement::OpJacobianPiolaKirchhoffStress(
+          "DISPLACEMENT",elastic_block_data,elastic_common_data,2,true,false,true
+        )
+      );
+      nitsche_element_trans.getOpPtrVector().push_back(
+        new PeriodicNitscheConstrains::OpLhsPeriodicNormal(
+          "DISPLACEMENT",nitsche_block_data,nitsche_common_data,
+          elastic_block_data,elastic_common_data,
+          periodic_common_data
+        )
+      );
+      nitsche_element_trans.getOpPtrVector().push_back(
+        new PeriodicNitscheConstrains::OpRhsPeriodicNormal(
+          "DISPLACEMENT",nitsche_block_data,nitsche_common_data,
+          elastic_block_data,elastic_common_data,
+          periodic_common_data,
+          F
+        )
+      );
+      nitsche_element_trans.getOpPtrVector().push_back(
+        new NitscheMethod::OpLhsNormal(
+          "DISPLACEMENT",nitsche_block_data,nitsche_common_data,
+          elastic_block_data,elastic_common_data,true
+        )
+      );
+
+      // this is to get data on opposite element
+      nitsche_element_trans.periodicVolume.getOpPtrVector().clear();
+      nitsche_element_trans.periodicVolume.getOpPtrVector().push_back(
+        new NonlinearElasticElement::OpGetCommonDataAtGaussPts(
+          "DISPLACEMENT",elastic_common_data
+        )
+      );
+      nitsche_element_trans.periodicVolume.getOpPtrVector().push_back(
+        new NonlinearElasticElement::OpGetCommonDataAtGaussPts(
+          "POTENTIAL_FIELD",elastic_common_data
+        )
+      );
+      nitsche_element_trans.periodicVolume.getOpPtrVector().push_back(
+        new NonlinearElasticElement::OpGetCommonDataAtGaussPts(
+          "MESH_NODE_POSITIONS",elastic_common_data
+        )
+      );
+      nitsche_element_trans.periodicVolume.getOpPtrVector().push_back(
+        new NonlinearElasticElement::OpJacobianPiolaKirchhoffStress(
+          "DISPLACEMENT",elastic_block_data,elastic_common_data,2,true,false,true
+        )
+      );
+      nitsche_element_trans.periodicVolume.getOpPtrVector().push_back(
+        new PeriodicNitscheConstrains::OpGetVolumeData(
+          elastic_common_data,
+          periodic_common_data
+        )
+      );
+      periodic_common_data.volumeElemName = "TRAN_ISOTROPIC_ELASTIC";
+
+      nitsche_element_trans.addToRule = 1;
+      ierr = m_field.loop_finite_elements(
+        "ELASTIC_MECHANICS","TRAN_ISOTROPIC_ELASTIC",nitsche_element_trans
+      );  CHKERRQ(ierr);
+    }
+
+
+  }
 
   /*****************************************************************************
    *
@@ -857,14 +1129,6 @@ int main(int argc, char *argv[]) {
 
   iso_elastic.getLoopFeLhs().getOpPtrVector().push_back(new VolumeCalculation("DISPLACEMENT",volume_vec));
   trans_elastic.getLoopFeLhs().getOpPtrVector().push_back(new VolumeCalculation("DISPLACEMENT",volume_vec));
-  
-  ierr = VecAssemblyBegin(volume_vec); CHKERRQ(ierr);
-  ierr = VecAssemblyEnd(volume_vec); CHKERRQ(ierr);
-  double rve_volume;
-  ierr = VecSum(volume_vec,&rve_volume);  CHKERRQ(ierr);
-  ierr = PetscPrintf(PETSC_COMM_WORLD,"RVE Volume %3.2g\n",rve_volume); CHKERRQ(ierr);
-  
-  ierr = VecDestroy(&volume_vec);
 
   /*****************************************************************************
    *
@@ -933,6 +1197,61 @@ int main(int argc, char *argv[]) {
     //std::cin >> wait;
   }
 
+  if(choise_value == NITSCHE) {
+    if(periodic_common_data.eps==0) {
+      const MoFEMProblem *problem_ptr;
+      ierr = m_field.get_problem("ELASTIC_MECHANICS",&problem_ptr); CHKERRQ(ierr);
+      for(int nn = 0;nn!=MinMaxNodes::MAXLAST;nn++) {
+        for(
+          _IT_NUMEREDDOFMOFEMENTITY_ROW_BY_ENT_FOR_LOOP_(
+            problem_ptr,minMaxNodes.entMinMax[nn],dof
+          )
+        ) {
+          minMaxNodes.rowIndices[3*nn+dof->get_dof_coeff_idx()]
+          = dof->get_petsc_gloabl_dof_idx();
+        }
+      }
+      VectorDouble coords;
+      int nb_bcs = 3*MinMaxNodes::MAXLAST;
+      coords.resize(nb_bcs,false);
+      rval = moab.get_coords(&minMaxNodes.entMinMax[0],MinMaxNodes::MAXLAST,&coords[0]);
+      VectorDouble strain;
+      strain.resize(6,false);
+      MatrixDouble mat_d;
+      for(int ii = 0;ii<6;ii++) {
+        minMaxNodes.rHs[ii].clear();
+        strain.clear();
+        strain[ii] = 1;
+        for(int nn = 0;nn<MinMaxNodes::MAXLAST;nn++) {
+          PeriodicNitscheConstrains::OpRhsPeriodicNormal::calcualteDMatrix(
+            VectorAdaptor(3,ublas::shallow_array_adaptor<double>(3,&coords[3*nn])),
+            mat_d
+          );
+          VectorAdaptor rhs(3,ublas::shallow_array_adaptor<double>(3,&minMaxNodes.rHs[ii][3*nn]));
+          noalias(rhs) = prod(mat_d,strain);
+        }
+      }
+      for(int ii = 0;ii<6;ii++) {
+        ierr = VecSetValues(
+          F[ii],nb_bcs,&minMaxNodes.rowIndices[0],&minMaxNodes.rHs[ii][0],INSERT_VALUES
+        ); CHKERRQ(ierr);
+        ierr = VecAssemblyBegin(F[ii]); CHKERRQ(ierr);
+        ierr = VecAssemblyEnd(F[ii]); CHKERRQ(ierr);
+      }
+      ierr = MatZeroRows(
+        Aij,nb_bcs,&minMaxNodes.rowIndices[0],1,PETSC_NULL,PETSC_NULL
+      ); CHKERRQ(ierr);
+    }
+  }
+
+  ierr = VecAssemblyBegin(volume_vec); CHKERRQ(ierr);
+  ierr = VecAssemblyEnd(volume_vec); CHKERRQ(ierr);
+  double rve_volume;
+  ierr = VecSum(volume_vec,&rve_volume);  CHKERRQ(ierr);
+  ierr = PetscPrintf(PETSC_COMM_WORLD,"RVE Volume %3.2g\n",rve_volume); CHKERRQ(ierr);
+
+  ierr = VecDestroy(&volume_vec);
+
   //----------------------------------------------------------------------------
   // 3.1 Solving the equation to get nodal displacement
   //----------------------------------------------------------------------------
@@ -971,6 +1290,139 @@ int main(int argc, char *argv[]) {
     lagrangian_element_periodic.setRVEBCsHomoStressOperators(
       "DISPLACEMENT","LAGRANGE_MUL_PERIODIC","MESH_NODE_POSITIONS",stress_homo
     );
+    break;
+    case NITSCHE:
+    if(stress_by_boundary_integral) {
+      nitsche_element_iso.getOpPtrVector().clear();
+      nitsche_element_trans.getOpPtrVector().clear();
+      nitsche_element_iso.periodicVolume.getOpPtrVector().clear();
+      nitsche_element_trans.periodicVolume.getOpPtrVector().clear();
+      for(
+        map<int,NonlinearElasticElement::BlockData>::iterator mit = iso_elastic.setOfBlocks.begin();
+        mit!=iso_elastic.setOfBlocks.end();
+        mit++
+      ) {
+        NonlinearElasticElement::CommonData &elastic_common_data = iso_elastic.commonData;
+        NonlinearElasticElement::BlockData &elastic_block_data = mit->second;
+        nitsche_element_iso.getOpPtrVector().push_back(
+          new NonlinearElasticElement::OpGetCommonDataAtGaussPts(
+            "DISPLACEMENT",elastic_common_data
+          )
+        );
+        nitsche_element_iso.getOpPtrVector().push_back(
+          new NonlinearElasticElement::OpGetCommonDataAtGaussPts(
+            "MESH_NODE_POSITIONS",elastic_common_data
+          )
+        );
+        nitsche_element_iso.getOpPtrVector().push_back(
+          new NonlinearElasticElement::OpJacobianPiolaKirchhoffStress(
+            "DISPLACEMENT",elastic_block_data,elastic_common_data,1,false,false,true
+          )
+        );
+        nitsche_element_iso.getOpPtrVector().push_back(
+          new PeriodicNitscheConstrains::OpCalculateHomogenisedStressSurfaceIntegral(
+            "DISPLACEMENT",nitsche_block_data,nitsche_common_data,
+            elastic_block_data,elastic_common_data,stress_homo
+          )
+        );
+      }
+      for(
+        map<int,NonlinearElasticElement::BlockData>::iterator mit = trans_elastic.setOfBlocks.begin();
+        mit!=trans_elastic.setOfBlocks.end();
+        mit++
+      ) {
+        NonlinearElasticElement::CommonData &elastic_common_data = trans_elastic.commonData;
+        NonlinearElasticElement::BlockData &elastic_block_data = mit->second;
+        nitsche_element_trans.getOpPtrVector().push_back(
+          new NonlinearElasticElement::OpGetCommonDataAtGaussPts(
+            "DISPLACEMENT",elastic_common_data
+          )
+        );
+        nitsche_element_trans.getOpPtrVector().push_back(
+          new NonlinearElasticElement::OpGetCommonDataAtGaussPts(
+            "MESH_NODE_POSITIONS",elastic_common_data
+          )
+        );
+        nitsche_element_trans.getOpPtrVector().push_back(
+          new NonlinearElasticElement::OpGetCommonDataAtGaussPts(
+            "POTENTIAL_FIELD",elastic_common_data
+          )
+        );
+        nitsche_element_trans.getOpPtrVector().push_back(
+          new NonlinearElasticElement::OpJacobianPiolaKirchhoffStress(
+            "DISPLACEMENT",elastic_block_data,elastic_common_data,2,false,false,true
+          )
+        );
+        nitsche_element_trans.getOpPtrVector().push_back(
+          new PeriodicNitscheConstrains::OpCalculateHomogenisedStressSurfaceIntegral(
+            "DISPLACEMENT",nitsche_block_data,nitsche_common_data,
+            elastic_block_data,elastic_common_data,stress_homo
+          )
+        );
+      }
+    } else {
+      for(
+        map<int,NonlinearElasticElement::BlockData>::iterator mit = iso_elastic.setOfBlocks.begin();
+        mit!=iso_elastic.setOfBlocks.end();
+        mit++
+      ) {
+        NonlinearElasticElement::CommonData &elastic_common_data = iso_elastic.commonData;
+        NonlinearElasticElement::BlockData &elastic_block_data = mit->second;
+        ave_stress_iso.getOpPtrVector().push_back(
+          new NonlinearElasticElement::OpGetCommonDataAtGaussPts(
+            "DISPLACEMENT",elastic_common_data
+          )
+        );
+        ave_stress_iso.getOpPtrVector().push_back(
+          new NonlinearElasticElement::OpGetCommonDataAtGaussPts(
+            "MESH_NODE_POSITIONS",elastic_common_data
+          )
+        );
+        ave_stress_iso.getOpPtrVector().push_back(
+          new NonlinearElasticElement::OpJacobianPiolaKirchhoffStress(
+            "DISPLACEMENT",elastic_block_data,elastic_common_data,1,false,false,true
+          )
+        );
+        ave_stress_iso.getOpPtrVector().push_back(
+          new PeriodicNitscheConstrains::OpCalculateHomogenisedStressVolumeIntegral(
+            "DISPLACEMENT",elastic_block_data,elastic_common_data,stress_homo
+          )
+        );
+      }
+      for(
+        map<int,NonlinearElasticElement::BlockData>::iterator mit = trans_elastic.setOfBlocks.begin();
+        mit!=trans_elastic.setOfBlocks.end();
+        mit++
+      ) {
+        NonlinearElasticElement::CommonData &elastic_common_data = trans_elastic.commonData;
+        NonlinearElasticElement::BlockData &elastic_block_data = mit->second;
+        ave_stress_trans.getOpPtrVector().push_back(
+          new NonlinearElasticElement::OpGetCommonDataAtGaussPts(
+            "DISPLACEMENT",elastic_common_data
+          )
+        );
+        ave_stress_trans.getOpPtrVector().push_back(
+          new NonlinearElasticElement::OpGetCommonDataAtGaussPts(
+            "MESH_NODE_POSITIONS",elastic_common_data
+          )
+        );
+        ave_stress_trans.getOpPtrVector().push_back(
+          new NonlinearElasticElement::OpGetCommonDataAtGaussPts(
+            "POTENTIAL_FIELD",elastic_common_data
+          )
+        );
+        ave_stress_trans.getOpPtrVector().push_back(
+          new NonlinearElasticElement::OpJacobianPiolaKirchhoffStress(
+            "DISPLACEMENT",elastic_block_data,elastic_common_data,2,false,false,true
+          )
+        );
+        ave_stress_trans.getOpPtrVector().push_back(
+          new PeriodicNitscheConstrains::OpCalculateHomogenisedStressVolumeIntegral(
+            "DISPLACEMENT",elastic_block_data,elastic_common_data,stress_homo
+          )
+        );
+      }
+    }
     break;
     case NOHOMOBC:
     SETERRQ(PETSC_COMM_SELF,MOFEM_IMPOSIBLE_CASE,"*** Boundary conditions not set");
@@ -1095,6 +1547,27 @@ int main(int argc, char *argv[]) {
       ierr = m_field.loop_finite_elements(
         "ELASTIC_MECHANICS","LAGRANGE_ELEM",lagrangian_element_periodic.getLoopFeRVEBCStress()
       ); CHKERRQ(ierr);
+    }
+    if(choise_value == NITSCHE) {
+      if(stress_by_boundary_integral) {
+        nitsche_element_iso.addToRule = 1;
+        nitsche_element_trans.addToRule = 1;
+        ierr = m_field.loop_finite_elements(
+          "ELASTIC_MECHANICS","ELASTIC",nitsche_element_iso
+        );  CHKERRQ(ierr);
+        ierr = m_field.loop_finite_elements(
+          "ELASTIC_MECHANICS","TRAN_ISOTROPIC_ELASTIC",nitsche_element_trans
+        );  CHKERRQ(ierr);
+      } else {
+        ave_stress_iso.addToRule = 1;
+        ave_stress_trans.addToRule = 1;
+        ierr = m_field.loop_finite_elements(
+          "ELASTIC_MECHANICS","ELASTIC",ave_stress_iso
+        );  CHKERRQ(ierr);
+        ierr = m_field.loop_finite_elements(
+          "ELASTIC_MECHANICS","TRAN_ISOTROPIC_ELASTIC",ave_stress_trans
+        );  CHKERRQ(ierr);
+      }
     }
     ierr = PetscOptionsGetReal(
       PETSC_NULL,"-my_rve_volume",&rve_volume,PETSC_NULL

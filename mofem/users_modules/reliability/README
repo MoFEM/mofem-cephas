@@ -21,10 +21,10 @@ mpirun -np 1 ./rve_fibre_directions \
 -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package superlu_dist -ksp_monitor \
 -my_order 1
 
-mpirun -np 1 ./rve_mechanical \
+mpirun -np 1 ../homogenisation/rve_mechanical \
 -my_file solution_RVE.h5m \
 -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package mumps -ksp_monitor \
--my_order 1 -my_bc_type periodic
+-my_order 1 -my_bc_type disp
 
 
 ////////////////////////////////////
@@ -50,18 +50,19 @@ mpirun -np 1 ./psfe_rve_mechanical \
 -my_order 1 -my_bc_type periodic
 
 
-////////////////////////////////////
+///////////////////////////////////////////
 //
 // 2. Homogenisation - stochastic
+//    2.1 randomness in material properties
 //
-////////////////////////////////////
+////////////////////////////////////////////
 
 -my_file ~/mofem_installation/mofem-cephas/mofem/users_modules/reliability/meshes/RVE_UD.cub \
 -my_file ~/mofem_installation/mofem-cephas/mofem/users_modules/homogenisation/meshes/Cube_RVE_with_reinforcement.cub \
 
 # Step 1: potential flow calculation to identify fibre direction
 mpirun -np 1 ../homogenisation/rve_fibre_directions \
--my_file ~/mofem_installation/mofem-cephas/mofem/users_modules/reliability/meshes/RVE_UD.cub \
+-my_file ~/mofem_installation/mofem-cephas/mofem/users_modules/reliability/meshes/RVE_UD_VF60.cub \
 -ksp_type fgmres -pc_type lu \
 -pc_factor_mat_solver_package superlu_dist -ksp_monitor \
 -my_order 1 
@@ -74,8 +75,7 @@ mpirun -np 1 ./trans_iso_RVE_disp_7vars \
 -my_file solution_RVE.h5m \
 -ksp_type fgmres -pc_type lu \
 -pc_factor_mat_solver_package mumps -ksp_monitor -my_order 1 \
--myapplied_strain 1.0,0.0,0.0,0.0,0.0,0.0 \
--log_summary
+-myapplied_strain 1.0,0.0,0.0,0.0,0.0,0.0 
 
 
 # Case 2: Periodic
@@ -83,12 +83,39 @@ make trans_iso_RVE_Periodic_7vars && \
 mpirun -np 1 ./trans_iso_RVE_Periodic_7vars \
 -my_file solution_RVE.h5m \
 -ksp_type fgmres -pc_type lu \
--pc_factor_mat_solver_package mumps -ksp_monitor -my_order 1 \ 
--myapplied_strain 1.0,0.0,0.0,0.0,0.0,0.0
+-pc_factor_mat_solver_package mumps -ksp_monitor \
+-my_order 1 -myapplied_strain 1.0,0.0,0.0,0.0,0.0,0.0
+
+mpirun -np 1 ../homogenisation/trans_iso_RVE_Periodic_7vars \
+-my_file solution_RVE.h5m \
+-ksp_type fgmres -pc_type lu \
+-pc_factor_mat_solver_package mumps -ksp_monitor \
+-my_order 1 -myapplied_strain 1.0,0.0,0.0,0.0,0.0,0.0
 
 # Case 3: Constant traction
 make trans_iso_RVE_Traction_7vars && \
 mpirun -np 1 ./trans_iso_RVE_Traction_7vars \
+-my_file solution_RVE.h5m \
+-ksp_type fgmres -pc_type lu \
+-pc_factor_mat_solver_package mumps -ksp_monitor -my_order 1 \
+-myapplied_strain 1.0,0.0,0.0,0.0,0.0,0.0
+
+/////////////////////////////////////////////
+//
+//    2.2 randomness in geometrical properties
+//
+//////////////////////////////////////////////
+
+# 1. Potential flow problem
+mpirun -np 1 ../homogenisation/rve_fibre_directions \
+-my_file ~/Dropbox/DURACOMP_Cal/009_MOFEM/Meshes/RVE_TISO_GEOM/RVE_CERL_Waviness_VF00W00M00.cub \
+-ksp_type fgmres -pc_type lu \
+-pc_factor_mat_solver_package superlu_dist -ksp_monitor \
+-my_order 1
+
+# Case 5: Waviness and misalignment
+make trans_iso_RVE_Geom_disp && \
+mpirun -np 1 ./trans_iso_RVE_Geom_disp \
 -my_file solution_RVE.h5m \
 -ksp_type fgmres -pc_type lu \
 -pc_factor_mat_solver_package mumps -ksp_monitor -my_order 1 \
@@ -108,24 +135,59 @@ mpirun -np 1 ./trans_iso_RVE_Traction_7vars \
 # Case 2: multiple layers laminate (up to four layers)
 # Reliability calculated by FORM method
 # ----------------------------------------------------
-WWFE_Laminate_Type_3n.cub
 
-valgrind --track-origins=yes \
+# Step 1: identify fibre direction
+-my_file ~/mofem_installation/mofem-cephas/mofem/users_modules/reliability/meshes/RVE_UD.cub \
+RVE_UD_VF60.cub
+UD_GFRP_K_VF62
+
+mpirun -np 1 ../homogenisation/rve_fibre_directions \
+-my_file ~/mofem_installation/mofem-cephas/mofem/users_modules/reliability/meshes/RVE_UD_VF60.cub \
+-ksp_type fgmres -pc_type lu \
+-pc_factor_mat_solver_package superlu_dist -ksp_monitor \
+-my_order 1
+
+mpirun -np 1 ../homogenisation/rve_mechanical \
+-my_file solution_RVE.h5m \
+-ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package mumps -ksp_monitor \
+-my_order 1 -my_bc_type disp
 
 
-../valgrind --track-origins=yes \
+# Step 2: run reliability calculation
+Laminate_REL_1L_BLT_Fine
+Laminate_REL_1L_BLS_Fine
+
+WWFE_Laminate_T3P4_RVE
 
 make MsFE_Reliability_Laminate_FORM_Disp && \
-mpirun -np 1 \
-./MsFE_Reliability_Laminate_FORM_Disp \
--my_file_macro ~/mofem_installation/mofem-cephas/mofem/users_modules/reliability/meshes/Laminate_REL_1L_Fine.cub \
--my_prob_data_file ~/Dropbox/DURACOMP_Cal/009_MoFEM/04_ReliabilityAnalysis/Input_probdata_CFRP_Ply_4_vars.txt \
+mpirun -np 1 ./MsFE_Reliability_Laminate_FORM_Disp \
+-my_file_macro ~/mofem_installation/mofem-cephas/mofem/users_modules/reliability/meshes/WWFE_Laminate_T3P4_RVE.cub \
+-my_prob_data_file ~/Dropbox/DURACOMP_Cal/009_MoFEM/04_ReliabilityAnalysis/Input_probdata_CFRP_RVE_12_vars.txt \
 -my_file_RVE solution_RVE.h5m \
 -ksp_type fgmres -pc_type lu \
 -pc_factor_mat_solver_package mumps -ksp_monitor \
--my_order_RVE 1 -my_order_Macro 1 -my_NO_Layers 1 
-\
--malloc_debug -malloc_dump
+-my_order_RVE 1 -my_order_Macro 1 -my_NO_Layers 4 
+
+# -------------------------------------------------------
+#
+# Case 1: single scale finite element reliability 
+#         ply properties are treated as random variables
+#         
+# -------------------------------------------------------
+
+-my_file_macro ~/MyBuild/mofem-cephas/mofem_v0.2/users_modules/stochastic/meshes/Laminate_REL_1L_Fine.cub \
+
+-my_file_macro ~/mofem_installation/mofem-cephas/mofem/users_modules/reliability/meshes/WWFE_T3P4_FE.cub \
+-my_prob_data_file ~/Dropbox/DURACOMP_Cal/009_MoFEM/04_ReliabilityAnalysis/Input_probdata_CFRP_Ply_10I_vars_CH-Per.txt \
 
 
+make FE_Reliability_Laminate_FORM_Disp && \
+mpirun -np 1 ./FE_Reliability_Laminate_FORM_Disp \
+-my_file_macro ~/mofem_installation/mofem-cephas/mofem/users_modules/reliability/meshes/Laminate_FE_REL.cub \
+-my_prob_data_file ~/Dropbox/DURACOMP_Cal/009_MoFEM/04_ReliabilityAnalysis/Input_probdata_CFRP_Ply_10C_vars_CH-Per.txt \
+-ksp_type fgmres -pc_type lu \
+-pc_factor_mat_solver_package mumps -ksp_monitor \
+-my_order_Macro 1 -my_NO_Layers 1 
 
+
+Laminate_FE_REL

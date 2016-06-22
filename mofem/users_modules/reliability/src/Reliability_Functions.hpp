@@ -49,6 +49,7 @@ namespace MoFEM {
     int flag_sens;                         // Flag for computation of sensitivities w.r.t. parameters
     int ExaminedPly;
     vector<string> NameVars;               // Name of random variables
+    string HomoMethod;                     // Homogenization method
     ublas::matrix<double> correlation;     // Correlation matrix
     ublas::matrix<double> marg;            // Marginal distribution for each random variable
     ublas::matrix<double> mod_correlation; // modified correlation matrix
@@ -127,6 +128,10 @@ namespace MoFEM {
     Stress_VectorNotation_xyz(4) = Stress_xyz(1,2);
     Stress_VectorNotation_xyz(5) = Stress_xyz(2,0);
     
+//    Stress_VectorNotation_xyz(3) = Stress_xyz(1,2);
+//    Stress_VectorNotation_xyz(4) = Stress_xyz(0,2);
+//    Stress_VectorNotation_xyz(5) = Stress_xyz(0,1);
+    
     ublas::matrix<FieldData> T_strain_inv_T;    T_strain_inv_T.resize(6,6);
     T_strain_inv_T(0,0) =   l1*l1;
     T_strain_inv_T(0,1) =   m1*m1;
@@ -179,8 +184,13 @@ namespace MoFEM {
     Stress_123(0,1) = Stress_123(1,0) = Stress_VectorNotation_123(3);
     Stress_123(1,2) = Stress_123(2,1) = Stress_VectorNotation_123(4);
     Stress_123(2,0) = Stress_123(0,2) = Stress_VectorNotation_123(5);
+
+//    Stress_123(0,1) = Stress_123(1,0) = Stress_VectorNotation_123(5);
+//    Stress_123(1,2) = Stress_123(2,1) = Stress_VectorNotation_123(3);
+//    Stress_123(2,0) = Stress_123(0,2) = Stress_VectorNotation_123(4);
     
   }
+  
   
   //------------------------------------------------------------------------------
   // Stress transformation

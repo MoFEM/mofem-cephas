@@ -1,0 +1,122 @@
+#!python
+cubit.cmd('reset')
+
+# Geometry (all dimension for macro is in meter [mm])'
+h= 1; Lx=10; Ly=10; 
+
+str1='brick x ' + str(Lx) + ' y ' + str(Ly) +' z ' + str(h);   cubit.cmd(str1)  
+  
+cubit.cmd('volume all size auto factor 6') 
+cubit.cmd('volume all scheme tetmesh') 
+cubit.cmd('mesh volume all ') 
+
+#Material Blocks 1 for -25 deg (1st layer)
+cubit.cmd('set duplicate block elements on')
+#
+#  Case: FORM
+#
+cubit.cmd('block 1 volume 1')   
+cubit.cmd('block 1 name "MAT_ELASTIC_First"')
+#
+#  Case: MCS
+# 
+##cubit.cmd('block 1 tet 1 to 2417 and 2419 to 3594')
+#cubit.cmd('block 1 tet 1 to 1335 and 1337 to 3160')
+#cubit.cmd('block 1 name "MAT_ELASTIC"') 
+
+cubit.cmd('block 1 attribute count 2') 
+cubit.cmd('block 1 attribute index 1 1')   #Young's modulus  (This will not be used in the calculation) 
+cubit.cmd('block 1 attribute index 2 0')   #Poisson's ratio (This will not be used in the calculation) 
+
+#Reliability 
+cubit.cmd('block 2 tet 1336') # mesh factor 6
+#cubit.cmd('block 2 tet 47') # mesh factor 10
+cubit.cmd('block 2 name "RELIABILITY"') 
+cubit.cmd('block 2 attribute count 2') 
+cubit.cmd('block 2 attribute index 1 1')   #Young's modulus  (This will not be used in the calculation) 
+cubit.cmd('block 2 attribute index 2 0')   #Poisson's ratio (This will not be used in the calculation) 
+
+
+# --------------------------------------------
+# Loading case 1:
+#   Uniaxial loading
+# --------------------------------------------
+
+# Applied displacement
+str1='create displacement on surface 4 dof 1 fix ' + str(0);  cubit.cmd(str1) 
+str1='create displacement on surface 3 dof 2 fix ' + str(0);  cubit.cmd(str1) 
+str1='create displacement on surface 2 dof 3 fix ' + str(0);  cubit.cmd(str1) 
+
+# Applied force
+
+# Case 1 & 2. uniaxial tension/compression (x direction)
+# Tension 0.7 XT
+#Force = 1341; 
+
+# Compression 0.7 XC
+#Force = -600; 
+
+#str1 = 'create force 1 on surface 6 vector ' + str(Force) +' 0 0 0 0 0'; 
+#str2 = 'create force 2 on surface 4 vector ' + str(-Force) +' 0 0 0 0 0';
+#cubit.cmd(str1); cubit.cmd(str2);
+
+# Case 3 & 4. uniaxial tension/compression (y direction)
+# Tension 0.7 YT
+#Force = -147; 
+
+#str1 = 'create force 1 on surface 5 vector 0 ' + str(Force) +' 0 0 0 0'; 
+#str2 = 'create force 2 on surface 3 vector 0 ' + str(-Force) +' 0 0 0 0';
+#cubit.cmd(str1); cubit.cmd(str2);
+
+##cubit.cmd('create force 2 on surface 5 vector 0 20.0 0 0 0 0') 
+##cubit.cmd('create force 3 on surface 1 vector 90 0 0 0 0 0') 
+
+# ----------------------------------------------
+# Loading case 2:
+#   Combined longitudinal and transverse loading
+# ----------------------------------------------
+
+# Applied displacement
+#str1='create displacement on surface 4 dof 1 fix ' + str(0);  cubit.cmd(str1) 
+#str1='create displacement on surface 3 dof 2 fix ' + str(0);  cubit.cmd(str1) 
+##str1='create displacement on surface 2 dof 3 fix ' + str(0);  cubit.cmd(str1) 
+
+# Applied force
+#cubit.cmd('create force 1 on surface 6 vector 1378 0 0 0 0 0') 
+#cubit.cmd('create force 2 on surface 5 vector 0 24 0 0 0 0') 
+##cubit.cmd('create force 3 on surface 1 vector 90 0 0 0 0 0') 
+
+# ----------------------------------------------
+# Loading case 3:
+#   Combined longitudinal and shear loading
+# ----------------------------------------------
+
+# Applied displacement
+#str1='create displacement on surface 4 dof 1 fix ' + str(0);  cubit.cmd(str1) 
+#str1='create displacement on curve   9 dof 2 fix ' + str(0);  cubit.cmd(str1) 
+##str1='create displacement on surface 4 dof 2 fix ' + str(0);  cubit.cmd(str1)
+##str1='create displacement on surface 3 dof 2 fix ' + str(0);  cubit.cmd(str1) 
+##str1='create displacement on surface 2 dof 3 fix ' + str(0);  cubit.cmd(str1) 
+
+# Applied force
+#cubit.cmd('create force 1 on surface 6 vector 1378 0 0 0 0 0') 
+#cubit.cmd('create force 2 on surface 5 vector -19.75  0 0 0 0 0') 
+#cubit.cmd('create force 3 on surface 6 vector 0 19.75 0 0 0 0') 
+#cubit.cmd('create force 4 on surface 3 vector 19.75 0 0 0 0 0') 
+
+# ----------------------------------------------
+# Loading case 4:
+#   Combined transverse and shear loading
+# ----------------------------------------------
+
+# Applied displacement
+#str1='create displacement on surface 4 dof 1 fix ' + str(0);  cubit.cmd(str1) 
+#str1='create displacement on surface 3 dof 2 fix ' + str(0);  cubit.cmd(str1) 
+#str1='create displacement on surface 2 dof 3 fix ' + str(0);  cubit.cmd(str1) 
+
+# Applied force
+#cubit.cmd('create force 1 on surface 6 vector -1036 0 0 0 0 0') 
+#cubit.cmd('create force 2 on surface 5 vector 0 20.0 0 0 0 0') 
+#cubit.cmd('create force 3 on surface 1 vector 90 0 0 0 0 0') 
+
+cubit.cmd('save as "/Users/nxz6/mofem_installation/mofem-cephas/mofem/users_modules/reliability/meshes/Laminate_REL_1L_Fine.cub" overwrite') 

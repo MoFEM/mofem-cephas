@@ -3,12 +3,12 @@
 cubit.cmd('new')
 
 autofactor=6; 
-zval=0.1; # 1
+zval=3; # 1
 str1 ='brick x 1 y 1 z ' + str(zval); cubit.cmd(str1) 
-str1 ='cylinder height ' + str(zval) + ' rad 0.4371'; cubit.cmd(str1) 
+str1 ='cylinder height ' + str(zval) + ' rad 0.4442'; cubit.cmd(str1) 
 
-#cubit.cmd('brick x 1 y 1 z 0.2')
-#cubit.cmd('cylinder height 0.2 rad 0.4371')
+#cubit.cmd('brick x 1 y 1 z 1')
+#cubit.cmd('cylinder height 1 rad 0.4442')
 
 cubit.cmd('subtract volume 2 from volume 1 keep')
 cubit.cmd('delete volume 2')
@@ -30,6 +30,8 @@ cubit.cmd('group "g3" add surface 14')
 cubit.cmd('group "g4" add surface 12 19')
 cubit.cmd('group "g5" add surface 13') 
 cubit.cmd('group "g6" add surface 16') 
+
+# --------------------------------------------------------------
 
 cubit.cmd('surface 11 size auto factor 6') # 5     
 cubit.cmd('surface 11 scheme trimesh')      
@@ -54,7 +56,6 @@ cubit.cmd('surface 14 scheme trimesh')
 cubit.cmd('mesh surface 14')    
 cubit.cmd('surface 16 scheme copy source surface 14 source vertex 15 target vertex 14 source curve 19 target curve 17 nosmoothing')
 cubit.cmd('mesh surface 16')
-  
 
 #============================================================= 
 #Mesh volume 
@@ -79,9 +80,7 @@ for i in range(0, 3):
 #============================================================= 
   
 cubit.cmd('block 1 attribute count 2')  
-#Em=3.5e3; Enu=0.3;  #gig to mega as we used dimension in mm
-Em=4.2e3; Enu=0.34;  # 3501-6 Epoxy: WWFE
-#Em=5.8e3; Enu=0.38;   # 3501-6 Epoxy: Gotsis & Chamis
+Em=3.35e3; Enu=0.35;   # LY556 Epoxy: Gotsis & Chamis
 
 Elastic=[str(Em), str(Enu)]  
 for i in range(0, 2):  
@@ -92,18 +91,14 @@ for i in range(0, 2):
 #============================================================= 
  
 #to use as isotropic 
-#cubit.cmd('block 2 attribute count 5')    
-#Ep=Em; Ez=Em; nup=Enu; nupz=Enu;  Gzp=Em/(2*(1+Enu));  
-
 cubit.cmd('block 2 attribute count 5')    
-#Ep=10*Em; Ez=20*Em; nup=0.26; nupz=0.26; Gzp=5*Em; 
-Ep=15e3; Ez=225e3; nup=0.0714; nupz=0.0133; Gzp=15e3;           # AS4 carbon fibre: WWFE
-#Ep=14.96e3; Ez=208.34e3; nup=0.0841; nupz=0.0144; Gzp=14.96e3;   # AS4 carbon fibre: Gotsis & Chamis
+Ep=80e3; Ez=80e3; nup=0.2; nupz=0.2;  Gzp=33.33e3;  
+#Ep=3.35e3; Ez=3.35e3; nup=0.35; nupz=0.35;  Gzp=1.2407e3;
 
-   
 TransIso=[str(Ep), str(Ez), str(nup), str(nupz), str(Gzp)]   
 for i in range(0, 5):   
-    str1='block 2 attribute index ' + str(i+1) +' '+TransIso[i]; cubit.cmd(str1)     
+    str1='block 2 attribute index ' + str(i+1) +' '+TransIso[i]; cubit.cmd(str1)  
+   
   
 #============================================================= 
 #Material properties for interface between fibres and matrix  
@@ -152,15 +147,16 @@ cubit.cmd('sideset 103 surface 12 19 13 16 11 18 15 14')  # all boundary surface
 #Definign zero proessrues for potential flow problem (This should be of the same order as PotentialFlow blocks )
 #============================================================= 
  
-zeroPressureNode=[380] # 674
+zeroPressureNode=[391] # 109
 for i in range(0, 1):  
     str1='nodeset ' + str(i+1) + ' node ' + str(zeroPressureNode[i]); cubit.cmd(str1) 
     str1='nodeset ' + str(i+1)+' name "ZeroPressure_' + str(i+1)+ '"'; cubit.cmd(str1)    
     
 #============================================================= 
 #Saving input RVE file  
-#============================================================= 
- 
-cubit.cmd('save as "/Users/nxz6/mofem_installation/mofem-cephas/mofem/users_modules/reliability/meshes/RVE_UD_VF60.cub" overwrite')    
+#=============================================================   
+
+cubit.cmd('save as "/Users/nxz6/mofem_installation/mofem-cephas/mofem/users_modules/reliability/meshes/UD_GFRP_K_VF62.cub" overwrite')    
+
 
 

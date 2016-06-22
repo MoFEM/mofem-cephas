@@ -28,6 +28,7 @@ struct ImportProbData {
   ublas::vector<double> MatStrength; // Material strength
   ublas::vector<double> PlyAngle;    // Ply angle of orientation
   vector<string> NameVars;           // Name of random variables
+  string HomoMethod;                 // Homogenization method
   int NumVars;                       // Number of variables
   int NumLayers;                     // Number of layers
   int ExaminedLayer;                 // Examined layer
@@ -92,7 +93,7 @@ struct ImportProbData {
     //ProbDataFile.open("//mnt//home//Dropbox//DURACOMP_Cal//009_MoFEM//04_ReliabilityAnalysis//Input_probdata.txt",ifstream::in);
     ProbDataFile.open(prob_data_file_name,ifstream::in);
     if (!ProbDataFile) {
-      cout << "\n\nFile does not exists!\n" << endl;
+      cout << "\n\nProbability data file does not exists!\n" << endl;
       exit(EXIT_FAILURE);
     }
     
@@ -114,6 +115,10 @@ struct ImportProbData {
           if (stringbuf.compare(0,3,"NUM") == 0) {
             // cout<<"Next line is data for number of variables"<<endl;
             datatype = "NUMBER";
+          }
+          else if (stringbuf.compare(0,4,"HOMO") == 0) {
+            // cout<<"Next line is data for correlation matrix"<<endl;
+            datatype = "HOMOGENIZATION";
           }
           else if (stringbuf.compare(0,3,"COR") == 0) {
             // cout<<"Next line is data for correlation matrix"<<endl;
@@ -225,6 +230,12 @@ struct ImportProbData {
               MatStrength(STR_IX-1) = atof(substringbuf.c_str());
               substringbuf.clear();
             }
+          }
+          else if (datatype.compare(0,4,"HOMO") == 0) {
+            substringbuf = stringbuf.substr(pos(1)+1,pos(2)-pos(1)-1);
+            cout<<"Homogenization method: "<<substringbuf<<endl;
+            HomoMethod = substringbuf;
+            substringbuf.clear();
           }
           else if (datatype.compare(0,4,"NAME") == 0) {
             // Insert data into probdata

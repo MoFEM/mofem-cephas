@@ -1,0 +1,166 @@
+#!python
+#To create RVE for all the three type of boundary conditions, i.e. (Linear dispacemet, traction and periodic)
+
+cubit.cmd('new')
+
+interval=20; 
+cubit.cmd('set duplicate block elements on')    
+#============================================================= 
+#Geometry
+#============================================================= 
+cubit.cmd('brick x 0.0114 y 0.0114 z 0.00228')   
+cubit.cmd('move volume 1 x 0.0057 y 0.0057 z 0')
+   
+ #1 fibre with dia=5(micro-meter)        
+for ii in range(0, 5):        
+    cubit.cmd('create cylinder height 0.00228 radius 2.5e-3')       
+
+#       1        
+x=[0.002971559,	0.005946194,	0,		0.0114,		0.008277929]     
+y=[0.007626149,	0.003380742,	0.003366027,	0.003366027,	0.0080013]  
+for i in range(0, 5):         
+    str1='move volume '+ str(i+2) + ' x ' + str(x[i]) + ' y ' + str(y[i]) + ' z 0 include_merged';  cubit.cmd(str1)        
+   
+cubit.cmd('intersect volume all keep')   
+cubit.cmd('delete volume 2 4 3 6 5')   
+cubit.cmd('subtract volume 7 8 11 10 9 from volume 1 keep')   
+cubit.cmd('delete volume 1')   
+   
+cubit.cmd('imprint volume all')         
+cubit.cmd('merge volume all')       
+     
+####=============================================================     
+####Periodic mesh      
+####=============================================================     
+cubit.cmd('surface 40 24 38 35 27 31    scheme trimesh')            
+cubit.cmd('surface 40 24 38 35 27 31   size auto factor 5')       
+cubit.cmd('mesh surface 40 24 38 35 27 31   ')            
+       
+s_surf=[24,27,31,35,38,40 ]         
+t_surf=[23,26,29,34,37,42]         
+s_vert=[20,22,24,29,32,44 ]         
+t_vert=[19,21,23,30,31,51]         
+         
+for i in range(0, 6):               
+    str1='surface '+str(t_surf[i])+' scheme mirror source surface '+str(s_surf[i])+' source vertex '+str(s_vert[i])+' target vertex '+str(t_vert[i])+' nosmoothing'; cubit.cmd(str1)         
+    str1='mesh surface  '+str(t_surf[i]); cubit.cmd(str1)                
+         
+cubit.cmd('curve 70 29 27 56 69  scheme equal')           
+cubit.cmd('curve 70 29 27 56 69   interval 3')        
+cubit.cmd('mesh curve 70 29 27 56 69')           
+       
+cubit.cmd('surface 49 28 41 48  scheme trimesh')            
+cubit.cmd('surface 49 28 41 48  size auto factor 5')       
+cubit.cmd('mesh surface 49 28 41 48 ')            
+      
+s_surf=[49,28,41,48]      
+t_surf=[44,32,40,50]       
+   
+s_vert=[45,24,51,41]     
+t_vert=[44,29,41,44]        
+        
+for i in range(0, 4):              
+    str1='surface '+str(t_surf[i])+' scheme mirror source surface '+str(s_surf[i])+' source vertex '+str(s_vert[i])+' target vertex '+str(t_vert[i])+' nosmoothing'; cubit.cmd(str1)        
+    str1='mesh surface  '+str(t_surf[i]); cubit.cmd(str1)               
+      
+cubit.cmd('group "g1" add surface 9 11 12 8')            
+cubit.cmd('group "g2" add surface 49 28 41 48 51 32 44 50  ')            
+    
+#cubit.cmd('volume all size auto factor 5')          
+cubit.cmd('volume all  scheme tetmesh')             
+cubit.cmd('mesh volume all ')             
+         
+#####=============================================================    
+#####Defining blocks for elastic, transversely-isotropic and potential flow problems     
+#####=============================================================    
+           
+vol=['12', '7 8 9 10 11']            
+mat=['MAT_PLASTIC','MAT_ELASTIC_TRANSISO_1']            
+for i in range(0, 2):            
+    str1='block  ' + str(i+1) +' volume '+vol[i]; cubit.cmd(str1)            
+    str1='block  ' + str(i+1) +' name "'+mat[i] + '"'; cubit.cmd(str1)            
+      
+vol=[7, 8, 9, 10, 11]      
+for i in range(0, 5):            
+    str1='block  ' + str(i+3) +' volume '+str(vol[i]); cubit.cmd(str1)            
+    str1='block '  + str(i+3) + 'name "PotentialFlow_'  + str(i+1) + '"';  cubit.cmd(str1)         
+          
+#=============================================================           
+#Material properties for matrix part            
+#=============================================================           
+#cubit.cmd('block 1 attribute count 2')            
+#Em=4.7e3; Enu=0.3;  #giga to mega as we used dimension in mm            
+#Elastic=[str(Em), str(Enu)]            
+#for i in range(0, 2):            
+#   str1='block 1 attribute index ' + str(i+1) +' '+Elastic[i]; cubit.cmd(str1)            
+#=============================================================           
+#Material properties for fibres              
+      
+##to use as isotropic           
+E=74e3;   nu=0.2;           
+Ep=E; Ez=E; nup=nu; nupz=nu;  Gzp=E/(2*(1+nu));             
+cubit.cmd('block 2 attribute count 5')              
+TransIso=[str(Ep), str(Ez), str(nup), str(nupz), str(Gzp)]               
+for i in range(0, 5):               
+    str1='block 2 attribute index ' + str(i+1) +' '+TransIso[i]; cubit.cmd(str1)               
+             
+#=============================================================      
+#Material properties for interface between fibres and matrix       
+#=============================================================      
+          
+alpha_interf=500           
+str1='block 8 surface 30 22 36 25 33'; cubit.cmd(str1)            
+str1='block 8 name "MAT_INTERF_1"'; cubit.cmd(str1)            
+cubit.cmd('block 8 attribute count 4')            
+str1='block 8 attribute index 1 '+str(alpha_interf); cubit.cmd(str1)    #alpha but not used in the cohesive interface model            
+str1='block 8 attribute index 2 '+str(0.0); cubit.cmd(str1)    #beta (material parameter) assume only normal separtion based           
+str1='block 8 attribute index 3 '+str(30); cubit.cmd(str1)    #ft (strength) MPa          
+str1='block 8 attribute index 4 '+str(0.1); cubit.cmd(str1)    #Gf (fracture energy J/m^2=N/m) chagned it to N/mm          
+            
+#=============================================================         
+#Defining interfaces       
+#=============================================================                  
+Interface=[30, 22, 36, 25, 33]             
+for i in range(0, 5):             
+    str1='sideset ' + str(i+1) +' surface '+str(Interface[i]); cubit.cmd(str1)             
+    str1='sideset ' + str(i+1) +' name "interface'+str(i+1); cubit.cmd(str1)             
+            
+#=============================================================        
+#Defining pressures for potential flow problem         
+#=============================================================     
+pres_pos=[24,27,31,35,38]       
+pres_neg=[23,26,29,34,37]       
+count=0;  count1=len(Interface);      
+for i in range(0, 6):            
+    str1='create pressure '+str(count+1)+' on surface '+str(pres_pos[i])+' magnitude 1';  cubit.cmd(str1)            
+    str1='create pressure '+str(count+2)+' on surface '+str(pres_neg[i])+' magnitude -1';  cubit.cmd(str1)           
+    str1='sideset '+str(count1+1)+' name "PressureIO_' + str(i+1) + '_1"'; cubit.cmd(str1)           
+    str1='sideset '+str(count1+2)+' name "PressureIO_' + str(i+1) + '_2"'; cubit.cmd(str1)           
+    count=count+2;   count1=count1+2;           
+          
+#=============================================================       
+#Definign zero proessrues for potential flow problem (This should be of the same order as PotentialFlow blocks )      
+#=============================================================       
+zeroPressureNode=[289, 402,  426,  361,  335]   # interfal 5          
+for i in range(0, 5):            
+    str1='nodeset ' + str(i+1) + ' node ' + str(zeroPressureNode[i]); cubit.cmd(str1)           
+    str1='nodeset ' + str(i+1)+' name "ZeroPressure_' + str(i+1)+ '"'; cubit.cmd(str1)           
+          
+#=============================================================          
+#Defining surfaces for dispacement, traction and periodic boundary conditions           
+#=============================================================          
+        
+cubit.cmd('sideset 101 surface 49 28 41 48 42 29 23 37 26 34')  # all -ve boundary surfaces            
+cubit.cmd('sideset 102 surface 50 44 32 51 40 35 27 38 24 31')  # all +ve boundary surfaces            
+cubit.cmd('sideset 103 surface 49 28 41 48 42 29 23 37 26 34 50 44 32 51 40 35 27 38 24 31')  # all boundary surfaces            
+           
+#=============================================================        
+#High order geomety approximation       
+#=============================================================        
+#cubit.cmd('block 16 tet all')                
+#cubit.cmd('block 16 element type tetra10')             
+      
+cubit.cmd('save as "/Users/zahur/Desktop/Plasticity/1JPaper/melro/tension/Cube_RVE_reinf_plast_interface_04fibres.cub" overwrite')        
+  
+
+

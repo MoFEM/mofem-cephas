@@ -107,6 +107,23 @@ target_link_libraries(
   mofem_third_party 
   mofem_cblas 
   ${MoFEM_PROJECT_LIBS})    
+  
+# 5. Waviness - Linear displacement boundary condition
+
+  add_executable(trans_iso_RVE_Geom_disp ${UM_SOURCE_DIR}/reliability/trans_iso_RVE_Geom_disp.cpp)
+target_link_libraries(
+  trans_iso_RVE_Geom_disp
+  user_modules_homogenisation 
+  users_modules_obsolete
+  users_modules
+  mofem_finite_elements 
+  mofem_interfaces 
+  mofem_multi_indices 
+  mofem_petsc 
+  mofem_approx 
+  mofem_third_party 
+  mofem_cblas 
+  ${MoFEM_PROJECT_LIBS})    
 
 # =======================================================================================#
 #                                                                                        #
@@ -161,3 +178,28 @@ target_link_libraries(
   mofem_cblas 
   ${MoFEM_PROJECT_LIBS}
   )
+  
+  
+  #---------------------------------------- 
+# Case 3: Reliability analysis - Laminate
+#---------------------------------------- 
+# ${UM_SOURCE_DIR}/basic_finite_elements/src/impl/PCMGSetUpViaApproxOrders.cpp
+add_executable(FE_Reliability_Laminate_FORM_Disp 
+               ${UM_SOURCE_DIR}/reliability/FE_Reliability_Laminate_FORM_Disp.cpp
+               )
+target_link_libraries(
+  FE_Reliability_Laminate_FORM_Disp
+  user_modules_reliability
+  user_modules_homogenisation
+  users_modules_obsolete 
+  users_modules
+  mofem_finite_elements 
+  mofem_interfaces 
+  mofem_multi_indices 
+  mofem_petsc  
+  mofem_approx 
+  mofem_third_party 
+  mofem_cblas 
+  ${MoFEM_PROJECT_LIBS}
+  )
+  

@@ -1,0 +1,120 @@
+#!python
+cubit.cmd('reset')
+
+# Geometry (all dimension for macro is in meter [mm])' 
+h = 0.1375 ; Lx = 10; Ly = 10; 
+
+str1='brick x ' + str(Lx) + ' y ' + str(Ly) +' z ' + str(h);   cubit.cmd(str1)
+str1='brick x ' + str(Lx) + ' y ' + str(Ly) +' z ' + str(h);   cubit.cmd(str1)
+str1='brick x ' + str(Lx) + ' y ' + str(Ly) +' z ' + str(h);   cubit.cmd(str1)
+
+str1='brick x ' + str(Lx*0.5) + ' y ' + str(Ly*0.5) +' z ' + str(h);   cubit.cmd(str1)
+str1='brick x ' + str(Lx*0.5) + ' y ' + str(Ly*0.5) +' z ' + str(h);   cubit.cmd(str1)
+str1='brick x ' + str(Lx*0.5) + ' y ' + str(Ly*0.5) +' z ' + str(h);   cubit.cmd(str1)
+str1='brick x ' + str(Lx*0.5) + ' y ' + str(Ly*0.5) +' z ' + str(h);   cubit.cmd(str1)
+
+str1='move volume 4 x ' + str(0.25*Lx)  +' y ' + str(0.25*Ly)  +' z ' +str(h/2)+'include_merged';     cubit.cmd(str1)
+str1='move volume 5 x ' + str(-0.25*Lx) +' y ' + str(0.25*Ly)  +' z ' +str(h/2)+'include_merged';     cubit.cmd(str1)
+str1='move volume 6 x ' + str(-0.25*Lx) +' y ' + str(-0.25*Ly) +' z ' +str(h/2)+'include_merged';     cubit.cmd(str1)
+str1='move volume 7 x ' + str(0.25*Lx)  +' y ' + str(-0.25*Ly) +' z ' +str(h/2)+'include_merged';     cubit.cmd(str1)
+
+str1='move volume 3 x 0 y 0 z '+str(3*h/2)+'include_merged';   cubit.cmd(str1)
+str1='move volume 2 x 0 y 0 z '+str(5*h/2)+'include_merged';   cubit.cmd(str1)
+str1='move volume 1 x 0 y 0 z '+str(7*h/2)+'include_merged';   cubit.cmd(str1)
+
+cubit.cmd('imprint volume all ')  
+cubit.cmd('merge volume all ')  
+  
+cubit.cmd('volume all size auto factor 7.5') 
+cubit.cmd('volume all scheme tetmesh') 
+cubit.cmd('mesh volume all ') 
+
+# Material Blocks 1 for the 1st layer
+cubit.cmd('set duplicate block elements on')
+cubit.cmd('block 1 volume 1')   
+cubit.cmd('block 1 name "MAT_ELASTIC_TRANSISO_First"') 
+cubit.cmd('block 1 attribute count 5') 
+#cubit.cmd('block 1 attribute index 1 1')   #Young's modulus  (This will not be used in the calculation) 
+#cubit.cmd('block 1 attribute index 2 0')   #Poisson's ratio (This will not be used in the calculation) 
+ 
+# Material Blocks 2 for the 2nd Layer  
+cubit.cmd('block 2 volume 2')   
+cubit.cmd('block 2 name "MAT_ELASTIC_TRANSISO_Second"') 
+cubit.cmd('block 2 attribute count 5') 
+#cubit.cmd('block 2 attribute index 1 1')   #Young's modulus  (This will not be used in the calculation) 
+#cubit.cmd('block 2 attribute index 2 0')   #Poisson's ratio (This will not be used in the calculation) 
+ 
+# Material Blocks 3 for the 3rd layer
+cubit.cmd('block 3 volume 3')   
+cubit.cmd('block 3 name "MAT_ELASTIC_TRANSISO_Third"') 
+cubit.cmd('block 3 attribute count 5') 
+#cubit.cmd('block 3 attribute index 1 1')   #Young's modulus  (This will not be used in the calculation) 
+#cubit.cmd('block 3 attribute index 2 0')   #Poisson's ratio (This will not be used in the calculation) 
+
+# Material Blocks 4 for the 4th layer
+cubit.cmd('block 4 volume 4 5 6 7')   
+cubit.cmd('block 4 name "MAT_ELASTIC_TRANSISO_Fourth"') 
+cubit.cmd('block 4 attribute count 5') 
+#cubit.cmd('block 4 attribute index 1 1')   #Young's modulus  (This will not be used in the calculation) 
+#cubit.cmd('block 4 attribute index 2 0')   #Poisson's ratio (This will not be used in the calculation)
+ 
+E2=10.3e3; E1=141.71e3; NU23=0.3; NU21=0.0166; G12=9.43e3;   # Shaw 2010
+TransIso=[str(E2), str(E1), str(NU23), str(NU21), str(G12)] 
+
+for j in range(0, 4):  
+  for i in range(0, 5):   
+    str1='block ' + str(j+1) +' attribute index ' + str(i+1) +' '+TransIso[i]; cubit.cmd(str1) 
+    
+# Reliability 
+#cubit.cmd('block 5 tet 1675')              # element in the 1st layer
+cubit.cmd('block 5 tet 3157')             # element in the 2nd layer
+#cubit.cmd('block 5 tet 5186') #6499       # element in the 3rd layer (lower)
+#cubit.cmd('block 5 tet 5712')             # element in the 4th layer - centre (lower)
+
+cubit.cmd('block 5 name "RELIABILITY"') 
+cubit.cmd('block 5 attribute count 5') 
+cubit.cmd('block 5 attribute index 1 1')   #Young's modulus  (This will not be used in the calculation) 
+cubit.cmd('block 5 attribute index 2 0')   #Poisson's ratio (This will not be used in the calculation) 
+cubit.cmd('block 5 attribute index 3 0')   
+cubit.cmd('block 5 attribute index 4 0')   
+cubit.cmd('block 5 attribute index 5 0')   
+
+# Impose boundary conditions
+#str1='create displacement on surface 4 10 16 28 34 dof 1 fix ' + str(0);  cubit.cmd(str1) 
+#str1='create displacement on surface 3 9  15 33 39 dof 2 fix ' + str(0);  cubit.cmd(str1) 
+str1='create displacement on surface 20 26 32 38 dof 3 fix ' + str(0);  cubit.cmd(str1) 
+str1='create displacement on vertex  31 dof 1 dof 2 fix ' + str(0);  cubit.cmd(str1) 
+
+# Applied force
+# Case 1 & 2. uniaxial tension/compression (x direction)
+Force = -400;
+str1 = 'create force 1 on surface 6 12 18 24 42 vector ' + str(Force) +' 0 0 0 0 0'; 
+str2 = 'create force 2 on surface 4 10 16 28 34 vector ' + str(-Force) +' 0 0 0 0 0';
+cubit.cmd(str1); cubit.cmd(str2);
+
+#cubit.cmd('create force 1 on surface 6 12 18 24 42 vector -300 0 0 0 0 0') 
+#cubit.cmd('create force 2 on surface 4 10 16 28 34 vector 300 0 0 0 0 0') 
+
+# Case 3. biaxial tension 
+#Force = 170
+#str1 = 'create force 1 on surface 6 12 18 24 42 vector ' + str(Force) +' 0 0 0 0 0'; 
+#str2 = 'create force 2 on surface 4 10 16 28 34 vector ' + str(-Force) +' 0 0 0 0 0';
+#str3 = 'create force 3 on surface 5 11 17 23 29 vector 0 ' + str(Force) +' 0 0 0 0';
+#str4 = 'create force 4 on surface 3 9  15 33 39 vector 0 ' + str(-Force) +' 0 0 0 0';
+#cubit.cmd(str1); cubit.cmd(str2); cubit.cmd(str3); cubit.cmd(str4)
+
+#cubit.cmd('create force 1 on surface 6 12 18 24 42 vector 85 0 0 0 0 0') 
+#cubit.cmd('create force 2 on surface 4 10 16 28 34 vector -85 0 0 0 0 0') 
+#cubit.cmd('create force 3 on surface 5 11 17 23 29 vector 0  85 0 0 0 0')
+#cubit.cmd('create force 4 on surface 3 9  15 33 39 vector 0 -85 0 0 0 0')
+
+# Case 4. biaxial longitudinal tension & shear
+#cubit.cmd('create force 1 on surface 6 12 18 24 42 vector 150 0 0 0 0 0') 
+#cubit.cmd('create force 2 on surface 4 10 16 28 34 vector -150 0 0 0 0 0') 
+#cubit.cmd('create force 3 on surface 5 11 17 23 29 vector 0  150 0 0 0 0')
+#cubit.cmd('create force 4 on surface 3 9  15 33 39 vector 0 -150 0 0 0 0')
+
+#cubit.cmd('create force 2 on surface 5 11 17 23 vector 0 -900 0 0 0 0') 
+#cubit.cmd('create force 3 on surface 1      vector 90 0 0 0 0 0') 
+
+cubit.cmd('save as "/Users/nxz6/mofem_installation/mofem-cephas/mofem/users_modules/reliability/meshes/WWFE_T3P4_FE.cub" overwrite')  
