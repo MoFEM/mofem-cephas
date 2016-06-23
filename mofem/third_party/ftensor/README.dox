@@ -3,11 +3,40 @@
 
 This library is adapted to MoFEM needs. Some new capabilities are
 added that philosophy and spirit of original implementation is preserved. Most
-of operators for tensor rank 4 are added.
+of operators for tensor rank 4 are added.\n
 
 If some operator is not working because is not added, you can let us know, or pleas
 feel free to add it by yourself and make pull request to merge your contribution
-with the library.
+with the library.\n
+
+Example:
+\code
+// It is important that each differently named index has a different template
+// parameter. So
+FTensor::Index<'i',3> i;
+FTensor::Index<'I',3> I;
+
+// Index<'i',3> i,j; is likely to lead to errors, since the program thinks that
+// i and j are identical.
+
+FTensor::Tensor2<double,3,3> F;    // Tensor rank 2 dimension 3
+FTensor::Tensor1<double,3> dX,dx;  // Tensor rank 1 dimension 3
+
+// Here fill F and dX
+
+dx(i) = F(i,I)*dX(I); // Push dX to get dx
+
+FTensor::Index<'J',3> J;
+FTensor::Tensor2_symmetric<double,3> C;  // Tensor rank 2 (symmetric) dimension 3
+
+C(I,J) = F(i,I)^F(i,J);   // Calculate right Green deformation tensor C=F^TF
+                          // ^ indicate that multiplication yield symmetric tensor
+
+FTensor::Index<'j',3> j;
+FTensor::Tensor2_symmetric<double,3> b;  // Tensor rank 2 (symmetric) dimension 3
+
+b(i,j) = F(i,I)^F(j,I);         // FF^T
+\endcode
 
 \n\n
 
@@ -272,7 +301,9 @@ of dimensions. For example first two indices has dimension 2 and last two 4.
 
 \todo Some operators for symmetric tensor 3 on last two indices are not implemented.
 
-\todo Tensor4 symmetric on first two and last two, not implemented. And more combinations
+\todo Tensor4 that has symmetry on minor fist two and last two and major symmetry between fist and last two.
+
+\todo Tensor4 that has major symmetric only on first two and last two.
 
 \todo More documentation and examples. Documentation of functions and very limited at this point
 
