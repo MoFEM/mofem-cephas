@@ -83,6 +83,20 @@ void test_T4(
       }
     }
 
+    {
+      Tensor1<double,3> t1_2;
+      t1_2(k) = t2_1(k,l)*t1_1(l);
+      Tensor2<double,3,3> t2,t2_2,t2_3;
+      t2_2(j,k) = t1_1(j)*t1_2(k);
+      t2_3(i,l) = (t1_1(j)*t4_1(i,j,k,l))*t1_2(k);
+      t2(i,l) = t4_1(i,j,k,l)*t2_2(j,k);
+      for(int ii = 0;ii!=3;ii++) {
+        for(int jj = 0;jj!=3;jj++) {
+          test_for_zero(t2(ii,jj) - t2_3(ii,jj),"Tensor4_times_Tensor2_12");
+        }
+      }
+    }
+
 
   }
 

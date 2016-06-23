@@ -604,8 +604,81 @@ operator*(
   return Tensor2_Expr<TensorExpr,typename promote<T,U>::V,Dim1,Dim3,j,l>(TensorExpr(a,b));
 }
 
+/* A(i,j,k,l)*B(j,k) */
 
+template<
+  class A, class B, class T, class U,
+  int Dim0, int Dim1, int Dim2, int Dim3,
+  char i, char j, char k, char l
+>
+class Tensor4_times_Tensor2_12
+{
+  const Tensor4_Expr<A,T,Dim0,Dim1,Dim2,Dim3,i,j,k,l> iterA;
+  const Tensor2_Expr<B,U,Dim1,Dim2,j,k> iterB;
 
+  template<int Current_Dim0, int Current_Dim1>
+  typename promote<T,U>::V eval(const int N1, const int N2,
+		       const Number<Current_Dim0> &,
+		       const Number<Current_Dim1> &)  const
+  {
+    return
+    iterA(N1,Current_Dim0-1,Current_Dim1-1,N2)*iterB(Current_Dim0-1,Current_Dim1-1)
+    + eval(N1,N2,Number<Current_Dim0-1>(),Number<Current_Dim1>());
+  }
+  template<int Current_Dim1>
+  typename promote<T,U>::V eval(const int N1, const int N2,
+		       const Number<1> &,
+		       const Number<Current_Dim1> &)  const
+  {
+    return
+    iterA(N1,0,Current_Dim1-1,N2)*iterB(0,Current_Dim1-1)
+    + eval(N1,N2,Number<Dim0>(),Number<Current_Dim1-1>());
+  }
+  typename promote<T,U>::V eval(const int N1, const int N2,
+		       const Number<1> &,
+		       const Number<1> &)  const
+  {
+    return iterA(N1,0,0,N2)*iterB(0,0);
+  }
+public:
+  typename promote<T,U>::V operator()(const int N1, const int N2) const
+  {
+    return eval(N1,N2,Number<Dim0>(),Number<Dim3>());
+  }
+
+  Tensor4_times_Tensor2_12(
+    const Tensor4_Expr<A,T,Dim0,Dim1,Dim2,Dim3,i,j,k,l> &a,
+    const Tensor2_Expr<B,U,Dim1,Dim2,j,k> &b
+  ): iterA(a), iterB(b) {}
+};
+
+template<class A, class B, class T, class U, int Dim0, int Dim1, int Dim2,
+  int Dim3, char i, char j, char k, char l>
+inline Tensor2_Expr
+<const Tensor4_times_Tensor2_12<A,B,T,U,Dim0,Dim1,Dim2,Dim3,i,j,k,l>,
+  typename promote<T,U>::V,Dim0,Dim3,i,l>
+operator*(
+  const Tensor4_Expr<A,T,Dim0,Dim1,Dim2,Dim3,i,j,k,l> &a,
+  const Tensor2_Expr<B,U,Dim1,Dim2,j,k> &b
+) {
+  typedef const Tensor4_times_Tensor2_12<A,B,T,U,Dim0,Dim1,Dim2,Dim3,i,j,k,l> TensorExpr;
+  return Tensor2_Expr<TensorExpr,typename promote<T,U>::V,Dim1,Dim3,i,l>(TensorExpr(a,b));
+}
+
+/* B(j,k)*A(i,j,k,l) */
+
+template<class A, class B, class T, class U, int Dim0, int Dim1, int Dim2,
+  int Dim3, char i, char j, char k, char l>
+inline Tensor2_Expr
+<const Tensor4_times_Tensor2_12<A,B,T,U,Dim0,Dim1,Dim2,Dim3,i,j,k,l>,
+  typename promote<T,U>::V,Dim0,Dim3,i,l>
+operator*(
+  const Tensor2_Expr<B,U,Dim1,Dim2,j,k> &b,
+  const Tensor4_Expr<A,T,Dim0,Dim1,Dim2,Dim3,i,j,k,l> &a
+) {
+  typedef const Tensor4_times_Tensor2_12<A,B,T,U,Dim0,Dim1,Dim2,Dim3,i,j,k,l> TensorExpr;
+  return Tensor2_Expr<TensorExpr,typename promote<T,U>::V,Dim1,Dim3,i,l>(TensorExpr(a,b));
+}
 
 /* This file has all of the declarations for expressions like
    Tensor4*Tensor2 and Tensor2*Tensor4, yielding a
