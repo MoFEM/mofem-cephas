@@ -1067,8 +1067,6 @@ operator*(
 
 /* A(i,j,k,l)*B(k,m) */
 
-// TODO: This variant is not implemented for symmetric tensor4
-
 template<class A, class B, class T, class U, int Dim0,int Dim1, int Dim2, int Dim3, int Dim4,
   char i, char j, char k, char l,char m>
 class Tensor4_times_Tensor2_2_0
@@ -1082,14 +1080,14 @@ class Tensor4_times_Tensor2_2_0
 		const Number<Current_Dim0> &
   )  const {
     return
-    iterA(N1,N2,Current_Dim0-1,N3)*iterB(Current_Dim0-1,N4)
+    iterA(N1,N2,Current_Dim0-1,N4)*iterB(Current_Dim0-1,N3)
     + eval(N1,N2,N3,N4,Number<Current_Dim0-1>());
   }
   typename promote<T,U>::V eval(
     const int N1, const int N2,const int N3,const int N4,
 		const Number<1> &
   )  const {
-    return iterA(N1,N2,0,N3)*iterB(0,N4);
+    return iterA(N1,N2,0,N4)*iterB(0,N3);
   }
 public:
   Tensor4_times_Tensor2_2_0(
@@ -1115,7 +1113,7 @@ operator*(
   (TensorExpr(a,b));
 }
 
-/* B(l,m)*A(i,j,k,l) */
+/* B(k,m)*A(i,j,k,l) */
 
 template<
 class A, class B, class T, class U, int Dim0,int Dim1, int Dim2,int Dim3, int Dim4,char i, char j, char k, char l,char m>
@@ -1132,8 +1130,6 @@ operator*(
 
 /* A(i,j,k,l)*B(m,k) */
 
-// TODO: This variant is not implemented for symmetric tensor4
-
 template<class A, class B, class T, class U, int Dim0,int Dim1, int Dim2, int Dim3, int Dim4,
   char i, char j, char k, char l,char m>
 class Tensor4_times_Tensor2_2_1
@@ -1147,14 +1143,14 @@ class Tensor4_times_Tensor2_2_1
 		const Number<Current_Dim0> &
   )  const {
     return
-    iterA(N1,N2,Current_Dim0-1,N3)*iterB(N4,Current_Dim0-1)
+    iterA(N1,N2,Current_Dim0-1,N4)*iterB(N3,Current_Dim0-1)
     + eval(N1,N2,N3,N4,Number<Current_Dim0-1>());
   }
   typename promote<T,U>::V eval(
     const int N1, const int N2,const int N3,const int N4,
 		const Number<1> &
   )  const {
-    return iterA(N1,N2,0,N3)*iterB(N4,0);
+    return iterA(N1,N2,0,N4)*iterB(N3,0);
   }
 public:
   Tensor4_times_Tensor2_2_1(
