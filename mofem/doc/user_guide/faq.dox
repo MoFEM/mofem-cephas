@@ -4,11 +4,10 @@
 
 The current MoFEM version can be identified by \e Semantic \e Versioning and \e
 Git \e Commit \e Id. \e Git \e Commit \e Id is unique and points to particular
-code commit. \e Semantic \e Versioning is not unique, more that one commits to git
+code commit. \e Semantic \e Versioning is not unique, more than one commits to git
 repository can have the same version.
 
-Every execution of code which is build with MoFEM library result that first two lines look
-like that
+First two lines of every executed code which is build with MoFEM library look like that
 \code
 version 0.3.24  <---  (MAJOR_VERSION.MINOR_VERSION.BUILD_VERSION)
 git commit id 3d06924d27973df16e3260c6e962929330cf9348
@@ -23,7 +22,7 @@ some function deprecated etc. that will result in incremented build version.
 Note that each users module has set minimal MoFEM version to which is
 compatible, see \ref adding_user_module for details.
 
-For other hand changes/improvements to core library like modification of local
+On the other hand changes/improvements to core library like modification of local
 variable name or when local documentation added, that will result in new commit
 however will NOT result in new \e build \e version, since implementation of
 users modules is not influenced by changes in main library.
@@ -35,11 +34,11 @@ minor or major version could be changed at any time when major/minor feature is
 initiated.
 
 In addition to above rules, the general principles could apply, in short,
-- 3.7.11 (bug fix)
-- 3.7.12 (partial new feature, hidden behind a Feature Toggle.)
-- 3.7.13 (performance improvement)
-- 3.8.0 (completed feature initiated in 3.7.12)
-- 4.0.0 (breaking changes in public API)
+- 3.7.11 (bug fix), incremental change in build version
+- 3.7.12 (partial new feature, hidden behind a Feature Toggle.), incremental change in build version
+- 3.7.13 (performance improvement), incremental change in build version
+- 3.8.0 (completed feature initiated in 3.7.12), direct change in minor version
+- 4.0.0 (breaking changes in public API), direct change in major version
 
 The MoFEM version can be set in CMakeList.txt located in root source directory,
 in lines
