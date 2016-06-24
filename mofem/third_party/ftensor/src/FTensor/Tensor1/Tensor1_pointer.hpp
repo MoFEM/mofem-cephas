@@ -1,6 +1,21 @@
 /* A version for pointers, useful for previously
    constructed arrays. */
 
+template<class T,int Dim,int Current_Dim>
+inline void T1_increment(
+  const Tensor1<T,Dim> &iter,const Number<Current_Dim> &
+) {
+  iter.increment(Number<Current_Dim>());
+  T1_increment(iter,Number<Current_Dim-1>());
+}
+
+template<class T,int Dim>
+inline void T1_increment(
+  const Tensor1<T,Dim> &iter,const Number<1> &
+) {
+  iter.increment(Number<1>());
+}
+
 template <class T, int Tensor_Dim>
 class Tensor1<T*,Tensor_Dim>
 {
@@ -95,12 +110,25 @@ public:
   /* The ++ operator increments the pointer, not the number that the
      pointer points to.  This allows iterating over a grid. */
 
+  template<int Current_Dim>
+  inline void increment(const Number<Current_Dim> &) const {
+    if(data[Current_Dim-1]) data[Current_Dim-1]+=inc;
+  }
+
   const Tensor1 & operator++() const
   {
-    for(int i=0;i<Tensor_Dim;++i)
-      if(data[i]) {
-        data[i]+=inc;
-      }
+    T1_increment(*this,Number<Tensor_Dim>());
     return *this;
   }
+
+};
+
+class AAA {
+	void A() {
+		double d[9];
+		Tensor1<double*,3> t2(
+			&d[0],&d[1],&d[2]
+		);
+		++t2;
+	}
 };
