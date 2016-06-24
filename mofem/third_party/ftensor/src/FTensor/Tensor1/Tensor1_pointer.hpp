@@ -122,13 +122,3 @@ public:
   }
 
 };
-
-class AAA {
-	void A() {
-		double d[9];
-		Tensor1<double*,3> t2(
-			&d[0],&d[1],&d[2]
-		);
-		++t2;
-	}
-};

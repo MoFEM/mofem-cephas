@@ -1,5 +1,48 @@
 /* A version for pointers. */
 
+template<
+  class T,
+  int Dim01,int Dim23,
+  int Current_Position0,int Current_Position1
+>
+inline void T4_ddg_increment(
+  const Tensor4_ddg<T,Dim01,Dim23> &iter,
+  const Number<Current_Position0> &,
+  const Number<Current_Position1> &
+) {
+  iter.increment(
+    Number<Current_Position0>(),Number<Current_Position1>()
+  );
+  T4_ddg_increment(
+    iter,Number<Current_Position0-1>(),Number<Current_Position1>()
+  );
+}
+
+template<class T,int Dim01,int Dim23,int Current_Position1>
+inline void T4_ddg_increment(
+  const Tensor4_ddg<T,Dim01,Dim23> &iter,
+  const Number<1> &,
+  const Number<Current_Position1> &
+) {
+	iter.increment(
+		Number<1>(),Number<Current_Position1>()
+	);
+	T4_ddg_increment(
+		iter,Number<(Dim01*(Dim01+1))/2>(),Number<Current_Position1-1>()
+	);
+}
+
+template<class T,int Dim01,int Dim23>
+inline void T4_ddg_increment(
+  const Tensor4_ddg<T,Dim01,Dim23> &iter,
+  const Number<1> &,
+  const Number<1> &
+) {
+	iter.increment(
+		Number<1>(),Number<1>()
+	);
+}
+
 template <class T, int Tensor_Dim01, int Tensor_Dim23>
 class Tensor4_ddg<T*,Tensor_Dim01,Tensor_Dim23>
 {
@@ -307,11 +350,30 @@ public:
   /* The ++ operator increments the pointer, not the number that the
      pointer points to.  This allows iterating over a grid. */
 
+  template<int Current_Position0,int Current_Position1>
+  inline void increment(
+    const Number<Current_Position0> &,
+    const Number<Current_Position1> &
+  ) const {
+    data[Current_Position0-1][Current_Position1-1]+=inc;
+  }
+
   const Tensor4_ddg<T*,Tensor_Dim01,Tensor_Dim23> & operator++() const
   {
-    for(int i=0;i<(Tensor_Dim01*(Tensor_Dim01+1))/2;++i)
-      for(int j=0;j<(Tensor_Dim01*(Tensor_Dim01+1))/2;++j)
-	     data[i][j] += inc;
+    T4_ddg_increment(*this,Number<(Tensor_Dim01*(Tensor_Dim01+1))/2>(),Number<(Tensor_Dim23*(Tensor_Dim23+1))/2>());
     return *this;
   }
+
+};
+
+class AAA {
+	void A() {
+		double d[9];
+		Tensor4_ddg<double*,3,3> t2(
+      &d[0],&d[1],&d[2],
+      &d[1],&d[2],&d[3],
+      &d[4],&d[5],&d[6]
+		);
+		++t2;
+	}
 };
