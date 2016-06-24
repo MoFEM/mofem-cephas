@@ -2,11 +2,11 @@
 
 template<
   class T,
-  int Dim0,int Dim1,int Dim2,int Dim3,int Inc,
+  int Dim0,int Dim1,int Dim2,int Dim3,
   int Current_Dim0,int Current_Dim1,int Current_Dim2,int Current_Dim3
 >
 inline void T4_increment(
-  const Tensor4<T,Dim0,Dim1,Dim2,Dim3,Inc> &iter,
+  const Tensor4<T,Dim0,Dim1,Dim2,Dim3> &iter,
   const Number<Current_Dim0> &,
   const Number<Current_Dim1> &,
   const Number<Current_Dim2> &,
@@ -25,11 +25,11 @@ inline void T4_increment(
 
 template<
   class T,
-  int Dim0,int Dim1,int Dim2,int Dim3,int Inc,
+  int Dim0,int Dim1,int Dim2,int Dim3,
   int Current_Dim1,int Current_Dim2,int Current_Dim3
 >
 inline void T4_increment(
-  const Tensor4<T,Dim0,Dim1,Dim2,Dim3,Inc> &iter,
+  const Tensor4<T,Dim0,Dim1,Dim2,Dim3> &iter,
   const Number<1> &,
   const Number<Current_Dim1> &,
   const Number<Current_Dim2> &,
@@ -48,11 +48,11 @@ inline void T4_increment(
 
 template<
   class T,
-  int Dim0,int Dim1,int Dim2,int Dim3,int Inc,
+  int Dim0,int Dim1,int Dim2,int Dim3,
   int Current_Dim2,int Current_Dim3
 >
 inline void T4_increment(
-  const Tensor4<T,Dim0,Dim1,Dim2,Dim3,Inc> &iter,
+  const Tensor4<T,Dim0,Dim1,Dim2,Dim3> &iter,
   const Number<1> &,
   const Number<1> &,
   const Number<Current_Dim2> &,
@@ -71,11 +71,11 @@ inline void T4_increment(
 
 template<
   class T,
-  int Dim0,int Dim1,int Dim2,int Dim3,int Inc,
+  int Dim0,int Dim1,int Dim2,int Dim3,
   int Current_Dim3
 >
 inline void T4_increment(
-  const Tensor4<T,Dim0,Dim1,Dim2,Dim3,Inc> &iter,
+  const Tensor4<T,Dim0,Dim1,Dim2,Dim3> &iter,
   const Number<1> &,
   const Number<1> &,
   const Number<1> &,
@@ -94,10 +94,10 @@ inline void T4_increment(
 
 template<
   class T,
-  int Dim0,int Dim1,int Dim2,int Dim3,int Inc
+  int Dim0,int Dim1,int Dim2,int Dim3
 >
 inline void T4_increment(
-  const Tensor4<T,Dim0,Dim1,Dim2,Dim3,Inc> &iter,
+  const Tensor4<T,Dim0,Dim1,Dim2,Dim3> &iter,
   const Number<1> &,
   const Number<1> &,
   const Number<1> &,
@@ -109,9 +109,10 @@ inline void T4_increment(
   );
 }
 
-template <class T, int Tensor_Dim0, int Tensor_Dim1,int Tensor_Dim2,int Tensor_Dim3,int Inc>
-class Tensor4<T*,Tensor_Dim0,Tensor_Dim1,Tensor_Dim2,Tensor_Dim3,Inc>
+template <class T, int Tensor_Dim0, int Tensor_Dim1,int Tensor_Dim2,int Tensor_Dim3>
+class Tensor4<T*,Tensor_Dim0,Tensor_Dim1,Tensor_Dim2,Tensor_Dim3>
 {
+  const int inc;
   mutable T* restrict data[Tensor_Dim0][Tensor_Dim1][Tensor_Dim2][Tensor_Dim3];
 public:
 
@@ -119,8 +120,9 @@ public:
     T* d0000,T* d0001,T* d0010,T* d0011,
     T* d0100,T* d0101,T* d0110,T* d0111,
     T* d1000,T* d1001,T* d1010,T* d1011,
-    T* d1100,T* d1101,T* d1110,T* d1111
-  ) {
+    T* d1100,T* d1101,T* d1110,T* d1111,
+    const int i = 1
+  ): inc(i) {
     Tensor4_constructor<T*,Tensor_Dim0,Tensor_Dim1,Tensor_Dim2,Tensor_Dim3>(
       data,
       d0000,d0001,d0010,d0011,
@@ -139,8 +141,9 @@ public:
     T* d1200, T* d1201, T* d1202, T* d1210, T* d1211, T* d1212, T* d1220, T* d1221, T* d1222,
     T* d2000, T* d2001, T* d2002, T* d2010, T* d2011, T* d2012, T* d2020, T* d2021, T* d2022,
     T* d2100, T* d2101, T* d2102, T* d2110, T* d2111, T* d2112, T* d2120, T* d2121, T* d2122,
-    T* d2200, T* d2201, T* d2202, T* d2210, T* d2211, T* d2212, T* d2220, T* d2221, T* d2222
-  ) {
+    T* d2200, T* d2201, T* d2202, T* d2210, T* d2211, T* d2212, T* d2220, T* d2221, T* d2222,
+    const int i = 1
+  ): inc(i) {
     Tensor4_constructor<T*,Tensor_Dim0,Tensor_Dim1,Tensor_Dim2,Tensor_Dim3>(
       data,
       d0000,d0001,d0002,d0010,d0011,d0012,d0020,d0021,d0022,
@@ -155,7 +158,7 @@ public:
     );
   }
 
-  Tensor4(T* d,const int shift) {
+  Tensor4(T* d,const int shift,const int i = 1): inc(i) {
     int s = 0;
     for(int i = 0;i!=Tensor_Dim0;++i) {
       for(int j = 0;j!=Tensor_Dim1;++j) {
@@ -252,7 +255,7 @@ public:
     const Number<Current_Dim2> &,
     const Number<Current_Dim3> &
   ) const {
-    data[Current_Dim0-1][Current_Dim1-1][Current_Dim2-1][Current_Dim3-1]+=Inc;
+    data[Current_Dim0-1][Current_Dim1-1][Current_Dim2-1][Current_Dim3-1]+=inc;
   }
 
   const Tensor4<T*,Tensor_Dim0,Tensor_Dim1,Tensor_Dim2,Tensor_Dim3> & operator++() const {
