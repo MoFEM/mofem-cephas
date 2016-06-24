@@ -91,7 +91,7 @@ namespace FTensor {
   class Tensor3_antisymmetric_Expr;
 
   template <class T, int Tensor_Dim0, int Tensor_Dim1,
-  int Tensor_Dim2,int Tensor_Dim3 > class Tensor4;
+  int Tensor_Dim2,int Tensor_Dim3,int Inc=1> class Tensor4;
   template <class A, class T, int Dim0, int Dim1, int Dim2, int Dim3,
     char i, char j, char k, char l> class Tensor4_Expr;
 
