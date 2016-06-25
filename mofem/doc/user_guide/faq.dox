@@ -253,6 +253,8 @@ in execution of the code by
 open instrumentscli0.trace
 \endcode
 
+If you use Linux you can alternatively use Valgrind, see \ref profiling_code_with_valgrind.
+
 \section profiling_code_stages How to profile code using PETSc tools?
 
 See PETSc documentation

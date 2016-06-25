@@ -35,16 +35,16 @@ set(MoFEM_VERSION_MINOR 3)
 set(MoFEM_VERSION_BUILD 26)
 
 include(CheckCXXSourceCompiles)
-# CHECK_CXX_SOURCE_COMPILES(
-#   "int main() { double * __restrict__ x;}\n"
-#   SYMM_RESTRICT
-# )
-# if(SYMM_RESTRICT)
-#   set(DEFINE_RESTRICT "-Drestrict=__restrict__")
-# else(SYMM_RESTRICT)
+CHECK_CXX_SOURCE_COMPILES(
+  "int main() { double * __restrict__ x;}\n"
+  SYMM_RESTRICT
+)
+if(SYMM_RESTRICT)
+  set(DEFINE_RESTRICT "-Drestrict=__restrict__")
+else(SYMM_RESTRICT)
   set(DEFINE_RESTRICT "-Drestrict=")
   add_definitions("-Drestrict=")
-# endif(SYMM_RESTRICT)
+endif(SYMM_RESTRICT)
 add_definitions(${DEFINE_RESTRICT})
 
 # Installing extermal packages

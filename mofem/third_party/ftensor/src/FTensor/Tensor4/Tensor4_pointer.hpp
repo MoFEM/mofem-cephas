@@ -123,7 +123,7 @@ public:
     T* d1100,T* d1101,T* d1110,T* d1111,
     const int i = 1
   ): inc(i) {
-    Tensor4_constructor<T*,Tensor_Dim0,Tensor_Dim1,Tensor_Dim2,Tensor_Dim3>(
+    Tensor4_constructor<T * restrict,Tensor_Dim0,Tensor_Dim1,Tensor_Dim2,Tensor_Dim3>(
       data,
       d0000,d0001,d0010,d0011,
       d0100,d0101,d0110,d0111,
@@ -144,7 +144,7 @@ public:
     T* d2200, T* d2201, T* d2202, T* d2210, T* d2211, T* d2212, T* d2220, T* d2221, T* d2222,
     const int i = 1
   ): inc(i) {
-    Tensor4_constructor<T*,Tensor_Dim0,Tensor_Dim1,Tensor_Dim2,Tensor_Dim3>(
+    Tensor4_constructor<T * restrict,Tensor_Dim0,Tensor_Dim1,Tensor_Dim2,Tensor_Dim3>(
       data,
       d0000,d0001,d0002,d0010,d0011,d0012,d0020,d0021,d0022,
       d0100,d0101,d0102,d0110,d0111,d0112,d0120,d0121,d0122,
