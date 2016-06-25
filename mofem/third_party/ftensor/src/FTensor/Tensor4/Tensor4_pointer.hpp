@@ -1,6 +1,115 @@
 /* A version for pointers. */
 
-template <class T, int Tensor_Dim0, int Tensor_Dim1,int Tensor_Dim2,int Tensor_Dim3 >
+template<
+  class T,
+  int Dim0,int Dim1,int Dim2,int Dim3,
+  int Current_Dim0,int Current_Dim1,int Current_Dim2,int Current_Dim3
+>
+inline void T4_increment(
+  const Tensor4<T,Dim0,Dim1,Dim2,Dim3> &iter,
+  const Number<Current_Dim0> &,
+  const Number<Current_Dim1> &,
+  const Number<Current_Dim2> &,
+  const Number<Current_Dim3> &
+) {
+  iter.increment(
+    Number<Current_Dim0>(),Number<Current_Dim1>(),
+    Number<Current_Dim2>(),Number<Current_Dim3>()
+  );
+  T4_increment(
+    iter,
+    Number<Current_Dim0-1>(),Number<Current_Dim1>(),
+    Number<Current_Dim2>(),Number<Current_Dim3>()
+  );
+}
+
+template<
+  class T,
+  int Dim0,int Dim1,int Dim2,int Dim3,
+  int Current_Dim1,int Current_Dim2,int Current_Dim3
+>
+inline void T4_increment(
+  const Tensor4<T,Dim0,Dim1,Dim2,Dim3> &iter,
+  const Number<1> &,
+  const Number<Current_Dim1> &,
+  const Number<Current_Dim2> &,
+  const Number<Current_Dim3> &
+) {
+  iter.increment(
+    Number<1>(),Number<Current_Dim1>(),
+    Number<Current_Dim2>(),Number<Current_Dim3>()
+  );
+  T4_increment(
+    iter,
+    Number<Dim0>(),Number<Current_Dim1-1>(),
+    Number<Current_Dim2>(),Number<Current_Dim3>()
+  );
+}
+
+template<
+  class T,
+  int Dim0,int Dim1,int Dim2,int Dim3,
+  int Current_Dim2,int Current_Dim3
+>
+inline void T4_increment(
+  const Tensor4<T,Dim0,Dim1,Dim2,Dim3> &iter,
+  const Number<1> &,
+  const Number<1> &,
+  const Number<Current_Dim2> &,
+  const Number<Current_Dim3> &
+) {
+  iter.increment(
+    Number<1>(),Number<1>(),
+    Number<Current_Dim2>(),Number<Current_Dim3>()
+  );
+  T4_increment(
+    iter,
+    Number<Dim0>(),Number<Dim1>(),
+    Number<Current_Dim2-1>(),Number<Current_Dim3>()
+  );
+}
+
+template<
+  class T,
+  int Dim0,int Dim1,int Dim2,int Dim3,
+  int Current_Dim3
+>
+inline void T4_increment(
+  const Tensor4<T,Dim0,Dim1,Dim2,Dim3> &iter,
+  const Number<1> &,
+  const Number<1> &,
+  const Number<1> &,
+  const Number<Current_Dim3> &
+) {
+  iter.increment(
+    Number<1>(),Number<1>(),
+    Number<1>(),Number<Current_Dim3>()
+  );
+  T4_increment(
+    iter,
+    Number<Dim0>(),Number<Dim1>(),
+    Number<Dim2>(),Number<Current_Dim3-1>()
+  );
+}
+
+template<
+  class T,
+  int Dim0,int Dim1,int Dim2,int Dim3
+>
+inline void T4_increment(
+  const Tensor4<T,Dim0,Dim1,Dim2,Dim3> &iter,
+  const Number<1> &,
+  const Number<1> &,
+  const Number<1> &,
+  const Number<1> &
+) {
+  iter.increment(
+    Number<1>(),Number<1>(),
+    Number<1>(),Number<1>()
+  );
+}
+
+template <class T, int Tensor_Dim0, int Tensor_Dim1,int Tensor_Dim2,int Tensor_Dim3>
 class Tensor4<T*,Tensor_Dim0,Tensor_Dim1,Tensor_Dim2,Tensor_Dim3>
 {
   const int inc;
@@ -139,16 +248,22 @@ public:
   /* The ++ operator increments the pointer, not the number that the
      pointer points to.  This allows iterating over a grid. */
 
+  template<int Current_Dim0,int Current_Dim1,int Current_Dim2,int Current_Dim3>
+  inline void increment(
+    const Number<Current_Dim0> &,
+    const Number<Current_Dim1> &,
+    const Number<Current_Dim2> &,
+    const Number<Current_Dim3> &
+  ) const {
+    data[Current_Dim0-1][Current_Dim1-1][Current_Dim2-1][Current_Dim3-1]+=inc;
+  }
+
   const Tensor4<T*,Tensor_Dim0,Tensor_Dim1,Tensor_Dim2,Tensor_Dim3> & operator++() const {
-    for(int i=0;i<Tensor_Dim0;++i) {
-      for(int j=0;j<Tensor_Dim1;++j) {
-        for(int k=0;k<Tensor_Dim2;++k) {
-          for(int l=0;l<Tensor_Dim3;++l) {
-            data[i][j][k][l] += inc;
-          }
-        }
-      }
-    }
+    T4_increment(
+      *this,
+      Number<Tensor_Dim0>(),Number<Tensor_Dim1>(),
+      Number<Tensor_Dim2>(),Number<Tensor_Dim3>()
+    );
     return *this;
   }
 

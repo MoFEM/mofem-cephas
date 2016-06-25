@@ -141,12 +141,16 @@ PetscErrorCode NonlinearElasticElement::OpGetDataAtGaussPts::doWork(
   PetscFunctionBegin;
   try {
 
-    int nb_dofs = data.getFieldData().size();
+    const int nb_dofs = data.getFieldData().size();
+    const int nb_base_functions = data.getN().size2();
     if(nb_dofs == 0) {
       PetscFunctionReturn(0);
     }
-    int nb_gauss_pts = data.getN().size1();
-    int rank = data.getFieldDofs()[0]->getNbOfCoeffs();
+    const int nb_gauss_pts = data.getN().size1();
+    const int rank = data.getFieldDofs()[0]->getNbOfCoeffs();
+    if(rank!=3) {
+      SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"Work only for vector field");
+    }
 
     //initialize
     if(type == zeroAtType) {
@@ -162,20 +166,52 @@ PetscErrorCode NonlinearElasticElement::OpGetDataAtGaussPts::doWork(
       }
     }
 
-    VectorDouble& values = data.getFieldData();
-    //std::cerr << valuesAtGaussPts[0] << " : ";
-    for(int gg = 0;gg<nb_gauss_pts;gg++) {
-      VectorAdaptor N = data.getN(gg,nb_dofs/rank);
-      MatrixAdaptor diffN = data.getDiffN(gg,nb_dofs/rank);
-      for(int dd = 0;dd<nb_dofs/rank;dd++) {
-        for(int rr1 = 0;rr1<rank;rr1++) {
-          valuesAtGaussPts[gg][rr1] += N[dd]*values[rank*dd+rr1];
-          for(int rr2 = 0;rr2<3;rr2++) {
-            gradientAtGaussPts[gg](rr1,rr2) += diffN(dd,rr2)*values[rank*dd+rr1];
-          }
-        }
+    FTensor::Tensor0<double*> base_function = data.getFTensor0N();
+    FTensor::Tensor1<double*,3> diff_base_functions = data.getFTensor1DiffN<3>();
+    FTensor::Index<'i',3> i;
+    FTensor::Index<'j',3> j;
+
+    for(int gg = 0;gg!=nb_gauss_pts;gg++) {
+      FTensor::Tensor1<double*,3> field_data = data.getFTensor1FieldData<3>();
+      int bb = 0;
+      for(;bb!=nb_dofs/3;bb++) {
+        FTensor::Tensor1<double*,3> values(
+          &valuesAtGaussPts[gg][0],
+          &valuesAtGaussPts[gg][1],
+          &valuesAtGaussPts[gg][2]
+        );
+        values(i) += base_function*field_data(i);
+        FTensor::Tensor2<double*,3,3> gradient(
+          &gradientAtGaussPts[gg](0,0),&gradientAtGaussPts[gg](0,1),&gradientAtGaussPts[gg](0,2),
+          &gradientAtGaussPts[gg](1,0),&gradientAtGaussPts[gg](1,1),&gradientAtGaussPts[gg](1,2),
+          &gradientAtGaussPts[gg](2,0),&gradientAtGaussPts[gg](2,1),&gradientAtGaussPts[gg](2,2)
+        );
+        gradient(i,j) += field_data(i)*diff_base_functions(j);
+        ++diff_base_functions;
+        ++base_function;
+        ++field_data;
+      }
+      for(;bb!=nb_base_functions;bb++) {
+        ++diff_base_functions;
+        ++base_function;
       }
     }
+
+
+    // VectorDouble& values = data.getFieldData();
+    // //std::cerr << valuesAtGaussPts[0] << " : ";
+    // for(int gg = 0;gg<nb_gauss_pts;gg++) {
+    //   VectorAdaptor N = data.getN(gg,nb_dofs/rank);
+    //   MatrixAdaptor diffN = data.getDiffN(gg,nb_dofs/rank);
+    //   for(int dd = 0;dd<nb_dofs/rank;dd++) {
+    //     for(int rr1 = 0;rr1<rank;rr1++) {
+    //       valuesAtGaussPts[gg][rr1] += N[dd]*values[rank*dd+rr1];
+    //       for(int rr2 = 0;rr2<3;rr2++) {
+    //         gradientAtGaussPts[gg](rr1,rr2) += diffN(dd,rr2)*values[rank*dd+rr1];
+    //       }
+    //     }
+    //   }
+    // }
 
     //std::cerr << row_field_name << " " << col_field_name << std::endl;
     //std::cerr << side << " " << type << std::endl;
@@ -447,38 +483,68 @@ PetscErrorCode NonlinearElasticElement::OpRhsPiolaKirchhoff::doWork(
   if(dAta.tEts.find(getNumeredEntFiniteElementPtr()->getEnt()) == dAta.tEts.end()) {
     PetscFunctionReturn(0);
   }
-  if(row_data.getIndices().size()==0) PetscFunctionReturn(0);
-  int nb_dofs = row_data.getIndices().size();
+
+  const int nb_dofs = row_data.getIndices().size();
+  if(nb_dofs==0) PetscFunctionReturn(0);
+  if((unsigned int)nb_dofs > 3*row_data.getN().size2()) {
+    SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+  }
+  const int nb_base_functions = row_data.getN().size2();
+  const int nb_gauss_pts = row_data.getN().size1();
 
   try {
 
     nf.resize(nb_dofs,false);
     nf.clear();
 
-    for(unsigned int gg = 0;gg<row_data.getN().size1();gg++) {
-      //diffN - on rows has degrees of freedom
-      //diffN - on columns has derivatives of shape function
-      const MatrixAdaptor &diffN = row_data.getDiffN(gg,nb_dofs/3);
-      const MatrixDouble& stress = commonData.sTress[gg];
+    FTensor::Tensor1<double*,3> diff_base_functions = row_data.getFTensor1DiffN<3>();
+    FTensor::Index<'i',3> i;
+    FTensor::Index<'j',3> j;
 
+    for(int gg = 0;gg!=nb_gauss_pts;gg++) {
       double val = getVolume()*getGaussPts()(3,gg);
       if((!aLe)&&getHoGaussPtsDetJac().size()>0) {
         val *= getHoGaussPtsDetJac()[gg]; ///< higher order geometry
       }
-      for(int dd = 0;dd<nb_dofs/3;dd++) {
-        for(int rr = 0;rr<3;rr++) {
-          for(int nn = 0;nn<3;nn++) {
-            //std::cerr << "stress : " << stress << std::endl;
-            nf[3*dd+rr] += val*diffN(dd,nn)*stress(rr,nn);
-          }
-        }
+      const MatrixDouble& stress = commonData.sTress[gg];
+      FTensor::Tensor2<const double *,3,3> t3(
+        &stress(0,0),&stress(0,1),&stress(0,2),
+        &stress(1,0),&stress(1,1),&stress(1,2),
+        &stress(2,0),&stress(2,1),&stress(2,2)
+      );
+      FTensor::Tensor1<double*,3> rhs(&nf[0],&nf[1],&nf[2],3);
+      int bb = 0;
+      for(;bb!=nb_dofs/3;bb++) {
+        rhs(i) += val*t3(i,j)*diff_base_functions(j);
+        ++rhs;
+        ++diff_base_functions;
       }
-
+      for(;bb!=nb_base_functions;bb++) {
+        ++diff_base_functions;
+      }
     }
 
-    if((unsigned int)nb_dofs > 3*row_data.getN().size2()) {
-      SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
-    }
+    // for(unsigned int gg = 0;gg<row_data.getN().size1();gg++) {
+    //   //diffN - on rows has degrees of freedom
+    //   //diffN - on columns has derivatives of shape function
+    //   const MatrixAdaptor &diffN = row_data.getDiffN(gg,nb_dofs/3);
+    //   const MatrixDouble& stress = commonData.sTress[gg];
+    //
+    //   double val = getVolume()*getGaussPts()(3,gg);
+    //   if((!aLe)&&getHoGaussPtsDetJac().size()>0) {
+    //     val *= getHoGaussPtsDetJac()[gg]; ///< higher order geometry
+    //   }
+    //   for(int dd = 0;dd<nb_dofs/3;dd++) {
+    //     for(int rr = 0;rr<3;rr++) {
+    //       for(int nn = 0;nn<3;nn++) {
+    //         //std::cerr << "stress : " << stress << std::endl;
+    //         nf[3*dd+rr] += val*diffN(dd,nn)*stress(rr,nn);
+    //       }
+    //     }
+    //   }
+    //
+    // }
+
 
     //std::cerr << "nf : " << nf << std::endl;
     ierr = aSemble(row_side,row_type,row_data); CHKERRQ(ierr);
@@ -555,19 +621,51 @@ PetscErrorCode NonlinearElasticElement::OpLhsPiolaKirchhoff_dx::getJac(
 ) {
   PetscFunctionBegin;
   jac.clear();
+  FTensor::Index<'i',3> i;
+  FTensor::Index<'j',3> j;
+  FTensor::Index<'k',3> k;
+  MatrixDouble &jac_stress = commonData.jacStress[gg];
   int nb_col = col_data.getFieldData().size();
-  const MatrixAdaptor diffN = col_data.getDiffN(gg,nb_col/3);
-  ublas::matrix<double> &jac_stress = commonData.jacStress[gg];
-  // FIXME: this is efficiency bottle neck
-  for(int dd = 0;dd<nb_col/3;dd++) {
-    for(int rr = 0;rr<3;rr++) {
-      for(int ii = 0;ii<9;ii++) {
-        for(int jj = 0;jj<3;jj++) {
-          jac(ii,3*dd+rr) += jac_stress(ii,3*rr+jj)*diffN(dd,jj);
-        }
-      }
+  double *diff_ptr = const_cast<double*>(&(col_data.getDiffN(gg,nb_col/3)(0,0)));
+  FTensor::Tensor1<double*,3> diff(diff_ptr,&diff_ptr[1],&diff_ptr[2],3);
+  for(int dd = 0;dd!=nb_col/3;dd++) {
+    for(int rr = 0;rr!=3;rr++) {
+      // Derivate of 1st Piola-stress multiplied by gradient of defamation for
+      // base function (dd) and displacement component (rr)
+      FTensor::Tensor2<double*,3,3> t2_1(
+        &jac(0,3*dd+rr),&jac(1,3*dd+rr),&jac(2,3*dd+rr),
+        &jac(3,3*dd+rr),&jac(4,3*dd+rr),&jac(5,3*dd+rr),
+        &jac(6,3*dd+rr),&jac(7,3*dd+rr),&jac(8,3*dd+rr)
+      );
+      // First two indices 'i','j' derivatives of 1st Piola-stress, third index 'k' is
+      // displacement component
+      FTensor::Tensor3<double*,3,3,3> t3_1(
+        &jac_stress(3*0+0,3*rr+0),&jac_stress(3*0+0,3*rr+1),&jac_stress(3*0+0,3*rr+2),
+        &jac_stress(3*0+1,3*rr+0),&jac_stress(3*0+1,3*rr+1),&jac_stress(3*0+1,3*rr+2),
+        &jac_stress(3*0+2,3*rr+0),&jac_stress(3*0+2,3*rr+1),&jac_stress(3*0+2,3*rr+2),
+        &jac_stress(3*1+0,3*rr+0),&jac_stress(3*1+0,3*rr+1),&jac_stress(3*1+0,3*rr+2),
+        &jac_stress(3*1+1,3*rr+0),&jac_stress(3*1+1,3*rr+1),&jac_stress(3*1+1,3*rr+2),
+        &jac_stress(3*1+2,3*rr+0),&jac_stress(3*1+2,3*rr+1),&jac_stress(3*1+2,3*rr+2),
+        &jac_stress(3*2+0,3*rr+0),&jac_stress(3*2+0,3*rr+1),&jac_stress(3*2+0,3*rr+2),
+        &jac_stress(3*2+1,3*rr+0),&jac_stress(3*2+1,3*rr+1),&jac_stress(3*2+1,3*rr+2),
+        &jac_stress(3*2+2,3*rr+0),&jac_stress(3*2+2,3*rr+1),&jac_stress(3*2+2,3*rr+2)
+      );
+      t2_1(i,j) += t3_1(i,j,k)*diff(k);
     }
+    ++diff;
   }
+  // const MatrixAdaptor diffN = col_data.getDiffN(gg,nb_col/3);
+  // int nb_col = col_data.getFieldData().size();
+  // // FIXME: this is efficiency bottle neck
+  // for(int dd = 0;dd<nb_col/3;dd++) {
+  //   for(int rr = 0;rr<3;rr++) {
+  //     for(int ii = 0;ii<9;ii++) {
+  //       for(int jj = 0;jj<3;jj++) {
+  //         jac(ii,3*dd+rr) += jac_stress(ii,3*rr+jj)*diffN(dd,jj);
+  //       }
+  //     }
+  //   }
+  // }
   PetscFunctionReturn(0);
 }
 
@@ -691,39 +789,82 @@ PetscErrorCode NonlinearElasticElement::OpLhsPiolaKirchhoff_dx::doWork(
     PetscFunctionReturn(0);
   }
 
+  const int nb_base_functions = row_data.getN().size2();
+  const int nb_gauss_pts = row_data.getN().size1();
+
+  FTensor::Index<'i',3> i;
+  FTensor::Index<'j',3> j;
+  FTensor::Index<'m',3> m;
+  FTensor::Tensor1<double*,3> diff_base_functions = row_data.getFTensor1DiffN<3>();
+
   try {
 
     k.resize(nb_row,nb_col,false);
     k.clear();
     jac.resize(9,nb_col,false);
 
-    for(unsigned int gg = 0;gg<row_data.getN().size1();gg++) {
-
+    for(unsigned int gg = 0;gg!=nb_gauss_pts;gg++) {
       ierr = getJac(col_data,gg); CHKERRQ(ierr);
       double val = getVolume()*getGaussPts()(3,gg);
       if((!aLe)&&(getHoGaussPtsDetJac().size()>0)) {
         val *= getHoGaussPtsDetJac()[gg]; ///< higher order geometry
       }
-      jac *= val;
-
-      const MatrixAdaptor &diffN = row_data.getDiffN(gg,nb_row/3);
-
-      { //integrate element stiffness matrix
-        for(int dd1 = 0;dd1<nb_row/3;dd1++) {
-          for(int rr1 = 0;rr1<3;rr1++) {
-            for(int dd2 = 0;dd2<nb_col/3;dd2++) {
-              for(int rr2 = 0;rr2<3;rr2++) {
-                k(3*dd1+rr1,3*dd2+rr2) +=
-                diffN(dd1,0)*jac(3*rr1+0,3*dd2+rr2)+
-                diffN(dd1,1)*jac(3*rr1+1,3*dd2+rr2)+
-                diffN(dd1,2)*jac(3*rr1+2,3*dd2+rr2);
-              }
-            }
-          }
+      int bb = 0;
+      for(;bb!=nb_row/3;bb++) {
+        for(int rr = 0;rr!=nb_col/3;rr++) {
+          FTensor::Tensor2<double*,3,3> lhs(
+            &k(3*bb+0,3*rr+0),&k(3*bb+0,3*rr+1),&k(3*bb+0,3*rr+2),
+            &k(3*bb+1,3*rr+0),&k(3*bb+1,3*rr+1),&k(3*bb+1,3*rr+2),
+            &k(3*bb+2,3*rr+0),&k(3*bb+2,3*rr+1),&k(3*bb+2,3*rr+2)
+          );
+          FTensor::Tensor3<double*,3,3,3> t3_1(
+            &jac(3*0+0,3*rr+0),&jac(3*0+0,3*rr+1),&jac(3*0+0,3*rr+2),
+            &jac(3*0+1,3*rr+0),&jac(3*0+1,3*rr+1),&jac(3*0+1,3*rr+2),
+            &jac(3*0+2,3*rr+0),&jac(3*0+2,3*rr+1),&jac(3*0+2,3*rr+2),
+            &jac(3*1+0,3*rr+0),&jac(3*1+0,3*rr+1),&jac(3*1+0,3*rr+2),
+            &jac(3*1+1,3*rr+0),&jac(3*1+1,3*rr+1),&jac(3*1+1,3*rr+2),
+            &jac(3*1+2,3*rr+0),&jac(3*1+2,3*rr+1),&jac(3*1+2,3*rr+2),
+            &jac(3*2+0,3*rr+0),&jac(3*2+0,3*rr+1),&jac(3*2+0,3*rr+2),
+            &jac(3*2+1,3*rr+0),&jac(3*2+1,3*rr+1),&jac(3*2+1,3*rr+2),
+            &jac(3*2+2,3*rr+0),&jac(3*2+2,3*rr+1),&jac(3*2+2,3*rr+2)
+          );
+          lhs(i,j) += val*t3_1(i,m,j)*diff_base_functions(m);
         }
+        ++diff_base_functions;
+      }
+      for(;bb!=nb_base_functions;bb++) {
+        ++diff_base_functions;
       }
 
     }
+
+    // for(unsigned int gg = 0;gg<row_data.getN().size1();gg++) {
+    //
+    //   ierr = getJac(col_data,gg); CHKERRQ(ierr);
+    //   double val = getVolume()*getGaussPts()(3,gg);
+    //   if((!aLe)&&(getHoGaussPtsDetJac().size()>0)) {
+    //     val *= getHoGaussPtsDetJac()[gg]; ///< higher order geometry
+    //   }
+    //   jac *= val;
+    //
+    //   const MatrixAdaptor &diffN = row_data.getDiffN(gg,nb_row/3);
+    //
+    //   { //integrate element stiffness matrix
+    //     for(int dd1 = 0;dd1<nb_row/3;dd1++) {
+    //       for(int rr1 = 0;rr1<3;rr1++) {
+    //         for(int dd2 = 0;dd2<nb_col/3;dd2++) {
+    //           for(int rr2 = 0;rr2<3;rr2++) {
+    //             k(3*dd1+rr1,3*dd2+rr2) +=
+    //             diffN(dd1,0)*jac(3*rr1+0,3*dd2+rr2)+
+    //             diffN(dd1,1)*jac(3*rr1+1,3*dd2+rr2)+
+    //             diffN(dd1,2)*jac(3*rr1+2,3*dd2+rr2);
+    //           }
+    //         }
+    //       }
+    //     }
+    //   }
+    //
+    // }
 
     //std::cerr << "N " << getNumeredEntFiniteElementPtr()->getRefEnt() << std::endl << k << std::endl;
     ierr = aSemble(row_side,col_side,row_type,col_type,row_data,col_data); CHKERRQ(ierr);
@@ -869,17 +1010,50 @@ OpLhsPiolaKirchhoff_dX(vel_field,field_name,data,common_data) {}
 PetscErrorCode NonlinearElasticElement::OpLhsEshelby_dx::getJac(DataForcesAndSurcesCore::EntData &col_data,int gg) {
   PetscFunctionBegin;
   jac.clear();
+  FTensor::Index<'i',3> i;
+  FTensor::Index<'j',3> j;
+  FTensor::Index<'k',3> k;
+  MatrixDouble &jac_stress = commonData.jacStress[gg];
   int nb_col = col_data.getFieldData().size();
-  const MatrixAdaptor diffN = col_data.getDiffN(gg,nb_col/3);
-  for(int dd = 0;dd<nb_col/3;dd++) {
-    for(int rr = 0;rr<3;rr++) {
-      for(int ii = 0;ii<9;ii++) {
-        for(int jj = 0;jj<3;jj++) {
-          jac(ii,3*dd+rr) += commonData.jacStress[gg](ii,3*rr+jj)*diffN(dd,jj);
-        }
-      }
+  double *diff_ptr = const_cast<double*>(&(col_data.getDiffN(gg,nb_col/3)(0,0)));
+  FTensor::Tensor1<double*,3> diff(diff_ptr,&diff_ptr[1],&diff_ptr[2],3);
+  for(int dd = 0;dd!=nb_col/3;dd++) {
+    for(int rr = 0;rr!=3;rr++) {
+      // Derivate of 1st Piola-stress multiplied by gradient of defamation for
+      // base function (dd) and displacement component (rr)
+      FTensor::Tensor2<double*,3,3> t2_1(
+        &jac(0,3*dd+rr),&jac(1,3*dd+rr),&jac(2,3*dd+rr),
+        &jac(3,3*dd+rr),&jac(4,3*dd+rr),&jac(5,3*dd+rr),
+        &jac(6,3*dd+rr),&jac(7,3*dd+rr),&jac(8,3*dd+rr)
+      );
+      // First two indices 'i','j' derivatives of 1st Piola-stress, third index 'k' is
+      // displacement component
+      FTensor::Tensor3<double*,3,3,3> t3_1(
+        &jac_stress(3*0+0,3*rr+0),&jac_stress(3*0+0,3*rr+1),&jac_stress(3*0+0,3*rr+2),
+        &jac_stress(3*0+1,3*rr+0),&jac_stress(3*0+1,3*rr+1),&jac_stress(3*0+1,3*rr+2),
+        &jac_stress(3*0+2,3*rr+0),&jac_stress(3*0+2,3*rr+1),&jac_stress(3*0+2,3*rr+2),
+        &jac_stress(3*1+0,3*rr+0),&jac_stress(3*1+0,3*rr+1),&jac_stress(3*1+0,3*rr+2),
+        &jac_stress(3*1+1,3*rr+0),&jac_stress(3*1+1,3*rr+1),&jac_stress(3*1+1,3*rr+2),
+        &jac_stress(3*1+2,3*rr+0),&jac_stress(3*1+2,3*rr+1),&jac_stress(3*1+2,3*rr+2),
+        &jac_stress(3*2+0,3*rr+0),&jac_stress(3*2+0,3*rr+1),&jac_stress(3*2+0,3*rr+2),
+        &jac_stress(3*2+1,3*rr+0),&jac_stress(3*2+1,3*rr+1),&jac_stress(3*2+1,3*rr+2),
+        &jac_stress(3*2+2,3*rr+0),&jac_stress(3*2+2,3*rr+1),&jac_stress(3*2+2,3*rr+2)
+      );
+      t2_1(i,j) += t3_1(i,j,k)*diff(k);
     }
+    ++diff;
   }
+  // int nb_col = col_data.getFieldData().size();
+  // const MatrixAdaptor diffN = col_data.getDiffN(gg,nb_col/3);
+  // for(int dd = 0;dd<nb_col/3;dd++) {
+  //   for(int rr = 0;rr<3;rr++) {
+  //     for(int ii = 0;ii<9;ii++) {
+  //       for(int jj = 0;jj<3;jj++) {
+  //         jac(ii,3*dd+rr) += commonData.jacStress[gg](ii,3*rr+jj)*diffN(dd,jj);
+  //       }
+  //     }
+  //   }
+  // }
   PetscFunctionReturn(0);
 }
 
@@ -892,17 +1066,50 @@ OpLhsPiolaKirchhoff_dx(vel_field,field_name,data,common_data)
 PetscErrorCode NonlinearElasticElement::OpLhsEshelby_dX::getJac(DataForcesAndSurcesCore::EntData &col_data,int gg) {
   PetscFunctionBegin;
   jac.clear();
+  FTensor::Index<'i',3> i;
+  FTensor::Index<'j',3> j;
+  FTensor::Index<'k',3> k;
+  MatrixDouble &jac_stress = commonData.jacStress[gg];
   int nb_col = col_data.getFieldData().size();
-  const MatrixAdaptor diffN = col_data.getDiffN(gg,nb_col/3);
-  for(int dd = 0;dd<nb_col/3;dd++) {
-    for(int rr = 0;rr<3;rr++) {
-      for(int ii = 0;ii<9;ii++) {
-        for(int jj = 0;jj<3;jj++) {
-          jac(ii,3*dd+rr) += commonData.jacStress[gg](ii,9+3*rr+jj)*diffN(dd,jj);
-        }
-      }
+  double *diff_ptr = const_cast<double*>(&(col_data.getDiffN(gg,nb_col/3)(0,0)));
+  FTensor::Tensor1<double*,3> diff(diff_ptr,&diff_ptr[1],&diff_ptr[2],3);
+  for(int dd = 0;dd!=nb_col/3;dd++) {
+    for(int rr = 0;rr!=3;rr++) {
+      // Derivate of 1st Piola-stress multiplied by gradient of defamation for
+      // base function (dd) and displacement component (rr)
+      FTensor::Tensor2<double*,3,3> t2_1(
+        &jac(0,3*dd+rr),&jac(1,3*dd+rr),&jac(2,3*dd+rr),
+        &jac(3,3*dd+rr),&jac(4,3*dd+rr),&jac(5,3*dd+rr),
+        &jac(6,3*dd+rr),&jac(7,3*dd+rr),&jac(8,3*dd+rr)
+      );
+      // First two indices 'i','j' derivatives of 1st Piola-stress, third index 'k' is
+      // displacement component
+      FTensor::Tensor3<double*,3,3,3> t3_1(
+        &jac_stress(3*0+0,9+3*rr+0),&jac_stress(3*0+0,9+3*rr+1),&jac_stress(3*0+0,9+3*rr+2),
+        &jac_stress(3*0+1,9+3*rr+0),&jac_stress(3*0+1,9+3*rr+1),&jac_stress(3*0+1,9+3*rr+2),
+        &jac_stress(3*0+2,9+3*rr+0),&jac_stress(3*0+2,9+3*rr+1),&jac_stress(3*0+2,9+3*rr+2),
+        &jac_stress(3*1+0,9+3*rr+0),&jac_stress(3*1+0,9+3*rr+1),&jac_stress(3*1+0,9+3*rr+2),
+        &jac_stress(3*1+1,9+3*rr+0),&jac_stress(3*1+1,9+3*rr+1),&jac_stress(3*1+1,9+3*rr+2),
+        &jac_stress(3*1+2,9+3*rr+0),&jac_stress(3*1+2,9+3*rr+1),&jac_stress(3*1+2,9+3*rr+2),
+        &jac_stress(3*2+0,9+3*rr+0),&jac_stress(3*2+0,9+3*rr+1),&jac_stress(3*2+0,9+3*rr+2),
+        &jac_stress(3*2+1,9+3*rr+0),&jac_stress(3*2+1,9+3*rr+1),&jac_stress(3*2+1,9+3*rr+2),
+        &jac_stress(3*2+2,9+3*rr+0),&jac_stress(3*2+2,9+3*rr+1),&jac_stress(3*2+2,9+3*rr+2)
+      );
+      t2_1(i,j) += t3_1(i,j,k)*diff(k);
     }
+    ++diff;
   }
+  // int nb_col = col_data.getFieldData().size();
+  // const MatrixAdaptor diffN = col_data.getDiffN(gg,nb_col/3);
+  // for(int dd = 0;dd<nb_col/3;dd++) {
+  //   for(int rr = 0;rr<3;rr++) {
+  //     for(int ii = 0;ii<9;ii++) {
+  //       for(int jj = 0;jj<3;jj++) {
+  //         jac(ii,3*dd+rr) += commonData.jacStress[gg](ii,9+3*rr+jj)*diffN(dd,jj);
+  //       }
+  //     }
+  //   }
+  // }
   PetscFunctionReturn(0);
 }
 

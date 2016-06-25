@@ -313,9 +313,10 @@ PetscErrorCode PostProcVolumeOnRefinedMesh::generateReferenceElementMesh() {
     // Range edges;
     // rval = moab_ref.get_adjacencies(tets,1,true,edges); CHKERRQ_MOAB(rval);
     EntityHandle meshset;
-    rval = moab_ref.create_meshset(MESHSET_SET|MESHSET_TRACK_OWNER,meshset); CHKERRQ_MOAB(rval);
+    rval = moab_ref.create_meshset(MESHSET_SET,meshset); CHKERRQ_MOAB(rval);
     rval = moab_ref.add_entities(meshset,tets); CHKERRQ_MOAB(rval);
     rval = moab_ref.convert_entities(meshset,true,false,false); CHKERRQ_MOAB(rval);
+    rval = moab_ref.delete_entities(&meshset,1); CHKERRQ_MOAB(rval);
   }
 
   Range elem_nodes;

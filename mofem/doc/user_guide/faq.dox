@@ -260,4 +260,20 @@ See PETSc documentation
 and examples
 <http://www.mcs.anl.gov/petsc/petsc-current/src/ksp/ksp/examples/tutorials/ex9.c.html>
 
+\section profiling_code_with_valgrind How to profile code with Valgrind?
+
+You have to install Valgrind <http://valgrind.org> and graphic user interface
+KCachegrind <http://kcachegrind.sourceforge.net/html/Home.html>. If you using Linux,
+for example ubuntu you can do that executing following commands,
+\code
+sudo apt-get install valgrind kcachegrind
+\endcode
+If you using OS X you can use Homebrew <http://brew.sh> to make installation,
+\code
+brew install valgrind
+brew install qcachegrind --with-graphviz
+\endcode
+
+If you have packages installed, follow instruction from <http://kcachegrind.sourceforge.net/html/Documentation.html>
+
 */
