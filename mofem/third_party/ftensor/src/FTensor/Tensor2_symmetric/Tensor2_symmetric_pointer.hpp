@@ -1,5 +1,20 @@
 /* A version for pointers. */
 
+template<class T,int Dim,int Current_Position>
+inline void Tensor2_symmetric_increment(
+  const Tensor2_symmetric<T,Dim> &iter,const Number<Current_Position> &
+) {
+  iter.increment(Number<Current_Position>());
+  Tensor2_symmetric_increment(iter,Number<Current_Position-1>());
+}
+
+template<class T,int Dim>
+inline void Tensor2_symmetric_increment(
+  const Tensor2_symmetric<T,Dim> &iter,const Number<1> &
+) {
+  iter.increment(Number<1>());
+}
+
 template <class T, int Tensor_Dim>
 class Tensor2_symmetric<T*,Tensor_Dim>
 {
@@ -200,10 +215,14 @@ public:
   /* The ++ operator increments the pointer, not the number that the
      pointer points to.  This allows iterating over a grid. */
 
+  template<int Current_Position>
+  inline void increment(const Number<Current_Position> &) const {
+    data[Current_Position-1] += inc;
+  }
+
   const Tensor2_symmetric<T*,Tensor_Dim> & operator++() const
   {
-    for(int i=0;i<(Tensor_Dim*(Tensor_Dim+1))/2;++i)
-      data[i] += inc;
+    Tensor2_symmetric_increment(*this,Number<(Tensor_Dim*(Tensor_Dim+1))/2>());
     return *this;
   }
 

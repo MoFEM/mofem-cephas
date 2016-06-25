@@ -1,5 +1,48 @@
 /* A version for pointers. */
 
+template<
+  class T,
+  int Dim0,int Dim1,Layout layout,
+  int Current_Dim0,int Current_Dim1
+>
+inline void T2_increment(
+  const Tensor2<T,Dim0,Dim1,layout> &iter,
+  const Number<Current_Dim0> &,
+  const Number<Current_Dim1> &
+) {
+  iter.increment(
+    Number<Current_Dim0>(),Number<Current_Dim1>()
+  );
+  T2_increment(
+    iter,Number<Current_Dim0-1>(),Number<Current_Dim1>()
+  );
+}
+
+template<class T,int Dim0,int Dim1,Layout layout,int Current_Dim1>
+inline void T2_increment(
+  const Tensor2<T,Dim0,Dim1,layout> &iter,
+  const Number<1> &,
+  const Number<Current_Dim1> &
+) {
+	iter.increment(
+		Number<1>(),Number<Current_Dim1>()
+	);
+	T2_increment(
+		iter,Number<Dim0>(),Number<Current_Dim1-1>()
+	);
+}
+
+template<class T,int Dim0,int Dim1,Layout layout>
+inline void T2_increment(
+  const Tensor2<T,Dim0,Dim1,layout> &iter,
+  const Number<1> &,
+  const Number<1> &
+) {
+	iter.increment(
+		Number<1>(),Number<1>()
+	);
+}
+
 template <class T, int Tensor_Dim0, int Tensor_Dim1,
 	  Layout layout>
 class Tensor2<T*,Tensor_Dim0,Tensor_Dim1,layout>
@@ -13,34 +56,27 @@ public:
      defined for a particular Tensor_Dim.  To initialize a different
      dimension, just add the appropriate constructor and call to
      the Tensor2_constructor constructor. */
-  Tensor2(T* d00, T* d01,T* d10, T* d11,const int i = 1):
-	inc(i) {
+  Tensor2(T* d00, T* d01,T* d10, T* d11,const int i = 1): inc(i) {
     Tensor2_constructor<T* restrict,Tensor_Dim0,Tensor_Dim1,layout>
       (data,d00,d01,d10,d11);
   }
-  Tensor2(T* d00, T* d01, T* d10, T* d11, T* d20, T* d21,const int i = 1):
-	inc(i)
-  {
+  Tensor2(T* d00, T* d01, T* d10, T* d11, T* d20, T* d21,const int i = 1): inc(i) {
     Tensor2_constructor<T* restrict,Tensor_Dim0,Tensor_Dim1,layout>
       (data,d00,d01,d10,d11,d20,d21);
   }
   Tensor2(
-		T* d00, T* d01, T* d02, T* d10, T* d11, T* d12, T* d20, T* d21, T* d22,
-		const int i = 1
-	): inc(i)
-  {
+		T* d00, T* d01, T* d02, T* d10, T* d11, T* d12, T* d20, T* d21, T* d22,const int i = 1
+	):inc(i) {
     Tensor2_constructor<T* restrict,Tensor_Dim0,Tensor_Dim1,layout>
       (data,d00,d01,d02,d10,d11,d12,d20,d21,d22);
   }
   Tensor2(T* d00, T* d01, T* d02, T* d03, T* d10, T* d11, T* d12, T* d13,
-	  T* d20, T* d21, T* d22, T* d23, T* d30, T* d31, T* d32, T* d33,
-		const int i = 1
-	): inc(i)
-  {
+	  T* d20, T* d21, T* d22, T* d23, T* d30, T* d31, T* d32, T* d33,const int i = 1):
+		inc(i) {
     Tensor2_constructor<T* restrict,Tensor_Dim0,Tensor_Dim1,layout>
       (data,d00,d01,d02,d03,d10,d11,d12,d13,d20,d21,d22,d23,d30,d31,d32,d33);
   }
-  Tensor2() {}
+  Tensor2(const int i = 1): inc(i) {}
 
   /* There are two operator(int,int)'s, one for non-consts that lets you
      change the value, and one for consts that doesn't. */
@@ -163,12 +199,20 @@ public:
   /* The ++ operator increments the pointer, not the number that the
      pointer points to.  This allows iterating over a grid. */
 
+	template<int Current_Dim0,int Current_Dim1>
+ 	inline void increment(
+ 	  const Number<Current_Dim0> &,
+ 	  const Number<Current_Dim1> &
+	) const {
+		(
+			(layout==column_major)
+			? data[Current_Dim0-1][Current_Dim1-1]+=inc
+			: data[Current_Dim1-1][Current_Dim0-1]+=inc
+		);
+ 	}
+
 	const Tensor2<T*,Tensor_Dim0,Tensor_Dim1,layout> & operator++() const {
-		for(int i=0;i<Tensor_Dim0;++i) {
-			for(int j=0;j<Tensor_Dim1;++j) {
-				((layout==column_major) ? data[i][j]+=inc : data[j][i]+=inc);
-			}
-		}
+		T2_increment(*this,Number<Tensor_Dim0>(),Number<Tensor_Dim1>());
 		return *this;
 	}
 
