@@ -1,13 +1,13 @@
 /*! \page ftenso_readme FTensor library
 \ingroup ftensor
 
-This library is adapted to MoFEM needs. Some new capabilities are
-added that philosophy and spirit of original implementation is preserved. Most
-of operators for tensor rank 4 are added.\n
+This library is adapted to MoFEM needs.. Several new capabilities are added to
+original FTensor library, however that philosophy and spirit of original
+implementation is preserved. \n\n
 
 If some operator is not working because is not added, you can let us know, or pleas
 feel free to add it by yourself and make pull request to merge your contribution
-with the library.\n
+with the library.\n\n
 
 Example:
 \code
