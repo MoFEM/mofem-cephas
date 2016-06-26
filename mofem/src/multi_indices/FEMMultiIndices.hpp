@@ -333,7 +333,7 @@ interface_RefElement<RefElement> {
   }
   inline EntityHandle getEnt() const { return getRefEnt(); }
 
-  /** deprecated \deprecated
+  /** \deprecated Use getRefEnt() instead
   */
   DEPRECATED inline EntityHandle get_ent() const { return getRefEnt(); }
 
@@ -413,10 +413,10 @@ interface_RefElement<T> {
   inline DofIdx get_nb_dofs_data() const { return this->sPtr->get_nb_dofs_data(); }
   inline EntityHandle getEnt() const { return this->sPtr->getRefEnt(); }
 
-  /** deprecated \deprecated
+  /** \deprecated Use getEnt() instead
   */
   DEPRECATED inline EntityHandle get_ent() const { return getEnt(); }
-  
+
   inline GlobalUId getGlobalUniqueId() const { return this->sPtr->getGlobalUniqueId(); }
   //
   SideNumber_multiIndex &get_side_number_table() const { return this->sPtr->get_side_number_table(); }

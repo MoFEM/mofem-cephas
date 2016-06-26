@@ -310,7 +310,7 @@ struct PostProcVolumeOnRefinedMesh: public PostProcTemplateOnRefineMesh<VolumeEl
 
 };
 
-/** Deprecated \deprecated
+/** \deprecated Use PostPocOnRefinedMesh instead
 */
 DEPRECATED typedef PostProcVolumeOnRefinedMesh PostPocOnRefinedMesh;
 

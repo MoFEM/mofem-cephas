@@ -551,7 +551,7 @@ struct FieldApproximationH1 {
     PetscFunctionReturn(0);
   }
 
-  /** Deprecated \deprecated
+  /** \deprecated Use loopMatrixAndVectorVolume instead
   */
   template<typename FUNEVAL>
   DEPRECATED PetscErrorCode loopMatrixAndVector(

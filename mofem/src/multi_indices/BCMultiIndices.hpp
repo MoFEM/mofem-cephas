@@ -73,30 +73,12 @@ struct CubitMeshSets {
    */
   PetscErrorCode get_bc_data(std::vector<char>& bc_data) const;
 
-  /** deprecated \deprecated
-  */
-  DEPRECATED PetscErrorCode get_Cubit_bc_data(std::vector<char>& bc_data) const {
-    PetscFunctionBegin;
-    PetscErrorCode ierr;
-    ierr = get_bc_data(bc_data); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
-  }
-
   /**
   * \brief get block_headers vector from MoFEM database
   *
   * \param material_data is the in/out vector were the material data will be stored
   */
   PetscErrorCode get_block_header_data(std::vector<unsigned int>& material_data) const;
-
-  /** deprecated \deprecated
-  */
-  DEPRECATED PetscErrorCode get_Cubit_block_header_data(std::vector<unsigned int>& material_data) const {
-    PetscFunctionBegin;
-    PetscErrorCode ierr;
-    ierr = get_block_header_data(material_data); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
-  }
 
   /**
   * \brief print material_data int stream given by os
@@ -106,15 +88,6 @@ struct CubitMeshSets {
   */
   PetscErrorCode print_block_header_data(std::ostream& os) const;
 
-  /** deprecated \deprecated
-  */
-  DEPRECATED PetscErrorCode print_Cubit_block_header_data(std::ostream& os) const {
-    PetscFunctionBegin;
-    PetscErrorCode ierr;
-    ierr = print_block_header_data(os); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
-  }
-
   /**
    * \brief print bc_data int stream given by os
    *
@@ -122,15 +95,6 @@ struct CubitMeshSets {
    * f.e. it->print_bc_data(std::cerr), i.e. printing to standard error output
    */
   PetscErrorCode print_bc_data(std::ostream& os) const;
-
-  /** deprecated \deprecated
-  */
-  DEPRECATED PetscErrorCode print_Cubit_bc_data(std::ostream& os) const {
-    PetscFunctionBegin;
-    PetscErrorCode ierr;
-    ierr = print_bc_data(os); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
-  }
 
   template<class _CUBIT_BC_DATA_TYPE_>
   PetscErrorCode get_bc_data_structure(_CUBIT_BC_DATA_TYPE_& data) const {
@@ -145,44 +109,15 @@ struct CubitMeshSets {
     PetscFunctionReturn(0);
   }
 
-  /** deprecated \deprecated
-  */
-  template<class _CUBIT_BC_DATA_TYPE_>
-  DEPRECATED
-  PetscErrorCode get_cubit_bc_data_structure(_CUBIT_BC_DATA_TYPE_& data) const {
-    PetscFunctionBegin;
-    PetscErrorCode ierr;
-    ierr = get_bc_data_structure(data); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
-  }
-
   /**
    *  \brief Function that returns the CubitBCType type of the block name, sideset name etc.
    */
   PetscErrorCode get_type_from_name(const std::string &name,CubitBCType &type) const;
 
-  /** deprecated \deprecated
-  */
-  DEPRECATED PetscErrorCode get_type_from_Cubit_name(const std::string &name,CubitBCType &type) const {
-    PetscFunctionBegin;
-    PetscErrorCode ierr;
-    ierr = get_type_from_name(name,type); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
-  }
-
   /**
    *  \brief Function that returns the CubitBCType type of the block name, sideset name etc.
    */
   PetscErrorCode get_type_from_name(CubitBCType &type) const;
-
-  /** deprecated \deprecated
-  */
-  DEPRECATED PetscErrorCode get_type_from_Cubit_name(CubitBCType &type) const {
-    PetscFunctionBegin;
-    PetscErrorCode ierr;
-    ierr = get_type_from_name(type); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
-  }
 
   /**
    * \brief get Cubit block attributes
@@ -191,15 +126,6 @@ struct CubitMeshSets {
    */
   PetscErrorCode get_attributes(std::vector<double> &attributes) const;
 
-  /** deprecated \deprecated
-  */
-  DEPRECATED PetscErrorCode get_Cubit_attributes(std::vector<double> &attributes) const {
-    PetscFunctionBegin;
-    PetscErrorCode ierr;
-    ierr = get_attributes(attributes); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
-  }
-
   /**
    * \brief print the attributes vector
    *
@@ -207,15 +133,6 @@ struct CubitMeshSets {
    * f.e. it->print_attributes(std::cerr), i.e. printing to standard error output
    */
   PetscErrorCode print_attributes(std::ostream& os) const;
-
-  /** deprecated \deprecated
-  */
-  DEPRECATED PetscErrorCode print_Cubit_attributes(std::ostream& os) const {
-    PetscFunctionBegin;
-    PetscErrorCode ierr;
-    ierr = print_attributes(os); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
-  }
 
   /**
    * \brief get name of block, sideset etc. (this is set in Cubit block properties)
@@ -249,7 +166,7 @@ struct CubitMeshSets {
    */
   std::string getName() const;
 
-  /** deprecated \deprecated
+  /** \deprecated Use getName() instead
   */
   DEPRECATED std::string get_name() const { return getName(); }
 
@@ -260,15 +177,6 @@ struct CubitMeshSets {
    * e.g it->print_name(std::cerr), i.e. printing to standard error output
    */
   PetscErrorCode print_name(std::ostream& os) const;
-
-  /** deprecated \deprecated
-  */
-  DEPRECATED PetscErrorCode print_Cubit_name(std::ostream& os) const {
-    PetscFunctionBegin;
-    PetscErrorCode ierr;
-    ierr = print_name(os); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
-  }
 
   template<class _ATTRIBUTE_TYPE_>
   PetscErrorCode get_attribute_data_structure(_ATTRIBUTE_TYPE_ &data) const {
