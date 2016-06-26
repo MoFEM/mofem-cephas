@@ -157,6 +157,7 @@ static int getMaxOrder(
   dit = dof_multi_index.begin();
   hi_dit = dof_multi_index.end();
   for(;dit!=hi_dit;dit++) {
+    if((*dit)->get_EntDofIdx()!=0) continue;
     int dit_max_order = (*dit)->getMaxOrder();
     max_order = (max_order>dit_max_order) ? max_order : dit_max_order;
   }
@@ -1097,6 +1098,7 @@ PetscErrorCode ForcesAndSurcesCore::getSpacesAndBaseOnEntities(DataForcesAndSurc
   PetscFunctionBegin;
   try {
     for(_IT_GET_FEDATA_DOFS_FOR_LOOP_(this,dof)) {
+      if((*dof)->get_EntDofIdx()!=0) continue;
       // std::cerr << *dof << std::endl;
       // std::cerr << dof->getSpace() << " " << data.sPace.size() << std::endl;
       // std::cerr << dof->getApproxBase() << " " << data.bAse.size() << std::endl;
