@@ -111,14 +111,14 @@ struct ForcesAndSurcesCore: public FEMethod {
   // ** Indices **
 
   /// \brief get node indices
-  PetscErrorCode getNodesIndices(const std::string &field_name,
+  PetscErrorCode getNodesIndices(const boost::string_ref field_name,
     FENumeredDofEntity_multiIndex &dofs,
     VectorInt &nodes_indices,
     VectorInt &local_nodes_indices
   ) const;
 
   /// \brief get indices by type (generic function)
-  PetscErrorCode getTypeIndices(const std::string &field_name,
+  PetscErrorCode getTypeIndices(const boost::string_ref field_name,
     FENumeredDofEntity_multiIndex &dofs,EntityType type,int side_number,
     VectorInt &indices,
     VectorInt &local_indices
@@ -126,7 +126,7 @@ struct ForcesAndSurcesCore: public FEMethod {
 
   /// \brief get indices by type (generic function)
   PetscErrorCode getTypeIndices(
-    const std::string &field_name,FENumeredDofEntity_multiIndex &dofs,
+    const boost::string_ref field_name,FENumeredDofEntity_multiIndex &dofs,
     EntityType type,boost::ptr_vector<DataForcesAndSurcesCore::EntData> &data
   ) const;
 
@@ -190,7 +190,7 @@ struct ForcesAndSurcesCore: public FEMethod {
    * @return            Error code
    */
   PetscErrorCode getNodesFieldData(
-    const std::string &field_name,
+    const boost::string_ref field_name,
     FEDofEntity_multiIndex &dofs,
     VectorDouble &nodes_data,
     VectorDofs &nodes_dofs,
@@ -209,7 +209,7 @@ struct ForcesAndSurcesCore: public FEMethod {
    * @return                Error code
    */
   PetscErrorCode getTypeFieldData(
-    const std::string &field_name,
+    const boost::string_ref field_name,
     FEDofEntity_multiIndex &dofs,
     EntityType type,
     int side_number,
@@ -218,20 +218,20 @@ struct ForcesAndSurcesCore: public FEMethod {
   ) const;
 
   PetscErrorCode getTypeFieldData(
-    const std::string &field_name,
+    const boost::string_ref field_name,
     FEDofEntity_multiIndex &dofs,
     EntityType type,
     boost::ptr_vector<DataForcesAndSurcesCore::EntData> &data
   ) const;
 
   PetscErrorCode getNoFieldFieldData(
-    const std::string &field_name,
+    const boost::string_ref field_name,
     FEDofEntity_multiIndex &dofs,
     VectorDouble &ent_field_data,
     VectorDofs &ent_field_dofs
   ) const;
   PetscErrorCode getNoFieldFieldData(
-    DataForcesAndSurcesCore &data,const std::string &field_name
+    DataForcesAndSurcesCore &data,const boost::string_ref field_name
   ) const;
 
   /**

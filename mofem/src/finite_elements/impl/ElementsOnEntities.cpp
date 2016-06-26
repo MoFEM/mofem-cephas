@@ -350,7 +350,7 @@ PetscErrorCode ForcesAndSurcesCore::getPrismDataOrderSpaceAndBase(DataForcesAndS
 // ** Indices **
 
 PetscErrorCode ForcesAndSurcesCore::getNodesIndices(
-  const std::string &field_name,FENumeredDofEntity_multiIndex &dofs,VectorInt &nodes_indices,VectorInt &local_nodes_indices
+  const boost::string_ref field_name,FENumeredDofEntity_multiIndex &dofs,VectorInt &nodes_indices,VectorInt &local_nodes_indices
 ) const {
   PetscErrorCode ierr;
   PetscFunctionBegin;
@@ -418,12 +418,17 @@ PetscErrorCode ForcesAndSurcesCore::getColNodesIndices(DataForcesAndSurcesCore &
 }
 
 PetscErrorCode ForcesAndSurcesCore::getTypeIndices(
-  const std::string &field_name,FENumeredDofEntity_multiIndex &dofs,EntityType type,int side_number,VectorInt &indices,VectorInt &local_indices
+  const boost::string_ref field_name,FENumeredDofEntity_multiIndex &dofs,EntityType type,int side_number,VectorInt &indices,VectorInt &local_indices
 ) const {
   PetscErrorCode ierr;
   PetscFunctionBegin;
   FENumeredDofEntity_multiIndex::index<Composite_Name_Type_And_Side_Number_mi_tag>::type::iterator dit,hi_dit;
   dit = dofs.get<Composite_Name_Type_And_Side_Number_mi_tag>().lower_bound(boost::make_tuple(field_name,type,side_number));
+  if(dit==dofs.get<Composite_Name_Type_And_Side_Number_mi_tag>().end()) {
+    indices.resize(0);
+    local_indices.resize(0);
+    PetscFunctionReturn(0);
+  }
   hi_dit = dofs.get<Composite_Name_Type_And_Side_Number_mi_tag>().upper_bound(boost::make_tuple(field_name,type,side_number));
   if(dit!=hi_dit) {
     indices.resize((*dit)->getNbDofsOnEnt(),false);
@@ -443,7 +448,7 @@ PetscErrorCode ForcesAndSurcesCore::getTypeIndices(
 }
 
 PetscErrorCode ForcesAndSurcesCore::getTypeIndices(
-  const std::string &field_name,FENumeredDofEntity_multiIndex &dofs,EntityType type,
+  const boost::string_ref field_name,FENumeredDofEntity_multiIndex &dofs,EntityType type,
   boost::ptr_vector<DataForcesAndSurcesCore::EntData> &data
 ) const {
   PetscErrorCode ierr;
@@ -715,7 +720,7 @@ PetscErrorCode ForcesAndSurcesCore::getProblemTypeColIndices(const std::string &
 // ** Data **
 
 PetscErrorCode ForcesAndSurcesCore::getNodesFieldData(
-  const std::string &field_name,
+  const boost::string_ref field_name,
   FEDofEntity_multiIndex &dofs,
   VectorDouble &nodes_data,
   VectorDofs &nodes_dofs,
@@ -795,7 +800,7 @@ PetscErrorCode ForcesAndSurcesCore::getNodesFieldData(DataForcesAndSurcesCore &d
 }
 
 PetscErrorCode ForcesAndSurcesCore::getTypeFieldData(
-  const std::string &field_name,
+  const boost::string_ref field_name,
   FEDofEntity_multiIndex &dofs,
   EntityType type,
   int side_number,
@@ -806,25 +811,30 @@ PetscErrorCode ForcesAndSurcesCore::getTypeFieldData(
   PetscFunctionBegin;
   FEDofEntity_multiIndex::index<Composite_Name_Type_And_Side_Number_mi_tag>::type::iterator dit,hi_dit;
   dit = dofs.get<Composite_Name_Type_And_Side_Number_mi_tag>().lower_bound(boost::make_tuple(field_name,type,side_number));
+  if(dit == dofs.get<Composite_Name_Type_And_Side_Number_mi_tag>().end()) {
+    ent_field_data.resize(0,false);
+    ent_field_dofs.resize(0,false);
+    PetscFunctionReturn(0);
+  }
   hi_dit = dofs.get<Composite_Name_Type_And_Side_Number_mi_tag>().upper_bound(boost::make_tuple(field_name,type,side_number));
   if(dit!=hi_dit) {
     ent_field_data.resize((*dit)->getNbDofsOnEnt(),false);
     ent_field_dofs.resize((*dit)->getNbDofsOnEnt(),false);
     for(;dit!=hi_dit;dit++) {
-      FieldData val = (*dit)->get_FieldData();
-      int idx = (*dit)->get_EntDofIdx();
+      const FieldData val = (*dit)->get_FieldData();
+      const int idx = (*dit)->get_EntDofIdx();
       ent_field_data[idx] = val;
       ent_field_dofs[idx] = &*(*dit);
     }
   } else {
-    ent_field_data.resize(0);
-    ent_field_dofs.resize(0);
+    ent_field_data.resize(0,false);
+    ent_field_dofs.resize(0,false);
   }
   PetscFunctionReturn(0);
 }
 
 PetscErrorCode ForcesAndSurcesCore::getTypeFieldData(
-  const std::string &field_name,
+  const boost::string_ref field_name,
   FEDofEntity_multiIndex &dofs,
   EntityType type,
   boost::ptr_vector<DataForcesAndSurcesCore::EntData> &data
@@ -859,7 +869,7 @@ PetscErrorCode ForcesAndSurcesCore::getTypeFieldData(
 }
 
 PetscErrorCode ForcesAndSurcesCore::getNoFieldFieldData(
-  const std::string &field_name,
+  const boost::string_ref field_name,
   FEDofEntity_multiIndex &dofs,
   VectorDouble &ent_field_data,
   VectorDofs &ent_field_dofs
@@ -881,7 +891,7 @@ PetscErrorCode ForcesAndSurcesCore::getNoFieldFieldData(
 }
 
 PetscErrorCode ForcesAndSurcesCore::getNoFieldFieldData(
-  DataForcesAndSurcesCore &data,const std::string &field_name
+  DataForcesAndSurcesCore &data,const boost::string_ref field_name
 ) const {
   PetscErrorCode ierr;
   PetscFunctionBegin;
