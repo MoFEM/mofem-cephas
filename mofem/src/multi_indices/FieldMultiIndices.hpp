@@ -87,7 +87,7 @@ struct Field {
    */
   inline EntityHandle getMeshSet() const { return meshSet; }
 
-  /** deprecated \deprecated
+  /** \deprecated use getMeshSet() instead
   */
   DEPRECATED inline EntityHandle get_meshset() const { return getMeshSet(); }
 
@@ -165,7 +165,7 @@ struct Field {
    */
   inline const BitFieldId& getId() const { return *((BitFieldId*)tag_id_data); }
 
-  /** deprecated \deprecated
+  /** \deprecated use getId() instead
   */
   DEPRECATED inline const BitFieldId& get_id() const { return getId(); }
 
@@ -175,7 +175,7 @@ struct Field {
    */
   inline boost::string_ref getNameRef() const { return boost::string_ref((char *)tag_name_data,tag_name_size); }
 
-  /** deprecated \deprecated
+  /** \deprecated use getNameRef() instead
   */
   DEPRECATED boost::string_ref get_name_ref() const { return getNameRef(); }
 
@@ -185,7 +185,7 @@ struct Field {
    */
   inline std::string getName() const { return std::string((char *)tag_name_data,tag_name_size); }
 
-  /** deprecated \deprecated
+  /** \deprecated use getName() instead
   */
   DEPRECATED inline std::string get_name() const { return getName(); }
 
@@ -195,7 +195,7 @@ struct Field {
    */
   inline FieldSpace getSpace() const { return *tag_space_data; }
 
-  /** deprecated \deprecated
+  /** \deprecated Use getSpace() instead
   */
   DEPRECATED inline FieldSpace get_space() const { return getSpace(); }
 
@@ -205,7 +205,7 @@ struct Field {
    */
   inline FieldApproximationBase getApproxBase() const { return *tag_base_data; }
 
-  /** deprecated \deprecated
+  /** \deprecated Use getApproxBase() instead
   */
   DEPRECATED inline FieldApproximationBase get_approx_base() const { return getApproxBase(); }
 
@@ -223,7 +223,7 @@ struct Field {
   */
   inline FieldCoefficientsNumber getNbOfCoeffs() const { return *tag_nb_coeff_data; };
 
-  /** deprecated \deprecated
+  /** \deprecated Use getNbOfCoeffs() instead
   */
   DEPRECATED inline FieldCoefficientsNumber get_nb_of_coeffs() const { return getNbOfCoeffs(); };
 
@@ -233,9 +233,9 @@ struct Field {
     */
   inline unsigned int getBitNumber() const { return bit_number; }
 
-  /** deprecated \deprecated
+  /** \deprecated Use getBitNumber() instead
   */
-  DEPRECATED inline unsigned int get_bit_number() const { return bit_number; }
+  DEPRECATED inline unsigned int get_bit_number() const { return getBitNumber(); }
 
 
   /**
@@ -269,7 +269,7 @@ struct interface_Field {
 
   inline EntityHandle getMeshSet() const { return this->sFieldPtr->getMeshSet(); }
 
-  /** deprecated \deprecated
+  /** \deprecated Use getMeshSet() instead
   */
   DEPRECATED inline EntityHandle get_meshset() const { return this->sFieldPtr->getMeshSet(); }
 
@@ -304,43 +304,43 @@ struct interface_Field {
 
   inline const BitFieldId& getId() const { return this->sFieldPtr->getId(); }
 
-  /** deprecated \deprecated
+  /** \deprecated Use getId() instead
   */
   DEPRECATED inline const BitFieldId& get_id() const { return this->sFieldPtr->getId(); }
 
   inline boost::string_ref getNameRef() const { return this->sFieldPtr->getNameRef(); }
 
-  /** deprecated \deprecated
+  /** \deprecated Use getNameRef() instead
   */
   DEPRECATED inline boost::string_ref get_name_ref() const { return this->sFieldPtr->getNameRef(); }
 
   inline std::string getName() const { return this->sFieldPtr->getName(); }
 
-  /** deprecated \deprecated
+  /** \deprecated Use getName() instead
   */
   DEPRECATED inline std::string get_name() const { return this->sFieldPtr->getName(); }
 
   inline FieldSpace getSpace() const { return this->sFieldPtr->getSpace(); }
 
-  /** deprecated \deprecated
+  /** \deprecated Use getSpace() instead
   */
   DEPRECATED inline FieldSpace get_space() const { return this->sFieldPtr->getSpace(); }
 
   inline FieldApproximationBase getApproxBase() const { return this->sFieldPtr->getApproxBase(); }
 
-  /** deprecated \deprecated
+  /** \deprecated Use getApproxBase() instead
   */
   DEPRECATED inline FieldApproximationBase get_approx_base() const { return this->sFieldPtr->getApproxBase(); }
 
   inline FieldCoefficientsNumber getNbOfCoeffs() const { return this->sFieldPtr->getNbOfCoeffs(); }
 
-  /** deprecated \deprecated
+  /** \deprecated Use getNbOfCoeffs() instead.
   */
   DEPRECATED inline FieldCoefficientsNumber get_nb_of_coeffs() const { return this->sFieldPtr->getNbOfCoeffs(); }
 
   inline unsigned int getBitNumber() const { return this->sFieldPtr->getBitNumber(); }
 
-  /** deprecated \deprecated
+  /** \deprecated Use getBitNumber() instead.
   */
   DEPRECATED inline unsigned int get_bit_number() const { return this->sFieldPtr->getBitNumber(); }
 
