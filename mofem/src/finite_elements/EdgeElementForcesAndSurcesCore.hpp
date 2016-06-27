@@ -78,25 +78,25 @@ struct EdgeElementForcesAndSurcesCore: public ForcesAndSurcesCore {
       ForcesAndSurcesCore::UserDataOperator(row_field_name,col_field_name,type) {}
 
     inline double getLength() {
-      return dynamic_cast<EdgeElementForcesAndSurcesCore*>(ptrFE)->lEngth;
+      return static_cast<EdgeElementForcesAndSurcesCore*>(ptrFE)->lEngth;
     }
     inline VectorDouble& getDirection() {
-      return dynamic_cast<EdgeElementForcesAndSurcesCore*>(ptrFE)->dIrection;
+      return static_cast<EdgeElementForcesAndSurcesCore*>(ptrFE)->dIrection;
     }
     inline VectorDouble& getCoords() {
-      return dynamic_cast<EdgeElementForcesAndSurcesCore*>(ptrFE)->cOords;
+      return static_cast<EdgeElementForcesAndSurcesCore*>(ptrFE)->cOords;
     }
     inline MatrixDouble& getGaussPts() {
-      return dynamic_cast<EdgeElementForcesAndSurcesCore*>(ptrFE)->gaussPts;
+      return static_cast<EdgeElementForcesAndSurcesCore*>(ptrFE)->gaussPts;
     }
     inline MatrixDouble& getCoordsAtGaussPts() {
-      return dynamic_cast<EdgeElementForcesAndSurcesCore*>(ptrFE)->coordsAtGaussPts;
+      return static_cast<EdgeElementForcesAndSurcesCore*>(ptrFE)->coordsAtGaussPts;
     }
     inline MatrixDouble& getTangetAtGaussPtrs() {
-      return dynamic_cast<EdgeElementForcesAndSurcesCore*>(ptrFE)->tAngent_at_GaussPt;
+      return static_cast<EdgeElementForcesAndSurcesCore*>(ptrFE)->tAngent_at_GaussPt;
     }
     inline const EdgeElementForcesAndSurcesCore* getEdgeFE() {
-      return dynamic_cast<EdgeElementForcesAndSurcesCore*>(ptrFE);
+      return static_cast<EdgeElementForcesAndSurcesCore*>(ptrFE);
     }
 
   };

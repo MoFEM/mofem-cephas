@@ -52,7 +52,7 @@ PetscErrorCode FatPrismPolynomialBaseCtx::queryInterface(const MOFEMuuid& uuid,M
   if(
     uuid == IDD_FATPRISM_BASE_FUNCTION
   ) {
-    *iface = dynamic_cast<FatPrismPolynomialBaseCtx*>(this);
+    *iface = static_cast<FatPrismPolynomialBaseCtx*>(this);
     PetscFunctionReturn(0);
   } else {
     SETERRQ(PETSC_COMM_WORLD,MOFEM_DATA_INCONSISTENCY,"wrong interference");
@@ -93,7 +93,7 @@ PetscErrorCode FatPrismPolynomialBase::queryInterface(
   PetscFunctionBegin;
   *iface = NULL;
   if(uuid == IDD_FATPRISM_BASE_FUNCTION) {
-    *iface = dynamic_cast<FatPrismPolynomialBase*>(this);
+    *iface = static_cast<FatPrismPolynomialBase*>(this);
     PetscFunctionReturn(0);
   } else {
     SETERRQ(PETSC_COMM_WORLD,MOFEM_DATA_INCONSISTENCY,"wrong interference");

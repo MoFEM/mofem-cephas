@@ -51,7 +51,7 @@ PetscErrorCode EdgePolynomialBase::queryInterface(
   PetscFunctionBegin;
   *iface = NULL;
   if(uuid == IDD_EDGE_BASE_FUNCTION) {
-    *iface = dynamic_cast<EdgePolynomialBase*>(this);
+    *iface = static_cast<EdgePolynomialBase*>(this);
     PetscFunctionReturn(0);
   } else {
     SETERRQ(PETSC_COMM_WORLD,MOFEM_DATA_INCONSISTENCY,"wrong interference");

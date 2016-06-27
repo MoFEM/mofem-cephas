@@ -31,7 +31,7 @@ PetscErrorCode BaseFunctionCtx::queryInterface(
   PetscFunctionBegin;
   *iface = NULL;
   if(uuid == IDD_UNKNOWN_BASE_FUNCTION) {
-    *iface = dynamic_cast<BaseFunctionCtx*>(this);
+    *iface = static_cast<BaseFunctionCtx*>(this);
     PetscFunctionReturn(0);
   } else {
     SETERRQ(PETSC_COMM_WORLD,MOFEM_DATA_INCONSISTENCY,"wrong interference");
@@ -45,7 +45,7 @@ PetscErrorCode BaseFunction::queryInterface(
   PetscFunctionBegin;
   *iface = NULL;
   if(uuid == IDD_UNKNOWN_BASE_FUNCTION) {
-    *iface = dynamic_cast<BaseFunction*>(this);
+    *iface = static_cast<BaseFunction*>(this);
     PetscFunctionReturn(0);
   } else {
     SETERRQ(PETSC_COMM_WORLD,MOFEM_DATA_INCONSISTENCY,"wrong interference");
