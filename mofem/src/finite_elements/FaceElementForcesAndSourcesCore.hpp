@@ -93,43 +93,43 @@ struct FaceElementForcesAndSourcesCore: public ForcesAndSurcesCore {
       ForcesAndSurcesCore::UserDataOperator(row_field_name,col_field_name,type) {};
 
     inline double getArea() {
-      return dynamic_cast<FaceElementForcesAndSourcesCore*>(ptrFE)->aRea;
+      return static_cast<FaceElementForcesAndSourcesCore*>(ptrFE)->aRea;
     }
 
     /** \brief get triangle normal
      */
     inline VectorDouble& getNormal() {
-      return dynamic_cast<FaceElementForcesAndSourcesCore*>(ptrFE)->normal;
+      return static_cast<FaceElementForcesAndSourcesCore*>(ptrFE)->normal;
     }
 
     /** \brief get element number of nodes
     */
     inline int getNumNodes() {
-      return dynamic_cast<FaceElementForcesAndSourcesCore*>(ptrFE)->num_nodes;
+      return static_cast<FaceElementForcesAndSourcesCore*>(ptrFE)->num_nodes;
     }
 
     /** \brief get element connectivity
      */
     inline const EntityHandle* getConn() {
-      return dynamic_cast<FaceElementForcesAndSourcesCore*>(ptrFE)->conn;
+      return static_cast<FaceElementForcesAndSourcesCore*>(ptrFE)->conn;
     }
 
     /** \brief get triangle coordinates
      */
     inline VectorDouble& getCoords() {
-      return dynamic_cast<FaceElementForcesAndSourcesCore*>(ptrFE)->coords;
+      return static_cast<FaceElementForcesAndSourcesCore*>(ptrFE)->coords;
     }
 
     /** \brief get triangle Gauss pts.
      */
     inline MatrixDouble& getGaussPts() {
-      return dynamic_cast<FaceElementForcesAndSourcesCore*>(ptrFE)->gaussPts;
+      return static_cast<FaceElementForcesAndSourcesCore*>(ptrFE)->gaussPts;
     }
 
     /** \brief get coordinates at Gauss pts.
      */
     inline MatrixDouble& getCoordsAtGaussPts() {
-      return dynamic_cast<FaceElementForcesAndSourcesCore*>(ptrFE)->coordsAtGaussPts;
+      return static_cast<FaceElementForcesAndSourcesCore*>(ptrFE)->coordsAtGaussPts;
     }
 
     /** \brief coordinate at Gauss points (if hierarchical approximation of element geometry)
@@ -139,7 +139,7 @@ struct FaceElementForcesAndSourcesCore: public ForcesAndSurcesCore {
 
       */
     inline MatrixDouble& getHoCoordsAtGaussPts() {
-      return dynamic_cast<FaceElementForcesAndSourcesCore*>(ptrFE)->hoCoordsAtGaussPts;
+      return static_cast<FaceElementForcesAndSourcesCore*>(ptrFE)->hoCoordsAtGaussPts;
     }
 
     /** \brief if higher order geometry return normals at Gauss pts.
@@ -149,7 +149,7 @@ struct FaceElementForcesAndSourcesCore: public ForcesAndSurcesCore {
 
      */
     inline MatrixDouble& getNormals_at_GaussPt() {
-      return dynamic_cast<FaceElementForcesAndSourcesCore*>(ptrFE)->nOrmals_at_GaussPt;
+      return static_cast<FaceElementForcesAndSourcesCore*>(ptrFE)->nOrmals_at_GaussPt;
     }
 
     /** \brief if higher order geometry return normals at Gauss pts.
@@ -157,7 +157,7 @@ struct FaceElementForcesAndSourcesCore: public ForcesAndSurcesCore {
       * \param gg gauss point number
       */
     inline ublas::matrix_row<MatrixDouble > getNormals_at_GaussPt(const int gg) {
-      return ublas::matrix_row<MatrixDouble >(dynamic_cast<FaceElementForcesAndSourcesCore*>(ptrFE)->nOrmals_at_GaussPt,gg);
+      return ublas::matrix_row<MatrixDouble >(static_cast<FaceElementForcesAndSourcesCore*>(ptrFE)->nOrmals_at_GaussPt,gg);
     }
 
     /** \brief if higher order geometry return tangent vector to triangle at Gauss pts.
@@ -167,7 +167,7 @@ struct FaceElementForcesAndSourcesCore: public ForcesAndSurcesCore {
 
      */
     inline MatrixDouble& getTangent1_at_GaussPt() {
-      return dynamic_cast<FaceElementForcesAndSourcesCore*>(ptrFE)->tAngent1_at_GaussPt;
+      return static_cast<FaceElementForcesAndSourcesCore*>(ptrFE)->tAngent1_at_GaussPt;
     }
 
     /** \brief if higher order geometry return tangent vector to triangle at Gauss pts.
@@ -177,19 +177,19 @@ struct FaceElementForcesAndSourcesCore: public ForcesAndSurcesCore {
 
      */
     inline MatrixDouble& getTangent2_at_GaussPt() {
-      return dynamic_cast<FaceElementForcesAndSourcesCore*>(ptrFE)->tAngent2_at_GaussPt;
+      return static_cast<FaceElementForcesAndSourcesCore*>(ptrFE)->tAngent2_at_GaussPt;
     }
 
     /** \brief return pointer to triangle finite element object
      */
     inline const FaceElementForcesAndSourcesCore* getFaceElementForcesAndSourcesCore() {
-      return dynamic_cast<FaceElementForcesAndSourcesCore*>(ptrFE);
+      return static_cast<FaceElementForcesAndSourcesCore*>(ptrFE);
     }
 
     /** \brief return pointer to Generic Triangle Finite Element object
      */
     inline const FaceElementForcesAndSourcesCore* getTriFE() {
-      return dynamic_cast<FaceElementForcesAndSourcesCore*>(ptrFE);
+      return static_cast<FaceElementForcesAndSourcesCore*>(ptrFE);
     }
 
   };

@@ -44,12 +44,12 @@ static moab::Error error;
 inline void* get_tag_ptr(SequenceManager *sequence_manager,Tag th,EntityHandle ent,int *tag_size) {
   ApproximationOrder *ret_val;
   if(th->get_storage_type()==MB_TAG_SPARSE) {
-    rval = dynamic_cast<SparseTag*>(th)->get_data(
+    rval = static_cast<SparseTag*>(th)->get_data(
       sequence_manager,&error,&ent,1,(const void**)&ret_val,tag_size
     ); MOAB_THROW(rval);
     return ret_val;
   } else {
-    rval = dynamic_cast<DenseTag*>(th)->get_data(
+    rval = static_cast<DenseTag*>(th)->get_data(
       sequence_manager,&error,&ent,1,(const void**)&ret_val,tag_size
     ); MOAB_THROW(rval);
     return ret_val;
@@ -89,7 +89,7 @@ ent(ent) {
 unsigned char BasicEntity::getPStatus() const {
   ParallelComm* pcomm = ParallelComm::get_pcomm(&basicDataPtr->moab,MYPCOMM_INDEX);
   return *((unsigned char*)MoFEM::get_tag_ptr(
-    dynamic_cast<moab::Core*>(&basicDataPtr->moab)->sequence_manager(),pcomm->pstatus_tag(),ent,NULL
+    static_cast<moab::Core*>(&basicDataPtr->moab)->sequence_manager(),pcomm->pstatus_tag(),ent,NULL
   ));
 }
 
@@ -101,13 +101,13 @@ BasicEntity(basic_data_ptr,ent) {
 
 EntityHandle* RefEntity::getParentEntPtr() const {
   return (EntityHandle*)get_tag_ptr(
-    dynamic_cast<moab::Core*>(&basicDataPtr->moab)->sequence_manager(),basicDataPtr->th_RefParentHandle,ent,NULL
+    static_cast<moab::Core*>(&basicDataPtr->moab)->sequence_manager(),basicDataPtr->th_RefParentHandle,ent,NULL
   );
 }
 
 BitRefLevel* RefEntity::getBitRefLevelPtr() const {
   return (BitRefLevel*)get_tag_ptr(
-    dynamic_cast<moab::Core*>(&basicDataPtr->moab)->sequence_manager(),basicDataPtr->th_RefBitLevel,ent,NULL
+    static_cast<moab::Core*>(&basicDataPtr->moab)->sequence_manager(),basicDataPtr->th_RefBitLevel,ent,NULL
   );
 }
 
@@ -173,12 +173,12 @@ tag_dof_rank_data(NULL) {
 
 ApproximationOrder* MoFEMEntity::getMaxOrderPtr() {
   return (ApproximationOrder*)MoFEM::get_tag_ptr(
-    dynamic_cast<moab::Core*>(&sFieldPtr->moab)->sequence_manager(),sFieldPtr->th_AppOrder,sPtr->ent,NULL
+    static_cast<moab::Core*>(&sFieldPtr->moab)->sequence_manager(),sFieldPtr->th_AppOrder,sPtr->ent,NULL
   );
 }
 ApproximationOrder MoFEMEntity::getMaxOrder() const {
   return *(ApproximationOrder*)MoFEM::get_tag_ptr(
-    dynamic_cast<moab::Core*>(&sFieldPtr->moab)->sequence_manager(),sFieldPtr->th_AppOrder,sPtr->ent,NULL
+    static_cast<moab::Core*>(&sFieldPtr->moab)->sequence_manager(),sFieldPtr->th_AppOrder,sPtr->ent,NULL
   );
 
 }

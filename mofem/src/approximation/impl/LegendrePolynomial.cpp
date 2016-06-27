@@ -35,7 +35,7 @@ PetscErrorCode LegendrePolynomialCtx::queryInterface(
   PetscFunctionBegin;
   *iface = NULL;
   if(uuid == IDD_LEGENDRE_BASE_FUNCTION) {
-    *iface = dynamic_cast<LegendrePolynomialCtx*>(this);
+    *iface = static_cast<LegendrePolynomialCtx*>(this);
     PetscFunctionReturn(0);
   } else {
     SETERRQ(PETSC_COMM_WORLD,MOFEM_DATA_INCONSISTENCY,"wrong interference");
@@ -51,7 +51,7 @@ PetscErrorCode LegendrePolynomial::queryInterface(
   PetscFunctionBegin;
   *iface = NULL;
   if(uuid == IDD_LEGENDRE_BASE_FUNCTION) {
-    *iface = dynamic_cast<LegendrePolynomial*>(this);
+    *iface = static_cast<LegendrePolynomial*>(this);
     PetscFunctionReturn(0);
   } else {
     SETERRQ(PETSC_COMM_WORLD,MOFEM_DATA_INCONSISTENCY,"wrong interference");

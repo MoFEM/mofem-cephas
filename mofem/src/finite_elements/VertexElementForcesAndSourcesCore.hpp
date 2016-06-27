@@ -70,7 +70,7 @@ struct VertexElementForcesAndSourcesCore: public ForcesAndSurcesCore {
       ForcesAndSurcesCore::UserDataOperator(row_field_name,col_field_name,type) {}
 
     inline VectorDouble& getCoords() {
-      return dynamic_cast<VertexElementForcesAndSourcesCore*>(ptrFE)->coords;
+      return static_cast<VertexElementForcesAndSourcesCore*>(ptrFE)->coords;
     }
 
   };

@@ -55,7 +55,7 @@ PetscErrorCode EntPolynomialBaseCtx::queryInterface(
     uuid == IDD_TRI_BASE_FUNCTION ||
     uuid == IDD_EDGE_BASE_FUNCTION
   ) {
-    *iface = dynamic_cast<EntPolynomialBaseCtx*>(this);
+    *iface = static_cast<EntPolynomialBaseCtx*>(this);
     PetscFunctionReturn(0);
   } else {
     SETERRQ(PETSC_COMM_WORLD,MOFEM_DATA_INCONSISTENCY,"wrong interference");
