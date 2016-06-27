@@ -36,7 +36,7 @@ struct __attribute__((__packed__))  SideNumber {
     return (EntityType)((ent&MB_TYPE_MASK)>>MB_ID_WIDTH);
   }
 
-  /** deprecated \deprecated
+  /** \deprecated Use getEntType() instead
   */
   DEPRECATED EntityType get_ent_type() const { return getEntType(); }
 
@@ -108,7 +108,7 @@ struct BasicEntity {
   */
   inline EntityType getEntType() const { return (EntityType)((ent&MB_TYPE_MASK)>>MB_ID_WIDTH); }
 
-  /** deprecated \deprecated
+  /** \deprecated Name changed to getEntType()
   */
   DEPRECATED inline EntityType get_ent_type() const { return getEntType(); }
 
@@ -116,7 +116,7 @@ struct BasicEntity {
   */
   inline EntityID getEntId() const { return (EntityID)(ent&MB_ID_MASK); };
 
-  /** deprecated \deprecated
+  /** \deprecated Name changed to getEntId()
   */
   inline DEPRECATED EntityID get_ent_id() const { return getEntId(); };
 
@@ -124,7 +124,7 @@ struct BasicEntity {
     */
   inline EntityHandle getOwnerEnt() const { return moab_owner_handle; }
 
-  /** deprecated \deprecated
+  /** \deprecated Name changed to getOwnerEnt()
   */
   DEPRECATED inline EntityHandle get_owner_ent() const { return getOwnerEnt(); }
 
@@ -133,9 +133,9 @@ struct BasicEntity {
     */
   inline EntityHandle getOwnerProc() const { return owner_proc; }
 
-  /** deprecated \deprecated
+  /** \deprecated Name changed to getOwnerProc()
   */
-  DEPRECATED inline EntityHandle get_owner_proc() const { return owner_proc; }
+  DEPRECATED inline EntityHandle get_owner_proc() const { return getOwnerProc(); }
 
 
   /** \brief get pstatus
@@ -152,7 +152,7 @@ struct BasicEntity {
     */
   unsigned char getPStatus() const;
 
-  /** deprecated \deprecated
+  /** \deprecated Name changed to getPStatus()
   */
   DEPRECATED inline unsigned char get_pstatus() const { return getPStatus(); }
 
@@ -195,7 +195,7 @@ struct BasicEntity {
     return sharing_procs_ptr;
   }
 
-  /** deprecated \deprecated
+  /** \deprecated Name changed to getSharingProcsPtr()
   */
   DEPRECATED int* get_sharing_procs_ptr() const { return getSharingProcsPtr(); }
 
@@ -237,7 +237,7 @@ struct BasicEntity {
     return sharing_handlers_ptr;
   }
 
-  /** deprecated \deprecated
+  /** \deprecated Name changed to getSharingHandlersPtr()
   */
   DEPRECATED inline EntityHandle* get_sharing_handlers_ptr() const { return getSharingHandlersPtr(); }
 
@@ -283,7 +283,7 @@ struct RefEntity: public BasicEntity {
   */
   inline EntityHandle getRefEnt() const { return ent; }
 
-  /** deprecated \deprecated
+  /** \deprecated Name changed to getRefEnt()
   */
   DEPRECATED inline EntityHandle get_ref_ent() const { return getRefEnt(); }
 
@@ -296,7 +296,7 @@ struct RefEntity: public BasicEntity {
     return (EntityType)((*tag_parent_ent&MB_TYPE_MASK)>>MB_ID_WIDTH);
   }
 
-  /** deprecated \deprecated
+  /** \deprecated Name changed to getParentEntType()
   */
   DEPRECATED inline EntityType get_parent_ent_type() const { return getParentEntType(); }
 
@@ -307,7 +307,7 @@ struct RefEntity: public BasicEntity {
     return *tag_parent_ent;
   }
 
-  /** deprecated \deprecated
+  /** \deprecated Name changed to getParentEnt()
   */
   DEPRECATED inline EntityHandle get_parent_ent() const { return getParentEnt(); }
 
@@ -315,7 +315,7 @@ struct RefEntity: public BasicEntity {
   */
   inline const BitRefLevel& getBitRefLevel() const { return *getBitRefLevelPtr(); }
 
-  /** deprecated \deprecated
+  /** \deprecated Name changed to getBitRefLevel()
   */
   DEPRECATED inline const BitRefLevel& get_BitRefLevel() const { return getBitRefLevel(); }
 
@@ -338,66 +338,66 @@ struct interface_RefEntity {
 
   inline EntityHandle getRefEnt() const { return this->sPtr->getRefEnt(); }
 
-  /** deprecated \deprecated
+  /** \deprecated Name changed to getRefEnt()
   */
   DEPRECATED inline EntityHandle get_ref_ent() const { return this->sPtr->getRefEnt(); }
 
   inline EntityType getParentEntType() const { return this->sPtr->getParentEntType(); };
 
-  /** deprecated \deprecated
+  /** \deprecated Name changed to getParentEntType()
   */
   DEPRECATED inline EntityType get_parent_ent_type() const { return this->sPtr->getParentEntType(); };
 
   inline EntityHandle getParentEnt() const { return this->sPtr->getParentEnt(); }
 
-  /** deprecated \deprecated
+  /** \deprecated Name changed to getParentEnt()
   */
   DEPRECATED inline EntityHandle get_parent_ent() const { return this->sPtr->getParentEnt(); }
   inline const BitRefLevel& getBitRefLevel() const { return this->sPtr->getBitRefLevel(); }
 
-  /** deprecated \deprecated
+  /** \deprecated Name changed to getBitRefLevel()
   */
   DEPRECATED inline const BitRefLevel& get_BitRefLevel() const { return this->sPtr->getBitRefLevel(); }
 
   inline EntityType getEntType() const { return this->sPtr->getEntType(); };
 
-  /** deprecated \deprecated
+  /** \deprecated Name changed to getEntType()
   */
   DEPRECATED inline EntityType get_ent_type() const { return this->sPtr->getEntType(); };
 
   inline EntityID getEntId() const { return this->sPtr->getEntId(); };
 
-  /** deprecated \deprecated
+  /** \deprecated Name changed to getEntId()
   */
   DEPRECATED inline EntityID get_ent_id() const { return this->sPtr->getEntId(); };
 
   inline EntityHandle getOwnerEnt() const { return this->sPtr->getOwnerEnt(); }
 
-  /** deprecated \deprecated
+  /** \deprecated Name changed to getOwnerEnt()
   */
   DEPRECATED inline EntityHandle get_owner_ent() const { return this->sPtr->getOwnerEnt(); }
 
   inline EntityHandle getOwnerProc() const { return this->sPtr->getOwnerProc(); }
 
-  /** deprecated \deprecated
+  /** \deprecated Name changed to getOwnerProc()
   */
   DEPRECATED EntityHandle get_owner_proc() const { return this->sPtr->getOwnerProc(); }
 
   inline unsigned char getPStatus() const { return this->sPtr->getPStatus(); }
 
-  /** deprecated \deprecated
+  /** \deprecated Name changed to getPStatus()
   */
   DEPRECATED inline unsigned char get_pstatus() const { return this->sPtr->getPStatus(); }
 
   inline int* getSharingProcsPtr() const { return this->sPtr->getSharingProcsPtr(); }
 
-  /** deprecated \deprecated
+  /** \deprecated Name changed to getSharingProcsPtr()
   */
   DEPRECATED inline int* get_sharing_procs_ptr() const { return this->sPtr->getSharingProcsPtr(); }
 
   inline EntityHandle* getSharingHandlersPtr() const { return this->sPtr->getSharingHandlersPtr(); }
 
-  /** deprecated \deprecated
+  /** \deprecated Name changed to getSharingHandlersPtr()
   */
   DEPRECATED inline EntityHandle* get_sharing_handlers_ptr() const { return this->sPtr->getSharingHandlersPtr(); }
 
@@ -606,7 +606,7 @@ struct MoFEMEntity:
    */
   inline EntityHandle getEnt() const { return getRefEnt(); }
 
-  /** deprecated \deprecated
+  /** \deprecated Name change to getEnt()
   */
   DEPRECATED EntityHandle get_ent() const { return getEnt(); }
 
@@ -616,7 +616,7 @@ struct MoFEMEntity:
    */
   inline int getNbDofsOnEnt() const { return tag_FieldData_size/sizeof(FieldData); }
 
-  /** deprecated \deprecated
+  /** \deprecated Name change to getNbDofsOnEnt()
   */
   DEPRECATED inline int get_nb_dofs_on_ent() const { return getNbDofsOnEnt(); }
 
@@ -630,7 +630,7 @@ struct MoFEMEntity:
     return VectorAdaptor(size,ublas::shallow_array_adaptor<FieldData>(size,ptr));
   }
 
-  /** deprecated \deprecated
+  /** \deprecated Name changed to getEntFieldData()
   */
   DEPRECATED inline VectorAdaptor get_ent_FieldData() const { return getEntFieldData(); }
 
@@ -641,7 +641,7 @@ struct MoFEMEntity:
    */
   inline int getOrderNbDofs(int order) const { return (this->sFieldPtr->forder_table[getEntType()])(order); }
 
-  /** deprecated \deprecated
+  /** \deprecated Name changed to getOrderNbDofs()
   */
   DEPRECATED inline int get_order_nb_dofs(int order) const { return getOrderNbDofs(order); }
 
@@ -652,7 +652,7 @@ struct MoFEMEntity:
    */
   inline int getOrderNbDofsDiff(int order) const { return getOrderNbDofs(order)-getOrderNbDofs(order-1); }
 
-  /** deprecated \deprecated
+  /** \deprecated Name changed to getOrderNbDofsDiff()
   */
   DEPRECATED inline int get_order_nb_dofs_diff(int order) const { return getOrderNbDofsDiff(order); }
 
@@ -668,7 +668,7 @@ struct MoFEMEntity:
    */
   ApproximationOrder getMaxOrder() const;
 
-  /** deprecated \deprecated
+  /** \deprecated Name changed to getMaxOrder()
   */
   DEPRECATED inline ApproximationOrder get_max_order() const { return getMaxOrder(); }
 
@@ -680,7 +680,7 @@ struct MoFEMEntity:
    */
   const GlobalUId& getGlobalUniqueId() const { return global_uid; }
 
-  /** deprecated \deprecated
+  /** \deprecated Name changed getGlobalUniqueId()
   */
   DEPRECATED const GlobalUId& get_global_unique_id() const { return getGlobalUniqueId(); }
 
@@ -704,18 +704,18 @@ struct MoFEMEntity:
    */
   inline const boost::shared_ptr<RefEntity> getRefEntityPtr() { return this->sPtr; }
 
-  /** deprecated \deprecated
+  /** \deprecated Name changed to getRefEntityPtr()
   */
-  DEPRECATED inline const boost::shared_ptr<RefEntity> get_RefEntity_ptr() { return this->sPtr; }
+  DEPRECATED inline const boost::shared_ptr<RefEntity> get_RefEntity_ptr() { return getRefEntityPtr(); }
 
   /**
    * \brief Get pointer to Field data structure associated with this entity
    */
   inline const boost::shared_ptr<Field> getFieldPtr() const { return this->sFieldPtr; }
 
-  /** deprecated \deprecated
+  /** \deprecated Name changed to getFieldPtr()
   */
-  DEPRECATED inline const boost::shared_ptr<Field> get_Field_ptr() const { return this->sFieldPtr; }
+  DEPRECATED inline const boost::shared_ptr<Field> get_Field_ptr() const { return getFieldPtr(); }
 
   friend std::ostream& operator<<(std::ostream& os,const MoFEMEntity& e);
 
@@ -739,61 +739,61 @@ interface_RefEntity<T> {
   };
   inline EntityHandle getEnt() const { return this->sPtr->getEnt(); }
 
-  /** deprecated \deprecated
+  /** \deprecated Use getEnt() instead
   */
   DEPRECATED inline EntityHandle get_ent() const { return this->sPtr->getEnt(); }
 
   inline int getNbDofsOnEnt() const { return this->sPtr->getNbDofsOnEnt(); }
 
-  /** deprecated \deprecated
+  /** \deprecated Chnage name to getNbDofsOnEnt()
   */
   DEPRECATED inline int get_nb_dofs_on_ent() const { return this->sPtr->getNbDofsOnEnt(); }
 
   inline VectorAdaptor getEntFieldData() const { return this->sPtr->getEntFieldData(); }
 
-  /** deprecated \deprecated
+  /** \deprecated Change name getEntFieldData()
   */
   DEPRECATED inline VectorAdaptor get_ent_FieldData() const { return this->sPtr->getEntFieldData(); }
 
   inline int getOrderNbDofs(int order) const { return this->sFieldPtr->getOrderNbDofs(order); }
 
-  /** deprecated \deprecated
+  /** \deprecated Change name to getOrderNbDofs()
   */
   DEPRECATED inline int get_order_nb_dofs(int order) const { return this->sFieldPtr->getOrderNbDofs(order); }
 
   inline int getOrderNbDofsDiff(int order) const { return this->sPtr->getOrderNbDofsDiff(order); }
 
-  /** deprecated \deprecated
+  /** \deprecated Chnage name to getOrderNbDofsDiff()
   */
   DEPRECATED inline int get_order_nb_dofs_diff(int order) const { return this->sPtr->getOrderNbDofsDiff(order); }
 
   inline ApproximationOrder getMaxOrder() const { return this->sPtr->getMaxOrder(); }
 
-  /** deprecated \deprecated
+  /** \deprecated Change name to getMaxOrder()
   */
   DEPRECATED inline ApproximationOrder get_max_order() const { return this->sPtr->getMaxOrder(); }
 
   inline GlobalUId getGlobalUniqueId() const { return this->sPtr->getGlobalUniqueId(); }
 
-  /** deprecated \deprecated
+  /** \deprecated Change name to getGlobalUniqueId()
   */
   DEPRECATED inline GlobalUId get_global_unique_id() const { return this->sPtr->getGlobalUniqueId(); }
 
   inline const boost::shared_ptr<RefEntity> getRefEntityPtr() { return this->sPtr->getRefEntityPtr(); }
 
-  /** deprecated \deprecated
+  /** \deprecated Change name to getRefEntityPtr()
   */
   DEPRECATED inline const boost::shared_ptr<RefEntity> get_RefEntity_ptr() { return this->sPtr->getRefEntityPtr(); }
 
   inline const boost::shared_ptr<Field> getFieldPtr() const { return this->sFieldPtr->getFieldPtr(); }
 
-  /** deprecated \deprecated
+  /** \deprecated Change name to getFieldPtr()
   */
   DEPRECATED inline const boost::shared_ptr<Field> get_Field_ptr() const { return this->sFieldPtr->getFieldPtr(); }
 
   inline const boost::shared_ptr<MoFEMEntity> getMoFEMEntityPtr() const { return this->sPtr; };
 
-  /** deprecated \deprecated
+  /** \deprecated Name is deprecated, use getMoFEMEntityPtr instead.
   */
   DEPRECATED inline const boost::shared_ptr<MoFEMEntity> get_MoFEMEntity_ptr() const { return getMoFEMEntityPtr(); };
 

@@ -381,17 +381,37 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::operator()() {
       try {
         ierr = opHOatGaussPoints.opRhs(dataH1); CHKERRQ(ierr);
         hoGaussPtsInvJac.resize(hoGaussPtsJac.size1(),hoGaussPtsJac.size2(),false);
-        ublas::noalias(hoGaussPtsInvJac) = hoGaussPtsJac;
-        MatrixDouble jac(3,3);
+        FTensor::Tensor2<double*,3,3> jac(
+          &hoGaussPtsJac(0,0),&hoGaussPtsJac(0,1),&hoGaussPtsJac(0,2),
+          &hoGaussPtsJac(0,3),&hoGaussPtsJac(0,4),&hoGaussPtsJac(0,5),
+          &hoGaussPtsJac(0,6),&hoGaussPtsJac(0,7),&hoGaussPtsJac(0,8),9
+        );
+        FTensor::Tensor2<double*,3,3> inv_jac(
+          &hoGaussPtsInvJac(0,0),&hoGaussPtsInvJac(0,1),&hoGaussPtsInvJac(0,2),
+          &hoGaussPtsInvJac(0,3),&hoGaussPtsInvJac(0,4),&hoGaussPtsInvJac(0,5),
+          &hoGaussPtsInvJac(0,6),&hoGaussPtsInvJac(0,7),&hoGaussPtsInvJac(0,8),9
+        );
         hoGaussPtsDetJac.resize(nbGaussPts,false);
-        for(int gg = 0;gg<nbGaussPts;gg++) {
-          cblas_dcopy(9,&hoGaussPtsJac(gg,0),1,&jac(0,0),1);
-          hoGaussPtsDetJac[gg] = ShapeDetJacVolume(&jac(0,0));
-          if(hoGaussPtsDetJac[gg]<0) {
+        FTensor::Tensor0<double*> det(&hoGaussPtsDetJac[0]);
+        for(int gg = 0;gg!=nbGaussPts;gg++) {
+          ierr = determinantTensor3by3(jac,det); CHKERRQ(ierr);
+          if(det<0) {
             SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"Negative volume");
           }
-          ierr = ShapeInvJacVolume(&hoGaussPtsInvJac(gg,0)); CHKERRQ(ierr);
+          ierr = invertTensor3by3(jac,det,inv_jac); CHKERRQ(ierr);
+          ++jac;
+          ++inv_jac;
+          ++det;
         }
+        // MatrixDouble jac(3,3);
+        // for(int gg = 0;gg<nbGaussPts;gg++) {
+          // cblas_dcopy(9,&hoGaussPtsJac(gg,0),1,&jac(0,0),1);
+        //   hoGaussPtsDetJac[gg] = ShapeDetJacVolume(&jac(0,0));
+        //   if(hoGaussPtsDetJac[gg]<0) {
+        //     SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"Negative volume");
+        //   }
+        //   ierr = ShapeInvJacVolume(&hoGaussPtsInvJac(gg,0)); CHKERRQ(ierr);
+        // }
         ierr = opSetHoInvJacH1.opRhs(dataH1); CHKERRQ(ierr);
         if((dataH1.spacesOnEntities[MBTET]).test(L2)) {
           ierr = opSetHoInvJacH1.opRhs(dataL2); CHKERRQ(ierr);

@@ -51,7 +51,7 @@ PetscErrorCode FlatPrismPolynomialBaseCtx::queryInterface(const MOFEMuuid& uuid,
   if(
     uuid == IDD_FLATPRISM_BASE_FUNCTION
   ) {
-    *iface = dynamic_cast<FlatPrismPolynomialBaseCtx*>(this);
+    *iface = static_cast<FlatPrismPolynomialBaseCtx*>(this);
     PetscFunctionReturn(0);
   } else {
     SETERRQ(PETSC_COMM_WORLD,MOFEM_DATA_INCONSISTENCY,"wrong interference");
@@ -84,7 +84,7 @@ PetscErrorCode FlatPrismPolynomialBase::queryInterface(
   PetscFunctionBegin;
   *iface = NULL;
   if(uuid == IDD_FLATPRISM_BASE_FUNCTION) {
-    *iface = dynamic_cast<FlatPrismPolynomialBase*>(this);
+    *iface = static_cast<FlatPrismPolynomialBase*>(this);
     PetscFunctionReturn(0);
   } else {
     SETERRQ(PETSC_COMM_WORLD,MOFEM_DATA_INCONSISTENCY,"wrong interference");

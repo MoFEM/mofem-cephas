@@ -68,7 +68,7 @@ struct DofEntity: public interface_MoFEMEntity<MoFEMEntity> {
     */
   inline GlobalUId getGlobalUniqueId() const { return getGlobalUniqueIdCalculate(get_EntDofIdx(),getMoFEMEntityPtr()); }
 
-  /** deprecated \deprecated
+  /** \deprecated use getGlobalUniqueId() instead
   */
   DEPRECATED inline GlobalUId get_global_unique_id() const { return getGlobalUniqueId(); }
 
@@ -99,12 +99,6 @@ struct DofEntity: public interface_MoFEMEntity<MoFEMEntity> {
     return ((ApproximationOrder*)this->sPtr->tag_dof_order_data)[get_EntDofIdx()];
   }
 
-  /** deprecated \deprecated
-  */
-  DEPRECATED inline FieldCoefficientsNumber get_dof_rank() const {
-    return ((FieldCoefficientsNumber*)this->sPtr->tag_dof_rank_data)[get_EntDofIdx()];
-  }
-
   /** \brief Get dof coefficient
   */
   inline FieldCoefficientsNumber get_dof_coeff_idx() const {
@@ -130,7 +124,7 @@ struct interface_DofEntity: public interface_MoFEMEntity<T> {
 
   inline const GlobalUId getGlobalUniqueId() const { return this->sPtr->getGlobalUniqueId(); }
 
-  /** deprecated \deprecated
+  /** \deprecated Use getGlobalUniqueId() instead
   */
   DEPRECATED inline const GlobalUId get_global_unique_id() const { return this->sPtr->getGlobalUniqueId(); }
 
@@ -140,17 +134,11 @@ struct interface_DofEntity: public interface_MoFEMEntity<T> {
 
   inline EntityHandle getEnt() const { return this->sPtr->getEnt(); };
 
-  /** deprecated \deprecated
+  /** \deprecated Use getEnt() instead
   */
   DEPRECATED inline EntityHandle get_ent() const { return getEnt(); };
 
   inline ApproximationOrder get_dof_order() const { return this->sPtr->get_dof_order(); };
-
-  /** deprecated \deprecated
-  */
-  DEPRECATED inline FieldCoefficientsNumber get_dof_rank() const {
-    return this->sPtr->get_dof_coeff_idx();
-  }
 
   inline FieldCoefficientsNumber get_dof_coeff_idx() const {
     return this->sPtr->get_dof_coeff_idx();
@@ -165,7 +153,7 @@ struct interface_DofEntity: public interface_MoFEMEntity<T> {
     return this->sPtr->getMoFEMEntityPtr();
   }
 
-  /** Deprecated \deprecated
+  /** \deprecated Use getMoFEMEntityPtr instead.
   */
   DEPRECATED inline const boost::shared_ptr<MoFEMEntity> get_MoFEMEntity_ptr() const {
     return this->sPtr->getMoFEMEntityPtr();

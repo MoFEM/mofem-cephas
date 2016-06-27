@@ -398,13 +398,13 @@ struct MoFEMProblem {
   MoFEMProblem(Interface &moab,const EntityHandle _meshset);
   inline BitProblemId getId() const { return *((BitProblemId*)tag_id_data); }
 
-  /** Deprecated \deprecated
+  /** \deprecated Use getId() instead
   */
   DEPRECATED inline BitProblemId get_id() const { return getId(); }
 
   inline std::string getName() const { return std::string((char *)tag_name_data,tag_name_size); }
 
-  /** Deprecated \deprecated
+  /** \deprecated Use getName() instead
   */
   DEPRECATED inline std::string get_name() const { return getName(); }
 
@@ -418,7 +418,7 @@ struct MoFEMProblem {
 
   inline BitRefLevel getBitRefLevel() const { return *tag_BitRefLevel; }
 
-  /** Deprecated \deprecated
+  /** \deprecated Use getBitRefLevel() instead
   */
   DEPRECATED inline BitRefLevel get_BitRefLevel() const { return getBitRefLevel(); }
 

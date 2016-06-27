@@ -55,7 +55,7 @@ PetscErrorCode TriPolynomialBase::queryInterface(
   PetscFunctionBegin;
   *iface = NULL;
   if(uuid == IDD_TET_BASE_FUNCTION) {
-    *iface = dynamic_cast<TriPolynomialBase*>(this);
+    *iface = static_cast<TriPolynomialBase*>(this);
     PetscFunctionReturn(0);
   } else {
     SETERRQ(PETSC_COMM_WORLD,MOFEM_DATA_INCONSISTENCY,"wrong interference");

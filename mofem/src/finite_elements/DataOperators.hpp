@@ -83,7 +83,7 @@ struct DataOperator {
  * \brief Calculate inverse of tensor rank 2 at integration points
  */
 template<int Tensor_Dim,class T,class L,class A>
-PetscErrorCode invertTensor3by3(
+inline PetscErrorCode invertTensor3by3(
   ublas::matrix<T,L,A> &jac_data,
   ublas::vector<T,A> &det_data,
   ublas::matrix<T,L,A> &inv_jac_data
@@ -98,7 +98,7 @@ PetscErrorCode invertTensor3by3(
 }
 
 template<>
-PetscErrorCode invertTensor3by3<3,double,ublas::row_major,ublas::unbounded_array<double> >(
+inline PetscErrorCode invertTensor3by3<3,double,ublas::row_major,ublas::unbounded_array<double> >(
   MatrixDouble &jac_data,
   VectorDouble &det_data,
   MatrixDouble &inv_jac_data

@@ -36,7 +36,7 @@ PetscErrorCode LobattoPolynomialCtx::queryInterface(
   PetscFunctionBegin;
   *iface = NULL;
   if(uuid == IDD_LOBATTO_BASE_FUNCTION) {
-    *iface = dynamic_cast<LobattoPolynomialCtx*>(this);
+    *iface = static_cast<LobattoPolynomialCtx*>(this);
     PetscFunctionReturn(0);
   } else {
     SETERRQ(PETSC_COMM_WORLD,MOFEM_DATA_INCONSISTENCY,"wrong interference");
@@ -52,7 +52,7 @@ PetscErrorCode LobattoPolynomial::queryInterface(
   PetscFunctionBegin;
   *iface = NULL;
   if(uuid == IDD_LOBATTO_BASE_FUNCTION) {
-    *iface = dynamic_cast<LobattoPolynomial*>(this);
+    *iface = static_cast<LobattoPolynomial*>(this);
     PetscFunctionReturn(0);
   } else {
     SETERRQ(PETSC_COMM_WORLD,MOFEM_DATA_INCONSISTENCY,"wrong interference");
@@ -90,7 +90,7 @@ PetscErrorCode KernelLobattoPolynomialCtx::queryInterface(
   PetscFunctionBegin;
   *iface = NULL;
   if(uuid == IDD_KERNEL_BASE_FUNCTION) {
-    *iface = dynamic_cast<KernelLobattoPolynomialCtx*>(this);
+    *iface = static_cast<KernelLobattoPolynomialCtx*>(this);
     PetscFunctionReturn(0);
   } else {
     SETERRQ(PETSC_COMM_WORLD,MOFEM_DATA_INCONSISTENCY,"wrong interference");
@@ -106,7 +106,7 @@ PetscErrorCode KernelLobattoPolynomial::queryInterface(
   PetscFunctionBegin;
   *iface = NULL;
   if(uuid == IDD_KERNEL_BASE_FUNCTION) {
-    *iface = dynamic_cast<KernelLobattoPolynomial*>(this);
+    *iface = static_cast<KernelLobattoPolynomial*>(this);
     PetscFunctionReturn(0);
   } else {
     SETERRQ(PETSC_COMM_WORLD,MOFEM_DATA_INCONSISTENCY,"wrong interference");
