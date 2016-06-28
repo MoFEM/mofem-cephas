@@ -32,7 +32,7 @@ project(MoFEM C Fortran CXX)
 
 set(MoFEM_VERSION_MAJOR 0)
 set(MoFEM_VERSION_MINOR 3)
-set(MoFEM_VERSION_BUILD 28)
+set(MoFEM_VERSION_BUILD 29)
 
 include(CheckCXXSourceCompiles)
 CHECK_CXX_SOURCE_COMPILES(
