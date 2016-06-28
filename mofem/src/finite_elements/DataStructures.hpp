@@ -30,8 +30,21 @@ typedef ublas::unbounded_array<const FEDofEntity*,std::allocator<const FEDofEnti
 typedef ublas::vector<const FEDofEntity*,DofsAllacator > VectorDofs;
 
 /**
-* \brief Get tensor rank 0 (scalar) form data vcetor
+* \brief Get tensor rank 0 (scalar) form data vector
 * \ingroup mofem_forces_and_sources_user_data_operators
+
+Example how to use it.
+\code
+VectorDouble vec;
+vec.resize(nb_gauss_pts,false);
+vec.clear();
+FTensor::Tensor0<double*> t0 = getTensor0FormData(data);
+for(int gg = 0;gg!=nb_gauss_pts;gg++) {
+
+  ++t0;
+}
+\endcode
+
 */
 template<class T, class A>
 FTensor::Tensor0<T*> getTensor0FormData(
@@ -672,7 +685,7 @@ struct DataForcesAndSurcesCore {
      *
      */
     inline FTensor::Tensor0<double*> getFTensor0N(const int gg,const int bb) {
-      return getFTensor0N(bAse,bb);
+      return getFTensor0N(bAse,gg,bb);
     };
 
     /**
