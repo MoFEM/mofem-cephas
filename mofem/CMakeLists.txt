@@ -150,9 +150,12 @@ file(COPY
   DESTINATION ${PROJECT_BINARY_DIR}
 )
 
-resolve_definitions(MOAB_DEFINITIONS ${MOAB_CPPFLAGS})
-message(STATUS ${MOAB_DEFINITIONS})
-add_definitions(${MOAB_DEFINITIONS})
+# Add moab definitions
+if(MOAB_DEFINITIONS)
+  resolve_definitions(MOAB_DEFINITIONS ${MOAB_CPPFLAGS})
+  message(STATUS ${MOAB_DEFINITIONS})
+  add_definitions(${MOAB_DEFINITIONS})
+endif(MOAB_DEFINITIONS)
 
 #add executable library form subdirectory
 enable_testing()

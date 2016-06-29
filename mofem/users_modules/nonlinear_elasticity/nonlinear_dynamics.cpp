@@ -675,6 +675,7 @@ int main(int argc, char *argv[]) {
   #else
     ierr = TSSetIJacobian(ts,Aij,Aij,f_TSSetIJacobian,&ts_ctx); CHKERRQ(ierr);
   #endif
+
   ierr = TSMonitorSet(ts,f_TSMonitorSet,&ts_ctx,PETSC_NULL); CHKERRQ(ierr);
 
   double ftime = 1;
@@ -685,7 +686,7 @@ int main(int argc, char *argv[]) {
     //shell matrix pre-conditioner
     SNES snes;
     ierr = TSGetSNES(ts,&snes); CHKERRQ(ierr);
-    ierr = SNESSetFromOptions(snes); CHKERRQ(ierr);
+    // ierr = SNESSetFromOptions(snes); CHKERRQ(ierr);
     KSP ksp;
     ierr = SNESGetKSP(snes,&ksp); CHKERRQ(ierr);
     ierr = KSPSetFromOptions(ksp); CHKERRQ(ierr);
@@ -780,6 +781,9 @@ int main(int argc, char *argv[]) {
     ierr = m_field.set_local_ghost_vector("DYNAMICS",COL,D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   }
 
+  #if PETSC_VERSION_GE(3,7,0)
+  ierr = TSSetExactFinalTime(ts,TS_EXACTFINALTIME_STEPOVER); CHKERRQ(ierr);
+  #endif
   ierr = TSSolve(ts,D); CHKERRQ(ierr);
   ierr = TSGetTime(ts,&ftime); CHKERRQ(ierr);
 
