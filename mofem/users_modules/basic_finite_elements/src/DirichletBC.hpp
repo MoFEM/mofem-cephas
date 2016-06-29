@@ -163,6 +163,27 @@ struct DirichletBCFromBlockSetFEMethodPreAndPostProc: public DisplacementBCFEMet
 
 };
 
+struct DirichletBCFromBlockSetFEMethodPreAndPostProcWithFlags: public DisplacementBCFEMethodPreAndPostProc {
+
+  const std::string blocksetName;
+  DirichletBCFromBlockSetFEMethodPreAndPostProcWithFlags(
+    FieldInterface& m_field,const std::string &field_name,const std::string &blockset_name,Mat aij,Vec x,Vec f
+  ):
+  DisplacementBCFEMethodPreAndPostProc(m_field,field_name,aij,x,f),
+  blocksetName(blockset_name) {
+  }
+
+  DirichletBCFromBlockSetFEMethodPreAndPostProcWithFlags(
+    FieldInterface& m_field,const std::string &field_name,const std::string &blockset_name
+  ):
+  DisplacementBCFEMethodPreAndPostProc(m_field,field_name),
+  blocksetName(blockset_name) {
+  }
+
+  PetscErrorCode iNitalize();
+
+};
+
 #endif //__DIRICHLETBC_HPP__
 
 /***************************************************************************//**
