@@ -40,7 +40,7 @@ using namespace boost::numeric;
 /** \brief Set Dirichlet boundary conditions on displacements
   * \ingroup Dirichlet_bc
   */
-struct DisplacementBCFEMethodPreAndPostProc: public FEMethod {
+struct DisplacementBCFEMethodPreAndPostProc: public MoFEM::FEMethod {
 
   FieldInterface& mField;
   const std::string fieldName;			///< field name to set Dirichlet BC
@@ -141,6 +141,9 @@ struct FixBcAtEntities: public DisplacementBCFEMethodPreAndPostProc {
   * Implementation of generalized Dirichlet Boundary Conditions from CUBIT Blockset
   * (or not using CUBIT building boundary conditions, e.g. Temperature or Displacements etc).
   * It can work for any Problem rank (1,2,3)
+  *
+  * FIXME Show example form journal file how to add block set
+  *
 **/
 struct DirichletBCFromBlockSetFEMethodPreAndPostProc: public DisplacementBCFEMethodPreAndPostProc {
 
@@ -163,6 +166,12 @@ struct DirichletBCFromBlockSetFEMethodPreAndPostProc: public DisplacementBCFEMet
 
 };
 
+/**
+ * \brief Add boundary conditions form block set having 6 attributes
+ *
+ * FIXME: Detailed description how to use it.
+ * FIXME Show example form journal file how to add block set
+ */
 struct DirichletBCFromBlockSetFEMethodPreAndPostProcWithFlags: public DisplacementBCFEMethodPreAndPostProc {
 
   const std::string blocksetName;
