@@ -475,27 +475,28 @@ PetscErrorCode PostProcVolumeOnRefinedMesh::postProcess() {
 
   rval = pcomm_post_proc_mesh->resolve_shared_ents(0); CHKERRQ_MOAB(rval);
 
-  #ifndef MOAB_HDF5_PARALLEL
-  #warning "No parallel HDF5, not most efficient way of writing files"
-  for(int r = 0;r<pcomm_post_proc_mesh->size();r++) {
-    // FIXME make better communication send only to proc 0
-    rval = pcomm_post_proc_mesh->broadcast_entities(r,tets,false,true); CHKERRQ_MOAB(rval);
-  }
-  #endif //
+  // #ifndef MOAB_HDF5_PARALLEL
+  // #warning "No parallel HDF5, not most efficient way of writing files"
+  // for(int r = 0;r<pcomm_post_proc_mesh->size();r++) {
+  //   // FIXME make better communication send only to proc 0
+  //   rval = pcomm_post_proc_mesh->broadcast_entities(r,tets,false,true); CHKERRQ_MOAB(rval);
+  // }
+  // #endif //
 
   PetscFunctionReturn(0);
 }
 
 PetscErrorCode PostProcVolumeOnRefinedMesh::writeFile(const std::string file_name) {
  PetscFunctionBegin;
- ErrorCode rval;
- #ifdef MOAB_HDF5_PARALLEL
- rval = postProcMesh.write_file(file_name.c_str(),"MOAB","PARALLEL=WRITE_PART"); CHKERRQ_MOAB(rval);
- #else
- if(mField.getCommRank()==0) {
-   rval = postProcMesh.write_file(file_name.c_str(),"MOAB",""); CHKERRQ_MOAB(rval);
- }
- #endif
+ MoABErrorCode rval;
+ // #ifdef MOAB_HDF5_PARALLEL
+  rval = postProcMesh.write_file(file_name.c_str(),"MOAB","PARALLEL=WRITE_PART"); CHKERRQ_MOAB(rval);
+ // #else
+ //  #warning "No parallel HDF5, not most efficient way of writing files"
+ //  if(mField.getCommRank()==0) {
+ //    rval = postProcMesh.write_file(file_name.c_str(),"MOAB",""); CHKERRQ_MOAB(rval);
+ //  }
+ // #endif
  PetscFunctionReturn(0);
 }
 

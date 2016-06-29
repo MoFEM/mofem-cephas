@@ -113,10 +113,10 @@ boost::shared_ptr<SideNumber> RefElement_PRISM::get_side_number_ptr(Interface &m
   // use moab to get sense, side and offset
   MoABErrorCode rval;
   int side_number,sense,offset;
-  rval = moab.side_number(sPtr->ent,ent,side_number,sense,offset); MOAB_THROW(rval);
+  rval = moab.side_number(sPtr->ent,ent,side_number,sense,offset);
 
   // it has to be degenerated prism, get sense from nodes topology
-  if(side_number==-1) {
+  if(side_number==-1 || rval != MB_SUCCESS) {
 
     if(moab.type_from_handle(ent)==MBVERTEX) {
       THROW_MESSAGE(

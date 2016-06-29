@@ -245,11 +245,26 @@ int main(int argc, char *argv[]) {
   ierr = VecMax(T,NULL,&pointwisenorm);
   std::cout << "\n The Global Pointwise Norm of error for this problem is : " << pointwisenorm << std::endl;
 
-  PetscViewer viewer;
-  PetscViewerASCIIOpen(PETSC_COMM_WORLD,"thermal_with_analytical_bc.txt",&viewer);
-  ierr = VecChop(T,1e-4); CHKERRQ(ierr);
-  ierr = VecView(T,viewer); CHKERRQ(ierr);
-  ierr = PetscViewerDestroy(&viewer); CHKERRQ(ierr);
+  // PetscViewer viewer;
+  // PetscViewerASCIIOpen(PETSC_COMM_WORLD,"thermal_with_analytical_bc.txt",&viewer);
+  // ierr = VecChop(T,1e-4); CHKERRQ(ierr);
+  // ierr = VecView(T,viewer); CHKERRQ(ierr);
+  // ierr = PetscViewerDestroy(&viewer); CHKERRQ(ierr);
+
+
+  double sum = 0;
+  ierr = VecSum(T,&sum); CHKERRQ(ierr);
+  ierr = PetscPrintf(PETSC_COMM_WORLD,"sum  = %9.8e\n",sum); CHKERRQ(ierr);
+  double fnorm;
+  ierr = VecNorm(T,NORM_2,&fnorm); CHKERRQ(ierr);
+  ierr = PetscPrintf(PETSC_COMM_WORLD,"fnorm  = %9.8e\n",fnorm); CHKERRQ(ierr);
+  if(fabs(sum+6.46079983e-01)>1e-7) {
+    SETERRQ(PETSC_COMM_WORLD,MOFEM_ATOM_TEST_INVALID,"Failed to pass test");
+  }
+  if(fabs(fnorm-4.26080052e+00)>1e-6) {
+    SETERRQ(PETSC_COMM_WORLD,MOFEM_ATOM_TEST_INVALID,"Failed to pass test");
+  }
+
 
   if(debug) {
 

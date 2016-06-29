@@ -37,19 +37,9 @@ if(ADOL-C_LIBRARY)
     mofem_cblas
     ${MoFEM_PROJECT_LIBS})
 
-  configure_file(
-    "${UM_SOURCE_DIR}/convective_mass_element/atom_tests/convective_matrix.sh.in"
-    "${CMAKE_CURRENT_SOURCE_DIR}/convective_matrix.sh"
-    @ONLY
-  )
-  file(COPY convective_matrix.sh
-    DESTINATION ${CMAKE_CURRENT_BINARY_DIR}
-    FILE_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_EXECUTE)
-
   cm_export_file("LShape.cub" export_files_convective_matrix)
-  add_test(convective_matrix convective_matrix.sh)
-  add_test(convective_matrix_compare ${CMAKE_COMMAND} -E compare_files
-    ${CMAKE_SOURCE_DIR}/convective_mass_element/atom_tests/blessed_files/convective_matrix.txt
-    ${CMAKE_BINARY_DIR}/convective_mass_element/atom_tests/convective_matrix.txt)
+  add_test(convective_matrix
+    ${MoFEM_MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/convective_matrix -my_file LShape.cub
+  )
 
 endif(ADOL-C_LIBRARY)

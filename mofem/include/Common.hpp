@@ -139,61 +139,14 @@ namespace MoFEM {
 
   typedef std::vector<boost::shared_ptr<MatrixDouble> > ShapeFunctionBasesVector;
 
-  #if PETSC_VERSION_GE(3,6,4)
-
-  DEPRECATED inline PetscErrorCode  PetscOptionsGetInt(PetscOptions *,const char pre[],const char name[],PetscInt *ivalue,PetscBool  *set) {
-    PetscErrorCode ierr;
-    PetscFunctionBegin;
-    ierr = ::PetscOptionsGetInt(pre,name,ivalue,set); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
+  template<class X>
+  inline std::string toString(X x) {
+    std::ostringstream buffer;
+    buffer << x;
+    return buffer.str();
   }
 
-  DEPRECATED inline PetscErrorCode PetscOptionsGetReal(PetscOptions *,const char pre[],const char name[],PetscReal *dval,PetscBool *set) {
-    PetscErrorCode ierr;
-    PetscFunctionBegin;
-    ierr  = ::PetscOptionsGetReal(pre,name,dval,set); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
-  }
-
-  DEPRECATED inline PetscErrorCode PetscOptionsGetScalar(PetscOptions *,const char pre[],const char name[],PetscScalar *dval,PetscBool *set) {
-    PetscErrorCode ierr;
-    PetscFunctionBegin;
-    ierr  = ::PetscOptionsGetScalar(pre,name,dval,set); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
-  }
-
-  DEPRECATED inline PetscErrorCode PetscOptionsGetString(PetscOptions *,const char pre[],const char name[],char str[],size_t size,PetscBool *set) {
-    PetscErrorCode ierr;
-    PetscFunctionBegin;
-    ierr  = ::PetscOptionsGetString(pre,name,str,size,set); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
-  }
-
-  DEPRECATED inline PetscErrorCode PetscOptionsGetBool(PetscOptions *,const char pre[],const char name[],PetscBool  *bval,PetscBool *set) {
-    PetscErrorCode ierr;
-    PetscFunctionBegin;
-    ierr  = ::PetscOptionsGetBool(pre,name,bval,set); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
-  }
-
-  DEPRECATED inline PetscErrorCode PetscOptionsGetRealArray(PetscOptions *,const char pre[],const char name[],PetscReal dval[],PetscInt *nmax,PetscBool *set) {
-    PetscErrorCode ierr;
-    PetscFunctionBegin;
-    ierr  = ::PetscOptionsGetRealArray(pre,name,dval,nmax,set); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
-  }
-
-  DEPRECATED inline PetscErrorCode PetscOptionsGetEList(
-    PetscOptions *,const char pre[],const char name[],const char*const* list,PetscInt next,PetscInt *value,PetscBool *set
-  ) {
-    PetscErrorCode ierr;
-    PetscFunctionBegin;
-    ierr  = ::PetscOptionsGetEList(pre,name,list,next,value,set); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
-  }
-
-
-  #elif PETSC_VERSION_GE(3,6,4)
+  #if PETSC_VERSION_GE(3,7,0)
 
   DEPRECATED inline PetscErrorCode  PetscOptionsGetInt(const char pre[],const char name[],PetscInt *ivalue,PetscBool  *set) {
     PetscErrorCode ierr;
@@ -244,6 +197,96 @@ namespace MoFEM {
     PetscFunctionBegin;
     ierr  = ::PetscOptionsGetEList(PETSC_NULL,pre,name,list,next,value,set); CHKERRQ(ierr);
     PetscFunctionReturn(0);
+  }
+
+  DEPRECATED inline PetscErrorCode PetscOptionsGetIntArray(
+    const char pre[],const char name[],PetscInt dvalue[],PetscInt *nmax,PetscBool  *set
+  ) {
+    PetscErrorCode ierr;
+    PetscFunctionBegin;
+    ierr = ::PetscOptionsGetIntArray(PETSC_NULL,pre,name,dvalue,nmax,set); CHKERRQ(ierr);
+    PetscFunctionReturn(0);
+  }
+
+  DEPRECATED inline PetscErrorCode PetscOptionsGetScalarArray(
+    const char pre[],const char name[],PetscScalar dvalue[],PetscInt *nmax,PetscBool  *set
+  ) {
+    PetscErrorCode ierr;
+    PetscFunctionBegin;
+    ierr = ::PetscOptionsGetScalarArray(PETSC_NULL,pre,name,dvalue,nmax,set); CHKERRQ(ierr);
+    PetscFunctionReturn(0);
+  }
+
+  #else
+
+  inline PetscErrorCode  PetscOptionsGetInt(PetscOptions *,const char pre[],const char name[],PetscInt *ivalue,PetscBool  *set) {
+    PetscErrorCode ierr;
+    PetscFunctionBegin;
+    ierr = ::PetscOptionsGetInt(pre,name,ivalue,set); CHKERRQ(ierr);
+    PetscFunctionReturn(0);
+  }
+
+  inline PetscErrorCode PetscOptionsGetReal(PetscOptions *,const char pre[],const char name[],PetscReal *dval,PetscBool *set) {
+    PetscErrorCode ierr;
+    PetscFunctionBegin;
+    ierr  = ::PetscOptionsGetReal(pre,name,dval,set); CHKERRQ(ierr);
+    PetscFunctionReturn(0);
+  }
+
+  inline PetscErrorCode PetscOptionsGetScalar(PetscOptions *,const char pre[],const char name[],PetscScalar *dval,PetscBool *set) {
+    PetscErrorCode ierr;
+    PetscFunctionBegin;
+    ierr  = ::PetscOptionsGetScalar(pre,name,dval,set); CHKERRQ(ierr);
+    PetscFunctionReturn(0);
+  }
+
+  inline PetscErrorCode PetscOptionsGetString(PetscOptions *,const char pre[],const char name[],char str[],size_t size,PetscBool *set) {
+    PetscErrorCode ierr;
+    PetscFunctionBegin;
+    ierr  = ::PetscOptionsGetString(pre,name,str,size,set); CHKERRQ(ierr);
+    PetscFunctionReturn(0);
+  }
+
+  inline PetscErrorCode PetscOptionsGetBool(PetscOptions *,const char pre[],const char name[],PetscBool  *bval,PetscBool *set) {
+    PetscErrorCode ierr;
+    PetscFunctionBegin;
+    ierr  = ::PetscOptionsGetBool(pre,name,bval,set); CHKERRQ(ierr);
+    PetscFunctionReturn(0);
+  }
+
+  inline PetscErrorCode PetscOptionsGetRealArray(PetscOptions *,const char pre[],const char name[],PetscReal dval[],PetscInt *nmax,PetscBool *set) {
+    PetscErrorCode ierr;
+    PetscFunctionBegin;
+    ierr  = ::PetscOptionsGetRealArray(pre,name,dval,nmax,set); CHKERRQ(ierr);
+    PetscFunctionReturn(0);
+  }
+
+  inline PetscErrorCode PetscOptionsGetEList(
+    PetscOptions *,const char pre[],const char name[],const char*const* list,PetscInt next,PetscInt *value,PetscBool *set
+  ) {
+    PetscErrorCode ierr;
+    PetscFunctionBegin;
+    ierr  = ::PetscOptionsGetEList(pre,name,list,next,value,set); CHKERRQ(ierr);
+    PetscFunctionReturn(0);
+  }
+
+  inline PetscErrorCode PetscOptionsGetIntArray(
+    PetscOptions options,const char pre[],const char name[],PetscInt dvalue[],PetscInt *nmax,PetscBool  *set
+  ) {
+    PetscErrorCode ierr;
+    PetscFunctionBegin;
+    ierr = ::PetscOptionsGetIntArray(pre,name,dvalue,nmax,set); CHKERRQ(ierr);
+    PetscFunctionReturn(0);
+  }
+
+  inline PetscErrorCode PetscOptionsGetScalarArray(
+    PetscOptions options,const char pre[],const char name[],PetscScalar dvalue[],PetscInt *nmax,PetscBool  *set
+  ) {
+    PetscErrorCode ierr;
+    PetscFunctionBegin;
+    ierr = ::PetscOptionsGetScalarArray(pre,name,dvalue,nmax,set); CHKERRQ(ierr);
+    PetscFunctionReturn(0);
+
   }
 
   #endif
