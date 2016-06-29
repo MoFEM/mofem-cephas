@@ -210,7 +210,7 @@ namespace MoFEM {
     PetscFunctionReturn(0);
   }
 
-  #elif
+  #else
 
   inline PetscErrorCode  PetscOptionsGetInt(PetscOptions *,const char pre[],const char name[],PetscInt *ivalue,PetscBool  *set) {
     PetscErrorCode ierr;
