@@ -273,7 +273,7 @@ namespace MoFEM {
   }
 
   inline PetscErrorCode PetscOptionsGetScalarArray(
-    PetscOptions options,PetscOptions options,const char pre[],const char name[],PetscScalar dvalue[],PetscInt *nmax,PetscBool  *set
+    PetscOptions options,const char pre[],const char name[],PetscScalar dvalue[],PetscInt *nmax,PetscBool  *set
   ) {
     PetscErrorCode ierr;
     PetscFunctionBegin;
