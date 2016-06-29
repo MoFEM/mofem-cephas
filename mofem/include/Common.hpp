@@ -139,6 +139,13 @@ namespace MoFEM {
 
   typedef std::vector<boost::shared_ptr<MatrixDouble> > ShapeFunctionBasesVector;
 
+  template<class X>
+  inline std::string toString(X x) {
+    std::ostringstream buffer;
+    buffer << x;
+    return buffer.str();
+  }
+
   #if PETSC_VERSION_GE(3,7,0)
 
   DEPRECATED inline PetscErrorCode  PetscOptionsGetInt(const char pre[],const char name[],PetscInt *ivalue,PetscBool  *set) {

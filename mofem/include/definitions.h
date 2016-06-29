@@ -366,6 +366,6 @@ DEPRECATED void macro_is_depracted_using_deprecated_function();
  * \brief Convert number to string
  * @param  x number
  */
-#define SSTR( x ) ((std::ostringstream() << std::dec << x)).str()
+#define SSTR(x) toString(x)
 
 #endif //__DEFINITONS_H__
