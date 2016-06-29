@@ -173,6 +173,9 @@ int main(int argc, char *argv[]) {
   ierr = recorder_ptr->add_series_recorder("THEMP_SERIES"); CHKERRQ(ierr);
   ierr = recorder_ptr->initialize_series_recorder("THEMP_SERIES"); CHKERRQ(ierr);
 
+  #if PETSC_VERSION_GE(3,7,0)
+  ierr = TSSetExactFinalTime(ts,TS_EXACTFINALTIME_STEPOVER); CHKERRQ(ierr);
+  #endif
   ierr = TSSolve(ts,T); CHKERRQ(ierr);
   ierr = TSGetTime(ts,&ftime); CHKERRQ(ierr);
 
@@ -188,20 +191,42 @@ int main(int argc, char *argv[]) {
     "steps %D (%D rejected, %D SNES fails), ftime %g, nonlinits %D, linits %D\n",
     steps,rejects,snesfails,ftime,nonlinits,linits);
 
-  PetscViewer viewer;
-  PetscViewerASCIIOpen(PETSC_COMM_WORLD,"thermal_elem_unsteady.txt",&viewer);
+  // PetscViewer viewer;
+  // PetscViewerASCIIOpen(PETSC_COMM_WORLD,"thermal_elem_unsteady.txt",&viewer);
+
+  double sum = 0;
+  double fnorm = 0;
 
   for(_IT_SERIES_STEPS_BY_NAME_FOR_LOOP_(recorder_ptr,"THEMP_SERIES",sit)) {
 
     ierr = recorder_ptr->load_series_data("THEMP_SERIES",sit->get_step_number()); CHKERRQ(ierr);
     ierr = m_field.set_local_ghost_vector("TEST_PROBLEM",ROW,T,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 
-    ierr = VecChop(T,1e-4); CHKERRQ(ierr);
-    ierr = VecView(T,viewer); CHKERRQ(ierr);
+    double sum0;
+    ierr = VecSum(T,&sum0); CHKERRQ(ierr);
+    ierr = PetscPrintf(PETSC_COMM_WORLD,"sum0  = %9.8e\n",sum0); CHKERRQ(ierr);
+    double fnorm0;
+    ierr = VecNorm(T,NORM_2,&fnorm0); CHKERRQ(ierr);
+    ierr = PetscPrintf(PETSC_COMM_WORLD,"fnorm0  = %9.8e\n",fnorm0); CHKERRQ(ierr);
+
+    sum += sum0;
+    fnorm += fnorm0;
+
+    // ierr = VecChop(T,1e-4); CHKERRQ(ierr);
+    // ierr = VecView(T,viewer); CHKERRQ(ierr);
 
   }
+  ierr = PetscPrintf(PETSC_COMM_WORLD,"sum  = %9.8e\n",sum); CHKERRQ(ierr);
+  ierr = PetscPrintf(PETSC_COMM_WORLD,"fnorm  = %9.8e\n",fnorm); CHKERRQ(ierr);
+  if(fabs(sum+1.32314077e+01)>1e-7) {
+    SETERRQ(PETSC_COMM_WORLD,MOFEM_ATOM_TEST_INVALID,"Failed to pass test");
+  }
+  if(fabs(fnorm-4.59664623e+00)>1e-6) {
+    SETERRQ(PETSC_COMM_WORLD,MOFEM_ATOM_TEST_INVALID,"Failed to pass test");
+  }
 
-  ierr = PetscViewerDestroy(&viewer); CHKERRQ(ierr);
+
+  // ierr = PetscViewerDestroy(&viewer); CHKERRQ(ierr);
 
 
   /*PostProcVertexMethod ent_method(moab,"TEMP");

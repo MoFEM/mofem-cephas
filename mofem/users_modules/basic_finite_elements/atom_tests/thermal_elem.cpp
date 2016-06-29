@@ -179,11 +179,25 @@ int main(int argc, char *argv[]) {
   ierr = m_field.set_global_ghost_vector("TEST_PROBLEM",ROW,T,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   //ierr = VecView(F,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
 
-  PetscViewer viewer;
-  PetscViewerASCIIOpen(PETSC_COMM_WORLD,"thermal_elem.txt",&viewer);
-  ierr = VecChop(T,1e-4); CHKERRQ(ierr);
-  ierr = VecView(T,viewer); CHKERRQ(ierr);
-  ierr = PetscViewerDestroy(&viewer); CHKERRQ(ierr);
+  // PetscViewer viewer;
+  // PetscViewerASCIIOpen(PETSC_COMM_WORLD,"thermal_elem.txt",&viewer);
+  // ierr = VecChop(T,1e-4); CHKERRQ(ierr);
+  // ierr = VecView(T,viewer); CHKERRQ(ierr);
+  // ierr = PetscViewerDestroy(&viewer); CHKERRQ(ierr);
+
+  double sum = 0;
+  ierr = VecSum(F,&sum); CHKERRQ(ierr);
+  ierr = PetscPrintf(PETSC_COMM_WORLD,"sum  = %9.8f\n",sum); CHKERRQ(ierr);
+  double fnorm;
+  ierr = VecNorm(F,NORM_2,&fnorm); CHKERRQ(ierr);
+  ierr = PetscPrintf(PETSC_COMM_WORLD,"fnorm  = %9.8e\n",fnorm); CHKERRQ(ierr);
+  if(fabs(sum+0.59583333)>1e-7) {
+    SETERRQ(PETSC_COMM_WORLD,MOFEM_ATOM_TEST_INVALID,"Failed to pass test");
+  }
+  if(fabs(fnorm-2.32872499e-01)>1e-6) {
+    SETERRQ(PETSC_COMM_WORLD,MOFEM_ATOM_TEST_INVALID,"Failed to pass test");
+  }
+
 
   /*PostProcVertexMethod ent_method(moab,"TEMP");
   ierr = m_field.loop_dofs("TEST_PROBLEM","TEMP",ROW,ent_method); CHKERRQ(ierr);

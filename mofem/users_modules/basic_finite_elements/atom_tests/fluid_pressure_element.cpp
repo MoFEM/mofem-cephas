@@ -149,7 +149,7 @@ int main(int argc, char *argv[]) {
 
   double sum = 0;
   ierr = VecSum(F,&sum); CHKERRQ(ierr);
-  ierr = PetscPrintf(PETSC_COMM_WORLD,"sum  = %4.3f\n",sum); CHKERRQ(ierr);
+  ierr = PetscPrintf(PETSC_COMM_WORLD,"sum  = %4.3e\n",sum); CHKERRQ(ierr);
   if(fabs(sum-1.0)>1e-8) {
     SETERRQ(PETSC_COMM_WORLD,MOFEM_ATOM_TEST_INVALID,"Failed to pass test");
   }

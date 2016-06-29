@@ -288,10 +288,24 @@ int main(int argc, char *argv[]) {
   PetscViewer viewer;
   ierr = PetscViewerASCIIOpen(PETSC_COMM_WORLD,"forces_and_sources_ultra_weak_transport.txt",&viewer); CHKERRQ(ierr);
 
-  const double chop = 1e-4;
-  ierr = VecChop(D,chop); CHKERRQ(ierr);
-  //VecView(D,PETSC_VIEWER_STDOUT_WORLD);
-  VecView(D,viewer);
+  // const double chop = 1e-4;
+  // ierr = VecChop(D,chop); CHKERRQ(ierr);
+  // //VecView(D,PETSC_VIEWER_STDOUT_WORLD);
+  // VecView(D,viewer);
+
+  double sum = 0;
+  ierr = VecSum(D,&sum); CHKERRQ(ierr);
+  ierr = PetscPrintf(PETSC_COMM_WORLD,"sum  = %9.8f\n",sum); CHKERRQ(ierr);
+  double fnorm;
+  ierr = VecNorm(D,NORM_2,&fnorm); CHKERRQ(ierr);
+  ierr = PetscPrintf(PETSC_COMM_WORLD,"fnorm  = %9.8e\n",fnorm); CHKERRQ(ierr);
+  if(fabs(sum-27.01171895)>1e-7) {
+    SETERRQ(PETSC_COMM_WORLD,MOFEM_ATOM_TEST_INVALID,"Failed to pass test");
+  }
+  if(fabs(fnorm-4.97066187e+00)>1e-7) {
+    SETERRQ(PETSC_COMM_WORLD,MOFEM_ATOM_TEST_INVALID,"Failed to pass test");
+  }
+
 
   ierr = PetscViewerDestroy(&viewer); CHKERRQ(ierr);
 
@@ -349,7 +363,7 @@ int main(int argc, char *argv[]) {
 
   const double eps = 1e-8;
   if(nrm2_F > eps) {
-    //SETERRQ(PETSC_COMM_SELF,MOFEM_ATOM_TEST_INVALID,"problem with residual");
+    SETERRQ(PETSC_COMM_SELF,MOFEM_ATOM_TEST_INVALID,"problem with residual");
   }
 
   ierr = ISDestroy(&dirchlet_ids); CHKERRQ(ierr);
