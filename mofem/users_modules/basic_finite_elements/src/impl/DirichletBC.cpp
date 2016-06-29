@@ -531,3 +531,75 @@ PetscErrorCode DirichletBCFromBlockSetFEMethodPreAndPostProc::iNitalize() {
   }
   PetscFunctionReturn(0);
 }
+
+
+PetscErrorCode DirichletBCFromBlockSetFEMethodPreAndPostProcWithFlags::iNitalize() {
+  PetscFunctionBegin;
+  if(mapZeroRows.empty() || !methodsOp.empty()) {
+    ParallelComm* pcomm = ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
+    for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BLOCKSET,it)) {
+      if(it->getName().compare(0,blocksetName.length(),blocksetName) == 0) {
+        std::vector<double> mydata;
+        ierr = it->get_attributes(mydata); CHKERRQ(ierr);
+        ublas::vector<double> scaled_values(mydata.size());
+        for(unsigned int ii = 0;ii<mydata.size();ii++) {
+          scaled_values[ii] = mydata[ii];
+        }
+
+        ierr = MethodForForceScaling::applyScale(this,methodsOp,scaled_values); CHKERRQ(ierr);
+        for(int dim = 0;dim<3;dim++) {
+          Range ents;
+          ierr = it->get_cubit_msId_entities_by_dimension(mField.get_moab(),dim,ents,true); CHKERRQ(ierr);
+          if(dim>1) {
+            Range edges;
+            ierr = mField.get_moab().get_adjacencies(ents,1,false,edges,Interface::UNION); CHKERRQ(ierr);
+            ents.insert(edges.begin(),edges.end());
+          }
+          if(dim>0) {
+            Range nodes;
+            rval = mField.get_moab().get_connectivity(ents,nodes,true); CHKERRQ_MOAB(rval);
+            ents.insert(nodes.begin(),nodes.end());
+          }
+          for(Range::iterator eit = ents.begin();eit!=ents.end();eit++) {
+            for(_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_NAME_ENT_PART_FOR_LOOP_(problemPtr,fieldName,*eit,pcomm->rank(),dof_ptr)) {
+              NumeredDofEntity *dof = dof_ptr->get();
+              if(dof->getEntType() == MBVERTEX) {
+                if(dof->get_dof_coeff_idx() == 0) {
+                  if(mydata[3] == 1)
+                  mapZeroRows[dof->get_petsc_gloabl_dof_idx()] = scaled_values[0];
+                }
+                if(dof->get_dof_coeff_idx() == 1) {
+                  if(mydata[4] == 1)
+                  mapZeroRows[dof->get_petsc_gloabl_dof_idx()] = scaled_values[1];
+                }
+                if(dof->get_dof_coeff_idx() == 2) {
+                  if(mydata[5] == 1)
+                  mapZeroRows[dof->get_petsc_gloabl_dof_idx()] = scaled_values[2];
+                }
+              } else {
+                if(dof->get_dof_coeff_idx() == 0) {
+                  mapZeroRows[dof->get_petsc_gloabl_dof_idx()] = 0;
+                }
+                if(dof->get_dof_coeff_idx() == 1) {
+                  mapZeroRows[dof->get_petsc_gloabl_dof_idx()] = 0;
+                }
+                if(dof->get_dof_coeff_idx() == 2) {
+                  mapZeroRows[dof->get_petsc_gloabl_dof_idx()] = 0;
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+    dofsIndices.resize(mapZeroRows.size());
+    dofsValues.resize(mapZeroRows.size());
+    int ii = 0;
+    std::map<DofIdx,FieldData>::iterator mit = mapZeroRows.begin();
+    for(;mit!=mapZeroRows.end();mit++,ii++) {
+      dofsIndices[ii] = mit->first;
+      dofsValues[ii] = mit->second;
+    }
+  }
+  PetscFunctionReturn(0);
+}
