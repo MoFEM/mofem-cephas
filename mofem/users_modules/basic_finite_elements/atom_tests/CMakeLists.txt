@@ -88,10 +88,7 @@ target_link_libraries(fluid_pressure_element_atom
 )
 
 add_test(fluid_pressure_element_atom_test
-  ${MoFEM_MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/fluid_pressure_element_atom -my_file fluid_presssure_cub_test.h5m)
-add_test(fluid_pressure_element_atom_test_compare ${CMAKE_COMMAND} -E compare_files
-  ${CMAKE_CURRENT_SOURCE_DIR}/blessed_files/fluid_pressure_element.txt
-  ${CMAKE_CURRENT_BINARY_DIR}/fluid_pressure_element.txt
+  ${MoFEM_MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/fluid_pressure_element_atom -my_file fluid_presssure_cub_test.h5m
 )
 
 # add example test for temperature element
