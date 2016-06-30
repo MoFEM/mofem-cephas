@@ -41,7 +41,7 @@
 struct NonlinearElasticElement {
 
   /// \brief  definition of volume element
-  struct MyVolumeFE: public VolumeElementForcesAndSourcesCore {
+  struct MyVolumeFE: public MoFEM::VolumeElementForcesAndSourcesCore {
 
     Mat A;
     Vec F;
@@ -178,7 +178,7 @@ struct NonlinearElasticElement {
 
     int gG;	///< Gauss point number
     CommonData *commonDataPtr; ///< common data shared between entities (f.e. field values at Gauss pts.)
-    VolumeElementForcesAndSourcesCore::UserDataOperator *opPtr; ///< pointer to finite element tetrahedral operator
+    MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator *opPtr; ///< pointer to finite element tetrahedral operator
 
     PetscErrorCode calculateC_CauchyDefromationTensor() {
       PetscFunctionBegin;
@@ -322,7 +322,7 @@ struct NonlinearElasticElement {
 
   };
 
-  struct OpGetDataAtGaussPts: public VolumeElementForcesAndSourcesCore::UserDataOperator {
+  struct OpGetDataAtGaussPts: public MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator {
 
     std::vector<VectorDouble > &valuesAtGaussPts;
     std::vector<MatrixDouble > &gradientAtGaussPts;
@@ -345,7 +345,7 @@ struct NonlinearElasticElement {
     OpGetCommonDataAtGaussPts(const std::string field_name,CommonData &common_data);
   };
 
-  struct OpJacobianPiolaKirchhoffStress: public VolumeElementForcesAndSourcesCore::UserDataOperator {
+  struct OpJacobianPiolaKirchhoffStress: public MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator {
 
     BlockData &dAta;
     CommonData &commonData;
@@ -389,7 +389,7 @@ struct NonlinearElasticElement {
 
   };
 
-  struct OpRhsPiolaKirchhoff: public VolumeElementForcesAndSourcesCore::UserDataOperator {
+  struct OpRhsPiolaKirchhoff: public MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator {
 
     BlockData &dAta;
     CommonData &commonData;
@@ -410,7 +410,7 @@ struct NonlinearElasticElement {
 
   };
 
-  struct OpEnergy: public VolumeElementForcesAndSourcesCore::UserDataOperator {
+  struct OpEnergy: public MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator {
 
     BlockData &dAta;
     CommonData &commonData;
@@ -424,7 +424,7 @@ struct NonlinearElasticElement {
 
   };
 
-  struct OpLhsPiolaKirchhoff_dx: public VolumeElementForcesAndSourcesCore::UserDataOperator {
+  struct OpLhsPiolaKirchhoff_dx: public MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator {
 
     BlockData &dAta;
     CommonData &commonData;

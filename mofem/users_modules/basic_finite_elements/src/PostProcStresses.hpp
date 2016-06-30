@@ -27,7 +27,7 @@
   #error "MoFEM need to be compiled with ADOL-C"
 #endif
 
-struct PostPorcStress: public VolumeElementForcesAndSourcesCore::UserDataOperator {
+struct PostPorcStress: public MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator {
 
   Interface &postProcMesh;
   std::vector<EntityHandle> &mapGaussPts;
@@ -44,7 +44,7 @@ struct PostPorcStress: public VolumeElementForcesAndSourcesCore::UserDataOperato
     PostProcVolumeOnRefinedMesh::CommonData &common_data,
     bool field_disp = false
   ):
-  VolumeElementForcesAndSourcesCore::UserDataOperator(field_name,ForcesAndSurcesCore::UserDataOperator::OPROW),
+  MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator(field_name,ForcesAndSurcesCore::UserDataOperator::OPROW),
   postProcMesh(post_proc_mesh),
   mapGaussPts(map_gauss_pts),
   dAta(data),

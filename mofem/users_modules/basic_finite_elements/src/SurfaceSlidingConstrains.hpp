@@ -192,13 +192,13 @@ struct SurfaceSlidingConstrains {
 
   FieldInterface &mField;
 
-  struct MyTriangleFE: public FaceElementForcesAndSourcesCore {
+  struct MyTriangleFE: public MoFEM::FaceElementForcesAndSourcesCore {
 
     Mat B;
     Vec F;
 
     MyTriangleFE(FieldInterface &m_field):
-    FaceElementForcesAndSourcesCore(m_field),
+    MoFEM::FaceElementForcesAndSourcesCore(m_field),
     B(PETSC_NULL),
     F(PETSC_NULL)
     {}
@@ -208,7 +208,7 @@ struct SurfaceSlidingConstrains {
       PetscFunctionBegin;
       PetscErrorCode ierr;
 
-      ierr = FaceElementForcesAndSourcesCore::preProcess(); CHKERRQ(ierr);
+      ierr = MoFEM::FaceElementForcesAndSourcesCore::preProcess(); CHKERRQ(ierr);
 
       if(B != PETSC_NULL) {
         snes_B = B;
@@ -383,13 +383,13 @@ struct SurfaceSlidingConstrains {
 
   /** \brief Operator calculate material positions and tangent vectors to element surface
    */
-  struct OpPositions: public FaceElementForcesAndSourcesCore::UserDataOperator {
+  struct OpPositions: public MoFEM::FaceElementForcesAndSourcesCore::UserDataOperator {
 
     std::vector<AuxFunctions> &aUx;
     DriverElementOrientation &oRientation;
 
     OpPositions(const std::string field_name,std::vector<AuxFunctions> &aux,DriverElementOrientation &orientation):
-    FaceElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPCOL),
+    MoFEM::FaceElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPCOL),
     aUx(aux),
     oRientation(orientation)
     {}
@@ -441,12 +441,12 @@ struct SurfaceSlidingConstrains {
 
   /** \brief Operator calculate Lagrange multiplier values at integration points
   */
-  struct OpLambda: public FaceElementForcesAndSourcesCore::UserDataOperator {
+  struct OpLambda: public MoFEM::FaceElementForcesAndSourcesCore::UserDataOperator {
 
     std::vector<AuxFunctions> &aUx;
 
     OpLambda(const std::string field_name,vector <AuxFunctions> &aux):
-    FaceElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROW),
+    MoFEM::FaceElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROW),
     aUx(aux) {
     }
 
@@ -503,13 +503,13 @@ struct SurfaceSlidingConstrains {
 
   /** \brief Operator calculate \f$\overline{\lambda}\mathbf{C}^\mathsf{T}\f$
   */
-  struct OpF: public FaceElementForcesAndSourcesCore::UserDataOperator {
+  struct OpF: public MoFEM::FaceElementForcesAndSourcesCore::UserDataOperator {
 
     std::vector<AuxFunctions> &aUx;
     DriverElementOrientation &oRientation;
 
     OpF(const std::string field_name,std::vector<AuxFunctions> &aux,DriverElementOrientation &orientation):
-    FaceElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROW),
+    MoFEM::FaceElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROW),
     aUx(aux),
     oRientation(orientation)
     {}
@@ -594,13 +594,13 @@ struct SurfaceSlidingConstrains {
 
   };
 
-  struct OpG: public FaceElementForcesAndSourcesCore::UserDataOperator {
+  struct OpG: public MoFEM::FaceElementForcesAndSourcesCore::UserDataOperator {
 
     std::vector<AuxFunctions> &aUx;
     DriverElementOrientation &oRientation;
 
     OpG(const std::string field_name,std::vector<AuxFunctions> &aux,DriverElementOrientation &orientation):
-    FaceElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROW),
+    MoFEM::FaceElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROW),
     aUx(aux),
     oRientation(orientation)
     {}
@@ -676,7 +676,7 @@ struct SurfaceSlidingConstrains {
 
   /** \brief Operator calculating matrix \b C
   */
-  struct OpC: public FaceElementForcesAndSourcesCore::UserDataOperator {
+  struct OpC: public MoFEM::FaceElementForcesAndSourcesCore::UserDataOperator {
 
     std::vector<AuxFunctions> &aUx;
     DriverElementOrientation &oRientation;
@@ -688,7 +688,7 @@ struct SurfaceSlidingConstrains {
       std::vector<AuxFunctions> &aux,
       DriverElementOrientation &orientation,
       bool assemble_transpose):
-    FaceElementForcesAndSourcesCore::UserDataOperator(
+    MoFEM::FaceElementForcesAndSourcesCore::UserDataOperator(
       lambda_field_name,
       positions_field_name,
       UserDataOperator::OPROWCOL
@@ -807,13 +807,13 @@ struct SurfaceSlidingConstrains {
 
   /** \brief Operator calculating matrix \b B
   */
-  struct OpB: public FaceElementForcesAndSourcesCore::UserDataOperator {
+  struct OpB: public MoFEM::FaceElementForcesAndSourcesCore::UserDataOperator {
 
     std::vector<AuxFunctions> &aUx;
     DriverElementOrientation &oRientation;
 
     OpB(const std::string field_name,std::vector<AuxFunctions> &aux,DriverElementOrientation &orientation):
-    FaceElementForcesAndSourcesCore::UserDataOperator(
+    MoFEM::FaceElementForcesAndSourcesCore::UserDataOperator(
       field_name,field_name,UserDataOperator::OPROWCOL
     ),
     aUx(aux),
@@ -913,7 +913,7 @@ struct SurfaceSlidingConstrains {
 
   /** \brief Operator calculating matrix \b A
   */
-  struct OpA: public FaceElementForcesAndSourcesCore::UserDataOperator {
+  struct OpA: public MoFEM::FaceElementForcesAndSourcesCore::UserDataOperator {
 
     std::vector<AuxFunctions> &aUx;
     DriverElementOrientation &oRientation;
@@ -924,7 +924,7 @@ struct SurfaceSlidingConstrains {
       std::vector<AuxFunctions> &aux,
       DriverElementOrientation &orientation
     ):
-    FaceElementForcesAndSourcesCore::UserDataOperator(
+    MoFEM::FaceElementForcesAndSourcesCore::UserDataOperator(
       lagrange_multipliers_field_name,field_name,UserDataOperator::OPROWCOL
     ),
     aUx(aux),
