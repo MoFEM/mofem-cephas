@@ -27,7 +27,7 @@ struct NodalForce {
   FieldInterface &mField;
   NodalForce(FieldInterface &m_field): mField(m_field),fe(m_field) {}
 
-  struct MyFE: public VertexElementForcesAndSourcesCore {
+  struct MyFE: public MoFEM::VertexElementForcesAndSourcesCore {
     MyFE(FieldInterface &m_field);
   };
 
@@ -43,7 +43,7 @@ struct NodalForce {
   boost::ptr_vector<MethodForForceScaling> methodsOp;
 
   /// \brief Operator to assemble nodal force into right hand side vector
-  struct OpNodalForce: public VertexElementForcesAndSourcesCore::UserDataOperator {
+  struct OpNodalForce: public MoFEM::VertexElementForcesAndSourcesCore::UserDataOperator {
 
     Vec F;
     bool useSnesF;

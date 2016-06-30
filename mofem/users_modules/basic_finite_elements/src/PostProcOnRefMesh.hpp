@@ -42,7 +42,7 @@ struct PostProcCommonOnRefMesh {
     std::map<std::string,std::vector<ublas::matrix<double> > > gradMap;
   };
 
-  struct OpGetFieldValues: public ForcesAndSurcesCore::UserDataOperator {
+  struct OpGetFieldValues: public MoFEM::ForcesAndSurcesCore::UserDataOperator {
 
     Interface &postProcMesh;
     std::vector<EntityHandle> &mapGaussPts;
@@ -58,7 +58,7 @@ struct PostProcCommonOnRefMesh {
       CommonData &common_data,
       Vec v = PETSC_NULL
     ):
-    ForcesAndSurcesCore::UserDataOperator(field_name,UserDataOperator::OPCOL),
+    MoFEM::ForcesAndSurcesCore::UserDataOperator(field_name,UserDataOperator::OPCOL),
     postProcMesh(post_proc_mesh),
     mapGaussPts(map_gauss_pts),
     commonData(common_data),
@@ -76,7 +76,7 @@ struct PostProcCommonOnRefMesh {
 
   };
 
-  struct OpGetFieldGradientValues: public ForcesAndSurcesCore::UserDataOperator {
+  struct OpGetFieldGradientValues: public MoFEM::ForcesAndSurcesCore::UserDataOperator {
 
     Interface &postProcMesh;
     std::vector<EntityHandle> &mapGaussPts;
@@ -92,7 +92,7 @@ struct PostProcCommonOnRefMesh {
       CommonData &common_data,
       Vec v = PETSC_NULL
     ):
-    ForcesAndSurcesCore::UserDataOperator(field_name,UserDataOperator::OPCOL),
+    MoFEM::ForcesAndSurcesCore::UserDataOperator(field_name,UserDataOperator::OPCOL),
     postProcMesh(post_proc_mesh),
     mapGaussPts(map_gauss_pts),
     commonData(common_data),
@@ -207,7 +207,7 @@ struct PostProcTemplateOnRefineMesh: public ELEMENT {
 /** \brief Post processing
   * \ingroup mofem_fs_post_proc
   */
-struct PostProcVolumeOnRefinedMesh: public PostProcTemplateOnRefineMesh<VolumeElementForcesAndSourcesCore> {
+struct PostProcVolumeOnRefinedMesh: public PostProcTemplateOnRefineMesh<MoFEM::VolumeElementForcesAndSourcesCore> {
 
   bool tenNodesPostProcTets;
   int nbOfRefLevels;
@@ -217,7 +217,7 @@ struct PostProcVolumeOnRefinedMesh: public PostProcTemplateOnRefineMesh<VolumeEl
     bool ten_nodes_post_proc_tets = true,
     int nb_ref_levels = -1
   ):
-  PostProcTemplateOnRefineMesh<VolumeElementForcesAndSourcesCore>(m_field),
+  PostProcTemplateOnRefineMesh<MoFEM::VolumeElementForcesAndSourcesCore>(m_field),
   tenNodesPostProcTets(ten_nodes_post_proc_tets),
   nbOfRefLevels(nb_ref_levels) {
   }
@@ -285,7 +285,7 @@ struct PostProcVolumeOnRefinedMesh: public PostProcTemplateOnRefineMesh<VolumeEl
   */
   PetscErrorCode addHdivFunctionsPostProc(const std::string field_name);
 
-  struct OpHdivFunctions: public VolumeElementForcesAndSourcesCore::UserDataOperator {
+  struct OpHdivFunctions: public MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator {
 
     Interface &postProcMesh;
     std::vector<EntityHandle> &mapGaussPts;
@@ -314,7 +314,7 @@ struct PostProcVolumeOnRefinedMesh: public PostProcTemplateOnRefineMesh<VolumeEl
 */
 DEPRECATED typedef PostProcVolumeOnRefinedMesh PostPocOnRefinedMesh;
 
-struct PostProcFatPrismOnRefinedMesh: public PostProcTemplateOnRefineMesh<FatPrismElementForcesAndSurcesCore> {
+struct PostProcFatPrismOnRefinedMesh: public PostProcTemplateOnRefineMesh<MoFEM::FatPrismElementForcesAndSurcesCore> {
 
   bool tenNodesPostProcTets;
 
@@ -322,7 +322,7 @@ struct PostProcFatPrismOnRefinedMesh: public PostProcTemplateOnRefineMesh<FatPri
     FieldInterface &m_field,
     bool ten_nodes_post_proc_tets = true
   ):
-  PostProcTemplateOnRefineMesh<FatPrismElementForcesAndSurcesCore>(m_field),
+  PostProcTemplateOnRefineMesh<MoFEM::FatPrismElementForcesAndSurcesCore>(m_field),
   tenNodesPostProcTets(ten_nodes_post_proc_tets) {
   }
 
@@ -355,7 +355,7 @@ struct PostProcFatPrismOnRefinedMesh: public PostProcTemplateOnRefineMesh<FatPri
 
 };
 
-struct PostProcFaceOnRefinedMesh: public PostProcTemplateOnRefineMesh<FaceElementForcesAndSourcesCore> {
+struct PostProcFaceOnRefinedMesh: public PostProcTemplateOnRefineMesh<MoFEM::FaceElementForcesAndSourcesCore> {
 
   bool sixNodePostProcTris;
 
@@ -363,7 +363,7 @@ struct PostProcFaceOnRefinedMesh: public PostProcTemplateOnRefineMesh<FaceElemen
     FieldInterface &m_field,
     bool six_node_post_proc_tris = true
   ):
-  PostProcTemplateOnRefineMesh<FaceElementForcesAndSourcesCore>(m_field),
+  PostProcTemplateOnRefineMesh<MoFEM::FaceElementForcesAndSourcesCore>(m_field),
   sixNodePostProcTris(six_node_post_proc_tris) {
   }
 

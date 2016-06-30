@@ -26,8 +26,8 @@
 */
 struct ThermalStressElement {
 
-  struct MyVolumeFE: public VolumeElementForcesAndSourcesCore {
-    MyVolumeFE(FieldInterface &m_field): VolumeElementForcesAndSourcesCore(m_field) {}
+  struct MyVolumeFE: public MoFEM::VolumeElementForcesAndSourcesCore {
+    MyVolumeFE(FieldInterface &m_field): MoFEM::VolumeElementForcesAndSourcesCore(m_field) {}
     int getRule(int order) { return 2*(order-1); };
   };
 
@@ -56,12 +56,12 @@ struct ThermalStressElement {
   };
   CommonData commonData;
 
-  struct OpGetTemperatureAtGaussPts: public VolumeElementForcesAndSourcesCore::UserDataOperator {
+  struct OpGetTemperatureAtGaussPts: public MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator {
 
     CommonData &commonData;
     int verb;
     OpGetTemperatureAtGaussPts(const std::string field_name,CommonData &common_data,int _verb = 0):
-    VolumeElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROW),
+    MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROW),
     commonData(common_data),
     verb(_verb) {}
 
@@ -90,14 +90,14 @@ struct ThermalStressElement {
   };
 
 
-  struct OpThermalStressRhs: public VolumeElementForcesAndSourcesCore::UserDataOperator {
+  struct OpThermalStressRhs: public MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator {
 
     Vec F;
     BlockData &dAta;
     CommonData &commonData;
     int verb;
     OpThermalStressRhs(const std::string field_name,Vec _F,BlockData &data,CommonData &common_data,int _verb = 0):
-    VolumeElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROW),
+    MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROW),
     F(_F),
     dAta(data),
     commonData(common_data),

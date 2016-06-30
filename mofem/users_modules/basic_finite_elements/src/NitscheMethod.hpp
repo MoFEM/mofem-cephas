@@ -32,10 +32,10 @@
 */
 struct NitscheMethod {
 
-  struct MyFace: FaceElementForcesAndSourcesCore {
+  struct MyFace: MoFEM::FaceElementForcesAndSourcesCore {
     int addToRule;
     MyFace(FieldInterface &m_field):
-    FaceElementForcesAndSourcesCore(m_field),
+    MoFEM::FaceElementForcesAndSourcesCore(m_field),
     addToRule(0) {}
     int getRule(int order) { return order+addToRule; }
     /*int getRule(int order) { return -1; }
@@ -132,12 +132,12 @@ struct NitscheMethod {
 
   /** \brief Get integration pts data on face
   */
-  struct OpGetFaceData: FaceElementForcesAndSourcesCore::UserDataOperator {
+  struct OpGetFaceData: MoFEM::FaceElementForcesAndSourcesCore::UserDataOperator {
 
     CommonData &commonData;
 
     OpGetFaceData(CommonData &common_data):
-    FaceElementForcesAndSourcesCore::UserDataOperator("DISPLACEMENT",OPROW),
+    MoFEM::FaceElementForcesAndSourcesCore::UserDataOperator("DISPLACEMENT",OPROW),
     commonData(common_data) {
     }
 
@@ -210,7 +210,7 @@ struct NitscheMethod {
   };
 
   /// \brief Definition of volume element
-  struct MyVolumeFE: public VolumeElementForcesAndSourcesCore {
+  struct MyVolumeFE: public MoFEM::VolumeElementForcesAndSourcesCore {
 
     BlockData &blockData;
     CommonData &commonData;
@@ -227,7 +227,7 @@ struct NitscheMethod {
       BlockData &block_data,
       CommonData &common_data
     ):
-    VolumeElementForcesAndSourcesCore(m_field),
+    MoFEM::VolumeElementForcesAndSourcesCore(m_field),
     blockData(block_data),
     commonData(common_data),
     faceFE(m_field),
@@ -349,7 +349,7 @@ struct NitscheMethod {
 
   /** \brief Basic operated shared between all Nitsche operators
   */
-  struct OpBasicCommon: public VolumeElementForcesAndSourcesCore::UserDataOperator {
+  struct OpBasicCommon: public MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator {
 
     BlockData &nitscheBlockData;
     CommonData &nitscheCommonData;
@@ -362,7 +362,7 @@ struct NitscheMethod {
       bool field_disp,
       const char type
     ):
-    VolumeElementForcesAndSourcesCore::UserDataOperator(
+    MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator(
       field_name,type
     ),
     nitscheBlockData(nitsche_block_data),
