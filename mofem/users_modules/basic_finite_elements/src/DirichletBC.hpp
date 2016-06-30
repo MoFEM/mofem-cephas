@@ -142,7 +142,15 @@ struct FixBcAtEntities: public DisplacementBCFEMethodPreAndPostProc {
   * (or not using CUBIT building boundary conditions, e.g. Temperature or Displacements etc).
   * It can work for any Problem rank (1,2,3)
   *
-  * FIXME Show example form journal file how to add block set
+  *    Usage in Cubit for displacement:
+       block 1 surface 12
+       block 1 name "DISPLACEMENT_1"
+       block 1 attribute count 3
+       block 1 attribute index 1 0       # value for x direction
+       block 1 attribute index 2 2       # value for y direction
+       block 1 attribute index 3 0       # value for z direction
+
+      With above command we set displacement of 2 on y-direction and constrain x,z direction (0 displacement)
   *
 **/
 struct DirichletBCFromBlockSetFEMethodPreAndPostProc: public DisplacementBCFEMethodPreAndPostProc {
@@ -169,8 +177,23 @@ struct DirichletBCFromBlockSetFEMethodPreAndPostProc: public DisplacementBCFEMet
 /**
  * \brief Add boundary conditions form block set having 6 attributes
  *
- * FIXME: Detailed description how to use it.
- * FIXME Show example form journal file how to add block set
+ * First 3 values are magnitudes of dofs e.g. in x,y,z direction and next 3 are flags, respectively.
+ * If flag is false ( = 0), particular dof is not taken into account.
+    Usage in Cubit for displacement:
+     block 1 tri 28 32
+     block 1 name "DISPLACEMENT_1"
+     block 1 attribute count 6
+     block 1 attribute index 1 97    # any value (Cubit doesnt allow for blank attributes)
+     block 1 attribute index 2 0
+     block 1 attribute index 3 0
+     block 1 attribute index 4 0       # flag for x direction
+     block 1 attribute index 5 1       # flag for y direction
+     block 1 attribute index 6 1       # flag for z direction
+    This means that we set zero displacement on y and z direction and on x set direction freely.
+    (value 97 is irrelevant because flag for 1 value is 0 (false))
+    It can be usefull if we want to set boundary conditions directly to triangles e.g,
+    since standard boundary conditions in Cubit allow only using nodeset or surface
+    which might not work with mesh based on facet engine (e.g. STL file)
  */
 struct DirichletBCFromBlockSetFEMethodPreAndPostProcWithFlags: public DisplacementBCFEMethodPreAndPostProc {
 
