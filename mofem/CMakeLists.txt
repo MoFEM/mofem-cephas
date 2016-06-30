@@ -32,7 +32,7 @@ project(MoFEM C Fortran CXX)
 
 set(MoFEM_VERSION_MAJOR 0)
 set(MoFEM_VERSION_MINOR 3)
-set(MoFEM_VERSION_BUILD 28)
+set(MoFEM_VERSION_BUILD 31)
 
 include(CheckCXXSourceCompiles)
 CHECK_CXX_SOURCE_COMPILES(
@@ -149,10 +149,6 @@ file(COPY
   ${PROJECT_SOURCE_DIR}/INSTALL
   DESTINATION ${PROJECT_BINARY_DIR}
 )
-
-resolve_definitions(MOAB_DEFINITIONS ${MOAB_CPPFLAGS})
-message(STATUS ${MOAB_DEFINITIONS})
-add_definitions(${MOAB_DEFINITIONS})
 
 #add executable library form subdirectory
 enable_testing()

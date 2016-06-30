@@ -34,10 +34,10 @@
 struct FluidPressure {
 
   FieldInterface &mField;
-  struct MyTriangleFE: public FaceElementForcesAndSourcesCore {
+  struct MyTriangleFE: public MoFEM::FaceElementForcesAndSourcesCore {
 
     MyTriangleFE(FieldInterface &m_field):
-    FaceElementForcesAndSourcesCore(m_field) {
+    MoFEM::FaceElementForcesAndSourcesCore(m_field) {
     }
     int getRule(int order) { return order+1; };
 
@@ -67,7 +67,7 @@ struct FluidPressure {
   PetscErrorCode ierr;
   ErrorCode rval;
 
-  struct OpCalculatePressure: public FaceElementForcesAndSourcesCore::UserDataOperator {
+  struct OpCalculatePressure: public MoFEM::FaceElementForcesAndSourcesCore::UserDataOperator {
 
     Vec F;
     FluidData &dAta;
@@ -83,7 +83,7 @@ struct FluidPressure {
       bool allow_negative_pressure,
       bool ho_geometry
     ):
-    FaceElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROW),
+    MoFEM::FaceElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROW),
     F(_F),
     dAta(data),
     methodsOp(methods_op),

@@ -88,10 +88,7 @@ target_link_libraries(fluid_pressure_element_atom
 )
 
 add_test(fluid_pressure_element_atom_test
-  ${MoFEM_MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/fluid_pressure_element_atom -my_file fluid_presssure_cub_test.h5m)
-add_test(fluid_pressure_element_atom_test_compare ${CMAKE_COMMAND} -E compare_files
-  ${CMAKE_CURRENT_SOURCE_DIR}/blessed_files/fluid_pressure_element.txt
-  ${CMAKE_CURRENT_BINARY_DIR}/fluid_pressure_element.txt
+  ${MoFEM_MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/fluid_pressure_element_atom -my_file fluid_presssure_cub_test.h5m
 )
 
 # add example test for temperature element
@@ -110,10 +107,6 @@ target_link_libraries(thermal_elem_atom
 
 add_test(thermal_elem_atom_test ${MoFEM_MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/thermal_elem_atom
   -my_file simple_thermal_problem.h5m -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package mumps -ksp_monitor)
-add_test(forces_and_sources_thermal_elem_atom_test_compare ${CMAKE_COMMAND} -E compare_files
-  ${CMAKE_CURRENT_SOURCE_DIR}/blessed_files/thermal_elem.txt
-  ${CMAKE_CURRENT_BINARY_DIR}/thermal_elem.txt
-)
 
 # add test test for temerature unsteady element
 add_executable(thermal_elem_unsteady_atom ${UM_CURRENT_SOURCE_DIR}/thermal_elem_unsteady.cpp)
@@ -135,10 +128,6 @@ add_test(thermal_elem_unsteady_atom_test ${MoFEM_MPI_RUN} -np 1 ${CMAKE_CURRENT_
   -snes_max_it 100 -snes_atol 1e-8 -snes_rtol 1e-8
   -ts_monitor -ts_type beuler -ts_dt 1 -ts_final_time 2  -ksp_monitor -snes_max_it 3 -snes_monitor
 )
-add_test(thermal_elem_unsteady_atom_test_compare ${CMAKE_COMMAND} -E compare_files
-  ${CMAKE_CURRENT_BINARY_DIR}/thermal_elem_unsteady.txt
-  ${CMAKE_CURRENT_SOURCE_DIR}/blessed_files/thermal_elem_unsteady.txt
-)
 
 # add theraml stress eleme
 cm_export_file("elasticity_atom_test_thermal_expansion.h5m" export_atom_tests_basic_fe)
@@ -155,10 +144,6 @@ target_link_libraries(thermal_stress_elem
 
 add_test(thermal_stress_elem_atom_test ${MoFEM_MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/thermal_stress_elem
   -my_file elasticity_atom_test_thermal_expansion.h5m
-)
-add_test(thermal_stress_elem_atom_test_compare ${CMAKE_COMMAND} -E compare_files
-  ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_thermal_stress_elem.txt
-  ${CMAKE_CURRENT_SOURCE_DIR}/blessed_files/thermal_stress_elem.txt
 )
 
 # add test for ultra weak finite element
@@ -178,10 +163,6 @@ add_test(ultra_weak_transport_atom ${MoFEM_MPI_RUN} -np 2
   ${CMAKE_CURRENT_BINARY_DIR}/ultra_weak_transport -my_file simple_thermal_problem.h5m
   -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package mumps -ksp_monitor
   -my_max_post_proc_ref_level 0 -my_order 0
-)
-add_test(ultra_weak_transport_atom_compare ${CMAKE_COMMAND} -E compare_files
-  ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_ultra_weak_transport.txt
-  ${CMAKE_CURRENT_SOURCE_DIR}/blessed_files/ultra_weak_transport.txt
 )
 
 # Testing field approximation
@@ -226,10 +207,6 @@ if(ADOL-C_LIBRARY)
 
   add_test(nonlinear_elastic_basic_test ${MoFEM_MPI_RUN} -np 1
     ${CMAKE_CURRENT_BINARY_DIR}/nonlinear_elastic_basic_test -my_file LShape.h5m
-  )
-  add_test(nonlinear_elastic_compare ${CMAKE_COMMAND} -E compare_files
-    ${CMAKE_CURRENT_BINARY_DIR}/nonlinear_elastic.txt
-    ${CMAKE_CURRENT_SOURCE_DIR}/blessed_files/nonlinear_elastic.txt
   )
 
 endif(ADOL-C_LIBRARY)

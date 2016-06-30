@@ -252,6 +252,9 @@ verbose(_verbose) {
   MPI_Comm_rank(comm,&rAnk);
 
   const EntityHandle root_meshset = moab.get_root_set();
+  if(root_meshset) {
+    THROW_MESSAGE("Root meshset should be 0");
+  }
   if(verbose>0) {
     print_MoFem_verison(comm);
   }

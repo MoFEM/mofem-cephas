@@ -27,7 +27,7 @@ struct EdgeForce {
   FieldInterface &mField;
   EdgeForce(FieldInterface &m_field): mField(m_field),fe(m_field,1){}
 
-  struct MyFE: public EdgeElementForcesAndSurcesCore {
+  struct MyFE: public MoFEM::EdgeElementForcesAndSurcesCore {
     int addToRule;
     MyFE(FieldInterface &m_field,int add_to_rule):
     EdgeElementForcesAndSurcesCore(m_field),
@@ -47,7 +47,7 @@ struct EdgeForce {
 
     boost::ptr_vector<MethodForForceScaling> methodsOp;
 
-    struct OpEdgeForce: public EdgeElementForcesAndSurcesCore::UserDataOperator {
+    struct OpEdgeForce: public MoFEM::EdgeElementForcesAndSurcesCore::UserDataOperator {
 
       Vec F;
       bCForce &dAta;

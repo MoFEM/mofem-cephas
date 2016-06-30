@@ -174,21 +174,43 @@ int main(int argc, char *argv[]) {
   ierr = MatAssemblyBegin(Aij,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
   ierr = MatAssemblyEnd(Aij,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
 
-  PetscViewer viewer;
-  ierr = PetscViewerASCIIOpen(PETSC_COMM_WORLD,"nonlinear_elastic.txt",&viewer); CHKERRQ(ierr);
+  // PetscViewer viewer;
+  // ierr = PetscViewerASCIIOpen(PETSC_COMM_WORLD,"nonlinear_elastic.txt",&viewer); CHKERRQ(ierr);
 
-  ierr = VecChop(F,1e-4); CHKERRQ(ierr);
-  //ierr = VecView(F,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
-  ierr = VecView(F,viewer); CHKERRQ(ierr);
+  // ierr = VecChop(F,1e-4); CHKERRQ(ierr);
+  // //ierr = VecView(F,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
+  // ierr = VecView(F,viewer); CHKERRQ(ierr);
+  //
+  // //MatView(Aij,PETSC_VIEWER_DRAW_WORLD);
+  // MatChop(Aij,1e-4);
+  // //MatView(Aij,PETSC_VIEWER_STDOUT_WORLD);
+  // MatView(Aij,viewer);
+  // //std::string wait;
+  // //std::cin >> wait;
+  // ierr = PetscViewerDestroy(&viewer); CHKERRQ(ierr);
 
-  //MatView(Aij,PETSC_VIEWER_DRAW_WORLD);
-  MatChop(Aij,1e-4);
-  //MatView(Aij,PETSC_VIEWER_STDOUT_WORLD);
-  MatView(Aij,viewer);
-  //std::string wait;
-  //std::cin >> wait;
+  double sum = 0;
+  ierr = VecSum(F,&sum); CHKERRQ(ierr);
+  ierr = PetscPrintf(PETSC_COMM_WORLD,"sum  = %4.3e\n",sum); CHKERRQ(ierr);
+  double fnorm;
+  ierr = VecNorm(F,NORM_2,&fnorm); CHKERRQ(ierr);
+  ierr = PetscPrintf(PETSC_COMM_WORLD,"fnorm  = %9.8e\n",fnorm); CHKERRQ(ierr);
 
-  ierr = PetscViewerDestroy(&viewer); CHKERRQ(ierr);
+  double mnorm;
+  ierr = MatNorm(Aij,NORM_1,&mnorm); CHKERRQ(ierr);
+  ierr = PetscPrintf(PETSC_COMM_WORLD,"mnorm  = %9.8e\n",mnorm); CHKERRQ(ierr);
+
+
+  if(fabs(sum)>1e-8) {
+    SETERRQ(PETSC_COMM_WORLD,MOFEM_ATOM_TEST_INVALID,"Failed to pass test");
+  }
+  if(fabs(fnorm-5.12196914e+00)>1e-6) {
+    SETERRQ(PETSC_COMM_WORLD,MOFEM_ATOM_TEST_INVALID,"Failed to pass test");
+  }
+  if(fabs(mnorm-5.48280139e+01)>1e-6) {
+    SETERRQ(PETSC_COMM_WORLD,MOFEM_ATOM_TEST_INVALID,"Failed to pass test");
+  }
+
 
   ierr = VecDestroy(&F); CHKERRQ(ierr);
   //ierr = VecDestroy(&D); CHKERRQ(ierr);

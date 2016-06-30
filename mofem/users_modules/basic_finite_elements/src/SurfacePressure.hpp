@@ -27,7 +27,7 @@ struct NeummanForcesSurface {
 
   FieldInterface &mField;
 
-  struct MyTriangleFE: public FaceElementForcesAndSourcesCore {
+  struct MyTriangleFE: public MoFEM::FaceElementForcesAndSourcesCore {
     MyTriangleFE(FieldInterface &m_field);
     int getRule(int order) { return order; };
   };
@@ -53,7 +53,7 @@ struct NeummanForcesSurface {
   boost::ptr_vector<MethodForForceScaling> methodsOp;
 
   /// Operator for force element
-  struct OpNeumannForce: public FaceElementForcesAndSourcesCore::UserDataOperator {
+  struct OpNeumannForce: public MoFEM::FaceElementForcesAndSourcesCore::UserDataOperator {
 
     Vec F;
     bCForce &dAta;
@@ -73,7 +73,7 @@ struct NeummanForcesSurface {
   };
 
   /// Operator for pressure element
-  struct OpNeumannPreassure:public FaceElementForcesAndSourcesCore::UserDataOperator {
+  struct OpNeumannPreassure:public MoFEM::FaceElementForcesAndSourcesCore::UserDataOperator {
 
     Vec F;
     bCPreassure &dAta;
@@ -94,7 +94,7 @@ struct NeummanForcesSurface {
   };
 
   /// Operator for flux element
-  struct OpNeumannFlux:public FaceElementForcesAndSourcesCore::UserDataOperator {
+  struct OpNeumannFlux:public MoFEM::FaceElementForcesAndSourcesCore::UserDataOperator {
 
     Vec F;
     bCPreassure &dAta;

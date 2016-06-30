@@ -141,15 +141,25 @@ int main(int argc, char *argv[]) {
 
   //ierr = VecView(F,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
 
-  PetscViewer viewer;
-  ierr = PetscViewerASCIIOpen(PETSC_COMM_WORLD,"fluid_pressure_element.txt",&viewer); CHKERRQ(ierr);
-  ierr = VecChop(F,1e-4); CHKERRQ(ierr);
-  ierr = VecView(F,viewer); CHKERRQ(ierr);
-  ierr = PetscViewerDestroy(&viewer); CHKERRQ(ierr);
+  // PetscViewer viewer;
+  // ierr = PetscViewerASCIIOpen(PETSC_COMM_WORLD,"fluid_pressure_element.txt",&viewer); CHKERRQ(ierr);
+  // ierr = VecChop(F,1e-4); CHKERRQ(ierr);
+  // ierr = VecView(F,viewer); CHKERRQ(ierr);
+  // ierr = PetscViewerDestroy(&viewer); CHKERRQ(ierr);
 
   double sum = 0;
   ierr = VecSum(F,&sum); CHKERRQ(ierr);
-  ierr = PetscPrintf(PETSC_COMM_WORLD,"sum  = %4.3f\n",sum); CHKERRQ(ierr);
+  ierr = PetscPrintf(PETSC_COMM_WORLD,"sum  = %4.3e\n",sum); CHKERRQ(ierr);
+  if(fabs(sum-1.0)>1e-8) {
+    SETERRQ(PETSC_COMM_WORLD,MOFEM_ATOM_TEST_INVALID,"Failed to pass test");
+  }
+  double fnorm;
+  ierr = VecNorm(F,NORM_2,&fnorm); CHKERRQ(ierr);
+  ierr = PetscPrintf(PETSC_COMM_WORLD,"fnorm  = %9.8e\n",fnorm); CHKERRQ(ierr);
+  if(fabs(fnorm-6.23059402e-01)>1e-6) {
+    SETERRQ(PETSC_COMM_WORLD,MOFEM_ATOM_TEST_INVALID,"Failed to pass test");
+  }
+
 
   // std::map<EntityHandle,ublas::vector<double> > tags_vals;
   // for(_IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(m_field,"DISPLACEMENT",dof)) {

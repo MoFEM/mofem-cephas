@@ -234,13 +234,13 @@ struct KelvinVoigtDamper {
   CommonData commonData;
 
   /// \brief definition of volume element
-  struct DamperFE: public VolumeElementForcesAndSourcesCore {
+  struct DamperFE: public MoFEM::VolumeElementForcesAndSourcesCore {
 
     CommonData &commonData;
     int addToRule; ///< Takes into account HO geometry
 
     DamperFE(FieldInterface &m_field,CommonData &common_data):
-    VolumeElementForcesAndSourcesCore(m_field),
+    MoFEM::VolumeElementForcesAndSourcesCore(m_field),
     commonData(common_data),
     addToRule(1) {
     }
@@ -251,7 +251,7 @@ struct KelvinVoigtDamper {
 
     PetscErrorCode preProcess() {
       PetscFunctionBegin;
-      ierr = VolumeElementForcesAndSourcesCore::preProcess(); CHKERRQ(ierr);
+      ierr = MoFEM::VolumeElementForcesAndSourcesCore::preProcess(); CHKERRQ(ierr);
 
       if(ts_ctx == CTX_TSSETIFUNCTION) {
 
@@ -267,7 +267,7 @@ struct KelvinVoigtDamper {
     PetscErrorCode postProcess() {
       PetscFunctionBegin;
 
-      ierr = VolumeElementForcesAndSourcesCore::postProcess(); CHKERRQ(ierr);
+      ierr = MoFEM::VolumeElementForcesAndSourcesCore::postProcess(); CHKERRQ(ierr);
 
       if(ts_ctx == CTX_TSSETIFUNCTION) {
         ierr = VecAssemblyBegin(ts_F); CHKERRQ(ierr);
@@ -291,7 +291,7 @@ struct KelvinVoigtDamper {
   feLhs(m_field,commonData) {
   }
 
-  struct OpGetDataAtGaussPts: public VolumeElementForcesAndSourcesCore::UserDataOperator {
+  struct OpGetDataAtGaussPts: public MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator {
 
     CommonData &commonData;
     bool calcVal;
@@ -305,7 +305,7 @@ struct KelvinVoigtDamper {
       bool calc_grad,
       EntityType zero_at_type = MBVERTEX
     ):
-    VolumeElementForcesAndSourcesCore::UserDataOperator(
+    MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator(
       field_name,UserDataOperator::OPCOL
     ),
     commonData(common_data),
@@ -388,7 +388,7 @@ struct KelvinVoigtDamper {
 
   };
 
-  struct OpJacobian: public VolumeElementForcesAndSourcesCore::UserDataOperator {
+  struct OpJacobian: public MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator {
 
     std::vector<int> tagS;
     KelvinVoigtDamper::ConstitutiveEquation<adouble> &cE;
@@ -408,7 +408,7 @@ struct KelvinVoigtDamper {
       bool calculate_residual,
       bool calculate_jacobian
     ):
-    VolumeElementForcesAndSourcesCore::UserDataOperator(
+    MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator(
       field_name,UserDataOperator::OPROW
     ),
     tagS(tags),
@@ -624,9 +624,9 @@ struct KelvinVoigtDamper {
 
   };
 
-  struct AssembleVector: VolumeElementForcesAndSourcesCore::UserDataOperator {
+  struct AssembleVector: MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator {
     AssembleVector(string field_name):
-    VolumeElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROW) {
+    MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROW) {
     }
     PetscErrorCode ierr;
     ublas::vector<double> nF;
@@ -701,9 +701,9 @@ struct KelvinVoigtDamper {
     }
   };
 
-  struct AssembleMatrix: VolumeElementForcesAndSourcesCore::UserDataOperator {
+  struct AssembleMatrix: MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator {
     AssembleMatrix(string row_name,string col_name):
-    VolumeElementForcesAndSourcesCore::UserDataOperator(
+    MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator(
       row_name,col_name,UserDataOperator::OPROWCOL) {
     }
     PetscErrorCode ierr;

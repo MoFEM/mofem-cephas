@@ -236,7 +236,7 @@ int main(int argc, char *argv[]) {
   if(rval==MB_ALREADY_ALLOCATED) rval = MB_SUCCESS;
   CHKERR_MOAB(rval);
   const void* tag_data_step_size[1];
-  EntityHandle root = moab.get_root_set();
+  EntityHandle root = 0;
   rval = moab.tag_get_by_ptr(th_step_size,&root,1,tag_data_step_size); CHKERRQ_MOAB(rval);
   double& step_size = *(double *)tag_data_step_size[0];
   const void* tag_data_step[1];

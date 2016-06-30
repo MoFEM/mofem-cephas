@@ -31,7 +31,7 @@ struct FieldApproximationH1 {
   FieldInterface &mField;
   const std::string problemName;
   VolumeElementForcesAndSourcesCore feVolume;
-  FaceElementForcesAndSourcesCore feFace;
+  MoFEM::FaceElementForcesAndSourcesCore feFace;
 
   FieldApproximationH1(
     FieldInterface &m_field):
@@ -45,7 +45,7 @@ struct FieldApproximationH1 {
     * Function work on volumes (Terahedrons & Bricks)
     */
   template<typename FUNEVAL>
-  struct OpApproxVolume: public VolumeElementForcesAndSourcesCore::UserDataOperator {
+  struct OpApproxVolume: public MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator {
 
     Mat A;
     std::vector<Vec> &vecF;
@@ -274,7 +274,7 @@ struct FieldApproximationH1 {
     FUNEVAL &functionEvaluator;
 
     OpApproxFace(const std::string &field_name,Mat _A,std::vector<Vec> &vec_F,FUNEVAL &function_evaluator):
-      FaceElementForcesAndSourcesCore::UserDataOperator(
+      MoFEM::FaceElementForcesAndSourcesCore::UserDataOperator(
         field_name,UserDataOperator::OPROW|UserDataOperator::OPROWCOL
       ),
       A(_A),
