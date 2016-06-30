@@ -13,7 +13,7 @@
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
 
-struct PostPorcStress: public VolumeElementForcesAndSourcesCore::UserDataOperator {
+struct PostPorcStress: public MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator {
 
   FieldInterface& mField;
   Interface &postProcMesh;
@@ -27,7 +27,7 @@ struct PostPorcStress: public VolumeElementForcesAndSourcesCore::UserDataOperato
     std::vector<EntityHandle> &map_gauss_pts,
     const std::string field_name,
     PostProcVolumeOnRefinedMesh::CommonData &common_data):
-    VolumeElementForcesAndSourcesCore::UserDataOperator(field_name,ForcesAndSurcesCore::UserDataOperator::OPROW),
+    MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator(field_name,ForcesAndSurcesCore::UserDataOperator::OPROW),
     mField(m_field),
     postProcMesh(post_proc_mesh),
     mapGaussPts(map_gauss_pts),
