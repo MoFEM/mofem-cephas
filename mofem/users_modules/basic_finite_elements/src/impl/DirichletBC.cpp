@@ -139,7 +139,9 @@ PetscErrorCode DisplacementBCFEMethodPreAndPostProc::preProcess() {
 
   if(snes_ctx == CTX_SNESNONE && ts_ctx == CTX_TSNONE) {
     if(dofsIndices.size()>0) {
-      ierr = VecSetValues(snes_x,dofsIndices.size(),&dofsIndices[0],&dofsValues[0],INSERT_VALUES); CHKERRQ(ierr);
+      ierr = VecSetValues(
+        snes_x,dofsIndices.size(),&dofsIndices[0],&dofsValues[0],INSERT_VALUES
+      ); CHKERRQ(ierr);
     }
     ierr = VecAssemblyBegin(snes_x); CHKERRQ(ierr);
     ierr = VecAssemblyEnd(snes_x); CHKERRQ(ierr);
