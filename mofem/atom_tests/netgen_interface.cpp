@@ -44,7 +44,7 @@ int main(int argc, char *argv[]) {
   //Read parameters from line command
   PetscBool flg = PETSC_TRUE;
   char mesh_file_name[255];
-  ierr = PetscOptionsGetString(PETSC_NULL,"-my_file",mesh_file_name,255,&flg); CHKERRQ(ierr);
+  ierr = PetscOptionsGetString(PETSC_NULL,PETSC_NULL,"-my_file",mesh_file_name,255,&flg); CHKERRQ(ierr);
   if(flg != PETSC_TRUE) {
     SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_file (MESH FILE NEEDED)");
   }
@@ -52,7 +52,7 @@ int main(int argc, char *argv[]) {
   //Read mesh to MOAB
   const char *option;
   option = "";//"PARALLEL=BCAST;";//;DEBUG_IO";
-  rval = moab.load_file(mesh_file_name, 0, option); CHKERRQ_MOAB(rval); 
+  rval = moab.load_file(mesh_file_name, 0, option); CHKERRQ_MOAB(rval);
   ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
   if(pcomm == NULL) pcomm =  new ParallelComm(&moab,PETSC_COMM_WORLD);
 
@@ -97,7 +97,7 @@ int main(int argc, char *argv[]) {
 
   outer_surface_skin = unite(outer_surface_skin,tets);
   ierr = netgen_iface->stlSetSurfaceTriangles(stl_geom,outer_surface_skin,NULL,1);  CHKERRQ(ierr);
-  
+
   cout << "Initialise the STL Geometry structure...." << std::endl;
   ng_res = Ng_STL_InitSTLGeometry(stl_geom);
   if(ng_res != NG_OK) {
@@ -119,7 +119,7 @@ int main(int argc, char *argv[]) {
     cout << "Error in Surface Meshing....Aborting!!" << std::endl;
     return 1;
   }
- 
+
   // volume mesh output
   int np;
   np = Ng_GetNP(mesh);
@@ -139,7 +139,7 @@ int main(int argc, char *argv[]) {
   rval = moab.delete_entities(&meshset_out,1); CHKERRQ_MOAB(rval);
 
   delete stl_geom;
-  Ng_DeleteMesh(mesh);	
+  Ng_DeleteMesh(mesh);
   Ng_Exit();
 
   // Initialise the Netgen Core library
@@ -178,7 +178,7 @@ int main(int argc, char *argv[]) {
   if(debug) rval = moab.write_file("netgen2.vtk","VTK","",&meshset_out,1); CHKERRQ_MOAB(rval);
   rval = moab.delete_entities(&meshset_out,1); CHKERRQ_MOAB(rval);
 
-  Ng_DeleteMesh(mesh);	
+  Ng_DeleteMesh(mesh);
   Ng_Exit();
 
   } catch (MoFEMException const &e) {
@@ -188,4 +188,3 @@ int main(int argc, char *argv[]) {
   PetscFinalize();
 
 }
-

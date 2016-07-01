@@ -44,7 +44,7 @@ add_test(ElasticityTest
   -ksp_type fgmres
   -pc_type lu
   -pc_factor_mat_solver_package mumps
-  -ksp_monitor -log_summary
+  -ksp_monitor -log_view
 )
 
 add_test(MultiGridViaOrderSolver
@@ -57,5 +57,5 @@ add_test(MultiGridViaOrderSolver
   -mg_coarse_ksp_type preonly -mg_coarse_pc_type lu -mg_coarse_pc_factor_mat_solver_package mumps
   -pc_mg_smoothup 10 -pc_mg_smoothdown 10
   -pc_mg_type multiplicative
-  -log_summary
+  -log_view
 )

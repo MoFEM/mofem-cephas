@@ -39,7 +39,7 @@ int main(int argc, char *argv[]) {
   #if PETSC_VERSION_GE(3,6,4)
   ierr = PetscOptionsGetString(PETSC_NULL,"","-my_file",mesh_file_name,255,&flg); CHKERRQ(ierr);
   #else
-  ierr = PetscOptionsGetString(PETSC_NULL,"-my_file",mesh_file_name,255,&flg); CHKERRQ(ierr);
+  ierr = PetscOptionsGetString(PETSC_NULL,PETSC_NULL,"-my_file",mesh_file_name,255,&flg); CHKERRQ(ierr);
   #endif
   if(flg != PETSC_TRUE) {
     SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_file (MESH FILE NEEDED)");
@@ -77,7 +77,7 @@ int main(int argc, char *argv[]) {
   #if PETSC_VERSION_GE(3,6,4)
   ierr = PetscOptionsGetInt(PETSC_NULL,"","-my_field_rank",&field_rank,&flg); CHKERRQ(ierr);
   #else
-  ierr = PetscOptionsGetInt(PETSC_NULL,"-my_field_rank",&field_rank,&flg); CHKERRQ(ierr);
+  ierr = PetscOptionsGetInt(PETSC_NULL,PETSC_NULL,"-my_field_rank",&field_rank,&flg); CHKERRQ(ierr);
   #endif
   ierr = m_field.add_field("FIELD",H1,AINSWORTH_COLE_BASE,field_rank); CHKERRQ(ierr);
   //add entities to field
@@ -122,7 +122,7 @@ int main(int argc, char *argv[]) {
   #if PETSC_VERSION_GE(3,6,4)
   ierr = PetscOptionsGetBool(PETSC_NULL,"","-my_save_fiele",&save_file,&flg); CHKERRQ(ierr);
   #else
-  ierr = PetscOptionsGetBool(PETSC_NULL,"-my_save_fiele",&save_file,&flg); CHKERRQ(ierr);
+  ierr = PetscOptionsGetBool(PETSC_NULL,PETSC_NULL,"-my_save_fiele",&save_file,&flg); CHKERRQ(ierr);
   #endif
   if(save_file) {
 

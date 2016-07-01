@@ -74,7 +74,7 @@ int main(int argc, char *argv[]) {
   PetscBool flg;
   PetscInt choise_value = LEGENDREPOLYNOMIAL;
   ierr = PetscOptionsGetEList(
-    NULL,"-base",list,LASTOP,&choise_value,&flg
+    PETSC_NULL,NULL,"-base",list,LASTOP,&choise_value,&flg
   ); CHKERRQ(ierr);
   if(flg != PETSC_TRUE) {
     SETERRQ(PETSC_COMM_SELF,MOFEM_IMPOSIBLE_CASE,"base not set");

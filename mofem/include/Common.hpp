@@ -148,6 +148,9 @@ namespace MoFEM {
 
   #if PETSC_VERSION_GE(3,7,0)
 
+  /**
+  \deprected Funtion is deprected use <http://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/Sys/PetscOptionsGetInt.html>
+  */
   DEPRECATED inline PetscErrorCode  PetscOptionsGetInt(const char pre[],const char name[],PetscInt *ivalue,PetscBool  *set) {
     PetscErrorCode ierr;
     PetscFunctionBegin;
@@ -155,6 +158,9 @@ namespace MoFEM {
     PetscFunctionReturn(0);
   }
 
+  /**
+  \deprected Funtion is deprected use <http://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/Sys/PetscOptionsGetReal.html>
+  */
   DEPRECATED inline PetscErrorCode PetscOptionsGetReal(const char pre[],const char name[],PetscReal *dval,PetscBool *set) {
     PetscErrorCode ierr;
     PetscFunctionBegin;
@@ -162,6 +168,9 @@ namespace MoFEM {
     PetscFunctionReturn(0);
   }
 
+  /**
+  \deprected Funtion is deprected use <http://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/Sys/PetscOptionsGetScalar.html>
+  */
   DEPRECATED inline PetscErrorCode PetscOptionsGetScalar(const char pre[],const char name[],PetscScalar *dval,PetscBool *set) {
     PetscErrorCode ierr;
     PetscFunctionBegin;
@@ -169,6 +178,9 @@ namespace MoFEM {
     PetscFunctionReturn(0);
   }
 
+  /**
+  \deprected Funtion is deprected use <http://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/Sys/PetscOptionsGetString.html>
+  */
   DEPRECATED inline PetscErrorCode PetscOptionsGetString(const char pre[],const char name[],char str[],size_t size,PetscBool *set) {
     PetscErrorCode ierr;
     PetscFunctionBegin;
@@ -176,6 +188,9 @@ namespace MoFEM {
     PetscFunctionReturn(0);
   }
 
+  /**
+  \deprected Funtion is deprected use <http://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/Sys/PetscOptionsGetBool.html>
+  */
   DEPRECATED inline PetscErrorCode PetscOptionsGetBool(const char pre[],const char name[],PetscBool  *bval,PetscBool *set) {
     PetscErrorCode ierr;
     PetscFunctionBegin;
@@ -183,6 +198,9 @@ namespace MoFEM {
     PetscFunctionReturn(0);
   }
 
+  /**
+  \deprected Funtion is deprected use <http://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/Sys/PetscOptionsGetRealArray.html>
+  */
   DEPRECATED inline PetscErrorCode PetscOptionsGetRealArray(const char pre[],const char name[],PetscReal dval[],PetscInt *nmax,PetscBool *set) {
     PetscErrorCode ierr;
     PetscFunctionBegin;
@@ -190,6 +208,9 @@ namespace MoFEM {
     PetscFunctionReturn(0);
   }
 
+  /**
+  \deprected Funtion is deprected use <http://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/Sys/PetscOptionsGetEList.html>
+  */
   DEPRECATED inline PetscErrorCode PetscOptionsGetEList(
     const char pre[],const char name[],const char*const* list,PetscInt next,PetscInt *value,PetscBool *set
   ) {
@@ -199,6 +220,9 @@ namespace MoFEM {
     PetscFunctionReturn(0);
   }
 
+  /**
+  \deprected Funtion is deprected use <http://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/Sys/PetscOptionsGetIntArray.html>
+  */
   DEPRECATED inline PetscErrorCode PetscOptionsGetIntArray(
     const char pre[],const char name[],PetscInt dvalue[],PetscInt *nmax,PetscBool  *set
   ) {
@@ -208,6 +232,9 @@ namespace MoFEM {
     PetscFunctionReturn(0);
   }
 
+  /**
+  \deprected Funtion is deprected use <http://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/Sys/PetscOptionsGetScalarArray.html>
+  */
   DEPRECATED inline PetscErrorCode PetscOptionsGetScalarArray(
     const char pre[],const char name[],PetscScalar dvalue[],PetscInt *nmax,PetscBool  *set
   ) {
