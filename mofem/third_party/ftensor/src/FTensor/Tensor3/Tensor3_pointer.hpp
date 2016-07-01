@@ -1,14 +1,88 @@
 /* A version for pointers. */
 
+template<
+  class T,
+  int Dim0,int Dim1,int Dim2,
+  int Current_Dim0,int Current_Dim1,int Current_Dim2
+>
+inline void T3_increment(
+  const Tensor3<T,Dim0,Dim1,Dim2> &iter,
+  const Number<Current_Dim0> &,
+  const Number<Current_Dim1> &,
+  const Number<Current_Dim2> &
+) {
+  iter.increment(
+    Number<Current_Dim0>(),Number<Current_Dim1>(),Number<Current_Dim2>()
+  );
+  T3_increment(
+    iter,Number<Current_Dim0-1>(),Number<Current_Dim1>(),Number<Current_Dim2>()
+  );
+}
+
+template<
+  class T,
+  int Dim0,int Dim1,int Dim2,
+  int Current_Dim1,int Current_Dim2
+>
+inline void T3_increment(
+  const Tensor3<T,Dim0,Dim1,Dim2> &iter,
+  const Number<1> &,
+  const Number<Current_Dim1> &,
+  const Number<Current_Dim2> &
+) {
+  iter.increment(
+    Number<1>(),Number<Current_Dim1>(),Number<Current_Dim2>()
+  );
+  T3_increment(
+    iter,
+    Number<Dim0>(),Number<Current_Dim1-1>(),Number<Current_Dim2>()
+  );
+}
+
+template<
+  class T,
+  int Dim0,int Dim1,int Dim2,
+  int Current_Dim2
+>
+inline void T3_increment(
+  const Tensor3<T,Dim0,Dim1,Dim2> &iter,
+  const Number<1> &,
+  const Number<1> &,
+  const Number<Current_Dim2> &
+) {
+  iter.increment(
+    Number<1>(),Number<1>(),Number<Current_Dim2>()
+  );
+  T3_increment(
+    iter,
+    Number<Dim0>(),Number<Dim1>(),Number<Current_Dim2-1>()
+  );
+}
+
+template<
+  class T,
+  int Dim0,int Dim1,int Dim2
+>
+inline void T3_increment(
+  const Tensor3<T,Dim0,Dim1,Dim2> &iter,
+  const Number<1> &,
+  const Number<1> &,
+  const Number<1> &
+) {
+  iter.increment(Number<1>(),Number<1>(),Number<1>());
+}
+
 template <class T, int Tensor_Dim0, int Tensor_Dim1, int Tensor_Dim2>
 class Tensor3<T*,Tensor_Dim0,Tensor_Dim1,Tensor_Dim2>
 {
+  const int inc;
   mutable T * restrict data[Tensor_Dim1][Tensor_Dim1][Tensor_Dim2];
 public:
   Tensor3() {}
 
   /* Tensor_Dim0=2, Tensor_Dim1=2, Tensor_Dim2=2 */
-  Tensor3(T* d000, T* d001, T* d010, T* d011, T* d100, T* d101, T* d110, T* d111)
+  Tensor3(T* d000, T* d001, T* d010, T* d011, T* d100, T* d101, T* d110, T* d111,const int i = 1)
+  :inc(i)
   {
     Tensor3_constructor<T * restrict,Tensor_Dim0,Tensor_Dim1,Tensor_Dim2>
       (data,d000, d001, d010, d011, d100, d101, d110, d111);
@@ -23,7 +97,9 @@ public:
           T* d120, T* d121, T* d122,
           T* d200, T* d201, T* d202,
           T* d210, T* d211, T* d212,
-          T* d220, T* d221, T* d222)
+          T* d220, T* d221, T* d222,
+          const int i = 1
+        ): inc(i)
   {
     Tensor3_constructor<T * restrict,Tensor_Dim0,Tensor_Dim1,Tensor_Dim2>
       (data,d000, d001, d002,
@@ -56,7 +132,9 @@ public:
           T* d300, T* d301, T* d302, T* d303,
           T* d310, T* d311, T* d312, T* d313,
           T* d320, T* d321, T* d322, T* d323,
-          T* d330, T* d331, T* d332, T* d333)
+          T* d330, T* d331, T* d332, T* d333,
+          const int i = 1
+        ): inc(i)
   {
     Tensor3_constructor<T * restrict,Tensor_Dim0,Tensor_Dim1,Tensor_Dim2>
       (data,d000, d001, d002, d003,
@@ -140,5 +218,25 @@ public:
     return Tensor3_Expr<const Tensor3<T*,Tensor_Dim0,Tensor_Dim1,Tensor_Dim2>,
       T,Dim0,Dim1,Dim2,i,j,k>(*this);
   }
+
+  /* The ++ operator increments the pointer, not the number that the
+     pointer points to.  This allows iterating over a grid. */
+
+  template<int Current_Dim0,int Current_Dim1,int Current_Dim2>
+  inline void increment(
+    const Number<Current_Dim0> &,
+    const Number<Current_Dim1> &,
+    const Number<Current_Dim2> &
+  ) const {
+    data[Current_Dim0-1][Current_Dim1-1][Current_Dim2-1]+=inc;
+  }
+
+  const Tensor3<T*,Tensor_Dim0,Tensor_Dim1,Tensor_Dim2> & operator++() const {
+    T3_increment(
+      *this,Number<Tensor_Dim0>(),Number<Tensor_Dim1>(),Number<Tensor_Dim2>()
+    );
+    return *this;
+  }
+
 
 };
