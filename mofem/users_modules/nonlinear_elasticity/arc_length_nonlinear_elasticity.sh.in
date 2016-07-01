@@ -242,7 +242,7 @@ COMMAND="$MPIRUN $BIN_PATH/arc_length_nonlinear_elasticity \
   -my_tol $TOL -my_its_d $ITSD \
   -ms $NBSTEPS -my_sr $STEP_SIZE -my_if $IF \
   -my_order $ORDER  \
-  -log_summary"
+  -log_view"
 
 echo | tee -a log
 echo "Start calculations ..." | tee -a log

@@ -209,7 +209,7 @@ int main(int argc, char *argv[]) {
 
   PetscBool flg = PETSC_TRUE;
   char mesh_file_name[255];
-  ierr = PetscOptionsGetString(PETSC_NULL,"-my_file",mesh_file_name,255,&flg); CHKERRQ(ierr);
+  ierr = PetscOptionsGetString(PETSC_NULL,PETSC_NULL,"-my_file",mesh_file_name,255,&flg); CHKERRQ(ierr);
   if(flg != PETSC_TRUE) {
     SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_file (MESH FILE NEEDED)");
   }
@@ -217,7 +217,7 @@ int main(int argc, char *argv[]) {
   // use this if your mesh is partotioned and you run code on parts,
   // you can solve very big problems
   PetscBool is_partitioned = PETSC_FALSE;
-  ierr = PetscOptionsGetBool(PETSC_NULL,"-my_is_partitioned",&is_partitioned,&flg); CHKERRQ(ierr);
+  ierr = PetscOptionsGetBool(PETSC_NULL,PETSC_NULL,"-my_is_partitioned",&is_partitioned,&flg); CHKERRQ(ierr);
 
   if(is_partitioned == PETSC_TRUE) {
     //Read mesh to MOAB
@@ -291,7 +291,7 @@ int main(int argc, char *argv[]) {
   //set app. order
 
   PetscInt disp_order;
-  ierr = PetscOptionsGetInt(PETSC_NULL,"-my_order",&disp_order,&flg); CHKERRQ(ierr);
+  ierr = PetscOptionsGetInt(PETSC_NULL,PETSC_NULL,"-my_order",&disp_order,&flg); CHKERRQ(ierr);
   if(flg!=PETSC_TRUE) {
     disp_order = 1;
   }
@@ -494,7 +494,7 @@ int main(int argc, char *argv[]) {
   neumann.snes_ctx = SnesMethod::CTX_SNESSETJACOBIAN;
   neumann.snes_B = Bij;
   PetscBool is_conservative = PETSC_FALSE;
-  ierr = PetscOptionsGetBool(PETSC_NULL,"-my_is_conservative",&is_conservative,&flg); CHKERRQ(ierr);
+  ierr = PetscOptionsGetBool(PETSC_NULL,PETSC_NULL,"-my_is_conservative",&is_conservative,&flg); CHKERRQ(ierr);
   if(is_conservative) {
     ierr = m_field.loop_finite_elements("ELASTIC_MECHANICS","NEUAMNN_FE",neumann); CHKERRQ(ierr);
   }

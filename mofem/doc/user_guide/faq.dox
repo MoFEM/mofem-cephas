@@ -243,7 +243,7 @@ instruments -v -t "Time Profiler" \
 -pc_type mg -mofem_mg_verbose 1 -mofem_mg_coarse_order 1 \
 -mofem_mg_levels 5 -mg_coarse_ksp_type preonly \
 -mg_coarse_pc_type lu -mg_coarse_pc_factor_mat_solver_package mumps \
--pc_mg_smoothup 10 -pc_mg_smoothdown 10 -pc_mg_type multiplicative -log_summary
+-pc_mg_smoothup 10 -pc_mg_smoothdown 10 -pc_mg_type multiplicative -log_view
 \endcode
 
 This generates directory \em instrumentscli0.trace and for next run
