@@ -797,7 +797,6 @@ PetscErrorCode NonlinearElasticElement::OpLhsPiolaKirchhoff_dx::doWork(
   FTensor::Index<'i',3> i;
   FTensor::Index<'j',3> j;
   FTensor::Index<'m',3> m;
-  FTensor::Tensor1<double*,3> diff_base_functions = row_data.getFTensor1DiffN<3>();
 
   try {
 
@@ -811,33 +810,31 @@ PetscErrorCode NonlinearElasticElement::OpLhsPiolaKirchhoff_dx::doWork(
       if((!aLe)&&(getHoGaussPtsDetJac().size()>0)) {
         val *= getHoGaussPtsDetJac()[gg]; ///< higher order geometry
       }
-      int bb = 0;
-      for(;bb!=nb_row/3;bb++) {
-        for(int rr = 0;rr!=nb_col/3;rr++) {
+      FTensor::Tensor3<double*,3,3,3> t3_1(
+        &jac(3*0+0,0),&jac(3*0+0,1),&jac(3*0+0,2),
+        &jac(3*0+1,0),&jac(3*0+1,1),&jac(3*0+1,2),
+        &jac(3*0+2,0),&jac(3*0+2,1),&jac(3*0+2,2),
+        &jac(3*1+0,0),&jac(3*1+0,1),&jac(3*1+0,2),
+        &jac(3*1+1,0),&jac(3*1+1,1),&jac(3*1+1,2),
+        &jac(3*1+2,0),&jac(3*1+2,1),&jac(3*1+2,2),
+        &jac(3*2+0,0),&jac(3*2+0,1),&jac(3*2+0,2),
+        &jac(3*2+1,0),&jac(3*2+1,1),&jac(3*2+1,2),
+        &jac(3*2+2,0),&jac(3*2+2,1),&jac(3*2+2,2),3
+      );
+      for(int rr = 0;rr!=nb_col/3;rr++) {
+        FTensor::Tensor1<double*,3> diff_base_functions = row_data.getFTensor1DiffN<3>(gg,0);
+        int bb = 0;
+        for(;bb!=nb_row/3;bb++) {
           FTensor::Tensor2<double*,3,3> lhs(
             &k(3*bb+0,3*rr+0),&k(3*bb+0,3*rr+1),&k(3*bb+0,3*rr+2),
             &k(3*bb+1,3*rr+0),&k(3*bb+1,3*rr+1),&k(3*bb+1,3*rr+2),
             &k(3*bb+2,3*rr+0),&k(3*bb+2,3*rr+1),&k(3*bb+2,3*rr+2)
           );
-          FTensor::Tensor3<double*,3,3,3> t3_1(
-            &jac(3*0+0,3*rr+0),&jac(3*0+0,3*rr+1),&jac(3*0+0,3*rr+2),
-            &jac(3*0+1,3*rr+0),&jac(3*0+1,3*rr+1),&jac(3*0+1,3*rr+2),
-            &jac(3*0+2,3*rr+0),&jac(3*0+2,3*rr+1),&jac(3*0+2,3*rr+2),
-            &jac(3*1+0,3*rr+0),&jac(3*1+0,3*rr+1),&jac(3*1+0,3*rr+2),
-            &jac(3*1+1,3*rr+0),&jac(3*1+1,3*rr+1),&jac(3*1+1,3*rr+2),
-            &jac(3*1+2,3*rr+0),&jac(3*1+2,3*rr+1),&jac(3*1+2,3*rr+2),
-            &jac(3*2+0,3*rr+0),&jac(3*2+0,3*rr+1),&jac(3*2+0,3*rr+2),
-            &jac(3*2+1,3*rr+0),&jac(3*2+1,3*rr+1),&jac(3*2+1,3*rr+2),
-            &jac(3*2+2,3*rr+0),&jac(3*2+2,3*rr+1),&jac(3*2+2,3*rr+2)
-          );
           lhs(i,j) += val*t3_1(i,m,j)*diff_base_functions(m);
+          ++diff_base_functions;
         }
-        ++diff_base_functions;
+        ++t3_1;
       }
-      for(;bb!=nb_base_functions;bb++) {
-        ++diff_base_functions;
-      }
-
     }
     // for(unsigned int gg = 0;gg<row_data.getN().size1();gg++) {
     //
