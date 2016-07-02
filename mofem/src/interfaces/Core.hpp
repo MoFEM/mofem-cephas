@@ -574,9 +574,9 @@ struct Core: public FieldInterface, MeshRefinment, PrismInterface, SeriesRecorde
 
   ///add entity EntFe to finite element data databse and resolve dofs on that entity
   //loop over all finite elements, resolve its meshsets, and resolve dofs on that entitie
-  PetscErrorCode build_finite_element_uids_view(EntFiniteElement &ent_fe,int &view_inserts,int verb = -1);
-  PetscErrorCode build_finite_element_data_dofs(EntFiniteElement &ent_fe,int verb = -1);
   PetscErrorCode build_finite_elements(int verb = -1);
+  PetscErrorCode build_finite_elements(const boost::shared_ptr<FiniteElement> fe,const Range *ents_ptr = NULL,int verb = -1);
+  PetscErrorCode build_finite_elements(const string fe_name,const Range *ents_ptr = NULL,int verb = -1);
   PetscErrorCode clear_finite_elements(const BitRefLevel &bit,const BitRefLevel &mask,int verb = -1);
   PetscErrorCode clear_finite_elements(const std::string &name,const Range &ents,int verb = -1);
 

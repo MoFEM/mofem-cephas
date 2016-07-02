@@ -1228,9 +1228,32 @@ struct FieldInterface: public UnknownInterface {
    */
   virtual PetscErrorCode clear_ents_fields(const std::string &name,const Range enst,int verb = -1) = 0;
 
-  /** build finite elements
-    */
+  /**
+   * \brief Build finite elements
+   * \ingroup mofem_fe
+   *
+   * Build finite element data structures. Have to be run before problem and adjacencies
+   * are constructed.
+   *
+   * @param  verb Verbosity level
+   * @return      Error code
+   */
   virtual PetscErrorCode build_finite_elements(int verb = -1) = 0;
+
+  /**
+   * \brief Build finite elements
+   * \ingroup mofem_fe
+   *
+   * Build finite element data structures. Have to be run before problem and adjacencies
+   * are constructed.
+   *
+   * @param  fe_name  Name of finite element
+   * @param  ents_ptr Pointer to range of finite elements
+   * @param  verb     Verbosity level
+   * @return      Error code
+   */
+  virtual PetscErrorCode build_finite_elements(const string fe_name,const Range *ents_ptr = NULL,int verb = -1) = 0;
+
 
   /** clear finite elements
     */
