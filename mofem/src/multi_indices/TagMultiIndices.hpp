@@ -69,7 +69,6 @@ namespace MoFEM {
 
   struct Ent_Ent_mi_tag {};
   struct Ent_Owner_mi_tag {};
-  struct Ent_mi_tag2 {};
 
   struct Unique_Ent_mi_tag {};
   struct Unique_FiniteElement_mi_tag {};
