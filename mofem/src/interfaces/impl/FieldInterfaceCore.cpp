@@ -1868,7 +1868,7 @@ PetscErrorCode Core::build_finite_element_data_dofs(EntFiniteElement &ent_fe,int
   }
   PetscFunctionReturn(0);
 }
-PetscErrorCode Core::build_finite_element_uids_view(EntFiniteElement &ent_fe,int verb) {
+PetscErrorCode Core::build_finite_element_uids_view(EntFiniteElement &ent_fe,int &view_inserts,int verb) {
   PetscFunctionBegin;
   if(!((*buildMoFEM)&BUILD_FIELD)) SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_FOUND,"fields not build");
   typedef Field_multiIndex::index<BitFieldId_mi_tag>::type field_by_id;
@@ -1943,6 +1943,7 @@ PetscErrorCode Core::build_finite_element_uids_view(EntFiniteElement &ent_fe,int
     nb_view_dofs[ss] = 0;
   }
 
+  view_inserts = 0;
   // Lopp over all fields in database
   for(unsigned int ii = 0;ii<BitFieldId().size();ii++) {
     // Common field id for ROW, COL and DATA
@@ -2002,6 +2003,7 @@ PetscErrorCode Core::build_finite_element_uids_view(EntFiniteElement &ent_fe,int
           for(;ents_miit3!=ents_hi_miit2;ents_miit3++) {
             std::pair<DofEntity_multiIndex_uid_view::iterator,bool> p;
             p = dofs_view_list[ss]->insert(*ents_miit3);
+            if(p.second) view_inserts++;
             nb_view_dofs[ss]++;
           }
         } else {
@@ -2077,8 +2079,11 @@ PetscErrorCode Core::build_finite_elements(int verb) {
         new EntFiniteElement(moab,ref_fe_miit->get_RefElement(),*fe_miit)
       );
       std::pair<EntFiniteElement_multiIndex::iterator,bool> p = entsFiniteElements.insert(ent_fe);
-      ierr = build_finite_element_uids_view(const_cast<EntFiniteElement&>(*(*p.first)),verb); CHKERRQ(ierr);
-      ierr = build_finite_element_data_dofs(const_cast<EntFiniteElement&>(*(*p.first)),verb); CHKERRQ(ierr);
+      int view_inserts = 0;
+      ierr = build_finite_element_uids_view(const_cast<EntFiniteElement&>(*(*p.first)),view_inserts,verb); CHKERRQ(ierr);
+      if(view_inserts) {
+        ierr = build_finite_element_data_dofs(const_cast<EntFiniteElement&>(*(*p.first)),verb); CHKERRQ(ierr);
+      }
     }
 
   }
