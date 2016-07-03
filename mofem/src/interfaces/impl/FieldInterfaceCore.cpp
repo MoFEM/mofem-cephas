@@ -1914,6 +1914,7 @@ PetscErrorCode Core::build_finite_elements(const boost::shared_ptr<FiniteElement
   typedef DofEntity_multiIndex::index<Unique_Ent_mi_tag>::type DofsByEntUId;
   DofsByEntUId& dofs_by_ent_uid = dofsField.get<Unique_Ent_mi_tag>();
 
+  boost::shared_ptr<SideNumber> side_number_ptr;
   for(
     std::map<UId,std::vector<boost::shared_ptr<EntFiniteElement> > >::iterator
     mit = map_uid_fe.begin();mit!=map_uid_fe.end();mit++
@@ -1943,7 +1944,7 @@ PetscErrorCode Core::build_finite_elements(const boost::shared_ptr<FiniteElement
           }
         }
         if((field_id&fe_it->get()->get_BitFieldId_data()).any()) {
-          boost::shared_ptr<SideNumber> side_number_ptr = fe_it->get()->get_side_number_ptr(moab,(*dit)->getEnt());
+          side_number_ptr = fe_it->get()->get_side_number_ptr(moab,(*dit)->getEnt());
           //add dofs to finite element multi_index database
           fe_it->get()->data_dofs.get<Unique_mi_tag>().insert(
             boost::shared_ptr<FEDofEntity>(new FEDofEntity(side_number_ptr,*dit))
