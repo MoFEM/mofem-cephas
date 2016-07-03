@@ -33,10 +33,35 @@ struct RefElement: public interface_RefEntity<RefEntity> {
 
   SideNumber_multiIndex side_number_table;
   RefElement(Interface &moab,const boost::shared_ptr<RefEntity> ref_ent_ptr);
-  virtual const BitRefEdges& get_BitRefEdges() const { return DummyBitRefEdges; }
-  virtual int get_BitRefEdges_ulong() const { return 0; }
-  SideNumber_multiIndex &get_side_number_table() const { return const_cast<SideNumber_multiIndex&>(side_number_table); };
-  virtual boost::shared_ptr<SideNumber> get_side_number_ptr(Interface &moab,EntityHandle ent) const {
+
+  virtual const BitRefEdges& getBitRefEdges() const { return DummyBitRefEdges; }
+
+  /** \deprecated Use getBitRefEdges() instead
+  */
+  DEPRECATED virtual const BitRefEdges& get_BitRefEdges() const { return DummyBitRefEdges; }
+
+  virtual int getBitRefEdgesUlong() const { return 0; }
+
+  /** \deprecated Use getBitRefEdgesUlong() instead
+  */
+  DEPRECATED virtual int get_BitRefEdges_ulong() const { return 0; }
+
+
+  SideNumber_multiIndex &getSideNumberTable() const { return const_cast<SideNumber_multiIndex&>(side_number_table); };
+
+  /** \deprecated Use getSideNumberTable() instead
+  */
+  DEPRECATED SideNumber_multiIndex &get_side_number_table() const { return getSideNumberTable(); };
+
+  virtual boost::shared_ptr<SideNumber> getSideNumberPtr(Interface &moab,EntityHandle ent) const {
+    NOT_USED(moab);
+    NOT_USED(ent);
+    return boost::shared_ptr<SideNumber>();
+  };
+
+  /** \deprecated Use getSideNumberPtr() instead
+  */
+  DEPRECATED virtual boost::shared_ptr<SideNumber> get_side_number_ptr(Interface &moab,EntityHandle ent) const {
     NOT_USED(moab);
     NOT_USED(ent);
     return boost::shared_ptr<SideNumber>();
@@ -52,7 +77,11 @@ struct RefElement: public interface_RefEntity<RefEntity> {
  */
 struct RefElement_MESHSET: public RefElement {
   RefElement_MESHSET(Interface &moab,const boost::shared_ptr<RefEntity> ref_ent_ptr);
-  boost::shared_ptr<SideNumber> get_side_number_ptr(Interface &moab,EntityHandle ent) const;
+  boost::shared_ptr<SideNumber> getSideNumberPtr(Interface &moab,EntityHandle ent) const;
+
+  /** \deprecated Use getSideNumberPtr() instead
+  */
+  DEPRECATED boost::shared_ptr<SideNumber> get_side_number_ptr(Interface &moab,EntityHandle ent) const;
 };
 
 /**
@@ -62,9 +91,23 @@ struct RefElement_MESHSET: public RefElement {
 struct RefElement_PRISM: public RefElement {
   BitRefEdges *tag_BitRefEdges;
   RefElement_PRISM(Interface &moab,const boost::shared_ptr<RefEntity> ref_ent_ptr);
-  boost::shared_ptr<SideNumber> get_side_number_ptr(Interface &moab,EntityHandle ent) const;
-  const BitRefEdges& get_BitRefEdges() const { return *tag_BitRefEdges; }
-  int get_BitRefEdges_ulong() const { return get_BitRefEdges().to_ulong(); }
+  boost::shared_ptr<SideNumber> getSideNumberPtr(Interface &moab,EntityHandle ent) const;
+
+  /** \deprecated Use getSideNumberPtr() instead
+  */
+  DEPRECATED boost::shared_ptr<SideNumber> get_side_number_ptr(Interface &moab,EntityHandle ent) const;
+
+  const BitRefEdges& getBitRefEdges() const { return *tag_BitRefEdges; }
+
+  /** \deprecated Use getBitRefEdges() instead
+  */
+  DEPRECATED const BitRefEdges& get_BitRefEdges() const { return getBitRefEdges(); }
+
+  int getBitRefEdgesUlong() const { return getBitRefEdges().to_ulong(); }
+
+  /** \deprecated Use getBitRefEdgesUlong() instead
+  */
+  DEPRECATED int get_BitRefEdges_ulong() const { return getBitRefEdgesUlong(); }
 };
 
 /**
@@ -75,12 +118,41 @@ struct RefElement_TET: public RefElement {
   BitRefEdges *tag_BitRefEdges;
   const int* tag_type_data;
   RefElement_TET(Interface &moab,const boost::shared_ptr<RefEntity> ref_ent_ptr);
-  boost::shared_ptr<SideNumber> get_side_number_ptr(Interface &moab,EntityHandle ent) const;
-  SideNumber_multiIndex &get_side_number_table() const { return const_cast<SideNumber_multiIndex&>(side_number_table); };
-  const BitRefEdges& get_BitRefEdges() const { return *tag_BitRefEdges; }
-  int get_BitRefEdges_ulong() const { return get_BitRefEdges().to_ulong(); }
-  inline int get_ref_type() const { return tag_type_data[0]; }
-  inline int get_ref_sub_type() const { return tag_type_data[1]; }
+  boost::shared_ptr<SideNumber> getSideNumberPtr(Interface &moab,EntityHandle ent) const;
+
+  /** \deprecated Use getSideNumberPtr() instead
+  */
+  DEPRECATED boost::shared_ptr<SideNumber> get_side_number_ptr(Interface &moab,EntityHandle ent) const;
+  SideNumber_multiIndex &getSideNumberTable() const { return const_cast<SideNumber_multiIndex&>(side_number_table); };
+
+  /** \deprecated Use getSideNumberTable() instead
+  */
+  DEPRECATED SideNumber_multiIndex &get_side_number_table() const { return getSideNumberTable(); };
+
+  const BitRefEdges& getBitRefEdges() const { return *tag_BitRefEdges; }
+
+  /** \deprecated Use getBitRefEdges() instead
+  */
+  DEPRECATED const BitRefEdges& get_BitRefEdges() const { return getBitRefEdges(); }
+
+  int getBitRefEdgesUlong() const { return get_BitRefEdges().to_ulong(); }
+
+  /** \deprecated Use getBitRefEdgesUlong() instead
+  */
+  DEPRECATED int get_BitRefEdges_ulong() const { return get_BitRefEdges().to_ulong(); }
+
+  inline int getRefType() const { return tag_type_data[0]; }
+
+  /** \deprecated Use getRefType() instead
+  */
+  DEPRECATED inline int get_ref_type() const { return getRefType(); }
+
+  inline int getRefSubType() const { return tag_type_data[1]; }
+
+  /** \deprecated Use getBitRefEdgesUlong() instead
+  */
+  DEPRECATED inline int get_ref_sub_type() const { return getRefSubType(); }
+
   friend std::ostream& operator<<(std::ostream& os,const RefElement_TET& e);
 };
 
@@ -90,7 +162,11 @@ struct RefElement_TET: public RefElement {
  */
 struct RefElement_TRI: public RefElement {
   RefElement_TRI(Interface &moab,const boost::shared_ptr<RefEntity> ref_ent_ptr);
-  boost::shared_ptr<SideNumber> get_side_number_ptr(Interface &moab,EntityHandle ent) const;
+  boost::shared_ptr<SideNumber> getSideNumberPtr(Interface &moab,EntityHandle ent) const;
+
+  /** \deprecated Use getSideNumberPtr() instead
+  */
+  DEPRECATED boost::shared_ptr<SideNumber> get_side_number_ptr(Interface &moab,EntityHandle ent) const;
   friend std::ostream& operator<<(std::ostream& os,const RefElement_TRI& e);
 };
 
@@ -100,7 +176,11 @@ struct RefElement_TRI: public RefElement {
  */
 struct RefElement_EDGE: public RefElement {
   RefElement_EDGE(Interface &moab,const boost::shared_ptr<RefEntity> ref_ent_ptr);
-  boost::shared_ptr<SideNumber> get_side_number_ptr(Interface &moab,EntityHandle ent) const;
+  boost::shared_ptr<SideNumber> getSideNumberPtr(Interface &moab,EntityHandle ent) const;
+
+  /** \deprecated Use getSideNumberPtr() instead
+  */
+  DEPRECATED boost::shared_ptr<SideNumber> get_side_number_ptr(Interface &moab,EntityHandle ent) const;
   friend std::ostream& operator<<(std::ostream& os,const RefElement_EDGE& e);
 };
 
@@ -110,7 +190,11 @@ struct RefElement_EDGE: public RefElement {
  */
 struct RefElement_VERTEX: public RefElement {
   RefElement_VERTEX(Interface &moab,const boost::shared_ptr<RefEntity> ref_ent_ptr);
-  boost::shared_ptr<SideNumber> get_side_number_ptr(Interface &moab,EntityHandle ent) const;
+  boost::shared_ptr<SideNumber> getSideNumberPtr(Interface &moab,EntityHandle ent) const;
+
+  /** \deprecated Use getSideNumberPtr() instead
+  */
+  DEPRECATED boost::shared_ptr<SideNumber> get_side_number_ptr(Interface &moab,EntityHandle ent) const;
   friend std::ostream& operator<<(std::ostream& os,const RefElement_VERTEX& e);
 };
 
@@ -131,12 +215,32 @@ struct interface_RefElement: interface_RefEntity<T> {
   sPtr(sptr) {
   }
 
-  int get_BitRefEdges_ulong() const { return this->sPtr->get_BitRefEdges_ulong(); }
-  SideNumber_multiIndex &get_side_number_table() const { return this->sPtr->get_side_number_table(); }
-  boost::shared_ptr<SideNumber> get_side_number_ptr(Interface &moab,EntityHandle ent) const {
-    return this->sPtr->get_side_number_ptr(moab,ent);
-  }
-  inline const boost::shared_ptr<T> get_RefElement() const { return this->sPtr; }
+  int getBitRefEdgesUlong() const { return this->sPtr->getBitRefEdgesUlong(); }
+
+  /** \deprecated Use getBitRefEdgesUlong() instead
+  */
+  DEPRECATED int get_BitRefEdges_ulong() const { return getBitRefEdgesUlong(); }
+
+  SideNumber_multiIndex &getSideNumberTable() const { return this->sPtr->getSideNumberTable(); }
+
+  /** \deprecated Use getSideNumberTable() instead
+  */
+  DEPRECATED SideNumber_multiIndex &get_side_number_table() const { return getSideNumberTable(); }
+
+  boost::shared_ptr<SideNumber> getSideNumberPtr(Interface &moab,EntityHandle ent) const {
+    return this->sPtr->getSideNumberPtr(moab,ent);
+
+  /** \deprecated Use getSideNumberPtr() instead
+  */
+  DEPRECATED boost::shared_ptr<SideNumber> get_side_number_ptr(Interface &moab,EntityHandle ent) const {
+      return this->sPtr->getSideNumberPtr(moab,ent);
+    }
+  inline const boost::shared_ptr<T> getRefElement() const { return this->sPtr; }
+
+  /** \deprecated Use getRefElement() instead
+  */
+  DEPRECATED inline const boost::shared_ptr<T> get_RefElement() const { return getRefElement() ; }
+
   virtual ~interface_RefElement() {}
 
 };
@@ -238,11 +342,23 @@ struct FiniteElement {
   inline boost::string_ref getNameRef() const { return boost::string_ref((char *)tag_name_data,tag_name_size); }
   inline std::string getName() const { return std::string((char *)tag_name_data,tag_name_size); }
   /// get BitFieldId col
-  inline BitFieldId get_BitFieldId_col() const { return *((BitFieldId*)tag_BitFieldId_col_data); }
+  inline BitFieldId getBitFieldIdCol() const { return *((BitFieldId*)tag_BitFieldId_col_data); }
+
+  /** \deprecated Use getBitFieldIdCol() instead
+  */
+  DEPRECATED inline BitFieldId get_BitFieldId_col() const { return getBitFieldIdCol(); }
   /// get BitFieldId row
-  inline BitFieldId get_BitFieldId_row() const { return *((BitFieldId*)tag_BitFieldId_row_data); }
+  inline BitFieldId getBitFieldIdRow() const { return *((BitFieldId*)tag_BitFieldId_row_data); }
+
+  /** \deprecated Use getBitFieldIdRow() instead
+  */
+  DEPRECATED inline BitFieldId get_BitFieldId_row() const { return getBitFieldIdRow(); }
   /// get BitFieldId data
-  inline BitFieldId get_BitFieldId_data() const { return *((BitFieldId*)tag_BitFieldId_data); }
+  inline BitFieldId getBitFieldIdData() const { return *((BitFieldId*)tag_BitFieldId_data); }
+
+  /** \deprecated Use getBitFieldIdData() instead
+  */
+  DEPRECATED inline BitFieldId get_BitFieldId_data() const { return getBitFieldIdData(); }
   /// get bit number
   inline unsigned int getBitNumber() const { return ffsl(((BitFieldId*)tag_id_data)->to_ulong()); }
 
@@ -294,9 +410,21 @@ struct interface_FiniteElement {
   inline EntityHandle getMeshSet() const { return this->sFePtr->getMeshSet(); }
   inline boost::string_ref getNameRef() const { return this->sFePtr->getNameRef(); }
   inline std::string getName() const { return this->sFePtr->getName(); }
-  inline BitFieldId get_BitFieldId_col() const { return this->sFePtr->get_BitFieldId_col(); }
-  inline BitFieldId get_BitFieldId_row() const { return this->sFePtr->get_BitFieldId_row(); }
-  inline BitFieldId get_BitFieldId_data() const { return this->sFePtr->get_BitFieldId_data(); }
+  inline BitFieldId getBitFieldIdCol() const { return this->sFePtr->getBitFieldIdCol(); }
+
+  /** \deprecated Use getBitFieldIdCol() instead
+  */
+  DEPRECATED inline BitFieldId get_BitFieldId_col() const { return getBitFieldIdCol(); }
+  inline BitFieldId getBitFieldIdRow() const { return this->sFePtr->getBitFieldIdRow(); }
+
+  /** \deprecated Use getBitFieldIdRow() instead
+  */
+  DEPRECATED inline BitFieldId get_BitFieldId_row() const { return getBitFieldIdRow(); }
+  inline BitFieldId getBitFieldIdData() const { return this->sFePtr->getBitFieldIdData(); }
+
+  /** \deprecated Use getBitFieldIdData() instead
+  */
+  DEPRECATED inline BitFieldId get_BitFieldId_data() const { return getBitFieldIdData(); }
   inline unsigned int getBitNumber() const { return this->sFePtr->getBitNumber(); }
 
 };
@@ -449,7 +577,7 @@ interface_RefElement<RefElement> {
     const NumeredDofEntity_multiIndex &dofs,NumeredDofEntity_multiIndex_uid_view_hashed &dofs_view,
     const int operation_type = Interface::UNION) const;
 
-  /** \deprecated Use getMoFEMFiniteElementRowDofView() instead
+  /** \deprecated Use getMoFEMFiniteElementColDofView() instead
   */
   DEPRECATED PetscErrorCode get_MoFEMFiniteElement_col_dof_view(
     const NumeredDofEntity_multiIndex &dofs,NumeredDofEntity_multiIndex_uid_view_hashed &dofs_view,
@@ -517,25 +645,25 @@ interface_RefElement<T> {
 
   /** \deprecated Use getDataDofs() instead
   */
-  DEPRECATED inline const FEDofEntity_multiIndex& get_data_dofs() const { return this->sPtr->getDataDofs(); };
+  DEPRECATED inline const FEDofEntity_multiIndex& get_data_dofs() const { return getDataDofs(); };
 
   inline DofIdx getNbDofsRow() const { return this->sPtr->getNbDofsRow(); }
 
   /** \deprecated Use getNbDofsRow() instead
   */
-  DEPRECATED inline DofIdx get_nb_dofs_row() const { return this->sPtr->getNbDofsRow(); }
+  DEPRECATED inline DofIdx get_nb_dofs_row() const { return getNbDofsRow(); }
 
   inline DofIdx getNbDofsCol() const { return this->sPtr->getNbDofsCol(); }
 
   /** \deprecated Use getNbDofsCol() instead
   */
-  DEPRECATED inline DofIdx get_nb_dofs_col() const { return this->sPtr->getNbDofsCol(); }
+  DEPRECATED inline DofIdx get_nb_dofs_col() const { return getNbDofsCol(); }
 
   inline DofIdx getNbDofsData() const { return this->sPtr->getNbDofsData(); }
 
   /** \deprecated Use getNbDofsData() instead
   */
-  DEPRECATED inline DofIdx get_nb_dofs_data() const { return this->sPtr->getNbDofsData(); }
+  DEPRECATED inline DofIdx get_nb_dofs_data() const { return getNbDofsData(); }
 
   inline EntityHandle getEnt() const { return this->sPtr->getRefEnt(); }
 
@@ -549,7 +677,7 @@ interface_RefElement<T> {
 
   /** \deprecated Use getSideNumberTable() instead
   */
-  DEPRECATED SideNumber_multiIndex &get_side_number_table() const { return this->sPtr->get_side_number_table(); }
+  DEPRECATED SideNumber_multiIndex &get_side_number_table() const { return getSideNumberTable(); }
 
   boost::shared_ptr<SideNumber> getSidePumberPtr(Interface &moab,EntityHandle ent) const {
     return this->sPtr->getSidePumberPtr(moab,ent);
@@ -558,7 +686,7 @@ interface_RefElement<T> {
   /** \deprecated Use getSidePumberPtr() instead
   */
   DEPRECATED boost::shared_ptr<SideNumber> get_side_number_ptr(Interface &moab,EntityHandle ent) const {
-    return this->sPtr->getSidePumberPtr(moab,ent);
+    return getSidePumberPtr(moab,ent);
   }
   //
   inline PetscErrorCode getElementAdjacency(Interface &moab,const Field *field_ptr,Range &adjacency) {
@@ -581,7 +709,7 @@ interface_RefElement<T> {
 
   /** \deprecated Use getRefElement() instead
   */
-  DEPRECATED inline const boost::shared_ptr<T> get_RefElement() const { return this->sPtr->get_RefElement(); }
+  DEPRECATED inline const boost::shared_ptr<T> get_RefElement() const { return getRefElement(); }
 
 
 };
@@ -667,19 +795,19 @@ struct interface_NumeredEntFiniteElement: public interface_EntFiniteElement<T> {
 
   /** \deprecated Use getPart() instead
   */
-  DEPRECATED inline unsigned int get_part() const { return this->sPtr->get_part(); }
+  DEPRECATED inline unsigned int get_part() const { return getPart(); }
 
   inline const FENumeredDofEntity_multiIndex& getRowsDofs() const { return this->sPtr->getRowsDofs(); };
 
   /** \deprecated Use getRowsDofs() instead
   */
-  DEPRECATED inline const FENumeredDofEntity_multiIndex& get_rows_dofs() const { return this->sPtr->getRowsDofs(); };
+  DEPRECATED inline const FENumeredDofEntity_multiIndex& get_rows_dofs() const { return getRowsDofs(); };
 
   inline const FENumeredDofEntity_multiIndex& getColsDofs() const { return this->sPtr->getColsDofs(); };
 
   /** \deprecated Use getColsDofs() instead
   */
-  DEPRECATED inline const FENumeredDofEntity_multiIndex& get_cols_dofs() const { return this->sPtr->getColsDofs(); };
+  DEPRECATED inline const FENumeredDofEntity_multiIndex& get_cols_dofs() const { return getColsDofs(); };
 };
 
 /**
