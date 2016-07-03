@@ -42,7 +42,18 @@ struct DofEntity: public interface_MoFEMEntity<MoFEMEntity> {
     return _uid_;
   }
 
-  static inline ShortId get_non_nonunique_short_id(const DofIdx dof,const boost::shared_ptr<MoFEMEntity> ent_ptr) {
+
+  static inline ShortId getNonNonuniqueShortId(const DofIdx dof,const boost::shared_ptr<MoFEMEntity> ent_ptr) {
+    if(dof>=512) THROW_MESSAGE("_dof>=512")
+    if(sizeof(ShortId) < sizeof(char)+2) THROW_MESSAGE("sizeof(ShortId)< sizeof(char)+2")
+    const char bit_number = ent_ptr->getBitNumber();
+    ShortId _uid_ = ((ShortId)dof)|(((ShortId)bit_number)<<9);
+    return _uid_;
+  }
+
+  /** \deprecated Use getNonNonuniqueShortId() instead
+  */
+  DEPRECATED static inline ShortId get_non_nonunique_short_id(const DofIdx dof,const boost::shared_ptr<MoFEMEntity> ent_ptr) {
     if(dof>=512) THROW_MESSAGE("_dof>=512")
     if(sizeof(ShortId) < sizeof(char)+2) THROW_MESSAGE("sizeof(ShortId)< sizeof(char)+2")
     const char bit_number = ent_ptr->getBitNumber();
@@ -61,8 +72,17 @@ struct DofEntity: public interface_MoFEMEntity<MoFEMEntity> {
     const DofIdx dof
   );
 
-  inline DofIdx get_EntDofIdx() const { return dof; }
-  inline FieldData& get_FieldData() const { return const_cast<FieldData&>(this->sPtr->tag_FieldData[get_EntDofIdx()]); }
+  inline DofIdx getEntDofIdx() const { return dof; }
+
+  /** \deprecated Use getEntDofIdx() instead
+  */
+  DEPRECATED inline DofIdx get_EntDofIdx() const { return getEntDofIdx(); }
+
+  inline FieldData& getFieldData() const { return const_cast<FieldData&>(this->sPtr->tag_FieldData[getEntDofIdx()]); }
+
+  /** \deprecated Use getFieldData() instead
+  */
+  DEPRECATED inline FieldData& get_FieldData() const { return getFieldData(); }
 
   /** \brief Get unique dof id
     */
@@ -89,24 +109,47 @@ struct DofEntity: public interface_MoFEMEntity<MoFEMEntity> {
     * reading those data using different MoAB instances.
     *
     */
-  inline ShortId get_non_nonunique_short_id() const  { return get_non_nonunique_short_id(dof,getMoFEMEntityPtr()); }
+  inline ShortId getNonNonuniqueShortId() const  { return getNonNonuniqueShortId(dof,getMoFEMEntityPtr()); }
+
+  /** \deprecated use getNonNonuniqueShortId() instead
+  */
+  DEPRECATED inline ShortId get_non_nonunique_short_id() const  { return get_non_nonunique_short_id(dof,getMoFEMEntityPtr()); }
 
   inline EntityHandle getEnt() const { return this->sPtr->getEnt(); }
-  inline EntityHandle get_ent() const { return getEnt(); }
+
+  /** \deprecated use getEnt() instead
+  */
+  DEPRECATED inline EntityHandle get_ent() const { return getEnt(); }
 
 
-  inline ApproximationOrder get_dof_order() const {
-    return ((ApproximationOrder*)this->sPtr->tag_dof_order_data)[get_EntDofIdx()];
+  inline ApproximationOrder getDofOrder() const {
+    return ((ApproximationOrder*)this->sPtr->tag_dof_order_data)[getEntDofIdx()];
+  }
+
+  /** \deprecated use getDofOrder() instead
+  */
+  DEPRECATED inline ApproximationOrder get_dof_order() const {
+    return ((ApproximationOrder*)this->sPtr->tag_dof_order_data)[getEntDofIdx()];
   }
 
   /** \brief Get dof coefficient
   */
-  inline FieldCoefficientsNumber get_dof_coeff_idx() const {
-    return ((FieldCoefficientsNumber*)this->sPtr->tag_dof_rank_data)[get_EntDofIdx()];
+  inline FieldCoefficientsNumber getDofCoeffIdx() const {
+    return ((FieldCoefficientsNumber*)this->sPtr->tag_dof_rank_data)[getEntDofIdx()];
+  }
+
+  /** \deprecated use getDofCoeffIdx() instead
+  */
+  DEPRECATED inline FieldCoefficientsNumber get_dof_coeff_idx() const {
+    return ((FieldCoefficientsNumber*)this->sPtr->tag_dof_rank_data)[getEntDofIdx()];
   }
 
   //check if node is active
-  inline char get_active() const { return active ? 1 : 0; }
+  inline char getActive() const { return active ? 1 : 0; }
+
+  /** \deprecated use getActive() instead
+  */
+  DEPRECATED inline char get_active() const { return active ? 1 : 0; }
   friend std::ostream& operator<<(std::ostream& os,const DofEntity& e);
 
 };
@@ -128,9 +171,24 @@ struct interface_DofEntity: public interface_MoFEMEntity<T> {
   */
   DEPRECATED inline const GlobalUId get_global_unique_id() const { return this->sPtr->getGlobalUniqueId(); }
 
-  inline ShortId get_non_nonunique_short_id() const { return this->sPtr->get_non_nonunique_short_id(); }
-  inline DofIdx get_EntDofIdx() const { return this->sPtr->get_EntDofIdx(); }
-  inline FieldData& get_FieldData() const { return this->sPtr->get_FieldData(); }
+  inline ShortId getOnNonuniqueShortId() const { return this->sPtr->getOnNonuniqueShortId(); }
+
+  /** \deprecated Use getOnNonuniqueShortId() instead
+  */
+  DEPRECATED inline ShortId get_non_nonunique_short_id() const { return this->sPtr->get_non_nonunique_short_id(); }
+
+  inline DofIdx getEntDofIdx() const { return this->sPtr->getEntDofIdx(); }
+
+  /** \deprecated Use getEntDofIdx() instead
+  */
+  DEPRECATED inline DofIdx get_EntDofIdx() const { return this->sPtr->getEntDofIdx(); }
+
+  inline FieldData& getFieldData() const { return this->sPtr->getFieldData(); }
+
+  /** \deprecated Use getFieldData() instead
+  */
+  DEPRECATED inline FieldData& get_FieldData() const { return this->sPtr->getFieldData(); }
+
 
   inline EntityHandle getEnt() const { return this->sPtr->getEnt(); };
 
@@ -138,15 +196,42 @@ struct interface_DofEntity: public interface_MoFEMEntity<T> {
   */
   DEPRECATED inline EntityHandle get_ent() const { return getEnt(); };
 
-  inline ApproximationOrder get_dof_order() const { return this->sPtr->get_dof_order(); };
+  inline ApproximationOrder getDofOrder() const { return this->sPtr->getDofOrder(); };
 
-  inline FieldCoefficientsNumber get_dof_coeff_idx() const {
-    return this->sPtr->get_dof_coeff_idx();
+  /** \deprecated Use getDofOrder() instead
+  */
+  DEPRECATED inline ApproximationOrder get_dof_order() const { return this->sPtr->getDofOrder(); };
+
+  inline FieldCoefficientsNumber getDofCoeffIdx() const {
+    return this->sPtr->getDofCoeffIdx();
   }
 
-  inline char get_active() const { return this->sPtr->get_active(); }
-  inline const boost::shared_ptr<DofEntity> get_DofEntity_ptr() const {
+  /** \deprecated Use getDofCoeffIdx() instead
+  */
+  DEPRECATED inline FieldCoefficientsNumber get_dof_coeff_idx() const {
+    return this->sPtr->getDofCoeffIdx();
+  }
+
+  inline char getActive() const { return this->sPtr->getActive(); }
+
+  /** \deprecated Use getActive() instead
+  */
+  DEPRECATED inline char get_active() const { return this->sPtr->getActive(); }
+
+  inline const boost::shared_ptr<DofEntity> getDofEntityPtr() const {
     return this->sPtr;
+  }
+
+  /** \deprecated Use getDofEntityPtr() instead
+  */
+  DEPRECATED inline const boost::shared_ptr<DofEntity> getDofEntity_ptr() const {
+    return getDofEntityPtr();
+  }
+
+  /** \deprecated Use getDofEntityPtr() instead
+  */
+  DEPRECATED inline const boost::shared_ptr<DofEntity> get_DofEntity_ptr() const {
+    return getDofEntityPtr();
   }
 
   inline const boost::shared_ptr<MoFEMEntity> getMoFEMEntityPtr() const {
@@ -173,11 +258,37 @@ struct NumeredDofEntity: public interface_DofEntity<DofEntity> {
   DofIdx petsc_gloabl_dof_idx;
   DofIdx petsc_local_dof_idx;
   unsigned int part;
-  inline DofIdx get_dof_idx() const { return dof_idx; }
-  inline DofIdx get_petsc_gloabl_dof_idx() const { return petsc_gloabl_dof_idx;  }
-  inline DofIdx get_petsc_local_dof_idx() const { return petsc_local_dof_idx; }
-  inline unsigned int get_part() const { return part;  }
-  inline bool get_has_local_index() const { return !signbit(petsc_local_dof_idx); }
+
+  inline DofIdx getDofIdx() const { return dof_idx; }
+
+  /** \deprecated Use getDofIdx() instead
+  */
+  DEPRECATED inline DofIdx get_dof_idx() const { return getDofIdx() ; }
+
+  inline DofIdx getPetscGlobalDofIdx() const { return petsc_gloabl_dof_idx;  }
+
+  /** \deprecated Use getPetscGlobalDofIdx() instead
+  */
+  DEPRECATED inline DofIdx get_petsc_gloabl_dof_idx() const { return getPetscGlobalDofIdx();  }
+
+  inline DofIdx getPetscLocalDofIdx() const { return petsc_local_dof_idx; }
+
+  /** \deprecated Use getPetscLocalDofIdx() instead
+  */
+  DEPRECATED inline DofIdx get_petsc_local_dof_idx() const { return getPetscLocalDofIdx(); }
+
+  inline unsigned int getPart() const { return part;  }
+
+  /** \deprecated Use getPart() instead
+  */
+  DEPRECATED inline unsigned int get_part() const { return getPart();  }
+
+  inline bool getHasLocalIndex() const { return !signbit(petsc_local_dof_idx); }
+
+  /** \deprecated Use getHasLocalIndex() instead
+  */
+  DEPRECATED inline bool get_has_local_index() const { return getHasLocalIndex(); }
+
   NumeredDofEntity(const boost::shared_ptr<DofEntity> _DofEntity_ptr);
   inline bool operator<(const NumeredDofEntity& _dof) const { return (UId)getGlobalUniqueId()<(UId)_dof.getGlobalUniqueId(); }
   friend std::ostream& operator<<(std::ostream& os,const NumeredDofEntity& e);
@@ -190,12 +301,42 @@ struct NumeredDofEntity: public interface_DofEntity<DofEntity> {
 template <typename T>
 struct interface_NumeredDofEntity: public interface_DofEntity<T> {
   interface_NumeredDofEntity(const boost::shared_ptr<T> sptr): interface_DofEntity<T>(sptr) {};
-  inline DofIdx get_dof_idx() const { return this->sPtr->get_dof_idx(); }
-  inline DofIdx get_petsc_gloabl_dof_idx() const { return this->sPtr->get_petsc_gloabl_dof_idx();  }
-  inline DofIdx get_petsc_local_dof_idx() const { return this->sPtr->get_petsc_local_dof_idx(); }
-  inline unsigned int get_part() const { return this->sPtr->get_part();  }
-  inline bool get_has_local_index() const { return this->sPtr->get_has_local_index(); }
-  inline boost::shared_ptr<NumeredDofEntity> get_NumeredDofEntity_ptr() const { return this->sPtr; };
+  inline DofIdx getDofIdx() const { return this->sPtr->getDofIdx(); }
+
+  /** \deprecated Use getDofIdx() instead
+  */
+  DEPRECATED inline DofIdx get_dof_idx() const { return this->sPtr->getDofIdx(); }
+
+  inline DofIdx getPetscGlobalDofIdx() const { return this->sPtr->getPetscGlobalDofIdx();  }
+
+  /** \deprecated Use getPetscGlobalDofIdx() instead
+  */
+  DEPRECATED inline DofIdx get_petsc_gloabl_dof_idx() const { return this->sPtr->getPetscGlobalDofIdx();  }
+
+  inline DofIdx getPetscLocalDofIdx() const { return this->sPtr->getPetscLocalDofIdx(); }
+
+  /** \deprecated Use getPetscLocalDofIdx() instead
+  */
+  DEPRECATED inline DofIdx get_petsc_local_dof_idx() const { return this->sPtr->getPetscLocalDofIdx(); }
+
+  inline unsigned int getPart() const { return this->sPtr->getPart();  }
+
+  /** \deprecated Use getPart() instead
+  */
+  DEPRECATED inline unsigned int get_part() const { return this->sPtr->getPart();  }
+
+  inline bool getHasLocalIndex() const { return this->sPtr->getHasLocalIndex(); }
+
+  /** \deprecated Use getHasLocalIndex() instead
+  */
+  DEPRECATED inline bool get_has_local_index() const { return this->sPtr->getHasLocalIndex(); }
+
+  inline boost::shared_ptr<NumeredDofEntity> getNumeredDofEntityPtr() const { return this->sPtr; };
+
+  /** \deprecated Use getNumeredDofEntityPtr() instead
+  */
+  DEPRECATED inline boost::shared_ptr<NumeredDofEntity> get_NumeredDofEntity_ptr() const { return getNumeredDofEntityPtr(); };
+
 };
 
 /**
