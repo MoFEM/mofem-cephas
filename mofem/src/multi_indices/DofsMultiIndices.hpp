@@ -54,11 +54,8 @@ struct DofEntity: public interface_MoFEMEntity<MoFEMEntity> {
   /** \deprecated Use getNonNonuniqueShortId() instead
   */
   DEPRECATED static inline ShortId get_non_nonunique_short_id(const DofIdx dof,const boost::shared_ptr<MoFEMEntity> ent_ptr) {
-    if(dof>=512) THROW_MESSAGE("_dof>=512")
-    if(sizeof(ShortId) < sizeof(char)+2) THROW_MESSAGE("sizeof(ShortId)< sizeof(char)+2")
-    const char bit_number = ent_ptr->getBitNumber();
-    ShortId _uid_ = ((ShortId)dof)|(((ShortId)bit_number)<<9);
-    return _uid_;
+
+    return getNonNonuniqueShortId(dof, ent_ptr);
   }
 
   bool active;
@@ -86,7 +83,7 @@ struct DofEntity: public interface_MoFEMEntity<MoFEMEntity> {
 
   /** \brief Get unique dof id
     */
-  inline GlobalUId getGlobalUniqueId() const { return getGlobalUniqueIdCalculate(get_EntDofIdx(),getMoFEMEntityPtr()); }
+  inline GlobalUId getGlobalUniqueId() const { return getGlobalUniqueIdCalculate(getEntDofIdx(),getMoFEMEntityPtr()); }
 
   /** \deprecated use getGlobalUniqueId() instead
   */
@@ -113,7 +110,7 @@ struct DofEntity: public interface_MoFEMEntity<MoFEMEntity> {
 
   /** \deprecated use getNonNonuniqueShortId() instead
   */
-  DEPRECATED inline ShortId get_non_nonunique_short_id() const  { return get_non_nonunique_short_id(dof,getMoFEMEntityPtr()); }
+  DEPRECATED inline ShortId get_non_nonunique_short_id() const  { return getNonNonuniqueShortId(); }
 
   inline EntityHandle getEnt() const { return this->sPtr->getEnt(); }
 
@@ -129,7 +126,7 @@ struct DofEntity: public interface_MoFEMEntity<MoFEMEntity> {
   /** \deprecated use getDofOrder() instead
   */
   DEPRECATED inline ApproximationOrder get_dof_order() const {
-    return ((ApproximationOrder*)this->sPtr->tag_dof_order_data)[getEntDofIdx()];
+    return getDofOrder();
   }
 
   /** \brief Get dof coefficient
@@ -141,7 +138,7 @@ struct DofEntity: public interface_MoFEMEntity<MoFEMEntity> {
   /** \deprecated use getDofCoeffIdx() instead
   */
   DEPRECATED inline FieldCoefficientsNumber get_dof_coeff_idx() const {
-    return ((FieldCoefficientsNumber*)this->sPtr->tag_dof_rank_data)[getEntDofIdx()];
+    return getDofCoeffIdx();
   }
 
   //check if node is active
@@ -149,7 +146,7 @@ struct DofEntity: public interface_MoFEMEntity<MoFEMEntity> {
 
   /** \deprecated use getActive() instead
   */
-  DEPRECATED inline char get_active() const { return active ? 1 : 0; }
+  DEPRECATED inline char get_active() const { return getActive() ; }
   friend std::ostream& operator<<(std::ostream& os,const DofEntity& e);
 
 };
@@ -171,11 +168,11 @@ struct interface_DofEntity: public interface_MoFEMEntity<T> {
   */
   DEPRECATED inline const GlobalUId get_global_unique_id() const { return this->sPtr->getGlobalUniqueId(); }
 
-  inline ShortId getOnNonuniqueShortId() const { return this->sPtr->getOnNonuniqueShortId(); }
+  inline ShortId getNonNonuniqueShortId() const { return this->sPtr->getNonNonuniqueShortId(); }
 
   /** \deprecated Use getOnNonuniqueShortId() instead
   */
-  DEPRECATED inline ShortId get_non_nonunique_short_id() const { return this->sPtr->get_non_nonunique_short_id(); }
+  DEPRECATED inline ShortId get_non_nonunique_short_id() const { return this->sPtr->getNonNonuniqueShortId(); }
 
   inline DofIdx getEntDofIdx() const { return this->sPtr->getEntDofIdx(); }
 

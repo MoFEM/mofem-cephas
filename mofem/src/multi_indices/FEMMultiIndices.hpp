@@ -33,13 +33,34 @@ struct RefElement: public interface_RefEntity<RefEntity> {
 
   SideNumber_multiIndex side_number_table;
   RefElement(Interface &moab,const boost::shared_ptr<RefEntity> ref_ent_ptr);
-  virtual const BitRefEdges& get_BitRefEdges() const { return DummyBitRefEdges; }
-  virtual int get_BitRefEdges_ulong() const { return 0; }
-  SideNumber_multiIndex &get_side_number_table() const { return const_cast<SideNumber_multiIndex&>(side_number_table); };
-  virtual boost::shared_ptr<SideNumber> get_side_number_ptr(Interface &moab,EntityHandle ent) const {
+  virtual const BitRefEdges& getBitRefEdges() const { return DummyBitRefEdges; }
+
+  /** \deprecated Use getBitRefEdges() instead
+  */
+  DEPRECATED virtual const BitRefEdges& get_BitRefEdges() const { return getBitRefEdges(); }
+  virtual int getBitRefEdgesUlong() const { return 0; }
+
+  /** \deprecated Use getBitRefEdgesUlong() instead
+  */
+  DEPRECATED virtual int get_BitRefEdges_ulong() const { return 0; }
+  SideNumber_multiIndex &getSideNumberTable() const { return const_cast<SideNumber_multiIndex&>(side_number_table); };
+
+  /** \deprecated Use getSideNumberTable() instead
+  */
+  DEPRECATED SideNumber_multiIndex &get_side_number_table() const { return getSideNumberTable(); };
+
+  virtual boost::shared_ptr<SideNumber> getSideNumberPtr(Interface &moab,EntityHandle ent) const {
     NOT_USED(moab);
     NOT_USED(ent);
     return boost::shared_ptr<SideNumber>();
+  };
+
+  /** \deprecated Use getSideNumberPtr() instead
+  */
+  DEPRECATED virtual boost::shared_ptr<SideNumber> get_side_number_ptr(Interface &moab,EntityHandle ent) const {
+    NOT_USED(moab);
+    NOT_USED(ent);
+    return getSideNumberPtr(moab, ent);
   };
 
   friend std::ostream& operator<<(std::ostream& os,const RefElement& e);
@@ -79,8 +100,14 @@ struct RefElement_TET: public RefElement {
   SideNumber_multiIndex &get_side_number_table() const { return const_cast<SideNumber_multiIndex&>(side_number_table); };
   const BitRefEdges& get_BitRefEdges() const { return *tag_BitRefEdges; }
   int get_BitRefEdges_ulong() const { return get_BitRefEdges().to_ulong(); }
-  inline int get_ref_type() const { return tag_type_data[0]; }
-  inline int get_ref_sub_type() const { return tag_type_data[1]; }
+  inline int getRefType() const { return tag_type_data[0]; }
+  /** \deprecated Use getRefType() instead
+  */
+  DEPRECATED inline int get_ref_type() const { return getRefType(); }
+  inline int getRefSubType() const { return tag_type_data[1]; }
+  /** \deprecated Use getRefSubType() instead
+  */
+  DEPRECATED inline int get_ref_sub_type() const { return getRefSubType(); }
   friend std::ostream& operator<<(std::ostream& os,const RefElement_TET& e);
 };
 
@@ -238,11 +265,20 @@ struct FiniteElement {
   inline boost::string_ref getNameRef() const { return boost::string_ref((char *)tag_name_data,tag_name_size); }
   inline std::string getName() const { return std::string((char *)tag_name_data,tag_name_size); }
   /// get BitFieldId col
-  inline BitFieldId get_BitFieldId_col() const { return *((BitFieldId*)tag_BitFieldId_col_data); }
+  inline BitFieldId getBitFieldIdCol() const { return *((BitFieldId*)tag_BitFieldId_col_data); }
+  /** \deprecated Use getBitFieldIdCol() instead
+  */
+  DEPRECATED inline BitFieldId get_BitFieldId_col() const { return getBitFieldIdCol() ; }
   /// get BitFieldId row
-  inline BitFieldId get_BitFieldId_row() const { return *((BitFieldId*)tag_BitFieldId_row_data); }
+  inline BitFieldId getBitFieldIdRow() const { return *((BitFieldId*)tag_BitFieldId_row_data); }
+  /** \deprecated Use getBitFieldIdRow() instead
+  */
+  DEPRECATED inline BitFieldId get_BitFieldId_row() const { return getBitFieldIdRow(); }
   /// get BitFieldId data
-  inline BitFieldId get_BitFieldId_data() const { return *((BitFieldId*)tag_BitFieldId_data); }
+  inline BitFieldId getBitFieldIdData() const { return *((BitFieldId*)tag_BitFieldId_data); }
+  /** \deprecated Use getBitFieldIdData() instead
+  */
+  DEPRECATED inline BitFieldId get_BitFieldId_data() const { return getBitFieldIdData(); }
   /// get bit number
   inline unsigned int getBitNumber() const { return ffsl(((BitFieldId*)tag_id_data)->to_ulong()); }
 
