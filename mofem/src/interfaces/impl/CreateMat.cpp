@@ -826,7 +826,7 @@ PetscErrorCode Core::partition_check_matrix_fill_in(const std::string &problem_n
         if(refinedEntitiesPtr->find((*rit)->getEnt())==refinedEntitiesPtr->end()) {
           SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
         }
-        if(!(*rit)->get_active()) {
+        if(!(*rit)->getActive()) {
           SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
         }
 
@@ -852,7 +852,7 @@ PetscErrorCode Core::partition_check_matrix_fill_in(const std::string &problem_n
             SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
           }
         }
-        int row = (*rit)->get_petsc_gloabl_dof_idx();
+        int row = (*rit)->getPetscGlobalDofIdx();
 
         FENumeredDofEntity_multiIndex::iterator cit = colPtr->begin();
         for(;cit!=colPtr->end();cit++) {
@@ -860,10 +860,10 @@ PetscErrorCode Core::partition_check_matrix_fill_in(const std::string &problem_n
           if(refinedEntitiesPtr->find((*cit)->getEnt())==refinedEntitiesPtr->end()) {
             SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
           }
-          if(!(*cit)->get_active()) {
+          if(!(*cit)->getActive()) {
             SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
           }
-          int col = (*cit)->get_petsc_gloabl_dof_idx();
+          int col = (*cit)->getPetscGlobalDofIdx();
           ait = adjacenciesPtr->get<Composite_Unique_mi_tag>().find(
             boost::make_tuple((*cit)->getMoFEMEntityPtr()->getGlobalUniqueId(),numeredEntFiniteElementPtr->getGlobalUniqueId())
           );

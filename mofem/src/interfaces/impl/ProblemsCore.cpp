@@ -239,7 +239,7 @@ PetscErrorCode Core::build_problem_on_distributed_mesh(MoFEMProblem *problem_ptr
       int glob_idx = start_ranges[ss]+local_idx;
       success = numered_dofs_ptr[ss]->modify( numered_dofs_ptr[ss]->project<0>(mit),NumeredDofEntity_mofem_index_change(glob_idx));
       if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
-      success = numered_dofs_ptr[ss]->modify( numered_dofs_ptr[ss]->project<0>(mit),NumeredDofEntity_part_change((*mit)->get_part(),glob_idx));
+      success = numered_dofs_ptr[ss]->modify( numered_dofs_ptr[ss]->project<0>(mit),NumeredDofEntity_part_change((*mit)->getPart(),glob_idx));
       if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
       local_idx++;
       unsigned char pstatus = (*mit)->getPStatus();
@@ -437,7 +437,7 @@ PetscErrorCode Core::build_problem_on_distributed_mesh(MoFEMProblem *problem_ptr
         bool success;
         success = numered_dofs_ptr[ss]->modify(dit,NumeredDofEntity_mofem_index_change(global_idx));
         if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
-        success = numered_dofs_ptr[ss]->modify(dit,NumeredDofEntity_part_change((*dit)->get_part(),global_idx));
+        success = numered_dofs_ptr[ss]->modify(dit,NumeredDofEntity_part_change((*dit)->getPart(),global_idx));
         if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
 
       }
@@ -1060,12 +1060,12 @@ PetscErrorCode Core::partition_compose_problem(const std::string &name,const std
             "data inconsistency, could not find dof in composite problem"
           );
         }
-        int part_number = (*diit)->get_part(); // get part number
-        int petsc_global_dof = (*diit)->get_petsc_gloabl_dof_idx();
+        int part_number = (*diit)->getPart(); // get part number
+        int petsc_global_dof = (*diit)->getPetscGlobalDofIdx();
         bool success;
         success = composed_dofs[ss]->modify(dit,NumeredDofEntity_part_change(part_number,petsc_global_dof));
         if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
-        if((*dit)->get_part() == (unsigned int)rAnk) {
+        if((*dit)->getPart() == (unsigned int)rAnk) {
           success =composed_dofs[ss]->modify(dit,NumeredDofEntity_local_idx_change((*nb_local_dofs[ss])++));
           if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
           is_local.push_back(petsc_global_dof);
@@ -1079,13 +1079,13 @@ PetscErrorCode Core::partition_compose_problem(const std::string &name,const std
       // apply local to global mapping
       is_local.resize(0);
       for(NumeredDofEntity_multiIndex::iterator dit = composed_dofs[ss]->begin();dit!=composed_dofs[ss]->end();dit++) {
-        is_local.push_back((*dit)->get_petsc_gloabl_dof_idx());
+        is_local.push_back((*dit)->getPetscGlobalDofIdx());
       }
       ierr = AOPetscToApplication(ao,is_local.size(),&is_local[0]); CHKERRQ(ierr);
       int idx2 = 0;
       for(NumeredDofEntity_multiIndex::iterator dit = composed_dofs[ss]->begin();dit!=composed_dofs[ss]->end();dit++) {
 
-        int part_number = (*dit)->get_part(); // get part number
+        int part_number = (*dit)->getPart(); // get part number
         int petsc_global_dof = is_local[idx2++];
         bool success;
         success = composed_dofs[ss]->modify(dit,NumeredDofEntity_part_change(part_number,petsc_global_dof));
@@ -1103,15 +1103,15 @@ PetscErrorCode Core::partition_compose_problem(const std::string &name,const std
         if(p.second) {
           (*nb_dofs[ss])++;
         }
-        int dof_idx = (*dit)->get_dof_idx();
-        int part_number = (*dit)->get_part(); // get part number
-        int petsc_global_dof = (*dit)->get_petsc_gloabl_dof_idx();
+        int dof_idx = (*dit)->getDofIdx();
+        int part_number = (*dit)->getPart(); // get part number
+        int petsc_global_dof = (*dit)->getPetscGlobalDofIdx();
         bool success;
         success = composed_dofs[ss]->modify(p.first,NumeredDofEntity_mofem_index_change(dof_idx));
         if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
         success = composed_dofs[ss]->modify(p.first,NumeredDofEntity_part_change(part_number,petsc_global_dof));
         if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
-        if((*p.first)->get_part() == (unsigned int)rAnk) {
+        if((*p.first)->getPart() == (unsigned int)rAnk) {
           success =composed_dofs[ss]->modify(p.first,NumeredDofEntity_local_idx_change((*nb_local_dofs[ss])++));
           if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
         }
@@ -1178,24 +1178,24 @@ PetscErrorCode Core::debugPartitionedProblem(const MoFEMProblem *problem_ptr,int
       dit = numered_dofs_ptr[ss]->begin();
       hi_dit = problem_ptr->numered_dofs_rows->get<Idx_mi_tag>().end();
       for(;dit!=hi_dit;dit++) {
-        if((*dit)->get_part()==(unsigned int)rAnk) {
-          if((*dit)->get_petsc_local_dof_idx()<0) {
+        if((*dit)->getPart()==(unsigned int)rAnk) {
+          if((*dit)->getPetscLocalDofIdx()<0) {
             std::ostringstream zz;
             zz << "rank " << rAnk << " " << **dit;
             SETERRQ2(PETSC_COMM_SELF,MOFEM_IMPOSIBLE_CASE,"local dof index for %d (0-row, 1-col) not set, i.e. has negative value\n %s",ss,zz.str().c_str());
           }
-          if((*dit)->get_petsc_local_dof_idx()>=*local_nbdof_ptr[ss]) {
+          if((*dit)->getPetscLocalDofIdx()>=*local_nbdof_ptr[ss]) {
             std::ostringstream zz;
             zz << "rank " << rAnk << " " << **dit;
             SETERRQ2(PETSC_COMM_SELF,MOFEM_IMPOSIBLE_CASE,"local dofs for %d (0-row, 1-col) out of range\n %s",ss,zz.str().c_str());
           }
         } else {
-          if((*dit)->get_petsc_gloabl_dof_idx()<0) {
+          if((*dit)->getPetscGlobalDofIdx()<0) {
             std::ostringstream zz;
             zz << "rank " << rAnk << " " << **dit;
             SETERRQ2(PETSC_COMM_SELF,MOFEM_IMPOSIBLE_CASE,"global dof index for %d (0-row, 1-col) row not set, i.e. has negative value\n %s",ss,zz.str().c_str());
           }
-          if((*dit)->get_petsc_gloabl_dof_idx()>=*nbdof_ptr[ss]) {
+          if((*dit)->getPetscGlobalDofIdx()>=*nbdof_ptr[ss]) {
             std::ostringstream zz;
             zz << "rank " << rAnk << " " << **dit;
             SETERRQ2(PETSC_COMM_SELF,MOFEM_IMPOSIBLE_CASE,"global dofs for %d (0-row, 1-col) out of range\n %s",ss,zz.str().c_str());
@@ -1227,7 +1227,7 @@ PetscErrorCode Core::resolve_shared_ents(const MoFEMProblem *problem_ptr,const s
   for(_IT_NUMEREDFEMOFEMENTITY_BY_NAME_FOR_LOOP_(problem_ptr,fe_name,fe_it)) {
     EntityHandle ent = (*fe_it)->getEnt();
     ents.insert(ent);
-    unsigned int part = (*fe_it)->get_part();
+    unsigned int part = (*fe_it)->getPart();
     rval = moab.tag_set_data(pcomm->part_tag(),&ent,1,&part); CHKERRQ_MOAB(rval);
     if(part == pcomm->rank()) {
       rval = moab.tag_set_data(th_gid,&ent,1,&gid); CHKERRQ_MOAB(rval);

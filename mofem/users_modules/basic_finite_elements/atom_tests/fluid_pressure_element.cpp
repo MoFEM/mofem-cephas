@@ -164,7 +164,7 @@ int main(int argc, char *argv[]) {
   // std::map<EntityHandle,ublas::vector<double> > tags_vals;
   // for(_IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(m_field,"DISPLACEMENT",dof)) {
   //   tags_vals[dof->getEnt()].resize(3);
-  //   tags_vals[dof->getEnt()][dof->get_dof_coeff_idx()] = dof->get_FieldData();
+  //   tags_vals[dof->getEnt()][dof->getDofCoeffIdx()] = dof->getFieldData();
   // }
   // std::vector<EntityHandle> ents;
   // ents.resize(tags_vals.size());

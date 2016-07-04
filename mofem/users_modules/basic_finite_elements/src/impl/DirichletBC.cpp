@@ -79,24 +79,24 @@ PetscErrorCode DisplacementBCFEMethodPreAndPostProc::iNitalize() {
             std::bitset<8> pstatus(dof->getPStatus());
             if(pstatus.test(0)) continue; //only local
             if(dof->getEntType() == MBVERTEX) {
-              if(dof->get_dof_coeff_idx() == 0 && mydata.data.flag1) {
-                mapZeroRows[dof->get_petsc_gloabl_dof_idx()] = scaled_values[0];
+              if(dof->getDofCoeffIdx() == 0 && mydata.data.flag1) {
+                mapZeroRows[dof->getPetscGlobalDofIdx()] = scaled_values[0];
               }
-              if(dof->get_dof_coeff_idx() == 1 && mydata.data.flag2) {
-                mapZeroRows[dof->get_petsc_gloabl_dof_idx()] = scaled_values[1];
+              if(dof->getDofCoeffIdx() == 1 && mydata.data.flag2) {
+                mapZeroRows[dof->getPetscGlobalDofIdx()] = scaled_values[1];
               }
-              if(dof->get_dof_coeff_idx() == 2 && mydata.data.flag3) {
-                mapZeroRows[dof->get_petsc_gloabl_dof_idx()] = scaled_values[2];
+              if(dof->getDofCoeffIdx() == 2 && mydata.data.flag3) {
+                mapZeroRows[dof->getPetscGlobalDofIdx()] = scaled_values[2];
               }
             } else {
-              if(dof->get_dof_coeff_idx() == 0 && mydata.data.flag1) {
-                mapZeroRows[dof->get_petsc_gloabl_dof_idx()] = 0;
+              if(dof->getDofCoeffIdx() == 0 && mydata.data.flag1) {
+                mapZeroRows[dof->getPetscGlobalDofIdx()] = 0;
               }
-              if(dof->get_dof_coeff_idx() == 1 && mydata.data.flag2) {
-                mapZeroRows[dof->get_petsc_gloabl_dof_idx()] = 0;
+              if(dof->getDofCoeffIdx() == 1 && mydata.data.flag2) {
+                mapZeroRows[dof->getPetscGlobalDofIdx()] = 0;
               }
-              if(dof->get_dof_coeff_idx() == 2 && mydata.data.flag3) {
-                mapZeroRows[dof->get_petsc_gloabl_dof_idx()] = 0;
+              if(dof->getDofCoeffIdx() == 2 && mydata.data.flag3) {
+                mapZeroRows[dof->getPetscGlobalDofIdx()] = 0;
               }
             }
           }
@@ -275,31 +275,31 @@ PetscErrorCode SpatialPositionsBCFEMethodPreAndPostProc::iNitalize() {
               EntityHandle node = dof->getEnt();
               cOords.resize(3);
               rval = mField.get_moab().get_coords(&node,1,&*cOords.data().begin()); CHKERRQ_MOAB(rval);
-              if(dof->get_dof_coeff_idx() == 0 && mydata.data.flag1) {
-                mapZeroRows[dof->get_petsc_gloabl_dof_idx()] = cOords[0]+scaled_values[0];
+              if(dof->getDofCoeffIdx() == 0 && mydata.data.flag1) {
+                mapZeroRows[dof->getPetscGlobalDofIdx()] = cOords[0]+scaled_values[0];
               }
-              if(dof->get_dof_coeff_idx() == 1 && mydata.data.flag2) {
-                mapZeroRows[dof->get_petsc_gloabl_dof_idx()] = cOords[1]+scaled_values[1];
+              if(dof->getDofCoeffIdx() == 1 && mydata.data.flag2) {
+                mapZeroRows[dof->getPetscGlobalDofIdx()] = cOords[1]+scaled_values[1];
               }
-              if(dof->get_dof_coeff_idx() == 2 && mydata.data.flag3) {
-                mapZeroRows[dof->get_petsc_gloabl_dof_idx()] = cOords[2]+scaled_values[2];
+              if(dof->getDofCoeffIdx() == 2 && mydata.data.flag3) {
+                mapZeroRows[dof->getPetscGlobalDofIdx()] = cOords[2]+scaled_values[2];
               }
             } else {
-              if(dof->get_dof_coeff_idx() == 0 && mydata.data.flag1) {
-                mapZeroRows[dof->get_petsc_gloabl_dof_idx()] = dof->get_FieldData();
+              if(dof->getDofCoeffIdx() == 0 && mydata.data.flag1) {
+                mapZeroRows[dof->getPetscGlobalDofIdx()] = dof->getFieldData();
               }
-              if(dof->get_dof_coeff_idx() == 1 && mydata.data.flag2) {
-                mapZeroRows[dof->get_petsc_gloabl_dof_idx()] = dof->get_FieldData();
+              if(dof->getDofCoeffIdx() == 1 && mydata.data.flag2) {
+                mapZeroRows[dof->getPetscGlobalDofIdx()] = dof->getFieldData();
               }
-              if(dof->get_dof_coeff_idx() == 2 && mydata.data.flag3) {
-                mapZeroRows[dof->get_petsc_gloabl_dof_idx()] = dof->get_FieldData();
+              if(dof->getDofCoeffIdx() == 2 && mydata.data.flag3) {
+                mapZeroRows[dof->getPetscGlobalDofIdx()] = dof->getFieldData();
               }
             }
           }
           for(std::vector<std::string>::iterator fit = fixFields.begin();fit!=fixFields.end();fit++) {
             for(_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_NAME_ENT_PART_FOR_LOOP_(problemPtr,*fit,*eit,pcomm->rank(),dof_ptr)) {
               NumeredDofEntity *dof = dof_ptr->get();
-              mapZeroRows[dof->get_petsc_gloabl_dof_idx()] = dof->get_FieldData();
+              mapZeroRows[dof->getPetscGlobalDofIdx()] = dof->getFieldData();
             }
           }
         }
@@ -344,9 +344,9 @@ PetscErrorCode TemperatureBCFEMethodPreAndPostProc::iNitalize() {
           for(_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_NAME_ENT_PART_FOR_LOOP_(problemPtr,fieldName,*eit,pcomm->rank(),dof_ptr)) {
             NumeredDofEntity *dof = dof_ptr->get();
             if(dof->getEntType() == MBVERTEX) {
-              mapZeroRows[dof->get_petsc_gloabl_dof_idx()] = scaled_values[0];
+              mapZeroRows[dof->getPetscGlobalDofIdx()] = scaled_values[0];
             } else {
-              mapZeroRows[dof->get_petsc_gloabl_dof_idx()] = 0;
+              mapZeroRows[dof->getPetscGlobalDofIdx()] = 0;
             }
           }
         }
@@ -371,7 +371,7 @@ PetscErrorCode FixBcAtEntities::iNitalize() {
       for(Range::iterator eit = eNts.begin();eit!=eNts.end();eit++) {
         for(_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_NAME_ENT_PART_FOR_LOOP_(problemPtr,*fit,*eit,mField.getCommRank(),dof_ptr)) {
           NumeredDofEntity *dof = dof_ptr->get();
-          mapZeroRows[dof->get_petsc_gloabl_dof_idx()] = 0;
+          mapZeroRows[dof->getPetscGlobalDofIdx()] = 0;
         }
       }
     }
@@ -497,24 +497,24 @@ PetscErrorCode DirichletBCFromBlockSetFEMethodPreAndPostProc::iNitalize() {
             for(_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_NAME_ENT_PART_FOR_LOOP_(problemPtr,fieldName,*eit,pcomm->rank(),dof_ptr)) {
               NumeredDofEntity *dof = dof_ptr->get();
               if(dof->getEntType() == MBVERTEX) {
-                if(dof->get_dof_coeff_idx() == 0) {
-                  mapZeroRows[dof->get_petsc_gloabl_dof_idx()] = scaled_values[0];
+                if(dof->getDofCoeffIdx() == 0) {
+                  mapZeroRows[dof->getPetscGlobalDofIdx()] = scaled_values[0];
                 }
-                if(dof->get_dof_coeff_idx() == 1) {
-                  mapZeroRows[dof->get_petsc_gloabl_dof_idx()] = scaled_values[1];
+                if(dof->getDofCoeffIdx() == 1) {
+                  mapZeroRows[dof->getPetscGlobalDofIdx()] = scaled_values[1];
                 }
-                if(dof->get_dof_coeff_idx() == 2) {
-                  mapZeroRows[dof->get_petsc_gloabl_dof_idx()] = scaled_values[2];
+                if(dof->getDofCoeffIdx() == 2) {
+                  mapZeroRows[dof->getPetscGlobalDofIdx()] = scaled_values[2];
                 }
               } else {
-                if(dof->get_dof_coeff_idx() == 0) {
-                  mapZeroRows[dof->get_petsc_gloabl_dof_idx()] = 0;
+                if(dof->getDofCoeffIdx() == 0) {
+                  mapZeroRows[dof->getPetscGlobalDofIdx()] = 0;
                 }
-                if(dof->get_dof_coeff_idx() == 1) {
-                  mapZeroRows[dof->get_petsc_gloabl_dof_idx()] = 0;
+                if(dof->getDofCoeffIdx() == 1) {
+                  mapZeroRows[dof->getPetscGlobalDofIdx()] = 0;
                 }
-                if(dof->get_dof_coeff_idx() == 2) {
-                  mapZeroRows[dof->get_petsc_gloabl_dof_idx()] = 0;
+                if(dof->getDofCoeffIdx() == 2) {
+                  mapZeroRows[dof->getPetscGlobalDofIdx()] = 0;
                 }
               }
             }
@@ -566,27 +566,27 @@ PetscErrorCode DirichletBCFromBlockSetFEMethodPreAndPostProcWithFlags::iNitalize
             for(_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_NAME_ENT_PART_FOR_LOOP_(problemPtr,fieldName,*eit,pcomm->rank(),dof_ptr)) {
               NumeredDofEntity *dof = dof_ptr->get();
               if(dof->getEntType() == MBVERTEX) {
-                if(dof->get_dof_coeff_idx() == 0) {
+                if(dof->getDofCoeffIdx() == 0) {
                   if(mydata[3] == 1)
-                  mapZeroRows[dof->get_petsc_gloabl_dof_idx()] = scaled_values[0];
+                  mapZeroRows[dof->getPetscGlobalDofIdx()] = scaled_values[0];
                 }
-                if(dof->get_dof_coeff_idx() == 1) {
+                if(dof->getDofCoeffIdx() == 1) {
                   if(mydata[4] == 1)
-                  mapZeroRows[dof->get_petsc_gloabl_dof_idx()] = scaled_values[1];
+                  mapZeroRows[dof->getPetscGlobalDofIdx()] = scaled_values[1];
                 }
-                if(dof->get_dof_coeff_idx() == 2) {
+                if(dof->getDofCoeffIdx() == 2) {
                   if(mydata[5] == 1)
-                  mapZeroRows[dof->get_petsc_gloabl_dof_idx()] = scaled_values[2];
+                  mapZeroRows[dof->getPetscGlobalDofIdx()] = scaled_values[2];
                 }
               } else {
-                if(dof->get_dof_coeff_idx() == 0) {
-                  mapZeroRows[dof->get_petsc_gloabl_dof_idx()] = 0;
+                if(dof->getDofCoeffIdx() == 0) {
+                  mapZeroRows[dof->getPetscGlobalDofIdx()] = 0;
                 }
-                if(dof->get_dof_coeff_idx() == 1) {
-                  mapZeroRows[dof->get_petsc_gloabl_dof_idx()] = 0;
+                if(dof->getDofCoeffIdx() == 1) {
+                  mapZeroRows[dof->getPetscGlobalDofIdx()] = 0;
                 }
-                if(dof->get_dof_coeff_idx() == 2) {
-                  mapZeroRows[dof->get_petsc_gloabl_dof_idx()] = 0;
+                if(dof->getDofCoeffIdx() == 2) {
+                  mapZeroRows[dof->getPetscGlobalDofIdx()] = 0;
                 }
               }
             }

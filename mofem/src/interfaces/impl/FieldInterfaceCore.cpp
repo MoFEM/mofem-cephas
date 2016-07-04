@@ -848,7 +848,7 @@ PetscErrorCode Core::set_field_order(const Range &ents,const BitFieldId id,const
         dof_set_type::iterator hi_dit = set_set.upper_bound(boost::make_tuple((*miit)->getNameRef(),(*miit)->getEnt()));
 
         for(;dit!=hi_dit;dit++) {
-          if((*dit)->get_dof_order()<=order) continue;
+          if((*dit)->getDofOrder()<=order) continue;
           bool success = dofsField.modify(dofsField.project<0>(dit),DofEntity_active_change(false));
           if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
         }
@@ -1153,7 +1153,7 @@ PetscErrorCode Core::dofs_L2H1HcurlHdiv(
             } else {
               if(DD<nb_active_dosf_on_ent) {
               } else {
-                if((*d_miit.first)->get_active()) {
+                if((*d_miit.first)->getActive()) {
                   is_active = false;
                   inactive_dof_counter[(*d_miit.first)->getEntType()]++;
                   bool success = dofsField.modify(d_miit.first,DofEntity_active_change(is_active));
@@ -1172,7 +1172,7 @@ PetscErrorCode Core::dofs_L2H1HcurlHdiv(
               SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
             }
             //check dof
-            if((*d_miit.first)->get_dof_order()!=oo) {
+            if((*d_miit.first)->getDofOrder()!=oo) {
               std::ostringstream ss;
               ss << "data inconsistency!" << std::endl;
               ss << "should be " << mdof << std::endl;
@@ -1833,7 +1833,7 @@ PetscErrorCode Core::build_finite_element_data_dofs(EntFiniteElement &ent_fe,int
   // Loops over active dofs only
   unsigned int size = distance(viit_data,hi_viit_data);
   for(;viit_data!=hi_viit_data;viit_data++) {
-    if(!(*viit_data)->get_active()) {
+    if(!(*viit_data)->getActive()) {
       nb_inactive_dofs++;
       continue;
     }
@@ -2286,8 +2286,8 @@ PetscErrorCode Core::partition_finite_elements(
         NumeredEntFiniteElement_change_part(max_part).operator()(numered_fe);
       }
       if(
-        (numered_fe->get_part()>=(unsigned int)low_proc)&&
-        (numered_fe->get_part()<=(unsigned int)hi_proc)
+        (numered_fe->getPart()>=(unsigned int)low_proc)&&
+        (numered_fe->getPart()<=(unsigned int)hi_proc)
       ) {
         if(part_from_moab) {
           //rows_view
@@ -2387,7 +2387,7 @@ PetscErrorCode Core::partition_ghost_dofs(const std::string &name,int verb) {
         rowdofit = (*fe_it)->rows_dofs->begin();
         hi_rowdofit = (*fe_it)->rows_dofs->end();
         for(;rowdofit!=hi_rowdofit;rowdofit++) {
-          if((*rowdofit)->get_part()==(unsigned int)rAnk) continue;
+          if((*rowdofit)->getPart()==(unsigned int)rAnk) continue;
           ghost_idx_row_view.insert((*rowdofit)->get_NumeredDofEntity_ptr());
         }
       }
@@ -2396,7 +2396,7 @@ PetscErrorCode Core::partition_ghost_dofs(const std::string &name,int verb) {
         coldofit = (*fe_it)->cols_dofs->begin();
         hi_coldofit = (*fe_it)->cols_dofs->end();
         for(;coldofit!=hi_coldofit;coldofit++) {
-          if((*coldofit)->get_part()==(unsigned int)rAnk) continue;
+          if((*coldofit)->getPart()==(unsigned int)rAnk) continue;
           ghost_idx_col_view.insert((*coldofit)->get_NumeredDofEntity_ptr());
         }
       }
@@ -2857,7 +2857,7 @@ PetscErrorCode Core::get_problem_finite_elements_entities(const std::string &pro
   for(;miit!=numeredFiniteElements.get<FiniteElement_name_mi_tag>().upper_bound(fe_name);miit++) {
     EntityHandle ent = (*miit)->getEnt();
     rval = moab.add_entities(meshset,&ent,1); CHKERRQ_MOAB(rval);
-    int part = (*miit)->get_part();
+    int part = (*miit)->getPart();
     rval = moab.tag_set_data(th_Part,&ent,1,&part); CHKERRQ_MOAB(rval);
   }
   PetscFunctionReturn(0);
@@ -3336,7 +3336,7 @@ PetscErrorCode Core::clear_inactive_dofs(int verb) {
   DofEntity_multiIndex::iterator dit;
   dit = dofsField.begin();
   for(;dit!=dofsField.end();dit++) {
-    if(!(*dit)->get_active()) {
+    if(!(*dit)->getActive()) {
       MoFEMEntityEntFiniteElementAdjacencyMap_multiIndex::index<Unique_mi_tag>::type::iterator ait,hi_ait;
       ait = entFEAdjacencies.get<Unique_mi_tag>().lower_bound((*dit)->getMoFEMEntityPtr()->getGlobalUniqueId());
       hi_ait = entFEAdjacencies.get<Unique_mi_tag>().upper_bound((*dit)->getMoFEMEntityPtr()->getGlobalUniqueId());

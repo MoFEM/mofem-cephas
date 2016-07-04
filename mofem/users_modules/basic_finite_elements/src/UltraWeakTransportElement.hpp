@@ -986,7 +986,7 @@ struct UltraWeakTransportElement {
         ierr = getNumeredEntFiniteElementPtr()->get_row_dofs_by_petsc_gloabl_dof_idx(
           data.getIndices()[0],&dof_ptr
         ); CHKERRQ(ierr);
-        dof_ptr->get_FieldData() = *error_flux_ptr;
+        dof_ptr->getFieldData() = *error_flux_ptr;
 
       } catch (const std::exception& ex) {
         std::ostringstream ss;

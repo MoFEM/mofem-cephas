@@ -224,7 +224,7 @@ PetscErrorCode AnalyticalDirichletBC::ApproxField::OpLhs::doWork(
     ents.merge(tris);
     for(Range::iterator eit = ents.begin();eit!=ents.end();eit++) {
       for(_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_NAME_ENT_PART_FOR_LOOP_(problemPtr,fieldName,*eit,pcomm->rank(),dof)) {
-        mapZeroRows[dof->get()->get_petsc_gloabl_dof_idx()] = dof->get()->get_FieldData();
+        mapZeroRows[dof->get()->getPetscGlobalDofIdx()] = dof->get()->getFieldData();
       }
     }
     dofsIndices.resize(mapZeroRows.size());

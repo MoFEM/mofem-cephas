@@ -323,15 +323,15 @@ struct Smoother {
 
             for(;diit!=hi_diit;diit++) {
               for(int ddd = 0;ddd<nb_col;ddd++) {
-                if(rowFrontIndices[3*nn+diit->get()->get_dof_coeff_idx()]!=diit->get()->get_petsc_gloabl_dof_idx()) {
+                if(rowFrontIndices[3*nn+diit->get()->getDofCoeffIdx()]!=diit->get()->getPetscGlobalDofIdx()) {
                   SETERRQ2(
                     PETSC_COMM_SELF,1,"data inconsistency %d != %d",
-                    3*nn+diit->get()->get_dof_coeff_idx(),diit->get()->get_petsc_gloabl_dof_idx()
+                    3*nn+diit->get()->getDofCoeffIdx(),diit->get()->getPetscGlobalDofIdx()
                   );
                 }
-                if(diit->get()->get_petsc_local_dof_idx()==-1) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
-                double g = f_tangent_front_mesh_array[diit->get()->get_petsc_local_dof_idx()]*k(3*nn+diit->get()->get_dof_coeff_idx(),ddd);
-                int lambda_idx = dit->get()->get_petsc_gloabl_dof_idx();
+                if(diit->get()->getPetscLocalDofIdx()==-1) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+                double g = f_tangent_front_mesh_array[diit->get()->getPetscLocalDofIdx()]*k(3*nn+diit->get()->getDofCoeffIdx(),ddd);
+                int lambda_idx = dit->get()->getPetscGlobalDofIdx();
                 ierr = MatSetValues(
                   getFEMethod()->snes_B,1,&lambda_idx,1,&col_indices_ptr[ddd],&g,ADD_VALUES
                 ); CHKERRQ(ierr);

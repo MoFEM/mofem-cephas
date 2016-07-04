@@ -138,8 +138,8 @@ PetscErrorCode Core::record_field(const std::string& serie_name,const std::strin
     if((dof_bit&mask) != dof_bit) continue;
     if((dof_bit&bit).any()) {
       EntityHandle ent = (*dit)->getEnt();
-      ShortId uid = (*dit)->get_non_nonunique_short_id();
-      FieldData val = (*dit)->get_FieldData();
+      ShortId uid = (*dit)->getNonNonuniqueShortId();
+      FieldData val = (*dit)->getFieldData();
       ierr = const_cast<MoFEMSeries*>(&*sit)->push_dofs(ent,uid,val); CHKERRQ(ierr);
     }
   }

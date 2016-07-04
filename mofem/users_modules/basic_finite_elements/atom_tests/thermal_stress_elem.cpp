@@ -126,7 +126,7 @@ int main(int argc, char *argv[]) {
     EntityHandle ent = dof->get()->getEnt();
     ublas::vector<double> coords(3);
     rval = moab.get_coords(&ent,1,&coords[0]); CHKERRQ_MOAB(rval);
-    dof->get()->get_FieldData() = 1;
+    dof->get()->getFieldData() = 1;
   }
 
   Vec F;

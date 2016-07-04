@@ -305,7 +305,7 @@ int main(int argc, char *argv[]) {
     coords[1] *= 4;
     coords[2] *= 0.5;
 
-    (*dof)->get_FieldData() = coords[(*dof)->get_dof_coeff_idx()];
+    (*dof)->getFieldData() = coords[(*dof)->getDofCoeffIdx()];
   }
 
   divergence_vol = 0;

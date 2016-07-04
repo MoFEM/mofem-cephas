@@ -127,7 +127,7 @@ struct ArcLengthIntElemFEMethod: public FEMethod {
     array_int_lambda[0] = 0;
     for(;dit!=hi_dit;dit++) {
       if(dit->get()->getEntType() != MBVERTEX) continue;
-      if(pcomm->rank() != dit->get()->get_part()) continue;
+      if(pcomm->rank() != dit->get()->getPart()) continue;
       if(Nodes3.find(dit->get()->getEnt())!=Nodes3.end()) {
         array_int_lambda[0] += array[dit->get()->petsc_local_dof_idx];
       }
