@@ -148,9 +148,6 @@ PetscErrorCode NonlinearElasticElement::OpGetDataAtGaussPts::doWork(
     }
     const int nb_gauss_pts = data.getN().size1();
     const int rank = data.getFieldDofs()[0]->getNbOfCoeffs();
-    if(rank!=3) {
-      SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"Work only for vector field");
-    }
 
     //initialize
     if(type == zeroAtType) {
@@ -171,47 +168,75 @@ PetscErrorCode NonlinearElasticElement::OpGetDataAtGaussPts::doWork(
     FTensor::Index<'i',3> i;
     FTensor::Index<'j',3> j;
 
-    for(int gg = 0;gg!=nb_gauss_pts;gg++) {
-      FTensor::Tensor1<double*,3> field_data = data.getFTensor1FieldData<3>();
-      int bb = 0;
-      for(;bb!=nb_dofs/3;bb++) {
+    if(rank==1) {
+
+      for(int gg = 0;gg!=nb_gauss_pts;gg++) {
+        FTensor::Tensor0<double*> field_data = data.getFTensor0FieldData();
+        double &val = valuesAtGaussPts[gg][0];
+        FTensor::Tensor1<double*,3> grad(
+          &gradientAtGaussPts[gg](0,0),
+          &gradientAtGaussPts[gg](0,1),
+          &gradientAtGaussPts[gg](0,2)
+        );
+        int bb = 0;
+        for(;bb!=nb_dofs;bb++) {
+          val += base_function*field_data;
+          grad(i) += diff_base_functions(i)*field_data;
+          ++diff_base_functions;
+          ++base_function;
+          ++field_data;
+        }
+        for(;bb!=nb_base_functions;bb++) {
+          ++diff_base_functions;
+          ++base_function;
+        }
+      }
+
+    } else if(rank==3) {
+
+      for(int gg = 0;gg!=nb_gauss_pts;gg++) {
+        FTensor::Tensor1<double*,3> field_data = data.getFTensor1FieldData<3>();
         FTensor::Tensor1<double*,3> values(
           &valuesAtGaussPts[gg][0],
           &valuesAtGaussPts[gg][1],
           &valuesAtGaussPts[gg][2]
         );
-        values(i) += base_function*field_data(i);
         FTensor::Tensor2<double*,3,3> gradient(
           &gradientAtGaussPts[gg](0,0),&gradientAtGaussPts[gg](0,1),&gradientAtGaussPts[gg](0,2),
           &gradientAtGaussPts[gg](1,0),&gradientAtGaussPts[gg](1,1),&gradientAtGaussPts[gg](1,2),
           &gradientAtGaussPts[gg](2,0),&gradientAtGaussPts[gg](2,1),&gradientAtGaussPts[gg](2,2)
         );
-        gradient(i,j) += field_data(i)*diff_base_functions(j);
-        ++diff_base_functions;
-        ++base_function;
-        ++field_data;
+        int bb = 0;
+        for(;bb!=nb_dofs/3;bb++) {
+          values(i) += base_function*field_data(i);
+          gradient(i,j) += field_data(i)*diff_base_functions(j);
+          ++diff_base_functions;
+          ++base_function;
+          ++field_data;
+        }
+        for(;bb!=nb_base_functions;bb++) {
+          ++diff_base_functions;
+          ++base_function;
+        }
       }
-      for(;bb!=nb_base_functions;bb++) {
-        ++diff_base_functions;
-        ++base_function;
+
+    } else {
+      // FIXME: THat part is inefficient
+      VectorDouble& values = data.getFieldData();
+      //std::cerr << valuesAtGaussPts[0] << " : ";
+      for(int gg = 0;gg<nb_gauss_pts;gg++) {
+        VectorAdaptor N = data.getN(gg,nb_dofs/rank);
+        MatrixAdaptor diffN = data.getDiffN(gg,nb_dofs/rank);
+        for(int dd = 0;dd<nb_dofs/rank;dd++) {
+          for(int rr1 = 0;rr1<rank;rr1++) {
+            valuesAtGaussPts[gg][rr1] += N[dd]*values[rank*dd+rr1];
+            for(int rr2 = 0;rr2<3;rr2++) {
+              gradientAtGaussPts[gg](rr1,rr2) += diffN(dd,rr2)*values[rank*dd+rr1];
+            }
+          }
+        }
       }
     }
-
-
-    // VectorDouble& values = data.getFieldData();
-    // //std::cerr << valuesAtGaussPts[0] << " : ";
-    // for(int gg = 0;gg<nb_gauss_pts;gg++) {
-    //   VectorAdaptor N = data.getN(gg,nb_dofs/rank);
-    //   MatrixAdaptor diffN = data.getDiffN(gg,nb_dofs/rank);
-    //   for(int dd = 0;dd<nb_dofs/rank;dd++) {
-    //     for(int rr1 = 0;rr1<rank;rr1++) {
-    //       valuesAtGaussPts[gg][rr1] += N[dd]*values[rank*dd+rr1];
-    //       for(int rr2 = 0;rr2<3;rr2++) {
-    //         gradientAtGaussPts[gg](rr1,rr2) += diffN(dd,rr2)*values[rank*dd+rr1];
-    //       }
-    //     }
-    //   }
-    // }
 
     //std::cerr << row_field_name << " " << col_field_name << std::endl;
     //std::cerr << side << " " << type << std::endl;
