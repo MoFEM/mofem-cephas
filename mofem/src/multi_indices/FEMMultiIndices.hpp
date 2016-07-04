@@ -38,13 +38,13 @@ struct RefElement: public interface_RefEntity<RefEntity> {
 
   /** \deprecated Use getBitRefEdges() instead
   */
-  DEPRECATED virtual const BitRefEdges& get_BitRefEdges() const { return DummyBitRefEdges; }
+  DEPRECATED virtual const BitRefEdges& get_BitRefEdges() const { return getBitRefEdges(); }
 
   virtual int getBitRefEdgesUlong() const { return 0; }
 
   /** \deprecated Use getBitRefEdgesUlong() instead
   */
-  DEPRECATED virtual int get_BitRefEdges_ulong() const { return 0; }
+  DEPRECATED virtual int get_BitRefEdges_ulong() const { return getBitRefEdgesUlong(); }
 
 
   SideNumber_multiIndex &getSideNumberTable() const { return const_cast<SideNumber_multiIndex&>(side_number_table); };
@@ -135,11 +135,11 @@ struct RefElement_TET: public RefElement {
   */
   DEPRECATED const BitRefEdges& get_BitRefEdges() const { return getBitRefEdges(); }
 
-  int getBitRefEdgesUlong() const { return get_BitRefEdges().to_ulong(); }
+  int getBitRefEdgesUlong() const { return getBitRefEdges().to_ulong(); }
 
   /** \deprecated Use getBitRefEdgesUlong() instead
   */
-  DEPRECATED int get_BitRefEdges_ulong() const { return get_BitRefEdges().to_ulong(); }
+  DEPRECATED int get_BitRefEdges_ulong() const { return getBitRefEdgesUlong(); }
 
   inline int getRefType() const { return tag_type_data[0]; }
 
@@ -149,7 +149,7 @@ struct RefElement_TET: public RefElement {
 
   inline int getRefSubType() const { return tag_type_data[1]; }
 
-  /** \deprecated Use getBitRefEdgesUlong() instead
+  /** \deprecated Use getRefSubType() instead
   */
   DEPRECATED inline int get_ref_sub_type() const { return getRefSubType(); }
 
@@ -219,17 +219,17 @@ struct interface_RefElement: interface_RefEntity<T> {
 
   /** \deprecated Use getBitRefEdgesUlong() instead
   */
-  DEPRECATED int get_BitRefEdges_ulong() const { return getBitRefEdgesUlong(); }
+  DEPRECATED int get_BitRefEdges_ulong() const { return this->sPtr->getBitRefEdgesUlong(); }
 
   SideNumber_multiIndex &getSideNumberTable() const { return this->sPtr->getSideNumberTable(); }
 
   /** \deprecated Use getSideNumberTable() instead
   */
-  DEPRECATED SideNumber_multiIndex &get_side_number_table() const { return getSideNumberTable(); }
+  DEPRECATED SideNumber_multiIndex &get_side_number_table() const { return this->sPtr->getSideNumberTable(); }
 
   boost::shared_ptr<SideNumber> getSideNumberPtr(Interface &moab,EntityHandle ent) const {
     return this->sPtr->getSideNumberPtr(moab,ent);
-
+    }
   /** \deprecated Use getSideNumberPtr() instead
   */
   DEPRECATED boost::shared_ptr<SideNumber> get_side_number_ptr(Interface &moab,EntityHandle ent) const {
@@ -271,7 +271,7 @@ typedef multi_index_container<
       composite_key<
 	ptrWrapperRefElement,
 	const_mem_fun<ptrWrapperRefElement::interface_type_RefEntity,EntityHandle,&ptrWrapperRefElement::getParentEnt>,
-	const_mem_fun<ptrWrapperRefElement::interface_type_RefElement,int,&ptrWrapperRefElement::get_BitRefEdges_ulong> > >,
+	const_mem_fun<ptrWrapperRefElement::interface_type_RefElement,int,&ptrWrapperRefElement::getBitRefEdgesUlong> > >,
     hashed_unique<
       tag<Composite_EntType_and_ParentEntType_mi_tag>,
       composite_key<
@@ -645,19 +645,19 @@ interface_RefElement<T> {
 
   /** \deprecated Use getDataDofs() instead
   */
-  DEPRECATED inline const FEDofEntity_multiIndex& get_data_dofs() const { return getDataDofs(); };
+  DEPRECATED inline const FEDofEntity_multiIndex& get_data_dofs() const { return this->sPtr->getDataDofs(); };
 
   inline DofIdx getNbDofsRow() const { return this->sPtr->getNbDofsRow(); }
 
   /** \deprecated Use getNbDofsRow() instead
   */
-  DEPRECATED inline DofIdx get_nb_dofs_row() const { return getNbDofsRow(); }
+  DEPRECATED inline DofIdx get_nb_dofs_row() const { return this->sPtr->getNbDofsRow(); }
 
   inline DofIdx getNbDofsCol() const { return this->sPtr->getNbDofsCol(); }
 
   /** \deprecated Use getNbDofsCol() instead
   */
-  DEPRECATED inline DofIdx get_nb_dofs_col() const { return getNbDofsCol(); }
+  DEPRECATED inline DofIdx get_nb_dofs_col() const { return this->sPtr->getNbDofsCol(); }
 
   inline DofIdx getNbDofsData() const { return this->sPtr->getNbDofsData(); }
 
@@ -669,7 +669,7 @@ interface_RefElement<T> {
 
   /** \deprecated Use getEnt() instead
   */
-  DEPRECATED inline EntityHandle get_ent() const { return getEnt(); }
+  DEPRECATED inline EntityHandle get_ent() const { return this->sPtr->getEnt(); }
 
   inline GlobalUId getGlobalUniqueId() const { return this->sPtr->getGlobalUniqueId(); }
   //
@@ -677,7 +677,7 @@ interface_RefElement<T> {
 
   /** \deprecated Use getSideNumberTable() instead
   */
-  DEPRECATED SideNumber_multiIndex &get_side_number_table() const { return getSideNumberTable(); }
+  DEPRECATED SideNumber_multiIndex &get_side_number_table() const { return this->sPtr->getSideNumberTable(); }
 
   boost::shared_ptr<SideNumber> getSidePumberPtr(Interface &moab,EntityHandle ent) const {
     return this->sPtr->getSidePumberPtr(moab,ent);
@@ -709,7 +709,7 @@ interface_RefElement<T> {
 
   /** \deprecated Use getRefElement() instead
   */
-  DEPRECATED inline const boost::shared_ptr<T> get_RefElement() const { return getRefElement(); }
+  DEPRECATED inline const boost::shared_ptr<T> get_RefElement() const { return this->sPtr->getRefElement(); }
 
 
 };
@@ -795,19 +795,19 @@ struct interface_NumeredEntFiniteElement: public interface_EntFiniteElement<T> {
 
   /** \deprecated Use getPart() instead
   */
-  DEPRECATED inline unsigned int get_part() const { return getPart(); }
+  DEPRECATED inline unsigned int get_part() const { return this->sPtr->getPart(); }
 
   inline const FENumeredDofEntity_multiIndex& getRowsDofs() const { return this->sPtr->getRowsDofs(); };
 
   /** \deprecated Use getRowsDofs() instead
   */
-  DEPRECATED inline const FENumeredDofEntity_multiIndex& get_rows_dofs() const { return getRowsDofs(); };
+  DEPRECATED inline const FENumeredDofEntity_multiIndex& get_rows_dofs() const { return this->sPtr->getRowsDofs(); };
 
   inline const FENumeredDofEntity_multiIndex& getColsDofs() const { return this->sPtr->getColsDofs(); };
 
   /** \deprecated Use getColsDofs() instead
   */
-  DEPRECATED inline const FENumeredDofEntity_multiIndex& get_cols_dofs() const { return getColsDofs(); };
+  DEPRECATED inline const FENumeredDofEntity_multiIndex& get_cols_dofs() const { return this->sPtr->getColsDofs(); };
 };
 
 /**

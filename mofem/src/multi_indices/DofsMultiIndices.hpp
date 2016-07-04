@@ -306,7 +306,7 @@ struct interface_NumeredDofEntity: public interface_DofEntity<T> {
 
   /** \deprecated Use getPetscGlobalDofIdx() instead
   */
-  DEPRECATED inline DofIdx get_petsc_gloabl_dof_idx() const { return getPetscGlobalDofIdx();  }
+  DEPRECATED inline DofIdx get_petsc_gloabl_dof_idx() const { return this->sPtr->getPetscGlobalDofIdx();  }
 
   inline DofIdx getPetscLocalDofIdx() const { return this->sPtr->getPetscLocalDofIdx(); }
 
@@ -318,13 +318,13 @@ struct interface_NumeredDofEntity: public interface_DofEntity<T> {
 
   /** \deprecated Use getPart() instead
   */
-  DEPRECATED inline unsigned int get_part() const { return getPart();  }
+  DEPRECATED inline unsigned int get_part() const { return this->sPtr->getPart();  }
 
   inline bool getHasLocalIndex() const { return this->sPtr->getHasLocalIndex(); }
 
   /** \deprecated Use getHasLocalIndex() instead
   */
-  DEPRECATED inline bool get_has_local_index() const { return getHasLocalIndex(); }
+  DEPRECATED inline bool get_has_local_index() const { return this->sPtr->getHasLocalIndex(); }
 
   inline boost::shared_ptr<NumeredDofEntity> getNumeredDofEntityPtr() const { return this->sPtr; };
 
