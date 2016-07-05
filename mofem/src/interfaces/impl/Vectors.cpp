@@ -99,13 +99,13 @@ PetscErrorCode Core::VecCreateGhost(const std::string &name,RowColData rc,Vec *V
   DofsByLocalIdx *dofs;
   switch (rc) {
     case ROW:
-      nb_dofs = p_miit->get_nb_dofs_row();
+      nb_dofs = p_miit->getNbDofsRow();
       nb_local_dofs = p_miit->get_nb_local_dofs_row();
       nb_ghost_dofs = p_miit->get_nb_ghost_dofs_row();
       dofs = const_cast<DofsByLocalIdx*>(&p_miit->numered_dofs_rows->get<PetscLocalIdx_mi_tag>());
       break;
     case COL:
-      nb_dofs = p_miit->get_nb_dofs_col();
+      nb_dofs = p_miit->getNbDofsCol();
       nb_local_dofs = p_miit->get_nb_local_dofs_col();
       nb_ghost_dofs = p_miit->get_nb_ghost_dofs_col();
       dofs = const_cast<DofsByLocalIdx*>(&p_miit->numered_dofs_cols->get<PetscLocalIdx_mi_tag>());
@@ -154,7 +154,7 @@ PetscErrorCode Core::ISCreateProblemOrder(
   NumeredDofEntity_multiIndex_petsc_local_dof_view_ordered_non_unique dof_loc_idx_view;
   for(;it!=hi_it;it++) {
     std::pair<NumeredDofEntity_multiIndex_petsc_local_dof_view_ordered_non_unique::iterator,bool> p;
-    if((*it)->get_part()!=(unsigned int)rAnk) continue;
+    if((*it)->getPart()!=(unsigned int)rAnk) continue;
     p = dof_loc_idx_view.insert(*it);
   }
   NumeredDofEntity_multiIndex_petsc_local_dof_view_ordered_non_unique::iterator vit,hi_vit;
@@ -164,7 +164,7 @@ PetscErrorCode Core::ISCreateProblemOrder(
   int *id;
   ierr = PetscMalloc(size*sizeof(int),&id); CHKERRQ(ierr);
   for(int ii = 0;vit!=hi_vit;vit++) {
-    id[ii++] = (*vit)->get_petsc_gloabl_dof_idx();
+    id[ii++] = (*vit)->getPetscGlobalDofIdx();
   }
   ierr = ISCreateGeneral(comm,size,id,PETSC_OWN_POINTER,is); CHKERRQ(ierr);
   PetscFunctionReturn(0);
@@ -203,7 +203,7 @@ PetscErrorCode Core::ISCreateProblemFieldAndRank(
   NumeredDofEntity_multiIndex_petsc_local_dof_view_ordered_non_unique dof_loc_idx_view;
   for(;it!=hi_it;it++) {
     std::pair<NumeredDofEntity_multiIndex_petsc_local_dof_view_ordered_non_unique::iterator,bool> p;
-    if((*it)->get_part()!=(unsigned int)rAnk) continue;
+    if((*it)->getPart()!=(unsigned int)rAnk) continue;
     if((*it)->getNameRef() != field) continue;
     p = dof_loc_idx_view.insert(*it);
   }
@@ -215,7 +215,7 @@ PetscErrorCode Core::ISCreateProblemFieldAndRank(
   int *id;
   ierr = PetscMalloc(size*sizeof(int),&id); CHKERRQ(ierr);
   for(int ii = 0;vit!=hi_vit;vit++) {
-    id[ii++] = (*vit)->get_petsc_gloabl_dof_idx();
+    id[ii++] = (*vit)->getPetscGlobalDofIdx();
   }
 
   ierr = ISCreateGeneral(comm,size,id,PETSC_OWN_POINTER,is); CHKERRQ(ierr);
@@ -263,13 +263,13 @@ PetscErrorCode Core::ISCreateFromProblemFieldToOtherProblemField(
      SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented");
   }
   for(;y_dit!=hi_y_dit;y_dit++) {
-    if((*y_dit)->get_part()!=(unsigned int)rAnk) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
+    if((*y_dit)->getPart()!=(unsigned int)rAnk) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
     if((*y_dit)->getName()!=y_field_name) continue;
     dofs_by_name_ent_dof::iterator x_dit;
-    x_dit = x_numered_dofs_by_ent_name_dof->find(boost::make_tuple(x_field_name,(*y_dit)->getEnt(),(*y_dit)->get_EntDofIdx()));
+    x_dit = x_numered_dofs_by_ent_name_dof->find(boost::make_tuple(x_field_name,(*y_dit)->getEnt(),(*y_dit)->getEntDofIdx()));
     if(x_dit==x_numered_dofs_by_ent_name_dof->end()) continue;
-    idx.push_back((*x_dit)->get_petsc_gloabl_dof_idx());
-    idy.push_back((*y_dit)->get_petsc_gloabl_dof_idx());
+    idx.push_back((*x_dit)->getPetscGlobalDofIdx());
+    idy.push_back((*y_dit)->getPetscGlobalDofIdx());
   }
   PetscFunctionReturn(0);
 }
@@ -358,12 +358,12 @@ PetscErrorCode Core::ISCreateFromProblemToOtherProblem(
      SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented");
   }
   for(;y_dit!=hi_y_dit;y_dit++) {
-    if((*y_dit)->get_part()!=(unsigned int)rAnk) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
+    if((*y_dit)->getPart()!=(unsigned int)rAnk) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
     dofs_by_uid::iterator x_dit;
     x_dit = x_numered_dofs_by_uid->find((*y_dit)->getGlobalUniqueId());
     if(x_dit==x_numered_dofs_by_uid->end()) continue;
-    idx.push_back((*x_dit)->get_petsc_gloabl_dof_idx());
-    idy.push_back((*y_dit)->get_petsc_gloabl_dof_idx());
+    idx.push_back((*x_dit)->getPetscGlobalDofIdx());
+    idy.push_back((*y_dit)->getPetscGlobalDofIdx());
   }
   PetscFunctionReturn(0);
 }
@@ -453,10 +453,10 @@ PetscErrorCode Core::set_local_ghost_vector(
     case SCATTER_FORWARD:
     switch (mode) {
       case INSERT_VALUES:
-      for(;miit!=hi_miit;miit++,ii++) array[ii] = (*miit)->get_FieldData();
+      for(;miit!=hi_miit;miit++,ii++) array[ii] = (*miit)->getFieldData();
       break;
       case ADD_VALUES:
-      for(;miit!=hi_miit;miit++,ii++) array[ii] += (*miit)->get_FieldData();
+      for(;miit!=hi_miit;miit++,ii++) array[ii] += (*miit)->getFieldData();
       break;
       default:
       SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented");
@@ -468,11 +468,11 @@ PetscErrorCode Core::set_local_ghost_vector(
       for(;miit!=hi_miit;miit++,ii++) {
         //std::cerr << *miit << std::endl;
         //std::cerr << array[ii] << std::endl;
-        (*miit)->get_FieldData() = array[ii];
+        (*miit)->getFieldData() = array[ii];
       }
       break;
       case ADD_VALUES:
-      for(;miit!=hi_miit;miit++,ii++) (*miit)->get_FieldData() += array[ii];
+      for(;miit!=hi_miit;miit++,ii++) (*miit)->getFieldData() += array[ii];
       break;
       default:
       SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented");
@@ -514,11 +514,11 @@ PetscErrorCode Core::set_global_ghost_vector(
   DofIdx nb_dofs;
   switch (rc) {
     case ROW:
-      nb_dofs = problem_ptr->get_nb_dofs_row();
+      nb_dofs = problem_ptr->getNbDofsRow();
       dofs = const_cast<DofsByGlobalIdx*>(&problem_ptr->numered_dofs_rows->get<PetscGlobalIdx_mi_tag>());
       break;
     case COL:
-      nb_dofs = problem_ptr->get_nb_dofs_col();
+      nb_dofs = problem_ptr->getNbDofsCol();
       dofs = const_cast<DofsByGlobalIdx*>(&problem_ptr->numered_dofs_cols->get<PetscGlobalIdx_mi_tag>());
       break;
     default:
@@ -542,10 +542,10 @@ PetscErrorCode Core::set_global_ghost_vector(
       ierr = VecGetArray(V_glob,&array); CHKERRQ(ierr);
       switch (mode) {
         case INSERT_VALUES:
-        for(;miit!=hi_miit;miit++) (*miit)->get_FieldData() = array[(*miit)->get_petsc_gloabl_dof_idx()];
+        for(;miit!=hi_miit;miit++) (*miit)->getFieldData() = array[(*miit)->getPetscGlobalDofIdx()];
         break;
         case ADD_VALUES:
-        for(;miit!=hi_miit;miit++) (*miit)->get_FieldData() += array[(*miit)->get_petsc_gloabl_dof_idx()];
+        for(;miit!=hi_miit;miit++) (*miit)->getFieldData() += array[(*miit)->getPetscGlobalDofIdx()];
         break;
         default:
         SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented");
@@ -627,7 +627,7 @@ PetscErrorCode Core::set_other_local_ghost_vector(
         //if(miit->getNameRef()!=field_name) continue;
         DofEntity_multiIndex::index<Composite_Name_And_Ent_And_EndDofIdx_mi_tag>::type::iterator diiiit;
         diiiit = dofsField.get<Composite_Name_And_Ent_And_EndDofIdx_mi_tag>().find(
-          boost::make_tuple(cpy_field_name,(*miit)->getEnt(),(*miit)->get_EntDofIdx())
+          boost::make_tuple(cpy_field_name,(*miit)->getEnt(),(*miit)->getEntDofIdx())
         );
         if(diiiit==dofsField.get<Composite_Name_And_Ent_And_EndDofIdx_mi_tag>().end()) {
           SETERRQ(
@@ -636,9 +636,9 @@ PetscErrorCode Core::set_other_local_ghost_vector(
           );
         }
         if(alpha) {
-          (*diiiit)->get_FieldData() = array[(*miit)->get_petsc_local_dof_idx()];
+          (*diiiit)->getFieldData() = array[(*miit)->getPetscLocalDofIdx()];
         } else {
-          (*diiiit)->get_FieldData() += array[(*miit)->get_petsc_local_dof_idx()];
+          (*diiiit)->getFieldData() += array[(*miit)->getPetscLocalDofIdx()];
         }
       }
       ierr = VecRestoreArray(V,&array); CHKERRQ(ierr);
@@ -649,7 +649,7 @@ PetscErrorCode Core::set_other_local_ghost_vector(
         //if(miit->getNameRef()!=field_name) continue;
         DofEntity_multiIndex::index<Composite_Name_And_Ent_And_EndDofIdx_mi_tag>::type::iterator diiiit;
         diiiit = dofsField.get<Composite_Name_And_Ent_And_EndDofIdx_mi_tag>().find(
-          boost::make_tuple(cpy_field_name,(*miit)->getEnt(),(*miit)->get_EntDofIdx())
+          boost::make_tuple(cpy_field_name,(*miit)->getEnt(),(*miit)->getEntDofIdx())
         );
         if(diiiit==dofsField.get<Composite_Name_And_Ent_And_EndDofIdx_mi_tag>().end()) {
           SETERRQ(
@@ -658,7 +658,7 @@ PetscErrorCode Core::set_other_local_ghost_vector(
             "no data to fill the vector (top tip: you want scatter forward or scatter reverse?)"
           );
         }
-        ierr = VecSetValue(V,(*miit)->get_petsc_gloabl_dof_idx(),(*diiiit)->get_FieldData(),mode); CHKERRQ(ierr);
+        ierr = VecSetValue(V,(*miit)->getPetscGlobalDofIdx(),(*diiiit)->getFieldData(),mode); CHKERRQ(ierr);
       }
       ierr = VecAssemblyBegin(V); CHKERRQ(ierr);
       ierr = VecAssemblyEnd(V); CHKERRQ(ierr);
@@ -700,11 +700,11 @@ PetscErrorCode Core::set_other_global_ghost_vector(
   DofIdx nb_dofs;
   switch (rc) {
     case ROW:
-      nb_dofs = problem_ptr->get_nb_dofs_row();
+      nb_dofs = problem_ptr->getNbDofsRow();
       dofs = const_cast<DofsByName*>(&problem_ptr->numered_dofs_rows->get<FieldName_mi_tag>());
       break;
     case COL:
-      nb_dofs = problem_ptr->get_nb_dofs_col();
+      nb_dofs = problem_ptr->getNbDofsCol();
       dofs = const_cast<DofsByName*>(&problem_ptr->numered_dofs_cols->get<FieldName_mi_tag>());
       break;
     default:
@@ -748,11 +748,11 @@ PetscErrorCode Core::set_other_global_ghost_vector(
         SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"not implemented");
       }
       for(;miit!=hi_miit;miit++) {
-        if((*miit)->get_petsc_gloabl_dof_idx()>=size) {
+        if((*miit)->getPetscGlobalDofIdx()>=size) {
           SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency: nb. of dofs and declared nb. dofs in database");
         }
         DofEntity_multiIndex::index<Composite_Name_And_Ent_And_EndDofIdx_mi_tag>::type::iterator diiiit;
-        diiiit = dofsField.get<Composite_Name_And_Ent_And_EndDofIdx_mi_tag>().find(boost::make_tuple(cpy_field_name,(*miit)->getEnt(),(*miit)->get_EntDofIdx()));
+        diiiit = dofsField.get<Composite_Name_And_Ent_And_EndDofIdx_mi_tag>().find(boost::make_tuple(cpy_field_name,(*miit)->getEnt(),(*miit)->getEntDofIdx()));
         if(diiiit==dofsField.get<Composite_Name_And_Ent_And_EndDofIdx_mi_tag>().end()) {
           EntityHandle ent = (*miit)->getEnt();
           rval = moab.add_entities((*cpy_fit)->getMeshSet(),&ent,1); CHKERRQ_MOAB(rval);
@@ -782,9 +782,9 @@ PetscErrorCode Core::set_other_global_ghost_vector(
             boost::shared_ptr<DofEntity>(
               new DofEntity(
                 *(p_e_miit.first),
-                (*diit)->get_dof_order(),
-                (*diit)->get_dof_coeff_idx(),
-                (*diit)->get_EntDofIdx()
+                (*diit)->getDofOrder(),
+                (*diit)->getDofCoeffIdx(),
+                (*diit)->getEntDofIdx()
               )
             );
             std::pair<DofEntity_multiIndex::iterator,bool> cpy_p_diit;
@@ -794,14 +794,14 @@ PetscErrorCode Core::set_other_global_ghost_vector(
               if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
             }
           }
-          diiiit = dofsField.get<Composite_Name_And_Ent_And_EndDofIdx_mi_tag>().find(boost::make_tuple(cpy_field_name,(*miit)->getEnt(),(*miit)->get_EntDofIdx()));
+          diiiit = dofsField.get<Composite_Name_And_Ent_And_EndDofIdx_mi_tag>().find(boost::make_tuple(cpy_field_name,(*miit)->getEnt(),(*miit)->getEntDofIdx()));
           if(diiiit==dofsField.get<Composite_Name_And_Ent_And_EndDofIdx_mi_tag>().end()) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
         }
-        if(alpha) (*diiiit)->get_FieldData() = 0;
-        (*diiiit)->get_FieldData() += array[(*miit)->get_petsc_gloabl_dof_idx()];
+        if(alpha) (*diiiit)->getFieldData() = 0;
+        (*diiiit)->getFieldData() += array[(*miit)->getPetscGlobalDofIdx()];
         if(verb > 1) {
           std::ostringstream ss;
-          ss << *(*diiiit) << "set " << array[(*miit)->get_petsc_gloabl_dof_idx()] << std::endl;
+          ss << *(*diiiit) << "set " << array[(*miit)->getPetscGlobalDofIdx()] << std::endl;
           PetscPrintf(comm,ss.str().c_str());
         }
       }
@@ -813,11 +813,11 @@ PetscErrorCode Core::set_other_global_ghost_vector(
     case SCATTER_FORWARD: {
       for(;miit!=hi_miit;miit++) {
         DofEntity_multiIndex::index<Composite_Name_And_Ent_And_EndDofIdx_mi_tag>::type::iterator diiiit;
-        diiiit = dofsField.get<Composite_Name_And_Ent_And_EndDofIdx_mi_tag>().find(boost::make_tuple(cpy_field_name,(*miit)->getEnt(),(*miit)->get_EntDofIdx()));
+        diiiit = dofsField.get<Composite_Name_And_Ent_And_EndDofIdx_mi_tag>().find(boost::make_tuple(cpy_field_name,(*miit)->getEnt(),(*miit)->getEntDofIdx()));
         if(diiiit==dofsField.get<Composite_Name_And_Ent_And_EndDofIdx_mi_tag>().end()) {
           SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"no data to fill the vector (top tip: you want scatter forward or scatter reverse?)");
         }
-        ierr = VecSetValue(V,(*miit)->get_petsc_gloabl_dof_idx(),(*diiiit)->get_FieldData(),mode); CHKERRQ(ierr);
+        ierr = VecSetValue(V,(*miit)->getPetscGlobalDofIdx(),(*diiiit)->getFieldData(),mode); CHKERRQ(ierr);
       }
       ierr = VecAssemblyBegin(V); CHKERRQ(ierr);
       ierr = VecAssemblyEnd(V); CHKERRQ(ierr);

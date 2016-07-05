@@ -199,7 +199,7 @@ int main(int argc, char *argv[]) {
       if(type == MBTRI) {
 
         const NumeredEntFiniteElement *mofem_fe = getNumeredEntFiniteElementPtr();
-        SideNumber_multiIndex &side_table = mofem_fe->get_side_number_table();
+        SideNumber_multiIndex &side_table = mofem_fe->getSideNumberTable();
         EntityHandle face = side_table.get<1>().find(boost::make_tuple(type,side))->get()->ent;
         int sense = side_table.get<1>().find(boost::make_tuple(type,side))->get()->sense;
 

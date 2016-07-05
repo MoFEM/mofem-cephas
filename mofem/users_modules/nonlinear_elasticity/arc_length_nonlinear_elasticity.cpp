@@ -415,7 +415,7 @@ int main(int argc, char *argv[]) {
         hi_dit = numered_dofs_rows->get<Ent_mi_tag>().upper_bound(*nit);
         for(;dit!=hi_dit;dit++) {
           PetscPrintf(PETSC_COMM_WORLD,"%s [ %d ] %6.4e -> ","LAMBDA",0,arcPtr->getFieldData());
-          PetscPrintf(PETSC_COMM_WORLD,"%s [ %d ] %6.4e\n",dit->get()->getName().c_str(),dit->get()->get_dof_coeff_idx(),dit->get()->get_FieldData());
+          PetscPrintf(PETSC_COMM_WORLD,"%s [ %d ] %6.4e\n",dit->get()->getName().c_str(),dit->get()->getDofCoeffIdx(),dit->get()->getFieldData());
         }
       }
       PetscFunctionReturn(0);

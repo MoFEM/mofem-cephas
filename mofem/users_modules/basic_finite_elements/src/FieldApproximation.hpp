@@ -76,7 +76,7 @@ struct FieldApproximationH1 {
       PetscErrorCode ierr;
 
       const FENumeredDofEntity *dof_ptr;
-      ierr = getNumeredEntFiniteElementPtr()->get_row_dofs_by_petsc_gloabl_dof_idx(row_data.getIndices()[0],&dof_ptr); CHKERRQ(ierr);
+      ierr = getNumeredEntFiniteElementPtr()->getRowDofsByPetscGlobalDofIdx(row_data.getIndices()[0],&dof_ptr); CHKERRQ(ierr);
       int rank = dof_ptr->getNbOfCoeffs();
 
       int nb_row_dofs = row_data.getIndices().size()/rank;
@@ -182,7 +182,7 @@ struct FieldApproximationH1 {
       //PetscAttachDebugger();
 
       const FENumeredDofEntity *dof_ptr;
-      ierr = getNumeredEntFiniteElementPtr()->get_row_dofs_by_petsc_gloabl_dof_idx(data.getIndices()[0],&dof_ptr); CHKERRQ(ierr);
+      ierr = getNumeredEntFiniteElementPtr()->getRowDofsByPetscGlobalDofIdx(data.getIndices()[0],&dof_ptr); CHKERRQ(ierr);
       unsigned int rank = dof_ptr->getNbOfCoeffs();
 
       int nb_row_dofs = data.getIndices().size()/rank;
@@ -300,7 +300,7 @@ struct FieldApproximationH1 {
       if(col_data.getIndices().size()==0) PetscFunctionReturn(0);
       PetscErrorCode ierr;
       const FENumeredDofEntity *dof_ptr;
-      ierr = getNumeredEntFiniteElementPtr()->get_row_dofs_by_petsc_gloabl_dof_idx(row_data.getIndices()[0],&dof_ptr); CHKERRQ(ierr);
+      ierr = getNumeredEntFiniteElementPtr()->getRowDofsByPetscGlobalDofIdx(row_data.getIndices()[0],&dof_ptr); CHKERRQ(ierr);
       int rank = dof_ptr->getNbOfCoeffs();
       int nb_row_dofs = row_data.getIndices().size()/rank;
       int nb_col_dofs = col_data.getIndices().size()/rank;
@@ -389,7 +389,7 @@ struct FieldApproximationH1 {
 
       //PetscAttachDebugger();
       const FENumeredDofEntity *dof_ptr;
-      ierr = getNumeredEntFiniteElementPtr()->get_row_dofs_by_petsc_gloabl_dof_idx(data.getIndices()[0],&dof_ptr); CHKERRQ(ierr);
+      ierr = getNumeredEntFiniteElementPtr()->getRowDofsByPetscGlobalDofIdx(data.getIndices()[0],&dof_ptr); CHKERRQ(ierr);
       unsigned int rank = dof_ptr->getNbOfCoeffs();
 
       int nb_row_dofs = data.getIndices().size()/rank;

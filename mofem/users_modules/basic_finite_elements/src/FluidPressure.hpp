@@ -101,7 +101,7 @@ struct FluidPressure {
       if(dAta.tRis.find(ent)==dAta.tRis.end()) PetscFunctionReturn(0);
 
       const FENumeredDofEntity *dof_ptr;
-      ierr = getNumeredEntFiniteElementPtr()->get_row_dofs_by_petsc_gloabl_dof_idx(data.getIndices()[0],&dof_ptr); CHKERRQ(ierr);
+      ierr = getNumeredEntFiniteElementPtr()->getRowDofsByPetscGlobalDofIdx(data.getIndices()[0],&dof_ptr); CHKERRQ(ierr);
       int rank = dof_ptr->getNbOfCoeffs();
       int nb_row_dofs = data.getIndices().size()/rank;
 

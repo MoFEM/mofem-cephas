@@ -170,11 +170,11 @@ int main(int argc, char *argv[]) {
   std::map<EntityHandle,double> m0,m1,m2;
   for(_IT_NUMEREDDOFMOFEMENTITY_ROW_FOR_LOOP_(problemPtr,dit)) {
 
-    if(dit->get()->get_dof_coeff_idx()!=1) continue;
+    if(dit->get()->getDofCoeffIdx()!=1) continue;
 
     my_split.precision(3);
     my_split.setf(std::ios::fixed);
-    my_split << dit->get()->get_petsc_gloabl_dof_idx() << " " << dit->get()->get_FieldData() << std::endl;
+    my_split << dit->get()->getPetscGlobalDofIdx() << " " << dit->get()->getFieldData() << std::endl;
 
   }
 

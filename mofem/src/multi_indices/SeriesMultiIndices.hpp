@@ -63,7 +63,7 @@ struct MoFEMSeries {
     PetscFunctionBegin;
     PetscErrorCode ierr;
     for(;it!=hi_it;it++) {
-      ierr = push_dofs((*it)->getEnt(),(*it)->get_non_nonunique_short_id(),(*it)->get_FieldData()); CHKERRQ(ierr);
+      ierr = push_dofs((*it)->getEnt(),(*it)->getNonNonuniqueShortId(),(*it)->getFieldData()); CHKERRQ(ierr);
     }
     PetscFunctionReturn(0);
   }

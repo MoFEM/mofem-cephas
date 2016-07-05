@@ -87,7 +87,7 @@ BitFEId MoFEMProblem::get_BitFEId() const {
   return *tag_BitFEId_data;
 }
 
-PetscErrorCode MoFEMProblem::get_row_dofs_by_petsc_gloabl_dof_idx(DofIdx idx,const NumeredDofEntity **dof_ptr) const {
+PetscErrorCode MoFEMProblem::getRowDofsByPetscGlobalDofIdx(DofIdx idx,const NumeredDofEntity **dof_ptr) const {
   PetscFunctionBegin;
   NumeredDofEntity_multiIndex::index<PetscGlobalIdx_mi_tag>::type::iterator dit;
   dit = numered_dofs_rows->get<PetscGlobalIdx_mi_tag>().find(idx);
@@ -98,7 +98,7 @@ PetscErrorCode MoFEMProblem::get_row_dofs_by_petsc_gloabl_dof_idx(DofIdx idx,con
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode MoFEMProblem::get_col_dofs_by_petsc_gloabl_dof_idx(DofIdx idx,const NumeredDofEntity **dof_ptr) const {
+PetscErrorCode MoFEMProblem::getColDofsByPetscGlobalDofIdx(DofIdx idx,const NumeredDofEntity **dof_ptr) const {
   PetscFunctionBegin;
   NumeredDofEntity_multiIndex::index<PetscGlobalIdx_mi_tag>::type::iterator dit;
   dit = numered_dofs_cols->get<PetscGlobalIdx_mi_tag>().find(idx);

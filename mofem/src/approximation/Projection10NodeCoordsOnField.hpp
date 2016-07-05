@@ -62,16 +62,16 @@ struct Projection10NodeCoordsOnField: public EntMethod {
       EntityHandle node = dofPtr->getEnt();
       coords.resize(3);
       rval = mField.get_moab().get_coords(&node,1,&*coords.data().begin());  CHKERR_MOAB(rval);
-      dofPtr->get_FieldData() = coords[dofPtr->get_dof_coeff_idx()];
+      dofPtr->getFieldData() = coords[dofPtr->getDofCoeffIdx()];
       if(vErbose>0) {
-        PetscPrintf(mField.get_comm(),"val = %6.7e\n",dofPtr->get_FieldData());
+        PetscPrintf(mField.get_comm(),"val = %6.7e\n",dofPtr->getFieldData());
       }
       PetscFunctionReturn(0);
     }
     if(dofPtr->getEntType() != MBEDGE) {
       PetscFunctionReturn(0);
     }
-    if(dofPtr->get_EntDofIdx() != dofPtr->get_dof_coeff_idx()) {
+    if(dofPtr->getEntDofIdx() != dofPtr->getDofCoeffIdx()) {
       PetscFunctionReturn(0);
     }
     EntityHandle edge = dofPtr->getEnt();
@@ -115,13 +115,13 @@ struct Projection10NodeCoordsOnField: public EntMethod {
     // Dof = (mid_node_coord-ave_mid_coord)/edge_shape_function_val
     Dof.resize(3);
     ublas::noalias(Dof) = diff_node_coord/edge_shape_function_val;
-    /*if(dofPtr->get_dof_order() != 2) {
+    /*if(dofPtr->getDofOrder() != 2) {
       SETERRQ(PETSC_COMM_SELF,1,"this method works only fileds which are order 2");
     }*/
     if(dofPtr->getNbOfCoeffs() != 3) {
       SETERRQ(PETSC_COMM_SELF,1,"this method works only fields which are rank 3");
     }
-    dofPtr->get_FieldData() = Dof[dofPtr->get_dof_coeff_idx()];
+    dofPtr->getFieldData() = Dof[dofPtr->getDofCoeffIdx()];
     PetscFunctionReturn(0);
   }
 
@@ -190,7 +190,7 @@ struct ProjectionFieldOn10NodeTet: public Projection10NodeCoordsOnField {
         if(onCoords) {
           coords.resize(3);
           rval = mField.get_moab().get_coords(&node,1,&*coords.data().begin());  CHKERR_MOAB(rval);
-          coords[dofPtr->get_dof_coeff_idx()] = dofPtr->get_FieldData();
+          coords[dofPtr->getDofCoeffIdx()] = dofPtr->getFieldData();
           rval = mField.get_moab().set_coords(&node,1,&*coords.data().begin());  CHKERR_MOAB(rval);
         } else {
           int field_rank = (*field_it)->getNbOfCoeffs();
@@ -203,7 +203,7 @@ struct ProjectionFieldOn10NodeTet: public Projection10NodeCoordsOnField {
           if(tag_size != dofPtr->getNbOfCoeffs()) {
             SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
           }
-          tag_value[dofPtr->get_dof_coeff_idx()] = dofPtr->get_FieldData();
+          tag_value[dofPtr->getDofCoeffIdx()] = dofPtr->getFieldData();
         }
       }
       PetscFunctionReturn(0);
@@ -226,17 +226,17 @@ struct ProjectionFieldOn10NodeTet: public Projection10NodeCoordsOnField {
       PetscFunctionReturn(0);
     }
 
-    if(dofPtr->get_dof_order()>=maxApproximationOrder) {
+    if(dofPtr->getDofOrder()>=maxApproximationOrder) {
       SETERRQ(PETSC_COMM_SELF,1,"too big approximation order, increase constant max_ApproximationOrder");
     }
     double approx_val = 0;
     FieldApproximationBase base = dofPtr->getApproxBase();
     switch (base) {
       case AINSWORTH_COLE_BASE:
-      approx_val = 0.25*L[dofPtr->get_dof_order()-2]*dofPtr->get_FieldData();
+      approx_val = 0.25*L[dofPtr->getDofOrder()-2]*dofPtr->getFieldData();
       break;
       case LOBATTO_BASE:
-      approx_val = 0.25*K[dofPtr->get_dof_order()-2]*dofPtr->get_FieldData();
+      approx_val = 0.25*K[dofPtr->getDofOrder()-2]*dofPtr->getFieldData();
       break;
       default:
       SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not yet implemented");
@@ -245,12 +245,12 @@ struct ProjectionFieldOn10NodeTet: public Projection10NodeCoordsOnField {
     if(onCoords) {
       coords.resize(num_nodes*3);
       rval = mField.get_moab().get_coords(conn,num_nodes,&*coords.data().begin()); CHKERR_MOAB(rval);
-      if(dofPtr->get_EntDofIdx() == dofPtr->get_dof_coeff_idx()) {
+      if(dofPtr->getEntDofIdx() == dofPtr->getDofCoeffIdx()) {
         //add only one when higher order terms present
-        double ave_mid = (coords[3*0+dofPtr->get_dof_coeff_idx()] + coords[3*1+dofPtr->get_dof_coeff_idx()])*0.5;
-        coords[2*3+dofPtr->get_dof_coeff_idx()] = ave_mid;
+        double ave_mid = (coords[3*0+dofPtr->getDofCoeffIdx()] + coords[3*1+dofPtr->getDofCoeffIdx()])*0.5;
+        coords[2*3+dofPtr->getDofCoeffIdx()] = ave_mid;
       }
-      coords[2*3+dofPtr->get_dof_coeff_idx()] += approx_val;
+      coords[2*3+dofPtr->getDofCoeffIdx()] += approx_val;
       rval = mField.get_moab().set_coords(&conn[2],1,&coords[3*2]);  CHKERR_MOAB(rval);
     } else {
       int tag_size;
@@ -261,12 +261,12 @@ struct ProjectionFieldOn10NodeTet: public Projection10NodeCoordsOnField {
       if(tag_size != dofPtr->getNbOfCoeffs()) {
         SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
       }
-      if(dofPtr->get_EntDofIdx() == dofPtr->get_dof_coeff_idx()) {
+      if(dofPtr->getEntDofIdx() == dofPtr->getDofCoeffIdx()) {
         //add only one when higher order terms present
-        double ave_mid = (tag_value[0][dofPtr->get_dof_coeff_idx()] + tag_value[1][dofPtr->get_dof_coeff_idx()])*0.5;
-        tag_value[2][dofPtr->get_dof_coeff_idx()] = ave_mid;
+        double ave_mid = (tag_value[0][dofPtr->getDofCoeffIdx()] + tag_value[1][dofPtr->getDofCoeffIdx()])*0.5;
+        tag_value[2][dofPtr->getDofCoeffIdx()] = ave_mid;
       }
-      tag_value[2][dofPtr->get_dof_coeff_idx()] += approx_val;
+      tag_value[2][dofPtr->getDofCoeffIdx()] += approx_val;
     }
     PetscFunctionReturn(0);
   }

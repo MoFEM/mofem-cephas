@@ -144,7 +144,7 @@ PetscErrorCode CreateRowComressedADJMatrix::getEntityAdjacenies(
           PetscSynchronizedPrintf(comm, "%s", ss.str().c_str());
       }
 
-      ierr = adj_miit->entFePtr->get_MoFEMFiniteElement_col_dof_view(
+      ierr = adj_miit->entFePtr->getColDofView(
         *(p_miit->numered_dofs_cols),
         dofs_col_view,
         Interface::UNION
@@ -173,7 +173,7 @@ PetscErrorCode CreateRowComressedADJMatrix::createMatArrays(
   // Get multi-indices for rows and columns
   const NumeredDofEntitysByIdx &dofs_row_by_idx = p_miit->numered_dofs_rows->get<TAG>();
   const NumeredDofEntitysByIdx &dofs_col_by_idx = p_miit->numered_dofs_cols->get<TAG>();
-  DofIdx nb_dofs_row = p_miit->get_nb_dofs_row();
+  DofIdx nb_dofs_row = p_miit->getNbDofsRow();
   if(nb_dofs_row == 0) {
     SETERRQ1(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"problem <%s> has zero rows",p_miit->getName().c_str());
   }
@@ -253,7 +253,7 @@ PetscErrorCode CreateRowComressedADJMatrix::createMatArrays(
               zz << *(*cvit) << std::endl;
               SETERRQ(PETSC_COMM_SELF,PETSC_ERR_ARG_SIZ,zz.str().c_str());
             }
-            if(col_idx>=p_miit->get_nb_dofs_col()) {
+            if(col_idx>=p_miit->getNbDofsCol()) {
               std::ostringstream zz;
               zz << "rank " << rAnk << " ";
               zz << *(*cvit) << std::endl;
@@ -424,7 +424,7 @@ PetscErrorCode CreateRowComressedADJMatrix::createMatArrays(
             p_miit->getName().c_str()
           );
         }
-        if(idx>=p_miit->get_nb_dofs_col()) {
+        if(idx>=p_miit->getNbDofsCol()) {
 
           std::ostringstream ss;
           ss << "Notes: " << std::endl;
@@ -575,8 +575,8 @@ PetscErrorCode CreateRowComressedADJMatrix::createMat(
   copy(j.begin(),j.end(),*_j);
 
 
-  PetscInt nb_row_dofs = p_miit->get_nb_dofs_row();
-  PetscInt nb_col_dofs = p_miit->get_nb_dofs_col();
+  PetscInt nb_row_dofs = p_miit->getNbDofsRow();
+  PetscInt nb_col_dofs = p_miit->getNbDofsCol();
 
   if(strcmp(type,MATMPIADJ)==0) {
 
@@ -646,7 +646,7 @@ PetscErrorCode Core::partition_problem(const std::string &name,int verb) {
   ProblemsByName &pRoblems_set = pRoblems.get<Problem_mi_tag>();
   ProblemsByName::iterator p_miit = pRoblems_set.find(name);
   if(p_miit==pRoblems_set.end()) SETERRQ1(PETSC_COMM_SELF,1,"problem with name %s not defined (top tip check spelling)",name.c_str());
-  DofIdx nb_dofs_row = p_miit->get_nb_dofs_row();
+  DofIdx nb_dofs_row = p_miit->getNbDofsRow();
 
   int *i,*j;
   Mat Adj;
@@ -744,7 +744,7 @@ PetscErrorCode Core::partition_problem(const std::string &name,int verb) {
         SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"check finite element definition, nb. of rows is not equal to columns");
       }
       assert(petsc_idx[(*miit_dofs_row)->dof_idx]>=0);
-      assert(petsc_idx[(*miit_dofs_row)->dof_idx]<(int)p_miit->get_nb_dofs_row());
+      assert(petsc_idx[(*miit_dofs_row)->dof_idx]<(int)p_miit->getNbDofsRow());
       bool success = dofs_row_by_idx_no_const.modify(miit_dofs_row,NumeredDofEntity_part_change(part_number[(*miit_dofs_row)->dof_idx],petsc_idx[(*miit_dofs_row)->dof_idx]));
       if(!success) {
         SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
@@ -826,7 +826,7 @@ PetscErrorCode Core::partition_check_matrix_fill_in(const std::string &problem_n
         if(refinedEntitiesPtr->find((*rit)->getEnt())==refinedEntitiesPtr->end()) {
           SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
         }
-        if(!(*rit)->get_active()) {
+        if(!(*rit)->getActive()) {
           SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
         }
 
@@ -852,7 +852,7 @@ PetscErrorCode Core::partition_check_matrix_fill_in(const std::string &problem_n
             SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
           }
         }
-        int row = (*rit)->get_petsc_gloabl_dof_idx();
+        int row = (*rit)->getPetscGlobalDofIdx();
 
         FENumeredDofEntity_multiIndex::iterator cit = colPtr->begin();
         for(;cit!=colPtr->end();cit++) {
@@ -860,10 +860,10 @@ PetscErrorCode Core::partition_check_matrix_fill_in(const std::string &problem_n
           if(refinedEntitiesPtr->find((*cit)->getEnt())==refinedEntitiesPtr->end()) {
             SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
           }
-          if(!(*cit)->get_active()) {
+          if(!(*cit)->getActive()) {
             SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
           }
-          int col = (*cit)->get_petsc_gloabl_dof_idx();
+          int col = (*cit)->getPetscGlobalDofIdx();
           ait = adjacenciesPtr->get<Composite_Unique_mi_tag>().find(
             boost::make_tuple((*cit)->getMoFEMEntityPtr()->getGlobalUniqueId(),numeredEntFiniteElementPtr->getGlobalUniqueId())
           );

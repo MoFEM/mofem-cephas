@@ -364,7 +364,7 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::operator()() {
       const Field* field_struture = mField.get_field_structure(meshPositionsFieldName);
       BitFieldId id = field_struture->getId();
 
-      if((numeredEntFiniteElementPtr->get_BitFieldId_data()&id).none()) {
+      if((numeredEntFiniteElementPtr->getBitFieldIdData()&id).none()) {
         SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_FOUND,"no MESH_NODE_POSITIONS in element data");
       }
 
@@ -473,7 +473,7 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::operator()() {
         const Field* field_struture = mField.get_field_structure(field_name);
         BitFieldId data_id = field_struture->getId();
 
-        if((oit->getNumeredEntFiniteElementPtr()->get_BitFieldId_data()&data_id).none()) {
+        if((oit->getNumeredEntFiniteElementPtr()->getBitFieldIdData()&data_id).none()) {
           SETERRQ2(
             PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"no data field < %s > on finite element < %s >",
             field_name.c_str(),feName.c_str()

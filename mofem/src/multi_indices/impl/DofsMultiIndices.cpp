@@ -82,9 +82,9 @@ dof(dof) {
 
 std::ostream& operator<<(std::ostream& os,const DofEntity& e) {
   os << "dof_uid " << e.getGlobalUniqueId()
-  << " dof_order " << e.get_dof_order()
-  << " dof_rank " << e.get_dof_coeff_idx()
-  << " dof " << e.get_EntDofIdx()
+  << " dof_order " << e.getDofOrder()
+  << " dof_rank " << e.getDofCoeffIdx()
+  << " dof " << e.getEntDofIdx()
   << " active " << e.active
   << " " << *(e.sFieldPtr);
   return os;
@@ -93,7 +93,7 @@ std::ostream& operator<<(std::ostream& os,const DofEntity& e) {
 DofEntity_active_change::DofEntity_active_change(bool _active): active(_active) {}
 void DofEntity_active_change::operator()(boost::shared_ptr<DofEntity> &_dof_) {
   _dof_->active = active;
-  if(active && _dof_->get_dof_order()>_dof_->getMaxOrder()) {
+  if(active && _dof_->getDofOrder()>_dof_->getMaxOrder()) {
     cerr << *_dof_ << endl;
     THROW_MESSAGE("Set DoF active which has order larger than maximal order set to entity");
   }

@@ -409,8 +409,8 @@ struct MoFEMProblem {
   DEPRECATED inline std::string get_name() const { return getName(); }
 
 
-  inline DofIdx get_nb_dofs_row() const { return *((DofIdx*)tag_nbdof_data_row); }
-  inline DofIdx get_nb_dofs_col() const { return *((DofIdx*)tag_nbdof_data_col); }
+  inline DofIdx getNbDofsRow() const { return *((DofIdx*)tag_nbdof_data_row); }
+  inline DofIdx getNbDofsCol() const { return *((DofIdx*)tag_nbdof_data_col); }
   inline DofIdx get_nb_local_dofs_row() const { return *((DofIdx*)tag_local_nbdof_data_row); }
   inline DofIdx get_nb_local_dofs_col() const { return *((DofIdx*)tag_local_nbdof_data_col); }
   inline DofIdx get_nb_ghost_dofs_row() const { return *((DofIdx*)tag_ghost_nbdof_data_row); }
@@ -424,8 +424,8 @@ struct MoFEMProblem {
 
 
   inline BitRefLevel get_DofMask_BitRefLevel() const { return *tag_BitRefLevel_DofMask; }
-  PetscErrorCode get_row_dofs_by_petsc_gloabl_dof_idx(DofIdx idx,const NumeredDofEntity **dof_ptr) const;
-  PetscErrorCode get_col_dofs_by_petsc_gloabl_dof_idx(DofIdx idx,const NumeredDofEntity **dof_ptr) const;
+  PetscErrorCode getRowDofsByPetscGlobalDofIdx(DofIdx idx,const NumeredDofEntity **dof_ptr) const;
+  PetscErrorCode getColDofsByPetscGlobalDofIdx(DofIdx idx,const NumeredDofEntity **dof_ptr) const;
   BitFEId get_BitFEId() const;
   friend std::ostream& operator<<(std::ostream& os,const MoFEMProblem& e);
 

@@ -103,19 +103,19 @@ struct ArcLengthCtx {
 
   /** \brief Get global index of load factor
   */
-  DofIdx getPetscGloablDofIdx() { return (*dIt)->get_petsc_gloabl_dof_idx(); };
+  DofIdx getPetscGlobalDofIdx() { return (*dIt)->getPetscGlobalDofIdx(); };
 
   /** \brief Get local index of load factor
   */
-  DofIdx getPetscLocalDofIdx() { return (*dIt)->get_petsc_local_dof_idx(); };
+  DofIdx getPetscLocalDofIdx() { return (*dIt)->getPetscLocalDofIdx(); };
 
   /** \brief Get value of load factor
   */
-  FieldData& getFieldData() { return (*dIt)->get_FieldData(); }
+  FieldData& getFieldData() { return (*dIt)->getFieldData(); }
 
   /** \brief Get proc owning lambda dof
   */
-  int getPart() { return (*dIt)->get_part(); };
+  int getPart() { return (*dIt)->getPart(); };
 
 };
 

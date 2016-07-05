@@ -71,7 +71,7 @@ ArcLengthCtx::ArcLengthCtx(FieldInterface &m_field,const std::string &problem_na
       "can not find unique LAMBDA (load factor)",PETSC_NULL
     );
   }
-  if((unsigned int)mField.getCommRank()==(*dIt)->get_part()) {
+  if((unsigned int)mField.getCommRank()==(*dIt)->getPart()) {
     ierr = VecCreateGhostWithArray(
       mField.get_comm(),1,1,0,PETSC_NULL,&dLambda,&ghosTdLambda
     ); CHKERRABORT(PETSC_COMM_WORLD,ierr);
@@ -118,7 +118,7 @@ PetscErrorCode ArcLengthMatShell::setLambda(Vec ksp_x,double *lambda,ScatterMode
 
     switch(scattermode) {
       case SCATTER_FORWARD: {
-        int idx = arcPtr->getPetscGloablDofIdx();
+        int idx = arcPtr->getPetscGlobalDofIdx();
         ierr = VecGetValues(ksp_x,1,&idx,&*lambda); CHKERRQ(ierr);
       }
       break;
@@ -318,7 +318,7 @@ PetscErrorCode SphericalArcLengthControl::operator()() {
     case CTX_SNESSETFUNCTION: {
       arcPtr->res_lambda = calculateLambdaInt() - pow(arcPtr->s,2);
       ierr = VecSetValue(
-        snes_f,arcPtr->getPetscGloablDofIdx(),arcPtr->res_lambda,ADD_VALUES
+        snes_f,arcPtr->getPetscGlobalDofIdx(),arcPtr->res_lambda,ADD_VALUES
       ); CHKERRQ(ierr);
       PetscPrintf(arcPtr->mField.get_comm(),"\tres_lambda = %6.4e\n",arcPtr->res_lambda);
     }
@@ -326,7 +326,7 @@ PetscErrorCode SphericalArcLengthControl::operator()() {
     case CTX_SNESSETJACOBIAN: {
       arcPtr->dIag = 2*arcPtr->dLambda*pow(arcPtr->beta,2)*arcPtr->F_lambda2;
       ierr = MatSetValue(
-        snes_B,arcPtr->getPetscGloablDofIdx(),arcPtr->getPetscGloablDofIdx(),1,ADD_VALUES
+        snes_B,arcPtr->getPetscGlobalDofIdx(),arcPtr->getPetscGlobalDofIdx(),1,ADD_VALUES
       ); CHKERRQ(ierr);
     }
     break;
