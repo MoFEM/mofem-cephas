@@ -201,7 +201,7 @@ ierr = fun(); CHKERRQ(ierr);
     existing code uses regular pointer, take opportunity and change it to smart
     pointer.
 
-  - Check program with line command argument -log_summary, verifying if number of created PTESc
+  - Check program with line command argument -log_view, verifying if number of created PTESc
     objects is equal to number of destroyed objects \code
 Memory usage is given in bytes:
 

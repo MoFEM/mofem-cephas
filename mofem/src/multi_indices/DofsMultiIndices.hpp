@@ -68,6 +68,11 @@ struct DofEntity: public interface_MoFEMEntity<MoFEMEntity> {
     */
   inline GlobalUId getGlobalUniqueId() const { return getGlobalUniqueIdCalculate(get_EntDofIdx(),getMoFEMEntityPtr()); }
 
+  /** \brief Get entity unique dof id
+    */
+  inline GlobalUId getEntGlobalUniqueId() const { return this->sPtr->getGlobalUniqueId(); }
+
+
   /** \deprecated use getGlobalUniqueId() instead
   */
   DEPRECATED inline GlobalUId get_global_unique_id() const { return getGlobalUniqueId(); }
@@ -127,6 +132,8 @@ struct interface_DofEntity: public interface_MoFEMEntity<T> {
   /** \deprecated Use getGlobalUniqueId() instead
   */
   DEPRECATED inline const GlobalUId get_global_unique_id() const { return this->sPtr->getGlobalUniqueId(); }
+
+  inline const GlobalUId getEntGlobalUniqueId() const { return this->sPtr->getEntGlobalUniqueId(); }
 
   inline ShortId get_non_nonunique_short_id() const { return this->sPtr->get_non_nonunique_short_id(); }
   inline DofIdx get_EntDofIdx() const { return this->sPtr->get_EntDofIdx(); }
@@ -274,6 +281,8 @@ typedef multi_index_container<
           const_mem_fun<DofEntity,DofIdx,&DofEntity::get_EntDofIdx>
     > >,
     //non_unique
+    ordered_non_unique<
+      tag<Unique_Ent_mi_tag>, const_mem_fun<DofEntity,GlobalUId,&DofEntity::getEntGlobalUniqueId> >,
     ordered_non_unique<
       const_mem_fun<DofEntity,char,&DofEntity::get_active> >,
     ordered_non_unique<

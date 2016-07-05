@@ -103,7 +103,7 @@ struct MonitorPostProc: public FEMethod {
     }
 
     PetscBool flg = PETSC_TRUE;
-    ierr = PetscOptionsGetInt(PETSC_NULL,"-my_output_prt",&pRT,&flg); CHKERRABORT(PETSC_COMM_WORLD,ierr);
+    ierr = PetscOptionsGetInt(PETSC_NULL,PETSC_NULL,"-my_output_prt",&pRT,&flg); CHKERRABORT(PETSC_COMM_WORLD,ierr);
     if(flg!=PETSC_TRUE) {
       pRT = 10;
     }
@@ -203,7 +203,7 @@ struct MonitorRestart: public FEMethod {
     }
 
     PetscBool flg = PETSC_TRUE;
-    ierr = PetscOptionsGetInt(PETSC_NULL,"-my_output_prt",&pRT,&flg); CHKERRABORT(PETSC_COMM_WORLD,ierr);
+    ierr = PetscOptionsGetInt(PETSC_NULL,PETSC_NULL,"-my_output_prt",&pRT,&flg); CHKERRABORT(PETSC_COMM_WORLD,ierr);
     if(flg!=PETSC_TRUE) {
       pRT = 10;
     }
@@ -254,7 +254,7 @@ int main(int argc, char *argv[]) {
 
   PetscBool flg = PETSC_TRUE;
   char mesh_file_name[255];
-  ierr = PetscOptionsGetString(PETSC_NULL,"-my_file",mesh_file_name,255,&flg); CHKERRQ(ierr);
+  ierr = PetscOptionsGetString(PETSC_NULL,PETSC_NULL,"-my_file",mesh_file_name,255,&flg); CHKERRQ(ierr);
   if(flg != PETSC_TRUE) {
     SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_file (MESH FILE NEEDED)");
   }
@@ -263,11 +263,11 @@ int main(int argc, char *argv[]) {
   // you can solve very big problems
   PetscBool is_partitioned = PETSC_FALSE;
   ierr = PetscOptionsGetBool(
-    PETSC_NULL, "-my_is_partitioned", &is_partitioned, &flg
+    PETSC_NULL,PETSC_NULL, "-my_is_partitioned", &is_partitioned, &flg
   ); CHKERRQ(ierr);
 
   PetscBool linear;
-  ierr = PetscOptionsGetBool(PETSC_NULL,"-is_linear",&linear,&linear); CHKERRQ(ierr);
+  ierr = PetscOptionsGetBool(PETSC_NULL,PETSC_NULL,"-is_linear",&linear,&linear); CHKERRQ(ierr);
 
   if (is_partitioned == PETSC_TRUE) {
     //Read mesh to MOAB
@@ -312,12 +312,12 @@ int main(int argc, char *argv[]) {
   //set app. order
   PetscInt disp_order;
   ierr = PetscOptionsGetInt(
-    PETSC_NULL, "-my_disp_order", &disp_order, &flg); CHKERRQ(ierr);
+    PETSC_NULL,PETSC_NULL, "-my_disp_order", &disp_order, &flg); CHKERRQ(ierr);
   if(flg!=PETSC_TRUE) {
     disp_order = 1;
   }
   PetscInt vel_order = disp_order;
-  ierr = PetscOptionsGetInt(PETSC_NULL,"-my_vel_order",&vel_order,&flg); CHKERRQ(ierr);
+  ierr = PetscOptionsGetInt(PETSC_NULL,PETSC_NULL,"-my_vel_order",&vel_order,&flg); CHKERRQ(ierr);
   if(flg!=PETSC_TRUE) {
     vel_order = disp_order;
   }
@@ -395,7 +395,7 @@ int main(int argc, char *argv[]) {
     string name = "-my_accelerogram";
     char time_file_name[255];
     PetscBool flg;
-    ierr = PetscOptionsGetString(PETSC_NULL,name.c_str(),time_file_name,255,&flg); CHKERRQ(ierr);
+    ierr = PetscOptionsGetString(PETSC_NULL,PETSC_NULL,name.c_str(),time_file_name,255,&flg); CHKERRQ(ierr);
     if(flg == PETSC_TRUE) {
       inertia.methodsOp.push_back(new TimeAccelerogram(name));
     }
@@ -707,7 +707,7 @@ int main(int argc, char *argv[]) {
   // Solve problem at time Zero
   PetscBool is_solve_at_time_zero = PETSC_FALSE;
   ierr = PetscOptionsGetBool(
-    PETSC_NULL, "-my_solve_at_time_zero",&is_solve_at_time_zero,&flg
+    PETSC_NULL,PETSC_NULL, "-my_solve_at_time_zero",&is_solve_at_time_zero,&flg
   ); CHKERRQ(ierr);
   if(is_solve_at_time_zero) {
 

@@ -79,7 +79,7 @@ add_test(ArcLengthNonLinearElasticityTest
   -snes_type newtonls -snes_linesearch_type basic -snes_linesearch_monitor
   -snes_max_it 16 -snes_atol 1e-8 -snes_rtol 1e-8
   -my_sr 1e-6 -my_ms 3 -snes_converged_reason
--log_summary)
+-log_view)
 
 cm_export_file("LShape.h5m" export_files_nonlinear_dynamics)
 cm_export_file("data.txt" export_files_nonlinear_dynamics)

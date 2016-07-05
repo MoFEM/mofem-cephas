@@ -1806,281 +1806,167 @@ PetscErrorCode Core::modify_problem_dof_mask_ref_level_set_bit(const std::string
   if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
   PetscFunctionReturn(0);
 }
-PetscErrorCode Core::build_finite_element_data_dofs(EntFiniteElement &ent_fe,int verb) {
+PetscErrorCode Core::build_finite_elements(const boost::shared_ptr<FiniteElement> fe,const Range *ents_ptr,int verb) {
   PetscFunctionBegin;
+  if(verb==-1) verb = verbose;
 
-  if(!(*buildMoFEM)&(1<<0)) {
-    SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_FOUND,"fields not build");
-  }
-  FEDofEntity_multiIndex &data_dofs = const_cast<FEDofEntity_multiIndex&>(ent_fe.data_dofs);
-  for(FEDofEntity_multiIndex::iterator dit = data_dofs.begin();dit!=data_dofs.end();dit++) {
-    int use_count = dit->use_count();
-    if(use_count<=1) {
-      dit = data_dofs.erase(dit);
-      if(dit==data_dofs.end()) {
-        break;
-      }
-    }
-  }
-
-  // Take only active dofs here, not all dofs ? That is the question.
-  DofEntity_multiIndex_uid_view::iterator viit_data,hi_viit_data;
-  viit_data = ent_fe.data_dof_view->begin();
-  hi_viit_data = ent_fe.data_dof_view->end();
-
-  unsigned int nb_inactive_dofs = 0;
-
-  // Loops over active dofs only
-  unsigned int size = distance(viit_data,hi_viit_data);
-  for(;viit_data!=hi_viit_data;viit_data++) {
-    if(!(*viit_data)->get_active()) {
-      nb_inactive_dofs++;
-      continue;
-    }
-    try {
-      switch((*viit_data)->getSpace()) {
-        case H1:
-        case HDIV:
-        case HCURL:
-        case L2:
-        case NOFIELD:
-        {
-          if(data_dofs.get<Unique_mi_tag>().find((*viit_data)->getGlobalUniqueId())==data_dofs.get<Unique_mi_tag>().end()) {
-            boost::shared_ptr<SideNumber> side_number_ptr = ent_fe.get_side_number_ptr(moab,(*viit_data)->getEnt());
-            //add dofs to finite element multi_index database
-            data_dofs.get<Unique_mi_tag>().insert(
-              data_dofs.end(),boost::shared_ptr<FEDofEntity>(
-                new FEDofEntity(side_number_ptr,*viit_data)
-              )
-            );
-          }
-        }
-        break;
-        default:
-        SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented");
-      }
-    } catch (MoFEMException const &e) {
-      SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
-    }
-  }
-  if(data_dofs.size()+nb_inactive_dofs!=size) {
-    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
-  }
-  PetscFunctionReturn(0);
-}
-PetscErrorCode Core::build_finite_element_uids_view(EntFiniteElement &ent_fe,int verb) {
-  PetscFunctionBegin;
-  if(!((*buildMoFEM)&BUILD_FIELD)) SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_FOUND,"fields not build");
-  typedef Field_multiIndex::index<BitFieldId_mi_tag>::type field_by_id;
-  typedef RefEntity_multiIndex::index<Ent_mi_tag>::type ref_ent_by_ent;
-  typedef DofEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type dof_set_type;
-  field_by_id &fields_by_id = fIelds.get<BitFieldId_mi_tag>();
-  dof_set_type& dof_set = dofsField.get<Composite_Name_And_Ent_mi_tag>();
+  typedef RefElement_multiIndex::index<Ent_mi_tag>::type RefFiniteElementByEnt;
+  typedef Field_multiIndex::index<BitFieldId_mi_tag>::type FieldById;
+  FieldById &fields_by_id = fIelds.get<BitFieldId_mi_tag>();
 
   //get id of mofem fields for row, col and data
   enum IntLoop { ROW = 0,COL,DATA,LAST };
   BitFieldId fe_fields[LAST] = {
-    ent_fe.get_BitFieldId_row(),
-    ent_fe.get_BitFieldId_col(),
-    ent_fe.get_BitFieldId_data()
+    fe.get()->get_BitFieldId_row(),
+    fe.get()->get_BitFieldId_col(),
+    fe.get()->get_BitFieldId_data()
   };
 
-  bool dofs_to_skip[] = { false, false, false };
-  if(fe_fields[ROW]==fe_fields[COL]) {
-     dofs_to_skip[COL] = true;
-     ent_fe.col_dof_view = ent_fe.row_dof_view;
-  }
-  if(fe_fields[ROW]==fe_fields[DATA]) {
-    dofs_to_skip[DATA] = true;
-    ent_fe.data_dof_view = ent_fe.row_dof_view;
-  } else if(fe_fields[COL]==fe_fields[DATA]) {
-    dofs_to_skip[DATA] = true;
-    ent_fe.data_dof_view = ent_fe.col_dof_view;
-  }
+  //get finite element meshset
+  EntityHandle meshset = get_finite_element_meshset(fe.get()->getId());
+  // get entities from finite element meshset // if meshset
+  Range fe_ents;
+  rval = moab.get_entities_by_handle(meshset,fe_ents,false); CHKERRQ_MOAB(rval);
+  if(ents_ptr) fe_ents = intersect(fe_ents,*ents_ptr);
 
-  if(fe_fields[ROW]!=fe_fields[COL] && ent_fe.col_dof_view == ent_fe.row_dof_view) {
-    ent_fe.col_dof_view
-    = boost::shared_ptr<DofEntity_multiIndex_uid_view>(new DofEntity_multiIndex_uid_view());
-  }
-  if(fe_fields[ROW]!=fe_fields[DATA] && ent_fe.data_dof_view == ent_fe.row_dof_view) {
-    ent_fe.data_dof_view
-    = boost::shared_ptr<DofEntity_multiIndex_uid_view>(new DofEntity_multiIndex_uid_view());
-  }
-  if(fe_fields[COL]!=fe_fields[DATA] && ent_fe.data_dof_view == ent_fe.col_dof_view) {
-    ent_fe.data_dof_view
-    = boost::shared_ptr<DofEntity_multiIndex_uid_view>(new DofEntity_multiIndex_uid_view());
-  }
+  // map entity uid to pointers
+  std::map<UId,std::vector<boost::shared_ptr<EntFiniteElement> > > map_uid_fe;
 
-  //get refinment level
-  const BitRefLevel& bit_ref_finite_element = ent_fe.getBitRefLevel();
-  Range tets,faces,edges,nodes,meshsets,adj_ents,ent_ents;
-  Range::iterator eit_eit;
-  boost::shared_ptr<DofEntity_multiIndex_uid_view> dofs_view_list[LAST] = {
-    ent_fe.row_dof_view, ent_fe.col_dof_view, ent_fe.data_dof_view
-  };
+  //loop meshset Ents and add finite elements
+  for(Range::iterator eit = fe_ents.begin();eit!=fe_ents.end();eit++) {
 
-  unsigned int nb_view_dofs[LAST];
-  for(int ss = 0;ss<LAST;ss++) {
-    if(!dofs_to_skip[ss]) {
-      // dofs_view_list[ss]->clear();
-      for(
-        DofEntity_multiIndex_uid_view::iterator dit = dofs_view_list[ss]->begin();
-        dit!=dofs_view_list[ss]->end();
-        dit++
-      ) {
-        int use_count = dit->use_count();
-        if(use_count<=1) {
-          // cerr << *(*dit) << cerr << endl;
-          // cerr << "AAAAA " << use_count << endl;
-          // SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"Just testing");
-          dit = dofs_view_list[ss]->erase(dit);
-          if(dit==dofs_view_list[ss]->end()) {
-            break;
-          }
-        }
-      }
+    // note: iterator is a wrapper
+    // check if is in refinedFiniteElements database
+    RefFiniteElementByEnt::iterator ref_fe_miit;
+    ref_fe_miit = refinedFiniteElements.get<Ent_mi_tag>().find(*eit);
+    if(ref_fe_miit == refinedFiniteElements.get<Ent_mi_tag>().end()) {
+      std::ostringstream ss;
+      ss << "ref FiniteElement not in database ent = " << *eit;
+      ss << " type " << moab.type_from_handle(*eit);
+      ss << " " << *fe;
+      SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,ss.str().c_str());
     }
-    nb_view_dofs[ss] = 0;
-  }
+    boost::shared_ptr<EntFiniteElement> ent_fe = boost::shared_ptr<EntFiniteElement>(
+      new EntFiniteElement(moab,ref_fe_miit->get_RefElement(),fe)
+    );
+    std::pair<EntFiniteElement_multiIndex::iterator,bool> p = entsFiniteElements.insert(ent_fe);
 
-  // Lopp over all fields in database
-  for(unsigned int ii = 0;ii<BitFieldId().size();ii++) {
-    // Common field id for ROW, COL and DATA
-    BitFieldId id_common = 0;
-    // Check if the field (ii) is added to finite element
-    for(int ss = 0;ss<LAST;ss++) {
-      if(dofs_to_skip[ss]) continue;
-      id_common |= fe_fields[ss]&BitFieldId().set(ii);
+    if(fe_fields[ROW]==fe_fields[COL]) {
+       p.first->get()->col_dof_view = p.first->get()->row_dof_view;
     }
-    if( id_common.none() ) continue;
-    // Find in database data associated with the field (ii)
-    field_by_id::iterator miit = fields_by_id.find(BitFieldId().set(ii));
-    if(miit==fields_by_id.end()) {
-      SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
+    if(fe_fields[ROW]==fe_fields[DATA]) {
+      p.first->get()->data_dof_view = p.first->get()->row_dof_view;
+    } else if(fe_fields[COL]==fe_fields[DATA]) {
+      p.first->get()->data_dof_view = p.first->get()->col_dof_view;
     }
-    // Resolve entities on element, those entities are used to build tag with dof
-    // uids on finite element tag
-    ierr = ent_fe.get_element_adjacency(moab,*miit,adj_ents); CHKERRQ(ierr);
-    // Loop over adjacent to finite entities, and find dofs on those entities
-    // this part is to build dofs_view_list
-    Range::iterator eit2 = adj_ents.begin();
-    for(;eit2!=adj_ents.end();eit2++) {
 
-      ref_ent_by_ent::iterator ref_ent_miit = refinedEntities.get<Ent_mi_tag>().find(*eit2);
-      if(ref_ent_miit==refinedEntities.get<Ent_mi_tag>().end()) {
-        RefEntity ref_ent(basicEntityDataPtr,*eit2);
-        if(!ref_ent.getBitRefLevel().any()) {
-          continue;
-        }
-        std::cerr << adj_ents << std::endl;
-        std::cerr << ent_fe << std::endl;
-        std::cerr << "bit level " << ent_fe.getBitRefLevel() << std::endl;
-        std::cerr << ref_ent << std::endl;
-        std::cerr << "bit level " << ref_ent.getBitRefLevel() << std::endl;
-        SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_FOUND,"ref ent not in database");
-      }
-      const BitRefLevel& bit_ref_ent = (*ref_ent_miit)->getBitRefLevel();
-      if(!(bit_ref_finite_element&bit_ref_ent).any()) {
-        std::ostringstream ss;
-        ss << "Top tip: check if you seed mesh with the elements for bit ref level1" << std::endl;
-        ss << "inconsistency in database entity" << " type "
-        << moab.type_from_handle(*eit2) << " bits ENT " << bit_ref_ent << std::endl;
-        ss << "inconsistency in database entity" << " type "
-        << moab.type_from_handle(ent_fe.getEnt()) << " bits FE  " << bit_ref_finite_element << std::endl;
-        ss << "element entity " << std::endl << **ref_ent_miit << std::endl;
-        SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,ss.str().c_str());
-      }
-      const boost::tuple<boost::string_ref,EntityHandle> tuple
-      = boost::make_tuple((*miit)->getNameRef(),(*ref_ent_miit)->getRefEnt());
-      dof_set_type::iterator ents_miit2 = dof_set.lower_bound(tuple);
-      if(ents_miit2 == dof_set.end()) continue;
-      dof_set_type::iterator ents_hi_miit2 = dof_set.upper_bound(tuple);
+    if(fe_fields[ROW]!=fe_fields[COL] && p.first->get()->col_dof_view == p.first->get()->row_dof_view) {
+      p.first->get()->col_dof_view
+      = boost::shared_ptr<DofEntity_multiIndex_uid_view>(new DofEntity_multiIndex_uid_view());
+    }
+    if(fe_fields[ROW]!=fe_fields[DATA] && p.first->get()->data_dof_view == p.first->get()->row_dof_view) {
+      p.first->get()->data_dof_view
+      = boost::shared_ptr<DofEntity_multiIndex_uid_view>(new DofEntity_multiIndex_uid_view());
+    } else if(fe_fields[COL]!=fe_fields[DATA] && p.first->get()->data_dof_view == p.first->get()->col_dof_view) {
+      p.first->get()->data_dof_view
+      = boost::shared_ptr<DofEntity_multiIndex_uid_view>(new DofEntity_multiIndex_uid_view());
+    }
+
+    p.first->get()->row_dof_view->clear();
+    p.first->get()->col_dof_view->clear();
+    p.first->get()->data_dof_view->clear();
+    p.first->get()->data_dofs.clear();
+
+    for(unsigned int ii = 0;ii<BitFieldId().size();ii++) {
+      // Common field id for ROW, COL and DATA
+      BitFieldId id_common = 0;
+      // Check if the field (ii) is added to finite element
       for(int ss = 0;ss<LAST;ss++) {
-        if( !(fe_fields[ss].test(ii)) ) continue;
-        dof_set_type::iterator ents_miit3 = ents_miit2;
-        if(!dofs_to_skip[ss]) {
-          for(;ents_miit3!=ents_hi_miit2;ents_miit3++) {
-            std::pair<DofEntity_multiIndex_uid_view::iterator,bool> p;
-            p = dofs_view_list[ss]->insert(*ents_miit3);
-            nb_view_dofs[ss]++;
-          }
-        } else {
-          nb_view_dofs[ss] = dofs_view_list[ss]->size();
-        }
+        id_common |= fe_fields[ss]&BitFieldId().set(ii);
+      }
+      if( id_common.none() ) continue;
+      // Find in database data associated with the field (ii)
+      FieldById::iterator miit = fields_by_id.find(BitFieldId().set(ii));
+      if(miit==fields_by_id.end()) {
+        SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"Data inconsistency");
       }
 
+      // Entities adjacent to entities
+      Range adj_ents;
+
+      // Resolve entities on element, those entities are used to build tag with dof
+      // uids on finite element tag
+      ierr = p.first->get()->get_element_adjacency(moab,*miit,adj_ents); CHKERRQ(ierr);
+
+      std::string field_name = miit->get()->getName();
+      for(Range::iterator eit = adj_ents.begin();eit!=adj_ents.end();eit++) {
+        MoFEMEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type::iterator meit;
+        meit = entsFields.get<Composite_Name_And_Ent_mi_tag>().find(boost::make_tuple(field_name,*eit));
+        if(meit!=entsFields.get<Composite_Name_And_Ent_mi_tag>().end()) {
+          UId uid = meit->get()->getGlobalUniqueId();
+          map_uid_fe[uid].push_back(*p.first);
+        }
+      }
     }
+
   }
 
-  for(int ss = 0;ss<LAST;ss++) {
-    if(nb_view_dofs[ss]!=dofs_view_list[ss]->size()) {
-      SETERRQ3(
-        PETSC_COMM_SELF,
-        MOFEM_DATA_INCONSISTENCY,
-        "data inconsistency %d != %d (%d)",
-        nb_view_dofs[ss],dofs_view_list[ss]->size(),ss
-      );
-    }
-  }
+  typedef DofEntity_multiIndex::index<Unique_Ent_mi_tag>::type DofsByEntUId;
+  DofsByEntUId& dofs_by_ent_uid = dofsField.get<Unique_Ent_mi_tag>();
 
-  if(verb>2) {
-    std::ostringstream ss;
-    ss << "add: FE data"  << std::endl << ent_fe << std::endl;
-    //rows
-    DofEntity_multiIndex_uid_view MoFEMFiniteElement_row_dof_uid_view;
-    ierr = ent_fe.get_MoFEMFiniteElement_row_dof_view(dofsField,MoFEMFiniteElement_row_dof_uid_view); CHKERRQ(ierr);
-    DofEntity_multiIndex_uid_view::iterator miit_row = MoFEMFiniteElement_row_dof_uid_view.begin();
-    ss << "rows dofs" << std::endl;
-    for(;miit_row!=MoFEMFiniteElement_row_dof_uid_view.end();miit_row++) ss << **miit_row << std::endl;
-    //cols
-    DofEntity_multiIndex_uid_view MoFEMFiniteElement_col_dof_uid_view;
-    ierr = ent_fe.get_MoFEMFiniteElement_col_dof_view(dofsField,MoFEMFiniteElement_col_dof_uid_view); CHKERRQ(ierr);
-    DofEntity_multiIndex_uid_view::iterator miit_col = MoFEMFiniteElement_col_dof_uid_view.begin();
-    ss << "cols dofs" << std::endl;
-    for(;miit_col!=MoFEMFiniteElement_col_dof_uid_view.end();miit_col++) ss << **miit_col << std::endl;
-    PetscPrintf(comm,ss.str().c_str());
+  boost::shared_ptr<SideNumber> side_number_ptr;
+  for(
+    std::map<UId,std::vector<boost::shared_ptr<EntFiniteElement> > >::iterator
+    mit = map_uid_fe.begin();mit!=map_uid_fe.end();mit++
+  ) {
+    DofsByEntUId::iterator dit,hi_dit;
+    dit = dofs_by_ent_uid.lower_bound(mit->first);
+    hi_dit = dofs_by_ent_uid.upper_bound(mit->first);
+    for(;dit!=hi_dit;dit++) {
+      // cerr << mit->first << endl;
+      // cerr << **dit << endl;
+      BitFieldId field_id = dit->get()->getId();
+      std::vector<boost::shared_ptr<EntFiniteElement> >::iterator fe_it,hi_fe_it;
+      fe_it = mit->second.begin();
+      hi_fe_it = mit->second.end();
+      for(;fe_it!=hi_fe_it;fe_it++) {
+        if((field_id&fe_it->get()->get_BitFieldId_row()).any()) {
+          fe_it->get()->row_dof_view->insert(*dit);
+        }
+        if(fe_it->get()->col_dof_view!=fe_it->get()->row_dof_view) {
+          if((field_id&fe_it->get()->get_BitFieldId_col()).any()) {
+            fe_it->get()->col_dof_view->insert(*dit);
+          }
+        }
+        if(fe_it->get()->data_dof_view!=fe_it->get()->row_dof_view && fe_it->get()->data_dof_view!=fe_it->get()->col_dof_view) {
+          if((field_id&fe_it->get()->get_BitFieldId_data()).any()) {
+            fe_it->get()->data_dof_view->insert(*dit);
+          }
+        }
+        if((field_id&fe_it->get()->get_BitFieldId_data()).any()) {
+          side_number_ptr = fe_it->get()->get_side_number_ptr(moab,(*dit)->getEnt());
+          //add dofs to finite element multi_index database
+          fe_it->get()->data_dofs.get<Unique_mi_tag>().insert(
+            boost::shared_ptr<FEDofEntity>(new FEDofEntity(side_number_ptr,*dit))
+          );
+        }
+      }
+    }
   }
 
   PetscFunctionReturn(0);
 }
+
 PetscErrorCode Core::build_finite_elements(int verb) {
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
 
-  typedef RefElement_multiIndex::index<Ent_mi_tag>::type RefFiniteElement_by_ent;
   FiniteElement_multiIndex::iterator fe_miit = finiteElements.begin();
+
   // loop Finite Elements
   for(;fe_miit!=finiteElements.end();fe_miit++) {
-
     if(verb>0) PetscPrintf(comm,"Build Finite Elements %s\n",(*fe_miit)->getName().c_str());
-    //get finite element meshset
-    EntityHandle meshset = get_finite_element_meshset((*fe_miit)->getId());
-    // get entities from finite element meshset // if meshset
-    Range MoFEMFiniteElement_ents;
-    rval = moab.get_entities_by_handle(meshset,MoFEMFiniteElement_ents,false); CHKERRQ_MOAB(rval);
-    //loop meshset Ents and add finite elements
-    Range::iterator eit = MoFEMFiniteElement_ents.begin();
-    for(;eit!=MoFEMFiniteElement_ents.end();eit++) {
-      // note: iterator is a wrapper
-      // check if is in refinedFiniteElements database
-      RefFiniteElement_by_ent::iterator ref_fe_miit;
-      ref_fe_miit = refinedFiniteElements.get<Ent_mi_tag>().find(*eit);
-      if(ref_fe_miit == refinedFiniteElements.get<Ent_mi_tag>().end()) {
-        std::ostringstream ss;
-        ss << "ref FiniteElement not in database ent = " << *eit;
-        ss << " type " << moab.type_from_handle(*eit);
-        ss << " " << *(*fe_miit);
-        SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,ss.str().c_str());
-      }
-      boost::shared_ptr<EntFiniteElement> ent_fe =
-      boost::shared_ptr<EntFiniteElement>(
-        new EntFiniteElement(moab,ref_fe_miit->get_RefElement(),*fe_miit)
-      );
-      std::pair<EntFiniteElement_multiIndex::iterator,bool> p = entsFiniteElements.insert(ent_fe);
-      ierr = build_finite_element_uids_view(const_cast<EntFiniteElement&>(*(*p.first)),verb); CHKERRQ(ierr);
-      ierr = build_finite_element_data_dofs(const_cast<EntFiniteElement&>(*(*p.first)),verb); CHKERRQ(ierr);
-    }
-
+    ierr = build_finite_elements(*fe_miit,NULL,verb); CHKERRQ(ierr);
   }
 
   if(verb>0) {
@@ -2103,6 +1989,26 @@ PetscErrorCode Core::build_finite_elements(int verb) {
   *buildMoFEM |= 1<<1;
   PetscFunctionReturn(0);
 }
+PetscErrorCode Core::build_finite_elements(const string fe_name,const Range *ents_ptr,int verb) {
+  PetscFunctionBegin;
+  if(verb==-1) verb = verbose;
+
+  FiniteElement_multiIndex::index<FiniteElement_name_mi_tag>::type::iterator
+  fe_miit = finiteElements.get<FiniteElement_name_mi_tag>().find(fe_name);
+  if(fe_miit==finiteElements.get<FiniteElement_name_mi_tag>().end()) {
+    SETERRQ1(
+      PETSC_COMM_SELF,MOFEM_NOT_FOUND,
+      "Finite element <%s> not found",fe_name.c_str()
+    );
+  }
+
+  if(verb>0) PetscPrintf(comm,"Build Finite Elements %s\n",fe_name.c_str());
+  ierr = build_finite_elements(*fe_miit,ents_ptr,verb); CHKERRQ(ierr);
+
+  *buildMoFEM |= 1<<1;
+  PetscFunctionReturn(0);
+}
+
 PetscErrorCode Core::build_adjacencies(const Range &ents,int verb) {
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;

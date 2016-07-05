@@ -51,7 +51,7 @@ struct TimeForceScale: public MethodForForceScaling {
   PetscErrorCode timeData() {
     PetscFunctionBegin;
     char time_file_name[255];
-    ierr = PetscOptionsGetString(PETSC_NULL,nAme.c_str(),time_file_name,255,&fLg); CHKERRQ(ierr);
+    ierr = PetscOptionsGetString(PETSC_NULL,PETSC_NULL,nAme.c_str(),time_file_name,255,&fLg); CHKERRQ(ierr);
     if(!fLg && errorIfFileNotGiven) {
       SETERRQ1(PETSC_COMM_SELF,1,"*** ERROR %s (time_data FILE NEEDED)",nAme.c_str());
     }
@@ -149,7 +149,7 @@ struct TimeAccelerogram: public MethodForForceScaling {
     PetscFunctionBegin;
     char time_file_name[255];
     PetscBool flg = PETSC_TRUE;
-    ierr = PetscOptionsGetString(PETSC_NULL,nAme.c_str(),time_file_name,255,&flg); CHKERRQ(ierr);
+    ierr = PetscOptionsGetString(PETSC_NULL,PETSC_NULL,nAme.c_str(),time_file_name,255,&flg); CHKERRQ(ierr);
     if(flg != PETSC_TRUE) {
       SETERRQ1(PETSC_COMM_SELF,1,"*** ERROR %s (time_data FILE NEEDED)",nAme.c_str());
     }

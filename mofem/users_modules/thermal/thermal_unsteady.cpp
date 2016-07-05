@@ -82,7 +82,7 @@ struct MonitorPostProc: public FEMethod {
     FEMethod(),mField(m_field),postProc(m_field),iNit(false) {
     PetscErrorCode ierr;
     PetscBool flg = PETSC_TRUE;
-    ierr = PetscOptionsGetInt(PETSC_NULL,"-my_output_prt",&pRT,&flg); CHKERRABORT(PETSC_COMM_WORLD,ierr);
+    ierr = PetscOptionsGetInt(PETSC_NULL,PETSC_NULL,"-my_output_prt",&pRT,&flg); CHKERRABORT(PETSC_COMM_WORLD,ierr);
     if(flg!=PETSC_TRUE) {
       pRT = 1;
     }
@@ -133,7 +133,7 @@ int main(int argc, char *argv[]) {
 
   PetscBool flg = PETSC_TRUE;
   char mesh_file_name[255];
-  ierr = PetscOptionsGetString(PETSC_NULL,"-my_file",mesh_file_name,255,&flg); CHKERRQ(ierr);
+  ierr = PetscOptionsGetString(PETSC_NULL,PETSC_NULL,"-my_file",mesh_file_name,255,&flg); CHKERRQ(ierr);
   if(flg != PETSC_TRUE) {
     SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_file (MESH FILE NEEDED)");
   }
@@ -141,14 +141,14 @@ int main(int argc, char *argv[]) {
   option = "";
 
   PetscInt order;
-  ierr = PetscOptionsGetInt(PETSC_NULL,"-my_order",&order,&flg); CHKERRQ(ierr);
+  ierr = PetscOptionsGetInt(PETSC_NULL,PETSC_NULL,"-my_order",&order,&flg); CHKERRQ(ierr);
   if(flg != PETSC_TRUE) {
     order = 1;
   }
 
   char time_data_file_for_ground_surface[255];
   PetscBool ground_temperature_analys = PETSC_FALSE;
-  ierr = PetscOptionsGetString(PETSC_NULL,"-my_ground_analysis_data",
+  ierr = PetscOptionsGetString(PETSC_NULL,PETSC_NULL,"-my_ground_analysis_data",
     time_data_file_for_ground_surface,255,&ground_temperature_analys); CHKERRQ(ierr);
   if(ground_temperature_analys) {
     #ifndef __GROUNDSURFACETEMERATURE_HPP
@@ -217,7 +217,7 @@ int main(int argc, char *argv[]) {
   // it allow to set approximation order for each block independettly
   PetscBool block_config;
   char block_config_file[255];
-  ierr = PetscOptionsGetString(PETSC_NULL,"-my_block_config",block_config_file,255,&block_config); CHKERRQ(ierr);
+  ierr = PetscOptionsGetString(PETSC_NULL,PETSC_NULL,"-my_block_config",block_config_file,255,&block_config); CHKERRQ(ierr);
   std::map<int,BlockOptionData> block_data;
   bool solar_radiation = false;
   if(block_config) {
@@ -472,7 +472,7 @@ int main(int argc, char *argv[]) {
   // save solution, if boundary conditions are defined you can use that file in mechanical problem
   // to calculate thermal stresses
   PetscBool is_partitioned = PETSC_FALSE;
-  ierr = PetscOptionsGetBool(PETSC_NULL,"-dm_is_partitioned",&is_partitioned,PETSC_NULL); CHKERRQ(ierr);
+  ierr = PetscOptionsGetBool(PETSC_NULL,PETSC_NULL,"-dm_is_partitioned",&is_partitioned,PETSC_NULL); CHKERRQ(ierr);
   if(is_partitioned) {
     rval = moab.write_file("solution.h5m"); CHKERRQ_MOAB(rval);
   } else {

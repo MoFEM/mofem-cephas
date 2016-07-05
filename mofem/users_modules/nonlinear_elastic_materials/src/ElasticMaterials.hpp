@@ -232,7 +232,7 @@ struct ElasticMaterials {
     //set app. order
     PetscBool flg = PETSC_TRUE;
     PetscInt disp_order;
-    ierr = PetscOptionsGetInt(PETSC_NULL,"-order",&disp_order,&flg); CHKERRQ(ierr);
+    ierr = PetscOptionsGetInt(PETSC_NULL,PETSC_NULL,"-order",&disp_order,&flg); CHKERRQ(ierr);
     if(flg!=PETSC_TRUE) {
       disp_order = 1;
     }

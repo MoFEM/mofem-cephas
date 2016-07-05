@@ -265,7 +265,7 @@ PetscErrorCode PostProcVolumeOnRefinedMesh::generateReferenceElementMesh() {
   int max_level = 0;
   if(nbOfRefLevels == -1) {
     PetscBool flg = PETSC_TRUE;
-    PetscOptionsGetInt(PETSC_NULL,"-my_max_post_proc_ref_level",&max_level,&flg);
+    PetscOptionsGetInt(PETSC_NULL,PETSC_NULL,"-my_max_post_proc_ref_level",&max_level,&flg);
   } else {
     max_level = nbOfRefLevels;
   }

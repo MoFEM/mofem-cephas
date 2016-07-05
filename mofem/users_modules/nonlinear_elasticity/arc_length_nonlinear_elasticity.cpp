@@ -69,13 +69,13 @@ int main(int argc, char *argv[]) {
 
   PetscBool flg = PETSC_TRUE;
   char mesh_file_name[255];
-  ierr = PetscOptionsGetString(PETSC_NULL,"-my_file",mesh_file_name,255,&flg); CHKERRQ(ierr);
+  ierr = PetscOptionsGetString(PETSC_NULL,PETSC_NULL,"-my_file",mesh_file_name,255,&flg); CHKERRQ(ierr);
   if(flg != PETSC_TRUE) {
     SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_file (MESH FILE NEEDED)");
   }
 
   PetscInt order;
-  ierr = PetscOptionsGetInt(PETSC_NULL,"-my_order",&order,&flg); CHKERRQ(ierr);
+  ierr = PetscOptionsGetInt(PETSC_NULL,PETSC_NULL,"-my_order",&order,&flg); CHKERRQ(ierr);
   if(flg != PETSC_TRUE) {
     order = 3;
   }
@@ -83,7 +83,7 @@ int main(int argc, char *argv[]) {
   // use this if your mesh is partitioned and you run code on parts,
   // you can solve very big problems
   PetscBool is_partitioned = PETSC_FALSE;
-  ierr = PetscOptionsGetBool(PETSC_NULL,"-my_is_partitioned",&is_partitioned,&flg); CHKERRQ(ierr);
+  ierr = PetscOptionsGetBool(PETSC_NULL,PETSC_NULL,"-my_is_partitioned",&is_partitioned,&flg); CHKERRQ(ierr);
 
   if(is_partitioned == PETSC_TRUE) {
     //Read mesh to MOAB
@@ -232,7 +232,7 @@ int main(int argc, char *argv[]) {
   }
 
   PetscBool linear;
-  ierr = PetscOptionsGetBool(PETSC_NULL,"-is_linear",&linear,&linear); CHKERRQ(ierr);
+  ierr = PetscOptionsGetBool(PETSC_NULL,PETSC_NULL,"-is_linear",&linear,&linear); CHKERRQ(ierr);
 
   //NeoHookean<adouble> neo_hooke_adouble;
   //NeoHookean<double> neo_hooke_double;
@@ -488,7 +488,7 @@ int main(int argc, char *argv[]) {
   ierr = SNESSetFromOptions(snes); CHKERRQ(ierr);
 
   PetscReal my_tol;
-  ierr = PetscOptionsGetReal(PETSC_NULL,"-my_tol",&my_tol,&flg); CHKERRQ(ierr);
+  ierr = PetscOptionsGetReal(PETSC_NULL,PETSC_NULL,"-my_tol",&my_tol,&flg); CHKERRQ(ierr);
   if(flg == PETSC_TRUE) {
     PetscReal atol,rtol,stol;
     PetscInt maxit,maxf;
@@ -560,25 +560,25 @@ int main(int argc, char *argv[]) {
   ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 
   PetscScalar step_size_reduction;
-  ierr = PetscOptionsGetReal(PETSC_NULL,"-my_sr",&step_size_reduction,&flg); CHKERRQ(ierr);
+  ierr = PetscOptionsGetReal(PETSC_NULL,PETSC_NULL,"-my_sr",&step_size_reduction,&flg); CHKERRQ(ierr);
   if(flg != PETSC_TRUE) {
     step_size_reduction = 1.;
   }
 
   PetscInt max_steps;
-  ierr = PetscOptionsGetInt(PETSC_NULL,"-my_ms",&max_steps,&flg); CHKERRQ(ierr);
+  ierr = PetscOptionsGetInt(PETSC_NULL,PETSC_NULL,"-my_ms",&max_steps,&flg); CHKERRQ(ierr);
   if(flg != PETSC_TRUE) {
     max_steps = 5;
   }
 
   int its_d;
-  ierr = PetscOptionsGetInt(PETSC_NULL,"-my_its_d",&its_d,&flg); CHKERRQ(ierr);
+  ierr = PetscOptionsGetInt(PETSC_NULL,PETSC_NULL,"-my_its_d",&its_d,&flg); CHKERRQ(ierr);
   if(flg != PETSC_TRUE) {
     its_d = 4;
   }
   PetscScalar max_reudction = 10,min_reduction = 0.1;
-  ierr = PetscOptionsGetReal(PETSC_NULL,"-my_max_step_reduction",&max_reudction,&flg); CHKERRQ(ierr);
-  ierr = PetscOptionsGetReal(PETSC_NULL,"-my_min_step_reduction",&min_reduction,&flg); CHKERRQ(ierr);
+  ierr = PetscOptionsGetReal(PETSC_NULL,PETSC_NULL,"-my_max_step_reduction",&max_reudction,&flg); CHKERRQ(ierr);
+  ierr = PetscOptionsGetReal(PETSC_NULL,PETSC_NULL,"-my_min_step_reduction",&min_reduction,&flg); CHKERRQ(ierr);
 
   double gamma = 0.5,reduction = 1;
   //step = 1;

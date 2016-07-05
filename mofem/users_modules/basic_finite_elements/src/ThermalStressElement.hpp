@@ -209,7 +209,7 @@ struct ThermalStressElement {
         ierr = mField.add_ents_to_finite_element_by_TETs(setOfBlocks[it->get_msId()].tEts,fe_name); CHKERRQ(ierr);
         double ref_temp;
         PetscBool flg;
-        ierr = PetscOptionsGetReal(PETSC_NULL,"-my_ref_temp",&ref_temp,&flg); CHKERRQ(ierr);
+        ierr = PetscOptionsGetReal(PETSC_NULL,PETSC_NULL,"-my_ref_temp",&ref_temp,&flg); CHKERRQ(ierr);
         if(flg == PETSC_TRUE) {
           PetscPrintf(mField.get_comm(),"set refernce temperature %3.2f\n",ref_temp);
           setOfBlocks[it->get_msId()].refTemperature = ref_temp;
