@@ -50,7 +50,7 @@ PetscErrorCode EdgeForce::OpEdgeForce::doWork(int side,EntityType type,DataForce
 
   // Get pointer to DOF and its rank
   const FENumeredDofEntity *dof_ptr;
-  ierr = getNumeredEntFiniteElementPtr()->get_row_dofs_by_petsc_gloabl_dof_idx(data.getIndices()[0],&dof_ptr); CHKERRQ(ierr);
+  ierr = getNumeredEntFiniteElementPtr()->getRowDofsByPetscGlobalDofIdx(data.getIndices()[0],&dof_ptr); CHKERRQ(ierr);
   int rank = dof_ptr->getNbOfCoeffs();
 
   int nb_dofs =  data.getIndices().size();

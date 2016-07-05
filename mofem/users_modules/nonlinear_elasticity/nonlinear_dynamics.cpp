@@ -532,8 +532,8 @@ int main(int argc, char *argv[]) {
       PETSC_COMM_WORLD,
       problem_ptr->get_nb_local_dofs_row(),
       problem_ptr->get_nb_local_dofs_col(),
-      problem_ptr->get_nb_dofs_row(),
-      problem_ptr->get_nb_dofs_row(),
+      problem_ptr->getNbDofsRow(),
+      problem_ptr->getNbDofsRow(),
       (void*)shellAij_ctx,&shell_Aij
     ); CHKERRQ(ierr);
     ierr = MatShellSetOperation(shell_Aij,MATOP_MULT,(void(*)(void))ConvectiveMassElement::MultOpA); CHKERRQ(ierr);

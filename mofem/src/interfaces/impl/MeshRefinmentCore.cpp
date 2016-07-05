@@ -415,7 +415,7 @@ PetscErrorCode Core::refine_TET(const Range &_tets,const BitRefLevel &bit,const 
         //verbose
         if(verbose>2) {
           std::ostringstream ss;
-          ss << miit_composite->get_RefElement() << std::endl;
+          ss << miit_composite->getRefElement() << std::endl;
           PetscPrintf(comm,ss.str().c_str());
         }
       }
@@ -490,7 +490,7 @@ PetscErrorCode Core::refine_TET(const Range &_tets,const BitRefLevel &bit,const 
           ref_tets_bit.set(tt);
           if(verbose>2) {
             std::ostringstream ss;
-            ss << "add tet: " << *(p_MoFEMFiniteElement.first->get_RefElement()) << std::endl;
+            ss << "add tet: " << *(p_MoFEMFiniteElement.first->getRefElement()) << std::endl;
             PetscPrintf(comm,ss.str().c_str());
           }
         }
@@ -807,7 +807,7 @@ PetscErrorCode Core::refine_PRISM(const EntityHandle meshset,const BitRefLevel &
       ref_prism_bit.set(pp,1);
       if(verb>2) {
 	std::ostringstream ss;
-	ss << "is refined " << *(miit_composite2->get_RefElement()) << std::endl;
+	ss << "is refined " << *(miit_composite2->getRefElement()) << std::endl;
 	PetscPrintf(comm,ss.str().c_str());
       }
     }
@@ -842,7 +842,7 @@ PetscErrorCode Core::refine_PRISM(const EntityHandle meshset,const BitRefLevel &
 	  ierr = addPrismToDatabase(ref_prisms[pp]); CHKERRQ(ierr);
 	  if(verb>2) {
 	    std::ostringstream ss;
-	    ss << "add prism: " << *(p_MoFEMFiniteElement.first->get_RefElement()) << std::endl;
+	    ss << "add prism: " << *(p_MoFEMFiniteElement.first->getRefElement()) << std::endl;
       if(verb>7) {
         for(int nn = 0;nn<6;nn++) {
           ss << new_prism_conn[nn] << " ";

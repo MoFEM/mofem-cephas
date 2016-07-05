@@ -2230,7 +2230,7 @@ struct FieldInterface: public UnknownInterface {
     if(count!=NULL) *count = 0;
     for(int nn = 0;nn<num_ents;nn++) {
       for(_IT_GET_DOFS_FIELD_BY_NAME_AND_ENT_FOR_LOOP_((*this),name,ent[nn],it)) {
-        *(dit++) = (*it)->get_FieldData();
+        *(dit++) = (*it)->getFieldData();
         if(count!=NULL) (*count)++;
       }
     }
@@ -2250,7 +2250,7 @@ struct FieldInterface: public UnknownInterface {
     if(count!=NULL) *count = 0;
     for(Range::const_iterator eit = ents.begin();eit!=ents.end();eit++) {
       for(_IT_GET_DOFS_FIELD_BY_NAME_AND_ENT_FOR_LOOP_((*this),name,*eit,it)) {
-        *(dit++) = (*it)->get_FieldData();
+        *(dit++) = (*it)->getFieldData();
         if(count!=NULL) (*count)++;
       }
     }
