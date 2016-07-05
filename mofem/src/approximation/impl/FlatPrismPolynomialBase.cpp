@@ -156,7 +156,7 @@ PetscErrorCode FlatPrismPolynomialBase::getValue(
   // This is needed to have proper order of nodes on faces
   MoABErrorCode rval;
   rval = cTx->mOab.get_connectivity(cTx->fePtr->getEnt(),connPrism,numNodes,true); CHKERRQ_MOAB(rval);
-  SideNumber_multiIndex& side_table = const_cast<SideNumber_multiIndex&>(cTx->fePtr->get_side_number_table());
+  SideNumber_multiIndex& side_table = const_cast<SideNumber_multiIndex&>(cTx->fePtr->getSideNumberTable());
   SideNumber_multiIndex::nth_index<1>::type::iterator siit3 = side_table.get<1>().find(boost::make_tuple(MBTRI,3));
   SideNumber_multiIndex::nth_index<1>::type::iterator siit4 = side_table.get<1>().find(boost::make_tuple(MBTRI,4));
   if(siit3==side_table.get<1>().end()) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");

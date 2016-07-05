@@ -409,7 +409,7 @@ typedef multi_index_container<
         DofEntity,
           const_mem_fun<DofEntity::interface_type_Field,boost::string_ref,&DofEntity::getNameRef>,
           const_mem_fun<DofEntity,EntityHandle,&DofEntity::getEnt>,
-          const_mem_fun<DofEntity,DofIdx,&DofEntity::get_EntDofIdx>
+          const_mem_fun<DofEntity,DofIdx,&DofEntity::getEntDofIdx>
     > >,
     //non_unique
     ordered_non_unique<
@@ -555,7 +555,7 @@ typedef multi_index_container<
     ordered_non_unique<
       tag<FieldName_mi_tag>, const_mem_fun<FENumeredDofEntity::interface_type_Field,boost::string_ref,&FENumeredDofEntity::getNameRef> >,
     ordered_non_unique<
-      tag<PetscGlobalIdx_mi_tag>, const_mem_fun<FENumeredDofEntity::interface_type_NumeredDofEntity,DofIdx,&FENumeredDofEntity::get_petsc_gloabl_dof_idx> >,
+      tag<PetscGlobalIdx_mi_tag>, const_mem_fun<FENumeredDofEntity::interface_type_NumeredDofEntity,DofIdx,&FENumeredDofEntity::getPetscGlobalDofIdx> >,
     ordered_non_unique<
       tag<Composite_Name_Type_And_Side_Number_mi_tag>,
       composite_key<
@@ -601,7 +601,7 @@ typedef multi_index_container<
 	      NumeredDofEntity,
 	      const_mem_fun<NumeredDofEntity::interface_type_Field,boost::string_ref,&NumeredDofEntity::getNameRef>,
 	      const_mem_fun<NumeredDofEntity::interface_type_DofEntity,EntityHandle,&NumeredDofEntity::getEnt>,
-	      const_mem_fun<NumeredDofEntity::interface_type_DofEntity,DofIdx,&NumeredDofEntity::get_EntDofIdx>
+	      const_mem_fun<NumeredDofEntity::interface_type_DofEntity,DofIdx,&NumeredDofEntity::getEntDofIdx>
     > >,
     //non unique
     ordered_non_unique<
@@ -653,7 +653,7 @@ typedef multi_index_container<
       composite_key<
 	     NumeredDofEntity,
 	     const_mem_fun<NumeredDofEntity::interface_type_Field,boost::string_ref,&NumeredDofEntity::getNameRef>,
-	     const_mem_fun<NumeredDofEntity,bool,&NumeredDofEntity::get_has_local_index>
+	     const_mem_fun<NumeredDofEntity,bool,&NumeredDofEntity::getHasLocalIndex>
 	  > >
   > > NumeredDofEntity_multiIndex;
 
@@ -675,7 +675,7 @@ typedef multi_index_container<
   boost::shared_ptr<NumeredDofEntity>,
   indexed_by<
     ordered_non_unique<
-      const_mem_fun<NumeredDofEntity,DofIdx,&NumeredDofEntity::get_petsc_local_dof_idx> >
+      const_mem_fun<NumeredDofEntity,DofIdx,&NumeredDofEntity::getPetscLocalDofIdx> >
   > > NumeredDofEntity_multiIndex_petsc_local_dof_view_ordered_non_unique;
 
 struct DofEntity_active_change {

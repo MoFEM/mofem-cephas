@@ -84,7 +84,7 @@ std::ostream& operator<<(std::ostream& os,const DofEntity& e) {
   os << "dof_uid " << e.getGlobalUniqueId()
   << " dof_order " << e.get_dof_order()
   << " dof_rank " << e.get_dof_coeff_idx()
-  << " dof " << e.get_EntDofIdx()
+  << " dof " << e.getEntDofIdx()
   << " active " << e.active
   << " " << *(e.sFieldPtr);
   return os;

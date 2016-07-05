@@ -1846,7 +1846,7 @@ PetscErrorCode Core::build_finite_element_data_dofs(EntFiniteElement &ent_fe,int
         case NOFIELD:
         {
           if(data_dofs.get<Unique_mi_tag>().find((*viit_data)->getGlobalUniqueId())==data_dofs.get<Unique_mi_tag>().end()) {
-            boost::shared_ptr<SideNumber> side_number_ptr = ent_fe.get_side_number_ptr(moab,(*viit_data)->getEnt());
+            boost::shared_ptr<SideNumber> side_number_ptr = ent_fe.getSideNumberPtr(moab,(*viit_data)->getEnt());
             //add dofs to finite element multi_index database
             data_dofs.get<Unique_mi_tag>().insert(
               data_dofs.end(),boost::shared_ptr<FEDofEntity>(
@@ -1880,9 +1880,9 @@ PetscErrorCode Core::build_finite_element_uids_view(EntFiniteElement &ent_fe,int
   //get id of mofem fields for row, col and data
   enum IntLoop { ROW = 0,COL,DATA,LAST };
   BitFieldId fe_fields[LAST] = {
-    ent_fe.get_BitFieldId_row(),
-    ent_fe.get_BitFieldId_col(),
-    ent_fe.get_BitFieldId_data()
+    ent_fe.getBitFieldIdRow(),
+    ent_fe.getBitFieldIdCol(),
+    ent_fe.getBitFieldIdData()
   };
 
   bool dofs_to_skip[] = { false, false, false };
@@ -1961,7 +1961,7 @@ PetscErrorCode Core::build_finite_element_uids_view(EntFiniteElement &ent_fe,int
     }
     // Resolve entities on element, those entities are used to build tag with dof
     // uids on finite element tag
-    ierr = ent_fe.get_element_adjacency(moab,*miit,adj_ents); CHKERRQ(ierr);
+    ierr = ent_fe.getElementAdjacency(moab,*miit,adj_ents); CHKERRQ(ierr);
     // Loop over adjacent to finite entities, and find dofs on those entities
     // this part is to build dofs_view_list
     Range::iterator eit2 = adj_ents.begin();
@@ -2030,13 +2030,13 @@ PetscErrorCode Core::build_finite_element_uids_view(EntFiniteElement &ent_fe,int
     ss << "add: FE data"  << std::endl << ent_fe << std::endl;
     //rows
     DofEntity_multiIndex_uid_view MoFEMFiniteElement_row_dof_uid_view;
-    ierr = ent_fe.get_MoFEMFiniteElement_row_dof_view(dofsField,MoFEMFiniteElement_row_dof_uid_view); CHKERRQ(ierr);
+    ierr = ent_fe.getMoFEMFiniteElementRowDofView(dofsField,MoFEMFiniteElement_row_dof_uid_view); CHKERRQ(ierr);
     DofEntity_multiIndex_uid_view::iterator miit_row = MoFEMFiniteElement_row_dof_uid_view.begin();
     ss << "rows dofs" << std::endl;
     for(;miit_row!=MoFEMFiniteElement_row_dof_uid_view.end();miit_row++) ss << **miit_row << std::endl;
     //cols
     DofEntity_multiIndex_uid_view MoFEMFiniteElement_col_dof_uid_view;
-    ierr = ent_fe.get_MoFEMFiniteElement_col_dof_view(dofsField,MoFEMFiniteElement_col_dof_uid_view); CHKERRQ(ierr);
+    ierr = ent_fe.getMoFEMFiniteElementColDofView(dofsField,MoFEMFiniteElement_col_dof_uid_view); CHKERRQ(ierr);
     DofEntity_multiIndex_uid_view::iterator miit_col = MoFEMFiniteElement_col_dof_uid_view.begin();
     ss << "cols dofs" << std::endl;
     for(;miit_col!=MoFEMFiniteElement_col_dof_uid_view.end();miit_col++) ss << **miit_col << std::endl;
@@ -2076,7 +2076,7 @@ PetscErrorCode Core::build_finite_elements(int verb) {
       }
       boost::shared_ptr<EntFiniteElement> ent_fe =
       boost::shared_ptr<EntFiniteElement>(
-        new EntFiniteElement(moab,ref_fe_miit->get_RefElement(),*fe_miit)
+        new EntFiniteElement(moab,ref_fe_miit->getRefElement(),*fe_miit)
       );
       std::pair<EntFiniteElement_multiIndex::iterator,bool> p = entsFiniteElements.insert(ent_fe);
       int view_inserts = 0;
@@ -2122,8 +2122,8 @@ PetscErrorCode Core::build_adjacencies(const Range &ents,int verb) {
       }
     }
     int by = BYROW;
-    if((*fit)->get_BitFieldId_row()!=(*fit)->get_BitFieldId_col()) by |= BYCOL;
-    if((*fit)->get_BitFieldId_row()!=(*fit)->get_BitFieldId_data()) by |= BYDATA;
+    if((*fit)->getBitFieldIdRow()!=(*fit)->getBitFieldIdCol()) by |= BYCOL;
+    if((*fit)->getBitFieldIdRow()!=(*fit)->getBitFieldIdData()) by |= BYDATA;
     MoFEMEntityEntFiniteElementAdjacencyMap_change_ByWhat modify_row(by);
     GlobalUId ent_uid = UId(0);
     DofEntity_multiIndex_uid_view::iterator rvit;
@@ -2138,9 +2138,9 @@ PetscErrorCode Core::build_adjacencies(const Range &ents,int verb) {
       bool success = entFEAdjacencies.modify(p.first,modify_row);
       if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
     }
-    if((*fit)->get_BitFieldId_row()!=(*fit)->get_BitFieldId_col()) {
+    if((*fit)->getBitFieldIdRow()!=(*fit)->getBitFieldIdCol()) {
       int by = BYCOL;
-      if((*fit)->get_BitFieldId_col()!=(*fit)->get_BitFieldId_data()) by |= BYDATA;
+      if((*fit)->getBitFieldIdCol()!=(*fit)->getBitFieldIdData()) by |= BYDATA;
       MoFEMEntityEntFiniteElementAdjacencyMap_change_ByWhat modify_col(by);
       ent_uid = UId(0);
       DofEntity_multiIndex_uid_view::iterator cvit;
@@ -2157,8 +2157,8 @@ PetscErrorCode Core::build_adjacencies(const Range &ents,int verb) {
       }
     }
     if(
-      (*fit)->get_BitFieldId_row()!=(*fit)->get_BitFieldId_data()||
-      (*fit)->get_BitFieldId_col()!=(*fit)->get_BitFieldId_data()
+      (*fit)->getBitFieldIdRow()!=(*fit)->getBitFieldIdData()||
+      (*fit)->getBitFieldIdCol()!=(*fit)->getBitFieldIdData()
     ) {
       MoFEMEntityEntFiniteElementAdjacencyMap_change_ByWhat modify_data(BYDATA);
       ent_uid = UId(0);
@@ -2273,7 +2273,7 @@ PetscErrorCode Core::partition_finite_elements(
         NumeredEntFiniteElement_change_part(proc).operator()(numered_fe);
       } else {
         //rows_view
-        ierr = (*miit2)->get_MoFEMFiniteElement_row_dof_view(
+        ierr = (*miit2)->getMoFEMFiniteElementRowDofView(
           *(p_miit->numered_dofs_rows),rows_view,Interface::UNION
         ); CHKERRQ(ierr);
         std::vector<int> parts(sIze,0);
@@ -2291,7 +2291,7 @@ PetscErrorCode Core::partition_finite_elements(
       ) {
         if(part_from_moab) {
           //rows_view
-          ierr = (*miit2)->get_MoFEMFiniteElement_row_dof_view(
+          ierr = (*miit2)->getMoFEMFiniteElementRowDofView(
             *(p_miit->numered_dofs_rows),rows_view,Interface::UNION
           ); CHKERRQ(ierr);
         }
@@ -2299,7 +2299,7 @@ PetscErrorCode Core::partition_finite_elements(
         viit_rows = rows_view.begin();
         for(;viit_rows!=rows_view.end();viit_rows++) {
           try {
-            boost::shared_ptr<SideNumber> side_number_ptr = (*miit2)->get_side_number_ptr(moab,(*viit_rows)->getEnt());
+            boost::shared_ptr<SideNumber> side_number_ptr = (*miit2)->getSideNumberPtr(moab,(*viit_rows)->getEnt());
             rows_dofs->insert(boost::shared_ptr<FENumeredDofEntity>(new FENumeredDofEntity(side_number_ptr,*viit_rows)));
           } catch (MoFEMException const &e) {
             SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
@@ -2308,7 +2308,7 @@ PetscErrorCode Core::partition_finite_elements(
         if(do_cols_fe) {
           //cols_views
           NumeredDofEntity_multiIndex_uid_view_ordered cols_view;
-          ierr = (*miit2)->get_MoFEMFiniteElement_col_dof_view(
+          ierr = (*miit2)->getMoFEMFiniteElementColDofView(
             *(p_miit->numered_dofs_cols),cols_view,Interface::UNION
           ); CHKERRQ(ierr);
           //cols element dof multi-indices
@@ -2316,7 +2316,7 @@ PetscErrorCode Core::partition_finite_elements(
           viit_cols = cols_view.begin();
           for(;viit_cols!=cols_view.end();viit_cols++) {
             try {
-              boost::shared_ptr<SideNumber> side_number_ptr = (*miit2)->get_side_number_ptr(moab,(*viit_cols)->getEnt());
+              boost::shared_ptr<SideNumber> side_number_ptr = (*miit2)->getSideNumberPtr(moab,(*viit_cols)->getEnt());
               cols_dofs->insert(boost::shared_ptr<FENumeredDofEntity>(new FENumeredDofEntity(side_number_ptr,*viit_cols)));
             } catch (MoFEMException const &e) {
               SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
@@ -2574,7 +2574,7 @@ PetscErrorCode Core::seed_ref_level(const Range &ents,const BitRefLevel &bit,int
       }
       if(verb>3) {
         std::ostringstream ss;
-        ss << *(p_MoFEMFiniteElement.first->get_RefElement());
+        ss << *(p_MoFEMFiniteElement.first->getRefElement());
         PetscSynchronizedPrintf(comm,"%s\n",ss.str().c_str());
       }
     }
@@ -2631,7 +2631,7 @@ PetscErrorCode Core::seed_ref_level_MESHSET(const EntityHandle meshset,const Bit
   std::pair<RefElement_multiIndex::iterator,bool> p_MoFEMFiniteElement = refinedFiniteElements.insert(pack_fe);
   if(verbose > 0) {
     std::ostringstream ss;
-    ss << "add meshset as ref_ent " << *(p_MoFEMFiniteElement.first->get_RefElement()) << std::endl;
+    ss << "add meshset as ref_ent " << *(p_MoFEMFiniteElement.first->getRefElement()) << std::endl;
     PetscPrintf(comm,ss.str().c_str());
   }
   PetscFunctionReturn(0);

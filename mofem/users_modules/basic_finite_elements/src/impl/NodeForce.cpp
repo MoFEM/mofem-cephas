@@ -46,7 +46,7 @@ NodalForce::OpNodalForce::OpNodalForce(const std::string field_name,Vec _F,bCFor
     PetscErrorCode ierr;
 
     const FENumeredDofEntity *dof_ptr;
-    ierr = getNumeredEntFiniteElementPtr()->get_row_dofs_by_petsc_gloabl_dof_idx(data.getIndices()[0],&dof_ptr); CHKERRQ(ierr);
+    ierr = getNumeredEntFiniteElementPtr()->getRowDofsByPetscGlobalDofIdx(data.getIndices()[0],&dof_ptr); CHKERRQ(ierr);
     int rank = dof_ptr->getNbOfCoeffs();
 
     if(data.getIndices().size()!=(unsigned int)rank) {

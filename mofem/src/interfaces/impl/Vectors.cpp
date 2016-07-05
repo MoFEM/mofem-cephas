@@ -99,13 +99,13 @@ PetscErrorCode Core::VecCreateGhost(const std::string &name,RowColData rc,Vec *V
   DofsByLocalIdx *dofs;
   switch (rc) {
     case ROW:
-      nb_dofs = p_miit->get_nb_dofs_row();
+      nb_dofs = p_miit->getNbDofsRow();
       nb_local_dofs = p_miit->get_nb_local_dofs_row();
       nb_ghost_dofs = p_miit->get_nb_ghost_dofs_row();
       dofs = const_cast<DofsByLocalIdx*>(&p_miit->numered_dofs_rows->get<PetscLocalIdx_mi_tag>());
       break;
     case COL:
-      nb_dofs = p_miit->get_nb_dofs_col();
+      nb_dofs = p_miit->getNbDofsCol();
       nb_local_dofs = p_miit->get_nb_local_dofs_col();
       nb_ghost_dofs = p_miit->get_nb_ghost_dofs_col();
       dofs = const_cast<DofsByLocalIdx*>(&p_miit->numered_dofs_cols->get<PetscLocalIdx_mi_tag>());
@@ -514,11 +514,11 @@ PetscErrorCode Core::set_global_ghost_vector(
   DofIdx nb_dofs;
   switch (rc) {
     case ROW:
-      nb_dofs = problem_ptr->get_nb_dofs_row();
+      nb_dofs = problem_ptr->getNbDofsRow();
       dofs = const_cast<DofsByGlobalIdx*>(&problem_ptr->numered_dofs_rows->get<PetscGlobalIdx_mi_tag>());
       break;
     case COL:
-      nb_dofs = problem_ptr->get_nb_dofs_col();
+      nb_dofs = problem_ptr->getNbDofsCol();
       dofs = const_cast<DofsByGlobalIdx*>(&problem_ptr->numered_dofs_cols->get<PetscGlobalIdx_mi_tag>());
       break;
     default:
@@ -700,11 +700,11 @@ PetscErrorCode Core::set_other_global_ghost_vector(
   DofIdx nb_dofs;
   switch (rc) {
     case ROW:
-      nb_dofs = problem_ptr->get_nb_dofs_row();
+      nb_dofs = problem_ptr->getNbDofsRow();
       dofs = const_cast<DofsByName*>(&problem_ptr->numered_dofs_rows->get<FieldName_mi_tag>());
       break;
     case COL:
-      nb_dofs = problem_ptr->get_nb_dofs_col();
+      nb_dofs = problem_ptr->getNbDofsCol();
       dofs = const_cast<DofsByName*>(&problem_ptr->numered_dofs_cols->get<FieldName_mi_tag>());
       break;
     default:

@@ -128,9 +128,9 @@ PetscErrorCode Core::build_problem_on_distributed_mesh(MoFEMProblem *problem_ptr
         //if finite element bit level has all refined bits sets
         if(((*fe_miit)->getBitRefLevel()&problem_ptr->getBitRefLevel())==problem_ptr->getBitRefLevel()) {
           //get dof uids for rows and columns
-          ierr = (*fe_miit)->get_MoFEMFiniteElement_row_dof_view(dofsField,dofs_rows); CHKERRQ(ierr);
+          ierr = (*fe_miit)->getMoFEMFiniteElementRowDofView(dofsField,dofs_rows); CHKERRQ(ierr);
           if(do_cols) {
-            ierr = (*fe_miit)->get_MoFEMFiniteElement_col_dof_view(dofsField,dofs_cols); CHKERRQ(ierr);
+            ierr = (*fe_miit)->getMoFEMFiniteElementColDofView(dofsField,dofs_cols); CHKERRQ(ierr);
           }
         }
       }
@@ -746,8 +746,8 @@ PetscErrorCode Core::build_problem(MoFEMProblem *problem_ptr,int verb) {
       //if finite element bit level has all refined bits sets
       if(((*miit3)->getBitRefLevel()&problem_ptr->getBitRefLevel())==problem_ptr->getBitRefLevel()) {
         //get dof uids for rows and columns
-        ierr = (*miit3)->get_MoFEMFiniteElement_row_dof_view(dofsField,dofs_rows); CHKERRQ(ierr);
-        ierr = (*miit3)->get_MoFEMFiniteElement_col_dof_view(dofsField,dofs_cols); CHKERRQ(ierr);
+        ierr = (*miit3)->getMoFEMFiniteElementRowDofView(dofsField,dofs_rows); CHKERRQ(ierr);
+        ierr = (*miit3)->getMoFEMFiniteElementColDofView(dofsField,dofs_cols); CHKERRQ(ierr);
       }
     }
   }
@@ -805,14 +805,14 @@ PetscErrorCode Core::build_problem(MoFEMProblem *problem_ptr,int verb) {
       ss << *miit_ss << std::endl;
     }
     ss << "rank " << rAnk << " ";
-    ss << "FEs row dofs "<< *problem_ptr << " Nb. row dof " << problem_ptr->get_nb_dofs_row() << std::endl;
+    ss << "FEs row dofs "<< *problem_ptr << " Nb. row dof " << problem_ptr->getNbDofsRow() << std::endl;
     NumeredDofEntity_multiIndex::iterator miit_dd_row = problem_ptr->numered_dofs_rows->begin();
     for(;miit_dd_row!=problem_ptr->numered_dofs_rows->end();miit_dd_row++) {
       ss << "rank " << rAnk << " ";
       ss<<*miit_dd_row<<std::endl;
     }
     ss << "rank " << rAnk << " ";
-    ss << "FEs col dofs "<< *problem_ptr << " Nb. col dof " << problem_ptr->get_nb_dofs_col() << std::endl;
+    ss << "FEs col dofs "<< *problem_ptr << " Nb. col dof " << problem_ptr->getNbDofsCol() << std::endl;
     NumeredDofEntity_multiIndex::iterator miit_dd_col = problem_ptr->numered_dofs_cols->begin();
     for(;miit_dd_col!=problem_ptr->numered_dofs_cols->end();miit_dd_col++) {
       ss << "rank " << rAnk << " ";
@@ -1130,21 +1130,21 @@ PetscErrorCode Core::printPartitionedProblem(const MoFEMProblem *problem_ptr,int
   if(verbose>0) {
     std::ostringstream ss;
     ss << "partition_problem: rank = " << rAnk << " FEs row ghost dofs "<< *problem_ptr
-    << " Nb. local dof " << problem_ptr->get_nb_local_dofs_row() << " nb global row dofs " << problem_ptr->get_nb_dofs_row() << std::endl;
+    << " Nb. local dof " << problem_ptr->get_nb_local_dofs_row() << " nb global row dofs " << problem_ptr->getNbDofsRow() << std::endl;
     ss << "partition_problem: rank = " << rAnk << " FEs col ghost dofs " << *problem_ptr
-    << " Nb. local dof " << problem_ptr->get_nb_local_dofs_col() << " nb global col dofs " << problem_ptr->get_nb_dofs_col() << std::endl;
+    << " Nb. local dof " << problem_ptr->get_nb_local_dofs_col() << " nb global col dofs " << problem_ptr->getNbDofsCol() << std::endl;
     PetscSynchronizedPrintf(comm,ss.str().c_str());
     PetscSynchronizedFlush(comm,PETSC_STDOUT);
   }
   if(verb>1) {
     std::ostringstream ss;
-    ss << "rank = " << rAnk << " FEs row dofs "<< *problem_ptr << " Nb. row dof " << problem_ptr->get_nb_dofs_row()
+    ss << "rank = " << rAnk << " FEs row dofs "<< *problem_ptr << " Nb. row dof " << problem_ptr->getNbDofsRow()
     << " Nb. local dof " << problem_ptr->get_nb_local_dofs_row() << std::endl;
     NumeredDofEntity_multiIndex::iterator miit_dd_row = problem_ptr->numered_dofs_rows->begin();
     for(;miit_dd_row!=problem_ptr->numered_dofs_rows->end();miit_dd_row++) {
       ss<<*miit_dd_row<<std::endl;
     }
-    ss << "rank = " << rAnk << " FEs col dofs "<< *problem_ptr << " Nb. col dof " << problem_ptr->get_nb_dofs_col()
+    ss << "rank = " << rAnk << " FEs col dofs "<< *problem_ptr << " Nb. col dof " << problem_ptr->getNbDofsCol()
     << " Nb. local dof " << problem_ptr->get_nb_local_dofs_col() << std::endl;
     NumeredDofEntity_multiIndex::iterator miit_dd_col = problem_ptr->numered_dofs_cols->begin();
     for(;miit_dd_col!=problem_ptr->numered_dofs_cols->end();miit_dd_col++) {
