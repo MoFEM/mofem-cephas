@@ -276,28 +276,69 @@ struct FiniteElement {
   BitFieldId* tag_BitFieldId_row_data;  ///< tag stores row id_id for fields
   BitFieldId* tag_BitFieldId_data;      ///< tag stores data id_id for fields
   FiniteElement(Interface &moab,const EntityHandle _meshset);
+
+  /**
+   * \brief Get finite element id
+   * @return Finite element Id
+   */
   inline BitFEId getId() const { return *tag_id_data; };
-  /// get meshset
+
+  /**
+   * \brief Get meshset containing element entities
+   * @return Meshset
+   */
   inline EntityHandle getMeshSet() const { return meshset; }
-  /// get FE name
+
+  /**
+   * \brief Get finite element name
+   * @return string_ref
+   */
   inline boost::string_ref getNameRef() const { return boost::string_ref((char *)tag_name_data,tag_name_size); }
+
+  /**
+   * \brief Get finite element name
+   * @return string
+   */
   inline std::string getName() const { return std::string((char *)tag_name_data,tag_name_size); }
-  /// get BitFieldId col
+
+  /**
+   * \brief Get field ids on columns
+   * @return Bit field ids
+   */
   inline BitFieldId getBitFieldIdCol() const { return *((BitFieldId*)tag_BitFieldId_col_data); }
+
   /** \deprecated Use getBitFieldIdCol() instead
   */
   DEPRECATED inline BitFieldId get_BitFieldId_col() const { return getBitFieldIdCol() ; }
-  /// get BitFieldId row
+
+  /**
+   * \brief Get field ids on rows
+   * @return Bit field ids
+   */
   inline BitFieldId getBitFieldIdRow() const { return *((BitFieldId*)tag_BitFieldId_row_data); }
+
   /** \deprecated Use getBitFieldIdRow() instead
   */
   DEPRECATED inline BitFieldId get_BitFieldId_row() const { return getBitFieldIdRow(); }
-  /// get BitFieldId data
+
+  /**
+   * \brief Get field ids on data
+   * @return Bit field ids
+   */
   inline BitFieldId getBitFieldIdData() const { return *((BitFieldId*)tag_BitFieldId_data); }
+
   /** \deprecated Use getBitFieldIdData() instead
   */
   DEPRECATED inline BitFieldId get_BitFieldId_data() const { return getBitFieldIdData(); }
-  /// get bit number
+
+  /**
+   * \brief Get bit identifying this element
+   *
+   * Each element like field is identified by bit set. Each element has unique bit set,
+   * this function returns number of that bit.
+   *
+   * @return Bit number
+   */
   inline unsigned int getBitNumber() const { return ffsl(((BitFieldId*)tag_id_data)->to_ulong()); }
 
   ElementAdjacencyTable element_adjacency_table;  //<- allow to add user specific adjacency map
@@ -344,13 +385,56 @@ struct interface_FiniteElement {
 
   inline const boost::shared_ptr<FiniteElement> get_MoFEMFiniteElementPtr() { return this->sFePtr; };
 
+  /**
+   * \brief Get finite element id
+   * @return Finite element Id
+   */
   inline BitFEId getId() const { return this->sFePtr->getId(); }
+
+  /**
+   * \brief Get meshset containing element entities
+   * @return Meshset
+   */
   inline EntityHandle getMeshSet() const { return this->sFePtr->getMeshSet(); }
+
+  /**
+   * \brief Get finite element name
+   * @return string_ref
+   */
   inline boost::string_ref getNameRef() const { return this->sFePtr->getNameRef(); }
+
+  /**
+   * \brief Get finite element name
+   * @return string_ref
+   */
   inline std::string getName() const { return this->sFePtr->getName(); }
+
+  /**
+   * \brief Get field ids on columns
+   * @return Bit field ids
+   */
   inline BitFieldId getBitFieldIdCol() const { return this->sFePtr->getBitFieldIdCol(); }
+
+  /**
+   * \brief Get field ids on rows
+   * @return Bit field ids
+   */
   inline BitFieldId getBitFieldIdRow() const { return this->sFePtr->getBitFieldIdRow(); }
+
+  /**
+   * \brief Get field ids on data
+   * @return Bit field ids
+   */
   inline BitFieldId getBitFieldIdData() const { return this->sFePtr->getBitFieldIdData(); }
+
+  /**
+   * \brief Get bit identifying this element
+   *
+   * Each element like field is identified by bit set. Each element has unique bit set,
+   * this function returns number of that bit.
+   *
+   * @return Bit number
+   */
   inline unsigned int getBitNumber() const { return this->sFePtr->getBitNumber(); }
 
 };
@@ -378,37 +462,67 @@ interface_RefElement<RefElement> {
     const boost::shared_ptr<FiniteElement> fe_ptr
   );
 
+  /**
+   * \brief Get unique UId for finite element entity
+   * @return UId
+   */
   const GlobalUId& getGlobalUniqueId() const { return global_uid; }
+
+  /**
+   * \brief Generaye UId for finite element entity
+   * @return [description]
+   */
   GlobalUId getGlobalUniqueIdCalculate() const {
     char bit_number = getBitNumber();
     assert(bit_number<=32);
     GlobalUId _uid_ = (sPtr->getRefEnt())|(((GlobalUId)bit_number)<<(8*sizeof(EntityHandle)));
     return _uid_;
   }
+
+  /**
+   * \brief Get element entity
+   * @return Element entity handle
+   */
   inline EntityHandle getEnt() const { return getRefEnt(); }
 
-  /** \deprecated Use getRefEnt() instead
+  /** \deprecated Use getEnt() instead
   */
-  DEPRECATED inline EntityHandle get_ent() const { return getRefEnt(); }
+  DEPRECATED inline EntityHandle get_ent() const { return getEnt(); }
 
+  /**
+   * \brief Get number of DOFs on row
+   * @return Number of dofs on row
+   */
   inline DofIdx getNbDofsRow() const { return row_dof_view->size(); }
 
   /** \deprecated Use getNbDofsRow() instead
   */
   DEPRECATED inline DofIdx get_nb_dofs_row() const { return getNbDofsRow() ; }
 
+  /**
+   * \brief Get number of DOFs on col
+   * @return Number of dofs on col
+   */
   inline DofIdx getNbDofsCol() const { return col_dof_view->size(); }
 
   /** \deprecated Use getNbDofsCol() instead
   */
   DEPRECATED inline DofIdx get_nb_dofs_col() const { return getNbDofsCol() ; }
 
+  /**
+   * \brief Get number of DOFs on data
+   * @return Number of dofs on data
+   */
   inline DofIdx getNbDofsData() const { return data_dof_view->size(); }
 
   /** \deprecated Use getNbDofsData() instead
   */
   DEPRECATED inline DofIdx get_nb_dofs_data() const { return getNbDofsData(); }
 
+  /**
+   * \brief Get data data dos multi-index structure
+   * @return Reference multi-index FEDofEntity_multiIndex
+   */
   inline const FEDofEntity_multiIndex& getDataDofs() const { return data_dofs; };
 
   /** \deprecated Use getDataDofs() instead
@@ -416,125 +530,128 @@ interface_RefElement<RefElement> {
   DEPRECATED inline const FEDofEntity_multiIndex& get_data_dofs() const { return getDataDofs(); };
 
   friend std::ostream& operator<<(std::ostream& os,const EntFiniteElement& e);
-  PetscErrorCode getMoFEMFiniteElementRowDofView(
-    const DofEntity_multiIndex &dofs,DofEntity_multiIndex_active_view &dofs_view,
-    const int operation_type = Interface::UNION) const;
 
-  /** \deprecated Use getMoFEMFiniteElementRowDofView() instead
-  */
-  DEPRECATED inline PetscErrorCode get_MoFEMFiniteElement_row_dof_view(
-  const DofEntity_multiIndex &dofs,DofEntity_multiIndex_active_view &dofs_view,
-  const int operation_type = Interface::UNION) const {
-    return getMoFEMFiniteElementRowDofView(dofs,dofs_view,operation_type);
-  }
-
-  PetscErrorCode getMoFEMFiniteElementColDofView(
-  const DofEntity_multiIndex &dofs,DofEntity_multiIndex_active_view &dofs_view,
-  const int operation_type = Interface::UNION) const;
-
-  /** \deprecated Use getMoFEMFiniteElementColDofView() instead
-  */
-  DEPRECATED inline PetscErrorCode get_MoFEMFiniteElement_col_dof_view(
-  const DofEntity_multiIndex &dofs,DofEntity_multiIndex_active_view &dofs_view,
-  const int operation_type = Interface::UNION) const {
-    return getMoFEMFiniteElementColDofView(dofs,dofs_view,operation_type);
-  }
-
-  PetscErrorCode getMoFEMFiniteElementDataDofView(
+  PetscErrorCode getRowDofView(
     const DofEntity_multiIndex &dofs,DofEntity_multiIndex_active_view &dofs_view,
     const int operation_type = Interface::UNION
   ) const;
 
-  /** \deprecated Use getMoFEMFiniteElementDataDofView() instead
+  /** \deprecated Use getRowDofView() instead
+  */
+  DEPRECATED inline PetscErrorCode get_MoFEMFiniteElement_row_dof_view(
+  const DofEntity_multiIndex &dofs,DofEntity_multiIndex_active_view &dofs_view,
+  const int operation_type = Interface::UNION) const {
+    return getRowDofView(dofs,dofs_view,operation_type);
+  }
+
+  PetscErrorCode getColDofView(
+  const DofEntity_multiIndex &dofs,DofEntity_multiIndex_active_view &dofs_view,
+  const int operation_type = Interface::UNION
+) const;
+
+  /** \deprecated Use getColDofView() instead
+  */
+  DEPRECATED inline PetscErrorCode get_MoFEMFiniteElement_col_dof_view(
+  const DofEntity_multiIndex &dofs,DofEntity_multiIndex_active_view &dofs_view,
+  const int operation_type = Interface::UNION) const {
+    return getColDofView(dofs,dofs_view,operation_type);
+  }
+
+  PetscErrorCode getDataDofView(
+    const DofEntity_multiIndex &dofs,DofEntity_multiIndex_active_view &dofs_view,
+    const int operation_type = Interface::UNION
+  ) const;
+
+  /** \deprecated Use getDataDofView() instead
   */
   DEPRECATED inline PetscErrorCode get_MoFEMFiniteElement_data_dof_view(
     const DofEntity_multiIndex &dofs,DofEntity_multiIndex_active_view &dofs_view,
     const int operation_type = Interface::UNION
   ) const {
-    return getMoFEMFiniteElementDataDofView(dofs,dofs_view,operation_type);
+    return getDataDofView(dofs,dofs_view,operation_type);
   }
 
-  PetscErrorCode getMoFEMFiniteElementRowDofView(
+  PetscErrorCode getRowDofView(
     const DofEntity_multiIndex &dofs,DofEntity_multiIndex_uid_view &dofs_view,
     const int operation_type = Interface::UNION
   ) const;
 
-  /** \deprecated Use getMoFEMFiniteElementRowDofView() instead
+  /** \deprecated Use getRowDofView() instead
   */
   DEPRECATED inline PetscErrorCode get_MoFEMFiniteElement_row_dof_view(
     const DofEntity_multiIndex &dofs,DofEntity_multiIndex_uid_view &dofs_view,
     const int operation_type = Interface::UNION
   ) const {
-    return getMoFEMFiniteElementRowDofView(dofs,dofs_view,operation_type);
+    return getRowDofView(dofs,dofs_view,operation_type);
   }
 
-  PetscErrorCode getMoFEMFiniteElementColDofView(
+  PetscErrorCode getColDofView(
     const DofEntity_multiIndex &dofs,DofEntity_multiIndex_uid_view &dofs_view,
     const int operation_type = Interface::UNION
   ) const;
 
-  /** \deprecated Use getMoFEMFiniteElementColDofView() instead
+  /** \deprecated Use getColDofView() instead
   */
   DEPRECATED inline PetscErrorCode get_MoFEMFiniteElement_col_dof_view(
     const DofEntity_multiIndex &dofs,DofEntity_multiIndex_uid_view &dofs_view,
     const int operation_type = Interface::UNION
   ) const {
-    return getMoFEMFiniteElementColDofView(dofs,dofs_view,operation_type);
+    return getColDofView(dofs,dofs_view,operation_type);
   };
 
-  PetscErrorCode getMoFEMFiniteElementRowDofView(
+  PetscErrorCode getRowDofView(
     const NumeredDofEntity_multiIndex &dofs,NumeredDofEntity_multiIndex_uid_view_ordered &dofs_view,
     const int operation_type = Interface::UNION
   ) const;
 
-  /** \deprecated Use getMoFEMFiniteElementRowDofView() instead
+  /** \deprecated Use getRowDofView() instead
   */
   DEPRECATED inline PetscErrorCode get_MoFEMFiniteElement_row_dof_view(
     const NumeredDofEntity_multiIndex &dofs,NumeredDofEntity_multiIndex_uid_view_ordered &dofs_view,
     const int operation_type = Interface::UNION
   ) const {
-    return getMoFEMFiniteElementRowDofView(dofs,dofs_view,operation_type);
+    return getRowDofView(dofs,dofs_view,operation_type);
   }
 
-  PetscErrorCode getMoFEMFiniteElementColDofView(
+  PetscErrorCode getColDofView(
     const NumeredDofEntity_multiIndex &dofs,NumeredDofEntity_multiIndex_uid_view_ordered &dofs_view,
     const int operation_type = Interface::UNION) const;
 
-  /** \deprecated Use getMoFEMFiniteElementColDofView() instead
+  /** \deprecated Use getColDofView() instead
   */
   DEPRECATED inline PetscErrorCode get_MoFEMFiniteElement_col_dof_view(
     const NumeredDofEntity_multiIndex &dofs,NumeredDofEntity_multiIndex_uid_view_ordered &dofs_view,
     const int operation_type = Interface::UNION
   ) const {
-    return getMoFEMFiniteElementColDofView(dofs,dofs_view,operation_type);
+    return getColDofView(dofs,dofs_view,operation_type);
   }
 
-  PetscErrorCode getMoFEMFiniteElementRowDofView(
+  PetscErrorCode getRowDofView(
     const NumeredDofEntity_multiIndex &dofs,NumeredDofEntity_multiIndex_uid_view_hashed &dofs_view,
     const int operation_type = Interface::UNION
   ) const;
 
-  /** \deprecated Use getMoFEMFiniteElementRowDofView() instead
+  /** \deprecated Use getRowDofView() instead
   */
   DEPRECATED inline PetscErrorCode get_MoFEMFiniteElement_row_dof_view(
     const NumeredDofEntity_multiIndex &dofs,NumeredDofEntity_multiIndex_uid_view_hashed &dofs_view,
     const int operation_type = Interface::UNION
   ) const {
-    return getMoFEMFiniteElementRowDofView(dofs,dofs_view,operation_type);
+    return getRowDofView(dofs,dofs_view,operation_type);
   }
 
-  PetscErrorCode getMoFEMFiniteElementColDofView(
+  PetscErrorCode getColDofView(
     const NumeredDofEntity_multiIndex &dofs,NumeredDofEntity_multiIndex_uid_view_hashed &dofs_view,
     const int operation_type = Interface::UNION
   ) const;
 
-  /** \deprecated Use getMoFEMFiniteElementRowDofView() instead
+  /** \deprecated Use getRowDofView() instead
   */
   DEPRECATED inline PetscErrorCode get_MoFEMFiniteElement_col_dof_view(
     const NumeredDofEntity_multiIndex &dofs,NumeredDofEntity_multiIndex_uid_view_hashed &dofs_view,
     const int operation_type = Interface::UNION
   ) const {
-    return getMoFEMFiniteElementColDofView(dofs,dofs_view,operation_type);
+    return getColDofView(dofs,dofs_view,operation_type);
   }
 
   PetscErrorCode getElementAdjacency(
@@ -592,41 +709,59 @@ interface_RefElement<T> {
   interface_RefElement<T>(sptr) {
   };
 
-  inline EntityID getEntId() const { return this->sPtr->getEntId(); }
-  inline EntityType getEntType() const { return this->sPtr->getEntType(); }
-  //
   inline const FEDofEntity_multiIndex& getDataDofs() const { return this->sPtr->getDataDofs(); };
 
   /** \deprecated Use getDataDofs() instead
   */
   DEPRECATED inline const FEDofEntity_multiIndex& get_data_dofs() const { return this->sPtr->getDataDofs(); };
 
+  /**
+   * \brief Get number of DOFs on row
+   * @return Number of dofs on row
+   */
   inline DofIdx getNbDofsRow() const { return this->sPtr->getNbDofsRow(); }
 
   /** \deprecated Use getNbDofsRow() instead
   */
   DEPRECATED inline DofIdx get_nb_dofs_row() const { return this->sPtr->getNbDofsRow(); }
 
+  /**
+   * \brief Get number of DOFs on col
+   * @return Number of dofs on col
+   */
   inline DofIdx getNbDofsCol() const { return this->sPtr->getNbDofsCol(); }
 
   /** \deprecated Use getNbDofsCol() instead
   */
   DEPRECATED inline DofIdx get_nb_dofs_col() const { return this->sPtr->getNbDofsCol(); }
 
+  /**
+   * \brief Get number of DOFs on data
+   * @return Number of dofs on data
+   */
   inline DofIdx getNbDofsData() const { return this->sPtr->getNbDofsData(); }
 
   /** \deprecated Use getNbDofsData() instead
   */
   DEPRECATED inline DofIdx get_nb_dofs_data() const { return this->sPtr->getNbDofsData(); }
 
+  /**
+   * \brief Get element entity
+   * @return Element entity handle
+   */
   inline EntityHandle getEnt() const { return this->sPtr->getRefEnt(); }
 
   /** \deprecated Use getEnt() instead
   */
   DEPRECATED inline EntityHandle get_ent() const { return getEnt(); }
 
+  /**
+   * \brief Get unique UId for finite element entity
+   * @return UId
+   */
   inline GlobalUId getGlobalUniqueId() const { return this->sPtr->getGlobalUniqueId(); }
-  //
+
+
   SideNumber_multiIndex &getSideNumberTable() const { return this->sPtr->getSideNumberTable(); }
 
   /** \deprecated Use getSideNumberTable() instead
@@ -749,6 +884,10 @@ struct interface_NumeredEntFiniteElement: public interface_EntFiniteElement<T> {
 
   interface_NumeredEntFiniteElement(const boost::shared_ptr<T> sptr): interface_EntFiniteElement<T>(sptr) {};
 
+  /**
+   * \brief Get partition number
+   * @return Partition number
+   */
   inline unsigned int getPart() const { return this->sPtr->getPart(); }
 
   /** \deprecated Use getPart() instead

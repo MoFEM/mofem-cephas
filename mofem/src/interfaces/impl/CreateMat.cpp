@@ -144,7 +144,7 @@ PetscErrorCode CreateRowComressedADJMatrix::getEntityAdjacenies(
           PetscSynchronizedPrintf(comm, "%s", ss.str().c_str());
       }
 
-      ierr = adj_miit->entFePtr->getMoFEMFiniteElementColDofView(
+      ierr = adj_miit->entFePtr->getColDofView(
         *(p_miit->numered_dofs_cols),
         dofs_col_view,
         Interface::UNION

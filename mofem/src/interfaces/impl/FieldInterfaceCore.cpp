@@ -2174,7 +2174,7 @@ PetscErrorCode Core::partition_finite_elements(
         NumeredEntFiniteElement_change_part(proc).operator()(numered_fe);
       } else {
         //rows_view
-        ierr = (*miit2)->getMoFEMFiniteElementRowDofView(
+        ierr = (*miit2)->getRowDofView(
           *(p_miit->numered_dofs_rows),rows_view,Interface::UNION
         ); CHKERRQ(ierr);
         std::vector<int> parts(sIze,0);
@@ -2192,7 +2192,7 @@ PetscErrorCode Core::partition_finite_elements(
       ) {
         if(part_from_moab) {
           //rows_view
-          ierr = (*miit2)->getMoFEMFiniteElementRowDofView(
+          ierr = (*miit2)->getRowDofView(
             *(p_miit->numered_dofs_rows),rows_view,Interface::UNION
           ); CHKERRQ(ierr);
         }
@@ -2209,7 +2209,7 @@ PetscErrorCode Core::partition_finite_elements(
         if(do_cols_fe) {
           //cols_views
           NumeredDofEntity_multiIndex_uid_view_ordered cols_view;
-          ierr = (*miit2)->getMoFEMFiniteElementColDofView(
+          ierr = (*miit2)->getColDofView(
             *(p_miit->numered_dofs_cols),cols_view,Interface::UNION
           ); CHKERRQ(ierr);
           //cols element dof multi-indices

@@ -944,7 +944,7 @@ static PetscErrorCode get_fe_dof_view(
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode EntFiniteElement::getMoFEMFiniteElementRowDofView(
+PetscErrorCode EntFiniteElement::getRowDofView(
   const DofEntity_multiIndex &dofs,DofEntity_multiIndex_active_view &dofs_view,
   const int operation_type
 ) const {
@@ -953,7 +953,7 @@ PetscErrorCode EntFiniteElement::getMoFEMFiniteElementRowDofView(
   ierr = get_fe_dof_view(*row_dof_view,dofs,dofs_view,operation_type); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
-PetscErrorCode EntFiniteElement::getMoFEMFiniteElementColDofView(
+PetscErrorCode EntFiniteElement::getColDofView(
   const DofEntity_multiIndex &dofs,DofEntity_multiIndex_active_view &dofs_view,
   const int operation_type
 ) const {
@@ -962,7 +962,7 @@ PetscErrorCode EntFiniteElement::getMoFEMFiniteElementColDofView(
   ierr = get_fe_dof_view(*col_dof_view,dofs,dofs_view,operation_type); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
-PetscErrorCode EntFiniteElement::getMoFEMFiniteElementDataDofView(
+PetscErrorCode EntFiniteElement::getDataDofView(
   const DofEntity_multiIndex &dofs,DofEntity_multiIndex_active_view &dofs_view,
   const int operation_type
 ) const {
@@ -971,7 +971,8 @@ PetscErrorCode EntFiniteElement::getMoFEMFiniteElementDataDofView(
   ierr = get_fe_dof_view(*data_dof_view,dofs,dofs_view,operation_type); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
-PetscErrorCode EntFiniteElement::getMoFEMFiniteElementRowDofView(
+
+PetscErrorCode EntFiniteElement::getRowDofView(
   const DofEntity_multiIndex &dofs,DofEntity_multiIndex_uid_view &dofs_view,
   const int operation_type
 ) const {
@@ -980,7 +981,7 @@ PetscErrorCode EntFiniteElement::getMoFEMFiniteElementRowDofView(
   ierr = get_fe_dof_view(*row_dof_view,dofs,dofs_view,operation_type); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
-PetscErrorCode EntFiniteElement::getMoFEMFiniteElementColDofView(
+PetscErrorCode EntFiniteElement::getColDofView(
   const DofEntity_multiIndex &dofs,DofEntity_multiIndex_uid_view &dofs_view,
   const int operation_type
 ) const {
@@ -990,7 +991,7 @@ PetscErrorCode EntFiniteElement::getMoFEMFiniteElementColDofView(
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode EntFiniteElement::getMoFEMFiniteElementRowDofView(
+PetscErrorCode EntFiniteElement::getRowDofView(
   const NumeredDofEntity_multiIndex &dofs,NumeredDofEntity_multiIndex_uid_view_ordered &dofs_view,
   const int operation_type
 ) const {
@@ -1000,7 +1001,7 @@ PetscErrorCode EntFiniteElement::getMoFEMFiniteElementRowDofView(
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode EntFiniteElement::getMoFEMFiniteElementColDofView(
+PetscErrorCode EntFiniteElement::getColDofView(
   const NumeredDofEntity_multiIndex &dofs,NumeredDofEntity_multiIndex_uid_view_ordered &dofs_view,
   const int operation_type
 ) const {
@@ -1009,7 +1010,7 @@ PetscErrorCode EntFiniteElement::getMoFEMFiniteElementColDofView(
   ierr = get_fe_dof_view(*col_dof_view,dofs,dofs_view,operation_type); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
-PetscErrorCode EntFiniteElement::getMoFEMFiniteElementRowDofView(
+PetscErrorCode EntFiniteElement::getRowDofView(
   const NumeredDofEntity_multiIndex &dofs,NumeredDofEntity_multiIndex_uid_view_hashed &dofs_view,
   const int operation_type
 ) const {
@@ -1019,7 +1020,7 @@ PetscErrorCode EntFiniteElement::getMoFEMFiniteElementRowDofView(
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode EntFiniteElement::getMoFEMFiniteElementColDofView(
+PetscErrorCode EntFiniteElement::getColDofView(
     const NumeredDofEntity_multiIndex &dofs,NumeredDofEntity_multiIndex_uid_view_hashed &dofs_view,
     const int operation_type) const {
   PetscFunctionBegin;

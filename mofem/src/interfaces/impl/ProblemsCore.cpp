@@ -128,9 +128,9 @@ PetscErrorCode Core::build_problem_on_distributed_mesh(MoFEMProblem *problem_ptr
         //if finite element bit level has all refined bits sets
         if(((*fe_miit)->getBitRefLevel()&problem_ptr->getBitRefLevel())==problem_ptr->getBitRefLevel()) {
           //get dof uids for rows and columns
-          ierr = (*fe_miit)->getMoFEMFiniteElementRowDofView(dofsField,dofs_rows); CHKERRQ(ierr);
+          ierr = (*fe_miit)->getRowDofView(dofsField,dofs_rows); CHKERRQ(ierr);
           if(do_cols) {
-            ierr = (*fe_miit)->getMoFEMFiniteElementColDofView(dofsField,dofs_cols); CHKERRQ(ierr);
+            ierr = (*fe_miit)->getColDofView(dofsField,dofs_cols); CHKERRQ(ierr);
           }
         }
       }
@@ -746,8 +746,8 @@ PetscErrorCode Core::build_problem(MoFEMProblem *problem_ptr,int verb) {
       //if finite element bit level has all refined bits sets
       if(((*miit3)->getBitRefLevel()&problem_ptr->getBitRefLevel())==problem_ptr->getBitRefLevel()) {
         //get dof uids for rows and columns
-        ierr = (*miit3)->getMoFEMFiniteElementRowDofView(dofsField,dofs_rows); CHKERRQ(ierr);
-        ierr = (*miit3)->getMoFEMFiniteElementColDofView(dofsField,dofs_cols); CHKERRQ(ierr);
+        ierr = (*miit3)->getRowDofView(dofsField,dofs_rows); CHKERRQ(ierr);
+        ierr = (*miit3)->getColDofView(dofsField,dofs_cols); CHKERRQ(ierr);
       }
     }
   }
