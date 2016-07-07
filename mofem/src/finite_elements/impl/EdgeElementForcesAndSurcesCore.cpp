@@ -187,6 +187,7 @@ PetscErrorCode EdgeElementForcesAndSurcesCore::operator()() {
   ) {
 
     ierr = getEdgesDataOrderSpaceAndBase(dataH1,meshPositionsFieldName); CHKERRQ(ierr);
+    ierr = getEdgesFieldData(dataH1,meshPositionsFieldName); CHKERRQ(ierr);
     ierr = getNodesFieldData(dataH1,meshPositionsFieldName); CHKERRQ(ierr);
     try {
       ierr = opGetHoTangentOnEdge.opRhs(dataH1); CHKERRQ(ierr);
