@@ -24,6 +24,7 @@ set(UM_LIB_SOURCES
   ${UM_SOURCE_DIR}/basic_finite_elements/src/impl/SurfacePressure.cpp
   ${UM_SOURCE_DIR}/basic_finite_elements/src/impl/PostProcOnRefMesh.cpp
   ${UM_SOURCE_DIR}/basic_finite_elements/src/impl/PCMGSetUpViaApproxOrders.cpp
+  ${UM_SOURCE_DIR}/basic_finite_elements/src/impl/ConvectiveMassElement.cpp
 )
 
 if(ADOL-C_LIBRARY)

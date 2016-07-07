@@ -236,3 +236,31 @@ if(ADOL-C_LIBRARY)
   )
 
 endif(ADOL-C_LIBRARY)
+
+
+# Convective element
+
+if(ADOL-C_LIBRARY)
+
+  add_executable(convective_matrix
+    ${UM_CURRENT_SOURCE_DIR}/convective_matrix.cpp
+  )
+
+  target_link_libraries(convective_matrix
+    users_modules
+    mofem_finite_elements
+    mofem_interfaces
+    mofem_multi_indices
+    mofem_petsc
+    mofem_approx
+    mofem_third_party
+    mofem_cblas
+    ${MoFEM_PROJECT_LIBS}
+  )
+
+  cm_export_file("LShape.cub" export_atom_tests_basic_fe)
+  add_test(convective_matrix
+    ${MoFEM_MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/convective_matrix -my_file LShape.cub
+  )
+
+endif(ADOL-C_LIBRARY)

@@ -18,7 +18,6 @@ set(UM_LIB_SOURCES "")
 # FIXME: This has to find solution as a install with sub-modules
 include(${UM_SOURCE_DIR}/basic_finite_elements/AddModule.cmake)
 include(${UM_SOURCE_DIR}/analytical_dirichlet_boundary_conditions/AddModule.cmake)
-include(${UM_SOURCE_DIR}/convective_mass_element/AddModule.cmake)
 
 # Users modules library, common for all programs
 add_library(users_modules ${UM_LIB_SOURCES})
@@ -31,10 +30,6 @@ add_subdirectory(
 add_subdirectory(
   ${UM_SOURCE_DIR}/analytical_dirichlet_boundary_conditions/atom_tests
   ${PROJECT_BINARY_DIR}/analytical_dirichlet_boundary_conditions/atom_tests
-)
-add_subdirectory(
-  ${UM_SOURCE_DIR}/convective_mass_element/atom_tests
-  ${PROJECT_BINARY_DIR}/convective_mass_element/atom_tests
 )
 
 # Those modules could be downloaded with MoFEM
