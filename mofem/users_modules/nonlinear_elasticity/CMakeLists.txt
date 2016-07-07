@@ -14,7 +14,6 @@
 #include subdirectory
 include_directories(${UM_SOURCE_DIR}/nonlinear_elasticity)
 include_directories(${UM_SOURCE_DIR}/nonlinear_elastic_materials/src)
-include_directories(${UM_SOURCE_DIR}/convective_mass_element/src)
 
 add_subdirectory(atom_tests)
 
