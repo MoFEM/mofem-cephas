@@ -245,13 +245,24 @@ PetscErrorCode PCApplyArcLength(PC pc,Vec pc_f,Vec pc_x) {
   ierr = mat_ctx->setLambda(pc_f,&res_lambda,SCATTER_FORWARD); CHKERRQ(ierr);
   double ddlambda = (res_lambda - db_dot_pc_x)/denominator;
   if(ddlambda != ddlambda || denominator == 0) {
+    double nrm2_pc_f,nrm2_db,nrm2_pc_x,nrm2_xLambda;
+    ierr = VecNorm(pc_f,NORM_2,&nrm2_pc_f); CHKERRQ(ierr);
+    ierr = VecNorm(ctx->arcPtr->db,NORM_2,&nrm2_db); CHKERRQ(ierr);
+    ierr = VecNorm(pc_x,NORM_2,&nrm2_pc_x); CHKERRQ(ierr);
+    ierr = VecNorm(ctx->arcPtr->xLambda,NORM_2,&nrm2_xLambda); CHKERRQ(ierr);
     std::ostringstream ss;
     ss
     << "problem with ddlambda=" << res_lambda
+    << " res_lambda=" << res_lambda
+    << " denominator=" << denominator
     << " ddlamnda=" << ddlambda
     << " db_dot_pc_x=" << db_dot_pc_x
     << " db_dot_x_lambda=" << db_dot_x_lambda
-    << " diag=" << ctx->arcPtr->dIag;
+    << " diag=" << ctx->arcPtr->dIag
+    << " nrm2_db=" << nrm2_db
+    << " nrm2_pc_f=" << nrm2_pc_f
+    << " nrm2_pc_x=" << nrm2_pc_x
+    << " nrm2_xLambda=" << nrm2_xLambda;
     SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,ss.str().c_str());
   }
   ierr = VecAXPY(pc_x,ddlambda,ctx->arcPtr->xLambda); CHKERRQ(ierr);
