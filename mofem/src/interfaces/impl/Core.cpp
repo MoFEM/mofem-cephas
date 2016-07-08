@@ -612,6 +612,7 @@ PetscErrorCode Core::clearMap() {
   entFEAdjacencies.clear();
   pRoblems.clear();
   cubitMeshsets.clear();
+  coordinateSystems.clear();
   PetscFunctionReturn(0);
 }
 

@@ -2175,7 +2175,7 @@ PetscErrorCode Core::partition_finite_elements(
       } else {
         //rows_view
         ierr = (*miit2)->getRowDofView(
-          *(p_miit->numered_dofs_rows),rows_view,Interface::UNION
+            *(p_miit->numered_dofs_rows),rows_view,Interface::UNION
         ); CHKERRQ(ierr);
         std::vector<int> parts(sIze,0);
         viit_rows = rows_view.begin();
