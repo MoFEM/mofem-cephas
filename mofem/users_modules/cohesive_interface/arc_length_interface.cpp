@@ -61,7 +61,7 @@ static char help[] = "...\n\n";
 #define DATAFILENAME "load_disp.txt"
 
 struct ArcLengthElement: public ArcLengthIntElemFEMethod {
-  Interface& mField;
+  MoFEM::Interface& mField;
   Range PostProcNodes;
   ArcLengthElement(MoFEM::Interface& m_field,ArcLengthCtx *arc_ptr):
   ArcLengthIntElemFEMethod(m_field.get_moab(),arc_ptr),
@@ -110,7 +110,7 @@ struct ArcLengthElement: public ArcLengthIntElemFEMethod {
 
 struct AssembleRhsVectors: public FEMethod {
 
-  Interface& mField;
+  MoFEM::Interface& mField;
   Vec &bodyForce;
   ArcLengthCtx *arcPtr;
 

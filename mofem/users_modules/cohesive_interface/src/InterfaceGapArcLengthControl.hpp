@@ -20,7 +20,7 @@
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
 struct ArcLengthIntElemFEMethod: public FEMethod {
-  Interface& mOab;
+  moab::Interface& mOab;
   ErrorCode rval;
   PetscErrorCode ierr;
 
@@ -32,7 +32,8 @@ struct ArcLengthIntElemFEMethod: public FEMethod {
 
   Tag thDamagedPrism;
 
-  ArcLengthIntElemFEMethod(Interface& moab,
+  ArcLengthIntElemFEMethod(
+    moab::Interface& moab,
     ArcLengthCtx *arcptr):
     FEMethod(),mOab(moab),arcPtr(arcptr) {
     PetscInt ghosts[1] = { 0 };

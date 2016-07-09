@@ -15,15 +15,15 @@
 
 struct PostPorcStress: public MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator {
 
-  Interface& mField;
-  Interface &postProcMesh;
+  MoFEM::Interface& mField;
+  moab::Interface &postProcMesh;
   std::vector<EntityHandle> &mapGaussPts;
 
   PostProcVolumeOnRefinedMesh::CommonData &commonData;
 
   PostPorcStress(
     MoFEM::Interface& m_field,
-    Interface &post_proc_mesh,
+    moab::Interface& post_proc_mesh,
     std::vector<EntityHandle> &map_gauss_pts,
     const std::string field_name,
     PostProcVolumeOnRefinedMesh::CommonData &common_data):
