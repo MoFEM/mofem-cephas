@@ -31,14 +31,14 @@ struct CohesiveInterfaceElement {
   CommonData commonData;
 
   struct MyPrism: public MoFEM::FlatPrismElementForcesAndSurcesCore {
-    MyPrism(FieldInterface &m_field): MoFEM::FlatPrismElementForcesAndSurcesCore(m_field) {}
+    MyPrism(MoFEM::Interface &m_field): MoFEM::FlatPrismElementForcesAndSurcesCore(m_field) {}
     int getRule(int order) { return 2*order; };
   };
   MyPrism feRhs;
   MyPrism feLhs;
   MyPrism feHistory;
 
-  CohesiveInterfaceElement(FieldInterface &m_field):
+  CohesiveInterfaceElement(MoFEM::Interface &m_field):
     feRhs(m_field),feLhs(m_field),feHistory(m_field) {};
 
   MyPrism& getFeRhs() { return feRhs; }
@@ -56,9 +56,9 @@ struct CohesiveInterfaceElement {
     */
   struct PhysicalEquation {
 
-    FieldInterface &mField;
+    MoFEM::Interface &mField;
     bool isInitialised;
-    PhysicalEquation(FieldInterface &m_field):
+    PhysicalEquation(MoFEM::Interface &m_field):
       mField(m_field),isInitialised(false) {};
 
     double h,youngModulus,beta,ft,Gf;

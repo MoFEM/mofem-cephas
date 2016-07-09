@@ -33,11 +33,11 @@
 */
 struct UltraWeakTransportElement {
 
-  FieldInterface &mField;
+  MoFEM::Interface &mField;
 
   /// \brief  definition of volume element
   struct MyVolumeFE: public MoFEM::VolumeElementForcesAndSourcesCore {
-    MyVolumeFE(FieldInterface &m_field): MoFEM::VolumeElementForcesAndSourcesCore(m_field) {}
+    MyVolumeFE(MoFEM::Interface &m_field): MoFEM::VolumeElementForcesAndSourcesCore(m_field) {}
     int getRule(int order) { return 2*order; };
   };
 
@@ -47,13 +47,13 @@ struct UltraWeakTransportElement {
     *
     */
   struct MyTriFE: public MoFEM::FaceElementForcesAndSourcesCore {
-    MyTriFE(FieldInterface &m_field): MoFEM::FaceElementForcesAndSourcesCore(m_field) {}
+    MyTriFE(MoFEM::Interface &m_field): MoFEM::FaceElementForcesAndSourcesCore(m_field) {}
     int getRule(int order) { return 2*order; };
   };
 
   MyTriFE feTriFluxValue;
 
-  UltraWeakTransportElement(FieldInterface &m_field):
+  UltraWeakTransportElement(MoFEM::Interface &m_field):
   mField(m_field),
   feVol(m_field),feTriFluxValue(m_field) {};
 

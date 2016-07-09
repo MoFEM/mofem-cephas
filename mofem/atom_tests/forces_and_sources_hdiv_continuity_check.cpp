@@ -49,7 +49,7 @@ int main(int argc, char *argv[]) {
   PetscInitialize(&argc,&argv,(char *)0,help);
 
   moab::Core mb_instance;
-  Interface& moab = mb_instance;
+  moab::Interface& moab = mb_instance;
   int rank;
   MPI_Comm_rank(PETSC_COMM_WORLD,&rank);
 
@@ -72,7 +72,7 @@ int main(int argc, char *argv[]) {
 
   //Create MoFEM (Joseph) database
   MoFEM::Core core(moab);
-  FieldInterface& m_field = core;
+  MoFEM::Interface& m_field = core;
 
   //set entitities bit level
   BitRefLevel bit_level0;
@@ -179,10 +179,10 @@ int main(int argc, char *argv[]) {
 
   struct OpTetFluxes: public VolumeElementForcesAndSourcesCore::UserDataOperator {
 
-    FieldInterface &m_field;
+    MoFEM::Interface &m_field;
     Tag tH;
 
-    OpTetFluxes(FieldInterface &m_field,Tag _th):
+    OpTetFluxes(MoFEM::Interface &m_field,Tag _th):
       VolumeElementForcesAndSourcesCore::UserDataOperator("HDIV",UserDataOperator::OPROW),
       m_field(m_field),tH(_th) {}
 
@@ -229,7 +229,8 @@ int main(int argc, char *argv[]) {
 
   struct MyTetFE: public VolumeElementForcesAndSourcesCore {
 
-    MyTetFE(FieldInterface &m_field): VolumeElementForcesAndSourcesCore(m_field) {}
+    MyTetFE(MoFEM::Interface &m_field):
+    VolumeElementForcesAndSourcesCore(m_field) {}
     int getRule(int order) { return -1; };
 
     ublas::matrix<double> N_tri;
@@ -267,11 +268,11 @@ int main(int argc, char *argv[]) {
 
   struct OpFacesSkinFluxes: public FaceElementForcesAndSourcesCore::UserDataOperator {
 
-    FieldInterface &m_field;
+    MoFEM::Interface &m_field;
     Tag tH1,tH2;
     TeeStream &mySplit;
 
-    OpFacesSkinFluxes(FieldInterface &m_field,Tag _th1,Tag _th2,TeeStream &my_split):
+    OpFacesSkinFluxes(MoFEM::Interface &m_field,Tag _th1,Tag _th2,TeeStream &my_split):
       FaceElementForcesAndSourcesCore::UserDataOperator("HDIV",UserDataOperator::OPROW),
       m_field(m_field),tH1(_th1),tH2(_th2),mySplit(my_split) {}
 
@@ -314,11 +315,11 @@ int main(int argc, char *argv[]) {
 
   struct OpFacesFluxes: public FaceElementForcesAndSourcesCore::UserDataOperator {
 
-    FieldInterface &m_field;
+    MoFEM::Interface &m_field;
     Tag tH1,tH2;
     TeeStream &mySplit;
 
-    OpFacesFluxes(FieldInterface &m_field,Tag _th1,Tag _th2,TeeStream &my_split):
+    OpFacesFluxes(MoFEM::Interface &m_field,Tag _th1,Tag _th2,TeeStream &my_split):
       FaceElementForcesAndSourcesCore::UserDataOperator("HDIV",UserDataOperator::OPROW),
       m_field(m_field),tH1(_th1),tH2(_th2),mySplit(my_split) {}
 
@@ -352,7 +353,7 @@ int main(int argc, char *argv[]) {
 
   struct MyTriFE: public FaceElementForcesAndSourcesCore {
 
-    MyTriFE(FieldInterface &m_field): FaceElementForcesAndSourcesCore(m_field) {}
+    MyTriFE(MoFEM::Interface &m_field): FaceElementForcesAndSourcesCore(m_field) {}
     int getRule(int order) { return -1; };
 
     PetscErrorCode setGaussPts(int order) {

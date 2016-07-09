@@ -40,7 +40,7 @@ PetscErrorCode ArcLengthCtx::setAlphaBeta(double alpha,double beta) {
   PetscFunctionReturn(0);
 }
 
-ArcLengthCtx::ArcLengthCtx(FieldInterface &m_field,const std::string &problem_name):
+ArcLengthCtx::ArcLengthCtx(MoFEM::Interface &m_field,const std::string &problem_name):
   mField(m_field),
   dx2(0),
   F_lambda2(0),

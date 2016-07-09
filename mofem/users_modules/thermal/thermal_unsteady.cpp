@@ -72,13 +72,13 @@ struct BlockOptionData {
 
 struct MonitorPostProc: public FEMethod {
 
-  FieldInterface &mField;
+  MoFEM::Interface &mField;
   PostProcVolumeOnRefinedMesh postProc;
 
   bool iNit;
   int pRT;
 
-  MonitorPostProc(FieldInterface &m_field):
+  MonitorPostProc(MoFEM::Interface &m_field):
     FEMethod(),mField(m_field),postProc(m_field),iNit(false) {
     PetscErrorCode ierr;
     PetscBool flg = PETSC_TRUE;
@@ -165,13 +165,13 @@ int main(int argc, char *argv[]) {
 
   //create MoAB
   moab::Core mb_instance;
-  Interface& moab = mb_instance;
+  moab::Interface& moab = mb_instance;
   ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
   if(pcomm == NULL) pcomm =  new ParallelComm(&moab,PETSC_COMM_WORLD);
   rval = moab.load_file(mesh_file_name, 0, option); CHKERRQ_MOAB(rval);
   //create MoFEM (Joseph) database
   MoFEM::Core core(moab);
-  FieldInterface& m_field = core;
+  MoFEM::Interface& m_field = core;
 
   //set entitities bit level (this allow to set refinment levels for h-adaptivity)
   //onlt one level is used in this example
@@ -256,10 +256,10 @@ int main(int argc, char *argv[]) {
         Range block_ents;
         rval = moab.get_entities_by_handle(it->meshset,block_ents,true); CHKERR_MOAB(rval);
         Range ents_to_set_order;
-        ierr = moab.get_adjacencies(block_ents,3,false,ents_to_set_order,Interface::UNION); CHKERRQ(ierr);
+        ierr = moab.get_adjacencies(block_ents,3,false,ents_to_set_order,moab::Interface::UNION); CHKERRQ(ierr);
         ents_to_set_order = ents_to_set_order.subset_by_type(MBTET);
-        ierr = moab.get_adjacencies(block_ents,2,false,ents_to_set_order,Interface::UNION); CHKERRQ(ierr);
-        ierr = moab.get_adjacencies(block_ents,1,false,ents_to_set_order,Interface::UNION); CHKERRQ(ierr);
+        ierr = moab.get_adjacencies(block_ents,2,false,ents_to_set_order,moab::Interface::UNION); CHKERRQ(ierr);
+        ierr = moab.get_adjacencies(block_ents,1,false,ents_to_set_order,moab::Interface::UNION); CHKERRQ(ierr);
         ierr = m_field.set_field_order(ents_to_set_order,"TEMP",block_data[it->get_msId()].oRder); CHKERRQ(ierr);
         ierr = m_field.set_field_order(ents_to_set_order,"TEMP_RATE",block_data[it->get_msId()].oRder); CHKERRQ(ierr);
       }

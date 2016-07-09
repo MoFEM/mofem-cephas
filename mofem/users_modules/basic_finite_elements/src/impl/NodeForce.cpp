@@ -24,7 +24,7 @@ using namespace MoFEM;
 
 using namespace boost::numeric;
 
-NodalForce::MyFE::MyFE(FieldInterface &m_field): VertexElementForcesAndSourcesCore(m_field) {
+NodalForce::MyFE::MyFE(MoFEM::Interface &m_field): VertexElementForcesAndSourcesCore(m_field) {
 
 }
 
@@ -101,7 +101,7 @@ NodalForce::OpNodalForce::OpNodalForce(const std::string field_name,Vec _F,bCFor
     PetscFunctionReturn(0);
   }
 
-  MetaNodalForces::TagForceScale::TagForceScale(FieldInterface &m_field): mField(m_field) {
+  MetaNodalForces::TagForceScale::TagForceScale(MoFEM::Interface &m_field): mField(m_field) {
     ErrorCode rval;
     double def_scale = 1.;
     const EntityHandle root_meshset = mField.get_moab().get_root_set();

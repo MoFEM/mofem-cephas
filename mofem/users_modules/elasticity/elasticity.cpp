@@ -76,7 +76,7 @@ int main(int argc, char *argv[]) {
   PetscInitialize(&argc,&argv,(char *)0,help);
 
   moab::Core mb_instance;
-  Interface& moab = mb_instance;
+  moab::Interface& moab = mb_instance;
 
   PetscBool flg_block_config,flg_file;
   char mesh_file_name[255];
@@ -122,7 +122,7 @@ int main(int argc, char *argv[]) {
 
   //Create MoFEM (Joseph) database
   MoFEM::Core core(moab);
-  FieldInterface& m_field = core;
+  MoFEM::Interface& m_field = core;
 
   // stl::bitset see for more details
   BitRefLevel bit_level0;
@@ -208,10 +208,10 @@ int main(int argc, char *argv[]) {
         Range block_ents;
         rval = moab.get_entities_by_handle(it->getMeshSet(),block_ents,true); CHKERRQ_MOAB(rval);
         Range ents_to_set_order;
-        rval = moab.get_adjacencies(block_ents,3,false,ents_to_set_order,Interface::UNION); CHKERRQ_MOAB(rval);
+        rval = moab.get_adjacencies(block_ents,3,false,ents_to_set_order,moab::Interface::UNION); CHKERRQ_MOAB(rval);
         ents_to_set_order = ents_to_set_order.subset_by_type(MBTET);
-        rval = moab.get_adjacencies(block_ents,2,false,ents_to_set_order,Interface::UNION); CHKERRQ_MOAB(rval);
-        rval = moab.get_adjacencies(block_ents,1,false,ents_to_set_order,Interface::UNION); CHKERRQ_MOAB(rval);
+        rval = moab.get_adjacencies(block_ents,2,false,ents_to_set_order,moab::Interface::UNION); CHKERRQ_MOAB(rval);
+        rval = moab.get_adjacencies(block_ents,1,false,ents_to_set_order,moab::Interface::UNION); CHKERRQ_MOAB(rval);
         ierr = m_field.synchronise_entities(ents_to_set_order); CHKERRQ(ierr);
         ierr = m_field.set_field_order(ents_to_set_order,"DISPLACEMENT",block_data[it->get_msId()].oRder); CHKERRQ(ierr);
       }

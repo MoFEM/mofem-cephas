@@ -40,7 +40,7 @@
 
 #include <UnknownInterface.hpp>
 #include <LoopMethods.hpp>
-#include <FieldInterface.hpp>
+#include <Interface.hpp>
 #include <MeshRefinment.hpp>
 #include <PrismInterface.hpp>
 #include <SeriesRecorder.hpp>
@@ -93,12 +93,12 @@ PetscErrorCode Core::queryInterface(const MOFEMuuid& uuid,UnknownInterface** ifa
     *iface = dynamic_cast<SeriesRecorder*>(this);
     PetscFunctionReturn(0);
   }
-  if(uuid == IDD_MOFEMFieldInterface) {
-    *iface = dynamic_cast<FieldInterface*>(this);
+  if(uuid == IDD_MOFEMInterface) {
+    *iface = dynamic_cast<Interface*>(this);
     PetscFunctionReturn(0);
   }
   if(uuid == IDD_MOFEMUnknown) {
-    *iface = dynamic_cast<FieldInterface*>(this);
+    *iface = dynamic_cast<Interface*>(this);
     PetscFunctionReturn(0);
   }
   SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"unknown interface");
@@ -235,7 +235,7 @@ PetscErrorCode mofem_error_handler(MPI_Comm comm,int line,const char *fun,const 
   PetscFunctionReturn(n);
 }
 
-Core::Core(Interface& _moab,MPI_Comm _comm,TagType _tag_type,int _verbose):
+Core::Core(moab::Interface& _moab,MPI_Comm _comm,TagType _tag_type,int _verbose):
 MeshRefinment(_moab),
 moab(_moab),
 comm(_comm),
@@ -519,7 +519,7 @@ verbose(_verbose) {
 }
 Core::~Core() {
 }
-Interface& Core::get_moab() {
+moab::Interface& Core::get_moab() {
   return moab;
 }
 MPI_Comm Core::get_comm() {

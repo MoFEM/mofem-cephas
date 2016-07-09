@@ -187,7 +187,7 @@ PetscErrorCode AnalyticalDirichletBC::ApproxField::OpLhs::doWork(
   }
 
   AnalyticalDirichletBC::DirichletBC::DirichletBC(
-    FieldInterface& m_field,const std::string &field,Mat A,Vec X,Vec F
+    MoFEM::Interface& m_field,const std::string &field,Mat A,Vec X,Vec F
   ):
   DisplacementBCFEMethodPreAndPostProc(m_field,field,A,X,F),
   tRis_ptr(NULL)
@@ -196,7 +196,7 @@ PetscErrorCode AnalyticalDirichletBC::ApproxField::OpLhs::doWork(
   }
 
   AnalyticalDirichletBC::DirichletBC::DirichletBC(
-    FieldInterface& m_field,const std::string &field
+    MoFEM::Interface& m_field,const std::string &field
   ):
   DisplacementBCFEMethodPreAndPostProc(m_field,field),
   tRis_ptr(NULL) {
@@ -220,7 +220,7 @@ PetscErrorCode AnalyticalDirichletBC::ApproxField::OpLhs::doWork(
     ParallelComm* pcomm = ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
     Range ents;
     rval = mField.get_moab().get_connectivity(tris,ents,true); CHKERRQ_MOAB(rval);
-    ierr = mField.get_moab().get_adjacencies(tris,1,false,ents,Interface::UNION); CHKERRQ(ierr);
+    ierr = mField.get_moab().get_adjacencies(tris,1,false,ents,moab::Interface::UNION); CHKERRQ(ierr);
     ents.merge(tris);
     for(Range::iterator eit = ents.begin();eit!=ents.end();eit++) {
       for(_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_NAME_ENT_PART_FOR_LOOP_(problemPtr,fieldName,*eit,pcomm->rank(),dof)) {
@@ -238,10 +238,10 @@ PetscErrorCode AnalyticalDirichletBC::ApproxField::OpLhs::doWork(
     PetscFunctionReturn(0);
   }
 
-  AnalyticalDirichletBC::AnalyticalDirichletBC(FieldInterface& m_field): approxField(m_field) {};
+  AnalyticalDirichletBC::AnalyticalDirichletBC(MoFEM::Interface& m_field): approxField(m_field) {};
 
   PetscErrorCode AnalyticalDirichletBC::initializeProblem(
-    FieldInterface &m_field,string fe,string field,Range& tris,string nodals_positions
+    MoFEM::Interface &m_field,string fe,string field,Range& tris,string nodals_positions
   ) {
     PetscFunctionBegin;
     PetscErrorCode ierr;
@@ -257,7 +257,7 @@ PetscErrorCode AnalyticalDirichletBC::ApproxField::OpLhs::doWork(
   }
 
   PetscErrorCode AnalyticalDirichletBC::setProblem(
-    FieldInterface &m_field,string problem
+    MoFEM::Interface &m_field,string problem
   ) {
     PetscFunctionBegin;
     PetscErrorCode ierr;
@@ -280,7 +280,7 @@ PetscErrorCode AnalyticalDirichletBC::ApproxField::OpLhs::doWork(
   }
 
   PetscErrorCode AnalyticalDirichletBC::solveProblem(
-    FieldInterface &m_field,string problem,string fe,DirichletBC &bc,Range &tris
+    MoFEM::Interface &m_field,string problem,string fe,DirichletBC &bc,Range &tris
   ) {
     PetscFunctionBegin;
     PetscErrorCode ierr;

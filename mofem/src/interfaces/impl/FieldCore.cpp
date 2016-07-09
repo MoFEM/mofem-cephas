@@ -1,4 +1,4 @@
-/** \file FieldInterfaceCore.cpp
+/** \file InterfaceCore.cpp
  * \brief Mylti-index containers, data structures and other low-level functions
  */
 
@@ -40,7 +40,7 @@
 #include <SeriesMultiIndices.hpp>
 
 #include <LoopMethods.hpp>
-#include <FieldInterface.hpp>
+#include <Interface.hpp>
 #include <MeshRefinment.hpp>
 #include <PrismInterface.hpp>
 #include <SeriesRecorder.hpp>
@@ -198,7 +198,7 @@ PetscErrorCode Core::add_ents_to_field_by_EDGEs(const Range &edges,const BitFiel
       rval = moab.add_entities(idm,edges); CHKERRQ_MOAB(rval);
       //rval = moab.get_connectivity(edges,nodes,true); CHKERRQ_MOAB(rval);
       //use get adjacencies, this will allow take in account adjacencies set user
-      rval = moab.get_adjacencies(edges,0,false,nodes,Interface::UNION); CHKERRQ_MOAB(rval);
+      rval = moab.get_adjacencies(edges,0,false,nodes,moab::Interface::UNION); CHKERRQ_MOAB(rval);
       {
         Range topo_nodes;
         rval = moab.get_connectivity(edges,topo_nodes,true); CHKERRQ_MOAB(rval);
@@ -298,7 +298,7 @@ PetscErrorCode Core::add_ents_to_field_by_TRIs(const Range &tris,const BitFieldI
     rval = moab.add_entities(idm,tris); CHKERRQ_MOAB(rval);
     //rval = moab.get_connectivity(tris,nodes,true); CHKERRQ_MOAB(rval);
     //use get adjacencies, this will allow take in account adjacencies set user
-    rval = moab.get_adjacencies(tris,0,false,nodes,Interface::UNION); CHKERRQ_MOAB(rval);
+    rval = moab.get_adjacencies(tris,0,false,nodes,moab::Interface::UNION); CHKERRQ_MOAB(rval);
     {
       Range topo_nodes;
       rval = moab.get_connectivity(tris,topo_nodes,true); CHKERRQ_MOAB(rval);
@@ -308,7 +308,7 @@ PetscErrorCode Core::add_ents_to_field_by_TRIs(const Range &tris,const BitFieldI
       nodes = subtract(nodes,mid_nodes);
     }
     rval = moab.add_entities(idm,nodes); CHKERRQ_MOAB(rval);
-    rval = moab.get_adjacencies(tris,1,false,edges,Interface::UNION); CHKERRQ_MOAB(rval);
+    rval = moab.get_adjacencies(tris,1,false,edges,moab::Interface::UNION); CHKERRQ_MOAB(rval);
     rval = moab.add_entities(idm,edges); CHKERRQ_MOAB(rval);
     if(verb>1) {
       std::ostringstream ss;
@@ -464,7 +464,7 @@ PetscErrorCode Core::add_ents_to_field_by_TETs(const Range &tets,const BitFieldI
     rval = moab.add_entities(idm,tets); CHKERRQ_MOAB(rval);
     //rval = moab.get_connectivity(tets,nodes,true); CHKERRQ_MOAB(rval);
     //use get adjacencies, this will allow take in account adjacencies set user
-    rval = moab.get_adjacencies(tets,0,false,nodes,Interface::UNION); CHKERRQ_MOAB(rval);
+    rval = moab.get_adjacencies(tets,0,false,nodes,moab::Interface::UNION); CHKERRQ_MOAB(rval);
     {
       Range topo_nodes;
       rval = moab.get_connectivity(tets,topo_nodes,true); CHKERRQ_MOAB(rval);
@@ -474,9 +474,9 @@ PetscErrorCode Core::add_ents_to_field_by_TETs(const Range &tets,const BitFieldI
       nodes = subtract(nodes,mid_nodes);
     }
     rval = moab.add_entities(idm,nodes); CHKERRQ_MOAB(rval);
-    rval = moab.get_adjacencies(tets,2,false,tris,Interface::UNION); CHKERRQ_MOAB(rval);
+    rval = moab.get_adjacencies(tets,2,false,tris,moab::Interface::UNION); CHKERRQ_MOAB(rval);
     rval = moab.add_entities(idm,tris); CHKERRQ_MOAB(rval);
-    rval = moab.get_adjacencies(tets,1,false,edges,Interface::UNION); CHKERRQ_MOAB(rval);
+    rval = moab.get_adjacencies(tets,1,false,edges,moab::Interface::UNION); CHKERRQ_MOAB(rval);
     rval = moab.add_entities(idm,edges); CHKERRQ_MOAB(rval);
     if(verb>1) {
       std::ostringstream ss;
@@ -491,9 +491,9 @@ PetscErrorCode Core::add_ents_to_field_by_TETs(const Range &tets,const BitFieldI
     break;
     case HCURL:
     rval = moab.add_entities(idm,tets); CHKERRQ_MOAB(rval);
-    rval = moab.get_adjacencies(tets,2,false,tris,Interface::UNION); CHKERRQ_MOAB(rval);
+    rval = moab.get_adjacencies(tets,2,false,tris,moab::Interface::UNION); CHKERRQ_MOAB(rval);
     rval = moab.add_entities(idm,tris); CHKERRQ_MOAB(rval);
-    rval = moab.get_adjacencies(tets,1,false,edges,Interface::UNION); CHKERRQ_MOAB(rval);
+    rval = moab.get_adjacencies(tets,1,false,edges,moab::Interface::UNION); CHKERRQ_MOAB(rval);
     rval = moab.add_entities(idm,edges); CHKERRQ_MOAB(rval);
     if(verb>1) {
       std::ostringstream ss;
@@ -507,7 +507,7 @@ PetscErrorCode Core::add_ents_to_field_by_TETs(const Range &tets,const BitFieldI
     break;
     case HDIV:
     rval = moab.add_entities(idm,tets); CHKERRQ_MOAB(rval);
-    rval = moab.get_adjacencies(tets,2,false,tris,Interface::UNION); CHKERRQ_MOAB(rval);
+    rval = moab.get_adjacencies(tets,2,false,tris,moab::Interface::UNION); CHKERRQ_MOAB(rval);
     rval = moab.add_entities(idm,tris); CHKERRQ_MOAB(rval);
     if(verb>1) {
       std::ostringstream ss;
@@ -590,7 +590,7 @@ PetscErrorCode Core::add_ents_to_field_by_QUADs(const Range &quads,const BitFiel
     rval = moab.add_entities(idm,quads); CHKERRQ_MOAB(rval);
     //rval = moab.get_connectivity(quads,nodes,true); CHKERRQ_MOAB(rval);
     //use get adjacencies, this will allow take in account adjacencies set user
-    rval = moab.get_adjacencies(quads,0,false,nodes,Interface::UNION); CHKERRQ_MOAB(rval);
+    rval = moab.get_adjacencies(quads,0,false,nodes,moab::Interface::UNION); CHKERRQ_MOAB(rval);
     {
       Range topo_nodes;
       rval = moab.get_connectivity(quads,topo_nodes,true); CHKERRQ_MOAB(rval);
@@ -600,7 +600,7 @@ PetscErrorCode Core::add_ents_to_field_by_QUADs(const Range &quads,const BitFiel
       nodes = subtract(nodes,mid_nodes);
     }
     rval = moab.add_entities(idm,nodes); CHKERRQ_MOAB(rval);
-    rval = moab.get_adjacencies(quads,1,true,edges,Interface::UNION); CHKERRQ_MOAB(rval);
+    rval = moab.get_adjacencies(quads,1,true,edges,moab::Interface::UNION); CHKERRQ_MOAB(rval);
     rval = moab.add_entities(idm,edges); CHKERRQ_MOAB(rval);
     if(verb>1) {
       std::ostringstream ss;
@@ -684,7 +684,7 @@ PetscErrorCode Core::add_ents_to_field_by_PRISMs(const Range &prisms,const BitFi
     rval = moab.add_entities(idm,prisms); CHKERRQ_MOAB(rval);
     //rval = moab.get_connectivity(prisms,nodes,true); CHKERRQ_MOAB(rval);
     //use get adjacencies, this will allow take in account adjacencies set user
-    rval = moab.get_adjacencies(prisms,0,false,nodes,Interface::UNION); CHKERRQ_MOAB(rval);
+    rval = moab.get_adjacencies(prisms,0,false,nodes,moab::Interface::UNION); CHKERRQ_MOAB(rval);
     {
       Range topo_nodes;
       rval = moab.get_connectivity(prisms,topo_nodes,true); CHKERRQ_MOAB(rval);
@@ -694,9 +694,9 @@ PetscErrorCode Core::add_ents_to_field_by_PRISMs(const Range &prisms,const BitFi
       nodes = subtract(nodes,mid_nodes);
     }
     rval = moab.add_entities(idm,nodes); CHKERRQ_MOAB(rval);
-    rval = moab.get_adjacencies(prisms,2,true,faces,Interface::UNION); CHKERRQ_MOAB(rval);
+    rval = moab.get_adjacencies(prisms,2,true,faces,moab::Interface::UNION); CHKERRQ_MOAB(rval);
     rval = moab.add_entities(idm,faces); CHKERRQ_MOAB(rval);
-    rval = moab.get_adjacencies(prisms,1,true,edges,Interface::UNION); CHKERRQ_MOAB(rval);
+    rval = moab.get_adjacencies(prisms,1,true,edges,moab::Interface::UNION); CHKERRQ_MOAB(rval);
     rval = moab.add_entities(idm,edges); CHKERRQ_MOAB(rval);
     if(verb>1) {
       std::ostringstream ss;
@@ -2175,7 +2175,7 @@ PetscErrorCode Core::partition_finite_elements(
       } else {
         //rows_view
         ierr = (*miit2)->getRowDofView(
-            *(p_miit->numered_dofs_rows),rows_view,Interface::UNION
+            *(p_miit->numered_dofs_rows),rows_view,moab::Interface::UNION
         ); CHKERRQ(ierr);
         std::vector<int> parts(sIze,0);
         viit_rows = rows_view.begin();
@@ -2193,7 +2193,7 @@ PetscErrorCode Core::partition_finite_elements(
         if(part_from_moab) {
           //rows_view
           ierr = (*miit2)->getRowDofView(
-            *(p_miit->numered_dofs_rows),rows_view,Interface::UNION
+            *(p_miit->numered_dofs_rows),rows_view,moab::Interface::UNION
           ); CHKERRQ(ierr);
         }
         //rows element dof multi-indices
@@ -2210,7 +2210,7 @@ PetscErrorCode Core::partition_finite_elements(
           //cols_views
           NumeredDofEntity_multiIndex_uid_view_ordered cols_view;
           ierr = (*miit2)->getColDofView(
-            *(p_miit->numered_dofs_cols),cols_view,Interface::UNION
+            *(p_miit->numered_dofs_cols),cols_view,moab::Interface::UNION
           ); CHKERRQ(ierr);
           //cols element dof multi-indices
           NumeredDofEntity_multiIndex_uid_view_ordered::iterator viit_cols;;
@@ -2483,7 +2483,7 @@ PetscErrorCode Core::seed_ref_level(const Range &ents,const BitRefLevel &bit,int
       int dim = moab.dimension_from_handle(seeded_ents[0]);
       for(int dd = 0;dd<dim;dd++) {
         Range ents;
-        rval = moab.get_adjacencies(seeded_ents,dd,true,ents,Interface::UNION); CHKERRQ_MOAB(rval);
+        rval = moab.get_adjacencies(seeded_ents,dd,true,ents,moab::Interface::UNION); CHKERRQ_MOAB(rval);
         if(dd == 2) {
           // currently only works with triangles
           ents = ents.subset_by_type(MBTRI);

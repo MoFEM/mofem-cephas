@@ -41,7 +41,7 @@ struct ThermalElement {
 
   /// \brief  definition of volume element
   struct MyVolumeFE: public MoFEM::VolumeElementForcesAndSourcesCore {
-    MyVolumeFE(FieldInterface &m_field): MoFEM::VolumeElementForcesAndSourcesCore(m_field) {}
+    MyVolumeFE(MoFEM::Interface &m_field): MoFEM::VolumeElementForcesAndSourcesCore(m_field) {}
 
     /** \brief it is used to calculate nb. of Gauss integration points
      *
@@ -71,7 +71,7 @@ struct ThermalElement {
     * This element is used to integrate heat fluxes; convection and radiation
     */
   struct MyTriFE: public MoFEM::FaceElementForcesAndSourcesCore {
-    MyTriFE(FieldInterface &m_field): MoFEM::FaceElementForcesAndSourcesCore(m_field) {}
+    MyTriFE(MoFEM::Interface &m_field): MoFEM::FaceElementForcesAndSourcesCore(m_field) {}
     int getRule(int order) { return 2*order; };
   };
 
@@ -88,8 +88,8 @@ struct ThermalElement {
   MyTriFE& getLoopFeRadiationRhs() { return feRadiationRhs; } //< get radiation element
   MyTriFE& getLoopFeRadiationLhs() { return feRadiationLhs; }
 
-  FieldInterface &mField;
-  ThermalElement(FieldInterface &m_field):
+  MoFEM::Interface &mField;
+  ThermalElement(MoFEM::Interface &m_field):
     feRhs(m_field),feLhs(m_field),
     feFlux(m_field),
     feConvectionRhs(m_field),feConvectionLhs(m_field),
@@ -570,11 +570,11 @@ struct ThermalElement {
     */
   struct UpdateAndControl: public FEMethod {
 
-    FieldInterface& mField;
+    MoFEM::Interface& mField;
     const std::string tempName;
     const std::string rateName;
 
-    UpdateAndControl(FieldInterface& m_field,
+    UpdateAndControl(MoFEM::Interface& m_field,
       const std::string temp_name,const std::string rate_name):
       mField(m_field),
       tempName(temp_name),
@@ -591,12 +591,12 @@ struct ThermalElement {
     */
   struct TimeSeriesMonitor: public FEMethod {
 
-    FieldInterface &mField;
+    MoFEM::Interface &mField;
     const std::string seriesName;
     const std::string tempName;
     BitRefLevel mask;
 
-    TimeSeriesMonitor(FieldInterface &m_field,const std::string series_name,const std::string temp_name):
+    TimeSeriesMonitor(MoFEM::Interface &m_field,const std::string series_name,const std::string temp_name):
       mField(m_field),seriesName(series_name),tempName(temp_name) {
       mask.set();
     }

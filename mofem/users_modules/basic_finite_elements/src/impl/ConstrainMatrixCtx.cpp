@@ -30,7 +30,7 @@ PetscErrorCode ConstrainMatrixCtx::getKsp(const KSP *ksp) {
   PetscFunctionReturn(0);
 }
 
-ConstrainMatrixCtx::ConstrainMatrixCtx(FieldInterface& m_field,string x_problem,string y_problem,bool create_ksp):
+ConstrainMatrixCtx::ConstrainMatrixCtx(MoFEM::Interface& m_field,string x_problem,string y_problem,bool create_ksp):
   mField(m_field),
   C(PETSC_NULL),CT(PETSC_NULL),CCT(PETSC_NULL),CTC(PETSC_NULL),K(PETSC_NULL),
   Cx(PETSC_NULL),CCTm1_Cx(PETSC_NULL),CT_CCTm1_Cx(PETSC_NULL),CTCx(PETSC_NULL),

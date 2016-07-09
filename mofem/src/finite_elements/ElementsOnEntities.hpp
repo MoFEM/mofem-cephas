@@ -37,8 +37,8 @@ struct ForcesAndSurcesCore: public FEMethod {
 
   PetscErrorCode ierr;
 
-  FieldInterface& mField;
-  ForcesAndSurcesCore(FieldInterface& m_field):
+  Interface& mField;
+  ForcesAndSurcesCore(MoFEM::Interface& m_field):
     mField(m_field) {};
   virtual ~ForcesAndSurcesCore() {}
 

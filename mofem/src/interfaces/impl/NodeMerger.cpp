@@ -39,7 +39,7 @@
 #include <SeriesMultiIndices.hpp>
 
 #include <LoopMethods.hpp>
-#include <FieldInterface.hpp>
+#include <Interface.hpp>
 #include <MeshRefinment.hpp>
 #include <PrismInterface.hpp>
 #include <SeriesRecorder.hpp>
@@ -67,7 +67,7 @@ PetscErrorCode NodeMergerInterface::queryInterface(const MOFEMuuid& uuid, Unknow
 PetscErrorCode NodeMergerInterface::mergeNodes(EntityHandle father,EntityHandle mother,BitRefLevel bit,Range *tets_ptr) {
   PetscFunctionBegin;
 
-  FieldInterface& m_field = cOre;
+  MoFEM::Interface& m_field = cOre;
   PetscErrorCode ierr;
   ErrorCode rval;
 
@@ -80,7 +80,7 @@ PetscErrorCode NodeMergerInterface::mergeNodes(EntityHandle father,EntityHandle 
   if(tets_ptr != NULL) {
     Range tets_edges;
     rval = m_field.get_moab().get_adjacencies(
-      *tets_ptr,1,false,tets_edges,Interface::UNION
+      *tets_ptr,1,false,tets_edges,moab::Interface::UNION
     ); CHKERRQ_MOAB(rval);
     common_edge = intersect(common_edge,tets_edges);
     father_edges = intersect(father_edges,tets_edges);
@@ -126,8 +126,8 @@ PetscErrorCode NodeMergerInterface::mergeNodes(EntityHandle father,EntityHandle 
   }
 
   Range adj_ents;
-  rval = m_field.get_moab().get_adjacencies(father_tets,1,false,adj_ents,Interface::UNION); CHKERRQ_MOAB(rval);
-  rval = m_field.get_moab().get_adjacencies(father_tets,2,false,adj_ents,Interface::UNION); CHKERRQ_MOAB(rval);
+  rval = m_field.get_moab().get_adjacencies(father_tets,1,false,adj_ents,moab::Interface::UNION); CHKERRQ_MOAB(rval);
+  rval = m_field.get_moab().get_adjacencies(father_tets,2,false,adj_ents,moab::Interface::UNION); CHKERRQ_MOAB(rval);
   for(Range::iterator eit = adj_ents.begin();eit!=adj_ents.end();eit++) {
     const EntityHandle* conn;
     int num_nodes;
@@ -158,10 +158,10 @@ PetscErrorCode NodeMergerInterface::mergeNodes(EntityHandle father,EntityHandle 
     }
   }
   adj_ents.clear();
-  rval = m_field.get_moab().get_adjacencies(mother_tets,1,false,adj_ents,Interface::UNION); CHKERRQ_MOAB(rval);
-  rval = m_field.get_moab().get_adjacencies(mother_tets,2,false,adj_ents,Interface::UNION); CHKERRQ_MOAB(rval);
-  rval = m_field.get_moab().get_adjacencies(edge_tets,1,false,adj_ents,Interface::UNION); CHKERRQ_MOAB(rval);
-  rval = m_field.get_moab().get_adjacencies(edge_tets,2,false,adj_ents,Interface::UNION); CHKERRQ_MOAB(rval);
+  rval = m_field.get_moab().get_adjacencies(mother_tets,1,false,adj_ents,moab::Interface::UNION); CHKERRQ_MOAB(rval);
+  rval = m_field.get_moab().get_adjacencies(mother_tets,2,false,adj_ents,moab::Interface::UNION); CHKERRQ_MOAB(rval);
+  rval = m_field.get_moab().get_adjacencies(edge_tets,1,false,adj_ents,moab::Interface::UNION); CHKERRQ_MOAB(rval);
+  rval = m_field.get_moab().get_adjacencies(edge_tets,2,false,adj_ents,moab::Interface::UNION); CHKERRQ_MOAB(rval);
   for(Range::iterator eit = adj_ents.begin();eit!=adj_ents.end();eit++) {
     const EntityHandle* conn;
     int num_nodes;
@@ -206,7 +206,7 @@ PetscErrorCode NodeMergerInterface::mergeNodes(EntityHandle father,EntityHandle 
 }
 PetscErrorCode NodeMergerInterface::mergeNodes(EntityHandle father,EntityHandle mother,BitRefLevel bit,BitRefLevel tets_from_bit_ref_level) {
   PetscFunctionBegin;
-  FieldInterface& m_field = cOre;
+  MoFEM::Interface& m_field = cOre;
   PetscErrorCode ierr;
 
   Range level_tets;

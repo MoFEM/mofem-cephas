@@ -40,7 +40,7 @@ int main(int argc, char *argv[]) {
   PetscInitialize(&argc,&argv,PETSC_NULL,help);
 
   moab::Core mb_instance;
-  Interface& moab = mb_instance;
+  moab::Interface& moab = mb_instance;
 
   //Reade parameters from line command
   PetscBool flg = PETSC_TRUE;
@@ -78,7 +78,7 @@ int main(int argc, char *argv[]) {
   //second argument set communicator for sequential problem
   //last argument make mofem quaiet
   MoFEM::Core core(moab,PETSC_COMM_SELF,MB_TAG_DENSE,-1);
-  FieldInterface& m_field = core;
+  MoFEM::Interface& m_field = core;
 
   //ref meshset ref level 0
   ierr = m_field.seed_ref_level_3D(0,0); CHKERRQ(ierr);

@@ -21,7 +21,7 @@ using namespace MoFEM;
 using namespace boost::numeric;
 
 DisplacementBCFEMethodPreAndPostProc::DisplacementBCFEMethodPreAndPostProc(
-  FieldInterface& m_field,const std::string &field_name,Mat Aij,Vec X,Vec F
+  MoFEM::Interface& m_field,const std::string &field_name,Mat Aij,Vec X,Vec F
 ):
 mField(m_field),
 fieldName(field_name),
@@ -35,7 +35,7 @@ dIag(1) {
 };
 
 DisplacementBCFEMethodPreAndPostProc::DisplacementBCFEMethodPreAndPostProc(
-  FieldInterface& m_field,const std::string &field_name
+  MoFEM::Interface& m_field,const std::string &field_name
 ):
 mField(m_field),
 fieldName(field_name),
@@ -65,7 +65,7 @@ PetscErrorCode DisplacementBCFEMethodPreAndPostProc::iNitalize() {
         ierr = it->get_cubit_msId_entities_by_dimension(mField.get_moab(),dim,ents,true); CHKERRQ(ierr);
         if(dim>1) {
           Range _edges;
-          ierr = mField.get_moab().get_adjacencies(ents,1,false,_edges,Interface::UNION); CHKERRQ(ierr);
+          ierr = mField.get_moab().get_adjacencies(ents,1,false,_edges,moab::Interface::UNION); CHKERRQ(ierr);
           ents.insert(_edges.begin(),_edges.end());
         }
         if(dim>0) {
@@ -260,7 +260,7 @@ PetscErrorCode SpatialPositionsBCFEMethodPreAndPostProc::iNitalize() {
         ierr = it->get_cubit_msId_entities_by_dimension(mField.get_moab(),dim,ents,true); CHKERRQ(ierr);
         if(dim>1) {
           Range _edges;
-          ierr = mField.get_moab().get_adjacencies(ents,1,false,_edges,Interface::UNION); CHKERRQ(ierr);
+          ierr = mField.get_moab().get_adjacencies(ents,1,false,_edges,moab::Interface::UNION); CHKERRQ(ierr);
           ents.insert(_edges.begin(),_edges.end());
         }
         if(dim>0) {
@@ -332,7 +332,7 @@ PetscErrorCode TemperatureBCFEMethodPreAndPostProc::iNitalize() {
         ierr = it->get_cubit_msId_entities_by_dimension(mField.get_moab(),dim,ents,true); CHKERRQ(ierr);
         if(dim>1) {
           Range _edges;
-          ierr = mField.get_moab().get_adjacencies(ents,1,false,_edges,Interface::UNION); CHKERRQ(ierr);
+          ierr = mField.get_moab().get_adjacencies(ents,1,false,_edges,moab::Interface::UNION); CHKERRQ(ierr);
           ents.insert(_edges.begin(),_edges.end());
         }
         if(dim>0) {
@@ -485,7 +485,7 @@ PetscErrorCode DirichletBCFromBlockSetFEMethodPreAndPostProc::iNitalize() {
           ierr = it->get_cubit_msId_entities_by_dimension(mField.get_moab(),dim,ents,true); CHKERRQ(ierr);
           if(dim>1) {
             Range edges;
-            ierr = mField.get_moab().get_adjacencies(ents,1,false,edges,Interface::UNION); CHKERRQ(ierr);
+            ierr = mField.get_moab().get_adjacencies(ents,1,false,edges,moab::Interface::UNION); CHKERRQ(ierr);
             ents.insert(edges.begin(),edges.end());
           }
           if(dim>0) {
@@ -554,7 +554,7 @@ PetscErrorCode DirichletBCFromBlockSetFEMethodPreAndPostProcWithFlags::iNitalize
           ierr = it->get_cubit_msId_entities_by_dimension(mField.get_moab(),dim,ents,true); CHKERRQ(ierr);
           if(dim>1) {
             Range edges;
-            ierr = mField.get_moab().get_adjacencies(ents,1,false,edges,Interface::UNION); CHKERRQ(ierr);
+            ierr = mField.get_moab().get_adjacencies(ents,1,false,edges,moab::Interface::UNION); CHKERRQ(ierr);
             ents.insert(edges.begin(),edges.end());
           }
           if(dim>0) {

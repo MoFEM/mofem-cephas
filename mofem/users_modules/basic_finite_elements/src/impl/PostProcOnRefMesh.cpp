@@ -278,7 +278,7 @@ PetscErrorCode PostProcVolumeOnRefinedMesh::generateReferenceElementMesh() {
   };
 
   moab::Core core_ref;
-  Interface& moab_ref = core_ref;
+  moab::Interface& moab_ref = core_ref;
 
   EntityHandle nodes[4];
   for(int nn = 0;nn<4;nn++) {
@@ -288,7 +288,7 @@ PetscErrorCode PostProcVolumeOnRefinedMesh::generateReferenceElementMesh() {
   rval = moab_ref.create_element(MBTET,nodes,4,tet); CHKERRQ_MOAB(rval);
 
   MoFEM::Core m_core_ref(moab_ref,PETSC_COMM_SELF,MB_TAG_DENSE,-2);
-  FieldInterface& m_field_ref = m_core_ref;
+  MoFEM::Interface& m_field_ref = m_core_ref;
 
   ierr = m_field_ref.seed_ref_level_3D(0,BitRefLevel().set(0)); CHKERRQ(ierr);
 
@@ -802,7 +802,7 @@ PetscErrorCode PostProcFaceOnRefinedMesh::generateReferenceElementMesh() {
   mapGaussPts.resize(gaussPts.size2());
 
   moab::Core core_ref;
-  Interface& moab_ref = core_ref;
+  moab::Interface& moab_ref = core_ref;
   const EntityHandle *conn;
   int num_nodes;
   EntityHandle tri_conn[3];

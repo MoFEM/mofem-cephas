@@ -500,7 +500,7 @@ PetscErrorCode DefaultElementAdjacency::defaultEdge(
     case H1:
     //moab.get_connectivity(&fe_ent,1,nodes,true);
     //use get adjacencies, this will allow take in account adjacencies set user
-    rval = moab.get_adjacencies(&fe_ent,1,0,false,nodes,Interface::UNION); CHKERRQ_MOAB(rval);
+    rval = moab.get_adjacencies(&fe_ent,1,0,false,nodes,moab::Interface::UNION); CHKERRQ_MOAB(rval);
     {
       Range topo_nodes;
       rval = moab.get_connectivity(&fe_ent,1,topo_nodes,true); CHKERRQ_MOAB(rval);
@@ -540,7 +540,7 @@ PetscErrorCode DefaultElementAdjacency::defaultTri(
     case H1:
     //moab.get_connectivity(&fe_ent,1,nodes,true);
     //use get adjacencies, this will allow take in account adjacencies set user
-    rval = moab.get_adjacencies(&fe_ent,1,0,false,nodes,Interface::UNION); CHKERRQ_MOAB(rval);
+    rval = moab.get_adjacencies(&fe_ent,1,0,false,nodes,moab::Interface::UNION); CHKERRQ_MOAB(rval);
     {
       Range topo_nodes;
       rval = moab.get_connectivity(&fe_ent,1,topo_nodes,true); CHKERRQ_MOAB(rval);
@@ -594,7 +594,7 @@ PetscErrorCode DefaultElementAdjacency::defaultTet(
     case H1:
     //moab.get_connectivity(&fe_ent,1,nodes,true);
     //use get adjacencies, this will allow take in account adjacencies set user
-    rval = moab.get_adjacencies(&fe_ent,1,0,false,nodes,Interface::UNION); CHKERRQ_MOAB(rval);
+    rval = moab.get_adjacencies(&fe_ent,1,0,false,nodes,moab::Interface::UNION); CHKERRQ_MOAB(rval);
     {
       Range topo_nodes;
       rval = moab.get_connectivity(&fe_ent,1,topo_nodes,true); CHKERRQ_MOAB(rval);
@@ -722,7 +722,7 @@ PetscErrorCode DefaultElementAdjacency::defaultPrism(
     case H1:
     //moab.get_connectivity(&fe_ent,1,nodes,true);
     //use get adjacencies, this will allow take in account adjacencies set user
-    rval = moab.get_adjacencies(&fe_ent,1,0,false,nodes,Interface::UNION); CHKERRQ_MOAB(rval);
+    rval = moab.get_adjacencies(&fe_ent,1,0,false,nodes,moab::Interface::UNION); CHKERRQ_MOAB(rval);
     {
       Range topo_nodes;
       rval = moab.get_connectivity(&fe_ent,1,topo_nodes,true); CHKERRQ_MOAB(rval);
@@ -919,7 +919,7 @@ static PetscErrorCode get_fe_dof_view(
   PetscFunctionBegin;
   typename boost::multi_index::index<MOFEM_DOFS,Unique_mi_tag>::type::iterator mofem_it,mofem_it_end;
   DofEntity_multiIndex_uid_view::iterator it,it_end;
-  if(operation_type==Interface::UNION) {
+  if(operation_type==moab::Interface::UNION) {
     mofem_it = mofem_dofs.template get<Unique_mi_tag>().begin();
     mofem_it_end = mofem_dofs.template get<Unique_mi_tag>().end();
     it = fe_dofs_view.begin();

@@ -27,15 +27,15 @@
 struct ThermalStressElement {
 
   struct MyVolumeFE: public MoFEM::VolumeElementForcesAndSourcesCore {
-    MyVolumeFE(FieldInterface &m_field): MoFEM::VolumeElementForcesAndSourcesCore(m_field) {}
+    MyVolumeFE(MoFEM::Interface &m_field): MoFEM::VolumeElementForcesAndSourcesCore(m_field) {}
     int getRule(int order) { return 2*(order-1); };
   };
 
   MyVolumeFE feThermalStressRhs;
   MyVolumeFE& getLoopThermalStressRhs() { return feThermalStressRhs; }
 
-  FieldInterface &mField;
-  ThermalStressElement( FieldInterface &m_field):
+  MoFEM::Interface &mField;
+  ThermalStressElement( MoFEM::Interface &m_field):
   feThermalStressRhs(m_field),
   mField(m_field) {
 

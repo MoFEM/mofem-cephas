@@ -37,7 +37,7 @@
 
 #include <UnknownInterface.hpp>
 #include <LoopMethods.hpp>
-#include <FieldInterface.hpp>
+#include <Interface.hpp>
 #include <MeshRefinment.hpp>
 #include <PrismInterface.hpp>
 #include <SeriesRecorder.hpp>
@@ -55,7 +55,7 @@ const static bool debug = false;
 struct CreateRowComressedADJMatrix: public Core {
 
   CreateRowComressedADJMatrix(
-    Interface& moab,MPI_Comm _comm = PETSC_COMM_WORLD,TagType _tag_type = MB_TAG_SPARSE,int _verbose = 1
+    moab::Interface& moab,MPI_Comm _comm = PETSC_COMM_WORLD,TagType _tag_type = MB_TAG_SPARSE,int _verbose = 1
   ):
   Core(moab,_comm,_tag_type,_verbose) {};
 
@@ -147,7 +147,7 @@ PetscErrorCode CreateRowComressedADJMatrix::getEntityAdjacenies(
       ierr = adj_miit->entFePtr->getColDofView(
         *(p_miit->numered_dofs_cols),
         dofs_col_view,
-        Interface::UNION
+        moab::Interface::UNION
       ); CHKERRQ(ierr);
 
     }
@@ -803,7 +803,7 @@ PetscErrorCode Core::partition_check_matrix_fill_in(const std::string &problem_n
   if(verb==-1) verb = verbose;
 
   struct TestMatrixFillIn: public FEMethod {
-    FieldInterface *mFieldPtr;
+    Interface *mFieldPtr;
 
     Mat A;
     PetscErrorCode ierr;
@@ -811,7 +811,7 @@ PetscErrorCode Core::partition_check_matrix_fill_in(const std::string &problem_n
 
     int rowPrint,colPrint;
 
-    TestMatrixFillIn(FieldInterface *m_field_ptr,Mat a,int row_print,int col_print):
+    TestMatrixFillIn(Interface *m_field_ptr,Mat a,int row_print,int col_print):
       mFieldPtr(m_field_ptr),A(a),
       rowPrint(row_print),colPrint(col_print) {};
 

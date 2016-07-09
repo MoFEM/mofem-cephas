@@ -1,5 +1,5 @@
 /** \file Core.hpp
- * \brief Core FieldInterface class for user interface
+ * \brief Core Interface class for user interface
  *
  * Low level data structures not used directly by user
  *
@@ -22,7 +22,7 @@
 
 namespace MoFEM {
 
-/** \brief Core FieldInterface class
+/** \brief Core Interface class
  *  \ingroup mofem
 
   This class is not used directly by the user. For internal use only.   It is
@@ -33,15 +33,15 @@ namespace MoFEM {
   without interfering with users modules programmer work.
 
  */
-struct Core: public FieldInterface, MeshRefinment, PrismInterface, SeriesRecorder {
+struct Core: public Interface, MeshRefinment, PrismInterface, SeriesRecorder {
 
   PetscErrorCode queryInterface(const MOFEMuuid& uuid, UnknownInterface** iface);
   PetscErrorCode query_interface_type(const std::type_info& iface_type, void*& ptr);
 
-  Interface& moab;
+  moab::Interface& moab;
   MPI_Comm comm;
 
-  Core(Interface& _moab,MPI_Comm _comm = PETSC_COMM_WORLD,TagType _tag_type = MB_TAG_SPARSE,int _verbose = 1);
+  Core(moab::Interface& _moab,MPI_Comm _comm = PETSC_COMM_WORLD,TagType _tag_type = MB_TAG_SPARSE,int _verbose = 1);
   ~Core();
 
   Tag get_th_RefParentHandle() { return th_RefParentHandle; }
@@ -138,7 +138,7 @@ struct Core: public FieldInterface, MeshRefinment, PrismInterface, SeriesRecorde
   PetscErrorCode initialiseDatabseInformationFromMesh(int verb = -1);
 
   //moab interface
-  Interface& get_moab();
+  moab::Interface& get_moab();
 
   //communicator MoFEM
   MPI_Comm get_comm();
@@ -260,7 +260,7 @@ struct Core: public FieldInterface, MeshRefinment, PrismInterface, SeriesRecorde
     try {
       PetscErrorCode ierr;
       MoABErrorCode rval;
-      const FieldInterface& this_field = *this;
+      const Interface& this_field = *this;
       for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(this_field,type,it)) {
         ierr = it->get_bc_data_structure(data); CHKERRQ(ierr);
         std::ostringstream ss;
@@ -329,7 +329,7 @@ struct Core: public FieldInterface, MeshRefinment, PrismInterface, SeriesRecorde
     MoABErrorCode rval;
     PetscErrorCode ierr;
     PetscFunctionBegin;
-    const FieldInterface& thism_field = *this;
+    const Interface& thism_field = *this;
     for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(thism_field,BLOCKSET|MAT_ELASTICSET,it)) {
       Mat_Elastic data;
       ierr = it->get_attribute_data_structure(data); CHKERRQ(ierr);
@@ -771,7 +771,7 @@ struct Core: public FieldInterface, MeshRefinment, PrismInterface, SeriesRecorde
     const int num_netities,
     const int to_dimension,
     Range &adj_entities,
-    const int operation_type = Interface::INTERSECT,
+    const int operation_type = moab::Interface::INTERSECT,
     const int verb = 0
   ) const;
   PetscErrorCode get_adjacencies(
@@ -780,7 +780,7 @@ struct Core: public FieldInterface, MeshRefinment, PrismInterface, SeriesRecorde
     const int num_netities,
     const int to_dimension,
     Range &adj_entities,
-    const int operation_type = Interface::INTERSECT,
+    const int operation_type = moab::Interface::INTERSECT,
     const int verb = 0
   ) const;
 

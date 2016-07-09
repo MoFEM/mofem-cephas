@@ -43,7 +43,7 @@ struct Smoother {
 
     SmootherBlockData &smootherData;
 
-    MyVolumeFE(FieldInterface &m_field,SmootherBlockData &smoother_data):
+    MyVolumeFE(MoFEM::Interface &m_field,SmootherBlockData &smoother_data):
     NonlinearElasticElement::MyVolumeFE(m_field),
     smootherData(smoother_data) {}
 
@@ -128,7 +128,7 @@ struct Smoother {
   MyVolumeFE feLhs; //< calculate left hand side for tetrahedral elements
   MyVolumeFE& getLoopFeLhs() { return feLhs; } ///< get lhs volume element
 
-  Smoother(FieldInterface &m_field):
+  Smoother(MoFEM::Interface &m_field):
   feRhs(m_field,smootherData),
   feLhs(m_field,smootherData)
   {}

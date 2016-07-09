@@ -32,10 +32,10 @@
   */
 struct BodyFroceConstantField {
 
-  FieldInterface &mField;
+  MoFEM::Interface &mField;
 
   struct MyVolumeFE: public MoFEM::VolumeElementForcesAndSourcesCore {
-    MyVolumeFE(FieldInterface &m_field): MoFEM::VolumeElementForcesAndSourcesCore(m_field) {}
+    MyVolumeFE(MoFEM::Interface &m_field): MoFEM::VolumeElementForcesAndSourcesCore(m_field) {}
     int getRule(int order) { return order; };
   };
 
@@ -43,7 +43,7 @@ struct BodyFroceConstantField {
   MyVolumeFE& getLoopFe() { return fe; }
 
   BodyFroceConstantField(
-    FieldInterface &m_field):
+    MoFEM::Interface &m_field):
     mField(m_field),fe(m_field) {}
 
   struct OpBodyForce: public MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator {

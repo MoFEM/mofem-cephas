@@ -29,8 +29,8 @@ struct KspCtx {
   ErrorCode rval;
   PetscErrorCode ierr;
 
-  FieldInterface &mField;
-  Interface &moab;
+  MoFEM::Interface &mField;
+  moab::Interface &moab;
 
   std::string problemName;   ///< Problem name
 
@@ -48,15 +48,17 @@ struct KspCtx {
   PetscLogEvent USER_EVENT_KspRhs;
   PetscLogEvent USER_EVENT_KspMat;
 
-  KspCtx(FieldInterface &m_field,const std::string &_problem_name):
-    mField(m_field),moab(m_field.get_moab()),problemName(_problem_name) {
+  KspCtx(MoFEM::Interface &m_field,const std::string &_problem_name):
+    mField(m_field),
+    moab(m_field.get_moab()),
+    problemName(_problem_name) {
     PetscLogEventRegister("LoopKSPRhs",0,&USER_EVENT_KspRhs);
     PetscLogEventRegister("LoopKSPMat",0,&USER_EVENT_KspMat);
   }
   virtual ~KspCtx() {}
 
-  const FieldInterface& getm_field() const { return mField; }
-  const Interface& get_moab() const { return moab; }
+  const MoFEM::Interface& get_mField() const { return mField; }
+  const moab::Interface& get_moab() const { return moab; }
 
   loops_to_do_type& get_loops_to_do_Mat() { return loops_to_do_Mat; }
   loops_to_do_type& get_loops_to_do_Rhs() { return loops_to_do_Rhs; }

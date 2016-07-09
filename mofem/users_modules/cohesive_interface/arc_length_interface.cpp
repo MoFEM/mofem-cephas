@@ -61,9 +61,9 @@ static char help[] = "...\n\n";
 #define DATAFILENAME "load_disp.txt"
 
 struct ArcLengthElement: public ArcLengthIntElemFEMethod {
-  FieldInterface& mField;
+  Interface& mField;
   Range PostProcNodes;
-  ArcLengthElement(FieldInterface& m_field,ArcLengthCtx *arc_ptr):
+  ArcLengthElement(MoFEM::Interface& m_field,ArcLengthCtx *arc_ptr):
   ArcLengthIntElemFEMethod(m_field.get_moab(),arc_ptr),
   mField(m_field) {
 
@@ -110,12 +110,12 @@ struct ArcLengthElement: public ArcLengthIntElemFEMethod {
 
 struct AssembleRhsVectors: public FEMethod {
 
-  FieldInterface& mField;
+  Interface& mField;
   Vec &bodyForce;
   ArcLengthCtx *arcPtr;
 
   AssembleRhsVectors(
-    FieldInterface& m_field,Vec &body_force,ArcLengthCtx *arc_ptr
+    MoFEM::Interface& m_field,Vec &body_force,ArcLengthCtx *arc_ptr
   ):
   mField(m_field),
   bodyForce(body_force),
@@ -177,7 +177,7 @@ int main(int argc, char *argv[]) {
   PetscInitialize(&argc,&argv,(char *)0,help);
 
   moab::Core mb_instance;
-  Interface& moab = mb_instance;
+  moab::Interface& moab = mb_instance;
   int rank;
   MPI_Comm_rank(PETSC_COMM_WORLD,&rank);
 
@@ -247,7 +247,7 @@ int main(int argc, char *argv[]) {
 
   //Create MoFEM (Joseph) database
   MoFEM::Core core(moab);
-  FieldInterface& m_field = core;
+  MoFEM::Interface& m_field = core;
   PrismInterface& interface = core;
 
   Tag th_my_ref_level;
@@ -400,9 +400,9 @@ int main(int argc, char *argv[]) {
     Range prims;
     ierr = m_field.get_entities_by_type_and_ref_level(problem_bit_level,BitRefLevel().set(),MBPRISM,prims); CHKERRQ(ierr);
     Range prims_faces;
-    rval = m_field.get_moab().get_adjacencies(prims,2,false,prims_faces,Interface::UNION); CHKERRQ_MOAB(rval);
+    rval = m_field.get_moab().get_adjacencies(prims,2,false,prims_faces,moab::Interface::UNION); CHKERRQ_MOAB(rval);
     Range prims_faces_edges;
-    rval = m_field.get_moab().get_adjacencies(prims_faces,1,false,prims_faces_edges,Interface::UNION); CHKERRQ_MOAB(rval);
+    rval = m_field.get_moab().get_adjacencies(prims_faces,1,false,prims_faces_edges,moab::Interface::UNION); CHKERRQ_MOAB(rval);
     ierr = m_field.set_field_order(prims_faces,"DISPLACEMENT",order>1 ? order-1 : 0); CHKERRQ(ierr);
     ierr = m_field.set_field_order(prims_faces_edges,"DISPLACEMENT",order>1 ? order-1 : 0); CHKERRQ(ierr);*/
 
@@ -505,7 +505,7 @@ int main(int argc, char *argv[]) {
       Range tris;
       rval = moab.get_entities_by_type(meshset,MBTRI,tris,true); CHKERRQ_MOAB(rval);
       Range ents3d;
-      rval = moab.get_adjacencies(tris,3,false,ents3d,Interface::UNION); CHKERRQ_MOAB(rval);
+      rval = moab.get_adjacencies(tris,3,false,ents3d,moab::Interface::UNION); CHKERRQ_MOAB(rval);
       interface_materials.back().pRisms = ents3d.subset_by_type(MBPRISM);
 
     }

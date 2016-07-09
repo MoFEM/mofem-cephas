@@ -56,7 +56,7 @@ int main(int argc, char *argv[]) {
   PetscInitialize(&argc,&argv,(char *)0,help);
 
   moab::Core mb_instance;
-  Interface& moab = mb_instance;
+  moab::Interface& moab = mb_instance;
   int rank;
   MPI_Comm_rank(PETSC_COMM_WORLD,&rank);
 
@@ -69,7 +69,7 @@ int main(int argc, char *argv[]) {
 
   //Create MoFEM (Joseph) database
   MoFEM::Core core(moab);
-  FieldInterface& m_field = core;
+  MoFEM::Interface& m_field = core;
 
   ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
   if(pcomm == NULL) pcomm =  new ParallelComm(&moab,PETSC_COMM_WORLD);
@@ -208,7 +208,7 @@ int main(int argc, char *argv[]) {
   Range tets;
   rval = moab.get_entities_by_type(fe_meshset,MBTET,tets,true); CHKERRQ_MOAB(rval);
   Range tets_edges;
-  rval = moab.get_adjacencies(tets,1,false,tets_edges,Interface::UNION); CHKERR_MOAB(rval);
+  rval = moab.get_adjacencies(tets,1,false,tets_edges,moab::Interface::UNION); CHKERR_MOAB(rval);
   EntityHandle edges_meshset;
   rval = moab.create_meshset(MESHSET_SET,edges_meshset); CHKERRQ_MOAB(rval);
   rval = moab.add_entities(edges_meshset,tets); CHKERRQ_MOAB(rval);

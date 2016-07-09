@@ -45,7 +45,7 @@ int main(int argc, char *argv[]) {
   PetscInitialize(&argc,&argv,(char *)0,help);
 
   moab::Core mb_instance;
-  Interface& moab = mb_instance;
+  moab::Interface& moab = mb_instance;
   int rank;
   MPI_Comm_rank(PETSC_COMM_WORLD,&rank);
 
@@ -67,7 +67,7 @@ int main(int argc, char *argv[]) {
 
   //Create MoFEM (Joseph) database
   MoFEM::Core core(moab);
-  FieldInterface& m_field = core;
+  MoFEM::Interface& m_field = core;
 
   //set entitities bit level
   BitRefLevel bit_level0;
@@ -119,7 +119,7 @@ int main(int argc, char *argv[]) {
     */
   struct MyUltraWeakFE: public UltraWeakTransportElement {
 
-    MyUltraWeakFE(FieldInterface &m_field): UltraWeakTransportElement(m_field) {};
+    MyUltraWeakFE(MoFEM::Interface &m_field): UltraWeakTransportElement(m_field) {};
 
     PetscErrorCode getFlux(EntityHandle ent,const double x,const double y,const double z,double &flux) {
       PetscFunctionBegin;

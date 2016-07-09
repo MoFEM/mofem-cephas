@@ -45,7 +45,7 @@ struct VertexElementForcesAndSourcesCore: public ForcesAndSurcesCore {
   DataForcesAndSurcesCore dataNoField,dataNoFieldCol;
   std::string meshPositionsFieldName;
 
-  VertexElementForcesAndSourcesCore(FieldInterface &m_field):
+  VertexElementForcesAndSourcesCore(Interface &m_field):
     ForcesAndSurcesCore(m_field),
     data(MBVERTEX),
     derivedData(data),

@@ -39,7 +39,7 @@
 #include <SeriesMultiIndices.hpp>
 
 #include <LoopMethods.hpp>
-#include <FieldInterface.hpp>
+#include <Interface.hpp>
 #include <MeshRefinment.hpp>
 #include <PrismInterface.hpp>
 #include <SeriesRecorder.hpp>
@@ -67,7 +67,7 @@ PetscErrorCode PrismsFromSurfaceInterface::queryInterface(const MOFEMuuid& uuid,
 PetscErrorCode PrismsFromSurfaceInterface::createPrisms(const Range &ents,Range &prisms,int verb) {
   PetscFunctionBegin;
   MoABErrorCode rval;
-  FieldInterface& m_field = cOre;
+  MoFEM::Interface& m_field = cOre;
   Range tris = ents.subset_by_type(MBTRI);
   for(Range::iterator tit = tris.begin();tit!=tris.end();tit++) {
     const EntityHandle* conn;
@@ -91,9 +91,9 @@ PetscErrorCode PrismsFromSurfaceInterface::createPrisms(const Range &ents,Range 
     EntityHandle prism;
     rval = m_field.get_moab().create_element(MBPRISM,prism_nodes,6,prism); CHKERRQ(rval);
     Range edges;
-    rval = m_field.get_moab().get_adjacencies(&prism,1,1,true,edges,Interface::UNION); CHKERRQ_MOAB(rval);
+    rval = m_field.get_moab().get_adjacencies(&prism,1,1,true,edges,moab::Interface::UNION); CHKERRQ_MOAB(rval);
     Range faces;
-    rval = m_field.get_moab().get_adjacencies(&prism,1,2,true,faces,Interface::UNION); CHKERRQ_MOAB(rval);
+    rval = m_field.get_moab().get_adjacencies(&prism,1,2,true,faces,moab::Interface::UNION); CHKERRQ_MOAB(rval);
     prisms.insert(prism);
     for(int ee = 0;ee<=2;ee++) {
       EntityHandle e1;
@@ -135,7 +135,7 @@ PetscErrorCode PrismsFromSurfaceInterface::seedPrismsEntities(Range &prisms,cons
   PetscFunctionBegin;
   PetscErrorCode ierr;
   MoABErrorCode rval;
-  FieldInterface& m_field = cOre;
+  MoFEM::Interface& m_field = cOre;
   const RefEntity_multiIndex *const_refined_entities_ptr;
   ierr = m_field.get_ref_ents(&const_refined_entities_ptr); CHKERRQ(ierr);
   MPI_Comm comm = m_field.get_comm();
@@ -145,7 +145,7 @@ PetscErrorCode PrismsFromSurfaceInterface::seedPrismsEntities(Range &prisms,cons
     int dim = m_field.get_moab().dimension_from_handle(prisms[0]);
     for(int dd = 0;dd<=dim;dd++) {
       Range ents;
-      rval = m_field.get_moab().get_adjacencies(prisms,dd,true,ents,Interface::UNION); CHKERRQ_MOAB(rval);
+      rval = m_field.get_moab().get_adjacencies(prisms,dd,true,ents,moab::Interface::UNION); CHKERRQ_MOAB(rval);
       Range::iterator eit = ents.begin();
       for(;eit!=ents.end();eit++) {
         std::pair<RefEntity_multiIndex::iterator,bool> p_ent = refined_entities_ptr->insert(
@@ -170,7 +170,7 @@ PetscErrorCode PrismsFromSurfaceInterface::createPrismsFromPrisms(const Range &p
   PetscErrorCode ierr;
   MoABErrorCode rval;
   PetscFunctionBegin;
-  FieldInterface& m_field = cOre;
+  MoFEM::Interface& m_field = cOre;
   Range tris;
   for(Range::iterator pit = prisms.begin();pit!=prisms.end();pit++) {
     EntityHandle face;
@@ -188,7 +188,7 @@ PetscErrorCode PrismsFromSurfaceInterface::createPrismsFromPrisms(const Range &p
 PetscErrorCode PrismsFromSurfaceInterface::setThickness(const Range &prisms,const double director3[],const double director4[]) {
   MoABErrorCode rval;
   PetscFunctionBegin;
-  FieldInterface& m_field = cOre;
+  MoFEM::Interface& m_field = cOre;
   Range nodes_f3,nodes_f4;
   for(Range::iterator pit = prisms.begin();pit!=prisms.end();pit++) {
     for(int ff = 3;ff<=4;ff++) {

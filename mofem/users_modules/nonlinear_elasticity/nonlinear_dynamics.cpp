@@ -65,7 +65,7 @@ static char help[] = "...\n\n";
 
 struct MonitorPostProc: public FEMethod {
 
-  FieldInterface &mField;
+  MoFEM::Interface &mField;
   PostProcVolumeOnRefinedMesh postProc;
   std::map<int, NonlinearElasticElement::BlockData> &setOfBlocks;
   NonlinearElasticElement::MyVolumeFE &feElasticEnergy;   ///< calculate elastic energy
@@ -77,7 +77,7 @@ struct MonitorPostProc: public FEMethod {
   int *step;
 
   MonitorPostProc(
-    FieldInterface &m_field,
+    MoFEM::Interface &m_field,
     std::map<int,NonlinearElasticElement::BlockData> &set_of_blocks,
     NonlinearElasticElement::MyVolumeFE &fe_elastic_energy,
     ConvectiveMassElement::MyVolumeFE &fe_kinetic_energy
@@ -173,10 +173,10 @@ struct MonitorRestart: public FEMethod {
 
   double *time;
   int *step;
-  FieldInterface &mField;
+  MoFEM::Interface &mField;
   int pRT;
 
-  MonitorRestart(FieldInterface &m_field,TS ts): mField(m_field) {
+  MonitorRestart(MoFEM::Interface &m_field,TS ts): mField(m_field) {
 
     PetscErrorCode ierr;
     ErrorCode rval;
@@ -248,7 +248,7 @@ int main(int argc, char *argv[]) {
   PetscInitialize(&argc, &argv, (char *)0, help);
 
   moab::Core mb_instance;
-  Interface& moab = mb_instance;
+  moab::Interface& moab = mb_instance;
   ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
   if (pcomm == NULL) pcomm = new ParallelComm(&moab, PETSC_COMM_WORLD);
 
@@ -284,7 +284,7 @@ int main(int argc, char *argv[]) {
   }
 
   MoFEM::Core core(moab);
-  FieldInterface& m_field = core;
+  MoFEM::Interface& m_field = core;
 
   //ref meshset ref level 0
   ierr = m_field.seed_ref_level_3D(0, 0); CHKERRQ(ierr);

@@ -533,123 +533,123 @@ interface_RefElement<RefElement> {
 
   PetscErrorCode getRowDofView(
     const DofEntity_multiIndex &dofs,DofEntity_multiIndex_active_view &dofs_view,
-    const int operation_type = Interface::UNION
+    const int operation_type = moab::Interface::UNION
   ) const;
 
   /** \deprecated Use getRowDofView() instead
   */
   DEPRECATED inline PetscErrorCode get_MoFEMFiniteElement_row_dof_view(
   const DofEntity_multiIndex &dofs,DofEntity_multiIndex_active_view &dofs_view,
-  const int operation_type = Interface::UNION) const {
+  const int operation_type = moab::Interface::UNION) const {
     return getRowDofView(dofs,dofs_view,operation_type);
   }
 
   PetscErrorCode getColDofView(
   const DofEntity_multiIndex &dofs,DofEntity_multiIndex_active_view &dofs_view,
-  const int operation_type = Interface::UNION
+  const int operation_type = moab::Interface::UNION
 ) const;
 
   /** \deprecated Use getColDofView() instead
   */
   DEPRECATED inline PetscErrorCode get_MoFEMFiniteElement_col_dof_view(
   const DofEntity_multiIndex &dofs,DofEntity_multiIndex_active_view &dofs_view,
-  const int operation_type = Interface::UNION) const {
+  const int operation_type = moab::Interface::UNION) const {
     return getColDofView(dofs,dofs_view,operation_type);
   }
 
   PetscErrorCode getDataDofView(
     const DofEntity_multiIndex &dofs,DofEntity_multiIndex_active_view &dofs_view,
-    const int operation_type = Interface::UNION
+    const int operation_type = moab::Interface::UNION
   ) const;
 
   /** \deprecated Use getDataDofView() instead
   */
   DEPRECATED inline PetscErrorCode get_MoFEMFiniteElement_data_dof_view(
     const DofEntity_multiIndex &dofs,DofEntity_multiIndex_active_view &dofs_view,
-    const int operation_type = Interface::UNION
+    const int operation_type = moab::Interface::UNION
   ) const {
     return getDataDofView(dofs,dofs_view,operation_type);
   }
 
   PetscErrorCode getRowDofView(
     const DofEntity_multiIndex &dofs,DofEntity_multiIndex_uid_view &dofs_view,
-    const int operation_type = Interface::UNION
+    const int operation_type = moab::Interface::UNION
   ) const;
 
   /** \deprecated Use getRowDofView() instead
   */
   DEPRECATED inline PetscErrorCode get_MoFEMFiniteElement_row_dof_view(
     const DofEntity_multiIndex &dofs,DofEntity_multiIndex_uid_view &dofs_view,
-    const int operation_type = Interface::UNION
+    const int operation_type = moab::Interface::UNION
   ) const {
     return getRowDofView(dofs,dofs_view,operation_type);
   }
 
   PetscErrorCode getColDofView(
     const DofEntity_multiIndex &dofs,DofEntity_multiIndex_uid_view &dofs_view,
-    const int operation_type = Interface::UNION
+    const int operation_type = moab::Interface::UNION
   ) const;
 
   /** \deprecated Use getColDofView() instead
   */
   DEPRECATED inline PetscErrorCode get_MoFEMFiniteElement_col_dof_view(
     const DofEntity_multiIndex &dofs,DofEntity_multiIndex_uid_view &dofs_view,
-    const int operation_type = Interface::UNION
+    const int operation_type = moab::Interface::UNION
   ) const {
     return getColDofView(dofs,dofs_view,operation_type);
   };
 
   PetscErrorCode getRowDofView(
     const NumeredDofEntity_multiIndex &dofs,NumeredDofEntity_multiIndex_uid_view_ordered &dofs_view,
-    const int operation_type = Interface::UNION
+    const int operation_type = moab::Interface::UNION
   ) const;
 
   /** \deprecated Use getRowDofView() instead
   */
   DEPRECATED inline PetscErrorCode get_MoFEMFiniteElement_row_dof_view(
     const NumeredDofEntity_multiIndex &dofs,NumeredDofEntity_multiIndex_uid_view_ordered &dofs_view,
-    const int operation_type = Interface::UNION
+    const int operation_type = moab::Interface::UNION
   ) const {
     return getRowDofView(dofs,dofs_view,operation_type);
   }
 
   PetscErrorCode getColDofView(
     const NumeredDofEntity_multiIndex &dofs,NumeredDofEntity_multiIndex_uid_view_ordered &dofs_view,
-    const int operation_type = Interface::UNION) const;
+    const int operation_type = moab::Interface::UNION) const;
 
   /** \deprecated Use getColDofView() instead
   */
   DEPRECATED inline PetscErrorCode get_MoFEMFiniteElement_col_dof_view(
     const NumeredDofEntity_multiIndex &dofs,NumeredDofEntity_multiIndex_uid_view_ordered &dofs_view,
-    const int operation_type = Interface::UNION
+    const int operation_type = moab::Interface::UNION
   ) const {
     return getColDofView(dofs,dofs_view,operation_type);
   }
 
   PetscErrorCode getRowDofView(
     const NumeredDofEntity_multiIndex &dofs,NumeredDofEntity_multiIndex_uid_view_hashed &dofs_view,
-    const int operation_type = Interface::UNION
+    const int operation_type = moab::Interface::UNION
   ) const;
 
   /** \deprecated Use getRowDofView() instead
   */
   DEPRECATED inline PetscErrorCode get_MoFEMFiniteElement_row_dof_view(
     const NumeredDofEntity_multiIndex &dofs,NumeredDofEntity_multiIndex_uid_view_hashed &dofs_view,
-    const int operation_type = Interface::UNION
+    const int operation_type = moab::Interface::UNION
   ) const {
     return getRowDofView(dofs,dofs_view,operation_type);
   }
 
   PetscErrorCode getColDofView(
     const NumeredDofEntity_multiIndex &dofs,NumeredDofEntity_multiIndex_uid_view_hashed &dofs_view,
-    const int operation_type = Interface::UNION
+    const int operation_type = moab::Interface::UNION
   ) const;
 
   /** \deprecated Use getRowDofView() instead
   */
   DEPRECATED inline PetscErrorCode get_MoFEMFiniteElement_col_dof_view(
     const NumeredDofEntity_multiIndex &dofs,NumeredDofEntity_multiIndex_uid_view_hashed &dofs_view,
-    const int operation_type = Interface::UNION
+    const int operation_type = moab::Interface::UNION
   ) const {
     return getColDofView(dofs,dofs_view,operation_type);
   }

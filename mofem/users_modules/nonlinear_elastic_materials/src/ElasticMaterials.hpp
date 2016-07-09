@@ -32,13 +32,13 @@
   */
 struct ElasticMaterials {
 
-  FieldInterface &mField;
+  MoFEM::Interface &mField;
   string defMaterial;
   string configFile;
 
   bool iNitialized;
 
-  ElasticMaterials(FieldInterface &m_field):
+  ElasticMaterials(MoFEM::Interface &m_field):
     mField(m_field),defMaterial(MAT_KIRCHOFF),
     configFile("elastic_material.in"),
     iNitialized(false) {}
@@ -243,10 +243,10 @@ struct ElasticMaterials {
       Range block_ents;
       rval = mField.get_moab().get_entities_by_handle(it->meshset,block_ents,true); CHKERR_MOAB(rval);
       Range ents_to_set_order;
-      ierr = mField.get_moab().get_adjacencies(block_ents,3,false,ents_to_set_order,Interface::UNION); CHKERRQ(ierr);
+      ierr = mField.get_moab().get_adjacencies(block_ents,3,false,ents_to_set_order,moab::Interface::UNION); CHKERRQ(ierr);
       ents_to_set_order = ents_to_set_order.subset_by_type(MBTET);
-      ierr = mField.get_moab().get_adjacencies(block_ents,2,false,ents_to_set_order,Interface::UNION); CHKERRQ(ierr);
-      ierr = mField.get_moab().get_adjacencies(block_ents,1,false,ents_to_set_order,Interface::UNION); CHKERRQ(ierr);
+      ierr = mField.get_moab().get_adjacencies(block_ents,2,false,ents_to_set_order,moab::Interface::UNION); CHKERRQ(ierr);
+      ierr = mField.get_moab().get_adjacencies(block_ents,1,false,ents_to_set_order,moab::Interface::UNION); CHKERRQ(ierr);
       if(mField.check_field("DISPLACEMENT")) {
         ierr = mField.set_field_order(ents_to_set_order,"DISPLACEMENT",blockData[it->get_msId()].oRder); CHKERRQ(ierr);
       }

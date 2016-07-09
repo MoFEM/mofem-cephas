@@ -20,7 +20,7 @@ set(MOFEM_INTERFACES_SRC
   impl/Vectors.cpp
   impl/FieldBlas.cpp
   impl/GetAdjacancies.cpp
-  impl/FieldInterfaceCore.cpp
+  impl/FieldCore.cpp
   impl/ProblemsCore.cpp
   impl/MeshRefinmentCore.cpp
   impl/PrismInterfaceCore.cpp

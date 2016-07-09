@@ -33,10 +33,10 @@
 */
 struct FluidPressure {
 
-  FieldInterface &mField;
+  MoFEM::Interface &mField;
   struct MyTriangleFE: public MoFEM::FaceElementForcesAndSourcesCore {
 
-    MyTriangleFE(FieldInterface &m_field):
+    MyTriangleFE(MoFEM::Interface &m_field):
     MoFEM::FaceElementForcesAndSourcesCore(m_field) {
     }
     int getRule(int order) { return order+1; };
@@ -50,7 +50,7 @@ struct FluidPressure {
   MyTriangleFE fe;
   MyTriangleFE& getLoopFe() { return fe; }
 
-  FluidPressure(FieldInterface &m_field): mField(m_field),fe(mField) {}
+  FluidPressure(MoFEM::Interface &m_field): mField(m_field),fe(mField) {}
 
   typedef int MeshSetId;
   struct FluidData {

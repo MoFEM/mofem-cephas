@@ -57,10 +57,10 @@ int main(int argc, char *argv[]) {
 
   //read mesh and create moab and mofem datastrutures
   moab::Core mb_instance;
-  Interface& moab = mb_instance;
+  moab::Interface& moab = mb_instance;
   rval = moab.load_file(mesh_file_name, 0, option); CHKERRQ_MOAB(rval);
   MoFEM::Core core(moab);
-  FieldInterface& m_field = core;
+  MoFEM::Interface& m_field = core;
 
   EntityHandle root_set = moab.get_root_set();
   //add all entities to database, all of them will be used

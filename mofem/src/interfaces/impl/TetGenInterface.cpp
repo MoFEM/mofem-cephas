@@ -50,7 +50,7 @@
 #include <SeriesMultiIndices.hpp>
 
 #include <LoopMethods.hpp>
-#include <FieldInterface.hpp>
+#include <Interface.hpp>
 #include <MeshRefinment.hpp>
 #include <PrismInterface.hpp>
 #include <SeriesRecorder.hpp>
@@ -84,7 +84,7 @@ PetscErrorCode TetGenInterface::inData(
     std::map<unsigned long,EntityHandle>& tetgen_moab_map) {
   PetscFunctionBegin;
 
-  FieldInterface& m_field = cOre;
+  MoFEM::Interface& m_field = cOre;
   Range::iterator it;
 
   //PetscErrorCode ierr;
@@ -203,7 +203,7 @@ PetscErrorCode TetGenInterface::setGeomData(
     std::map<int,Range> &type_ents) {
   PetscFunctionBegin;
 
-  FieldInterface& m_field = cOre;
+  MoFEM::Interface& m_field = cOre;
   //PetscErrorCode ierr;
   //ErrorCode rval;
 
@@ -236,7 +236,7 @@ PetscErrorCode TetGenInterface::outData(
   Range *ents,bool id_in_tags,bool error_if_created) {
   PetscFunctionBegin;
 
-  FieldInterface& m_field = cOre;
+  MoFEM::Interface& m_field = cOre;
 
   //PetscErrorCode ierr;
   ErrorCode rval;
@@ -333,7 +333,7 @@ PetscErrorCode TetGenInterface::outData(
   Range ents;
   ierr = outData(in,out,moab_tetgen_map,tetgen_moab_map,&ents,id_in_tags,error_if_created); CHKERRQ(ierr);
   //std::cerr << ents.size() << std::endl;
-  FieldInterface& m_field = cOre;
+  MoFEM::Interface& m_field = cOre;
   ierr = m_field.seed_ref_level(ents.subset_by_type(MBTET),bit); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
@@ -344,7 +344,7 @@ PetscErrorCode TetGenInterface::setFaceData(
   std::map<unsigned long,EntityHandle>& tetgen_moab_map) {
   PetscFunctionBegin;
   ErrorCode rval;
-  FieldInterface& m_field = cOre;
+  MoFEM::Interface& m_field = cOre;
   in.numberoffacets = markers.size();
   in.facetlist = new tetgenio::facet[in.numberoffacets];
   in.facetmarkerlist = new int[in.numberoffacets];
@@ -397,7 +397,7 @@ PetscErrorCode TetGenInterface::getTriangleMarkers(
   Range *ents,idxRange_Map *ents_map,bool only_non_zero) {
   PetscFunctionBegin;
   ErrorCode rval;
-  FieldInterface& m_field = cOre;
+  MoFEM::Interface& m_field = cOre;
   Tag th_marker;
   int def_marker = 0;
   rval = m_field.get_moab().tag_get_handle(
@@ -433,7 +433,7 @@ PetscErrorCode TetGenInterface::getTriangleMarkers(
 PetscErrorCode TetGenInterface::setReginData(std::vector<std::pair<EntityHandle,int> >& regions,tetgenio& in) {
   PetscFunctionBegin;
   ErrorCode rval;
-  FieldInterface& m_field = cOre;
+  MoFEM::Interface& m_field = cOre;
   in.numberofregions = regions.size();
   in.regionlist = new double[5*in.numberofregions];
   int kk = 0;
@@ -472,7 +472,7 @@ PetscErrorCode TetGenInterface::getReginData(
   Range *ents,idxRange_Map *ents_map) {
   PetscFunctionBegin;
   ErrorCode rval;
-  FieldInterface& m_field = cOre;
+  MoFEM::Interface& m_field = cOre;
   int nbattributes = out.numberoftetrahedronattributes;
   if(nbattributes==0) {
     SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,
@@ -551,7 +551,7 @@ PetscErrorCode TetGenInterface::checkPlanar_Trinagle(double coords[],bool *resul
 PetscErrorCode TetGenInterface::groupPlanar_Triangle(Range &tris,std::vector<Range> &sorted,const double eps) {
   PetscFunctionBegin;
 
-  FieldInterface& m_field = cOre;
+  MoFEM::Interface& m_field = cOre;
 
   PetscErrorCode ierr;
   ErrorCode rval;
@@ -577,7 +577,7 @@ PetscErrorCode TetGenInterface::groupPlanar_Triangle(Range &tris,std::vector<Ran
       //get tris adjacent to vit skin edges
       Range skin_edges_tris;
       rval = m_field.get_moab().get_adjacencies(
-        skin_edges,2,false,skin_edges_tris,Interface::UNION); CHKERRQ_MOAB(rval);
+        skin_edges,2,false,skin_edges_tris,moab::Interface::UNION); CHKERRQ_MOAB(rval);
       //get tris which are part of facet
       Range inner_tris = intersect(skin_edges_tris,*vit);
       Range outer_tris = intersect(skin_edges_tris,tris);
@@ -597,14 +597,14 @@ PetscErrorCode TetGenInterface::groupPlanar_Triangle(Range &tris,std::vector<Ran
 	} else {
 	  Range tit_edges;
 	  rval = m_field.get_moab().get_adjacencies(
-	    &*tit,1,1,false,tit_edges,Interface::UNION); CHKERRQ_MOAB(rval);
+	    &*tit,1,1,false,tit_edges,moab::Interface::UNION); CHKERRQ_MOAB(rval);
 	  tit_edges = intersect(tit_edges,skin_edges);
 	  if(tit_edges.size()!=1) {
 	    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
 	  }
 	  Range inner_tri;
  	  rval = m_field.get_moab().get_adjacencies(
-	    tit_edges,2,false,inner_tri,Interface::UNION); CHKERRQ_MOAB(rval);
+	    tit_edges,2,false,inner_tri,moab::Interface::UNION); CHKERRQ_MOAB(rval);
 	  inner_tri = intersect(inner_tri,inner_tris);
 	  if(inner_tri.size()!=1) {
 	    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
@@ -696,7 +696,7 @@ PetscErrorCode TetGenInterface::makePolygonFacet(Range &ents,Range &polygons,
     SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"no ents to build polygon");
   }
 
-  FieldInterface& m_field = cOre;
+  MoFEM::Interface& m_field = cOre;
 
   //PetscErrorCode ierr;
   ErrorCode rval;

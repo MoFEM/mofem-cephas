@@ -1,4 +1,4 @@
- /** \file FieldInterface.hpp
+ /** \file Interface.hpp
  * \brief MoFEM interface
  */
 
@@ -12,8 +12,8 @@
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 */
 
-#ifndef __FIELDINTERFACE_HPP__
-#define __FIELDINTERFACE_HPP__
+#ifndef __Interface_HPP__
+#define __Interface_HPP__
 
 #include "UnknownInterface.hpp"
 
@@ -21,10 +21,10 @@
   */
 namespace MoFEM {
 
-static const MOFEMuuid IDD_MOFEMFieldInterface = MOFEMuuid( BitIntefaceId(FIELD_INTERFACE) );
+static const MOFEMuuid IDD_MOFEMInterface = MOFEMuuid( BitIntefaceId(FIELD_INTERFACE) );
 
 /**
- * \brief FieldInterface
+ * \brief Interface
  * \ingroup mofem
  *
  * This interface is used by user to: <br>
@@ -32,7 +32,7 @@ static const MOFEMuuid IDD_MOFEMFieldInterface = MOFEMuuid( BitIntefaceId(FIELD_
  *  (*) define elements, <br>
  *  (*) define problems, <br>
  */
-struct FieldInterface: public UnknownInterface {
+struct Interface: public UnknownInterface {
 
   virtual PetscErrorCode query_interface_type(const std::type_info& type, void*& ptr) = 0;
 
@@ -47,7 +47,7 @@ struct FieldInterface: public UnknownInterface {
   }
 
   /// get moab interface
-  virtual Interface& get_moab() = 0;
+  virtual moab::Interface& get_moab() = 0;
 
   /**
    * \brief Get pointer to basic entity data.
@@ -530,7 +530,7 @@ struct FieldInterface: public UnknownInterface {
     const int num_netities,
     const int to_dimension,
     Range &adj_entities,
-    const int operation_type = Interface::INTERSECT,
+    const int operation_type = moab::Interface::INTERSECT,
     const int verb = 0
   ) const = 0;
 
@@ -545,7 +545,7 @@ struct FieldInterface: public UnknownInterface {
     const int num_netities,
     const int to_dimension,
     Range &adj_entities,
-    const int operation_type = Interface::INTERSECT,
+    const int operation_type = moab::Interface::INTERSECT,
     const int verb = 0
   ) const = 0;
 
@@ -2016,7 +2016,7 @@ struct FieldInterface: public UnknownInterface {
    * This function is like swiss knife, is can be used to post-processing or matrix
    * and vectors assembly. It makes loop over given finite element for given
    * problem. The particular methods executed on each element are given by
-   * class derived form FieldInterface::FEMethod. At beginning of each loop user defined
+   * class derived form Interface::FEMethod. At beginning of each loop user defined
    * function (method)  preProcess() is called, for each element operator() is
    * executed, at the end loop finalizes with user defined function (method)
    * postProcess().
@@ -2026,7 +2026,7 @@ struct FieldInterface: public UnknownInterface {
    * For more details pleas look to examples.
    *
    * \param problem_name fe_name \param method is class derived form
-   * FieldInterface::FEMethod
+   * Interface::FEMethod
   **/
   virtual PetscErrorCode loop_finite_elements(const std::string &problem_name,const std::string &fe_name,FEMethod &method,int verb = -1) = 0;
 
@@ -2036,7 +2036,7 @@ struct FieldInterface: public UnknownInterface {
    * This function is like swiss knife, is can be used to post-processing or matrix
    * and vectors assembly. It makes loop over given finite element for given
    * problem. The particular methods executed on each element are given by
-   * class derived form FieldInterface::FEMethod. At beginning of each loop user defined
+   * class derived form Interface::FEMethod. At beginning of each loop user defined
    * function (method)  preProcess() is called, for each element operator() is
    * executed, at the end loop finalizes with user defined function (method)
    * postProcess().
@@ -2046,7 +2046,7 @@ struct FieldInterface: public UnknownInterface {
    * \param pointer to problem data structure
    * \param method is class derived form
    *
-   * FieldInterface::FEMethod
+   * Interface::FEMethod
   **/
   virtual PetscErrorCode loop_finite_elements(const MoFEMProblem *problem_ptr,const std::string &fe_name,FEMethod &method,int lower_rank,int upper_rank,int verb = -1) = 0;
 
@@ -2056,7 +2056,7 @@ struct FieldInterface: public UnknownInterface {
    * This function is like swiss knife, is can be used to post-processing or matrix
    * and vectors assembly. It makes loop over given finite element for given
    * problem. The particular methods executed on each element are given by
-   * class derived form FieldInterface::FEMethod. At beginning of each loop user defined
+   * class derived form Interface::FEMethod. At beginning of each loop user defined
    * function (method)  preProcess() is called, for each element operator() is
    * executed, at the end loop finalizes with user defined function (method)
    * postProcess().
@@ -2064,7 +2064,7 @@ struct FieldInterface: public UnknownInterface {
    * For more details please look to examples.
    *
    * \param problem_name fe_name \param method is class derived form
-   * FieldInterface::FEMethod
+   * Interface::FEMethod
   **/
   virtual PetscErrorCode loop_finite_elements(const std::string &problem_name,const std::string &fe_name,FEMethod &method,int lower_rank,int upper_rank,int verb = -1) = 0;
 
@@ -2332,9 +2332,11 @@ struct FieldInterface: public UnknownInterface {
 
 };
 
+DEPRECATED typedef Interface FieldInterface;
+
 }
 
-#endif // __FIELDINTERFACE_HPP__
+#endif // __Interface_HPP__
 
 /***************************************************************************//**
  * \defgroup mofem_bc Boundary conditions

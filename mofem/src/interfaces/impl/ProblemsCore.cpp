@@ -1,4 +1,4 @@
-/** \file FieldInterfaceCore.cpp
+/** \file InterfaceCore.cpp
  * \brief Mylti-index containers, data structures and other low-level functions
  */
 
@@ -40,7 +40,7 @@
 #include <SeriesMultiIndices.hpp>
 
 #include <LoopMethods.hpp>
-#include <FieldInterface.hpp>
+#include <Interface.hpp>
 #include <MeshRefinment.hpp>
 #include <PrismInterface.hpp>
 #include <SeriesRecorder.hpp>
@@ -626,7 +626,7 @@ PetscErrorCode Core::partition_mesh(Range &ents,int dim,int adj_dim,int n_parts,
       }
       Range tagged_sets;
       rval = moab.get_entities_by_type_and_tag(
-        0,MBENTITYSET,&part_tag,NULL,1,tagged_sets,Interface::UNION
+        0,MBENTITYSET,&part_tag,NULL,1,tagged_sets,moab::Interface::UNION
       ); CHKERRQ_MOAB(rval);
       if(!tagged_sets.empty()) {
         rval = moab.tag_delete_data(part_tag,tagged_sets); CHKERRQ_MOAB(rval);
@@ -666,7 +666,7 @@ PetscErrorCode Core::partition_mesh(Range &ents,int dim,int adj_dim,int n_parts,
           Range adj_ents;
           if(dim > 0 ) {
             rval = moab.get_adjacencies(
-              dim_ents,dd,false,adj_ents,Interface::UNION
+              dim_ents,dd,false,adj_ents,moab::Interface::UNION
             ); CHKERRQ_MOAB(rval);
           } else {
             rval = moab.get_connectivity(dim_ents,adj_ents,true); CHKERRQ_MOAB(rval);

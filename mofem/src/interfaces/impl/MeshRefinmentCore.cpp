@@ -39,7 +39,7 @@
 #include <SeriesMultiIndices.hpp>
 
 #include <LoopMethods.hpp>
-#include <FieldInterface.hpp>
+#include <Interface.hpp>
 #include <MeshRefinment.hpp>
 #include <PrismInterface.hpp>
 #include <SeriesRecorder.hpp>
@@ -71,7 +71,7 @@ PetscErrorCode Core::add_verices_in_the_middel_of_edges(const EntityHandle meshs
   if(edges.empty()) {
     Range tets;
     rval = moab.get_entities_by_type(meshset,MBTET,tets,recursive); CHKERRQ_MOAB(rval);
-    rval = moab.get_adjacencies(tets,1,true,edges,Interface::UNION); CHKERRQ_MOAB(rval);
+    rval = moab.get_adjacencies(tets,1,true,edges,moab::Interface::UNION); CHKERRQ_MOAB(rval);
     if(tets.empty()) {
       Range prisms;
       rval = moab.get_entities_by_type(meshset,MBPRISM,prisms,recursive); CHKERRQ_MOAB(rval);
@@ -545,7 +545,7 @@ PetscErrorCode Core::refine_TET(const Range &_tets,const BitRefLevel &bit,const 
     }
     Range ref_edges;
     //get all all edges of refined tets
-    rval = moab.get_adjacencies(ref_tets,nb_new_tets,1,true,ref_edges,Interface::UNION); CHKERRQ_MOAB(rval);
+    rval = moab.get_adjacencies(ref_tets,nb_new_tets,1,true,ref_edges,moab::Interface::UNION); CHKERRQ_MOAB(rval);
     //check for all ref edge and set parents
     for(Range::iterator reit = ref_edges.begin();reit!=ref_edges.end();reit++) {
       Range ref_edges_nodes;
@@ -623,7 +623,7 @@ PetscErrorCode Core::refine_TET(const Range &_tets,const BitRefLevel &bit,const 
 
       //this will help to debug error
       Range ref_edges_nodes_tets;
-      rval = moab.get_adjacencies(ref_edges_nodes,3,true,ref_edges_nodes_tets,Interface::UNION); CHKERRQ_MOAB(rval);
+      rval = moab.get_adjacencies(ref_edges_nodes,3,true,ref_edges_nodes_tets,moab::Interface::UNION); CHKERRQ_MOAB(rval);
       ref_edges_nodes_tets = intersect(ref_edges_nodes_tets,tets);
       ref_edges_nodes_tets.insert(*reit);
 
@@ -637,7 +637,7 @@ PetscErrorCode Core::refine_TET(const Range &_tets,const BitRefLevel &bit,const 
       SETERRQ(PETSC_COMM_SELF,1,"impossible refined edge");
     }
     Range ref_faces;
-    rval = moab.get_adjacencies(ref_tets,nb_new_tets,2,true,ref_faces,Interface::UNION); CHKERRQ_MOAB(rval);
+    rval = moab.get_adjacencies(ref_tets,nb_new_tets,2,true,ref_faces,moab::Interface::UNION); CHKERRQ_MOAB(rval);
     Tag th_interface_side;
     const int def_side[] = {0};
     rval = moab.tag_get_handle("INTERFACE_SIDE",1,MB_TYPE_INTEGER,
