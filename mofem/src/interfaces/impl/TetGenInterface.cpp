@@ -244,28 +244,29 @@ PetscErrorCode TetGenInterface::outData(
   Tag th_marker;
   int def_marker = 0;
   rval = m_field.get_moab().tag_get_handle(
-    "TETGEN_MARKER",1,MB_TYPE_INTEGER,th_marker,MB_TAG_CREAT|MB_TAG_SPARSE,&def_marker); CHKERRQ_MOAB(rval);
+    "TETGEN_MARKER",1,MB_TYPE_INTEGER,th_marker,MB_TAG_CREAT|MB_TAG_SPARSE,&def_marker
+  ); CHKERRQ_MOAB(rval);
 
   int ii = 0;
   for(;ii<out.numberofpoints;ii++) {
     if(ii<in.numberofpoints) {
       if(memcmp(&in.pointlist[3*ii],&out.pointlist[3*ii],3*sizeof(double)) == 0) {
-	unsigned long iii = MBVERTEX|(ii<<MB_TYPE_WIDTH);
-	if(tetgen_moab_map.find(iii)!=tetgen_moab_map.end()) {
-	  rval = m_field.get_moab().tag_set_data(th_marker,&tetgen_moab_map[iii],1,&out.pointmarkerlist[ii]); CHKERRQ_MOAB(rval);
-	  continue;
-	} else {
-	  SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency between TetGen and MoAB");
-	}
+        unsigned long iii = MBVERTEX|(ii<<MB_TYPE_WIDTH);
+        if(tetgen_moab_map.find(iii)!=tetgen_moab_map.end()) {
+          rval = m_field.get_moab().tag_set_data(th_marker,&tetgen_moab_map[iii],1,&out.pointmarkerlist[ii]); CHKERRQ_MOAB(rval);
+          continue;
+        } else {
+          SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency between TetGen and MoAB");
+        }
       }
     }
     if(id_in_tags) {
       if(out.pointparamlist[ii].tag>0) {
-	EntityHandle node;
-	rval = m_field.get_moab().handle_from_id(MBVERTEX,in.pointparamlist[ii].tag-1,node); CHKERRQ_MOAB(rval);
-	if(moab_tetgen_map.find(node)!=moab_tetgen_map.end()) {
-	  continue;
-	}
+        EntityHandle node;
+        rval = m_field.get_moab().handle_from_id(MBVERTEX,in.pointparamlist[ii].tag-1,node); CHKERRQ_MOAB(rval);
+        if(moab_tetgen_map.find(node)!=moab_tetgen_map.end()) {
+          continue;
+        }
       }
     }
     if(error_if_created) {
@@ -284,19 +285,19 @@ PetscErrorCode TetGenInterface::outData(
     unsigned long iii = MBTET|(ii<<MB_TYPE_WIDTH);
     if(ii<in.numberoftetrahedra) {
       if(memcmp(&in.tetrahedronlist[4*ii],&out.tetrahedronlist[4*ii],4*sizeof(int)) == 0) {
-	if(tetgen_moab_map.find(iii)!=tetgen_moab_map.end()) {
+        if(tetgen_moab_map.find(iii)!=tetgen_moab_map.end()) {
           if(ents!=NULL) ents->insert(tetgen_moab_map[iii]);
-	  continue;
-	} else {
-	  SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency between TetGen and MoAB");
-	}
+          continue;
+        } else {
+          SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency between TetGen and MoAB");
+        }
       }
     }
     EntityHandle conn[4];
     for(int nn = 0;nn<4;nn++) {
       int nnn = out.tetrahedronlist[4*ii+nn];
       if(tetgen_moab_map.find(MBVERTEX|(nnn<<MB_TYPE_WIDTH))==tetgen_moab_map.end()) {
-	SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency between TetGen and MoAB");
+        SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency between TetGen and MoAB");
       }
       conn[nn] = tetgen_moab_map.at(MBVERTEX|(nnn<<MB_TYPE_WIDTH));
     }
@@ -308,12 +309,12 @@ PetscErrorCode TetGenInterface::outData(
       Range tet_nodes;
       rval = m_field.get_moab().get_connectivity(&tet,1,tet_nodes,true); CHKERRQ_MOAB(rval);
       if(tet_nodes.size()!=4) {
-	SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency; tet should have 4 nodes");
+        SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency; tet should have 4 nodes");
       }
     } else {
-      if(tets.size()!=1) {
-	SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency; expecting one element");
-      }
+      // if(tets.size()!=1) {
+      //   SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency; expecting one element");
+      // }
       tet = *tets.begin();
     }
     moab_tetgen_map[tet] = iii;

@@ -1,0 +1,434 @@
+/** \file CommCore.cpp
+ * \brief Core functions interface for managing communication
+ */
+
+/* MoFEM is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU Lesser General Public License as published by the
+ * Free Software Foundation, either version 3 of the License, or (at your
+ * option) any later version.
+ *
+ * MoFEM is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
+ * License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
+*/
+
+#include <Includes.hpp>
+#include <version.h>
+#include <definitions.h>
+#include <Common.hpp>
+
+#include <h1_hdiv_hcurl_l2.h>
+
+#include <UnknownInterface.hpp>
+
+#include <MaterialBlocks.hpp>
+#include <CubitBCData.hpp>
+#include <TagMultiIndices.hpp>
+#include <CoordSysMultiIndices.hpp>
+#include <FieldMultiIndices.hpp>
+#include <EntsMultiIndices.hpp>
+#include <DofsMultiIndices.hpp>
+#include <FEMMultiIndices.hpp>
+#include <ProblemsMultiIndices.hpp>
+#include <AdjacencyMultiIndices.hpp>
+#include <BCMultiIndices.hpp>
+#include <CoreDataStructures.hpp>
+#include <SeriesMultiIndices.hpp>
+
+#include <LoopMethods.hpp>
+#include <Interface.hpp>
+#include <MeshRefinment.hpp>
+#include <PrismInterface.hpp>
+#include <SeriesRecorder.hpp>
+#include <Core.hpp>
+
+#include <boost/scoped_array.hpp>
+
+#include <moab/MeshTopoUtil.hpp>
+
+namespace MoFEM {
+
+  PetscErrorCode Core::synchronise_entities(Range &ents,int verb) {
+    PetscFunctionBegin;
+    if(verb==-1) verb = verbose;
+
+    //ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
+
+    //make a buffer
+    std::vector<std::vector<EntityHandle> > sbuffer(sIze);
+
+    Range::iterator eit = ents.begin();
+    for(;eit!=ents.end();eit++) {
+
+      RefEntity_multiIndex::iterator meit;
+      meit = refinedEntities.get<Ent_mi_tag>().find(*eit);
+      if(meit == refinedEntities.get<Ent_mi_tag>().end()) {
+        continue;
+        SETERRQ2(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,
+          "rank %d entity %lu not exist on database, local entity can not be found for this owner",
+          rAnk,*eit);
+      }
+
+      unsigned char pstatus = (*meit)->getPStatus();
+
+      if(pstatus == 0) continue;
+
+      if(verb>1) {
+        std::ostringstream zz;
+        zz << "pstatus " <<  std::bitset<8>(pstatus) << " ";
+        PetscSynchronizedPrintf(comm,"%s",zz.str().c_str());
+      }
+
+      for(int proc = 0; proc<MAX_SHARING_PROCS && -1 != (*meit)->getSharingProcsPtr()[proc]; proc++) {
+        if((*meit)->getSharingProcsPtr()[proc] == -1) {
+          SETERRQ(PETSC_COMM_SELF,MOFEM_IMPOSIBLE_CASE,"sharing processor not set");
+        }
+        if((*meit)->getSharingProcsPtr()[proc] == rAnk) {
+          continue;
+        }
+        EntityHandle handle_on_sharing_proc = (*meit)->getSharingHandlersPtr()[proc];
+        sbuffer[(*meit)->getSharingProcsPtr()[proc]].push_back(handle_on_sharing_proc);
+        if(verb>1) {
+          PetscSynchronizedPrintf(comm,"send %lu (%lu) to %d at %d\n",
+          (*meit)->getRefEnt(),handle_on_sharing_proc,(*meit)->getSharingProcsPtr()[proc],rAnk);
+        }
+        if(!(pstatus&PSTATUS_MULTISHARED)) {
+          break;
+        }
+      }
+
+
+    }
+
+    int nsends = 0; 			// number of messages to send
+    std::vector<int> sbuffer_lengths(sIze); 	// length of the message to proc
+    const size_t block_size = sizeof(EntityHandle)/sizeof(int);
+    for(int proc  = 0;proc<sIze;proc++) {
+
+      if(!sbuffer[proc].empty()) {
+
+        sbuffer_lengths[proc] = sbuffer[proc].size()*block_size;
+        nsends++;
+
+      } else {
+
+        sbuffer_lengths[proc] = 0;
+
+      }
+
+    }
+
+    // Make sure it is a PETSc comm
+    ierr = PetscCommDuplicate(comm,&comm,NULL); CHKERRQ(ierr);
+
+    std::vector<MPI_Status> status(sIze);
+
+    // Computes the number of messages a node expects to receive
+    int nrecvs;	// number of messages received
+    ierr = PetscGatherNumberOfMessages(comm,NULL,&sbuffer_lengths[0],&nrecvs); CHKERRQ(ierr);
+
+    // Computes info about messages that a MPI-node will receive, including (from-id,length) pairs for each message.
+    int *onodes;		// list of node-ids from which messages are expected
+    int *olengths;	// corresponding message lengths
+    ierr = PetscGatherMessageLengths(comm,nsends,nrecvs,&sbuffer_lengths[0],&onodes,&olengths);  CHKERRQ(ierr);
+
+    // Gets a unique new tag from a PETSc communicator. All processors that share
+    // the communicator MUST call this routine EXACTLY the same number of times.
+    // This tag should only be used with the current objects communicator; do NOT
+    // use it with any other MPI communicator.
+    int tag;
+    ierr = PetscCommGetNewTag(comm,&tag); CHKERRQ(ierr);
+
+    // Allocate a buffer sufficient to hold messages of size specified in
+    // olengths. And post Irecvs on these buffers using node info from onodes
+    int **rbuf;		// must bee freed by user
+    MPI_Request *r_waits; // must bee freed by user
+    // rbuf has a pointers to messages. It has size of of nrecvs (number of
+    // messages) +1. In the first index a block is allocated,
+    // such that rbuf[i] = rbuf[i-1]+olengths[i-1].
+    ierr = PetscPostIrecvInt(comm,tag,nrecvs,onodes,olengths,&rbuf,&r_waits); CHKERRQ(ierr);
+
+    MPI_Request *s_waits; // status of sens messages
+    ierr = PetscMalloc1(nsends,&s_waits); CHKERRQ(ierr);
+
+    // Send messeges
+    for(int proc=0,kk=0; proc<sIze; proc++) {
+      if(!sbuffer_lengths[proc]) continue; // no message to send to this proc
+      ierr = MPI_Isend(
+        &(sbuffer[proc])[0], 	// buffer to send
+        sbuffer_lengths[proc], 	// message length
+        MPIU_INT,proc,       	// to proc
+        tag,comm,s_waits+kk); CHKERRQ(ierr);
+      kk++;
+    }
+
+    // Wait for received
+    if(nrecvs) {
+      ierr = MPI_Waitall(nrecvs,r_waits,&status[0]);CHKERRQ(ierr);
+    }
+    // Wait for send messages
+    if(nsends) {
+      ierr = MPI_Waitall(nsends,s_waits,&status[0]);CHKERRQ(ierr);
+    }
+
+    if(verb>0) {
+      PetscSynchronizedPrintf(comm,"nb. before ents %u\n",ents.size());
+    }
+
+    // synchronise range
+    for(int kk = 0;kk<nrecvs;kk++) {
+
+      int len = olengths[kk];
+      int *data_from_proc = rbuf[kk];
+
+      for(int ee = 0;ee<len;ee+=block_size) {
+
+        EntityHandle ent;
+        bcopy(&data_from_proc[ee],&ent,sizeof(EntityHandle));
+        RefEntity_multiIndex::index<Ent_mi_tag>::type::iterator meit;
+        meit = refinedEntities.get<Ent_mi_tag>().find(ent);
+        if(meit == refinedEntities.get<Ent_mi_tag>().end()) {
+          SETERRQ2(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,
+            "rank %d entity %lu not exist on database, local entity can not be found for this owner",rAnk,ent);
+          }
+          if(verb>2) {
+            PetscSynchronizedPrintf(comm,"received %ul (%ul) from %d at %d\n",(*meit)->getRefEnt(),ent,onodes[kk],rAnk);
+          }
+          ents.insert((*meit)->getRefEnt());
+
+        }
+
+    }
+
+    if(verb>0) {
+      PetscSynchronizedPrintf(comm,"nb. after ents %u\n",ents.size());
+    }
+
+
+    // Cleaning
+    ierr = PetscFree(s_waits); CHKERRQ(ierr);
+    ierr = PetscFree(rbuf[0]); CHKERRQ(ierr);
+    ierr = PetscFree(rbuf); CHKERRQ(ierr);
+    ierr = PetscFree(r_waits); CHKERRQ(ierr);
+    ierr = PetscFree(onodes); CHKERRQ(ierr);
+    ierr = PetscFree(olengths); CHKERRQ(ierr);
+
+    if(verb>0) {
+      PetscSynchronizedFlush(comm,PETSC_STDOUT);
+    }
+
+    PetscFunctionReturn(0);
+  }
+
+  PetscErrorCode Core::synchronise_field_entities(const BitFieldId id,int verb) {
+    PetscFunctionBegin;
+    if(verb==-1) verb = verbose;
+    EntityHandle idm;
+    try {
+      idm = get_field_meshset(id);
+    } catch (MoFEMException const &e) {
+      SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
+    }
+    Range ents;
+    ierr = moab.get_entities_by_handle(idm,ents,false); CHKERRQ(ierr);
+    ierr = synchronise_entities(ents,verb); CHKERRQ(ierr);
+    rval = moab.add_entities(idm,ents); CHKERRQ_MOAB(rval);
+    PetscFunctionReturn(0);
+  }
+
+  PetscErrorCode Core::synchronise_field_entities(const std::string& name,int verb) {
+    PetscFunctionBegin;
+    if(verb==-1) verb = verbose;
+    *buildMoFEM = 0;
+    try {
+      ierr = synchronise_field_entities(get_BitFieldId(name),verb);  CHKERRQ(ierr);
+    } catch (MoFEMException const &e) {
+      SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
+    }
+    PetscFunctionReturn(0);
+  }
+
+  PetscErrorCode Core::set_owner_handle(
+    std::vector<EntityHandle> ents,const int from_proc,int verb
+  ) {
+    PetscFunctionBegin;
+
+    const size_t handle_size = sizeof(EntityHandle);
+    const size_t buff_size = handle_size*ents.size()/sizeof(PetscInt);
+    if(sizeof(EntityHandle) % sizeof(PetscInt)) {
+      SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"Data inconsistency");
+    }
+
+    // Make sure it is a PETSc comm
+    ierr = PetscCommDuplicate(comm,&comm,NULL); CHKERRQ(ierr);
+
+    IS is_from_proc;
+    PetscInt *idx = (int*)&ents[0];
+    ierr = ISCreateGeneral(
+      comm,buff_size,idx,PETSC_USE_POINTER,&is_from_proc
+    ); CHKERRQ(ierr);
+
+    EntityHandle *test_iter = (EntityHandle*)&idx[0];
+    for(int ii = 0;ii!=ents.size();ii++) {
+      if(test_iter[ii]!=ents[ii]) {
+        SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"Data inconsistency");
+      }
+    }
+
+    // Gather handles
+    IS is_gather;
+    ierr = ISAllGather(is_from_proc,&is_gather); CHKERRQ(ierr);
+    ierr = ISDestroy(&is_from_proc); CHKERRQ(ierr);
+
+    const EntityHandle *owner_hs;
+    ierr = ISGetIndices(is_gather,(const int**)&owner_hs); CHKERRQ(ierr);
+
+    ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
+    if(pcomm == NULL) pcomm =  new ParallelComm(&moab,comm);
+
+    // if(pcomm->rank()==1) {
+    //   for(int rr = 0;rr!=pcomm->size();rr++) {
+    //     for(int ii = 0;ii!=ents.size();ii++) {
+    //         cerr << owner_hs[rr*ents.size()+ii] << " : " << ents[ii] << endl;
+    //     }
+    //   }
+    // }
+
+    if(sIze>1) {
+
+      unsigned char pstatus = 0;
+      // if(pcomm->rank()!=from_proc) {
+      //   pstatus = PSTATUS_NOT_OWNED;
+      //   pstatus |= PSTATUS_GHOST;
+      // }
+      // if(pcomm->size()>2) {
+      //   pstatus |= PSTATUS_SHARED;
+      //   pstatus |= PSTATUS_MULTISHARED;
+      // } else {
+      //   pstatus |= PSTATUS_SHARED;
+      // }
+
+      std::vector<EntityHandle> shhandles(MAX_SHARING_PROCS, -1);
+      std::vector<int> shprocs(MAX_SHARING_PROCS,0);
+
+      shprocs[0] = 0;
+
+      for(int ii = 0;ii!=ents.size();ii++) {
+
+        shhandles[0] = owner_hs[ii];
+
+        if(owner_hs[rAnk*ents.size()+ii] != ents[ii]) {
+          SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"Data inconsistency");
+        }
+
+        if(sIze>2) {
+          rval = moab.tag_set_data(pcomm->sharedhs_tag(),&ents[ii],1,&shhandles[0]); CHKERRQ_MOAB(rval);
+          rval = moab.tag_set_data(pcomm->sharedps_tag(),&ents[ii],1,&shprocs[0]); CHKERRQ_MOAB(rval);
+        } else {
+          rval = moab.tag_set_data(pcomm->sharedh_tag(),&ents[ii],1,&shhandles[0]); CHKERRQ_MOAB(rval);
+          rval = moab.tag_set_data(pcomm->sharedp_tag(),&ents[ii],1,&shprocs[0]); CHKERRQ_MOAB(rval);
+        }
+        rval = moab.tag_set_data(pcomm->pstatus_tag(),&ents[ii],1,&pstatus); CHKERRQ_MOAB(rval);
+
+      }
+
+    }
+
+    ierr = ISRestoreIndices(is_gather,(const int**)&owner_hs); CHKERRQ(ierr);
+    ierr = ISDestroy(&is_gather); CHKERRQ(ierr);
+
+    PetscFunctionReturn(0);
+  }
+
+  PetscErrorCode Core::resolve_shared_ents(const MoFEMProblem *problem_ptr,const std::string &fe_name,int verb) {
+    PetscFunctionBegin;
+    ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
+    std::vector<int> shprocs(MAX_SHARING_PROCS,0);
+    std::vector<EntityHandle> shhandles(MAX_SHARING_PROCS,0);
+    Range ents;
+    Tag th_gid;
+    const int zero =  0;
+    rval = moab.tag_get_handle(
+      GLOBAL_ID_TAG_NAME,1,MB_TYPE_INTEGER,th_gid,MB_TAG_DENSE|MB_TAG_CREAT,&zero
+    ); CHKERRQ_MOAB(rval);
+    PetscLayout layout;
+    ierr = problem_ptr->getNumberOfElementsByNameAndPart(get_comm(),fe_name,&layout); CHKERRQ(ierr);
+    int gid,last_gid;
+    ierr = PetscLayoutGetRange(layout,&gid,&last_gid); CHKERRQ(ierr);
+    ierr = PetscLayoutDestroy(&layout); CHKERRQ(ierr);
+    for(_IT_NUMEREDFEMOFEMENTITY_BY_NAME_FOR_LOOP_(problem_ptr,fe_name,fe_it)) {
+      EntityHandle ent = (*fe_it)->getEnt();
+      ents.insert(ent);
+      unsigned int part = (*fe_it)->getPart();
+      rval = moab.tag_set_data(pcomm->part_tag(),&ent,1,&part); CHKERRQ_MOAB(rval);
+      if(part == pcomm->rank()) {
+        rval = moab.tag_set_data(th_gid,&ent,1,&gid); CHKERRQ_MOAB(rval);
+        gid++;
+      }
+      shprocs.clear();
+      shhandles.clear();
+      if(pcomm->size()>1) {
+        unsigned char pstatus = 0;
+        if(pcomm->rank()!=part) {
+          pstatus = PSTATUS_NOT_OWNED;
+          pstatus |= PSTATUS_GHOST;
+        }
+        if(pcomm->size()>2) {
+          pstatus |= PSTATUS_SHARED;
+          pstatus |= PSTATUS_MULTISHARED;
+        } else {
+          pstatus |= PSTATUS_SHARED;
+        }
+        int rrr = 0;
+        for(unsigned int rr = 0;rr<pcomm->size();rr++) {
+          if(rr!=pcomm->rank()) {
+            shhandles[rrr] = ent;
+            shprocs[rrr] = rr;
+            rrr++;
+          }
+          shprocs[rrr] = -1;
+        }
+        if(pstatus&PSTATUS_SHARED) {
+          rval = moab.tag_set_data(pcomm->sharedp_tag(),&ent,1,&shprocs[0]); CHKERRQ_MOAB(rval);
+          rval = moab.tag_set_data(pcomm->sharedh_tag(),&ent,1,&shhandles[0]); CHKERRQ_MOAB(rval);
+        }
+        if(PSTATUS_MULTISHARED) {
+          rval = moab.tag_set_data(pcomm->sharedps_tag(),&ent,1,&shprocs[0]); CHKERRQ_MOAB(rval);
+          rval = moab.tag_set_data(pcomm->sharedhs_tag(),&ent,1,&shhandles[0]); CHKERRQ_MOAB(rval);
+        }
+        rval = moab.tag_set_data(pcomm->pstatus_tag(),&ent,1,&pstatus); CHKERRQ_MOAB(rval);
+      }
+    }
+    rval = pcomm->exchange_tags(th_gid,ents); CHKERRQ_MOAB(rval);
+    PetscFunctionReturn(0);
+  }
+  PetscErrorCode Core::resolve_shared_ents(const std::string &name,const std::string &fe_name,int verb) {
+    PetscFunctionBegin;
+    typedef MoFEMProblem_multiIndex::index<Problem_mi_tag>::type MoFEMProblem_multiIndex_by_name;
+    //find p_miit
+    MoFEMProblem_multiIndex_by_name &problems_set = pRoblems.get<Problem_mi_tag>();
+    MoFEMProblem_multiIndex_by_name::iterator p_miit = problems_set.find(name);
+    if(p_miit==problems_set.end()) {
+      SETERRQ1(PETSC_COMM_SELF,1,"problem with name < %s > not defined (top tip check spelling)",name.c_str());
+    }
+    ierr = resolve_shared_ents(&*p_miit,fe_name,verb); CHKERRQ(ierr);
+    PetscFunctionReturn(0);
+  }
+  PetscErrorCode Core::get_problem_elements_layout(const std::string &name,const std::string &fe_name,PetscLayout *layout,int verb) {
+    PetscFunctionBegin;
+    typedef MoFEMProblem_multiIndex::index<Problem_mi_tag>::type MoFEMProblem_multiIndex_by_name;
+    //find p_miit
+    MoFEMProblem_multiIndex_by_name &problems_set = pRoblems.get<Problem_mi_tag>();
+    MoFEMProblem_multiIndex_by_name::iterator p_miit = problems_set.find(name);
+    if(p_miit==problems_set.end()) {
+      SETERRQ1(PETSC_COMM_SELF,1,"problem with name < %s > not defined (top tip check spelling)",name.c_str());
+    }
+    ierr = p_miit->getNumberOfElementsByNameAndPart(get_comm(),fe_name,layout); CHKERRQ(ierr);
+    PetscFunctionReturn(0);
+  }
+
+}

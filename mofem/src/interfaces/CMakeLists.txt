@@ -21,8 +21,11 @@ set(MOFEM_INTERFACES_SRC
   impl/FieldBlas.cpp
   impl/GetAdjacancies.cpp
   impl/FieldCore.cpp
+  impl/FECore.cpp
   impl/ProblemsCore.cpp
-  impl/MeshRefinmentCore.cpp
+  impl/CommCore.cpp
+  impl/DeleteCore.cpp
+  impl/MeshRefinment.cpp
   impl/PrismInterfaceCore.cpp
   impl/SeriesRecorderCore.cpp
   impl/NodeMerger.cpp

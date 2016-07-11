@@ -333,16 +333,34 @@ struct Interface: public UnknownInterface {
   virtual PetscErrorCode print_cubit_force_set() const = 0;
   virtual PetscErrorCode print_cubit_materials_set() const = 0;
 
+  /**
+   * \brief Clear database
+   * @param  verb Verbosity level
+   * @return      Error code
+   */
+  virtual PetscErrorCode clear_database(int verb  = -1) = 0;
+
+  /** \brief Set unique owning handle on all processors
+  */
+  virtual PetscErrorCode set_owner_handle(
+    std::vector<EntityHandle> ents,const int from_proc = 0,int verb = -1
+  ) = 0;
+
+  /**
+   * \brief Clear database and initialize it once again
+   * @param  verb Verbosity level
+   * @return      Error code
+   */
   virtual PetscErrorCode rebuild_database(int verb = -1) = 0;
 
-  /** synchronise entity range on processors (collective)
+  /** synchronize entity range on processors (collective)
 
     collective - need tu be run on all processors in communicator
 
     */
   virtual PetscErrorCode synchronise_entities(Range &ent,int verb = -1) = 0;
 
-  /** synchronise entity range on processors (collective)
+  /** synchronize entity range on processors (collective)
     * \ingroup mofem_field
 
     collective - need tu be run on all processors in communicator
@@ -353,7 +371,7 @@ struct Interface: public UnknownInterface {
     */
   virtual PetscErrorCode synchronise_field_entities(const BitFieldId id,int verb = -1) = 0;
 
-  /** synchronise entity range on processors (collective)
+  /** synchronize entity range on processors (collective)
     * \ingroup mofem_field
 
     collective - need tu be run on all processors in communicator

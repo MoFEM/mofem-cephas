@@ -214,6 +214,7 @@ struct Core: public Interface, MeshRefinment, PrismInterface, SeriesRecorder {
   PetscErrorCode check_number_of_ents_in_ents_finite_element(const std::string& name) const;
   PetscErrorCode check_number_of_ents_in_ents_finite_element() const;
 
+  PetscErrorCode clear_database(int verb  = -1);
   PetscErrorCode rebuild_database(int verb = -1);
 
   //cubit meshsets
@@ -406,6 +407,9 @@ struct Core: public Interface, MeshRefinment, PrismInterface, SeriesRecorder {
   PetscErrorCode synchronise_entities(Range &ent,int verb = -1);
   PetscErrorCode synchronise_field_entities(const BitFieldId id,int verb = -1);
   PetscErrorCode synchronise_field_entities(const std::string& name,int verb = -1);
+
+  //Set owner handle
+  PetscErrorCode set_owner_handle(std::vector<EntityHandle> ents,const int from_proc = 0,int verb = -1);
 
   /**
    * \brief Add filed
