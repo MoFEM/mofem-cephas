@@ -41,7 +41,7 @@ struct Core: public Interface, MeshRefinment, PrismInterface, SeriesRecorder {
   moab::Interface& moab;
   MPI_Comm comm;
 
-  Core(moab::Interface& _moab,MPI_Comm _comm = PETSC_COMM_WORLD,TagType _tag_type = MB_TAG_SPARSE,int _verbose = 1);
+  Core(moab::Interface& _moab,MPI_Comm _comm = PETSC_COMM_WORLD,int _verbose = 1);
   ~Core();
 
   Tag get_th_RefParentHandle() { return th_RefParentHandle; }
@@ -131,6 +131,7 @@ struct Core: public Interface, MeshRefinment, PrismInterface, SeriesRecorder {
   };
 
   //core methods
+  PetscErrorCode getTags(int verb = -1);
   PetscErrorCode clearMap();
   BitFieldId getFieldShift();
   BitFEId getFEShift();

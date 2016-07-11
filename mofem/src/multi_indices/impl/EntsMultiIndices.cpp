@@ -83,6 +83,7 @@ ent(ent) {
     THROW_MESSAGE("this entity type is currently not implemented");
   }
   ParallelComm* pcomm = ParallelComm::get_pcomm(&basicDataPtr->moab,MYPCOMM_INDEX);
+  if(pcomm == NULL) THROW_MESSAGE("pcomm is null");
 
   unsigned char pstatus;
   rval = basicDataPtr->moab.tag_get_data(
@@ -94,12 +95,12 @@ ent(ent) {
   if(pcomm->rank()>1) {
     std::vector<EntityHandle> shhandles(MAX_SHARING_PROCS, 0);
     if(pcomm->size()>2) {
-      rval = basicDataPtr->moab.tag_get_data(pcomm->sharedhs_tag(),&ent,1,&shhandles[0]); MOAB_THROW(rval);
+      rval = basicDataPtr->moab.tag_get_data(pcomm->sharedhs_tag(),&ent,1,&shhandles[0]);
     } else {
-      rval = basicDataPtr->moab.tag_get_data(pcomm->sharedh_tag(),&ent,1,&shhandles[0]); MOAB_THROW(rval);
+      rval = basicDataPtr->moab.tag_get_data(pcomm->sharedh_tag(),&ent,1,&shhandles[0]);
     }
 
-    if(shhandles[0]>0&&shhandles[1]==-1) {
+    if(rval==MB_SUCCESS&&shhandles[0]>0&&shhandles[1]==-1) {
       moab_owner_handle = shhandles[0];
     }
   }
