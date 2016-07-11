@@ -60,6 +60,7 @@ BasicEntityData::BasicEntityData(moab::Interface &moab):
 moab(moab) {
   rval = moab.tag_get_handle("_RefParentHandle",th_RefParentHandle); MOAB_THROW(rval);
   rval = moab.tag_get_handle("_RefBitLevel",th_RefBitLevel); MOAB_THROW(rval);
+  rval = moab.tag_get_handle("_OwnerHandle",th_OwnerHandle); MOAB_THROW(rval);
 }
 BasicEntityData::~BasicEntityData() {
 }
@@ -91,18 +92,10 @@ ent(ent) {
   ); MOAB_THROW(rval);
 
   moab_owner_handle = -1;
-
   if(pcomm->rank()>1) {
-    std::vector<EntityHandle> shhandles(MAX_SHARING_PROCS, 0);
-    if(pcomm->size()>2) {
-      rval = basicDataPtr->moab.tag_get_data(pcomm->sharedhs_tag(),&ent,1,&shhandles[0]);
-    } else {
-      rval = basicDataPtr->moab.tag_get_data(pcomm->sharedh_tag(),&ent,1,&shhandles[0]);
-    }
-
-    if(rval==MB_SUCCESS&&shhandles[0]>0&&shhandles[1]==-1) {
-      moab_owner_handle = shhandles[0];
-    }
+    EntityHandle owner_handle_at_0;
+    rval = basicDataPtr->moab.tag_get_data(basicDataPtr->th_OwnerHandle,&ent,1,&owner_handle_at_0);
+    if(owner_handle_at_0!=-1) moab_owner_handle = owner_handle_at_0;
   }
 
   if(moab_owner_handle==-1) {

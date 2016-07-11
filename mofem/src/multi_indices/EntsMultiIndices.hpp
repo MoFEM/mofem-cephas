@@ -79,6 +79,7 @@ struct BasicEntityData {
   moab::Interface &moab;
   Tag th_RefParentHandle;
   Tag th_RefBitLevel;
+  Tag th_OwnerHandle;    ///< Handle on processor 0
   BasicEntityData(moab::Interface &mfield);
   virtual ~BasicEntityData();
 };

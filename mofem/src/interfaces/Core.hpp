@@ -72,6 +72,7 @@ struct Core: public Interface, MeshRefinment, PrismInterface, SeriesRecorder {
   Tag th_CoordSysMeshSet;             ///< Tag on field meshset pointing to coordinate system meshset
   Tag th_CoordSysName;                ///< Name of coordinate system
   Tag th_CoordSysDim;                 ///< Tag on cordsys meshset for dimension of coordinate system associated to fields
+  Tag th_OwnerHandle;                 ///< Handle on processor 0
 
   boost::shared_ptr<BasicEntityData> basicEntityDataPtr;
 

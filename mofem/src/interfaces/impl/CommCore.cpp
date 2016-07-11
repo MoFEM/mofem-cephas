@@ -290,49 +290,15 @@ namespace MoFEM {
     ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
     if(pcomm == NULL) pcomm =  new ParallelComm(&moab,comm);
 
-    // if(pcomm->rank()==1) {
-    //   for(int rr = 0;rr!=pcomm->size();rr++) {
-    //     for(int ii = 0;ii!=ents.size();ii++) {
-    //         cerr << owner_hs[rr*ents.size()+ii] << " : " << ents[ii] << endl;
-    //     }
-    //   }
-    // }
-
     if(sIze>1) {
 
-      unsigned char pstatus = 0;
-      // if(pcomm->rank()!=from_proc) {
-      //   pstatus = PSTATUS_NOT_OWNED;
-      //   pstatus |= PSTATUS_GHOST;
-      // }
-      // if(pcomm->size()>2) {
-      //   pstatus |= PSTATUS_SHARED;
-      //   pstatus |= PSTATUS_MULTISHARED;
-      // } else {
-      //   pstatus |= PSTATUS_SHARED;
-      // }
-
-      std::vector<EntityHandle> shhandles(MAX_SHARING_PROCS, -1);
-      std::vector<int> shprocs(MAX_SHARING_PROCS,0);
-
-      shprocs[0] = 0;
-
       for(int ii = 0;ii!=ents.size();ii++) {
-
-        shhandles[0] = owner_hs[ii];
 
         if(owner_hs[rAnk*ents.size()+ii] != ents[ii]) {
           SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"Data inconsistency");
         }
 
-        if(sIze>2) {
-          rval = moab.tag_set_data(pcomm->sharedhs_tag(),&ents[ii],1,&shhandles[0]); CHKERRQ_MOAB(rval);
-          rval = moab.tag_set_data(pcomm->sharedps_tag(),&ents[ii],1,&shprocs[0]); CHKERRQ_MOAB(rval);
-        } else {
-          rval = moab.tag_set_data(pcomm->sharedh_tag(),&ents[ii],1,&shhandles[0]); CHKERRQ_MOAB(rval);
-          rval = moab.tag_set_data(pcomm->sharedp_tag(),&ents[ii],1,&shprocs[0]); CHKERRQ_MOAB(rval);
-        }
-        rval = moab.tag_set_data(pcomm->pstatus_tag(),&ents[ii],1,&pstatus); CHKERRQ_MOAB(rval);
+        rval = moab.tag_set_data(th_OwnerHandle,&ents[ii],1,&owner_hs[ii]); CHKERRQ_MOAB(rval);
 
       }
 
