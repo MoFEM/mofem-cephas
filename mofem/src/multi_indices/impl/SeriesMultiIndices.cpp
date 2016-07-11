@@ -191,7 +191,7 @@ PetscErrorCode MoFEMSeries::save(Interface &moab) const {
   }
   for(unsigned int mm = nb_contained;mm<ia.size()-1;mm++) {
     EntityHandle new_meshset;
-    rval = moab.create_meshset(MESHSET_SET,new_meshset); CHKERRQ_MOAB(rval);
+    rval = moab.create_meshset(MESHSET_SET|MESHSET_TRACK_OWNER,new_meshset); CHKERRQ_MOAB(rval);
     rval = moab.add_entities(meshset,&new_meshset,1); CHKERRQ_MOAB(rval);
   }
   contained.resize(0);

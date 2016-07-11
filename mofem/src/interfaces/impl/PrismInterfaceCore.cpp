@@ -120,15 +120,15 @@ PetscErrorCode Core::get_msId_3dENTS_sides(const EntityHandle SIDESET,const BitR
   skin_edges_boundary = subtract(skin_edges_boundary,skin_faces_edges); // from skin edges subtract edges from skin faces of 3d ents (only internal edges)
   if(verb>3) {
     EntityHandle out_meshset;
-    rval = moab.create_meshset(MESHSET_SET,out_meshset); CHKERRQ_MOAB(rval);
+    rval = moab.create_meshset(MESHSET_SET|MESHSET_TRACK_OWNER,out_meshset); CHKERRQ_MOAB(rval);
     rval = moab.add_entities(out_meshset,triangles); CHKERRQ_MOAB(rval);
     rval = moab.write_file("triangles.vtk","VTK","",&out_meshset,1); CHKERRQ_MOAB(rval);
     rval = moab.delete_entities(&out_meshset,1); CHKERRQ_MOAB(rval);
-    rval = moab.create_meshset(MESHSET_SET,out_meshset); CHKERRQ_MOAB(rval);
+    rval = moab.create_meshset(MESHSET_SET|MESHSET_TRACK_OWNER,out_meshset); CHKERRQ_MOAB(rval);
     rval = moab.add_entities(out_meshset,ents3d); CHKERRQ_MOAB(rval);
     rval = moab.write_file("ents3d.vtk","VTK","",&out_meshset,1); CHKERRQ_MOAB(rval);
     rval = moab.delete_entities(&out_meshset,1); CHKERRQ_MOAB(rval);
-    rval = moab.create_meshset(MESHSET_SET,out_meshset); CHKERRQ_MOAB(rval);
+    rval = moab.create_meshset(MESHSET_SET|MESHSET_TRACK_OWNER,out_meshset); CHKERRQ_MOAB(rval);
     rval = moab.add_entities(out_meshset,skin_edges_boundary); CHKERRQ_MOAB(rval);
     rval = moab.write_file("skin_edges_boundary.vtk","VTK","",&out_meshset,1); CHKERRQ_MOAB(rval);
     rval = moab.delete_entities(&out_meshset,1); CHKERRQ_MOAB(rval);
@@ -195,9 +195,9 @@ PetscErrorCode Core::get_msId_3dENTS_sides(const EntityHandle SIDESET,const BitR
   rval = moab.get_child_meshsets(SIDESET,children);  CHKERRQ_MOAB(rval);
   if(children.empty()) {
     children.resize(3);
-    rval = moab.create_meshset(MESHSET_SET,children[0]); CHKERRQ_MOAB(rval);
-    rval = moab.create_meshset(MESHSET_SET,children[1]); CHKERRQ_MOAB(rval);
-    rval = moab.create_meshset(MESHSET_SET,children[2]); CHKERRQ_MOAB(rval);
+    rval = moab.create_meshset(MESHSET_SET|MESHSET_TRACK_OWNER,children[0]); CHKERRQ_MOAB(rval);
+    rval = moab.create_meshset(MESHSET_SET|MESHSET_TRACK_OWNER,children[1]); CHKERRQ_MOAB(rval);
+    rval = moab.create_meshset(MESHSET_SET|MESHSET_TRACK_OWNER,children[2]); CHKERRQ_MOAB(rval);
     rval = moab.add_child_meshset(SIDESET,children[0]); CHKERRQ_MOAB(rval);
     rval = moab.add_child_meshset(SIDESET,children[1]); CHKERRQ_MOAB(rval);
     rval = moab.add_child_meshset(SIDESET,children[2]); CHKERRQ_MOAB(rval);
@@ -368,7 +368,7 @@ PetscErrorCode Core::get_msId_3dENTS_split_sides(
   }
   //crete meshset for new mesh bit level
   EntityHandle meshset_for_bit_level;
-  rval = moab.create_meshset(MESHSET_SET,meshset_for_bit_level); CHKERRQ_MOAB(rval);
+  rval = moab.create_meshset(MESHSET_SET|MESHSET_TRACK_OWNER,meshset_for_bit_level); CHKERRQ_MOAB(rval);
   //subtract those elements which will be refined, i.e. disconnected form other side elements, and connected to new prisms, if they area created
   meshset_3d_ents = subtract(meshset_3d_ents,side_ents3d);
   rval = moab.add_entities(meshset_for_bit_level,meshset_3d_ents); CHKERRQ_MOAB(rval);
@@ -407,7 +407,7 @@ PetscErrorCode Core::get_msId_3dENTS_split_sides(
     if(nb_new_conn==0) {
       if(verb>3) {
         EntityHandle meshset_error_out;
-        rval = moab.create_meshset(MESHSET_SET,meshset_error_out); CHKERRQ_MOAB(rval);
+        rval = moab.create_meshset(MESHSET_SET|MESHSET_TRACK_OWNER,meshset_error_out); CHKERRQ_MOAB(rval);
         rval = moab.add_entities(meshset_error_out,&*eit3d,1); CHKERRQ_MOAB(rval);
         ierr = moab.write_file("error_out.vtk","VTK","",&meshset_error_out,1); CHKERRQ(ierr);
       }
@@ -567,19 +567,19 @@ PetscErrorCode Core::get_msId_3dENTS_split_sides(
 	  if(new_ent.size()!=1) {
 	    if(rAnk==0) {
 	      EntityHandle out_meshset;
-	      rval = moab.create_meshset(MESHSET_SET,out_meshset); CHKERRQ_MOAB(rval);
+	      rval = moab.create_meshset(MESHSET_SET|MESHSET_TRACK_OWNER,out_meshset); CHKERRQ_MOAB(rval);
 	      rval = moab.add_entities(out_meshset,&*eit,1); CHKERRQ_MOAB(rval);
 	      rval = moab.write_file("debug_get_msId_3dENTS_split_sides.vtk","VTK","",&out_meshset,1); CHKERRQ_MOAB(rval);
 	      rval = moab.delete_entities(&out_meshset,1); CHKERRQ_MOAB(rval);
-	      rval = moab.create_meshset(MESHSET_SET,out_meshset); CHKERRQ_MOAB(rval);
+	      rval = moab.create_meshset(MESHSET_SET|MESHSET_TRACK_OWNER,out_meshset); CHKERRQ_MOAB(rval);
 	      rval = moab.add_entities(out_meshset,side_ents3d); CHKERRQ_MOAB(rval);
 	      rval = moab.write_file("debug_get_msId_3dENTS_split_sides_side_ents3d.vtk","VTK","",&out_meshset,1); CHKERRQ_MOAB(rval);
 	      rval = moab.delete_entities(&out_meshset,1); CHKERRQ_MOAB(rval);
-	      rval = moab.create_meshset(MESHSET_SET,out_meshset); CHKERRQ_MOAB(rval);
+	      rval = moab.create_meshset(MESHSET_SET|MESHSET_TRACK_OWNER,out_meshset); CHKERRQ_MOAB(rval);
 	      rval = moab.add_entities(out_meshset,other_ents3d); CHKERRQ_MOAB(rval);
 	      rval = moab.write_file("debug_get_msId_3dENTS_split_sides_other_ents3d.vtk","VTK","",&out_meshset,1); CHKERRQ_MOAB(rval);
 	      rval = moab.delete_entities(&out_meshset,1); CHKERRQ_MOAB(rval);
-	      rval = moab.create_meshset(MESHSET_SET,out_meshset); CHKERRQ_MOAB(rval);
+	      rval = moab.create_meshset(MESHSET_SET|MESHSET_TRACK_OWNER,out_meshset); CHKERRQ_MOAB(rval);
 	      rval = moab.add_entities(out_meshset,triangles); CHKERRQ_MOAB(rval);
 	      rval = moab.write_file("debug_get_msId_3dENTS_split_triangles.vtk","VTK","",&out_meshset,1); CHKERRQ_MOAB(rval);
 	      rval = moab.delete_entities(&out_meshset,1); CHKERRQ_MOAB(rval);

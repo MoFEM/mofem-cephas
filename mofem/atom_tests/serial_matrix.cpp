@@ -77,7 +77,7 @@ int main(int argc, char *argv[]) {
   //Create MoFEM (Joseph) database
   //second argument set communicator for sequential problem
   //last argument make mofem quaiet
-  MoFEM::Core core(moab,PETSC_COMM_SELF,MB_TAG_DENSE,-1);
+  MoFEM::Core core(moab,PETSC_COMM_SELF,-1);
   MoFEM::Interface& m_field = core;
 
   //ref meshset ref level 0

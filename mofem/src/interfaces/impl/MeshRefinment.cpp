@@ -628,7 +628,7 @@ PetscErrorCode Core::refine_TET(const Range &_tets,const BitRefLevel &bit,const 
       ref_edges_nodes_tets.insert(*reit);
 
       EntityHandle meshset_out;
-      rval = moab.create_meshset(MESHSET_SET,meshset_out); CHKERRQ_MOAB(rval);
+      rval = moab.create_meshset(MESHSET_SET|MESHSET_TRACK_OWNER,meshset_out); CHKERRQ_MOAB(rval);
       rval = moab.add_entities(meshset_out,ref_edges_nodes_tets); CHKERRQ_MOAB(rval);
       rval = moab.write_file("debug_error.vtk","VTK","",&meshset_out,1); CHKERRQ_MOAB(rval);
       rval = moab.delete_entities(&meshset_out,1); CHKERRQ_MOAB(rval);

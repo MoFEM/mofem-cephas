@@ -110,7 +110,7 @@ PetscErrorCode PrismsFromSurfaceInterface::createPrisms(const Range &ents,Range 
     }
     if(number_nodes>3) {
       EntityHandle meshset;
-      rval = m_field.get_moab().create_meshset(MESHSET_SET,meshset); CHKERRQ_MOAB(rval);
+      rval = m_field.get_moab().create_meshset(MESHSET_SET|MESHSET_TRACK_OWNER,meshset); CHKERRQ_MOAB(rval);
       rval = m_field.get_moab().add_entities(meshset,&f4,1); CHKERRQ_MOAB(rval);
       for(int ee = 0;ee<=2;ee++) {
         EntityHandle e2;

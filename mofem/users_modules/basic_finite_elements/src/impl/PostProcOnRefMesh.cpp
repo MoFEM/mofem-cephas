@@ -287,7 +287,7 @@ PetscErrorCode PostProcVolumeOnRefinedMesh::generateReferenceElementMesh() {
   EntityHandle tet;
   rval = moab_ref.create_element(MBTET,nodes,4,tet); CHKERRQ_MOAB(rval);
 
-  MoFEM::Core m_core_ref(moab_ref,PETSC_COMM_SELF,MB_TAG_DENSE,-2);
+  MoFEM::Core m_core_ref(moab_ref,PETSC_COMM_SELF,-2);
   MoFEM::Interface& m_field_ref = m_core_ref;
 
   ierr = m_field_ref.seed_ref_level_3D(0,BitRefLevel().set(0)); CHKERRQ(ierr);
@@ -313,7 +313,7 @@ PetscErrorCode PostProcVolumeOnRefinedMesh::generateReferenceElementMesh() {
     // Range edges;
     // rval = moab_ref.get_adjacencies(tets,1,true,edges); CHKERRQ_MOAB(rval);
     EntityHandle meshset;
-    rval = moab_ref.create_meshset(MESHSET_SET,meshset); CHKERRQ_MOAB(rval);
+    rval = moab_ref.create_meshset(MESHSET_SET|MESHSET_TRACK_OWNER,meshset); CHKERRQ_MOAB(rval);
     rval = moab_ref.add_entities(meshset,tets); CHKERRQ_MOAB(rval);
     rval = moab_ref.convert_entities(meshset,true,false,false); CHKERRQ_MOAB(rval);
     rval = moab_ref.delete_entities(&meshset,1); CHKERRQ_MOAB(rval);
@@ -359,7 +359,7 @@ PetscErrorCode PostProcVolumeOnRefinedMesh::generateReferenceElementMesh() {
   ); CHKERRQ(ierr);
 
   // EntityHandle meshset;
-  // rval = moab_ref.create_meshset(MESHSET_SET,meshset); CHKERRQ_MOAB(rval);
+  // rval = moab_ref.create_meshset(MESHSET_SET|MESHSET_TRACK_OWNER,meshset); CHKERRQ_MOAB(rval);
   // rval = moab_ref.add_entities(meshset,tets); CHKERRQ_MOAB(rval);
   // rval = moab_ref.write_file("test_reference_mesh.vtk","VTK","",&meshset,1); CHKERRQ_MOAB(rval);
   //moab_ref.list_entities(tets);
@@ -644,7 +644,7 @@ PetscErrorCode PostProcFatPrismOnRefinedMesh::setGaussPtsTrianglesOnly(int order
     Range edges;
     rval = postProcMesh.get_adjacencies(&prism,1,1,true,edges); CHKERRQ_MOAB(rval);
     EntityHandle meshset;
-    rval = postProcMesh.create_meshset(MESHSET_SET,meshset); CHKERRQ_MOAB(rval);
+    rval = postProcMesh.create_meshset(MESHSET_SET|MESHSET_TRACK_OWNER,meshset); CHKERRQ_MOAB(rval);
     rval = postProcMesh.add_entities(meshset,&prism,1); CHKERRQ_MOAB(rval);
     // rval = postProcMesh.add_entities(meshset,faces); CHKERRQ_MOAB(rval);
     rval = postProcMesh.add_entities(meshset,edges); CHKERRQ_MOAB(rval);
@@ -880,7 +880,7 @@ PetscErrorCode PostProcFaceOnRefinedMesh::setGaussPts(int order) {
     Range edges;
     rval = postProcMesh.get_adjacencies(&tri,1,1,true,edges); CHKERRQ_MOAB(rval);
     EntityHandle meshset;
-    rval = postProcMesh.create_meshset(MESHSET_SET,meshset); CHKERRQ_MOAB(rval);
+    rval = postProcMesh.create_meshset(MESHSET_SET|MESHSET_TRACK_OWNER,meshset); CHKERRQ_MOAB(rval);
     rval = postProcMesh.add_entities(meshset,&tri,1); CHKERRQ_MOAB(rval);
     rval = postProcMesh.add_entities(meshset,edges); CHKERRQ_MOAB(rval);
     if(sixNodePostProcTris) {

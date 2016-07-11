@@ -351,7 +351,7 @@ namespace MoFEM {
           eit = ents_to_remove.erase(eit);
           continue;
         }
-        if((bit2&bit)!=bit) {
+        if((bit2&bit).none()) {
           eit = ents_to_remove.erase(eit);
           continue;
         }
@@ -426,7 +426,7 @@ namespace MoFEM {
           eit = ents_to_remove.erase(eit);
           continue;
         }
-        if((bit2&bit)!=bit) {
+        if((bit2&bit).none()) {
           eit = ents_to_remove.erase(eit);
           continue;
         }
@@ -486,7 +486,7 @@ namespace MoFEM {
         ent_it++;
         continue;
       }
-      if((bit2&bit)!=bit) {
+      if((bit2&bit).none()) {
         ent_it++;
         continue;
       }
@@ -514,7 +514,7 @@ namespace MoFEM {
           eit = ents_to_delete.erase(eit);
           continue;
         }
-        if((bit2&bit)!=bit) {
+        if((bit2&bit).none()) {
           eit = ents_to_delete.erase(eit);
           continue;
         }
@@ -534,7 +534,7 @@ namespace MoFEM {
           }
           /*if(rAnk==0) {
           EntityHandle out_meshset;
-          rval = moab.create_meshset(MESHSET_SET,out_meshset); CHKERRQ_MOAB(rval);
+          rval = moab.create_meshset(MESHSET_SET|MESHSET_TRACK_OWNER,out_meshset); CHKERRQ_MOAB(rval);
           rval = moab.add_entities(out_meshset,&ent,1); CHKERRQ_MOAB(rval);
           rval = moab.add_entities(out_meshset,&*eit,1); CHKERRQ_MOAB(rval);
           rval = moab.write_file("error.vtk","VTK","",&out_meshset,1); CHKERRQ_MOAB(rval);
@@ -574,16 +574,15 @@ namespace MoFEM {
     }
     if(verb>2) {
       EntityHandle out_meshset;
-      rval = moab.create_meshset(MESHSET_SET,out_meshset); CHKERRQ_MOAB(rval);
+      rval = moab.create_meshset(MESHSET_SET|MESHSET_TRACK_OWNER,out_meshset); CHKERRQ_MOAB(rval);
       rval = moab.add_entities(out_meshset,ents_to_delete.subset_by_type(MBTET)); CHKERRQ_MOAB(rval);
       rval = moab.write_file("debug_ents_to_delete.vtk","VTK","",&out_meshset,1); CHKERRQ_MOAB(rval);
       rval = moab.delete_entities(&out_meshset,1); CHKERRQ_MOAB(rval);
     }
-    rval = moab.delete_entities(ents_to_delete); CHKERRQ_MOAB(rval);
-    //delete entities form moab
-    // for(int dd = 3;dd>=0;dd--) {
-    //   rval = moab.delete_entities(ents_to_delete.subset_by_dimension(dd)); CHKERRQ_MOAB(rval);
-    // }
+    // rval = moab.delete_entities(ents_to_delete); CHKERRQ_MOAB(rval);
+    for(int dd = 3;dd>=0;dd--) {
+      rval = moab.delete_entities(ents_to_delete.subset_by_dimension(dd)); CHKERRQ_MOAB(rval);
+    }
     PetscFunctionReturn(0);
   }
   PetscErrorCode Core::delete_finite_elements_by_bit_ref(
@@ -603,7 +602,7 @@ namespace MoFEM {
         fe_it++;
         continue;
       }
-      if((bit2&bit)!=bit) {
+      if((bit2&bit).none()) {
         fe_it++;
         continue;
       }

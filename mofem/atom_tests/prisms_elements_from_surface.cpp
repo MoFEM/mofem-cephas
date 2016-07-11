@@ -79,7 +79,7 @@ int main(int argc, char *argv[]) {
     prisms.merge(add_prims_layer);
 
     EntityHandle meshset;
-    rval = moab.create_meshset(MESHSET_SET,meshset); CHKERRQ_MOAB(rval);
+    rval = moab.create_meshset(MESHSET_SET|MESHSET_TRACK_OWNER,meshset); CHKERRQ_MOAB(rval);
     rval = moab.add_entities(meshset,prisms); CHKERRQ_MOAB(rval);
 
     BitRefLevel bit_level0;
