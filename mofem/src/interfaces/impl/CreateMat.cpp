@@ -687,20 +687,20 @@ PetscErrorCode Core::partition_problem(const std::string &name,int verb) {
   IS is;
   ierr = MatPartitioningCreate(comm,&part); CHKERRQ(ierr);
   //#ifdef __APPLE__
-  ierr = PetscBarrier((PetscObject)Adj); CHKERRQ(ierr);
+  // ierr = PetscBarrier((PetscObject)Adj); CHKERRQ(ierr);
   //#endif
   ierr = MatPartitioningSetAdjacency(part,Adj); CHKERRQ(ierr);
   ierr = MatPartitioningSetFromOptions(part); CHKERRQ(ierr);
   ierr = MatPartitioningSetNParts(part,sIze); CHKERRQ(ierr);
   //#ifdef __APPLE__
-  ierr = PetscBarrier((PetscObject)part); CHKERRQ(ierr);
+  // ierr = PetscBarrier((PetscObject)part); CHKERRQ(ierr);
   //#endif
   ierr = MatPartitioningApply(part,&is); CHKERRQ(ierr);
   if(verb>2) {
     ISView(is,PETSC_VIEWER_STDOUT_WORLD);
   }
   // #ifdef __APPLE__
-  ierr = PetscBarrier((PetscObject)is); CHKERRQ(ierr);
+  // ierr = PetscBarrier((PetscObject)is); CHKERRQ(ierr);
   // #endif
 
   //gather

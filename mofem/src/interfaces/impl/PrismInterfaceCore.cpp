@@ -410,6 +410,8 @@ PetscErrorCode Core::get_msId_3dENTS_split_sides(
         rval = moab.create_meshset(MESHSET_SET|MESHSET_TRACK_OWNER,meshset_error_out); CHKERRQ_MOAB(rval);
         rval = moab.add_entities(meshset_error_out,&*eit3d,1); CHKERRQ_MOAB(rval);
         ierr = moab.write_file("error_out.vtk","VTK","",&meshset_error_out,1); CHKERRQ(ierr);
+        rval = moab.delete_entities(&meshset_error_out,1); CHKERRQ_MOAB(rval);
+
       }
       SETERRQ1(PETSC_COMM_SELF,1,"database inconsistency, in side_ent3 is a tet which has no common node with interface, num_nodes = %d",num_nodes);
     }

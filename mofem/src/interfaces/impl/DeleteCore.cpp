@@ -469,7 +469,6 @@ namespace MoFEM {
     PetscFunctionReturn(0);
   }
 
-
   PetscErrorCode Core::remove_ents_by_bit_ref(const BitRefLevel &bit,const BitRefLevel &mask,int verb) {
     PetscFunctionBegin;
     if(verb==-1) verb = verbose;
@@ -578,6 +577,11 @@ namespace MoFEM {
       rval = moab.add_entities(out_meshset,ents_to_delete.subset_by_type(MBTET)); CHKERRQ_MOAB(rval);
       rval = moab.write_file("debug_ents_to_delete.vtk","VTK","",&out_meshset,1); CHKERRQ_MOAB(rval);
       rval = moab.delete_entities(&out_meshset,1); CHKERRQ_MOAB(rval);
+    }
+    Range meshsets;
+    rval = moab.get_entities_by_type(0,MBENTITYSET,meshsets,true);
+    for(Range::iterator mit = meshsets.begin();mit!=meshsets.end();mit++) {
+      rval = moab.remove_entities(*mit,ents_to_delete);
     }
     // rval = moab.delete_entities(ents_to_delete); CHKERRQ_MOAB(rval);
     for(int dd = 3;dd>=0;dd--) {

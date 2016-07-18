@@ -85,23 +85,10 @@ ent(ent) {
   }
   ParallelComm* pcomm = ParallelComm::get_pcomm(&basicDataPtr->moab,MYPCOMM_INDEX);
   if(pcomm == NULL) THROW_MESSAGE("pcomm is null");
-
   unsigned char pstatus;
-  rval = basicDataPtr->moab.tag_get_data(
-    pcomm->pstatus_tag(),&ent,1,&pstatus
-  ); MOAB_THROW(rval);
-
-  moab_owner_handle = -1;
-  if(pcomm->rank()>1) {
-    EntityHandle owner_handle_at_0;
-    rval = basicDataPtr->moab.tag_get_data(basicDataPtr->th_OwnerHandle,&ent,1,&owner_handle_at_0);
-    if(owner_handle_at_0!=-1) moab_owner_handle = owner_handle_at_0;
-  }
-
-  if(moab_owner_handle==-1) {
-    rval = pcomm->get_owner_handle(ent,owner_proc,moab_owner_handle); MOAB_THROW(rval);
-  }
-
+  rval = basicDataPtr->
+  moab.tag_get_data(pcomm->pstatus_tag(),&ent,1,&pstatus); MOAB_THROW(rval);
+  rval = pcomm->get_owner_handle(ent,owner_proc,moab_owner_handle); MOAB_THROW(rval);
 }
 
 unsigned char BasicEntity::getPStatus() const {

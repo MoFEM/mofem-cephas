@@ -1565,7 +1565,11 @@ PetscErrorCode Core::seed_ref_level(const Range &ents,const BitRefLevel &bit,int
         ierr = test_moab(moab,*tit); CHKERRQ(ierr);
       }
       bool success = refinedEntities.modify(p_ent.first,RefEntity_change_add_bit(bit));
-      if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
+      if(!success) {
+        SETERRQ(
+          PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful"
+        );
+      }
       if(verb>2) {
         std::ostringstream ss;
         ss << **p_ent.first;

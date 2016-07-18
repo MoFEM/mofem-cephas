@@ -634,6 +634,13 @@ namespace MoFEM {
     *buildMoFEM |= 1<<1;
     PetscFunctionReturn(0);
   }
+
+  PetscErrorCode build_finite_elements(const BitRefLevel &bit,int verb) {
+    PetscFunctionBegin;
+    SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"Not yet implemented");
+    PetscFunctionReturn(0);
+  }
+
   PetscErrorCode Core::build_finite_elements(const string fe_name,const Range *ents_ptr,int verb) {
     PetscFunctionBegin;
     if(verb==-1) verb = verbose;

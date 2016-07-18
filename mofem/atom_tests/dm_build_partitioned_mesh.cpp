@@ -64,7 +64,7 @@ int main(int argc, char *argv[]) {
   option = "PARALLEL=BCAST_DELETE;PARALLEL_RESOLVE_SHARED_ENTS;PARTITION=PARALLEL_PARTITION;";
   rval = moab.load_file(mesh_file_name, 0, option); CHKERRQ_MOAB(rval);
 
-  MoFEM::Core core(moab,PETSC_COMM_WORLD,MB_TAG_DENSE);
+  MoFEM::Core core(moab,PETSC_COMM_WORLD);
   MoFEM::Interface& m_field = core;
 
   EntityHandle root_set = moab.get_root_set();

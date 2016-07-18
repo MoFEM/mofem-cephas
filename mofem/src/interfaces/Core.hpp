@@ -581,6 +581,7 @@ struct Core: public Interface, MeshRefinment, PrismInterface, SeriesRecorder {
   ///add entity EntFe to finite element data databse and resolve dofs on that entity
   //loop over all finite elements, resolve its meshsets, and resolve dofs on that entitie
   PetscErrorCode build_finite_elements(int verb = -1);
+  PetscErrorCode build_finite_elements(const BitRefLevel &bit,int verb = -1);
   PetscErrorCode build_finite_elements(const boost::shared_ptr<FiniteElement> fe,const Range *ents_ptr = NULL,int verb = -1);
   PetscErrorCode build_finite_elements(const string fe_name,const Range *ents_ptr = NULL,int verb = -1);
   PetscErrorCode clear_finite_elements(const BitRefLevel &bit,const BitRefLevel &mask,int verb = -1);

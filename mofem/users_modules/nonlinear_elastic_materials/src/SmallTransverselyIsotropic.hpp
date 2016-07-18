@@ -1,6 +1,6 @@
-/** \file Hooke.hpp
+/** \file SmallStrainTranverslyIsotropic.hpp
  * \ingroup nonlinear_elastic_elem
- * \brief Implementation of linear elastic material
+ * \brief Implementation of linear transverse isotropic material.
  */
 
 /* This file is part of MoFEM.
