@@ -121,6 +121,10 @@ add_custom_target(
   COMMENT "Checkout CDashTesting branch ..." VERBATIM
 )
 add_custom_target(
+  checkout_develop
+  COMMENT "Checkout develop branch ..." VERBATIM
+)
+add_custom_target(
   checkout_master
   COMMENT "Checkout master branch ..." VERBATIM
 )
@@ -181,6 +185,13 @@ foreach(LOOP_MODULE ${INSTLLED_MODULES})
     COMMENT "Checkout CDashTesting baranch for module ${MODULE_NAME}" VERBATIM
   )
   add_dependencies(checkout_CDashTesting checkout_CDashTesting_${MODULE_NAME})
+  add_custom_target(
+    checkout_develop_${MODULE_NAME}
+    COMMAND ${GIT_EXECUTABLE} checkout develop
+    WORKING_DIRECTORY ${MODULE_DIRECTORY}
+    COMMENT "Checkout develop baranch for module ${MODULE_NAME}" VERBATIM
+  )
+  add_dependencies(checkout_develop checkout_develop_${MODULE_NAME})
   add_custom_target(
     checkout_master_${MODULE_NAME}
     COMMAND ${GIT_EXECUTABLE} checkout master
