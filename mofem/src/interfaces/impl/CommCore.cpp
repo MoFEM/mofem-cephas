@@ -252,64 +252,6 @@ namespace MoFEM {
     PetscFunctionReturn(0);
   }
 
-  PetscErrorCode Core::set_owner_handle(
-    std::vector<EntityHandle> ents,const int from_proc,int verb
-  ) {
-    PetscFunctionBegin;
-
-    const size_t handle_size = sizeof(EntityHandle);
-    const size_t buff_size = handle_size*ents.size()/sizeof(PetscInt);
-    if(sizeof(EntityHandle) % sizeof(PetscInt)) {
-      SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"Data inconsistency");
-    }
-
-    // Make sure it is a PETSc comm
-    ierr = PetscCommDuplicate(comm,&comm,NULL); CHKERRQ(ierr);
-
-    IS is_from_proc;
-    PetscInt *idx = (int*)&ents[0];
-    ierr = ISCreateGeneral(
-      comm,buff_size,idx,PETSC_USE_POINTER,&is_from_proc
-    ); CHKERRQ(ierr);
-
-    EntityHandle *test_iter = (EntityHandle*)&idx[0];
-    for(int ii = 0;ii!=ents.size();ii++) {
-      if(test_iter[ii]!=ents[ii]) {
-        SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"Data inconsistency");
-      }
-    }
-
-    // Gather handles
-    IS is_gather;
-    ierr = ISAllGather(is_from_proc,&is_gather); CHKERRQ(ierr);
-    ierr = ISDestroy(&is_from_proc); CHKERRQ(ierr);
-
-    const EntityHandle *owner_hs;
-    ierr = ISGetIndices(is_gather,(const int**)&owner_hs); CHKERRQ(ierr);
-
-    ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
-    if(pcomm == NULL) pcomm =  new ParallelComm(&moab,comm);
-
-    if(sIze>1) {
-
-      for(int ii = 0;ii!=ents.size();ii++) {
-
-        if(owner_hs[rAnk*ents.size()+ii] != ents[ii]) {
-          SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"Data inconsistency");
-        }
-
-        rval = moab.tag_set_data(th_OwnerHandle,&ents[ii],1,&owner_hs[ii]); CHKERRQ_MOAB(rval);
-
-      }
-
-    }
-
-    ierr = ISRestoreIndices(is_gather,(const int**)&owner_hs); CHKERRQ(ierr);
-    ierr = ISDestroy(&is_gather); CHKERRQ(ierr);
-
-    PetscFunctionReturn(0);
-  }
-
   PetscErrorCode Core::resolve_shared_ents(const MoFEMProblem *problem_ptr,const std::string &fe_name,int verb) {
     PetscFunctionBegin;
     ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);

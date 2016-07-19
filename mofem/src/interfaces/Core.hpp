@@ -409,9 +409,6 @@ struct Core: public Interface, MeshRefinment, PrismInterface, SeriesRecorder {
   PetscErrorCode synchronise_field_entities(const BitFieldId id,int verb = -1);
   PetscErrorCode synchronise_field_entities(const std::string& name,int verb = -1);
 
-  //Set owner handle
-  PetscErrorCode set_owner_handle(std::vector<EntityHandle> ents,const int from_proc = 0,int verb = -1);
-
   /**
    * \brief Add filed
    * @param  name           Field name

@@ -220,27 +220,3 @@ foreach(LOOP_MODULE ${INSTLLED_MODULES})
   # include module
   include(${LOOP_MODULE})
 endforeach(LOOP_MODULE)
-
-
-# Base modules programs
-# FIXME: This has to find solution as a install with sub-modules
-add_subdirectory(
-  ${UM_SOURCE_DIR}/thermal
-  ${PROJECT_BINARY_DIR}/thermal
-)
-add_subdirectory(
-  ${UM_SOURCE_DIR}/ultraweak
-  ${PROJECT_BINARY_DIR}/ultraweak
-)
-add_subdirectory(
-  ${UM_SOURCE_DIR}/elasticity
-  ${PROJECT_BINARY_DIR}/elasticity
-)
-add_subdirectory(
-  ${UM_SOURCE_DIR}/cohesive_interface
-  ${PROJECT_BINARY_DIR}/cohesive_interface
-)
-add_subdirectory(
-  ${UM_SOURCE_DIR}/nonlinear_elasticity
-  ${PROJECT_BINARY_DIR}/nonlinear_elasticity
-)

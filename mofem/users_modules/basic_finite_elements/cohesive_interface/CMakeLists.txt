@@ -11,13 +11,13 @@
 # You should have received a copy of the GNU Lesser General Public
 # License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 
-include_directories(${UM_SOURCE_DIR}/elasticity/src)
-include_directories(${UM_SOURCE_DIR}/nonlinear_elasticity)
-include_directories(${UM_SOURCE_DIR}/nonlinear_elastic_materials/src)
-include_directories(${UM_SOURCE_DIR}/cohesive_interface/src)
+include_directories(${UM_SOURCE_DIR}/basic_finite_elements/elasticity/src)
+include_directories(${UM_SOURCE_DIR}/basic_finite_elements/nonlinear_elasticity)
+include_directories(${UM_SOURCE_DIR}/basic_finite_elements/nonlinear_elastic_materials/src)
+include_directories(${UM_SOURCE_DIR}/basic_finite_elements/cohesive_interface/src)
 
 add_executable(arc_length_interface
-  ${UM_SOURCE_DIR}/cohesive_interface/arc_length_interface.cpp
+  ${CMAKE_CURRENT_SOURCE_DIR}/arc_length_interface.cpp
 )
 target_link_libraries(arc_length_interface
   users_modules

@@ -12,10 +12,16 @@
 # You should have received a copy of the GNU Lesser General Public
 # License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 
-include_directories(${UM_SOURCE_DIR}/nonlinear_elastic_materials/src)
+include_directories(
+  ${UM_SOURCE_DIR}/basic_finite_elements/nonlinear_elastic_materials/src
+)
+
+include_directories(
+  ${UM_SOURCE_DIR}/nonlinear_elastic_materials/src
+)
 
 add_executable(elasticity
-  ${UM_SOURCE_DIR}/elasticity/elasticity.cpp
+  ${UM_SOURCE_DIR}/basic_finite_elements/elasticity/elasticity.cpp
 )
 target_link_libraries(elasticity
   users_modules
@@ -33,9 +39,11 @@ target_link_libraries(elasticity
 cm_export_file("LShape.h5m" export_files_elasticity)
 cm_export_file("LShape2Parts.h5m" export_files_elasticity)
 
-file(COPY
-    ${CMAKE_CURRENT_SOURCE_DIR}/README
-    DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/)
+file(
+  COPY
+  ${CMAKE_CURRENT_SOURCE_DIR}/README
+  DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/
+)
 
 #testing
 add_test(ElasticityTest

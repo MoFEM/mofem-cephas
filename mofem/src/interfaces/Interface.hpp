@@ -340,12 +340,6 @@ struct Interface: public UnknownInterface {
    */
   virtual PetscErrorCode clear_database(int verb  = -1) = 0;
 
-  /** \brief Set unique owning handle on all processors
-  */
-  virtual PetscErrorCode set_owner_handle(
-    std::vector<EntityHandle> ents,const int from_proc = 0,int verb = -1
-  ) = 0;
-
   /**
    * \brief Clear database and initialize it once again
    * @param  verb Verbosity level

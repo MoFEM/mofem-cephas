@@ -11,15 +11,19 @@
 # You should have received a copy of the GNU Lesser General Public
 # License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 
-file(COPY
-    ${CMAKE_CURRENT_SOURCE_DIR}/README
-    DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/)
+file(
+  COPY
+  ${CMAKE_CURRENT_SOURCE_DIR}/README
+  DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/
+)
 
 # For convinience source files from MoFEM project are used. If user is
 # implementing independent application it will be using instead project
 # directories.
 
-add_executable(transport ${UM_SOURCE_DIR}/ultraweak/transport.cpp)
+add_executable(
+  transport ${UM_SOURCE_DIR}/basic_finite_elements/ultraweak/transport.cpp
+)
 target_link_libraries(transport
   users_modules
   mofem_finite_elements

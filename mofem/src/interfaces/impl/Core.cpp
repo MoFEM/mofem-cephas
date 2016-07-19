@@ -648,11 +648,6 @@ PetscErrorCode Core::getTags(int verb) {
   rval = moab.tag_get_handle("_SeriesName",def_val_len,MB_TYPE_OPAQUE,
     th_SeriesName,MB_TAG_CREAT|MB_TAG_BYTES|MB_TAG_VARLEN|MB_TAG_SPARSE,NULL
   ); CHKERRQ_MOAB(rval);
-  //Handle on processor 0
-  const EntityHandle def_neg_handle = -1;
-  rval = moab.tag_get_handle(
-    "_OwnerHandle",1,MB_TYPE_HANDLE,th_OwnerHandle,MB_TAG_CREAT|MB_TAG_SPARSE,&def_neg_handle
-  ); CHKERRQ_MOAB(rval);
 
   //For VTK files
   int def_elem_type = MBMAXTYPE;

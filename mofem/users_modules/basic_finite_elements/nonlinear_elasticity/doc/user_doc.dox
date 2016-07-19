@@ -17,19 +17,18 @@ and mass matrix is implemented in \ref ConvectiveMassElement.
 \subsection dynamic_elastic_bar_input_file Input files
 
 Following description and line commands are in presumption that user parent
-working directory is \em
-users_modules/nonlinear_elasticity/examples/prismatic_bar in build directory.
+working directory is \em users_modules/basic_finite_elements/nonlinear_elasticity/examples/prismatic_bar in build directory.
 All input files used in this example can be found in the example directory.
 
 \subsection journal Journal file
 
 Mesh file with boundary conditions, material properties can be created with Cubit journal file with prismatic bar (rod.jou),
-\include users_modules/nonlinear_elasticity/examples/prismatic_bar/rod.jou
+\include users_modules/basic_finite_elements/nonlinear_elasticity/examples/prismatic_bar/rod.jou
 
 \subsection time_history Time history data
 
 Time data history file (rod_history.in),
-\include users_modules/nonlinear_elasticity/examples/prismatic_bar/rod_history.in
+\include users_modules/basic_finite_elements/nonlinear_elasticity/examples/prismatic_bar/rod_history.in
 where first column represents time and second column represent time force scaling.
 
 \subsection execution Executing code
@@ -90,7 +89,7 @@ Running dynamic analysis out_values_1.h5m, out_values_2.h5m, ... are created
 for each time step. Post-processing mesh in output fails is stored in native MoAB data format
 using standard h5m.
 
-VTK files can be generated using script located in \em users_modules/nonlinear_elasticity/do_vtk.sh. For example
+VTK files can be generated using script located in \em users_modules/basic_finite_elements/nonlinear_elasticity/do_vtk.sh. For example
 \code
 ../../do_vtk.sh out_values_*h5m
 \endcode
@@ -117,16 +116,15 @@ For Alpha method user can set spectral radius following petsc documentation
 \subsection dam_input_file Input files
 
 Following description and line commands are in presumption that user parent
-working directory is \em
-users_modules/nonlinear_elasticity/examples/dam in build directory.
+working directory is \em users_modules/basic_finite_elements/nonlinear_elasticity/examples/dam in build directory.
 All input files used in this example can be found in the example directory.
 
 \subsection accelerogram Accelerogram
 
 This is simplified analysis of dam structure subjected to earthquake. Dynamic
 loads given in accelerogram are given in
-\em users_modules/nonlinear_elasticity/examples/dam/accelerogram.in
-\include users_modules/nonlinear_elasticity/examples/dam/accelerogram.in
+\em users_modules/basic_finite_elements/nonlinear_elasticity/examples/dam/accelerogram.in
+\include users_modules/basic_finite_elements/nonlinear_elasticity/examples/dam/accelerogram.in
 where first columb represents time, second acceleretaion in \em x-direction,
 third column acceleration in \em y-direction and last column is acceleration in
 \em y-direction.
@@ -135,13 +133,13 @@ third column acceleration in \em y-direction and last column is acceleration in
 
 For simplicity are other loads are constant in time, and time depenent laad
 scaling function is in
-\em users_modules/nonlinear_elasticity/examples/dam/dam_history.in
-\include users_modules/nonlinear_elasticity/examples/dam/dam_history.in
+\em users_modules/basic_finite_elements/nonlinear_elasticity/examples/dam/dam_history.in
+\include users_modules/basic_finite_elements/nonlinear_elasticity/examples/dam/dam_history.in
 
 \subsection execution_dam Executing code
 
 Line command executing model should be run from
-users_modules/nonlinear_elasticity/examples/dam in build directory
+users_modules/basic_finite_elements/nonlinear_elasticity/examples/dam in build directory
 \code
 mpirun -np 4 ../../nonlinear_dynamics \
 -my_file dam.h5m \
@@ -175,12 +173,12 @@ calculate initial displacements.
  file overwrite material parameters set in Cubit journal file
 
 User can set material parameters or approximation order to each block defined in cubit.
-\include users_modules/nonlinear_elasticity/examples/dam/block_data.in
+\include users_modules/basic_finite_elements/nonlinear_elasticity/examples/dam/block_data.in
 
 \subsection journal_dam Journal file
 
 Mesh journal mesh file is shown bellow. Pleas note end of the file were bondary conditions,
 blocks with elstic matrix, damping model and body forces are defined.
-\include users_modules/nonlinear_elasticity/examples/dam/dam.jou
+\include users_modules/basic_finite_elements/nonlinear_elasticity/examples/dam/dam.jou
 
 */
