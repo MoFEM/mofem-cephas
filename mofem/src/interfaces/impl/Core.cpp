@@ -612,6 +612,7 @@ PetscErrorCode Core::clearMap() {
   entFEAdjacencies.clear();
   pRoblems.clear();
   cubitMeshsets.clear();
+  coordinateSystems.clear();
   PetscFunctionReturn(0);
 }
 
@@ -634,8 +635,8 @@ PetscErrorCode Core::addPrismToDatabase(const EntityHandle prism,int verb) {
       rval = moab.get_adjacencies(&conn[3],3,2,false,face_side4); CHKERRQ_MOAB(rval);
       if(face_side3.size()!=1) SETERRQ(PETSC_COMM_SELF,1,"prism don't have side face 3");
       if(face_side4.size()!=1) SETERRQ(PETSC_COMM_SELF,1,"prims don't have side face 4");
-      p_MoFEMFiniteElement.first->get_side_number_ptr(moab,*face_side3.begin());
-      p_MoFEMFiniteElement.first->get_side_number_ptr(moab,*face_side4.begin());
+      p_MoFEMFiniteElement.first->getSideNumberPtr(moab,*face_side3.begin());
+      p_MoFEMFiniteElement.first->getSideNumberPtr(moab,*face_side4.begin());
     }
   } catch (MoFEMException const &e) {
     SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);

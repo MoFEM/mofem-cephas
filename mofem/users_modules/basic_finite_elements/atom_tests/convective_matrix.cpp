@@ -172,8 +172,8 @@ int main(int argc, char *argv[]) {
     for(_IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(m_field,"SPATIAL_POSITION",dof_ptr)) {
       if(dof_ptr->get()->getEntType()!=MBVERTEX) continue;
       EntityHandle ent = dof_ptr->get()->getEnt();
-      int dof_rank = dof_ptr->get()->get_dof_coeff_idx();
-      double &fval = dof_ptr->get()->get_FieldData();
+      int dof_rank = dof_ptr->get()->getDofCoeffIdx();
+      double &fval = dof_ptr->get()->getFieldData();
       if(node!=ent) {
 	rval = moab.get_coords(&ent,1,coords); CHKERRQ_MOAB(rval);
 	node = ent;
@@ -189,8 +189,8 @@ int main(int argc, char *argv[]) {
     for(_IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(m_field,"DOT_SPATIAL_POSITION",dof_ptr)) {
       if(dof_ptr->get()->getEntType()!=MBVERTEX) continue;
       EntityHandle ent = dof_ptr->get()->getEnt();
-      int dof_rank = dof_ptr->get()->get_dof_coeff_idx();
-      double &fval = dof_ptr->get()->get_FieldData();
+      int dof_rank = dof_ptr->get()->getDofCoeffIdx();
+      double &fval = dof_ptr->get()->getFieldData();
       if(node!=ent) {
 	rval = moab.get_coords(&ent,1,coords); CHKERRQ_MOAB(rval);
 	node = ent;

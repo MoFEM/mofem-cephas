@@ -274,7 +274,7 @@ PetscErrorCode MoFEMSeriesStep::get(Interface &moab,DofEntity_multiIndex &dofsFi
     dit = dofsField.get<Composite_Ent_and_ShortId_mi_tag>().find(boost::make_tuple(ent,uid));
     if(dit!=dofsField.get<Composite_Ent_and_ShortId_mi_tag>().end()) {
       //std::cerr << *dit << std::endl;
-      (*dit)->get_FieldData() = val;
+      (*dit)->getFieldData() = val;
     } else {
       SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_FOUND,
 	"data inconsistency, getting data series, dof on ENTITY and ShortId can't be found");

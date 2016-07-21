@@ -71,7 +71,7 @@ ArcLengthCtx::ArcLengthCtx(FieldInterface &m_field,const std::string &problem_na
       "can not find unique LAMBDA (load factor)",PETSC_NULL
     );
   }
-  if((unsigned int)mField.getCommRank()==(*dIt)->get_part()) {
+  if((unsigned int)mField.getCommRank()==(*dIt)->getPart()) {
     ierr = VecCreateGhostWithArray(
       mField.get_comm(),1,1,0,PETSC_NULL,&dLambda,&ghosTdLambda
     ); CHKERRABORT(PETSC_COMM_WORLD,ierr);
@@ -118,7 +118,7 @@ PetscErrorCode ArcLengthMatShell::setLambda(Vec ksp_x,double *lambda,ScatterMode
 
     switch(scattermode) {
       case SCATTER_FORWARD: {
-        int idx = arcPtr->getPetscGloablDofIdx();
+        int idx = arcPtr->getPetscGlobalDofIdx();
         ierr = VecGetValues(ksp_x,1,&idx,&*lambda); CHKERRQ(ierr);
       }
       break;
@@ -245,13 +245,24 @@ PetscErrorCode PCApplyArcLength(PC pc,Vec pc_f,Vec pc_x) {
   ierr = mat_ctx->setLambda(pc_f,&res_lambda,SCATTER_FORWARD); CHKERRQ(ierr);
   double ddlambda = (res_lambda - db_dot_pc_x)/denominator;
   if(ddlambda != ddlambda || denominator == 0) {
+    double nrm2_pc_f,nrm2_db,nrm2_pc_x,nrm2_xLambda;
+    ierr = VecNorm(pc_f,NORM_2,&nrm2_pc_f); CHKERRQ(ierr);
+    ierr = VecNorm(ctx->arcPtr->db,NORM_2,&nrm2_db); CHKERRQ(ierr);
+    ierr = VecNorm(pc_x,NORM_2,&nrm2_pc_x); CHKERRQ(ierr);
+    ierr = VecNorm(ctx->arcPtr->xLambda,NORM_2,&nrm2_xLambda); CHKERRQ(ierr);
     std::ostringstream ss;
     ss
     << "problem with ddlambda=" << res_lambda
+    << " res_lambda=" << res_lambda
+    << " denominator=" << denominator
     << " ddlamnda=" << ddlambda
     << " db_dot_pc_x=" << db_dot_pc_x
     << " db_dot_x_lambda=" << db_dot_x_lambda
-    << " diag=" << ctx->arcPtr->dIag;
+    << " diag=" << ctx->arcPtr->dIag
+    << " nrm2_db=" << nrm2_db
+    << " nrm2_pc_f=" << nrm2_pc_f
+    << " nrm2_pc_x=" << nrm2_pc_x
+    << " nrm2_xLambda=" << nrm2_xLambda;
     SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,ss.str().c_str());
   }
   ierr = VecAXPY(pc_x,ddlambda,ctx->arcPtr->xLambda); CHKERRQ(ierr);
@@ -318,7 +329,7 @@ PetscErrorCode SphericalArcLengthControl::operator()() {
     case CTX_SNESSETFUNCTION: {
       arcPtr->res_lambda = calculateLambdaInt() - pow(arcPtr->s,2);
       ierr = VecSetValue(
-        snes_f,arcPtr->getPetscGloablDofIdx(),arcPtr->res_lambda,ADD_VALUES
+        snes_f,arcPtr->getPetscGlobalDofIdx(),arcPtr->res_lambda,ADD_VALUES
       ); CHKERRQ(ierr);
       PetscPrintf(arcPtr->mField.get_comm(),"\tres_lambda = %6.4e\n",arcPtr->res_lambda);
     }
@@ -326,7 +337,7 @@ PetscErrorCode SphericalArcLengthControl::operator()() {
     case CTX_SNESSETJACOBIAN: {
       arcPtr->dIag = 2*arcPtr->dLambda*pow(arcPtr->beta,2)*arcPtr->F_lambda2;
       ierr = MatSetValue(
-        snes_B,arcPtr->getPetscGloablDofIdx(),arcPtr->getPetscGloablDofIdx(),1,ADD_VALUES
+        snes_B,arcPtr->getPetscGlobalDofIdx(),arcPtr->getPetscGlobalDofIdx(),1,ADD_VALUES
       ); CHKERRQ(ierr);
     }
     break;

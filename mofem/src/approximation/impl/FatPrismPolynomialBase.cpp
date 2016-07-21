@@ -392,7 +392,7 @@ PetscErrorCode FatPrismPolynomialBase::getValueH1(ublas::matrix<double> &pts) {
       int quads_nodes[3*4];
       int quad_order[3];
       double *quad_n[3],*diff_quad_n[3];
-      SideNumber_multiIndex& side_table = const_cast<SideNumber_multiIndex&>(cTx->fePtr->get_side_number_table());
+      SideNumber_multiIndex& side_table = const_cast<SideNumber_multiIndex&>(cTx->fePtr->getSideNumberTable());
       SideNumber_multiIndex::nth_index<1>::type::iterator siit;
       siit = side_table.get<1>().lower_bound(boost::make_tuple(MBQUAD,0));
       SideNumber_multiIndex::nth_index<1>::type::iterator hi_siit;

@@ -187,6 +187,7 @@ PetscErrorCode EdgeElementForcesAndSurcesCore::operator()() {
   ) {
 
     ierr = getEdgesDataOrderSpaceAndBase(dataH1,meshPositionsFieldName); CHKERRQ(ierr);
+    ierr = getEdgesFieldData(dataH1,meshPositionsFieldName); CHKERRQ(ierr);
     ierr = getNodesFieldData(dataH1,meshPositionsFieldName); CHKERRQ(ierr);
     try {
       ierr = opGetHoTangentOnEdge.opRhs(dataH1); CHKERRQ(ierr);
@@ -221,7 +222,7 @@ PetscErrorCode EdgeElementForcesAndSurcesCore::operator()() {
       const Field* field_struture = mField.get_field_structure(field_name);
       BitFieldId data_id = field_struture->getId();
 
-      if((oit->getNumeredEntFiniteElementPtr()->get_BitFieldId_data()&data_id).none()) {
+      if((oit->getNumeredEntFiniteElementPtr()->getBitFieldIdData()&data_id).none()) {
         SETERRQ2(
           PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"no data field < %s > on finite element < %s >",
           field_name.c_str(),feName.c_str()

@@ -51,7 +51,7 @@ PetscErrorCode PostProcCommonOnRefMesh::OpGetFieldValues::doWork(
     it = data.getFieldDofs().begin();
     hi_it = data.getFieldDofs().end();
     for(int ii = 0;it!=hi_it;it++,ii++) {
-      int local_idx = getFEMethod()->rowPtr->find((*it)->getGlobalUniqueId())->get()->get_petsc_local_dof_idx();
+      int local_idx = getFEMethod()->rowPtr->find((*it)->getGlobalUniqueId())->get()->getPetscLocalDofIdx();
       vAlues[ii] = a[local_idx];
     }
     ierr = VecRestoreArray(V,&a); CHKERRQ(ierr);
@@ -180,7 +180,7 @@ PetscErrorCode PostProcCommonOnRefMesh::OpGetFieldGradientValues::doWork(
     it = data.getFieldDofs().begin();
     hi_it = data.getFieldDofs().end();
     for(int ii = 0;it!=hi_it;it++,ii++) {
-      int local_idx = getFEMethod()->rowPtr->find((*it)->getGlobalUniqueId())->get()->get_petsc_local_dof_idx();
+      int local_idx = getFEMethod()->rowPtr->find((*it)->getGlobalUniqueId())->get()->getPetscLocalDofIdx();
       vAlues[ii] = a[local_idx];
     }
     ierr = VecRestoreArray(V,&a); CHKERRQ(ierr);

@@ -116,7 +116,7 @@ struct ThermalStressElement {
           PetscErrorCode ierr;
 
           const FENumeredDofEntity *dof_ptr;
-          ierr = getNumeredEntFiniteElementPtr()->get_row_dofs_by_petsc_gloabl_dof_idx(data.getIndices()[0],&dof_ptr); CHKERRQ(ierr);
+          ierr = getNumeredEntFiniteElementPtr()->getRowDofsByPetscGlobalDofIdx(data.getIndices()[0],&dof_ptr); CHKERRQ(ierr);
           int rank = dof_ptr->getNbOfCoeffs();
           if(rank != 3) {
             SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");

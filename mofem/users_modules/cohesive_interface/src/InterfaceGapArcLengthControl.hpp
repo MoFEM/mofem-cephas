@@ -127,7 +127,7 @@ struct ArcLengthIntElemFEMethod: public FEMethod {
     array_int_lambda[0] = 0;
     for(;dit!=hi_dit;dit++) {
       if(dit->get()->getEntType() != MBVERTEX) continue;
-      if(pcomm->rank() != dit->get()->get_part()) continue;
+      if(pcomm->rank() != dit->get()->getPart()) continue;
       if(Nodes3.find(dit->get()->getEnt())!=Nodes3.end()) {
         array_int_lambda[0] += array[dit->get()->petsc_local_dof_idx];
       }
@@ -187,7 +187,7 @@ struct ArcLengthIntElemFEMethod: public FEMethod {
       case CTX_SNESSETFUNCTION: {
         //calculate residual for arc length row
         arcPtr->res_lambda = lambda_int - arcPtr->s;
-        ierr = VecSetValue(snes_f,arcPtr->getPetscGloablDofIdx(),arcPtr->res_lambda,ADD_VALUES); CHKERRQ(ierr);
+        ierr = VecSetValue(snes_f,arcPtr->getPetscGlobalDofIdx(),arcPtr->res_lambda,ADD_VALUES); CHKERRQ(ierr);
         PetscPrintf(PETSC_COMM_SELF,"\tres_lambda = %6.4e lambda_int = %6.4e s = %6.4e\n",
         arcPtr->res_lambda,lambda_int,arcPtr->s);
       }
@@ -195,7 +195,7 @@ struct ArcLengthIntElemFEMethod: public FEMethod {
       case CTX_SNESSETJACOBIAN: {
         //calculate diagonal therm
         arcPtr->dIag = arcPtr->beta*sqrt(arcPtr->F_lambda2);
-        ierr = MatSetValue(snes_B,arcPtr->getPetscGloablDofIdx(),arcPtr->getPetscGloablDofIdx(),1,ADD_VALUES); CHKERRQ(ierr);
+        ierr = MatSetValue(snes_B,arcPtr->getPetscGlobalDofIdx(),arcPtr->getPetscGlobalDofIdx(),1,ADD_VALUES); CHKERRQ(ierr);
       }
       break;
       default:

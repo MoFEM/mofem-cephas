@@ -195,7 +195,7 @@ struct NitscheMethod {
           p_data.iNdices = data.getIndices();
           p_data.dofOrders.resize(data.getFieldDofs().size(),false);
           for(unsigned int dd = 0;dd<data.getFieldDofs().size();dd++) {
-            p_data.dofOrders[dd] = data.getFieldDofs()[dd]->get_dof_order();
+            p_data.dofOrders[dd] = data.getFieldDofs()[dd]->getDofOrder();
           }
           // std::cerr << shape_fun << std::endl;
         }

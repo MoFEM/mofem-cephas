@@ -92,7 +92,7 @@ PetscErrorCode Core::field_axpy(const double alpha,const std::string& field_name
           }
         }
       }
-      (*dit)->get_FieldData() += alpha*data;
+      (*dit)->getFieldData() += alpha*data;
     }
   }
   PetscFunctionReturn(0);
@@ -103,7 +103,7 @@ PetscErrorCode Core::set_field(const double val,const EntityType type,const std:
   dit = dofsField.get<Composite_Name_And_Type_mi_tag >().lower_bound(boost::make_tuple(field_name,type));
   hi_dit = dofsField.get<Composite_Name_And_Type_mi_tag >().upper_bound(boost::make_tuple(field_name,type));
   for(;dit!=hi_dit;dit++) {
-    (*dit)->get_FieldData() = val;
+    (*dit)->getFieldData() = val;
   }
   PetscFunctionReturn(0);
 }
@@ -125,7 +125,7 @@ PetscErrorCode Core::set_field(const double val,const EntityType type,const Rang
       last = ent;
     }
     if(cont) continue;
-    (*dit)->get_FieldData() = val;
+    (*dit)->getFieldData() = val;
   }
   PetscFunctionReturn(0);
 }
@@ -135,7 +135,7 @@ PetscErrorCode Core::field_scale(const double alpha,const std::string& field_nam
   dit = dofsField.get<FieldName_mi_tag>().lower_bound(field_name);
   hi_dit = dofsField.get<FieldName_mi_tag>().upper_bound(field_name);
   for(;dit!=hi_dit;dit++) {
-    (*dit)->get_FieldData() *= alpha;
+    (*dit)->getFieldData() *= alpha;
   }
   PetscFunctionReturn(0);
 }

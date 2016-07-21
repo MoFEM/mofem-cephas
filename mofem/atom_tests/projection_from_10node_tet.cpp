@@ -145,24 +145,24 @@ int main(int argc, char *argv[]) {
     {
         //if(dof_ptr->getEntType()!=MBEDGE) continue;
 
-        if((*dof_ptr)->get_dof_coeff_idx()==0)
+        if((*dof_ptr)->getDofCoeffIdx()==0)
         {
             //Round and truncate to 3 decimal places
-            double fval = (*dof_ptr)->get_FieldData();
+            double fval = (*dof_ptr)->getFieldData();
             std::cout << boost::format("%.3lf") % roundn(fval) << "  ";
             myfile << boost::format("%.3lf") % roundn(fval) << "  ";
         }
-        if((*dof_ptr)->get_dof_coeff_idx()==1)
+        if((*dof_ptr)->getDofCoeffIdx()==1)
         {
             //Round and truncate to 3 decimal places
-            double fval = (*dof_ptr)->get_FieldData();
+            double fval = (*dof_ptr)->getFieldData();
             std::cout << boost::format("%.3lf") % roundn(fval) << "  ";
             myfile << boost::format("%.3lf") % roundn(fval) << "  ";
         }
-        if((*dof_ptr)->get_dof_coeff_idx()==2)
+        if((*dof_ptr)->getDofCoeffIdx()==2)
         {
             //Round and truncate to 3 decimal places
-            double fval = (*dof_ptr)->get_FieldData();
+            double fval = (*dof_ptr)->getFieldData();
             std::cout << boost::format("%.3lf") % roundn(fval) << std::endl;
             myfile << boost::format("%.3lf") % roundn(fval) << std::endl;
         }
