@@ -1,6 +1,6 @@
 FROM ubuntu
 
-MAINTAINER likask@wp.pl
+MAINTAINER Lukasz.Kaczmarczyk@glasgow.ac.uk
 
 # Confif apt-get
 RUN echo 'APT::Install-Recommends "0";' > /etc/apt/apt.conf.d/99local
@@ -38,16 +38,24 @@ libadolc-dev \
 bison \
 flex \
 libx11-dev \
-libboost-all-dev\
- xauth \
- xterm \
- && rm -rf /var/lib/apt/lists/*
+libboost-all-dev \
+xauth \
+xterm \
+vim \
+perlbrew \
+&& rm -rf /var/lib/apt/lists/*
 
-# Set passord
+# Switch to older perl, otherwise are problems with Zoltan install and PETSc
+RUN perlbrew init \
+&& perlbrew install-patchperl \
+&& perlbrew available \
+&& perlbrew --notest install perl-5.18.4 \
+&& perlbrew switch perl-5.18.4
+
+# SSH
 RUN mkdir /var/run/sshd
 RUN echo 'root:mofem' | chpasswd
-RUN sed -i 's/PermitRootLogin without-password/PermitRootLogin yes/' /etc/ssh/sshd_config
-RUN sed -i 's/#PasswordAuthentication yes/PasswordAuthentication yes/' /etc/ssh/sshd_config
+RUN sed -i 's/PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config
 
 # SSH login fix. Otherwise user is kicked off after login
 RUN sed 's@session\s*required\s*pam_loginuid.so@session optional pam_loginuid.so@g' -i /etc/pam.d/sshd
@@ -62,7 +70,7 @@ RUN mkdir root/.ssh
 ENV PETSC_VERSION 3.7.2
 
 # Install petsc opt
-RUN cd /opt && git clone https://bitbucket.org/petsc/petsc.git && cd /opt/petsc && git checkout tags/v$PETSC_VERSION
+RUN cd /opt && git clone --branch v$PETSC_VERSION --depth 1 https://bitbucket.org/petsc/petsc.git
 RUN cd /opt/petsc && wget ftp://ftp.unidata.ucar.edu/pub/netcdf/netcdf-4.3.3.1.tar.gz
 
 RUN cd /opt/petsc && \
@@ -71,23 +79,37 @@ RUN cd /opt/petsc && \
 --with-mpi=1 \
 --download-metis=1 \
 --download-parmetis=1 \
+--download-ptscotch=1 \
 --download-hypre=1 \
 --download-mumps=1 \
 --download-blacs=1 \
---download-moab=1 \
 --download-hdf5=1 \
 --download-netcdf=/opt/petsc/netcdf-4.3.3.1.tar.gz  \
---download-scalapack && \
+--download-scalapack=1 \
+--with-shared-libraries=1 && \
 make PETSC_DIR=/opt/petsc PETSC_ARCH=arch-linux2-c-opt all
 
 RUN sed -i 's/PATH.*/&\":\/opt\/petsc\/arch-linux2-c-opt\/bin\"/' /etc/environment
 
-# Install tetgen
-#RUN cd /opt && \
-#wget https://bitbucket.org/likask/mofem-joseph/downloads/tetgen1.5.0.tgz && \
-#tar -xvvzf tetgen1.5.0.tgz && cd tetgen1.5.0 && \
-#cmake . && \
-#make && cp libtet.a lib/ && make clean && rm /opt/tetgen1.5.0.tgz
+# Install moab
+RUN cd /opt && git clone --branch master --depth 1  https://bitbucket.org/likask/moab.git && \
+cd /opt/moab && \
+autoreconf -fi && \
+./configure --prefix=/opt/petsc/arch-linux2-c-opt --libdir=/opt/petsc/arch-linux2-c-opt/lib \
+CC=mpicc CFLAGS="-fPIC -g -O" \
+AR=/usr/bin/ar ARFLAGS=cr \
+CXX=mpicxx CXXFLAGS="-g -fPIC" F90=mpif90 \
+F90FLAGS="-fPIC -ffree-line-length-0 -g -O" \
+F77=mpif90 FFLAGS="-fPIC -ffree-line-length-0 -g -O" \
+FC=mpif90 FCFLAGS="-fPIC -ffree-line-length-0 -g -O" \
+--enable-shared --with-mpi= \
+--with-hdf5=/opt/petsc/arch-linux2-c-opt \
+--with-netcdf=/opt/petsc/arch-linux2-c-opt \
+--with-zoltan=/opt/petsc/arch-linux2-c-opt \
+--with-parmetis=/opt/petsc/arch-linux2-c-opt \
+--with-metis=/opt/petsc/arch-linux2-c-opt \
+--with-scotch=/opt/petsc/arch-linux2-c-opt \
+&& make install && make clean
 
 # SLEP opt //solve eigen value problem
 #RUN cd /opt && git clone https://bitbucket.org/slepc/slepc && cd /opt/slepc && git checkout tags/v$PETSC_VERSION

@@ -11,11 +11,11 @@ MoFEM is compiled and ran.
 In Mac OS X a lightweight Linux distribution is virtualized to run the Docker
 containers in.
 
-##1. Download and Install Docker##
+##Download and Install Docker##
 
 First install docker as per the instructions here: https://docs.docker.com/installation/#installation
 
-##2. Setup Aliases##
+##Setup Aliases##
 
 The setup of Docker and the use of MoFEM within it will be through the command
 line interface. To ease the installation and continual usage aliases have been
@@ -39,81 +39,55 @@ the new version change the dockpull alias command to the correct version.
 #Docker Aliases
 #--------------
 
-#Set my hostname
-DOCK_HOSTNAME="mofem_host"
+# Set my hostname
+DOCK_HOSTNAME="mofemdocker"
 
-#Initialise docker variables in the current shell
-alias dockshellinit='`boot2docker shellinit 2>/dev/null | grep export`'
+# Pull mofem container
+alias dockpull='docker pull likask/ubuntu_mofem:v0.7'
 
-#List all containers
-alias docklist='docker ps -a'
+# Start mofem docker
+alias dockmofem='docker run -it --hostname $DOCK_HOSTNAME -v $HOME:/mnt/home -v mofem_build:/build likask/ubuntu_mofem:v0.7 /bin/bash'
 
-#Pull the ubuntu_mofem image from remote Docker server. Note this version number may change
-alias dockpull='docker pull likask/ubuntu_mofem:v0.6'
+# Remove last container
+alias dockrmlast='docker rm `docker ps -l -q`'
 
-#Update docker time: After the system waking from sleep Docker’s time is wrong and this can affect building/compilation.
-alias docktime='/usr/local/bin/boot2docker ssh sudo ntpclient -s -h pool.ntp.org'
+# Start container with name work
+alias dockstartwork='docker run -it --name work --hostname $DOCK_HOSTNAME -v $HOME:/mnt/home -v mofem_build:/build likask/ubuntu_mofem:v0.7 /bin/bash'
+# ReAttach work container
+alias dockattachwork='docker start -ai work'
+# Remove container work
+alias dockrmwork='docker rm work'
 
-#Create and start a temporary container, and remove it on exit - all changes will be lost
-alias dockcreatetmp='docker run -it --rm --hostname $DOCK_HOSTNAME -v $HOME:/mnt/home --volumes-from mofem_build mofem_host/ubuntu_mofem:v0.6 /bin/bash'
+# Start container and remove it on exit
+alias docktmpwork='docker run -it --rm --hostname $DOCK_HOSTNAME -v $HOME:/mnt/home -v mofem_build:/build likask/ubuntu_mofem:v0.7 /bin/bash'
 
-#Create and start container with the name "sshd" and mount build and data volumes
-alias dockcreatesshd='docker run -d -P -p 2222:22 --name sshd --hostname $DOCK_HOSTNAME -v $HOME:/mnt/home --volumes-from mofem_build mofem_host/ubuntu_mofem:v0.6 /usr/sbin/sshd -D'
-#start sshd container before connecting
-alias dockstartsshd='docker start sshd'
-#Login into sshd container using ssh and xserver (the command below finds the IP address)
-alias sshdock='ssh -X root@$(echo $(boot2docker ip 2>&1 | sed "s/^.*: //g")) -p 2222'
-#Remove container “sshd”
+# List all containers
+alias dockpsall='docker ps -a'
+
+#start sshd
+
+docker-ip() {
+  docker inspect --format '{{ .NetworkSettings.Ports.HostIp.22/tcp }}' "$@"
+}
+
+
+alias dockstartsshd='docker run -d -P -p 2222:22 --name sshd --hostname $DOCK_HOSTNAME -v $HOME:/mnt/home -v mofem_build:/build likask/ubuntu_mofem:v0.7 /usr/sbin/sshd -D'
 alias dockstopsshd='docker rm -f sshd'
-#Transfer your public key to Docker
-alias dockauthorize='scp -P 2222 ~/.ssh/id_rsa.pub root@$(echo $(boot2docker ip 2>&1 | sed "s/^.*: //g")):.ssh/authorized_keys'
+alias dockautorize='scp -P 2222 ~/.ssh/id_rsa.pub root@$0.0.0.0:.ssh/authorized_keys'
+alias sshdock='ssh -X root@0.0.0.0 -p 2222'
+
 ~~~~~~
 -----------------------------
 
-##3. Setting Up Docker##
-
-There are two ways of setting up Docker: launching the boot2docker app or setting up a terminal. The instructions below are for the terminal only. Note if you use the boot2docker app the above aliases are not loaded in the terminal which is automatically opened.
-
-
-###3.1 Initialise boot2docker###
-
-This sets up the virtualization layer and so is only required the very first time.
-
-~~~~~~
-boot2docker init
-~~~~~~
-
-###3.2 Start boot2docker###
-
-This starts the virtual machine for the lightweight Linux OS. This needs to be done each time Docker is stopped, such as after a system reboot.
-
-~~~~~~
-boot2docker start
-~~~~~~
-
-To ascertain the current status of the virtual machine run:
-~~~~~~
-boot2docker status
-~~~~~~
-
-###4.2 Initialise Required Variables###
-
-This sets up the neccesary environment variables for boot2docker to work with Docker.
-
-~~~~~~
-dockshellinit
-~~~~~~
-
------------------------------
-##4. Download MoFEM Docker Image##
+##Download MoFEM Docker Image##
 
 Download the ubuntu_mofem image which contains the pre-compiled libraries for MoFEM and also use this command to update to the most recent release image.
 
 ~~~~~~
-dockpull
+docker pull likask/ubuntu_mofem:v0.7
 ~~~~~~
 
-##6. Setup MoFEM in Docker##
+##Setup MoFEM in Docker##
 
 Setting up MoFEM in Docker requires the creation of 2 containers from 2
 different images and mounting the host OS in one of them. The diagram below
@@ -121,7 +95,7 @@ illustrates how this works with the relevant commands given thereafter.
 
 ![Docker_ImagesContainersVolumes](DockerImagesContainersVolumes.png)
 
-###4.1 Create mofem_build Container###
+###Create mofem_build Container###
 
 The user generated data is kept on 2 volumes mounted on this container. This
 generated data could be the compiled MoFEM code.
@@ -130,70 +104,17 @@ To create the mofem_build container from the Ubuntu image with the 2 volumes
 run:
 
 ~~~~~~
-docker run --name mofem_build  -v /build -v /data ubuntu /bin/bash
+docker volume create --name mofem_build
 ~~~~~~
 
-###5.2 Create sshd Container for SSH Access###
+Now you cans start to work in mofem contaoner
+~~~~~
+docker run -it --hostname $DOCK_HOSTNAME -v $HOME:/mnt/home -v mofem_build:/build likask/ubuntu_mofem:v0.7
+~~~~~
 
-To access the 2 volumes in the mofem_build container they are mounted into an
-sshd container. This container has the precompiled libraries necessary for
-MoFEM  and can be accessed via ssh. This keeps the data volumes separate from
-the precompiled libraries and so when the libraries are updated the container
-can be replaced with the new one and the user’s data is not lost.
+##Building MoFEM in Docker##
 
-To create the sshd container run:
-
-~~~~~~
-dockcreatesshd
-~~~~~~
-
-###6.3 SSH Access to SSHD Container###
-
-Start sshd container before connecting:
-~~~~~~
-dockstartsshd
-
-~~~~~~
-
-Connect to ubuntu_mofem container using ssh:
-
-~~~~~~
-sshdock
-
-~~~~~~
-
-Password: mofem
-
-To stop the need to enter a password every time you log into the container you
-can generate a public-private key pair and copy the public key to the sshd
-container. To generate a public key in Mac OS X or Linux:
-
-~~~~~~
-ssh-keygen -t rsa
-~~~~~~
-
-This will prompt you for a password which you should leave blank. Then copy
-your new public key to your sshd container:
-
-~~~~~~
-dockauthorize
-~~~~~~
-
-You should now be able to log-in without having to enter the password.
-
-###6.4 Time De-Sync Problem###
-
-When awaking the host system from sleep the Docker clock may de-sync with the
-host clock. This can create compilation warnings and problems. To solve this
-use the command below in the host OS.
-
-~~~~~~
-docktime
-~~~~~~
-
-##6. Building MoFEM in Docker##
-
-###6.1 Building MoFEM ###
+###Building MoFEM ###
 
 In v0.2 the core MoFEM libraries are built separately from the user’s modules.
 This adds further complications during the building process which will be
@@ -218,7 +139,7 @@ cd $HOME
 git clone https://bitbucket.org/likask/mofem-cephas.git mofem-cephas
 ~~~~~~
 
-####6.1.1 Release####
+####Release####
 
 Setup file structure:
 
@@ -281,7 +202,7 @@ it’s better to only build that which you need to use.
 Note 2: when changing cmake files or files which are copied to the build
 directory, both MoFEM libraries and user's modules need to be re-built.
 
-####6.1.2 Debug####
+####Debug####
 
 Setup file structure:
 
