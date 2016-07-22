@@ -14,10 +14,16 @@ ENV PETSC_VERSION 3.7.2
 ENV PETSC_DIR=/opt/petsc
 ENV PETSC_ARCH=arch-linux2-c-opt
 
+ENV BRANCH DEVELOP
+
+# ENV http_proxy="http://wwwcache.gla.ac.uk:8080/"
+# ENV ftp_proxy="ftp://wwwcache.gla.ac.uk:8080/"
+# ENV https_proxy="https://wwwcache.gla.ac.uk:8080/"
+
 RUN mkdir $BUILD_DIR && chown developer $BUILD_DIR
 USER developer
 
-RUN git clone https://bitbucket.org/likask/mofem-cephas.git $MOFEM_SRC_DIR
+RUN git clone --branch develop --depth 1 https://bitbucket.org/likask/mofem-cephas.git $MOFEM_SRC_DIR
 #RUN cd $MOFEM_SRC_DIR && git pull
 
 RUN mkdir $MOFEM_BUILD_DIR \
@@ -37,13 +43,26 @@ $MOFEM_SRC_DIR/mofem
 RUN cd $MOFEM_BUILD_DIR && make && make install
 RUN cd $MOFEM_BUILD_DIR && ctest -D Experimental; echo "Tests Done"
 
-RUN cd $MOFEM_SRC_DIR/mofem/users_modules && git clone https://bitbucket.org/likask/mofem_um_obsolete obsolete
-RUN cd $MOFEM_SRC_DIR/mofem/users_modules && git clone https://bitbucket.org/likask/mofem_um_minimal_surface_equation minimal_surface_equation
-RUN cd $MOFEM_SRC_DIR/mofem/users_modules && git clone https://bitbucket.org/likask/mofem_um_gels gels
-RUN cd $MOFEM_SRC_DIR/mofem/users_modules && git clone https://bitbucket.org/likask/mofem_um_small_strain_plasticity small_strain_plasticity
-RUN cd $MOFEM_SRC_DIR/mofem/users_modules && git clone https://bitbucket.org/likask/mofem_um_homogenisation homogenisation
-RUN cd $MOFEM_SRC_DIR/mofem/users_modules && git clone https://bitbucket.org/likask/mofem_um_solid_shell_prism_element solid_shell_prism_element
-RUN cd $MOFEM_SRC_DIR/mofem/users_modules && git clone https://bitbucket.org/likask/mofem_um_bone_remodelling bone_remodelling
+RUN cd $MOFEM_SRC_DIR/mofem/users_modules \
+&& git clone --branch develop --depth 1 https://bitbucket.org/likask/mofem_um_obsolete obsolete
+
+RUN cd $MOFEM_SRC_DIR/mofem/users_modules \
+&& git clone --branch develop --depth 1 https://bitbucket.org/likask/mofem_um_minimal_surface_equation minimal_surface_equation
+
+RUN cd $MOFEM_SRC_DIR/mofem/users_modules \
+&& git clone --branch develop --depth 1 https://bitbucket.org/likask/mofem_um_gels gels
+
+RUN cd $MOFEM_SRC_DIR/mofem/users_modules \
+&& git clone --branch develop --depth 1 https://bitbucket.org/likask/mofem_um_small_strain_plasticity small_strain_plasticity
+
+RUN cd $MOFEM_SRC_DIR/mofem/users_modules \
+&& git clone --branch develop --depth 1 https://bitbucket.org/likask/mofem_um_homogenisation homogenisation
+
+RUN cd $MOFEM_SRC_DIR/mofem/users_modules \
+&& git clone --branch develop --depth 1 https://bitbucket.org/likask/mofem_um_solid_shell_prism_element solid_shell_prism_element
+
+RUN cd $MOFEM_SRC_DIR/mofem/users_modules \
+&& git clone --branch develop --depth 1 https://bitbucket.org/likask/mofem_um_bone_remodelling bone_remodelling
 
 RUN cd $MOFEM_INSTALL_DIR && cmake -DCMAKE_BUILD_TYPE=Release -DWITH_METAIO=1 -DCMAKE_CXX_FLAGS="-Wall -std=c++11" users_modules
 RUN cd $MOFEM_INSTALL_DIR && make

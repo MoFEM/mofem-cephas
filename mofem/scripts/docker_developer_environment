@@ -5,6 +5,10 @@ MAINTAINER Lukasz.Kaczmarczyk@glasgow.ac.uk
 # Confif apt-get
 RUN echo 'APT::Install-Recommends "0";' > /etc/apt/apt.conf.d/99local
 
+# ENV http_proxy="http://wwwcache.gla.ac.uk:8080/"
+# ENV ftp_proxy="ftp://wwwcache.gla.ac.uk:8080/"
+# ENV https_proxy="https://wwwcache.gla.ac.uk:8080/"
+
 # Install packages
 RUN apt-get update && \
 apt-get install -y \
@@ -41,40 +45,23 @@ libx11-dev \
 libboost-all-dev \
 xauth \
 xterm \
-vim \
 perlbrew \
 && rm -rf /var/lib/apt/lists/*
-
-# Switch to older perl, otherwise are problems with Zoltan install and PETSc
-RUN perlbrew init \
-&& perlbrew install-patchperl \
-&& perlbrew available \
-&& perlbrew --notest install perl-5.18.4 \
-&& perlbrew switch perl-5.18.4
-
-# SSH
-RUN mkdir /var/run/sshd
-RUN echo 'root:mofem' | chpasswd
-RUN sed -i 's/PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config
-
-# SSH login fix. Otherwise user is kicked off after login
-RUN sed 's@session\s*required\s*pam_loginuid.so@session optional pam_loginuid.so@g' -i /etc/pam.d/sshd
-
-ENV NOTVISIBLE "in users profile"
-RUN echo "export VISIBLE=now" >> /etc/profile
-
-# SSH .ssh dir
-RUN mkdir root/.ssh
 
 # Set petesc version
 ENV PETSC_VERSION 3.7.2
 
 # Install petsc opt
 RUN cd /opt && git clone --branch v$PETSC_VERSION --depth 1 https://bitbucket.org/petsc/petsc.git
-RUN cd /opt/petsc && wget ftp://ftp.unidata.ucar.edu/pub/netcdf/netcdf-4.3.3.1.tar.gz
 
-RUN cd /opt/petsc && \
-./configure \
+RUN perlbrew init \
+&& perlbrew install-patchperl \
+&& perlbrew available \
+&& perlbrew --notest install perl-5.18.4 \
+&& perlbrew switch perl-5.18.4 \
+&& cd /opt/petsc \
+&& wget ftp://ftp.unidata.ucar.edu/pub/netcdf/netcdf-4.3.3.1.tar.gz \
+&& ./configure \
 --with-debugging=0 \
 --with-mpi=1 \
 --download-metis=1 \
@@ -86,10 +73,10 @@ RUN cd /opt/petsc && \
 --download-hdf5=1 \
 --download-netcdf=/opt/petsc/netcdf-4.3.3.1.tar.gz  \
 --download-scalapack=1 \
---with-shared-libraries=1 && \
-make PETSC_DIR=/opt/petsc PETSC_ARCH=arch-linux2-c-opt all
-
-RUN sed -i 's/PATH.*/&\":\/opt\/petsc\/arch-linux2-c-opt\/bin\"/' /etc/environment
+--with-shared-libraries=1 \
+&& make PETSC_DIR=/opt/petsc PETSC_ARCH=arch-linux2-c-opt all \
+&& rm -rvf /opt/petsc/arch-linux2-c-opt/externalpackages/* \
+&& perlbrew clean
 
 # Install moab
 RUN cd /opt && git clone --branch master --depth 1  https://bitbucket.org/likask/moab.git && \
@@ -111,9 +98,25 @@ FC=mpif90 FCFLAGS="-fPIC -ffree-line-length-0 -g -O" \
 --with-scotch=/opt/petsc/arch-linux2-c-opt \
 && make install && make clean
 
+RUN sed -i 's/PATH.*/&\":\/opt\/petsc\/arch-linux2-c-opt\/bin\"/' /etc/environment
+
 # SLEP opt //solve eigen value problem
 #RUN cd /opt && git clone https://bitbucket.org/slepc/slepc && cd /opt/slepc && git checkout tags/v$PETSC_VERSION
 #RUN cd /opt/slepc && PETSC_DIR=/opt/petsc PETSC_ARCH=arch-linux2-c-opt ./configure && make SLEPC_DIR=$PWD PETSC_DIR=/opt/petsc PETSC_ARCH=arch-linux2-c-opt
+
+# SSH
+RUN mkdir /var/run/sshd
+RUN echo 'root:mofem' | chpasswd
+RUN sed -i 's/PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config
+
+# SSH login fix. Otherwise user is kicked off after login
+RUN sed 's@session\s*required\s*pam_loginuid.so@session optional pam_loginuid.so@g' -i /etc/pam.d/sshd
+
+ENV NOTVISIBLE "in users profile"
+RUN echo "export VISIBLE=now" >> /etc/profile
+
+# SSH .ssh dir
+RUN mkdir root/.ssh
 
 EXPOSE 22
 CMD ["/usr/sbin/sshd", "-D"]
