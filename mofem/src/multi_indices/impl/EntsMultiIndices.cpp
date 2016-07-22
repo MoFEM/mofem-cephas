@@ -60,7 +60,6 @@ BasicEntityData::BasicEntityData(moab::Interface &moab):
 moab(moab) {
   rval = moab.tag_get_handle("_RefParentHandle",th_RefParentHandle); MOAB_THROW(rval);
   rval = moab.tag_get_handle("_RefBitLevel",th_RefBitLevel); MOAB_THROW(rval);
-  rval = moab.tag_get_handle("_OwnerHandle",th_OwnerHandle); MOAB_THROW(rval);
 }
 BasicEntityData::~BasicEntityData() {
 }
