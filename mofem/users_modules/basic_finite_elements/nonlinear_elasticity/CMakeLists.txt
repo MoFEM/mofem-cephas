@@ -12,14 +12,15 @@
 # License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 
 #include subdirectory
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/nonlinear_elasticity)
-include_directories(${CMAKE_CURRENT_SOURCE_DIR}/nonlinear_elastic_materials/src)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR})
+include_directories(${UM_SOURCE_DIR}/basic_finite_elements/nonlinear_elastic_materials/src)
+include_directories(${UM_SOURCE_DIR}/obsolete/src)
 
 add_subdirectory(atom_tests)
 
 if(ADOL-C_LIBRARY)
   add_executable(arc_length_nonlinear_elasticity
-  ${CMAKE_CURRENT_SOURCE_DIR}/nonlinear_elasticity/arc_length_nonlinear_elasticity.cpp)
+  ${CMAKE_CURRENT_SOURCE_DIR}/arc_length_nonlinear_elasticity.cpp)
   target_link_libraries(
     arc_length_nonlinear_elasticity
     users_modules
@@ -48,13 +49,13 @@ file(COPY
 )
 
 configure_file(
-  "${UM_SOURCE_DIR}/nonlinear_elasticity/arc_length_nonlinear_elasticity.sh.in"
+  "${CMAKE_CURRENT_SOURCE_DIR}/arc_length_nonlinear_elasticity.sh.in"
   "${CMAKE_CURRENT_SOURCE_DIR}/arc_length_nonlinear_elasticity.sh"
   @ONLY
 )
 
 configure_file(
-  "${UM_SOURCE_DIR}/nonlinear_elasticity/do_vtk.sh.in"
+  "${CMAKE_CURRENT_SOURCE_DIR}/do_vtk.sh.in"
   "${CMAKE_CURRENT_SOURCE_DIR}/do_vtk.sh"
   @ONLY
 )
@@ -85,7 +86,7 @@ cm_export_file("LShape.h5m" export_files_nonlinear_dynamics)
 cm_export_file("data.txt" export_files_nonlinear_dynamics)
 
 add_executable(nonlinear_dynamics
-${UM_SOURCE_DIR}/nonlinear_elasticity/nonlinear_dynamics.cpp)
+${CMAKE_CURRENT_SOURCE_DIR}/nonlinear_dynamics.cpp)
 target_link_libraries(nonlinear_dynamics
   users_modules
   mofem_finite_elements
@@ -118,7 +119,7 @@ if(SLEPC_LIBRARY)
   cm_export_file("rod.h5m" export_files_arc_length_nonlinearelasticity)
 
   add_executable(stability
-  ${UM_SOURCE_DIR}/nonlinear_elasticity/stability.cpp)
+  ${CMAKE_CURRENT_SOURCE_DIR}/stability.cpp)
   target_link_libraries(stability
     users_modules
     mofem_finite_elements
