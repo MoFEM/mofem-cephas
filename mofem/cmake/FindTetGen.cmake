@@ -22,14 +22,14 @@ if(WITH_TETGEN)
   )
   execute_process(COMMAND ${CMAKE_COMMAND} -E touch ${PROJECT_BINARY_DIR}/external/lib/libtet.a)
   add_custom_target(
-    copy_tetgen_fiels
+    copy_tetgen_fields
     ALL
     COMMAND ${CMAKE_COMMAND} -E copy_if_different ${PROJECT_BINARY_DIR}/external/src/tetgen/include/tetgen.h ${PROJECT_BINARY_DIR}/external/include
     COMMAND ${CMAKE_COMMAND} -E copy_if_different ${PROJECT_BINARY_DIR}/external/src/tetgen-build/libtet* ${PROJECT_BINARY_DIR}/external/lib
     COMMAND ${CMAKE_COMMAND} -E copy_if_different ${PROJECT_BINARY_DIR}/external/src/tetgen-build/tetgen ${PROJECT_BINARY_DIR}/external/bin
     DEPENDS tetgen
   )
-  add_dependencies(install_prerequisites tetgen copy_tetgen_fiels)
+  add_dependencies(install_prerequisites tetgen copy_tetgen_fields)
 endif(WITH_TETGEN)
 
 if(WITH_TETGEN)
