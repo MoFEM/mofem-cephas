@@ -107,7 +107,7 @@ run:
 docker volume create --name mofem_build
 ~~~~~~
 
-Now you cans start to work in mofem contaoner
+Now you cans start to work in mofem container
 ~~~~~
 docker run -it --hostname $DOCK_HOSTNAME -v $HOME:/mnt/home -v mofem_build:/build likask/ubuntu_mofem:v0.7
 ~~~~~
