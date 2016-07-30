@@ -11,7 +11,7 @@
 # You should have received a copy of the GNU Lesser General Public
 # License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 
-include_directories(${PROJECT_SOURCE_DIR}/third_party/ftensor/src)
+include_directories(${PROJECT_SOURCE_DIR}/src/ftensor/src)
 
 #multi_indices
 set(MOFEM_INTERFACES_SRC

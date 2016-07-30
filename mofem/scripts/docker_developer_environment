@@ -60,7 +60,7 @@ RUN perlbrew init \
 && perlbrew --notest install perl-5.18.4 \
 && perlbrew switch perl-5.18.4 \
 && cd /opt/petsc \
-&& wget ftp://ftp.unidata.ucar.edu/pub/netcdf/netcdf-4.3.3.1.tar.gz \
+&& wget https://bitbucket.org/likask/mofem-joseph/downloads/netcdf-4.3.3.1.tar.gz \
 && ./configure \
 --with-debugging=0 \
 --with-mpi=1 \
@@ -117,6 +117,9 @@ RUN echo "export VISIBLE=now" >> /etc/profile
 
 # SSH .ssh dir
 RUN mkdir root/.ssh
+
+# Allow to trace child procsses needed for debuging
+RUN sed  -i 's/kernel.yama.ptrace_scope = 1/kernel.yama.ptrace_scope = 0/' /etc/sysctl.d/10-ptrace.conf
 
 EXPOSE 22
 CMD ["/usr/sbin/sshd", "-D"]

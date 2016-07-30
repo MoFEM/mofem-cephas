@@ -11,25 +11,26 @@
 # You should have received a copy of the GNU Lesser General Public
 # License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 
-# FTensor
+include_directories("${PROJECT_SOURCE_DIR}/src/ftensor/src")
+
 file(GLOB_RECURSE FTENSOR_CONFORMANCE_TEST_FILES
-  ${PROJECT_SOURCE_DIR}/third_party/ftensor/tests/conformance/test_*.cpp
+  ${PROJECT_SOURCE_DIR}/src/ftensor/tests/conformance/test_*.cpp
 )
 add_executable(
   ftensor_conformance_test
-  ${PROJECT_SOURCE_DIR}/third_party/ftensor/tests/conformance/main.cpp
+  ${PROJECT_SOURCE_DIR}/src/ftensor/tests/conformance/main.cpp
   ${FTENSOR_CONFORMANCE_TEST_FILES}
 )
 add_test(
   ftensor_conformance_test ${CMAKE_CURRENT_BINARY_DIR}/ftensor_conformance_test
 )
-add_subdirectory(${PROJECT_SOURCE_DIR}/third_party/ftensor/tests/speed)
+add_subdirectory(${PROJECT_SOURCE_DIR}/src/ftensor/tests/speed)
 
 if(ADOL-C_LIBRARY)
 
   add_executable(
     ftensor_and_adolc_tapeless_test
-    ${PROJECT_SOURCE_DIR}/third_party/ftensor/tests/ftensor_and_adolc_tapeless.cpp
+    ${PROJECT_SOURCE_DIR}/src/ftensor/tests/ftensor_and_adolc_tapeless.cpp
   )
   target_link_libraries(ftensor_and_adolc_tapeless_test ${ADOL-C_LIBRARY})
   add_test(
@@ -38,7 +39,7 @@ if(ADOL-C_LIBRARY)
 
   add_executable(
     ftensor_and_adolc_test
-    ${PROJECT_SOURCE_DIR}/third_party/ftensor/tests/ftensor_and_adolc.cpp
+    ${PROJECT_SOURCE_DIR}/src/ftensor/tests/ftensor_and_adolc.cpp
   )
   target_link_libraries(ftensor_and_adolc_test ${ADOL-C_LIBRARY})
   add_test(
