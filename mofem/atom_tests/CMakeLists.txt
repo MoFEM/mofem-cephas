@@ -701,13 +701,13 @@ list(INSERT testing_base_list
   legendre
   lobatto
   h1tet
-  hcurltet
+  #hcurltet
   hdivtet
   l2tet
   h1tri
   hdivtri
-  hcurltri
-  l2tri
+  #hcurltri
+  #l2tri
   h1edge
 )
 foreach(test_base ${testing_base_list})

@@ -24,7 +24,7 @@ add_executable(
 add_test(
   ftensor_conformance_test ${CMAKE_CURRENT_BINARY_DIR}/ftensor_conformance_test
 )
-# add_subdirectory(${PROJECT_SOURCE_DIR}/src/ftensor/tests/speed)
+add_subdirectory(${PROJECT_SOURCE_DIR}/src/ftensor/tests/speed)
 
 if(ADOL-C_LIBRARY)
 
