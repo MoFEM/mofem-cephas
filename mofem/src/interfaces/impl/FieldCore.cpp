@@ -48,7 +48,6 @@
 
 namespace MoFEM {
 
-const static int debug = 1;
 
 PetscErrorCode Core::add_field(
   const std::string& name,
