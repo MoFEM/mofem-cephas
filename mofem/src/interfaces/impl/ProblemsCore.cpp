@@ -61,8 +61,6 @@ struct __attribute__ ((__packed__)) IdxDataType {
   }
 };
 
-const static int debug = 1;
-
 PetscErrorCode Core::add_problem(const BitProblemId id,const std::string& name) {
   PetscFunctionBegin;
   EntityHandle meshset;

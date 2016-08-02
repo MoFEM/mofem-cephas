@@ -399,7 +399,7 @@ PetscErrorCode Core::addPrismToDatabase(const EntityHandle prism,int verb) {
 }
 
 PetscErrorCode Core::getTags(int verb) {
-  PetscErrorCode ierr;
+  // PetscErrorCode ierr;
   MoABErrorCode rval;
 
   PetscFunctionBegin;

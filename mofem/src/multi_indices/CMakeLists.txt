@@ -13,14 +13,7 @@
 
 #multi_indices
 add_library(mofem_multi_indices
-  impl/CoreDataStructures.cpp
-  impl/EntsMultiIndices.cpp
-  impl/CoordSysMultiIndices.cpp
-  impl/DofsMultiIndices.cpp
-  impl/FEMMultiIndices.cpp
-  impl/ProblemsMultiIndices.cpp
-  impl/SeriesMultiIndices.cpp
-  impl/BCMultiIndices.cpp
+  impl/All.cpp
 )
 
 

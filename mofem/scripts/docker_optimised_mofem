@@ -30,6 +30,7 @@ RUN mkdir $MOFEM_BUILD_DIR \
 && cd $MOFEM_BUILD_DIR \
 && cmake \
 -DCMAKE_BUILD_TYPE=Release \
+-DCMAKE_Fortran_COMPILER=/usr/bin/gfortran \
 -DCMAKE_CXX_FLAGS="-Wall -std=c++11" \
 -DPETSC_DIR=$PETSC_DIR \
 -DPETSC_ARCH=$PETSC_ARCH \

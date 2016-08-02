@@ -13,10 +13,7 @@
 
 #multi_indices
 add_library(mofem_petsc
-  impl/KspCtx.cpp
-  impl/SnesCtx.cpp
-  impl/TsCtx.cpp
-  impl/DMMMoFEM.cpp
+  impl/All.cpp
 )
 
 install(TARGETS mofem_petsc DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
