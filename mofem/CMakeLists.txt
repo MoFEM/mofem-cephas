@@ -17,11 +17,14 @@ cmake_minimum_required (VERSION 2.8.7)
 include(cmake/FindPETSC.cmake)
 include(cmake/FindMOAB.cmake)
 
-message(${PETSCVAR_CXX})
+# message(${PETSCVAR_CXX})
 
 set(CMAKE_C_COMPILER ${PETSCVAR_CC} )
 string(REGEX MATCH  "^.*mpicxx" PETSCVAR_CXX_ "${PETSCVAR_CXX}")
 set(CMAKE_CXX_COMPILER ${PETSCVAR_CXX_})
+if(PETSCVAR_FC)
+  set(CMAKE_Fortran_COMPILER ${PETSCVAR_FC})
+endif(PETSCVAR_FC)
 
 #get mpipath bin directory
 string(REGEX REPLACE "mpicc" "" "MPI_BIN_PATH" ${CMAKE_C_COMPILER})
@@ -30,6 +33,7 @@ include(cmake/ResolveCompilerPaths.cmake)
 
 project(MoFEM C CXX)
 
+# If fortrns is set by PETSc or user
 if(CMAKE_Fortran_COMPILER)
   # Optional language
   enable_language(Fortran)
