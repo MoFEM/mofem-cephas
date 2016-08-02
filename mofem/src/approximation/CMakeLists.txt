@@ -15,6 +15,7 @@ include_directories(${PROJECT_SOURCE_DIR}/src/ftensor/src)
 include_directories(${PROJECT_SOURCE_DIR}/src/multi_indices)
 include_directories(${PROJECT_SOURCE_DIR}/src/interfaces)
 include_directories(${PROJECT_SOURCE_DIR}/src/finite_elements)
+include_directories(${PROJECT_SOURCE_DIR}/src/petsc)
 
 # Approximation lib
 add_library(mofem_approx
@@ -28,6 +29,7 @@ add_library(mofem_approx
   impl/EdgePolynomialBase.cpp
   impl/FlatPrismPolynomialBase.cpp
   impl/FatPrismPolynomialBase.cpp
+  impl/Hcurl.cpp
   c_impl/base_functions.c
   c_impl/fem_tools.c
   c_impl/h1.c
@@ -36,3 +38,16 @@ add_library(mofem_approx
 )
 
 install(TARGETS mofem_approx DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
+
+add_executable(vtk_curl_base_on_tet impl/Hcurl.cpp)
+set_target_properties(vtk_curl_base_on_tet PROPERTIES COMPILE_FLAGS "-DGENERATE_VTK_WITH_CURL_BASE")
+target_link_libraries(vtk_curl_base_on_tet
+  mofem_finite_elements
+  mofem_interfaces
+  mofem_multi_indices
+  mofem_petsc
+  mofem_approx
+  mofem_cblas
+  mofem_third_party
+  ${PROJECT_LIBS}
+)
