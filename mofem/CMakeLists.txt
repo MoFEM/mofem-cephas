@@ -32,7 +32,7 @@ project(MoFEM C CXX)
 
 if(CMAKE_Fortran_COMPILER)
   # Optional language
-  enable_language(Fortran OPTIONAL)
+  enable_language(Fortran)
 endif(CMAKE_Fortran_COMPILER)
 
 set(MoFEM_VERSION_MAJOR 0)

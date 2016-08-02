@@ -116,13 +116,10 @@ docker run -it --hostname $DOCK_HOSTNAME -v $HOME:/mnt/home -v mofem_build:/buil
 
 ###Building MoFEM ###
 
-In v0.2 the core MoFEM libraries are built separately from the user’s modules.
+From v0.2 the core MoFEM libraries are built separately from the user’s modules.
 This adds further complications during the building process which will be
 explained below. The reason for this is it allows the MoFEM core to be used as
 a library for other projects.
-
-Building should be done through the sshd container into the ''$MOFEM_INSTALL_DIR'' mounted
-volume and the source code on the host system can be found in /mnt/home
 
 Please note that the location of the MoFEM source code needs to be specified by
 the user due to differing locations. The placeholder for this location in the
@@ -136,7 +133,7 @@ favorite editor on your native system and manage *Git* repository.
 Cloning MoFEM sourcecode (note that following line you should execute in your native operating system):
 ~~~~~~
 cd $HOME
-git clone https://bitbucket.org/likask/mofem-cephas.git mofem-cephas
+git clone https://bitbucket.org/likask/mofem-cephas.git
 ~~~~~~
 
 ####Release####
@@ -162,6 +159,7 @@ cd $MOFEM_INSTALL_DIR/release/lib
 
 cmake \
 -DCMAKE_BUILD_TYPE=Release \
+-DCMAKE_Fortran_COMPILER=/usr/bin/gfortran \
 -DCMAKE_CXX_FLAGS="-Wall" \
 -DPETSC_DIR=/opt/petsc -DPETSC_ARCH=arch-linux2-c-opt \
 -DMOAB_DIR=/opt/petsc/arch-linux2-c-opt \
@@ -220,7 +218,8 @@ Cmake command:
 cd $MOFEM_INSTALL_DIR/debug/lib
 
 cmake \
--DCMAKE_BUILD_TYPE=Debug\
+-DCMAKE_BUILD_TYPE=Debug \
+-DCMAKE_Fortran_COMPILER=/usr/bin/gfortran \
 -DCMAKE_CXX_FLAGS="-Wall" \
 -DPETSC_DIR=/opt/petsc -DPETSC_ARCH=arch-linux2-c-debug \
 -DMOAB_DIR=/opt/petsc/arch-linux2-c-debug \
