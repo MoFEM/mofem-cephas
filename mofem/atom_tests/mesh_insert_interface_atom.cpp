@@ -42,7 +42,7 @@ int main(int argc, char *argv[]) {
   }**/
 
   moab::Core mb_instance;
-  Interface& moab = mb_instance;
+  moab::Interface& moab = mb_instance;
   const char *option;
   option = "";//"PARALLEL=BCAST";//;DEBUG_IO";
   rval = moab.load_file(mesh_file_name, 0, option); CHKERR_MOAB(rval);
@@ -50,7 +50,7 @@ int main(int argc, char *argv[]) {
   if(pcomm == NULL) pcomm =  new ParallelComm(&moab,PETSC_COMM_WORLD);
 
   MoFEM::Core core(moab);
-  FieldInterface& m_field = core;
+  MoFEM::Interface& m_field = core;
   PrismInterface& interface = core;
 
   ierr = m_field.seed_ref_level_3D(0,BitRefLevel().set(0)); CHKERRQ(ierr);
@@ -239,7 +239,7 @@ int main(int argc, char *argv[]) {
   EntityHandle out_meshset_tris;
   rval = moab.create_meshset(MESHSET_SET,out_meshset_tris); CHKERRQ_MOAB(rval);
   Range tris;
-  rval = moab.get_adjacencies(prisms,2,false,tris,Interface::UNION); CHKERRQ_MOAB(rval);
+  rval = moab.get_adjacencies(prisms,2,false,tris,moab::Interface::UNION); CHKERRQ_MOAB(rval);
   std::cerr << tris.size() << " : " << prisms.size() << std::endl;
   rval = moab.add_entities(out_meshset_tris,tris); CHKERRQ_MOAB(rval);
   rval = moab.write_file("out_tris.vtk","VTK","",&out_meshset_tris,1); CHKERRQ_MOAB(rval);

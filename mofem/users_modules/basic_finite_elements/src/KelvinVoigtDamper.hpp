@@ -37,7 +37,7 @@ struct KelvinVoigtDamper {
     DAMPERSTRESS
   };
 
-  FieldInterface &mField;
+  MoFEM::Interface &mField;
 
   /** \brief Dumper material parameters
   \ingroup nonlinear_elastic_elem
@@ -239,7 +239,7 @@ struct KelvinVoigtDamper {
     CommonData &commonData;
     int addToRule; ///< Takes into account HO geometry
 
-    DamperFE(FieldInterface &m_field,CommonData &common_data):
+    DamperFE(MoFEM::Interface &m_field,CommonData &common_data):
     MoFEM::VolumeElementForcesAndSourcesCore(m_field),
     commonData(common_data),
     addToRule(1) {
@@ -285,7 +285,7 @@ struct KelvinVoigtDamper {
 
   DamperFE feRhs,feLhs;
 
-  KelvinVoigtDamper(FieldInterface &m_field):
+  KelvinVoigtDamper(MoFEM::Interface &m_field):
   mField(m_field),
   feRhs(m_field,commonData),
   feLhs(m_field,commonData) {

@@ -278,4 +278,18 @@ brew install qcachegrind --with-graphviz
 
 If you have packages installed, follow instruction from <http://kcachegrind.sourceforge.net/html/Documentation.html>
 
+\section debugging_in_docker How to make debugging in docekr?
+
+You can use gdb inside docker, remembering to set cmake with debugging
+build type, for example
+\code
+cmake -DCMAKE_BUILD_TYPE=Release -DWITH_METAIO=1 -DCMAKE_CXX_FLAGS="-Wall -std=c++11" users_modules
+\enddode
+
+It is one non trivial trick that you have to do, to make debugging possible in
+docker, you need to run docker container in \em privileged mode, for example
+\code
+docker run --privileged -it --name work --hostname mofem -v $HOME:/mnt/home -v mofem_build:/my_build likask/mofem_build:v0.2 /bin/bash
+\endcode
+
 */

@@ -11,23 +11,14 @@
 # You should have received a copy of the GNU Lesser General Public
 # License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 
-include_directories(${PROJECT_SOURCE_DIR}/third_party/ftensor/src)
+include_directories(${PROJECT_SOURCE_DIR}/src/ftensor/src)
 include_directories(${PROJECT_SOURCE_DIR}/src/multi_indices)
 include_directories(${PROJECT_SOURCE_DIR}/src/interfaces)
 include_directories(${PROJECT_SOURCE_DIR}/src/finite_elements)
 
 # Approximation lib
 add_library(mofem_approx
-  impl/EntityRefine.cpp
-  impl/BaseFunction.cpp
-  impl/LegendrePolynomial.cpp
-  impl/LobattoPolynomial.cpp
-  impl/EntPolynomialBaseCtx.cpp
-  impl/TriPolynomialBase.cpp
-  impl/TetPolynomialBase.cpp
-  impl/EdgePolynomialBase.cpp
-  impl/FlatPrismPolynomialBase.cpp
-  impl/FatPrismPolynomialBase.cpp
+  impl/All.cpp
   c_impl/base_functions.c
   c_impl/fem_tools.c
   c_impl/h1.c

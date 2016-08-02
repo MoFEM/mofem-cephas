@@ -14,7 +14,7 @@
 include_directories(${PROJECT_SOURCE_DIR}/include)
 include_directories(${PROJECT_SOURCE_DIR}/third_party)
 include_directories(${PROJECT_SOURCE_DIR}/third_party/cblas)
-include_directories(${PROJECT_SOURCE_DIR}/third_party/ftensor/src)
+include_directories(${PROJECT_SOURCE_DIR}/src/ftensor/src)
 include_directories(${PROJECT_SOURCE_DIR}/third_party/phg-quadrule)
 
 include_directories(${PROJECT_SOURCE_DIR}/src/approximation)
@@ -701,13 +701,13 @@ list(INSERT testing_base_list
   legendre
   lobatto
   h1tet
-  hcurltet
+  #hcurltet
   hdivtet
   l2tet
   h1tri
   hdivtri
-  hcurltri
-  l2tri
+  #hcurltri
+  #l2tri
   h1edge
 )
 foreach(test_base ${testing_base_list})

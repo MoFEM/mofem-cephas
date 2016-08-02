@@ -29,7 +29,7 @@
 
 struct PostPorcStress: public MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator {
 
-  Interface &postProcMesh;
+  moab::Interface &postProcMesh;
   std::vector<EntityHandle> &mapGaussPts;
 
   NonlinearElasticElement::BlockData &dAta;
@@ -37,7 +37,7 @@ struct PostPorcStress: public MoFEM::VolumeElementForcesAndSourcesCore::UserData
   bool fieldDisp;
 
   PostPorcStress(
-    Interface &post_proc_mesh,
+    moab::Interface &post_proc_mesh,
     std::vector<EntityHandle> &map_gauss_pts,
     const std::string field_name,
     NonlinearElasticElement::BlockData &data,

@@ -64,7 +64,7 @@
  */
 struct ArcLengthCtx {
 
-  FieldInterface &mField;
+  MoFEM::Interface &mField;
 
   double s;	///< arc length radius
   double beta; 	///< force scaling factor
@@ -96,7 +96,7 @@ struct ArcLengthCtx {
    */
   PetscErrorCode setAlphaBeta(double alpha,double beta);
 
-  ArcLengthCtx(FieldInterface &m_field,const std::string &problem_name);
+  ArcLengthCtx(MoFEM::Interface &m_field,const std::string &problem_name);
   virtual ~ArcLengthCtx();
 
   NumeredDofEntity_multiIndex::index<FieldName_mi_tag>::type::iterator dIt;
@@ -128,7 +128,7 @@ struct ArcLengthCtx {
 struct ArcLengthSnesCtx: public SnesCtx {
   ArcLengthCtx* arcPtr;
   ArcLengthSnesCtx(
-    FieldInterface &m_field,const std::string &problem_name,ArcLengthCtx* arc_ptr
+    MoFEM::Interface &m_field,const std::string &problem_name,ArcLengthCtx* arc_ptr
   ):
   SnesCtx(m_field,problem_name),
   arcPtr(arc_ptr) {
@@ -146,7 +146,7 @@ struct ArcLengthSnesCtx: public SnesCtx {
 struct ArcLengthTsCtx: public TsCtx {
   ArcLengthCtx* arcPtr;
   ArcLengthTsCtx(
-    FieldInterface &m_field,const std::string &problem_name,ArcLengthCtx* arc_ptr
+    MoFEM::Interface &m_field,const std::string &problem_name,ArcLengthCtx* arc_ptr
   ):
   TsCtx(m_field,problem_name),
   arcPtr(arc_ptr) {

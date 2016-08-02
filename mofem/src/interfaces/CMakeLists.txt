@@ -11,23 +11,11 @@
 # You should have received a copy of the GNU Lesser General Public
 # License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 
+include_directories(${PROJECT_SOURCE_DIR}/src/ftensor/src)
+
 #multi_indices
 set(MOFEM_INTERFACES_SRC
-  impl/LoopMethods.cpp
-  #Core
-  impl/Core.cpp
-  impl/CreateMat.cpp
-  impl/Vectors.cpp
-  impl/FieldBlas.cpp
-  impl/GetAdjacancies.cpp
-  impl/FieldInterfaceCore.cpp
-  impl/ProblemsCore.cpp
-  impl/MeshRefinmentCore.cpp
-  impl/PrismInterfaceCore.cpp
-  impl/SeriesRecorderCore.cpp
-  impl/NodeMerger.cpp
-  impl/BitLevelCoupler.cpp
-  impl/PrismsFromSurfaceInterface.cpp
+  impl/All.cpp
 )
 
 if(TETGEN_LIBRARY)

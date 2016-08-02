@@ -42,7 +42,7 @@ int main(int argc, char *argv[]) {
   PetscInitialize(&argc,&argv,(char *)0,help);
 
   moab::Core mb_instance;
-  Interface& moab = mb_instance;
+  moab::Interface& moab = mb_instance;
   int rank;
   MPI_Comm_rank(PETSC_COMM_WORLD,&rank);
 
@@ -67,7 +67,7 @@ int main(int argc, char *argv[]) {
 
   //create MoFEM (Joseph) database
   MoFEM::Core core(moab);
-  FieldInterface& m_field = core;
+  MoFEM::Interface& m_field = core;
   //meshset consisting all entities in mesh
   EntityHandle root_set = moab.get_root_set();
 
@@ -185,14 +185,16 @@ int main(int argc, char *argv[]) {
 
   struct MyFE: public VolumeElementForcesAndSourcesCore {
 
-    MyFE(FieldInterface &m_field): VolumeElementForcesAndSourcesCore(m_field) {}
+    MyFE(MoFEM::Interface &m_field):
+    VolumeElementForcesAndSourcesCore(m_field) {}
     int getRule(int order) { return order; }; //order/2; };
 
   };
 
   struct MyTriFE: public FaceElementForcesAndSourcesCore {
 
-    MyTriFE(FieldInterface &m_field): FaceElementForcesAndSourcesCore(m_field) {}
+    MyTriFE(MoFEM::Interface &m_field):
+    FaceElementForcesAndSourcesCore(m_field) {}
     int getRule(int order) { return order; };//2*order; }; //order/2; };
 
   };

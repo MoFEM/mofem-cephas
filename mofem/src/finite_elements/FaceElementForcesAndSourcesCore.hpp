@@ -67,7 +67,7 @@ struct FaceElementForcesAndSourcesCore: public ForcesAndSurcesCore {
   OpGetCoordsAndNormalsOnFace opHOCoordsAndNormals;
   OpSetPiolaTransoformOnTriangle opSetPiolaTransoformOnTriangle;
 
-  FaceElementForcesAndSourcesCore(FieldInterface &m_field):
+  FaceElementForcesAndSourcesCore(Interface &m_field):
     ForcesAndSurcesCore(m_field),
     dataH1(MBTRI),derivedDataH1(dataH1),
     dataHdiv(MBTRI),derivedDataHdiv(dataHdiv),

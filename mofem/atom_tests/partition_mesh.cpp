@@ -48,7 +48,7 @@ int main(int argc, char *argv[]) {
     //read mesh and create moab and mofem datastrutures
 
     moab::Core mb_instance;
-    Interface& moab = mb_instance;
+    moab::Interface& moab = mb_instance;
     {
       const char *option;
       option = "";
@@ -59,7 +59,7 @@ int main(int argc, char *argv[]) {
       rval = moab.load_file(mesh_file_name, 0, option); CHKERRQ_MOAB(rval);
     }
     MoFEM::Core core(moab);
-    FieldInterface& m_field = core;
+    MoFEM::Interface& m_field = core;
 
     EntityHandle root_set = moab.get_root_set();
     Range tets;
@@ -82,7 +82,7 @@ int main(int argc, char *argv[]) {
   PetscBarrier(PETSC_NULL);
 
   moab::Core mb_instance2;
-  Interface& moab2 = mb_instance2;
+  moab::Interface& moab2 = mb_instance2;
   {
     const char *option =
     "DEBUG_IO;"

@@ -558,12 +558,12 @@ PetscErrorCode PCMGSetUpViaApproxOrdersCtx::createIsAtLevel(int kk,IS *is) {
   if(kk == nbLevels-1) {
     order_at_next_level = orderAtLastLevel;
   }
-  const MoFEM::FieldInterface *m_field_ptr;
-  ierr = DMoFEMGetFieldInterfacePtr(dM,&m_field_ptr); CHKERRQ(ierr);
-  const MoFEM::MoFEMProblem *problem_ptr;
+  const MoFEM::Interface *m_field_ptr;
+  ierr = DMoFEMGetInterfacePtr(dM,&m_field_ptr); CHKERRQ(ierr);
+  const MoFEMProblem *problem_ptr;
   ierr = DMMoFEMGetProblemPtr(dM,&problem_ptr); CHKERRQ(ierr);
   string problem_name = problem_ptr->getName();
-  ierr = const_cast<MoFEM::FieldInterface *>(m_field_ptr)
+  ierr = const_cast<MoFEM::Interface *>(m_field_ptr)
   ->ISCreateProblemOrder(problem_name,ROW,0,order_at_next_level,is); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }

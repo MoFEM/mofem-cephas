@@ -64,7 +64,7 @@ struct FlatPrismElementForcesAndSurcesCore: public ForcesAndSurcesCore {
   MatrixDouble tAngent2_at_GaussPtF4;
   OpGetCoordsAndNormalsOnPrism opHOCoordsAndNormals;
 
-  FlatPrismElementForcesAndSurcesCore(FieldInterface &m_field):
+  FlatPrismElementForcesAndSurcesCore(Interface &m_field):
     ForcesAndSurcesCore(m_field),
     dataH1(MBPRISM),derivedDataH1(dataH1),
     dataHdiv(MBPRISM),derivedDataHdiv(dataHdiv),

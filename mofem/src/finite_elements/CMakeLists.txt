@@ -11,21 +11,12 @@
 # You should have received a copy of the GNU Lesser General Public
 # License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 
-include_directories(${PROJECT_SOURCE_DIR}/third_party/ftensor/src)
+include_directories(${PROJECT_SOURCE_DIR}/src/ftensor/src)
 include_directories(${PROJECT_SOURCE_DIR}/third_party/phg-quadrule)
 
 #finite elements
 add_library(mofem_finite_elements
-  impl/DataStructures.cpp
-  impl/DataOperators.cpp
-  impl/ElementsOnEntities.cpp
-  impl/UserDataOperators.cpp
-  impl/VolumeElementForcesAndSourcesCore.cpp
-  impl/FaceElementForcesAndSourcesCore.cpp
-  impl/EdgeElementForcesAndSurcesCore.cpp
-  impl/VertexElementForcesAndSourcesCore.cpp
-  impl/FlatPrismElementForcesAndSurcesCore.cpp
-  impl/FatPrismElementForcesAndSurcesCore.cpp
+  impl/All.cpp
 )
 
 install(TARGETS mofem_finite_elements DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)

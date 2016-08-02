@@ -39,7 +39,7 @@ int main(int argc, char *argv[]) {
   try {
 
     moab::Core mb_instance;
-    Interface& moab = mb_instance;
+    moab::Interface& moab = mb_instance;
     int rank;
     MPI_Comm_rank(PETSC_COMM_WORLD,&rank);
 
@@ -64,7 +64,7 @@ int main(int argc, char *argv[]) {
 
     //Create MoFEM (Joseph) databas
     MoFEM::Core core(moab);
-    FieldInterface& m_field = core;
+    MoFEM::Interface& m_field = core;
 
     PrismsFromSurfaceInterface *prisms_from_surface_interface;
     ierr = m_field.query_interface(prisms_from_surface_interface); CHKERRQ(ierr);
@@ -79,7 +79,7 @@ int main(int argc, char *argv[]) {
     prisms.merge(add_prims_layer);
 
     EntityHandle meshset;
-    rval = moab.create_meshset(MESHSET_SET,meshset); CHKERRQ_MOAB(rval);
+    rval = moab.create_meshset(MESHSET_SET|MESHSET_TRACK_OWNER,meshset); CHKERRQ_MOAB(rval);
     rval = moab.add_entities(meshset,prisms); CHKERRQ_MOAB(rval);
 
     BitRefLevel bit_level0;

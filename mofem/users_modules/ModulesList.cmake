@@ -121,6 +121,10 @@ add_custom_target(
   COMMENT "Checkout CDashTesting branch ..." VERBATIM
 )
 add_custom_target(
+  checkout_develop
+  COMMENT "Checkout develop branch ..." VERBATIM
+)
+add_custom_target(
   checkout_master
   COMMENT "Checkout master branch ..." VERBATIM
 )
@@ -182,6 +186,13 @@ foreach(LOOP_MODULE ${INSTLLED_MODULES})
   )
   add_dependencies(checkout_CDashTesting checkout_CDashTesting_${MODULE_NAME})
   add_custom_target(
+    checkout_develop_${MODULE_NAME}
+    COMMAND ${GIT_EXECUTABLE} checkout develop
+    WORKING_DIRECTORY ${MODULE_DIRECTORY}
+    COMMENT "Checkout develop baranch for module ${MODULE_NAME}" VERBATIM
+  )
+  add_dependencies(checkout_develop checkout_develop_${MODULE_NAME})
+  add_custom_target(
     checkout_master_${MODULE_NAME}
     COMMAND ${GIT_EXECUTABLE} checkout master
     WORKING_DIRECTORY ${MODULE_DIRECTORY}
@@ -209,27 +220,3 @@ foreach(LOOP_MODULE ${INSTLLED_MODULES})
   # include module
   include(${LOOP_MODULE})
 endforeach(LOOP_MODULE)
-
-
-# Base modules programs
-# FIXME: This has to find solution as a install with sub-modules
-add_subdirectory(
-  ${UM_SOURCE_DIR}/thermal
-  ${PROJECT_BINARY_DIR}/thermal
-)
-add_subdirectory(
-  ${UM_SOURCE_DIR}/ultraweak
-  ${PROJECT_BINARY_DIR}/ultraweak
-)
-add_subdirectory(
-  ${UM_SOURCE_DIR}/elasticity
-  ${PROJECT_BINARY_DIR}/elasticity
-)
-add_subdirectory(
-  ${UM_SOURCE_DIR}/cohesive_interface
-  ${PROJECT_BINARY_DIR}/cohesive_interface
-)
-add_subdirectory(
-  ${UM_SOURCE_DIR}/nonlinear_elasticity
-  ${PROJECT_BINARY_DIR}/nonlinear_elasticity
-)

@@ -38,7 +38,7 @@ int main(int argc, char *argv[]) {
   PetscInitialize(&argc,&argv,(char *)0,help);
 
   moab::Core mb_instance;
-  Interface& moab = mb_instance;
+  moab::Interface& moab = mb_instance;
   int rank;
   MPI_Comm_rank(PETSC_COMM_WORLD,&rank);
 
@@ -56,7 +56,7 @@ int main(int argc, char *argv[]) {
 
   //Create MoFEM (Joseph) database
   MoFEM::Core core(moab);
-  FieldInterface& m_field = core;
+  MoFEM::Interface& m_field = core;
 
   ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
   if(pcomm == NULL) pcomm =  new ParallelComm(&moab,PETSC_COMM_WORLD);
@@ -110,7 +110,7 @@ int main(int argc, char *argv[]) {
   Range tets_skin;
   rval = skin.find_skin(0,tets,false,tets_skin); CHKERR_MOAB(rval);
   Range tets_skin_edges;
-  rval = moab.get_adjacencies(tets_skin,1,false,tets_skin_edges,Interface::UNION); CHKERRQ_MOAB(rval);
+  rval = moab.get_adjacencies(tets_skin,1,false,tets_skin_edges,moab::Interface::UNION); CHKERRQ_MOAB(rval);
   ierr = m_field.add_ents_to_finite_element_by_EDGEs(tets_skin_edges,"TEST_FE"); CHKERRQ(ierr);
 
   //set app. order

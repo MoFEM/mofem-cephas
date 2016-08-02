@@ -48,7 +48,7 @@ struct ConvectiveMassElement {
     Vec F;
     bool initV; ///< check if ghost vector used to accumalte Kinetin energy is created
 
-    MyVolumeFE(FieldInterface &m_field);
+    MyVolumeFE(MoFEM::Interface &m_field);
 
     /** \brief it is used to calculate nb. of Gauss integration points
      *
@@ -96,10 +96,10 @@ struct ConvectiveMassElement {
   MyVolumeFE feEnergy; ///< calculate kinetic energy
   MyVolumeFE& getLoopFeEnergy() { return feEnergy; } ///< get kinetic energy element
 
-  FieldInterface &mField;
+  MoFEM::Interface &mField;
   short int tAg;
 
-  ConvectiveMassElement(FieldInterface &m_field,short int tag);
+  ConvectiveMassElement(MoFEM::Interface &m_field,short int tag);
 
   /** \brief data for calculation inertia forces
     * \ingroup user_modules
@@ -451,13 +451,13 @@ struct ConvectiveMassElement {
 
   struct UpdateAndControl: public FEMethod {
 
-    FieldInterface& mField;
+    MoFEM::Interface& mField;
     TS tS;
     const std::string velocityField;
     const std::string spatialPositionField;
 
     int jacobianLag;
-    UpdateAndControl(FieldInterface& m_field,TS _ts,
+    UpdateAndControl(MoFEM::Interface& m_field,TS _ts,
       const std::string velocity_field,
       const std::string spatial_position_field
     );
@@ -715,8 +715,8 @@ struct ConvectiveMassElement {
   }
 
   struct ShellResidualElement: public FEMethod {
-    FieldInterface &mField;
-    ShellResidualElement(FieldInterface &m_field);
+    MoFEM::Interface &mField;
+    ShellResidualElement(MoFEM::Interface &m_field);
 
     //variables bellow need to be set by user
     MatShellCtx *shellMatCtx; 					///< pointer to shell matrix
@@ -737,8 +737,8 @@ struct ConvectiveMassElement {
     */
   struct ShellMatrixElement: public FEMethod {
 
-    FieldInterface &mField;
-    ShellMatrixElement(FieldInterface &m_field);
+    MoFEM::Interface &mField;
+    ShellMatrixElement(MoFEM::Interface &m_field);
 
     typedef std::pair<std::string,FEMethod*> LoopPairType;
     typedef std::vector<LoopPairType > LoopsToDoType;

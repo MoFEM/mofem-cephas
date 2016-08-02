@@ -1,0 +1,119 @@
+FROM ubuntu
+#FROM ubuntu:precise
+
+MAINTAINER Lukasz.Kaczmarczyk@glasgow.ac.uk
+
+# Confif apt-get
+RUN echo 'APT::Install-Recommends "0";' > /etc/apt/apt.conf.d/99local
+
+# ENV http_proxy="http://wwwcache.gla.ac.uk:8080/"
+# ENV ftp_proxy="ftp://wwwcache.gla.ac.uk:8080/"
+# ENV https_proxy="https://wwwcache.gla.ac.uk:8080/"
+
+# Install packages
+RUN apt-get update && \
+apt-get install -y \
+file \
+zlib1g-dev \
+openssh-server \
+wget \
+valgrind \
+git \
+g++ \
+gfortran \
+gdb \
+m4 \
+automake \
+build-essential \
+libtool \
+libblas-dev \
+liblapack-dev \
+libsigsegv2 \
+libjpeg-dev \
+graphviz \
+doxygen \
+cmake \
+gnuplot \
+pstack \
+ca-certificates \
+python \
+libadolc-dev \
+bison \
+flex \
+libx11-dev \
+libboost-all-dev \
+libopenmpi-dev \
+openmpi-bin \
+xauth \
+xterm \
+&& rm -rf /var/lib/apt/lists/*
+
+# Set petesc version
+ENV PETSC_VERSION 3.7.2
+
+# Install petsc opt
+RUN cd /opt && git clone --branch v$PETSC_VERSION --depth 1 https://bitbucket.org/petsc/petsc.git
+
+RUN cd /opt/petsc \
+&& wget https://bitbucket.org/likask/mofem-joseph/downloads/netcdf-4.3.3.1.tar.gz \
+&& ./configure \
+--with-debugging=0 \
+--with-mpi=1 \
+--download-metis=1 \
+--download-parmetis=1 \
+--download-hypre=1 \
+--download-mumps=1 \
+--download-blacs=1 \
+--download-hdf5=1 \
+--download-netcdf=/opt/petsc/netcdf-4.3.3.1.tar.gz  \
+--download-scalapack=1 \
+--with-shared-libraries=1 \
+&& make PETSC_DIR=/opt/petsc PETSC_ARCH=arch-linux2-c-opt all \
+&& rm -rvf /opt/petsc/arch-linux2-c-opt/externalpackages/* \
+
+# Install moab
+RUN cd /opt && git clone --branch master --depth 1  https://bitbucket.org/likask/moab.git
+
+RUN cd /opt/moab && \
+autoreconf -fi && \
+./configure --prefix=/opt/petsc/arch-linux2-c-opt --libdir=/opt/petsc/arch-linux2-c-opt/lib \
+CC=mpicc CFLAGS="-fPIC -g -O" \
+AR=/usr/bin/ar ARFLAGS=cr \
+CXX=mpicxx CXXFLAGS="-g -fPIC" F90=mpif90 \
+F90FLAGS="-fPIC -ffree-line-length-0 -g -O" \
+F77=mpif90 FFLAGS="-fPIC -ffree-line-length-0 -g -O" \
+FC=mpif90 FCFLAGS="-fPIC -ffree-line-length-0 -g -O" \
+--enable-shared --with-mpi= \
+--with-hdf5=/opt/petsc/arch-linux2-c-opt \
+--with-netcdf=/opt/petsc/arch-linux2-c-opt \
+--with-zoltan=/opt/petsc/arch-linux2-c-opt \
+--with-parmetis=/opt/petsc/arch-linux2-c-opt \
+--with-metis=/opt/petsc/arch-linux2-c-opt \
+--with-scotch=/opt/petsc/arch-linux2-c-opt \
+&& make install && make clean
+
+RUN sed -i 's/PATH.*/&\":\/opt\/petsc\/arch-linux2-c-opt\/bin\"/' /etc/environment
+
+# SLEP opt //solve eigen value problem
+#RUN cd /opt && git clone https://bitbucket.org/slepc/slepc && cd /opt/slepc && git checkout tags/v$PETSC_VERSION
+#RUN cd /opt/slepc && PETSC_DIR=/opt/petsc PETSC_ARCH=arch-linux2-c-opt ./configure && make SLEPC_DIR=$PWD PETSC_DIR=/opt/petsc PETSC_ARCH=arch-linux2-c-opt
+
+# SSH
+RUN mkdir /var/run/sshd
+RUN echo 'root:mofem' | chpasswd
+RUN sed -i 's/PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config
+
+# SSH login fix. Otherwise user is kicked off after login
+RUN sed 's@session\s*required\s*pam_loginuid.so@session optional pam_loginuid.so@g' -i /etc/pam.d/sshd
+
+ENV NOTVISIBLE "in users profile"
+RUN echo "export VISIBLE=now" >> /etc/profile
+
+# SSH .ssh dir
+RUN mkdir root/.ssh
+
+# Allow to trace child procsses needed for debuging
+RUN sed  -i 's/kernel.yama.ptrace_scope = 1/kernel.yama.ptrace_scope = 0/' /etc/sysctl.d/10-ptrace.conf
+
+EXPOSE 22
+CMD ["/usr/sbin/sshd", "-D"]

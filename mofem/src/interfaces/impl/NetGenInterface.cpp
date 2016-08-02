@@ -46,7 +46,7 @@
 
 //SRC/INTERFACES
 #include <LoopMethods.hpp>
-#include <FieldInterface.hpp>
+#include <Interface.hpp>
 #include <MeshRefinment.hpp>
 #include <PrismInterface.hpp>
 #include <SeriesRecorder.hpp>
@@ -108,7 +108,7 @@ PetscErrorCode NetGenInterface::stlSetSurfaceTriangles(Ng_STL_Geometry *stl_geom
   ErrorCode rval;
   //PetscErroCode ierr;
 
-  FieldInterface& m_field = cOre;
+  MoFEM::Interface& m_field = cOre;
   Range tets = ents.subset_by_type(MBTET);
   Range tris = ents.subset_by_type(MBTRI);
   Range::iterator tit = tris.begin();
@@ -151,7 +151,7 @@ PetscErrorCode NetGenInterface::stlSetSurfaceEdges(Ng_STL_Geometry *stl_geom,Ran
   ErrorCode rval;
   //PetscErroCode ierr;
 
-  FieldInterface& m_field = cOre;
+  MoFEM::Interface& m_field = cOre;
   Range edges = ents.subset_by_type(MBEDGE);
   Range::iterator eit = edges.begin();
   for(;eit!=edges.end();eit++) {
@@ -173,7 +173,7 @@ PetscErrorCode NetGenInterface::setPoints(Ng_Mesh *mesh,std::vector<EntityHandle
   PetscFunctionBegin;
 
   ErrorCode rval;
-  FieldInterface& m_field = cOre;
+  MoFEM::Interface& m_field = cOre;
 
   std::vector<double> coords(pts.size()*3);
   rval = m_field.get_moab().get_coords(&*pts.begin(),pts.size(),&*coords.begin()); CHKERRQ_MOAB(rval);
@@ -198,7 +198,7 @@ PetscErrorCode NetGenInterface::setSurfaceElements(Ng_Mesh *mesh,std::vector<Ent
     map_pts[*pit] = nn;
   }
 
-  FieldInterface& m_field = cOre;
+  MoFEM::Interface& m_field = cOre;
   std::vector<EntityHandle>::iterator eit = elms.begin();
   for(;eit!=elms.end();eit++) {
 
@@ -241,7 +241,7 @@ PetscErrorCode NetGenInterface::setSurfaceElements(Ng_Mesh *mesh,std::vector<Ent
 }
 PetscErrorCode NetGenInterface::getPoints(Ng_Mesh *mesh,std::vector<EntityHandle> &pts) {
   PetscFunctionBegin;
-  FieldInterface& m_field = cOre;
+  MoFEM::Interface& m_field = cOre;
   ErrorCode rval;
 
   int nb_pts = Ng_GetNP(mesh);
@@ -268,7 +268,7 @@ PetscErrorCode NetGenInterface::getPoints(Ng_Mesh *mesh,std::vector<EntityHandle
 
 PetscErrorCode NetGenInterface::getSurfaceElements(Ng_Mesh *mesh,std::vector<EntityHandle> &pts,std::vector<EntityHandle> &elms) {
   PetscFunctionBegin;
-  FieldInterface& m_field = cOre;
+  MoFEM::Interface& m_field = cOre;
   ErrorCode rval;
   //PetscErrorCode ierr;
 
@@ -313,7 +313,7 @@ PetscErrorCode NetGenInterface::getSurfaceElements(Ng_Mesh *mesh,std::vector<Ent
 PetscErrorCode NetGenInterface::getVolumeElements(Ng_Mesh *mesh,std::vector<EntityHandle> &pts,std::vector<EntityHandle> &elms) {
   PetscFunctionBegin;
 
-  FieldInterface& m_field = cOre;
+  MoFEM::Interface& m_field = cOre;
   ErrorCode rval;
 
   int ne;

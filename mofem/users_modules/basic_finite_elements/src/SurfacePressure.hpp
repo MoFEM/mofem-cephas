@@ -25,10 +25,10 @@
   */
 struct NeummanForcesSurface {
 
-  FieldInterface &mField;
+  MoFEM::Interface &mField;
 
   struct MyTriangleFE: public MoFEM::FaceElementForcesAndSourcesCore {
-    MyTriangleFE(FieldInterface &m_field);
+    MyTriangleFE(MoFEM::Interface &m_field);
     int getRule(int order) { return order; };
   };
 
@@ -36,7 +36,7 @@ struct NeummanForcesSurface {
   MyTriangleFE& getLoopFe() { return fe; }
 
   NeummanForcesSurface(
-    FieldInterface &m_field):
+    MoFEM::Interface &m_field):
     mField(m_field),fe(m_field) {}
 
   struct bCForce {
@@ -164,7 +164,7 @@ struct MetaNeummanForces {
    * @return                       Error code
    */
   static PetscErrorCode addNeumannBCElements(
-    FieldInterface &m_field,
+    MoFEM::Interface &m_field,
     const std::string field_name,
     const std::string mesh_nodals_positions = "MESH_NODE_POSITIONS") {
     PetscFunctionBegin;
@@ -256,7 +256,7 @@ struct MetaNeummanForces {
    *
    */
   static PetscErrorCode setMomentumFluxOperators(
-    FieldInterface &m_field,
+    MoFEM::Interface &m_field,
     boost::ptr_map<std::string,NeummanForcesSurface> &neumann_forces,
     Vec F,const std::string field_name,const std::string mesh_nodals_positions = "MESH_NODE_POSITIONS"
   ) {
@@ -304,7 +304,7 @@ struct MetaNeummanForces {
   /** \deprecated Use setMomentumFluxOperators() instead
   */
   DEPRECATED static PetscErrorCode setNeumannFiniteElementOperators(
-    FieldInterface &m_field,
+    MoFEM::Interface &m_field,
     boost::ptr_map<std::string,NeummanForcesSurface> &neumann_forces,
     Vec F,const std::string field_name,const std::string mesh_nodals_positions = "MESH_NODE_POSITIONS"
   ) {
@@ -317,7 +317,7 @@ struct MetaNeummanForces {
   }
 
   static PetscErrorCode addNeumannFluxBCElements(
-    FieldInterface &m_field,
+    MoFEM::Interface &m_field,
     const std::string field_name,
     const std::string mesh_nodals_positions = "MESH_NODE_POSITIONS") {
     PetscFunctionBegin;
@@ -342,7 +342,7 @@ struct MetaNeummanForces {
   }
 
   static PetscErrorCode setMassFluxOperators(
-    FieldInterface &m_field,
+    MoFEM::Interface &m_field,
     boost::ptr_map<std::string,NeummanForcesSurface> &neumann_forces,
     Vec F,const std::string field_name,const std::string mesh_nodals_positions = "MESH_NODE_POSITIONS"
   ) {
@@ -365,7 +365,7 @@ struct MetaNeummanForces {
   /** \deprecated Use setMassFluxOperators() instead
   */
   DEPRECATED static PetscErrorCode setNeumannFluxFiniteElementOperators(
-    FieldInterface &m_field,
+    MoFEM::Interface &m_field,
     boost::ptr_map<std::string,NeummanForcesSurface> &neumann_forces,
     Vec F,const std::string field_name,const std::string mesh_nodals_positions = "MESH_NODE_POSITIONS"
   ) {

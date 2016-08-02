@@ -29,7 +29,7 @@ using namespace MoFEM;
 #include <adolc/adolc.h>
 #include <NonLinearElasticElement.hpp>
 
-NonlinearElasticElement::MyVolumeFE::MyVolumeFE(FieldInterface &m_field):
+NonlinearElasticElement::MyVolumeFE::MyVolumeFE(MoFEM::Interface &m_field):
   VolumeElementForcesAndSourcesCore(m_field),
   A(PETSC_NULL),
   F(PETSC_NULL),
@@ -122,7 +122,7 @@ PetscErrorCode NonlinearElasticElement::MyVolumeFE::postProcess() {
 }
 
 NonlinearElasticElement::NonlinearElasticElement(
-  FieldInterface &m_field,short int tag):
+  MoFEM::Interface &m_field,short int tag):
   feRhs(m_field),feLhs(m_field),
   feEnergy(m_field),
   mField(m_field),tAg(tag) {}
