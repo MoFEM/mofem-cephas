@@ -45,8 +45,6 @@
 
 namespace MoFEM {
 
-const static bool debug = false;
-
 /** \brief Create compressed matrix
 
   NOTE: Only function class members are allowed in this class. NO VARIABLES.
