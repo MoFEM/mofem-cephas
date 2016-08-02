@@ -27,6 +27,7 @@ using namespace MoFEM;
 
 #include <boost/numeric/ublas/vector_proxy.hpp>
 #include <boost/numeric/ublas/matrix.hpp>
+
 #include <boost/numeric/ublas/matrix_proxy.hpp>
 #include <boost/numeric/ublas/vector.hpp>
 
@@ -40,7 +41,7 @@ using namespace MoFEM;
   #error "MoFEM need to be compiled with ADOL-C"
 #endif
 
-ConvectiveMassElement::MyVolumeFE::MyVolumeFE(FieldInterface &m_field):
+ConvectiveMassElement::MyVolumeFE::MyVolumeFE(MoFEM::Interface &m_field):
 VolumeElementForcesAndSourcesCore(m_field),
 A(PETSC_NULL),
 F(PETSC_NULL),
@@ -134,7 +135,7 @@ PetscErrorCode ConvectiveMassElement::MyVolumeFE::postProcess() {
 }
 
 ConvectiveMassElement::ConvectiveMassElement(
-  FieldInterface &m_field,short int tag
+  MoFEM::Interface &m_field,short int tag
 ):
 feMassRhs(m_field),
 feMassLhs(m_field),
@@ -1988,7 +1989,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
 
 
     ConvectiveMassElement::UpdateAndControl::UpdateAndControl(
-      FieldInterface& m_field,TS _ts,
+      MoFEM::Interface& m_field,TS _ts,
       const std::string velocity_field,
       const std::string spatial_position_field
     ):
@@ -2555,7 +2556,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
   }
 
   ConvectiveMassElement::ShellResidualElement::ShellResidualElement(
-    FieldInterface &m_field
+    MoFEM::Interface &m_field
   ): mField(m_field) {
 
   }
@@ -2613,7 +2614,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
   #ifdef __DIRICHLETBC_HPP__
 
   ConvectiveMassElement::ShellMatrixElement::ShellMatrixElement(
-    FieldInterface &m_field
+    MoFEM::Interface &m_field
   ): mField(m_field) {
 
   }

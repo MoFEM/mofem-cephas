@@ -56,7 +56,7 @@ int main(int argc, char *argv[]) {
 
   //read mesh and create moab and mofem datastrutures
   moab::Core mb_instance;
-  Interface& moab = mb_instance;
+  moab::Interface& moab = mb_instance;
 
   ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
   if(pcomm == NULL) pcomm =  new ParallelComm(&moab,PETSC_COMM_WORLD);
@@ -64,8 +64,8 @@ int main(int argc, char *argv[]) {
   option = "PARALLEL=BCAST_DELETE;PARALLEL_RESOLVE_SHARED_ENTS;PARTITION=PARALLEL_PARTITION;";
   rval = moab.load_file(mesh_file_name, 0, option); CHKERRQ_MOAB(rval);
 
-  MoFEM::Core core(moab,PETSC_COMM_WORLD,MB_TAG_DENSE);
-  FieldInterface& m_field = core;
+  MoFEM::Core core(moab,PETSC_COMM_WORLD);
+  MoFEM::Interface& m_field = core;
 
   EntityHandle root_set = moab.get_root_set();
   //add all entities to database, all of them will be used

@@ -33,3 +33,9 @@ if(ADOL-C_LIBRARY)
     ${UM_SOURCE_DIR}/basic_finite_elements/src/impl/NonLinearElasticElement.cpp
   )
 endif(ADOL-C_LIBRARY)
+
+add_subdirectory(${PROJECT_SOURCE_DIR}/basic_finite_elements/elasticity)
+add_subdirectory(${PROJECT_SOURCE_DIR}/basic_finite_elements/nonlinear_elasticity)
+add_subdirectory(${PROJECT_SOURCE_DIR}/basic_finite_elements/ultraweak)
+add_subdirectory(${PROJECT_SOURCE_DIR}/basic_finite_elements/thermal)
+add_subdirectory(${PROJECT_SOURCE_DIR}/basic_finite_elements/cohesive_interface)

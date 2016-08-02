@@ -190,14 +190,14 @@
 */
 struct SurfaceSlidingConstrains {
 
-  FieldInterface &mField;
+  MoFEM::Interface &mField;
 
   struct MyTriangleFE: public MoFEM::FaceElementForcesAndSourcesCore {
 
     Mat B;
     Vec F;
 
-    MyTriangleFE(FieldInterface &m_field):
+    MyTriangleFE(MoFEM::Interface &m_field):
     MoFEM::FaceElementForcesAndSourcesCore(m_field),
     B(PETSC_NULL),
     F(PETSC_NULL)
@@ -258,7 +258,7 @@ struct SurfaceSlidingConstrains {
 
     int elementOrientation;
 
-    virtual PetscErrorCode getElementOrientation(FieldInterface &m_field,const FEMethod *fe_method_ptr) {
+    virtual PetscErrorCode getElementOrientation(MoFEM::Interface &m_field,const FEMethod *fe_method_ptr) {
       PetscFunctionBegin;
       elementOrientation = 1;
       PetscFunctionReturn(0);
@@ -268,7 +268,7 @@ struct SurfaceSlidingConstrains {
 
   DriverElementOrientation &crackFrontOrientation;
 
-  SurfaceSlidingConstrains(FieldInterface &m_field,DriverElementOrientation &orientation):
+  SurfaceSlidingConstrains(MoFEM::Interface &m_field,DriverElementOrientation &orientation):
   mField(m_field),
   feRhs(m_field),
   feLhs(m_field),

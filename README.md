@@ -9,3 +9,8 @@ The objective is to have implementation with reach abstraction (able to
 implement nontrivial finite elements) while being small and extendable.
 
 [Go to Documentation Page](http://mofem.eng.gla.ac.uk/mofem/html/index.html)
+
+## Current build status
+
+- ### **Drone**: [![Build Status](https://drone.io/bitbucket.org/likask/mofem-cephas/status.png)](https://drone.io/bitbucket.org/likask/mofem-cephas/latest)
+- ### **CDashTesting**: [CDashTesting](http://cdash.eng.gla.ac.uk/cdash/)

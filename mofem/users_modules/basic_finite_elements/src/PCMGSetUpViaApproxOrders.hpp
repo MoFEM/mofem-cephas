@@ -159,7 +159,7 @@ PetscErrorCode DMCreateGlobalVector_MGViaApproxOrders(DM dm,Vec *g);
  */
 struct PCMGSetUpViaApproxOrdersCtx {
 
-  // FieldInterface *mFieldPtr;		///< MoFEM interface
+  // Interface *mFieldPtr;		///< MoFEM interface
   // string problemName;			      ///< Problem name
 
   DM dM;  ///< Distributed mesh manager

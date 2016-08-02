@@ -15,7 +15,7 @@
 
 include_directories(${PROJECT_SOURCE_DIR}/third_party)
 include_directories(${PROJECT_SOURCE_DIR}/third_party/cblas)
-include_directories(${PROJECT_SOURCE_DIR}/third_party/ftensor/src)
+include_directories(${PROJECT_SOURCE_DIR}/src/ftensor/src)
 include_directories(${PROJECT_SOURCE_DIR}/third_party/phg-quadrule)
 
 add_library(mofem_third_party
@@ -29,6 +29,5 @@ add_library(mofem_third_party
 )
 
 add_subdirectory(${PROJECT_SOURCE_DIR}/third_party/cblas)
-add_subdirectory(${PROJECT_SOURCE_DIR}/third_party/ftensor)
 
 install(TARGETS mofem_third_party DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)

@@ -28,13 +28,13 @@ using namespace boost::numeric;
   */
 struct FieldApproximationH1 {
 
-  FieldInterface &mField;
+  MoFEM::Interface &mField;
   const std::string problemName;
   VolumeElementForcesAndSourcesCore feVolume;
   MoFEM::FaceElementForcesAndSourcesCore feFace;
 
   FieldApproximationH1(
-    FieldInterface &m_field):
+    MoFEM::Interface &m_field):
     mField(m_field),
     feVolume(m_field),
     feFace(m_field) {

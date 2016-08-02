@@ -61,6 +61,12 @@ knowledge how each module is developed.
 
 - Version repository <https://bitbucket.org/likask/mofem-cephas>
 - Testing webpage (CDash) <http://cdash.eng.gla.ac.uk/cdash/>
+- Current build status of latest branch push (Drone.io) \htmlonly
+<a href="https://drone.io/bitbucket.org/likask/mofem-cephas/latest">
+<img border="0" alt="drone.io" src="https://drone.io/bitbucket.org/likask/mofem-cephas/status.png">
+</a>
+\endhtmlonly
+
 
 \section users_modules User modules
 

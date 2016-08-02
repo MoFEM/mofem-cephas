@@ -1,7 +1,7 @@
 # Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl)
-# The MoFEM package is copyrighted by Lukasz Kaczmarczyk. 
-# It can be freely used for educational and research purposes 
-# by other institutions. If you use this softwre pleas cite my work. 
+# The MoFEM package is copyrighted by Lukasz Kaczmarczyk.
+# It can be freely used for educational and research purposes
+# by other institutions. If you use this softwre pleas cite my work.
 #
 # MoFEM is free software: you can redistribute it and/or modify it under
 # the terms of the GNU Lesser General Public License as published by the
@@ -16,11 +16,8 @@
 # You should have received a copy of the GNU Lesser General Public
 # License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 
-
 include_directories("${PROJECT_SOURCE_DIR}/third_party/cblas")
 link_directories("${PROJECT_BINARY_DIR}/third_party/cblas")
-
-#install(FILES cblas.h DESTINATION ${CMAKE_INSTALL_PREFIX}/include)
 
 add_library(mofem_cblas
 cblas_caxpy.c
@@ -191,4 +188,3 @@ zdotusub.f
 )
 
 install(TARGETS mofem_cblas DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
-

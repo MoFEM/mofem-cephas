@@ -29,8 +29,8 @@ struct SnesCtx {
   ErrorCode rval;
   PetscErrorCode ierr;
 
-  FieldInterface &mField;
-  Interface &moab;
+  MoFEM::Interface &mField;
+  moab::Interface &moab;
 
   std::string problemName;
   bool zeroPreCondMatrixB;
@@ -49,7 +49,7 @@ struct SnesCtx {
   PetscLogEvent USER_EVENT_SnesRhs;
   PetscLogEvent USER_EVENT_SnesMat;
 
-  SnesCtx(FieldInterface &m_field,const std::string &problem_name):
+  SnesCtx(Interface &m_field,const std::string &problem_name):
     mField(m_field),
     moab(m_field.get_moab()),
     problemName(problem_name),
@@ -59,8 +59,8 @@ struct SnesCtx {
   }
   virtual ~SnesCtx() {}
 
-  const FieldInterface& getm_field() const { return mField; }
-  const Interface& get_moab() const { return moab; }
+  const MoFEM::Interface& getm_field() const { return mField; }
+  const moab::Interface& get_moab() const { return moab; }
 
   loops_to_do_type& get_loops_to_do_Mat() { return loops_to_do_Mat; }
   loops_to_do_type& get_loops_to_do_Rhs() { return loops_to_do_Rhs; }

@@ -24,12 +24,12 @@
 */
 struct EdgeForce {
 
-  FieldInterface &mField;
-  EdgeForce(FieldInterface &m_field): mField(m_field),fe(m_field,1){}
+  MoFEM::Interface &mField;
+  EdgeForce(MoFEM::Interface &m_field): mField(m_field),fe(m_field,1){}
 
   struct MyFE: public MoFEM::EdgeElementForcesAndSurcesCore {
     int addToRule;
-    MyFE(FieldInterface &m_field,int add_to_rule):
+    MyFE(MoFEM::Interface &m_field,int add_to_rule):
     EdgeElementForcesAndSurcesCore(m_field),
     addToRule(add_to_rule)
     {}
@@ -76,7 +76,7 @@ struct EdgeForce {
   struct MetaEdgeForces {
 
     /// Add element taking information from NODESET
-    static PetscErrorCode addElement (FieldInterface &m_field,const std::string field_name) {
+    static PetscErrorCode addElement (MoFEM::Interface &m_field,const std::string field_name) {
       PetscFunctionBegin;
       PetscErrorCode ierr;
       ErrorCode rval;
@@ -93,7 +93,7 @@ struct EdgeForce {
         Range edges;
         rval = m_field.get_moab().get_entities_by_type(it->meshset,MBEDGE,edges,true); CHKERRQ_MOAB(rval);
         Range tris_edges;
-        rval = m_field.get_moab().get_adjacencies(tris,1,false,tris_edges,Interface::UNION); CHKERRQ_MOAB(rval);
+        rval = m_field.get_moab().get_adjacencies(tris,1,false,tris_edges,moab::Interface::UNION); CHKERRQ_MOAB(rval);
         edges = subtract(edges,tris_edges);
         ierr = m_field.add_ents_to_finite_element_by_EDGEs(edges,"FORCE_FE"); CHKERRQ(ierr);
       }
@@ -102,7 +102,7 @@ struct EdgeForce {
 
     /// Set integration point operators
     static PetscErrorCode setOperators(
-      FieldInterface &m_field,
+      MoFEM::Interface &m_field,
       boost::ptr_map<std::string,EdgeForce> &edge_forces,
       Vec F,const std::string field_name
     ) {

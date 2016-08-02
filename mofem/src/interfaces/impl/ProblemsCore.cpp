@@ -1,5 +1,5 @@
-/** \file FieldInterfaceCore.cpp
- * \brief Mylti-index containers, data structures and other low-level functions
+/** \file ProblemCore.cpp
+ * \brief Managing complexities for problem
  */
 
 /* MoFEM is free software: you can redistribute it and/or modify it under
@@ -40,7 +40,7 @@
 #include <SeriesMultiIndices.hpp>
 
 #include <LoopMethods.hpp>
-#include <FieldInterface.hpp>
+#include <Interface.hpp>
 #include <MeshRefinment.hpp>
 #include <PrismInterface.hpp>
 #include <SeriesRecorder.hpp>
@@ -62,6 +62,150 @@ struct __attribute__ ((__packed__)) IdxDataType {
 };
 
 const static int debug = 1;
+
+PetscErrorCode Core::add_problem(const BitProblemId id,const std::string& name) {
+  PetscFunctionBegin;
+  EntityHandle meshset;
+  rval = moab.create_meshset(MESHSET_SET|MESHSET_TRACK_OWNER,meshset); CHKERRQ_MOAB(rval);
+  rval = moab.tag_set_data(th_ProblemId,&meshset,1,&id); CHKERRQ_MOAB(rval);
+  void const* tag_data[] = { name.c_str() };
+  int tag_sizes[1]; tag_sizes[0] = name.size();
+  rval = moab.tag_set_by_ptr(th_ProblemName,&meshset,1,tag_data,tag_sizes); CHKERRQ_MOAB(rval);
+  //create entry
+  std::pair<MoFEMProblem_multiIndex::iterator,bool> p = pRoblems.insert(MoFEMProblem(moab,meshset));
+  NOT_USED(p);
+  assert(p.second);
+  if(verbose>0) {
+    std::ostringstream ss;
+    ss << "add problem: " << name << std::endl;
+    PetscPrintf(comm,ss.str().c_str());
+  }
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode Core::add_problem(const std::string& name,enum MoFEMTypes bh,int verb) {
+  PetscFunctionBegin;
+  if(verb==-1) verb = verbose;
+  typedef MoFEMProblem_multiIndex::index<Problem_mi_tag>::type mofem_problems_by_name;
+  const mofem_problems_by_name& set = pRoblems.get<Problem_mi_tag>();
+  mofem_problems_by_name::iterator miit = set.find(name);
+  if(miit==set.end()) {
+    BitProblemId id = getProblemShift();
+    ierr = add_problem(id,name); CHKERRQ(ierr);
+  } else if(bh == MF_EXCL) {
+    SETERRQ1(PETSC_COMM_SELF,MOFEM_NOT_FOUND,"problem is in database %s",name.c_str());
+  }
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode Core::delete_problem(const std::string name) {
+  PetscFunctionBegin;
+  typedef MoFEMProblem_multiIndex::index<Problem_mi_tag>::type mofem_problems_by_name;
+  mofem_problems_by_name &mofem_problems_set = pRoblems.get<Problem_mi_tag>();
+  mofem_problems_by_name::iterator p_miit = mofem_problems_set.find(name);
+  if(p_miit == mofem_problems_set.end()) {
+    SETERRQ1(PETSC_COMM_SELF,1,"no such problem like < %s >",name.c_str());
+  }
+  EntityHandle meshset = p_miit->meshset;
+  mofem_problems_set.erase(p_miit);
+  rval = moab.delete_entities(&meshset,1); CHKERRQ_MOAB(rval);
+  PetscFunctionReturn(0);
+}
+
+BitProblemId Core::get_BitProblemId(const std::string& name) const {
+  typedef MoFEMProblem_multiIndex::index<Problem_mi_tag>::type mofem_problems_by_name;
+  const mofem_problems_by_name& set = pRoblems.get<Problem_mi_tag>();
+  mofem_problems_by_name::iterator miit = set.find(name);
+  return miit->getId();
+}
+
+PetscErrorCode Core::list_problem() const {
+  PetscFunctionBegin;
+  typedef MoFEMProblem_multiIndex::index<BitProblemId_mi_tag>::type problem_set_by_id;
+  const problem_set_by_id &set_id = pRoblems.get<BitProblemId_mi_tag>();
+  problem_set_by_id::iterator miit = set_id.begin();
+  for(;miit!=set_id.end();miit++) {
+    std::ostringstream ss;
+    ss << *miit << std::endl;
+    PetscPrintf(comm,ss.str().c_str());
+  }
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode Core::modify_problem_add_finite_element(const std::string &name_problem,const std::string &fe_name) {
+  PetscFunctionBegin;
+  try {
+    typedef MoFEMProblem_multiIndex::index<Problem_mi_tag>::type mofem_problems_by_name;
+    mofem_problems_by_name& set = pRoblems.get<Problem_mi_tag>();
+    mofem_problems_by_name::iterator miit = set.find(name_problem);
+    if(miit==set.end()) {
+      SETERRQ1(PETSC_COMM_SELF,MOFEM_NOT_FOUND,"this problem <%s> is not there",name_problem.c_str());
+    }
+    BitFEId f_id = get_BitFEId(fe_name);
+    bool success = set.modify(miit,ProblemFiniteElementChangeBitAdd(f_id));
+    if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
+  } catch (MoFEMException const &e) {
+    SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
+  }
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode Core::modify_problem_unset_finite_element(const std::string &name_problem,const std::string &fe_name) {
+  PetscFunctionBegin;
+  try {
+    typedef MoFEMProblem_multiIndex::index<Problem_mi_tag>::type mofem_problems_by_name;
+    mofem_problems_by_name& set = pRoblems.get<Problem_mi_tag>();
+    mofem_problems_by_name::iterator miit = set.find(name_problem);
+    if(miit==set.end()) {
+      SETERRQ1(PETSC_COMM_SELF,MOFEM_NOT_FOUND,"this problem <%s> is not there",name_problem.c_str());
+    }
+    BitFEId f_id = get_BitFEId(fe_name);
+    bool success = set.modify(miit,ProblemFiniteElementChangeBitUnSet(f_id));
+    if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
+  } catch (MoFEMException const &e) {
+    SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
+  }
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode Core::modify_problem_ref_level_add_bit(const std::string &name_problem,const BitRefLevel &bit) {
+  PetscFunctionBegin;
+  typedef MoFEMProblem_multiIndex::index<Problem_mi_tag>::type mofem_problems_by_name;
+  mofem_problems_by_name& set = pRoblems.get<Problem_mi_tag>();
+  mofem_problems_by_name::iterator miit = set.find(name_problem);
+  std::ostringstream ss;
+  ss << name_problem;
+  if(miit==set.end()) SETERRQ1(PETSC_COMM_SELF,MOFEM_NOT_FOUND,"this problem <%s> is there",ss.str().c_str());
+  bool success = set.modify(miit,ProblemChangeRefLevelBitAdd(bit));
+  if(!success) SETERRQ(PETSC_COMM_SELF,1,"modification unsuccessful");
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode Core::modify_problem_ref_level_set_bit(const std::string &name_problem,const BitRefLevel &bit) {
+  PetscFunctionBegin;
+  typedef MoFEMProblem_multiIndex::index<Problem_mi_tag>::type mofem_problems_by_name;
+  mofem_problems_by_name& set = pRoblems.get<Problem_mi_tag>();
+  mofem_problems_by_name::iterator miit = set.find(name_problem);
+  std::ostringstream ss;
+  ss << name_problem;
+  if(miit==set.end()) SETERRQ1(PETSC_COMM_SELF,MOFEM_NOT_FOUND,"this problem <%s> is there",ss.str().c_str());
+  bool success = set.modify(miit,ProblemChangeRefLevelBitSet(bit));
+  if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode Core::modify_problem_dof_mask_ref_level_set_bit(const std::string &name_problem,const BitRefLevel &bit) {
+  PetscFunctionBegin;
+  typedef MoFEMProblem_multiIndex::index<Problem_mi_tag>::type mofem_problems_by_name;
+  mofem_problems_by_name& set = pRoblems.get<Problem_mi_tag>();
+  mofem_problems_by_name::iterator miit = set.find(name_problem);
+  std::ostringstream ss;
+  ss << name_problem;
+  if(miit==set.end()) SETERRQ1(PETSC_COMM_SELF,MOFEM_NOT_FOUND,"this problem <%s> is there",ss.str().c_str());
+  bool success = set.modify(miit,ProblemChangeRefLevelBitDofMaskSet(bit));
+  if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
+  PetscFunctionReturn(0);
+}
 
 PetscErrorCode Core::build_problem_on_partitioned_mesh(MoFEMProblem *problem_ptr,bool square_matrix,int verb) {
   PetscFunctionBegin;
@@ -626,7 +770,7 @@ PetscErrorCode Core::partition_mesh(Range &ents,int dim,int adj_dim,int n_parts,
       }
       Range tagged_sets;
       rval = moab.get_entities_by_type_and_tag(
-        0,MBENTITYSET,&part_tag,NULL,1,tagged_sets,Interface::UNION
+        0,MBENTITYSET,&part_tag,NULL,1,tagged_sets,moab::Interface::UNION
       ); CHKERRQ_MOAB(rval);
       if(!tagged_sets.empty()) {
         rval = moab.tag_delete_data(part_tag,tagged_sets); CHKERRQ_MOAB(rval);
@@ -637,7 +781,7 @@ PetscErrorCode Core::partition_mesh(Range &ents,int dim,int adj_dim,int n_parts,
         int num_new = n_parts - tagged_sets.size();
         for(int i = 0;i < num_new;i++) {
           EntityHandle new_set;
-          rval = moab.create_meshset(MESHSET_SET, new_set); CHKERR_MOAB(rval);
+          rval = moab.create_meshset(MESHSET_SET|MESHSET_TRACK_OWNER, new_set); CHKERR_MOAB(rval);
           tagged_sets.insert(new_set);
         }
       } else if (n_parts < (int)tagged_sets.size()) {
@@ -666,7 +810,7 @@ PetscErrorCode Core::partition_mesh(Range &ents,int dim,int adj_dim,int n_parts,
           Range adj_ents;
           if(dim > 0 ) {
             rval = moab.get_adjacencies(
-              dim_ents,dd,false,adj_ents,Interface::UNION
+              dim_ents,dd,false,adj_ents,moab::Interface::UNION
             ); CHKERRQ_MOAB(rval);
           } else {
             rval = moab.get_connectivity(dim_ents,adj_ents,true); CHKERRQ_MOAB(rval);
@@ -802,21 +946,21 @@ PetscErrorCode Core::build_problem(MoFEMProblem *problem_ptr,int verb) {
     ss << "FEs data for problem " << *problem_ptr << std::endl;
     for(;miit_ss!=hi_miit2;miit_ss++) {
       ss << "rank " << rAnk << " ";
-      ss << *miit_ss << std::endl;
+      ss << **miit_ss << std::endl;
     }
     ss << "rank " << rAnk << " ";
     ss << "FEs row dofs "<< *problem_ptr << " Nb. row dof " << problem_ptr->getNbDofsRow() << std::endl;
     NumeredDofEntity_multiIndex::iterator miit_dd_row = problem_ptr->numered_dofs_rows->begin();
     for(;miit_dd_row!=problem_ptr->numered_dofs_rows->end();miit_dd_row++) {
       ss << "rank " << rAnk << " ";
-      ss<<*miit_dd_row<<std::endl;
+      ss<<**miit_dd_row<<std::endl;
     }
     ss << "rank " << rAnk << " ";
     ss << "FEs col dofs "<< *problem_ptr << " Nb. col dof " << problem_ptr->getNbDofsCol() << std::endl;
     NumeredDofEntity_multiIndex::iterator miit_dd_col = problem_ptr->numered_dofs_cols->begin();
     for(;miit_dd_col!=problem_ptr->numered_dofs_cols->end();miit_dd_col++) {
       ss << "rank " << rAnk << " ";
-      ss<<*miit_dd_col<<std::endl;
+      ss<<**miit_dd_col<<std::endl;
     }
     PetscSynchronizedPrintf(comm,ss.str().c_str());
   }
@@ -1208,92 +1352,7 @@ PetscErrorCode Core::debugPartitionedProblem(const MoFEMProblem *problem_ptr,int
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode Core::resolve_shared_ents(const MoFEMProblem *problem_ptr,const std::string &fe_name,int verb) {
-  PetscFunctionBegin;
-  ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
-  std::vector<int> shprocs(MAX_SHARING_PROCS,0);
-  std::vector<EntityHandle> shhandles(MAX_SHARING_PROCS,0);
-  Range ents;
-  Tag th_gid;
-  const int zero =  0;
-  rval = moab.tag_get_handle(
-    GLOBAL_ID_TAG_NAME,1,MB_TYPE_INTEGER,th_gid,MB_TAG_DENSE|MB_TAG_CREAT,&zero
-  ); CHKERRQ_MOAB(rval);
-  PetscLayout layout;
-  ierr = problem_ptr->getNumberOfElementsByNameAndPart(get_comm(),fe_name,&layout); CHKERRQ(ierr);
-  int gid,last_gid;
-  ierr = PetscLayoutGetRange(layout,&gid,&last_gid); CHKERRQ(ierr);
-  ierr = PetscLayoutDestroy(&layout); CHKERRQ(ierr);
-  for(_IT_NUMEREDFEMOFEMENTITY_BY_NAME_FOR_LOOP_(problem_ptr,fe_name,fe_it)) {
-    EntityHandle ent = (*fe_it)->getEnt();
-    ents.insert(ent);
-    unsigned int part = (*fe_it)->getPart();
-    rval = moab.tag_set_data(pcomm->part_tag(),&ent,1,&part); CHKERRQ_MOAB(rval);
-    if(part == pcomm->rank()) {
-      rval = moab.tag_set_data(th_gid,&ent,1,&gid); CHKERRQ_MOAB(rval);
-      gid++;
-    }
-    shprocs.clear();
-    shhandles.clear();
-    if(pcomm->size()>1) {
-      unsigned char pstatus = 0;
-      if(pcomm->rank()!=part) {
-        pstatus = PSTATUS_NOT_OWNED;
-        pstatus |= PSTATUS_GHOST;
-      }
-      if(pcomm->size()>2) {
-        pstatus |= PSTATUS_SHARED;
-        pstatus |= PSTATUS_MULTISHARED;
-      } else {
-        pstatus |= PSTATUS_SHARED;
-      }
-      int rrr = 0;
-      for(unsigned int rr = 0;rr<pcomm->size();rr++) {
-        if(rr!=pcomm->rank()) {
-          shhandles[rrr] = ent;
-          shprocs[rrr] = rr;
-          rrr++;
-        }
-        shprocs[rrr] = -1;
-      }
-      if(pstatus&PSTATUS_SHARED) {
-        rval = moab.tag_set_data(pcomm->sharedp_tag(),&ent,1,&shprocs[0]); CHKERRQ_MOAB(rval);
-        rval = moab.tag_set_data(pcomm->sharedh_tag(),&ent,1,&shhandles[0]); CHKERRQ_MOAB(rval);
-      }
-      if(PSTATUS_MULTISHARED) {
-        rval = moab.tag_set_data(pcomm->sharedps_tag(),&ent,1,&shprocs[0]); CHKERRQ_MOAB(rval);
-        rval = moab.tag_set_data(pcomm->sharedhs_tag(),&ent,1,&shhandles[0]); CHKERRQ_MOAB(rval);
-      }
-      rval = moab.tag_set_data(pcomm->pstatus_tag(),&ent,1,&pstatus); CHKERRQ_MOAB(rval);
-    }
-  }
-  rval = pcomm->exchange_tags(th_gid,ents); CHKERRQ_MOAB(rval);
-  PetscFunctionReturn(0);
-}
-PetscErrorCode Core::resolve_shared_ents(const std::string &name,const std::string &fe_name,int verb) {
-  PetscFunctionBegin;
-  typedef MoFEMProblem_multiIndex::index<Problem_mi_tag>::type MoFEMProblem_multiIndex_by_name;
-  //find p_miit
-  MoFEMProblem_multiIndex_by_name &problems_set = pRoblems.get<Problem_mi_tag>();
-  MoFEMProblem_multiIndex_by_name::iterator p_miit = problems_set.find(name);
-  if(p_miit==problems_set.end()) {
-    SETERRQ1(PETSC_COMM_SELF,1,"problem with name < %s > not defined (top tip check spelling)",name.c_str());
-  }
-  ierr = resolve_shared_ents(&*p_miit,fe_name,verb); CHKERRQ(ierr);
-  PetscFunctionReturn(0);
-}
-PetscErrorCode Core::get_problem_elements_layout(const std::string &name,const std::string &fe_name,PetscLayout *layout,int verb) {
-  PetscFunctionBegin;
-  typedef MoFEMProblem_multiIndex::index<Problem_mi_tag>::type MoFEMProblem_multiIndex_by_name;
-  //find p_miit
-  MoFEMProblem_multiIndex_by_name &problems_set = pRoblems.get<Problem_mi_tag>();
-  MoFEMProblem_multiIndex_by_name::iterator p_miit = problems_set.find(name);
-  if(p_miit==problems_set.end()) {
-    SETERRQ1(PETSC_COMM_SELF,1,"problem with name < %s > not defined (top tip check spelling)",name.c_str());
-  }
-  ierr = p_miit->getNumberOfElementsByNameAndPart(get_comm(),fe_name,layout); CHKERRQ(ierr);
-  PetscFunctionReturn(0);
-}
+
 
 
 

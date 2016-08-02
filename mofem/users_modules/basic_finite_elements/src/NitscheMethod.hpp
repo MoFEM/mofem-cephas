@@ -34,7 +34,7 @@ struct NitscheMethod {
 
   struct MyFace: MoFEM::FaceElementForcesAndSourcesCore {
     int addToRule;
-    MyFace(FieldInterface &m_field):
+    MyFace(MoFEM::Interface &m_field):
     MoFEM::FaceElementForcesAndSourcesCore(m_field),
     addToRule(0) {}
     int getRule(int order) { return order+addToRule; }
@@ -223,7 +223,7 @@ struct NitscheMethod {
     }
 
     MyVolumeFE(
-      FieldInterface &m_field,
+      MoFEM::Interface &m_field,
       BlockData &block_data,
       CommonData &common_data
     ):

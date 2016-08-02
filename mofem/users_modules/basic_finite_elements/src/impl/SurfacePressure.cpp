@@ -26,7 +26,7 @@ using namespace MoFEM;
 
 using namespace boost::numeric;
 
-NeummanForcesSurface::MyTriangleFE::MyTriangleFE(FieldInterface &m_field):
+NeummanForcesSurface::MyTriangleFE::MyTriangleFE(MoFEM::Interface &m_field):
 FaceElementForcesAndSourcesCore(m_field) {
 }
 

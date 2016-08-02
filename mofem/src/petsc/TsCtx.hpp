@@ -29,8 +29,8 @@ struct TsCtx {
   ErrorCode rval;
   PetscErrorCode ierr;
 
-  FieldInterface &mField;
-  Interface &moab;
+  MoFEM::Interface &mField;
+  moab::Interface &moab;
 
   std::string problemName;
 
@@ -55,8 +55,9 @@ struct TsCtx {
   PetscLogEvent USER_EVENT_TsCtxMonitor;
 
   bool zeroMatrix;
-  TsCtx(FieldInterface &m_field,const std::string &problem_name):
-    mField(m_field),moab(m_field.get_moab()),
+  TsCtx(MoFEM::Interface &m_field,const std::string &problem_name):
+    mField(m_field),
+    moab(m_field.get_moab()),
     problemName(problem_name),
     zeroMatrix(true) {
     PetscLogEventRegister("LoopTsIFunction",0,&USER_EVENT_TsCtxIFunction);
@@ -66,8 +67,9 @@ struct TsCtx {
     PetscLogEventRegister("LoopTsMonitor",0,&USER_EVENT_TsCtxMonitor);
   }
 
-  const FieldInterface& getm_field() const { return mField; }
-  const Interface& get_moab() const { return moab; }
+  const MoFEM::Interface& getMoFEM() const { return mField; }
+  const moab::Interface& getMoAB() const { return moab; }
+
   loops_to_do_type& get_loops_to_do_IFunction() { return loops_to_do_IFunction; }
   loops_to_do_type& get_loops_to_do_IJacobian() { return loops_to_do_IJacobian; }
   loops_to_do_type& get_loops_to_do_Monitor() { return loops_to_do_Monitor; }

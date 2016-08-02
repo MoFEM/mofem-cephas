@@ -24,11 +24,11 @@
   */
 struct NodalForce {
 
-  FieldInterface &mField;
-  NodalForce(FieldInterface &m_field): mField(m_field),fe(m_field) {}
+  MoFEM::Interface &mField;
+  NodalForce(MoFEM::Interface &m_field): mField(m_field),fe(m_field) {}
 
   struct MyFE: public MoFEM::VertexElementForcesAndSourcesCore {
-    MyFE(FieldInterface &m_field);
+    MyFE(MoFEM::Interface &m_field);
   };
 
   MyFE fe;
@@ -75,17 +75,17 @@ struct MetaNodalForces {
 
   */
   struct TagForceScale: public MethodForForceScaling {
-    FieldInterface &mField;
+    MoFEM::Interface &mField;
     double *sCale;
     Tag thScale;
 
-    TagForceScale(FieldInterface &m_field);
+    TagForceScale(MoFEM::Interface &m_field);
     PetscErrorCode scaleNf(const FEMethod *fe,ublas::vector<FieldData> &Nf);
 
   };
 
   /// Add element taking information from NODESET
-  static PetscErrorCode addElement (FieldInterface &m_field,const std::string field_name) {
+  static PetscErrorCode addElement (MoFEM::Interface &m_field,const std::string field_name) {
     PetscFunctionBegin;
     PetscErrorCode ierr;
     ErrorCode rval;
@@ -113,7 +113,7 @@ struct MetaNodalForces {
 
   /// Set integration point operators
   static PetscErrorCode setOperators(
-    FieldInterface &m_field, boost::ptr_map<std::string,NodalForce> &nodal_forces, Vec F,const std::string field_name
+    MoFEM::Interface &m_field, boost::ptr_map<std::string,NodalForce> &nodal_forces, Vec F,const std::string field_name
   ) {
     PetscFunctionBegin;
     PetscErrorCode ierr;

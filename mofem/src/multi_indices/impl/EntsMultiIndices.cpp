@@ -83,6 +83,10 @@ ent(ent) {
     THROW_MESSAGE("this entity type is currently not implemented");
   }
   ParallelComm* pcomm = ParallelComm::get_pcomm(&basicDataPtr->moab,MYPCOMM_INDEX);
+  if(pcomm == NULL) THROW_MESSAGE("pcomm is null");
+  unsigned char pstatus;
+  rval = basicDataPtr->
+  moab.tag_get_data(pcomm->pstatus_tag(),&ent,1,&pstatus); MOAB_THROW(rval);
   rval = pcomm->get_owner_handle(ent,owner_proc,moab_owner_handle); MOAB_THROW(rval);
 }
 

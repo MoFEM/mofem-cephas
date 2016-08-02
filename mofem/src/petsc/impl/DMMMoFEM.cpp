@@ -36,7 +36,7 @@
 #include <SeriesMultiIndices.hpp>
 
 #include <LoopMethods.hpp>
-#include <FieldInterface.hpp>
+#include <Interface.hpp>
 #include <MeshRefinment.hpp>
 #include <PrismInterface.hpp>
 #include <SeriesRecorder.hpp>
@@ -144,7 +144,7 @@ PetscErrorCode DMDestroy_MoFEM(DM dm) {
 }
 
 PetscErrorCode DMMoFEMCreateMoFEM(
-  DM dm,MoFEM::FieldInterface *m_field_ptr,const char problem_name[],const MoFEM::BitRefLevel &bit_level
+  DM dm,MoFEM::Interface *m_field_ptr,const char problem_name[],const MoFEM::BitRefLevel &bit_level
 ) {
   PetscErrorCode ierr;
   PetscFunctionBegin;
@@ -181,7 +181,7 @@ PetscErrorCode DMMoFEMCreateMoFEM(
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode DMoFEMGetFieldInterfacePtr(DM dm,const MoFEM::FieldInterface **m_field_ptr) {
+PetscErrorCode DMoFEMGetInterfacePtr(DM dm,const MoFEM::Interface **m_field_ptr) {
   PetscValidHeaderSpecific(dm,DM_CLASSID,1);
   PetscFunctionBegin;
   DMCtx *dm_field = (DMCtx*)dm->data;

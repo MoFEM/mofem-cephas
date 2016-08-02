@@ -43,7 +43,7 @@ int main(int argc, char *argv[]) {
   try {
 
   moab::Core mb_instance;
-  Interface& moab = mb_instance;
+  moab::Interface& moab = mb_instance;
   int rank;
   MPI_Comm_rank(PETSC_COMM_WORLD,&rank);
 
@@ -68,7 +68,7 @@ int main(int argc, char *argv[]) {
 
   //Create MoFEM (Joseph) databas
   MoFEM::Core core(moab);
-  FieldInterface& m_field = core;
+  MoFEM::Interface& m_field = core;
 
   BitRefLevel bit_level0;
   bit_level0.set(0);
@@ -161,13 +161,13 @@ int main(int argc, char *argv[]) {
       rval = moab.get_connectivity(*viit,aa,true); CHKERRQ_MOAB(rval);
       Range viit_edges;
       rval = m_field.get_moab().get_adjacencies(
-        *viit,1,false,viit_edges,Interface::UNION); CHKERRQ_MOAB(rval);
+        *viit,1,false,viit_edges,moab::Interface::UNION); CHKERRQ_MOAB(rval);
       for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,SIDESET,sit)) {
 	Range faces;
 	rval = moab.get_entities_by_type(sit->meshset,MBTRI,faces,true); CHKERRQ_MOAB(rval);
 	Range faces_edges;
 	rval = m_field.get_moab().get_adjacencies(
-	  faces,1,false,faces_edges,Interface::UNION); CHKERRQ_MOAB(rval);
+	  faces,1,false,faces_edges,moab::Interface::UNION); CHKERRQ_MOAB(rval);
 	aa.merge(intersect(faces_edges,viit_edges));
       }
       markers.push_back(std::pair<Range,int>(unite(polygons,aa),-1));

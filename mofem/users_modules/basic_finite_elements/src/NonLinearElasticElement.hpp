@@ -48,7 +48,7 @@ struct NonlinearElasticElement {
 
     int addToRule;
 
-    MyVolumeFE(FieldInterface &m_field);
+    MyVolumeFE(MoFEM::Interface &m_field);
 
     /** \brief it is used to calculate nb. of Gauss integration points
      *
@@ -83,11 +83,11 @@ struct NonlinearElasticElement {
   MyVolumeFE feEnergy; ///< calculate elastic energy
   MyVolumeFE& getLoopFeEnergy() { return feEnergy; } ///< get energy fe
 
-  FieldInterface &mField;
+  MoFEM::Interface &mField;
   short int tAg;
 
   NonlinearElasticElement(
-    FieldInterface &m_field,short int tag);
+    MoFEM::Interface &m_field,short int tag);
 
   template<typename TYPE>
   struct FunctionsToCalculatePiolaKirchhoffI;

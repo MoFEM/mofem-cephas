@@ -69,7 +69,7 @@ struct VolumeElementForcesAndSourcesCore: public ForcesAndSurcesCore {
   OpSetHoPiolaTransform opSetHoPiolaTransform;
   OpSetHoInvJacHdiv opSetHoInvJacHdiv;
 
-  VolumeElementForcesAndSourcesCore(FieldInterface &m_field,const EntityType type = MBTET);
+  VolumeElementForcesAndSourcesCore(Interface &m_field,const EntityType type = MBTET);
   virtual ~VolumeElementForcesAndSourcesCore() {}
 
   MoABErrorCode rval;

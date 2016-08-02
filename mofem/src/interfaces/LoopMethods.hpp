@@ -204,7 +204,7 @@ TSMethod {
   * It is low level class however in some class users looking for speed and efficiency,
   * can use it directly.
   *
-  * This class is used with FieldInterface::loop_finite_elements, where
+  * This class is used with Interface::loop_finite_elements, where
   * user overloaded operator FEMethod::operator() is executed for each element in
   * the problem. Class have to additional methods which are overloaded by user,
   * FEMethod::preProcess() and FEMethod::postProcess() executed at beginning and end

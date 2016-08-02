@@ -28,11 +28,16 @@ string(REGEX REPLACE "mpicc" "" "MPI_BIN_PATH" ${CMAKE_C_COMPILER})
 find_program(MPI_RUN mpirun HINTS ${MPI_BIN_PATH} /usr/bin PATH ${MPI_BIN_PATH})
 include(cmake/ResolveCompilerPaths.cmake)
 
-project(MoFEM C Fortran CXX)
+project(MoFEM C CXX)
+
+if(CMAKE_Fortran_COMPILER)
+  # Optional language
+  enable_language(Fortran)
+endif(CMAKE_Fortran_COMPILER)
 
 set(MoFEM_VERSION_MAJOR 0)
 set(MoFEM_VERSION_MINOR 3)
-set(MoFEM_VERSION_BUILD 32)
+set(MoFEM_VERSION_BUILD 33)
 
 include(CheckCXXSourceCompiles)
 CHECK_CXX_SOURCE_COMPILES(

@@ -44,7 +44,7 @@
 #include <SeriesMultiIndices.hpp>
 
 #include <LoopMethods.hpp>
-#include <FieldInterface.hpp>
+#include <Interface.hpp>
 #include <MeshRefinment.hpp>
 #include <PrismInterface.hpp>
 #include <SeriesRecorder.hpp>
@@ -76,7 +76,7 @@ extern "C" {
 namespace MoFEM {
 
 VolumeElementForcesAndSourcesCore::VolumeElementForcesAndSourcesCore(
-  FieldInterface &m_field,const EntityType type
+  Interface &m_field,const EntityType type
 ):
 ForcesAndSurcesCore(m_field),
 coords(12),

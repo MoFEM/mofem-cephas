@@ -11,6 +11,8 @@
 # You should have received a copy of the GNU Lesser General Public
 # License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 
+include_directories(${PROJECT_SOURCE_DIR}/src/ftensor/src)
+
 #multi_indices
 set(MOFEM_INTERFACES_SRC
   impl/LoopMethods.cpp
@@ -20,9 +22,12 @@ set(MOFEM_INTERFACES_SRC
   impl/Vectors.cpp
   impl/FieldBlas.cpp
   impl/GetAdjacancies.cpp
-  impl/FieldInterfaceCore.cpp
+  impl/FieldCore.cpp
+  impl/FECore.cpp
   impl/ProblemsCore.cpp
-  impl/MeshRefinmentCore.cpp
+  impl/CommCore.cpp
+  impl/DeleteCore.cpp
+  impl/MeshRefinment.cpp
   impl/PrismInterfaceCore.cpp
   impl/SeriesRecorderCore.cpp
   impl/NodeMerger.cpp

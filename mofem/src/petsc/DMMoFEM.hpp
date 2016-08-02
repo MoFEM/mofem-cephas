@@ -32,16 +32,16 @@ PetscErrorCode DMRegister_MoFEM(const char sname[]);
   * \brief Must be called by user to set MoFEM data structures
   * \ingroup dm
   */
-PetscErrorCode DMMoFEMCreateMoFEM(DM dm,MoFEM::FieldInterface *m_field_ptr,const char problem_name[],const MoFEM::BitRefLevel &bit_level);
+PetscErrorCode DMMoFEMCreateMoFEM(DM dm,MoFEM::Interface *m_field_ptr,const char problem_name[],const MoFEM::BitRefLevel &bit_level);
 
 /**
- * \brief Get pointer to MoFEM::FieldInterface
+ * \brief Get pointer to MoFEM::Interface
  * @param  dm          Distributed mesh manager
  * @param  m_field_ptr Pointer to pointer of field interface
  * @return             Error code
  * \ingroup dm
  */
-PetscErrorCode DMoFEMGetFieldInterfacePtr(DM dm,const MoFEM::FieldInterface **m_field_ptr);
+PetscErrorCode DMoFEMGetInterfacePtr(DM dm,const MoFEM::Interface **m_field_ptr);
 
 /**
   * \brief Get pointer to problem data structure
@@ -435,7 +435,7 @@ namespace MoFEM {
 
     PetscErrorCode queryInterface(const MOFEMuuid& uuid,UnknownInterface** iface);
 
-    FieldInterface *mField_ptr; 		///< MoFEM interface
+    Interface *mField_ptr; 		///< MoFEM interface
     PetscBool isProblemBuild;      ///< True if problem is build
     std::string problemName;			        ///< Problem name
 

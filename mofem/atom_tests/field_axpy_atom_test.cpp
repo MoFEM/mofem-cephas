@@ -59,7 +59,7 @@ int main(int argc, char *argv[]) {
   PetscInitialize(&argc,&argv,PETSC_NULL,help);
 
   moab::Core mb_instance;
-  Interface& moab = mb_instance;
+  moab::Interface& moab = mb_instance;
   int rank;
   MPI_Comm_rank(PETSC_COMM_WORLD,&rank);
 
@@ -93,53 +93,53 @@ int main(int argc, char *argv[]) {
 
   //Create MoFEM (Joseph) database
   MoFEM::Core core(moab);
-  FieldInterface& mField = core;
+  MoFEM::Interface& m_field = core;
 
   //ref meshset ref level 0
-  ierr = mField.seed_ref_level_3D(0,0); CHKERRQ(ierr);
+  ierr = m_field.seed_ref_level_3D(0,0); CHKERRQ(ierr);
 
   // stl::bitset see for more details
   BitRefLevel bit_level0;
   bit_level0.set(0);
   EntityHandle meshset_level0;
   rval = moab.create_meshset(MESHSET_SET,meshset_level0); CHKERRQ_MOAB(rval);
-  ierr = mField.seed_ref_level_3D(0,bit_level0); CHKERRQ(ierr);
-  ierr = mField.get_entities_by_ref_level(bit_level0,BitRefLevel().set(),meshset_level0); CHKERRQ(ierr);
+  ierr = m_field.seed_ref_level_3D(0,bit_level0); CHKERRQ(ierr);
+  ierr = m_field.get_entities_by_ref_level(bit_level0,BitRefLevel().set(),meshset_level0); CHKERRQ(ierr);
 
   /***/
   //Define problem
 
   //Fields
-  ierr = mField.add_field("FIELD_A",H1,3); CHKERRQ(ierr);
-  ierr = mField.add_field("FIELD_B",H1,3); CHKERRQ(ierr);
+  ierr = m_field.add_field("FIELD_A",H1,3); CHKERRQ(ierr);
+  ierr = m_field.add_field("FIELD_B",H1,3); CHKERRQ(ierr);
 
-  ierr = mField.add_ents_to_field_by_TETs(0,"FIELD_A"); CHKERRQ(ierr);
-  ierr = mField.add_ents_to_field_by_TETs(0,"FIELD_B"); CHKERRQ(ierr);
+  ierr = m_field.add_ents_to_field_by_TETs(0,"FIELD_A"); CHKERRQ(ierr);
+  ierr = m_field.add_ents_to_field_by_TETs(0,"FIELD_B"); CHKERRQ(ierr);
 
-  ierr = mField.set_field_order(0,MBTET,"FIELD_A",order+1); CHKERRQ(ierr);
-  ierr = mField.set_field_order(0,MBTRI,"FIELD_A",order+1); CHKERRQ(ierr);
-  ierr = mField.set_field_order(0,MBEDGE,"FIELD_A",order+1); CHKERRQ(ierr);
-  ierr = mField.set_field_order(0,MBVERTEX,"FIELD_A",1); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(0,MBTET,"FIELD_A",order+1); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(0,MBTRI,"FIELD_A",order+1); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(0,MBEDGE,"FIELD_A",order+1); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(0,MBVERTEX,"FIELD_A",1); CHKERRQ(ierr);
 
-  ierr = mField.set_field_order(0,MBTET,"FIELD_B",order); CHKERRQ(ierr);
-  ierr = mField.set_field_order(0,MBTRI,"FIELD_B",order); CHKERRQ(ierr);
-  ierr = mField.set_field_order(0,MBEDGE,"FIELD_B",order); CHKERRQ(ierr);
-  ierr = mField.set_field_order(0,MBVERTEX,"FIELD_B",1); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(0,MBTET,"FIELD_B",order); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(0,MBTRI,"FIELD_B",order); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(0,MBEDGE,"FIELD_B",order); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(0,MBVERTEX,"FIELD_B",1); CHKERRQ(ierr);
 
   //build field
-  ierr = mField.build_fields(); CHKERRQ(ierr);
+  ierr = m_field.build_fields(); CHKERRQ(ierr);
 
-  ierr = mField.set_field(+1,MBVERTEX,"FIELD_A"); CHKERRQ(ierr);
-  ierr = mField.set_field(-2,MBVERTEX,"FIELD_B"); CHKERRQ(ierr);
+  ierr = m_field.set_field(+1,MBVERTEX,"FIELD_A"); CHKERRQ(ierr);
+  ierr = m_field.set_field(-2,MBVERTEX,"FIELD_B"); CHKERRQ(ierr);
 
-  ierr = mField.field_axpy(+0.5,"FIELD_B","FIELD_A"); CHKERRQ(ierr);
-  ierr = mField.field_scale(-0.5,"FIELD_B"); CHKERRQ(ierr);
+  ierr = m_field.field_axpy(+0.5,"FIELD_B","FIELD_A"); CHKERRQ(ierr);
+  ierr = m_field.field_scale(-0.5,"FIELD_B"); CHKERRQ(ierr);
 
   //Open mesh_file_name.txt for writing
   std::ofstream myfile;
   myfile.open("field_axpy_test.txt");
 
-  for(_IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(mField,"FIELD_A",dof_ptr))
+  for(_IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(m_field,"FIELD_A",dof_ptr))
     {
         if((*dof_ptr)->getEntType()!=MBVERTEX) continue;
 
@@ -166,7 +166,7 @@ int main(int argc, char *argv[]) {
         }
 
     }
-  for(_IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(mField,"FIELD_B",dof_ptr))
+  for(_IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(m_field,"FIELD_B",dof_ptr))
     {
         if((*dof_ptr)->getEntType()!=MBVERTEX) continue;
 

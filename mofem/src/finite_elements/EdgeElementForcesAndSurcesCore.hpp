@@ -47,7 +47,7 @@ struct EdgeElementForcesAndSurcesCore: public ForcesAndSurcesCore {
   MatrixDouble tAngent_at_GaussPt;
   OpGetHoTangentOnEdge opGetHoTangentOnEdge;
 
-  EdgeElementForcesAndSurcesCore(FieldInterface &m_field):
+  EdgeElementForcesAndSurcesCore(Interface &m_field):
     ForcesAndSurcesCore(m_field),
     dataH1(MBEDGE),
     derivedDataH1(dataH1),

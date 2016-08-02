@@ -62,7 +62,7 @@ struct FatPrismElementForcesAndSurcesCore: public VolumeElementForcesAndSourcesC
   MatrixDouble tAngent2_at_GaussPtF4;
   OpGetCoordsAndNormalsOnPrism opHOCoordsAndNormals;
 
-  FatPrismElementForcesAndSurcesCore(FieldInterface &m_field):
+  FatPrismElementForcesAndSurcesCore(Interface &m_field):
   VolumeElementForcesAndSourcesCore(m_field,MBPRISM),
   dataH1TrianglesOnly(MBPRISM),
   dataH1TroughThickness(MBPRISM),

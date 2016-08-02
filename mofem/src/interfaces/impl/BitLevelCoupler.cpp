@@ -35,7 +35,7 @@
 #include <SeriesMultiIndices.hpp>
 
 #include <LoopMethods.hpp>
-#include <FieldInterface.hpp>
+#include <Interface.hpp>
 #include <MeshRefinment.hpp>
 #include <PrismInterface.hpp>
 #include <SeriesRecorder.hpp>
@@ -73,7 +73,7 @@ PetscErrorCode BitLevelCouplerInterface::queryInterface(const MOFEMuuid& uuid, U
 
 PetscErrorCode BitLevelCouplerInterface::buildTree(const BitRefLevel &parent_level,int verb) {
   PetscFunctionBegin;
-  FieldInterface& m_field = cOre;
+  MoFEM::Interface& m_field = cOre;
   treePtr.reset(new AdaptiveKDTree(&m_field.get_moab()));
   Range tets;
   ierr = m_field.get_entities_by_type_and_ref_level(
@@ -95,7 +95,7 @@ PetscErrorCode BitLevelCouplerInterface::resetTree(const BitRefLevel &parent_lev
 PetscErrorCode BitLevelCouplerInterface::getParent(const double *coords,EntityHandle &parent,
   bool tet_only,const double iter_tol,const double inside_tol,int verb) {
   PetscFunctionBegin;
-  FieldInterface& m_field = cOre;
+  MoFEM::Interface& m_field = cOre;
   EntityHandle leaf_out;
   rval = treePtr->point_search(coords,leaf_out,iter_tol,inside_tol); CHKERRQ_MOAB(rval);
   bool is_in;
@@ -204,7 +204,7 @@ PetscErrorCode BitLevelCouplerInterface::getParent(const double *coords,EntityHa
 PetscErrorCode BitLevelCouplerInterface::buidlAdjacenciesVerticesOnTets(const BitRefLevel &parent_level,Range &children,
     bool vertex_elements,const double iter_tol,const double inside_tol,bool throw_error,int verb) {
   PetscFunctionBegin;
-  FieldInterface& m_field = cOre;
+  MoFEM::Interface& m_field = cOre;
   //build Tree
   bool init_tree = false;
 
@@ -270,7 +270,7 @@ PetscErrorCode BitLevelCouplerInterface::buidlAdjacenciesEdgesFacesVolumes(
 
   if(verb>2) std::cout << children << std::endl;
 
-  FieldInterface& m_field = cOre;
+  MoFEM::Interface& m_field = cOre;
 
   //access to ref dofs multi-index
   const RefEntity_multiIndex *refined_ptr;
@@ -373,7 +373,7 @@ PetscErrorCode BitLevelCouplerInterface::buidlAdjacenciesEdgesFacesVolumes(
 PetscErrorCode BitLevelCouplerInterface::chanegParent(RefEntity_multiIndex::iterator it,EntityHandle parent,bool element) {
   PetscFunctionBegin;
 
-  FieldInterface& m_field = cOre;
+  MoFEM::Interface& m_field = cOre;
   const RefEntity_multiIndex *refined_ptr;
   ierr = m_field.get_ref_ents(&refined_ptr); CHKERRQ(ierr);
 
@@ -415,7 +415,7 @@ PetscErrorCode BitLevelCouplerInterface::chanegParent(RefEntity_multiIndex::iter
 PetscErrorCode BitLevelCouplerInterface::resetParents(Range &children,bool elements,int verb) {
   PetscFunctionBegin;
 
-  FieldInterface& m_field = cOre;
+  MoFEM::Interface& m_field = cOre;
 
   //access to ref dofs multi-index
   const RefEntity_multiIndex *refined_ptr;
@@ -453,7 +453,7 @@ PetscErrorCode BitLevelCouplerInterface::verifyParent(RefEntity_multiIndex::iter
 PetscErrorCode BitLevelCouplerInterface::getLocCoordsOnTet(EntityHandle tet,const double *glob_coords,int verb) {
   PetscFunctionBegin;
 
-  FieldInterface& m_field = cOre;
+  MoFEM::Interface& m_field = cOre;
 
   int num_nodes;
   rval = m_field.get_moab().get_connectivity(tet,cOnn,num_nodes,true); CHKERRQ_MOAB(rval);

@@ -37,12 +37,12 @@ struct AnalyticalDirichletBC {
     struct MyTriFE: public FaceElementForcesAndSourcesCore {
 
       int addToRule; ///< this is add to integration rule if 2nd order geometry approximation
-      MyTriFE(FieldInterface &m_field): FaceElementForcesAndSourcesCore(m_field),addToRule(1) {}
+      MyTriFE(MoFEM::Interface &m_field): FaceElementForcesAndSourcesCore(m_field),addToRule(1) {}
       int getRule(int order) { return order+addToRule; };
 
     };
 
-    ApproxField(FieldInterface &m_field): feApprox(m_field) {}
+    ApproxField(MoFEM::Interface &m_field): feApprox(m_field) {}
     virtual ~ApproxField() {}
 
     MyTriFE feApprox;
@@ -188,11 +188,11 @@ struct AnalyticalDirichletBC {
   struct DirichletBC : public DisplacementBCFEMethodPreAndPostProc {
 
     DirichletBC(
-      FieldInterface& m_field,const std::string &field,Mat A,Vec X,Vec F
+      MoFEM::Interface& m_field,const std::string &field,Mat A,Vec X,Vec F
     );
 
     DirichletBC(
-      FieldInterface& m_field,const std::string &field
+      MoFEM::Interface& m_field,const std::string &field
     );
 
     Range *tRis_ptr;
@@ -203,11 +203,11 @@ struct AnalyticalDirichletBC {
   };
 
   ApproxField approxField;
-  AnalyticalDirichletBC(FieldInterface& m_field);
+  AnalyticalDirichletBC(MoFEM::Interface& m_field);
 
   template<typename FUNEVAL>
   PetscErrorCode setApproxOps(
-    FieldInterface &m_field,
+    MoFEM::Interface &m_field,
     string field_name,Range& tris,
     boost::shared_ptr<FUNEVAL> funtcion_evaluator,int field_number = 0,
     string nodals_positions = "MESH_NODE_POSITIONS") {
@@ -223,7 +223,7 @@ struct AnalyticalDirichletBC {
     }
 
   PetscErrorCode initializeProblem(
-    FieldInterface &m_field,string fe,string field,Range& tris,
+    MoFEM::Interface &m_field,string fe,string field,Range& tris,
     string nodals_positions = "MESH_NODE_POSITIONS"
   );
 
@@ -231,11 +231,11 @@ struct AnalyticalDirichletBC {
   Vec D,F;
   KSP kspSolver;
   PetscErrorCode setProblem(
-    FieldInterface &m_field,string problem
+    MoFEM::Interface &m_field,string problem
   );
 
   PetscErrorCode solveProblem(
-    FieldInterface &m_field,string problem,string fe,DirichletBC &bc,Range &tris
+    MoFEM::Interface &m_field,string problem,string fe,DirichletBC &bc,Range &tris
   );
 
   PetscErrorCode destroyProblem();

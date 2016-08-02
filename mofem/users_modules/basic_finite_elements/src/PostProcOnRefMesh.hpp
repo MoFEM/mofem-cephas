@@ -44,14 +44,14 @@ struct PostProcCommonOnRefMesh {
 
   struct OpGetFieldValues: public MoFEM::ForcesAndSurcesCore::UserDataOperator {
 
-    Interface &postProcMesh;
+    moab::Interface &postProcMesh;
     std::vector<EntityHandle> &mapGaussPts;
     CommonData &commonData;
     const std::string tagName;
     Vec V;
 
     OpGetFieldValues(
-      Interface &post_proc_mesh,
+      moab::Interface &post_proc_mesh,
       std::vector<EntityHandle> &map_gauss_pts,
       const std::string field_name,
       const std::string tag_name,
@@ -78,14 +78,14 @@ struct PostProcCommonOnRefMesh {
 
   struct OpGetFieldGradientValues: public MoFEM::ForcesAndSurcesCore::UserDataOperator {
 
-    Interface &postProcMesh;
+    moab::Interface &postProcMesh;
     std::vector<EntityHandle> &mapGaussPts;
     CommonData &commonData;
     const std::string tagName;
     Vec V;
 
     OpGetFieldGradientValues(
-      Interface &post_proc_mesh,
+      moab::Interface &post_proc_mesh,
       std::vector<EntityHandle> &map_gauss_pts,
       const std::string field_name,
       const std::string tag_name,
@@ -117,10 +117,10 @@ template<class ELEMENT>
 struct PostProcTemplateOnRefineMesh: public ELEMENT {
 
   moab::Core coreMesh;
-  Interface &postProcMesh;
+  moab::Interface &postProcMesh;
   std::vector<EntityHandle> mapGaussPts;
 
-  PostProcTemplateOnRefineMesh(FieldInterface &m_field):
+  PostProcTemplateOnRefineMesh(MoFEM::Interface &m_field):
   ELEMENT(m_field),
   postProcMesh(coreMesh) {
   }
@@ -213,7 +213,7 @@ struct PostProcVolumeOnRefinedMesh: public PostProcTemplateOnRefineMesh<MoFEM::V
   int nbOfRefLevels;
 
   PostProcVolumeOnRefinedMesh(
-    FieldInterface &m_field,
+    MoFEM::Interface &m_field,
     bool ten_nodes_post_proc_tets = true,
     int nb_ref_levels = -1
   ):
@@ -287,11 +287,11 @@ struct PostProcVolumeOnRefinedMesh: public PostProcTemplateOnRefineMesh<MoFEM::V
 
   struct OpHdivFunctions: public MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator {
 
-    Interface &postProcMesh;
+    moab::Interface &postProcMesh;
     std::vector<EntityHandle> &mapGaussPts;
 
     OpHdivFunctions(
-      Interface &post_proc_mesh,
+      moab::Interface &post_proc_mesh,
       std::vector<EntityHandle> &map_gauss_pts,
       const std::string field_name
     ):
@@ -319,7 +319,7 @@ struct PostProcFatPrismOnRefinedMesh: public PostProcTemplateOnRefineMesh<MoFEM:
   bool tenNodesPostProcTets;
 
   PostProcFatPrismOnRefinedMesh(
-    FieldInterface &m_field,
+    MoFEM::Interface &m_field,
     bool ten_nodes_post_proc_tets = true
   ):
   PostProcTemplateOnRefineMesh<MoFEM::FatPrismElementForcesAndSurcesCore>(m_field),
@@ -360,7 +360,7 @@ struct PostProcFaceOnRefinedMesh: public PostProcTemplateOnRefineMesh<MoFEM::Fac
   bool sixNodePostProcTris;
 
   PostProcFaceOnRefinedMesh(
-    FieldInterface &m_field,
+    MoFEM::Interface &m_field,
     bool six_node_post_proc_tris = true
   ):
   PostProcTemplateOnRefineMesh<MoFEM::FaceElementForcesAndSourcesCore>(m_field),
