@@ -348,7 +348,6 @@ PetscErrorCode PostProcVolumeOnRefinedMesh::generateReferenceElementMesh() {
     }
   }
 
-  ublas::matrix<double> N;
   shapeFunctions.resize(elem_nodes.size(),4);
   ierr = ShapeMBTET(
     &*shapeFunctions.data().begin(),
