@@ -30,8 +30,10 @@ include(cmake/ResolveCompilerPaths.cmake)
 
 project(MoFEM C CXX)
 
-# Optional language
-enable_language(Fortran OPTIONAL)
+if(CMAKE_Fortran_COMPILER)
+  # Optional language
+  enable_language(Fortran OPTIONAL)
+endif(CMAKE_Fortran_COMPILER)
 
 set(MoFEM_VERSION_MAJOR 0)
 set(MoFEM_VERSION_MINOR 3)
