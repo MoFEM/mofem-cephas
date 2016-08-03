@@ -130,6 +130,7 @@ mpirun -np 1 ./trans_iso_RVE_Geom_disp \
 *                                                                                        *
 ******************************************************************************************
 
+make CompStruct_Rel && mpirun -np 1 ./CompStruct_Rel
 
 # ----------------------------------------------------
 # Case 2: multiple layers laminate (up to four layers)

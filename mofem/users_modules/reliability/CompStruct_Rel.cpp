@@ -840,6 +840,12 @@ void gfun(Stochastic_Model probdata,
    */
   
   
+  // ================================
+  //
+  // Example 1
+  //
+  // ================================
+  
   // Evaluate the limit state function
   val_lsf = x(0)*x(1)-78.12*x(2);
   
@@ -851,12 +857,72 @@ void gfun(Stochastic_Model probdata,
   // w.r.t. the 3rd random variable
   grad_lsf(2) = -78.12;
   
+  
   /*
   val_lsf = x(0)*x(1)-600*x(2);
   
   grad_lsf(0) = x(1);
   grad_lsf(1) = x(0);
-  grad_lsf(2) = -600;*/
+  grad_lsf(2) = -600;
+  */
+  
+  /*
+  // ================================
+  //
+  // Example 3
+  //
+  // ================================
+  // Evaluate the limit state function
+  val_lsf = pow(x(0),4) + 2*pow(x(1),4) - 20;
+  
+  // Evaluate the 1st-order partial derivatives of the LSF w.r.t. basic variables
+  // w.r.t. the 1st random variable
+  grad_lsf(0) = 4*pow(x(0),3);
+  // w.r.t. the 2nd random variable
+  grad_lsf(1) = 8*pow(x(1),3);
+  
+  // Evaluate the 2nd-order partial derivatives of the LSF w.r.t. basic variables
+  // w.r.t. the 1st random variable
+  Hess_lsf(0,0) = 12*pow(x(0),2);
+  // w.r.t. the 2nd random variable
+  Hess_lsf(1,1) = 24*pow(x(1),2);
+  */
+  
+  /*
+  // ================================
+  //
+  // Example 4
+  //
+  // ================================
+  // Evaluate the limit state function
+  val_lsf = x(2) - sqrt(300*pow(x(0),2) + 1.92*pow(x(1),2));
+  
+  // Evaluate the 1st-order partial derivatives of the LSF w.r.t. basic variables
+  // w.r.t. the 1st random variable
+  grad_lsf(0) = - pow(300*pow(x(0),2) + 1.92*pow(x(1),2),-0.5)*300*x(0);
+  // w.r.t. the 2nd random variable
+  grad_lsf(1) = - pow(300*pow(x(0),2) + 1.92*pow(x(1),2),-0.5)*1.92*x(1);
+  // w.r.t. the 3rd random variable
+  grad_lsf(2) = 1;
+  
+  
+  // Evaluate the 2nd-order partial derivatives of the LSF w.r.t. basic variables
+  // w.r.t. the 1st random variable
+  double a;
+  a = pow(300*pow(x(0),2) + 1.92*pow(x(1),2),-1.5)*576;
+  Hess_lsf(0,0) = a*(-pow(x(1),2));
+  Hess_lsf(0,1) = a*(-x(0)*x(1));
+  Hess_lsf(0,2) = 0;
+  // w.r.t. the 2nd random variable
+  Hess_lsf(1,0) = a*(-x(0)*x(1));
+  Hess_lsf(1,1) = a*(-pow(x(0),2));
+  Hess_lsf(1,2) = 0;
+  // w.r.t. the 3rd random variable
+  Hess_lsf(2,0) = 0;
+  Hess_lsf(2,1) = 0;
+  Hess_lsf(2,2) = 0;
+  */
+  
   
 }
 
@@ -938,7 +1004,7 @@ int main(int argc, char * argv[]) {
   ReliabOpt.istep_max  = 2000;     // Maximum number of interation allowed in the search algorithm
   ReliabOpt.e1         = 0.001;   // Tolerance on how close design point is to limit-state surface
   ReliabOpt.e2         = 0.001;   // Tolerance on how accurately the gradient points towards the origin
-  ReliabOpt.step_code  = 1;//0.025;   // 0: step size by Armijo rule, otherwise: given value is the step size
+  ReliabOpt.step_code  = 0.025;//0.025;   // 0: step size by Armijo rule, otherwise: given value is the step size
   ReliabOpt.Recorded_u = 1;       // 0: u-vector not recorded at all iterations, 1: u-vector recorded at all iterations
   ReliabOpt.Recorded_x = 1;       // 0: x-vector not recorded at all iterations, 1: x-vector recorded at all iterations
   ReliabOpt.grad_G     = "PSFEM"; // "PSFEM": perturbation based SFEM, "DDM": direct differentiation, 'ADM': automatic differentiation
