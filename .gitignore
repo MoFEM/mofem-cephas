@@ -42,3 +42,5 @@ _Store
 .build-tools.cson
 contributors_list_modules
 All.cpp
+MoFEM.hpp.*
+Includes.hpp.*

@@ -17,7 +17,15 @@ include_directories(${PROJECT_SOURCE_DIR}/src/interfaces)
 include_directories(${PROJECT_SOURCE_DIR}/src/finite_elements)
 
 # Approximation lib
-add_library(mofem_approx
+if(PRECOMPILED_HEADRES)
+  set_source_files_properties(
+    All.cpp
+    PROPERTIES
+    COMPILE_FLAGS "-include ${PROJECT_SOURCE_DIR}/include/Includes.hpp"
+  )
+endif(PRECOMPILED_HEADRES)
+add_library(
+  mofem_approx
   impl/All.cpp
   c_impl/base_functions.c
   c_impl/fem_tools.c
@@ -25,5 +33,8 @@ add_library(mofem_approx
   c_impl/hdiv.c
   c_impl/l2.c
 )
+if(PRECOMPILED_HEADRES)
+  add_dependencies(mofem_approx Includes.hpp.pch_copy)
+endif(PRECOMPILED_HEADRES)
 
 install(TARGETS mofem_approx DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)

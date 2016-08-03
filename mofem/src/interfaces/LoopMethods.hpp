@@ -38,6 +38,7 @@ static const MOFEMuuid IDD_MOFEMEntMethod = MOFEMuuid( BitIntefaceId(ENT_METHOD)
 struct KspMethod: virtual public UnknownInterface  {
 
   PetscErrorCode queryInterface (const MOFEMuuid& uuid, UnknownInterface** iface) {
+    PetscFunctionBegin;
     if(uuid == IDD_MOFEMKspMethod) {
       *iface = dynamic_cast<KspMethod*>(this);
       PetscFunctionReturn(0);

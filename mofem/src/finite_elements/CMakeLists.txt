@@ -15,8 +15,19 @@ include_directories(${PROJECT_SOURCE_DIR}/src/ftensor/src)
 include_directories(${PROJECT_SOURCE_DIR}/third_party/phg-quadrule)
 
 #finite elements
-add_library(mofem_finite_elements
+if(PRECOMPILED_HEADRES)
+  set_source_files_properties(
+    All.cpp
+    PROPERTIES
+    COMPILE_FLAGS "-include ${PROJECT_SOURCE_DIR}/include/Includes.hpp"
+  )
+endif(PRECOMPILED_HEADRES)
+add_library(
+  mofem_finite_elements
   impl/All.cpp
 )
+if(PRECOMPILED_HEADRES)
+  add_dependencies(mofem_finite_elements Includes.hpp.pch_copy)
+endif(PRECOMPILED_HEADRES)
 
 install(TARGETS mofem_finite_elements DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
