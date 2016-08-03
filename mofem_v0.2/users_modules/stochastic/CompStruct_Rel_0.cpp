@@ -49,7 +49,6 @@ using namespace MoFEM;
 #include <boost/math/distributions/gamma.hpp>
 
 #include <boost/numeric/ublas/matrix.hpp>
-#include <boost/numeric/ublas/matrix_proxy.hpp>
 #include <boost/numeric/ublas/triangular.hpp>
 #include <boost/numeric/ublas/io.hpp>
 
@@ -731,106 +730,6 @@ void modify_correlation_mat(Stochastic_Model &probdata) {
 }
 
 //------------------------------------------------------------------------------
-// d2x/dudu = - u*(dx/du) - (df(x)/dx)/f*(dx/du)^2
-// dx/du = f/phi
-//
-
-void d2x_dudu(ublas::vector<double> x,
-              ublas::vector<double> u,
-              Stochastic_Model probdata,
-              ublas::vector<double> &dxdz,
-              ublas::matrix<double> &ddxddu) {
-  int nvars;
-  nvars = probdata.nvars;
-  
-  double imean, istd;
-  double iloc, ishape, iscale;
-  double ilambda;
-  double ilower, iupper;
-  
-  int dist_type;
-  
-  ddxddu.resize(nvars,nvars); ddxddu.clear();
-  dxdz.resize(nvars); dxdz.clear();
-  
-  ublas::vector<double> z; // y = Az
-  z = prod(probdata.Lo, u);
-  
-  using boost::math::normal_distribution;
-  normal_distribution<> snorm(0,1);
-  
-  for (int i=0; i<nvars; i++) {
-    dist_type = probdata.marg(i,0);
-    switch (dist_type) {
-      case 1: { // Normal distribution
-        imean = probdata.marg(i,4);
-        istd  = probdata.marg(i,5);
-        normal_distribution<> mynorm(imean,istd);
-        dxdz(i) = pdf(snorm,z(i))/pdf(mynorm,x(i));
-        ddxddu(i,i) = - z(i)*dxdz(i) + pow(dxdz(i),2)*(x(i)-imean)/pow(istd,2);
-        break;
-      }
-      case 2: { // Lognormal distribution
-        using boost::math::lognormal_distribution;
-        iloc   = probdata.marg(i,4);
-        iscale = probdata.marg(i,5);
-        lognormal_distribution<> my_logn(iloc,iscale);
-        dxdz(i) = pdf(snorm,z(i))/pdf(my_logn,x(i));
-        ddxddu(i,i) = - z(i)*dxdz(i) + pow(dxdz(i),2)*(pow(iscale,2) + log(x(i))-imean)/pow(iscale,2)/x(i);
-        break;
-      }
-      case 3: { // Exponential distribution
-        using boost::math::exponential_distribution;
-        ilambda = 1/probdata.marg(i,1);
-        exponential_distribution<> my_exp(ilambda);
-        dxdz(i) = pdf(snorm,z(i))/pdf(my_exp,x(i));
-        ddxddu(i,i) = - z(i)*dxdz(i) + ilambda*pow(dxdz(i),2);
-        break;
-      }
-      case 4: { // Gumbel distribution
-        using boost::math::extreme_value_distribution;
-        iloc   = probdata.marg(i,4);
-        iscale = probdata.marg(i,5);
-        extreme_value_distribution<> my_EVI(iloc,iscale);
-        dxdz(i) = pdf(snorm,z(i))/pdf(my_EVI,x(i));
-        ddxddu(i,i) = - z(i)*dxdz(i) - (exp(-(x(i)-iloc)/iscale) - 1)/iscale*pow(dxdz(i),2);
-        break;
-      }
-      case 5: { // Weibull distribution
-        using boost::math::weibull_distribution;
-        ishape = probdata.marg(i,4);
-        iscale = probdata.marg(i,5);
-        weibull_distribution<> my_wbl(ishape,iscale);
-        dxdz(i) = pdf(snorm,z(i))/pdf(my_wbl,x(i));
-        ddxddu(i,i) = - z(i)*dxdz(i) -((ishape -1)/x(i) - ishape*pow(x(i)/iscale,ishape-1)/iscale)*pow(dxdz(i),2);
-        break;
-      }
-      case 6: { // Uniform distribution
-        using boost::math::uniform_distribution;
-        ilower = probdata.marg(i,4);
-        iupper = probdata.marg(i,5);
-        uniform_distribution<> my_unif(ilower,iupper);
-        dxdz(i) = pdf(snorm,z(i))/pdf(my_unif,x(i));
-        ddxddu(i,i) = - z(i)*dxdz(i);
-        break;
-      }
-      case 7: { // Gamma distribution
-        using boost::math::gamma_distribution;
-        ishape = probdata.marg(i,4);
-        iscale = probdata.marg(i,5);
-        gamma_distribution<> my_gamma(ishape,iscale);
-        dxdz(i) = pdf(snorm,z(i))/pdf(my_gamma,x(i));
-        ddxddu(i,i) = - z(i)*dxdz(i) - (1/x(i) - 1/iscale)*pow(dxdz(i),2);
-        break;
-      }
-      default:
-        break;
-    }
-  }
-  
-}
-
-//------------------------------------------------------------------------------
 // To compute Jacobian
 //
 
@@ -928,8 +827,7 @@ void Jacobian_u_x(ublas::vector<double> x,
 void gfun(Stochastic_Model probdata,
           ublas::vector<double> x,
           double &val_lsf,
-          ublas::vector<double> &grad_lsf,
-          ublas::matrix<double> &Hess_lsf) {
+          ublas::vector<double> &grad_lsf) {
   /*
    * Define limit state function
    *   Here, using the limit state function of Example 4.5 in
@@ -940,17 +838,8 @@ void gfun(Stochastic_Model probdata,
    *           I = area moment of the cross-section, denoted as x(1)
    *           P = applied load, denoted as x(2)
    */
-  int nvars;
-  nvars = probdata.nvars;
-  grad_lsf.resize(nvars); grad_lsf.clear();
-  Hess_lsf.resize(nvars,nvars); Hess_lsf.clear();
   
-  /*
-  // ================================
-  //
-  // Example 1
-  //
-  // ================================
+  
   // Evaluate the limit state function
   val_lsf = x(0)*x(1)-78.12*x(2);
   
@@ -962,86 +851,12 @@ void gfun(Stochastic_Model probdata,
   // w.r.t. the 3rd random variable
   grad_lsf(2) = -78.12;
   
-  // Evaluate the 2nd-order partial derivatives of the LSF w.r.t. basic variables
-  // w.r.t. the 1st random variable
-  Hess_lsf(0,0) = 0;
-  Hess_lsf(0,1) = 1;
-  Hess_lsf(0,2) = 0;
-  // w.r.t. the 2nd random variable
-  Hess_lsf(1,0) = 1;
-  Hess_lsf(1,1) = 0;
-  Hess_lsf(1,2) = 0;
-  // w.r.t. the 3rd random variable
-  Hess_lsf(2,0) = 0;
-  Hess_lsf(2,1) = 0;
-  Hess_lsf(2,2) = 0;
-  */
-  
   /*
   val_lsf = x(0)*x(1)-600*x(2);
   
   grad_lsf(0) = x(1);
   grad_lsf(1) = x(0);
   grad_lsf(2) = -600;*/
-  
-  
-  // ================================
-  //
-  // Example 3
-  //
-  // ================================
-  // Evaluate the limit state function
-  val_lsf = pow(x(0),4) + 2*pow(x(1),4) - 20;
-  
-  // Evaluate the 1st-order partial derivatives of the LSF w.r.t. basic variables
-  // w.r.t. the 1st random variable
-  grad_lsf(0) = 4*pow(x(0),3);
-  // w.r.t. the 2nd random variable
-  grad_lsf(1) = 8*pow(x(1),3);
-  
-  // Evaluate the 2nd-order partial derivatives of the LSF w.r.t. basic variables
-  // w.r.t. the 1st random variable
-  Hess_lsf(0,0) = 12*pow(x(0),2);
-  // w.r.t. the 2nd random variable
-  Hess_lsf(1,1) = 24*pow(x(1),2);
-  
-
-  /*
-  // ================================
-  //
-  // Example 4
-  //
-  // ================================
-  // Evaluate the limit state function
-  val_lsf = x(2) - sqrt(300*pow(x(0),2) + 1.92*pow(x(1),2));
-  
-  // Evaluate the 1st-order partial derivatives of the LSF w.r.t. basic variables
-  // w.r.t. the 1st random variable
-  grad_lsf(0) = - pow(300*pow(x(0),2) + 1.92*pow(x(1),2),-0.5)*300*x(0);
-  // w.r.t. the 2nd random variable
-  grad_lsf(1) = - pow(300*pow(x(0),2) + 1.92*pow(x(1),2),-0.5)*1.92*x(1);
-  // w.r.t. the 3rd random variable
-  grad_lsf(2) = 1;
-  
-  // Evaluate the 2nd-order partial derivatives of the LSF w.r.t. basic variables
-  // w.r.t. the 1st random variable
-  double a;
-  a = pow(300*pow(x(0),2) + 1.92*pow(x(1),2),-1.5)*576;
-  Hess_lsf(0,0) = -pow(x(1),2);
-  Hess_lsf(0,1) = x(0)*x(1);
-  Hess_lsf(0,2) = 0;
-  // w.r.t. the 2nd random variable
-  Hess_lsf(1,0) = x(0)*x(1);
-  Hess_lsf(1,1) = -pow(x(0),2);
-  Hess_lsf(1,2) = 0;
-  // w.r.t. the 3rd random variable
-  Hess_lsf(2,0) = 0;
-  Hess_lsf(2,1) = 0;
-  Hess_lsf(2,2) = 0;
-  
-  Hess_lsf = a*Hess_lsf;
-  */
-  cout<<"\n The Hessian matrix: "<<Hess_lsf<<endl;
   
 }
 
@@ -1062,131 +877,7 @@ void search_dir(double val_G,
   
 }
 
-//------------------------------------------------------------------------------
-// Conduct Gram-Schmidt QR factorization of a matrix
-//// 1. classic
-//void gschmidt(ublas::matrix<double> A, ublas::matrix<double> &Q) {
-//  
-//}
 
-// 2. modified
-//
-
-void gramschmidt(ublas::matrix<double> A, ublas::matrix<double> &Q) {
-  
-  int m, n;
-  m = A.size1(); // the number of rows
-  n = A.size2(); // the number of columns
-  
-  //ublas::zero_matrix<double> R(m, n);
-  ublas::matrix<double> R(m, n);
-  for (int i=0; i<m; i++) {
-    for (int j=0; j<n; j++) {
-      R(i,j) = 0;
-    }
-  }
-  
-  Q = A;
-  
-  cout<<"Size row: "<<m<<"\t Size column: "<<n<<endl;
-  
-  ublas::vector<double> irow(n);
-  ublas::matrix<double> TQ(n,m);
-  for (int i=0; i<m; i++) {
-    TQ = trans(Q);
-    // Get i-th column
-    ublas::matrix_row<ublas::matrix<double> > irow_Q(TQ, i);
-    // Calculate normal of i-th column
-    R(i, i) = norm_2(irow_Q);
-    // Normalized the i-th column
-    irow_Q = irow_Q/R(i,i);
-    for (int j=0; j<n; j++) {
-      Q(j, i) = irow_Q(j);
-    }
-    // --
-    for (int k = i+1; k<n; k++) {
-      ublas::matrix_row<ublas::matrix<double> > krow_Q(TQ, k);
-      R(i,k) = inner_prod(irow_Q,krow_Q);
-      krow_Q = krow_Q - R(i,k)*irow_Q;
-      for (int j=0; j<n; j++) {
-        Q(j,k) = krow_Q(j);
-      }
-    }
-  }
-}
-
-void fliplr(ublas::matrix<double> &A) {
-  int nrow, ncol;
-  nrow = A.size1(); ncol = A.size2();
-  ublas::matrix<double> B;
-  B.resize(nrow,ncol); B.clear();
-  for (int i=0; i<nrow; i++) {
-    for (int j=0; j<ncol; j++) {
-      B(i,j) = A(i,ncol-j-1);
-    }
-  }
-  A.clear();
-  A = B;
-}
-
-
-//------------------------------------------------------------------------------
-// Construct an orthogonal matrix to rotate vector 
-//
-
-void orthonormal_matrix(ublas::vector<double> alpha, ublas::matrix<double> &Q) {
-  
-  double nvars;
-  
-  nvars = alpha.size();
-  ublas::identity_matrix<double> A1(nvars);
-  ublas::matrix<double> A(nvars,nvars);
-  A = A1; fliplr(A);
-  for (int i=0; i<nvars; i++) {
-    A(i,0) = alpha(i);
-  }
-  
-  // conduct Gram-Schmidt orthonormalization
-  gramschmidt(A,Q);
-  fliplr(Q);
-  Q = trans(Q);
-  cout<<"\n"<<"Orthogonal matrix: "<<Q<<endl;
-  
-}
-
-
-
-//------------------------------------------------------------------------------
-// Construct Hessian matrix at U-space or standard normal space
-//
-
-void Hessian_Matrix(ublas::vector<double> dxdu,
-             ublas::vector<double> grad_g,
-             ublas::matrix<double> Hess_g,
-             ublas::matrix<double> &Hess_G,
-             ublas::matrix<double> Hess_x) {
-  //
-  // ddG/dudu = ddg/dxdx*(dx/du)^2 + dg/dx*(ddx/dudu)
-  //
-  int nvars;
-  nvars = dxdu.size();
-  ublas::matrix<double> mat_grad_g;
-  ublas::matrix<double> mat_dxdu;
-  
-  mat_grad_g.resize(nvars,nvars); mat_grad_g.clear();
-  mat_dxdu.resize(nvars,nvars); mat_dxdu.clear();
-  
-  
-  for (int i=0; i<nvars; i++) {
-    mat_grad_g(i,i) = grad_g(i);
-    mat_dxdu(i,i) = dxdu(i);
-  }
-  
-  Hess_G.resize(nvars,nvars); Hess_G.clear();
-  ublas::matrix<double> temp_Hess_G;
-  temp_Hess_G = prod(Hess_g,mat_dxdu);cout<<"\nHess x: "<<Hess_x<<endl;
-  Hess_G = prod(mat_dxdu,temp_Hess_G) + prod(mat_grad_g, Hess_x);
-}
 
 
 /*******************************************************************************
@@ -1247,7 +938,7 @@ int main(int argc, char * argv[]) {
   ReliabOpt.istep_max  = 2000;     // Maximum number of interation allowed in the search algorithm
   ReliabOpt.e1         = 0.001;   // Tolerance on how close design point is to limit-state surface
   ReliabOpt.e2         = 0.001;   // Tolerance on how accurately the gradient points towards the origin
-  ReliabOpt.step_code  = 0.025;//0.025;   // 0: step size by Armijo rule, otherwise: given value is the step size
+  ReliabOpt.step_code  = 1;//0.025;   // 0: step size by Armijo rule, otherwise: given value is the step size
   ReliabOpt.Recorded_u = 1;       // 0: u-vector not recorded at all iterations, 1: u-vector recorded at all iterations
   ReliabOpt.Recorded_x = 1;       // 0: x-vector not recorded at all iterations, 1: x-vector recorded at all iterations
   ReliabOpt.grad_G     = "PSFEM"; // "PSFEM": perturbation based SFEM, "DDM": direct differentiation, 'ADM': automatic differentiation
@@ -1421,10 +1112,6 @@ int main(int argc, char * argv[]) {
   ublas::vector<double> u_dir(probdata.nvars);  // Direction
   ublas::vector<double> u_new(probdata.nvars);  // New trial of checking point
   
-  ublas::matrix<double> Hess_g;                 // Hessian matrix of LSF in x space
-  grad_g.resize(probdata.nvars); grad_g.clear();
-  Hess_g.resize(probdata.nvars,probdata.nvars); Hess_g.clear();
-  
   /*
    *  Start iteration
    */
@@ -1450,13 +1137,15 @@ int main(int argc, char * argv[]) {
     dudx.resize(probdata.nvars,probdata.nvars); dudx.clear();
     Jacobian_u_x(x,u,probdata,dudx);
     
-    inv_dudx.resize(probdata.nvars,probdata.nvars); inv_dudx.clear();
+    inv_dudx.resize(probdata.nvars,probdata.nvars);
+    inv_dudx.clear();
     inv_dudx = gjinverse(dudx,singular);
     
     /*
      * Evaluate limit-state function and its gradient
      */
-    gfun(probdata,x,val_G,grad_g,Hess_g);
+    grad_g.resize(probdata.nvars); grad_g.clear();
+    gfun(probdata,x,val_G,grad_g);
     
     grad_G.resize(probdata.nvars); grad_G.clear();
     cout<<dudx<<"\t"<<inv_dudx<<endl;
@@ -1531,14 +1220,14 @@ int main(int argc, char * argv[]) {
       u_new.resize(probdata.nvars); u_new.clear();
       u_new = u + step_size*u_dir;
       
-      cout<<"\n\nReliability index estimate at "<<istep;
-      cout<<" is: \t"<<((val_G/norm_2(grad_G)) + inner_prod(alpha, u))<<endl;
+      cout<<"\n\nReliability index estimate at "<<istep<<" is: \t"<<((val_G/norm_2(grad_G)) + inner_prod(alpha, u))<<endl;
       
       // Prepare for a new round in the loop
       u.resize(probdata.nvars); u.clear();
       u = u_new;
       istep = istep + 1;
     }
+    
     
   } while (conv_flag == 0); // end of while
   
@@ -1549,71 +1238,6 @@ int main(int argc, char * argv[]) {
   //////////////////////////////////////////////////////////////////////////////
 
   beta = inner_prod(alpha,u);
-  
-  //////////////////////////////////////////////////////////////////////////////
-  //                                                                          //
-  //        STEP 9: Calculate the estimate of reliability index               //
-  //                                                                          //
-  //////////////////////////////////////////////////////////////////////////////
-  
-  cout<<"\nStart to calculate orthogonal matrix"<<endl;
-  ublas::matrix<double> Qmatrix;
-  orthonormal_matrix(alpha,Qmatrix);
-  cout<<"\nThe Q matrix: "<<Qmatrix<<endl;
-  
-  ublas::vector<double> dxdu;
-  ublas::matrix<double> ddxddu;
-  cout<<"\n The x: "<<x<<endl;
-  cout<<"\n The u: "<<u<<endl;
-  d2x_dudu(x, u, probdata, dxdu, ddxddu);
-  
-  ublas::matrix<double> Hess_G;
-  Hessian_Matrix(dxdu, grad_g, Hess_g, Hess_G, ddxddu);
-  
-  ublas::matrix<double> A_Matrix;
-  ublas::matrix<double> Temp_A_Matrix;
-  Temp_A_Matrix = prod(Qmatrix, Hess_G);
-  A_Matrix = prod(Temp_A_Matrix, trans(Qmatrix))/norm_2(grad_G);
-  
-  cout<<"\nHessian matrix: "<<Hess_G<<endl;
-  cout<<"\nA matrix: "<<A_Matrix<<endl;
-  
-  ublas::matrix<double> New_A_Matrix;
-  int Size_A; Size_A = A_Matrix.size1() - 1;
-  New_A_Matrix.resize(Size_A,Size_A); New_A_Matrix.clear();
-  for (int i = 0; i<Size_A; i++) {
-    for (int j = 0; j<Size_A; j++) {
-      New_A_Matrix(i,j) = A_Matrix(i,j);
-    }
-  }
-  
-  //LAPACK - eigenvalues and vectors. Applied twice for initial creates memory space
-  ublas::matrix<double> eigen_vectors = New_A_Matrix;
-  ublas::vector<double> kappa(Size_A);
-  
-  int lda, info, lwork = -1; lda = Size_A;
-  double wkopt;
-  info = lapack_dsyev('N','U',Size_A,&(eigen_vectors.data()[0]),lda,&(kappa.data()[0]),&wkopt,lwork);
-  if(info != 0) SETERRQ1(PETSC_COMM_SELF,1,"is something wrong with lapack_dsyev info = %d",info);
-  lwork = (int)wkopt;
-  double work[lwork];
-  info = lapack_dsyev('V','U',Size_A,&(eigen_vectors.data()[0]),lda,&(kappa.data()[0]),work,lwork);
-  if(info != 0) SETERRQ1(PETSC_COMM_SELF,1,"is something wrong with lapack_dsyev info = %d",info);
-  
-  
-  using boost::math::normal_distribution;
-  normal_distribution<> snorm(0,1);
-  double pf_Breitung = 0.0;
-  for (int i = 0; i<Size_A; i++) {
-    pf_Breitung = pf_Breitung + 1/sqrt(1 + kappa(i)*beta);
-  }
-  pf_Breitung = cdf(snorm,-beta)*pf_Breitung;
-  double beta_Breitung;
-  beta_Breitung = -quantile(snorm,pf_Breitung);
-  
-  cout<<"\nThe eigen values are: "<<kappa<<endl;
-  cout<<"\nThe Breitung probability of failure is: "<<pf_Breitung<<endl;
-  cout<<"\nThe Breitung reliability index is: "<<beta_Breitung<<endl;
   
   
   //////////////////////////////////////////////////////////////////////////////

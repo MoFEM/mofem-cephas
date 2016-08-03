@@ -28,8 +28,10 @@ struct ImportProbData {
   ublas::vector<double> MatStrength; // Material strength
   ublas::vector<double> PlyAngle;    // Ply angle of orientation
   vector<string> NameVars;           // Name of random variables
+  vector<string> NameMatVars;       // Name of random variables for material properties
   string HomoMethod;                 // Homogenization method
   int NumVars;                       // Number of variables
+  int NumMatVars =0;                 // Number of variables for material properties
   int NumLayers;                     // Number of layers
   int ExaminedLayer;                 // Examined layer
   int TimePoint;                     // Time point for selection of wt in degradation analysis
@@ -80,7 +82,6 @@ struct ImportProbData {
   virtual PetscErrorCode ProbdataFileIn() {
     PetscFunctionBegin;
     
-    ErrorCode rval;
     PetscErrorCode ierr;
     
     char prob_data_file_name[255];
@@ -252,6 +253,35 @@ struct ImportProbData {
               substringbuf = stringbuf.substr(pos(i-1)+1,(pos(i)-pos(i-1))-1);
               cout<<substringbuf<<endl;
               NameVars.push_back(substringbuf);
+              // Identify random variables for material properties
+              if (substringbuf.compare(0,2,"Em") == 0) {       // Young's modulus of matrix - isotropic
+                NumMatVars ++;
+                NameMatVars.push_back(substringbuf);
+              }
+              else if (substringbuf.compare(0,3,"NUm") == 0) { // Poisson's ratio of matrix - isotropic
+                NumMatVars ++;
+                NameMatVars.push_back(substringbuf);
+              }
+              else if (substringbuf.compare(0,3,"NUp") == 0) { // Poisson's ratio in p-direction of fibre
+                NumMatVars ++;
+                NameMatVars.push_back(substringbuf);
+              }
+              else if (substringbuf.compare(0,3,"NUz") == 0) { // Poisson's ratio in z-direction of fibre
+                NumMatVars ++;
+                NameMatVars.push_back(substringbuf);
+              }
+              else if (substringbuf.compare(0,2,"Ep") == 0) {  // Young's modulus in p-direction of fibre
+                NumMatVars ++;
+                NameMatVars.push_back(substringbuf);
+              }
+              else if (substringbuf.compare(0,2,"Ez") == 0) {  // Young's modulus in longitudinal direction
+                NumMatVars ++;
+                NameMatVars.push_back(substringbuf);
+              }
+              else if (substringbuf.compare(0,3,"Gzp") == 0) { // Shear modulus in z-direction of fibre
+                NumMatVars ++;
+                NameMatVars.push_back(substringbuf);
+              }
               substringbuf.clear();
             }
           }

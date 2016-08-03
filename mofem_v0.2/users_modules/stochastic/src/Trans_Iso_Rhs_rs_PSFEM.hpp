@@ -113,9 +113,9 @@ namespace MoFEM {
          ierr = mymat.D_r_ShearZP(_nu_p,_nu_pz,_E_p,_E_z,_G_zp); CHKERRQ(ierr);
          ConstitutiveMatrix_r = mymat.StiffnessMatrix_rShearZP;
       }
-      else {
-           cout<<"Invalid input of random variable"<<endl;
-      }
+//      else {
+//           cout<<"Invalid input of random variable"<<endl;
+//      }
 
       /*************************************************************************
        * 
@@ -283,9 +283,9 @@ namespace MoFEM {
          // cout<<"second variable Poisson z \t";
          ConstitutiveMatrix_rs.clear();
       }
-      else {
-           cout<<"Invalid input of random variable"<<endl;
-      }
+//      else {
+//           cout<<"Invalid input of random variable"<<endl;
+//      }
       
       /*************************************************************************
        * 
@@ -389,9 +389,9 @@ namespace MoFEM {
          ierr = mymat.D_r_Poisson(_young,_nu); CHKERRQ(ierr);
          ConstitutiveMatrix_r = mymat.StiffnessMatrix_rPoisson;
       }
-      else {
-         cout<<"Invalid input of random variable"<<endl;
-      }
+//      else {
+//         cout<<"Invalid input of random variable"<<endl;
+//      }
 
       /*************************************************************************
        * 
@@ -495,9 +495,9 @@ namespace MoFEM {
          ierr = mymat.D_rs_YoungPoisson(_young,_nu); CHKERRQ(ierr);
          ConstitutiveMatrix_rs = mymat.StiffnessMatrix_rsYoungPoisson;
       }
-      else {
-           cout<<"Invalid input of random variable"<<endl;
-      }
+//      else {
+//           cout<<"Invalid input of random variable"<<endl;
+//      }
       
       /*************************************************************************
        * 
