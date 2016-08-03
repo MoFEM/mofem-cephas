@@ -49,14 +49,28 @@ cm_export_file("../meshes/mat_elastic_transiso.h5m" export_atom_tests)
 cm_export_file("../meshes/mat_interf.h5m" export_atom_tests)
 cm_export_file("../meshes/inlet_outlet.h5m" export_atom_tests)
 
-add_executable(cubit_bc_test cubit_bc_test.cpp)
+set(PERCOMPILED_MOFEM_HEADER "${PROJECT_SOURCE_DIR}/include/MoFEM.hpp")
+
+function(my_add_executable target source)
+  if(PRECOMPILED_HEADRES)
+    set_source_files_properties(${source} PROPERTIES COMPILE_FLAGS "-include ${PERCOMPILED_MOFEM_HEADER}")
+  endif(PRECOMPILED_HEADRES)
+  add_executable(${target} ${source})
+  if(PRECOMPILED_HEADRES)
+    add_dependencies(${target} MoFEM.hpp.pch_copy)
+  endif(PRECOMPILED_HEADRES)
+endfunction(my_add_executable)
+
+# add_executable(cubit_bc_test cubit_bc_test.cpp)
+my_add_executable(cubit_bc_test cubit_bc_test.cpp)
 target_link_libraries(cubit_bc_test
   mofem_interfaces
   mofem_multi_indices
   mofem_approx
   mofem_cblas
   mofem_third_party
-  ${PROJECT_LIBS})
+  ${PROJECT_LIBS}
+)
 
 add_test(cubit_bc_atom_test_disp01 ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/cubit_bc_test -my_file disp01.h5m)
 add_test(cubit_bc_atom_test_disp01_compare ${CMAKE_COMMAND} -E compare_files
@@ -132,7 +146,7 @@ add_test(cubit_bc_atom_test_inlet_outlet_compare ${CMAKE_COMMAND} -E compare_fil
 #Loop over Cubit Meshset Test
 cm_export_file("../meshes/loop_atom.h5m" export_atom_tests)
 
-add_executable(loops_atom_test loops_test.cpp)
+my_add_executable(loops_atom_test loops_test.cpp)
 target_link_libraries(loops_atom_test
   mofem_interfaces
   mofem_multi_indices
@@ -151,7 +165,7 @@ add_test(cubit_meshset_loop_test_compare ${CMAKE_COMMAND} -E compare_files
 #field axpy
 cm_export_file("../meshes/elasticity_atom_test_01X_pressure.h5m" export_atom_tests)
 
-add_executable(field_axpy_atom_test field_axpy_atom_test.cpp)
+my_add_executable(field_axpy_atom_test field_axpy_atom_test.cpp)
 target_link_libraries(field_axpy_atom_test
   mofem_interfaces
   mofem_multi_indices
@@ -168,7 +182,7 @@ add_test(field_axpy_compare ${CMAKE_COMMAND} -E compare_files
   ${CMAKE_BINARY_DIR}/atom_tests/field_axpy_test.txt)
 
 #test coord sys
-add_executable(test_setting_coordinate_sys test_setting_coordinate_sys.cpp)
+my_add_executable(test_setting_coordinate_sys test_setting_coordinate_sys.cpp)
 target_link_libraries(test_setting_coordinate_sys
   mofem_interfaces
   mofem_multi_indices
@@ -183,7 +197,7 @@ add_test(test_setting_coordinate_sys ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR
 #mesh refine
 cm_export_file("../meshes/templar.h5m" export_atom_tests)
 
-add_executable(mesh_refine_atom mesh_refine_atom.cpp)
+my_add_executable(mesh_refine_atom mesh_refine_atom.cpp)
 target_link_libraries(mesh_refine_atom
   mofem_interfaces
   mofem_multi_indices
@@ -200,7 +214,7 @@ add_test(mesh_refine_atom_test_compare ${CMAKE_COMMAND} -E compare_files ${CMAKE
 cm_export_file("../meshes/Tinterface.h5m" export_atom_tests)
 cm_export_file("../meshes/4seasons.h5m" export_atom_tests)
 
-add_executable(mesh_insert_interface_atom mesh_insert_interface_atom.cpp)
+my_add_executable(mesh_insert_interface_atom mesh_insert_interface_atom.cpp)
 target_link_libraries(mesh_insert_interface_atom
   mofem_interfaces
   mofem_multi_indices
@@ -232,7 +246,7 @@ add_test(mesh_insert_T_4seasons_interface_atom_test_compare ${CMAKE_COMMAND} -E 
 )
 
 #foces and sources functions Test
-add_executable(forces_and_sources_getting_orders_indices_atom_test forces_and_sources_getting_orders_indices_atom_test.cpp)
+my_add_executable(forces_and_sources_getting_orders_indices_atom_test forces_and_sources_getting_orders_indices_atom_test.cpp)
 target_link_libraries(forces_and_sources_getting_orders_indices_atom_test
   mofem_finite_elements
   mofem_interfaces
@@ -250,7 +264,7 @@ add_test(forces_and_sources_getting_orders_indices_test_compare ${CMAKE_COMMAND}
   ${CMAKE_BINARY_DIR}/atom_tests/forces_and_sources_getting_orders_indices_atom_test.txt
 )
 
-add_executable(forces_and_sources_getting_mult_H1_H1_atom_test forces_and_sources_getting_mult_H1_H1_atom_test.cpp)
+my_add_executable(forces_and_sources_getting_mult_H1_H1_atom_test forces_and_sources_getting_mult_H1_H1_atom_test.cpp)
 target_link_libraries(forces_and_sources_getting_mult_H1_H1_atom_test
   mofem_finite_elements
   mofem_interfaces
@@ -268,7 +282,7 @@ add_test(forces_and_sources_getting_mult_H1_H1_test_compare ${CMAKE_COMMAND} -E 
   ${CMAKE_BINARY_DIR}/atom_tests/forces_and_sources_getting_mult_H1_H1_atom_test.txt
 )
 
-add_executable(forces_and_sources_calculate_jacobian forces_and_sources_calculate_jacobian.cpp)
+my_add_executable(forces_and_sources_calculate_jacobian forces_and_sources_calculate_jacobian.cpp)
 target_link_libraries(forces_and_sources_calculate_jacobian
   mofem_finite_elements
   mofem_interfaces
@@ -286,7 +300,7 @@ add_test(forces_and_sources_calculate_jacobian_test_compare ${CMAKE_COMMAND} -E 
   ${CMAKE_BINARY_DIR}/atom_tests/forces_and_sources_calculate_jacobian.txt
 )
 
-add_executable(forces_and_sources_testing_volume_element forces_and_sources_testing_volume_element.cpp)
+my_add_executable(forces_and_sources_testing_volume_element forces_and_sources_testing_volume_element.cpp)
 target_link_libraries(forces_and_sources_testing_volume_element
   mofem_finite_elements
   mofem_interfaces
@@ -307,7 +321,7 @@ add_test(forces_and_sources_testing_volume_element_test_compare ${CMAKE_COMMAND}
   ${CMAKE_BINARY_DIR}/atom_tests/forces_and_sources_testing_volume_element.txt
 )
 
-add_executable(forces_and_sources_testing_ftensor forces_and_sources_testing_ftensor.cpp)
+my_add_executable(forces_and_sources_testing_ftensor forces_and_sources_testing_ftensor.cpp)
 target_link_libraries(forces_and_sources_testing_ftensor
   mofem_finite_elements
   mofem_interfaces
@@ -323,7 +337,7 @@ add_test(
   -my_file elasticity_atom_test_01X_pressure.h5m
 )
 
-add_executable(forces_and_sources_getting_higher_order_skin_normals_atom forces_and_sources_getting_higher_order_skin_normals_atom_tets.cpp)
+my_add_executable(forces_and_sources_getting_higher_order_skin_normals_atom forces_and_sources_getting_higher_order_skin_normals_atom_tets.cpp)
 target_link_libraries(forces_and_sources_getting_higher_order_skin_normals_atom
   mofem_finite_elements
   mofem_interfaces
@@ -345,7 +359,7 @@ add_test(forces_and_sources_getting_higher_order_skin_normals_atom_test_compare 
 )
 
 #triangle element
-add_executable(forces_and_sources_testing_triangle_element forces_and_sources_testing_triangle_element.cpp)
+my_add_executable(forces_and_sources_testing_triangle_element forces_and_sources_testing_triangle_element.cpp)
 target_link_libraries(forces_and_sources_testing_triangle_element
   mofem_finite_elements
   mofem_interfaces
@@ -366,7 +380,7 @@ add_test(forces_and_sources_testing_triangle_element_test_compare ${CMAKE_COMMAN
 )
 
 #edge element
-add_executable(forces_and_sources_testing_edge_element forces_and_sources_testing_edge_element.cpp)
+my_add_executable(forces_and_sources_testing_edge_element forces_and_sources_testing_edge_element.cpp)
 target_link_libraries(forces_and_sources_testing_edge_element
   mofem_finite_elements
   mofem_interfaces
@@ -387,7 +401,7 @@ add_test(forces_and_sources_testing_edge_element_test_compare ${CMAKE_COMMAND} -
 )
 
 #vertex element
-add_executable(forces_and_sources_testing_vertex_element forces_and_sources_testing_vertex_element.cpp)
+my_add_executable(forces_and_sources_testing_vertex_element forces_and_sources_testing_vertex_element.cpp)
 target_link_libraries(forces_and_sources_testing_vertex_element
   mofem_finite_elements
   mofem_interfaces
@@ -408,7 +422,7 @@ add_test(forces_and_sources_testing_vertex_element_test_compare ${CMAKE_COMMAND}
 )
 
 #flat prism element
-add_executable(forces_and_sources_testing_flat_prism_element forces_and_sources_testing_flat_prism_element.cpp)
+my_add_executable(forces_and_sources_testing_flat_prism_element forces_and_sources_testing_flat_prism_element.cpp)
 target_link_libraries(forces_and_sources_testing_flat_prism_element
   mofem_finite_elements
   mofem_interfaces
@@ -427,7 +441,7 @@ add_test(forces_and_sources_testing_flat_prism_element_test_compare ${CMAKE_COMM
 )
 
 # add test for recording series
-add_executable(record_series_atom record_series_atom.cpp)
+my_add_executable(record_series_atom record_series_atom.cpp)
 target_link_libraries(record_series_atom
   mofem_interfaces
   mofem_multi_indices
@@ -446,7 +460,7 @@ add_test(record_series_atom_test_compare ${CMAKE_COMMAND} -E compare_files
 )
 
 # add test for hdiv space
-add_executable(forces_and_sources_hdiv_approximation_functions forces_and_sources_hdiv_approximation_functions.cpp)
+my_add_executable(forces_and_sources_hdiv_approximation_functions forces_and_sources_hdiv_approximation_functions.cpp)
 target_link_libraries(forces_and_sources_hdiv_approximation_functions
   mofem_finite_elements
   mofem_interfaces
@@ -463,7 +477,7 @@ add_test(forces_and_sources_hdiv_approximation_functions_atom_compare ${CMAKE_CO
 )
 
 # add test for hdiv space - check approximation continuity
-add_executable(forces_and_sources_hdiv_continuity_check forces_and_sources_hdiv_continuity_check.cpp)
+my_add_executable(forces_and_sources_hdiv_continuity_check forces_and_sources_hdiv_continuity_check.cpp)
 target_link_libraries(forces_and_sources_hdiv_continuity_check
   mofem_finite_elements
   mofem_interfaces
@@ -483,7 +497,7 @@ add_test(forces_and_sources_hdiv_continuity_check_atom_compare ${CMAKE_COMMAND} 
 )
 
 # add test for hdvi divergence operator
-add_executable(forces_and_sources_hdiv_divergence_operator forces_and_sources_hdiv_divergence_operator.cpp)
+my_add_executable(forces_and_sources_hdiv_divergence_operator forces_and_sources_hdiv_divergence_operator.cpp)
 target_link_libraries(forces_and_sources_hdiv_divergence_operator
   mofem_finite_elements
   mofem_interfaces
@@ -499,7 +513,7 @@ add_test(forces_and_sources_hdiv_divergence_operator_atom
 )
 
 #dm
-add_executable(dm_mofem dm_mofem.cpp)
+my_add_executable(dm_mofem dm_mofem.cpp)
 target_link_libraries(dm_mofem
   mofem_finite_elements
   mofem_interfaces
@@ -517,7 +531,7 @@ add_test(dm_mofem_atom_compare ${CMAKE_COMMAND} -E compare_files
 )
 
 cm_export_file("disp01_2parts.h5m" export_atom_tests)
-add_executable(dm_build_partitioned_mesh dm_build_partitioned_mesh.cpp)
+my_add_executable(dm_build_partitioned_mesh dm_build_partitioned_mesh.cpp)
 target_link_libraries(dm_build_partitioned_mesh
   mofem_finite_elements
   mofem_interfaces
@@ -537,7 +551,7 @@ add_test(dm_build_partitioned_mesh_atom_compare ${CMAKE_COMMAND} -E compare_file
 )
 
 #single process
-add_executable(serial_matrix serial_matrix.cpp)
+my_add_executable(serial_matrix serial_matrix.cpp)
 target_link_libraries(serial_matrix
   mofem_finite_elements
   mofem_interfaces
@@ -555,7 +569,7 @@ add_test(serial_matrix_compare ${CMAKE_COMMAND} -E compare_files
 )
 
 #test for build problems
-add_executable(build_problems build_problems.cpp)
+my_add_executable(build_problems build_problems.cpp)
 target_link_libraries(build_problems
   mofem_finite_elements
   mofem_interfaces
@@ -568,7 +582,7 @@ target_link_libraries(build_problems
 add_test(build_problems_atom ${MPI_RUN} -np 2 ${CMAKE_CURRENT_BINARY_DIR}/build_problems -my_file disp01.h5m)
 
 #test inactivating and clearing inactive dofs
-add_executable(activate_deactivate_dofs activate_deactivate_dofs.cpp)
+my_add_executable(activate_deactivate_dofs activate_deactivate_dofs.cpp)
 target_link_libraries(activate_deactivate_dofs
   mofem_finite_elements
   mofem_interfaces
@@ -582,7 +596,7 @@ add_test(activate_deactivate_dofs ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/a
 
 
 # Projection form and to 10 node tets
-add_executable(projection_from_10node_tet_atom projection_from_10node_tet.cpp)
+my_add_executable(projection_from_10node_tet_atom projection_from_10node_tet.cpp)
 target_link_libraries(projection_from_10node_tet_atom
   mofem_finite_elements
   mofem_interfaces
@@ -605,7 +619,7 @@ if(TETGEN_LIBRARY)
 
   cm_export_file("../meshes/Tinterface.h5m" export_atom_tests)
 
-  add_executable(tetgen_interface tetgen_interface.cpp)
+  my_add_executable(tetgen_interface tetgen_interface.cpp)
   target_link_libraries(tetgen_interface
     mofem_interfaces
     mofem_multi_indices
@@ -626,7 +640,7 @@ endif(TETGEN_LIBRARY)
 
 if(NETGEN_LIBRARY)
 
-  add_executable(netgen_interface netgen_interface.cpp)
+  my_add_executable(netgen_interface netgen_interface.cpp)
   target_link_libraries(netgen_interface
     mofem_interfaces
     mofem_multi_indices
@@ -638,7 +652,7 @@ if(NETGEN_LIBRARY)
 
 endif(NETGEN_LIBRARY)
 
-add_executable(node_merge node_merge.cpp)
+my_add_executable(node_merge node_merge.cpp)
 target_link_libraries(node_merge
   mofem_interfaces
   mofem_multi_indices
@@ -654,7 +668,7 @@ add_test(node_merge ${MPI_RUN} -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/node_merge -my_file node_merge_test.h5m
 )
 
-add_executable(prisms_elements_from_surface prisms_elements_from_surface.cpp)
+my_add_executable(prisms_elements_from_surface prisms_elements_from_surface.cpp)
 target_link_libraries(prisms_elements_from_surface
   mofem_finite_elements
   mofem_interfaces
@@ -670,7 +684,7 @@ add_test(prisms_elements_from_surface ${MPI_RUN} -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/prisms_elements_from_surface -my_file rectangle_surface_mesh.cub
 )
 
-add_executable(partition_mesh partition_mesh.cpp)
+my_add_executable(partition_mesh partition_mesh.cpp)
 target_link_libraries(partition_mesh
   mofem_finite_elements
   mofem_interfaces
@@ -685,7 +699,7 @@ add_test(partition_mesh ${MPI_RUN} -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/partition_mesh -my_file disp01.h5m
 )
 
-add_executable(testing_base_functions testing_base_functions.cpp)
+my_add_executable(testing_base_functions testing_base_functions.cpp)
 target_link_libraries(testing_base_functions
   mofem_finite_elements
   mofem_interfaces
@@ -718,7 +732,7 @@ foreach(test_base ${testing_base_list})
 endforeach(test_base IN testing_base_list)
 
 if(ADOL-C_LIBRARY)
-  add_executable(adol-c_atom adol-c_atom.cpp)
+  my_add_executable(adol-c_atom adol-c_atom.cpp)
   target_link_libraries(adol-c_atom ${PROJECT_LIBS})
   if(WITH_ADOL-C)
     add_dependencies(adol-c_atom adolc)

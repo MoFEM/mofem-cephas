@@ -16,10 +16,16 @@ include_directories("${PROJECT_SOURCE_DIR}/src/ftensor/src")
 file(GLOB_RECURSE FTENSOR_CONFORMANCE_TEST_FILES
   ${PROJECT_SOURCE_DIR}/src/ftensor/tests/conformance/test_*.cpp
 )
+file(REMOVE ${CMAKE_CURRENT_SOURCE_DIR}/All.cpp)
+foreach(LINE ${FTENSOR_CONFORMANCE_TEST_FILES})
+  set(TO_INCLUDE "#include \"${LINE}\"\n")
+  file(APPEND ${CMAKE_CURRENT_SOURCE_DIR}/All.cpp ${TO_INCLUDE})
+endforeach(LINE ${TENSOR_CONFORMANCE_TEST_FILES})
+
 add_executable(
   ftensor_conformance_test
   ${PROJECT_SOURCE_DIR}/src/ftensor/tests/conformance/main.cpp
-  ${FTENSOR_CONFORMANCE_TEST_FILES}
+  ${CMAKE_CURRENT_SOURCE_DIR}/All.cpp
 )
 add_test(
   ftensor_conformance_test ${CMAKE_CURRENT_BINARY_DIR}/ftensor_conformance_test
