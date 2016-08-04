@@ -110,7 +110,7 @@ target_link_libraries(thermal_elem_atom
 )
 
 add_test(thermal_elem_atom_test ${MoFEM_MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/thermal_elem_atom
-  -my_file simple_thermal_problem.h5m -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package mumps -ksp_monitor)
+-my_file simple_thermal_problem.h5m -ksp_type fgmres -pc_type bjacobi -ksp_atol 0 -ksp_rtol 1e-12 -ksp_monitor)
 
 # add test test for temerature unsteady element
 bfe_add_executable(thermal_elem_unsteady_atom ${UM_CURRENT_SOURCE_DIR}/thermal_elem_unsteady.cpp)
@@ -127,7 +127,7 @@ target_link_libraries(thermal_elem_unsteady_atom
 
 add_test(thermal_elem_unsteady_atom_test ${MoFEM_MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/thermal_elem_unsteady_atom
   -my_file simple_thermal_problem.h5m
-  -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package mumps
+  -ksp_type fgmres -pc_type bjacobi -ksp_atol 0 -ksp_rtol 1e-12
   -snes_type newtonls -snes_linesearch_type basic
   -snes_max_it 100 -snes_atol 1e-8 -snes_rtol 1e-8
   -ts_monitor -ts_type beuler -ts_dt 1 -ts_final_time 2  -ksp_monitor -snes_max_it 3 -snes_monitor
@@ -163,9 +163,9 @@ target_link_libraries(ultra_weak_transport
   mofem_third_party
   ${MoFEM_PROJECT_LIBS})
 
-add_test(ultra_weak_transport_atom ${MoFEM_MPI_RUN} -np 2
+add_test(ultra_weak_transport_atom ${MoFEM_MPI_RUN} -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/ultra_weak_transport -my_file simple_thermal_problem.h5m
-  -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package mumps -ksp_monitor
+  -ksp_type fgmres -pc_type bjacobi -ksp_monitor -ksp_atol 0 -ksp_rtol 1e-12
   -my_max_post_proc_ref_level 0 -my_order 0
 )
 
@@ -186,8 +186,9 @@ target_link_libraries(field_approximation
 )
 
 add_test(field_approximation_test
-  ${MoFEM_MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/field_approximation -my_file elasticity_atom_test_01X_pressure.h5m
-  -ksp_monitor -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package mumps
+  ${MoFEM_MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/field_approximation
+  -my_file elasticity_atom_test_01X_pressure.h5m
+  -ksp_monitor -ksp_type fgmres -pc_type bjacobi -ksp_atol 0 -ksp_rtol 1e-12
 )
 add_test(field_approximation_test_compare ${CMAKE_COMMAND} -E compare_files
   ${CMAKE_CURRENT_SOURCE_DIR}/blessed_files/field_approximation.txt
