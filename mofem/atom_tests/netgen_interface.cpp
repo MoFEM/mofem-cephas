@@ -20,8 +20,6 @@ namespace nglib {
 using namespace nglib;
 #include <NetGenInterface.hpp>
 
-#include <moab/Skinner.hpp>
-
 using namespace MoFEM;
 
 ErrorCode rval;

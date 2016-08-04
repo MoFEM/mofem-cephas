@@ -14,18 +14,6 @@
 
 #define FTENSOR_DEBUG
 
-// #ifdef WITH_ADOL_C
-//   #include <adolc/adolc.h>
-// #endif
-
-#include <MoFEM.hpp>
-#include <Projection10NodeCoordsOnField.hpp>
-
-#include <boost/iostreams/tee.hpp>
-#include <boost/iostreams/stream.hpp>
-#include <fstream>
-#include <iostream>
-
 namespace bio = boost::iostreams;
 using bio::tee_device;
 using bio::stream;

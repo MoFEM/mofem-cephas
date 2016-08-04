@@ -21,22 +21,8 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
-#include <MoFEM.hpp>
-using namespace MoFEM;
-
-#include <Projection10NodeCoordsOnField.hpp>
-
-#include <boost/numeric/ublas/vector_proxy.hpp>
-#include <boost/numeric/ublas/matrix.hpp>
-#include <boost/numeric/ublas/matrix_proxy.hpp>
-#include <boost/numeric/ublas/vector.hpp>
-
-#include <adolc/adolc.h>
-
-#include <MethodForForceScaling.hpp>
-#include <DirichletBC.hpp>
-#include <MethodForForceScaling.hpp>
-#include <ConvectiveMassElement.hpp>
+ #include <BasicFiniteElements.hpp>
+ using namespace MoFEM;
 
 ErrorCode rval;
 PetscErrorCode ierr;

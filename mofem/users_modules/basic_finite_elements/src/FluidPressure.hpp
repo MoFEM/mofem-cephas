@@ -24,8 +24,6 @@
 #ifndef __FLUID_PRESSURE_HPP
 #define __FLUID_PRESSURE_HPP
 
-#include<moab/Skinner.hpp>
-
 /** \brief Fluid pressure forces
 
 \todo Implementation for large displacements
@@ -186,82 +184,14 @@ struct FluidPressure {
 
   PetscErrorCode addNeumannFluidPressureBCElements(
     const std::string field_name,const std::string mesh_nodals_positions = "MESH_NODE_POSITIONS"
-  ) {
-    PetscFunctionBegin;
+  );
 
-    ierr = mField.add_finite_element("FLUID_PRESSURE_FE",MF_ZERO); CHKERRQ(ierr);
-    ierr = mField.modify_finite_element_add_field_row("FLUID_PRESSURE_FE",field_name); CHKERRQ(ierr);
-    ierr = mField.modify_finite_element_add_field_col("FLUID_PRESSURE_FE",field_name); CHKERRQ(ierr);
-    ierr = mField.modify_finite_element_add_field_data("FLUID_PRESSURE_FE",field_name); CHKERRQ(ierr);
-    if(mField.check_field(mesh_nodals_positions)) {
-      ierr = mField.modify_finite_element_add_field_data("FLUID_PRESSURE_FE",mesh_nodals_positions); CHKERRQ(ierr);
-    }
-
-    //takes skin of block of entities
-    Skinner skin(&mField.get_moab());
-    // loop over all blocksets and get data which name is FluidPressure
-    for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BLOCKSET,bit)) {
-
-      if(bit->getName().compare(0,14,"FLUID_PRESSURE") == 0) {
-
-        //get block attributes
-        std::vector<double> attributes;
-        ierr = bit->get_attributes(attributes); CHKERRQ(ierr);
-        if(attributes.size()<7) {
-          SETERRQ1(PETSC_COMM_SELF,1,"not enough block attributes to deffine fluid pressure element, attributes.size() = %d ",attributes.size());
-        }
-        setOfFluids[bit->get_msId()].dEnsity = attributes[0];
-        setOfFluids[bit->get_msId()].aCCeleration.resize(3);
-        setOfFluids[bit->get_msId()].aCCeleration[0] = attributes[1];
-        setOfFluids[bit->get_msId()].aCCeleration[1] = attributes[2];
-        setOfFluids[bit->get_msId()].aCCeleration[2] = attributes[3];
-        setOfFluids[bit->get_msId()].zEroPressure.resize(3);
-        setOfFluids[bit->get_msId()].zEroPressure[0] = attributes[4];
-        setOfFluids[bit->get_msId()].zEroPressure[1] = attributes[5];
-        setOfFluids[bit->get_msId()].zEroPressure[2] = attributes[6];
-        //get blok tetrahedrons and triangles
-        Range tets;
-        rval = mField.get_moab().get_entities_by_type(bit->meshset,MBTET,tets,true); CHKERRQ_MOAB(rval);
-        Range tris;
-        rval = mField.get_moab().get_entities_by_type(bit->meshset,MBTRI,setOfFluids[bit->get_msId()].tRis,true); CHKERRQ_MOAB(rval);
-        //this get triangles only on block surfaces
-        Range tets_skin_tris;
-        rval = skin.find_skin(0,tets,false,tets_skin_tris); CHKERR_MOAB(rval);
-        setOfFluids[bit->get_msId()].tRis.merge(tets_skin_tris);
-        std::ostringstream ss;
-        ss << setOfFluids[bit->get_msId()] << std::endl;
-        PetscPrintf(mField.get_comm(),ss.str().c_str());
-
-        ierr = mField.add_ents_to_finite_element_by_TRIs(setOfFluids[bit->get_msId()].tRis,"FLUID_PRESSURE_FE"); CHKERRQ(ierr);
-
-      }
-
-    }
-
-    PetscFunctionReturn(0);
-  }
-
-
-  PetscErrorCode setNeumannFluidPressureFiniteElementOperators(string field_name,Vec F,
-    bool allow_negative_pressure = true,bool ho_geometry = false) {
-    PetscFunctionBegin;
-    std::map<MeshSetId,FluidData>::iterator sit = setOfFluids.begin();
-    for(;sit!=setOfFluids.end();sit++) {
-      //add finite element
-      fe.getOpPtrVector().push_back(new OpCalculatePressure(
-        field_name,F,sit->second,methodsOp,allow_negative_pressure,ho_geometry
-      ));
-    }
-    PetscFunctionReturn(0);
-  }
-
+  PetscErrorCode setNeumannFluidPressureFiniteElementOperators(
+    string field_name,Vec F,bool allow_negative_pressure = true,bool ho_geometry = false
+  );
+  
 };
 
-std::ostream& operator<<(std::ostream& os,const FluidPressure::FluidData &e) {
-  os << "dEnsity " << e.dEnsity << std::endl;
-  os << "aCCeleration " << e.aCCeleration << std::endl;
-  os << "zEroPressure " << e.zEroPressure << std::endl;
-  return os;
-}
+std::ostream& operator<<(std::ostream& os,const FluidPressure::FluidData &e);
 
 #endif //__FLUID_PRESSSURE_HPP

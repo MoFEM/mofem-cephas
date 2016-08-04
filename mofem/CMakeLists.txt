@@ -159,11 +159,14 @@ file(COPY
   DESTINATION ${PROJECT_BINARY_DIR}
 )
 
-#add executable library form subdirectory
+# Add executable library form subdirectory
 enable_testing()
 include(CTest)
 
-#add generation of examplaes
+# Precompiled headers
+include(cmake/PrecompiledHeaders.cmake)
+
+# Sdd generation of examplaes
 configure_file(
   ${PROJECT_SOURCE_DIR}/MoFEMConfig.cmake.in
   ${PROJECT_BINARY_DIR}/MoFEMConfig.cmake

@@ -1,5 +1,9 @@
   /** \file h1_hdiv_hcurl_l2.h
   \brief Functions to approximate hierarchical spaces
+
+  \FIXME: Name Shape Functions is used, in that context is more appropriate
+  to use base functions. Need to be changed.
+
 */
 
 /*
@@ -19,31 +23,43 @@
 extern "C" {
 #endif
 
-/// number of dofs for L2 space
+// L2
+
+/// Number of dofs for L2 space
 #define NBVOLUMETET_L2_AINSWORTH_COLE(P) ((P+1)*(P+2)*(P+3)/6)
 #define NBFACETRI_L2_AINSWORTH_COLE(P) ((P+1)*(P+2)/2)
 #define NBEDGE_L2_AINSWORTH_COLE(P) (P+1)
-/// number of dofs on edge for H1 space
+
+// H1
+
+/// Number of dofs on edge for H1 space
 #define NBEDGE_H1_AINSWORTH_COLE(P) ((P>0) ? (P-1) : 0)
-/// number of dofs on face for H1 space
+/// Number of dofs on face for H1 space
 #define NBFACETRI_H1_AINSWORTH_COLE(P) ((P>1) ? ((P-2)*(P-1)/2) : 0)
 #define NBFACEQUAD_H1_AINSWORTH_COLE(P) ((P>2) ? ((P-3)*(P-2)/2) : 0)
-/// number of dofs on volume for H1 space
+/// Number of dofs on volume for H1 space
 #define NBVOLUMETET_H1_AINSWORTH_COLE(P) ((P>2) ? ((P-3)*(P-2)*(P-1)/6) : 0)
 #define NBVOLUMEPRISM_H1_AINSWORTH_COLE(P) ((P>4) ? ((P-5)*(P-4)*(P-3)/6) : 0)
-//HCURL
-#define NBEDGE_HCURL_AINSWORTH_COLE(P) (P+1)
-#define NBFACETRI_HCURL_AINSWORTH_COLE(P) ((P>0) ? (P-1)*(P+1) : 0)
-#define NBVOLUMETET_HCURL_AINSWORTH_COLE(P) ((P>1) ? (P-2)*(P-1)*(P+1)/2 : 0)
-//HDIV
+
+// H curl
+
+/// Number of base functions H curl on faces
+#define NBEDGE_HCURL_AINSWORTH_COLE(P) ((P>0) ? (P+1) : 0)
+#define NBFACETRI_EDGE_HCURL_AINSWORTH_COLE(P) ((P>1) ? P-1 : 0)
+#define NBFACETRI_FACE_HCURL_AINSWORTH_COLE(P) ((P>2) ? (P-1)*(P-2) : 0)
+#define NBFACETRI_HCURL_AINSWORTH_COLE(P) ((P>1) ? (P-1)*(P+1) : 0)
+#define NBVOLUMETET_HCURL_AINSWORTH_COLE(P) ((P>2) ? (P-2)*(P-1)*(P+1)/2 : 0)
+
+// H div
+
 #define NBEDGE_HDIV_AINSWORTH_COLE(P) (0)
-#define NBFACETRI_HDIV_AINSWORTH_COLE(P) ((P>0) ? (P+1)*(P+2)/2 : 0)
-#define NBVOLUMETET_HDIV_AINSWORTH_COLE(P) ((P>1) ? (P-1)*(P+1)*(P+2)/2 : 0)
 #define NBFACETRI_EDGE_HDIV_AINSWORTH_COLE(P) ((P>0) ? P : 0)
 #define NBFACETRI_FACE_HDIV_AINSWORTH_COLE(P) ((P>2) ? ((P-2)*(P-2)+(P-2))/2 : 0)
+#define NBFACETRI_HDIV_AINSWORTH_COLE(P) ((P>0) ? (P+1)*(P+2)/2 : 0)
 #define NBVOLUMETET_EDGE_HDIV_AINSWORTH_COLE(P) ((P>1) ? P-1 : 0)
 #define NBVOLUMETET_FACE_HDIV_AINSWORTH_COLE(P) ((P>2) ? ((P-2)*(P-2)+(P-2)) : 0)
 #define NBVOLUMETET_VOLUME_HDIV_AINSWORTH_COLE(P) ((P>3) ? ((P-3)*(P-2)*(P-1)/2) : 0)
+#define NBVOLUMETET_HDIV_AINSWORTH_COLE(P) ((P>1) ? (P-1)*(P+1)*(P+2)/2 : 0)
 
 PetscErrorCode L2_FaceShapeFunctions_MBTRI(int p,double *N,double *diffN,double *L2N,double *diff_L2N,int GDIM);
 PetscErrorCode L2_ShapeFunctions_MBTET(
@@ -122,6 +138,10 @@ PetscErrorCode Hdiv_FaceBubbleShapeFunctions_MBTET_ON_FACE(
   int *faces_nodes,int p,double *N,double *diffN,double *PHI_f,double *diffPHI_f,int GDIM,int NB,
   PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
 );
+
+// Hcurl shape functions
+
+// Hcurl space is independent indecently purely in C++
 
 #ifdef __cplusplus
 }

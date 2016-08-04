@@ -14,19 +14,7 @@
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#include <tetgen.h>
-#ifdef REAL
-  #undef REAL
-#endif
-
 #include <MoFEM.hpp>
-#include <TetGenInterface.hpp>
-
-#include <boost/scoped_ptr.hpp>
-#include <moab/AdaptiveKDTree.hpp>
-#include <BitLevelCoupler.hpp>
-
-#include <moab/Skinner.hpp>
 
 using namespace MoFEM;
 

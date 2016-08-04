@@ -2,7 +2,7 @@
 
   Based on Hierarchic Finite Element Bases on Unstructured Tetrahedral
   Meshes, by Mark Ainsworth and Joe Coyle
-  Shape functions for MBTRI and H1 approximation
+  Shape functions for MBTRI/MBTET and HDiv space
 
 */
 

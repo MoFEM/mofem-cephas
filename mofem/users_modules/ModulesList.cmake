@@ -22,11 +22,7 @@ include(${UM_SOURCE_DIR}/analytical_dirichlet_boundary_conditions/AddModule.cmak
 # Users modules library, common for all programs
 add_library(users_modules ${UM_LIB_SOURCES})
 
-# Atom test user modules
-add_subdirectory(
-  ${UM_SOURCE_DIR}/basic_finite_elements/atom_tests
-  ${PROJECT_BINARY_DIR}/basic_finite_elements/atom_tests
-)
+# FIXME: Atom test user modules
 add_subdirectory(
   ${UM_SOURCE_DIR}/analytical_dirichlet_boundary_conditions/atom_tests
   ${PROJECT_BINARY_DIR}/analytical_dirichlet_boundary_conditions/atom_tests

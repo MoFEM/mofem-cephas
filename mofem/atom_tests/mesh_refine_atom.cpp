@@ -14,10 +14,6 @@
 
 #include <MoFEM.hpp>
 
-#include <boost/scoped_ptr.hpp>
-#include <moab/AdaptiveKDTree.hpp>
-#include <BitLevelCoupler.hpp>
-
 using namespace MoFEM;
 
 ErrorCode rval;
