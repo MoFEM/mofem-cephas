@@ -13,7 +13,6 @@
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
 #include <MoFEM.hpp>
-#include <Projection10NodeCoordsOnField.hpp>
 
 using namespace MoFEM;
 
