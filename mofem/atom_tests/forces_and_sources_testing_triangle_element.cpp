@@ -14,14 +14,6 @@
 
 
 #include <MoFEM.hpp>
-#include <Projection10NodeCoordsOnField.hpp>
-
-#include <moab/Skinner.hpp>
-
-#include <boost/iostreams/tee.hpp>
-#include <boost/iostreams/stream.hpp>
-#include <fstream>
-#include <iostream>
 
 namespace bio = boost::iostreams;
 using bio::tee_device;
