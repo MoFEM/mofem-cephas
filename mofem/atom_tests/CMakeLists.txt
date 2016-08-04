@@ -51,16 +51,6 @@ cm_export_file("../meshes/inlet_outlet.h5m" export_atom_tests)
 
 set(PERCOMPILED_MOFEM_HEADER "${PROJECT_SOURCE_DIR}/include/MoFEM.hpp")
 
-function(my_add_executable target source)
-  if(PRECOMPILED_HEADRES)
-    set_source_files_properties(${source} PROPERTIES COMPILE_FLAGS "-include ${PERCOMPILED_MOFEM_HEADER}")
-  endif(PRECOMPILED_HEADRES)
-  add_executable(${target} ${source})
-  if(PRECOMPILED_HEADRES)
-    add_dependencies(${target} MoFEM.hpp.pch_copy)
-  endif(PRECOMPILED_HEADRES)
-endfunction(my_add_executable)
-
 # add_executable(cubit_bc_test cubit_bc_test.cpp)
 my_add_executable(cubit_bc_test cubit_bc_test.cpp)
 target_link_libraries(cubit_bc_test

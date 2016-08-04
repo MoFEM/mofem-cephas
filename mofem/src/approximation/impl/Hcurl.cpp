@@ -14,6 +14,8 @@
 
 using namespace MoFEM;
 
+#ifndef GENERATE_VTK_WITH_CURL_BASE
+
 PetscErrorCode MoFEM::Hcurl_EdgeBaseFunctions_MBTET(
   int *sense,int *p,double *N,double *diffN,double *edgeN[],double *diff_edgeN[],int GDIM,
   PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
@@ -262,6 +264,8 @@ PetscErrorCode MoFEM::Hcurl_BubbleFaceFunctions_MBTET(
   }
   PetscFunctionReturn(0);
 }
+
+#endif // Not GENERATE_VTK_WITH_CURL_BASE
 
 #ifdef GENERATE_VTK_WITH_CURL_BASE
 
