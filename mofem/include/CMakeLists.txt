@@ -64,7 +64,6 @@ if(PRECOMPILED_HEADRES)
     OBJECT_OUTPUTS "MoFEM.hpp.pch"
   )
   add_library(MoFEM.hpp.pch OBJECT MoFEM.hpp)
-  add_dependencies(MoFEM.hpp.pch Includes.hpp.pch_copy)
   add_custom_target(
     MoFEM.hpp.pch_copy
     ${CMAKE_COMMAND} -E copy_if_different
