@@ -24,33 +24,14 @@
  -my_sr reduction of step size\n\
  -my_ms maximal number of steps\n\n";
 
-#include <MoFEM.hpp>
+#include <BasicFiniteElements.hpp>
 using namespace MoFEM;
-
-#include <boost/numeric/ublas/vector_proxy.hpp>
-#include <boost/numeric/ublas/matrix.hpp>
-#include <boost/numeric/ublas/matrix_proxy.hpp>
-#include <boost/numeric/ublas/vector.hpp>
-
-#include <MethodForForceScaling.hpp>
-#include <DirichletBC.hpp>
-#include <ArcLengthTools.hpp>
-#include <adolc/adolc.h>
-#include <NonLinearElasticElement.hpp>
-#include <NeoHookean.hpp>
-
-#include <PostProcOnRefMesh.hpp>
-#include <PostProcStresses.hpp>
-#include <Projection10NodeCoordsOnField.hpp>
-
-#include <MethodForForceScaling.hpp>
-#include <SurfacePressure.hpp>
-#include <NodalForce.hpp>
 
 #include <boost/program_options.hpp>
 using namespace std;
 namespace po = boost::program_options;
 #include <ElasticMaterials.hpp>
+#include <NeoHookean.hpp>
 
 #include <SurfacePressureComplexForLazy.hpp>
 using namespace ObosleteUsersModules;

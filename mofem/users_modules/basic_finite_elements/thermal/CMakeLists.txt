@@ -21,7 +21,7 @@ file(
 # implementing independent application it will be using instead project
 # directories.
 
-add_executable(thermal_steady ${CMAKE_CURRENT_SOURCE_DIR}/thermal_steady.cpp)
+bfe_add_executable(thermal_steady ${CMAKE_CURRENT_SOURCE_DIR}/thermal_steady.cpp)
 target_link_libraries(thermal_steady
   users_modules
   mofem_finite_elements
@@ -37,12 +37,12 @@ target_link_libraries(thermal_steady
 if(${GROUND_SURFACE_TEMPERATURE})
   include_directories("${UM_SOURCE_DIR}/ground_surface_temperature/src")
   include_directories("${UM_SOURCE_DIR}/ground_surface_temperature/third_party")
-  add_executable(thermal_unseady
+  bfe_add_executable(thermal_unseady
     ${CMAKE_CURRENT_BINARY_DIR}/thermal_unsteady.cpp
     ${UM_SOURCE_DIR}/ground_surface_temperature/third_party/spa.c
   )
 else(${GROUND_SURFACE_TEMPERATURE})
-  add_executable(
+  bfe_add_executable(
     thermal_unseady ${CMAKE_CURRENT_SOURCE_DIR}/thermal_unsteady.cpp
   )
 endif()

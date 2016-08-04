@@ -19,24 +19,12 @@
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
 
-#include <boost/iostreams/tee.hpp>
-#include <boost/iostreams/stream.hpp>
-#include <fstream>
-#include <iostream>
+#include <BasicFiniteElements.hpp>
+using namespace MoFEM;
 
 namespace bio = boost::iostreams;
 using bio::tee_device;
 using bio::stream;
-
-#include <MoFEM.hpp>
-using namespace MoFEM;
-
-#include <MethodForForceScaling.hpp>
-#include <DirichletBC.hpp>
-#include <PostProcOnRefMesh.hpp>
-#include <ThermalElement.hpp>
-
-#include <Projection10NodeCoordsOnField.hpp>
 
 static char help[] = "...\n\n";
 

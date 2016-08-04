@@ -19,32 +19,14 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
-#include <MoFEM.hpp>
+#include <BasicFiniteElements.hpp>
 using namespace MoFEM;
-
-#include <MethodForForceScaling.hpp>
-#include <DirichletBC.hpp>
-
-#include <Projection10NodeCoordsOnField.hpp>
-
-#include <boost/numeric/ublas/vector_proxy.hpp>
-#include <boost/numeric/ublas/matrix.hpp>
-#include <boost/numeric/ublas/matrix_proxy.hpp>
-#include <boost/numeric/ublas/vector.hpp>
-
-#include <SurfacePressure.hpp>
-#include <NodalForce.hpp>
-#include <SurfacePressureComplexForLazy.hpp>
-#include <adolc/adolc.h>
-#include <NonLinearElasticElement.hpp>
-
-#include <PostProcOnRefMesh.hpp>
-#include <PostProcStresses.hpp>
 #include <Hooke.hpp>
 
 #undef EPS
 #include <slepceps.h>
 
+#include <SurfacePressureComplexForLazy.hpp>
 using namespace ObosleteUsersModules;
 
 ErrorCode rval;

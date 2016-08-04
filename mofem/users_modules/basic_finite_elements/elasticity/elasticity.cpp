@@ -14,38 +14,14 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
-#include <MoFEM.hpp>
+#include <BasicFiniteElements.hpp>
 using namespace MoFEM;
 
 #include <boost/program_options.hpp>
 using namespace std;
 namespace po = boost::program_options;
 
-#include <MethodForForceScaling.hpp>
-#include <DirichletBC.hpp>
-#include <Projection10NodeCoordsOnField.hpp>
-
-#include <boost/numeric/ublas/vector_proxy.hpp>
-#include <boost/numeric/ublas/matrix.hpp>
-#include <boost/numeric/ublas/matrix_proxy.hpp>
-#include <boost/numeric/ublas/vector.hpp>
-
-#include <MethodForForceScaling.hpp>
-#include <SurfacePressure.hpp>
-#include <NodalForce.hpp>
-#include <EdgeForce.hpp>
-#include <FluidPressure.hpp>
-#include <BodyForce.hpp>
-#include <ThermalStressElement.hpp>
-
-#include <PostProcOnRefMesh.hpp>
-#include <PostProcHookStresses.hpp>
-
-#include <adolc/adolc.h>
-#include <NonLinearElasticElement.hpp>
 #include <Hooke.hpp>
-
-#include <PCMGSetUpViaApproxOrders.hpp>
 
 using namespace boost::numeric;
 
@@ -459,7 +435,7 @@ int main(int argc, char *argv[]) {
   ierr = post_proc.addFieldValuesGradientPostProc("DISPLACEMENT"); CHKERRQ(ierr);
   //add postpocessing for sresses
   post_proc.getOpPtrVector().push_back(
-	  new PostPorcStress(
+	  new PostPorcHookStress(
 	    m_field,
 	    post_proc.postProcMesh,
 	    post_proc.mapGaussPts,

@@ -163,7 +163,10 @@ file(COPY
 enable_testing()
 include(CTest)
 
-#add generation of examplaes
+# Precompiled headers
+include(cmake/PrecompiledHeaders.cmake)
+
+# Sdd generation of examplaes
 configure_file(
   ${PROJECT_SOURCE_DIR}/MoFEMConfig.cmake.in
   ${PROJECT_BINARY_DIR}/MoFEMConfig.cmake
@@ -175,9 +178,6 @@ configure_file(
 )
 install(FILES ${PROJECT_BINARY_DIR}/MoFEMConfig.cmake DESTINATION ${CMAKE_INSTALL_PREFIX})
 install(FILES ${PROJECT_BINARY_DIR}/MoFEMConfig-version.cmake DESTINATION ${CMAKE_INSTALL_PREFIX})
-
-# Precompiled headers
-include(cmake/PrecompiledHeaders.cmake)
 
 add_subdirectory(${PROJECT_SOURCE_DIR}/scripts)
 add_subdirectory(${PROJECT_SOURCE_DIR}/third_party)
