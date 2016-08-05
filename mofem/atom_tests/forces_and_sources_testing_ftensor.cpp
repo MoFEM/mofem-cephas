@@ -14,11 +14,13 @@
 
 #define FTENSOR_DEBUG
 
+#include <MoFEM.hpp>
+using namespace MoFEM;
+
 namespace bio = boost::iostreams;
 using bio::tee_device;
 using bio::stream;
 
-using namespace MoFEM;
 
 static char help[] = "...\n\n";
 
