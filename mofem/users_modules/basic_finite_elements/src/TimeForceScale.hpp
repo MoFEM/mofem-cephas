@@ -22,6 +22,9 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
+#ifndef __TIMEFORCESCALE_HPP__
+#define __TIMEFORCESCALE_HPP__
+
 /** \brief Force scale operator for reading two columns
   */
 struct TimeForceScale: public MethodForForceScaling {
@@ -216,3 +219,5 @@ struct TimeAccelerogram: public MethodForForceScaling {
   }
 
 };
+
+#endif // __TIMEFORCESCALE_HPP__

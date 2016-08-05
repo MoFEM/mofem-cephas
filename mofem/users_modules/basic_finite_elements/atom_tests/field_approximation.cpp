@@ -12,21 +12,11 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
-#include <boost/iostreams/tee.hpp>
-#include <boost/iostreams/stream.hpp>
-#include <fstream>
-#include <iostream>
+#include <BasicFiniteElements.hpp>
 
 namespace bio = boost::iostreams;
 using bio::tee_device;
 using bio::stream;
-
-#include <MoFEM.hpp>
-#include <Projection10NodeCoordsOnField.hpp>
-
-using namespace MoFEM;
-#include <boost/numeric/ublas/vector_proxy.hpp>
-#include <FieldApproximation.hpp>
 
 #define HOON
 

@@ -26,8 +26,20 @@ if(NETGEN_LIBRARY)
   set(MOFEM_INTERFACES_SRC ${MOFEM_INTERFACES_SRC} impl/NetGenInterface.cpp)
 endif(NETGEN_LIBRARY)
 
-add_library(mofem_interfaces
+if(PRECOMPILED_HEADRES)
+  set_source_files_properties(
+    All.cpp
+    PROPERTIES
+    COMPILE_FLAGS "-include ${PROJECT_SOURCE_DIR}/include/Includes.hpp"
+  )
+endif(PRECOMPILED_HEADRES)
+add_library(
+  mofem_interfaces
   ${MOFEM_INTERFACES_SRC}
 )
+if(PRECOMPILED_HEADRES)
+  add_dependencies(mofem_interfaces Includes.hpp.pch_copy)
+endif(PRECOMPILED_HEADRES)
+
 
 install(TARGETS mofem_interfaces DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)

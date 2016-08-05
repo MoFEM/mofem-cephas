@@ -15,6 +15,7 @@
 #ifndef __MOFEM_HPP__
 #define __MOFEM_HPP__
 
+//Include system and libraries files
 #include <Includes.hpp>
 
 //SRC APPROXIMATION
@@ -79,6 +80,15 @@
 #include <VertexElementForcesAndSourcesCore.hpp>
 #include <FlatPrismElementForcesAndSurcesCore.hpp>
 #include <FatPrismElementForcesAndSurcesCore.hpp>
+#include <Projection10NodeCoordsOnField.hpp>
+
+// interfaces
+#ifdef WITH_TETGEN
+  #include <TetGenInterface.hpp>
+#endif //WITH_TETGEN
+#include <BitLevelCoupler.hpp>
+#include <NodeMerger.hpp>
+#include <PrismsFromSurfaceInterface.hpp>
 
 
 #endif //MOFEM_HPP__

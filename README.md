@@ -12,5 +12,5 @@ implement nontrivial finite elements) while being small and extendable.
 
 ## Current build status
 
-- ### **Drone**: [![Build Status](https://drone.io/bitbucket.org/likask/mofem-cephas/status.png)](https://drone.io/bitbucket.org/likask/mofem-cephas/latest)
+- ### **Drone.io**: [![Build Status](https://drone.io/bitbucket.org/likask/mofem-cephas/status.png)](https://drone.io/bitbucket.org/likask/mofem-cephas/latest)
 - ### **CDashTesting**: [CDashTesting](http://cdash.eng.gla.ac.uk/cdash/)

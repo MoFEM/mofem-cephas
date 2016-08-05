@@ -13,7 +13,7 @@
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
 
-struct PostPorcStress: public MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator {
+struct PostPorcHookStress: public MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator {
 
   MoFEM::Interface& mField;
   moab::Interface &postProcMesh;
@@ -21,7 +21,7 @@ struct PostPorcStress: public MoFEM::VolumeElementForcesAndSourcesCore::UserData
 
   PostProcVolumeOnRefinedMesh::CommonData &commonData;
 
-  PostPorcStress(
+  PostPorcHookStress(
     MoFEM::Interface& m_field,
     moab::Interface& post_proc_mesh,
     std::vector<EntityHandle> &map_gauss_pts,

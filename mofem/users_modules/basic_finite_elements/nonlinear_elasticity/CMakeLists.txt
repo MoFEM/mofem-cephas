@@ -19,7 +19,7 @@ include_directories(${UM_SOURCE_DIR}/obsolete/src)
 add_subdirectory(atom_tests)
 
 if(ADOL-C_LIBRARY)
-  add_executable(arc_length_nonlinear_elasticity
+  bfe_add_executable(arc_length_nonlinear_elasticity
   ${CMAKE_CURRENT_SOURCE_DIR}/arc_length_nonlinear_elasticity.cpp)
   target_link_libraries(
     arc_length_nonlinear_elasticity
@@ -74,7 +74,7 @@ file(COPY do_vtk.sh
 add_test(ArcLengthNonLinearElasticityTest
   ${MoFEM_MPI_RUN} -np 2 ${CMAKE_CURRENT_BINARY_DIR}/arc_length_nonlinear_elasticity
   -my_file dome_thin_symm.h5m -ksp_type fgmres
-  -pc_type lu -pc_factor_mat_solver_package mumps
+  -pc_type asm -sub_pc_type lu
   -ksp_atol 1e-10 -ksp_rtol 1e-10
   -snes_monitor
   -snes_type newtonls -snes_linesearch_type basic -snes_linesearch_monitor
@@ -85,7 +85,7 @@ add_test(ArcLengthNonLinearElasticityTest
 cm_export_file("LShape.h5m" export_files_nonlinear_dynamics)
 cm_export_file("data.txt" export_files_nonlinear_dynamics)
 
-add_executable(nonlinear_dynamics
+bfe_add_executable(nonlinear_dynamics
 ${CMAKE_CURRENT_SOURCE_DIR}/nonlinear_dynamics.cpp)
 target_link_libraries(nonlinear_dynamics
   users_modules
@@ -103,7 +103,7 @@ target_link_libraries(nonlinear_dynamics
 
 add_test(NonLinearDynamics
   ${MoFEM_MPI_RUN} -np 2 ${CMAKE_CURRENT_BINARY_DIR}/nonlinear_dynamics -my_file LShape.h5m
-  -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package mumps
+  -ksp_type fgmres -pc_type asm -sub_pc_type lu
   -ksp_atol 1e-10 -ksp_rtol 1e-10 -snes_monitor
   -snes_type newtonls -snes_linesearch_type basic
   -snes_max_it 100 -snes_atol 1e-7 -snes_rtol 1e-7
@@ -118,8 +118,7 @@ if(SLEPC_LIBRARY)
   #cm_export_file("cylinder.h5m" export_files_arc_length_nonlinearelasticity)
   cm_export_file("rod.h5m" export_files_arc_length_nonlinearelasticity)
 
-  add_executable(stability
-  ${CMAKE_CURRENT_SOURCE_DIR}/stability.cpp)
+  bfe_add_executable(stability ${CMAKE_CURRENT_SOURCE_DIR}/stability.cpp)
   target_link_libraries(stability
     users_modules
     mofem_finite_elements

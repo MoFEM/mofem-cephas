@@ -40,4 +40,9 @@ _Store
 
 
 .build-tools.cson
+
 contributors_list_modules
+MoFEM.hpp.*
+Includes.hpp.*
+BasicFiniteElements.hpp.*
+mofem/src/ftensor/All.cpp

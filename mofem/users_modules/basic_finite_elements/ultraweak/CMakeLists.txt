@@ -21,7 +21,7 @@ file(
 # implementing independent application it will be using instead project
 # directories.
 
-add_executable(
+bfe_add_executable(
   transport ${UM_SOURCE_DIR}/basic_finite_elements/ultraweak/transport.cpp
 )
 target_link_libraries(transport

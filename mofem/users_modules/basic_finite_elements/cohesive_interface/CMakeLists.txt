@@ -16,7 +16,7 @@ include_directories(${UM_SOURCE_DIR}/basic_finite_elements/nonlinear_elasticity)
 include_directories(${UM_SOURCE_DIR}/basic_finite_elements/nonlinear_elastic_materials/src)
 include_directories(${UM_SOURCE_DIR}/basic_finite_elements/cohesive_interface/src)
 
-add_executable(arc_length_interface
+bfe_add_executable(arc_length_interface
   ${CMAKE_CURRENT_SOURCE_DIR}/arc_length_interface.cpp
 )
 target_link_libraries(arc_length_interface

@@ -20,7 +20,7 @@ include_directories(
   ${UM_SOURCE_DIR}/nonlinear_elastic_materials/src
 )
 
-add_executable(elasticity
+bfe_add_executable(elasticity
   ${UM_SOURCE_DIR}/basic_finite_elements/elasticity/elasticity.cpp
 )
 target_link_libraries(elasticity
@@ -49,9 +49,7 @@ file(
 add_test(ElasticityTest
   ${MoFEM_MPI_RUN} -np 2 ${CMAKE_CURRENT_BINARY_DIR}/elasticity
   -my_file LShape.h5m
-  -ksp_type fgmres
-  -pc_type lu
-  -pc_factor_mat_solver_package mumps
+  -ksp_type cg -pc_type asm -sub_pc_type lu
   -ksp_monitor -log_view
 )
 
@@ -62,7 +60,7 @@ add_test(MultiGridViaOrderSolver
   -my_order 4
   -pc_type mg
   -mofem_mg_verbose 1 -mofem_mg_coarse_order 2 -mofem_mg_levels 3
-  -mg_coarse_ksp_type preonly -mg_coarse_pc_type lu -mg_coarse_pc_factor_mat_solver_package mumps
+  -mg_coarse_ksp_type preonly -mg_coarse_pc_type bjacobi
   -pc_mg_smoothup 10 -pc_mg_smoothdown 10
   -pc_mg_type multiplicative
   -log_view

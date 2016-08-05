@@ -17,37 +17,23 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
-#include <MoFEM.hpp>
+#include <BasicFiniteElements.hpp>
 using namespace MoFEM;
 
-#include <MethodForForceScaling.hpp>
-#include <DirichletBC.hpp>
-#include <PostProcOnRefMesh.hpp>
-#include <ThermalElement.hpp>
-
-#include <Projection10NodeCoordsOnField.hpp>
-
-#include <boost/shared_ptr.hpp>
 #include <boost/program_options.hpp>
-
 using namespace std;
 namespace po = boost::program_options;
 
-#include <moab/AdaptiveKDTree.hpp>
-#include <moab/Skinner.hpp>
-
-#include <adolc/adolc.h>
-
 #ifdef __GROUNDSURFACETEMERATURE_HPP
 
-#include <GenricClimateModel.hpp>
-#include <GroundSurfaceTemerature.hpp>
+  #include <GenricClimateModel.hpp>
+  #include <GroundSurfaceTemerature.hpp>
 
-#include <time.h>
-extern "C" {
-  #include <spa.h>
-}
-#include <CrudeClimateModel.hpp>
+  #include <time.h>
+  extern "C" {
+    #include <spa.h>
+  }
+  #include <CrudeClimateModel.hpp>
 
 #endif // __GROUNDSURFACETEMERATURE_HPP
 

@@ -15,9 +15,18 @@ include_directories(${PROJECT_SOURCE_DIR}/src/ftensor/src)
 include_directories(${PROJECT_SOURCE_DIR}/src/multi_indices)
 include_directories(${PROJECT_SOURCE_DIR}/src/interfaces)
 include_directories(${PROJECT_SOURCE_DIR}/src/finite_elements)
+include_directories(${PROJECT_SOURCE_DIR}/src/petsc)
 
 # Approximation lib
-add_library(mofem_approx
+if(PRECOMPILED_HEADRES)
+  set_source_files_properties(
+    All.cpp
+    PROPERTIES
+    COMPILE_FLAGS "-include ${PROJECT_SOURCE_DIR}/include/Includes.hpp"
+  )
+endif(PRECOMPILED_HEADRES)
+add_library(
+  mofem_approx
   impl/All.cpp
   c_impl/base_functions.c
   c_impl/fem_tools.c
@@ -25,5 +34,29 @@ add_library(mofem_approx
   c_impl/hdiv.c
   c_impl/l2.c
 )
+if(PRECOMPILED_HEADRES)
+  add_dependencies(mofem_approx Includes.hpp.pch_copy)
+endif(PRECOMPILED_HEADRES)
 
 install(TARGETS mofem_approx DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
+
+# Tetsing files
+set_source_files_properties(
+  impl/Hcurl.cpp
+  PROPERTIES
+  COMPILE_FLAGS "-DGENERATE_VTK_WITH_CURL_BASE -include ${PROJECT_SOURCE_DIR}/include/Includes.hpp"
+)
+add_executable(vtk_curl_base_on_tet impl/Hcurl.cpp)
+if(PRECOMPILED_HEADRES)
+  add_dependencies(vtk_curl_base_on_tet Includes.hpp.pch_copy)
+endif(PRECOMPILED_HEADRES)
+target_link_libraries(vtk_curl_base_on_tet
+  mofem_finite_elements
+  mofem_interfaces
+  mofem_multi_indices
+  mofem_petsc
+  mofem_approx
+  mofem_cblas
+  mofem_third_party
+  ${PROJECT_LIBS}
+)
