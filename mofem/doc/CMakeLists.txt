@@ -22,7 +22,7 @@ if(DOXYGEN_FOUND)
     add_custom_target(doc_get_contributors
       COMMAND echo "MoFEM lib contributors" > ${PROJECT_SOURCE_DIR}/doc/contributors_list
       COMMAND echo >> ${PROJECT_SOURCE_DIR}/doc/contributors_list
-      COMMAND ${GIT_EXECUTABLE} shortlog -s -e -n | sed "s/\@/ at /g" >> ${PROJECT_SOURCE_DIR}/doc/contributors_list
+      COMMAND ${GIT_EXECUTABLE} shortlog -s -e -n | grep -v daedalos9@yahoo.co.uk | sed "s/\@/ at /g" >> ${PROJECT_SOURCE_DIR}/doc/contributors_list
       COMMAND touch ${PROJECT_SOURCE_DIR}/users_modules/doc/contributors_list_modules
       WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
       COMMENT "Get MoFEM contributors list" VERBATIM
