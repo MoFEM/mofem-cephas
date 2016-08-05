@@ -199,7 +199,9 @@ struct ProjectionFieldOn10NodeTet: public Projection10NodeCoordsOnField {
           }
           double *tag_value;
           int tag_size;
-          rval = mField.get_moab().tag_get_by_ptr(th,&node,1,(const void **)&tag_value,&tag_size); CHKERRQ_MOAB(rval);
+          rval = mField.get_moab().tag_get_by_ptr(
+            th,&node,1,(const void **)&tag_value,&tag_size
+          ); CHKERRQ_MOAB(rval);
           if(tag_size != dofPtr->getNbOfCoeffs()) {
             SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
           }

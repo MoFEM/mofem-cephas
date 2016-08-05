@@ -2218,6 +2218,8 @@ PetscErrorCode Core::loop_dofs(const std::string &field_name,EntMethod &method,i
     method.dofNumeredPtr = NULL;
     try {
       ierr = method(); CHKERRQ(ierr);
+    } catch (MoFEMException const &e) {
+      SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
     } catch (const std::exception& ex) {
       std::ostringstream ss;
       ss << "throw in method: " << ex.what() << std::endl;
