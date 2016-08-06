@@ -34,6 +34,8 @@ likask/mofem-cephas:
     - echo "Build"
     - make install
     - ctest --output-on-failure
+  AfterBuildSuccess:
+    - export MOFEM_INSTALL_DIR=/build/um
     - echo "Configure users modules"
     - cd $MOFEM_INSTALL_DIR
     - /opt/bin/cmake users_modules
