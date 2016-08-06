@@ -1,0 +1,15 @@
+FROM likask/ubuntu_mofem:v0.7
+
+MAINTAINER Lukasz.Kaczmarczyk@glasgow.ac.uk
+
+RUN adduser -q developer
+
+# Set environment
+ENV BUILD_DIR /build
+ENV MOFEM_SRC_DIR $BUILD_DIR/src
+ENV MOFEM_BUILD_DIR $BUILD_DIR/opt
+ENV MOFEM_INSTALL_DIR $BUILD_DIR/um
+
+ENV PETSC_VERSION 3.7.2
+ENV PETSC_DIR=/opt/petsc
+ENV PETSC_ARCH=arch-linux2-c-opt
