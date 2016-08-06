@@ -18,7 +18,6 @@ RUN mkdir $MOFEM_BUILD_DIR \
 && cd $MOFEM_BUILD_DIR \
 && cmake \
 -DCMAKE_BUILD_TYPE=Release \
--DCMAKE_Fortran_COMPILER=/usr/bin/gfortran \
 -DCMAKE_CXX_FLAGS="-Wall -std=c++11" \
 -DPETSC_DIR=$PETSC_DIR \
 -DPETSC_ARCH=$PETSC_ARCH \
@@ -28,3 +27,6 @@ RUN mkdir $MOFEM_BUILD_DIR \
 -DBUILD_SHARED_LIBS=yes \
 -DCMAKE_INSTALL_PREFIX=$MOFEM_INSTALL_DIR \
 $MOFEM_SRC_DIR
+
+RUN cd $MOFEM_BUILD_DIR && make install
+RUN cd $MOFEM_BUILD_DIR && ctest --output-on-failure 
