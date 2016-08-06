@@ -7,15 +7,20 @@ likask/mofem-cephas:
     - sudo chmod -R aug+rX /opt
     - sudo rm -f mofem_env.tar.gz
   Build:
-    - echo $PWD
+    - echo DISTELLI_DOCKER_USERNAME $DISTELLI_DOCKER_USERNAME
+    - echo DISTELLI_DOCKER_PW $DISTELLI_DOCKER_PW
+    - echo DISTELLI_DOCKER_EMAIL $DISTELLI_DOCKER_EMAIL
+    - echo DISTELLI_DOCKER_REPO $DISTELLI_DOCKER_REPO
+    - echo DISTELLI_DOCKER_PATH $DISTELLI_DOCKER_PATH
+    - echo PWD $PWD
     - export MOFEM_SRC_DIR=$PWD
     - export MOFEM_INSTALL_DIR=$PWD/um
     - export MOFEM_BUILD_DIR=$PWD/lib
     - export PETSC_DIR=/opt/petsc
     - export PETSC_ARCH=arch-linux2-c-opt
-    - echo $MOFEM_SRC_DIR
-    - echo $MOFEM_INSTALL_DIR
-    - echo $MOFEM_BUILD_DIR
+    - echo MOFEM_SRC_DIR $MOFEM_SRC_DIR
+    - echo MOFEM_INSTALL_DIR $MOFEM_INSTALL_DIR
+    - echo MOFEM_BUILD_DIR $MOFEM_BUILD_DIR
     - mkdir $MOFEM_BUILD_DIR
     - cd $MOFEM_BUILD_DIR
     - echo "Configure"
