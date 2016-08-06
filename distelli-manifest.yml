@@ -31,6 +31,11 @@ likask/mofem-cephas:
     - make install
     - ctest --output-on-failure
   AfterBuildSuccess:
+    - export MOFEM_SRC_DIR=$PWD
+    - export MOFEM_INSTALL_DIR=$PWD/um
+    - export MOFEM_BUILD_DIR=$PWD/lib
+    - export PETSC_DIR=/opt/petsc
+    - export PETSC_ARCH=arch-linux2-c-opt
     - echo "Build users modules"
     - cd $MOFEM_INSTALL_DIR/basic_finite_elements/atom_tests
     - make
