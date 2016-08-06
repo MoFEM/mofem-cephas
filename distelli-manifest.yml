@@ -43,5 +43,3 @@ likask/mofem-cephas:
     - cd $MOFEM_INSTALL_DIR/basic_finite_elements/atom_tests
     - make
     - ctest --output-on-failure
-  PkgInclude:
-      - '*'
