@@ -13,6 +13,8 @@ Build:
   - export PETSC_ARCH=arch-linux2-c-opt
   - mkdir -p $MOFEM_BUILD_DIR
   - cd $MOFEM_BUILD_DIR
+  - echo "Configure"
+  -
   >
     /opt/bin/cmake
     -DCMAKE_BUILD_TYPE=MinSizeRel
@@ -28,6 +30,7 @@ Build:
   - make install
   - ctest --output-on-failure
 AfterBuildSuccess:
+  - echo "Build users modules"
   - cd $MOFEM_INSTALL_DIR/basic_finite_elements/atom_tests
   - make
   - ctest --output-on-failure
