@@ -16,7 +16,6 @@
 # You should have received a copy of the GNU Lesser General Public
 # License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 
-include_directories(${PROJECT_SOURCE_DIR}/include)
 include_directories(${PROJECT_SOURCE_DIR}/third_party)
 include_directories(${PROJECT_SOURCE_DIR}/third_party/cblas)
 include_directories(${PROJECT_SOURCE_DIR}/src/ftensor/src)
@@ -37,38 +36,56 @@ if(PRECOMPILED_HEADRES)
   endif()
 
   # Includes.hpp
+  add_custom_target(
+    Includes.hpp_copy
+    ${CMAKE_COMMAND} -E copy_if_different
+    ${CMAKE_CURRENT_SOURCE_DIR}/Includes.hpp
+    ${CMAKE_CURRENT_BINARY_DIR}/precompiled/Includes.hpp
+    COMMENT
+    "Copy Includes.hpp header"
+  )
   set_source_files_properties(
-    Includes.hpp
+    precompiled/Includes.hpp
     PROPERTIES
     LANGUAGE CXX
     COMPILE_FLAGS "-x c++-header"
     OBJECT_OUTPUTS "Includes.hpp.pch"
   )
-  add_library(Includes.hpp.pch OBJECT Includes.hpp)
+  add_library(Includes.hpp.pch OBJECT precompiled/Includes.hpp)
+  add_dependencies(Includes.hpp.pch Includes.hpp_copy)
   add_custom_target(
     Includes.hpp.pch_copy
     ${CMAKE_COMMAND} -E copy_if_different
     ${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/Includes.hpp.pch.dir/Includes.hpp.o
-    ${CMAKE_CURRENT_SOURCE_DIR}/Includes.hpp.${OUT_PCH_SUFFIX}
+    ${CMAKE_CURRENT_BINARY_DIR}/precompiled/Includes.hpp.${OUT_PCH_SUFFIX}
     COMMENT
     "Copy precompiled Includes.hpp header"
   )
   add_dependencies(Includes.hpp.pch_copy Includes.hpp.pch)
 
   # MoFEM.hpp
+  add_custom_target(
+    MoFEM.hpp_copy
+    ${CMAKE_COMMAND} -E copy_if_different
+    ${CMAKE_CURRENT_SOURCE_DIR}/MoFEM.hpp
+    ${CMAKE_CURRENT_BINARY_DIR}/precompiled/MoFEM.hpp
+    COMMENT
+    "Copy MoFEM.hpp header"
+  )
   set_source_files_properties(
-    MoFEM.hpp
+    precompiled/MoFEM.hpp
     PROPERTIES
     LANGUAGE CXX
     COMPILE_FLAGS "-x c++-header"
     OBJECT_OUTPUTS "MoFEM.hpp.pch"
   )
-  add_library(MoFEM.hpp.pch OBJECT MoFEM.hpp)
+  add_library(MoFEM.hpp.pch OBJECT precompiled/MoFEM.hpp)
+  add_dependencies(MoFEM.hpp.pch MoFEM.hpp_copy)
   add_custom_target(
     MoFEM.hpp.pch_copy
     ${CMAKE_COMMAND} -E copy_if_different
     ${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/MoFEM.hpp.pch.dir/MoFEM.hpp.o
-    ${CMAKE_CURRENT_SOURCE_DIR}/MoFEM.hpp.${OUT_PCH_SUFFIX}
+    ${CMAKE_CURRENT_BINARY_DIR}/precompiled/MoFEM.hpp.${OUT_PCH_SUFFIX}
     COMMENT
     "Copy precompiled MoFEM.hpp header"
   )

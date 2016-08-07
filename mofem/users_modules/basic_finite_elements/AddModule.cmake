@@ -23,19 +23,32 @@ if(MoFEM_PRECOMPILED_HEADRES)
   endif()
 
   # BasicFiniteElements.hpp
-  set_source_files_properties(
+  add_custom_target(
+    BasicFiniteElements.hpp_copy
+    ${CMAKE_COMMAND} -E copy_if_different
     ${PROJECT_SOURCE_DIR}/basic_finite_elements/src/BasicFiniteElements.hpp
+    ${PROJECT_BINARY_DIR}/basic_finite_elements/src/precompiled/BasicFiniteElements.hpp
+    COMMENT
+    "Copy BasicFiniteElements.hpp header"
+  )
+  set_source_files_properties(
+    ${PROJECT_BINARY_DIR}/basic_finite_elements/src/precompiled/BasicFiniteElements.hpp
     PROPERTIES
     LANGUAGE CXX
     COMPILE_FLAGS "-x c++-header"
     OBJECT_OUTPUTS "BasicFiniteElements.hpp.pch"
   )
-  add_library(BasicFiniteElements.hpp.pch OBJECT ${PROJECT_SOURCE_DIR}/basic_finite_elements/src/BasicFiniteElements.hpp)
+  add_library(
+    BasicFiniteElements.hpp.pch
+    OBJECT
+    ${PROJECT_BINARY_DIR}/basic_finite_elements/src/precompiled/BasicFiniteElements.hpp
+  )
+  add_dependencies(BasicFiniteElements.hpp.pch BasicFiniteElements.hpp_copy )
   add_custom_target(
     BasicFiniteElements.hpp.pch_copy
     ${CMAKE_COMMAND} -E copy_if_different
-    ${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/BasicFiniteElements.hpp.pch.dir/basic_finite_elements/src/BasicFiniteElements.hpp.o
-    ${PROJECT_SOURCE_DIR}/basic_finite_elements/src/BasicFiniteElements.hpp.${OUT_PCH_SUFFIX}
+    ${PROJECT_BINARY_DIR}/CMakeFiles/BasicFiniteElements.hpp.pch.dir/basic_finite_elements/src/precompiled/BasicFiniteElements.hpp.o
+    ${PROJECT_BINARY_DIR}/basic_finite_elements/src/precompile/BasicFiniteElements.hpp.${OUT_PCH_SUFFIX}
     COMMENT
     "Copy precompiled BasicFiniteElements.hpp header"
   )
@@ -43,7 +56,7 @@ if(MoFEM_PRECOMPILED_HEADRES)
 
 endif(MoFEM_PRECOMPILED_HEADRES)
 
-set(PERCOMPILED_HEADER "${PROJECT_SOURCE_DIR}/basic_finite_elements/src/BasicFiniteElements.hpp")
+set(PERCOMPILED_HEADER "${PROJECT_BINARY_DIR}/basic_finite_elements/src/precompiled/BasicFiniteElements.hpp")
 
 function(bfe_add_executable target source)
   if(MoFEM_PRECOMPILED_HEADRES)

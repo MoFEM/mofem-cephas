@@ -49,7 +49,7 @@ cm_export_file("../meshes/mat_elastic_transiso.h5m" export_atom_tests)
 cm_export_file("../meshes/mat_interf.h5m" export_atom_tests)
 cm_export_file("../meshes/inlet_outlet.h5m" export_atom_tests)
 
-set(PERCOMPILED_MOFEM_HEADER "${PROJECT_SOURCE_DIR}/include/MoFEM.hpp")
+set(PERCOMPILED_MOFEM_HEADER "${PROJECT_BINARY_DIR}/include/precompiled/MoFEM.hpp")
 
 # add_executable(cubit_bc_test cubit_bc_test.cpp)
 my_add_executable(cubit_bc_test cubit_bc_test.cpp)

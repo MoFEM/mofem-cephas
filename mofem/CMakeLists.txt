@@ -101,19 +101,27 @@ include(cmake/ExportFile.cmake)
 #git revision
 include(cmake/GetGitRevisionDescription.cmake)
 get_git_head_revision(GIT_REFSPEC GIT_SHA1)
-#add_definitions("-DGIT_SHA1=${GIT_SHA1}")
 
-# configure a header file to pass some of the CMake settings
-# to the source code
+# Configure a header file to pass some of the CMake settings to the source code
 configure_file(
-  "${PROJECT_SOURCE_DIR}/include/config.h.in"
-  "${PROJECT_SOURCE_DIR}/include/config.h"
+  ${PROJECT_SOURCE_DIR}/include/config.h.in
+  ${PROJECT_BINARY_DIR}/include/config.h
 )
 configure_file(
-  "${PROJECT_SOURCE_DIR}/include/version.h.in"
-  "${PROJECT_SOURCE_DIR}/include/version.h"
+  ${PROJECT_SOURCE_DIR}/include/version.h.in
+  ${PROJECT_BINARY_DIR}/include/version.h
 )
-include_directories("${PROJECT_SOURCE_DIR}/include")
+include_directories(${PROJECT_BINARY_DIR}/include)
+include_directories(${PROJECT_SOURCE_DIR}/include)
+
+install(DIRECTORY ${PROJECT_SOURCE_DIR}/include DESTINATION ${CMAKE_INSTALL_PREFIX})
+install(
+  FILES
+  ${PROJECT_BINARY_DIR}/include/config.h
+  ${PROJECT_BINARY_DIR}/include/version.h
+  DESTINATION
+  ${CMAKE_INSTALL_PREFIX}/include
+)
 
 #add coverage
 if(WITHCOVERAGE)

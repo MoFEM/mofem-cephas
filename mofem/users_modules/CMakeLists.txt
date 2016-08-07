@@ -67,7 +67,7 @@ include_directories(
 
 add_definitions(${MOAB_DEFINITIONS})
 
-include_directories(${MoFEM_PROJECT_SOURCE_DIR}/include)
+include_directories(${PROJECT_BINARY_DIR}/include)
 include_directories(${MoFEM_PROJECT_SOURCE_DIR}/third_party)
 include_directories(${MoFEM_PROJECT_SOURCE_DIR}/third_party/cblas)
 include_directories(${MoFEM_PROJECT_SOURCE_DIR}/src/ftensor/src)
@@ -77,8 +77,6 @@ include_directories(${MoFEM_PROJECT_SOURCE_DIR}/src/multi_indices)
 include_directories(${MoFEM_PROJECT_SOURCE_DIR}/src/interfaces)
 include_directories(${MoFEM_PROJECT_SOURCE_DIR}/src/petsc)
 include_directories(${MoFEM_PROJECT_SOURCE_DIR}/src/finite_elements)
-
-include_directories(${MoFEM_PROJECT_BINARY_DIR}/include)
 
 link_directories(${MoFEM_PROJECT_BINARY_DIR}/src/approximation)
 link_directories(${MoFEM_PROJECT_BINARY_DIR}/src/multi_indices)
