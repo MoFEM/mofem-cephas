@@ -34,6 +34,7 @@ RUN wget https://www.dropbox.com/s/axa48op5mevukfj/mofem_env.tar.gz \
 && tar -xzf mofem_env.tar.gz \
 && rm -f mofem_env.tar.gz
 
+RUN echo 'root:mofem' | chpasswd
 RUN adduser -q developer
 RUN mkdir $BUILD_DIR
 RUN chown developer $BUILD_DIR
@@ -56,5 +57,5 @@ RUN cd $MOFEM_BUILD_DIR && make install
 RUN cd $MOFEM_BUILD_DIR && ctest --output-on-failure
 
 RUN cd $MOFEM_INSTALL_DIR && /opt/bin/cmake -DCMAKE_CXX_FLAGS="-Wall" users_modules
-RUN cd $MOFEM_INSTALL_DIR && make
-RUN cd $MOFEM_INSTALL_DIR && ctest --output-on-failure
+RUN cd $MOFEM_INSTALL_DIR && cd $MOFEM_INSTALL_DIR/basic_finite_elements/atom_tests && make
+RUN cd $MOFEM_INSTALL_DIR && cd $MOFEM_INSTALL_DIR/basic_finite_elements/atom_tests && ctest --output-on-failure
