@@ -41,7 +41,7 @@ endif(CMAKE_Fortran_COMPILER)
 
 set(MoFEM_VERSION_MAJOR 0)
 set(MoFEM_VERSION_MINOR 3)
-set(MoFEM_VERSION_BUILD 33)
+set(MoFEM_VERSION_BUILD 34)
 
 include(CheckCXXSourceCompiles)
 CHECK_CXX_SOURCE_COMPILES(
@@ -107,9 +107,15 @@ configure_file(
   ${PROJECT_SOURCE_DIR}/include/config.h.in
   ${PROJECT_BINARY_DIR}/include/config.h
 )
+set_source_files_properties(
+  ${PROJECT_BINARY_DIR}/include/config.h PROPERTIES GENERATED TRUE
+)
 configure_file(
   ${PROJECT_SOURCE_DIR}/include/version.h.in
   ${PROJECT_BINARY_DIR}/include/version.h
+)
+set_source_files_properties(
+  ${PROJECT_BINARY_DIR}/include/version.h PROPERTIES GENERATED TRUE
 )
 include_directories(${PROJECT_BINARY_DIR}/include)
 include_directories(${PROJECT_SOURCE_DIR}/include)

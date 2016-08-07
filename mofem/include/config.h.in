@@ -1,2 +1,7 @@
+#ifndef __CONFIG_H__
+#define __CONFIG_H__
+
 // the configured options and settings for MoFEM
 #define ADD_
+
+#endif

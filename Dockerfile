@@ -16,10 +16,11 @@ ENV PETSC_ARCH=arch-linux2-c-opt
 
 ENV BUILD_TYPE=MinSizeRel
 
-RUN mkdir -p $MOFEM_BUILD_DIR
 RUN adduser -q developer
-RUN chown developer $MOFEM_BUILD_DIR
+RUN mkdir $BUILD_DIR
+RUN chown developer $BUILD_DIR
 USER developer
+RUN mkdir $MOFEM_BUILD_DIR
 
 RUN cd $MOFEM_BUILD_DIR \
 && cmake \

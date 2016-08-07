@@ -36,56 +36,47 @@ if(PRECOMPILED_HEADRES)
   endif()
 
   # Includes.hpp
-  add_custom_target(
-    Includes.hpp_copy
-    ${CMAKE_COMMAND} -E copy_if_different
-    ${CMAKE_CURRENT_SOURCE_DIR}/Includes.hpp
-    ${CMAKE_CURRENT_BINARY_DIR}/precompiled/Includes.hpp
-    COMMENT
-    "Copy Includes.hpp header"
-  )
   set_source_files_properties(
-    precompiled/Includes.hpp
+    Includes.hpp
     PROPERTIES
     LANGUAGE CXX
     COMPILE_FLAGS "-x c++-header"
     OBJECT_OUTPUTS "Includes.hpp.pch"
   )
-  add_library(Includes.hpp.pch OBJECT precompiled/Includes.hpp)
-  add_dependencies(Includes.hpp.pch Includes.hpp_copy)
+  add_library(Includes.hpp.pch OBJECT Includes.hpp)
   add_custom_target(
     Includes.hpp.pch_copy
-    ${CMAKE_COMMAND} -E copy_if_different
+    ${CMAKE_COMMAND} -E copy
     ${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/Includes.hpp.pch.dir/Includes.hpp.o
     ${CMAKE_CURRENT_BINARY_DIR}/precompiled/Includes.hpp.${OUT_PCH_SUFFIX}
+    COMMAND
+    ${CMAKE_COMMAND} -E copy
+    ${CMAKE_CURRENT_SOURCE_DIR}/Includes.hpp
+    ${CMAKE_CURRENT_BINARY_DIR}/precompiled/Includes.hpp
     COMMENT
     "Copy precompiled Includes.hpp header"
   )
   add_dependencies(Includes.hpp.pch_copy Includes.hpp.pch)
 
+
   # MoFEM.hpp
-  add_custom_target(
-    MoFEM.hpp_copy
-    ${CMAKE_COMMAND} -E copy_if_different
-    ${CMAKE_CURRENT_SOURCE_DIR}/MoFEM.hpp
-    ${CMAKE_CURRENT_BINARY_DIR}/precompiled/MoFEM.hpp
-    COMMENT
-    "Copy MoFEM.hpp header"
-  )
   set_source_files_properties(
-    precompiled/MoFEM.hpp
+    MoFEM.hpp
     PROPERTIES
     LANGUAGE CXX
     COMPILE_FLAGS "-x c++-header"
     OBJECT_OUTPUTS "MoFEM.hpp.pch"
   )
-  add_library(MoFEM.hpp.pch OBJECT precompiled/MoFEM.hpp)
-  add_dependencies(MoFEM.hpp.pch MoFEM.hpp_copy)
+  add_library(MoFEM.hpp.pch OBJECT MoFEM.hpp)
   add_custom_target(
     MoFEM.hpp.pch_copy
-    ${CMAKE_COMMAND} -E copy_if_different
+    ${CMAKE_COMMAND} -E copy
     ${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/MoFEM.hpp.pch.dir/MoFEM.hpp.o
     ${CMAKE_CURRENT_BINARY_DIR}/precompiled/MoFEM.hpp.${OUT_PCH_SUFFIX}
+    COMMAND
+    ${CMAKE_COMMAND} -E copy
+    ${CMAKE_CURRENT_SOURCE_DIR}/MoFEM.hpp
+    ${CMAKE_CURRENT_BINARY_DIR}/precompiled/MoFEM.hpp
     COMMENT
     "Copy precompiled MoFEM.hpp header"
   )
