@@ -26,7 +26,6 @@ pipelines:
             -DPETSC_ARCH=$PETSC_ARCH
             -DMOAB_DIR=$PETSC_DIR/$PETSC_ARCH
             -DADOL-C_DIR=/usr
-            -DWITH_TETGEN=1
             -DBUILD_SHARED_LIBS=yes
             -DCMAKE_INSTALL_PREFIX=$MOFEM_INSTALL_DIR
             $MOFEM_SRC_DIR/mofem
