@@ -22,7 +22,7 @@ if(PRECOMPILED_HEADRES)
   set_source_files_properties(
     All.cpp
     PROPERTIES
-    COMPILE_FLAGS "-include ${PROJECT_SOURCE_DIR}/include/Includes.hpp"
+    COMPILE_FLAGS "-include ${PROJECT_BINARY_DIR}/include/precompiled/Includes.hpp"
   )
 endif(PRECOMPILED_HEADRES)
 add_library(
@@ -44,7 +44,7 @@ install(TARGETS mofem_approx DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
 set_source_files_properties(
   impl/Hcurl.cpp
   PROPERTIES
-  COMPILE_FLAGS "-DGENERATE_VTK_WITH_CURL_BASE -include ${PROJECT_SOURCE_DIR}/include/Includes.hpp"
+  COMPILE_FLAGS "-DGENERATE_VTK_WITH_CURL_BASE -include ${PROJECT_BINARY_DIR}/include/precompiled/Includes.hpp"
 )
 add_executable(vtk_curl_base_on_tet impl/Hcurl.cpp)
 if(PRECOMPILED_HEADRES)

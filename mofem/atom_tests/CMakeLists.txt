@@ -11,7 +11,6 @@
 # You should have received a copy of the GNU Lesser General Public
 # License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 
-include_directories(${PROJECT_SOURCE_DIR}/include)
 include_directories(${PROJECT_SOURCE_DIR}/third_party)
 include_directories(${PROJECT_SOURCE_DIR}/third_party/cblas)
 include_directories(${PROJECT_SOURCE_DIR}/src/ftensor/src)
@@ -49,7 +48,7 @@ cm_export_file("../meshes/mat_elastic_transiso.h5m" export_atom_tests)
 cm_export_file("../meshes/mat_interf.h5m" export_atom_tests)
 cm_export_file("../meshes/inlet_outlet.h5m" export_atom_tests)
 
-set(PERCOMPILED_MOFEM_HEADER "${PROJECT_SOURCE_DIR}/include/MoFEM.hpp")
+set(PERCOMPILED_MOFEM_HEADER "${PROJECT_BINARY_DIR}/include/precompiled/MoFEM.hpp")
 
 # add_executable(cubit_bc_test cubit_bc_test.cpp)
 my_add_executable(cubit_bc_test cubit_bc_test.cpp)
