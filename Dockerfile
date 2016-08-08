@@ -16,6 +16,7 @@ ENV PETSC_ARCH=arch-linux2-c-opt
 
 ENV BUILD_TYPE=MinSizeRel
 ENV CMAKE /opt/bin/cmake
+ENV CTEST /opt/bin/ctest
 
 RUN apt-get update \
 && apt-get install -y \
@@ -54,10 +55,10 @@ RUN mkdir $MOFEM_BUILD_DIR \
 $MOFEM_SRC_DIR \
 && cd $MOFEM_BUILD_DIR \
 && make install \
-&& ctest --output-on-failure
+&& $CTEST --output-on-failure
 
 RUN cd $MOFEM_INSTALL_DIR  \
 && $CMAKE -DCMAKE_CXX_FLAGS="-Wall" users_modules \
 && cd $MOFEM_INSTALL_DIR/basic_finite_elements/atom_tests \
 && make \
-&& ctest --output-on-failure
+&& $CTEST --output-on-failure
