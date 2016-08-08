@@ -1,26 +1,12 @@
-image: ubuntu:precise
+image: likask/ubuntu_mofem:v0.7
 
 pipelines:
   default:
     - step:
         script:
-          -
-          >
-            sudo apt-get install -y
-            build-essential
-            gcc
-            g++
-            libopenmpi-dev
-            openmpi-bin
-            openssh-server
-            libblas-dev
-            liblapack-dev
-          - cd /
-          - sudo wget --quiet https://www.dropbox.com/s/axa48op5mevukfj/mofem_env.tar.gz
-          - sudo tar -xzf mofem_env.tar.gz
-          - sudo chmod -R aug+rX /opt
-          - sudo rm -f mofem_env.tar.gz
           - echo PWD $PWD
+          - export PETSC_DIR=/opt/petsc
+          - export PETSC_ARCH=arch-linux2-c-opt
           - export MOFEM_SRC_DIR=$PWD
           - export MOFEM_INSTALL_DIR=$PWD/um
           - export MOFEM_BUILD_DIR=$PWD/lib
@@ -32,25 +18,27 @@ pipelines:
           - echo "Configure"
           -
           >
-            /opt/bin/cmake
-            -DCMAKE_BUILD_TYPE=MinSizeRel
-            -DBUILD_SHARED_LIBS=1
-            -DCMAKE_CXX_FLAGS="-Wall"
-            -DPETSC_DIR=$PETSC_DIR
-            -DPETSC_ARCH=$PETSC_ARCH
-            -DMOAB_DIR=$PETSC_DIR/$PETSC_ARCH
-            -DWITH_ADOL-C=1
-            -DCMAKE_INSTALL_PREFIX=$MOFEM_INSTALL_DIR
+            cmake
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_CXX_FLAGS="-Wall -std=c++11" \
+            -DPETSC_DIR=$PETSC_DIR \
+            -DPETSC_ARCH=$PETSC_ARCH \
+            -DMOAB_DIR=$PETSC_DIR/$PETSC_ARCH \
+            -DADOL-C_DIR=/usr \
+            -DWITH_TETGEN=1 \
+            -DBUILD_SHARED_LIBS=yes \
+            -DCMAKE_INSTALL_PREFIX=$MOFEM_INSTALL_DIR \
             $MOFEM_SRC_DIR/mofem
           - echo "Build"
           - make install
-          - /opt/bin/ctest --output-on-failure
+          - ctest --output-on-failure
           - export MOFEM_INSTALL_DIR=/build/um
           - echo "Configure users modules"
           - cd $MOFEM_INSTALL_DIR
-          - /opt/bin/cmake users_modules
+          - echo "Configure UM"
+          - cmake users_modules
           - echo "Build users modules"
           - cd $MOFEM_INSTALL_DIR/basic_finite_elements/atom_tests
           - make
-          - /opt/bin/ctest --output-on-failure
+          - ctest --output-on-failure
           - echo "All done"
