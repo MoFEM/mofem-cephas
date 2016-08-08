@@ -120,15 +120,6 @@ set_source_files_properties(
 include_directories(${PROJECT_BINARY_DIR}/include)
 include_directories(${PROJECT_SOURCE_DIR}/include)
 
-install(DIRECTORY ${PROJECT_SOURCE_DIR}/include DESTINATION ${CMAKE_INSTALL_PREFIX})
-install(
-  FILES
-  ${PROJECT_BINARY_DIR}/include/config.h
-  ${PROJECT_BINARY_DIR}/include/version.h
-  DESTINATION
-  ${CMAKE_INSTALL_PREFIX}/include
-)
-
 #add coverage
 if(WITHCOVERAGE)
   set(GCC_COVERAGE_COMPILE_FLAGS "-Wall -fprofile-arcs -ftest-coverage")
