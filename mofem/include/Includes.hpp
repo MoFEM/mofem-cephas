@@ -89,6 +89,8 @@ extern "C" {
 #include <boost/ptr_container/ptr_vector.hpp>
 #include <boost/ptr_container/ptr_map.hpp>
 #include <boost/scoped_ptr.hpp>
+#include <boost/scoped_array.hpp>
+
 
 #include <boost/iostreams/tee.hpp>
 #include <boost/iostreams/stream.hpp>
@@ -101,6 +103,8 @@ extern "C" {
 #include <MBTagConventions.hpp>
 #include <moab/Skinner.hpp>
 #include <moab/AdaptiveKDTree.hpp>
+#include <moab/MeshTopoUtil.hpp>
+#include <moab/ReadUtilIface.hpp>
 
 //Name spaces
 using namespace moab;
