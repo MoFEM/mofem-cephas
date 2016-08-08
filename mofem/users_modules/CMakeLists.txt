@@ -67,7 +67,8 @@ include_directories(
 
 add_definitions(${MOAB_DEFINITIONS})
 
-include_directories(${PROJECT_BINARY_DIR}/include)
+include_directories(${MoFEM_PROJECT_SOURCE_DIR}/include)
+include_directories(${MoFEM_PROJECT_BINARY_DIR}/include)
 include_directories(${MoFEM_PROJECT_SOURCE_DIR}/third_party)
 include_directories(${MoFEM_PROJECT_SOURCE_DIR}/third_party/cblas)
 include_directories(${MoFEM_PROJECT_SOURCE_DIR}/src/ftensor/src)

@@ -41,11 +41,19 @@ endif(PRECOMPILED_HEADRES)
 install(TARGETS mofem_approx DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)
 
 # Tetsing files
-set_source_files_properties(
-  impl/Hcurl.cpp
-  PROPERTIES
-  COMPILE_FLAGS "-DGENERATE_VTK_WITH_CURL_BASE -include ${PROJECT_BINARY_DIR}/include/precompiled/Includes.hpp"
-)
+if(PRECOMPILED_HEADRES)
+  set_source_files_properties(
+    impl/Hcurl.cpp
+    PROPERTIES
+    COMPILE_FLAGS "-DGENERATE_VTK_WITH_CURL_BASE -include ${PROJECT_BINARY_DIR}/include/precompiled/Includes.hpp"
+  )
+else(PRECOMPILED_HEADRES)
+  set_source_files_properties(
+    impl/Hcurl.cpp
+    PROPERTIES
+    COMPILE_FLAGS "-DGENERATE_VTK_WITH_CURL_BASE"
+  )
+endif(PRECOMPILED_HEADRES)
 add_executable(vtk_curl_base_on_tet impl/Hcurl.cpp)
 if(PRECOMPILED_HEADRES)
   add_dependencies(vtk_curl_base_on_tet Includes.hpp.pch_copy)
