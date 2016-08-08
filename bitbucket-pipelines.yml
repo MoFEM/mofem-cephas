@@ -4,6 +4,7 @@ pipelines:
   default:
     - step:
         script:
+          - ls
           - echo PWD $PWD
           - export PETSC_DIR=/opt/petsc
           - export PETSC_ARCH=arch-linux2-c-opt
@@ -19,15 +20,15 @@ pipelines:
           -
           >
             cmake
-            -DCMAKE_BUILD_TYPE=Release \
-            -DCMAKE_CXX_FLAGS="-Wall -std=c++11" \
-            -DPETSC_DIR=$PETSC_DIR \
-            -DPETSC_ARCH=$PETSC_ARCH \
-            -DMOAB_DIR=$PETSC_DIR/$PETSC_ARCH \
-            -DADOL-C_DIR=/usr \
-            -DWITH_TETGEN=1 \
-            -DBUILD_SHARED_LIBS=yes \
-            -DCMAKE_INSTALL_PREFIX=$MOFEM_INSTALL_DIR \
+            -DCMAKE_BUILD_TYPE=Release
+            -DCMAKE_CXX_FLAGS="-Wall -std=c++11"
+            -DPETSC_DIR=$PETSC_DIR
+            -DPETSC_ARCH=$PETSC_ARCH
+            -DMOAB_DIR=$PETSC_DIR/$PETSC_ARCH
+            -DADOL-C_DIR=/usr
+            -DWITH_TETGEN=1
+            -DBUILD_SHARED_LIBS=yes
+            -DCMAKE_INSTALL_PREFIX=$MOFEM_INSTALL_DIR
             $MOFEM_SRC_DIR/mofem
           - echo "Build"
           - make install
