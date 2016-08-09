@@ -39,7 +39,7 @@ file(COPY
 
 #testing
 add_test(ArcLengthInterfaceTest
-  ${MoFEM_MPI_RUN} -np 2 ${CMAKE_CURRENT_BINARY_DIR}/arc_length_interface
+  ${MPI_RUN_FLAGS} ${MPI_RUN_FLAGS} -np 2 ${CMAKE_CURRENT_BINARY_DIR}/arc_length_interface
   -my_file PeelTestHalfCrack.h5m -my_order 1
   -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package mumps
   -ksp_monitor -ksp_atol 1e-10 -ksp_rtol 1e-10

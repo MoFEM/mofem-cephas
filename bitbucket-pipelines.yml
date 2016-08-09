@@ -27,6 +27,7 @@ pipelines:
             -DMOAB_DIR=$PETSC_DIR/$PETSC_ARCH
             -DADOL-C_DIR=/usr
             -DBUILD_SHARED_LIBS=yes
+            -DMPI_RUN_FLAGS=--allow-run-as-root
             -DCMAKE_INSTALL_PREFIX=$MOFEM_INSTALL_DIR
             $MOFEM_SRC_DIR/mofem
           - echo "Build"
@@ -36,7 +37,7 @@ pipelines:
           - echo "Configure users modules"
           - cd $MOFEM_INSTALL_DIR
           - echo "Configure UM"
-          - cmake -DBUILD_SHARED_LIBS=yes users_modules
+          - cmake -DBUILD_SHARED_LIBS=yes -DMPI_RUN_FLAGS=--allow-run-as-root users_modules
           - echo "Build users modules"
           - cd $MOFEM_INSTALL_DIR/basic_finite_elements/atom_tests
           - make
