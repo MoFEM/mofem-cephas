@@ -33,7 +33,6 @@ pipelines:
           - echo "Build"
           - make install
           - ctest --output-on-failure
-          - export MOFEM_INSTALL_DIR=/build/um
           - echo "Configure users modules"
           - cd $MOFEM_INSTALL_DIR
           - echo "Configure UM"
