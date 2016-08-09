@@ -28,6 +28,6 @@ target_link_libraries(thermal_with_analytical_bc
   mofem_cblas
   ${MoFEM_PROJECT_LIBS})
 
-add_test(thermal_with_analytical_bc_atom ${MPI_RUN_FLAGS} ${MPI_RUN_FLAGS} -np 1
+add_test(thermal_with_analytical_bc_atom ${MoFEM_MPI_RUN} ${MPI_RUN_FLAGS} -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/thermal_with_analytical_bc
   -my_file sphere.cub -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package mumps -ksp_monitor)
