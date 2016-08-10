@@ -20,7 +20,6 @@
 
 #include <ArcLengthTools.cpp>
 #include <ConstrainMatrixCtx.cpp>
-#include <ConvectiveMassElement.cpp>
 #include <DirichletBC.cpp>
 #include <EdgeForce.cpp>
 #include <NodeForce.cpp>
@@ -32,4 +31,5 @@
 
 #ifdef WITH_ADOL_C
   #include <NonLinearElasticElement.cpp>
+  #include <ConvectiveMassElement.cpp>
 #endif // WITH_ADOL_C
