@@ -5,7 +5,7 @@ MAINTAINER Lukasz.Kaczmarczyk@glasgow.ac.uk
 ADD mofem /mofem
 
 # Set environment
-ENV BUILD_DIR /build
+ENV BUILD_DIR /build_mofem_precise
 ENV MOFEM_SRC_DIR /mofem/
 ENV MOFEM_BUILD_DIR $BUILD_DIR/lib
 ENV MOFEM_INSTALL_DIR $BUILD_DIR/um
@@ -13,6 +13,7 @@ ENV MOFEM_INSTALL_DIR $BUILD_DIR/um
 ENV PETSC_VERSION 3.7.2
 ENV PETSC_DIR=/opt/petsc
 ENV PETSC_ARCH=arch-linux2-c-opt
+ENV PATH $PATH:$PETSC_DIR/$PETSC_ARCH/bin
 
 ENV BUILD_TYPE=MinSizeRel
 ENV CMAKE /opt/bin/cmake
@@ -32,16 +33,15 @@ liblapack-dev \
 
 RUN wget https://www.dropbox.com/s/axa48op5mevukfj/mofem_env.tar.gz \
 && tar -xzf mofem_env.tar.gz \
-&& rm -f mofem_env.tar.gz \
+&& rm -f mofem_env.tar.gz
 
-RUN echo 'root:mofem' | chpasswd \
-&& adduser -q developer \
-&& mkdir $BUILD_DIR \
-&& chown developer $BUILD_DIR
+# RUN echo 'root:mofem' | chpasswd \
+# && adduser -q developer \
+# && mkdir $BUILD_DIR \
+# && chown developer $BUILD_DIR
+# USER developer
 
-USER developer
-
-RUN mkdir $MOFEM_BUILD_DIR \
+RUN mkdir -p $MOFEM_BUILD_DIR \
 && cd $MOFEM_BUILD_DIR \
 && $CMAKE \
 -DCMAKE_BUILD_TYPE=MinSizeRel \
@@ -55,9 +55,8 @@ RUN mkdir $MOFEM_BUILD_DIR \
 $MOFEM_SRC_DIR \
 && cd $MOFEM_BUILD_DIR \
 && make install \
-&& $CTEST --output-on-failure
-
-RUN cd $MOFEM_INSTALL_DIR  \
+&& $CTEST --output-on-failure \
+&& cd $MOFEM_INSTALL_DIR  \
 && $CMAKE -DCMAKE_CXX_FLAGS="-Wall" users_modules \
 && cd $MOFEM_INSTALL_DIR/basic_finite_elements/atom_tests \
 && make \

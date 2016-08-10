@@ -39,7 +39,7 @@ if(ADOL-C_LIBRARY)
 
   cm_export_file("LShape.cub" export_files_convective_matrix)
   add_test(convective_matrix
-    ${MoFEM_MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/convective_matrix -my_file LShape.cub
+    ${MoFEM_MPI_RUN} ${MPI_RUN_FLAGS} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/convective_matrix -my_file LShape.cub
   )
 
 endif(ADOL-C_LIBRARY)
