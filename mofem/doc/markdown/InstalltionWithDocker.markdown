@@ -17,7 +17,7 @@ First install docker as per the instructions here: https://docs.docker.com/insta
 
 ##Clone mofem repository
 
-To build MoFEM the source code need to be downloaded. The best way to do it is
+To build MoFEM the source code need to be downloaded. The best method to do it is
 to clone repository
 ~~~~~~
 cd $HOME
@@ -37,8 +37,8 @@ docker run --name mofem_build mofem_build:v0.1 /bin/bash
 
 If you do not exactly understand what is *docker image*, *docker container* and
 *docker volume* do not worry. You do need to only know how to run and develop
-code in docker what is explained in below. However if you like to fully explore
-features avilable in docer and utilise its full potential pleas look into
+code in docker, how to do it is explained in below. However if you like to fully explore
+features available by running MoFEM in docker and utilize its full potential pleas look into
 documentation in https://docs.docker.com/engine/userguide/
 
 ##Running docker container
@@ -58,12 +58,12 @@ docker run \
 likask/ubuntu_mofem:latest /bin/bash
 ~~~~~~
 After execution of above command you working inside docker, this is isolated system
-hosed by your OS (MacOSX, Linux or Windows).
+hosed by your operating system, f.e. MacOSX, Linux or Windows.
 
 The *work container* mount *mofem source directory* into *mofem* directory and
 your home directory.
 
-Note that:
+Running docker is set-up as follows:
 - Changes in root direct make only effect for running this container.
 - Changes in directory *mofem_build* are shared between other docker containers.
 - Changes in home directory in container or host system are shared.
