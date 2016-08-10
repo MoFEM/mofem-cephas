@@ -100,10 +100,9 @@ RUN cd /opt \
 #RUN cd /opt && git clone https://bitbucket.org/slepc/slepc && cd /opt/slepc && git checkout tags/v$PETSC_VERSION
 #RUN cd /opt/slepc && PETSC_DIR=/opt/petsc PETSC_ARCH=arch-linux2-c-opt ./configure && make SLEPC_DIR=$PWD PETSC_DIR=/opt/petsc PETSC_ARCH=arch-linux2-c-opt
 
-RUN sed -i 's/PATH.*/&\":\/opt\/petsc\/arch-linux2-c-opt\/bin\"/' /etc/environment
-
 ENV PETSC_DIR=/opt/petsc
 ENV PETSC_ARCH=arch-linux2-c-opt
+ENV PATH $PATH:$PETSC_DIR/$PETSC_ARCH/bin
 ENV MOFEM_SRC_DIR=/mofem
 ENV MOFEM_INSTALL_DIR=/mofem_build/um
 ENV MOFEM_BUILD_DIR=/mofem_build/lib
