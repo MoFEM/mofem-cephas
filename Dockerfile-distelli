@@ -5,7 +5,7 @@ MAINTAINER Lukasz.Kaczmarczyk@glasgow.ac.uk
 ADD mofem /mofem
 
 # Set environment
-ENV BUILD_DIR /build
+ENV BUILD_DIR /build_mofem_precise
 ENV MOFEM_SRC_DIR /mofem/
 ENV MOFEM_BUILD_DIR $BUILD_DIR/lib
 ENV MOFEM_INSTALL_DIR $BUILD_DIR/um
@@ -62,3 +62,5 @@ RUN cd $MOFEM_INSTALL_DIR  \
 && cd $MOFEM_INSTALL_DIR/basic_finite_elements/atom_tests \
 && make \
 && $CTEST --output-on-failure
+
+VOLUME /build_mofem_precise

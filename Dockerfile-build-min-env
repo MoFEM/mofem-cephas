@@ -1,5 +1,4 @@
 FROM ubuntu:precise
-#FROM ubuntu:precise
 
 MAINTAINER Lukasz.Kaczmarczyk@glasgow.ac.uk
 
@@ -84,5 +83,12 @@ RUN cd /opt \
 && ./b2 install --prefix=/opt/petsc/arch-linux2-c-opt \
 && mv boost /opt/petsc/arch-linux2-c-opt/include/ \
 && cd /opt && rm -rvf /opt/boost_1_57_0*
+
+RUN cd /opt \
+&& wget https://cmake.org/files/v3.0/cmake-3.0.1-Darwin-universal.tar.gz \
+&& tar -xzf cmake-3.0.1.tar.gz \
+&& cd cmake-3.0.1 && cmake -DCMAKE_INSTALL_PREFIX=/opt/local \
+&& make install \
+&& cd /opt && rm -rvf cmake-3.0.1*
 
 RUN sed -i 's/PATH.*/&\":\/opt\/petsc\/arch-linux2-c-opt\/bin\"/' /etc/environment

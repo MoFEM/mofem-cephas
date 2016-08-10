@@ -43,15 +43,18 @@ extern "C" {
 #include <EdgeForce.hpp>
 #include <FieldApproximation.hpp>
 #include <FluidPressure.hpp>
-#include <KelvinVoigtDamper.hpp>
 #include <NodalForce.hpp>
-#include <NonLinearElasticElement.hpp>
-#include <NitscheMethod.hpp>
-#include <PCMGSetUpViaApproxOrders.hpp>
 #include <PostProcOnRefMesh.hpp>
-#include <PostProcStresses.hpp>
+#ifdef WITH_ADOL_C
+  #include <NonLinearElasticElement.hpp>
+  #include <KelvinVoigtDamper.hpp>
+  #include <PostProcStresses.hpp>
+  #include <Smoother.hpp>
+  #include <ConvectiveMassElement.hpp>
+  #include <NitscheMethod.hpp>
+#endif
+#include <PCMGSetUpViaApproxOrders.hpp>
 #include <PostProcHookStresses.hpp>
-#include <Smoother.hpp>
 #include <SurfacePressure.hpp>
 #include <SurfaceSlidingConstrains.hpp>
 #include <ThermalElement.hpp>
@@ -59,7 +62,8 @@ extern "C" {
 #include <TimeForceScale.hpp>
 #include <UltraWeakTransportElement.hpp>
 #include <VolumeCalculation.hpp>
-#include <ConvectiveMassElement.hpp>
+#ifdef WITH_ADOL_C
+#endif
 
 
 #endif // __BASICFINITEELEMENTS_HPP__
