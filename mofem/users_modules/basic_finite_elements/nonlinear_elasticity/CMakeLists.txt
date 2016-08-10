@@ -38,41 +38,43 @@ if(ADOL-C_LIBRARY)
 
 cm_export_file("dome_thin_symm.h5m" export_files_arc_length_nonlinearelasticity)
 
-file(COPY
-  ${CMAKE_CURRENT_SOURCE_DIR}/README
+file(
+  COPY ${CMAKE_CURRENT_SOURCE_DIR}/README
   DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/
 )
 
-file(COPY
-  ${CMAKE_CURRENT_SOURCE_DIR}/examples
+file(
+  COPY ${CMAKE_CURRENT_SOURCE_DIR}/examples
   DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/
 )
 
-configure_file(
-  "${CMAKE_CURRENT_SOURCE_DIR}/arc_length_nonlinear_elasticity.sh.in"
-  "${CMAKE_CURRENT_SOURCE_DIR}/arc_length_nonlinear_elasticity.sh"
-  @ONLY
-)
-
-configure_file(
-  "${CMAKE_CURRENT_SOURCE_DIR}/do_vtk.sh.in"
-  "${CMAKE_CURRENT_SOURCE_DIR}/do_vtk.sh"
-  @ONLY
-)
-
-file(COPY arc_length_nonlinear_elasticity.sh
+file(
+  COPY ${CMAKE_CURRENT_SOURCE_DIR}/arc_length_nonlinear_elasticity.sh.in
   DESTINATION ${CMAKE_CURRENT_BINARY_DIR}
   FILE_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_EXECUTE
 )
+configure_file(
+  ${CMAKE_CURRENT_BINARY_DIR}/arc_length_nonlinear_elasticity.sh.in
+  ${CMAKE_CURRENT_BINARY_DIR}/arc_length_nonlinear_elasticity.sh
+  @ONLY
+)
 
-file(COPY do_vtk.sh
+file(
+  COPY ${CMAKE_CURRENT_SOURCE_DIR}/do_vtk.sh.in
   DESTINATION ${CMAKE_CURRENT_BINARY_DIR}
   FILE_PERMISSIONS OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_EXECUTE
 )
+configure_file(
+  ${CMAKE_CURRENT_BINARY_DIR}/do_vtk.sh.in
+  ${CMAKE_CURRENT_BINARY_DIR}/do_vtk.sh
+  @ONLY
+)
+
+
 
 #testing
 add_test(ArcLengthNonLinearElasticityTest
-  ${MoFEM_MPI_RUN} -np 2 ${CMAKE_CURRENT_BINARY_DIR}/arc_length_nonlinear_elasticity
+  ${MoFEM_MPI_RUN} ${MPI_RUN_FLAGS} -np 2 ${CMAKE_CURRENT_BINARY_DIR}/arc_length_nonlinear_elasticity
   -my_file dome_thin_symm.h5m -ksp_type fgmres
   -pc_type asm -sub_pc_type lu
   -ksp_atol 1e-10 -ksp_rtol 1e-10
@@ -102,7 +104,7 @@ target_link_libraries(nonlinear_dynamics
 )
 
 add_test(NonLinearDynamics
-  ${MoFEM_MPI_RUN} -np 2 ${CMAKE_CURRENT_BINARY_DIR}/nonlinear_dynamics -my_file LShape.h5m
+  ${MoFEM_MPI_RUN} ${MPI_RUN_FLAGS} -np 2 ${CMAKE_CURRENT_BINARY_DIR}/nonlinear_dynamics -my_file LShape.h5m
   -ksp_type fgmres -pc_type asm -sub_pc_type lu
   -ksp_atol 1e-10 -ksp_rtol 1e-10 -snes_monitor
   -snes_type newtonls -snes_linesearch_type basic
@@ -133,7 +135,7 @@ if(SLEPC_LIBRARY)
   ${MoFEM_PROJECT_LIBS})
 
   add_test(EigenProblem
-    ${MoFEM_MPI_RUN} -np 2 ${CMAKE_CURRENT_BINARY_DIR}/stability
+    ${MoFEM_MPI_RUN} ${MPI_RUN_FLAGS} -np 2 ${CMAKE_CURRENT_BINARY_DIR}/stability
     -my_file rod.h5m
     -ksp_type gmres -pc_type lu -pc_factor_mat_solver_package mumps -ksp_monitor -ksp_atol 1e-12 -ksp_rtol 1e-12
     -st_ksp_type preonly -st_pc_type cholesky -st_pc_factor_mat_solver_package mumps

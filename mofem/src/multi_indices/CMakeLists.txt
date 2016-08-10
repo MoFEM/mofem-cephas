@@ -16,7 +16,7 @@ if(PRECOMPILED_HEADRES)
   set_source_files_properties(
     All.cpp
     PROPERTIES
-    COMPILE_FLAGS "-include ${PROJECT_SOURCE_DIR}/include/Includes.hpp"
+    COMPILE_FLAGS "-include ${PROJECT_BINARY_DIR}/include/precompiled/Includes.hpp"
   )
 endif(PRECOMPILED_HEADRES)
 add_library(mofem_multi_indices

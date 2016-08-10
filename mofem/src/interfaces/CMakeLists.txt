@@ -16,21 +16,19 @@ include_directories(${PROJECT_SOURCE_DIR}/src/ftensor/src)
 #multi_indices
 set(MOFEM_INTERFACES_SRC
   impl/All.cpp
+  impl/AllInterfaces.cpp
 )
-
-if(TETGEN_LIBRARY)
-  set(MOFEM_INTERFACES_SRC ${MOFEM_INTERFACES_SRC} impl/TetGenInterface.cpp)
-endif(TETGEN_LIBRARY)
-
-if(NETGEN_LIBRARY)
-  set(MOFEM_INTERFACES_SRC ${MOFEM_INTERFACES_SRC} impl/NetGenInterface.cpp)
-endif(NETGEN_LIBRARY)
 
 if(PRECOMPILED_HEADRES)
   set_source_files_properties(
     All.cpp
     PROPERTIES
-    COMPILE_FLAGS "-include ${PROJECT_SOURCE_DIR}/include/Includes.hpp"
+    COMPILE_FLAGS "-include ${PROJECT_BINARY_DIR}/include/precompiled/Includes.hpp"
+  )
+  set_source_files_properties(
+    AllInterfaces.cpp
+    PROPERTIES
+    COMPILE_FLAGS "-include ${PROJECT_BINARY_DIR}/include/precompiled/Includes.hpp"
   )
 endif(PRECOMPILED_HEADRES)
 add_library(

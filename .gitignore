@@ -12,12 +12,6 @@ mofem_live_cd_check.sh
 mofem_update.sh
 mofem_fast_check.sh
 
-arc_length.sh
-convergence_study.sh
-convective_matrix.sh
-arc_length_nonlinear_elasticity.sh
-do_vtk.sh
-
 homogenisation
 fracture_mechanics
 moisture_transport
@@ -37,12 +31,6 @@ _Store
 *.swn
 *.bak
 .atom-build.json
-
-
 .build-tools.cson
 
 contributors_list_modules
-MoFEM.hpp.*
-Includes.hpp.*
-BasicFiniteElements.hpp.*
-mofem/src/ftensor/All.cpp

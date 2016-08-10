@@ -20,9 +20,7 @@ if(CMAKE_HOST_UNIX)
   install(CODE
     "
     EXECUTE_PROCESS(
-      COMMAND ln -sf
-      ${PROJECT_SOURCE_DIR}/users_modules
-      ${CMAKE_INSTALL_PREFIX}/
+      COMMAND ln -sf ${PROJECT_SOURCE_DIR}/users_modules ${CMAKE_INSTALL_PREFIX}/
     )
     "
   )

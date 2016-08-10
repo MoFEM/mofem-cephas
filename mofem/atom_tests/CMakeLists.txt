@@ -11,7 +11,6 @@
 # You should have received a copy of the GNU Lesser General Public
 # License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 
-include_directories(${PROJECT_SOURCE_DIR}/include)
 include_directories(${PROJECT_SOURCE_DIR}/third_party)
 include_directories(${PROJECT_SOURCE_DIR}/third_party/cblas)
 include_directories(${PROJECT_SOURCE_DIR}/src/ftensor/src)
@@ -49,7 +48,7 @@ cm_export_file("../meshes/mat_elastic_transiso.h5m" export_atom_tests)
 cm_export_file("../meshes/mat_interf.h5m" export_atom_tests)
 cm_export_file("../meshes/inlet_outlet.h5m" export_atom_tests)
 
-set(PERCOMPILED_MOFEM_HEADER "${PROJECT_SOURCE_DIR}/include/MoFEM.hpp")
+set(PERCOMPILED_MOFEM_HEADER "${PROJECT_BINARY_DIR}/include/precompiled/MoFEM.hpp")
 
 # add_executable(cubit_bc_test cubit_bc_test.cpp)
 my_add_executable(cubit_bc_test cubit_bc_test.cpp)
@@ -62,73 +61,73 @@ target_link_libraries(cubit_bc_test
   ${PROJECT_LIBS}
 )
 
-add_test(cubit_bc_atom_test_disp01 ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/cubit_bc_test -my_file disp01.h5m)
+add_test(cubit_bc_atom_test_disp01 ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/cubit_bc_test -my_file disp01.h5m)
 add_test(cubit_bc_atom_test_disp01_compare ${CMAKE_COMMAND} -E compare_files
   ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/disp01.cub.txt ${CMAKE_BINARY_DIR}/atom_tests/disp01.h5m.txt
 )
 
-add_test(cubit_bc_atom_test_force01 ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/cubit_bc_test -my_file force01.h5m)
+add_test(cubit_bc_atom_test_force01 ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/cubit_bc_test -my_file force01.h5m)
 add_test(cubit_bc_atom_test_force01_compare ${CMAKE_COMMAND} -E compare_files
   ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/force01.cub.txt ${CMAKE_BINARY_DIR}/atom_tests/force01.h5m.txt
 )
 
-add_test(cubit_bc_atom_test_velocity01 ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/cubit_bc_test -my_file velocity01.h5m)
+add_test(cubit_bc_atom_test_velocity01 ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/cubit_bc_test -my_file velocity01.h5m)
 add_test(cubit_bc_atom_test_velocity01_compare ${CMAKE_COMMAND} -E compare_files
   ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/velocity01.cub.txt ${CMAKE_BINARY_DIR}/atom_tests/velocity01.h5m.txt
 )
 
-add_test(cubit_bc_atom_test_accel01 ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/cubit_bc_test -my_file accel01.h5m)
+add_test(cubit_bc_atom_test_accel01 ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/cubit_bc_test -my_file accel01.h5m)
 add_test(cubit_bc_atom_test_accel01_compare ${CMAKE_COMMAND} -E compare_files
   ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/accel01.cub.txt ${CMAKE_BINARY_DIR}/atom_tests/accel01.h5m.txt
 )
 
-add_test(cubit_bc_atom_test_temper01 ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/cubit_bc_test -my_file temper01.h5m)
+add_test(cubit_bc_atom_test_temper01 ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/cubit_bc_test -my_file temper01.h5m)
 add_test(cubit_bc_atom_test_temper01_compare ${CMAKE_COMMAND} -E compare_files
   ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/temper01.cub.txt ${CMAKE_BINARY_DIR}/atom_tests/temper01.h5m.txt
 )
 
-add_test(cubit_bc_atom_test_pressure01 ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/cubit_bc_test -my_file pressure01.h5m)
+add_test(cubit_bc_atom_test_pressure01 ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/cubit_bc_test -my_file pressure01.h5m)
 add_test(cubit_bc_atom_test_pressure01_compare ${CMAKE_COMMAND} -E compare_files
   ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/pressure01.cub.txt ${CMAKE_BINARY_DIR}/atom_tests/pressure01.h5m.txt
 )
 
-add_test(cubit_bc_atom_test_heatflux01 ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/cubit_bc_test -my_file heatflux01.h5m)
+add_test(cubit_bc_atom_test_heatflux01 ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/cubit_bc_test -my_file heatflux01.h5m)
 add_test(cubit_bc_atom_test_heatflux01_compare ${CMAKE_COMMAND} -E compare_files
   ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/heatflux01.cub.txt ${CMAKE_BINARY_DIR}/atom_tests/heatflux01.h5m.txt
 )
 
-add_test(cubit_bc_atom_test_comb01 ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/cubit_bc_test -my_file comb01.h5m)
+add_test(cubit_bc_atom_test_comb01 ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/cubit_bc_test -my_file comb01.h5m)
 add_test(cubit_bc_atom_test_comb01_compare ${CMAKE_COMMAND} -E compare_files
   ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/comb01.cub.txt ${CMAKE_BINARY_DIR}/atom_tests/comb01.h5m.txt
 )
 
-add_test(cubit_bc_atom_test_bcoverlap01 ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/cubit_bc_test -my_file bcoverlap01.h5m)
+add_test(cubit_bc_atom_test_bcoverlap01 ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/cubit_bc_test -my_file bcoverlap01.h5m)
 add_test(cubit_bc_atom_test_bcoverlap01_compare ${CMAKE_COMMAND} -E compare_files
   ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/bcoverlap01.cub.txt ${CMAKE_BINARY_DIR}/atom_tests/bcoverlap01.h5m.txt
 )
 
-add_test(cubit_bc_atom_test_interf01 ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/cubit_bc_test -my_file interf01.h5m)
+add_test(cubit_bc_atom_test_interf01 ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/cubit_bc_test -my_file interf01.h5m)
 add_test(cubit_bc_atom_test_interf01_compare ${CMAKE_COMMAND} -E compare_files
   ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/interf01.cub.txt ${CMAKE_BINARY_DIR}/atom_tests/interf01.h5m.txt
 )
 
-add_test(cubit_bc_atom_test_mat_elastic ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/cubit_bc_test -my_file mat_elastic.h5m)
+add_test(cubit_bc_atom_test_mat_elastic ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/cubit_bc_test -my_file mat_elastic.h5m)
 add_test(cubit_bc_atom_test_mat_elastic_compare ${CMAKE_COMMAND} -E compare_files
   ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/mat_elastic.cub.txt ${CMAKE_BINARY_DIR}/atom_tests/mat_elastic.h5m.txt
 )
 
-add_test(cubit_bc_atom_test_mat_elastic_transiso ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/cubit_bc_test -my_file mat_elastic_transiso.h5m)
+add_test(cubit_bc_atom_test_mat_elastic_transiso ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/cubit_bc_test -my_file mat_elastic_transiso.h5m)
 add_test(cubit_bc_atom_test_mat_elastic_transiso_compare ${CMAKE_COMMAND} -E compare_files
   ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/mat_elastic_transiso.cub.txt
   ${CMAKE_BINARY_DIR}/atom_tests/mat_elastic_transiso.h5m.txt
 )
 
-add_test(cubit_bc_atom_test_mat_interf ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/cubit_bc_test -my_file mat_interf.h5m)
+add_test(cubit_bc_atom_test_mat_interf ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/cubit_bc_test -my_file mat_interf.h5m)
 add_test(cubit_bc_atom_test_mat_interf_compare ${CMAKE_COMMAND} -E compare_files
   ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/mat_interf.cub.txt ${CMAKE_BINARY_DIR}/atom_tests/mat_interf.h5m.txt
 )
 
-add_test(cubit_bc_atom_test_inlet_outlet ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/cubit_bc_test -my_file inlet_outlet.h5m)
+add_test(cubit_bc_atom_test_inlet_outlet ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/cubit_bc_test -my_file inlet_outlet.h5m)
 add_test(cubit_bc_atom_test_inlet_outlet_compare ${CMAKE_COMMAND} -E compare_files
   ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/inlet_outlet.cub.txt ${CMAKE_BINARY_DIR}/atom_tests/inlet_outlet.h5m.txt
 )
@@ -146,7 +145,7 @@ target_link_libraries(loops_atom_test
   ${PROJECT_LIBS}
 )
 
-add_test(cubit_meshset_loop_test ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/loops_atom_test -my_file loop_atom.h5m)
+add_test(cubit_meshset_loop_test ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/loops_atom_test -my_file loop_atom.h5m)
 add_test(cubit_meshset_loop_test_compare ${CMAKE_COMMAND} -E compare_files
   ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/loop_atom.cub.txt
   ${CMAKE_BINARY_DIR}/atom_tests/loop_atom.h5m.txt
@@ -166,7 +165,7 @@ target_link_libraries(field_axpy_atom_test
   ${PROJECT_LIBS}
 )
 
-add_test(field_axpy ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/field_axpy_atom_test -my_file elasticity_atom_test_01X_pressure.h5m)
+add_test(field_axpy ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/field_axpy_atom_test -my_file elasticity_atom_test_01X_pressure.h5m)
 add_test(field_axpy_compare ${CMAKE_COMMAND} -E compare_files
   ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/field_axpy_test.txt
   ${CMAKE_BINARY_DIR}/atom_tests/field_axpy_test.txt)
@@ -182,7 +181,7 @@ target_link_libraries(test_setting_coordinate_sys
   mofem_third_party
   ${PROJECT_LIBS}
 )
-add_test(test_setting_coordinate_sys ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/test_setting_coordinate_sys -my_file elasticity_atom_test_01X_pressure.h5m)
+add_test(test_setting_coordinate_sys ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/test_setting_coordinate_sys -my_file elasticity_atom_test_01X_pressure.h5m)
 
 #mesh refine
 cm_export_file("../meshes/templar.h5m" export_atom_tests)
@@ -197,7 +196,7 @@ target_link_libraries(mesh_refine_atom
   ${PROJECT_LIBS}
 )
 
-add_test(mesh_refine_atom ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/mesh_refine_atom -my_file templar.h5m)
+add_test(mesh_refine_atom ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/mesh_refine_atom -my_file templar.h5m)
 add_test(mesh_refine_atom_test_compare ${CMAKE_COMMAND} -E compare_files ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/mesh_refine.txt ${CMAKE_BINARY_DIR}/atom_tests/mesh_refine.txt)
 
 #mesh_insert_interface_atom
@@ -214,20 +213,20 @@ target_link_libraries(mesh_insert_interface_atom
   ${PROJECT_LIBS}
 )
 
-add_test(mesh_insert_interface_atom ${MPI_RUN} -np 1
+add_test(mesh_insert_interface_atom ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/mesh_insert_interface_atom -my_file templar.h5m
 )
 add_test(mesh_insert_interface_atom_test_compare ${CMAKE_COMMAND} -E compare_files
   ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/mesh_insert_interface.txt ${CMAKE_BINARY_DIR}/atom_tests/mesh_insert_interface.txt
 )
-add_test(mesh_insert_T_interface_atom ${MPI_RUN} -np 1
+add_test(mesh_insert_T_interface_atom ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/mesh_insert_interface_atom -my_file Tinterface.h5m
 )
 add_test(mesh_insert_T_interface_atom_test_compare ${CMAKE_COMMAND} -E compare_files
   ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/mesh_insert_T_interface.txt
   ${CMAKE_BINARY_DIR}/atom_tests/mesh_insert_interface.txt
 )
-add_test(mesh_insert_T_4seasons_interface_atom ${MPI_RUN} -np 1
+add_test(mesh_insert_T_4seasons_interface_atom ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/mesh_insert_interface_atom -my_file 4seasons.h5m
 )
 add_test(mesh_insert_T_4seasons_interface_atom_test_compare ${CMAKE_COMMAND} -E compare_files
@@ -248,7 +247,7 @@ target_link_libraries(forces_and_sources_getting_orders_indices_atom_test
 )
 
 add_test(forces_and_sources_getting_orders_indices_test
-  ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_getting_orders_indices_atom_test -my_file elasticity_atom_test_01X_pressure.h5m)
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_getting_orders_indices_atom_test -my_file elasticity_atom_test_01X_pressure.h5m)
 add_test(forces_and_sources_getting_orders_indices_test_compare ${CMAKE_COMMAND} -E compare_files
   ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/forces_and_sources_getting_orders_indices_atom_test.txt
   ${CMAKE_BINARY_DIR}/atom_tests/forces_and_sources_getting_orders_indices_atom_test.txt
@@ -266,7 +265,7 @@ target_link_libraries(forces_and_sources_getting_mult_H1_H1_atom_test
 )
 
 add_test(forces_and_sources_getting_mult_H1_H1_test
-  ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_getting_mult_H1_H1_atom_test -my_file elasticity_atom_test_01X_pressure.h5m)
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_getting_mult_H1_H1_atom_test -my_file elasticity_atom_test_01X_pressure.h5m)
 add_test(forces_and_sources_getting_mult_H1_H1_test_compare ${CMAKE_COMMAND} -E compare_files
   ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/forces_and_sources_getting_mult_H1_H1_atom_test.txt
   ${CMAKE_BINARY_DIR}/atom_tests/forces_and_sources_getting_mult_H1_H1_atom_test.txt
@@ -284,7 +283,7 @@ target_link_libraries(forces_and_sources_calculate_jacobian
 )
 
 add_test(forces_and_sources_calculate_jacobian_test
-  ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_calculate_jacobian -my_file elasticity_atom_test_01X_pressure.h5m)
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_calculate_jacobian -my_file elasticity_atom_test_01X_pressure.h5m)
 add_test(forces_and_sources_calculate_jacobian_test_compare ${CMAKE_COMMAND} -E compare_files
   ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/forces_and_sources_calculate_jacobian.txt
   ${CMAKE_BINARY_DIR}/atom_tests/forces_and_sources_calculate_jacobian.txt
@@ -303,7 +302,7 @@ target_link_libraries(forces_and_sources_testing_volume_element
 
 add_test(
   forces_and_sources_testing_volume_element_test
-  ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_testing_volume_element
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_testing_volume_element
   -my_file elasticity_atom_test_01X_pressure.h5m
 )
 add_test(forces_and_sources_testing_volume_element_test_compare ${CMAKE_COMMAND} -E compare_files
@@ -323,7 +322,7 @@ target_link_libraries(forces_and_sources_testing_ftensor
 )
 add_test(
   forces_and_sources_testing_ftensor
-  ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_testing_ftensor
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_testing_ftensor
   -my_file elasticity_atom_test_01X_pressure.h5m
 )
 
@@ -341,7 +340,7 @@ target_link_libraries(forces_and_sources_getting_higher_order_skin_normals_atom
 cm_export_file("../meshes/sphere.h5m" export_atom_tests)
 
 add_test(forces_and_sources_getting_higher_order_skin_normals_atom_test
-  ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_getting_higher_order_skin_normals_atom -my_file sphere.h5m
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_getting_higher_order_skin_normals_atom -my_file sphere.h5m
 )
 add_test(forces_and_sources_getting_higher_order_skin_normals_atom_test_compare ${CMAKE_COMMAND} -E compare_files
   ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/forces_and_sources_getting_higher_order_skin_normals_atom.txt
@@ -361,7 +360,7 @@ target_link_libraries(forces_and_sources_testing_triangle_element
 )
 
 add_test(forces_and_sources_testing_triangle_element_test
-  ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_testing_triangle_element
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_testing_triangle_element
   -my_file elasticity_atom_test_01X_pressure.h5m
 )
 add_test(forces_and_sources_testing_triangle_element_test_compare ${CMAKE_COMMAND} -E compare_files
@@ -382,7 +381,7 @@ target_link_libraries(forces_and_sources_testing_edge_element
 )
 
 add_test(forces_and_sources_testing_edge_element_test
-  ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_testing_edge_element
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_testing_edge_element
   -my_file elasticity_atom_test_01X_pressure.h5m
 )
 add_test(forces_and_sources_testing_edge_element_test_compare ${CMAKE_COMMAND} -E compare_files
@@ -403,7 +402,7 @@ target_link_libraries(forces_and_sources_testing_vertex_element
 )
 
 add_test(forces_and_sources_testing_vertex_element_test
-  ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_testing_vertex_element
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_testing_vertex_element
   -my_file elasticity_atom_test_01X_pressure.h5m
 )
 add_test(forces_and_sources_testing_vertex_element_test_compare ${CMAKE_COMMAND} -E compare_files
@@ -423,7 +422,7 @@ target_link_libraries(forces_and_sources_testing_flat_prism_element
   ${PROJECT_LIBS})
 
 add_test(forces_and_sources_testing_flat_prism_element_test
-  ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_testing_flat_prism_element -my_file templar.h5m
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_testing_flat_prism_element -my_file templar.h5m
 )
 add_test(forces_and_sources_testing_flat_prism_element_test_compare ${CMAKE_COMMAND} -E compare_files
   ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/forces_and_sources_testing_flat_prism_element.txt
@@ -441,7 +440,7 @@ target_link_libraries(record_series_atom
   ${PROJECT_LIBS}
 )
 
-add_test(record_series_atom_test ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/record_series_atom
+add_test(record_series_atom_test ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/record_series_atom
   -my_file elasticity_atom_test_01X_pressure.h5m
 )
 add_test(record_series_atom_test_compare ${CMAKE_COMMAND} -E compare_files
@@ -460,7 +459,7 @@ target_link_libraries(forces_and_sources_hdiv_approximation_functions
   mofem_third_party
   ${PROJECT_LIBS})
 
-add_test(forces_and_sources_hdiv_approximation_functions_atom ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_hdiv_approximation_functions)
+add_test(forces_and_sources_hdiv_approximation_functions_atom ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_hdiv_approximation_functions)
 add_test(forces_and_sources_hdiv_approximation_functions_atom_compare ${CMAKE_COMMAND} -E compare_files
   ${CMAKE_BINARY_DIR}/atom_tests/forces_and_sources_hdiv_approximation_functions.txt
   ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/forces_and_sources_hdiv_approximation_functions.txt
@@ -479,7 +478,7 @@ target_link_libraries(forces_and_sources_hdiv_continuity_check
 )
 
 add_test(forces_and_sources_hdiv_continuity_check_atom
-  ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_hdiv_continuity_check -my_file sphere.h5m
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_hdiv_continuity_check -my_file sphere.h5m
 )
 add_test(forces_and_sources_hdiv_continuity_check_atom_compare ${CMAKE_COMMAND} -E compare_files
   ${CMAKE_BINARY_DIR}/atom_tests/forces_and_sources_hdiv_continuity_check.txt
@@ -499,7 +498,7 @@ target_link_libraries(forces_and_sources_hdiv_divergence_operator
 )
 
 add_test(forces_and_sources_hdiv_divergence_operator_atom
-  ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_hdiv_divergence_operator
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_hdiv_divergence_operator
 )
 
 #dm
@@ -514,7 +513,7 @@ target_link_libraries(dm_mofem
   mofem_third_party
   ${PROJECT_LIBS}
 )
-add_test(dm_mofem_atom ${MPI_RUN} -np 2 ${CMAKE_CURRENT_BINARY_DIR}/dm_mofem -my_file disp01.h5m)
+add_test(dm_mofem_atom ${MPI_RUN} ${MPI_RUN_FLAGS} -np 2 ${CMAKE_CURRENT_BINARY_DIR}/dm_mofem -my_file disp01.h5m)
 add_test(dm_mofem_atom_compare ${CMAKE_COMMAND} -E compare_files
   ${CMAKE_BINARY_DIR}/atom_tests/dm_mofem.txt
   ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/dm_mofem.txt
@@ -533,7 +532,7 @@ target_link_libraries(dm_build_partitioned_mesh
   ${PROJECT_LIBS}
 )
 add_test(dm_build_partitioned_mesh_atom
-  ${MPI_RUN} -np 2 ${CMAKE_CURRENT_BINARY_DIR}/dm_build_partitioned_mesh -my_file disp01_2parts.h5m -dm_is_partitioned
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 2 ${CMAKE_CURRENT_BINARY_DIR}/dm_build_partitioned_mesh -my_file disp01_2parts.h5m -dm_is_partitioned
 )
 add_test(dm_build_partitioned_mesh_atom_compare ${CMAKE_COMMAND} -E compare_files
   ${CMAKE_BINARY_DIR}/atom_tests/dm_build_partitioned_mesh.txt
@@ -552,7 +551,7 @@ target_link_libraries(serial_matrix
   mofem_third_party
   ${PROJECT_LIBS}
 )
-add_test(serial_matrix ${MPI_RUN} -np 2 ${CMAKE_CURRENT_BINARY_DIR}/serial_matrix -my_file disp01.h5m)
+add_test(serial_matrix ${MPI_RUN} ${MPI_RUN_FLAGS} -np 2 ${CMAKE_CURRENT_BINARY_DIR}/serial_matrix -my_file disp01.h5m)
 add_test(serial_matrix_compare ${CMAKE_COMMAND} -E compare_files
   ${CMAKE_BINARY_DIR}/atom_tests/serial_matrix.txt
   ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/serial_matrix.txt
@@ -569,7 +568,7 @@ target_link_libraries(build_problems
   mofem_cblas
   mofem_third_party
   ${PROJECT_LIBS})
-add_test(build_problems_atom ${MPI_RUN} -np 2 ${CMAKE_CURRENT_BINARY_DIR}/build_problems -my_file disp01.h5m)
+add_test(build_problems_atom ${MPI_RUN} ${MPI_RUN_FLAGS} -np 2 ${CMAKE_CURRENT_BINARY_DIR}/build_problems -my_file disp01.h5m)
 
 #test inactivating and clearing inactive dofs
 my_add_executable(activate_deactivate_dofs activate_deactivate_dofs.cpp)
@@ -582,7 +581,7 @@ target_link_libraries(activate_deactivate_dofs
   mofem_cblas
   mofem_third_party
   ${PROJECT_LIBS})
-add_test(activate_deactivate_dofs ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/activate_deactivate_dofs -my_file disp01.h5m)
+add_test(activate_deactivate_dofs ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/activate_deactivate_dofs -my_file disp01.h5m)
 
 
 # Projection form and to 10 node tets
@@ -598,7 +597,7 @@ target_link_libraries(projection_from_10node_tet_atom
 )
 
 add_test(
-  projection_from_10node_tet_atom ${MPI_RUN} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/projection_from_10node_tet_atom -my_file sphere.h5m
+  projection_from_10node_tet_atom ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/projection_from_10node_tet_atom -my_file sphere.h5m
 )
 add_test(projection_from_10node_tet_atom_compare ${CMAKE_COMMAND} -E compare_files
   ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/10node_sphere.txt
@@ -623,7 +622,7 @@ if(TETGEN_LIBRARY)
     add_dependencies(tetgen_interface tetgen)
   endif(WITH_TETGEN)
 
-  add_test(tetgen_interface_atom ${MPI_RUN} -np 1
+  add_test(tetgen_interface_atom ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
     ${CMAKE_CURRENT_BINARY_DIR}/tetgen_interface -my_file Tinterface.h5m
   )
 endif(TETGEN_LIBRARY)
@@ -654,7 +653,7 @@ target_link_libraries(node_merge
 )
 
 cm_export_file("../meshes/node_merge_test.h5m" export_atom_tests)
-add_test(node_merge ${MPI_RUN} -np 1
+add_test(node_merge ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/node_merge -my_file node_merge_test.h5m
 )
 
@@ -670,7 +669,7 @@ target_link_libraries(prisms_elements_from_surface
   ${PROJECT_LIBS}
 )
 cm_export_file("../meshes/rectangle_surface_mesh.cub" export_atom_tests)
-add_test(prisms_elements_from_surface ${MPI_RUN} -np 1
+add_test(prisms_elements_from_surface ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/prisms_elements_from_surface -my_file rectangle_surface_mesh.cub
 )
 
@@ -685,7 +684,7 @@ target_link_libraries(partition_mesh
   mofem_third_party
   ${PROJECT_LIBS}
 )
-add_test(partition_mesh ${MPI_RUN} -np 1
+add_test(partition_mesh ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/partition_mesh -my_file disp01.h5m
 )
 
@@ -716,7 +715,7 @@ list(INSERT testing_base_list
 )
 foreach(test_base ${testing_base_list})
   add_test(testing_base_functions_${test_base}
-    ${MPI_RUN} -np 1
+    ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
     ${CMAKE_CURRENT_BINARY_DIR}/testing_base_functions -base ${test_base}
   )
 endforeach(test_base IN testing_base_list)
@@ -728,7 +727,7 @@ if(ADOL-C_LIBRARY)
     add_dependencies(adol-c_atom adolc)
   endif(WITH_ADOL-C)
   add_test(
-    adol-c_atom_test ${MPI_RUN} -np 1
+    adol-c_atom_test ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
     ${CMAKE_CURRENT_BINARY_DIR}/adol-c_atom
   )
 endif(ADOL-C_LIBRARY)
