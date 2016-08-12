@@ -508,8 +508,8 @@ PetscErrorCode Normal_hierarchical(
   diffX_x = diffX_x_node;diffX_y = diffX_y_node;diffX_z = diffX_z_node;
   diffY_x = diffY_x_node;diffY_y = diffY_y_node;diffY_z = diffY_z_node;
   if(dofs_face!=NULL ||idofs_face!=NULL) {
-    int nb_dofs_face = NBFACETRI_H1_AINSWORTH_COLE(order);
-    int nb_dofs_approx_face = NBFACETRI_H1_AINSWORTH_COLE(order_approx);
+    int nb_dofs_face = NBFACETRI_H1(order);
+    int nb_dofs_approx_face = NBFACETRI_H1(order_approx);
     if(nb_dofs_face>0) {
       if(dofs_face!=NULL) {
         diffX_x += cblas_ddot(nb_dofs_face,&dofs_face[0],3,&diffN_face[gg*2*nb_dofs_approx_face+0],2);
@@ -532,8 +532,8 @@ PetscErrorCode Normal_hierarchical(
   ee = 0;
   if(dofs_edge!=NULL || idofs_edge!=NULL) {
     for(;ee<3;ee++) {
-      int nb_dofs_edge = NBEDGE_H1_AINSWORTH_COLE(order_edge[ee]);
-      int nb_dofs_approx_edge = NBEDGE_H1_AINSWORTH_COLE(order_edge_approx[ee]);
+      int nb_dofs_edge = NBEDGE_H1(order_edge[ee]);
+      int nb_dofs_approx_edge = NBEDGE_H1(order_edge_approx[ee]);
       if(nb_dofs_edge>0) {
         if(dofs_edge!=NULL) {
           if(dofs_edge[ee]!=NULL) {

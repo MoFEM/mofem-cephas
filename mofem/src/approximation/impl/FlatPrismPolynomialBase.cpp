@@ -236,7 +236,7 @@ PetscErrorCode FlatPrismPolynomialBase::getValueH1(ublas::matrix<double> &pts) {
       }
       sense[ee] = data.dataOnEntities[MBEDGE][ee].getSense();
       order[ee] = data.dataOnEntities[MBEDGE][ee].getDataOrder();
-      int nb_dofs = NBEDGE_H1_AINSWORTH_COLE(data.dataOnEntities[MBEDGE][ee].getDataOrder());
+      int nb_dofs = NBEDGE_H1(data.dataOnEntities[MBEDGE][ee].getDataOrder());
       data.dataOnEntities[MBEDGE][ee].getN(base).resize(nb_gauss_pts,nb_dofs,false);
       data.dataOnEntities[MBEDGE][ee].getDiffN(base).resize(nb_gauss_pts,2*nb_dofs,false);
       H1edgeN[ee] = &*data.dataOnEntities[MBEDGE][ee].getN(base).data().begin();
@@ -270,7 +270,7 @@ PetscErrorCode FlatPrismPolynomialBase::getValueH1(ublas::matrix<double> &pts) {
   }
   if((data.spacesOnEntities[MBTRI]).test(H1)) {
     for(int ff = 3;ff<=4;ff++) {
-      int nb_dofs = NBFACETRI_H1_AINSWORTH_COLE(data.dataOnEntities[MBTRI][ff].getDataOrder());
+      int nb_dofs = NBFACETRI_H1(data.dataOnEntities[MBTRI][ff].getDataOrder());
       data.dataOnEntities[MBTRI][ff].getN(base).resize(nb_gauss_pts,nb_dofs,false);
       data.dataOnEntities[MBTRI][ff].getDiffN(base).resize(nb_gauss_pts,2*nb_dofs,false);
       ierr = H1_FaceShapeFunctions_MBTRI(
