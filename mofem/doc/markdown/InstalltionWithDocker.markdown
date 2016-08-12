@@ -6,7 +6,7 @@ the distribution of pre-compiled libraries for the Docker platform that can
 then run on any system. The Docker platform works by using facilities provided
 by the Linux kernel to provide lightweight containers and thereby avoiding the
 need to run costly virtual machines. It’s through the use of containers that
-MoFEM is compiled and ran.
+MoFEM is compiled and run.
 
 In Mac OS X a lightweight Linux distribution is virtualized to run the Docker
 containers in.
@@ -31,6 +31,7 @@ Next step of installation is to configure and compile MoFEM. First command creat
 contains *mofem_build volume*. Volume in container will be shared between other
 containers and docker *work* runs.
 ~~~~~~
+cd mofem-cephas
 docker build -t mofem_build:v0.1 --force-rm=true --file=Dockerfile-build $HOME/mofem-cephas
 docker run --name mofem_build mofem_build:v0.1 /bin/bash
 ~~~~~~
@@ -47,20 +48,21 @@ Installation is at that point finished. Now you can run docker container and
 run some code.
 
 You can start the *work container*, container mount *mofem build volume* from container which
-has been in previous step
-~~~~~~
-docker run \
---rm=true -it \
---volumes-from mofem_build  \
--v $HOME/mofem-cephas/mofem:/mofem \
--v $HOME:$HOME \
--e HOSTHOME=$HOME \
-likask/ubuntu_mofem:latest /bin/bash
-~~~~~~
-After execution of above command you working inside docker, this is isolated system
-hosed by your operating system, f.e. MacOSX, Linux or Windows.
+has been created in the previous step
 
-The *work container* mount *mofem source directory* into *mofem* directory and
+    docker run \
+    --rm=true -it \
+    --volumes-from mofem_build  \
+    -v $HOME/mofem-cephas/mofem:/mofem \
+    -v $HOME:$HOME \
+    -e HOSTHOME=$HOME \
+    likask/ubuntu_mofem:latest /bin/bash
+
+After execution of above command you are working inside docker, this is isolated system
+hosted by your OS (MacOSX, Linux or Windows). You can run several containers
+like this at once. 
+
+The *work container* mounts *mofem source directory* into *mofem* directory and
 your home directory.
 
 Running docker is set-up as follows:
@@ -85,5 +87,5 @@ VTK output file save results to HOME directory of your host system.
 Note that working with docker you can work with several versions of MoFEM at once,
 keep old versions locally or upload them int docker hub (https://hub.docker.com)
 
-Any problems pleas with this installation pleas contact us by cmatgu@googlegroups.com
+Any problems with this installation, please contact us by cmatgu@googlegroups.com
 or on Slack https://mofem.slack.com/.
