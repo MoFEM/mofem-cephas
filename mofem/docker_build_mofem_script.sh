@@ -20,8 +20,8 @@ echo "Configure"
   -DCMAKE_INSTALL_PREFIX=$MOFEM_INSTALL_DIR $MOFEM_SRC_DIR
 echo "Build"
 make install
-make clean
 ctest --output-on-failure
+make clean
 
 echo "Configure users modules"
 cd $MOFEM_INSTALL_DIR
@@ -30,4 +30,5 @@ echo "Build users modules"
 cd $MOFEM_INSTALL_DIR/basic_finite_elements/atom_tests
 make
 ctest --output-on-failure
+make clean
 echo "All done"

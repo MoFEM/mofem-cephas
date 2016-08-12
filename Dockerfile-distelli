@@ -61,5 +61,5 @@ $MOFEM_SRC_DIR \
 && $CMAKE -DCMAKE_CXX_FLAGS="-Wall" users_modules \
 && cd $MOFEM_INSTALL_DIR/basic_finite_elements/atom_tests \
 && make \
-&& $CTEST --output-on-failure
+&& $CTEST --output-on-failure \
 && make clean
