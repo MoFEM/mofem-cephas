@@ -46,8 +46,8 @@ documentation in https://docs.docker.com/engine/userguide/
 Installation is at that point done, now you can run docker container and
 run some code.
 
-You can start the *work container*, container mount *mofem build volume* from container which
-has been created in the previous step
+To run code a *work container* need to be started, container mount *mofem build
+volume* from container which has been created in the previous step
 
     docker run \
     --rm=true -it \
@@ -55,11 +55,11 @@ has been created in the previous step
     -v $HOME/mofem-cephas/mofem:/mofem \
     -v $HOME:$HOME \
     -e HOSTHOME=$HOME \
-    likask/ubuntu_mofem:latest /bin/bash
+    mofem_build:v0.1 /bin/bash
 
-After execution of above command you are working inside docker, this is isolated system
-hosted by your OS (MacOSX, Linux or Windows). You can run several containers
-like this at once by executing above command in available terminal.
+After execution of above command you are working inside docker, this is isolated
+system hosted by your OS (MacOSX, Linux or Windows). You can run several
+containers like this at once by executing above command in available terminal.
 
 The *work container* mounts *mofem source directory* into *mofem* directory and
 your home directory.

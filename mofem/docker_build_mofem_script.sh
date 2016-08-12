@@ -10,10 +10,11 @@ cd $MOFEM_BUILD_DIR
 
 # Determine number of cores to compile code
 
-NBCORES=`cat /proc/cpuinfo | grep processor | wc -l`
-NBMAX=12
-if (($NBCORES > $NBMAX)); then
-  NB=$NBMAX
+NBCORES=$(cat /proc/cpuinfo | grep processor | wc -l)
+NB_MAX=12
+
+if (($NBCORES > $NB_MAX)); then
+  NB=$NB_MAX
 else
   NB=$NBCORES
 fi
