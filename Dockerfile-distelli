@@ -55,9 +55,11 @@ RUN mkdir -p $MOFEM_BUILD_DIR \
 $MOFEM_SRC_DIR \
 && cd $MOFEM_BUILD_DIR \
 && make install \
+&& make clean \
 && $CTEST --output-on-failure \
 && cd $MOFEM_INSTALL_DIR  \
 && $CMAKE -DCMAKE_CXX_FLAGS="-Wall" users_modules \
 && cd $MOFEM_INSTALL_DIR/basic_finite_elements/atom_tests \
 && make \
 && $CTEST --output-on-failure
+&& make clean
