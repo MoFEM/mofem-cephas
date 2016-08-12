@@ -31,6 +31,7 @@ pipelines:
           - echo "Build"
           - make install
           - ctest --output-on-failure
+          - make clean
           - echo "Configure users modules"
           - cd $MOFEM_INSTALL_DIR
           -
@@ -43,4 +44,5 @@ pipelines:
           - cd $MOFEM_INSTALL_DIR/basic_finite_elements/atom_tests
           - make
           - ctest --output-on-failure
+          - make clean
           - echo "All done"

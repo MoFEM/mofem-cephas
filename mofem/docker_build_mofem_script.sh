@@ -20,6 +20,7 @@ echo "Configure"
   -DCMAKE_INSTALL_PREFIX=$MOFEM_INSTALL_DIR $MOFEM_SRC_DIR
 echo "Build"
 make install
+make clean
 ctest --output-on-failure
 
 echo "Configure users modules"
