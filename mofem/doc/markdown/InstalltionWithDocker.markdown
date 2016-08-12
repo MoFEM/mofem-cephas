@@ -29,7 +29,7 @@ git clone https://bitbucket.org/likask/mofem-cephas.git
 Next step of installation is to configure and compile MoFEM. First command creates
 *mofem build image*. Second command creates *mofem build container* which
 contains *mofem_build volume*. Volume in container will be shared between other
-containers and docker *work* runs.
+containers were MoFEM is compiled and run;
 ~~~~~~
 docker build -t mofem_build:v0.1 --force-rm=true --file=Dockerfile-build $HOME/mofem-cephas
 docker run --name mofem_build mofem_build:v0.1 /bin/bash
@@ -43,7 +43,7 @@ documentation in https://docs.docker.com/engine/userguide/
 
 ##Running docker container
 
-Installation is at that point finished. Now you can run docker container and
+Installation is at that point done, now you can run docker container and
 run some code.
 
 You can start the *work container*, container mount *mofem build volume* from container which
@@ -64,12 +64,12 @@ like this at once by executing above command in available terminal.
 The *work container* mounts *mofem source directory* into *mofem* directory and
 your home directory.
 
-Running docker is set-up as follows:
+MoFEM docker container mount volumes as follows as follows:
 - Changes in root direct make only effect for running this container.
 - Changes in directory *mofem_build* are shared between other docker containers.
 - Changes in home directory in container or host system are shared.
 
-For example we can run make and run linear elasticity example,
+In container new we can compile linear elastic example and calculate simple problem
 ~~~~~~
 cd /mofem_build/um/basic_finite_elements/elasticity
 make
