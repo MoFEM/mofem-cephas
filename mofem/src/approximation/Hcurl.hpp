@@ -45,7 +45,7 @@ PetscErrorCode Hcurl_BubbleFaceFunctions_MBTET(
 
 On each face we have P*(P-1)/2 and are 4 faces on Tetrahedral.
 
-See NBFACEVOLUMETET_FACE_HCURL
+See NBVOLUMETET_FACE_HCURL
 
 */
 PetscErrorCode Hcurl_FaceInteriorFunctions_MBTET(
@@ -57,7 +57,7 @@ PetscErrorCode Hcurl_FaceInteriorFunctions_MBTET(
 
 On volume have (P-3)*(P-2)*(P-1)/2.
 
-See NBFACEVOLUMETET_TET_HCURL
+See NBVOLUMETET_TET_HCURL
 
 */
 PetscErrorCode Hcurl_VolumeInteriorFunctions_MBTET(
