@@ -37,6 +37,26 @@ PetscErrorCode Hcurl_BubbleFaceFunctions_MBTET(
   PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
 );
 
+/** \brief Face base interior function
+
+On each face we have P*(P-1)/2 and are 4 faces on Tetrahedral.
+
+*/
+PetscErrorCode Hcurl_FaceInteriorFunctions_MBTET(
+  int *faces_nodes,int *p,double *N,double *diffN,double *phi_f[4],double *diff_phi_f[4],int GDIM,
+  PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
+);
+
+/** \brief Volume interior function
+
+On volume have (P-3)*(P-2)*(P-1)/2.
+
+*/
+PetscErrorCode Hcurl_VolumeInteriorFunctions_MBTET(
+  int *faces_nodes,int *p,double *N,double *diffN,double *phi_f[4],double *diff_phi_f[4],int GDIM,
+  PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
+);
+
 
 
 }

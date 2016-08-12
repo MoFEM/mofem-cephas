@@ -48,6 +48,8 @@ extern "C" {
 #define NBFACETRI_EDGE_HCURL_AINSWORTH_COLE(P) ((P>1) ? P-1 : 0)
 #define NBFACETRI_FACE_HCURL_AINSWORTH_COLE(P) ((P>2) ? (P-1)*(P-2) : 0)
 #define NBFACETRI_HCURL_AINSWORTH_COLE(P) ((P>1) ? (P-1)*(P+1) : 0)
+#define NBFACEVOLUMETET_FACE_HCURL_AINSWORTH_COLE(P) ((P>2) ? (2*(P-1)*(P-2)) : 0)
+#define NBFACEVOLUMETET_TET_HCURL_AINSWORTH_COLE(P) ((P>3) ? ((P-3)*(P-2)*(P-1)/2) : 0)
 #define NBVOLUMETET_HCURL_AINSWORTH_COLE(P) ((P>2) ? (P-2)*(P-1)*(P+1)/2 : 0)
 
 // H div
