@@ -327,16 +327,29 @@ int main(int argc, char *argv[]) {
   ierr = DMoFEMMeshToLocalVector(dm,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   ierr = MatZeroEntries(Aij); CHKERRQ(ierr);
 
+  bool flag_cubit_disp = false;
+  for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,NODESET|DISPLACEMENTSET,it)) {
+    flag_cubit_disp = true;
+  }
+
   //assemble Aij and F
-  DisplacementBCFEMethodPreAndPostProc dirichlet_bc(m_field,"DISPLACEMENT",Aij,D0,F);
-  dirichlet_bc.snes_ctx = FEMethod::CTX_SNESNONE;
-  dirichlet_bc.ts_ctx = FEMethod::CTX_TSNONE;
+  boost::shared_ptr<FEMethod> dirihlet_bc_ptr;
+  // if normally defined boundary conditions are not found, try to use DISPLACEMENT blockset
+  if(!flag_cubit_disp){
+    dirihlet_bc_ptr = boost::shared_ptr<FEMethod>(new DirichletBCFromBlockSetFEMethodPreAndPostProcWithFlags(m_field,"DISPLACEMENT","DISPLACEMENT",Aij,D0,F));
+  } else {
+    dirihlet_bc_ptr = boost::shared_ptr<FEMethod>(new DisplacementBCFEMethodPreAndPostProc(m_field,"DISPLACEMENT",Aij,D0,F));
+  }
+
+
+  dirihlet_bc_ptr->snes_ctx = FEMethod::CTX_SNESNONE;
+  dirihlet_bc_ptr->ts_ctx = FEMethod::CTX_TSNONE;
 
   ierr = VecZeroEntries(D0); CHKERRQ(ierr);
   ierr = VecGhostUpdateBegin(D0,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(D0,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = DMoFEMMeshToLocalVector(dm,D0,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-  ierr = DMoFEMPreProcessFiniteElements(dm,&dirichlet_bc); CHKERRQ(ierr);
+  ierr = DMoFEMPreProcessFiniteElements(dm,dirihlet_bc_ptr.get()); CHKERRQ(ierr);
   ierr = DMoFEMMeshToLocalVector(dm,D0,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   //ierr = VecView(D0,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
 
@@ -386,7 +399,7 @@ int main(int argc, char *argv[]) {
   ierr = DMoFEMLoopFiniteElements(dm,"FLUID_PRESSURE_FE",&fluid_pressure_fe.getLoopFe()); CHKERRQ(ierr);
 
   //postproc
-  ierr = DMoFEMPostProcessFiniteElements(dm,&dirichlet_bc); CHKERRQ(ierr);
+  ierr = DMoFEMPostProcessFiniteElements(dm,dirihlet_bc_ptr.get()); CHKERRQ(ierr);
 
   //Matrix View
   //MatView(Aij,PETSC_VIEWER_STDOUT_WORLD);
@@ -435,7 +448,7 @@ int main(int argc, char *argv[]) {
   ierr = post_proc.addFieldValuesGradientPostProc("DISPLACEMENT"); CHKERRQ(ierr);
   //add postpocessing for sresses
   post_proc.getOpPtrVector().push_back(
-	  new PostPorcHookStress(
+    new PostPorcHookStress(
 	    m_field,
 	    post_proc.postProcMesh,
 	    post_proc.mapGaussPts,
@@ -474,9 +487,9 @@ int main(int argc, char *argv[]) {
         ierr = VecScale(F_thermal,-1); CHKERRQ(ierr); //check this !!!
         ierr = VecAXPY(F_thermal,1,F); CHKERRQ(ierr);
 
-        dirichlet_bc.snes_x = D;
-        dirichlet_bc.snes_f = F_thermal;
-        ierr = DMoFEMPostProcessFiniteElements(dm,&dirichlet_bc); CHKERRQ(ierr);
+        dirihlet_bc_ptr->snes_x = D;
+        dirihlet_bc_ptr->snes_f = F_thermal;
+        ierr = DMoFEMPostProcessFiniteElements(dm,dirihlet_bc_ptr.get()); CHKERRQ(ierr);
 
         ierr = KSPSolve(solver,F_thermal,D); CHKERRQ(ierr);
         ierr = VecAXPY(D,1.,D0); CHKERRQ(ierr);
@@ -485,7 +498,7 @@ int main(int argc, char *argv[]) {
 
         //Save data on mesh
         ierr = DMoFEMMeshToLocalVector(dm,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-        ierr = DMoFEMPreProcessFiniteElements(dm,&dirichlet_bc); CHKERRQ(ierr);
+        ierr = DMoFEMPreProcessFiniteElements(dm,dirihlet_bc_ptr.get()); CHKERRQ(ierr);
         ierr = DMoFEMLoopFiniteElements(dm,"ELASTIC",&post_proc); CHKERRQ(ierr);
         std::ostringstream o1;
         o1 << "out_" << sit->step_number << ".h5m";
@@ -510,9 +523,9 @@ int main(int argc, char *argv[]) {
       ierr = VecScale(F_thermal,-1); CHKERRQ(ierr);  // check this !!!
       ierr = VecAXPY(F_thermal,1,F); CHKERRQ(ierr);
 
-      dirichlet_bc.snes_x = D;
-      dirichlet_bc.snes_f = F_thermal;
-      ierr = DMoFEMPostProcessFiniteElements(dm,&dirichlet_bc); CHKERRQ(ierr);
+      dirihlet_bc_ptr->snes_x = D;
+      dirihlet_bc_ptr->snes_f = F_thermal;
+      ierr = DMoFEMPostProcessFiniteElements(dm,dirihlet_bc_ptr.get()); CHKERRQ(ierr);
 
       ierr = KSPSolve(solver,F_thermal,D); CHKERRQ(ierr);
       ierr = VecAXPY(D,1.,D0); CHKERRQ(ierr);
