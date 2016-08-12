@@ -275,7 +275,7 @@ PetscErrorCode FatPrismPolynomialBase::getValueH1(ublas::matrix<double> &pts) {
         // through thickness ho approximation
         // linear xi,eta, ho terms for zeta
         int order = cTx->dataTroughThickness.dataOnEntities[MBEDGE][ee].getDataOrder();
-        int nb_dofs = NBEDGE_H1_AINSWORTH_COLE(order);
+        int nb_dofs = NBEDGE_H1(order);
         if((unsigned int)nb_dofs!=cTx->dataTroughThickness.dataOnEntities[MBEDGE][ee].getN(base).size2()) {
           SETERRQ2(
             PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"nb_dofs != nb_dofs %d != %d",
@@ -423,8 +423,8 @@ PetscErrorCode FatPrismPolynomialBase::getValueH1(ublas::matrix<double> &pts) {
         }
         int order = data.dataOnEntities[MBQUAD][siit->get()->side_number].getDataOrder();
         quad_order[siit->get()->side_number] = order;
-        data.dataOnEntities[MBQUAD][siit->get()->side_number].getN(base).resize(nb_gauss_pts,NBFACEQUAD_H1_AINSWORTH_COLE(order),false);
-        data.dataOnEntities[MBQUAD][siit->get()->side_number].getDiffN(base).resize(nb_gauss_pts,3*NBFACEQUAD_H1_AINSWORTH_COLE(order),false);
+        data.dataOnEntities[MBQUAD][siit->get()->side_number].getN(base).resize(nb_gauss_pts,NBFACEQUAD_H1(order),false);
+        data.dataOnEntities[MBQUAD][siit->get()->side_number].getDiffN(base).resize(nb_gauss_pts,3*NBFACEQUAD_H1(order),false);
         if(data.dataOnEntities[MBQUAD][siit->get()->side_number].getN(base).size2()>0) {
           quad_n[siit->get()->side_number] = &*data.dataOnEntities[MBQUAD][siit->get()->side_number].getN(base).data().begin();
           diff_quad_n[siit->get()->side_number] = &*data.dataOnEntities[MBQUAD][siit->get()->side_number].getDiffN(base).data().begin();
@@ -446,9 +446,9 @@ PetscErrorCode FatPrismPolynomialBase::getValueH1(ublas::matrix<double> &pts) {
       int order = data.dataOnEntities[MBPRISM][0].getDataOrder();
       double *vertex_n  = &data.dataOnEntities[MBVERTEX][0].getN(base)(0,0);
       double *diff_vertex_n = &data.dataOnEntities[MBVERTEX][0].getDiffN(base)(0,0);
-      data.dataOnEntities[MBPRISM][0].getN(base).resize(nb_gauss_pts,NBVOLUMEPRISM_H1_AINSWORTH_COLE(order),false);
-      data.dataOnEntities[MBPRISM][0].getDiffN(base).resize(nb_gauss_pts,3*NBVOLUMEPRISM_H1_AINSWORTH_COLE(order),false);
-      if(NBVOLUMEPRISM_H1_AINSWORTH_COLE(order)>0) {
+      data.dataOnEntities[MBPRISM][0].getN(base).resize(nb_gauss_pts,NBVOLUMEPRISM_H1(order),false);
+      data.dataOnEntities[MBPRISM][0].getDiffN(base).resize(nb_gauss_pts,3*NBVOLUMEPRISM_H1(order),false);
+      if(NBVOLUMEPRISM_H1(order)>0) {
         ierr = H1_VolumeShapeFunctions_MBPRISM(
           order,
           vertex_n,

@@ -40,6 +40,7 @@ if(ADOL-C_LIBRARY)
     ftensor_and_adolc_tapeless_test
     ${PROJECT_SOURCE_DIR}/src/ftensor/tests/ftensor_and_adolc_tapeless.cpp
   )
+  add_dependencies(ftensor_and_adolc_tapeless_test adolc)
   target_link_libraries(ftensor_and_adolc_tapeless_test ${ADOL-C_LIBRARY})
   add_test(
     ftensor_adloc_tapeless_test ${CMAKE_CURRENT_BINARY_DIR}/ftensor_and_adolc_tapeless_test
@@ -49,6 +50,7 @@ if(ADOL-C_LIBRARY)
     ftensor_and_adolc_test
     ${PROJECT_SOURCE_DIR}/src/ftensor/tests/ftensor_and_adolc.cpp
   )
+  add_dependencies(ftensor_and_adolc_test adolc)
   target_link_libraries(ftensor_and_adolc_test ${ADOL-C_LIBRARY})
   add_test(
     ftensor_adloc_test ${CMAKE_CURRENT_BINARY_DIR}/ftensor_and_adolc_test

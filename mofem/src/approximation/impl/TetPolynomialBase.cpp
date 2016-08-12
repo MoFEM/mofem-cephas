@@ -89,7 +89,7 @@ PetscErrorCode TetPolynomialBase::getValueH1(ublas::matrix<double> &pts) {
       }
       _sense_[ee] = data.dataOnEntities[MBEDGE][ee].getSense();
       _order_[ee] = data.dataOnEntities[MBEDGE][ee].getDataOrder();
-      int nb_dofs = NBEDGE_H1_AINSWORTH_COLE(data.dataOnEntities[MBEDGE][ee].getDataOrder());
+      int nb_dofs = NBEDGE_H1(data.dataOnEntities[MBEDGE][ee].getDataOrder());
       data.dataOnEntities[MBEDGE][ee].getN(base).resize(nb_gauss_pts,nb_dofs,false);
       data.dataOnEntities[MBEDGE][ee].getDiffN(base).resize(nb_gauss_pts,3*nb_dofs,false);
       _H1edgeN_[ee] = &*data.dataOnEntities[MBEDGE][ee].getN(base).data().begin();
@@ -114,7 +114,7 @@ PetscErrorCode TetPolynomialBase::getValueH1(ublas::matrix<double> &pts) {
       if(data.dataOnEntities[MBTRI][ff].getSense() == 0) {
         SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
       }
-      int nb_dofs = NBFACETRI_H1_AINSWORTH_COLE(data.dataOnEntities[MBTRI][ff].getDataOrder());
+      int nb_dofs = NBFACETRI_H1(data.dataOnEntities[MBTRI][ff].getDataOrder());
       _order_[ff] = data.dataOnEntities[MBTRI][ff].getDataOrder();
       data.dataOnEntities[MBTRI][ff].getN(base).resize(nb_gauss_pts,nb_dofs,false);
       data.dataOnEntities[MBTRI][ff].getDiffN(base).resize(nb_gauss_pts,3*nb_dofs,false);
@@ -148,7 +148,7 @@ PetscErrorCode TetPolynomialBase::getValueH1(ublas::matrix<double> &pts) {
 
     //volume
     int order = data.dataOnEntities[MBTET][0].getDataOrder();
-    int nb_vol_dofs = NBVOLUMETET_H1_AINSWORTH_COLE(order);
+    int nb_vol_dofs = NBVOLUMETET_H1(order);
     data.dataOnEntities[MBTET][0].getN(base).resize(nb_gauss_pts,nb_vol_dofs,false);
     data.dataOnEntities[MBTET][0].getDiffN(base).resize(nb_gauss_pts,3*nb_vol_dofs,false);
     ierr = H1_VolumeShapeFunctions_MBTET(
@@ -181,10 +181,10 @@ PetscErrorCode TetPolynomialBase::getValueL2(
   int nb_gauss_pts = pts.size2();
 
   data.dataOnEntities[MBTET][0].getN(base).resize(
-    nb_gauss_pts,NBVOLUMETET_L2_AINSWORTH_COLE(data.dataOnEntities[MBTET][0].getDataOrder()),false
+    nb_gauss_pts,NBVOLUMETET_L2(data.dataOnEntities[MBTET][0].getDataOrder()),false
   );
   data.dataOnEntities[MBTET][0].getDiffN(base).resize(
-    nb_gauss_pts,3*NBVOLUMETET_L2_AINSWORTH_COLE(data.dataOnEntities[MBTET][0].getDataOrder()),false
+    nb_gauss_pts,3*NBVOLUMETET_L2(data.dataOnEntities[MBTET][0].getDataOrder()),false
   );
 
   ierr = L2_ShapeFunctions_MBTET(
@@ -235,13 +235,13 @@ PetscErrorCode TetPolynomialBase::getValueHdiv(
     faces_order[ff] = data.dataOnEntities[MBTRI][ff].getDataOrder();
     //three edges on face
     for(int ee = 0;ee<3;ee++) {
-      N_face_edge(ff,ee).resize(nb_gauss_pts,3*NBFACETRI_EDGE_HDIV_AINSWORTH_COLE(faces_order[ff]),false);
-      diffN_face_edge(ff,ee).resize(nb_gauss_pts,9*NBFACETRI_EDGE_HDIV_AINSWORTH_COLE(faces_order[ff]),false);
+      N_face_edge(ff,ee).resize(nb_gauss_pts,3*NBFACETRI_EDGE_HDIV(faces_order[ff]),false);
+      diffN_face_edge(ff,ee).resize(nb_gauss_pts,9*NBFACETRI_EDGE_HDIV(faces_order[ff]),false);
       phi_f_e[ff][ee] = &((N_face_edge(ff,ee))(0,0));
       diff_phi_f_e[ff][ee] = &((diffN_face_edge(ff,ee))(0,0));
     }
-    N_face_bubble[ff].resize(nb_gauss_pts,3*NBFACETRI_FACE_HDIV_AINSWORTH_COLE(faces_order[ff]),false);
-    diffN_face_bubble[ff].resize(nb_gauss_pts,9*NBFACETRI_FACE_HDIV_AINSWORTH_COLE(faces_order[ff]),false);
+    N_face_bubble[ff].resize(nb_gauss_pts,3*NBFACETRI_FACE_HDIV(faces_order[ff]),false);
+    diffN_face_bubble[ff].resize(nb_gauss_pts,9*NBFACETRI_FACE_HDIV(faces_order[ff]),false);
     phi_f[ff] = &*(N_face_bubble[ff].data().begin());
     diff_phi_f[ff] = &*(diffN_face_bubble[ff].data().begin());
   }
@@ -277,8 +277,8 @@ PetscErrorCode TetPolynomialBase::getValueHdiv(
   N_volume_edge.resize(6,false);
   diffN_volume_edge.resize(6,false);
   for(int ee = 0;ee<6;ee++) {
-    N_volume_edge[ee].resize(nb_gauss_pts,3*NBVOLUMETET_EDGE_HDIV_AINSWORTH_COLE(volume_order),false);
-    diffN_volume_edge[ee].resize(nb_gauss_pts,9*NBVOLUMETET_EDGE_HDIV_AINSWORTH_COLE(volume_order),false);
+    N_volume_edge[ee].resize(nb_gauss_pts,3*NBVOLUMETET_EDGE_HDIV(volume_order),false);
+    diffN_volume_edge[ee].resize(nb_gauss_pts,9*NBVOLUMETET_EDGE_HDIV(volume_order),false);
     phi_v_e[ee] = &*(N_volume_edge[ee].data().begin());
     diff_phi_v_e[ee] = &*(diffN_volume_edge[ee].data().begin());
   }
@@ -292,8 +292,8 @@ PetscErrorCode TetPolynomialBase::getValueHdiv(
   N_volume_face.resize(4,false);
   diffN_volume_face.resize(4,false);
   for(int ff = 0;ff<4;ff++) {
-    N_volume_face[ff].resize(nb_gauss_pts,3*NBVOLUMETET_FACE_HDIV_AINSWORTH_COLE(volume_order),false);
-    diffN_volume_face[ff].resize(nb_gauss_pts,9*NBVOLUMETET_FACE_HDIV_AINSWORTH_COLE(volume_order),false);
+    N_volume_face[ff].resize(nb_gauss_pts,3*NBVOLUMETET_FACE_HDIV(volume_order),false);
+    diffN_volume_face[ff].resize(nb_gauss_pts,9*NBVOLUMETET_FACE_HDIV(volume_order),false);
     phi_v_f[ff] = &*(N_volume_face[ff].data().begin());
     diff_phi_v_f[ff] = &*(diffN_volume_face[ff].data().begin());
   }
@@ -304,8 +304,8 @@ PetscErrorCode TetPolynomialBase::getValueHdiv(
     base_polynomials
   ); CHKERRQ(ierr);
 
-  N_volume_bubble.resize(nb_gauss_pts,3*NBVOLUMETET_VOLUME_HDIV_AINSWORTH_COLE(volume_order),false);
-  diffN_volume_bubble.resize(nb_gauss_pts,9*NBVOLUMETET_VOLUME_HDIV_AINSWORTH_COLE(volume_order),false);
+  N_volume_bubble.resize(nb_gauss_pts,3*NBVOLUMETET_VOLUME_HDIV(volume_order),false);
+  diffN_volume_bubble.resize(nb_gauss_pts,9*NBVOLUMETET_VOLUME_HDIV(volume_order),false);
   phi_v = &*(N_volume_bubble.data().begin());
   diff_phi_v = &*(diffN_volume_bubble.data().begin());
   ierr = Hdiv_VolumeBubbleShapeFunctions_MBTET(
@@ -325,32 +325,32 @@ PetscErrorCode TetPolynomialBase::getValueHdiv(
     SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
   }
   for(int ff = 0;ff<4;ff++) {
-    data.dataOnEntities[MBTRI][ff].getHdivN(base).resize(nb_gauss_pts,3*NBFACETRI_HDIV_AINSWORTH_COLE(faces_order[ff]),false);
-    data.dataOnEntities[MBTRI][ff].getDiffHdivN(base).resize(nb_gauss_pts,9*NBFACETRI_HDIV_AINSWORTH_COLE(faces_order[ff]),false);
+    data.dataOnEntities[MBTRI][ff].getHdivN(base).resize(nb_gauss_pts,3*NBFACETRI_HDIV(faces_order[ff]),false);
+    data.dataOnEntities[MBTRI][ff].getDiffHdivN(base).resize(nb_gauss_pts,9*NBFACETRI_HDIV(faces_order[ff]),false);
     int col = 0,diff_col = 0;
     for(int oo = 0;oo<faces_order[ff];oo++) {
       for(int ee = 0;ee<3;ee++) {
         //values
-        for(int dd = 3*NBFACETRI_EDGE_HDIV_AINSWORTH_COLE(oo);dd<3*NBFACETRI_EDGE_HDIV_AINSWORTH_COLE(oo+1);dd++,col++) {
+        for(int dd = 3*NBFACETRI_EDGE_HDIV(oo);dd<3*NBFACETRI_EDGE_HDIV(oo+1);dd++,col++) {
           for(int gg = 0;gg!=nb_gauss_pts;gg++) {
             data.dataOnEntities[MBTRI][ff].getHdivN(base)(gg,col) = N_face_edge(ff,ee)(gg,dd);
           }
         }
         //derivatives
-        for(int dd = 9*NBFACETRI_EDGE_HDIV_AINSWORTH_COLE(oo);dd<9*NBFACETRI_EDGE_HDIV_AINSWORTH_COLE(oo+1);dd++,diff_col++) {
+        for(int dd = 9*NBFACETRI_EDGE_HDIV(oo);dd<9*NBFACETRI_EDGE_HDIV(oo+1);dd++,diff_col++) {
           for(int gg = 0;gg!=nb_gauss_pts;gg++) {
             data.dataOnEntities[MBTRI][ff].getDiffHdivN(base)(gg,diff_col) = diffN_face_edge(ff,ee)(gg,dd);
           }
         }
       }
       //values
-      for(int dd = 3*NBFACETRI_FACE_HDIV_AINSWORTH_COLE(oo);dd<3*NBFACETRI_FACE_HDIV_AINSWORTH_COLE(oo+1);dd++,col++) {
+      for(int dd = 3*NBFACETRI_FACE_HDIV(oo);dd<3*NBFACETRI_FACE_HDIV(oo+1);dd++,col++) {
         for(int gg = 0;gg!=nb_gauss_pts;gg++) {
           data.dataOnEntities[MBTRI][ff].getHdivN(base)(gg,col) = N_face_bubble[ff](gg,dd);
         }
       }
       //derivatives
-      for(int dd = 9*NBFACETRI_FACE_HDIV_AINSWORTH_COLE(oo);dd<9*NBFACETRI_FACE_HDIV_AINSWORTH_COLE(oo+1);dd++,diff_col++) {
+      for(int dd = 9*NBFACETRI_FACE_HDIV(oo);dd<9*NBFACETRI_FACE_HDIV(oo+1);dd++,diff_col++) {
         for(int gg = 0;gg!=nb_gauss_pts;gg++) {
           data.dataOnEntities[MBTRI][ff].getDiffHdivN(base)(gg,diff_col) = diffN_face_bubble[ff](gg,dd);
         }
@@ -360,18 +360,18 @@ PetscErrorCode TetPolynomialBase::getValueHdiv(
 
   //volume
   int col = 0,diff_col = 0;
-  data.dataOnEntities[MBTET][0].getHdivN(base).resize(nb_gauss_pts,3*NBVOLUMETET_HDIV_AINSWORTH_COLE(volume_order),false);
-  data.dataOnEntities[MBTET][0].getDiffHdivN(base).resize(nb_gauss_pts,9*NBVOLUMETET_HDIV_AINSWORTH_COLE(volume_order),false);
+  data.dataOnEntities[MBTET][0].getHdivN(base).resize(nb_gauss_pts,3*NBVOLUMETET_HDIV(volume_order),false);
+  data.dataOnEntities[MBTET][0].getDiffHdivN(base).resize(nb_gauss_pts,9*NBVOLUMETET_HDIV(volume_order),false);
   for(int oo = 0;oo<volume_order;oo++) {
     for(int ee = 0;ee<6;ee++) {
       //values
-      for(int dd = 3*NBVOLUMETET_EDGE_HDIV_AINSWORTH_COLE(oo);dd<3*NBVOLUMETET_EDGE_HDIV_AINSWORTH_COLE(oo+1);dd++,col++) {
+      for(int dd = 3*NBVOLUMETET_EDGE_HDIV(oo);dd<3*NBVOLUMETET_EDGE_HDIV(oo+1);dd++,col++) {
         for(int gg = 0;gg!=nb_gauss_pts;gg++) {
           data.dataOnEntities[MBTET][0].getHdivN(base)(gg,col) = N_volume_edge[ee](gg,dd);
         }
       }
       //direvatives
-      for(int dd = 9*NBVOLUMETET_EDGE_HDIV_AINSWORTH_COLE(oo);dd<9*NBVOLUMETET_EDGE_HDIV_AINSWORTH_COLE(oo+1);dd++,diff_col++) {
+      for(int dd = 9*NBVOLUMETET_EDGE_HDIV(oo);dd<9*NBVOLUMETET_EDGE_HDIV(oo+1);dd++,diff_col++) {
         for(int gg = 0;gg!=nb_gauss_pts;gg++) {
           data.dataOnEntities[MBTET][0].getDiffHdivN(base)(gg,diff_col) = diffN_volume_edge[ee](gg,dd);
         }
@@ -379,26 +379,26 @@ PetscErrorCode TetPolynomialBase::getValueHdiv(
     }
     for(int ff = 0;ff<4;ff++) {
       //values
-      for(int dd = 3*NBVOLUMETET_FACE_HDIV_AINSWORTH_COLE(oo);dd<3*NBVOLUMETET_FACE_HDIV_AINSWORTH_COLE(oo+1);dd++,col++) {
+      for(int dd = 3*NBVOLUMETET_FACE_HDIV(oo);dd<3*NBVOLUMETET_FACE_HDIV(oo+1);dd++,col++) {
         for(int gg = 0;gg!=nb_gauss_pts;gg++) {
           data.dataOnEntities[MBTET][0].getHdivN(base)(gg,col) = N_volume_face[ff](gg,dd);
         }
       }
       //direvatives
-      for(int dd = 9*NBVOLUMETET_FACE_HDIV_AINSWORTH_COLE(oo);dd<9*NBVOLUMETET_FACE_HDIV_AINSWORTH_COLE(oo+1);dd++,diff_col++) {
+      for(int dd = 9*NBVOLUMETET_FACE_HDIV(oo);dd<9*NBVOLUMETET_FACE_HDIV(oo+1);dd++,diff_col++) {
         for(int gg = 0;gg!=nb_gauss_pts;gg++) {
           data.dataOnEntities[MBTET][0].getDiffHdivN(base)(gg,diff_col) = diffN_volume_face[ff](gg,dd);
         }
       }
     }
     //values
-    for(int dd = 3*NBVOLUMETET_VOLUME_HDIV_AINSWORTH_COLE(oo);dd<3*NBVOLUMETET_VOLUME_HDIV_AINSWORTH_COLE(oo+1);dd++,col++) {
+    for(int dd = 3*NBVOLUMETET_VOLUME_HDIV(oo);dd<3*NBVOLUMETET_VOLUME_HDIV(oo+1);dd++,col++) {
       for(int gg = 0;gg!=nb_gauss_pts;gg++) {
         data.dataOnEntities[MBTET][0].getHdivN(base)(gg,col) = N_volume_bubble(gg,dd);
       }
     }
     //direvatives
-    for(int dd = 9*NBVOLUMETET_VOLUME_HDIV_AINSWORTH_COLE(oo);dd<9*NBVOLUMETET_VOLUME_HDIV_AINSWORTH_COLE(oo+1);dd++,diff_col++) {
+    for(int dd = 9*NBVOLUMETET_VOLUME_HDIV(oo);dd<9*NBVOLUMETET_VOLUME_HDIV(oo+1);dd++,diff_col++) {
       for(int gg = 0;gg!=nb_gauss_pts;gg++) {
         data.dataOnEntities[MBTET][0].getDiffHdivN(base)(gg,diff_col) = diffN_volume_bubble(gg,dd);
       }

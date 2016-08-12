@@ -31,7 +31,6 @@ Next step of installation is to configure and compile MoFEM. First command creat
 contains *mofem_build volume*. Volume in container will be shared between other
 containers and docker *work* runs.
 ~~~~~~
-cd mofem-cephas
 docker build -t mofem_build:v0.1 --force-rm=true --file=Dockerfile-build $HOME/mofem-cephas
 docker run --name mofem_build mofem_build:v0.1 /bin/bash
 ~~~~~~
@@ -48,7 +47,7 @@ Installation is at that point finished. Now you can run docker container and
 run some code.
 
 You can start the *work container*, container mount *mofem build volume* from container which
-has been in the previous step
+has been created in the previous step
 
     docker run \
     --rm=true -it \
@@ -59,7 +58,8 @@ has been in the previous step
     likask/ubuntu_mofem:latest /bin/bash
 
 After execution of above command you are working inside docker, this is isolated system
-hosted by your OS (MacOSX, Linux or Windows).
+hosted by your OS (MacOSX, Linux or Windows). You can run several containers
+like this at once by executing above command in available terminal.
 
 The *work container* mounts *mofem source directory* into *mofem* directory and
 your home directory.

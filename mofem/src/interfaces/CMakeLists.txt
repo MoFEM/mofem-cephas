@@ -35,6 +35,7 @@ add_library(
   mofem_interfaces
   ${MOFEM_INTERFACES_SRC}
 )
+add_dependencies(mofem_interfaces install_prerequisites)
 if(PRECOMPILED_HEADRES)
   add_dependencies(mofem_interfaces Includes.hpp.pch_copy)
 endif(PRECOMPILED_HEADRES)
