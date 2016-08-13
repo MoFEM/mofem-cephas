@@ -13,7 +13,7 @@ containers in.
 
 ##Download and Install Docker##
 
-First install docker as per the instructions here: https://docs.docker.com/installation/#installation
+First install docker as per the instructions here: [https://docs.docker.com/installation/#installation](https://docs.docker.com/installation/#installation)
 
 ##Clone mofem repository
 
@@ -39,7 +39,7 @@ If you do not exactly understand what is *docker image*, *docker container* and
 *docker volume* do not worry. You do need to only know how to run and develop
 code in docker, how to do it is explained in below. However if you like to fully explore
 features available by running MoFEM in docker and utilize its full potential pleas look into
-documentation in https://docs.docker.com/engine/userguide/
+documentation in [Docker User Guide](https://docs.docker.com/engine/userguide/)
 
 ##Running docker container
 
@@ -84,7 +84,21 @@ containers however is not visible from host file system. The last command which 
 VTK output file save results to HOME directory of your host system.
 
 Note that working with docker you can work with several versions of MoFEM at once,
-keep old versions locally or upload them int docker hub (https://hub.docker.com)
+keep old versions locally or upload them int [Docker Hub](https://hub.docker.com/r/likask/ubuntu_mofem/).
 
-Any problems with this installation, please contact us by cmatgu@googlegroups.com
-or on Slack https://mofem.slack.com/.
+##What you will need on host system
+
+- Post processor to visualise results. We using [ParaView](http://www.paraview.org)
+however you can find good alternatives like [VisIt](https://wci.llnl.gov/simulation/computer-codes/visit/).
+
+- If you going to write your modules or modify existing MoFEM modules you will need
+text editor. We recommend [Atom](https://atom.io).
+
+- You will need some basic tools make plots (f.e. [gnuplot](http://www.gnuplot.info)) or work with output files, tools like grep, [sed](https://en.wikipedia.org/wiki/Sed) or [awk](https://en.wikipedia.org/wiki/AWK). If you working in Linux simply install appropriate packages. If you are MacOS X user
+we recommend to install [HomeBrew](http://brew.sh), which install missing packages into
+MacOS X system.
+
+##Contact
+
+Any problems with this installation, please contact us by [cmatgu@googlegroups.com](mailto:cmatgu@googlegroups.com)
+or on Slack [MoFEM Slack](https://mofem.slack.com/).
