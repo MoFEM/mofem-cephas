@@ -77,7 +77,7 @@ PetscErrorCode Hcurl_BubbleFaceFunctions_MBTET(
 
 On each face we have P*(P-1)/2 and are 4 faces on Tetrahedral.
 
-See NBVOLUMETET_FACE_HCURL
+See NBFACETRI_FACE_HCURL
 
 * @param  face_nodes       array [4*3] of local indices of face nodes
 * @param  p                approximation order

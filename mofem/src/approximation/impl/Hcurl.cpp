@@ -475,38 +475,54 @@ PetscErrorCode MoFEM::Hcurl_FaceFunctions_MBTET(
   ); CHKERRQ(ierr);
 
   FTensor::Index<'i',3> i;
-  FTensor::t_face_base[4] = {
-    &phi_f[0][0],phi_f[0][1],phi_f[0][2]
-  };
+  FTensor::Tensor1<double*,3> t_face_base(&phi_f[0][0],&phi_f[0][1],&phi_f[0][2]);
 
   for(int ff = 0;ff!=4;ff++) {
 
-
+    FTensor::Tensor1<double*,3> t_face_edge_base[]= {
+      FTensor::Tensor1<double*,3>(&phi_f_e[ff][0][0],&phi_f_e[ff][0][1],&phi_f_e[ff][0][2],3),
+      FTensor::Tensor1<double*,3>(&phi_f_e[ff][1][0],&phi_f_e[ff][1][1],&phi_f_e[ff][1][2],3),
+      FTensor::Tensor1<double*,3>(&phi_f_e[ff][2][0],&phi_f_e[ff][2][1],&phi_f_e[ff][2][2],3)
+    };
+    FTensor::Tensor1<double*,3> t_face_face_base( &phi_f_f[ff][0],&phi_f_f[ff][1],&phi_f_f[ff][2],3);
 
     int cc = 0;
-    int ll_e = 0,ll_f = 0;
     for(int oo = 0;oo!=p[ff];oo++) {
+      for(int ii = 0;ii!=nb_integration_pts;ii++) {
 
-      for(int ee = 0;ee!=3;ee++) {
-        FTensor::Tensor1<double*,3> t_face_edge_base(
-          &phi_f_e[ff][ee][0],&phi_f_e[ff][ee][1],&phi_f_e[ff][ee][2],3
-        );
-        for(int ii = 0;ii!=nb_integration_pts;ii++) {
-          for(int ll_e = NBFACETRI_EDGE_HCURL(oo-1);ll_e!=NBFACETRI_EDGE_HCURL(oo);ll_e++) {
-
-            t_face_base(i) = t_face_edge_base(i);
-            t_face_base++;
-            t_face_edge_base++;
-
+        // Face-edge base
+        for(int ee = 0;ee!=3;ee++) {
+          for(int ll = NBFACETRI_EDGE_HCURL(oo-1);ll!=NBFACETRI_EDGE_HCURL(oo);ll++) {
+            t_face_base(i) = t_face_edge_base[ee](i);
+            cc++;
+            ++t_face_base;
+            ++t_face_edge_base[ee];
           }
+        }
+
+        // Face-face base
+        for(int ll = NBFACETRI_FACE_HCURL(oo-1);ll!=NBFACETRI_FACE_HCURL(oo);ll++) {
+          t_face_base(i) = t_face_face_base(i);
+          cc++;
+          ++t_face_base;
+          ++t_face_face_base;
+        }
+
       }
     }
 
     // check consistency
+    const int nb_base_fun_on_face = NBFACETRI_HCURL(p);
+    if(cc!=nb_base_fun_on_face) {
+      SETERRQ2(
+        PETSC_COMM_SELF,
+        MOFEM_DATA_INCONSISTENCY,
+        "Wrong number of base functions %d != %d",
+        cc,nb_base_fun_on_face
+      );
+    }
 
   }
-
-
 
   PetscFunctionReturn(0);
 }
@@ -516,6 +532,8 @@ PetscErrorCode MoFEM::Hcurl_VolumeFunctions_MBTET(
   PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
 ) {
   PetscFunctionBegin;
+
+  
   PetscFunctionReturn(0);
 }
 
