@@ -560,10 +560,11 @@ PetscErrorCode MoFEM::Hcurl_VolumeFunctions_MBTET(
   FTensor::Tensor1<double*,3> t_volume_interior(&phi_v_v[0],&phi_v_v[1],&phi_v_v[2],3);
   FTensor::Tensor1<double*,3> t_phi_v(&phi_v[0],&phi_v[1],&phi_v[2],3);
 
-  for(int oo = 0;oo!=p;oo++) {
-    for(int ii = 0;ii!=nb_integration_pts;ii++) {
+  for(int ii = 0;ii!=nb_integration_pts;ii++) {
 
-      int cc = 0;
+    int cc = 0;
+    for(int oo = 0;oo<=p;oo++) {
+
       for(int ll = NBVOLUMETET_FACE_HCURL(oo-1);ll!=NBVOLUMETET_FACE_HCURL(oo);ll++) {
         t_phi_v(i) = t_face_interior(i);
         ++t_phi_v;
@@ -578,18 +579,19 @@ PetscErrorCode MoFEM::Hcurl_VolumeFunctions_MBTET(
         ++cc;
       }
 
-      // check consistency
-      const int nb_base_fun_on_face = NBVOLUMETET_HCURL(p);
-      if(cc!=nb_base_fun_on_face) {
-        SETERRQ2(
-          PETSC_COMM_SELF,
-          MOFEM_DATA_INCONSISTENCY,
-          "Wrong number of base functions %d != %d",
-          cc,nb_base_fun_on_face
-        );
-      }
-
     }
+
+    // check consistency
+    const int nb_base_fun_on_face = NBVOLUMETET_HCURL(p);
+    if(cc!=nb_base_fun_on_face) {
+      SETERRQ2(
+        PETSC_COMM_SELF,
+        MOFEM_DATA_INCONSISTENCY,
+        "Wrong number of base functions %d != %d",
+        cc,nb_base_fun_on_face
+      );
+    }
+
   }
 
   PetscFunctionReturn(0);
@@ -855,7 +857,6 @@ PetscErrorCode VTK_Hcurl_MBTET(const string file_name) {
     nb_gauss_pts,
     Legendre_polynomials
   ); CHKERRQ(ierr);
-
   for(int ll = 0;ll!=NBVOLUMETET_FACE_HCURL(order);ll++) {
     std::ostringstream ss;
     ss << "curl_face_interior_" << ll;
@@ -932,11 +933,41 @@ PetscErrorCode VTK_Hcurl_MBTET(const string file_name) {
 
       int gg = 0;
       for(Range::iterator nit = elem_nodes.begin();nit!=elem_nodes.end();nit++,gg++) {
-        int idx = 3*NBFACETRI_HCURL(order)*gg+ll*3;
+        int idx = 3*NBFACETRI_HCURL   (order)*gg+ll*3;
         rval = moab_ref.tag_set_data(th,&*nit,1,&(phi_f[ff][idx])); CHKERRQ_MOAB(rval);
       }
     }
   }
+
+  cout << "NBVOLUMETET_TET_HCURL(order) " << NBVOLUMETET_HCURL(order) << endl;
+  VectorDouble base_volume_functions(3*NBVOLUMETET_HCURL(order)*nb_gauss_pts);
+  VectorDouble diff_base_volume_functions(9*NBVOLUMETET_HCURL(order)*nb_gauss_pts);
+  phi_v = &base_volume_functions[0];
+  diff_phi_v = &diff_base_volume_functions[0];
+  ierr = MoFEM::Hcurl_VolumeFunctions_MBTET(
+    order,
+    &*shape_fun.data().begin(),
+    diff_shape_fun,
+    phi_v,
+    diff_phi_v,
+    nb_gauss_pts,
+    Legendre_polynomials
+  ); CHKERRQ(ierr);
+  for(int ll = 0;ll!=NBVOLUMETET_HCURL(order);ll++) {
+    std::ostringstream ss;
+    ss << "curl_volume_" << ll;
+    Tag th;
+    rval = moab_ref.tag_get_handle(
+      ss.str().c_str(),3,MB_TYPE_DOUBLE,th,MB_TAG_CREAT|MB_TAG_SPARSE,def_val
+    ); CHKERRQ_MOAB(rval);
+
+    int gg = 0;
+    for(Range::iterator nit = elem_nodes.begin();nit!=elem_nodes.end();nit++,gg++) {
+      int idx = 3*NBVOLUMETET_HCURL(order)*gg+ll*3;
+      rval = moab_ref.tag_set_data(th,&*nit,1,&(phi_v[idx])); CHKERRQ_MOAB(rval);
+    }
+  }
+
 
   EntityHandle meshset;
   rval = moab_ref.create_meshset(MESHSET_SET|MESHSET_TRACK_OWNER,meshset); CHKERRQ_MOAB(rval);
