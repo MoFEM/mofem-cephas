@@ -68,7 +68,7 @@ include_directories(
 add_definitions(${MOAB_DEFINITIONS})
 
 include_directories(${MoFEM_PROJECT_SOURCE_DIR}/include)
-include_directories(${PROJECT_BINARY_DIR}/include)
+include_directories(${MoFEM_INSTALL_DIR}/include)
 
 include_directories(${MoFEM_PROJECT_SOURCE_DIR}/third_party)
 include_directories(${MoFEM_PROJECT_SOURCE_DIR}/third_party/cblas)
@@ -80,7 +80,7 @@ include_directories(${MoFEM_PROJECT_SOURCE_DIR}/src/interfaces)
 include_directories(${MoFEM_PROJECT_SOURCE_DIR}/src/petsc)
 include_directories(${MoFEM_PROJECT_SOURCE_DIR}/src/finite_elements)
 
-link_directories(${PROJECT_BINARY_DIR}/lib)
+link_directories(${MoFEM_INSTALL_DIR}/lib)
 link_directories(${PROJECT_BINARY_DIR})
 
 #add executable library form subdirectory
