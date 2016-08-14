@@ -15,7 +15,7 @@ project(MoFEM-UserModules C CXX)
 
 cmake_minimum_required(VERSION 2.8.7)
 
-find_package(MoFEM 0.3.11
+find_package(MoFEM 0.3.35
   REQUIRED HINTS ${MOFEM_DIR} ../ ../../ $ENV{MOFEM_DIR}
 )
 message(STATUS "MoFEM version ${MoFEM_VERSION}")
@@ -68,7 +68,8 @@ include_directories(
 add_definitions(${MOAB_DEFINITIONS})
 
 include_directories(${MoFEM_PROJECT_SOURCE_DIR}/include)
-include_directories(${MoFEM_PROJECT_BINARY_DIR}/include)
+include_directories(${PROJECT_BINARY_DIR}/include)
+
 include_directories(${MoFEM_PROJECT_SOURCE_DIR}/third_party)
 include_directories(${MoFEM_PROJECT_SOURCE_DIR}/third_party/cblas)
 include_directories(${MoFEM_PROJECT_SOURCE_DIR}/src/ftensor/src)
