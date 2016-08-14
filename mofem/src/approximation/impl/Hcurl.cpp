@@ -475,7 +475,6 @@ PetscErrorCode MoFEM::Hcurl_FaceFunctions_MBTET(
   ); CHKERRQ(ierr);
 
   FTensor::Index<'i',3> i;
-  FTensor::Tensor1<double*,3> t_face_base(&phi_f[0][0],&phi_f[0][1],&phi_f[0][2]);
 
   for(int ff = 0;ff!=4;ff++) {
 
@@ -484,22 +483,25 @@ PetscErrorCode MoFEM::Hcurl_FaceFunctions_MBTET(
       FTensor::Tensor1<double*,3>(&phi_f_e[ff][1][0],&phi_f_e[ff][1][1],&phi_f_e[ff][1][2],3),
       FTensor::Tensor1<double*,3>(&phi_f_e[ff][2][0],&phi_f_e[ff][2][1],&phi_f_e[ff][2][2],3)
     };
-    FTensor::Tensor1<double*,3> t_face_face_base( &phi_f_f[ff][0],&phi_f_f[ff][1],&phi_f_f[ff][2],3);
+    FTensor::Tensor1<double*,3> t_face_face_base(&phi_f_f[ff][0],&phi_f_f[ff][1],&phi_f_f[ff][2],3);
+    FTensor::Tensor1<double*,3> t_face_base(&phi_f[ff][0],&phi_f[ff][1],&phi_f[ff][2],3);
 
-    for(int oo = 0;oo!=p[ff];oo++) {
-      for(int ii = 0;ii!=nb_integration_pts;ii++) {
+    for(int ii = 0;ii!=nb_integration_pts;ii++) {
 
-        int cc = 0;
+      int cc = 0;
+      for(int oo = 0;oo<=p[ff];oo++) {
         // Face-edge base
         for(int ee = 0;ee!=3;ee++) {
-          for(int ll = NBFACETRI_EDGE_HCURL(oo-1);ll!=NBFACETRI_EDGE_HCURL(oo);ll++) {
-            t_face_base(i) = t_face_edge_base[ee](i);
-            ++cc;
-            ++t_face_base;
-            ++t_face_edge_base[ee];
+          if(oo>1) {
+            for(int ll = NBFACETRI_EDGE_HCURL(oo-1);ll!=NBFACETRI_EDGE_HCURL(oo);ll++) {
+              t_face_base(i) = t_face_edge_base[ee](i);
+              ++cc;
+              ++t_face_base;
+              ++t_face_edge_base[ee];
+              // cerr << oo << " " << ll << " " << cc << " " << NBFACETRI_EDGE_HCURL(oo) << endl;
+            }
           }
         }
-
         // Face-face base
         for(int ll = NBFACETRI_FACE_HCURL(oo-1);ll!=NBFACETRI_FACE_HCURL(oo);ll++) {
           t_face_base(i) = t_face_face_base(i);
@@ -507,19 +509,20 @@ PetscErrorCode MoFEM::Hcurl_FaceFunctions_MBTET(
           ++t_face_base;
           ++t_face_face_base;
         }
-
-        // check consistency
-        const int nb_base_fun_on_face = NBFACETRI_HCURL(p[ff]);
-        if(cc!=nb_base_fun_on_face) {
-          SETERRQ2(
-            PETSC_COMM_SELF,
-            MOFEM_DATA_INCONSISTENCY,
-            "Wrong number of base functions %d != %d",
-            cc,nb_base_fun_on_face
-          );
-        }
-
       }
+
+
+      // check consistency
+      const int nb_base_fun_on_face = NBFACETRI_HCURL(p[ff]);
+      if(cc!=nb_base_fun_on_face) {
+        SETERRQ2(
+          PETSC_COMM_SELF,
+          MOFEM_DATA_INCONSISTENCY,
+          "Wrong number of base functions %d != %d",
+          cc,nb_base_fun_on_face
+        );
+      }
+
     }
 
 
@@ -628,7 +631,7 @@ PetscErrorCode VTK_Hcurl_MBTET(const string file_name) {
 
   ierr = m_field_ref.seed_ref_level_3D(0,BitRefLevel().set(0)); CHKERRQ(ierr);
 
-  const int max_level = 5;
+  const int max_level = 3;
   for(int ll = 0;ll!=max_level;ll++) {
     Range edges;
     ierr = m_field_ref.get_entities_by_type_and_ref_level
@@ -685,6 +688,7 @@ PetscErrorCode VTK_Hcurl_MBTET(const string file_name) {
   const int order = 5;
   int edge_order[6] = { order,order,order, order,order,order };
 
+  cout << "NBEDGE_HCURL(order) " <<  NBEDGE_HCURL(order) << endl;
   MatrixDouble base_edge_functions(
     6,3*nb_gauss_pts*NBEDGE_HCURL(order)
   );
@@ -740,6 +744,7 @@ PetscErrorCode VTK_Hcurl_MBTET(const string file_name) {
     }
   }
 
+  cout << "NBFACETRI_EDGE_HCURL(order) " << NBFACETRI_EDGE_HCURL(order) << endl;
   int faces_order[] = { order,order,order,order };
   int faces_nodes[] = { 0,1,3, 1,2,3, 0,2,3, 0,1,2 };
   MatrixDouble base_face_edge_functions(
@@ -793,6 +798,7 @@ PetscErrorCode VTK_Hcurl_MBTET(const string file_name) {
     }
   }
 
+  cout << "NBFACETRI_FACE_HCURL(order) " << NBFACETRI_FACE_HCURL(order) << endl;
   MatrixDouble base_face_bubble_functions(
     4,3*NBFACETRI_FACE_HCURL(order)*nb_gauss_pts
   );
@@ -834,6 +840,7 @@ PetscErrorCode VTK_Hcurl_MBTET(const string file_name) {
     }
   }
 
+  cout << "NBVOLUMETET_FACE_HCURL(order) " << NBVOLUMETET_FACE_HCURL(order) << endl;
   VectorDouble base_face_inetrior_functions(3*NBVOLUMETET_FACE_HCURL(order)*nb_gauss_pts);
   VectorDouble diff_base_face_inetrior_functions(9*NBVOLUMETET_FACE_HCURL(order)*nb_gauss_pts);
   double *phi_v_f = &base_face_inetrior_functions[0];
@@ -864,6 +871,7 @@ PetscErrorCode VTK_Hcurl_MBTET(const string file_name) {
     }
   }
 
+  cout << "NBVOLUMETET_TET_HCURL(order) " << NBVOLUMETET_TET_HCURL(order) << endl;
   VectorDouble base_interior_functions(3*NBVOLUMETET_TET_HCURL(order)*nb_gauss_pts);
   VectorDouble diff_base_interior_functions(9*NBVOLUMETET_TET_HCURL(order)*nb_gauss_pts);
   double *phi_v = &base_interior_functions[0];
@@ -889,6 +897,44 @@ PetscErrorCode VTK_Hcurl_MBTET(const string file_name) {
     for(Range::iterator nit = elem_nodes.begin();nit!=elem_nodes.end();nit++,gg++) {
       int idx = 3*NBVOLUMETET_TET_HCURL(order)*gg+ll*3;
       rval = moab_ref.tag_set_data(th,&*nit,1,&(phi_v[idx])); CHKERRQ_MOAB(rval);
+    }
+  }
+
+  cout << "NBFACETRI_HCURL(order) " << NBFACETRI_HCURL(order) << endl;
+  MatrixDouble base_face_functions(
+    4,3*NBFACETRI_HCURL(order)*nb_gauss_pts
+  );
+  MatrixDouble diff_base_face_functions(
+    4,9*NBFACETRI_HCURL(order)*nb_gauss_pts
+  );
+  for(int ff=0;ff!=4;ff++) {
+    phi_f[ff] = &base_face_functions(ff,0);
+    diff_phi_f[ff] = &diff_base_face_functions(ff,0);
+  }
+  ierr =  Hcurl_FaceFunctions_MBTET(
+    faces_nodes,
+    faces_order,
+    &*shape_fun.data().begin(),
+    diff_shape_fun,
+    phi_f,
+    diff_phi_f,
+    nb_gauss_pts,
+    Legendre_polynomials
+  ); CHKERRQ(ierr);
+  for(int ff = 0;ff!=4;ff++) {
+    for(int ll = 0;ll!=NBFACETRI_HCURL(order);ll++) {
+      std::ostringstream ss;
+      ss << "curl_face_" << ff << "_" << ll;
+      Tag th;
+      rval = moab_ref.tag_get_handle(
+        ss.str().c_str(),3,MB_TYPE_DOUBLE,th,MB_TAG_CREAT|MB_TAG_SPARSE,def_val
+      ); CHKERRQ_MOAB(rval);
+
+      int gg = 0;
+      for(Range::iterator nit = elem_nodes.begin();nit!=elem_nodes.end();nit++,gg++) {
+        int idx = 3*NBFACETRI_HCURL(order)*gg+ll*3;
+        rval = moab_ref.tag_set_data(th,&*nit,1,&(phi_f[ff][idx])); CHKERRQ_MOAB(rval);
+      }
     }
   }
 
