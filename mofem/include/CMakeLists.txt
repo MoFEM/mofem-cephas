@@ -27,6 +27,27 @@ include_directories(${PROJECT_SOURCE_DIR}/src/interfaces)
 include_directories(${PROJECT_SOURCE_DIR}/src/petsc)
 include_directories(${PROJECT_SOURCE_DIR}/src/finite_elements)
 
+# Configure a header file to pass some of the CMake settings to the source code
+configure_file(
+  ${PROJECT_SOURCE_DIR}/include/config.h.in
+  ${PROJECT_BINARY_DIR}/include/config.h
+)
+set_source_files_properties(
+  ${PROJECT_BINARY_DIR}/include/config.h PROPERTIES GENERATED TRUE
+)
+configure_file(
+  ${PROJECT_SOURCE_DIR}/include/version.h.in
+  ${PROJECT_BINARY_DIR}/include/version.h
+)
+set_source_files_properties(
+  ${PROJECT_BINARY_DIR}/include/version.h PROPERTIES GENERATED TRUE
+)
+include_directories(${PROJECT_BINARY_DIR}/include)
+include_directories(${PROJECT_SOURCE_DIR}/include)
+
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/config.h DESTINATION ${CMAKE_INSTALL_PREFIX}/include)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/version.h DESTINATION ${CMAKE_INSTALL_PREFIX}/include)
+
 if(PRECOMPILED_HEADRES)
 
   if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
@@ -57,7 +78,6 @@ if(PRECOMPILED_HEADRES)
     "Copy precompiled Includes.hpp header"
   )
   add_dependencies(Includes.hpp.pch_copy Includes.hpp.pch)
-
 
   # MoFEM.hpp
   set_source_files_properties(
