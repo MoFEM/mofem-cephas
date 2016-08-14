@@ -486,15 +486,15 @@ PetscErrorCode MoFEM::Hcurl_FaceFunctions_MBTET(
     };
     FTensor::Tensor1<double*,3> t_face_face_base( &phi_f_f[ff][0],&phi_f_f[ff][1],&phi_f_f[ff][2],3);
 
-    int cc = 0;
     for(int oo = 0;oo!=p[ff];oo++) {
       for(int ii = 0;ii!=nb_integration_pts;ii++) {
 
+        int cc = 0;
         // Face-edge base
         for(int ee = 0;ee!=3;ee++) {
           for(int ll = NBFACETRI_EDGE_HCURL(oo-1);ll!=NBFACETRI_EDGE_HCURL(oo);ll++) {
             t_face_base(i) = t_face_edge_base[ee](i);
-            cc++;
+            ++cc;
             ++t_face_base;
             ++t_face_edge_base[ee];
           }
@@ -503,24 +503,25 @@ PetscErrorCode MoFEM::Hcurl_FaceFunctions_MBTET(
         // Face-face base
         for(int ll = NBFACETRI_FACE_HCURL(oo-1);ll!=NBFACETRI_FACE_HCURL(oo);ll++) {
           t_face_base(i) = t_face_face_base(i);
-          cc++;
+          ++cc;
           ++t_face_base;
           ++t_face_face_base;
+        }
+
+        // check consistency
+        const int nb_base_fun_on_face = NBFACETRI_HCURL(p[ff]);
+        if(cc!=nb_base_fun_on_face) {
+          SETERRQ2(
+            PETSC_COMM_SELF,
+            MOFEM_DATA_INCONSISTENCY,
+            "Wrong number of base functions %d != %d",
+            cc,nb_base_fun_on_face
+          );
         }
 
       }
     }
 
-    // check consistency
-    const int nb_base_fun_on_face = NBFACETRI_HCURL(p);
-    if(cc!=nb_base_fun_on_face) {
-      SETERRQ2(
-        PETSC_COMM_SELF,
-        MOFEM_DATA_INCONSISTENCY,
-        "Wrong number of base functions %d != %d",
-        cc,nb_base_fun_on_face
-      );
-    }
 
   }
 
@@ -531,9 +532,63 @@ PetscErrorCode MoFEM::Hcurl_VolumeFunctions_MBTET(
   int p,double *N,double *diffN,double *phi_v,double *diff_phi_v,int nb_integration_pts,
   PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
 ) {
+  PetscErrorCode ierr;
   PetscFunctionBegin;
 
-  
+  VectorDouble base_face_inetrior_functions(3*NBVOLUMETET_FACE_HCURL(p)*nb_integration_pts);
+  VectorDouble diff_base_face_inetrior_functions(9*NBVOLUMETET_FACE_HCURL(p)*nb_integration_pts);
+  double *phi_v_f = &base_face_inetrior_functions[0];
+  double *diff_phi_v_f = &diff_base_face_inetrior_functions[0];
+  int faces_nodes[] = { 0,1,3, 1,2,3, 0,2,3, 0,1,2 };
+  ierr = Hcurl_FaceInteriorFunctions_MBTET(
+    faces_nodes,p,N,diffN,phi_v_f,diff_phi_v_f,nb_integration_pts,base_polynomials
+  ); CHKERRQ(ierr);
+
+  VectorDouble base_interior_functions(3*NBVOLUMETET_TET_HCURL(p)*nb_integration_pts);
+  VectorDouble diff_base_interior_functions(9*NBVOLUMETET_TET_HCURL(p)*nb_integration_pts);
+  double *phi_v_v = &base_interior_functions[0];
+  double *diff_phi_v_v = &diff_base_interior_functions[0];
+  ierr = Hcurl_VolumeInteriorFunctions_MBTET(
+    p,N,diffN,phi_v_v,diff_phi_v_v,nb_integration_pts,base_polynomials
+  ); CHKERRQ(ierr);
+
+  FTensor::Index<'i',3> i;
+  FTensor::Tensor1<double*,3> t_face_interior(&phi_v_f[0],&phi_v_f[1],&phi_v_f[2],3);
+  FTensor::Tensor1<double*,3> t_volume_interior(&phi_v_v[0],&phi_v_v[1],&phi_v_v[2],3);
+  FTensor::Tensor1<double*,3> t_phi_v(&phi_v[0],&phi_v[1],&phi_v[2],3);
+
+  for(int oo = 0;oo!=p;oo++) {
+    for(int ii = 0;ii!=nb_integration_pts;ii++) {
+
+      int cc = 0;
+      for(int ll = NBVOLUMETET_FACE_HCURL(oo-1);ll!=NBVOLUMETET_FACE_HCURL(oo);ll++) {
+        t_phi_v(i) = t_face_interior(i);
+        ++t_phi_v;
+        ++t_face_interior;
+        ++cc;
+      }
+
+      for(int ll = NBVOLUMETET_TET_HCURL(oo-1);ll!=NBVOLUMETET_TET_HCURL(oo);ll++) {
+        t_phi_v(i) = t_volume_interior(i);
+        ++t_phi_v;
+        ++t_volume_interior;
+        ++cc;
+      }
+
+      // check consistency
+      const int nb_base_fun_on_face = NBVOLUMETET_HCURL(p);
+      if(cc!=nb_base_fun_on_face) {
+        SETERRQ2(
+          PETSC_COMM_SELF,
+          MOFEM_DATA_INCONSISTENCY,
+          "Wrong number of base functions %d != %d",
+          cc,nb_base_fun_on_face
+        );
+      }
+
+    }
+  }
+
   PetscFunctionReturn(0);
 }
 
@@ -809,8 +864,8 @@ PetscErrorCode VTK_Hcurl_MBTET(const string file_name) {
     }
   }
 
-  VectorDouble base_interior_functions(3*NBVOLUMETET_FACE_HCURL(order)*nb_gauss_pts);
-  VectorDouble diff_base_interior_functions(9*NBVOLUMETET_FACE_HCURL(order)*nb_gauss_pts);
+  VectorDouble base_interior_functions(3*NBVOLUMETET_TET_HCURL(order)*nb_gauss_pts);
+  VectorDouble diff_base_interior_functions(9*NBVOLUMETET_TET_HCURL(order)*nb_gauss_pts);
   double *phi_v = &base_interior_functions[0];
   double *diff_phi_v = &diff_base_interior_functions[0];
   ierr = Hcurl_VolumeInteriorFunctions_MBTET(
