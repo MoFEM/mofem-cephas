@@ -12,7 +12,13 @@
 namespace MoFEM {
 
 /**
- * \brief Edge based H-curl base functions
+ * \brief Edge based H-curl base functions on tetrahedral
+
+ Function generates hierarchical base of h-curl comforting functions on
+ tetrahedral edge.  For more details see \cite ainsworth2011bernstein.
+
+ On each edgde we have P+1 functions. See NBEDGE_HCURL
+
  * @param  sense            sense fo edge (i.e. unique orientation)
  * @param  p                array of oder for each edge
  * @param  N                array shape functions evaluated at each integration point
@@ -25,6 +31,29 @@ namespace MoFEM {
  */
 PetscErrorCode Hcurl_EdgeBaseFunctions_MBTET(
   int *sense,int *p,double *N,double *diffN,double *edgeN[],double *diff_edgeN[],int nb_integration_pts,
+  PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
+);
+
+/**
+ * \brief Edge based H-curl base functions on edge
+
+ Function generates hierarchical base of h-curl comforting functions on
+ tetrahedral edge.  For more details see \cite ainsworth2011bernstein.
+
+ On each edgde we have P+1 functions. See NBEDGE_HCURL
+
+ * @param  sense            sense fo edge (i.e. unique orientation)
+ * @param  p                array of oder for each edge
+ * @param  N                array shape functions evaluated at each integration point
+ * @param  diffN            derivatives of shape functions
+ * @param  edgeN            base functions on edges
+ * @param  diff_edgeN       derivatives of edge shape functions
+ * @param  nb_integration_pts             number of integration points
+ * @param  base_polynomials polynomial base function (f.e. Legendre of Lobatto)
+ * @return                  error code
+ */
+PetscErrorCode Hcurl_EdgeBaseFunctions_MBTET_ON_EDGE(
+  int sense,int p,double *N,double *diffN,double *edgeN,double *diff_edgeN,int nb_integration_pts,
   PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
 );
 
@@ -160,6 +189,8 @@ PetscErrorCode Hcurl_VolumeFunctions_MBTET(
   int p,double *N,double *diffN,double *phi_v,double *diff_phi_v,int nb_integration_pts,
   PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
 );
+
+
 
 
 }

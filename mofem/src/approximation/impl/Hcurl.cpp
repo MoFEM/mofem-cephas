@@ -99,6 +99,56 @@ PetscErrorCode MoFEM::Hcurl_EdgeBaseFunctions_MBTET(
   PetscFunctionReturn(0);
 }
 
+PetscErrorCode MoFEM::Hcurl_EdgeBaseFunctions_MBTET_ON_EDGE(
+  int sense,int p,double *N,double *diffN,double *edgeN,double *diff_edgeN,int nb_integration_pts,
+  PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
+) {
+  PetscFunctionBegin;
+  PetscErrorCode ierr;
+
+  FTensor::Index<'i',3> i;
+  FTensor::Tensor1<double*,3> t_node_diff_ksi[2] = {
+    FTensor::Tensor1<double*,3>(&diffN[0],&diffN[ 1],&diffN[ 2]),
+    FTensor::Tensor1<double*,3>(&diffN[3],&diffN[ 4],&diffN[ 5])
+  };
+  double edge_diff_ksi[3];
+  FTensor::Tensor1<double*,3> t_edge_diff_ksi(&edge_diff_ksi[0],&edge_diff_ksi[1],&edge_diff_ksi[2]);
+  t_edge_diff_ksi(i) = (t_node_diff_ksi[1](i)-t_node_diff_ksi[0](i))*sense;
+
+  FTensor::Tensor1<double*,3> t_edge_n(&edgeN[0],&edgeN[1],&edgeN[2],3);
+  FTensor::Tensor1<double,3> t_psi_e_0,t_psi_e_1;
+
+  for(int ii = 0;ii!=nb_integration_pts;ii++) {
+
+    const int node_shift = ii*2;
+    if(NBEDGE_HCURL(p)==0) continue;
+
+    t_psi_e_0(i) = N[node_shift+1]*t_node_diff_ksi[0](i)- N[node_shift+0]*t_node_diff_ksi[1](i);
+    t_psi_e_1(i) = N[node_shift+1]*t_node_diff_ksi[0](i)+ N[node_shift+0]*t_node_diff_ksi[1](i);
+    t_edge_n(i) = t_psi_e_0(i);
+    ++t_edge_n;
+    t_edge_n(i) = t_psi_e_1(i);
+    ++t_edge_n;
+
+    if(p>1) {
+      const double ksi_0i = N[node_shift+1]-N[node_shift+0];
+      double psi_l[p+1],diff_psi_l[3*p+3];
+      ierr = base_polynomials(
+        p,ksi_0i,&edge_diff_ksi[0],psi_l,diff_psi_l,3
+      ); CHKERRQ(ierr);
+      for(int ll = 2;ll!=NBEDGE_HCURL(p);ll++) {
+        const double a = (double)(2*ll+1)/(double)(ll+1);
+        const double b = (double)(ll)/(double)(ll+1);
+        t_edge_n(i) = a*psi_l[ll-1]*t_psi_e_1(i)-b*psi_l[ll-2]*t_psi_e_0(i);
+        ++t_edge_n;
+      }
+    }
+
+  }
+
+  PetscFunctionReturn(0);
+}
+
 PetscErrorCode MoFEM::Hcurl_EdgeBasedFaceFunctions_MBTET(
   int *faces_nodes,int *p,double *N,double *diffN,double *phi_f_e[4][3],double *diff_phi_f_e[4][3],int nb_integration_pts,
   PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
