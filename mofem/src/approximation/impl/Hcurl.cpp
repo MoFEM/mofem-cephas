@@ -106,6 +106,8 @@ PetscErrorCode MoFEM::Hcurl_EdgeBaseFunctions_MBTET_ON_EDGE(
   PetscFunctionBegin;
   PetscErrorCode ierr;
 
+  if(NBEDGE_HCURL(p)==0) PetscFunctionReturn(0);
+
   FTensor::Index<'i',3> i;
   FTensor::Tensor1<double*,3> t_node_diff_ksi[2] = {
     FTensor::Tensor1<double*,3>(&diffN[0],&diffN[ 1],&diffN[ 2]),
@@ -121,7 +123,6 @@ PetscErrorCode MoFEM::Hcurl_EdgeBaseFunctions_MBTET_ON_EDGE(
   for(int ii = 0;ii!=nb_integration_pts;ii++) {
 
     const int node_shift = ii*2;
-    if(NBEDGE_HCURL(p)==0) continue;
 
     t_psi_e_0(i) = N[node_shift+1]*t_node_diff_ksi[0](i)- N[node_shift+0]*t_node_diff_ksi[1](i);
     t_psi_e_1(i) = N[node_shift+1]*t_node_diff_ksi[0](i)+ N[node_shift+0]*t_node_diff_ksi[1](i);
@@ -144,6 +145,79 @@ PetscErrorCode MoFEM::Hcurl_EdgeBaseFunctions_MBTET_ON_EDGE(
       }
     }
 
+  }
+
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode MoFEM::Hcurl_EdgeBaseFunctions_MBTET_ON_FACE(
+  int *sense,int *p,double *N,double *diffN,double *edgeN[],double *diff_edgeN[],int nb_integration_pts,
+  PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
+) {
+  PetscFunctionBegin;
+  PetscErrorCode ierr;
+  const int edges_nodes[3][2] = { {0,1}, {1,2}, {2,0} };
+  int P[3];
+  for(int ee = 0;ee<3; ee++) P[ee] = NBEDGE_HCURL(p[ee]);
+
+  FTensor::Index<'i',3> i;
+  FTensor::Tensor1<double*,3> t_node_diff_ksi[3] = {
+    FTensor::Tensor1<double*,3>(&diffN[0],&diffN[ 1],&diffN[ 2]),
+    FTensor::Tensor1<double*,3>(&diffN[3],&diffN[ 4],&diffN[ 5]),
+    FTensor::Tensor1<double*,3>(&diffN[6],&diffN[ 7],&diffN[ 8])
+  };
+  double edge_diff_ksi[3][3];
+  FTensor::Tensor1<double*,3> t_edge_diff_ksi[3] = {
+    FTensor::Tensor1<double*,3>(&edge_diff_ksi[0][0],&edge_diff_ksi[0][1],&edge_diff_ksi[0][2]),
+    FTensor::Tensor1<double*,3>(&edge_diff_ksi[1][0],&edge_diff_ksi[1][1],&edge_diff_ksi[1][2]),
+    FTensor::Tensor1<double*,3>(&edge_diff_ksi[2][0],&edge_diff_ksi[2][1],&edge_diff_ksi[2][2])
+  };
+  for(int ee = 0;ee!=3;ee++) {
+    t_edge_diff_ksi[ee](i) = (
+      t_node_diff_ksi[edges_nodes[ee][1]](i)-t_node_diff_ksi[edges_nodes[ee][0]](i)
+    )*sense[ee];
+  }
+
+  FTensor::Tensor1<double*,3> t_edge_n[3] = {
+    FTensor::Tensor1<double*,3>(&edgeN[0][0],&edgeN[0][1],&edgeN[0][2],3),
+    FTensor::Tensor1<double*,3>(&edgeN[1][0],&edgeN[1][1],&edgeN[1][2],3),
+    FTensor::Tensor1<double*,3>(&edgeN[2][0],&edgeN[2][1],&edgeN[2][2],3)
+  };
+  FTensor::Tensor1<double,3> t_psi_e_0,t_psi_e_1;
+
+  for(int ii = 0;ii!=nb_integration_pts;ii++) {
+
+    const int node_shift = ii*3;
+    for(int ee = 0;ee!=3;ee++) {
+
+      if(P[ee]==0) continue;
+
+      t_psi_e_0(i) =
+      N[node_shift+edges_nodes[ee][1]]*t_node_diff_ksi[edges_nodes[ee][0]](i)-
+      N[node_shift+edges_nodes[ee][0]]*t_node_diff_ksi[edges_nodes[ee][1]](i);
+      t_psi_e_1(i) =
+      N[node_shift+edges_nodes[ee][1]]*t_node_diff_ksi[edges_nodes[ee][0]](i)+
+      N[node_shift+edges_nodes[ee][0]]*t_node_diff_ksi[edges_nodes[ee][1]](i);
+      (t_edge_n[ee])(i) = t_psi_e_0(i);
+      ++(t_edge_n[ee]);
+      (t_edge_n[ee])(i) = t_psi_e_1(i);
+      ++(t_edge_n[ee]);
+
+      if(p[ee]>1) {
+        const double ksi_0i = N[node_shift+edges_nodes[ee][1]]-N[node_shift+edges_nodes[ee][0]];
+        double psi_l[p[ee]+1],diff_psi_l[3*p[ee]+3];
+        ierr = base_polynomials(
+          p[ee],ksi_0i,&edge_diff_ksi[ee][0],psi_l,diff_psi_l,3
+        ); CHKERRQ(ierr);
+        for(int ll = 2;ll!=P[ee];ll++) {
+          const double a = (double)(2*ll+1)/(double)(ll+1);
+          const double b = (double)(ll)/(double)(ll+1);
+          (t_edge_n[ee])(i) = a*psi_l[ll-1]*t_psi_e_1(i)-b*psi_l[ll-2]*t_psi_e_0(i);
+          ++(t_edge_n[ee]);
+        }
+      }
+
+    }
   }
 
   PetscFunctionReturn(0);
@@ -210,6 +284,66 @@ PetscErrorCode MoFEM::Hcurl_EdgeBasedFaceFunctions_MBTET(
         }
 
       }
+    }
+  }
+
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode MoFEM::Hcurl_EdgeBasedFaceFunctions_MBTET_ON_FACE(
+  int *faces_nodes,int p,double *N,double *diffN,double *phi_f_e[3],double *diff_phi_f_e[3],int nb_integration_pts,
+  PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
+) {
+  PetscErrorCode ierr;
+  PetscFunctionBegin;
+  const int edges[3][2] = { {0,1}, {1,2}, {2,0} };
+
+  FTensor::Index<'i',3> i;
+  FTensor::Tensor1<double*,3> t_node_diff_ksi[3] = {
+    FTensor::Tensor1<double*,3>(&diffN[0],&diffN[ 1],&diffN[ 2]),
+    FTensor::Tensor1<double*,3>(&diffN[3],&diffN[ 4],&diffN[ 5]),
+    FTensor::Tensor1<double*,3>(&diffN[6],&diffN[ 7],&diffN[ 8])
+  };
+  FTensor::Tensor1<double,3> t_edge_diff_ksi;
+
+  const int o_nodes[3] = { 2,0,1 };
+  FTensor::Tensor1<double*,3> t_o_diff[3] = {
+    FTensor::Tensor1<double*,3>(&diffN[3*o_nodes[0]+0],&diffN[3*o_nodes[0]+1],&diffN[3*o_nodes[0]+2]),
+    FTensor::Tensor1<double*,3>(&diffN[3*o_nodes[1]+0],&diffN[3*o_nodes[1]+1],&diffN[3*o_nodes[1]+2]),
+    FTensor::Tensor1<double*,3>(&diffN[3*o_nodes[2]+0],&diffN[3*o_nodes[2]+1],&diffN[3*o_nodes[2]+2])
+  };
+  double psi_l[p+1],diff_psi_l[3*p+3];
+
+  const int nb_base_fun_on_face = NBFACETRI_EDGE_HCURL(p);
+  if(nb_base_fun_on_face==0) PetscFunctionReturn(0);
+
+  for(int ee = 0;ee!=3;ee++) {
+
+    FTensor::Tensor1<double*,3> t_face_edge_base(
+      &phi_f_e[ee][0],&phi_f_e[ee][1],&phi_f_e[ee][2],3
+    );
+
+    t_edge_diff_ksi(i) = t_node_diff_ksi[o_nodes[1]](i)-t_node_diff_ksi[o_nodes[0]](i);
+
+    for(int ii = 0;ii!=nb_integration_pts;ii++) {
+
+      const int node_shift = ii*4;
+      const double n[] = {
+        N[node_shift+faces_nodes[0]],
+        N[node_shift+faces_nodes[1]],
+        N[node_shift+faces_nodes[2]]
+      };
+      const double ksi_0i = n[edges[ee][1]]-n[edges[ee][0]];
+      ierr = base_polynomials(
+        p,ksi_0i,&t_edge_diff_ksi(0),psi_l,diff_psi_l,3
+      ); CHKERRQ(ierr);
+      const double beta_e = n[edges[ee][0]]*n[edges[ee][1]];
+
+      for(int ll = 0;ll!=nb_base_fun_on_face;ll++) {
+        t_face_edge_base(i) = beta_e*psi_l[ll]*t_o_diff[ee](i);
+        ++t_face_edge_base;
+      }
+
     }
   }
 
@@ -317,6 +451,96 @@ PetscErrorCode MoFEM::Hcurl_BubbleFaceFunctions_MBTET(
     }
 
   }
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode MoFEM::Hcurl_BubbleFaceFunctions_MBTET_ON_FACE(
+  int *faces_nodes,int p,double *N,double *diffN,double *phi_f,double *diff_phi_f,int nb_integration_pts,
+  PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
+) {
+  PetscErrorCode ierr;
+  PetscFunctionBegin;
+
+  const double coords[] = { 0,0,0, 1,0,0, 0,1,0 };
+
+  FTensor::Index<'i',3> i;
+  FTensor::Tensor1<double*,3> t_node_diff_ksi[3] = {
+    FTensor::Tensor1<double*,3>(&diffN[0],&diffN[ 1],&diffN[ 2]),
+    FTensor::Tensor1<double*,3>(&diffN[3],&diffN[ 4],&diffN[ 5]),
+    FTensor::Tensor1<double*,3>(&diffN[6],&diffN[ 7],&diffN[ 8])
+  };
+  FTensor::Tensor1<double,3> t_diff_ksi0i,t_diff_ksi0j;
+
+  if(NBFACETRI_FACE_HCURL(p)==0) PetscFunctionReturn(0);
+
+  FTensor::Tensor1<double,3> t_coords0(
+    3*coords[faces_nodes[0]+0],
+    3*coords[faces_nodes[0]+1],
+    3*coords[faces_nodes[0]+2]
+  );
+  FTensor::Tensor1<double,3> tou_0i(
+    coords[3*faces_nodes[1]+0],
+    coords[3*faces_nodes[1]+1],
+    coords[3*faces_nodes[1]+2]
+  );
+  FTensor::Tensor1<double,3> tou_0j(
+    coords[3*faces_nodes[2]+0],
+    coords[3*faces_nodes[2]+1],
+    coords[3*faces_nodes[2]+2]
+  );
+  tou_0i(i) -= t_coords0(i);
+  tou_0j(i) -= t_coords0(i);
+
+  t_diff_ksi0i(i) = t_node_diff_ksi[faces_nodes[1]](i)-t_node_diff_ksi[faces_nodes[0]](i);
+  t_diff_ksi0j(i) = t_node_diff_ksi[faces_nodes[2]](i)-t_node_diff_ksi[faces_nodes[0]](i);
+
+  double psi_l_0i[p+1],diff_psi_l_0i[3*p+3];
+  double psi_l_0j[p+1],diff_psi_l_0j[3*p+3];
+
+  FTensor::Tensor1<double*,3> t_phi_f(&phi_f[0],&phi_f[1],&phi_f[2],3);
+
+  for(int ii = 0;ii!=nb_integration_pts;ii++) {
+
+    const int node_shift = ii*3;
+    const double beta_0ij = N[node_shift+faces_nodes[0]]*
+    N[node_shift+faces_nodes[1]]*N[node_shift+faces_nodes[2]];
+
+    const double ksi_0i = N[node_shift+faces_nodes[1]]-N[node_shift+faces_nodes[0]];
+    ierr = base_polynomials(
+      p,ksi_0i,&t_diff_ksi0i(0),psi_l_0i,diff_psi_l_0i,3
+    ); CHKERRQ(ierr);
+
+    const double ksi_0j = N[node_shift+faces_nodes[2]]-N[node_shift+faces_nodes[0]];
+    ierr = base_polynomials(p,ksi_0j,&t_diff_ksi0j(0),psi_l_0j,diff_psi_l_0j,3); CHKERRQ(ierr);
+
+    int cc = 0;
+    for(int oo = 0;oo<=(p-3);oo++) {
+      for(int pp0 = 0;pp0<=oo;pp0++) {
+        const int pp1 = oo-pp0;
+        if(pp1>=0) {
+          const double a = beta_0ij*psi_l_0i[pp0]*psi_l_0j[pp1];
+          t_phi_f(i) = a*tou_0i(i);
+          ++t_phi_f;
+          ++cc;
+          t_phi_f(i) = a*tou_0j(i);
+          ++t_phi_f;
+          ++cc;
+        }
+      }
+    }
+
+    const int nb_base_fun_on_face = NBFACETRI_FACE_HCURL(p);
+    if(cc!=nb_base_fun_on_face) {
+      SETERRQ2(
+        PETSC_COMM_SELF,
+        MOFEM_DATA_INCONSISTENCY,
+        "Wrong number of base functions %d != %d",
+        cc,nb_base_fun_on_face
+      );
+    }
+
+  }
+
   PetscFunctionReturn(0);
 }
 
@@ -575,6 +799,90 @@ PetscErrorCode MoFEM::Hcurl_FaceFunctions_MBTET(
 
     }
 
+  }
+
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode Hcurl_FaceFunctions_MBTET_ON_FACE(
+  int *faces_nodes,int p,double *N,double *diffN,double *phi_f,double *diff_phi_f,int nb_integration_pts,
+  PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
+) {
+  PetscErrorCode ierr;
+  PetscFunctionBegin;
+
+  MatrixDouble base_face_edge_functions;
+  MatrixDouble diff_base_face_edge_functions;
+  double *phi_f_e[3];
+  double *diff_phi_f_e[3];
+  base_face_edge_functions.resize(3,3*NBFACETRI_EDGE_HCURL(p)*nb_integration_pts);
+  diff_base_face_edge_functions.resize(3,9*NBFACETRI_EDGE_HCURL(p)*nb_integration_pts);
+  for(int ee = 0;ee!=3;ee++) {
+    phi_f_e[ee] = &base_face_edge_functions(ee,0);
+    diff_phi_f_e[ee] = &diff_base_face_edge_functions(ee,0);
+  }
+
+  ierr = Hcurl_EdgeBasedFaceFunctions_MBTET_ON_FACE(
+    faces_nodes,p,N,diffN,phi_f_e,diff_phi_f_e,nb_integration_pts,base_polynomials
+  ); CHKERRQ(ierr);
+
+  VectorDouble base_face_bubble_functions;
+  VectorDouble diff_base_face_bubble_functions;
+  double *phi_f_f;
+  double *diff_phi_f_f;
+  base_face_bubble_functions.resize(3*NBFACETRI_FACE_HCURL(p)*nb_integration_pts);
+  diff_base_face_bubble_functions.resize(3*NBFACETRI_FACE_HCURL(p)*nb_integration_pts);
+  phi_f_f = &base_face_bubble_functions[0];
+  diff_phi_f_f = &diff_base_face_bubble_functions[0];
+  ierr = Hcurl_BubbleFaceFunctions_MBTET_ON_FACE(
+    faces_nodes,p,N,diffN,phi_f_f,diff_phi_f_f,nb_integration_pts,base_polynomials
+  ); CHKERRQ(ierr);
+
+  FTensor::Index<'i',3> i;
+
+  FTensor::Tensor1<double*,3> t_face_edge_base[]= {
+    FTensor::Tensor1<double*,3>(&phi_f_e[0][0],&phi_f_e[0][1],&phi_f_e[0][2],3),
+    FTensor::Tensor1<double*,3>(&phi_f_e[1][0],&phi_f_e[1][1],&phi_f_e[1][2],3),
+    FTensor::Tensor1<double*,3>(&phi_f_e[2][0],&phi_f_e[2][1],&phi_f_e[2][2],3)
+  };
+  FTensor::Tensor1<double*,3> t_face_face_base(&phi_f_f[0],&phi_f_f[1],&phi_f_f[2],3);
+  FTensor::Tensor1<double*,3> t_face_base(&phi_f[0],&phi_f[1],&phi_f[2],3);
+
+  for(int ii = 0;ii!=nb_integration_pts;ii++) {
+
+    int cc = 0;
+    for(int oo = 0;oo<=p;oo++) {
+      // Face-edge base
+      for(int ee = 0;ee!=3;ee++) {
+        if(oo>1) {
+          for(int ll = NBFACETRI_EDGE_HCURL(oo-1);ll!=NBFACETRI_EDGE_HCURL(oo);ll++) {
+            t_face_base(i) = t_face_edge_base[ee](i);
+            ++cc;
+            ++t_face_base;
+            ++t_face_edge_base[ee];
+            // cerr << oo << " " << ll << " " << cc << " " << NBFACETRI_EDGE_HCURL(oo) << endl;
+          }
+        }
+      }
+      // Face-face base
+      for(int ll = NBFACETRI_FACE_HCURL(oo-1);ll!=NBFACETRI_FACE_HCURL(oo);ll++) {
+        t_face_base(i) = t_face_face_base(i);
+        ++cc;
+        ++t_face_base;
+        ++t_face_face_base;
+      }
+    }
+
+    // check consistency
+    const int nb_base_fun_on_face = NBFACETRI_HCURL(p);
+    if(cc!=nb_base_fun_on_face) {
+      SETERRQ2(
+        PETSC_COMM_SELF,
+        MOFEM_DATA_INCONSISTENCY,
+        "Wrong number of base functions %d != %d",
+        cc,nb_base_fun_on_face
+      );
+    }
 
   }
 
