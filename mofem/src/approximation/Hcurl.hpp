@@ -261,7 +261,7 @@ PetscErrorCode Hcurl_VolumeInteriorFunctions_MBTET(
 
 */
 PetscErrorCode Hcurl_FaceFunctions_MBTET(
-  int *faces_nodes,int *p,double *N,double *diffN,double *phi_f[4],double *diff_phi_f[4],int nb_integration_pts,
+  int *face_nodes,int *p,double *N,double *diffN,double *phi_f[4],double *diff_phi_f[4],int nb_integration_pts,
   PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
 );
 

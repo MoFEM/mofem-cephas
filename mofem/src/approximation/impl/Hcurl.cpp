@@ -712,7 +712,7 @@ PetscErrorCode MoFEM::Hcurl_VolumeInteriorFunctions_MBTET(
 }
 
 PetscErrorCode MoFEM::Hcurl_FaceFunctions_MBTET(
-  int *faces_nodes,int *p,double *N,double *diffN,double *phi_f[4],double *diff_phi_f[4],int nb_integration_pts,
+  int *face_nodes,int *p,double *N,double *diffN,double *phi_f[4],double *diff_phi_f[4],int nb_integration_pts,
   PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
 ) {
   PetscErrorCode ierr;
@@ -731,7 +731,7 @@ PetscErrorCode MoFEM::Hcurl_FaceFunctions_MBTET(
     }
   }
   ierr = Hcurl_EdgeBasedFaceFunctions_MBTET(
-    faces_nodes,p,N,diffN,phi_f_e,diff_phi_f_e,nb_integration_pts,base_polynomials
+    face_nodes,p,N,diffN,phi_f_e,diff_phi_f_e,nb_integration_pts,base_polynomials
   ); CHKERRQ(ierr);
 
   VectorDouble base_face_bubble_functions[4];
@@ -745,7 +745,7 @@ PetscErrorCode MoFEM::Hcurl_FaceFunctions_MBTET(
     diff_phi_f_f[ff] = &diff_base_face_bubble_functions[ff][0];
   }
   ierr = Hcurl_BubbleFaceFunctions_MBTET(
-    faces_nodes,p,N,diffN,phi_f_f,diff_phi_f_f,nb_integration_pts,base_polynomials
+    face_nodes,p,N,diffN,phi_f_f,diff_phi_f_f,nb_integration_pts,base_polynomials
   ); CHKERRQ(ierr);
 
   FTensor::Index<'i',3> i;
@@ -804,7 +804,7 @@ PetscErrorCode MoFEM::Hcurl_FaceFunctions_MBTET(
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode Hcurl_FaceFunctions_MBTET_ON_FACE(
+PetscErrorCode MoFEM::Hcurl_FaceFunctions_MBTET_ON_FACE(
   int *faces_nodes,int p,double *N,double *diffN,double *phi_f,double *diff_phi_f,int nb_integration_pts,
   PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
 ) {

@@ -44,6 +44,8 @@ using namespace MoFEM;
 #include <EntPolynomialBaseCtx.hpp>
 #include <EdgePolynomialBase.hpp>
 
+#include <Hcurl.hpp>
+
 PetscErrorCode EdgePolynomialBase::queryInterface(
   const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface
 ) {
@@ -218,5 +220,37 @@ PetscErrorCode EdgePolynomialBase::getValueHdiv(ublas::matrix<double> &pts) {
 }
 
 PetscErrorCode EdgePolynomialBase::getValueHCurl(ublas::matrix<double> &pts) {
-  SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"Not yet implemented");
+  PetscErrorCode ierr;
+  PetscFunctionBegin;
+
+  DataForcesAndSurcesCore& data = cTx->dAta;
+  const FieldApproximationBase base = cTx->bAse;
+  PetscErrorCode (*base_polynomials)(
+    int p,double s,double *diff_s,double *L,double *diffL,const int dim
+  ) = cTx->basePolynomials;
+
+  int nb_gauss_pts = pts.size2();
+
+  if(data.spacesOnEntities[MBEDGE].test(HCURL)) {
+    //edges
+    if(data.dataOnEntities[MBEDGE].size()!=1) {
+      SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
+    }
+    int sense = data.dataOnEntities[MBEDGE][0].getSense();
+    int order = data.dataOnEntities[MBEDGE][0].getDataOrder();
+    int nb_dofs = NBEDGE_HCURL(data.dataOnEntities[MBEDGE][0].getDataOrder());
+    data.dataOnEntities[MBEDGE][0].getN(base).resize(nb_gauss_pts,3*nb_dofs,false);
+    ierr = Hcurl_EdgeBaseFunctions_MBTET_ON_EDGE(
+      sense,
+      order,
+      &data.dataOnEntities[MBVERTEX][0].getN(base)(0,0),
+      NULL,
+      &*data.dataOnEntities[MBEDGE][0].getN(base).data().begin(),
+      NULL,
+      nb_gauss_pts,
+      base_polynomials
+    ); CHKERRQ(ierr);
+  }
+
+  PetscFunctionReturn(0);
 }

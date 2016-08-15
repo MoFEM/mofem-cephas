@@ -45,6 +45,8 @@ using namespace MoFEM;
 #include <EntPolynomialBaseCtx.hpp>
 #include <TriPolynomialBase.hpp>
 
+#include <Hcurl.hpp>
+
 TriPolynomialBase::TriPolynomialBase() {}
 TriPolynomialBase::~TriPolynomialBase() {}
 
@@ -220,18 +222,66 @@ PetscErrorCode TriPolynomialBase::getValueHdiv(
 PetscErrorCode TriPolynomialBase::getValueHCurl(
   ublas::matrix<double> &pts
 ) {
-  // PetscErrorCode ierr;
+  PetscErrorCode ierr;
   PetscFunctionBegin;
 
-  // DataForcesAndSurcesCore& data = cTx->dAta;
-  // const FieldApproximationBase base = cTx->bAse;
-  // PetscErrorCode (*base_polynomials)(
-  //   int p,double s,double *diff_s,double *L,double *diffL,const int dim
-  // ) = cTx->basePolynomials;
-  //
-  // int nb_gauss_pts = pts.size2();
+  DataForcesAndSurcesCore& data = cTx->dAta;
+  const FieldApproximationBase base = cTx->bAse;
+  PetscErrorCode (*base_polynomials)(
+    int p,double s,double *diff_s,double *L,double *diffL,const int dim
+  ) = cTx->basePolynomials;
 
-  SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"Not yet implemented (You can do it)");
+  int nb_gauss_pts = pts.size2();
+
+  // Calculation H-curl on triangle faces
+  if(data.spacesOnEntities[MBEDGE].test(HCURL)) {
+    if(data.dataOnEntities[MBEDGE].size()!=3) {
+      SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
+    }
+    int sense[3],order[3];
+    double *HCurl_edgeN[3];
+    for(int ee = 0;ee<3;ee++) {
+      if(data.dataOnEntities[MBEDGE][ee].getSense() == 0) {
+        SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
+      }
+      sense[ee] = data.dataOnEntities[MBEDGE][ee].getSense();
+      order[ee] = data.dataOnEntities[MBEDGE][ee].getDataOrder();
+      int nb_dofs = NBEDGE_HCURL(data.dataOnEntities[MBEDGE][ee].getDataOrder());
+      data.dataOnEntities[MBEDGE][ee].getN(base).resize(nb_gauss_pts,3*nb_dofs,false);
+      HCurl_edgeN[ee] = &*data.dataOnEntities[MBEDGE][ee].getN(base).data().begin();
+    }
+    ierr = Hcurl_EdgeBaseFunctions_MBTET_ON_FACE(
+      sense,
+      order,
+      &data.dataOnEntities[MBVERTEX][0].getN(base)(0,0),
+      NULL,
+      HCurl_edgeN,
+      NULL,
+      nb_gauss_pts,
+      base_polynomials
+    ); CHKERRQ(ierr);
+  }
+
+  if(data.spacesOnEntities[MBTRI].test(HCURL)) {
+    //face
+    if(data.dataOnEntities[MBTRI].size()!=1) {
+      SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
+    }
+    int order = data.dataOnEntities[MBTRI][0].getDataOrder();
+    int nb_dofs = NBFACETRI_HCURL(order);
+    data.dataOnEntities[MBTRI][0].getN(base).resize(nb_gauss_pts,3*nb_dofs,false);
+    int face_nodes[] = { 0,1,2 };
+    ierr = Hcurl_FaceFunctions_MBTET_ON_FACE(
+      face_nodes,
+      order,
+      &data.dataOnEntities[MBVERTEX][0].getN(base)(0,0),
+      NULL,
+      &*data.dataOnEntities[MBTRI][0].getN(base).data().begin(),
+      NULL,
+      nb_gauss_pts,
+      base_polynomials
+    ); CHKERRQ(ierr);
+  }
 
   PetscFunctionReturn(0);
 }
