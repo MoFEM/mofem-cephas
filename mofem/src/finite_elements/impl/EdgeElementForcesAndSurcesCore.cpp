@@ -164,7 +164,12 @@ PetscErrorCode EdgeElementForcesAndSurcesCore::operator()() {
             SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"Not yet implemented");
           }
           if(dataH1.spacesOnEntities[MBEDGE].test(HCURL)) {
-            SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"Not yet implemented");
+            ierr = EdgePolynomialBase().getValue(
+              gaussPts,
+              boost::shared_ptr<BaseFunctionCtx>(
+                new EntPolynomialBaseCtx(dataH1,HCURL,ApproximationBaseArray[b],NOBASE)
+              )
+            ); CHKERRQ(ierr);
           }
           if(dataH1.spacesOnEntities[MBTET].test(L2)) {
             SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"Not yet implemented");

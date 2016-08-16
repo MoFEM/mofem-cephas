@@ -164,6 +164,20 @@ struct DataForcesAndSurcesCore {
     HDIV0_0 = 0,HDIV1_0,HDIV2_0,HDIV0_1,HDIV1_1,HDIV2_1,HDIV0_2,HDIV1_2,HDIV2_2
   };
 
+  /**
+   * \brief Format in rows of Hcurl base functions
+   */
+  enum HCurlFormatting {
+    HCURL0 = 0,HCURL1,HCURL2
+  };
+
+  /**
+   * \brief Format in rows of Hcurl gradients of base functions
+   */
+  enum HCurlDiffFormatting {
+    HCURL0_0 = 0,HCURL1_0,HCURL2_0,HCURL0_1,HCURL1_1,HCURL2_1,HCURL0_2,HCURL1_2,HCURL2_2
+  };
+
   /** \brief Data on single entity (This is passed as argument to DataOperator::doWork)
     * \ingroup mofem_forces_and_sources_user_data_operators
     */
@@ -493,7 +507,7 @@ struct DataForcesAndSurcesCore {
     /** \brief get derivatives of base functions for Hdiv space
     *
     * Note: In rows ale integration pts, columns are formatted that that
-    * components of vectors over, then derivatives, for example row for given
+    * components of vectors and then derivatives, for example row for given
     * integration points is formatted in array
     * \f[
     * t_{0,0}, t_{1,0}, t_{1,0}, t_{0,1}, t_{1,1}, t_{1,1}, t_{0,2}, t_{1,2}, t_{1,2}
@@ -584,6 +598,37 @@ struct DataForcesAndSurcesCore {
     inline const MatrixAdaptor getDiffHdivN(const int dof,const int gg) {
       return getDiffHdivN(bAse,dof,gg);
     }
+
+    inline const MatrixDouble& getHcurlN(const FieldApproximationBase base) const { return getN(base); };
+    inline const MatrixDouble& getDiffHcurlN(const FieldApproximationBase base) const { return getDiffN(base); };
+    inline MatrixDouble& getHcurlN(const FieldApproximationBase base) { return getN(base); };
+    inline MatrixDouble& getDiffHcurlN(const FieldApproximationBase base) { return getDiffN(base); };
+
+    /** \brief get base functions for Hdiv space
+    */
+    inline const MatrixDouble& getHcurlN() const { return getN(bAse); };
+
+    /** \brief get derivatives of base functions for Hdiv space
+    *
+    * Note: In rows ale integration pts, columns are formatted that that
+    * components of vectors and then derivatives, for example row for given
+    * integration points is formatted in array
+    * \f[
+    * t_{0,0}, t_{1,0}, t_{1,0}, t_{0,1}, t_{1,1}, t_{1,1}, t_{0,2}, t_{1,2}, t_{1,2}
+    * \f]
+    * where comma express derivative, i.e. \f$t_{2,1} = \frac{\partial t_2}{\partial \xi_1}\f$
+    *
+    */
+    inline const MatrixDouble& getDiffHcurlN() const { return getDiffN(bAse); };
+
+    /** \brief get base functions for Hdiv space
+    */
+    inline MatrixDouble& getHcurlN() { return getN(bAse); };
+
+    /** \brief Get derivatives of base functions for Hdiv space
+    *
+    */
+    inline MatrixDouble& getDiffHcurlN() { return getDiffN(bAse); };
 
     /**
      * \brief Get base function as Tensor0
