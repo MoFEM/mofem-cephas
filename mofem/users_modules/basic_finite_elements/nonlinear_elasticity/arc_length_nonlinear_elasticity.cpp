@@ -512,17 +512,34 @@ int main(int argc, char *argv[]) {
   loops_to_do_Rhs.push_back(TsCtx::loop_pair_type("ELASTIC",&elastic.getLoopFeRhs()));
   //surface forces and pressures
   loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("NEUAMNN_FE",&fe_neumann));
+
+  //edge forces
+  boost::ptr_map<std::string,EdgeForce> edge_forces;
+  string fe_name_str ="FORCE_FE";
+  edge_forces.insert(fe_name_str,new EdgeForce(m_field));
+  for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,NODESET|FORCESET,it)) {
+    ierr = edge_forces.at(fe_name_str).addForce("SPATIAL_POSITION",arc_ctx->F_lambda,it->get_msId());  CHKERRQ(ierr);
+  }
+  for(
+    boost::ptr_map<std::string,EdgeForce>::iterator eit = edge_forces.begin();
+    eit!=edge_forces.end();eit++
+  ) {
+    loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type(eit->first,&eit->second->getLoopFe()));
+  }
+
   //nodal forces
   boost::ptr_map<std::string,NodalForce> nodal_forces;
-  string fe_name_str ="FORCE_FE";
+  // string fe_name_str ="FORCE_FE";
   nodal_forces.insert(fe_name_str,new NodalForce(m_field));
   for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,NODESET|FORCESET,it)) {
     ierr = nodal_forces.at(fe_name_str).addForce("SPATIAL_POSITION",arc_ctx->F_lambda,it->get_msId());  CHKERRQ(ierr);
   }
-  boost::ptr_map<std::string,NodalForce>::iterator fit = nodal_forces.begin();
-  for(;fit!=nodal_forces.end();fit++) {
+  for(
+    boost::ptr_map<std::string,NodalForce>::iterator fit = nodal_forces.begin();
+    fit!=nodal_forces.end();fit++) {
     loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type(fit->first,&fit->second->getLoopFe()));
   }
+
   //arc length
   loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("NONE",&assemble_F_lambda));
   loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("ARC_LENGTH",&arc_method));
