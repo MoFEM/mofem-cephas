@@ -673,7 +673,7 @@ PetscErrorCode MoFEM::Hcurl_FaceInteriorFunctions_MBTET(
   double psi_l_0i[4][p+1],diff_psi_l_0i[4][3*p+3];
   double psi_l_0j[4][p+1],diff_psi_l_0j[4][3*p+3];
   double beta_f[4];
-  FTensor::Tensor1<double,3> t_beta_f[4];
+  FTensor::Tensor1<double,3> t_diff_beta_f[4];
 
   FTensor::Tensor1<double*,3> t_phi_v(&phi_v[0],&phi_v[1],&phi_v[2],3);
   FTensor::Tensor2<double*,3,3> t_diff_phi_v(
@@ -697,10 +697,10 @@ PetscErrorCode MoFEM::Hcurl_FaceInteriorFunctions_MBTET(
       N[node_shift+faces_nodes[3*ff+0]]*N[node_shift+faces_nodes[3*ff+1]]*
       N[node_shift+faces_nodes[3*ff+2]];
 
-      t_beta_f[ff](j) =
-      t_node_diff_ksi[3*ff+0](j)*N[node_shift+faces_nodes[3*ff+1]]*N[node_shift+faces_nodes[3*ff+2]]+
-      N[node_shift+faces_nodes[3*ff+0]]*t_node_diff_ksi[3*ff+1](j)*N[node_shift+faces_nodes[3*ff+2]]+
-      N[node_shift+faces_nodes[3*ff+0]]*N[node_shift+faces_nodes[3*ff+1]]*t_node_diff_ksi[3*ff+2](j);
+      t_diff_beta_f[ff](j) =
+      t_node_diff_ksi[faces_nodes[3*ff+0]](j)*N[node_shift+faces_nodes[3*ff+1]]*N[node_shift+faces_nodes[3*ff+2]]+
+      N[node_shift+faces_nodes[3*ff+0]]*t_node_diff_ksi[faces_nodes[3*ff+1]](j)*N[node_shift+faces_nodes[3*ff+2]]+
+      N[node_shift+faces_nodes[3*ff+0]]*N[node_shift+faces_nodes[3*ff+1]]*t_node_diff_ksi[faces_nodes[3*ff+2]](j);
 
       const double ksi_0i =
       N[node_shift+faces_nodes[3*ff+1]]-N[node_shift+faces_nodes[3*ff+0]];
@@ -717,17 +717,17 @@ PetscErrorCode MoFEM::Hcurl_FaceInteriorFunctions_MBTET(
     }
 
     FTensor::Tensor1<double*,3> t_diff_psi_l_0i[] = {
-      FTensor::Tensor1<double*,3>(&diff_psi_l_0i[0][0],&diff_psi_l_0i[0][1],&diff_psi_l_0i[0][2]),
-      FTensor::Tensor1<double*,3>(&diff_psi_l_0i[1][0],&diff_psi_l_0i[1][1],&diff_psi_l_0i[1][2]),
-      FTensor::Tensor1<double*,3>(&diff_psi_l_0i[2][0],&diff_psi_l_0i[2][1],&diff_psi_l_0i[2][2]),
-      FTensor::Tensor1<double*,3>(&diff_psi_l_0i[3][0],&diff_psi_l_0i[3][1],&diff_psi_l_0i[3][2])
+      FTensor::Tensor1<double*,3>(&diff_psi_l_0i[0][0],&diff_psi_l_0i[0][1],&diff_psi_l_0i[0][2],3),
+      FTensor::Tensor1<double*,3>(&diff_psi_l_0i[1][0],&diff_psi_l_0i[1][1],&diff_psi_l_0i[1][2],3),
+      FTensor::Tensor1<double*,3>(&diff_psi_l_0i[2][0],&diff_psi_l_0i[2][1],&diff_psi_l_0i[2][2],3),
+      FTensor::Tensor1<double*,3>(&diff_psi_l_0i[3][0],&diff_psi_l_0i[3][1],&diff_psi_l_0i[3][2],3),
     };
 
     FTensor::Tensor1<double*,3> t_diff_psi_l_0j[] = {
-      FTensor::Tensor1<double*,3>(&diff_psi_l_0j[0][0],&diff_psi_l_0j[0][1],&diff_psi_l_0j[0][2]),
-      FTensor::Tensor1<double*,3>(&diff_psi_l_0j[1][0],&diff_psi_l_0j[1][1],&diff_psi_l_0j[1][2]),
-      FTensor::Tensor1<double*,3>(&diff_psi_l_0j[2][0],&diff_psi_l_0j[2][1],&diff_psi_l_0j[2][2]),
-      FTensor::Tensor1<double*,3>(&diff_psi_l_0j[3][0],&diff_psi_l_0j[3][1],&diff_psi_l_0j[3][2])
+      FTensor::Tensor1<double*,3>(&diff_psi_l_0j[0][0],&diff_psi_l_0j[0][1],&diff_psi_l_0j[0][2],3),
+      FTensor::Tensor1<double*,3>(&diff_psi_l_0j[1][0],&diff_psi_l_0j[1][1],&diff_psi_l_0j[1][2],3),
+      FTensor::Tensor1<double*,3>(&diff_psi_l_0j[2][0],&diff_psi_l_0j[2][1],&diff_psi_l_0j[2][2],3),
+      FTensor::Tensor1<double*,3>(&diff_psi_l_0j[3][0],&diff_psi_l_0j[3][1],&diff_psi_l_0j[3][2],3)
     };
 
     int cc = 0;
@@ -742,7 +742,7 @@ PetscErrorCode MoFEM::Hcurl_FaceInteriorFunctions_MBTET(
             ++t_phi_v;
             ++cc;
             t_diff_phi_v(i,j) = (
-              t_beta_f[ff](j)*t+
+              t_diff_beta_f[ff](j)*t+
               beta_f[ff]*t_diff_psi_l_0i[ff](j)*psi_l_0j[ff][pp1]+
               beta_f[ff]*psi_l_0i[ff][pp0]*t_diff_psi_l_0j[ff](j)
             )*t_node_diff_ksi[face_opposite_nodes[ff]](i);
@@ -927,7 +927,7 @@ PetscErrorCode MoFEM::Hcurl_FaceFunctions_MBTET(
   double *diff_phi_f_f[4];
   for(int ff=0;ff!=4;ff++) {
     base_face_bubble_functions[ff].resize(3*NBFACETRI_FACE_HCURL(p[ff])*nb_integration_pts);
-    diff_base_face_bubble_functions[ff].resize(3*NBFACETRI_FACE_HCURL(p[ff])*nb_integration_pts);
+    diff_base_face_bubble_functions[ff].resize(9*NBFACETRI_FACE_HCURL(p[ff])*nb_integration_pts);
     phi_f_f[ff] = &base_face_bubble_functions[ff][0];
     diff_phi_f_f[ff] = &diff_base_face_bubble_functions[ff][0];
   }
@@ -1018,7 +1018,7 @@ PetscErrorCode MoFEM::Hcurl_FaceFunctions_MBTET_ON_FACE(
   double *phi_f_f;
   double *diff_phi_f_f;
   base_face_bubble_functions.resize(3*NBFACETRI_FACE_HCURL(p)*nb_integration_pts);
-  diff_base_face_bubble_functions.resize(3*NBFACETRI_FACE_HCURL(p)*nb_integration_pts);
+  diff_base_face_bubble_functions.resize(9*NBFACETRI_FACE_HCURL(p)*nb_integration_pts);
   phi_f_f = &base_face_bubble_functions[0];
   diff_phi_f_f = &diff_base_face_bubble_functions[0];
   ierr = Hcurl_BubbleFaceFunctions_MBTET_ON_FACE(
