@@ -1,5 +1,9 @@
 ##Installation on Ubuntu##
 
+Installation of MoFEM on Ubuntu can be made as well within docker see details
+[go to this page](doc/markdown/InstalltionWithDocker.markdown). Installation in
+docker is faster where prebuild enviroent is downloaded directly form
+[docker hub](https://hub.docker.com/r/likask/ubuntu_mofem/).
 
 ###1. Install packages
 
