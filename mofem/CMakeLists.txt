@@ -66,7 +66,7 @@ execute_process(
 )
 add_custom_target(
   install_prerequisites
-  COMMAND ${CMAKE_COMMAND} -E touch_nocreate ${PROJECT_BINARY_DIR}/CMakeCache.txt
+  # COMMAND ${CMAKE_COMMAND} -E touch_nocreate ${PROJECT_BINARY_DIR}/CMakeCache.txt
   COMMENT "Install prerequisites compiled with MoFEM"
 )
 
