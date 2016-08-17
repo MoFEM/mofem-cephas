@@ -26,8 +26,7 @@ PetscErrorCode MoFEM::Hcurl_EdgeBaseFunctions_MBTET(
     {0,1}, {1,2}, {2,0}, {0,3}, {1,3}, {2,3}
   };
   int P[6];
-  for(int ee = 0;ee<6; ee++)
-    P[ee] = NBEDGE_HCURL(p[ee]);
+  for(int ee = 0;ee!=6; ee++) P[ee] = NBEDGE_HCURL(p[ee]);
 
   FTensor::Index<'i',3> i;
   FTensor::Index<'j',3> j;
@@ -94,6 +93,7 @@ PetscErrorCode MoFEM::Hcurl_EdgeBaseFunctions_MBTET(
     )
   };
   FTensor::Tensor1<double,3> t_psi_e_0,t_psi_e_1;
+  FTensor::Tensor2<double,3,3> t_diff_psi_e_0,t_diff_psi_e_1;
 
   for(int ii = 0;ii!=nb_integration_pts;ii++) {
 
@@ -103,32 +103,49 @@ PetscErrorCode MoFEM::Hcurl_EdgeBaseFunctions_MBTET(
       if(P[ee]==0) continue;
 
       t_psi_e_0(i) =
-      N[node_shift+edges_nodes[ee][1]]*t_node_diff_ksi[edges_nodes[ee][0]](i)-
-      N[node_shift+edges_nodes[ee][0]]*t_node_diff_ksi[edges_nodes[ee][1]](i);
+      (N[node_shift+edges_nodes[ee][1]]*t_node_diff_ksi[edges_nodes[ee][0]](i)-
+      N[node_shift+edges_nodes[ee][0]]*t_node_diff_ksi[edges_nodes[ee][1]](i))*sense[ee];
+      t_diff_psi_e_0(i,j) =
+      (t_node_diff_ksi[edges_nodes[ee][1]](j)*t_node_diff_ksi[edges_nodes[ee][0]](i)-
+      t_node_diff_ksi[edges_nodes[ee][0]](j)*t_node_diff_ksi[edges_nodes[ee][1]](i))*sense[ee];
+
       t_psi_e_1(i) =
       N[node_shift+edges_nodes[ee][1]]*t_node_diff_ksi[edges_nodes[ee][0]](i)+
       N[node_shift+edges_nodes[ee][0]]*t_node_diff_ksi[edges_nodes[ee][1]](i);
+      t_diff_psi_e_1(i,j) =
+      t_node_diff_ksi[edges_nodes[ee][1]](j)*t_node_diff_ksi[edges_nodes[ee][0]](i)+
+      t_node_diff_ksi[edges_nodes[ee][0]](j)*t_node_diff_ksi[edges_nodes[ee][1]](i);
+
       (t_edge_n[ee])(i) = t_psi_e_0(i);
       ++(t_edge_n[ee]);
       (t_edge_n[ee])(i) = t_psi_e_1(i);
       ++(t_edge_n[ee]);
 
+      (t_diff_edge_n[ee])(i,j) = t_diff_psi_e_0(i,j);
+      ++(t_diff_edge_n[ee]);
+      (t_diff_edge_n[ee])(i,j) = t_diff_psi_e_1(i,j);
+      ++(t_diff_edge_n[ee]);
+
       if(p[ee]>1) {
-        const double ksi_0i = N[node_shift+edges_nodes[ee][1]]-N[node_shift+edges_nodes[ee][0]];
+
+        const double ksi_0i = (N[node_shift+edges_nodes[ee][1]]-N[node_shift+edges_nodes[ee][0]])*sense[ee];
         double psi_l[p[ee]+1],diff_psi_l[3*p[ee]+3];
-        ierr = base_polynomials(
-          p[ee],ksi_0i,&edge_diff_ksi[ee][0],psi_l,diff_psi_l,3
-        ); CHKERRQ(ierr);
-        FTensor::Tensor1<double*,3> t_diff_psi_l(&diff_psi_l[0],&diff_psi_l[1],&diff_psi_l[2],3);
+        ierr = base_polynomials(p[ee],ksi_0i,&edge_diff_ksi[ee][0],psi_l,diff_psi_l,3); CHKERRQ(ierr);
+        FTensor::Tensor1<double*,3> t_diff_psi_l(&diff_psi_l[0],&diff_psi_l[p[ee]+1],&diff_psi_l[2*p[ee]+2],1);
+
         for(int ll = 2;ll!=P[ee];ll++) {
+
           const double a = (double)(2*ll+1)/(double)(ll+1);
           const double b = (double)(ll)/(double)(ll+1);
+
           (t_edge_n[ee])(i) = a*psi_l[ll-1]*t_psi_e_1(i)-b*psi_l[ll-2]*t_psi_e_0(i);
           ++(t_edge_n[ee]);
-          (t_diff_edge_n[ee])(i,j) = -b*t_diff_psi_l(j)*t_psi_e_0(i);
+
+          (t_diff_edge_n[ee])(i,j) = -b*(t_diff_psi_l(j)*t_psi_e_0(i)+psi_l[ll-2]*t_diff_psi_e_0(i,j));
           ++t_diff_psi_l;
-          (t_diff_edge_n[ee])(i,j) += a*t_diff_psi_l(j)*t_psi_e_1(i);
+          (t_diff_edge_n[ee])(i,j) += a*(t_diff_psi_l(j)*t_psi_e_1(i)+psi_l[ll-1]*t_diff_psi_e_1(i,j));
           ++(t_diff_edge_n[ee]);
+
         }
       }
 
@@ -166,7 +183,7 @@ PetscErrorCode MoFEM::Hcurl_EdgeBaseFunctions_MBTET_ON_EDGE(
 
     const int node_shift = ii*2;
 
-    t_psi_e_0(i) = N[node_shift+1]*t_node_diff_ksi[0](i)- N[node_shift+0]*t_node_diff_ksi[1](i);
+    t_psi_e_0(i) = (N[node_shift+1]*t_node_diff_ksi[0](i)- N[node_shift+0]*t_node_diff_ksi[1](i))*sense;
     t_psi_e_1(i) = N[node_shift+1]*t_node_diff_ksi[0](i)+ N[node_shift+0]*t_node_diff_ksi[1](i);
     t_edge_n(i) = t_psi_e_0(i);
     ++t_edge_n;
@@ -174,7 +191,7 @@ PetscErrorCode MoFEM::Hcurl_EdgeBaseFunctions_MBTET_ON_EDGE(
     ++t_edge_n;
 
     if(p>1) {
-      const double ksi_0i = N[node_shift+1]-N[node_shift+0];
+      const double ksi_0i = (N[node_shift+1]-N[node_shift+0])*sense;
       double psi_l[p+1],diff_psi_l[3*p+3];
       ierr = base_polynomials(
         p,ksi_0i,&edge_diff_ksi[0],psi_l,diff_psi_l,3
@@ -240,8 +257,8 @@ PetscErrorCode MoFEM::Hcurl_EdgeBaseFunctions_MBTET_ON_FACE(
       if(P[ee]==0) continue;
 
       t_psi_e_0(i) =
-      N[node_shift+edges_nodes[ee][1]]*t_node_diff_ksi[edges_nodes[ee][0]](i)-
-      N[node_shift+edges_nodes[ee][0]]*t_node_diff_ksi[edges_nodes[ee][1]](i);
+      (N[node_shift+edges_nodes[ee][1]]*t_node_diff_ksi[edges_nodes[ee][0]](i)-
+      N[node_shift+edges_nodes[ee][0]]*t_node_diff_ksi[edges_nodes[ee][1]](i))*sense[ee];
       t_psi_e_1(i) =
       N[node_shift+edges_nodes[ee][1]]*t_node_diff_ksi[edges_nodes[ee][0]](i)+
       N[node_shift+edges_nodes[ee][0]]*t_node_diff_ksi[edges_nodes[ee][1]](i);
@@ -251,7 +268,7 @@ PetscErrorCode MoFEM::Hcurl_EdgeBaseFunctions_MBTET_ON_FACE(
       ++(t_edge_n[ee]);
 
       if(p[ee]>1) {
-        const double ksi_0i = N[node_shift+edges_nodes[ee][1]]-N[node_shift+edges_nodes[ee][0]];
+        const double ksi_0i = (N[node_shift+edges_nodes[ee][1]]-N[node_shift+edges_nodes[ee][0]])*sense[ee];
         double psi_l[p[ee]+1],diff_psi_l[3*p[ee]+3];
         ierr = base_polynomials(
           p[ee],ksi_0i,&edge_diff_ksi[ee][0],psi_l,diff_psi_l,3
@@ -1236,9 +1253,7 @@ PetscErrorCode VTK_Hcurl_MBTET(const string file_name) {
   int edge_order[6] = { order,order,order, order,order,order };
 
   cout << "NBEDGE_HCURL(order) " <<  NBEDGE_HCURL(order) << endl;
-  MatrixDouble base_edge_functions(
-    6,3*nb_gauss_pts*NBEDGE_HCURL(order)
-  );
+  MatrixDouble base_edge_functions(6,3*nb_gauss_pts*NBEDGE_HCURL(order));
   double* edge_n[] = {
     &base_edge_functions(0,0),
     &base_edge_functions(1,0),
@@ -1248,9 +1263,7 @@ PetscErrorCode VTK_Hcurl_MBTET(const string file_name) {
     &base_edge_functions(5,0)
   };
 
-  MatrixDouble diff_base_edge_functions(
-    6,9*nb_gauss_pts*NBEDGE_HCURL(order)
-  );
+  MatrixDouble diff_base_edge_functions(6,9*nb_gauss_pts*NBEDGE_HCURL(order));
   double* diff_edge_n[] = {
     &diff_base_edge_functions(0,0),
     &diff_base_edge_functions(1,0),
@@ -1281,237 +1294,250 @@ PetscErrorCode VTK_Hcurl_MBTET(const string file_name) {
       rval = moab_ref.tag_get_handle(
         ss.str().c_str(),3,MB_TYPE_DOUBLE,th,MB_TAG_CREAT|MB_TAG_SPARSE,def_val
       ); CHKERRQ_MOAB(rval);
+      std::ostringstream ss_grad;
+      ss_grad << "grad_curl_edge_" << ee << "_" << ll;
+      Tag th_grad;
+      rval = moab_ref.tag_get_handle(
+        ss_grad.str().c_str(),9,MB_TYPE_DOUBLE,th_grad,MB_TAG_CREAT|MB_TAG_SPARSE,def_val
+      ); CHKERRQ_MOAB(rval);
 
       int gg = 0;
       for(Range::iterator nit = elem_nodes.begin();nit!=elem_nodes.end();nit++,gg++) {
         rval = moab_ref.tag_set_data(
           th,&*nit,1,&(edge_n[ee][gg*3*NBEDGE_HCURL(order)+ll*3])
         ); CHKERRQ_MOAB(rval);
+        int sh = gg*9*NBEDGE_HCURL(order)+ll*9;
+        double grad[9] = {
+          diff_edge_n[ee][sh+0],diff_edge_n[ee][sh+3],diff_edge_n[ee][sh+6],
+          diff_edge_n[ee][sh+1],diff_edge_n[ee][sh+4],diff_edge_n[ee][sh+7],
+          diff_edge_n[ee][sh+2],diff_edge_n[ee][sh+5],diff_edge_n[ee][sh+8]
+        };
+        rval = moab_ref.tag_set_data(th_grad,&*nit,1,grad); CHKERRQ_MOAB(rval);
       }
     }
   }
 
-  cout << "NBFACETRI_EDGE_HCURL(order) " << NBFACETRI_EDGE_HCURL(order) << endl;
-  int faces_order[] = { order,order,order,order };
-  int faces_nodes[] = { 0,1,3, 1,2,3, 0,2,3, 0,1,2 };
-  MatrixDouble base_face_edge_functions(
-    4,3*3*NBFACETRI_EDGE_HCURL(order)*nb_gauss_pts
-  );
-  MatrixDouble diff_base_face_edge_functions(
-    4,3*9*NBFACETRI_EDGE_HCURL(order)*nb_gauss_pts
-  );
-  double *phi_f_e[4][3];
-  double *diff_phi_f_e[4][3];
-  for(int ff = 0;ff!=4;ff++) {
-    for(int ee = 0;ee!=3;ee++) {
-      phi_f_e[ff][ee] = &base_face_edge_functions(ff,ee*3*NBFACETRI_EDGE_HCURL(order)*nb_gauss_pts);
-      diff_phi_f_e[ff][ee] = &diff_base_face_edge_functions(ff,ee*9*NBFACETRI_EDGE_HCURL(order)*nb_gauss_pts);
-    }
-  }
-
-  ierr = Hcurl_EdgeBasedFaceFunctions_MBTET(
-    faces_nodes,
-    faces_order,
-    &*shape_fun.data().begin(),
-    diff_shape_fun,
-    phi_f_e,
-    diff_phi_f_e,
-    nb_gauss_pts,
-    Legendre_polynomials
-  ); CHKERRQ(ierr);
-
-  for(int ff = 0;ff!=4;ff++) {
-    for(int  ee = 0;ee!=3;ee++) {
-      for(int ll = 0;ll!=NBFACETRI_EDGE_HCURL(order);ll++) {
-        std::ostringstream ss;
-        ss << "curl_face_edge_" << ff << "_" << ee << "_" << ll;
-        Tag th;
-        rval = moab_ref.tag_get_handle(
-          ss.str().c_str(),3,MB_TYPE_DOUBLE,th,MB_TAG_CREAT|MB_TAG_SPARSE,def_val
-        ); CHKERRQ_MOAB(rval);
-
-        int gg = 0;
-        for(Range::iterator nit = elem_nodes.begin();nit!=elem_nodes.end();nit++,gg++) {
-
-          int idx =
-          3*NBFACETRI_EDGE_HCURL(order)*gg+ll*3;
-          if(idx >= base_face_edge_functions.size2()) {
-            cerr << ff << " " << ee << " " << ll << " " << gg << endl;
-          }
-
-          rval = moab_ref.tag_set_data(th,&*nit,1,&(phi_f_e[ff][ee][idx])); CHKERRQ_MOAB(rval);
-        }
-      }
-    }
-  }
-
-  cout << "NBFACETRI_FACE_HCURL(order) " << NBFACETRI_FACE_HCURL(order) << endl;
-  MatrixDouble base_face_bubble_functions(
-    4,3*NBFACETRI_FACE_HCURL(order)*nb_gauss_pts
-  );
-  MatrixDouble diff_base_face_bubble_functions(
-    4,9*NBFACETRI_FACE_HCURL(order)*nb_gauss_pts
-  );
-  double *phi_f[4];
-  double *diff_phi_f[4];
-  for(int ff=0;ff!=4;ff++) {
-    phi_f[ff] = &base_face_bubble_functions(ff,0);
-    diff_phi_f[ff] = &diff_base_face_bubble_functions(ff,0);
-  }
-
-  ierr = Hcurl_BubbleFaceFunctions_MBTET(
-    faces_nodes,
-    faces_order,
-    &*shape_fun.data().begin(),
-    diff_shape_fun,
-    phi_f,
-    diff_phi_f,
-    nb_gauss_pts,
-    Legendre_polynomials
-  ); CHKERRQ(ierr);
-
-  for(int ff = 0;ff!=4;ff++) {
-    for(int ll = 0;ll!=NBFACETRI_FACE_HCURL(order);ll++) {
-      std::ostringstream ss;
-      ss << "curl_face_bubble_" << ff << "_" << ll;
-      Tag th;
-      rval = moab_ref.tag_get_handle(
-        ss.str().c_str(),3,MB_TYPE_DOUBLE,th,MB_TAG_CREAT|MB_TAG_SPARSE,def_val
-      ); CHKERRQ_MOAB(rval);
-
-      int gg = 0;
-      for(Range::iterator nit = elem_nodes.begin();nit!=elem_nodes.end();nit++,gg++) {
-        int idx = 3*NBFACETRI_FACE_HCURL(order)*gg+ll*3;
-        rval = moab_ref.tag_set_data(th,&*nit,1,&(phi_f[ff][idx])); CHKERRQ_MOAB(rval);
-      }
-    }
-  }
-
-  cout << "NBVOLUMETET_FACE_HCURL(order) " << NBVOLUMETET_FACE_HCURL(order) << endl;
-  VectorDouble base_face_inetrior_functions(3*NBVOLUMETET_FACE_HCURL(order)*nb_gauss_pts);
-  VectorDouble diff_base_face_inetrior_functions(9*NBVOLUMETET_FACE_HCURL(order)*nb_gauss_pts);
-  double *phi_v_f = &base_face_inetrior_functions[0];
-  double *diff_phi_v_f = &diff_base_face_inetrior_functions[0];
-  ierr = Hcurl_FaceInteriorFunctions_MBTET(
-    faces_nodes,
-    order,
-    &*shape_fun.data().begin(),
-    diff_shape_fun,
-    phi_v_f,
-    diff_phi_v_f,
-    nb_gauss_pts,
-    Legendre_polynomials
-  ); CHKERRQ(ierr);
-  for(int ll = 0;ll!=NBVOLUMETET_FACE_HCURL(order);ll++) {
-    std::ostringstream ss;
-    ss << "curl_face_interior_" << ll;
-    Tag th;
-    rval = moab_ref.tag_get_handle(
-      ss.str().c_str(),3,MB_TYPE_DOUBLE,th,MB_TAG_CREAT|MB_TAG_SPARSE,def_val
-    ); CHKERRQ_MOAB(rval);
-
-    int gg = 0;
-    for(Range::iterator nit = elem_nodes.begin();nit!=elem_nodes.end();nit++,gg++) {
-      int idx = 3*NBVOLUMETET_FACE_HCURL(order)*gg+ll*3;
-      rval = moab_ref.tag_set_data(th,&*nit,1,&(phi_v_f[idx])); CHKERRQ_MOAB(rval);
-    }
-  }
-
-  cout << "NBVOLUMETET_TET_HCURL(order) " << NBVOLUMETET_TET_HCURL(order) << endl;
-  VectorDouble base_interior_functions(3*NBVOLUMETET_TET_HCURL(order)*nb_gauss_pts);
-  VectorDouble diff_base_interior_functions(9*NBVOLUMETET_TET_HCURL(order)*nb_gauss_pts);
-  double *phi_v = &base_interior_functions[0];
-  double *diff_phi_v = &diff_base_interior_functions[0];
-  ierr = Hcurl_VolumeInteriorFunctions_MBTET(
-    order,
-    &*shape_fun.data().begin(),
-    diff_shape_fun,
-    phi_v,
-    diff_phi_v,
-    nb_gauss_pts,
-    Legendre_polynomials
-  ); CHKERRQ(ierr);
-  for(int ll = 0;ll!=NBVOLUMETET_TET_HCURL(order);ll++) {
-    std::ostringstream ss;
-    ss << "curl_interior_" << ll;
-    Tag th;
-    rval = moab_ref.tag_get_handle(
-      ss.str().c_str(),3,MB_TYPE_DOUBLE,th,MB_TAG_CREAT|MB_TAG_SPARSE,def_val
-    ); CHKERRQ_MOAB(rval);
-
-    int gg = 0;
-    for(Range::iterator nit = elem_nodes.begin();nit!=elem_nodes.end();nit++,gg++) {
-      int idx = 3*NBVOLUMETET_TET_HCURL(order)*gg+ll*3;
-      rval = moab_ref.tag_set_data(th,&*nit,1,&(phi_v[idx])); CHKERRQ_MOAB(rval);
-    }
-  }
-
-  cout << "NBFACETRI_HCURL(order) " << NBFACETRI_HCURL(order) << endl;
-  MatrixDouble base_face_functions(
-    4,3*NBFACETRI_HCURL(order)*nb_gauss_pts
-  );
-  MatrixDouble diff_base_face_functions(
-    4,9*NBFACETRI_HCURL(order)*nb_gauss_pts
-  );
-  for(int ff=0;ff!=4;ff++) {
-    phi_f[ff] = &base_face_functions(ff,0);
-    diff_phi_f[ff] = &diff_base_face_functions(ff,0);
-  }
-  ierr =  Hcurl_FaceFunctions_MBTET(
-    faces_nodes,
-    faces_order,
-    &*shape_fun.data().begin(),
-    diff_shape_fun,
-    phi_f,
-    diff_phi_f,
-    nb_gauss_pts,
-    Legendre_polynomials
-  ); CHKERRQ(ierr);
-  for(int ff = 0;ff!=4;ff++) {
-    for(int ll = 0;ll!=NBFACETRI_HCURL(order);ll++) {
-      std::ostringstream ss;
-      ss << "curl_face_" << ff << "_" << ll;
-      Tag th;
-      rval = moab_ref.tag_get_handle(
-        ss.str().c_str(),3,MB_TYPE_DOUBLE,th,MB_TAG_CREAT|MB_TAG_SPARSE,def_val
-      ); CHKERRQ_MOAB(rval);
-
-      int gg = 0;
-      for(Range::iterator nit = elem_nodes.begin();nit!=elem_nodes.end();nit++,gg++) {
-        int idx = 3*NBFACETRI_HCURL   (order)*gg+ll*3;
-        rval = moab_ref.tag_set_data(th,&*nit,1,&(phi_f[ff][idx])); CHKERRQ_MOAB(rval);
-      }
-    }
-  }
-
-  cout << "NBVOLUMETET_TET_HCURL(order) " << NBVOLUMETET_HCURL(order) << endl;
-  VectorDouble base_volume_functions(3*NBVOLUMETET_HCURL(order)*nb_gauss_pts);
-  VectorDouble diff_base_volume_functions(9*NBVOLUMETET_HCURL(order)*nb_gauss_pts);
-  phi_v = &base_volume_functions[0];
-  diff_phi_v = &diff_base_volume_functions[0];
-  ierr = MoFEM::Hcurl_VolumeFunctions_MBTET(
-    order,
-    &*shape_fun.data().begin(),
-    diff_shape_fun,
-    phi_v,
-    diff_phi_v,
-    nb_gauss_pts,
-    Legendre_polynomials
-  ); CHKERRQ(ierr);
-  for(int ll = 0;ll!=NBVOLUMETET_HCURL(order);ll++) {
-    std::ostringstream ss;
-    ss << "curl_volume_" << ll;
-    Tag th;
-    rval = moab_ref.tag_get_handle(
-      ss.str().c_str(),3,MB_TYPE_DOUBLE,th,MB_TAG_CREAT|MB_TAG_SPARSE,def_val
-    ); CHKERRQ_MOAB(rval);
-
-    int gg = 0;
-    for(Range::iterator nit = elem_nodes.begin();nit!=elem_nodes.end();nit++,gg++) {
-      int idx = 3*NBVOLUMETET_HCURL(order)*gg+ll*3;
-      rval = moab_ref.tag_set_data(th,&*nit,1,&(phi_v[idx])); CHKERRQ_MOAB(rval);
-    }
-  }
+  // cout << "NBFACETRI_EDGE_HCURL(order) " << NBFACETRI_EDGE_HCURL(order) << endl;
+  // int faces_order[] = { order,order,order,order };
+  // int faces_nodes[] = { 0,1,3, 1,2,3, 0,2,3, 0,1,2 };
+  // MatrixDouble base_face_edge_functions(
+  //   4,3*3*NBFACETRI_EDGE_HCURL(order)*nb_gauss_pts
+  // );
+  // MatrixDouble diff_base_face_edge_functions(
+  //   4,3*9*NBFACETRI_EDGE_HCURL(order)*nb_gauss_pts
+  // );
+  // double *phi_f_e[4][3];
+  // double *diff_phi_f_e[4][3];
+  // for(int ff = 0;ff!=4;ff++) {
+  //   for(int ee = 0;ee!=3;ee++) {
+  //     phi_f_e[ff][ee] = &base_face_edge_functions(ff,ee*3*NBFACETRI_EDGE_HCURL(order)*nb_gauss_pts);
+  //     diff_phi_f_e[ff][ee] = &diff_base_face_edge_functions(ff,ee*9*NBFACETRI_EDGE_HCURL(order)*nb_gauss_pts);
+  //   }
+  // }
+  //
+  // ierr = Hcurl_EdgeBasedFaceFunctions_MBTET(
+  //   faces_nodes,
+  //   faces_order,
+  //   &*shape_fun.data().begin(),
+  //   diff_shape_fun,
+  //   phi_f_e,
+  //   diff_phi_f_e,
+  //   nb_gauss_pts,
+  //   Legendre_polynomials
+  // ); CHKERRQ(ierr);
+  //
+  // for(int ff = 0;ff!=4;ff++) {
+  //   for(int  ee = 0;ee!=3;ee++) {
+  //     for(int ll = 0;ll!=NBFACETRI_EDGE_HCURL(order);ll++) {
+  //       std::ostringstream ss;
+  //       ss << "curl_face_edge_" << ff << "_" << ee << "_" << ll;
+  //       Tag th;
+  //       rval = moab_ref.tag_get_handle(
+  //         ss.str().c_str(),3,MB_TYPE_DOUBLE,th,MB_TAG_CREAT|MB_TAG_SPARSE,def_val
+  //       ); CHKERRQ_MOAB(rval);
+  //
+  //       int gg = 0;
+  //       for(Range::iterator nit = elem_nodes.begin();nit!=elem_nodes.end();nit++,gg++) {
+  //
+  //         int idx =
+  //         3*NBFACETRI_EDGE_HCURL(order)*gg+ll*3;
+  //         if(idx >= base_face_edge_functions.size2()) {
+  //           cerr << ff << " " << ee << " " << ll << " " << gg << endl;
+  //         }
+  //
+  //         rval = moab_ref.tag_set_data(th,&*nit,1,&(phi_f_e[ff][ee][idx])); CHKERRQ_MOAB(rval);
+  //       }
+  //     }
+  //   }
+  // }
+  //
+  // cout << "NBFACETRI_FACE_HCURL(order) " << NBFACETRI_FACE_HCURL(order) << endl;
+  // MatrixDouble base_face_bubble_functions(
+  //   4,3*NBFACETRI_FACE_HCURL(order)*nb_gauss_pts
+  // );
+  // MatrixDouble diff_base_face_bubble_functions(
+  //   4,9*NBFACETRI_FACE_HCURL(order)*nb_gauss_pts
+  // );
+  // double *phi_f[4];
+  // double *diff_phi_f[4];
+  // for(int ff=0;ff!=4;ff++) {
+  //   phi_f[ff] = &base_face_bubble_functions(ff,0);
+  //   diff_phi_f[ff] = &diff_base_face_bubble_functions(ff,0);
+  // }
+  //
+  // ierr = Hcurl_BubbleFaceFunctions_MBTET(
+  //   faces_nodes,
+  //   faces_order,
+  //   &*shape_fun.data().begin(),
+  //   diff_shape_fun,
+  //   phi_f,
+  //   diff_phi_f,
+  //   nb_gauss_pts,
+  //   Legendre_polynomials
+  // ); CHKERRQ(ierr);
+  //
+  // for(int ff = 0;ff!=4;ff++) {
+  //   for(int ll = 0;ll!=NBFACETRI_FACE_HCURL(order);ll++) {
+  //     std::ostringstream ss;
+  //     ss << "curl_face_bubble_" << ff << "_" << ll;
+  //     Tag th;
+  //     rval = moab_ref.tag_get_handle(
+  //       ss.str().c_str(),3,MB_TYPE_DOUBLE,th,MB_TAG_CREAT|MB_TAG_SPARSE,def_val
+  //     ); CHKERRQ_MOAB(rval);
+  //
+  //     int gg = 0;
+  //     for(Range::iterator nit = elem_nodes.begin();nit!=elem_nodes.end();nit++,gg++) {
+  //       int idx = 3*NBFACETRI_FACE_HCURL(order)*gg+ll*3;
+  //       rval = moab_ref.tag_set_data(th,&*nit,1,&(phi_f[ff][idx])); CHKERRQ_MOAB(rval);
+  //     }
+  //   }
+  // }
+  //
+  // cout << "NBVOLUMETET_FACE_HCURL(order) " << NBVOLUMETET_FACE_HCURL(order) << endl;
+  // VectorDouble base_face_inetrior_functions(3*NBVOLUMETET_FACE_HCURL(order)*nb_gauss_pts);
+  // VectorDouble diff_base_face_inetrior_functions(9*NBVOLUMETET_FACE_HCURL(order)*nb_gauss_pts);
+  // double *phi_v_f = &base_face_inetrior_functions[0];
+  // double *diff_phi_v_f = &diff_base_face_inetrior_functions[0];
+  // ierr = Hcurl_FaceInteriorFunctions_MBTET(
+  //   faces_nodes,
+  //   order,
+  //   &*shape_fun.data().begin(),
+  //   diff_shape_fun,
+  //   phi_v_f,
+  //   diff_phi_v_f,
+  //   nb_gauss_pts,
+  //   Legendre_polynomials
+  // ); CHKERRQ(ierr);
+  // for(int ll = 0;ll!=NBVOLUMETET_FACE_HCURL(order);ll++) {
+  //   std::ostringstream ss;
+  //   ss << "curl_face_interior_" << ll;
+  //   Tag th;
+  //   rval = moab_ref.tag_get_handle(
+  //     ss.str().c_str(),3,MB_TYPE_DOUBLE,th,MB_TAG_CREAT|MB_TAG_SPARSE,def_val
+  //   ); CHKERRQ_MOAB(rval);
+  //
+  //   int gg = 0;
+  //   for(Range::iterator nit = elem_nodes.begin();nit!=elem_nodes.end();nit++,gg++) {
+  //     int idx = 3*NBVOLUMETET_FACE_HCURL(order)*gg+ll*3;
+  //     rval = moab_ref.tag_set_data(th,&*nit,1,&(phi_v_f[idx])); CHKERRQ_MOAB(rval);
+  //   }
+  // }
+  //
+  // cout << "NBVOLUMETET_TET_HCURL(order) " << NBVOLUMETET_TET_HCURL(order) << endl;
+  // VectorDouble base_interior_functions(3*NBVOLUMETET_TET_HCURL(order)*nb_gauss_pts);
+  // VectorDouble diff_base_interior_functions(9*NBVOLUMETET_TET_HCURL(order)*nb_gauss_pts);
+  // double *phi_v = &base_interior_functions[0];
+  // double *diff_phi_v = &diff_base_interior_functions[0];
+  // ierr = Hcurl_VolumeInteriorFunctions_MBTET(
+  //   order,
+  //   &*shape_fun.data().begin(),
+  //   diff_shape_fun,
+  //   phi_v,
+  //   diff_phi_v,
+  //   nb_gauss_pts,
+  //   Legendre_polynomials
+  // ); CHKERRQ(ierr);
+  // for(int ll = 0;ll!=NBVOLUMETET_TET_HCURL(order);ll++) {
+  //   std::ostringstream ss;
+  //   ss << "curl_interior_" << ll;
+  //   Tag th;
+  //   rval = moab_ref.tag_get_handle(
+  //     ss.str().c_str(),3,MB_TYPE_DOUBLE,th,MB_TAG_CREAT|MB_TAG_SPARSE,def_val
+  //   ); CHKERRQ_MOAB(rval);
+  //
+  //   int gg = 0;
+  //   for(Range::iterator nit = elem_nodes.begin();nit!=elem_nodes.end();nit++,gg++) {
+  //     int idx = 3*NBVOLUMETET_TET_HCURL(order)*gg+ll*3;
+  //     rval = moab_ref.tag_set_data(th,&*nit,1,&(phi_v[idx])); CHKERRQ_MOAB(rval);
+  //   }
+  // }
+  //
+  // cout << "NBFACETRI_HCURL(order) " << NBFACETRI_HCURL(order) << endl;
+  // MatrixDouble base_face_functions(
+  //   4,3*NBFACETRI_HCURL(order)*nb_gauss_pts
+  // );
+  // MatrixDouble diff_base_face_functions(
+  //   4,9*NBFACETRI_HCURL(order)*nb_gauss_pts
+  // );
+  // for(int ff=0;ff!=4;ff++) {
+  //   phi_f[ff] = &base_face_functions(ff,0);
+  //   diff_phi_f[ff] = &diff_base_face_functions(ff,0);
+  // }
+  // ierr =  Hcurl_FaceFunctions_MBTET(
+  //   faces_nodes,
+  //   faces_order,
+  //   &*shape_fun.data().begin(),
+  //   diff_shape_fun,
+  //   phi_f,
+  //   diff_phi_f,
+  //   nb_gauss_pts,
+  //   Legendre_polynomials
+  // ); CHKERRQ(ierr);
+  // for(int ff = 0;ff!=4;ff++) {
+  //   for(int ll = 0;ll!=NBFACETRI_HCURL(order);ll++) {
+  //     std::ostringstream ss;
+  //     ss << "curl_face_" << ff << "_" << ll;
+  //     Tag th;
+  //     rval = moab_ref.tag_get_handle(
+  //       ss.str().c_str(),3,MB_TYPE_DOUBLE,th,MB_TAG_CREAT|MB_TAG_SPARSE,def_val
+  //     ); CHKERRQ_MOAB(rval);
+  //
+  //     int gg = 0;
+  //     for(Range::iterator nit = elem_nodes.begin();nit!=elem_nodes.end();nit++,gg++) {
+  //       int idx = 3*NBFACETRI_HCURL   (order)*gg+ll*3;
+  //       rval = moab_ref.tag_set_data(th,&*nit,1,&(phi_f[ff][idx])); CHKERRQ_MOAB(rval);
+  //     }
+  //   }
+  // }
+  //
+  // cout << "NBVOLUMETET_TET_HCURL(order) " << NBVOLUMETET_HCURL(order) << endl;
+  // VectorDouble base_volume_functions(3*NBVOLUMETET_HCURL(order)*nb_gauss_pts);
+  // VectorDouble diff_base_volume_functions(9*NBVOLUMETET_HCURL(order)*nb_gauss_pts);
+  // phi_v = &base_volume_functions[0];
+  // diff_phi_v = &diff_base_volume_functions[0];
+  // ierr = MoFEM::Hcurl_VolumeFunctions_MBTET(
+  //   order,
+  //   &*shape_fun.data().begin(),
+  //   diff_shape_fun,
+  //   phi_v,
+  //   diff_phi_v,
+  //   nb_gauss_pts,
+  //   Legendre_polynomials
+  // ); CHKERRQ(ierr);
+  // for(int ll = 0;ll!=NBVOLUMETET_HCURL(order);ll++) {
+  //   std::ostringstream ss;
+  //   ss << "curl_volume_" << ll;
+  //   Tag th;
+  //   rval = moab_ref.tag_get_handle(
+  //     ss.str().c_str(),3,MB_TYPE_DOUBLE,th,MB_TAG_CREAT|MB_TAG_SPARSE,def_val
+  //   ); CHKERRQ_MOAB(rval);
+  //
+  //   int gg = 0;
+  //   for(Range::iterator nit = elem_nodes.begin();nit!=elem_nodes.end();nit++,gg++) {
+  //     int idx = 3*NBVOLUMETET_HCURL(order)*gg+ll*3;
+  //     rval = moab_ref.tag_set_data(th,&*nit,1,&(phi_v[idx])); CHKERRQ_MOAB(rval);
+  //   }
+  // }
 
 
   EntityHandle meshset;
