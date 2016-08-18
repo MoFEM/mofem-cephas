@@ -170,10 +170,10 @@ int main(int argc, char *argv[]) {
 
   }
 
-  if(pcomm->rank()!=(unsigned int)do_for_rank) {
-    std::string wait;
-    std::cin >> wait;
-  }
+  // if(pcomm->rank()!=(unsigned int)do_for_rank) {
+  //   std::string wait;
+  //   std::cin >> wait;
+  // }
 
   PetscFinalize();
   return 0;
