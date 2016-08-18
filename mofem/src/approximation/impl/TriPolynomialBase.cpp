@@ -248,6 +248,7 @@ PetscErrorCode TriPolynomialBase::getValueHCurl(
       order[ee] = data.dataOnEntities[MBEDGE][ee].getDataOrder();
       int nb_dofs = NBEDGE_HCURL(data.dataOnEntities[MBEDGE][ee].getDataOrder());
       data.dataOnEntities[MBEDGE][ee].getN(base).resize(nb_gauss_pts,3*nb_dofs,false);
+      data.dataOnEntities[MBEDGE][0].getDiffN(base).resize(nb_gauss_pts,0,false);
       HCurl_edgeN[ee] = &*data.dataOnEntities[MBEDGE][ee].getN(base).data().begin();
     }
     ierr = Hcurl_EdgeBaseFunctions_MBTET_ON_FACE(
@@ -260,6 +261,11 @@ PetscErrorCode TriPolynomialBase::getValueHCurl(
       nb_gauss_pts,
       base_polynomials
     ); CHKERRQ(ierr);
+  } else {
+    for(int ee = 0;ee<3;ee++) {
+      data.dataOnEntities[MBEDGE][ee].getN(base).resize(nb_gauss_pts,0,false);
+      data.dataOnEntities[MBEDGE][ee].getDiffN(base).resize(nb_gauss_pts,0,false);
+    }
   }
 
   if(data.spacesOnEntities[MBTRI].test(HCURL)) {
@@ -270,6 +276,7 @@ PetscErrorCode TriPolynomialBase::getValueHCurl(
     int order = data.dataOnEntities[MBTRI][0].getDataOrder();
     int nb_dofs = NBFACETRI_HCURL(order);
     data.dataOnEntities[MBTRI][0].getN(base).resize(nb_gauss_pts,3*nb_dofs,false);
+    data.dataOnEntities[MBTRI][0].getDiffN(base).resize(nb_gauss_pts,0,false);
     int face_nodes[] = { 0,1,2 };
     ierr = Hcurl_FaceFunctions_MBTET_ON_FACE(
       face_nodes,
@@ -281,6 +288,9 @@ PetscErrorCode TriPolynomialBase::getValueHCurl(
       nb_gauss_pts,
       base_polynomials
     ); CHKERRQ(ierr);
+  } else {
+    data.dataOnEntities[MBTRI][0].getN(base).resize(nb_gauss_pts,0,false);
+    data.dataOnEntities[MBTRI][0].getDiffN(base).resize(nb_gauss_pts,0,false);
   }
 
   PetscFunctionReturn(0);

@@ -431,7 +431,7 @@ PetscErrorCode TetPolynomialBase::getValueHCurl(
       SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
     }
     double *hcurl_edge_n[6],*diff_hcurl_edge_n[6];
-    for(int ee = 0;ee<6;ee++) {
+    for(int ee = 0;ee!=6;ee++) {
       if(data.dataOnEntities[MBEDGE][ee].getSense() == 0) {
         SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
       }
@@ -453,6 +453,11 @@ PetscErrorCode TetPolynomialBase::getValueHCurl(
       nb_gauss_pts,
       base_polynomials
     ); CHKERRQ(ierr);
+  } else {
+    for(int ee = 0;ee!=6;ee++) {
+      data.dataOnEntities[MBEDGE][ee].getN(base).resize(nb_gauss_pts,0,false);
+      data.dataOnEntities[MBEDGE][ee].getDiffN(base).resize(nb_gauss_pts,0,false);
+    }
   }
 
   // triangles
@@ -463,7 +468,7 @@ PetscErrorCode TetPolynomialBase::getValueHCurl(
       SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
     }
     double *hcurl_base_n[4],*diff_hcurl_base_n[4];
-    for(int ff = 0;ff<4;ff++) {
+    for(int ff = 0;ff!=4;ff++) {
       if(data.dataOnEntities[MBTRI][ff].getSense() == 0) {
         SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
       }
@@ -490,6 +495,11 @@ PetscErrorCode TetPolynomialBase::getValueHCurl(
       nb_gauss_pts,
       base_polynomials
     ); CHKERRQ(ierr);
+  } else {
+    for(int ff = 0;ff<4;ff++) {
+      data.dataOnEntities[MBTRI][ff].getN(base).resize(nb_gauss_pts,0,false);
+      data.dataOnEntities[MBTRI][ff].getDiffN(base).resize(nb_gauss_pts,0,false);
+    }
   }
 
   if(data.spacesOnEntities[MBTET].test(HCURL)) {
@@ -509,6 +519,9 @@ PetscErrorCode TetPolynomialBase::getValueHCurl(
       base_polynomials
     ); CHKERRQ(ierr);
 
+  } else {
+    data.dataOnEntities[MBTET][0].getN(base).resize(nb_gauss_pts,0,false);
+    data.dataOnEntities[MBTET][0].getDiffN(base).resize(nb_gauss_pts,0,false);
   }
 
   PetscFunctionReturn(0);

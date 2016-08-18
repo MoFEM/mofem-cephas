@@ -240,6 +240,7 @@ PetscErrorCode EdgePolynomialBase::getValueHCurl(ublas::matrix<double> &pts) {
     int order = data.dataOnEntities[MBEDGE][0].getDataOrder();
     int nb_dofs = NBEDGE_HCURL(data.dataOnEntities[MBEDGE][0].getDataOrder());
     data.dataOnEntities[MBEDGE][0].getN(base).resize(nb_gauss_pts,3*nb_dofs,false);
+    data.dataOnEntities[MBEDGE][0].getDiffN(base).resize(nb_gauss_pts,0,false);
     ierr = Hcurl_EdgeBaseFunctions_MBTET_ON_EDGE(
       sense,
       order,
@@ -250,6 +251,9 @@ PetscErrorCode EdgePolynomialBase::getValueHCurl(ublas::matrix<double> &pts) {
       nb_gauss_pts,
       base_polynomials
     ); CHKERRQ(ierr);
+  } else {
+    data.dataOnEntities[MBEDGE][0].getN(base).resize(nb_gauss_pts,0,false);
+    data.dataOnEntities[MBEDGE][0].getDiffN(base).resize(nb_gauss_pts,0,false);
   }
 
   PetscFunctionReturn(0);
