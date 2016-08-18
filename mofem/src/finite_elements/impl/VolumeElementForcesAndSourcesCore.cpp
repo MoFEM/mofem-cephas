@@ -93,12 +93,12 @@ derivedDataHcurl(dataHcurl),
 dataNoField(type),
 dataNoFieldCol(type),
 opSetInvJacH1(invJac),
-opPiolaTransform(vOlume,jAc),
+opContravariantPiolaTransform(vOlume,jAc),
 opSetInvJacHdiv(invJac),
 meshPositionsFieldName("MESH_NODE_POSITIONS"),
 opHOatGaussPoints(hoCoordsAtGaussPts,hoGaussPtsJac,3,3),
 opSetHoInvJacH1(hoGaussPtsInvJac),
-opSetHoPiolaTransform(hoGaussPtsDetJac,hoGaussPtsJac),
+opSetHoContravariantPiolaTransform(hoGaussPtsDetJac,hoGaussPtsJac),
 opSetHoInvJacHdiv(hoGaussPtsInvJac),
 tJac(
   &jAc(0,0),&jAc(0,1),&jAc(0,2),
@@ -348,7 +348,7 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::operator()() {
         ierr = opSetInvJacH1.opRhs(dataL2); CHKERRQ(ierr);
       }
       if((dataH1.spacesOnEntities[MBTRI]).test(HDIV)) {
-        ierr = opPiolaTransform.opRhs(dataHdiv); CHKERRQ(ierr);
+        ierr = opContravariantPiolaTransform.opRhs(dataHdiv); CHKERRQ(ierr);
         ierr = opSetInvJacHdiv.opRhs(dataHdiv); CHKERRQ(ierr);
       }
     } catch (std::exception& ex) {
@@ -417,7 +417,7 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::operator()() {
           ierr = opSetHoInvJacH1.opRhs(dataL2); CHKERRQ(ierr);
         }
         if((dataH1.spacesOnEntities[MBTRI]).test(HDIV)) {
-          ierr = opSetHoPiolaTransform.opRhs(dataHdiv); CHKERRQ(ierr);
+          ierr = opSetHoContravariantPiolaTransform.opRhs(dataHdiv); CHKERRQ(ierr);
           ierr = opSetHoInvJacHdiv.opRhs(dataHdiv); CHKERRQ(ierr);
         }
       } catch (std::exception& ex) {

@@ -55,7 +55,7 @@ struct VolumeElementForcesAndSourcesCore: public ForcesAndSurcesCore {
   DataForcesAndSurcesCore dataNoFieldCol;
 
   OpSetInvJacH1 opSetInvJacH1;
-  OpSetPiolaTransform opPiolaTransform;
+  OpSetContravariantPiolaTransform opContravariantPiolaTransform;
   OpSetInvJacHdiv opSetInvJacHdiv;
 
   std::string meshPositionsFieldName;
@@ -66,7 +66,7 @@ struct VolumeElementForcesAndSourcesCore: public ForcesAndSurcesCore {
 
   OpGetDataAndGradient opHOatGaussPoints; ///< higher order geometry data at Gauss pts
   OpSetHoInvJacH1 opSetHoInvJacH1;
-  OpSetHoPiolaTransform opSetHoPiolaTransform;
+  OpSetHoContravariantPiolaTransform opSetHoContravariantPiolaTransform;
   OpSetHoInvJacHdiv opSetHoInvJacHdiv;
 
   VolumeElementForcesAndSourcesCore(Interface &m_field,const EntityType type = MBTET);

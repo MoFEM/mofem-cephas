@@ -764,7 +764,7 @@ PetscErrorCode OpSetInvJacHdiv::doWork(
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode OpSetPiolaTransform::doWork(
+PetscErrorCode OpSetContravariantPiolaTransform::doWork(
   int side,
   EntityType type,
   DataForcesAndSurcesCore::EntData &data
@@ -1027,7 +1027,7 @@ PetscErrorCode OpSetHoInvJacH1::doWork(
   }
 
 
- PetscErrorCode OpSetHoPiolaTransform::doWork(
+ PetscErrorCode OpSetHoContravariantPiolaTransform::doWork(
     int side,EntityType type,DataForcesAndSurcesCore::EntData &data
   ) {
     PetscFunctionBegin;

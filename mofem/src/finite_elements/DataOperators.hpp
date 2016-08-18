@@ -268,7 +268,7 @@ Contravariant Piola transformation
 \f]
 
 */
-struct OpSetPiolaTransform: public DataOperator {
+struct OpSetContravariantPiolaTransform: public DataOperator {
 
   double &vOlume;
   // MatrixDouble3by3 &jAc;
@@ -278,7 +278,7 @@ struct OpSetPiolaTransform: public DataOperator {
   FTensor::Index<'j',3> j;
   FTensor::Index<'k',3> k;
 
-  OpSetPiolaTransform(double &volume,MatrixDouble3by3 &jac):
+  OpSetContravariantPiolaTransform(double &volume,MatrixDouble3by3 &jac):
   vOlume(volume),
   // jAc(jac),
   tJac(
@@ -297,7 +297,7 @@ struct OpSetPiolaTransform: public DataOperator {
 
 /** \brief Apply covariant (Piola) transfer for Hdiv space for HO geometry
 */
-struct OpSetHoPiolaTransform: public DataOperator {
+struct OpSetHoContravariantPiolaTransform: public DataOperator {
 
   VectorDouble &detHoJac;
   MatrixDouble &hoJac;
@@ -305,7 +305,7 @@ struct OpSetHoPiolaTransform: public DataOperator {
   FTensor::Index<'j',3> j;
   FTensor::Index<'k',3> k;
 
-  OpSetHoPiolaTransform(VectorDouble &det_jac,MatrixDouble &jac):
+  OpSetHoContravariantPiolaTransform(VectorDouble &det_jac,MatrixDouble &jac):
   detHoJac(det_jac),hoJac(jac) {}
 
   MatrixDouble piolaN;
