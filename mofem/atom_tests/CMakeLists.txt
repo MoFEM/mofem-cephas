@@ -704,14 +704,15 @@ list(INSERT testing_base_list
   legendre
   lobatto
   h1tet
-  #hcurltet
+  hcurltet
   hdivtet
   l2tet
   h1tri
   hdivtri
-  #hcurltri
+  hcurltri
   #l2tri
   h1edge
+  hcurledge
 )
 foreach(test_base ${testing_base_list})
   add_test(testing_base_functions_${test_base}

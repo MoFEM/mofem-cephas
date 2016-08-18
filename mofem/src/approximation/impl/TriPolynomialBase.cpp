@@ -184,7 +184,8 @@ PetscErrorCode TriPolynomialBase::getValueHdiv(
   ); CHKERRQ(ierr);
   ierr = Hdiv_FaceBubbleShapeFunctions_MBTET_ON_FACE(
     face_nodes,face_order,
-    &data.dataOnEntities[MBVERTEX][0].getN(base)(0,0),NULL,
+    &data.dataOnEntities[MBVERTEX][0].getN(base)(0,0),
+    NULL,
     PHI_f,NULL,nb_gauss_pts,3,
     base_polynomials
   ); CHKERRQ(ierr);
@@ -249,7 +250,7 @@ PetscErrorCode TriPolynomialBase::getValueHCurl(
       sense,
       order,
       &data.dataOnEntities[MBVERTEX][0].getN(base)(0,0),
-      NULL,
+      &data.dataOnEntities[MBVERTEX][0].getDiffN(base)(0,0),
       HCurl_edgeN,
       NULL,
       nb_gauss_pts,
@@ -276,7 +277,7 @@ PetscErrorCode TriPolynomialBase::getValueHCurl(
       face_nodes,
       order,
       &data.dataOnEntities[MBVERTEX][0].getN(base)(0,0),
-      NULL,
+      &data.dataOnEntities[MBVERTEX][0].getDiffN(base)(0,0),
       &*data.dataOnEntities[MBTRI][0].getN(base).data().begin(),
       NULL,
       nb_gauss_pts,

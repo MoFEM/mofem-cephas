@@ -251,7 +251,7 @@ PetscErrorCode EdgePolynomialBase::getValueHCurl(ublas::matrix<double> &pts) {
       sense,
       order,
       &data.dataOnEntities[MBVERTEX][0].getN(base)(0,0),
-      NULL,
+      &data.dataOnEntities[MBVERTEX][0].getDiffN(base)(0,0),
       &*data.dataOnEntities[MBEDGE][0].getN(base).data().begin(),
       NULL,
       nb_gauss_pts,
