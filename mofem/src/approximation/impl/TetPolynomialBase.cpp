@@ -602,7 +602,7 @@ PetscErrorCode TetPolynomialBase::getValue(
     ierr = getValueL2(pts); CHKERRQ(ierr);
     break;
     default:
-    SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"Not yet implemented");
+    SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"Unknown space");
   }
 
   PetscFunctionReturn(0);

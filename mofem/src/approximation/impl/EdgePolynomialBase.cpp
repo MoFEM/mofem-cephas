@@ -211,12 +211,18 @@ PetscErrorCode EdgePolynomialBase::getValueH1(ublas::matrix<double> &pts) {
 
 PetscErrorCode EdgePolynomialBase::getValueL2(ublas::matrix<double> &pts) {
   PetscFunctionBegin;
-  SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"Not yet implemented");
+  SETERRQ(
+    PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,
+    "Make no sense, unless problem is 1d (1d not implemented yet)"
+  );
   PetscFunctionReturn(0);
 }
 
 PetscErrorCode EdgePolynomialBase::getValueHdiv(ublas::matrix<double> &pts) {
-  SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"Not yet implemented");
+  SETERRQ(
+    PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,
+    "Make no sense, unless problem is 2d (2d not implemented yet)"
+  );
 }
 
 PetscErrorCode EdgePolynomialBase::getValueHCurl(ublas::matrix<double> &pts) {

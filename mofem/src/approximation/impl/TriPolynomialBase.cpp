@@ -138,16 +138,10 @@ PetscErrorCode TriPolynomialBase::getValueL2(
   // PetscErrorCode ierr;
   PetscFunctionBegin;
 
-  // DataForcesAndSurcesCore& data = cTx->dAta;
-  // const FieldApproximationBase base = cTx->bAse;
-  // PetscErrorCode (*base_polynomials)(
-  //   int p,double s,double *diff_s,double *L,double *diffL,const int dim
-  // ) = cTx->basePolynomials;
-  //
-  // int nb_gauss_pts = pts.size2();
-
-  SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"Not yet implemented (You can do it)");
-
+  SETERRQ(
+    PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,
+    "Make no sense unless problem is 2d (2d not implemented yet)"
+  );
 
   PetscFunctionReturn(0);
 }
