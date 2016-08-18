@@ -36,7 +36,8 @@ add_subdirectory(${PROJECT_SOURCE_DIR}/src/ftensor/tests/speed)
 
 if(ADOL-C_LIBRARY)
 
-  find_path(TAPLESS_ADOL-C adtl.h HINTS ${ADOL-C_DIR}/include/adtl.h)
+  find_path(TAPLESS_ADOL-C adtl.h HINTS ${ADOL-C_DIR}/include/adolc)
+  # message(STATUS ${TAPLESS_ADOL-C})
   # Older versions of ADOL-C have don't have tapeless functionality
   if(TAPLESS_ADOL-C)
     add_executable(
