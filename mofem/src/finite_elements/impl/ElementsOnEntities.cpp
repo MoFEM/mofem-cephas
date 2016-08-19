@@ -1055,19 +1055,19 @@ PetscErrorCode ForcesAndSurcesCore::getFaceTriNodes(DataForcesAndSurcesCore &dat
     const boost::shared_ptr<SideNumber> side = *siit;
     int face_conn[3] = {-1,-1,-1};
     if(side->offset == 0) {
-      face_conn[0] = side->sense == 1 ? cannonical_face_sense_p1[side->side_number][0] : cannonical_face_sense_m1[side->side_number][0];
-      face_conn[1] = side->sense == 1 ? cannonical_face_sense_p1[side->side_number][1] : cannonical_face_sense_m1[side->side_number][1];
-      face_conn[2] = side->sense == 1 ? cannonical_face_sense_p1[side->side_number][2] : cannonical_face_sense_m1[side->side_number][2];
+      face_conn[0] = side->sense == 1 ? cannonical_face_sense_p1[(int)side->side_number][0] : cannonical_face_sense_m1[(int)side->side_number][0];
+      face_conn[1] = side->sense == 1 ? cannonical_face_sense_p1[(int)side->side_number][1] : cannonical_face_sense_m1[(int)side->side_number][1];
+      face_conn[2] = side->sense == 1 ? cannonical_face_sense_p1[(int)side->side_number][2] : cannonical_face_sense_m1[(int)side->side_number][2];
     }
     if(side->offset == 1) {
-      face_conn[0] = side->sense == 1 ? cannonical_face_sense_p1[side->side_number][1] : cannonical_face_sense_m1[side->side_number][2]/**/;
-      face_conn[1] = side->sense == 1 ? cannonical_face_sense_p1[side->side_number][2] : cannonical_face_sense_m1[side->side_number][0];
-      face_conn[2] = side->sense == 1 ? cannonical_face_sense_p1[side->side_number][0] : cannonical_face_sense_m1[side->side_number][1];
+      face_conn[0] = side->sense == 1 ? cannonical_face_sense_p1[(int)side->side_number][1] : cannonical_face_sense_m1[(int)side->side_number][2]/**/;
+      face_conn[1] = side->sense == 1 ? cannonical_face_sense_p1[(int)side->side_number][2] : cannonical_face_sense_m1[(int)side->side_number][0];
+      face_conn[2] = side->sense == 1 ? cannonical_face_sense_p1[(int)side->side_number][0] : cannonical_face_sense_m1[(int)side->side_number][1];
     }
     if(side->offset == 2) {
-      face_conn[0] = side->sense == 1 ? cannonical_face_sense_p1[side->side_number][2] : cannonical_face_sense_m1[side->side_number][1]/**/;
-      face_conn[1] = side->sense == 1 ? cannonical_face_sense_p1[side->side_number][0] : cannonical_face_sense_m1[side->side_number][2];
-      face_conn[2] = side->sense == 1 ? cannonical_face_sense_p1[side->side_number][1] : cannonical_face_sense_m1[side->side_number][0];
+      face_conn[0] = side->sense == 1 ? cannonical_face_sense_p1[(int)side->side_number][2] : cannonical_face_sense_m1[(int)side->side_number][1]/**/;
+      face_conn[1] = side->sense == 1 ? cannonical_face_sense_p1[(int)side->side_number][0] : cannonical_face_sense_m1[(int)side->side_number][2];
+      face_conn[2] = side->sense == 1 ? cannonical_face_sense_p1[(int)side->side_number][1] : cannonical_face_sense_m1[(int)side->side_number][0];
     }
     for(int nn = 0;nn<3;nn++) data.facesNodes(side->side_number,nn) = face_conn[nn];
     {

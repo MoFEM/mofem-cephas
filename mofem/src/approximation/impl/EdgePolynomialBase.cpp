@@ -153,14 +153,14 @@ PetscErrorCode EdgePolynomialBase::getValueH1(ublas::matrix<double> &pts) {
   const int side_number = 0;
   int sense = data.dataOnEntities[MBEDGE][side_number].getSense();
   int order = data.dataOnEntities[MBEDGE][side_number].getDataOrder();
-  data.dataOnEntities[MBEDGE][side_number].getN(base).resize(nb_gauss_pts,NBEDGE_H1_AINSWORTH_COLE(order),false);
-  data.dataOnEntities[MBEDGE][side_number].getDiffN(base).resize(nb_gauss_pts,NBEDGE_H1_AINSWORTH_COLE(order),false);
+  data.dataOnEntities[MBEDGE][side_number].getN(base).resize(nb_gauss_pts,NBEDGE_H1(order),false);
+  data.dataOnEntities[MBEDGE][side_number].getDiffN(base).resize(nb_gauss_pts,NBEDGE_H1(order),false);
 
   data.dataOnEntities[MBEDGE][side_number].getN(base).clear();
   data.dataOnEntities[MBEDGE][side_number].getDiffN(base).clear();
 
-  L.resize(NBEDGE_H1_AINSWORTH_COLE(order),false);
-  diffL.resize(NBEDGE_H1_AINSWORTH_COLE(order),false);
+  L.resize(NBEDGE_H1(order),false);
+  diffL.resize(NBEDGE_H1(order),false);
 
   // std::cerr << data.dataOnEntities[MBVERTEX][0].getN(base) << std::endl;
 
@@ -177,7 +177,7 @@ PetscErrorCode EdgePolynomialBase::getValueH1(ublas::matrix<double> &pts) {
 
       // calculate Legendre polynomials at integration points
       ierr = base_polynomials(
-        NBEDGE_H1_AINSWORTH_COLE(order)-1,s,&diff_s,&*L.data().begin(),&*diffL.data().begin(),1
+        NBEDGE_H1(order)-1,s,&diff_s,&*L.data().begin(),&*diffL.data().begin(),1
       ); CHKERRQ(ierr);
 
       // std::cerr << "s " << s << " " << L << std::endl;

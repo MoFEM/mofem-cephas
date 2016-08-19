@@ -15,7 +15,7 @@ project(MoFEM-UserModules C CXX)
 
 cmake_minimum_required(VERSION 2.8.7)
 
-find_package(MoFEM 0.3.11
+find_package(MoFEM 0.3.35
   REQUIRED HINTS ${MOFEM_DIR} ../ ../../ $ENV{MOFEM_DIR}
 )
 message(STATUS "MoFEM version ${MoFEM_VERSION}")
@@ -68,7 +68,8 @@ include_directories(
 add_definitions(${MOAB_DEFINITIONS})
 
 include_directories(${MoFEM_PROJECT_SOURCE_DIR}/include)
-include_directories(${MoFEM_PROJECT_BINARY_DIR}/include)
+include_directories(${MoFEM_INSTALL_DIR}/include)
+
 include_directories(${MoFEM_PROJECT_SOURCE_DIR}/third_party)
 include_directories(${MoFEM_PROJECT_SOURCE_DIR}/third_party/cblas)
 include_directories(${MoFEM_PROJECT_SOURCE_DIR}/src/ftensor/src)
@@ -79,14 +80,7 @@ include_directories(${MoFEM_PROJECT_SOURCE_DIR}/src/interfaces)
 include_directories(${MoFEM_PROJECT_SOURCE_DIR}/src/petsc)
 include_directories(${MoFEM_PROJECT_SOURCE_DIR}/src/finite_elements)
 
-link_directories(${MoFEM_PROJECT_BINARY_DIR}/src/approximation)
-link_directories(${MoFEM_PROJECT_BINARY_DIR}/src/multi_indices)
-link_directories(${MoFEM_PROJECT_BINARY_DIR}/src/interfaces)
-link_directories(${MoFEM_PROJECT_BINARY_DIR}/src/petsc)
-link_directories(${MoFEM_PROJECT_BINARY_DIR}/src/finite_elements)
-link_directories(${MoFEM_PROJECT_BINARY_DIR}/third_party)
-link_directories(${MoFEM_PROJECT_BINARY_DIR}/third_party/cblas)
-
+link_directories(${MoFEM_INSTALL_DIR}/lib)
 link_directories(${PROJECT_BINARY_DIR})
 
 #add executable library form subdirectory

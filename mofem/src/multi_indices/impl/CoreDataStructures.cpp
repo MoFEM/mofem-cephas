@@ -105,30 +105,30 @@ tag_name_size(0) {
     case LOBATTO_BASE:
     switch(*tag_space_data) {
       case H1:
-      forder_table[MBVERTEX] = fNBVERTEX_H1_AINSWORTH_COLE;
-      forder_table[MBEDGE] = fNBEDGE_H1_AINSWORTH_COLE;
-      forder_table[MBTRI] = fNBFACETRI_H1_AINSWORTH_COLE;
-      forder_table[MBQUAD] = fNBFACEQUAD_H1_AINSWORTH_COLE;
-      forder_table[MBTET] = fNBVOLUMETET_H1_AINSWORTH_COLE;
-      forder_table[MBPRISM] = fNBVOLUMEPRISM_H1_AINSWORTH_COLE;
+      forder_table[MBVERTEX] = fNBVERTEX_H1;
+      forder_table[MBEDGE] = fNBEDGE_H1;
+      forder_table[MBTRI] = fNBFACETRI_H1;
+      forder_table[MBQUAD] = fNBFACEQUAD_H1;
+      forder_table[MBTET] = fNBVOLUMETET_H1;
+      forder_table[MBPRISM] = fNBVOLUMEPRISM_H1;
       break;
       case HDIV:
-      forder_table[MBVERTEX] = fNBVERTEX_HDIV_AINSWORTH_COLE;
-      forder_table[MBEDGE] = fNBEDGE_HDIV_AINSWORTH_COLE;
-      forder_table[MBTRI] = fNBFACETRI_HDIV_AINSWORTH_COLE;
-      forder_table[MBTET] = fNBVOLUMETET_HDIV_AINSWORTH_COLE;
+      forder_table[MBVERTEX] = fNBVERTEX_HDIV;
+      forder_table[MBEDGE] = fNBEDGE_HDIV;
+      forder_table[MBTRI] = fNBFACETRI_HDIV;
+      forder_table[MBTET] = fNBVOLUMETET_HDIV;
       break;
       case HCURL:
-      forder_table[MBVERTEX] = fNBVERTEX_HCURL_AINSWORTH_COLE;
-      forder_table[MBEDGE] = fNBEDGE_HCURL_AINSWORTH_COLE;
-      forder_table[MBTRI] = fNBFACETRI_HCURL_AINSWORTH_COLE;
-      forder_table[MBTET] = fNBVOLUMETET_HCURL_AINSWORTH_COLE;
+      forder_table[MBVERTEX] = fNBVERTEX_HCURL;
+      forder_table[MBEDGE] = fNBEDGE_HCURL;
+      forder_table[MBTRI] = fNBFACETRI_HCURL;
+      forder_table[MBTET] = fNBVOLUMETET_HCURL;
       break;
       case L2:
       forder_table[MBVERTEX] = fNBVERTEX_L2;
-      forder_table[MBEDGE] = fNBEDGE_L2_AINSWORTH_COLE;
-      forder_table[MBTRI] = fNBFACETRI_L2_AINSWORTH_COLE;
-      forder_table[MBTET] = fNBVOLUMETET_L2_AINSWORTH_COLE;
+      forder_table[MBEDGE] = fNBEDGE_L2;
+      forder_table[MBTRI] = fNBFACETRI_L2;
+      forder_table[MBTET] = fNBVOLUMETET_L2;
       break;
       case NOFIELD:
       for(EntityType t = MBVERTEX;t<MBMAXTYPE;t++) {

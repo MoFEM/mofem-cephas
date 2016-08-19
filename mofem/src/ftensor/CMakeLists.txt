@@ -22,7 +22,7 @@ foreach(LINE ${FTENSOR_CONFORMANCE_TEST_FILES})
   set(TO_INCLUDE "#include \"${LINE}\"\n")
   file(APPEND ${CMAKE_CURRENT_BINARY_DIR}/All.cpp ${TO_INCLUDE})
 endforeach(LINE ${TENSOR_CONFORMANCE_TEST_FILES})
-set_source_files_properties(All.cpp PROPERTIES GENERATED TRUE)
+# set_source_files_properties(All.cpp PROPERTIES GENERATED TRUE)
 
 add_executable(
   ftensor_conformance_test
@@ -36,19 +36,26 @@ add_subdirectory(${PROJECT_SOURCE_DIR}/src/ftensor/tests/speed)
 
 if(ADOL-C_LIBRARY)
 
-  add_executable(
-    ftensor_and_adolc_tapeless_test
-    ${PROJECT_SOURCE_DIR}/src/ftensor/tests/ftensor_and_adolc_tapeless.cpp
-  )
-  target_link_libraries(ftensor_and_adolc_tapeless_test ${ADOL-C_LIBRARY})
-  add_test(
-    ftensor_adloc_tapeless_test ${CMAKE_CURRENT_BINARY_DIR}/ftensor_and_adolc_tapeless_test
-  )
+  find_path(TAPLESS_ADOL-C adtl.h HINTS ${ADOL-C_DIR}/include/adolc)
+  # message(STATUS ${TAPLESS_ADOL-C})
+  # Older versions of ADOL-C have don't have tapeless functionality
+  if(TAPLESS_ADOL-C)
+    add_executable(
+      ftensor_and_adolc_tapeless_test
+      ${PROJECT_SOURCE_DIR}/src/ftensor/tests/ftensor_and_adolc_tapeless.cpp
+    )
+    add_dependencies(ftensor_and_adolc_tapeless_test install_prerequisites)
+    target_link_libraries(ftensor_and_adolc_tapeless_test ${ADOL-C_LIBRARY})
+    add_test(
+      ftensor_adloc_tapeless_test ${CMAKE_CURRENT_BINARY_DIR}/ftensor_and_adolc_tapeless_test
+    )
+  endif(TAPLESS_ADOL-C)
 
   add_executable(
     ftensor_and_adolc_test
     ${PROJECT_SOURCE_DIR}/src/ftensor/tests/ftensor_and_adolc.cpp
   )
+  add_dependencies(ftensor_and_adolc_test install_prerequisites)
   target_link_libraries(ftensor_and_adolc_test ${ADOL-C_LIBRARY})
   add_test(
     ftensor_adloc_test ${CMAKE_CURRENT_BINARY_DIR}/ftensor_and_adolc_test

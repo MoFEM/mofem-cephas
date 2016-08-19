@@ -74,7 +74,7 @@ PetscErrorCode Hdiv_EdgeBasedVolumeShapeFunctions_MBTET(
   int ii = 0;
   for(;ii<GDIM;ii++) {
     int node_shift = ii*4;
-    int shift = ii*NBVOLUMETET_EDGE_HDIV_AINSWORTH_COLE(p);
+    int shift = ii*NBVOLUMETET_EDGE_HDIV(p);
     ee = 0;
     for(;ee<6;ee++) {
       double Beta_e = N[ node_shift+edges_nodes[2*ee+1] ]*N[ node_shift+edges_nodes[2*ee+0] ];
@@ -111,7 +111,7 @@ PetscErrorCode Hdiv_EdgeBasedVolumeShapeFunctions_MBTET(
           }
         }
       }
-      if(l!=NBVOLUMETET_EDGE_HDIV_AINSWORTH_COLE(p)) SETERRQ2(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"wrong order %d != %d",l,NBVOLUMETET_FACE_HDIV_AINSWORTH_COLE(p));
+      if(l!=NBVOLUMETET_EDGE_HDIV(p)) SETERRQ2(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"wrong order %d != %d",l,NBVOLUMETET_FACE_HDIV(p));
     }
   }
   PetscFunctionReturn(0);
@@ -178,7 +178,7 @@ PetscErrorCode Hdiv_FaceBasedVolumeShapeFunctions_MBTET(
           N[node_shift+faces_nodes[3*ff+0]]*N[node_shift+faces_nodes[3*ff+1]]*diffN[3*faces_nodes[3*ff+2]+dd];
         }
       }
-      int shift = ii*NBVOLUMETET_FACE_HDIV_AINSWORTH_COLE(p);
+      int shift = ii*NBVOLUMETET_FACE_HDIV(p);
       int jj = 0;
       int oo = 0;
       for(;oo<=p-3;oo++) {
@@ -215,7 +215,7 @@ PetscErrorCode Hdiv_FaceBasedVolumeShapeFunctions_MBTET(
           }
         }
       }
-      if(jj!=NBVOLUMETET_FACE_HDIV_AINSWORTH_COLE(p)) SETERRQ2(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"wrong order %d != %d",jj,NBVOLUMETET_FACE_HDIV_AINSWORTH_COLE(p));
+      if(jj!=NBVOLUMETET_FACE_HDIV(p)) SETERRQ2(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"wrong order %d != %d",jj,NBVOLUMETET_FACE_HDIV(p));
     }
   }
   PetscFunctionReturn(0);
@@ -267,7 +267,7 @@ PetscErrorCode Hdiv_VolumeBubbleShapeFunctions_MBTET(
       ierr = base_polynomials(p,ksi_0j,NULL,Psi_m,NULL,3); CHKERRQ(ierr);
       ierr = base_polynomials(p,ksi_0k,NULL,Psi_n,NULL,3); CHKERRQ(ierr);
     }
-    int shift = ii*NBVOLUMETET_VOLUME_HDIV_AINSWORTH_COLE(p);
+    int shift = ii*NBVOLUMETET_VOLUME_HDIV(p);
     int jj = 0;
     int oo = 0;
     for(;oo<=p-4;oo++) {
@@ -305,7 +305,7 @@ PetscErrorCode Hdiv_VolumeBubbleShapeFunctions_MBTET(
         }
       }
     }
-    if(3*jj!=NBVOLUMETET_VOLUME_HDIV_AINSWORTH_COLE(p)) SETERRQ2(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"wrong order %d != %d",jj,NBVOLUMETET_VOLUME_HDIV_AINSWORTH_COLE(p));
+    if(3*jj!=NBVOLUMETET_VOLUME_HDIV(p)) SETERRQ2(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"wrong order %d != %d",jj,NBVOLUMETET_VOLUME_HDIV(p));
   }
   PetscFunctionReturn(0);
 }
@@ -343,7 +343,7 @@ PetscErrorCode Hdiv_EdgeFaceShapeFunctions_MBTET_ON_FACE(
   int ii = 0;
   for(;ii<GDIM;ii++) {
     int node_shift = ii*NB;
-    int shift = ii*NBFACETRI_EDGE_HDIV_AINSWORTH_COLE(p);
+    int shift = ii*NBFACETRI_EDGE_HDIV(p);
     int ee = 0;
     for(;ee<3;ee++) {
       int n0_idx = faces_nodes[face_edges_nodes[2*ee+0]];
@@ -388,7 +388,7 @@ PetscErrorCode Hdiv_EdgeFaceShapeFunctions_MBTET_ON_FACE(
           }
         }
       }
-      if(l!=NBFACETRI_EDGE_HDIV_AINSWORTH_COLE(p)) SETERRQ2(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"wrong order %d != %d",l,NBFACETRI_EDGE_HDIV_AINSWORTH_COLE(p));
+      if(l!=NBFACETRI_EDGE_HDIV(p)) SETERRQ2(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"wrong order %d != %d",l,NBFACETRI_EDGE_HDIV(p));
     }
   }
   PetscFunctionReturn(0);
@@ -448,7 +448,7 @@ PetscErrorCode Hdiv_FaceBubbleShapeFunctions_MBTET_ON_FACE(
         N[node_shift+faces_nodes[0]]*N[node_shift+faces_nodes[1]]*diffN[3*faces_nodes[2]+dd];
       }
     }
-    int shift = ii*NBFACETRI_FACE_HDIV_AINSWORTH_COLE(p);
+    int shift = ii*NBFACETRI_FACE_HDIV(p);
     int jj = 0;
     int oo = 0;
     for(;oo<=p-3;oo++) {
@@ -476,7 +476,7 @@ PetscErrorCode Hdiv_FaceBubbleShapeFunctions_MBTET_ON_FACE(
         }
       }
     }
-    if(jj!=NBFACETRI_FACE_HDIV_AINSWORTH_COLE(p)) SETERRQ2(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"wrong order %d != %d",jj,NBFACETRI_FACE_HDIV_AINSWORTH_COLE(p));
+    if(jj!=NBFACETRI_FACE_HDIV(p)) SETERRQ2(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"wrong order %d != %d",jj,NBFACETRI_FACE_HDIV(p));
   }
   PetscFunctionReturn(0);
 }

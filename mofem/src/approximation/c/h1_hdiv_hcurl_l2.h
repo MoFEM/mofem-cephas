@@ -26,40 +26,42 @@ extern "C" {
 // L2
 
 /// Number of dofs for L2 space
-#define NBVOLUMETET_L2_AINSWORTH_COLE(P) ((P+1)*(P+2)*(P+3)/6)
-#define NBFACETRI_L2_AINSWORTH_COLE(P) ((P+1)*(P+2)/2)
-#define NBEDGE_L2_AINSWORTH_COLE(P) (P+1)
+#define NBVOLUMETET_L2(P) ((P+1)*(P+2)*(P+3)/6)
+#define NBFACETRI_L2(P) ((P+1)*(P+2)/2)
+#define NBEDGE_L2(P) (P+1)
 
 // H1
 
 /// Number of dofs on edge for H1 space
-#define NBEDGE_H1_AINSWORTH_COLE(P) ((P>0) ? (P-1) : 0)
+#define NBEDGE_H1(P) ((P>0) ? (P-1) : 0)
 /// Number of dofs on face for H1 space
-#define NBFACETRI_H1_AINSWORTH_COLE(P) ((P>1) ? ((P-2)*(P-1)/2) : 0)
-#define NBFACEQUAD_H1_AINSWORTH_COLE(P) ((P>2) ? ((P-3)*(P-2)/2) : 0)
+#define NBFACETRI_H1(P) ((P>1) ? ((P-2)*(P-1)/2) : 0)
+#define NBFACEQUAD_H1(P) ((P>2) ? ((P-3)*(P-2)/2) : 0)
 /// Number of dofs on volume for H1 space
-#define NBVOLUMETET_H1_AINSWORTH_COLE(P) ((P>2) ? ((P-3)*(P-2)*(P-1)/6) : 0)
-#define NBVOLUMEPRISM_H1_AINSWORTH_COLE(P) ((P>4) ? ((P-5)*(P-4)*(P-3)/6) : 0)
+#define NBVOLUMETET_H1(P) ((P>2) ? ((P-3)*(P-2)*(P-1)/6) : 0)
+#define NBVOLUMEPRISM_H1(P) ((P>4) ? ((P-5)*(P-4)*(P-3)/6) : 0)
 
 // H curl
 
 /// Number of base functions H curl on faces
-#define NBEDGE_HCURL_AINSWORTH_COLE(P) ((P>0) ? (P+1) : 0)
-#define NBFACETRI_EDGE_HCURL_AINSWORTH_COLE(P) ((P>1) ? P-1 : 0)
-#define NBFACETRI_FACE_HCURL_AINSWORTH_COLE(P) ((P>2) ? (P-1)*(P-2) : 0)
-#define NBFACETRI_HCURL_AINSWORTH_COLE(P) ((P>1) ? (P-1)*(P+1) : 0)
-#define NBVOLUMETET_HCURL_AINSWORTH_COLE(P) ((P>2) ? (P-2)*(P-1)*(P+1)/2 : 0)
+#define NBEDGE_HCURL(P) ((P>0) ? (P+1) : 0)
+#define NBFACETRI_EDGE_HCURL(P) ((P>1) ? P-1 : 0)
+#define NBFACETRI_FACE_HCURL(P) ((P>2) ? (P-1)*(P-2) : 0)
+#define NBFACETRI_HCURL(P) ((P>1) ? (P-1)*(P+1) : 0)
+#define NBVOLUMETET_FACE_HCURL(P) ((P>2) ? (2*(P-1)*(P-2)) : 0)
+#define NBVOLUMETET_TET_HCURL(P) ((P>3) ? ((P-3)*(P-2)*(P-1)/2) : 0)
+#define NBVOLUMETET_HCURL(P) ((P>2) ? (P-2)*(P-1)*(P+1)/2 : 0)
 
 // H div
 
-#define NBEDGE_HDIV_AINSWORTH_COLE(P) (0)
-#define NBFACETRI_EDGE_HDIV_AINSWORTH_COLE(P) ((P>0) ? P : 0)
-#define NBFACETRI_FACE_HDIV_AINSWORTH_COLE(P) ((P>2) ? ((P-2)*(P-2)+(P-2))/2 : 0)
-#define NBFACETRI_HDIV_AINSWORTH_COLE(P) ((P>0) ? (P+1)*(P+2)/2 : 0)
-#define NBVOLUMETET_EDGE_HDIV_AINSWORTH_COLE(P) ((P>1) ? P-1 : 0)
-#define NBVOLUMETET_FACE_HDIV_AINSWORTH_COLE(P) ((P>2) ? ((P-2)*(P-2)+(P-2)) : 0)
-#define NBVOLUMETET_VOLUME_HDIV_AINSWORTH_COLE(P) ((P>3) ? ((P-3)*(P-2)*(P-1)/2) : 0)
-#define NBVOLUMETET_HDIV_AINSWORTH_COLE(P) ((P>1) ? (P-1)*(P+1)*(P+2)/2 : 0)
+#define NBEDGE_HDIV(P) (0)
+#define NBFACETRI_EDGE_HDIV(P) ((P>0) ? P : 0)
+#define NBFACETRI_FACE_HDIV(P) ((P>2) ? ((P-2)*(P-2)+(P-2))/2 : 0)
+#define NBFACETRI_HDIV(P) ((P>0) ? (P+1)*(P+2)/2 : 0)
+#define NBVOLUMETET_EDGE_HDIV(P) ((P>1) ? P-1 : 0)
+#define NBVOLUMETET_FACE_HDIV(P) ((P>2) ? ((P-2)*(P-2)+(P-2)) : 0)
+#define NBVOLUMETET_VOLUME_HDIV(P) ((P>3) ? ((P-3)*(P-2)*(P-1)/2) : 0)
+#define NBVOLUMETET_HDIV(P) ((P>1) ? (P-1)*(P+1)*(P+2)/2 : 0)
 
 PetscErrorCode L2_FaceShapeFunctions_MBTRI(int p,double *N,double *diffN,double *L2N,double *diff_L2N,int GDIM);
 PetscErrorCode L2_ShapeFunctions_MBTET(

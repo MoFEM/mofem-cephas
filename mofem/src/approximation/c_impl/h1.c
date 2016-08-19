@@ -42,7 +42,7 @@ PetscErrorCode H1_EdgeShapeFunctions_MBTRI(
   int P[3];
   int ee = 0;
   for(;ee<3;ee++) {
-    P[ee] = NBEDGE_H1_AINSWORTH_COLE(p[ee]);
+    P[ee] = NBEDGE_H1(p[ee]);
   }
   int dd = 0;
   double diff_ksi01[2],diff_ksi12[2],diff_ksi20[2];
@@ -123,7 +123,7 @@ PetscErrorCode H1_FaceShapeFunctions_MBTRI(
 ) {
   PetscFunctionBegin;
   PetscErrorCode ierr;
-  int P = NBFACETRI_H1_AINSWORTH_COLE(p);
+  int P = NBFACETRI_H1(p);
   if(P == 0) PetscFunctionReturn(0);
   double diff_ksiL0[2],diff_ksiL1[2];
   double *diff_ksi_faces[] = { diff_ksiL0, diff_ksiL1 };
@@ -193,7 +193,7 @@ PetscErrorCode H1_EdgeShapeFunctions_MBTET(
   PetscErrorCode ierr;
   int P[6];
   int ee = 0;
-  for(;ee<6; ee++) P[ee] = NBEDGE_H1_AINSWORTH_COLE(p[ee]);
+  for(;ee<6; ee++) P[ee] = NBEDGE_H1(p[ee]);
   int edges_nodes[2*6] = { 0,1, 1,2, 2,0, 0,3, 1,3, 2,3 };
   double diff_ksi01[3],diff_ksi12[3],diff_ksi20[3];
   double diff_ksi03[3],diff_ksi13[3],diff_ksi23[3];
@@ -252,7 +252,7 @@ PetscErrorCode H1_FaceShapeFunctions_MBTET(
   PetscErrorCode ierr;
   int P[4];
   int ff = 0;
-  for(;ff<4; ff++) P[ff] = NBFACETRI_H1_AINSWORTH_COLE(p[ff]);
+  for(;ff<4; ff++) P[ff] = NBFACETRI_H1(p[ff]);
   double diff_ksiL0F0[3],diff_ksiL1F0[3];
   double diff_ksiL0F1[3],diff_ksiL1F1[3];
   double diff_ksiL0F2[3],diff_ksiL1F2[3];
@@ -329,7 +329,7 @@ PetscErrorCode H1_VolumeShapeFunctions_MBTET(
 ) {
   PetscFunctionBegin;
   PetscErrorCode ierr;
-  int P = NBVOLUMETET_H1_AINSWORTH_COLE(p);
+  int P = NBVOLUMETET_H1(p);
   if(P==0) PetscFunctionReturn(0);
   double diff_ksiL0[3],diff_ksiL1[3],diff_ksiL2[3];
   int dd = 0;
@@ -390,10 +390,10 @@ PetscErrorCode H1_EdgeShapeDiffMBTETinvJ(int *base_p,int *p,double *edge_diffN[]
   PetscFunctionBegin;
   int ee = 0,ii,gg;
   for(;ee<6; ee++) {
-   for(ii = 0;ii<NBEDGE_H1_AINSWORTH_COLE(p[ee]);ii++) {
+   for(ii = 0;ii<NBEDGE_H1(p[ee]);ii++) {
     for(gg = 0;gg<GDIM;gg++) {
-      int shift1 = NBEDGE_H1_AINSWORTH_COLE(base_p[ee])*gg;
-      int shift2 = NBEDGE_H1_AINSWORTH_COLE(p[ee])*gg;
+      int shift1 = NBEDGE_H1(base_p[ee])*gg;
+      int shift2 = NBEDGE_H1(p[ee])*gg;
       cblas_dgemv(CblasRowMajor,CblasTrans,3,3,1.,
         invJac,3,&(edge_diffN[ee])[3*shift1+3*ii],1,0.,&(edge_diffNinvJac[ee])[3*shift2+3*ii],1);
   }}}
@@ -403,10 +403,10 @@ PetscErrorCode H1_FaceShapeDiffMBTETinvJ(int *base_p,int *p,double *face_diffN[]
   PetscFunctionBegin;
   int ff = 0,ii,gg;
   for(;ff<4; ff++) {
-   for(ii = 0;ii<NBFACETRI_H1_AINSWORTH_COLE(p[ff]);ii++) {
+   for(ii = 0;ii<NBFACETRI_H1(p[ff]);ii++) {
     for(gg = 0;gg<GDIM;gg++) {
-      int shift1 = NBFACETRI_H1_AINSWORTH_COLE(base_p[ff])*gg;
-      int shift2 = NBFACETRI_H1_AINSWORTH_COLE(p[ff])*gg;
+      int shift1 = NBFACETRI_H1(base_p[ff])*gg;
+      int shift2 = NBFACETRI_H1(p[ff])*gg;
       cblas_dgemv(CblasRowMajor,CblasTrans,3,3,1.,
         invJac,3,&(face_diffN[ff])[3*shift1+3*ii],1,0.,&(face_diffNinvJac[ff])[3*shift2+3*ii],1);
   }}}
@@ -415,10 +415,10 @@ PetscErrorCode H1_FaceShapeDiffMBTETinvJ(int *base_p,int *p,double *face_diffN[]
 PetscErrorCode H1_VolumeShapeDiffMBTETinvJ(int base_p,int p,double *volume_diffN,double *invJac,double *volume_diffNinvJac,int GDIM) {
   PetscFunctionBegin;
   int ii,gg;
-  for(ii = 0;ii<NBVOLUMETET_H1_AINSWORTH_COLE(p);ii++) {
+  for(ii = 0;ii<NBVOLUMETET_H1(p);ii++) {
     for(gg = 0;gg<GDIM;gg++) {
-      int shift1 = NBVOLUMETET_H1_AINSWORTH_COLE(base_p)*gg;
-      int shift2 = NBVOLUMETET_H1_AINSWORTH_COLE(p)*gg;
+      int shift1 = NBVOLUMETET_H1(base_p)*gg;
+      int shift2 = NBVOLUMETET_H1(p)*gg;
       cblas_dgemv(CblasRowMajor,CblasTrans,3,3,1.,
         invJac,3,&(volume_diffN)[3*shift1+3*ii],1,0.,&(volume_diffNinvJac)[3*shift2+3*ii],1);
   }}
@@ -429,7 +429,7 @@ PetscErrorCode H1_EdgeGradientOfDeformation_hierachical(int p,double *diffN,doub
   int col,row = 0;
   for(;row<3;row++)
     for(col = 0;col<3;col++)
-      F[3*row+col] = cblas_ddot(NBEDGE_H1_AINSWORTH_COLE(p),&diffN[col],3,&dofs[row],3);
+      F[3*row+col] = cblas_ddot(NBEDGE_H1(p),&diffN[col],3,&dofs[row],3);
   PetscFunctionReturn(0);
 }
 PetscErrorCode H1_FaceGradientOfDeformation_hierachical(int p,double *diffN,double *dofs,double *F) {
@@ -437,7 +437,7 @@ PetscErrorCode H1_FaceGradientOfDeformation_hierachical(int p,double *diffN,doub
   int col,row = 0;
   for(;row<3;row++)
     for(col = 0;col<3;col++)
-      F[3*row+col] = cblas_ddot(NBFACETRI_H1_AINSWORTH_COLE(p),&diffN[col],3,&dofs[row],3);
+      F[3*row+col] = cblas_ddot(NBFACETRI_H1(p),&diffN[col],3,&dofs[row],3);
   PetscFunctionReturn(0);
 }
 PetscErrorCode H1_VolumeGradientOfDeformation_hierachical(int p,double *diffN,double *dofs,double *F) {
@@ -445,7 +445,7 @@ PetscErrorCode H1_VolumeGradientOfDeformation_hierachical(int p,double *diffN,do
   int col,row = 0;
   for(;row<3;row++)
     for(col = 0;col<3;col++)
-      F[3*row+col] = cblas_ddot(NBVOLUMETET_H1_AINSWORTH_COLE(p),&diffN[col],3,&dofs[row],3);
+      F[3*row+col] = cblas_ddot(NBVOLUMETET_H1(p),&diffN[col],3,&dofs[row],3);
   PetscFunctionReturn(0);
 }
 PetscErrorCode H1_QuadShapeFunctions_MBPRISM(
@@ -457,7 +457,7 @@ PetscErrorCode H1_QuadShapeFunctions_MBPRISM(
   int P[3];
   int ff = 0;
   for(;ff<3; ff++) {
-    P[ff] = NBFACEQUAD_H1_AINSWORTH_COLE(p[ff]);
+    P[ff] = NBFACEQUAD_H1(p[ff]);
   }
   double ksi_faces[6];
   double diff_ksiL0F0[3],diff_ksiL3F0[3];
@@ -554,7 +554,7 @@ PetscErrorCode H1_VolumeShapeFunctions_MBPRISM(
 ) {
   PetscFunctionBegin;
   PetscErrorCode ierr;
-  int P = NBVOLUMEPRISM_H1_AINSWORTH_COLE(p);
+  int P = NBVOLUMEPRISM_H1(p);
   if(P==0) PetscFunctionReturn(0);
   double diff_ksiL0[3],diff_ksiL1[3],diff_ksiL2[3];
   int ii = 0;

@@ -3,7 +3,7 @@ FROM likask/ubuntu_mofem
 MAINTAINER Lukasz.Kaczmarczyk@glasgow.ac.uk
 
 ADD mofem /mofem
-RUN /mofem/docker_build_mofem_script.sh
+RUN /mofem/scripts/docker_build_mofem_script.sh
 
 VOLUME /mofem_build
 WORKDIR /mofem_build

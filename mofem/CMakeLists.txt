@@ -41,7 +41,7 @@ endif(CMAKE_Fortran_COMPILER)
 
 set(MoFEM_VERSION_MAJOR 0)
 set(MoFEM_VERSION_MINOR 3)
-set(MoFEM_VERSION_BUILD 34)
+set(MoFEM_VERSION_BUILD 35)
 
 include(CheckCXXSourceCompiles)
 CHECK_CXX_SOURCE_COMPILES(
@@ -101,24 +101,6 @@ include(cmake/ExportFile.cmake)
 #git revision
 include(cmake/GetGitRevisionDescription.cmake)
 get_git_head_revision(GIT_REFSPEC GIT_SHA1)
-
-# Configure a header file to pass some of the CMake settings to the source code
-configure_file(
-  ${PROJECT_SOURCE_DIR}/include/config.h.in
-  ${PROJECT_BINARY_DIR}/include/config.h
-)
-set_source_files_properties(
-  ${PROJECT_BINARY_DIR}/include/config.h PROPERTIES GENERATED TRUE
-)
-configure_file(
-  ${PROJECT_SOURCE_DIR}/include/version.h.in
-  ${PROJECT_BINARY_DIR}/include/version.h
-)
-set_source_files_properties(
-  ${PROJECT_BINARY_DIR}/include/version.h PROPERTIES GENERATED TRUE
-)
-include_directories(${PROJECT_BINARY_DIR}/include)
-include_directories(${PROJECT_SOURCE_DIR}/include)
 
 #add coverage
 if(WITHCOVERAGE)
@@ -184,9 +166,12 @@ configure_file(
 install(FILES ${PROJECT_BINARY_DIR}/MoFEMConfig.cmake DESTINATION ${CMAKE_INSTALL_PREFIX})
 install(FILES ${PROJECT_BINARY_DIR}/MoFEMConfig-version.cmake DESTINATION ${CMAKE_INSTALL_PREFIX})
 
+add_subdirectory(${PROJECT_SOURCE_DIR}/include)
+include_directories(${PROJECT_BINARY_DIR}/include)
+include_directories(${PROJECT_SOURCE_DIR}/include)
+
 add_subdirectory(${PROJECT_SOURCE_DIR}/scripts)
 add_subdirectory(${PROJECT_SOURCE_DIR}/third_party)
-add_subdirectory(${PROJECT_SOURCE_DIR}/include)
 add_subdirectory(${PROJECT_SOURCE_DIR}/src)
 add_subdirectory(${PROJECT_SOURCE_DIR}/atom_tests)
 add_subdirectory(${PROJECT_SOURCE_DIR}/users_modules.in)
