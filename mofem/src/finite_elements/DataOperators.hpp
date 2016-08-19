@@ -204,14 +204,14 @@ struct OpSetInvJacH1: public DataOperator {
 };
 
 /// \brief Transform local reference derivatives of shape function to global derivatives
-struct OpSetInvJacHdiv: public DataOperator {
+struct OpSetInvJacHdivAndHcurl: public DataOperator {
 
   FTensor::Tensor2<double*,3,3> tInvJac;
   FTensor::Index<'i',3> i;
   FTensor::Index<'j',3> j;
   FTensor::Index<'k',3> k;
 
-  OpSetInvJacHdiv(MatrixDouble3by3 &inv_jac):
+  OpSetInvJacHdivAndHcurl(MatrixDouble3by3 &inv_jac):
   tInvJac(
     &inv_jac(0,0),&inv_jac(0,1),&inv_jac(0,2),
     &inv_jac(1,0),&inv_jac(1,1),&inv_jac(1,2),
@@ -257,7 +257,7 @@ struct OpSetHoInvJacHdiv: public DataOperator {
 
 };
 
-/** \brief apply covariant (Piola) transfer for Hdiv space
+/** \brief apply contravariant (Piola) transfer to Hdiv space
 
 Contravariant Piola transformation
 \f[
@@ -295,7 +295,7 @@ struct OpSetContravariantPiolaTransform: public DataOperator {
 
 };
 
-/** \brief Apply covariant (Piola) transfer for Hdiv space for HO geometry
+/** \brief Apply contravariant (Piola) transfer to Hdiv space for HO geometry
 */
 struct OpSetHoContravariantPiolaTransform: public DataOperator {
 
@@ -312,7 +312,41 @@ struct OpSetHoContravariantPiolaTransform: public DataOperator {
   MatrixDouble piolaDiffN;
   PetscErrorCode doWork(int side,EntityType type,DataForcesAndSurcesCore::EntData &data);
 
-  };
+};
+
+/** \brief apply covariant transfer to Hcurl space
+
+Contravariant Piola transformation
+\f[
+\psi_i|_t = \frac{1}{\textrm{det}(J)}J_{ij}\hat{\psi}_j\\
+\left.\frac{\partial \psi_i}{\partial \xi_j}\right|_t
+=
+\frac{1}{\textrm{det}(J)}J_{ik}\frac{\partial \hat{\psi}_k}{\partial \xi_j}
+\f]
+
+*/
+struct OpSetCovariantPiolaTransform: public DataOperator {
+
+
+  FTensor::Tensor2<double*,3,3> tInvJac;
+  FTensor::Index<'i',3> i;
+  FTensor::Index<'j',3> j;
+  FTensor::Index<'k',3> k;
+
+  OpSetCovariantPiolaTransform(MatrixDouble3by3 &inv_jac):
+  tInvJac(
+    &inv_jac(0,0),&inv_jac(0,1),&inv_jac(0,2),
+    &inv_jac(1,0),&inv_jac(1,1),&inv_jac(1,2),
+    &inv_jac(2,0),&inv_jac(2,1),&inv_jac(2,2)
+  ) {
+  }
+
+  MatrixDouble piolaN;
+  MatrixDouble piolaDiffN;
+
+  PetscErrorCode doWork(int side,EntityType type,DataForcesAndSurcesCore::EntData &data);
+
+};
 
 
 /** \brief Get field values and gradients at Gauss points

@@ -94,7 +94,8 @@ dataNoField(type),
 dataNoFieldCol(type),
 opSetInvJacH1(invJac),
 opContravariantPiolaTransform(vOlume,jAc),
-opSetInvJacHdiv(invJac),
+opCovariantPiolaTransform(invJac),
+opSetInvJacHdivAndHcurl(invJac),
 meshPositionsFieldName("MESH_NODE_POSITIONS"),
 opHOatGaussPoints(hoCoordsAtGaussPts,hoGaussPtsJac,3,3),
 opSetHoInvJacH1(hoGaussPtsInvJac),
@@ -231,31 +232,36 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::getSpaceBaseAndOrderOnElement(
     //H1
     if((dataH1.spacesOnEntities[MBEDGE]).test(H1)) {
       ierr = getEdgesSense(dataH1); CHKERRQ(ierr);
-    }
-    if((dataH1.spacesOnEntities[MBTRI]).test(H1)) {
-      ierr = getTrisSense(dataH1); CHKERRQ(ierr);
-    }
-    //Hdiv
-    if((dataH1.spacesOnEntities[MBTRI]).test(HDIV)) {
-      ierr = getTrisSense(dataHdiv); CHKERRQ(ierr);
-      ierr = getFaceTriNodes(dataHdiv); CHKERRQ(ierr);
-    }
-    //H1
-    if((dataH1.spacesOnEntities[MBEDGE]).test(H1)) {
       ierr = getEdgesDataOrder(dataH1,H1); CHKERRQ(ierr);
     }
     if((dataH1.spacesOnEntities[MBTRI]).test(H1)) {
+      ierr = getTrisSense(dataH1); CHKERRQ(ierr);
       ierr = getTrisDataOrder(dataH1,H1); CHKERRQ(ierr);
     }
     if((dataH1.spacesOnEntities[MBTET]).test(H1)) {
       ierr = getTetDataOrder(dataH1,H1); CHKERRQ(ierr);
     }
+    //Hcurl
+    if((dataH1.spacesOnEntities[MBEDGE]).test(HCURL)) {
+      ierr = getEdgesSense(dataHcurl); CHKERRQ(ierr);
+      ierr = getEdgesDataOrder(dataHcurl,HCURL); CHKERRQ(ierr);
+    }
+    if((dataH1.spacesOnEntities[MBTRI]).test(HCURL)) {
+      ierr = getTrisSense(dataHcurl); CHKERRQ(ierr);
+      ierr = getFaceTriNodes(dataHcurl); CHKERRQ(ierr);
+      ierr = getTrisDataOrder(dataHcurl,HCURL); CHKERRQ(ierr);
+    }
+    if((dataH1.spacesOnEntities[MBTET]).test(HCURL)) {
+      ierr = getTetDataOrder(dataHcurl,HCURL); CHKERRQ(ierr);
+    }
     //Hdiv
     if((dataH1.spacesOnEntities[MBTRI]).test(HDIV)) {
       ierr = getTrisSense(dataHdiv); CHKERRQ(ierr);
-      ierr = getTrisDataOrder(dataHdiv,HDIV); CHKERRQ(ierr);
-      ierr = getTetDataOrder(dataHdiv,HDIV); CHKERRQ(ierr);
       ierr = getFaceTriNodes(dataHdiv); CHKERRQ(ierr);
+      ierr = getTrisDataOrder(dataHdiv,HDIV); CHKERRQ(ierr);
+    }
+    if((dataH1.spacesOnEntities[MBTET]).test(HDIV)) {
+      ierr = getTetDataOrder(dataHdiv,HDIV); CHKERRQ(ierr);
     }
     //L2
     if((dataH1.spacesOnEntities[MBTET]).test(L2)) {
@@ -344,12 +350,16 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::operator()() {
 
     try {
       ierr = opSetInvJacH1.opRhs(dataH1); CHKERRQ(ierr);
-      if((dataH1.spacesOnEntities[MBTET]).test(L2)) {
-        ierr = opSetInvJacH1.opRhs(dataL2); CHKERRQ(ierr);
+      if(dataH1.spacesOnEntities[MBEDGE].test(HCURL)) {
+        ierr = opCovariantPiolaTransform.opRhs(dataHcurl); CHKERRQ(ierr);
+        ierr = opSetInvJacHdivAndHcurl.opRhs(dataHcurl); CHKERRQ(ierr);
       }
-      if((dataH1.spacesOnEntities[MBTRI]).test(HDIV)) {
+      if(dataH1.spacesOnEntities[MBTRI].test(HDIV)) {
         ierr = opContravariantPiolaTransform.opRhs(dataHdiv); CHKERRQ(ierr);
-        ierr = opSetInvJacHdiv.opRhs(dataHdiv); CHKERRQ(ierr);
+        ierr = opSetInvJacHdivAndHcurl.opRhs(dataHdiv); CHKERRQ(ierr);
+      }
+      if(dataH1.spacesOnEntities[MBTET].test(L2)) {
+        ierr = opSetInvJacH1.opRhs(dataL2); CHKERRQ(ierr);
       }
     } catch (std::exception& ex) {
       std::ostringstream ss;
@@ -413,13 +423,17 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::operator()() {
         //   ierr = ShapeInvJacVolume(&hoGaussPtsInvJac(gg,0)); CHKERRQ(ierr);
         // }
         ierr = opSetHoInvJacH1.opRhs(dataH1); CHKERRQ(ierr);
-        if((dataH1.spacesOnEntities[MBTET]).test(L2)) {
+        if(dataH1.spacesOnEntities[MBTET].test(L2)) {
           ierr = opSetHoInvJacH1.opRhs(dataL2); CHKERRQ(ierr);
         }
-        if((dataH1.spacesOnEntities[MBTRI]).test(HDIV)) {
+        if(dataH1.spacesOnEntities[MBTRI].test(HDIV)) {
           ierr = opSetHoContravariantPiolaTransform.opRhs(dataHdiv); CHKERRQ(ierr);
           ierr = opSetHoInvJacHdiv.opRhs(dataHdiv); CHKERRQ(ierr);
         }
+        if(dataH1.spacesOnEntities[MBEDGE].test(HCURL)) {
+          // TODO Add covariant transform
+        }
+
       } catch (std::exception& ex) {
         std::ostringstream ss;
         ss << "problem with indices in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
@@ -491,7 +505,7 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::operator()() {
             op_data[ss] = !ss ? &dataH1 : &derivedDataH1;
             break;
             case HCURL:
-            SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented yet");
+            op_data[ss] = !ss ? &dataHcurl : &derivedDataHcurl;
             break;
             case HDIV:
             op_data[ss] = !ss ? &dataHdiv : &derivedDataHdiv;

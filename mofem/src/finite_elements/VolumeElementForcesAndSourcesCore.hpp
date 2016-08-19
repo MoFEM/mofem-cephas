@@ -56,7 +56,8 @@ struct VolumeElementForcesAndSourcesCore: public ForcesAndSurcesCore {
 
   OpSetInvJacH1 opSetInvJacH1;
   OpSetContravariantPiolaTransform opContravariantPiolaTransform;
-  OpSetInvJacHdiv opSetInvJacHdiv;
+  OpSetCovariantPiolaTransform opCovariantPiolaTransform;
+  OpSetInvJacHdivAndHcurl opSetInvJacHdivAndHcurl;
 
   std::string meshPositionsFieldName;
   MatrixDouble hoCoordsAtGaussPts;

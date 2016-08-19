@@ -707,13 +707,28 @@ PetscErrorCode OpSetInvJacH1::doWork(
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode OpSetInvJacHdiv::doWork(
+PetscErrorCode OpSetInvJacHdivAndHcurl::doWork(
     int side,
     EntityType type,
     DataForcesAndSurcesCore::EntData &data) {
   PetscFunctionBegin;
 
   if(type != MBTRI && type != MBTET) PetscFunctionReturn(0);
+
+  if(
+    (int)DataForcesAndSurcesCore::HDIV0_1!=(int)DataForcesAndSurcesCore::HCURL0_1 ||
+    (int)DataForcesAndSurcesCore::HDIV0_2!=(int)DataForcesAndSurcesCore::HCURL0_2 ||
+    (int)DataForcesAndSurcesCore::HDIV1_0!=(int)DataForcesAndSurcesCore::HCURL1_0 ||
+    (int)DataForcesAndSurcesCore::HDIV1_2!=(int)DataForcesAndSurcesCore::HCURL1_2 ||
+    (int)DataForcesAndSurcesCore::HDIV2_0!=(int)DataForcesAndSurcesCore::HCURL2_0 ||
+    (int)DataForcesAndSurcesCore::HDIV2_1!=(int)DataForcesAndSurcesCore::HCURL2_1
+  ) {
+    SETERRQ(
+      PETSC_COMM_SELF,
+      MOFEM_DATA_INCONSISTENCY,
+      "Data inconsistency between Hcurl and Hdiv struture of base functions"
+    );
+  }
 
   try {
 
@@ -822,6 +837,75 @@ PetscErrorCode OpSetContravariantPiolaTransform::doWork(
       }
       data.getHdivN(base).data().swap(piolaN.data());
       data.getDiffHdivN(base).data().swap(piolaDiffN.data());
+
+    }
+
+    // data.getBase() = base;
+
+  } catch (std::exception& ex) {
+    std::ostringstream ss;
+    ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
+    SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
+  }
+
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode OpSetCovariantPiolaTransform::doWork(
+  int side,
+  EntityType type,
+  DataForcesAndSurcesCore::EntData &data
+)  {
+  PetscFunctionBegin;
+
+  if(type != MBEDGE && type != MBTRI && type != MBTET) PetscFunctionReturn(0);
+
+  try {
+
+    for(int b = AINSWORTH_COLE_BASE; b!=USER_BASE; b++) {
+
+      FieldApproximationBase base = ApproximationBaseArray[b];
+
+      const unsigned int nb_base_functions = data.getHcurlN(base).size2()/3;
+      if(!nb_base_functions) continue;
+
+      const unsigned int nb_gauss_pts = data.getHcurlN(base).size1();
+      piolaN.resize(nb_gauss_pts,data.getHcurlN(base).size2(),false);
+      piolaDiffN.resize(nb_gauss_pts,data.getDiffHcurlN(base).size2(),false);
+
+      FTensor::Tensor1<double*,3> t_n = data.getFTensor1HcurlN<3>(base);
+      double *t_transformed_n_ptr = &*piolaN.data().begin();
+      FTensor::Tensor1<double*,3> t_transformed_n(
+        t_transformed_n_ptr, //HDIV0
+        &t_transformed_n_ptr[DataForcesAndSurcesCore::HCURL1],
+        &t_transformed_n_ptr[DataForcesAndSurcesCore::HCURL2],3
+      );
+      FTensor::Tensor2<double*,3,3> t_diff_n = data.getFTensor2DiffHdivN<3,3>(base);
+      double *t_transformed_diff_n_ptr = &*piolaDiffN.data().begin();
+      FTensor::Tensor2<double*,3,3> t_transformed_diff_n(
+        t_transformed_diff_n_ptr,
+        &t_transformed_diff_n_ptr[DataForcesAndSurcesCore::HCURL0_1],
+        &t_transformed_diff_n_ptr[DataForcesAndSurcesCore::HCURL0_2],
+        &t_transformed_diff_n_ptr[DataForcesAndSurcesCore::HCURL1_0],
+        &t_transformed_diff_n_ptr[DataForcesAndSurcesCore::HCURL1_1],
+        &t_transformed_diff_n_ptr[DataForcesAndSurcesCore::HCURL1_2],
+        &t_transformed_diff_n_ptr[DataForcesAndSurcesCore::HCURL2_0],
+        &t_transformed_diff_n_ptr[DataForcesAndSurcesCore::HCURL2_1],
+        &t_transformed_diff_n_ptr[DataForcesAndSurcesCore::HCURL2_2],9
+      );
+
+      for(unsigned int gg = 0;gg!=nb_gauss_pts;gg++) {
+        for(unsigned int bb = 0;bb!=nb_base_functions;bb++) {
+          t_transformed_n(i) = tInvJac(k,i)*t_n(k);
+          t_transformed_diff_n(i,k) = tInvJac(j,i)*t_diff_n(j,k);
+          ++t_n;
+          ++t_transformed_n;
+          ++t_diff_n;
+          ++t_transformed_diff_n;
+        }
+      }
+      data.getHcurlN(base).data().swap(piolaN.data());
+      data.getDiffHcurlN(base).data().swap(piolaDiffN.data());
 
     }
 
