@@ -10,13 +10,13 @@ MoFEM is compiled and run.
 
 In Mac OS X a lightweight Linux distribution is virtualized to run the Docker
 containers in.
+Entire installation procedure is also presented on [Youtube](https://www.youtube.com/watch?v=6opfKER7JHA) video.
 
 ##Download and Install Docker##
 
 First install docker as per the instructions here: [https://docs.docker.com/installation/#installation](https://docs.docker.com/installation/#installation)
 
 ##Clone mofem repository
-
 To build MoFEM the source code need to be downloaded. The best method to do it is
 to clone repository
 ~~~~~~
@@ -31,7 +31,7 @@ Next step of installation is to configure and compile MoFEM. First command creat
 contains *mofem_build volume*. Volume in container will be shared between other
 containers were MoFEM is compiled and run;
 ~~~~~~
-docker build -t mofem_build:v0.1 --force-rm=true --file=Dockerfile-build $HOME/mofem-cephas
+docker build -t mofem_build:v0.1 --force-rm=true --file=$HOME/mofem-cephas/Dockerfile-build $HOME/mofem-cephas
 docker run --name mofem_build mofem_build:v0.1 /bin/bash
 ~~~~~~
 
@@ -49,14 +49,9 @@ run some code.
 To run code a *work container* need to be started, container mount *mofem build
 volume* from container which has been created in the previous step
 
-    docker run \
-    --rm=true -it \
-    --volumes-from mofem_build  \
-    -v $HOME/mofem-cephas/mofem:/mofem \
-    -v $HOME:$HOME \
-    -e HOSTHOME=$HOME \
-    mofem_build:v0.1 /bin/bash
-
+~~~~~~
+    docker run --rm=true -it --volumes-from mofem_build  -v $HOME/mofem-cephas/mofem:/mofem -v $HOME:$HOME -e HOSTHOME=$HOME mofem_build:v0.1 /bin/bash
+~~~~~~
 After execution of above command you are working inside docker, this is isolated
 system hosted by your OS (MacOSX, Linux or Windows). You can run several
 containers like this at once by executing above command in available terminal.
