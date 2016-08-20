@@ -23,13 +23,13 @@ using namespace MoFEM;
 using namespace boost::numeric;
 #include <PostProcOnRefMesh.hpp>
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-  #include <gm_rule.h>
-#ifdef __cplusplus
-}
-#endif
+// #ifdef __cplusplus
+// extern "C" {
+// #endif
+//   #include <gm_rule.h>
+// #ifdef __cplusplus
+// }
+// #endif
 
 
 PetscErrorCode PostProcCommonOnRefMesh::OpGetFieldValues::doWork(
@@ -136,6 +136,34 @@ PetscErrorCode PostProcCommonOnRefMesh::OpGetFieldValues::doWork(
       }
     }
     break;
+    case HCURL:
+    if(type == MBEDGE && side == 0) {
+      for(int gg = 0;gg<nb_gauss_pts;gg++) {
+        rval = postProcMesh.tag_set_data(th,&mapGaussPts[gg],1,def_VAL); CHKERRQ_MOAB(rval);
+      }
+    }
+    rval = postProcMesh.tag_get_by_ptr(th,&mapGaussPts[0],mapGaussPts.size(),tags_ptr); CHKERRQ_MOAB(rval);
+    {
+      FTensor::Index<'i',3> i;
+      FTensor::Tensor1<double*,3> t_n_hcurl = data.getFTensor1HcurlN<3>();
+      for(int gg = 0;gg!=nb_gauss_pts;gg++) {
+        double *ptr = &((double*)tags_ptr[gg])[0];
+        int ll = 0;
+        for(;ll!=(vAluesPtr->size()/rank);ll++) {
+          FTensor::Tensor1<double*,3> t_tag_val(ptr,&ptr[1],&ptr[2],3);
+          for(int rr = 0;rr!=rank;rr++) {
+            const double dof_val = (*vAluesPtr)[ll*rank+rr];
+            t_tag_val(i) += dof_val*t_n_hcurl(i);
+            ++t_tag_val;
+          }
+          ++t_n_hcurl;
+        }
+        for(;ll!=data.getHcurlN().size2()/3;ll++) {
+          ++t_n_hcurl;
+        }
+      }
+    }
+    break;
     case HDIV:
     if(type == MBTRI && side == 0) {
       for(int gg = 0;gg<nb_gauss_pts;gg++) {
@@ -143,13 +171,23 @@ PetscErrorCode PostProcCommonOnRefMesh::OpGetFieldValues::doWork(
       }
     }
     rval = postProcMesh.tag_get_by_ptr(th,&mapGaussPts[0],mapGaussPts.size(),tags_ptr); CHKERRQ_MOAB(rval);
-    for(int gg = 0;gg<nb_gauss_pts;gg++) {
-      for(int rr = 0;rr<rank;rr++) {
-        for(int dd = 0;dd<3;dd++) {
-          ((double*)tags_ptr[gg])[3*rr+dd] += cblas_ddot(
-            (vAluesPtr->size()/rank),&(data.getHdivN(gg)(0,dd)),3,&((*vAluesPtr)[rr]),rank
-          );
-
+    {
+      FTensor::Index<'i',3> i;
+      FTensor::Tensor1<double*,3> t_n_hdiv = data.getFTensor1HdivN<3>();
+      for(int gg = 0;gg!=nb_gauss_pts;gg++) {
+        double *ptr = &((double*)tags_ptr[gg])[0];
+        int ll = 0;
+        for(;ll!=(vAluesPtr->size()/rank);ll++) {
+          FTensor::Tensor1<double*,3> t_tag_val(ptr,&ptr[1],&ptr[2],3);
+          for(int rr = 0;rr!=rank;rr++) {
+            const double dof_val = (*vAluesPtr)[ll*rank+rr];
+            t_tag_val(i) += dof_val*t_n_hdiv(i);
+            ++t_tag_val;
+          }
+          ++t_n_hdiv;
+        }
+        for(;ll!=data.getHdivN().size2()/3;ll++) {
+          ++t_n_hdiv;
         }
       }
     }
