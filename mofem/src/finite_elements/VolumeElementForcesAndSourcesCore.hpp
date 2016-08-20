@@ -67,8 +67,9 @@ struct VolumeElementForcesAndSourcesCore: public ForcesAndSurcesCore {
 
   OpGetDataAndGradient opHOatGaussPoints; ///< higher order geometry data at Gauss pts
   OpSetHoInvJacH1 opSetHoInvJacH1;
-  OpSetHoContravariantPiolaTransform opSetHoContravariantPiolaTransform;
-  OpSetHoInvJacHdiv opSetHoInvJacHdiv;
+  OpSetHoContravariantPiolaTransform opHoContravariantTransform;
+  OpSetHoCovariantPiolaTransform opHoCovariantTransform;
+  OpSetHoInvJacHdivAndHcurl opSetHoInvJacHdivAndHcurl;
 
   VolumeElementForcesAndSourcesCore(Interface &m_field,const EntityType type = MBTET);
   virtual ~VolumeElementForcesAndSourcesCore() {}

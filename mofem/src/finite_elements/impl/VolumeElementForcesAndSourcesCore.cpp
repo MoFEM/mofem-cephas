@@ -99,8 +99,9 @@ opSetInvJacHdivAndHcurl(invJac),
 meshPositionsFieldName("MESH_NODE_POSITIONS"),
 opHOatGaussPoints(hoCoordsAtGaussPts,hoGaussPtsJac,3,3),
 opSetHoInvJacH1(hoGaussPtsInvJac),
-opSetHoContravariantPiolaTransform(hoGaussPtsDetJac,hoGaussPtsJac),
-opSetHoInvJacHdiv(hoGaussPtsInvJac),
+opHoContravariantTransform(hoGaussPtsDetJac,hoGaussPtsJac),
+opHoCovariantTransform(hoGaussPtsInvJac),
+opSetHoInvJacHdivAndHcurl(hoGaussPtsInvJac),
 tJac(
   &jAc(0,0),&jAc(0,1),&jAc(0,2),
   &jAc(1,0),&jAc(1,1),&jAc(1,2),
@@ -427,11 +428,12 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::operator()() {
           ierr = opSetHoInvJacH1.opRhs(dataL2); CHKERRQ(ierr);
         }
         if(dataH1.spacesOnEntities[MBTRI].test(HDIV)) {
-          ierr = opSetHoContravariantPiolaTransform.opRhs(dataHdiv); CHKERRQ(ierr);
-          ierr = opSetHoInvJacHdiv.opRhs(dataHdiv); CHKERRQ(ierr);
+          ierr = opHoContravariantTransform.opRhs(dataHdiv); CHKERRQ(ierr);
+          ierr = opSetHoInvJacHdivAndHcurl.opRhs(dataHdiv); CHKERRQ(ierr);
         }
         if(dataH1.spacesOnEntities[MBEDGE].test(HCURL)) {
-          // TODO Add covariant transform
+          ierr = opCovariantPiolaTransform.opRhs(dataHcurl); CHKERRQ(ierr);
+          ierr = opSetHoInvJacHdivAndHcurl.opRhs(dataHcurl); CHKERRQ(ierr);
         }
 
       } catch (std::exception& ex) {

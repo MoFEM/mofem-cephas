@@ -241,14 +241,14 @@ struct OpSetHoInvJacH1: public DataOperator {
 
 /** \brief transform local reference derivatives of shape function to global derivatives if higher order geometry is given
   */
-struct OpSetHoInvJacHdiv: public DataOperator {
+struct OpSetHoInvJacHdivAndHcurl: public DataOperator {
 
   MatrixDouble &invHoJac;
   FTensor::Index<'i',3> i;
   FTensor::Index<'j',3> j;
   FTensor::Index<'k',3> k;
 
-  OpSetHoInvJacHdiv(MatrixDouble &inv_ho_jac): invHoJac(inv_ho_jac) {}
+  OpSetHoInvJacHdivAndHcurl(MatrixDouble &inv_ho_jac): invHoJac(inv_ho_jac) {}
 
   MatrixDouble diffHdivInvJac;
   PetscErrorCode doWork(
@@ -313,6 +313,25 @@ struct OpSetHoContravariantPiolaTransform: public DataOperator {
   PetscErrorCode doWork(int side,EntityType type,DataForcesAndSurcesCore::EntData &data);
 
 };
+
+/** \brief Apply covariant (Piola) transfer to Hcurl space for HO geometry
+*/
+struct OpSetHoCovariantPiolaTransform: public DataOperator {
+
+  MatrixDouble &hoInvJac;
+  FTensor::Index<'i',3> i;
+  FTensor::Index<'j',3> j;
+  FTensor::Index<'k',3> k;
+
+  OpSetHoCovariantPiolaTransform(MatrixDouble &inv_jac):
+  hoInvJac(inv_jac) {}
+
+  MatrixDouble piolaN;
+  MatrixDouble piolaDiffN;
+  PetscErrorCode doWork(int side,EntityType type,DataForcesAndSurcesCore::EntData &data);
+
+};
+
 
 /** \brief apply covariant transfer to Hcurl space
 
@@ -453,23 +472,60 @@ struct OpGetCoordsAndNormalsOnPrism: public DataOperator {
 
 };
 
-
-/** \brief transform Hdiv space fluxes from reference element to physical triangle
+/** \brief transform Hdiv base fluxes from reference element to physical triangle
  */
-struct OpSetPiolaTransoformOnTriangle: public DataOperator {
+struct OpSetContravariantPiolaTransoformOnTriangle: public DataOperator {
 
-  const VectorDouble &normal;
-  const MatrixDouble &nOrmals_at_GaussPt;
+  const VectorDouble &nOrmal;
+  const MatrixDouble &normalsAtGaussPt;
 
-  OpSetPiolaTransoformOnTriangle(
-    const VectorDouble &_normal,
-    const MatrixDouble &_nOrmals_at_GaussPt):
-    normal(_normal),nOrmals_at_GaussPt(_nOrmals_at_GaussPt) {}
+  OpSetContravariantPiolaTransoformOnTriangle(
+    const VectorDouble &normal,
+    const MatrixDouble &normals_at_pts
+  ):
+  nOrmal(normal),
+  normalsAtGaussPt(normals_at_pts) {}
 
   PetscErrorCode doWork(
     int side,
     EntityType type,
-    DataForcesAndSurcesCore::EntData &data);
+    DataForcesAndSurcesCore::EntData &data
+  );
+
+};
+
+/** \brief transform Hcurl base fluxes from reference element to physical triangle
+ */
+struct OpSetCovariantPiolaTransoformOnTriangle: public DataOperator {
+
+  const VectorDouble &nOrmal;
+  const MatrixDouble &normalsAtGaussPt;
+  const VectorDouble &tAngent0;
+  const MatrixDouble &tangent0AtGaussPt;
+  const VectorDouble &tAngent1;
+  const MatrixDouble &tangent1AtGaussPt;
+
+  OpSetCovariantPiolaTransoformOnTriangle(
+    const VectorDouble &normal,
+    const MatrixDouble &normals_at_pts,
+    const VectorDouble &tangent0,
+    const MatrixDouble &tangent0_at_pts,
+    const VectorDouble &tangent1,
+    const MatrixDouble &tangent1_at_pts
+  ):
+  nOrmal(normal),
+  normalsAtGaussPt(normals_at_pts),
+  tAngent0(tangent0),
+  tangent0AtGaussPt(tangent0_at_pts),
+  tAngent1(tangent1),
+  tangent1AtGaussPt(tangent1_at_pts)
+  {}
+
+  PetscErrorCode doWork(
+    int side,
+    EntityType type,
+    DataForcesAndSurcesCore::EntData &data
+  );
 
 };
 
@@ -483,6 +539,29 @@ struct OpGetHoTangentOnEdge: public DataOperator {
     tAngent(tangent) {}
 
   PetscErrorCode doWork(int side,EntityType type,DataForcesAndSurcesCore::EntData &data);
+
+};
+
+/** \brief transform Hcurl base fluxes from reference element to physical edge
+ */
+struct OpSetCovariantPiolaTransoformOnEdge: public DataOperator {
+
+  const VectorDouble &tAngent;
+  const MatrixDouble &tangentAtGaussPt;
+
+  OpSetCovariantPiolaTransoformOnEdge(
+    const VectorDouble &tangent,
+    const MatrixDouble &tangent_at_pts
+  ):
+  tAngent(tangent),
+  tangentAtGaussPt(tangent_at_pts)
+  {}
+
+  PetscErrorCode doWork(
+    int side,
+    EntityType type,
+    DataForcesAndSurcesCore::EntData &data
+  );
 
 };
 

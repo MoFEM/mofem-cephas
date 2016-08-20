@@ -160,9 +160,6 @@ PetscErrorCode EdgeElementForcesAndSurcesCore::operator()() {
               )
             ); CHKERRQ(ierr);
           }
-          if(dataH1.spacesOnEntities[MBTRI].test(HDIV)) {
-            SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"Not yet implemented");
-          }
           if(dataH1.spacesOnEntities[MBEDGE].test(HCURL)) {
             ierr = EdgePolynomialBase().getValue(
               gaussPts,
@@ -171,8 +168,21 @@ PetscErrorCode EdgeElementForcesAndSurcesCore::operator()() {
               )
             ); CHKERRQ(ierr);
           }
-          if(dataH1.spacesOnEntities[MBTET].test(L2)) {
-            SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"Not yet implemented");
+          if(dataH1.spacesOnEntities[MBEDGE].test(HDIV)) {
+            ierr = EdgePolynomialBase().getValue(
+              gaussPts,
+              boost::shared_ptr<BaseFunctionCtx>(
+                new EntPolynomialBaseCtx(dataH1,HDIV,ApproximationBaseArray[b],NOBASE)
+              )
+            ); CHKERRQ(ierr);
+          }
+          if(dataH1.spacesOnEntities[MBEDGE].test(L2)) {
+            ierr = EdgePolynomialBase().getValue(
+              gaussPts,
+              boost::shared_ptr<BaseFunctionCtx>(
+                new EntPolynomialBaseCtx(dataH1,L2,ApproximationBaseArray[b],NOBASE)
+              )
+            ); CHKERRQ(ierr);
           }
           break;
           default:
