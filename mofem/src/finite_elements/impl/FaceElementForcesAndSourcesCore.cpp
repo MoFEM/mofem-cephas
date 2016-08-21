@@ -78,6 +78,8 @@ PetscErrorCode FaceElementForcesAndSourcesCore::operator()() {
 
   if(numeredEntFiniteElementPtr->getEntType() != MBTRI) PetscFunctionReturn(0);
 
+  // Calculate normal and tangent vectors for face geometry given by 3 nodes.
+
   {
     EntityHandle ent = numeredEntFiniteElementPtr->getEnt();
     rval = mField.get_moab().get_connectivity(ent,conn,num_nodes,true); CHKERRQ_MOAB(rval);
@@ -91,27 +93,48 @@ PetscErrorCode FaceElementForcesAndSourcesCore::operator()() {
       diff_n,&*coords.data().begin(),&*normal.data().begin()
     ); CHKERRQ(ierr);
     aRea = cblas_dnrm2(3,&*normal.data().begin(),1)*0.5;
-
+    tangent1.resize(3,false);
+    tangent2.resize(3,false);
+    for(int dd = 0;dd!=3;dd++) {
+      tangent1[dd] = cblas_ddot(3,&diff_n[0],2,&coords[dd],3);
+      tangent2[dd] = cblas_ddot(3,&diff_n[1],2,&coords[dd],3);
+    }
   }
+
+  // Get spaces order/base and sense of entities.
 
   ierr = getSpacesAndBaseOnEntities(dataH1); CHKERRQ(ierr);
 
   //H1
-  if((dataH1.spacesOnEntities[MBEDGE]).test(H1)) {
+  if(dataH1.spacesOnEntities[MBEDGE].test(H1)) {
     ierr = getEdgesSense(dataH1); CHKERRQ(ierr);
     ierr = getEdgesDataOrder(dataH1,H1); CHKERRQ(ierr);
   }
-  if((dataH1.spacesOnEntities[MBTRI]).test(H1)) {
+  if(dataH1.spacesOnEntities[MBTRI].test(H1)) {
     ierr = getTrisSense(dataH1); CHKERRQ(ierr);
     ierr = getTrisDataOrder(dataH1,H1); CHKERRQ(ierr);
   }
 
-  //Hdiv
-  if((dataH1.spacesOnEntities[MBTRI]).test(HDIV)) {
-    ierr = getTrisSense(dataHdiv); CHKERRQ(ierr);
-    ierr = getTrisDataOrder(dataHdiv,HDIV); CHKERRQ(ierr);
+  //Hcurl
+  if(dataH1.spacesOnEntities[MBEDGE].test(HCURL)) {
+    ierr = getEdgesSense(dataHcurl); CHKERRQ(ierr);
+    ierr = getEdgesDataOrder(dataHcurl,HCURL); CHKERRQ(ierr);
+    dataHcurl.spacesOnEntities[MBEDGE].set(HCURL);
+  }
+  if(dataH1.spacesOnEntities[MBTRI].test(HCURL)) {
+    ierr = getTrisSense(dataHcurl); CHKERRQ(ierr);
+    ierr = getTrisDataOrder(dataHcurl,HCURL); CHKERRQ(ierr);
+    dataHcurl.spacesOnEntities[MBTRI].set(HCURL);
   }
 
+  //Hdiv
+  if(dataH1.spacesOnEntities[MBTRI].test(HDIV)) {
+    ierr = getTrisSense(dataHdiv); CHKERRQ(ierr);
+    ierr = getTrisDataOrder(dataHdiv,HDIV); CHKERRQ(ierr);
+    dataHcurl.spacesOnEntities[MBTRI].set(HDIV);
+  }
+
+  // Set integration points
   int nb_gauss_pts;
   int order_data = getMaxDataOrder();
   int order_row = getMaxRowOrder();
@@ -152,6 +175,9 @@ PetscErrorCode FaceElementForcesAndSourcesCore::operator()() {
       nb_gauss_pts = 0;
     }
   } else {
+
+    // If rule is negative, set user defined integration points
+
     ierr = setGaussPts(order_row,order_col,order_data); CHKERRQ(ierr);
     nb_gauss_pts = gaussPts.size2();
     dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE).resize(nb_gauss_pts,3,false);
@@ -167,6 +193,7 @@ PetscErrorCode FaceElementForcesAndSourcesCore::operator()() {
   if(nb_gauss_pts == 0) PetscFunctionReturn(0);
 
   /// Use the some node base
+
   dataHdiv.dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE) = dataH1.dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE);
   dataHcurl.dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE) = dataH1.dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE);
   dataL2.dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE) = dataH1.dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE);
@@ -180,6 +207,7 @@ PetscErrorCode FaceElementForcesAndSourcesCore::operator()() {
     }
   }
 
+  // Calculate base base functions for faces.
   try {
 
     for(int b = AINSWORTH_COLE_BASE;b!=LASTBASE;b++) {
@@ -195,14 +223,6 @@ PetscErrorCode FaceElementForcesAndSourcesCore::operator()() {
               )
             ); CHKERRQ(ierr);
           }
-          if(dataH1.spacesOnEntities[MBTRI].test(HDIV)) {
-            ierr = TriPolynomialBase().getValue(
-              gaussPts,
-              boost::shared_ptr<BaseFunctionCtx>(
-                new EntPolynomialBaseCtx(dataHdiv,HDIV,ApproximationBaseArray[b],NOBASE)
-              )
-            ); CHKERRQ(ierr);
-          }
           if(dataH1.spacesOnEntities[MBEDGE].test(HCURL)) {
             ierr = TriPolynomialBase().getValue(
               gaussPts,
@@ -211,7 +231,15 @@ PetscErrorCode FaceElementForcesAndSourcesCore::operator()() {
               )
             ); CHKERRQ(ierr);
           }
-          if(dataH1.spacesOnEntities[MBTET].test(L2)) {
+          if(dataH1.spacesOnEntities[MBTRI].test(HDIV)) {
+            ierr = TriPolynomialBase().getValue(
+              gaussPts,
+              boost::shared_ptr<BaseFunctionCtx>(
+                new EntPolynomialBaseCtx(dataHdiv,HDIV,ApproximationBaseArray[b],NOBASE)
+              )
+            ); CHKERRQ(ierr);
+          }
+          if(dataH1.spacesOnEntities[MBTRI].test(L2)) {
             ierr = TriPolynomialBase().getValue(
               gaussPts,
               boost::shared_ptr<BaseFunctionCtx>(
@@ -231,6 +259,8 @@ PetscErrorCode FaceElementForcesAndSourcesCore::operator()() {
     SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
   }
 
+  // Check if field for high-order geometry is set and if it is set calculate
+  // higher-order normals and face tangent vectors.
   if(
     dataPtr->get<FieldName_mi_tag>().find(meshPositionsFieldName)!=
     dataPtr->get<FieldName_mi_tag>().end()
@@ -242,6 +272,7 @@ PetscErrorCode FaceElementForcesAndSourcesCore::operator()() {
       SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_FOUND,"no MESH_NODE_POSITIONS in element data");
     }
 
+    // Calculate normal for high-order geometry
     ierr = getEdgesDataOrderSpaceAndBase(dataH1,meshPositionsFieldName); CHKERRQ(ierr);
     ierr = getTrisDataOrderSpaceAndBase(dataH1,meshPositionsFieldName); CHKERRQ(ierr);
     ierr = getNodesFieldData(dataH1,meshPositionsFieldName); CHKERRQ(ierr);
@@ -262,8 +293,14 @@ PetscErrorCode FaceElementForcesAndSourcesCore::operator()() {
     tAngent2_at_GaussPt.resize(0,0,false);
   }
 
+  // Apply Piola transform to HDiv and HCurl spaces, uses previously calculated
+  // faces normal and tangent vectors.
   if(dataH1.spacesOnEntities[MBTRI].test(HDIV)) {
-    ierr = opSetPiolaTransoformOnTriangle.opRhs(dataHdiv); CHKERRQ(ierr);
+    ierr = opContravariantTransoform.opRhs(dataHdiv); CHKERRQ(ierr);
+  }
+  if(dataH1.spacesOnEntities[MBEDGE].test(HCURL)) {
+    // cerr << dataHcurl.dataOnEntities[MBEDGE][0].getN(AINSWORTH_COLE_BASE) << endl;
+    ierr = opCovariantTransoform.opRhs(dataHcurl); CHKERRQ(ierr);
   }
 
   const UserDataOperator::OpType types[2] = {
@@ -306,7 +343,7 @@ PetscErrorCode FaceElementForcesAndSourcesCore::operator()() {
           op_data[ss] = !ss ? &dataH1 : &derivedDataH1;
           break;
           case HCURL:
-          SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented yet");
+          op_data[ss] = !ss ? &dataHcurl : &derivedDataHcurl;
           break;
           case HDIV:
           op_data[ss] = !ss ? &dataHdiv : &derivedDataHdiv;

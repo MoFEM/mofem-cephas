@@ -404,9 +404,9 @@ PetscErrorCode Hdiv_FaceBubbleShapeFunctions_MBTET_ON_FACE(
   if(diffN!=NULL) {
     int vert_i = faces_nodes[1];
     int vert_j = faces_nodes[2];
-    double _Spin_[9];
-    ierr = Spin(_Spin_,&diffN[3*vert_i]); CHKERRQ(ierr);
-    cblas_dgemv(CblasRowMajor,CblasNoTrans,3,3,1.,_Spin_,3,&diffN[3*vert_j],1,0,Phi_f,1);
+    double spin[9];
+    ierr = Spin(spin,&diffN[3*vert_i]); CHKERRQ(ierr);
+    cblas_dgemv(CblasRowMajor,CblasNoTrans,3,3,1.,spin,3,&diffN[3*vert_j],1,0,Phi_f,1);
   } else {
     Phi_f[0] = 1;
     Phi_f[1] = 0;

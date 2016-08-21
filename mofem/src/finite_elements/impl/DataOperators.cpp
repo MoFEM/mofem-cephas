@@ -707,13 +707,28 @@ PetscErrorCode OpSetInvJacH1::doWork(
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode OpSetInvJacHdiv::doWork(
+PetscErrorCode OpSetInvJacHdivAndHcurl::doWork(
     int side,
     EntityType type,
     DataForcesAndSurcesCore::EntData &data) {
   PetscFunctionBegin;
 
   if(type != MBTRI && type != MBTET) PetscFunctionReturn(0);
+
+  if(
+    (int)DataForcesAndSurcesCore::HDIV0_1!=(int)DataForcesAndSurcesCore::HCURL0_1 ||
+    (int)DataForcesAndSurcesCore::HDIV0_2!=(int)DataForcesAndSurcesCore::HCURL0_2 ||
+    (int)DataForcesAndSurcesCore::HDIV1_0!=(int)DataForcesAndSurcesCore::HCURL1_0 ||
+    (int)DataForcesAndSurcesCore::HDIV1_2!=(int)DataForcesAndSurcesCore::HCURL1_2 ||
+    (int)DataForcesAndSurcesCore::HDIV2_0!=(int)DataForcesAndSurcesCore::HCURL2_0 ||
+    (int)DataForcesAndSurcesCore::HDIV2_1!=(int)DataForcesAndSurcesCore::HCURL2_1
+  ) {
+    SETERRQ(
+      PETSC_COMM_SELF,
+      MOFEM_DATA_INCONSISTENCY,
+      "Data inconsistency between Hcurl and Hdiv struture of base functions"
+    );
+  }
 
   try {
 
@@ -764,7 +779,7 @@ PetscErrorCode OpSetInvJacHdiv::doWork(
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode OpSetPiolaTransform::doWork(
+PetscErrorCode OpSetContravariantPiolaTransform::doWork(
   int side,
   EntityType type,
   DataForcesAndSurcesCore::EntData &data
@@ -822,6 +837,75 @@ PetscErrorCode OpSetPiolaTransform::doWork(
       }
       data.getHdivN(base).data().swap(piolaN.data());
       data.getDiffHdivN(base).data().swap(piolaDiffN.data());
+
+    }
+
+    // data.getBase() = base;
+
+  } catch (std::exception& ex) {
+    std::ostringstream ss;
+    ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
+    SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
+  }
+
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode OpSetCovariantPiolaTransform::doWork(
+  int side,
+  EntityType type,
+  DataForcesAndSurcesCore::EntData &data
+)  {
+  PetscFunctionBegin;
+
+  if(type != MBEDGE && type != MBTRI && type != MBTET) PetscFunctionReturn(0);
+
+  try {
+
+    for(int b = AINSWORTH_COLE_BASE; b!=USER_BASE; b++) {
+
+      FieldApproximationBase base = ApproximationBaseArray[b];
+
+      const unsigned int nb_base_functions = data.getHcurlN(base).size2()/3;
+      if(!nb_base_functions) continue;
+
+      const unsigned int nb_gauss_pts = data.getHcurlN(base).size1();
+      piolaN.resize(nb_gauss_pts,data.getHcurlN(base).size2(),false);
+      piolaDiffN.resize(nb_gauss_pts,data.getDiffHcurlN(base).size2(),false);
+
+      FTensor::Tensor1<double*,3> t_n = data.getFTensor1HcurlN<3>(base);
+      double *t_transformed_n_ptr = &*piolaN.data().begin();
+      FTensor::Tensor1<double*,3> t_transformed_n(
+        t_transformed_n_ptr, //HDIV0
+        &t_transformed_n_ptr[DataForcesAndSurcesCore::HCURL1],
+        &t_transformed_n_ptr[DataForcesAndSurcesCore::HCURL2],3
+      );
+      FTensor::Tensor2<double*,3,3> t_diff_n = data.getFTensor2DiffHdivN<3,3>(base);
+      double *t_transformed_diff_n_ptr = &*piolaDiffN.data().begin();
+      FTensor::Tensor2<double*,3,3> t_transformed_diff_n(
+        t_transformed_diff_n_ptr,
+        &t_transformed_diff_n_ptr[DataForcesAndSurcesCore::HCURL0_1],
+        &t_transformed_diff_n_ptr[DataForcesAndSurcesCore::HCURL0_2],
+        &t_transformed_diff_n_ptr[DataForcesAndSurcesCore::HCURL1_0],
+        &t_transformed_diff_n_ptr[DataForcesAndSurcesCore::HCURL1_1],
+        &t_transformed_diff_n_ptr[DataForcesAndSurcesCore::HCURL1_2],
+        &t_transformed_diff_n_ptr[DataForcesAndSurcesCore::HCURL2_0],
+        &t_transformed_diff_n_ptr[DataForcesAndSurcesCore::HCURL2_1],
+        &t_transformed_diff_n_ptr[DataForcesAndSurcesCore::HCURL2_2],9
+      );
+
+      for(unsigned int gg = 0;gg!=nb_gauss_pts;gg++) {
+        for(unsigned int bb = 0;bb!=nb_base_functions;bb++) {
+          t_transformed_n(i) = tInvJac(k,i)*t_n(k);
+          t_transformed_diff_n(i,k) = tInvJac(j,i)*t_diff_n(j,k);
+          ++t_n;
+          ++t_transformed_n;
+          ++t_diff_n;
+          ++t_transformed_diff_n;
+        }
+      }
+      data.getHcurlN(base).data().swap(piolaN.data());
+      data.getDiffHcurlN(base).data().swap(piolaDiffN.data());
 
     }
 
@@ -950,7 +1034,7 @@ PetscErrorCode OpSetHoInvJacH1::doWork(
     PetscFunctionReturn(0);
   }
 
-  PetscErrorCode OpSetHoInvJacHdiv::doWork(
+  PetscErrorCode OpSetHoInvJacHdivAndHcurl::doWork(
     int side,
     EntityType type,
     DataForcesAndSurcesCore::EntData &data
@@ -1027,82 +1111,152 @@ PetscErrorCode OpSetHoInvJacH1::doWork(
   }
 
 
- PetscErrorCode OpSetHoPiolaTransform::doWork(
-    int side,EntityType type,DataForcesAndSurcesCore::EntData &data
-  ) {
-    PetscFunctionBegin;
+PetscErrorCode OpSetHoContravariantPiolaTransform::doWork(
+  int side,EntityType type,DataForcesAndSurcesCore::EntData &data
+) {
+  PetscFunctionBegin;
 
-    if(type != MBTRI && type != MBTET) PetscFunctionReturn(0);
+  if(type != MBTRI && type != MBTET) PetscFunctionReturn(0);
 
-    try {
+  try {
 
+    for(int b = AINSWORTH_COLE_BASE; b!=USER_BASE; b++) {
 
-      for(int b = AINSWORTH_COLE_BASE; b!=USER_BASE; b++) {
+      FieldApproximationBase base = ApproximationBaseArray[b];
 
-        FieldApproximationBase base = ApproximationBaseArray[b];
+      unsigned int nb_gauss_pts = data.getHdivN(base).size1();
+      unsigned int nb_base_functions = data.getHdivN(base).size2()/3;
+      piolaN.resize(nb_gauss_pts,data.getHdivN(base).size2(),false);
+      piolaDiffN.resize(nb_gauss_pts,data.getDiffHdivN(base).size2(),false);
 
-        unsigned int nb_gauss_pts = data.getHdivN(base).size1();
-        unsigned int nb_base_functions = data.getHdivN(base).size2()/3;
-        piolaN.resize(nb_gauss_pts,data.getHdivN(base).size2(),false);
-        piolaDiffN.resize(nb_gauss_pts,data.getDiffHdivN(base).size2(),false);
+      FTensor::Tensor1<double*,3> t_n = data.getFTensor1HdivN<3>(base);
+      double *t_transformed_n_ptr = &*piolaN.data().begin();
+      FTensor::Tensor1<double*,3> t_transformed_n(
+        t_transformed_n_ptr, //HDIV0
+        &t_transformed_n_ptr[DataForcesAndSurcesCore::HDIV1],
+        &t_transformed_n_ptr[DataForcesAndSurcesCore::HDIV2],3
+      );
+      FTensor::Tensor2<double*,3,3> t_diff_n = data.getFTensor2DiffHdivN<3,3>(base);
+      double *t_transformed_diff_n_ptr = &*piolaDiffN.data().begin();
+      FTensor::Tensor2<double*,3,3> t_transformed_diff_n(
+        t_transformed_diff_n_ptr,
+        &t_transformed_diff_n_ptr[DataForcesAndSurcesCore::HDIV0_1],
+        &t_transformed_diff_n_ptr[DataForcesAndSurcesCore::HDIV0_2],
+        &t_transformed_diff_n_ptr[DataForcesAndSurcesCore::HDIV1_0],
+        &t_transformed_diff_n_ptr[DataForcesAndSurcesCore::HDIV1_1],
+        &t_transformed_diff_n_ptr[DataForcesAndSurcesCore::HDIV1_2],
+        &t_transformed_diff_n_ptr[DataForcesAndSurcesCore::HDIV2_0],
+        &t_transformed_diff_n_ptr[DataForcesAndSurcesCore::HDIV2_1],
+        &t_transformed_diff_n_ptr[DataForcesAndSurcesCore::HDIV2_2],9
+      );
 
-        FTensor::Tensor1<double*,3> t_n = data.getFTensor1HdivN<3>(base);
-        double *t_transformed_n_ptr = &*piolaN.data().begin();
-        FTensor::Tensor1<double*,3> t_transformed_n(
-          t_transformed_n_ptr, //HDIV0
-          &t_transformed_n_ptr[DataForcesAndSurcesCore::HDIV1],
-          &t_transformed_n_ptr[DataForcesAndSurcesCore::HDIV2],3
-        );
-        FTensor::Tensor2<double*,3,3> t_diff_n = data.getFTensor2DiffHdivN<3,3>(base);
-        double *t_transformed_diff_n_ptr = &*piolaDiffN.data().begin();
-        FTensor::Tensor2<double*,3,3> t_transformed_diff_n(
-          t_transformed_diff_n_ptr,
-          &t_transformed_diff_n_ptr[DataForcesAndSurcesCore::HDIV0_1],
-          &t_transformed_diff_n_ptr[DataForcesAndSurcesCore::HDIV0_2],
-          &t_transformed_diff_n_ptr[DataForcesAndSurcesCore::HDIV1_0],
-          &t_transformed_diff_n_ptr[DataForcesAndSurcesCore::HDIV1_1],
-          &t_transformed_diff_n_ptr[DataForcesAndSurcesCore::HDIV1_2],
-          &t_transformed_diff_n_ptr[DataForcesAndSurcesCore::HDIV2_0],
-          &t_transformed_diff_n_ptr[DataForcesAndSurcesCore::HDIV2_1],
-          &t_transformed_diff_n_ptr[DataForcesAndSurcesCore::HDIV2_2],9
-        );
+      FTensor::Tensor0<double*> t_det(&*detHoJac.data().begin());
+      double *t_jac_ptr = hoJac.data().begin();
+      FTensor::Tensor2<double*,3,3> t_jac(
+        t_jac_ptr,&t_jac_ptr[1],&t_jac_ptr[2],
+        &t_jac_ptr[3],&t_jac_ptr[4],&t_jac_ptr[5],
+        &t_jac_ptr[6],&t_jac_ptr[7],&t_jac_ptr[8],9
+      );
 
-        FTensor::Tensor0<double*> t_det(&*detHoJac.data().begin());
-        double *t_jac_ptr = hoJac.data().begin();
-        FTensor::Tensor2<double*,3,3> t_jac(
-          t_jac_ptr,&t_jac_ptr[1],&t_jac_ptr[2],
-          &t_jac_ptr[3],&t_jac_ptr[4],&t_jac_ptr[5],
-          &t_jac_ptr[6],&t_jac_ptr[7],&t_jac_ptr[8],9
-        );
-
-        for(unsigned int gg = 0;gg!=nb_gauss_pts;gg++) {
-          for(unsigned int bb = 0;bb!=nb_base_functions;bb++) {
-            const double a = 1./t_det;
-            t_transformed_n(i) = a*t_jac(i,k)*t_n(k);
-            t_transformed_diff_n(i,k) = a*t_jac(i,j)*t_diff_n(j,k);
-            ++t_n;
-            ++t_transformed_n;
-            ++t_diff_n;
-            ++t_transformed_diff_n;
-          }
-          ++t_det;
-          ++t_jac;
+      for(unsigned int gg = 0;gg!=nb_gauss_pts;gg++) {
+        for(unsigned int bb = 0;bb!=nb_base_functions;bb++) {
+          const double a = 1./t_det;
+          t_transformed_n(i) = a*t_jac(i,k)*t_n(k);
+          t_transformed_diff_n(i,k) = a*t_jac(i,j)*t_diff_n(j,k);
+          ++t_n;
+          ++t_transformed_n;
+          ++t_diff_n;
+          ++t_transformed_diff_n;
         }
-
-        data.getHdivN(base).data().swap(piolaN.data());
-        data.getDiffHdivN(base).data().swap(piolaDiffN.data());
-
+        ++t_det;
+        ++t_jac;
       }
 
-    } catch (std::exception& ex) {
-      std::ostringstream ss;
-      ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
-      SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
+      data.getHdivN(base).data().swap(piolaN.data());
+      data.getDiffHdivN(base).data().swap(piolaDiffN.data());
+
     }
 
-    PetscFunctionReturn(0);
+  } catch (std::exception& ex) {
+    std::ostringstream ss;
+    ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
+    SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
   }
 
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode OpSetHoCovariantPiolaTransform::doWork(
+  int side,EntityType type,DataForcesAndSurcesCore::EntData &data
+) {
+  PetscFunctionBegin;
+
+  if(type != MBTRI && type != MBTET) PetscFunctionReturn(0);
+
+  try {
+
+    for(int b = AINSWORTH_COLE_BASE; b!=USER_BASE; b++) {
+
+      FieldApproximationBase base = ApproximationBaseArray[b];
+
+      unsigned int nb_gauss_pts = data.getHdivN(base).size1();
+      unsigned int nb_base_functions = data.getHdivN(base).size2()/3;
+      piolaN.resize(nb_gauss_pts,data.getHdivN(base).size2(),false);
+      piolaDiffN.resize(nb_gauss_pts,data.getDiffHdivN(base).size2(),false);
+
+      FTensor::Tensor1<double*,3> t_n = data.getFTensor1HdivN<3>(base);
+      double *t_transformed_n_ptr = &*piolaN.data().begin();
+      FTensor::Tensor1<double*,3> t_transformed_n(
+        t_transformed_n_ptr, //HDIV0
+        &t_transformed_n_ptr[DataForcesAndSurcesCore::HCURL1],
+        &t_transformed_n_ptr[DataForcesAndSurcesCore::HCURL2],3
+      );
+      FTensor::Tensor2<double*,3,3> t_diff_n = data.getFTensor2DiffHdivN<3,3>(base);
+      double *t_transformed_diff_n_ptr = &*piolaDiffN.data().begin();
+      FTensor::Tensor2<double*,3,3> t_transformed_diff_n(
+        t_transformed_diff_n_ptr,
+        &t_transformed_diff_n_ptr[DataForcesAndSurcesCore::HCURL0_1],
+        &t_transformed_diff_n_ptr[DataForcesAndSurcesCore::HCURL0_2],
+        &t_transformed_diff_n_ptr[DataForcesAndSurcesCore::HCURL1_0],
+        &t_transformed_diff_n_ptr[DataForcesAndSurcesCore::HCURL1_1],
+        &t_transformed_diff_n_ptr[DataForcesAndSurcesCore::HCURL1_2],
+        &t_transformed_diff_n_ptr[DataForcesAndSurcesCore::HCURL2_0],
+        &t_transformed_diff_n_ptr[DataForcesAndSurcesCore::HCURL2_1],
+        &t_transformed_diff_n_ptr[DataForcesAndSurcesCore::HCURL2_2],9
+      );
+
+      double *t_inv_jac_ptr = hoInvJac.data().begin();
+      FTensor::Tensor2<double*,3,3> t_inv_jac(
+        t_inv_jac_ptr,&t_inv_jac_ptr[1],&t_inv_jac_ptr[2],
+        &t_inv_jac_ptr[3],&t_inv_jac_ptr[4],&t_inv_jac_ptr[5],
+        &t_inv_jac_ptr[6],&t_inv_jac_ptr[7],&t_inv_jac_ptr[8],9
+      );
+
+      for(unsigned int gg = 0;gg!=nb_gauss_pts;gg++) {
+        for(unsigned int bb = 0;bb!=nb_base_functions;bb++) {
+          t_transformed_n(i) = t_inv_jac(k,i)*t_n(k);
+          t_transformed_diff_n(i,k) = t_inv_jac(j,i)*t_diff_n(j,k);
+          ++t_n;
+          ++t_transformed_n;
+          ++t_diff_n;
+          ++t_transformed_diff_n;
+        }
+        ++t_inv_jac;
+      }
+
+      data.getHdivN(base).data().swap(piolaN.data());
+      data.getDiffHdivN(base).data().swap(piolaDiffN.data());
+
+    }
+
+  } catch (std::exception& ex) {
+    std::ostringstream ss;
+    ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
+    SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
+  }
+
+  PetscFunctionReturn(0);
+}
 
 PetscErrorCode OpGetDataAndGradient::doWork(
     int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
@@ -1361,7 +1515,7 @@ PetscErrorCode OpGetCoordsAndNormalsOnPrism::calculateNormals() {
 }
 
 
-PetscErrorCode OpSetPiolaTransoformOnTriangle::doWork(
+PetscErrorCode OpSetContravariantPiolaTransoformOnTriangle::doWork(
     int side,
     EntityType type,
     DataForcesAndSurcesCore::EntData &data
@@ -1370,36 +1524,113 @@ PetscErrorCode OpSetPiolaTransoformOnTriangle::doWork(
 
   if(type != MBTRI) PetscFunctionReturn(0);
 
-  FieldApproximationBase base = data.getBase();
+  // FieldApproximationBase base = data.getBase();
 
   for(int b = AINSWORTH_COLE_BASE; b!=USER_BASE; b++) {
 
-    data.getBase() = ApproximationBaseArray[b];
+    FieldApproximationBase base = ApproximationBaseArray[b];
+    // data.getBase() = ApproximationBaseArray[b];
 
-    double l0 = cblas_dnrm2(3,&normal[0],1);
-    int nb_gauss_pts = data.getHdivN().size1();
-    int nb_dofs = data.getHdivN().size2()/3;
+    double l0 = cblas_dnrm2(3,&nOrmal[0],1);
+    int nb_gauss_pts = data.getHdivN(base).size1();
+    int nb_dofs = data.getHdivN(base).size2()/3;
     int gg = 0;
     for(;gg<nb_gauss_pts;gg++) {
-
       int dd = 0;
       for(;dd<nb_dofs;dd++) {
-        double val = data.getHdivN()(gg,3*dd);
-        if(nOrmals_at_GaussPt.size1()==(unsigned int)nb_gauss_pts) {
-          double l = cblas_dnrm2(3,&nOrmals_at_GaussPt(gg,0),1);
-          cblas_dcopy(3,&nOrmals_at_GaussPt(gg,0),1,&data.getHdivN()(gg,3*dd),1);
-          cblas_dscal(3,val/pow(l,2),&data.getHdivN()(gg,3*dd),1);
+        double val = data.getHdivN(base)(gg,3*dd);
+        if(normalsAtGaussPt.size1()==(unsigned int)nb_gauss_pts) {
+          double l = cblas_dnrm2(3,&normalsAtGaussPt(gg,0),1);
+          cblas_dcopy(3,&normalsAtGaussPt(gg,0),1,&data.getHdivN(base)(gg,3*dd),1);
+          cblas_dscal(3,val/pow(l,2),&data.getHdivN(base)(gg,3*dd),1);
         } else {
-          cblas_dcopy(3,&normal[0],1,&data.getHdivN()(gg,3*dd),1);
-          cblas_dscal(3,val/pow(l0,2),&data.getHdivN()(gg,3*dd),1);
+          cblas_dcopy(3,&nOrmal[0],1,&data.getHdivN(base)(gg,3*dd),1);
+          cblas_dscal(3,val/pow(l0,2),&data.getHdivN(base)(gg,3*dd),1);
         }
+      }
+    }
+  }
+
+  // data.getBase() = base;
+
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode OpSetCovariantPiolaTransoformOnTriangle::doWork(
+  int side,
+  EntityType type,
+  DataForcesAndSurcesCore::EntData &data
+) {
+  PetscErrorCode ierr;
+  PetscFunctionBegin;
+
+  if(type != MBEDGE && type != MBTRI) PetscFunctionReturn(0);
+
+  FTensor::Index<'i',3> i;
+  FTensor::Index<'j',3> j;
+  FTensor::Tensor1<double,3> tmp_t_h_curl;
+
+  FTensor::Tensor2<const double*,3,3> t_m(
+    &tAngent0[0],&tAngent0[1],&tAngent0[2],
+    &tAngent1[0],&tAngent1[1],&tAngent1[2],
+    &nOrmal[0],&nOrmal[1],&nOrmal[2],1
+  );
+  double det;
+  FTensor::Tensor2<double,3,3> t_inv_m;
+  ierr = determinantTensor3by3(t_m,det); CHKERRQ(ierr);
+  ierr = invertTensor3by3(t_m,det,t_inv_m); CHKERRQ(ierr);
+
+  for(int b = AINSWORTH_COLE_BASE; b!=USER_BASE; b++) {
+
+    FieldApproximationBase base = ApproximationBaseArray[b];
+
+    int nb_dofs = data.getHcurlN(base).size2()/3;
+    int nb_gauss_pts = data.getHcurlN(base).size1();
+
+    if(nb_dofs>0 && nb_gauss_pts>0) {
+
+      FieldApproximationBase base = ApproximationBaseArray[b];
+      FTensor::Tensor1<double*,3> t_h_curl(
+        &data.getHcurlN(base)(0,DataForcesAndSurcesCore::HCURL0),
+        &data.getHcurlN(base)(0,DataForcesAndSurcesCore::HCURL1),
+        &data.getHcurlN(base)(0,DataForcesAndSurcesCore::HCURL2),3
+      );
+
+      int cc = 0;
+      if(normalsAtGaussPt.size1()==(unsigned int)nb_gauss_pts) {
+        FTensor::Tensor2<const double*,3,3> t_m_at_pts(
+          &tangent0AtGaussPt(0,0),&tangent0AtGaussPt(0,1),&tangent0AtGaussPt(0,2),
+          &tangent1AtGaussPt(0,0),&tangent1AtGaussPt(0,1),&tangent1AtGaussPt(0,2),
+          &normalsAtGaussPt(0,0),&normalsAtGaussPt(0,1),&normalsAtGaussPt(0,2),3
+        );
+        for(int gg = 0;gg<nb_gauss_pts;gg++) {
+          ierr = determinantTensor3by3(t_m_at_pts,det); CHKERRQ(ierr);
+          ierr = invertTensor3by3(t_m_at_pts,det,t_inv_m); CHKERRQ(ierr);
+          for(int ll = 0;ll!=nb_dofs;ll++) {
+            tmp_t_h_curl(i) = t_inv_m(j,i)*t_h_curl(j);
+            t_h_curl(i) = tmp_t_h_curl(i);
+            ++t_h_curl;
+            ++cc;
+          }
+          ++t_m_at_pts;
+        }
+      } else {
+        for(int gg = 0;gg<nb_gauss_pts;gg++) {
+          for(int ll = 0;ll!=nb_dofs;ll++) {
+            tmp_t_h_curl(i) = t_inv_m(j,i)*t_h_curl(j);
+            t_h_curl(i) = tmp_t_h_curl(i);
+            ++t_h_curl;
+            ++cc;
+          }
+        }
+      }
+      if(cc!=nb_gauss_pts*nb_dofs) {
+        SETERRQ(PETSC_COMM_SELF,MOFEM_IMPOSIBLE_CASE,"Data inconsistency");
       }
 
     }
 
   }
-
-  data.getBase() = base;
 
   PetscFunctionReturn(0);
 }
@@ -1408,7 +1639,7 @@ PetscErrorCode OpGetHoTangentOnEdge::doWork(int side,EntityType type,DataForcesA
   PetscFunctionBegin;
 
   int nb_dofs = data.getFieldData().size();
-  if(nb_dofs == 0)  PetscFunctionReturn(0);
+  if(nb_dofs == 0) PetscFunctionReturn(0);
 
   try {
 
@@ -1455,5 +1686,83 @@ PetscErrorCode OpGetHoTangentOnEdge::doWork(int side,EntityType type,DataForcesA
   }
   PetscFunctionReturn(0);
 }
+
+PetscErrorCode OpSetCovariantPiolaTransoformOnEdge::doWork(
+  int side,
+  EntityType type,
+  DataForcesAndSurcesCore::EntData &data
+) {
+  PetscFunctionBegin;
+
+  if(type != MBEDGE) PetscFunctionReturn(0);
+
+  FTensor::Index<'i',3> i;
+  FTensor::Tensor1<const double*,3> t_m(
+    &tAngent[0],&tAngent[1],&tAngent[2]
+  );
+  const double l0 = t_m(i)*t_m(i);
+  std::vector<double> l1;
+  {
+    int nb_gauss_pts = tangentAtGaussPt.size1();
+    if(nb_gauss_pts) {
+      l1.resize(nb_gauss_pts);
+      FTensor::Tensor1<const double*,3> t_m_at_pts(
+        &tangentAtGaussPt(0,0),&tangentAtGaussPt(0,1),&tangentAtGaussPt(0,2),3
+      );
+      for(int gg = 0;gg<nb_gauss_pts;gg++) {
+        l1[gg] = t_m_at_pts(i)*t_m_at_pts(i);
+        ++t_m_at_pts;
+      }
+    }
+  }
+
+  for(int b = AINSWORTH_COLE_BASE; b!=USER_BASE; b++) {
+
+    FieldApproximationBase base = ApproximationBaseArray[b];
+    int nb_gauss_pts = data.getHcurlN(base).size1();
+    int nb_dofs = data.getHcurlN(base).size2()/3;
+    if(nb_gauss_pts>0 && nb_dofs>0) {
+      FTensor::Tensor1<double*,3> t_h_curl(
+        &data.getHcurlN(base)(0,DataForcesAndSurcesCore::HCURL0),
+        &data.getHcurlN(base)(0,DataForcesAndSurcesCore::HCURL1),
+        &data.getHcurlN(base)(0,DataForcesAndSurcesCore::HCURL2),3
+      );
+      int cc = 0;
+      if(tangentAtGaussPt.size1()==(unsigned int)nb_gauss_pts) {
+        FTensor::Tensor1<const double*,3> t_m_at_pts(
+          &tangentAtGaussPt(0,0),&tangentAtGaussPt(0,1),&tangentAtGaussPt(0,2),3
+        );
+        for(int gg = 0;gg<nb_gauss_pts;gg++) {
+          const double val = t_h_curl(0);
+          const double l0 = l1[gg];
+          const double a = val/l0;
+          for(int ll = 0;ll!=nb_dofs;ll++) {
+            t_h_curl(i) = t_m_at_pts(i)*a;
+            ++t_h_curl;
+          }
+          ++t_m_at_pts;
+          ++cc;
+        }
+      } else {
+        for(int gg = 0;gg<nb_gauss_pts;gg++) {
+          const double val = t_h_curl(0);
+          const double a = val/l0;
+          for(int ll = 0;ll!=nb_dofs;ll++) {
+            t_h_curl(i) = t_m(i)*a;
+            ++t_h_curl;
+            ++cc;
+          }
+        }
+      }
+      if(cc!=nb_gauss_pts*nb_dofs) {
+        SETERRQ(PETSC_COMM_SELF,MOFEM_IMPOSIBLE_CASE,"Data inconsistency");
+      }
+    }
+
+  }
+
+  PetscFunctionReturn(0);
+}
+
 
 }

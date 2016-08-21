@@ -217,13 +217,29 @@ PetscErrorCode Core::add_ents_to_field_by_EDGEs(const Range &edges,const BitFiel
       }
       break;
     case HCURL:
-      SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"sorry, not implemented");
+
+      // You would add hcurl space on edge here if you would have 1d h-curl space.
+      // Ass far I know that really makes no sense. H-curl space is spanning on
+      // edges, but you would add it by adding space through entities of higher
+      // dimension.
+
+      SETERRQ(
+        PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,
+        "sorry, not implemented, HCURL not implemented for edge"
+      );
+
       break;
     case HDIV:
-      SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"sorry, not implemented, HDIV not implemented for EDGEs");
+
+      // Look to comments above about h-curl spce. That apply as well to h-div space.
+
+      SETERRQ(
+        PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,
+        "sorry, not implemented, HDIV not implemented for edge"
+      );
       break;
     default:
-      SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"add_ents_to_field_by_EDGEs this field not work for EDGEs");
+      SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"sorry, adds unknown field to edge");
   }
   PetscFunctionReturn(0);
 }
@@ -320,13 +336,22 @@ PetscErrorCode Core::add_ents_to_field_by_TRIs(const Range &tris,const BitFieldI
     }
     break;
     case HCURL:
-    SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"sorry, not implemented, HCURL not implemented for TRI");
+
+    // You would add h-div space on edge here if you would have 2d hdiv space. At the
+    // moment attention is focussed on 3d problems.
+
+    SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"sorry, not implemented, HCURL not implemented for triangle");
+
     break;
     case HDIV:
-    SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"sorry, not implemented, HDIV not implemented for TRI");
+
+    // You would add h-div space on edge here if you would have 2d hdiv space. At the MOFEM_NOT_IMPLEMENTED
+    // attention is focussed on 3d problems.
+
+    SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"sorry, not implemented, HDIV not implemented for triangle");
     break;
     default:
-    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"add_ents_to_field_by_TRIs this field not work for TRIs");
+    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"sorry, unknown field is applied to triangle entity");
   }
   PetscFunctionReturn(0);
 }
@@ -365,6 +390,7 @@ PetscErrorCode Core::add_ents_to_field_by_VERTICEs(const Range &nodes,const BitF
   FieldSpace space;
   rval = moab.tag_get_data(th_FieldSpace,&idm,1,&space); CHKERRQ_MOAB(rval);
   switch (space) {
+    case L2:
     case H1:
     rval = moab.add_entities(idm,nodes); CHKERRQ_MOAB(rval);
     if(verb>1) {
@@ -376,7 +402,9 @@ PetscErrorCode Core::add_ents_to_field_by_VERTICEs(const Range &nodes,const BitF
     }
     break;
     default:
-    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"add_ents_to_field_by_TRIs this field not work for TRIs");
+    SETERRQ(
+      PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,
+      "sorry, if it try to span space on vertex entity which makes no sense");
   }
   PetscFunctionReturn(0);
 }
@@ -493,7 +521,7 @@ PetscErrorCode Core::add_ents_to_field_by_TETs(const Range &tets,const BitFieldI
     }
     break;
     default:
-    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"add_ents_to_field_by_TETs this field not work for TETs");
+    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"sorry, unknown space added to entity");
   }
   if(verb>1) {
     PetscSynchronizedFlush(comm,PETSC_STDOUT);

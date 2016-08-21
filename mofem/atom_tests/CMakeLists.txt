@@ -448,6 +448,22 @@ add_test(record_series_atom_test_compare ${CMAKE_COMMAND} -E compare_files
   ${CMAKE_BINARY_DIR}/atom_tests/record_series_atom.txt
 )
 
+# add test for hcurl space
+my_add_executable(forces_and_sources_hcurl_approximation_functions forces_and_sources_hcurl_approximation_functions.cpp)
+target_link_libraries(forces_and_sources_hcurl_approximation_functions
+  mofem_finite_elements
+  mofem_interfaces
+  mofem_multi_indices
+  mofem_approx
+  mofem_cblas
+  mofem_third_party
+  ${PROJECT_LIBS}
+)
+add_test(
+  forces_and_sources_hcurl_approximation_functions_atom
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_hcurl_approximation_functions
+)
+
 # add test for hdiv space
 my_add_executable(forces_and_sources_hdiv_approximation_functions forces_and_sources_hdiv_approximation_functions.cpp)
 target_link_libraries(forces_and_sources_hdiv_approximation_functions
@@ -457,9 +473,13 @@ target_link_libraries(forces_and_sources_hdiv_approximation_functions
   mofem_approx
   mofem_cblas
   mofem_third_party
-  ${PROJECT_LIBS})
+  ${PROJECT_LIBS}
+)
 
-add_test(forces_and_sources_hdiv_approximation_functions_atom ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_hdiv_approximation_functions)
+add_test(
+  forces_and_sources_hdiv_approximation_functions_atom
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_hdiv_approximation_functions
+)
 add_test(forces_and_sources_hdiv_approximation_functions_atom_compare ${CMAKE_COMMAND} -E compare_files
   ${CMAKE_BINARY_DIR}/atom_tests/forces_and_sources_hdiv_approximation_functions.txt
   ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/forces_and_sources_hdiv_approximation_functions.txt
@@ -704,14 +724,15 @@ list(INSERT testing_base_list
   legendre
   lobatto
   h1tet
-  #hcurltet
+  hcurltet
   hdivtet
   l2tet
   h1tri
   hdivtri
-  #hcurltri
+  hcurltri
   #l2tri
   h1edge
+  hcurledge
 )
 foreach(test_base ${testing_base_list})
   add_test(testing_base_functions_${test_base}

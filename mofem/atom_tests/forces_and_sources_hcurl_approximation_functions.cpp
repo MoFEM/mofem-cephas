@@ -63,38 +63,45 @@ int main(int argc, char *argv[]) {
   ierr = m_field.seed_ref_level_3D(0,bit_level0); CHKERRQ(ierr);
 
   //Fields
-  ierr = m_field.add_field("HDIV",HDIV,1); CHKERRQ(ierr);
+  ierr = m_field.add_field("HCURL",HCURL,1); CHKERRQ(ierr);
 
   //FE TET
-  ierr = m_field.add_finite_element("HDIV_TET_FE"); CHKERRQ(ierr);
+  ierr = m_field.add_finite_element("HCURL_TET_FE"); CHKERRQ(ierr);
   //Define rows/cols and element data
-  ierr = m_field.modify_finite_element_add_field_row("HDIV_TET_FE","HDIV"); CHKERRQ(ierr);
-  ierr = m_field.modify_finite_element_add_field_col("HDIV_TET_FE","HDIV"); CHKERRQ(ierr);
-  ierr = m_field.modify_finite_element_add_field_data("HDIV_TET_FE","HDIV"); CHKERRQ(ierr);
+  ierr = m_field.modify_finite_element_add_field_row("HCURL_TET_FE","HCURL"); CHKERRQ(ierr);
+  ierr = m_field.modify_finite_element_add_field_col("HCURL_TET_FE","HCURL"); CHKERRQ(ierr);
+  ierr = m_field.modify_finite_element_add_field_data("HCURL_TET_FE","HCURL"); CHKERRQ(ierr);
 
   //FE TRI
-  ierr = m_field.add_finite_element("HDIV_TRI_FE"); CHKERRQ(ierr);
+  ierr = m_field.add_finite_element("HCURL_TRI_FE"); CHKERRQ(ierr);
   //Define rows/cols and element data
-  ierr = m_field.modify_finite_element_add_field_row("HDIV_TRI_FE","HDIV"); CHKERRQ(ierr);
-  ierr = m_field.modify_finite_element_add_field_col("HDIV_TRI_FE","HDIV"); CHKERRQ(ierr);
-  ierr = m_field.modify_finite_element_add_field_data("HDIV_TRI_FE","HDIV"); CHKERRQ(ierr);
+  ierr = m_field.modify_finite_element_add_field_row("HCURL_TRI_FE","HCURL"); CHKERRQ(ierr);
+  ierr = m_field.modify_finite_element_add_field_col("HCURL_TRI_FE","HCURL"); CHKERRQ(ierr);
+  ierr = m_field.modify_finite_element_add_field_data("HCURL_TRI_FE","HCURL"); CHKERRQ(ierr);
+
+  //FE EDGE
+  ierr = m_field.add_finite_element("HCURL_EDGE_FE"); CHKERRQ(ierr);
+  //Define rows/cols and element data
+  ierr = m_field.modify_finite_element_add_field_row("HCURL_EDGE_FE","HCURL"); CHKERRQ(ierr);
+  ierr = m_field.modify_finite_element_add_field_col("HCURL_EDGE_FE","HCURL"); CHKERRQ(ierr);
+  ierr = m_field.modify_finite_element_add_field_data("HCURL_EDGE_FE","HCURL"); CHKERRQ(ierr);
 
   //Problem
   ierr = m_field.add_problem("TEST_PROBLEM"); CHKERRQ(ierr);
 
   //set finite elements for problem
-  ierr = m_field.modify_problem_add_finite_element("TEST_PROBLEM","HDIV_TET_FE"); CHKERRQ(ierr);
-  ierr = m_field.modify_problem_add_finite_element("TEST_PROBLEM","HDIV_TRI_FE"); CHKERRQ(ierr);
+  ierr = m_field.modify_problem_add_finite_element("TEST_PROBLEM","HCURL_TET_FE"); CHKERRQ(ierr);
+  ierr = m_field.modify_problem_add_finite_element("TEST_PROBLEM","HCURL_TRI_FE"); CHKERRQ(ierr);
+  ierr = m_field.modify_problem_add_finite_element("TEST_PROBLEM","HCURL_EDGE_FE"); CHKERRQ(ierr);
   //set refinment level for problem
   ierr = m_field.modify_problem_ref_level_add_bit("TEST_PROBLEM",bit_level0); CHKERRQ(ierr);
-
 
   //meshset consisting all entities in mesh
   EntityHandle root_set = moab.get_root_set();
   //add entities to field
-  ierr = m_field.add_ents_to_field_by_TETs(root_set,"HDIV"); CHKERRQ(ierr);
+  ierr = m_field.add_ents_to_field_by_TETs(root_set,"HCURL"); CHKERRQ(ierr);
   //add entities to finite element
-  ierr = m_field.add_ents_to_finite_element_by_TETs(root_set,"HDIV_TET_FE"); CHKERRQ(ierr);
+  ierr = m_field.add_ents_to_finite_element_by_TETs(root_set,"HCURL_TET_FE"); CHKERRQ(ierr);
 
   Range tets;
   ierr = m_field.get_entities_by_type_and_ref_level(
@@ -103,15 +110,19 @@ int main(int argc, char *argv[]) {
   Skinner skin(&moab);
   Range skin_faces; // skin faces from 3d ents
   rval = skin.find_skin(0,tets,false,skin_faces); CHKERR_MOAB(rval);
-  ierr = m_field.add_ents_to_finite_element_by_TRIs(skin_faces,"HDIV_TRI_FE"); CHKERRQ(ierr);
+  ierr = m_field.add_ents_to_finite_element_by_TRIs(skin_faces,"HCURL_TRI_FE"); CHKERRQ(ierr);
+  Range skin_edges;
+  rval = moab.get_adjacencies(skin_faces,1,false,skin_edges,moab::Interface::UNION); CHKERR_MOAB(rval);
+  ierr = m_field.add_ents_to_finite_element_by_EDGEs(skin_edges,"HCURL_EDGE_FE"); CHKERRQ(ierr);
 
   //set app. order
   int order = 4;
-  ierr = m_field.set_field_order(root_set,MBTET,"HDIV",order); CHKERRQ(ierr);
-  ierr = m_field.set_field_order(root_set,MBTRI,"HDIV",order); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(root_set,MBTET,"HCURL",order); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(root_set,MBTRI,"HCURL",order); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(root_set,MBEDGE,"HCURL",order); CHKERRQ(ierr);
 
-  /****/
   //build database
+
   //build field
   ierr = m_field.build_fields(); CHKERRQ(ierr);
   //build finite elemnts
@@ -121,8 +132,8 @@ int main(int argc, char *argv[]) {
   //build problem
   ierr = m_field.build_problems(); CHKERRQ(ierr);
 
-  /****/
   //mesh partitioning
+
   //partition
   ierr = m_field.partition_simple_problem("TEST_PROBLEM"); CHKERRQ(ierr);
   ierr = m_field.partition_finite_elements("TEST_PROBLEM"); CHKERRQ(ierr);
@@ -132,7 +143,7 @@ int main(int argc, char *argv[]) {
   typedef tee_device<std::ostream, std::ofstream> TeeDevice;
   typedef stream<TeeDevice> TeeStream;
 
-  std::ofstream ofs("forces_and_sources_hdiv_approximation_functions.txt");
+  std::ofstream ofs("forces_and_sources_hcurl_approximation_functions.txt");
   TeeDevice my_tee(std::cout, ofs);
   TeeStream my_split(my_tee);
 
@@ -140,7 +151,7 @@ int main(int argc, char *argv[]) {
 
     TeeStream &mySplit;
     OpPrintingHdivApproximationFunctions(TeeStream &my_split):
-    VolumeElementForcesAndSourcesCore::UserDataOperator("HDIV",UserDataOperator::OPROW),
+    VolumeElementForcesAndSourcesCore::UserDataOperator("HCURL",UserDataOperator::OPROW),
     mySplit(my_split) {
     }
 
@@ -157,15 +168,15 @@ int main(int argc, char *argv[]) {
       mySplit.precision(5);
 
       const double eps = 1e-6;
-      for(int dd = 0;dd<data.getHdivN().data().size();dd++) {
-        if(fabs(data.getHdivN().data()[dd])<eps) data.getHdivN().data()[dd] = 0;
+      for(int dd = 0;dd<data.getHcurlN().data().size();dd++) {
+        if(fabs(data.getHcurlN().data()[dd])<eps) data.getHcurlN().data()[dd] = 0;
       }
       for(int dd = 0;dd<data.getDiffHdivN().data().size();dd++) {
         if(fabs(data.getDiffHdivN().data()[dd])<eps) data.getDiffHdivN().data()[dd] = 0;
       }
 
-      mySplit << std::fixed << data.getHdivN() << std::endl;
-      mySplit << std::fixed << data.getDiffHdivN() << std::endl;
+      mySplit << std::fixed << data.getHcurlN() << std::endl;
+      mySplit << std::fixed << data.getDiffHcurlN() << std::endl;
 
       PetscFunctionReturn(0);
     }
@@ -183,7 +194,7 @@ int main(int argc, char *argv[]) {
 
     TeeStream &mySplit;
     OpFacePrintingHdivApproximationFunctions(TeeStream &my_split):
-    FaceElementForcesAndSourcesCore::UserDataOperator("HDIV",UserDataOperator::OPROW),
+    FaceElementForcesAndSourcesCore::UserDataOperator("HCURL",UserDataOperator::OPROW),
     mySplit(my_split) {
     }
 
@@ -200,15 +211,11 @@ int main(int argc, char *argv[]) {
       mySplit.precision(5);
 
       const double eps = 1e-6;
-      for(int dd = 0;dd<data.getHdivN().data().size();dd++) {
-        if(fabs(data.getHdivN().data()[dd])<eps) data.getHdivN().data()[dd] = 0;
-      }
-      for(int dd = 0;dd<data.getDiffHdivN().data().size();dd++) {
-        if(fabs(data.getDiffHdivN().data()[dd])<eps) data.getDiffHdivN().data()[dd] = 0;
+      for(int dd = 0;dd<data.getHcurlN().data().size();dd++) {
+        if(fabs(data.getHcurlN().data()[dd])<eps) data.getHcurlN().data()[dd] = 0;
       }
 
-      mySplit << std::fixed << data.getHdivN() << std::endl;
-      // mySplit << std::fixed << data.getDiffHdivN() << std::endl;
+      mySplit << std::fixed << data.getHcurlN() << std::endl;
 
       PetscFunctionReturn(0);
     }
@@ -223,20 +230,62 @@ int main(int argc, char *argv[]) {
 
   };
 
+  struct OpEdgePrintingHdivApproximationFunctions: public EdgeElementForcesAndSurcesCore::UserDataOperator {
+
+    TeeStream &mySplit;
+    OpEdgePrintingHdivApproximationFunctions(TeeStream &my_split):
+    EdgeElementForcesAndSurcesCore::UserDataOperator("HCURL",UserDataOperator::OPROW),
+    mySplit(my_split) {
+    }
+
+    PetscErrorCode doWork(
+      int side,
+      EntityType type,
+      DataForcesAndSurcesCore::EntData &data
+    ) {
+      PetscFunctionBegin;
+
+      if(data.getFieldData().size()==0) PetscFunctionReturn(0);
+
+      mySplit << std::endl << "type " << type << " side " << side << std::endl;
+      mySplit.precision(5);
+
+      const double eps = 1e-6;
+      for(int dd = 0;dd<data.getHcurlN().data().size();dd++) {
+        if(fabs(data.getHcurlN().data()[dd])<eps) data.getHcurlN().data()[dd] = 0;
+      }
+
+      mySplit << std::fixed << data.getHcurlN() << std::endl;
+
+      PetscFunctionReturn(0);
+    }
+
+  };
+
+  struct MyEdgeFE: public EdgeElementForcesAndSurcesCore {
+
+    MyEdgeFE(MoFEM::Interface &m_field):
+    EdgeElementForcesAndSurcesCore(m_field) {}
+    int getRule(int order) { return 1; };
+
+  };
 
   MyFE tet_fe(m_field);
   MyFaceFE tri_fe(m_field);
+  MyEdgeFE edge_fe(m_field);
 
   tet_fe.getOpPtrVector().push_back(new OpPrintingHdivApproximationFunctions(my_split));
   tri_fe.getOpPtrVector().push_back(new OpFacePrintingHdivApproximationFunctions(my_split));
+  edge_fe.getOpPtrVector().push_back(new OpEdgePrintingHdivApproximationFunctions(my_split));
 
-  ierr = m_field.loop_finite_elements("TEST_PROBLEM","HDIV_TET_FE",tet_fe);  CHKERRQ(ierr);
-  ierr = m_field.loop_finite_elements("TEST_PROBLEM","HDIV_TRI_FE",tri_fe);  CHKERRQ(ierr);
+  ierr = m_field.loop_finite_elements("TEST_PROBLEM","HCURL_TET_FE",tet_fe);  CHKERRQ(ierr);
+  ierr = m_field.loop_finite_elements("TEST_PROBLEM","HCURL_TRI_FE",tri_fe);  CHKERRQ(ierr);
+  ierr = m_field.loop_finite_elements("TEST_PROBLEM","HCURL_EDGE_FE",edge_fe);  CHKERRQ(ierr);
 
   /*PostProcVolumeOnRefinedMesh post_proc(m_field);
   ierr = post_proc.generateReferenceElementMesh(); CHKERRQ(ierr);
-  ierr = post_proc.addHdivFunctionsPostProc("HDIV");  CHKERRQ(ierr);
-  ierr = m_field.loop_finite_elements("TEST_PROBLEM","HDIV_TET_FE",post_proc);  CHKERRQ(ierr);
+  ierr = post_proc.addHdivFunctionsPostProc("HCURL");  CHKERRQ(ierr);
+  ierr = m_field.loop_finite_elements("TEST_PROBLEM","HCURL_TET_FE",post_proc);  CHKERRQ(ierr);
   rval = post_proc.postProcMesh.write_file("out.vtk","VTK",""); CHKERRQ_MOAB(rval);*/
 
 

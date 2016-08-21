@@ -204,14 +204,14 @@ struct OpSetInvJacH1: public DataOperator {
 };
 
 /// \brief Transform local reference derivatives of shape function to global derivatives
-struct OpSetInvJacHdiv: public DataOperator {
+struct OpSetInvJacHdivAndHcurl: public DataOperator {
 
   FTensor::Tensor2<double*,3,3> tInvJac;
   FTensor::Index<'i',3> i;
   FTensor::Index<'j',3> j;
   FTensor::Index<'k',3> k;
 
-  OpSetInvJacHdiv(MatrixDouble3by3 &inv_jac):
+  OpSetInvJacHdivAndHcurl(MatrixDouble3by3 &inv_jac):
   tInvJac(
     &inv_jac(0,0),&inv_jac(0,1),&inv_jac(0,2),
     &inv_jac(1,0),&inv_jac(1,1),&inv_jac(1,2),
@@ -241,14 +241,14 @@ struct OpSetHoInvJacH1: public DataOperator {
 
 /** \brief transform local reference derivatives of shape function to global derivatives if higher order geometry is given
   */
-struct OpSetHoInvJacHdiv: public DataOperator {
+struct OpSetHoInvJacHdivAndHcurl: public DataOperator {
 
   MatrixDouble &invHoJac;
   FTensor::Index<'i',3> i;
   FTensor::Index<'j',3> j;
   FTensor::Index<'k',3> k;
 
-  OpSetHoInvJacHdiv(MatrixDouble &inv_ho_jac): invHoJac(inv_ho_jac) {}
+  OpSetHoInvJacHdivAndHcurl(MatrixDouble &inv_ho_jac): invHoJac(inv_ho_jac) {}
 
   MatrixDouble diffHdivInvJac;
   PetscErrorCode doWork(
@@ -257,7 +257,7 @@ struct OpSetHoInvJacHdiv: public DataOperator {
 
 };
 
-/** \brief apply covariant (Piola) transfer for Hdiv space
+/** \brief apply contravariant (Piola) transfer to Hdiv space
 
 Contravariant Piola transformation
 \f[
@@ -268,7 +268,7 @@ Contravariant Piola transformation
 \f]
 
 */
-struct OpSetPiolaTransform: public DataOperator {
+struct OpSetContravariantPiolaTransform: public DataOperator {
 
   double &vOlume;
   // MatrixDouble3by3 &jAc;
@@ -278,7 +278,7 @@ struct OpSetPiolaTransform: public DataOperator {
   FTensor::Index<'j',3> j;
   FTensor::Index<'k',3> k;
 
-  OpSetPiolaTransform(double &volume,MatrixDouble3by3 &jac):
+  OpSetContravariantPiolaTransform(double &volume,MatrixDouble3by3 &jac):
   vOlume(volume),
   // jAc(jac),
   tJac(
@@ -295,9 +295,9 @@ struct OpSetPiolaTransform: public DataOperator {
 
 };
 
-/** \brief Apply covariant (Piola) transfer for Hdiv space for HO geometry
+/** \brief Apply contravariant (Piola) transfer to Hdiv space for HO geometry
 */
-struct OpSetHoPiolaTransform: public DataOperator {
+struct OpSetHoContravariantPiolaTransform: public DataOperator {
 
   VectorDouble &detHoJac;
   MatrixDouble &hoJac;
@@ -305,14 +305,67 @@ struct OpSetHoPiolaTransform: public DataOperator {
   FTensor::Index<'j',3> j;
   FTensor::Index<'k',3> k;
 
-  OpSetHoPiolaTransform(VectorDouble &det_jac,MatrixDouble &jac):
+  OpSetHoContravariantPiolaTransform(VectorDouble &det_jac,MatrixDouble &jac):
   detHoJac(det_jac),hoJac(jac) {}
 
   MatrixDouble piolaN;
   MatrixDouble piolaDiffN;
   PetscErrorCode doWork(int side,EntityType type,DataForcesAndSurcesCore::EntData &data);
 
-  };
+};
+
+/** \brief Apply covariant (Piola) transfer to Hcurl space for HO geometry
+*/
+struct OpSetHoCovariantPiolaTransform: public DataOperator {
+
+  MatrixDouble &hoInvJac;
+  FTensor::Index<'i',3> i;
+  FTensor::Index<'j',3> j;
+  FTensor::Index<'k',3> k;
+
+  OpSetHoCovariantPiolaTransform(MatrixDouble &inv_jac):
+  hoInvJac(inv_jac) {}
+
+  MatrixDouble piolaN;
+  MatrixDouble piolaDiffN;
+  PetscErrorCode doWork(int side,EntityType type,DataForcesAndSurcesCore::EntData &data);
+
+};
+
+
+/** \brief apply covariant transfer to Hcurl space
+
+Contravariant Piola transformation
+\f[
+\psi_i|_t = \frac{1}{\textrm{det}(J)}J_{ij}\hat{\psi}_j\\
+\left.\frac{\partial \psi_i}{\partial \xi_j}\right|_t
+=
+\frac{1}{\textrm{det}(J)}J_{ik}\frac{\partial \hat{\psi}_k}{\partial \xi_j}
+\f]
+
+*/
+struct OpSetCovariantPiolaTransform: public DataOperator {
+
+
+  FTensor::Tensor2<double*,3,3> tInvJac;
+  FTensor::Index<'i',3> i;
+  FTensor::Index<'j',3> j;
+  FTensor::Index<'k',3> k;
+
+  OpSetCovariantPiolaTransform(MatrixDouble3by3 &inv_jac):
+  tInvJac(
+    &inv_jac(0,0),&inv_jac(0,1),&inv_jac(0,2),
+    &inv_jac(1,0),&inv_jac(1,1),&inv_jac(1,2),
+    &inv_jac(2,0),&inv_jac(2,1),&inv_jac(2,2)
+  ) {
+  }
+
+  MatrixDouble piolaN;
+  MatrixDouble piolaDiffN;
+
+  PetscErrorCode doWork(int side,EntityType type,DataForcesAndSurcesCore::EntData &data);
+
+};
 
 
 /** \brief Get field values and gradients at Gauss points
@@ -419,23 +472,60 @@ struct OpGetCoordsAndNormalsOnPrism: public DataOperator {
 
 };
 
-
-/** \brief transform Hdiv space fluxes from reference element to physical triangle
+/** \brief transform Hdiv base fluxes from reference element to physical triangle
  */
-struct OpSetPiolaTransoformOnTriangle: public DataOperator {
+struct OpSetContravariantPiolaTransoformOnTriangle: public DataOperator {
 
-  const VectorDouble &normal;
-  const MatrixDouble &nOrmals_at_GaussPt;
+  const VectorDouble &nOrmal;
+  const MatrixDouble &normalsAtGaussPt;
 
-  OpSetPiolaTransoformOnTriangle(
-    const VectorDouble &_normal,
-    const MatrixDouble &_nOrmals_at_GaussPt):
-    normal(_normal),nOrmals_at_GaussPt(_nOrmals_at_GaussPt) {}
+  OpSetContravariantPiolaTransoformOnTriangle(
+    const VectorDouble &normal,
+    const MatrixDouble &normals_at_pts
+  ):
+  nOrmal(normal),
+  normalsAtGaussPt(normals_at_pts) {}
 
   PetscErrorCode doWork(
     int side,
     EntityType type,
-    DataForcesAndSurcesCore::EntData &data);
+    DataForcesAndSurcesCore::EntData &data
+  );
+
+};
+
+/** \brief transform Hcurl base fluxes from reference element to physical triangle
+ */
+struct OpSetCovariantPiolaTransoformOnTriangle: public DataOperator {
+
+  const VectorDouble &nOrmal;
+  const MatrixDouble &normalsAtGaussPt;
+  const VectorDouble &tAngent0;
+  const MatrixDouble &tangent0AtGaussPt;
+  const VectorDouble &tAngent1;
+  const MatrixDouble &tangent1AtGaussPt;
+
+  OpSetCovariantPiolaTransoformOnTriangle(
+    const VectorDouble &normal,
+    const MatrixDouble &normals_at_pts,
+    const VectorDouble &tangent0,
+    const MatrixDouble &tangent0_at_pts,
+    const VectorDouble &tangent1,
+    const MatrixDouble &tangent1_at_pts
+  ):
+  nOrmal(normal),
+  normalsAtGaussPt(normals_at_pts),
+  tAngent0(tangent0),
+  tangent0AtGaussPt(tangent0_at_pts),
+  tAngent1(tangent1),
+  tangent1AtGaussPt(tangent1_at_pts)
+  {}
+
+  PetscErrorCode doWork(
+    int side,
+    EntityType type,
+    DataForcesAndSurcesCore::EntData &data
+  );
 
 };
 
@@ -449,6 +539,29 @@ struct OpGetHoTangentOnEdge: public DataOperator {
     tAngent(tangent) {}
 
   PetscErrorCode doWork(int side,EntityType type,DataForcesAndSurcesCore::EntData &data);
+
+};
+
+/** \brief transform Hcurl base fluxes from reference element to physical edge
+ */
+struct OpSetCovariantPiolaTransoformOnEdge: public DataOperator {
+
+  const VectorDouble &tAngent;
+  const MatrixDouble &tangentAtGaussPt;
+
+  OpSetCovariantPiolaTransoformOnEdge(
+    const VectorDouble &tangent,
+    const MatrixDouble &tangent_at_pts
+  ):
+  tAngent(tangent),
+  tangentAtGaussPt(tangent_at_pts)
+  {}
+
+  PetscErrorCode doWork(
+    int side,
+    EntityType type,
+    DataForcesAndSurcesCore::EntData &data
+  );
 
 };
 
