@@ -230,9 +230,9 @@ PetscErrorCode MoFEM::Hcurl_EdgeBaseFunctions_MBTET_ON_FACE(
   t_node_diff_ksi[1](0) = diffN[2];
   t_node_diff_ksi[1](1) = diffN[3];
   t_node_diff_ksi[1](2) = 0;
-  t_node_diff_ksi[1](0) = diffN[4];
-  t_node_diff_ksi[1](1) = diffN[5];
-  t_node_diff_ksi[1](2) = 0;
+  t_node_diff_ksi[2](0) = diffN[4];
+  t_node_diff_ksi[2](1) = diffN[5];
+  t_node_diff_ksi[2](2) = 0;
 
   FTensor::Tensor1<double*,3> t_edge_n[3] = {
     FTensor::Tensor1<double*,3>(&edge_n[0][0],&edge_n[0][1],&edge_n[0][2],3),

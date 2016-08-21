@@ -96,9 +96,17 @@ PetscErrorCode EdgeElementForcesAndSurcesCore::operator()() {
   //PetscAttachDebugger();
   ierr = getSpacesAndBaseOnEntities(dataH1); CHKERRQ(ierr);
   ierr = getEdgesDataOrder(dataH1,H1); CHKERRQ(ierr);
-  ierr = getEdgesDataOrder(dataH1,H1); CHKERRQ(ierr);
-
   dataH1.dataOnEntities[MBEDGE][0].getSense() = 1; // set sense to 1, this is this entity
+
+  //Hcurl
+  if(dataH1.spacesOnEntities[MBEDGE].test(HCURL)) {
+    ierr = getEdgesDataOrder(dataHcurl,HCURL); CHKERRQ(ierr);
+    dataHcurl.dataOnEntities[MBEDGE][0].getSense() = 1; // set sense to 1, this is this entity
+    dataHcurl.spacesOnEntities[MBEDGE].set(HCURL);
+  }
+
+  /// Use the some node base
+  dataHcurl.dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE) = dataH1.dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE);
 
   int order_data = getMaxDataOrder();
   int order_row = getMaxRowOrder();
@@ -164,25 +172,15 @@ PetscErrorCode EdgeElementForcesAndSurcesCore::operator()() {
             ierr = EdgePolynomialBase().getValue(
               gaussPts,
               boost::shared_ptr<BaseFunctionCtx>(
-                new EntPolynomialBaseCtx(dataH1,HCURL,ApproximationBaseArray[b],NOBASE)
+                new EntPolynomialBaseCtx(dataHcurl,HCURL,ApproximationBaseArray[b],NOBASE)
               )
             ); CHKERRQ(ierr);
           }
           if(dataH1.spacesOnEntities[MBEDGE].test(HDIV)) {
-            ierr = EdgePolynomialBase().getValue(
-              gaussPts,
-              boost::shared_ptr<BaseFunctionCtx>(
-                new EntPolynomialBaseCtx(dataH1,HDIV,ApproximationBaseArray[b],NOBASE)
-              )
-            ); CHKERRQ(ierr);
+            SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"Not yet implemented");
           }
           if(dataH1.spacesOnEntities[MBEDGE].test(L2)) {
-            ierr = EdgePolynomialBase().getValue(
-              gaussPts,
-              boost::shared_ptr<BaseFunctionCtx>(
-                new EntPolynomialBaseCtx(dataH1,L2,ApproximationBaseArray[b],NOBASE)
-              )
-            ); CHKERRQ(ierr);
+            SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"Not yet implemented");
           }
           break;
           default:
@@ -200,7 +198,6 @@ PetscErrorCode EdgeElementForcesAndSurcesCore::operator()() {
     dataPtr->get<FieldName_mi_tag>().find(meshPositionsFieldName)!=
     dataPtr->get<FieldName_mi_tag>().end()
   ) {
-
     ierr = getEdgesDataOrderSpaceAndBase(dataH1,meshPositionsFieldName); CHKERRQ(ierr);
     ierr = getEdgesFieldData(dataH1,meshPositionsFieldName); CHKERRQ(ierr);
     ierr = getNodesFieldData(dataH1,meshPositionsFieldName); CHKERRQ(ierr);
@@ -213,6 +210,11 @@ PetscErrorCode EdgeElementForcesAndSurcesCore::operator()() {
     }
   } else {
     tAngent_at_GaussPt.resize(0,3,false);
+  }
+
+  if(dataH1.spacesOnEntities[MBEDGE].test(HCURL)) {
+    // cerr << dataHcurl.dataOnEntities[MBEDGE][0].getN(AINSWORTH_COLE_BASE) << endl;
+    ierr = opCovariantTransoform.opRhs(dataHcurl); CHKERRQ(ierr);
   }
 
   const UserDataOperator::OpType types[2] = {
@@ -254,13 +256,20 @@ PetscErrorCode EdgeElementForcesAndSurcesCore::operator()() {
           op_data[ss] = !ss ? &dataH1 : &derivedDataH1;
           break;
           case HCURL:
-          SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented yet");
+          op_data[ss] = !ss ? &dataHcurl : &derivedDataHcurl;
           break;
           case HDIV:
-          SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not make sanes on edge");
+          SETERRQ(
+            PETSC_COMM_SELF,
+            MOFEM_NOT_IMPLEMENTED,
+            "not make sanes on edge in 3d space (for 1d/2d not implemented)"
+          );
           break;
           case L2:
-          SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not make sanes on edge");
+          SETERRQ(
+            PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,
+            "not make sanes on edge in 3d space (for 1d/2d not implemented)"
+          );
           break;
           case NOFIELD:
           op_data[ss] = !ss ? &dataNoField : &dataNoFieldCol;

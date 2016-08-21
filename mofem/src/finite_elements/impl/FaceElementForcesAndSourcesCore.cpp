@@ -119,20 +119,22 @@ PetscErrorCode FaceElementForcesAndSourcesCore::operator()() {
   if(dataH1.spacesOnEntities[MBEDGE].test(HCURL)) {
     ierr = getEdgesSense(dataHcurl); CHKERRQ(ierr);
     ierr = getEdgesDataOrder(dataHcurl,HCURL); CHKERRQ(ierr);
+    dataHcurl.spacesOnEntities[MBEDGE].set(HCURL);
   }
   if(dataH1.spacesOnEntities[MBTRI].test(HCURL)) {
     ierr = getTrisSense(dataHcurl); CHKERRQ(ierr);
     ierr = getTrisDataOrder(dataHcurl,HCURL); CHKERRQ(ierr);
+    dataHcurl.spacesOnEntities[MBTRI].set(HCURL);
   }
 
   //Hdiv
   if(dataH1.spacesOnEntities[MBTRI].test(HDIV)) {
     ierr = getTrisSense(dataHdiv); CHKERRQ(ierr);
     ierr = getTrisDataOrder(dataHdiv,HDIV); CHKERRQ(ierr);
+    dataHcurl.spacesOnEntities[MBTRI].set(HDIV);
   }
 
   // Set integration points
-
   int nb_gauss_pts;
   int order_data = getMaxDataOrder();
   int order_row = getMaxRowOrder();
@@ -206,7 +208,6 @@ PetscErrorCode FaceElementForcesAndSourcesCore::operator()() {
   }
 
   // Calculate base base functions for faces.
-
   try {
 
     for(int b = AINSWORTH_COLE_BASE;b!=LASTBASE;b++) {
@@ -298,7 +299,8 @@ PetscErrorCode FaceElementForcesAndSourcesCore::operator()() {
     ierr = opContravariantTransoform.opRhs(dataHdiv); CHKERRQ(ierr);
   }
   if(dataH1.spacesOnEntities[MBEDGE].test(HCURL)) {
-    ierr = opCovariantTransoform.opRhs(dataHdiv); CHKERRQ(ierr);
+    // cerr << dataHcurl.dataOnEntities[MBEDGE][0].getN(AINSWORTH_COLE_BASE) << endl;
+    ierr = opCovariantTransoform.opRhs(dataHcurl); CHKERRQ(ierr);
   }
 
   const UserDataOperator::OpType types[2] = {
@@ -341,7 +343,7 @@ PetscErrorCode FaceElementForcesAndSourcesCore::operator()() {
           op_data[ss] = !ss ? &dataH1 : &derivedDataH1;
           break;
           case HCURL:
-          SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented yet");
+          op_data[ss] = !ss ? &dataHcurl : &derivedDataHcurl;
           break;
           case HDIV:
           op_data[ss] = !ss ? &dataHdiv : &derivedDataHdiv;

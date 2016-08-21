@@ -41,6 +41,8 @@ struct EdgeElementForcesAndSurcesCore: public ForcesAndSurcesCore {
 
   DataForcesAndSurcesCore dataH1;
   DerivedDataForcesAndSurcesCore derivedDataH1;
+  DataForcesAndSurcesCore dataHcurl;
+  DerivedDataForcesAndSurcesCore derivedDataHcurl;
   DataForcesAndSurcesCore dataNoField,dataNoFieldCol;
   std::string meshPositionsFieldName;
 
@@ -52,6 +54,8 @@ struct EdgeElementForcesAndSurcesCore: public ForcesAndSurcesCore {
   ForcesAndSurcesCore(m_field),
   dataH1(MBEDGE),
   derivedDataH1(dataH1),
+  dataHcurl(MBEDGE),
+  derivedDataHcurl(dataHcurl),
   dataNoField(MBEDGE),
   dataNoFieldCol(MBEDGE),
   meshPositionsFieldName("MESH_NODE_POSITIONS"),

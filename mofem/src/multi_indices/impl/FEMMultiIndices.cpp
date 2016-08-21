@@ -512,6 +512,9 @@ PetscErrorCode DefaultElementAdjacency::defaultEdge(
     adjacency.insert(nodes.begin(),nodes.end());
     adjacency.insert(fe_ent);
     break;
+    case HCURL:
+    adjacency.insert(fe_ent);
+    break;
     case NOFIELD:
     {
       Range ents;
@@ -550,6 +553,15 @@ PetscErrorCode DefaultElementAdjacency::defaultTri(
       nodes = subtract(nodes,mid_nodes);
     }
     adjacency.insert(nodes.begin(),nodes.end());
+    rval = moab.get_adjacencies(&fe_ent,1,1,false,edges); CHKERRQ_MOAB(rval);
+    adjacency.insert(edges.begin(),edges.end());
+    for(Range::iterator eeit = edges.begin();eeit!=edges.end();eeit++) {
+      fe_ptr.getSideNumberPtr(moab,*eeit);
+    }
+    //add faces
+    adjacency.insert(fe_ent);
+    break;
+    case HCURL:
     rval = moab.get_adjacencies(&fe_ent,1,1,false,edges); CHKERRQ_MOAB(rval);
     adjacency.insert(edges.begin(),edges.end());
     for(Range::iterator eeit = edges.begin();eeit!=edges.end();eeit++) {

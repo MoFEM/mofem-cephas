@@ -249,13 +249,15 @@ PetscErrorCode TriPolynomialBase::getValueHCurl(
     ierr = Hcurl_EdgeBaseFunctions_MBTET_ON_FACE(
       sense,
       order,
-      &data.dataOnEntities[MBVERTEX][0].getN(base)(0,0),
-      &data.dataOnEntities[MBVERTEX][0].getDiffN(base)(0,0),
+      &*data.dataOnEntities[MBVERTEX][0].getN(base).data().begin(),
+      &*data.dataOnEntities[MBVERTEX][0].getDiffN(base).data().begin(),
       HCurl_edgeN,
       NULL,
       nb_gauss_pts,
       base_polynomials
     ); CHKERRQ(ierr);
+    // cerr << data.dataOnEntities[MBVERTEX][0].getN(base) << endl;
+    // cerr << data.dataOnEntities[MBEDGE][0].getN(base) << endl;
   } else {
     for(int ee = 0;ee<3;ee++) {
       data.dataOnEntities[MBEDGE][ee].getN(base).resize(nb_gauss_pts,0,false);
@@ -283,6 +285,7 @@ PetscErrorCode TriPolynomialBase::getValueHCurl(
       nb_gauss_pts,
       base_polynomials
     ); CHKERRQ(ierr);
+    // cerr << data.dataOnEntities[MBTRI][0].getN(base) << endl;
   } else {
     data.dataOnEntities[MBTRI][0].getN(base).resize(nb_gauss_pts,0,false);
     data.dataOnEntities[MBTRI][0].getDiffN(base).resize(nb_gauss_pts,0,false);

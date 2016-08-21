@@ -1564,53 +1564,72 @@ PetscErrorCode OpSetCovariantPiolaTransoformOnTriangle::doWork(
   PetscErrorCode ierr;
   PetscFunctionBegin;
 
-  if(type != MBTRI) PetscFunctionReturn(0);
+  if(type != MBEDGE && type != MBTRI) PetscFunctionReturn(0);
+
+  FTensor::Index<'i',3> i;
+  FTensor::Index<'j',3> j;
+  FTensor::Tensor1<double,3> tmp_t_h_curl;
+
+  FTensor::Tensor2<const double*,3,3> t_m(
+    &tAngent0[0],&tAngent0[1],&tAngent0[2],
+    &tAngent1[0],&tAngent1[1],&tAngent1[2],
+    &nOrmal[0],&nOrmal[1],&nOrmal[2],1
+  );
+  double det;
+  FTensor::Tensor2<double,3,3> t_inv_m;
+  ierr = determinantTensor3by3(t_m,det); CHKERRQ(ierr);
+  ierr = invertTensor3by3(t_m,det,t_inv_m); CHKERRQ(ierr);
 
   for(int b = AINSWORTH_COLE_BASE; b!=USER_BASE; b++) {
 
     FieldApproximationBase base = ApproximationBaseArray[b];
 
-    FTensor::Tensor2<const double*,3,3> t_m(
-      &tAngent0[0],&tAngent0[1],&tAngent0[2],
-      &tAngent1[0],&tAngent1[1],&tAngent1[2],
-      &nOrmal[0],&nOrmal[1],&nOrmal[2],1
-    );
+    int nb_dofs = data.getHcurlN(base).size2()/3;
+    int nb_gauss_pts = data.getHcurlN(base).size1();
 
-    double det;
-    FTensor::Tensor2<double,3,3> t_inv_m;
+    if(nb_dofs>0 && nb_gauss_pts>0) {
 
-    ierr = determinantTensor3by3(t_m,det); CHKERRQ(ierr);
-    ierr = invertTensor3by3(t_m,det,t_inv_m); CHKERRQ(ierr);
+      FieldApproximationBase base = ApproximationBaseArray[b];
+      FTensor::Tensor1<double*,3> t_h_curl(
+        &data.getHcurlN(base)(0,DataForcesAndSurcesCore::HCURL0),
+        &data.getHcurlN(base)(0,DataForcesAndSurcesCore::HCURL1),
+        &data.getHcurlN(base)(0,DataForcesAndSurcesCore::HCURL2),3
+      );
 
-    FTensor::Tensor2<const double*,3,3> t_m_at_pts(
-      &tangent0AtGaussPt(0,0),&tangent0AtGaussPt(0,1),&tangent0AtGaussPt(0,2),
-      &tangent1AtGaussPt(0,0),&tangent1AtGaussPt(0,1),&tangent1AtGaussPt(0,2),
-      &normalsAtGaussPt(0,0),&normalsAtGaussPt(0,1),&normalsAtGaussPt(0,2),3
-    );
-
-    FTensor::Tensor1<double*,3> t_h_curl(
-      &data.getHcurlN()(0,DataForcesAndSurcesCore::HCURL0),
-      &data.getHcurlN()(0,DataForcesAndSurcesCore::HCURL1),
-      &data.getHcurlN()(0,DataForcesAndSurcesCore::HCURL2),3
-    );
-
-    FTensor::Index<'i',3> i;
-    FTensor::Index<'j',3> j;
-    FTensor::Tensor1<double,3> tmp_t_h_curl;
-
-    int nb_gauss_pts = data.getHdivN().size1();
-    int nb_dofs = data.getHdivN().size2()/3;
-    int gg = 0;
-    for(;gg<nb_gauss_pts;gg++) {
+      int cc = 0;
       if(normalsAtGaussPt.size1()==(unsigned int)nb_gauss_pts) {
-        ierr = determinantTensor3by3(t_m_at_pts,det); CHKERRQ(ierr);
-        ierr = invertTensor3by3(t_m_at_pts,det,t_inv_m); CHKERRQ(ierr);
-        ++t_m_at_pts;
-      } 
-      tmp_t_h_curl(i) = t_inv_m(j,i)*t_h_curl(j);
-      t_h_curl(i) = tmp_t_h_curl(i);
-      ++t_h_curl;
+        FTensor::Tensor2<const double*,3,3> t_m_at_pts(
+          &tangent0AtGaussPt(0,0),&tangent0AtGaussPt(0,1),&tangent0AtGaussPt(0,2),
+          &tangent1AtGaussPt(0,0),&tangent1AtGaussPt(0,1),&tangent1AtGaussPt(0,2),
+          &normalsAtGaussPt(0,0),&normalsAtGaussPt(0,1),&normalsAtGaussPt(0,2),3
+        );
+        for(int gg = 0;gg<nb_gauss_pts;gg++) {
+          ierr = determinantTensor3by3(t_m_at_pts,det); CHKERRQ(ierr);
+          ierr = invertTensor3by3(t_m_at_pts,det,t_inv_m); CHKERRQ(ierr);
+          for(int ll = 0;ll!=nb_dofs;ll++) {
+            tmp_t_h_curl(i) = t_inv_m(j,i)*t_h_curl(j);
+            t_h_curl(i) = tmp_t_h_curl(i);
+            ++t_h_curl;
+            ++cc;
+          }
+          ++t_m_at_pts;
+        }
+      } else {
+        for(int gg = 0;gg<nb_gauss_pts;gg++) {
+          for(int ll = 0;ll!=nb_dofs;ll++) {
+            tmp_t_h_curl(i) = t_inv_m(j,i)*t_h_curl(j);
+            t_h_curl(i) = tmp_t_h_curl(i);
+            ++t_h_curl;
+            ++cc;
+          }
+        }
+      }
+      if(cc!=nb_gauss_pts*nb_dofs) {
+        SETERRQ(PETSC_COMM_SELF,MOFEM_IMPOSIBLE_CASE,"Data inconsistency");
+      }
+
     }
+
   }
 
   PetscFunctionReturn(0);
@@ -1620,7 +1639,7 @@ PetscErrorCode OpGetHoTangentOnEdge::doWork(int side,EntityType type,DataForcesA
   PetscFunctionBegin;
 
   int nb_dofs = data.getFieldData().size();
-  if(nb_dofs == 0)  PetscFunctionReturn(0);
+  if(nb_dofs == 0) PetscFunctionReturn(0);
 
   try {
 
@@ -1675,43 +1694,71 @@ PetscErrorCode OpSetCovariantPiolaTransoformOnEdge::doWork(
 ) {
   PetscFunctionBegin;
 
-  if(type != MBTRI) PetscFunctionReturn(0);
+  if(type != MBEDGE) PetscFunctionReturn(0);
+
   FTensor::Index<'i',3> i;
+  FTensor::Tensor1<const double*,3> t_m(
+    &tAngent[0],&tAngent[1],&tAngent[2]
+  );
+  const double l0 = t_m(i)*t_m(i);
+  std::vector<double> l1;
+  {
+    int nb_gauss_pts = tangentAtGaussPt.size1();
+    if(nb_gauss_pts) {
+      l1.resize(nb_gauss_pts);
+      FTensor::Tensor1<const double*,3> t_m_at_pts(
+        &tangentAtGaussPt(0,0),&tangentAtGaussPt(0,1),&tangentAtGaussPt(0,2),3
+      );
+      for(int gg = 0;gg<nb_gauss_pts;gg++) {
+        l1[gg] = t_m_at_pts(i)*t_m_at_pts(i);
+        ++t_m_at_pts;
+      }
+    }
+  }
 
   for(int b = AINSWORTH_COLE_BASE; b!=USER_BASE; b++) {
 
     FieldApproximationBase base = ApproximationBaseArray[b];
-
-    FTensor::Tensor1<const double*,3> t_m(
-      &tAngent[0],&tAngent[1],&tAngent[2]
-    );
-    const double l0 = t_m(i)*t_m(i);
-
-    FTensor::Tensor1<const double*,3> t_m_at_pts(
-      &tangentAtGaussPt(0,0),&tangentAtGaussPt(0,1),&tangentAtGaussPt(0,2),3
-    );
-
-    FTensor::Tensor1<double*,3> t_h_curl(
-      &data.getHcurlN()(0,DataForcesAndSurcesCore::HCURL0),
-      &data.getHcurlN()(0,DataForcesAndSurcesCore::HCURL1),
-      &data.getHcurlN()(0,DataForcesAndSurcesCore::HCURL2),3
-    );
-
-
-    int nb_gauss_pts = data.getHdivN().size1();
-    int nb_dofs = data.getHdivN().size2()/3;
-    int gg = 0;
-    for(;gg<nb_gauss_pts;gg++) {
-      double val = data.getHcurlN()(gg,DataForcesAndSurcesCore::HCURL0);
+    int nb_gauss_pts = data.getHcurlN(base).size1();
+    int nb_dofs = data.getHcurlN(base).size2()/3;
+    if(nb_gauss_pts>0 && nb_dofs>0) {
+      FTensor::Tensor1<double*,3> t_h_curl(
+        &data.getHcurlN(base)(0,DataForcesAndSurcesCore::HCURL0),
+        &data.getHcurlN(base)(0,DataForcesAndSurcesCore::HCURL1),
+        &data.getHcurlN(base)(0,DataForcesAndSurcesCore::HCURL2),3
+      );
+      int cc = 0;
       if(tangentAtGaussPt.size1()==(unsigned int)nb_gauss_pts) {
-        const double l1 = t_m_at_pts(i)*t_m_at_pts(i);
-        t_h_curl(i) = t_m_at_pts(i)*val/l1;
-        ++t_m_at_pts;
+        FTensor::Tensor1<const double*,3> t_m_at_pts(
+          &tangentAtGaussPt(0,0),&tangentAtGaussPt(0,1),&tangentAtGaussPt(0,2),3
+        );
+        for(int gg = 0;gg<nb_gauss_pts;gg++) {
+          const double val = t_h_curl(0);
+          const double l0 = l1[gg];
+          const double a = val/l0;
+          for(int ll = 0;ll!=nb_dofs;ll++) {
+            t_h_curl(i) = t_m_at_pts(i)*a;
+            ++t_h_curl;
+          }
+          ++t_m_at_pts;
+          ++cc;
+        }
       } else {
-        t_h_curl(i) = t_m(i)*val/l0;
+        for(int gg = 0;gg<nb_gauss_pts;gg++) {
+          const double val = t_h_curl(0);
+          const double a = val/l0;
+          for(int ll = 0;ll!=nb_dofs;ll++) {
+            t_h_curl(i) = t_m(i)*a;
+            ++t_h_curl;
+            ++cc;
+          }
+        }
       }
-      ++t_h_curl;
+      if(cc!=nb_gauss_pts*nb_dofs) {
+        SETERRQ(PETSC_COMM_SELF,MOFEM_IMPOSIBLE_CASE,"Data inconsistency");
+      }
     }
+
   }
 
   PetscFunctionReturn(0);

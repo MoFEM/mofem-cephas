@@ -246,27 +246,33 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::getSpaceBaseAndOrderOnElement(
     if((dataH1.spacesOnEntities[MBEDGE]).test(HCURL)) {
       ierr = getEdgesSense(dataHcurl); CHKERRQ(ierr);
       ierr = getEdgesDataOrder(dataHcurl,HCURL); CHKERRQ(ierr);
+      dataHcurl.spacesOnEntities[MBEDGE].set(HCURL);
     }
     if((dataH1.spacesOnEntities[MBTRI]).test(HCURL)) {
       ierr = getTrisSense(dataHcurl); CHKERRQ(ierr);
       ierr = getFaceTriNodes(dataHcurl); CHKERRQ(ierr);
       ierr = getTrisDataOrder(dataHcurl,HCURL); CHKERRQ(ierr);
+      dataHcurl.spacesOnEntities[MBTRI].set(HCURL);
     }
     if((dataH1.spacesOnEntities[MBTET]).test(HCURL)) {
       ierr = getTetDataOrder(dataHcurl,HCURL); CHKERRQ(ierr);
+      dataHcurl.spacesOnEntities[MBTET].set(HCURL);
     }
     //Hdiv
     if((dataH1.spacesOnEntities[MBTRI]).test(HDIV)) {
       ierr = getTrisSense(dataHdiv); CHKERRQ(ierr);
       ierr = getFaceTriNodes(dataHdiv); CHKERRQ(ierr);
       ierr = getTrisDataOrder(dataHdiv,HDIV); CHKERRQ(ierr);
+      dataHdiv.spacesOnEntities[MBTRI].set(HDIV);
     }
     if((dataH1.spacesOnEntities[MBTET]).test(HDIV)) {
       ierr = getTetDataOrder(dataHdiv,HDIV); CHKERRQ(ierr);
+      dataHdiv.spacesOnEntities[MBTET].set(HDIV);
     }
     //L2
     if((dataH1.spacesOnEntities[MBTET]).test(L2)) {
       ierr = getTetDataOrder(dataL2,L2); CHKERRQ(ierr);
+      dataL2.spacesOnEntities[MBTET].set(L2);
     }
   } catch (std::exception& ex) {
     std::ostringstream ss;
