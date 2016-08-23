@@ -68,8 +68,8 @@ PetscErrorCode Hdiv_EdgeBasedVolumeShapeFunctions_MBTET(
   for(;ee<6;ee++) {
     cblas_dcopy(3,&coords[3*edges_nodes[2*ee+1]],1,tau_e[ee],1);
     cblas_daxpy(3,-1,&coords[3*edges_nodes[2*ee+0]],1,tau_e[ee],1);
-    double nrm2 = cblas_dnrm2(3,tau_e[ee],1);
-    cblas_dscal(3,1./nrm2,tau_e[ee],1);
+    // double nrm2 = cblas_dnrm2(3,tau_e[ee],1);
+    // cblas_dscal(3,1./nrm2,tau_e[ee],1);
   }
   int ii = 0;
   for(;ii<GDIM;ii++) {
@@ -132,12 +132,12 @@ PetscErrorCode Hdiv_FaceBasedVolumeShapeFunctions_MBTET(
     int idx_node2 = faces_nodes[3*ff+2];
     cblas_dcopy(3,&coords[3*idx_node1],1,tau_0i[ff],1);
     cblas_daxpy(3,-1,&coords[3*idx_node0],1,tau_0i[ff],1);
-    double nrm2_0i = cblas_dnrm2(3,tau_0i[ff],1);
-    cblas_dscal(3,1./nrm2_0i,tau_0i[ff],1);
+    // double nrm2_0i = cblas_dnrm2(3,tau_0i[ff],1);
+    // cblas_dscal(3,1./nrm2_0i,tau_0i[ff],1);
     cblas_dcopy(3,&coords[3*idx_node2],1,tau_0j[ff],1);
     cblas_daxpy(3,-1,&coords[3*idx_node0],1,tau_0j[ff],1);
-    double nrm2_0j = cblas_dnrm2(3,tau_0j[ff],1);
-    cblas_dscal(3,1./nrm2_0j,tau_0j[ff],1);
+    // double nrm2_0j = cblas_dnrm2(3,tau_0j[ff],1);
+    // cblas_dscal(3,1./nrm2_0j,tau_0j[ff],1);
   }
   int ii = 0;
   for(;ii<GDIM;ii++) {
@@ -232,8 +232,8 @@ PetscErrorCode Hdiv_VolumeBubbleShapeFunctions_MBTET(
   for(;nn<3;nn++) {
     cblas_dcopy(3,&coords[3*(nn+1)],1,ed[nn],1);
     cblas_daxpy(3,-1,&coords[0],1,ed[nn],1);
-    double nrm2 = cblas_dnrm2(3,ed[nn],1);
-    cblas_dscal(3,1./nrm2,ed[nn],1);
+    // double nrm2 = cblas_dnrm2(3,ed[nn],1);
+    // cblas_dscal(3,1./nrm2,ed[nn],1);
   }
   int ii = 0;
   for(;ii<GDIM;ii++) {

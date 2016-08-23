@@ -44,7 +44,7 @@ extern "C" {
 // H curl
 
 /// Number of base functions H curl on faces
-#define NBEDGE_HCURL(P) ((P>0) ? (P+1) : 0)
+#define NBEDGE_HCURL(P) ((P>=0) ? (P+1) : 0)
 #define NBFACETRI_EDGE_HCURL(P) ((P>1) ? P-1 : 0)
 #define NBFACETRI_FACE_HCURL(P) ((P>2) ? (P-1)*(P-2) : 0)
 #define NBFACETRI_HCURL(P) ((P>1) ? (P-1)*(P+1) : 0)

@@ -147,7 +147,7 @@ struct DataForcesAndSurcesCore {
    * \brief Format of rows in gradients of H1 base functions
    */
   enum H1DiffFormating {
-    H1_0,H1_1,H1_2
+    H1_0 = 0,H1_1,H1_2
   };
 
   /**
@@ -636,6 +636,30 @@ struct DataForcesAndSurcesCore {
     inline MatrixDouble& getDiffHcurlN() { return getDiffN(bAse); };
 
 
+    /** \brief get Hcurl of base functions at Gauss pts
+    *
+    * \param base Approximation base
+    * \param gg nb. of Gauss point
+    * \param number of of base functions
+    *
+    */
+    inline const MatrixAdaptor getHcurlN(const FieldApproximationBase base,const int gg) {
+      const int dim = 3;
+      int nb_base_functions = getHcurlN(base).size2()/dim;
+      double *data = &getHcurlN(base)(gg,0);
+      return MatrixAdaptor(nb_base_functions,dim,ublas::shallow_array_adaptor<double>(dim*nb_base_functions,data));
+    }
+
+    /** \brief get Hcurl of base functions at Gauss pts
+    *
+    * \param gg nb. of Gauss point
+    * \param number of of base functions
+    *
+    */
+    inline const MatrixAdaptor getHcurlN(const int gg) {
+      return getHcurlN(bAse,gg);
+    }
+
     // ********* Tensors *******
 
     /**
@@ -904,7 +928,7 @@ struct DataForcesAndSurcesCore {
     */
     template<int Tensor_Dim>
     inline FTensor::Tensor1<double*,Tensor_Dim> getFTensor1HcurlN() {
-      return getFTensor1HcurlN<Tensor_Dim>();
+      return getFTensor1HcurlN<Tensor_Dim>(bAse);
     }
 
     /** \brief Get derivatives of base functions for Hcurl space
@@ -918,7 +942,7 @@ struct DataForcesAndSurcesCore {
     */
     template<int Tensor_Dim0,int Tensor_Dim1>
     FTensor::Tensor2<double*,Tensor_Dim0,Tensor_Dim1> getFTensor2DiffHcurlN() {
-      return getFTensor2DiffHdivN<Tensor_Dim0,Tensor_Dim1>();
+      return getFTensor2DiffHdivN<Tensor_Dim0,Tensor_Dim1>(bAse);
     }
 
     friend std::ostream& operator<<(std::ostream& os,const DataForcesAndSurcesCore::EntData &e);

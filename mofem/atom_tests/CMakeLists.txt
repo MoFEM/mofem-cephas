@@ -464,6 +464,21 @@ add_test(
   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_hcurl_approximation_functions
 )
 
+my_add_executable(forces_and_sources_hcurl_continuity_check forces_and_sources_hcurl_continuity_check.cpp)
+target_link_libraries(forces_and_sources_hcurl_continuity_check
+  mofem_finite_elements
+  mofem_interfaces
+  mofem_multi_indices
+  mofem_approx
+  mofem_cblas
+  mofem_third_party
+  ${PROJECT_LIBS}
+)
+add_test(forces_and_sources_hcurl_continuity_check_atom
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+  ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_hdiv_continuity_check -my_file sphere.h5m
+)
+
 # add test for hdiv space
 my_add_executable(forces_and_sources_hdiv_approximation_functions forces_and_sources_hdiv_approximation_functions.cpp)
 target_link_libraries(forces_and_sources_hdiv_approximation_functions
@@ -496,13 +511,8 @@ target_link_libraries(forces_and_sources_hdiv_continuity_check
   mofem_third_party
   ${PROJECT_LIBS}
 )
-
 add_test(forces_and_sources_hdiv_continuity_check_atom
   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_hdiv_continuity_check -my_file sphere.h5m
-)
-add_test(forces_and_sources_hdiv_continuity_check_atom_compare ${CMAKE_COMMAND} -E compare_files
-  ${CMAKE_BINARY_DIR}/atom_tests/forces_and_sources_hdiv_continuity_check.txt
-  ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/forces_and_sources_hdiv_continuity_check.txt
 )
 
 # add test for hdvi divergence operator

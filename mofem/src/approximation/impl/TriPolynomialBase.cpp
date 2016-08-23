@@ -266,6 +266,10 @@ PetscErrorCode TriPolynomialBase::getValueHCurl(
   }
 
   if(data.spacesOnEntities[MBTRI].test(HCURL)) {
+
+    // cerr << data.dataOnEntities[MBVERTEX][0].getN(base) << endl;
+    // cerr << data.dataOnEntities[MBVERTEX][0].getDiffN(base) << endl;
+    //
     //face
     if(data.dataOnEntities[MBTRI].size()!=1) {
       SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
@@ -274,6 +278,7 @@ PetscErrorCode TriPolynomialBase::getValueHCurl(
     int nb_dofs = NBFACETRI_HCURL(order);
     data.dataOnEntities[MBTRI][0].getN(base).resize(nb_gauss_pts,3*nb_dofs,false);
     data.dataOnEntities[MBTRI][0].getDiffN(base).resize(nb_gauss_pts,0,false);
+    // cerr << data.dataOnEntities[MBVERTEX][0].getDiffN(base) << endl;
     int face_nodes[] = { 0,1,2 };
     ierr = Hcurl_FaceFunctions_MBTET_ON_FACE(
       face_nodes,
@@ -342,21 +347,19 @@ PetscErrorCode TriPolynomialBase::getValue(
   data.dataOnEntities[MBVERTEX][0].getDiffN(base).resize(3,2,false);
   ierr = ShapeDiffMBTRI(&*data.dataOnEntities[MBVERTEX][0].getDiffN(base).data().begin()); CHKERRQ(ierr);
 
-  if(cTx->sPace==H1) {
-    // In linear geometry derivatives are constant,
-    // this in expense of efficiency makes implementation
-    // constant between vertices and other types of entities
-    MatrixDouble diffN(nb_gauss_pts,6);
-    for(int gg = 0;gg<nb_gauss_pts;gg++) {
-      for(int nn = 0;nn<3;nn++) {
-        for(int dd = 0;dd<2;dd++) {
-          diffN(gg,nn*2+dd) = data.dataOnEntities[MBVERTEX][0].getDiffN(base)(nn,dd);
-        }
+  // In linear geometry derivatives are constant,
+  // this in expense of efficiency makes implementation
+  // consistent between vertices and other types of entities
+  MatrixDouble diffN(nb_gauss_pts,6);
+  for(int gg = 0;gg<nb_gauss_pts;gg++) {
+    for(int nn = 0;nn<3;nn++) {
+      for(int dd = 0;dd<2;dd++) {
+        diffN(gg,nn*2+dd) = data.dataOnEntities[MBVERTEX][0].getDiffN(base)(nn,dd);
       }
     }
-    data.dataOnEntities[MBVERTEX][0].getDiffN(base).resize(diffN.size1(),diffN.size2(),false);
-    data.dataOnEntities[MBVERTEX][0].getDiffN(base).data().swap(diffN.data());
   }
+  data.dataOnEntities[MBVERTEX][0].getDiffN(base).resize(diffN.size1(),diffN.size2(),false);
+  data.dataOnEntities[MBVERTEX][0].getDiffN(base).data().swap(diffN.data());
 
   switch (cTx->sPace) {
     case H1:

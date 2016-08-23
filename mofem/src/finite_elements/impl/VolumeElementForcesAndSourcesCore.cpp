@@ -438,7 +438,7 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::operator()() {
           ierr = opSetHoInvJacHdivAndHcurl.opRhs(dataHdiv); CHKERRQ(ierr);
         }
         if(dataH1.spacesOnEntities[MBEDGE].test(HCURL)) {
-          ierr = opCovariantPiolaTransform.opRhs(dataHcurl); CHKERRQ(ierr);
+          ierr = opHoCovariantTransform.opRhs(dataHcurl); CHKERRQ(ierr);
           ierr = opSetHoInvJacHdivAndHcurl.opRhs(dataHcurl); CHKERRQ(ierr);
         }
 
