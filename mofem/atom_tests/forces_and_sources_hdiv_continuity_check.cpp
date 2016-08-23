@@ -306,7 +306,7 @@ int main(int argc, char *argv[]) {
       if(fabs(*tn_ptr)>eps) {
         SETERRQ1(
           PETSC_COMM_SELF,
-          MOFEM_DATA_INCONSISTENCY,
+          MOFEM_ATOM_TEST_INVALID,
           "HDiv continuity failed %6.4e",
           *tn_ptr
         );
@@ -355,7 +355,7 @@ int main(int argc, char *argv[]) {
       if(fabs(*tn_ptr)>eps) {
         SETERRQ1(
           PETSC_COMM_SELF,
-          MOFEM_DATA_INCONSISTENCY,
+          MOFEM_ATOM_TEST_INVALID,
           "HDiv continuity failed %6.4e",
           *tn_ptr
         );

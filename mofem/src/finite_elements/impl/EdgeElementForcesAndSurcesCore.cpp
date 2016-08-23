@@ -113,7 +113,7 @@ PetscErrorCode EdgeElementForcesAndSurcesCore::operator()() {
   int order_col = getMaxColOrder();
   int rule = getRule(order_row,order_col,order_data);
   int nb_gauss_pts;
-  {
+  if(rule >= 0) {
     if(rule<QUAD_1D_TABLE_SIZE) {
       if(QUAD_1D_TABLE[rule]->dim!=1) {
         SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"wrong dimension");
@@ -143,6 +143,17 @@ PetscErrorCode EdgeElementForcesAndSurcesCore::operator()() {
         rule,QUAD_1D_TABLE_SIZE
       );
       nb_gauss_pts = 0;
+    }
+  } else {
+    // If rule is negative, set user defined integration points
+    ierr = setGaussPts(order_row,order_col,order_data); CHKERRQ(ierr);
+    nb_gauss_pts = gaussPts.size2();
+    dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE).resize(nb_gauss_pts,2,false);
+    if(nb_gauss_pts) {
+      for(int gg = 0;gg!=nb_gauss_pts;gg++) {
+        dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE)(gg,0) = N_MBEDGE0(gaussPts(0,gg));
+        dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE)(gg,1) = N_MBEDGE1(gaussPts(0,gg));
+      }
     }
   }
 

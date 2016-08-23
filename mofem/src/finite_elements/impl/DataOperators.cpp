@@ -1742,21 +1742,21 @@ PetscErrorCode OpSetCovariantPiolaTransoformOnEdge::doWork(
           &tangentAtGaussPt(0,0),&tangentAtGaussPt(0,1),&tangentAtGaussPt(0,2),3
         );
         for(int gg = 0;gg<nb_gauss_pts;gg++) {
-          const double val = t_h_curl(0);
           const double l0 = l1[gg];
-          const double a = val/l0;
           for(int ll = 0;ll!=nb_dofs;ll++) {
+            const double val = t_h_curl(0);
+            const double a = val/l0;
             t_h_curl(i) = t_m_at_pts(i)*a;
             ++t_h_curl;
+            ++cc;
           }
           ++t_m_at_pts;
-          ++cc;
         }
       } else {
         for(int gg = 0;gg<nb_gauss_pts;gg++) {
-          const double val = t_h_curl(0);
-          const double a = val/l0;
           for(int ll = 0;ll!=nb_dofs;ll++) {
+            const double val = t_h_curl(0);
+            const double a = val/l0;
             t_h_curl(i) = t_m(i)*a;
             ++t_h_curl;
             ++cc;

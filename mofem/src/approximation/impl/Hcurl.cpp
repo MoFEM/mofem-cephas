@@ -183,8 +183,8 @@ PetscErrorCode MoFEM::Hcurl_EdgeBaseFunctions_MBTET_ON_EDGE(
 
     const int node_shift = ii*2;
 
-    t_psi_e_0(i) = (N[node_shift+1]*t_node_diff_ksi[0](i)- N[node_shift+0]*t_node_diff_ksi[1](i))*sense;
-    t_psi_e_1(i) = N[node_shift+1]*t_node_diff_ksi[0](i)+ N[node_shift+0]*t_node_diff_ksi[1](i);
+    t_psi_e_0(i) = (N[node_shift+1]*t_node_diff_ksi[0](i)-N[node_shift+0]*t_node_diff_ksi[1](i))*sense;
+    t_psi_e_1(i) = N[node_shift+1]*t_node_diff_ksi[0](i)+N[node_shift+0]*t_node_diff_ksi[1](i);
     t_edge_n(i) = t_psi_e_0(i);
     ++t_edge_n;
     t_edge_n(i) = t_psi_e_1(i);

@@ -81,10 +81,10 @@ PetscErrorCode EdgeForce::OpEdgeForce::doWork(int side,EntityType type,DataForce
 
       if(!rr) {
         wEights[gg] = 0;
-        if(getTangetAtGaussPtrs().size1()>0) {
+        if(getTangetAtGaussPts().size1()>0) {
           // This is if edge is curved, i.e. HO geometry
           for(int dd = 0;dd<3;dd++) {
-            wEights[gg] += pow(getTangetAtGaussPtrs()(gg,dd),2);
+            wEights[gg] += pow(getTangetAtGaussPts()(gg,dd),2);
           }
           wEights[gg] = sqrt(wEights[gg]);
         } else {
