@@ -457,9 +457,8 @@ PetscErrorCode MoFEM::Hcurl_BubbleFaceFunctions_MBTET(
     int n1 = faces_nodes[3*ff+1];
     int n2 = faces_nodes[3*ff+2];
 
-    // tou_0i(i) = t_coords[n1](i)-t_coords[n0](i);//t_node_diff_ksi[n1](i)+t_node_diff_ksi[n0](i);
-    // tou_0j(i) = t_coords[n1](i)-t_coords[n0](i);//t_node_diff_ksi[n2](i)+t_node_diff_ksi[n0](i);
-
+    // tou_0i(i) = t_coords[n1](i)-t_coords[n0](i);
+    // tou_0j(i) = t_coords[n2](i)-t_coords[n0](i);
     tou_0i(i) = t_node_diff_ksi[n1](i);
     tou_0j(i) = t_node_diff_ksi[n2](i);
 
@@ -562,7 +561,13 @@ PetscErrorCode MoFEM::Hcurl_BubbleFaceFunctions_MBTET_ON_FACE(
   };
 
 
-  // const double coords[] = { 0,0,0, 1,0,0, 0,1,0 };
+  // double coords[] = { 0,0,0, 1,0,0, 0,1,0 };
+  // FTensor::Tensor1<double*,3> t_coords[3] = {
+  //   FTensor::Tensor1<double*,3>(&coords[0],&coords[ 1],&coords[ 2]),
+  //   FTensor::Tensor1<double*,3>(&coords[3],&coords[ 4],&coords[ 5]),
+  //   FTensor::Tensor1<double*,3>(&coords[6],&coords[ 7],&coords[ 8])
+  // };
+
   FTensor::Index<'i',3> i;
 
   if(NBFACETRI_FACE_HCURL(p)==0) PetscFunctionReturn(0);
@@ -573,14 +578,11 @@ PetscErrorCode MoFEM::Hcurl_BubbleFaceFunctions_MBTET_ON_FACE(
 
   FTensor::Tensor1<double,3> tou_0i;
   FTensor::Tensor1<double,3> tou_0j;
+
+  // tou_0i(i) = t_coords[n1](i)-t_coords[n0](i);
+  // tou_0j(i) = t_coords[n2](i)-t_coords[n0](i);
   tou_0i(i) = t_node_diff_ksi[n1](i);
   tou_0j(i) = t_node_diff_ksi[n2](i);
-
-  // FTensor::Tensor1<double,3> t_coords0(coords[3*n0+0],coords[3*n0+1],coords[3*n0+2]);
-  // FTensor::Tensor1<double,3> tou_0i(coords[3*n1+0],coords[3*n1+1],coords[3*n1+2]);
-  // FTensor::Tensor1<double,3> tou_0j(coords[3*n2+0],coords[3*n2+1],coords[3*n2+2]);
-  // tou_0i(i) -= t_coords0(i);
-  // tou_0j(i) -= t_coords0(i);
 
   double psi_l_0i[p+1],psi_l_0j[p+1];
   FTensor::Tensor1<double*,3> t_phi_f(&phi_f[0],&phi_f[1],&phi_f[2],3);

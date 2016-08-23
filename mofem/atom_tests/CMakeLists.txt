@@ -463,6 +463,10 @@ add_test(
   forces_and_sources_hcurl_approximation_functions_atom
   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_hcurl_approximation_functions
 )
+add_test(forces_and_sources_hcurl_approximation_functions_atom_compare ${CMAKE_COMMAND} -E compare_files
+  ${CMAKE_BINARY_DIR}/atom_tests/forces_and_sources_hcurl_approximation_functions.txt
+  ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/forces_and_sources_hcurl_approximation_functions.txt
+)
 
 my_add_executable(forces_and_sources_hcurl_continuity_check forces_and_sources_hcurl_continuity_check.cpp)
 target_link_libraries(forces_and_sources_hcurl_continuity_check
