@@ -511,6 +511,7 @@ PetscErrorCode TetPolynomialBase::getValueHCurl(
     int nb_vol_dofs = NBVOLUMETET_HCURL(order);
     data.dataOnEntities[MBTET][0].getN(base).resize(nb_gauss_pts,3*nb_vol_dofs,false);
     data.dataOnEntities[MBTET][0].getDiffN(base).resize(nb_gauss_pts,9*nb_vol_dofs,false);
+    // cerr << data.dataOnEntities[MBVERTEX][0].getDiffN(base) << endl;
     ierr = Hcurl_VolumeFunctions_MBTET(
       data.dataOnEntities[MBTET][0].getDataOrder(),
       &*data.dataOnEntities[MBVERTEX][0].getN(base).data().begin(),

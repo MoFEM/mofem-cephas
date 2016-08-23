@@ -349,7 +349,7 @@ int main(int argc, char *argv[]) {
     if(fabs(-2.35868-sum)>eps) {
       SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"wrong result");
     }
-    if(fabs(-65.4854-diff_sum)>eps) {
+    if(fabs(-65.9899-diff_sum)>eps) {
       SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"wrong result");
     }
   }
