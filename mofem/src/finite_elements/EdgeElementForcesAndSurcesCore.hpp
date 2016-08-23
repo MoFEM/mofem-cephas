@@ -121,7 +121,7 @@ struct EdgeElementForcesAndSurcesCore: public ForcesAndSurcesCore {
     /**
      * \brief get tangent vector to edge curve at integration points
      */
-    inline MatrixDouble& getTangetAtGaussPtrs() {
+    inline MatrixDouble& getTangetAtGaussPts() {
       return static_cast<EdgeElementForcesAndSurcesCore*>(ptrFE)->tAngent_at_GaussPt;
     }
 
@@ -158,8 +158,8 @@ struct EdgeElementForcesAndSurcesCore: public ForcesAndSurcesCore {
       return FTensor::Tensor1<double*,3>(ptr,&ptr[1],&ptr[2],3);
     }
 
-    inline FTensor::Tensor1<double*,3> getTensor1TangentAtGaussPtr() {
-      double *ptr = &*getTangetAtGaussPtrs().data().begin();
+    inline FTensor::Tensor1<double*,3> getTensor1TangentAtGaussPts() {
+      double *ptr = &*getTangetAtGaussPts().data().begin();
       return FTensor::Tensor1<double*,3>(ptr,&ptr[1],&ptr[2],3);
     }
 

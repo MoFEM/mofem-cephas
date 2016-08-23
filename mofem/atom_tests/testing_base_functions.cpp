@@ -346,12 +346,12 @@ int main(int argc, char *argv[]) {
     diff_sum += sum_matrix(tet_data.dataOnEntities[MBTET][0].getDiffN(AINSWORTH_COLE_BASE));
     std::cout << "sum  " << sum << std::endl;
     std::cout << "diff_sum " << diff_sum << std::endl;
-    // if(fabs(1.3509-sum)>eps) {
-    //   SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"wrong result");
-    // }
-    // if(fabs(0.233313-diff_sum)>eps) {
-    //   SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"wrong result");
-    // }
+    if(fabs(-2.35868-sum)>eps) {
+      SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"wrong result");
+    }
+    if(fabs(-63.7575-diff_sum)>eps) {
+      SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"wrong result");
+    }
   }
 
   if(choise_value==L2TET) {
@@ -494,6 +494,9 @@ int main(int argc, char *argv[]) {
     std::cout << tri_data.dataOnEntities[MBTRI][0].getN(AINSWORTH_COLE_BASE) << std::endl;
     sum += sum_matrix(tri_data.dataOnEntities[MBTRI][0].getN(AINSWORTH_COLE_BASE));
     std::cout << "sum  " << sum << std::endl;
+    if(fabs(0.111111-sum)>eps) {
+      SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"wrong result");
+    }
   }
 
   if(choise_value==L2TRI) {
@@ -574,8 +577,9 @@ int main(int argc, char *argv[]) {
     int sum = 0;
     sum += sum_matrix(edge_data.dataOnEntities[MBEDGE][0].getN(AINSWORTH_COLE_BASE));
     std::cout << "sum  " << sum << std::endl;
-
-
+    if(fabs(-4-sum)>eps) {
+      SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"wrong result");
+    }
   }
 
   PetscFinalize();

@@ -300,6 +300,7 @@ PetscErrorCode FaceElementForcesAndSourcesCore::operator()() {
   }
   if(dataH1.spacesOnEntities[MBEDGE].test(HCURL)) {
     // cerr << dataHcurl.dataOnEntities[MBEDGE][0].getN(AINSWORTH_COLE_BASE) << endl;
+    //
     ierr = opCovariantTransoform.opRhs(dataHcurl); CHKERRQ(ierr);
   }
 

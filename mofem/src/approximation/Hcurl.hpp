@@ -1,4 +1,4 @@
-/** \file Hcurl.gpp
+/** \file Hcurl.hpp
 
   \brief Implementation of H-curl base function.
 
@@ -151,29 +151,6 @@ PetscErrorCode Hcurl_BubbleFaceFunctions_MBTET(
   int *faces_nodes,int *p,double *N,double *diffN,double *phi_f[4],double *diff_phi_f[4],int nb_integration_pts,
   PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
 );
-
-/** \brief Face edge base functions of Hcurl space on face on tetrahedral.
-
-  On each face we have P*(P-1) base functions and are 4 faces.
-
-  See NBFACETRI_EDGE_HCURL
-
-  * @param  face_nodes       array [4*3] of local indices of face nodes
-  * @param  p                approximation order
-  * @param  N                array shape functions evaluated at each integration point
-  * @param  diffN            derivatives of nodal shape functions
-  * @param  phi_f[4]         calculated shape functions for each face
-  * @param  diff_phi_v[4]    derivatives of shape functions for each face
-  * @param  nb_integration_pts             number of shape functions
-  * @param  base_polynomials polynomial base function (f.e. Legendre of Lobatto)
-  * @return                  error code
-
-*/
-PetscErrorCode Hcurl_BubbleFaceFunctions_MBTET(
-  int *faces_nodes,int *p,double *N,double *diffN,double *phi_f[4],double *diff_phi_f[4],int nb_integration_pts,
-  PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
-);
-
 
 /** \brief Face edge base functions of Hcurl space on face.
 
