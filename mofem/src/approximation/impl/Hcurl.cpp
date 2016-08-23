@@ -1,5 +1,7 @@
 /** \file Hcurl.cpp
 
+  \brief Implementation of H-curl base
+
   Based on Hierarchic Finite Element Bases on Unstructured Tetrahedral
   Meshes, by Mark Ainsworth and Joe Coyle
   Shape functions for MBTRI/MBTET and HCurl space
@@ -213,6 +215,8 @@ PetscErrorCode MoFEM::Hcurl_EdgeBaseFunctions_MBTET_ON_FACE(
 ) {
   PetscErrorCode ierr;
   PetscFunctionBegin;
+
+  // TODO This is not by atom tests properly
 
   if(diff_edge_n!=NULL) {
     SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"Calculation of derivatives not implemented");

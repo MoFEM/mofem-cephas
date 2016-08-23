@@ -1,4 +1,4 @@
-/** \file Hcurl.gpp
+/** \file Hcurl.hpp
 
   \brief Implementation of H-curl base function.
 
