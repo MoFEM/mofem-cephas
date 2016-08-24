@@ -149,7 +149,7 @@ int main(int argc, char *argv[]) {
 
       int gg = 0;
       for(;gg<nb_gauss_pts;gg++) {
-        ierr = getDivergenceMatrixOperator_Hdiv(side,type,data,gg,div_vec); CHKERRQ(ierr);
+        ierr = getDivergenceOfHDivBaseFunctions(side,type,data,gg,div_vec); CHKERRQ(ierr);
         //cout << std::fixed << div_vec << std::endl;
         unsigned int dd = 0;
         for(;dd<div_vec.size();dd++) {

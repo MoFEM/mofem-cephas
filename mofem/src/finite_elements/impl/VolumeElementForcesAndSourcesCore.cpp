@@ -659,7 +659,7 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::operator()() {
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode VolumeElementForcesAndSourcesCore::UserDataOperator::getDivergenceMatrixOperator_Hdiv(
+PetscErrorCode VolumeElementForcesAndSourcesCore::UserDataOperator::getDivergenceOfHDivBaseFunctions(
   int side,EntityType type,
   DataForcesAndSurcesCore::EntData &data,
   int gg,
@@ -670,19 +670,29 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::UserDataOperator::getDivergenc
   try {
 
     int nb_dofs = data.getFieldData().size();
+    if(nb_dofs==0) PetscFunctionReturn(0);
+
+    if(data.getSpace()!=HDIV) {
+      SETERRQ1(
+        PETSC_COMM_SELF,
+        MOFEM_DATA_INCONSISTENCY,
+        "This function should be used for HDIV used but is used with %s",
+        FieldSpaceNames[data.getSpace()]
+      );
+    }
+
     if((unsigned int)nb_dofs != data.getDiffHdivN().size2()/9) {
       std::cerr << "side " << side << " type " << type << std::endl;
       SETERRQ3(
         PETSC_COMM_SELF,
         MOFEM_DATA_INCONSISTENCY,
-        "data inconsistency base = %s "
+        "Data inositency, wrong number of dofs  = %s "
         "%d != %d/9",
         FieldSpaceNames[data.getSpace()],
         nb_dofs,data.getDiffHdivN().size2()
       );
     }
 
-    if(nb_dofs == 0) PetscFunctionReturn(0);
     div.resize(nb_dofs,false);
 
     FTensor::Tensor0<double*> t_div(&*div.data().begin());
@@ -695,10 +705,6 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::UserDataOperator::getDivergenc
 
     int dd = 0;
     for(;dd<nb_dofs;dd++) {
-      // div[dd] =
-      // (data.getDiffHdivN(dd,gg))(0,0)+
-      // (data.getDiffHdivN(dd,gg))(1,1)+
-      // (data.getDiffHdivN(dd,gg))(2,2);
       t_div = t_grad_base(0)+t_grad_base(1)+t_grad_base(2);
       ++t_div;
       ++t_grad_base;
@@ -712,5 +718,71 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::UserDataOperator::getDivergenc
 
   PetscFunctionReturn(0);
 }
+
+PetscErrorCode VolumeElementForcesAndSourcesCore::UserDataOperator::getCurlOfHCurlBaseFunctions(
+  int side,
+  EntityType type,
+  DataForcesAndSurcesCore::EntData &data,
+  int gg,
+  MatrixDouble &curl
+) {
+  PetscFunctionBegin;
+
+  try {
+
+    int nb_dofs = data.getFieldData().size();
+    if(nb_dofs==0) PetscFunctionReturn(0);
+
+    if(data.getSpace()!=HCURL) {
+      SETERRQ1(
+        PETSC_COMM_SELF,
+        MOFEM_DATA_INCONSISTENCY,
+        "This function should be used for HCURL used but is used with %s",
+        FieldSpaceNames[data.getSpace()]
+      );
+    }
+
+    if((unsigned int)nb_dofs != data.getDiffHcurlN().size2()/9) {
+      std::cerr << "side " << side << " type " << type << std::endl;
+      SETERRQ3(
+        PETSC_COMM_SELF,
+        MOFEM_DATA_INCONSISTENCY,
+        "Data inositency, wrong number of dofs  = %s "
+        "%d != %d/9",
+        FieldSpaceNames[data.getSpace()],
+        nb_dofs,data.getDiffHdivN().size2()
+      );
+    }
+
+    curl.resize(nb_dofs,3,false);
+    FTensor::Tensor1<double*,3> t_curl(
+      &curl(0,0),&curl(0,1),&curl(0,2),3
+    );
+    FTensor::Tensor2<const double*,3,3> t_grad_base(
+      &data.getDiffHdivN(gg)(0,HDIV0_0),&data.getDiffHdivN(gg)(0,HDIV0_1),&data.getDiffHdivN(gg)(0,HDIV0_2),
+      &data.getDiffHdivN(gg)(0,HDIV1_0),&data.getDiffHdivN(gg)(0,HDIV1_1),&data.getDiffHdivN(gg)(0,HDIV1_2),
+      &data.getDiffHdivN(gg)(0,HDIV2_0),&data.getDiffHdivN(gg)(0,HDIV2_1),&data.getDiffHdivN(gg)(0,HDIV2_2),9
+    );
+
+    FTensor::Index<'i',3> i;
+
+    int dd = 0;
+    for(;dd<nb_dofs;dd++) {
+      t_curl(0) = t_grad_base(2,1)-t_grad_base(1,2);
+      t_curl(1) = t_grad_base(0,2)-t_grad_base(2,0);
+      t_curl(2) = t_grad_base(1,0)-t_grad_base(0,1);
+      ++t_curl;
+      ++t_grad_base;
+    }
+
+  } catch (std::exception& ex) {
+    std::ostringstream ss;
+    ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
+    SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+  }
+
+  PetscFunctionReturn(0);
+}
+
 
 }
