@@ -716,12 +716,12 @@ PetscErrorCode OpSetInvJacHdivAndHcurl::doWork(
   if(type != MBTRI && type != MBTET) PetscFunctionReturn(0);
 
   if(
-    (int)DataForcesAndSurcesCore::HDIV0_1!=(int)DataForcesAndSurcesCore::HCURL0_1 ||
-    (int)DataForcesAndSurcesCore::HDIV0_2!=(int)DataForcesAndSurcesCore::HCURL0_2 ||
-    (int)DataForcesAndSurcesCore::HDIV1_0!=(int)DataForcesAndSurcesCore::HCURL1_0 ||
-    (int)DataForcesAndSurcesCore::HDIV1_2!=(int)DataForcesAndSurcesCore::HCURL1_2 ||
-    (int)DataForcesAndSurcesCore::HDIV2_0!=(int)DataForcesAndSurcesCore::HCURL2_0 ||
-    (int)DataForcesAndSurcesCore::HDIV2_1!=(int)DataForcesAndSurcesCore::HCURL2_1
+    (int)HDIV0_1!=(int)HCURL0_1 ||
+    (int)HDIV0_2!=(int)HCURL0_2 ||
+    (int)HDIV1_0!=(int)HCURL1_0 ||
+    (int)HDIV1_2!=(int)HCURL1_2 ||
+    (int)HDIV2_0!=(int)HCURL2_0 ||
+    (int)HDIV2_1!=(int)HCURL2_1
   ) {
     SETERRQ(
       PETSC_COMM_SELF,
@@ -748,14 +748,14 @@ PetscErrorCode OpSetInvJacHdivAndHcurl::doWork(
       double *t_inv_diff_n_ptr = &*diffHdivInvJac.data().begin();
       FTensor::Tensor2<double*,3,3> t_inv_diff_n(
         t_inv_diff_n_ptr,
-        &t_inv_diff_n_ptr[DataForcesAndSurcesCore::HDIV0_1],
-        &t_inv_diff_n_ptr[DataForcesAndSurcesCore::HDIV0_2],
-        &t_inv_diff_n_ptr[DataForcesAndSurcesCore::HDIV1_0],
-        &t_inv_diff_n_ptr[DataForcesAndSurcesCore::HDIV1_1],
-        &t_inv_diff_n_ptr[DataForcesAndSurcesCore::HDIV1_2],
-        &t_inv_diff_n_ptr[DataForcesAndSurcesCore::HDIV2_0],
-        &t_inv_diff_n_ptr[DataForcesAndSurcesCore::HDIV2_1],
-        &t_inv_diff_n_ptr[DataForcesAndSurcesCore::HDIV2_2],9
+        &t_inv_diff_n_ptr[HDIV0_1],
+        &t_inv_diff_n_ptr[HDIV0_2],
+        &t_inv_diff_n_ptr[HDIV1_0],
+        &t_inv_diff_n_ptr[HDIV1_1],
+        &t_inv_diff_n_ptr[HDIV1_2],
+        &t_inv_diff_n_ptr[HDIV2_0],
+        &t_inv_diff_n_ptr[HDIV2_1],
+        &t_inv_diff_n_ptr[HDIV2_2],9
       );
 
       for(unsigned int gg = 0;gg!=nb_gauss_pts;gg++) {
@@ -807,21 +807,21 @@ PetscErrorCode OpSetContravariantPiolaTransform::doWork(
       double *t_transformed_n_ptr = &*piolaN.data().begin();
       FTensor::Tensor1<double*,3> t_transformed_n(
         t_transformed_n_ptr, //HDIV0
-        &t_transformed_n_ptr[DataForcesAndSurcesCore::HDIV1],
-        &t_transformed_n_ptr[DataForcesAndSurcesCore::HDIV2],3
+        &t_transformed_n_ptr[HDIV1],
+        &t_transformed_n_ptr[HDIV2],3
       );
       FTensor::Tensor2<double*,3,3> t_diff_n = data.getFTensor2DiffHdivN<3,3>(base);
       double *t_transformed_diff_n_ptr = &*piolaDiffN.data().begin();
       FTensor::Tensor2<double*,3,3> t_transformed_diff_n(
         t_transformed_diff_n_ptr,
-        &t_transformed_diff_n_ptr[DataForcesAndSurcesCore::HDIV0_1],
-        &t_transformed_diff_n_ptr[DataForcesAndSurcesCore::HDIV0_2],
-        &t_transformed_diff_n_ptr[DataForcesAndSurcesCore::HDIV1_0],
-        &t_transformed_diff_n_ptr[DataForcesAndSurcesCore::HDIV1_1],
-        &t_transformed_diff_n_ptr[DataForcesAndSurcesCore::HDIV1_2],
-        &t_transformed_diff_n_ptr[DataForcesAndSurcesCore::HDIV2_0],
-        &t_transformed_diff_n_ptr[DataForcesAndSurcesCore::HDIV2_1],
-        &t_transformed_diff_n_ptr[DataForcesAndSurcesCore::HDIV2_2],9
+        &t_transformed_diff_n_ptr[HDIV0_1],
+        &t_transformed_diff_n_ptr[HDIV0_2],
+        &t_transformed_diff_n_ptr[HDIV1_0],
+        &t_transformed_diff_n_ptr[HDIV1_1],
+        &t_transformed_diff_n_ptr[HDIV1_2],
+        &t_transformed_diff_n_ptr[HDIV2_0],
+        &t_transformed_diff_n_ptr[HDIV2_1],
+        &t_transformed_diff_n_ptr[HDIV2_2],9
       );
 
       double const a = c/vOlume;
@@ -877,21 +877,21 @@ PetscErrorCode OpSetCovariantPiolaTransform::doWork(
       double *t_transformed_n_ptr = &*piolaN.data().begin();
       FTensor::Tensor1<double*,3> t_transformed_n(
         t_transformed_n_ptr, //HDIV0
-        &t_transformed_n_ptr[DataForcesAndSurcesCore::HCURL1],
-        &t_transformed_n_ptr[DataForcesAndSurcesCore::HCURL2],3
+        &t_transformed_n_ptr[HCURL1],
+        &t_transformed_n_ptr[HCURL2],3
       );
       FTensor::Tensor2<double*,3,3> t_diff_n = data.getFTensor2DiffHdivN<3,3>(base);
       double *t_transformed_diff_n_ptr = &*piolaDiffN.data().begin();
       FTensor::Tensor2<double*,3,3> t_transformed_diff_n(
         t_transformed_diff_n_ptr,
-        &t_transformed_diff_n_ptr[DataForcesAndSurcesCore::HCURL0_1],
-        &t_transformed_diff_n_ptr[DataForcesAndSurcesCore::HCURL0_2],
-        &t_transformed_diff_n_ptr[DataForcesAndSurcesCore::HCURL1_0],
-        &t_transformed_diff_n_ptr[DataForcesAndSurcesCore::HCURL1_1],
-        &t_transformed_diff_n_ptr[DataForcesAndSurcesCore::HCURL1_2],
-        &t_transformed_diff_n_ptr[DataForcesAndSurcesCore::HCURL2_0],
-        &t_transformed_diff_n_ptr[DataForcesAndSurcesCore::HCURL2_1],
-        &t_transformed_diff_n_ptr[DataForcesAndSurcesCore::HCURL2_2],9
+        &t_transformed_diff_n_ptr[HCURL0_1],
+        &t_transformed_diff_n_ptr[HCURL0_2],
+        &t_transformed_diff_n_ptr[HCURL1_0],
+        &t_transformed_diff_n_ptr[HCURL1_1],
+        &t_transformed_diff_n_ptr[HCURL1_2],
+        &t_transformed_diff_n_ptr[HCURL2_0],
+        &t_transformed_diff_n_ptr[HCURL2_1],
+        &t_transformed_diff_n_ptr[HCURL2_2],9
       );
 
       for(unsigned int gg = 0;gg!=nb_gauss_pts;gg++) {
@@ -1059,14 +1059,14 @@ PetscErrorCode OpSetHoInvJacH1::doWork(
         double *t_inv_diff_n_ptr = &*diffHdivInvJac.data().begin();
         FTensor::Tensor2<double*,3,3> t_inv_diff_n(
           t_inv_diff_n_ptr,
-          &t_inv_diff_n_ptr[DataForcesAndSurcesCore::HDIV0_1],
-          &t_inv_diff_n_ptr[DataForcesAndSurcesCore::HDIV0_2],
-          &t_inv_diff_n_ptr[DataForcesAndSurcesCore::HDIV1_0],
-          &t_inv_diff_n_ptr[DataForcesAndSurcesCore::HDIV1_1],
-          &t_inv_diff_n_ptr[DataForcesAndSurcesCore::HDIV1_2],
-          &t_inv_diff_n_ptr[DataForcesAndSurcesCore::HDIV2_0],
-          &t_inv_diff_n_ptr[DataForcesAndSurcesCore::HDIV2_1],
-          &t_inv_diff_n_ptr[DataForcesAndSurcesCore::HDIV2_2],9
+          &t_inv_diff_n_ptr[HDIV0_1],
+          &t_inv_diff_n_ptr[HDIV0_2],
+          &t_inv_diff_n_ptr[HDIV1_0],
+          &t_inv_diff_n_ptr[HDIV1_1],
+          &t_inv_diff_n_ptr[HDIV1_2],
+          &t_inv_diff_n_ptr[HDIV2_0],
+          &t_inv_diff_n_ptr[HDIV2_1],
+          &t_inv_diff_n_ptr[HDIV2_2],9
         );
         double *t_inv_jac_ptr = invHoJac.data().begin();
         FTensor::Tensor2<double*,3,3> t_inv_jac(
@@ -1133,21 +1133,21 @@ PetscErrorCode OpSetHoContravariantPiolaTransform::doWork(
       double *t_transformed_n_ptr = &*piolaN.data().begin();
       FTensor::Tensor1<double*,3> t_transformed_n(
         t_transformed_n_ptr, //HDIV0
-        &t_transformed_n_ptr[DataForcesAndSurcesCore::HDIV1],
-        &t_transformed_n_ptr[DataForcesAndSurcesCore::HDIV2],3
+        &t_transformed_n_ptr[HDIV1],
+        &t_transformed_n_ptr[HDIV2],3
       );
       FTensor::Tensor2<double*,3,3> t_diff_n = data.getFTensor2DiffHdivN<3,3>(base);
       double *t_transformed_diff_n_ptr = &*piolaDiffN.data().begin();
       FTensor::Tensor2<double*,3,3> t_transformed_diff_n(
         t_transformed_diff_n_ptr,
-        &t_transformed_diff_n_ptr[DataForcesAndSurcesCore::HDIV0_1],
-        &t_transformed_diff_n_ptr[DataForcesAndSurcesCore::HDIV0_2],
-        &t_transformed_diff_n_ptr[DataForcesAndSurcesCore::HDIV1_0],
-        &t_transformed_diff_n_ptr[DataForcesAndSurcesCore::HDIV1_1],
-        &t_transformed_diff_n_ptr[DataForcesAndSurcesCore::HDIV1_2],
-        &t_transformed_diff_n_ptr[DataForcesAndSurcesCore::HDIV2_0],
-        &t_transformed_diff_n_ptr[DataForcesAndSurcesCore::HDIV2_1],
-        &t_transformed_diff_n_ptr[DataForcesAndSurcesCore::HDIV2_2],9
+        &t_transformed_diff_n_ptr[HDIV0_1],
+        &t_transformed_diff_n_ptr[HDIV0_2],
+        &t_transformed_diff_n_ptr[HDIV1_0],
+        &t_transformed_diff_n_ptr[HDIV1_1],
+        &t_transformed_diff_n_ptr[HDIV1_2],
+        &t_transformed_diff_n_ptr[HDIV2_0],
+        &t_transformed_diff_n_ptr[HDIV2_1],
+        &t_transformed_diff_n_ptr[HDIV2_2],9
       );
 
       FTensor::Tensor0<double*> t_det(&*detHoJac.data().begin());
@@ -1208,21 +1208,21 @@ PetscErrorCode OpSetHoCovariantPiolaTransform::doWork(
       double *t_transformed_n_ptr = &*piolaN.data().begin();
       FTensor::Tensor1<double*,3> t_transformed_n(
         t_transformed_n_ptr, //HDIV0
-        &t_transformed_n_ptr[DataForcesAndSurcesCore::HCURL1],
-        &t_transformed_n_ptr[DataForcesAndSurcesCore::HCURL2],3
+        &t_transformed_n_ptr[HCURL1],
+        &t_transformed_n_ptr[HCURL2],3
       );
       FTensor::Tensor2<double*,3,3> t_diff_n = data.getFTensor2DiffHcurlN<3,3>(base);
       double *t_transformed_diff_n_ptr = &*piolaDiffN.data().begin();
       FTensor::Tensor2<double*,3,3> t_transformed_diff_n(
         t_transformed_diff_n_ptr,
-        &t_transformed_diff_n_ptr[DataForcesAndSurcesCore::HCURL0_1],
-        &t_transformed_diff_n_ptr[DataForcesAndSurcesCore::HCURL0_2],
-        &t_transformed_diff_n_ptr[DataForcesAndSurcesCore::HCURL1_0],
-        &t_transformed_diff_n_ptr[DataForcesAndSurcesCore::HCURL1_1],
-        &t_transformed_diff_n_ptr[DataForcesAndSurcesCore::HCURL1_2],
-        &t_transformed_diff_n_ptr[DataForcesAndSurcesCore::HCURL2_0],
-        &t_transformed_diff_n_ptr[DataForcesAndSurcesCore::HCURL2_1],
-        &t_transformed_diff_n_ptr[DataForcesAndSurcesCore::HCURL2_2],9
+        &t_transformed_diff_n_ptr[HCURL0_1],
+        &t_transformed_diff_n_ptr[HCURL0_2],
+        &t_transformed_diff_n_ptr[HCURL1_0],
+        &t_transformed_diff_n_ptr[HCURL1_1],
+        &t_transformed_diff_n_ptr[HCURL1_2],
+        &t_transformed_diff_n_ptr[HCURL2_0],
+        &t_transformed_diff_n_ptr[HCURL2_1],
+        &t_transformed_diff_n_ptr[HCURL2_2],9
       );
 
       double *t_inv_jac_ptr = hoInvJac.data().begin();
@@ -1593,14 +1593,14 @@ PetscErrorCode OpSetCovariantPiolaTransoformOnTriangle::doWork(
 
       FieldApproximationBase base = ApproximationBaseArray[b];
       FTensor::Tensor1<double*,3> t_h_curl(
-        &data.getHcurlN(base)(0,DataForcesAndSurcesCore::HCURL0),
-        &data.getHcurlN(base)(0,DataForcesAndSurcesCore::HCURL1),
-        &data.getHcurlN(base)(0,DataForcesAndSurcesCore::HCURL2),3
+        &data.getHcurlN(base)(0,HCURL0),
+        &data.getHcurlN(base)(0,HCURL1),
+        &data.getHcurlN(base)(0,HCURL2),3
       );
       FTensor::Tensor1<double*,3> t_transformed_h_curl(
-        &piola_n(0,DataForcesAndSurcesCore::HCURL0),
-        &piola_n(0,DataForcesAndSurcesCore::HCURL1),
-        &piola_n(0,DataForcesAndSurcesCore::HCURL2),3
+        &piola_n(0,HCURL0),
+        &piola_n(0,HCURL1),
+        &piola_n(0,HCURL2),3
       );
 
       int cc = 0;
@@ -1732,9 +1732,9 @@ PetscErrorCode OpSetCovariantPiolaTransoformOnEdge::doWork(
     int nb_dofs = data.getHcurlN(base).size2()/3;
     if(nb_gauss_pts>0 && nb_dofs>0) {
       FTensor::Tensor1<double*,3> t_h_curl(
-        &data.getHcurlN(base)(0,DataForcesAndSurcesCore::HCURL0),
-        &data.getHcurlN(base)(0,DataForcesAndSurcesCore::HCURL1),
-        &data.getHcurlN(base)(0,DataForcesAndSurcesCore::HCURL2),3
+        &data.getHcurlN(base)(0,HCURL0),
+        &data.getHcurlN(base)(0,HCURL1),
+        &data.getHcurlN(base)(0,HCURL2),3
       );
       int cc = 0;
       if(tangentAtGaussPt.size1()==(unsigned int)nb_gauss_pts) {

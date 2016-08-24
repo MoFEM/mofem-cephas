@@ -685,12 +685,23 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::UserDataOperator::getDivergenc
     if(nb_dofs == 0) PetscFunctionReturn(0);
     div.resize(nb_dofs,false);
 
+    FTensor::Tensor0<double*> t_div(&*div.data().begin());
+    FTensor::Tensor1<const double*,3> t_grad_base(
+      &data.getDiffHdivN(gg)(0,HDIV0_0),
+      &data.getDiffHdivN(gg)(0,HDIV1_1),
+      &data.getDiffHdivN(gg)(0,HDIV2_2),9
+    );
+    FTensor::Index<'i',3> i;
+
     int dd = 0;
     for(;dd<nb_dofs;dd++) {
-      div[dd] =
-      (data.getDiffHdivN(dd,gg))(0,0)+
-      (data.getDiffHdivN(dd,gg))(1,1)+
-      (data.getDiffHdivN(dd,gg))(2,2);
+      // div[dd] =
+      // (data.getDiffHdivN(dd,gg))(0,0)+
+      // (data.getDiffHdivN(dd,gg))(1,1)+
+      // (data.getDiffHdivN(dd,gg))(2,2);
+      t_div = t_grad_base(0)+t_grad_base(1)+t_grad_base(2);
+      ++t_div;
+      ++t_grad_base;
     }
 
   } catch (std::exception& ex) {

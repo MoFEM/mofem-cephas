@@ -143,41 +143,6 @@ FTensor::Tensor2<double*,Tensor_Dim0,Tensor_Dim1> getTensor2FormData(
   */
 struct DataForcesAndSurcesCore {
 
-  /**
-   * \brief Format of rows in gradients of H1 base functions
-   */
-  enum H1DiffFormating {
-    H1_0 = 0,H1_1,H1_2
-  };
-
-  /**
-   * \brief Format in rows of Hdiv base functions
-   */
-  enum HDivFormatting {
-    HDIV0 = 0,HDIV1,HDIV2
-  };
-
-  /**
-   * \brief Format in rows of Hdiv gradients of base functions
-   */
-  enum HDivDiffFormatting {
-    HDIV0_0 = 0,HDIV1_0,HDIV2_0,HDIV0_1,HDIV1_1,HDIV2_1,HDIV0_2,HDIV1_2,HDIV2_2
-  };
-
-  /**
-   * \brief Format in rows of Hcurl base functions
-   */
-  enum HCurlFormatting {
-    HCURL0 = 0,HCURL1,HCURL2
-  };
-
-  /**
-   * \brief Format in rows of Hcurl gradients of base functions
-   */
-  enum HCurlDiffFormatting {
-    HCURL0_0 = 0,HCURL1_0,HCURL2_0,HCURL0_1,HCURL1_1,HCURL2_1,HCURL0_2,HCURL1_2,HCURL2_2
-  };
-
   /** \brief Data on single entity (This is passed as argument to DataOperator::doWork)
     * \ingroup mofem_forces_and_sources_user_data_operators
     */
