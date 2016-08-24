@@ -48,6 +48,7 @@ int main(int argc, char *argv[]) {
     HCURLTRI,
     L2TRI,
     H1EDGE,
+    HCURLEDGE,
     H1FLATPRIS,
     H1FATPRISM,
     LASTOP
@@ -65,6 +66,7 @@ int main(int argc, char *argv[]) {
     "hcurltri",
     "l2tri",
     "h1edge",
+    "hcurledge",
     "h1flatprism",
     "h1fatprism"
   };
@@ -186,6 +188,7 @@ int main(int argc, char *argv[]) {
     tet_data.spacesOnEntities[type].set(L2);
     tet_data.spacesOnEntities[type].set(H1);
     tet_data.spacesOnEntities[type].set(HDIV);
+    tet_data.spacesOnEntities[type].set(HCURL);
   }
   tet_data.dataOnEntities[MBVERTEX].resize(1);
   tet_data.dataOnEntities[MBVERTEX][0].getDataOrder() = 1;
@@ -343,12 +346,12 @@ int main(int argc, char *argv[]) {
     diff_sum += sum_matrix(tet_data.dataOnEntities[MBTET][0].getDiffN(AINSWORTH_COLE_BASE));
     std::cout << "sum  " << sum << std::endl;
     std::cout << "diff_sum " << diff_sum << std::endl;
-    // if(fabs(1.3509-sum)>eps) {
-    //   SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"wrong result");
-    // }
-    // if(fabs(0.233313-diff_sum)>eps) {
-    //   SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"wrong result");
-    // }
+    if(fabs(-2.35868-sum)>eps) {
+      SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"wrong result");
+    }
+    if(fabs(-63.7575-diff_sum)>eps) {
+      SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"wrong result");
+    }
   }
 
   if(choise_value==L2TET) {
@@ -379,6 +382,7 @@ int main(int argc, char *argv[]) {
     tri_data.spacesOnEntities[type].set(L2);
     tri_data.spacesOnEntities[type].set(H1);
     tri_data.spacesOnEntities[type].set(HDIV);
+    tri_data.spacesOnEntities[type].set(HCURL);
   }
   tri_data.dataOnEntities[MBVERTEX].resize(1);
   tri_data.dataOnEntities[MBVERTEX][0].getDataOrder() = 1;
@@ -468,7 +472,31 @@ int main(int argc, char *argv[]) {
   }
 
   if(choise_value==HCURLTRI) {
-    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"wrong result");
+    ierr = TriPolynomialBase().getValue(
+      pts_tri,
+      boost::shared_ptr<BaseFunctionCtx>(
+        new EntPolynomialBaseCtx(tri_data,HCURL,AINSWORTH_COLE_BASE,NOBASE)
+      )
+    ); CHKERRQ(ierr);
+    if(
+      tri_data.dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE).get()!=
+      tri_data.dataOnEntities[MBVERTEX][0].getNSharedPtr(AINSWORTH_COLE_BASE).get()
+    ) {
+      SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"Different pointers");
+    }
+    double sum = 0,diff_sum = 0;
+    std::cout << "Edges\n";
+    for(int ee = 0;ee<3;ee++) {
+      std::cout << tri_data.dataOnEntities[MBEDGE][ee].getN(AINSWORTH_COLE_BASE) << std::endl;
+      sum += sum_matrix(tri_data.dataOnEntities[MBEDGE][ee].getN(AINSWORTH_COLE_BASE));
+    }
+    std::cout << "Face\n";
+    std::cout << tri_data.dataOnEntities[MBTRI][0].getN(AINSWORTH_COLE_BASE) << std::endl;
+    sum += sum_matrix(tri_data.dataOnEntities[MBTRI][0].getN(AINSWORTH_COLE_BASE));
+    std::cout << "sum  " << sum << std::endl;
+    if(fabs(0.111111-sum)>eps) {
+      SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"wrong result");
+    }
   }
 
   if(choise_value==L2TRI) {
@@ -480,6 +508,7 @@ int main(int argc, char *argv[]) {
     edge_data.spacesOnEntities[type].set(L2);
     edge_data.spacesOnEntities[type].set(H1);
     edge_data.spacesOnEntities[type].set(HDIV);
+    edge_data.spacesOnEntities[type].set(HCURL);
   }
   edge_data.dataOnEntities[MBVERTEX].resize(1);
   edge_data.dataOnEntities[MBVERTEX][0].getDataOrder() = 1;
@@ -527,6 +556,28 @@ int main(int argc, char *argv[]) {
       SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"wrong result");
     }
     if(fabs(2.85714-diff_sum)>eps) {
+      SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"wrong result");
+    }
+  }
+
+  if(choise_value==HCURLEDGE) {
+    ierr = EdgePolynomialBase().getValue(
+      pts_edge,
+      boost::shared_ptr<BaseFunctionCtx>(
+        new EntPolynomialBaseCtx(edge_data,HCURL,AINSWORTH_COLE_BASE,NOBASE)
+      )
+    ); CHKERRQ(ierr);
+    if(
+      edge_data.dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE).get()!=
+      edge_data.dataOnEntities[MBVERTEX][0].getNSharedPtr(AINSWORTH_COLE_BASE).get()
+    ) {
+      SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"Different pointers");
+    }
+    std::cout << edge_data.dataOnEntities[MBEDGE][0].getN(AINSWORTH_COLE_BASE) << std::endl;
+    int sum = 0;
+    sum += sum_matrix(edge_data.dataOnEntities[MBEDGE][0].getN(AINSWORTH_COLE_BASE));
+    std::cout << "sum  " << sum << std::endl;
+    if(fabs(-4-sum)>eps) {
       SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"wrong result");
     }
   }

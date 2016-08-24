@@ -40,8 +40,8 @@ if(CMAKE_Fortran_COMPILER)
 endif(CMAKE_Fortran_COMPILER)
 
 set(MoFEM_VERSION_MAJOR 0)
-set(MoFEM_VERSION_MINOR 3)
-set(MoFEM_VERSION_BUILD 35)
+set(MoFEM_VERSION_MINOR 4)
+set(MoFEM_VERSION_BUILD 0)
 
 include(CheckCXXSourceCompiles)
 CHECK_CXX_SOURCE_COMPILES(
@@ -66,7 +66,7 @@ execute_process(
 )
 add_custom_target(
   install_prerequisites
-  COMMAND ${CMAKE_COMMAND} -E touch_nocreate ${PROJECT_BINARY_DIR}/CMakeCache.txt
+  # COMMAND ${CMAKE_COMMAND} -E touch_nocreate ${PROJECT_BINARY_DIR}/CMakeCache.txt
   COMMENT "Install prerequisites compiled with MoFEM"
 )
 

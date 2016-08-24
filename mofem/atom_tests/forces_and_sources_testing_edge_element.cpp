@@ -173,7 +173,7 @@ int main(int argc, char *argv[]) {
 
       int nb_gauss_pts = data.getN().size1();
       for(int gg = 0;gg<nb_gauss_pts;gg++) {
-        my_split << "tangent " << gg << " " << getTangetAtGaussPtrs() << std::endl;
+        my_split << "tangent " << gg << " " << getTangetAtGaussPts() << std::endl;
       }
 
       PetscFunctionReturn(0);

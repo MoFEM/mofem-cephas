@@ -1,5 +1,7 @@
 /** \file TetPolynomialBase.cpp
-\brief Implementation of Ainsworth-Cole H1 base on tetrahedral
+\brief Implementation of hierarchical bases on tetrahedral
+
+A l2, h1, h-div and h-curl spaces are implemented.
 
 */
 
@@ -76,30 +78,30 @@ PetscErrorCode TetPolynomialBase::getValueH1(ublas::matrix<double> &pts) {
 
   int nb_gauss_pts = pts.size2();
 
-  int _sense_[6],_order_[6];
+  int sense[6],order[6];
   if(data.spacesOnEntities[MBEDGE].test(H1)) {
     //edges
     if(data.dataOnEntities[MBEDGE].size()!=6) {
       SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
     }
-    double *_H1edgeN_[6],*_diffH1edgeN_[6];
+    double *h1_edge_n[6],*diff_h1_egde_n[6];
     for(int ee = 0;ee<6;ee++) {
       if(data.dataOnEntities[MBEDGE][ee].getSense() == 0) {
         SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
       }
-      _sense_[ee] = data.dataOnEntities[MBEDGE][ee].getSense();
-      _order_[ee] = data.dataOnEntities[MBEDGE][ee].getDataOrder();
+      sense[ee] = data.dataOnEntities[MBEDGE][ee].getSense();
+      order[ee] = data.dataOnEntities[MBEDGE][ee].getDataOrder();
       int nb_dofs = NBEDGE_H1(data.dataOnEntities[MBEDGE][ee].getDataOrder());
       data.dataOnEntities[MBEDGE][ee].getN(base).resize(nb_gauss_pts,nb_dofs,false);
       data.dataOnEntities[MBEDGE][ee].getDiffN(base).resize(nb_gauss_pts,3*nb_dofs,false);
-      _H1edgeN_[ee] = &*data.dataOnEntities[MBEDGE][ee].getN(base).data().begin();
-      _diffH1edgeN_[ee] = &*data.dataOnEntities[MBEDGE][ee].getDiffN(base).data().begin();
+      h1_edge_n[ee] = &*data.dataOnEntities[MBEDGE][ee].getN(base).data().begin();
+      diff_h1_egde_n[ee] = &*data.dataOnEntities[MBEDGE][ee].getDiffN(base).data().begin();
     }
     ierr = H1_EdgeShapeFunctions_MBTET(
-      _sense_,_order_,
+      sense,order,
       &*data.dataOnEntities[MBVERTEX][0].getN(base).data().begin(),
       &*data.dataOnEntities[MBVERTEX][0].getDiffN(base).data().begin(),
-      _H1edgeN_,_diffH1edgeN_,nb_gauss_pts,base_polynomials
+      h1_edge_n,diff_h1_egde_n,nb_gauss_pts,base_polynomials
     ); CHKERRQ(ierr);
   }
 
@@ -109,17 +111,17 @@ PetscErrorCode TetPolynomialBase::getValueH1(ublas::matrix<double> &pts) {
     if(data.dataOnEntities[MBTRI].size()!=4) {
       SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
     }
-    double *_H1faceN_[4],*_diffH1faceN_[4];
+    double *h1_face_n[4],*diff_h1_face_n[4];
     for(int ff = 0;ff<4;ff++) {
       if(data.dataOnEntities[MBTRI][ff].getSense() == 0) {
         SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
       }
       int nb_dofs = NBFACETRI_H1(data.dataOnEntities[MBTRI][ff].getDataOrder());
-      _order_[ff] = data.dataOnEntities[MBTRI][ff].getDataOrder();
+      order[ff] = data.dataOnEntities[MBTRI][ff].getDataOrder();
       data.dataOnEntities[MBTRI][ff].getN(base).resize(nb_gauss_pts,nb_dofs,false);
       data.dataOnEntities[MBTRI][ff].getDiffN(base).resize(nb_gauss_pts,3*nb_dofs,false);
-      _H1faceN_[ff] = &*data.dataOnEntities[MBTRI][ff].getN(base).data().begin();
-      _diffH1faceN_[ff] = &*data.dataOnEntities[MBTRI][ff].getDiffN(base).data().begin();
+      h1_face_n[ff] = &*data.dataOnEntities[MBTRI][ff].getN(base).data().begin();
+      diff_h1_face_n[ff] = &*data.dataOnEntities[MBTRI][ff].getDiffN(base).data().begin();
     }
     if(data.facesNodes.size1() != 4) {
       SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
@@ -129,11 +131,11 @@ PetscErrorCode TetPolynomialBase::getValueH1(ublas::matrix<double> &pts) {
     }
     ierr = H1_FaceShapeFunctions_MBTET(
       &*data.facesNodes.data().begin(),
-      _order_,
+      order,
       &*data.dataOnEntities[MBVERTEX][0].getN(base).data().begin(),
       &*data.dataOnEntities[MBVERTEX][0].getDiffN(base).data().begin(),
-      _H1faceN_,
-      _diffH1faceN_,
+      h1_face_n,
+      diff_h1_face_n,
       nb_gauss_pts,
       base_polynomials
     ); CHKERRQ(ierr);
@@ -411,18 +413,127 @@ PetscErrorCode TetPolynomialBase::getValueHdiv(
 PetscErrorCode TetPolynomialBase::getValueHCurl(
   ublas::matrix<double> &pts
 ) {
-  // PetscErrorCode ierr;
+  PetscErrorCode ierr;
   PetscFunctionBegin;
 
-  // DataForcesAndSurcesCore& data = cTx->dAta;
-  // const FieldApproximationBase base = cTx->bAse;
-  // PetscErrorCode (*base_polynomials)(
-  //   int p,double s,double *diff_s,double *L,double *diffL,const int dim
-  // ) = cTx->basePolynomials;
-  //
-  // int nb_gauss_pts = pts.size2();
+  try {
 
-  SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"Not yet implemented (You can do it)");
+  DataForcesAndSurcesCore& data = cTx->dAta;
+  const FieldApproximationBase base = cTx->bAse;
+  PetscErrorCode (*base_polynomials)(
+    int p,double s,double *diff_s,double *L,double *diffL,const int dim
+  ) = cTx->basePolynomials;
+
+  int nb_gauss_pts = pts.size2();
+
+  // edges
+  if(data.spacesOnEntities[MBEDGE].test(HCURL)) {
+    int sense[6],order[6];
+    if(data.dataOnEntities[MBEDGE].size()!=6) {
+      SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
+    }
+    double *hcurl_edge_n[6],*diff_hcurl_edge_n[6];
+    for(int ee = 0;ee!=6;ee++) {
+      if(data.dataOnEntities[MBEDGE][ee].getSense() == 0) {
+        SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
+      }
+      sense[ee] = data.dataOnEntities[MBEDGE][ee].getSense();
+      order[ee] = data.dataOnEntities[MBEDGE][ee].getDataOrder();
+      int nb_dofs = NBEDGE_HCURL(data.dataOnEntities[MBEDGE][ee].getDataOrder());
+      data.dataOnEntities[MBEDGE][ee].getN(base).resize(nb_gauss_pts,3*nb_dofs,false);
+      data.dataOnEntities[MBEDGE][ee].getDiffN(base).resize(nb_gauss_pts,9*nb_dofs,false);
+      hcurl_edge_n[ee] = &*data.dataOnEntities[MBEDGE][ee].getN(base).data().begin();
+      diff_hcurl_edge_n[ee] = &*data.dataOnEntities[MBEDGE][ee].getDiffN(base).data().begin();
+    }
+    ierr = Hcurl_EdgeBaseFunctions_MBTET(
+      sense,
+      order,
+      &*data.dataOnEntities[MBVERTEX][0].getN(base).data().begin(),
+      &*data.dataOnEntities[MBVERTEX][0].getDiffN(base).data().begin(),
+      hcurl_edge_n,
+      diff_hcurl_edge_n,
+      nb_gauss_pts,
+      base_polynomials
+    ); CHKERRQ(ierr);
+  } else {
+    for(int ee = 0;ee!=6;ee++) {
+      data.dataOnEntities[MBEDGE][ee].getN(base).resize(nb_gauss_pts,0,false);
+      data.dataOnEntities[MBEDGE][ee].getDiffN(base).resize(nb_gauss_pts,0,false);
+    }
+  }
+
+  // triangles
+  if(data.spacesOnEntities[MBTRI].test(HCURL)) {
+    int order[4];
+    //faces
+    if(data.dataOnEntities[MBTRI].size()!=4) {
+      SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
+    }
+    double *hcurl_base_n[4],*diff_hcurl_base_n[4];
+    for(int ff = 0;ff!=4;ff++) {
+      if(data.dataOnEntities[MBTRI][ff].getSense() == 0) {
+        SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
+      }
+      int nb_dofs = NBFACETRI_HCURL(data.dataOnEntities[MBTRI][ff].getDataOrder());
+      order[ff] = data.dataOnEntities[MBTRI][ff].getDataOrder();
+      data.dataOnEntities[MBTRI][ff].getN(base).resize(nb_gauss_pts,3*nb_dofs,false);
+      data.dataOnEntities[MBTRI][ff].getDiffN(base).resize(nb_gauss_pts,9*nb_dofs,false);
+      hcurl_base_n[ff] = &*data.dataOnEntities[MBTRI][ff].getN(base).data().begin();
+      diff_hcurl_base_n[ff] = &*data.dataOnEntities[MBTRI][ff].getDiffN(base).data().begin();
+    }
+    if(data.facesNodes.size1() != 4) {
+      SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
+    }
+    if(data.facesNodes.size2() != 3) {
+      SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
+    }
+    ierr = Hcurl_FaceFunctions_MBTET(
+      &*data.facesNodes.data().begin(),
+      order,
+      &*data.dataOnEntities[MBVERTEX][0].getN(base).data().begin(),
+      &*data.dataOnEntities[MBVERTEX][0].getDiffN(base).data().begin(),
+      hcurl_base_n,
+      diff_hcurl_base_n,
+      nb_gauss_pts,
+      base_polynomials
+    ); CHKERRQ(ierr);
+  } else {
+    for(int ff = 0;ff<4;ff++) {
+      data.dataOnEntities[MBTRI][ff].getN(base).resize(nb_gauss_pts,0,false);
+      data.dataOnEntities[MBTRI][ff].getDiffN(base).resize(nb_gauss_pts,0,false);
+    }
+  }
+
+  if(data.spacesOnEntities[MBTET].test(HCURL)) {
+
+    //volume
+    int order = data.dataOnEntities[MBTET][0].getDataOrder();
+    int nb_vol_dofs = NBVOLUMETET_HCURL(order);
+    data.dataOnEntities[MBTET][0].getN(base).resize(nb_gauss_pts,3*nb_vol_dofs,false);
+    data.dataOnEntities[MBTET][0].getDiffN(base).resize(nb_gauss_pts,9*nb_vol_dofs,false);
+    // cerr << data.dataOnEntities[MBVERTEX][0].getDiffN(base) << endl;
+    ierr = Hcurl_VolumeFunctions_MBTET(
+      data.dataOnEntities[MBTET][0].getDataOrder(),
+      &*data.dataOnEntities[MBVERTEX][0].getN(base).data().begin(),
+      &*data.dataOnEntities[MBVERTEX][0].getDiffN(base).data().begin(),
+      &*data.dataOnEntities[MBTET][0].getN(base).data().begin(),
+      &*data.dataOnEntities[MBTET][0].getDiffN(base).data().begin(),
+      nb_gauss_pts,
+      base_polynomials
+    ); CHKERRQ(ierr);
+
+  } else {
+    data.dataOnEntities[MBTET][0].getN(base).resize(nb_gauss_pts,0,false);
+    data.dataOnEntities[MBTET][0].getDiffN(base).resize(nb_gauss_pts,0,false);
+  }
+
+  } catch (MoFEMException const &e) {
+    SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
+  } catch (std::exception& ex) {
+    std::ostringstream ss;
+    ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
+    SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
+  }
 
   PetscFunctionReturn(0);
 }
@@ -502,7 +613,7 @@ PetscErrorCode TetPolynomialBase::getValue(
     ierr = getValueL2(pts); CHKERRQ(ierr);
     break;
     default:
-    SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"Not yet implemented");
+    SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"Unknown space");
   }
 
   PetscFunctionReturn(0);

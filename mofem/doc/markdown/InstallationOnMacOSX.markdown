@@ -1,5 +1,10 @@
 ## Installation on OS X ##
 
+Installation of MoFEM on MacOS X can be made as well within docker see details
+[go to this page](doc/markdown/InstalltionWithDocker.markdown). Installation in
+docker is faster where prebuild enviroent is downloaded directly form
+[docker hub](https://hub.docker.com/r/likask/ubuntu_mofem/).
+
 If you have any problems, feedback or would like to suggest corrections,
 please email [cmatgu@googlegroups.com](mailto:cmatgu@googlegroups.com).
 Before you start you need to install

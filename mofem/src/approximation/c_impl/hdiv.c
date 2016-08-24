@@ -68,8 +68,8 @@ PetscErrorCode Hdiv_EdgeBasedVolumeShapeFunctions_MBTET(
   for(;ee<6;ee++) {
     cblas_dcopy(3,&coords[3*edges_nodes[2*ee+1]],1,tau_e[ee],1);
     cblas_daxpy(3,-1,&coords[3*edges_nodes[2*ee+0]],1,tau_e[ee],1);
-    double nrm2 = cblas_dnrm2(3,tau_e[ee],1);
-    cblas_dscal(3,1./nrm2,tau_e[ee],1);
+    // double nrm2 = cblas_dnrm2(3,tau_e[ee],1);
+    // cblas_dscal(3,1./nrm2,tau_e[ee],1);
   }
   int ii = 0;
   for(;ii<GDIM;ii++) {
@@ -132,12 +132,12 @@ PetscErrorCode Hdiv_FaceBasedVolumeShapeFunctions_MBTET(
     int idx_node2 = faces_nodes[3*ff+2];
     cblas_dcopy(3,&coords[3*idx_node1],1,tau_0i[ff],1);
     cblas_daxpy(3,-1,&coords[3*idx_node0],1,tau_0i[ff],1);
-    double nrm2_0i = cblas_dnrm2(3,tau_0i[ff],1);
-    cblas_dscal(3,1./nrm2_0i,tau_0i[ff],1);
+    // double nrm2_0i = cblas_dnrm2(3,tau_0i[ff],1);
+    // cblas_dscal(3,1./nrm2_0i,tau_0i[ff],1);
     cblas_dcopy(3,&coords[3*idx_node2],1,tau_0j[ff],1);
     cblas_daxpy(3,-1,&coords[3*idx_node0],1,tau_0j[ff],1);
-    double nrm2_0j = cblas_dnrm2(3,tau_0j[ff],1);
-    cblas_dscal(3,1./nrm2_0j,tau_0j[ff],1);
+    // double nrm2_0j = cblas_dnrm2(3,tau_0j[ff],1);
+    // cblas_dscal(3,1./nrm2_0j,tau_0j[ff],1);
   }
   int ii = 0;
   for(;ii<GDIM;ii++) {
@@ -232,8 +232,8 @@ PetscErrorCode Hdiv_VolumeBubbleShapeFunctions_MBTET(
   for(;nn<3;nn++) {
     cblas_dcopy(3,&coords[3*(nn+1)],1,ed[nn],1);
     cblas_daxpy(3,-1,&coords[0],1,ed[nn],1);
-    double nrm2 = cblas_dnrm2(3,ed[nn],1);
-    cblas_dscal(3,1./nrm2,ed[nn],1);
+    // double nrm2 = cblas_dnrm2(3,ed[nn],1);
+    // cblas_dscal(3,1./nrm2,ed[nn],1);
   }
   int ii = 0;
   for(;ii<GDIM;ii++) {
@@ -404,9 +404,9 @@ PetscErrorCode Hdiv_FaceBubbleShapeFunctions_MBTET_ON_FACE(
   if(diffN!=NULL) {
     int vert_i = faces_nodes[1];
     int vert_j = faces_nodes[2];
-    double _Spin_[9];
-    ierr = Spin(_Spin_,&diffN[3*vert_i]); CHKERRQ(ierr);
-    cblas_dgemv(CblasRowMajor,CblasNoTrans,3,3,1.,_Spin_,3,&diffN[3*vert_j],1,0,Phi_f,1);
+    double spin[9];
+    ierr = Spin(spin,&diffN[3*vert_i]); CHKERRQ(ierr);
+    cblas_dgemv(CblasRowMajor,CblasNoTrans,3,3,1.,spin,3,&diffN[3*vert_j],1,0,Phi_f,1);
   } else {
     Phi_f[0] = 1;
     Phi_f[1] = 0;

@@ -283,8 +283,8 @@ If you have packages installed, follow instruction from <http://kcachegrind.sour
 You can use gdb inside docker, remembering to set cmake with debugging
 build type, for example
 \code
-cmake -DCMAKE_BUILD_TYPE=Release -DWITH_METAIO=1 -DCMAKE_CXX_FLAGS="-Wall -std=c++11" users_modules
-\enddode
+cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_FLAGS="-Wall" users_modules
+\endcode
 
 It is one non trivial trick that you have to do, to make debugging possible in
 docker, you need to run docker container in \em privileged mode, for example

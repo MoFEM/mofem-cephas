@@ -41,21 +41,27 @@ struct EdgeElementForcesAndSurcesCore: public ForcesAndSurcesCore {
 
   DataForcesAndSurcesCore dataH1;
   DerivedDataForcesAndSurcesCore derivedDataH1;
+  DataForcesAndSurcesCore dataHcurl;
+  DerivedDataForcesAndSurcesCore derivedDataHcurl;
   DataForcesAndSurcesCore dataNoField,dataNoFieldCol;
   std::string meshPositionsFieldName;
 
   MatrixDouble tAngent_at_GaussPt;
   OpGetHoTangentOnEdge opGetHoTangentOnEdge;
+  OpSetCovariantPiolaTransoformOnEdge opCovariantTransoform;
 
   EdgeElementForcesAndSurcesCore(Interface &m_field):
-    ForcesAndSurcesCore(m_field),
-    dataH1(MBEDGE),
-    derivedDataH1(dataH1),
-    dataNoField(MBEDGE),
-    dataNoFieldCol(MBEDGE),
-    meshPositionsFieldName("MESH_NODE_POSITIONS"),
-    opGetHoTangentOnEdge(tAngent_at_GaussPt)
-  {};
+  ForcesAndSurcesCore(m_field),
+  dataH1(MBEDGE),
+  derivedDataH1(dataH1),
+  dataHcurl(MBEDGE),
+  derivedDataHcurl(dataHcurl),
+  dataNoField(MBEDGE),
+  dataNoFieldCol(MBEDGE),
+  meshPositionsFieldName("MESH_NODE_POSITIONS"),
+  opGetHoTangentOnEdge(tAngent_at_GaussPt),
+  opCovariantTransoform(dIrection,tAngent_at_GaussPt) {
+  }
 
   MoABErrorCode rval;
   double lEngth;;
@@ -77,27 +83,86 @@ struct EdgeElementForcesAndSurcesCore: public ForcesAndSurcesCore {
       const std::string &row_field_name,const std::string &col_field_name,const char type):
       ForcesAndSurcesCore::UserDataOperator(row_field_name,col_field_name,type) {}
 
+    /**
+     * \brief get edge length
+     */
     inline double getLength() {
       return static_cast<EdgeElementForcesAndSurcesCore*>(ptrFE)->lEngth;
     }
+
+    /**
+     * \brief get edge dIrection
+     */
     inline VectorDouble& getDirection() {
       return static_cast<EdgeElementForcesAndSurcesCore*>(ptrFE)->dIrection;
     }
+
+    /**
+     * \brief get edge node coordinates
+     */
     inline VectorDouble& getCoords() {
       return static_cast<EdgeElementForcesAndSurcesCore*>(ptrFE)->cOords;
     }
+
+    /**
+     * \brief get integration points on the edge
+     */
     inline MatrixDouble& getGaussPts() {
       return static_cast<EdgeElementForcesAndSurcesCore*>(ptrFE)->gaussPts;
     }
+
+    /**
+     * \brief get coordinate at integration point
+     */
     inline MatrixDouble& getCoordsAtGaussPts() {
       return static_cast<EdgeElementForcesAndSurcesCore*>(ptrFE)->coordsAtGaussPts;
     }
-    inline MatrixDouble& getTangetAtGaussPtrs() {
+
+    /**
+     * \brief get tangent vector to edge curve at integration points
+     */
+    inline MatrixDouble& getTangetAtGaussPts() {
       return static_cast<EdgeElementForcesAndSurcesCore*>(ptrFE)->tAngent_at_GaussPt;
     }
+
+    /**
+     * \brief get pointer to this finite element
+     */
     inline const EdgeElementForcesAndSurcesCore* getEdgeFE() {
       return static_cast<EdgeElementForcesAndSurcesCore*>(ptrFE);
     }
+
+    inline FTensor::Tensor1<double*,3> getTensor1Direction() {
+      double *ptr = &*getDirection().data().begin();
+      return FTensor::Tensor1<double*,3>(ptr,&ptr[1],&ptr[2]);
+    }
+
+    /**
+     * \brief get get coords at gauss points
+
+     \code
+     FTensor::Index<'i',3> i;
+     FTensor::Tensor1<double,3> t_center;
+     FTensor::Tensor1<double*,3> t_coords = getTensor1Coords();
+     t_center(i) = 0;
+     for(int nn = 0;nn!=2;nn++) {
+        t_center(i) += t_coords(i);
+        ++t_coords;
+      }
+      t_center(i) /= 2;
+    \endcode
+
+     */
+    inline FTensor::Tensor1<double*,3> getTensor1Coords() {
+      double *ptr = getCoords().data().begin();
+      return FTensor::Tensor1<double*,3>(ptr,&ptr[1],&ptr[2],3);
+    }
+
+    inline FTensor::Tensor1<double*,3> getTensor1TangentAtGaussPts() {
+      double *ptr = &*getTangetAtGaussPts().data().begin();
+      return FTensor::Tensor1<double*,3>(ptr,&ptr[1],&ptr[2],3);
+    }
+
 
   };
 
