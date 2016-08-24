@@ -702,9 +702,7 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::UserDataOperator::getDivergenc
       &data.getDiffHdivN(gg)(0,HDIV2_2),9
     );
     FTensor::Index<'i',3> i;
-
-    int dd = 0;
-    for(;dd<nb_dofs;dd++) {
+    for(int dd = 0;dd<nb_dofs;dd++) {
       t_div = t_grad_base(0)+t_grad_base(1)+t_grad_base(2);
       ++t_div;
       ++t_grad_base;
@@ -750,24 +748,19 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::UserDataOperator::getCurlOfHCu
         "Data inositency, wrong number of dofs  = %s "
         "%d != %d/9",
         FieldSpaceNames[data.getSpace()],
-        nb_dofs,data.getDiffHdivN().size2()
+        nb_dofs,data.getDiffHcurlN().size2()
       );
     }
 
     curl.resize(nb_dofs,3,false);
-    FTensor::Tensor1<double*,3> t_curl(
-      &curl(0,0),&curl(0,1),&curl(0,2),3
-    );
+    FTensor::Tensor1<double*,3> t_curl(&curl(0,0),&curl(0,1),&curl(0,2),3);
     FTensor::Tensor2<const double*,3,3> t_grad_base(
-      &data.getDiffHdivN(gg)(0,HDIV0_0),&data.getDiffHdivN(gg)(0,HDIV0_1),&data.getDiffHdivN(gg)(0,HDIV0_2),
-      &data.getDiffHdivN(gg)(0,HDIV1_0),&data.getDiffHdivN(gg)(0,HDIV1_1),&data.getDiffHdivN(gg)(0,HDIV1_2),
-      &data.getDiffHdivN(gg)(0,HDIV2_0),&data.getDiffHdivN(gg)(0,HDIV2_1),&data.getDiffHdivN(gg)(0,HDIV2_2),9
+      &data.getDiffHcurlN(gg)(0,HCURL0_0),&data.getDiffHcurlN(gg)(0,HCURL0_1),&data.getDiffHcurlN(gg)(0,HCURL0_2),
+      &data.getDiffHcurlN(gg)(0,HCURL1_0),&data.getDiffHcurlN(gg)(0,HCURL1_1),&data.getDiffHcurlN(gg)(0,HCURL1_2),
+      &data.getDiffHcurlN(gg)(0,HCURL2_0),&data.getDiffHcurlN(gg)(0,HCURL2_1),&data.getDiffHcurlN(gg)(0,HCURL2_2),9
     );
-
     FTensor::Index<'i',3> i;
-
-    int dd = 0;
-    for(;dd<nb_dofs;dd++) {
+    for(int dd = 0;dd<nb_dofs;dd++) {
       t_curl(0) = t_grad_base(2,1)-t_grad_base(1,2);
       t_curl(1) = t_grad_base(0,2)-t_grad_base(2,0);
       t_curl(2) = t_grad_base(1,0)-t_grad_base(0,1);

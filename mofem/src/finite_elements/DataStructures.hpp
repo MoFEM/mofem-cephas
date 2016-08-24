@@ -625,6 +625,31 @@ struct DataForcesAndSurcesCore {
       return getHcurlN(bAse,gg);
     }
 
+    /** \brief get DiffHdiv of base functions at Gauss pts
+    *
+    * \param base Approximation base
+    * \param gg nb. of Gauss point
+    * \param number of of base functions
+    *
+    */
+    inline const MatrixAdaptor getDiffHcurlN(FieldApproximationBase base,const int gg) {
+      int nb_base_functions = getDiffHcurlN(base).size2()/9;
+      double *data = &getDiffHcurlN(base)(gg,0);
+      return MatrixAdaptor(
+        nb_base_functions,9,ublas::shallow_array_adaptor<double>(9*nb_base_functions,data)
+      );
+    }
+
+    /** \brief get DiffHdiv of base functions at Gauss pts
+    *
+    * \param gg nb. of Gauss point
+    * \param number of of base functions
+    *
+    */
+    inline const MatrixAdaptor getDiffHcurlN(const int gg) {
+      return getDiffHcurlN(bAse,gg);
+    }
+
     // ********* Tensors *******
 
     /**
