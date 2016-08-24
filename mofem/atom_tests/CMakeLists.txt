@@ -429,6 +429,49 @@ add_test(forces_and_sources_testing_flat_prism_element_test_compare ${CMAKE_COMM
   ${CMAKE_BINARY_DIR}/atom_tests/forces_and_sources_testing_flat_prism_element.txt
 )
 
+# Checking direvatives
+my_add_executable(
+  forces_and_sources_check_base_functions_direvatives
+  forces_and_sources_check_base_functions_direvatives.cpp
+)
+target_link_libraries(forces_and_sources_check_base_functions_direvatives
+  mofem_finite_elements
+  mofem_interfaces
+  mofem_multi_indices
+  mofem_approx
+  mofem_cblas
+  mofem_third_party
+  ${PROJECT_LIBS}
+)
+add_test(forces_and_sources_check_h1_base_functions_direvatives_atom
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+  ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_check_base_functions_direvatives -base H1TET
+)
+add_test(forces_and_sources_check_hdiv_base_functions_direvatives_atom
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+  ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_check_base_functions_direvatives -base HDIVTET
+)
+add_test(forces_and_sources_check_hcurl_base_functions_direvatives_atom
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+  ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_check_base_functions_direvatives -base HCURLTET
+)
+
+# Continuity check on tet for h1 space
+my_add_executable(forces_and_sources_h1_continuity_check forces_and_sources_h1_continuity_check.cpp)
+target_link_libraries(forces_and_sources_h1_continuity_check
+  mofem_finite_elements
+  mofem_interfaces
+  mofem_multi_indices
+  mofem_approx
+  mofem_cblas
+  mofem_third_party
+  ${PROJECT_LIBS}
+)
+add_test(forces_and_sources_h1_continuity_check_atom
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+  ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_h1_continuity_check -my_file sphere.h5m
+)
+
 # add test for recording series
 my_add_executable(record_series_atom record_series_atom.cpp)
 target_link_libraries(record_series_atom
@@ -480,7 +523,7 @@ target_link_libraries(forces_and_sources_hcurl_continuity_check
 )
 add_test(forces_and_sources_hcurl_continuity_check_atom
   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
-  ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_hdiv_continuity_check -my_file sphere.h5m
+  ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_hcurl_continuity_check -my_file sphere.h5m
 )
 
 # add test for hdiv space
