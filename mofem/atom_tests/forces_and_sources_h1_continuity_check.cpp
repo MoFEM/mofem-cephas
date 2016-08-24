@@ -80,7 +80,7 @@ int main(int argc, char *argv[]) {
 
   //Fields
   ierr = m_field.add_field("MESH_NODE_POSITIONS",H1,3); CHKERRQ(ierr);
-  ierr = m_field.add_field("HCURL",HCURL,1); CHKERRQ(ierr);
+  ierr = m_field.add_field("H1",H1,1); CHKERRQ(ierr);
 
   //FE
   ierr = m_field.add_finite_element("TET_FE"); CHKERRQ(ierr);
@@ -89,24 +89,24 @@ int main(int argc, char *argv[]) {
   ierr = m_field.add_finite_element("EDGE_FE"); CHKERRQ(ierr);
 
   //Define rows/cols and element data
-  ierr = m_field.modify_finite_element_add_field_row("TET_FE","HCURL"); CHKERRQ(ierr);
-  ierr = m_field.modify_finite_element_add_field_col("TET_FE","HCURL"); CHKERRQ(ierr);
-  ierr = m_field.modify_finite_element_add_field_data("TET_FE","HCURL"); CHKERRQ(ierr);
+  ierr = m_field.modify_finite_element_add_field_row("TET_FE","H1"); CHKERRQ(ierr);
+  ierr = m_field.modify_finite_element_add_field_col("TET_FE","H1"); CHKERRQ(ierr);
+  ierr = m_field.modify_finite_element_add_field_data("TET_FE","H1"); CHKERRQ(ierr);
   ierr = m_field.modify_finite_element_add_field_data("TET_FE","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
 
-  ierr = m_field.modify_finite_element_add_field_row("SKIN_FE","HCURL"); CHKERRQ(ierr);
-  ierr = m_field.modify_finite_element_add_field_col("SKIN_FE","HCURL"); CHKERRQ(ierr);
-  ierr = m_field.modify_finite_element_add_field_data("SKIN_FE","HCURL"); CHKERRQ(ierr);
+  ierr = m_field.modify_finite_element_add_field_row("SKIN_FE","H1"); CHKERRQ(ierr);
+  ierr = m_field.modify_finite_element_add_field_col("SKIN_FE","H1"); CHKERRQ(ierr);
+  ierr = m_field.modify_finite_element_add_field_data("SKIN_FE","H1"); CHKERRQ(ierr);
   ierr = m_field.modify_finite_element_add_field_data("SKIN_FE","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
 
-  ierr = m_field.modify_finite_element_add_field_row("TRI_FE","HCURL"); CHKERRQ(ierr);
-  ierr = m_field.modify_finite_element_add_field_col("TRI_FE","HCURL"); CHKERRQ(ierr);
-  ierr = m_field.modify_finite_element_add_field_data("TRI_FE","HCURL"); CHKERRQ(ierr);
+  ierr = m_field.modify_finite_element_add_field_row("TRI_FE","H1"); CHKERRQ(ierr);
+  ierr = m_field.modify_finite_element_add_field_col("TRI_FE","H1"); CHKERRQ(ierr);
+  ierr = m_field.modify_finite_element_add_field_data("TRI_FE","H1"); CHKERRQ(ierr);
   ierr = m_field.modify_finite_element_add_field_data("TRI_FE","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
 
-  ierr = m_field.modify_finite_element_add_field_row("EDGE_FE","HCURL"); CHKERRQ(ierr);
-  ierr = m_field.modify_finite_element_add_field_col("EDGE_FE","HCURL"); CHKERRQ(ierr);
-  ierr = m_field.modify_finite_element_add_field_data("EDGE_FE","HCURL"); CHKERRQ(ierr);
+  ierr = m_field.modify_finite_element_add_field_row("EDGE_FE","H1"); CHKERRQ(ierr);
+  ierr = m_field.modify_finite_element_add_field_col("EDGE_FE","H1"); CHKERRQ(ierr);
+  ierr = m_field.modify_finite_element_add_field_data("EDGE_FE","H1"); CHKERRQ(ierr);
   ierr = m_field.modify_finite_element_add_field_data("EDGE_FE","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
 
   //Problem
@@ -124,7 +124,7 @@ int main(int argc, char *argv[]) {
   //meshset consisting all entities in mesh
   EntityHandle root_set = moab.get_root_set();
   //add entities to field
-  ierr = m_field.add_ents_to_field_by_TETs(root_set,"HCURL"); CHKERRQ(ierr);
+  ierr = m_field.add_ents_to_field_by_TETs(root_set,"H1"); CHKERRQ(ierr);
 
   //add entities to finite element
   ierr = m_field.add_ents_to_finite_element_by_TETs(root_set,"TET_FE"); CHKERRQ(ierr);
@@ -150,9 +150,9 @@ int main(int argc, char *argv[]) {
 
   //set app. order
   int order = 4;
-  ierr = m_field.set_field_order(root_set,MBTET,"HCURL",order); CHKERRQ(ierr);
-  ierr = m_field.set_field_order(root_set,MBTRI,"HCURL",order); CHKERRQ(ierr);
-  ierr = m_field.set_field_order(root_set,MBEDGE,"HCURL",order); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(root_set,MBTET,"H1",order); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(root_set,MBTRI,"H1",order); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(root_set,MBEDGE,"H1",order); CHKERRQ(ierr);
 
 
   ierr = m_field.add_ents_to_field_by_TETs(0,"MESH_NODE_POSITIONS"); CHKERRQ(ierr);
@@ -203,7 +203,7 @@ int main(int argc, char *argv[]) {
     Tag tH;
 
     OpTetFluxes(MoFEM::Interface &m_field,Tag th):
-      VolumeElementForcesAndSourcesCore::UserDataOperator("HCURL",UserDataOperator::OPROW),
+      VolumeElementForcesAndSourcesCore::UserDataOperator("H1",UserDataOperator::OPROW),
       mField(m_field),tH(th) {}
 
     PetscErrorCode doWork(
@@ -223,21 +223,15 @@ int main(int argc, char *argv[]) {
         EntityHandle face = side_table.get<1>().find(boost::make_tuple(type,side))->get()->ent;
         int sense = side_table.get<1>().find(boost::make_tuple(type,side))->get()->sense;
 
-        // cerr << data.getHcurlN() << endl;
-
-        ublas::vector<double> t(3,0);
-        int nb_dofs = data.getHcurlN().size2()/3;
+        double t = 0;
+        int nb_dofs = data.getN().size2();
         for(int dd = 0;dd<nb_dofs;dd++) {
-          for(int ddd = 0;ddd<3;ddd++) {
-            t(ddd) += data.getHcurlN(side)(dd,ddd)*data.getFieldData()[dd];
-          }
+            t += data.getN(side)(dd)*data.getFieldData()[dd];
         }
 
         double *t_ptr;
         rval = mField.get_moab().tag_get_by_ptr(tH,&face,1,(const void **)&t_ptr); CHKERRQ_MOAB(rval);
-        for(int dd = 0;dd<3;dd++) {
-          t_ptr[dd] += sense*t[dd];
-        }
+        *t_ptr += sense*t;
 
       }
 
@@ -250,19 +244,15 @@ int main(int argc, char *argv[]) {
         rval = mField.get_moab().get_adjacencies(&edge,1,3,false,adj_tets,moab::Interface::UNION);
         const int nb_adj_tets = adj_tets.size();
 
-        ublas::vector<double> t(3,0);
-        int nb_dofs = data.getHcurlN().size2()/3;
+        double t = 0;
+        int nb_dofs = data.getN().size2();
         for(int dd = 0;dd<nb_dofs;dd++) {
-          for(int ddd = 0;ddd<3;ddd++) {
-            t(ddd) += data.getHcurlN(4+side)(dd,ddd)*data.getFieldData()[dd];
-          }
+          t += data.getN(4+side)(dd)*data.getFieldData()[dd];
         }
 
         double *t_ptr;
         rval = mField.get_moab().tag_get_by_ptr(tH,&edge,1,(const void **)&t_ptr); CHKERRQ_MOAB(rval);
-        for(int dd = 0;dd<3;dd++) {
-          t_ptr[dd] += t[dd]/nb_adj_tets;
-        }
+        *t_ptr += t/nb_adj_tets;
 
       }
 
@@ -326,7 +316,7 @@ int main(int argc, char *argv[]) {
     TeeStream &mySplit;
 
     OpFacesSkinFluxes(MoFEM::Interface &m_field,Tag th1,Tag th2,TeeStream &my_split):
-      FaceElementForcesAndSourcesCore::UserDataOperator("HCURL",UserDataOperator::OPROW),
+      FaceElementForcesAndSourcesCore::UserDataOperator("H1",UserDataOperator::OPROW),
       mField(m_field),
       tH1(th1),
       tH2(th2),
@@ -339,9 +329,7 @@ int main(int argc, char *argv[]) {
       PetscFunctionBegin;
 
       MoABErrorCode rval;
-
       if(type != MBTRI) PetscFunctionReturn(0);
-
       EntityHandle face = getNumeredEntFiniteElementPtr()->getEnt();
 
       double *t_ptr;
@@ -349,21 +337,13 @@ int main(int argc, char *argv[]) {
       double *tn_ptr;
       rval = mField.get_moab().tag_get_by_ptr(tH2,&face,1,(const void **)&tn_ptr); CHKERRQ_MOAB(rval);
 
-      *tn_ptr =
-      getTangent1_at_GaussPt()(0,0)*t_ptr[0]+getTangent1_at_GaussPt()(0,1)*t_ptr[1]+getTangent1_at_GaussPt()(0,2)*t_ptr[2]+
-      getTangent2_at_GaussPt()(0,0)*t_ptr[0]+getTangent2_at_GaussPt()(0,1)*t_ptr[1]+getTangent2_at_GaussPt()(0,2)*t_ptr[2];
+      *tn_ptr = *t_ptr;
 
-      int nb_dofs = data.getHcurlN().size2()/3;
       int dd = 0;
+      int nb_dofs = data.getN().size2();
       for(;dd<nb_dofs;dd++) {
         double val = data.getFieldData()[dd];
-        *tn_ptr +=
-        -getTangent1_at_GaussPt()(0,0)*data.getHcurlN()(0,3*dd+0)*val
-        -getTangent1_at_GaussPt()(0,1)*data.getHcurlN()(0,3*dd+1)*val
-        -getTangent1_at_GaussPt()(0,2)*data.getHcurlN()(0,3*dd+2)*val
-        -getTangent2_at_GaussPt()(0,0)*data.getHcurlN()(0,3*dd+0)*val
-        -getTangent2_at_GaussPt()(0,1)*data.getHcurlN()(0,3*dd+1)*val
-        -getTangent2_at_GaussPt()(0,2)*data.getHcurlN()(0,3*dd+2)*val;
+        *tn_ptr += -data.getN()(0,dd)*val;
       }
 
       const double eps = 1e-8;
@@ -371,7 +351,7 @@ int main(int argc, char *argv[]) {
         SETERRQ1(
           PETSC_COMM_SELF,
           MOFEM_ATOM_TEST_INVALID,
-          "HCurl continuity failed %6.4e",
+          "H1 continuity failed %6.4e",
           *tn_ptr
         );
       }
@@ -391,7 +371,7 @@ int main(int argc, char *argv[]) {
     TeeStream &mySplit;
 
     OpFacesFluxes(MoFEM::Interface &m_field,Tag _th1,Tag _th2,TeeStream &my_split):
-      FaceElementForcesAndSourcesCore::UserDataOperator("HCURL",UserDataOperator::OPROW),
+      FaceElementForcesAndSourcesCore::UserDataOperator("H1",UserDataOperator::OPROW),
       mField(m_field),tH1(_th1),tH2(_th2),mySplit(my_split) {}
 
     PetscErrorCode doWork(
@@ -411,16 +391,14 @@ int main(int argc, char *argv[]) {
       double *tn_ptr;
       rval = mField.get_moab().tag_get_by_ptr(tH2,&face,1,(const void **)&tn_ptr); CHKERRQ_MOAB(rval);
 
-      *tn_ptr =
-      getTangent1_at_GaussPt()(0,0)*t_ptr[0]+getTangent1_at_GaussPt()(0,1)*t_ptr[1]+getTangent1_at_GaussPt()(0,2)*t_ptr[2]+
-      getTangent2_at_GaussPt()(0,0)*t_ptr[0]+getTangent2_at_GaussPt()(0,1)*t_ptr[1]+getTangent2_at_GaussPt()(0,2)*t_ptr[2];
+      *tn_ptr = *t_ptr;
 
       const double eps = 1e-8;
       if(fabs(*tn_ptr)>eps) {
         SETERRQ1(
           PETSC_COMM_SELF,
           MOFEM_ATOM_TEST_INVALID,
-          "HCurl continuity failed %6.4e",
+          "H1 continuity failed %6.4e",
           *tn_ptr
         );
       }
@@ -459,7 +437,7 @@ int main(int argc, char *argv[]) {
     TeeStream &mySplit;
 
     OpEdgesFluxes(MoFEM::Interface &m_field,Tag _th1,Tag _th2,TeeStream &my_split):
-      EdgeElementForcesAndSurcesCore::UserDataOperator("HCURL",UserDataOperator::OPROW),
+      EdgeElementForcesAndSurcesCore::UserDataOperator("H1",UserDataOperator::OPROW),
       mField(m_field),tH1(_th1),tH2(_th2),mySplit(my_split) {}
 
     PetscErrorCode doWork(
@@ -479,20 +457,14 @@ int main(int argc, char *argv[]) {
       double *tn_ptr;
       rval = mField.get_moab().tag_get_by_ptr(tH2,&edge,1,(const void **)&tn_ptr); CHKERRQ_MOAB(rval);
 
-      *tn_ptr =
-      getTangetAtGaussPts()(0,0)*t_ptr[0]+
-      getTangetAtGaussPts()(0,1)*t_ptr[1]+
-      getTangetAtGaussPts()(0,2)*t_ptr[2];
+      *tn_ptr = *t_ptr;
 
       double tn = 0;
-      int nb_dofs = data.getHcurlN().size2()/3;
+      int nb_dofs = data.getN().size2();
       int dd = 0;
       for(;dd<nb_dofs;dd++) {
         double val = data.getFieldData()[dd];
-        tn +=
-        getTangetAtGaussPts()(0,0)*data.getHcurlN()(0,3*dd+0)*val+
-        getTangetAtGaussPts()(0,1)*data.getHcurlN()(0,3*dd+1)*val+
-        getTangetAtGaussPts()(0,2)*data.getHcurlN()(0,3*dd+2)*val;
+        tn += data.getN()(0,dd)*val;
       }
 
       // mySplit << *tn_ptr << "  " << tn << " " << getLength() << endl;
@@ -502,15 +474,15 @@ int main(int argc, char *argv[]) {
 
       // cerr << t_ptr[0] << " " << t_ptr[1] << " " << t_ptr[2] << endl;
 
-      const double eps = 1e-8;
-      if(fabs(*tn_ptr)>eps) {
-        SETERRQ1(
-          PETSC_COMM_SELF,
-          MOFEM_ATOM_TEST_INVALID,
-          "HCurl continuity failed %6.4e",
-          *tn_ptr
-        );
-      }
+      // const double eps = 1e-8;
+      // if(fabs(*tn_ptr)>eps) {
+      //   SETERRQ1(
+      //     PETSC_COMM_SELF,
+      //     MOFEM_ATOM_TEST_INVALID,
+      //     "H1 continuity failed %6.4e",
+      //     *tn_ptr
+      //   );
+      // }
 
       mySplit.precision(5);
 
