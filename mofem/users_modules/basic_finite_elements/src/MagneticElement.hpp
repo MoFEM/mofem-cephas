@@ -21,6 +21,15 @@
 #ifndef __MAGNETICELEMENT_HPP__
 #define __MAGNETICELEMENT_HPP__
 
+/**
+ * \brief Implementation of magnetostatic problem (basic Implementation)
+ *
+ *  Look for theory and details here:
+ *
+ *  \cite ivanyshyn2013computation
+ *  <www.hpfem.jku.at/publications/szthesis.pdf>
+ *
+ */
 struct MagneticElement {
 
   MoFEM::Interface &mField;
@@ -49,8 +58,6 @@ struct MagneticElement {
 
   };
   virtual ~MagneticElement() {}
-
-
 
   /**
    * \brief data structure storing material constants, model parameters, matrices, etc.
@@ -101,7 +108,9 @@ struct MagneticElement {
       if(bit->getName().compare(0,9,"NATURALBC") == 0) {
         Range faces;
         rval = mField.get_moab().get_entities_by_type(bit->meshset,MBTRI,faces,true); CHKERRQ_MOAB(rval);
-        rval = mField.get_moab().get_adjacencies(faces,1,true,blockData.naturalBc,moab::Interface::UNION); CHKERRQ_MOAB(rval);
+        rval = mField.get_moab().get_adjacencies(
+          faces,1,true,blockData.naturalBc,moab::Interface::UNION
+        ); CHKERRQ_MOAB(rval);
         blockData.naturalBc.merge(faces);
       }
     }
@@ -119,7 +128,9 @@ struct MagneticElement {
       if(bit->getName().compare(0,10,"ESSENTIALBC") == 0) {
         Range faces;
         rval = mField.get_moab().get_entities_by_type(bit->meshset,MBTRI,faces,true); CHKERRQ_MOAB(rval);
-        rval = mField.get_moab().get_adjacencies(faces,1,true,blockData.essentialBc,moab::Interface::UNION); CHKERRQ_MOAB(rval);
+        rval = mField.get_moab().get_adjacencies(
+          faces,1,true,blockData.essentialBc,moab::Interface::UNION
+        ); CHKERRQ_MOAB(rval);
         blockData.essentialBc.merge(faces);
       }
     }
@@ -278,7 +289,6 @@ struct MagneticElement {
     PostProcVolumeOnRefinedMesh post_proc(mField);
     ierr = post_proc.generateReferenceElementMesh(); CHKERRQ(ierr);
     ierr = post_proc.addFieldValuesPostProc(blockData.fieldName); CHKERRQ(ierr);
-    ierr = post_proc.addFieldValuesGradientPostProc(blockData.fieldName); CHKERRQ(ierr);
     ierr = DMoFEMLoopFiniteElements(blockData.dM,blockData.feName.c_str(),&post_proc); CHKERRQ(ierr);
     ierr = post_proc.writeFile("out_values.h5m"); CHKERRQ(ierr);
     PetscFunctionReturn(0);
@@ -290,12 +300,8 @@ struct MagneticElement {
   struct OpCurlCurl: public MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator {
 
     BlockData &blockData;
-    OpCurlCurl(
-      BlockData &data
-    ):
-    MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator(
-      data.fieldName,UserDataOperator::OPROWCOL
-    ),
+    OpCurlCurl(BlockData &data):
+    MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator(data.fieldName,UserDataOperator::OPROWCOL),
     blockData(data) {
     }
     virtual ~OpCurlCurl() {}
@@ -440,6 +446,69 @@ struct MagneticElement {
         ADD_VALUES
       ); CHKERRQ(ierr);
 
+      PetscFunctionReturn(0);
+    }
+
+  };
+
+  /** \brief calculate and assemble CurlCurl matrix
+  */
+  struct OpPostProcessCurl: public MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator {
+
+    BlockData &blockData;
+    moab::Interface &postProcMesh;
+    std::vector<EntityHandle> &mapGaussPts;
+
+    OpPostProcessCurl(
+      BlockData &data,
+      moab::Interface &post_proc_mesh,
+      std::vector<EntityHandle> &map_gauss_pts
+    ):
+    MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator(
+      data.fieldName,UserDataOperator::OPROW
+    ),
+    blockData(data),
+    postProcMesh(post_proc_mesh),
+    mapGaussPts(map_gauss_pts) {
+    }
+    virtual ~OpPostProcessCurl() {}
+
+    PetscErrorCode doWork(
+      int row_side,EntityType row_type,DataForcesAndSurcesCore::EntData &row_data
+    ) {
+      PetscErrorCode ierr;
+      MoABErrorCode rval;
+      PetscFunctionBegin;
+      Tag th;
+      double def_val[] = { 0,0,0 };
+      rval = postProcMesh.tag_get_handle(
+        "MAGNETIC_INDUCTION_FIELD",3,MB_TYPE_DOUBLE,th,MB_TAG_CREAT|MB_TAG_SPARSE,def_val
+      ); CHKERRQ_MOAB(rval);
+      const int nb_row_dofs = row_data.getHcurlN().size2()/3;
+      if(nb_row_dofs==0) PetscFunctionReturn(0);
+      const void* tags_ptr[mapGaussPts.size()];
+      rval = postProcMesh.tag_get_by_ptr(
+        th,&mapGaussPts[0],mapGaussPts.size(),tags_ptr
+      ); CHKERRQ_MOAB(rval);
+      double *ptr = (double*)tags_ptr;
+      FTensor::Tensor1<double*,3> t_curl(ptr,&ptr[1],&ptr[2],3);
+      MatrixDouble row_curl_mat,col_curl_mat;
+      FTensor::Index<'i',3> i;
+      const int nb_gauss_pts = row_data.getHcurlN().size1();
+      for(int gg = 0;gg!=nb_gauss_pts;gg++) {
+        ierr = getCurlOfHCurlBaseFunctions(
+          row_side,row_type,row_data,gg,row_curl_mat
+        ); CHKERRQ(ierr);
+        t_curl(i) = 0;
+        FTensor::Tensor1<double*,3> t_base_curl(
+          &row_curl_mat(0,HCURL0),&row_curl_mat(0,HCURL1),&row_curl_mat(0,HCURL2),3
+        );
+        for(int aa = 0;aa!=nb_row_dofs;aa++) {
+          t_curl(i) += row_data.getFieldData()[aa]*t_base_curl(i);
+          ++t_base_curl;
+        }
+        ++t_curl;
+      }
       PetscFunctionReturn(0);
     }
 
