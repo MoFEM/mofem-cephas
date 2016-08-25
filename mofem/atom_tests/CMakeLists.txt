@@ -573,9 +573,23 @@ target_link_libraries(forces_and_sources_hdiv_divergence_operator
   mofem_third_party
   ${PROJECT_LIBS}
 )
-
 add_test(forces_and_sources_hdiv_divergence_operator_atom
   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_hdiv_divergence_operator
+)
+
+# add test for hcurl curl operator
+my_add_executable(forces_and_sources_hcurl_curl_operator forces_and_sources_hcurl_curl_operator.cpp)
+target_link_libraries(forces_and_sources_hcurl_curl_operator
+  mofem_finite_elements
+  mofem_interfaces
+  mofem_multi_indices
+  mofem_approx
+  mofem_cblas
+  mofem_third_party
+  ${PROJECT_LIBS}
+)
+add_test(forces_and_sources_hcurl_curl_operator_atom
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_hcurl_curl_operator
 )
 
 #dm

@@ -397,7 +397,7 @@ struct UltraWeakTransportElement {
             w *= getHoGaussPtsDetJac()(gg);
           }
 
-          ierr = getDivergenceMatrixOperator_Hdiv(side,type,data,gg,div_vec); CHKERRQ(ierr);
+          ierr = getDivergenceOfHDivBaseFunctions(side,type,data,gg,div_vec); CHKERRQ(ierr);
 
           noalias(Nf) -= w*div_vec*cTx.valuesAtGaussPts[gg];
 
@@ -479,7 +479,7 @@ struct UltraWeakTransportElement {
             w *= getHoGaussPtsDetJac()(gg);
           }
 
-          ierr = getDivergenceMatrixOperator_Hdiv(
+          ierr = getDivergenceOfHDivBaseFunctions(
             col_side,col_type,col_data,gg,div_vec
           ); CHKERRQ(ierr);
 
@@ -892,7 +892,7 @@ struct UltraWeakTransportElement {
       div_vec.resize(nb_dofs);
       for(int gg = 0;gg<nb_gauss_pts;gg++) {
 
-        ierr = getDivergenceMatrixOperator_Hdiv(side,type,data,gg,div_vec); CHKERRQ(ierr);
+        ierr = getDivergenceOfHDivBaseFunctions(side,type,data,gg,div_vec); CHKERRQ(ierr);
         cTx.divergenceAtGaussPts[gg] += inner_prod(div_vec,data.getFieldData());
         noalias(cTx.fluxesAtGaussPts[gg]) += prod( trans(data.getHdivN(gg)), data.getFieldData());
 

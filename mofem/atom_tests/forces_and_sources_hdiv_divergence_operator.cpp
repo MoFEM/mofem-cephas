@@ -122,9 +122,10 @@ int main(int argc, char *argv[]) {
 
   struct OpTetDivergence: public VolumeElementForcesAndSourcesCore::UserDataOperator {
 
-    FieldData &dIv;
-    OpTetDivergence(FieldData &div):
-      VolumeElementForcesAndSourcesCore::UserDataOperator("HDIV",UserDataOperator::OPROW),dIv(div) {}
+    double &dIv;
+    OpTetDivergence(double &div):
+    VolumeElementForcesAndSourcesCore::UserDataOperator("HDIV",UserDataOperator::OPROW),
+    dIv(div) {}
 
     PetscErrorCode doWork(
       int side,
@@ -149,7 +150,7 @@ int main(int argc, char *argv[]) {
 
       int gg = 0;
       for(;gg<nb_gauss_pts;gg++) {
-        ierr = getDivergenceMatrixOperator_Hdiv(side,type,data,gg,div_vec); CHKERRQ(ierr);
+        ierr = getDivergenceOfHDivBaseFunctions(side,type,data,gg,div_vec); CHKERRQ(ierr);
         //cout << std::fixed << div_vec << std::endl;
         unsigned int dd = 0;
         for(;dd<div_vec.size();dd++) {
@@ -191,8 +192,8 @@ int main(int argc, char *argv[]) {
 
     double &dIv;
     OpFacesFluxes(double &div):
-      FaceElementForcesAndSourcesCore::UserDataOperator("HDIV",UserDataOperator::OPROW),
-      dIv(div) {}
+    FaceElementForcesAndSourcesCore::UserDataOperator("HDIV",UserDataOperator::OPROW),
+    dIv(div) {}
 
     PetscErrorCode doWork(
       int side,
@@ -310,10 +311,13 @@ int main(int argc, char *argv[]) {
   std::cout << "divergence_skin " << divergence_skin << std::endl;
 
   if(fabs(divergence_skin-divergence_vol)>eps) {
-     SETERRQ2(PETSC_COMM_SELF,MOFEM_ATOM_TEST_INVALID,"invalid surface flux or divergence or both\n",
-	divergence_skin,divergence_vol);
+     SETERRQ2(
+       PETSC_COMM_SELF,
+       MOFEM_ATOM_TEST_INVALID,
+       "invalid surface flux or divergence or both\n",
+	    divergence_skin,divergence_vol
+    );
   }
-
 
   ierr = PetscFinalize(); CHKERRQ(ierr);
 }

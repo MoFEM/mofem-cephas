@@ -160,10 +160,44 @@ struct VolumeElementForcesAndSourcesCore: public ForcesAndSurcesCore {
       return static_cast<VolumeElementForcesAndSourcesCore*>(ptrFE);
     }
 
-    //differential operators
-    PetscErrorCode getDivergenceMatrixOperator_Hdiv(
-      int side,EntityType type,DataForcesAndSurcesCore::EntData &data,
-      int gg,VectorDouble &div
+    /**
+     * \brief Get divergence of base functions at integration point
+     *
+     * Works only for H-div space.
+     *
+     * @param  side side (local) number of entity on element
+     * @param  type type of entity
+     * @param  data data structure
+     * @param  gg   gauss pts
+     * @param  div  divergence vector, size of vector is equal to number of base functions
+     * @return      error code
+     */
+    PetscErrorCode getDivergenceOfHDivBaseFunctions(
+      int side,
+      EntityType type,
+      DataForcesAndSurcesCore::EntData &data,
+      int gg,
+      VectorDouble &div
+    );
+
+    /**
+     * \brief Get curl of base functions at integration point
+     *
+     * Works only for H-curl space.
+     *
+     * @param  side side (local) number of entity on element
+     * @param  type type of entity
+     * @param  data data structure
+     * @param  gg   gauss pts
+     * @param  curl curl matrix, nb. of rows is equal to number of base functions, columns are curl of base vector
+     * @return      error code
+     */
+    PetscErrorCode getCurlOfHCurlBaseFunctions(
+      int side,
+      EntityType type,
+      DataForcesAndSurcesCore::EntData &data,
+      int gg,
+      MatrixDouble &curl
     );
 
   };

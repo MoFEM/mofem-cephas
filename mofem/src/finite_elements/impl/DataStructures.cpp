@@ -496,8 +496,8 @@ FTensor::Tensor1<double*,3> DataForcesAndSurcesCore::EntData::getFTensor1HdivN<3
   double *t_n_ptr = &*getHdivN(base).data().begin();
   return FTensor::Tensor1<double*,3>(
     t_n_ptr, //HDIV0
-    &t_n_ptr[DataForcesAndSurcesCore::HDIV1],
-    &t_n_ptr[DataForcesAndSurcesCore::HDIV2],3
+    &t_n_ptr[HDIV1],
+    &t_n_ptr[HDIV2],3
   );
 }
 
@@ -513,14 +513,14 @@ FTensor::Tensor2<double*,3,3> DataForcesAndSurcesCore::EntData::getFTensor2DiffH
   double *t_diff_n_ptr = &*getDiffHdivN(base).data().begin();
   return FTensor::Tensor2<double*,3,3>(
     t_diff_n_ptr,
-    &t_diff_n_ptr[DataForcesAndSurcesCore::HDIV0_1],
-    &t_diff_n_ptr[DataForcesAndSurcesCore::HDIV0_2],
-    &t_diff_n_ptr[DataForcesAndSurcesCore::HDIV1_0],
-    &t_diff_n_ptr[DataForcesAndSurcesCore::HDIV1_1],
-    &t_diff_n_ptr[DataForcesAndSurcesCore::HDIV1_2],
-    &t_diff_n_ptr[DataForcesAndSurcesCore::HDIV2_0],
-    &t_diff_n_ptr[DataForcesAndSurcesCore::HDIV2_1],
-    &t_diff_n_ptr[DataForcesAndSurcesCore::HDIV2_2],9
+    &t_diff_n_ptr[HDIV0_1],
+    &t_diff_n_ptr[HDIV0_2],
+    &t_diff_n_ptr[HDIV1_0],
+    &t_diff_n_ptr[HDIV1_1],
+    &t_diff_n_ptr[HDIV1_2],
+    &t_diff_n_ptr[HDIV2_0],
+    &t_diff_n_ptr[HDIV2_1],
+    &t_diff_n_ptr[HDIV2_2],9
   );
 }
 
