@@ -923,14 +923,20 @@ PetscErrorCode MoFEM::Hcurl_FaceFunctions_MBTET(
     double *phi_f_e[4][3];
     double *diff_phi_f_e[4][3];
     for(int ff = 0;ff!=4;ff++) {
-
-      base_face_edge_functions[ff].resize(3,3*NBFACETRI_EDGE_HCURL(p[ff])*nb_integration_pts);
-      diff_base_face_edge_functions[ff].resize(3,9*NBFACETRI_EDGE_HCURL(p[ff])*nb_integration_pts);
-      // base_face_edge_functions[ff].clear();
-      // diff_base_face_edge_functions[ff].clear();
-      for(int ee = 0;ee!=3;ee++) {
-        phi_f_e[ff][ee] = &base_face_edge_functions[ff](ee,0);
-        diff_phi_f_e[ff][ee] = &diff_base_face_edge_functions[ff](ee,0);
+      if(NBFACETRI_EDGE_HCURL(p[ff])==0) {
+        for(int ee = 0;ee!=3;ee++) {
+          phi_f_e[ff][ee] = NULL;
+          diff_phi_f_e[ff][ee] = NULL;
+        }
+      } else {
+        base_face_edge_functions[ff].resize(3,3*NBFACETRI_EDGE_HCURL(p[ff])*nb_integration_pts);
+        diff_base_face_edge_functions[ff].resize(3,9*NBFACETRI_EDGE_HCURL(p[ff])*nb_integration_pts);
+        // base_face_edge_functions[ff].clear();
+        // diff_base_face_edge_functions[ff].clear();
+        for(int ee = 0;ee!=3;ee++) {
+          phi_f_e[ff][ee] = &base_face_edge_functions[ff](ee,0);
+          diff_phi_f_e[ff][ee] = &diff_base_face_edge_functions[ff](ee,0);
+        }
       }
     }
     ierr = Hcurl_EdgeBasedFaceFunctions_MBTET(
@@ -943,10 +949,15 @@ PetscErrorCode MoFEM::Hcurl_FaceFunctions_MBTET(
     double *diff_phi_f_f[4];
     for(int ff=0;ff!=4;ff++) {
       int nb_dofs = NBFACETRI_FACE_HCURL(p[ff]);
-      base_face_bubble_functions[ff].resize(3*nb_dofs*nb_integration_pts,false);
-      diff_base_face_bubble_functions[ff].resize(9*nb_dofs*nb_integration_pts,false);
-      phi_f_f[ff] = &*base_face_bubble_functions[ff].data().begin();
-      diff_phi_f_f[ff] = &*diff_base_face_bubble_functions[ff].data().begin();
+      if(nb_dofs==0) {
+        phi_f_f[ff] = NULL;
+        diff_phi_f_f[ff] = NULL;
+      } else {
+        base_face_bubble_functions[ff].resize(3*nb_dofs*nb_integration_pts,false);
+        diff_base_face_bubble_functions[ff].resize(9*nb_dofs*nb_integration_pts,false);
+        phi_f_f[ff] = &*base_face_bubble_functions[ff].data().begin();
+        diff_phi_f_f[ff] = &*diff_base_face_bubble_functions[ff].data().begin();
+      }
     }
     ierr = Hcurl_BubbleFaceFunctions_MBTET(
       face_nodes,p,N,diffN,phi_f_f,diff_phi_f_f,nb_integration_pts,base_polynomials

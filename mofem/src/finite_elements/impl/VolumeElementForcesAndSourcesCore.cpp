@@ -412,9 +412,9 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::operator()() {
         FTensor::Tensor0<double*> det(&hoGaussPtsDetJac[0]);
         for(int gg = 0;gg!=nbGaussPts;gg++) {
           ierr = determinantTensor3by3(jac,det); CHKERRQ(ierr);
-          if(det<0) {
-            SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"Negative volume");
-          }
+          // if(det<0) {
+          //   SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"Negative volume");
+          // }
           ierr = invertTensor3by3(jac,det,inv_jac); CHKERRQ(ierr);
           ++jac;
           ++inv_jac;
