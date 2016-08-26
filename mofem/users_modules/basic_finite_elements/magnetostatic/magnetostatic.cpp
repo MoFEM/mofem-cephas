@@ -33,9 +33,6 @@ int main(int argc, char *argv[]) {
   moab::Core mb_instance;
   moab::Interface& moab = mb_instance;
 
-  PetscBool flg = PETSC_TRUE;
-  char mesh_file_name[255];
-
   ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
   if(pcomm == NULL) pcomm =  new ParallelComm(&moab,PETSC_COMM_WORLD);
 
@@ -45,25 +42,24 @@ int main(int argc, char *argv[]) {
   PetscInt order = 2;
   PetscBool is_partitioned = PETSC_FALSE;
 
-  {
-    ierr = PetscOptionsBegin(
-      PETSC_COMM_WORLD,"","Shell prism configure","none"
-    ); CHKERRQ(ierr);
-    ierr = PetscOptionsString(
-      "-my_file",
-      "mesh file name","", "mesh.h5m",mesh_file_name, 255, &flg_file
-    ); CHKERRQ(ierr);
-    ierr = PetscOptionsInt(
-      "-my_order",
-      "default approximation order",
-      "",order,&order,PETSC_NULL
-    ); CHKERRQ(ierr);
-    ierr = PetscOptionsBool(
-      "-my_is_partitioned",
-      "set if mesh is partitioned (this result that each process keeps only part of the mesh",
-      "",PETSC_FALSE,&is_partitioned,PETSC_NULL
-    ); CHKERRQ(ierr);
-  }
+  ierr = PetscOptionsBegin(
+    PETSC_COMM_WORLD,"","Shell prism configure","none"
+  ); CHKERRQ(ierr);
+  ierr = PetscOptionsString(
+    "-my_file",
+    "mesh file name","", "mesh.h5m",mesh_file_name, 255, &flg_file
+  ); CHKERRQ(ierr);
+  ierr = PetscOptionsInt(
+    "-my_order",
+    "default approximation order",
+    "",order,&order,PETSC_NULL
+  ); CHKERRQ(ierr);
+  ierr = PetscOptionsBool(
+    "-my_is_partitioned",
+    "set if mesh is partitioned (this result that each process keeps only part of the mesh)",
+    "",PETSC_FALSE,&is_partitioned,PETSC_NULL
+  ); CHKERRQ(ierr);
+  ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
   if(is_partitioned == PETSC_TRUE) {
     //Read mesh to MOAB
@@ -89,7 +85,7 @@ int main(int argc, char *argv[]) {
   ierr = magnetic.getEssentialBc(); CHKERRQ(ierr);
   ierr = magnetic.createFields(); CHKERRQ(ierr);
   ierr = magnetic.createElements(); CHKERRQ(ierr);
-  ierr = magnetic.reateProblem(); CHKERRQ(ierr);
+  ierr = magnetic.createProblem(); CHKERRQ(ierr);
   ierr = magnetic.solveProblem(); CHKERRQ(ierr);
   ierr = magnetic.postProcessResults(); CHKERRQ(ierr);
   ierr = magnetic.destroyProblem(); CHKERRQ(ierr);

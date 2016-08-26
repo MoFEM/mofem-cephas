@@ -16,6 +16,8 @@ file(
   ${CMAKE_CURRENT_SOURCE_DIR}/README
   DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/
 )
+cm_export_file("magnetic_coil.cub" export_files_magneto_static)
+cm_export_file("magnetic_coil.jou" export_files_magneto_static)
 
 
 # For convinience source files from MoFEM project are used. If user is

@@ -1,0 +1,16 @@
+reset
+
+brick x 10 y 10 z 10
+create Cylinder height 4 radius 2 
+chop volume 1 with volume 2 
+merge volume all 
+
+block 1 surface 7
+block 1 name 'NATURALBC'
+
+volume all size auto factor 7
+volume all scheme Tetmesh
+mesh volume all
+
+block 2 tet all   
+block 2 element type tetra10
