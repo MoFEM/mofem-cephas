@@ -72,9 +72,9 @@ int main(int argc, char *argv[]) {
   // create one tet
   double tet_coords[] = {
     0,0,0,
-    1,0,0,
-    0,1,0,
-    0,0,1
+    0.5,0,0,
+    0,0.5,0,
+    0,0,0.5
   };
   EntityHandle nodes[4];
   for(int nn = 0;nn<4;nn++) {
@@ -191,9 +191,9 @@ int main(int argc, char *argv[]) {
 
         const int nb_dofs = data.getN().size2();
         for(int dd = 0;dd!=nb_dofs;dd++) {
-          const double dksi = (data.getN()(1,dd)-data.getN()(0,dd))/(2*eps);
-          const double deta = (data.getN()(3,dd)-data.getN()(2,dd))/(2*eps);
-          const double dzeta = (data.getN()(5,dd)-data.getN()(4,dd))/(2*eps);
+          const double dksi = (data.getN()(1,dd)-data.getN()(0,dd))/eps;
+          const double deta = (data.getN()(3,dd)-data.getN()(2,dd))/eps;
+          const double dzeta = (data.getN()(5,dd)-data.getN()(4,dd))/eps;
           mySplit << "DKsi " << dksi-data.getDiffN()(6,3*dd+0) << std::endl;
           mySplit << "DEta " << deta-data.getDiffN()(6,3*dd+1) << std::endl;
           mySplit << "DZeta " << dzeta-data.getDiffN()(6,3*dd+2) << std::endl;
@@ -251,11 +251,11 @@ int main(int argc, char *argv[]) {
         const int nb_dofs = data.getN().size2()/3;
         for(int dd = 0;dd!=nb_dofs;dd++) {
           FTensor::Tensor1<double,3> dksi;
-          dksi(i) = (base_ksi_p(i)-base_ksi_m(i))/(2*eps);
+          dksi(i) = (base_ksi_p(i)-base_ksi_m(i))/eps;
           FTensor::Tensor1<double,3> deta;
-          deta(i) = (base_eta_p(i)-base_eta_m(i))/(2*eps);
+          deta(i) = (base_eta_p(i)-base_eta_m(i))/eps;
           FTensor::Tensor1<double,3> dzeta;
-          dzeta(i) = (base_zeta_p(i)-base_zeta_m(i))/(2*eps);
+          dzeta(i) = (base_zeta_p(i)-base_zeta_m(i))/eps;
 
           dksi(i) -= diff_base(i,N0);
           deta(i) -= diff_base(i,N1);
@@ -265,21 +265,21 @@ int main(int argc, char *argv[]) {
           mySplit << "dEta " << deta(0) << "  " << deta(1) << " " << deta(2) << " " << sqrt(deta(i)*deta(i)) << endl;
           mySplit << "dZeta " << dzeta(0) << "  " << dzeta(1) << " " << dzeta(2) << " " << sqrt(dzeta(i)*dzeta(i)) << endl;
 
-          if(sqrt(dksi(i)*dksi(i))>eps) {
+          if(sqrt(dksi(i)*dksi(i))>eps_diff) {
             SETERRQ1(
               PETSC_COMM_SELF,MOFEM_ATOM_TEST_INVALID,
               "%s inconsistent dKsi derivative",
               FieldSpaceNames[data.getFieldDofs()[0]->getSpace()]
             );
           }
-          if(sqrt(deta(i)*deta(i))>eps) {
+          if(sqrt(deta(i)*deta(i))>eps_diff) {
             SETERRQ1(
               PETSC_COMM_SELF,MOFEM_ATOM_TEST_INVALID,
               "%s inconsistent dEta derivative",
               FieldSpaceNames[data.getFieldDofs()[0]->getSpace()]
             );
           }
-          if(sqrt(dzeta(i)*dzeta(i))>eps) {
+          if(sqrt(dzeta(i)*dzeta(i))>eps_diff) {
             SETERRQ1(
               PETSC_COMM_SELF,MOFEM_ATOM_TEST_INVALID,
               "%s inconsistent dZeta derivative",

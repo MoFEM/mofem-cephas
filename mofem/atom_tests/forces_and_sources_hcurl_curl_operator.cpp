@@ -37,9 +37,9 @@ int main(int argc, char *argv[]) {
   //create one tet
   double tet_coords[] = {
     0,0,0,
-    1.,0,0,
-    0,1.,0,
-    0,0,1.
+    2.,0,0,
+    0,2.,0,
+    0,0,2.
   };
 
   EntityHandle nodes[4];
