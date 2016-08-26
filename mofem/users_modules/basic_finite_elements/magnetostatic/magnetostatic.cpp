@@ -77,10 +77,9 @@ int main(int argc, char *argv[]) {
   //Create mofem interface
   MoFEM::Core core(moab);
   MoFEM::Interface& m_field = core;
-  //set entities bit level
-  ierr = m_field.seed_ref_level_3D(0,BitRefLevel().set(0)); CHKERRQ(ierr);
 
   MagneticElement magnetic(m_field);
+  magnetic.blockData.oRder = order;
   ierr = magnetic.getNaturalBc(); CHKERRQ(ierr);
   ierr = magnetic.getEssentialBc(); CHKERRQ(ierr);
   ierr = magnetic.createFields(); CHKERRQ(ierr);

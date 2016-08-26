@@ -8,7 +8,7 @@ merge volume all
 block 1 surface 7
 block 1 name 'NATURALBC'
 
-volume all size auto factor 7
+volume all size auto factor 9
 volume all scheme Tetmesh
 mesh volume all
 

@@ -38,7 +38,7 @@ struct MagneticElement {
   struct VolumeFE: public MoFEM::VolumeElementForcesAndSourcesCore {
     VolumeFE(MoFEM::Interface &m_field):
     MoFEM::VolumeElementForcesAndSourcesCore(m_field) {}
-    int getRule(int order) { return 2*order; };
+    int getRule(int order) { return 2*(order-1)+1; };
   };
   VolumeFE feVol;
 
@@ -47,7 +47,7 @@ struct MagneticElement {
     */
   struct TriFE: public MoFEM::FaceElementForcesAndSourcesCore {
     TriFE(MoFEM::Interface &m_field): MoFEM::FaceElementForcesAndSourcesCore(m_field) {}
-    int getRule(int order) { return 2*order; };
+    int getRule(int order) { return 2*(order-1)+1; };
   };
   TriFE feTri;
 
@@ -90,7 +90,7 @@ struct MagneticElement {
     fieldName("MAGNETIC_POTENTIAL"),
     feName("MAGNETIC"),
     feNaturalBCName("MAGENTIC_NATURAL_BC"),
-    mu(M_PI*4e-7) {
+    mu(1) {
     }
     ~BlockData() {}
   };
@@ -139,7 +139,11 @@ struct MagneticElement {
       rval = mField.get_moab().get_entities_by_type(0,MBTET,tets); CHKERRQ_MOAB(rval);
       Skinner skin(&mField.get_moab());
       Range skin_faces; // skin faces from 3d ents
-      rval = skin.find_skin(0,tets,false,blockData.essentialBc); CHKERR_MOAB(rval);
+      rval = skin.find_skin(0,tets,false,skin_faces); CHKERR_MOAB(rval);
+      rval = mField.get_moab().get_adjacencies(
+        skin_faces,1,true,blockData.essentialBc,moab::Interface::UNION
+      ); CHKERRQ_MOAB(rval);
+      blockData.essentialBc.merge(skin_faces);
     }
     PetscFunctionReturn(0);
   }
@@ -151,6 +155,10 @@ struct MagneticElement {
   PetscErrorCode createFields() {
     PetscErrorCode ierr;
     PetscFunctionBegin;
+
+    //set entities bit level
+    ierr = mField.seed_ref_level_3D(0,BitRefLevel().set(0)); CHKERRQ(ierr);
+
     //Fields
     ierr = mField.add_field(blockData.fieldName,HCURL,1); CHKERRQ(ierr);
     ierr = mField.add_field("MESH_NODE_POSITIONS",H1,3); CHKERRQ(ierr);
@@ -168,6 +176,11 @@ struct MagneticElement {
     ierr = mField.set_field_order(root_set,MBVERTEX,"MESH_NODE_POSITIONS",1); CHKERRQ(ierr);
     //build field
     ierr = mField.build_fields(); CHKERRQ(ierr);
+
+    //get HO gemetry for 10 node tets
+    Projection10NodeCoordsOnField ent_method_material(mField,"MESH_NODE_POSITIONS");
+    ierr = mField.loop_dofs("MESH_NODE_POSITIONS",ent_method_material); CHKERRQ(ierr);
+
     PetscFunctionReturn(0);
   }
 
@@ -232,6 +245,21 @@ struct MagneticElement {
     TriFE tri_fe(mField);
     tri_fe.getOpPtrVector().push_back(new OpNaturalBC(blockData));
 
+    ierr = MatZeroEntries(blockData.A); CHKERRQ(ierr);
+    ierr = VecZeroEntries(blockData.F); CHKERRQ(ierr);
+    ierr = VecGhostUpdateBegin(blockData.F,ADD_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+    ierr = VecGhostUpdateEnd(blockData.F,ADD_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+
+    ierr = DMoFEMLoopFiniteElements(blockData.dM,blockData.feName.c_str(),&vol_fe); CHKERRQ(ierr);
+    ierr = DMoFEMLoopFiniteElements(blockData.dM,blockData.feNaturalBCName.c_str(),&tri_fe); CHKERRQ(ierr);
+
+    ierr = MatAssemblyBegin(blockData.A,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+    ierr = MatAssemblyEnd(blockData.A,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+    ierr = VecGhostUpdateBegin(blockData.F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+    ierr = VecGhostUpdateEnd(blockData.F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+    ierr = VecAssemblyBegin(blockData.F); CHKERRQ(ierr);
+    ierr = VecAssemblyEnd(blockData.F); CHKERRQ(ierr);
+
     std::vector<int> dofs_bc_indices;
     const MoFEM::MoFEMProblem *problem_ptr;
     ierr = DMMoFEMGetProblemPtr(blockData.dM,&problem_ptr); CHKERRQ(ierr);
@@ -242,6 +270,8 @@ struct MagneticElement {
         dofs_bc_indices.push_back(dof_ptr->get()->getPetscGlobalDofIdx());
       }
     }
+    cerr << blockData.essentialBc << endl;
+    cerr << dofs_bc_indices.size() << endl;
 
     const double diag = 1;
     ierr = MatZeroRowsColumns(
@@ -253,20 +283,9 @@ struct MagneticElement {
       blockData.F
     ); CHKERRQ(ierr);
 
-    ierr = MatZeroEntries(blockData.A); CHKERRQ(ierr);
-    ierr = DMoFEMLoopFiniteElements(blockData.dM,blockData.feName.c_str(),&vol_fe); CHKERRQ(ierr);
-    ierr = DMoFEMLoopFiniteElements(blockData.dM,blockData.feNaturalBCName.c_str(),&tri_fe); CHKERRQ(ierr);
-
-    ierr = MatAssemblyBegin(blockData.A,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
-    ierr = MatAssemblyEnd(blockData.A,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
-    ierr = VecGhostUpdateBegin(blockData.F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-    ierr = VecGhostUpdateEnd(blockData.F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-    ierr = VecAssemblyBegin(blockData.F); CHKERRQ(ierr);
-    ierr = VecAssemblyEnd(blockData.F); CHKERRQ(ierr);
-
     KSP solver;
     ierr = KSPCreate(PETSC_COMM_WORLD,&solver); CHKERRQ(ierr);
-    ierr = KSPSetDM(solver,blockData.dM); CHKERRQ(ierr);
+    // ierr = KSPSetDM(solver,blockData.dM); CHKERRQ(ierr);
     ierr = KSPSetOperators(solver,blockData.A,blockData.A); CHKERRQ(ierr);
     ierr = KSPSetFromOptions(solver); CHKERRQ(ierr);
     ierr = KSPSetUp(solver); CHKERRQ(ierr);
@@ -276,6 +295,9 @@ struct MagneticElement {
     ierr = KSPDestroy(&solver); CHKERRQ(ierr);
     ierr = VecDestroy(&blockData.F); CHKERRQ(ierr);
     ierr = MatDestroy(&blockData.A); CHKERRQ(ierr);
+
+    ierr = VecGhostUpdateBegin(blockData.D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+    ierr = VecGhostUpdateEnd(blockData.D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
     ierr = DMoFEMMeshToLocalVector(
       blockData.dM,blockData.D,INSERT_VALUES,SCATTER_REVERSE
     ); CHKERRQ(ierr);
@@ -289,6 +311,9 @@ struct MagneticElement {
     PostProcVolumeOnRefinedMesh post_proc(mField);
     ierr = post_proc.generateReferenceElementMesh(); CHKERRQ(ierr);
     ierr = post_proc.addFieldValuesPostProc(blockData.fieldName); CHKERRQ(ierr);
+    post_proc.getOpPtrVector().push_back(
+      new OpPostProcessCurl(blockData,post_proc.postProcMesh,post_proc.mapGaussPts)
+    );
     ierr = DMoFEMLoopFiniteElements(blockData.dM,blockData.feName.c_str(),&post_proc); CHKERRQ(ierr);
     ierr = post_proc.writeFile("out_values.h5m"); CHKERRQ(ierr);
     PetscFunctionReturn(0);
@@ -303,6 +328,7 @@ struct MagneticElement {
     OpCurlCurl(BlockData &data):
     MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator(data.fieldName,UserDataOperator::OPROWCOL),
     blockData(data) {
+      sYmm = false;
     }
     virtual ~OpCurlCurl() {}
 
@@ -317,14 +343,37 @@ struct MagneticElement {
       PetscErrorCode ierr;
       PetscFunctionBegin;
 
+      if(row_type==MBVERTEX) PetscFunctionReturn(0);
+      if(col_type==MBVERTEX) PetscFunctionReturn(0);
+
       const int nb_row_dofs = row_data.getHcurlN().size2()/3;
       if(nb_row_dofs==0) PetscFunctionReturn(0);
       const int nb_col_dofs = col_data.getHcurlN().size2()/3;
       if(nb_col_dofs==0) PetscFunctionReturn(0);
       entityLocalMatrix.resize(nb_row_dofs,nb_col_dofs,false);
+      entityLocalMatrix.clear();
+
+      if(nb_row_dofs!=row_data.getFieldData().size()) {
+        SETERRQ2(
+          PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,
+          "Number of base functions and dofs on entity is different on rows %d!=%d",
+          nb_row_dofs,row_data.getFieldData().size()
+        );
+      }
+      if(nb_col_dofs!=col_data.getFieldData().size()) {
+        SETERRQ2(
+          PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,
+          "Number of base functions and dofs on entity is different on cols",
+          nb_col_dofs,col_data.getFieldData().size()
+        );
+      }
 
       MatrixDouble row_curl_mat,col_curl_mat;
       FTensor::Index<'i',3> i;
+
+      // cerr << row_data.getHcurlN() << endl;
+      // cerr << row_data.getDiffHcurlN() << endl;
+
 
       const int nb_gauss_pts = row_data.getHcurlN().size1();
       for(int gg = 0;gg!=nb_gauss_pts;gg++) {
@@ -342,23 +391,43 @@ struct MagneticElement {
           col_side,col_type,col_data,gg,col_curl_mat
         ); CHKERRQ(ierr);
 
+        // cerr << row_curl_mat << endl;
+        // cerr << col_curl_mat << endl;
+
+        FTensor::Tensor1<const double*,3> t_row_base(
+          &row_data.getHcurlN(gg)(0,HCURL0),
+          &row_data.getHcurlN(gg)(0,HCURL1),
+          &row_data.getHcurlN(gg)(0,HCURL2),3
+        );
+
         FTensor::Tensor1<double*,3> t_row_curl(
           &row_curl_mat(0,HCURL0),&row_curl_mat(0,HCURL1),&row_curl_mat(0,HCURL2),3
         );
         for(int aa = 0;aa!=nb_row_dofs;aa++) {
-          FTensor::Tensor0<double*> t_local_mat(&entityLocalMatrix(aa,0));
+          FTensor::Tensor0<double*> t_local_mat(&entityLocalMatrix(aa,0),1);
           FTensor::Tensor1<double*,3> t_col_curl(
             &col_curl_mat(0,HCURL0),&col_curl_mat(0,HCURL1),&col_curl_mat(0,HCURL2),3
           );
+          FTensor::Tensor1<const double*,3> t_col_base(
+            &col_data.getHcurlN(gg)(0,HCURL0),
+            &col_data.getHcurlN(gg)(0,HCURL1),
+            &col_data.getHcurlN(gg)(0,HCURL2),3
+          );
           for(int bb = 0;bb!=nb_col_dofs;bb++) {
-            t_local_mat += w*t_row_curl(i)*t_col_curl(i);
+            t_local_mat += (1./blockData.mu)*w*t_row_curl(i)*t_col_curl(i);
+            t_local_mat += (1e-2)*w*t_row_base(i)*t_col_base(i);
             ++t_col_curl;
+            ++t_col_base;
             ++t_local_mat;
           }
           ++t_row_curl;
+          ++t_row_base;
         }
 
       }
+
+      // cerr << entityLocalMatrix << endl;
+      // cerr << endl;
 
       ierr = MatSetValues(
         blockData.A,
@@ -367,15 +436,15 @@ struct MagneticElement {
         &entityLocalMatrix(0,0),ADD_VALUES
       ); CHKERRQ(ierr);
 
-      if(row_side != col_side || row_type != col_type) {
-        entityLocalMatrix = trans(entityLocalMatrix);
-        ierr = MatSetValues(
-          blockData.A,
-          nb_col_dofs,&col_data.getIndices()[0],
-          nb_row_dofs,&row_data.getIndices()[0],
-          &entityLocalMatrix(0,0),ADD_VALUES
-        ); CHKERRQ(ierr);
-      }
+      // if(row_side != col_side || row_type != col_type) {
+      //   entityLocalMatrix = trans(entityLocalMatrix);
+      //   ierr = MatSetValues(
+      //     blockData.A,
+      //     nb_col_dofs,&col_data.getIndices()[0],
+      //     nb_row_dofs,&row_data.getIndices()[0],
+      //     &entityLocalMatrix(0,0),ADD_VALUES
+      //   ); CHKERRQ(ierr);
+      // }
 
       PetscFunctionReturn(0);
     }
@@ -400,9 +469,12 @@ struct MagneticElement {
       PetscErrorCode ierr;
       PetscFunctionBegin;
 
+      if(row_type==MBVERTEX) PetscFunctionReturn(0);
+
       const int nb_row_dofs = row_data.getHcurlN().size2()/3;
       if(nb_row_dofs==0) PetscFunctionReturn(0);
       naturalBC.resize(nb_row_dofs,false);
+      naturalBC.clear();
 
       FTensor::Index<'i',3> i;
 
@@ -410,6 +482,7 @@ struct MagneticElement {
       FTensor::Tensor1<double*,3> t_row_base = row_data.getFTensor1HcurlN<3>();
 
       for(int gg = 0;gg!=nb_gauss_pts;gg++) {
+
         // get integration weight scaled by volume
         double area;
         if(getNormals_at_GaussPt().size1() == (unsigned int)nb_gauss_pts) {
@@ -431,7 +504,7 @@ struct MagneticElement {
 
         FTensor::Tensor0<double*> t_f(&naturalBC[0]);
         for(int aa = 0;aa!=nb_row_dofs;aa++) {
-          t_f = w*t_row_base(i)*t_j(i);
+          t_f += w*t_row_base(i)*t_j(i);
           ++t_row_base;
           ++t_f;
         }
@@ -479,6 +552,9 @@ struct MagneticElement {
       PetscErrorCode ierr;
       MoABErrorCode rval;
       PetscFunctionBegin;
+
+      if(row_type==MBVERTEX) PetscFunctionReturn(0);
+
       Tag th;
       double def_val[] = { 0,0,0 };
       rval = postProcMesh.tag_get_handle(
@@ -487,27 +563,40 @@ struct MagneticElement {
       const int nb_row_dofs = row_data.getHcurlN().size2()/3;
       if(nb_row_dofs==0) PetscFunctionReturn(0);
       const void* tags_ptr[mapGaussPts.size()];
-      rval = postProcMesh.tag_get_by_ptr(
-        th,&mapGaussPts[0],mapGaussPts.size(),tags_ptr
-      ); CHKERRQ_MOAB(rval);
-      double *ptr = (double*)tags_ptr;
-      FTensor::Tensor1<double*,3> t_curl(ptr,&ptr[1],&ptr[2],3);
-      MatrixDouble row_curl_mat,col_curl_mat;
+      MatrixDouble row_curl_mat;
       FTensor::Index<'i',3> i;
       const int nb_gauss_pts = row_data.getHcurlN().size1();
+      if(nb_gauss_pts!=mapGaussPts.size()) {
+        SETERRQ2(
+          PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,
+          "Inconsistency number of dofs %d!=%d",
+          nb_gauss_pts,mapGaussPts.size()
+        );
+      }
+
+      rval = postProcMesh.tag_get_by_ptr(th,&mapGaussPts[0],mapGaussPts.size(),tags_ptr); CHKERRQ_MOAB(rval);
+
+
       for(int gg = 0;gg!=nb_gauss_pts;gg++) {
+
+        // get curl of base functions
         ierr = getCurlOfHCurlBaseFunctions(
           row_side,row_type,row_data,gg,row_curl_mat
         ); CHKERRQ(ierr);
-        t_curl(i) = 0;
         FTensor::Tensor1<double*,3> t_base_curl(
           &row_curl_mat(0,HCURL0),&row_curl_mat(0,HCURL1),&row_curl_mat(0,HCURL2),3
         );
+
+        // get pointer to tag values on entity (i.e. vertex on refined post-processing mesh)
+        double *ptr = &((double*)tags_ptr[gg])[0];
+        FTensor::Tensor1<double*,3> t_curl(ptr,&ptr[1],&ptr[2]);
+
+        // caclulate curl value
         for(int aa = 0;aa!=nb_row_dofs;aa++) {
           t_curl(i) += row_data.getFieldData()[aa]*t_base_curl(i);
           ++t_base_curl;
         }
-        ++t_curl;
+
       }
       PetscFunctionReturn(0);
     }

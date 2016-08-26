@@ -713,7 +713,7 @@ PetscErrorCode OpSetInvJacHdivAndHcurl::doWork(
     DataForcesAndSurcesCore::EntData &data) {
   PetscFunctionBegin;
 
-  if(type != MBTRI && type != MBTET) PetscFunctionReturn(0);
+  if(type != MBEDGE && type != MBTRI && type != MBTET) PetscFunctionReturn(0);
 
   if(
     (int)HDIV0_1!=(int)HCURL0_1 ||
@@ -1041,7 +1041,8 @@ PetscErrorCode OpSetHoInvJacH1::doWork(
   ) {
     PetscFunctionBegin;
 
-    if(type != MBTRI && type != MBTET) PetscFunctionReturn(0);
+    if(type != MBEDGE && type != MBTRI && type != MBTET) PetscFunctionReturn(0);
+    // if(data.getSpace() == HDIV && type == MBEDGE) PetscFunctionReturn(0);
 
     try {
 
