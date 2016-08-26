@@ -810,21 +810,26 @@ PetscErrorCode MoFEM::Hcurl_VolumeInteriorFunctions_MBTET(
   for(int ii = 0;ii!=nb_integration_pts;ii++) {
 
     const int node_shift = ii*4;
-    const double beta_v = N[node_shift+0]*N[node_shift+1]*N[node_shift+2]*N[node_shift+3];
+    const int n0 = node_shift+0;
+    const int n1 = node_shift+1;
+    const int n2 = node_shift+2;
+    const int n3 = node_shift+3;
 
-    const double ksi_0i = N[node_shift+1]-N[node_shift+0];
+    const double beta_v = N[n0]*N[n1]*N[n2]*N[n3];
+
+    const double ksi_0i = N[n1]-N[n0];
     ierr = base_polynomials(p,ksi_0i,diff_ksi0i,psi_l_0i,diff_psi_l_0i,3); CHKERRQ(ierr);
-    const double ksi_0j = N[node_shift+2]-N[node_shift+0];
+    const double ksi_0j = N[n2]-N[n0];
     ierr = base_polynomials(p,ksi_0j,diff_ksi0j,psi_l_0j,diff_psi_l_0j,3); CHKERRQ(ierr);
-    const double ksi_0k = N[node_shift+3]-N[node_shift+0];
+    const double ksi_0k = N[n3]-N[n0];
     ierr = base_polynomials(p,ksi_0k,diff_ksi0k,psi_l_0k,diff_psi_l_0k,3); CHKERRQ(ierr);
 
     FTensor::Tensor1<double,3> t_diff_beta_v;
     t_diff_beta_v(j) =
-    t_node_diff_ksi[0](j)*N[node_shift+1]*N[node_shift+2]*N[node_shift+3]+
-    N[node_shift+0]*t_node_diff_ksi[1](j)*N[node_shift+2]*N[node_shift+3]+
-    N[node_shift+0]*N[node_shift+1]*t_node_diff_ksi[2](j)*N[node_shift+3]+
-    N[node_shift+0]*N[node_shift+1]*N[node_shift+2]*t_node_diff_ksi[3](j);
+    t_node_diff_ksi[0](j)*N[n1]*N[n2]*N[n3]+
+    N[n0]*t_node_diff_ksi[1](j)*N[n2]*N[n3]+
+    N[n0]*N[n1]*t_node_diff_ksi[2](j)*N[n3]+
+    N[n0]*N[n1]*N[n2]*t_node_diff_ksi[3](j);
 
     int cc = 0;
     for(int oo = 0;oo<=(p-4);oo++) {
@@ -884,10 +889,10 @@ PetscErrorCode MoFEM::Hcurl_VolumeInteriorFunctions_MBTET(
             t_diff_phi_v(N2,j) = t_b(j);
             ++t_diff_phi_v;
           }
+          ++t_diff_psi_l_0j;
         }
-        ++t_diff_psi_l_0j;
+        ++t_diff_psi_l_0i;
       }
-      ++t_diff_psi_l_0i;
     }
 
     const int nb_base_fun_on_face = NBVOLUMETET_TET_HCURL(p);
@@ -1196,6 +1201,8 @@ PetscErrorCode MoFEM::Hcurl_VolumeFunctions_MBTET(
 
   VectorDouble base_face_inetrior_functions(3*NBVOLUMETET_FACE_HCURL(p)*nb_integration_pts);
   VectorDouble diff_base_face_inetrior_functions(9*NBVOLUMETET_FACE_HCURL(p)*nb_integration_pts);
+  // base_face_inetrior_functions.clear();
+  // diff_base_face_inetrior_functions.clear();
   double *phi_v_f = &*base_face_inetrior_functions.data().begin();
   double *diff_phi_v_f = &*diff_base_face_inetrior_functions.data().begin();
   int faces_nodes[] = { 0,1,3, 1,2,3, 0,2,3, 0,1,2 };
@@ -1205,8 +1212,8 @@ PetscErrorCode MoFEM::Hcurl_VolumeFunctions_MBTET(
 
   VectorDouble base_interior_functions(3*NBVOLUMETET_TET_HCURL(p)*nb_integration_pts);
   VectorDouble diff_base_interior_functions(9*NBVOLUMETET_TET_HCURL(p)*nb_integration_pts);
-  base_interior_functions.clear();
-  diff_base_interior_functions.clear();
+  // base_interior_functions.clear();
+  // diff_base_interior_functions.clear();
   double *phi_v_v = &*base_interior_functions.data().begin();
   double *diff_phi_v_v = &*diff_base_interior_functions.data().begin();
   ierr = Hcurl_VolumeInteriorFunctions_MBTET(

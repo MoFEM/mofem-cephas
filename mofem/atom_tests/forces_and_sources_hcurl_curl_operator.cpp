@@ -71,7 +71,7 @@ int main(int argc, char *argv[]) {
   //add entities to field
   ierr = m_field.add_ents_to_field_by_TETs(root_set,"HCURL"); CHKERRQ(ierr);
   //set app. order
-  int order = 4;
+  int order = 5;
   ierr = m_field.set_field_order(root_set,MBTET,"HCURL",order); CHKERRQ(ierr);
   ierr = m_field.set_field_order(root_set,MBTRI,"HCURL",order); CHKERRQ(ierr);
   ierr = m_field.set_field_order(root_set,MBEDGE,"HCURL",order); CHKERRQ(ierr);

@@ -124,7 +124,7 @@ int main(int argc, char *argv[]) {
   ierr = m_field.add_ents_to_finite_element_by_TETs(root_set,"TET_FE"); CHKERRQ(ierr);
 
   //set app. order
-  int order = 4;
+  int order = 5;
   if(space == H1) {
     ierr = m_field.set_field_order(root_set,MBTET,"FIELD",order); CHKERRQ(ierr);
     ierr = m_field.set_field_order(root_set,MBTRI,"FIELD",order); CHKERRQ(ierr);
@@ -266,24 +266,27 @@ int main(int argc, char *argv[]) {
           mySplit << "dZeta " << dzeta(0) << "  " << dzeta(1) << " " << dzeta(2) << " " << sqrt(dzeta(i)*dzeta(i)) << endl;
 
           if(sqrt(dksi(i)*dksi(i))>eps_diff) {
-            SETERRQ1(
+            SETERRQ2(
               PETSC_COMM_SELF,MOFEM_ATOM_TEST_INVALID,
-              "%s inconsistent dKsi derivative",
-              FieldSpaceNames[data.getFieldDofs()[0]->getSpace()]
+              "%s inconsistent dKsi derivative  for type %d",
+              FieldSpaceNames[data.getFieldDofs()[0]->getSpace()],
+              type
             );
           }
           if(sqrt(deta(i)*deta(i))>eps_diff) {
-            SETERRQ1(
+            SETERRQ2(
               PETSC_COMM_SELF,MOFEM_ATOM_TEST_INVALID,
-              "%s inconsistent dEta derivative",
-              FieldSpaceNames[data.getFieldDofs()[0]->getSpace()]
+              "%s inconsistent dEta derivative for type %d",
+              FieldSpaceNames[data.getFieldDofs()[0]->getSpace()],
+              type
             );
           }
           if(sqrt(dzeta(i)*dzeta(i))>eps_diff) {
-            SETERRQ1(
+            SETERRQ2(
               PETSC_COMM_SELF,MOFEM_ATOM_TEST_INVALID,
-              "%s inconsistent dZeta derivative",
-              FieldSpaceNames[data.getFieldDofs()[0]->getSpace()]
+              "%s inconsistent dZeta derivative for type %d",
+              FieldSpaceNames[data.getFieldDofs()[0]->getSpace()],
+              type
             );
           }
 
