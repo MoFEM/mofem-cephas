@@ -68,7 +68,7 @@ PetscErrorCode NeummanForcesSurface::OpNeumannForce::doWork(
 
     double val = getGaussPts()(2,gg);
     if(hoGeometry) {
-      val *= 0.5*cblas_dnrm2(3,&getNormals_at_GaussPt()(gg,0),1);
+      val *= 0.5*cblas_dnrm2(3,&getNormalsAtGaussPt()(gg,0),1);
     } else {
       val *= getArea();
     }
@@ -147,7 +147,7 @@ PetscErrorCode NeummanForcesSurface::OpNeumannPreassure::doWork(
   Nf.clear();
 
   //std::cerr << getNormal() << std::endl;
-  //std::cerr << getNormals_at_GaussPt() << std::endl;
+  //std::cerr << getNormalsAtGaussPt() << std::endl;
 
   for(unsigned int gg = 0;gg<data.getN().size1();gg++) {
 
@@ -156,7 +156,7 @@ PetscErrorCode NeummanForcesSurface::OpNeumannPreassure::doWork(
 
       double force;
       if(hoGeometry) {
-        force = dAta.data.data.value1*getNormals_at_GaussPt()(gg,rr);
+        force = dAta.data.data.value1*getNormalsAtGaussPt()(gg,rr);
       } else {
         force = dAta.data.data.value1*getNormal()[rr];
       }
@@ -231,14 +231,14 @@ PetscErrorCode NeummanForcesSurface::OpNeumannFlux::doWork(
   Nf.resize(data.getIndices().size(),false);
   Nf.clear();
   //std::cerr << getNormal() << std::endl;
-  //std::cerr << getNormals_at_GaussPt() << std::endl;
+  //std::cerr << getNormalsAtGaussPt() << std::endl;
 
   for(unsigned int gg = 0;gg<data.getN().size1();gg++) {
 
     double val = getGaussPts()(2,gg);
     double flux;
     if(hoGeometry) {
-      double area = 0.5*cblas_dnrm2(3,&getNormals_at_GaussPt()(gg,0),1);
+      double area = 0.5*cblas_dnrm2(3,&getNormalsAtGaussPt()(gg,0),1);
       flux = dAta.data.data.value1*area;
     } else {
       flux = dAta.data.data.value1*getArea();

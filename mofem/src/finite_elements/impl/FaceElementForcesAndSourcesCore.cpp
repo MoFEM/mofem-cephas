@@ -300,7 +300,6 @@ PetscErrorCode FaceElementForcesAndSourcesCore::operator()() {
   }
   if(dataH1.spacesOnEntities[MBEDGE].test(HCURL)) {
     // cerr << dataHcurl.dataOnEntities[MBEDGE][0].getN(AINSWORTH_COLE_BASE) << endl;
-    //
     ierr = opCovariantTransoform.opRhs(dataHcurl); CHKERRQ(ierr);
   }
 
@@ -350,7 +349,7 @@ PetscErrorCode FaceElementForcesAndSourcesCore::operator()() {
           op_data[ss] = !ss ? &dataHdiv : &derivedDataHdiv;
           break;
           case L2:
-          SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not make sanes on face");
+          SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not make sense on face");
           break;
           case NOFIELD:
           op_data[ss] = !ss ? &dataNoField : &dataNoFieldCol;

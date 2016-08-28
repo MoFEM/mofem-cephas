@@ -164,7 +164,7 @@ struct FlatPrismElementForcesAndSurcesCore: public ForcesAndSurcesCore {
      * Face 3 is top face in canonical triangle numeration, see \cite tautges2010canonical
      *
      */
-    inline MatrixDouble& getNormals_at_GaussPtF3() {
+    inline MatrixDouble& getNormalsAtGaussPtF3() {
       return static_cast<FlatPrismElementForcesAndSurcesCore*>(ptrFE)->nOrmals_at_GaussPtF3;
     }
 
@@ -173,7 +173,7 @@ struct FlatPrismElementForcesAndSurcesCore: public ForcesAndSurcesCore {
      * Face 4 is top face in canonical triangle numeration, see \cite tautges2010canonical
      *
      */
-    inline MatrixDouble& getNormals_at_GaussPtF4() {
+    inline MatrixDouble& getNormalsAtGaussPtF4() {
       return static_cast<FlatPrismElementForcesAndSurcesCore*>(ptrFE)->nOrmals_at_GaussPtF4;
     }
 
@@ -183,7 +183,7 @@ struct FlatPrismElementForcesAndSurcesCore: public ForcesAndSurcesCore {
       *
       * \param gg gauss point number
       */
-    inline ublas::matrix_row<MatrixDouble > getNormals_at_GaussPtF3(const int gg) {
+    inline ublas::matrix_row<MatrixDouble > getNormalsAtGaussPtF3(const int gg) {
       return ublas::matrix_row<MatrixDouble >(static_cast<FlatPrismElementForcesAndSurcesCore*>(ptrFE)->nOrmals_at_GaussPtF3,gg);
     }
 
@@ -193,31 +193,79 @@ struct FlatPrismElementForcesAndSurcesCore: public ForcesAndSurcesCore {
       *
       * \param gg gauss point number
       */
-    inline ublas::matrix_row<MatrixDouble > getNormals_at_GaussPtF4(const int gg) {
+    inline ublas::matrix_row<MatrixDouble > getNormalsAtGaussPtF4(const int gg) {
       return ublas::matrix_row<MatrixDouble >(static_cast<FlatPrismElementForcesAndSurcesCore*>(ptrFE)->nOrmals_at_GaussPtF4,gg);
+    }
+
+    /** \deprecated Use getNormalsAtGaussPtF3() instead
+    */
+    DEPRECATED inline ublas::matrix_row<MatrixDouble > getNormals_at_GaussPtF3(const int gg) {
+      return getNormalsAtGaussPtF3(gg);
+    }
+
+    /** \deprecated Use getNormalsAtGaussPtF3() instead
+    */
+    DEPRECATED inline MatrixDouble& getNormals_at_GaussPtF3() {
+      return getNormalsAtGaussPtF3();
+    }
+
+    /** \deprecated Use getTangent1AtGaussPtF3() instead
+    */
+    DEPRECATED inline MatrixDouble& getTangent1_at_GaussPtF3() {
+      return getTangent1AtGaussPtF3();
+    }
+
+    /** \deprecated Use getTangent2AtGaussPtF3() instead
+    */
+    DEPRECATED inline MatrixDouble& getTangent2_at_GaussPtF3() {
+      return getTangent2AtGaussPtF3();
+    }
+
+    /** \deprecated Use getNormalsAtGaussPtF4() instead
+    */
+    DEPRECATED inline ublas::matrix_row<MatrixDouble > getNormals_at_GaussPtF4(const int gg) {
+      return getNormalsAtGaussPtF4(gg);
+    }
+
+    /** \deprecated Use getNormalsAtGaussPtF4() instead
+    */
+    DEPRECATED inline MatrixDouble& getNormals_at_GaussPtF4() {
+      return getNormalsAtGaussPtF4();
+    }
+
+    /** \deprecated Use getTangent1AtGaussPtF4() instead
+    */
+    DEPRECATED inline MatrixDouble& getTangent1_at_GaussPtF4() {
+      return getTangent1AtGaussPtF4();
+    }
+
+    /** \deprecated Use getTangent2AtGaussPtF4() instead
+    */
+    DEPRECATED inline MatrixDouble& getTangent2_at_GaussPtF4() {
+      return getTangent2AtGaussPtF4();
     }
 
     /** \brief if higher order geometry return tangent vector to triangle at Gauss pts.
      */
-    inline MatrixDouble& getTangent1_at_GaussPtF3() {
+    inline MatrixDouble& getTangent1AtGaussPtF3() {
       return static_cast<FlatPrismElementForcesAndSurcesCore*>(ptrFE)->tAngent1_at_GaussPtF3;
     }
 
     /** \brief if higher order geometry return tangent vector to triangle at Gauss pts.
      */
-    inline MatrixDouble& getTangent2_at_GaussPtF3() {
+    inline MatrixDouble& getTangent2AtGaussPtF3() {
       return static_cast<FlatPrismElementForcesAndSurcesCore*>(ptrFE)->tAngent2_at_GaussPtF3;
     }
 
     /** \brief if higher order geometry return tangent vector to triangle at Gauss pts.
      */
-    inline MatrixDouble& getTangent1_at_GaussPtF4() {
+    inline MatrixDouble& getTangent1AtGaussPtF4() {
       return static_cast<FlatPrismElementForcesAndSurcesCore*>(ptrFE)->tAngent1_at_GaussPtF4;
     }
 
     /** \brief if higher order geometry return tangent vector to triangle at Gauss pts.
      */
-    inline MatrixDouble& getTangent2_at_GaussPtF4() {
+    inline MatrixDouble& getTangent2AtGaussPtF4() {
       return static_cast<FlatPrismElementForcesAndSurcesCore*>(ptrFE)->tAngent2_at_GaussPtF4;
     }
 

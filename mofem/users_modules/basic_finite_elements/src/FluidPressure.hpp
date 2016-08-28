@@ -132,7 +132,7 @@ struct FluidPressure {
         for(int rr = 0;rr<rank;rr++) {
           double force;
           if(hoGeometry) {
-            force = pressure*getNormals_at_GaussPt()(gg,rr);
+            force = pressure*getNormalsAtGaussPt()(gg,rr);
           } else {
             force = pressure*getNormal()[rr];
           }

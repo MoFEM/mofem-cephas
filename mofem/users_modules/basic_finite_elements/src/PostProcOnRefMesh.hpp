@@ -42,6 +42,11 @@ struct PostProcCommonOnRefMesh {
     std::map<std::string,std::vector<ublas::matrix<double> > > gradMap;
   };
 
+  /**
+   * \brief operator to post-process (save gardients on refined post-processing mesh) field gradient
+   * \ingroup mofem_fs_post_proc
+   *
+   */
   struct OpGetFieldValues: public MoFEM::ForcesAndSurcesCore::UserDataOperator {
 
     moab::Interface &postProcMesh;
@@ -76,6 +81,11 @@ struct PostProcCommonOnRefMesh {
 
   };
 
+  /**
+   * \brief operator to post-process (save gradients on refined post-processing mesh) field gradient
+   * \ingroup mofem_fs_post_proc
+   *
+   */
   struct OpGetFieldGradientValues: public MoFEM::ForcesAndSurcesCore::UserDataOperator {
 
     moab::Interface &postProcMesh;
@@ -113,6 +123,12 @@ struct PostProcCommonOnRefMesh {
 
 };
 
+/**
+ * \brief Generic post-pocessing class
+ *
+ * Generate refined mesh and save data on vertices
+ *
+ */
 template<class ELEMENT>
 struct PostProcTemplateOnRefineMesh: public ELEMENT {
 

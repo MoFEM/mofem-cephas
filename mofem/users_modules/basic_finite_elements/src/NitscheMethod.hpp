@@ -157,7 +157,7 @@ struct NitscheMethod {
             commonData.nbTetGaussPts++;
           }
           commonData.faceNormals.resize(4);
-          commonData.faceNormals[faceInRespectToTet] = 0.5*getNormals_at_GaussPt();
+          commonData.faceNormals[faceInRespectToTet] = 0.5*getNormalsAtGaussPt();
           commonData.hoCoordsAtGaussPts.resize(4);
           commonData.hoCoordsAtGaussPts[faceInRespectToTet] = getHoCoordsAtGaussPts();
           commonData.cOords.resize(4);

@@ -474,8 +474,8 @@ PetscErrorCode TetPolynomialBase::getValueHCurl(
       if(data.dataOnEntities[MBTRI][ff].getSense() == 0) {
         SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
       }
-      int nb_dofs = NBFACETRI_HCURL(data.dataOnEntities[MBTRI][ff].getDataOrder());
       order[ff] = data.dataOnEntities[MBTRI][ff].getDataOrder();
+      int nb_dofs = NBFACETRI_HCURL(order[ff] );
       data.dataOnEntities[MBTRI][ff].getN(base).resize(nb_gauss_pts,3*nb_dofs,false);
       data.dataOnEntities[MBTRI][ff].getDiffN(base).resize(nb_gauss_pts,9*nb_dofs,false);
       hcurl_base_n[ff] = &*data.dataOnEntities[MBTRI][ff].getN(base).data().begin();
@@ -498,7 +498,7 @@ PetscErrorCode TetPolynomialBase::getValueHCurl(
       base_polynomials
     ); CHKERRQ(ierr);
   } else {
-    for(int ff = 0;ff<4;ff++) {
+    for(int ff = 0;ff!=4;ff++) {
       data.dataOnEntities[MBTRI][ff].getN(base).resize(nb_gauss_pts,0,false);
       data.dataOnEntities[MBTRI][ff].getDiffN(base).resize(nb_gauss_pts,0,false);
     }

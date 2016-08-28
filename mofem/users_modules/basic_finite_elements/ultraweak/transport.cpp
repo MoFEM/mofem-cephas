@@ -1,3 +1,8 @@
+/** \fi;e transport.cpp
+\brief Example implementation of transport problem using ultra-week formulation
+
+*/
+
 /* This file is part of MoFEM.
  * MoFEM is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the
@@ -14,10 +19,6 @@
 
 #include <BasicFiniteElements.hpp>
 using namespace MoFEM;
-
-namespace bio = boost::iostreams;
-using bio::tee_device;
-using bio::stream;
 
 static char help[] = "...\n\n";
 
@@ -49,16 +50,12 @@ int main(int argc, char *argv[]) {
   rval = moab.load_file(mesh_file_name, 0, option); CHKERRQ_MOAB(rval);
   BARRIER_RANK_END(pcomm)
 
-  //Create MoFEM (Joseph) database
+  //Create mofem interface
   MoFEM::Core core(moab);
   MoFEM::Interface& m_field = core;
 
-  //set entitities bit level
-  BitRefLevel bit_level0;
-  bit_level0.set(0);
-  EntityHandle meshset_level0;
-  rval = moab.create_meshset(MESHSET_SET,meshset_level0); CHKERRQ_MOAB(rval);
-  ierr = m_field.seed_ref_level_3D(0,bit_level0); CHKERRQ(ierr);
+  //set entities bit level
+  ierr = m_field.seed_ref_level_3D(0,BitRefLevel().set(0)); CHKERRQ(ierr);
 
   //Fields
   ierr = m_field.add_field("FLUXES",HDIV,1); CHKERRQ(ierr);
@@ -159,12 +156,12 @@ int main(int argc, char *argv[]) {
   //build finite elemnts
   ierr = m_field.build_finite_elements(); CHKERRQ(ierr);
   //build adjacencies
-  ierr = m_field.build_adjacencies(bit_level0); CHKERRQ(ierr);
+  ierr = m_field.build_adjacencies(BitRefLevel().set(0)); CHKERRQ(ierr);
 
   //Problem
   ierr = m_field.add_problem("ULTRAWEAK"); CHKERRQ(ierr);
   //set refinment level for problem
-  ierr = m_field.modify_problem_ref_level_add_bit("ULTRAWEAK",bit_level0); CHKERRQ(ierr);
+  ierr = m_field.modify_problem_ref_level_add_bit("ULTRAWEAK",BitRefLevel().set(0)); CHKERRQ(ierr);
 
   ierr = m_field.modify_problem_add_finite_element("ULTRAWEAK","ULTRAWEAK"); CHKERRQ(ierr);
 
@@ -174,7 +171,7 @@ int main(int argc, char *argv[]) {
 
   ierr = m_field.add_problem("ULTRAWEAK_CALCULATE_ERROR"); CHKERRQ(ierr);
   //set refinment level for problem
-  ierr = m_field.modify_problem_ref_level_add_bit("ULTRAWEAK_CALCULATE_ERROR",bit_level0); CHKERRQ(ierr);
+  ierr = m_field.modify_problem_ref_level_add_bit("ULTRAWEAK_CALCULATE_ERROR",BitRefLevel().set(0)); CHKERRQ(ierr);
   ierr = m_field.modify_problem_add_finite_element("ULTRAWEAK_CALCULATE_ERROR","ULTRAWEAK_ERROR"); CHKERRQ(ierr);
 
   //build problem

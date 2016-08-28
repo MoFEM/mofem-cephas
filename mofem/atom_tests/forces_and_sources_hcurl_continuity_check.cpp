@@ -350,20 +350,20 @@ int main(int argc, char *argv[]) {
       rval = mField.get_moab().tag_get_by_ptr(tH2,&face,1,(const void **)&tn_ptr); CHKERRQ_MOAB(rval);
 
       *tn_ptr =
-      getTangent1_at_GaussPt()(0,0)*t_ptr[0]+getTangent1_at_GaussPt()(0,1)*t_ptr[1]+getTangent1_at_GaussPt()(0,2)*t_ptr[2]+
-      getTangent2_at_GaussPt()(0,0)*t_ptr[0]+getTangent2_at_GaussPt()(0,1)*t_ptr[1]+getTangent2_at_GaussPt()(0,2)*t_ptr[2];
+      getTangent1AtGaussPt()(0,0)*t_ptr[0]+getTangent1AtGaussPt()(0,1)*t_ptr[1]+getTangent1AtGaussPt()(0,2)*t_ptr[2]+
+      getTangent2AtGaussPt()(0,0)*t_ptr[0]+getTangent2AtGaussPt()(0,1)*t_ptr[1]+getTangent2AtGaussPt()(0,2)*t_ptr[2];
 
       int nb_dofs = data.getHcurlN().size2()/3;
       int dd = 0;
       for(;dd<nb_dofs;dd++) {
         double val = data.getFieldData()[dd];
         *tn_ptr +=
-        -getTangent1_at_GaussPt()(0,0)*data.getHcurlN()(0,3*dd+0)*val
-        -getTangent1_at_GaussPt()(0,1)*data.getHcurlN()(0,3*dd+1)*val
-        -getTangent1_at_GaussPt()(0,2)*data.getHcurlN()(0,3*dd+2)*val
-        -getTangent2_at_GaussPt()(0,0)*data.getHcurlN()(0,3*dd+0)*val
-        -getTangent2_at_GaussPt()(0,1)*data.getHcurlN()(0,3*dd+1)*val
-        -getTangent2_at_GaussPt()(0,2)*data.getHcurlN()(0,3*dd+2)*val;
+        -getTangent1AtGaussPt()(0,0)*data.getHcurlN()(0,3*dd+0)*val
+        -getTangent1AtGaussPt()(0,1)*data.getHcurlN()(0,3*dd+1)*val
+        -getTangent1AtGaussPt()(0,2)*data.getHcurlN()(0,3*dd+2)*val
+        -getTangent2AtGaussPt()(0,0)*data.getHcurlN()(0,3*dd+0)*val
+        -getTangent2AtGaussPt()(0,1)*data.getHcurlN()(0,3*dd+1)*val
+        -getTangent2AtGaussPt()(0,2)*data.getHcurlN()(0,3*dd+2)*val;
       }
 
       const double eps = 1e-8;
@@ -412,8 +412,8 @@ int main(int argc, char *argv[]) {
       rval = mField.get_moab().tag_get_by_ptr(tH2,&face,1,(const void **)&tn_ptr); CHKERRQ_MOAB(rval);
 
       *tn_ptr =
-      getTangent1_at_GaussPt()(0,0)*t_ptr[0]+getTangent1_at_GaussPt()(0,1)*t_ptr[1]+getTangent1_at_GaussPt()(0,2)*t_ptr[2]+
-      getTangent2_at_GaussPt()(0,0)*t_ptr[0]+getTangent2_at_GaussPt()(0,1)*t_ptr[1]+getTangent2_at_GaussPt()(0,2)*t_ptr[2];
+      getTangent1AtGaussPt()(0,0)*t_ptr[0]+getTangent1AtGaussPt()(0,1)*t_ptr[1]+getTangent1AtGaussPt()(0,2)*t_ptr[2]+
+      getTangent2AtGaussPt()(0,0)*t_ptr[0]+getTangent2AtGaussPt()(0,1)*t_ptr[1]+getTangent2AtGaussPt()(0,2)*t_ptr[2];
 
       const double eps = 1e-8;
       if(fabs(*tn_ptr)>eps) {
