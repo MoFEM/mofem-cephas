@@ -1,16 +1,31 @@
 reset
 
+#create Cylinder height 4 radius 3 
+#create Cylinder height 4 radius 1
+#subtract volume 2 from volume 1
+#modify curve 2  blend radius 1
+#modify curve 6  blend radius 1
+#modify curve 5  blend radius 1
+#modify curve 1  blend radius 1
+#
+#brick x 10 y 10 z 10
+#subtract volume 1 from volume 3
+#block 1 surface 19 20 18 21
+
 brick x 10 y 10 z 10
-create Cylinder height 4 radius 2 
-chop volume 1 with volume 2 
+create Cylinder height 4 radius 2
+block 1 surface 7  
+
+block 1 name 'NATURALBC'  
+chop volume 1 with volume 2
 merge volume all 
 
-block 1 surface 7
-block 1 name 'NATURALBC'
+volume all sizing function type skeleton scale 9 time_accuracy_level 6 
+volume all sizing function type skeleton  
+#volume all size auto factor 6   
+volume all scheme Tetmesh    
+mesh volume all    
+    
+block 2 tet all       
+block 2 element type tetra10    
 
-volume all size auto factor 9
-volume all scheme Tetmesh
-mesh volume all
-
-block 2 tet all   
-block 2 element type tetra10

@@ -213,9 +213,9 @@ int main(int argc, char *argv[]) {
         for(;dd<nb_dofs;dd++) {
           double area;
           VectorDouble n;
-          if(getNormals_at_GaussPt().size1() == (unsigned int)nb_gauss_pts) {
-            n = getNormals_at_GaussPt(gg);
-            area = norm_2(getNormals_at_GaussPt(gg))*0.5;
+          if(getNormalsAtGaussPt().size1() == (unsigned int)nb_gauss_pts) {
+            n = getNormalsAtGaussPt(gg);
+            area = norm_2(getNormalsAtGaussPt(gg))*0.5;
           } else {
             n = getNormal();
             area = getArea();

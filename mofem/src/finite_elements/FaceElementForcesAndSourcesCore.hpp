@@ -72,7 +72,7 @@ struct FaceElementForcesAndSourcesCore: public ForcesAndSurcesCore {
     ForcesAndSurcesCore(m_field),
     dataH1(MBTRI),derivedDataH1(dataH1),
     dataHdiv(MBTRI),derivedDataHdiv(dataHdiv),
-    dataHcurl(MBTRI),derivedDataHcurl(dataHdiv),
+    dataHcurl(MBTRI),derivedDataHcurl(dataHcurl),
     dataL2(MBTRI),derivedDataL2(dataHdiv),
     dataNoField(MBTRI),dataNoFieldCol(MBTRI),
     meshPositionsFieldName("MESH_NODE_POSITIONS"),
@@ -229,7 +229,7 @@ struct FaceElementForcesAndSourcesCore: public ForcesAndSurcesCore {
     of geometry is available.
 
      */
-    inline MatrixDouble& getNormals_at_GaussPt() {
+    inline MatrixDouble& getNormalsAtGaussPt() {
       return static_cast<FaceElementForcesAndSourcesCore*>(ptrFE)->nOrmals_at_GaussPt;
     }
 
@@ -237,7 +237,7 @@ struct FaceElementForcesAndSourcesCore: public ForcesAndSurcesCore {
       *
       * \param gg gauss point number
       */
-    inline ublas::matrix_row<MatrixDouble > getNormals_at_GaussPt(const int gg) {
+    inline ublas::matrix_row<MatrixDouble > getNormalsAtGaussPt(const int gg) {
       return ublas::matrix_row<MatrixDouble >(static_cast<FaceElementForcesAndSourcesCore*>(ptrFE)->nOrmals_at_GaussPt,gg);
     }
 
@@ -247,7 +247,7 @@ struct FaceElementForcesAndSourcesCore: public ForcesAndSurcesCore {
     of geometry is avaliable.
 
      */
-    inline MatrixDouble& getTangent1_at_GaussPt() {
+    inline MatrixDouble& getTangent1AtGaussPt() {
       return static_cast<FaceElementForcesAndSourcesCore*>(ptrFE)->tAngent1_at_GaussPt;
     }
 
@@ -257,8 +257,32 @@ struct FaceElementForcesAndSourcesCore: public ForcesAndSurcesCore {
     of geometry is avaliable.
 
      */
-    inline MatrixDouble& getTangent2_at_GaussPt() {
+    inline MatrixDouble& getTangent2AtGaussPt() {
       return static_cast<FaceElementForcesAndSourcesCore*>(ptrFE)->tAngent2_at_GaussPt;
+    }
+
+    /** \deprecated Use getNormalsAtGaussPt() instead
+    */
+    DEPRECATED inline ublas::matrix_row<MatrixDouble > getNormals_at_GaussPt(const int gg) {
+      return getNormalsAtGaussPt(gg);
+    }
+
+    /** \deprecated Use getNormalsAtGaussPt() instead
+    */
+    DEPRECATED inline MatrixDouble& getNormals_at_GaussPt() {
+      return getNormalsAtGaussPt();
+    }
+
+    /** \deprecated Use getTangent1AtGaussPt() instead
+    */
+    DEPRECATED inline MatrixDouble& getTangent1_at_GaussPt() {
+      return getTangent1AtGaussPt();
+    }
+
+    /** \deprecated Use getTangent2AtGaussPt() instead
+    */
+    DEPRECATED inline MatrixDouble& getTangent2_at_GaussPt() {
+      return getTangent2AtGaussPt();
     }
 
     /** \brief get normal at integration points
@@ -267,7 +291,7 @@ struct FaceElementForcesAndSourcesCore: public ForcesAndSurcesCore {
       \code
       double nrm2;
       FTensor::Index<'i',3> i;
-      FTensor::Tensor1<double*,3> t_normal = getTensor1Normals_at_GaussPt();
+      FTensor::Tensor1<double*,3> t_normal = getTensor1NormalsAtGaussPt();
       for(int gg = gg!=data.getN().size1();gg++) {
         nrm2 = sqrt(t_normal(i)*t_normal(i));
         ++t_normal;
@@ -275,24 +299,24 @@ struct FaceElementForcesAndSourcesCore: public ForcesAndSurcesCore {
       \endcode
 
     */
-    inline FTensor::Tensor1<double*,3> getTensor1Normals_at_GaussPt() {
-      double *ptr = &*getNormals_at_GaussPt().data().begin();
+    inline FTensor::Tensor1<double*,3> getTensor1NormalsAtGaussPt() {
+      double *ptr = &*getNormalsAtGaussPt().data().begin();
       return FTensor::Tensor1<double*,3>(ptr,&ptr[1],&ptr[2],3);
     }
 
     /** \brief get tangent 1 at integration points
 
     */
-    inline FTensor::Tensor1<double*,3> getTensor1Tangent1_at_GaussPt() {
-      double *ptr = &*getTangent1_at_GaussPt().data().begin();
+    inline FTensor::Tensor1<double*,3> getTensor1Tangent1AtGaussPt() {
+      double *ptr = &*getTangent1AtGaussPt().data().begin();
       return FTensor::Tensor1<double*,3>(ptr,&ptr[1],&ptr[2],3);
     }
 
     /** \brief get tangent 2 at integration points
 
     */
-    inline FTensor::Tensor1<double*,3> getTensor1Tangent2_at_GaussPt() {
-      double *ptr = &*getTangent2_at_GaussPt().data().begin();
+    inline FTensor::Tensor1<double*,3> getTensor1Tangent2AtGaussPt() {
+      double *ptr = &*getTangent2AtGaussPt().data().begin();
       return FTensor::Tensor1<double*,3>(ptr,&ptr[1],&ptr[2],3);
     }
 

@@ -696,10 +696,11 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::UserDataOperator::getDivergenc
     div.resize(nb_dofs,false);
 
     FTensor::Tensor0<double*> t_div(&*div.data().begin());
+    const double *grad_ptr = &data.getDiffHdivN()(gg,0);
     FTensor::Tensor1<const double*,3> t_grad_base(
-      &data.getDiffHdivN(gg)(0,HDIV0_0),
-      &data.getDiffHdivN(gg)(0,HDIV1_1),
-      &data.getDiffHdivN(gg)(0,HDIV2_2),9
+      grad_ptr,
+      &grad_ptr[HDIV1_1],
+      &grad_ptr[HDIV2_2],9
     );
     FTensor::Index<'i',3> i;
     for(int dd = 0;dd<nb_dofs;dd++) {
@@ -754,10 +755,12 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::UserDataOperator::getCurlOfHCu
 
     curl.resize(nb_dofs,3,false);
     FTensor::Tensor1<double*,3> t_curl(&curl(0,0),&curl(0,1),&curl(0,2),3);
+    const double *grad_ptr = &data.getDiffHcurlN()(gg,0);
+
     FTensor::Tensor2<const double*,3,3> t_grad_base(
-      &data.getDiffHcurlN(gg)(0,HCURL0_0),&data.getDiffHcurlN(gg)(0,HCURL0_1),&data.getDiffHcurlN(gg)(0,HCURL0_2),
-      &data.getDiffHcurlN(gg)(0,HCURL1_0),&data.getDiffHcurlN(gg)(0,HCURL1_1),&data.getDiffHcurlN(gg)(0,HCURL1_2),
-      &data.getDiffHcurlN(gg)(0,HCURL2_0),&data.getDiffHcurlN(gg)(0,HCURL2_1),&data.getDiffHcurlN(gg)(0,HCURL2_2),9
+      grad_ptr,&grad_ptr[HCURL0_1],&grad_ptr[HCURL0_2],
+      &grad_ptr[HCURL1_0],&grad_ptr[HCURL1_1],&grad_ptr[HCURL1_2],
+      &grad_ptr[HCURL2_0],&grad_ptr[HCURL2_1],&grad_ptr[HCURL2_2],9
     );
     FTensor::Index<'i',3> i;
     for(int dd = 0;dd<nb_dofs;dd++) {

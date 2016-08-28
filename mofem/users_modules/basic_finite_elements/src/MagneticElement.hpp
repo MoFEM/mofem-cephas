@@ -38,25 +38,27 @@ struct MagneticElement {
   struct VolumeFE: public MoFEM::VolumeElementForcesAndSourcesCore {
     VolumeFE(MoFEM::Interface &m_field):
     MoFEM::VolumeElementForcesAndSourcesCore(m_field) {}
-    int getRule(int order) { return 2*(order-1)+1; };
+    int getRule(int order) { return 2*order+1; };
   };
-  VolumeFE feVol;
+
+  // /// \brief  definition of volume element
+  // struct VolumeFEReducedIntegration: public MoFEM::VolumeElementForcesAndSourcesCore {
+  //   VolumeFEReducedIntegration(MoFEM::Interface &m_field):
+  //   MoFEM::VolumeElementForcesAndSourcesCore(m_field) {}
+  //   int getRule(int order) { return 2*order+1; };
+  // };
 
   /** \brief define surface element
     *
     */
   struct TriFE: public MoFEM::FaceElementForcesAndSourcesCore {
     TriFE(MoFEM::Interface &m_field): MoFEM::FaceElementForcesAndSourcesCore(m_field) {}
-    int getRule(int order) { return 2*(order-1)+1; };
+    int getRule(int order) { return 2*order+1; };
   };
-  TriFE feTri;
 
   MagneticElement(MoFEM::Interface &m_field):
-  mField(m_field),
-  feVol(m_field),
-  feTri(m_field) {
-
-  };
+  mField(m_field) {
+  }
   virtual ~MagneticElement() {}
 
   /**
@@ -71,7 +73,8 @@ struct MagneticElement {
     const string feNaturalBCName;
 
     // material parameters
-    double mu;  ///< magnetic constant  N / A2
+    double mU;  ///< magnetic constant  N / A2
+    double ePsilon; ///< regularization paramater
 
     // Natural boundary conditions
     Range naturalBc;
@@ -90,7 +93,8 @@ struct MagneticElement {
     fieldName("MAGNETIC_POTENTIAL"),
     feName("MAGNETIC"),
     feNaturalBCName("MAGENTIC_NATURAL_BC"),
-    mu(1) {
+    mU(1),
+    ePsilon(1) {
     }
     ~BlockData() {}
   };
@@ -140,6 +144,7 @@ struct MagneticElement {
       Skinner skin(&mField.get_moab());
       Range skin_faces; // skin faces from 3d ents
       rval = skin.find_skin(0,tets,false,skin_faces); CHKERR_MOAB(rval);
+      skin_faces = subtract(skin_faces,blockData.naturalBc);
       rval = mField.get_moab().get_adjacencies(
         skin_faces,1,true,blockData.essentialBc,moab::Interface::UNION
       ); CHKERRQ_MOAB(rval);
@@ -153,31 +158,57 @@ struct MagneticElement {
    * @return error code
    */
   PetscErrorCode createFields() {
+    MoABErrorCode rval;
     PetscErrorCode ierr;
     PetscFunctionBegin;
 
-    //set entities bit level
+    // Set entities bit level. each entity has bit level depending for example
+    // on refinement level. In this case we do not refine mesh or not do
+    // topological changes, simply set refinement level to zero on all entities.
+
     ierr = mField.seed_ref_level_3D(0,BitRefLevel().set(0)); CHKERRQ(ierr);
 
-    //Fields
-    ierr = mField.add_field(blockData.fieldName,HCURL,1); CHKERRQ(ierr);
+    // add fields
+    ierr = mField.add_field(blockData.fieldName,HCURL,LOBATTO_BASE,1); CHKERRQ(ierr);
     ierr = mField.add_field("MESH_NODE_POSITIONS",H1,3); CHKERRQ(ierr);
     //meshset consisting all entities in mesh
     EntityHandle root_set = mField.get_moab().get_root_set();
     //add entities to field
     ierr = mField.add_ents_to_field_by_TETs(root_set,blockData.fieldName); CHKERRQ(ierr);
+
+    // // The higher-order gradients can be gauged by locally skipping the
+    // // corresponding degrees of freedom and basis functions in the higher-order
+    // // edge-based, face-based and cell-based finite element subspaces.
+    //
+    // Range tris,edges;
+    // rval = mField.get_moab().get_entities_by_type(root_set,MBTRI,tris,true); CHKERRQ_MOAB(rval);
+    // rval = mField.get_moab().get_entities_by_type(root_set,MBEDGE,edges,true); CHKERRQ_MOAB(rval);
+    //
+    // // Set order in volume
+    // Range bc_ents = unite(blockData.naturalBc,blockData.essentialBc);
+    // Range vol_ents = subtract(unite(tris,edges),bc_ents);
+    // ierr = mField.set_field_order(vol_ents,blockData.fieldName,blockData.oRder); CHKERRQ(ierr);
+    // int gauged_order = 1;
+    // ierr = mField.set_field_order(bc_ents,blockData.fieldName,gauged_order); CHKERRQ(ierr);
+
+    // Set order on tets
     ierr = mField.set_field_order(root_set,MBTET,blockData.fieldName,blockData.oRder); CHKERRQ(ierr);
     ierr = mField.set_field_order(root_set,MBTRI,blockData.fieldName,blockData.oRder); CHKERRQ(ierr);
     ierr = mField.set_field_order(root_set,MBEDGE,blockData.fieldName,blockData.oRder); CHKERRQ(ierr);
+
+    // Set geometry approximation ordered
     ierr = mField.add_ents_to_field_by_TETs(root_set,"MESH_NODE_POSITIONS"); CHKERRQ(ierr);
-    ierr = mField.set_field_order(root_set,MBTET,"MESH_NODE_POSITIONS",2); CHKERRQ(ierr);
-    ierr = mField.set_field_order(root_set,MBTRI,"MESH_NODE_POSITIONS",2); CHKERRQ(ierr);
-    ierr = mField.set_field_order(root_set,MBEDGE,"MESH_NODE_POSITIONS",2); CHKERRQ(ierr);
+    ierr = mField.set_field_order(root_set,MBTET,"MESH_NODE_POSITIONS",1); CHKERRQ(ierr);
+    ierr = mField.set_field_order(root_set,MBTRI,"MESH_NODE_POSITIONS",1); CHKERRQ(ierr);
+    ierr = mField.set_field_order(root_set,MBEDGE,"MESH_NODE_POSITIONS",1); CHKERRQ(ierr);
     ierr = mField.set_field_order(root_set,MBVERTEX,"MESH_NODE_POSITIONS",1); CHKERRQ(ierr);
+
     //build field
     ierr = mField.build_fields(); CHKERRQ(ierr);
 
-    //get HO gemetry for 10 node tets
+    // get HO geometry for 10 node tets
+    // This method takes coordinates form edges mid nodes in 10 node tet and
+    // project values on 2nd order hierarchical basis used to approx. geometry.
     Projection10NodeCoordsOnField ent_method_material(mField,"MESH_NODE_POSITIONS");
     ierr = mField.loop_dofs("MESH_NODE_POSITIONS",ent_method_material); CHKERRQ(ierr);
 
@@ -242,6 +273,7 @@ struct MagneticElement {
 
     VolumeFE vol_fe(mField);
     vol_fe.getOpPtrVector().push_back(new OpCurlCurl(blockData));
+    vol_fe.getOpPtrVector().push_back(new OpStab(blockData));
     TriFE tri_fe(mField);
     tri_fe.getOpPtrVector().push_back(new OpNaturalBC(blockData));
 
@@ -260,6 +292,7 @@ struct MagneticElement {
     ierr = VecAssemblyBegin(blockData.F); CHKERRQ(ierr);
     ierr = VecAssemblyEnd(blockData.F); CHKERRQ(ierr);
 
+    // Boundary conditions
     std::vector<int> dofs_bc_indices;
     const MoFEM::MoFEMProblem *problem_ptr;
     ierr = DMMoFEMGetProblemPtr(blockData.dM,&problem_ptr); CHKERRQ(ierr);
@@ -267,20 +300,20 @@ struct MagneticElement {
       for(_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_NAME_ENT_PART_FOR_LOOP_(
         problem_ptr,blockData.fieldName,*eit,mField.getCommRank(),dof_ptr
       )) {
+        std::bitset<8> pstatus(dof_ptr->get()->getPStatus());
+        if(pstatus.test(0)) continue; //only local
         dofs_bc_indices.push_back(dof_ptr->get()->getPetscGlobalDofIdx());
       }
     }
-    cerr << blockData.essentialBc << endl;
-    cerr << dofs_bc_indices.size() << endl;
 
     const double diag = 1;
     ierr = MatZeroRowsColumns(
       blockData.A,
       dofs_bc_indices.size(),
-      &*dofs_bc_indices.begin(),
+      dofs_bc_indices.empty()?PETSC_NULL:&*dofs_bc_indices.begin(),
       diag,
       PETSC_NULL,
-      blockData.F
+      PETSC_NULL
     ); CHKERRQ(ierr);
 
     KSP solver;
@@ -310,6 +343,7 @@ struct MagneticElement {
     PetscFunctionBegin;
     PostProcVolumeOnRefinedMesh post_proc(mField);
     ierr = post_proc.generateReferenceElementMesh(); CHKERRQ(ierr);
+    ierr = post_proc.addFieldValuesPostProc("MESH_NODE_POSITIONS"); CHKERRQ(ierr);
     ierr = post_proc.addFieldValuesPostProc(blockData.fieldName); CHKERRQ(ierr);
     post_proc.getOpPtrVector().push_back(
       new OpPostProcessCurl(blockData,post_proc.postProcMesh,post_proc.mapGaussPts)
@@ -328,9 +362,8 @@ struct MagneticElement {
     OpCurlCurl(BlockData &data):
     MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator(data.fieldName,UserDataOperator::OPROWCOL),
     blockData(data) {
-      sYmm = false;
+      sYmm = true;
     }
-    virtual ~OpCurlCurl() {}
 
     MatrixDouble entityLocalMatrix;
 
@@ -356,14 +389,14 @@ struct MagneticElement {
       if(nb_row_dofs!=row_data.getFieldData().size()) {
         SETERRQ2(
           PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,
-          "Number of base functions and dofs on entity is different on rows %d!=%d",
+          "Number of base functions and DOFs on entity is different on rows %d!=%d",
           nb_row_dofs,row_data.getFieldData().size()
         );
       }
       if(nb_col_dofs!=col_data.getFieldData().size()) {
         SETERRQ2(
           PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,
-          "Number of base functions and dofs on entity is different on cols",
+          "Number of base functions and DOFs on entity is different on cols",
           nb_col_dofs,col_data.getFieldData().size()
         );
       }
@@ -374,16 +407,15 @@ struct MagneticElement {
       // cerr << row_data.getHcurlN() << endl;
       // cerr << row_data.getDiffHcurlN() << endl;
 
-
+      const double c0 = 1./blockData.mU;
       const int nb_gauss_pts = row_data.getHcurlN().size1();
+
       for(int gg = 0;gg!=nb_gauss_pts;gg++) {
 
         // get integration weight scaled by volume
         double w = getGaussPts()(3,gg)*getVolume();
-        if(getHoGaussPtsDetJac().size()>0) {
-          // if ho geometry is given
-          w *= getHoGaussPtsDetJac()(gg);
-        }
+        // if ho geometry is given
+        w *= getHoGaussPtsDetJac()(gg);
         ierr = getCurlOfHCurlBaseFunctions(
           row_side,row_type,row_data,gg,row_curl_mat
         ); CHKERRQ(ierr);
@@ -394,12 +426,6 @@ struct MagneticElement {
         // cerr << row_curl_mat << endl;
         // cerr << col_curl_mat << endl;
 
-        FTensor::Tensor1<const double*,3> t_row_base(
-          &row_data.getHcurlN(gg)(0,HCURL0),
-          &row_data.getHcurlN(gg)(0,HCURL1),
-          &row_data.getHcurlN(gg)(0,HCURL2),3
-        );
-
         FTensor::Tensor1<double*,3> t_row_curl(
           &row_curl_mat(0,HCURL0),&row_curl_mat(0,HCURL1),&row_curl_mat(0,HCURL2),3
         );
@@ -408,19 +434,126 @@ struct MagneticElement {
           FTensor::Tensor1<double*,3> t_col_curl(
             &col_curl_mat(0,HCURL0),&col_curl_mat(0,HCURL1),&col_curl_mat(0,HCURL2),3
           );
+          for(int bb = 0;bb!=nb_col_dofs;bb++) {
+            t_local_mat += c0*w*t_row_curl(i)*t_col_curl(i);
+            ++t_col_curl;
+            ++t_local_mat;
+          }
+          ++t_row_curl;
+        }
+
+      }
+
+      // cerr << entityLocalMatrix << endl;
+      // cerr << endl;
+
+      ierr = MatSetValues(
+        blockData.A,
+        nb_row_dofs,&row_data.getIndices()[0],
+        nb_col_dofs,&col_data.getIndices()[0],
+        &entityLocalMatrix(0,0),ADD_VALUES
+      ); CHKERRQ(ierr);
+
+      if(row_side != col_side || row_type != col_type) {
+        entityLocalMatrix = trans(entityLocalMatrix);
+        ierr = MatSetValues(
+          blockData.A,
+          nb_col_dofs,&col_data.getIndices()[0],
+          nb_row_dofs,&row_data.getIndices()[0],
+          &entityLocalMatrix(0,0),ADD_VALUES
+        ); CHKERRQ(ierr);
+      }
+
+      PetscFunctionReturn(0);
+    }
+
+  };
+
+  /** \brief calculate and assemble stabilization matrix
+  */
+  struct OpStab: public MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator {
+
+    BlockData &blockData;
+    OpStab(BlockData &data):
+    MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator(data.fieldName,UserDataOperator::OPROWCOL),
+    blockData(data) {
+      sYmm = true;
+    }
+
+    MatrixDouble entityLocalMatrix;
+
+    PetscErrorCode doWork(
+      int row_side,int col_side,
+      EntityType row_type,EntityType col_type,
+      DataForcesAndSurcesCore::EntData &row_data,
+      DataForcesAndSurcesCore::EntData &col_data
+    ) {
+      PetscErrorCode ierr;
+      PetscFunctionBegin;
+
+      if(row_type==MBVERTEX) PetscFunctionReturn(0);
+      if(col_type==MBVERTEX) PetscFunctionReturn(0);
+
+      const int nb_row_dofs = row_data.getHcurlN().size2()/3;
+      if(nb_row_dofs==0) PetscFunctionReturn(0);
+      const int nb_col_dofs = col_data.getHcurlN().size2()/3;
+      if(nb_col_dofs==0) PetscFunctionReturn(0);
+      entityLocalMatrix.resize(nb_row_dofs,nb_col_dofs,false);
+      entityLocalMatrix.clear();
+
+      if(nb_row_dofs!=row_data.getFieldData().size()) {
+        SETERRQ2(
+          PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,
+          "Number of base functions and DOFs on entity is different on rows %d!=%d",
+          nb_row_dofs,row_data.getFieldData().size()
+        );
+      }
+      if(nb_col_dofs!=col_data.getFieldData().size()) {
+        SETERRQ2(
+          PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,
+          "Number of base functions and DOFs on entity is different on cols",
+          nb_col_dofs,col_data.getFieldData().size()
+        );
+      }
+
+      MatrixDouble row_curl_mat,col_curl_mat;
+      FTensor::Index<'i',3> i;
+
+      // cerr << row_data.getHcurlN() << endl;
+      // cerr << row_data.getDiffHcurlN() << endl;
+
+      const double c0 = 1./blockData.mU;
+      const double c1 = blockData.ePsilon*c0;
+      const int nb_gauss_pts = row_data.getHcurlN().size1();
+
+      for(int gg = 0;gg!=nb_gauss_pts;gg++) {
+
+        // get integration weight scaled by volume
+        double w = getGaussPts()(3,gg)*getVolume();
+        // if ho geometry is given
+        w *= getHoGaussPtsDetJac()(gg);
+
+        // cerr << row_curl_mat << endl;
+        // cerr << col_curl_mat << endl;
+
+        FTensor::Tensor1<const double*,3> t_row_base(
+          &row_data.getHcurlN(gg)(0,HCURL0),
+          &row_data.getHcurlN(gg)(0,HCURL1),
+          &row_data.getHcurlN(gg)(0,HCURL2),3
+        );
+
+        for(int aa = 0;aa!=nb_row_dofs;aa++) {
+          FTensor::Tensor0<double*> t_local_mat(&entityLocalMatrix(aa,0),1);
           FTensor::Tensor1<const double*,3> t_col_base(
             &col_data.getHcurlN(gg)(0,HCURL0),
             &col_data.getHcurlN(gg)(0,HCURL1),
             &col_data.getHcurlN(gg)(0,HCURL2),3
           );
           for(int bb = 0;bb!=nb_col_dofs;bb++) {
-            t_local_mat += (1./blockData.mu)*w*t_row_curl(i)*t_col_curl(i);
-            t_local_mat += (1e-2)*w*t_row_base(i)*t_col_base(i);
-            ++t_col_curl;
+            t_local_mat += c1*w*t_row_base(i)*t_col_base(i);
             ++t_col_base;
             ++t_local_mat;
           }
-          ++t_row_curl;
           ++t_row_base;
         }
 
@@ -436,20 +569,21 @@ struct MagneticElement {
         &entityLocalMatrix(0,0),ADD_VALUES
       ); CHKERRQ(ierr);
 
-      // if(row_side != col_side || row_type != col_type) {
-      //   entityLocalMatrix = trans(entityLocalMatrix);
-      //   ierr = MatSetValues(
-      //     blockData.A,
-      //     nb_col_dofs,&col_data.getIndices()[0],
-      //     nb_row_dofs,&row_data.getIndices()[0],
-      //     &entityLocalMatrix(0,0),ADD_VALUES
-      //   ); CHKERRQ(ierr);
-      // }
+      if(row_side != col_side || row_type != col_type) {
+        entityLocalMatrix = trans(entityLocalMatrix);
+        ierr = MatSetValues(
+          blockData.A,
+          nb_col_dofs,&col_data.getIndices()[0],
+          nb_row_dofs,&row_data.getIndices()[0],
+          &entityLocalMatrix(0,0),ADD_VALUES
+        ); CHKERRQ(ierr);
+      }
 
       PetscFunctionReturn(0);
     }
 
   };
+
 
   /** \brief calculate essential boundary conditions
     */
@@ -481,26 +615,32 @@ struct MagneticElement {
       const int nb_gauss_pts = row_data.getHcurlN().size1();
       FTensor::Tensor1<double*,3> t_row_base = row_data.getFTensor1HcurlN<3>();
 
+      FTensor::Tensor1<double*,3> t_tangent1 = getTensor1Tangent1AtGaussPt();
+      FTensor::Tensor1<double*,3> t_tangent2 = getTensor1Tangent2AtGaussPt();
+
       for(int gg = 0;gg!=nb_gauss_pts;gg++) {
 
         // get integration weight scaled by volume
         double area;
-        if(getNormals_at_GaussPt().size1() == (unsigned int)nb_gauss_pts) {
-          area = norm_2(getNormals_at_GaussPt(gg))*0.5;
-        } else {
-          area = getArea();
-        }
+        area = norm_2(getNormalsAtGaussPt(gg))*0.5;
         double w = getGaussPts()(2,gg)*area;
 
         // Current is on surface where natural bc are applied. It is set that
         // current is in XY plane, circular, around the coil.
-        FTensor::Tensor1<double,3> t_j;
         const double x = getHoCoordsAtGaussPts()(gg,0);
         const double y = getHoCoordsAtGaussPts()(gg,1);
         const double r = sqrt(x*x+y*y);
+        FTensor::Tensor1<double,3> t_j;
         t_j(0) = -y/r;
         t_j(1) = +x/r;
         t_j(2) = 0;
+
+        double a = t_j(i)*t_tangent1(i);
+        double b = t_j(i)*t_tangent2(i);
+        t_j(i) = a*t_tangent1(i)+b*t_tangent2(i);
+
+        ++t_tangent1;
+        ++t_tangent2;
 
         FTensor::Tensor0<double*> t_f(&naturalBC[0]);
         for(int aa = 0;aa!=nb_row_dofs;aa++) {

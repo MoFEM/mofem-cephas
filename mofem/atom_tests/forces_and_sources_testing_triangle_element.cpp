@@ -182,9 +182,9 @@ int main(int argc, char *argv[]) {
       my_split << std::setprecision(3) << getArea() << std::endl;
       my_split << std::setprecision(3) << getNormal() << std::endl;
       my_split << std::setprecision(3) << getHoCoordsAtGaussPts() << std::endl;
-      my_split << std::setprecision(3) << getNormals_at_GaussPt() << std::endl;
-      my_split << std::setprecision(3) << getTangent1_at_GaussPt() << std::endl;
-      my_split << std::setprecision(3) << getTangent2_at_GaussPt() << std::endl;
+      my_split << std::setprecision(3) << getNormalsAtGaussPt() << std::endl;
+      my_split << std::setprecision(3) << getTangent1AtGaussPt() << std::endl;
+      my_split << std::setprecision(3) << getTangent2AtGaussPt() << std::endl;
       my_split << std::endl;
       PetscFunctionReturn(0);
     }
