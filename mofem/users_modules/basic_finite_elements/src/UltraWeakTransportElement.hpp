@@ -676,8 +676,8 @@ struct UltraWeakTransportElement {
           ierr = cTx.getBcOnValues(fe_ent,x,y,z,value); CHKERRQ(ierr);
 
           double w = getGaussPts()(2,gg)*0.5;
-          if(getNormals_at_GaussPt().size1() == (unsigned int)nb_gauss_pts) {
-            noalias(Nf) += w*prod(data.getHdivN(gg),getNormals_at_GaussPt(gg))*value;
+          if(getNormalsAtGaussPt().size1() == (unsigned int)nb_gauss_pts) {
+            noalias(Nf) += w*prod(data.getHdivN(gg),getNormalsAtGaussPt(gg))*value;
           } else {
             noalias(Nf) += w*prod(data.getHdivN(gg),getNormal())*value;
           }
@@ -745,9 +745,9 @@ struct UltraWeakTransportElement {
           //std::cerr << data.getHdivN() << std::endl;
 
           double area;
-          if(getNormals_at_GaussPt().size1() == (unsigned int)nb_gauss_pts) {
-            area = 2.*norm_2(getNormals_at_GaussPt(gg));
-            noalias(normalN) = prod(data.getHdivN(gg),getNormals_at_GaussPt(gg))/area;
+          if(getNormalsAtGaussPt().size1() == (unsigned int)nb_gauss_pts) {
+            area = 2.*norm_2(getNormalsAtGaussPt(gg));
+            noalias(normalN) = prod(data.getHdivN(gg),getNormalsAtGaussPt(gg))/area;
           } else {
             area = 2.*getArea();
             noalias(normalN) = prod(data.getHdivN(gg),getNormal())/area;

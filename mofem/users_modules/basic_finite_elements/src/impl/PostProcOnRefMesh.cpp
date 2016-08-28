@@ -43,6 +43,7 @@ PetscErrorCode PostProcCommonOnRefMesh::OpGetFieldValues::doWork(
   PetscErrorCode ierr;
 
   if(data.getFieldData().size()==0) PetscFunctionReturn(0);
+
   if(V) {
     vAlues.resize(data.getFieldData().size());
     double *a;
@@ -95,6 +96,9 @@ PetscErrorCode PostProcCommonOnRefMesh::OpGetFieldValues::doWork(
   const void* tags_ptr[mapGaussPts.size()];
   int nb_gauss_pts = data.getN().size1();
   if(mapGaussPts.size()!=(unsigned int)nb_gauss_pts) {
+    // cerr << *data.getFieldDofs()[0] << endl;
+    // cerr << data.getFieldData().size() << " " << data.getN().size2() << endl;
+    // cerr << data.getDataOrder() << endl;
     SETERRQ2(
       PETSC_COMM_SELF,
       MOFEM_DATA_INCONSISTENCY,

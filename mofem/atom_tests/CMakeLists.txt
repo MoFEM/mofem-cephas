@@ -574,7 +574,7 @@ target_link_libraries(forces_and_sources_hdiv_divergence_operator
   ${PROJECT_LIBS}
 )
 add_test(forces_and_sources_hdiv_divergence_operator_atom
-  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_hdiv_divergence_operator
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_hdiv_divergence_operator -my_file sphere.h5m
 )
 
 # add test for hcurl curl operator

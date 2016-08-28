@@ -181,38 +181,38 @@ int main(int argc, char *argv[]) {
         //   *it = fabs(*it)<eps ? 0.0 : *it;
         // }
         // for(
-        //   ublas::unbounded_array<double>::iterator it = getNormals_at_GaussPtF3().data().begin();
-        //   it!=getNormals_at_GaussPtF3().data().end();it++
+        //   ublas::unbounded_array<double>::iterator it = getNormalsAtGaussPtF3().data().begin();
+        //   it!=getNormalsAtGaussPtF3().data().end();it++
         // ) {
         //   *it = fabs(*it)<eps ? 0.0 : *it;
         // }
         // for(
-        //   ublas::unbounded_array<double>::iterator it = getTangent1_at_GaussPtF3().data().begin();
-        //   it!=getTangent1_at_GaussPtF3().data().end();it++
+        //   ublas::unbounded_array<double>::iterator it = getTangent1AtGaussPtF3().data().begin();
+        //   it!=getTangent1AtGaussPtF3().data().end();it++
         // ) {
         //   *it = fabs(*it)<eps ? 0.0 : *it;
         // }
         // for(
-        //   ublas::unbounded_array<double>::iterator it = getTangent2_at_GaussPtF3().data().begin();
-        //   it!=getTangent2_at_GaussPtF3().data().end();it++
+        //   ublas::unbounded_array<double>::iterator it = getTangent2AtGaussPtF3().data().begin();
+        //   it!=getTangent2AtGaussPtF3().data().end();it++
         // ) {
         //   *it = fabs(*it)<eps ? 0.0 : *it;
         // }
         // for(
-        //   ublas::unbounded_array<double>::iterator it = getNormals_at_GaussPtF4().data().begin();
-        //   it!=getNormals_at_GaussPtF4().data().end();it++
+        //   ublas::unbounded_array<double>::iterator it = getNormalsAtGaussPtF4().data().begin();
+        //   it!=getNormalsAtGaussPtF4().data().end();it++
         // ) {
         //   *it = fabs(*it)<eps ? 0.0 : *it;
         // }
         // for(
-        //   ublas::unbounded_array<double>::iterator it = getTangent1_at_GaussPtF4().data().begin();
-        //   it!=getTangent1_at_GaussPtF4().data().end();it++
+        //   ublas::unbounded_array<double>::iterator it = getTangent1AtGaussPtF4().data().begin();
+        //   it!=getTangent1AtGaussPtF4().data().end();it++
         // ) {
         //   *it = fabs(*it)<eps ? 0.0 : *it;
         // }
         // for(
-        //   ublas::unbounded_array<double>::iterator it = getTangent2_at_GaussPtF4().data().begin();
-        //   it!=getTangent2_at_GaussPtF4().data().end();it++
+        //   ublas::unbounded_array<double>::iterator it = getTangent2AtGaussPtF4().data().begin();
+        //   it!=getTangent2AtGaussPtF4().data().end();it++
         // ) {
         //   *it = fabs(*it)<eps ? 0.0 : *it;
         // }
@@ -235,12 +235,12 @@ int main(int argc, char *argv[]) {
         // mySplit << std::setprecision(3) << getArea(1) << std::endl;
         // mySplit << std::setprecision(3) << "normal F3 " << getNormalF3() << std::endl;
         // mySplit << std::setprecision(3) << "normal F4 " << getNormalF4() << std::endl;
-        // mySplit << std::setprecision(3) << "normal at Gauss pt F3 " << getNormals_at_GaussPtF3() << std::endl;
-        // mySplit << std::setprecision(3) << getTangent1_at_GaussPtF3() << std::endl;
-        // mySplit << std::setprecision(3) << getTangent2_at_GaussPtF3() << std::endl;
-        // mySplit << std::setprecision(3) << "normal at Gauss pt F4 " << getNormals_at_GaussPtF4() << std::endl;
-        // mySplit << std::setprecision(3) << getTangent1_at_GaussPtF4() << std::endl;
-        // mySplit << std::setprecision(3) << getTangent2_at_GaussPtF4() << std::endl;
+        // mySplit << std::setprecision(3) << "normal at Gauss pt F3 " << getNormalsAtGaussPtF3() << std::endl;
+        // mySplit << std::setprecision(3) << getTangent1AtGaussPtF3() << std::endl;
+        // mySplit << std::setprecision(3) << getTangent2AtGaussPtF3() << std::endl;
+        // mySplit << std::setprecision(3) << "normal at Gauss pt F4 " << getNormalsAtGaussPtF4() << std::endl;
+        // mySplit << std::setprecision(3) << getTangent1AtGaussPtF4() << std::endl;
+        // mySplit << std::setprecision(3) << getTangent2AtGaussPtF4() << std::endl;
         PetscFunctionReturn(0);
       }
 
