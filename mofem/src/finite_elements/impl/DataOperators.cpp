@@ -1078,7 +1078,7 @@ PetscErrorCode OpSetHoInvJacH1::doWork(
 
         for(unsigned int gg = 0;gg!=nb_gauss_pts;gg++) {
           for(unsigned int bb = 0;bb!=nb_base_functions;bb++) {
-            t_inv_diff_n(k,i) = t_diff_n(k,j)*t_inv_jac(i,j);
+            t_inv_diff_n(k,i) = t_diff_n(j,k)*t_inv_jac(i,j);
             ++t_diff_n;
             ++t_inv_diff_n;
           }
