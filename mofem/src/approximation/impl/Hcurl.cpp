@@ -255,10 +255,9 @@ PetscErrorCode MoFEM::Hcurl_EdgeBaseFunctions_MBTET_ON_FACE(
       const int n1 = edges_nodes[ee][1];
 
       t_psi_e_0(i) =
-      (N[node_shift+n1]*t_node_diff_ksi[n0](i)-N[n0]*t_node_diff_ksi[n1](i))*sense[ee];
+      (N[node_shift+n1]*t_node_diff_ksi[n0](i)-N[node_shift+n0]*t_node_diff_ksi[n1](i))*sense[ee];
       t_psi_e_1(i) =
       N[node_shift+n1]*t_node_diff_ksi[n0](i)+N[node_shift+n0]*t_node_diff_ksi[n1](i);
-      
       (t_edge_n[ee])(i) = t_psi_e_0(i);
       ++(t_edge_n[ee]);
       (t_edge_n[ee])(i) = t_psi_e_1(i);
