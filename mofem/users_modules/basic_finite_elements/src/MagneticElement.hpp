@@ -198,9 +198,9 @@ struct MagneticElement {
 
     // Set geometry approximation ordered
     ierr = mField.add_ents_to_field_by_TETs(root_set,"MESH_NODE_POSITIONS"); CHKERRQ(ierr);
-    ierr = mField.set_field_order(root_set,MBTET,"MESH_NODE_POSITIONS",1); CHKERRQ(ierr);
-    ierr = mField.set_field_order(root_set,MBTRI,"MESH_NODE_POSITIONS",1); CHKERRQ(ierr);
-    ierr = mField.set_field_order(root_set,MBEDGE,"MESH_NODE_POSITIONS",1); CHKERRQ(ierr);
+    ierr = mField.set_field_order(root_set,MBTET,"MESH_NODE_POSITIONS",2); CHKERRQ(ierr);
+    ierr = mField.set_field_order(root_set,MBTRI,"MESH_NODE_POSITIONS",2); CHKERRQ(ierr);
+    ierr = mField.set_field_order(root_set,MBEDGE,"MESH_NODE_POSITIONS",2); CHKERRQ(ierr);
     ierr = mField.set_field_order(root_set,MBVERTEX,"MESH_NODE_POSITIONS",1); CHKERRQ(ierr);
 
     //build field
