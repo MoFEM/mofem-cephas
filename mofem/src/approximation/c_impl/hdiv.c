@@ -56,12 +56,13 @@ PetscErrorCode Hdiv_FaceBubbleShapeFunctions_MBTET(
   PetscFunctionReturn(0);
 }
 PetscErrorCode Hdiv_EdgeBasedVolumeShapeFunctions_MBTET(
-  int p,double *coords,double *N,double *diffN,double *PHI_v_e[6],double *diffPHI_v_e[6],int GDIM,
+  int p,double *N,double *diffN,double *PHI_v_e[6],double *diffPHI_v_e[6],int GDIM,
   PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
 ) {
   PetscFunctionBegin;
   if(p<2) PetscFunctionReturn(0);
   PetscErrorCode ierr;
+  double coords[] = { 0,0,0, 1,0,0, 0,1,0, 0,0,1 };
   const int edges_nodes[] = { 0,1, 1,2, 2,0, 0,3, 1,3, 2,3 };
   double tau_e[6][3];
   int ee = 0;
@@ -117,12 +118,13 @@ PetscErrorCode Hdiv_EdgeBasedVolumeShapeFunctions_MBTET(
   PetscFunctionReturn(0);
 }
 PetscErrorCode Hdiv_FaceBasedVolumeShapeFunctions_MBTET(
-  int p,double *coords,double *N,double *diffN,double *PHI_v_f[],double *diffPHI_v_f[],int GDIM,
+  int p,double *N,double *diffN,double *PHI_v_f[],double *diffPHI_v_f[],int GDIM,
   PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
 ) {
   PetscFunctionBegin;
   if(p<3) PetscFunctionReturn(0);
   PetscErrorCode ierr;
+  double coords[] = { 0,0,0, 1,0,0, 0,1,0, 0,0,1 };
   const int faces_nodes[] = { 0,1,3, 1,2,3, 0,2,3, 0,1,2 };
   double tau_0i[4][3],tau_0j[4][3];
   int ff = 0;
@@ -221,12 +223,13 @@ PetscErrorCode Hdiv_FaceBasedVolumeShapeFunctions_MBTET(
   PetscFunctionReturn(0);
 }
 PetscErrorCode Hdiv_VolumeBubbleShapeFunctions_MBTET(
-  int p,double *coords,double *N,double *diffN,double *PHI_v,double *diffPHI_v,int GDIM,
+  int p,double *N,double *diffN,double *PHI_v,double *diffPHI_v,int GDIM,
   PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
 ) {
   PetscFunctionBegin;
   if(p<4) PetscFunctionReturn(0);
   PetscErrorCode ierr;
+  double coords[] = { 0,0,0, 1,0,0, 0,1,0, 0,0,1 };
   double ed[3][3];
   int nn = 0;
   for(;nn<3;nn++) {

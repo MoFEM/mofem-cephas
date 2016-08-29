@@ -274,7 +274,6 @@ PetscErrorCode TetPolynomialBase::getValueHdiv(
   double *diff_phi_v;
 
   int volume_order = data.dataOnEntities[MBTET][0].getDataOrder();
-  double coords[] = { 0,0,0, 1,0,0, 0,1,0, 0,0,1 };
 
   N_volume_edge.resize(6,false);
   diffN_volume_edge.resize(6,false);
@@ -285,7 +284,7 @@ PetscErrorCode TetPolynomialBase::getValueHdiv(
     diff_phi_v_e[ee] = &*(diffN_volume_edge[ee].data().begin());
   }
   ierr = Hdiv_EdgeBasedVolumeShapeFunctions_MBTET(
-    volume_order,coords,&data.dataOnEntities[MBVERTEX][0].getN(base)(0,0),
+    volume_order,&data.dataOnEntities[MBVERTEX][0].getN(base)(0,0),
     &data.dataOnEntities[MBVERTEX][0].getDiffN(base)(0,0),
     phi_v_e,diff_phi_v_e,nb_gauss_pts,
     base_polynomials
@@ -300,7 +299,7 @@ PetscErrorCode TetPolynomialBase::getValueHdiv(
     diff_phi_v_f[ff] = &*(diffN_volume_face[ff].data().begin());
   }
   ierr = Hdiv_FaceBasedVolumeShapeFunctions_MBTET(
-    volume_order,coords,&data.dataOnEntities[MBVERTEX][0].getN(base)(0,0),
+    volume_order,&data.dataOnEntities[MBVERTEX][0].getN(base)(0,0),
     &data.dataOnEntities[MBVERTEX][0].getDiffN(base)(0,0),
     phi_v_f,diff_phi_v_f,nb_gauss_pts,
     base_polynomials
@@ -311,7 +310,7 @@ PetscErrorCode TetPolynomialBase::getValueHdiv(
   phi_v = &*(N_volume_bubble.data().begin());
   diff_phi_v = &*(diffN_volume_bubble.data().begin());
   ierr = Hdiv_VolumeBubbleShapeFunctions_MBTET(
-    volume_order,coords,&data.dataOnEntities[MBVERTEX][0].getN(base)(0,0),
+    volume_order,&data.dataOnEntities[MBVERTEX][0].getN(base)(0,0),
     &data.dataOnEntities[MBVERTEX][0].getDiffN(base)(0,0),
     phi_v,diff_phi_v,nb_gauss_pts,
     base_polynomials
