@@ -589,7 +589,7 @@ target_link_libraries(forces_and_sources_hcurl_curl_operator
   ${PROJECT_LIBS}
 )
 add_test(forces_and_sources_hcurl_curl_operator_atom
-  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_hcurl_curl_operator
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_hcurl_curl_operator -my_file sphere.h5m
 )
 
 #dm

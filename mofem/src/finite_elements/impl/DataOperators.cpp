@@ -1059,17 +1059,12 @@ PetscErrorCode OpSetHoInvJacH1::doWork(
         FTensor::Tensor2<double*,3,3> t_diff_n = data.getFTensor2DiffHdivN<3,3>(base);
         double *t_inv_diff_n_ptr = &*diffHdivInvJac.data().begin();
         FTensor::Tensor2<double*,3,3> t_inv_diff_n(
-          t_inv_diff_n_ptr,
-          &t_inv_diff_n_ptr[HDIV0_1],
-          &t_inv_diff_n_ptr[HDIV0_2],
-          &t_inv_diff_n_ptr[HDIV1_0],
-          &t_inv_diff_n_ptr[HDIV1_1],
-          &t_inv_diff_n_ptr[HDIV1_2],
-          &t_inv_diff_n_ptr[HDIV2_0],
-          &t_inv_diff_n_ptr[HDIV2_1],
-          &t_inv_diff_n_ptr[HDIV2_2],9
+          t_inv_diff_n_ptr, &t_inv_diff_n_ptr[HDIV0_1], &t_inv_diff_n_ptr[HDIV0_2],
+          &t_inv_diff_n_ptr[HDIV1_0], &t_inv_diff_n_ptr[HDIV1_1], &t_inv_diff_n_ptr[HDIV1_2],
+          &t_inv_diff_n_ptr[HDIV2_0], &t_inv_diff_n_ptr[HDIV2_1], &t_inv_diff_n_ptr[HDIV2_2],9
         );
         double *t_inv_jac_ptr = invHoJac.data().begin();
+        // cerr << invHoJac << endl;
         FTensor::Tensor2<double*,3,3> t_inv_jac(
           t_inv_jac_ptr,&t_inv_jac_ptr[1],&t_inv_jac_ptr[2],
           &t_inv_jac_ptr[3],&t_inv_jac_ptr[4],&t_inv_jac_ptr[5],
@@ -1078,7 +1073,7 @@ PetscErrorCode OpSetHoInvJacH1::doWork(
 
         for(unsigned int gg = 0;gg!=nb_gauss_pts;gg++) {
           for(unsigned int bb = 0;bb!=nb_base_functions;bb++) {
-            t_inv_diff_n(k,i) = t_diff_n(j,k)*t_inv_jac(i,j);
+            t_inv_diff_n(i,j) = t_inv_jac(k,j)*t_diff_n(i,k);
             ++t_diff_n;
             ++t_inv_diff_n;
           }
