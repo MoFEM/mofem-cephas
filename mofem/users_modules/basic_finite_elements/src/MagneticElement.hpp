@@ -94,7 +94,7 @@ struct MagneticElement {
     feName("MAGNETIC"),
     feNaturalBCName("MAGENTIC_NATURAL_BC"),
     mU(1),
-    ePsilon(1) {
+    ePsilon(0.01) {
     }
     ~BlockData() {}
   };
