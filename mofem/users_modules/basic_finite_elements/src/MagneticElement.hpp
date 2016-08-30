@@ -406,7 +406,7 @@ struct MagneticElement {
   \f[
   \mathbf{u} = \nabla \times \mathbf{B}
   \f]
-  where \f$\mathbf{B}\f$ is magnetic flux.
+  where \f$\mathbf{B}\f$ is magnetic flux and \f$\mu\f$ is magnetic permeability.
 
   For more details pleas look to \cite ivanyshyn2013computation
 
@@ -540,6 +540,7 @@ struct MagneticElement {
   \f[
   \mathbf{A} = \int_\Omega \epsilon \mathbf{u}  \cdot \mathbf{v} \textrm{d}\Omega
   \f]
+  where \f$\epsilon\f$ is regularization parameter.
 
   */
   struct OpStab: public MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator {
@@ -672,6 +673,7 @@ struct MagneticElement {
     \f[
     \mathbf{A} = \int_{\partial\Omega} \ \mathbf{u}  \cdot \mathbf{j}_i \textrm{d}{\partial\Omega}
     \f]
+    where \f$\mathbf{j}_i\f$ is current density function.
 
     Here simple current on coil is hard coded. In future more general implementation
     is needed.
