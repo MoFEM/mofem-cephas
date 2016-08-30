@@ -1,5 +1,6 @@
 /** \file MagneticElement.hpp
  * \brief Implementation of magnetic element
+ * \ingroup maxwell_element
  *
  */
 
@@ -23,6 +24,7 @@
 
 /**
  * \brief Implementation of magnetostatic problem (basic Implementation)
+ * \ingroup maxwell_element
  *
  *  Look for theory and details here:
  *
@@ -94,7 +96,7 @@ struct MagneticElement {
     feName("MAGNETIC"),
     feNaturalBCName("MAGENTIC_NATURAL_BC"),
     mU(1),
-    ePsilon(1) {
+    ePsilon(0.1) {
     }
     ~BlockData() {}
   };
@@ -103,6 +105,7 @@ struct MagneticElement {
 
   /**
    * \brief get natural boundary conditions
+   * \ingroup maxwell_element
    * @return      error code
    */
   PetscErrorCode getNaturalBc() {
@@ -123,6 +126,7 @@ struct MagneticElement {
 
   /**
    * \brief get essential boundary conditions (only homogenous case is considered)
+   * \ingroup maxwell_element
    * @return      error code
    */
   PetscErrorCode getEssentialBc() {
@@ -155,6 +159,7 @@ struct MagneticElement {
 
   /**
    * \brief build problem data structures
+   * \ingroup maxwell_element
    * @return error code
    */
   PetscErrorCode createFields() {
@@ -215,6 +220,15 @@ struct MagneticElement {
     PetscFunctionReturn(0);
   }
 
+  /**
+   * \brief create finite elements
+   * \ingroup maxwell_element
+   *
+   * Create volume and surface element. Surface element is used to integrate
+   * natural boundary conditions.
+   *
+   * @return error code
+   */
   PetscErrorCode createElements() {
     PetscErrorCode ierr;
     PetscFunctionBegin;
@@ -238,6 +252,18 @@ struct MagneticElement {
     PetscFunctionReturn(0);
   }
 
+  /**
+   * \brief create problem
+   * \ingroup maxwell_element
+   *
+   * Problem is collection of finite elements. With the information on which
+   * fields finite elements operates the matrix and  left and right hand side
+   * vector could be created.
+   *
+   * Here we use Distributed mesh manager from PETSc as a inteface.
+   *
+   * @return error code
+   */
   PetscErrorCode createProblem() {
     PetscErrorCode ierr;
     PetscFunctionBegin;
@@ -257,6 +283,11 @@ struct MagneticElement {
     PetscFunctionReturn(0);
   }
 
+  /**
+   * \brief destroy Distributed mesh manager
+   * \ingroup maxwell_element
+   * @return [description]
+   */
   PetscErrorCode destroyProblem() {
     PetscErrorCode ierr;
     PetscFunctionBegin;
@@ -264,6 +295,12 @@ struct MagneticElement {
     PetscFunctionReturn(0);
   }
 
+  /**  \brief solve problem
+   * \ingroup maxwell_element
+   *
+   * Create matrices; integrate over elements; solve linear system of equations
+   *
+   */
   PetscErrorCode solveProblem() {
     PetscErrorCode ierr;
     PetscFunctionBegin;
@@ -338,6 +375,11 @@ struct MagneticElement {
     PetscFunctionReturn(0);
   }
 
+  /**
+   * \brief post-process results, i.e. save solution on the mesh
+   * \ingroup maxwell_element
+   * @return [description]
+   */
   PetscErrorCode postProcessResults() {
     PetscErrorCode ierr;
     PetscFunctionBegin;
@@ -355,6 +397,19 @@ struct MagneticElement {
 
 
   /** \brief calculate and assemble CurlCurl matrix
+   * \ingroup maxwell_element
+
+  \f[
+  \mathbf{A} = \int_\Omega \mu^{-1} \left( \nabla \times \mathbf{u}  \cdot \nabla \times \mathbf{v} \right) \textrm{d}\Omega
+  \f]
+  where
+  \f[
+  \mathbf{u} = \nabla \times \mathbf{B}
+  \f]
+  where \f$\mathbf{B}\f$ is magnetic flux and \f$\mu\f$ is magnetic permeability.
+
+  For more details pleas look to \cite ivanyshyn2013computation
+
   */
   struct OpCurlCurl: public MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator {
 
@@ -367,6 +422,16 @@ struct MagneticElement {
 
     MatrixDouble entityLocalMatrix;
 
+    /**
+     * \brief integrate matrix
+     * @param  row_side local number of entity on element for row of the matrix
+     * @param  col_side local number of entity on element for col of the matrix
+     * @param  row_type type of row entity (EDGE/TRIANGLE/TETRAHEDRON)
+     * @param  col_type type of col entity (EDGE/TRIANGLE/TETRAHEDRON)
+     * @param  row_data structure of data, like base functions and associated methods to access those data on rows
+     * @param  col_data structure of data, like base functions and associated methods to access those data on rows
+     * @return          error code
+     */
     PetscErrorCode doWork(
       int row_side,int col_side,
       EntityType row_type,EntityType col_type,
@@ -470,6 +535,13 @@ struct MagneticElement {
   };
 
   /** \brief calculate and assemble stabilization matrix
+  * \ingroup maxwell_element
+
+  \f[
+  \mathbf{A} = \int_\Omega \epsilon \mathbf{u}  \cdot \mathbf{v} \textrm{d}\Omega
+  \f]
+  where \f$\epsilon\f$ is regularization parameter.
+
   */
   struct OpStab: public MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator {
 
@@ -482,6 +554,16 @@ struct MagneticElement {
 
     MatrixDouble entityLocalMatrix;
 
+    /**
+     * \brief integrate matrix
+     * @param  row_side local number of entity on element for row of the matrix
+     * @param  col_side local number of entity on element for col of the matrix
+     * @param  row_type type of row entity (EDGE/TRIANGLE/TETRAHEDRON)
+     * @param  col_type type of col entity (EDGE/TRIANGLE/TETRAHEDRON)
+     * @param  row_data structure of data, like base functions and associated methods to access those data on rows
+     * @param  col_data structure of data, like base functions and associated methods to access those data on rows
+     * @return          error code
+     */
     PetscErrorCode doWork(
       int row_side,int col_side,
       EntityType row_type,EntityType col_type,
@@ -586,6 +668,16 @@ struct MagneticElement {
 
 
   /** \brief calculate essential boundary conditions
+    * \ingroup maxwell_element
+
+    \f[
+    \mathbf{A} = \int_{\partial\Omega} \ \mathbf{u}  \cdot \mathbf{j}_i \textrm{d}{\partial\Omega}
+    \f]
+    where \f$\mathbf{j}_i\f$ is current density function.
+
+    Here simple current on coil is hard coded. In future more general implementation
+    is needed.
+
     */
   struct OpNaturalBC: public MoFEM::FaceElementForcesAndSourcesCore::UserDataOperator {
 
@@ -597,6 +689,15 @@ struct MagneticElement {
     }
 
     VectorDouble naturalBC;
+
+    /**
+     * \brief integrate matrix
+     * \ingroup maxwell_element
+     * @param  row_side local number of entity on element for row of the matrix
+     * @param  row_type type of row entity (EDGE/TRIANGLE/TETRAHEDRON)
+     * @param  row_data structure of data, like base functions and associated methods to access those data on rows
+     * @return          error code
+     */
     PetscErrorCode doWork(
       int row_side,EntityType row_type,DataForcesAndSurcesCore::EntData &row_data
     ) {
@@ -665,7 +766,8 @@ struct MagneticElement {
   };
 
   /** \brief calculate and assemble CurlCurl matrix
-  */
+    * \ingroup maxwell_element
+    */
   struct OpPostProcessCurl: public MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator {
 
     BlockData &blockData;
@@ -746,3 +848,8 @@ struct MagneticElement {
 };
 
 #endif //__MAGNETICELEMENT_HPP__
+
+/***************************************************************************//**
+ * \defgroup maxwell_element Magnetic/Maxwell element
+ * \ingroup user_modules
+ ******************************************************************************/

@@ -1,4 +1,5 @@
-/** \file magentostatic.cpp
+/** \file magnetostatic.cpp
+  * \ingroup maxwell_element
   *
   * \brief Example implementation of magnetostaic problem
   *
