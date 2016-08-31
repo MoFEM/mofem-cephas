@@ -3175,6 +3175,309 @@ namespace MoFEM {
     }
     
     //------------------------------------------------------------------------------
+    // Code: 43050
+    // TSAI-WU
+    //
+    
+    virtual PetscErrorCode gfun_ply_Tsai_Wu_New(ublas::vector<double> x,
+                                                vector<string> vars_name,
+                                                ublas::vector<double> MatStrength,
+                                                ublas::matrix<double> StressGP,
+                                                ublas::vector<ublas::matrix<double> > StressGP_r,
+                                                ublas::matrix<ublas::matrix<double> > StressGP_rs,
+                                                double &val_lsf,
+                                                ublas::vector<double> &grad_lsf,
+                                                ublas::matrix<double> &hess_lsf,
+                                                int num_ply_vars,
+                                                int PSFE_order) {
+      PetscFunctionBegin;
+      
+      double X_T; // tensile strength in the fibre direction
+      double X_C; // tensile strength in the transverse direction
+      double Y_T; // compressive strength in the fibre direction
+      double Y_C; // compressive strength in the transverse direction
+      double S_12; // Longitudinal or axial shear strength
+      double S_23; // Transverse shear strength
+      double F1, F2, F11, F22, F44, F66, F12, F23;
+      ublas::matrix<double> dsdx(3,3);
+      //cout<<"\nPly strength: "<<PlyStrength<<endl;
+      X_T  = MatStrength(0);
+      X_C  = MatStrength(1);
+      Y_T  = MatStrength(2);
+      Y_C  = MatStrength(3);//cout<<"The Y_T is: "<<Y_T<<endl;
+      S_12 = MatStrength(4);
+      S_23 = MatStrength(5);
+      
+      // Update the values if the parameters are considered as random variables.
+      for (unsigned i=1; i<=x.size();i++) {
+        if (vars_name[i].compare(0,2,"XT") == 0) {
+          X_T = x(i-1);
+        }
+        else if (vars_name[i].compare(0,2,"XC") == 0) {
+          X_C = x(i-1);
+        }
+        else if (vars_name[i].compare(0,2,"YT") == 0) {
+          Y_T = x(i-1);
+        }
+        else if (vars_name[i].compare(0,2,"YC") == 0) {
+          Y_C = x(i-1);
+        }
+        else if (vars_name[i].compare(0,3,"S12") == 0) {
+          S_12 = x(i-1);
+        }
+        else if (vars_name[i].compare(0,3,"S23") == 0) {
+          S_23 = x(i-1);
+        }
+      }
+      
+      // Calculate the transverse shear strength using Christensen's formula
+      double eta;
+      eta = 0.2519; // CFRP
+      //eta = 0.2910; // GFRP
+      S_23 = eta*Y_T*Y_C;
+      
+      F1 = (1/X_T - 1/X_C);
+      F2 = (1/Y_T - 1/Y_C);
+      F11 = 1/(X_T*X_C);
+      F22 = 1/(Y_T*Y_C);
+      F12 = -1/(2*sqrt(X_T*X_C*Y_T*Y_C)); // Empirical suggestion: Mises-Hencky criterion
+      F23 = -1/(2*Y_T*Y_C);
+      F44 = 1/(S_23*S_23);
+      F66 = 1/(S_12*S_12);
+      
+      val_lsf = 1- (  F1*StressGP(0,0)
+                    + F2*(StressGP(1,1) + StressGP(2,2))
+                    + F11*StressGP(0,0)*StressGP(0,0)
+                    + F22*(StressGP(1,1)*StressGP(1,1) + StressGP(2,2)*StressGP(2,2))
+                    + F44*StressGP(1,2)*StressGP(1,2)
+                    + F66*(StressGP(0,1)*StressGP(0,1) + StressGP(2,0)*StressGP(2,0))
+                    + 2*F12*StressGP(0,0)*(StressGP(1,1)+StressGP(2,2))
+                    + 2*F23*StressGP(1,1)*StressGP(2,2));
+      
+      // Evaluate the partial derovative of the LSF w.r.t. basic variables
+      
+      // ============================================
+      //
+      // Calculate the first order derivative of LSF
+      //
+      // ============================================
+      for (unsigned i=0; i<x.size(); i++) {
+        cout<<"The variable name is "<<vars_name[i+1]<<endl;
+        if (vars_name[i+1].compare(0,2,"XT") == 0) {
+          // w.r.t X_T
+          double F12_XT = 1/4*pow(X_T*X_C*Y_T*Y_C,-1.5)*X_C*Y_T*Y_C;
+          double F1_XT = -1/(X_T*X_T);
+          double F11_XT = -1/(X_T*X_T*X_C);
+          grad_lsf(i) = - (  F1_XT*StressGP(0,0)
+                             + F11_XT*StressGP(0,0)*StressGP(0,0)
+                             + 2*F12_XT*StressGP(0,0)*(StressGP(1,1)+StressGP(2,2)));
+          
+        }
+        else if (vars_name[i+1].compare(0,2,"XC") == 0) {
+          // w.r.t X_C
+          double F1_XC = 1/(X_C*X_C);
+          double F11_XC = -1/(X_T*X_C*X_C);
+          double F12_XC = 1/4*pow(X_T*X_C*Y_T*Y_C,-1.5)*X_T*Y_T*Y_C;
+          grad_lsf(i) = - (  F1_XC*StressGP(0,0)
+                             + F11_XC*StressGP(0,0)*StressGP(0,0)
+                             + 2*F12_XC*StressGP(0,0)*(StressGP(1,1)+StressGP(2,2)));
+        }
+        else if (vars_name[i+1].compare(0,2,"YT") == 0) {
+          // w.r.t Y_T
+          double F2_YT = -1/(Y_T*Y_T);
+          double F22_YT = -1/(Y_T*Y_T*Y_C);
+          double F12_YT = 1/4*pow(X_T*X_C*Y_T*Y_C,-1.5)*X_T*X_C*Y_C;
+          double F44_YT = -2*eta*Y_C/(S_23*S_23*S_23);
+          double F23_YT = 1/(2*Y_C*Y_T*Y_T);
+          grad_lsf(i) = - (  F2_YT*(StressGP(1,1) + StressGP(2,2))
+                             + F22_YT*(StressGP(1,1)*StressGP(1,1) + StressGP(2,2)*StressGP(2,2))
+                             + F44_YT*StressGP(1,2)*StressGP(1,2)
+                             + 2*F12_YT*StressGP(0,0)*(StressGP(1,1)+StressGP(2,2))
+                             + 2*F23_YT*StressGP(1,1)*StressGP(2,2));
+        }
+        else if (vars_name[i+1].compare(0,2,"YC") == 0) {
+          // w.r.t Y_C
+          double F2_YC = 1/(Y_C*Y_C);
+          double F22_YC = -1/(Y_T*Y_C*Y_C);
+          double F12_YC = 1/4*pow(X_T*X_C*Y_T*Y_C,-1.5)*X_T*X_C*Y_T;
+          double F44_YC = -2*eta*Y_T/(S_23*S_23*S_23);
+          double F23_YC = 1/(2*Y_C*Y_C*Y_T);
+          grad_lsf(i) = - (  F2_YC*(StressGP(1,1) + StressGP(2,2))
+                             + F22_YC*(StressGP(1,1)*StressGP(1,1) + StressGP(2,2)*StressGP(2,2))
+                             + F44_YC*StressGP(1,2)*StressGP(1,2)
+                             + 2*F12_YC*StressGP(0,0)*(StressGP(1,1)+StressGP(2,2))
+                             + 2*F23_YC*StressGP(1,1)*StressGP(2,2));
+        }
+        else if (vars_name[i+1].compare(0,3,"S12") == 0) {
+          // w.r.t S_12
+          grad_lsf(i) = 2*(StressGP(0,1)*StressGP(0,1) + StressGP(0,2)*StressGP(0,2))/pow(S_12,3);
+        }
+        else {
+          // w.r.t. Ez
+          dsdx.clear(); dsdx.resize(3,3); dsdx = StressGP_r(i);
+          grad_lsf(i) = - (  F1*dsdx(0,0)
+                           + F2*(dsdx(1,1) + dsdx(2,2))
+                           + 2*F11*StressGP(0,0)*dsdx(0,0)
+                           + 2*F22*(StressGP(1,1)*dsdx(1,1) + StressGP(2,2)*dsdx(2,2))
+                           + 2*F44*StressGP(1,2)*dsdx(1,2)
+                           + 2*F66*(StressGP(0,1)*dsdx(0,1) + StressGP(2,0)*dsdx(2,0))
+                           + 2*F12*dsdx(0,0)*(StressGP(1,1)+StressGP(2,2))
+                           + 2*F12*StressGP(0,0)*(dsdx(1,1)+dsdx(2,2))
+                           + 2*F23*dsdx(1,1)*StressGP(2,2)
+                           + 2*F23*StressGP(1,1)*dsdx(2,2));
+        }
+      }
+      
+      // ============================================
+      //
+      // Calculate the second order derivative of LSF
+      //
+      // ============================================
+      
+      if (PSFE_order == 2) {
+        ublas::matrix<double> dsdx_r(3,3);
+        ublas::matrix<double> dsdx_s(3,3);
+        ublas::matrix<double> dsdx_rs(3,3);
+        //      dsdx_rs.clear();
+        
+        for (unsigned ivar=0; ivar<x.size(); ivar++) {
+          for (unsigned jvar=0; jvar<x.size(); jvar++) {
+            dsdx_r.clear(); dsdx_s.clear(); dsdx_rs.clear();
+            //
+            if ((ivar<num_ply_vars) && (jvar<num_ply_vars)) {
+              dsdx_r = StressGP_r(ivar); dsdx_s = StressGP_r(jvar);
+              dsdx_rs = StressGP_rs(ivar,jvar);
+              
+              hess_lsf(ivar, jvar) = - (  F1*dsdx_rs(0,0)
+                                 + F2*(dsdx_rs(1,1) + dsdx_rs(2,2))
+                                 + 2*F11*(dsdx_s(0,0)*dsdx_r(0,0) + StressGP(0,0)*dsdx_rs(0,0))
+                                 + 2*F22*(dsdx_s(1,1)*dsdx_r(1,1) + StressGP(1,1)*dsdx_rs(1,1) + dsdx_s(2,2)*dsdx_r(2,2) + StressGP(2,2)*dsdx_rs(2,2))
+                                 + 2*F44*(dsdx_s(1,2)*dsdx_r(1,2) + StressGP(1,2)*dsdx_rs(1,2))
+                                 + 2*F66*(dsdx_s(0,1)*dsdx_r(0,1) + StressGP(0,1)*dsdx_rs(0,1) + dsdx_s(2,0)*dsdx_r(2,0) + StressGP(2,0)*dsdx_rs(2,0))
+                                 + 2*F12*(dsdx_rs(0,0)*(StressGP(1,1)+StressGP(2,2)) + dsdx_r(0,0)*(dsdx_s(1,1)+dsdx_s(2,2)))
+                                 + 2*F12*(dsdx_s(0,0)*(dsdx_r(1,1)+dsdx_r(2,2)) + StressGP(0,0)*(dsdx_rs(1,1)+dsdx_rs(2,2)))
+                                 + 2*F23*(dsdx_rs(1,1)*StressGP(2,2) + dsdx_r(1,1)*dsdx_s(2,2))
+                                 + 2*F23*(dsdx_s(1,1)*dsdx_r(2,2) + StressGP(1,1)*dsdx_rs(2,2)));
+              hess_lsf(jvar, ivar) = hess_lsf(ivar, jvar);
+            }
+            else if ((ivar<num_ply_vars) && (vars_name[jvar+1].compare(0,2,"XT")==0)) {
+              // XT Em
+              double F12_XT = 1/4*pow(X_T*X_C*Y_T*Y_C,-1.5)*X_C*Y_T*Y_C;
+              double F1_XT = -1/(X_T*X_T);
+              double F11_XT = -1/(X_T*X_T*X_C);
+              
+              hess_lsf(ivar, jvar) = - (  F1_XT*dsdx_r(0,0)
+                                        + 2*F11_XT*StressGP(0,0)*dsdx_r(0,0)
+                                        + 2*F12_XT*(dsdx_r(0,0)*(StressGP(1,1)+StressGP(2,2))
+                                        + StressGP(0,0)*(dsdx_r(1,1)+dsdx_r(2,2))));
+              hess_lsf(jvar, ivar) = hess_lsf(ivar, jvar);
+            }
+            else if ((vars_name[ivar+1].compare(0,2,"XT")==0) && (vars_name[jvar+1].compare(0,2,"XT")==0)) {
+              // XT XT
+              double F12_XTXT = -3/8*pow(X_T*X_C*Y_T*Y_C,-2.5)*pow(X_C*Y_T*Y_C,2);
+              double F1_XTXT  = 2/(X_T*X_T*X_T);
+              double F11_XTXT = 2/(X_T*X_T*X_T*X_C);
+              hess_lsf(ivar, jvar) = - (  F1_XTXT*StressGP(0,0)
+                                 + F11_XTXT*StressGP(0,0)*StressGP(0,0)
+                                 + 2*F12_XTXT*StressGP(0,0)*(StressGP(1,1)+StressGP(2,2)));
+            }
+            else if ((ivar<num_ply_vars) && (vars_name[jvar+1].compare(0,2,"XC")==0)) {
+              // X_C Em
+              double F1_XC = 1/(X_C*X_C);
+              double F11_XC = -1/(X_T*X_C*X_C);
+              double F12_XC = 1/4*pow(X_T*X_C*Y_T*Y_C,-1.5)*X_T*Y_T*Y_C;
+
+              hess_lsf(ivar, jvar) = - (  F1_XC*dsdx_r(0,0)
+                                 + 2*F11_XC*StressGP(0,0)*dsdx_r(0,0)
+                                 + 2*F12_XC*(dsdx_r(0,0)*(StressGP(1,1)+StressGP(2,2))
+                                             + StressGP(0,0)*(dsdx_r(1,1)+dsdx_r(2,2))));
+              hess_lsf(jvar, ivar) = hess_lsf(ivar, jvar);
+            }
+            else if ((vars_name[ivar+1].compare(0,2,"XC")==0) && (vars_name[jvar+1].compare(0,2,"XC")==0)) {
+              // X_C X_C
+              double F1_XCXC  = -2/(X_C*X_C*X_C);
+              double F11_XCXC = 2/(X_T*X_C*X_C*X_C);
+              double F12_XCXC = -3/8*pow(X_T*X_C*Y_T*Y_C,-2.5)*pow(X_T*Y_T*Y_C,2);
+              hess_lsf(ivar, jvar) = - (  F1_XCXC*StressGP(0,0)
+                                 + F11_XCXC*StressGP(0,0)*StressGP(0,0)
+                                 + 2*F12_XCXC*StressGP(0,0)*(StressGP(1,1)+StressGP(2,2)));
+            }
+            else if ((ivar<num_ply_vars) && (vars_name[jvar+1].compare(0,2,"YT")==0)) {
+              // Y_T Em
+              double F2_YT = -1/(Y_T*Y_T);
+              double F22_YT = -1/(Y_T*Y_T*Y_C);
+              double F12_YT = 1/4*pow(X_T*X_C*Y_T*Y_C,-1.5)*X_T*X_C*Y_C;
+              double F44_YT = -2*eta*Y_C/(S_23*S_23*S_23);
+              double F23_YT = 1/(2*Y_C*Y_T*Y_T);
+              
+              hess_lsf(ivar, jvar) = - (  F2_YT*(dsdx_r(1,1) + dsdx_r(2,2))
+                                        + 2*F22_YT*(StressGP(1,1)*dsdx_r(1,1) + StressGP(2,2)*dsdx_r(2,2))
+                                        + 2*F44_YT*StressGP(1,2)*dsdx_r(1,2)
+                                        + 2*F12_YT*(dsdx_r(0,0)*(StressGP(1,1)+StressGP(2,2)) + StressGP(0,0)*(dsdx_r(1,1)+dsdx_r(2,2)))
+                                        + 2*F23_YT*(dsdx_r(1,1)*StressGP(2,2) + StressGP(1,1)*dsdx_r(2,2)));
+              hess_lsf(jvar, ivar) = hess_lsf(ivar, jvar);
+            }
+            else if ((vars_name[ivar+1].compare(0,2,"YT")==0) && (vars_name[jvar+1].compare(0,2,"YT")==0)) {
+              // Y_T Y_T
+              double F2_YTYT  = 2/(Y_T*Y_T*Y_T);
+              double F22_YTYT = 2/(Y_T*Y_T*Y_T*Y_C);
+              double F12_YTYT = -3/8*pow(X_T*X_C*Y_T*Y_C,-2.5)*pow(X_T*X_C*Y_C,2);
+              double F44_YTYT = 6*pow(eta*Y_C,2)/pow(S_23,4);
+              double F23_YTYT = -2/(2*Y_C*Y_T*Y_T*Y_T);
+              
+              hess_lsf(ivar, jvar) = - (  F2_YTYT*(StressGP(1,1) + StressGP(2,2))
+                                        + F22_YTYT*(StressGP(1,1)*StressGP(1,1) + StressGP(2,2)*StressGP(2,2))
+                                        + F44_YTYT*StressGP(1,2)*StressGP(1,2)
+                                        + 2*F12_YTYT*StressGP(0,0)*(StressGP(1,1)+StressGP(2,2))
+                                        + 2*F23_YTYT*StressGP(1,1)*StressGP(2,2));
+            }
+            else if ((ivar<num_ply_vars) && (vars_name[jvar+1].compare(0,2,"YC")==0)) {
+              // Y_C EM
+              double F2_YC = 1/(Y_C*Y_C);
+              double F22_YC = -1/(Y_T*Y_C*Y_C);
+              double F12_YC = 1/4*pow(X_T*X_C*Y_T*Y_C,-1.5)*X_T*X_C*Y_T;
+              double F44_YC = -2*eta*Y_T/(S_23*S_23*S_23);
+              double F23_YC = 1/(2*Y_C*Y_C*Y_T);
+              
+              hess_lsf(ivar, jvar) = - (  F2_YC*(dsdx_r(1,1) + dsdx_s(2,2))
+                                        + 2*F22_YC*(StressGP(1,1)*dsdx_r(1,1) + StressGP(2,2)*dsdx_r(2,2))
+                                        + 2*F44_YC*StressGP(1,2)*dsdx_r(1,2)
+                                        + 2*F12_YC*(dsdx_r(0,0)*(StressGP(1,1)+StressGP(2,2)) + StressGP(0,0)*(dsdx_r(1,1)+dsdx_r(2,2)))
+                                        + 2*F23_YC*(dsdx_r(1,1)*StressGP(2,2) + StressGP(1,1)*dsdx_r(2,2)));
+              hess_lsf(jvar, ivar) = hess_lsf(ivar, jvar);
+            }
+            else if ((vars_name[ivar+1].compare(0,2,"YC")==0) && (vars_name[jvar+1].compare(0,2,"YC")==0)) {
+              // Y_C Y_C
+              double F2_YCYC  = -2/(Y_C*Y_C*Y_C);
+              double F22_YCYC = 2/(Y_T*Y_C*Y_C*Y_C);
+              double F12_YCYC = -3/8*pow(X_T*X_C*Y_T*Y_C,-2.5)*pow(X_T*X_C*Y_T,2);
+              double F44_YCYC = 6*pow(eta*Y_T,2)/pow(S_23,4);
+              double F23_YCYC = -2/(2*Y_C*Y_C*Y_C*Y_T);
+              
+              hess_lsf(ivar, jvar) = - (  F2_YCYC*(StressGP(1,1) + StressGP(2,2))
+                                        + F22_YCYC*(StressGP(1,1)*StressGP(1,1) + StressGP(2,2)*StressGP(2,2))
+                                        + F44_YCYC*StressGP(1,2)*StressGP(1,2)
+                                        + 2*F12_YCYC*StressGP(0,0)*(StressGP(1,1)+StressGP(2,2))
+                                        + 2*F23_YCYC*StressGP(1,1)*StressGP(2,2));
+            }
+            else if ((ivar<num_ply_vars) && (vars_name[jvar+1].compare(0,3,"S12")==0)) {
+              // S12 Em
+              hess_lsf(ivar, jvar) = 4*(StressGP(0,1)*dsdx_r(0,1) + StressGP(0,2)*dsdx_r(0,2))/pow(S_12,3);
+              hess_lsf(jvar, ivar) = hess_lsf(ivar, jvar);
+            }
+            else if ((vars_name[ivar+1].compare(0,3,"S12")==0) && (vars_name[jvar+1].compare(0,2,"S12")==0)) {
+              // S12 S12
+              hess_lsf(ivar, jvar) = -6*(StressGP(0,1)*StressGP(0,1) + StressGP(0,2)*StressGP(0,2))/pow(S_12,4);
+            }
+          }
+        }
+      }
+      
+      
+      PetscFunctionReturn(0);
+    }
+    
+    //------------------------------------------------------------------------------
     // Code: 44050
     // TSAI-WU
     //

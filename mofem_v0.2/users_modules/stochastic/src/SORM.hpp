@@ -59,7 +59,7 @@ struct SORM{
     PetscFunctionBegin;
     
     int nvars;
-    nvars = probdata.nvars;
+    nvars = probdata.num_vars;
     
     double imean, istd;
     double iloc, ishape, iscale;

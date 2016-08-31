@@ -414,7 +414,7 @@ struct MoFEMEntity: public interface_MoFEMField<MoFEMField>, interface_RefMoFEME
   const LocalUId& get_local_unique_id() const { return local_uid; }
   LocalUId get_local_unique_id_calculate() const {
     char bit_number = get_bit_number();
-    assert(bit_number<32);
+    assert(bit_number<64); //assert(bit_number<32);
     LocalUId _uid_ = (UId)0;
     _uid_ |= (UId)ref_ptr->ent;
     _uid_ |= (UId)bit_number << 8*sizeof(EntityHandle);
@@ -423,7 +423,7 @@ struct MoFEMEntity: public interface_MoFEMField<MoFEMField>, interface_RefMoFEME
   const GlobalUId& get_global_unique_id() const { return global_uid; }
   GlobalUId get_global_unique_id_calculate() const {
     char bit_number = get_bit_number();
-    assert(bit_number<32);
+    assert(bit_number<64); //assert(bit_number<32);
     assert(ref_ptr->owner_proc<1024);
     GlobalUId _uid_ = (UId)0;
     _uid_ |= (UId)ref_ptr->moab_owner_handle;

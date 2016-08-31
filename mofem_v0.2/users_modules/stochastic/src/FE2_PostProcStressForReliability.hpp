@@ -380,30 +380,37 @@ namespace ObosleteUsersModules {
     
     ublas::matrix<double> Dmat;
     ublas::matrix<double> Dmat_r;
+    ublas::matrix<double> Dmat_s;
     ublas::matrix<double> Dmat_rs;
     ublas::matrix<double> StressGP_r;
+    ublas::matrix<double> StressGP_s;
     ublas::matrix<double> StressGP_rs;
     ublas::matrix<double> StrainGP_r;
+    ublas::matrix<double> StrainGP_s;
     ublas::matrix<double> StrainGP_rs;
     string zeroth_field;
-    string first_field;
+    string first_field_r;
+    string first_field_s;
     string second_field;
     
     Tag th_stress,th_prin_stress_vect1,th_prin_stress_vect2,th_prin_stress_vect3,th_prin_stress_vals;
     
     FE2_PostProcStressForReliability_Second(FieldInterface& _mField,
                                             string _zeroth_field,
-                                            string _first_field,
+                                            string _first_field_r,
+                                            string _first_field_s,
                                             string _second_field,
                                             ublas::matrix<double> _Dmat,
                                             ublas::matrix<double> _Dmat_r,
+                                            ublas::matrix<double> _Dmat_s,
                                             ublas::matrix<double> _Dmat_rs):
     PostProcDisplacemenysAndStarinOnRefMesh(_mField.get_moab(),_zeroth_field),
     mField(_mField),
     zeroth_field(_zeroth_field),
-    first_field(_first_field),
+    first_field_r(_first_field_r),
+    first_field_s(_first_field_s),
     second_field(_second_field),
-    Dmat(_Dmat), Dmat_r(_Dmat_r), Dmat_rs(_Dmat_rs){
+    Dmat(_Dmat), Dmat_r(_Dmat_r), Dmat_s(_Dmat_s), Dmat_rs(_Dmat_rs){
       double def_VAL2[3] = { 0.0, 0.0, 0.0 };
       rval = moab_post_proc.tag_get_handle("PRIN_STRESS_VECT1",3,MB_TYPE_DOUBLE,th_prin_stress_vect1,MB_TAG_CREAT|MB_TAG_SPARSE,def_VAL2); CHKERR_THROW(rval);
       rval = moab_post_proc.tag_get_handle("PRIN_STRESS_VECT2",3,MB_TYPE_DOUBLE,th_prin_stress_vect2,MB_TAG_CREAT|MB_TAG_SPARSE,def_VAL2); CHKERR_THROW(rval);
@@ -431,27 +438,31 @@ namespace ObosleteUsersModules {
         
         //Strains to Nodes in PostProc Mesh: create vector containing matrices
         vector< ublas::matrix< FieldData > > GradU_at_GaussPt;
-        vector< ublas::matrix< FieldData > > Grad_dU_at_GaussPt;
+        vector< ublas::matrix< FieldData > > Grad_dU_r_at_GaussPt;
+        vector< ublas::matrix< FieldData > > Grad_dU_s_at_GaussPt;
         vector< ublas::matrix< FieldData > > Grad_ddU_at_GaussPt;
         
         //du/dx
         ierr = GetGaussDiffDataVector(zeroth_field,GradU_at_GaussPt); CHKERRQ(ierr);
-        ierr = GetGaussDiffDataVector(first_field,Grad_dU_at_GaussPt); CHKERRQ(ierr);
+        ierr = GetGaussDiffDataVector(first_field_r,Grad_dU_r_at_GaussPt); CHKERRQ(ierr);
+        ierr = GetGaussDiffDataVector(first_field_s,Grad_dU_s_at_GaussPt); CHKERRQ(ierr);
         ierr = GetGaussDiffDataVector(second_field,Grad_ddU_at_GaussPt); CHKERRQ(ierr);
         
-        vector< ublas::matrix< FieldData > >::iterator viit     = GradU_at_GaussPt.begin();
-        vector< ublas::matrix< FieldData > >::iterator viit_du  = Grad_dU_at_GaussPt.begin();
-        vector< ublas::matrix< FieldData > >::iterator viit_ddu = Grad_ddU_at_GaussPt.begin();
+        vector< ublas::matrix< FieldData > >::iterator viit      = GradU_at_GaussPt.begin();
+        vector< ublas::matrix< FieldData > >::iterator viit_du_r = Grad_dU_r_at_GaussPt.begin();
+        vector< ublas::matrix< FieldData > >::iterator viit_du_s = Grad_dU_s_at_GaussPt.begin();
+        vector< ublas::matrix< FieldData > >::iterator viit_ddu  = Grad_ddU_at_GaussPt.begin();
         
         map<EntityHandle,EntityHandle>::iterator mit = node_map.begin();
         int gg = 0;
         
         // calculate zeroth-order displacement iduced strain/stress
-        for(;viit!=GradU_at_GaussPt.end();viit++,viit_du++,viit_ddu++,mit++,gg++) {
+        for(;viit!=GradU_at_GaussPt.end();viit++,viit_du_r++,viit_du_s,viit_ddu++,mit++,gg++) {
           
           
           ublas::matrix< FieldData > GradU = *viit;
-          ublas::matrix< FieldData > Grad_dU = *viit_du;
+          ublas::matrix< FieldData > Grad_dU_r = *viit_du_r;
+          ublas::matrix< FieldData > Grad_dU_s = *viit_du_s;
           ublas::matrix< FieldData > Grad_ddU = *viit_ddu;
           
           if(!invH.empty()) {
@@ -471,13 +482,15 @@ namespace ObosleteUsersModules {
             //[ dU/dX1 dU/dX2 dU/dX3 ]
             //[ dV/dX1 dV/dX2 dV/dX3 ] = GradU * invH
             //[ dW/dX1 dW/dX2 dW/dX3 ]
-            GradU    = prod( GradU,    invH[gg] );
-            Grad_dU  = prod( Grad_dU,  invH[gg] );
-            Grad_ddU = prod( Grad_ddU, invH[gg] );
+            GradU     = prod( GradU,    invH[gg] );
+            Grad_dU_r = prod( Grad_dU_r, invH[gg] );
+            Grad_dU_s = prod( Grad_dU_s, invH[gg] );
+            Grad_ddU  = prod( Grad_ddU, invH[gg] );
           }
-          ublas::matrix< FieldData > Strain;     Strain.resize(3,3);     Strain     = 0.5*( GradU    + trans(GradU)   );
-          ublas::matrix< FieldData > Strain_du;  Strain_du.resize(3,3);  Strain_du  = 0.5*( Grad_dU  + trans(Grad_dU) );
-          ublas::matrix< FieldData > Strain_ddu; Strain_ddu.resize(3,3); Strain_ddu = 0.5*( Grad_ddU + trans(Grad_ddU) );
+          ublas::matrix< FieldData > Strain;       Strain.resize(3,3);       Strain      = 0.5*( GradU     + trans(GradU)   );
+          ublas::matrix< FieldData > Strain_du_r;  Strain_du_r.resize(3,3);  Strain_du_r = 0.5*( Grad_dU_r + trans(Grad_dU_r) );
+          ublas::matrix< FieldData > Strain_du_s;  Strain_du_s.resize(3,3);  Strain_du_s = 0.5*( Grad_dU_s + trans(Grad_dU_s) );
+          ublas::matrix< FieldData > Strain_ddu;   Strain_ddu.resize(3,3);   Strain_ddu  = 0.5*( Grad_ddU  + trans(Grad_ddU) );
           
           //rval = moab_post_proc.tag_set_data(th_strain,&mit->second,1,&(Strain.data()[0])); CHKERR_PETSC(rval);
           //rval = moab_post_proc.tag_set_data(th_strain,&mit->second,1,&(Strain.data()[0])); CHKERR_PETSC(rval);
@@ -491,13 +504,21 @@ namespace ObosleteUsersModules {
           Strain_VectorNotation[4] = 2*Strain(1,2);
           Strain_VectorNotation[5] = 2*Strain(2,0);
           
-          ublas::vector<FieldData> Strain_du_VectorNotation(6);
-          Strain_du_VectorNotation[0] = Strain_du(0,0);
-          Strain_du_VectorNotation[1] = Strain_du(1,1);
-          Strain_du_VectorNotation[2] = Strain_du(2,2);
-          Strain_du_VectorNotation[3] = 2*Strain_du(0,1);
-          Strain_du_VectorNotation[4] = 2*Strain_du(1,2);
-          Strain_du_VectorNotation[5] = 2*Strain_du(2,0);
+          ublas::vector<FieldData> Strain_du_r_VectorNotation(6);
+          Strain_du_r_VectorNotation[0] = Strain_du_r(0,0);
+          Strain_du_r_VectorNotation[1] = Strain_du_r(1,1);
+          Strain_du_r_VectorNotation[2] = Strain_du_r(2,2);
+          Strain_du_r_VectorNotation[3] = 2*Strain_du_r(0,1);
+          Strain_du_r_VectorNotation[4] = 2*Strain_du_r(1,2);
+          Strain_du_r_VectorNotation[5] = 2*Strain_du_r(2,0);
+          
+          ublas::vector<FieldData> Strain_du_s_VectorNotation(6);
+          Strain_du_s_VectorNotation[0] = Strain_du_s(0,0);
+          Strain_du_s_VectorNotation[1] = Strain_du_s(1,1);
+          Strain_du_s_VectorNotation[2] = Strain_du_s(2,2);
+          Strain_du_s_VectorNotation[3] = 2*Strain_du_s(0,1);
+          Strain_du_s_VectorNotation[4] = 2*Strain_du_s(1,2);
+          Strain_du_s_VectorNotation[5] = 2*Strain_du_s(2,0);
           
           ublas::vector<FieldData> Strain_ddu_VectorNotation(6);
           Strain_ddu_VectorNotation[0] = Strain_ddu(0,0);
@@ -510,7 +531,8 @@ namespace ObosleteUsersModules {
           // [ddSigma/ddX] = [ddD/ddX][Epsilon] + 2* [dD/dX][dEpsilon/dX] + [D] [ddEpsilon/ddX]
           ublas::vector< FieldData > ddStress_ddx_VectorNotation(6); ddStress_ddx_VectorNotation.clear();
           ddStress_ddx_VectorNotation = prod( Dmat_rs, Strain_VectorNotation )
-                                      + prod( Dmat_r,  Strain_du_VectorNotation )
+                                      + prod( Dmat_r,  Strain_du_s_VectorNotation )
+                                      + prod( Dmat_s,  Strain_du_r_VectorNotation)
                                       + prod( Dmat,    Strain_ddu_VectorNotation );
           
           ublas::matrix< FieldData > ddStress_ddx = ublas::zero_matrix<FieldData>(3,3);

@@ -106,9 +106,9 @@ enum ByWhat {
 #define BITREFEDGES_SIZE 6 /*number of edges on tetrahedral*/
 #define BITREFLEVEL_SIZE 128 /*max number of refinements*/
 #define BITFIELDID_SIZE 64 /*max number of fields*/
-#define BITFEID_SIZE 32 /*max number of finite elements*/
-#define BITPROBLEMID_SIZE 32 /*max number of problems*/
-#define BITINTERFACEUID_SIZE 32
+#define BITFEID_SIZE 64 /*max number of finite elements*/
+#define BITPROBLEMID_SIZE 64 /*max number of problems*/
+#define BITINTERFACEUID_SIZE 64
 
 //// default comunicator number
 #define MYPCOMM_INDEX 0

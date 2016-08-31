@@ -1560,17 +1560,17 @@ int main(int argc, char *argv[]) {
     //
     // Evaluate limit-state function and its gradient
     //
-    ierr = Solve_FE2_Problem.RVE_Dmat_Disp(m_field_RVE,
-                                           stochastic_fields,
-                                           x,
-                                           probdata.num_vars,
-                                           probdata.NameVars,
-                                           probdata.AnalysisType); CHKERRQ(ierr);
+//    ierr = Solve_FE2_Problem.RVE_Dmat_Disp(m_field_RVE,
+//                                           stochastic_fields,
+//                                           x,
+//                                           probdata.num_vars,
+//                                           probdata.NameVars,
+//                                           probdata.AnalysisType); CHKERRQ(ierr);
     
-//    ierr = Solve_FE2_Problem.Micro_FE_Dmat(m_field_RVE, nvars, nders,
-//                                           stochastic_fields, x, probdata.num_vars,
-//                                           probdata.NameVars); CHKERRQ(ierr);
-    ierr = Solve_FE2_Problem.Macro_FE_REL_FSORM(m_field_Macro, nvars, nders,
+    ierr = Solve_FE2_Problem.Micro_FE_Dmat(m_field_RVE, nvars, nders,
+                                           stochastic_fields, x, probdata.num_vars,
+                                           probdata.NameVars); CHKERRQ(ierr);
+    ierr = Solve_FE2_Problem.Macro_FE_REL(m_field_Macro, nvars, nders,
                                                 stochastic_fields, x, probdata.num_vars,
                                                 probdata.NameVars,PlyAngle_new,//probdata.PlyAngle,
                                                 NO_Layers); CHKERRQ(ierr);

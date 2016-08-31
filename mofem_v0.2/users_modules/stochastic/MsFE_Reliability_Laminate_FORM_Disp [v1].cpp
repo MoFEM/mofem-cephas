@@ -94,7 +94,6 @@ extern "C" {
 #include <NatafTransformation.hpp>
 #include <LimitStateFunction.hpp>
 #include <Reliability_Input.hpp>
-#include <SORM.hpp>
 
 //======================================================
 
@@ -179,6 +178,95 @@ ErrorCode rval;
 PetscErrorCode ierr;
 
 static char help[] = "...\n\n";
+
+//const char* args[] = {
+//  "_r_Em", "_r_NUm",                                                // 1st order
+//  "_r_NUp", "_r_NUpz", "_r_Ep", "_r_Ez", "_r_Gzp",
+//  "_r_Ef", "_r_NUf",
+//  "_rs_EmEm", "_rs_NUmNUm",                                         // 2nd order
+//  "_rs_NUpNUp", "_rs_NUpzNUpz", "_rs_EpEp", "_rs_EzEz", "_rs_GzpGzp",
+//  "_rs_EfEf", "_rs_NUfNUf"
+//};
+//
+//int nvars = 9;    // number of variables
+//int nders = 18;   // number of partial derivatives (firsr- and second- order)
+//vector<string> stochastic_fields(args, args + 18);
+
+
+//const char* args[] = {
+//  "_r_Em",  "_r_NUm",                                                // 1st order
+//  "_r_NUp", "_r_NUpz", "_r_Ep", "_r_Ez", "_r_Gzp",
+//  "_r_Ef",  "_r_NUf",
+//  "_rs_EmEm",     "_rs_EmNUm",   "_rs_EmNUp",   "_rs_EmNUpz",  "_rs_EmEp",   "_rs_EmEz",   "_rs_EmGzp", "_rs_EmEf",  "_rs_EmNUf", // 2nd order
+//  "_rs_NUmNUm",   "_rs_NUmNUp",  "_rs_NUmNUpz", "_rs_NUmEp",   "_rs_NUmEz",  "_rs_NUmGzp", "_rs_NUmEf", "_rs_NUmNUf",
+//  "_rs_NUpNUp",   "_rs_NUpNUpz", "_rs_NUpEp",   "_rs_NUpEz",   "_rs_NUpGzp", "_rs_NUpEf",  "_rs_NUpNUf",
+//  "_rs_NUpzNUpz", "_rs_NUpzEp",  "_rs_NUpzEz",  "_rs_NUpzGzp", "_rs_NUpzEf", "_rs_NUpzNUf",
+//  "_rs_EpEp",     "_rs_EpEz",    "_rs_EpGzp",   "_rs_EpEf",    "_rs_EpNUf",
+//  "_rs_EzEz",     "_rs_EzGzp",   "_rs_EzEf",    "_rs_EzNUf",
+//  "_rs_GzpGzp",   "_rs_GzpEf",   "_rs_GzpNUf",
+//  "_rs_EfEf",     "_rs_EfNUf",
+//  "_rs_NUfNUf"
+//};
+//
+//int nvars = 9;    // number of variables
+//int nders = 54;   // number of partial derivatives (firsr- and second- order)
+//vector<string> stochastic_fields(args, args + 54);
+
+//const char* args_multiscale[] = {
+//  "_r_Em", "_r_NUm",                                                // 1st order
+//  "_r_NUp", "_r_NUpz", "_r_Ep", "_r_Ez", "_r_Gzp",
+//  "_r_Ef", "_r_NUf",
+//  "_r_F",
+//  "_r_Theta",
+//  "_rs_EmEm","_rs_EmNUm",                                      // 2nd order - Em
+//  "_rs_EmNUp","_rs_EmNUpz","_rs_EmEp","_rs_EmEz","_rs_EmGzp",
+//  "_rs_EmEf","_rs_EmNUf",
+//  "_rs_EmF",
+//  "_rs_EmTheta1","_rs_EmTheta2","_rs_EmTheta3","_rs_EmTheta4","_rs_EmOrientation",
+//  "_rs_NUmNUm",                                               // 2nd order - NUm
+//  "_rs_NUmNUp","_rs_NUmNUpz","_rs_NUmEp","_rs_NUmEz","_rs_NUmGzp",
+//  "_rs_NUmEf","_rs_NUmNUf",
+//  "_rs_NUmF",
+//  "_rs_NUmTheta1","_rs_NUmTheta2","_rs_NUmTheta3","_rs_NUmTheta4","_rs_NUmOrientation",
+//  "_rs_NUpNUp","_rs_NUpNUpz","_rs_NUpEp","_rs_NUpEz","_rs_NUpGzp", // 2nd order - NUp
+//  "_rs_NUpEf","_rs_NUpNUf",
+//  "_rs_NUpF",
+//  "_rs_NUpTheta1","_rs_NUpTheta2","_rs_NUpTheta3","_rs_NUpTheta4","_rs_NUpOrientation",
+//  "_rs_NUpzNUpz","_rs_NUpzEp","_rs_NUpzEz","_rs_NUpzGzp",    // 2nd order - NUpz
+//  "_rs_NUpzEf","_rs_NUpzNUf",
+//  "_rs_NUpzF",
+//  "_rs_NUpzTheta1","_rs_NUpzTheta2","_rs_NUpzTheta3","_rs_NUpzTheta4","_rs_NUpzOrientation",
+//  "_rs_EpEp","_rs_EpEz","_rs_EpGzp",                           // 2nd order - Ep
+//  "_rs_EpEf","_rs_EpNUf",
+//  "_rs_EpF",
+//  "_rs_EpTheta1","_rs_EpTheta2","_rs_EpTheta3","_rs_EpTheta4","_rs_EpOrientation",
+//  "_rs_EzEz","_rs_EzGzp",                                      // 2nd order - Ez
+//  "_rs_EzEf","_rs_EzNUf",
+//  "_rs_EzF",
+//  "_rs_EzTheta1","_rs_EzTheta2","_rs_EzTheta3","_rs_EzTheta4","_rs_EzOrientation",
+//  "_rs_GzpGzp",                                               // 2nd order - Gzp
+//  "_rs_GzpEf","_rs_GzpNUf",
+//  "_rs_GzpF",
+//  "_rs_GzpTheta1","_rs_GzpTheta2","_rs_GzpTheta3","_rs_GzpTheta4","_rs_GzpOrientation",
+//  "_rs_EfEf","_rs_EfNUf",                                      // 2nd order - Ef
+//  "_rs_EfF",
+//  "_rs_EfTheta1","_rs_EfTheta2","_rs_EfTheta3","_rs_EfTheta4","_rs_EfOrientation",
+//  "_rs_NUfNUf",                                               // 2nd order - NUf
+//  "_rs_NUfF",
+//  "_rs_NUfTheta1","_rs_NUfTheta2","_rs_NUfTheta3","_rs_NUfTheta4","_rs_NUfOrientation",
+//  "_rs_FF",                                                     // 2nd order - F
+//  "_rs_FTheta1","_rs_FTheta2","_rs_FTheta3","_rs_FTheta4","_rs_FOrientation",
+//  "_rs_Theta1Theta1","_rs_Theta1Theta2","_rs_Theta1Theta3","_rs_Theta1Theta4","_rs_Theta1Orientation",
+//  "_rs_Theta2Theta2","_rs_Theta2Theta3","_rs_Theta2Theta4","_rs_Theta2Orientation",
+//  "_rs_Theta3Theta3","_rs_Theta3Theta4","_rs_Theta3Orientation",
+//  "_rs_Theta4Theta4","_rs_Theta4Orientation",
+//  "_rs_OrientationOrientation",
+//};
+//
+//int nvars_ply = 9;    // number of variables
+//int nders_ply = 18;   // number of partial derivatives (firsr- and second- order)
+//vector<string> stochastic_fields(args, args + 18);
+
 
 //------------------------------------------------------------------------------
 // To transform stress
@@ -423,6 +511,25 @@ int main(int argc, char *argv[]) {
     "_rs_r1s15", "_rs_r2s15", "_rs_r3s15", "_rs_r4s15", "_rs_r5s15", "_rs_r6s15", "_rs_r7s15", "_rs_r8s15", "_rs_r9s15", "_rs_r10s15", "_rs_r11s15", "_rs_r12s13", "_rs_r13s15",  "_rs_r14s15", "_rs_r15s15",
   }; // 2nd order
   
+//  const char* args[] = {
+//    "_r_Em",        "_r_NUm",                                                // 1st order
+//    "_r_NUp",       "_r_NUpz",     "_r_Ep",       "_r_Ez",       "_r_Gzp",
+//    "_r_Ef",        "_r_NUf",
+//    "_rs_EmEm",     "_rs_EmNUm",   "_rs_EmNUp",   "_rs_EmNUpz",  "_rs_EmEp",   "_rs_EmEz",   "_rs_EmGzp", "_rs_EmEf",  "_rs_EmNUf", // 2nd order
+//    "_rs_NUmNUm",   "_rs_NUmNUp",  "_rs_NUmNUpz", "_rs_NUmEp",   "_rs_NUmEz",  "_rs_NUmGzp", "_rs_NUmEf", "_rs_NUmNUf",
+//    "_rs_NUpNUp",   "_rs_NUpNUpz", "_rs_NUpEp",   "_rs_NUpEz",   "_rs_NUpGzp", "_rs_NUpEf",  "_rs_NUpNUf",
+//    "_rs_NUpzNUpz", "_rs_NUpzEp",  "_rs_NUpzEz",  "_rs_NUpzGzp", "_rs_NUpzEf", "_rs_NUpzNUf",
+//    "_rs_EpEp",     "_rs_EpEz",    "_rs_EpGzp",   "_rs_EpEf",    "_rs_EpNUf",
+//    "_rs_EzEz",     "_rs_EzGzp",   "_rs_EzEf",    "_rs_EzNUf",
+//    "_rs_GzpGzp",   "_rs_GzpEf",   "_rs_GzpNUf",
+//    "_rs_EfEf",     "_rs_EfNUf",
+//    "_rs_NUfNUf"
+//  };
+//  
+//  int nvars = 9;    // number of variables
+//  int nders = 54;   // number of partial derivatives (first- and second- order)
+//  vector<string> stochastic_fields(args, args + 54);
+  
   //============================================================================
   //
   //  A. Micro (RVE) Problem
@@ -470,6 +577,7 @@ int main(int argc, char *argv[]) {
   vector<string> name_rve_mat; name_rve_mat.clear();
   vector<string> name_ply_mat; name_ply_mat.clear();
   
+  cout<<"\n"<<endl;
   
   // ---------------------------------
   //
@@ -477,8 +585,8 @@ int main(int argc, char *argv[]) {
   //   microscale material properties
   //
   // ---------------------------------
-  cout<<probdata.num_vars<<endl;
-  for (int i = 1; i<=probdata.num_vars; i++) {
+  
+  for (int i = 0; i<probdata.num_vars; i++) {
     // The variable names is
     cout<<"The variable is "<<probdata.NameVars[i]<<endl;
     if (probdata.NameVars[i].compare(0,2,"Em") == 0) {
@@ -568,7 +676,7 @@ int main(int argc, char *argv[]) {
   cout<<"The number of variables for ply material properties is "<<nvars_ply_mat<<"\t"<<nders_ply_mat<<endl;
   
   const char* args_rve[nders_rve_mat];
-  for (int i = 0; i<nders_rve_mat; i++) {
+  for (int i = 0; i<(nders_rve_mat); i++) {
     if (i<nvars_rve_mat) {
       args_rve[i] = args_1st[i];
     } else {
@@ -578,7 +686,7 @@ int main(int argc, char *argv[]) {
   }
   
   const char* args_ply[nders_ply_mat];
-  for (int i = 0; i<nders_ply_mat; i++) {
+  for (int i = 0; i<(nders_ply_mat); i++) {
     if (i<nvars_ply_mat) {
       args_ply[i] = args_1st[i];
     } else {
@@ -587,15 +695,15 @@ int main(int argc, char *argv[]) {
     cout<<"The symbol is "<<args_ply[i]<<endl;
   }
   
-//  int nvars = 9;    // number of variables
-//  int nders = 54;   // number of partial derivatives (first- and second- order)
-//  nvars = nvars_rve_mat;
-//  nders = nders_rve_mat;
-//  vector<string> stochastic_fields(args_rve, args_rve + nders_rve_mat);
+  int nvars = 9;    // number of variables
+  int nders = 54;   // number of partial derivatives (first- and second- order)
+  nvars = nvars_rve_mat;
+  nders = nders_rve_mat;
+  vector<string> stochastic_fields(args_rve, args_rve + nders_rve_mat);
+  
   
   vector<string> stochastic_fields_rve(args_rve, args_rve + nders_rve_mat);
   vector<string> stochastic_fields_ply(args_ply, args_ply + nders_ply_mat);
-  
   /*****************************************************************************
    *
    * Read parameters from line command
@@ -761,9 +869,9 @@ int main(int argc, char *argv[]) {
   ierr = m_field_RVE.add_field("Lagrange_mul_disp",H1,field_rank); CHKERRQ(ierr);
   
   // Stochastic fields for perturbation method
-  for(int ii=0; ii < nders_rve_mat; ii++ ) {
+  for(int ii=0; ii < nders; ii++ ) {
     ostringstream ss_field;
-    ss_field << "DISP_RVE" << stochastic_fields_rve[ii];
+    ss_field << "DISP_RVE" << stochastic_fields[ii];
     cout<<ss_field.str().c_str()<<endl;
     ierr = m_field_RVE.add_field(ss_field.str().c_str(),H1,field_rank,MF_ZERO); CHKERRQ(ierr);
   }
@@ -796,9 +904,9 @@ int main(int argc, char *argv[]) {
   
   // Stochastic
   //for(int ii=0; ii < nvars; ii++ ) {
-  for(int ii=0; ii < nders_rve_mat; ii++ ) {
+  for(int ii=0; ii < nders; ii++ ) {
     ostringstream ss_field;
-    ss_field << "DISP_RVE" << stochastic_fields_rve[ii];
+    ss_field << "DISP_RVE" << stochastic_fields[ii];
     cout<<ss_field.str().c_str()<<endl;
     ierr = m_field_RVE.modify_finite_element_add_field_data("ELASTIC_FE_RVE",ss_field.str().c_str()); CHKERRQ(ierr);
   }
@@ -811,9 +919,9 @@ int main(int argc, char *argv[]) {
   
   
   //for(int ii=0; ii < nvars; ii++ ) {
-  for(int ii=0; ii < nders_rve_mat; ii++ ) {
+  for(int ii=0; ii < nders; ii++ ) {
     ostringstream ss_field;
-    ss_field << "DISP_RVE" << stochastic_fields_rve[ii];
+    ss_field << "DISP_RVE" << stochastic_fields[ii];
     cout<<ss_field.str().c_str()<<endl;
     ierr = m_field_RVE.modify_finite_element_add_field_data("TRAN_ISO_FE_RVE",ss_field.str().c_str()); CHKERRQ(ierr);
   }
@@ -860,9 +968,9 @@ int main(int argc, char *argv[]) {
    *
    ****************************************************************************/
   ierr = m_field_RVE.add_ents_to_field_by_TETs(0,"DISP_RVE"); CHKERRQ(ierr);
-  for(int ii=0; ii < nders_rve_mat; ii++ ) {
+  for(int ii=0; ii < nders; ii++ ) {
     ostringstream ss_field;
-    ss_field << "DISP_RVE" << stochastic_fields_rve[ii];
+    ss_field << "DISP_RVE" << stochastic_fields[ii];
     ierr = m_field_RVE.add_ents_to_field_by_TETs(0,ss_field.str().c_str()); CHKERRQ(ierr);
   }
   
@@ -894,24 +1002,24 @@ int main(int argc, char *argv[]) {
    *   Ainsworth M. and Coyle J. (2003) Hierarchic finite element bases on
    unstructured tetrahedral meshes. IJNME, 58(14). pp.2103-2130.
    ****************************************************************************/
-  ierr = m_field_RVE.set_field_order(0,MBTET,   "DISP_RVE",order_RVE); CHKERRQ(ierr);
-  ierr = m_field_RVE.set_field_order(0,MBTRI,   "DISP_RVE",order_RVE); CHKERRQ(ierr);
-  ierr = m_field_RVE.set_field_order(0,MBEDGE,  "DISP_RVE",order_RVE); CHKERRQ(ierr);
+  ierr = m_field_RVE.set_field_order(0,MBTET,"DISP_RVE",order_RVE); CHKERRQ(ierr);
+  ierr = m_field_RVE.set_field_order(0,MBTRI,"DISP_RVE",order_RVE); CHKERRQ(ierr);
+  ierr = m_field_RVE.set_field_order(0,MBEDGE,"DISP_RVE",order_RVE); CHKERRQ(ierr);
   ierr = m_field_RVE.set_field_order(0,MBVERTEX,"DISP_RVE",1); CHKERRQ(ierr);
   
-  ierr = m_field_RVE.set_field_order(0,MBTRI,   "Lagrange_mul_disp",order_RVE); CHKERRQ(ierr);
-  ierr = m_field_RVE.set_field_order(0,MBEDGE,  "Lagrange_mul_disp",order_RVE); CHKERRQ(ierr);
+  ierr = m_field_RVE.set_field_order(0,MBTRI,"Lagrange_mul_disp",order_RVE); CHKERRQ(ierr);
+  ierr = m_field_RVE.set_field_order(0,MBEDGE,"Lagrange_mul_disp",order_RVE); CHKERRQ(ierr);
   ierr = m_field_RVE.set_field_order(0,MBVERTEX,"Lagrange_mul_disp",1); CHKERRQ(ierr);
   
   int order_st = order_RVE;
-  for(int ii=0; ii < nders_rve_mat; ii++ ) {
+  for(int ii=0; ii < nders; ii++ ) {
     ostringstream ss_field;
-    ss_field << "DISP_RVE" << stochastic_fields_rve[ii];
+    ss_field << "DISP_RVE" << stochastic_fields[ii];
     //    cout<<ss_field.str().c_str()<<endl;
-    ierr = m_field_RVE.set_field_order(0,MBTET,   ss_field.str().c_str(),order_st); CHKERRQ(ierr);
-    ierr = m_field_RVE.set_field_order(0,MBTRI,   ss_field.str().c_str(),order_st); CHKERRQ(ierr);
-    ierr = m_field_RVE.set_field_order(0,MBEDGE,  ss_field.str().c_str(),order_st); CHKERRQ(ierr);
-    ierr = m_field_RVE.set_field_order(0,MBVERTEX,ss_field.str().c_str(),1);        CHKERRQ(ierr);
+    ierr = m_field_RVE.set_field_order(0,MBTET,ss_field.str().c_str(),order_st); CHKERRQ(ierr);
+    ierr = m_field_RVE.set_field_order(0,MBTRI,ss_field.str().c_str(),order_st); CHKERRQ(ierr);
+    ierr = m_field_RVE.set_field_order(0,MBEDGE,ss_field.str().c_str(),order_st); CHKERRQ(ierr);
+    ierr = m_field_RVE.set_field_order(0,MBVERTEX,ss_field.str().c_str(),1); CHKERRQ(ierr);
   }
   
   // ===========================================================================
@@ -1034,6 +1142,80 @@ int main(int argc, char *argv[]) {
     }
   }
   
+  /*
+  ierr = m_field_Macro.seed_ref_level_3D(0,bit_level0_Macro); CHKERRQ(ierr);
+  
+  EntityHandle meshset_macro_1st_Ply, meshset_macro_2nd_Ply, meshset_macro_3rd_Ply, meshset_macro_4th_Ply, meshset_Reliability;
+  rval = moab_Macro.create_meshset(MESHSET_SET,meshset_macro_1st_Ply); CHKERR_PETSC(rval);
+  rval = moab_Macro.create_meshset(MESHSET_SET,meshset_Reliability); CHKERR_PETSC(rval);
+  // First layer
+  for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field_Macro,BLOCKSET,it)){
+    if(it->get_name() == "MAT_ELASTIC_First") {
+      Range TetsInBlock;
+      rval = moab_Macro.get_entities_by_type(it->meshset, MBTET,TetsInBlock,true); CHKERR_PETSC(rval);
+      Range block_rope_bit_level = intersect(LatestRefinedTets,TetsInBlock);
+      rval = moab_Macro.add_entities(meshset_macro_1st_Ply,block_rope_bit_level);CHKERR_PETSC(rval);
+    }
+  }
+  ierr = m_field_Macro.seed_finite_elements(meshset_macro_1st_Ply); CHKERRQ(ierr);
+  // Second layer
+  if (NO_Layers > 1) {
+    cout<<"\n\nInput Layer 2\n"<<endl;
+    rval = moab_Macro.create_meshset(MESHSET_SET,meshset_macro_2nd_Ply); CHKERR_PETSC(rval);
+    for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field_Macro,BLOCKSET,it)){
+      if(it->get_name() == "MAT_ELASTIC_Second") {
+        Range TetsInBlock;
+        rval = moab_Macro.get_entities_by_type(it->meshset, MBTET,TetsInBlock,true); CHKERR_PETSC(rval);
+        Range block_rope_bit_level = intersect(LatestRefinedTets,TetsInBlock);
+        rval = moab_Macro.add_entities(meshset_macro_2nd_Ply,block_rope_bit_level);CHKERR_PETSC(rval);
+      }
+    }
+    ierr = m_field_Macro.seed_finite_elements(meshset_macro_2nd_Ply); CHKERRQ(ierr);
+  }
+  // Third layer
+  if (NO_Layers > 2) {
+    cout<<"\n\nInput Layer 3\n"<<endl;
+    rval = moab_Macro.create_meshset(MESHSET_SET,meshset_macro_3rd_Ply); CHKERR_PETSC(rval);
+    for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field_Macro,BLOCKSET,it)){
+      if(it->get_name() == "MAT_ELASTIC_Third") {
+        Range TetsInBlock;
+        rval = moab_Macro.get_entities_by_type(it->meshset, MBTET,TetsInBlock,true); CHKERR_PETSC(rval);
+        Range block_rope_bit_level = intersect(LatestRefinedTets,TetsInBlock);
+        rval = moab_Macro.add_entities(meshset_macro_3rd_Ply,block_rope_bit_level);CHKERR_PETSC(rval);
+      }
+    }
+    ierr = m_field_Macro.seed_finite_elements(meshset_macro_3rd_Ply); CHKERRQ(ierr);
+  }
+  // Fourth layer
+  if (NO_Layers > 3) {
+    cout<<"\n\nInput Layer 4\n"<<endl;
+    rval = moab_Macro.create_meshset(MESHSET_SET,meshset_macro_4th_Ply); CHKERR_PETSC(rval);
+    for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field_Macro,BLOCKSET,it)){
+      if(it->get_name() == "MAT_ELASTIC_Fourth") {
+        Range TetsInBlock;
+        rval = moab_Macro.get_entities_by_type(it->meshset, MBTET,TetsInBlock,true); CHKERR_PETSC(rval);
+        Range block_rope_bit_level = intersect(LatestRefinedTets,TetsInBlock);
+        rval = moab_Macro.add_entities(meshset_macro_4th_Ply,block_rope_bit_level);CHKERR_PETSC(rval);
+      }
+    }
+    ierr = m_field_Macro.seed_finite_elements(meshset_macro_4th_Ply); CHKERRQ(ierr);
+  }
+  // select reliability calculation related elements into element-set
+  for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field_Macro,BLOCKSET,it)){
+    if(it->get_name() == "RELIABILITY") {
+      Range TetsInBlock;
+      rval = moab_Macro.get_entities_by_type(it->meshset, MBTET,TetsInBlock,true); CHKERR_PETSC(rval);
+      Range block_rope_bit_level = intersect(LatestRefinedTets,TetsInBlock);
+      
+      cout<<"=============  TetsInBlock  "<< TetsInBlock.size() <<endl;
+      
+      rval = moab_Macro.add_entities(meshset_Reliability,block_rope_bit_level);CHKERR_PETSC(rval);
+      
+    }
+  }
+  ierr = m_field_Macro.seed_finite_elements(meshset_Reliability); CHKERRQ(ierr);
+  */
+  
   
   // ===========================================================================
   //
@@ -1052,11 +1234,18 @@ int main(int argc, char *argv[]) {
   ierr = m_field_Macro.add_field("MESH_NODE_POSITIONS",H1,3,MF_ZERO); CHKERRQ(ierr);
   
   // Stochastic fields for perturbation methods at macroscale
-  for(int ii=0; ii < nders_ply_mat; ii++ ) {
+  for(int ii=0; ii < nders; ii++ ) {
     ostringstream ss_field;
-    ss_field << "DISP_MACRO" << stochastic_fields_ply[ii];
+    ss_field << "DISP_MACRO" << stochastic_fields[ii];
     ierr = m_field_Macro.add_field(ss_field.str().c_str(),H1,field_rank,MF_ZERO); CHKERRQ(ierr);
   }
+  ierr = m_field_Macro.add_field("DISP_MACRO_r_F",H1,field_rank,MF_ZERO); CHKERRQ(ierr);
+  ierr = m_field_Macro.add_field("DISP_MACRO_r_Theta",H1,field_rank,MF_ZERO); CHKERRQ(ierr);
+  ierr = m_field_Macro.add_field("DISP_MACRO_r_Theta_1st_Ply",H1,field_rank,MF_ZERO); CHKERRQ(ierr);
+  ierr = m_field_Macro.add_field("DISP_MACRO_r_Theta_2nd_Ply",H1,field_rank,MF_ZERO); CHKERRQ(ierr);
+  ierr = m_field_Macro.add_field("DISP_MACRO_r_Theta_3rd_Ply",H1,field_rank,MF_ZERO); CHKERRQ(ierr);
+  ierr = m_field_Macro.add_field("DISP_MACRO_r_Theta_4th_Ply",H1,field_rank,MF_ZERO); CHKERRQ(ierr);
+  
   
   /*****************************************************************************
    *
@@ -1093,11 +1282,15 @@ int main(int argc, char *argv[]) {
   ierr = m_field_Macro.modify_finite_element_add_field_data("ELASTIC_1st_Ply","DISP_MACRO"); CHKERRQ(ierr);
   ierr = m_field_Macro.modify_finite_element_add_field_data("ELASTIC_1st_Ply","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
   
-  for(int ii=0; ii < nders_ply_mat; ii++ ) {
+  for(int ii=0; ii < nders; ii++ ) {
     ostringstream ss_field;
-    ss_field << "DISP_MACRO" << stochastic_fields_ply[ii];
+    ss_field << "DISP_MACRO" << stochastic_fields[ii];
     ierr = m_field_Macro.modify_finite_element_add_field_data("ELASTIC_1st_Ply",ss_field.str().c_str()); CHKERRQ(ierr);
   }
+  ierr = m_field_Macro.modify_finite_element_add_field_data("ELASTIC_1st_Ply","DISP_MACRO_r_F"); CHKERRQ(ierr);
+  ierr = m_field_Macro.modify_finite_element_add_field_data("ELASTIC_1st_Ply","DISP_MACRO_r_Theta"); CHKERRQ(ierr);
+  ierr = m_field_Macro.modify_finite_element_add_field_data("ELASTIC_1st_Ply","DISP_MACRO_r_Theta_1st_Ply"); CHKERRQ(ierr);
+  
   
   // Second layer
   if (NO_Layers > 1) {
@@ -1107,13 +1300,18 @@ int main(int argc, char *argv[]) {
     ierr = m_field_Macro.modify_finite_element_add_field_data("ELASTIC_2nd_Ply","DISP_MACRO"); CHKERRQ(ierr);
     ierr = m_field_Macro.modify_finite_element_add_field_data("ELASTIC_2nd_Ply","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
     
-    for(int ii=0; ii < nders_ply_mat; ii++ ) {
+    ierr = m_field_Macro.modify_finite_element_add_field_data("ELASTIC_1st_Ply","DISP_MACRO_r_Theta_2nd_Ply"); CHKERRQ(ierr);
+    
+    for(int ii=0; ii < nders; ii++ ) {
       ostringstream ss_field;
-      ss_field << "DISP_MACRO" << stochastic_fields_ply[ii];
+      ss_field << "DISP_MACRO" << stochastic_fields[ii];
       ierr = m_field_Macro.modify_finite_element_add_field_data("ELASTIC_2nd_Ply",ss_field.str().c_str()); CHKERRQ(ierr);
     }
+    ierr = m_field_Macro.modify_finite_element_add_field_data("ELASTIC_2nd_Ply","DISP_MACRO_r_F"); CHKERRQ(ierr);
+    ierr = m_field_Macro.modify_finite_element_add_field_data("ELASTIC_2nd_Ply","DISP_MACRO_r_Theta"); CHKERRQ(ierr);
+    ierr = m_field_Macro.modify_finite_element_add_field_data("ELASTIC_2nd_Ply","DISP_MACRO_r_Theta_1st_Ply"); CHKERRQ(ierr);
+    ierr = m_field_Macro.modify_finite_element_add_field_data("ELASTIC_2nd_Ply","DISP_MACRO_r_Theta_2nd_Ply"); CHKERRQ(ierr);
   }
-  
   // Third layer
   if (NO_Layers > 2) {
     //Define rows/cols and element data
@@ -1122,13 +1320,20 @@ int main(int argc, char *argv[]) {
     ierr = m_field_Macro.modify_finite_element_add_field_data("ELASTIC_3rd_Ply","DISP_MACRO"); CHKERRQ(ierr);
     ierr = m_field_Macro.modify_finite_element_add_field_data("ELASTIC_3rd_Ply","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
     
-    for(int ii=0; ii < nders_ply_mat; ii++ ) {
+    ierr = m_field_Macro.modify_finite_element_add_field_data("ELASTIC_1st_Ply","DISP_MACRO_r_Theta_3rd_Ply"); CHKERRQ(ierr);
+    ierr = m_field_Macro.modify_finite_element_add_field_data("ELASTIC_2nd_Ply","DISP_MACRO_r_Theta_3rd_Ply"); CHKERRQ(ierr);
+    
+    for(int ii=0; ii < nders; ii++ ) {
       ostringstream ss_field;
-      ss_field << "DISP_MACRO" << stochastic_fields_ply[ii];
+      ss_field << "DISP_MACRO" << stochastic_fields[ii];
       ierr = m_field_Macro.modify_finite_element_add_field_data("ELASTIC_3rd_Ply",ss_field.str().c_str()); CHKERRQ(ierr);
     }
+    ierr = m_field_Macro.modify_finite_element_add_field_data("ELASTIC_3rd_Ply","DISP_MACRO_r_F"); CHKERRQ(ierr);
+    ierr = m_field_Macro.modify_finite_element_add_field_data("ELASTIC_3rd_Ply","DISP_MACRO_r_Theta"); CHKERRQ(ierr);
+    ierr = m_field_Macro.modify_finite_element_add_field_data("ELASTIC_3rd_Ply","DISP_MACRO_r_Theta_1st_Ply"); CHKERRQ(ierr);
+    ierr = m_field_Macro.modify_finite_element_add_field_data("ELASTIC_3rd_Ply","DISP_MACRO_r_Theta_2nd_Ply"); CHKERRQ(ierr);
+    ierr = m_field_Macro.modify_finite_element_add_field_data("ELASTIC_3rd_Ply","DISP_MACRO_r_Theta_3rd_Ply"); CHKERRQ(ierr);
   }
-  
   // Fourth layer
   if (NO_Layers > 3) {
     //Define rows/cols and element data
@@ -1137,11 +1342,21 @@ int main(int argc, char *argv[]) {
     ierr = m_field_Macro.modify_finite_element_add_field_data("ELASTIC_4th_Ply","DISP_MACRO"); CHKERRQ(ierr);
     ierr = m_field_Macro.modify_finite_element_add_field_data("ELASTIC_4th_Ply","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
     
-    for(int ii=0; ii < nders_ply_mat; ii++ ) {
+    ierr = m_field_Macro.modify_finite_element_add_field_data("ELASTIC_1st_Ply","DISP_MACRO_r_Theta_4th_Ply"); CHKERRQ(ierr);
+    ierr = m_field_Macro.modify_finite_element_add_field_data("ELASTIC_2nd_Ply","DISP_MACRO_r_Theta_4th_Ply"); CHKERRQ(ierr);
+    ierr = m_field_Macro.modify_finite_element_add_field_data("ELASTIC_3rd_Ply","DISP_MACRO_r_Theta_4th_Ply"); CHKERRQ(ierr);
+    
+    for(int ii=0; ii < nders; ii++ ) {
       ostringstream ss_field;
-      ss_field << "DISP_MACRO" << stochastic_fields_ply[ii];
+      ss_field << "DISP_MACRO" << stochastic_fields[ii];
       ierr = m_field_Macro.modify_finite_element_add_field_data("ELASTIC_4th_Ply",ss_field.str().c_str()); CHKERRQ(ierr);
     }
+    ierr = m_field_Macro.modify_finite_element_add_field_data("ELASTIC_4th_Ply","DISP_MACRO_r_F"); CHKERRQ(ierr);
+    ierr = m_field_Macro.modify_finite_element_add_field_data("ELASTIC_4th_Ply","DISP_MACRO_r_Theta"); CHKERRQ(ierr);
+    ierr = m_field_Macro.modify_finite_element_add_field_data("ELASTIC_4th_Ply","DISP_MACRO_r_Theta_1st_Ply"); CHKERRQ(ierr);
+    ierr = m_field_Macro.modify_finite_element_add_field_data("ELASTIC_4th_Ply","DISP_MACRO_r_Theta_2nd_Ply"); CHKERRQ(ierr);
+    ierr = m_field_Macro.modify_finite_element_add_field_data("ELASTIC_4th_Ply","DISP_MACRO_r_Theta_3rd_Ply"); CHKERRQ(ierr);
+    ierr = m_field_Macro.modify_finite_element_add_field_data("ELASTIC_4th_Ply","DISP_MACRO_r_Theta_4th_Ply"); CHKERRQ(ierr);
   }
 
   //Define rows/cols and element data
@@ -1150,11 +1365,17 @@ int main(int argc, char *argv[]) {
   ierr = m_field_Macro.modify_finite_element_add_field_data("ELASTIC_FE_MACRO_REL","DISP_MACRO"); CHKERRQ(ierr);
   ierr = m_field_Macro.modify_finite_element_add_field_data("ELASTIC_FE_MACRO_REL","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
   
-  for(int ii=0; ii < nders_ply_mat; ii++ ) {
+  for(int ii=0; ii < nders; ii++ ) {
     ostringstream ss_field;
-    ss_field << "DISP_MACRO" << stochastic_fields_ply[ii];
+    ss_field << "DISP_MACRO" << stochastic_fields[ii];
     ierr = m_field_Macro.modify_finite_element_add_field_data("ELASTIC_FE_MACRO_REL",ss_field.str().c_str()); CHKERRQ(ierr);
   }
+  ierr = m_field_Macro.modify_finite_element_add_field_data("ELASTIC_FE_MACRO_REL","DISP_MACRO_r_F"); CHKERRQ(ierr);
+  ierr = m_field_Macro.modify_finite_element_add_field_data("ELASTIC_FE_MACRO_REL","DISP_MACRO_r_Theta"); CHKERRQ(ierr);
+  ierr = m_field_Macro.modify_finite_element_add_field_data("ELASTIC_FE_MACRO_REL","DISP_MACRO_r_Theta_1st_Ply"); CHKERRQ(ierr);
+  ierr = m_field_Macro.modify_finite_element_add_field_data("ELASTIC_FE_MACRO_REL","DISP_MACRO_r_Theta_2nd_Ply"); CHKERRQ(ierr);
+  ierr = m_field_Macro.modify_finite_element_add_field_data("ELASTIC_FE_MACRO_REL","DISP_MACRO_r_Theta_3rd_Ply"); CHKERRQ(ierr);
+  ierr = m_field_Macro.modify_finite_element_add_field_data("ELASTIC_FE_MACRO_REL","DISP_MACRO_r_Theta_4th_Ply"); CHKERRQ(ierr);
   
   
   //define problems
@@ -1195,11 +1416,18 @@ int main(int argc, char *argv[]) {
   ierr = m_field_Macro.add_ents_to_field_by_TETs(0,"DISP_MACRO"); CHKERRQ(ierr);
   ierr = m_field_Macro.add_ents_to_field_by_TETs(0,"MESH_NODE_POSITIONS"); CHKERRQ(ierr);
   
-  for(int ii=0; ii < nders_ply_mat; ii++ ) {
+  for(int ii=0; ii < nders; ii++ ) {
     ostringstream ss_field;
-    ss_field << "DISP_MACRO" << stochastic_fields_ply[ii];
+    ss_field << "DISP_MACRO" << stochastic_fields[ii];
     ierr = m_field_Macro.add_ents_to_field_by_TETs(0,ss_field.str().c_str()); CHKERRQ(ierr);
   }
+  ierr = m_field_Macro.add_ents_to_field_by_TETs(0,"DISP_MACRO_r_F"); CHKERRQ(ierr);
+  ierr = m_field_Macro.add_ents_to_field_by_TETs(0,"DISP_MACRO_r_Theta"); CHKERRQ(ierr);
+  ierr = m_field_Macro.add_ents_to_field_by_TETs(0,"DISP_MACRO_r_Theta_1st_Ply"); CHKERRQ(ierr);
+  ierr = m_field_Macro.add_ents_to_field_by_TETs(0,"DISP_MACRO_r_Theta_2nd_Ply"); CHKERRQ(ierr);
+  ierr = m_field_Macro.add_ents_to_field_by_TETs(0,"DISP_MACRO_r_Theta_3rd_Ply"); CHKERRQ(ierr);
+  ierr = m_field_Macro.add_ents_to_field_by_TETs(0,"DISP_MACRO_r_Theta_4th_Ply"); CHKERRQ(ierr);
+  
 
   /*****************************************************************************
    *
@@ -1207,16 +1435,31 @@ int main(int argc, char *argv[]) {
    *
    ****************************************************************************/
   // First layer
-  ierr = m_field_Macro.add_ents_to_finite_element_by_TETs(TetsInBlock_1st_Ply, "ELASTIC_1st_Ply"); CHKERRQ(ierr);
+  /*
+  ierr = m_field_Macro.add_ents_to_finite_element_by_TETs(meshset_macro_1st_Ply, "ELASTIC_1st_Ply",true); CHKERRQ(ierr);
   // Second layer
   if (NO_Layers > 1) {
-    ierr = m_field_Macro.add_ents_to_finite_element_by_TETs(TetsInBlock_2nd_Ply,"ELASTIC_2nd_Ply"); CHKERRQ(ierr);
+    ierr = m_field_Macro.add_ents_to_finite_element_by_TETs(meshset_macro_2nd_Ply,"ELASTIC_2nd_Ply",true); CHKERRQ(ierr);
   }
   // Third layer
   if (NO_Layers > 2) {
-    ierr = m_field_Macro.add_ents_to_finite_element_by_TETs(TetsInBlock_3rd_Ply,"ELASTIC_3rd_Ply"); CHKERRQ(ierr);
+    ierr = m_field_Macro.add_ents_to_finite_element_by_TETs(meshset_macro_3rd_Ply,"ELASTIC_4th_Ply",true); CHKERRQ(ierr);
   }
   // Fourth layer
+  if (NO_Layers > 3) {
+    ierr = m_field_Macro.add_ents_to_finite_element_by_TETs(meshset_macro_4th_Ply,"ELASTIC_4th_Ply",true); CHKERRQ(ierr);
+  }
+  
+  ierr = m_field_Macro.add_ents_to_finite_element_by_TETs(meshset_Reliability,"ELASTIC_FE_MACRO_REL",true); CHKERRQ(ierr);
+  */
+
+  ierr = m_field_Macro.add_ents_to_finite_element_by_TETs(TetsInBlock_1st_Ply, "ELASTIC_1st_Ply"); CHKERRQ(ierr);
+  if (NO_Layers > 1) {
+    ierr = m_field_Macro.add_ents_to_finite_element_by_TETs(TetsInBlock_2nd_Ply,"ELASTIC_2nd_Ply"); CHKERRQ(ierr);
+  }
+  if (NO_Layers > 2) {
+    ierr = m_field_Macro.add_ents_to_finite_element_by_TETs(TetsInBlock_3rd_Ply,"ELASTIC_3rd_Ply"); CHKERRQ(ierr);
+  }
   if (NO_Layers > 3) {
     ierr = m_field_Macro.add_ents_to_finite_element_by_TETs(TetsInBlock_4th_Ply,"ELASTIC_4th_Ply"); CHKERRQ(ierr);
   }
@@ -1235,14 +1478,44 @@ int main(int argc, char *argv[]) {
   ierr = m_field_Macro.set_field_order(0,MBVERTEX,"DISP_MACRO",1); CHKERRQ(ierr);
   
   order_st = order_Macro;
-  for(int ii=0; ii < nders_ply_mat; ii++ ) {
+  for(int ii=0; ii < nders; ii++ ) {
     ostringstream ss_field;
-    ss_field << "DISP_MACRO" << stochastic_fields_ply[ii];
-    ierr = m_field_Macro.set_field_order(0,MBTET,   ss_field.str().c_str(),order_st); CHKERRQ(ierr);
-    ierr = m_field_Macro.set_field_order(0,MBTRI,   ss_field.str().c_str(),order_st); CHKERRQ(ierr);
-    ierr = m_field_Macro.set_field_order(0,MBEDGE,  ss_field.str().c_str(),order_st); CHKERRQ(ierr);
+    ss_field << "DISP_MACRO" << stochastic_fields[ii];
+    ierr = m_field_Macro.set_field_order(0,MBTET,ss_field.str().c_str(),order_st); CHKERRQ(ierr);
+    ierr = m_field_Macro.set_field_order(0,MBTRI,ss_field.str().c_str(),order_st); CHKERRQ(ierr);
+    ierr = m_field_Macro.set_field_order(0,MBEDGE,ss_field.str().c_str(),order_st); CHKERRQ(ierr);
     ierr = m_field_Macro.set_field_order(0,MBVERTEX,ss_field.str().c_str(),1); CHKERRQ(ierr);
   }
+  // Applied force
+  ierr = m_field_Macro.set_field_order(0,MBTET,   "DISP_MACRO_r_F",order_st); CHKERRQ(ierr);
+  ierr = m_field_Macro.set_field_order(0,MBTRI,   "DISP_MACRO_r_F",order_st); CHKERRQ(ierr);
+  ierr = m_field_Macro.set_field_order(0,MBEDGE,  "DISP_MACRO_r_F",order_st); CHKERRQ(ierr);
+  ierr = m_field_Macro.set_field_order(0,MBVERTEX,"DISP_MACRO_r_F",1); CHKERRQ(ierr);
+  // Ply orietation
+  ierr = m_field_Macro.set_field_order(0,MBTET,   "DISP_MACRO_r_Theta",order_st); CHKERRQ(ierr);
+  ierr = m_field_Macro.set_field_order(0,MBTRI,   "DISP_MACRO_r_Theta",order_st); CHKERRQ(ierr);
+  ierr = m_field_Macro.set_field_order(0,MBEDGE,  "DISP_MACRO_r_Theta",order_st); CHKERRQ(ierr);
+  ierr = m_field_Macro.set_field_order(0,MBVERTEX,"DISP_MACRO_r_Theta",1); CHKERRQ(ierr);
+  
+  ierr = m_field_Macro.set_field_order(0,MBTET,   "DISP_MACRO_r_Theta_1st_Ply",order_st); CHKERRQ(ierr);
+  ierr = m_field_Macro.set_field_order(0,MBTRI,   "DISP_MACRO_r_Theta_1st_Ply",order_st); CHKERRQ(ierr);
+  ierr = m_field_Macro.set_field_order(0,MBEDGE,  "DISP_MACRO_r_Theta_1st_Ply",order_st); CHKERRQ(ierr);
+  ierr = m_field_Macro.set_field_order(0,MBVERTEX,"DISP_MACRO_r_Theta_1st_Ply",1); CHKERRQ(ierr);
+  
+  ierr = m_field_Macro.set_field_order(0,MBTET,   "DISP_MACRO_r_Theta_2nd_Ply",order_st); CHKERRQ(ierr);
+  ierr = m_field_Macro.set_field_order(0,MBTRI,   "DISP_MACRO_r_Theta_2nd_Ply",order_st); CHKERRQ(ierr);
+  ierr = m_field_Macro.set_field_order(0,MBEDGE,  "DISP_MACRO_r_Theta_2nd_Ply",order_st); CHKERRQ(ierr);
+  ierr = m_field_Macro.set_field_order(0,MBVERTEX,"DISP_MACRO_r_Theta_2nd_Ply",1); CHKERRQ(ierr);
+  
+  ierr = m_field_Macro.set_field_order(0,MBTET,   "DISP_MACRO_r_Theta_3rd_Ply",order_st); CHKERRQ(ierr);
+  ierr = m_field_Macro.set_field_order(0,MBTRI,   "DISP_MACRO_r_Theta_3rd_Ply",order_st); CHKERRQ(ierr);
+  ierr = m_field_Macro.set_field_order(0,MBEDGE,  "DISP_MACRO_r_Theta_3rd_Ply",order_st); CHKERRQ(ierr);
+  ierr = m_field_Macro.set_field_order(0,MBVERTEX,"DISP_MACRO_r_Theta_3rd_Ply",1); CHKERRQ(ierr);
+  
+  ierr = m_field_Macro.set_field_order(0,MBTET,   "DISP_MACRO_r_Theta_4th_Ply",order_st); CHKERRQ(ierr);
+  ierr = m_field_Macro.set_field_order(0,MBTRI,   "DISP_MACRO_r_Theta_4th_Ply",order_st); CHKERRQ(ierr);
+  ierr = m_field_Macro.set_field_order(0,MBEDGE,  "DISP_MACRO_r_Theta_4th_Ply",order_st); CHKERRQ(ierr);
+  ierr = m_field_Macro.set_field_order(0,MBVERTEX,"DISP_MACRO_r_Theta_4th_Ply",1); CHKERRQ(ierr);
   
   //
   ierr = m_field_Macro.set_field_order(0,MBTET,   "MESH_NODE_POSITIONS",2); CHKERRQ(ierr);
@@ -1375,8 +1648,6 @@ int main(int argc, char *argv[]) {
   
   string var_name;
   
-  int PSFE_order = 1;
-  
   //////////////////////////////////////////////////////////////////////////////
   //                                                                          //
   //        STEP 2: use probability transformation to obtain y in             //
@@ -1429,8 +1700,14 @@ int main(int argc, char *argv[]) {
   // ===========================================================================
   // Declare matrix for stroring RVE constitutive matrix & its derivatives
   ublas::matrix<double> Dmat;
+  ublas::matrix<double> Dmat_r_Em, Dmat_r_NUm, Dmat_r_Ep, Dmat_r_Ez;
+  ublas::matrix<double> Dmat_r_NUp, Dmat_r_NUpz, Dmat_r_Gzp;
+  ublas::matrix<double> Dmat_r_Ef, Dmat_r_NUf;
+  ublas::matrix<double> Dmat_r_F,Dmat_r_Theta;
+  ublas::matrix<double> Dmat_r_Theta_1, Dmat_r_Theta_2, Dmat_r_Theta_3, Dmat_r_Theta_4;
+  
   ublas::vector<ublas::matrix<double> > Dmat_r;
-  ublas::matrix<ublas::matrix<double> > Dmat_rs;
+  
   //////////////////////////////////////////////////////////////////////////////
   //                                                                          //
   //        STEP 4: Perform iterative loop to find design point               //
@@ -1453,22 +1730,24 @@ int main(int argc, char *argv[]) {
   ublas::vector<double> u_dir(probdata.num_vars);  // Direction
   ublas::vector<double> u_new(probdata.num_vars);  // New trial of checking point
   
-  ublas::matrix<double> Hess_g;                 // Hessian matrix of LSF in x space
-  grad_g.resize(probdata.num_vars); grad_g.clear();
-  Hess_g.resize(probdata.num_vars,probdata.num_vars); Hess_g.clear();
-  
   //
   ublas::matrix<double> StressGP_Global(3,3);    StressGP_Global.clear();
   ublas::matrix<double> StressGP(3,3);           StressGP.clear();
-  ublas::vector<ublas::matrix<double> > StressGP_r(nvars_ply_mat);
-  ublas::matrix<ublas::matrix<double> > StressGP_rs(nvars_ply_mat,nvars_ply_mat);
-  
-  for (int ivar = 0; ivar<nvars_ply_mat; ivar++) {
-    StressGP_r(ivar).resize(3,3); StressGP_r(ivar).clear();
-    for (int jvar = 0; jvar<nvars_ply_mat; jvar++) {
-      StressGP_rs(ivar,jvar).resize(3,3); StressGP_rs(ivar,jvar).clear();
-    }
-  }
+  ublas::matrix<double> StressGP_r_Em(3,3);      StressGP_r_Em.clear();
+  ublas::matrix<double> StressGP_r_NUm(3,3);     StressGP_r_NUm.clear();
+  ublas::matrix<double> StressGP_r_Ep(3,3);      StressGP_r_Ep.clear();
+  ublas::matrix<double> StressGP_r_Ez(3,3);      StressGP_r_Ez.clear();
+  ublas::matrix<double> StressGP_r_NUp(3,3);     StressGP_r_NUp.clear();
+  ublas::matrix<double> StressGP_r_NUpz(3,3);    StressGP_r_NUpz.clear();
+  ublas::matrix<double> StressGP_r_Gzp(3,3);     StressGP_r_Gzp.clear();
+  ublas::matrix<double> StressGP_r_Ef(3,3);      StressGP_r_Ef.clear();
+  ublas::matrix<double> StressGP_r_NUf(3,3);     StressGP_r_NUf.clear();
+  ublas::matrix<double> StressGP_r_F(3,3);       StressGP_r_F.clear();
+  ublas::matrix<double> StressGP_r_Theta(3,3);   StressGP_r_Theta.clear();
+  ublas::matrix<double> StressGP_r_Theta_1(3,3); StressGP_r_Theta_1.clear();
+  ublas::matrix<double> StressGP_r_Theta_2(3,3); StressGP_r_Theta_2.clear();
+  ublas::matrix<double> StressGP_r_Theta_3(3,3); StressGP_r_Theta_3.clear();
+  ublas::matrix<double> StressGP_r_Theta_4(3,3); StressGP_r_Theta_4.clear();
   
   double theta_angle;
   ublas::vector<double> PlyAngle_new;
@@ -1554,176 +1833,583 @@ int main(int argc, char *argv[]) {
     //
     // Evaluate limit-state function and its gradient
     //
-    // Micro-scale FE
     ierr = Solve_FE2_Problem.RVE_Dmat_Disp(m_field_RVE,
-                                           stochastic_fields_rve,
+                                           stochastic_fields,
                                            x,
                                            probdata.num_vars,
                                            probdata.NameVars,
-                                           PSFE_order); CHKERRQ(ierr);
-    // Macro-scale FE
-    ierr = Solve_FE2_Problem.Macro_FE_REL_FSORM(m_field_Macro,
-                                                nvars_rve_mat,
-                                                nvars_ply_mat,
-                                                name_rve_mat,
-                                                name_ply_mat,
-                                                stochastic_fields_ply,
-                                                x,PlyAngle_new,//probdata.PlyAngle,
-                                                NO_Layers,
-                                                PSFE_order); CHKERRQ(ierr);
+                                           probdata.AnalysisType); CHKERRQ(ierr);
     
-    Dmat.resize(6,6);
-    Dmat_r.resize(nvars_ply_mat);
-    Dmat_rs.resize(nvars_ply_mat, nvars_ply_mat);
+//    ierr = Solve_FE2_Problem.Micro_FE_Dmat(m_field_RVE, nvars, nders,
+//                                           stochastic_fields, x, probdata.num_vars,
+//                                           probdata.NameVars); CHKERRQ(ierr);
+    
+    ierr = Solve_FE2_Problem.Macro_FE_REL_FSORM(m_field_Macro, nvars, nders,
+                                                stochastic_fields, x, probdata.num_vars,
+                                                probdata.NameVars,PlyAngle_new,//probdata.PlyAngle,
+                                                NO_Layers); CHKERRQ(ierr);
+    
+    Dmat.resize(6,6);           Dmat.clear();
+    Dmat_r_Em.resize(6,6);      Dmat_r_Em.clear();
+    Dmat_r_NUm.resize(6,6);     Dmat_r_NUm.clear();
+    Dmat_r_Ep.resize(6,6);      Dmat_r_Ep.clear();
+    Dmat_r_Ez.resize(6,6);      Dmat_r_Ez.clear();
+    Dmat_r_NUp.resize(6,6);     Dmat_r_NUp.clear();
+    Dmat_r_NUpz.resize(6,6);    Dmat_r_NUpz.clear();
+    Dmat_r_Gzp.resize(6,6);     Dmat_r_Gzp.clear();
+    Dmat_r_Ef.resize(6,6);      Dmat_r_NUpz.clear();
+    Dmat_r_NUf.resize(6,6);     Dmat_r_NUf.clear();
+    Dmat_r_Theta.resize(6,6);   Dmat_r_Theta.clear();
+    Dmat_r_Theta_1.resize(6,6); Dmat_r_Theta_1.clear();
+    Dmat_r_Theta_2.resize(6,6); Dmat_r_Theta_2.clear();
+    Dmat_r_Theta_3.resize(6,6); Dmat_r_Theta_3.clear();
+    Dmat_r_Theta_4.resize(6,6); Dmat_r_Theta_4.clear();
+    
     
     switch (probdata.ExaminedPly) {
       case 1:{cout<<"\n\nThe 1st layer is under examination.\n\n";
         //--------------------------
         // D matrix for the 1st ply
         //--------------------------
-        
-        for (int i=0; i<nvars_ply_mat; i++) {
+        Dmat_r.resize(Solve_FE2_Problem.Ply_1st_Dmat_r.size());
+        for (int i=0; i<Solve_FE2_Problem.Ply_1st_Dmat_r.size(); i++) {
           Dmat_r(i) = Solve_FE2_Problem.Ply_1st_Dmat_r(i);
-          for (int j=0; j<nvars_ply_mat; j++) {
-            Dmat_rs(i,j) = Solve_FE2_Problem.Ply_1st_Dmat_rs(i,j);
-          }
         }
-        Dmat = Solve_FE2_Problem.Dmat_1st_Ply; //cout<<"Dmat: "<<Dmat<<"\n\n";
+        
+        Dmat             = Solve_FE2_Problem.Dmat_1st_Ply; //cout<<"Dmat: "<<Dmat<<"\n\n";
+        Dmat_r_Em        = Solve_FE2_Problem.Dmat_1st_Ply_r_Em; //cout<<"Dmat_r_Em: "<<Dmat_r_Em<<"\n\n";
+        Dmat_r_NUm       = Solve_FE2_Problem.Dmat_1st_Ply_r_NUm;
+        Dmat_r_Ep        = Solve_FE2_Problem.Dmat_1st_Ply_r_Ep;
+        Dmat_r_Ez        = Solve_FE2_Problem.Dmat_1st_Ply_r_Ez; //cout<<"Dmat_r_Ez: "<<Dmat_r_Ez<<"\n\n";
+        Dmat_r_NUp       = Solve_FE2_Problem.Dmat_1st_Ply_r_NUp;
+        Dmat_r_NUpz      = Solve_FE2_Problem.Dmat_1st_Ply_r_NUpz;
+        Dmat_r_Gzp       = Solve_FE2_Problem.Dmat_1st_Ply_r_Gzp;
+        Dmat_r_Ef        = Solve_FE2_Problem.Dmat_1st_Ply_r_Ef;
+        Dmat_r_NUf       = Solve_FE2_Problem.Dmat_1st_Ply_r_NUf;
+        Dmat_r_Theta     = Solve_FE2_Problem.Dmat_1st_Ply_r_Theta;
+        Dmat_r_Theta_1   = Solve_FE2_Problem.Dmat_1st_Ply_r_Theta_1;
+        Dmat_r_Theta_2   = Solve_FE2_Problem.Dmat_1st_Ply_r_Theta_2;
+        Dmat_r_Theta_3   = Solve_FE2_Problem.Dmat_1st_Ply_r_Theta_3;
+        Dmat_r_Theta_4   = Solve_FE2_Problem.Dmat_1st_Ply_r_Theta_4;
         break;
       }
       case 2: {cout<<"\n\nThe 2nd layer is under examination.\n\n";
         //--------------------------
         // D matrix for the 2nd ply
         //--------------------------
-        for (int i=0; i<nvars_ply_mat; i++) {
+        Dmat_r.resize(Solve_FE2_Problem.Ply_2nd_Dmat_r.size());
+        for (int i=0; i<Solve_FE2_Problem.Ply_2nd_Dmat_r.size(); i++) {
           Dmat_r(i) = Solve_FE2_Problem.Ply_2nd_Dmat_r(i);
-          for (int j=0; j<nvars_ply_mat; j++) {
-            Dmat_rs(i,j) = Solve_FE2_Problem.Ply_2nd_Dmat_rs(i,j);
-          }
         }
         
-        Dmat = Solve_FE2_Problem.Dmat_2nd_Ply; //cout<<"Dmat: "<<Dmat<<"\n\n";
+        Dmat             = Solve_FE2_Problem.Dmat_2nd_Ply; //cout<<"Dmat: "<<Dmat<<"\n\n";
+        Dmat_r_Em        = Solve_FE2_Problem.Dmat_2nd_Ply_r_Em; //cout<<"Dmat_r_Em: "<<Dmat_r_Em<<"\n\n";
+        Dmat_r_NUm       = Solve_FE2_Problem.Dmat_2nd_Ply_r_NUm;
+        Dmat_r_Ep        = Solve_FE2_Problem.Dmat_2nd_Ply_r_Ep;
+        Dmat_r_Ez        = Solve_FE2_Problem.Dmat_2nd_Ply_r_Ez; //cout<<"Dmat_r_Ez: "<<Dmat_r_Ez<<"\n\n";
+        Dmat_r_NUp       = Solve_FE2_Problem.Dmat_2nd_Ply_r_NUp;
+        Dmat_r_NUpz      = Solve_FE2_Problem.Dmat_2nd_Ply_r_NUpz;
+        Dmat_r_Gzp       = Solve_FE2_Problem.Dmat_2nd_Ply_r_Gzp;
+        Dmat_r_Ef        = Solve_FE2_Problem.Dmat_2nd_Ply_r_Ef;
+        Dmat_r_NUf       = Solve_FE2_Problem.Dmat_2nd_Ply_r_NUf;
+        Dmat_r_Theta     = Solve_FE2_Problem.Dmat_2nd_Ply_r_Theta;
+        Dmat_r_Theta_1   = Solve_FE2_Problem.Dmat_2nd_Ply_r_Theta_1;
+        Dmat_r_Theta_2   = Solve_FE2_Problem.Dmat_2nd_Ply_r_Theta_2;
+        Dmat_r_Theta_3   = Solve_FE2_Problem.Dmat_2nd_Ply_r_Theta_3;
+        Dmat_r_Theta_4   = Solve_FE2_Problem.Dmat_2nd_Ply_r_Theta_4;
         break;
       }
       case 3: {cout<<"\n\nThe 3rd layer is under examination.\n\n";
         //--------------------------
         // D matrix for the 3rd ply
         //--------------------------
-        for (int i=0; i<nvars_ply_mat; i++) {
+        Dmat_r.resize(Solve_FE2_Problem.Ply_3rd_Dmat_r.size());
+        for (int i=0; i<Solve_FE2_Problem.Ply_3rd_Dmat_r.size(); i++) {
           Dmat_r(i) = Solve_FE2_Problem.Ply_3rd_Dmat_r(i);
-          for (int j=0; j<nvars_ply_mat; j++) {
-            Dmat_rs(i,j) = Solve_FE2_Problem.Ply_3rd_Dmat_rs(i,j);
-          }
         }
         
-        Dmat = Solve_FE2_Problem.Dmat_3rd_Ply; //cout<<"Dmat: "<<Dmat<<"\n\n";
+        Dmat             = Solve_FE2_Problem.Dmat_3rd_Ply; //cout<<"Dmat: "<<Dmat<<"\n\n";
+        Dmat_r_Em        = Solve_FE2_Problem.Dmat_3rd_Ply_r_Em; //cout<<"Dmat_r_Em: "<<Dmat_r_Em<<"\n\n";
+        Dmat_r_NUm       = Solve_FE2_Problem.Dmat_3rd_Ply_r_NUm;
+        Dmat_r_Ep        = Solve_FE2_Problem.Dmat_3rd_Ply_r_Ep;
+        Dmat_r_Ez        = Solve_FE2_Problem.Dmat_3rd_Ply_r_Ez; //cout<<"Dmat_r_Ez: "<<Dmat_r_Ez<<"\n\n";
+        Dmat_r_NUp       = Solve_FE2_Problem.Dmat_3rd_Ply_r_NUp;
+        Dmat_r_NUpz      = Solve_FE2_Problem.Dmat_3rd_Ply_r_NUpz;
+        Dmat_r_Gzp       = Solve_FE2_Problem.Dmat_3rd_Ply_r_Gzp;
+        Dmat_r_Ef        = Solve_FE2_Problem.Dmat_3rd_Ply_r_Ef;
+        Dmat_r_NUf       = Solve_FE2_Problem.Dmat_3rd_Ply_r_NUf;
+        Dmat_r_Theta     = Solve_FE2_Problem.Dmat_3rd_Ply_r_Theta;
+        Dmat_r_Theta_1   = Solve_FE2_Problem.Dmat_3rd_Ply_r_Theta_1;
+        Dmat_r_Theta_2   = Solve_FE2_Problem.Dmat_3rd_Ply_r_Theta_2;
+        Dmat_r_Theta_3   = Solve_FE2_Problem.Dmat_3rd_Ply_r_Theta_3;
+        Dmat_r_Theta_4   = Solve_FE2_Problem.Dmat_3rd_Ply_r_Theta_4;
         break;
       }
       case 4: {cout<<"\n\nThe 4th layer is under examination.\n\n";
         //--------------------------
         // D matrix for the 4th ply
         //--------------------------
-        for (int i=0; i<nvars_ply_mat; i++) {
+        Dmat_r.resize(Solve_FE2_Problem.Ply_4th_Dmat_r.size());
+        for (int i=0; i<Solve_FE2_Problem.Ply_4th_Dmat_r.size(); i++) {
           Dmat_r(i) = Solve_FE2_Problem.Ply_4th_Dmat_r(i);
-          for (int j=0; j<nvars_ply_mat; j++) {
-            Dmat_rs(i,j) = Solve_FE2_Problem.Ply_4th_Dmat_rs(i,j);
-          }
         }
         
-        Dmat = Solve_FE2_Problem.Dmat_4th_Ply; //cout<<"Dmat: "<<Dmat<<"\n\n";
+        Dmat             = Solve_FE2_Problem.Dmat_4th_Ply; //cout<<"Dmat: "<<Dmat<<"\n\n";
+        Dmat_r_Em        = Solve_FE2_Problem.Dmat_4th_Ply_r_Em; //cout<<"Dmat_r_Em: "<<Dmat_r_Em<<"\n\n";
+        Dmat_r_NUm       = Solve_FE2_Problem.Dmat_4th_Ply_r_NUm;
+        Dmat_r_Ep        = Solve_FE2_Problem.Dmat_4th_Ply_r_Ep;
+        Dmat_r_Ez        = Solve_FE2_Problem.Dmat_4th_Ply_r_Ez; //cout<<"Dmat_r_Ez: "<<Dmat_r_Ez<<"\n\n";
+        Dmat_r_NUp       = Solve_FE2_Problem.Dmat_4th_Ply_r_NUp;
+        Dmat_r_NUpz      = Solve_FE2_Problem.Dmat_4th_Ply_r_NUpz;
+        Dmat_r_Gzp       = Solve_FE2_Problem.Dmat_4th_Ply_r_Gzp;
+        Dmat_r_Ef        = Solve_FE2_Problem.Dmat_4th_Ply_r_Ef;
+        Dmat_r_NUf       = Solve_FE2_Problem.Dmat_4th_Ply_r_NUf;
+        Dmat_r_Theta     = Solve_FE2_Problem.Dmat_4th_Ply_r_Theta;
+        Dmat_r_Theta_1   = Solve_FE2_Problem.Dmat_4th_Ply_r_Theta_1;
+        Dmat_r_Theta_2   = Solve_FE2_Problem.Dmat_4th_Ply_r_Theta_2;
+        Dmat_r_Theta_3   = Solve_FE2_Problem.Dmat_4th_Ply_r_Theta_3;
+        Dmat_r_Theta_4   = Solve_FE2_Problem.Dmat_4th_Ply_r_Theta_4;
         break;
       }
     }
     
+    Dmat_r_F.resize(6,6); Dmat_r_F.clear();
+    
+    
     //theta_angle = probdata.PlyAngle(probdata.ExaminedPly - 1)*(M_PI/180.0); cout<<"\n the angle "<<theta_angle<<endl;
     theta_angle = PlyAngle_new(probdata.ExaminedPly - 1)*(M_PI/180.0);
     
-    // ==============================================
-    //
-    // Recover the stress at Gauss points for specific element(s)
-    //
-    // ==============================================
-    
+    // Calculate the zeroth-order stress at Gauss points for specific element(s)
     FE2_PostProcStressForReliability_Zeroth Calc_Stress(m_field_Macro,"DISP_MACRO",Dmat);
     ierr = m_field_Macro.loop_finite_elements("ELASTIC_PROBLEM_MACRO","ELASTIC_FE_MACRO_REL",Calc_Stress); CHKERRQ(ierr);
     StressGP.clear(); REL_Stress_Transformation(theta_angle, Calc_Stress.StressGP, StressGP);
     //cout<<"Stress at GP in xyz: "<<Calc_Stress.StressGP<<endl;
     cout<<"Stress at GP in 123: "<<StressGP<<endl;
-
-    // ==============================================
-    //
-    // Recover the first-order derivatives of stress
-    //
-    // ==============================================
     
-    for (unsigned i=0; i<nvars_ply_mat; i++) {
-      var_name.clear(); var_name = probdata.NameVars[i+1];
-      
-      ostringstream ss_field;
-      ss_field.str(""); ss_field.clear();
-      ss_field << "DISP_MACRO" << stochastic_fields_ply[i];
-      cout<<"The first-order field is "<< ss_field.str().c_str() <<endl;
-      
-      FE2_PostProcStressForReliability_First Calc_Stress_r(m_field_Macro,"DISP_MACRO",ss_field.str().c_str(),Dmat,Dmat_r(i));
-      ierr = m_field_Macro.loop_finite_elements("ELASTIC_PROBLEM_MACRO","ELASTIC_FE_MACRO_REL",Calc_Stress_r);  CHKERRQ(ierr);
-      StressGP_r(i).resize(3,3); StressGP_r(i).clear();
+    // Calculate the first-order partial derivative stress at Gauss points for specific element(s)
+    //int i_mat_rv = -1;
+    for (unsigned i=1; i<=x.size(); i++) {
+      var_name.clear(); var_name = probdata.NameVars[i];
       //cout<<"The variable name is "<<probdata.NameVars[i]<<endl;
-      
-      if (var_name.compare(0,6,"theta1") == 0) {
+      if (var_name.compare(0,2,"Em") == 0) {
+        Dmat_r_Em = Dmat_r(i-1);
+        // w.r.t. Em
+        FE2_PostProcStressForReliability_First Calc_Stress_Em(m_field_Macro,"DISP_MACRO","DISP_MACRO_r_Em",Dmat,Dmat_r_Em);
+        ierr = m_field_Macro.loop_finite_elements("ELASTIC_PROBLEM_MACRO","ELASTIC_FE_MACRO_REL",Calc_Stress_Em);  CHKERRQ(ierr);
+        StressGP_Global.clear(); StressGP_Global = Calc_Stress_Em.StressGP_r;
+        StressGP_r_Em.clear();   REL_Stress_Transformation(theta_angle, StressGP_Global, StressGP_r_Em);
+        cout<<"Stress_r_Em at GP: "<<StressGP_r_Em<<endl;
+      }
+      else if (var_name.compare(0,3,"NUm") == 0) {
+        Dmat_r_NUm = Dmat_r(i-1);
+        // w.r.t. NUm
+        FE2_PostProcStressForReliability_First Calc_Stress_NUm(m_field_Macro,"DISP_MACRO","DISP_MACRO_r_NUm",Dmat,Dmat_r_NUm);
+        ierr = m_field_Macro.loop_finite_elements("ELASTIC_PROBLEM_MACRO","ELASTIC_FE_MACRO_REL",Calc_Stress_NUm);  CHKERRQ(ierr);
+        StressGP_Global.clear(); StressGP_Global = Calc_Stress_NUm.StressGP_r;
+        StressGP_r_NUm.clear();  REL_Stress_Transformation(theta_angle, StressGP_Global, StressGP_r_NUm);
+        cout<<"Stress_r_NUm at GP: "<<StressGP_r_NUm<<endl;
+      }
+      else if (var_name.compare(0,3,"NUp") == 0) {
+        Dmat_r_NUp = Dmat_r(i-1);
+        // w.r.t. NUp
+        FE2_PostProcStressForReliability_First Calc_Stress_NUp(m_field_Macro,"DISP_MACRO","DISP_MACRO_r_NUp",Dmat,Dmat_r_NUp);
+        ierr = m_field_Macro.loop_finite_elements("ELASTIC_PROBLEM_MACRO","ELASTIC_FE_MACRO_REL",Calc_Stress_NUp);  CHKERRQ(ierr);
+        StressGP_Global.clear(); StressGP_Global = Calc_Stress_NUp.StressGP_r;
+        StressGP_r_NUp.clear();  REL_Stress_Transformation(theta_angle, StressGP_Global, StressGP_r_NUp);
+        cout<<"Stress_r_NUp at GP: "<<StressGP_r_NUp<<endl;
+      }
+      else if (var_name.compare(0,3,"NUz") == 0) {
+        Dmat_r_NUpz = Dmat_r(i-1);
+        // w.r.t. NUpz
+        FE2_PostProcStressForReliability_First Calc_Stress_NUpz(m_field_Macro,"DISP_MACRO","DISP_MACRO_r_NUpz",Dmat,Dmat_r_NUpz);
+        ierr = m_field_Macro.loop_finite_elements("ELASTIC_PROBLEM_MACRO","ELASTIC_FE_MACRO_REL",Calc_Stress_NUpz);  CHKERRQ(ierr);
+        StressGP_Global.clear(); StressGP_Global = Calc_Stress_NUpz.StressGP_r;
+        StressGP_r_NUpz.clear(); REL_Stress_Transformation(theta_angle, StressGP_Global, StressGP_r_NUpz);
+        cout<<"Stress_r_NUpz at GP: "<<StressGP_r_NUpz<<endl;
+      }
+      else if (var_name.compare(0,2,"Ep") == 0) {
+        Dmat_r_Ep = Dmat_r(i-1);
+        // w.r.t. Ep
+        FE2_PostProcStressForReliability_First Calc_Stress_Ep(m_field_Macro,"DISP_MACRO","DISP_MACRO_r_Ep",Dmat,Dmat_r_Ep);
+        ierr = m_field_Macro.loop_finite_elements("ELASTIC_PROBLEM_MACRO","ELASTIC_FE_MACRO_REL",Calc_Stress_Ep);  CHKERRQ(ierr);
+        StressGP_Global.clear(); StressGP_Global = Calc_Stress_Ep.StressGP_r;
+        StressGP_r_Ep.clear();   REL_Stress_Transformation(theta_angle, StressGP_Global, StressGP_r_Ep);
+        cout<<"Stress_r_Ep at GP: "<<StressGP_r_Ep<<endl;
+      }
+      else if (var_name.compare(0,2,"Ez") == 0) {
+        Dmat_r_Ez = Dmat_r(i-1);
+        // w.r.t. Ez
+        FE2_PostProcStressForReliability_First Calc_Stress_Ez(m_field_Macro,"DISP_MACRO","DISP_MACRO_r_Ez",Dmat,Dmat_r_Ez);
+        ierr = m_field_Macro.loop_finite_elements("ELASTIC_PROBLEM_MACRO","ELASTIC_FE_MACRO_REL",Calc_Stress_Ez);  CHKERRQ(ierr);
+        StressGP_Global.clear(); StressGP_Global = Calc_Stress_Ez.StressGP_r;
+        StressGP_r_Ez.clear();   REL_Stress_Transformation(theta_angle, StressGP_Global, StressGP_r_Ez);
+        cout<<"Stress_r_Ez at GP: "<<StressGP_r_Ez<<endl;
+      }
+      else if (var_name.compare(0,3,"Gzp") == 0) {
+        Dmat_r_Gzp = Dmat_r(i-1);
+        // w.r.t. Gzp
+        FE2_PostProcStressForReliability_First Calc_Stress_Gzp(m_field_Macro,"DISP_MACRO","DISP_MACRO_r_Gzp",Dmat,Dmat_r_Gzp);
+        ierr = m_field_Macro.loop_finite_elements("ELASTIC_PROBLEM_MACRO","ELASTIC_FE_MACRO_REL",Calc_Stress_Gzp);  CHKERRQ(ierr);
+        StressGP_Global.clear(); StressGP_Global = Calc_Stress_Gzp.StressGP_r;
+        StressGP_r_Gzp.clear();  REL_Stress_Transformation(theta_angle, StressGP_Global, StressGP_r_Gzp);
+        cout<<"Stress_r_Gzp at GP: "<<StressGP_r_Gzp<<endl;
+      }
+      else if (var_name.compare(0,2,"Ef") == 0) {
+        Dmat_r_Ef = Dmat_r(i-1);
+        // w.r.t. Ef - fibre with isotropic material
+        FE2_PostProcStressForReliability_First Calc_Stress_Ef(m_field_Macro,"DISP_MACRO","DISP_MACRO_r_Ef",Dmat,Dmat_r_Ef);
+        ierr = m_field_Macro.loop_finite_elements("ELASTIC_PROBLEM_MACRO","ELASTIC_FE_MACRO_REL",Calc_Stress_Ef);  CHKERRQ(ierr);
+        StressGP_Global.clear(); StressGP_Global = Calc_Stress_Ef.StressGP_r;
+        StressGP_r_Ef.clear();   REL_Stress_Transformation(theta_angle, StressGP_Global, StressGP_r_Ef);
+        cout<<"Stress_r_Ef at GP: "<<StressGP_r_Ef<<endl;
+      }
+      else if (var_name.compare(0,3,"NUf") == 0) {
+        Dmat_r_NUf = Dmat_r(i-1);
+        // w.r.t. NUf - fibre with isotropic material
+        FE2_PostProcStressForReliability_First Calc_Stress_NUf(m_field_Macro,"DISP_MACRO","DISP_MACRO_r_NUf",Dmat,Dmat_r_NUf);
+        ierr = m_field_Macro.loop_finite_elements("ELASTIC_PROBLEM_MACRO","ELASTIC_FE_MACRO_REL",Calc_Stress_NUf);  CHKERRQ(ierr);
+        StressGP_Global.clear(); StressGP_Global = Calc_Stress_NUf.StressGP_r;
+        StressGP_r_NUf.clear();  REL_Stress_Transformation(theta_angle, StressGP_Global, StressGP_r_NUf);
+        cout<<"Stress_r_NUf at GP: "<<StressGP_r_NUf<<endl;
+      }
+      else if (var_name.compare(0,5,"force") == 0) {
+        Dmat_r_F = Dmat_r(i-1);
+        // w.r.t. F - applied force
+        FE2_PostProcStressForReliability_First Calc_Stress_F(m_field_Macro,"DISP_MACRO","DISP_MACRO_r_F",Dmat,Dmat_r_F);
+        ierr = m_field_Macro.loop_finite_elements("ELASTIC_PROBLEM_MACRO","ELASTIC_FE_MACRO_REL",Calc_Stress_F);  CHKERRQ(ierr);
+        StressGP_Global.clear(); StressGP_Global = Calc_Stress_F.StressGP_r;
+        StressGP_r_F.clear();    REL_Stress_Transformation(theta_angle,StressGP_Global,StressGP_r_F);
+        cout<<"Stress_r_F at GP: "<<StressGP_r_F<<endl;
+      }
+      else if (var_name.compare(0,11,"orientation") == 0) {
+        Dmat_r_Theta = Dmat_r(i-1);
+        // w.r.t. ply angle
+        FE2_PostProcStressForReliability_First Calc_Stress_Theta(m_field_Macro,"DISP_MACRO","DISP_MACRO_r_Theta",Dmat,Dmat_r_Theta);
+        ierr = m_field_Macro.loop_finite_elements("ELASTIC_PROBLEM_MACRO","ELASTIC_FE_MACRO_REL",Calc_Stress_Theta);  CHKERRQ(ierr);
+        StressGP_Global.clear();  StressGP_Global = Calc_Stress_Theta.StressGP_r;
+        StressGP_r_Theta.clear(); REL_Stress_Transformation(theta_angle,StressGP_Global,StressGP_r_Theta);
+        //cout<<"StressGP_r_Theta_xyz: "<<Calc_Stress_Theta.StressGP_r<<endl;
+        cout<<"StressGP_r_Theta_123: "<<StressGP_r_Theta<<endl;
+      }
+      else if (var_name.compare(0,6,"theta1") == 0) {
+        Dmat_r_Theta_1 = Dmat_r(i-1);
         // w.r.t. ply angle for the 1st-layer
+        FE2_PostProcStressForReliability_First Calc_Stress_Theta_1(m_field_Macro,"DISP_MACRO","DISP_MACRO_r_Theta_1st_Ply",Dmat,Dmat_r_Theta_1);
+        ierr = m_field_Macro.loop_finite_elements("ELASTIC_PROBLEM_MACRO","ELASTIC_FE_MACRO_REL",Calc_Stress_Theta_1);  CHKERRQ(ierr);
+        StressGP_r_Theta_1.clear();
         if (probdata.ExaminedPly == 1) {
-          REL_Stress_Transformation_Theta(theta_angle, Calc_Stress.StressGP, Calc_Stress_r.StressGP_r, StressGP_r(i));
+          REL_Stress_Transformation_Theta(theta_angle,
+                                          Calc_Stress.StressGP,
+                                          Calc_Stress_Theta_1.StressGP_r,
+                                          StressGP_r_Theta_1);
         } else {
-          REL_Stress_Transformation(theta_angle, Calc_Stress_r.StressGP_r, StressGP_r(i));
+          REL_Stress_Transformation(theta_angle,Calc_Stress_Theta_1.StressGP_r,
+                                    StressGP_r_Theta_1);
         }
       }
       else if (var_name.compare(0,6,"theta2") == 0) {
+        Dmat_r_Theta_2 = Dmat_r(i-1);
         // w.r.t. ply angle for the 2nd-layer
+        FE2_PostProcStressForReliability_First Calc_Stress_Theta_2(m_field_Macro,"DISP_MACRO","DISP_MACRO_r_Theta_2nd_Ply",Dmat,Dmat_r_Theta_2);
+        ierr = m_field_Macro.loop_finite_elements("ELASTIC_PROBLEM_MACRO","ELASTIC_FE_MACRO_REL",Calc_Stress_Theta_2);  CHKERRQ(ierr);
+        StressGP_Global.clear(); StressGP_Global = Calc_Stress_Theta_2.StressGP_r;
+        StressGP_r_Theta_2.clear();
         if (probdata.ExaminedPly == 2) {
-          REL_Stress_Transformation_Theta(theta_angle, Calc_Stress.StressGP, Calc_Stress_r.StressGP_r, StressGP_r(i));
+          REL_Stress_Transformation_Theta(theta_angle,
+                                          Calc_Stress.StressGP,
+                                          Calc_Stress_Theta_2.StressGP_r,
+                                          StressGP_r_Theta_2);
         } else {
-          REL_Stress_Transformation(theta_angle, Calc_Stress_r.StressGP_r,StressGP_r(i));
+          REL_Stress_Transformation(theta_angle,StressGP_Global,StressGP_r_Theta_2);
         }
       }
       else if (var_name.compare(0,6,"theta3") == 0) {
+        Dmat_r_Theta_3 = Dmat_r(i-1);
         // w.r.t. ply angle for the 3rd-layer
+        FE2_PostProcStressForReliability_First Calc_Stress_Theta_3(m_field_Macro,"DISP_MACRO","DISP_MACRO_r_Theta_3rd_Ply",Dmat,Dmat_r_Theta_3);
+        ierr = m_field_Macro.loop_finite_elements("ELASTIC_PROBLEM_MACRO","ELASTIC_FE_MACRO_REL",Calc_Stress_Theta_3);  CHKERRQ(ierr);
+        StressGP_Global.clear(); StressGP_Global = Calc_Stress_Theta_3.StressGP_r;
         if (probdata.ExaminedPly == 3) {
-          REL_Stress_Transformation_Theta(theta_angle, Calc_Stress.StressGP, Calc_Stress_r.StressGP_r, StressGP_r(i));
+          StressGP_r_Theta_3.clear(); REL_Stress_Transformation_Theta(theta_angle,
+                                                                      Calc_Stress.StressGP,
+                                                                      Calc_Stress_Theta_3.StressGP_r,
+                                                                      StressGP_r_Theta_3);
         } else {
-          REL_Stress_Transformation(theta_angle, Calc_Stress_r.StressGP_r,StressGP_r(i));
+          StressGP_r_Theta_3.clear(); REL_Stress_Transformation(theta_angle,StressGP_Global,StressGP_r_Theta_3);
         }
       }
       else if (var_name.compare(0,6,"theta4") == 0) {
+        Dmat_r_Theta_4 = Dmat_r(i-1);
         // w.r.t. ply angle the 4th-layer
+        FE2_PostProcStressForReliability_First Calc_Stress_Theta_4(m_field_Macro,"DISP_MACRO","DISP_MACRO_r_Theta_4th_Ply",Dmat,Dmat_r_Theta_4);
+        ierr = m_field_Macro.loop_finite_elements("ELASTIC_PROBLEM_MACRO","ELASTIC_FE_MACRO_REL",Calc_Stress_Theta_4);  CHKERRQ(ierr);
+        StressGP_Global.clear(); StressGP_Global = Calc_Stress_Theta_4.StressGP_r;
         if (probdata.ExaminedPly == 4) {
-          REL_Stress_Transformation_Theta(theta_angle, Calc_Stress.StressGP, Calc_Stress_r.StressGP_r, StressGP_r(i));
+          StressGP_r_Theta_4.clear(); REL_Stress_Transformation_Theta(theta_angle,
+                                                                      Calc_Stress.StressGP,
+                                                                      Calc_Stress_Theta_4.StressGP_r,
+                                                                      StressGP_r_Theta_4);
         } else {
-          REL_Stress_Transformation(theta_angle, Calc_Stress_r.StressGP_r, StressGP_r(i));
+          StressGP_r_Theta_4.clear(); REL_Stress_Transformation(theta_angle,StressGP_Global,StressGP_r_Theta_4);
         }
       }
-      else {
-        REL_Stress_Transformation(theta_angle, Calc_Stress_r.StressGP_r, StressGP_r(i));
-      }
-      cout<<StressGP_r(i)<<endl;
       var_name.clear();
     }
+  
+    FE2_PostProcStressForReliability_Second Calc_Stress_EmEm(m_field_Macro,
+                                                             "DISP_MACRO",
+                                                             "DISP_MACRO_r_Em",
+                                                             "DISP_MACRO_rs_EmEm",
+                                                             Dmat,Dmat,Dmat);
+    ierr = m_field_Macro.loop_finite_elements("ELASTIC_PROBLEM_MACRO",
+                                              "ELASTIC_FE_MACRO_REL",
+                                              Calc_Stress_EmEm);  CHKERRQ(ierr);
     
     // Evaluate LSF and its gradient
     grad_g.resize(probdata.num_vars); grad_g.clear();
     //ierr = TheLSF.gfun(x,val_G,grad_g); CHKERRQ(ierr);
     
     switch (FailureCriterion) {
+      case 12013: {
+        //
+        // Maximum stress theory - fibre failure
+        //
+        NameOfFailureCriterion = "Maximum stress theory - Fibre failure";
+        ierr = TheLSF.gfun_ply_MS_LD(x,probdata.NameVars,probdata.MatStrength,
+                                     StressGP,
+                                     StressGP_r_Em,StressGP_r_NUm,
+                                     StressGP_r_NUp,StressGP_r_NUpz,
+                                     StressGP_r_Ep,StressGP_r_Ez,StressGP_r_Gzp,
+                                     StressGP_r_Ef,StressGP_r_NUf,
+                                     StressGP_r_F,StressGP_r_Theta,
+                                     StressGP_r_Theta_1,StressGP_r_Theta_2,
+                                     StressGP_r_Theta_3,StressGP_r_Theta_4,
+                                     val_G,grad_g); CHKERRQ(ierr);
+        break;
+      }
+      case 22013: {
+        //
+        // Maximum stress theory - matrix failure
+        //
+        NameOfFailureCriterion = "Maximum stress theory - Matrix failure";
+        ierr = TheLSF.gfun_ply_MS_TD(x,probdata.NameVars,probdata.MatStrength,
+                                     StressGP,
+                                     StressGP_r_Em,StressGP_r_NUm,
+                                     StressGP_r_NUp,StressGP_r_NUpz,
+                                     StressGP_r_Ep,StressGP_r_Ez,StressGP_r_Gzp,
+                                     StressGP_r_Ef,StressGP_r_NUf,
+                                     StressGP_r_F,StressGP_r_Theta,
+                                     StressGP_r_Theta_1,StressGP_r_Theta_2,
+                                     StressGP_r_Theta_3,StressGP_r_Theta_4,
+                                     val_G,grad_g); CHKERRQ(ierr);
+        break;
+      }
+      case 22014: {
+        //
+        // Maximum stress theory - shear failure
+        //
+        NameOfFailureCriterion = "Maximum stress theory - Shear failure";
+        ierr = TheLSF.gfun_ply_MS_Shear(x,probdata.NameVars,probdata.MatStrength,
+                                        StressGP,
+                                        StressGP_r_Em,StressGP_r_NUm,
+                                        StressGP_r_NUp,StressGP_r_NUpz,
+                                        StressGP_r_Ep,StressGP_r_Ez,StressGP_r_Gzp,
+                                        StressGP_r_Ef,StressGP_r_NUf,
+                                        StressGP_r_F,StressGP_r_Theta,
+                                        StressGP_r_Theta_1,StressGP_r_Theta_2,
+                                        StressGP_r_Theta_3,StressGP_r_Theta_4,
+                                        val_G,grad_g); CHKERRQ(ierr);
+        break;
+      }
+      case 13033: {
+        //
+        // Hashin failure theory - fibre failure
+        //
+        NameOfFailureCriterion = "Hashin failure theory - Fibre failure";
+        ierr = TheLSF.gfun_ply_HF(x,probdata.NameVars,probdata.MatStrength,
+                                  StressGP,
+                                  StressGP_r_Em,StressGP_r_NUm,
+                                  StressGP_r_NUp,StressGP_r_NUpz,
+                                  StressGP_r_Ep,StressGP_r_Ez,StressGP_r_Gzp,
+                                  StressGP_r_Ef,StressGP_r_NUf,
+                                  StressGP_r_F,StressGP_r_Theta,
+                                  StressGP_r_Theta_1,StressGP_r_Theta_2,
+                                  StressGP_r_Theta_3,StressGP_r_Theta_4,
+                                  val_G,grad_g); CHKERRQ(ierr);
+        
+        break;
+      }
+      case 23033: {
+        //
+        // Hashin failure theory - matrix failure
+        //
+        NameOfFailureCriterion = "Hashin failure theory - Matrix failure";
+        ierr = TheLSF.gfun_ply_HM(x,probdata.NameVars,probdata.MatStrength,
+                                  StressGP,
+                                  StressGP_r_Em,StressGP_r_NUm,
+                                  StressGP_r_NUp,StressGP_r_NUpz,
+                                  StressGP_r_Ep,StressGP_r_Ez,StressGP_r_Gzp,
+                                  StressGP_r_Ef,StressGP_r_NUf,
+                                  StressGP_r_F,StressGP_r_Theta,
+                                  StressGP_r_Theta_1,StressGP_r_Theta_2,
+                                  StressGP_r_Theta_3,StressGP_r_Theta_4,
+                                  val_G,grad_g); CHKERRQ(ierr);
+        break;
+      }
+      case 42050: {
+        //
+        // Tsai-Wu failure criteria
+        //
+        NameOfFailureCriterion = "Tsai-Wu - 2D stress state";
+        ierr = TheLSF.gfun_ply_Tsai_Wu_2D(x,probdata.NameVars,probdata.MatStrength,
+                                          StressGP,
+                                          StressGP_r_Em,StressGP_r_NUm,
+                                          StressGP_r_NUp,StressGP_r_NUpz,
+                                          StressGP_r_Ep,StressGP_r_Ez,StressGP_r_Gzp,
+                                          StressGP_r_Ef,StressGP_r_NUf,
+                                          StressGP_r_F,StressGP_r_Theta,
+                                          StressGP_r_Theta_1,StressGP_r_Theta_2,
+                                          StressGP_r_Theta_3,StressGP_r_Theta_4,
+                                          val_G,grad_g); CHKERRQ(ierr);
+        break;
+      }
       case 43050: {
         //
         // Tsai-Wu failure criteria
         //
         NameOfFailureCriterion = "Tsai-Wu - 3D stress state";
-        ierr = TheLSF.gfun_ply_Tsai_Wu_New(x, probdata.NameVars, probdata.MatStrength,
-                                           StressGP, StressGP_r, StressGP_rs,
-                                           val_G, grad_g, Hess_g,
-                                           nvars_ply_mat, PSFE_order); CHKERRQ(ierr);
+        ierr = TheLSF.gfun_ply_Tsai_Wu(x,probdata.NameVars,probdata.MatStrength,
+                                       StressGP,
+                                       StressGP_r_Em,StressGP_r_NUm,
+                                       StressGP_r_NUp,StressGP_r_NUpz,
+                                       StressGP_r_Ep,StressGP_r_Ez,StressGP_r_Gzp,
+                                       StressGP_r_Ef,StressGP_r_NUf,
+                                       StressGP_r_F,StressGP_r_Theta,
+                                       StressGP_r_Theta_1,StressGP_r_Theta_2,
+                                       StressGP_r_Theta_3,StressGP_r_Theta_4,
+                                       val_G,grad_g); CHKERRQ(ierr);
         break;
       }
+      case 44050: {
+        //
+        // Tsai-Wu failure criteria
+        //
+        NameOfFailureCriterion = "Tsai-Wu-Christensen - 3D stress state";
+        ierr = TheLSF.gfun_ply_Tsai_Wu_Christensen(x,probdata.NameVars,probdata.MatStrength,
+                                                   StressGP,
+                                                   StressGP_r_Em,StressGP_r_NUm,
+                                                   StressGP_r_NUp,StressGP_r_NUpz,
+                                                   StressGP_r_Ep,StressGP_r_Ez,StressGP_r_Gzp,
+                                                   StressGP_r_Ef,StressGP_r_NUf,
+                                                   StressGP_r_F,StressGP_r_Theta,
+                                                   StressGP_r_Theta_1,StressGP_r_Theta_2,
+                                                   StressGP_r_Theta_3,StressGP_r_Theta_4,
+                                                   val_G,grad_g); CHKERRQ(ierr);
+        break;
+      }
+      case 42060: {
+        //
+        // Tsai-Hill failure criteria
+        //
+        NameOfFailureCriterion = "Tsai-Hill - 2D stress-state";
+        ierr = TheLSF.gfun_ply_Tsai_Hill_2D(x,probdata.NameVars,probdata.MatStrength,
+                                            StressGP,
+                                            StressGP_r_Em,StressGP_r_NUm,
+                                            StressGP_r_NUp,StressGP_r_NUpz,
+                                            StressGP_r_Ep,StressGP_r_Ez,StressGP_r_Gzp,
+                                            StressGP_r_Ef,StressGP_r_NUf,
+                                            StressGP_r_F,StressGP_r_Theta,
+                                            StressGP_r_Theta_1,StressGP_r_Theta_2,
+                                            StressGP_r_Theta_3,StressGP_r_Theta_4,
+                                            val_G,grad_g); CHKERRQ(ierr);
+        break;
+      }
+      case 43060: {
+        //
+        // Tsai-Hill failure criteria
+        //
+        NameOfFailureCriterion = "Tsai-Hill - 3D stress-state";
+        ierr = TheLSF.gfun_ply_Tsai_Hill(x,probdata.NameVars,probdata.MatStrength,
+                                         StressGP,
+                                         StressGP_r_Em,StressGP_r_NUm,
+                                         StressGP_r_NUp,StressGP_r_NUpz,
+                                         StressGP_r_Ep,StressGP_r_Ez,StressGP_r_Gzp,
+                                         StressGP_r_Ef,StressGP_r_NUf,
+                                         StressGP_r_F,StressGP_r_Theta,
+                                         StressGP_r_Theta_1,StressGP_r_Theta_2,
+                                         StressGP_r_Theta_3,StressGP_r_Theta_4,
+                                         val_G,grad_g); CHKERRQ(ierr);
+        break;
+      }
+      case 13073: {
+        //
+        // Richard Christen: Fibre controlled failure
+        //
+        NameOfFailureCriterion = "Christensen - Fibre controlled failure";
+        ierr = TheLSF.gfun_ply_RCF(x,probdata.NameVars,probdata.MatStrength,
+                                   StressGP,
+                                   StressGP_r_Em,StressGP_r_NUm,
+                                   StressGP_r_NUp,StressGP_r_NUpz,
+                                   StressGP_r_Ep,StressGP_r_Ez,StressGP_r_Gzp,
+                                   StressGP_r_Ef,StressGP_r_NUf,
+                                   StressGP_r_F,StressGP_r_Theta,
+                                   StressGP_r_Theta_1,StressGP_r_Theta_2,
+                                   StressGP_r_Theta_3,StressGP_r_Theta_4,
+                                   val_G,grad_g); CHKERRQ(ierr);
+        break;
+      }
+      case 23073: {
+        //
+        // Richard Christen: Matrix controlled failure
+        //
+        NameOfFailureCriterion = "Christensen - Matrix controlled failure";
+        ierr = TheLSF.gfun_ply_RCM(x,probdata.NameVars,probdata.MatStrength,
+                                   StressGP,
+                                   StressGP_r_Em,StressGP_r_NUm,
+                                   StressGP_r_NUp,StressGP_r_NUpz,
+                                   StressGP_r_Ep,StressGP_r_Ez,StressGP_r_Gzp,
+                                   StressGP_r_Ef,StressGP_r_NUf,
+                                   StressGP_r_F,StressGP_r_Theta,
+                                   StressGP_r_Theta_1,StressGP_r_Theta_2,
+                                   StressGP_r_Theta_3,StressGP_r_Theta_4,
+                                   val_G,grad_g); CHKERRQ(ierr);
+        break;
+      }
+      case 42080: {
+        //
+        // Hoffman failure theory
+        //
+        NameOfFailureCriterion = "Hoffman failure theory - 2D stress states";
+        ierr = TheLSF.gfun_ply_Hoffman_2D(x,probdata.NameVars,probdata.MatStrength,
+                                          StressGP,
+                                          StressGP_r_Em,StressGP_r_NUm,
+                                          StressGP_r_NUp,StressGP_r_NUpz,
+                                          StressGP_r_Ep,StressGP_r_Ez,StressGP_r_Gzp,
+                                          StressGP_r_Ef,StressGP_r_NUf,
+                                          StressGP_r_F,StressGP_r_Theta,
+                                          StressGP_r_Theta_1,StressGP_r_Theta_2,
+                                          StressGP_r_Theta_3,StressGP_r_Theta_4,
+                                          val_G,grad_g); CHKERRQ(ierr);
+        break;
+      }
+      case 43080: {
+        //
+        // Hoffman failure theory
+        //
+        NameOfFailureCriterion = "Hoffman failure theory - 3D stress states";
+        ierr = TheLSF.gfun_ply_Hoffman(x,probdata.NameVars,probdata.MatStrength,
+                                       StressGP,
+                                       StressGP_r_Em,StressGP_r_NUm,
+                                       StressGP_r_NUp,StressGP_r_NUpz,
+                                       StressGP_r_Ep,StressGP_r_Ez,StressGP_r_Gzp,
+                                       StressGP_r_Ef,StressGP_r_NUf,
+                                       StressGP_r_F,StressGP_r_Theta,
+                                       StressGP_r_Theta_1,StressGP_r_Theta_2,
+                                       StressGP_r_Theta_3,StressGP_r_Theta_4,
+                                       val_G,grad_g); CHKERRQ(ierr);
+        break;
+      }
+        //default: {}
     }
     
     grad_G.resize(probdata.num_vars); grad_G.clear();
@@ -1809,6 +2495,7 @@ int main(int argc, char *argv[]) {
         BetaFile<<"\n";
       }
       
+      
       // Determin new trial point
       u_new.resize(probdata.num_vars); u_new.clear();
       u_new = u + step_size*u_dir;  // when step_size is 1, it is HLRF search algorithm
@@ -1822,9 +2509,7 @@ int main(int argc, char *argv[]) {
     rel_calc_time  = (double)(rel_t2 - rel_t1)/CLOCKS_PER_SEC;
     rel_t1 = rel_t2;
     cout<<"Elapsed time at this step is: "<<rel_calc_time<<" seconds.\n";
-    //if (istep>12) {
-    //  conv_flag = 1;
-    //}
+    
   } while (conv_flag == 0);
   
   
@@ -1839,182 +2524,6 @@ int main(int argc, char *argv[]) {
   
   beta = inner_prod(alpha,u);
   
-  //////////////////////////////////////////////////////////////////////////////
-  //                                                                          //
-  //        STEP 9: Adjust the estimate of reliability index by using         //
-  //                the Second Order Reliability Method (SORM)                //
-  //                                                                          //
-  //////////////////////////////////////////////////////////////////////////////
-  
-  PSFE_order = probdata.AnalysisType;
-  
-  if (PSFE_order==2) {
-    cout<<"\n\n";
-    cout<<"/////////////////////////////////////////////////////////////////\n";
-    cout<<"//                                                             //\n";
-    cout<<"// The Second Order Reliability Method starts from here!       //\n";
-    cout<<"//                                                             //\n";
-    cout<<"/////////////////////////////////////////////////////////////////\n";
-    
-    // =======================================
-    //
-    // 9.1 Conducting analysis for RVE problem
-    //
-    // =======================================
-    ierr = Solve_FE2_Problem.RVE_Dmat_Disp(m_field_RVE,
-                                           stochastic_fields_rve,
-                                           x,
-                                           probdata.num_vars,
-                                           probdata.NameVars,
-                                           PSFE_order); CHKERRQ(ierr);
-  
-    // =======================================
-    //
-    // 9.2 Conducting analysis for Macro problem
-    //
-    // =======================================
-    ierr = Solve_FE2_Problem.Macro_FE_REL_FSORM(m_field_Macro,
-                                                nvars_rve_mat,
-                                                nvars_ply_mat,
-                                                name_rve_mat,
-                                                name_ply_mat,
-                                                stochastic_fields_ply,
-                                                x,PlyAngle_new,
-                                                NO_Layers,
-                                                PSFE_order); CHKERRQ(ierr);
-    
-    // =======================================
-    //
-    // 9.3 Recover the 2nd-order derivatives of stress
-    //
-    // =======================================
-    
-    int sub_nvars = 0;
-    int var_pos;
-    for (int ivar = 0; ivar<nvars_ply_mat; ivar++) {
-      // Get the first-order field
-      ostringstream first_field_r;
-      first_field_r.str(""); first_field_r.clear();
-      first_field_r << "DISP_MACRO" << stochastic_fields_ply[ivar];
-      
-      for (int jvar = ivar; jvar<nvars_ply_mat; jvar++) {
-        // Get the first-order derivative of field w.r.t. - j-th variable
-        ostringstream first_field_s;
-        first_field_s.str(""); first_field_s.clear();
-        first_field_s << "DISP_MACRO" << stochastic_fields_ply[jvar];
-        
-        //
-        if (jvar == ivar) {
-          sub_nvars = sub_nvars + (jvar + 1);
-          var_pos = sub_nvars;
-        } else {
-          var_pos = var_pos + jvar;
-        }
-        
-        // Get the second-order field
-        ostringstream second_field;
-        second_field.str(""); second_field.clear();
-        second_field << "DISP_MACRO" << stochastic_fields_ply[var_pos + nvars_ply_mat -1];
-        cout<<"The second-order field is "<<second_field.str().c_str()<<endl;
-        
-        //
-        FE2_PostProcStressForReliability_Second Calc_Stress_2nd(m_field_Macro,
-                                                                "DISP_MACRO",
-                                                                first_field_r.str().c_str(),
-                                                                first_field_s.str().c_str(),
-                                                                second_field.str().c_str(),
-                                                                Dmat,
-                                                                Dmat_r(ivar),Dmat_r(jvar),
-                                                                Dmat_rs(ivar,jvar));
-        ierr = m_field_Macro.loop_finite_elements("ELASTIC_PROBLEM_MACRO","ELASTIC_FE_MACRO_REL",Calc_Stress_2nd);  CHKERRQ(ierr);
-        //ublas::matrix<double> istress_rs; istress_rs.clear();
-        REL_Stress_Transformation(theta_angle, Calc_Stress_2nd.StressGP_rs, StressGP_rs(ivar,jvar));
-        cout<<"Stress_rs at GP: "<<StressGP_rs(ivar,jvar)<<endl;
-      }
-    }
-    
-    // =======================================
-    //
-    // 9.4 Calculate Hessian matrix of LSF in x-space
-    //
-    // =======================================
-    
-    ierr = TheLSF.gfun_ply_Tsai_Wu_New(x, probdata.NameVars, probdata.MatStrength,
-                                       StressGP, StressGP_r, StressGP_rs,
-                                       val_G, grad_g, Hess_g,
-                                       nvars_ply_mat, PSFE_order); CHKERRQ(ierr);
-    
-    // =======================================
-    //
-    // 9.5 Construct orthogonal matrix
-    //
-    // =======================================
-    SORM theSORM;
-    
-    cout<<"\nStart to calculate orthogonal matrix"<<endl;
-    ublas::matrix<double> Qmatrix;
-    theSORM.orthonormal_matrix(alpha,Qmatrix);
-    cout<<"\nThe Q matrix: "<<Qmatrix<<endl;
-
-    ublas::vector<double> dxdu;
-    ublas::matrix<double> ddxddu;
-    cout<<"\n The x: "<<x<<endl;
-    cout<<"\n The u: "<<u<<endl;
-    theSORM.d2x_dudu(x, u, probdata, dxdu, ddxddu);
-
-    // =======================================
-    //
-    // 9.6 Transform Hessian matrix from x-space to u-space
-    //
-    // =======================================
-    ublas::matrix<double> Hess_G;
-    theSORM.Hessian_Matrix(dxdu, grad_g, Hess_g, Hess_G, ddxddu);
-
-    ublas::matrix<double> A_Matrix;
-    ublas::matrix<double> Temp_A_Matrix;
-    Temp_A_Matrix = prod(Qmatrix, Hess_G);
-    A_Matrix = prod(Temp_A_Matrix, trans(Qmatrix))/norm_2(grad_G);
-
-    cout<<"\nHessian matrix: "<<Hess_G<<endl;
-    cout<<"\nA matrix: "<<A_Matrix<<endl;
-
-    ublas::matrix<double> New_A_Matrix;
-    int Size_A; Size_A = A_Matrix.size1() - 1;
-    New_A_Matrix.resize(Size_A,Size_A); New_A_Matrix.clear();
-    for (int i = 0; i<Size_A; i++) {
-      for (int j = 0; j<Size_A; j++) {
-        New_A_Matrix(i,j) = A_Matrix(i,j);
-      }
-    }
-
-    //LAPACK - eigenvalues and vectors. Applied twice for initial creates memory space
-    ublas::matrix<double> eigen_vectors = New_A_Matrix;
-    ublas::vector<double> kappa(Size_A);
-
-    int lda, info, lwork = -1; lda = Size_A;
-    double wkopt;
-    info = lapack_dsyev('N','U',Size_A,&(eigen_vectors.data()[0]),lda,&(kappa.data()[0]),&wkopt,lwork);
-    if(info != 0) SETERRQ1(PETSC_COMM_SELF,1,"is something wrong with lapack_dsyev info = %d",info);
-    lwork = (int)wkopt;
-    double work[lwork];
-    info = lapack_dsyev('V','U',Size_A,&(eigen_vectors.data()[0]),lda,&(kappa.data()[0]),work,lwork);
-    if(info != 0) SETERRQ1(PETSC_COMM_SELF,1,"is something wrong with lapack_dsyev info = %d",info);
-    
-    
-    using boost::math::normal_distribution;
-    normal_distribution<> snorm(0,1);
-    double pf_Breitung = 0.0;
-    for (int i = 0; i<Size_A; i++) {
-      pf_Breitung = pf_Breitung + 1/sqrt(1 + kappa(i)*beta);
-    }
-    //pf_Breitung = cdf(snorm,-beta)*pf_Breitung;
-    double beta_Breitung;
-    //beta_Breitung = -quantile(snorm,pf_Breitung);
-    
-    cout<<"\nThe eigen values are: "<<kappa<<endl;
-    cout<<"\nThe Breitung probability of failure is: "<<pf_Breitung<<endl;
-    //cout<<"\nThe Breitung reliability index is: "<<beta_Breitung<<endl;
-  }
   
   //////////////////////////////////////////////////////////////////////////////
   //                                                                          //
