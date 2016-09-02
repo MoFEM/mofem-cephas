@@ -41,7 +41,7 @@ endif(CMAKE_Fortran_COMPILER)
 
 set(MoFEM_VERSION_MAJOR 0)
 set(MoFEM_VERSION_MINOR 4)
-set(MoFEM_VERSION_BUILD 4)
+set(MoFEM_VERSION_BUILD 5)
 
 include(CheckCXXSourceCompiles)
 CHECK_CXX_SOURCE_COMPILES(
@@ -83,8 +83,8 @@ include(cmake/FindSLEPC.cmake)
 #Other tools
 include(cmake/FindADOL-C.cmake)
 include(cmake/FindTetGen.cmake)
-include(cmake/FindNetGen.cmake)
 include(cmake/FindTriangle.cmake)
+include(cmake/FindMed.cmake)
 
 #CGAL tools
 #find_package(CGAL HINTS ${CGAL_DIR}/lib/CGAL)

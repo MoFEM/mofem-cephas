@@ -86,6 +86,9 @@
 #ifdef WITH_TETGEN
   #include <TetGenInterface.hpp>
 #endif //WITH_TETGEN
+#ifdef WITH_MED
+  #include <MedInterface.hpp>
+#endif //WITH_MED
 #include <BitLevelCoupler.hpp>
 #include <NodeMerger.hpp>
 #include <PrismsFromSurfaceInterface.hpp>
