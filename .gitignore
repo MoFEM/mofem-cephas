@@ -24,6 +24,7 @@ soft_tissue_materials
 minimal_surface_equation
 bone_remodelling
 helmholtz
+optimal_mass_transport
 
 _Store
 *.swp
