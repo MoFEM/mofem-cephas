@@ -700,7 +700,7 @@ PetscErrorCode Core::initialiseDatabseInformationFromMesh(int verb) {
         }
         if(verb > 0) {
           std::ostringstream ss;
-          ss << "read cubit" << base_meshset << std::endl;
+          ss << "read cubit " << base_meshset << std::endl;
           //PetscSynchronizedPrintf(comm,ss.str().c_str());
           PetscPrintf(comm,ss.str().c_str());
         }
