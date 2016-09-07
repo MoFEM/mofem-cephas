@@ -56,6 +56,5 @@ target_link_libraries(thermal_unseady
   mofem_approx
   mofem_third_party
   mofem_cblas
-  boost_program_options
   ${MoFEM_PROJECT_LIBS}
 )

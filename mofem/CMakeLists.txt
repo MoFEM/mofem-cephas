@@ -127,6 +127,15 @@ if(TAO_LIBRARY)
   add_definitions(-DTAO)
 endif(TAO_LIBRARY)
 
+find_library(
+  BOOST_PROGRAM_OPTIONS_LIB NAMES boost_program_options
+  HINTS
+  ${PETSC_DIR}/${PETSC_ARCH}/lib
+)
+if(NOT BOOST_PROGRAM_OPTIONS_LIB)
+  message(FATAL_ERROR "boost program options library not found")
+endif(NOT BOOST_PROGRAM_OPTIONS_LIB)
+
 resolve_libraries(PROJECT_LIBS "
   ${SLEPC_LIBRARY}
   ${ADOL-C_LIBRARY}
@@ -137,7 +146,8 @@ resolve_libraries(PROJECT_LIBS "
   ${PETSCVAR_PETSC_WITH_EXTERNAL_LIB}
   ${TAO_LIBRARY}
   ${MPI_F90_LIB}
-  ${MPI_F77_LIB}"
+  ${MPI_F77_LIB}
+  ${BOOST_PROGRAM_OPTIONS_LIB}"
 )
 
 message(STATUS ${PROJECT_LIBS})
