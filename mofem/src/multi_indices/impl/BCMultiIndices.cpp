@@ -376,7 +376,7 @@ std::ostream& operator<<(std::ostream& os,const CubitMeshSets& e) {
     const CubitBCType jj_bc_type = 1<<jj;
     if((e.cubitBcType&jj_bc_type).any()) {
       string bc_type_name;
-      ss << " " << string(CubitBCNames[jj]);
+      ss << " " << string(CubitBCNames[jj+1]);
     }
     ++jj;
   }
