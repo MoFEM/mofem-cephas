@@ -221,6 +221,9 @@ struct Core: public Interface, MeshRefinment, PrismInterface, SeriesRecorder {
   //cubit meshsets
   bool check_msId_meshset(const int ms_id,const CubitBCType cubit_bc_type);
   PetscErrorCode add_cubit_msId(const CubitBCType cubit_bc_type,const int ms_id,const std::string name = "");
+  PetscErrorCode set_cubit_msId_attribites(
+    const CubitBCType cubit_bc_type,const int ms_id,const std::vector<double> &attributes
+  );
   PetscErrorCode delete_cubit_msId(const CubitBCType cubit_bc_type,const int ms_id);
   PetscErrorCode get_cubit_msId(const int ms_id,const CubitBCType cubit_bc_type,const CubitMeshSets **cubit_meshset_ptr);
   PetscErrorCode get_cubit_msId_entities_by_dimension(const int ms_id,const CubitBCType cubit_bc_type, const int dimension,Range &entities,const bool recursive = false);

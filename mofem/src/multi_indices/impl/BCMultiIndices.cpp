@@ -35,16 +35,24 @@ PetscErrorCode CubitMeshSets::getTagsHanlders(Interface &moab) {
   ErrorCode rval;
   rval = moab.tag_get_handle(DIRICHLET_SET_TAG_NAME,nsTag); CHKERR_MOAB(rval);MOAB_THROW(rval);
   rval = moab.tag_get_handle(NEUMANN_SET_TAG_NAME,ssTag); CHKERR_MOAB(rval);MOAB_THROW(rval);
-  rval = moab.tag_get_handle((std::string(DIRICHLET_SET_TAG_NAME)+"__BC_DATA").c_str(),nsTag_data); CHKERR_MOAB(rval);MOAB_THROW(rval);
-  rval = moab.tag_get_handle((std::string(NEUMANN_SET_TAG_NAME)+"__BC_DATA").c_str(),ssTag_data); CHKERR_MOAB(rval);MOAB_THROW(rval);
+  rval = moab.tag_get_handle((
+    std::string(DIRICHLET_SET_TAG_NAME)+"__BC_DATA").c_str(),nsTag_data
+  ); CHKERR_MOAB(rval);MOAB_THROW(rval);
+  rval = moab.tag_get_handle(
+    (std::string(NEUMANN_SET_TAG_NAME)+"__BC_DATA").c_str(),ssTag_data
+  ); CHKERR_MOAB(rval);MOAB_THROW(rval);
   rval = moab.tag_get_handle(MATERIAL_SET_TAG_NAME,bhTag); CHKERR_MOAB(rval);MOAB_THROW(rval);
   rval = moab.tag_get_handle(BLOCK_HEADER,bhTag_header); CHKERR_MOAB(rval);MOAB_THROW(rval);
-  rval = moab.tag_get_handle(BLOCK_ATTRIBUTES,block_attribs); CHKERR_MOAB(rval); MOAB_THROW(rval);
+  rval = moab.tag_get_handle(BLOCK_ATTRIBUTES,thBlockAttribs); CHKERR_MOAB(rval); MOAB_THROW(rval);
   rval = moab.tag_get_handle(NAME_TAG_NAME,entityNameTag); CHKERR_MOAB(rval);MOAB_THROW(rval);
   PetscFunctionReturn(0);
 }
 CubitMeshSets::CubitMeshSets(Interface &moab,const EntityHandle _meshset):
-  meshset(_meshset),cubitBcType(UNKNOWNSET),msId(NULL),tag_bc_data(NULL),tag_bc_size(0),
+  meshset(_meshset),
+  cubitBcType(UNKNOWNSET),
+  msId(NULL),
+  tag_bc_data(NULL),
+  tag_bc_size(0),
   tag_block_header_data(NULL),
   tag_block_attributes(NULL),
   tag_block_attributes_size(0),
@@ -81,30 +89,30 @@ CubitMeshSets::CubitMeshSets(Interface &moab,const EntityHandle _meshset):
         cubitBcType = BLOCKSET;
       }
     }
-    if(
-      (*tit == nsTag_data) ||
-      (*tit == ssTag_data)
-    ) {
-      rval = moab.tag_get_by_ptr(*tit,&meshset,1,(const void **)&tag_bc_data,&tag_bc_size); CHKERR_MOAB(rval);MOAB_THROW(rval);
+    if((*tit == nsTag_data)||(*tit == ssTag_data)) {
+      rval = moab.tag_get_by_ptr(
+        *tit,&meshset,1,(const void **)&tag_bc_data,&tag_bc_size
+      ); CHKERR_MOAB(rval);MOAB_THROW(rval);
       PetscErrorCode ierr;
-      ierr = getTypeFromBcData(cubitBcType); if(ierr>0) THROW_MESSAGE("unrecognised bc_data type");
+      ierr = getTypeFromBcData(cubitBcType); if(ierr>0) THROW_MESSAGE("unrecognized bc_data type");
     }
     if(*tit == bhTag_header) {
       int tag_length;
       rval = moab.tag_get_length(*tit,tag_length);
-      rval = moab.tag_get_by_ptr(*tit,&meshset,1,(const void **)&tag_block_header_data); CHKERR_MOAB(rval);MOAB_THROW(rval);
+      rval = moab.tag_get_by_ptr(
+        *tit,&meshset,1,(const void **)&tag_block_header_data
+      ); CHKERR_MOAB(rval); MOAB_THROW(rval);
       if(tag_block_header_data[1]>0) cubitBcType |= MATERIALSET;
     }
-    if(*tit == block_attribs) {
-      rval = moab.tag_get_by_ptr(*tit,&meshset,1,(const void **)&tag_block_attributes,&tag_block_attributes_size); CHKERR_MOAB(rval); MOAB_THROW(rval);
-      //for(int ii = 0;ii<tag_block_attributes_size;ii++) {
-      //std::cerr << "RRRRR " << tag_block_attributes[ii] << std::endl;
-      //}
+    if(*tit == thBlockAttribs) {
+      rval = moab.tag_get_by_ptr(
+        *tit,&meshset,1,(const void **)&tag_block_attributes,&tag_block_attributes_size
+      ); CHKERR_MOAB(rval); MOAB_THROW(rval);
     }
     if(*tit == entityNameTag) {
       rval = moab.tag_get_by_ptr(entityNameTag,&meshset,1,(const void **)&tag_name_data); CHKERR_MOAB(rval); MOAB_THROW(rval);
       PetscErrorCode ierr;
-      ierr = getTypeFromName(cubitBcType); if(ierr>0) THROW_MESSAGE("unrecognised Cubit name type");
+      ierr = getTypeFromName(cubitBcType); if(ierr>0) THROW_MESSAGE("unrecognized Cubit name type");
     }
   }
 
@@ -296,6 +304,7 @@ PetscErrorCode CubitMeshSets::getTypeFromBcData(CubitBCType &type) const {
   ierr = getTypeFromBcData(bc_data,type); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
+
 PetscErrorCode CubitMeshSets::printBcData(std::ostream& os) const {
   PetscFunctionBegin;
   std::vector<char> bc_data;
@@ -313,12 +322,25 @@ PetscErrorCode CubitMeshSets::printBcData(std::ostream& os) const {
   os << std::endl;
   PetscFunctionReturn(0);
 }
+
 PetscErrorCode CubitMeshSets::getAttributes(std::vector<double>& attributes) const {
   PetscFunctionBegin;
   attributes.resize(tag_block_attributes_size);
   if(tag_block_attributes_size>0) {
     copy(&tag_block_attributes[0],&tag_block_attributes[tag_block_attributes_size],attributes.begin());
   }
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode CubitMeshSets::setAttributes(moab::Interface &moab,const std::vector<double>& attributes) {
+  MoABErrorCode rval;
+  PetscFunctionBegin;
+  int tag_size[] = { attributes.size() };
+  void const* tag_data[] = { &*attributes.begin() };
+  rval = moab.tag_set_by_ptr(thBlockAttribs,&meshset,1,tag_data,tag_size); CHKERR_MOAB(rval);
+  rval = moab.tag_get_by_ptr(
+    thBlockAttribs,&meshset,1,(const void **)&tag_block_attributes,&tag_block_attributes_size
+  ); CHKERR_MOAB(rval);
   PetscFunctionReturn(0);
 }
 
@@ -329,10 +351,9 @@ PetscErrorCode CubitMeshSets::printAttributes(std::ostream& os) const {
     os << std::endl;
     os << "Block attributes" << std::endl;
     os << "----------------" << std::endl;
-    for(unsigned int ii = 0;ii<attributes.size();ii++)
-        {
-            os << "attr. no: " << ii+1 << "   value: " << attributes[ii] << std::endl;
-        }
+    for(unsigned int ii = 0;ii<attributes.size();ii++) {
+      os << "attr. no: " << ii+1 << "   value: " << attributes[ii] << std::endl;
+    }
     os << std::endl;
     PetscFunctionReturn(0);
 }
@@ -342,18 +363,17 @@ PetscErrorCode CubitMeshSets::getTypeFromName(const std::string &name,CubitBCTyp
 
     //See CubitBCType in common.hpp
     if (name.compare(0,11,"MAT_ELASTIC") == 0) {
-        type |= MAT_ELASTICSET; }
-    else if (name.compare(0,11,"MAT_THERMAL") == 0) {
-        type |= MAT_THERMALSET; }
-    else if (name.compare(0,12,"MAT_MOISTURE") == 0) {
-      type |= MAT_MOISTURESET; }
-    else if (name.compare(0,10,"MAT_INTERF") == 0) {
-        type |= MAT_INTERFSET; }
-    else if (name.compare(0,11,"BODY_FORCES") == 0) {
-	type |= BODYFORCESSET; }
-
-        //To be extended as appropriate
-
+      type |= MAT_ELASTICSET;
+    } else if (name.compare(0,11,"MAT_THERMAL") == 0) {
+      type |= MAT_THERMALSET;
+    } else if (name.compare(0,12,"MAT_MOISTURE") == 0) {
+      type |= MAT_MOISTURESET;
+    } else if (name.compare(0,10,"MAT_INTERF") == 0) {
+      type |= MAT_INTERFSET;
+    } else if (name.compare(0,11,"BODY_FORCES") == 0) {
+      type |= BODYFORCESSET;
+    }
+    //To be extended as appropriate
     else { type |= UNKNOWNCUBITNAME; }
 
     PetscFunctionReturn(0);
@@ -678,5 +698,14 @@ void CubitMeshSets_change_name::operator()(CubitMeshSets &e) {
   }
 }
 
+void CubitMeshSets_change_add_bit_to_cubit_bc_type::operator()(CubitMeshSets &e) {
+  e.cubitBcType |= bIt;
+}
+
+void CubitMeshSets_change_attributes::operator()(CubitMeshSets &e) {
+  PetscErrorCode ierr;
+  ierr = e.setAttributes(mOab,aTtr);
+  if(ierr>0) THROW_MESSAGE("Attributes not changed");
+}
 
 }

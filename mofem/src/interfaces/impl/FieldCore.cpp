@@ -1965,10 +1965,25 @@ PetscErrorCode Core::add_cubit_msId(const CubitBCType cubit_bc_type,const int ms
   }
   PetscFunctionReturn(0);
 }
+PetscErrorCode Core::set_cubit_msId_attribites(
+  const CubitBCType cubit_bc_type,const int ms_id,const std::vector<double> &attributes
+) {
+  PetscFunctionBegin;
+  CubitMeshSet_multiIndex::index<Composite_Cubit_msId_And_MeshSetType_mi_tag>::type::iterator
+  cit = cubitMeshsets.get<Composite_Cubit_msId_And_MeshSetType_mi_tag>().find(boost::make_tuple(ms_id,cubit_bc_type.to_ulong()));
+  if(cit==cubitMeshsets.get<Composite_Cubit_msId_And_MeshSetType_mi_tag>().end()) {
+    SETERRQ1(PETSC_COMM_SELF,1,"such cubit meshset is already there",ms_id);
+  }
+  bool success = cubitMeshsets.modify(
+    cubitMeshsets.project<0>(cit),CubitMeshSets_change_attributes(moab,attributes)
+  );
+  if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
+  PetscFunctionReturn(0);
+}
 PetscErrorCode Core::delete_cubit_msId(const CubitBCType cubit_bc_type,const int ms_id) {
   PetscFunctionBegin;
   CubitMeshSet_multiIndex::index<Composite_Cubit_msId_And_MeshSetType_mi_tag>::type::iterator
-    miit = cubitMeshsets.get<Composite_Cubit_msId_And_MeshSetType_mi_tag>().find(boost::make_tuple(ms_id,cubit_bc_type.to_ulong()));
+  miit = cubitMeshsets.get<Composite_Cubit_msId_And_MeshSetType_mi_tag>().find(boost::make_tuple(ms_id,cubit_bc_type.to_ulong()));
   if(miit==cubitMeshsets.get<Composite_Cubit_msId_And_MeshSetType_mi_tag>().end()) {
     SETERRQ1(PETSC_COMM_SELF,1,"such cubit meshset is already there",ms_id);
   }

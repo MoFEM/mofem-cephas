@@ -227,6 +227,13 @@ struct CubitMeshSets {
    */
   PetscErrorCode getAttributes(std::vector<double> &attributes) const;
 
+  /**
+   * \brief cet Cubit block attributes
+   *
+   * \param attributes is the vector where the block attribute data will be stored
+   */
+  PetscErrorCode setAttributes(moab::Interface &moab,const std::vector<double> &attributes);
+
   /** \deprecated Use getAttributes() instead
   */
   DEPRECATED inline PetscErrorCode get_attributes(std::vector<double> &attributes) const {
@@ -325,7 +332,7 @@ struct CubitMeshSets {
 
   friend std::ostream& operator<<(std::ostream& os,const CubitMeshSets& e);
 
-  Tag nsTag,ssTag,nsTag_data,ssTag_data,bhTag,bhTag_header,block_attribs,entityNameTag;
+  Tag nsTag,ssTag,nsTag_data,ssTag_data,bhTag,bhTag_header,thBlockAttribs,entityNameTag;
 
   PetscErrorCode getTagsHanlders(Interface &moab);
 
@@ -354,15 +361,18 @@ typedef multi_index_container<
 	  const_mem_fun<CubitMeshSets,unsigned long int,&CubitMeshSets::getMaksedBcTypeULong> > >
   > > CubitMeshSet_multiIndex;
 
+/** \brief change meshset type
+*/
 struct CubitMeshSets_change_add_bit_to_cubit_bc_type {
   CubitBCType bIt;
   CubitMeshSets_change_add_bit_to_cubit_bc_type(const CubitBCType &bit):
   bIt(bit) {};
-  void operator()(CubitMeshSets &e) {
-    e.cubitBcType |= bIt;
-  }
+  void operator()(CubitMeshSets &e);
 };
 
+/**
+ * \brief change meshset name
+ */
 struct CubitMeshSets_change_name {
   Interface &mOab;
   std::string nAme;
@@ -372,6 +382,39 @@ struct CubitMeshSets_change_name {
   };
   void operator()(CubitMeshSets &e);
 };
+
+/**
+ * change meshset attributes
+ */
+struct CubitMeshSets_change_attributes {
+  Interface &mOab;
+  const std::vector<double> &aTtr;
+  CubitMeshSets_change_attributes(Interface &moab,const std::vector<double> &attr):
+  mOab(moab),
+  aTtr(attr) {
+  };
+  void operator()(CubitMeshSets &e);
+};
+
+/**
+ * change meshset attributes
+ */
+template<class ATTRIBUTE_TYPE>
+struct CubitMeshSets_change_attributes_data_structure {
+  Interface &mOab;
+  const ATTRIBUTE_TYPE &aTtr;
+  CubitMeshSets_change_attributes_data_structure(Interface &moab,const ATTRIBUTE_TYPE &attr):
+  mOab(moab),
+  aTtr(attr) {
+  };
+  void operator()(CubitMeshSets &e) {
+    PetscErrorCode ierr;
+    ierr = e.setAttributeDataStructure(mOab,aTtr);
+    if(ierr>0) THROW_MESSAGE("Attributes not changed");
+  }
+};
+
+
 
 }
 
