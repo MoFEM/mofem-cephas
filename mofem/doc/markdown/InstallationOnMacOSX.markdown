@@ -82,20 +82,6 @@ make install
 
 ###5. Install other libraries
 
-####5.3 Boost 1.57
-
-~~~~~~
-cd $MOFEM_INSTALL_DIR
-# Download boost from http://www.boost.org/users/history/version_1_57_0.html
-# and place it in mofem install directory ($MOFEM_INSTALL_DIR)
-tar -xvvzf boost_1_57_0.tar.gz
-cd boost_1_57_0
-./bootstrap.sh --prefix=$MOFEM_INSTALL_DIR/local
-./b2 install
-~~~~~~
-
-Note: It will take some time to build boost.
-
 ####5.2 TetGen
 
 ~~~~~~
@@ -151,32 +137,6 @@ cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_FLAGS="-Wall"  -DCMAKE_CXX_FLAGS="-Wa
 # Build:
 make -j4
 ~~~~~~
-
-###8. Dynamic Linked Shared Libraries
-
-When executing a binary there may be a `dyld` related error. This is because the required dynamic libraries haven not been linked to the executable.
-
-There are two ways of solving this problem:
-
-1. Hack
-
-  Add this to your ~/.bashrc:
-  ~~~~~
-  export MOFEM_INSTALL_DIR=$HOME/mofem_installation
-  export PATH=$PATH:$MOFEM_INSTALL_DIR/petsc/arch-darwin-c-opt/bin
-  export DYLD_LIBRARY_PATH=$DYLD_LIBRARY_PATH:$MOFEM_INSTALL_DIR/local/lib64:$MOFEM_INSTALL_DIR/local/lib
-  ~~~~~
-
-  Note: you'll need to reload the current session for this to take effect
-
-2. Linking
-
-  If you don't want to-do the above hack you can instead link the required dylib files to your executable. This requires `install_name_tool` and `otool`, which should come as part of Xcode.
-
-  `otool` can check a binary for dynamicallly linked libraries e.g. `otool -L arc_length_nonlinear_elasticity`. Check the printout to see which libraries are not linked correctly. That can be a case when two or more version of the same library is installed
-  in the system.
-
-  Then change the libraries that are not linked correclty e.g. `install_name_tool -change libboost_program_options.dylib $MOFEM_INSTALL_DIR/local/lib/libboost_program_options.dylib arc_length_nonlinear_elasticity`
 
 ###9. Testing
 
