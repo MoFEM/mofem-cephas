@@ -28,28 +28,28 @@
   *
   */
 enum MoFEMInterfaces {
-  UNKNOWNINTERFACE = 1<<0,
+  UNKNOWNINTERFACE              = 1<<0,
   //Field Interface
-  FIELD_INTERFACE = 1<<0|1<<1,
-  MESH_REFINE = 1<<1|1<<2,
-  PRISM_INTEFACE = 1<<1|1<<3,
-  SERIES_RECORDER = 1<<1|1<<4,
+  FIELD_INTERFACE               = 1<<0|1<<1,
+  MESH_REFINE                   = 1<<1|1<<2,
+  PRISM_INTEFACE                = 1<<1|1<<3,
+  SERIES_RECORDER               = 1<<1|1<<4,
   //Independet Interfaces
-  TETGEN_INTERFACE = 1<<3|1<<4,		///< used to generate mesh using TetGen
-  NETGEN_INTERFACE = 1<<3|1<<5,		///< used to generate mesh using NetGen
-  NODEMERGER_INTERFACE = 1<<3|1<<6,	///< used to merge nodes
-  BITLEVELCOUPLER_INTERFACE = 1<<3|1<<7, ///< used to couple bit levels by finding parent children relation
-  PRISMSFROMSURFACE_INTERFACE = 1<<3|1<<8 ///< create prisms from surface elements
+  TETGEN_INTERFACE              = 1<<3|1<<4,  ///< used to generate mesh using TetGen
+  MED_INTERFACE                 = 1<<3|1<<5,	///< interface to med data format
+  NODEMERGER_INTERFACE          = 1<<3|1<<6,	///< used to merge nodes
+  BITLEVELCOUPLER_INTERFACE     = 1<<3|1<<7,  ///< used to couple bit levels by finding parent children relation
+  PRISMSFROMSURFACE_INTERFACE   = 1<<3|1<<8   ///< create prisms from surface elements
 };
 
 enum LoopInterfaces {
   //Loop Methods
-  KSP_METHOD = 1<<0,
-  SNES_METHOD = 1<<1,
-  TS_METHOD = 1<<2,
-  BASIC_METHOD = 1<<0|1<<1|1<<2,
-  FE_METHOD = 1<<0|1<<1|1<<2|1<<3,
-  ENT_METHOD = 1<<0|1<<1|1<<2|1<<4
+  KSP_METHOD    = 1<<0,
+  SNES_METHOD   = 1<<1,
+  TS_METHOD     = 1<<2,
+  BASIC_METHOD  = 1<<0|1<<1|1<<2,
+  FE_METHOD     = 1<<0|1<<1|1<<2|1<<3,
+  ENT_METHOD    = 1<<0|1<<1|1<<2|1<<4
 };
 
 /**
@@ -64,16 +64,16 @@ enum DMInterfaces {
  * \brief Interfaces uses to manage base functions
  */
 enum BaseIntefaces {
-  UNKNOWN_BASE_FUNCTION_INTERFACE = 1<<0,
-  LEGENDRE_BASE_FUNCTION_INTERFACE = 1<<1,
-  LOBATTO_BASE_FUNCTION_INTERFACE = 1<<2,
-  KERNEL_BASE_FUNCTION_INTERFACE = 1<<3,
-  ENT_BASE_FUNCTION_INTERFACE = 1<<4,
-  TET_BASE_FUNCTION_INTERFACE = 1<<1|1<<3|1<<3,
-  TRI_BASE_FUNCTION_INTERFACE = 1<<1|1<<3|1<<4,
-  EDGE_BASE_FUNCTION_INTERFACE = 1<<1|1<<3|1<<5,
-  FATPRISM_BASE_FUNCTION_INTERFACE = 1<<1|1<<3|1<<6,
-  FLATPRISM_BASE_FUNCTION_INTERFACE = 1<<1|1<<3|1<<7
+  UNKNOWN_BASE_FUNCTION_INTERFACE     = 1<<0,
+  LEGENDRE_BASE_FUNCTION_INTERFACE    = 1<<1,
+  LOBATTO_BASE_FUNCTION_INTERFACE     = 1<<2,
+  KERNEL_BASE_FUNCTION_INTERFACE      = 1<<3,
+  ENT_BASE_FUNCTION_INTERFACE         = 1<<4,
+  TET_BASE_FUNCTION_INTERFACE         = 1<<1|1<<3|1<<3,
+  TRI_BASE_FUNCTION_INTERFACE         = 1<<1|1<<3|1<<4,
+  EDGE_BASE_FUNCTION_INTERFACE        = 1<<1|1<<3|1<<5,
+  FATPRISM_BASE_FUNCTION_INTERFACE    = 1<<1|1<<3|1<<6,
+  FLATPRISM_BASE_FUNCTION_INTERFACE   = 1<<1|1<<3|1<<7
 };
 
 /** \brief Error handling
@@ -85,26 +85,26 @@ enum BaseIntefaces {
   *
   */
 enum MoFEMErrorCodes {
-  MOFEM_SUCESS = 0,
-  MOFEM_DATA_INCONSISTENCY = 100,
-  MOFEM_NOT_IMPLEMENTED = 101,
-  MOFEM_NOT_FOUND = 102,
-  MOFEM_OPERATION_UNSUCCESSFUL = 103,
-  MOFEM_IMPOSIBLE_CASE = 104,
-  MOFEM_MOFEMEXCEPTION_THROW = 105,
-  MOFEM_STD_EXCEPTION_THROW = 106,
-  MOFEM_INVALID_DATA = 107,
-  MOFEM_ATOM_TEST_INVALID = 108,
-  MOFEM_MOAB_ERROR = 109
+  MOFEM_SUCESS                  = 0,
+  MOFEM_DATA_INCONSISTENCY      = 100,
+  MOFEM_NOT_IMPLEMENTED         = 101,
+  MOFEM_NOT_FOUND               = 102,
+  MOFEM_OPERATION_UNSUCCESSFUL  = 103,
+  MOFEM_IMPOSIBLE_CASE          = 104,
+  MOFEM_MOFEMEXCEPTION_THROW    = 105,
+  MOFEM_STD_EXCEPTION_THROW     = 106,
+  MOFEM_INVALID_DATA            = 107,
+  MOFEM_ATOM_TEST_INVALID       = 108,
+  MOFEM_MOAB_ERROR              = 109
 };
 
 /// \brief approximation base
 enum FieldApproximationBase {
   NOBASE = 0,
   AINSWORTH_COLE_BASE = 1, ///< Ainsworth Cole (Legendre) approx. base \cite NME:NME847
-  LOBATTO_BASE, ///< Like AINSWORTH_COLE_BASE but with Lobatto base instead Legendre \cite beriot2015efficient
-  BERNSTEIN_BEZIER_BASE, ///< Not yet implemented, in implementation we will follow \cite ainsworth2011bernstein
-  USER_BASE, ///< user implemented approximation base
+  LOBATTO_BASE,            ///< Like AINSWORTH_COLE_BASE but with Lobatto base instead Legendre \cite beriot2015efficient
+  BERNSTEIN_BEZIER_BASE,   ///< Not yet implemented, in implementation we will follow \cite ainsworth2011bernstein
+  USER_BASE,               ///< user implemented approximation base
   LASTBASE
 };
 
@@ -157,40 +157,70 @@ enum MoFEMTypes {
 
 /// \brief RowColData
 enum RowColData {
-  ROW,COL,DATA,LASTROWCOLDATA
+  ROW = 0,COL,DATA,LASTROWCOLDATA
 };
 
 enum ByWhat {
-  BYROW = 1<<0, BYCOL = 1<<1, BYDATA = 1<<2,
-  BYROWDATA = 1<<0|1<<2, BYCOLDATA = 1<<1|1<<2, BYROWCOL = 1<<0|1<<1,
-  BYALL = 1<<0|1<<1|1<<2
+  BYROW     = 1<<0,
+  BYCOL     = 1<<1,
+  BYDATA    = 1<<2,
+  BYROWDATA = 1<<0|1<<2,
+  BYCOLDATA = 1<<1|1<<2,
+  BYROWCOL  = 1<<0|1<<1,
+  BYALL     = 1<<0|1<<1|1<<2
 };
 
 /**
-  * Types of sets and boundary conditions
+  * \bief Types of sets and boundary conditions
   *
   */
 enum CubitBC {
-  UNKNOWNSET = 0,
-  NODESET = 1<<0,
-  SIDESET = 1<<1,
-  BLOCKSET = 1<<2,
-  MATERIALSET = 1<<3,
-  DISPLACEMENTSET = 1<<4,
-  FORCESET = 1<<5,
-  PRESSURESET = 1<<6,
-  VELOCITYSET = 1<<7,
-  ACCELERATIONSET = 1<<8,
-  TEMPERATURESET = 1<<9,
-  HEATFLUXSET = 1<<10,
-  INTERFACESET = 1<<11,
-  UNKNOWNCUBITNAME = 1<< 12,
-  MAT_ELASTICSET = 1<<13,	///< block name is "MAT_ELASTIC"
-  MAT_INTERFSET = 1 <<14,
-  MAT_THERMALSET = 1<<15,	///< block name is "MAT_THERMAL"
-  BODYFORCESSET = 1<<16,	///< block name is "BODY_FORCES"
-  MAT_MOISTURESET = 1<<17, 	///< block name is "MAT_MOISTURE"
-  LASTCUBITSET
+  UNKNOWNSET       = 0,
+  NODESET          = 1<<0,
+  SIDESET          = 1<<1,
+  BLOCKSET         = 1<<2,
+  MATERIALSET      = 1<<3,
+  DISPLACEMENTSET  = 1<<4,
+  FORCESET         = 1<<5,
+  PRESSURESET      = 1<<6,
+  VELOCITYSET      = 1<<7,
+  ACCELERATIONSET  = 1<<8,
+  TEMPERATURESET   = 1<<9,
+  HEATFLUXSET      = 1<<10,
+  INTERFACESET     = 1<<11,
+  UNKNOWNCUBITNAME = 1<<12,
+  MAT_ELASTICSET   = 1<<13,	///< block name is "MAT_ELASTIC"
+  MAT_INTERFSET    = 1<<14,
+  MAT_THERMALSET   = 1<<15,	///< block name is "MAT_THERMAL"
+  BODYFORCESSET    = 1<<16,	///< block name is "BODY_FORCES"
+  MAT_MOISTURESET  = 1<<17, 	///< block name is "MAT_MOISTURE"
+  LASTCUBITSET     = 1<<18
+};
+
+/**
+ * \brief Names of types of sets and boundary conditions
+ */
+const static char * const CubitBCNames[] = {
+  "UNKNOWNSET",
+  "NODESET",
+  "SIDESET",
+  "BLOCKSET",
+  "MATERIALSET",
+  "DISPLACEMENTSET",
+  "FORCESET",
+  "PRESSURESET",
+  "VELOCITYSET",
+  "ACCELERATIONSET",
+  "TEMPERATURESET",
+  "HEATFLUXSET",
+  "INTERFACESET",
+  "UNKNOWNCUBITNAME",
+  "MAT_ELASTICSET",
+  "MAT_INTERFSET",
+  "MAT_THERMALSET",
+  "BODYFORCESSET",
+  "MAT_MOISTURESET",
+  "LASTCUBITSET"
 };
 
 /**

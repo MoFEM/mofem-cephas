@@ -48,14 +48,7 @@
 
 // Interfaces
 #include <TetGenInterface.hpp>
-#ifdef WITH_NETGEN
-  namespace nglib {
-  #include <nglib.h>
-  }
-  using namespace nglib;
-  #include <NetGenInterface.hpp>
-#endif
-
+#include <MedInterface.hpp>
 #include <NodeMerger.hpp>
 #include <PrismsFromSurfaceInterface.hpp>
 
@@ -119,13 +112,13 @@ PetscErrorCode Core::query_interface_type(const std::type_info& type,void*& ptr)
   }
   #endif
 
-  // NetGen
-  #ifdef WITH_NETGEN
-  if(type == typeid(NetGenInterface)) {
-    if(iFaces.find(IDD_MOFEMNetGegInterface.uUId.to_ulong()) == iFaces.end()) {
-      iFaces[IDD_MOFEMNetGegInterface.uUId.to_ulong()] = new NetGenInterface(*this);
+  // MedInterface
+  #ifdef WITH_MED
+  if(type == typeid(MedInterface)) {
+    if(iFaces.find(IDD_MOFEMedInterface.uUId.to_ulong()) == iFaces.end()) {
+      iFaces[IDD_MOFEMedInterface.uUId.to_ulong()] = new MedInterface(*this);
     }
-    ptr = iFaces.at(IDD_MOFEMNetGegInterface.uUId.to_ulong());
+    ptr = iFaces.at(IDD_MOFEMedInterface.uUId.to_ulong());
     PetscFunctionReturn(0);
   }
   #endif
@@ -707,7 +700,7 @@ PetscErrorCode Core::initialiseDatabseInformationFromMesh(int verb) {
         }
         if(verb > 0) {
           std::ostringstream ss;
-          ss << "read cubit" << base_meshset << std::endl;
+          ss << "read cubit " << base_meshset << std::endl;
           //PetscSynchronizedPrintf(comm,ss.str().c_str());
           PetscPrintf(comm,ss.str().c_str());
         }
