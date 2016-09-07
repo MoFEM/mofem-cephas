@@ -30,7 +30,7 @@
 namespace MoFEM {
 
 //moab base meshsets
-PetscErrorCode CubitMeshSets::get_tags_hanlders(Interface &moab) {
+PetscErrorCode CubitMeshSets::getTagsHanlders(Interface &moab) {
   PetscFunctionBegin;
   ErrorCode rval;
   rval = moab.tag_get_handle(DIRICHLET_SET_TAG_NAME,nsTag); CHKERR_MOAB(rval);MOAB_THROW(rval);
@@ -51,7 +51,7 @@ CubitMeshSets::CubitMeshSets(Interface &moab,const EntityHandle _meshset):
   tag_name_data(NULL),
   meshsets_mask(NODESET|SIDESET|BLOCKSET) {
   PetscErrorCode ierr;
-  ierr = get_tags_hanlders(moab); CHKERRABORT(PETSC_COMM_WORLD,ierr);
+  ierr = getTagsHanlders(moab); CHKERRABORT(PETSC_COMM_WORLD,ierr);
   ErrorCode rval;
   rval = moab.tag_get_tags_on_entity(meshset,tag_handles); CHKERR_MOAB(rval);MOAB_THROW(rval);
   std::vector<Tag>::iterator tit = tag_handles.begin();
@@ -87,7 +87,7 @@ CubitMeshSets::CubitMeshSets(Interface &moab,const EntityHandle _meshset):
     ) {
       rval = moab.tag_get_by_ptr(*tit,&meshset,1,(const void **)&tag_bc_data,&tag_bc_size); CHKERR_MOAB(rval);MOAB_THROW(rval);
       PetscErrorCode ierr;
-      ierr = get_type_from_bc_data(cubitBcType); if(ierr>0) THROW_MESSAGE("unrecognised bc_data type");
+      ierr = getTypeFromBcData(cubitBcType); if(ierr>0) THROW_MESSAGE("unrecognised bc_data type");
     }
     if(*tit == bhTag_header) {
       int tag_length;
@@ -104,7 +104,7 @@ CubitMeshSets::CubitMeshSets(Interface &moab,const EntityHandle _meshset):
     if(*tit == entityNameTag) {
       rval = moab.tag_get_by_ptr(entityNameTag,&meshset,1,(const void **)&tag_name_data); CHKERR_MOAB(rval); MOAB_THROW(rval);
       PetscErrorCode ierr;
-      ierr = get_type_from_name(cubitBcType); if(ierr>0) THROW_MESSAGE("unrecognised Cubit name type");
+      ierr = getTypeFromName(cubitBcType); if(ierr>0) THROW_MESSAGE("unrecognised Cubit name type");
     }
   }
 
@@ -137,7 +137,7 @@ tag_block_attributes_size(0),
 tag_name_data(NULL),
 meshsets_mask(NODESET|SIDESET|BLOCKSET)  {
   PetscErrorCode ierr;
-  ierr = get_tags_hanlders(moab); CHKERRABORT(PETSC_COMM_WORLD,ierr);
+  ierr = getTagsHanlders(moab); CHKERRABORT(PETSC_COMM_WORLD,ierr);
   ErrorCode rval;
   rval = moab.create_meshset(MESHSET_SET|MESHSET_TRACK_OWNER,meshset); MOAB_THROW(rval);
   switch(cubitBcType.to_ulong()) {
@@ -167,7 +167,7 @@ meshsets_mask(NODESET|SIDESET|BLOCKSET)  {
     }
   }
 }
-PetscErrorCode CubitMeshSets::get_cubit_msId_entities_by_dimension(Interface &moab,const int dimension,Range &entities,const bool recursive)  const {
+PetscErrorCode CubitMeshSets::getMeshSetIdEntitiesByDimension(Interface &moab,const int dimension,Range &entities,const bool recursive)  const {
   PetscFunctionBegin;
   ErrorCode rval;
   //rval = moab.list_entity(meshset); CHKERRQ_MOAB(rval);
@@ -180,21 +180,21 @@ PetscErrorCode CubitMeshSets::get_cubit_msId_entities_by_dimension(Interface &mo
   CHKERRQ_MOAB(rval);
   PetscFunctionReturn(0);
 }
-PetscErrorCode CubitMeshSets::get_cubit_msId_entities_by_dimension(Interface &moab,Range &entities,const bool recursive)  const {
+PetscErrorCode CubitMeshSets::getMeshSetIdEntitiesByDimension(Interface &moab,Range &entities,const bool recursive)  const {
   PetscFunctionBegin;
   if((cubitBcType&CubitBCType(BLOCKSET)).any()) {
     if(tag_block_header_data!=NULL) {
-      return get_cubit_msId_entities_by_dimension(moab,tag_block_header_data[2],entities,recursive);
+      return getMeshSetIdEntitiesByDimension(moab,tag_block_header_data[2],entities,recursive);
     } else {
       SETERRQ(PETSC_COMM_SELF,1,"dimension unknown");
     }
   }
   if((cubitBcType&CubitBCType(NODESET)).any()) {
-    return get_cubit_msId_entities_by_dimension(moab,0,entities,recursive);
+    return getMeshSetIdEntitiesByDimension(moab,0,entities,recursive);
   }
   PetscFunctionReturn(0);
 }
-PetscErrorCode CubitMeshSets::get_cubit_msId_entities_by_type(Interface &moab,const EntityType type,Range &entities,const bool recursive)  const {
+PetscErrorCode CubitMeshSets::getMeshSetIdEntitiesByType(Interface &moab,const EntityType type,Range &entities,const bool recursive)  const {
   PetscFunctionBegin;
   ErrorCode rval;
   //rval = moab.list_entity(meshset); CHKERRQ_MOAB(rval);
@@ -208,25 +208,25 @@ PetscErrorCode CubitMeshSets::get_cubit_msId_entities_by_type(Interface &moab,co
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode CubitMeshSets::get_bc_data(std::vector<char>& bc_data) const {
+PetscErrorCode CubitMeshSets::getBcData(std::vector<char>& bc_data) const {
   PetscFunctionBegin;
   bc_data.resize(tag_bc_size);
   copy(&tag_bc_data[0],&tag_bc_data[tag_bc_size],bc_data.begin());
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode CubitMeshSets::get_block_header_data(std::vector<unsigned int>& material_data) const {
+PetscErrorCode CubitMeshSets::getBlockHeaderData(std::vector<unsigned int>& material_data) const {
     PetscFunctionBegin;
     material_data.resize(3);
     copy(&tag_block_header_data[0],&tag_block_header_data[3],material_data.begin());
     PetscFunctionReturn(0);
 }
 
-PetscErrorCode CubitMeshSets::print_block_header_data(std::ostream& os) const {
+PetscErrorCode CubitMeshSets::printBlockHeaderData(std::ostream& os) const {
     PetscFunctionBegin;
     if(tag_block_header_data!=NULL) {
       std::vector<unsigned int> material_data;
-      get_block_header_data(material_data);
+      getBlockHeaderData(material_data);
       os << "block_header_data = ";
       std::vector<unsigned int>::iterator vit = material_data.begin();
       for(;vit!=material_data.end();vit++) {
@@ -252,7 +252,7 @@ std::string CubitMeshSets::getName() const {
   }
 }
 
-PetscErrorCode CubitMeshSets::print_name(std::ostream& os) const {
+PetscErrorCode CubitMeshSets::printName(std::ostream& os) const {
     PetscFunctionBegin;
     std::string name = getName();
     os << std::endl;
@@ -260,7 +260,7 @@ PetscErrorCode CubitMeshSets::print_name(std::ostream& os) const {
     PetscFunctionReturn(0);
 }
 
-PetscErrorCode CubitMeshSets::get_type_from_bc_data(const std::vector<char> &bc_data,CubitBCType &type) const {
+PetscErrorCode CubitMeshSets::getTypeFromBcData(const std::vector<char> &bc_data,CubitBCType &type) const {
     PetscFunctionBegin;
 
     //See CubitBCType in common.hpp
@@ -288,18 +288,18 @@ PetscErrorCode CubitMeshSets::get_type_from_bc_data(const std::vector<char> &bc_
 
     PetscFunctionReturn(0);
 }
-PetscErrorCode CubitMeshSets::get_type_from_bc_data(CubitBCType &type) const {
+PetscErrorCode CubitMeshSets::getTypeFromBcData(CubitBCType &type) const {
   PetscFunctionBegin;
   PetscErrorCode ierr;
   std::vector<char> bc_data;
-  ierr = get_bc_data(bc_data); CHKERRQ(ierr);
-  ierr = get_type_from_bc_data(bc_data,type); CHKERRQ(ierr);
+  ierr = getBcData(bc_data); CHKERRQ(ierr);
+  ierr = getTypeFromBcData(bc_data,type); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
-PetscErrorCode CubitMeshSets::print_bc_data(std::ostream& os) const {
+PetscErrorCode CubitMeshSets::printBcData(std::ostream& os) const {
   PetscFunctionBegin;
   std::vector<char> bc_data;
-  get_bc_data(bc_data);
+  getBcData(bc_data);
   os << "bc_data = ";
   std::vector<char>::iterator vit = bc_data.begin();
   for(;vit!=bc_data.end();vit++) {
@@ -313,7 +313,7 @@ PetscErrorCode CubitMeshSets::print_bc_data(std::ostream& os) const {
   os << std::endl;
   PetscFunctionReturn(0);
 }
-PetscErrorCode CubitMeshSets::get_attributes(std::vector<double>& attributes) const {
+PetscErrorCode CubitMeshSets::getAttributes(std::vector<double>& attributes) const {
   PetscFunctionBegin;
   attributes.resize(tag_block_attributes_size);
   if(tag_block_attributes_size>0) {
@@ -322,10 +322,10 @@ PetscErrorCode CubitMeshSets::get_attributes(std::vector<double>& attributes) co
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode CubitMeshSets::print_attributes(std::ostream& os) const {
+PetscErrorCode CubitMeshSets::printAttributes(std::ostream& os) const {
     PetscFunctionBegin;
     std::vector<double> attributes;
-    get_attributes(attributes);
+    getAttributes(attributes);
     os << std::endl;
     os << "Block attributes" << std::endl;
     os << "----------------" << std::endl;
@@ -337,7 +337,7 @@ PetscErrorCode CubitMeshSets::print_attributes(std::ostream& os) const {
     PetscFunctionReturn(0);
 }
 
-PetscErrorCode CubitMeshSets::get_type_from_name(const std::string &name,CubitBCType &type) const {
+PetscErrorCode CubitMeshSets::getTypeFromName(const std::string &name,CubitBCType &type) const {
     PetscFunctionBegin;
 
     //See CubitBCType in common.hpp
@@ -359,11 +359,11 @@ PetscErrorCode CubitMeshSets::get_type_from_name(const std::string &name,CubitBC
     PetscFunctionReturn(0);
 }
 
-PetscErrorCode CubitMeshSets::get_type_from_name(CubitBCType &type) const {
+PetscErrorCode CubitMeshSets::getTypeFromName(CubitBCType &type) const {
     PetscFunctionBegin;
     PetscErrorCode ierr;
     std::string name = getName();
-    ierr = get_type_from_name(name,type); CHKERRQ(ierr);
+    ierr = getTypeFromName(name,type); CHKERRQ(ierr);
     PetscFunctionReturn(0);
 }
 

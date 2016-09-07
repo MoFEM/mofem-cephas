@@ -95,7 +95,7 @@ NodalForce::OpNodalForce::OpNodalForce(const std::string field_name,Vec _F,bCFor
     ErrorCode rval;
     const CubitMeshSets *cubit_meshset_ptr;
     ierr = mField.get_cubit_msId(ms_id,NODESET,&cubit_meshset_ptr); CHKERRQ(ierr);
-    ierr = cubit_meshset_ptr->get_bc_data_structure(mapForce[ms_id].data); CHKERRQ(ierr);
+    ierr = cubit_meshset_ptr->getBcDataStructure(mapForce[ms_id].data); CHKERRQ(ierr);
     rval = mField.get_moab().get_entities_by_type(cubit_meshset_ptr->meshset,MBVERTEX,mapForce[ms_id].nOdes,true); CHKERRQ_MOAB(rval);
     fe.getOpPtrVector().push_back(new OpNodalForce(field_name,F,mapForce[ms_id],methodsOp,use_snes_f));
     PetscFunctionReturn(0);

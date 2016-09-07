@@ -111,7 +111,7 @@ struct EdgeForce {
       string fe_name = "FORCE_FE";
       edge_forces.insert(fe_name,new EdgeForce(m_field));
       for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,NODESET|FORCESET,it)) {
-        ierr = edge_forces.at(fe_name).addForce(field_name,F,it->get_msId());  CHKERRQ(ierr);
+        ierr = edge_forces.at(fe_name).addForce(field_name,F,it->getMeshSetId());  CHKERRQ(ierr);
       }
       PetscFunctionReturn(0);
     }

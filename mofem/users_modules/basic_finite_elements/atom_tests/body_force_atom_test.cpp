@@ -145,9 +145,9 @@ int main(int argc, char *argv[]) {
 
   for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,BLOCKSET|BODYFORCESSET,it)) {
     Block_BodyForces mydata;
-    ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
+    ierr = it->getAttributeDataStructure(mydata); CHKERRQ(ierr);
     my_split << mydata << std::endl;
-    ierr = body_forces_methods.addBlock("DISPLACEMENT",F,it->get_msId()); CHKERRQ(ierr);
+    ierr = body_forces_methods.addBlock("DISPLACEMENT",F,it->getMeshSetId()); CHKERRQ(ierr);
   }
   ierr = m_field.loop_finite_elements("TEST_PROBLEM","TEST_FE",body_forces_methods.getLoopFe()); CHKERRQ(ierr);
   ierr = VecAssemblyBegin(F); CHKERRQ(ierr);

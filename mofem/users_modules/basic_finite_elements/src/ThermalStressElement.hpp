@@ -201,18 +201,18 @@ struct ThermalStressElement {
       }
       for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BLOCKSET|MAT_ELASTICSET,it)) {
         Mat_Elastic mydata;
-        ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
-        setOfBlocks[it->get_msId()].youngModulus = mydata.data.Young;
-        setOfBlocks[it->get_msId()].poissonRatio = mydata.data.Poisson;
-        setOfBlocks[it->get_msId()].thermalExpansion = mydata.data.ThermalExpansion;
-        rval = mField.get_moab().get_entities_by_type(it->meshset,MBTET,setOfBlocks[it->get_msId()].tEts,true); CHKERRQ_MOAB(rval);
-        ierr = mField.add_ents_to_finite_element_by_TETs(setOfBlocks[it->get_msId()].tEts,fe_name); CHKERRQ(ierr);
+        ierr = it->getAttributeDataStructure(mydata); CHKERRQ(ierr);
+        setOfBlocks[it->getMeshSetId()].youngModulus = mydata.data.Young;
+        setOfBlocks[it->getMeshSetId()].poissonRatio = mydata.data.Poisson;
+        setOfBlocks[it->getMeshSetId()].thermalExpansion = mydata.data.ThermalExpansion;
+        rval = mField.get_moab().get_entities_by_type(it->meshset,MBTET,setOfBlocks[it->getMeshSetId()].tEts,true); CHKERRQ_MOAB(rval);
+        ierr = mField.add_ents_to_finite_element_by_TETs(setOfBlocks[it->getMeshSetId()].tEts,fe_name); CHKERRQ(ierr);
         double ref_temp;
         PetscBool flg;
         ierr = PetscOptionsGetReal(PETSC_NULL,PETSC_NULL,"-my_ref_temp",&ref_temp,&flg); CHKERRQ(ierr);
         if(flg == PETSC_TRUE) {
           PetscPrintf(mField.get_comm(),"set refernce temperature %3.2f\n",ref_temp);
-          setOfBlocks[it->get_msId()].refTemperature = ref_temp;
+          setOfBlocks[it->getMeshSetId()].refTemperature = ref_temp;
         }
       }
     }

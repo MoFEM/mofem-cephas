@@ -69,16 +69,16 @@ int main(int argc, char *argv[]) {
   //NODESETs
   for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,NODESET,it)) {
     std::cout << *it << std::endl;
-    ierr = it->print_bc_data(std::cout); CHKERRQ(ierr);
+    ierr = it->printBcData(std::cout); CHKERRQ(ierr);
     std::vector<char> bc_data;
-    ierr = it->get_bc_data(bc_data); CHKERRQ(ierr);
+    ierr = it->getBcData(bc_data); CHKERRQ(ierr);
     if(bc_data.empty()) continue;
 
       //Displacement
       if (strcmp (&bc_data[0],"Displacement") == 0)
       {
           DisplacementCubitBcData mydata;
-          ierr = it->get_bc_data_structure(mydata); CHKERRQ(ierr);
+          ierr = it->getBcDataStructure(mydata); CHKERRQ(ierr);
           //Print data
           std::cout << mydata;
           myfile << mydata;
@@ -88,7 +88,7 @@ int main(int argc, char *argv[]) {
       else if (strcmp (&bc_data[0],"Force") == 0)
       {
           ForceCubitBcData mydata;
-          ierr = it->get_bc_data_structure(mydata); CHKERRQ(ierr);
+          ierr = it->getBcDataStructure(mydata); CHKERRQ(ierr);
           //Print data
           std::cout << mydata;
           myfile << mydata;
@@ -98,7 +98,7 @@ int main(int argc, char *argv[]) {
       else if (strcmp (&bc_data[0],"Velocity") == 0)
       {
           VelocityCubitBcData mydata;
-          ierr = it->get_bc_data_structure(mydata); CHKERRQ(ierr);
+          ierr = it->getBcDataStructure(mydata); CHKERRQ(ierr);
           //Print data
           std::cout << mydata;
           myfile << mydata;
@@ -108,7 +108,7 @@ int main(int argc, char *argv[]) {
       else if (strcmp (&bc_data[0],"Acceleration") == 0)
       {
           AccelerationCubitBcData mydata;
-          ierr = it->get_bc_data_structure(mydata); CHKERRQ(ierr);
+          ierr = it->getBcDataStructure(mydata); CHKERRQ(ierr);
           //Print data
           std::cout << mydata;
           myfile << mydata;
@@ -118,7 +118,7 @@ int main(int argc, char *argv[]) {
       else if (strcmp (&bc_data[0],"Temperature") == 0)
       {
           TemperatureCubitBcData mydata;
-          ierr = it->get_bc_data_structure(mydata); CHKERRQ(ierr);
+          ierr = it->getBcDataStructure(mydata); CHKERRQ(ierr);
           //Print data
           std::cout << mydata;
           myfile << mydata;
@@ -132,16 +132,16 @@ int main(int argc, char *argv[]) {
   //SIDESETs
   for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,SIDESET,it)) {
     std::cout << *it << std::endl;
-    ierr = it->print_bc_data(std::cout); CHKERRQ(ierr);
+    ierr = it->printBcData(std::cout); CHKERRQ(ierr);
     std::vector<char> bc_data;
-    ierr = it->get_bc_data(bc_data); CHKERRQ(ierr);
+    ierr = it->getBcData(bc_data); CHKERRQ(ierr);
     if(bc_data.empty()) continue;
 
       //Pressure
       if (strcmp (&bc_data[0],"Pressure") == 0)
       {
           PressureCubitBcData mydata;
-          ierr = it->get_bc_data_structure(mydata); CHKERRQ(ierr);
+          ierr = it->getBcDataStructure(mydata); CHKERRQ(ierr);
           //Print data
           std::cout << mydata;
           myfile << mydata;
@@ -151,7 +151,7 @@ int main(int argc, char *argv[]) {
       else if (strcmp (&bc_data[0],"HeatFlux") == 0)
       {
           HeatFluxCubitBcData mydata;
-          ierr = it->get_bc_data_structure(mydata); CHKERRQ(ierr);
+          ierr = it->getBcDataStructure(mydata); CHKERRQ(ierr);
           //Print data
           std::cout << mydata;
           myfile << mydata;
@@ -161,7 +161,7 @@ int main(int argc, char *argv[]) {
       else if (strcmp (&bc_data[0],"cfd_bc") == 0)
       {
           CfgCubitBcData mydata;
-          ierr = it->get_bc_data_structure(mydata); CHKERRQ(ierr);
+          ierr = it->getBcDataStructure(mydata); CHKERRQ(ierr);
 
           //Interface bc (Hex:6 Dec:6)
           if (mydata.data.type == 6) {  // 6 is the decimal value of the corresponding value (hex) in bc_data
@@ -200,15 +200,15 @@ int main(int argc, char *argv[]) {
       std::cout << std::endl << *it << std::endl;
 
       //Get and print block name
-      ierr = it->print_name(std::cout); CHKERRQ(ierr);
-      ierr = it->print_name(myfile); CHKERRQ(ierr);
+      ierr = it->printName(std::cout); CHKERRQ(ierr);
+      ierr = it->printName(myfile); CHKERRQ(ierr);
 
 
       //Get and print block attributes
       std::vector<double> attributes;
-      ierr = it->get_attributes(attributes); CHKERRQ(ierr);
-      ierr = it->print_attributes(std::cout); CHKERRQ(ierr);
-      ierr = it->print_attributes(myfile); CHKERRQ(ierr);
+      ierr = it->getAttributes(attributes); CHKERRQ(ierr);
+      ierr = it->printAttributes(std::cout); CHKERRQ(ierr);
+      ierr = it->printAttributes(myfile); CHKERRQ(ierr);
   }
 
   //Get block attributes and assign them as material properties/solution parameters based on the name of each block
@@ -230,19 +230,19 @@ int main(int argc, char *argv[]) {
     //Elastic material
     if (name.compare(0,20,"MAT_ELASTIC_TRANSISO") == 0) {
       Mat_Elastic_TransIso mydata;
-      ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
+      ierr = it->getAttributeDataStructure(mydata); CHKERRQ(ierr);
       //Print data
       std::cout << mydata;
       myfile << mydata;
     } else if (name.compare(0,11,"MAT_ELASTIC") == 0) {
       Mat_Elastic mydata;
-      ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
+      ierr = it->getAttributeDataStructure(mydata); CHKERRQ(ierr);
       //Print data
       std::cout << mydata;
       myfile << mydata;
     } else if (name.compare(0,10,"MAT_INTERF") == 0) {
       Mat_Interf mydata;
-      ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
+      ierr = it->getAttributeDataStructure(mydata); CHKERRQ(ierr);
       //Print data
       std::cout << mydata;
       myfile << mydata;
@@ -258,7 +258,7 @@ int main(int argc, char *argv[]) {
     if (name.compare(0,13,"ADD_BLOCK_SET") == 0) {
       add_block_is_there = true;
       std::vector<double> attributes;
-      it->get_attributes(attributes);
+      it->getAttributes(attributes);
     }
   }
 

@@ -951,15 +951,15 @@ struct KelvinVoigtDamper {
     for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BLOCKSET,it)) {
       if(it->getName().compare(0,6,"DAMPER") == 0) {
         std::vector<double> data;
-        ierr = it->get_attributes(data); CHKERRQ(ierr);
+        ierr = it->getAttributes(data); CHKERRQ(ierr);
         if(data.size()<2) {
           SETERRQ(PETSC_COMM_SELF,1,"Data inconsistency");
         }
         rval = mField.get_moab().get_entities_by_type(
-          it->meshset,MBTET,blockMaterialDataMap[it->get_msId()].tEts,true
+          it->meshset,MBTET,blockMaterialDataMap[it->getMeshSetId()].tEts,true
         ); CHKERRQ_MOAB(rval);
-        blockMaterialDataMap[it->get_msId()].gBeta = data[0];
-        blockMaterialDataMap[it->get_msId()].vBeta = data[1];
+        blockMaterialDataMap[it->getMeshSetId()].gBeta = data[0];
+        blockMaterialDataMap[it->getMeshSetId()].vBeta = data[1];
       }
     }
     PetscFunctionReturn(0);

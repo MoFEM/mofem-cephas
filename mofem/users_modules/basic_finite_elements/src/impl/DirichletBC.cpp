@@ -54,7 +54,7 @@ PetscErrorCode DisplacementBCFEMethodPreAndPostProc::iNitalize() {
     ParallelComm* pcomm = ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
     for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NODESET|DISPLACEMENTSET,it)) {
       DisplacementCubitBcData mydata;
-      ierr = it->get_bc_data_structure(mydata); CHKERRQ(ierr);
+      ierr = it->getBcDataStructure(mydata); CHKERRQ(ierr);
       ublas::vector<double> scaled_values(3);
       scaled_values[0] = mydata.data.value1;
       scaled_values[1] = mydata.data.value2;
@@ -62,7 +62,7 @@ PetscErrorCode DisplacementBCFEMethodPreAndPostProc::iNitalize() {
       ierr = MethodForForceScaling::applyScale(this,methodsOp,scaled_values); CHKERRQ(ierr);
       for(int dim = 0;dim<3;dim++) {
         Range ents;
-        ierr = it->get_cubit_msId_entities_by_dimension(mField.get_moab(),dim,ents,true); CHKERRQ(ierr);
+        ierr = it->getMeshSetIdEntitiesByDimension(mField.get_moab(),dim,ents,true); CHKERRQ(ierr);
         if(dim>1) {
           Range _edges;
           ierr = mField.get_moab().get_adjacencies(ents,1,false,_edges,moab::Interface::UNION); CHKERRQ(ierr);
@@ -249,7 +249,7 @@ PetscErrorCode SpatialPositionsBCFEMethodPreAndPostProc::iNitalize() {
     ParallelComm* pcomm = ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
     for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NODESET|DISPLACEMENTSET,it)) {
       DisplacementCubitBcData mydata;
-      ierr = it->get_bc_data_structure(mydata); CHKERRQ(ierr);
+      ierr = it->getBcDataStructure(mydata); CHKERRQ(ierr);
       ublas::vector<double> scaled_values(3);
       scaled_values[0] = mydata.data.value1;
       scaled_values[1] = mydata.data.value2;
@@ -257,7 +257,7 @@ PetscErrorCode SpatialPositionsBCFEMethodPreAndPostProc::iNitalize() {
       ierr = MethodForForceScaling::applyScale(this,methodsOp,scaled_values); CHKERRQ(ierr);
       for(int dim = 0;dim<3;dim++) {
         Range ents;
-        ierr = it->get_cubit_msId_entities_by_dimension(mField.get_moab(),dim,ents,true); CHKERRQ(ierr);
+        ierr = it->getMeshSetIdEntitiesByDimension(mField.get_moab(),dim,ents,true); CHKERRQ(ierr);
         if(dim>1) {
           Range _edges;
           ierr = mField.get_moab().get_adjacencies(ents,1,false,_edges,moab::Interface::UNION); CHKERRQ(ierr);
@@ -323,13 +323,13 @@ PetscErrorCode TemperatureBCFEMethodPreAndPostProc::iNitalize() {
     ParallelComm* pcomm = ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
     for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NODESET|TEMPERATURESET,it)) {
       TemperatureCubitBcData mydata;
-      ierr = it->get_bc_data_structure(mydata); CHKERRQ(ierr);
+      ierr = it->getBcDataStructure(mydata); CHKERRQ(ierr);
       ublas::vector<double> scaled_values(1);
       scaled_values[0] = mydata.data.value1;
       ierr = MethodForForceScaling::applyScale(this,methodsOp,scaled_values); CHKERRQ(ierr);
       for(int dim = 0;dim<3;dim++) {
         Range ents;
-        ierr = it->get_cubit_msId_entities_by_dimension(mField.get_moab(),dim,ents,true); CHKERRQ(ierr);
+        ierr = it->getMeshSetIdEntitiesByDimension(mField.get_moab(),dim,ents,true); CHKERRQ(ierr);
         if(dim>1) {
           Range _edges;
           ierr = mField.get_moab().get_adjacencies(ents,1,false,_edges,moab::Interface::UNION); CHKERRQ(ierr);
@@ -474,7 +474,7 @@ PetscErrorCode DirichletBCFromBlockSetFEMethodPreAndPostProc::iNitalize() {
     for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BLOCKSET,it)) {
       if(it->getName().compare(0,blocksetName.length(),blocksetName) == 0) {
         std::vector<double> mydata;
-        ierr = it->get_attributes(mydata); CHKERRQ(ierr);
+        ierr = it->getAttributes(mydata); CHKERRQ(ierr);
         ublas::vector<double> scaled_values(mydata.size());
         for(unsigned int ii = 0;ii<mydata.size();ii++) {
           scaled_values[ii] = mydata[ii];
@@ -482,7 +482,7 @@ PetscErrorCode DirichletBCFromBlockSetFEMethodPreAndPostProc::iNitalize() {
         ierr = MethodForForceScaling::applyScale(this,methodsOp,scaled_values); CHKERRQ(ierr);
         for(int dim = 0;dim<3;dim++) {
           Range ents;
-          ierr = it->get_cubit_msId_entities_by_dimension(mField.get_moab(),dim,ents,true); CHKERRQ(ierr);
+          ierr = it->getMeshSetIdEntitiesByDimension(mField.get_moab(),dim,ents,true); CHKERRQ(ierr);
           if(dim>1) {
             Range edges;
             ierr = mField.get_moab().get_adjacencies(ents,1,false,edges,moab::Interface::UNION); CHKERRQ(ierr);
@@ -542,7 +542,7 @@ PetscErrorCode DirichletBCFromBlockSetFEMethodPreAndPostProcWithFlags::iNitalize
     for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BLOCKSET,it)) {
       if(it->getName().compare(0,blocksetName.length(),blocksetName) == 0) {
         std::vector<double> mydata;
-        ierr = it->get_attributes(mydata); CHKERRQ(ierr);
+        ierr = it->getAttributes(mydata); CHKERRQ(ierr);
         ublas::vector<double> scaled_values(mydata.size());
         for(unsigned int ii = 0;ii<mydata.size();ii++) {
           scaled_values[ii] = mydata[ii];
@@ -551,7 +551,7 @@ PetscErrorCode DirichletBCFromBlockSetFEMethodPreAndPostProcWithFlags::iNitalize
         ierr = MethodForForceScaling::applyScale(this,methodsOp,scaled_values); CHKERRQ(ierr);
         for(int dim = 0;dim<3;dim++) {
           Range ents;
-          ierr = it->get_cubit_msId_entities_by_dimension(mField.get_moab(),dim,ents,true); CHKERRQ(ierr);
+          ierr = it->getMeshSetIdEntitiesByDimension(mField.get_moab(),dim,ents,true); CHKERRQ(ierr);
           if(dim>1) {
             Range edges;
             ierr = mField.get_moab().get_adjacencies(ents,1,false,edges,moab::Interface::UNION); CHKERRQ(ierr);

@@ -1994,7 +1994,7 @@ PetscErrorCode Core::get_cubit_msId_entities_by_dimension(const int msId,const C
   CubitMeshSet_multiIndex::index<Composite_Cubit_msId_And_MeshSetType_mi_tag>::type::iterator
     miit = cubitMeshsets.get<Composite_Cubit_msId_And_MeshSetType_mi_tag>().find(boost::make_tuple(msId,cubit_bc_type.to_ulong()));
   if(miit!=cubitMeshsets.get<Composite_Cubit_msId_And_MeshSetType_mi_tag>().end()) {
-    ierr = miit->get_cubit_msId_entities_by_dimension(moab,dimension,entities,recursive); CHKERRQ(ierr);
+    ierr = miit->getMeshSetIdEntitiesByDimension(moab,dimension,entities,recursive); CHKERRQ(ierr);
   } else {
     SETERRQ1(PETSC_COMM_SELF,1,"msId = %d is not there",msId);
   }
@@ -2005,7 +2005,7 @@ PetscErrorCode Core::get_cubit_msId_entities_by_dimension(const int msId,const C
   CubitMeshSet_multiIndex::index<Composite_Cubit_msId_And_MeshSetType_mi_tag>::type::iterator
     miit = cubitMeshsets.get<Composite_Cubit_msId_And_MeshSetType_mi_tag>().find(boost::make_tuple(msId,cubit_bc_type.to_ulong()));
   if(miit!=cubitMeshsets.get<Composite_Cubit_msId_And_MeshSetType_mi_tag>().end()) {
-    ierr = miit->get_cubit_msId_entities_by_dimension(moab,entities,recursive); CHKERRQ(ierr);
+    ierr = miit->getMeshSetIdEntitiesByDimension(moab,entities,recursive); CHKERRQ(ierr);
   } else {
     SETERRQ1(PETSC_COMM_SELF,1,"msId = %d is not there",msId);
   }

@@ -28,7 +28,6 @@ namespace MoFEM {
   /// MultiIndex Tag for field id
   struct CubitMeshSets_mi_tag {};
   struct CubitMeshSets_mask_meshset_mi_tag {};
-  struct CubitMeshSets_bc_data_mi_tag {};
   struct CubitMeshSets_name {};
   struct Composite_Cubit_msId_And_MeshSetType_mi_tag {};
 

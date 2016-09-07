@@ -264,7 +264,7 @@ struct Core: public Interface, MeshRefinment, PrismInterface, SeriesRecorder {
       MoABErrorCode rval;
       const Interface& this_field = *this;
       for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(this_field,type,it)) {
-        ierr = it->get_bc_data_structure(data); CHKERRQ(ierr);
+        ierr = it->getBcDataStructure(data); CHKERRQ(ierr);
         std::ostringstream ss;
         ss << *it << std::endl;
         ss << data << std::endl;
@@ -274,10 +274,10 @@ struct Core: public Interface, MeshRefinment, PrismInterface, SeriesRecorder {
         rval = moab.get_entities_by_type(it->meshset,MBEDGE,edges,true); CHKERRQ_MOAB(rval);
         rval = moab.get_entities_by_type(it->meshset,MBVERTEX,nodes,true); CHKERRQ_MOAB(rval);
         ss << "name "<< it->getName() << std::endl;
-        ss << "msId "<< it->get_msId() << " nb. tets " << tets.size() << std::endl;
-        ss << "msId "<< it->get_msId() << " nb. tris " << tris.size() << std::endl;
-        ss << "msId "<< it->get_msId() << " nb. edges " << edges.size() << std::endl;
-        ss << "msId "<< it->get_msId() << " nb. nodes " << nodes.size() << std::endl;
+        ss << "msId "<< it->getMeshSetId() << " nb. tets " << tets.size() << std::endl;
+        ss << "msId "<< it->getMeshSetId() << " nb. tris " << tris.size() << std::endl;
+        ss << "msId "<< it->getMeshSetId() << " nb. edges " << edges.size() << std::endl;
+        ss << "msId "<< it->getMeshSetId() << " nb. nodes " << nodes.size() << std::endl;
         ss << std::endl;
         PetscPrintf(comm,ss.str().c_str());
       }
@@ -334,20 +334,20 @@ struct Core: public Interface, MeshRefinment, PrismInterface, SeriesRecorder {
     const Interface& thism_field = *this;
     for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(thism_field,BLOCKSET|MAT_ELASTICSET,it)) {
       Mat_Elastic data;
-      ierr = it->get_attribute_data_structure(data); CHKERRQ(ierr);
+      ierr = it->getAttributeDataStructure(data); CHKERRQ(ierr);
       std::ostringstream ss;
       ss << *it << std::endl;
       ss << data;
       Range tets;
       rval = moab.get_entities_by_type(it->meshset,MBTET,tets,true); CHKERRQ_MOAB(rval);
-      ss << "MAT_ELATIC msId "<< it->get_msId() << " nb. tets " << tets.size() << std::endl;
+      ss << "MAT_ELATIC msId "<< it->getMeshSetId() << " nb. tets " << tets.size() << std::endl;
       ss << std::endl;
       PetscPrintf(comm,ss.str().c_str());
     }
 
     for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(thism_field,BLOCKSET|MAT_THERMALSET,it)) {
         Mat_Thermal data;
-        ierr = it->get_attribute_data_structure(data); CHKERRQ(ierr);
+        ierr = it->getAttributeDataStructure(data); CHKERRQ(ierr);
         std::ostringstream ss;
         ss << *it << std::endl;
         ss << data;
@@ -356,7 +356,7 @@ struct Core: public Interface, MeshRefinment, PrismInterface, SeriesRecorder {
 
 	/*for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(thism_field,BLOCKSET|MAT_HELMHOLTZSET,it)) {
         Mat_Helmholtz data;
-        ierr = it->get_attribute_data_structure(data); CHKERRQ(ierr);
+        ierr = it->getAttributeDataStructure(data); CHKERRQ(ierr);
         std::ostringstream ss;
         ss << *it << std::endl;
         ss << data;
@@ -365,7 +365,7 @@ struct Core: public Interface, MeshRefinment, PrismInterface, SeriesRecorder {
 
     for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(thism_field,BLOCKSET|MAT_MOISTURESET,it)) {
       Mat_Moisture data;
-      ierr = it->get_attribute_data_structure(data); CHKERRQ(ierr);
+      ierr = it->getAttributeDataStructure(data); CHKERRQ(ierr);
       std::ostringstream ss;
       ss << *it << std::endl;
       ss << data;

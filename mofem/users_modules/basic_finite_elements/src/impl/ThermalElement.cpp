@@ -628,18 +628,18 @@ PetscErrorCode ThermalElement::addThermalElements(const std::string field_name,c
   for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BLOCKSET|MAT_THERMALSET,it)) {
 
     Mat_Thermal temp_data;
-    ierr = it->get_attribute_data_structure(temp_data); CHKERRQ(ierr);
+    ierr = it->getAttributeDataStructure(temp_data); CHKERRQ(ierr);
 
-    setOfBlocks[it->get_msId()].cOnductivity_mat.resize(3,3); //(3X3) conductivity matrix
-    setOfBlocks[it->get_msId()].cOnductivity_mat.clear();
-    setOfBlocks[it->get_msId()].cOnductivity_mat(0,0)=temp_data.data.Conductivity;
-    setOfBlocks[it->get_msId()].cOnductivity_mat(1,1)=temp_data.data.Conductivity;
-    setOfBlocks[it->get_msId()].cOnductivity_mat(2,2)=temp_data.data.Conductivity;
-    //setOfBlocks[it->get_msId()].cOnductivity = temp_data.data.Conductivity;
+    setOfBlocks[it->getMeshSetId()].cOnductivity_mat.resize(3,3); //(3X3) conductivity matrix
+    setOfBlocks[it->getMeshSetId()].cOnductivity_mat.clear();
+    setOfBlocks[it->getMeshSetId()].cOnductivity_mat(0,0)=temp_data.data.Conductivity;
+    setOfBlocks[it->getMeshSetId()].cOnductivity_mat(1,1)=temp_data.data.Conductivity;
+    setOfBlocks[it->getMeshSetId()].cOnductivity_mat(2,2)=temp_data.data.Conductivity;
+    //setOfBlocks[it->getMeshSetId()].cOnductivity = temp_data.data.Conductivity;
 
-    setOfBlocks[it->get_msId()].cApacity = temp_data.data.HeatCapacity;
-    rval = mField.get_moab().get_entities_by_type(it->meshset,MBTET,setOfBlocks[it->get_msId()].tEts,true); CHKERRQ_MOAB(rval);
-    ierr = mField.add_ents_to_finite_element_by_TETs(setOfBlocks[it->get_msId()].tEts,"THERMAL_FE"); CHKERRQ(ierr);
+    setOfBlocks[it->getMeshSetId()].cApacity = temp_data.data.HeatCapacity;
+    rval = mField.get_moab().get_entities_by_type(it->meshset,MBTET,setOfBlocks[it->getMeshSetId()].tEts,true); CHKERRQ_MOAB(rval);
+    ierr = mField.add_ents_to_finite_element_by_TETs(setOfBlocks[it->getMeshSetId()].tEts,"THERMAL_FE"); CHKERRQ(ierr);
 
   }
 
@@ -661,9 +661,9 @@ PetscErrorCode ThermalElement::addThermalFluxElement(const std::string field_nam
   }
 
   for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,SIDESET|HEATFLUXSET,it)) {
-    ierr = it->get_bc_data_structure(setOfFluxes[it->get_msId()].dAta); CHKERRQ(ierr);
-    rval = mField.get_moab().get_entities_by_type(it->meshset,MBTRI,setOfFluxes[it->get_msId()].tRis,true); CHKERRQ_MOAB(rval);
-    ierr = mField.add_ents_to_finite_element_by_TRIs(setOfFluxes[it->get_msId()].tRis,"THERMAL_FLUX_FE"); CHKERRQ(ierr);
+    ierr = it->getBcDataStructure(setOfFluxes[it->getMeshSetId()].dAta); CHKERRQ(ierr);
+    rval = mField.get_moab().get_entities_by_type(it->meshset,MBTRI,setOfFluxes[it->getMeshSetId()].tRis,true); CHKERRQ_MOAB(rval);
+    ierr = mField.add_ents_to_finite_element_by_TRIs(setOfFluxes[it->getMeshSetId()].tRis,"THERMAL_FLUX_FE"); CHKERRQ(ierr);
   }
 
   //this is alternative method for setting boundary conditions, to bypass bu in cubit file reader.
@@ -671,16 +671,16 @@ PetscErrorCode ThermalElement::addThermalFluxElement(const std::string field_nam
   for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BLOCKSET,it)) {
     if(it->getName().compare(0,9,"HEAT_FLUX") == 0) {
       std::vector<double> data;
-      ierr = it->get_attributes(data); CHKERRQ(ierr);
+      ierr = it->getAttributes(data); CHKERRQ(ierr);
       if(data.size()!=1) {
         SETERRQ(PETSC_COMM_SELF,1,"Data inconsistency");
       }
-      strcpy(setOfFluxes[it->get_msId()].dAta.data.name,"HeatFlu");
-      setOfFluxes[it->get_msId()].dAta.data.flag1 = 1;
-      setOfFluxes[it->get_msId()].dAta.data.value1 = data[0];
-      //std::cerr << setOfFluxes[it->get_msId()].dAta << std::endl;
-      rval = mField.get_moab().get_entities_by_type(it->meshset,MBTRI,setOfFluxes[it->get_msId()].tRis,true); CHKERRQ_MOAB(rval);
-      ierr = mField.add_ents_to_finite_element_by_TRIs(setOfFluxes[it->get_msId()].tRis,"THERMAL_FLUX_FE"); CHKERRQ(ierr);
+      strcpy(setOfFluxes[it->getMeshSetId()].dAta.data.name,"HeatFlu");
+      setOfFluxes[it->getMeshSetId()].dAta.data.flag1 = 1;
+      setOfFluxes[it->getMeshSetId()].dAta.data.value1 = data[0];
+      //std::cerr << setOfFluxes[it->getMeshSetId()].dAta << std::endl;
+      rval = mField.get_moab().get_entities_by_type(it->meshset,MBTRI,setOfFluxes[it->getMeshSetId()].tRis,true); CHKERRQ_MOAB(rval);
+      ierr = mField.add_ents_to_finite_element_by_TRIs(setOfFluxes[it->getMeshSetId()].tRis,"THERMAL_FLUX_FE"); CHKERRQ(ierr);
     }
   }
 
@@ -708,15 +708,15 @@ PetscErrorCode ThermalElement::addThermalConvectionElement(const std::string fie
     if(it->getName().compare(0,10,"CONVECTION") == 0) {
 
       std::vector<double> data;
-      ierr = it->get_attributes(data); CHKERRQ(ierr);
+      ierr = it->getAttributes(data); CHKERRQ(ierr);
       if(data.size()!=2) {
         SETERRQ(PETSC_COMM_SELF,1,"Data inconsistency");
       }
-      setOfConvection[it->get_msId()].cOnvection = data[0];
-      setOfConvection[it->get_msId()].tEmperature = data[1];
-      //std::cerr << setOfFluxes[it->get_msId()].dAta << std::endl;
-      rval = mField.get_moab().get_entities_by_type(it->meshset,MBTRI,setOfConvection[it->get_msId()].tRis,true); CHKERRQ_MOAB(rval);
-      ierr = mField.add_ents_to_finite_element_by_TRIs(setOfConvection[it->get_msId()].tRis,"THERMAL_CONVECTION_FE"); CHKERRQ(ierr);
+      setOfConvection[it->getMeshSetId()].cOnvection = data[0];
+      setOfConvection[it->getMeshSetId()].tEmperature = data[1];
+      //std::cerr << setOfFluxes[it->getMeshSetId()].dAta << std::endl;
+      rval = mField.get_moab().get_entities_by_type(it->meshset,MBTRI,setOfConvection[it->getMeshSetId()].tRis,true); CHKERRQ_MOAB(rval);
+      ierr = mField.add_ents_to_finite_element_by_TRIs(setOfConvection[it->getMeshSetId()].tRis,"THERMAL_CONVECTION_FE"); CHKERRQ(ierr);
 
     }
   }
@@ -743,17 +743,17 @@ PetscErrorCode ThermalElement::addThermalRadiationElement(const std::string fiel
   for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BLOCKSET,it)) {
     if(it->getName().compare(0,9,"RADIATION") == 0) {
       std::vector<double> data;
-      ierr = it->get_attributes(data); CHKERRQ(ierr);
+      ierr = it->getAttributes(data); CHKERRQ(ierr);
       if(data.size()!=3) {
         SETERRQ(PETSC_COMM_SELF,1,"Data inconsistency");
       }
-      setOfRadiation[it->get_msId()].sIgma = data[0];
-      setOfRadiation[it->get_msId()].eMissivity = data[1];
-      //setOfRadiation[it->get_msId()].aBsorption = data[2];
-      setOfRadiation[it->get_msId()].aMbienttEmp = data[2];
-      //std::cerr << setOfFluxes[it->get_msId()].dAta << std::endl;
-      rval = mField.get_moab().get_entities_by_type(it->meshset,MBTRI,setOfRadiation[it->get_msId()].tRis,true); CHKERRQ_MOAB(rval);
-      ierr = mField.add_ents_to_finite_element_by_TRIs(setOfRadiation[it->get_msId()].tRis,"THERMAL_RADIATION_FE"); CHKERRQ(ierr);
+      setOfRadiation[it->getMeshSetId()].sIgma = data[0];
+      setOfRadiation[it->getMeshSetId()].eMissivity = data[1];
+      //setOfRadiation[it->getMeshSetId()].aBsorption = data[2];
+      setOfRadiation[it->getMeshSetId()].aMbienttEmp = data[2];
+      //std::cerr << setOfFluxes[it->getMeshSetId()].dAta << std::endl;
+      rval = mField.get_moab().get_entities_by_type(it->meshset,MBTRI,setOfRadiation[it->getMeshSetId()].tRis,true); CHKERRQ_MOAB(rval);
+      ierr = mField.add_ents_to_finite_element_by_TRIs(setOfRadiation[it->getMeshSetId()].tRis,"THERMAL_RADIATION_FE"); CHKERRQ(ierr);
 
     }
   }

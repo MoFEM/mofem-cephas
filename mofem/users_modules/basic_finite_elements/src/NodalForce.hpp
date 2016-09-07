@@ -120,7 +120,7 @@ struct MetaNodalForces {
     string fe_name = "FORCE_FE";
     nodal_forces.insert(fe_name,new NodalForce(m_field));
     for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,NODESET|FORCESET,it)) {
-      ierr = nodal_forces.at(fe_name).addForce(field_name,F,it->get_msId());  CHKERRQ(ierr);
+      ierr = nodal_forces.at(fe_name).addForce(field_name,F,it->getMeshSetId());  CHKERRQ(ierr);
     }
     PetscFunctionReturn(0);
   }

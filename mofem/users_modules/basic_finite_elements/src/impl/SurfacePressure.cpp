@@ -284,7 +284,7 @@ PetscErrorCode NeummanForcesSurface::addForce(const std::string field_name,Vec F
     const CubitMeshSets *cubit_meshset_ptr;
     ierr = mField.get_cubit_msId(ms_id,BLOCKSET,&cubit_meshset_ptr); CHKERRQ(ierr);
     std::vector<double> mydata;
-    ierr = cubit_meshset_ptr->get_attributes(mydata); CHKERRQ(ierr);
+    ierr = cubit_meshset_ptr->getAttributes(mydata); CHKERRQ(ierr);
     ublas::vector<double> force(mydata.size());
     for(unsigned int ii = 0;ii<mydata.size();ii++) {
       force[ii] = mydata[ii];
@@ -319,7 +319,7 @@ PetscErrorCode NeummanForcesSurface::addForce(const std::string field_name,Vec F
   } else {
     const CubitMeshSets *cubit_meshset_ptr;
     ierr = mField.get_cubit_msId(ms_id,NODESET,&cubit_meshset_ptr); CHKERRQ(ierr);
-    ierr = cubit_meshset_ptr->get_bc_data_structure(mapForce[ms_id].data); CHKERRQ(ierr);
+    ierr = cubit_meshset_ptr->getBcDataStructure(mapForce[ms_id].data); CHKERRQ(ierr);
     rval = mField.get_moab().get_entities_by_type(cubit_meshset_ptr->meshset,MBTRI,mapForce[ms_id].tRis,true); CHKERRQ_MOAB(rval);
     fe.getOpPtrVector().push_back(new OpNeumannForce(field_name,F,mapForce[ms_id],methodsOp,ho_geometry));
   }
@@ -334,7 +334,7 @@ PetscErrorCode NeummanForcesSurface::addPreassure(const std::string field_name,V
     const CubitMeshSets *cubit_meshset_ptr;
     ierr = mField.get_cubit_msId(ms_id,BLOCKSET,&cubit_meshset_ptr); CHKERRQ(ierr);
     std::vector<double> mydata;
-    ierr = cubit_meshset_ptr->get_attributes(mydata); CHKERRQ(ierr);
+    ierr = cubit_meshset_ptr->getAttributes(mydata); CHKERRQ(ierr);
     ublas::vector<double> pressure(mydata.size());
     for(unsigned int ii = 0;ii<mydata.size();ii++) {
       pressure[ii] = mydata[ii];
@@ -355,7 +355,7 @@ PetscErrorCode NeummanForcesSurface::addPreassure(const std::string field_name,V
   } else {
     const CubitMeshSets *cubit_meshset_ptr;
     ierr = mField.get_cubit_msId(ms_id,SIDESET,&cubit_meshset_ptr); CHKERRQ(ierr);
-    ierr = cubit_meshset_ptr->get_bc_data_structure(mapPreassure[ms_id].data); CHKERRQ(ierr);
+    ierr = cubit_meshset_ptr->getBcDataStructure(mapPreassure[ms_id].data); CHKERRQ(ierr);
     rval = mField.get_moab().get_entities_by_type(cubit_meshset_ptr->meshset,MBTRI,mapPreassure[ms_id].tRis,true); CHKERRQ_MOAB(rval);
     fe.getOpPtrVector().push_back(new OpNeumannPreassure(field_name,F,mapPreassure[ms_id],methodsOp,ho_geometry));
   }
@@ -368,7 +368,7 @@ PetscErrorCode NeummanForcesSurface::addFlux(const std::string field_name,Vec F,
   ErrorCode rval;
   const CubitMeshSets *cubit_meshset_ptr;
   ierr = mField.get_cubit_msId(ms_id,SIDESET,&cubit_meshset_ptr); CHKERRQ(ierr);
-  ierr = cubit_meshset_ptr->get_bc_data_structure(mapPreassure[ms_id].data); CHKERRQ(ierr);
+  ierr = cubit_meshset_ptr->getBcDataStructure(mapPreassure[ms_id].data); CHKERRQ(ierr);
   rval = mField.get_moab().get_entities_by_type(cubit_meshset_ptr->meshset,MBTRI,mapPreassure[ms_id].tRis,true); CHKERRQ_MOAB(rval);
   fe.getOpPtrVector().push_back(new OpNeumannFlux(field_name,F,mapPreassure[ms_id],methodsOp,ho_geometry));
   PetscFunctionReturn(0);

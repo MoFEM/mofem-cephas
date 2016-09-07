@@ -165,7 +165,7 @@ int main(int argc, char *argv[]) {
 
   // set markers to side Cubit sets
   for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,SIDESET,sit)) {
-    int id = sit->get_msId();
+    int id = sit->getMeshSetId();
     Range faces;
     rval = moab.get_entities_by_type(sit->meshset,MBTRI,faces,true); CHKERRQ_MOAB(rval);
     markers.push_back(std::pair<Range,int>(faces,id));
@@ -177,7 +177,7 @@ int main(int argc, char *argv[]) {
 
   std::vector<std::pair<EntityHandle,int> > regions; // list of regions
   for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,BLOCKSET,bit)) {
-    int id = bit->get_msId();
+    int id = bit->getMeshSetId();
     Range tets;
     rval = moab.get_entities_by_type(bit->meshset,MBTET,tets,true); CHKERRQ_MOAB(rval);
     regions.push_back(std::pair<EntityHandle,int>(*tets.begin(),-id));

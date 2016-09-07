@@ -246,7 +246,7 @@ int main(int argc, char *argv[]) {
     int ll = 1;
     for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,SIDESET|INTERFACESET,cit)) {
     //for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,SIDESET,cit)) {
-      ierr = PetscPrintf(PETSC_COMM_WORLD,"Insert Interface %d\n",cit->get_msId()); CHKERRQ(ierr);
+      ierr = PetscPrintf(PETSC_COMM_WORLD,"Insert Interface %d\n",cit->getMeshSetId()); CHKERRQ(ierr);
       EntityHandle cubit_meshset = cit->getMeshSet();
       {
         //get tet enties form back bit_level
@@ -462,13 +462,13 @@ int main(int argc, char *argv[]) {
 
     if (name.compare(0,11,"MAT_ELASTIC") == 0) {
       Mat_Elastic mydata;
-      ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
+      ierr = it->getAttributeDataStructure(mydata); CHKERRQ(ierr);
       cout << mydata;
       young_modulus=mydata.data.Young;
       poisson_ratio=mydata.data.Poisson;
     } else if (name.compare(0,10,"MAT_INTERF") == 0) {
       Mat_Interf mydata;
-      ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
+      ierr = it->getAttributeDataStructure(mydata); CHKERRQ(ierr);
       cout << mydata;
 
       interface_materials.push_back(new CohesiveInterfaceElement::PhysicalEquation(m_field));
@@ -538,7 +538,7 @@ int main(int argc, char *argv[]) {
   //body forces
   BodyFroceConstantField body_forces_methods(m_field);
   for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,BLOCKSET|BODYFORCESSET,it)) {
-    ierr = body_forces_methods.addBlock("DISPLACEMENT",F_body_force,it->get_msId()); CHKERRQ(ierr);
+    ierr = body_forces_methods.addBlock("DISPLACEMENT",F_body_force,it->getMeshSetId()); CHKERRQ(ierr);
   }
   ierr = VecZeroEntries(F_body_force); CHKERRQ(ierr);
   ierr = VecGhostUpdateBegin(F_body_force,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
@@ -554,19 +554,19 @@ int main(int argc, char *argv[]) {
   string fe_name_str = "FORCE_FE";
   neumann_forces.insert(fe_name_str,new NeummanForcesSurface(m_field));
   for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,NODESET|FORCESET,it)) {
-    ierr = neumann_forces.at(fe_name_str).addForce("DISPLACEMENT",arc_ctx->F_lambda,it->get_msId());  CHKERRQ(ierr);
+    ierr = neumann_forces.at(fe_name_str).addForce("DISPLACEMENT",arc_ctx->F_lambda,it->getMeshSetId());  CHKERRQ(ierr);
   }
   fe_name_str = "PRESSURE_FE";
   neumann_forces.insert(fe_name_str,new NeummanForcesSurface(m_field));
   for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,SIDESET|PRESSURESET,it)) {
-    ierr = neumann_forces.at(fe_name_str).addPreassure("DISPLACEMENT",arc_ctx->F_lambda,it->get_msId()); CHKERRQ(ierr);
+    ierr = neumann_forces.at(fe_name_str).addPreassure("DISPLACEMENT",arc_ctx->F_lambda,it->getMeshSetId()); CHKERRQ(ierr);
   }
   //add nodal forces
   boost::ptr_map<std::string,NodalForce> nodal_forces;
   fe_name_str ="FORCE_FE";
   nodal_forces.insert(fe_name_str,new NodalForce(m_field));
   for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,NODESET|FORCESET,it)) {
-    ierr = nodal_forces.at(fe_name_str).addForce("DISPLACEMENT",arc_ctx->F_lambda,it->get_msId());  CHKERRQ(ierr);
+    ierr = nodal_forces.at(fe_name_str).addForce("DISPLACEMENT",arc_ctx->F_lambda,it->getMeshSetId());  CHKERRQ(ierr);
   }
 
   SNES snes;

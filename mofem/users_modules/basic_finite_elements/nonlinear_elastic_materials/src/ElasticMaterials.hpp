@@ -154,54 +154,54 @@ struct ElasticMaterials {
       for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BLOCKSET,it)) {
 
         std::ostringstream str_order;
-        str_order << "block_" << it->get_msId() << ".displacemet_order";
+        str_order << "block_" << it->getMeshSetId() << ".displacemet_order";
         config_file_options.add_options()
-        (str_order.str().c_str(),po::value<int>(&blockData[it->get_msId()].oRder)->default_value(-1));
+        (str_order.str().c_str(),po::value<int>(&blockData[it->getMeshSetId()].oRder)->default_value(-1));
 
         std::ostringstream str_material;
-        str_material << "block_" << it->get_msId() << ".material";
+        str_material << "block_" << it->getMeshSetId() << ".material";
         config_file_options.add_options()
-        (str_material.str().c_str(),po::value<std::string>(&blockData[it->get_msId()].mAterial)->default_value(defMaterial));
+        (str_material.str().c_str(),po::value<std::string>(&blockData[it->getMeshSetId()].mAterial)->default_value(defMaterial));
 
         std::ostringstream str_ym;
-        str_ym << "block_" << it->get_msId() << ".young_modulus";
+        str_ym << "block_" << it->getMeshSetId() << ".young_modulus";
         config_file_options.add_options()
-        (str_ym.str().c_str(),po::value<double>(&blockData[it->get_msId()].yOung)->default_value(-1));
+        (str_ym.str().c_str(),po::value<double>(&blockData[it->getMeshSetId()].yOung)->default_value(-1));
 
         std::ostringstream str_pr;
-        str_pr << "block_" << it->get_msId() << ".poisson_ratio";
+        str_pr << "block_" << it->getMeshSetId() << ".poisson_ratio";
         config_file_options.add_options()
-        (str_pr.str().c_str(),po::value<double>(&blockData[it->get_msId()].pOisson)->default_value(-2));
+        (str_pr.str().c_str(),po::value<double>(&blockData[it->getMeshSetId()].pOisson)->default_value(-2));
 
         std::ostringstream str_density;
-        str_density << "block_" << it->get_msId() << ".density";
+        str_density << "block_" << it->getMeshSetId() << ".density";
         config_file_options.add_options()
-        (str_density.str().c_str(),po::value<double>(&blockData[it->get_msId()].dEnsity)->default_value(-1));
+        (str_density.str().c_str(),po::value<double>(&blockData[it->getMeshSetId()].dEnsity)->default_value(-1));
 
         std::ostringstream str_dashG;
-        str_dashG << "block_" << it->get_msId() << ".dashG";
+        str_dashG << "block_" << it->getMeshSetId() << ".dashG";
         config_file_options.add_options()
-        (str_dashG.str().c_str(),po::value<double>(&blockData[it->get_msId()].dashG)->default_value(-1));
+        (str_dashG.str().c_str(),po::value<double>(&blockData[it->getMeshSetId()].dashG)->default_value(-1));
 
         std::ostringstream str_dashPoisson;
-        str_dashPoisson << "block_" << it->get_msId() << ".dashPoisson";
+        str_dashPoisson << "block_" << it->getMeshSetId() << ".dashPoisson";
         config_file_options.add_options()
-        (str_dashPoisson.str().c_str(),po::value<double>(&blockData[it->get_msId()].dashPoisson)->default_value(-2));
+        (str_dashPoisson.str().c_str(),po::value<double>(&blockData[it->getMeshSetId()].dashPoisson)->default_value(-2));
 
         std::ostringstream str_ax;
-        str_ax << "block_" << it->get_msId() << ".a_x";
+        str_ax << "block_" << it->getMeshSetId() << ".a_x";
         config_file_options.add_options()
-        (str_ax.str().c_str(),po::value<double>(&blockData[it->get_msId()].aX)->default_value(0));
+        (str_ax.str().c_str(),po::value<double>(&blockData[it->getMeshSetId()].aX)->default_value(0));
 
         std::ostringstream str_ay;
-        str_ay << "block_" << it->get_msId() << ".a_y";
+        str_ay << "block_" << it->getMeshSetId() << ".a_y";
         config_file_options.add_options()
-        (str_ay.str().c_str(),po::value<double>(&blockData[it->get_msId()].aY)->default_value(0));
+        (str_ay.str().c_str(),po::value<double>(&blockData[it->getMeshSetId()].aY)->default_value(0));
 
         std::ostringstream str_az;
-        str_az << "block_" << it->get_msId() << ".a_z";
+        str_az << "block_" << it->getMeshSetId() << ".a_z";
         config_file_options.add_options()
-        (str_az.str().c_str(),po::value<double>(&blockData[it->get_msId()].aZ)->default_value(0));
+        (str_az.str().c_str(),po::value<double>(&blockData[it->getMeshSetId()].aZ)->default_value(0));
       }
       ifstream file(configFile.c_str());
       if(isConfigFileSet) {
@@ -237,9 +237,9 @@ struct ElasticMaterials {
       disp_order = 1;
     }
     for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BLOCKSET,it)) {
-      if(blockData[it->get_msId()].oRder == -1) continue;
-      if(blockData[it->get_msId()].oRder == disp_order) continue;
-      PetscPrintf(mField.get_comm(),"Set block %d oRder to %d\n",it->get_msId(),blockData[it->get_msId()].oRder);
+      if(blockData[it->getMeshSetId()].oRder == -1) continue;
+      if(blockData[it->getMeshSetId()].oRder == disp_order) continue;
+      PetscPrintf(mField.get_comm(),"Set block %d oRder to %d\n",it->getMeshSetId(),blockData[it->getMeshSetId()].oRder);
       Range block_ents;
       rval = mField.get_moab().get_entities_by_handle(it->meshset,block_ents,true); CHKERR_MOAB(rval);
       Range ents_to_set_order;
@@ -248,16 +248,16 @@ struct ElasticMaterials {
       ierr = mField.get_moab().get_adjacencies(block_ents,2,false,ents_to_set_order,moab::Interface::UNION); CHKERRQ(ierr);
       ierr = mField.get_moab().get_adjacencies(block_ents,1,false,ents_to_set_order,moab::Interface::UNION); CHKERRQ(ierr);
       if(mField.check_field("DISPLACEMENT")) {
-        ierr = mField.set_field_order(ents_to_set_order,"DISPLACEMENT",blockData[it->get_msId()].oRder); CHKERRQ(ierr);
+        ierr = mField.set_field_order(ents_to_set_order,"DISPLACEMENT",blockData[it->getMeshSetId()].oRder); CHKERRQ(ierr);
       }
       if(mField.check_field("SPATIAL_POSITION")) {
-        ierr = mField.set_field_order(ents_to_set_order,"SPATIAL_POSITION",blockData[it->get_msId()].oRder); CHKERRQ(ierr);
+        ierr = mField.set_field_order(ents_to_set_order,"SPATIAL_POSITION",blockData[it->getMeshSetId()].oRder); CHKERRQ(ierr);
       }
       if(mField.check_field("DOT_SPATIAL_POSITION")) {
-        ierr = mField.set_field_order(ents_to_set_order,"DOT_SPATIAL_POSITION",blockData[it->get_msId()].oRder); CHKERRQ(ierr);
+        ierr = mField.set_field_order(ents_to_set_order,"DOT_SPATIAL_POSITION",blockData[it->getMeshSetId()].oRder); CHKERRQ(ierr);
       }
       if(mField.check_field("SPATIAL_VELOCITY")) {
-        ierr = mField.set_field_order(ents_to_set_order,"SPATIAL_VELOCITY",blockData[it->get_msId()].oRder); CHKERRQ(ierr);
+        ierr = mField.set_field_order(ents_to_set_order,"SPATIAL_VELOCITY",blockData[it->getMeshSetId()].oRder); CHKERRQ(ierr);
       }
     }
     PetscFunctionReturn(0);
@@ -276,9 +276,9 @@ struct ElasticMaterials {
       iNitialized = true;
     }
     for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BLOCKSET|MAT_ELASTICSET,it)) {
-      int id = it->get_msId();
+      int id = it->getMeshSetId();
       Mat_Elastic mydata;
-      ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
+      ierr = it->getAttributeDataStructure(mydata); CHKERRQ(ierr);
       EntityHandle meshset = it->getMeshSet();
       rval = mField.get_moab().get_entities_by_type(meshset,MBTET,set_of_blocks[id].tEts,true); CHKERRQ_MOAB(rval);
       set_of_blocks[id].iD = id;
@@ -320,11 +320,11 @@ struct ElasticMaterials {
       iNitialized = true;
     }
     for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BLOCKSET|BODYFORCESSET,it)) {
-      int id = it->get_msId();
+      int id = it->getMeshSetId();
       EntityHandle meshset = it->getMeshSet();
       rval = mField.get_moab().get_entities_by_type(meshset,MBTET,set_of_blocks[id].tEts,true); CHKERRQ_MOAB(rval);
       Block_BodyForces mydata;
-      ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
+      ierr = it->getAttributeDataStructure(mydata); CHKERRQ(ierr);
       set_of_blocks[id].rho0 = mydata.data.density;
       set_of_blocks[id].a0.resize(3);
       set_of_blocks[id].a0[0] = mydata.data.acceleration_x;
@@ -333,11 +333,11 @@ struct ElasticMaterials {
       if(blockData[id].dEnsity>=0) {
         set_of_blocks[id].rho0 = blockData[id].dEnsity;
         std::ostringstream str_ax;
-        str_ax << "block_" << it->get_msId() << ".a_x";
+        str_ax << "block_" << it->getMeshSetId() << ".a_x";
         std::ostringstream str_ay;
-        str_ay << "block_" << it->get_msId() << ".a_y";
+        str_ay << "block_" << it->getMeshSetId() << ".a_y";
         std::ostringstream str_az;
-        str_az << "block_" << it->get_msId() << ".a_z";
+        str_az << "block_" << it->getMeshSetId() << ".a_z";
         if(vM.count(str_ax.str().c_str())) {
           set_of_blocks[id].a0[0] = blockData[id].aX;
         }
@@ -375,29 +375,29 @@ struct ElasticMaterials {
 
     for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BLOCKSET,it)) {
       bool set = false;
-      int id = it->get_msId();
+      int id = it->getMeshSetId();
       EntityHandle meshset = it->getMeshSet();
       if(it->getName().compare(0,6,"DAMPER") == 0) {
         set = true;
         std::vector<double> data;
-        ierr = it->get_attributes(data); CHKERRQ(ierr);
+        ierr = it->getAttributes(data); CHKERRQ(ierr);
         if(data.size()<2) {
           SETERRQ(PETSC_COMM_SELF,1,"Data inconsistency");
         }
         rval = mField.get_moab().get_entities_by_type(
-          it->meshset,MBTET,set_of_blocks[it->get_msId()].tEts,true
+          it->meshset,MBTET,set_of_blocks[it->getMeshSetId()].tEts,true
         ); CHKERRQ_MOAB(rval);
-        set_of_blocks[it->get_msId()].gBeta = data[0];
-        set_of_blocks[it->get_msId()].vBeta = data[1];
+        set_of_blocks[it->getMeshSetId()].gBeta = data[0];
+        set_of_blocks[it->getMeshSetId()].vBeta = data[1];
       }
       if(blockData[id].dashG > 0) {
         set = true;
         Range tEts;
         rval = mField.get_moab().get_entities_by_type(meshset,MBTET,tEts,true); CHKERRQ_MOAB(rval);
         if(tEts.empty()) continue;
-        set_of_blocks[it->get_msId()].tEts = tEts;
-        set_of_blocks[it->get_msId()].gBeta = blockData[id].dashG;
-        set_of_blocks[it->get_msId()].vBeta = blockData[id].dashPoisson;
+        set_of_blocks[it->getMeshSetId()].tEts = tEts;
+        set_of_blocks[it->getMeshSetId()].gBeta = blockData[id].dashG;
+        set_of_blocks[it->getMeshSetId()].vBeta = blockData[id].dashPoisson;
       }
       if(set) {
         PetscPrintf(
