@@ -2,7 +2,7 @@
  * \brief Data structures for Meshset/Blocsk with material data
  *
  * Notes:
- * - use BLOCK_ATTRIBUTES tag to store data sttucutures
+ * - use BLOCK_ATTRIBUTES tag to store data structures
  * - data structures are tags of meshsets
 
  * MoFEM is free software: you can redistribute it and/or modify it under
@@ -32,12 +32,12 @@ struct GenericAttributeData {
 
     virtual PetscErrorCode fill_data(const std::vector<double>& attributes) {
       PetscFunctionBegin;
-      SETERRQ(PETSC_COMM_SELF,1,"It makes no sense for the generic attribute type");
+      SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"It makes no sense for the generic attribute type");
       PetscFunctionReturn(0);
     }
     virtual PetscErrorCode set_data(void *tag_ptr,unsigned int size) {
       PetscFunctionBegin;
-      SETERRQ(PETSC_COMM_SELF,1,"It makes no sense for the generic attribute type");
+      SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"It makes no sense for the generic attribute type");
       PetscFunctionReturn(0);
     }
 
@@ -67,23 +67,31 @@ struct BlockSetAttributes: public GenericAttributeData {
 
     const CubitBCType type;
     const unsigned int min_number_of_atributes;
-    BlockSetAttributes(): type(BLOCKSET),min_number_of_atributes(0) {};
+    BlockSetAttributes():
+    type(BLOCKSET),
+    min_number_of_atributes(0) {};
 
-    virtual PetscErrorCode fill_data(const std::vector<double>& attributes) {
+    PetscErrorCode fill_data(const std::vector<double>& attributes) {
       PetscFunctionBegin;
       if(8*attributes.size()>sizeof(data)) {
-	SETERRQ(PETSC_COMM_SELF,1,
-	  "data inconsistency, please review the number of material properties defined");
+        SETERRQ(
+          PETSC_COMM_SELF,
+          MOFEM_DATA_INCONSISTENCY,
+          "data inconsistency, please review the number of material properties defined"
+        );
       }
       bzero(&data,sizeof(data));
       memcpy(&data, &attributes[0],8*attributes.size());
       PetscFunctionReturn(0);
     }
-    virtual PetscErrorCode set_data(void *tag_ptr,unsigned int size) {
+    PetscErrorCode set_data(void *tag_ptr,unsigned int size) {
       PetscFunctionBegin;
       if(size>sizeof(data)) {
-	SETERRQ(PETSC_COMM_SELF,1,
-	  "data inconsistency, please review the number of material properties defined");
+        SETERRQ(
+          PETSC_COMM_SELF,
+          MOFEM_DATA_INCONSISTENCY,
+          "data inconsistency, please review the number of material properties defined"
+        );
       }
       memcpy(tag_ptr,&data,size);
       PetscFunctionReturn(0);
@@ -122,23 +130,26 @@ struct Mat_Elastic: public GenericAttributeData {
     const unsigned int min_number_of_atributes;
     Mat_Elastic(): type(MAT_ELASTICSET),min_number_of_atributes(2) {};
 
-    virtual PetscErrorCode fill_data(const std::vector<double>& attributes) {
-        PetscFunctionBegin;
-        if(attributes.size()<min_number_of_atributes) {
-	  SETERRQ(PETSC_COMM_SELF,1,"Young modulus and/or Poisson ratio is not defined. (top tip: check number of ELASTIC block atributes)");
-	}
-        if(8*attributes.size()>sizeof(data)) {
-	  SETERRQ(PETSC_COMM_SELF,1,"data inconsistency, please review the number of material properties defined");
-	}
-	bzero(&data,sizeof(data));
-        memcpy(&data, &attributes[0],8*attributes.size());
-        PetscFunctionReturn(0);
+    PetscErrorCode fill_data(const std::vector<double>& attributes) {
+      PetscFunctionBegin;
+      if(attributes.size()<min_number_of_atributes) {
+        SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"Young modulus and/or Poisson ratio is not defined. (top tip: check number of ELASTIC block atributes)");
+      }
+      if(8*attributes.size()>sizeof(data)) {
+        SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency, please review the number of material properties defined");
+      }
+      bzero(&data,sizeof(data));
+      memcpy(&data, &attributes[0],8*attributes.size());
+      PetscFunctionReturn(0);
     }
-    virtual PetscErrorCode set_data(void *tag_ptr,unsigned int size) {
+    PetscErrorCode set_data(void *tag_ptr,unsigned int size) {
       PetscFunctionBegin;
       if(size>sizeof(data)) {
-	SETERRQ(PETSC_COMM_SELF,1,
-	  "data inconsistency, please review the number of material properties defined");
+        SETERRQ(
+          PETSC_COMM_SELF,
+          MOFEM_DATA_INCONSISTENCY,
+          "data inconsistency, please review the number of material properties defined"
+        );
       }
       memcpy(tag_ptr,&data,size);
       PetscFunctionReturn(0);
@@ -178,23 +189,23 @@ struct Mat_Thermal: public GenericAttributeData {
   const unsigned int min_number_of_atributes;
   Mat_Thermal(): type(MAT_THERMALSET),min_number_of_atributes(2) {};
 
-  virtual PetscErrorCode fill_data(const std::vector<double>& attributes) {
+  PetscErrorCode fill_data(const std::vector<double>& attributes) {
     PetscFunctionBegin;
     if(attributes.size()<min_number_of_atributes) {
-      SETERRQ(PETSC_COMM_SELF,1,"Thermal conductivity is not defined. (top tip: check number of THERMAL block atributes)");
+      SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"Thermal conductivity is not defined. (top tip: check number of THERMAL block atributes)");
     }
     if(8*attributes.size()>sizeof(data)) {
-      SETERRQ(PETSC_COMM_SELF,1,"data inconsistency, please review the number of material properties defined");
+      SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency, please review the number of material properties defined");
     }
     bzero(&data,sizeof(data));
     memcpy(&data, &attributes[0],8*attributes.size());
     PetscFunctionReturn(0);
   }
-  virtual PetscErrorCode set_data(void *tag_ptr,unsigned int size) {
+  PetscErrorCode set_data(void *tag_ptr,unsigned int size) {
     PetscFunctionBegin;
     if(size>sizeof(data)) {
-      SETERRQ(PETSC_COMM_SELF,1,
-	"data inconsistency, please review the number of material properties defined");
+      SETERRQ(
+        PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency, please review the number of material properties defined");
     }
     memcpy(tag_ptr,&data,size);
     PetscFunctionReturn(0);
@@ -234,13 +245,13 @@ struct Mat_Moisture: public GenericAttributeData {
   const unsigned int min_number_of_atributes;
   Mat_Moisture(): type(MAT_MOISTURESET),min_number_of_atributes(1) {};
 
-  virtual PetscErrorCode fill_data(const std::vector<double>& attributes) {
+  PetscErrorCode fill_data(const std::vector<double>& attributes) {
     PetscFunctionBegin;
     if(attributes.size()<min_number_of_atributes) {
-      SETERRQ(PETSC_COMM_SELF,1,"moisture diffusivity is not defined. (top tip: check number of MOISTURE block atributes)");
+      SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"moisture diffusivity is not defined. (top tip: check number of MOISTURE block atributes)");
     }
     if(8*attributes.size()>sizeof(data)) {
-      SETERRQ(PETSC_COMM_SELF,1,"data inconsistency, please review the number of material properties defined");
+      SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency, please review the number of material properties defined");
     }
     bzero(&data,sizeof(data));
     memcpy(&data, &attributes[0],8*attributes.size());
@@ -279,19 +290,19 @@ struct Block_BodyForces: public GenericAttributeData {
   const unsigned int min_number_of_atributes;
   Block_BodyForces(): type(BODYFORCESSET),min_number_of_atributes(4) {};
 
-  virtual PetscErrorCode fill_data(const std::vector<double>& attributes) {
+  PetscErrorCode fill_data(const std::vector<double>& attributes) {
     PetscFunctionBegin;
     if(attributes.size()<min_number_of_atributes) {
-      SETERRQ(PETSC_COMM_SELF,1,"Material density and/or acceleration is not defined. (top tip: check number of THERMAL block atributes)");
+      SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"Material density and/or acceleration is not defined. (top tip: check number of THERMAL block atributes)");
     }
     if(8*attributes.size()>sizeof(data)) {
-      SETERRQ(PETSC_COMM_SELF,1,"data inconsistency, please review the number of material properties defined");
+      SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency, please review the number of material properties defined");
     }
     bzero(&data,sizeof(data));
     memcpy(&data, &attributes[0],8*attributes.size());
     PetscFunctionReturn(0);
   }
-  virtual PetscErrorCode set_data(void *tag_ptr,unsigned int size) {
+  PetscErrorCode set_data(void *tag_ptr,unsigned int size) {
     PetscFunctionBegin;
     if(size>sizeof(data)) {
       SETERRQ(PETSC_COMM_SELF,1,
@@ -329,24 +340,29 @@ struct Block_BodyForces: public GenericAttributeData {
     const unsigned int min_number_of_atributes;
     Mat_Elastic_TransIso(): Mat_Elastic(),min_number_of_atributes(5) {};
 
-    virtual PetscErrorCode fill_data(const std::vector<double>& attributes) {
+    PetscErrorCode fill_data(const std::vector<double>& attributes) {
       PetscFunctionBegin;
       //Fill data
       if(attributes.size()<min_number_of_atributes) {
-        SETERRQ(PETSC_COMM_SELF,1,"All material data not defined");
+        SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"All material data not defined");
       }
-      if(8*attributes.size()!=sizeof(data)) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency, please review the number of material properties defined");
+      if(8*attributes.size()!=sizeof(data)) {
+        SETERRQ(PETSC_COMM_SELF,1,"data inconsistency, please review the number of material properties defined");
+      }
       memcpy(&data, &attributes[0], sizeof(data));
       bzero(&data,sizeof(data));
       memcpy(&data, &attributes[0],8*attributes.size());
 
       PetscFunctionReturn(0);
     }
-    virtual PetscErrorCode set_data(void *tag_ptr,unsigned int size) {
+    PetscErrorCode set_data(void *tag_ptr,unsigned int size) {
       PetscFunctionBegin;
       if(size>sizeof(data)) {
-	SETERRQ(PETSC_COMM_SELF,1,
-	  "data inconsistency, please review the number of material properties defined");
+        SETERRQ(
+          PETSC_COMM_SELF,
+          MOFEM_DATA_INCONSISTENCY,
+          "data inconsistency, please review the number of material properties defined"
+        );
       }
       memcpy(tag_ptr,&data,size);
       PetscFunctionReturn(0);
@@ -426,17 +442,17 @@ struct Mat_Elastic_EberleinHolzapfel1: public Mat_Elastic {
     const unsigned int min_number_of_atributes;
     Mat_Elastic_EberleinHolzapfel1(): Mat_Elastic(),min_number_of_atributes(10) {};
 
-    virtual PetscErrorCode fill_data(const std::vector<double>& attributes) {
-        PetscFunctionBegin;
-        if(attributes.size()<min_number_of_atributes) {
-	  SETERRQ(PETSC_COMM_SELF,1,"All material data not defined");
-	}
-        if(8*attributes.size()>sizeof(data)) {
-	  SETERRQ(PETSC_COMM_SELF,1,"data inconsistency, please review the number of material properties defined");
-	}
-	bzero(&data,sizeof(data));
-        memcpy(&data, &attributes[0],8*attributes.size());
-        PetscFunctionReturn(0);
+    PetscErrorCode fill_data(const std::vector<double>& attributes) {
+      PetscFunctionBegin;
+      if(attributes.size()<min_number_of_atributes) {
+        SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"All material data not defined");
+      }
+      if(8*attributes.size()>sizeof(data)) {
+        SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency, please review the number of material properties defined");
+      }
+      bzero(&data,sizeof(data));
+      memcpy(&data, &attributes[0],8*attributes.size());
+      PetscFunctionReturn(0);
     }
 
 

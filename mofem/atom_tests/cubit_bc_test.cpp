@@ -252,6 +252,11 @@ int main(int argc, char *argv[]) {
 
   bool add_block_is_there = false;
   ierr = m_field.add_cubit_msId(BLOCKSET,1000,"ADD_BLOCK_SET"); CHKERRQ(ierr);
+  std::vector<double> attr(3);
+  attr[0] = 0;
+  attr[1] = 1;
+  attr[2] = 2;
+  ierr = m_field.set_cubit_msId_attribites(BLOCKSET,1000,attr); CHKERRQ(ierr);
   for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,BLOCKSET,it)) {
     //Get block name
     std::string name = it->getName();
@@ -259,9 +264,14 @@ int main(int argc, char *argv[]) {
       add_block_is_there = true;
       std::vector<double> attributes;
       it->getAttributes(attributes);
+      if(attributes.size()!=3) {
+        SETERRQ1(PETSC_COMM_WORLD,MOFEM_ATOM_TEST_INVALID,"should be 3 attributes but is %d",attributes.size());
+      }
+      if(attributes[0]!=0 || attributes[1]!=1 || attributes[2]!=2) {
+        SETERRQ(PETSC_COMM_WORLD,MOFEM_ATOM_TEST_INVALID,"wrong values of attributes");
+      }
     }
   }
-
   if(!add_block_is_there) {
     SETERRQ(PETSC_COMM_WORLD,MOFEM_OPERATION_UNSUCCESSFUL,"no added block set");
   }

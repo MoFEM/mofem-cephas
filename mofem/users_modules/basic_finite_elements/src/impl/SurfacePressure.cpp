@@ -293,7 +293,7 @@ PetscErrorCode NeummanForcesSurface::addForce(const std::string field_name,Vec F
     if(force.empty()) {
       SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"Force not given");
     }
-    //Assign values from BLOCKSET FORCE to RHS vector. Info about native Cubit BC data structure can be found in CubitBCData.hpp
+    //Assign values from BLOCKSET FORCE to RHS vector. Info about native Cubit BC data structure can be found in BCData.hpp
     const string name = "Force";
     strncpy(mapForce[ms_id].data.data.name,name.c_str(),name.size()>5?5:name.size());
     double magnitude = sqrt(force[0]*force[0] + force[1]*force[1] + force[2]*force[2]);

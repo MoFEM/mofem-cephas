@@ -1,4 +1,4 @@
-/** \file CubitBCData.hpp
+/** \file BCData.hpp
  * \brief Data strucures with Cubit native blocks/meshets with boundary conditions
  *
  */
@@ -18,8 +18,8 @@
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 */
 
-#ifndef __CUBITBCDATA_HPP__
-#define __CUBITBCDATA_HPP__
+#ifndef __BCDATA_HPP__
+#define __BCDATA_HPP__
 
 namespace MoFEM {
 
@@ -36,7 +36,7 @@ struct GenericCubitBcData {
       PetscFunctionReturn(0);
     }
 
-    virtual PetscErrorCode set_data(const std::vector<char> bc_data) {
+    virtual PetscErrorCode set_data(void *tag_ptr,unsigned int size) {
       PetscFunctionBegin;
       SETERRQ(PETSC_COMM_SELF,1,"It makes no sense for the generic bc type");
       PetscFunctionReturn(0);
@@ -84,11 +84,8 @@ struct DisplacementCubitBcData: public GenericCubitBcData {
       PetscFunctionReturn(0);
     }
 
-    PetscErrorCode set_data(const std::vector<char>& bc_data) {
+    PetscErrorCode set_data(void *tag_ptr,unsigned int size) {
       PetscFunctionBegin;
-      //Set data
-      if(bc_data.size()!=sizeof(data)) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
-      memcpy((void *)&bc_data[0], &data, sizeof(data));
       PetscFunctionReturn(0);
     }
 
@@ -311,11 +308,11 @@ struct HeatFluxCubitBcData: public GenericCubitBcData {
     HeatFluxCubitBcData(): type(HEATFLUXSET) {};
 
     PetscErrorCode fill_data(const std::vector<char>& bc_data) {
-        PetscFunctionBegin;
-        //Fill data
-	if(bc_data.size()!=sizeof(data)) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
-        memcpy(&data, &bc_data[0], sizeof(data));
-        PetscFunctionReturn(0);
+      PetscFunctionBegin;
+      //Fill data
+      if(bc_data.size()!=sizeof(data)) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+      memcpy(&data, &bc_data[0], sizeof(data));
+      PetscFunctionReturn(0);
     }
 
     /*! \brief Print heat flux bc data

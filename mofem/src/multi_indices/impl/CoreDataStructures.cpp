@@ -23,7 +23,7 @@
 #include <h1_hdiv_hcurl_l2.h>
 
 #include <MaterialBlocks.hpp>
-#include <CubitBCData.hpp>
+#include <BCData.hpp>
 #include <TagMultiIndices.hpp>
 #include <CoordSysMultiIndices.hpp>
 #include <FieldMultiIndices.hpp>

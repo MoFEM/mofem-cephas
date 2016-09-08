@@ -210,6 +210,20 @@ struct CubitMeshSets {
     return getBcDataStructure(data);
   }
 
+  template<class CUBIT_BC_DATA_TYPE>
+  PetscErrorCode setBcDataStructure(CUBIT_BC_DATA_TYPE& data) const {
+    PetscFunctionBegin;
+    PetscErrorCode ierr;
+    if((cubitBcType&data.type).none()) {
+      SETERRQ(PETSC_COMM_SELF,1,"bc_data are not for CUBIT_BC_DATA_TYPE structure");
+    }
+    std::vector<char> bc_data;
+    getBcData(bc_data);
+    ierr = data.set_data(bc_data); CHKERRQ(ierr);
+    PetscFunctionReturn(0);
+  }
+
+
   /**
    *  \brief Function that returns the CubitBCType type of the block name, sideset name etc.
    */
@@ -395,26 +409,6 @@ struct CubitMeshSets_change_attributes {
   };
   void operator()(CubitMeshSets &e);
 };
-
-/**
- * change meshset attributes
- */
-template<class ATTRIBUTE_TYPE>
-struct CubitMeshSets_change_attributes_data_structure {
-  Interface &mOab;
-  const ATTRIBUTE_TYPE &aTtr;
-  CubitMeshSets_change_attributes_data_structure(Interface &moab,const ATTRIBUTE_TYPE &attr):
-  mOab(moab),
-  aTtr(attr) {
-  };
-  void operator()(CubitMeshSets &e) {
-    PetscErrorCode ierr;
-    ierr = e.setAttributeDataStructure(mOab,aTtr);
-    if(ierr>0) THROW_MESSAGE("Attributes not changed");
-  }
-};
-
-
 
 }
 
