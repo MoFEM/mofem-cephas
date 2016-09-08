@@ -222,7 +222,13 @@ struct Core: public Interface, MeshRefinment, PrismInterface, SeriesRecorder {
   bool check_msId_meshset(const int ms_id,const CubitBCType cubit_bc_type);
   PetscErrorCode add_cubit_msId(const CubitBCType cubit_bc_type,const int ms_id,const std::string name = "");
   PetscErrorCode set_cubit_msId_attribites(
-    const CubitBCType cubit_bc_type,const int ms_id,const std::vector<double> &attributes
+    const CubitBCType cubit_bc_type,const int ms_id,const std::vector<double> &attributes,const std::string name = ""
+  );
+  PetscErrorCode set_cubit_msId_attribites_data_structure(
+    const CubitBCType cubit_bc_type,const int ms_id,const GenericAttributeData &data,const std::string name = ""
+  );
+  PetscErrorCode set_cubit_msId_bc_data_structure(
+    const CubitBCType cubit_bc_type,const int ms_id,const GenericCubitBcData &data
   );
   PetscErrorCode delete_cubit_msId(const CubitBCType cubit_bc_type,const int ms_id);
   PetscErrorCode get_cubit_msId(const int ms_id,const CubitBCType cubit_bc_type,const CubitMeshSets **cubit_meshset_ptr);
@@ -259,8 +265,8 @@ struct Core: public Interface, MeshRefinment, PrismInterface, SeriesRecorder {
     return cubitMeshsets.get<CubitMeshSets_name>().upper_bound(name);
   }
 
-  template<class _CUBIT_BC_DATA_TYPE_>
-  PetscErrorCode printCubitSet(_CUBIT_BC_DATA_TYPE_& data,unsigned long int type) const {
+  template<class CUBIT_BC_DATA_TYPE>
+  PetscErrorCode printCubitSet(CUBIT_BC_DATA_TYPE& data,unsigned long int type) const {
     PetscFunctionBegin;
     try {
       PetscErrorCode ierr;
@@ -294,7 +300,7 @@ struct Core: public Interface, MeshRefinment, PrismInterface, SeriesRecorder {
     PetscFunctionBegin;
     PetscErrorCode ierr;
     DisplacementCubitBcData mydata;
-    ierr = printCubitSet(mydata,NODESET|mydata.type.to_ulong()); CHKERRQ(ierr);
+    ierr = printCubitSet(mydata,NODESET|mydata.tYpe.to_ulong()); CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }
 
@@ -302,7 +308,7 @@ struct Core: public Interface, MeshRefinment, PrismInterface, SeriesRecorder {
     PetscFunctionBegin;
     PetscErrorCode ierr;
     PressureCubitBcData mydata;
-    ierr = printCubitSet(mydata,SIDESET|mydata.type.to_ulong()); CHKERRQ(ierr);
+    ierr = printCubitSet(mydata,SIDESET|mydata.tYpe.to_ulong()); CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }
 
@@ -310,7 +316,7 @@ struct Core: public Interface, MeshRefinment, PrismInterface, SeriesRecorder {
     PetscFunctionBegin;
     PetscErrorCode ierr;
     ForceCubitBcData mydata;
-    ierr = printCubitSet(mydata,NODESET|mydata.type.to_ulong()); CHKERRQ(ierr);
+    ierr = printCubitSet(mydata,NODESET|mydata.tYpe.to_ulong()); CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }
 
@@ -318,7 +324,7 @@ struct Core: public Interface, MeshRefinment, PrismInterface, SeriesRecorder {
     PetscFunctionBegin;
     PetscErrorCode ierr;
     TemperatureCubitBcData mydata;
-    ierr = printCubitSet(mydata,NODESET|mydata.type.to_ulong()); CHKERRQ(ierr);
+    ierr = printCubitSet(mydata,NODESET|mydata.tYpe.to_ulong()); CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }
 
@@ -326,7 +332,7 @@ struct Core: public Interface, MeshRefinment, PrismInterface, SeriesRecorder {
     PetscErrorCode ierr;
     PetscFunctionBegin;
     HeatFluxCubitBcData mydata;
-    ierr = printCubitSet(mydata,SIDESET|mydata.type.to_ulong()); CHKERRQ(ierr);
+    ierr = printCubitSet(mydata,SIDESET|mydata.tYpe.to_ulong()); CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }
 

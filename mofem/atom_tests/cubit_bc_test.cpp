@@ -275,6 +275,53 @@ int main(int argc, char *argv[]) {
   if(!add_block_is_there) {
     SETERRQ(PETSC_COMM_WORLD,MOFEM_OPERATION_UNSUCCESSFUL,"no added block set");
   }
+  add_block_is_there = false;
+  ierr = m_field.add_cubit_msId(BLOCKSET,1001,"MAT_ELASTIC"); CHKERRQ(ierr);
+  {
+    Mat_Elastic mydata;
+    mydata.data.Young = 1;
+    mydata.data.Poisson = 0.25;
+    ierr = m_field.set_cubit_msId_attribites_data_structure(BLOCKSET,1001,mydata); CHKERRQ(ierr);
+  }
+  for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,BLOCKSET,it)) {
+    if(it->getMeshSetId()!=1001) continue;
+    //Get block name
+    std::string name = it->getName();
+    if(name.compare(0,13,"MAT_ELASTIC") == 0 && (it->getBcType()&CubitBCType(MAT_ELASTICSET)).any()) {
+      add_block_is_there = true;
+      Mat_Elastic mydata;
+      ierr = it->getAttributeDataStructure(mydata); CHKERRQ(ierr);
+      //Print data
+      std::cout << mydata;
+      if(mydata.data.Young != 1 || mydata.data.Poisson != 0.25) {
+        SETERRQ(PETSC_COMM_WORLD,MOFEM_ATOM_TEST_INVALID,"wrong values of attributes");
+      }
+    }
+  }
+  if(!add_block_is_there) {
+    SETERRQ(PETSC_COMM_WORLD,MOFEM_OPERATION_UNSUCCESSFUL,"no added block set");
+  }
+  add_block_is_there = false;
+  ierr = m_field.add_cubit_msId(SIDESET,1002); CHKERRQ(ierr);
+  {
+    PressureCubitBcData mybc;
+    stpcpy(mybc.data.name,"Pressure");
+    mybc.data.flag1 = 0;
+    mybc.data.flag2 = 0;
+    mybc.data.value1 = 1;
+    ierr = m_field.set_cubit_msId_bc_data_structure(SIDESET,1002,mybc); CHKERRQ(ierr);
+  }
+  for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,SIDESET,it)) {
+    if(it->getMeshSetId()!=1002) continue;
+    add_block_is_there = true;
+    PressureCubitBcData mydata;
+    ierr = it->getBcDataStructure(mydata); CHKERRQ(ierr);
+    //Print data
+    std::cout << mydata;
+  }
+  if(!add_block_is_there) {
+    SETERRQ(PETSC_COMM_WORLD,MOFEM_OPERATION_UNSUCCESSFUL,"no added block set");
+  }
 
   //Close mesh_file_name.txt
   myfile.close();

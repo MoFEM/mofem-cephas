@@ -190,40 +190,6 @@ struct CubitMeshSets {
    */
   PetscErrorCode printBcData(std::ostream& os) const;
 
-  template<class CUBIT_BC_DATA_TYPE>
-  PetscErrorCode getBcDataStructure(CUBIT_BC_DATA_TYPE& data) const {
-    PetscFunctionBegin;
-    PetscErrorCode ierr;
-    if((cubitBcType&data.type).none()) {
-      SETERRQ(PETSC_COMM_SELF,1,"bc_data are not for CUBIT_BC_DATA_TYPE structure");
-    }
-    std::vector<char> bc_data;
-    getBcData(bc_data);
-    ierr = data.fill_data(bc_data); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
-  }
-
-  /** \deprecated Use getBcDataStructure() instead
-  */
-  template<class CUBIT_BC_DATA_TYPE>
-  DEPRECATED inline PetscErrorCode get_bc_data_structure(CUBIT_BC_DATA_TYPE& data) const {
-    return getBcDataStructure(data);
-  }
-
-  template<class CUBIT_BC_DATA_TYPE>
-  PetscErrorCode setBcDataStructure(CUBIT_BC_DATA_TYPE& data) const {
-    PetscFunctionBegin;
-    PetscErrorCode ierr;
-    if((cubitBcType&data.type).none()) {
-      SETERRQ(PETSC_COMM_SELF,1,"bc_data are not for CUBIT_BC_DATA_TYPE structure");
-    }
-    std::vector<char> bc_data;
-    getBcData(bc_data);
-    ierr = data.set_data(bc_data); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
-  }
-
-
   /**
    *  \brief Function that returns the CubitBCType type of the block name, sideset name etc.
    */
@@ -313,8 +279,12 @@ struct CubitMeshSets {
   PetscErrorCode getAttributeDataStructure(ATTRIBUTE_TYPE &data) const {
     PetscFunctionBegin;
     PetscErrorCode ierr;
-    if((cubitBcType&data.type).none()) {
-        SETERRQ(PETSC_COMM_SELF,1,"attributes are not for ATTRIBUTE_TYPE structure");
+    if((cubitBcType&data.getType()).none()) {
+      SETERRQ(
+        PETSC_COMM_SELF,
+        MOFEM_DATA_INCONSISTENCY,
+        "attributes are not for ATTRIBUTE_TYPE structure"
+      );
     }
     std::vector<double> attributes;
     ierr = getAttributes(attributes); CHKERRQ(ierr);
@@ -333,14 +303,43 @@ struct CubitMeshSets {
    * \brief fill meshset data with data on structure
    */
   template<class ATTRIBUTE_TYPE>
-  PetscErrorCode setAttributeDataStructure(ATTRIBUTE_TYPE &data) const {
+  PetscErrorCode setAttributeDataStructure(const ATTRIBUTE_TYPE &data) {
     PetscFunctionBegin;
     PetscErrorCode ierr;
-    if((cubitBcType&data.type).none()) {
+    if((cubitBcType&data.getType()).none()) {
         SETERRQ(PETSC_COMM_SELF,1,"attributes are not for ATTRIBUTE_TYPE structure");
     }
     double *ptr = const_cast<double*>(tag_block_attributes);
     ierr = data.set_data(ptr,8*tag_block_attributes_size); CHKERRQ(ierr);
+    PetscFunctionReturn(0);
+  }
+
+  template<class CUBIT_BC_DATA_TYPE>
+  PetscErrorCode getBcDataStructure(CUBIT_BC_DATA_TYPE& data) const {
+    PetscFunctionBegin;
+    PetscErrorCode ierr;
+    if((cubitBcType&data.tYpe).none()) {
+      SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"bc_data are not for CUBIT_BC_DATA_TYPE structure");
+    }
+    std::vector<char> bc_data;
+    getBcData(bc_data);
+    ierr = data.fill_data(bc_data); CHKERRQ(ierr);
+    PetscFunctionReturn(0);
+  }
+
+  /** \deprecated Use getBcDataStructure() instead
+  */
+  template<class CUBIT_BC_DATA_TYPE>
+  DEPRECATED inline PetscErrorCode get_bc_data_structure(CUBIT_BC_DATA_TYPE& data) const {
+    return getBcDataStructure(data);
+  }
+
+  template<class CUBIT_BC_DATA_TYPE>
+  PetscErrorCode setBcDataStructure(CUBIT_BC_DATA_TYPE& data) {
+    PetscFunctionBegin;
+    PetscErrorCode ierr;
+    char *ptr = const_cast<char*>(tag_bc_data);
+    ierr = data.set_data(ptr,tag_bc_size); CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }
 
@@ -405,8 +404,35 @@ struct CubitMeshSets_change_attributes {
   const std::vector<double> &aTtr;
   CubitMeshSets_change_attributes(Interface &moab,const std::vector<double> &attr):
   mOab(moab),
-  aTtr(attr) {
-  };
+  aTtr(attr) {}
+  void operator()(CubitMeshSets &e);
+};
+
+/**
+ * change meshset attributes for material data structure
+ */
+struct CubitMeshSets_change_attributes_data_structure {
+  Interface &mOab;
+  const GenericAttributeData &aTtr;
+  CubitMeshSets_change_attributes_data_structure(
+    Interface &moab,const GenericAttributeData &attr
+  ):
+  mOab(moab),
+  aTtr(attr) {}
+  void operator()(CubitMeshSets &e);
+};
+
+/**
+ * change meshset attributes for material data structure
+ */
+struct CubitMeshSets_change_bc_data_structure {
+  Interface &mOab;
+  const GenericCubitBcData &bcData;
+  CubitMeshSets_change_bc_data_structure(
+    Interface &moab,const GenericCubitBcData &bc_data
+  ):
+  mOab(moab),
+  bcData(bc_data) {}
   void operator()(CubitMeshSets &e);
 };
 

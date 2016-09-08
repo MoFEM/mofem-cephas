@@ -19,6 +19,16 @@
 #ifndef __DEFINITONS_H__
 #define __DEFINITONS_H__
 
+//taken from http://stackoverflow.com/questions/295120/c-mark-as-deprecated
+#ifdef __GNUC__
+  #define DEPRECATED __attribute__((deprecated))
+#elif defined(_MSC_VER)
+  #define DEPRECATED __declspec(deprecated)
+#else
+  #pragma message("WARNING: You need to implement DEPRECATED for this compiler")
+  #define DEPRECATED
+#endif
+
 /** \brief Interfaces IDs
   *
   * To manage different complexities related to field, finite elements mesh
@@ -188,14 +198,19 @@ enum CubitBC {
   TEMPERATURESET   = 1<<9,
   HEATFLUXSET      = 1<<10,
   INTERFACESET     = 1<<11,
-  UNKNOWNCUBITNAME = 1<<12,
-  MAT_ELASTICSET   = 1<<13,	///< block name is "MAT_ELASTIC"
+  UNKNOWNNAME      = 1<<12,
+  MAT_ELASTICSET   = 1<<13,	  ///< block name is "MAT_ELASTIC"
   MAT_INTERFSET    = 1<<14,
-  MAT_THERMALSET   = 1<<15,	///< block name is "MAT_THERMAL"
-  BODYFORCESSET    = 1<<16,	///< block name is "BODY_FORCES"
+  MAT_THERMALSET   = 1<<15,	  ///< block name is "MAT_THERMAL"
+  BODYFORCESSET    = 1<<16, 	///< block name is "BODY_FORCES"
   MAT_MOISTURESET  = 1<<17, 	///< block name is "MAT_MOISTURE"
-  LASTCUBITSET     = 1<<18
+  DIRICHLET_BC     = 1<<18,
+  NEUMANN_BC       = 1<<19,
+  LASTSET_BC       = 1<<20
 };
+
+DEPRECATED static const unsigned int UNKNOWNCUBITNAME = UNKNOWNNAME;
+DEPRECATED static const unsigned int LASTCUBITSET = LASTSET_BC;
 
 /**
  * \brief Names of types of sets and boundary conditions
@@ -214,7 +229,7 @@ const static char * const CubitBCNames[] = {
   "TEMPERATURESET",
   "HEATFLUXSET",
   "INTERFACESET",
-  "UNKNOWNCUBITNAME",
+  "UNKNOWNNAME",
   "MAT_ELASTICSET",
   "MAT_INTERFSET",
   "MAT_THERMALSET",
@@ -277,16 +292,6 @@ enum HCurlDiffFormatting {
 #define MB_START_ID ((EntityID)1)        //!< All entity id's currently start at 1
 #define MB_END_ID ((EntityID)MB_ID_MASK) //!< Last id is the complement of the MASK
 #define MB_ID_MASK (~MB_TYPE_MASK)
-
-//taken from http://stackoverflow.com/questions/295120/c-mark-as-deprecated
-#ifdef __GNUC__
-  #define DEPRECATED __attribute__((deprecated))
-#elif defined(_MSC_VER)
-  #define DEPRECATED __declspec(deprecated)
-#else
-  #pragma message("WARNING: You need to implement DEPRECATED for this compiler")
-  #define DEPRECATED
-#endif
 
 #define NOT_USED(x) ( (void)(x) )
 

@@ -70,10 +70,6 @@ CubitMeshSets::CubitMeshSets(Interface &moab,const EntityHandle _meshset):
       *tit == bhTag) {
       rval = moab.tag_get_by_ptr(*tit,&meshset,1,(const void **)&msId); CHKERR_MOAB(rval);MOAB_THROW(rval);
     }
-    if(
-      (*tit == nsTag_data)||
-      (*tit == ssTag_data)) {
-    }
     if(*tit == nsTag) {
       if(*msId != -1) {
         cubitBcType = NODESET;
@@ -116,7 +112,7 @@ CubitMeshSets::CubitMeshSets(Interface &moab,const EntityHandle _meshset):
     }
   }
 
-  //If BC set has name, unset UNKNOWNCUBITNAME
+  //If BC set has name, unset UNKNOWNNAME
   if(
     cubitBcType.to_ulong() & (
       DISPLACEMENTSET|
@@ -129,8 +125,8 @@ CubitMeshSets::CubitMeshSets(Interface &moab,const EntityHandle _meshset):
       INTERFACESET
     )
   ) {
-    if( (cubitBcType & CubitBCType(UNKNOWNCUBITNAME)).any() ) {
-      cubitBcType = cubitBcType & (~CubitBCType(UNKNOWNCUBITNAME));
+    if( (cubitBcType & CubitBCType(UNKNOWNNAME)).any() ) {
+      cubitBcType = cubitBcType & (~CubitBCType(UNKNOWNNAME));
     }
   }
 
@@ -276,23 +272,16 @@ PetscErrorCode CubitMeshSets::getTypeFromBcData(const std::vector<char> &bc_data
       PetscFunctionReturn(0);
     }
 
-    if (strcmp (&bc_data[0],"Displacement") == 0)
-        type |= DISPLACEMENTSET;
-    else if (strcmp (&bc_data[0],"Force") == 0)
-        type |= FORCESET;
-    else if (strcmp (&bc_data[0],"Velocity") == 0)
-        type |= VELOCITYSET;
-    else if (strcmp (&bc_data[0],"Acceleration") == 0)
-        type |= ACCELERATIONSET;
-    else if (strcmp (&bc_data[0],"Temperature") == 0)
-        type |= TEMPERATURESET;
-    else if (strcmp (&bc_data[0],"Pressure") == 0)
-        type |= PRESSURESET;
-    else if (strcmp (&bc_data[0],"HeatFlux") == 0)
-        type |= HEATFLUXSET;
-    else if (strcmp (&bc_data[0],"cfd_bc") == 0)
-        type |= INTERFACESET;
-    else SETERRQ(PETSC_COMM_SELF,1,"this bc_data is unknown");
+    if (strcmp (&bc_data[0],"Displacement") == 0) type |= DISPLACEMENTSET;
+    else if (strcmp (&bc_data[0],"Force") == 0) type |= FORCESET;
+    else if (strcmp (&bc_data[0],"Velocity") == 0) type |= VELOCITYSET;
+    else if (strcmp (&bc_data[0],"Acceleration") == 0) type |= ACCELERATIONSET;
+    else if (strcmp (&bc_data[0],"Temperature") == 0) type |= TEMPERATURESET;
+    else if (strcmp (&bc_data[0],"Pressure") == 0) type |= PRESSURESET;
+    else if (strcmp (&bc_data[0],"HeatFlux") == 0) type |= HEATFLUXSET;
+    else if (strcmp (&bc_data[0],"cfd_bc") == 0) type |= INTERFACESET;
+    else type |= UNKNOWNNAME;
+
 
     PetscFunctionReturn(0);
 }
@@ -374,7 +363,7 @@ PetscErrorCode CubitMeshSets::getTypeFromName(const std::string &name,CubitBCTyp
       type |= BODYFORCESSET;
     }
     //To be extended as appropriate
-    else { type |= UNKNOWNCUBITNAME; }
+    else { type |= UNKNOWNNAME; }
 
     PetscFunctionReturn(0);
 }
@@ -392,7 +381,7 @@ std::ostream& operator<<(std::ostream& os,const CubitMeshSets& e) {
   // get name of cubit meshset
   std::ostringstream ss;
   unsigned jj = 0;
-  while(1<<jj != LASTCUBITSET) {
+  while(1<<jj != LASTSET_BC) {
     const CubitBCType jj_bc_type = 1<<jj;
     if((e.cubitBcType&jj_bc_type).any()) {
       string bc_type_name;
@@ -692,6 +681,17 @@ void CubitMeshSets_change_name::operator()(CubitMeshSets &e) {
       nAme.resize(NAME_TAG_SIZE);
       rval = mOab.tag_set_data(e.entityNameTag,&e.meshset,1,nAme.c_str()); MOAB_THROW(rval);
       rval = mOab.tag_get_by_ptr(e.entityNameTag,&e.meshset,1,(const void **)&e.tag_name_data); MOAB_THROW(rval);
+      PetscErrorCode ierr;
+      CubitBCType type;
+      ierr = e.getTypeFromName(type); if(ierr>0) THROW_MESSAGE("unrecognized Cubit name type");
+      e.cubitBcType |= type;
+    }; break;
+    case NODESET:
+    case SIDESET:
+    {
+      nAme.resize(NAME_TAG_SIZE);
+      rval = mOab.tag_set_data(e.entityNameTag,&e.meshset,1,nAme.c_str()); MOAB_THROW(rval);
+      rval = mOab.tag_get_by_ptr(e.entityNameTag,&e.meshset,1,(const void **)&e.tag_name_data); MOAB_THROW(rval);
     }; break;
     default:
     THROW_MESSAGE("not implemented for this CubitBC type");
@@ -707,5 +707,51 @@ void CubitMeshSets_change_attributes::operator()(CubitMeshSets &e) {
   ierr = e.setAttributes(mOab,aTtr);
   if(ierr>0) THROW_MESSAGE("Attributes not changed");
 }
+
+void CubitMeshSets_change_attributes_data_structure::operator()(CubitMeshSets &e) {
+  MoABErrorCode rval;
+  PetscErrorCode ierr;
+  // Need to run this to set tag size in number of doubles, don;t know nothing about structure
+  int tag_size[] = { aTtr.getSizeOfData()/sizeof(double) };
+  void const* tag_data[] = { aTtr.getDataPtr() };
+  rval = mOab.tag_set_by_ptr(e.thBlockAttribs,&e.meshset,1,tag_data,tag_size); MOAB_THROW(rval);
+  rval = mOab.tag_get_by_ptr(
+    e.thBlockAttribs,&e.meshset,1,(const void **)&e.tag_block_attributes,&e.tag_block_attributes_size
+  ); MOAB_THROW(rval);
+  // Here I know about structure
+  ierr = e.setAttributeDataStructure(aTtr);
+  if(ierr>0) THROW_MESSAGE("Attributes not changed");
+}
+
+void CubitMeshSets_change_bc_data_structure::operator()(CubitMeshSets &e) {
+  MoABErrorCode rval;
+  PetscErrorCode ierr;
+  // Need to run this to set tag size, don;t know nothing about structure
+  int tag_size[] = { bcData.getSizeOfData() };
+  void const* tag_data[] = { bcData.getDataPtr() };
+  if((e.cubitBcType&CubitBCType(NODESET)).any()) {
+    rval = mOab.tag_set_by_ptr( e.nsTag_data,&e.meshset,1,tag_data,tag_size
+    ); MOAB_THROW(rval);
+    rval = mOab.tag_get_by_ptr(
+      e.nsTag_data,&e.meshset,1,(const void **)&e.tag_bc_data,&e.tag_bc_size
+    ); MOAB_THROW(rval);
+  } else if((e.cubitBcType&CubitBCType(SIDESET)).any()) {
+    rval = mOab.tag_set_by_ptr(
+      e.ssTag_data,&e.meshset,1,tag_data,tag_size
+    ); MOAB_THROW(rval);
+    rval = mOab.tag_get_by_ptr(
+      e.ssTag_data,&e.meshset,1,(const void **)&e.tag_bc_data,&e.tag_bc_size
+    ); MOAB_THROW(rval);
+  } else {
+    THROW_MESSAGE("You have to have NODESET or SIDESET to apply BC data on it");
+  }
+  // Here I know about structure
+  ierr = e.setBcDataStructure(bcData);
+  if(ierr>0) THROW_MESSAGE("Attributes not changed");
+  // Get Type form BC data
+  ierr = e.getTypeFromBcData(e.cubitBcType); if(ierr>0) THROW_MESSAGE("unrecognized bc_data type");
+}
+
+
 
 }

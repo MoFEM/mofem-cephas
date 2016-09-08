@@ -611,17 +611,30 @@ PetscErrorCode Core::getTags(int verb) {
   rval = moab.tag_get_by_ptr(th_MoFEMBuild,&root_meshset,1,(const void **)&buildMoFEM); CHKERRQ_MOAB(rval);
   //Meshsets
   int default_val = -1;
-  rval = moab.tag_get_handle(DIRICHLET_SET_TAG_NAME,1, MB_TYPE_INTEGER,
-    nsTag, MB_TAG_SPARSE|MB_TAG_CREAT, &default_val); CHKERRQ_MOAB(rval);
+  rval = moab.tag_get_handle(
+    DIRICHLET_SET_TAG_NAME,1, MB_TYPE_INTEGER,
+    nsTag, MB_TAG_SPARSE|MB_TAG_CREAT, &default_val
+  ); CHKERRQ_MOAB(rval);
   rval = moab.tag_get_handle(NEUMANN_SET_TAG_NAME,1, MB_TYPE_INTEGER,
     ssTag, MB_TAG_SPARSE|MB_TAG_CREAT, &default_val); CHKERRQ_MOAB(rval);
   const int def_bc_data_len = 0;
   std::string tag_name = std::string(DIRICHLET_SET_TAG_NAME)+"__BC_DATA";
-  rval = moab.tag_get_handle(tag_name.c_str(),def_bc_data_len,MB_TYPE_OPAQUE,
-    nsTag_data,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES|MB_TAG_VARLEN,NULL); CHKERRQ_MOAB(rval);
+  rval = moab.tag_get_handle(
+    tag_name.c_str(),
+    def_bc_data_len,
+    MB_TYPE_OPAQUE,
+    nsTag_data,
+    MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES|MB_TAG_VARLEN,
+    NULL
+  ); CHKERRQ_MOAB(rval);
   tag_name = std::string(NEUMANN_SET_TAG_NAME)+"__BC_DATA";
-  rval = moab.tag_get_handle(tag_name.c_str(),def_bc_data_len,MB_TYPE_OPAQUE,
-    ssTag_data,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES|MB_TAG_VARLEN,NULL); CHKERRQ_MOAB(rval);
+  rval = moab.tag_get_handle(
+    tag_name.c_str(),
+    def_bc_data_len,
+    MB_TYPE_OPAQUE,
+    ssTag_data,
+    MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES|MB_TAG_VARLEN,NULL
+  ); CHKERRQ_MOAB(rval);
   rval = moab.tag_get_handle(MATERIAL_SET_TAG_NAME, 1, MB_TYPE_INTEGER,
     bhTag,MB_TAG_SPARSE|MB_TAG_CREAT,&default_val); CHKERRQ_MOAB(rval);
   std::vector<unsigned int> def_uint_zero(3,0);

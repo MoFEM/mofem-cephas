@@ -1966,7 +1966,49 @@ PetscErrorCode Core::add_cubit_msId(const CubitBCType cubit_bc_type,const int ms
   PetscFunctionReturn(0);
 }
 PetscErrorCode Core::set_cubit_msId_attribites(
-  const CubitBCType cubit_bc_type,const int ms_id,const std::vector<double> &attributes
+  const CubitBCType cubit_bc_type,const int ms_id,const std::vector<double> &attributes,const std::string name
+) {
+  PetscFunctionBegin;
+  CubitMeshSet_multiIndex::index<Composite_Cubit_msId_And_MeshSetType_mi_tag>::type::iterator
+  cit = cubitMeshsets.get<Composite_Cubit_msId_And_MeshSetType_mi_tag>().find(boost::make_tuple(ms_id,cubit_bc_type.to_ulong()));
+  if(cit==cubitMeshsets.get<Composite_Cubit_msId_And_MeshSetType_mi_tag>().end()) {
+    SETERRQ1(PETSC_COMM_SELF,1,"such cubit meshset is already there",ms_id);
+  }
+  if(name.size()>0) {
+    bool success  = cubitMeshsets.modify(cubitMeshsets.project<0>(cit),CubitMeshSets_change_name(moab,name));
+    if(!success) {
+      SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"name to cubit meshset can not be set");
+    }
+  }
+  bool success = cubitMeshsets.modify(
+    cubitMeshsets.project<0>(cit),CubitMeshSets_change_attributes(moab,attributes)
+  );
+  if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
+  PetscFunctionReturn(0);
+}
+PetscErrorCode Core::set_cubit_msId_attribites_data_structure(
+  const CubitBCType cubit_bc_type,const int ms_id,const GenericAttributeData &data,const std::string name
+) {
+  PetscFunctionBegin;
+  CubitMeshSet_multiIndex::index<Composite_Cubit_msId_And_MeshSetType_mi_tag>::type::iterator
+  cit = cubitMeshsets.get<Composite_Cubit_msId_And_MeshSetType_mi_tag>().find(boost::make_tuple(ms_id,cubit_bc_type.to_ulong()));
+  if(cit==cubitMeshsets.get<Composite_Cubit_msId_And_MeshSetType_mi_tag>().end()) {
+    SETERRQ1(PETSC_COMM_SELF,1,"such cubit meshset is already there",ms_id);
+  }
+  if(name.size()>0) {
+    bool success  = cubitMeshsets.modify(cubitMeshsets.project<0>(cit),CubitMeshSets_change_name(moab,name));
+    if(!success) {
+      SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"name to cubit meshset can not be set");
+    }
+  }
+  bool success = cubitMeshsets.modify(
+    cubitMeshsets.project<0>(cit),CubitMeshSets_change_attributes_data_structure(moab,data)
+  );
+  if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
+  PetscFunctionReturn(0);
+}
+PetscErrorCode Core::set_cubit_msId_bc_data_structure(
+  const CubitBCType cubit_bc_type,const int ms_id,const GenericCubitBcData &data
 ) {
   PetscFunctionBegin;
   CubitMeshSet_multiIndex::index<Composite_Cubit_msId_And_MeshSetType_mi_tag>::type::iterator
@@ -1975,7 +2017,7 @@ PetscErrorCode Core::set_cubit_msId_attribites(
     SETERRQ1(PETSC_COMM_SELF,1,"such cubit meshset is already there",ms_id);
   }
   bool success = cubitMeshsets.modify(
-    cubitMeshsets.project<0>(cit),CubitMeshSets_change_attributes(moab,attributes)
+    cubitMeshsets.project<0>(cit),CubitMeshSets_change_bc_data_structure(moab,data)
   );
   if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
   PetscFunctionReturn(0);
