@@ -192,6 +192,27 @@ int main(int argc, char *argv[]) {
       else SETERRQ(PETSC_COMM_SELF,1,"Error: Unrecognizable BC type");
   }
 
+  bool add_block_is_there = false;
+  ierr = m_field.add_cubit_msId(SIDESET,1002); CHKERRQ(ierr);
+  {
+    PressureCubitBcData mybc;
+    strncpy(mybc.data.name,"Pressure",8);
+    mybc.data.flag1 = 0;
+    mybc.data.flag2 = 0;
+    mybc.data.value1 = 1;
+    ierr = m_field.set_cubit_msId_bc_data_structure(SIDESET,1002,mybc); CHKERRQ(ierr);
+  }
+  for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,SIDESET,it)) {
+    if(it->getMeshSetId()!=1002) continue;
+    add_block_is_there = true;
+    PressureCubitBcData mydata;
+    ierr = it->getBcDataStructure(mydata); CHKERRQ(ierr);
+    //Print data
+    std::cout << mydata;
+  }
+  if(!add_block_is_there) {
+    SETERRQ(PETSC_COMM_WORLD,MOFEM_OPERATION_UNSUCCESSFUL,"no added block set");
+  }
 
   std::cout << "<<<< BLOCKSETs >>>>>" << std::endl;
   //BLOCKSETs
@@ -250,7 +271,7 @@ int main(int argc, char *argv[]) {
 
   }
 
-  bool add_block_is_there = false;
+  add_block_is_there = false;
   ierr = m_field.add_cubit_msId(BLOCKSET,1000,"ADD_BLOCK_SET"); CHKERRQ(ierr);
   std::vector<double> attr(3);
   attr[0] = 0;
@@ -297,27 +318,6 @@ int main(int argc, char *argv[]) {
         SETERRQ(PETSC_COMM_WORLD,MOFEM_ATOM_TEST_INVALID,"wrong values of attributes");
       }
     }
-  }
-  if(!add_block_is_there) {
-    SETERRQ(PETSC_COMM_WORLD,MOFEM_OPERATION_UNSUCCESSFUL,"no added block set");
-  }
-  add_block_is_there = false;
-  ierr = m_field.add_cubit_msId(SIDESET,1002); CHKERRQ(ierr);
-  {
-    PressureCubitBcData mybc;
-    stpcpy(mybc.data.name,"Pressure");
-    mybc.data.flag1 = 0;
-    mybc.data.flag2 = 0;
-    mybc.data.value1 = 1;
-    ierr = m_field.set_cubit_msId_bc_data_structure(SIDESET,1002,mybc); CHKERRQ(ierr);
-  }
-  for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,SIDESET,it)) {
-    if(it->getMeshSetId()!=1002) continue;
-    add_block_is_there = true;
-    PressureCubitBcData mydata;
-    ierr = it->getBcDataStructure(mydata); CHKERRQ(ierr);
-    //Print data
-    std::cout << mydata;
   }
   if(!add_block_is_there) {
     SETERRQ(PETSC_COMM_WORLD,MOFEM_OPERATION_UNSUCCESSFUL,"no added block set");

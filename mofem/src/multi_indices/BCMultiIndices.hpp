@@ -217,7 +217,7 @@ struct CubitMeshSets {
   /** \deprecated Use getAttributes() instead
   */
   DEPRECATED inline PetscErrorCode get_attributes(std::vector<double> &attributes) const {
-    return get_attributes(attributes);
+    return getAttributes(attributes);
   }
 
   /**
