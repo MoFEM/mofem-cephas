@@ -22,6 +22,8 @@
 
 namespace MoFEM {
 
+struct MeshsetsManager;
+
 /** \brief Core Interface class
  *  \ingroup mofem
 
@@ -36,7 +38,7 @@ namespace MoFEM {
 struct Core: public Interface, MeshRefinment, PrismInterface, SeriesRecorder {
 
   PetscErrorCode queryInterface(const MOFEMuuid& uuid, UnknownInterface** iface);
-  PetscErrorCode query_interface_type(const std::type_info& iface_type, void*& ptr);
+  PetscErrorCode query_interface_type(const std::type_info& iface_type,void*& ptr) const;
 
   moab::Interface& moab;
   MPI_Comm comm;
@@ -49,7 +51,7 @@ struct Core: public Interface, MeshRefinment, PrismInterface, SeriesRecorder {
 
   protected:
 
-  boost::ptr_map<unsigned long,UnknownInterface *> iFaces;
+  mutable boost::ptr_map<unsigned long,UnknownInterface *> iFaces;
 
   //Database
   ErrorCode rval;
@@ -66,7 +68,6 @@ struct Core: public Interface, MeshRefinment, PrismInterface, SeriesRecorder {
   Tag th_ProblemLocalNbDofRow,th_ProblemGhostNbDofRow;
   Tag th_ProblemLocalNbDofCol,th_ProblemGhostNbDofCol;
   Tag th_ProblemShift,th_FieldShift,th_FEShift;
-  Tag nsTag,ssTag,nsTag_data,ssTag_data,bhTag,bhTag_header;
   Tag th_ElemType;                    ///< Needed for VTK files
   Tag th_SeriesName;                  ///< Recorded series name
   Tag th_CoordSysMeshSet;             ///< Tag on field meshset pointing to coordinate system meshset
@@ -90,23 +91,23 @@ struct Core: public Interface, MeshRefinment, PrismInterface, SeriesRecorder {
   int verbose;
 
   //ref
-  RefEntity_multiIndex refinedEntities;		///< refined entities
-  RefElement_multiIndex refinedFiniteElements;	///< refined elements
+  RefEntity_multiIndex refinedEntities;		       ///< refined entities
+  RefElement_multiIndex refinedFiniteElements;	 ///< refined elements
   //coordinate sysrems
   CoordSys_multiIndex coordinateSystems;
   //field
-  Field_multiIndex fIelds;			///< field
-  MoFEMEntity_multiIndex entsFields;			///< entities on field
-  DofEntity_multiIndex dofsField;		///< dofs on fiels
+  Field_multiIndex fIelds;			           ///< field
+  MoFEMEntity_multiIndex entsFields;			 ///< entities on field
+  DofEntity_multiIndex dofsField;		       ///< dofs on fiels
   //finite element
-  FiniteElement_multiIndex finiteElements;		///< finite elements
+  FiniteElement_multiIndex finiteElements;		        ///< finite elements
   EntFiniteElement_multiIndex entsFiniteElements;			///< finite element entities
   //entFEAdjacencies
   MoFEMEntityEntFiniteElementAdjacencyMap_multiIndex entFEAdjacencies;	///< adjacencies of elements to dofs
   //pRoblems
-  MoFEMProblem_multiIndex pRoblems;					///< problems
+  MoFEMProblem_multiIndex pRoblems;					 ///< problems
   //cubit
-  CubitMeshSet_multiIndex cubitMeshsets;					///< cubit meshsets
+  // CubitMeshSet_multiIndex cubitMeshsets;	   ///< cubit meshsets
   //series
   Series_multiIndex sEries;							///< recorded series
   SeriesStep_multiIndex seriesSteps;						///< recorded series steps
@@ -140,9 +141,11 @@ struct Core: public Interface, MeshRefinment, PrismInterface, SeriesRecorder {
 
   //moab interface
   moab::Interface& get_moab();
+  const moab::Interface& get_moab() const;
+
 
   //communicator MoFEM
-  MPI_Comm get_comm();
+  MPI_Comm get_comm() const;
 
   //add prims element
   PetscErrorCode addPrismToDatabase(const EntityHandle prism,int verb = -1);
@@ -179,7 +182,20 @@ struct Core: public Interface, MeshRefinment, PrismInterface, SeriesRecorder {
   SeriesStep_multiIndex::index<SeriesName_mi_tag>::type::iterator get_series_steps_byName_begin(const std::string& name);
   SeriesStep_multiIndex::index<SeriesName_mi_tag>::type::iterator get_series_steps_byName_end(const std::string& name);
 
-  //PrismInrerface
+  //FiedlInterface
+
+  //check consistency
+  PetscErrorCode check_number_of_ents_in_ents_field(const std::string& name) const;
+  PetscErrorCode check_number_of_ents_in_ents_field() const;
+  PetscErrorCode check_number_of_ents_in_ents_finite_element(const std::string& name) const;
+  PetscErrorCode check_number_of_ents_in_ents_finite_element() const;
+
+  PetscErrorCode clear_database(int verb  = -1);
+  PetscErrorCode rebuild_database(int verb = -1);
+
+  //cubit meshsets
+
+  MeshsetsManager* meshsetsManagerPtr;
 
   PetscErrorCode get_msId_3dENTS_sides(
     const int msId,
@@ -207,18 +223,6 @@ struct Core: public Interface, MeshRefinment, PrismInterface, SeriesRecorder {
     const EntityHandle SIDESET,const bool add_iterfece_entities,const bool recursive = false,int verb = -1
   );
 
-  //FiedlInterface
-
-  //check consistency
-  PetscErrorCode check_number_of_ents_in_ents_field(const std::string& name) const;
-  PetscErrorCode check_number_of_ents_in_ents_field() const;
-  PetscErrorCode check_number_of_ents_in_ents_finite_element(const std::string& name) const;
-  PetscErrorCode check_number_of_ents_in_ents_finite_element() const;
-
-  PetscErrorCode clear_database(int verb  = -1);
-  PetscErrorCode rebuild_database(int verb = -1);
-
-  //cubit meshsets
   bool check_msId_meshset(const int ms_id,const CubitBCType cubit_bc_type);
   PetscErrorCode add_cubit_msId(const CubitBCType cubit_bc_type,const int ms_id,const std::string name = "");
   PetscErrorCode set_cubit_msId_attribites(
@@ -238,152 +242,28 @@ struct Core: public Interface, MeshRefinment, PrismInterface, SeriesRecorder {
   PetscErrorCode get_cubit_msId_entities_by_dimension(const int ms_id,const unsigned int cubit_bc_type, Range &entities,const bool recursive = false);
   PetscErrorCode get_cubit_msId_meshset(const int ms_id,const unsigned int cubit_bc_type,EntityHandle &meshset);
   PetscErrorCode get_cubit_meshsets(const unsigned int cubit_bc_type,Range &meshsets);
-  CubitMeshSet_multiIndex::iterator get_cubit_meshsets_begin() const { return cubitMeshsets.begin(); }
-  CubitMeshSet_multiIndex::iterator get_cubit_meshsets_end() const { return cubitMeshsets.end(); }
+
+  CubitMeshSet_multiIndex::iterator get_cubit_meshsets_begin() const;
+  CubitMeshSet_multiIndex::iterator get_cubit_meshsets_end() const;
   CubitMeshSet_multiIndex::index<CubitMeshSets_mi_tag>::type::iterator
-  get_cubit_meshsets_begin(const unsigned int cubit_bc_type) const {
-    return cubitMeshsets.get<CubitMeshSets_mi_tag>().lower_bound(cubit_bc_type);
-  }
+  get_cubit_meshsets_begin(const unsigned int cubit_bc_type) const;
   CubitMeshSet_multiIndex::index<CubitMeshSets_mi_tag>::type::iterator
-  get_cubit_meshsets_end(const unsigned int cubit_bc_type) const {
-    return cubitMeshsets.get<CubitMeshSets_mi_tag>().upper_bound(cubit_bc_type);
-  }
+  get_cubit_meshsets_end(const unsigned int cubit_bc_type) const;
   CubitMeshSet_multiIndex::index<CubitMeshSets_mask_meshset_mi_tag>::type::iterator
-  get_CubitMeshSets_bySetType_begin(const unsigned int cubit_bc_type) const {
-    return cubitMeshsets.get<CubitMeshSets_mask_meshset_mi_tag>().lower_bound(cubit_bc_type);
-  }
+  get_CubitMeshSets_bySetType_begin(const unsigned int cubit_bc_type) const;
   CubitMeshSet_multiIndex::index<CubitMeshSets_mask_meshset_mi_tag>::type::iterator
-  get_CubitMeshSets_bySetType_end(const unsigned int cubit_bc_type) const {
-    return cubitMeshsets.get<CubitMeshSets_mask_meshset_mi_tag>().upper_bound(cubit_bc_type);
-  }
+  get_CubitMeshSets_bySetType_end(const unsigned int cubit_bc_type) const;
   CubitMeshSet_multiIndex::index<CubitMeshSets_name>::type::iterator
-  get_CubitMeshSets_byName_begin(const std::string& name) const {
-    return cubitMeshsets.get<CubitMeshSets_name>().lower_bound(name);
-  }
+  get_CubitMeshSets_byName_begin(const std::string& name) const;
   CubitMeshSet_multiIndex::index<CubitMeshSets_name>::type::iterator
-  get_CubitMeshSets_byName_end(const std::string& name) const {
-    return cubitMeshsets.get<CubitMeshSets_name>().upper_bound(name);
-  }
+  get_CubitMeshSets_byName_end(const std::string& name) const;
 
-  template<class CUBIT_BC_DATA_TYPE>
-  PetscErrorCode printCubitSet(CUBIT_BC_DATA_TYPE& data,unsigned long int type) const {
-    PetscFunctionBegin;
-    try {
-      PetscErrorCode ierr;
-      MoABErrorCode rval;
-      const Interface& this_field = *this;
-      for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(this_field,type,it)) {
-        ierr = it->getBcDataStructure(data); CHKERRQ(ierr);
-        std::ostringstream ss;
-        ss << *it << std::endl;
-        ss << data << std::endl;
-        Range tets,tris,edges,nodes;
-        rval = moab.get_entities_by_type(it->meshset,MBTET,tets,true); CHKERRQ_MOAB(rval);
-        rval = moab.get_entities_by_type(it->meshset,MBTRI,tris,true); CHKERRQ_MOAB(rval);
-        rval = moab.get_entities_by_type(it->meshset,MBEDGE,edges,true); CHKERRQ_MOAB(rval);
-        rval = moab.get_entities_by_type(it->meshset,MBVERTEX,nodes,true); CHKERRQ_MOAB(rval);
-        ss << "name "<< it->getName() << std::endl;
-        ss << "msId "<< it->getMeshSetId() << " nb. tets " << tets.size() << std::endl;
-        ss << "msId "<< it->getMeshSetId() << " nb. tris " << tris.size() << std::endl;
-        ss << "msId "<< it->getMeshSetId() << " nb. edges " << edges.size() << std::endl;
-        ss << "msId "<< it->getMeshSetId() << " nb. nodes " << nodes.size() << std::endl;
-        ss << std::endl;
-        PetscPrintf(comm,ss.str().c_str());
-      }
-    } catch (MoFEMException const &e) {
-      SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
-    }
-    PetscFunctionReturn(0);
-  }
-
-  PetscErrorCode print_cubit_displacement_set() const {
-    PetscFunctionBegin;
-    PetscErrorCode ierr;
-    DisplacementCubitBcData mydata;
-    ierr = printCubitSet(mydata,NODESET|mydata.tYpe.to_ulong()); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
-  }
-
-  PetscErrorCode print_cubit_pressure_set() const {
-    PetscFunctionBegin;
-    PetscErrorCode ierr;
-    PressureCubitBcData mydata;
-    ierr = printCubitSet(mydata,SIDESET|mydata.tYpe.to_ulong()); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
-  }
-
-  PetscErrorCode print_cubit_force_set() const {
-    PetscFunctionBegin;
-    PetscErrorCode ierr;
-    ForceCubitBcData mydata;
-    ierr = printCubitSet(mydata,NODESET|mydata.tYpe.to_ulong()); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
-  }
-
-  PetscErrorCode print_cubit_temperature() const {
-    PetscFunctionBegin;
-    PetscErrorCode ierr;
-    TemperatureCubitBcData mydata;
-    ierr = printCubitSet(mydata,NODESET|mydata.tYpe.to_ulong()); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
-  }
-
-  PetscErrorCode print_cubit_heat_flux_set() const {
-    PetscErrorCode ierr;
-    PetscFunctionBegin;
-    HeatFluxCubitBcData mydata;
-    ierr = printCubitSet(mydata,SIDESET|mydata.tYpe.to_ulong()); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
-  }
-
-  PetscErrorCode print_cubit_materials_set() const {
-    MoABErrorCode rval;
-    PetscErrorCode ierr;
-    PetscFunctionBegin;
-    const Interface& thism_field = *this;
-    for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(thism_field,BLOCKSET|MAT_ELASTICSET,it)) {
-      Mat_Elastic data;
-      ierr = it->getAttributeDataStructure(data); CHKERRQ(ierr);
-      std::ostringstream ss;
-      ss << *it << std::endl;
-      ss << data;
-      Range tets;
-      rval = moab.get_entities_by_type(it->meshset,MBTET,tets,true); CHKERRQ_MOAB(rval);
-      ss << "MAT_ELATIC msId "<< it->getMeshSetId() << " nb. tets " << tets.size() << std::endl;
-      ss << std::endl;
-      PetscPrintf(comm,ss.str().c_str());
-    }
-
-    for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(thism_field,BLOCKSET|MAT_THERMALSET,it)) {
-        Mat_Thermal data;
-        ierr = it->getAttributeDataStructure(data); CHKERRQ(ierr);
-        std::ostringstream ss;
-        ss << *it << std::endl;
-        ss << data;
-        PetscPrintf(comm,ss.str().c_str());
-    }
-
-	/*for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(thism_field,BLOCKSET|MAT_HELMHOLTZSET,it)) {
-        Mat_Helmholtz data;
-        ierr = it->getAttributeDataStructure(data); CHKERRQ(ierr);
-        std::ostringstream ss;
-        ss << *it << std::endl;
-        ss << data;
-        PetscPrintf(PETSC_COMM_WORLD,ss.str().c_str());
-    }*/
-
-    for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(thism_field,BLOCKSET|MAT_MOISTURESET,it)) {
-      Mat_Moisture data;
-      ierr = it->getAttributeDataStructure(data); CHKERRQ(ierr);
-      std::ostringstream ss;
-      ss << *it << std::endl;
-      ss << data;
-      PetscPrintf(comm,ss.str().c_str());
-    }
-
-
-    PetscFunctionReturn(0);
-  }
+  DEPRECATED PetscErrorCode print_cubit_displacement_set() const;
+  DEPRECATED PetscErrorCode print_cubit_pressure_set() const;
+  DEPRECATED PetscErrorCode print_cubit_force_set() const;
+  DEPRECATED PetscErrorCode print_cubit_temperature() const;
+  DEPRECATED PetscErrorCode print_cubit_heat_flux_set() const;
+  DEPRECATED PetscErrorCode print_cubit_materials_set() const;
 
   //refine
   PetscErrorCode seed_finite_elements(const Range &entities,int verb = -1);

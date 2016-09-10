@@ -12,8 +12,8 @@
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 */
 
-#ifndef __Interface_HPP__
-#define __Interface_HPP__
+#ifndef __INTERFACE_HPP__
+#define __INTERFACE_HPP__
 
 #include "UnknownInterface.hpp"
 
@@ -34,20 +34,21 @@ static const MOFEMuuid IDD_MOFEMInterface = MOFEMuuid( BitIntefaceId(FIELD_INTER
  */
 struct Interface: public UnknownInterface {
 
-  virtual PetscErrorCode query_interface_type(const std::type_info& type, void*& ptr) = 0;
+  virtual PetscErrorCode query_interface_type(const std::type_info& type,void*& ptr) const = 0;
 
   template <class IFace>
-  PetscErrorCode query_interface(IFace*& ptr) {
+  PetscErrorCode query_interface(IFace*& ptr) const {
+    PetscErrorCode ierr;
     PetscFunctionBegin;
     void* tmp_ptr;
-    PetscErrorCode ierr;
-    ierr = query_interface_type(typeid(IFace), tmp_ptr); CHKERRQ(ierr);
+    ierr = query_interface_type(typeid(IFace),tmp_ptr); CHKERRQ(ierr);
     ptr = reinterpret_cast<IFace*>(tmp_ptr);
     PetscFunctionReturn(0);
   }
 
   /// get moab interface
   virtual moab::Interface& get_moab() = 0;
+  virtual const moab::Interface& get_moab() const = 0;
 
   /**
    * \brief Get pointer to basic entity data.
@@ -59,7 +60,7 @@ struct Interface: public UnknownInterface {
   virtual boost::shared_ptr<BasicEntityData> get_basic_entity_data_ptr() = 0;
 
   /// get communicator
-  virtual MPI_Comm get_comm() = 0;
+  virtual MPI_Comm get_comm() const = 0;
 
   /// get communicator size
   virtual int getCommSize() const = 0;
@@ -95,8 +96,7 @@ struct Interface: public UnknownInterface {
     * \brief check for CUBIT Id and CUBIT type
     * \ingroup mofem_bc
 
-
-    \bug All cubit interface functions should be outsurced to dedicated inerface
+    \todo All cubit interface functions should be outsourced to dedicated interface
 
     * \param msId id of the BLOCKSET/SIDESET/BLOCKSET: from CUBIT
     * \param  see CubitBC (NODESET, SIDESET or BLOCKSET and more)
@@ -240,16 +240,6 @@ struct Interface: public UnknownInterface {
     */
   virtual CubitMeshSet_multiIndex::iterator get_cubit_meshsets_end() const = 0;
 
-    /**
-     * \brief Iterator that loops over all the Cubit MeshSets in a moFEM field
-     * \ingroup mofem_bc
-
-     *
-     * \param mField moFEM Field
-     * \param iterator
-     */
-  #define _IT_CUBITMESHSETS_FOR_LOOP_(MFIELD,IT) \
-    CubitMeshSet_multiIndex::iterator IT = MFIELD.get_cubit_meshsets_begin(); IT!=MFIELD.get_cubit_meshsets_end(); IT++
 
   /**
     * \brief get begin iterator of cubit mehset of given type (instead you can use _IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(MFIELD,CUBITBCTYPE,IT)
@@ -279,19 +269,6 @@ struct Interface: public UnknownInterface {
   virtual CubitMeshSet_multiIndex::index<CubitMeshSets_mi_tag>::type::iterator
   get_cubit_meshsets_end(const unsigned int ) const = 0;
 
-    /**
-      * \brief Iterator that loops over a specific Cubit MeshSet in a moFEM field
-      * \ingroup mofem_bc
-
-      *
-      * \param mField moFEM Field
-      * \param  see CubitBC (NODESET, SIDESET or BLOCKSET and more)
-      * \param iterator
-      */
-  #define _IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(MFIELD,CUBITBCTYPE,IT) \
-    CubitMeshSet_multiIndex::index<CubitMeshSets_mi_tag>::type::iterator IT = MFIELD.get_cubit_meshsets_begin(CUBITBCTYPE); \
-    IT!=MFIELD.get_cubit_meshsets_end(CUBITBCTYPE); IT++
-
   /**
     * \brief get begin iterator of cubit mehset of given type (instead you can use _IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(MFIELD,CUBITBCTYPE,IT)
     * \ingroup mofem_bc
@@ -320,52 +297,26 @@ struct Interface: public UnknownInterface {
   virtual CubitMeshSet_multiIndex::index<CubitMeshSets_mask_meshset_mi_tag>::type::iterator
   get_CubitMeshSets_bySetType_end(const unsigned int ) const = 0;
 
-  /**
-   * \brief Iterator that loops over a specific Cubit MeshSet having a particular BC meshset in a moFEM field
-   * \ingroup mofem_bc
-
-   *
-   * \param mField moFEM Field
-   * \param  see CubitBC (NODESET, SIDESET or BLOCKSET and more)
-   * \param iterator
-   *
-   * Example: \code
-     for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,NODESET|DISPLACEMENTSET,it) {
-    	...
-   * } \endcode
-   */
-  #define _IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(MFIELD,CUBITBCTYPE,IT) \
-    CubitMeshSet_multiIndex::index<CubitMeshSets_mask_meshset_mi_tag>::type::iterator IT = MFIELD.get_CubitMeshSets_bySetType_begin(CUBITBCTYPE); \
-    IT!=MFIELD.get_CubitMeshSets_bySetType_end(CUBITBCTYPE); IT++
-
-
   virtual CubitMeshSet_multiIndex::index<CubitMeshSets_name>::type::iterator
   get_CubitMeshSets_byName_begin(const std::string& name) const = 0;
   virtual CubitMeshSet_multiIndex::index<CubitMeshSets_name>::type::iterator
   get_CubitMeshSets_byName_end(const std::string& name) const = 0;
 
-  /**
-    * \brief Iterator that loops over Cubit BlockSet having a particular name
-    * \ingroup mofem_bc
+  /** \deprecated use MeshsetsManager interface instead
+  */
+  DEPRECATED virtual PetscErrorCode print_cubit_displacement_set() const = 0;
 
+  /** \deprecated use MeshsetsManager interface instead
+  */
+  DEPRECATED virtual PetscErrorCode print_cubit_pressure_set() const = 0;
 
-    * \param MFIELD mField
-    * \param NAME name
-    * \param IT iterator
-    *
-    * Example: \code
-      for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,"SOME_BLOCK_NANE",it) {
-    	...
-    * } \endcode
-    */
-  #define _IT_CUBITMESHSETS_BY_NAME_FOR_LOOP_(MFIELD,NAME,IT) \
-    CubitMeshSet_multiIndex::index<CubitMeshSets_name>::type::iterator IT = MFIELD.get_CubitMeshSets_byName_begin(NAME); \
-    IT!=MFIELD.get_CubitMeshSets_byName_end(NAME); IT++
+  /** \deprecated use MeshsetsManager interface instead
+  */
+  DEPRECATED virtual PetscErrorCode print_cubit_force_set() const = 0;
 
-  virtual PetscErrorCode print_cubit_displacement_set() const = 0;
-  virtual PetscErrorCode print_cubit_pressure_set() const = 0;
-  virtual PetscErrorCode print_cubit_force_set() const = 0;
-  virtual PetscErrorCode print_cubit_materials_set() const = 0;
+  /** \deprecated use MeshsetsManager interface instead
+  */
+  DEPRECATED virtual PetscErrorCode print_cubit_materials_set() const = 0;
 
   /**
    * \brief Clear database
@@ -2382,7 +2333,7 @@ DEPRECATED typedef Interface FieldInterface;
 
 }
 
-#endif // __Interface_HPP__
+#endif // __INTERFACE_HPP__
 
 /***************************************************************************//**
  * \defgroup mofem_bc Boundary conditions
