@@ -1,5 +1,5 @@
 /** \file TetGenInterface.cpp
- * \brief TetGen inteface for resmeshing and on the fly mesh craetion
+ * \brief TetGen interface for meshing/re-meshing and on the fly mesh creation
  *
  */
 

@@ -25,11 +25,12 @@ namespace MoFEM {
    * \ingroup mofem_bc
 
    *
-   * \param mField moFEM Field
+   * \param MESHSET_MANAGER meshset manager (works as well with Interface)
    * \param iterator
    */
-   #define _IT_CUBITMESHSETS_FOR_LOOP_(MFIELD,IT) \
-   CubitMeshSet_multiIndex::iterator IT = MFIELD.get_cubit_meshsets_begin(); IT!=MFIELD.get_cubit_meshsets_end(); IT++
+   #define _IT_CUBITMESHSETS_FOR_LOOP_(MESHSET_MANAGER,IT) \
+   CubitMeshSet_multiIndex::iterator IT = MESHSET_MANAGER.getMeshsetsManager()->getBegin(); \
+   IT!=MESHSET_MANAGER.getMeshsetsManager()->getEnd(); IT++
 
    /**
    * \brief Iterator that loops over a specific Cubit MeshSet in a moFEM field
@@ -40,16 +41,16 @@ namespace MoFEM {
    * \param  see CubitBC (NODESET, SIDESET or BLOCKSET and more)
    * \param iterator
    */
-   #define _IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(MFIELD,CUBITBCTYPE,IT) \
-   CubitMeshSet_multiIndex::index<CubitMeshSets_mi_tag>::type::iterator IT = MFIELD.get_cubit_meshsets_begin(CUBITBCTYPE); \
-   IT!=MFIELD.get_cubit_meshsets_end(CUBITBCTYPE); IT++
+   #define _IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(MESHSET_MANAGER,CUBITBCTYPE,IT) \
+   CubitMeshSet_multiIndex::index<CubitMeshSets_mi_tag>::type::iterator IT = MESHSET_MANAGER.getMeshsetsManager()->getBegin(CUBITBCTYPE); \
+   IT!=MESHSET_MANAGER.getMeshsetsManager()->getEnd(CUBITBCTYPE); IT++
 
    /**
    * \brief Iterator that loops over a specific Cubit MeshSet having a particular BC meshset in a moFEM field
    * \ingroup mofem_bc
 
    *
-   * \param mField moFEM Field
+   * \param MESHSET_MANAGER meshset manager (works as well with Interface)
    * \param  see CubitBC (NODESET, SIDESET or BLOCKSET and more)
    * \param iterator
    *
@@ -58,16 +59,16 @@ namespace MoFEM {
    ...
    * } \endcode
    */
-   #define _IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(MFIELD,CUBITBCTYPE,IT) \
-   CubitMeshSet_multiIndex::index<CubitMeshSets_mask_meshset_mi_tag>::type::iterator IT = MFIELD.get_CubitMeshSets_bySetType_begin(CUBITBCTYPE); \
-   IT!=MFIELD.get_CubitMeshSets_bySetType_end(CUBITBCTYPE); IT++
+   #define _IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(MESHSET_MANAGER,CUBITBCTYPE,IT) \
+   CubitMeshSet_multiIndex::index<CubitMeshSets_mask_meshset_mi_tag>::type::iterator IT = MESHSET_MANAGER.getMeshsetsManager()->getBySetTypeBegin(CUBITBCTYPE); \
+   IT!=MESHSET_MANAGER.getMeshsetsManager()->getBySetTypeEnd(CUBITBCTYPE); IT++
 
    /**
    * \brief Iterator that loops over Cubit BlockSet having a particular name
    * \ingroup mofem_bc
 
 
-   * \param MFIELD mField
+   * \param MESHSET_MANAGER meshset manager (works as well with Interface)
    * \param NAME name
    * \param IT iterator
    *
@@ -76,9 +77,9 @@ namespace MoFEM {
    ...
    * } \endcode
    */
-   #define _IT_CUBITMESHSETS_BY_NAME_FOR_LOOP_(MFIELD,NAME,IT) \
-   CubitMeshSet_multiIndex::index<CubitMeshSets_name>::type::iterator IT = MFIELD.get_CubitMeshSets_byName_begin(NAME); \
-   IT!=MFIELD.get_CubitMeshSets_byName_end(NAME); IT++
+   #define _IT_CUBITMESHSETS_BY_NAME_FOR_LOOP_(MESHSET_MANAGER,NAME,IT) \
+   CubitMeshSet_multiIndex::index<CubitMeshSets_name>::type::iterator IT = MESHSET_MANAGER.getMeshsetsManager()->getBegin(NAME); \
+   IT!=MESHSET_MANAGER.getMeshsetsManager()->getEnd(NAME); IT++
 
   static const MOFEMuuid IDD_MOFEMMeshsetsManager = MOFEMuuid( BitIntefaceId(MESHSETSMANAGER_INTERFACE) );
 
@@ -103,6 +104,21 @@ namespace MoFEM {
     inline Tag get_bhTag() const { return bhTag; }
     inline Tag get_bhTag_header() const { return bhTag_header; }
 
+    MeshsetsManager* getMeshsetsManager() { return this; }
+    const MeshsetsManager* getMeshsetsManager() const { return this; }
+
+    /**
+     * \brief clear multi-index container
+     * @return error code
+     */
+    PetscErrorCode clearMap();
+
+    /**
+     * \brier initialize container form data on mesh
+     * @return [description]
+     */
+    PetscErrorCode initialiseDatabseInformationFromMesh(int verb = 0);
+
     template<class CUBIT_BC_DATA_TYPE>
     PetscErrorCode printBcSet(CUBIT_BC_DATA_TYPE& data,unsigned long int type) const {
       PetscErrorCode ierr;
@@ -111,7 +127,7 @@ namespace MoFEM {
       try {
         const MoFEM::Interface& m_field = cOre;
         const moab::Interface& moab = m_field.get_moab();
-        for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,type,it)) {
+        for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_((*this),type,it)) {
           ierr = it->getBcDataStructure(data); CHKERRQ(ierr);
           std::ostringstream ss;
           ss << *it << std::endl;
@@ -141,7 +157,7 @@ namespace MoFEM {
       PetscFunctionBegin;
       const MoFEM::Interface& m_field = cOre;
       const moab::Interface& moab = m_field.get_moab();
-      for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,BLOCKSET|MAT_ELASTICSET,it)) {
+      for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_((*this),BLOCKSET|MAT_ELASTICSET,it)) {
         Mat_Elastic data;
         ierr = it->getAttributeDataStructure(data); CHKERRQ(ierr);
         std::ostringstream ss;
@@ -426,8 +442,6 @@ namespace MoFEM {
       */
     PetscErrorCode getmeshsetsByType(const unsigned int cubit_bc_type,Range &meshsets);
 
-
-
   protected:
 
     Tag nsTag;
@@ -445,3 +459,8 @@ namespace MoFEM {
 }
 
 #endif //__MESHSETSMANAGER_HPP__
+
+/***************************************************************************//**
+ * \defgroup mofem_bc Managing meshsets which boundary conditions and materials
+ * \ingroup mofem
+ ******************************************************************************/

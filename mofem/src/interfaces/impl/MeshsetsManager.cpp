@@ -1,5 +1,5 @@
 /** \file MeshsetsManager.cpp
- * \brief TetGen inteface for resmeshing and on the fly mesh craetion
+ * \brief Interface to manage meshsets which carrying information about boundary conditions and material blocks
  *
  */
 
@@ -76,6 +76,43 @@ namespace MoFEM {
   MeshsetsManager::MeshsetsManager(const MoFEM::Core& core):
   cOre(const_cast<MoFEM::Core&>(core)) {
   }
+
+  PetscErrorCode MeshsetsManager::clearMap() {
+    PetscFunctionBegin;
+    cubitMeshsets.clear();
+    PetscFunctionReturn(0);
+  }
+
+  PetscErrorCode MeshsetsManager::initialiseDatabseInformationFromMesh(int verb) {
+    MoABErrorCode rval;
+    MoFEM::Interface &m_field = cOre;
+    moab::Interface &moab = m_field.get_moab();
+    PetscFunctionBegin;
+    Range meshsets;
+    rval = moab.get_entities_by_type(0,MBENTITYSET,meshsets,true);  CHKERRQ_MOAB(rval);
+    for(Range::iterator mit = meshsets.begin();mit!=meshsets.end();mit++) {
+      try {
+        //check if meshset is cubit meshset
+        CubitMeshSets base_meshset(moab,*mit);
+        if((base_meshset.cubitBcType&CubitBCType(NODESET|SIDESET|BLOCKSET)).any()) {
+          std::pair<CubitMeshSet_multiIndex::iterator,bool> p = cubitMeshsets.insert(base_meshset);
+          if(!p.second) {
+            SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"meshset not inserted");
+          }
+          if(verb > 0) {
+            std::ostringstream ss;
+            ss << "read cubit " << base_meshset << std::endl;
+            //PetscSynchronizedPrintf(comm,ss.str().c_str());
+            PetscPrintf(m_field.get_comm(),ss.str().c_str());
+          }
+        }
+      } catch (MoFEMException const &e) {
+        SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
+      }
+    }
+    PetscFunctionReturn(0);
+  }
+
 
   PetscErrorCode MeshsetsManager::getTags(int verb) {
     MoABErrorCode rval;

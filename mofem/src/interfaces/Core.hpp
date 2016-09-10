@@ -193,10 +193,6 @@ struct Core: public Interface, MeshRefinment, PrismInterface, SeriesRecorder {
   PetscErrorCode clear_database(int verb  = -1);
   PetscErrorCode rebuild_database(int verb = -1);
 
-  //cubit meshsets
-
-  MeshsetsManager* meshsetsManagerPtr;
-
   PetscErrorCode get_msId_3dENTS_sides(
     const int msId,
     const CubitBCType cubit_bc_type,
@@ -223,40 +219,31 @@ struct Core: public Interface, MeshRefinment, PrismInterface, SeriesRecorder {
     const EntityHandle SIDESET,const bool add_iterfece_entities,const bool recursive = false,int verb = -1
   );
 
-  bool check_msId_meshset(const int ms_id,const CubitBCType cubit_bc_type);
-  PetscErrorCode add_cubit_msId(const CubitBCType cubit_bc_type,const int ms_id,const std::string name = "");
-  PetscErrorCode set_cubit_msId_attribites(
+  //cubit meshsets
+
+  MeshsetsManager* meshsetsManagerPtr;
+  MeshsetsManager* getMeshsetsManager() { return meshsetsManagerPtr; }
+  const MeshsetsManager* getMeshsetsManager() const { return meshsetsManagerPtr; }
+
+  DEPRECATED bool check_msId_meshset(const int ms_id,const CubitBCType cubit_bc_type);
+  DEPRECATED PetscErrorCode add_cubit_msId(const CubitBCType cubit_bc_type,const int ms_id,const std::string name = "");
+  DEPRECATED PetscErrorCode set_cubit_msId_attribites(
     const CubitBCType cubit_bc_type,const int ms_id,const std::vector<double> &attributes,const std::string name = ""
   );
-  PetscErrorCode set_cubit_msId_attribites_data_structure(
+  DEPRECATED PetscErrorCode set_cubit_msId_attribites_data_structure(
     const CubitBCType cubit_bc_type,const int ms_id,const GenericAttributeData &data,const std::string name = ""
   );
-  PetscErrorCode set_cubit_msId_bc_data_structure(
+  DEPRECATED PetscErrorCode set_cubit_msId_bc_data_structure(
     const CubitBCType cubit_bc_type,const int ms_id,const GenericCubitBcData &data
   );
-  PetscErrorCode delete_cubit_msId(const CubitBCType cubit_bc_type,const int ms_id);
-  PetscErrorCode get_cubit_msId(const int ms_id,const CubitBCType cubit_bc_type,const CubitMeshSets **cubit_meshset_ptr);
-  PetscErrorCode get_cubit_msId_entities_by_dimension(const int ms_id,const CubitBCType cubit_bc_type, const int dimension,Range &entities,const bool recursive = false);
-  PetscErrorCode get_cubit_msId_entities_by_dimension(const int ms_id,const CubitBCType cubit_bc_type, Range &entities,const bool recursive = false);
-  PetscErrorCode get_cubit_msId_entities_by_dimension(const int ms_id,const unsigned int cubit_bc_type, const int dimension,Range &entities,const bool recursive = false);
-  PetscErrorCode get_cubit_msId_entities_by_dimension(const int ms_id,const unsigned int cubit_bc_type, Range &entities,const bool recursive = false);
-  PetscErrorCode get_cubit_msId_meshset(const int ms_id,const unsigned int cubit_bc_type,EntityHandle &meshset);
-  PetscErrorCode get_cubit_meshsets(const unsigned int cubit_bc_type,Range &meshsets);
-
-  CubitMeshSet_multiIndex::iterator get_cubit_meshsets_begin() const;
-  CubitMeshSet_multiIndex::iterator get_cubit_meshsets_end() const;
-  CubitMeshSet_multiIndex::index<CubitMeshSets_mi_tag>::type::iterator
-  get_cubit_meshsets_begin(const unsigned int cubit_bc_type) const;
-  CubitMeshSet_multiIndex::index<CubitMeshSets_mi_tag>::type::iterator
-  get_cubit_meshsets_end(const unsigned int cubit_bc_type) const;
-  CubitMeshSet_multiIndex::index<CubitMeshSets_mask_meshset_mi_tag>::type::iterator
-  get_CubitMeshSets_bySetType_begin(const unsigned int cubit_bc_type) const;
-  CubitMeshSet_multiIndex::index<CubitMeshSets_mask_meshset_mi_tag>::type::iterator
-  get_CubitMeshSets_bySetType_end(const unsigned int cubit_bc_type) const;
-  CubitMeshSet_multiIndex::index<CubitMeshSets_name>::type::iterator
-  get_CubitMeshSets_byName_begin(const std::string& name) const;
-  CubitMeshSet_multiIndex::index<CubitMeshSets_name>::type::iterator
-  get_CubitMeshSets_byName_end(const std::string& name) const;
+  DEPRECATED PetscErrorCode delete_cubit_msId(const CubitBCType cubit_bc_type,const int ms_id);
+  DEPRECATED PetscErrorCode get_cubit_msId(const int ms_id,const CubitBCType cubit_bc_type,const CubitMeshSets **cubit_meshset_ptr);
+  DEPRECATED PetscErrorCode get_cubit_msId_entities_by_dimension(const int ms_id,const CubitBCType cubit_bc_type, const int dimension,Range &entities,const bool recursive = false);
+  DEPRECATED PetscErrorCode get_cubit_msId_entities_by_dimension(const int ms_id,const CubitBCType cubit_bc_type, Range &entities,const bool recursive = false);
+  DEPRECATED PetscErrorCode get_cubit_msId_entities_by_dimension(const int ms_id,const unsigned int cubit_bc_type, const int dimension,Range &entities,const bool recursive = false);
+  DEPRECATED PetscErrorCode get_cubit_msId_entities_by_dimension(const int ms_id,const unsigned int cubit_bc_type, Range &entities,const bool recursive = false);
+  DEPRECATED PetscErrorCode get_cubit_msId_meshset(const int ms_id,const unsigned int cubit_bc_type,EntityHandle &meshset);
+  DEPRECATED PetscErrorCode get_cubit_meshsets(const unsigned int cubit_bc_type,Range &meshsets);
 
   DEPRECATED PetscErrorCode print_cubit_displacement_set() const;
   DEPRECATED PetscErrorCode print_cubit_pressure_set() const;
