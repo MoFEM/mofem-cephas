@@ -35,7 +35,7 @@ struct MoFEMSeries {
   MoFEMSeries(Interface &moab,const EntityHandle _meshset);
 
   /// get meshset
-  inline EntityHandle getMeshSet() const { return meshset; }
+  inline EntityHandle getMeshset() const { return meshset; }
   inline EntityID get_meshset_id() const { return (EntityID)(meshset&MB_ID_MASK); }
   /// get string_ref of series
   inline boost::string_ref getNameRef() const { return boost::string_ref((char *)tag_name_data,tag_name_size); }
@@ -86,7 +86,7 @@ struct interface_MoFEMSeries {
   interface_MoFEMSeries(const T *_ptr): ptr(_ptr) {}
 
   /// get meshset
-  inline EntityHandle getMeshSet() const { return ptr->getMeshSet(); }
+  inline EntityHandle getMeshset() const { return ptr->getMeshset(); }
   inline EntityID get_meshset_id() const { return ptr->get_meshset_id(); }
   /// get string_ref of series
   inline boost::string_ref getNameRef() const { return ptr->getNameRef(); }

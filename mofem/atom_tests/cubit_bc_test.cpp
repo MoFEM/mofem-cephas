@@ -206,7 +206,7 @@ int main(int argc, char *argv[]) {
     ierr = meshsets_manager_ptr->setBcData(SIDESET,1002,mybc); CHKERRQ(ierr);
   }
   for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,SIDESET,it)) {
-    if(it->getMeshSetId()!=1002) continue;
+    if(it->getMeshsetId()!=1002) continue;
     add_block_is_there = true;
     PressureCubitBcData mydata;
     ierr = it->getBcDataStructure(mydata); CHKERRQ(ierr);
@@ -308,7 +308,7 @@ int main(int argc, char *argv[]) {
     ierr = meshsets_manager_ptr->setAttribitesByDataStructure(BLOCKSET,1001,mydata); CHKERRQ(ierr);
   }
   for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,BLOCKSET,it)) {
-    if(it->getMeshSetId()!=1001) continue;
+    if(it->getMeshsetId()!=1001) continue;
     //Get block name
     std::string name = it->getName();
     if(name.compare(0,13,"MAT_ELASTIC") == 0 && (it->getBcType()&CubitBCType(MAT_ELASTICSET)).any()) {

@@ -475,7 +475,7 @@ PetscErrorCode DefaultElementAdjacency::defaultVertex(
     case NOFIELD:
     {
       Range ents;
-      rval = moab.get_entities_by_handle(field_ptr.getMeshSet(),ents,false); CHKERRQ_MOAB(rval);
+      rval = moab.get_entities_by_handle(field_ptr.getMeshset(),ents,false); CHKERRQ_MOAB(rval);
       adjacency.merge(ents);
       for(Range::iterator eit = ents.begin();eit!=ents.end();eit++) {
         const_cast<SideNumber_multiIndex&>(fe_ptr.getSideNumberTable()).insert(
@@ -518,7 +518,7 @@ PetscErrorCode DefaultElementAdjacency::defaultEdge(
     case NOFIELD:
     {
       Range ents;
-      rval = moab.get_entities_by_handle(field_ptr.getMeshSet(),ents,false); CHKERRQ_MOAB(rval);
+      rval = moab.get_entities_by_handle(field_ptr.getMeshset(),ents,false); CHKERRQ_MOAB(rval);
       adjacency.merge(ents);
       for(Range::iterator eit = ents.begin();eit!=ents.end();eit++) {
         const_cast<SideNumber_multiIndex&>(fe_ptr.getSideNumberTable()).insert(
@@ -576,7 +576,7 @@ PetscErrorCode DefaultElementAdjacency::defaultTri(
     case NOFIELD:
     {
       Range ents;
-      rval = moab.get_entities_by_handle(field_ptr.getMeshSet(),ents,false); CHKERRQ_MOAB(rval);
+      rval = moab.get_entities_by_handle(field_ptr.getMeshset(),ents,false); CHKERRQ_MOAB(rval);
       adjacency.merge(ents);
       for(Range::iterator eit = ents.begin();eit!=ents.end();eit++) {
         const_cast<SideNumber_multiIndex&>(fe_ptr.getSideNumberTable()).insert(
@@ -637,7 +637,7 @@ PetscErrorCode DefaultElementAdjacency::defaultTet(
     case NOFIELD:
     {
       Range ents;
-      rval = moab.get_entities_by_handle(field_ptr.getMeshSet(),ents,false); CHKERRQ_MOAB(rval);
+      rval = moab.get_entities_by_handle(field_ptr.getMeshset(),ents,false); CHKERRQ_MOAB(rval);
       adjacency.merge(ents);
       for(Range::iterator eit = ents.begin();eit!=ents.end();eit++) {
         const_cast<SideNumber_multiIndex&>(fe_ptr.getSideNumberTable()).insert(
@@ -765,7 +765,7 @@ PetscErrorCode DefaultElementAdjacency::defaultPrism(
     case NOFIELD:
     {
       Range ents;
-      rval = moab.get_entities_by_handle(field_ptr.getMeshSet(),ents,false); CHKERRQ_MOAB(rval);
+      rval = moab.get_entities_by_handle(field_ptr.getMeshset(),ents,false); CHKERRQ_MOAB(rval);
       adjacency.merge(ents);
       for(Range::iterator eit = ents.begin();eit!=ents.end();eit++) {
         const_cast<SideNumber_multiIndex&>(fe_ptr.getSideNumberTable()).insert(
@@ -804,7 +804,7 @@ PetscErrorCode DefaultElementAdjacency::defaultMeshset(
     case NOFIELD:
     {
       Range ents;
-      rval = moab.get_entities_by_handle(field_ptr.getMeshSet(),ents,false); CHKERRQ_MOAB(rval);
+      rval = moab.get_entities_by_handle(field_ptr.getMeshset(),ents,false); CHKERRQ_MOAB(rval);
       adjacency.merge(ents);
       for(Range::iterator eit = ents.begin();eit!=ents.end();eit++) {
         const_cast<SideNumber_multiIndex&>(fe_ptr.getSideNumberTable()).insert(
@@ -892,7 +892,7 @@ data_dof_view(boost::shared_ptr<DofEntity_multiIndex_uid_view>(new DofEntity_mul
   //get finite element entity
   global_uid =  getGlobalUniqueIdCalculate();
   //add ents to meshset
-  //EntityHandle meshset = getMeshSet();
+  //EntityHandle meshset = getMeshset();
   //EntityHandle ent = getEnt();
   //ierr = moab.add_entities(meshset,&ent,1); CHKERRABORT(PETSC_COMM_WORLD,ierr);
 }

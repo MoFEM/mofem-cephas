@@ -171,7 +171,7 @@ meshsets_mask(NODESET|SIDESET|BLOCKSET)  {
     }
   }
 }
-PetscErrorCode CubitMeshSets::getMeshSetIdEntitiesByDimension(Interface &moab,const int dimension,Range &entities,const bool recursive)  const {
+PetscErrorCode CubitMeshSets::getMeshsetIdEntitiesByDimension(Interface &moab,const int dimension,Range &entities,const bool recursive)  const {
   PetscFunctionBegin;
   ErrorCode rval;
   //rval = moab.list_entity(meshset); CHKERRQ_MOAB(rval);
@@ -184,21 +184,21 @@ PetscErrorCode CubitMeshSets::getMeshSetIdEntitiesByDimension(Interface &moab,co
   CHKERRQ_MOAB(rval);
   PetscFunctionReturn(0);
 }
-PetscErrorCode CubitMeshSets::getMeshSetIdEntitiesByDimension(Interface &moab,Range &entities,const bool recursive)  const {
+PetscErrorCode CubitMeshSets::getMeshsetIdEntitiesByDimension(Interface &moab,Range &entities,const bool recursive)  const {
   PetscFunctionBegin;
   if((cubitBcType&CubitBCType(BLOCKSET)).any()) {
     if(tag_block_header_data!=NULL) {
-      return getMeshSetIdEntitiesByDimension(moab,tag_block_header_data[2],entities,recursive);
+      return getMeshsetIdEntitiesByDimension(moab,tag_block_header_data[2],entities,recursive);
     } else {
       SETERRQ(PETSC_COMM_SELF,1,"dimension unknown");
     }
   }
   if((cubitBcType&CubitBCType(NODESET)).any()) {
-    return getMeshSetIdEntitiesByDimension(moab,0,entities,recursive);
+    return getMeshsetIdEntitiesByDimension(moab,0,entities,recursive);
   }
   PetscFunctionReturn(0);
 }
-PetscErrorCode CubitMeshSets::getMeshSetIdEntitiesByType(Interface &moab,const EntityType type,Range &entities,const bool recursive)  const {
+PetscErrorCode CubitMeshSets::getMeshsetIdEntitiesByType(Interface &moab,const EntityType type,Range &entities,const bool recursive)  const {
   PetscFunctionBegin;
   ErrorCode rval;
   //rval = moab.list_entity(meshset); CHKERRQ_MOAB(rval);

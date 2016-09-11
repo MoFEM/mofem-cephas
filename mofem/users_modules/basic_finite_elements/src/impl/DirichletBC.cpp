@@ -62,7 +62,7 @@ PetscErrorCode DisplacementBCFEMethodPreAndPostProc::iNitalize() {
       ierr = MethodForForceScaling::applyScale(this,methodsOp,scaled_values); CHKERRQ(ierr);
       for(int dim = 0;dim<3;dim++) {
         Range ents;
-        ierr = it->getMeshSetIdEntitiesByDimension(mField.get_moab(),dim,ents,true); CHKERRQ(ierr);
+        ierr = it->getMeshsetIdEntitiesByDimension(mField.get_moab(),dim,ents,true); CHKERRQ(ierr);
         if(dim>1) {
           Range _edges;
           ierr = mField.get_moab().get_adjacencies(ents,1,false,_edges,moab::Interface::UNION); CHKERRQ(ierr);
@@ -257,7 +257,7 @@ PetscErrorCode SpatialPositionsBCFEMethodPreAndPostProc::iNitalize() {
       ierr = MethodForForceScaling::applyScale(this,methodsOp,scaled_values); CHKERRQ(ierr);
       for(int dim = 0;dim<3;dim++) {
         Range ents;
-        ierr = it->getMeshSetIdEntitiesByDimension(mField.get_moab(),dim,ents,true); CHKERRQ(ierr);
+        ierr = it->getMeshsetIdEntitiesByDimension(mField.get_moab(),dim,ents,true); CHKERRQ(ierr);
         if(dim>1) {
           Range _edges;
           ierr = mField.get_moab().get_adjacencies(ents,1,false,_edges,moab::Interface::UNION); CHKERRQ(ierr);
@@ -329,7 +329,7 @@ PetscErrorCode TemperatureBCFEMethodPreAndPostProc::iNitalize() {
       ierr = MethodForForceScaling::applyScale(this,methodsOp,scaled_values); CHKERRQ(ierr);
       for(int dim = 0;dim<3;dim++) {
         Range ents;
-        ierr = it->getMeshSetIdEntitiesByDimension(mField.get_moab(),dim,ents,true); CHKERRQ(ierr);
+        ierr = it->getMeshsetIdEntitiesByDimension(mField.get_moab(),dim,ents,true); CHKERRQ(ierr);
         if(dim>1) {
           Range _edges;
           ierr = mField.get_moab().get_adjacencies(ents,1,false,_edges,moab::Interface::UNION); CHKERRQ(ierr);
@@ -482,7 +482,7 @@ PetscErrorCode DirichletBCFromBlockSetFEMethodPreAndPostProc::iNitalize() {
         ierr = MethodForForceScaling::applyScale(this,methodsOp,scaled_values); CHKERRQ(ierr);
         for(int dim = 0;dim<3;dim++) {
           Range ents;
-          ierr = it->getMeshSetIdEntitiesByDimension(mField.get_moab(),dim,ents,true); CHKERRQ(ierr);
+          ierr = it->getMeshsetIdEntitiesByDimension(mField.get_moab(),dim,ents,true); CHKERRQ(ierr);
           if(dim>1) {
             Range edges;
             ierr = mField.get_moab().get_adjacencies(ents,1,false,edges,moab::Interface::UNION); CHKERRQ(ierr);
@@ -551,7 +551,7 @@ PetscErrorCode DirichletBCFromBlockSetFEMethodPreAndPostProcWithFlags::iNitalize
         ierr = MethodForForceScaling::applyScale(this,methodsOp,scaled_values); CHKERRQ(ierr);
         for(int dim = 0;dim<3;dim++) {
           Range ents;
-          ierr = it->getMeshSetIdEntitiesByDimension(mField.get_moab(),dim,ents,true); CHKERRQ(ierr);
+          ierr = it->getMeshsetIdEntitiesByDimension(mField.get_moab(),dim,ents,true); CHKERRQ(ierr);
           if(dim>1) {
             Range edges;
             ierr = mField.get_moab().get_adjacencies(ents,1,false,edges,moab::Interface::UNION); CHKERRQ(ierr);

@@ -287,7 +287,7 @@ struct FiniteElement {
    * \brief Get meshset containing element entities
    * @return Meshset
    */
-  inline EntityHandle getMeshSet() const { return meshset; }
+  inline EntityHandle getMeshset() const { return meshset; }
 
   /**
    * \brief Get finite element name
@@ -395,7 +395,7 @@ struct interface_FiniteElement {
    * \brief Get meshset containing element entities
    * @return Meshset
    */
-  inline EntityHandle getMeshSet() const { return this->sFePtr->getMeshSet(); }
+  inline EntityHandle getMeshset() const { return this->sFePtr->getMeshset(); }
 
   /**
    * \brief Get finite element name

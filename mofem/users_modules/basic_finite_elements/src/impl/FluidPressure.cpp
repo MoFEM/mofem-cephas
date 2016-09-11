@@ -46,29 +46,29 @@ PetscErrorCode FluidPressure::addNeumannFluidPressureBCElements(
       if(attributes.size()<7) {
         SETERRQ1(PETSC_COMM_SELF,1,"not enough block attributes to deffine fluid pressure element, attributes.size() = %d ",attributes.size());
       }
-      setOfFluids[bit->getMeshSetId()].dEnsity = attributes[0];
-      setOfFluids[bit->getMeshSetId()].aCCeleration.resize(3);
-      setOfFluids[bit->getMeshSetId()].aCCeleration[0] = attributes[1];
-      setOfFluids[bit->getMeshSetId()].aCCeleration[1] = attributes[2];
-      setOfFluids[bit->getMeshSetId()].aCCeleration[2] = attributes[3];
-      setOfFluids[bit->getMeshSetId()].zEroPressure.resize(3);
-      setOfFluids[bit->getMeshSetId()].zEroPressure[0] = attributes[4];
-      setOfFluids[bit->getMeshSetId()].zEroPressure[1] = attributes[5];
-      setOfFluids[bit->getMeshSetId()].zEroPressure[2] = attributes[6];
+      setOfFluids[bit->getMeshsetId()].dEnsity = attributes[0];
+      setOfFluids[bit->getMeshsetId()].aCCeleration.resize(3);
+      setOfFluids[bit->getMeshsetId()].aCCeleration[0] = attributes[1];
+      setOfFluids[bit->getMeshsetId()].aCCeleration[1] = attributes[2];
+      setOfFluids[bit->getMeshsetId()].aCCeleration[2] = attributes[3];
+      setOfFluids[bit->getMeshsetId()].zEroPressure.resize(3);
+      setOfFluids[bit->getMeshsetId()].zEroPressure[0] = attributes[4];
+      setOfFluids[bit->getMeshsetId()].zEroPressure[1] = attributes[5];
+      setOfFluids[bit->getMeshsetId()].zEroPressure[2] = attributes[6];
       //get blok tetrahedrons and triangles
       Range tets;
       rval = mField.get_moab().get_entities_by_type(bit->meshset,MBTET,tets,true); CHKERRQ_MOAB(rval);
       Range tris;
-      rval = mField.get_moab().get_entities_by_type(bit->meshset,MBTRI,setOfFluids[bit->getMeshSetId()].tRis,true); CHKERRQ_MOAB(rval);
+      rval = mField.get_moab().get_entities_by_type(bit->meshset,MBTRI,setOfFluids[bit->getMeshsetId()].tRis,true); CHKERRQ_MOAB(rval);
       //this get triangles only on block surfaces
       Range tets_skin_tris;
       rval = skin.find_skin(0,tets,false,tets_skin_tris); CHKERR_MOAB(rval);
-      setOfFluids[bit->getMeshSetId()].tRis.merge(tets_skin_tris);
+      setOfFluids[bit->getMeshsetId()].tRis.merge(tets_skin_tris);
       std::ostringstream ss;
-      ss << setOfFluids[bit->getMeshSetId()] << std::endl;
+      ss << setOfFluids[bit->getMeshsetId()] << std::endl;
       PetscPrintf(mField.get_comm(),ss.str().c_str());
 
-      ierr = mField.add_ents_to_finite_element_by_TRIs(setOfFluids[bit->getMeshSetId()].tRis,"FLUID_PRESSURE_FE"); CHKERRQ(ierr);
+      ierr = mField.add_ents_to_finite_element_by_TRIs(setOfFluids[bit->getMeshsetId()].tRis,"FLUID_PRESSURE_FE"); CHKERRQ(ierr);
 
     }
 

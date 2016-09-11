@@ -85,11 +85,11 @@ struct Field {
 
    * @return EntityHandle
    */
-  inline EntityHandle getMeshSet() const { return meshSet; }
+  inline EntityHandle getMeshset() const { return meshSet; }
 
-  /** \deprecated use getMeshSet() instead
+  /** \deprecated use getMeshset() instead
   */
-  DEPRECATED inline EntityHandle get_meshset() const { return getMeshSet(); }
+  DEPRECATED inline EntityHandle get_meshset() const { return getMeshset(); }
 
   /**
     * \brief Get dimension of general two-point tensor \ref MoFEM::CoordSys::getDim
@@ -143,7 +143,7 @@ struct Field {
    * \brief Returns meshset on which Tags defining coordinate system are stored
    * @return Coordinate system EntityHandle
    */
-  inline EntityHandle getCoordSysMeshSet() const { return coordSysPtr->getMeshSet(); }
+  inline EntityHandle getCoordSysMeshSet() const { return coordSysPtr->getMeshset(); }
 
   /**
    * \brief   Get coordinate system name
@@ -267,11 +267,11 @@ struct interface_Field {
 
   interface_Field(const boost::shared_ptr<T> field_ptr): sFieldPtr(field_ptr) {};
 
-  inline EntityHandle getMeshSet() const { return this->sFieldPtr->getMeshSet(); }
+  inline EntityHandle getMeshset() const { return this->sFieldPtr->getMeshset(); }
 
-  /** \deprecated Use getMeshSet() instead
+  /** \deprecated Use getMeshset() instead
   */
-  DEPRECATED inline EntityHandle get_meshset() const { return this->sFieldPtr->getMeshSet(); }
+  DEPRECATED inline EntityHandle get_meshset() const { return this->sFieldPtr->getMeshset(); }
 
   inline int getCoordSysId() const { return this->sFieldPtr->getCoordSysId(); }
 

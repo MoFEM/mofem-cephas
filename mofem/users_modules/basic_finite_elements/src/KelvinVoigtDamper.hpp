@@ -956,10 +956,10 @@ struct KelvinVoigtDamper {
           SETERRQ(PETSC_COMM_SELF,1,"Data inconsistency");
         }
         rval = mField.get_moab().get_entities_by_type(
-          it->meshset,MBTET,blockMaterialDataMap[it->getMeshSetId()].tEts,true
+          it->meshset,MBTET,blockMaterialDataMap[it->getMeshsetId()].tEts,true
         ); CHKERRQ_MOAB(rval);
-        blockMaterialDataMap[it->getMeshSetId()].gBeta = data[0];
-        blockMaterialDataMap[it->getMeshSetId()].vBeta = data[1];
+        blockMaterialDataMap[it->getMeshsetId()].gBeta = data[0];
+        blockMaterialDataMap[it->getMeshsetId()].vBeta = data[1];
       }
     }
     PetscFunctionReturn(0);

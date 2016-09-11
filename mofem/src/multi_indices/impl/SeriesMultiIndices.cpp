@@ -300,7 +300,7 @@ PetscErrorCode MoFEMSeriesStep::get_time_init(Interface &moab) {
 }
 
 std::ostream& operator<<(std::ostream& os,const MoFEMSeries& e) {
-  os << "name " << e.getName() << " meshset " << e.getMeshSet();
+  os << "name " << e.getName() << " meshset " << e.getMeshset();
   return os;
 }
 

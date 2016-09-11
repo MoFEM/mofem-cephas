@@ -76,7 +76,7 @@ PetscErrorCode Core::delete_recorder_series(const std::string& series_name) {
   if(sit == sEries.get<SeriesName_mi_tag>().end()) {
     SETERRQ1(PETSC_COMM_SELF,1,"serie recorder <%s> not exist and can be deleted",series_name.c_str());
   }
-  EntityHandle series_meshset = sit->getMeshSet();
+  EntityHandle series_meshset = sit->getMeshset();
   rval = moab.tag_delete(sit->th_SeriesTime); CHKERRQ_MOAB(rval);
   rval = moab.tag_delete(sit->th_SeriesDataHandles); CHKERRQ_MOAB(rval);
   rval = moab.tag_delete(sit->th_SeriesDataUIDs); CHKERRQ_MOAB(rval);
