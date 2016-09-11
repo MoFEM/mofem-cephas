@@ -25,7 +25,7 @@
 #include <h1_hdiv_hcurl_l2.h>
 
 #include <MaterialBlocks.hpp>
-#include <CubitBCData.hpp>
+#include <BCData.hpp>
 #include <TagMultiIndices.hpp>
 #include <CoordSysMultiIndices.hpp>
 #include <FieldMultiIndices.hpp>
@@ -48,14 +48,7 @@
 
 // Interfaces
 #include <TetGenInterface.hpp>
-#ifdef WITH_NETGEN
-  namespace nglib {
-  #include <nglib.h>
-  }
-  using namespace nglib;
-  #include <NetGenInterface.hpp>
-#endif
-
+#include <MedInterface.hpp>
 #include <NodeMerger.hpp>
 #include <PrismsFromSurfaceInterface.hpp>
 
@@ -119,13 +112,13 @@ PetscErrorCode Core::query_interface_type(const std::type_info& type,void*& ptr)
   }
   #endif
 
-  // NetGen
-  #ifdef WITH_NETGEN
-  if(type == typeid(NetGenInterface)) {
-    if(iFaces.find(IDD_MOFEMNetGegInterface.uUId.to_ulong()) == iFaces.end()) {
-      iFaces[IDD_MOFEMNetGegInterface.uUId.to_ulong()] = new NetGenInterface(*this);
+  // MedInterface
+  #ifdef WITH_MED
+  if(type == typeid(MedInterface)) {
+    if(iFaces.find(IDD_MOFEMedInterface.uUId.to_ulong()) == iFaces.end()) {
+      iFaces[IDD_MOFEMedInterface.uUId.to_ulong()] = new MedInterface(*this);
     }
-    ptr = iFaces.at(IDD_MOFEMNetGegInterface.uUId.to_ulong());
+    ptr = iFaces.at(IDD_MOFEMedInterface.uUId.to_ulong());
     PetscFunctionReturn(0);
   }
   #endif
@@ -618,17 +611,30 @@ PetscErrorCode Core::getTags(int verb) {
   rval = moab.tag_get_by_ptr(th_MoFEMBuild,&root_meshset,1,(const void **)&buildMoFEM); CHKERRQ_MOAB(rval);
   //Meshsets
   int default_val = -1;
-  rval = moab.tag_get_handle(DIRICHLET_SET_TAG_NAME,1, MB_TYPE_INTEGER,
-    nsTag, MB_TAG_SPARSE|MB_TAG_CREAT, &default_val); CHKERRQ_MOAB(rval);
+  rval = moab.tag_get_handle(
+    DIRICHLET_SET_TAG_NAME,1, MB_TYPE_INTEGER,
+    nsTag, MB_TAG_SPARSE|MB_TAG_CREAT, &default_val
+  ); CHKERRQ_MOAB(rval);
   rval = moab.tag_get_handle(NEUMANN_SET_TAG_NAME,1, MB_TYPE_INTEGER,
     ssTag, MB_TAG_SPARSE|MB_TAG_CREAT, &default_val); CHKERRQ_MOAB(rval);
   const int def_bc_data_len = 0;
   std::string tag_name = std::string(DIRICHLET_SET_TAG_NAME)+"__BC_DATA";
-  rval = moab.tag_get_handle(tag_name.c_str(),def_bc_data_len,MB_TYPE_OPAQUE,
-    nsTag_data,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES|MB_TAG_VARLEN,NULL); CHKERRQ_MOAB(rval);
+  rval = moab.tag_get_handle(
+    tag_name.c_str(),
+    def_bc_data_len,
+    MB_TYPE_OPAQUE,
+    nsTag_data,
+    MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES|MB_TAG_VARLEN,
+    NULL
+  ); CHKERRQ_MOAB(rval);
   tag_name = std::string(NEUMANN_SET_TAG_NAME)+"__BC_DATA";
-  rval = moab.tag_get_handle(tag_name.c_str(),def_bc_data_len,MB_TYPE_OPAQUE,
-    ssTag_data,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES|MB_TAG_VARLEN,NULL); CHKERRQ_MOAB(rval);
+  rval = moab.tag_get_handle(
+    tag_name.c_str(),
+    def_bc_data_len,
+    MB_TYPE_OPAQUE,
+    ssTag_data,
+    MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES|MB_TAG_VARLEN,NULL
+  ); CHKERRQ_MOAB(rval);
   rval = moab.tag_get_handle(MATERIAL_SET_TAG_NAME, 1, MB_TYPE_INTEGER,
     bhTag,MB_TAG_SPARSE|MB_TAG_CREAT,&default_val); CHKERRQ_MOAB(rval);
   std::vector<unsigned int> def_uint_zero(3,0);
@@ -707,7 +713,7 @@ PetscErrorCode Core::initialiseDatabseInformationFromMesh(int verb) {
         }
         if(verb > 0) {
           std::ostringstream ss;
-          ss << "read cubit" << base_meshset << std::endl;
+          ss << "read cubit " << base_meshset << std::endl;
           //PetscSynchronizedPrintf(comm,ss.str().c_str());
           PetscPrintf(comm,ss.str().c_str());
         }

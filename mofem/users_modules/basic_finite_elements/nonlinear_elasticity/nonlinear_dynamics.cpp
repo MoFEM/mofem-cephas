@@ -538,10 +538,10 @@ int main(int argc, char *argv[]) {
       surface_force.typeOfForces = NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::NONCONSERVATIVE;
     }
     for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,NODESET|FORCESET,it)) {
-      ierr = surface_force.addForce(it->get_msId()); CHKERRQ(ierr);
+      ierr = surface_force.addForce(it->getMeshSetId()); CHKERRQ(ierr);
     }
     for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,SIDESET|PRESSURESET,it)) {
-      ierr = surface_force.addPreassure(it->get_msId()); CHKERRQ(ierr);
+      ierr = surface_force.addPreassure(it->getMeshSetId()); CHKERRQ(ierr);
     }
     surface_force.methodsOp.push_back(new TimeForceScale());
     shell_matrix_element.loopK.push_back(ConvectiveMassElement::ShellMatrixElement::LoopPairType("NEUMANN_FE",&surface_force));
@@ -571,10 +571,10 @@ int main(int argc, char *argv[]) {
       surface_force.typeOfForces = NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::NONCONSERVATIVE;
     }
     for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,NODESET|FORCESET,it)) {
-      ierr = surface_force.addForce(it->get_msId()); CHKERRQ(ierr);
+      ierr = surface_force.addForce(it->getMeshSetId()); CHKERRQ(ierr);
     }
     for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,SIDESET|PRESSURESET,it)) {
-      ierr = surface_force.addPreassure(it->get_msId()); CHKERRQ(ierr);
+      ierr = surface_force.addPreassure(it->getMeshSetId()); CHKERRQ(ierr);
     }
     surface_force.methodsOp.push_back(new TimeForceScale());
 
@@ -587,7 +587,7 @@ int main(int argc, char *argv[]) {
   string fe_name_str ="FORCE_FE";
   nodal_forces.insert(fe_name_str,new NodalForce(m_field));
   for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,NODESET|FORCESET,it)) {
-    ierr = nodal_forces.at(fe_name_str).addForce("SPATIAL_POSITION",F,it->get_msId(),true);  CHKERRQ(ierr);
+    ierr = nodal_forces.at(fe_name_str).addForce("SPATIAL_POSITION",F,it->getMeshSetId(),true);  CHKERRQ(ierr);
     nodal_forces.at(fe_name_str).methodsOp.push_back(new TimeForceScale());
   }
 

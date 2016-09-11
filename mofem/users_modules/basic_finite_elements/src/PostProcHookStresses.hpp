@@ -45,7 +45,7 @@ struct PostPorcHookStress: public MoFEM::VolumeElementForcesAndSourcesCore::User
     EntityHandle ent = getNumeredEntFiniteElementPtr()->getEnt();
     for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BLOCKSET|MAT_ELASTICSET,it)) {
       Mat_Elastic mydata;
-      ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
+      ierr = it->getAttributeDataStructure(mydata); CHKERRQ(ierr);
 
       Range meshsets;
       rval = mField.get_moab().get_entities_by_type(it->meshset,MBENTITYSET,meshsets,true); CHKERRQ_MOAB(rval);
@@ -54,7 +54,7 @@ struct PostPorcHookStress: public MoFEM::VolumeElementForcesAndSourcesCore::User
         if( mField.get_moab().contains_entities(*mit,&ent,1) ) {
           *_lambda = LAMBDA(mydata.data.Young,mydata.data.Poisson);
           *_mu = MU(mydata.data.Young,mydata.data.Poisson);
-          *_block_id = it->get_msId();
+          *_block_id = it->getMeshSetId();
           PetscFunctionReturn(0);
         }
       }

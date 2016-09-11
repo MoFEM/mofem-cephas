@@ -38,7 +38,7 @@
 
 //SRC/MULTI-INDICES
 #include <MaterialBlocks.hpp>
-#include <CubitBCData.hpp>
+#include <BCData.hpp>
 #include <TagMultiIndices.hpp>
 #include <CoordSysMultiIndices.hpp>
 #include <FieldMultiIndices.hpp>
@@ -86,6 +86,9 @@
 #ifdef WITH_TETGEN
   #include <TetGenInterface.hpp>
 #endif //WITH_TETGEN
+#ifdef WITH_MED
+  #include <MedInterface.hpp>
+#endif //WITH_MED
 #include <BitLevelCoupler.hpp>
 #include <NodeMerger.hpp>
 #include <PrismsFromSurfaceInterface.hpp>

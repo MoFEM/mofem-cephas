@@ -116,6 +116,40 @@ struct Interface: public UnknownInterface {
   virtual PetscErrorCode add_cubit_msId(const CubitBCType cubit_bc_tyep,const int msId,const std::string name = "") = 0;
 
   /**
+   * \brief set attributes to cubit meshset
+   * @param  cubit_bc_type type of meshset, see CubitBC, i.e. BLOCKSET, NODESET, SIDESET
+   * @param  ms_id         id of meshset
+   * @param  attributes    attributes
+   * @return               error code
+   */
+  virtual PetscErrorCode set_cubit_msId_attribites(
+    const CubitBCType cubit_bc_type,const int ms_id,const std::vector<double> &attributes,const std::string name = ""
+  ) = 0;
+
+  /**
+   * \brief set (material) data structure to cubit meshset
+   * @param  cubit_bc_type type of meshset, see CubitBC, i.e. BLOCKSET, NODESET, SIDESET
+   * @param  ms_id         id of meshset
+   * @param  attributes    attributes
+   * @return               error code
+   */
+  virtual PetscErrorCode set_cubit_msId_attribites_data_structure(
+    const CubitBCType cubit_bc_type,const int ms_id,const GenericAttributeData &data,const std::string name = ""
+  ) = 0;
+
+  /**
+   * \brief set boundary data structure to meshset
+   * @param  cubit_bc_type type of meshset, see CubitBC, i.e. BLOCKSET, NODESET, SIDESET
+   * @param  ms_id         id of meshset
+   * @param  data          data structure
+   * @return               error code
+   */
+  virtual PetscErrorCode set_cubit_msId_bc_data_structure(
+    const CubitBCType cubit_bc_type,const int ms_id,const GenericCubitBcData &data
+  ) = 0;
+
+
+  /**
     * \brief delete cubit meshset
     * \ingroup mopfem_bc
 

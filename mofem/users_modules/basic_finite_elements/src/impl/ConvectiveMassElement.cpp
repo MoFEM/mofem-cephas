@@ -2044,12 +2044,12 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
 
       Range added_tets;
       for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BLOCKSET|BODYFORCESSET,it)) {
-        int id = it->get_msId();
+        int id = it->getMeshSetId();
         EntityHandle meshset = it->getMeshSet();
         rval = mField.get_moab().get_entities_by_type(meshset,MBTET,setOfBlocks[id].tEts,true); CHKERRQ_MOAB(rval);
         added_tets.merge(setOfBlocks[id].tEts);
         Block_BodyForces mydata;
-        ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
+        ierr = it->getAttributeDataStructure(mydata); CHKERRQ(ierr);
         setOfBlocks[id].rho0 = mydata.data.density;
         setOfBlocks[id].a0.resize(3);
         setOfBlocks[id].a0[0] = mydata.data.acceleration_x;
@@ -2060,14 +2060,14 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
 
       for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BLOCKSET|MAT_ELASTICSET,it)) {
         Mat_Elastic mydata;
-        ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
+        ierr = it->getAttributeDataStructure(mydata); CHKERRQ(ierr);
         if(mydata.data.User1 == 0) continue;
         Range tets;
         EntityHandle meshset = it->getMeshSet();
         rval = mField.get_moab().get_entities_by_type(meshset,MBTET,tets,true); CHKERRQ_MOAB(rval);
         tets = subtract(tets,added_tets);
         if(tets.empty()) continue;
-        int id = it->get_msId();
+        int id = it->getMeshSetId();
         setOfBlocks[-id].tEts = tets;
         setOfBlocks[-id].rho0 = mydata.data.User1;
         setOfBlocks[-id].a0.resize(3);

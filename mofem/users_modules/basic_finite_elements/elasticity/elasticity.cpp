@@ -158,29 +158,29 @@ int main(int argc, char *argv[]) {
       po::options_description config_file_options;
       for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,BLOCKSET,it)) {
         std::ostringstream str_order;
-        str_order << "block_" << it->get_msId() << ".displacement_order";
+        str_order << "block_" << it->getMeshSetId() << ".displacement_order";
         config_file_options.add_options()
-        (str_order.str().c_str(),po::value<int>(&block_data[it->get_msId()].oRder)->default_value(order));
+        (str_order.str().c_str(),po::value<int>(&block_data[it->getMeshSetId()].oRder)->default_value(order));
         std::ostringstream str_cond;
-        str_cond << "block_" << it->get_msId() << ".young_modulus";
+        str_cond << "block_" << it->getMeshSetId() << ".young_modulus";
         config_file_options.add_options()
-        (str_cond.str().c_str(),po::value<double>(&block_data[it->get_msId()].yOung)->default_value(-1));
+        (str_cond.str().c_str(),po::value<double>(&block_data[it->getMeshSetId()].yOung)->default_value(-1));
         std::ostringstream str_capa;
-        str_capa << "block_" << it->get_msId() << ".poisson_ratio";
+        str_capa << "block_" << it->getMeshSetId() << ".poisson_ratio";
         config_file_options.add_options()
-        (str_capa.str().c_str(),po::value<double>(&block_data[it->get_msId()].pOisson)->default_value(-1));
+        (str_capa.str().c_str(),po::value<double>(&block_data[it->getMeshSetId()].pOisson)->default_value(-1));
         std::ostringstream str_init_temp;
-        str_init_temp << "block_" << it->get_msId() << ".initial_temperature";
+        str_init_temp << "block_" << it->getMeshSetId() << ".initial_temperature";
         config_file_options.add_options()
-        (str_init_temp.str().c_str(),po::value<double>(&block_data[it->get_msId()].initTemp)->default_value(0));
+        (str_init_temp.str().c_str(),po::value<double>(&block_data[it->getMeshSetId()].initTemp)->default_value(0));
       }
       po::parsed_options parsed = parse_config_file(ini_file,config_file_options,true);
       store(parsed,vm);
       po::notify(vm);
       for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,BLOCKSET,it)) {
-        if(block_data[it->get_msId()].oRder == -1) continue;
-        if(block_data[it->get_msId()].oRder == order) continue;
-        PetscPrintf(PETSC_COMM_WORLD,"Set block %d order to %d\n",it->get_msId(),block_data[it->get_msId()].oRder);
+        if(block_data[it->getMeshSetId()].oRder == -1) continue;
+        if(block_data[it->getMeshSetId()].oRder == order) continue;
+        PetscPrintf(PETSC_COMM_WORLD,"Set block %d order to %d\n",it->getMeshSetId(),block_data[it->getMeshSetId()].oRder);
         Range block_ents;
         rval = moab.get_entities_by_handle(it->getMeshSet(),block_ents,true); CHKERRQ_MOAB(rval);
         Range ents_to_set_order;
@@ -189,7 +189,7 @@ int main(int argc, char *argv[]) {
         rval = moab.get_adjacencies(block_ents,2,false,ents_to_set_order,moab::Interface::UNION); CHKERRQ_MOAB(rval);
         rval = moab.get_adjacencies(block_ents,1,false,ents_to_set_order,moab::Interface::UNION); CHKERRQ_MOAB(rval);
         ierr = m_field.synchronise_entities(ents_to_set_order); CHKERRQ(ierr);
-        ierr = m_field.set_field_order(ents_to_set_order,"DISPLACEMENT",block_data[it->get_msId()].oRder); CHKERRQ(ierr);
+        ierr = m_field.set_field_order(ents_to_set_order,"DISPLACEMENT",block_data[it->getMeshSetId()].oRder); CHKERRQ(ierr);
       }
       std::vector<std::string> additional_parameters;
       additional_parameters = collect_unrecognized(parsed.options,po::include_positional);
@@ -236,7 +236,7 @@ int main(int argc, char *argv[]) {
   if(!m_field.check_field("TEMP")) {
     bool add_temp_field = false;
     for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,BLOCKSET,it)) {
-      if(block_data[it->get_msId()].initTemp!=0) {
+      if(block_data[it->getMeshSetId()].initTemp!=0) {
         add_temp_field = true;
         break;
       }
@@ -259,14 +259,14 @@ int main(int argc, char *argv[]) {
   ierr = m_field.loop_dofs("MESH_NODE_POSITIONS",ent_method_material); CHKERRQ(ierr);
   if(m_field.check_field("TEMP")) {
     for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,BLOCKSET,it)) {
-      if(block_data[it->get_msId()].initTemp!=0) {
+      if(block_data[it->getMeshSetId()].initTemp!=0) {
         PetscPrintf(PETSC_COMM_WORLD,"Set block %d temperature to %3.2g\n",
-        it->get_msId(),block_data[it->get_msId()].initTemp);
+        it->getMeshSetId(),block_data[it->getMeshSetId()].initTemp);
         Range block_ents;
         rval = moab.get_entities_by_handle(it->meshset,block_ents,true); CHKERRQ_MOAB(rval);
         Range vertices;
         rval = moab.get_connectivity(block_ents,vertices,true); CHKERRQ_MOAB(rval);
-        ierr = m_field.set_field(block_data[it->get_msId()].initTemp,MBVERTEX,vertices,"TEMP"); CHKERRQ(ierr);
+        ierr = m_field.set_field(block_data[it->getMeshSetId()].initTemp,MBVERTEX,vertices,"TEMP"); CHKERRQ(ierr);
       }
     }
   }
@@ -391,7 +391,7 @@ int main(int argc, char *argv[]) {
   //body forces
   BodyFroceConstantField body_forces_methods(m_field);
   for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,BLOCKSET|BODYFORCESSET,it)) {
-    ierr = body_forces_methods.addBlock("DISPLACEMENT",F,it->get_msId()); CHKERRQ(ierr);
+    ierr = body_forces_methods.addBlock("DISPLACEMENT",F,it->getMeshSetId()); CHKERRQ(ierr);
   }
   ierr = DMoFEMLoopFiniteElements(dm,"BODY_FORCE",&body_forces_methods.getLoopFe()); CHKERRQ(ierr);
   //fluid pressure

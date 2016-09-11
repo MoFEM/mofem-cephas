@@ -32,7 +32,6 @@ target_link_libraries(elasticity
   mofem_approx
   mofem_third_party
   mofem_cblas
-  boost_program_options
   ${MoFEM_PROJECT_LIBS}
 )
 

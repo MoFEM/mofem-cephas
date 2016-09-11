@@ -41,7 +41,7 @@ endif(CMAKE_Fortran_COMPILER)
 
 set(MoFEM_VERSION_MAJOR 0)
 set(MoFEM_VERSION_MINOR 4)
-set(MoFEM_VERSION_BUILD 4)
+set(MoFEM_VERSION_BUILD 5)
 
 include(CheckCXXSourceCompiles)
 CHECK_CXX_SOURCE_COMPILES(
@@ -83,8 +83,8 @@ include(cmake/FindSLEPC.cmake)
 #Other tools
 include(cmake/FindADOL-C.cmake)
 include(cmake/FindTetGen.cmake)
-include(cmake/FindNetGen.cmake)
 include(cmake/FindTriangle.cmake)
+include(cmake/FindMed.cmake)
 
 #CGAL tools
 #find_package(CGAL HINTS ${CGAL_DIR}/lib/CGAL)
@@ -127,6 +127,15 @@ if(TAO_LIBRARY)
   add_definitions(-DTAO)
 endif(TAO_LIBRARY)
 
+find_library(
+  BOOST_PROGRAM_OPTIONS_LIB NAMES boost_program_options
+  HINTS
+  ${PETSC_DIR}/${PETSC_ARCH}/lib
+)
+if(NOT BOOST_PROGRAM_OPTIONS_LIB)
+  message(FATAL_ERROR "boost program options library not found")
+endif(NOT BOOST_PROGRAM_OPTIONS_LIB)
+
 resolve_libraries(PROJECT_LIBS "
   ${SLEPC_LIBRARY}
   ${ADOL-C_LIBRARY}
@@ -137,7 +146,8 @@ resolve_libraries(PROJECT_LIBS "
   ${PETSCVAR_PETSC_WITH_EXTERNAL_LIB}
   ${TAO_LIBRARY}
   ${MPI_F90_LIB}
-  ${MPI_F77_LIB}"
+  ${MPI_F77_LIB}
+  ${BOOST_PROGRAM_OPTIONS_LIB}"
 )
 
 message(STATUS ${PROJECT_LIBS})

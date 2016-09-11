@@ -83,15 +83,15 @@ int main(int argc, char *argv[]) {
     for (_IT_CUBITMESHSETS_BY_NAME_FOR_LOOP_(m_field,"Moon",it)){
       std::cout << it->getName() << std::endl;
       myfile << it->getName() << std::endl;
-      if(it->get_cubit_bc_type_ulong() & BLOCKSET) {
+      if(it->getBcTypeULong() & BLOCKSET) {
         std::cout << "BLOCKSET" << std::endl;
         myfile << "BLOCKSET" << std::endl;
       }
-      if(it->get_cubit_bc_type_ulong() & SIDESET) {
+      if(it->getBcTypeULong() & SIDESET) {
         std::cout << "SIDESET" << std::endl;
         myfile << "SIDESET" << std::endl;
       }
-      if(it->get_cubit_bc_type_ulong() & NODESET) {
+      if(it->getBcTypeULong() & NODESET) {
         std::cout << "NODESET" << std::endl;
         myfile << "NODESET" << std::endl;
       }

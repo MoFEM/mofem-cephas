@@ -147,7 +147,7 @@ int main(int argc, char *argv[]) {
   for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,NODESET|TEMPERATURESET,it)) {
 
     Range tris;
-    ierr = it->get_cubit_msId_entities_by_dimension(m_field.get_moab(),2,tris,true); CHKERRQ(ierr);
+    ierr = it->getMeshSetIdEntitiesByDimension(m_field.get_moab(),2,tris,true); CHKERRQ(ierr);
     neumann_tris.insert(tris.begin(),tris.end());
 
   }

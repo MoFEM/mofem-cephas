@@ -32,7 +32,6 @@ if(ADOL-C_LIBRARY)
     mofem_approx
     mofem_third_party
     mofem_cblas
-    boost_program_options
     ${MoFEM_PROJECT_LIBS}
   )
 
@@ -99,7 +98,6 @@ target_link_libraries(nonlinear_dynamics
   mofem_approx
   mofem_third_party
   mofem_cblas
-  boost_program_options
   ${MoFEM_PROJECT_LIBS}
 )
 
@@ -131,7 +129,6 @@ if(SLEPC_LIBRARY)
     mofem_approx
     mofem_third_party
     mofem_cblas
-    boost_program_options
   ${MoFEM_PROJECT_LIBS})
 
   add_test(EigenProblem

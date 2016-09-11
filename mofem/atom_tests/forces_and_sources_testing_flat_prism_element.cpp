@@ -63,7 +63,7 @@ int main(int argc, char *argv[]) {
   int ll = 1;
   //for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,SIDESET|INTERFACESET,cit)) {
   for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,SIDESET,cit)) {
-    ierr = PetscPrintf(PETSC_COMM_WORLD,"Insert Interface %d\n",cit->get_msId()); CHKERRQ(ierr);
+    ierr = PetscPrintf(PETSC_COMM_WORLD,"Insert Interface %d\n",cit->getMeshSetId()); CHKERRQ(ierr);
     EntityHandle cubit_meshset = cit->getMeshSet();
     {
       //get tet enties form back bit_level

@@ -206,7 +206,7 @@ struct MetaNeummanForces {
     for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,BLOCKSET,it)) {
       if(it->getName().compare(0,block_set_force_name.length(),block_set_force_name) == 0) {
         std::vector<double> mydata;
-        ierr = it->get_attributes(mydata); CHKERRQ(ierr);
+        ierr = it->getAttributes(mydata); CHKERRQ(ierr);
         ublas::vector<double> force(mydata.size());
         for(unsigned int ii = 0;ii<mydata.size();ii++) {
           force[ii] = mydata[ii];
@@ -225,7 +225,7 @@ struct MetaNeummanForces {
     for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,BLOCKSET,it)) {
       if(it->getName().compare(0,block_set_pressure_name.length(),block_set_pressure_name) == 0) {
         std::vector<double> mydata;
-        ierr = it->get_attributes(mydata); CHKERRQ(ierr);
+        ierr = it->getAttributes(mydata); CHKERRQ(ierr);
         ublas::vector<double> pressure(mydata.size());
         for(unsigned int ii = 0;ii<mydata.size();ii++) {
           pressure[ii] = mydata[ii];
@@ -267,9 +267,9 @@ struct MetaNeummanForces {
     neumann_forces.insert(fe_name,new NeummanForcesSurface(m_field));
     bool ho_geometry = m_field.check_field(mesh_nodals_positions);
     for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,NODESET|FORCESET,it)) {
-      ierr = neumann_forces.at(fe_name).addForce(field_name,F,it->get_msId(),ho_geometry,false);  CHKERRQ(ierr);
+      ierr = neumann_forces.at(fe_name).addForce(field_name,F,it->getMeshSetId(),ho_geometry,false);  CHKERRQ(ierr);
       /*ForceCubitBcData data;
-      ierr = it->get_bc_data_structure(data); CHKERRQ(ierr);
+      ierr = it->getBcDataStructure(data); CHKERRQ(ierr);
       my_split << *it << std::endl;
       my_split << data << std::endl;*/
     }
@@ -277,16 +277,16 @@ struct MetaNeummanForces {
     const string block_set_force_name("FORCE");
     for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,BLOCKSET,it)) {
       if(it->getName().compare(0,block_set_force_name.length(),block_set_force_name) == 0) {
-        ierr =  neumann_forces.at(fe_name).addForce(field_name,F,it->get_msId(),ho_geometry,true); CHKERRQ(ierr);
+        ierr =  neumann_forces.at(fe_name).addForce(field_name,F,it->getMeshSetId(),ho_geometry,true); CHKERRQ(ierr);
       }
     }
 
     fe_name = "PRESSURE_FE";
     neumann_forces.insert(fe_name,new NeummanForcesSurface(m_field));
     for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,SIDESET|PRESSURESET,it)) {
-      ierr =  neumann_forces.at(fe_name).addPreassure(field_name,F,it->get_msId(),ho_geometry,false); CHKERRQ(ierr);
+      ierr =  neumann_forces.at(fe_name).addPreassure(field_name,F,it->getMeshSetId(),ho_geometry,false); CHKERRQ(ierr);
       /*PressureCubitBcData data;
-      ierr = it->get_bc_data_structure(data); CHKERRQ(ierr);
+      ierr = it->getBcDataStructure(data); CHKERRQ(ierr);
       my_split << *it << std::endl;
       my_split << data << std::endl;*/
     }
@@ -294,7 +294,7 @@ struct MetaNeummanForces {
     const string block_set_pressure_name("PRESSURE");
     for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,BLOCKSET,it)) {
       if(it->getName().compare(0,block_set_pressure_name.length(),block_set_pressure_name) == 0) {
-        ierr =  neumann_forces.at(fe_name).addPreassure(field_name,F,it->get_msId(),ho_geometry,true); CHKERRQ(ierr);
+        ierr =  neumann_forces.at(fe_name).addPreassure(field_name,F,it->getMeshSetId(),ho_geometry,true); CHKERRQ(ierr);
       }
     }
 
@@ -353,9 +353,9 @@ struct MetaNeummanForces {
     neumann_forces.insert(fe_name,new NeummanForcesSurface(m_field));
     for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,SIDESET|PRESSURESET,it)) {
       bool ho_geometry = m_field.check_field(mesh_nodals_positions);
-      ierr = neumann_forces.at(fe_name).addFlux(field_name,F,it->get_msId(),ho_geometry); CHKERRQ(ierr);
+      ierr = neumann_forces.at(fe_name).addFlux(field_name,F,it->getMeshSetId(),ho_geometry); CHKERRQ(ierr);
       /*PressureCubitBcData data;
-      ierr = it->get_bc_data_structure(data); CHKERRQ(ierr);
+      ierr = it->getBcDataStructure(data); CHKERRQ(ierr);
       my_split << *it << std::endl;
       my_split << data << std::endl;*/
     }

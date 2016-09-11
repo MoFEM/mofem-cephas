@@ -120,7 +120,7 @@ struct BodyFroceConstantField {
     ErrorCode rval;
     const CubitMeshSets *cubit_meshset_ptr;
     ierr = mField.get_cubit_msId(ms_id,BLOCKSET,&cubit_meshset_ptr); CHKERRQ(ierr);
-    ierr = cubit_meshset_ptr->get_attribute_data_structure(mapData[ms_id]); CHKERRQ(ierr);
+    ierr = cubit_meshset_ptr->getAttributeDataStructure(mapData[ms_id]); CHKERRQ(ierr);
     EntityHandle meshset = cubit_meshset_ptr->getMeshSet();
     Range tets;
     rval = mField.get_moab().get_entities_by_type(meshset,MBTET,tets,true); CHKERRQ_MOAB(rval);
