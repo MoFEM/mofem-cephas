@@ -419,7 +419,7 @@ namespace MoFEM {
     PetscFunctionReturn(0);
   }
 
-  PetscErrorCode MeshsetsManager::getmeshsetsByType(const unsigned int cubit_bc_type,Range &meshsets) {
+  PetscErrorCode MeshsetsManager::getMeshsetsByType(const unsigned int cubit_bc_type,Range &meshsets) {
     PetscFunctionBegin;
     CubitMeshSet_multiIndex::index<CubitMeshSets_mi_tag>::type::iterator
       miit = cubitMeshsets.get<CubitMeshSets_mi_tag>().lower_bound(cubit_bc_type);

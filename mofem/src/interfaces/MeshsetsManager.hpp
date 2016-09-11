@@ -95,16 +95,57 @@ namespace MoFEM {
     MoFEM::Core& cOre;
     MeshsetsManager(const MoFEM::Core& core);
 
+    /**
+     * \brief get tags handlers used on meshsets
+
+     * On meshsets range of tages in set. Depending on tag type and data on that
+     * tag type of meshset could be determined. This function get hanldes to
+     * tags.
+     *
+     * Most of the tags are followinf convention used by MoAB or Cubit and other
+     * meshing softwares, f.e. gmesh.
+
+     */
     PetscErrorCode getTags(int verb = -1);
 
+    /**
+     * \brief get tag handle used to store "id" of NODESET
+     */
     inline Tag get_nsTag() const { return nsTag; }
+
+    /**
+     * \brief get tag handle used to store "id" of SIDESET
+     */
     inline Tag get_ssTag() const { return ssTag; }
+
+    /**
+     * \brief get tag handle used to store boundary data on NODESET
+     */
     inline Tag get_nsTag_data() const { return nsTag_data; }
+
+    /**
+     * \brief get tag handle used to store boundary data on SIDESET
+     */
     inline Tag get_ssTag_data() const { return ssTag_data; }
+
+    /**
+     * \brief get tag handle used to store "id" of BLOCKSET
+     */
     inline Tag get_bhTag() const { return bhTag; }
+
+    /**
+     * \brief get tag handle used to store of block set header (Used by Cubit)
+     */
     inline Tag get_bhTag_header() const { return bhTag_header; }
 
+    /**
+     * \brief return pointer to meshset manager
+     */
     MeshsetsManager* get_meshsets_manager_ptr() { return this; }
+
+    /**
+     * \brief return pointer to meshset manager
+     */
     const MeshsetsManager* get_meshsets_manager_ptr() const { return this; }
 
     /**
@@ -151,11 +192,34 @@ namespace MoFEM {
       PetscFunctionReturn(0);
     }
 
+    /**
+     * \brief print meshsets with displacement boundary conditions data structure
+     */
     PetscErrorCode printDisplacementSet() const;
+
+    /**
+     * \brief print meshsets with pressure boundary conditions data structure
+     */
     PetscErrorCode printPressureSet() const;
+
+    /**
+     * \brief print meshsets with force boundary conditions data structure
+     */
     PetscErrorCode printForceSet() const;
+
+    /**
+     * \brief print meshsets with temperature boundary conditions data structure
+     */
     PetscErrorCode printTemperatureSet() const;
+
+    /**
+     * \brief print meshsets with heat flux boundary conditions data structure
+     */
     PetscErrorCode printHeatFluxSet() const;
+
+    /**
+     * \brief print meshsets with material data structure set on it
+     */
     PetscErrorCode printMaterialsSet() const;
 
     inline CubitMeshSet_multiIndex& getMeshsetsMultindex() {
@@ -407,7 +471,7 @@ namespace MoFEM {
       * \param  see CubitBC (NODESET, SIDESET or BLOCKSET and more).
       * \param meshsets is range of meshsets
       */
-    PetscErrorCode getmeshsetsByType(const unsigned int cubit_bc_type,Range &meshsets);
+    PetscErrorCode getMeshsetsByType(const unsigned int cubit_bc_type,Range &meshsets);
 
   protected:
 

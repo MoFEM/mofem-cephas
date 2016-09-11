@@ -1146,7 +1146,7 @@ PetscErrorCode Core::get_cubit_msId_meshset(const int ms_id,const unsigned int c
 }
 
 PetscErrorCode Core::get_cubit_meshsets(const unsigned int cubit_bc_type,Range &meshsets) {
-  return meshsetsManagerPtr->getmeshsetsByType(cubit_bc_type,meshsets);
+  return meshsetsManagerPtr->getMeshsetsByType(cubit_bc_type,meshsets);
 }
 
 }
