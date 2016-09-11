@@ -12,14 +12,14 @@
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 */
 
-#ifndef __Interface_HPP__
-#define __Interface_HPP__
-
-#include "UnknownInterface.hpp"
+#ifndef __INTERFACE_HPP__
+#define __INTERFACE_HPP__
 
 /** \brief name space of MoFEM library functions and classes
   */
 namespace MoFEM {
+
+struct MeshsetsManager;
 
 static const MOFEMuuid IDD_MOFEMInterface = MOFEMuuid( BitIntefaceId(FIELD_INTERFACE) );
 
@@ -34,20 +34,21 @@ static const MOFEMuuid IDD_MOFEMInterface = MOFEMuuid( BitIntefaceId(FIELD_INTER
  */
 struct Interface: public UnknownInterface {
 
-  virtual PetscErrorCode query_interface_type(const std::type_info& type, void*& ptr) = 0;
+  virtual PetscErrorCode query_interface_type(const std::type_info& type,void*& ptr) const = 0;
 
   template <class IFace>
-  PetscErrorCode query_interface(IFace*& ptr) {
+  PetscErrorCode query_interface(IFace*& ptr) const {
+    PetscErrorCode ierr;
     PetscFunctionBegin;
     void* tmp_ptr;
-    PetscErrorCode ierr;
-    ierr = query_interface_type(typeid(IFace), tmp_ptr); CHKERRQ(ierr);
+    ierr = query_interface_type(typeid(IFace),tmp_ptr); CHKERRQ(ierr);
     ptr = reinterpret_cast<IFace*>(tmp_ptr);
     PetscFunctionReturn(0);
   }
 
   /// get moab interface
   virtual moab::Interface& get_moab() = 0;
+  virtual const moab::Interface& get_moab() const = 0;
 
   /**
    * \brief Get pointer to basic entity data.
@@ -59,7 +60,7 @@ struct Interface: public UnknownInterface {
   virtual boost::shared_ptr<BasicEntityData> get_basic_entity_data_ptr() = 0;
 
   /// get communicator
-  virtual MPI_Comm get_comm() = 0;
+  virtual MPI_Comm get_comm() const = 0;
 
   /// get communicator size
   virtual int getCommSize() const = 0;
@@ -91,60 +92,91 @@ struct Interface: public UnknownInterface {
     */
   virtual PetscErrorCode check_number_of_ents_in_ents_finite_element() const = 0;
 
+  /** \brief get MeshsetsManager pointer
+  */
+  virtual MeshsetsManager* get_meshsets_manager_ptr() = 0;
+
+  /** \brief get MeshsetsManager pointer
+  */
+  virtual const MeshsetsManager* get_meshsets_manager_ptr() const = 0;
+
+  /** \brief get MeshsetsManager pointer
+  */
+  virtual MeshsetsManager& get_meshsets_manager() = 0;
+
+  /** \brief get MeshsetsManager pointer
+  */
+  virtual const MeshsetsManager& get_meshsets_manager() const = 0;
+
+
   /**
     * \brief check for CUBIT Id and CUBIT type
     * \ingroup mofem_bc
 
-
-    \bug All cubit interface functions should be outsurced to dedicated inerface
+    \deprecated use MeshsetsManager
+    \todo All cubit interface functions should be outsourced to dedicated interface
 
     * \param msId id of the BLOCKSET/SIDESET/BLOCKSET: from CUBIT
     * \param  see CubitBC (NODESET, SIDESET or BLOCKSET and more)
     */
-  virtual bool check_msId_meshset(const int msId,const CubitBCType cubit_bc_type) = 0;
+  DEPRECATED virtual bool check_msId_meshset(const int msId,const CubitBCType cubit_bc_type) = 0;
 
   /**
     * \brief add cubit meshset
     * \ingroup mofem_bc
 
-    *
+    \deprecated use MeshsetsManager
+    \todo All cubit interface functions should be outsourced to dedicated interface
+
     * \param see CubitBC (NODESET, SIDESET or BLOCKSET and more)
     * \param ms_id id of the BLOCKSET/SIDESET/BLOCKSET
     * \param name of set
 
     */
-  virtual PetscErrorCode add_cubit_msId(const CubitBCType cubit_bc_tyep,const int msId,const std::string name = "") = 0;
+  DEPRECATED virtual PetscErrorCode add_cubit_msId(const CubitBCType cubit_bc_tyep,const int msId,const std::string name = "") = 0;
 
   /**
    * \brief set attributes to cubit meshset
+
+   \deprecated use MeshsetsManager
+   \todo All cubit interface functions should be outsourced to dedicated interface
+
    * @param  cubit_bc_type type of meshset, see CubitBC, i.e. BLOCKSET, NODESET, SIDESET
    * @param  ms_id         id of meshset
    * @param  attributes    attributes
    * @return               error code
    */
-  virtual PetscErrorCode set_cubit_msId_attribites(
+  DEPRECATED virtual PetscErrorCode set_cubit_msId_attribites(
     const CubitBCType cubit_bc_type,const int ms_id,const std::vector<double> &attributes,const std::string name = ""
   ) = 0;
 
   /**
    * \brief set (material) data structure to cubit meshset
+
+   \deprecated use MeshsetsManager
+   \todo All cubit interface functions should be outsourced to dedicated interface
+
    * @param  cubit_bc_type type of meshset, see CubitBC, i.e. BLOCKSET, NODESET, SIDESET
    * @param  ms_id         id of meshset
    * @param  attributes    attributes
    * @return               error code
    */
-  virtual PetscErrorCode set_cubit_msId_attribites_data_structure(
+  DEPRECATED virtual PetscErrorCode set_cubit_msId_attribites_data_structure(
     const CubitBCType cubit_bc_type,const int ms_id,const GenericAttributeData &data,const std::string name = ""
   ) = 0;
 
   /**
    * \brief set boundary data structure to meshset
+
+   \deprecated use MeshsetsManager
+   \todo All cubit interface functions should be outsourced to dedicated interface
+
    * @param  cubit_bc_type type of meshset, see CubitBC, i.e. BLOCKSET, NODESET, SIDESET
    * @param  ms_id         id of meshset
    * @param  data          data structure
    * @return               error code
    */
-  virtual PetscErrorCode set_cubit_msId_bc_data_structure(
+  DEPRECATED virtual PetscErrorCode set_cubit_msId_bc_data_structure(
     const CubitBCType cubit_bc_type,const int ms_id,const GenericCubitBcData &data
   ) = 0;
 
@@ -153,19 +185,24 @@ struct Interface: public UnknownInterface {
     * \brief delete cubit meshset
     * \ingroup mopfem_bc
 
-    *
+   \deprecated use MeshsetsManager
+   \todo All cubit interface functions should be outsourced to dedicated interface
+
     * \param  see CubitBC (NODESET, SIDESET or BLOCKSET and more)
     * \param msId id of the BLOCKSET/SIDESET/BLOCKSET: from CUBIT
     *
     */
-  virtual PetscErrorCode delete_cubit_msId(const CubitBCType cubit_bc_type,const int msId) = 0;
+  DEPRECATED virtual PetscErrorCode delete_cubit_msId(const CubitBCType cubit_bc_type,const int msId) = 0;
 
   /**
     * \brief get cubit meshset
     * \ingroup mofem_bc
 
+   \deprecated use MeshsetsManager
+   \todo All cubit interface functions should be outsourced to dedicated interface
+
     */
-  virtual PetscErrorCode get_cubit_msId(const int msId,const CubitBCType cubit_bc_type,const CubitMeshSets **cubit_meshset_ptr) = 0;
+  DEPRECATED virtual PetscErrorCode get_cubit_msId(const int msId,const CubitBCType cubit_bc_type,const CubitMeshSets **cubit_meshset_ptr) = 0;
 
   /**
     * \brief get entities from CUBIT/meshset of a particular entity dimension
@@ -177,13 +214,16 @@ struct Interface: public UnknownInterface {
     * one should get all triangles or tetrahedrons for which the nodeset was create in Cubit,
     * and get all the connectivities of tris/tets.
 
+   \deprecated use MeshsetsManager
+   \todo All cubit interface functions should be outsourced to dedicated interface
+
     * \param msId id of the BLOCKSET/SIDESET/BLOCKSET: from CUBIT
     * \param  see CubitBC (NODESET, SIDESET or BLOCKSET and more)
     * \param dimensions (0 - Nodes, 1 - Edges, 2 - Faces, 3 - Volume(tetrahedral))
     * \param Range containing the retreived entities
     * \param recursive If true, meshsets containing meshsets are queried recursively. Returns the contents of meshsets, but not the meshsets themselves if true.
     */
-  virtual PetscErrorCode get_cubit_msId_entities_by_dimension(const int msId,const unsigned int cubit_bc_type, const int dimension,Range &entities,const bool recursive = false) = 0;
+  DEPRECATED virtual PetscErrorCode get_cubit_msId_entities_by_dimension(const int msId,const unsigned int cubit_bc_type, const int dimension,Range &entities,const bool recursive = false) = 0;
 
   /**
     * \brief get entities related to CUBIT/meshset,
@@ -192,180 +232,56 @@ struct Interface: public UnknownInterface {
     * NODESET will get Vertices only, even if the NODESET contains edges, tris and tets
     * SIDESET will get Tris, BLOCKSET will get Tets, DISPLACEMENTSET and FORCESET are stored in NODESET, PRESSURESET is stored in Sideset.
 
+   \deprecated use MeshsetsManager
+   \todo All cubit interface functions should be outsourced to dedicated interface
+
     * \param msId id of the BLOCKSET/SIDESET/BLOCKSET: from CUBIT
     * \param  see CubitBC (NODESET, SIDESET or BLOCKSET and more)
     * \param Range containing the retreived entities related to the
     * \param recursive If true, meshsets containing meshsets are queried recursively.  Returns the contents of meshsets, but not the meshsets themselves if true.
     */
-  virtual PetscErrorCode get_cubit_msId_entities_by_dimension(const int msId,const unsigned int cubit_bc_type, Range &entities,const bool recursive = false) = 0;
+  DEPRECATED virtual PetscErrorCode get_cubit_msId_entities_by_dimension(const int msId,const unsigned int cubit_bc_type, Range &entities,const bool recursive = false) = 0;
 
   /**
     * \ingroup mofem_bc
     * \brief get meshset from CUBIT Id and CUBIT type
-    *
+
+   \deprecated use MeshsetsManager
+   \todo All cubit interface functions should be outsourced to dedicated interface
+
     * \param msId id of the BLOCKSET/SIDESET/BLOCKSET: from CUBIT
     * \param  see CubitBC (NODESET, SIDESET or BLOCKSET and more)
     * \param meshset where to store the retrieved entities
     */
-  virtual PetscErrorCode get_cubit_msId_meshset(const int msId,const unsigned int cubit_bc_type,EntityHandle &meshset) = 0;
+  DEPRECATED virtual PetscErrorCode get_cubit_msId_meshset(const int msId,const unsigned int cubit_bc_type,EntityHandle &meshset) = 0;
 
   /**
     * \ingroup mofem_bc
     * \brief get all CUBIT meshsets by CUBIT type
-    *
+
+   \deprecated use MeshsetsManager
+   \todo All cubit interface functions should be outsourced to dedicated interface
+
     * \param  see CubitBC (NODESET, SIDESET or BLOCKSET and more).
     * \param meshsets is range of meshsets
     */
-  virtual PetscErrorCode get_cubit_meshsets(const unsigned int cubit_bc_type,Range &meshsets) = 0;
+  DEPRECATED virtual PetscErrorCode get_cubit_meshsets(const unsigned int cubit_bc_type,Range &meshsets) = 0;
 
-   /**
-    * \ingroup mofem_bc
-    * \brief get begin iterator of cubit mehset of given type (instead you can use _IT_CUBITMESHSETS_TYPE_FOR_LOOP_(MFIELD,CUBITBCTYPE,IT)
-    *
-    * for(_IT_CUBITMESHSETS_FOR_LOOP_(mField,it) {
-    * 	...
-    * }
-    *
-    */
-  virtual CubitMeshSet_multiIndex::iterator get_cubit_meshsets_begin() const = 0;
+  /** \deprecated use MeshsetsManager interface instead
+  */
+  DEPRECATED virtual PetscErrorCode print_cubit_displacement_set() const = 0;
 
-   /**
-    * \ingroup mofem_bc
-    * \brief get end iterator of cubit mehset of given type (instead you can use _IT_CUBITMESHSETS_FOR_LOOP_(MFIELD,CUBITBCTYPE,IT)
-    *
-    * for(_IT_CUBITMESHSETS_FOR_LOOP_(mField,it) {
-    * 	...
-    * }
-    *
-    */
-  virtual CubitMeshSet_multiIndex::iterator get_cubit_meshsets_end() const = 0;
+  /** \deprecated use MeshsetsManager interface instead
+  */
+  DEPRECATED virtual PetscErrorCode print_cubit_pressure_set() const = 0;
 
-    /**
-     * \brief Iterator that loops over all the Cubit MeshSets in a moFEM field
-     * \ingroup mofem_bc
+  /** \deprecated use MeshsetsManager interface instead
+  */
+  DEPRECATED virtual PetscErrorCode print_cubit_force_set() const = 0;
 
-     *
-     * \param mField moFEM Field
-     * \param iterator
-     */
-  #define _IT_CUBITMESHSETS_FOR_LOOP_(MFIELD,IT) \
-    CubitMeshSet_multiIndex::iterator IT = MFIELD.get_cubit_meshsets_begin(); IT!=MFIELD.get_cubit_meshsets_end(); IT++
-
-  /**
-    * \brief get begin iterator of cubit mehset of given type (instead you can use _IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(MFIELD,CUBITBCTYPE,IT)
-    * \ingroup mofem_bc
-
-    *
-    * for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NODESET|DISPLACEMENTSET,it) {
-    * 	...
-    * }
-    *
-    * \param  type of meshset (NODESET, SIDESET or BLOCKSET and more)
-    */
-  virtual CubitMeshSet_multiIndex::index<CubitMeshSets_mi_tag>::type::iterator
-  get_cubit_meshsets_begin(const unsigned int ) const = 0;
-
-  /**
-    * \brief get end iterator of cubit mehset of given type (instead you can use _IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(MFIELD,CUBITBCTYPE,IT)
-    * \ingroup mofem_bc
-
-    *
-    * for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NODESET,it) {
-    * 	...
-    * }
-    *
-    * \param  type of meshset (NODESET, SIDESET or BLOCKSET and more)
-    */
-  virtual CubitMeshSet_multiIndex::index<CubitMeshSets_mi_tag>::type::iterator
-  get_cubit_meshsets_end(const unsigned int ) const = 0;
-
-    /**
-      * \brief Iterator that loops over a specific Cubit MeshSet in a moFEM field
-      * \ingroup mofem_bc
-
-      *
-      * \param mField moFEM Field
-      * \param  see CubitBC (NODESET, SIDESET or BLOCKSET and more)
-      * \param iterator
-      */
-  #define _IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(MFIELD,CUBITBCTYPE,IT) \
-    CubitMeshSet_multiIndex::index<CubitMeshSets_mi_tag>::type::iterator IT = MFIELD.get_cubit_meshsets_begin(CUBITBCTYPE); \
-    IT!=MFIELD.get_cubit_meshsets_end(CUBITBCTYPE); IT++
-
-  /**
-    * \brief get begin iterator of cubit mehset of given type (instead you can use _IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(MFIELD,CUBITBCTYPE,IT)
-    * \ingroup mofem_bc
-
-    *
-    * for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,NODESET|DISPLACEMENTSET,it) {
-    * 	...
-    * }
-    *
-    * \param  type of meshset (NODESET, SIDESET or BLOCKSET and more)
-    */
-  virtual CubitMeshSet_multiIndex::index<CubitMeshSets_mask_meshset_mi_tag>::type::iterator
-  get_CubitMeshSets_bySetType_begin(const unsigned int ) const = 0;
-
-  /**
-    * \brief get end iterator of cubit mehset of given type (instead you can use _IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(MFIELD,CUBITBCTYPE,IT)
-    * \ingroup mofem_bc
-
-    *
-    * for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,NODESET|DISPLACEMENTSET,it) {
-    * 	...
-    * }
-    *
-    * \param  type of meshset (NODESET, SIDESET or BLOCKSET and more)
-    */
-  virtual CubitMeshSet_multiIndex::index<CubitMeshSets_mask_meshset_mi_tag>::type::iterator
-  get_CubitMeshSets_bySetType_end(const unsigned int ) const = 0;
-
-  /**
-   * \brief Iterator that loops over a specific Cubit MeshSet having a particular BC meshset in a moFEM field
-   * \ingroup mofem_bc
-
-   *
-   * \param mField moFEM Field
-   * \param  see CubitBC (NODESET, SIDESET or BLOCKSET and more)
-   * \param iterator
-   *
-   * Example: \code
-     for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,NODESET|DISPLACEMENTSET,it) {
-    	...
-   * } \endcode
-   */
-  #define _IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(MFIELD,CUBITBCTYPE,IT) \
-    CubitMeshSet_multiIndex::index<CubitMeshSets_mask_meshset_mi_tag>::type::iterator IT = MFIELD.get_CubitMeshSets_bySetType_begin(CUBITBCTYPE); \
-    IT!=MFIELD.get_CubitMeshSets_bySetType_end(CUBITBCTYPE); IT++
-
-
-  virtual CubitMeshSet_multiIndex::index<CubitMeshSets_name>::type::iterator
-  get_CubitMeshSets_byName_begin(const std::string& name) const = 0;
-  virtual CubitMeshSet_multiIndex::index<CubitMeshSets_name>::type::iterator
-  get_CubitMeshSets_byName_end(const std::string& name) const = 0;
-
-  /**
-    * \brief Iterator that loops over Cubit BlockSet having a particular name
-    * \ingroup mofem_bc
-
-
-    * \param MFIELD mField
-    * \param NAME name
-    * \param IT iterator
-    *
-    * Example: \code
-      for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,"SOME_BLOCK_NANE",it) {
-    	...
-    * } \endcode
-    */
-  #define _IT_CUBITMESHSETS_BY_NAME_FOR_LOOP_(MFIELD,NAME,IT) \
-    CubitMeshSet_multiIndex::index<CubitMeshSets_name>::type::iterator IT = MFIELD.get_CubitMeshSets_byName_begin(NAME); \
-    IT!=MFIELD.get_CubitMeshSets_byName_end(NAME); IT++
-
-  virtual PetscErrorCode print_cubit_displacement_set() const = 0;
-  virtual PetscErrorCode print_cubit_pressure_set() const = 0;
-  virtual PetscErrorCode print_cubit_force_set() const = 0;
-  virtual PetscErrorCode print_cubit_materials_set() const = 0;
+  /** \deprecated use MeshsetsManager interface instead
+  */
+  DEPRECATED virtual PetscErrorCode print_cubit_materials_set() const = 0;
 
   /**
    * \brief Clear database
@@ -2382,12 +2298,7 @@ DEPRECATED typedef Interface FieldInterface;
 
 }
 
-#endif // __Interface_HPP__
-
-/***************************************************************************//**
- * \defgroup mofem_bc Boundary conditions
- * \ingroup mofem
- ******************************************************************************/
+#endif // __INTERFACE_HPP__
 
 /***************************************************************************//**
  * \defgroup mofem_series Recording and reading series

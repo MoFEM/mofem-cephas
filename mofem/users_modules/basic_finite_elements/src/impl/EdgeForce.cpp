@@ -127,11 +127,13 @@ PetscErrorCode EdgeForce::OpEdgeForce::doWork(int side,EntityType type,DataForce
 }
 
 PetscErrorCode EdgeForce::addForce(const std::string field_name,Vec F,int ms_id,bool use_snes_f) {
-  PetscFunctionBegin;
   PetscErrorCode ierr;
   ErrorCode rval;
   const CubitMeshSets *cubit_meshset_ptr;
-  ierr = mField.get_cubit_msId(ms_id,NODESET,&cubit_meshset_ptr); CHKERRQ(ierr);
+  MeshsetsManager *mmanager_ptr;
+  PetscFunctionBegin;
+  ierr = mField.query_interface(mmanager_ptr); CHKERRQ(ierr);
+  ierr = mmanager_ptr->getCubitMeshsetPtr(ms_id,NODESET,&cubit_meshset_ptr); CHKERRQ(ierr);
   ierr = cubit_meshset_ptr->getBcDataStructure(mapForce[ms_id].data); CHKERRQ(ierr);
   rval = mField.get_moab().get_entities_by_type(cubit_meshset_ptr->meshset,MBEDGE,mapForce[ms_id].eDges,true); CHKERRQ_MOAB(rval);
   // Add operator for element, set data and entities operating on the data

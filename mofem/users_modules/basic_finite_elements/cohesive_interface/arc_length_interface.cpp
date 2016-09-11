@@ -433,10 +433,12 @@ int main(int argc, char *argv[]) {
   ierr = m_field.partition_ghost_dofs("ELASTIC_MECHANICS"); CHKERRQ(ierr);
 
   //print bcs
-  ierr = m_field.print_cubit_displacement_set(); CHKERRQ(ierr);
-  ierr = m_field.print_cubit_force_set(); CHKERRQ(ierr);
+  MeshsetsManager *mmanager_ptr;
+  ierr = m_field.query_interface(mmanager_ptr); CHKERRQ(ierr);
+  ierr = mmanager_ptr->printDisplacementSet(); CHKERRQ(ierr);
+  ierr = mmanager_ptr->printForceSet(); CHKERRQ(ierr);
   //print block sets with materials
-  ierr = m_field.print_cubit_materials_set(); CHKERRQ(ierr);
+  ierr = mmanager_ptr->printMaterialsSet(); CHKERRQ(ierr);
 
   //create matrices
   Vec F,F_body_force,D;

@@ -110,9 +110,6 @@ int main(int argc, char *argv[]) {
 
     problem_bit_level = bit_levels.back();
 
-    Range CubitSideSets_meshsets;
-    ierr = m_field.get_cubit_meshsets(SIDESET,CubitSideSets_meshsets); CHKERRQ(ierr);
-
     //Fields
     ierr = m_field.add_field("SPATIAL_POSITION",H1,3); CHKERRQ(ierr);
     ierr = m_field.add_field("MESH_NODE_POSITIONS",H1,3); CHKERRQ(ierr);
@@ -275,12 +272,12 @@ int main(int argc, char *argv[]) {
   ierr = m_field.partition_ghost_dofs("ELASTIC_MECHANICS"); CHKERRQ(ierr);
 
   //print bcs
-  ierr = m_field.print_cubit_displacement_set(); CHKERRQ(ierr);
-  ierr = m_field.print_cubit_pressure_set(); CHKERRQ(ierr);
-  ierr = m_field.print_cubit_force_set(); CHKERRQ(ierr);
-
+  MeshsetsManager *mmanager_ptr;
+  ierr = m_field.query_interface(mmanager_ptr); CHKERRQ(ierr);
+  ierr = mmanager_ptr->printDisplacementSet(); CHKERRQ(ierr);
+  ierr = mmanager_ptr->printForceSet(); CHKERRQ(ierr);
   //print block sets with materials
-  ierr = m_field.print_cubit_materials_set(); CHKERRQ(ierr);
+  ierr = mmanager_ptr->printMaterialsSet(); CHKERRQ(ierr);
 
   //create matrices
   Vec F;

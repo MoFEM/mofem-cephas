@@ -31,10 +31,9 @@ struct MedInterface: public UnknownInterface {
 
   PetscErrorCode queryInterface(const MOFEMuuid& uuid, UnknownInterface** iface);
 
-  MoFEM::interface& mField;
-  MedInterface(MoFEM::Interface& m_field):
-  mField(m_field) {
-  }
+  MoFEM::Core& cOre;
+  MedInterface(const MoFEM::Core& core):
+  cOre(const_cast<MoFEM::Core&>(core)) {}
 
 };
 

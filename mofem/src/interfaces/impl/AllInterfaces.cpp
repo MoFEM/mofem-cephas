@@ -1,5 +1,6 @@
 const static int debug = 1;
 
+#include "impl/MeshsetsManager.cpp"
 #include "impl/MeshRefinment.cpp"
 #include "impl/PrismInterfaceCore.cpp"
 #include "impl/SeriesRecorderCore.cpp"

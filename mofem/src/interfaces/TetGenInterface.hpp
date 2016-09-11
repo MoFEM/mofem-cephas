@@ -34,7 +34,8 @@ struct TetGenInterface: public UnknownInterface {
   PetscErrorCode queryInterface(const MOFEMuuid& uuid, UnknownInterface** iface);
 
   MoFEM::Core& cOre;
-  TetGenInterface(MoFEM::Core& core): cOre(core) {};
+  TetGenInterface(const MoFEM::Core& core):
+  cOre(const_cast<MoFEM::Core&>(core)) {}
 
   typedef std::map<EntityHandle,unsigned long> moabTetGen_Map;
   typedef std::map<unsigned long,EntityHandle> tetGenMoab_Map;

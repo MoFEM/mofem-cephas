@@ -57,6 +57,16 @@
 #include <PrismInterface.hpp>
 #include <SeriesRecorder.hpp>
 #include <Core.hpp>
+#include <MeshsetsManager.hpp>
+#ifdef WITH_TETGEN
+  #include <TetGenInterface.hpp>
+#endif //WITH_TETGEN
+#ifdef WITH_MED
+  #include <MedInterface.hpp>
+#endif //WITH_MED
+#include <BitLevelCoupler.hpp>
+#include <NodeMerger.hpp>
+#include <PrismsFromSurfaceInterface.hpp>
 
 //SRC/PETSC
 #include <KspCtx.hpp>
@@ -82,15 +92,5 @@
 #include <FatPrismElementForcesAndSurcesCore.hpp>
 #include <Projection10NodeCoordsOnField.hpp>
 
-// interfaces
-#ifdef WITH_TETGEN
-  #include <TetGenInterface.hpp>
-#endif //WITH_TETGEN
-#ifdef WITH_MED
-  #include <MedInterface.hpp>
-#endif //WITH_MED
-#include <BitLevelCoupler.hpp>
-#include <NodeMerger.hpp>
-#include <PrismsFromSurfaceInterface.hpp>
 
 #endif //MOFEM_HPP__

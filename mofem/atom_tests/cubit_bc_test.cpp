@@ -192,15 +192,18 @@ int main(int argc, char *argv[]) {
       else SETERRQ(PETSC_COMM_SELF,1,"Error: Unrecognizable BC type");
   }
 
+  MeshsetsManager *meshsets_manager_ptr;
+  ierr = m_field.query_interface(meshsets_manager_ptr); CHKERRQ(ierr);
+
   bool add_block_is_there = false;
-  ierr = m_field.add_cubit_msId(SIDESET,1002); CHKERRQ(ierr);
+  ierr = meshsets_manager_ptr->addMeshset(SIDESET,1002); CHKERRQ(ierr);
   {
     PressureCubitBcData mybc;
     strncpy(mybc.data.name,"Pressure",8);
     mybc.data.flag1 = 0;
     mybc.data.flag2 = 0;
     mybc.data.value1 = 1;
-    ierr = m_field.set_cubit_msId_bc_data_structure(SIDESET,1002,mybc); CHKERRQ(ierr);
+    ierr = meshsets_manager_ptr->setBcData(SIDESET,1002,mybc); CHKERRQ(ierr);
   }
   for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,SIDESET,it)) {
     if(it->getMeshSetId()!=1002) continue;
@@ -272,12 +275,12 @@ int main(int argc, char *argv[]) {
   }
 
   add_block_is_there = false;
-  ierr = m_field.add_cubit_msId(BLOCKSET,1000,"ADD_BLOCK_SET"); CHKERRQ(ierr);
+  ierr = meshsets_manager_ptr->addMeshset(BLOCKSET,1000,"ADD_BLOCK_SET"); CHKERRQ(ierr);
   std::vector<double> attr(3);
   attr[0] = 0;
   attr[1] = 1;
   attr[2] = 2;
-  ierr = m_field.set_cubit_msId_attribites(BLOCKSET,1000,attr); CHKERRQ(ierr);
+  ierr = meshsets_manager_ptr->setAttribites(BLOCKSET,1000,attr); CHKERRQ(ierr);
   for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,BLOCKSET,it)) {
     //Get block name
     std::string name = it->getName();
@@ -297,12 +300,12 @@ int main(int argc, char *argv[]) {
     SETERRQ(PETSC_COMM_WORLD,MOFEM_OPERATION_UNSUCCESSFUL,"no added block set");
   }
   add_block_is_there = false;
-  ierr = m_field.add_cubit_msId(BLOCKSET,1001,"MAT_ELASTIC"); CHKERRQ(ierr);
+  ierr = meshsets_manager_ptr->addMeshset(BLOCKSET,1001,"MAT_ELASTIC"); CHKERRQ(ierr);
   {
     Mat_Elastic mydata;
     mydata.data.Young = 1;
     mydata.data.Poisson = 0.25;
-    ierr = m_field.set_cubit_msId_attribites_data_structure(BLOCKSET,1001,mydata); CHKERRQ(ierr);
+    ierr = meshsets_manager_ptr->setAttribitesByDataStructure(BLOCKSET,1001,mydata); CHKERRQ(ierr);
   }
   for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,BLOCKSET,it)) {
     if(it->getMeshSetId()!=1001) continue;
