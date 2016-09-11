@@ -276,13 +276,15 @@ PetscErrorCode NeummanForcesSurface::OpNeumannFlux::doWork(
 
 
 PetscErrorCode NeummanForcesSurface::addForce(const std::string field_name,Vec F,int ms_id,bool ho_geometry,bool block_set) {
-  PetscFunctionBegin;
   PetscErrorCode ierr;
   ErrorCode rval;
+  const CubitMeshSets *cubit_meshset_ptr;
+  MeshsetsManager *mmanager_ptr;
+  PetscFunctionBegin;
+  ierr = mField.query_interface(mmanager_ptr); CHKERRQ(ierr);
   if(block_set) {
     //Add data from block set.
-    const CubitMeshSets *cubit_meshset_ptr;
-    ierr = mField.get_cubit_msId(ms_id,BLOCKSET,&cubit_meshset_ptr); CHKERRQ(ierr);
+    ierr = mmanager_ptr->getCubitMeshsetPtr(ms_id,BLOCKSET,&cubit_meshset_ptr); CHKERRQ(ierr);
     std::vector<double> mydata;
     ierr = cubit_meshset_ptr->getAttributes(mydata); CHKERRQ(ierr);
     ublas::vector<double> force(mydata.size());
@@ -317,8 +319,7 @@ PetscErrorCode NeummanForcesSurface::addForce(const std::string field_name,Vec F
 
     // SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"Not implemented");
   } else {
-    const CubitMeshSets *cubit_meshset_ptr;
-    ierr = mField.get_cubit_msId(ms_id,NODESET,&cubit_meshset_ptr); CHKERRQ(ierr);
+    ierr = mmanager_ptr->getCubitMeshsetPtr(ms_id,NODESET,&cubit_meshset_ptr); CHKERRQ(ierr);
     ierr = cubit_meshset_ptr->getBcDataStructure(mapForce[ms_id].data); CHKERRQ(ierr);
     rval = mField.get_moab().get_entities_by_type(cubit_meshset_ptr->meshset,MBTRI,mapForce[ms_id].tRis,true); CHKERRQ_MOAB(rval);
     fe.getOpPtrVector().push_back(new OpNeumannForce(field_name,F,mapForce[ms_id],methodsOp,ho_geometry));
@@ -327,12 +328,14 @@ PetscErrorCode NeummanForcesSurface::addForce(const std::string field_name,Vec F
 }
 
 PetscErrorCode NeummanForcesSurface::addPreassure(const std::string field_name,Vec F,int ms_id,bool ho_geometry,bool block_set) {
-  PetscFunctionBegin;
   PetscErrorCode ierr;
-  ErrorCode rval;
+  MoABErrorCode rval;
+  const CubitMeshSets *cubit_meshset_ptr;
+  MeshsetsManager *mmanager_ptr;
+  PetscFunctionBegin;
+  ierr = mField.query_interface(mmanager_ptr); CHKERRQ(ierr);
   if(block_set) {
-    const CubitMeshSets *cubit_meshset_ptr;
-    ierr = mField.get_cubit_msId(ms_id,BLOCKSET,&cubit_meshset_ptr); CHKERRQ(ierr);
+    ierr = mmanager_ptr->getCubitMeshsetPtr(ms_id,BLOCKSET,&cubit_meshset_ptr); CHKERRQ(ierr);
     std::vector<double> mydata;
     ierr = cubit_meshset_ptr->getAttributes(mydata); CHKERRQ(ierr);
     ublas::vector<double> pressure(mydata.size());
@@ -353,8 +356,7 @@ PetscErrorCode NeummanForcesSurface::addPreassure(const std::string field_name,V
     rval = mField.get_moab().get_entities_by_type(cubit_meshset_ptr->meshset,MBTRI,mapPreassure[ms_id].tRis,true); CHKERRQ_MOAB(rval);
     fe.getOpPtrVector().push_back(new OpNeumannPreassure(field_name,F,mapPreassure[ms_id],methodsOp,ho_geometry));
   } else {
-    const CubitMeshSets *cubit_meshset_ptr;
-    ierr = mField.get_cubit_msId(ms_id,SIDESET,&cubit_meshset_ptr); CHKERRQ(ierr);
+    ierr = mmanager_ptr->getCubitMeshsetPtr(ms_id,SIDESET,&cubit_meshset_ptr); CHKERRQ(ierr);
     ierr = cubit_meshset_ptr->getBcDataStructure(mapPreassure[ms_id].data); CHKERRQ(ierr);
     rval = mField.get_moab().get_entities_by_type(cubit_meshset_ptr->meshset,MBTRI,mapPreassure[ms_id].tRis,true); CHKERRQ_MOAB(rval);
     fe.getOpPtrVector().push_back(new OpNeumannPreassure(field_name,F,mapPreassure[ms_id],methodsOp,ho_geometry));
@@ -363,11 +365,13 @@ PetscErrorCode NeummanForcesSurface::addPreassure(const std::string field_name,V
 }
 
 PetscErrorCode NeummanForcesSurface::addFlux(const std::string field_name,Vec F,int ms_id,bool ho_geometry) {
-  PetscFunctionBegin;
   PetscErrorCode ierr;
   ErrorCode rval;
   const CubitMeshSets *cubit_meshset_ptr;
-  ierr = mField.get_cubit_msId(ms_id,SIDESET,&cubit_meshset_ptr); CHKERRQ(ierr);
+  MeshsetsManager *mmanager_ptr;
+  PetscFunctionBegin;
+  ierr = mField.query_interface(mmanager_ptr); CHKERRQ(ierr);
+  ierr = mmanager_ptr->getCubitMeshsetPtr(ms_id,SIDESET,&cubit_meshset_ptr); CHKERRQ(ierr);
   ierr = cubit_meshset_ptr->getBcDataStructure(mapPreassure[ms_id].data); CHKERRQ(ierr);
   rval = mField.get_moab().get_entities_by_type(cubit_meshset_ptr->meshset,MBTRI,mapPreassure[ms_id].tRis,true); CHKERRQ_MOAB(rval);
   fe.getOpPtrVector().push_back(new OpNeumannFlux(field_name,F,mapPreassure[ms_id],methodsOp,ho_geometry));

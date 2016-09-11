@@ -94,11 +94,20 @@ struct Interface: public UnknownInterface {
 
   /** \brief get MeshsetsManager pointer
   */
-  virtual MeshsetsManager* getMeshsetsManager() = 0;
+  virtual MeshsetsManager* get_meshsets_manager_ptr() = 0;
 
   /** \brief get MeshsetsManager pointer
   */
-  virtual const MeshsetsManager* getMeshsetsManager() const = 0;
+  virtual const MeshsetsManager* get_meshsets_manager_ptr() const = 0;
+
+  /** \brief get MeshsetsManager pointer
+  */
+  virtual MeshsetsManager& get_meshsets_manager() = 0;
+
+  /** \brief get MeshsetsManager pointer
+  */
+  virtual const MeshsetsManager& get_meshsets_manager() const = 0;
+
 
   /**
     * \brief check for CUBIT Id and CUBIT type

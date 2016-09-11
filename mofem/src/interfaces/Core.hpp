@@ -143,7 +143,6 @@ struct Core: public Interface, MeshRefinment, PrismInterface, SeriesRecorder {
   moab::Interface& get_moab();
   const moab::Interface& get_moab() const;
 
-
   //communicator MoFEM
   MPI_Comm get_comm() const;
 
@@ -222,8 +221,10 @@ struct Core: public Interface, MeshRefinment, PrismInterface, SeriesRecorder {
   //cubit meshsets
 
   MeshsetsManager* meshsetsManagerPtr;
-  MeshsetsManager* getMeshsetsManager() { return meshsetsManagerPtr; }
-  const MeshsetsManager* getMeshsetsManager() const { return meshsetsManagerPtr; }
+  MeshsetsManager* get_meshsets_manager_ptr() { return meshsetsManagerPtr; }
+  const MeshsetsManager* get_meshsets_manager_ptr() const { return meshsetsManagerPtr; }
+  MeshsetsManager& get_meshsets_manager() { return *meshsetsManagerPtr; }
+  const MeshsetsManager& get_meshsets_manager() const { return *meshsetsManagerPtr; }
 
   DEPRECATED bool check_msId_meshset(const int ms_id,const CubitBCType cubit_bc_type);
   DEPRECATED PetscErrorCode add_cubit_msId(const CubitBCType cubit_bc_type,const int ms_id,const std::string name = "");

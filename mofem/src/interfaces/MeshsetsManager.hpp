@@ -29,8 +29,8 @@ namespace MoFEM {
    * \param iterator
    */
    #define _IT_CUBITMESHSETS_FOR_LOOP_(MESHSET_MANAGER,IT) \
-   CubitMeshSet_multiIndex::iterator IT = MESHSET_MANAGER.getMeshsetsManager()->getBegin(); \
-   IT!=MESHSET_MANAGER.getMeshsetsManager()->getEnd(); IT++
+   CubitMeshSet_multiIndex::iterator IT = MESHSET_MANAGER.get_meshsets_manager_ptr()->getBegin(); \
+   IT!=MESHSET_MANAGER.get_meshsets_manager_ptr()->getEnd(); IT++
 
    /**
    * \brief Iterator that loops over a specific Cubit MeshSet in a moFEM field
@@ -42,8 +42,8 @@ namespace MoFEM {
    * \param iterator
    */
    #define _IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(MESHSET_MANAGER,CUBITBCTYPE,IT) \
-   CubitMeshSet_multiIndex::index<CubitMeshSets_mi_tag>::type::iterator IT = MESHSET_MANAGER.getMeshsetsManager()->getBegin(CUBITBCTYPE); \
-   IT!=MESHSET_MANAGER.getMeshsetsManager()->getEnd(CUBITBCTYPE); IT++
+   CubitMeshSet_multiIndex::index<CubitMeshSets_mi_tag>::type::iterator IT = MESHSET_MANAGER.get_meshsets_manager_ptr()->getBegin(CUBITBCTYPE); \
+   IT!=MESHSET_MANAGER.get_meshsets_manager_ptr()->getEnd(CUBITBCTYPE); IT++
 
    /**
    * \brief Iterator that loops over a specific Cubit MeshSet having a particular BC meshset in a moFEM field
@@ -60,8 +60,8 @@ namespace MoFEM {
    * } \endcode
    */
    #define _IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(MESHSET_MANAGER,CUBITBCTYPE,IT) \
-   CubitMeshSet_multiIndex::index<CubitMeshSets_mask_meshset_mi_tag>::type::iterator IT = MESHSET_MANAGER.getMeshsetsManager()->getBySetTypeBegin(CUBITBCTYPE); \
-   IT!=MESHSET_MANAGER.getMeshsetsManager()->getBySetTypeEnd(CUBITBCTYPE); IT++
+   CubitMeshSet_multiIndex::index<CubitMeshSets_mask_meshset_mi_tag>::type::iterator IT = MESHSET_MANAGER.get_meshsets_manager_ptr()->getBySetTypeBegin(CUBITBCTYPE); \
+   IT!=MESHSET_MANAGER.get_meshsets_manager_ptr()->getBySetTypeEnd(CUBITBCTYPE); IT++
 
    /**
    * \brief Iterator that loops over Cubit BlockSet having a particular name
@@ -78,8 +78,8 @@ namespace MoFEM {
    * } \endcode
    */
    #define _IT_CUBITMESHSETS_BY_NAME_FOR_LOOP_(MESHSET_MANAGER,NAME,IT) \
-   CubitMeshSet_multiIndex::index<CubitMeshSets_name>::type::iterator IT = MESHSET_MANAGER.getMeshsetsManager()->getBegin(NAME); \
-   IT!=MESHSET_MANAGER.getMeshsetsManager()->getEnd(NAME); IT++
+   CubitMeshSet_multiIndex::index<CubitMeshSets_name>::type::iterator IT = MESHSET_MANAGER.get_meshsets_manager_ptr()->getBegin(NAME); \
+   IT!=MESHSET_MANAGER.get_meshsets_manager_ptr()->getEnd(NAME); IT++
 
   static const MOFEMuuid IDD_MOFEMMeshsetsManager = MOFEMuuid( BitIntefaceId(MESHSETSMANAGER_INTERFACE) );
 
@@ -104,8 +104,8 @@ namespace MoFEM {
     inline Tag get_bhTag() const { return bhTag; }
     inline Tag get_bhTag_header() const { return bhTag_header; }
 
-    MeshsetsManager* getMeshsetsManager() { return this; }
-    const MeshsetsManager* getMeshsetsManager() const { return this; }
+    MeshsetsManager* get_meshsets_manager_ptr() { return this; }
+    const MeshsetsManager* get_meshsets_manager_ptr() const { return this; }
 
     /**
      * \brief clear multi-index container
@@ -151,45 +151,12 @@ namespace MoFEM {
       PetscFunctionReturn(0);
     }
 
-    PetscErrorCode printMaterialsSet() const {
-      MoABErrorCode rval;
-      PetscErrorCode ierr;
-      PetscFunctionBegin;
-      const MoFEM::Interface& m_field = cOre;
-      const moab::Interface& moab = m_field.get_moab();
-      for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_((*this),BLOCKSET|MAT_ELASTICSET,it)) {
-        Mat_Elastic data;
-        ierr = it->getAttributeDataStructure(data); CHKERRQ(ierr);
-        std::ostringstream ss;
-        ss << *it << std::endl;
-        ss << data;
-        Range tets;
-        rval = moab.get_entities_by_type(it->meshset,MBTET,tets,true); CHKERRQ_MOAB(rval);
-        ss << "MAT_ELATIC msId "<< it->getMeshSetId() << " nb. tets " << tets.size() << std::endl;
-        ss << std::endl;
-        PetscPrintf(m_field.get_comm(),ss.str().c_str());
-      }
-
-      for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,BLOCKSET|MAT_THERMALSET,it)) {
-          Mat_Thermal data;
-          ierr = it->getAttributeDataStructure(data); CHKERRQ(ierr);
-          std::ostringstream ss;
-          ss << *it << std::endl;
-          ss << data;
-          PetscPrintf(m_field.get_comm(),ss.str().c_str());
-      }
-
-      for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,BLOCKSET|MAT_MOISTURESET,it)) {
-        Mat_Moisture data;
-        ierr = it->getAttributeDataStructure(data); CHKERRQ(ierr);
-        std::ostringstream ss;
-        ss << *it << std::endl;
-        ss << data;
-        PetscPrintf(m_field.get_comm(),ss.str().c_str());
-      }
-
-      PetscFunctionReturn(0);
-    }
+    PetscErrorCode printDisplacementSet() const;
+    PetscErrorCode printPressureSet() const;
+    PetscErrorCode printForceSet() const;
+    PetscErrorCode printTemperatureSet() const;
+    PetscErrorCode printHeatFluxSet() const;
+    PetscErrorCode printMaterialsSet() const;
 
     inline CubitMeshSet_multiIndex& getMeshsetsMultindex() {
       return cubitMeshsets;

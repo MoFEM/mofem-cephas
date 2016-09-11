@@ -1037,59 +1037,54 @@ PetscErrorCode Core::set_field_coordinate_system(const std::string field_name,co
 // cubit meshsets
 
 PetscErrorCode Core::print_cubit_displacement_set() const {
-  PetscFunctionBegin;
   PetscErrorCode ierr;
   MeshsetsManager *meshsets_manager;
+  PetscFunctionBegin;
   ierr = query_interface(meshsets_manager); CHKERRQ(ierr);
-  DisplacementCubitBcData mydata;
-  ierr = meshsets_manager->printBcSet(mydata,NODESET|mydata.tYpe.to_ulong()); CHKERRQ(ierr);
+  ierr = meshsets_manager->printDisplacementSet(); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 
 PetscErrorCode Core::print_cubit_pressure_set() const {
-  PetscFunctionBegin;
   PetscErrorCode ierr;
   MeshsetsManager *meshsets_manager;
+  PetscFunctionBegin;
   ierr = query_interface(meshsets_manager); CHKERRQ(ierr);
-  PressureCubitBcData mydata;
-  ierr = meshsets_manager->printBcSet(mydata,SIDESET|mydata.tYpe.to_ulong()); CHKERRQ(ierr);
+  ierr = meshsets_manager->printPressureSet(); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 
 PetscErrorCode Core::print_cubit_force_set() const {
-  PetscFunctionBegin;
   PetscErrorCode ierr;
   MeshsetsManager *meshsets_manager;
+  PetscFunctionBegin;
   ierr = query_interface(meshsets_manager); CHKERRQ(ierr);
-  ForceCubitBcData mydata;
-  ierr = meshsets_manager->printBcSet(mydata,NODESET|mydata.tYpe.to_ulong()); CHKERRQ(ierr);
+  ierr = meshsets_manager->printForceSet(); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 
 PetscErrorCode Core::print_cubit_temperature() const {
-  PetscFunctionBegin;
   PetscErrorCode ierr;
   MeshsetsManager *meshsets_manager;
+  PetscFunctionBegin;
   ierr = query_interface(meshsets_manager); CHKERRQ(ierr);
-  TemperatureCubitBcData mydata;
-  ierr = meshsets_manager->printBcSet(mydata,NODESET|mydata.tYpe.to_ulong()); CHKERRQ(ierr);
+  ierr = meshsets_manager->printTemperatureSet(); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 
 PetscErrorCode Core::print_cubit_heat_flux_set() const {
   PetscErrorCode ierr;
-  PetscFunctionBegin;
   MeshsetsManager *meshsets_manager;
+  PetscFunctionBegin;
   ierr = query_interface(meshsets_manager); CHKERRQ(ierr);
-  HeatFluxCubitBcData mydata;
-  ierr = meshsets_manager->printBcSet(mydata,SIDESET|mydata.tYpe.to_ulong()); CHKERRQ(ierr);
+  ierr = meshsets_manager->printHeatFluxSet(); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 
 PetscErrorCode Core::print_cubit_materials_set() const {
   PetscErrorCode ierr;
-  PetscFunctionBegin;
   MeshsetsManager *meshsets_manager;
+  PetscFunctionBegin;
   ierr = query_interface(meshsets_manager); CHKERRQ(ierr);
   ierr = meshsets_manager->printMaterialsSet(); CHKERRQ(ierr);
   PetscFunctionReturn(0);

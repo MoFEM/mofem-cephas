@@ -162,6 +162,87 @@ namespace MoFEM {
     PetscFunctionReturn(0);
   }
 
+  PetscErrorCode MeshsetsManager::printDisplacementSet() const {
+    PetscErrorCode ierr;
+    DisplacementCubitBcData mydata;
+    PetscFunctionBegin;
+    ierr = printBcSet(mydata,NODESET|mydata.tYpe.to_ulong()); CHKERRQ(ierr);
+    PetscFunctionReturn(0);
+  }
+
+  PetscErrorCode MeshsetsManager::printPressureSet() const {
+    PetscErrorCode ierr;
+    PressureCubitBcData mydata;
+    PetscFunctionBegin;
+    ierr = printBcSet(mydata,SIDESET|mydata.tYpe.to_ulong()); CHKERRQ(ierr);
+    PetscFunctionReturn(0);
+  }
+
+  PetscErrorCode MeshsetsManager::printForceSet() const {
+    PetscErrorCode ierr;
+    ForceCubitBcData mydata;
+    PetscFunctionBegin;
+    ierr = printBcSet(mydata,NODESET|mydata.tYpe.to_ulong()); CHKERRQ(ierr);
+    PetscFunctionReturn(0);
+  }
+
+  PetscErrorCode MeshsetsManager::printTemperatureSet() const {
+    PetscErrorCode ierr;
+    TemperatureCubitBcData mydata;
+    PetscFunctionBegin;
+    ierr = printBcSet(mydata,NODESET|mydata.tYpe.to_ulong()); CHKERRQ(ierr);
+    PetscFunctionReturn(0);
+  }
+
+  PetscErrorCode MeshsetsManager::printHeatFluxSet() const {
+    PetscErrorCode ierr;
+    HeatFluxCubitBcData mydata;
+    PetscFunctionBegin;
+    ierr = printBcSet(mydata,SIDESET|mydata.tYpe.to_ulong()); CHKERRQ(ierr);
+    PetscFunctionReturn(0);
+  }
+
+  PetscErrorCode MeshsetsManager::printMaterialsSet() const {
+    MoABErrorCode rval;
+    PetscErrorCode ierr;
+    PetscFunctionBegin;
+    const MoFEM::Interface& m_field = cOre;
+    const moab::Interface& moab = m_field.get_moab();
+    for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_((*this),BLOCKSET|MAT_ELASTICSET,it)) {
+      Mat_Elastic data;
+      ierr = it->getAttributeDataStructure(data); CHKERRQ(ierr);
+      std::ostringstream ss;
+      ss << *it << std::endl;
+      ss << data;
+      Range tets;
+      rval = moab.get_entities_by_type(it->meshset,MBTET,tets,true); CHKERRQ_MOAB(rval);
+      ss << "MAT_ELATIC msId "<< it->getMeshSetId() << " nb. tets " << tets.size() << std::endl;
+      ss << std::endl;
+      PetscPrintf(m_field.get_comm(),ss.str().c_str());
+    }
+
+    for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,BLOCKSET|MAT_THERMALSET,it)) {
+        Mat_Thermal data;
+        ierr = it->getAttributeDataStructure(data); CHKERRQ(ierr);
+        std::ostringstream ss;
+        ss << *it << std::endl;
+        ss << data;
+        PetscPrintf(m_field.get_comm(),ss.str().c_str());
+    }
+
+    for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,BLOCKSET|MAT_MOISTURESET,it)) {
+      Mat_Moisture data;
+      ierr = it->getAttributeDataStructure(data); CHKERRQ(ierr);
+      std::ostringstream ss;
+      ss << *it << std::endl;
+      ss << data;
+      PetscPrintf(m_field.get_comm(),ss.str().c_str());
+    }
+
+    PetscFunctionReturn(0);
+  }
+
+
   bool MeshsetsManager::checkMeshset(const int ms_id,const CubitBCType cubit_bc_type) {
     CubitMeshSet_multiIndex::index<Composite_Cubit_msId_And_MeshSetType_mi_tag>::type::iterator
       miit = cubitMeshsets.get<Composite_Cubit_msId_And_MeshSetType_mi_tag>().find(boost::make_tuple(ms_id,cubit_bc_type.to_ulong()));
