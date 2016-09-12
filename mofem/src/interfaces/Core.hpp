@@ -70,9 +70,6 @@ struct Core: public Interface, MeshRefinment, PrismInterface, SeriesRecorder {
   Tag th_ProblemShift,th_FieldShift,th_FEShift;
   Tag th_ElemType;                    ///< Needed for VTK files
   Tag th_SeriesName;                  ///< Recorded series name
-  Tag th_CoordSysMeshSet;             ///< Tag on field meshset pointing to coordinate system meshset
-  Tag th_CoordSysName;                ///< Name of coordinate system
-  Tag th_CoordSysDim;                 ///< Tag on cordsys meshset for dimension of coordinate system associated to fields
 
   boost::shared_ptr<BasicEntityData> basicEntityDataPtr;
 
@@ -93,8 +90,6 @@ struct Core: public Interface, MeshRefinment, PrismInterface, SeriesRecorder {
   //ref
   RefEntity_multiIndex refinedEntities;		       ///< refined entities
   RefElement_multiIndex refinedFiniteElements;	 ///< refined elements
-  //coordinate sysrems
-  CoordSys_multiIndex coordinateSystems;
   //field
   Field_multiIndex fIelds;			           ///< field
   MoFEMEntity_multiIndex entsFields;			 ///< entities on field
@@ -616,6 +611,7 @@ struct Core: public Interface, MeshRefinment, PrismInterface, SeriesRecorder {
   PetscErrorCode loop_dofs(const std::string &field_name,EntMethod &method,int verb = -1);
 
   //get multi_index form database
+  PetscErrorCode get_fields(const Field_multiIndex **fields_ptr) const;
   PetscErrorCode get_ref_ents(const RefEntity_multiIndex **refined_entities_ptr) const;
   PetscErrorCode get_ref_finite_elements(const RefElement_multiIndex **refined_finite_elements_ptr) const;
   PetscErrorCode get_problem(const std::string &problem_name,const MoFEMProblem **problem_ptr) const;
@@ -664,9 +660,9 @@ struct Core: public Interface, MeshRefinment, PrismInterface, SeriesRecorder {
     const int verb = 0
   ) const;
 
-  //Coordinate systems
-  PetscErrorCode add_coordinate_system(const int cs_dim[],const std::string name);
-  PetscErrorCode set_field_coordinate_system(const std::string field_name,const std::string cs_name);
+  // //Coordinate systems
+  // DEPRECATED PetscErrorCode add_coordinate_system(const int cs_dim[],const std::string name);
+  // DEPRECATED PetscErrorCode set_field_coordinate_system(const std::string field_name,const std::string cs_name);
 
   //Petsc Logs
   PetscLogEvent USER_EVENT_preProcess;

@@ -77,14 +77,16 @@ int main(int argc, char *argv[]) {
   //Define problem
 
   //Coord system
+  CoordSystemsManager *cs_manger_ptr;
+  ierr = m_field.query_interface(cs_manger_ptr); CHKERRQ(ierr);
   {
     int cs_dim[] = {0,3,0,3};
-    ierr = m_field.add_coordinate_system(cs_dim,"BASE_FOR_TWO_POINT_TENSOR"); CHKERRQ(ierr);
+    ierr = cs_manger_ptr->addCoordinateSystem(cs_dim,"BASE_FOR_TWO_POINT_TENSOR"); CHKERRQ(ierr);
   }
 
   //Fields
   ierr = m_field.add_field("FIELD_A",H1,9); CHKERRQ(ierr);
-  ierr = m_field.set_field_coordinate_system("FIELD_A","BASE_FOR_TWO_POINT_TENSOR"); CHKERRQ(ierr);
+  ierr = cs_manger_ptr->setFieldCoordinateSystem("FIELD_A","BASE_FOR_TWO_POINT_TENSOR"); CHKERRQ(ierr);
 
   ierr = m_field.add_ents_to_field_by_TETs(0,"FIELD_A"); CHKERRQ(ierr);
 
