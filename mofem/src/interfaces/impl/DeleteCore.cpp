@@ -548,15 +548,15 @@ namespace MoFEM {
             refinedEntities.project<0>(pit),RefEntity_change_remove_parent()
           );
           if(!success) {
-            SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"mofification unsucessfull");
+            SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
           }
         }
       }
     }
     { //remove deleted entities form cubit meshsets
       CubitMeshSet_multiIndex::iterator cubit_it;
-      cubit_it = cubitMeshsets.begin();
-      for(;cubit_it!=cubitMeshsets.end();cubit_it++) {
+      cubit_it = meshsetsManagerPtr->getBegin();
+      for(;cubit_it!=meshsetsManagerPtr->getEnd();cubit_it++) {
         EntityHandle cubit_meshset = cubit_it->meshset;
         rval = moab.remove_entities(cubit_meshset,ents_to_delete); CHKERRQ_MOAB(rval);
         Range meshsets;

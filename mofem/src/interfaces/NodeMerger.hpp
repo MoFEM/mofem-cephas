@@ -29,8 +29,8 @@ struct NodeMergerInterface: public UnknownInterface {
   PetscErrorCode queryInterface(const MOFEMuuid& uuid, UnknownInterface** iface);
 
   MoFEM::Core& cOre;
-  NodeMergerInterface(MoFEM::Core& core):
-  cOre(core),
+  NodeMergerInterface(const MoFEM::Core& core):
+  cOre(const_cast<MoFEM::Core&>(core)),
   successMerge(false),
   errorIfNoCommonEdge(false) {
   }

@@ -1,8 +1,9 @@
 /** \file TetGenInterface.cpp
- * \brief TetGen inteface for resmeshing and on the fly mesh craetion
+ * \brief TetGen interface for meshing/re-meshing and on the fly mesh creation
  *
- * Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl) <br>
- *
+ */
+
+/**
  * The MoFEM package is copyrighted by Lukasz Kaczmarczyk.
  * It can be freely used for educational and research purposes
  * by other institutions. If you use this softwre pleas cite my work.

@@ -47,6 +47,7 @@
 #include <Core.hpp>
 
 // Interfaces
+#include <MeshsetsManager.hpp>
 #include <TetGenInterface.hpp>
 #include <MedInterface.hpp>
 #include <NodeMerger.hpp>
@@ -98,7 +99,7 @@ PetscErrorCode Core::queryInterface(const MOFEMuuid& uuid,UnknownInterface** ifa
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode Core::query_interface_type(const std::type_info& type,void*& ptr) {
+PetscErrorCode Core::query_interface_type(const std::type_info& type,void*& ptr) const {
   PetscFunctionBegin;
 
   // TetGen
@@ -122,6 +123,15 @@ PetscErrorCode Core::query_interface_type(const std::type_info& type,void*& ptr)
     PetscFunctionReturn(0);
   }
   #endif
+
+  //Meshsets manager
+  if(type == typeid(MeshsetsManager)) {
+    if(iFaces.find(IDD_MOFEMMeshsetsManager.uUId.to_ulong()) == iFaces.end()) {
+      iFaces[IDD_MOFEMMeshsetsManager.uUId.to_ulong()] = new MeshsetsManager(*this);
+    }
+    ptr = iFaces.at(IDD_MOFEMMeshsetsManager.uUId.to_ulong());
+    PetscFunctionReturn(0);
+  }
 
   //Node merger
   if(type == typeid(NodeMergerInterface)) {
@@ -151,14 +161,15 @@ PetscErrorCode Core::query_interface_type(const std::type_info& type,void*& ptr)
   }
 
   if(type == typeid(MeshRefinment)) {
-    ptr = static_cast<MeshRefinment*>(this);
+    ptr = static_cast<MeshRefinment*>(const_cast<Core*>(this));
   } else if(type == typeid(SeriesRecorder)) {
-    ptr = static_cast<SeriesRecorder*>(this);
+    ptr = static_cast<SeriesRecorder*>(const_cast<Core*>(this));
   } else if(type == typeid(PrismInterface)) {
-    ptr = static_cast<PrismInterface*>(this);
+    ptr = static_cast<PrismInterface*>(const_cast<Core*>(this));
   } else {
     SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"unknown interface");
   }
+
   PetscFunctionReturn(0);
 }
 
@@ -249,6 +260,8 @@ verbose(_verbose) {
     print_MoFem_verison(comm);
   }
 
+  ierr = query_interface(meshsetsManagerPtr); CHKERRABORT(PETSC_COMM_WORLD,ierr);
+
   ierr = getTags(); CHKERRABORT(PETSC_COMM_WORLD,ierr);
   ierr = clearMap(); CHKERRABORT(PETSC_COMM_WORLD,ierr);
   basicEntityDataPtr = boost::shared_ptr<BasicEntityData>(new BasicEntityData(moab));
@@ -267,7 +280,10 @@ Core::~Core() {
 moab::Interface& Core::get_moab() {
   return moab;
 }
-MPI_Comm Core::get_comm() {
+const moab::Interface& Core::get_moab() const {
+  return moab;
+}
+MPI_Comm Core::get_comm() const {
   return comm;
 }
 BitFieldId Core::get_BitFieldId(const std::string& name) const {
@@ -341,11 +357,14 @@ BitFEId Core::getFEShift() {
   assert((unsigned int)*feShift<BitFEId().set().to_ulong());
   return BitFEId(1<<(((*feShift)++)-1));
 }
+
 BitProblemId Core::getProblemShift() {
   assert((unsigned int)*pShift<BitProblemId().set().to_ulong());
   return BitProblemId(1<<(((*pShift)++)-1));
 }
+
 PetscErrorCode Core::clearMap() {
+  PetscErrorCode ierr;
   PetscFunctionBegin;
   refinedEntities.clear();
   refinedFiniteElements.clear();
@@ -356,10 +375,13 @@ PetscErrorCode Core::clearMap() {
   entsFiniteElements.clear();
   entFEAdjacencies.clear();
   pRoblems.clear();
-  cubitMeshsets.clear();
   coordinateSystems.clear();
   sEries.clear();
   seriesSteps.clear();
+
+  MeshsetsManager *m_manger_ptr;
+  ierr = query_interface(m_manger_ptr); CHKERRQ(ierr);
+  ierr = m_manger_ptr->clearMap(); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 
@@ -609,51 +631,15 @@ PetscErrorCode Core::getTags(int verb) {
   rval = moab.tag_get_handle("_MoFEMBuild",1,MB_TYPE_INTEGER,th_MoFEMBuild,MB_TAG_CREAT|MB_TAG_MESH,&def_bool);
   if(rval==MB_ALREADY_ALLOCATED) rval = MB_SUCCESS;
   rval = moab.tag_get_by_ptr(th_MoFEMBuild,&root_meshset,1,(const void **)&buildMoFEM); CHKERRQ_MOAB(rval);
-  //Meshsets
-  int default_val = -1;
-  rval = moab.tag_get_handle(
-    DIRICHLET_SET_TAG_NAME,1, MB_TYPE_INTEGER,
-    nsTag, MB_TAG_SPARSE|MB_TAG_CREAT, &default_val
-  ); CHKERRQ_MOAB(rval);
-  rval = moab.tag_get_handle(NEUMANN_SET_TAG_NAME,1, MB_TYPE_INTEGER,
-    ssTag, MB_TAG_SPARSE|MB_TAG_CREAT, &default_val); CHKERRQ_MOAB(rval);
-  const int def_bc_data_len = 0;
-  std::string tag_name = std::string(DIRICHLET_SET_TAG_NAME)+"__BC_DATA";
-  rval = moab.tag_get_handle(
-    tag_name.c_str(),
-    def_bc_data_len,
-    MB_TYPE_OPAQUE,
-    nsTag_data,
-    MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES|MB_TAG_VARLEN,
-    NULL
-  ); CHKERRQ_MOAB(rval);
-  tag_name = std::string(NEUMANN_SET_TAG_NAME)+"__BC_DATA";
-  rval = moab.tag_get_handle(
-    tag_name.c_str(),
-    def_bc_data_len,
-    MB_TYPE_OPAQUE,
-    ssTag_data,
-    MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES|MB_TAG_VARLEN,NULL
-  ); CHKERRQ_MOAB(rval);
-  rval = moab.tag_get_handle(MATERIAL_SET_TAG_NAME, 1, MB_TYPE_INTEGER,
-    bhTag,MB_TAG_SPARSE|MB_TAG_CREAT,&default_val); CHKERRQ_MOAB(rval);
-  std::vector<unsigned int> def_uint_zero(3,0);
-  rval= moab.tag_get_handle(BLOCK_HEADER,3*sizeof(unsigned int),MB_TYPE_INTEGER,
-    bhTag_header,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES,&def_uint_zero[0]
-  ); CHKERRQ_MOAB(rval);
-  Tag block_attribs;
-  int def_Block_Attributes_length = 0;
-  rval = moab.tag_get_handle(BLOCK_ATTRIBUTES,def_Block_Attributes_length,MB_TYPE_DOUBLE,
-    block_attribs,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_VARLEN,NULL
-  ); CHKERRQ_MOAB(rval);
-  Tag entity_name_tag;
-  rval = moab.tag_get_handle(
-    NAME_TAG_NAME,NAME_TAG_SIZE,MB_TYPE_OPAQUE,entity_name_tag,MB_TAG_SPARSE|MB_TAG_CREAT
-  ); CHKERRQ_MOAB(rval);
   //Series
   rval = moab.tag_get_handle("_SeriesName",def_val_len,MB_TYPE_OPAQUE,
     th_SeriesName,MB_TAG_CREAT|MB_TAG_BYTES|MB_TAG_VARLEN|MB_TAG_SPARSE,NULL
   ); CHKERRQ_MOAB(rval);
+
+  //Meshsets
+  MeshsetsManager *meshsets_manager_ptr;
+  ierr = query_interface(meshsets_manager_ptr); CHKERRQ(ierr);
+  ierr = meshsets_manager_ptr->getTags(verb); CHKERRQ(ierr);
 
   //For VTK files
   int def_elem_type = MBMAXTYPE;
@@ -668,13 +654,6 @@ PetscErrorCode Core::clear_database(int verb) {
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
   ierr = clearMap(); CHKERRQ(ierr);
-  // std::vector<ParallelComm*> list;
-  // ParallelComm::get_all_pcomm(&moab,list);
-  // for(int ii = 0;ii!=list.size();ii++) {
-  //   delete list[ii];
-  // }
-  // ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
-  // if(pcomm == NULL) pcomm =  new ParallelComm(&moab,comm);
   PetscFunctionReturn(0);
 }
 
@@ -682,15 +661,6 @@ PetscErrorCode Core::rebuild_database(int verb) {
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
   ierr = clearMap(); CHKERRQ(ierr);
-  // std::vector<ParallelComm*> list;
-  // ParallelComm::get_all_pcomm(&moab,list);
-  // for(int ii = 0;ii!=list.size();ii++) {
-  //   delete list[ii];
-  // }
-  // ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
-  // if(pcomm == NULL) pcomm =  new ParallelComm(&moab,comm);
-  // basicEntityDataPtr.reset();
-  // basicEntityDataPtr = boost::shared_ptr<BasicEntityData>(new BasicEntityData(moab));
   ierr = initialiseDatabseInformationFromMesh(verb); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
@@ -698,30 +668,12 @@ PetscErrorCode Core::rebuild_database(int verb) {
 PetscErrorCode Core::initialiseDatabseInformationFromMesh(int verb) {
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
+  MeshsetsManager *m_manger_ptr;
+  ierr = query_interface(m_manger_ptr); CHKERRQ(ierr);
+  ierr = m_manger_ptr->initialiseDatabseInformationFromMesh(verb); CHKERRQ(ierr);
   Range meshsets;
   rval = moab.get_entities_by_type(0,MBENTITYSET,meshsets,true);  CHKERRQ_MOAB(rval);
-  //loop all meshsets in moab to find meshets with boundary conditions
-  Range::iterator mit = meshsets.begin();
-  for(;mit!=meshsets.end();mit++) {
-    try {
-      //check if meshset is cubit meshset
-      CubitMeshSets base_meshset(moab,*mit);
-      if((base_meshset.cubitBcType&CubitBCType(NODESET|SIDESET|BLOCKSET)).any()) {
-        std::pair<CubitMeshSet_multiIndex::iterator,bool> p = cubitMeshsets.insert(base_meshset);
-        if(!p.second) {
-          SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"meshset not inserted");
-        }
-        if(verb > 0) {
-          std::ostringstream ss;
-          ss << "read cubit " << base_meshset << std::endl;
-          //PetscSynchronizedPrintf(comm,ss.str().c_str());
-          PetscPrintf(comm,ss.str().c_str());
-        }
-      }
-    } catch (MoFEMException const &e) {
-      SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
-    }
-  }
+  Range::iterator mit;
   //loop all meshsehset to find coordinate system
   mit = meshsets.begin();
   for(;mit!=meshsets.end();mit++) {
@@ -1082,6 +1034,119 @@ PetscErrorCode Core::set_field_coordinate_system(const std::string field_name,co
   PetscFunctionReturn(0);
 }
 
+// cubit meshsets
 
+PetscErrorCode Core::print_cubit_displacement_set() const {
+  PetscErrorCode ierr;
+  MeshsetsManager *meshsets_manager;
+  PetscFunctionBegin;
+  ierr = query_interface(meshsets_manager); CHKERRQ(ierr);
+  ierr = meshsets_manager->printDisplacementSet(); CHKERRQ(ierr);
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode Core::print_cubit_pressure_set() const {
+  PetscErrorCode ierr;
+  MeshsetsManager *meshsets_manager;
+  PetscFunctionBegin;
+  ierr = query_interface(meshsets_manager); CHKERRQ(ierr);
+  ierr = meshsets_manager->printPressureSet(); CHKERRQ(ierr);
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode Core::print_cubit_force_set() const {
+  PetscErrorCode ierr;
+  MeshsetsManager *meshsets_manager;
+  PetscFunctionBegin;
+  ierr = query_interface(meshsets_manager); CHKERRQ(ierr);
+  ierr = meshsets_manager->printForceSet(); CHKERRQ(ierr);
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode Core::print_cubit_temperature() const {
+  PetscErrorCode ierr;
+  MeshsetsManager *meshsets_manager;
+  PetscFunctionBegin;
+  ierr = query_interface(meshsets_manager); CHKERRQ(ierr);
+  ierr = meshsets_manager->printTemperatureSet(); CHKERRQ(ierr);
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode Core::print_cubit_heat_flux_set() const {
+  PetscErrorCode ierr;
+  MeshsetsManager *meshsets_manager;
+  PetscFunctionBegin;
+  ierr = query_interface(meshsets_manager); CHKERRQ(ierr);
+  ierr = meshsets_manager->printHeatFluxSet(); CHKERRQ(ierr);
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode Core::print_cubit_materials_set() const {
+  PetscErrorCode ierr;
+  MeshsetsManager *meshsets_manager;
+  PetscFunctionBegin;
+  ierr = query_interface(meshsets_manager); CHKERRQ(ierr);
+  ierr = meshsets_manager->printMaterialsSet(); CHKERRQ(ierr);
+  PetscFunctionReturn(0);
+}
+
+bool Core::check_msId_meshset(const int ms_id,const CubitBCType cubit_bc_type) {
+  return meshsetsManagerPtr->checkMeshset(ms_id,cubit_bc_type);
+}
+
+PetscErrorCode Core::add_cubit_msId(const CubitBCType cubit_bc_type,const int ms_id,const std::string name) {
+  return meshsetsManagerPtr->addMeshset(cubit_bc_type,ms_id,name);
+}
+
+PetscErrorCode Core::set_cubit_msId_attribites(
+  const CubitBCType cubit_bc_type,const int ms_id,const std::vector<double> &attributes,const std::string name
+) {
+  return meshsetsManagerPtr->setAttribites(cubit_bc_type,ms_id,attributes,name);
+}
+PetscErrorCode Core::set_cubit_msId_attribites_data_structure(
+  const CubitBCType cubit_bc_type,const int ms_id,const GenericAttributeData &data,const std::string name
+) {
+  return meshsetsManagerPtr->setAttribitesByDataStructure(cubit_bc_type,ms_id,data,name);
+}
+PetscErrorCode Core::set_cubit_msId_bc_data_structure(
+  const CubitBCType cubit_bc_type,const int ms_id,const GenericCubitBcData &data
+) {
+  return meshsetsManagerPtr->setBcData(cubit_bc_type,ms_id,data);
+}
+PetscErrorCode Core::delete_cubit_msId(const CubitBCType cubit_bc_type,const int ms_id) {
+  return meshsetsManagerPtr->deleteMeshset(cubit_bc_type,ms_id);
+}
+PetscErrorCode Core::get_cubit_msId(const int ms_id,const CubitBCType cubit_bc_type,const CubitMeshSets **cubit_meshset_ptr) {
+  return meshsetsManagerPtr->getCubitMeshsetPtr(ms_id,cubit_bc_type,cubit_meshset_ptr);
+}
+PetscErrorCode Core::get_cubit_msId_entities_by_dimension(
+  const int msId,const CubitBCType cubit_bc_type,const int dimension,Range &entities,const bool recursive
+) {
+  return meshsetsManagerPtr->getEntitiesByDimension(msId,cubit_bc_type.to_ulong(),dimension,entities,recursive);
+}
+PetscErrorCode Core::get_cubit_msId_entities_by_dimension(const int msId,const CubitBCType cubit_bc_type,Range &entities,const bool recursive) {
+  return meshsetsManagerPtr->getEntitiesByDimension(msId,cubit_bc_type.to_ulong(),entities,recursive);
+}
+PetscErrorCode Core::get_cubit_msId_entities_by_dimension(
+  const int ms_id,const unsigned int cubit_bc_type,const int dimension,Range &entities,const bool recursive
+) {
+  PetscFunctionBegin;
+  ierr = get_cubit_msId_entities_by_dimension(ms_id,CubitBCType(cubit_bc_type),dimension,entities,recursive); CHKERRQ(ierr);
+  PetscFunctionReturn(0);
+}
+PetscErrorCode Core::get_cubit_msId_entities_by_dimension(const int ms_id,const unsigned int cubit_bc_type,
+  Range &entities,const bool recursive) {
+  PetscFunctionBegin;
+  ierr = get_cubit_msId_entities_by_dimension(ms_id,CubitBCType(cubit_bc_type),entities,recursive); CHKERRQ(ierr);
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode Core::get_cubit_msId_meshset(const int ms_id,const unsigned int cubit_bc_type,EntityHandle &meshset) {
+  return meshsetsManagerPtr->getMeshset(ms_id,cubit_bc_type,meshset);
+}
+
+PetscErrorCode Core::get_cubit_meshsets(const unsigned int cubit_bc_type,Range &meshsets) {
+  return meshsetsManagerPtr->getMeshsetsByType(cubit_bc_type,meshsets);
+}
 
 }

@@ -28,7 +28,8 @@ struct PrismsFromSurfaceInterface: public UnknownInterface {
   PetscErrorCode queryInterface(const MOFEMuuid& uuid, UnknownInterface** iface);
 
   MoFEM::Core& cOre;
-  PrismsFromSurfaceInterface(MoFEM::Core& core): cOre(core) {};
+  PrismsFromSurfaceInterface(const MoFEM::Core& core):
+  cOre(const_cast<MoFEM::Core&>(core)) {}
 
   std::map<EntityHandle,EntityHandle> createdVertices;
 
