@@ -54,7 +54,7 @@ struct PostPorcHookStress: public MoFEM::VolumeElementForcesAndSourcesCore::User
         if( mField.get_moab().contains_entities(*mit,&ent,1) ) {
           *_lambda = LAMBDA(mydata.data.Young,mydata.data.Poisson);
           *_mu = MU(mydata.data.Young,mydata.data.Poisson);
-          *_block_id = it->getMeshSetId();
+          *_block_id = it->getMeshsetId();
           PetscFunctionReturn(0);
         }
       }

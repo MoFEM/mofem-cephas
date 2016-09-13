@@ -179,10 +179,10 @@ namespace MoFEM {
           rval = moab.get_entities_by_type(it->meshset,MBEDGE,edges,true); CHKERRQ_MOAB(rval);
           rval = moab.get_entities_by_type(it->meshset,MBVERTEX,nodes,true); CHKERRQ_MOAB(rval);
           ss << "name "<< it->getName() << std::endl;
-          ss << "msId "<< it->getMeshSetId() << " nb. tets " << tets.size() << std::endl;
-          ss << "msId "<< it->getMeshSetId() << " nb. tris " << tris.size() << std::endl;
-          ss << "msId "<< it->getMeshSetId() << " nb. edges " << edges.size() << std::endl;
-          ss << "msId "<< it->getMeshSetId() << " nb. nodes " << nodes.size() << std::endl;
+          ss << "msId "<< it->getMeshsetId() << " nb. tets " << tets.size() << std::endl;
+          ss << "msId "<< it->getMeshsetId() << " nb. tris " << tris.size() << std::endl;
+          ss << "msId "<< it->getMeshsetId() << " nb. edges " << edges.size() << std::endl;
+          ss << "msId "<< it->getMeshsetId() << " nb. nodes " << nodes.size() << std::endl;
           ss << std::endl;
           PetscPrintf(m_field.get_comm(),ss.str().c_str());
         }
@@ -281,7 +281,7 @@ namespace MoFEM {
     }
 
     /**
-      * \brief get end iterator of cubit mehset of given type (instead you can use _IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(MFIELD,CUBITBCTYPE,IT)
+      * \brief get end iterator of cubit meshset of given type (instead you can use _IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(MFIELD,CUBITBCTYPE,IT)
       * \ingroup mofem_bc
 
       *
@@ -366,6 +366,15 @@ namespace MoFEM {
 
       */
     PetscErrorCode addMeshset(const CubitBCType cubit_bc_tyep,const int ms_id,const std::string name = "");
+
+    /**
+     * \brief add entities to cubit meshset
+     * @param  cubit_bc_tyep type of meshset, f.e. NODESET, SIDESET or BLOCKSET
+     * @param  ms_id         id of meshset
+     * @param  ents          entities to add
+     * @return               error code
+     */
+    PetscErrorCode addEntitiesToMeshset(const CubitBCType cubit_bc_tyep,const int ms_id,Range &ents);
 
     /**
      * \brief set attributes to cubit meshset

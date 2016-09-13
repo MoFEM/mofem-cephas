@@ -48,6 +48,7 @@
 
 // Interfaces
 #include <MeshsetsManager.hpp>
+#include <CoordSystemsManager.hpp>
 #include <TetGenInterface.hpp>
 #include <MedInterface.hpp>
 #include <NodeMerger.hpp>
@@ -130,6 +131,15 @@ PetscErrorCode Core::query_interface_type(const std::type_info& type,void*& ptr)
       iFaces[IDD_MOFEMMeshsetsManager.uUId.to_ulong()] = new MeshsetsManager(*this);
     }
     ptr = iFaces.at(IDD_MOFEMMeshsetsManager.uUId.to_ulong());
+    PetscFunctionReturn(0);
+  }
+
+  //Cooordinate systems manager
+  if(type == typeid(CoordSystemsManager)) {
+    if(iFaces.find(IDD_MOFEMCoordsSystemsManager.uUId.to_ulong()) == iFaces.end()) {
+      iFaces[IDD_MOFEMCoordsSystemsManager.uUId.to_ulong()] = new CoordSystemsManager(*this);
+    }
+    ptr = iFaces.at(IDD_MOFEMCoordsSystemsManager.uUId.to_ulong());
     PetscFunctionReturn(0);
   }
 
@@ -375,13 +385,17 @@ PetscErrorCode Core::clearMap() {
   entsFiniteElements.clear();
   entFEAdjacencies.clear();
   pRoblems.clear();
-  coordinateSystems.clear();
   sEries.clear();
   seriesSteps.clear();
 
   MeshsetsManager *m_manger_ptr;
   ierr = query_interface(m_manger_ptr); CHKERRQ(ierr);
   ierr = m_manger_ptr->clearMap(); CHKERRQ(ierr);
+
+  CoordSystemsManager *cs_manger_ptr;
+  ierr = query_interface(cs_manger_ptr); CHKERRQ(ierr);
+  ierr = cs_manger_ptr->clearMap(); CHKERRQ(ierr);
+
   PetscFunctionReturn(0);
 }
 
@@ -587,24 +601,6 @@ PetscErrorCode Core::getTags(int verb) {
     th_ProblemGhostNbDofCol,MB_TAG_CREAT|MB_TAG_BYTES|MB_TAG_SPARSE,&def_nbdofs
   ); CHKERRQ_MOAB(rval);
 
-  //Coordinate systems
-  const int def_coord_sys_dim[] = { 0,0,0,0 };
-  rval = moab.tag_get_handle(
-    "_CoordSysDim",4,MB_TYPE_INTEGER,th_CoordSysDim,MB_TAG_CREAT|MB_TAG_SPARSE,&def_coord_sys_dim
-  ); CHKERRQ_MOAB(rval);
-  EntityHandle def_coor_sys_meshset = 0;
-  rval = moab.tag_get_handle(
-    "_CoordSysMeshSet",1,MB_TYPE_HANDLE,th_CoordSysMeshSet,MB_TAG_CREAT|MB_TAG_SPARSE,&def_coor_sys_meshset
-  ); CHKERRQ_MOAB(rval);
-  rval = moab.tag_get_handle(
-    "_CoordSysName",
-    def_val_len,
-    MB_TYPE_OPAQUE,
-    th_CoordSysName,
-    MB_TAG_CREAT|MB_TAG_BYTES|MB_TAG_VARLEN|MB_TAG_SPARSE,
-    NULL
-  ); CHKERRQ_MOAB(rval);
-
   //Global Variables
   //Fields
   int def_shift = 1;
@@ -636,10 +632,15 @@ PetscErrorCode Core::getTags(int verb) {
     th_SeriesName,MB_TAG_CREAT|MB_TAG_BYTES|MB_TAG_VARLEN|MB_TAG_SPARSE,NULL
   ); CHKERRQ_MOAB(rval);
 
-  //Meshsets
+  //Meshsets with boundary conditions and material sets
   MeshsetsManager *meshsets_manager_ptr;
   ierr = query_interface(meshsets_manager_ptr); CHKERRQ(ierr);
   ierr = meshsets_manager_ptr->getTags(verb); CHKERRQ(ierr);
+
+  //Coordinate systems
+  CoordSystemsManager *cs_manger_ptr;
+  ierr = query_interface(cs_manger_ptr); CHKERRQ(ierr);
+  ierr = cs_manger_ptr->getTags(verb); CHKERRQ(ierr);
 
   //For VTK files
   int def_elem_type = MBMAXTYPE;
@@ -671,76 +672,13 @@ PetscErrorCode Core::initialiseDatabseInformationFromMesh(int verb) {
   MeshsetsManager *m_manger_ptr;
   ierr = query_interface(m_manger_ptr); CHKERRQ(ierr);
   ierr = m_manger_ptr->initialiseDatabseInformationFromMesh(verb); CHKERRQ(ierr);
+  CoordSystemsManager *cs_manger_ptr;
+  ierr = query_interface(cs_manger_ptr); CHKERRQ(ierr);
+  ierr = cs_manger_ptr->initialiseDatabseInformationFromMesh(verb); CHKERRQ(ierr);
+
   Range meshsets;
   rval = moab.get_entities_by_type(0,MBENTITYSET,meshsets,true);  CHKERRQ_MOAB(rval);
   Range::iterator mit;
-  //loop all meshsehset to find coordinate system
-  mit = meshsets.begin();
-  for(;mit!=meshsets.end();mit++) {
-    try {
-      const char *cs_name;
-      int cs_name_size;
-      rval = moab.tag_get_by_ptr(
-        th_CoordSysName,&*mit,1,(const void **)&cs_name,&cs_name_size
-      );
-      if(rval == MB_SUCCESS && cs_name_size) {
-        boost::shared_ptr<CoordSys> coord_sys(new CoordSys(moab,*mit));
-        std::pair<CoordSys_multiIndex::iterator,bool> p = coordinateSystems.insert(coord_sys);
-        if(!p.second) {
-          SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"meshset to coord system not inserted");
-        }
-      }
-    } catch (MoFEMException const &e) {
-      SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
-    }
-  }
-  { // Create cartesian coordinate system if not exist
-    CoordSys_multiIndex::index<CoordSysName_mi_tag >::type::iterator csit;
-    csit = coordinateSystems.get<CoordSysName_mi_tag >().find("CARTESIAN3D");
-    if(csit==coordinateSystems.get<CoordSysName_mi_tag >().end()) {
-      EntityHandle meshset;
-      rval = moab.create_meshset(MESHSET_SET|MESHSET_TRACK_OWNER,meshset); CHKERRQ_MOAB(rval);
-      int dim[] = { 3,0,0,0 };
-      rval = moab.tag_set_data(th_CoordSysDim,&meshset,1,dim); CHKERRQ_MOAB(rval);
-      std::string sys_name_str = "CARTESIAN3D";
-      void const* sys_name[] = { sys_name_str.c_str() };
-      int sys_name_size[1];
-      sys_name_size[0] = sys_name_str.size();
-      rval = moab.tag_set_by_ptr(
-        th_CoordSysName,&meshset,1,sys_name,sys_name_size
-      ); CHKERRQ_MOAB(rval);
-      boost::shared_ptr<CoordSys> coord_sys(new CoordSys(moab,meshset));
-      std::pair<CoordSys_multiIndex ::iterator,bool> p = coordinateSystems.insert(coord_sys);
-      if(!p.second) {
-        SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"MeshSet to coord system not inserted");
-      }
-    }
-    csit = coordinateSystems.get<CoordSysName_mi_tag>().find("UNDEFINED");
-    if(csit==coordinateSystems.get<CoordSysName_mi_tag>().end()) {
-      EntityHandle meshset;
-      rval = moab.create_meshset(MESHSET_SET|MESHSET_TRACK_OWNER,meshset); CHKERRQ_MOAB(rval);
-      int dim[] = { -1,0,0,0 };
-      rval = moab.tag_set_data(th_CoordSysDim,&meshset,1,dim); CHKERRQ_MOAB(rval);
-      std::string sys_name_str = "UNDEFINED";
-      void const* sys_name[] = { sys_name_str.c_str() };
-      int sys_name_size[1];
-      sys_name_size[0] = sys_name_str.size();
-      rval = moab.tag_set_by_ptr(
-        th_CoordSysName,&meshset,1,sys_name,sys_name_size
-      ); CHKERRQ_MOAB(rval);
-      boost::shared_ptr<CoordSys> coord_sys(new CoordSys(moab,meshset));
-      std::pair<CoordSys_multiIndex ::iterator,bool> p = coordinateSystems.insert(coord_sys);
-      if(!p.second) {
-        SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"MeshSet to coord system not inserted");
-      }
-    }
-  }
-  //PetscSynchronizedFlush(comm,PETSC_STDOUT);
-  CoordSys_multiIndex::index<CoordSysName_mi_tag>::type::iterator undefined_cs_it;
-  undefined_cs_it = coordinateSystems.get<CoordSysName_mi_tag>().find("UNDEFINED");
-  if(undefined_cs_it==coordinateSystems.get<CoordSysName_mi_tag>().end()) {
-    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"Undefined system not found");
-  }
   mit = meshsets.begin();
   for(;mit!=meshsets.end();mit++) {
     BitFieldId field_id;
@@ -751,17 +689,16 @@ PetscErrorCode Core::initialiseDatabseInformationFromMesh(int verb) {
       std::pair<Field_multiIndex::iterator,bool> p;
       try {
         EntityHandle coord_sys_id;
-        rval = moab.tag_get_data(th_CoordSysMeshSet,&*mit,1,&coord_sys_id); CHKERRQ_MOAB(rval);
-        CoordSys_multiIndex::index<Meshset_mi_tag>::type::iterator cs_it;
+        rval = moab.tag_get_data(
+          cs_manger_ptr->get_th_CoordSysMeshset(),&*mit,1,&coord_sys_id
+        ); CHKERRQ_MOAB(rval);
+        boost::shared_ptr<CoordSys> cs_ptr;
         if(coord_sys_id!=0) {
-          cs_it = coordinateSystems.get<Meshset_mi_tag>().find(coord_sys_id);
-          if(cs_it==coordinateSystems.get<Meshset_mi_tag>().end()) {
-            SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"Unknown Coordinate System");
-          }
+          ierr = cs_manger_ptr->getCoordSysPtr(coord_sys_id,cs_ptr); CHKERRQ(ierr);
         } else {
-          cs_it = coordinateSystems.project<Meshset_mi_tag>(undefined_cs_it);
+          ierr = cs_manger_ptr->getCoordSysPtr("UNDEFINED",cs_ptr); CHKERRQ(ierr);
         }
-        p = fIelds.insert(boost::shared_ptr<Field>(new Field(moab,*mit,*cs_it)));
+        p = fIelds.insert(boost::shared_ptr<Field>(new Field(moab,*mit,cs_ptr)));
         if(verb > 0) {
           std::ostringstream ss;
           ss << "read field " << **p.first << std::endl;;
@@ -951,88 +888,21 @@ PetscErrorCode Core::initialiseDatabseInformationFromMesh(int verb) {
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode Core::add_coordinate_system(const int cs_dim[],const std::string name) {
-  PetscFunctionBegin;
-  EntityHandle meshset;
-  rval = moab.create_meshset(MESHSET_SET|MESHSET_TRACK_OWNER,meshset); CHKERRQ_MOAB(rval);
-  rval = moab.tag_set_data(th_CoordSysDim,&meshset,1,cs_dim); CHKERRQ_MOAB(rval);
-  void const* sys_name[] = { name.c_str() };
-  int sys_name_size[1];
-  sys_name_size[0] = name.size();
-  rval = moab.tag_set_by_ptr(
-    th_CoordSysName,&meshset,1,sys_name,sys_name_size
-  ); CHKERRQ_MOAB(rval);
-  boost::shared_ptr<CoordSys> coord_sys(new CoordSys(moab,meshset));
-  std::pair<CoordSys_multiIndex ::iterator,bool> p = coordinateSystems.insert(coord_sys);
-  if(!p.second) {
-    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"MeshSet to coord system not inserted");
-  }
-  PetscFunctionReturn(0);
-}
-
-PetscErrorCode Core::set_field_coordinate_system(const std::string field_name,const std::string cs_name) {
-  PetscFunctionBegin;
-  Field_multiIndex::index<FieldName_mi_tag>::type::iterator field_it;
-  field_it = fIelds.get<FieldName_mi_tag>().find(field_name);
-  if(field_it==fIelds.get<FieldName_mi_tag>().end()) {
-    SETERRQ1(
-      PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"Field < %s > not found",field_name.c_str()
-    );
-  }
-  CoordSys_multiIndex::index<CoordSysName_mi_tag>::type::iterator cs_it;
-  cs_it = coordinateSystems.get<CoordSysName_mi_tag>().find(cs_name);
-  if(cs_it==coordinateSystems.get<CoordSysName_mi_tag>().end()) {
-    SETERRQ1(
-      PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"Coord system < %s > not found",cs_name.c_str()
-    );
-  }
-  int dim = 1;
-  for(int alpha = 0;alpha<4;alpha++) {
-    if((*cs_it)->getDim(alpha)>0) {
-      dim *= (*cs_it)->getDim(alpha);
-    }
-  }
-  switch((*field_it)->getSpace()) {
-    case NOSPACE:
-    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"No space given");
-    case H1:
-    if((*field_it)->getNbOfCoeffs()!=dim) {
-      SETERRQ2(
-        PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,
-        "dimension mismatch of field and coordinate system"
-        "cs dim %d field rank %d",
-        dim,(*field_it)->getNbOfCoeffs()
-      );
-    }
-    break;
-    case HDIV:
-    case HCURL:
-    if(3*(*field_it)->getNbOfCoeffs()!=dim) {
-      SETERRQ2(
-        PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,
-        "dimension mismatch of field and coordinate system"
-        "cs dim %d field rank %d",
-        dim,(*field_it)->getNbOfCoeffs()
-      );
-    }
-    break;
-    case L2:
-    if((*field_it)->getNbOfCoeffs()!=dim) {
-      SETERRQ2(
-        PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,
-        "dimension mismatch of field and coordinate system"
-        "cs dim %d field rank %d",
-        dim,(*field_it)->getNbOfCoeffs()
-      );
-    }
-    case NOFIELD:
-    case LASTSPACE:
-    {};
-  }
-  bool success = fIelds.modify(fIelds.project<0>(field_it),FieldChangeCoordinateSystem(*cs_it));
-  if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
-  PetscFunctionReturn(0);
-}
+// PetscErrorCode Core::add_coordinate_system(const int cs_dim[],const std::string name) {
+//   CoordSystemsManager *cs_manger_ptr;
+//   PetscFunctionBegin;
+//   ierr = query_interface(cs_manger_ptr); CHKERRQ(ierr);
+//   ierr = cs_manger_ptr->addCoordinateSystem(cs_dim,name); CHKERRQ(ierr);
+//   PetscFunctionReturn(0);
+// }
+//
+// PetscErrorCode Core::set_field_coordinate_system(const std::string field_name,const std::string cs_name) {
+//   CoordSystemsManager *cs_manger_ptr;
+//   PetscFunctionBegin;
+//   ierr = query_interface(cs_manger_ptr); CHKERRQ(ierr);
+//   ierr = cs_manger_ptr->setFieldCoordinateSystem(field_name,cs_name); CHKERRQ(ierr);
+//   PetscFunctionReturn(0);
+// }
 
 // cubit meshsets
 
@@ -1148,5 +1018,48 @@ PetscErrorCode Core::get_cubit_msId_meshset(const int ms_id,const unsigned int c
 PetscErrorCode Core::get_cubit_meshsets(const unsigned int cubit_bc_type,Range &meshsets) {
   return meshsetsManagerPtr->getMeshsetsByType(cubit_bc_type,meshsets);
 }
+
+PetscErrorCode Core::get_fields(const Field_multiIndex **fields_ptr) const {
+  PetscFunctionBegin;
+  *fields_ptr = &fIelds;
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode Core::get_ref_ents(const RefEntity_multiIndex **refined_entities_ptr) const {
+  PetscFunctionBegin;
+  *refined_entities_ptr = &refinedEntities;
+  PetscFunctionReturn(0);
+}
+PetscErrorCode Core::get_ref_finite_elements(const RefElement_multiIndex **refined_finite_elements_ptr) const {
+  PetscFunctionBegin;
+  *refined_finite_elements_ptr = &refinedFiniteElements;
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode Core::get_problem(const std::string &problem_name,const MoFEMProblem **problem_ptr) const {
+  PetscFunctionBegin;
+  typedef MoFEMProblem_multiIndex::index<Problem_mi_tag>::type ProblemsByName;
+  const ProblemsByName &problems = pRoblems.get<Problem_mi_tag>();
+  ProblemsByName::iterator p_miit = problems.find(problem_name);
+  if(p_miit == problems.end()) {
+    SETERRQ1(
+      PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,
+      "problem < %s > not found, (top tip: check spelling)",problem_name.c_str()
+    );
+  }
+  *problem_ptr = &*p_miit;
+  PetscFunctionReturn(0);
+}
+PetscErrorCode Core::get_field_ents(const MoFEMEntity_multiIndex **field_ents) const {
+  PetscFunctionBegin;
+  *field_ents = &entsFields;
+  PetscFunctionReturn(0);
+}
+PetscErrorCode Core::get_dofs(const DofEntity_multiIndex **dofs_ptr) const {
+  PetscFunctionBegin;
+  *dofs_ptr = &dofsField;
+  PetscFunctionReturn(0);
+}
+
 
 }

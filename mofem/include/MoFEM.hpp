@@ -58,6 +58,7 @@
 #include <SeriesRecorder.hpp>
 #include <Core.hpp>
 #include <MeshsetsManager.hpp>
+#include <CoordSystemsManager.hpp>
 #ifdef WITH_TETGEN
   #include <TetGenInterface.hpp>
 #endif //WITH_TETGEN

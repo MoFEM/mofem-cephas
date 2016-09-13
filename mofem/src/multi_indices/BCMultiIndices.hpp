@@ -46,11 +46,11 @@ struct CubitMeshSets {
    * \brief get meshset id as it set in preprocessing software
    * @return id of meshset
    */
-  inline int getMeshSetId() const { return *msId; }
+  inline int getMeshsetId() const { return *msId; }
 
-  /** \deprecated use getMeshSetId() instead
+  /** \deprecated use getMeshsetId() instead
   */
-  DEPRECATED inline int get_msId() const { return getMeshSetId(); }
+  DEPRECATED inline int get_msId() const { return getMeshsetId(); }
 
   /**
    * \brief get type of meshset
@@ -65,11 +65,12 @@ struct CubitMeshSets {
    * \brief get bc meshset
    * @return meshset entity handle
    */
-  inline EntityHandle getMeshSet() const { return meshset; }
+  inline EntityHandle getMeshset() const { return meshset; }
 
-  /** \deprecated Use getMeshSet() instead
+  /** \deprecated Use getMeshset() instead
   */
-  DEPRECATED inline EntityHandle get_meshset() const { return getMeshSet(); }
+  DEPRECATED inline EntityHandle get_meshset() const { return getMeshset(); }
+  DEPRECATED inline EntityHandle getMeshSet() const { return getMeshset(); }
 
   /**
    * \brief get bc meshset type
@@ -95,16 +96,16 @@ struct CubitMeshSets {
    * @param  recursive true if meshset should be searched recursively
    * @return           error code
    */
-  PetscErrorCode getMeshSetIdEntitiesByDimension(
+  PetscErrorCode getMeshsetIdEntitiesByDimension(
     Interface &moab,const int dimension,Range &entities,const bool recursive = false
   ) const;
 
-  /** \deprecated Use getMeshSetIdEntitiesByDimension() instead
+  /** \deprecated Use getMeshsetIdEntitiesByDimension() instead
   */
   DEPRECATED inline PetscErrorCode get_cubit_msId_entities_by_dimension(
     Interface &moab,const int dimension,Range &entities,const bool recursive = false
   ) const {
-    return getMeshSetIdEntitiesByDimension(moab,dimension,entities,recursive);
+    return getMeshsetIdEntitiesByDimension(moab,dimension,entities,recursive);
   }
 
   /**
@@ -118,16 +119,16 @@ struct CubitMeshSets {
    * @return           error code
    *
    */
-  PetscErrorCode getMeshSetIdEntitiesByDimension(
+  PetscErrorCode getMeshsetIdEntitiesByDimension(
     Interface &moab,Range &entities,const bool recursive = false
   )  const;
 
-  /** \deprecated Use getMeshSetIdEntitiesByDimension() instead
+  /** \deprecated Use getMeshsetIdEntitiesByDimension() instead
   */
   DEPRECATED inline PetscErrorCode get_cubit_msId_entities_by_dimension(
     Interface &moab,Range &entities,const bool recursive = false
   )  const {
-    return getMeshSetIdEntitiesByDimension(moab,entities,recursive);
+    return getMeshsetIdEntitiesByDimension(moab,entities,recursive);
   }
 
   /**
@@ -138,16 +139,16 @@ struct CubitMeshSets {
    * @param  recursive true if meshset should be searched recursively
    * @return           error code
    */
-  PetscErrorCode getMeshSetIdEntitiesByType(
+  PetscErrorCode getMeshsetIdEntitiesByType(
     Interface &moab,const EntityType type,Range &entities,const bool recursive = false
   ) const;
 
-  /** \deprecated Use getMeshSetIdEntitiesByType() instead
+  /** \deprecated Use getMeshsetIdEntitiesByType() instead
   */
   DEPRECATED inline PetscErrorCode get_cubit_msId_entities_by_type(
     Interface &moab,const EntityType type,Range &entities,const bool recursive = false
   ) const {
-    return getMeshSetIdEntitiesByType(moab,type,entities,recursive);
+    return getMeshsetIdEntitiesByType(moab,type,entities,recursive);
   }
 
   /**
@@ -370,7 +371,7 @@ typedef multi_index_container<
       tag<Composite_Cubit_msId_And_MeshSetType_mi_tag>,
       composite_key<
 	CubitMeshSets,
-	  const_mem_fun<CubitMeshSets,int,&CubitMeshSets::getMeshSetId>,
+	  const_mem_fun<CubitMeshSets,int,&CubitMeshSets::getMeshsetId>,
 	  const_mem_fun<CubitMeshSets,unsigned long int,&CubitMeshSets::getMaksedBcTypeULong> > >
   > > CubitMeshSet_multiIndex;
 

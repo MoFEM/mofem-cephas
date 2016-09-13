@@ -302,7 +302,7 @@ int main(int argc, char *argv[]) {
 
   Range node_set;
   for(_IT_CUBITMESHSETS_BY_NAME_FOR_LOOP_(m_field,"LoadPath",cit)) {
-    EntityHandle meshset = cit->getMeshSet();
+    EntityHandle meshset = cit->getMeshset();
     Range nodes;
     rval = moab.get_entities_by_type(meshset,MBVERTEX,nodes,true); MOAB_THROW(rval);
     node_set.merge(nodes);
@@ -322,10 +322,10 @@ int main(int argc, char *argv[]) {
   }
   fe_neumann.uSeF = true;
   for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,NODESET|FORCESET,it)) {
-    ierr = fe_neumann.addForce(it->getMeshSetId()); CHKERRQ(ierr);
+    ierr = fe_neumann.addForce(it->getMeshsetId()); CHKERRQ(ierr);
   }
   for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,SIDESET|PRESSURESET,it)) {
-    ierr = fe_neumann.addPreassure(it->getMeshSetId()); CHKERRQ(ierr);
+    ierr = fe_neumann.addPreassure(it->getMeshsetId()); CHKERRQ(ierr);
   }
   SpatialPositionsBCFEMethodPreAndPostProc my_dirichlet_bc(m_field,"SPATIAL_POSITION",Aij,D,F);
   ierr = m_field.get_problem("ELASTIC_MECHANICS",&my_dirichlet_bc.problemPtr); CHKERRQ(ierr);
@@ -515,7 +515,7 @@ int main(int argc, char *argv[]) {
   string fe_name_str ="FORCE_FE";
   edge_forces.insert(fe_name_str,new EdgeForce(m_field));
   for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,NODESET|FORCESET,it)) {
-    ierr = edge_forces.at(fe_name_str).addForce("SPATIAL_POSITION",arc_ctx->F_lambda,it->getMeshSetId());  CHKERRQ(ierr);
+    ierr = edge_forces.at(fe_name_str).addForce("SPATIAL_POSITION",arc_ctx->F_lambda,it->getMeshsetId());  CHKERRQ(ierr);
   }
   for(
     boost::ptr_map<std::string,EdgeForce>::iterator eit = edge_forces.begin();
@@ -529,7 +529,7 @@ int main(int argc, char *argv[]) {
   // string fe_name_str ="FORCE_FE";
   nodal_forces.insert(fe_name_str,new NodalForce(m_field));
   for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,NODESET|FORCESET,it)) {
-    ierr = nodal_forces.at(fe_name_str).addForce("SPATIAL_POSITION",arc_ctx->F_lambda,it->getMeshSetId());  CHKERRQ(ierr);
+    ierr = nodal_forces.at(fe_name_str).addForce("SPATIAL_POSITION",arc_ctx->F_lambda,it->getMeshsetId());  CHKERRQ(ierr);
   }
   for(
     boost::ptr_map<std::string,NodalForce>::iterator fit = nodal_forces.begin();

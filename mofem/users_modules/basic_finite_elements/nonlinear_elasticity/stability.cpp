@@ -352,10 +352,10 @@ int main(int argc, char *argv[]) {
   NeummanForcesSurfaceComplexForLazy neumann_forces(m_field,Aij,F);
   NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE &neumann = neumann_forces.getLoopSpatialFe();
   for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,NODESET|FORCESET,it)) {
-    ierr = neumann.addForce(it->getMeshSetId()); CHKERRQ(ierr);
+    ierr = neumann.addForce(it->getMeshsetId()); CHKERRQ(ierr);
   }
   for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,SIDESET|PRESSURESET,it)) {
-    ierr = neumann.addPreassure(it->getMeshSetId()); CHKERRQ(ierr);
+    ierr = neumann.addPreassure(it->getMeshsetId()); CHKERRQ(ierr);
   }
   SpatialPositionsBCFEMethodPreAndPostProc my_Dirichlet_bc(m_field,"SPATIAL_POSITION",Aij,D,F);
 
