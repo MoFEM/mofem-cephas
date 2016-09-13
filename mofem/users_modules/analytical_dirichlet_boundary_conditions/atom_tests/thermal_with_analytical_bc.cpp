@@ -135,7 +135,7 @@ int main(int argc, char *argv[]) {
 
   Range bc_tris;
   for(_IT_CUBITMESHSETS_BY_NAME_FOR_LOOP_(m_field,"ANALYTICAL_BC",it)) {
-    rval = moab.get_entities_by_type(it->getMeshSet(),MBTRI,bc_tris,true); CHKERRQ_MOAB(rval);
+    rval = moab.get_entities_by_type(it->getMeshset(),MBTRI,bc_tris,true); CHKERRQ_MOAB(rval);
   }
 
   AnalyticalDirichletBC analytical_bc(m_field);

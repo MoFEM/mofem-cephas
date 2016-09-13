@@ -141,19 +141,20 @@ PetscErrorCode Core::add_field(
     //add meshset
     std::pair<Field_multiIndex::iterator,bool> p;
     try {
-      CoordSys_multiIndex::index<CoordSysName_mi_tag>::type::iterator undefined_cs_it;
-      undefined_cs_it = coordinateSystems.get<CoordSysName_mi_tag>().find("UNDEFINED");
-      if(undefined_cs_it==coordinateSystems.get<CoordSysName_mi_tag>().end()) {
-        SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"Undefined system not found");
-      }
-      EntityHandle coord_sys_id = (*undefined_cs_it)->getMeshSet();
-      rval = moab.tag_set_data(th_CoordSysMeshSet,&meshset,1,&coord_sys_id); CHKERRQ_MOAB(rval);
-      p = fIelds.insert(boost::shared_ptr<Field>(new Field(moab,meshset,*undefined_cs_it)));
+      CoordSystemsManager *cs_manger_ptr;
+      ierr = query_interface(cs_manger_ptr); CHKERRQ(ierr);
+      boost::shared_ptr<CoordSys > undefined_cs_ptr;
+      ierr = cs_manger_ptr->getCoordSysPtr("UNDEFINED",undefined_cs_ptr); CHKERRQ(ierr);
+      EntityHandle coord_sys_id = undefined_cs_ptr->getMeshset();
+      rval = moab.tag_set_data(
+        cs_manger_ptr->get_th_CoordSysMeshset(),&meshset,1,&coord_sys_id
+      ); CHKERRQ_MOAB(rval);
+      p = fIelds.insert(boost::shared_ptr<Field>(new Field(moab,meshset,undefined_cs_ptr)));
       if(bh == MF_EXCL) {
         if(!p.second) SETERRQ1(
           PETSC_COMM_SELF,1,
           "field not inserted %s (top tip, it could be already there)",
-          Field(moab,meshset,*undefined_cs_it).getName().c_str()
+          Field(moab,meshset,undefined_cs_ptr).getName().c_str()
         );
       }
     } catch (MoFEMException const &e) {
@@ -1888,7 +1889,7 @@ PetscErrorCode Core::update_field_meshset_by_entities_children(const BitRefLevel
   PetscFunctionBegin;
   Field_multiIndex::iterator fit = fIelds.begin();
   for(;fit!=fIelds.end();fit++) {
-    EntityHandle meshset = (*fit)->getMeshSet();
+    EntityHandle meshset = (*fit)->getMeshset();
     ierr = update_meshset_by_entities_children(meshset,child_bit,meshset,MBTET,false,verb);  CHKERRQ(ierr);
     ierr = update_meshset_by_entities_children(meshset,child_bit,meshset,MBTRI,false,verb);  CHKERRQ(ierr);
     ierr = update_meshset_by_entities_children(meshset,child_bit,meshset,MBEDGE,false,verb);  CHKERRQ(ierr);
@@ -1900,7 +1901,7 @@ PetscErrorCode Core::update_field_meshset_by_entities_children(const std::string
   PetscFunctionBegin;
   Field_multiIndex::index<FieldName_mi_tag>::type::iterator fit;
   fit = fIelds.get<FieldName_mi_tag>().find(name);
-  EntityHandle meshset = (*fit)->getMeshSet();
+  EntityHandle meshset = (*fit)->getMeshset();
   ierr = update_meshset_by_entities_children(meshset,child_bit,meshset,MBTET,false,verb);  CHKERRQ(ierr);
   ierr = update_meshset_by_entities_children(meshset,child_bit,meshset,MBTRI,false,verb);  CHKERRQ(ierr);
   ierr = update_meshset_by_entities_children(meshset,child_bit,meshset,MBEDGE,false,verb);  CHKERRQ(ierr);
@@ -1913,7 +1914,7 @@ PetscErrorCode Core::update_finite_element_meshset_by_entities_children(const st
   const FiniteElementsByName& set = finiteElements.get<FiniteElement_name_mi_tag>();
   FiniteElementsByName::iterator miit = set.find(name);
   if(miit==set.end()) THROW_MESSAGE(("finite element < "+name+" > not found (top tip: check spelling)").c_str());
-  EntityHandle meshset = (*miit)->getMeshSet();
+  EntityHandle meshset = (*miit)->getMeshset();
   ierr = update_meshset_by_entities_children(meshset,child_bit,meshset,fe_ent_type,false,verb);  CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
@@ -2145,41 +2146,6 @@ PetscErrorCode Core::loop_dofs(const std::string &field_name,EntMethod &method,i
   ierr = method.postProcess(); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
-PetscErrorCode Core::get_ref_ents(const RefEntity_multiIndex **refined_entities_ptr) const {
-  PetscFunctionBegin;
-  *refined_entities_ptr = &refinedEntities;
-  PetscFunctionReturn(0);
-}
-PetscErrorCode Core::get_ref_finite_elements(const RefElement_multiIndex **refined_finite_elements_ptr) const {
-  PetscFunctionBegin;
-  *refined_finite_elements_ptr = &refinedFiniteElements;
-  PetscFunctionReturn(0);
-}
-
-PetscErrorCode Core::get_problem(const std::string &problem_name,const MoFEMProblem **problem_ptr) const {
-  PetscFunctionBegin;
-  typedef MoFEMProblem_multiIndex::index<Problem_mi_tag>::type ProblemsByName;
-  const ProblemsByName &problems = pRoblems.get<Problem_mi_tag>();
-  ProblemsByName::iterator p_miit = problems.find(problem_name);
-  if(p_miit == problems.end()) {
-    SETERRQ1(
-      PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,
-      "problem < %s > not found, (top tip: check spelling)",problem_name.c_str()
-    );
-  }
-  *problem_ptr = &*p_miit;
-  PetscFunctionReturn(0);
-}
-PetscErrorCode Core::get_field_ents(const MoFEMEntity_multiIndex **field_ents) const {
-  PetscFunctionBegin;
-  *field_ents = &entsFields;
-  PetscFunctionReturn(0);
-}
-PetscErrorCode Core::get_dofs(const DofEntity_multiIndex **dofs_ptr) const {
-  PetscFunctionBegin;
-  *dofs_ptr = &dofsField;
-  PetscFunctionReturn(0);
-}
 MoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator Core::get_ent_moabfield_by_name_begin(const std::string &field_name) const {
   return entsFields.get<FieldName_mi_tag>().lower_bound(field_name);
 }
@@ -2227,7 +2193,7 @@ PetscErrorCode Core::check_number_of_ents_in_ents_field(const std::string& name)
   if(it == fIelds.get<FieldName_mi_tag>().end()) {
     SETERRQ1(PETSC_COMM_SELF,1,"field not found < %s >",name.c_str());
   }
-  EntityHandle meshset = (*it)->getMeshSet();
+  EntityHandle meshset = (*it)->getMeshset();
 
   int num_entities;
   MoABErrorCode rval;
@@ -2243,7 +2209,7 @@ PetscErrorCode Core::check_number_of_ents_in_ents_field() const {
   Field_multiIndex::index<FieldName_mi_tag>::type::iterator it = fIelds.get<FieldName_mi_tag>().begin();
   for(;it!=fIelds.get<FieldName_mi_tag>().end();it++) {
     if((*it)->getSpace() == NOFIELD) continue; //FIXME: should be treated properly, not test is just skipped for this NOFIELD space
-    EntityHandle meshset = (*it)->getMeshSet();
+    EntityHandle meshset = (*it)->getMeshset();
     MoABErrorCode rval;
     int num_entities;
     rval = moab.get_number_entities_by_handle(meshset,num_entities); CHKERRQ_MOAB(rval);
@@ -2260,7 +2226,7 @@ PetscErrorCode Core::check_number_of_ents_in_ents_finite_element(const std::stri
   if(it == finiteElements.get<FiniteElement_name_mi_tag>().end()) {
     SETERRQ1(PETSC_COMM_SELF,1,"finite element not found < %s >",name.c_str());
   }
-  EntityHandle meshset = (*it)->getMeshSet();
+  EntityHandle meshset = (*it)->getMeshset();
   MoABErrorCode rval;
   int num_entities;
   rval = moab.get_number_entities_by_handle(meshset,num_entities); CHKERRQ_MOAB(rval);
@@ -2277,7 +2243,7 @@ PetscErrorCode Core::check_number_of_ents_in_ents_finite_element() const {
   FiniteElement_multiIndex::index<FiniteElement_name_mi_tag>::type::iterator it;
   it = finiteElements.get<FiniteElement_name_mi_tag>().begin();
   for(;it!=finiteElements.get<FiniteElement_name_mi_tag>().end();it++) {
-    EntityHandle meshset = (*it)->getMeshSet();
+    EntityHandle meshset = (*it)->getMeshset();
     MoABErrorCode rval;
     int num_entities;
     rval = moab.get_number_entities_by_handle(meshset,num_entities); CHKERRQ_MOAB(rval);

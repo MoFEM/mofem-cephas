@@ -388,20 +388,24 @@ struct Interface: public UnknownInterface {
    */
   virtual PetscErrorCode seed_ref_level_MESHSET(const EntityHandle meshset,const BitRefLevel &bit,int verb = -1) = 0;
 
-  /** \brief Add coordinate system
-    *
-    * \param cs_id see \ref CoordSystems for options
-    * \param name unique name of coordinate system
-    */
-  virtual PetscErrorCode add_coordinate_system(const int cs_dim[],const std::string name) = 0;
+  // /** \brief Add coordinate system
+  //
+  //   * \deprecated Use CoordSystemsManager to add coordinate system
+  //
+  //   * \param cs_id see \ref CoordSystems for options
+  //   * \param name unique name of coordinate system
+  //   */
+  // DEPRECATED virtual PetscErrorCode add_coordinate_system(const int cs_dim[],const std::string name) = 0;
 
-  /** \brief Set coordinate system to field
-    *
-    * \param name of field
-    * \param name unique name of coordinate system
-    *
-    */
-  virtual PetscErrorCode set_field_coordinate_system(const std::string field_name,const std::string cs_name) = 0;
+  // /** \brief Set coordinate system to field
+  //
+  //   * \deprecated Use CoordSystemsManager to add coordinate system
+  //
+  //   * \param name of field
+  //   * \param name unique name of coordinate system
+  //   *
+  //   */
+  // DEPRECATED virtual PetscErrorCode set_field_coordinate_system(const std::string field_name,const std::string cs_name) = 0;
 
   /**\brief add all ents from ref level given by bit to meshset
     * \ingroup mofem_ref_ents
@@ -2055,6 +2059,11 @@ struct Interface: public UnknownInterface {
     */
   virtual PetscErrorCode loop_dofs(const std::string &field_name,EntMethod &method,int verb = -1) = 0;
 
+  /** \brief Get fields multi-index from database
+    * \ingroup mofem_access
+    */
+  virtual PetscErrorCode get_fields(const Field_multiIndex **fields_ptr) const = 0;
+
   /** \brief Get ref entities multi-index from database
     * \ingroup mofem_access
     */
@@ -2066,7 +2075,7 @@ struct Interface: public UnknownInterface {
   virtual PetscErrorCode get_ref_finite_elements(const RefElement_multiIndex **refined_finite_elements_ptr) const = 0;
 
   /** \brief Get problem database (data structure)
-    * \ingroup mofem_problems
+    * \ingroup mofem_access
     */
   virtual PetscErrorCode get_problem(const std::string &problem_name,const MoFEMProblem **problem_ptr) const = 0;
 

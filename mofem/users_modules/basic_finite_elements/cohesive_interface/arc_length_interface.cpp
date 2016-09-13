@@ -45,7 +45,7 @@ struct ArcLengthElement: public ArcLengthIntElemFEMethod {
   mField(m_field) {
 
     for(_IT_CUBITMESHSETS_BY_NAME_FOR_LOOP_(mField,"LoadPath",cit)) {
-      EntityHandle meshset = cit->getMeshSet();
+      EntityHandle meshset = cit->getMeshset();
       Range nodes;
       rval = mOab.get_entities_by_type(meshset,MBVERTEX,nodes,true); MOAB_THROW(rval);
       PostProcNodes.merge(nodes);
@@ -246,8 +246,8 @@ int main(int argc, char *argv[]) {
     int ll = 1;
     for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,SIDESET|INTERFACESET,cit)) {
     //for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,SIDESET,cit)) {
-      ierr = PetscPrintf(PETSC_COMM_WORLD,"Insert Interface %d\n",cit->getMeshSetId()); CHKERRQ(ierr);
-      EntityHandle cubit_meshset = cit->getMeshSet();
+      ierr = PetscPrintf(PETSC_COMM_WORLD,"Insert Interface %d\n",cit->getMeshsetId()); CHKERRQ(ierr);
+      EntityHandle cubit_meshset = cit->getMeshset();
       {
         //get tet enties form back bit_level
         EntityHandle ref_level_meshset = 0;
@@ -480,7 +480,7 @@ int main(int argc, char *argv[]) {
       interface_materials.back().ft = mydata.data.ft;
       interface_materials.back().Gf = mydata.data.Gf;
 
-      EntityHandle meshset = it->getMeshSet();
+      EntityHandle meshset = it->getMeshset();
       Range tris;
       rval = moab.get_entities_by_type(meshset,MBTRI,tris,true); CHKERRQ_MOAB(rval);
       Range ents3d;
@@ -540,7 +540,7 @@ int main(int argc, char *argv[]) {
   //body forces
   BodyFroceConstantField body_forces_methods(m_field);
   for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,BLOCKSET|BODYFORCESSET,it)) {
-    ierr = body_forces_methods.addBlock("DISPLACEMENT",F_body_force,it->getMeshSetId()); CHKERRQ(ierr);
+    ierr = body_forces_methods.addBlock("DISPLACEMENT",F_body_force,it->getMeshsetId()); CHKERRQ(ierr);
   }
   ierr = VecZeroEntries(F_body_force); CHKERRQ(ierr);
   ierr = VecGhostUpdateBegin(F_body_force,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
@@ -556,19 +556,19 @@ int main(int argc, char *argv[]) {
   string fe_name_str = "FORCE_FE";
   neumann_forces.insert(fe_name_str,new NeummanForcesSurface(m_field));
   for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,NODESET|FORCESET,it)) {
-    ierr = neumann_forces.at(fe_name_str).addForce("DISPLACEMENT",arc_ctx->F_lambda,it->getMeshSetId());  CHKERRQ(ierr);
+    ierr = neumann_forces.at(fe_name_str).addForce("DISPLACEMENT",arc_ctx->F_lambda,it->getMeshsetId());  CHKERRQ(ierr);
   }
   fe_name_str = "PRESSURE_FE";
   neumann_forces.insert(fe_name_str,new NeummanForcesSurface(m_field));
   for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,SIDESET|PRESSURESET,it)) {
-    ierr = neumann_forces.at(fe_name_str).addPreassure("DISPLACEMENT",arc_ctx->F_lambda,it->getMeshSetId()); CHKERRQ(ierr);
+    ierr = neumann_forces.at(fe_name_str).addPreassure("DISPLACEMENT",arc_ctx->F_lambda,it->getMeshsetId()); CHKERRQ(ierr);
   }
   //add nodal forces
   boost::ptr_map<std::string,NodalForce> nodal_forces;
   fe_name_str ="FORCE_FE";
   nodal_forces.insert(fe_name_str,new NodalForce(m_field));
   for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,NODESET|FORCESET,it)) {
-    ierr = nodal_forces.at(fe_name_str).addForce("DISPLACEMENT",arc_ctx->F_lambda,it->getMeshSetId());  CHKERRQ(ierr);
+    ierr = nodal_forces.at(fe_name_str).addForce("DISPLACEMENT",arc_ctx->F_lambda,it->getMeshsetId());  CHKERRQ(ierr);
   }
 
   SNES snes;

@@ -147,7 +147,7 @@ int main(int argc, char *argv[]) {
     Block_BodyForces mydata;
     ierr = it->getAttributeDataStructure(mydata); CHKERRQ(ierr);
     my_split << mydata << std::endl;
-    ierr = body_forces_methods.addBlock("DISPLACEMENT",F,it->getMeshSetId()); CHKERRQ(ierr);
+    ierr = body_forces_methods.addBlock("DISPLACEMENT",F,it->getMeshsetId()); CHKERRQ(ierr);
   }
   ierr = m_field.loop_finite_elements("TEST_PROBLEM","TEST_FE",body_forces_methods.getLoopFe()); CHKERRQ(ierr);
   ierr = VecAssemblyBegin(F); CHKERRQ(ierr);

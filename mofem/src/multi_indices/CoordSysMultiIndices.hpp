@@ -121,7 +121,7 @@ namespace MoFEM {
       PetscFunctionReturn(0);
     }
 
-    inline EntityHandle getMeshSet() const { return meshSet; };
+    inline EntityHandle getMeshset() const { return meshSet; };
     inline boost::string_ref getNameRef() const { return boost::string_ref((char *)tagCoordSysName,tagCoordSysNameSize); };
     inline std::string getName() const { return std::string((char *)tagCoordSysName,tagCoordSysNameSize); };
   };

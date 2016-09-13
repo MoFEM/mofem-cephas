@@ -214,21 +214,21 @@ int main(int argc, char *argv[]) {
       po::options_description config_file_options;
       for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,BLOCKSET,it)) {
         std::ostringstream str_order;
-        str_order << "block_" << it->getMeshSetId() << ".temperature_order";
+        str_order << "block_" << it->getMeshsetId() << ".temperature_order";
         config_file_options.add_options()
-        (str_order.str().c_str(),po::value<int>(&block_data[it->getMeshSetId()].oRder)->default_value(order));
+        (str_order.str().c_str(),po::value<int>(&block_data[it->getMeshsetId()].oRder)->default_value(order));
         std::ostringstream str_cond;
-        str_cond << "block_" << it->getMeshSetId() << ".heat_conductivity";
+        str_cond << "block_" << it->getMeshsetId() << ".heat_conductivity";
         config_file_options.add_options()
-        (str_cond.str().c_str(),po::value<double>(&block_data[it->getMeshSetId()].cOnductivity)->default_value(-1));
+        (str_cond.str().c_str(),po::value<double>(&block_data[it->getMeshsetId()].cOnductivity)->default_value(-1));
         std::ostringstream str_capa;
-        str_capa << "block_" << it->getMeshSetId() << ".heat_capacity";
+        str_capa << "block_" << it->getMeshsetId() << ".heat_capacity";
         config_file_options.add_options()
-        (str_capa.str().c_str(),po::value<double>(&block_data[it->getMeshSetId()].cApacity)->default_value(-1));
+        (str_capa.str().c_str(),po::value<double>(&block_data[it->getMeshsetId()].cApacity)->default_value(-1));
         std::ostringstream str_init_temp;
-        str_init_temp << "block_" << it->getMeshSetId() << ".initail_temperature";
+        str_init_temp << "block_" << it->getMeshsetId() << ".initail_temperature";
         config_file_options.add_options()
-        (str_init_temp.str().c_str(),po::value<double>(&block_data[it->getMeshSetId()].initTemp)->default_value(0));
+        (str_init_temp.str().c_str(),po::value<double>(&block_data[it->getMeshsetId()].initTemp)->default_value(0));
       }
       config_file_options.add_options()
       ("climate_model.solar_radiation",po::value<bool>(&solar_radiation)->default_value(false));
@@ -236,9 +236,9 @@ int main(int argc, char *argv[]) {
       store(parsed,vm);
       po::notify(vm);
       for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,BLOCKSET,it)) {
-        if(block_data[it->getMeshSetId()].oRder == -1) continue;
-        if(block_data[it->getMeshSetId()].oRder == order) continue;
-        PetscPrintf(PETSC_COMM_WORLD,"Set block %d oRder to %d\n",it->getMeshSetId(),block_data[it->getMeshSetId()].oRder);
+        if(block_data[it->getMeshsetId()].oRder == -1) continue;
+        if(block_data[it->getMeshsetId()].oRder == order) continue;
+        PetscPrintf(PETSC_COMM_WORLD,"Set block %d oRder to %d\n",it->getMeshsetId(),block_data[it->getMeshsetId()].oRder);
         Range block_ents;
         rval = moab.get_entities_by_handle(it->meshset,block_ents,true); CHKERR_MOAB(rval);
         Range ents_to_set_order;
@@ -246,8 +246,8 @@ int main(int argc, char *argv[]) {
         ents_to_set_order = ents_to_set_order.subset_by_type(MBTET);
         ierr = moab.get_adjacencies(block_ents,2,false,ents_to_set_order,moab::Interface::UNION); CHKERRQ(ierr);
         ierr = moab.get_adjacencies(block_ents,1,false,ents_to_set_order,moab::Interface::UNION); CHKERRQ(ierr);
-        ierr = m_field.set_field_order(ents_to_set_order,"TEMP",block_data[it->getMeshSetId()].oRder); CHKERRQ(ierr);
-        ierr = m_field.set_field_order(ents_to_set_order,"TEMP_RATE",block_data[it->getMeshSetId()].oRder); CHKERRQ(ierr);
+        ierr = m_field.set_field_order(ents_to_set_order,"TEMP",block_data[it->getMeshsetId()].oRder); CHKERRQ(ierr);
+        ierr = m_field.set_field_order(ents_to_set_order,"TEMP_RATE",block_data[it->getMeshsetId()].oRder); CHKERRQ(ierr);
       }
       std::vector<std::string> additional_parameters;
       additional_parameters = collect_unrecognized(parsed.options,po::include_positional);
@@ -311,12 +311,12 @@ int main(int argc, char *argv[]) {
   Projection10NodeCoordsOnField ent_method_material(m_field,"MESH_NODE_POSITIONS");
   ierr = m_field.loop_dofs("MESH_NODE_POSITIONS",ent_method_material); CHKERRQ(ierr);
   for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,BLOCKSET,it)) {
-    if(block_data[it->getMeshSetId()].initTemp!=0) {
+    if(block_data[it->getMeshsetId()].initTemp!=0) {
       Range block_ents;
       rval = moab.get_entities_by_handle(it->meshset,block_ents,true); CHKERR_MOAB(rval);
       Range vertices;
       rval = moab.get_connectivity(block_ents,vertices,true); CHKERRQ_MOAB(rval);
-      ierr = m_field.set_field(block_data[it->getMeshSetId()].initTemp,MBVERTEX,vertices,"TEMP"); CHKERRQ(ierr);
+      ierr = m_field.set_field(block_data[it->getMeshsetId()].initTemp,MBVERTEX,vertices,"TEMP"); CHKERRQ(ierr);
     }
   }
 

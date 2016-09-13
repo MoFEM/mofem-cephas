@@ -1178,8 +1178,8 @@ PetscErrorCode NonlinearElasticElement::setBlocks(
   for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BLOCKSET|MAT_ELASTICSET,it)) {
     Mat_Elastic mydata;
     ierr = it->getAttributeDataStructure(mydata); CHKERRQ(ierr);
-    int id = it->getMeshSetId();
-    EntityHandle meshset = it->getMeshSet();
+    int id = it->getMeshsetId();
+    EntityHandle meshset = it->getMeshset();
     rval = mField.get_moab().get_entities_by_type(meshset,MBTET,setOfBlocks[id].tEts,true); CHKERRQ_MOAB(rval);
     setOfBlocks[id].iD = id;
     setOfBlocks[id].E = mydata.data.Young;

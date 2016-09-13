@@ -335,7 +335,7 @@ namespace MoFEM {
     ierr = clear_ents_fields(bit,mask,verb); CHKERRQ(ierr);
     Field_multiIndex::iterator f_it = fIelds.begin();
     for(;f_it!=fIelds.end();f_it++) {
-      EntityHandle meshset = (*f_it)->getMeshSet();
+      EntityHandle meshset = (*f_it)->getMeshset();
       Range ents_to_remove;
       rval = moab.get_entities_by_handle(
         meshset,ents_to_remove,false); CHKERRQ_MOAB(rval);
@@ -409,7 +409,7 @@ namespace MoFEM {
     ierr = clear_finite_elements(bit,mask,verb); CHKERRQ(ierr);
     FiniteElement_multiIndex::iterator fe_it = finiteElements.begin();
     for(;fe_it!=finiteElements.end();fe_it++) {
-      EntityHandle meshset = (*fe_it)->getMeshSet();
+      EntityHandle meshset = (*fe_it)->getMeshset();
       Range ents_to_remove;
       rval = moab.get_entities_by_handle(
         meshset,ents_to_remove,false
@@ -625,7 +625,7 @@ namespace MoFEM {
         "finite element <%s> not found",name.c_str()
       );
     }
-    EntityHandle meshset = (*miit)->getMeshSet();
+    EntityHandle meshset = (*miit)->getMeshset();
     Range ents;
     rval = moab.get_entities_by_handle(meshset,ents,false); CHKERRQ_MOAB(rval);
     ierr = remove_ents_from_finite_element(name,ents,verb); CHKERRQ(ierr);

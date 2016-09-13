@@ -163,11 +163,11 @@ struct UltraWeakTransportElement {
 
       Mat_Thermal temp_data;
       ierr = it->getAttributeDataStructure(temp_data); CHKERRQ(ierr);
-      setOfBlocks[it->getMeshSetId()].cOnductivity = temp_data.data.Conductivity;
-      setOfBlocks[it->getMeshSetId()].cApacity = temp_data.data.HeatCapacity;
-      rval = mField.get_moab().get_entities_by_type(it->meshset,MBTET,setOfBlocks[it->getMeshSetId()].tEts,true); CHKERRQ_MOAB(rval);
-      ierr = mField.add_ents_to_finite_element_by_TETs(setOfBlocks[it->getMeshSetId()].tEts,"ULTRAWEAK"); CHKERRQ(ierr);
-      ierr = mField.add_ents_to_finite_element_by_TETs(setOfBlocks[it->getMeshSetId()].tEts,"ULTRAWEAK_ERROR"); CHKERRQ(ierr);
+      setOfBlocks[it->getMeshsetId()].cOnductivity = temp_data.data.Conductivity;
+      setOfBlocks[it->getMeshsetId()].cApacity = temp_data.data.HeatCapacity;
+      rval = mField.get_moab().get_entities_by_type(it->meshset,MBTET,setOfBlocks[it->getMeshsetId()].tEts,true); CHKERRQ_MOAB(rval);
+      ierr = mField.add_ents_to_finite_element_by_TETs(setOfBlocks[it->getMeshsetId()].tEts,"ULTRAWEAK"); CHKERRQ(ierr);
+      ierr = mField.add_ents_to_finite_element_by_TETs(setOfBlocks[it->getMeshsetId()].tEts,"ULTRAWEAK_ERROR"); CHKERRQ(ierr);
 
     }
 

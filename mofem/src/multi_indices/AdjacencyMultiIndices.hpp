@@ -34,10 +34,10 @@ struct MoFEMEntityEntFiniteElementAdjacencyMap {
     const boost::shared_ptr<EntFiniteElement> ent_fe_ptr
   );
   inline GlobalUId get_MoFEMFiniteElement_unique_id() const { return entFePtr->getGlobalUniqueId(); }
-  inline EntityHandle get_MoFEMFiniteElement_meshset() const { return entFePtr->getMeshSet(); }
+  inline EntityHandle get_MoFEMFiniteElement_meshset() const { return entFePtr->getMeshset(); }
   inline EntityHandle get_MoFEMFiniteElement_entity_handle() const { return entFePtr->getEnt(); }
   inline GlobalUId get_ent_unique_id() const { return mofemEntPtr->getGlobalUniqueId(); };
-  inline EntityHandle get_ent_meshset() const { return mofemEntPtr->getMeshSet(); };
+  inline EntityHandle get_ent_meshset() const { return mofemEntPtr->getMeshset(); };
   inline EntityHandle get_ent_entity_handle() const { return mofemEntPtr->getEnt(); };
   BitFieldId getEntId() const { return mofemEntPtr->getId(); }
   BitFEId get_BitFEId() const { return entFePtr->getId(); }

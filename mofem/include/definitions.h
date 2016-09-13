@@ -50,7 +50,8 @@ enum MoFEMInterfaces {
   NODEMERGER_INTERFACE          = 1<<3|1<<6,	///< used to merge nodes
   BITLEVELCOUPLER_INTERFACE     = 1<<3|1<<7,  ///< used to couple bit levels by finding parent children relation
   PRISMSFROMSURFACE_INTERFACE   = 1<<3|1<<8,  ///< create prisms from surface elements
-  MESHSETSMANAGER_INTERFACE     = 1<<3|1<<9   ///< Interface to manage meshsets with materials and boundary conditions
+  MESHSETSMANAGER_INTERFACE     = 1<<3|1<<9,  ///< Interface to manage meshsets with materials and boundary conditions
+  COORDSSYSTEMMANAGER_INTERFACE = 1<<3|1<<10  ///< Interface to manage coordinate systems
 };
 
 enum LoopInterfaces {

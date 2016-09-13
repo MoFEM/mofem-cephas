@@ -1,7 +1,6 @@
 /** \file MeshRefinment.hpp
- * \brief MoFEM interface
+ * \brief Interface managing boundary and blockset data on meshsets
  *
- * Low level data structures not used directly by user
  */
 
 /*
