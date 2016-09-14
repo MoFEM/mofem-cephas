@@ -25,6 +25,7 @@
 
 /**
  * \brief Store variables for ArcLength analysis
+ *
  * \ingroup arc_length_control
 
  The constrain function if given by
@@ -156,6 +157,7 @@ struct ArcLengthTsCtx: public TsCtx {
 #endif // __TSCTX_HPP__
 
 /** \brief shell matrix for arc-length method
+ *
  * \ingroup arc_length_control
 
  Shell matrix which has structure:
