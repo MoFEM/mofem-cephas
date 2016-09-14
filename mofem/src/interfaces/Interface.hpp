@@ -217,6 +217,12 @@ struct Interface: public UnknownInterface {
    \deprecated use MeshsetsManager
    \todo All cubit interface functions should be outsourced to dedicated interface
 
+   \code
+   MeshsetsManager *meshset_manager_ptr;
+   ierr = m_field.query_interface(meshset_manager_ptr); CHKERRQ(ierr);
+   ierr = meshset_manager_ptr->getEntitiesByDimension(ms_id,cubit_bc_type,dimension,entities,true); CHKERRQ(ierr);
+   \endcode
+
     * \param msId id of the BLOCKSET/SIDESET/BLOCKSET: from CUBIT
     * \param  see CubitBC (NODESET, SIDESET or BLOCKSET and more)
     * \param dimensions (0 - Nodes, 1 - Edges, 2 - Faces, 3 - Volume(tetrahedral))
