@@ -495,6 +495,9 @@ namespace MoFEM {
 
     PetscErrorCode setMeshsetFromFile(const string file_name);
 
+    PetscErrorCode setMeshsetFromFile();
+
+
   protected:
 
     Tag nsTag;

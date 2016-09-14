@@ -110,7 +110,7 @@ int main(int argc, char *argv[]) {
 
     std::cout << "<<<< ADD BLOCKSETs FROM CONFIG FILE >>>>>" << std::endl;
 
-    ierr = meshsets_manager_ptr->setMeshsetFromFile("add_cubit_meshsets.in"); CHKERRQ(ierr);
+    ierr = meshsets_manager_ptr->setMeshsetFromFile(/*"add_cubit_meshsets.in"*/); CHKERRQ(ierr);
 
     // List all meshsets
     for(_IT_CUBITMESHSETS_FOR_LOOP_(m_field,it)) {

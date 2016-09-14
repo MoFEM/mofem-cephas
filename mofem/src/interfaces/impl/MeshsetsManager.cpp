@@ -798,6 +798,32 @@ namespace MoFEM {
     PetscFunctionReturn(0);
   }
 
+  PetscErrorCode MeshsetsManager::setMeshsetFromFile() {
+    PetscErrorCode ierr;
+    MoFEM::Interface &m_field = cOre;
+    moab::Interface &moab = m_field.get_moab();
+    PetscBool flg_file;
+    char meshset_file_name[255];
+    PetscFunctionBegin;
+    ierr = PetscOptionsBegin(m_field.get_comm(),"","Set meshsets form file","none"); CHKERRQ(ierr);
+    ierr = PetscOptionsString(
+      "-meshsets_config",
+      "meshsets config  file name","",
+      "add_cubit_meshsets.in",
+      meshset_file_name,
+      255,
+      &flg_file
+    ); CHKERRQ(ierr);
+    if(flg_file==PETSC_TRUE) {
+      ifstream f(meshset_file_name);
+      if(!f.good()) {
+        SETERRQ1(m_field.get_comm(),MOFEM_DATA_INCONSISTENCY,"File configuring meshsets ( %s ) can not be open\n",meshset_file_name);
+      }
+      ierr = setMeshsetFromFile(string(meshset_file_name)); CHKERRQ(ierr);
+    }
+    ierr = PetscOptionsEnd(); CHKERRQ(ierr);
+    PetscFunctionReturn(0);
+  }
 
 
 }
