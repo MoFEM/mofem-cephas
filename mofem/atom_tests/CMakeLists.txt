@@ -61,75 +61,171 @@ target_link_libraries(cubit_bc_test
   ${PROJECT_LIBS}
 )
 
-add_test(cubit_bc_atom_test_disp01 ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/cubit_bc_test -my_file disp01.h5m)
-add_test(cubit_bc_atom_test_disp01_compare ${CMAKE_COMMAND} -E compare_files
-  ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/disp01.cub.txt ${CMAKE_BINARY_DIR}/atom_tests/disp01.h5m.txt
+add_test(
+  cubit_bc_atom_test_disp01
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/cubit_bc_test -my_file disp01.h5m
+)
+add_test(
+  cubit_bc_atom_test_disp01_compare
+  ${CMAKE_COMMAND} -E compare_files
+  ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/disp01.cub.txt
+  ${CMAKE_BINARY_DIR}/atom_tests/disp01.h5m.txt
 )
 
-add_test(cubit_bc_atom_test_force01 ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/cubit_bc_test -my_file force01.h5m)
-add_test(cubit_bc_atom_test_force01_compare ${CMAKE_COMMAND} -E compare_files
-  ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/force01.cub.txt ${CMAKE_BINARY_DIR}/atom_tests/force01.h5m.txt
+add_test(
+  cubit_bc_atom_test_force01
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/cubit_bc_test -my_file force01.h5m
+)
+add_test(
+  cubit_bc_atom_test_force01_compare
+  ${CMAKE_COMMAND} -E compare_files
+  ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/force01.cub.txt
+  ${CMAKE_BINARY_DIR}/atom_tests/force01.h5m.txt
 )
 
-add_test(cubit_bc_atom_test_velocity01 ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/cubit_bc_test -my_file velocity01.h5m)
-add_test(cubit_bc_atom_test_velocity01_compare ${CMAKE_COMMAND} -E compare_files
-  ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/velocity01.cub.txt ${CMAKE_BINARY_DIR}/atom_tests/velocity01.h5m.txt
+add_test(
+  cubit_bc_atom_test_velocity01
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/cubit_bc_test -my_file velocity01.h5m
+)
+add_test(
+  cubit_bc_atom_test_velocity01_compare
+  ${CMAKE_COMMAND} -E compare_files
+  ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/velocity01.cub.txt
+  ${CMAKE_BINARY_DIR}/atom_tests/velocity01.h5m.txt
 )
 
-add_test(cubit_bc_atom_test_accel01 ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/cubit_bc_test -my_file accel01.h5m)
-add_test(cubit_bc_atom_test_accel01_compare ${CMAKE_COMMAND} -E compare_files
-  ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/accel01.cub.txt ${CMAKE_BINARY_DIR}/atom_tests/accel01.h5m.txt
+add_test(
+  cubit_bc_atom_test_accel01
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/cubit_bc_test -my_file accel01.h5m
+)
+add_test(
+  cubit_bc_atom_test_accel01_compare
+  ${CMAKE_COMMAND} -E compare_files
+  ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/accel01.cub.txt
+  ${CMAKE_BINARY_DIR}/atom_tests/accel01.h5m.txt
 )
 
-add_test(cubit_bc_atom_test_temper01 ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/cubit_bc_test -my_file temper01.h5m)
-add_test(cubit_bc_atom_test_temper01_compare ${CMAKE_COMMAND} -E compare_files
-  ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/temper01.cub.txt ${CMAKE_BINARY_DIR}/atom_tests/temper01.h5m.txt
+add_test(
+  cubit_bc_atom_test_temper01
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/cubit_bc_test -my_file temper01.h5m
+)
+add_test(
+  cubit_bc_atom_test_temper01_compare ${CMAKE_COMMAND} -E compare_files
+  ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/temper01.cub.txt
+  ${CMAKE_BINARY_DIR}/atom_tests/temper01.h5m.txt
 )
 
-add_test(cubit_bc_atom_test_pressure01 ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/cubit_bc_test -my_file pressure01.h5m)
-add_test(cubit_bc_atom_test_pressure01_compare ${CMAKE_COMMAND} -E compare_files
-  ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/pressure01.cub.txt ${CMAKE_BINARY_DIR}/atom_tests/pressure01.h5m.txt
+add_test(
+  cubit_bc_atom_test_pressure01
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/cubit_bc_test -my_file pressure01.h5m
+)
+add_test(
+  cubit_bc_atom_test_pressure01_compare
+  ${CMAKE_COMMAND} -E compare_files
+  ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/pressure01.cub.txt
+  ${CMAKE_BINARY_DIR}/atom_tests/pressure01.h5m.txt
 )
 
-add_test(cubit_bc_atom_test_heatflux01 ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/cubit_bc_test -my_file heatflux01.h5m)
-add_test(cubit_bc_atom_test_heatflux01_compare ${CMAKE_COMMAND} -E compare_files
-  ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/heatflux01.cub.txt ${CMAKE_BINARY_DIR}/atom_tests/heatflux01.h5m.txt
+add_test(
+  cubit_bc_atom_test_heatflux01
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/cubit_bc_test -my_file heatflux01.h5m
+)
+add_test(
+  cubit_bc_atom_test_heatflux01_compare
+  ${CMAKE_COMMAND} -E compare_files
+  ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/heatflux01.cub.txt
+  ${CMAKE_BINARY_DIR}/atom_tests/heatflux01.h5m.txt
 )
 
-add_test(cubit_bc_atom_test_comb01 ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/cubit_bc_test -my_file comb01.h5m)
-add_test(cubit_bc_atom_test_comb01_compare ${CMAKE_COMMAND} -E compare_files
-  ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/comb01.cub.txt ${CMAKE_BINARY_DIR}/atom_tests/comb01.h5m.txt
+add_test(
+  cubit_bc_atom_test_comb01
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/cubit_bc_test -my_file comb01.h5m)
+add_test(
+  cubit_bc_atom_test_comb01_compare
+  ${CMAKE_COMMAND} -E compare_files
+  ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/comb01.cub.txt
+  ${CMAKE_BINARY_DIR}/atom_tests/comb01.h5m.txt
 )
 
-add_test(cubit_bc_atom_test_bcoverlap01 ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/cubit_bc_test -my_file bcoverlap01.h5m)
-add_test(cubit_bc_atom_test_bcoverlap01_compare ${CMAKE_COMMAND} -E compare_files
-  ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/bcoverlap01.cub.txt ${CMAKE_BINARY_DIR}/atom_tests/bcoverlap01.h5m.txt
+add_test(
+  cubit_bc_atom_test_bcoverlap01
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/cubit_bc_test -my_file bcoverlap01.h5m
+)
+add_test(
+  cubit_bc_atom_test_bcoverlap01_compare
+  ${CMAKE_COMMAND} -E compare_files
+  ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/bcoverlap01.cub.txt
+  ${CMAKE_BINARY_DIR}/atom_tests/bcoverlap01.h5m.txt
 )
 
-add_test(cubit_bc_atom_test_interf01 ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/cubit_bc_test -my_file interf01.h5m)
-add_test(cubit_bc_atom_test_interf01_compare ${CMAKE_COMMAND} -E compare_files
-  ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/interf01.cub.txt ${CMAKE_BINARY_DIR}/atom_tests/interf01.h5m.txt
+add_test(
+  cubit_bc_atom_test_interf01
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/cubit_bc_test -my_file interf01.h5m
+)
+add_test(
+  cubit_bc_atom_test_interf01_compare
+  ${CMAKE_COMMAND} -E compare_files
+  ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/interf01.cub.txt
+  ${CMAKE_BINARY_DIR}/atom_tests/interf01.h5m.txt
 )
 
-add_test(cubit_bc_atom_test_mat_elastic ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/cubit_bc_test -my_file mat_elastic.h5m)
-add_test(cubit_bc_atom_test_mat_elastic_compare ${CMAKE_COMMAND} -E compare_files
-  ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/mat_elastic.cub.txt ${CMAKE_BINARY_DIR}/atom_tests/mat_elastic.h5m.txt
+add_test(
+  cubit_bc_atom_test_mat_elastic
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/cubit_bc_test -my_file mat_elastic.h5m
+)
+add_test(
+  cubit_bc_atom_test_mat_elastic_compare
+  ${CMAKE_COMMAND} -E compare_files
+  ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/mat_elastic.cub.txt
+  ${CMAKE_BINARY_DIR}/atom_tests/mat_elastic.h5m.txt
 )
 
-add_test(cubit_bc_atom_test_mat_elastic_transiso ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/cubit_bc_test -my_file mat_elastic_transiso.h5m)
-add_test(cubit_bc_atom_test_mat_elastic_transiso_compare ${CMAKE_COMMAND} -E compare_files
+add_test(
+  cubit_bc_atom_test_mat_elastic_transiso
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/cubit_bc_test -my_file mat_elastic_transiso.h5m
+)
+add_test(
+  cubit_bc_atom_test_mat_elastic_transiso_compare ${CMAKE_COMMAND} -E compare_files
   ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/mat_elastic_transiso.cub.txt
   ${CMAKE_BINARY_DIR}/atom_tests/mat_elastic_transiso.h5m.txt
 )
 
-add_test(cubit_bc_atom_test_mat_interf ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/cubit_bc_test -my_file mat_interf.h5m)
-add_test(cubit_bc_atom_test_mat_interf_compare ${CMAKE_COMMAND} -E compare_files
-  ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/mat_interf.cub.txt ${CMAKE_BINARY_DIR}/atom_tests/mat_interf.h5m.txt
+add_test(
+  cubit_bc_atom_test_mat_interf
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/cubit_bc_test -my_file mat_interf.h5m
+)
+add_test(
+  cubit_bc_atom_test_mat_interf_compare
+  ${CMAKE_COMMAND} -E compare_files
+  ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/mat_interf.cub.txt
+  ${CMAKE_BINARY_DIR}/atom_tests/mat_interf.h5m.txt
 )
 
-add_test(cubit_bc_atom_test_inlet_outlet ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/cubit_bc_test -my_file inlet_outlet.h5m)
-add_test(cubit_bc_atom_test_inlet_outlet_compare ${CMAKE_COMMAND} -E compare_files
-  ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/inlet_outlet.cub.txt ${CMAKE_BINARY_DIR}/atom_tests/inlet_outlet.h5m.txt
+add_test(
+  cubit_bc_atom_test_inlet_outlet
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/cubit_bc_test -my_file inlet_outlet.h5m
+)
+add_test(
+  cubit_bc_atom_test_inlet_outlet_compare
+  ${CMAKE_COMMAND} -E compare_files
+  ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/inlet_outlet.cub.txt
+  ${CMAKE_BINARY_DIR}/atom_tests/inlet_outlet.h5m.txt
+)
+
+# testing adding cubit meshset
+my_add_executable(add_cubit_meshsets add_cubit_meshsets.cpp)
+target_link_libraries(add_cubit_meshsets
+  mofem_interfaces
+  mofem_multi_indices
+  mofem_approx
+  mofem_cblas
+  mofem_third_party
+  ${PROJECT_LIBS}
+)
+
+add_test(
+  add_cubit_meshsets
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/add_cubit_meshsets
 )
 
 #Loop over Cubit Meshset Test

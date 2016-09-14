@@ -111,7 +111,6 @@ struct Interface: public UnknownInterface {
 
   /**
     * \brief check for CUBIT Id and CUBIT type
-    * \ingroup mofem_bc
 
     \deprecated use MeshsetsManager
     \todo All cubit interface functions should be outsourced to dedicated interface
@@ -123,7 +122,6 @@ struct Interface: public UnknownInterface {
 
   /**
     * \brief add cubit meshset
-    * \ingroup mofem_bc
 
     \deprecated use MeshsetsManager
     \todo All cubit interface functions should be outsourced to dedicated interface
@@ -196,7 +194,6 @@ struct Interface: public UnknownInterface {
 
   /**
     * \brief get cubit meshset
-    * \ingroup mofem_bc
 
    \deprecated use MeshsetsManager
    \todo All cubit interface functions should be outsourced to dedicated interface
@@ -206,7 +203,6 @@ struct Interface: public UnknownInterface {
 
   /**
     * \brief get entities from CUBIT/meshset of a particular entity dimension
-    * \ingroup mofem_bc
 
     * Nodeset can contain nodes, edges, triangles and tets. This applies to other  meshsets too.
     * The nodeset's meshset contain the nodes in the MIDDLE of the surface or volume which is done by default in Cubit,
@@ -233,7 +229,6 @@ struct Interface: public UnknownInterface {
 
   /**
     * \brief get entities related to CUBIT/meshset,
-    * \ingroup mofem_bc
 
     * NODESET will get Vertices only, even if the NODESET contains edges, tris and tets
     * SIDESET will get Tris, BLOCKSET will get Tets, DISPLACEMENTSET and FORCESET are stored in NODESET, PRESSURESET is stored in Sideset.
@@ -249,7 +244,6 @@ struct Interface: public UnknownInterface {
   DEPRECATED virtual PetscErrorCode get_cubit_msId_entities_by_dimension(const int msId,const unsigned int cubit_bc_type, Range &entities,const bool recursive = false) = 0;
 
   /**
-    * \ingroup mofem_bc
     * \brief get meshset from CUBIT Id and CUBIT type
 
    \deprecated use MeshsetsManager
@@ -262,7 +256,6 @@ struct Interface: public UnknownInterface {
   DEPRECATED virtual PetscErrorCode get_cubit_msId_meshset(const int msId,const unsigned int cubit_bc_type,EntityHandle &meshset) = 0;
 
   /**
-    * \ingroup mofem_bc
     * \brief get all CUBIT meshsets by CUBIT type
 
    \deprecated use MeshsetsManager
