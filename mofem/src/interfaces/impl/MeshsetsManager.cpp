@@ -502,7 +502,7 @@ namespace MoFEM {
     moab::Interface &moab = m_field.get_moab();
     PetscFunctionBegin;
     try {
-      ifstream ini_file(file_name);
+      std::ifstream ini_file(file_name.c_str(),std::ifstream::in);
       po::variables_map vm;
       po::options_description config_file_options;
       map<int,BlockData> block_lists;
