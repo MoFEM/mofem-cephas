@@ -377,6 +377,17 @@ namespace MoFEM {
     PetscErrorCode addEntitiesToMeshset(const CubitBCType cubit_bc_tyep,const int ms_id,Range &ents);
 
     /**
+     * \brief add entities to cubit meshset
+     * @param  cubit_bc_tyep type of meshset, f.e. NODESET, SIDESET or BLOCKSET
+     * @param  ms_id         id of meshset
+     * @param  ents          pointer to entities array
+     * @param  nb_ents       number of entities in array
+     * @return               error code
+     */
+    PetscErrorCode addEntitiesToMeshset(const CubitBCType cubit_bc_type,const int ms_id,const EntityHandle *ents,const int nb_ents);
+
+
+    /**
      * \brief set attributes to cubit meshset
      * @param  cubit_bc_type type of meshset, see CubitBC, i.e. BLOCKSET, NODESET, SIDESET
      * @param  ms_id         id of meshset
@@ -481,6 +492,8 @@ namespace MoFEM {
       * \param meshsets is range of meshsets
       */
     PetscErrorCode getMeshsetsByType(const unsigned int cubit_bc_type,Range &meshsets);
+
+    PetscErrorCode setMeshsetFromFile(const string file_name);
 
   protected:
 

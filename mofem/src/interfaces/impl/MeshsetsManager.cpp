@@ -55,6 +55,10 @@
 
 #include <MeshsetsManager.hpp>
 
+#include <boost/program_options.hpp>
+using namespace std;
+namespace po = boost::program_options;
+
 namespace MoFEM {
 
   PetscErrorCode MeshsetsManager::queryInterface(const MOFEMuuid& uuid, UnknownInterface** iface) {
@@ -289,12 +293,30 @@ namespace MoFEM {
       boost::make_tuple(ms_id,cubit_bc_type.to_ulong())
     );
     if(cit==cubitMeshsets.get<Composite_Cubit_msId_And_MeshSetType_mi_tag>().end()) {
-      SETERRQ1(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"such cubit meshset is already there",ms_id);
+      SETERRQ1(m_field.get_comm(),MOFEM_DATA_INCONSISTENCY,"such cubit meshset is already there",ms_id);
     }
     EntityHandle meshset = cit->getMeshset();
     rval = moab.add_entities(meshset,ents); CHKERRQ_MOAB(rval);
     PetscFunctionReturn(0);
   }
+
+  PetscErrorCode MeshsetsManager::addEntitiesToMeshset(const CubitBCType cubit_bc_type,const int ms_id,const EntityHandle *ents,const int nb_ents) {
+    MoABErrorCode rval;
+    MoFEM::Interface &m_field = cOre;
+    moab::Interface &moab = m_field.get_moab();
+    PetscFunctionBegin;
+    CubitMeshSet_multiIndex::index<Composite_Cubit_msId_And_MeshSetType_mi_tag>::type::iterator
+    cit = cubitMeshsets.get<Composite_Cubit_msId_And_MeshSetType_mi_tag>().find(
+      boost::make_tuple(ms_id,cubit_bc_type.to_ulong())
+    );
+    if(cit==cubitMeshsets.get<Composite_Cubit_msId_And_MeshSetType_mi_tag>().end()) {
+      SETERRQ1(m_field.get_comm(),MOFEM_DATA_INCONSISTENCY,"such cubit meshset is already there",ms_id);
+    }
+    EntityHandle meshset = cit->getMeshset();
+    rval = moab.add_entities(meshset,ents,nb_ents); CHKERRQ_MOAB(rval);
+    PetscFunctionReturn(0);
+  }
+
 
   PetscErrorCode MeshsetsManager::setAttribites(
     const CubitBCType cubit_bc_type,const int ms_id,const std::vector<double> &attributes,const std::string name
@@ -305,12 +327,12 @@ namespace MoFEM {
     CubitMeshSet_multiIndex::index<Composite_Cubit_msId_And_MeshSetType_mi_tag>::type::iterator
     cit = cubitMeshsets.get<Composite_Cubit_msId_And_MeshSetType_mi_tag>().find(boost::make_tuple(ms_id,cubit_bc_type.to_ulong()));
     if(cit==cubitMeshsets.get<Composite_Cubit_msId_And_MeshSetType_mi_tag>().end()) {
-      SETERRQ1(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"such cubit meshset is already there",ms_id);
+      SETERRQ1(m_field.get_comm(),MOFEM_DATA_INCONSISTENCY,"such cubit meshset is already there",ms_id);
     }
     if(name.size()>0) {
       bool success  = cubitMeshsets.modify(cubitMeshsets.project<0>(cit),CubitMeshSets_change_name(moab,name));
       if(!success) {
-        SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"name to cubit meshset can not be set");
+        SETERRQ(m_field.get_comm(),MOFEM_OPERATION_UNSUCCESSFUL,"name to cubit meshset can not be set");
       }
     }
     bool success = cubitMeshsets.modify(
@@ -329,7 +351,7 @@ namespace MoFEM {
     CubitMeshSet_multiIndex::index<Composite_Cubit_msId_And_MeshSetType_mi_tag>::type::iterator
     cit = cubitMeshsets.get<Composite_Cubit_msId_And_MeshSetType_mi_tag>().find(boost::make_tuple(ms_id,cubit_bc_type.to_ulong()));
     if(cit==cubitMeshsets.get<Composite_Cubit_msId_And_MeshSetType_mi_tag>().end()) {
-      SETERRQ1(PETSC_COMM_SELF,1,"such cubit meshset is already there",ms_id);
+      SETERRQ1(m_field.get_comm(),MOFEM_DATA_INCONSISTENCY,"such cubit meshset is already there",ms_id);
     }
     if(name.size()>0) {
       bool success  = cubitMeshsets.modify(cubitMeshsets.project<0>(cit),CubitMeshSets_change_name(moab,name));
@@ -353,7 +375,7 @@ namespace MoFEM {
     CubitMeshSet_multiIndex::index<Composite_Cubit_msId_And_MeshSetType_mi_tag>::type::iterator
     cit = cubitMeshsets.get<Composite_Cubit_msId_And_MeshSetType_mi_tag>().find(boost::make_tuple(ms_id,cubit_bc_type.to_ulong()));
     if(cit==cubitMeshsets.get<Composite_Cubit_msId_And_MeshSetType_mi_tag>().end()) {
-      SETERRQ1(PETSC_COMM_SELF,1,"such cubit meshset is already there",ms_id);
+      SETERRQ1(m_field.get_comm(),MOFEM_DATA_INCONSISTENCY,"such cubit meshset is already there",ms_id);
     }
     bool success = cubitMeshsets.modify(
       cubitMeshsets.project<0>(cit),CubitMeshSets_change_bc_data_structure(moab,data)
@@ -370,7 +392,7 @@ namespace MoFEM {
     CubitMeshSet_multiIndex::index<Composite_Cubit_msId_And_MeshSetType_mi_tag>::type::iterator
     miit = cubitMeshsets.get<Composite_Cubit_msId_And_MeshSetType_mi_tag>().find(boost::make_tuple(ms_id,cubit_bc_type.to_ulong()));
     if(miit==cubitMeshsets.get<Composite_Cubit_msId_And_MeshSetType_mi_tag>().end()) {
-      SETERRQ1(PETSC_COMM_SELF,1,"such cubit meshset is already there",ms_id);
+      SETERRQ1(m_field.get_comm(),MOFEM_DATA_INCONSISTENCY,"such cubit meshset is already there",ms_id);
     }
     EntityHandle meshset = miit->getMeshset();
     cubitMeshsets.get<Composite_Cubit_msId_And_MeshSetType_mi_tag>().erase(miit);
@@ -379,13 +401,14 @@ namespace MoFEM {
   }
 
   PetscErrorCode MeshsetsManager::getCubitMeshsetPtr(const int ms_id,const CubitBCType cubit_bc_type,const CubitMeshSets **cubit_meshset_ptr) {
+    MoFEM::Interface &m_field = cOre;
     PetscFunctionBegin;
     CubitMeshSet_multiIndex::index<Composite_Cubit_msId_And_MeshSetType_mi_tag>::type::iterator
       miit = cubitMeshsets.get<Composite_Cubit_msId_And_MeshSetType_mi_tag>().find(boost::make_tuple(ms_id,cubit_bc_type.to_ulong()));
     if(miit!=cubitMeshsets.get<Composite_Cubit_msId_And_MeshSetType_mi_tag>().end()) {
       *cubit_meshset_ptr = &*miit;
     } else {
-      SETERRQ1(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"msId = %d is not there",ms_id);
+      SETERRQ1(m_field.get_comm(),MOFEM_DATA_INCONSISTENCY,"msId = %d is not there",ms_id);
     }
     PetscFunctionReturn(0);
   }
@@ -402,7 +425,7 @@ namespace MoFEM {
     if(miit!=cubitMeshsets.get<Composite_Cubit_msId_And_MeshSetType_mi_tag>().end()) {
       ierr = miit->getMeshsetIdEntitiesByDimension(moab,dimension,entities,recursive); CHKERRQ(ierr);
     } else {
-      SETERRQ1(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"msId = %d is not there",msId);
+      SETERRQ1(m_field.get_comm(),MOFEM_DATA_INCONSISTENCY,"msId = %d is not there",msId);
     }
     PetscFunctionReturn(0);
   }
@@ -419,19 +442,20 @@ namespace MoFEM {
     if(miit!=cubitMeshsets.get<Composite_Cubit_msId_And_MeshSetType_mi_tag>().end()) {
       ierr = miit->getMeshsetIdEntitiesByDimension(moab,entities,recursive); CHKERRQ(ierr);
     } else {
-      SETERRQ1(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"ms_id = %d is not there",ms_id);
+      SETERRQ1(m_field.get_comm(),MOFEM_DATA_INCONSISTENCY,"ms_id = %d is not there",ms_id);
     }
     PetscFunctionReturn(0);
   }
 
   PetscErrorCode MeshsetsManager::getMeshset(const int ms_id,const unsigned int cubit_bc_type,EntityHandle &meshset) {
+    MoFEM::Interface &m_field = cOre;
     PetscFunctionBegin;
     CubitMeshSet_multiIndex::index<Composite_Cubit_msId_And_MeshSetType_mi_tag>::type::iterator
       miit = cubitMeshsets.get<Composite_Cubit_msId_And_MeshSetType_mi_tag>().find(boost::make_tuple(ms_id,cubit_bc_type));
     if(miit!=cubitMeshsets.get<Composite_Cubit_msId_And_MeshSetType_mi_tag>().end()) {
       meshset = miit->meshset;
     } else {
-      SETERRQ1(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"ms_id = %d is not there",ms_id);
+      SETERRQ1(m_field.get_comm(),MOFEM_DATA_INCONSISTENCY,"ms_id = %d is not there",ms_id);
     }
     PetscFunctionReturn(0);
   }
@@ -448,6 +472,331 @@ namespace MoFEM {
     PetscFunctionReturn(0);
   }
 
+  struct BlockData {
+
+    const CubitMeshSets *cubitMeshsetPtr;
+
+    int iD;
+    string addType;
+    string nAme;
+    CubitBC bcType;
+
+    Mat_Elastic matElastic;
+    DisplacementCubitBcData dispBc;
+    ForceCubitBcData forceBc;
+    PressureCubitBcData pressureBc;
+
+    std::vector<double> aTtr;
+    BlockData():
+    aTtr(10) {
+      strncpy(dispBc.data.name,"Displacement",12);
+      strncpy(forceBc.data.name,"Force",5);
+      strncpy(pressureBc.data.name,"Pressure",8);
+    }
+
+  };
+
+  PetscErrorCode MeshsetsManager::setMeshsetFromFile(const string file_name) {
+    PetscErrorCode ierr;
+    MoFEM::Interface &m_field = cOre;
+    moab::Interface &moab = m_field.get_moab();
+    PetscFunctionBegin;
+    try {
+      ifstream ini_file(file_name);
+      po::variables_map vm;
+      po::options_description config_file_options;
+      map<int,BlockData> block_lists;
+      for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,BLOCKSET,it)) {
+        block_lists[it->getMeshsetId()].cubitMeshsetPtr = &*it;
+        std::ostringstream str_add;
+        str_add << "block_" << it->getMeshsetId() << ".add";
+        std::ostringstream str_id;
+        str_id << "block_" << it->getMeshsetId() << ".id";
+        std::ostringstream str_name;
+        str_name << "block_" << it->getMeshsetId() << ".name";
+        config_file_options.add_options()
+        (str_add.str().c_str(),po::value<string>(&block_lists[it->getMeshsetId()].addType)->default_value("UNKNOWNSET"),"Add block set")
+        (str_id.str().c_str(),po::value<int>(&block_lists[it->getMeshsetId()].iD)->default_value(-1),"Id of meshset")
+        (str_name.str().c_str(),po::value<string>(&block_lists[it->getMeshsetId()].nAme)->default_value(""),"Name of the meshset");
+        // Block attributes
+        for(int ii = 1;ii<=10;ii++) {
+          std::ostringstream str_user;
+          str_user << "block_" << it->getMeshsetId() << ".user" << ii;
+          config_file_options.add_options()
+          (str_user.str().c_str(),po::value<double>(&block_lists[it->getMeshsetId()].aTtr[ii-1])->default_value(0.0),"Add block attribute");
+        }
+        // Mat elastic
+        {
+          // double Young; 			///< Young's modulus
+          // double Poisson; 		///< Poisson's ratio
+          // double ThermalExpansion;	///< Thermal expansion
+          std::ostringstream str_young;
+          str_young << "block_" << it->getMeshsetId() << ".young";
+          std::ostringstream str_poisson;
+          str_poisson << "block_" << it->getMeshsetId() << ".poisson";
+          std::ostringstream str_thermal_expansion;
+          str_thermal_expansion << "block_" << it->getMeshsetId() << ".thermalexpansion";
+          config_file_options.add_options()
+          (str_young.str().c_str(),po::value<double>(&block_lists[it->getMeshsetId()].matElastic.data.Young)->default_value(-1),"Young modulus")
+          (str_poisson.str().c_str(),po::value<double>(&block_lists[it->getMeshsetId()].matElastic.data.Poisson)->default_value(-2),"Poisson ratio")
+          (str_thermal_expansion.str().c_str(),po::value<double>(&block_lists[it->getMeshsetId()].matElastic.data.ThermalExpansion)->default_value(-1),"Thermal expansion");
+        }
+        // Displacement bc
+        {
+          // char flag1; //< Flag for X-Translation (0: N/A, 1: specified)
+          // char flag2; //< Flag for Y-Translation (0: N/A, 1: specified)
+          // char flag3; //< Flag for Z-Translation (0: N/A, 1: specified)
+          // char flag4; //< Flag for X-Rotation (0: N/A, 1: specified)
+          // char flag5; //< Flag for Y-Rotation (0: N/A, 1: specified)
+          // char flag6; //< Flag for Z-Rotation (0: N/A, 1: specified)
+          // double value1; //< Value for X-Translation
+          // double value2; //< Value for Y-Translation
+          // double value3; //< Value for Z-Translation
+          // double value4; //< Value for X-Rotation
+          // double value5; //< Value for Y-Rotation
+          // double value6; //< Value for Z-Rotation
+          std::ostringstream str_flag1;
+          str_flag1 << "block_" << it->getMeshsetId() << ".disp_flag1";
+          std::ostringstream str_flag2;
+          str_flag2 << "block_" << it->getMeshsetId() << ".disp_flag2";
+          std::ostringstream str_flag3;
+          str_flag3 << "block_" << it->getMeshsetId() << ".disp_flag3";
+          std::ostringstream str_flag4;
+          str_flag4 << "block_" << it->getMeshsetId() << ".disp_flag4";
+          std::ostringstream str_flag5;
+          str_flag5 << "block_" << it->getMeshsetId() << ".disp_flag5";
+          std::ostringstream str_flag6;
+          str_flag6 << "block_" << it->getMeshsetId() << ".disp_flag6";
+          std::ostringstream str_value1;
+          str_value1 << "block_" << it->getMeshsetId() << ".disp_ux";
+          std::ostringstream str_value2;
+          str_value2 << "block_" << it->getMeshsetId() << ".disp_uy";
+          std::ostringstream str_value3;
+          str_value3 << "block_" << it->getMeshsetId() << ".disp_uz";
+          std::ostringstream str_value4;
+          str_value4 << "block_" << it->getMeshsetId() << ".disp_rx";
+          std::ostringstream str_value5;
+          str_value5 << "block_" << it->getMeshsetId() << ".disp_ry";
+          std::ostringstream str_value6;
+          str_value6 << "block_" << it->getMeshsetId() << ".disp_rz";
+          config_file_options.add_options()
+          (str_flag1.str().c_str(),po::value<char>(&block_lists[it->getMeshsetId()].dispBc.data.flag1)->default_value(0),"flag1")
+          (str_flag2.str().c_str(),po::value<char>(&block_lists[it->getMeshsetId()].dispBc.data.flag2)->default_value(0),"flag2")
+          (str_flag3.str().c_str(),po::value<char>(&block_lists[it->getMeshsetId()].dispBc.data.flag3)->default_value(0),"flag3")
+          (str_flag4.str().c_str(),po::value<char>(&block_lists[it->getMeshsetId()].dispBc.data.flag4)->default_value(0),"flag4")
+          (str_flag5.str().c_str(),po::value<char>(&block_lists[it->getMeshsetId()].dispBc.data.flag5)->default_value(0),"flag5")
+          (str_flag6.str().c_str(),po::value<char>(&block_lists[it->getMeshsetId()].dispBc.data.flag6)->default_value(0),"flag6")
+          (str_value1.str().c_str(),po::value<double>(&block_lists[it->getMeshsetId()].dispBc.data.value1)->default_value(0),"value1")
+          (str_value2.str().c_str(),po::value<double>(&block_lists[it->getMeshsetId()].dispBc.data.value2)->default_value(0),"value2")
+          (str_value3.str().c_str(),po::value<double>(&block_lists[it->getMeshsetId()].dispBc.data.value3)->default_value(0),"value3")
+          (str_value4.str().c_str(),po::value<double>(&block_lists[it->getMeshsetId()].dispBc.data.value4)->default_value(0),"value4")
+          (str_value5.str().c_str(),po::value<double>(&block_lists[it->getMeshsetId()].dispBc.data.value5)->default_value(0),"value5")
+          (str_value6.str().c_str(),po::value<double>(&block_lists[it->getMeshsetId()].dispBc.data.value6)->default_value(0),"value6");
+        }
+        // Fore BC data
+        {
+          // char zero[3]; //< 3 zeros
+          // double value1; //< Force magnitude
+          // double value2; //< Moment magnitude
+          // double value3; //< X-component of force direction vector
+          // double value4; //< Y-component of force direction vector
+          // double value5; //< Z-component of force direction vector
+          // double value6; //< X-component of moment direction vector
+          // double value7; //< Y-component of moment direction vector
+          // double value8; //< Z-component of moment direction vector
+          // char zero2; // 0
+          std::ostringstream str_value1;
+          str_value1 << "block_" << it->getMeshsetId() << ".force_magnitude";
+          std::ostringstream str_value2;
+          str_value2 << "block_" << it->getMeshsetId() << ".moment_magnitude";
+          std::ostringstream str_value3;
+          str_value3 << "block_" << it->getMeshsetId() << ".moment_fx";
+          std::ostringstream str_value4;
+          str_value4 << "block_" << it->getMeshsetId() << ".moment_fy";
+          std::ostringstream str_value5;
+          str_value5 << "block_" << it->getMeshsetId() << ".moment_fz";
+          std::ostringstream str_value6;
+          str_value6 << "block_" << it->getMeshsetId() << ".moment_mx";
+          std::ostringstream str_value7;
+          str_value7 << "block_" << it->getMeshsetId() << ".moment_my";
+          std::ostringstream str_value8;
+          str_value8 << "block_" << it->getMeshsetId() << ".moment_mz";
+          config_file_options.add_options()
+          (str_value1.str().c_str(),po::value<double>(&block_lists[it->getMeshsetId()].forceBc.data.value1)->default_value(0),"value1")
+          (str_value2.str().c_str(),po::value<double>(&block_lists[it->getMeshsetId()].forceBc.data.value2)->default_value(0),"value2")
+          (str_value3.str().c_str(),po::value<double>(&block_lists[it->getMeshsetId()].forceBc.data.value3)->default_value(0),"value3")
+          (str_value4.str().c_str(),po::value<double>(&block_lists[it->getMeshsetId()].forceBc.data.value4)->default_value(0),"value4")
+          (str_value5.str().c_str(),po::value<double>(&block_lists[it->getMeshsetId()].forceBc.data.value5)->default_value(0),"value5")
+          (str_value6.str().c_str(),po::value<double>(&block_lists[it->getMeshsetId()].forceBc.data.value6)->default_value(0),"value6")
+          (str_value7.str().c_str(),po::value<double>(&block_lists[it->getMeshsetId()].forceBc.data.value7)->default_value(0),"value7")
+          (str_value8.str().c_str(),po::value<double>(&block_lists[it->getMeshsetId()].forceBc.data.value8)->default_value(0),"value8");
+        }
+        // Sideset
+        {
+          // char name[8];   //< 8 characters for "Pressure"
+          // char zero;      //< This is always zero
+          // char flag2;     //< 0: Pressure is interpreted as pure pressure 1: pressure is interpreted as total force
+          // double value1;  //< Pressure value
+          std::ostringstream str_flag2;
+          str_flag2 << "block_" << it->getMeshsetId() << ".pressure_flag2";
+          std::ostringstream str_value1;
+          str_value1 << "block_" << it->getMeshsetId() << ".pressure_magnitude";
+          config_file_options.add_options()
+          (str_flag2.str().c_str(),po::value<char>(&block_lists[it->getMeshsetId()].pressureBc.data.flag2)->default_value(0),"flag2")
+          (str_value1.str().c_str(),po::value<double>(&block_lists[it->getMeshsetId()].pressureBc.data.value1)->default_value(0),"value1");
+        }
+      }
+      po::parsed_options parsed = parse_config_file(ini_file,config_file_options,true);
+      store(parsed,vm);
+      po::notify(vm);
+      for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,BLOCKSET,it)) {
+
+        CubitBCType bc_type;
+        unsigned jj = 0;
+        while(1<<jj != LASTSET_BC) {
+          if(string(CubitBCNames[jj+1])==block_lists[it->getMeshsetId()].addType) {
+            cerr << CubitBCNames[jj+1] << " ";
+            bc_type = 1<<jj;
+          }
+          ++jj;
+        }
+        if(bc_type.none()) {
+          SETERRQ1(
+            m_field.get_comm(),
+            MOFEM_DATA_INCONSISTENCY,
+            "Unrecognized type %s\n",block_lists[it->getMeshsetId()].addType.c_str()
+          );
+        }
+        std::cerr << bc_type.to_ulong() << " ";
+        std::cerr << it->getMeshsetId() << " ";
+        std::cerr << block_lists[it->getMeshsetId()].addType << endl;
+
+        if(bc_type.to_ulong()==BLOCKSET) block_lists[it->getMeshsetId()].bcType = BLOCKSET;
+        else if(bc_type.to_ulong()==NODESET) block_lists[it->getMeshsetId()].bcType = NODESET;
+        else if(bc_type.to_ulong()==SIDESET) block_lists[it->getMeshsetId()].bcType = SIDESET;
+        else {
+          SETERRQ1(
+            m_field.get_comm(),
+            MOFEM_DATA_INCONSISTENCY,
+            "Not yet implemented type %s\n",
+            block_lists[it->getMeshsetId()].addType.c_str()
+          );
+        }
+        if(block_lists[it->getMeshsetId()].iD==-1) {
+          SETERRQ1(
+            m_field.get_comm(),
+            MOFEM_DATA_INCONSISTENCY,
+            "Unset iD number %d\n",
+            block_lists[it->getMeshsetId()].iD
+          );
+        }
+
+      }
+      std::vector<std::string> additional_parameters;
+      additional_parameters = collect_unrecognized(parsed.options,po::include_positional);
+      for(std::vector<std::string>::iterator vit = additional_parameters.begin();
+      vit!=additional_parameters.end();vit++) {
+        ierr = PetscPrintf(m_field.get_comm(),"** WARNING Unrecognized option %s\n",vit->c_str()); CHKERRQ(ierr);
+      }
+      for(map<int,BlockData>::iterator mit = block_lists.begin();mit!=block_lists.end();mit++) {
+        switch(mit->second.bcType) {
+          case UNKNOWNSET:
+          break;
+          case BLOCKSET: {
+            if(
+              (CubitBCType(mit->second.bcType)&mit->second.cubitMeshsetPtr->getBcType()).any()&&
+              mit->second.iD==mit->second.cubitMeshsetPtr->getMeshsetId()
+            ) {
+              // Meshset is the same, only modification
+            } else {
+              ierr = addMeshset(mit->second.bcType,mit->second.iD,mit->second.nAme); CHKERRQ(ierr);
+              EntityHandle meshset = mit->second.cubitMeshsetPtr->getMeshset();
+              ierr = addEntitiesToMeshset(mit->second.bcType,mit->second.iD,&meshset,1); CHKERRQ(ierr);
+            }
+            //Add attributes
+            ierr = setAttribites(mit->second.bcType,mit->second.iD,mit->second.aTtr); CHKERRQ(ierr);
+            //Add material elastic data if value are physical (i.e. Young > 0, Poisson in (-1.0.5) and ThermalExpansion>0)
+            if(mit->second.matElastic.data.Young!=-1) {
+              ierr = setAttribitesByDataStructure(mit->second.bcType,mit->second.iD,mit->second.matElastic); CHKERRQ(ierr);
+            }
+          }
+          break;
+          case NODESET: {
+            if(
+              (CubitBCType(mit->second.bcType)&mit->second.cubitMeshsetPtr->getBcType()).any()&&
+              mit->second.iD==mit->second.cubitMeshsetPtr->getMeshsetId()
+            ) {
+              // Meshset is the same, only modification
+            } else {
+              ierr = addMeshset(mit->second.bcType,mit->second.iD); CHKERRQ(ierr);
+              EntityHandle meshset = mit->second.cubitMeshsetPtr->getMeshset();
+              ierr = addEntitiesToMeshset(mit->second.bcType,mit->second.iD,&meshset,1); CHKERRQ(ierr);
+            }
+            //Add displacement bc
+            if(
+              mit->second.dispBc.data.flag1||
+              mit->second.dispBc.data.flag2||
+              mit->second.dispBc.data.flag3||
+              mit->second.dispBc.data.flag4||
+              mit->second.dispBc.data.flag5||
+              mit->second.dispBc.data.flag6
+            ) {
+              if(mit->second.dispBc.data.flag1=='0') mit->second.dispBc.data.flag1=0;
+              if(mit->second.dispBc.data.flag1=='N') mit->second.dispBc.data.flag1=0;
+              if(mit->second.dispBc.data.flag1) mit->second.dispBc.data.flag1=1;
+              if(mit->second.dispBc.data.flag2=='0') mit->second.dispBc.data.flag2=0;
+              if(mit->second.dispBc.data.flag2=='N') mit->second.dispBc.data.flag2=0;
+              if(mit->second.dispBc.data.flag2) mit->second.dispBc.data.flag2=1;
+              if(mit->second.dispBc.data.flag3=='0') mit->second.dispBc.data.flag3=0;
+              if(mit->second.dispBc.data.flag3=='N') mit->second.dispBc.data.flag3=0;
+              if(mit->second.dispBc.data.flag3) mit->second.dispBc.data.flag3=1;
+              if(mit->second.dispBc.data.flag4=='0') mit->second.dispBc.data.flag4=0;
+              if(mit->second.dispBc.data.flag4=='N') mit->second.dispBc.data.flag4=0;
+              if(mit->second.dispBc.data.flag4) mit->second.dispBc.data.flag4=1;
+              if(mit->second.dispBc.data.flag5=='0') mit->second.dispBc.data.flag5=0;
+              if(mit->second.dispBc.data.flag5=='N') mit->second.dispBc.data.flag5=0;
+              if(mit->second.dispBc.data.flag5) mit->second.dispBc.data.flag5=1;
+              if(mit->second.dispBc.data.flag6=='0') mit->second.dispBc.data.flag6=0;
+              if(mit->second.dispBc.data.flag6=='N') mit->second.dispBc.data.flag6=0;
+              if(mit->second.dispBc.data.flag6) mit->second.dispBc.data.flag6=1;
+              ierr = setBcData(mit->second.bcType,mit->second.iD,mit->second.dispBc); CHKERRQ(ierr);
+            }
+            if(mit->second.forceBc.data.value1!=0||mit->second.forceBc.data.value2!=0) {
+              ierr = setBcData(mit->second.bcType,mit->second.iD,mit->second.forceBc); CHKERRQ(ierr);
+            }
+          }
+          break;
+          case SIDESET: {
+            if(
+              (CubitBCType(mit->second.bcType)&mit->second.cubitMeshsetPtr->getBcType()).any()&&
+              mit->second.iD==mit->second.cubitMeshsetPtr->getMeshsetId()
+            ) {
+              // Meshset is the same, only modification
+            } else {
+              ierr = addMeshset(mit->second.bcType,mit->second.iD); CHKERRQ(ierr);
+              EntityHandle meshset = mit->second.cubitMeshsetPtr->getMeshset();
+              ierr = addEntitiesToMeshset(mit->second.bcType,mit->second.iD,&meshset,1); CHKERRQ(ierr);
+            }
+            // Add pressure
+            if(mit->second.pressureBc.data.value1!=0) {
+              if(mit->second.pressureBc.data.flag2=='0') mit->second.dispBc.data.flag2=0;
+              if(mit->second.pressureBc.data.flag2=='N') mit->second.dispBc.data.flag2=0;
+              if(mit->second.pressureBc.data.flag2) mit->second.dispBc.data.flag2=1;
+              ierr = setBcData(mit->second.bcType,mit->second.iD,mit->second.pressureBc); CHKERRQ(ierr);
+            }
+          }
+          break;
+          default:
+          SETERRQ(m_field.get_comm(),MOFEM_DATA_INCONSISTENCY,"Not yet implemented type\n");
+        }
+      }
+    } catch (const std::exception& ex) {
+      std::ostringstream ss;
+      ss << ex.what() << std::endl;
+      SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
+    }
+    PetscFunctionReturn(0);
+  }
 
 
 

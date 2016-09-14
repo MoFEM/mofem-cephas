@@ -223,6 +223,8 @@ target_link_libraries(add_cubit_meshsets
   ${PROJECT_LIBS}
 )
 
+cm_export_file("add_cubit_meshsets.in" export_atom_tests)
+
 add_test(
   add_cubit_meshsets
   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/add_cubit_meshsets

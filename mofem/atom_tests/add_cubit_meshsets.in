@@ -1,0 +1,79 @@
+# We assume that blocksets 1000,1001, ... are oreviously created. New meshsets
+# are created, and contain in them appropiate previously created meshest. In
+# addition we set attributes and other boundary conditions to newely created
+# meshsets.
+
+[block_1000]
+
+# Example setting NODESET
+
+id=2000
+add=NODESET
+
+[block_1001]
+
+# Example applying attributes to blockset
+
+id=2001
+add=BLOCKSET
+user1=1.0
+user2=2.0
+user3=3.0
+
+[block_1002]
+
+# Example applying material block (isotropic elastic material)
+
+id=2002
+add=BLOCKSET
+name=MAT_ELASTIC
+young=10
+poisson=0.25
+thermalexpansion=0
+
+[block_1003]
+
+# Example applying displacement constrains
+
+id=2003
+add=NODESET
+
+# Each flag means that boundary consition on displacemnys is set.
+disp_flag1=1 # Setting constrains in x- direction
+disp_flag2=1 # Setting constrains in y- direction
+disp_flag3=1 # Setting constrains in z- direction
+disp_flag4=1 # Setting constrains on rotation over x- axis
+disp_flag5=1 # Setting constrains on rotation over y- axis
+disp_flag6=1 # Setting constrains on rotation over z-axis
+disp_ux=1 # value of disp in x- direction
+disp_uy=2
+disp_uz=3
+disp_rx=4 # value of rotiatuin in y-direction
+disp_ry=5
+disp_rz=6
+
+# Note abouve values could be interpreted differntly if needed.
+
+[block_1004]
+
+# Example applying force boundary conditions
+
+id=2004
+add=NODESET
+force_magnitude=1
+moment_magnitude=1
+moment_fx=1
+moment_fy=1
+moment_fz=1
+moment_mx=1
+moment_my=1
+moment_mz=1
+
+[block_1005]
+
+# Example applying pressure boundary conditions
+
+id=2005
+add=SIDESET
+pressure_flag2=1
+pressure_magnitude=1

@@ -103,6 +103,51 @@ int main(int argc, char *argv[]) {
       SETERRQ(PETSC_COMM_WORLD,MOFEM_OPERATION_UNSUCCESSFUL,"no added block set");
     }
 
+    ierr = meshsets_manager_ptr->addMeshset(BLOCKSET,1002,"ADD_BLOCK_SET"); CHKERRQ(ierr);
+    ierr = meshsets_manager_ptr->addMeshset(BLOCKSET,1003,"ADD_BLOCK_SET"); CHKERRQ(ierr);
+    ierr = meshsets_manager_ptr->addMeshset(BLOCKSET,1004,"ADD_BLOCK_SET"); CHKERRQ(ierr);
+    ierr = meshsets_manager_ptr->addMeshset(BLOCKSET,1005,"ADD_BLOCK_SET"); CHKERRQ(ierr);
+
+    std::cout << "<<<< ADD BLOCKSETs FROM CONFIG FILE >>>>>" << std::endl;
+
+    ierr = meshsets_manager_ptr->setMeshsetFromFile("add_cubit_meshsets.in"); CHKERRQ(ierr);
+
+    // List all meshsets
+    for(_IT_CUBITMESHSETS_FOR_LOOP_(m_field,it)) {
+      std::cout << *it << endl;
+      if((it->getBcType()&CubitBCType(BLOCKSET)).any()) {
+        std::vector<double> attributes;
+        it->getAttributes(attributes);
+        std::cout << "Attr: ";
+        for(int ii = 0;ii!=attributes.size();ii++) {
+          std::cout << attributes[ii] << " ";
+        }
+        std::cout << endl;
+      }
+      if((it->getBcType()&CubitBCType(MAT_ELASTICSET)).any()) {
+        Mat_Elastic mydata;
+        ierr = it->getAttributeDataStructure(mydata); CHKERRQ(ierr);
+        std::cout << "Mat elastic found " << endl << mydata << endl;
+      }
+      if((it->getBcType()&CubitBCType(DISPLACEMENTSET)).any()) {
+        DisplacementCubitBcData mydata;
+        ierr = it->getBcDataStructure(mydata); CHKERRQ(ierr);
+        std::cout << mydata;
+      }
+      if((it->getBcType()&CubitBCType(FORCESET)).any()) {
+        ForceCubitBcData mydata;
+        ierr = it->getBcDataStructure(mydata); CHKERRQ(ierr);
+        std::cout << mydata;
+      }
+      if((it->getBcType()&CubitBCType(PRESSURESET)).any()) {
+        PressureCubitBcData mydata;
+        ierr = it->getBcDataStructure(mydata); CHKERRQ(ierr);
+        std::cout << mydata;
+      }
+    }
+
+
+
   } catch (MoFEMException const &e) {
     SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
   }

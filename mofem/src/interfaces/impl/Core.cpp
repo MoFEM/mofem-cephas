@@ -449,9 +449,14 @@ PetscErrorCode Core::getTags(int verb) {
     th_version,
     MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES,
     NULL
-  ); CHKERRQ_MOAB(rval);
-  const char *ptr_version = version.c_str();
-  rval = moab.tag_set_data(th_version,&root_meshset,1,ptr_version); CHKERRQ_MOAB(rval);
+  );
+  if(rval==MB_ALREADY_ALLOCATED) {
+    rval = MB_SUCCESS;
+  } else {
+    CHKERRQ_MOAB(rval);
+    const char *ptr_version = version.c_str();
+    rval = moab.tag_set_data(th_version,&root_meshset,1,ptr_version); CHKERRQ_MOAB(rval);
+  }
 
   //tags saved in vtk-files
   const int def_part = -1;
