@@ -78,12 +78,12 @@ numered_dofs_cols(boost::shared_ptr<NumeredDofEntity_multiIndex>(new NumeredDofE
 
 std::ostream& operator<<(std::ostream& os,const MoFEMProblem& e) {
   os << "problem id " << e.getId()
-    << " FiniteElement id " << e.get_BitFEId()
+    << " FiniteElement id " << e.getBitFEId()
     << " name "<<e.getName();
   return os;
 }
 
-BitFEId MoFEMProblem::get_BitFEId() const {
+BitFEId MoFEMProblem::getBitFEId() const {
   return *tag_BitFEId_data;
 }
 

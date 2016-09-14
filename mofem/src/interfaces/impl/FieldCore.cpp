@@ -1355,7 +1355,7 @@ PetscErrorCode Core::partition_finite_elements(
   EntFiniteElement_multiIndex::iterator miit2 = entsFiniteElements.begin();
   EntFiniteElement_multiIndex::iterator hi_miit2 = entsFiniteElements.end();
   for(;miit2!=hi_miit2;miit2++) {
-    if(((*miit2)->getId()&p_miit->get_BitFEId()).none()) continue; // if element is not part of problem
+    if(((*miit2)->getId()&p_miit->getBitFEId()).none()) continue; // if element is not part of problem
     if(((*miit2)->getBitRefLevel()&p_miit->getBitRefLevel())!=p_miit->getBitRefLevel()) continue; // if entity is not problem refinement level
     boost::shared_ptr<NumeredEntFiniteElement> numered_fe(new NumeredEntFiniteElement(*miit2));
     bool do_cols_fe = true;
@@ -1539,12 +1539,12 @@ PetscErrorCode Core::partition_ghost_dofs(const std::string &name,int verb) {
     std::ostringstream ss;
     ss << "partition_ghost_col_dofs: rank = " << rAnk
     << " FEs col ghost dofs "<< *p_miit
-    << " Nb. col ghost dof " << p_miit->get_nb_ghost_dofs_col()
-    << " Nb. local dof " << p_miit->get_nb_local_dofs_col() << std::endl;
+    << " Nb. col ghost dof " << p_miit->getNbGhostDofsCol()
+    << " Nb. local dof " << p_miit->getNbLocalDofsCol() << std::endl;
     ss << "partition_ghost_row_dofs: rank = " << rAnk
     << " FEs row ghost dofs "<< *p_miit
-    << " Nb. row ghost dof " << p_miit->get_nb_ghost_dofs_row()
-    << " Nb. local dof " << p_miit->get_nb_local_dofs_row() << std::endl;
+    << " Nb. row ghost dof " << p_miit->getNbGhostDofsRow()
+    << " Nb. local dof " << p_miit->getNbLocalDofsRow() << std::endl;
     if(verb>1) {
       NumeredDofEntity_multiIndex::iterator miit_dd_col = p_miit->numered_dofs_cols->begin();
       for(;miit_dd_col!=p_miit->numered_dofs_cols->end();miit_dd_col++) {

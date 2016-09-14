@@ -508,8 +508,8 @@ int main(int argc, char *argv[]) {
     ierr = m_field.get_problem("DYNAMICS",&problem_ptr); CHKERRQ(ierr);
     ierr = MatCreateShell(
       PETSC_COMM_WORLD,
-      problem_ptr->get_nb_local_dofs_row(),
-      problem_ptr->get_nb_local_dofs_col(),
+      problem_ptr->getNbLocalDofsRow(),
+      problem_ptr->getNbLocalDofsCol(),
       problem_ptr->getNbDofsRow(),
       problem_ptr->getNbDofsRow(),
       (void*)shellAij_ctx,&shell_Aij

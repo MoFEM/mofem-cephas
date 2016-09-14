@@ -597,8 +597,8 @@ PetscErrorCode DMGlobalToLocalEnd_MoFEM(DM dm,Vec g,InsertMode mode,Vec l) {
   ierr = VecGhostUpdateEnd(g,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 
   DMCtx *dm_field = (DMCtx*)dm->data;
-  int nb_dofs = dm_field->problemPtr->get_nb_local_dofs_row();
-  int nb_ghost = dm_field->problemPtr->get_nb_ghost_dofs_row();
+  int nb_dofs = dm_field->problemPtr->getNbLocalDofsRow();
+  int nb_ghost = dm_field->problemPtr->getNbGhostDofsRow();
 
   double *array_loc,*array_glob;
   ierr = VecGetArray(l,&array_loc); CHKERRQ(ierr);
@@ -625,8 +625,8 @@ PetscErrorCode DMLocalToGlobalBegin_MoFEM(DM dm,Vec l,InsertMode mode,Vec g) {
   PetscFunctionBegin;
 
   DMCtx *dm_field = (DMCtx*)dm->data;
-  int nb_dofs = dm_field->problemPtr->get_nb_local_dofs_row();
-  int nb_ghost = dm_field->problemPtr->get_nb_ghost_dofs_row();
+  int nb_dofs = dm_field->problemPtr->getNbLocalDofsRow();
+  int nb_ghost = dm_field->problemPtr->getNbGhostDofsRow();
 
   double *array_loc,*array_glob;
   ierr = VecGetArray(l,&array_loc); CHKERRQ(ierr);

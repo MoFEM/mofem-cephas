@@ -119,7 +119,7 @@ PetscErrorCode CreateRowComressedADJMatrix::getEntityAdjacenies(
   dofs_col_view.clear();
   for (; adj_miit != hi_adj_miit; adj_miit++) {
     if (adj_miit->by_other&BYROW) {
-      if ((adj_miit->entFePtr->getId()&p_miit->get_BitFEId()).none()) {
+      if ((adj_miit->entFePtr->getId()&p_miit->getBitFEId()).none()) {
         // if element is not part of problem
         continue;
       }
@@ -531,7 +531,7 @@ PetscErrorCode CreateRowComressedADJMatrix::createMatArrays(
     if(i.size()-1 != (unsigned int)nb_loc_row_from_iterators) {
       SETERRQ(PETSC_COMM_SELF,PETSC_ERR_ARG_SIZ,"data inconsistency");
     }
-    PetscInt nb_local_dofs_row = p_miit->get_nb_local_dofs_row();
+    PetscInt nb_local_dofs_row = p_miit->getNbLocalDofsRow();
     if((unsigned int)nb_local_dofs_row!=i.size()-1) {
       SETERRQ(PETSC_COMM_SELF,PETSC_ERR_ARG_SIZ,"data inconsistency");
     }
@@ -542,7 +542,7 @@ PetscErrorCode CreateRowComressedADJMatrix::createMatArrays(
     if(i.size()-1 != (unsigned int)nb_loc_row_from_iterators) {
       SETERRQ(PETSC_COMM_SELF,PETSC_ERR_ARG_SIZ,"data inconsistency");
     }
-    PetscInt nb_local_dofs_row = p_miit->get_nb_local_dofs_row();
+    PetscInt nb_local_dofs_row = p_miit->getNbLocalDofsRow();
     if((unsigned int)nb_local_dofs_row!=i.size()-1) {
       SETERRQ(PETSC_COMM_SELF,PETSC_ERR_ARG_SIZ,"data inconsistency");
     }
@@ -592,8 +592,8 @@ PetscErrorCode CreateRowComressedADJMatrix::createMat(
   } else if(strcmp(type,MATMPIAIJ)==0) {
 
     // Compressed MPIADJ matrix
-    PetscInt nb_local_dofs_row = p_miit->get_nb_local_dofs_row();
-    PetscInt nb_local_dofs_col = p_miit->get_nb_local_dofs_col();
+    PetscInt nb_local_dofs_row = p_miit->getNbLocalDofsRow();
+    PetscInt nb_local_dofs_col = p_miit->getNbLocalDofsCol();
     ierr = ::MatCreateMPIAIJWithArrays(
       comm,nb_local_dofs_row,nb_local_dofs_col,nb_row_dofs,nb_col_dofs,*_i,*_j,PETSC_NULL,M
     ); CHKERRQ(ierr);
@@ -601,8 +601,8 @@ PetscErrorCode CreateRowComressedADJMatrix::createMat(
   } else if(strcmp(type,MATAIJ)==0) {
 
     // Sequential compressed ADJ matrix
-    PetscInt nb_local_dofs_row = p_miit->get_nb_local_dofs_row();
-    PetscInt nb_local_dofs_col = p_miit->get_nb_local_dofs_col();
+    PetscInt nb_local_dofs_row = p_miit->getNbLocalDofsRow();
+    PetscInt nb_local_dofs_col = p_miit->getNbLocalDofsCol();
     ierr = ::MatCreateSeqAIJWithArrays(PETSC_COMM_SELF,nb_local_dofs_row,nb_local_dofs_col,*_i,*_j,PETSC_NULL,M); CHKERRQ(ierr);
 
   } else {
