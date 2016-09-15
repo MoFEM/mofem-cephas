@@ -577,6 +577,13 @@ namespace MoFEM {
      temperature_flag1=1        # 0: N/A, 1: temperature value applied
      temperature_t=1
 
+     [block_1007]
+
+     id=2007
+     add=SIDESET
+     heatflux_flag1=1        # 0: N/A, 1: temperature value applied
+     heatflux_magnitude=1
+
      */
     PetscErrorCode setMeshsetFromFile(const string file_name);
 

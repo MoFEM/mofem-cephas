@@ -523,7 +523,7 @@ std::ostream& operator<<(std::ostream& os,const TemperatureCubitBcData& e) {
 std::ostream& operator<<(std::ostream& os,const PressureCubitBcData& e) {
     os << "\n";
     os << "P r e s s u r e \n \n";
-    os << "Pressure flag2: " << e.data.flag2 << "\n";
+    os << "Pressure flag2: " << (int)e.data.flag2 << "\n";
     os << "Pressure value: " << e.data.value1 << "\n \n";
     return os;
 }

@@ -486,7 +486,8 @@ namespace MoFEM {
     ForceCubitBcData forceBc;
     PressureCubitBcData pressureBc;
     TemperatureCubitBcData temperatureBc;
-    
+    HeatFluxCubitBcData heatFluxBc;
+
 
     std::vector<double> aTtr;
     BlockData():
@@ -495,6 +496,7 @@ namespace MoFEM {
       strncpy(forceBc.data.name,"Force",5);
       strncpy(pressureBc.data.name,"Pressure",8);
       strncpy(temperatureBc.data.name,"Temperature",11);
+      strncpy(heatFluxBc.data.name,"HeatFlux",8);
     }
 
   };
@@ -673,6 +675,24 @@ namespace MoFEM {
           (str_flag2.str().c_str(),po::value<char>(&block_lists[it->getMeshsetId()].pressureBc.data.flag2)->default_value(0),"flag2")
           (str_value1.str().c_str(),po::value<double>(&block_lists[it->getMeshsetId()].pressureBc.data.value1)->default_value(0),"value1");
         }
+        {
+          // char name[8]; //< 8 characters for "HeatFlux" (no space)
+          // char pre1; //< This is always zero
+          // char pre2; //< 0: heat flux is not applied on thin shells (default); 1: heat flux is applied on thin shells
+          // char flag1; //< 0: N/A, 1: normal heat flux case (i.e. single value, case without thin shells)
+          // char flag2; //< 0: N/A, 1: Thin shell top heat flux specified
+          // char flag3; //< 0: N/A, 1: Thin shell bottom heat flux specidied
+          // double value1; //< Heat flux value for default case (no thin shells)
+          // double value2; //< Heat flux (thin shell top)
+          // double value3; //< Heat flux (thin shell bottom)
+          std::ostringstream str_flag1;
+          str_flag1 << "block_" << it->getMeshsetId() << ".heatflux_flag1";
+          std::ostringstream str_value1;
+          str_value1 << "block_" << it->getMeshsetId() << ".heatflux_magnitude";
+          config_file_options.add_options()
+          (str_flag1.str().c_str(),po::value<char>(&block_lists[it->getMeshsetId()].heatFluxBc.data.flag1)->default_value(0),"flag1")
+          (str_value1.str().c_str(),po::value<double>(&block_lists[it->getMeshsetId()].heatFluxBc.data.value1)->default_value(0),"value1");
+        }
       }
       po::parsed_options parsed = parse_config_file(ini_file,config_file_options,true);
       store(parsed,vm);
@@ -814,10 +834,17 @@ namespace MoFEM {
             }
             // Add pressure
             if(mit->second.pressureBc.data.value1!=0) {
-              if(mit->second.pressureBc.data.flag2=='0') mit->second.dispBc.data.flag2=0;
-              if(mit->second.pressureBc.data.flag2=='N') mit->second.dispBc.data.flag2=0;
-              if(mit->second.pressureBc.data.flag2) mit->second.dispBc.data.flag2=1;
+              if(mit->second.pressureBc.data.flag2=='0') mit->second.pressureBc.data.flag2=0;
+              if(mit->second.pressureBc.data.flag2=='N') mit->second.pressureBc.data.flag2=0;
+              if(mit->second.pressureBc.data.flag2) mit->second.pressureBc.data.flag2=1;
               ierr = setBcData(mit->second.bcType,mit->second.iD,mit->second.pressureBc); CHKERRQ(ierr);
+            }
+            // Add heat flux
+            if(mit->second.heatFluxBc.data.value1!=0) {
+              if(mit->second.heatFluxBc.data.flag1=='0') mit->second.heatFluxBc.data.flag1=0;
+              if(mit->second.heatFluxBc.data.flag1=='N') mit->second.heatFluxBc.data.flag1=0;
+              if(mit->second.heatFluxBc.data.flag1) mit->second.heatFluxBc.data.flag1=1;
+              ierr = setBcData(mit->second.bcType,mit->second.iD,mit->second.heatFluxBc); CHKERRQ(ierr);
             }
           }
           break;
