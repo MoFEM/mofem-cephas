@@ -481,7 +481,11 @@ namespace MoFEM {
     string nAme;
     CubitBC bcType;
 
+    // Materials
     Mat_Elastic matElastic;
+    Mat_Thermal matThermal;
+
+    // BCs
     DisplacementCubitBcData dispBc;
     ForceCubitBcData forceBc;
     PressureCubitBcData pressureBc;
@@ -545,6 +549,20 @@ namespace MoFEM {
           (str_young.str().c_str(),po::value<double>(&block_lists[it->getMeshsetId()].matElastic.data.Young)->default_value(-1),"Young modulus")
           (str_poisson.str().c_str(),po::value<double>(&block_lists[it->getMeshsetId()].matElastic.data.Poisson)->default_value(-2),"Poisson ratio")
           (str_thermal_expansion.str().c_str(),po::value<double>(&block_lists[it->getMeshsetId()].matElastic.data.ThermalExpansion)->default_value(-1),"Thermal expansion");
+          // TODO Add users parameters
+        }
+        // Mat theraml
+        {
+          // double Conductivity; ///< Thermal conductivity
+          // double HeatCapacity; ///< Heat Capacity
+          std::ostringstream str_conductivity;
+          str_conductivity << "block_" << it->getMeshsetId() << ".conductivity";
+          std::ostringstream str_capacity;
+          str_capacity << "block_" << it->getMeshsetId() << ".capacity";
+          config_file_options.add_options()
+          (str_conductivity.str().c_str(),po::value<double>(&block_lists[it->getMeshsetId()].matThermal.data.Conductivity)->default_value(-1),"Conductivity")
+          (str_capacity.str().c_str(),po::value<double>(&block_lists[it->getMeshsetId()].matThermal.data.HeatCapacity)->default_value(-1),"Capacity");
+          // TODO Add users parameters
         }
         // Displacement bc
         {
@@ -703,21 +721,18 @@ namespace MoFEM {
         unsigned jj = 0;
         while(1<<jj != LASTSET_BC) {
           if(string(CubitBCNames[jj+1])==block_lists[it->getMeshsetId()].addType) {
-            cerr << CubitBCNames[jj+1] << " ";
+            // cerr << CubitBCNames[jj+1] << " ";
             bc_type = 1<<jj;
           }
           ++jj;
         }
         if(bc_type.none()) {
-          SETERRQ1(
-            m_field.get_comm(),
-            MOFEM_DATA_INCONSISTENCY,
-            "Unrecognized type %s\n",block_lists[it->getMeshsetId()].addType.c_str()
-          );
+          // Skip the bockset nothing is defined for it
+          continue;
         }
-        std::cerr << bc_type.to_ulong() << " ";
-        std::cerr << it->getMeshsetId() << " ";
-        std::cerr << block_lists[it->getMeshsetId()].addType << endl;
+        // std::cerr << bc_type.to_ulong() << " ";
+        // std::cerr << it->getMeshsetId() << " ";
+        // std::cerr << block_lists[it->getMeshsetId()].addType << endl;
 
         if(bc_type.to_ulong()==BLOCKSET) block_lists[it->getMeshsetId()].bcType = BLOCKSET;
         else if(bc_type.to_ulong()==NODESET) block_lists[it->getMeshsetId()].bcType = NODESET;
@@ -766,6 +781,9 @@ namespace MoFEM {
             //Add material elastic data if value are physical (i.e. Young > 0, Poisson in (-1.0.5) and ThermalExpansion>0)
             if(mit->second.matElastic.data.Young!=-1) {
               ierr = setAttribitesByDataStructure(mit->second.bcType,mit->second.iD,mit->second.matElastic); CHKERRQ(ierr);
+            }
+            if(mit->second.matThermal.data.Conductivity!=-1) {
+              ierr = setAttribitesByDataStructure(mit->second.bcType,mit->second.iD,mit->second.matThermal); CHKERRQ(ierr);
             }
           }
           break;

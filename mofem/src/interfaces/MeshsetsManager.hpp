@@ -584,12 +584,25 @@ namespace MoFEM {
      heatflux_flag1=1        # 0: N/A, 1: temperature value applied
      heatflux_magnitude=1
 
+     [block_1008]
+
+     # Example applying material block (isotropic thermal material)
+
+     id=2008
+     add=BLOCKSET
+     name=MAT_THERMAL # Hast to be set for Thermal Mat
+     conductivity=1
+     capacity=1
+
      */
     PetscErrorCode setMeshsetFromFile(const string file_name);
 
     /**
      * \brief get name of config file from line command '-meshsets_config'
      * @return error code
+
+     Option is "-meshsets_config file_name.cfg"
+
      */
     PetscErrorCode setMeshsetFromFile();
 

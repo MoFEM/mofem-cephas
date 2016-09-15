@@ -109,6 +109,7 @@ int main(int argc, char *argv[]) {
     ierr = meshsets_manager_ptr->addMeshset(BLOCKSET,1005,"ADD_BLOCK_SET"); CHKERRQ(ierr);
     ierr = meshsets_manager_ptr->addMeshset(BLOCKSET,1006,"ADD_BLOCK_SET"); CHKERRQ(ierr);
     ierr = meshsets_manager_ptr->addMeshset(BLOCKSET,1007,"ADD_BLOCK_SET"); CHKERRQ(ierr);
+    ierr = meshsets_manager_ptr->addMeshset(BLOCKSET,1008,"ADD_BLOCK_SET"); CHKERRQ(ierr);
 
     std::cout << "<<<< ADD BLOCKSETs FROM CONFIG FILE >>>>>" << std::endl;
 
@@ -130,6 +131,11 @@ int main(int argc, char *argv[]) {
         Mat_Elastic mydata;
         ierr = it->getAttributeDataStructure(mydata); CHKERRQ(ierr);
         std::cout << "Mat elastic found " << endl << mydata << endl;
+      }
+      if((it->getBcType()&CubitBCType(MAT_THERMALSET)).any()) {
+        Mat_Thermal mydata;
+        ierr = it->getAttributeDataStructure(mydata); CHKERRQ(ierr);
+        std::cout << "Mat thermal found " << endl << mydata << endl;
       }
       if((it->getBcType()&CubitBCType(DISPLACEMENTSET)).any()) {
         DisplacementCubitBcData mydata;

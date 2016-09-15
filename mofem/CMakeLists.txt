@@ -127,14 +127,22 @@ if(TAO_LIBRARY)
   add_definitions(-DTAO)
 endif(TAO_LIBRARY)
 
+# Add boost directory
+if(NOT BOOST_DIR)
+  set(BOOST_DIR $ENV{BOOST_DIR})
+endif(NOT BOOST_DIR)
 find_library(
   BOOST_PROGRAM_OPTIONS_LIB NAMES boost_program_options
   HINTS
+  ${BOOST_DIR}/lib
   ${PETSC_DIR}/${PETSC_ARCH}/lib
 )
 if(NOT BOOST_PROGRAM_OPTIONS_LIB)
   message(FATAL_ERROR "boost program options library not found")
 endif(NOT BOOST_PROGRAM_OPTIONS_LIB)
+if(BOOST_DIR)
+  include_directories(${BOOST_DIR}/include)
+endif(BOOST_DIR)
 
 resolve_libraries(PROJECT_LIBS "
   ${SLEPC_LIBRARY}
