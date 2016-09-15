@@ -581,7 +581,7 @@ namespace MoFEM {
 
      id=2007
      add=SIDESET
-     heatflux_flag1=1        # 0: N/A, 1: temperature value applied
+     heatflux_flag1=1        # 0: N/A, 1: hetflux applied
      heatflux_magnitude=1
 
      [block_1008]
