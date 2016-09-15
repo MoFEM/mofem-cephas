@@ -721,21 +721,18 @@ namespace MoFEM {
         unsigned jj = 0;
         while(1<<jj != LASTSET_BC) {
           if(string(CubitBCNames[jj+1])==block_lists[it->getMeshsetId()].addType) {
-            cerr << CubitBCNames[jj+1] << " ";
+            // cerr << CubitBCNames[jj+1] << " ";
             bc_type = 1<<jj;
           }
           ++jj;
         }
         if(bc_type.none()) {
-          SETERRQ1(
-            m_field.get_comm(),
-            MOFEM_DATA_INCONSISTENCY,
-            "Unrecognized type %s\n",block_lists[it->getMeshsetId()].addType.c_str()
-          );
+          // Skip the bockset nothing is defined for it
+          continue;
         }
-        std::cerr << bc_type.to_ulong() << " ";
-        std::cerr << it->getMeshsetId() << " ";
-        std::cerr << block_lists[it->getMeshsetId()].addType << endl;
+        // std::cerr << bc_type.to_ulong() << " ";
+        // std::cerr << it->getMeshsetId() << " ";
+        // std::cerr << block_lists[it->getMeshsetId()].addType << endl;
 
         if(bc_type.to_ulong()==BLOCKSET) block_lists[it->getMeshsetId()].bcType = BLOCKSET;
         else if(bc_type.to_ulong()==NODESET) block_lists[it->getMeshsetId()].bcType = NODESET;

@@ -600,6 +600,9 @@ namespace MoFEM {
     /**
      * \brief get name of config file from line command '-meshsets_config'
      * @return error code
+
+     Option is "-meshsets_config file_name.cfg"
+
      */
     PetscErrorCode setMeshsetFromFile();
 
