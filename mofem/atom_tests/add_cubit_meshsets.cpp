@@ -107,6 +107,7 @@ int main(int argc, char *argv[]) {
     ierr = meshsets_manager_ptr->addMeshset(BLOCKSET,1003,"ADD_BLOCK_SET"); CHKERRQ(ierr);
     ierr = meshsets_manager_ptr->addMeshset(BLOCKSET,1004,"ADD_BLOCK_SET"); CHKERRQ(ierr);
     ierr = meshsets_manager_ptr->addMeshset(BLOCKSET,1005,"ADD_BLOCK_SET"); CHKERRQ(ierr);
+    ierr = meshsets_manager_ptr->addMeshset(BLOCKSET,1006,"ADD_BLOCK_SET"); CHKERRQ(ierr);
 
     std::cout << "<<<< ADD BLOCKSETs FROM CONFIG FILE >>>>>" << std::endl;
 
@@ -144,6 +145,12 @@ int main(int argc, char *argv[]) {
         ierr = it->getBcDataStructure(mydata); CHKERRQ(ierr);
         std::cout << mydata;
       }
+      if((it->getBcType()&CubitBCType(TEMPERATURESET)).any()) {
+        TemperatureCubitBcData mydata;
+        ierr = it->getBcDataStructure(mydata); CHKERRQ(ierr);
+        std::cout << mydata;
+      }
+
     }
 
 

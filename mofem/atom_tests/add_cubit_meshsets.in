@@ -77,3 +77,12 @@ id=2005
 add=SIDESET
 pressure_flag2=1
 pressure_magnitude=1
+
+# Example applying temperature boundary conditions
+
+[block_1006]
+
+id=2006
+add=NODESET
+temperature_flag1=1        # 0: N/A, 1: temperature value applied
+temperature_t=1

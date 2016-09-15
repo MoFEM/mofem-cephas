@@ -485,6 +485,8 @@ namespace MoFEM {
     DisplacementCubitBcData dispBc;
     ForceCubitBcData forceBc;
     PressureCubitBcData pressureBc;
+    TemperatureCubitBcData temperatureBc;
+    
 
     std::vector<double> aTtr;
     BlockData():
@@ -492,6 +494,7 @@ namespace MoFEM {
       strncpy(dispBc.data.name,"Displacement",12);
       strncpy(forceBc.data.name,"Force",5);
       strncpy(pressureBc.data.name,"Pressure",8);
+      strncpy(temperatureBc.data.name,"Temperature",11);
     }
 
   };
@@ -631,6 +634,31 @@ namespace MoFEM {
           (str_value7.str().c_str(),po::value<double>(&block_lists[it->getMeshsetId()].forceBc.data.value7)->default_value(0),"value7")
           (str_value8.str().c_str(),po::value<double>(&block_lists[it->getMeshsetId()].forceBc.data.value8)->default_value(0),"value8");
         }
+        {
+          // char name[11]; //< 11 characters for "Temperature"
+          // char pre1; //< This is always zero
+          // char pre2; //< 0: temperature is not applied on thin shells (default); 1: temperature is applied on thin shells
+          // char flag1; //< 0: N/A, 1: temperature value applied (not on thin shells)
+          // char flag2; //< 0: N/A, 1: temperature applied on thin shell middle
+          // char flag3; //< 0: N/A, 1: thin shell temperature gradient specified
+          // char flag4; //< 0: N/A, 1: top thin shell temperature
+          // char flag5; //< 0: N/A, 1: bottom thin shell temperature
+          // char flag6; //< This is always zero
+          // double value1; //< Temperature (default case - no thin shells)
+          // double value2; //< Temperature for middle of thin shells
+          // double value3; //< Temperature gradient for thin shells
+          // double value4; //< Temperature for top of thin shells
+          // double value5; //< Temperature for bottom of thin shells
+          // double value6; //< This is always zero, i.e. ignore
+          std::ostringstream str_flag1;
+          str_flag1 << "block_" << it->getMeshsetId() << ".temperature_flag1";
+          std::ostringstream str_value1;
+          str_value1 << "block_" << it->getMeshsetId() << ".temperature_t";
+          config_file_options.add_options()
+          (str_flag1.str().c_str(),po::value<char>(&block_lists[it->getMeshsetId()].temperatureBc.data.flag1)->default_value(0),"flag1")
+          (str_value1.str().c_str(),po::value<double>(&block_lists[it->getMeshsetId()].temperatureBc.data.value1)->default_value(0),"value1");
+          // TODO: Add more cases, see above
+        }
         // Sideset
         {
           // char name[8];   //< 8 characters for "Pressure"
@@ -763,6 +791,13 @@ namespace MoFEM {
             }
             if(mit->second.forceBc.data.value1!=0||mit->second.forceBc.data.value2!=0) {
               ierr = setBcData(mit->second.bcType,mit->second.iD,mit->second.forceBc); CHKERRQ(ierr);
+            }
+            // Add temperature boundary condition
+            if(mit->second.temperatureBc.data.flag1) {
+              if(mit->second.temperatureBc.data.flag1=='0') mit->second.temperatureBc.data.flag1=0;
+              if(mit->second.temperatureBc.data.flag1=='N') mit->second.temperatureBc.data.flag1=0;
+              if(mit->second.temperatureBc.data.flag1) mit->second.temperatureBc.data.flag1=1;
+              ierr = setBcData(mit->second.bcType,mit->second.iD,mit->second.temperatureBc); CHKERRQ(ierr);
             }
           }
           break;
