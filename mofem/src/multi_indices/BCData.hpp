@@ -401,7 +401,8 @@ struct PressureCubitBcData: public GenericCubitBcData {
  * \ingroup mofem_bc
  */
 struct HeatFluxCubitBcData: public GenericCubitBcData {
-    struct __attribute__ ((packed)) _data_{
+  
+  struct __attribute__ ((packed)) _data_ {
     char name[8]; //< 8 characters for "HeatFlux" (no space)
     char pre1; //< This is always zero
     char pre2; //< 0: heat flux is not applied on thin shells (default); 1: heat flux is applied on thin shells
@@ -411,36 +412,36 @@ struct HeatFluxCubitBcData: public GenericCubitBcData {
     double value1; //< Heat flux value for default case (no thin shells)
     double value2; //< Heat flux (thin shell top)
     double value3; //< Heat flux (thin shell bottom)
-    };
+  };
 
-    _data_ data;
+  _data_ data;
 
-    std::size_t getSizeOfData() const { return sizeof(_data_); }
-    const void * getDataPtr() const { return &data; }
+  std::size_t getSizeOfData() const { return sizeof(_data_); }
+  const void * getDataPtr() const { return &data; }
 
-    HeatFluxCubitBcData():
-    GenericCubitBcData(HEATFLUXSET) {}
+  HeatFluxCubitBcData():
+  GenericCubitBcData(HEATFLUXSET) {}
 
-    PetscErrorCode fill_data(const std::vector<char>& bc_data) {
-      PetscFunctionBegin;
-      //Fill data
-      if(bc_data.size()!=sizeof(data)) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
-      memcpy(&data, &bc_data[0], sizeof(data));
-      PetscFunctionReturn(0);
+  PetscErrorCode fill_data(const std::vector<char>& bc_data) {
+    PetscFunctionBegin;
+    //Fill data
+    if(bc_data.size()!=sizeof(data)) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+    memcpy(&data, &bc_data[0], sizeof(data));
+    PetscFunctionReturn(0);
+  }
+
+  PetscErrorCode set_data(void *tag_ptr,unsigned int size) const {
+    PetscFunctionBegin;
+    if(size!=sizeof(data)) {
+      SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
     }
+    memcpy(tag_ptr, &data, size);
+    PetscFunctionReturn(0);
+  }
 
-    PetscErrorCode set_data(void *tag_ptr,unsigned int size) const {
-      PetscFunctionBegin;
-      if(size!=sizeof(data)) {
-        SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
-      }
-      memcpy(tag_ptr, &data, size);
-      PetscFunctionReturn(0);
-    }
-
-    /*! \brief Print heat flux bc data
-    */
-    friend std::ostream& operator<<(std::ostream& os,const HeatFluxCubitBcData& e);
+  /*! \brief Print heat flux bc data
+  */
+  friend std::ostream& operator<<(std::ostream& os,const HeatFluxCubitBcData& e);
 
 };
 

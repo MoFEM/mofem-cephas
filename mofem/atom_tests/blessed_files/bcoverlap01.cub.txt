@@ -27,6 +27,7 @@ Temperature (thin shell bottom): N/A
 
 P r e s s u r e 
  
+Pressure flag2: 0
 Pressure value: -100
  
 

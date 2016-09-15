@@ -428,8 +428,8 @@ struct Core: public Interface, MeshRefinment, PrismInterface, SeriesRecorder {
   PetscErrorCode delete_finite_element(const std::string name,int verb = -1);
 
   //other auxiliary functions for finite element
-  BitFEId get_BitFEId(const std::string& name) const;
-  std::string get_BitFEId_name(const BitFEId id) const;
+  BitFEId getBitFEId(const std::string& name) const;
+  std::string getBitFEId_name(const BitFEId id) const;
   EntityHandle get_finite_element_meshset(const BitFEId id) const;
   EntityHandle get_finite_element_meshset(const std::string& name) const;
   PetscErrorCode list_finite_elements() const;
