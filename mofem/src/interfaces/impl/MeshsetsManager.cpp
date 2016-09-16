@@ -495,7 +495,7 @@ namespace MoFEM {
 
     std::vector<double> aTtr;
     BlockData():
-    aTtr(10) {
+    aTtr(10,0) {
       strncpy(dispBc.data.name,"Displacement",12);
       strncpy(forceBc.data.name,"Force",5);
       strncpy(pressureBc.data.name,"Pressure",8);
