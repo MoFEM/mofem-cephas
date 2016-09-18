@@ -332,7 +332,7 @@ int main(int argc, char *argv[]) {
 
   // for ksp solver vector is moved into rhs side
   // for snes it is left ond the left
-  // ierr = VecScale(F,-1); CHKERRQ(ierr);
+  ierr = VecScale(F,-1); CHKERRQ(ierr);
 
   //MatView(Aij,PETSC_VIEWER_DRAW_WORLD);
   //MatView(Aij,PETSC_VIEWER_STDOUT_WORLD);
@@ -389,15 +389,13 @@ int main(int argc, char *argv[]) {
 
   //calculate residuals
   ufe.feVol.getOpPtrVector().clear();
-  ufe.feVol.getOpPtrVector().clear();
 
   ufe.feVol.getOpPtrVector().push_back(new MyUltraWeakFE::OpFluxDivergenceAtGaussPts(ufe,"FLUXES"));
-  ufe.feVol.getOpPtrVector().push_back(new MyUltraWeakFE::OpVDotDivSigma_L2Hdiv(ufe,"VALUES","FLUXES",PETSC_NULL,F));
-  ufe.feVol.getOpPtrVector().push_back(new MyUltraWeakFE::OpTauDotSigma_HdivHdiv(ufe,"FLUXES",PETSC_NULL,F));
   ufe.feVol.getOpPtrVector().push_back(new MyUltraWeakFE::OpValuesAtGaussPts(ufe,"VALUES"));
   ufe.feVol.getOpPtrVector().push_back(new MyUltraWeakFE::OpDivTauU_HdivL2(ufe,"FLUXES","VALUES",PETSC_NULL,F));
   ufe.feVol.getOpPtrVector().push_back(new MyUltraWeakFE::OpL2Source(ufe,"VALUES",F));
-
+  ufe.feVol.getOpPtrVector().push_back(new MyUltraWeakFE::OpTauDotSigma_HdivHdiv(ufe,"FLUXES",PETSC_NULL,F));
+  ufe.feVol.getOpPtrVector().push_back(new MyUltraWeakFE::OpVDotDivSigma_L2Hdiv(ufe,"VALUES","FLUXES",PETSC_NULL,F));
   ierr = m_field.loop_finite_elements("ULTRAWEAK","ULTRAWEAK",ufe.feVol); CHKERRQ(ierr);
 
   ufe.feTriFluxValue.getOpPtrVector().clear();
@@ -409,18 +407,17 @@ int main(int argc, char *argv[]) {
   ierr = VecAssemblyBegin(F); CHKERRQ(ierr);
   ierr = VecAssemblyEnd(F); CHKERRQ(ierr);
 
-  ufe.feTriFluxValue.getOpPtrVector().clear();
-  ufe.feTriFluxValue.getOpPtrVector().push_back(new MyUltraWeakFE::OpEvaluateBcOnFluxes(ufe,"FLUXES",F));
-  ierr = m_field.loop_finite_elements("ULTRAWEAK","ULTRAWEAK_BCFLUX",ufe.feTriFluxValue); CHKERRQ(ierr);
-  ierr = VecGhostUpdateBegin(F,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-  ierr = VecGhostUpdateEnd(F,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-  ierr = VecAssemblyBegin(F); CHKERRQ(ierr);
-  ierr = VecAssemblyEnd(F); CHKERRQ(ierr);
 
-  ierr = MatAssemblyBegin(Aij,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
-  ierr = MatAssemblyEnd(Aij,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
-
-  ierr = VecAXPY(F,-1.,D0); CHKERRQ(ierr);
+  // ierr = VecAXPY(F,-1.,D0); CHKERRQ(ierr);
+  // ierr = MatZeroRowsIS(Aij,essential_bc_ids,1,PETSC_NULL,F); CHKERRQ(ierr);
+  {
+    std::vector<int> ids;
+    ids.insert(ids.begin(),ufe.bcIndices.begin(),ufe.bcIndices.end());
+    std::vector<double> vals(ids.size(),0);
+    ierr = VecSetValues(F,ids.size(),&*ids.begin(),&*vals.begin(),INSERT_VALUES); CHKERRQ(ierr);
+    ierr = VecAssemblyBegin(F); CHKERRQ(ierr);
+    ierr = VecAssemblyEnd(F); CHKERRQ(ierr);
+  }
 
   {
     double nrm2_F;
