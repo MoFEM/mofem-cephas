@@ -888,11 +888,52 @@ struct DataForcesAndSurcesCore {
     FTensor::Tensor1<double*,Tensor_Dim> getFTensor1DiffN(const int gg,const int bb);
 
     /** \brief Get base functions for Hdiv space
+
+    \note You probably like to use getFTensor1HdivN(), in typical use base is set
+    automatically based on base set to field.
+
+    * @param  base Approximation base
+
+    Example:
+    \code
+    FTensor::Index<'i',3> i;
+    int nb_dofs = data.getFieldData().size();
+    FTensor::Tensor1<double*,3> t_n_hdiv = data.getFTensor1HdivN<3>();
+    for(int gg = 0;gg!=nb_gauss_pts;gg++) {
+      int ll = 0;
+      for(;ll!=nb_dofs;ll++) {
+        double dot_product = t_n_hdiv(i)*t_n_hdiv(i);
+        ++t_n_hdiv;
+      }
+      for(;ll!=data.getHdivN().size2()/3;ll++) {
+        ++t_n_hdiv;
+      }
+    }
+    \endcode
+
     */
     template<int Tensor_Dim>
     FTensor::Tensor1<double*,Tensor_Dim> getFTensor1HdivN(FieldApproximationBase base);
 
     /** \brief Get base functions for Hdiv space
+
+    Example:
+    \code
+    FTensor::Index<'i',3> i;
+    int nb_dofs = data.getFieldData().size();
+    FTensor::Tensor1<double*,3> t_n_hdiv = data.getFTensor1HdivN<3>();
+    for(int gg = 0;gg!=nb_gauss_pts;gg++) {
+      int ll = 0;
+      for(;ll!=nb_dofs;ll++) {
+        double dot_product = t_n_hdiv(i)*t_n_hdiv(i);
+        ++t_n_hdiv;
+      }
+      for(;ll!=data.getHdivN().size2()/3;ll++) {
+        ++t_n_hdiv;
+      }
+    }
+    \endcode
+
     */
     template<int Tensor_Dim>
     FTensor::Tensor1<double*,Tensor_Dim> getFTensor1HdivN();
