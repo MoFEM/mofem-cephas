@@ -131,10 +131,10 @@ struct UltraWeakTransportElement {
   virtual PetscErrorCode getResistivity(
     const EntityHandle ent,
     const double x,const double y,const double z,
-    ublas::matrix<FieldData> &inv_k) {
+    ublas::matrix<FieldData> &inv_k
+  ) {
     PetscFunctionBegin;
-    inv_k.resize(3,3);
-    bzero(&*inv_k.data().begin(),9*sizeof(FieldData));
+    inv_k.clear();
     for(int dd = 0;dd<3;dd++) {
       inv_k(dd,dd) = 1;
     }
@@ -280,10 +280,8 @@ struct UltraWeakTransportElement {
     F(f) {}
     virtual ~OpTauDotSigma_HdivHdiv() {}
 
-    ublas::matrix<FieldData> NN,transNN;
-    ublas::matrix<FieldData> invK,invKN;
+    MatrixDouble NN,transNN,invK;
     VectorDouble Nf;
-    VectorDouble invKFlux;
 
     /**
      * \brief Assemble matrix
@@ -301,49 +299,62 @@ struct UltraWeakTransportElement {
       DataForcesAndSurcesCore::EntData &row_data,
       DataForcesAndSurcesCore::EntData &col_data
     ) {
-      PetscFunctionBegin;
-
       PetscErrorCode ierr;
-
+      PetscFunctionBegin;
       try {
-
         if(Aij == PETSC_NULL) PetscFunctionReturn(0);
         if(row_data.getFieldData().size()==0) PetscFunctionReturn(0);
         if(col_data.getFieldData().size()==0) PetscFunctionReturn(0);
-
         EntityHandle fe_ent = getNumeredEntFiniteElementPtr()->getEnt();
-
         int nb_row = row_data.getFieldData().size();
         int nb_col = col_data.getFieldData().size();
-        NN.resize(nb_row,nb_col);
-        bzero(&NN(0,0),NN.data().size()*sizeof(FieldData));
-
-        invKN.resize(3,nb_col);
+        NN.resize(nb_row,nb_col,false);
+        NN.clear();
+        FTensor::Index<'i',3> i;
+        FTensor::Index<'j',3> j;
+        invK.resize(3,3,false);
+        // get access to resistivity data by tensor rank 2
+        FTensor::Tensor2<double*,3,3> t_inv_k(
+          &invK(0,0),&invK(0,1),&invK(0,2),
+          &invK(1,0),&invK(1,1),&invK(1,2),
+          &invK(2,0),&invK(2,1),&invK(2,2)
+        );
+        // get base functions
+        FTensor::Tensor1<double*,3> t_n_hdiv_row = row_data.getFTensor1HdivN<3>();
         int nb_gauss_pts = row_data.getHdivN().size1();
-        int gg = 0;
-        for(;gg<nb_gauss_pts;gg++) {
-
+        for(int gg = 0;gg<nb_gauss_pts;gg++) {
+          // get integration weight and multiply by element volume
           double w = getGaussPts()(3,gg)*getVolume();
+          // in case that HO geometry is defined that below take into account that
+          // edges of element are curved
           if(getHoGaussPtsDetJac().size()>0) {
             w *= getHoGaussPtsDetJac()(gg);
           }
-
           const double x = getCoordsAtGaussPts()(gg,0);
           const double y = getCoordsAtGaussPts()(gg,1);
           const double z = getCoordsAtGaussPts()(gg,2);
+          // calculate receptivity (invers of conductivity)
           ierr = cTx.getResistivity(fe_ent,x,y,z,invK); CHKERRQ(ierr);
-          noalias(invKN) = prod(invK,trans(col_data.getHdivN(gg)));
-          noalias(NN) += w*prod(row_data.getHdivN(gg),invKN);
-
+          for(int kk = 0;kk!=nb_row;kk++) {
+            FTensor::Tensor1<const double*,3> t_n_hdiv_col(
+              &col_data.getHdivN(gg)(0,HDIV0),
+              &col_data.getHdivN(gg)(0,HDIV1),
+              &col_data.getHdivN(gg)(0,HDIV2),3
+            );
+            for(int ll = 0;ll!=nb_col;ll++) {
+              NN(kk,ll) += w*t_n_hdiv_row(i)*t_inv_k(i,j)*t_n_hdiv_col(j);
+              ++t_n_hdiv_col;
+            }
+            ++t_n_hdiv_row;
+          }
         }
-
+        // matrix is symmetric, assemble other part
         ierr = MatSetValues(
           Aij,
           nb_row,&row_data.getIndices()[0],
           nb_col,&col_data.getIndices()[0],
           &NN(0,0),ADD_VALUES
         ); CHKERRQ(ierr);
-
         if(row_side != col_side || row_type != col_type) {
           transNN.resize(nb_col,nb_row);
           noalias(transNN) = trans(NN);
@@ -375,50 +386,53 @@ struct UltraWeakTransportElement {
     PetscErrorCode doWork(
       int side,EntityType type,DataForcesAndSurcesCore::EntData &data
     ) {
-      PetscFunctionBegin;
-
       PetscErrorCode ierr;
-
+      PetscFunctionBegin;
       try {
-
         if(data.getFieldData().size()==0) PetscFunctionReturn(0);
-
+        FTensor::Index<'i',3> i;
+        FTensor::Index<'j',3> j;
+        invK.resize(3,3,false);
         EntityHandle fe_ent = getNumeredEntFiniteElementPtr()->getEnt();
-
         int nb_row = data.getFieldData().size();
         Nf.resize(nb_row);
-        bzero(&*Nf.data().begin(),Nf.data().size()*sizeof(FieldData));
-
+        Nf.clear();
+        // get access to resistivity data by tensor rank 2
+        FTensor::Tensor2<double*,3,3> t_inv_k(
+          &invK(0,0),&invK(0,1),&invK(0,2),
+          &invK(1,0),&invK(1,1),&invK(1,2),
+          &invK(2,0),&invK(2,1),&invK(2,2)
+        );
+        // get base functions
+        FTensor::Tensor1<double*,3> t_n_hdiv = data.getFTensor1HdivN<3>();
         int nb_gauss_pts = data.getHdivN().size1();
-        int gg = 0;
-        for(;gg<nb_gauss_pts;gg++) {
-
+        for(int gg = 0;gg<nb_gauss_pts;gg++) {
           double w = getGaussPts()(3,gg)*getVolume();
           if(getHoGaussPtsDetJac().size()>0) {
             w *= getHoGaussPtsDetJac()(gg);
           }
-
           const double x = getCoordsAtGaussPts()(gg,0);
           const double y = getCoordsAtGaussPts()(gg,1);
           const double z = getCoordsAtGaussPts()(gg,2);
           ierr = cTx.getResistivity(fe_ent,x,y,z,invK); CHKERRQ(ierr);
-
-          invKFlux.resize(3);
-          noalias(invKFlux) = prod(invK,cTx.fluxesAtGaussPts[gg]);
-          noalias(Nf) += w*prod(data.getHdivN(gg),invKFlux);
-
+          FTensor::Tensor1<double*,3> t_flux(
+            &cTx.fluxesAtGaussPts[gg][0],
+            &cTx.fluxesAtGaussPts[gg][1],
+            &cTx.fluxesAtGaussPts[gg][2]
+          );
+          for(int ll = 0;ll!=nb_row;ll++) {
+            Nf[ll] += w*t_n_hdiv(i)*t_inv_k(i,j)*t_flux(j);
+            ++t_n_hdiv;
+          }
         }
-
         ierr = VecSetValues(
           F,nb_row,&data.getIndices()[0],&Nf[0],ADD_VALUES
         ); CHKERRQ(ierr);
-
       } catch (const std::exception& ex) {
         std::ostringstream ss;
         ss << "throw in method: " << ex.what() << std::endl;
         SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
       }
-
       PetscFunctionReturn(0);
     }
 
@@ -450,55 +464,43 @@ struct UltraWeakTransportElement {
     }
     virtual ~OpDivTauU_HdivL2() {}
 
-    VectorDouble div_vec,Nf;
+    VectorDouble divVec,Nf;
 
     PetscErrorCode doWork(
       int side,EntityType type,
       DataForcesAndSurcesCore::EntData &data
     ) {
-      PetscFunctionBegin;
-
       PetscErrorCode ierr;
-
+      PetscFunctionBegin;
       try {
-
         if(data.getFieldData().size()==0) PetscFunctionReturn(0);
-
         int nb_row = data.getIndices().size();
         Nf.resize(nb_row);
+        Nf.clear();
         bzero(&*Nf.data().begin(),Nf.data().size()*sizeof(FieldData));
-
-        div_vec.resize(data.getHdivN().size2()/3,0);
-        if(div_vec.size()!=data.getIndices().size()) {
+        divVec.resize(data.getHdivN().size2()/3,0);
+        if(divVec.size()!=data.getIndices().size()) {
           SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
         }
-
         int nb_gauss_pts = data.getN().size1();
         int gg = 0;
         for(;gg<nb_gauss_pts;gg++) {
-
           double w = getGaussPts()(3,gg)*getVolume();
           if(getHoGaussPtsDetJac().size()>0) {
             w *= getHoGaussPtsDetJac()(gg);
           }
-
-          ierr = getDivergenceOfHDivBaseFunctions(side,type,data,gg,div_vec); CHKERRQ(ierr);
-
-          noalias(Nf) -= w*div_vec*cTx.valuesAtGaussPts[gg];
-
+          ierr = getDivergenceOfHDivBaseFunctions(side,type,data,gg,divVec); CHKERRQ(ierr);
+          noalias(Nf) -= w*divVec*cTx.valuesAtGaussPts[gg];
         }
-
         ierr = VecSetValues(
           F,nb_row,&data.getIndices()[0],
           &Nf[0],ADD_VALUES
         ); CHKERRQ(ierr);
-
       } catch (const std::exception& ex) {
         std::ostringstream ss;
         ss << "throw in method: " << ex.what() << std::endl;
         SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
       }
-
       PetscFunctionReturn(0);
     }
 
@@ -533,7 +535,7 @@ struct UltraWeakTransportElement {
     virtual ~OpVDotDivSigma_L2Hdiv() {}
 
     ublas::matrix<FieldData> NN,transNN;
-    VectorDouble div_vec,Nf;
+    VectorDouble divVec,Nf;
 
     PetscErrorCode doWork(
       int row_side,int col_side,
@@ -541,52 +543,34 @@ struct UltraWeakTransportElement {
       DataForcesAndSurcesCore::EntData &row_data,
       DataForcesAndSurcesCore::EntData &col_data
     ) {
-      PetscFunctionBegin;
-
       PetscErrorCode ierr;
-
+      PetscFunctionBegin;
       try {
-
         if(Aij == PETSC_NULL) PetscFunctionReturn(0);
         if(row_data.getFieldData().size()==0) PetscFunctionReturn(0);
         if(col_data.getFieldData().size()==0) PetscFunctionReturn(0);
-
         int nb_row = row_data.getFieldData().size();
         int nb_col = col_data.getFieldData().size();
         NN.resize(nb_row,nb_col);
-        bzero(&NN(0,0),NN.data().size()*sizeof(FieldData));
-
-        div_vec.resize(nb_col,0);
-
+        NN.clear();
+        divVec.resize(nb_col,false);
         int nb_gauss_pts = row_data.getHdivN().size1();
-        int gg = 0;
-        for(;gg<nb_gauss_pts;gg++) {
-
+        for(int gg = 0;gg<nb_gauss_pts;gg++) {
           double w = getGaussPts()(3,gg)*getVolume();
           if(getHoGaussPtsDetJac().size()>0) {
             w *= getHoGaussPtsDetJac()(gg);
           }
-
           ierr = getDivergenceOfHDivBaseFunctions(
-            col_side,col_type,col_data,gg,div_vec
+            col_side,col_type,col_data,gg,divVec
           ); CHKERRQ(ierr);
-
-          //FIXME this multiplication should be done in blas or ublas
-          for(int rr = 0;rr<nb_row;rr++) {
-            for(int cc = 0;cc<nb_col;cc++) {
-              NN(rr,cc) -= w*(row_data.getN(gg)[rr]*div_vec[cc]);
-            }
-          }
-
+          noalias(NN) -= w*outer_prod(row_data.getN(gg),divVec);
         }
-
         ierr = MatSetValues(
           Aij,
           nb_row,&row_data.getIndices()[0],
           nb_col,&col_data.getIndices()[0],
           &NN(0,0),ADD_VALUES
         ); CHKERRQ(ierr);
-
         transNN.resize(nb_col,nb_row);
         ublas::noalias(transNN) = trans(NN);
         ierr = MatSetValues(
@@ -595,14 +579,11 @@ struct UltraWeakTransportElement {
           nb_row,&row_data.getIndices()[0],
           &transNN(0,0),ADD_VALUES
         ); CHKERRQ(ierr);
-
-
       } catch (const std::exception& ex) {
         std::ostringstream ss;
         ss << "throw in method: " << ex.what() << std::endl;
         SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
       }
-
       PetscFunctionReturn(0);
     }
 
@@ -662,44 +643,31 @@ struct UltraWeakTransportElement {
     VectorDouble Nf;
     PetscErrorCode doWork(
       int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
-        PetscFunctionBegin;
-
         PetscErrorCode ierr;
-
+        PetscFunctionBegin;
         try {
-
           if(data.getFieldData().size()==0) PetscFunctionReturn(0);
           EntityHandle fe_ent = getNumeredEntFiniteElementPtr()->getEnt();
-
           int nb_row = data.getFieldData().size();
           Nf.resize(nb_row);
           Nf.clear();
-
           int nb_gauss_pts = data.getHdivN().size1();
-          int gg = 0;
-          for(;gg<nb_gauss_pts;gg++) {
-
+          for(int gg = 0;gg<nb_gauss_pts;gg++) {
             double w = getGaussPts()(3,gg)*getVolume();
             if(getHoGaussPtsDetJac().size()>0) {
               w *= getHoGaussPtsDetJac()(gg);
             }
-
             const double x = getCoordsAtGaussPts()(gg,0);
             const double y = getCoordsAtGaussPts()(gg,1);
             const double z = getCoordsAtGaussPts()(gg,2);
             double flux;
             ierr = cTx.getFlux(fe_ent,x,y,z,flux); CHKERRQ(ierr);
-            for(int rr = 0;rr!=nb_row;rr++) {
-              Nf[rr] += w*data.getN(gg)[rr]*flux;
-            }
-
+            noalias(Nf) += w*data.getN(gg)*flux;
           }
-
           ierr = VecSetValues(
             F,nb_row,&data.getIndices()[0],
             &Nf[0],ADD_VALUES
           ); CHKERRQ(ierr);
-
         } catch (const std::exception& ex) {
           std::ostringstream ss;
           ss << "throw in method: " << ex.what() << std::endl;
@@ -850,6 +818,7 @@ struct UltraWeakTransportElement {
 
         NN.clear();
         Nf.clear();
+        double nrm2 = 0;
 
         // loop over integration points
         for(int gg = 0;gg<nb_gauss_pts;gg++) {
@@ -864,7 +833,9 @@ struct UltraWeakTransportElement {
           ierr = cTx.getBcOnFluxes(fe_ent,x,y,z,flux); CHKERRQ(ierr);
           // get weight for integration rule
           double w = getGaussPts()(2,gg);
-          double nrm2 = sqrt(t_normal(i)*t_normal(i));
+          if(gg == 0) {
+            nrm2  = sqrt(t_normal(i)*t_normal(i));
+          }
 
           // set tensor of rank 0 to matrix NN elements
           // loop over base functions on rows and columns
@@ -875,7 +846,7 @@ struct UltraWeakTransportElement {
               &data.getHdivN(gg)(0,HDIV1),
               &data.getHdivN(gg)(0,HDIV2),3
             );
-            for(int kk = 0;kk!=nb_dofs;kk++) {
+            for(int kk = 0;kk<=ll;kk++) {
               NN(ll,kk) += w*t_n_hdiv_row(i)*t_n_hdiv_col(i);
               ++t_n_hdiv_col;
             }
@@ -887,6 +858,7 @@ struct UltraWeakTransportElement {
           // If HO geometry increment t_normal to next integration point
           if(getNormalsAtGaussPt().size1() == (unsigned int)nb_gauss_pts) {
             ++t_normal;
+            nrm2  = sqrt(t_normal(i)*t_normal(i));
           }
 
         }
@@ -894,51 +866,10 @@ struct UltraWeakTransportElement {
         // get global dofs indices on element
         cTx.bcIndices.insert(data.getIndices().begin(),data.getIndices().end());
 
-        // cerr << NN << endl;
-        // cerr << Nf << endl;
-        // cerr << NN << endl;
+        // factor matrix
         cholesky_decompose(NN);
+        // solve local problem
         cholesky_solve(NN,Nf,ublas::lower());
-        // cerr << Nf << endl;
-
-        // cerr << NN << endl;
-        // cerr << Nf << endl;
-
-
-        // __CLPK_integer info;
-        // std::vector<__CLPK_integer> ipiv(nb_dofs,0);
-        // // TRANS, N, NRHS, A, LDA, IPIV, B, LDB, INFO
-        // // FIXME: use general LU factorization, should be use Cholesky LLT
-        // info = lapack_dgetrf(nb_dofs,nb_dofs,&NN(0,0),nb_dofs,&ipiv[0]);
-        // if(info!=0) {
-        //   SETERRQ1(PETSC_COMM_WORLD,MOFEM_DATA_INCONSISTENCY,"can't factor matrix, info = %d",info);
-        // }
-        // info = lapack_dgetrs('N',nb_dofs,1,&NN(0,0),nb_dofs,&ipiv[0],&Nf[0],nb_dofs);
-        // if(info!=0) {
-        //   SETERRQ1(PETSC_COMM_WORLD,MOFEM_DATA_INCONSISTENCY,"can't solve problem, info = %d",info);
-        // }
-        // cerr << Nf << endl;
-
-
-        // checking solution
-        // {
-        //   FTensor::Tensor1<double,3> t_flux;
-        //   FTensor::Tensor1<double*,3> t_n_hdiv_row = data.getFTensor1HdivN<3>();
-        //   for(int gg = 0;gg<nb_gauss_pts;gg++) {
-        //     // loop over base functions on rows and columns
-        //     t_flux(0) = 0;
-        //     t_flux(1) = 0;
-        //     t_flux(2) = 0;
-        //     for(int ll = 0;ll!=nb_dofs;ll++) {
-        //       t_flux(i) += t_n_hdiv_row(i)*Nf[ll];
-        //       ++t_n_hdiv_row;
-        //     }
-        //     cerr << "flux " << endl;
-        //     cerr << t_flux(0) << " " << t_flux(1) << " " << t_flux(2) << endl;
-        //   }
-        //   cerr << "normal " << endl;
-        //   cerr << getNormal()/getArea() << endl;
-        // }
 
         // set solution to vector
         ierr = VecSetValues(X,data.getIndices().size(),&data.getIndices()[0],&Nf[0],INSERT_VALUES); CHKERRQ(ierr);
@@ -1011,21 +942,14 @@ struct UltraWeakTransportElement {
 
     PetscErrorCode doWork(int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
       PetscFunctionBegin;
-
       try {
-
         if(data.getFieldData().size() == 0)  PetscFunctionReturn(0);
-
         int nb_gauss_pts = data.getDiffN().size1();
-
         cTx.valuesGradientAtGaussPts.resize(nb_gauss_pts);
-
         for(int gg = 0;gg<nb_gauss_pts;gg++) {
-
-          cTx.valuesGradientAtGaussPts[gg].resize(3);
+          cTx.valuesGradientAtGaussPts[gg].resize(3,false);
           noalias(cTx.valuesGradientAtGaussPts[gg]) = prod( trans(data.getDiffN(gg)), data.getFieldData() );
         }
-
       } catch (const std::exception& ex) {
         std::ostringstream ss;
         ss << "throw in method: " << ex.what() << std::endl;
@@ -1065,7 +989,7 @@ struct UltraWeakTransportElement {
         cTx.divergenceAtGaussPts.resize(nb_gauss_pts);
         if(type == MBTRI && side == 0) {
           for(int gg = 0;gg<nb_gauss_pts;gg++) {
-            cTx.fluxesAtGaussPts[gg].resize(3);
+            cTx.fluxesAtGaussPts[gg].resize(3,false);
             cTx.fluxesAtGaussPts[gg].clear();
           }
           cTx.divergenceAtGaussPts.clear();
