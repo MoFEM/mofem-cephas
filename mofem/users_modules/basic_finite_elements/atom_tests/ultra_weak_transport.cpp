@@ -172,11 +172,6 @@ int main(int argc, char *argv[]) {
   ierr = m_field.modify_problem_add_finite_element("ULTRAWEAK","ULTRAWEAK_BCFLUX"); CHKERRQ(ierr);
   ierr = m_field.modify_problem_add_finite_element("ULTRAWEAK","ULTRAWEAK_BCVALUE"); CHKERRQ(ierr);
 
-  ierr = m_field.add_problem("ULTRAWEAK_CALCULATE_ERROR"); CHKERRQ(ierr);
-  //set refinment level for problem
-  ierr = m_field.modify_problem_ref_level_add_bit("ULTRAWEAK_CALCULATE_ERROR",bit_level0); CHKERRQ(ierr);
-  ierr = m_field.modify_problem_add_finite_element("ULTRAWEAK_CALCULATE_ERROR","ULTRAWEAK_ERROR"); CHKERRQ(ierr);
-
   //build problem
   ierr = m_field.build_problems(); CHKERRQ(ierr);
 
@@ -186,11 +181,6 @@ int main(int argc, char *argv[]) {
   ierr = m_field.partition_finite_elements("ULTRAWEAK"); CHKERRQ(ierr);
   //what are ghost nodes, see Petsc Manual
   ierr = m_field.partition_ghost_dofs("ULTRAWEAK"); CHKERRQ(ierr);
-
-  //partition for problem calculating error
-  ierr = m_field.partition_simple_problem("ULTRAWEAK_CALCULATE_ERROR"); CHKERRQ(ierr);
-  ierr = m_field.partition_finite_elements("ULTRAWEAK_CALCULATE_ERROR"); CHKERRQ(ierr);
-  ierr = m_field.partition_ghost_dofs("ULTRAWEAK_CALCULATE_ERROR"); CHKERRQ(ierr);
 
   Mat Aij;
   ierr = m_field.MatCreateMPIAIJWithArrays("ULTRAWEAK",&Aij); CHKERRQ(ierr);
@@ -289,22 +279,7 @@ int main(int argc, char *argv[]) {
     SETERRQ(PETSC_COMM_WORLD,MOFEM_ATOM_TEST_INVALID,"Failed to pass test");
   }
 
-
   ierr = PetscViewerDestroy(&viewer); CHKERRQ(ierr);
-
-  //evaluate error
-  ufe.feVol.getOpPtrVector().clear();
-
-  ufe.feVol.getOpPtrVector().push_back(new MyUltraWeakFE::OpValuesGradientAtGaussPts(ufe,"VALUES"));
-  ufe.feVol.getOpPtrVector().push_back(new MyUltraWeakFE::OpFluxDivergenceAtGaussPts(ufe,"FLUXES"));
-  ufe.feVol.getOpPtrVector().push_back(new MyUltraWeakFE::OpError_L2Norm(ufe,"ERROR"));
-  ierr = m_field.loop_finite_elements("ULTRAWEAK_CALCULATE_ERROR","ULTRAWEAK_ERROR",ufe.feVol); CHKERRQ(ierr);
-
-  Vec E;
-  ierr = m_field.VecCreateGhost("ULTRAWEAK_CALCULATE_ERROR",ROW,&E); CHKERRQ(ierr);
-  ierr = m_field.set_local_ghost_vector("ULTRAWEAK_CALCULATE_ERROR",ROW,E,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  ierr = m_field.set_global_ghost_vector("ULTRAWEAK_CALCULATE_ERROR",ROW,E,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-  ierr = VecDestroy(&E); CHKERRQ(ierr);
 
   ierr = VecZeroEntries(F); CHKERRQ(ierr);
   ierr = VecGhostUpdateBegin(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
@@ -354,7 +329,6 @@ int main(int argc, char *argv[]) {
   ierr = VecDestroy(&D); CHKERRQ(ierr);
   ierr = VecDestroy(&D0); CHKERRQ(ierr);
   ierr = VecDestroy(&F); CHKERRQ(ierr);
-  ierr = VecDestroy(&E); CHKERRQ(ierr);
   ierr = KSPDestroy(&solver); CHKERRQ(ierr);
 
   PostProcVolumeOnRefinedMesh post_proc(m_field);
@@ -370,18 +344,6 @@ int main(int argc, char *argv[]) {
   ierr = m_field.loop_finite_elements("ULTRAWEAK","ULTRAWEAK",post_proc);  CHKERRQ(ierr);
   ierr = post_proc.writeFile("out_fluxes.h5m"); CHKERRQ(ierr);
   ierr = post_proc.clearOperators(); CHKERRQ(ierr);
-
-  PostProcVolumeOnRefinedMesh post_proc_error(m_field,false,0);
-  ierr = post_proc_error.generateReferenceElementMesh(); CHKERRQ(ierr);
-  ierr = post_proc_error.addFieldValuesPostProc("ERROR"); CHKERRQ(ierr);
-  ierr = m_field.loop_finite_elements("ULTRAWEAK_CALCULATE_ERROR","ULTRAWEAK_ERROR",post_proc_error);  CHKERRQ(ierr);
-  ierr = post_proc_error.writeFile("out_error.h5m"); CHKERRQ(ierr);
-  ierr = post_proc_error.clearOperators(); CHKERRQ(ierr);
-
-  //if(pcomm->rank()==0) {
-    //EntityHandle fe_meshset = m_field.get_finite_element_meshset("ULTRAWEAK");
-    //rval = moab.write_file("error.vtk","VTK","",&fe_meshset,1); CHKERRQ_MOAB(rval); CHKERRQ_MOAB(rval);
-  //}
 
   ierr = PetscFinalize(); CHKERRQ(ierr);
 
