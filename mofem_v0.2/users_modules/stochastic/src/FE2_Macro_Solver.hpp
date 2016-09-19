@@ -1606,7 +1606,7 @@ namespace MoFEM {
           ierr = VecGhostUpdateBegin(dF,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
           ierr = VecGhostUpdateEnd(dF,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
           
-          VarName = rve_vars_name[irv]; cout<<"\n variable name: "<<VarName<<endl;
+          VarName = rve_vars_name[irv];
           
           if (VarName.compare(0,2,"Em") == 0) { // due to Young's modulus of matrix - isotropic
             Trans_Iso_Rhs_r_PSFEM my_fe_k_r_Em(m_field_RVE,Aij,D,dF,"DISP_RVE","Young","isotropic","matrix");
@@ -1629,7 +1629,6 @@ namespace MoFEM {
             ierr = m_field_RVE.loop_finite_elements("ELASTIC_PROBLEM_RVE","TRAN_ISO_FE_RVE",my_fe_k_r_Ep);  CHKERRQ(ierr);
           }
           else if (VarName.compare(0,2,"Ez") == 0) { // due to Young's modulus in longitudinal direction
-            cout<<"Case 1"<<endl;
             Trans_Iso_Rhs_r_PSFEM my_fe_k_r_Ez(m_field_RVE,Aij,D,dF,"DISP_RVE","YoungZ","transversely_isotropic","reinforcement");
             ierr = m_field_RVE.loop_finite_elements("ELASTIC_PROBLEM_RVE","TRAN_ISO_FE_RVE",my_fe_k_r_Ez);  CHKERRQ(ierr);
           }
@@ -1641,7 +1640,6 @@ namespace MoFEM {
 
           ostringstream ss_field;
           ss_field << "DISP_RVE" << stochastic_fields[irv];
-          cout<<ss_field.str().c_str()<<endl;
           
           //------------------------------------------------------------------
           // a. Getting the 1st-order derivative of nodal displacement
@@ -1846,9 +1844,8 @@ namespace MoFEM {
       }
       
       // Asign results to corresponding matrix
-      cout<<"\nOutput results"<<endl;
       for(int irv = 0; irv < num_rve_vars; irv++) {
-        VarName = rve_vars_name[irv]; cout<<rve_vars_pos[irv]-1<<"\t"<<VarName<<endl;
+        VarName = rve_vars_name[irv];
         if (VarName.compare(0,2,"Em") == 0) { // due to Young's modulus of matrix - isotropic
           Dmat_r_Em = RVE_Dmat_r(rve_vars_pos[irv]-1); //cout<<"\nDmat_r_Em: "<<Dmat_r_Em<<endl;
         }
@@ -1882,8 +1879,6 @@ namespace MoFEM {
         }
         VarName.clear();
       }
-      
-      cout<<"\nFinish of the output"<<endl;
       
       //cout<<"\nDmat for periodic BC: "<<Dmat<<endl;
       

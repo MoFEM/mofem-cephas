@@ -1,0 +1,26 @@
+reset
+set duplicate block elements on
+
+brick x 1.0 y 1.0 z 0.06
+
+create force 1 on surface 6 vector  1300 0 0 0 0 0 
+create force 2 on surface 4 vector -1300 0 0 0 0 0 
+
+volume all scheme Tetmesh
+volume all size auto factor 6
+mesh volume all
+
+block 1 volume 1
+block 1 name 'MAT_ELASTIC_First'
+block 1 attribute count 2
+block 1 attribute index 1 1000
+block 1 attribute index 2 0.3 
+
+block 2 tet 1111
+block 2 name 'RELIABILITY'
+block 2 attribute count 2
+block 2 attribute index 1 1000
+block 2 attribute index 2 0.3 
+
+
+save as "/Users/nxz6/mofem_installation/mofem-cephas/mofem/users_modules/reliability/meshes/Example01_APM.cub" overwrite

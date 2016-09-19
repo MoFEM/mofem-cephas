@@ -94,7 +94,7 @@ struct SORM{
           iscale = probdata.marg(i,5);
           lognormal_distribution<> my_logn(iloc,iscale);
           dxdz(i) = pdf(snorm,z(i))/pdf(my_logn,x(i));
-          ddxddu(i,i) = - z(i)*dxdz(i) + pow(dxdz(i),2)*(pow(iscale,2) + log(x(i))-imean)/pow(iscale,2)/x(i);
+          ddxddu(i,i) = - z(i)*dxdz(i) + pow(dxdz(i),2)*(pow(iscale,2) + log(x(i))-iloc)/pow(iscale,2)/x(i);
           break;
         }
         case 3: { // Exponential distribution

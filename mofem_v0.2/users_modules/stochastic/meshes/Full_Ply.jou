@@ -39,4 +39,4 @@ block 2 attribute index 2 0.3
 # save as "/Users/nxz6/MyBuild/mofem-cephas/mofem_v0.2/users_modules/stochastic/meshes/Quad_Ply_REL270.cub" overwrite
 # save as "/Users/nxz6/MyBuild/mofem-cephas/mofem_v0.2/users_modules/stochastic/meshes/Quad_Ply_REL11.cub" overwrite
 # save as "/Users/nxz6/MyBuild/mofem-cephas/mofem_v0.2/users_modules/stochastic/meshes/Quad_Ply_REL16.cub" overwrite
-save as "/Users/nxz6/MyBuild/mofem-cephas/mofem_v0.2/users_modules/stochastic/meshes/Plate_SFSF_REL16.cub" overwrite
+# save as "/Users/nxz6/MyBuild/mofem-cephas/mofem_v0.2/users_modules/stochastic/meshes/Plate_SFSF_REL16.cub" overwrite

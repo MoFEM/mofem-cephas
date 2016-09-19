@@ -1,41 +1,76 @@
-//
-//  main.cpp
-//  Reliability_Analysis
-//
-//  Created by Xiaoyi Zhou on 22/05/2015.
-//  Copyright (c) 2015 Xiaoyi Zhou. All rights reserved.
-//
-// This code adopts the open-source Matlab toolbox - FERUM 4.1 (Finite Element
-//   Reliability Using Matlab) devloped by Jean-Marc BOURINET at the IFMA (Institut
-//   Français de Mécanique Avancée) in Clermont-Ferrand, France, which is a new
-//   version of FERUM originally developed and maintained by Terje Haukaas,
-//   Armen Der Kiureghian and other contributors at the University of California
-//   at Berkeley initiated in 1999.
-//
-// FERUM 4.1 is available at http://www.ifma.fr/Recherche/laboratoires_recherche/FERUM
-// FERUM 3.0 is available at http://www.ce.berkeley.edu/projects/ferum/
-//
-// References:
-//   [1] Merchers, R. (1999) Structural reliability analysis and prediction,
-//       2nd edition, Wiley.
-//   [2] Ditlevsen, O. (2005) Structural reliability methods, electronic version
-//   [3] Choi, et al. (2007) Reliability-based structural design, Springer
-//   [4] Bourinet, J.-M. (2009) FERUM 4.0 User's Guide
-//
+/* Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl)
+ * --------------------------------------------------------------
+ * FIXME: DESCRIPTION
+ */
 
+/* This file is part of MoFEM.
+ * MoFEM is free software: you can redistribute it and/or modify it under
+ * the terms of the GNU Lesser General Public License as published by the
+ * Free Software Foundation, either version 3 of the License, or (at your
+ * option) any later version.
+ *
+ * MoFEM is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
+ * License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
+
+#include <MoFEM.hpp>
+using namespace MoFEM;
+
+#include <DirichletBC.hpp>
+#include <Projection10NodeCoordsOnField.hpp>
+
+#include <petsctime.h>
+
+#include <SurfacePressure.hpp>
+#include <FEMethod_LowLevelStudent.hpp>
+#include <FEMethod_UpLevelStudent.hpp>
+
+#include <PostProcOnRefMesh.hpp>
+#include <PostProcVertexMethod.hpp>
+#include <PostProcDisplacementAndStrainOnRefindedMesh.hpp>
+
+#include <ElasticFEMethod.hpp>
+#include "ElasticFEMethodTransIso.hpp"
+
+#include "ElasticFE_RVELagrange_Disp.hpp"
+#include "ElasticFE_RVELagrange_Disp_Multi_Rhs.hpp"
+#include "ElasticFE_RVELagrange_Homogenized_Stress_Disp.hpp"
+#include "RVEVolume.hpp"
+
+using namespace ObosleteUsersModules;
+#include "MaterialConstitutiveMatrix_FirstOrderDerivative.hpp"
+#include "MaterialConstitutiveMatrix_SecondOrderDerivative.hpp"
+#include "Trans_Iso_Rhs_r_PSFEM.hpp"
+#include "Trans_Iso_Rhs_rs_PSFEM.hpp"
+
+#include <FE2_ElasticFEMethod.hpp>
+
+#include <FE2_Rhs_r_PSFEM.hpp>
+#include <FE2_Rhs_rs_PSFEM.hpp>
+
+#include <Reliability_SurfacePressure.hpp>
+
+#include <FE2_Macro_Solver.hpp>
+
+#include <FE2_PostProcStressForReliability.hpp>
+
+using namespace boost::numeric;
+
+//======================================================
+// Declaration for reliability analysis
 extern "C" {
 #include <gm_rule.h>
 #include <ltqnorm.h>
 }
 
-
-#include <MoFEM.hpp>
-using namespace MoFEM;
-
 #include <iostream>
 #include <fstream>
 #include <ctime>
-#include <vector>
+//#include <vector>
 #include <new>
 #include <ctype.h>
 
@@ -49,53 +84,17 @@ using namespace MoFEM;
 #include <boost/math/distributions/gamma.hpp>
 
 #include <boost/numeric/ublas/matrix.hpp>
-#include <boost/numeric/ublas/matrix_proxy.hpp>
 #include <boost/numeric/ublas/triangular.hpp>
 #include <boost/numeric/ublas/io.hpp>
 
 #include <cholesky.hpp>
 #include <MatrixInverse.hpp> // download from http://proteowizard.sourceforge.net/dox/_matrix_inverse_8hpp.html
 
-using namespace boost::numeric;
-//using namespace MoFEM;
-using namespace std;
-
-static char help[] = "...\n\n";
-
-
-//------------------------------------------------------------------------------
-// Construct data structure <Stochastic_Model> for collecting data representing
-//   statistical information of inputs including probability distribution,
-//   correlation matrix and etc.
-
-struct Stochastic_Model {
-  int nvars;                             // Number of variables
-  double dist_type;                      // Distribution type index
-  double transf_type;                    // Type of joint distribution
-  double R0_method;                      // Method for computation of the modified Nataf correlation matrix
-  int flag_sens;                         // Flag for computation of sensitivities w.r.t. parameters
-  ublas::matrix<double> correlation;     // Correlation matrix
-  ublas::matrix<double> marg;            // Marginal distribution for each random variable
-  ublas::matrix<double> mod_correlation; // modified correlation matrix
-  ublas::matrix<double> Lo;              // Chelosky decomposition
-  ublas::matrix<double> inv_Lo;          // inverse of matrix Lo
-};
-
-//------------------------------------------------------------------------------
-// Construct data structure <Reliability_Options> to define calculation options
-//
-
-struct Reliability_Options {
-  int echo_flag;            // Program interactive mode, 0: silent mode
-  // FORM analysis options
-  int istep_max;            // Maximum number of interations allowed in the search algorithm
-  double e1;                // Tolerance on how close design point is to limit-state surface
-  double e2;                // Tolerance on how accurately the gradient points towards the origin
-  double step_code;         // 0: step size by Armijo rule, otherwise: given value is the step size
-  int Recorded_u;           // 0: u-vector not recorded at all iterations, 1: u-vector recorded at all iterations
-  int Recorded_x;           // 0: x-vector not recorded at all iterations, 1: x-vector recorded at all iterations
-  string grad_G;            // "PSFEM": perturbation based SFEM, "DDM": direct differentiation, 'ADM': automatic differentiation
-};
+#include <ImportProbData.hpp>
+#include <NatafTransformation.hpp>
+#include <LimitStateFunction.hpp>
+#include <Reliability_Input.hpp>
+#include <SORM.hpp>
 
 //------------------------------------------------------------------------------
 // Construct data structure <LSF_Options> to define limit-state function options
@@ -110,814 +109,19 @@ struct LSF_Options {
 
 
 //------------------------------------------------------------------------------
-// To count number of a specific character or a substring in a string;
+// To determine search direction
 //
 
-void str_cnt(char *mstr,char substr,int &cnt) {
-  int j=0;
-  for (int i=0;i<strlen(mstr);i++)
-  {
-    if (*(mstr+i)==substr)
-    {
-      j++;
-    }
-  }
-  cnt=j;
-}
-
-//------------------------------------------------------------------------------
-// To determine the position of a specific charater in a string
-//
-
-void str_pos(char *mstr,char substr,int *pos) {
-  int j=1;
-  for (int i=0;i<strlen(mstr);i++) {
-    if (*(mstr+i)==substr) {
-      //cout<<*(mstr+i)<<'\t'<<i<<'\n';
-      pos[j]=i;
-      j++;
-    }
-  }
-}
-
-
-//------------------------------------------------------------------------------
-// To transform x from original space to standard normal distribution probability
-// space using Nataf transformation
-//
-
-double x_to_u(ublas::vector<double> x,
-              Stochastic_Model probdata,
-              ublas::vector<double> &u) {
-  int nvars;
-  nvars = probdata.nvars;
-  ublas::vector<double> z(nvars);
-  u.resize(nvars);
+void search_dir(double val_G,
+                ublas::vector<double> grad_G,
+                ublas::vector<double> u,
+                ublas::vector<double> &u_dir) {
+  // Determin direction cosine vector
+  boost::numeric::ublas::vector<double> alpha;
+  alpha = -grad_G/norm_2(grad_G);
   
-  using boost::math::normal_distribution;
-  normal_distribution<> snorm(0,1);
-  double imean, istd, iloc, ishape, iscale, ilambda, ilower, iupper;
-  int dist_type;
-  
-  for (int i=0;i<nvars;i++) {
-    dist_type = probdata.marg(i,0);
-    switch (dist_type) { // distribution type
-      case 1: {
-        /*
-         * distribution type 1: Normal
-         *           parameter: location - mean
-         *                      scale    - standard deviation
-         */
-        imean = probdata.marg(i,4);
-        istd  = probdata.marg(i,5);
-        normal_distribution<> mynorm(imean,istd);
-        z(i) = quantile(snorm,cdf(mynorm,x(i)));
-        break;
-      }
-      case 2: {
-        /*
-         * distribution type 2: lognormal
-         *           parameter: location - mean of logrithm rv
-         *                      scale    - std of logrithm rv
-         */
-        using boost::math::lognormal_distribution;
-        iloc   = probdata.marg(i,4);
-        iscale = probdata.marg(i,5);
-        lognormal_distribution<> my_logn(iloc,iscale);
-        z(i) = quantile(snorm,cdf(my_logn,x(i)));
-        break;
-      }
-      case 3: {
-        /*
-         * distribution type 3: exponential
-         *           parameter: lambda = 1/mu
-         */
-        using boost::math::exponential_distribution;
-        ilambda = 1/probdata.marg(i,1);
-        exponential_distribution<> my_exp(ilambda);
-        z(i) = quantile(snorm,cdf(my_exp,x(i)));
-        break;
-      }
-      case 4: {
-        /*
-         * distribution type 4: Extreme value distribution - I (Gumbel)
-         *           parameter: shape
-         *                      location
-         *                      scale
-         */
-        using boost::math::extreme_value_distribution;
-        iloc   = probdata.marg(i,4);
-        iscale = probdata.marg(i,5);
-        extreme_value_distribution<> my_EVI(iloc,iscale);
-        z(i) = quantile(snorm,cdf(my_EVI,x(i)));
-        break;
-      }
-      case 5: {
-        /*
-         * distribution type 5: Extreme value distribution - III (Weibull)
-         *           parameter: shape
-         *                      scale
-         */
-        using boost::math::weibull_distribution;
-        iloc   = probdata.marg(i,4);
-        iscale = probdata.marg(i,5);
-        weibull_distribution<> my_wbl(iloc,iscale);
-        z(i) = quantile(snorm,cdf(my_wbl,x(i)));
-        break;
-      }
-      case 6: {
-        /*
-         * distribution type 6: Uniform distribution
-         *           parameter: shape
-         *                      scale
-         */
-        using boost::math::uniform_distribution;
-        ilower = probdata.marg(i,4);
-        iupper = probdata.marg(i,5);
-        uniform_distribution<> my_unif(ilower,iupper);
-        z(i) = quantile(snorm,cdf(my_unif,x(i)));
-        break;
-      }
-      case 7: {
-        /*
-         * distribution type 7: Gamma distribution
-         *           parameter: shape
-         *                      scale
-         */
-        using boost::math::gamma_distribution;
-        ishape = probdata.marg(i,4);
-        iscale = probdata.marg(i,5);
-        gamma_distribution<> my_gamma(ishape,iscale);
-        z(i) = quantile(snorm,cdf(my_gamma,x(i)));
-        break;
-      }
-      default:
-        cout<<"The distribution type index should be value between 0 and 7!"<<endl;
-        break;
-    }
-
-    cout<<i<<"th variable \t"<<z(i)<<endl;
-  }
-
-  u = prod(probdata.inv_Lo,z);
-  
-}
-
-
-//------------------------------------------------------------------------------
-// To transform u from standard normal distribution probability
-// space to original space to obtain x using Nataf transformation
-//
-
-double u_to_x(ublas::vector<double> u,
-              Stochastic_Model probdata,
-              ublas::vector<double> &x,
-              double &detj) {
-  int nvars;
-  nvars = probdata.nvars;
-  x.resize(nvars);
-  ublas::vector<double> z(nvars);
-  z = prod(probdata.Lo,u);
-  
-  using boost::math::normal_distribution;
-  normal_distribution<> snorm(0,1);
-  double imean, istd, iloc, ishape, iscale, ilambda, ilower, iupper;
-  int dist_type;
-  detj = 1.0;
-  
-  for (int i=0;i<nvars;i++) {
-    dist_type = probdata.marg(i,0);
-    switch (dist_type) { // distribution type
-      case 1: {
-        /*
-         * distribution type 1: Normal
-         *           parameter: location - mean
-         *                      scale    - standard deviation
-         */
-        imean = probdata.marg(i,4);
-        istd  = probdata.marg(i,5);
-        normal_distribution<> mynorm(imean,istd);
-        x(i) = quantile(mynorm,cdf(snorm,z(i)));
-        detj = detj*pdf(mynorm,x(i))/pdf(snorm,u(i));
-        break;
-      }
-      case 2: {
-        /*
-         * distribution type 2: lognormal
-         *           parameter: location - mean of logrithm rv
-         *                      scale    - std of logrithm rv
-         */
-        using boost::math::lognormal_distribution;
-        iloc   = probdata.marg(i,4);
-        iscale = probdata.marg(i,5);
-        lognormal_distribution<> my_logn(iloc,iscale);
-        x(i) = quantile(my_logn,cdf(snorm,z(i)));
-        detj = detj*pdf(my_logn,x(i))/pdf(snorm,u(i));
-        break;
-      }
-      case 3: {
-        /*
-         * distribution type 3: exponential
-         *           parameter: lambda = 1/mu
-         */
-        using boost::math::exponential_distribution;
-        ilambda = 1/probdata.marg(i,1);
-        exponential_distribution<> my_exp(ilambda);
-        x(i) = quantile(my_exp,cdf(snorm,z(i)));
-        detj = detj*pdf(my_exp,x(i))/pdf(snorm,u(i));
-        break;
-      }
-      case 4: {
-        /*
-         * distribution type 4: Extreme value distribution - I (Gumbel)
-         *           parameter: shape
-         *                      location
-         *                      scale
-         */
-        using boost::math::extreme_value_distribution;
-        iloc   = probdata.marg(i,4);
-        iscale = probdata.marg(i,5);
-        extreme_value_distribution<> my_EVI(iloc,iscale);
-        x(i) = quantile(my_EVI,cdf(snorm,z(i)));
-        detj = detj*pdf(my_EVI,x(i))/pdf(snorm,u(i));
-        break;
-      }
-      case 5: {
-        /*
-         * distribution type 5: Extreme value distribution - III (Weibull)
-         *           parameter: shape
-         *                      scale
-         */
-        using boost::math::weibull_distribution;
-        iloc   = probdata.marg(i,4);
-        iscale = probdata.marg(i,5);
-        weibull_distribution<> my_wbl(iloc,iscale);
-        x(i) = quantile(my_wbl,cdf(snorm,z(i)));
-        detj = detj*pdf(my_wbl,x(i))/pdf(snorm,u(i));
-        break;
-      }
-      case 6: {
-        /*
-         * distribution type 6: Uniform distribution
-         *           parameter: shape
-         *                      scale
-         */
-        using boost::math::uniform_distribution;
-        ilower = probdata.marg(i,4);
-        iupper = probdata.marg(i,5);
-        uniform_distribution<> my_unif(ilower,iupper);
-        x(i) = quantile(my_unif,cdf(snorm,z(i)));
-        detj = detj*pdf(my_unif,x(i))/pdf(snorm,u(i));
-        break;
-      }
-      case 7: {
-        /*
-         * distribution type 7: Gamma distribution
-         *           parameter: shape
-         *                      scale
-         */
-        using boost::math::gamma_distribution;
-        ishape = probdata.marg(i,4);
-        iscale = probdata.marg(i,5);
-        gamma_distribution<> my_gamma(ishape,iscale);
-        x(i) = quantile(my_gamma,cdf(snorm,z(i)));
-        detj = detj*pdf(my_gamma,x(i))/pdf(snorm,u(i));
-        break;
-      }
-      default:
-        cout<<"The distribution type index should be value between 0 and 7!"<<endl;
-        break;
-    }
-    
-    cout<<i<<"th variable \t"<<x(i)<<"\t"<<u(i)<<endl;
-  }
-  
-}
-
-//------------------------------------------------------------------------------
-// To compute modified correlation matrix by using Nataf transformation
-//
-
-void modify_correlation_mat(Stochastic_Model &probdata) {
-  /*
-   * [Liu and Der Kiureghian, 1986] provided an empirical formula to calculate
-   *   transformed correlation coefficient.
-   *       R = rho_mod/rho_init
-   *       R = a + b*Vi + c*Vi^2 + d*rho_init + e*rho_init^2 + f*rho_init*Vi
-   *             + g*Vj + k*rho_init*Vj + l*Vi*Vj
-   *       where a, b, c, d, e, f, g, k and l are coefficients, which are given
-   *       below accoording to the reference.
-   *
-   * [Melchers, 1999] Structural reliability analysis and prediction
-   * [Ditlevsen, 2005] Structural reliability methods
-   *
-   */
-  vector<vector<vector<double> > > coef;
-  
-  // set up size for 3D array 'coef'
-  coef.resize(10);
-  for (int i = 0; i < 10; i++) {
-    coef[i].resize(10);
-    for (int j = 0; j < 10; j++) {
-      coef[i][j].resize(10);
-    }
-  }
-  // Initialization the 3D arrayv 'coef' with zeros
-  for (int i = 0; i<10; i++) {
-    for (int j = 0; j<10; j++) {
-      for (int k = 0; k<10; k++) {
-        coef[i][j][k] = 0.0;
-      }
-    }
-  }
-  
-  // Assign values to coef Xj Xi
-  // .1 Case: Xj of Normal and Xi of ?
-  //   .1 Normal to Normal
-  coef[0][0][0] = 1.0;
-  //   .2 Normal to Lognormal
-  coef[0][1][0] = 0.0; // Value will be given by a specific formula
-  //   .3 Normal to Exponential
-  coef[0][2][0] = 1.107;
-  //   .4 Normal to Gumbel
-  coef[0][3][0] = 1.031;
-  //   .5 Normal to Weibull
-  coef[0][4][0] =  1.031;
-  coef[0][4][1] = -0.195;
-  coef[0][4][2] =  0.0328;
-  //   .6 Normal to Uniform
-  coef[0][5][0] = 1.023;
-  
-  // .2 Case: Xj of Lognormal to Xi of ?
-  //   .1 Lognormal to Normal
-  coef[1][0][0] = 0.0; // Value will be given by a specific formula
-  //   .2 Lognormal to Lognormal
-  coef[1][1][0] = 0.0; // Value will be given by a specific formula
-  //   .3 Lognormal to Exponential
-  coef[1][2][0] =  1.098;
-  coef[1][2][1] =  0.019;
-  coef[1][2][2] =  0.0303;
-  coef[1][2][3] =  0.003;
-  coef[1][2][4] =  0.025;
-  coef[1][2][5] = -0.437;
-  //   .4 Lognormal to Gumbel
-  coef[1][3][0] =  1.029;
-  coef[1][3][1] =  0.014;
-  coef[1][3][2] =  0.233;
-  coef[1][3][3] =  0.001;
-  coef[1][3][4] =  0.004;
-  coef[1][3][5] = -0.197;
-  //   .5 Lognormal to Weibull
-  coef[1][4][0] =  1.031;
-  coef[1][4][1] =  0.011;
-  coef[1][4][2] =  0.220;
-  coef[1][4][3] =  0.052;
-  coef[1][4][4] =  0.002;
-  coef[1][4][5] =  0.005;
-  coef[1][4][6] = -0.210;
-  coef[1][4][7] =  0.350;
-  coef[1][4][8] = -0.174;
-  coef[1][4][9] =  0.009;
-  //   .6 Lognormal to Uniform
-  coef[1][5][0] =  1.019;
-  coef[1][5][1] =  0.014;
-  coef[1][5][2] =  0.249;
-  coef[1][5][3] =  0.0;
-  coef[1][5][4] =  0.010;
-  
-  // .3 Case: Xj of Exponential to Xi of ?
-  //   .1 Exponential to Normal
-  coef[2][0][0] = 1.107;
-  //   .1 Exponential to Lognormal
-  coef[2][1][0] =  1.098;
-  coef[2][1][1] =  0.019;
-  coef[2][1][2] =  0.303;
-  coef[2][1][3] =  0.003;
-  coef[2][1][4] =  0.025;
-  coef[2][1][5] = -0.437;
-  //   .2 Exponential to Exponetial
-  coef[2][2][0] =  1.229;
-  coef[2][2][1] =  0.0;
-  coef[2][2][2] =  0.0;
-  coef[2][2][3] = -0.367;
-  coef[2][2][4] =  0.153;
-  //   .3 Exponential to Gumbel
-  coef[2][3][0] =  1.142;
-  coef[2][3][1] =  0.0;
-  coef[2][3][2] =  0.0;
-  coef[2][3][3] = -0.154;
-  coef[2][3][4] =  0.031;
-  //   .4 Exponential to Weibull
-  //      !!! difference exists between Ditlevsen & Melchers
-  //          the values used here follow those given in Ditlevsen's book.
-  coef[2][4][0] =  1.147;
-  coef[2][4][1] = -0.271;
-  coef[2][4][2] =  0.459;
-  coef[2][4][3] =  0.145;
-  coef[2][4][4] =  0.010;
-  coef[2][4][5] = -0.467;
-  //   .5 Exponential to Uniform
-  coef[2][5][0] =  1.133;
-  coef[2][5][1] =  0.0;
-  coef[2][5][2] =  0.0;
-  coef[2][5][3] =  0.0;
-  coef[2][5][4] =  0.029;
-  
-  // .4 Case: Xj of Gumbel to Xi of ?
-  //   .1 Gumbel to Normal
-  coef[3][0][0] =  1.031;
-  //   .2 Gumbel to Lognormal
-  coef[3][1][0] =  1.029;
-  coef[3][1][1] =  0.014;
-  coef[3][1][2] =  0.233;
-  coef[3][1][3] =  0.001;
-  coef[3][1][4] =  0.004;
-  coef[3][1][5] = -0.197;
-  //   .3 Gumbel to Exponential
-  coef[3][2][0] =  1.142;
-  coef[3][2][1] =  0.0;
-  coef[3][2][2] =  0.0;
-  coef[3][2][3] = -0.154;
-  coef[3][2][4] =  0.031;
-  //   .4 Gumbel to Gumbel
-  coef[3][3][0] =  1.064;
-  coef[3][3][1] =  0.0;
-  coef[3][3][2] =  0.0;
-  coef[3][3][3] = -0.069;
-  coef[3][3][4] =  0.005;
-  //   .5 Gumbel to Weibull
-  coef[3][4][0] =  1.064;
-  coef[3][4][1] = -0.210;
-  coef[3][4][2] =  0.356;
-  coef[3][4][3] =  0.065;
-  coef[3][4][4] =  0.003;
-  coef[3][4][5] = -0.211;
-  //   .6 Gumbel to Uniform
-  coef[3][5][0] =  1.055;
-  coef[3][5][1] =  0.0;
-  coef[3][5][2] =  0.0;
-  coef[3][5][3] =  0.0;
-  coef[3][5][4] =  0.015;
-  
-  // .5 Case: Xj of Weibull to Xi of ?
-  //   .1 Weibull to Normal
-  coef[4][0][0] =  1.031;
-  coef[4][0][1] = -0.195;
-  coef[4][0][2] =  0.328;
-  //   .2 Weibull to Lognormal
-  //      !!! difference exists between Ditlevsen & Melchers
-  //          the values used here follow those given in Ditlevsen's book.
-  coef[4][1][0] =  1.031;
-  coef[4][1][1] =  0.011;
-  coef[4][1][2] =  0.220;
-  coef[4][1][3] =  0.052;
-  coef[4][1][4] =  0.002;
-  coef[4][1][5] =  0.005;
-  coef[4][1][6] = -0.210;
-  coef[4][1][7] =  0.350;
-  coef[4][1][8] = -0.174;
-  coef[4][1][9] =  0.009;
-  //   .3 Weibull to Exponential
-  //      !!! difference exists between Ditlevsen & Melchers
-  //          the values used here follow those given in Ditlevsen's book.
-  coef[4][2][0] =  1.147;
-  coef[4][2][1] = -0.271;
-  coef[4][2][2] =  0.459;
-  coef[4][2][3] =  0.145;
-  coef[4][2][4] =  0.010;
-  coef[4][2][5] = -0.467;
-  //   .4 Weibull to Gumbel
-  coef[4][3][0] =  1.064;
-  coef[4][3][1] = -0.210;
-  coef[4][3][2] =  0.356;
-  coef[4][3][3] =  0.065;
-  coef[4][3][4] =  0.003;
-  coef[4][3][5] = -0.211;
-  //   .5 Weibull to Weibull
-  coef[4][4][0] =  1.063;
-  coef[4][4][1] = -0.200;
-  coef[4][4][2] =  0.337;
-  coef[4][4][3] = -0.004;
-  coef[4][4][4] = -0.001;
-  coef[4][4][5] =  0.007;
-  coef[4][4][6] = -0.200;
-  coef[4][4][7] =  0.337;
-  coef[4][4][8] =  0.007;
-  coef[4][4][9] = -0.007;
-  //   .6 Weibull to Uniform
-  coef[4][5][0] =  1.061;
-  coef[4][5][1] = -0.237;
-  coef[4][5][2] =  0.379;
-  coef[4][5][3] =  0.0;
-  coef[4][5][4] = -0.005;
-  
-  // .6 Case: Xj of Uniform to Xi of ?
-  //   .1 Uniform to Normal
-  coef[5][0][0] =  1.023;
-  //   .2 Uniform to Lognormal
-  coef[5][1][0] =  1.019;
-  coef[5][1][1] =  0.014;
-  coef[5][1][2] =  0.249;
-  coef[5][1][3] =  0.0;
-  coef[5][1][4] =  0.01;
-  //   .3 Uniform to Exponential
-  coef[5][2][0] =  1.133;
-  coef[5][2][1] =  0.0;
-  coef[5][2][2] =  0.0;
-  coef[5][2][3] =  0.0;
-  coef[5][2][4] =  0.029;
-  //   .4 Uniform to Gumbel
-  coef[5][3][0] =  1.055;
-  coef[5][3][1] =  0.0;
-  coef[5][3][2] =  0.0;
-  coef[5][3][3] =  0.0;
-  coef[5][3][4] =  0.015;
-  //   .5 Uniform to Weibull
-  coef[5][4][0] =  1.061;
-  coef[5][4][1] = -0.237;
-  coef[5][4][2] =  0.379;
-  coef[5][4][3] =  0.0;
-  coef[5][4][4] = -0.005;
-  //   .6 Uniform to Uniform
-  coef[5][5][0] =  1.047;
-  coef[5][5][1] =  0.0;
-  coef[5][5][2] =  0.0;
-  coef[5][5][3] =  0.0;
-  coef[5][5][4] = -0.047;
-  
-  // Define the size of the modified correlation matrix
-  probdata.mod_correlation.resize(probdata.nvars,probdata.nvars);
-  
-  int    idisttype, jdisttype; // distribution type index for ith & jth variable
-  double R;                    // ratio of correlation coefficient
-  double Vi, Vj;               // coefficient of variation of ith & jth variables
-  double rho_ji;               // correlation coefficient of jth & ith variables
-  double rcoef[10];            // coefficients for R value calculation function
-  
-  for (int ivar = 0;ivar<probdata.nvars;ivar++) {
-    idisttype = probdata.marg(ivar,0);
-    
-    for (int jvar = ivar+1; jvar<probdata.nvars; jvar++) {
-      jdisttype = probdata.marg(jvar,0);
-      //cout<<"ith variable = "<<idisttype<<"\t jth variable = "<<jdisttype<<endl;
-      
-      if ((idisttype == 1) && (jdisttype == 1)) {
-        // cout<<"Both are normal distribution"<<endl;
-        probdata.mod_correlation(jvar,ivar) = probdata.correlation(jvar,ivar);
-        
-      }
-      else if ((idisttype == 1) && (jdisttype == 2)) {
-        // cout<<"Normal and Lognormal"<<endl;
-        Vj = probdata.marg(jvar,2);
-        R = Vj/sqrt(log(1 + Vj*Vj));
-        probdata.mod_correlation(jvar,ivar) = R * probdata.correlation(jvar,ivar);
-        
-      }
-      else if ((idisttype == 2) && (jdisttype == 1)) {
-        // cout<<"Lognormal and Normal"<<endl;
-        Vj = probdata.marg(jvar,2);
-        R = Vj/sqrt(log(1 + Vj*Vj));
-        probdata.mod_correlation(jvar,ivar) = R * probdata.correlation(jvar,ivar);
-        
-      }
-      else if ((idisttype == 2) && (jdisttype == 2)) {
-        // cout<<"Lognormal and Lognormal"<<endl;
-        Vi = probdata.marg(ivar,2);
-        Vj = probdata.marg(jvar,2);
-        rho_ji = probdata.correlation(jvar,ivar);
-        R = log(1 + rho_ji * Vi * Vj) / (sqrt(log(1 + Vj * Vj) * log(1 + Vi * Vi)));
-        probdata.mod_correlation(jvar,ivar) = R * probdata.correlation(jvar,ivar);
-        
-      }
-      else {
-        // cout<<"Other cases"<<endl;
-        
-        // Get coefficients from coefficient matrix
-        for (int k = 0; k<10; k++) {
-          rcoef[k] = coef[jvar][ivar][k];
-        }
-        //
-        Vi = probdata.marg(ivar,2);
-        Vj = probdata.marg(jvar,2);
-        rho_ji = probdata.correlation(jvar,ivar);
-        // calculate ratio R
-        R =   rcoef[0]                                        // 1
-        + rcoef[6] * Vi + rcoef[7] * Vi * Vi              // Vi & Vi*Vi
-        + rcoef[1] * Vj + rcoef[2] * Vj * Vj              // Vj & Vj*Vj
-        + rcoef[9] * Vi * Vj                              // Vi*Vj
-        + rcoef[3] * rho_ji + rcoef[4] * rho_ji * rho_ji  // rho & rho*rho
-        + rcoef[8] * rho_ji * Vi + rcoef[5] * rho_ji * Vj;// rho*Vi & rho*Vj
-        probdata.mod_correlation(jvar,ivar) = R * probdata.correlation(jvar,ivar);
-        
-      }
-      //cout<<R<<'\t'<<probdata.mod_correlation(jvar,ivar)<<endl;
-    }
-  }
-  
-  // Fill the rest elements of the modified correlation matrix
-  for (int irow = 0; irow<probdata.nvars; irow++) {
-    for (int jcol = 0; jcol<probdata.nvars; jcol++) {
-      if (jcol == irow) {
-        probdata.mod_correlation(jcol,irow) = 1.0;
-      }
-      if ( jcol > irow ) {
-        probdata.mod_correlation(irow,jcol) = probdata.mod_correlation(jcol,irow);
-      }
-      //cout<<probdata.correlation(irow,jcol)<<'\t';
-      //cout<<probdata.mod_correlation(irow,jcol)<<'\t';
-    }
-    //cout<<endl;
-  }
-}
-
-//------------------------------------------------------------------------------
-// d2x/dudu = - u*(dx/du) - (df(x)/dx)/f*(dx/du)^2
-// dx/du = f/phi
-//
-
-void d2x_dudu(ublas::vector<double> x,
-              ublas::vector<double> u,
-              Stochastic_Model probdata,
-              ublas::vector<double> &dxdz,
-              ublas::matrix<double> &ddxddu) {
-  int nvars;
-  nvars = probdata.nvars;
-  
-  double imean, istd;
-  double iloc, ishape, iscale;
-  double ilambda;
-  double ilower, iupper;
-  
-  int dist_type;
-  
-  ddxddu.resize(nvars,nvars); ddxddu.clear();
-  dxdz.resize(nvars); dxdz.clear();
-  
-  ublas::vector<double> z; // y = Az
-  z = prod(probdata.Lo, u);
-  
-  using boost::math::normal_distribution;
-  normal_distribution<> snorm(0,1);
-  
-  for (int i=0; i<nvars; i++) {
-    dist_type = probdata.marg(i,0);
-    switch (dist_type) {
-      case 1: { // Normal distribution
-        imean = probdata.marg(i,4);
-        istd  = probdata.marg(i,5);
-        normal_distribution<> mynorm(imean,istd);
-        dxdz(i) = pdf(snorm,z(i))/pdf(mynorm,x(i));
-        ddxddu(i,i) = - z(i)*dxdz(i) + pow(dxdz(i),2)*(x(i)-imean)/pow(istd,2);
-        break;
-      }
-      case 2: { // Lognormal distribution
-        using boost::math::lognormal_distribution;
-        iloc   = probdata.marg(i,4);
-        iscale = probdata.marg(i,5);
-        lognormal_distribution<> my_logn(iloc,iscale);
-        dxdz(i) = pdf(snorm,z(i))/pdf(my_logn,x(i));
-        ddxddu(i,i) = - z(i)*dxdz(i) + pow(dxdz(i),2)*(pow(iscale,2) + log(x(i))-imean)/pow(iscale,2)/x(i);
-        break;
-      }
-      case 3: { // Exponential distribution
-        using boost::math::exponential_distribution;
-        ilambda = 1/probdata.marg(i,1);
-        exponential_distribution<> my_exp(ilambda);
-        dxdz(i) = pdf(snorm,z(i))/pdf(my_exp,x(i));
-        ddxddu(i,i) = - z(i)*dxdz(i) + ilambda*pow(dxdz(i),2);
-        break;
-      }
-      case 4: { // Gumbel distribution
-        using boost::math::extreme_value_distribution;
-        iloc   = probdata.marg(i,4);
-        iscale = probdata.marg(i,5);
-        extreme_value_distribution<> my_EVI(iloc,iscale);
-        dxdz(i) = pdf(snorm,z(i))/pdf(my_EVI,x(i));
-        ddxddu(i,i) = - z(i)*dxdz(i) - (exp(-(x(i)-iloc)/iscale) - 1)/iscale*pow(dxdz(i),2);
-        break;
-      }
-      case 5: { // Weibull distribution
-        using boost::math::weibull_distribution;
-        ishape = probdata.marg(i,4);
-        iscale = probdata.marg(i,5);
-        weibull_distribution<> my_wbl(ishape,iscale);
-        dxdz(i) = pdf(snorm,z(i))/pdf(my_wbl,x(i));
-        ddxddu(i,i) = - z(i)*dxdz(i) -((ishape -1)/x(i) - ishape*pow(x(i)/iscale,ishape-1)/iscale)*pow(dxdz(i),2);
-        break;
-      }
-      case 6: { // Uniform distribution
-        using boost::math::uniform_distribution;
-        ilower = probdata.marg(i,4);
-        iupper = probdata.marg(i,5);
-        uniform_distribution<> my_unif(ilower,iupper);
-        dxdz(i) = pdf(snorm,z(i))/pdf(my_unif,x(i));
-        ddxddu(i,i) = - z(i)*dxdz(i);
-        break;
-      }
-      case 7: { // Gamma distribution
-        using boost::math::gamma_distribution;
-        ishape = probdata.marg(i,4);
-        iscale = probdata.marg(i,5);
-        gamma_distribution<> my_gamma(ishape,iscale);
-        dxdz(i) = pdf(snorm,z(i))/pdf(my_gamma,x(i));
-        ddxddu(i,i) = - z(i)*dxdz(i) - (1/x(i) - 1/iscale)*pow(dxdz(i),2);
-        break;
-      }
-      default:
-        break;
-    }
-  }
-  
-}
-
-//------------------------------------------------------------------------------
-// To compute Jacobian
-//
-
-void Jacobian_u_x(ublas::vector<double> x,
-                  ublas::vector<double> u,
-                  Stochastic_Model probdata,
-                  ublas::matrix<double> &dudx) {
-  int nvars;
-  nvars = probdata.nvars;
-  double imean, istd, iloc, ishape, iscale, ilambda, ilower, iupper;
-  int dist_type;
-  
-  ublas::vector<double> z;
-  z = prod(probdata.Lo, u);
-  //z = u;
-  dudx.resize(nvars,nvars);
-  dudx.clear();
-  
-  ublas::matrix<double> dzdx(nvars,nvars);
-  dzdx.clear();
-  
-  using boost::math::normal_distribution;
-  normal_distribution<> snorm(0,1);
-  
-  for (int i=0; i<nvars; i++) {
-    dist_type = probdata.marg(i,0);
-    switch (dist_type) {
-      case 1: { // Normal distribution
-        imean = probdata.marg(i,4);
-        istd  = probdata.marg(i,5);
-        normal_distribution<> mynorm(imean,istd);
-        dzdx(i, i) = pdf(mynorm,x(i))/pdf(snorm,z(i));
-        break;
-      }
-      case 2: { // Lognormal distribution
-        using boost::math::lognormal_distribution;
-        iloc   = probdata.marg(i,4);
-        iscale = probdata.marg(i,5);
-        lognormal_distribution<> my_logn(iloc,iscale);
-        dzdx(i, i) = pdf(my_logn,x(i))/pdf(snorm,z(i));
-        break;
-      }
-      case 3: { // Exponential distribution
-        using boost::math::exponential_distribution;
-        ilambda = 1/probdata.marg(i,1);
-        exponential_distribution<> my_exp(ilambda);
-        dzdx(i, i) = pdf(my_exp,x(i))/pdf(snorm,z(i));
-        break;
-      }
-      case 4: { // Gumbel distribution
-        using boost::math::extreme_value_distribution;
-        iloc   = probdata.marg(i,4);
-        iscale = probdata.marg(i,5);
-        extreme_value_distribution<> my_EVI(iloc,iscale);
-        dzdx(i, i) = pdf(my_EVI,x(i))/pdf(snorm,z(i));
-        break;
-      }
-      case 5: { // Weibull distribution
-        using boost::math::weibull_distribution;
-        iloc   = probdata.marg(i,4);
-        iscale = probdata.marg(i,5);
-        weibull_distribution<> my_wbl(iloc,iscale);
-        dzdx(i, i) = pdf(my_wbl,x(i))/pdf(snorm,z(i));
-        break;
-      }
-      case 6: { // Uniform distribution
-        using boost::math::uniform_distribution;
-        ilower = probdata.marg(i,4);
-        iupper = probdata.marg(i,5);
-        uniform_distribution<> my_unif(ilower,iupper);
-        dzdx(i, i) = pdf(my_unif,x(i))/pdf(snorm,z(i));
-        break;
-      }
-      case 7: { // Gamma distribution
-        using boost::math::gamma_distribution;
-        ishape = probdata.marg(i,4);
-        iscale = probdata.marg(i,5);
-        gamma_distribution<> my_gamma(ishape,iscale);
-        dzdx(i, i) = pdf(my_gamma,x(i))/pdf(snorm,z(i));
-        break;
-      }
-        
-      default:
-        break;
-    }
-  }
-  dudx = prod(probdata.inv_Lo, dzdx);
+  // Compute direction
+  u_dir = ((val_G/norm_2(grad_G)) + inner_prod(alpha, u))*alpha - u;
 }
 
 //------------------------------------------------------------------------------
@@ -941,7 +145,7 @@ void gfun(Stochastic_Model probdata,
    *           P = applied load, denoted as x(2)
    */
   int nvars;
-  nvars = probdata.nvars;
+  nvars = probdata.num_vars;
   grad_lsf.resize(nvars); grad_lsf.clear();
   Hess_lsf.resize(nvars,nvars); Hess_lsf.clear();
   
@@ -991,22 +195,22 @@ void gfun(Stochastic_Model probdata,
   //
   // ================================
   // Evaluate the limit state function
-  val_lsf = pow(x(0),4) + 2*pow(x(1),4) - 20;
-  
-  // Evaluate the 1st-order partial derivatives of the LSF w.r.t. basic variables
-  // w.r.t. the 1st random variable
-  grad_lsf(0) = 4*pow(x(0),3);
-  // w.r.t. the 2nd random variable
-  grad_lsf(1) = 8*pow(x(1),3);
-  
-  // Evaluate the 2nd-order partial derivatives of the LSF w.r.t. basic variables
-  // w.r.t. the 1st random variable
-  Hess_lsf(0,0) = 12*pow(x(0),2);
-  // w.r.t. the 2nd random variable
-  Hess_lsf(1,1) = 24*pow(x(1),2);
+//  val_lsf = pow(x(0),4) + 2*pow(x(1),4) - 20;
+//  
+//  // Evaluate the 1st-order partial derivatives of the LSF w.r.t. basic variables
+//  // w.r.t. the 1st random variable
+//  grad_lsf(0) = 4*pow(x(0),3);
+//  // w.r.t. the 2nd random variable
+//  grad_lsf(1) = 8*pow(x(1),3);
+//  
+//  // Evaluate the 2nd-order partial derivatives of the LSF w.r.t. basic variables
+//  // w.r.t. the 1st random variable
+//  Hess_lsf(0,0) = 12*pow(x(0),2);
+//  // w.r.t. the 2nd random variable
+//  Hess_lsf(1,1) = 24*pow(x(1),2);
   
 
-  /*
+  /**/
   // ================================
   //
   // Example 4
@@ -1040,186 +244,95 @@ void gfun(Stochastic_Model probdata,
   Hess_lsf(2,2) = 0;
   
   Hess_lsf = a*Hess_lsf;
-  */
+  /**/
   cout<<"\n The Hessian matrix: "<<Hess_lsf<<endl;
   
 }
 
-//------------------------------------------------------------------------------
-// To determine search direction
-//
 
-void search_dir(double val_G,
-                ublas::vector<double> grad_G,
-                ublas::vector<double> u,
-                ublas::vector<double> &u_dir) {
-  // Determin direction cosine vector
-  boost::numeric::ublas::vector<double> alpha;
-  alpha = -grad_G/norm_2(grad_G);
-  
-  // Compute direction
-  u_dir = ((val_G/norm_2(grad_G)) + inner_prod(alpha, u))*alpha - u;
-  
-}
+ErrorCode rval;
+PetscErrorCode ierr;
 
-//------------------------------------------------------------------------------
-// Conduct Gram-Schmidt QR factorization of a matrix
-//// 1. classic
-//void gschmidt(ublas::matrix<double> A, ublas::matrix<double> &Q) {
-//  
-//}
+static char help[] = "...\n\n";
 
-// 2. modified
-//
-
-void gramschmidt(ublas::matrix<double> A, ublas::matrix<double> &Q) {
-  
-  int m, n;
-  m = A.size1(); // the number of rows
-  n = A.size2(); // the number of columns
-  
-  //ublas::zero_matrix<double> R(m, n);
-  ublas::matrix<double> R(m, n);
-  for (int i=0; i<m; i++) {
-    for (int j=0; j<n; j++) {
-      R(i,j) = 0;
-    }
-  }
-  
-  Q = A;
-  
-  cout<<"Size row: "<<m<<"\t Size column: "<<n<<endl;
-  
-  ublas::vector<double> irow(n);
-  ublas::matrix<double> TQ(n,m);
-  for (int i=0; i<m; i++) {
-    TQ = trans(Q);
-    // Get i-th column
-    ublas::matrix_row<ublas::matrix<double> > irow_Q(TQ, i);
-    // Calculate normal of i-th column
-    R(i, i) = norm_2(irow_Q);
-    // Normalized the i-th column
-    irow_Q = irow_Q/R(i,i);
-    for (int j=0; j<n; j++) {
-      Q(j, i) = irow_Q(j);
-    }
-    // --
-    for (int k = i+1; k<n; k++) {
-      ublas::matrix_row<ublas::matrix<double> > krow_Q(TQ, k);
-      R(i,k) = inner_prod(irow_Q,krow_Q);
-      krow_Q = krow_Q - R(i,k)*irow_Q;
-      for (int j=0; j<n; j++) {
-        Q(j,k) = krow_Q(j);
-      }
-    }
-  }
-}
-
-void fliplr(ublas::matrix<double> &A) {
-  int nrow, ncol;
-  nrow = A.size1(); ncol = A.size2();
-  ublas::matrix<double> B;
-  B.resize(nrow,ncol); B.clear();
-  for (int i=0; i<nrow; i++) {
-    for (int j=0; j<ncol; j++) {
-      B(i,j) = A(i,ncol-j-1);
-    }
-  }
-  A.clear();
-  A = B;
-}
-
-
-//------------------------------------------------------------------------------
-// Construct an orthogonal matrix to rotate vector 
-//
-
-void orthonormal_matrix(ublas::vector<double> alpha, ublas::matrix<double> &Q) {
-  
-  double nvars;
-  
-  nvars = alpha.size();
-  ublas::identity_matrix<double> A1(nvars);
-  ublas::matrix<double> A(nvars,nvars);
-  A = A1; fliplr(A);
-  for (int i=0; i<nvars; i++) {
-    A(i,0) = alpha(i);
-  }
-  
-  // conduct Gram-Schmidt orthonormalization
-  gramschmidt(A,Q);
-  fliplr(Q);
-  Q = trans(Q);
-  cout<<"\n"<<"Orthogonal matrix: "<<Q<<endl;
-  
-}
-
-
-
-//------------------------------------------------------------------------------
-// Construct Hessian matrix at U-space or standard normal space
-//
-
-void Hessian_Matrix(ublas::vector<double> dxdu,
-             ublas::vector<double> grad_g,
-             ublas::matrix<double> Hess_g,
-             ublas::matrix<double> &Hess_G,
-             ublas::matrix<double> Hess_x) {
-  //
-  // ddG/dudu = ddg/dxdx*(dx/du)^2 + dg/dx*(ddx/dudu)
-  //
-  int nvars;
-  nvars = dxdu.size();
-  ublas::matrix<double> mat_grad_g;
-  ublas::matrix<double> mat_dxdu;
-  
-  mat_grad_g.resize(nvars,nvars); mat_grad_g.clear();
-  mat_dxdu.resize(nvars,nvars); mat_dxdu.clear();
-  
-  
-  for (int i=0; i<nvars; i++) {
-    mat_grad_g(i,i) = grad_g(i);
-    mat_dxdu(i,i) = dxdu(i);
-  }
-  
-  Hess_G.resize(nvars,nvars); Hess_G.clear();
-  ublas::matrix<double> temp_Hess_G;
-  temp_Hess_G = prod(Hess_g,mat_dxdu);cout<<"\nHess x: "<<Hess_x<<endl;
-  Hess_G = prod(mat_dxdu,temp_Hess_G) + prod(mat_grad_g, Hess_x);
-}
-
-
-/*******************************************************************************
- *                                                                             *
- *             MAIN CODE FOR STRUCTURAL RELIABILITY ANLYSIS                    *
- *                                                                             *
-/*******************************************************************************/
-
-
-
-int main(int argc, char * argv[]) {
+int main(int argc, char *argv[]) {
   
   clock_t start_time, finish_time;
   double total_time;
   start_time = clock();
+    
+  //============================================================================
+  //
+  //  A. Micro (RVE) Problem
+  //
+  //============================================================================
   
-  ErrorCode rval;
-  PetscErrorCode ierr;
   PetscInitialize(&argc,&argv,(char *)0,help);
-  PetscBool flg = PETSC_TRUE;
-  const char *option;
-  PetscInt order;
   
-//  mt19937 rng;                         // using pseudo-random generator: mt19937
-//  double myrnd;
-//  normal_distribution<> normdist(0,1);        // setting normal distribution rnd
-//  variate_generator <mt19937&,normal_distribution<> > normrnd(rng,normdist);
-//  // combination of distribution and generator
-//  myrnd = normrnd(); cout<<myrnd<<endl;
-//  double value;
-//  value = ltqnorm(myrnd);
-//  cout<<value<<endl;
+  int rank;
+  MPI_Comm_rank(PETSC_COMM_WORLD,&rank);
   
+  moab::Core mb_instance_RVE;
+  Interface& moab_RVE = mb_instance_RVE;
+  
+  
+  // ===========================================================================
+  //
+  //  A.I. READ MESH DATA AND FEA COMPUTATION PARAMETERS FROM FILE
+  //
+  // ===========================================================================
+  
+  // ==
+  Stochastic_Model probdata;
+  
+  // Import data from textile file
+  ImportProbData readprobdata;
+  
+  ierr = readprobdata.ProbdataFileIn(); CHKERRQ(ierr);
+  probdata.marg         = readprobdata.MargProb;
+  probdata.correlation  = readprobdata.CorrMat;
+  probdata.num_vars     = readprobdata.NumVars;
+  probdata.MatStrength  = readprobdata.MatStrength;
+  probdata.NameVars     = readprobdata.NameVars;
+  probdata.PlyAngle     = readprobdata.PlyAngle;
+  probdata.ExaminedPly  = readprobdata.ExaminedLayer;
+  probdata.AnalysisType = readprobdata.AnalysisType;
+  probdata.num_mat_vars = readprobdata.NumMatVars;
+  probdata.NameMatVars  = readprobdata.NameMatVars;
+  
+  /*****************************************************************************
+   *
+   * Read parameters from line command
+   *
+   ****************************************************************************/
+  
+//  PetscBool flg = PETSC_TRUE;
+//  char mesh_file_name[255];
+//  
+//  ierr = PetscOptionsGetString(PETSC_NULL,"-my_file_RVE",mesh_file_name,255,&flg); CHKERRQ(ierr);
+//  if(flg != PETSC_TRUE) {
+//    SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_file_RVE (MESH FILE NEEDED)");
+//  }
+//  
+//  PetscInt order_RVE;
+//  ierr = PetscOptionsGetInt(PETSC_NULL,"-my_order_RVE",&order_RVE,&flg); CHKERRQ(ierr);
+//  if(flg != PETSC_TRUE) {
+//    order_RVE = 1;
+//  }
+  
+ 
+  // ===========================================================================
+  //
+  //  C. RELIABILITY ANLYSIS
+  //
+  // ===========================================================================
+  
+  cout<<"\n\n";
+  cout<<"///////////////////////////////////////////////////////////////////\n";
+  cout<<"//                                                               //\n  ";
+  cout<<"//           Reliability calculation starts from here!           //\n";
+  cout<<"//                                                               //\n";
+  cout<<"/////////////////////////////////////////////////////////////////\n\n";
   
   //////////////////////////////////////////////////////////////////////////////
   //                                                                          //
@@ -1242,118 +355,55 @@ int main(int argc, char * argv[]) {
    */
   Reliability_Options ReliabOpt;
   
-  ReliabOpt.echo_flag  = 1;       // Program interactive mode, 0: silent mode
-  // FORM analysis options
-  ReliabOpt.istep_max  = 2000;     // Maximum number of interation allowed in the search algorithm
-  ReliabOpt.e1         = 0.001;   // Tolerance on how close design point is to limit-state surface
-  ReliabOpt.e2         = 0.001;   // Tolerance on how accurately the gradient points towards the origin
-  ReliabOpt.step_code  = 0.025;//0.025;   // 0: step size by Armijo rule, otherwise: given value is the step size
-  ReliabOpt.Recorded_u = 1;       // 0: u-vector not recorded at all iterations, 1: u-vector recorded at all iterations
-  ReliabOpt.Recorded_x = 1;       // 0: x-vector not recorded at all iterations, 1: x-vector recorded at all iterations
-  ReliabOpt.grad_G     = "PSFEM"; // "PSFEM": perturbation based SFEM, "DDM": direct differentiation, 'ADM': automatic differentiation
-  
+  ReliabOpt.echo_flag     = 1;       // Program interactive mode, 0: silent mode
+  // For FORM
+  ReliabOpt.istep_max     = 2000;    // Maximum number of interation allowed in the search algorithm
+  ReliabOpt.e1            = 0.001;   // Tolerance on how close design point is to limit-state surface
+  ReliabOpt.e2            = 0.001;   // Tolerance on how accurately the gradient points towards the origin
+  ReliabOpt.step_code     = 0.05;       // 0: step size by Armijo rule, otherwise: given value is the step size
+  ReliabOpt.Recorded_u    = 1;       // 0: u-vector not recorded at all iterations, 1: u-vector recorded at all iterations
+  ReliabOpt.Recorded_x    = 1;       // 0: x-vector not recorded at all iterations, 1: x-vector recorded at all iterations
+  ReliabOpt.Recorded_beta = 1;
+  ReliabOpt.grad_G        = "PSFEM"; // "PSFEM": perturbation, "DDM": direct differentiation, 'ADM': automatic differentiation
   
   int    echo_flag = ReliabOpt.echo_flag;
   double e1        = ReliabOpt.e1;
   double e2        = ReliabOpt.e2;
   int    istep_max = ReliabOpt.istep_max;
   double step_code = ReliabOpt.step_code;
+  int    beta_flag = ReliabOpt.Recorded_beta;
   
   /*
    *  Read inputs' statistical properties from file to insert into <probdata>
    */
-  Stochastic_Model probdata;
+  /*Stochastic_Model probdata;
   
-  ifstream ProbDataFile("//mnt//home//Dropbox//DURACOMP_Cal//009_MoFEM//04_ReliabilityAnalysis//Input_probdata_Example01.txt");
+  // Import data from textile file
+  // ImportProbData readprobdata;
   
-  char   buffer[256];
-  string stringbuf;
-  string substringbuf;
-  string datatype;
-  int    cnt;
-  int    *pos;
-  int    MAR_IX, COR_IX;
-  MAR_IX = 0; COR_IX = 0;
-  while (!ProbDataFile.eof()){
-    ProbDataFile.getline(buffer,100);
-    if (strlen(buffer)>0) {
-      //stringbuf = (string)buffer;
-      //substringbuf = stringbuf.substr(0,1);
-      //cout<<substringbuf<<'\t'<<atof(substringbuf.c_str())<<endl;
-      if (isdigit(buffer[0]) == 0) {
-        stringbuf = (string)buffer;
-        if (stringbuf.compare(0,3,"NUM") == 0) {
-          // cout<<"Next line is data for number of variables"<<endl;
-          datatype = "NUMBER";
-        }
-        else if (stringbuf.compare(0,3,"COR") == 0) {
-          // cout<<"Next line is data for correlation matrix"<<endl;
-          datatype = "CORRELATION";
-        }
-        else if (stringbuf.compare(0,3,"MAR") == 0) {
-          // cout<<"Next line is data for marginal distribution"<<endl;
-          datatype = "MARGINAL";
-        }
-        stringbuf.clear();
-      }
-      else {
-        str_cnt(buffer,',',cnt);
-        pos = new int[cnt];
-        str_pos(buffer,',',pos);
-        stringbuf = (string)buffer;
-        
-        if (datatype.compare(0,3,"NUM") == 0) { // number of variables
-          substringbuf = stringbuf.substr(0,pos[1]);
-          probdata.nvars = atoi(substringbuf.c_str());
-        }
-        else if (datatype.compare(0,3,"MAR") == 0) { // marginal distribution
-          // Declaration
-          if (MAR_IX ==0) {
-            probdata.marg.resize(probdata.nvars,10);
-          }
-          MAR_IX ++;
-          
-          // Insert data into probdata
-          for (int i=1; i<=cnt;i++) {
-            if (i==1) {
-              substringbuf = stringbuf.substr(0,pos[i]);
-            }
-            else {
-              substringbuf = stringbuf.substr(pos[i-1]+1,(pos[i]-pos[i-1])-1);
-            }
-            probdata.marg(MAR_IX-1,i-1) = atof(substringbuf.c_str());
-          }
-        }
-        else if (datatype.compare(0,3,"COR") == 0) { // correlation matrix
-          // Declaration
-          if (COR_IX ==0) {
-            probdata.correlation.resize(probdata.nvars,probdata.nvars);
-          }
-          COR_IX ++;
-          
-          // Insert data into probdata
-          for (int i=1; i<=cnt;i++) {
-            if (i == 1) {
-              substringbuf = stringbuf.substr(0,pos[i]);
-            }
-            else {
-              substringbuf = stringbuf.substr(pos[i-1]+1,(pos[i]-pos[i-1])-1);
-            }
-            probdata.correlation(COR_IX-1, i-1) = atof(substringbuf.c_str());
-          }
-        }
-        // free dynamically allocated memory
-        delete [] pos;
-        // cout<<datatype<<'\t'<<cnt<<'\t'<<buffer<<endl;
-      }
-    }
-  }
+  ierr = readprobdata.ProbdataFileIn(); CHKERRQ(ierr);
+  probdata.marg         = readprobdata.MargProb;
+  probdata.correlation  = readprobdata.CorrMat;
+  probdata.num_vars     = readprobdata.NumVars;
+  probdata.MatStrength  = readprobdata.MatStrength;
+  probdata.NameVars     = readprobdata.NameVars;
+  probdata.PlyAngle     = readprobdata.PlyAngle;
+  probdata.ExaminedPly  = readprobdata.ExaminedLayer;
+  probdata.AnalysisType = readprobdata.AnalysisType;
+  probdata.num_mat_vars = readprobdata.NumMatVars;
+  probdata.NameMatVars  = readprobdata.NameMatVars;
+   */
   
-
-  //cout<<"number of variables: "<<probdata.nvars<<endl;
-  //cout<<"distribution type: "<<probdata.marg[0][0]<<endl;
-  //cout<<"correlation coefficient: "<<probdata.correlation[1][1]<<endl;
-
+  int FailureCriterion; // 1: Tsai-Wu, 2: Tsai-Hill
+  string NameOfFailureCriterion;
+  FailureCriterion = readprobdata.FailureCriterion;
+  
+  step_code = readprobdata.SearchStep;
+  cout<<"Search step: "<<step_code<<endl;
+  
+  string var_name;
+  
+  int PSFE_order = 1;
   
   //////////////////////////////////////////////////////////////////////////////
   //                                                                          //
@@ -1362,27 +412,28 @@ int main(int argc, char * argv[]) {
   //                y = norminv(F(x))                                         //
   //                                                                          //
   //////////////////////////////////////////////////////////////////////////////
-  
-  modify_correlation_mat(probdata);
-  
+  NatafTransformation my_nataf_transformation;
+  ierr = my_nataf_transformation.ModCorrMat_Empirical(probdata.num_vars,
+                                                      probdata.marg,
+                                                      probdata.correlation,
+                                                      probdata.mod_correlation); CHKERRQ(ierr);
+
   /*
    * Perform Cholesky decomposition for the modified correlation matrix
    *    A = LL'
    */
-  ublas::triangular_matrix<double, ublas::lower> Lmat(probdata.nvars,probdata.nvars);
+  ublas::triangular_matrix<double, ublas::lower> Lmat(probdata.num_vars,probdata.num_vars);
   cholesky_decompose(probdata.mod_correlation,Lmat);
-  probdata.Lo.resize(probdata.nvars,probdata.nvars);
+  probdata.Lo.resize(probdata.num_vars,probdata.num_vars);
   probdata.Lo = Lmat;
   
   //cout<<"Cholesky decomposed matrix: "<<Lmat<<endl;
   
-  
   // Compute the inverse of Lo
-  probdata.inv_Lo.resize(probdata.nvars,probdata.nvars);
+  probdata.inv_Lo.resize(probdata.num_vars,probdata.num_vars);
   bool singular = false;
   probdata.inv_Lo = gjinverse(probdata.Lo,singular);
-  //cout<<"Lmat \t"<<probdata.Lo<<endl;
-  //cout<<"inverse of Lmat \t"<<probdata.inv_Lo<<endl;
+  
   
   
   //////////////////////////////////////////////////////////////////////////////
@@ -1390,14 +441,15 @@ int main(int argc, char * argv[]) {
   //        STEP 3: select an initial checking point, x                       //
   //                                                                          //
   //////////////////////////////////////////////////////////////////////////////
-
-  ublas::vector<double> x(probdata.nvars);
-  for (int i=0; i<probdata.nvars; i++) {
+  
+  ublas::vector<double> x(probdata.num_vars);
+  for (int i=0; i<probdata.num_vars; i++) {
     x(i) = probdata.marg(i,3);
   }
-  double detj;
-  ublas::vector<double> u(probdata.nvars);
-  x_to_u(x,probdata,u);
+  
+  ublas::vector<double> u;
+  ierr = my_nataf_transformation.x_to_u(x,probdata.num_vars,probdata.marg,probdata.inv_Lo,u); CHKERRQ(ierr);
+  
   
   //////////////////////////////////////////////////////////////////////////////
   //                                                                          //
@@ -1409,65 +461,104 @@ int main(int argc, char * argv[]) {
    *  Set parameters for the iterative loop
    */
   int    istep = 1;     // Initialize iterative counter
-  int    conv_flag = 0; // Convergence is achieved when this flag is set to
+  int    conv_flag = 0; // Convergence is achieved when this flag is set to 1
   
-  double val_G, val_G0;                         // LSF for given inputs
-  double step_size;                             // Step size
-  ublas::vector<double> grad_g(probdata.nvars); // Gradient of LSF in x space
-  ublas::vector<double> grad_G(probdata.nvars); // Gradient of LSF in u space
-  ublas::vector<double> alpha(probdata.nvars);  // Direction cosine vector
-  ublas::matrix<double> dudx(probdata.nvars,probdata.nvars);
-  ublas::matrix<double> inv_dudx(probdata.nvars,probdata.nvars);
-  ublas::vector<double> u_dir(probdata.nvars);  // Direction
-  ublas::vector<double> u_new(probdata.nvars);  // New trial of checking point
+  double val_G, val_G0;                                         // LSF for given inputs
+  double step_size;                                             // Step size
+  ublas::vector<double> grad_g(probdata.num_vars); // Gradient of LSF in x space
+  ublas::vector<double> grad_G(probdata.num_vars); // Gradient of LSF in u space
+  ublas::vector<double> alpha(probdata.num_vars);  // Direction cosine vector
+  ublas::matrix<double> dudx(probdata.num_vars,probdata.num_vars);
+  ublas::matrix<double> inv_dudx(probdata.num_vars,probdata.num_vars);
+  ublas::vector<double> u_dir(probdata.num_vars);  // Direction
+  ublas::vector<double> u_new(probdata.num_vars);  // New trial of checking point
   
   ublas::matrix<double> Hess_g;                 // Hessian matrix of LSF in x space
-  grad_g.resize(probdata.nvars); grad_g.clear();
-  Hess_g.resize(probdata.nvars,probdata.nvars); Hess_g.clear();
+  grad_g.resize(probdata.num_vars); grad_g.clear();
+  Hess_g.resize(probdata.num_vars,probdata.num_vars); Hess_g.clear();
   
-  /*
+    /*
    *  Start iteration
    */
   
+  clock_t rel_t1, rel_t2;
+  double rel_calc_time;
+  rel_t1 = clock();
+  
+  FE2_Macro_Solver_Laminate Solve_FE2_Problem;
+  LSF_Composite_Lamina TheLSF;
+  //cout<<beta_flag<<endl;
+  
+  ofstream BetaFile;
+  if (beta_flag == 1) {
+    BetaFile.open("//mnt//home//Dropbox//DURACOMP_Cal//009_MoFEM//04_ReliabilityAnalysis//Result_Beta.txt",ofstream::out);
+  }
+  
+  
   do {
+    
+    cout<<"\n\n*************************************************\n*\n";
+    cout<<"*    This is "<<istep<<" step!"<<"\n*\n";
+    cout<<"*************************************************\n";
     
     if (echo_flag) {
       cout<<"-------------------------------- \n";
       cout<<"Now carrying out iteration number: \t"<<istep<<endl;
     }
+    
+    
     ////////////////////////////////////////////////////////////////////////////
     //                                                                        //
     //        STEP 5: calculate Jacobian, J = dy/dx                           //
     //                                                                        //
     ////////////////////////////////////////////////////////////////////////////
-    /*
-     * Transformation from u to x space
-     */
-    x.resize(probdata.nvars); x.clear();
-    u_to_x(u,probdata,x,detj);
+    
+    //
+    // Transformation from u to x space
+    //
+    double detj = 1.0;
+    x.resize(probdata.num_vars); x.clear();
+    ierr = my_nataf_transformation.u_to_x(u,probdata.num_vars,probdata.marg,probdata.Lo,x,detj); CHKERRQ(ierr);
+    
+    cout<<"x is "<<x<<endl;
+    cout<<"u is "<<u<<endl;
     
     // Jacobian
-    dudx.resize(probdata.nvars,probdata.nvars); dudx.clear();
-    Jacobian_u_x(x,u,probdata,dudx);
+    dudx.resize(probdata.num_vars,probdata.num_vars); dudx.clear();
+    ierr = my_nataf_transformation.Jacobian_u_x(x,u,probdata.num_vars,probdata.marg,probdata.Lo,probdata.inv_Lo,dudx); CHKERRQ(ierr);
     
-    inv_dudx.resize(probdata.nvars,probdata.nvars); inv_dudx.clear();
+    inv_dudx.resize(probdata.num_vars,probdata.num_vars); inv_dudx.clear();
     inv_dudx = gjinverse(dudx,singular);
     
-    /*
-     * Evaluate limit-state function and its gradient
-     */
-    gfun(probdata,x,val_G,grad_g,Hess_g);
+    // Evaluate LSF and its gradient
+    grad_g.resize(probdata.num_vars); grad_g.clear();
+    gfun(probdata, x,val_G, grad_g, Hess_g);
     
-    grad_G.resize(probdata.nvars); grad_G.clear();
-    cout<<dudx<<"\t"<<inv_dudx<<endl;
+//    //ierr = TheLSF.gfun(x,val_G,grad_g); CHKERRQ(ierr);
+//    
+//    switch (FailureCriterion) {
+//      case 43050: {
+//        //
+//        // Tsai-Wu failure criteria
+//        //
+//        NameOfFailureCriterion = "Tsai-Wu - 3D stress state";
+//        ierr = TheLSF.gfun_ply_Tsai_Wu_New(x, probdata.NameVars, probdata.MatStrength,
+//                                           StressGP, StressGP_r, StressGP_rs,
+//                                           val_G, grad_g, Hess_g,
+//                                           nvars_ply_mat, PSFE_order); CHKERRQ(ierr);
+//        break;
+//      }
+//    }
+//    
+    grad_G.resize(probdata.num_vars); grad_G.clear();
     grad_G = prod(grad_g,inv_dudx);
     
     cout<<"LSF value is \t"<<val_G<<endl;
-    cout<<"Gradient of LSF at normal space and original space are \t"<<grad_g<<"\t"<<grad_G<<endl;
+    cout<<"Gradient of LSF is \t"<<grad_g<<"\t"<<grad_G<<endl;
     
-    /*
-     *  Set scale parameter G0 and inform about structural response
-     */
+    //
+    // Set scale parameter G0 and inform about structural response
+    //
     if (istep == 1) {
       val_G0 = val_G;
       if (echo_flag) {
@@ -1483,17 +574,18 @@ int main(int argc, char * argv[]) {
     //                c) reliability index estimate: beta = sqrt(norm(y))     //
     //                                                                        //
     ////////////////////////////////////////////////////////////////////////////
-    /*
-     * Compute direction cosine alpha vector
-     */
-    alpha.resize(probdata.nvars); alpha.clear();
+    
+    //
+    // Compute direction cosine alpha vector
+    //
+    alpha.resize(probdata.num_vars); alpha.clear();
     alpha = -grad_G/norm_2(grad_G);
     cout<<"Direction cosine "<<alpha<<endl;
     
-    /*
-     * Check convergence
-     */
-    if (((abs(val_G/val_G0)<e1) && (norm_2(u-inner_prod(alpha,u)*alpha))) || (istep == istep_max)) {
+    //
+    // Check convergence
+    //
+    if (((abs(val_G/val_G0)<e1) && (norm_2(u-inner_prod(alpha,u)*alpha)<e2)) || (istep == istep_max)) {
       conv_flag = 1;
     }
     
@@ -1508,135 +600,197 @@ int main(int argc, char * argv[]) {
     //                                                                        //
     ////////////////////////////////////////////////////////////////////////////
     
-    /*
-     * Take a step if convergence is not achieved
-     */
+    //
+    // Take a step if convergence is not achieved
+    //
     if (conv_flag == 0) {
       // Determine search direction
+      u_dir.resize(probdata.num_vars); u_dir.clear();
       search_dir(val_G,grad_G,u,u_dir);
       // Determine step size
       if (step_code != 0) {
         step_size = step_code;
       }
       else {
-        cout<<"\n!!!!!!!!!!!!!!!!!!WARNING!!!!!!!!!!!!!!!!!!";
+        cout<<"\n!!!!!!!!!!!!!!!!!!!!!!!!!!!WARNING!!!!!!!!!!!!!!!!!!!!!!!!!!!";
         cout<<"\nArmijo rule will be used to determine step size for setting new trial point, \n";
         cout<<"but it isn't available yet in current version!!! \n";
         cout<<"Re-assign a nonzero value to step_code.\n";
-        cout<<"!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"<<endl;
+        cout<<"!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!"<<endl;
         conv_flag = 1;
       }
       
+      cout<<"\n\nReliability index estimate at "<<istep<<" is: "<<((val_G/norm_2(grad_G)) + inner_prod(alpha, u));
+      cout<<"\t"<<norm_2(u)<<"\t"<<inner_prod(alpha,u)<<endl;
+      //cout<<"design point: "<<u<<endl;
+      
+      // Write reliability index in file
+      if (beta_flag == 1) {
+        BetaFile<<setprecision(15)<<inner_prod(alpha,u)<<"\t"<<val_G;
+        for (int i=0;i<probdata.num_vars;i++) {
+          BetaFile<<"\t"<<x(i);
+        }
+        BetaFile<<"\n";
+      }
+      
       // Determin new trial point
-      u_new.resize(probdata.nvars); u_new.clear();
-      u_new = u + step_size*u_dir;
-      
-      cout<<"\n\nReliability index estimate at "<<istep;
-      cout<<" is: \t"<<((val_G/norm_2(grad_G)) + inner_prod(alpha, u))<<endl;
-      
+      u_new.resize(probdata.num_vars); u_new.clear();
+      u_new = u + step_size*u_dir;  // when step_size is 1, it is HLRF search algorithm
       // Prepare for a new round in the loop
-      u.resize(probdata.nvars); u.clear();
+      u.resize(probdata.num_vars); u.clear();
       u = u_new;
       istep = istep + 1;
     }
     
-  } while (conv_flag == 0); // end of while
+    rel_t2 = clock();
+    rel_calc_time  = (double)(rel_t2 - rel_t1)/CLOCKS_PER_SEC;
+    rel_t1 = rel_t2;
+    cout<<"Elapsed time at this step is: "<<rel_calc_time<<" seconds.\n";
+    if (istep>8) {
+      //conv_flag = 1;
+    }
+  } while (conv_flag == 0);
+  
+  
+  // Close beta value writting file
+  if (beta_flag == 1) { BetaFile.close(); }
   
   //////////////////////////////////////////////////////////////////////////////
   //                                                                          //
   //        STEP 8: Calculate the estimate of reliability index               //
   //                                                                          //
   //////////////////////////////////////////////////////////////////////////////
-
+  
   beta = inner_prod(alpha,u);
   
   //////////////////////////////////////////////////////////////////////////////
   //                                                                          //
-  //        STEP 9: Calculate the estimate of reliability index               //
+  //        STEP 9: Adjust the estimate of reliability index by using         //
+  //                the Second Order Reliability Method (SORM)                //
   //                                                                          //
   //////////////////////////////////////////////////////////////////////////////
   
-  cout<<"\nStart to calculate orthogonal matrix"<<endl;
-  ublas::matrix<double> Qmatrix;
-  orthonormal_matrix(alpha,Qmatrix);
-  cout<<"\nThe Q matrix: "<<Qmatrix<<endl;
+  PSFE_order = probdata.AnalysisType;
   
-  ublas::vector<double> dxdu;
-  ublas::matrix<double> ddxddu;
-  cout<<"\n The x: "<<x<<endl;
-  cout<<"\n The u: "<<u<<endl;
-  d2x_dudu(x, u, probdata, dxdu, ddxddu);
-  
-  ublas::matrix<double> Hess_G;
-  Hessian_Matrix(dxdu, grad_g, Hess_g, Hess_G, ddxddu);
-  
-  ublas::matrix<double> A_Matrix;
-  ublas::matrix<double> Temp_A_Matrix;
-  Temp_A_Matrix = prod(Qmatrix, Hess_G);
-  A_Matrix = prod(Temp_A_Matrix, trans(Qmatrix))/norm_2(grad_G);
-  
-  cout<<"\nHessian matrix: "<<Hess_G<<endl;
-  cout<<"\nA matrix: "<<A_Matrix<<endl;
-  
-  ublas::matrix<double> New_A_Matrix;
-  int Size_A; Size_A = A_Matrix.size1() - 1;
-  New_A_Matrix.resize(Size_A,Size_A); New_A_Matrix.clear();
-  for (int i = 0; i<Size_A; i++) {
-    for (int j = 0; j<Size_A; j++) {
-      New_A_Matrix(i,j) = A_Matrix(i,j);
-    }
-  }
-  
-  //LAPACK - eigenvalues and vectors. Applied twice for initial creates memory space
-  ublas::matrix<double> eigen_vectors = New_A_Matrix;
-  ublas::vector<double> kappa(Size_A);
-  
-  int lda, info, lwork = -1; lda = Size_A;
-  double wkopt;
-  info = lapack_dsyev('N','U',Size_A,&(eigen_vectors.data()[0]),lda,&(kappa.data()[0]),&wkopt,lwork);
-  if(info != 0) SETERRQ1(PETSC_COMM_SELF,1,"is something wrong with lapack_dsyev info = %d",info);
-  lwork = (int)wkopt;
-  double work[lwork];
-  info = lapack_dsyev('V','U',Size_A,&(eigen_vectors.data()[0]),lda,&(kappa.data()[0]),work,lwork);
-  if(info != 0) SETERRQ1(PETSC_COMM_SELF,1,"is something wrong with lapack_dsyev info = %d",info);
-  
-  
-  using boost::math::normal_distribution;
-  normal_distribution<> snorm(0,1);
-  double pf_Breitung = 0.0;
-  for (int i = 0; i<Size_A; i++) {
-    pf_Breitung = pf_Breitung + 1/sqrt(1 + kappa(i)*beta);
-  }
-  pf_Breitung = cdf(snorm,-beta)*pf_Breitung;
   double beta_Breitung;
-  beta_Breitung = -quantile(snorm,pf_Breitung);
+  double pf_Breitung = 0.0;
   
-  cout<<"\nThe eigen values are: "<<kappa<<endl;
-  cout<<"\nThe Breitung probability of failure is: "<<pf_Breitung<<endl;
-  cout<<"\nThe Breitung reliability index is: "<<beta_Breitung<<endl;
-  
-  
+  if (PSFE_order==2) {
+    cout<<"\n\n";
+    cout<<"/////////////////////////////////////////////////////////////////\n";
+    cout<<"//                                                             //\n";
+    cout<<"// The Second Order Reliability Method starts from here!       //\n";
+    cout<<"//                                                             //\n";
+    cout<<"/////////////////////////////////////////////////////////////////\n";
+            
+    // =======================================
+    //
+    // 9.4 Calculate Hessian matrix of LSF in x-space
+    //
+    // =======================================
+    
+//    ierr = TheLSF.gfun_ply_Tsai_Wu_New(x, probdata.NameVars, probdata.MatStrength,
+//                                       StressGP, StressGP_r, StressGP_rs,
+//                                       val_G, grad_g, Hess_g,
+//                                       nvars_ply_mat, PSFE_order); CHKERRQ(ierr);
+    
+    // =======================================
+    //
+    // 9.5 Construct orthogonal matrix
+    //
+    // =======================================
+    SORM theSORM;
+    
+    cout<<"\nStart to calculate orthogonal matrix"<<endl;
+    ublas::matrix<double> Qmatrix;
+    theSORM.orthonormal_matrix(alpha,Qmatrix);
+    cout<<"\nThe Q matrix: "<<Qmatrix<<endl;
+
+    ublas::vector<double> dxdu;
+    ublas::matrix<double> ddxddu;
+    cout<<"\n The x: "<<x<<endl;
+    cout<<"\n The u: "<<u<<endl;
+    theSORM.d2x_dudu(x, u, probdata, dxdu, ddxddu);
+
+    // =======================================
+    //
+    // 9.6 Transform Hessian matrix from x-space to u-space
+    //
+    // =======================================
+    ublas::matrix<double> Hess_G;
+    theSORM.Hessian_Matrix(dxdu, grad_g, Hess_g, Hess_G, ddxddu);
+
+    ublas::matrix<double> A_Matrix;
+    ublas::matrix<double> Temp_A_Matrix;
+    Temp_A_Matrix = prod(Qmatrix, Hess_G);
+    A_Matrix = prod(Temp_A_Matrix, trans(Qmatrix))/norm_2(grad_G);
+
+    cout<<"\nHessian matrix: "<<Hess_G<<endl;
+    cout<<"\nA matrix: "<<A_Matrix<<endl;
+
+    ublas::matrix<double> New_A_Matrix;
+    int Size_A; Size_A = A_Matrix.size1() - 1;
+    New_A_Matrix.resize(Size_A,Size_A); New_A_Matrix.clear();
+    for (int i = 0; i<Size_A; i++) {
+      for (int j = 0; j<Size_A; j++) {
+        New_A_Matrix(i,j) = A_Matrix(i,j);
+      }
+    }
+
+    //LAPACK - eigenvalues and vectors. Applied twice for initial creates memory space
+    ublas::matrix<double> eigen_vectors = New_A_Matrix;
+    ublas::vector<double> kappa(Size_A);
+
+    int lda, info, lwork = -1; lda = Size_A;
+    double wkopt;
+    info = lapack_dsyev('N','U',Size_A,&(eigen_vectors.data()[0]),lda,&(kappa.data()[0]),&wkopt,lwork);
+    if(info != 0) SETERRQ1(PETSC_COMM_SELF,1,"is something wrong with lapack_dsyev info = %d",info);
+    lwork = (int)wkopt;
+    double work[lwork];
+    info = lapack_dsyev('V','U',Size_A,&(eigen_vectors.data()[0]),lda,&(kappa.data()[0]),work,lwork);
+    if(info != 0) SETERRQ1(PETSC_COMM_SELF,1,"is something wrong with lapack_dsyev info = %d",info);
+    
+    
+    using boost::math::normal_distribution;
+    normal_distribution<> snorm(0,1);
+    for (int i = 0; i<Size_A; i++) {
+      pf_Breitung = pf_Breitung + 1/sqrt(1 + kappa(i)*beta);
+    }
+    pf_Breitung = cdf(snorm,-beta)*pf_Breitung;
+    beta_Breitung = -quantile(snorm,pf_Breitung);
+    
+    cout<<"\nThe eigen values are: "<<kappa<<endl;
+  }
+
   //////////////////////////////////////////////////////////////////////////////
   //                                                                          //
   //                               FINISH                                     //
   //                                                                          //
   //////////////////////////////////////////////////////////////////////////////
+  
   finish_time = clock();
   total_time  = (double)(finish_time - start_time)/CLOCKS_PER_SEC;
   
-  cout<<"\n\n*************************************************\n*\n";
+  cout<<"\n\n************************************************************\n*\n";
   
   
   if (istep == istep_max) {
     cout<<"*  The maximum number of iteration is reached.\n";
+  } else {
+    cout<<"*  The number of iterations is: "<<istep<<".\n";
   }
   
-  cout<<"*  Optimal reliability index (beta) is: "<<beta<<endl;
+  
+    cout<<"*  Optimal reliability index (beta) is:    "<<beta<<endl;
+  if (PSFE_order==2) {
+    cout<<"*  The Breitung reliability index is:      "<<beta_Breitung<<endl;
+    cout<<"*  The Breitung probability of failure is: "<<pf_Breitung<<endl;
+  }
   cout<<"*  Elapsed time is "<<total_time<<" seconds.\n";
   cout<<"*  The program finishes !!! \n*\n";
-  cout<<"*************************************************"<<endl;
+  cout<<"************************************************************"<<endl;
   
-  
-
   ierr = PetscFinalize(); CHKERRQ(ierr);
+  return 0;
+  
 }

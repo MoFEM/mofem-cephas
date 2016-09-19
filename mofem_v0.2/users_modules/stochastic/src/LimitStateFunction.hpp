@@ -3381,6 +3381,45 @@ namespace MoFEM {
                                  + F11_XTXT*StressGP(0,0)*StressGP(0,0)
                                  + 2*F12_XTXT*StressGP(0,0)*(StressGP(1,1)+StressGP(2,2)));
             }
+            else if (((vars_name[ivar+1].compare(0,2,"XT")==0) && (vars_name[jvar+1].compare(0,2,"XC")==0))
+                     || ((vars_name[ivar+1].compare(0,2,"XC")==0) && (vars_name[jvar+1].compare(0,2,"XT")==0))) {
+              // XT XC
+              double F12_XTXC = -3/8*pow(X_T*X_C*Y_T*Y_C,-2.5)*(X_C*Y_T*Y_C)*(X_T*Y_T*Y_C) + 1/4*pow(X_T*X_C*Y_T*Y_C,-1.5)*(Y_T*Y_C);
+              double F1_XTXC = 0;
+              double F11_XTXC = 1/(X_T*X_T*X_C*X_C);
+              hess_lsf(ivar, jvar) = - (  F1_XTXC*StressGP(0,0)
+                               + F11_XTXC*StressGP(0,0)*StressGP(0,0)
+                               + 2*F12_XTXC*StressGP(0,0)*(StressGP(1,1)+StressGP(2,2)));
+              hess_lsf(jvar, ivar) = hess_lsf(ivar, jvar);
+            }
+            else if (((vars_name[ivar+1].compare(0,2,"XT")==0) && (vars_name[jvar+1].compare(0,2,"YT")==0))
+                     || ((vars_name[ivar+1].compare(0,2,"YT")==0) && (vars_name[jvar+1].compare(0,2,"XT")==0))) {
+              // XT YT
+              double F12_XTYT = -3/8*pow(X_T*X_C*Y_T*Y_C,-2.5)*(X_C*Y_T*Y_C)*(X_T*X_C*Y_C) + 1/4*pow(X_T*X_C*Y_T*Y_C,-1.5)*(X_C*Y_C);
+              double F1_XTYT = 0;
+              double F11_XTYT = 0;
+              hess_lsf(ivar, jvar) = - (  F1_XTYT*StressGP(0,0)
+                                        + F11_XTYT*StressGP(0,0)*StressGP(0,0)
+                                        + 2*F12_XTYT*StressGP(0,0)*(StressGP(1,1)+StressGP(2,2)));
+              hess_lsf(jvar, ivar) = hess_lsf(ivar, jvar);
+            }
+            else if (((vars_name[ivar+1].compare(0,2,"XT")==0) && (vars_name[jvar+1].compare(0,2,"YC")==0))
+                     || ((vars_name[ivar+1].compare(0,2,"YC")==0) && (vars_name[jvar+1].compare(0,2,"XT")==0))) {
+              // XT YC
+              double F12_XTYC = -3/8*pow(X_T*X_C*Y_T*Y_C,-2.5)*(X_C*Y_T*Y_C)*(X_T*X_C*Y_T) + 1/4*pow(X_T*X_C*Y_T*Y_C,-1.5)*(X_C*Y_T);
+              double F1_XTYC = 0;
+              double F11_XTYC = 0;
+              hess_lsf(ivar, jvar) = - (  F1_XTYC*StressGP(0,0)
+                                        + F11_XTYC*StressGP(0,0)*StressGP(0,0)
+                                        + 2*F12_XTYC*StressGP(0,0)*(StressGP(1,1)+StressGP(2,2)));
+              hess_lsf(jvar, ivar) = hess_lsf(ivar, jvar);
+            }
+            else if (((vars_name[ivar+1].compare(0,2,"XT")==0) && (vars_name[jvar+1].compare(0,3,"S12")==0))
+                     || ((vars_name[ivar+1].compare(0,3,"S12")==0) && (vars_name[jvar+1].compare(0,2,"XT")==0))) {
+              // XT S12
+              hess_lsf(ivar, jvar) = 0;
+              hess_lsf(jvar, ivar) = hess_lsf(ivar, jvar);
+            }
             else if ((ivar<num_ply_vars) && (vars_name[jvar+1].compare(0,2,"XC")==0)) {
               // X_C Em
               double F1_XC = 1/(X_C*X_C);
@@ -3401,6 +3440,35 @@ namespace MoFEM {
               hess_lsf(ivar, jvar) = - (  F1_XCXC*StressGP(0,0)
                                  + F11_XCXC*StressGP(0,0)*StressGP(0,0)
                                  + 2*F12_XCXC*StressGP(0,0)*(StressGP(1,1)+StressGP(2,2)));
+            }
+            else if (((vars_name[ivar+1].compare(0,2,"XC")==0) && (vars_name[jvar+1].compare(0,2,"YT")==0))
+                     || ((vars_name[ivar+1].compare(0,2,"YT")==0) && (vars_name[jvar+1].compare(0,2,"XC")==0))) {
+              // XC YT
+              double F1_XCYT  = 0;
+              double F11_XCYT = 0;
+              double F12_XCYT = -3/8*pow(X_T*X_C*Y_T*Y_C,-1.5)*(X_T*Y_T*Y_C)*(X_T*X_C*Y_C) + 1/4*pow(X_T*X_C*Y_T*Y_C,-1.5)*X_T*Y_C;
+              hess_lsf(ivar, jvar) = - (  F1_XCYT*StressGP(0,0)
+                               + F11_XCYT*StressGP(0,0)*StressGP(0,0)
+                               + 2*F12_XCYT*StressGP(0,0)*(StressGP(1,1)+StressGP(2,2)));
+              hess_lsf(jvar, ivar) = hess_lsf(ivar, jvar);
+            }
+            else if (((vars_name[ivar+1].compare(0,2,"XC")==0) && (vars_name[jvar+1].compare(0,2,"YC")==0))
+                     || ((vars_name[ivar+1].compare(0,2,"YC")==0) && (vars_name[jvar+1].compare(0,2,"XC")==0))) {
+              // XC YC
+              double F1_XCYC  = 0;
+              double F11_XCYC = 0;
+              double F12_XCYC = -3/8*pow(X_T*X_C*Y_T*Y_C,-2.5)*(X_T*Y_T*Y_C)*(X_T*X_C*Y_T) + 1/4*pow(X_T*X_C*Y_T*Y_C,-1.5)*X_T*Y_T;
+              hess_lsf(ivar, jvar) = - (  F1_XCYC*StressGP(0,0)
+                                        + F11_XCYC*StressGP(0,0)*StressGP(0,0)
+                                        + 2*F12_XCYC*StressGP(0,0)*(StressGP(1,1)+StressGP(2,2)));
+              hess_lsf(jvar, ivar) = hess_lsf(ivar, jvar);
+            }
+            
+            else if (((vars_name[ivar+1].compare(0,2,"XC")==0) && (vars_name[jvar+1].compare(0,3,"S12")==0))
+                     || ((vars_name[ivar+1].compare(0,3,"S12")==0) && (vars_name[jvar+1].compare(0,2,"XC")==0))) {
+              // XC S12
+              hess_lsf(ivar, jvar) = 0;
+              hess_lsf(jvar, ivar) = hess_lsf(ivar, jvar);
             }
             else if ((ivar<num_ply_vars) && (vars_name[jvar+1].compare(0,2,"YT")==0)) {
               // Y_T Em
@@ -3431,6 +3499,27 @@ namespace MoFEM {
                                         + 2*F12_YTYT*StressGP(0,0)*(StressGP(1,1)+StressGP(2,2))
                                         + 2*F23_YTYT*StressGP(1,1)*StressGP(2,2));
             }
+            else if (((vars_name[ivar+1].compare(0,2,"YT")==0) && (vars_name[jvar+1].compare(0,2,"YC")==0))
+                     || ((vars_name[ivar+1].compare(0,2,"YC")==0) && (vars_name[jvar+1].compare(0,2,"YT")==0))) {
+              // YT YC
+              double F2_YTYC = 0;
+              double F22_YTYC = 1/(Y_T*Y_T*Y_C*Y_C);
+              double F12_YTYC = -3/8*pow(X_T*X_C*Y_T*Y_C,-2.5)*(X_T*X_C*Y_C)*(X_T*X_C*Y_T) + 1/4*pow(X_T*X_C*Y_T*Y_C,-1.5)*X_T*X_C;
+              double F44_YTYC = -2*eta/pow(eta*Y_T*Y_C,3) + 6*eta*Y_C/pow(eta*Y_T*Y_C,4)*eta*Y_T;
+              double F23_YTYC = -1/(2*Y_C*Y_C*Y_T*Y_T);
+              hess_lsf(ivar, jvar) = - (  F2_YTYC*(StressGP(1,1) + StressGP(2,2))
+                               + F22_YTYC*(StressGP(1,1)*StressGP(1,1) + StressGP(2,2)*StressGP(2,2))
+                               + F44_YTYC*StressGP(1,2)*StressGP(1,2)
+                               + 2*F12_YTYC*StressGP(0,0)*(StressGP(1,1)+StressGP(2,2))
+                               + 2*F23_YTYC*StressGP(1,1)*StressGP(2,2));
+              hess_lsf(jvar, ivar) = hess_lsf(ivar, jvar);
+            }
+            else if (((vars_name[ivar+1].compare(0,2,"YT")==0) && (vars_name[jvar+1].compare(0,3,"S12")==0))
+                     || ((vars_name[ivar+1].compare(0,3,"S12")==0) && (vars_name[jvar+1].compare(0,2,"YT")==0))) {
+              // XC S12
+              hess_lsf(ivar, jvar) = 0;
+              hess_lsf(jvar, ivar) = hess_lsf(ivar, jvar);
+            }
             else if ((ivar<num_ply_vars) && (vars_name[jvar+1].compare(0,2,"YC")==0)) {
               // Y_C EM
               double F2_YC = 1/(Y_C*Y_C);
@@ -3459,6 +3548,12 @@ namespace MoFEM {
                                         + F44_YCYC*StressGP(1,2)*StressGP(1,2)
                                         + 2*F12_YCYC*StressGP(0,0)*(StressGP(1,1)+StressGP(2,2))
                                         + 2*F23_YCYC*StressGP(1,1)*StressGP(2,2));
+            }
+            else if (((vars_name[ivar+1].compare(0,2,"YC")==0) && (vars_name[jvar+1].compare(0,3,"S12")==0))
+                     || ((vars_name[ivar+1].compare(0,3,"S12")==0) && (vars_name[jvar+1].compare(0,2,"YC")==0))) {
+              // YC S12
+              hess_lsf(ivar, jvar) = 0;
+              hess_lsf(jvar, ivar) = hess_lsf(ivar, jvar);
             }
             else if ((ivar<num_ply_vars) && (vars_name[jvar+1].compare(0,3,"S12")==0)) {
               // S12 Em

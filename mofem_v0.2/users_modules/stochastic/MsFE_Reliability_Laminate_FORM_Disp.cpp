@@ -615,7 +615,8 @@ int main(int argc, char *argv[]) {
   if(flg != PETSC_TRUE) {
     order_RVE = 1;
   }
-
+cout<<"stop 1"<<endl;
+  
   /*****************************************************************************
    *
    * Transfer mesh data to MOAB database
@@ -632,7 +633,7 @@ int main(int argc, char *argv[]) {
   MoFEM::Core core_RVE(moab_RVE);
   FieldInterface& m_field_RVE = core_RVE;
   
-  
+ cout<<"stop 2"<<endl;
   /*****************************************************************************
    *
    * Get fibre direction information from the potential-flow calculation
@@ -658,7 +659,7 @@ int main(int argc, char *argv[]) {
   ierr = m_field_RVE.build_finite_elements(); CHKERRQ(ierr);
   ierr = m_field_RVE.build_adjacencies(bit_levels.back()); CHKERRQ(ierr);
   ierr = m_field_RVE.build_problems(); CHKERRQ(ierr);
-
+cout<<"stop 3"<<endl;
   /*****************************************************************************
    *
    * Group element into various mesh-set
@@ -2007,8 +2008,8 @@ int main(int argc, char *argv[]) {
     for (int i = 0; i<Size_A; i++) {
       pf_Breitung = pf_Breitung + 1/sqrt(1 + kappa(i)*beta);
     }
-    //pf_Breitung = cdf(snorm,-beta)*pf_Breitung;
-    double beta_Breitung;
+    pf_Breitung = cdf(snorm,-beta)*pf_Breitung;
+    double beta_Breitung = 0.0;
     //beta_Breitung = -quantile(snorm,pf_Breitung);
     
     cout<<"\nThe eigen values are: "<<kappa<<endl;
