@@ -845,7 +845,7 @@ void gfun(Stochastic_Model probdata,
   // Example 1
   //
   // ================================
-  
+  /*
   // Evaluate the limit state function
   val_lsf = x(0)*x(1)-78.12*x(2);
   
@@ -856,7 +856,7 @@ void gfun(Stochastic_Model probdata,
   grad_lsf(1) = x(0);
   // w.r.t. the 3rd random variable
   grad_lsf(2) = -78.12;
-  
+  */
   
   /*
   val_lsf = x(0)*x(1)-600*x(2);
@@ -866,7 +866,7 @@ void gfun(Stochastic_Model probdata,
   grad_lsf(2) = -600;
   */
   
-  /*
+  
   // ================================
   //
   // Example 3
@@ -883,10 +883,10 @@ void gfun(Stochastic_Model probdata,
   
   // Evaluate the 2nd-order partial derivatives of the LSF w.r.t. basic variables
   // w.r.t. the 1st random variable
-  Hess_lsf(0,0) = 12*pow(x(0),2);
+  //Hess_lsf(0,0) = 12*pow(x(0),2);
   // w.r.t. the 2nd random variable
-  Hess_lsf(1,1) = 24*pow(x(1),2);
-  */
+  //Hess_lsf(1,1) = 24*pow(x(1),2);
+  
   
   /*
   // ================================

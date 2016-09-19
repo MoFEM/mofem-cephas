@@ -77,7 +77,7 @@ str1='create displacement on vertex  31 dof 1 dof 2 fix ' + str(0);  cubit.cmd(s
 
 # Applied force
 # Case 1 & 2. uniaxial tension/compression (x direction)
-Force = -350;
+Force = -250;
 str1 = 'create force 1 on surface 6 12 18 24 42 vector ' + str(Force) +' 0 0 0 0 0'; 
 str2 = 'create force 2 on surface 4 10 16 28 34 vector ' + str(-Force) +' 0 0 0 0 0';
 cubit.cmd(str1); cubit.cmd(str2);
