@@ -331,19 +331,13 @@ int main(int argc, char *argv[]) {
   ierr = VecDestroy(&F); CHKERRQ(ierr);
   ierr = KSPDestroy(&solver); CHKERRQ(ierr);
 
-  PostProcVolumeOnRefinedMesh post_proc(m_field);
-  ierr = post_proc.generateReferenceElementMesh(); CHKERRQ(ierr);
-
-  ierr = post_proc.addFieldValuesPostProc("VALUES"); CHKERRQ(ierr);
-  ierr = m_field.loop_finite_elements("ULTRAWEAK","ULTRAWEAK",post_proc);  CHKERRQ(ierr);
-  ierr = post_proc.writeFile("out_values.h5m"); CHKERRQ(ierr);
-  //rval = post_proc.postProcMesh.write_file("out.vtk","VTK",""); CHKERRQ_MOAB(rval);
-  ierr = post_proc.clearOperators(); CHKERRQ(ierr);
-
-  ierr = post_proc.addFieldValuesPostProc("FLUXES"); CHKERRQ(ierr);
-  ierr = m_field.loop_finite_elements("ULTRAWEAK","ULTRAWEAK",post_proc);  CHKERRQ(ierr);
-  ierr = post_proc.writeFile("out_fluxes.h5m"); CHKERRQ(ierr);
-  ierr = post_proc.clearOperators(); CHKERRQ(ierr);
+  // PostProcVolumeOnRefinedMesh post_proc(m_field);
+  // ierr = post_proc.generateReferenceElementMesh(); CHKERRQ(ierr);
+  //
+  // ierr = post_proc.addFieldValuesPostProc("VALUES"); CHKERRQ(ierr);
+  // ierr = post_proc.addFieldValuesPostProc("FLUXES"); CHKERRQ(ierr);
+  // ierr = m_field.loop_finite_elements("ULTRAWEAK","ULTRAWEAK",post_proc);  CHKERRQ(ierr);
+  // ierr = post_proc.writeFile("out.h5m"); CHKERRQ(ierr);
 
   ierr = PetscFinalize(); CHKERRQ(ierr);
 

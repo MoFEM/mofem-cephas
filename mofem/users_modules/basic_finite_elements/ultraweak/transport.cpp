@@ -51,10 +51,8 @@ int main(int argc, char *argv[]) {
   if(pcomm == NULL) pcomm =  new ParallelComm(&moab,PETSC_COMM_WORLD);
 
   const char *option;
-  option = "";//"PARALLEL=BCAST;";//;DEBUG_IO";
-  BARRIER_RANK_START(pcomm)
+  option = "";
   rval = moab.load_file(mesh_file_name, 0, option); CHKERRQ_MOAB(rval);
-  BARRIER_RANK_END(pcomm)
 
   //Create mofem interface
   MoFEM::Core core(moab);
@@ -246,25 +244,15 @@ int main(int argc, char *argv[]) {
   ierr = m_field.modify_problem_add_finite_element("ULTRAWEAK","ULTRAWEAK_BCFLUX"); CHKERRQ(ierr);
   ierr = m_field.modify_problem_add_finite_element("ULTRAWEAK","ULTRAWEAK_BCVALUE"); CHKERRQ(ierr);
 
-  // ierr = m_field.add_problem("ULTRAWEAK_CALCULATE_ERROR"); CHKERRQ(ierr);
-  // //set refinment level for problem
-  // ierr = m_field.modify_problem_ref_level_add_bit("ULTRAWEAK_CALCULATE_ERROR",BitRefLevel().set(0)); CHKERRQ(ierr);
-  // ierr = m_field.modify_problem_add_finite_element("ULTRAWEAK_CALCULATE_ERROR","ULTRAWEAK_ERROR"); CHKERRQ(ierr);
-
   //build problem
   ierr = m_field.build_problems(); CHKERRQ(ierr);
 
   //mesh partitioning
   //partition
-  ierr = m_field.partition_simple_problem("ULTRAWEAK"); CHKERRQ(ierr);
+  ierr = m_field.partition_problem("ULTRAWEAK"); CHKERRQ(ierr);
   ierr = m_field.partition_finite_elements("ULTRAWEAK"); CHKERRQ(ierr);
   //what are ghost nodes, see Petsc Manual
   ierr = m_field.partition_ghost_dofs("ULTRAWEAK"); CHKERRQ(ierr);
-
-  // //partition for problem calculating error
-  // ierr = m_field.partition_simple_problem("ULTRAWEAK_CALCULATE_ERROR"); CHKERRQ(ierr);
-  // ierr = m_field.partition_finite_elements("ULTRAWEAK_CALCULATE_ERROR"); CHKERRQ(ierr);
-  // ierr = m_field.partition_ghost_dofs("ULTRAWEAK_CALCULATE_ERROR"); CHKERRQ(ierr);
 
   Mat Aij;
   ierr = m_field.MatCreateMPIAIJWithArrays("ULTRAWEAK",&Aij); CHKERRQ(ierr);
@@ -290,19 +278,6 @@ int main(int argc, char *argv[]) {
   ierr = VecGhostUpdateEnd(D0,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
   ierr = VecAssemblyBegin(D0); CHKERRQ(ierr);
   ierr = VecAssemblyEnd(D0); CHKERRQ(ierr);
-
-  // ierr = m_field.set_global_ghost_vector("ULTRAWEAK",COL,D0,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-
-  // {
-  //   PostProcVolumeOnRefinedMesh post_proc(m_field);
-  //   ierr = post_proc.generateReferenceElementMesh(); CHKERRQ(ierr);
-  //   ierr = post_proc.addFieldValuesPostProc("FLUXES"); CHKERRQ(ierr);
-  //   ierr = m_field.loop_finite_elements("ULTRAWEAK","ULTRAWEAK",post_proc);  CHKERRQ(ierr);
-  //   ierr = post_proc.writeFile("out_fluxes.h5m"); CHKERRQ(ierr);
-  //   ierr = post_proc.clearOperators(); CHKERRQ(ierr);
-  //   PetscFinalize();
-  //   return 0;
-  // }
 
   ufe.feVol.getOpPtrVector().push_back(new MyUltraWeakFE::OpFluxDivergenceAtGaussPts(ufe,"FLUXES"));
   ufe.feVol.getOpPtrVector().push_back(new MyUltraWeakFE::OpValuesAtGaussPts(ufe,"VALUES"));
@@ -357,31 +332,6 @@ int main(int argc, char *argv[]) {
   ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 
   ierr = m_field.set_global_ghost_vector("ULTRAWEAK",COL,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-
-  // PetscViewer viewer;
-  // ierr = PetscViewerASCIIOpen(PETSC_COMM_WORLD,"forces_and_sources_ultra_weak_transport.txt",&viewer); CHKERRQ(ierr);
-  //
-  // const double chop = 1e-4;
-  // ierr = VecChop(D,chop); CHKERRQ(ierr);
-  // //VecView(D,PETSC_VIEWER_STDOUT_WORLD);
-  // VecView(D,viewer);
-  //
-  // ierr = PetscViewerDestroy(&viewer); CHKERRQ(ierr);
-
-  //evaluate error
-  // ufe.feVol.getOpPtrVector().clear();
-  // ufe.feVol.getOpPtrVector().clear();
-  //
-  // ufe.feVol.getOpPtrVector().push_back(new MyUltraWeakFE::OpValuesGradientAtGaussPts(ufe,"VALUES"));
-  // ufe.feVol.getOpPtrVector().push_back(new MyUltraWeakFE::OpFluxDivergenceAtGaussPts(ufe,"FLUXES"));
-  // ufe.feVol.getOpPtrVector().push_back(new MyUltraWeakFE::OpError_L2Norm(ufe,"ERROR"));
-  // ierr = m_field.loop_finite_elements("ULTRAWEAK_CALCULATE_ERROR","ULTRAWEAK_ERROR",ufe.feVol); CHKERRQ(ierr);
-  //
-  // Vec E;
-  // ierr = m_field.VecCreateGhost("ULTRAWEAK_CALCULATE_ERROR",ROW,&E); CHKERRQ(ierr);
-  // ierr = m_field.set_local_ghost_vector("ULTRAWEAK_CALCULATE_ERROR",ROW,E,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  // ierr = m_field.set_global_ghost_vector("ULTRAWEAK_CALCULATE_ERROR",ROW,E,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-  // ierr = VecDestroy(&E); CHKERRQ(ierr);
 
   ierr = VecZeroEntries(F); CHKERRQ(ierr);
   ierr = VecGhostUpdateBegin(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
@@ -443,27 +393,51 @@ int main(int argc, char *argv[]) {
   ierr = post_proc.generateReferenceElementMesh(); CHKERRQ(ierr);
 
   ierr = post_proc.addFieldValuesPostProc("VALUES"); CHKERRQ(ierr);
-  ierr = m_field.loop_finite_elements("ULTRAWEAK","ULTRAWEAK",post_proc);  CHKERRQ(ierr);
-  ierr = post_proc.writeFile("out_values.h5m"); CHKERRQ(ierr);
-  //rval = post_proc.postProcMesh.write_file("out.vtk","VTK",""); CHKERRQ_MOAB(rval);
-  ierr = post_proc.clearOperators(); CHKERRQ(ierr);
-
   ierr = post_proc.addFieldValuesPostProc("FLUXES"); CHKERRQ(ierr);
+
+  struct OpPostProc: MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator {
+    moab::Interface &postProcMesh;
+    std::vector<EntityHandle> &mapGaussPts;
+    OpPostProc(
+      moab::Interface &post_proc_mesh,
+      std::vector<EntityHandle> &map_gauss_pts
+    ):
+    MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator("VALUES",UserDataOperator::OPCOL),
+    postProcMesh(post_proc_mesh),
+    mapGaussPts(map_gauss_pts) {
+    }
+    PetscErrorCode doWork(
+      int side,
+      EntityType type,
+      DataForcesAndSurcesCore::EntData &data
+    ) {
+      MoABErrorCode rval;
+      PetscFunctionBegin;
+      if(type != MBTET) PetscFunctionReturn(0);
+      EntityHandle fe_ent = getNumeredEntFiniteElementPtr()->getEnt();
+      Tag th_error_flux;
+      rval = getVolumeFE()->mField.get_moab().tag_get_handle("ERRORL2_FLUX",th_error_flux); CHKERRQ_MOAB(rval);
+      double* error_flux_ptr;
+      rval = getVolumeFE()->mField.get_moab().tag_get_by_ptr(
+        th_error_flux,&fe_ent,1,(const void**)&error_flux_ptr
+      ); CHKERRQ_MOAB(rval);
+      {
+        double def_val = 0;
+        Tag th_error_flux;
+        rval = postProcMesh.tag_get_handle(
+          "ERRORL2_FLUX",1,MB_TYPE_DOUBLE,th_error_flux,MB_TAG_CREAT|MB_TAG_SPARSE,&def_val
+        ); CHKERRQ_MOAB(rval);
+        for(vector<EntityHandle>::iterator vit = mapGaussPts.begin();vit!=mapGaussPts.end();vit++) {
+          rval = postProcMesh.tag_set_data(th_error_flux,&*vit,1,error_flux_ptr); CHKERRQ_MOAB(rval);
+        }
+      }
+      PetscFunctionReturn(0);
+    }
+  };
+  post_proc.getOpPtrVector().push_back(new OpPostProc(post_proc.postProcMesh,post_proc.mapGaussPts));
+
   ierr = m_field.loop_finite_elements("ULTRAWEAK","ULTRAWEAK",post_proc);  CHKERRQ(ierr);
-  ierr = post_proc.writeFile("out_fluxes.h5m"); CHKERRQ(ierr);
-  ierr = post_proc.clearOperators(); CHKERRQ(ierr);
-
-  // PostProcVolumeOnRefinedMesh post_proc_error(m_field,false,0);
-  // ierr = post_proc_error.generateReferenceElementMesh(); CHKERRQ(ierr);
-  // ierr = post_proc_error.addFieldValuesPostProc("ERROR"); CHKERRQ(ierr);
-  // ierr = m_field.loop_finite_elements("ULTRAWEAK_CALCULATE_ERROR","ULTRAWEAK_ERROR",post_proc_error);  CHKERRQ(ierr);
-  // ierr = post_proc_error.writeFile("out_error.h5m"); CHKERRQ(ierr);
-  // ierr = post_proc_error.clearOperators(); CHKERRQ(ierr);
-
-  if(pcomm->rank()==0) {
-    EntityHandle fe_meshset = m_field.get_finite_element_meshset("ULTRAWEAK");
-    rval = moab.write_file("error.vtk","VTK","",&fe_meshset,1); CHKERRQ_MOAB(rval); CHKERRQ_MOAB(rval);
-  }
+  ierr = post_proc.writeFile("out.h5m"); CHKERRQ(ierr);
 
   ierr = PetscFinalize(); CHKERRQ(ierr);
 

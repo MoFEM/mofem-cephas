@@ -1006,21 +1006,10 @@ struct UltraWeakTransportElement {
         if(type != MBTET) PetscFunctionReturn(0);
         int nb_gauss_pts = data.getN().size1();
         EntityHandle fe_ent = getNumeredEntFiniteElementPtr()->getEnt();
-        double def_VAL = 0;
-        Tag th_error_div_sigma;
-        rval = cTx.mField.get_moab().tag_get_handle(
-          "ERRORL2_DIVSIGMA_F",1,MB_TYPE_DOUBLE,th_error_div_sigma,MB_TAG_CREAT|MB_TAG_SPARSE,&def_VAL
-        ); CHKERRQ_MOAB(rval);
+        double def_val = 0;
         Tag th_error_flux;
         rval = cTx.mField.get_moab().tag_get_handle(
-          "ERRORL2_FLUX",1,MB_TYPE_DOUBLE,th_error_flux,MB_TAG_CREAT|MB_TAG_SPARSE,&def_VAL
-        ); CHKERRQ_MOAB(rval);
-        if(type == MBTRI && side == 0) {
-          cTx.mField.get_moab().tag_set_data(th_error_div_sigma,&fe_ent,1,&def_VAL);
-        }
-        double* error_div_ptr;
-        rval = cTx.mField.get_moab().tag_get_by_ptr(
-          th_error_div_sigma,&fe_ent,1,(const void**)&error_div_ptr
+          "ERRORL2_FLUX",1,MB_TYPE_DOUBLE,th_error_flux,MB_TAG_CREAT|MB_TAG_SPARSE,&def_val
         ); CHKERRQ_MOAB(rval);
         double* error_flux_ptr;
         rval = cTx.mField.get_moab().tag_get_by_ptr(
@@ -1038,15 +1027,12 @@ struct UltraWeakTransportElement {
           double flux;
           ierr = cTx.getFlux(fe_ent,x,y,z,flux); CHKERRQ(ierr);
           if(gg == 0) {
-            *error_div_ptr = 0;
             *error_flux_ptr = 0;
           }
-          *error_div_ptr += w*( pow(cTx.divergenceAtGaussPts[gg] + flux,2) );
           noalias(deltaFlux) = cTx.fluxesAtGaussPts[gg]+cTx.valuesGradientAtGaussPts[gg];
           *error_flux_ptr += w*( inner_prod(deltaFlux,deltaFlux) );
         }
         if(type == MBTET) {
-          *error_div_ptr = sqrt(*error_div_ptr);
           *error_flux_ptr = sqrt(*error_flux_ptr);
         }
       } catch (const std::exception& ex) {
