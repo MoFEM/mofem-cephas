@@ -63,14 +63,12 @@ int main(int argc, char *argv[]) {
   //Fields
   ierr = m_field.add_field("FLUXES",HDIV,1); CHKERRQ(ierr);
   ierr = m_field.add_field("VALUES",L2,1); CHKERRQ(ierr);
-  ierr = m_field.add_field("ERROR",L2,1); CHKERRQ(ierr);
 
   //meshset consisting all entities in mesh
   EntityHandle root_set = moab.get_root_set();
   //add entities to field
   ierr = m_field.add_ents_to_field_by_TETs(root_set,"FLUXES"); CHKERRQ(ierr);
   ierr = m_field.add_ents_to_field_by_TETs(root_set,"VALUES"); CHKERRQ(ierr);
-  ierr = m_field.add_ents_to_field_by_TETs(root_set,"ERROR"); CHKERRQ(ierr);
 
   //set app. order
   //see Hierarchic Finite Element Bases on Unstructured Tetrahedral Meshes (Mark Ainsworth & Joe Coyle)
@@ -84,7 +82,6 @@ int main(int argc, char *argv[]) {
   ierr = m_field.set_field_order(root_set,MBTRI,"FLUXES",order+1); CHKERRQ(ierr);
 
   ierr = m_field.set_field_order(root_set,MBTET,"VALUES",order); CHKERRQ(ierr);
-  ierr = m_field.set_field_order(root_set,MBTET,"ERROR",0); CHKERRQ(ierr);
 
   //build field
   ierr = m_field.build_fields(); CHKERRQ(ierr);
@@ -134,7 +131,7 @@ int main(int argc, char *argv[]) {
   };
 
   MyUltraWeakFE ufe(m_field);
-  ierr = ufe.addFiniteElements("FLUXES","VALUES","ERROR"); CHKERRQ(ierr);
+  ierr = ufe.addFiniteElements("FLUXES","VALUES"); CHKERRQ(ierr);
 
   Range tets;
   ierr = m_field.get_entities_by_type_and_ref_level(BitRefLevel().set(0),BitRefLevel().set(),MBTET,tets); CHKERRQ(ierr);

@@ -70,35 +70,6 @@ int main(int argc, char *argv[]) {
   //set entities bit level
   ierr = m_field.seed_ref_level_3D(0,BitRefLevel().set(0)); CHKERRQ(ierr);
 
-  //Fields
-  ierr = m_field.add_field("FLUXES",HDIV,1); CHKERRQ(ierr);
-  ierr = m_field.add_field("VALUES",L2,1); CHKERRQ(ierr);
-  ierr = m_field.add_field("ERROR",L2,1); CHKERRQ(ierr);
-
-  //meshset consisting all entities in mesh
-  EntityHandle root_set = moab.get_root_set();
-  //add entities to field
-  ierr = m_field.add_ents_to_field_by_TETs(root_set,"FLUXES"); CHKERRQ(ierr);
-  ierr = m_field.add_ents_to_field_by_TETs(root_set,"VALUES"); CHKERRQ(ierr);
-  ierr = m_field.add_ents_to_field_by_TETs(root_set,"ERROR"); CHKERRQ(ierr);
-
-  //set app. order
-  //see Hierarchic Finite Element Bases on Unstructured Tetrahedral Meshes (Mark Ainsworth & Joe Coyle)
-  PetscInt order;
-  ierr = PetscOptionsGetInt(PETSC_NULL,PETSC_NULL,"-my_order",&order,&flg); CHKERRQ(ierr);
-  if(flg != PETSC_TRUE) {
-    order = 2;
-  }
-
-  ierr = m_field.set_field_order(root_set,MBTET,"FLUXES",order+1); CHKERRQ(ierr);
-  ierr = m_field.set_field_order(root_set,MBTRI,"FLUXES",order+1); CHKERRQ(ierr);
-
-  ierr = m_field.set_field_order(root_set,MBTET,"VALUES",order); CHKERRQ(ierr);
-  ierr = m_field.set_field_order(root_set,MBTET,"ERROR",0); CHKERRQ(ierr);
-
-  //build field
-  ierr = m_field.build_fields(); CHKERRQ(ierr);
-
   //finite elements
 
   BcFluxMap bc_flux_map;
@@ -192,252 +163,59 @@ int main(int argc, char *argv[]) {
 
   };
 
-  MyUltraWeakFE ufe(m_field,bc_flux_map);
-  ierr = ufe.addFiniteElements("FLUXES","VALUES","ERROR"); CHKERRQ(ierr);
-
-  Range tets;
-  ierr = m_field.get_entities_by_type_and_ref_level(BitRefLevel().set(0),BitRefLevel().set(),MBTET,tets); CHKERRQ(ierr);
-  Skinner skin(&moab);
-  Range skin_faces; // skin faces from 3d ents
-  rval = skin.find_skin(0,tets,false,skin_faces); CHKERR_MOAB(rval);
-
-  // note: what is essential (dirichlet) is natural (neumann) for ultra weak compared to classical FE
-  Range natural_bc;
-  for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,NODESET|TEMPERATURESET,it)) {
-
-    Range tris;
-    ierr = it->getMeshsetIdEntitiesByDimension(m_field.get_moab(),2,tris,true); CHKERRQ(ierr);
-    natural_bc.insert(tris.begin(),tris.end());
-
+  //set app. order
+  //see Hierarchic Finite Element Bases on Unstructured Tetrahedral Meshes (Mark Ainsworth & Joe Coyle)
+  PetscInt order;
+  ierr = PetscOptionsGetInt(PETSC_NULL,PETSC_NULL,"-my_order",&order,&flg); CHKERRQ(ierr);
+  if(flg != PETSC_TRUE) {
+    order = 2;
   }
-  for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,SIDESET|HEATFLUXSET,it)) {
-    HeatFluxCubitBcData mydata;
-    ierr = it->getBcDataStructure(mydata); CHKERRQ(ierr);
-    if(mydata.data.flag1==1) {
+
+  MyUltraWeakFE ufe(m_field,bc_flux_map);
+  ierr = ufe.addFields("VALUES","FLUXES",order); CHKERRQ(ierr);
+  ierr = ufe.addFiniteElements("FLUXES","VALUES"); CHKERRQ(ierr);
+
+  // Set boundary conditions
+  {
+    Range tets;
+    EntityHandle fe_meshset = m_field.get_finite_element_meshset("ULTRAWEAK"); CHKERRQ(ierr);
+    rval = m_field.get_moab().get_entities_by_type(fe_meshset,MBTET,tets); CHKERR_MOAB(rval);
+    Skinner skin(&moab);
+    Range skin_faces; // skin faces from 3d ents
+    rval = skin.find_skin(0,tets,false,skin_faces); CHKERR_MOAB(rval);
+    // note: what is essential (dirichlet) is natural (neumann) for ultra weak compared to classical FE
+    Range natural_bc;
+    for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,NODESET|TEMPERATURESET,it)) {
+
       Range tris;
       ierr = it->getMeshsetIdEntitiesByDimension(m_field.get_moab(),2,tris,true); CHKERRQ(ierr);
-      bc_flux_map[it->getMeshsetId()].eNts = tris;
-      bc_flux_map[it->getMeshsetId()].fLux = mydata.data.value1;
-      // cerr << bc_flux_map[it->getMeshsetId()].eNts << endl;
-      // cerr << bc_flux_map[it->getMeshsetId()].fLux << endl;
+      natural_bc.insert(tris.begin(),tris.end());
+
     }
-  }
-
-  Range essential_bc = subtract(skin_faces,natural_bc);
-  ierr = m_field.add_ents_to_finite_element_by_TRIs(essential_bc,"ULTRAWEAK_BCFLUX"); CHKERRQ(ierr);
-  ierr = m_field.add_ents_to_finite_element_by_TRIs(natural_bc,"ULTRAWEAK_BCVALUE"); CHKERRQ(ierr);
-  // ierr = m_field.add_ents_to_finite_element_by_TRIs(skin_faces,"ULTRAWEAK_BCVALUE"); CHKERRQ(ierr);
-
-  //build finite elemnts
-  ierr = m_field.build_finite_elements(); CHKERRQ(ierr);
-  //build adjacencies
-  ierr = m_field.build_adjacencies(BitRefLevel().set(0)); CHKERRQ(ierr);
-
-  //Problem
-  ierr = m_field.add_problem("ULTRAWEAK"); CHKERRQ(ierr);
-  //set refinment level for problem
-  ierr = m_field.modify_problem_ref_level_add_bit("ULTRAWEAK",BitRefLevel().set(0)); CHKERRQ(ierr);
-
-  ierr = m_field.modify_problem_add_finite_element("ULTRAWEAK","ULTRAWEAK"); CHKERRQ(ierr);
-
-  //boundary conditions
-  ierr = m_field.modify_problem_add_finite_element("ULTRAWEAK","ULTRAWEAK_BCFLUX"); CHKERRQ(ierr);
-  ierr = m_field.modify_problem_add_finite_element("ULTRAWEAK","ULTRAWEAK_BCVALUE"); CHKERRQ(ierr);
-
-  //build problem
-  ierr = m_field.build_problems(); CHKERRQ(ierr);
-
-  //mesh partitioning
-  //partition
-  ierr = m_field.partition_problem("ULTRAWEAK"); CHKERRQ(ierr);
-  ierr = m_field.partition_finite_elements("ULTRAWEAK"); CHKERRQ(ierr);
-  //what are ghost nodes, see Petsc Manual
-  ierr = m_field.partition_ghost_dofs("ULTRAWEAK"); CHKERRQ(ierr);
-
-  Mat Aij;
-  ierr = m_field.MatCreateMPIAIJWithArrays("ULTRAWEAK",&Aij); CHKERRQ(ierr);
-  Vec F,D,D0;
-  ierr = m_field.VecCreateGhost("ULTRAWEAK",COL,&D); CHKERRQ(ierr);
-  ierr = m_field.VecCreateGhost("ULTRAWEAK",COL,&D0); CHKERRQ(ierr);
-  ierr = m_field.VecCreateGhost("ULTRAWEAK",ROW,&F); CHKERRQ(ierr);
-
-  ierr = MatZeroEntries(Aij); CHKERRQ(ierr);
-  ierr = VecZeroEntries(F); CHKERRQ(ierr);
-  ierr = VecGhostUpdateBegin(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  ierr = VecGhostUpdateEnd(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-
-  ierr = VecZeroEntries(D0); CHKERRQ(ierr);
-  ierr = VecGhostUpdateBegin(D0,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  ierr = VecGhostUpdateEnd(D0,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-
-  ufe.feTriFluxValue.getOpPtrVector().clear();
-  ufe.feTriFluxValue.getOpPtrVector().push_back(new MyUltraWeakFE::OpEvaluateBcOnFluxes(ufe,"FLUXES",D0));
-  ierr = m_field.loop_finite_elements("ULTRAWEAK","ULTRAWEAK_BCFLUX",ufe.feTriFluxValue); CHKERRQ(ierr);
-
-  ierr = VecGhostUpdateBegin(D0,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-  ierr = VecGhostUpdateEnd(D0,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-  ierr = VecAssemblyBegin(D0); CHKERRQ(ierr);
-  ierr = VecAssemblyEnd(D0); CHKERRQ(ierr);
-
-  ufe.feVol.getOpPtrVector().push_back(new MyUltraWeakFE::OpFluxDivergenceAtGaussPts(ufe,"FLUXES"));
-  ufe.feVol.getOpPtrVector().push_back(new MyUltraWeakFE::OpValuesAtGaussPts(ufe,"VALUES"));
-  ufe.feVol.getOpPtrVector().push_back(new MyUltraWeakFE::OpDivTauU_HdivL2(ufe,"FLUXES","VALUES",Aij,F));
-  ufe.feVol.getOpPtrVector().push_back(new MyUltraWeakFE::OpL2Source(ufe,"VALUES",F));
-  ufe.feVol.getOpPtrVector().push_back(new MyUltraWeakFE::OpTauDotSigma_HdivHdiv(ufe,"FLUXES",Aij,F));
-  ufe.feVol.getOpPtrVector().push_back(new MyUltraWeakFE::OpVDotDivSigma_L2Hdiv(ufe,"VALUES","FLUXES",Aij,F));
-  ierr = m_field.loop_finite_elements("ULTRAWEAK","ULTRAWEAK",ufe.feVol); CHKERRQ(ierr);
-
-  ufe.feTriFluxValue.getOpPtrVector().clear();
-  ufe.feTriFluxValue.getOpPtrVector().push_back(new MyUltraWeakFE::OpRhsBcOnValues(ufe,"FLUXES",F));
-  ierr = m_field.loop_finite_elements("ULTRAWEAK","ULTRAWEAK_BCVALUE",ufe.feTriFluxValue); CHKERRQ(ierr);
-
-  ierr = MatAssemblyBegin(Aij,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
-  ierr = MatAssemblyEnd(Aij,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
-
-  ierr = VecGhostUpdateBegin(F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-  ierr = VecGhostUpdateEnd(F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-  ierr = VecAssemblyBegin(F); CHKERRQ(ierr);
-  ierr = VecAssemblyEnd(F); CHKERRQ(ierr);
-
-  {
-    double nrm2_F;
-    ierr = VecNorm(F,NORM_2,&nrm2_F); CHKERRQ(ierr);
-    PetscPrintf(PETSC_COMM_WORLD,"nrm2_F = %6.4e\n",nrm2_F);
-  }
-
-  // for ksp solver vector is moved into rhs side
-  // for snes it is left ond the left
-  ierr = VecScale(F,-1); CHKERRQ(ierr);
-
-  //MatView(Aij,PETSC_VIEWER_DRAW_WORLD);
-  //MatView(Aij,PETSC_VIEWER_STDOUT_WORLD);
-  // std::string wait;
-  //std::cin >> wait;
-  IS essential_bc_ids;
-  ierr = ufe.getDirichletBCIndices(&essential_bc_ids); CHKERRQ(ierr);
-  ierr = MatZeroRowsIS(Aij,essential_bc_ids,1,D0,F); CHKERRQ(ierr);
-
-  // MatView(Aij,PETSC_VIEWER_DRAW_WORLD);
-  // std::cin >> wait;
-
-  //solve
-  KSP solver;
-  ierr = KSPCreate(PETSC_COMM_WORLD,&solver); CHKERRQ(ierr);
-  ierr = KSPSetOperators(solver,Aij,Aij); CHKERRQ(ierr);
-  ierr = KSPSetFromOptions(solver); CHKERRQ(ierr);
-  ierr = KSPSetUp(solver); CHKERRQ(ierr);
-
-  ierr = KSPSolve(solver,F,D); CHKERRQ(ierr);
-  ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-
-  ierr = m_field.set_global_ghost_vector("ULTRAWEAK",COL,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-
-  ierr = VecZeroEntries(F); CHKERRQ(ierr);
-  ierr = VecGhostUpdateBegin(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-  ierr = VecGhostUpdateEnd(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-
-  //calculate residuals
-  ufe.feVol.getOpPtrVector().clear();
-
-  ufe.feVol.getOpPtrVector().push_back(new MyUltraWeakFE::OpFluxDivergenceAtGaussPts(ufe,"FLUXES"));
-  ufe.feVol.getOpPtrVector().push_back(new MyUltraWeakFE::OpValuesAtGaussPts(ufe,"VALUES"));
-  ufe.feVol.getOpPtrVector().push_back(new MyUltraWeakFE::OpValuesGradientAtGaussPts(ufe,"VALUES"));
-  ufe.feVol.getOpPtrVector().push_back(new MyUltraWeakFE::OpDivTauU_HdivL2(ufe,"FLUXES","VALUES",PETSC_NULL,F));
-  ufe.feVol.getOpPtrVector().push_back(new MyUltraWeakFE::OpL2Source(ufe,"VALUES",F));
-  ufe.feVol.getOpPtrVector().push_back(new MyUltraWeakFE::OpTauDotSigma_HdivHdiv(ufe,"FLUXES",PETSC_NULL,F));
-  ufe.feVol.getOpPtrVector().push_back(new MyUltraWeakFE::OpVDotDivSigma_L2Hdiv(ufe,"VALUES","FLUXES",PETSC_NULL,F));
-  ufe.feVol.getOpPtrVector().push_back(new MyUltraWeakFE::OpError_L2Norm(ufe,"VALUES"));
-  ierr = m_field.loop_finite_elements("ULTRAWEAK","ULTRAWEAK",ufe.feVol); CHKERRQ(ierr);
-
-  ufe.feTriFluxValue.getOpPtrVector().clear();
-  ufe.feTriFluxValue.getOpPtrVector().push_back(new MyUltraWeakFE::OpRhsBcOnValues(ufe,"FLUXES",F));
-  ierr = m_field.loop_finite_elements("ULTRAWEAK","ULTRAWEAK_BCVALUE",ufe.feTriFluxValue); CHKERRQ(ierr);
-
-  ierr = VecGhostUpdateBegin(F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-  ierr = VecGhostUpdateEnd(F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-  ierr = VecAssemblyBegin(F); CHKERRQ(ierr);
-  ierr = VecAssemblyEnd(F); CHKERRQ(ierr);
-
-
-  // ierr = VecAXPY(F,-1.,D0); CHKERRQ(ierr);
-  // ierr = MatZeroRowsIS(Aij,essential_bc_ids,1,PETSC_NULL,F); CHKERRQ(ierr);
-  {
-    std::vector<int> ids;
-    ids.insert(ids.begin(),ufe.bcIndices.begin(),ufe.bcIndices.end());
-    std::vector<double> vals(ids.size(),0);
-    ierr = VecSetValues(F,ids.size(),&*ids.begin(),&*vals.begin(),INSERT_VALUES); CHKERRQ(ierr);
-    ierr = VecAssemblyBegin(F); CHKERRQ(ierr);
-    ierr = VecAssemblyEnd(F); CHKERRQ(ierr);
-  }
-
-  {
-    double nrm2_F;
-    ierr = VecNorm(F,NORM_2,&nrm2_F); CHKERRQ(ierr);
-    PetscPrintf(PETSC_COMM_WORLD,"nrm2_F = %6.4e\n",nrm2_F);
-    const double eps = 1e-8;
-    if(nrm2_F > eps) {
-      //SETERRQ(PETSC_COMM_SELF,MOFEM_ATOM_TEST_INVALID,"problem with residual");
-    }
-  }
-
-
-  ierr = ISDestroy(&essential_bc_ids); CHKERRQ(ierr);
-  ierr = MatDestroy(&Aij); CHKERRQ(ierr);
-  ierr = VecDestroy(&D); CHKERRQ(ierr);
-  ierr = VecDestroy(&D0); CHKERRQ(ierr);
-  ierr = VecDestroy(&F); CHKERRQ(ierr);
-  ierr = KSPDestroy(&solver); CHKERRQ(ierr);
-
-  PostProcVolumeOnRefinedMesh post_proc(m_field);
-  ierr = post_proc.generateReferenceElementMesh(); CHKERRQ(ierr);
-
-  ierr = post_proc.addFieldValuesPostProc("VALUES"); CHKERRQ(ierr);
-  ierr = post_proc.addFieldValuesPostProc("FLUXES"); CHKERRQ(ierr);
-
-  struct OpPostProc: MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator {
-    moab::Interface &postProcMesh;
-    std::vector<EntityHandle> &mapGaussPts;
-    OpPostProc(
-      moab::Interface &post_proc_mesh,
-      std::vector<EntityHandle> &map_gauss_pts
-    ):
-    MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator("VALUES",UserDataOperator::OPCOL),
-    postProcMesh(post_proc_mesh),
-    mapGaussPts(map_gauss_pts) {
-    }
-    PetscErrorCode doWork(
-      int side,
-      EntityType type,
-      DataForcesAndSurcesCore::EntData &data
-    ) {
-      MoABErrorCode rval;
-      PetscFunctionBegin;
-      if(type != MBTET) PetscFunctionReturn(0);
-      EntityHandle fe_ent = getNumeredEntFiniteElementPtr()->getEnt();
-      Tag th_error_flux;
-      rval = getVolumeFE()->mField.get_moab().tag_get_handle("ERRORL2_FLUX",th_error_flux); CHKERRQ_MOAB(rval);
-      double* error_flux_ptr;
-      rval = getVolumeFE()->mField.get_moab().tag_get_by_ptr(
-        th_error_flux,&fe_ent,1,(const void**)&error_flux_ptr
-      ); CHKERRQ_MOAB(rval);
-      {
-        double def_val = 0;
-        Tag th_error_flux;
-        rval = postProcMesh.tag_get_handle(
-          "ERRORL2_FLUX",1,MB_TYPE_DOUBLE,th_error_flux,MB_TAG_CREAT|MB_TAG_SPARSE,&def_val
-        ); CHKERRQ_MOAB(rval);
-        for(vector<EntityHandle>::iterator vit = mapGaussPts.begin();vit!=mapGaussPts.end();vit++) {
-          rval = postProcMesh.tag_set_data(th_error_flux,&*vit,1,error_flux_ptr); CHKERRQ_MOAB(rval);
-        }
+    for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,SIDESET|HEATFLUXSET,it)) {
+      HeatFluxCubitBcData mydata;
+      ierr = it->getBcDataStructure(mydata); CHKERRQ(ierr);
+      if(mydata.data.flag1==1) {
+        Range tris;
+        ierr = it->getMeshsetIdEntitiesByDimension(m_field.get_moab(),2,tris,true); CHKERRQ(ierr);
+        bc_flux_map[it->getMeshsetId()].eNts = tris;
+        bc_flux_map[it->getMeshsetId()].fLux = mydata.data.value1;
+        // cerr << bc_flux_map[it->getMeshsetId()].eNts << endl;
+        // cerr << bc_flux_map[it->getMeshsetId()].fLux << endl;
       }
-      PetscFunctionReturn(0);
     }
-  };
-  post_proc.getOpPtrVector().push_back(new OpPostProc(post_proc.postProcMesh,post_proc.mapGaussPts));
+    Range essential_bc = subtract(skin_faces,natural_bc);
+    ierr = m_field.add_ents_to_finite_element_by_TRIs(essential_bc,"ULTRAWEAK_BCFLUX"); CHKERRQ(ierr);
+    ierr = m_field.add_ents_to_finite_element_by_TRIs(natural_bc,"ULTRAWEAK_BCVALUE"); CHKERRQ(ierr);
+    // ierr = m_field.add_ents_to_finite_element_by_TRIs(skin_faces,"ULTRAWEAK_BCVALUE"); CHKERRQ(ierr);
+  }
 
-  ierr = m_field.loop_finite_elements("ULTRAWEAK","ULTRAWEAK",post_proc);  CHKERRQ(ierr);
-  ierr = post_proc.writeFile("out.h5m"); CHKERRQ(ierr);
+  ierr = ufe.buildProblem(BitRefLevel().set(0)); CHKERRQ(ierr);
+  ierr = ufe.createMatrices(); CHKERRQ(ierr);
+  ierr = ufe.solveProblem(); CHKERRQ(ierr);
+  ierr = ufe.calculateResidual(); CHKERRQ(ierr);
+  ierr = ufe.destroyMatrices(); CHKERRQ(ierr);
+  ierr = ufe.postProc(); CHKERRQ(ierr);
 
   ierr = PetscFinalize(); CHKERRQ(ierr);
 
