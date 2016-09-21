@@ -387,25 +387,6 @@ struct Interface: public UnknownInterface {
    */
   virtual PetscErrorCode seed_ref_level_MESHSET(const EntityHandle meshset,const BitRefLevel &bit,int verb = -1) = 0;
 
-  // /** \brief Add coordinate system
-  //
-  //   * \deprecated Use CoordSystemsManager to add coordinate system
-  //
-  //   * \param cs_id see \ref CoordSystems for options
-  //   * \param name unique name of coordinate system
-  //   */
-  // DEPRECATED virtual PetscErrorCode add_coordinate_system(const int cs_dim[],const std::string name) = 0;
-
-  // /** \brief Set coordinate system to field
-  //
-  //   * \deprecated Use CoordSystemsManager to add coordinate system
-  //
-  //   * \param name of field
-  //   * \param name unique name of coordinate system
-  //   *
-  //   */
-  // DEPRECATED virtual PetscErrorCode set_field_coordinate_system(const std::string field_name,const std::string cs_name) = 0;
-
   /**\brief add all ents from ref level given by bit to meshset
     * \ingroup mofem_ref_ents
     *
