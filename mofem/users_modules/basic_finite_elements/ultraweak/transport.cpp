@@ -68,6 +68,8 @@ int main(int argc, char *argv[]) {
   // }
 
   //set entities bit level
+  BitRefLevel bit_ref_level;
+  bit_ref_level.set(0);
   ierr = m_field.seed_ref_level_3D(0,BitRefLevel().set(0)); CHKERRQ(ierr);
 
   //finite elements
@@ -205,12 +207,16 @@ int main(int argc, char *argv[]) {
       }
     }
     Range essential_bc = subtract(skin_faces,natural_bc);
+    Range bit_tris;
+    ierr = m_field.get_entities_by_type_and_ref_level(bit_ref_level,BitRefLevel().set(),MBTRI,bit_tris);
+    essential_bc = intersect(bit_tris,essential_bc);
+    natural_bc = intersect(bit_tris,natural_bc);
     ierr = m_field.add_ents_to_finite_element_by_TRIs(essential_bc,"ULTRAWEAK_BCFLUX"); CHKERRQ(ierr);
     ierr = m_field.add_ents_to_finite_element_by_TRIs(natural_bc,"ULTRAWEAK_BCVALUE"); CHKERRQ(ierr);
     // ierr = m_field.add_ents_to_finite_element_by_TRIs(skin_faces,"ULTRAWEAK_BCVALUE"); CHKERRQ(ierr);
   }
 
-  ierr = ufe.buildProblem(BitRefLevel().set(0)); CHKERRQ(ierr);
+  ierr = ufe.buildProblem(bit_ref_level); CHKERRQ(ierr);
   ierr = ufe.createMatrices(); CHKERRQ(ierr);
   ierr = ufe.solveProblem(); CHKERRQ(ierr);
   ierr = ufe.calculateResidual(); CHKERRQ(ierr);

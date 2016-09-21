@@ -221,9 +221,11 @@ struct UltraWeakTransportElement {
     ErrorCode rval;
 
     // Set up volume element operators. Operators are used to calculate components
-    // of stiffness matrix & right hand side, in essence are used to do volume integras over
+    // of stiffness matrix & right hand side, in essence are used to do volume integrals over
     // tetrahedral in this case.
 
+    // Define element "ULTRAWEAK". Note that this element will work with fluxes_name and
+    // values_name. This reflect bilinear form for the problem
     ierr = mField.add_finite_element("ULTRAWEAK",MF_ZERO); CHKERRQ(ierr);
     ierr = mField.modify_finite_element_add_field_row("ULTRAWEAK",fluxes_name); CHKERRQ(ierr);
     ierr = mField.modify_finite_element_add_field_col("ULTRAWEAK",fluxes_name); CHKERRQ(ierr);
@@ -231,13 +233,23 @@ struct UltraWeakTransportElement {
     ierr = mField.modify_finite_element_add_field_col("ULTRAWEAK",values_name); CHKERRQ(ierr);
     ierr = mField.modify_finite_element_add_field_data("ULTRAWEAK",fluxes_name); CHKERRQ(ierr);
     ierr = mField.modify_finite_element_add_field_data("ULTRAWEAK",values_name); CHKERRQ(ierr);
+
+    // In some cases you like to use HO geometry to describe shape of the bode, curved edges and faces, for
+    // example body is a sphere. HO geometry is approximated by a field,  which can be hierarchical, so shape of
+    // the edges could be given by polynomial of arbitrary order.
+    //
+    // Check if field "mesh_nodals_positions" is defined, and if it is add that field to data of finite
+    // element. MoFEM will use that that to calculate Jacobian as result that geometry in nonlinear.
     if(mField.check_field(mesh_nodals_positions)) {
       ierr = mField.modify_finite_element_add_field_data("ULTRAWEAK",mesh_nodals_positions); CHKERRQ(ierr);
     }
-
+    // Look for all BLOCKSET which are MAT_THERMALSET, takes entities from those BLOCKSETS
+    // and add them to "ULTRAWEAK" finite element. In addition get data form that meshset
+    // and set cOnductivity which is used to calculate fluxes from gradients of concentration
+    // or gradient of temperature, depending how you interpret variables.
     for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BLOCKSET|MAT_THERMALSET,it)) {
 
-      cerr << *it << endl;
+      // cerr << *it << endl;
 
       Mat_Thermal temp_data;
       ierr = it->getAttributeDataStructure(temp_data); CHKERRQ(ierr);
@@ -248,6 +260,7 @@ struct UltraWeakTransportElement {
 
     }
 
+    // Define element to integrate natural boundary conditions, i.e. set values.
     ierr = mField.add_finite_element("ULTRAWEAK_BCVALUE",MF_ZERO); CHKERRQ(ierr);
     ierr = mField.modify_finite_element_add_field_row("ULTRAWEAK_BCVALUE",fluxes_name); CHKERRQ(ierr);
     ierr = mField.modify_finite_element_add_field_col("ULTRAWEAK_BCVALUE",fluxes_name); CHKERRQ(ierr);
@@ -257,6 +270,7 @@ struct UltraWeakTransportElement {
       ierr = mField.modify_finite_element_add_field_data("ULTRAWEAK_BCVALUE",mesh_nodals_positions); CHKERRQ(ierr);
     }
 
+    // Define element to apply essential boundary conditions.
     ierr = mField.add_finite_element("ULTRAWEAK_BCFLUX",MF_ZERO); CHKERRQ(ierr);
     ierr = mField.modify_finite_element_add_field_row("ULTRAWEAK_BCFLUX",fluxes_name); CHKERRQ(ierr);
     ierr = mField.modify_finite_element_add_field_col("ULTRAWEAK_BCFLUX",fluxes_name); CHKERRQ(ierr);
@@ -269,19 +283,25 @@ struct UltraWeakTransportElement {
     PetscFunctionReturn(0);
   }
 
+  /**
+   * \brief Build problem
+   * @param  ref_level mesh refinement on which mesh problem you like to built.
+   * @return           error code
+   */
   PetscErrorCode buildProblem(BitRefLevel &ref_level) {
     PetscErrorCode ierr;
     PetscFunctionBegin;
-    //build finite elemnts
+    //build finite elements strutures
     ierr = mField.build_finite_elements(); CHKERRQ(ierr);
-    //build adjacencies
+    //Build adjacencies of degrees of freedom and elements
     ierr = mField.build_adjacencies(ref_level); CHKERRQ(ierr);
-    //Problem
+    //Define problem
     ierr = mField.add_problem("ULTRAWEAK"); CHKERRQ(ierr);
     //set refinment level for problem
     ierr = mField.modify_problem_ref_level_add_bit("ULTRAWEAK",ref_level); CHKERRQ(ierr);
+    // Add element to problem
     ierr = mField.modify_problem_add_finite_element("ULTRAWEAK","ULTRAWEAK"); CHKERRQ(ierr);
-    //boundary conditions
+    // Boundary conditions
     ierr = mField.modify_problem_add_finite_element("ULTRAWEAK","ULTRAWEAK_BCFLUX"); CHKERRQ(ierr);
     ierr = mField.modify_problem_add_finite_element("ULTRAWEAK","ULTRAWEAK_BCVALUE"); CHKERRQ(ierr);
     //build problem
@@ -335,6 +355,10 @@ struct UltraWeakTransportElement {
     }
   };
 
+  /**
+   * \brief Post process results
+   * @return error code
+   */
   PetscErrorCode postProc() {
     PetscErrorCode ierr;
     PetscFunctionBegin;
@@ -351,6 +375,7 @@ struct UltraWeakTransportElement {
   Vec D,D0,F;
   Mat Aij;
 
+  /// \brief create matrices
   PetscErrorCode createMatrices() {
     PetscErrorCode ierr;
     PetscFunctionBegin;
@@ -368,19 +393,23 @@ struct UltraWeakTransportElement {
     PetscFunctionReturn(0);
   }
 
+  /// \brief solve problem
   PetscErrorCode solveProblem() {
     PetscErrorCode ierr;
     PetscFunctionBegin;
 
+    // Calculate essential boundary conditions
+
     feTriFluxValue.getOpPtrVector().clear();
+    // set operator to calculate essential boundary conditions
     feTriFluxValue.getOpPtrVector().push_back(new OpEvaluateBcOnFluxes(*this,"FLUXES",D0));
     ierr = mField.loop_finite_elements("ULTRAWEAK","ULTRAWEAK_BCFLUX",feTriFluxValue); CHKERRQ(ierr);
-
     ierr = VecGhostUpdateBegin(D0,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
     ierr = VecGhostUpdateEnd(D0,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
     ierr = VecAssemblyBegin(D0); CHKERRQ(ierr);
     ierr = VecAssemblyEnd(D0); CHKERRQ(ierr);
 
+    // set operators to calculate matrix and right hand side vectors
     feVol.getOpPtrVector().push_back(new OpFluxDivergenceAtGaussPts(*this,"FLUXES"));
     feVol.getOpPtrVector().push_back(new OpValuesAtGaussPts(*this,"VALUES"));
     feVol.getOpPtrVector().push_back(new OpDivTauU_HdivL2(*this,"FLUXES","VALUES",Aij,F));
@@ -389,13 +418,14 @@ struct UltraWeakTransportElement {
     feVol.getOpPtrVector().push_back(new OpVDotDivSigma_L2Hdiv(*this,"VALUES","FLUXES",Aij,F));
     ierr = mField.loop_finite_elements("ULTRAWEAK","ULTRAWEAK",feVol); CHKERRQ(ierr);
 
+    // calculate right hand side for natural boundary conditions
     feTriFluxValue.getOpPtrVector().clear();
     feTriFluxValue.getOpPtrVector().push_back(new OpRhsBcOnValues(*this,"FLUXES",F));
     ierr = mField.loop_finite_elements("ULTRAWEAK","ULTRAWEAK_BCVALUE",feTriFluxValue); CHKERRQ(ierr);
 
+    // assemble matrices
     ierr = MatAssemblyBegin(Aij,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
     ierr = MatAssemblyEnd(Aij,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
-
     ierr = VecGhostUpdateBegin(F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
     ierr = VecGhostUpdateEnd(F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
     ierr = VecAssemblyBegin(F); CHKERRQ(ierr);
@@ -423,24 +453,24 @@ struct UltraWeakTransportElement {
     // MatView(Aij,PETSC_VIEWER_DRAW_WORLD);
     // std::cin >> wait;
 
-    //solve
+    // Solve
     KSP solver;
     ierr = KSPCreate(PETSC_COMM_WORLD,&solver); CHKERRQ(ierr);
     ierr = KSPSetOperators(solver,Aij,Aij); CHKERRQ(ierr);
     ierr = KSPSetFromOptions(solver); CHKERRQ(ierr);
     ierr = KSPSetUp(solver); CHKERRQ(ierr);
-
     ierr = KSPSolve(solver,F,D); CHKERRQ(ierr);
     ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
     ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-
-    ierr = mField.set_global_ghost_vector("ULTRAWEAK",COL,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-
     ierr = KSPDestroy(&solver); CHKERRQ(ierr);
+
+    // copy data form vector on mesh
+    ierr = mField.set_global_ghost_vector("ULTRAWEAK",COL,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 
     PetscFunctionReturn(0);
   }
 
+  /// \brief calculate residual
   PetscErrorCode calculateResidual() {
     PetscErrorCode ierr;
     PetscFunctionBegin;
@@ -487,6 +517,7 @@ struct UltraWeakTransportElement {
     PetscFunctionReturn(0);
   }
 
+  /// \brief destroy matrices
   PetscErrorCode destroyMatrices() {
     PetscErrorCode ierr;
     PetscFunctionBegin;
@@ -1172,7 +1203,7 @@ struct UltraWeakTransportElement {
   };
 
   /**
-   * \brief calculate flux at integration poin
+   * \brief calculate flux at integration point
    */
   struct OpFluxDivergenceAtGaussPts: public MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator {
 
