@@ -203,8 +203,6 @@ struct UltraWeakTransportElement {
     ierr = mField.set_field_order(root_set,MBTRI,fluxes,order+1); CHKERRQ(ierr);
     ierr = mField.set_field_order(root_set,MBTET,values,order); CHKERRQ(ierr);
 
-    //build field
-    ierr = mField.build_fields(); CHKERRQ(ierr);
 
     PetscFunctionReturn(0);
   }
@@ -291,14 +289,40 @@ struct UltraWeakTransportElement {
   PetscErrorCode buildProblem(BitRefLevel &ref_level) {
     PetscErrorCode ierr;
     PetscFunctionBegin;
-    //build finite elements strutures
-    ierr = mField.build_finite_elements(); CHKERRQ(ierr);
+    //build field
+    ierr = mField.build_fields(); CHKERRQ(ierr);
+    // get tetrahedrons which has been build previously and now in so called garbage bit level
+    Range done_tets;
+    ierr = mField.get_entities_by_type_and_ref_level(
+      BitRefLevel().set(BITREFLEVEL_SIZE-1),BitRefLevel().set(),MBTET,done_tets
+    ); CHKERRQ(ierr);
+    // get tetrahedrons which belong to problem bit level
+    Range ref_tets;
+    ierr = mField.get_entities_by_type_and_ref_level(
+      ref_level,BitRefLevel().set(),MBTET,ref_tets
+    ); CHKERRQ(ierr);
+    ref_tets = subtract(ref_tets,done_tets);
+    ierr = mField.build_finite_elements("ULTRAWEAK",&ref_tets,2); CHKERRQ(ierr);
+    // get triangles which has been build previously and now in so called garbage bit level
+    Range done_faces;
+    ierr = mField.get_entities_by_type_and_ref_level(
+      BitRefLevel().set(BITREFLEVEL_SIZE-1),BitRefLevel().set(),MBTRI,done_faces
+    ); CHKERRQ(ierr);
+    // get triangles which belong to problem bit level
+    Range ref_faces;
+    ierr = mField.get_entities_by_type_and_ref_level(
+      ref_level,BitRefLevel().set(),MBTRI,ref_faces
+    ); CHKERRQ(ierr);
+    ref_faces = subtract(ref_faces,done_faces);
+    //build finite elements structures
+    ierr = mField.build_finite_elements("ULTRAWEAK_BCFLUX",&ref_faces,2); CHKERRQ(ierr);
+    ierr = mField.build_finite_elements("ULTRAWEAK_BCVALUE",&ref_faces,2); CHKERRQ(ierr);
     //Build adjacencies of degrees of freedom and elements
     ierr = mField.build_adjacencies(ref_level); CHKERRQ(ierr);
     //Define problem
-    ierr = mField.add_problem("ULTRAWEAK"); CHKERRQ(ierr);
+    ierr = mField.add_problem("ULTRAWEAK",MF_ZERO); CHKERRQ(ierr);
     //set refinment level for problem
-    ierr = mField.modify_problem_ref_level_add_bit("ULTRAWEAK",ref_level); CHKERRQ(ierr);
+    ierr = mField.modify_problem_ref_level_set_bit("ULTRAWEAK",ref_level); CHKERRQ(ierr);
     // Add element to problem
     ierr = mField.modify_problem_add_finite_element("ULTRAWEAK","ULTRAWEAK"); CHKERRQ(ierr);
     // Boundary conditions
@@ -359,7 +383,7 @@ struct UltraWeakTransportElement {
    * \brief Post process results
    * @return error code
    */
-  PetscErrorCode postProc() {
+  PetscErrorCode postProc(const string out_file) {
     PetscErrorCode ierr;
     PetscFunctionBegin;
     PostProcVolumeOnRefinedMesh post_proc(mField);
@@ -368,7 +392,7 @@ struct UltraWeakTransportElement {
     ierr = post_proc.addFieldValuesPostProc("FLUXES"); CHKERRQ(ierr);
     post_proc.getOpPtrVector().push_back(new OpPostProc(post_proc.postProcMesh,post_proc.mapGaussPts));
     ierr = mField.loop_finite_elements("ULTRAWEAK","ULTRAWEAK",post_proc);  CHKERRQ(ierr);
-    ierr = post_proc.writeFile("out.h5m"); CHKERRQ(ierr);
+    ierr = post_proc.writeFile(out_file.c_str()); CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }
 
@@ -390,6 +414,9 @@ struct UltraWeakTransportElement {
     ierr = VecZeroEntries(D0); CHKERRQ(ierr);
     ierr = VecGhostUpdateBegin(D0,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
     ierr = VecGhostUpdateEnd(D0,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+    ierr = VecZeroEntries(D); CHKERRQ(ierr);
+    ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+    ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }
 
@@ -398,8 +425,14 @@ struct UltraWeakTransportElement {
     PetscErrorCode ierr;
     PetscFunctionBegin;
 
+    ierr = mField.set_global_ghost_vector("ULTRAWEAK",COL,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+
+
     // Calculate essential boundary conditions
 
+    // clear essental bc indices, it could have dofs from other mesh refinement
+    bcIndices.clear();
+    // clear operator, just in case if some other operators are left on this element
     feTriFluxValue.getOpPtrVector().clear();
     // set operator to calculate essential boundary conditions
     feTriFluxValue.getOpPtrVector().push_back(new OpEvaluateBcOnFluxes(*this,"FLUXES",D0));
@@ -486,7 +519,7 @@ struct UltraWeakTransportElement {
     feVol.getOpPtrVector().push_back(new OpL2Source(*this,"VALUES",F));
     feVol.getOpPtrVector().push_back(new OpTauDotSigma_HdivHdiv(*this,"FLUXES",PETSC_NULL,F));
     feVol.getOpPtrVector().push_back(new OpVDotDivSigma_L2Hdiv(*this,"VALUES","FLUXES",PETSC_NULL,F));
-    feVol.getOpPtrVector().push_back(new OpError_L2Norm(*this,"VALUES"));
+    // feVol.getOpPtrVector().push_back(new OpError_L2Norm(*this,"VALUES"));
     ierr = mField.loop_finite_elements("ULTRAWEAK","ULTRAWEAK",feVol); CHKERRQ(ierr);
     feTriFluxValue.getOpPtrVector().clear();
     feTriFluxValue.getOpPtrVector().push_back(new OpRhsBcOnValues(*this,"FLUXES",F));
@@ -514,6 +547,18 @@ struct UltraWeakTransportElement {
         //SETERRQ(PETSC_COMM_SELF,MOFEM_ATOM_TEST_INVALID,"problem with residual");
       }
     }
+    PetscFunctionReturn(0);
+  }
+
+  PetscErrorCode evaluateError() {
+    PetscErrorCode ierr;
+    PetscFunctionBegin;
+    feVol.getOpPtrVector().clear();
+    feVol.getOpPtrVector().push_back(new OpFluxDivergenceAtGaussPts(*this,"FLUXES"));
+    feVol.getOpPtrVector().push_back(new OpValuesAtGaussPts(*this,"VALUES"));
+    feVol.getOpPtrVector().push_back(new OpValuesGradientAtGaussPts(*this,"VALUES"));
+    feVol.getOpPtrVector().push_back(new OpError_L2Norm(*this,"VALUES"));
+    ierr = mField.loop_finite_elements("ULTRAWEAK","ULTRAWEAK",feVol,0,mField.getCommSize()); CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }
 
@@ -1218,7 +1263,7 @@ struct UltraWeakTransportElement {
 
     virtual ~OpFluxDivergenceAtGaussPts() {}
 
-    VectorDouble div_vec;
+    VectorDouble divVec;
     PetscErrorCode doWork(int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
       PetscFunctionBegin;
       PetscErrorCode ierr;
@@ -1235,10 +1280,10 @@ struct UltraWeakTransportElement {
           }
           cTx.divergenceAtGaussPts.clear();
         }
-        div_vec.resize(nb_dofs);
+        divVec.resize(nb_dofs);
         for(int gg = 0;gg<nb_gauss_pts;gg++) {
-          ierr = getDivergenceOfHDivBaseFunctions(side,type,data,gg,div_vec); CHKERRQ(ierr);
-          cTx.divergenceAtGaussPts[gg] += inner_prod(div_vec,data.getFieldData());
+          ierr = getDivergenceOfHDivBaseFunctions(side,type,data,gg,divVec); CHKERRQ(ierr);
+          cTx.divergenceAtGaussPts[gg] += inner_prod(divVec,data.getFieldData());
           noalias(cTx.fluxesAtGaussPts[gg]) += prod(trans(data.getHdivN(gg)),data.getFieldData());
         }
       } catch (const std::exception& ex) {
@@ -1249,8 +1294,9 @@ struct UltraWeakTransportElement {
       PetscFunctionReturn(0);
     }
 
-};
+  };
 
+  map<double,EntityHandle> errorMap;
 
   /** \brief calculate error evaluator
     */
@@ -1304,6 +1350,7 @@ struct UltraWeakTransportElement {
         }
         if(type == MBTET) {
           *error_flux_ptr = sqrt(*error_flux_ptr);
+          cTx.errorMap[*error_flux_ptr] = fe_ent;
         }
       } catch (const std::exception& ex) {
         std::ostringstream ss;
