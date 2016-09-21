@@ -656,6 +656,17 @@ namespace MoFEM {
 
     if(verb>0) PetscPrintf(comm,"Build Finite Elements %s\n",fe_name.c_str());
     ierr = build_finite_elements(*fe_miit,ents_ptr,verb); CHKERRQ(ierr);
+    if(verb>0) {
+      typedef EntFiniteElement_multiIndex::index<BitFEId_mi_tag>::type FiniteElementById;
+      FiniteElementById &finite_elements_by_id = entsFiniteElements.get<BitFEId_mi_tag>();
+      FiniteElementById::iterator miit = finite_elements_by_id.lower_bound((*fe_miit)->getId());
+      FiniteElementById::iterator hi_miit = finite_elements_by_id.upper_bound((*fe_miit)->getId());
+      int count = distance(miit,hi_miit);
+      std::ostringstream ss;
+      ss << *(*fe_miit) << " Nb. FEs " << count << std::endl;
+      PetscSynchronizedPrintf(comm,ss.str().c_str());
+      PetscSynchronizedFlush(comm,PETSC_STDOUT);
+    }
 
     *buildMoFEM |= 1<<1;
     PetscFunctionReturn(0);
