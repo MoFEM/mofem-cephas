@@ -78,7 +78,8 @@ PetscErrorCode L2_ShapeFunctions_MBTET(
   int P = NBVOLUMETET_L2(p);
   if(P==0) PetscFunctionReturn(0);
   double diff_ksiL0[3],diff_ksiL1[3],diff_ksiL2[3];
-  for(int dd = 0;dd<3;dd++) {
+  int dd = 0;
+  for(;dd<3;dd++) {
     diff_ksiL0[dd] = ( diffN[1*3 + dd] - diffN[0*3 + dd] );
     diff_ksiL1[dd] = ( diffN[2*3 + dd] - diffN[0*3 + dd] );
     diff_ksiL2[dd] = ( diffN[3*3 + dd] - diffN[0*3 + dd] );
@@ -108,7 +109,8 @@ PetscErrorCode L2_ShapeFunctions_MBTET(
               L2N[shift+jj] = L0[pp0]*L1[pp1]*L2[pp2];
             }
             if(diff_L2N!=NULL) {
-              for(int dd = 0;dd<3;dd++) {
+              int dd = 0;
+              for(;dd<3;dd++) {
                 diff_L2N[3*shift+3*jj+dd] =
                 diffL0[dd*(p+1)+pp0]*L1[pp1]*L2[pp2]+
                 L0[pp0]*diffL1[dd*(p+1)+pp1]*L2[pp2]+
