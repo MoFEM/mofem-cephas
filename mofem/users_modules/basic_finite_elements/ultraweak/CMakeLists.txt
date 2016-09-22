@@ -16,6 +16,23 @@ file(
   ${CMAKE_CURRENT_SOURCE_DIR}/README
   DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/
 )
+file(
+  COPY
+  ${CMAKE_CURRENT_SOURCE_DIR}/l-shape.msh
+  DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/
+)
+file(
+  COPY
+  ${CMAKE_CURRENT_SOURCE_DIR}/l-shape.geo
+  DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/
+)
+file(
+  COPY
+  ${CMAKE_CURRENT_SOURCE_DIR}/bc.cfg
+  DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/
+)
+
+
 
 # For convinience source files from MoFEM project are used. If user is
 # implementing independent application it will be using instead project
