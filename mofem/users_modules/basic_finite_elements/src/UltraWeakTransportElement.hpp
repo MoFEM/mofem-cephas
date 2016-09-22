@@ -932,7 +932,7 @@ struct UltraWeakTransportElement {
           if(getHoGaussPtsDetJac().size()>0) {
             w *= getHoGaussPtsDetJac()(gg);
           }
-          noalias(Nf) -= w*data.getN(gg)*cTx.divergenceAtGaussPts[gg];
+          noalias(Nf) += w*data.getN(gg)*cTx.divergenceAtGaussPts[gg];
         }
         ierr = VecSetValues(
           F,nb_row,&data.getIndices()[0],
@@ -987,7 +987,7 @@ struct UltraWeakTransportElement {
           const double z = getCoordsAtGaussPts()(gg,2);
           double flux = 0;
           ierr = cTx.getFlux(fe_ent,x,y,z,flux); CHKERRQ(ierr);
-          noalias(Nf) -= w*data.getN(gg)*flux;
+          noalias(Nf) += w*data.getN(gg)*flux;
         }
         ierr = VecSetValues(F,nb_row,&data.getIndices()[0],&Nf[0],ADD_VALUES); CHKERRQ(ierr);
       } catch (const std::exception& ex) {
