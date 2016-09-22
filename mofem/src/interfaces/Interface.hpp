@@ -207,7 +207,7 @@ struct Interface: public UnknownInterface {
     * Nodeset can contain nodes, edges, triangles and tets. This applies to other  meshsets too.
     * The nodeset's meshset contain the nodes in the MIDDLE of the surface or volume which is done by default in Cubit,
     * Hence if all nodes on a particular nodeset are required,
-    * one should get all triangles or tetrahedrons for which the nodeset was create in Cubit,
+    * one should get all triangles or tetrahedron for which the nodeset was create in Cubit,
     * and get all the connectivities of tris/tets.
 
    \deprecated use MeshsetsManager
@@ -387,25 +387,6 @@ struct Interface: public UnknownInterface {
    */
   virtual PetscErrorCode seed_ref_level_MESHSET(const EntityHandle meshset,const BitRefLevel &bit,int verb = -1) = 0;
 
-  // /** \brief Add coordinate system
-  //
-  //   * \deprecated Use CoordSystemsManager to add coordinate system
-  //
-  //   * \param cs_id see \ref CoordSystems for options
-  //   * \param name unique name of coordinate system
-  //   */
-  // DEPRECATED virtual PetscErrorCode add_coordinate_system(const int cs_dim[],const std::string name) = 0;
-
-  // /** \brief Set coordinate system to field
-  //
-  //   * \deprecated Use CoordSystemsManager to add coordinate system
-  //
-  //   * \param name of field
-  //   * \param name unique name of coordinate system
-  //   *
-  //   */
-  // DEPRECATED virtual PetscErrorCode set_field_coordinate_system(const std::string field_name,const std::string cs_name) = 0;
-
   /**\brief add all ents from ref level given by bit to meshset
     * \ingroup mofem_ref_ents
     *
@@ -530,8 +511,13 @@ struct Interface: public UnknownInterface {
     *
    **/
   virtual PetscErrorCode update_meshset_by_entities_children(
-    const EntityHandle parent, const BitRefLevel &child_bit,const EntityHandle child, EntityType child_type,
-    const bool recursive = false, int verb = -1) = 0;
+    const EntityHandle parent,
+    const BitRefLevel &child_bit,
+    const EntityHandle child,
+    EntityType child_type,
+    const bool recursive = false,
+    int verb = -1
+  ) = 0;
 
   /** \brief update fields meshesets by child entities
     * \ingroup mofem_field
@@ -678,21 +664,21 @@ struct Interface: public UnknownInterface {
   virtual PetscErrorCode add_ents_to_field_by_TRIs(const Range &tris,const std::string& name,int verb = -1) = 0;
 
   /**
-    * \brief set field entities from adjacencies of tetrahedrons
+    * \brief set field entities from adjacencies of tetrahedron
     * \ingroup mofem_field
     *
     * The lower dimension entities are added depending on the space type
-    * \param meshset contains set tetrahedrons
+    * \param meshset contains set tetrahedron
     * \param name of the field
     */
   virtual PetscErrorCode add_ents_to_field_by_TETs(const EntityHandle meshset,const std::string& name,int verb = -1) = 0;
 
   /**
-    * \brief set field entities from adjacencies of tetrahedrons
+    * \brief set field entities from adjacencies of tetrahedron
     * \ingroup mofem_field
     *
     * The lower dimension entities are added depending on the space type
-    * \param range contains set tetrahedrons
+    * \param range contains set tetrahedron
     * \param name of the field
     */
   virtual PetscErrorCode add_ents_to_field_by_TETs(const Range &tets,const std::string& name,int verb = -1) = 0;
@@ -945,7 +931,7 @@ struct Interface: public UnknownInterface {
   /** \brief add EDGES entities from range to finite element database given by name
    * \ingroup mofem_fe
    *
-   * \param range contains tetrahedrons
+   * \param range contains tetrahedron
    * \param name Finite Element name
    */
   virtual PetscErrorCode add_ents_to_finite_element_by_EDGEs(const Range& edge,const std::string &name) = 0;
@@ -953,7 +939,7 @@ struct Interface: public UnknownInterface {
   /** \brief add VERTICES entities from range to finite element database given by name
    * \ingroup mofem_fe
    *
-   * \param range contains tetrahedrons
+   * \param range contains tetrahedron
    * \param name Finite Element name
    */
   virtual PetscErrorCode add_ents_to_finite_element_by_VERTICEs(const Range& vert,const std::string &name) = 0;
@@ -961,7 +947,7 @@ struct Interface: public UnknownInterface {
   /** \brief add TRI entities from range to finite element database given by name
    * \ingroup mofem_fe
    *
-   * \param range contains tetrahedrons
+   * \param range contains tetrahedron
    * \param name Finite Element name
    */
   virtual PetscErrorCode add_ents_to_finite_element_by_TRIs(const Range& tris,const std::string &name) = 0;
@@ -969,7 +955,7 @@ struct Interface: public UnknownInterface {
   /** \brief add TRI entities from meshset to finite element database given by name
    * \ingroup mofem_fe
    *
-   * \param range contains tetrahedrons
+   * \param range contains tetrahedron
    * \param name Finite Element name
    * \param recursive if true parent meshset is searched recursively
    */
@@ -980,7 +966,7 @@ struct Interface: public UnknownInterface {
   /** \brief add TET entities from range to finite element database given by name
    * \ingroup mofem_fe
    *
-   * \param range contains tetrahedrons
+   * \param range contains tetrahedron
    * \param name Finite Element name
    */
   virtual PetscErrorCode add_ents_to_finite_element_by_TETs(const Range& tets,const std::string &name) = 0;
@@ -988,7 +974,7 @@ struct Interface: public UnknownInterface {
   /** \brief add TET entities from meshset to finite element database given by name
    * \ingroup mofem_fe
    *
-   * \param meshset contains tetrahedrons
+   * \param meshset contains tetrahedron
    * \param name Finite Element name
    * \param recursive if true parent meshset is searched recursively
    */
@@ -999,7 +985,7 @@ struct Interface: public UnknownInterface {
   /** \brief add PRISM entities from meshset to finite element database given by name
    * \ingroup mofem_fe
    *
-   * \param range contains tetrahedrons
+   * \param range contains tetrahedron
    * \param name Finite Element name
    */
   virtual PetscErrorCode add_ents_to_finite_element_by_PRISMs(const Range& prims,const std::string &name) = 0;
@@ -1007,7 +993,7 @@ struct Interface: public UnknownInterface {
   /** \brief add TET entities from meshset to finite element database given by name
    * \ingroup mofem_fe
    *
-   * \param meshset contains tetrahedrons
+   * \param meshset contains tetrahedron
    * \param name Finite Element name
    * \param recursive if true parent meshset is searched recursively
    */

@@ -1848,8 +1848,8 @@ PetscErrorCode Core::update_meshset_by_entities_children(
     std::cerr << moab.type_from_handle(parent) <<  " " << MBENTITYSET << std::endl;
   } CHKERRQ_MOAB(rval);
 
-  typedef RefEntity_multiIndex::index<Composite_Ent_And_ParentEntType_mi_tag>::type ref_ents_by_composite;
-  ref_ents_by_composite &ref_ents = refinedEntities.get<Composite_Ent_And_ParentEntType_mi_tag>();
+  typedef RefEntity_multiIndex::index<Composite_Ent_And_ParentEntType_mi_tag>::type RefEntsByComposite;
+  RefEntsByComposite &ref_ents = refinedEntities.get<Composite_Ent_And_ParentEntType_mi_tag>();
   Range::iterator eit = ents.begin();
   for(;eit!=ents.end();eit++) {
     if(verb>2) {
@@ -1857,8 +1857,8 @@ PetscErrorCode Core::update_meshset_by_entities_children(
       ss << "ent " << *eit << std::endl;;
       PetscPrintf(comm,ss.str().c_str());
     }
-    ref_ents_by_composite::iterator miit = ref_ents.lower_bound(boost::make_tuple(*eit,child_type));
-    ref_ents_by_composite::iterator hi_miit = ref_ents.upper_bound(boost::make_tuple(*eit,child_type));
+    RefEntsByComposite::iterator miit = ref_ents.lower_bound(boost::make_tuple(*eit,child_type));
+    RefEntsByComposite::iterator hi_miit = ref_ents.upper_bound(boost::make_tuple(*eit,child_type));
     for(;miit!=hi_miit;miit++) {
       if(verb>2) {
         std::ostringstream ss;

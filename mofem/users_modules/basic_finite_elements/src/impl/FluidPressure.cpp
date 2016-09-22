@@ -55,7 +55,7 @@ PetscErrorCode FluidPressure::addNeumannFluidPressureBCElements(
       setOfFluids[bit->getMeshsetId()].zEroPressure[0] = attributes[4];
       setOfFluids[bit->getMeshsetId()].zEroPressure[1] = attributes[5];
       setOfFluids[bit->getMeshsetId()].zEroPressure[2] = attributes[6];
-      //get blok tetrahedrons and triangles
+      //get blok tetrahedron and triangles
       Range tets;
       rval = mField.get_moab().get_entities_by_type(bit->meshset,MBTET,tets,true); CHKERRQ_MOAB(rval);
       Range tris;

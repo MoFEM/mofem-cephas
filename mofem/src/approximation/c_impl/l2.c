@@ -112,8 +112,9 @@ PetscErrorCode L2_ShapeFunctions_MBTET(
               int dd = 0;
               for(;dd<3;dd++) {
                 diff_L2N[3*shift+3*jj+dd] =
-                diffL0[dd*(p+1)+pp0]*L1[pp1]*L2[pp2]+L0[pp0]*diffL1[dd*(p+1)+pp1]
-                *L2[pp2]+L0[pp0]*L1[pp1]*diffL2[dd*(p+1)+pp2];
+                diffL0[dd*(p+1)+pp0]*L1[pp1]*L2[pp2]+
+                L0[pp0]*diffL1[dd*(p+1)+pp1]*L2[pp2]+
+                L0[pp0]*L1[pp1]*diffL2[dd*(p+1)+pp2];
               }
             }
             jj++;

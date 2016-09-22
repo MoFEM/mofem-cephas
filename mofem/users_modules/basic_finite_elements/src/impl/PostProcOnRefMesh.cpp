@@ -285,6 +285,25 @@ PetscErrorCode PostProcCommonOnRefMesh::OpGetFieldGradientValues::doWork(
         }
       }
       break;
+      case L2:
+      commonData.gradMap[rowFieldName].resize(nb_gauss_pts);
+      for(int gg = 0;gg<nb_gauss_pts;gg++) {
+        rval = postProcMesh.tag_set_data(th,&mapGaussPts[gg],1,def_VAL); CHKERRQ_MOAB(rval);
+        (commonData.gradMap[rowFieldName])[gg].resize(rank,3);
+        (commonData.gradMap[rowFieldName])[gg].clear();
+      }
+      rval = postProcMesh.tag_get_by_ptr(th,&mapGaussPts[0],mapGaussPts.size(),tags_ptr); CHKERRQ_MOAB(rval);
+      for(int gg = 0;gg<nb_gauss_pts;gg++) {
+        for(int rr = 0;rr<rank;rr++) {
+          for(int dd = 0;dd<3;dd++) {
+            for(unsigned int dof = 0;dof<(vAluesPtr->size()/rank);dof++) {
+              ((double*)tags_ptr[gg])[rank*rr+dd] += data.getDiffN(gg)(dof,dd)*(*vAluesPtr)[rank*dof+rr];
+              (commonData.gradMap[rowFieldName])[gg](rr,dd) += data.getDiffN(gg)(dof,dd)*(*vAluesPtr)[rank*dof+rr];
+            }
+          }
+        }
+      }
+      break;
       default:
       SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"field with that space is not implemented");
     }

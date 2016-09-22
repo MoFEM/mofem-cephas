@@ -398,16 +398,7 @@ struct MoFEMProblem {
   MoFEMProblem(Interface &moab,const EntityHandle _meshset);
   inline BitProblemId getId() const { return *((BitProblemId*)tag_id_data); }
 
-  // /** \deprecated Use getId() instead
-  // */
-  // DEPRECATED inline BitProblemId get_id() const { return getId(); }
-
   inline std::string getName() const { return std::string((char *)tag_name_data,tag_name_size); }
-
-  // /** \deprecated Use getName() instead
-  // */
-  // DEPRECATED inline std::string get_name() const { return getName(); }
-
 
   inline DofIdx getNbDofsRow() const { return *((DofIdx*)tag_nbdof_data_row); }
   inline DofIdx getNbDofsCol() const { return *((DofIdx*)tag_nbdof_data_col); }
@@ -433,11 +424,6 @@ struct MoFEMProblem {
   DEPRECATED inline DofIdx get_nb_ghost_dofs_col() const { return getNbGhostDofsCol(); }
 
   inline BitRefLevel getBitRefLevel() const { return *tag_BitRefLevel; }
-
-  // /** \deprecated Use getBitRefLevel() instead
-  // */
-  // DEPRECATED inline BitRefLevel get_BitRefLevel() const { return getBitRefLevel(); }
-
 
   inline BitRefLevel get_DofMask_BitRefLevel() const { return *tag_BitRefLevel_DofMask; }
   PetscErrorCode getRowDofsByPetscGlobalDofIdx(DofIdx idx,const NumeredDofEntity **dof_ptr) const;
