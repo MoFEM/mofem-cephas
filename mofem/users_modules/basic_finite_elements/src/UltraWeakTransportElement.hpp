@@ -1,6 +1,8 @@
 /** \file UltraWeakTransportElement.hpp
  * \brief Ultra weak implementation of transport element
  *
+ * \ingroup mofem_ultra_weak_transport_elem
+ *
  */
 
 /*
@@ -27,7 +29,7 @@
   Note to solve this system you need to use direct solver or proper preconditioner
   for saddle problem.
 
-  It is based on \cite arnold2006differential \cite arnold2012mixed
+  It is based on \cite arnold2006differential \cite arnold2012mixed \cote reviartthomas1996
   <https://www.researchgate.net/profile/Richard_Falk/publication/226454406_Differential_Complexes_and_Stability_of_Finite_Element_Methods_I._The_de_Rham_Complex/links/02e7e5214f0426ff77000000.pdf>
 
   General problem have form,
@@ -571,7 +573,7 @@ struct UltraWeakTransportElement {
     const MoFEMProblem *problem_ptr;
     ierr = mField.get_problem("ULTRAWEAK",&problem_ptr); CHKERRQ(ierr);
     PetscPrintf(
-      mField.get_comm(),"Nb dofs %d error2 = %6.4e\n",problem_ptr->getNbDofsRow(),sumError
+      mField.get_comm(),"Nb dofs %d error = %6.4e\n",problem_ptr->getNbDofsRow(),sumError
     );
     PetscFunctionReturn(0);
   }
@@ -1349,6 +1351,7 @@ struct UltraWeakTransportElement {
           th_error_flux,&fe_ent,1,(const void**)&error_flux_ptr
         ); CHKERRQ_MOAB(rval);
         deltaFlux.resize(3,false);
+        const double h = pow(getVolume()*12/sqrt(2),(double)1/3);
         *error_flux_ptr = 0;
         for(int gg = 0;gg<nb_gauss_pts;gg++) {
           double w = getGaussPts()(3,gg)*getVolume();
@@ -1358,6 +1361,9 @@ struct UltraWeakTransportElement {
           const double x = getCoordsAtGaussPts()(gg,0);
           const double y = getCoordsAtGaussPts()(gg,1);
           const double z = getCoordsAtGaussPts()(gg,2);
+          // double flux;
+          // ierr = cTx.getFlux(fe_ent,x,y,z,flux); CHKERRQ(ierr);
+          // double delta_div = pow(cTx.divergenceAtGaussPts[gg]-flux,2);
           ierr = cTx.getResistivity(fe_ent,x,y,z,invK); CHKERRQ(ierr);
           noalias(deltaFlux) = prod(invK,cTx.fluxesAtGaussPts[gg])+cTx.valuesGradientAtGaussPts[gg];
           *error_flux_ptr += w*inner_prod(deltaFlux,deltaFlux);

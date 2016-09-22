@@ -1,6 +1,14 @@
-/** \fi;e transport.cpp
+/** \file transport.cpp
 \brief Example implementation of transport problem using ultra-week formulation
 
+
+
+\todo Shoud be implemented and tested problem form this article
+Demkowicz, Leszek, and Jayadeep Gopalakrishnan. "Analysis of the DPG method for
+the Poisson equation." SIAM Journal on Numerical Analysis 49.5 (2011):
+1788-1809.
+
+\ingroup mofem_ultra_weak_transport_elem
 */
 
 /* This file is part of MoFEM.
@@ -238,14 +246,16 @@ struct MyUltraWeakFE: public UltraWeakTransportElement {
     }
     // get tets which has large error
     Range tets_to_refine;
-    int size = ((double)5/6)*ufe.errorMap.size();
+    const double max_error = ufe.errorMap.rbegin()->first;
+    // int size = ((double)5/6)*ufe.errorMap.size();
     for(
       map<double,EntityHandle>::iterator mit = ufe.errorMap.begin();
       mit!=ufe.errorMap.end();
       mit++
     ) {
       // cerr << mit->first << " " << mit->second << endl;
-      if((size--)>0) continue;
+      // if((size--)>0) continue;
+      if(mit->first<0.25*max_error) continue;
       tets_to_refine.insert(mit->second);
     }
     Range tets_to_refine_edges;
