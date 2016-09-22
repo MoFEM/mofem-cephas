@@ -119,8 +119,7 @@ struct MyUltraWeakFE: public UltraWeakTransportElement {
     PetscErrorCode ierr;
     PetscFunctionBegin;
     Range tets;
-    EntityHandle fe_meshset = mField.get_finite_element_meshset("ULTRAWEAK"); CHKERRQ(ierr);
-    rval = mField.get_moab().get_entities_by_type(fe_meshset,MBTET,tets); CHKERR_MOAB(rval);
+    ierr = mField.get_entities_by_type_and_ref_level(ref_level,BitRefLevel().set(),MBTET,tets);
     Skinner skin(&mField.get_moab());
     Range skin_faces; // skin faces from 3d ents
     rval = skin.find_skin(0,tets,false,skin_faces); CHKERR_MOAB(rval);
@@ -175,64 +174,6 @@ struct MyUltraWeakFE: public UltraWeakTransportElement {
     PetscFunctionReturn(0);
   }
 
-  PetscErrorCode refienMesh(
-    UltraWeakTransportElement &ufe,const int nb_levels
-  ) {
-    PetscErrorCode ierr;
-    MoABErrorCode rval;
-    MeshRefinment *refine_ptr;
-    PetscFunctionBegin;
-    Range refined_edges;
-    BitRefLevel all_but_0;
-    all_but_0.set(0);
-    all_but_0.flip();
-    ierr = mField.get_entities_by_type_and_ref_level(
-      all_but_0,all_but_0,MBEDGE,refined_edges
-    ); CHKERRQ(ierr);
-    Range tets_to_refine;
-    int size = ((double)2/3)*ufe.errorMap.size();
-    for(
-      map<double,EntityHandle>::iterator mit = ufe.errorMap.begin();
-      mit!=ufe.errorMap.end();
-      mit++
-    ) {
-      // cerr << mit->first << " " << mit->second << endl;
-      if((size--)>0) continue;
-      tets_to_refine.insert(mit->second);
-    }
-    Range tets_to_refine_edges;
-    rval = mField.get_moab().get_adjacencies(
-      tets_to_refine,1,false,tets_to_refine_edges,moab::Interface::UNION
-    ); CHKERRQ_MOAB(rval);
-    // cerr << tets_to_refine_edges << endl;
-    ierr = mField.query_interface(refine_ptr); CHKERRQ(ierr);
-    refined_edges.merge(tets_to_refine_edges);
-    // cerr << refined_edges << endl;
-    for(int ll = 0;ll!=nb_levels;ll++) {
-      ierr = refine_ptr->add_verices_in_the_middel_of_edges(refined_edges,BitRefLevel().set(ll+1)); CHKERRQ(ierr);
-      Range tets;
-      ierr = mField.get_entities_by_type_and_ref_level(
-        BitRefLevel().set(ll),BitRefLevel().set(),MBTET,tets
-      ); CHKERRQ(ierr);
-      ierr = refine_ptr->refine_TET(tets,BitRefLevel().set(ll+1)); CHKERRQ(ierr);
-      // cerr << BitRefLevel().set(ll+1) << endl;
-    }
-
-    // {
-    //   EntityHandle out_meshset_tet;
-    //   rval = mField.get_moab().create_meshset(MESHSET_SET,out_meshset_tet); CHKERRQ_MOAB(rval);
-    //   // cerr << BitRefLevel().set(nb_levels) << endl;
-    //   ierr = mField.get_entities_by_type_and_ref_level(
-    //     BitRefLevel().set(nb_levels),BitRefLevel().set(),MBTET,out_meshset_tet
-    //   ); CHKERRQ(ierr);
-    //   if(mField.getCommRank()==0) {
-    //     rval = mField.get_moab().write_file("ref_mesh.vtk","VTK","",&out_meshset_tet,1); CHKERRQ_MOAB(rval);
-    //   }
-    // }
-
-    PetscFunctionReturn(0);
-  }
-
   PetscErrorCode updateMeshsetsFieldsAndElements(const int nb_levels,const int order) {
     MoABErrorCode rval;
     PetscErrorCode ierr;
@@ -270,16 +211,65 @@ struct MyUltraWeakFE: public UltraWeakTransportElement {
       rval = mField.get_moab().get_entities_by_type(it->meshset,MBTET,setOfBlocks[it->getMeshsetId()].tEts,true); CHKERRQ_MOAB(rval);
       setOfBlocks[it->getMeshsetId()].tEts = intersect(ref_tets,setOfBlocks[it->getMeshsetId()].tEts);
       ierr = mField.add_ents_to_finite_element_by_TETs(setOfBlocks[it->getMeshsetId()].tEts,"ULTRAWEAK"); CHKERRQ(ierr);
-      // {
-      //   if(mField.getCommRank()==0) {
-      //     EntityHandle out_meshset_tet;
-      //     rval = mField.get_moab().create_meshset(MESHSET_SET,out_meshset_tet); CHKERRQ_MOAB(rval);
-      //     rval = mField.get_moab().add_entities(out_meshset_tet,setOfBlocks[it->getMeshsetId()].tEts); CHKERRQ_MOAB(rval);
-      //     rval = mField.get_moab().write_file("block_mesh.vtk","VTK","",&out_meshset_tet,1); CHKERRQ_MOAB(rval);
-      //   }
-      // }
     }
     rval = mField.get_moab().delete_entities(&out_meshset_tet,1); CHKERRQ_MOAB(rval);
+    PetscFunctionReturn(0);
+  }
+
+  PetscErrorCode refienMesh(
+    UltraWeakTransportElement &ufe,const int nb_levels,const int order
+  ) {
+    PetscErrorCode ierr;
+    MoABErrorCode rval;
+    MeshRefinment *refine_ptr;
+    PetscFunctionBegin;
+    // get refined edges having child vertex
+    const RefEntity_multiIndex *ref_ents_ptr;
+    ierr = mField.get_ref_ents(&ref_ents_ptr); CHKERRQ(ierr);
+    typedef RefEntity_multiIndex::index<Composite_EntType_and_ParentEntType_mi_tag>::type RefEntsByComposite;
+    const RefEntsByComposite &ref_ents = ref_ents_ptr->get<Composite_EntType_and_ParentEntType_mi_tag>();
+    RefEntsByComposite::iterator rit,hi_rit;
+    rit = ref_ents.lower_bound(boost::make_tuple(MBVERTEX,MBEDGE));
+    hi_rit = ref_ents.upper_bound(boost::make_tuple(MBVERTEX,MBEDGE));
+    Range refined_edges;
+    // thist loop is over vertices which parent is edge
+    for(;rit!=hi_rit;rit++) {
+      refined_edges.insert((*rit)->getParentEnt()); // get parent edge
+    }
+    // get tets which has large error
+    Range tets_to_refine;
+    int size = ((double)5/6)*ufe.errorMap.size();
+    for(
+      map<double,EntityHandle>::iterator mit = ufe.errorMap.begin();
+      mit!=ufe.errorMap.end();
+      mit++
+    ) {
+      // cerr << mit->first << " " << mit->second << endl;
+      if((size--)>0) continue;
+      tets_to_refine.insert(mit->second);
+    }
+    Range tets_to_refine_edges;
+    rval = mField.get_moab().get_adjacencies(
+      tets_to_refine,1,false,tets_to_refine_edges,moab::Interface::UNION
+    ); CHKERRQ_MOAB(rval);
+    refined_edges.merge(tets_to_refine_edges);
+    ierr = mField.query_interface(refine_ptr); CHKERRQ(ierr);
+    for(int ll = 0;ll!=nb_levels;ll++) {
+      Range edges;
+      ierr = mField.get_entities_by_type_and_ref_level(
+        BitRefLevel().set(ll),BitRefLevel().set(),MBEDGE,edges
+      ); CHKERRQ(ierr);
+      edges = intersect(edges,refined_edges);
+      // add edges to refine at current level edges (some of the where refined before)
+      ierr = refine_ptr->add_verices_in_the_middel_of_edges(edges,BitRefLevel().set(ll+1)); CHKERRQ(ierr);
+      //  get tets at current level
+      Range tets;
+      ierr = mField.get_entities_by_type_and_ref_level(
+        BitRefLevel().set(ll),BitRefLevel().set(),MBTET,tets
+      ); CHKERRQ(ierr);
+      ierr = refine_ptr->refine_TET(tets,BitRefLevel().set(ll+1)); CHKERRQ(ierr);
+      ierr = updateMeshsetsFieldsAndElements(ll+1,order); CHKERRQ(ierr);
+    }
     PetscFunctionReturn(0);
   }
 
@@ -303,10 +293,8 @@ int main(int argc, char *argv[]) {
   if(flg != PETSC_TRUE) {
     SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_file (MESH FILE NEEDED)");
   }
-
   ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
   if(pcomm == NULL) pcomm =  new ParallelComm(&moab,PETSC_COMM_WORLD);
-
   const char *option;
   option = "";
   rval = moab.load_file(mesh_file_name, 0, option); CHKERRQ_MOAB(rval);
@@ -320,7 +308,12 @@ int main(int argc, char *argv[]) {
   ierr = m_field.query_interface(meshsets_manager_ptr); CHKERRQ(ierr);
   ierr = meshsets_manager_ptr->setMeshsetFromFile(); CHKERRQ(ierr);
 
+  PetscPrintf(PETSC_COMM_WORLD,"Read meshsets add added meshsets for bc.cfg\n");
   for(_IT_CUBITMESHSETS_FOR_LOOP_(m_field,it)) {
+    PetscPrintf(
+      PETSC_COMM_WORLD,
+      "%s",static_cast<std::ostringstream&>(std::ostringstream().seekp(0) << *it << endl).str().c_str()
+    );
     cerr << *it << endl;
   }
 
@@ -354,39 +347,38 @@ int main(int argc, char *argv[]) {
   ierr = ufe.destroyMatrices(); CHKERRQ(ierr);
   ierr = ufe.postProc("out_0.h5m"); CHKERRQ(ierr);
 
-  {
-    const int nb_levels = 1;
+  int nb_levels = 5;
+  ierr = PetscOptionsGetInt(PETSC_NULL,PETSC_NULL,"-nb_levels",&nb_levels,PETSC_NULL); CHKERRQ(ierr);
+  for(int ll = 1;ll!=nb_levels;ll++) {
+    const int nb_levels = ll;
     ierr = ufe.squashBits(); CHKERRQ(ierr);
-    ierr = ufe.refienMesh(ufe,nb_levels); CHKERRQ(ierr);
-    ierr = ufe.updateMeshsetsFieldsAndElements(nb_levels,order); CHKERRQ(ierr);
+    ierr = ufe.refienMesh(ufe,nb_levels,order); CHKERRQ(ierr);
     ref_level = BitRefLevel().set(nb_levels);
     bc_flux_map.clear();
     ierr = ufe.addBoundaryElements(ref_level);
     ierr = ufe.buildProblem(ref_level); CHKERRQ(ierr);
-    // {
-    //   EntityHandle out_meshset;
-    //   rval = m_field.get_moab().create_meshset(MESHSET_SET,out_meshset); CHKERRQ_MOAB(rval);
-    //   ierr = m_field.get_problem_finite_elements_entities("ULTRAWEAK","ULTRAWEAK",out_meshset); CHKERRQ(ierr);
-    //   if(m_field.getCommRank()==0) {
-    //     rval = m_field.get_moab().write_file("vol_mesh.vtk","VTK","",&out_meshset,1); CHKERRQ_MOAB(rval);
-    //   }
-    // }
-    // {
-    //   EntityHandle out_meshset;
-    //   rval = m_field.get_moab().create_meshset(MESHSET_SET,out_meshset); CHKERRQ_MOAB(rval);
-    //   ierr = m_field.get_problem_finite_elements_entities("ULTRAWEAK","ULTRAWEAK_BCVALUE",out_meshset); CHKERRQ(ierr);
-    //   if(m_field.getCommRank()==0) {
-    //     rval = m_field.get_moab().write_file("bc_nat_mesh.vtk","VTK","",&out_meshset,1); CHKERRQ_MOAB(rval);
-    //   }
-    // }
-    // {
-    //   EntityHandle out_meshset;
-    //   rval = m_field.get_moab().create_meshset(MESHSET_SET,out_meshset); CHKERRQ_MOAB(rval);
-    //   ierr = m_field.get_problem_finite_elements_entities("ULTRAWEAK","ULTRAWEAK_BCFLUX",out_meshset); CHKERRQ(ierr);
-    //   if(m_field.getCommRank()==0) {
-    //     rval = m_field.get_moab().write_file("bc_ess_mesh.vtk","VTK","",&out_meshset,1); CHKERRQ_MOAB(rval);
-    //   }
-    // }
+
+    {
+      EntityHandle out_meshset;
+      rval = m_field.get_moab().create_meshset(MESHSET_SET,out_meshset); CHKERRQ_MOAB(rval);
+      // cerr << BitRefLevel().set(nb_levels) << endl;
+      ierr = m_field.get_problem_finite_elements_entities("ULTRAWEAK","ULTRAWEAK_BCFLUX",out_meshset); CHKERRQ(ierr);
+      if(m_field.getCommRank()==0) {
+        rval = m_field.get_moab().write_file("bc_ess_mesh.vtk","VTK","",&out_meshset,1); CHKERRQ_MOAB(rval);
+      }
+    }
+
+    {
+      EntityHandle out_meshset;
+      rval = m_field.get_moab().create_meshset(MESHSET_SET,out_meshset); CHKERRQ_MOAB(rval);
+      // cerr << BitRefLevel().set(nb_levels) << endl;
+      ierr = m_field.get_problem_finite_elements_entities("ULTRAWEAK","ULTRAWEAK_BCVALUE",out_meshset); CHKERRQ(ierr);
+      if(m_field.getCommRank()==0) {
+        rval = m_field.get_moab().write_file("bc_ant_mesh.vtk","VTK","",&out_meshset,1); CHKERRQ_MOAB(rval);
+      }
+    }
+
+
     ierr = ufe.createMatrices(); CHKERRQ(ierr);
     ierr = ufe.solveProblem(); CHKERRQ(ierr);
     ierr = ufe.calculateResidual(); CHKERRQ(ierr);

@@ -389,6 +389,7 @@ struct UltraWeakTransportElement {
     PostProcVolumeOnRefinedMesh post_proc(mField);
     ierr = post_proc.generateReferenceElementMesh(); CHKERRQ(ierr);
     ierr = post_proc.addFieldValuesPostProc("VALUES"); CHKERRQ(ierr);
+    ierr = post_proc.addFieldValuesGradientPostProc("VALUES"); CHKERRQ(ierr);
     ierr = post_proc.addFieldValuesPostProc("FLUXES"); CHKERRQ(ierr);
     post_proc.getOpPtrVector().push_back(new OpPostProc(post_proc.postProcMesh,post_proc.mapGaussPts));
     ierr = mField.loop_finite_elements("ULTRAWEAK","ULTRAWEAK",post_proc);  CHKERRQ(ierr);
@@ -407,6 +408,14 @@ struct UltraWeakTransportElement {
     ierr = mField.VecCreateGhost("ULTRAWEAK",COL,&D); CHKERRQ(ierr);
     ierr = mField.VecCreateGhost("ULTRAWEAK",COL,&D0); CHKERRQ(ierr);
     ierr = mField.VecCreateGhost("ULTRAWEAK",ROW,&F); CHKERRQ(ierr);
+    PetscFunctionReturn(0);
+  }
+
+  /// \brief solve problem
+  PetscErrorCode solveProblem() {
+    PetscErrorCode ierr;
+    PetscFunctionBegin;
+
     ierr = MatZeroEntries(Aij); CHKERRQ(ierr);
     ierr = VecZeroEntries(F); CHKERRQ(ierr);
     ierr = VecGhostUpdateBegin(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
@@ -417,16 +426,8 @@ struct UltraWeakTransportElement {
     ierr = VecZeroEntries(D); CHKERRQ(ierr);
     ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
     ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
-  }
-
-  /// \brief solve problem
-  PetscErrorCode solveProblem() {
-    PetscErrorCode ierr;
-    PetscFunctionBegin;
 
     ierr = mField.set_global_ghost_vector("ULTRAWEAK",COL,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-
 
     // Calculate essential boundary conditions
 
@@ -443,10 +444,11 @@ struct UltraWeakTransportElement {
     ierr = VecAssemblyEnd(D0); CHKERRQ(ierr);
 
     // set operators to calculate matrix and right hand side vectors
+    feVol.getOpPtrVector().clear();
+    feVol.getOpPtrVector().push_back(new OpL2Source(*this,"VALUES",F));
     feVol.getOpPtrVector().push_back(new OpFluxDivergenceAtGaussPts(*this,"FLUXES"));
     feVol.getOpPtrVector().push_back(new OpValuesAtGaussPts(*this,"VALUES"));
     feVol.getOpPtrVector().push_back(new OpDivTauU_HdivL2(*this,"FLUXES","VALUES",Aij,F));
-    feVol.getOpPtrVector().push_back(new OpL2Source(*this,"VALUES",F));
     feVol.getOpPtrVector().push_back(new OpTauDotSigma_HdivHdiv(*this,"FLUXES",Aij,F));
     feVol.getOpPtrVector().push_back(new OpVDotDivSigma_L2Hdiv(*this,"VALUES","FLUXES",Aij,F));
     ierr = mField.loop_finite_elements("ULTRAWEAK","ULTRAWEAK",feVol); CHKERRQ(ierr);
@@ -510,16 +512,16 @@ struct UltraWeakTransportElement {
     ierr = VecZeroEntries(F); CHKERRQ(ierr);
     ierr = VecGhostUpdateBegin(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
     ierr = VecGhostUpdateEnd(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+    ierr = VecAssemblyBegin(F); CHKERRQ(ierr);
+    ierr = VecAssemblyEnd(F); CHKERRQ(ierr);
     //calculate residuals
     feVol.getOpPtrVector().clear();
+    feVol.getOpPtrVector().push_back(new OpL2Source(*this,"VALUES",F));
     feVol.getOpPtrVector().push_back(new OpFluxDivergenceAtGaussPts(*this,"FLUXES"));
     feVol.getOpPtrVector().push_back(new OpValuesAtGaussPts(*this,"VALUES"));
-    feVol.getOpPtrVector().push_back(new OpValuesGradientAtGaussPts(*this,"VALUES"));
     feVol.getOpPtrVector().push_back(new OpDivTauU_HdivL2(*this,"FLUXES","VALUES",PETSC_NULL,F));
-    feVol.getOpPtrVector().push_back(new OpL2Source(*this,"VALUES",F));
     feVol.getOpPtrVector().push_back(new OpTauDotSigma_HdivHdiv(*this,"FLUXES",PETSC_NULL,F));
     feVol.getOpPtrVector().push_back(new OpVDotDivSigma_L2Hdiv(*this,"VALUES","FLUXES",PETSC_NULL,F));
-    // feVol.getOpPtrVector().push_back(new OpError_L2Norm(*this,"VALUES"));
     ierr = mField.loop_finite_elements("ULTRAWEAK","ULTRAWEAK",feVol); CHKERRQ(ierr);
     feTriFluxValue.getOpPtrVector().clear();
     feTriFluxValue.getOpPtrVector().push_back(new OpRhsBcOnValues(*this,"FLUXES",F));
@@ -550,15 +552,27 @@ struct UltraWeakTransportElement {
     PetscFunctionReturn(0);
   }
 
+  /** \brief Calculate error on elements
+
+    \todo this functions runs serial, in future should be parallel and work on
+    distributed meshes.
+
+  */
   PetscErrorCode evaluateError() {
     PetscErrorCode ierr;
     PetscFunctionBegin;
+    errorMap.clear();
+    sumError = 0;
     feVol.getOpPtrVector().clear();
     feVol.getOpPtrVector().push_back(new OpFluxDivergenceAtGaussPts(*this,"FLUXES"));
-    feVol.getOpPtrVector().push_back(new OpValuesAtGaussPts(*this,"VALUES"));
     feVol.getOpPtrVector().push_back(new OpValuesGradientAtGaussPts(*this,"VALUES"));
     feVol.getOpPtrVector().push_back(new OpError_L2Norm(*this,"VALUES"));
     ierr = mField.loop_finite_elements("ULTRAWEAK","ULTRAWEAK",feVol,0,mField.getCommSize()); CHKERRQ(ierr);
+    const MoFEMProblem *problem_ptr;
+    ierr = mField.get_problem("ULTRAWEAK",&problem_ptr); CHKERRQ(ierr);
+    PetscPrintf(
+      mField.get_comm(),"Nb dofs %d error2 = %6.4e\n",problem_ptr->getNbDofsRow(),sumError
+    );
     PetscFunctionReturn(0);
   }
 
@@ -790,7 +804,6 @@ struct UltraWeakTransportElement {
         int nb_row = data.getIndices().size();
         Nf.resize(nb_row);
         Nf.clear();
-        bzero(&*Nf.data().begin(),Nf.data().size()*sizeof(FieldData));
         divVec.resize(data.getHdivN().size2()/3,0);
         if(divVec.size()!=data.getIndices().size()) {
           SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
@@ -875,7 +888,7 @@ struct UltraWeakTransportElement {
           ierr = getDivergenceOfHDivBaseFunctions(
             col_side,col_type,col_data,gg,divVec
           ); CHKERRQ(ierr);
-          noalias(NN) -= w*outer_prod(row_data.getN(gg),divVec);
+          noalias(NN) += w*outer_prod(row_data.getN(gg),divVec);
         }
         ierr = MatSetValues(
           Aij,
@@ -884,7 +897,7 @@ struct UltraWeakTransportElement {
           &NN(0,0),ADD_VALUES
         ); CHKERRQ(ierr);
         transNN.resize(nb_col,nb_row);
-        ublas::noalias(transNN) = trans(NN);
+        ublas::noalias(transNN) = -trans(NN);
         ierr = MatSetValues(
           Aij,
           nb_col,&col_data.getIndices()[0],
@@ -944,7 +957,8 @@ struct UltraWeakTransportElement {
 
     OpL2Source(
       UltraWeakTransportElement &ctx,
-      const std::string field_name,Vec _F
+      const std::string field_name,
+      Vec _F
     ):
     MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROW),
     cTx(ctx),
@@ -952,42 +966,40 @@ struct UltraWeakTransportElement {
 
     VectorDouble Nf;
     PetscErrorCode doWork(
-      int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
-        PetscErrorCode ierr;
-        PetscFunctionBegin;
-        try {
-          if(data.getFieldData().size()==0) PetscFunctionReturn(0);
-          EntityHandle fe_ent = getNumeredEntFiniteElementPtr()->getEnt();
-          int nb_row = data.getFieldData().size();
-          Nf.resize(nb_row);
-          Nf.clear();
-          int nb_gauss_pts = data.getHdivN().size1();
-          for(int gg = 0;gg<nb_gauss_pts;gg++) {
-            double w = getGaussPts()(3,gg)*getVolume();
-            if(getHoGaussPtsDetJac().size()>0) {
-              w *= getHoGaussPtsDetJac()(gg);
-            }
-            const double x = getCoordsAtGaussPts()(gg,0);
-            const double y = getCoordsAtGaussPts()(gg,1);
-            const double z = getCoordsAtGaussPts()(gg,2);
-            double flux;
-            ierr = cTx.getFlux(fe_ent,x,y,z,flux); CHKERRQ(ierr);
-            noalias(Nf) += w*data.getN(gg)*flux;
+      int side,EntityType type,DataForcesAndSurcesCore::EntData &data
+    ) {
+      PetscErrorCode ierr;
+      PetscFunctionBegin;
+      try {
+        if(data.getFieldData().size()==0) PetscFunctionReturn(0);
+        EntityHandle fe_ent = getNumeredEntFiniteElementPtr()->getEnt();
+        int nb_row = data.getFieldData().size();
+        Nf.resize(nb_row,false);
+        Nf.clear();
+        int nb_gauss_pts = data.getHdivN().size1();
+        for(int gg = 0;gg<nb_gauss_pts;gg++) {
+          double w = getGaussPts()(3,gg)*getVolume();
+          if(getHoGaussPtsDetJac().size()>0) {
+            w *= getHoGaussPtsDetJac()(gg);
           }
-          ierr = VecSetValues(
-            F,nb_row,&data.getIndices()[0],
-            &Nf[0],ADD_VALUES
-          ); CHKERRQ(ierr);
-        } catch (const std::exception& ex) {
-          std::ostringstream ss;
-          ss << "throw in method: " << ex.what() << std::endl;
-          SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+          const double x = getCoordsAtGaussPts()(gg,0);
+          const double y = getCoordsAtGaussPts()(gg,1);
+          const double z = getCoordsAtGaussPts()(gg,2);
+          double flux = 0;
+          ierr = cTx.getFlux(fe_ent,x,y,z,flux); CHKERRQ(ierr);
+          noalias(Nf) -= w*data.getN(gg)*flux;
         }
-
-        PetscFunctionReturn(0);
+        ierr = VecSetValues(F,nb_row,&data.getIndices()[0],&Nf[0],ADD_VALUES); CHKERRQ(ierr);
+      } catch (const std::exception& ex) {
+        std::ostringstream ss;
+        ss << "throw in method: " << ex.what() << std::endl;
+        SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
 
-    };
+      PetscFunctionReturn(0);
+    }
+
+  };
 
   /**
    * \brief calculate \f$ \int_\mathcal{S} {\boldsymbol\tau} \cdot \mathbf{n}u \textrm{d}\mathcal{S} \f$
@@ -1231,6 +1243,7 @@ struct UltraWeakTransportElement {
       try {
         if(data.getFieldData().size() == 0)  PetscFunctionReturn(0);
         int nb_gauss_pts = data.getDiffN().size1();
+        // cerr << data.getDiffN() << endl;
         cTx.valuesGradientAtGaussPts.resize(nb_gauss_pts);
         for(int gg = 0;gg<nb_gauss_pts;gg++) {
           cTx.valuesGradientAtGaussPts[gg].resize(3,false);
@@ -1297,6 +1310,7 @@ struct UltraWeakTransportElement {
   };
 
   map<double,EntityHandle> errorMap;
+  double sumError;
 
   /** \brief calculate error evaluator
     */
@@ -1312,6 +1326,8 @@ struct UltraWeakTransportElement {
     virtual ~OpError_L2Norm() {}
 
     VectorDouble deltaFlux;
+    MatrixDouble invK;
+
     PetscErrorCode doWork(
       int side,EntityType type,DataForcesAndSurcesCore::EntData &data
     ) {
@@ -1320,6 +1336,7 @@ struct UltraWeakTransportElement {
       PetscFunctionBegin;
       try {
         if(type != MBTET) PetscFunctionReturn(0);
+        invK.resize(3,3,false);
         int nb_gauss_pts = data.getN().size1();
         EntityHandle fe_ent = getNumeredEntFiniteElementPtr()->getEnt();
         double def_val = 0;
@@ -1332,6 +1349,7 @@ struct UltraWeakTransportElement {
           th_error_flux,&fe_ent,1,(const void**)&error_flux_ptr
         ); CHKERRQ_MOAB(rval);
         deltaFlux.resize(3,false);
+        *error_flux_ptr = 0;
         for(int gg = 0;gg<nb_gauss_pts;gg++) {
           double w = getGaussPts()(3,gg)*getVolume();
           if(getHoGaussPtsDetJac().size()>0) {
@@ -1340,18 +1358,13 @@ struct UltraWeakTransportElement {
           const double x = getCoordsAtGaussPts()(gg,0);
           const double y = getCoordsAtGaussPts()(gg,1);
           const double z = getCoordsAtGaussPts()(gg,2);
-          double flux;
-          ierr = cTx.getFlux(fe_ent,x,y,z,flux); CHKERRQ(ierr);
-          if(gg == 0) {
-            *error_flux_ptr = 0;
-          }
-          noalias(deltaFlux) = cTx.fluxesAtGaussPts[gg]+cTx.valuesGradientAtGaussPts[gg];
-          *error_flux_ptr += w*( inner_prod(deltaFlux,deltaFlux) );
+          ierr = cTx.getResistivity(fe_ent,x,y,z,invK); CHKERRQ(ierr);
+          noalias(deltaFlux) = prod(invK,cTx.fluxesAtGaussPts[gg])+cTx.valuesGradientAtGaussPts[gg];
+          *error_flux_ptr += w*inner_prod(deltaFlux,deltaFlux);
         }
-        if(type == MBTET) {
-          *error_flux_ptr = sqrt(*error_flux_ptr);
-          cTx.errorMap[*error_flux_ptr] = fe_ent;
-        }
+        cTx.sumError += *error_flux_ptr;
+        *error_flux_ptr = sqrt(*error_flux_ptr);
+        cTx.errorMap[*error_flux_ptr] = fe_ent;
       } catch (const std::exception& ex) {
         std::ostringstream ss;
         ss << "throw in method: " << ex.what() << std::endl;
