@@ -33,8 +33,7 @@ namespace MoFEM {
 
  User is implementing own operator at Gauss point level, by own object
  derived from FaceElementForcesAndSourcesCoreL::UserDataOperator.  Arbitrary
- number of operator added pushing objects to rowOpPtrVector and
- rowColOpPtrVector.
+ number of operator added pushing objects to OpPtrVector
 
  */
 struct FaceElementForcesAndSourcesCore: public ForcesAndSurcesCore {
@@ -307,6 +306,10 @@ struct FaceElementForcesAndSourcesCore: public ForcesAndSurcesCore {
     inline const FaceElementForcesAndSourcesCore* getTriFE() {
       return static_cast<FaceElementForcesAndSourcesCore*>(ptrFE);
     }
+
+    PetscErrorCode loopSideVolumes(
+      const string &fe_name,VolumeElementForcesAndSourcesCoreOnSide &method
+    );
 
   };
 

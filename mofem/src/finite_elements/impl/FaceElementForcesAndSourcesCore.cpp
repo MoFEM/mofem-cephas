@@ -54,6 +54,7 @@
 #include <DataStructures.hpp>
 #include <DataOperators.hpp>
 #include <ElementsOnEntities.hpp>
+#include <VolumeElementForcesAndSourcesCore.hpp>
 #include <FaceElementForcesAndSourcesCore.hpp>
 
 #include <BaseFunction.hpp>
@@ -72,6 +73,70 @@ extern "C" {
 #endif
 
 namespace MoFEM {
+
+PetscErrorCode FaceElementForcesAndSourcesCore::UserDataOperator::loopSideVolumes(
+  const string &fe_name,VolumeElementForcesAndSourcesCoreOnSide &method
+) {
+  PetscErrorCode ierr;
+  PetscFunctionBegin;
+
+  const EntityHandle ent = getNumeredEntFiniteElementPtr()->getEnt();
+  const MoFEMProblem *problem_ptr = getFEMethod()->problemPtr;
+  Range adjacent_volumes;
+  ierr = getTriFE()->mField.get_adjacencies_equality(ent,3,adjacent_volumes); CHKERRQ(ierr);
+  typedef NumeredEntFiniteElement_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type FEByComposite;
+  FEByComposite &numered_fe =
+  (const_cast<NumeredEntFiniteElement_multiIndex&>(problem_ptr->numeredFiniteElements)).get<Composite_Name_And_Ent_mi_tag>();
+
+  method.feName = fe_name;
+
+  ierr = method.setFaceFEPtr(getTriFE()); CHKERRQ(ierr);
+  ierr = method.copy_basic_method(*getFEMethod()); CHKERRQ(ierr);
+  ierr = method.copy_ksp(*getFEMethod()); CHKERRQ(ierr);
+  ierr = method.copy_snes(*getFEMethod()); CHKERRQ(ierr);
+  ierr = method.copy_ts(*getFEMethod()); CHKERRQ(ierr);
+
+  try {
+    ierr = method.preProcess(); CHKERRQ(ierr);
+  } catch (const std::exception& ex) {
+    std::ostringstream ss;
+    ss << "throw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__ << std::endl;
+    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,ss.str().c_str());
+  }
+
+  int nn = 0;
+  method.loopSize = adjacent_volumes.size();
+  for(Range::iterator vit = adjacent_volumes.begin();vit!=adjacent_volumes.end();vit++) {
+    FEByComposite::iterator miit = numered_fe.find(boost::make_tuple(fe_name,*vit));
+    if(miit!=numered_fe.end()) {
+      // cerr << **miit << endl;
+      // cerr << &(**miit) << endl;
+      // cerr << (*miit)->getEnt() << endl;
+      method.nInTheLoop = nn++;
+      method.numeredEntFiniteElementPtr = &(**miit);
+      method.dataPtr = &((*miit)->sPtr->data_dofs);
+      method.rowPtr = (*miit)->rows_dofs.get();
+      method.colPtr = (*miit)->cols_dofs.get();
+      try {
+        ierr = method(); CHKERRQ(ierr);
+      } catch (const std::exception& ex) {
+        std::ostringstream ss;
+        ss << "throw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__ << std::endl;
+        SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,ss.str().c_str());
+      }
+    }
+  }
+
+  try {
+    ierr = method.postProcess(); CHKERRQ(ierr);
+  } catch (const std::exception& ex) {
+    std::ostringstream ss;
+    ss << "throw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__ << std::endl;
+    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,ss.str().c_str());
+  }
+
+  PetscFunctionReturn(0);
+}
 
 PetscErrorCode FaceElementForcesAndSourcesCore::operator()() {
   PetscFunctionBegin;
