@@ -261,30 +261,6 @@ struct FaceElementForcesAndSourcesCore: public ForcesAndSurcesCore {
       return static_cast<FaceElementForcesAndSourcesCore*>(ptrFE)->tAngent2_at_GaussPt;
     }
 
-    /** \deprecated Use getNormalsAtGaussPt() instead
-    */
-    DEPRECATED inline ublas::matrix_row<MatrixDouble > getNormals_at_GaussPt(const int gg) {
-      return getNormalsAtGaussPt(gg);
-    }
-
-    /** \deprecated Use getNormalsAtGaussPt() instead
-    */
-    DEPRECATED inline MatrixDouble& getNormals_at_GaussPt() {
-      return getNormalsAtGaussPt();
-    }
-
-    /** \deprecated Use getTangent1AtGaussPt() instead
-    */
-    DEPRECATED inline MatrixDouble& getTangent1_at_GaussPt() {
-      return getTangent1AtGaussPt();
-    }
-
-    /** \deprecated Use getTangent2AtGaussPt() instead
-    */
-    DEPRECATED inline MatrixDouble& getTangent2_at_GaussPt() {
-      return getTangent2AtGaussPt();
-    }
-
     /** \brief get normal at integration points
 
       Example:
