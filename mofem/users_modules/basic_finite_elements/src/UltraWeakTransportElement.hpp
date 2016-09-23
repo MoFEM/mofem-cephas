@@ -29,7 +29,7 @@
   Note to solve this system you need to use direct solver or proper preconditioner
   for saddle problem.
 
-  It is based on \cite arnold2006differential \cite arnold2012mixed \cote reviartthomas1996
+  It is based on \cite arnold2006differential \cite arnold2012mixed \cite reviartthomas1996
   <https://www.researchgate.net/profile/Richard_Falk/publication/226454406_Differential_Complexes_and_Stability_of_Finite_Element_Methods_I._The_de_Rham_Complex/links/02e7e5214f0426ff77000000.pdf>
 
   General problem have form,
