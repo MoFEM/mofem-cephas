@@ -37,7 +37,7 @@ typedef double 		__CLPK_doublereal;
 typedef __CLPK_logical 	(*__CLPK_L_fp)();
 typedef long int 	__CLPK_ftnlen;
 #endif
-	
+
 typedef struct { __CLPK_real r, i; } __CLPK_complex;
 typedef struct { __CLPK_doublereal r, i; } __CLPK_doublecomplex;
 
@@ -58,27 +58,27 @@ __CLPK_integer dpotrs_ (char *uplo, __CLPK_integer *n, __CLPK_integer *nrhs, __C
 __CLPK_integer dposv_ (char *uplo, __CLPK_integer *n, __CLPK_integer *nrhs, __CLPK_doublereal *a, __CLPK_integer *lda,
   __CLPK_doublereal *b, __CLPK_integer *ldb, __CLPK_integer *info);
 __CLPK_integer dpotri_ (char *uplo, __CLPK_integer *n, __CLPK_doublereal *a, __CLPK_integer *lda, __CLPK_integer *info);
-__CLPK_integer dgesvd_(char *jobu, char *jobvt, __CLPK_integer *m, __CLPK_integer *n, 
+__CLPK_integer dgesvd_(char *jobu, char *jobvt, __CLPK_integer *m, __CLPK_integer *n,
   __CLPK_doublereal *a, __CLPK_integer *lda, __CLPK_doublereal *s, __CLPK_doublereal *u, __CLPK_integer * ldu,
   __CLPK_doublereal *vt, __CLPK_integer *ldvt, __CLPK_doublereal *work, __CLPK_integer *lwork, __CLPK_integer *info);
-__CLPK_integer sgesvd_(char *jobu, char *jobvt, __CLPK_integer *m, __CLPK_integer *n, 
+__CLPK_integer sgesvd_(char *jobu, char *jobvt, __CLPK_integer *m, __CLPK_integer *n,
   float *a, __CLPK_integer *lda, float *s, float *u, __CLPK_integer * ldu,
   float *vt, __CLPK_integer *ldvt, float *work, __CLPK_integer *lwork, __CLPK_integer *info);
 __CLPK_integer dsyev_(char *jobz, char *uplo, __CLPK_integer *n, __CLPK_doublereal *a,
   __CLPK_integer *lda, __CLPK_doublereal *w, __CLPK_doublereal *work, __CLPK_integer *lwork, __CLPK_integer *info);
 __CLPK_integer dgelsy_(char *trans, __CLPK_integer *m, __CLPK_integer *n, __CLPK_integer *
-  nrhs, __CLPK_doublereal *a, __CLPK_integer *lda, __CLPK_doublereal *b, __CLPK_integer *ldb, 
+  nrhs, __CLPK_doublereal *a, __CLPK_integer *lda, __CLPK_doublereal *b, __CLPK_integer *ldb,
   __CLPK_doublereal *work, __CLPK_integer *lwork, __CLPK_integer *info);
 __CLPK_integer dgels_(char *trans, __CLPK_integer *m, __CLPK_integer *n, __CLPK_integer *
-  nrhs, __CLPK_doublereal *a, __CLPK_integer *lda, __CLPK_doublereal *b, __CLPK_integer *ldb, 
+  nrhs, __CLPK_doublereal *a, __CLPK_integer *lda, __CLPK_doublereal *b, __CLPK_integer *ldb,
   __CLPK_doublereal *work, __CLPK_integer *lwork, __CLPK_integer *info);
-__CLPK_integer dgesdd_(char *jobz, __CLPK_integer *m, __CLPK_integer *n, __CLPK_doublereal *a, __CLPK_integer *lda, 
-  __CLPK_doublereal *s, __CLPK_doublereal *u, __CLPK_integer *ldu,__CLPK_doublereal *vt, __CLPK_integer *ldvt, 
+__CLPK_integer dgesdd_(char *jobz, __CLPK_integer *m, __CLPK_integer *n, __CLPK_doublereal *a, __CLPK_integer *lda,
+  __CLPK_doublereal *s, __CLPK_doublereal *u, __CLPK_integer *ldu,__CLPK_doublereal *vt, __CLPK_integer *ldvt,
   __CLPK_doublereal *work, __CLPK_integer *lwork, __CLPK_integer *iwork, __CLPK_integer *info);
-__CLPK_integer dsyevd_(char *jobz,char *uplo,__CLPK_integer *n,__CLPK_doublereal  *a,__CLPK_integer *lda, 
+__CLPK_integer dsyevd_(char *jobz,char *uplo,__CLPK_integer *n,__CLPK_doublereal  *a,__CLPK_integer *lda,
   __CLPK_doublereal *w,__CLPK_doublereal *work,__CLPK_integer *lwork,__CLPK_integer *iwork,
   __CLPK_integer *liwork,__CLPK_integer *info);
-__CLPK_integer zgetri_(__CLPK_integer *n, __CLPK_doublecomplex *a, __CLPK_integer *lda, 
+__CLPK_integer zgetri_(__CLPK_integer *n, __CLPK_doublecomplex *a, __CLPK_integer *lda,
 	__CLPK_integer *ipiv, __CLPK_doublecomplex *work, __CLPK_integer *lwork, __CLPK_integer *info);
 __CLPK_integer zgetrf_(__CLPK_integer *m, __CLPK_integer *n,
   __CLPK_doublecomplex *a, __CLPK_integer *lda, __CLPK_integer *ipiv, __CLPK_integer *info);
@@ -101,9 +101,9 @@ inline static __CLPK_integer lapack_sgetrf (__CLPK_integer m,
 }
 
 
-inline static __CLPK_integer lapack_dgetrf (__CLPK_integer m,
-  __CLPK_integer n, __CLPK_doublereal *a, __CLPK_integer lda, __CLPK_integer *ipiv)
-{
+inline static __CLPK_integer lapack_dgetrf (
+	__CLPK_integer m, __CLPK_integer n, __CLPK_doublereal *a, __CLPK_integer lda, __CLPK_integer *ipiv
+) {
   __CLPK_integer info;
   dgetrf_ (&m, &n, a, &lda, ipiv, &info);
   return info;
@@ -170,7 +170,7 @@ inline static __CLPK_integer lapack_dgesvd (char jobu, char jobvt,
     u, &ldu, vt, &ldvt, work, &lwork, &info);
   return info;
 }
- 
+
 inline static __CLPK_integer lapack_sgesvd (char jobu, char jobvt,
   __CLPK_integer m, __CLPK_integer n, float *a, __CLPK_integer lda, float *s, float *u,
   __CLPK_integer ldu, float *vt, __CLPK_integer ldvt, float *work, __CLPK_integer lwork)
@@ -189,7 +189,7 @@ inline static __CLPK_integer lapack_dsyev (char jobz, char uplo, __CLPK_integer 
   return info;
 }
 
-inline static __CLPK_integer lapack_dgels(char trans, __CLPK_integer m, __CLPK_integer n, __CLPK_integer nrhs, 
+inline static __CLPK_integer lapack_dgels(char trans, __CLPK_integer m, __CLPK_integer n, __CLPK_integer nrhs,
   __CLPK_doublereal *a, __CLPK_integer lda, __CLPK_doublereal *b, __CLPK_integer ldb,
   __CLPK_doublereal *work, __CLPK_integer lwork) {
   __CLPK_integer info;
@@ -197,15 +197,15 @@ inline static __CLPK_integer lapack_dgels(char trans, __CLPK_integer m, __CLPK_i
   return info;
 }
 
-inline static __CLPK_integer lapack_dgesdd(char jobz, __CLPK_integer m, __CLPK_integer n, __CLPK_doublereal *a, __CLPK_integer lda, 
-  __CLPK_doublereal *s, __CLPK_doublereal *u, __CLPK_integer ldu,__CLPK_doublereal *vt, __CLPK_integer ldvt, 
+inline static __CLPK_integer lapack_dgesdd(char jobz, __CLPK_integer m, __CLPK_integer n, __CLPK_doublereal *a, __CLPK_integer lda,
+  __CLPK_doublereal *s, __CLPK_doublereal *u, __CLPK_integer ldu,__CLPK_doublereal *vt, __CLPK_integer ldvt,
   __CLPK_doublereal *work, __CLPK_integer lwork,__CLPK_integer *iwork) {
   __CLPK_integer info;
   dgesdd_(&jobz,&m,&n,a,&lda,s,u,&ldu,vt,&ldvt,work,&lwork,iwork,&info);
   return info;
 }
 
-inline static __CLPK_integer lapack_dsyevd(char jobz,char uplo,__CLPK_integer n,__CLPK_doublereal  *a,__CLPK_integer lda, 
+inline static __CLPK_integer lapack_dsyevd(char jobz,char uplo,__CLPK_integer n,__CLPK_doublereal  *a,__CLPK_integer lda,
   __CLPK_doublereal *w,__CLPK_doublereal *work,__CLPK_integer lwork,__CLPK_integer *iwork,
   __CLPK_integer liwork) {
   __CLPK_integer info;
@@ -254,5 +254,3 @@ inline static __CLPK_integer lapack_dpbtrs(char uplo,__CLPK_integer n,__CLPK_int
 #ifdef __cplusplus
 }
 #endif
-
-

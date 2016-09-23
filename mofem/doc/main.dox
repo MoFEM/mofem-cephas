@@ -127,7 +127,7 @@ with MoFEM. If not, see <http://www.gnu.org/licenses/>
 
 MoFEM is copyright by Lukasz Kaczmarczyk (Lukasz.Kaczmarczyk at glasgow.ac.uk)
 and has received contributions by several people. MoFEM can be used freely for
-educational and research purposes by other institutions.
+educational, research or commercial purposes by other institutions.
 
 Users modules are not part of MoFEM library and can be created privately,
 independently form MoFEM developers. User modules may follow different license

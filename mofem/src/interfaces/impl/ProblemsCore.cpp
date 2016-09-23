@@ -139,7 +139,7 @@ PetscErrorCode Core::modify_problem_add_finite_element(const std::string &name_p
     if(miit==set.end()) {
       SETERRQ1(PETSC_COMM_SELF,MOFEM_NOT_FOUND,"this problem <%s> is not there",name_problem.c_str());
     }
-    BitFEId f_id = get_BitFEId(fe_name);
+    BitFEId f_id = getBitFEId(fe_name);
     bool success = set.modify(miit,ProblemFiniteElementChangeBitAdd(f_id));
     if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
   } catch (MoFEMException const &e) {
@@ -157,7 +157,7 @@ PetscErrorCode Core::modify_problem_unset_finite_element(const std::string &name
     if(miit==set.end()) {
       SETERRQ1(PETSC_COMM_SELF,MOFEM_NOT_FOUND,"this problem <%s> is not there",name_problem.c_str());
     }
-    BitFEId f_id = get_BitFEId(fe_name);
+    BitFEId f_id = getBitFEId(fe_name);
     bool success = set.modify(miit,ProblemFiniteElementChangeBitUnSet(f_id));
     if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
   } catch (MoFEMException const &e) {
@@ -266,7 +266,7 @@ PetscErrorCode Core::build_problem_on_distributed_mesh(MoFEMProblem *problem_ptr
     //iterate all finite elemen entities in database
     for(;fe_miit!=hi_fe_miit;fe_miit++) {
       //if element is in problem
-      if(((*fe_miit)->getId()&problem_ptr->get_BitFEId()).any()) {
+      if(((*fe_miit)->getId()&problem_ptr->getBitFEId()).any()) {
         //if finite element bit level has all refined bits sets
         if(((*fe_miit)->getBitRefLevel()&problem_ptr->getBitRefLevel())==problem_ptr->getBitRefLevel()) {
           //get dof uids for rows and columns
@@ -884,7 +884,7 @@ PetscErrorCode Core::build_problem(MoFEMProblem *problem_ptr,int verb) {
   //iterate all finite element entities in database
   for(;miit3!=hi_miit2;miit3++) {
     //if element is in problem
-    if(((*miit3)->getId()&problem_ptr->get_BitFEId()).any()) {
+    if(((*miit3)->getId()&problem_ptr->getBitFEId()).any()) {
       //if finite element bit level has all refined bits sets
       if(((*miit3)->getBitRefLevel()&problem_ptr->getBitRefLevel())==problem_ptr->getBitRefLevel()) {
         //get dof uids for rows and columns
@@ -1272,22 +1272,22 @@ PetscErrorCode Core::printPartitionedProblem(const MoFEMProblem *problem_ptr,int
   if(verbose>0) {
     std::ostringstream ss;
     ss << "partition_problem: rank = " << rAnk << " FEs row ghost dofs "<< *problem_ptr
-    << " Nb. local dof " << problem_ptr->get_nb_local_dofs_row() << " nb global row dofs " << problem_ptr->getNbDofsRow() << std::endl;
+    << " Nb. local dof " << problem_ptr->getNbLocalDofsRow() << " nb global row dofs " << problem_ptr->getNbDofsRow() << std::endl;
     ss << "partition_problem: rank = " << rAnk << " FEs col ghost dofs " << *problem_ptr
-    << " Nb. local dof " << problem_ptr->get_nb_local_dofs_col() << " nb global col dofs " << problem_ptr->getNbDofsCol() << std::endl;
+    << " Nb. local dof " << problem_ptr->getNbLocalDofsCol() << " nb global col dofs " << problem_ptr->getNbDofsCol() << std::endl;
     PetscSynchronizedPrintf(comm,ss.str().c_str());
     PetscSynchronizedFlush(comm,PETSC_STDOUT);
   }
   if(verb>1) {
     std::ostringstream ss;
     ss << "rank = " << rAnk << " FEs row dofs "<< *problem_ptr << " Nb. row dof " << problem_ptr->getNbDofsRow()
-    << " Nb. local dof " << problem_ptr->get_nb_local_dofs_row() << std::endl;
+    << " Nb. local dof " << problem_ptr->getNbLocalDofsRow() << std::endl;
     NumeredDofEntity_multiIndex::iterator miit_dd_row = problem_ptr->numered_dofs_rows->begin();
     for(;miit_dd_row!=problem_ptr->numered_dofs_rows->end();miit_dd_row++) {
       ss<<*miit_dd_row<<std::endl;
     }
     ss << "rank = " << rAnk << " FEs col dofs "<< *problem_ptr << " Nb. col dof " << problem_ptr->getNbDofsCol()
-    << " Nb. local dof " << problem_ptr->get_nb_local_dofs_col() << std::endl;
+    << " Nb. local dof " << problem_ptr->getNbLocalDofsCol() << std::endl;
     NumeredDofEntity_multiIndex::iterator miit_dd_col = problem_ptr->numered_dofs_cols->begin();
     for(;miit_dd_col!=problem_ptr->numered_dofs_cols->end();miit_dd_col++) {
       ss<<*miit_dd_col<<std::endl;

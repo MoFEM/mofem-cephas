@@ -61,18 +61,25 @@ int main(int argc, char *argv[]) {
   PetscBool is_partitioned = PETSC_FALSE;
 
   ierr = PetscOptionsBegin(PETSC_COMM_WORLD,"","Elastic Config","none"); CHKERRQ(ierr);
-  ierr = PetscOptionsString("-my_file",
+  ierr = PetscOptionsString(
+    "-my_file",
     "mesh file name","",
-    "mesh.h5m",mesh_file_name,255,&flg_file); CHKERRQ(ierr);
-  ierr = PetscOptionsInt("-my_order",
+    "mesh.h5m",mesh_file_name,255,&flg_file
+  ); CHKERRQ(ierr);
+  ierr = PetscOptionsInt(
+    "-my_order",
     "default approximation order","",
-      2,&order,PETSC_NULL); CHKERRQ(ierr);
-  ierr = PetscOptionsBool("-my_is_partitioned",
+    2,&order,PETSC_NULL
+    ); CHKERRQ(ierr);
+  ierr = PetscOptionsBool(
+    "-my_is_partitioned",
     "set if mesh is partitioned (this result that each process keeps only part of the mes","",
-    PETSC_FALSE,&is_partitioned,PETSC_NULL); CHKERRQ(ierr);
+    PETSC_FALSE,&is_partitioned,PETSC_NULL
+  ); CHKERRQ(ierr);
   ierr = PetscOptionsString("-my_block_config",
     "elastic configure file name","",
-    "block_conf.in",block_config_file,255,&flg_block_config); CHKERRQ(ierr);
+    "block_conf.in",block_config_file,255,&flg_block_config
+  ); CHKERRQ(ierr);
   ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
   //Reade parameters from line command

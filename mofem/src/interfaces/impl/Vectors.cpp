@@ -67,12 +67,12 @@ PetscErrorCode Core::VecCreateSeq(const std::string &name,RowColData rc,Vec *V) 
   DofIdx nb_local_dofs,nb_ghost_dofs;
   switch (rc) {
     case ROW:
-      nb_local_dofs = p_miit->get_nb_local_dofs_row();
-      nb_ghost_dofs = p_miit->get_nb_ghost_dofs_row();
+      nb_local_dofs = p_miit->getNbLocalDofsRow();
+      nb_ghost_dofs = p_miit->getNbGhostDofsRow();
       break;
     case COL:
-      nb_local_dofs = p_miit->get_nb_local_dofs_col();
-      nb_ghost_dofs = p_miit->get_nb_ghost_dofs_col();
+      nb_local_dofs = p_miit->getNbLocalDofsCol();
+      nb_ghost_dofs = p_miit->getNbGhostDofsCol();
       break;
     default:
      SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"Not implemented");
@@ -100,14 +100,14 @@ PetscErrorCode Core::VecCreateGhost(const std::string &name,RowColData rc,Vec *V
   switch (rc) {
     case ROW:
       nb_dofs = p_miit->getNbDofsRow();
-      nb_local_dofs = p_miit->get_nb_local_dofs_row();
-      nb_ghost_dofs = p_miit->get_nb_ghost_dofs_row();
+      nb_local_dofs = p_miit->getNbLocalDofsRow();
+      nb_ghost_dofs = p_miit->getNbGhostDofsRow();
       dofs = const_cast<DofsByLocalIdx*>(&p_miit->numered_dofs_rows->get<PetscLocalIdx_mi_tag>());
       break;
     case COL:
       nb_dofs = p_miit->getNbDofsCol();
-      nb_local_dofs = p_miit->get_nb_local_dofs_col();
-      nb_ghost_dofs = p_miit->get_nb_ghost_dofs_col();
+      nb_local_dofs = p_miit->getNbLocalDofsCol();
+      nb_ghost_dofs = p_miit->getNbGhostDofsCol();
       dofs = const_cast<DofsByLocalIdx*>(&p_miit->numered_dofs_cols->get<PetscLocalIdx_mi_tag>());
       break;
     default:
@@ -241,11 +241,11 @@ PetscErrorCode Core::ISCreateFromProblemFieldToOtherProblemField(
   switch (y_rc) {
     case ROW:
       y_dit = p_y->numered_dofs_rows->get<PetscLocalIdx_mi_tag>().lower_bound(0);
-      hi_y_dit = p_y->numered_dofs_rows->get<PetscLocalIdx_mi_tag>().upper_bound(p_y->get_nb_local_dofs_row()-1);
+      hi_y_dit = p_y->numered_dofs_rows->get<PetscLocalIdx_mi_tag>().upper_bound(p_y->getNbLocalDofsRow()-1);
       break;
     case COL:
       y_dit = p_y->numered_dofs_cols->get<PetscLocalIdx_mi_tag>().lower_bound(0);
-      hi_y_dit = p_y->numered_dofs_cols->get<PetscLocalIdx_mi_tag>().upper_bound(p_y->get_nb_local_dofs_col()-1);
+      hi_y_dit = p_y->numered_dofs_cols->get<PetscLocalIdx_mi_tag>().upper_bound(p_y->getNbLocalDofsCol()-1);
       break;
     default:
      SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented");
@@ -336,11 +336,11 @@ PetscErrorCode Core::ISCreateFromProblemToOtherProblem(
   switch (y_rc) {
     case ROW:
       y_dit = p_y->numered_dofs_rows->get<PetscLocalIdx_mi_tag>().lower_bound(0);
-      hi_y_dit = p_y->numered_dofs_rows->get<PetscLocalIdx_mi_tag>().lower_bound(p_y->get_nb_local_dofs_row()); // should be lower
+      hi_y_dit = p_y->numered_dofs_rows->get<PetscLocalIdx_mi_tag>().lower_bound(p_y->getNbLocalDofsRow()); // should be lower
       break;
     case COL:
       y_dit = p_y->numered_dofs_cols->get<PetscLocalIdx_mi_tag>().lower_bound(0);
-      hi_y_dit = p_y->numered_dofs_cols->get<PetscLocalIdx_mi_tag>().lower_bound(p_y->get_nb_local_dofs_col()); // should be lower
+      hi_y_dit = p_y->numered_dofs_cols->get<PetscLocalIdx_mi_tag>().lower_bound(p_y->getNbLocalDofsCol()); // should be lower
       break;
     default:
      SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented");
@@ -425,13 +425,13 @@ PetscErrorCode Core::set_local_ghost_vector(
   DofIdx nb_local_dofs,nb_ghost_dofs;
   switch (rc) {
     case ROW:
-      nb_local_dofs = problem_ptr->get_nb_local_dofs_row();
-      nb_ghost_dofs = problem_ptr->get_nb_ghost_dofs_row();
+      nb_local_dofs = problem_ptr->getNbLocalDofsRow();
+      nb_ghost_dofs = problem_ptr->getNbGhostDofsRow();
       dofs = const_cast<DofsByLocalIdx*>(&problem_ptr->numered_dofs_rows->get<PetscLocalIdx_mi_tag>());
       break;
     case COL:
-      nb_local_dofs = problem_ptr->get_nb_local_dofs_col();
-      nb_ghost_dofs = problem_ptr->get_nb_ghost_dofs_col();
+      nb_local_dofs = problem_ptr->getNbLocalDofsCol();
+      nb_ghost_dofs = problem_ptr->getNbGhostDofsCol();
       dofs = const_cast<DofsByLocalIdx*>(&problem_ptr->numered_dofs_cols->get<PetscLocalIdx_mi_tag>());
       break;
     default:

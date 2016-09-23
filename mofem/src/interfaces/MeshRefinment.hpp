@@ -53,7 +53,8 @@ struct MeshRefinment: public UnknownInterface {
    * \param recursive If true, meshsets containing meshsets are queried recursively.  Returns the contents of meshsets, but not the meshsets themselves if true.
    */
   virtual PetscErrorCode add_verices_in_the_middel_of_edges(
-    const EntityHandle meshset,const BitRefLevel &bit,const bool recursive = false,int verb = -1) = 0;
+    const EntityHandle meshset,const BitRefLevel &bit,const bool recursive = false,int verb = -1
+  ) = 0;
 
   /**
    * \brief make vertices in the middle of edges in meshset and add them to refinment levels defined by bit

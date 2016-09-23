@@ -377,6 +377,17 @@ namespace MoFEM {
     PetscErrorCode addEntitiesToMeshset(const CubitBCType cubit_bc_tyep,const int ms_id,Range &ents);
 
     /**
+     * \brief add entities to cubit meshset
+     * @param  cubit_bc_tyep type of meshset, f.e. NODESET, SIDESET or BLOCKSET
+     * @param  ms_id         id of meshset
+     * @param  ents          pointer to entities array
+     * @param  nb_ents       number of entities in array
+     * @return               error code
+     */
+    PetscErrorCode addEntitiesToMeshset(const CubitBCType cubit_bc_type,const int ms_id,const EntityHandle *ents,const int nb_ents);
+
+
+    /**
      * \brief set attributes to cubit meshset
      * @param  cubit_bc_type type of meshset, see CubitBC, i.e. BLOCKSET, NODESET, SIDESET
      * @param  ms_id         id of meshset
@@ -481,6 +492,120 @@ namespace MoFEM {
       * \param meshsets is range of meshsets
       */
     PetscErrorCode getMeshsetsByType(const unsigned int cubit_bc_type,Range &meshsets);
+
+    /**
+     * \brief add blocksets reading config file
+
+     Example of config file
+     \code
+     # Example applying attributes to blockset
+
+     id=2001
+     add=BLOCKSET
+     user1=1.0  # attribute value 1
+     user2=2.0  # you can set up to 10 attributes (if needed could be easily extended to more, let us know)
+     user3=3.0
+
+     [block_1002]
+
+     # Example applying material block (isotropic elastic material)
+
+     id=2002
+     add=BLOCKSET
+     name=MAT_ELASTIC
+     young=10
+     poisson=0.25
+     thermalexpansion=0
+
+     [block_1003]
+
+     # Example applying displacement constrains
+
+     id=2003
+     add=NODESET
+
+     # Each flag means that boundary consition on displacemnys is set.
+     disp_flag1=1 # Setting constrains in x- direction
+     disp_flag2=1 # Setting constrains in y- direction
+     disp_flag3=1 # Setting constrains in z- direction
+     disp_flag4=1 # Setting constrains on rotation over x- axis
+     disp_flag5=1 # Setting constrains on rotation over y- axis
+     disp_flag6=1 # Setting constrains on rotation over z-axis
+     disp_ux=1 # value of disp in x- direction
+     disp_uy=2
+     disp_uz=3
+     disp_rx=4 # value of rotiatuin in y-direction
+     disp_ry=5
+     disp_rz=6
+
+     # Note abouve values could be interpreted differntly if needed.
+
+     [block_1004]
+
+     # Example applying force boundary conditions
+
+     id=2004
+     add=NODESET
+     force_magnitude=1
+     moment_magnitude=1
+     moment_fx=1
+     moment_fy=1
+     moment_fz=1
+     moment_mx=1
+     moment_my=1
+     moment_mz=1
+
+     [block_1005]
+
+     # Example applying pressure boundary conditions
+
+     id=2005
+     add=SIDESET
+     pressure_flag2=1       # 0: Pressure is interpreted as pure pressure 1: pressure is interpreted as total force
+     pressure_magnitude=1
+     \endcode
+
+     * @param  file_name config file
+     * @return           error code
+
+     # Example applying temperature boundary conditions
+
+     [block_1006]
+
+     id=2006
+     add=NODESET
+     temperature_flag1=1        # 0: N/A, 1: temperature value applied
+     temperature_t=1
+
+     [block_1007]
+
+     id=2007
+     add=SIDESET
+     heatflux_flag1=1        # 0: N/A, 1: hetflux applied
+     heatflux_magnitude=1
+
+     [block_1008]
+
+     # Example applying material block (isotropic thermal material)
+
+     id=2008
+     add=BLOCKSET
+     name=MAT_THERMAL # Hast to be set for Thermal Mat
+     conductivity=1
+     capacity=1
+
+     */
+    PetscErrorCode setMeshsetFromFile(const string file_name);
+
+    /**
+     * \brief get name of config file from line command '-meshsets_config'
+     * @return error code
+
+     Option is "-meshsets_config file_name.cfg"
+
+     */
+    PetscErrorCode setMeshsetFromFile();
+
 
   protected:
 

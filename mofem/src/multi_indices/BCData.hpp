@@ -112,7 +112,9 @@ struct DisplacementCubitBcData: public GenericCubitBcData {
     const void * getDataPtr() const { return &data; }
 
     DisplacementCubitBcData():
-    GenericCubitBcData(DISPLACEMENTSET) {}
+    GenericCubitBcData(DISPLACEMENTSET) {
+      bzero(&data,sizeof(data));
+    }
 
     PetscErrorCode fill_data(const std::vector<char>& bc_data) {
       PetscFunctionBegin;
@@ -162,7 +164,9 @@ struct ForceCubitBcData: public GenericCubitBcData {
     const void * getDataPtr() const { return &data; }
 
     ForceCubitBcData():
-    GenericCubitBcData(FORCESET) {};
+    GenericCubitBcData(FORCESET) {
+      bzero(&data,sizeof(data));
+    }
 
     PetscErrorCode fill_data(const std::vector<char>& bc_data) {
       PetscFunctionBegin;
@@ -216,7 +220,9 @@ struct VelocityCubitBcData: public GenericCubitBcData {
     const void * getDataPtr() const { return &data; }
 
     VelocityCubitBcData():
-    GenericCubitBcData(VELOCITYSET) {}
+    GenericCubitBcData(VELOCITYSET) {
+      bzero(&data,sizeof(data));
+    }
 
     PetscErrorCode fill_data(const std::vector<char>& bc_data) {
       PetscFunctionBegin;
@@ -270,7 +276,9 @@ struct AccelerationCubitBcData: public GenericCubitBcData {
     const void * getDataPtr() const { return &data; }
 
     AccelerationCubitBcData():
-    GenericCubitBcData(ACCELERATIONSET) {}
+    GenericCubitBcData(ACCELERATIONSET) {
+      bzero(&data,sizeof(data));
+    }
 
     PetscErrorCode fill_data(const std::vector<char>& bc_data) {
       PetscFunctionBegin;
@@ -300,55 +308,57 @@ struct AccelerationCubitBcData: public GenericCubitBcData {
  *  \brief Definition of the temperature bc data structure
  * \ingroup mofem_bc
  */
-struct TemperatureCubitBcData: public GenericCubitBcData {
-    struct __attribute__ ((packed)) _data_{
-    char name[11]; //< 11 characters for "Temperature"
-    char pre1; //< This is always zero
-    char pre2; //< 0: temperature is not applied on thin shells (default); 1: temperature is applied on thin shells
-    char flag1; //< 0: N/A, 1: temperature value applied (not on thin shells)
-    char flag2; //< 0: N/A, 1: temperature applied on thin shell middle
-    char flag3; //< 0: N/A, 1: thin shell temperature gradient specified
-    char flag4; //< 0: N/A, 1: top thin shell temperature
-    char flag5; //< 0: N/A, 1: bottom thin shell temperature
-    char flag6; //< This is always zero
-    double value1; //< Temperature (default case - no thin shells)
-    double value2; //< Temperature for middle of thin shells
-    double value3; //< Temperature gradient for thin shells
-    double value4; //< Temperature for top of thin shells
-    double value5; //< Temperature for bottom of thin shells
-    double value6; //< This is always zero, i.e. ignore
-    };
+ struct TemperatureCubitBcData: public GenericCubitBcData {
+   struct __attribute__ ((packed)) _data_{
+     char name[11]; //< 11 characters for "Temperature"
+     char pre1; //< This is always zero
+     char pre2; //< 0: temperature is not applied on thin shells (default); 1: temperature is applied on thin shells
+     char flag1; //< 0: N/A, 1: temperature value applied (not on thin shells)
+     char flag2; //< 0: N/A, 1: temperature applied on thin shell middle
+     char flag3; //< 0: N/A, 1: thin shell temperature gradient specified
+     char flag4; //< 0: N/A, 1: top thin shell temperature
+     char flag5; //< 0: N/A, 1: bottom thin shell temperature
+     char flag6; //< This is always zero
+     double value1; //< Temperature (default case - no thin shells)
+     double value2; //< Temperature for middle of thin shells
+     double value3; //< Temperature gradient for thin shells
+     double value4; //< Temperature for top of thin shells
+     double value5; //< Temperature for bottom of thin shells
+     double value6; //< This is always zero, i.e. ignore
+   };
 
-    _data_ data;
+   _data_ data;
 
-    std::size_t getSizeOfData() const { return sizeof(_data_); }
-    const void * getDataPtr() const { return &data; }
+   std::size_t getSizeOfData() const { return sizeof(_data_); }
+   const void * getDataPtr() const { return &data; }
 
-    TemperatureCubitBcData():
-    GenericCubitBcData(TEMPERATURESET) {}
+   TemperatureCubitBcData():
+   GenericCubitBcData(TEMPERATURESET) {
+     bzero(&data,sizeof(data));
+   }
 
-    PetscErrorCode fill_data(const std::vector<char>& bc_data) {
-      PetscFunctionBegin;
-      //Fill data
-      if(bc_data.size()!=sizeof(data)) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
-      memcpy(&data, &bc_data[0], sizeof(data));
-      PetscFunctionReturn(0);
-    }
+   PetscErrorCode fill_data(const std::vector<char>& bc_data) {
+     PetscFunctionBegin;
+     //Fill data
+     if(bc_data.size()!=sizeof(data)) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+     memcpy(&data, &bc_data[0], sizeof(data));
+     PetscFunctionReturn(0);
+   }
 
-    PetscErrorCode set_data(void *tag_ptr,unsigned int size) const {
-      PetscFunctionBegin;
-      if(size!=sizeof(data)) {
-        SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
-      }
-      memcpy(tag_ptr, &data, size);
-      PetscFunctionReturn(0);
-    }
+   PetscErrorCode set_data(void *tag_ptr,unsigned int size) const {
+     PetscFunctionBegin;
+     if(size!=sizeof(data)) {
+       SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
+     }
+     memcpy(tag_ptr, &data, size);
+     PetscFunctionReturn(0);
+   }
 
 
-    /*! \brief Print temperature bc data
-    */
-    friend std::ostream& operator<<(std::ostream& os,const TemperatureCubitBcData& e);
-};
+   /*! \brief Print temperature bc data
+   */
+   friend std::ostream& operator<<(std::ostream& os,const TemperatureCubitBcData& e);
+ };
 
 /*! \struct PressureCubitBcData
  * \brief Definition of the pressure bc data structure
@@ -369,7 +379,9 @@ struct PressureCubitBcData: public GenericCubitBcData {
     const void * getDataPtr() const { return &data; }
 
     PressureCubitBcData():
-    GenericCubitBcData(PRESSURESET) {}
+    GenericCubitBcData(PRESSURESET) {
+      bzero(&data,sizeof(data));
+    }
 
     PetscErrorCode fill_data(const std::vector<char>& bc_data) {
       PetscFunctionBegin;
@@ -401,7 +413,8 @@ struct PressureCubitBcData: public GenericCubitBcData {
  * \ingroup mofem_bc
  */
 struct HeatFluxCubitBcData: public GenericCubitBcData {
-    struct __attribute__ ((packed)) _data_{
+
+  struct __attribute__ ((packed)) _data_ {
     char name[8]; //< 8 characters for "HeatFlux" (no space)
     char pre1; //< This is always zero
     char pre2; //< 0: heat flux is not applied on thin shells (default); 1: heat flux is applied on thin shells
@@ -411,36 +424,38 @@ struct HeatFluxCubitBcData: public GenericCubitBcData {
     double value1; //< Heat flux value for default case (no thin shells)
     double value2; //< Heat flux (thin shell top)
     double value3; //< Heat flux (thin shell bottom)
-    };
+  };
 
-    _data_ data;
+  _data_ data;
 
-    std::size_t getSizeOfData() const { return sizeof(_data_); }
-    const void * getDataPtr() const { return &data; }
+  std::size_t getSizeOfData() const { return sizeof(_data_); }
+  const void * getDataPtr() const { return &data; }
 
-    HeatFluxCubitBcData():
-    GenericCubitBcData(HEATFLUXSET) {}
+  HeatFluxCubitBcData():
+  GenericCubitBcData(HEATFLUXSET) {
+    bzero(&data,sizeof(data));
+  }
 
-    PetscErrorCode fill_data(const std::vector<char>& bc_data) {
-      PetscFunctionBegin;
-      //Fill data
-      if(bc_data.size()!=sizeof(data)) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
-      memcpy(&data, &bc_data[0], sizeof(data));
-      PetscFunctionReturn(0);
+  PetscErrorCode fill_data(const std::vector<char>& bc_data) {
+    PetscFunctionBegin;
+    //Fill data
+    if(bc_data.size()!=sizeof(data)) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+    memcpy(&data, &bc_data[0], sizeof(data));
+    PetscFunctionReturn(0);
+  }
+
+  PetscErrorCode set_data(void *tag_ptr,unsigned int size) const {
+    PetscFunctionBegin;
+    if(size!=sizeof(data)) {
+      SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
     }
+    memcpy(tag_ptr, &data, size);
+    PetscFunctionReturn(0);
+  }
 
-    PetscErrorCode set_data(void *tag_ptr,unsigned int size) const {
-      PetscFunctionBegin;
-      if(size!=sizeof(data)) {
-        SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
-      }
-      memcpy(tag_ptr, &data, size);
-      PetscFunctionReturn(0);
-    }
-
-    /*! \brief Print heat flux bc data
-    */
-    friend std::ostream& operator<<(std::ostream& os,const HeatFluxCubitBcData& e);
+  /*! \brief Print heat flux bc data
+  */
+  friend std::ostream& operator<<(std::ostream& os,const HeatFluxCubitBcData& e);
 
 };
 
@@ -461,7 +476,9 @@ struct CfgCubitBcData: public GenericCubitBcData {
     const void * getDataPtr() const { return &data; }
 
     CfgCubitBcData():
-    GenericCubitBcData(INTERFACESET) {}
+    GenericCubitBcData(INTERFACESET) {
+      bzero(&data,sizeof(data));
+    }
 
     PetscErrorCode fill_data(const std::vector<char>& bc_data) {
       PetscFunctionBegin;

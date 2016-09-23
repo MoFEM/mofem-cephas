@@ -463,7 +463,7 @@ namespace MoFEM {
     PetscFunctionBegin;
     if(verb==-1) verb = verbose;
     ierr = clear_finite_elements(name,ents,verb); CHKERRQ(ierr);
-    const BitFEId id = get_BitFEId(name);
+    const BitFEId id = getBitFEId(name);
     const EntityHandle idm = get_finite_element_meshset(id);
     rval = moab.remove_entities(idm,ents); CHKERRQ_MOAB(rval);
     PetscFunctionReturn(0);

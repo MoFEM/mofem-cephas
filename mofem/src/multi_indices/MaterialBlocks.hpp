@@ -116,6 +116,7 @@ struct BlockSetAttributes: public GenericAttributeData {
 
     BlockSetAttributes():
     GenericAttributeData(BLOCKSET,0) {
+      bzero(&data,sizeof(data));
     }
 
     PetscErrorCode fill_data(const std::vector<double>& attributes) {
@@ -174,7 +175,6 @@ struct Mat_Elastic: public GenericAttributeData {
     _data_ data;
     std::size_t getSizeOfData() const { return sizeof(data); };
     const void * getDataPtr() const { return   &data; }
-
 
     Mat_Elastic():
     GenericAttributeData(MAT_ELASTICSET,2) {
@@ -245,6 +245,7 @@ struct Mat_Thermal: public GenericAttributeData {
 
   Mat_Thermal():
   GenericAttributeData(MAT_THERMALSET,2) {
+    bzero(&data,sizeof(data));
   }
 
   PetscErrorCode fill_data(const std::vector<double>& attributes) {
@@ -302,7 +303,9 @@ struct Mat_Moisture: public GenericAttributeData {
   const void * getDataPtr() const { return &data; }
 
   Mat_Moisture():
-  GenericAttributeData(MAT_MOISTURESET,1) {}
+  GenericAttributeData(MAT_MOISTURESET,1) {
+    bzero(&data,sizeof(data));
+  }
 
   PetscErrorCode fill_data(const std::vector<double>& attributes) {
     PetscFunctionBegin;
@@ -400,7 +403,9 @@ struct Block_BodyForces: public GenericAttributeData {
     const void * getDataPtr() const { return &data; }
 
     Mat_Elastic_TransIso():
-    GenericAttributeData(MAT_ELASTICSET,5) {}
+    GenericAttributeData(MAT_ELASTICSET,5) {
+      bzero(&data,sizeof(data));
+    }
 
     PetscErrorCode fill_data(const std::vector<double>& attributes) {
       PetscFunctionBegin;
@@ -456,7 +461,9 @@ struct Mat_Interf: public GenericAttributeData {
   const void * getDataPtr() const { return &data; }
 
   Mat_Interf():
-  GenericAttributeData(MAT_INTERFSET,4) {}
+  GenericAttributeData(MAT_INTERFSET,4) {
+    bzero(&data,sizeof(data));
+  }
 
   virtual PetscErrorCode fill_data(const std::vector<double>& attributes) {
     PetscFunctionBegin;
@@ -509,7 +516,9 @@ struct Mat_Elastic_EberleinHolzapfel1: public GenericAttributeData {
     const void * getDataPtr() const { return &data; }
 
     Mat_Elastic_EberleinHolzapfel1():
-    GenericAttributeData(MAT_ELASTICSET,10) {}
+    GenericAttributeData(MAT_ELASTICSET,10) {
+      bzero(&data,sizeof(data));
+    }
 
     PetscErrorCode fill_data(const std::vector<double>& attributes) {
       PetscFunctionBegin;
