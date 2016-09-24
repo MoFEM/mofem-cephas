@@ -72,7 +72,7 @@ struct ExampleUltraWeak: public UltraWeakTransportElement {
    * @param  flux reference to source term set by function
    * @return      error code
    */
-  PetscErrorCode getFlux(EntityHandle ent,const double x,const double y,const double z,double &flux) {
+  PetscErrorCode getSource(EntityHandle ent,const double x,const double y,const double z,double &flux) {
     PetscFunctionBegin;
     flux = 0;
     PetscFunctionReturn(0);
@@ -311,20 +311,25 @@ struct ExampleUltraWeak: public UltraWeakTransportElement {
       ierr = mField.update_meshset_by_entities_children(meshset,ref_level,meshset,MBTET,true); CHKERRQ(ierr);
     }
     // update fields and elements
-    EntityHandle out_meshset_tet;
-    rval = mField.get_moab().create_meshset(MESHSET_SET,out_meshset_tet); CHKERRQ_MOAB(rval);
+    EntityHandle ref_meshset;
+    rval = mField.get_moab().create_meshset(MESHSET_SET,ref_meshset); CHKERRQ_MOAB(rval);
     // cerr << BitRefLevel().set(nb_levels) << endl;
     ierr = mField.get_entities_by_type_and_ref_level(
-      BitRefLevel().set(nb_levels),BitRefLevel().set(),MBTET,out_meshset_tet
+      BitRefLevel().set(nb_levels),BitRefLevel().set(),MBTET,ref_meshset
+    ); CHKERRQ(ierr);
+    ierr = mField.get_entities_by_type_and_ref_level(
+      BitRefLevel().set(nb_levels),BitRefLevel().set(),MBTRI,ref_meshset
     ); CHKERRQ(ierr);
     //add entities to field
-    ierr = mField.add_ents_to_field_by_TETs(out_meshset_tet,"FLUXES"); CHKERRQ(ierr);
-    ierr = mField.add_ents_to_field_by_TETs(out_meshset_tet,"VALUES"); CHKERRQ(ierr);
+    ierr = mField.add_ents_to_field_by_TETs(ref_meshset,"FLUXES"); CHKERRQ(ierr);
+    ierr = mField.add_ents_to_field_by_TETs(ref_meshset,"VALUES"); CHKERRQ(ierr);
     ierr = mField.set_field_order(0,MBTET,"FLUXES",order+1); CHKERRQ(ierr);
     ierr = mField.set_field_order(0,MBTRI,"FLUXES",order+1); CHKERRQ(ierr);
     ierr = mField.set_field_order(0,MBTET,"VALUES",order); CHKERRQ(ierr);
     Range ref_tets;
-    rval = mField.get_moab().get_entities_by_type(out_meshset_tet,MBTET,ref_tets); CHKERRQ_MOAB(rval);
+    rval = mField.get_moab().get_entities_by_type(ref_meshset,MBTET,ref_tets); CHKERRQ_MOAB(rval);
+    Range ref_tris;
+    rval = mField.get_moab().get_entities_by_type(ref_meshset,MBTRI,ref_tris); CHKERRQ_MOAB(rval);
     //add entities to finite elements
     for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BLOCKSET|MAT_THERMALSET,it)) {
       Mat_Thermal temp_data;
@@ -334,8 +339,16 @@ struct ExampleUltraWeak: public UltraWeakTransportElement {
       rval = mField.get_moab().get_entities_by_type(it->meshset,MBTET,setOfBlocks[it->getMeshsetId()].tEts,true); CHKERRQ_MOAB(rval);
       setOfBlocks[it->getMeshsetId()].tEts = intersect(ref_tets,setOfBlocks[it->getMeshsetId()].tEts);
       ierr = mField.add_ents_to_finite_element_by_TETs(setOfBlocks[it->getMeshsetId()].tEts,"ULTRAWEAK"); CHKERRQ(ierr);
+      Range skeleton;
+      rval = mField.get_moab().get_adjacencies(
+        setOfBlocks[it->getMeshsetId()].tEts,2,false,skeleton,moab::Interface::UNION
+      );
+      skeleton = intersect(ref_tris,skeleton);
+      ierr = mField.add_ents_to_finite_element_by_TRIs(
+        skeleton,"ULTRAWEAK_SKELETON"
+      ); CHKERRQ(ierr);
     }
-    rval = mField.get_moab().delete_entities(&out_meshset_tet,1); CHKERRQ_MOAB(rval);
+    rval = mField.get_moab().delete_entities(&ref_meshset,1); CHKERRQ_MOAB(rval);
     PetscFunctionReturn(0);
   }
 

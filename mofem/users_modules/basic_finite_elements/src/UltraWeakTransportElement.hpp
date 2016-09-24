@@ -68,7 +68,7 @@ struct UltraWeakTransportElement {
     int getRule(int order) { return 2*order+1; };
   };
 
-  MyTriFE feTriFluxValue;   ///< Instance of surface element
+  MyTriFE feTri;   ///< Instance of surface element
 
   /**
    * \brief construction of this data structure
@@ -76,7 +76,7 @@ struct UltraWeakTransportElement {
   UltraWeakTransportElement(MoFEM::Interface &m_field):
   mField(m_field),
   feVol(m_field),
-  feTriFluxValue(m_field) {};
+  feTri(m_field) {};
 
   /**
    * \brief destructor
@@ -112,7 +112,7 @@ struct UltraWeakTransportElement {
     * @param  flux reference to source term set by function
     * @return      error code
     */
-  virtual PetscErrorCode getFlux(
+  virtual PetscErrorCode getSource(
     const EntityHandle ent,
     const double x,const double y,const double z,
     double &flux) {
@@ -234,6 +234,12 @@ struct UltraWeakTransportElement {
     ierr = mField.modify_finite_element_add_field_data("ULTRAWEAK",fluxes_name); CHKERRQ(ierr);
     ierr = mField.modify_finite_element_add_field_data("ULTRAWEAK",values_name); CHKERRQ(ierr);
 
+    // Define finite element to integrate over skeleton, we need that to evaluate error
+    ierr = mField.add_finite_element("ULTRAWEAK_SKELETON",MF_ZERO); CHKERRQ(ierr);
+    ierr = mField.modify_finite_element_add_field_row("ULTRAWEAK_SKELETON",fluxes_name); CHKERRQ(ierr);
+    ierr = mField.modify_finite_element_add_field_col("ULTRAWEAK_SKELETON",fluxes_name); CHKERRQ(ierr);
+    ierr = mField.modify_finite_element_add_field_data("ULTRAWEAK_SKELETON",fluxes_name); CHKERRQ(ierr);
+
     // In some cases you like to use HO geometry to describe shape of the bode, curved edges and faces, for
     // example body is a sphere. HO geometry is approximated by a field,  which can be hierarchical, so shape of
     // the edges could be given by polynomial of arbitrary order.
@@ -242,6 +248,7 @@ struct UltraWeakTransportElement {
     // element. MoFEM will use that that to calculate Jacobian as result that geometry in nonlinear.
     if(mField.check_field(mesh_nodals_positions)) {
       ierr = mField.modify_finite_element_add_field_data("ULTRAWEAK",mesh_nodals_positions); CHKERRQ(ierr);
+      ierr = mField.modify_finite_element_add_field_data("ULTRAWEAK_SKELETON",mesh_nodals_positions); CHKERRQ(ierr);
     }
     // Look for all BLOCKSET which are MAT_THERMALSET, takes entities from those BLOCKSETS
     // and add them to "ULTRAWEAK" finite element. In addition get data form that meshset
@@ -255,8 +262,20 @@ struct UltraWeakTransportElement {
       ierr = it->getAttributeDataStructure(temp_data); CHKERRQ(ierr);
       setOfBlocks[it->getMeshsetId()].cOnductivity = temp_data.data.Conductivity;
       setOfBlocks[it->getMeshsetId()].cApacity = temp_data.data.HeatCapacity;
-      rval = mField.get_moab().get_entities_by_type(it->meshset,MBTET,setOfBlocks[it->getMeshsetId()].tEts,true); CHKERRQ_MOAB(rval);
-      ierr = mField.add_ents_to_finite_element_by_TETs(setOfBlocks[it->getMeshsetId()].tEts,"ULTRAWEAK"); CHKERRQ(ierr);
+      rval = mField.get_moab().get_entities_by_type(
+        it->meshset,MBTET,setOfBlocks[it->getMeshsetId()].tEts,true
+      ); CHKERRQ_MOAB(rval);
+      ierr = mField.add_ents_to_finite_element_by_TETs(
+        setOfBlocks[it->getMeshsetId()].tEts,"ULTRAWEAK"
+      ); CHKERRQ(ierr);
+
+      Range skeleton;
+      rval = mField.get_moab().get_adjacencies(
+        setOfBlocks[it->getMeshsetId()].tEts,2,false,skeleton,moab::Interface::UNION
+      );
+      ierr = mField.add_ents_to_finite_element_by_TRIs(
+        skeleton,"ULTRAWEAK_SKELETON"
+      ); CHKERRQ(ierr);
 
     }
 
@@ -296,6 +315,9 @@ struct UltraWeakTransportElement {
     // get tetrahedrons which has been build previously and now in so called garbage bit level
     Range done_tets;
     ierr = mField.get_entities_by_type_and_ref_level(
+      BitRefLevel().set(0),BitRefLevel().set(),MBTET,done_tets
+    ); CHKERRQ(ierr);
+    ierr = mField.get_entities_by_type_and_ref_level(
       BitRefLevel().set(BITREFLEVEL_SIZE-1),BitRefLevel().set(),MBTET,done_tets
     ); CHKERRQ(ierr);
     // get tetrahedrons which belong to problem bit level
@@ -308,6 +330,9 @@ struct UltraWeakTransportElement {
     // get triangles which has been build previously and now in so called garbage bit level
     Range done_faces;
     ierr = mField.get_entities_by_type_and_ref_level(
+      BitRefLevel().set(0),BitRefLevel().set(),MBTRI,done_faces
+    ); CHKERRQ(ierr);
+    ierr = mField.get_entities_by_type_and_ref_level(
       BitRefLevel().set(BITREFLEVEL_SIZE-1),BitRefLevel().set(),MBTRI,done_faces
     ); CHKERRQ(ierr);
     // get triangles which belong to problem bit level
@@ -319,6 +344,7 @@ struct UltraWeakTransportElement {
     //build finite elements structures
     ierr = mField.build_finite_elements("ULTRAWEAK_BCFLUX",&ref_faces,2); CHKERRQ(ierr);
     ierr = mField.build_finite_elements("ULTRAWEAK_BCVALUE",&ref_faces,2); CHKERRQ(ierr);
+    ierr = mField.build_finite_elements("ULTRAWEAK_SKELETON",&ref_faces,2); CHKERRQ(ierr);
     //Build adjacencies of degrees of freedom and elements
     ierr = mField.build_adjacencies(ref_level); CHKERRQ(ierr);
     //Define problem
@@ -327,6 +353,7 @@ struct UltraWeakTransportElement {
     ierr = mField.modify_problem_ref_level_set_bit("ULTRAWEAK",ref_level); CHKERRQ(ierr);
     // Add element to problem
     ierr = mField.modify_problem_add_finite_element("ULTRAWEAK","ULTRAWEAK"); CHKERRQ(ierr);
+    ierr = mField.modify_problem_add_finite_element("ULTRAWEAK","ULTRAWEAK_SKELETON"); CHKERRQ(ierr);
     // Boundary conditions
     ierr = mField.modify_problem_add_finite_element("ULTRAWEAK","ULTRAWEAK_BCFLUX"); CHKERRQ(ierr);
     ierr = mField.modify_problem_add_finite_element("ULTRAWEAK","ULTRAWEAK_BCVALUE"); CHKERRQ(ierr);
@@ -362,20 +389,52 @@ struct UltraWeakTransportElement {
       if(type != MBTET) PetscFunctionReturn(0);
       EntityHandle fe_ent = getNumeredEntFiniteElementPtr()->getEnt();
       Tag th_error_flux;
-      rval = getVolumeFE()->mField.get_moab().tag_get_handle("ERRORL2_FLUX",th_error_flux); CHKERRQ_MOAB(rval);
+      rval = getVolumeFE()->mField.get_moab().tag_get_handle("ERROR_FLUX",th_error_flux); CHKERRQ_MOAB(rval);
       double* error_flux_ptr;
       rval = getVolumeFE()->mField.get_moab().tag_get_by_ptr(
         th_error_flux,&fe_ent,1,(const void**)&error_flux_ptr
       ); CHKERRQ_MOAB(rval);
+
+      Tag th_error_div;
+      rval = getVolumeFE()->mField.get_moab().tag_get_handle("ERROR_DIV",th_error_div); CHKERRQ_MOAB(rval);
+      double* error_div_ptr;
+      rval = getVolumeFE()->mField.get_moab().tag_get_by_ptr(
+        th_error_div,&fe_ent,1,(const void**)&error_div_ptr
+      ); CHKERRQ_MOAB(rval);
+
+      Tag th_error_jump;
+      rval = getVolumeFE()->mField.get_moab().tag_get_handle("ERROR_JUMP",th_error_jump); CHKERRQ_MOAB(rval);
+      double* error_jump_ptr;
+      rval = getVolumeFE()->mField.get_moab().tag_get_by_ptr(
+        th_error_jump,&fe_ent,1,(const void**)&error_jump_ptr
+      ); CHKERRQ_MOAB(rval);
+
       {
         double def_val = 0;
         Tag th_error_flux;
         rval = postProcMesh.tag_get_handle(
-          "ERRORL2_FLUX",1,MB_TYPE_DOUBLE,th_error_flux,MB_TAG_CREAT|MB_TAG_SPARSE,&def_val
+          "ERROR_FLUX",1,MB_TYPE_DOUBLE,th_error_flux,MB_TAG_CREAT|MB_TAG_SPARSE,&def_val
         ); CHKERRQ_MOAB(rval);
         for(vector<EntityHandle>::iterator vit = mapGaussPts.begin();vit!=mapGaussPts.end();vit++) {
           rval = postProcMesh.tag_set_data(th_error_flux,&*vit,1,error_flux_ptr); CHKERRQ_MOAB(rval);
         }
+
+        Tag th_error_div;
+        rval = postProcMesh.tag_get_handle(
+          "ERROR_DIV",1,MB_TYPE_DOUBLE,th_error_div,MB_TAG_CREAT|MB_TAG_SPARSE,&def_val
+        ); CHKERRQ_MOAB(rval);
+        for(vector<EntityHandle>::iterator vit = mapGaussPts.begin();vit!=mapGaussPts.end();vit++) {
+          rval = postProcMesh.tag_set_data(th_error_div,&*vit,1,error_div_ptr); CHKERRQ_MOAB(rval);
+        }
+
+        Tag th_error_jump;
+        rval = postProcMesh.tag_get_handle(
+          "ERROR_JUMP",1,MB_TYPE_DOUBLE,th_error_jump,MB_TAG_CREAT|MB_TAG_SPARSE,&def_val
+        ); CHKERRQ_MOAB(rval);
+        for(vector<EntityHandle>::iterator vit = mapGaussPts.begin();vit!=mapGaussPts.end();vit++) {
+          rval = postProcMesh.tag_set_data(th_error_jump,&*vit,1,error_jump_ptr); CHKERRQ_MOAB(rval);
+        }
+
       }
       PetscFunctionReturn(0);
     }
@@ -436,10 +495,10 @@ struct UltraWeakTransportElement {
     // clear essental bc indices, it could have dofs from other mesh refinement
     bcIndices.clear();
     // clear operator, just in case if some other operators are left on this element
-    feTriFluxValue.getOpPtrVector().clear();
+    feTri.getOpPtrVector().clear();
     // set operator to calculate essential boundary conditions
-    feTriFluxValue.getOpPtrVector().push_back(new OpEvaluateBcOnFluxes(*this,"FLUXES",D0));
-    ierr = mField.loop_finite_elements("ULTRAWEAK","ULTRAWEAK_BCFLUX",feTriFluxValue); CHKERRQ(ierr);
+    feTri.getOpPtrVector().push_back(new OpEvaluateBcOnFluxes(*this,"FLUXES",D0));
+    ierr = mField.loop_finite_elements("ULTRAWEAK","ULTRAWEAK_BCFLUX",feTri); CHKERRQ(ierr);
     ierr = VecGhostUpdateBegin(D0,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
     ierr = VecGhostUpdateEnd(D0,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
     ierr = VecAssemblyBegin(D0); CHKERRQ(ierr);
@@ -456,9 +515,9 @@ struct UltraWeakTransportElement {
     ierr = mField.loop_finite_elements("ULTRAWEAK","ULTRAWEAK",feVol); CHKERRQ(ierr);
 
     // calculate right hand side for natural boundary conditions
-    feTriFluxValue.getOpPtrVector().clear();
-    feTriFluxValue.getOpPtrVector().push_back(new OpRhsBcOnValues(*this,"FLUXES",F));
-    ierr = mField.loop_finite_elements("ULTRAWEAK","ULTRAWEAK_BCVALUE",feTriFluxValue); CHKERRQ(ierr);
+    feTri.getOpPtrVector().clear();
+    feTri.getOpPtrVector().push_back(new OpRhsBcOnValues(*this,"FLUXES",F));
+    ierr = mField.loop_finite_elements("ULTRAWEAK","ULTRAWEAK_BCVALUE",feTri); CHKERRQ(ierr);
 
     // assemble matrices
     ierr = MatAssemblyBegin(Aij,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
@@ -525,9 +584,9 @@ struct UltraWeakTransportElement {
     feVol.getOpPtrVector().push_back(new OpTauDotSigma_HdivHdiv(*this,"FLUXES",PETSC_NULL,F));
     feVol.getOpPtrVector().push_back(new OpVDotDivSigma_L2Hdiv(*this,"VALUES","FLUXES",PETSC_NULL,F));
     ierr = mField.loop_finite_elements("ULTRAWEAK","ULTRAWEAK",feVol); CHKERRQ(ierr);
-    feTriFluxValue.getOpPtrVector().clear();
-    feTriFluxValue.getOpPtrVector().push_back(new OpRhsBcOnValues(*this,"FLUXES",F));
-    ierr = mField.loop_finite_elements("ULTRAWEAK","ULTRAWEAK_BCVALUE",feTriFluxValue); CHKERRQ(ierr);
+    feTri.getOpPtrVector().clear();
+    feTri.getOpPtrVector().push_back(new OpRhsBcOnValues(*this,"FLUXES",F));
+    ierr = mField.loop_finite_elements("ULTRAWEAK","ULTRAWEAK_BCVALUE",feTri); CHKERRQ(ierr);
     ierr = VecGhostUpdateBegin(F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
     ierr = VecGhostUpdateEnd(F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
     ierr = VecAssemblyBegin(F); CHKERRQ(ierr);
@@ -564,16 +623,24 @@ struct UltraWeakTransportElement {
     PetscErrorCode ierr;
     PetscFunctionBegin;
     errorMap.clear();
-    sumError = 0;
+    sumErrorFlux = 0;
+    sumErrorDiv = 0;
+    sumErrorJump = 0;
+    feTri.getOpPtrVector().clear();
+    feTri.getOpPtrVector().push_back(new OpSkeleton(*this,"FLUXES"));
+    ierr = mField.loop_finite_elements("ULTRAWEAK","ULTRAWEAK_SKELETON",feTri,0,mField.getCommSize()); CHKERRQ(ierr);
     feVol.getOpPtrVector().clear();
     feVol.getOpPtrVector().push_back(new OpFluxDivergenceAtGaussPts(*this,"FLUXES"));
     feVol.getOpPtrVector().push_back(new OpValuesGradientAtGaussPts(*this,"VALUES"));
-    feVol.getOpPtrVector().push_back(new OpError_L2Norm(*this,"VALUES"));
+    feVol.getOpPtrVector().push_back(new OpError(*this,"VALUES"));
     ierr = mField.loop_finite_elements("ULTRAWEAK","ULTRAWEAK",feVol,0,mField.getCommSize()); CHKERRQ(ierr);
     const MoFEMProblem *problem_ptr;
     ierr = mField.get_problem("ULTRAWEAK",&problem_ptr); CHKERRQ(ierr);
     PetscPrintf(
-      mField.get_comm(),"Nb dofs %d error = %6.4e\n",problem_ptr->getNbDofsRow(),sumError
+      mField.get_comm(),
+      "Nb dofs %d error flux^2 = %6.4e error div^2 = %6.4e error jump^2 = %6.4e error tot^2 = %6.4e\n",
+      problem_ptr->getNbDofsRow(),
+      sumErrorFlux,sumErrorDiv,sumErrorJump,sumErrorFlux+sumErrorDiv+sumErrorJump
     );
     PetscFunctionReturn(0);
   }
@@ -600,10 +667,10 @@ struct UltraWeakTransportElement {
 
     OpTauDotSigma_HdivHdiv(
       UltraWeakTransportElement &ctx,
-      const std::string field_name,Mat aij,Vec f
+      const std::string flux_name,Mat aij,Vec f
     ):
     MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator(
-      field_name,
+      flux_name,
       UserDataOperator::OPROW|UserDataOperator::OPROWCOL
     ),
     cTx(ctx),
@@ -778,15 +845,15 @@ struct UltraWeakTransportElement {
 
     OpDivTauU_HdivL2(
       UltraWeakTransportElement &ctx,
-      const std::string field_name_row,string field_name_col,Mat _Aij,Vec _F
+      const std::string flux_name_row,string val_name_col,Mat aij,Vec f
     ):
     MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator(
-      field_name_row,field_name_col,
+      flux_name_row,val_name_col,
       UserDataOperator::OPROW
     ),
     cTx(ctx),
-    Aij(_Aij),
-    F(_F) {
+    Aij(aij),
+    F(f) {
       //this operator is not symmetric setting this variable makes element
       //operator to loop over element entities (subsimplicies) without
       //assumption that off-diagonal matrices are symmetric.
@@ -844,15 +911,15 @@ struct UltraWeakTransportElement {
 
     OpVDotDivSigma_L2Hdiv(
       UltraWeakTransportElement &ctx,
-      const std::string field_name_row,string field_name_col,Mat _Aij,Vec _F
+      const std::string val_name_row,string flux_name_col,Mat aij,Vec f
     ):
     MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator(
-      field_name_row,field_name_col,
+      val_name_row,flux_name_col,
       UserDataOperator::OPROW|UserDataOperator::OPROWCOL
     ),
     cTx(ctx),
-    Aij(_Aij),
-    F(_F) {
+    Aij(aij),
+    F(f) {
 
       //this operator is not symmetric setting this variable makes element
       //operator to loop over element entities without
@@ -959,12 +1026,12 @@ struct UltraWeakTransportElement {
 
     OpL2Source(
       UltraWeakTransportElement &ctx,
-      const std::string field_name,
-      Vec _F
+      const std::string val_name,
+      Vec f
     ):
-    MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROW),
+    MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator(val_name,UserDataOperator::OPROW),
     cTx(ctx),
-    F(_F) {}
+    F(f) {}
 
     VectorDouble Nf;
     PetscErrorCode doWork(
@@ -988,7 +1055,7 @@ struct UltraWeakTransportElement {
           const double y = getCoordsAtGaussPts()(gg,1);
           const double z = getCoordsAtGaussPts()(gg,2);
           double flux = 0;
-          ierr = cTx.getFlux(fe_ent,x,y,z,flux); CHKERRQ(ierr);
+          ierr = cTx.getSource(fe_ent,x,y,z,flux); CHKERRQ(ierr);
           noalias(Nf) += w*data.getN(gg)*flux;
         }
         ierr = VecSetValues(F,nb_row,&data.getIndices()[0],&Nf[0],ADD_VALUES); CHKERRQ(ierr);
@@ -1016,11 +1083,11 @@ struct UltraWeakTransportElement {
     Vec F;
 
     OpRhsBcOnValues(
-      UltraWeakTransportElement &ctx,const std::string field_name,Vec _F
+      UltraWeakTransportElement &ctx,const std::string fluxes_name,Vec f
     ):
-    MoFEM::FaceElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROW),
+    MoFEM::FaceElementForcesAndSourcesCore::UserDataOperator(fluxes_name,UserDataOperator::OPROW),
     cTx(ctx),
-    F(_F) {}
+    F(f) {}
 
     VectorDouble Nf;
     PetscErrorCode doWork(
@@ -1074,11 +1141,11 @@ struct UltraWeakTransportElement {
     UltraWeakTransportElement &cTx;
     Vec X;
     OpEvaluateBcOnFluxes(
-      UltraWeakTransportElement &ctx,const std::string field_name,Vec _X
+      UltraWeakTransportElement &ctx,const std::string flux_name,Vec x
     ):
-    MoFEM::FaceElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROW),
+    MoFEM::FaceElementForcesAndSourcesCore::UserDataOperator(flux_name,UserDataOperator::OPROW),
     cTx(ctx),
-    X(_X) {
+    X(x) {
     }
     virtual ~OpEvaluateBcOnFluxes() {}
     MatrixDouble NN;
@@ -1194,9 +1261,9 @@ struct UltraWeakTransportElement {
 
     OpValuesAtGaussPts(
       UltraWeakTransportElement &ctx,
-      const std::string field_name
+      const std::string val_name = "VALUES"
     ):
-    MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROW),
+    MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator(val_name,UserDataOperator::OPROW),
     cTx(ctx) {}
 
     virtual ~OpValuesAtGaussPts() {}
@@ -1234,9 +1301,9 @@ struct UltraWeakTransportElement {
 
     OpValuesGradientAtGaussPts(
       UltraWeakTransportElement &ctx,
-      const std::string field_name
+      const std::string val_name = "VALUES"
     ):
-    MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROW),
+    MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator(val_name,UserDataOperator::OPROW),
     cTx(ctx) {}
     virtual ~OpValuesGradientAtGaussPts() {}
 
@@ -1312,20 +1379,22 @@ struct UltraWeakTransportElement {
   };
 
   map<double,EntityHandle> errorMap;
-  double sumError;
+  double sumErrorFlux;
+  double sumErrorDiv;
+  double sumErrorJump;
 
   /** \brief calculate error evaluator
     */
-  struct OpError_L2Norm: public MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator {
+  struct OpError: public MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator {
 
     UltraWeakTransportElement &cTx;
 
-    OpError_L2Norm(
+    OpError(
       UltraWeakTransportElement &ctx,
       const std::string field_name):
       MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROW),
       cTx(ctx) {}
-    virtual ~OpError_L2Norm() {}
+    virtual ~OpError() {}
 
     VectorDouble deltaFlux;
     MatrixDouble invK;
@@ -1342,14 +1411,42 @@ struct UltraWeakTransportElement {
         int nb_gauss_pts = data.getN().size1();
         EntityHandle fe_ent = getNumeredEntFiniteElementPtr()->getEnt();
         double def_val = 0;
-        Tag th_error_flux;
+        Tag th_error_flux,th_error_div;
         rval = cTx.mField.get_moab().tag_get_handle(
-          "ERRORL2_FLUX",1,MB_TYPE_DOUBLE,th_error_flux,MB_TAG_CREAT|MB_TAG_SPARSE,&def_val
+          "ERROR_FLUX",1,MB_TYPE_DOUBLE,th_error_flux,MB_TAG_CREAT|MB_TAG_SPARSE,&def_val
         ); CHKERRQ_MOAB(rval);
         double* error_flux_ptr;
         rval = cTx.mField.get_moab().tag_get_by_ptr(
           th_error_flux,&fe_ent,1,(const void**)&error_flux_ptr
         ); CHKERRQ_MOAB(rval);
+
+        rval = cTx.mField.get_moab().tag_get_handle(
+          "ERROR_DIV",1,MB_TYPE_DOUBLE,th_error_div,MB_TAG_CREAT|MB_TAG_SPARSE,&def_val
+        ); CHKERRQ_MOAB(rval);
+        double* error_div_ptr;
+        rval = cTx.mField.get_moab().tag_get_by_ptr(
+          th_error_div,&fe_ent,1,(const void**)&error_div_ptr
+        ); CHKERRQ_MOAB(rval);
+
+        Tag th_error_jump;
+        rval = cTx.mField.get_moab().tag_get_handle(
+          "ERROR_JUMP",1,MB_TYPE_DOUBLE,th_error_jump,MB_TAG_CREAT|MB_TAG_SPARSE,&def_val
+        ); CHKERRQ_MOAB(rval);
+        double* error_jump_ptr;
+        rval = cTx.mField.get_moab().tag_get_by_ptr(
+          th_error_jump,&fe_ent,1,(const void**)&error_jump_ptr
+        ); CHKERRQ_MOAB(rval);
+
+        for(int ff = 0;ff!=4;ff++) {
+          EntityHandle face;
+          rval = cTx.mField.get_moab().side_element(fe_ent,2,ff,face); CHKERRQ_MOAB(rval);
+          double* error_face_jump_ptr;
+          rval = cTx.mField.get_moab().tag_get_by_ptr(
+            th_error_jump,&face,1,(const void**)&error_face_jump_ptr
+          ); CHKERRQ_MOAB(rval);
+          *error_jump_ptr += *error_face_jump_ptr;
+        }
+
         deltaFlux.resize(3,false);
         const double h = pow(getVolume()*12/sqrt(2),(double)1/3);
         *error_flux_ptr = 0;
@@ -1361,16 +1458,19 @@ struct UltraWeakTransportElement {
           const double x = getCoordsAtGaussPts()(gg,0);
           const double y = getCoordsAtGaussPts()(gg,1);
           const double z = getCoordsAtGaussPts()(gg,2);
-          // double flux;
-          // ierr = cTx.getFlux(fe_ent,x,y,z,flux); CHKERRQ(ierr);
-          // double delta_div = pow(cTx.divergenceAtGaussPts[gg]-flux,2);
+          double flux;
+          ierr = cTx.getSource(fe_ent,x,y,z,flux); CHKERRQ(ierr);
+          *error_div_ptr += w*pow(cTx.divergenceAtGaussPts[gg]-flux,2);
           ierr = cTx.getResistivity(fe_ent,x,y,z,invK); CHKERRQ(ierr);
           noalias(deltaFlux) = prod(invK,cTx.fluxesAtGaussPts[gg])+cTx.valuesGradientAtGaussPts[gg];
           *error_flux_ptr += w*inner_prod(deltaFlux,deltaFlux);
         }
-        cTx.sumError += *error_flux_ptr;
-        *error_flux_ptr = sqrt(*error_flux_ptr);
-        cTx.errorMap[*error_flux_ptr] = fe_ent;
+        cTx.sumErrorFlux += *error_flux_ptr;
+        *error_div_ptr = h*sqrt(*error_div_ptr);
+        *error_div_ptr = pow(*error_div_ptr,2);
+        cTx.sumErrorDiv += *error_div_ptr;
+        cTx.sumErrorJump += *error_jump_ptr;
+        cTx.errorMap[sqrt(*error_flux_ptr+*error_div_ptr+*error_jump_ptr)] = fe_ent;
       } catch (const std::exception& ex) {
         std::ostringstream ss;
         ss << "throw in method: " << ex.what() << std::endl;
@@ -1381,6 +1481,135 @@ struct UltraWeakTransportElement {
     }
 
   };
+
+  /**
+   * \brief calculate jump on entities
+   */
+  struct OpSkeleton: public MoFEM::FaceElementForcesAndSourcesCore::UserDataOperator {
+
+    /**
+     * \brief volume element to get values from adjacent tets to face
+     */
+    VolumeElementForcesAndSourcesCoreOnSide volSideFe;
+
+    /** store values at integration point, key of the map is sense of face in
+     * respect to adjacent tetrahedra
+     */
+    map<int,VectorDouble> valMap;
+
+    /**
+     * \brief calculate values on adjacent tetrahedra to face
+     */
+    struct OpVolSide: public VolumeElementForcesAndSourcesCoreOnSide::UserDataOperator {
+      map<int,VectorDouble> &valMap;
+      OpVolSide(map<int,VectorDouble> &val_map):
+      VolumeElementForcesAndSourcesCoreOnSide::UserDataOperator("VALUES",UserDataOperator::OPROW),
+      valMap(val_map) {
+      }
+      PetscErrorCode doWork(int side, EntityType type,DataForcesAndSurcesCore::EntData &data) {
+        PetscFunctionBegin;
+        try {
+          if(data.getFieldData().size() == 0)  PetscFunctionReturn(0);
+          int nb_gauss_pts = data.getN().size1();
+          valMap[getFaceSense()].resize(nb_gauss_pts);
+          for(int gg = 0;gg<nb_gauss_pts;gg++) {
+            valMap[getFaceSense()][gg] = inner_prod(trans(data.getN(gg)),data.getFieldData());
+          }
+        } catch (const std::exception& ex) {
+          std::ostringstream ss;
+          ss << "throw in method: " << ex.what() << std::endl;
+          SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+        }
+        PetscFunctionReturn(0);
+      }
+    };
+
+    UltraWeakTransportElement &cTx;
+
+    OpSkeleton(
+      UltraWeakTransportElement &ctx,const std::string flux_name
+    ):
+    MoFEM::FaceElementForcesAndSourcesCore::UserDataOperator(flux_name,UserDataOperator::OPROW),
+    volSideFe(ctx.mField),
+    cTx(ctx) {
+      volSideFe.getOpPtrVector().push_back(new OpSkeleton::OpVolSide(valMap));
+    }
+
+    PetscErrorCode doWork(int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
+      MoABErrorCode rval;
+      PetscErrorCode ierr;
+      PetscFunctionBegin;
+      if(type == MBTRI) {
+        EntityHandle fe_ent = getNumeredEntFiniteElementPtr()->getEnt();
+
+        double def_val = 0;
+        Tag th_error_jump;
+        rval = cTx.mField.get_moab().tag_get_handle(
+          "ERROR_JUMP",1,MB_TYPE_DOUBLE,th_error_jump,MB_TAG_CREAT|MB_TAG_SPARSE,&def_val
+        ); CHKERRQ_MOAB(rval);
+        double* error_jump_ptr;
+        rval = cTx.mField.get_moab().tag_get_by_ptr(
+          th_error_jump,&fe_ent,1,(const void**)&error_jump_ptr
+        ); CHKERRQ_MOAB(rval);
+        *error_jump_ptr = 0;
+
+        // check if this is essential boundary condition
+        EntityHandle essential_bc_meshset = cTx.mField.get_finite_element_meshset("ULTRAWEAK_BCFLUX");
+        if(cTx.mField.get_moab().contains_entities(essential_bc_meshset,&fe_ent,1)) {
+          // essential bc, np jump then, exit and go to next face
+          PetscFunctionReturn(0);
+        }
+
+        // calculate values form adjacent tets
+        valMap.clear();
+        ierr = loopSideVolumes("ULTRAWEAK",volSideFe); CHKERRQ(ierr);
+
+        int nb_gauss_pts = data.getHdivN().size1();
+
+        // it is only one face, so it has to be bc ntural boundary condition
+        if(valMap.size()==1) {
+          if(valMap.begin()->second.size()!=nb_gauss_pts) {
+            SETERRQ(PETSC_COMM_WORLD,MOFEM_DATA_INCONSISTENCY,"wrong number of integration points");
+          }
+          for(int gg = 0;gg!=nb_gauss_pts;gg++) {
+            const double x = getCoordsAtGaussPts()(gg,0);
+            const double y = getCoordsAtGaussPts()(gg,1);
+            const double z = getCoordsAtGaussPts()(gg,2);
+            double value;
+            ierr = cTx.getBcOnValues(fe_ent,x,y,z,value); CHKERRQ(ierr);
+            double w = getGaussPts()(2,gg);
+            if(getNormalsAtGaussPt().size1() == (unsigned int)nb_gauss_pts) {
+              w *= norm_2(getNormalsAtGaussPt(gg))*0.5;
+            } else {
+              w *= getArea();
+            }
+            *error_jump_ptr += w*pow(value-valMap.begin()->second[gg],2);
+          }
+        } else if(valMap.size()==2) {
+          for(int gg = 0;gg!=nb_gauss_pts;gg++) {
+            double w = getGaussPts()(2,gg);
+            if(getNormalsAtGaussPt().size1() == (unsigned int)nb_gauss_pts) {
+              w *= norm_2(getNormalsAtGaussPt(gg))*0.5;
+            } else {
+              w *= getArea();
+            }
+            double delta = valMap.at(1)[gg]-valMap.at(-1)[gg];
+            *error_jump_ptr += w*pow(delta,2);
+          }
+        } else {
+          SETERRQ1(
+            PETSC_COMM_WORLD,MOFEM_DATA_INCONSISTENCY,
+            "data inconsistency, wrong number of neighbors valMap.size() = %d",
+            valMap.size()
+          );
+        }
+      }
+
+      PetscFunctionReturn(0);
+    }
+
+  };
+
 
 };
 
