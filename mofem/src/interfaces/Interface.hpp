@@ -2326,8 +2326,6 @@ struct Interface: public UnknownInterface {
 
 };
 
-DEPRECATED typedef Interface FieldInterface;
-
 }
 
 #endif // __INTERFACE_HPP__

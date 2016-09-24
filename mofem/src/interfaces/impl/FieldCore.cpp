@@ -1294,20 +1294,6 @@ PetscErrorCode Core::list_fields() const {
 }
 
 
-PetscErrorCode Core::build_adjacencies(const BitRefLevel &bit,const BitRefLevel &mask,int verb) {
-  PetscFunctionBegin;
-  if(verb==-1) verb = verbose;
-  Range ents;
-  ierr = get_entities_by_ref_level(bit,mask,ents); CHKERRQ(ierr);
-  ierr = build_adjacencies(ents,verb); CHKERRQ(ierr);
-  PetscFunctionReturn(0);
-}
-PetscErrorCode Core::build_adjacencies(const BitRefLevel &bit,int verb) {
-  PetscFunctionBegin;
-  if(verb==-1) verb = verbose;
-  ierr = build_adjacencies(bit,BitRefLevel().set(),verb); CHKERRQ(ierr);
-  PetscFunctionReturn(0);
-}
 PetscErrorCode Core::list_adjacencies() const {
   PetscFunctionBegin;
   MoFEMEntityEntFiniteElementAdjacencyMap_multiIndex::iterator miit = entFEAdjacencies.begin();

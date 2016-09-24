@@ -680,10 +680,13 @@ namespace MoFEM {
     //typedef MoFEMEntity_multiIndex::index<Unique_mi_tag>::type ents_by_uid;
     EntFiniteElement_multiIndex::iterator fit = entsFiniteElements.begin();
     for(;fit!=entsFiniteElements.end();fit++) {
+      if(
+        (*fit)->getBitFieldIdRow().none() &&
+        (*fit)->getBitFieldIdCol().none() &&
+        (*fit)->getBitFieldIdData().none()
+      ) continue;
       if(!ents.empty()) {
-        if(ents.find((*fit)->getEnt())==ents.end()) {
-          continue;
-        }
+        if(ents.find((*fit)->getEnt())==ents.end()) continue;
       }
       int by = BYROW;
       if((*fit)->getBitFieldIdRow()!=(*fit)->getBitFieldIdCol()) by |= BYCOL;
@@ -750,6 +753,21 @@ namespace MoFEM {
       //PetscSynchronizedFlush(comm,PETSC_STDOUT);
     }
     *buildMoFEM |= 1<<2;
+    PetscFunctionReturn(0);
+  }
+
+  PetscErrorCode Core::build_adjacencies(const BitRefLevel &bit,const BitRefLevel &mask,int verb) {
+    PetscFunctionBegin;
+    if(verb==-1) verb = verbose;
+    Range ents;
+    ierr = get_entities_by_ref_level(bit,mask,ents); CHKERRQ(ierr);
+    ierr = build_adjacencies(ents,verb); CHKERRQ(ierr);
+    PetscFunctionReturn(0);
+  }
+  PetscErrorCode Core::build_adjacencies(const BitRefLevel &bit,int verb) {
+    PetscFunctionBegin;
+    if(verb==-1) verb = verbose;
+    ierr = build_adjacencies(bit,BitRefLevel().set(),verb); CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }
 
