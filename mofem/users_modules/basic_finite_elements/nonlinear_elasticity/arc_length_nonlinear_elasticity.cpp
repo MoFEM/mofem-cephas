@@ -299,6 +299,8 @@ int main(int argc, char *argv[]) {
   ierr = MatShellSetOperation(ShellAij,MATOP_MULT,(void(*)(void))ArcLengthMatMultShellOp); CHKERRQ(ierr);
 
   ArcLengthSnesCtx snes_ctx(m_field,"ELASTIC_MECHANICS",arc_ctx);
+  ///< do not very if element of given name exist when do loop over elements
+  snes_ctx.bH = MF_ZERO;
 
   Range node_set;
   for(_IT_CUBITMESHSETS_BY_NAME_FOR_LOOP_(m_field,"LoadPath",cit)) {

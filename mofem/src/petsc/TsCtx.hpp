@@ -33,6 +33,7 @@ struct TsCtx {
   moab::Interface &moab;
 
   std::string problemName;
+  MoFEMTypes bH; ///< If set to MF_EXIST check if element exist
 
   typedef std::pair<std::string,FEMethod*> loop_pair_type;
   typedef std::vector<loop_pair_type > loops_to_do_type;
@@ -59,6 +60,7 @@ struct TsCtx {
     mField(m_field),
     moab(m_field.get_moab()),
     problemName(problem_name),
+    bH(MF_EXIST),
     zeroMatrix(true) {
     PetscLogEventRegister("LoopTsIFunction",0,&USER_EVENT_TsCtxIFunction);
     PetscLogEventRegister("LoopTsIJacobian",0,&USER_EVENT_TsCtxIJacobian);
