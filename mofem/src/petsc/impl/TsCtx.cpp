@@ -84,7 +84,7 @@ PetscErrorCode f_TSSetIFunction(TS ts,PetscReal t,Vec u,Vec u_t,Vec F,void *ctx)
     lit->second->ts_step = step;
     ierr = lit->second->set_ts_ctx(TSMethod::CTX_TSSETIFUNCTION);
     ierr = lit->second->set_ts(ts); CHKERRQ(ierr);
-    ierr = ts_ctx->mField.loop_finite_elements(ts_ctx->problemName,lit->first,*(lit->second)); CHKERRQ(ierr);
+    ierr = ts_ctx->mField.loop_finite_elements(ts_ctx->problemName,lit->first,*(lit->second),ts_ctx->bH); CHKERRQ(ierr);
     ierr = lit->second->set_ts_ctx(TSMethod::CTX_TSNONE);
   }
   //post process
@@ -148,7 +148,7 @@ PetscErrorCode f_TSSetIJacobian(TS ts,PetscReal t,Vec u,Vec u_t,PetscReal a,Mat 
     lit->second->ts_step = step;
     ierr = lit->second->set_ts_ctx(TSMethod::CTX_TSSETIJACOBIAN);
     ierr = lit->second->set_ts(ts); CHKERRQ(ierr);
-    ierr = ts_ctx->mField.loop_finite_elements(ts_ctx->problemName,lit->first,*(lit->second)); CHKERRQ(ierr);
+    ierr = ts_ctx->mField.loop_finite_elements(ts_ctx->problemName,lit->first,*(lit->second),ts_ctx->bH); CHKERRQ(ierr);
     ierr = lit->second->set_ts_ctx(TSMethod::CTX_TSNONE); CHKERRQ(ierr);
   }
   //post process
@@ -201,7 +201,7 @@ PetscErrorCode f_TSMonitorSet(TS ts,PetscInt step,PetscReal t,Vec u,void *ctx) {
     lit->second->ts_F = PETSC_NULL;
     ierr = lit->second->set_ts_ctx(TSMethod::CTX_TSTSMONITORSET);
     ierr = lit->second->set_ts(ts); CHKERRQ(ierr);
-    ierr = ts_ctx->mField.loop_finite_elements(ts_ctx->problemName,lit->first,*(lit->second)); CHKERRQ(ierr);
+    ierr = ts_ctx->mField.loop_finite_elements(ts_ctx->problemName,lit->first,*(lit->second),ts_ctx->bH); CHKERRQ(ierr);
     ierr = lit->second->set_ts_ctx(TSMethod::CTX_TSNONE);
   }
   //post process

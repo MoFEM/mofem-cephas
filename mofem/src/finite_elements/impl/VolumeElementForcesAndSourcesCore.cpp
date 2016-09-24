@@ -61,6 +61,7 @@
 #include <DataOperators.hpp>
 #include <ElementsOnEntities.hpp>
 #include <VolumeElementForcesAndSourcesCore.hpp>
+#include <FaceElementForcesAndSourcesCore.hpp>
 
 #ifdef __cplusplus
 extern "C" {
@@ -778,6 +779,69 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::UserDataOperator::getCurlOfHCu
   }
 
   PetscFunctionReturn(0);
+}
+
+PetscErrorCode VolumeElementForcesAndSourcesCoreOnSide::setGaussPts(int order) {
+  PetscFunctionBegin;
+  if(faceFEPtr==NULL) {
+    SETERRQ(PETSC_COMM_WORLD,MOFEM_DATA_INCONSISTENCY,"Pointer to face element is not set");
+  }
+  const EntityHandle face_entity = faceFEPtr->numeredEntFiniteElementPtr->getEnt();
+  SideNumber_multiIndex& side_table = const_cast<SideNumber_multiIndex&>(
+    numeredEntFiniteElementPtr->getSideNumberTable()
+  );
+  SideNumber_multiIndex::nth_index<0>::type::iterator sit = side_table.get<0>().find(face_entity);
+  if(sit==side_table.get<0>().end()) {
+    SETERRQ(PETSC_COMM_WORLD,MOFEM_DATA_INCONSISTENCY,"Face can not be found on volume element");
+  }
+  int face_conn_map[3];
+  for(int nn = 0;nn!=3;nn++) {
+    face_conn_map[nn] = distance(&conn[0],find(conn,&conn[4],faceFEPtr->conn[nn]));
+    if(face_conn_map[nn]>3) {
+      SETERRQ(PETSC_COMM_WORLD,MOFEM_DATA_INCONSISTENCY,"No common node on face and element can not be found");
+    }
+  }
+  const int nb_gauss_pts = faceFEPtr->gaussPts.size2();
+  gaussPts.resize(4,nb_gauss_pts,false);
+  gaussPts.clear();
+  const MatrixDouble &face_shape_funtions = faceFEPtr->dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE);
+  const double tet_coords[] = { 0,0,0, 1,0,0, 0,1,0, 0,0,1 };
+  for(int gg = 0;gg!=nb_gauss_pts;gg++) {
+    gaussPts(0,gg) =
+    face_shape_funtions(gg,0)*tet_coords[3*face_conn_map[0]+0]+
+    face_shape_funtions(gg,1)*tet_coords[3*face_conn_map[1]+0]+
+    face_shape_funtions(gg,2)*tet_coords[3*face_conn_map[2]+0];
+    gaussPts(1,gg) =
+    face_shape_funtions(gg,0)*tet_coords[3*face_conn_map[0]+1]+
+    face_shape_funtions(gg,1)*tet_coords[3*face_conn_map[1]+1]+
+    face_shape_funtions(gg,2)*tet_coords[3*face_conn_map[2]+1];
+    gaussPts(2,gg) =
+    face_shape_funtions(gg,0)*tet_coords[3*face_conn_map[0]+2]+
+    face_shape_funtions(gg,1)*tet_coords[3*face_conn_map[1]+2]+
+    face_shape_funtions(gg,2)*tet_coords[3*face_conn_map[2]+2];
+    gaussPts(3,gg) = faceFEPtr->gaussPts(2,gg);
+  }
+  PetscFunctionReturn(0);
+}
+
+VectorDouble& VolumeElementForcesAndSourcesCoreOnSide::UserDataOperator::getNormal() {
+  return getFaceFEPtr()->normal;
+}
+
+MatrixDouble& VolumeElementForcesAndSourcesCoreOnSide::UserDataOperator::getNormalsAtGaussPt() {
+  return getFaceFEPtr()->nOrmals_at_GaussPt;
+}
+
+MatrixDouble& VolumeElementForcesAndSourcesCoreOnSide::UserDataOperator::getFaceCoordsAtGaussPts() {
+  return getFaceFEPtr()->coordsAtGaussPts;
+}
+
+/** \brief if higher order geometry return normals at Gauss pts.
+  *
+  * \param gg gauss point number
+  */
+ublas::matrix_row<MatrixDouble > VolumeElementForcesAndSourcesCoreOnSide::UserDataOperator::getNormalsAtGaussPt(const int gg) {
+  return ublas::matrix_row<MatrixDouble >(getNormalsAtGaussPt(),gg);
 }
 
 

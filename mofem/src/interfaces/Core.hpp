@@ -601,14 +601,34 @@ struct Core: public Interface, MeshRefinment, PrismInterface, SeriesRecorder {
   PetscErrorCode problem_basic_method_postProcess(const MoFEMProblem *problem_ptr,BasicMethod &method,int verb = -1);
   PetscErrorCode problem_basic_method_postProcess(const std::string &problem_name,BasicMethod &method,int verb = -1);
 
-  PetscErrorCode loop_finite_elements(const MoFEMProblem *problem_ptr,const std::string &fe_name,FEMethod &method,int lower_rank,int upper_rank,int verb = -1);
-  PetscErrorCode loop_finite_elements(const std::string &problem_name,const std::string &fe_name,FEMethod &method,int lower_rank,int upper_rank,int verb = -1);
-  PetscErrorCode loop_finite_elements(const std::string &problem_name,const std::string &fe_name,FEMethod &method,int verb = -1);
+  PetscErrorCode loop_finite_elements(
+    const MoFEMProblem *problem_ptr,const std::string &fe_name,FEMethod &method,
+    int lower_rank,int upper_rank,MoFEMTypes bh = MF_EXIST,int verb = -1
+  );
+  PetscErrorCode loop_finite_elements(
+    const std::string &problem_name,const std::string &fe_name,FEMethod &method,
+    int lower_rank,int upper_rank,MoFEMTypes bh = MF_EXIST,int verb = -1
+  );
+  PetscErrorCode loop_finite_elements(
+    const std::string &problem_name,const std::string &fe_name,FEMethod &method,
+    MoFEMTypes bh = MF_EXIST,int verb = -1
+  );
 
-  PetscErrorCode loop_dofs(const MoFEMProblem *problem_ptr,const std::string &field_name,RowColData rc,EntMethod &method,int lower_rank,int upper_rank,int verb = -1);
-  PetscErrorCode loop_dofs(const std::string &problem_name,const std::string &field_name,RowColData rc,EntMethod &method,int lower_rank,int upper_rank,int verb = -1);
-  PetscErrorCode loop_dofs(const std::string &problem_name,const std::string &field_name,RowColData rc,EntMethod &method,int verb = -1);
-  PetscErrorCode loop_dofs(const std::string &field_name,EntMethod &method,int verb = -1);
+  PetscErrorCode loop_dofs(
+    const MoFEMProblem *problem_ptr,const std::string &field_name,RowColData rc,
+    EntMethod &method,int lower_rank,int upper_rank,int verb = -1
+  );
+  PetscErrorCode loop_dofs(
+    const std::string &problem_name,const std::string &field_name,RowColData rc,
+    EntMethod &method,int lower_rank,int upper_rank,int verb = -1
+  );
+  PetscErrorCode loop_dofs(
+    const std::string &problem_name,const std::string &field_name,RowColData rc,
+    EntMethod &method,int verb = -1
+  );
+  PetscErrorCode loop_dofs(
+    const std::string &field_name,EntMethod &method,int verb = -1
+  );
 
   //get multi_index form database
   PetscErrorCode get_fields(const Field_multiIndex **fields_ptr) const;

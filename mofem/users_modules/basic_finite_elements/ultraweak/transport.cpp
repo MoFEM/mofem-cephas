@@ -1,9 +1,7 @@
 /** \file transport.cpp
 \brief Example implementation of transport problem using ultra-week formulation
 
-
-
-\todo Shoud be implemented and tested problem form this article
+\todo Should be implemented and tested problem from this article
 Demkowicz, Leszek, and Jayadeep Gopalakrishnan. "Analysis of the DPG method for
 the Poisson equation." SIAM Journal on Numerical Analysis 49.5 (2011):
 1788-1809.
@@ -30,29 +28,35 @@ using namespace MoFEM;
 
 static char help[] = "...\n\n";
 
+/**
+ * Data structure to pass information between function evaluating boundary
+ * values and fluxes and generic data structures for boundary conditions on
+ * meshsets.
+ */
 struct BcFluxData {
   Range eNts;
   double fLux;
 };
 typedef map<int,BcFluxData> BcFluxMap;
 
-/** thefine sources and other stuff
+/** \brief Application of ultraweak data structure
   *
-  * UltraWeakTransportElement is a class collecting functons, opertors and
+  * UltraWeakTransportElement is a class collecting functions, operators and
   * data for ultra week implementation of transport element. See there to
   * learn how elements are created or how operators look like.
   *
   * Some methods in UltraWeakTransportElement are abstract, f.e. user need to
-  * implement own surce therm.
-  *
+  * implement own source therm.
+
+  * \ingroup mofem_ultra_weak_transport_elem
   */
-struct MyUltraWeakFE: public UltraWeakTransportElement {
+struct ExampleUltraWeak: public UltraWeakTransportElement {
 
   BcFluxMap &bcFluxMap;
   EntityHandle lastEnt;
   double lastFlux;
 
-  MyUltraWeakFE(MoFEM::Interface &m_field,BcFluxMap &bc_flux_map):
+  ExampleUltraWeak(MoFEM::Interface &m_field,BcFluxMap &bc_flux_map):
   UltraWeakTransportElement(m_field),
   bcFluxMap(bc_flux_map),
   lastEnt(0),
@@ -122,6 +126,17 @@ struct MyUltraWeakFE: public UltraWeakTransportElement {
     PetscFunctionReturn(0);
   }
 
+  /**
+   * \bried set-up boundary conditions
+   * @param  ref_level mesh refinment level
+
+   \note It is assumed that user would like to something non-standard with boundary
+   conditions, have a own type of data structures to pass to functions calculating
+   values and fluxes on boundary. For example BcFluxMap. That way this function
+   is implemented here not in generic class UltraWeakTransportElement.
+
+   * @return           error code
+   */
   PetscErrorCode addBoundaryElements(BitRefLevel &ref_level) {
     MoABErrorCode rval;
     PetscErrorCode ierr;
@@ -161,69 +176,33 @@ struct MyUltraWeakFE: public UltraWeakTransportElement {
     PetscFunctionReturn(0);
   }
 
-  PetscErrorCode squashBits() {
-    PetscErrorCode ierr;
-    PetscFunctionBegin;
-    BitRefLevel all_but_0;
-    all_but_0.set(0);
-    all_but_0.flip();
-    BitRefLevel new_bit;
-    new_bit.set(BITREFLEVEL_SIZE-1); // Garbage level
-    const RefEntity_multiIndex *refined_ents_ptr;
-    ierr = mField.get_ref_ents(&refined_ents_ptr); CHKERRQ(ierr);
-    RefEntity_multiIndex::iterator mit = refined_ents_ptr->begin();
-    for(;mit!=refined_ents_ptr->end();mit++) {
-      if(mit->get()->getEntType() == MBENTITYSET) continue;
-      BitRefLevel bit = mit->get()->getBitRefLevel();
-      if((all_but_0&bit)==bit) {
-        const_cast<RefEntity_multiIndex*>(refined_ents_ptr)->modify(mit,RefEntity_change_set_bit(new_bit));
-      }
-    }
-    PetscFunctionReturn(0);
-  }
+  /**
+   * \brief Refine mesh
+   * @param  ufe       general data structure
+   * @param  nb_levels number of refinement levels
+   * @param  order     set order of approximation
+   * @return           errpr code
 
-  PetscErrorCode updateMeshsetsFieldsAndElements(const int nb_levels,const int order) {
-    MoABErrorCode rval;
-    PetscErrorCode ierr;
-    BitRefLevel ref_level;
-    PetscFunctionBegin;
-    ref_level.set(nb_levels);
-    for(_IT_CUBITMESHSETS_FOR_LOOP_(mField,it)) {
-      EntityHandle meshset = it->meshset;
-      ierr = mField.update_meshset_by_entities_children(meshset,ref_level,meshset,MBVERTEX,true); CHKERRQ(ierr);
-      ierr = mField.update_meshset_by_entities_children(meshset,ref_level,meshset,MBEDGE,true); CHKERRQ(ierr);
-      ierr = mField.update_meshset_by_entities_children(meshset,ref_level,meshset,MBTRI,true); CHKERRQ(ierr);
-      ierr = mField.update_meshset_by_entities_children(meshset,ref_level,meshset,MBTET,true); CHKERRQ(ierr);
-    }
-    // update fields and elements
-    EntityHandle out_meshset_tet;
-    rval = mField.get_moab().create_meshset(MESHSET_SET,out_meshset_tet); CHKERRQ_MOAB(rval);
-    // cerr << BitRefLevel().set(nb_levels) << endl;
-    ierr = mField.get_entities_by_type_and_ref_level(
-      BitRefLevel().set(nb_levels),BitRefLevel().set(),MBTET,out_meshset_tet
-    ); CHKERRQ(ierr);
-    //add entities to field
-    ierr = mField.add_ents_to_field_by_TETs(out_meshset_tet,"FLUXES"); CHKERRQ(ierr);
-    ierr = mField.add_ents_to_field_by_TETs(out_meshset_tet,"VALUES"); CHKERRQ(ierr);
-    ierr = mField.set_field_order(0,MBTET,"FLUXES",order+1); CHKERRQ(ierr);
-    ierr = mField.set_field_order(0,MBTRI,"FLUXES",order+1); CHKERRQ(ierr);
-    ierr = mField.set_field_order(0,MBTET,"VALUES",order); CHKERRQ(ierr);
-    Range ref_tets;
-    rval = mField.get_moab().get_entities_by_type(out_meshset_tet,MBTET,ref_tets); CHKERRQ_MOAB(rval);
-    //add entities to finite elements
-    for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BLOCKSET|MAT_THERMALSET,it)) {
-      Mat_Thermal temp_data;
-      ierr = it->getAttributeDataStructure(temp_data); CHKERRQ(ierr);
-      setOfBlocks[it->getMeshsetId()].cOnductivity = temp_data.data.Conductivity;
-      setOfBlocks[it->getMeshsetId()].cApacity = temp_data.data.HeatCapacity;
-      rval = mField.get_moab().get_entities_by_type(it->meshset,MBTET,setOfBlocks[it->getMeshsetId()].tEts,true); CHKERRQ_MOAB(rval);
-      setOfBlocks[it->getMeshsetId()].tEts = intersect(ref_tets,setOfBlocks[it->getMeshsetId()].tEts);
-      ierr = mField.add_ents_to_finite_element_by_TETs(setOfBlocks[it->getMeshsetId()].tEts,"ULTRAWEAK"); CHKERRQ(ierr);
-    }
-    rval = mField.get_moab().delete_entities(&out_meshset_tet,1); CHKERRQ_MOAB(rval);
-    PetscFunctionReturn(0);
-  }
+   Refinement of could result in distorted mesh, for example, imagine when you
+   have two levels of non-uniform refinement. Some tetrahedra on the mesh at
+   first refinement instance are only refined by splitting subset of edges on
+   it. Then refined child tetrahedra usually will have worse quality than
+   quality of parent element. Refining such element in subsequent mesh
+   refinement, potentially will deteriorate elements quality even worse. To
+   prevent that adding new refinement level, recreate whole hierarchy of meshes.
 
+   Note on subsequent improvement could include refinement of
+   tetrahedra from different levels, including initial mesh. So refinement two
+   could split elements created during refinement one and also split elements
+   from an initial mesh.
+
+   That adding the new refinement level creates refinement hierarchy of meshes
+   from a scratch,  not adding to existing one.
+
+   Entities from previous hierarchy are used in that process, but bit levels on
+   those entities are squashed.
+
+   */
   PetscErrorCode refienMesh(
     UltraWeakTransportElement &ufe,const int nb_levels,const int order
   ) {
@@ -282,6 +261,85 @@ struct MyUltraWeakFE: public UltraWeakTransportElement {
     }
     PetscFunctionReturn(0);
   }
+
+  /**
+   * \brief Squash bits of entities
+
+   Information about hierarchy of meshses is lost, but entities are not deleted
+   from the mesh. After squshing entities bits, new hierarchy can be created.
+
+   * @return error code
+   */
+  PetscErrorCode squashBits() {
+    PetscErrorCode ierr;
+    PetscFunctionBegin;
+    BitRefLevel all_but_0;
+    all_but_0.set(0);
+    all_but_0.flip();
+    BitRefLevel new_bit;
+    new_bit.set(BITREFLEVEL_SIZE-1); // Garbage level
+    const RefEntity_multiIndex *refined_ents_ptr;
+    ierr = mField.get_ref_ents(&refined_ents_ptr); CHKERRQ(ierr);
+    RefEntity_multiIndex::iterator mit = refined_ents_ptr->begin();
+    for(;mit!=refined_ents_ptr->end();mit++) {
+      if(mit->get()->getEntType() == MBENTITYSET) continue;
+      BitRefLevel bit = mit->get()->getBitRefLevel();
+      if((all_but_0&bit)==bit) {
+        const_cast<RefEntity_multiIndex*>(refined_ents_ptr)->modify(mit,RefEntity_change_set_bit(new_bit));
+      }
+    }
+    PetscFunctionReturn(0);
+  }
+
+  /**
+   * \brief update meshsets with new entities after mesh refinement
+   * @param  nb_levels nb_levels
+   * @param  order     appropriate order
+   * @return           error code
+   */
+  PetscErrorCode updateMeshsetsFieldsAndElements(const int nb_levels,const int order) {
+    MoABErrorCode rval;
+    PetscErrorCode ierr;
+    BitRefLevel ref_level;
+    PetscFunctionBegin;
+    ref_level.set(nb_levels);
+    for(_IT_CUBITMESHSETS_FOR_LOOP_(mField,it)) {
+      EntityHandle meshset = it->meshset;
+      ierr = mField.update_meshset_by_entities_children(meshset,ref_level,meshset,MBVERTEX,true); CHKERRQ(ierr);
+      ierr = mField.update_meshset_by_entities_children(meshset,ref_level,meshset,MBEDGE,true); CHKERRQ(ierr);
+      ierr = mField.update_meshset_by_entities_children(meshset,ref_level,meshset,MBTRI,true); CHKERRQ(ierr);
+      ierr = mField.update_meshset_by_entities_children(meshset,ref_level,meshset,MBTET,true); CHKERRQ(ierr);
+    }
+    // update fields and elements
+    EntityHandle out_meshset_tet;
+    rval = mField.get_moab().create_meshset(MESHSET_SET,out_meshset_tet); CHKERRQ_MOAB(rval);
+    // cerr << BitRefLevel().set(nb_levels) << endl;
+    ierr = mField.get_entities_by_type_and_ref_level(
+      BitRefLevel().set(nb_levels),BitRefLevel().set(),MBTET,out_meshset_tet
+    ); CHKERRQ(ierr);
+    //add entities to field
+    ierr = mField.add_ents_to_field_by_TETs(out_meshset_tet,"FLUXES"); CHKERRQ(ierr);
+    ierr = mField.add_ents_to_field_by_TETs(out_meshset_tet,"VALUES"); CHKERRQ(ierr);
+    ierr = mField.set_field_order(0,MBTET,"FLUXES",order+1); CHKERRQ(ierr);
+    ierr = mField.set_field_order(0,MBTRI,"FLUXES",order+1); CHKERRQ(ierr);
+    ierr = mField.set_field_order(0,MBTET,"VALUES",order); CHKERRQ(ierr);
+    Range ref_tets;
+    rval = mField.get_moab().get_entities_by_type(out_meshset_tet,MBTET,ref_tets); CHKERRQ_MOAB(rval);
+    //add entities to finite elements
+    for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BLOCKSET|MAT_THERMALSET,it)) {
+      Mat_Thermal temp_data;
+      ierr = it->getAttributeDataStructure(temp_data); CHKERRQ(ierr);
+      setOfBlocks[it->getMeshsetId()].cOnductivity = temp_data.data.Conductivity;
+      setOfBlocks[it->getMeshsetId()].cApacity = temp_data.data.HeatCapacity;
+      rval = mField.get_moab().get_entities_by_type(it->meshset,MBTET,setOfBlocks[it->getMeshsetId()].tEts,true); CHKERRQ_MOAB(rval);
+      setOfBlocks[it->getMeshsetId()].tEts = intersect(ref_tets,setOfBlocks[it->getMeshsetId()].tEts);
+      ierr = mField.add_ents_to_finite_element_by_TETs(setOfBlocks[it->getMeshsetId()].tEts,"ULTRAWEAK"); CHKERRQ(ierr);
+    }
+    rval = mField.get_moab().delete_entities(&out_meshset_tet,1); CHKERRQ_MOAB(rval);
+    PetscFunctionReturn(0);
+  }
+
+
 
 };
 
@@ -343,7 +401,9 @@ int main(int argc, char *argv[]) {
   //finite elements
 
   BcFluxMap bc_flux_map;
-  MyUltraWeakFE ufe(m_field,bc_flux_map);
+  ExampleUltraWeak ufe(m_field,bc_flux_map);
+
+  // Initially calculate problem on coarse mesh
 
   ierr = ufe.addFields("VALUES","FLUXES",order); CHKERRQ(ierr);
   ierr = ufe.addFiniteElements("FLUXES","VALUES"); CHKERRQ(ierr);
@@ -357,8 +417,11 @@ int main(int argc, char *argv[]) {
   ierr = ufe.destroyMatrices(); CHKERRQ(ierr);
   ierr = ufe.postProc("out_0.h5m"); CHKERRQ(ierr);
 
-  int nb_levels = 5;
+  int nb_levels = 5; // default number of refinement levels
+  // get number of refinement levels form command line
   ierr = PetscOptionsGetInt(PETSC_NULL,PETSC_NULL,"-nb_levels",&nb_levels,PETSC_NULL); CHKERRQ(ierr);
+
+  // refine mesh, solve problem and do it again until number of refinement levels are exceeded.
   for(int ll = 1;ll!=nb_levels;ll++) {
     const int nb_levels = ll;
     ierr = ufe.squashBits(); CHKERRQ(ierr);
@@ -367,28 +430,6 @@ int main(int argc, char *argv[]) {
     bc_flux_map.clear();
     ierr = ufe.addBoundaryElements(ref_level);
     ierr = ufe.buildProblem(ref_level); CHKERRQ(ierr);
-
-    {
-      EntityHandle out_meshset;
-      rval = m_field.get_moab().create_meshset(MESHSET_SET,out_meshset); CHKERRQ_MOAB(rval);
-      // cerr << BitRefLevel().set(nb_levels) << endl;
-      ierr = m_field.get_problem_finite_elements_entities("ULTRAWEAK","ULTRAWEAK_BCFLUX",out_meshset); CHKERRQ(ierr);
-      if(m_field.getCommRank()==0) {
-        rval = m_field.get_moab().write_file("bc_ess_mesh.vtk","VTK","",&out_meshset,1); CHKERRQ_MOAB(rval);
-      }
-    }
-
-    {
-      EntityHandle out_meshset;
-      rval = m_field.get_moab().create_meshset(MESHSET_SET,out_meshset); CHKERRQ_MOAB(rval);
-      // cerr << BitRefLevel().set(nb_levels) << endl;
-      ierr = m_field.get_problem_finite_elements_entities("ULTRAWEAK","ULTRAWEAK_BCVALUE",out_meshset); CHKERRQ(ierr);
-      if(m_field.getCommRank()==0) {
-        rval = m_field.get_moab().write_file("bc_ant_mesh.vtk","VTK","",&out_meshset,1); CHKERRQ_MOAB(rval);
-      }
-    }
-
-
     ierr = ufe.createMatrices(); CHKERRQ(ierr);
     ierr = ufe.solveProblem(); CHKERRQ(ierr);
     ierr = ufe.calculateResidual(); CHKERRQ(ierr);

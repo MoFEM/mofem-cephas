@@ -615,6 +615,7 @@ PetscErrorCode ThermalElement::addThermalElements(const std::string field_name,c
   ErrorCode rval;
 
   ierr = mField.add_finite_element("THERMAL_FE",MF_ZERO); CHKERRQ(ierr);
+
   ierr = mField.modify_finite_element_add_field_row("THERMAL_FE",field_name); CHKERRQ(ierr);
   ierr = mField.modify_finite_element_add_field_col("THERMAL_FE",field_name); CHKERRQ(ierr);
   ierr = mField.modify_finite_element_add_field_data("THERMAL_FE",field_name); CHKERRQ(ierr);
@@ -904,14 +905,19 @@ PetscErrorCode ThermalElement::setTimeSteppingProblem(TsCtx &ts_ctx,string field
   TsCtx::loops_to_do_type& loops_to_do_Rhs = ts_ctx.get_loops_to_do_IFunction();
   loops_to_do_Rhs.push_back(TsCtx::loop_pair_type("THERMAL_FE",&feRhs));
   loops_to_do_Rhs.push_back(TsCtx::loop_pair_type("THERMAL_FLUX_FE",&feFlux));
-  loops_to_do_Rhs.push_back(TsCtx::loop_pair_type("THERMAL_CONVECTION_FE",&feConvectionRhs));
-  loops_to_do_Rhs.push_back(TsCtx::loop_pair_type("THERMAL_RADIATION_FE",&feRadiationRhs));
+  if(mField.check_finite_element("THERMAL_CONVECTION_FE"))
+    loops_to_do_Rhs.push_back(TsCtx::loop_pair_type("THERMAL_CONVECTION_FE",&feConvectionRhs));
+  if(mField.check_finite_element("THERMAL_RADIATION_FE"))
+    loops_to_do_Rhs.push_back(TsCtx::loop_pair_type("THERMAL_RADIATION_FE",&feRadiationRhs));
 
   //lhs
   TsCtx::loops_to_do_type& loops_to_do_Mat = ts_ctx.get_loops_to_do_IJacobian();
   loops_to_do_Mat.push_back(TsCtx::loop_pair_type("THERMAL_FE",&feLhs));
-  loops_to_do_Mat.push_back(TsCtx::loop_pair_type("THERMAL_CONVECTION_FE",&feConvectionLhs));
-  loops_to_do_Mat.push_back(TsCtx::loop_pair_type("THERMAL_RADIATION_FE",&feRadiationLhs));
+  if(mField.check_finite_element("THERMAL_CONVECTION_FE")) 
+    loops_to_do_Mat.push_back(TsCtx::loop_pair_type("THERMAL_CONVECTION_FE",&feConvectionLhs));
+  if(mField.check_finite_element("THERMAL_RADIATION_FE"))
+    loops_to_do_Mat.push_back(TsCtx::loop_pair_type("THERMAL_RADIATION_FE",&feRadiationLhs));
+
   //monitor
   //TsCtx::loops_to_do_type& loops_to_do_Monitor = ts_ctx.get_loops_to_do_Monitor();
 

@@ -203,7 +203,8 @@ int main(int argc, char *argv[]) {
 
   ierr = m_field.loop_finite_elements("TEST_PROBLEM","THERMAL_FE",thermal_elements.getLoopFeRhs()); CHKERRQ(ierr);
   ierr = m_field.loop_finite_elements("TEST_PROBLEM","THERMAL_FE",thermal_elements.getLoopFeLhs()); CHKERRQ(ierr);
-  ierr = m_field.loop_finite_elements("TEST_PROBLEM","THERMAL_FLUX_FE",thermal_elements.getLoopFeFlux()); CHKERRQ(ierr);
+  if(m_field.check_finite_element("THERMAL_FLUX_FE"))
+    ierr = m_field.loop_finite_elements("TEST_PROBLEM","THERMAL_FLUX_FE",thermal_elements.getLoopFeFlux()); CHKERRQ(ierr);
 
   //postproc
   ierr = m_field.problem_basic_method_postProcess("TEST_PROBLEM",analytical_ditihlet_bc); CHKERRQ(ierr);

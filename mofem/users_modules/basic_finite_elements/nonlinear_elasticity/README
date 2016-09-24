@@ -11,7 +11,7 @@ Example run
 
 mpirun -np 4 ./arc_length_nonlinear_elasticity \
   -my_file dome_thin_symm.h5m \
-  -ksp_type fgmres -pc_type asm -sub_pc_type lu -ksp_monitor ksp_monitor -ksp_atol 1e-10 -ksp_rtol 1e-10 \
+  -ksp_type fgmres -pc_type asm -sub_pc_type lu -ksp_atol 1e-10 -ksp_rtol 1e-10 \
   -snes_monitor -snes_type newtonls -snes_linesearch_type basic \
   -snes_max_it 16 -snes_atol 1e-8 -snes_rtol 1e-8 -my_sr 1e-5 -my_ms 20 -snes_converged_reason
 

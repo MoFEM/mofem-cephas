@@ -33,6 +33,7 @@ struct KspCtx {
   moab::Interface &moab;
 
   std::string problemName;   ///< Problem name
+  MoFEMTypes bH; ///< If set to MF_EXIST check if element exist
 
   typedef std::pair<std::string,FEMethod*> loop_pair_type;
   typedef std::vector<loop_pair_type > loops_to_do_type;
@@ -51,7 +52,8 @@ struct KspCtx {
   KspCtx(MoFEM::Interface &m_field,const std::string &_problem_name):
     mField(m_field),
     moab(m_field.get_moab()),
-    problemName(_problem_name) {
+    problemName(_problem_name),
+    bH(MF_EXIST) {
     PetscLogEventRegister("LoopKSPRhs",0,&USER_EVENT_KspRhs);
     PetscLogEventRegister("LoopKSPMat",0,&USER_EVENT_KspMat);
   }
