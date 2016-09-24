@@ -33,8 +33,7 @@ namespace MoFEM {
 
  User is implementing own operator at Gauss point level, by own object
  derived from VolumeElementForcesAndSourcesCore::UserDataOperator.  Arbitrary
- number of operator added pushing objects to rowOpPtrVector and
- rowColOpPtrVector.
+ number of operator added pushing objects to OpPtrVector
 
  */
 struct VolumeElementForcesAndSourcesCore: public ForcesAndSurcesCore {
@@ -218,6 +217,118 @@ struct VolumeElementForcesAndSourcesCore: public ForcesAndSurcesCore {
     PetscFunctionBegin;
     PetscFunctionReturn(0);
   }
+
+};
+
+struct FaceElementForcesAndSourcesCore;
+
+/**
+ * \brief Volume element used to integrate on skeleton.
+ */
+struct VolumeElementForcesAndSourcesCoreOnSide: public VolumeElementForcesAndSourcesCore {
+
+  FaceElementForcesAndSourcesCore *faceFEPtr;
+  VolumeElementForcesAndSourcesCoreOnSide(
+    Interface &m_field,const EntityType type = MBTET
+  ):
+  VolumeElementForcesAndSourcesCore(m_field,type),
+  faceFEPtr(NULL) {
+  }
+  ~VolumeElementForcesAndSourcesCoreOnSide() {}
+
+  inline PetscErrorCode setFaceFEPtr(const FaceElementForcesAndSourcesCore *face_fe_ptr) {
+    PetscFunctionBegin;
+    faceFEPtr = const_cast<FaceElementForcesAndSourcesCore*>(face_fe_ptr);
+    PetscFunctionReturn(0);
+  }
+
+  int getRule(int order) { return -1; };
+  PetscErrorCode setGaussPts(int order);
+
+  /** \brief default operator for TET element
+    * \ingroup mofem_forces_and_sources_volume_element
+    */
+  struct UserDataOperator: public VolumeElementForcesAndSourcesCore::UserDataOperator {
+
+    UserDataOperator(
+      const std::string &field_name,const char type
+    ):
+    VolumeElementForcesAndSourcesCore::UserDataOperator(field_name,type) {
+    }
+
+    UserDataOperator(
+      const std::string &row_field_name,const std::string &col_field_name,const char type
+    ):
+    VolumeElementForcesAndSourcesCore::UserDataOperator(row_field_name,col_field_name,type) {
+    }
+
+    /** \brief return pointer to Generic Volume Finite Element object
+     */
+    inline const VolumeElementForcesAndSourcesCoreOnSide* getVolumeFE() {
+      return static_cast<VolumeElementForcesAndSourcesCoreOnSide*>(ptrFE);
+    }
+
+    inline FaceElementForcesAndSourcesCore* getFaceFEPtr() {
+      return getVolumeFE()->faceFEPtr;
+    }
+
+    /**
+     * get face normal on side which is this element
+     * @return face normal
+     */
+    VectorDouble& getNormal();
+
+    /** \brief get normal as tensor
+    */
+    inline FTensor::Tensor1<double*,3> getTensor1Normal() {
+      double *ptr = &*getNormal().data().begin();
+      return FTensor::Tensor1<double*,3>(ptr,&ptr[1],&ptr[2]);
+    }
+
+    /** \brief if higher order geometry return normals at Gauss pts.
+
+    Note: returned matrix has size 0 in rows and columns if no HO approximation
+    of geometry is available.
+
+     */
+    MatrixDouble& getNormalsAtGaussPt();
+
+    /** \brief if higher order geometry return normals at Gauss pts.
+      *
+      * \param gg gauss point number
+      */
+    ublas::matrix_row<MatrixDouble > getNormalsAtGaussPt(const int gg);
+
+    /** \brief get normal at integration points
+
+      Example:
+      \code
+      double nrm2;
+      FTensor::Index<'i',3> i;
+      FTensor::Tensor1<double*,3> t_normal = getTensor1NormalsAtGaussPt();
+      for(int gg = gg!=data.getN().size1();gg++) {
+        nrm2 = sqrt(t_normal(i)*t_normal(i));
+        ++t_normal;
+      }
+      \endcode
+
+    */
+    inline FTensor::Tensor1<double*,3> getTensor1NormalsAtGaussPt() {
+      double *ptr = &*getNormalsAtGaussPt().data().begin();
+      return FTensor::Tensor1<double*,3>(ptr,&ptr[1],&ptr[2],3);
+    }
+
+    /** \brief get face coordinates at Gauss pts.
+
+    \note Coordinates should be the same what function getCoordsAtGaussPts
+    on tets is returning. If both coordinates are different it is error, or you
+    do something very unusual.
+
+     */
+    MatrixDouble& getFaceCoordsAtGaussPts();
+
+  };
+
 
 };
 

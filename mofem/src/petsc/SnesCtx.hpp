@@ -33,7 +33,8 @@ struct SnesCtx {
   moab::Interface &moab;
 
   std::string problemName;
-  bool zeroPreCondMatrixB;
+  MoFEMTypes bH;  ///< If set to MF_EXIST check if element exist, default MF_EXIST
+  bool zeroPreCondMatrixB; ///< If true zero matrix, otherwise user need to do it, default true
 
   typedef std::pair<std::string,FEMethod*> loop_pair_type;
   typedef std::vector<loop_pair_type > loops_to_do_type;
@@ -53,6 +54,7 @@ struct SnesCtx {
     mField(m_field),
     moab(m_field.get_moab()),
     problemName(problem_name),
+    bH(MF_EXIST),
     zeroPreCondMatrixB(true) {
     PetscLogEventRegister("LoopSNESRhs",0,&USER_EVENT_SnesRhs);
     PetscLogEventRegister("LoopSNESMat",0,&USER_EVENT_SnesMat);

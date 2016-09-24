@@ -1013,7 +1013,7 @@ PetscErrorCode Core::partition_check_matrix_fill_in(const std::string &problem_n
       PetscPrintf(comm,"\tcheck element %s\n",(*fe)->getName().c_str());
     }
 
-    ierr = loop_finite_elements(problem_name,(*fe)->getName(),method,verb);  CHKERRQ(ierr);
+    ierr = loop_finite_elements(problem_name,(*fe)->getName(),method,MF_EXIST,verb);  CHKERRQ(ierr);
 
   }
 

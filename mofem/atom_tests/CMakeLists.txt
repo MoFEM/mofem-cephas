@@ -692,6 +692,28 @@ add_test(forces_and_sources_hcurl_curl_operator_atom
   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_hcurl_curl_operator -my_file sphere.h5m
 )
 
+#test integration on skeleton
+my_add_executable(
+  forces_and_sources_integration_on_skeleton
+  forces_and_sources_integration_on_skeleton.cpp
+)
+target_link_libraries(forces_and_sources_integration_on_skeleton
+  mofem_finite_elements
+  mofem_interfaces
+  mofem_multi_indices
+  mofem_petsc
+  mofem_approx
+  mofem_cblas
+  mofem_third_party
+  ${PROJECT_LIBS}
+)
+add_test(
+  forces_and_sources_integration_on_skeleton
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+  ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_integration_on_skeleton
+  -my_file sphere.h5m
+)
+
 #dm
 my_add_executable(dm_mofem dm_mofem.cpp)
 target_link_libraries(dm_mofem

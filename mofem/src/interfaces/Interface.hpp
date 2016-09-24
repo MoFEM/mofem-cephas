@@ -1962,7 +1962,6 @@ struct Interface: public UnknownInterface {
   virtual PetscErrorCode problem_basic_method_postProcess(const std::string &problem_name,BasicMethod &method,int verb = -1) = 0;
 
   /** \brief Make a loop over finite elements.
-   * \ingroup mofem_loops
    *
    * This function is like swiss knife, is can be used to post-processing or matrix
    * and vectors assembly. It makes loop over given finite element for given
@@ -1975,14 +1974,22 @@ struct Interface: public UnknownInterface {
    * Methods are executed only for local elements at given processor.
    *
    * For more details pleas look to examples.
-   *
-   * \param problem_name fe_name \param method is class derived form
-   * Interface::FEMethod
+
+   * @param  problem_name problem consisting set of elements
+   * @param  fe_name      name of element in problem
+   * @param  method       class derived form Interface::FEMethod
+   * @param  bh           if bH = MF_EXIST, throws error if fe_name does not exist
+   * @param  verb         verbosity level
+   * @return              error code
+
+   * \ingroup mofem_loops
   **/
-  virtual PetscErrorCode loop_finite_elements(const std::string &problem_name,const std::string &fe_name,FEMethod &method,int verb = -1) = 0;
+  virtual PetscErrorCode loop_finite_elements(
+    const std::string &problem_name,const std::string &fe_name,FEMethod &method,
+    MoFEMTypes bh = MF_EXIST,int verb = -1
+  ) = 0;
 
   /** \brief Make a loop over finite elements on partitions from upper to lower rank.
-   * \ingroup mofem_loops
    *
    * This function is like swiss knife, is can be used to post-processing or matrix
    * and vectors assembly. It makes loop over given finite element for given
@@ -1994,15 +2001,25 @@ struct Interface: public UnknownInterface {
    *
    * For more details please look to examples.
    *
-   * \param pointer to problem data structure
-   * \param method is class derived form
-   *
    * Interface::FEMethod
+
+   * @param  problem_ptr pointer to problem consisting set of elements
+   * @param  fe_name      name of element in problem
+   * @param  method       class derived form Interface::FEMethod
+   * @param  lower_rank   lower rank of process owned by finite element
+   * @param  upper_rank   lower rank of process owned by finite element
+   * @param  bh           if bH = MF_EXIST, throws error if fe_name does not exist
+   * @param  verb         verbosity level
+   * @return              error code
+
+   * \ingroup mofem_loops
   **/
-  virtual PetscErrorCode loop_finite_elements(const MoFEMProblem *problem_ptr,const std::string &fe_name,FEMethod &method,int lower_rank,int upper_rank,int verb = -1) = 0;
+  virtual PetscErrorCode loop_finite_elements(
+    const MoFEMProblem *problem_ptr,const std::string &fe_name,FEMethod &method,
+    int lower_rank,int upper_rank,MoFEMTypes bh = MF_EXIST,int verb = -1
+  ) = 0;
 
   /** \brief Make a loop over finite elements on partitions from upper to lower rank.
-   * \ingroup mofem_loops
    *
    * This function is like swiss knife, is can be used to post-processing or matrix
    * and vectors assembly. It makes loop over given finite element for given
@@ -2014,33 +2031,54 @@ struct Interface: public UnknownInterface {
    *
    * For more details please look to examples.
    *
-   * \param problem_name fe_name \param method is class derived form
-   * Interface::FEMethod
+
+   * @param  problem_name pointer to problem consisting set of elements
+   * @param  fe_name      name of element in problem
+   * @param  method       class derived form Interface::FEMethod
+   * @param  lower_rank   lower rank of process owned by finite element
+   * @param  upper_rank   lower rank of process owned by finite element
+   * @param  bh           if bH = MF_EXIST, throws error if fe_name does not exist
+   * @param  verb         verbosity level
+   * @return              error code
+
+   * \ingroup mofem_loops
   **/
-  virtual PetscErrorCode loop_finite_elements(const std::string &problem_name,const std::string &fe_name,FEMethod &method,int lower_rank,int upper_rank,int verb = -1) = 0;
+  virtual PetscErrorCode loop_finite_elements(
+    const std::string &problem_name,const std::string &fe_name,FEMethod &method,
+    int lower_rank,int upper_rank,MoFEMTypes bh = MF_EXIST,int verb = -1
+  ) = 0;
 
   /** \brief Make a loop over entities
+
     * \ingroup mofem_loops
-    *
     */
-  virtual PetscErrorCode loop_dofs(const MoFEMProblem *problem_ptr,const std::string &field_name,RowColData rc,EntMethod &method,int lower_rank,int upper_rank,int verb = -1) = 0;
+  virtual PetscErrorCode loop_dofs(
+    const MoFEMProblem *problem_ptr,const std::string &field_name,RowColData rc,
+    EntMethod &method,int lower_rank,int upper_rank,int verb = -1
+  ) = 0;
 
   /** \brief Make a loop over entities
+
     * \ingroup mofem_loops
-    *
     */
-  virtual PetscErrorCode loop_dofs(const std::string &problem_name,const std::string &field_name,RowColData rc,EntMethod &method,int lower_rank,int upper_rank,int verb = -1) = 0;
+  virtual PetscErrorCode loop_dofs(
+    const std::string &problem_name,const std::string &field_name,RowColData rc,
+    EntMethod &method,int lower_rank,int upper_rank,int verb = -1
+  ) = 0;
 
 
   /** \brief Make a loop over entities
+
     * \ingroup mofem_loops
-    *
     */
-  virtual PetscErrorCode loop_dofs(const std::string &problem_name,const std::string &field_name,RowColData rc,EntMethod &method,int verb = -1) = 0;
+  virtual PetscErrorCode loop_dofs(
+    const std::string &problem_name,const std::string &field_name,RowColData rc,
+    EntMethod &method,int verb = -1
+  ) = 0;
 
   /** \brief Make a loop over entities
+
     * \ingroup mofem_field
-    *
     */
   virtual PetscErrorCode loop_dofs(const std::string &field_name,EntMethod &method,int verb = -1) = 0;
 
