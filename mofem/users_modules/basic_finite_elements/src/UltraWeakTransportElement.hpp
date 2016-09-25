@@ -1465,9 +1465,11 @@ struct UltraWeakTransportElement {
           noalias(deltaFlux) = prod(invK,cTx.fluxesAtGaussPts[gg])+cTx.valuesGradientAtGaussPts[gg];
           *error_flux_ptr += w*inner_prod(deltaFlux,deltaFlux);
         }
-        cTx.sumErrorFlux += *error_flux_ptr;
         *error_div_ptr = h*sqrt(*error_div_ptr);
         *error_div_ptr = pow(*error_div_ptr,2);
+        *error_jump_ptr = (1/sqrt(h))*sqrt(*error_jump_ptr);
+        *error_jump_ptr = pow(*error_jump_ptr,2);
+        cTx.sumErrorFlux += *error_flux_ptr;
         cTx.sumErrorDiv += *error_div_ptr;
         cTx.sumErrorJump += *error_jump_ptr;
         cTx.errorMap[sqrt(*error_flux_ptr+*error_div_ptr+*error_jump_ptr)] = fe_ent;
