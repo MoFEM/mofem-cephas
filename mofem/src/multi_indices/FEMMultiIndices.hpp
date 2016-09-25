@@ -210,15 +210,15 @@ typedef multi_index_container<
     ordered_non_unique<
       tag<Composite_ParentEnt_And_BitsOfRefinedEdges_mi_tag>,
       composite_key<
-	ptrWrapperRefElement,
-	const_mem_fun<ptrWrapperRefElement::interface_type_RefEntity,EntityHandle,&ptrWrapperRefElement::getParentEnt>,
-	const_mem_fun<ptrWrapperRefElement::interface_type_RefElement,int,&ptrWrapperRefElement::getBitRefEdgesUlong> > >,
+	     ptrWrapperRefElement,
+	     const_mem_fun<ptrWrapperRefElement::interface_type_RefEntity,EntityHandle,&ptrWrapperRefElement::getParentEnt>,
+	     const_mem_fun<ptrWrapperRefElement::interface_type_RefElement,int,&ptrWrapperRefElement::getBitRefEdgesUlong> > >,
     hashed_unique<
       tag<Composite_EntType_and_ParentEntType_mi_tag>,
       composite_key<
-	ptrWrapperRefElement,
-	const_mem_fun<ptrWrapperRefElement::interface_type_RefEntity,EntityHandle,&ptrWrapperRefElement::getRefEnt>,
-	const_mem_fun<ptrWrapperRefElement::interface_type_RefEntity,EntityHandle,&ptrWrapperRefElement::getParentEnt> > >
+	     ptrWrapperRefElement,
+	     const_mem_fun<ptrWrapperRefElement::interface_type_RefEntity,EntityHandle,&ptrWrapperRefElement::getRefEnt>,
+	     const_mem_fun<ptrWrapperRefElement::interface_type_RefEntity,EntityHandle,&ptrWrapperRefElement::getParentEnt> > >
   > > RefElement_multiIndex;
 
 /** \brief change parent
@@ -929,9 +929,9 @@ typedef multi_index_container<
     ordered_non_unique<
       tag<Composite_Name_And_Ent_mi_tag>,
       composite_key<
-	EntFiniteElement,
-	const_mem_fun<EntFiniteElement::interface_type_MoFEMFiniteElement,boost::string_ref,&EntFiniteElement::getNameRef>,
-	const_mem_fun<EntFiniteElement,EntityHandle,&EntFiniteElement::getEnt> > >
+	      EntFiniteElement,
+	      const_mem_fun<EntFiniteElement::interface_type_MoFEMFiniteElement,boost::string_ref,&EntFiniteElement::getNameRef>,
+	      const_mem_fun<EntFiniteElement,EntityHandle,&EntFiniteElement::getEnt> > >
   > > EntFiniteElement_multiIndex;
 
 /**
