@@ -1,0 +1,205 @@
+/*! \page ultraweak_adaptivity Implementation of hp-adaptivity and ultraweak formulation
+
+\brief Set by step example how to implement mix finite element and do hp-adaptivity
+
+In this tutorial we show step by step procedure how to implement hp-adaptivity
+for ultraweak formulation for stationary transport/heat-conduction problem
+(Poisson equation).
+
+Code relevant to this tutorial could be found in \ref
+mofem_ultra_weak_transport_elem module. Full source code for main program is
+available under link \ref transport.cpp, whereas main class implementation of
+finite element and finite element operators is available here \ref
+UltraWeakTransportElement.hpp.
+
+MoFEM is built on three pillars, PETSc library which manages abstraction related
+to algebraic system of equations and delivers interface to several solvers,
+mesh-oriented database (MoAB) which manages complexities related to mesh
+topology and delivers various format readers and Boost library which through
+multi-indices manages access to containers.
+
+MoFEM handles complexities related to finite element method, degrees of freedom,
+approximation spaces and base functions. It gives structure to structure and
+extremally flexible implementation of finite element code.
+
+Here we considering problem
+\f[
+A_{ij} \sigma_j + u_{,i} = 0 \; \textrm{on} \; \Omega \\
+\sigma_{i,i} = f \; \textrm{on} \; \Omega
+\f]
+where first equations is physical (constitutive) equation and tensor
+\f$A_{ij}\f$ express material parameters. Second equation is conservation equation
+which express conservation of mass or energy, depending on interpretation of physical
+problem.
+
+Multiplying the constitutive equation by a test field \f$\tau\f$ and integrating by parts
+over \f$\Omega\f$ (taking into account the homogeneous Dirichlet boundary condition), we
+obtain
+\f[
+\int_\Omega A\sigma_i \tau_i \textrm{d}x - \int_\Omega u \tau_{i,i} \textrm{d}x = 0,\quad \forall \boldsymbol\tau \in H(\textrm{div},\Omega)
+\f]
+while from the equilibrium equation we obtain
+\f[
+\int_\Omega \sigma_{i,i}v \textrm{d}x = \int_\Omega f v \textrm{d}x, \quad \forall v \in L^2(\Omega).
+\f]
+
+For a start we will show how to implement above problem in MoFEM, calculate the
+error and run h-adaptivity.  Before we look into implementation details, you can
+run simple example
+\code
+mpirun -np 2 ./transport \
+-my_file l-shape.msh -meshsets_config bc.cfg  \
+-ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package mumps -ksp_monitor \
+-my_order 1 -nb_levels 5 2>&1 | tee log_order1
+\endcode
+where
+- \em -np \b 2 indicate number of processors
+- \em -my_file \b l-shape.msh name of the mesh file
+- \em -meshsets_config \b bc.cfg name of file with boundary conditions
+- \em -ksp_type \b fgmres \em -pc_type \b lu \em -pc_factor_mat_solver_package \b mumps \em -ksp_monitor set-up linear solver
+- \em -my_order \b 1 set approximation order (0,1,2,..)
+- \em -nb_levels \b 5 set number of mesh refinement level driven by approximation error
+
+As result following output is produced
+\image html l-shape-adaptivity.gif "h-adaptivity" width=6cm
+\image html l-shape-adaptivity_singularity.gif "Flux singularity" width=6cm
+You can note that subsequent mesh refinement reduces error and make it more
+uniformly distributed through the mesh. You can as well observe that mesh
+getting denser at the corner where singularity is located.
+
+\todo Should be implemented and tested problem from this article
+\cite demkowicz2011analysis. In this paper analytical solution is available, allowing
+to tested efficiency of evaluated error. You are very welcome to improve that
+documentation.
+
+\tableofcontents
+
+\section uw_reading_mesh Setting up problem
+
+We consider the problem which potentially can have complex geometry and a
+not-trivial set of boundary conditions.  Here we use external program Gmsh
+<http://gmsh.info> to generate mesh, however other file format and preprocessor
+could be used if is more convenient for user. In this section we focus attention
+on how to read mesh file and how to apply some arbitrary boundary conditions on
+that mesh.
+
+The first step is to create mesh database, where information about the problem
+is stored. We create MoAB (see <http://ftp.mcs.anl.gov/pub/fathom/moab-docs/>)
+instance and interface to it
+\code
+moab::Core mb_instance;               ///< Create database
+moab::Interface& moab = mb_instance;  ///< Create interface to database
+\endcode
+
+Once we have created database, we get from command line name of file which we
+like to load
+\code
+PetscBool flg = PETSC_TRUE;   ///< Is true of option is set in line command
+char mesh_file_name[255];     ///< File name
+ierr = PetscOptionsGetString(PETSC_NULL,PETSC_NULL,"-my_file",mesh_file_name,255,&flg); CHKERRQ(ierr);
+\endcode
+where here we using PETSc function to do that,
+see <http://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/Sys/PetscOptionsGetString.html> for
+more details. Having mesh file name, we can load mesh to database
+\code
+const char *option;
+option = "";
+rval = moab.load_file(mesh_file_name, 0, option); CHKERRQ_MOAB(rval);
+\endcode
+
+MoFEM can read various file format in this example we using mesh from Gmsh
+<http://gmsh.info>, where example file geometry is stored in file \ref
+l-shape.geo and mesh is in \ref l-shape.msh For more details about file formats
+pleas look to  MoAB documentation, but for need of this tutorial you can only
+follow introduction bellow.
+
+Creating MoFEM database to store information about fields, finite elements and
+problem, we linking it to MOAB database and create interface to manage data
+\code
+MoFEM::Core core(moab);             ///< Create database
+MoFEM::Interface& m_field = core;   ///< Create interface to database
+\endcode
+
+In file \erf l-shape.msh following geometry and mesh is described
+\image html gmesh_blocksets.png "Blocksets and GMesh mesh" width=6cm
+where as result of reading of that mesh following information is printed on the
+screen
+\code
+read cubit meshset 12682136550675316737 type BLOCKSET msId 2
+read cubit meshset 12682136550675316738 type BLOCKSET msId 3
+read cubit meshset 12682136550675316741 type BLOCKSET msId 1
+\endcode
+The output to the screen indicates that three \e BLOCKSETs are available. Those
+blockest are interpreted as \e Physical Volume and \e Physical Surfaces created
+in Gmsh. User can created more sophisticated geometry or use more complex set
+of boundary \e Physical, it is a matter of separate config file how volume or
+boundary conditions are interpreted.
+
+The interpretation of \e BLOCKSETs is done by the meshset config file \b bc.cfg,
+\include users_modules/basic_finite_elements/ultraweak/bc.cfg
+According to that file, \e BLOCKSET 3 is set to be \e NODSET 1003 where
+temperature is applied \f$u=0\, x \in \partial \Omega_u\f$ and
+\e BLOCKSET 2 is set to be SIDESET 1002 where flux is applied
+\f$n_i\sigma_i = 1\, x \in \partial \Omega_\sigma\f$.
+On \e BLOCKSET 1 is the domain \f$\Omega\f$ where problem is defined.
+
+In the above example, temperature type, heat flux type and temperature volume is
+used. This is matter of interpretation, we using this convention to be
+consistent with other meshing programs like CUBIT where boundary conditions can
+be sed directly. However MoFEM user can set own types and attach own
+interpretation if needed.
+
+In general meshsets storing information about boundary conditions or domains where
+problems are set is managed by \ref MoFEM::MeshsetsManager interface. Using that
+interface user can access information about boundary conditions and add new one.
+All modules and software components using that interface can easily share information
+through it. To get access to interface, user need to query MoFEM for it, as follows
+\code
+MoFEM::MeshsetsManager *meshsets_manager_ptr; //< Click on class to see more details
+ierr = m_field.query_interface(meshsets_manager_ptr); CHKERRQ(ierr);
+\endcode
+one it has access to interface we can read file \b bc.cfg, pare it and add boundary
+condition, this automatized for user convenience and done with single interface
+method
+\code
+ierr = meshsets_manager_ptr->setMeshsetFromFile(); CHKERRQ(ierr);  //<- Click on function to see more details
+\endcode
+
+In general, user can query about interfaces preforming different functions, in
+this particular example we are using two interfaces, one to manage \e BLOCKSETs,
+i.e. \ref MoFEM::MeshsetsManager and another one for refining meshes, i.e.
+MoFEM::MeshRefinment Note that all commands return error code and after each function
+error code is check, in case of the error appropriate information is printed
+during execution time. It is important to follow rule if checking error code, that
+simplifies code debugging and bug reporting.
+
+\section um_solving_problem Solving problem and calculating matrices and vectors
+
+\code
+
+BcFluxMap bc_flux_map;
+ExampleUltraWeak ufe(m_field,bc_flux_map);
+
+// Initially calculate problem on coarse mesh
+
+ierr = ufe.addFields("VALUES","FLUXES",order); CHKERRQ(ierr);
+ierr = ufe.addFiniteElements("FLUXES","VALUES"); CHKERRQ(ierr);
+// Set boundary conditions
+ierr = ufe.addBoundaryElements(ref_level);
+ierr = ufe.buildProblem(ref_level); CHKERRQ(ierr);
+ierr = ufe.createMatrices(); CHKERRQ(ierr);
+ierr = ufe.solveProblem(); CHKERRQ(ierr);
+ierr = ufe.calculateResidual(); CHKERRQ(ierr);
+ierr = ufe.evaluateError(); CHKERRQ(ierr);
+ierr = ufe.destroyMatrices(); CHKERRQ(ierr);
+ierr = ufe.postProc("out_0.h5m"); CHKERRQ(ierr);
+
+\endcode
+
+\section uw_mesh_refinment Mesh refinement levels
+
+
+\image html mesh_bit_levels.png "Mesh bit refinement levels (Example)" width=6cm
+
+
+*/

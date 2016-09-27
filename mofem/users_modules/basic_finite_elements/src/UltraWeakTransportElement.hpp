@@ -1436,6 +1436,10 @@ struct UltraWeakTransportElement {
         rval = cTx.mField.get_moab().tag_get_by_ptr(
           th_error_jump,&fe_ent,1,(const void**)&error_jump_ptr
         ); CHKERRQ_MOAB(rval);
+        *error_jump_ptr = 0;
+
+        /// characteristic size of the element
+        const double h = pow(getVolume()*12/sqrt(2),(double)1/3);
 
         for(int ff = 0;ff!=4;ff++) {
           EntityHandle face;
@@ -1444,12 +1448,14 @@ struct UltraWeakTransportElement {
           rval = cTx.mField.get_moab().tag_get_by_ptr(
             th_error_jump,&face,1,(const void**)&error_face_jump_ptr
           ); CHKERRQ_MOAB(rval);
+          *error_face_jump_ptr = (1/sqrt(h))*sqrt(*error_face_jump_ptr);
+          *error_face_jump_ptr = pow(*error_face_jump_ptr,2);
           *error_jump_ptr += *error_face_jump_ptr;
         }
 
-        deltaFlux.resize(3,false);
-        const double h = pow(getVolume()*12/sqrt(2),(double)1/3);
         *error_flux_ptr = 0;
+        *error_div_ptr = 0;
+        deltaFlux.resize(3,false);
         for(int gg = 0;gg<nb_gauss_pts;gg++) {
           double w = getGaussPts()(3,gg)*getVolume();
           if(getHoGaussPtsDetJac().size()>0) {
@@ -1467,8 +1473,6 @@ struct UltraWeakTransportElement {
         }
         *error_div_ptr = h*sqrt(*error_div_ptr);
         *error_div_ptr = pow(*error_div_ptr,2);
-        *error_jump_ptr = (1/sqrt(h))*sqrt(*error_jump_ptr);
-        *error_jump_ptr = pow(*error_jump_ptr,2);
         cTx.sumErrorFlux += *error_flux_ptr;
         cTx.sumErrorDiv += *error_div_ptr;
         cTx.sumErrorJump += *error_jump_ptr;
@@ -1541,70 +1545,82 @@ struct UltraWeakTransportElement {
       MoABErrorCode rval;
       PetscErrorCode ierr;
       PetscFunctionBegin;
-      if(type == MBTRI) {
-        EntityHandle fe_ent = getNumeredEntFiniteElementPtr()->getEnt();
+      try {
 
-        double def_val = 0;
-        Tag th_error_jump;
-        rval = cTx.mField.get_moab().tag_get_handle(
-          "ERROR_JUMP",1,MB_TYPE_DOUBLE,th_error_jump,MB_TAG_CREAT|MB_TAG_SPARSE,&def_val
-        ); CHKERRQ_MOAB(rval);
-        double* error_jump_ptr;
-        rval = cTx.mField.get_moab().tag_get_by_ptr(
-          th_error_jump,&fe_ent,1,(const void**)&error_jump_ptr
-        ); CHKERRQ_MOAB(rval);
-        *error_jump_ptr = 0;
+        if(type == MBTRI) {
+          EntityHandle fe_ent = getNumeredEntFiniteElementPtr()->getEnt();
 
-        // check if this is essential boundary condition
-        EntityHandle essential_bc_meshset = cTx.mField.get_finite_element_meshset("ULTRAWEAK_BCFLUX");
-        if(cTx.mField.get_moab().contains_entities(essential_bc_meshset,&fe_ent,1)) {
-          // essential bc, np jump then, exit and go to next face
-          PetscFunctionReturn(0);
+          double def_val = 0;
+          Tag th_error_jump;
+          rval = cTx.mField.get_moab().tag_get_handle(
+            "ERROR_JUMP",1,MB_TYPE_DOUBLE,th_error_jump,MB_TAG_CREAT|MB_TAG_SPARSE,&def_val
+          ); CHKERRQ_MOAB(rval);
+          double* error_jump_ptr;
+          rval = cTx.mField.get_moab().tag_get_by_ptr(
+            th_error_jump,&fe_ent,1,(const void**)&error_jump_ptr
+          ); CHKERRQ_MOAB(rval);
+          *error_jump_ptr = 0;
+
+          // check if this is essential boundary condition
+          EntityHandle essential_bc_meshset = cTx.mField.get_finite_element_meshset("ULTRAWEAK_BCFLUX");
+          if(cTx.mField.get_moab().contains_entities(essential_bc_meshset,&fe_ent,1)) {
+            // essential bc, np jump then, exit and go to next face
+            PetscFunctionReturn(0);
+          }
+
+          // calculate values form adjacent tets
+          valMap.clear();
+          ierr = loopSideVolumes("ULTRAWEAK",volSideFe); CHKERRQ(ierr);
+
+          int nb_gauss_pts = data.getHdivN().size1();
+
+          // it is only one face, so it has to be bc ntural boundary condition
+          if(valMap.size()==1) {
+            if(valMap.begin()->second.size()!=nb_gauss_pts) {
+              SETERRQ(PETSC_COMM_WORLD,MOFEM_DATA_INCONSISTENCY,"wrong number of integration points");
+            }
+            for(int gg = 0;gg!=nb_gauss_pts;gg++) {
+              const double x = getCoordsAtGaussPts()(gg,0);
+              const double y = getCoordsAtGaussPts()(gg,1);
+              const double z = getCoordsAtGaussPts()(gg,2);
+              double value;
+              ierr = cTx.getBcOnValues(fe_ent,x,y,z,value); CHKERRQ(ierr);
+              double w = getGaussPts()(2,gg);
+              if(getNormalsAtGaussPt().size1() == (unsigned int)nb_gauss_pts) {
+                w *= norm_2(getNormalsAtGaussPt(gg))*0.5;
+              } else {
+                w *= getArea();
+              }
+              *error_jump_ptr += w*pow(value-valMap.begin()->second[gg],2);
+            }
+          } else if(valMap.size()==2) {
+            for(int gg = 0;gg!=nb_gauss_pts;gg++) {
+              double w = getGaussPts()(2,gg);
+              if(getNormalsAtGaussPt().size1() == (unsigned int)nb_gauss_pts) {
+                w *= norm_2(getNormalsAtGaussPt(gg))*0.5;
+              } else {
+                w *= getArea();
+              }
+              double delta = valMap.at(1)[gg]-valMap.at(-1)[gg];
+              *error_jump_ptr += w*pow(delta,2);
+            }
+          } else {
+            SETERRQ1(
+              PETSC_COMM_WORLD,MOFEM_DATA_INCONSISTENCY,
+              "data inconsistency, wrong number of neighbors valMap.size() = %d",
+              valMap.size()
+            );
+          }
         }
 
-        // calculate values form adjacent tets
-        valMap.clear();
-        ierr = loopSideVolumes("ULTRAWEAK",volSideFe); CHKERRQ(ierr);
-
-        int nb_gauss_pts = data.getHdivN().size1();
-
-        // it is only one face, so it has to be bc ntural boundary condition
-        if(valMap.size()==1) {
-          if(valMap.begin()->second.size()!=nb_gauss_pts) {
-            SETERRQ(PETSC_COMM_WORLD,MOFEM_DATA_INCONSISTENCY,"wrong number of integration points");
-          }
-          for(int gg = 0;gg!=nb_gauss_pts;gg++) {
-            const double x = getCoordsAtGaussPts()(gg,0);
-            const double y = getCoordsAtGaussPts()(gg,1);
-            const double z = getCoordsAtGaussPts()(gg,2);
-            double value;
-            ierr = cTx.getBcOnValues(fe_ent,x,y,z,value); CHKERRQ(ierr);
-            double w = getGaussPts()(2,gg);
-            if(getNormalsAtGaussPt().size1() == (unsigned int)nb_gauss_pts) {
-              w *= norm_2(getNormalsAtGaussPt(gg))*0.5;
-            } else {
-              w *= getArea();
-            }
-            *error_jump_ptr += w*pow(value-valMap.begin()->second[gg],2);
-          }
-        } else if(valMap.size()==2) {
-          for(int gg = 0;gg!=nb_gauss_pts;gg++) {
-            double w = getGaussPts()(2,gg);
-            if(getNormalsAtGaussPt().size1() == (unsigned int)nb_gauss_pts) {
-              w *= norm_2(getNormalsAtGaussPt(gg))*0.5;
-            } else {
-              w *= getArea();
-            }
-            double delta = valMap.at(1)[gg]-valMap.at(-1)[gg];
-            *error_jump_ptr += w*pow(delta,2);
-          }
-        } else {
-          SETERRQ1(
-            PETSC_COMM_WORLD,MOFEM_DATA_INCONSISTENCY,
-            "data inconsistency, wrong number of neighbors valMap.size() = %d",
-            valMap.size()
-          );
-        }
+      } catch (const std::out_of_range& ex) {
+        std::ostringstream ss;
+        ss << "throw in method: " << ex.what() << std::endl;
+        SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
+      } catch (const std::exception& ex) {
+        std::ostringstream ss;
+        ss << "throw in method: " << ex.what() << std::endl;
+        SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
       }
 
       PetscFunctionReturn(0);

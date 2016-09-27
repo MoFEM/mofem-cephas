@@ -166,12 +166,12 @@
   \mathbf{B}=
   \int_\Gamma
   \lambda
-  \mathbf{N}^\mathsf{T}_\mathbf{X}
-    \left(
+  (\mathbf{X}-\mathbf{X}_0)\cdot
+  \left(
     \textrm{Spin}\left[\frac{\partial\mathbf{X}}{\partial\xi}\right]\cdot\mathbf{B}_\eta
     -
     \textrm{Spin}\left[\frac{\partial\mathbf{X}}{\partial\eta}\right]\cdot\mathbf{B}_\xi
-    \right)
+  \right)
   \textrm{d}\Gamma
   \f]
   and
@@ -594,6 +594,8 @@ struct SurfaceSlidingConstrains {
 
   };
 
+  /** \brief Calculate residual \$ \mathbf{g} = \int_\Gamma \mathbf{N}_\lambda \mathbf{N}\left( \mathbf{X}-\mathbf{X}_0 \right) \$
+  */
   struct OpG: public MoFEM::FaceElementForcesAndSourcesCore::UserDataOperator {
 
     std::vector<AuxFunctions> &aUx;

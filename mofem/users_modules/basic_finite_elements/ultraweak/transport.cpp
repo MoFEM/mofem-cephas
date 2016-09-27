@@ -376,14 +376,18 @@ int main(int argc, char *argv[]) {
   int rank;
   MPI_Comm_rank(PETSC_COMM_WORLD,&rank);
 
+  // get file name form command line
   PetscBool flg = PETSC_TRUE;
   char mesh_file_name[255];
   ierr = PetscOptionsGetString(PETSC_NULL,PETSC_NULL,"-my_file",mesh_file_name,255,&flg); CHKERRQ(ierr);
   if(flg != PETSC_TRUE) {
-    SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_file (MESH FILE NEEDED)");
+    SETERRQ(PETSC_COMM_SELF,MOFEM_INVALID_DATA,"*** ERROR -my_file (MESH FILE NEEDED)");
   }
+
+  // create MOAB communicator
   ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
   if(pcomm == NULL) pcomm =  new ParallelComm(&moab,PETSC_COMM_WORLD);
+
   const char *option;
   option = "";
   rval = moab.load_file(mesh_file_name, 0, option); CHKERRQ_MOAB(rval);
