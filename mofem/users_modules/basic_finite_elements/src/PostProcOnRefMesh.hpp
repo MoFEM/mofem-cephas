@@ -352,6 +352,39 @@ struct PostProcFatPrismOnRefinedMesh: public PostProcTemplateOnRefineMesh<MoFEM:
   int getRuleTrianglesOnly(int order) { return -1; };
   int getRuleThroughThickness(int order) { return -1; };
 
+  struct PointsMap3D {
+    const int kSi;
+    const int eTa;
+    const int zEta;
+    int nN;
+    PointsMap3D(
+      const int ksi,
+      const int eta,
+      const int zeta,
+      const int nn
+    ):
+    kSi(ksi),
+    eTa(eta),
+    zEta(zeta),
+    nN(nn) {
+    }
+  };
+
+  typedef multi_index_container<
+    PointsMap3D,
+    indexed_by<
+      ordered_unique<
+        composite_key<
+        PointsMap3D,
+        member<PointsMap3D,const int,&PointsMap3D::kSi>,
+        member<PointsMap3D,const int,&PointsMap3D::eTa>,
+        member<PointsMap3D,const int,&PointsMap3D::zEta>
+      >
+    >
+  > > PointsMap3D_multiIndex;
+
+  PointsMap3D_multiIndex pointsMap;
+
   PetscErrorCode setGaussPtsTrianglesOnly(int order_triangles_only);
   PetscErrorCode setGaussPtsThroughThickness(int order_thickness);
   PetscErrorCode generateReferenceElementMesh();
