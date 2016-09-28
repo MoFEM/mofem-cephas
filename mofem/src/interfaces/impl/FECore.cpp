@@ -56,7 +56,7 @@ namespace MoFEM {
     FiniteElements_by_name::iterator it_fe = finite_element_name_set.find(fe_name);
     if(bh == MF_EXCL) {
       if(it_fe!=finite_element_name_set.end()) {
-        SETERRQ1(PETSC_COMM_SELF,MOFEM_NOT_FOUND,"this < %s > is there",fe_name.c_str());
+        SETERRQ1(comm,MOFEM_NOT_FOUND,"this < %s > is there",fe_name.c_str());
       }
     } else {
       if(it_fe!=finite_element_name_set.end()) PetscFunctionReturn(0);
@@ -74,7 +74,7 @@ namespace MoFEM {
     std::pair<FiniteElement_multiIndex::iterator,bool> p = finiteElements.insert(
       boost::shared_ptr<FiniteElement>(new FiniteElement(moab,meshset))
     );
-    if(!p.second) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"FiniteElement not inserted");
+    if(!p.second) SETERRQ(comm,MOFEM_OPERATION_UNSUCCESSFUL,"FiniteElement not inserted");
     if(verbose>0) {
       std::ostringstream ss;
       ss << "add finite element: " << fe_name << std::endl;
@@ -91,7 +91,7 @@ namespace MoFEM {
     FiniteElements_by_name &finite_element_name_set = finiteElements.get<FiniteElement_name_mi_tag>();
     FiniteElements_by_name::iterator it_fe = finite_element_name_set.find(fe_name);
     if(it_fe==finite_element_name_set.end()) {
-      SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_FOUND,"this FiniteElement is there");
+      SETERRQ(comm,MOFEM_NOT_FOUND,"this FiniteElement is there");
     }
     boost::shared_ptr<FiniteElement> fe;
     fe = *it_fe;
@@ -105,12 +105,12 @@ namespace MoFEM {
     typedef FiniteElement_multiIndex::index<FiniteElement_name_mi_tag>::type FiniteElements_by_name;
     FiniteElements_by_name &finite_element_name_set = finiteElements.get<FiniteElement_name_mi_tag>();
     FiniteElements_by_name::iterator it_fe = finite_element_name_set.find(fe_name);
-    if(it_fe==finite_element_name_set.end()) SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_FOUND,"this FiniteElement is there");
+    if(it_fe==finite_element_name_set.end()) SETERRQ(comm,MOFEM_NOT_FOUND,"this FiniteElement is there");
     try {
       bool success = finite_element_name_set.modify(it_fe,MoFEMFiniteElement_change_bit_add(get_BitFieldId(name_data)));
-      if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
+      if(!success) SETERRQ(comm,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
     } catch (MoFEMException const &e) {
-      SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
+      SETERRQ(comm,e.errorCode,e.errorMessage);
     }
     PetscFunctionReturn(0);
   }
@@ -121,12 +121,12 @@ namespace MoFEM {
     typedef FiniteElement_multiIndex::index<FiniteElement_name_mi_tag>::type FiniteElements_by_name;
     FiniteElements_by_name &finite_element_name_set = finiteElements.get<FiniteElement_name_mi_tag>();
     FiniteElements_by_name::iterator it_fe = finite_element_name_set.find(fe_name);
-    if(it_fe==finite_element_name_set.end()) SETERRQ1(PETSC_COMM_SELF,MOFEM_NOT_FOUND,"this < %s > is not there",fe_name.c_str());
+    if(it_fe==finite_element_name_set.end()) SETERRQ1(comm,MOFEM_NOT_FOUND,"this < %s > is not there",fe_name.c_str());
     try {
       bool success = finite_element_name_set.modify(it_fe,MoFEMFiniteElement_row_change_bit_add(get_BitFieldId(name_row)));
-      if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
+      if(!success) SETERRQ(comm,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
     } catch (MoFEMException const &e) {
-      SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
+      SETERRQ(comm,e.errorCode,e.errorMessage);
     }
     PetscFunctionReturn(0);
   }
@@ -137,12 +137,12 @@ namespace MoFEM {
     typedef FiniteElement_multiIndex::index<FiniteElement_name_mi_tag>::type FiniteElements_by_name;
     FiniteElements_by_name &finite_element_name_set = finiteElements.get<FiniteElement_name_mi_tag>();
     FiniteElements_by_name::iterator it_fe = finite_element_name_set.find(fe_name);
-    if(it_fe==finite_element_name_set.end()) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"this FiniteElement is there");
+    if(it_fe==finite_element_name_set.end()) SETERRQ(comm,MOFEM_OPERATION_UNSUCCESSFUL,"this FiniteElement is there");
     try {
       bool success = finite_element_name_set.modify(it_fe,MoFEMFiniteElement_col_change_bit_add(get_BitFieldId(name_col)));
-      if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
+      if(!success) SETERRQ(comm,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
     } catch (MoFEMException const &e) {
-      SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
+      SETERRQ(comm,e.errorCode,e.errorMessage);
     }
     PetscFunctionReturn(0);
   }
@@ -153,12 +153,12 @@ namespace MoFEM {
     typedef FiniteElement_multiIndex::index<FiniteElement_name_mi_tag>::type FiniteElements_by_name;
     FiniteElements_by_name &finite_element_name_set = finiteElements.get<FiniteElement_name_mi_tag>();
     FiniteElements_by_name::iterator it_fe = finite_element_name_set.find(fe_name);
-    if(it_fe==finite_element_name_set.end()) SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_FOUND,"this FiniteElement is there");
+    if(it_fe==finite_element_name_set.end()) SETERRQ(comm,MOFEM_NOT_FOUND,"this FiniteElement is there");
     try {
       bool success = finite_element_name_set.modify(it_fe,MoFEMFiniteElement_change_bit_off(get_BitFieldId(name_data)));
-      if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
+      if(!success) SETERRQ(comm,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
     } catch (MoFEMException const &e) {
-      SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
+      SETERRQ(comm,e.errorCode,e.errorMessage);
     }
     PetscFunctionReturn(0);
   }
@@ -169,12 +169,12 @@ namespace MoFEM {
     typedef FiniteElement_multiIndex::index<FiniteElement_name_mi_tag>::type FiniteElements_by_name;
     FiniteElements_by_name &finite_element_name_set = finiteElements.get<FiniteElement_name_mi_tag>();
     FiniteElements_by_name::iterator it_fe = finite_element_name_set.find(fe_name);
-    if(it_fe==finite_element_name_set.end()) SETERRQ1(PETSC_COMM_SELF,MOFEM_NOT_FOUND,"this < %s > is not there",fe_name.c_str());
+    if(it_fe==finite_element_name_set.end()) SETERRQ1(comm,MOFEM_NOT_FOUND,"this < %s > is not there",fe_name.c_str());
     try {
       bool success = finite_element_name_set.modify(it_fe,MoFEMFiniteElement_row_change_bit_off(get_BitFieldId(name_row)));
-      if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
+      if(!success) SETERRQ(comm,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
     } catch (MoFEMException const &e) {
-      SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
+      SETERRQ(comm,e.errorCode,e.errorMessage);
     }
     PetscFunctionReturn(0);
   }
@@ -185,12 +185,12 @@ namespace MoFEM {
     typedef FiniteElement_multiIndex::index<FiniteElement_name_mi_tag>::type FiniteElements_by_name;
     FiniteElements_by_name &finite_element_name_set = finiteElements.get<FiniteElement_name_mi_tag>();
     FiniteElements_by_name::iterator it_fe = finite_element_name_set.find(fe_name);
-    if(it_fe==finite_element_name_set.end()) SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_FOUND,"this FiniteElement is there");
+    if(it_fe==finite_element_name_set.end()) SETERRQ(comm,MOFEM_NOT_FOUND,"this FiniteElement is there");
     try {
       bool success = finite_element_name_set.modify(it_fe,MoFEMFiniteElement_col_change_bit_off(get_BitFieldId(name_col)));
-      if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
+      if(!success) SETERRQ(comm,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
     } catch (MoFEMException const &e) {
-      SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
+      SETERRQ(comm,e.errorCode,e.errorMessage);
     }
     PetscFunctionReturn(0);
   }
@@ -251,7 +251,7 @@ namespace MoFEM {
       ierr = seed_finite_elements(edges.subset_by_type(MBEDGE)); CHKERRQ(ierr);
       ierr = add_ents_to_finite_element_by_EDGEs(edges,getBitFEId(name));  CHKERRQ(ierr);
     } catch (MoFEMException const &e) {
-      SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
+      SETERRQ(comm,e.errorCode,e.errorMessage);
     }
     PetscFunctionReturn(0);
   }
@@ -269,7 +269,7 @@ namespace MoFEM {
     try {
       ierr = add_ents_to_finite_element_by_VERTICEs(vert,getBitFEId(name));  CHKERRQ(ierr);
     } catch (MoFEMException const &e) {
-      SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
+      SETERRQ(comm,e.errorCode,e.errorMessage);
     }
     PetscFunctionReturn(0);
   }
@@ -287,7 +287,7 @@ namespace MoFEM {
     try {
       ierr = add_ents_to_finite_element_by_TRIs(tris,getBitFEId(name));  CHKERRQ(ierr);
     } catch (MoFEMException const &e) {
-      SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
+      SETERRQ(comm,e.errorCode,e.errorMessage);
     }
     PetscFunctionReturn(0);
   }
@@ -298,7 +298,7 @@ namespace MoFEM {
     try {
       idm = get_finite_element_meshset(getBitFEId(name));
     } catch (MoFEMException const &e) {
-      SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
+      SETERRQ(comm,e.errorCode,e.errorMessage);
     }
     Range tris;
     rval = moab.get_entities_by_type(meshset,MBTRI,tris,recursive); CHKERRQ_MOAB(rval);
@@ -312,7 +312,7 @@ namespace MoFEM {
     try {
       idm = get_finite_element_meshset(id);
     } catch (MoFEMException const &e) {
-      SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
+      SETERRQ(comm,e.errorCode,e.errorMessage);
     }
     Range tets;
     rval = moab.get_entities_by_type(meshset,MBTET,tets,recursive); CHKERRQ_MOAB(rval);
@@ -332,7 +332,7 @@ namespace MoFEM {
     try {
       ierr = add_ents_to_finite_element_by_TETs(tets,getBitFEId(name));  CHKERRQ(ierr);
     } catch (MoFEMException const &e) {
-      SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
+      SETERRQ(comm,e.errorCode,e.errorMessage);
     }
     PetscFunctionReturn(0);
   }
@@ -342,7 +342,7 @@ namespace MoFEM {
     try {
       ierr = add_ents_to_finite_element_by_TETs(meshset,getBitFEId(name),recursive);  CHKERRQ(ierr);
     } catch (MoFEMException const &e) {
-      SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
+      SETERRQ(comm,e.errorCode,e.errorMessage);
     }
     PetscFunctionReturn(0);
   }
@@ -354,7 +354,7 @@ namespace MoFEM {
     try {
       idm = get_finite_element_meshset(id);
     } catch (MoFEMException const &e) {
-      SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
+      SETERRQ(comm,e.errorCode,e.errorMessage);
     }
     Range prisms;
     rval = moab.get_entities_by_type(meshset,MBPRISM,prisms,recursive); CHKERRQ_MOAB(rval);
@@ -376,7 +376,7 @@ namespace MoFEM {
     try {
       ierr = add_ents_to_finite_element_by_PRISMs(prims,getBitFEId(name));  CHKERRQ(ierr);
     } catch (MoFEMException const &e) {
-      SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
+      SETERRQ(comm,e.errorCode,e.errorMessage);
     }
     PetscFunctionReturn(0);
   }
@@ -387,7 +387,7 @@ namespace MoFEM {
     try {
       ierr = add_ents_to_finite_element_by_PRISMs(meshset,getBitFEId(name),recursive);  CHKERRQ(ierr);
     } catch (MoFEMException const &e) {
-      SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
+      SETERRQ(comm,e.errorCode,e.errorMessage);
     }
     PetscFunctionReturn(0);
   }
@@ -431,7 +431,7 @@ namespace MoFEM {
         PetscSynchronizedFlush(comm,PETSC_STDOUT);
       }
     } catch (MoFEMException const &e) {
-      SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
+      SETERRQ(comm,e.errorCode,e.errorMessage);
     }
     PetscFunctionReturn(0);
   }
@@ -489,7 +489,7 @@ namespace MoFEM {
         ss << "ref FiniteElement not in database ent = " << *eit;
         ss << " type " << moab.type_from_handle(*eit);
         ss << " " << *fe;
-        SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,ss.str().c_str());
+        SETERRQ(comm,MOFEM_DATA_INCONSISTENCY,ss.str().c_str());
       }
       boost::shared_ptr<EntFiniteElement> ent_fe = boost::shared_ptr<EntFiniteElement>(
         new EntFiniteElement(moab,ref_fe_miit->getRefElement(),fe)
@@ -533,7 +533,7 @@ namespace MoFEM {
         // Find in database data associated with the field (ii)
         FieldById::iterator miit = fields_by_id.find(BitFieldId().set(ii));
         if(miit==fields_by_id.end()) {
-          SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"Data inconsistency");
+          SETERRQ(comm,MOFEM_DATA_INCONSISTENCY,"Data inconsistency");
         }
 
         // Entities adjacent to entities
@@ -635,9 +635,9 @@ namespace MoFEM {
     PetscFunctionReturn(0);
   }
 
-  PetscErrorCode build_finite_elements(const BitRefLevel &bit,int verb) {
+  PetscErrorCode Core::build_finite_elements(const BitRefLevel &bit,int verb) {
     PetscFunctionBegin;
-    SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"Not yet implemented");
+    SETERRQ(comm,MOFEM_NOT_IMPLEMENTED,"Not yet implemented");
     PetscFunctionReturn(0);
   }
 
@@ -649,7 +649,7 @@ namespace MoFEM {
     fe_miit = finiteElements.get<FiniteElement_name_mi_tag>().find(fe_name);
     if(fe_miit==finiteElements.get<FiniteElement_name_mi_tag>().end()) {
       SETERRQ1(
-        PETSC_COMM_SELF,MOFEM_NOT_FOUND,
+        comm,MOFEM_NOT_FOUND,
         "Finite element <%s> not found",fe_name.c_str()
       );
     }
@@ -675,15 +675,17 @@ namespace MoFEM {
   PetscErrorCode Core::build_adjacencies(const Range &ents,int verb) {
     PetscFunctionBegin;
     if(verb==-1) verb = verbose;
-    if(!((*buildMoFEM)&(1<<0))) SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_FOUND,"field not build");
-    if(!((*buildMoFEM)&(1<<1))) SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_FOUND,"fe not build");
-    //typedef MoFEMEntity_multiIndex::index<Unique_mi_tag>::type ents_by_uid;
+    if(!((*buildMoFEM)&(1<<0))) SETERRQ(comm,MOFEM_NOT_FOUND,"field not build");
+    if(!((*buildMoFEM)&(1<<1))) SETERRQ(comm,MOFEM_NOT_FOUND,"fe not build");
     EntFiniteElement_multiIndex::iterator fit = entsFiniteElements.begin();
     for(;fit!=entsFiniteElements.end();fit++) {
+      if(
+        (*fit)->getBitFieldIdRow().none() &&
+        (*fit)->getBitFieldIdCol().none() &&
+        (*fit)->getBitFieldIdData().none()
+      ) continue;
       if(!ents.empty()) {
-        if(ents.find((*fit)->getEnt())==ents.end()) {
-          continue;
-        }
+        if(ents.find((*fit)->getEnt())==ents.end()) continue;
       }
       int by = BYROW;
       if((*fit)->getBitFieldIdRow()!=(*fit)->getBitFieldIdCol()) by |= BYCOL;
@@ -693,14 +695,14 @@ namespace MoFEM {
       DofEntity_multiIndex_uid_view::iterator rvit;
       rvit = (*fit)->row_dof_view->begin();
       for(;rvit!=(*fit)->row_dof_view->end();rvit++) {
-        if( ent_uid == (*rvit)->getMoFEMEntityPtr()->getGlobalUniqueId()) continue;
+        if(ent_uid == (*rvit)->getMoFEMEntityPtr()->getGlobalUniqueId()) continue;
         ent_uid = (*rvit)->getMoFEMEntityPtr()->getGlobalUniqueId();
         std::pair<MoFEMEntityEntFiniteElementAdjacencyMap_multiIndex::iterator,bool> p;
         p = entFEAdjacencies.insert(
           MoFEMEntityEntFiniteElementAdjacencyMap((*rvit)->getMoFEMEntityPtr(),*fit)
         );
         bool success = entFEAdjacencies.modify(p.first,modify_row);
-        if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
+        if(!success) SETERRQ(comm,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
       }
       if((*fit)->getBitFieldIdRow()!=(*fit)->getBitFieldIdCol()) {
         int by = BYCOL;
@@ -717,7 +719,7 @@ namespace MoFEM {
             MoFEMEntityEntFiniteElementAdjacencyMap((*cvit)->getMoFEMEntityPtr(),*fit)
           );
           bool success = entFEAdjacencies.modify(p.first,modify_col);
-          if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
+          if(!success) SETERRQ(comm,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
         }
       }
       if(
@@ -729,14 +731,14 @@ namespace MoFEM {
         DofEntity_multiIndex_uid_view::iterator dvit;
         dvit = (*fit)->data_dof_view->begin();
         for(;dvit!=(*fit)->data_dof_view->end();dvit++) {
-          if( ent_uid == (*dvit)->getMoFEMEntityPtr()->getGlobalUniqueId()) continue;
+          if(ent_uid == (*dvit)->getMoFEMEntityPtr()->getGlobalUniqueId()) continue;
           ent_uid = (*dvit)->getMoFEMEntityPtr()->getGlobalUniqueId();
           std::pair<MoFEMEntityEntFiniteElementAdjacencyMap_multiIndex::iterator,bool> p;
           p = entFEAdjacencies.insert(
             MoFEMEntityEntFiniteElementAdjacencyMap((*dvit)->getMoFEMEntityPtr(),*fit)
           );
           bool success = entFEAdjacencies.modify(p.first,modify_data);
-          if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
+          if(!success) SETERRQ(comm,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
         }
       }
     }
@@ -746,10 +748,23 @@ namespace MoFEM {
     if(verbose>0) {
       PetscSynchronizedPrintf(comm,"Nb. entFEAdjacencies %u\n",entFEAdjacencies.size());
       PetscSynchronizedFlush(comm,PETSC_STDOUT);
-      //PetscSynchronizedPrintf(comm,"Nb. entFEAdjacencies %u\n",entFEAdjacencies.size());
-      //PetscSynchronizedFlush(comm,PETSC_STDOUT);
     }
     *buildMoFEM |= 1<<2;
+    PetscFunctionReturn(0);
+  }
+
+  PetscErrorCode Core::build_adjacencies(const BitRefLevel &bit,const BitRefLevel &mask,int verb) {
+    PetscFunctionBegin;
+    if(verb==-1) verb = verbose;
+    Range ents;
+    ierr = get_entities_by_ref_level(bit,mask,ents); CHKERRQ(ierr);
+    ierr = build_adjacencies(ents,verb); CHKERRQ(ierr);
+    PetscFunctionReturn(0);
+  }
+  PetscErrorCode Core::build_adjacencies(const BitRefLevel &bit,int verb) {
+    PetscFunctionBegin;
+    if(verb==-1) verb = verbose;
+    ierr = build_adjacencies(bit,BitRefLevel().set(),verb); CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }
 
@@ -759,7 +774,7 @@ namespace MoFEM {
       RefEntity_multiIndex::index<Ent_mi_tag>::type::iterator
         eiit = refinedEntities.get<Ent_mi_tag>().find(*eit);
       if(eiit == refinedEntities.get<Ent_mi_tag>().end())  {
-        SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_FOUND,"entity is not in database");
+        SETERRQ(comm,MOFEM_NOT_FOUND,"entity is not in database");
       }
       if((*eiit)->getBitRefLevel().none()) continue;
       std::pair<RefElement_multiIndex::iterator,bool> p_MoFEMFiniteElement;
@@ -790,11 +805,69 @@ namespace MoFEM {
         );
         break;
         default:
-        SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"not implemented");
+        SETERRQ(comm,MOFEM_DATA_INCONSISTENCY,"not implemented");
       }
     }
     PetscFunctionReturn(0);
   }
 
+  PetscErrorCode Core::seed_finite_elements(const EntityHandle meshset,int verb) {
+    PetscFunctionBegin;
+    Range entities;
+    ierr = moab.get_entities_by_handle(meshset,entities,true); CHKERRQ(ierr);
+    ierr = seed_finite_elements(entities,verb); CHKERRQ(ierr);
+    PetscFunctionReturn(0);
+  }
+
+  PetscErrorCode Core::get_finite_elements(const FiniteElement_multiIndex **finiteElements_ptr) const {
+    PetscFunctionBegin;
+    *finiteElements_ptr = &finiteElements;
+    PetscFunctionReturn(0);
+  }
+  EntFiniteElement_multiIndex::index<FiniteElement_name_mi_tag>::type::iterator
+  Core::get_fe_by_name_begin(const std::string &fe_name) const {
+    return entsFiniteElements.get<FiniteElement_name_mi_tag>().lower_bound(fe_name);
+  }
+  EntFiniteElement_multiIndex::index<FiniteElement_name_mi_tag>::type::iterator
+  Core::get_fe_by_name_end(const std::string &fe_name) const {
+    return entsFiniteElements.get<FiniteElement_name_mi_tag>().upper_bound(fe_name);
+  }
+
+  PetscErrorCode Core::check_number_of_ents_in_ents_finite_element(const std::string& name) const {
+    PetscFunctionBegin;
+    FiniteElement_multiIndex::index<FiniteElement_name_mi_tag>::type::iterator it;
+    it = finiteElements.get<FiniteElement_name_mi_tag>().find(name);
+    if(it == finiteElements.get<FiniteElement_name_mi_tag>().end()) {
+      SETERRQ1(comm,1,"finite element not found < %s >",name.c_str());
+    }
+    EntityHandle meshset = (*it)->getMeshset();
+    MoABErrorCode rval;
+    int num_entities;
+    rval = moab.get_number_entities_by_handle(meshset,num_entities); CHKERRQ_MOAB(rval);
+    if(
+      entsFiniteElements.get<FiniteElement_name_mi_tag>().count((*it)->getName().c_str())
+      != (unsigned int)num_entities
+    ) {
+      SETERRQ1(comm,1,"not equal number of entities in meshset and finite elements multiindex < %s >",(*it)->getName().c_str());
+    }
+    PetscFunctionReturn(0);
+  }
+
+  PetscErrorCode Core::check_number_of_ents_in_ents_finite_element() const {
+    PetscFunctionBegin;
+    FiniteElement_multiIndex::index<FiniteElement_name_mi_tag>::type::iterator it;
+    it = finiteElements.get<FiniteElement_name_mi_tag>().begin();
+    for(;it!=finiteElements.get<FiniteElement_name_mi_tag>().end();it++) {
+      EntityHandle meshset = (*it)->getMeshset();
+      MoABErrorCode rval;
+      int num_entities;
+      rval = moab.get_number_entities_by_handle(meshset,num_entities); CHKERRQ_MOAB(rval);
+      if(entsFiniteElements.get<FiniteElement_name_mi_tag>().count((*it)->getName().c_str())
+        != (unsigned int)num_entities) {
+        SETERRQ1(comm,1,"not equal number of entities in meshset and finite elements multiindex < %s >",(*it)->getName().c_str());
+      }
+    }
+    PetscFunctionReturn(0);
+  }
 
 }

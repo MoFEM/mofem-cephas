@@ -35,7 +35,7 @@ struct MyUltraWeakFE: public UltraWeakTransportElement {
 
   MyUltraWeakFE(MoFEM::Interface &m_field): UltraWeakTransportElement(m_field) {};
 
-  PetscErrorCode getFlux(EntityHandle ent,const double x,const double y,const double z,double &flux) {
+  PetscErrorCode getSource(EntityHandle ent,const double x,const double y,const double z,double &flux) {
     PetscFunctionBegin;
     //double d = sqrt(x*x+y*y+z*z);
     flux = 1;//-pow(d,5./4.);

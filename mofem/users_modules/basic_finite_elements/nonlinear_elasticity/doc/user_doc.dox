@@ -177,8 +177,8 @@ User can set material parameters or approximation order to each block defined in
 
 \subsection journal_dam Journal file
 
-Mesh journal mesh file is shown bellow. Pleas note end of the file were bondary conditions,
-blocks with elstic matrix, damping model and body forces are defined.
+Mesh journal mesh file is shown bellow. Pleas note end of the file were boundary conditions,
+blocks with elastic matrix, damping model and body forces are defined.
 \include users_modules/basic_finite_elements/nonlinear_elasticity/examples/dam/dam.jou
 
 */
