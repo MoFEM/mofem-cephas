@@ -673,7 +673,7 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::UserDataOperator::getDivergenc
     int nb_dofs = data.getFieldData().size();
     if(nb_dofs==0) PetscFunctionReturn(0);
 
-    if(data.getSpace()!=HDIV || data.getSpace()!=HCURL) {
+    if(data.getSpace()!=HDIV && data.getSpace()!=HCURL) {
       SETERRQ1(
         PETSC_COMM_SELF,
         MOFEM_DATA_INCONSISTENCY,
@@ -733,7 +733,7 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::UserDataOperator::getCurlOfHCu
     int nb_dofs = data.getFieldData().size();
     if(nb_dofs==0) PetscFunctionReturn(0);
 
-    if(data.getSpace()!=HDIV || data.getSpace()!=HCURL) {
+    if(data.getSpace()!=HDIV && data.getSpace()!=HCURL) {
       SETERRQ1(
         PETSC_COMM_SELF,
         MOFEM_DATA_INCONSISTENCY,
