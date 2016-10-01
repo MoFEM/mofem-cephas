@@ -42,7 +42,12 @@ namespace MoFEM {
   #define UID_DOF_MAK 0x1FF
 
   typedef std::bitset<BITREFEDGES_SIZE> BitRefEdges;
+
+  /**
+   * \brief Bit structure attached to each entity identifying to what mesh entity is attached.
+   */
   typedef std::bitset<BITREFLEVEL_SIZE> BitRefLevel;
+
   typedef std::bitset<BITFIELDID_SIZE> BitFieldId;
   typedef std::bitset<BITFEID_SIZE> BitFEId;
   typedef std::bitset<BITPROBLEMID_SIZE> BitProblemId;
