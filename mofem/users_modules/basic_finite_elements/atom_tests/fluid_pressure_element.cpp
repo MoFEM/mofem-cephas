@@ -88,8 +88,8 @@ int main(int argc, char *argv[]) {
   ///add probelem which will be solved, could be more than one problem
   //operating on some subset of defined approximatons spces
   ierr = m_field.add_problem("TEST_PROBLEM"); CHKERRQ(ierr);
-  //mesh could have several refinment levels which share some subset of entities between them.
-  //below defines on which set of entities (on refinment level 0) build approximation spaces for TEST_PROBLEM
+  //mesh could have several Refinement levels which share some subset of entities between them.
+  //below defines on which set of entities (on Refinement level 0) build approximation spaces for TEST_PROBLEM
   ierr = m_field.modify_problem_ref_level_add_bit("TEST_PROBLEM",bit_level0); CHKERRQ(ierr);
 
   //add finite element to test problem

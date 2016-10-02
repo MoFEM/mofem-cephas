@@ -89,6 +89,12 @@ struct UltraWeakTransportElement {
   ublas::vector<VectorDouble > fluxesAtGaussPts;          ///< fluxes at integration points on element
 
   set<int> bcIndices;
+
+  /**
+   * \brief get dof indices where essential boundary conditions are applied
+   * @param  is indices
+   * @return    error code
+   */
   PetscErrorCode getDirichletBCIndices(IS *is) {
     PetscFunctionBegin;
     std::vector<int> ids;
@@ -356,7 +362,7 @@ struct UltraWeakTransportElement {
     ierr = mField.build_adjacencies(ref_level); CHKERRQ(ierr);
     //Define problem
     ierr = mField.add_problem("ULTRAWEAK",MF_ZERO); CHKERRQ(ierr);
-    //set refinment level for problem
+    //set refinement level for problem
     ierr = mField.modify_problem_ref_level_set_bit("ULTRAWEAK",ref_level); CHKERRQ(ierr);
     // Add element to problem
     ierr = mField.modify_problem_add_finite_element("ULTRAWEAK","ULTRAWEAK"); CHKERRQ(ierr);

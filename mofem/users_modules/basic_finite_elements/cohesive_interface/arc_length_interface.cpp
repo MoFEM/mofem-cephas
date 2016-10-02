@@ -229,7 +229,7 @@ int main(int argc, char *argv[]) {
 
   Tag th_my_ref_level;
   BitRefLevel def_bit_level = 0;
-  rval = m_field.get_moab().tag_get_handle("_MY_REFINMENT_LEVEL",sizeof(BitRefLevel),MB_TYPE_OPAQUE,
+  rval = m_field.get_moab().tag_get_handle("_MY_REFINEMENT_LEVEL",sizeof(BitRefLevel),MB_TYPE_OPAQUE,
     th_my_ref_level,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES,&def_bit_level);
   const EntityHandle root_meshset = m_field.get_moab().get_root_set();
   BitRefLevel *ptr_bit_level0;
@@ -323,7 +323,7 @@ int main(int argc, char *argv[]) {
     ierr = m_field.modify_problem_add_finite_element("ELASTIC_MECHANICS","INTERFACE"); CHKERRQ(ierr);
     ierr = m_field.modify_problem_add_finite_element("ELASTIC_MECHANICS","ARC_LENGTH"); CHKERRQ(ierr);
 
-    //set refinment level for problem
+    //set refinement level for problem
     ierr = m_field.modify_problem_ref_level_add_bit("ELASTIC_MECHANICS",problem_bit_level); CHKERRQ(ierr);
 
     /***/

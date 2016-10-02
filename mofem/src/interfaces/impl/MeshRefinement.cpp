@@ -1,4 +1,4 @@
-/** \file MeshRefinmentCore.cpp
+/** \file MeshRefinementCore.cpp
  * \brief FIXME this is not so good implementation
  *
  * MoFEM is free software: you can redistribute it and/or modify it under
@@ -40,7 +40,7 @@
 
 #include <LoopMethods.hpp>
 #include <Interface.hpp>
-#include <MeshRefinment.hpp>
+#include <MeshRefinement.hpp>
 #include <PrismInterface.hpp>
 #include <SeriesRecorder.hpp>
 #include <Core.hpp>
@@ -49,7 +49,7 @@
 
 namespace MoFEM {
 
-MeshRefinment::MeshRefinment(moab::Interface &moab) {
+MeshRefinement::MeshRefinement(moab::Interface &moab) {
   MoABErrorCode rval;
   const int def_type[] = {0,0};
   rval = moab.tag_get_handle(

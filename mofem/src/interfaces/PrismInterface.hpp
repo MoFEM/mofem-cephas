@@ -99,7 +99,7 @@ struct PrismInterface: public UnknownInterface {
    * The all new entities (prisms, tets) are added to refinement level given by bit
    *
    * \param meshset 
-   * \param refinment bit level of new mesh
+   * \param Refinement bit level of new mesh
    * \param inheret_from_bit_level inheret nodes and other entities form this bit level. 
    * \param add_iterfece_entities add prism elements at interface
    * \param recuslsive do meshesets in the meshset

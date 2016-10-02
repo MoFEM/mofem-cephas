@@ -293,7 +293,7 @@ int main(int argc, char *argv[]) {
 
   //define problems
   ierr = m_field.add_problem("ELASTIC_PROB"); CHKERRQ(ierr);
-  //set refinment level for problem
+  //set refinement level for problem
   ierr = m_field.modify_problem_ref_level_add_bit("ELASTIC_PROB",bit_level0); CHKERRQ(ierr);
 
   DMType dm_name = "ELASTIC_PROB";

@@ -159,7 +159,7 @@ int main(int argc, char *argv[]) {
   MoFEM::Core core(moab);
   MoFEM::Interface& m_field = core;
 
-  //set entitities bit level (this allow to set refinment levels for h-adaptivity)
+  //set entitities bit level (this allow to set refinement levels for h-adaptivity)
   //onlt one level is used in this example
   BitRefLevel bit_level0;
   bit_level0.set(0);

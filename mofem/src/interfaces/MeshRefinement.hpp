@@ -1,4 +1,4 @@
-/** \file MeshRefinment.hpp
+/** \file MeshRefinement.hpp
  * \brief Interface managing boundary and blockset data on meshsets
  *
  */
@@ -33,14 +33,14 @@ static const MOFEMuuid IDD_MOFEMMeshRefine = MOFEMuuid( BitIntefaceId(MESH_REFIN
   \bug If outsourced, class member functions should follow name convention
 
   */
-struct MeshRefinment: public UnknownInterface {
+struct MeshRefinement: public UnknownInterface {
 
   Tag th_RefType;
 
-  MeshRefinment(moab::Interface &moab);
+  MeshRefinement(moab::Interface &moab);
 
   ///destructor
-  virtual ~MeshRefinment() {}
+  virtual ~MeshRefinement() {}
 
   /**
    * \brief make vertices in the middle of edges in meshset and add them to refinement levels defined by bit
@@ -57,7 +57,7 @@ struct MeshRefinment: public UnknownInterface {
   ) = 0;
 
   /**
-   * \brief make vertices in the middle of edges in meshset and add them to refinment levels defined by bit
+   * \brief make vertices in the middle of edges in meshset and add them to Refinement levels defined by bit
    *
    * Takes entities from meshsets and queried recursively (get entities from meshsets in meshsets, usually have to be used for CUBIT meshset).
    * If meshset does not contain any edges, get entities in dimension 3 and get edge adjacencies.
@@ -101,6 +101,8 @@ struct MeshRefinment: public UnknownInterface {
     const bool recursive = false,int verb = -1) = 0;
 
 };
+
+DEPRECATED typedef MeshRefinement MeshRefinment;
 
 }
 

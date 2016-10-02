@@ -4,7 +4,7 @@
  *
  * It is based on \cite ruprecht1998scheme
  *
- * \todo tet refinment should be rewritten, with better error control, and more clear refinement patterns.
+ * \todo tet Refinement should be rewritten, with better error control, and more clear refinement patterns.
  */
 
 #ifndef __ENTITYREFINE_HPP__
