@@ -189,6 +189,13 @@ struct UltraWeakTransportElement {
   };
   std::map<int,BlockData> setOfBlocks; ///< maps block set id with appropriate BlockData
 
+  /**
+   * \brief Add fields to database
+   * @param  values name of the fields
+   * @param  fluxes name of filed for fluxes
+   * @param  order  order of approximation
+   * @return        error code
+   */
   PetscErrorCode addFields(const std::string &values,const std::string &fluxes,const int order) {
     PetscErrorCode ierr;
     PetscFunctionBegin;
