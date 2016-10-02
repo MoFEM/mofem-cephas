@@ -470,7 +470,7 @@ int main(int argc, char *argv[]) {
   ierr = m_field.modify_problem_add_finite_element("DYNAMICS","FLUID_PRESSURE_FE"); CHKERRQ(ierr);
   ierr = m_field.modify_problem_add_finite_element("DYNAMICS","MASS_ELEMENT"); CHKERRQ(ierr);
   ierr = m_field.modify_problem_add_finite_element("DYNAMICS","VELOCITY_ELEMENT"); CHKERRQ(ierr);
-  //set refinment level for problem
+  //set refinement level for problem
   ierr = m_field.modify_problem_ref_level_add_bit("DYNAMICS",bit_level0); CHKERRQ(ierr);
 
   if(is_partitioned) {

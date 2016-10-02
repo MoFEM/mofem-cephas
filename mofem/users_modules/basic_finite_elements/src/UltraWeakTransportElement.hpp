@@ -55,7 +55,7 @@ struct UltraWeakTransportElement {
     int getRule(int order) { return 2*order+1; };
   };
 
-  MyVolumeFE feVol;   ///> Instance of volume element
+  MyVolumeFE feVol;   ///< Instance of volume element
 
   /** \brief definition of surface element
 
@@ -89,6 +89,12 @@ struct UltraWeakTransportElement {
   ublas::vector<VectorDouble > fluxesAtGaussPts;          ///< fluxes at integration points on element
 
   set<int> bcIndices;
+
+  /**
+   * \brief get dof indices where essential boundary conditions are applied
+   * @param  is indices
+   * @return    error code
+   */
   PetscErrorCode getDirichletBCIndices(IS *is) {
     PetscFunctionBegin;
     std::vector<int> ids;
@@ -189,6 +195,13 @@ struct UltraWeakTransportElement {
   };
   std::map<int,BlockData> setOfBlocks; ///< maps block set id with appropriate BlockData
 
+  /**
+   * \brief Add fields to database
+   * @param  values name of the fields
+   * @param  fluxes name of filed for fluxes
+   * @param  order  order of approximation
+   * @return        error code
+   */
   PetscErrorCode addFields(const std::string &values,const std::string &fluxes,const int order) {
     PetscErrorCode ierr;
     PetscFunctionBegin;
@@ -349,7 +362,7 @@ struct UltraWeakTransportElement {
     ierr = mField.build_adjacencies(ref_level); CHKERRQ(ierr);
     //Define problem
     ierr = mField.add_problem("ULTRAWEAK",MF_ZERO); CHKERRQ(ierr);
-    //set refinment level for problem
+    //set refinement level for problem
     ierr = mField.modify_problem_ref_level_set_bit("ULTRAWEAK",ref_level); CHKERRQ(ierr);
     // Add element to problem
     ierr = mField.modify_problem_add_finite_element("ULTRAWEAK","ULTRAWEAK"); CHKERRQ(ierr);
@@ -472,7 +485,10 @@ struct UltraWeakTransportElement {
     PetscFunctionReturn(0);
   }
 
-  /// \brief solve problem
+  /**
+   * \brief solve problem
+   * @return error code
+   */
   PetscErrorCode solveProblem() {
     PetscErrorCode ierr;
     PetscFunctionBegin;
@@ -492,7 +508,7 @@ struct UltraWeakTransportElement {
 
     // Calculate essential boundary conditions
 
-    // clear essental bc indices, it could have dofs from other mesh refinement
+    // clear essential bc indices, it could have dofs from other mesh refinement
     bcIndices.clear();
     // clear operator, just in case if some other operators are left on this element
     feTri.getOpPtrVector().clear();
@@ -909,6 +925,9 @@ struct UltraWeakTransportElement {
     Mat Aij;
     Vec F;
 
+    /**
+     * \brief Constructor
+     */
     OpVDotDivSigma_L2Hdiv(
       UltraWeakTransportElement &ctx,
       const std::string val_name_row,string flux_name_col,Mat aij,Vec f
@@ -931,6 +950,16 @@ struct UltraWeakTransportElement {
     ublas::matrix<FieldData> NN,transNN;
     VectorDouble divVec,Nf;
 
+    /**
+     * \brief Do calculations
+     * @param  row_side local index of entity on row
+     * @param  col_side local index of entity on column
+     * @param  row_type type of row entity
+     * @param  col_type type of col entity
+     * @param  row_data row data structure carrying information about base functions, DOFs indices, etc.
+     * @param  col_data column data structure carrying information about base functions, DOFs indices, etc.
+     * @return          error code
+     */
     PetscErrorCode doWork(
       int row_side,int col_side,
       EntityType row_type,EntityType col_type,
@@ -1082,6 +1111,9 @@ struct UltraWeakTransportElement {
     UltraWeakTransportElement &cTx;
     Vec F;
 
+    /**
+     * \brief Constructor
+     */
     OpRhsBcOnValues(
       UltraWeakTransportElement &ctx,const std::string fluxes_name,Vec f
     ):
@@ -1090,6 +1122,14 @@ struct UltraWeakTransportElement {
     F(f) {}
 
     VectorDouble Nf;
+
+    /**
+     * \brief Integrate boundary condition
+     * @param  side local index of entity
+     * @param  type type of entity
+     * @param  data data on entity
+     * @return      error code
+     */
     PetscErrorCode doWork(
       int side,EntityType type,DataForcesAndSurcesCore::EntData &data
     ) {
@@ -1475,7 +1515,8 @@ struct UltraWeakTransportElement {
         *error_div_ptr = pow(*error_div_ptr,2);
         cTx.sumErrorFlux += *error_flux_ptr;
         cTx.sumErrorDiv += *error_div_ptr;
-        cTx.sumErrorJump += *error_jump_ptr;
+        // FIXME: Summation should be while skeleton is calculated
+        cTx.sumErrorJump += *error_jump_ptr; /// FIXME: this need to be fixed
         cTx.errorMap[sqrt(*error_flux_ptr+*error_div_ptr+*error_jump_ptr)] = fe_ent;
       } catch (const std::exception& ex) {
         std::ostringstream ss;
@@ -1574,7 +1615,7 @@ struct UltraWeakTransportElement {
 
           int nb_gauss_pts = data.getHdivN().size1();
 
-          // it is only one face, so it has to be bc ntural boundary condition
+          // it is only one face, so it has to be bc natural boundary condition
           if(valMap.size()==1) {
             if(valMap.begin()->second.size()!=nb_gauss_pts) {
               SETERRQ(PETSC_COMM_WORLD,MOFEM_DATA_INCONSISTENCY,"wrong number of integration points");

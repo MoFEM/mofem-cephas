@@ -128,7 +128,7 @@ struct ExampleUltraWeak: public UltraWeakTransportElement {
 
   /**
    * \bried set-up boundary conditions
-   * @param  ref_level mesh refinment level
+   * @param  ref_level mesh refinement level
 
    \note It is assumed that user would like to something non-standard with boundary
    conditions, have a own type of data structures to pass to functions calculating
@@ -203,12 +203,12 @@ struct ExampleUltraWeak: public UltraWeakTransportElement {
    those entities are squashed.
 
    */
-  PetscErrorCode refienMesh(
+  PetscErrorCode refineMesh(
     UltraWeakTransportElement &ufe,const int nb_levels,const int order
   ) {
     PetscErrorCode ierr;
     MoABErrorCode rval;
-    MeshRefinment *refine_ptr;
+    MeshRefinement *refine_ptr;
     PetscFunctionBegin;
     // get refined edges having child vertex
     const RefEntity_multiIndex *ref_ents_ptr;
@@ -450,7 +450,7 @@ int main(int argc, char *argv[]) {
   for(int ll = 1;ll!=nb_levels;ll++) {
     const int nb_levels = ll;
     ierr = ufe.squashBits(); CHKERRQ(ierr);
-    ierr = ufe.refienMesh(ufe,nb_levels,order); CHKERRQ(ierr);
+    ierr = ufe.refineMesh(ufe,nb_levels,order); CHKERRQ(ierr);
     ref_level = BitRefLevel().set(nb_levels);
     bc_flux_map.clear();
     ierr = ufe.addBoundaryElements(ref_level);

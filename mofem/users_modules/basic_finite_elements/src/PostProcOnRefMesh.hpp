@@ -3,6 +3,8 @@
  *
  * Create refined mesh, without enforcing continuity between element. Calculate
  * field values on nodes of that mesh.
+ *
+ * \ingroup mofem_fs_post_proc
  */
 
 /* This file is part of MoFEM.
@@ -33,6 +35,8 @@ between element could be shown.
 Post-processed entities could be represented by ho-elements, for example 10 node
 tetrahedrons. Moreover each element could be refined such that higher order
 polynomials  could be well represented.
+
+* \ingroup mofem_fs_post_proc
 
 */
 struct PostProcCommonOnRefMesh {
@@ -128,6 +132,7 @@ struct PostProcCommonOnRefMesh {
  *
  * Generate refined mesh and save data on vertices
  *
+ * \ingroup mofem_fs_post_proc
  */
 template<class ELEMENT>
 struct PostProcTemplateOnRefineMesh: public ELEMENT {
@@ -153,6 +158,8 @@ struct PostProcTemplateOnRefineMesh: public ELEMENT {
     Note:
     Name of the tag to store values on post-process mesh is the same as field name
 
+    * \ingroup mofem_fs_post_proc
+
   */
   PetscErrorCode addFieldValuesPostProc(const std::string field_name,Vec v = PETSC_NULL) {
     PetscFunctionBegin;
@@ -169,6 +176,8 @@ struct PostProcTemplateOnRefineMesh: public ELEMENT {
     \param field_name
     \param tag_name to store results on post-process mesh
     \param v If vector is given, values from vector are used to set tags on mesh
+
+    * \ingroup mofem_fs_post_proc
 
   */
   PetscErrorCode addFieldValuesPostProc(const std::string field_name,const std::string tag_name,Vec v = PETSC_NULL) {
@@ -190,6 +199,8 @@ struct PostProcTemplateOnRefineMesh: public ELEMENT {
     Note:
     Name of the tag to store values on post-process mesh is the same as field name
 
+    * \ingroup mofem_fs_post_proc
+
   */
   PetscErrorCode addFieldValuesGradientPostProc(const std::string field_name,Vec v = PETSC_NULL) {
     PetscFunctionBegin;
@@ -206,6 +217,8 @@ struct PostProcTemplateOnRefineMesh: public ELEMENT {
     \param field_name
     \param tag_name to store results on post-process mesh
     \param v If vector is given, values from vector are used to set tags on mesh
+
+    * \ingroup mofem_fs_post_proc
 
   */
   PetscErrorCode addFieldValuesGradientPostProc(const std::string field_name,const std::string tag_name,Vec v = PETSC_NULL) {
@@ -330,6 +343,11 @@ struct PostProcVolumeOnRefinedMesh: public PostProcTemplateOnRefineMesh<MoFEM::V
 */
 DEPRECATED typedef PostProcVolumeOnRefinedMesh PostPocOnRefinedMesh;
 
+/**
+ *  \brief Postprocess on prism
+ *
+ * \ingroup mofem_fs_post_proc
+ */
 struct PostProcFatPrismOnRefinedMesh: public PostProcTemplateOnRefineMesh<MoFEM::FatPrismElementForcesAndSurcesCore> {
 
   bool tenNodesPostProcTets;
@@ -404,6 +422,11 @@ struct PostProcFatPrismOnRefinedMesh: public PostProcTemplateOnRefineMesh<MoFEM:
 
 };
 
+/**
+ * \brief Postprocess on face
+ *
+ * \ingroup mofem_fs_post_proc
+ */
 struct PostProcFaceOnRefinedMesh: public PostProcTemplateOnRefineMesh<MoFEM::FaceElementForcesAndSourcesCore> {
 
   bool sixNodePostProcTris;

@@ -62,7 +62,7 @@ struct PostPorcHookStress: public MoFEM::VolumeElementForcesAndSourcesCore::User
 
     SETERRQ(PETSC_COMM_SELF,1,
       "Element is not in elastic block, however you run linear elastic analysis with that element\n"
-      "top tip: check if you update block sets after mesh refinments or interface insertion");
+      "top tip: check if you update block sets after mesh refinements or interface insertion");
 
     PetscFunctionReturn(0);
   }

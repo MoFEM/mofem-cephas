@@ -19,7 +19,7 @@ using namespace MoFEM;
 ErrorCode rval;
 PetscErrorCode ierr;
 
-static char help[] = "teting mesh refinment algorithm\n\n";
+static char help[] = "teting mesh refinement algorithm\n\n";
 
 int main(int argc, char *argv[]) {
 
@@ -43,7 +43,7 @@ int main(int argc, char *argv[]) {
 
   MoFEM::Core core(moab);
   MoFEM::Interface& m_field = core;
-  MeshRefinment& refine = core;
+  MeshRefinement& refine = core;
 
   BitRefLevel bit_level0;
   bit_level0.set(0);
@@ -56,7 +56,7 @@ int main(int argc, char *argv[]) {
   rval = moab.create_meshset(MESHSET_SET,meshset_level0); CHKERRQ_MOAB(rval);
   ierr = m_field.get_entities_by_ref_level(bit_level0,BitRefLevel().set(),meshset_level0); CHKERRQ(ierr);
 
-  // random mesh refinment
+  // random mesh refinement
   EntityHandle meshset_ref_edges;
   rval = moab.create_meshset(MESHSET_SET,meshset_ref_edges); CHKERRQ_MOAB(rval);
   Range edges_to_refine;

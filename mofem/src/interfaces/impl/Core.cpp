@@ -41,7 +41,7 @@
 #include <UnknownInterface.hpp>
 #include <LoopMethods.hpp>
 #include <Interface.hpp>
-#include <MeshRefinment.hpp>
+#include <MeshRefinement.hpp>
 #include <PrismInterface.hpp>
 #include <SeriesRecorder.hpp>
 #include <Core.hpp>
@@ -81,7 +81,7 @@ PetscErrorCode Core::queryInterface(const MOFEMuuid& uuid,UnknownInterface** ifa
     PetscFunctionReturn(0);
   }
   if(uuid == IDD_MOFEMMeshRefine) {
-    *iface = dynamic_cast<MeshRefinment*>(this);
+    *iface = dynamic_cast<MeshRefinement*>(this);
     PetscFunctionReturn(0);
   }
   if(uuid == IDD_MOFEMSeriesRecorder) {
@@ -170,8 +170,8 @@ PetscErrorCode Core::query_interface_type(const std::type_info& type,void*& ptr)
     PetscFunctionReturn(0);
   }
 
-  if(type == typeid(MeshRefinment)) {
-    ptr = static_cast<MeshRefinment*>(const_cast<Core*>(this));
+  if(type == typeid(MeshRefinement)) {
+    ptr = static_cast<MeshRefinement*>(const_cast<Core*>(this));
   } else if(type == typeid(SeriesRecorder)) {
     ptr = static_cast<SeriesRecorder*>(const_cast<Core*>(this));
   } else if(type == typeid(PrismInterface)) {
@@ -250,7 +250,7 @@ PetscErrorCode mofem_error_handler(MPI_Comm comm,int line,const char *fun,const 
 }
 
 Core::Core(moab::Interface& _moab,MPI_Comm _comm,int _verbose):
-MeshRefinment(_moab),
+MeshRefinement(_moab),
 moab(_moab),
 comm(_comm),
 verbose(_verbose) {

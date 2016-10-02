@@ -2346,7 +2346,7 @@ struct Interface: public UnknownInterface {
  ******************************************************************************/
 
 /***************************************************************************//**
- * \defgroup mofem_ref_ents Adjacencies
+ * \defgroup mofem_ref_ents BitRefLevel Selections
  * \ingroup mofem
  ******************************************************************************/
 
