@@ -1194,7 +1194,7 @@ done please see  UltraWeakTransportElement.
 
 At this stage you could see how to assemble vector, we focus attention on the
 assembly of Dirichlet boundary condition. Note the Dirichlet boundary conditions
-in this formulation, is natural, i.e. enforced in a week sense when a system of
+in this formulation, is natural, i.e. enforced in a weak sense when a system of
 linear equations is solved.
 
 This time, we will calculate integral
