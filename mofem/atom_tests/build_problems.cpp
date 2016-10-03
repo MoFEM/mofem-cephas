@@ -110,7 +110,7 @@ int main(int argc, char *argv[]) {
   ierr = m_field.add_problem("P1"); CHKERRQ(ierr);
   ierr = m_field.add_problem("P2"); CHKERRQ(ierr);
 
-  //set refinment level for problem
+  //set refinement level for problem
   ierr = m_field.modify_problem_ref_level_add_bit("P1",bit_level0); CHKERRQ(ierr);
   ierr = m_field.modify_problem_ref_level_add_bit("P2",bit_level0); CHKERRQ(ierr);
 

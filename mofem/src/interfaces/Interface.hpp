@@ -2326,8 +2326,6 @@ struct Interface: public UnknownInterface {
 
 };
 
-DEPRECATED typedef Interface FieldInterface;
-
 }
 
 #endif // __INTERFACE_HPP__
@@ -2348,7 +2346,7 @@ DEPRECATED typedef Interface FieldInterface;
  ******************************************************************************/
 
 /***************************************************************************//**
- * \defgroup mofem_ref_ents Adjacencies
+ * \defgroup mofem_ref_ents BitRefLevel Selections
  * \ingroup mofem
  ******************************************************************************/
 

@@ -41,7 +41,7 @@
 #include <UnknownInterface.hpp>
 #include <LoopMethods.hpp>
 #include <Interface.hpp>
-#include <MeshRefinment.hpp>
+#include <MeshRefinement.hpp>
 #include <PrismInterface.hpp>
 #include <SeriesRecorder.hpp>
 #include <Core.hpp>
@@ -81,7 +81,7 @@ PetscErrorCode Core::queryInterface(const MOFEMuuid& uuid,UnknownInterface** ifa
     PetscFunctionReturn(0);
   }
   if(uuid == IDD_MOFEMMeshRefine) {
-    *iface = dynamic_cast<MeshRefinment*>(this);
+    *iface = dynamic_cast<MeshRefinement*>(this);
     PetscFunctionReturn(0);
   }
   if(uuid == IDD_MOFEMSeriesRecorder) {
@@ -170,8 +170,8 @@ PetscErrorCode Core::query_interface_type(const std::type_info& type,void*& ptr)
     PetscFunctionReturn(0);
   }
 
-  if(type == typeid(MeshRefinment)) {
-    ptr = static_cast<MeshRefinment*>(const_cast<Core*>(this));
+  if(type == typeid(MeshRefinement)) {
+    ptr = static_cast<MeshRefinement*>(const_cast<Core*>(this));
   } else if(type == typeid(SeriesRecorder)) {
     ptr = static_cast<SeriesRecorder*>(const_cast<Core*>(this));
   } else if(type == typeid(PrismInterface)) {
@@ -250,7 +250,7 @@ PetscErrorCode mofem_error_handler(MPI_Comm comm,int line,const char *fun,const 
 }
 
 Core::Core(moab::Interface& _moab,MPI_Comm _comm,int _verbose):
-MeshRefinment(_moab),
+MeshRefinement(_moab),
 moab(_moab),
 comm(_comm),
 verbose(_verbose) {
@@ -1063,6 +1063,148 @@ PetscErrorCode Core::get_field_ents(const MoFEMEntity_multiIndex **field_ents) c
 PetscErrorCode Core::get_dofs(const DofEntity_multiIndex **dofs_ptr) const {
   PetscFunctionBegin;
   *dofs_ptr = &dofsField;
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode Core::seed_ref_level_2D(const EntityHandle meshset,const BitRefLevel &bit,int verb) {
+  PetscFunctionBegin;
+  Range ents2d;
+  rval = moab.get_entities_by_dimension(meshset,2,ents2d,false); CHKERRQ_MOAB(rval);
+  ierr = seed_ref_level(ents2d,bit,verb); CHKERRQ(ierr);
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode Core::seed_ref_level(const Range &ents,const BitRefLevel &bit,int verb) {
+  PetscFunctionBegin;
+  if(verb==-1) verb = verbose;
+  Range seeded_ents;
+  try {
+    if(verb > 1) {
+      PetscSynchronizedPrintf(comm,"nb. entities for seed %d\n",ents.size());
+    }
+    Range::iterator tit = ents.begin();
+    for(;tit!=ents.end();tit++) {
+      boost::shared_ptr<RefEntity> ref_ent(new RefEntity(basicEntityDataPtr,*tit));
+      std::bitset<8> ent_pstat(ref_ent->getPStatus());
+      ent_pstat.flip(0);
+      std::pair<RefEntity_multiIndex::iterator,bool> p_ent = refinedEntities.insert(ref_ent);
+      if(debug > 0) {
+        ierr = test_moab(moab,*tit); CHKERRQ(ierr);
+      }
+      bool success = refinedEntities.modify(p_ent.first,RefEntity_change_add_bit(bit));
+      if(!success) {
+        SETERRQ(
+          comm,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful"
+        );
+      }
+      if(verb>2) {
+        std::ostringstream ss;
+        ss << **p_ent.first;
+        PetscSynchronizedPrintf(comm,"%s\n",ss.str().c_str());
+      }
+      std::pair<RefElement_multiIndex::iterator,bool> p_MoFEMFiniteElement;
+      switch((*p_ent.first)->getEntType()) {
+        case MBVERTEX:
+        p_MoFEMFiniteElement = refinedFiniteElements.insert(ptrWrapperRefElement(
+          boost::shared_ptr<RefElement>(new RefElement_VERTEX(moab,*p_ent.first)))
+        );
+        seeded_ents.insert(*tit);
+        break;
+        case MBEDGE:
+        p_MoFEMFiniteElement = refinedFiniteElements.insert(ptrWrapperRefElement(
+          boost::shared_ptr<RefElement>(new RefElement_EDGE(moab,*p_ent.first)))
+        );
+        seeded_ents.insert(*tit);
+        break;
+        case MBTRI:
+        p_MoFEMFiniteElement = refinedFiniteElements.insert(ptrWrapperRefElement(
+          boost::shared_ptr<RefElement>(new RefElement_TRI(moab,*p_ent.first)))
+        );
+        seeded_ents.insert(*tit);
+        break;
+        case MBTET:
+        p_MoFEMFiniteElement = refinedFiniteElements.insert(ptrWrapperRefElement(
+          boost::shared_ptr<RefElement>(new RefElement_TET(moab,*p_ent.first)))
+        );
+        seeded_ents.insert(*tit);
+        break;
+        case MBPRISM:
+        p_MoFEMFiniteElement = refinedFiniteElements.insert(ptrWrapperRefElement(
+          boost::shared_ptr<RefElement>(new RefElement_PRISM(moab,*p_ent.first)))
+        );
+        break;
+        case MBENTITYSET:
+        p_MoFEMFiniteElement = refinedFiniteElements.insert(ptrWrapperRefElement(
+          boost::shared_ptr<RefElement>(new RefElement_MESHSET(moab,*p_ent.first)))
+        );
+        break;
+        default:
+        SETERRQ(comm,MOFEM_NOT_IMPLEMENTED,"not implemented");
+      }
+      if(verb>3) {
+        std::ostringstream ss;
+        ss << *(p_MoFEMFiniteElement.first->getRefElement());
+        PetscSynchronizedPrintf(comm,"%s\n",ss.str().c_str());
+      }
+    }
+    if(!seeded_ents.empty()) {
+      int dim = moab.dimension_from_handle(seeded_ents[0]);
+      for(int dd = 0;dd<dim;dd++) {
+        Range ents;
+        rval = moab.get_adjacencies(seeded_ents,dd,true,ents,moab::Interface::UNION); CHKERRQ_MOAB(rval);
+        if(dd == 2) {
+          // currently only works with triangles
+          ents = ents.subset_by_type(MBTRI);
+        }
+        Range::iterator eit = ents.begin();
+        for(;eit!=ents.end();eit++) {
+          std::pair<RefEntity_multiIndex::iterator,bool> p_ent = refinedEntities.insert(
+            boost::shared_ptr<RefEntity>(new RefEntity(basicEntityDataPtr,*eit))
+          );
+          bool success = refinedEntities.modify(p_ent.first,RefEntity_change_add_bit(bit));
+          if(!success) SETERRQ(comm,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
+          if(verb>2) {
+            std::ostringstream ss;
+            ss << *(p_ent.first);
+            PetscSynchronizedPrintf(comm,"%s\n",ss.str().c_str());
+          }
+        }
+      }
+    }
+    if(verb>2) {
+      PetscSynchronizedPrintf(comm,"\n");
+      PetscSynchronizedFlush(comm,PETSC_STDOUT);
+    }
+  } catch (MoFEMException const &e) {
+    SETERRQ(comm,e.errorCode,e.errorMessage);
+  }
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode Core::seed_ref_level_3D(const EntityHandle meshset,const BitRefLevel &bit,int verb) {
+  PetscFunctionBegin;
+  Range ents3d;
+  rval = moab.get_entities_by_dimension(meshset,3,ents3d,false); CHKERRQ_MOAB(rval);
+  ierr = seed_ref_level(ents3d,bit,verb); CHKERRQ(ierr);
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode Core::seed_ref_level_MESHSET(const EntityHandle meshset,const BitRefLevel &bit,int verb) {
+  PetscFunctionBegin;
+  if(verb==-1) verb = verbose;
+  std::pair<RefEntity_multiIndex::iterator,bool> p_ent = refinedEntities.insert(
+    boost::shared_ptr<RefEntity>(new RefEntity(basicEntityDataPtr,meshset))
+  );
+  refinedEntities.modify(p_ent.first,RefEntity_change_add_bit(bit));
+  ptrWrapperRefElement pack_fe(
+    boost::shared_ptr<RefElement>(new RefElement_MESHSET(moab,*p_ent.first))
+  );
+  std::pair<RefElement_multiIndex::iterator,bool> p_MoFEMFiniteElement = refinedFiniteElements.insert(pack_fe);
+  if(verbose > 0) {
+    std::ostringstream ss;
+    ss << "add meshset as ref_ent " << *(p_MoFEMFiniteElement.first->getRefElement()) << std::endl;
+    PetscPrintf(comm,ss.str().c_str());
+  }
   PetscFunctionReturn(0);
 }
 

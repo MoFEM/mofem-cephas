@@ -45,7 +45,7 @@
 
 #include <LoopMethods.hpp>
 #include <Interface.hpp>
-#include <MeshRefinment.hpp>
+#include <MeshRefinement.hpp>
 #include <PrismInterface.hpp>
 #include <SeriesRecorder.hpp>
 #include <Core.hpp>
@@ -673,7 +673,7 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::UserDataOperator::getDivergenc
     int nb_dofs = data.getFieldData().size();
     if(nb_dofs==0) PetscFunctionReturn(0);
 
-    if(data.getSpace()!=HDIV) {
+    if(data.getSpace()!=HDIV && data.getSpace()!=HCURL) {
       SETERRQ1(
         PETSC_COMM_SELF,
         MOFEM_DATA_INCONSISTENCY,
@@ -733,11 +733,11 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::UserDataOperator::getCurlOfHCu
     int nb_dofs = data.getFieldData().size();
     if(nb_dofs==0) PetscFunctionReturn(0);
 
-    if(data.getSpace()!=HCURL) {
+    if(data.getSpace()!=HDIV && data.getSpace()!=HCURL) {
       SETERRQ1(
         PETSC_COMM_SELF,
         MOFEM_DATA_INCONSISTENCY,
-        "This function should be used for HCURL used but is used with %s",
+        "This function should be used for HDIV used but is used with %s",
         FieldSpaceNames[data.getSpace()]
       );
     }
@@ -794,13 +794,17 @@ PetscErrorCode VolumeElementForcesAndSourcesCoreOnSide::setGaussPts(int order) {
   if(sit==side_table.get<0>().end()) {
     SETERRQ(PETSC_COMM_WORLD,MOFEM_DATA_INCONSISTENCY,"Face can not be found on volume element");
   }
-  int face_conn_map[3];
+  faceSense = (*sit)->sense;
+  faceSideNumber = (*sit)->side_number;
+  fill(tetConnMap,&tetConnMap[4],-1);
   for(int nn = 0;nn!=3;nn++) {
-    face_conn_map[nn] = distance(&conn[0],find(conn,&conn[4],faceFEPtr->conn[nn]));
-    if(face_conn_map[nn]>3) {
+    faceConnMap[nn] = std::distance(conn,find(conn,&conn[4],faceFEPtr->conn[nn]));
+    tetConnMap[faceConnMap[nn]] = nn;
+    if(faceConnMap[nn]>3) {
       SETERRQ(PETSC_COMM_WORLD,MOFEM_DATA_INCONSISTENCY,"No common node on face and element can not be found");
     }
   }
+  oppositeNode = std::distance(tetConnMap,find(tetConnMap,&tetConnMap[4],-1));
   const int nb_gauss_pts = faceFEPtr->gaussPts.size2();
   gaussPts.resize(4,nb_gauss_pts,false);
   gaussPts.clear();
@@ -808,17 +812,17 @@ PetscErrorCode VolumeElementForcesAndSourcesCoreOnSide::setGaussPts(int order) {
   const double tet_coords[] = { 0,0,0, 1,0,0, 0,1,0, 0,0,1 };
   for(int gg = 0;gg!=nb_gauss_pts;gg++) {
     gaussPts(0,gg) =
-    face_shape_funtions(gg,0)*tet_coords[3*face_conn_map[0]+0]+
-    face_shape_funtions(gg,1)*tet_coords[3*face_conn_map[1]+0]+
-    face_shape_funtions(gg,2)*tet_coords[3*face_conn_map[2]+0];
+    face_shape_funtions(gg,0)*tet_coords[3*faceConnMap[0]+0]+
+    face_shape_funtions(gg,1)*tet_coords[3*faceConnMap[1]+0]+
+    face_shape_funtions(gg,2)*tet_coords[3*faceConnMap[2]+0];
     gaussPts(1,gg) =
-    face_shape_funtions(gg,0)*tet_coords[3*face_conn_map[0]+1]+
-    face_shape_funtions(gg,1)*tet_coords[3*face_conn_map[1]+1]+
-    face_shape_funtions(gg,2)*tet_coords[3*face_conn_map[2]+1];
+    face_shape_funtions(gg,0)*tet_coords[3*faceConnMap[0]+1]+
+    face_shape_funtions(gg,1)*tet_coords[3*faceConnMap[1]+1]+
+    face_shape_funtions(gg,2)*tet_coords[3*faceConnMap[2]+1];
     gaussPts(2,gg) =
-    face_shape_funtions(gg,0)*tet_coords[3*face_conn_map[0]+2]+
-    face_shape_funtions(gg,1)*tet_coords[3*face_conn_map[1]+2]+
-    face_shape_funtions(gg,2)*tet_coords[3*face_conn_map[2]+2];
+    face_shape_funtions(gg,0)*tet_coords[3*faceConnMap[0]+2]+
+    face_shape_funtions(gg,1)*tet_coords[3*faceConnMap[1]+2]+
+    face_shape_funtions(gg,2)*tet_coords[3*faceConnMap[2]+2];
     gaussPts(3,gg) = faceFEPtr->gaussPts(2,gg);
   }
   PetscFunctionReturn(0);

@@ -35,7 +35,7 @@ struct MeshsetsManager;
   without interfering with users modules programmer work.
 
  */
-struct Core: public Interface, MeshRefinment, PrismInterface, SeriesRecorder {
+struct Core: public Interface, MeshRefinement, PrismInterface, SeriesRecorder {
 
   PetscErrorCode queryInterface(const MOFEMuuid& uuid, UnknownInterface** iface);
   PetscErrorCode query_interface_type(const std::type_info& iface_type,void*& ptr) const;
@@ -372,8 +372,8 @@ struct Core: public Interface, MeshRefinment, PrismInterface, SeriesRecorder {
   );
 
   //build fiels
-  PetscErrorCode dofs_NoField(const BitFieldId id,std::map<EntityType,int> &dof_counter,int verb = -1);
-  PetscErrorCode dofs_L2H1HcurlHdiv(
+  PetscErrorCode BuildFieldForNoField(const BitFieldId id,std::map<EntityType,int> &dof_counter,int verb = -1);
+  PetscErrorCode BuildFieldForL2H1HcurlHdiv(
     const BitFieldId id,std::map<EntityType,int> &dof_counter,std::map<EntityType,int> &inactive_dof_counter,int verb = -1
   );
   PetscErrorCode build_fields(int verb = -1);

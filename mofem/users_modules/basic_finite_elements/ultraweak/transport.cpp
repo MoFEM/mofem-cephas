@@ -72,7 +72,7 @@ struct ExampleUltraWeak: public UltraWeakTransportElement {
    * @param  flux reference to source term set by function
    * @return      error code
    */
-  PetscErrorCode getFlux(EntityHandle ent,const double x,const double y,const double z,double &flux) {
+  PetscErrorCode getSource(EntityHandle ent,const double x,const double y,const double z,double &flux) {
     PetscFunctionBegin;
     flux = 0;
     PetscFunctionReturn(0);
@@ -128,7 +128,7 @@ struct ExampleUltraWeak: public UltraWeakTransportElement {
 
   /**
    * \bried set-up boundary conditions
-   * @param  ref_level mesh refinment level
+   * @param  ref_level mesh refinement level
 
    \note It is assumed that user would like to something non-standard with boundary
    conditions, have a own type of data structures to pass to functions calculating
@@ -203,12 +203,12 @@ struct ExampleUltraWeak: public UltraWeakTransportElement {
    those entities are squashed.
 
    */
-  PetscErrorCode refienMesh(
+  PetscErrorCode refineMesh(
     UltraWeakTransportElement &ufe,const int nb_levels,const int order
   ) {
     PetscErrorCode ierr;
     MoABErrorCode rval;
-    MeshRefinment *refine_ptr;
+    MeshRefinement *refine_ptr;
     PetscFunctionBegin;
     // get refined edges having child vertex
     const RefEntity_multiIndex *ref_ents_ptr;
@@ -257,8 +257,49 @@ struct ExampleUltraWeak: public UltraWeakTransportElement {
         BitRefLevel().set(ll),BitRefLevel().set(),MBTET,tets
       ); CHKERRQ(ierr);
       ierr = refine_ptr->refine_TET(tets,BitRefLevel().set(ll+1)); CHKERRQ(ierr);
-      ierr = updateMeshsetsFieldsAndElements(ll+1,order); CHKERRQ(ierr);
+      ierr = updateMeshsetsFieldsAndElements(ll+1); CHKERRQ(ierr);
     }
+
+    // update fields and elements
+    EntityHandle ref_meshset;
+    rval = mField.get_moab().create_meshset(MESHSET_SET,ref_meshset); CHKERRQ_MOAB(rval);
+    {
+      // cerr << BitRefLevel().set(nb_levels) << endl;
+      ierr = mField.get_entities_by_type_and_ref_level(
+        BitRefLevel().set(nb_levels),BitRefLevel().set(),MBTET,ref_meshset
+      ); CHKERRQ(ierr);
+
+      Range ref_tets;
+      rval = mField.get_moab().get_entities_by_type(ref_meshset,MBTET,ref_tets); CHKERRQ_MOAB(rval);
+
+      //add entities to field
+      ierr = mField.add_ents_to_field_by_TETs(ref_meshset,"FLUXES"); CHKERRQ(ierr);
+      ierr = mField.add_ents_to_field_by_TETs(ref_meshset,"VALUES"); CHKERRQ(ierr);
+      ierr = mField.set_field_order(0,MBTET,"FLUXES",order+1); CHKERRQ(ierr);
+      ierr = mField.set_field_order(0,MBTRI,"FLUXES",order+1); CHKERRQ(ierr);
+      ierr = mField.set_field_order(0,MBTET,"VALUES",order); CHKERRQ(ierr);
+
+      // add entities to skeleton
+      Range ref_tris;
+      ierr = mField.get_entities_by_type_and_ref_level(
+        BitRefLevel().set(nb_levels),BitRefLevel().set(),MBTRI,ref_tris
+      ); CHKERRQ(ierr);
+      ierr = mField.add_ents_to_finite_element_by_TRIs(
+        ref_tris,"ULTRAWEAK_SKELETON"
+      ); CHKERRQ(ierr);
+
+      //add entities to finite elements
+      for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BLOCKSET|MAT_THERMALSET,it)) {
+        Mat_Thermal temp_data;
+        ierr = it->getAttributeDataStructure(temp_data); CHKERRQ(ierr);
+        setOfBlocks[it->getMeshsetId()].cOnductivity = temp_data.data.Conductivity;
+        setOfBlocks[it->getMeshsetId()].cApacity = temp_data.data.HeatCapacity;
+        rval = mField.get_moab().get_entities_by_type(it->meshset,MBTET,setOfBlocks[it->getMeshsetId()].tEts,true); CHKERRQ_MOAB(rval);
+        setOfBlocks[it->getMeshsetId()].tEts = intersect(ref_tets,setOfBlocks[it->getMeshsetId()].tEts);
+        ierr = mField.add_ents_to_finite_element_by_TETs(setOfBlocks[it->getMeshsetId()].tEts,"ULTRAWEAK"); CHKERRQ(ierr);
+      }
+    }
+    rval = mField.get_moab().delete_entities(&ref_meshset,1); CHKERRQ_MOAB(rval);
     PetscFunctionReturn(0);
   }
 
@@ -276,8 +317,8 @@ struct ExampleUltraWeak: public UltraWeakTransportElement {
     BitRefLevel all_but_0;
     all_but_0.set(0);
     all_but_0.flip();
-    BitRefLevel new_bit;
-    new_bit.set(BITREFLEVEL_SIZE-1); // Garbage level
+    BitRefLevel garbage_bit;
+    garbage_bit.set(BITREFLEVEL_SIZE-1); // Garbage level
     const RefEntity_multiIndex *refined_ents_ptr;
     ierr = mField.get_ref_ents(&refined_ents_ptr); CHKERRQ(ierr);
     RefEntity_multiIndex::iterator mit = refined_ents_ptr->begin();
@@ -285,7 +326,13 @@ struct ExampleUltraWeak: public UltraWeakTransportElement {
       if(mit->get()->getEntType() == MBENTITYSET) continue;
       BitRefLevel bit = mit->get()->getBitRefLevel();
       if((all_but_0&bit)==bit) {
-        const_cast<RefEntity_multiIndex*>(refined_ents_ptr)->modify(mit,RefEntity_change_set_bit(new_bit));
+        const_cast<RefEntity_multiIndex*>(refined_ents_ptr)->modify(
+          mit,RefEntity_change_set_bit(garbage_bit)
+        );
+      } else {
+        const_cast<RefEntity_multiIndex*>(refined_ents_ptr)->modify(
+          mit,RefEntity_change_set_bit(BitRefLevel().set(0))
+        );
       }
     }
     PetscFunctionReturn(0);
@@ -297,7 +344,7 @@ struct ExampleUltraWeak: public UltraWeakTransportElement {
    * @param  order     appropriate order
    * @return           error code
    */
-  PetscErrorCode updateMeshsetsFieldsAndElements(const int nb_levels,const int order) {
+  PetscErrorCode updateMeshsetsFieldsAndElements(const int nb_levels) {
     MoABErrorCode rval;
     PetscErrorCode ierr;
     BitRefLevel ref_level;
@@ -310,32 +357,6 @@ struct ExampleUltraWeak: public UltraWeakTransportElement {
       ierr = mField.update_meshset_by_entities_children(meshset,ref_level,meshset,MBTRI,true); CHKERRQ(ierr);
       ierr = mField.update_meshset_by_entities_children(meshset,ref_level,meshset,MBTET,true); CHKERRQ(ierr);
     }
-    // update fields and elements
-    EntityHandle out_meshset_tet;
-    rval = mField.get_moab().create_meshset(MESHSET_SET,out_meshset_tet); CHKERRQ_MOAB(rval);
-    // cerr << BitRefLevel().set(nb_levels) << endl;
-    ierr = mField.get_entities_by_type_and_ref_level(
-      BitRefLevel().set(nb_levels),BitRefLevel().set(),MBTET,out_meshset_tet
-    ); CHKERRQ(ierr);
-    //add entities to field
-    ierr = mField.add_ents_to_field_by_TETs(out_meshset_tet,"FLUXES"); CHKERRQ(ierr);
-    ierr = mField.add_ents_to_field_by_TETs(out_meshset_tet,"VALUES"); CHKERRQ(ierr);
-    ierr = mField.set_field_order(0,MBTET,"FLUXES",order+1); CHKERRQ(ierr);
-    ierr = mField.set_field_order(0,MBTRI,"FLUXES",order+1); CHKERRQ(ierr);
-    ierr = mField.set_field_order(0,MBTET,"VALUES",order); CHKERRQ(ierr);
-    Range ref_tets;
-    rval = mField.get_moab().get_entities_by_type(out_meshset_tet,MBTET,ref_tets); CHKERRQ_MOAB(rval);
-    //add entities to finite elements
-    for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BLOCKSET|MAT_THERMALSET,it)) {
-      Mat_Thermal temp_data;
-      ierr = it->getAttributeDataStructure(temp_data); CHKERRQ(ierr);
-      setOfBlocks[it->getMeshsetId()].cOnductivity = temp_data.data.Conductivity;
-      setOfBlocks[it->getMeshsetId()].cApacity = temp_data.data.HeatCapacity;
-      rval = mField.get_moab().get_entities_by_type(it->meshset,MBTET,setOfBlocks[it->getMeshsetId()].tEts,true); CHKERRQ_MOAB(rval);
-      setOfBlocks[it->getMeshsetId()].tEts = intersect(ref_tets,setOfBlocks[it->getMeshsetId()].tEts);
-      ierr = mField.add_ents_to_finite_element_by_TETs(setOfBlocks[it->getMeshsetId()].tEts,"ULTRAWEAK"); CHKERRQ(ierr);
-    }
-    rval = mField.get_moab().delete_entities(&out_meshset_tet,1); CHKERRQ_MOAB(rval);
     PetscFunctionReturn(0);
   }
 
@@ -355,14 +376,18 @@ int main(int argc, char *argv[]) {
   int rank;
   MPI_Comm_rank(PETSC_COMM_WORLD,&rank);
 
+  // get file name form command line
   PetscBool flg = PETSC_TRUE;
   char mesh_file_name[255];
   ierr = PetscOptionsGetString(PETSC_NULL,PETSC_NULL,"-my_file",mesh_file_name,255,&flg); CHKERRQ(ierr);
   if(flg != PETSC_TRUE) {
-    SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_file (MESH FILE NEEDED)");
+    SETERRQ(PETSC_COMM_SELF,MOFEM_INVALID_DATA,"*** ERROR -my_file (MESH FILE NEEDED)");
   }
+
+  // create MOAB communicator
   ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
   if(pcomm == NULL) pcomm =  new ParallelComm(&moab,PETSC_COMM_WORLD);
+
   const char *option;
   option = "";
   rval = moab.load_file(mesh_file_name, 0, option); CHKERRQ_MOAB(rval);
@@ -425,7 +450,7 @@ int main(int argc, char *argv[]) {
   for(int ll = 1;ll!=nb_levels;ll++) {
     const int nb_levels = ll;
     ierr = ufe.squashBits(); CHKERRQ(ierr);
-    ierr = ufe.refienMesh(ufe,nb_levels,order); CHKERRQ(ierr);
+    ierr = ufe.refineMesh(ufe,nb_levels,order); CHKERRQ(ierr);
     ref_level = BitRefLevel().set(nb_levels);
     bc_flux_map.clear();
     ierr = ufe.addBoundaryElements(ref_level);

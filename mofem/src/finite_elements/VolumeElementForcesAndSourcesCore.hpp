@@ -223,7 +223,8 @@ struct VolumeElementForcesAndSourcesCore: public ForcesAndSurcesCore {
 struct FaceElementForcesAndSourcesCore;
 
 /**
- * \brief Volume element used to integrate on skeleton.
+ * \brief Volume element used to integrate on skeleton
+ * \ingroup mofem_forces_and_sources_volume_element
  */
 struct VolumeElementForcesAndSourcesCoreOnSide: public VolumeElementForcesAndSourcesCore {
 
@@ -243,6 +244,13 @@ struct VolumeElementForcesAndSourcesCoreOnSide: public VolumeElementForcesAndSou
   }
 
   int getRule(int order) { return -1; };
+
+  int faceSense;       ///< Sense of face, could be 1 or -1
+  int faceSideNumber;  ///< Face side number
+  int faceConnMap[3];
+  int tetConnMap[4];
+  int oppositeNode;
+
   PetscErrorCode setGaussPts(int order);
 
   /** \brief default operator for TET element
@@ -264,12 +272,40 @@ struct VolumeElementForcesAndSourcesCoreOnSide: public VolumeElementForcesAndSou
 
     /** \brief return pointer to Generic Volume Finite Element object
      */
-    inline const VolumeElementForcesAndSourcesCoreOnSide* getVolumeFE() {
+    inline const VolumeElementForcesAndSourcesCoreOnSide* getVolumeFE() const {
       return static_cast<VolumeElementForcesAndSourcesCoreOnSide*>(ptrFE);
     }
 
-    inline FaceElementForcesAndSourcesCore* getFaceFEPtr() {
+    inline FaceElementForcesAndSourcesCore* getFaceFEPtr() const {
       return getVolumeFE()->faceFEPtr;
+    }
+
+    /**
+     * \brief get face sense in respect to volume
+     * @return error code
+     */
+    inline int getFaceSense() const {
+      return getVolumeFE()->faceSense;
+    }
+
+    /**
+     * \brief get face side number in respect to volume
+     * @return error code
+     */
+    inline int getFaceSideNumber() const {
+      return getVolumeFE()->faceSideNumber;
+    }
+
+    inline bool getEdgeFace(const int ee) const {
+      const bool edges_on_faces[6][4] = {
+        { true, false, false, true }, // e0
+        { false, true, false, true }, // e1
+        { false, false, true, true }, // e2
+        { true, false, true, false }, // e3
+        { true, true, false, false }, // e4
+        { false, true, true, false }
+      };
+      return edges_on_faces[ee][getFaceSideNumber()];
     }
 
     /**

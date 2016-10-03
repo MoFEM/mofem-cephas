@@ -57,7 +57,7 @@ boost::shared_ptr<SideNumber> RefElement_MESHSET::getSideNumberPtr(Interface &mo
   NOT_USED(ent);
   SideNumber_multiIndex::iterator miit;
   miit = const_cast<SideNumber_multiIndex&>(side_number_table).insert(
-    boost::shared_ptr<SideNumber>(new SideNumber(ent,-1,0,0))
+    boost::shared_ptr<SideNumber>(new SideNumber(ent,0,0,0))
   ).first;
   return *miit;
   THROW_MESSAGE("not implemented");
@@ -105,7 +105,7 @@ boost::shared_ptr<SideNumber> RefElement_PRISM::getSideNumberPtr(Interface &moab
   // if ent is meshset
   if(moab.type_from_handle(ent)==MBENTITYSET) {
     miit = const_cast<SideNumber_multiIndex&>(side_number_table).insert(
-      boost::shared_ptr<SideNumber>(new SideNumber(ent,-1,0,0))
+      boost::shared_ptr<SideNumber>(new SideNumber(ent,0,0,0))
     ).first;
     return *miit;
   }
@@ -308,7 +308,7 @@ boost::shared_ptr<SideNumber> RefElement_TET::getSideNumberPtr(Interface &moab,E
   }
   if(moab.type_from_handle(ent)==MBENTITYSET) {
     miit = const_cast<SideNumber_multiIndex&>(side_number_table).insert(
-      boost::shared_ptr<SideNumber>(new SideNumber(ent,-1,0,0))
+      boost::shared_ptr<SideNumber>(new SideNumber(ent,0,0,0))
     ).first;
     return *miit;
   }
@@ -349,7 +349,7 @@ RefElement(moab,ref_ent_ptr) {
   rval = moab.get_connectivity(tri,conn,num_nodes,true); MOAB_THROW(rval);
   for(int nn = 0;nn<3; nn++) {
     const_cast<SideNumber_multiIndex&>(side_number_table).insert(
-      boost::shared_ptr<SideNumber>(new SideNumber(conn[nn],nn,0,-1))
+      boost::shared_ptr<SideNumber>(new SideNumber(conn[nn],nn,0,0))
     );
   }
   for(int ee = 0;ee<3; ee++) {
@@ -375,7 +375,7 @@ boost::shared_ptr<SideNumber> RefElement_TRI::getSideNumberPtr(Interface &moab,E
   }
   if(moab.type_from_handle(ent)==MBENTITYSET) {
     miit = const_cast<SideNumber_multiIndex&>(side_number_table).insert(
-      boost::shared_ptr<SideNumber>(new SideNumber(ent,-1,0,0))
+      boost::shared_ptr<SideNumber>(new SideNumber(ent,0,0,0))
     ).first;
     return *miit;
   }
@@ -412,7 +412,7 @@ boost::shared_ptr<SideNumber> RefElement_EDGE::getSideNumberPtr(Interface &moab,
   }
   if(moab.type_from_handle(ent)==MBENTITYSET) {
     miit = const_cast<SideNumber_multiIndex&>(side_number_table).insert(
-      boost::shared_ptr<SideNumber>(new SideNumber(ent,-1,0,0))
+      boost::shared_ptr<SideNumber>(new SideNumber(ent,0,0,0))
     ).first;
     return *miit;
   }
@@ -451,7 +451,7 @@ boost::shared_ptr<SideNumber> RefElement_VERTEX::getSideNumberPtr(
   }
   if(moab.type_from_handle(ent)==MBENTITYSET) {
     miit = const_cast<SideNumber_multiIndex&>(side_number_table).insert(
-      boost::shared_ptr<SideNumber>(new SideNumber(ent,-1,0,0))
+      boost::shared_ptr<SideNumber>(new SideNumber(ent,0,0,0))
     ).first;
     return *miit;
   }
