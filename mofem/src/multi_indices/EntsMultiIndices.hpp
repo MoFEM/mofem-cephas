@@ -237,7 +237,8 @@ struct RefEntity: public BasicEntity {
 
    * Every entity belongs to some refinement level or levels. Each level is marked
    * by bit set in BitRefLevel() (bitset) structure.
-   * FIXME: Better explanation here needed.
+   *
+   * See \ref uw_mesh_refinement for explanation.
 
    * @return Return pointer to tag.
    */
