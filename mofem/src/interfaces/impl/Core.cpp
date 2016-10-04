@@ -117,10 +117,10 @@ PetscErrorCode Core::query_interface_type(const std::type_info& type,void*& ptr)
   // MedInterface
   #ifdef WITH_MED
   if(type == typeid(MedInterface)) {
-    if(iFaces.find(IDD_MOFEMedInterface.uUId.to_ulong()) == iFaces.end()) {
-      iFaces[IDD_MOFEMedInterface.uUId.to_ulong()] = new MedInterface(*this);
+    if(iFaces.find(IDD_MOFEMMedInterface.uUId.to_ulong()) == iFaces.end()) {
+      iFaces[IDD_MOFEMMedInterface.uUId.to_ulong()] = new MedInterface(*this);
     }
-    ptr = iFaces.at(IDD_MOFEMedInterface.uUId.to_ulong());
+    ptr = iFaces.at(IDD_MOFEMMedInterface.uUId.to_ulong());
     PetscFunctionReturn(0);
   }
   #endif
