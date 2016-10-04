@@ -50,7 +50,7 @@ Multiplying the constitutive equation by a test field \f$\tau\f$ and integrating
 over \f$\Omega\f$ (taking into account the inhomogeneous Dirichlet boundary condition), we
 obtain
 \f[
-\int_\Omega A\sigma_i \tau_i \textrm{d}x - \int_\Omega u \tau_{i,i} \textrm{d}x =
+\int_\Omega A_{ij}\sigma_j \tau_i \textrm{d}x - \int_\Omega u \tau_{i,i} \textrm{d}x =
 \int_{\Gamma_\textrm{u}} \overline{u} \tau_{i} n_i \textrm{d}\Gamma
 ,\quad \forall \boldsymbol\tau \in H(\textrm{div},\Omega)
 \f]
@@ -1194,7 +1194,7 @@ done please see  UltraWeakTransportElement.
 
 At this stage you could see how to assemble vector, we focus attention on the
 assembly of Dirichlet boundary condition. Note the Dirichlet boundary conditions
-in this formulation, is natural, i.e. enforced in a week sense when a system of
+in this formulation, is natural, i.e. enforced in a weak sense when a system of
 linear equations is solved.
 
 This time, we will calculate integral
