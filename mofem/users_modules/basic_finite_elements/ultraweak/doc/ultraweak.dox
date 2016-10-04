@@ -34,12 +34,12 @@ approximation spaces and base functions. It provides tools and structures for
 implementation classical and non-classical finite element codes and can handle
 linear, nonlinear and time dependent problems.
 
-Here we considering problem
+Here we are considering a problem
 \f[
 A_{ij} \sigma_j + u_{,i} = 0 \; \textrm{on} \; \Omega \\
 \sigma_{i,i} = f \; \textrm{on} \; \Omega
 \f]
-where first equations is physical (constitutive) equation and tensor
+where first equation is physical (constitutive) equation and tensor
 \f$A_{ij}\f$ express material properties, for example if \f$A_{ij}\f$ is
 diagonal matrix with single constant on diagonal we have isotropic material
 having the same conduction in each direction. Second equation is conservation
@@ -87,7 +87,7 @@ As result of postprocessing in ParaView we have created following output
 \image html l-shape-adaptivity.gif "h-adaptivity" width=6cm
 \image html l-shape-adaptivity_singularity.gif "Flux singularity" width=6cm
 You can note that subsequent mesh refinement reduces error and make it more
-uniformly distributed through the mesh. You can also observe that mesh
+uniformly distributed through the mesh. You can also observe that mesh is
 getting denser at the corner where singularity is located.
 
 \todo Should be implemented and tested problem from this article
@@ -115,11 +115,11 @@ Imagine that we load the mesh with the topology like in the top-left figure. We
 seed the mesh (\ref MoFEM::Interface::seed_ref_level) by  tagging each entity
 with the first bit on, i.e. \e 001.
 
-Next, we refine by spliting one of the edges, see middle-left figure. You can
+Next, we refine by splitting one of the edges, see middle-left figure. You can
 understand that as edge-splitting-mesh refinement, see \cite ruprecht1998scheme.
 As the result of this mesh refinement new vertex in the middle of the edge is
 created, four new edges and four triangles. The remaining of mesh entities is
-part of old and new mesh level. As consequence entities which are shared between
+part of old and new mesh level. As a consequence entities which are shared between
 the second mesh and first mesh have two bites on, i.e. \e 011, since those are
 coexisting on two meshes. New entities have the only second bit on, i.e. \e 010.
 
@@ -178,7 +178,7 @@ PetscBool flg = PETSC_TRUE;   ///< Is true of option is set in line command
 char mesh_file_name[255];     ///< File name
 ierr = PetscOptionsGetString(PETSC_NULL,PETSC_NULL,"-my_file",mesh_file_name,255,&flg); CHKERRQ(ierr);
 \endcode
-where here we using PETSc function to do that,
+where here we are using PETSc function to do that,
 see <http://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/Sys/PetscOptionsGetString.html> for
 more details. Having mesh file name, we can load mesh, created in Gmsh, to database
 \code{.cpp}
@@ -187,13 +187,13 @@ option = "";
 rval = moab.load_file(mesh_file_name, 0, option); CHKERRQ_MOAB(rval);
 \endcode
 
-MoFEM can read various file format in this example we using mesh from Gmsh,
+MoFEM can read various file format in this example we are using mesh from Gmsh,
 where example file geometry is stored in file \ref l-shape.geo and mesh is in
-\ref l-shape.msh. For more details about file formats pleas look to MoAB
+\ref l-shape.msh. For more details about file formats please look into MoAB
 documentation.
 
 Creating MoFEM database to store information about fields, finite elements and
-problem, we linking it to MOAB database and create interface to manage data
+problem, we link it to MOAB database and create interface to manage data
 \code{.cpp}
 MoFEM::Core core(moab);             ///< Create database
 MoFEM::Interface& m_field = core;   ///< Create interface to database
@@ -210,23 +210,23 @@ read cubit meshset 12682136550675316741 type BLOCKSET msId 1
 \endverbatim
 The output to the screen indicates that three \e BLOCKSETs are available. Those
 \e BOLCKSETs are interpreted as \e Physical Volume and \e Physical Surfaces
-which were created in Gmsh. User can created more sophisticated geometry or use
-more complex set of boundary conditions. Interpretation of BLOCKSETs  it is a
+which were created in Gmsh. User can create more sophisticated geometry or use
+more complex set of boundary conditions. Interpretation of BLOCKSETs is a
 matter of separate config file, which describes problem specific types of
 boundary conditions.
 
 The interpretation of \e BLOCKSETs is done by the meshset config file \b bc.cfg,
 \include users_modules/basic_finite_elements/ultraweak/bc.cfg
-According to that file, \e BLOCKSET 3 is set to be \e NODSET 1003 where
+According to that file, \e BLOCKSET 3 is set to be \e NODESET 1001 where
 temperature is applied \f$u=0\, x \in \partial \Omega_u\f$ and
 \e BLOCKSET 2 is set to be SIDESET 1002 where flux is applied
 \f$n_i\sigma_i = 1\, x \in \partial \Omega_\sigma\f$.
 On \e BLOCKSET 1 is the domain \f$\Omega\f$ where problem is defined.
 
 In the above example, temperature type, heat flux type and temperature volume is
-used. This is matter of interpretation as well, we using this convention to be
+used. This is a matter of interpretation as well, we are using this convention to be
 consistent with other meshing programs like CUBIT where boundary conditions like
-that can be set directly. However MoFEM user can set own types and attach own
+that can be set directly. However, MoFEM user can set own types and attach own
 interpretation if needed.
 
 Boundary condition meshsets are managed in MoFEM by \ref MoFEM::MeshsetsManager
@@ -235,8 +235,8 @@ conditions and add a new one. All modules and software components using that
 interface can easily share information through it. To get access to interface,
 user needs to query MoFEM for it, as follows
 \code{.cpp}
-MoFEM::MeshsetsManager *meshsets_manager_ptr; //< Click on class to see more
-details ierr = m_field.query_interface(meshsets_manager_ptr); CHKERRQ(ierr);
+MoFEM::MeshsetsManager *meshsets_manager_ptr; //< Click on class to see more details
+ierr = m_field.query_interface(meshsets_manager_ptr); CHKERRQ(ierr);
 \endcode
 using interface we can read file \b bc.cfg, parse it and
 add boundary conditions. All this is automatized for user convenience and done with
@@ -259,7 +259,7 @@ to new technologies and programmers need.
 \note Note that all commands return an error code and after each function, an
 error code is checked, in a case of the error, appropriate information is
 printed during execution time. It is important to follow that rule, of checking
-the error code, it simplify code debugging and bug reporting.
+the error code, it simplifies code debugging and bug reporting.
 
 \section um_solving_problem Solving problem and calculating matrices and vectors
 
@@ -304,7 +304,7 @@ such procedure will look very similar to other problems, where we set-up
 problem, apply boundary conditions, solve problem and postprocess results.
 
 Some MoFEM functions and philosophy of building problem is explained in  \ref
-minimal_surface_equation, please look to that document for further explanation.
+minimal_surface_equation, please look into that document for further explanation.
 
 \subsection ultraweak_add_fields Adding fields to the database (ufe.addFields)
 
@@ -336,21 +336,21 @@ respectively. Third argument in functions MoFEM::Interface::add_field sets
 number of coefficients. Since we have vector and scalar field, number of
 coefficients is 1. If for example we would like to have second rank field for
 HDIV space and vector field for L2 space, number of coefficients would be three.
-Note that in general case you can set the filed on part of the mesh and on some
+Note that in general case you can set the field on part of the mesh and on some
 part it could be 3d field, 2d or 1d.
 
 Function MoFEM::Interface::add_ents_to_field_by_TETs add entities to a field, in
 this case, we like to solve the problem on whole mesh, so all entities from root
-meshset are added. Since we span that filed on tetrahedra and all lower entities
+meshset are added. Since we span that field on tetrahedra and all lower entities
 field is in 3d. The dimension of field is dictated by a dimension of entities.
 
 \subsection ultraweak_add_elements Adding elements to the database (ufe.addFiniteElements)
 
-In following part of the code we declare finite elements, implementation of
-elements is done separately. By definition of finite elements, we simply
+In the following part of the code we declare finite elements, implementation of
+elements is done separately. By definition of finite elements, we are simply
 telling code on what fields given finite element operates. Domain of elements,
 i.e. entities on which elements integrate operators could be declared on the part
-of the mesh where given field is given. If you declare element on entities on
+of the mesh where the field is given. If you declare element on entities on
 which fields is no spanning, that element will have zero number of degrees of
 freedom.
 
@@ -362,7 +362,7 @@ In this example, we have four kinds of finite elements \e ULTRAWEAK,
 
 - \e ULTRAWEAK_SKELETON finite element is used to integrate over the skeleton,
   i.e. faces between elements. We are using it to calculate jumps of the values
-  to evaluate solution error.
+  to evaluate the solution error.
 
 - \e ULTRAWEAK_BCVALUE finite element is used to integrate over faces where
   Dirichlet (natural) boundary conditions are declared. The values integrated on
@@ -405,7 +405,7 @@ PetscErrorCode UltraWeakTransportElement::addFiniteElements(
   ierr = mField.modify_finite_element_add_field_col("ULTRAWEAK_SKELETON",fluxes_name); CHKERRQ(ierr);
   ierr = mField.modify_finite_element_add_field_data("ULTRAWEAK_SKELETON",fluxes_name); CHKERRQ(ierr);
 
-  // In some cases you like to use HO geometry to describe shape of the bode, curved edges and faces, for
+  // In some cases you like to use HO geometry to describe shape of the body, curved edges and faces, for
   // example body is a sphere. HO geometry is approximated by a field,  which can be hierarchical, so shape of
   // the edges could be given by polynomial of arbitrary order.
   //
@@ -416,7 +416,7 @@ PetscErrorCode UltraWeakTransportElement::addFiniteElements(
     ierr = mField.modify_finite_element_add_field_data("ULTRAWEAK_SKELETON",mesh_nodals_positions); CHKERRQ(ierr);
   }
   // Look for all BLOCKSET which are MAT_THERMALSET, takes entities from those BLOCKSETS
-  // and add them to "ULTRAWEAK" finite element. In addition get data form that meshset
+  // and add them to "ULTRAWEAK" finite element. In addition get data from that meshset
   // and set cOnductivity which is used to calculate fluxes from gradients of concentration
   // or gradient of temperature, depending how you interpret variables.
   for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BLOCKSET|MAT_THERMALSET,it)) {
@@ -490,7 +490,7 @@ MoFEM::Interface::add_ents_to_finite_element_by_TRIs add tetrahedral and
 triangles to given element respectively. You can think about tetrahedral and
 triangles as domains on which you perform the integration. Note that field can
 be spanned on tetrahedral (3d entities) but you can integrate on triangles, then
-on such element trace of filed on the triangle is available from that element.
+on such element trace of field on the triangle is available from that element.
 
 Note part of the code
 \code{.cpp}
@@ -498,9 +498,9 @@ for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BLOCKSET|MAT_THERMALSET,it
 
 }
 \endcode
-which iterates over all BLOCKSETs on which MAT_THERMALSET is defined, then its
-get information about material parameters and range of tetrahedral entities in
-that block. Next, it add those tetrahedral to \e  ULTRAWEAK finite element. In
+which iterates over all BLOCKSETs on which MAT_THERMALSET is defined, then it
+gets information about material parameters and range of tetrahedral entities in
+that block. Next, it adds those tetrahedral to \e  ULTRAWEAK finite element. In
 addition takes all adjacent triangles to tetrahedra and add those entities to \e
 ULTRAWEAK_SKELETON finite element.
 
@@ -564,9 +564,9 @@ boundary condition.
 \note For standard finite element formulation, boundary condition on fluxes is
 natural, so if you have zero flux on the boundary, you have zero value for DOFs
 on the right-hand side vector. In essence, you do nothing to enforce zero flux.
-This is not the case hare.
+This is not the case here.
 
-In addition function
+In addition, function
 \code{.cpp}
 PetscErrorCode ExampleUltraWeak::getBcOnValues(
   const EntityHandle ent,
@@ -610,16 +610,16 @@ implementations of operations on particular elements which are later explained.
 
 Once fields and finite elements are declared and defined, we build/rebuild data
 structures carrying information needed to do the analysis. Note that function
-bellow is general, takes in account that problem could be build on several
+below is general, takes into account that problem could be build on several
 refinement levels, and if only the necessary part of structures if rebuild in
 subsequent mesh refinements.
 
 The mesh MoFEM::BitRefLevel and related details with mesh refinement are described in
-following sections. Here we focus only on declaring, building and partitioning
+the following sections. Here we focus only on declaring, building and partitioning
 problem for parallelized calculations.
 
 MoFEM can work on partitioned meshes and parallel algebra and calculations.
-However here we assume that mesh is the same on all processors only
+However, here we assume that mesh is the same on all processors only
 calculations, matrices and vectors are distributed.
 
 \code{.cpp}
@@ -732,8 +732,8 @@ emerging from problem definition, finite elements, fields and domains on which
 finite elements and fields operate. That defines the structure of sparse matrix
 and structure of parallel vectors which ghost values.
 
-\note MoFEM utilises properties of approximation spaces, knowing space of
-approximation filed, we know how DOFs are distributed on the mesh. With
+\note MoFEM utilizes properties of approximation spaces, knowing space of
+approximation field, we know how DOFs are distributed on the mesh. With
 information about the bilinear form, which is set in the defined of a
 finite element, we can build adjacencies between DOFs. At last, with the
 definition of a problem, i.e. set of finite elements in the problem, we can
@@ -747,7 +747,7 @@ At that point, we have defined and the partitioned problem and that is enough to
 construct distributed matrices and vectors. The sparsity of the matrix,
 adjacencies and other bookkeeping operations are handled by MoFEM and PETSc.
 
-Functions and use of bellow code was explained earlier in \ref minimal_surface_equation;
+Functions and use of below code was explained earlier in \ref minimal_surface_equation;
 \code
 PetscErrorCode UltraWeakTransportElement::createMatrices() {
   PetscErrorCode ierr;
@@ -763,7 +763,7 @@ PetscErrorCode UltraWeakTransportElement::createMatrices() {
 \section ultraweak_assemble_and_solve Assemble and solve
 
 At that point, we have all data structures necessary to solve the problem. Now
-we focus on attention on the implementation of finite element instances and
+we focus attention on the implementation of finite element instances and
 solution procedure. In essence, we need to assemble matrices and vectors,
 enforce constraints, solve a linear system of equations and solve the problem.
 
@@ -823,7 +823,7 @@ looping over finite elements, parallelization of the problem or assembly itself
 is handled by the MoFEM.
 
 The function
-\code
+\code{.cpp}
 PetscErrorCode UltraWeakTransportElement::solveProblem() {
     PetscErrorCode ierr;
     PetscFunctionBegin;
@@ -839,7 +839,7 @@ degrees of freedom for essential boundary conditions. Exploiting properties of
 H-div space, trace of base functions on the boundary can be evaluated element by
 element, where for each boundary triangle small system of linear equations is
 solved.
-\code
+\code{.cpp}
 feTri.getOpPtrVector().clear();
 feTri.getOpPtrVector().push_back(new OpEvaluateBcOnFluxes(*this,"FLUXES",D0));
 ierr = mField.loop_finite_elements("ULTRAWEAK","ULTRAWEAK_BCFLUX",feTri); CHKERRQ(ierr);
@@ -1043,7 +1043,7 @@ Note that in this case, where we have H-div space on rows and L2 space on column
 You can notice three loops, over elements, entities on element and integration
 point. The first and second loop are managed by MoFEM the last one over
 integration points where a particular operator is evaluated is implemented by
-programmer, as shown bellow
+programmer, as shown below
 \code
 struct UltraWeakTransportElement::OpVDotDivSigma_L2Hdiv: public MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator {
   Mat Aij;
@@ -1093,12 +1093,12 @@ struct UltraWeakTransportElement::OpVDotDivSigma_L2Hdiv: public MoFEM::VolumeEle
 };
 
 \endcode
-Note that we integrate over tetrahedra. Thus operator is
-MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator inherited.  The class
+Note that we integrate over tetrahedra. Thus operator
+MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator is inherited.  The class
 constructor
 UltraWeakTransportElement::OpVDotDivSigma_L2Hdiv::OpVDotDivSigma_L2Hdiv takes an
 argument PETSc matrix and set variable \e sYmm to false, since matrix
-\f$\mathbf{C}\f$ is non-symmetric. Moreover constructing operator we indicate
+\f$\mathbf{C}\f$ is non-symmetric. Moreover, constructing operator we indicate
 that in the first argument of bilinear form we take field \e FLUXES and in the
 second argument of bilinear form we take field \e VALUES. Finally, in the
 constructor of operator we indicate that we like to loop over all possible
@@ -1125,14 +1125,10 @@ MoFEM executes this method, in this particular case, for each combination of pai
 \}
 \f]
 Note that function MoFEM::DataOperator::doWork takes as argument \b row_side and
-\b col_dise, which represent a local index of processed entity on rows and columns,
+\b col_side, which represent a local index of processed entity on rows and columns,
 respectively.  Also,  \b row_type and \b col_type shows the type of entity, for
 example, tetrahedra or triangle in this case.  To see more details about a type
 of entities, local indices and canonical numeration see  \cite tautges2010canonical.
-
-The \b row_data and \b col_data are data structures
-MoFEM::DataForcesAndSurcesCore::EntData carrying information about values of base
-functions, global and local DOFs indices, DOFs values on evaluated entities.
 
 The \b row_data and \b col_data are data structures
 MoFEM::DataForcesAndSurcesCore::EntData carrying information about values of base
@@ -1168,7 +1164,7 @@ for(int gg = 0;gg<nb_gauss_pts;gg++) {
   noalias(C) += w*outer_prod(divVec,row_data.getN(gg));
 }
 \endcode
-Here we using Boost uBlas functions to do operations on local matrices.  You can
+Here we are using Boost uBlas functions to do operations on local matrices.  You can
 alternatively use tensor library implemented in MoFEM (\ref FTensor) to do the
 job. Once local element matrix \b C is calculated, it is assembled into global matrix
 \code
@@ -1194,7 +1190,7 @@ done please see  UltraWeakTransportElement.
 
 At this stage you could see how to assemble vector, we focus attention on the
 assembly of Dirichlet boundary condition. Note the Dirichlet boundary conditions
-in this formulation, is natural, i.e. enforced in a week sense when a system of
+in this formulation, is natural, i.e. enforced in a weak sense when a system of
 linear equations is solved.
 
 This time, we will calculate integral
@@ -1293,7 +1289,7 @@ for details.
 
 In this example to estimate posterior error we follow paper
 \cite braess1996posteriori. This error estimator works well for mesh-dependent norms,
-for which is reliable and efficient. However is not  efficient in natural norm of
+for which is reliable and efficient. However, it is not efficient in natural norm of
 \f$H(\textrm{div},\Omega)\times L^2(\Omega)\f$ \cite  carstensen1997posteriori.
 
 \todo You can find two other papers, \cite  carstensen1997posteriori and
@@ -1445,7 +1441,7 @@ described in following section.
 
 Once the jump is calculated, we can evaluate error estimator, by running
 sequence of entity operators on each volume element, as follows,
-\code
+\code{.cpp}
 feVol.getOpPtrVector().push_back(new UltraWeakTransportElement::OpFluxDivergenceAtGaussPts(*this,"FLUXES"));
   feVol.getOpPtrVector().push_back(new UltraWeakTransportElement::OpValuesGradientAtGaussPts(*this,"VALUES"));
   feVol.getOpPtrVector().push_back(new UltraWeakTransportElement::OpError(*this,"VALUES"));
@@ -1471,10 +1467,10 @@ calculate norm of the jump, i.e. \f$\eta_{e,R}\f$.
 
 MoFEM has some dedicated data structures and methods to do this type of
 integration. Those procedures were implemented to give user ability to implement
-Discontinuous (Petrov) Galerkim, contact mechanics or other approaches involving
+Discontinuous (Petrov) Galerkin, contact mechanics or other approaches involving
 integration on skeleton where information from adjacent entities is needed.
 
-\code
+\code{.cpp}
 struct UltraWeakTransportElement::OpSkeleton: public MoFEM::FaceElementForcesAndSourcesCore::UserDataOperator {
 
   /**
@@ -1523,12 +1519,12 @@ is over skeleton, like face normal vector, face area, etc. Note that nested
 operator UltraWeakTransportElement::OpSkeleton::OpVolSide is added to nested
 volume instance \b volSideFe, in constructor of face operator with the command
 line
-\code
+\code[.cpp}]
 volSideFe.getOpPtrVector().push_back(new UltraWeakTransportElement::OpSkeleton::OpSkeleton::OpVolSide(valMap));
 \endcode
 
 The example of implementation of nested volume element operator looks as follows
-\code
+\code{.cpp}
 struct UltraWeakTransportElement::OpSkeleton::OpVolSide: public MoFEM::VolumeElementForcesAndSourcesCoreOnSide::UserDataOperator {
   map<int,VectorDouble> &valMap;
   OpVolSide(map<int,VectorDouble> &val_map):
@@ -1556,7 +1552,7 @@ accessed by \b getFaceSense().
 
 Once we evaluated approximation functions values at each face, we can calculate
 error \f$\eta_{e,R}\f$, using face operator
-\code
+\code{.cpp}
 PetscErrorCode UltraWeakTransportElement::OpSkeleton::doWork(int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
   MoABErrorCode rval;
   PetscErrorCode ierr;
@@ -1623,7 +1619,7 @@ If it is not case one, and if a face has only one volume in the side, thus on
 that face natural boundary is applied, then jump is a difference between
 boundary value and values evaluated by adjacent volume operator. If a face is in
 volume, i.e. third case, we calculate the difference between values from
-adjacent volumes. Results are stored on face tag values, here we using MOAB to
+adjacent volumes. Results are stored on face tag values, here we are using MOAB to
 do that for us, using
 \code
  rval = cTx.mField.get_moab().tag_get_by_ptr(
@@ -1832,7 +1828,7 @@ for(int ll = 0;ll!=nb_levels;ll++) {
 \section ultraweak_future_work Future work and contribution
 
 If you like to contribute to this module (or MoFEM library), you are very
-welcome. Pleas feel free to add changes, including improving this documentation.
+welcome. Please feel free to add changes, including improving this documentation.
 If you like to work and modify this user module, you can fork this repository,
 make your changes, and do pull request. Contact us <cmatgu@googlegroups.com>  or
 <https://mofem.slack.com/>  if you need any help or comments.
