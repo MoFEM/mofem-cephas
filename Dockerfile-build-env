@@ -95,10 +95,19 @@ RUN cd /opt \
 && make install \
 && cd /opt && rm -rf cmake-3.0.1*
 
-
 # SLEP opt //solve eigen value problem
 #RUN cd /opt && git clone https://bitbucket.org/slepc/slepc && cd /opt/slepc && git checkout tags/v$PETSC_VERSION
 #RUN cd /opt/slepc && PETSC_DIR=/opt/petsc PETSC_ARCH=arch-linux2-c-opt ./configure && make SLEPC_DIR=$PWD PETSC_DIR=/opt/petsc PETSC_ARCH=arch-linux2-c-opt
+
+# MED
+RUN cd /opt && wget http://files.salome-platform.org/Salome/other/med-3.2.0.tar.gz && \
+tar -xzf med-3.2.0.tar.gz && rm med-3.2.0.tar.gz && \
+cd med-3.2.0/ && \
+./configure --disable-python --disable-fortran --prefix=/opt/med --with-hdf5=/opt/petsc/arch-linux2-c-opt && \
+make install && make clean
+
+# ADOL-C
+# FIXME: Add adol-c compilation
 
 ENV PETSC_DIR=/opt/petsc
 ENV PETSC_ARCH=arch-linux2-c-opt
