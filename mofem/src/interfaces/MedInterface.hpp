@@ -26,6 +26,10 @@ namespace MoFEM {
 
   /** \brief Interface for load MED files
   * \ingroup mofem_med_files
+
+  \todo Reading higher order entities
+  \todo Reading fields data
+  
   */
   struct MedInterface: public UnknownInterface {
 
