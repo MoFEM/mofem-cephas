@@ -296,6 +296,21 @@ namespace MoFEM {
       SETERRQ1(m_field.get_comm(),MOFEM_NOT_IMPLEMENTED,"Not implemented for space dim %d",space_dim);
     }
 
+    EntityHandle mesh_meshset;
+    {
+      MeshsetsManager *meshsets_manager_ptr;
+      ierr = m_field.query_interface(meshsets_manager_ptr); CHKERRQ(ierr);
+      int max_id = 0;
+      for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,BLOCKSET,cit)) {
+        max_id = (max_id < cit->getMeshsetId()) ? cit->getMeshsetId() : max_id;
+      }
+      max_id++;
+      ierr = meshsets_manager_ptr->addMeshset(BLOCKSET,max_id++,string(mesh_name)); CHKERRQ(ierr);
+      CubitMeshSet_multiIndex::index<CubitMeshSets_name>::type::iterator cit =
+      meshsets_manager_ptr->getMeshsetsMultindex().get<CubitMeshSets_name>().find(string(mesh_name));
+      mesh_meshset = cit->getMeshset();
+    }
+
     med_bool change_of_coord, geo_transform;
     med_int num_nodes = MEDmeshnEntity(
       fid, mesh_name, MED_NO_DT, MED_NO_IT, MED_NODE,
@@ -333,7 +348,7 @@ namespace MoFEM {
     std::copy(&coord_med[0*num_nodes],&coord_med[1*num_nodes],arrays_coord[0]);
     std::copy(&coord_med[1*num_nodes],&coord_med[2*num_nodes],arrays_coord[1]);
     std::copy(&coord_med[2*num_nodes],&coord_med[3*num_nodes],arrays_coord[2]);
-
+    ierr = m_field.get_moab().add_entities(mesh_meshset,verts); CHKERRQ(ierr);
     family_elem_map.clear();
 
     // get family for vertices
@@ -409,6 +424,7 @@ namespace MoFEM {
       ); CHKERRQ_MOAB(rval);
 
       Range ents(starte,starte+num_ele-1);
+      ierr = m_field.get_moab().add_entities(mesh_meshset,ents); CHKERRQ(ierr);
 
       // get family for cells
       {
@@ -542,9 +558,10 @@ namespace MoFEM {
     ierr = m_field.query_interface(meshsets_manager_ptr); CHKERRQ(ierr);
 
     int max_id = 0;
-    for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,BLOCKSET,cit)) {
+    for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,BLOCKSET,cit)) {
       max_id = (max_id < cit->getMeshsetId()) ? cit->getMeshsetId() : max_id;
     }
+    max_id++;
 
     // cerr << group_elem_map.size() << endl;
     for(

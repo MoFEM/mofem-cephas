@@ -46,6 +46,20 @@
    ierr = med_interface_ptr->readMed(); CHKERRQ(ierr);
    ierr = med_interface_ptr->medGetFieldNames(); CHKERRQ(ierr);
 
+   int ii = 0;
+   const int check_list[] = { 2163, 624, 65, 104};
+   for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,BLOCKSET,cit)) {
+     EntityHandle meshset = cit->getMeshset();
+     int nb_ents;
+     rval = moab.get_number_entities_by_handle(meshset,nb_ents,true); CHKERRQ_MOAB(rval);
+     ierr = PetscPrintf(PETSC_COMM_WORLD,"Nb of ents in %s %d\n",cit->getName().c_str(),nb_ents); CHKERRQ(ierr);
+     if(nb_ents!=check_list[ii]) {
+       SETERRQ2(PETSC_COMM_WORLD,MOFEM_ATOM_TEST_INVALID,"Wrong numbers of entities in meshset %d != %d",nb_ents,check_list[ii]);
+     }
+     ii++;
+   }
+
+
    rval = moab.write_file("out.vtk","VTK",""); CHKERRQ_MOAB(rval);
 
    ierr = PetscFinalize(); CHKERRQ(ierr);
