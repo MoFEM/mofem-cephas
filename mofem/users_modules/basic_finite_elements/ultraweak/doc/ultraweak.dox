@@ -2,8 +2,6 @@
 
 \brief Set by step example how to implement mix finite element and do hp-adaptivity
 
-\note Draft version
-
 Here we present general procedure applied to h-adaptivity of mix problem. MoFEM
 is generic finite element code capable of solving problems from magnetics,
 mechanics of fluids and solids, and as result of this operates on necessary
