@@ -46,8 +46,10 @@ struct Core: public Interface, PrismInterface, SeriesRecorder {
   Core(moab::Interface& _moab,MPI_Comm _comm = PETSC_COMM_WORLD,int _verbose = 1);
   ~Core();
 
-  Tag get_th_RefParentHandle() { return th_RefParentHandle; }
-  Tag get_th_RefBitLevel() { return th_RefBitLevel; }
+  inline Tag get_th_RefParentHandle() const { return th_RefParentHandle; }
+  inline Tag get_th_RefBitLevel() const { return th_RefBitLevel; }
+  inline Tag get_th_RefBitEdge() const { return th_RefBitEdge; }
+  inline Tag get_th_RefType() const { return th_RefType; }
 
   //add prims element FIXME This is wrong solution
   PetscErrorCode addPrismToDatabase(const EntityHandle prism,int verb = -1);

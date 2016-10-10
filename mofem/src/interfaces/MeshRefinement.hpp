@@ -37,12 +37,6 @@ struct MeshRefinement: public UnknownInterface {
 
   PetscErrorCode queryInterface(const MOFEMuuid& uuid, UnknownInterface** iface);
 
-  Tag th_RefType;
-  Tag th_RefParentHandle;
-  Tag th_RefBitLevel;
-  Tag th_RefBitLevel_Mask;
-  Tag th_RefBitEdge;
-
   MoFEM::Core& cOre;
   MeshRefinement(const MoFEM::Core &core);
 

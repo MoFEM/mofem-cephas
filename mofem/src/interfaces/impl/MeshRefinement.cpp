@@ -66,52 +66,6 @@ PetscErrorCode MeshRefinement::queryInterface(const MOFEMuuid& uuid, UnknownInte
 
 MeshRefinement::MeshRefinement(const MoFEM::Core &core):
 cOre(const_cast<MoFEM::Core&>(core)) {
-  MoABErrorCode rval;
-  MoFEM::Interface &m_field = cOre;
-  const int def_type[] = {0,0};
-  rval = m_field.get_moab().tag_get_handle(
-    "_RefType",
-    2,
-    MB_TYPE_INTEGER,
-    th_RefType,
-    MB_TAG_CREAT|MB_TAG_SPARSE,
-    def_type
-  ); MOAB_THROW(rval);
-  EntityHandle def_handle = 0;
-  rval = m_field.get_moab().tag_get_handle(
-    "_RefParentHandle",
-    1,
-    MB_TYPE_HANDLE,
-    th_RefParentHandle,
-    MB_TAG_CREAT|MB_TAG_SPARSE,
-    &def_handle
-  ); MOAB_THROW(rval);
-  BitRefLevel def_bit_level = 0;
-  rval = m_field.get_moab().tag_get_handle(
-    "_RefBitLevel",
-    sizeof(BitRefLevel),
-    MB_TYPE_OPAQUE,
-    th_RefBitLevel,
-    MB_TAG_CREAT|MB_TAG_BYTES|MB_TAG_SPARSE,
-    &def_bit_level
-  ); MOAB_THROW(rval);
-  BitRefLevel def_bit_level_mask = BitRefLevel().set();
-  rval = m_field.get_moab().tag_get_handle(
-    "_RefBitLevelMask",
-    sizeof(BitRefLevel),
-    MB_TYPE_OPAQUE,
-    th_RefBitLevel_Mask,
-    MB_TAG_CREAT|MB_TAG_BYTES|MB_TAG_SPARSE,
-    &def_bit_level_mask
-  ); MOAB_THROW(rval);
-  BitRefEdges def_bit_egde = 0;
-  rval = m_field.get_moab().tag_get_handle(
-    "_RefBitEdge",
-    sizeof(BitRefEdges),
-    MB_TYPE_OPAQUE,
-    th_RefBitEdge,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES,
-    &def_bit_egde
-  ); MOAB_THROW(rval);
 }
 
 PetscErrorCode MeshRefinement::add_verices_in_the_middel_of_edges(const EntityHandle meshset,const BitRefLevel &bit,const bool recursive,int verb) {
@@ -216,8 +170,8 @@ PetscErrorCode MeshRefinement::add_verices_in_the_middel_of_edges(const Range &_
       cblas_dscal(3,0.5,coords,1);
       EntityHandle node;
       rval = moab.create_vertex(coords,node); CHKERRQ_MOAB(rval);
-      rval = moab.tag_set_data(th_RefParentHandle,&node,1,&*eit); CHKERRQ_MOAB(rval);
-      rval = moab.tag_set_data(th_RefBitLevel,&node,1,&bit); CHKERRQ_MOAB(rval);
+      rval = moab.tag_set_data(cOre.get_th_RefParentHandle(),&node,1,&*eit); CHKERRQ_MOAB(rval);
+      rval = moab.tag_set_data(cOre.get_th_RefBitLevel(),&node,1,&bit); CHKERRQ_MOAB(rval);
       std::pair<RefEntity_multiIndex::iterator,bool> p_ent =
       const_cast<RefEntity_multiIndex*>(refined_ents_ptr)->insert(
         boost::shared_ptr<RefEntity>(new RefEntity(m_field.get_basic_entity_data_ptr(),node))
@@ -587,10 +541,10 @@ PetscErrorCode MeshRefinement::refine_TET(const Range &_tets,const BitRefLevel &
           int ref_type[2];
           ref_type[0] = parent_edges_bit.count();
           ref_type[1] = sub_type;
-          rval = moab.tag_set_data(th_RefType,&ref_tets[tt],1,ref_type); CHKERRQ_MOAB(rval);
-          rval = moab.tag_set_data(th_RefParentHandle,&ref_tets[tt],1,&*tit); CHKERRQ_MOAB(rval);
-          rval = moab.tag_set_data(th_RefBitLevel,&ref_tets[tt],1,&bit); CHKERRQ_MOAB(rval);
-          rval = moab.tag_set_data(th_RefBitEdge,&ref_tets[tt],1,&parent_edges_bit); CHKERRQ_MOAB(rval);
+          rval = moab.tag_set_data(cOre.get_th_RefType(),&ref_tets[tt],1,ref_type); CHKERRQ_MOAB(rval);
+          rval = moab.tag_set_data(cOre.get_th_RefParentHandle(),&ref_tets[tt],1,&*tit); CHKERRQ_MOAB(rval);
+          rval = moab.tag_set_data(cOre.get_th_RefBitLevel(),&ref_tets[tt],1,&bit); CHKERRQ_MOAB(rval);
+          rval = moab.tag_set_data(cOre.get_th_RefBitEdge(),&ref_tets[tt],1,&parent_edges_bit); CHKERRQ_MOAB(rval);
           //add refined entity
           std::pair<RefEntity_multiIndex::iterator,bool> p_MoFEMEntity =
           const_cast<RefEntity_multiIndex*>(refined_ents_ptr)->insert(
@@ -762,7 +716,7 @@ PetscErrorCode MeshRefinement::refine_TET(const Range &_tets,const BitRefLevel &
       if(ff<4) continue; //this refined edge is contained by face of tetrahedral
       // check if ref edge is in coarse tetrahedral (i.e. that is internal edge of refined tetrahedral)
       if(intersect(tet_nodes,ref_edges_nodes).size()==2) {
-        rval = moab.tag_set_data(th_RefParentHandle,&*reit,1,&*tit); CHKERRQ_MOAB(rval);
+        rval = moab.tag_set_data(cOre.get_th_RefParentHandle(),&*reit,1,&*tit); CHKERRQ_MOAB(rval);
         //add edge to refinedEntities
         std::pair<RefEntity_multiIndex::iterator,bool> p_ent =
         const_cast<RefEntity_multiIndex*>(refined_ents_ptr)->insert(
@@ -819,7 +773,7 @@ PetscErrorCode MeshRefinement::refine_TET(const Range &_tets,const BitRefLevel &
         //check if refined edge is contained by face of tetrahedral
         if(intersect(faces_nodes[ff],ref_faces_nodes).size()==3) {
           EntityHandle face = tit_faces[ff];
-          rval = moab.tag_set_data(th_RefParentHandle,&*rfit,1,&face); CHKERRQ_MOAB(rval);
+          rval = moab.tag_set_data(cOre.get_th_RefParentHandle(),&*rfit,1,&face); CHKERRQ_MOAB(rval);
           int side = 0;
           //set face side if it is on interface
           rval = moab.tag_get_data(th_interface_side,&face,1,&side); CHKERRQ_MOAB(rval);
@@ -848,7 +802,7 @@ PetscErrorCode MeshRefinement::refine_TET(const Range &_tets,const BitRefLevel &
       //check if ref face is in coarse tetrahedral
       //this is ref face which is contained by tetrahedral volume
       if(intersect(tet_nodes,ref_faces_nodes).size()==3) {
-        rval = moab.tag_set_data(th_RefParentHandle,&*rfit,1,&*tit); CHKERRQ_MOAB(rval);
+        rval = moab.tag_set_data(cOre.get_th_RefParentHandle(),&*rfit,1,&*tit); CHKERRQ_MOAB(rval);
         std::pair<RefEntity_multiIndex::iterator,bool> p_ent =
         const_cast<RefEntity_multiIndex*>(refined_ents_ptr)->insert(
           boost::shared_ptr<RefEntity>(new RefEntity(m_field.get_basic_entity_data_ptr(),*rfit))
@@ -1012,9 +966,9 @@ PetscErrorCode MeshRefinement::refine_PRISM(const EntityHandle meshset,const Bit
         }
         if(!ref_prism_bit.test(pp)) {
           rval = moab.create_element(MBPRISM,&new_prism_conn[6*pp],6,ref_prisms[pp]); CHKERRQ_MOAB(rval);
-          rval = moab.tag_set_data(th_RefParentHandle,&ref_prisms[pp],1,&*pit); CHKERRQ_MOAB(rval);
-          rval = moab.tag_set_data(th_RefBitLevel,&ref_prisms[pp],1,&bit); CHKERRQ_MOAB(rval);
-          rval = moab.tag_set_data(th_RefBitEdge,&ref_prisms[pp],1,&split_edges); CHKERRQ_MOAB(rval);
+          rval = moab.tag_set_data(cOre.get_th_RefParentHandle(),&ref_prisms[pp],1,&*pit); CHKERRQ_MOAB(rval);
+          rval = moab.tag_set_data(cOre.get_th_RefBitLevel(),&ref_prisms[pp],1,&bit); CHKERRQ_MOAB(rval);
+          rval = moab.tag_set_data(cOre.get_th_RefBitEdge(),&ref_prisms[pp],1,&split_edges); CHKERRQ_MOAB(rval);
           std::pair<RefEntity_multiIndex::iterator,bool> p_ent =
           const_cast<RefEntity_multiIndex*>(refined_ents_ptr)->insert(
             boost::shared_ptr<RefEntity>(new RefEntity(m_field.get_basic_entity_data_ptr(),ref_prisms[pp]))
