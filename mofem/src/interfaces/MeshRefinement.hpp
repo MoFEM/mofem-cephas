@@ -1,5 +1,5 @@
 /** \file MeshRefinement.hpp
- * \brief Interface managing boundary and blockset data on meshsets
+ * \brief Interface for mesh refinement
  *
  */
 
@@ -32,6 +32,8 @@ static const MOFEMuuid IDD_MOFEMMeshRefine = MOFEMuuid( BitIntefaceId(MESH_REFIN
   structure which should be only basic database
   \bug If outsourced, class member functions should follow name convention
 
+
+  \ingroup mofem_refiner
   */
 struct MeshRefinement: public UnknownInterface {
 
@@ -109,3 +111,11 @@ DEPRECATED typedef MeshRefinement MeshRefinment;
 }
 
 #endif // __MESHREFINE_HPP__
+
+
+/***************************************************************************//**
+ * \defgroup mofem_refiner Mesh refining
+ * \brief Interface to mesh refining
+ *
+ * \ingroup mofem
+ ******************************************************************************/
