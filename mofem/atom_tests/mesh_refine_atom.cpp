@@ -43,7 +43,10 @@ int main(int argc, char *argv[]) {
 
   MoFEM::Core core(moab);
   MoFEM::Interface& m_field = core;
-  MeshRefinement& refine = core;
+
+
+  MeshRefinement *refine;
+  ierr = m_field.query_interface(refine); CHKERRQ(ierr);
 
   BitRefLevel bit_level0;
   bit_level0.set(0);
@@ -69,8 +72,8 @@ int main(int argc, char *argv[]) {
       ierr = moab.add_entities(meshset_ref_edges,&*eit,1); CHKERRQ(ierr);
     }
   }
-  ierr = refine.add_verices_in_the_middel_of_edges(meshset_ref_edges,bit_level1); CHKERRQ(ierr);
-  ierr = refine.refine_TET(meshset_level0,bit_level1); CHKERRQ(ierr);
+  ierr = refine->add_verices_in_the_middel_of_edges(meshset_ref_edges,bit_level1); CHKERRQ(ierr);
+  ierr = refine->refine_TET(meshset_level0,bit_level1); CHKERRQ(ierr);
   //PetscAttachDebugger ();
   //ierr = m_field.shift_right_bit_ref(1); CHKERRQ(ierr);
 

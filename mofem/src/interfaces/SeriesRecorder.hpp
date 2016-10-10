@@ -161,3 +161,10 @@ struct SeriesRecorder: public UnknownInterface {
 }
 
 #endif // __SERIESRECORDER_HPP__
+
+/***************************************************************************//**
+ * \defgroup mofem_series Recording and reading series
+ * Recorder for time steps and solution sequences
+ *
+ * \ingroup mofem
+ ******************************************************************************/

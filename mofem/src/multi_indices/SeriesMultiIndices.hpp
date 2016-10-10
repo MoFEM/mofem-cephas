@@ -23,11 +23,16 @@ namespace MoFEM {
 
 struct MoFEMSeriesStep;
 
+/**
+ * \brief Structure for recording (time) series
+ *
+ * \ingroup series_multi_indices
+ */
 struct MoFEMSeries {
 
   EntityHandle meshset;
   const void* tag_name_data;		///< tag keeps name of the series
-  int tag_name_size; 			///< number of bits necessary to keep field series
+  int tag_name_size; 			      ///< number of bits necessary to keep field series
 
   bool record_begin;
   bool record_end;
@@ -97,6 +102,11 @@ struct interface_MoFEMSeries {
 
 };
 
+/**
+ * \brief Structure for keeping time and step
+ *
+ * \ingroup series_multi_indices
+ */
 struct MoFEMSeriesStep: public interface_MoFEMSeries<MoFEMSeries> {
 
   typedef interface_MoFEMSeries<MoFEMSeries> interface_type_MoFEMSeries;
@@ -115,6 +125,11 @@ struct MoFEMSeriesStep: public interface_MoFEMSeries<MoFEMSeries> {
 
 };
 
+/**
+ * \brief Series multi index
+ *
+ * \ingroup series_multi_indices
+ */
 typedef multi_index_container<
   MoFEMSeries,
   indexed_by<
@@ -124,6 +139,11 @@ typedef multi_index_container<
     tag<SeriesName_mi_tag>, const_mem_fun<MoFEMSeries,boost::string_ref,&MoFEMSeries::getNameRef> >
   > > Series_multiIndex;
 
+/**
+ * \brief Step multi index
+ *
+ * \ingroup series_multi_indices
+ */
 typedef multi_index_container<
   MoFEMSeriesStep,
   indexed_by<
