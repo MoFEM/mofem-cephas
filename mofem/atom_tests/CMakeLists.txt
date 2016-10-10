@@ -281,7 +281,12 @@ target_link_libraries(test_setting_coordinate_sys
   mofem_third_party
   ${PROJECT_LIBS}
 )
-add_test(test_setting_coordinate_sys ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/test_setting_coordinate_sys -my_file elasticity_atom_test_01X_pressure.h5m)
+add_test(
+  test_setting_coordinate_sys
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+  ${CMAKE_CURRENT_BINARY_DIR}/test_setting_coordinate_sys
+  -my_file elasticity_atom_test_01X_pressure.h5m
+)
 
 #mesh refine
 cm_export_file("../meshes/templar.h5m" export_atom_tests)
