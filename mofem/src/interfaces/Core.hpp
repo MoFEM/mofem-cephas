@@ -35,7 +35,7 @@ struct MeshsetsManager;
   without interfering with users modules programmer work.
 
  */
-struct Core: public Interface, MeshRefinement, PrismInterface, SeriesRecorder {
+struct Core: public Interface, PrismInterface, SeriesRecorder {
 
   PetscErrorCode queryInterface(const MOFEMuuid& uuid, UnknownInterface** iface);
   PetscErrorCode query_interface_type(const std::type_info& iface_type,void*& ptr) const;
@@ -49,6 +49,9 @@ struct Core: public Interface, MeshRefinement, PrismInterface, SeriesRecorder {
   Tag get_th_RefParentHandle() { return th_RefParentHandle; }
   Tag get_th_RefBitLevel() { return th_RefBitLevel; }
 
+  //add prims element FIXME This is wrong solution
+  PetscErrorCode addPrismToDatabase(const EntityHandle prism,int verb = -1);
+
   protected:
 
   mutable boost::ptr_map<unsigned long,UnknownInterface *> iFaces;
@@ -60,6 +63,7 @@ struct Core: public Interface, MeshRefinement, PrismInterface, SeriesRecorder {
   //Data and low level methods
   Tag th_Part;  ///< Tag for partition number
   Tag th_RefParentHandle,th_RefBitLevel,th_RefBitLevel_Mask,th_RefBitEdge,th_RefFEMeshset;
+  Tag th_RefType;
   Tag th_FieldId,th_FieldName,th_FieldName_DataNamePrefix,th_FieldSpace,th_FieldBase;
   Tag th_FEId,th_FEName;
   Tag th_FEIdCol,th_FEIdRow,th_FEIdData;
@@ -140,18 +144,6 @@ struct Core: public Interface, MeshRefinement, PrismInterface, SeriesRecorder {
 
   //communicator MoFEM
   MPI_Comm get_comm() const;
-
-  //add prims element
-  PetscErrorCode addPrismToDatabase(const EntityHandle prism,int verb = -1);
-
-  //MeshRefinemnt
-  PetscErrorCode add_verices_in_the_middel_of_edges(
-    const EntityHandle meshset,const BitRefLevel &bit,const bool recursive = false,int verb = -1);
-  PetscErrorCode add_verices_in_the_middel_of_edges(const Range &edges,const BitRefLevel &bit,int verb = -1);
-  PetscErrorCode refine_TET(const EntityHandle meshset,const BitRefLevel &bit,const bool respect_interface = false);
-  PetscErrorCode refine_TET(const Range &test,const BitRefLevel &bit,const bool respect_interface = false);
-  PetscErrorCode refine_PRISM(const EntityHandle meshset,const BitRefLevel &bit,int verb = -1);
-  PetscErrorCode refine_MESHSET(const EntityHandle meshset,const BitRefLevel &bit,const bool recursive = false,int verb = -1);
 
   //SeriesRecorder
   //add/delete series
