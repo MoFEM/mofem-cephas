@@ -1,4 +1,4 @@
-FROM likask/ubuntu_mofem
+FROM likask/ubuntu_mofem:latest
 
 MAINTAINER Lukasz.Kaczmarczyk@glasgow.ac.uk
 

@@ -332,6 +332,8 @@ struct FaceElementForcesAndSourcesCore: public ForcesAndSurcesCore {
 
   \todo Generalize function for arbitrary face orientation in 3d space
 
+  \ingroup mofem_forces_and_sources_tri_element
+
 */
 struct OpCalculateInvJacForFace: public FaceElementForcesAndSourcesCore::UserDataOperator {
   MatrixDouble &invJac;
@@ -346,6 +348,8 @@ struct OpCalculateInvJacForFace: public FaceElementForcesAndSourcesCore::UserDat
 /** \brief Transform local reference derivatives of shape functions to global derivatives
 
 It is used for 2d problems.
+
+\ingroup mofem_forces_and_sources_tri_element
 
 */
 struct OpSetInvJacH1ForFace: public FaceElementForcesAndSourcesCore::UserDataOperator {
