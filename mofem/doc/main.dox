@@ -23,8 +23,8 @@ Stuff).
 
 MoFEM can read and write number of mesh file formats using functionality
 provided by MoAB.  The current version of MoFEM has full support for
-CUBIT/TRELIS, TetGEN, NetGEN for pre-processing and ParaView for
-post-processing.
+CUBIT/TRELIS, TetGEN, Salome/Code_Aster (MED format) for pre-processing and
+ParaView for post-processing.
 
 \tableofcontents
 
