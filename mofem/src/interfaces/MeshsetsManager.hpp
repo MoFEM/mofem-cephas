@@ -83,8 +83,6 @@ namespace MoFEM {
 
   static const MOFEMuuid IDD_MOFEMMeshsetsManager = MOFEMuuid( BitIntefaceId(MESHSETSMANAGER_INTERFACE) );
 
-  struct Core;
-
   /** \brief Interface for managing meshsets containing materials and boundary conditions
    * \ingroup mofem_bc
    */
