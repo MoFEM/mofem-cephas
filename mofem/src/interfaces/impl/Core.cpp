@@ -41,12 +41,12 @@
 #include <UnknownInterface.hpp>
 #include <LoopMethods.hpp>
 #include <Interface.hpp>
-#include <MeshRefinement.hpp>
 #include <PrismInterface.hpp>
 #include <SeriesRecorder.hpp>
 #include <Core.hpp>
 
 // Interfaces
+#include <MeshRefinement.hpp>
 #include <MeshsetsManager.hpp>
 #include <CoordSystemsManager.hpp>
 #include <TetGenInterface.hpp>
@@ -171,8 +171,14 @@ PetscErrorCode Core::query_interface_type(const std::type_info& type,void*& ptr)
   }
 
   if(type == typeid(MeshRefinement)) {
-    ptr = static_cast<MeshRefinement*>(const_cast<Core*>(this));
-  } else if(type == typeid(SeriesRecorder)) {
+    if(iFaces.find(IDD_MOFEMMeshRefine.uUId.to_ulong()) == iFaces.end()) {
+      iFaces[IDD_MOFEMMeshRefine.uUId.to_ulong()] = new MeshRefinement(*this);
+    }
+    ptr = iFaces.at(IDD_MOFEMMeshRefine.uUId.to_ulong());
+    PetscFunctionReturn(0);
+  }
+
+  if(type == typeid(SeriesRecorder)) {
     ptr = static_cast<SeriesRecorder*>(const_cast<Core*>(this));
   } else if(type == typeid(PrismInterface)) {
     ptr = static_cast<PrismInterface*>(const_cast<Core*>(this));
@@ -250,7 +256,6 @@ PetscErrorCode mofem_error_handler(MPI_Comm comm,int line,const char *fun,const 
 }
 
 Core::Core(moab::Interface& _moab,MPI_Comm _comm,int _verbose):
-MeshRefinement(_moab),
 moab(_moab),
 comm(_comm),
 verbose(_verbose) {
@@ -499,6 +504,15 @@ PetscErrorCode Core::getTags(int verb) {
     MB_TYPE_OPAQUE,
     th_RefBitEdge,MB_TAG_CREAT|MB_TAG_SPARSE|MB_TAG_BYTES,
     &def_bit_egde
+  ); CHKERRQ_MOAB(rval);
+  const int def_type[] = {0,0};
+  rval = moab.tag_get_handle(
+    "_RefType",
+    2,
+    MB_TYPE_INTEGER,
+    th_RefType,
+    MB_TAG_CREAT|MB_TAG_SPARSE,
+    def_type
   ); CHKERRQ_MOAB(rval);
 
   //Tags Field
