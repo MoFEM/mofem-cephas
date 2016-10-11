@@ -122,6 +122,12 @@ if(ADOL-C_LIBRARY)
   message(STATUS "WITH ADLOC-C")
 endif(ADOL-C_LIBRARY)
 
+if(MED_LIBRARY)
+  include_directories("${MED_DIR}/include")
+  add_definitions(-DWITH_MED )
+  message(STATUS "WITH MED")
+endif(MED_LIBRARY)
+
 if(SLEPC_LIBRARY)
   include_directories("${SLEPC_DIR}/${PETSC_ARCH}/include")
   include_directories("${SLEPC_DIR}/include")

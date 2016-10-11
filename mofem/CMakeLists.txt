@@ -41,7 +41,7 @@ endif(CMAKE_Fortran_COMPILER)
 
 set(MoFEM_VERSION_MAJOR 0)
 set(MoFEM_VERSION_MINOR 5)
-set(MoFEM_VERSION_BUILD 6)
+set(MoFEM_VERSION_BUILD 8)
 
 include(CheckCXXSourceCompiles)
 CHECK_CXX_SOURCE_COMPILES(
@@ -71,9 +71,7 @@ add_custom_target(
 )
 
 #SIGMA tools
-include(cmake/FindiMesh.cmake)
 include(cmake/FindCGM.cmake)
-include(cmake/FindLASSO.cmake)
 include(cmake/FindMESHKIT.cmake)
 
 #PETSC tools
@@ -146,15 +144,16 @@ endif(BOOST_DIR)
 
 resolve_libraries(PROJECT_LIBS "
   ${SLEPC_LIBRARY}
-  ${ADOL-C_LIBRARY}
-  ${TETGEN_LIBRARY}
-  ${NETGEN_LIBRARY}
-  ${MOAB_LIBS_LINK}
+  ${TAO_LIBRARY}
   -L${PETSC_DIR}/${PETSC_ARCH}/lib
   ${PETSCVAR_PETSC_WITH_EXTERNAL_LIB}
-  ${TAO_LIBRARY}
+  ${MESHKIT_LIBS_LINK}
+  ${MOAB_LIBS_LINK}
+  ${TETGEN_LIBRARY}
+  ${MED_LIBRARY}
   ${MPI_F90_LIB}
   ${MPI_F77_LIB}
+  ${ADOL-C_LIBRARY}
   ${BOOST_PROGRAM_OPTIONS_LIB}"
 )
 

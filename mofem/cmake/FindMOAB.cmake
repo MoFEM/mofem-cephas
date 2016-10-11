@@ -8,8 +8,8 @@ if(NOT MOAB_DIR)
   set(MOAB_DIR $ENV{MOAB_DIR})
 endif(NOT MOAB_DIR)
 
-find_file (MOAB_VARIBLES_FILE moab.make
-  HINTS ${MOAB_DIR}/lib)
+find_file(MOAB_VARIBLES_FILE moab.make HINTS ${MOAB_DIR}/lib)
+
 if(NOT MOAB_VARIBLES_FILE)
   message(FATAL_ERROR ${MOAB_VARIBLES_FILE})
 endif(NOT MOAB_VARIBLES_FILE)

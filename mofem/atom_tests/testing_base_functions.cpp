@@ -36,6 +36,11 @@ int main(int argc, char *argv[]) {
 
   PetscInitialize(&argc,&argv,(char *)0,help);
 
+  moab::Core mb_instance;
+  moab::Interface& moab = mb_instance;
+  MoFEM::Core core(moab);
+  MoFEM::Interface& m_field = core;
+
   enum bases {
     LEGENDREPOLYNOMIAL,
     LOBATTOPOLYNOMIAL,

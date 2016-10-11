@@ -626,6 +626,8 @@ namespace MoFEM {
 #endif //__MESHSETSMANAGER_HPP__
 
 /***************************************************************************//**
- * \defgroup mofem_bc Managing meshsets which boundary conditions and materials
+ * \defgroup mofem_bc Managing boundary conditions and materials
+ * \brief Interface for meshsets with entities with data and boundary conditions
+ *
  * \ingroup mofem
  ******************************************************************************/

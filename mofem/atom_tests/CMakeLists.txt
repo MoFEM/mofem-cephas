@@ -281,7 +281,12 @@ target_link_libraries(test_setting_coordinate_sys
   mofem_third_party
   ${PROJECT_LIBS}
 )
-add_test(test_setting_coordinate_sys ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/test_setting_coordinate_sys -my_file elasticity_atom_test_01X_pressure.h5m)
+add_test(
+  test_setting_coordinate_sys
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+  ${CMAKE_CURRENT_BINARY_DIR}/test_setting_coordinate_sys
+  -my_file elasticity_atom_test_01X_pressure.h5m
+)
 
 #mesh refine
 cm_export_file("../meshes/templar.h5m" export_atom_tests)
@@ -945,3 +950,22 @@ if(ADOL-C_LIBRARY)
     ${CMAKE_CURRENT_BINARY_DIR}/adol-c_atom
   )
 endif(ADOL-C_LIBRARY)
+
+if(MED_LIBRARY)
+  cm_export_file("../meshes/Mesh_1.med" export_atom_tests)
+  my_add_executable(reading_med_file reading_med_file.cpp)
+  target_link_libraries(reading_med_file
+    mofem_finite_elements
+    mofem_interfaces
+    mofem_multi_indices
+    mofem_petsc
+    mofem_approx
+    mofem_cblas
+    mofem_third_party
+    ${PROJECT_LIBS}
+  )
+  add_test(
+    reading_med_file_test ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+    ${CMAKE_CURRENT_BINARY_DIR}/reading_med_file -med_file Mesh_1.med
+  )
+endif(MED_LIBRARY)

@@ -2331,43 +2331,49 @@ struct Interface: public UnknownInterface {
 #endif // __INTERFACE_HPP__
 
 /***************************************************************************//**
- * \defgroup mofem_series Recording and reading series
- * \ingroup mofem
- ******************************************************************************/
-
-/***************************************************************************//**
  * \defgroup mofem_field Fields
+ * \brief Data structure for adding and managing fields
+ *
  * \ingroup mofem
  ******************************************************************************/
 
 /***************************************************************************//**
  * \defgroup mofem_field_algebra Field Basic Algebra
+ * \brief Basic algebraic operation on fields
+ *
  * \ingroup mofem
  ******************************************************************************/
 
 /***************************************************************************//**
- * \defgroup mofem_ref_ents BitRefLevel Selections
+ * \defgroup mofem_ref_ents Get entities and adjacencies
+ * \brief Get adjacencies/entities for given BitRefLevel (mesh refinement)
+ *
  * \ingroup mofem
  ******************************************************************************/
 
 /***************************************************************************//**
  * \defgroup mofem_fe Finite elements
+ * \brief Adding and managing finite elements
+ *
  * \ingroup mofem
  ******************************************************************************/
 
 /***************************************************************************//**
  * \defgroup mofem_problems Problems
+ * \brief Adding and managing problems
+ *
  * \ingroup mofem
  ******************************************************************************/
 
 /***************************************************************************//**
  * \defgroup mofem_vectors Vectors
+ * \brief Creating and scattering vectors on the mesh for given problem
+ *
  * \ingroup mofem
  ******************************************************************************/
 
 /***************************************************************************//**
  * \defgroup mofem_loops Loops
- *
  * \brief Manages complexities for integrating over finite elements and dofs.
  *
  * \ingroup mofem
@@ -2375,5 +2381,7 @@ struct Interface: public UnknownInterface {
 
 /***************************************************************************//**
  * \defgroup mofem_access Pointers to multi-indices
+ * \brief Get direct access to multi-indices in database
+ *
  * \ingroup mofem
  ******************************************************************************/
