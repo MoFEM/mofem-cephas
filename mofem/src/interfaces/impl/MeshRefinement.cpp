@@ -195,7 +195,9 @@ PetscErrorCode MeshRefinement::add_verices_in_the_middel_of_edges(const Range &_
   }
   PetscFunctionReturn(0);
 }
-PetscErrorCode MeshRefinement::refine_TET(const EntityHandle meshset,const BitRefLevel &bit,const bool respect_interface,int verb) {
+PetscErrorCode MeshRefinement::refine_TET(
+  const EntityHandle meshset,const BitRefLevel &bit,const bool respect_interface,int verb
+) {
   PetscErrorCode ierr;
   MoABErrorCode rval;
   MoFEM::Interface &m_field = cOre;
@@ -206,7 +208,9 @@ PetscErrorCode MeshRefinement::refine_TET(const EntityHandle meshset,const BitRe
   ierr = refine_TET(tets,bit,respect_interface); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
-PetscErrorCode MeshRefinement::refine_TET(const Range &_tets,const BitRefLevel &bit,const bool respect_interface,int verb) {
+PetscErrorCode MeshRefinement::refine_TET(
+  const Range &_tets,const BitRefLevel &bit,const bool respect_interface,int verb
+) {
   PetscErrorCode ierr;
   MoABErrorCode rval;
   MoFEM::Interface &m_field = cOre;
@@ -223,7 +227,8 @@ PetscErrorCode MeshRefinement::refine_TET(const Range &_tets,const BitRefLevel &
 
   typedef const RefEntity_multiIndex::index<Ent_mi_tag>::type RefEntsByEnt;
   RefEntsByEnt &ref_ents_ent = refined_ents_ptr->get<Ent_mi_tag>();
-  // find all vertices which parent is edge
+
+  // Find all vertices which parent is edge
   typedef const RefEntity_multiIndex::index<Composite_EntType_and_ParentEntType_mi_tag>::type RefEntsByComposite;
   RefEntsByComposite &ref_ents = refined_ents_ptr->get<Composite_EntType_and_ParentEntType_mi_tag>();
   RefEntsByComposite::iterator miit = ref_ents.lower_bound(boost::make_tuple(MBVERTEX,MBEDGE));
@@ -245,14 +250,17 @@ PetscErrorCode MeshRefinement::refine_TET(const Range &_tets,const BitRefLevel &
     SETERRQ(m_field.get_comm(),MOFEM_DATA_INCONSISTENCY,"not implemented, set last parameter in refine_TET to false");
   }
 
+  // make loop over all tets which going to be refined
   Range tets = _tets.subset_by_type(MBTET);
   Range::iterator tit = tets.begin();
   for(;tit!=tets.end();tit++) {
+
     RefElementByEnt::iterator miit2 = ref_finite_element.find(*tit);
     if(miit2==ref_finite_element.end()) {
       SETERRQ(m_field.get_comm(),MOFEM_DATA_INCONSISTENCY,"this tet is not in refinedFiniteElements");
     }
-    //connectivity
+
+    // get tet connectivity
     const EntityHandle* conn;
     int num_nodes;
     moab.get_connectivity(*tit,conn,num_nodes,true);
@@ -261,9 +269,16 @@ PetscErrorCode MeshRefinement::refine_TET(const Range &_tets,const BitRefLevel &
       bool success = const_cast<RefEntity_multiIndex*>(refined_ents_ptr)->modify(
         refined_ents_ptr->get<Ent_mi_tag>().find(conn[nn]),RefEntity_change_add_bit(bit)
       );
-      if(!success) SETERRQ(m_field.get_comm(),MOFEM_DATA_INCONSISTENCY,"can not set refinement bit level to tet node");
+      if(!success) {
+        SETERRQ(
+          m_field.get_comm(),
+          MOFEM_DATA_INCONSISTENCY,
+          "can not set refinement bit level to tet node"
+        );
+      }
     }
-    //get edges
+
+    // get edges
     BitRefEdges parent_edges_bit(0);
     EntityHandle edge_new_nodes[6];
     std::fill(&edge_new_nodes[0],&edge_new_nodes[6],no_handle);
@@ -296,15 +311,16 @@ PetscErrorCode MeshRefinement::refine_TET(const Range &_tets,const BitRefLevel &
         }
       }
     }
+    // test if nodes used to refine are not part of tet
     for(int ee = 0;ee<6;ee++) {
       if(edge_new_nodes[ee] == no_handle) continue;
       for(int nn = 0;nn<4;nn++) {
         if(conn[nn] == edge_new_nodes[ee]) {
-          std::cerr << conn[0] << " "
-          << conn[1] << " "
-          << conn[2] << " "
-          << conn[3] << " : "
-          << edge_new_nodes[ee] << std::endl;
+          // std::cerr << conn[0] << " "
+          // << conn[1] << " "
+          // << conn[2] << " "
+          // << conn[3] << " : "
+          // << edge_new_nodes[ee] << std::endl;
           for(int eee = 0;eee<6;eee++) {
             EntityHandle edge;
             rval = moab.side_element(*tit,1,eee,edge);  CHKERRQ_MOAB(rval);
@@ -447,8 +463,13 @@ PetscErrorCode MeshRefinement::refine_TET(const Range &_tets,const BitRefLevel &
     // find that tets
     EntityHandle ref_tets[8];
     std::bitset<8> ref_tets_bit(0);
-    RefEntByComposite::iterator miit_composite = by_composite.lower_bound(boost::make_tuple(*tit,parent_edges_bit.to_ulong()));
-    RefEntByComposite::iterator hi_miit_composite = by_composite.upper_bound(boost::make_tuple(*tit,parent_edges_bit.to_ulong()));
+    RefEntByComposite::iterator miit_composite = by_composite.lower_bound(
+      boost::make_tuple(*tit,parent_edges_bit.to_ulong())
+    );
+    RefEntByComposite::iterator hi_miit_composite = by_composite.upper_bound(
+      boost::make_tuple(*tit,parent_edges_bit.to_ulong())
+    );
+    // check if tet with this refinement shame already exits
     if(distance(miit_composite,hi_miit_composite)==(unsigned int)nb_new_tets) {
       for(int tt = 0;miit_composite!=hi_miit_composite;miit_composite++,tt++) {
         EntityHandle tet = miit_composite->getRefEnt();
