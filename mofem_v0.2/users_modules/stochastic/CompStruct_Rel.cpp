@@ -673,7 +673,7 @@ int main(int argc, char *argv[]) {
   PSFE_order = probdata.AnalysisType;
   
   double beta_Breitung;
-  double pf_Breitung = 0.0;
+  double pf_Breitung;
   
   if (PSFE_order==2) {
     cout<<"\n\n";
@@ -753,10 +753,10 @@ int main(int argc, char *argv[]) {
     
     using boost::math::normal_distribution;
     normal_distribution<> snorm(0,1);
+    pf_Breitung = cdf(snorm,-beta);
     for (int i = 0; i<Size_A; i++) {
-      pf_Breitung = pf_Breitung + 1/sqrt(1 + kappa(i)*beta);
+      pf_Breitung = pf_Breitung/sqrt(1 + kappa(i)*beta);
     }
-    pf_Breitung = cdf(snorm,-beta)*pf_Breitung;
     beta_Breitung = -quantile(snorm,pf_Breitung);
     
     cout<<"\nThe eigen values are: "<<kappa<<endl;

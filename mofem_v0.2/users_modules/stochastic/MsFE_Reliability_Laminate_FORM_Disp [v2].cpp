@@ -762,16 +762,13 @@ int main(int argc, char *argv[]) {
   ierr = m_field_RVE.add_field("Lagrange_mul_disp",H1,field_rank); CHKERRQ(ierr);
   
   // Stochastic fields for perturbation method
-//  for(int ii=0; ii < nders_rve_mat; ii++ ) {
-//    ostringstream ss_field;
-//    ss_field << "DISP_RVE" << stochastic_fields_rve[ii];
-//    cout<<ss_field.str().c_str()<<endl;
-//    ierr = m_field_RVE.add_field(ss_field.str().c_str(),H1,field_rank,MF_ZERO); CHKERRQ(ierr);
-//  }
+  for(int ii=0; ii < nders_rve_mat; ii++ ) {
+    ostringstream ss_field;
+    ss_field << "DISP_RVE" << stochastic_fields_rve[ii];
+    cout<<ss_field.str().c_str()<<endl;
+    ierr = m_field_RVE.add_field(ss_field.str().c_str(),H1,field_rank,MF_ZERO); CHKERRQ(ierr);
+  }
   
-  ierr = m_field_RVE.add_field("DISP_RVE_r",H1,field_rank,MF_ZERO); CHKERRQ(ierr);
-  ierr = m_field_RVE.add_field("DISP_RVE_s",H1,field_rank,MF_ZERO); CHKERRQ(ierr);
-  ierr = m_field_RVE.add_field("DISP_RVE_rs",H1,field_rank,MF_ZERO); CHKERRQ(ierr);
   
   /*****************************************************************************
    *
@@ -800,16 +797,12 @@ int main(int argc, char *argv[]) {
   
   // Stochastic
   //for(int ii=0; ii < nvars; ii++ ) {
-//  for(int ii=0; ii < nders_rve_mat; ii++ ) {
-//    ostringstream ss_field;
-//    ss_field << "DISP_RVE" << stochastic_fields_rve[ii];
-//    cout<<ss_field.str().c_str()<<endl;
-//    ierr = m_field_RVE.modify_finite_element_add_field_data("ELASTIC_FE_RVE",ss_field.str().c_str()); CHKERRQ(ierr);
-//  }
-  
-  ierr = m_field_RVE.modify_finite_element_add_field_data("ELASTIC_FE_RVE","DISP_RVE_r"); CHKERRQ(ierr);
-  ierr = m_field_RVE.modify_finite_element_add_field_data("ELASTIC_FE_RVE","DISP_RVE_s"); CHKERRQ(ierr);
-  ierr = m_field_RVE.modify_finite_element_add_field_data("ELASTIC_FE_RVE","DISP_RVE_rs"); CHKERRQ(ierr);
+  for(int ii=0; ii < nders_rve_mat; ii++ ) {
+    ostringstream ss_field;
+    ss_field << "DISP_RVE" << stochastic_fields_rve[ii];
+    cout<<ss_field.str().c_str()<<endl;
+    ierr = m_field_RVE.modify_finite_element_add_field_data("ELASTIC_FE_RVE",ss_field.str().c_str()); CHKERRQ(ierr);
+  }
   
   //FE Transverse Isotropic
   ierr = m_field_RVE.modify_finite_element_add_field_row("TRAN_ISO_FE_RVE","DISP_RVE"); CHKERRQ(ierr);
@@ -819,16 +812,12 @@ int main(int argc, char *argv[]) {
   
   
   //for(int ii=0; ii < nvars; ii++ ) {
-//  for(int ii=0; ii < nders_rve_mat; ii++ ) {
-//    ostringstream ss_field;
-//    ss_field << "DISP_RVE" << stochastic_fields_rve[ii];
-//    cout<<ss_field.str().c_str()<<endl;
-//    ierr = m_field_RVE.modify_finite_element_add_field_data("TRAN_ISO_FE_RVE",ss_field.str().c_str()); CHKERRQ(ierr);
-//  }
-  
-  ierr = m_field_RVE.modify_finite_element_add_field_data("TRAN_ISO_FE_RVE","DISP_RVE_r"); CHKERRQ(ierr);
-  ierr = m_field_RVE.modify_finite_element_add_field_data("TRAN_ISO_FE_RVE","DISP_RVE_s"); CHKERRQ(ierr);
-  ierr = m_field_RVE.modify_finite_element_add_field_data("TRAN_ISO_FE_RVE","DISP_RVE_rs"); CHKERRQ(ierr);
+  for(int ii=0; ii < nders_rve_mat; ii++ ) {
+    ostringstream ss_field;
+    ss_field << "DISP_RVE" << stochastic_fields_rve[ii];
+    cout<<ss_field.str().c_str()<<endl;
+    ierr = m_field_RVE.modify_finite_element_add_field_data("TRAN_ISO_FE_RVE",ss_field.str().c_str()); CHKERRQ(ierr);
+  }
   
   //C and CT
   //======================================================================================================
@@ -872,16 +861,12 @@ int main(int argc, char *argv[]) {
    *
    ****************************************************************************/
   ierr = m_field_RVE.add_ents_to_field_by_TETs(0,"DISP_RVE"); CHKERRQ(ierr);
+  for(int ii=0; ii < nders_rve_mat; ii++ ) {
+    ostringstream ss_field;
+    ss_field << "DISP_RVE" << stochastic_fields_rve[ii];
+    ierr = m_field_RVE.add_ents_to_field_by_TETs(0,ss_field.str().c_str()); CHKERRQ(ierr);
+  }
   
-//  for(int ii=0; ii < nders_rve_mat; ii++ ) {
-//    ostringstream ss_field;
-//    ss_field << "DISP_RVE" << stochastic_fields_rve[ii];
-//    ierr = m_field_RVE.add_ents_to_field_by_TETs(0,ss_field.str().c_str()); CHKERRQ(ierr);
-//  }
-  
-  ierr = m_field_RVE.add_ents_to_field_by_TETs(0,"DISP_RVE_r"); CHKERRQ(ierr);
-  ierr = m_field_RVE.add_ents_to_field_by_TETs(0,"DISP_RVE_s"); CHKERRQ(ierr);
-  ierr = m_field_RVE.add_ents_to_field_by_TETs(0,"DISP_RVE_rs"); CHKERRQ(ierr);
   
   /*****************************************************************************
    *
@@ -920,31 +905,15 @@ int main(int argc, char *argv[]) {
   ierr = m_field_RVE.set_field_order(0,MBVERTEX,"Lagrange_mul_disp",1); CHKERRQ(ierr);
   
   int order_st = order_RVE;
-//  for(int ii=0; ii < nders_rve_mat; ii++ ) {
-//    ostringstream ss_field;
-//    ss_field << "DISP_RVE" << stochastic_fields_rve[ii];
-//    //    cout<<ss_field.str().c_str()<<endl;
-//    ierr = m_field_RVE.set_field_order(0,MBTET,   ss_field.str().c_str(),order_st); CHKERRQ(ierr);
-//    ierr = m_field_RVE.set_field_order(0,MBTRI,   ss_field.str().c_str(),order_st); CHKERRQ(ierr);
-//    ierr = m_field_RVE.set_field_order(0,MBEDGE,  ss_field.str().c_str(),order_st); CHKERRQ(ierr);
-//    ierr = m_field_RVE.set_field_order(0,MBVERTEX,ss_field.str().c_str(),1);        CHKERRQ(ierr);
-//  }
-  
-  ierr = m_field_RVE.set_field_order(0,MBTET,   "DISP_RVE_r",order_st); CHKERRQ(ierr);
-  ierr = m_field_RVE.set_field_order(0,MBTRI,   "DISP_RVE_r",order_st); CHKERRQ(ierr);
-  ierr = m_field_RVE.set_field_order(0,MBEDGE,  "DISP_RVE_r",order_st); CHKERRQ(ierr);
-  ierr = m_field_RVE.set_field_order(0,MBVERTEX,"DISP_RVE_r",1);        CHKERRQ(ierr);
-  
-  ierr = m_field_RVE.set_field_order(0,MBTET,   "DISP_RVE_s",order_st); CHKERRQ(ierr);
-  ierr = m_field_RVE.set_field_order(0,MBTRI,   "DISP_RVE_s",order_st); CHKERRQ(ierr);
-  ierr = m_field_RVE.set_field_order(0,MBEDGE,  "DISP_RVE_s",order_st); CHKERRQ(ierr);
-  ierr = m_field_RVE.set_field_order(0,MBVERTEX,"DISP_RVE_s",1);        CHKERRQ(ierr);
-  
-  ierr = m_field_RVE.set_field_order(0,MBTET,   "DISP_RVE_rs",order_st); CHKERRQ(ierr);
-  ierr = m_field_RVE.set_field_order(0,MBTRI,   "DISP_RVE_rs",order_st); CHKERRQ(ierr);
-  ierr = m_field_RVE.set_field_order(0,MBEDGE,  "DISP_RVE_rs",order_st); CHKERRQ(ierr);
-  ierr = m_field_RVE.set_field_order(0,MBVERTEX,"DISP_RVE_rs",1);        CHKERRQ(ierr);
-  
+  for(int ii=0; ii < nders_rve_mat; ii++ ) {
+    ostringstream ss_field;
+    ss_field << "DISP_RVE" << stochastic_fields_rve[ii];
+    //    cout<<ss_field.str().c_str()<<endl;
+    ierr = m_field_RVE.set_field_order(0,MBTET,   ss_field.str().c_str(),order_st); CHKERRQ(ierr);
+    ierr = m_field_RVE.set_field_order(0,MBTRI,   ss_field.str().c_str(),order_st); CHKERRQ(ierr);
+    ierr = m_field_RVE.set_field_order(0,MBEDGE,  ss_field.str().c_str(),order_st); CHKERRQ(ierr);
+    ierr = m_field_RVE.set_field_order(0,MBVERTEX,ss_field.str().c_str(),1);        CHKERRQ(ierr);
+  }
   
   // ===========================================================================
   //
@@ -1084,15 +1053,11 @@ int main(int argc, char *argv[]) {
   ierr = m_field_Macro.add_field("MESH_NODE_POSITIONS",H1,3,MF_ZERO); CHKERRQ(ierr);
   
   // Stochastic fields for perturbation methods at macroscale
-//  for(int ii=0; ii < nders_ply_mat; ii++ ) {
-//    ostringstream ss_field;
-//    ss_field << "DISP_MACRO" << stochastic_fields_ply[ii];
-//    ierr = m_field_Macro.add_field(ss_field.str().c_str(),H1,field_rank,MF_ZERO); CHKERRQ(ierr);
-//  }
-  
-  ierr = m_field_Macro.add_field("DISP_MACRO_r",H1,field_rank,MF_ZERO); CHKERRQ(ierr);
-  ierr = m_field_Macro.add_field("DISP_MACRO_s",H1,field_rank,MF_ZERO); CHKERRQ(ierr);
-  ierr = m_field_Macro.add_field("DISP_MACRO_rs",H1,field_rank,MF_ZERO); CHKERRQ(ierr);
+  for(int ii=0; ii < nders_ply_mat; ii++ ) {
+    ostringstream ss_field;
+    ss_field << "DISP_MACRO" << stochastic_fields_ply[ii];
+    ierr = m_field_Macro.add_field(ss_field.str().c_str(),H1,field_rank,MF_ZERO); CHKERRQ(ierr);
+  }
   
   /*****************************************************************************
    *
@@ -1129,15 +1094,11 @@ int main(int argc, char *argv[]) {
   ierr = m_field_Macro.modify_finite_element_add_field_data("ELASTIC_1st_Ply","DISP_MACRO"); CHKERRQ(ierr);
   ierr = m_field_Macro.modify_finite_element_add_field_data("ELASTIC_1st_Ply","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
   
-//  for(int ii=0; ii < nders_ply_mat; ii++ ) {
-//    ostringstream ss_field;
-//    ss_field << "DISP_MACRO" << stochastic_fields_ply[ii];
-//    ierr = m_field_Macro.modify_finite_element_add_field_data("ELASTIC_1st_Ply",ss_field.str().c_str()); CHKERRQ(ierr);
-//  }
-  
-  ierr = m_field_Macro.modify_finite_element_add_field_data("ELASTIC_1st_Ply","DISP_MACRO_r"); CHKERRQ(ierr);
-  ierr = m_field_Macro.modify_finite_element_add_field_data("ELASTIC_1st_Ply","DISP_MACRO_s"); CHKERRQ(ierr);
-  ierr = m_field_Macro.modify_finite_element_add_field_data("ELASTIC_1st_Ply","DISP_MACRO_rs"); CHKERRQ(ierr);
+  for(int ii=0; ii < nders_ply_mat; ii++ ) {
+    ostringstream ss_field;
+    ss_field << "DISP_MACRO" << stochastic_fields_ply[ii];
+    ierr = m_field_Macro.modify_finite_element_add_field_data("ELASTIC_1st_Ply",ss_field.str().c_str()); CHKERRQ(ierr);
+  }
   
   // Second layer
   if (NO_Layers > 1) {
@@ -1147,15 +1108,11 @@ int main(int argc, char *argv[]) {
     ierr = m_field_Macro.modify_finite_element_add_field_data("ELASTIC_2nd_Ply","DISP_MACRO"); CHKERRQ(ierr);
     ierr = m_field_Macro.modify_finite_element_add_field_data("ELASTIC_2nd_Ply","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
     
-//    for(int ii=0; ii < nders_ply_mat; ii++ ) {
-//      ostringstream ss_field;
-//      ss_field << "DISP_MACRO" << stochastic_fields_ply[ii];
-//      ierr = m_field_Macro.modify_finite_element_add_field_data("ELASTIC_2nd_Ply",ss_field.str().c_str()); CHKERRQ(ierr);
-//    }
-    
-    ierr = m_field_Macro.modify_finite_element_add_field_data("ELASTIC_2nd_Ply","DISP_MACRO_r"); CHKERRQ(ierr);
-    ierr = m_field_Macro.modify_finite_element_add_field_data("ELASTIC_2nd_Ply","DISP_MACRO_s"); CHKERRQ(ierr);
-    ierr = m_field_Macro.modify_finite_element_add_field_data("ELASTIC_2nd_Ply","DISP_MACRO_rs"); CHKERRQ(ierr);
+    for(int ii=0; ii < nders_ply_mat; ii++ ) {
+      ostringstream ss_field;
+      ss_field << "DISP_MACRO" << stochastic_fields_ply[ii];
+      ierr = m_field_Macro.modify_finite_element_add_field_data("ELASTIC_2nd_Ply",ss_field.str().c_str()); CHKERRQ(ierr);
+    }
   }
   
   // Third layer
@@ -1166,16 +1123,11 @@ int main(int argc, char *argv[]) {
     ierr = m_field_Macro.modify_finite_element_add_field_data("ELASTIC_3rd_Ply","DISP_MACRO"); CHKERRQ(ierr);
     ierr = m_field_Macro.modify_finite_element_add_field_data("ELASTIC_3rd_Ply","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
     
-//    for(int ii=0; ii < nders_ply_mat; ii++ ) {
-//      ostringstream ss_field;
-//      ss_field << "DISP_MACRO" << stochastic_fields_ply[ii];
-//      ierr = m_field_Macro.modify_finite_element_add_field_data("ELASTIC_3rd_Ply",ss_field.str().c_str()); CHKERRQ(ierr);
-//    }
-    
-    ierr = m_field_Macro.modify_finite_element_add_field_data("ELASTIC_3rd_Ply","DISP_MACRO_r"); CHKERRQ(ierr);
-    ierr = m_field_Macro.modify_finite_element_add_field_data("ELASTIC_3rd_Ply","DISP_MACRO_s"); CHKERRQ(ierr);
-    ierr = m_field_Macro.modify_finite_element_add_field_data("ELASTIC_3rd_Ply","DISP_MACRO_rs"); CHKERRQ(ierr);
-    
+    for(int ii=0; ii < nders_ply_mat; ii++ ) {
+      ostringstream ss_field;
+      ss_field << "DISP_MACRO" << stochastic_fields_ply[ii];
+      ierr = m_field_Macro.modify_finite_element_add_field_data("ELASTIC_3rd_Ply",ss_field.str().c_str()); CHKERRQ(ierr);
+    }
   }
   
   // Fourth layer
@@ -1186,15 +1138,11 @@ int main(int argc, char *argv[]) {
     ierr = m_field_Macro.modify_finite_element_add_field_data("ELASTIC_4th_Ply","DISP_MACRO"); CHKERRQ(ierr);
     ierr = m_field_Macro.modify_finite_element_add_field_data("ELASTIC_4th_Ply","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
     
-//    for(int ii=0; ii < nders_ply_mat; ii++ ) {
-//      ostringstream ss_field;
-//      ss_field << "DISP_MACRO" << stochastic_fields_ply[ii];
-//      ierr = m_field_Macro.modify_finite_element_add_field_data("ELASTIC_4th_Ply",ss_field.str().c_str()); CHKERRQ(ierr);
-//    }
-    
-    ierr = m_field_Macro.modify_finite_element_add_field_data("ELASTIC_4th_Ply","DISP_MACRO_r"); CHKERRQ(ierr);
-    ierr = m_field_Macro.modify_finite_element_add_field_data("ELASTIC_4th_Ply","DISP_MACRO_s"); CHKERRQ(ierr);
-    ierr = m_field_Macro.modify_finite_element_add_field_data("ELASTIC_4th_Ply","DISP_MACRO_rs"); CHKERRQ(ierr);
+    for(int ii=0; ii < nders_ply_mat; ii++ ) {
+      ostringstream ss_field;
+      ss_field << "DISP_MACRO" << stochastic_fields_ply[ii];
+      ierr = m_field_Macro.modify_finite_element_add_field_data("ELASTIC_4th_Ply",ss_field.str().c_str()); CHKERRQ(ierr);
+    }
   }
 
   //Define rows/cols and element data
@@ -1203,15 +1151,11 @@ int main(int argc, char *argv[]) {
   ierr = m_field_Macro.modify_finite_element_add_field_data("ELASTIC_FE_MACRO_REL","DISP_MACRO"); CHKERRQ(ierr);
   ierr = m_field_Macro.modify_finite_element_add_field_data("ELASTIC_FE_MACRO_REL","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
   
-//  for(int ii=0; ii < nders_ply_mat; ii++ ) {
-//    ostringstream ss_field;
-//    ss_field << "DISP_MACRO" << stochastic_fields_ply[ii];
-//    ierr = m_field_Macro.modify_finite_element_add_field_data("ELASTIC_FE_MACRO_REL",ss_field.str().c_str()); CHKERRQ(ierr);
-//  }
-  
-  ierr = m_field_Macro.modify_finite_element_add_field_data("ELASTIC_FE_MACRO_REL","DISP_MACRO_r"); CHKERRQ(ierr);
-  ierr = m_field_Macro.modify_finite_element_add_field_data("ELASTIC_FE_MACRO_REL","DISP_MACRO_s"); CHKERRQ(ierr);
-  ierr = m_field_Macro.modify_finite_element_add_field_data("ELASTIC_FE_MACRO_REL","DISP_MACRO_rs"); CHKERRQ(ierr);
+  for(int ii=0; ii < nders_ply_mat; ii++ ) {
+    ostringstream ss_field;
+    ss_field << "DISP_MACRO" << stochastic_fields_ply[ii];
+    ierr = m_field_Macro.modify_finite_element_add_field_data("ELASTIC_FE_MACRO_REL",ss_field.str().c_str()); CHKERRQ(ierr);
+  }
   
   
   //define problems
@@ -1252,15 +1196,11 @@ int main(int argc, char *argv[]) {
   ierr = m_field_Macro.add_ents_to_field_by_TETs(0,"DISP_MACRO"); CHKERRQ(ierr);
   ierr = m_field_Macro.add_ents_to_field_by_TETs(0,"MESH_NODE_POSITIONS"); CHKERRQ(ierr);
   
-//  for(int ii=0; ii < nders_ply_mat; ii++ ) {
-//    ostringstream ss_field;
-//    ss_field << "DISP_MACRO" << stochastic_fields_ply[ii];
-//    ierr = m_field_Macro.add_ents_to_field_by_TETs(0,ss_field.str().c_str()); CHKERRQ(ierr);
-//  }
-  
-  ierr = m_field_Macro.add_ents_to_field_by_TETs(0,"DISP_MACRO_r"); CHKERRQ(ierr);
-  ierr = m_field_Macro.add_ents_to_field_by_TETs(0,"DISP_MACRO_s"); CHKERRQ(ierr);
-  ierr = m_field_Macro.add_ents_to_field_by_TETs(0,"DISP_MACRO_rs"); CHKERRQ(ierr);
+  for(int ii=0; ii < nders_ply_mat; ii++ ) {
+    ostringstream ss_field;
+    ss_field << "DISP_MACRO" << stochastic_fields_ply[ii];
+    ierr = m_field_Macro.add_ents_to_field_by_TETs(0,ss_field.str().c_str()); CHKERRQ(ierr);
+  }
 
   /*****************************************************************************
    *
@@ -1296,29 +1236,14 @@ int main(int argc, char *argv[]) {
   ierr = m_field_Macro.set_field_order(0,MBVERTEX,"DISP_MACRO",1); CHKERRQ(ierr);
   
   order_st = order_Macro;
-//  for(int ii=0; ii < nders_ply_mat; ii++ ) {
-//    ostringstream ss_field;
-//    ss_field << "DISP_MACRO" << stochastic_fields_ply[ii];
-//    ierr = m_field_Macro.set_field_order(0,MBTET,   ss_field.str().c_str(),order_st); CHKERRQ(ierr);
-//    ierr = m_field_Macro.set_field_order(0,MBTRI,   ss_field.str().c_str(),order_st); CHKERRQ(ierr);
-//    ierr = m_field_Macro.set_field_order(0,MBEDGE,  ss_field.str().c_str(),order_st); CHKERRQ(ierr);
-//    ierr = m_field_Macro.set_field_order(0,MBVERTEX,ss_field.str().c_str(),1); CHKERRQ(ierr);
-//  }
-  
-  ierr = m_field_Macro.set_field_order(0,MBTET,   "DISP_MACRO_r",order_st); CHKERRQ(ierr);
-  ierr = m_field_Macro.set_field_order(0,MBTRI,   "DISP_MACRO_r",order_st); CHKERRQ(ierr);
-  ierr = m_field_Macro.set_field_order(0,MBEDGE,  "DISP_MACRO_r",order_st); CHKERRQ(ierr);
-  ierr = m_field_Macro.set_field_order(0,MBVERTEX,"DISP_MACRO_r",1); CHKERRQ(ierr);
-  
-  ierr = m_field_Macro.set_field_order(0,MBTET,   "DISP_MACRO_s",order_st); CHKERRQ(ierr);
-  ierr = m_field_Macro.set_field_order(0,MBTRI,   "DISP_MACRO_s",order_st); CHKERRQ(ierr);
-  ierr = m_field_Macro.set_field_order(0,MBEDGE,  "DISP_MACRO_s",order_st); CHKERRQ(ierr);
-  ierr = m_field_Macro.set_field_order(0,MBVERTEX,"DISP_MACRO_s",1); CHKERRQ(ierr);
-  
-  ierr = m_field_Macro.set_field_order(0,MBTET,   "DISP_MACRO_rs",order_st); CHKERRQ(ierr);
-  ierr = m_field_Macro.set_field_order(0,MBTRI,   "DISP_MACRO_rs",order_st); CHKERRQ(ierr);
-  ierr = m_field_Macro.set_field_order(0,MBEDGE,  "DISP_MACRO_rs",order_st); CHKERRQ(ierr);
-  ierr = m_field_Macro.set_field_order(0,MBVERTEX,"DISP_MACRO_rs",1); CHKERRQ(ierr);
+  for(int ii=0; ii < nders_ply_mat; ii++ ) {
+    ostringstream ss_field;
+    ss_field << "DISP_MACRO" << stochastic_fields_ply[ii];
+    ierr = m_field_Macro.set_field_order(0,MBTET,   ss_field.str().c_str(),order_st); CHKERRQ(ierr);
+    ierr = m_field_Macro.set_field_order(0,MBTRI,   ss_field.str().c_str(),order_st); CHKERRQ(ierr);
+    ierr = m_field_Macro.set_field_order(0,MBEDGE,  ss_field.str().c_str(),order_st); CHKERRQ(ierr);
+    ierr = m_field_Macro.set_field_order(0,MBVERTEX,ss_field.str().c_str(),1); CHKERRQ(ierr);
+  }
   
   //
   ierr = m_field_Macro.set_field_order(0,MBTET,   "MESH_NODE_POSITIONS",2); CHKERRQ(ierr);
@@ -1567,8 +1492,7 @@ int main(int argc, char *argv[]) {
     BetaFile.open("//mnt//home//Dropbox//DURACOMP_Cal//009_MoFEM//04_ReliabilityAnalysis//Result_Beta.txt",ofstream::out);
   }
   
-  vector<Vec> D_r(nvars_ply_mat);
-  vector<Vec> D_rs((nvars_ply_mat + 1)*nvars_ply_mat/2);
+  
   do {
     
     cout<<"\n\n*************************************************\n*\n";
@@ -1647,8 +1571,7 @@ int main(int argc, char *argv[]) {
                                                 stochastic_fields_ply,
                                                 x,PlyAngle_new,//probdata.PlyAngle,
                                                 NO_Layers,
-                                                PSFE_order,
-                                                D_r,D_rs); CHKERRQ(ierr);
+                                                PSFE_order); CHKERRQ(ierr);
     
     Dmat.resize(6,6);
     Dmat_r.resize(nvars_ply_mat);
@@ -1740,14 +1663,9 @@ int main(int argc, char *argv[]) {
       ostringstream ss_field;
       ss_field.str(""); ss_field.clear();
       ss_field << "DISP_MACRO" << stochastic_fields_ply[i];
-      
       // cout<<"The first-order field is "<< ss_field.str().c_str() <<endl;
       
-      ierr = m_field_Macro.set_other_global_ghost_vector("ELASTIC_PROBLEM_MACRO","DISP_MACRO","DISP_MACRO_r",ROW,D_r[i],INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-      FE2_PostProcStressForReliability_First Calc_Stress_r(m_field_Macro,"DISP_MACRO","DISP_MACRO_r",Dmat,Dmat_r(i));
-      
-      //FE2_PostProcStressForReliability_First Calc_Stress_r(m_field_Macro,"DISP_MACRO",ss_field.str().c_str(),Dmat,Dmat_r(i));
-      
+      FE2_PostProcStressForReliability_First Calc_Stress_r(m_field_Macro,"DISP_MACRO",ss_field.str().c_str(),Dmat,Dmat_r(i));
       ierr = m_field_Macro.loop_finite_elements("ELASTIC_PROBLEM_MACRO","ELASTIC_FE_MACRO_REL",Calc_Stress_r);  CHKERRQ(ierr);
       StressGP_r(i).resize(3,3); StressGP_r(i).clear();
       //cout<<"The variable name is "<<probdata.NameVars[i]<<endl;
@@ -1965,8 +1883,7 @@ int main(int argc, char *argv[]) {
                                                 stochastic_fields_ply,
                                                 x,PlyAngle_new,
                                                 NO_Layers,
-                                                PSFE_order,
-                                                D_r,D_rs); CHKERRQ(ierr);
+                                                PSFE_order); CHKERRQ(ierr);
     
     // =======================================
     //
@@ -2039,7 +1956,6 @@ int main(int argc, char *argv[]) {
     
     int sub_nvars = 0;
     int var_pos;
-    int num_2nd_elem = 0;
     // cout<<"\nDmat is:\n "<<Dmat<<endl;
     // cout<<"\nDmat new is:\n "<<Solve_FE2_Problem.Dmat_1st_Ply<<endl;
     for (int ivar = 0; ivar<nvars_ply_mat; ivar++) {
@@ -2049,9 +1965,6 @@ int main(int argc, char *argv[]) {
       first_field_r << "DISP_MACRO" << stochastic_fields_ply[ivar];
       
       for (int jvar = ivar; jvar<nvars_ply_mat; jvar++) {
-        
-        num_2nd_elem = num_2nd_elem + 1 ;
-        
         // Get the first-order derivative of field w.r.t. - j-th variable
         ostringstream first_field_s;
         first_field_s.str(""); first_field_s.clear();
@@ -2071,28 +1984,15 @@ int main(int argc, char *argv[]) {
         second_field << "DISP_MACRO" << stochastic_fields_ply[var_pos + nvars_ply_mat -1];
         // cout<<"\n\nThe second-order field is:\t "<<second_field.str().c_str()<<endl;
         
-        ierr = m_field_Macro.set_other_global_ghost_vector("ELASTIC_PROBLEM_MACRO","DISP_MACRO","DISP_MACRO_r", ROW,D_r[ivar],INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-        ierr = m_field_Macro.set_other_global_ghost_vector("ELASTIC_PROBLEM_MACRO","DISP_MACRO","DISP_MACRO_s", ROW,D_r[jvar],INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-        ierr = m_field_Macro.set_other_global_ghost_vector("ELASTIC_PROBLEM_MACRO","DISP_MACRO","DISP_MACRO_rs",ROW,D_rs[num_2nd_elem - 1],INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
         //
         FE2_PostProcStressForReliability_Second Calc_Stress_2nd(m_field_Macro,
                                                                 "DISP_MACRO",
-                                                                "DISP_MACRO_r",
-                                                                "DISP_MACRO_s",
-                                                                "DISP_MACRO_rs",
+                                                                first_field_r.str().c_str(),
+                                                                first_field_s.str().c_str(),
+                                                                second_field.str().c_str(),
                                                                 Dmat,
                                                                 Dmat_r(ivar),Dmat_r(jvar),
                                                                 Dmat_rs(ivar,jvar));
-        
-//        FE2_PostProcStressForReliability_Second Calc_Stress_2nd(m_field_Macro,
-//                                                                "DISP_MACRO",
-//                                                                first_field_r.str().c_str(),
-//                                                                first_field_s.str().c_str(),
-//                                                                second_field.str().c_str(),
-//                                                                Dmat,
-//                                                                Dmat_r(ivar),Dmat_r(jvar),
-//                                                                Dmat_rs(ivar,jvar));
-        
         ierr = m_field_Macro.loop_finite_elements("ELASTIC_PROBLEM_MACRO","ELASTIC_FE_MACRO_REL",Calc_Stress_2nd);  CHKERRQ(ierr);
         //ublas::matrix<double> istress_rs; istress_rs.clear();
         REL_Stress_Transformation(theta_angle, Calc_Stress_2nd.StressGP_rs, StressGP_rs(ivar,jvar));

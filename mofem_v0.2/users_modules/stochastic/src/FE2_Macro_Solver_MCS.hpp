@@ -683,273 +683,273 @@ namespace MoFEM {
     //        Caculate RVE constitutive matrix Dmat
     //
     // =========================================================================
-    virtual PetscErrorCode Calculate_RVEDmat_Periodic(FieldInterface &m_field_RVE,
-                                                      ublas::vector<double> vars_value,
-                                                      int num_rvars,
-                                                      vector<string> vars_name) {
-      PetscFunctionBegin;
-      ErrorCode rval;
-      PetscErrorCode ierr;
-      
-      Dmat.resize(6,6); Dmat.clear();
-      
-      /*****************************************************************************
-       *
-       *  0. PREPARATION FOR PROCESSING SOLVE
-       *
-       ****************************************************************************/
-      
-      vector<Vec> F(6);
-      ierr = m_field_RVE.VecCreateGhost("ELASTIC_PROBLEM_RVE",ROW,&F[0]); CHKERRQ(ierr);
-      for(int ii = 1;ii<6;ii++) {
-        ierr = VecDuplicate(F[0],&F[ii]); CHKERRQ(ierr);
-      }
-      
-      Vec D;
-      ierr = m_field_RVE.VecCreateGhost("ELASTIC_PROBLEM_RVE",COL,&D); CHKERRQ(ierr);
-      
-      /*************************************************************************
-       *
-       *  1. Assembling global stiffness matrix K
-       *     and external force vector F
-       ************************************************************************/
-      Mat Aij;
-      ierr = m_field_RVE.MatCreateMPIAIJWithArrays("ELASTIC_PROBLEM_RVE",&Aij); CHKERRQ(ierr);
-      
-      struct MyElasticFEMethod: public ElasticFEMethod {
-        MyElasticFEMethod(FieldInterface& _m_field,
-                          Mat& _Aij,Vec& _D,Vec& _F,double _lambda,double _mu, string _field_name = "DISPLACEMENT"):
-        ElasticFEMethod(_m_field,_Aij,_D,_F,_lambda,_mu,_field_name) {};
-        
-        PetscErrorCode Fint(Vec F_int) {
-          PetscFunctionBegin;
-          ierr = ElasticFEMethod::Fint(); CHKERRQ(ierr);
-          for(int rr = 0;rr<row_mat;rr++) {
-            if(RowGlob[rr].size()!=f_int[rr].size()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
-            if(RowGlob[rr].size()==0) continue;
-            f_int[rr] *= -1; //This is not SNES we solve K*D = -RES
-            ierr = VecSetValues(F_int,RowGlob[rr].size(),&(RowGlob[rr])[0],&(f_int[rr].data()[0]),ADD_VALUES); CHKERRQ(ierr);
-          }
-          PetscFunctionReturn(0);
-        }
-      };
-      
-      //Assemble F and Aij
-      double YoungModulus = 3500;
-      double PoissonRatio = 0.3;
-      double YoungModulus_Fibre, PoissonRatio_Fibre;
-      double alpha;
-      int field_rank=3;
-      
-      /*************************************************************************
-       *
-       *  2. Get the volume of RVE
-       *
-       ************************************************************************/
-      double RVE_volume;    RVE_volume=0.0;  //RVE volume for full RVE We need this for stress calculation
-      Vec RVE_volume_Vec;
-      ParallelComm* pcomm = ParallelComm::get_pcomm(&m_field_RVE.get_moab(),MYPCOMM_INDEX);
-      ierr = VecCreateMPI(PETSC_COMM_WORLD, 1, pcomm->size(), &RVE_volume_Vec);  CHKERRQ(ierr);
-      ierr = VecZeroEntries(RVE_volume_Vec); CHKERRQ(ierr);
-      
-      RVEVolume MyRVEVol(m_field_RVE,Aij,D,F[0],LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio), RVE_volume_Vec);
-      RVEVolumeTrans MyRVEVolTrans(m_field_RVE,Aij,D,F[0], RVE_volume_Vec);
-      
-      ierr = m_field_RVE.loop_finite_elements("ELASTIC_PROBLEM_RVE","ELASTIC_FE_RVE",MyRVEVol);  CHKERRQ(ierr);
-      ierr = m_field_RVE.loop_finite_elements("ELASTIC_PROBLEM_RVE","TRAN_ISO_FE_RVE",MyRVEVolTrans);  CHKERRQ(ierr);
-      //ierr = VecView(RVE_volume_Vec,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
-      ierr = VecSum(RVE_volume_Vec, &RVE_volume);  CHKERRQ(ierr);
-      cout<<"Final RVE_volume = "<< RVE_volume <<endl;
-      
-      
-      for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field_RVE,BLOCKSET,it)) {
-        cout << endl << *it << endl;
-        //
-        // Get block name
-        //
-        string name = it->get_name();
-        //
-        // Modify material properties of matrix
-        //
-        if (name.compare(0,13,"MAT_ELASTIC_1") == 0) {
-          Mat_Elastic mydata;
-          ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
-          
-          string ParameterName;
-          for (int ii=1;ii<=num_rvars;ii++) {
-            ParameterName = vars_name[ii];
-            
-            if (ParameterName.compare(0,2,"Em") == 0) {cout<<"the variable name is "<<ParameterName<<endl;
-              mydata.data.Young = vars_value(ii-1);
-            }
-            else if (ParameterName.compare(0,3,"NUm") == 0) {cout<<"the variable name is "<<ParameterName<<endl;
-              mydata.data.Poisson = vars_value(ii-1);
-            }
-            ParameterName.clear();
-          }
-          
-          YoungModulus=mydata.data.Young;
-          PoissonRatio=mydata.data.Poisson;
-          ierr = it->set_attribute_data_structure(mydata); CHKERRQ(ierr);
-          cout << "Matrix material:\n" << mydata;
-        }
-        //
-        // Update material properties of inclusion/fibre reinforcement
-        //
-        if (name.compare(0,20,"MAT_ELASTIC_TRANSISO") == 0) {
-          Mat_Elastic_TransIso mydata;
-          ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
-          
-          string ParameterName;
-          for (int i=1;i<=num_rvars;i++) {
-            ParameterName = vars_name[i];
-            cout<<"the variable name is "<<vars_name[i]<<endl;
-            if (ParameterName.compare(0,2,"Ez") == 0) {
-              mydata.data.Youngz = vars_value(i-1);
-            }
-            else if (ParameterName.compare(0,2,"Ep") == 0) {
-              mydata.data.Youngp = vars_value(i-1);
-            }
-            else if (ParameterName.compare(0,3,"NUp") == 0) {
-              mydata.data.Poissonp = vars_value(i-1);
-            }
-            else if (ParameterName.compare(0,4,"NUpz") == 0) {
-              mydata.data.Poissonpz = vars_value(i-1);
-            }
-            else if (ParameterName.compare(0,3,"Gzp") == 0) {
-              mydata.data.Shearzp = vars_value(i-1);
-            }
-            ParameterName.clear();
-          }
-          
-          ierr = it->set_attribute_data_structure(mydata); CHKERRQ(ierr);
-          cout << "Fibre material:\n" << mydata;
-        }
-      }
-      
-      cout<<YoungModulus<<"\t"<<PoissonRatio<<endl;
-      
-      ublas::vector<FieldData> applied_strain;  //it is not used in the calculation, it is required by ElasticFE_RVELagrange_Disp as input
-      applied_strain.resize(1.5*field_rank+1.5); applied_strain.clear();
-
-      MyElasticFEMethod MyFE(m_field_RVE,Aij,D,F[0],LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio),"DISP_RVE");
-      TranIsotropicFibreDirRotElasticFEMethod MyTIsotFE(m_field_RVE,Aij,D,F[0],"DISP_RVE");
-      
-      
-      ElasticFE_RVELagrange_Periodic_Multi_Rhs MyFE_RVELagrangePeriodic(m_field_RVE,Aij,D,F[0],F[1],F[2],F[3],F[4],F[5],applied_strain,"DISP_RVE","Lagrange_mul_disp",field_rank);
-      ElasticFE_RVELagrange_RigidBodyTranslation MyFE_RVELagrangeRigidBodyTrans(m_field_RVE,Aij,D,F[0],applied_strain,"DISP_RVE","Lagrange_mul_disp",field_rank,"Lagrange_mul_disp_rigid_trans");
-      
-      for(int ii = 0; ii<6; ii++) {
-        ierr = VecZeroEntries(F[ii]); CHKERRQ(ierr);
-        ierr = VecGhostUpdateBegin(F[ii],INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-        ierr = VecGhostUpdateEnd(F[ii],INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-      }
-      ierr = MatZeroEntries(Aij); CHKERRQ(ierr);
-      ierr = VecZeroEntries(D); CHKERRQ(ierr);
-      ierr = m_field_RVE.set_global_ghost_vector("ELASTIC_PROBLEM_RVE",ROW,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-      
-      ierr = m_field_RVE.loop_finite_elements("ELASTIC_PROBLEM_RVE","ELASTIC_FE_RVE",MyFE);  CHKERRQ(ierr);
-      ierr = m_field_RVE.loop_finite_elements("ELASTIC_PROBLEM_RVE","TRAN_ISO_FE_RVE",MyTIsotFE);  CHKERRQ(ierr);
-      ierr = m_field_RVE.loop_finite_elements("ELASTIC_PROBLEM_RVE","Lagrange_FE",MyFE_RVELagrangePeriodic);  CHKERRQ(ierr);
-      ierr = m_field_RVE.loop_finite_elements("ELASTIC_PROBLEM_RVE","Lagrange_FE_rigid_trans",MyFE_RVELagrangeRigidBodyTrans);  CHKERRQ(ierr);
-      
-      for(int ii = 0; ii<6; ii++) {
-        ierr = VecGhostUpdateBegin(F[ii],ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-        ierr = VecGhostUpdateEnd(F[ii],ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-        ierr = VecAssemblyBegin(F[ii]); CHKERRQ(ierr);
-        ierr = VecAssemblyEnd(F[ii]); CHKERRQ(ierr);
-      }
-      
-      ierr = MatAssemblyBegin(Aij,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
-      ierr = MatAssemblyEnd(Aij,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
-      
-      
-      /*****************************************************************************
-       *
-       *  3. SOLVE THE ZEROTH-ORDER FINITE ELEMENT EQUILIBRIUM EQUATION
-       *     [K][U] = [F]
-       *
-       ****************************************************************************/
-      
-      //----------------------------------------------------------------------------
-      // 3.1 Solving the equation to get nodal displacement
-      //----------------------------------------------------------------------------
-      //Solver
-      KSP solver;
-      ierr = KSPCreate(PETSC_COMM_WORLD,&solver); CHKERRQ(ierr);
-      ierr = KSPSetOperators(solver,Aij,Aij); CHKERRQ(ierr);
-      ierr = KSPSetFromOptions(solver); CHKERRQ(ierr);
-      ierr = KSPSetUp(solver); CHKERRQ(ierr);
-      
-      //create a vector for 6 components of homogenized stress
-      Vec Stress_Homo;
-      ierr = VecCreateMPI(PETSC_COMM_WORLD, 6, 6*pcomm->size(), &Stress_Homo);  CHKERRQ(ierr);
-      
-      for(int ics = 0; ics<6; ics++) {
-        
-        cout<<"===============================================================\n";
-        switch (ics) {
-          case 0:
-            cout<<"        Applied strain [1 0 0 0 0 0]^T\n"; break;
-          case 1:
-            cout<<"        Applied strain [0 1 0 0 0 0]^T\n"; break;
-          case 2:
-            cout<<"        Applied strain [0 0 1 0 0 0]^T\n"; break;
-          case 3:
-            cout<<"        Applied strain [0 0 0 1 0 0]^T\n"; break;
-          case 4:
-            cout<<"        Applied strain [0 0 0 0 1 0]^T\n"; break;
-          case 5:
-            cout<<"        Applied strain [0 0 0 0 0 1]^T\n"; break;
-        }
-        cout<<"===============================================================\n";
-        
-        ierr = VecZeroEntries(D); CHKERRQ(ierr);
-        ierr = KSPSolve(solver,F[ics],D); CHKERRQ(ierr);
-        ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-        ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-        ierr = m_field_RVE.set_global_ghost_vector("ELASTIC_PROBLEM_RVE",ROW,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-        
-        //----------------------------------------------------------------------------
-        // 3.2 Calculating zeroth-order homogenized stress using volume averaging theorem
-        //----------------------------------------------------------------------------
-        
-        ierr = VecZeroEntries(Stress_Homo); CHKERRQ(ierr);
-        ElasticFE_RVELagrange_Homogenized_Stress_Periodic MyFE_RVEHomoStressPeriodic(m_field_RVE,Aij,D,F[ics],&RVE_volume, applied_strain, Stress_Homo,"DISP_RVE","Lagrange_mul_disp",field_rank);
-        ierr = m_field_RVE.loop_finite_elements("ELASTIC_PROBLEM_RVE","Lagrange_FE",MyFE_RVEHomoStressPeriodic);  CHKERRQ(ierr);
-        
-        if(pcomm->rank()==0) {
-          PetscScalar    *avec;
-          VecGetArray(Stress_Homo, &avec);
-          //cout<< "\nStress_Homo =\n";
-          for(int kk=0; kk<6; kk++) {
-            Dmat(kk,ics) = *avec;
-            //cout.precision(15);
-            //cout <<*avec<<endl;
-            avec++;
-          }
-          VecRestoreArray(Stress_Homo,&avec);
-        }
-      }
-      
-      /*************************************************************************
-       *
-       *  4. FINISH
-       *
-       ************************************************************************/
-      
-      //Destroy matrices and vectors
-      for(int ii = 0;ii<6;ii++) {
-        ierr = VecDestroy(&F[ii]); CHKERRQ(ierr);
-      }
-      ierr = VecDestroy(&D); CHKERRQ(ierr);
-      ierr = MatDestroy(&Aij); CHKERRQ(ierr);
-      ierr = KSPDestroy(&solver); CHKERRQ(ierr);
-      ierr = VecDestroy(&RVE_volume_Vec); CHKERRQ(ierr);
-      ierr = VecDestroy(&Stress_Homo); CHKERRQ(ierr);
-      
-      PetscFunctionReturn(0);
-    }
+//    virtual PetscErrorCode Calculate_RVEDmat_Periodic(FieldInterface &m_field_RVE,
+//                                                      ublas::vector<double> vars_value,
+//                                                      int num_rvars,
+//                                                      vector<string> vars_name) {
+//      PetscFunctionBegin;
+//      ErrorCode rval;
+//      PetscErrorCode ierr;
+//      
+//      Dmat.resize(6,6); Dmat.clear();
+//      
+//      /*****************************************************************************
+//       *
+//       *  0. PREPARATION FOR PROCESSING SOLVE
+//       *
+//       ****************************************************************************/
+//      
+//      vector<Vec> F(6);
+//      ierr = m_field_RVE.VecCreateGhost("ELASTIC_PROBLEM_RVE",ROW,&F[0]); CHKERRQ(ierr);
+//      for(int ii = 1;ii<6;ii++) {
+//        ierr = VecDuplicate(F[0],&F[ii]); CHKERRQ(ierr);
+//      }
+//      
+//      Vec D;
+//      ierr = m_field_RVE.VecCreateGhost("ELASTIC_PROBLEM_RVE",COL,&D); CHKERRQ(ierr);
+//      
+//      /*************************************************************************
+//       *
+//       *  1. Assembling global stiffness matrix K
+//       *     and external force vector F
+//       ************************************************************************/
+//      Mat Aij;
+//      ierr = m_field_RVE.MatCreateMPIAIJWithArrays("ELASTIC_PROBLEM_RVE",&Aij); CHKERRQ(ierr);
+//      
+//      struct MyElasticFEMethod: public ElasticFEMethod {
+//        MyElasticFEMethod(FieldInterface& _m_field,
+//                          Mat& _Aij,Vec& _D,Vec& _F,double _lambda,double _mu, string _field_name = "DISPLACEMENT"):
+//        ElasticFEMethod(_m_field,_Aij,_D,_F,_lambda,_mu,_field_name) {};
+//        
+//        PetscErrorCode Fint(Vec F_int) {
+//          PetscFunctionBegin;
+//          ierr = ElasticFEMethod::Fint(); CHKERRQ(ierr);
+//          for(int rr = 0;rr<row_mat;rr++) {
+//            if(RowGlob[rr].size()!=f_int[rr].size()) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+//            if(RowGlob[rr].size()==0) continue;
+//            f_int[rr] *= -1; //This is not SNES we solve K*D = -RES
+//            ierr = VecSetValues(F_int,RowGlob[rr].size(),&(RowGlob[rr])[0],&(f_int[rr].data()[0]),ADD_VALUES); CHKERRQ(ierr);
+//          }
+//          PetscFunctionReturn(0);
+//        }
+//      };
+//      
+//      //Assemble F and Aij
+//      double YoungModulus = 3500;
+//      double PoissonRatio = 0.3;
+//      double YoungModulus_Fibre, PoissonRatio_Fibre;
+//      double alpha;
+//      int field_rank=3;
+//      
+//      /*************************************************************************
+//       *
+//       *  2. Get the volume of RVE
+//       *
+//       ************************************************************************/
+//      double RVE_volume;    RVE_volume=0.0;  //RVE volume for full RVE We need this for stress calculation
+//      Vec RVE_volume_Vec;
+//      ParallelComm* pcomm = ParallelComm::get_pcomm(&m_field_RVE.get_moab(),MYPCOMM_INDEX);
+//      ierr = VecCreateMPI(PETSC_COMM_WORLD, 1, pcomm->size(), &RVE_volume_Vec);  CHKERRQ(ierr);
+//      ierr = VecZeroEntries(RVE_volume_Vec); CHKERRQ(ierr);
+//      
+//      RVEVolume MyRVEVol(m_field_RVE,Aij,D,F[0],LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio), RVE_volume_Vec);
+//      RVEVolumeTrans MyRVEVolTrans(m_field_RVE,Aij,D,F[0], RVE_volume_Vec);
+//      
+//      ierr = m_field_RVE.loop_finite_elements("ELASTIC_PROBLEM_RVE","ELASTIC_FE_RVE",MyRVEVol);  CHKERRQ(ierr);
+//      ierr = m_field_RVE.loop_finite_elements("ELASTIC_PROBLEM_RVE","TRAN_ISO_FE_RVE",MyRVEVolTrans);  CHKERRQ(ierr);
+//      //ierr = VecView(RVE_volume_Vec,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
+//      ierr = VecSum(RVE_volume_Vec, &RVE_volume);  CHKERRQ(ierr);
+//      cout<<"Final RVE_volume = "<< RVE_volume <<endl;
+//      
+//      
+//      for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field_RVE,BLOCKSET,it)) {
+//        cout << endl << *it << endl;
+//        //
+//        // Get block name
+//        //
+//        string name = it->get_name();
+//        //
+//        // Modify material properties of matrix
+//        //
+//        if (name.compare(0,13,"MAT_ELASTIC_1") == 0) {
+//          Mat_Elastic mydata;
+//          ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
+//          
+//          string ParameterName;
+//          for (int ii=1;ii<=num_rvars;ii++) {
+//            ParameterName = vars_name[ii];
+//            
+//            if (ParameterName.compare(0,2,"Em") == 0) {cout<<"the variable name is "<<ParameterName<<endl;
+//              mydata.data.Young = vars_value(ii-1);
+//            }
+//            else if (ParameterName.compare(0,3,"NUm") == 0) {cout<<"the variable name is "<<ParameterName<<endl;
+//              mydata.data.Poisson = vars_value(ii-1);
+//            }
+//            ParameterName.clear();
+//          }
+//          
+//          YoungModulus=mydata.data.Young;
+//          PoissonRatio=mydata.data.Poisson;
+//          ierr = it->set_attribute_data_structure(mydata); CHKERRQ(ierr);
+//          cout << "Matrix material:\n" << mydata;
+//        }
+//        //
+//        // Update material properties of inclusion/fibre reinforcement
+//        //
+//        if (name.compare(0,20,"MAT_ELASTIC_TRANSISO") == 0) {
+//          Mat_Elastic_TransIso mydata;
+//          ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
+//          
+//          string ParameterName;
+//          for (int i=1;i<=num_rvars;i++) {
+//            ParameterName = vars_name[i];
+//            cout<<"the variable name is "<<vars_name[i]<<endl;
+//            if (ParameterName.compare(0,2,"Ez") == 0) {
+//              mydata.data.Youngz = vars_value(i-1);
+//            }
+//            else if (ParameterName.compare(0,2,"Ep") == 0) {
+//              mydata.data.Youngp = vars_value(i-1);
+//            }
+//            else if (ParameterName.compare(0,3,"NUp") == 0) {
+//              mydata.data.Poissonp = vars_value(i-1);
+//            }
+//            else if (ParameterName.compare(0,4,"NUpz") == 0) {
+//              mydata.data.Poissonpz = vars_value(i-1);
+//            }
+//            else if (ParameterName.compare(0,3,"Gzp") == 0) {
+//              mydata.data.Shearzp = vars_value(i-1);
+//            }
+//            ParameterName.clear();
+//          }
+//          
+//          ierr = it->set_attribute_data_structure(mydata); CHKERRQ(ierr);
+//          cout << "Fibre material:\n" << mydata;
+//        }
+//      }
+//      
+//      cout<<YoungModulus<<"\t"<<PoissonRatio<<endl;
+//      
+//      ublas::vector<FieldData> applied_strain;  //it is not used in the calculation, it is required by ElasticFE_RVELagrange_Disp as input
+//      applied_strain.resize(1.5*field_rank+1.5); applied_strain.clear();
+//
+//      MyElasticFEMethod MyFE(m_field_RVE,Aij,D,F[0],LAMBDA(YoungModulus,PoissonRatio),MU(YoungModulus,PoissonRatio),"DISP_RVE");
+//      TranIsotropicFibreDirRotElasticFEMethod MyTIsotFE(m_field_RVE,Aij,D,F[0],"DISP_RVE");
+//      
+//      
+//      ElasticFE_RVELagrange_Periodic_Multi_Rhs MyFE_RVELagrangePeriodic(m_field_RVE,Aij,D,F[0],F[1],F[2],F[3],F[4],F[5],applied_strain,"DISP_RVE","Lagrange_mul_disp",field_rank);
+//      ElasticFE_RVELagrange_RigidBodyTranslation MyFE_RVELagrangeRigidBodyTrans(m_field_RVE,Aij,D,F[0],applied_strain,"DISP_RVE","Lagrange_mul_disp",field_rank,"Lagrange_mul_disp_rigid_trans");
+//      
+//      for(int ii = 0; ii<6; ii++) {
+//        ierr = VecZeroEntries(F[ii]); CHKERRQ(ierr);
+//        ierr = VecGhostUpdateBegin(F[ii],INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+//        ierr = VecGhostUpdateEnd(F[ii],INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+//      }
+//      ierr = MatZeroEntries(Aij); CHKERRQ(ierr);
+//      ierr = VecZeroEntries(D); CHKERRQ(ierr);
+//      ierr = m_field_RVE.set_global_ghost_vector("ELASTIC_PROBLEM_RVE",ROW,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+//      
+//      ierr = m_field_RVE.loop_finite_elements("ELASTIC_PROBLEM_RVE","ELASTIC_FE_RVE",MyFE);  CHKERRQ(ierr);
+//      ierr = m_field_RVE.loop_finite_elements("ELASTIC_PROBLEM_RVE","TRAN_ISO_FE_RVE",MyTIsotFE);  CHKERRQ(ierr);
+//      ierr = m_field_RVE.loop_finite_elements("ELASTIC_PROBLEM_RVE","Lagrange_FE",MyFE_RVELagrangePeriodic);  CHKERRQ(ierr);
+//      ierr = m_field_RVE.loop_finite_elements("ELASTIC_PROBLEM_RVE","Lagrange_FE_rigid_trans",MyFE_RVELagrangeRigidBodyTrans);  CHKERRQ(ierr);
+//      
+//      for(int ii = 0; ii<6; ii++) {
+//        ierr = VecGhostUpdateBegin(F[ii],ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+//        ierr = VecGhostUpdateEnd(F[ii],ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+//        ierr = VecAssemblyBegin(F[ii]); CHKERRQ(ierr);
+//        ierr = VecAssemblyEnd(F[ii]); CHKERRQ(ierr);
+//      }
+//      
+//      ierr = MatAssemblyBegin(Aij,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+//      ierr = MatAssemblyEnd(Aij,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+//      
+//      
+//      /*****************************************************************************
+//       *
+//       *  3. SOLVE THE ZEROTH-ORDER FINITE ELEMENT EQUILIBRIUM EQUATION
+//       *     [K][U] = [F]
+//       *
+//       ****************************************************************************/
+//      
+//      //----------------------------------------------------------------------------
+//      // 3.1 Solving the equation to get nodal displacement
+//      //----------------------------------------------------------------------------
+//      //Solver
+//      KSP solver;
+//      ierr = KSPCreate(PETSC_COMM_WORLD,&solver); CHKERRQ(ierr);
+//      ierr = KSPSetOperators(solver,Aij,Aij); CHKERRQ(ierr);
+//      ierr = KSPSetFromOptions(solver); CHKERRQ(ierr);
+//      ierr = KSPSetUp(solver); CHKERRQ(ierr);
+//      
+//      //create a vector for 6 components of homogenized stress
+//      Vec Stress_Homo;
+//      ierr = VecCreateMPI(PETSC_COMM_WORLD, 6, 6*pcomm->size(), &Stress_Homo);  CHKERRQ(ierr);
+//      
+//      for(int ics = 0; ics<6; ics++) {
+//        
+//        cout<<"===============================================================\n";
+//        switch (ics) {
+//          case 0:
+//            cout<<"        Applied strain [1 0 0 0 0 0]^T\n"; break;
+//          case 1:
+//            cout<<"        Applied strain [0 1 0 0 0 0]^T\n"; break;
+//          case 2:
+//            cout<<"        Applied strain [0 0 1 0 0 0]^T\n"; break;
+//          case 3:
+//            cout<<"        Applied strain [0 0 0 1 0 0]^T\n"; break;
+//          case 4:
+//            cout<<"        Applied strain [0 0 0 0 1 0]^T\n"; break;
+//          case 5:
+//            cout<<"        Applied strain [0 0 0 0 0 1]^T\n"; break;
+//        }
+//        cout<<"===============================================================\n";
+//        
+//        ierr = VecZeroEntries(D); CHKERRQ(ierr);
+//        ierr = KSPSolve(solver,F[ics],D); CHKERRQ(ierr);
+//        ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+//        ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+//        ierr = m_field_RVE.set_global_ghost_vector("ELASTIC_PROBLEM_RVE",ROW,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+//        
+//        //----------------------------------------------------------------------------
+//        // 3.2 Calculating zeroth-order homogenized stress using volume averaging theorem
+//        //----------------------------------------------------------------------------
+//        
+//        ierr = VecZeroEntries(Stress_Homo); CHKERRQ(ierr);
+//        ElasticFE_RVELagrange_Homogenized_Stress_Periodic MyFE_RVEHomoStressPeriodic(m_field_RVE,Aij,D,F[ics],&RVE_volume, applied_strain, Stress_Homo,"DISP_RVE","Lagrange_mul_disp",field_rank);
+//        ierr = m_field_RVE.loop_finite_elements("ELASTIC_PROBLEM_RVE","Lagrange_FE",MyFE_RVEHomoStressPeriodic);  CHKERRQ(ierr);
+//        
+//        if(pcomm->rank()==0) {
+//          PetscScalar    *avec;
+//          VecGetArray(Stress_Homo, &avec);
+//          //cout<< "\nStress_Homo =\n";
+//          for(int kk=0; kk<6; kk++) {
+//            Dmat(kk,ics) = *avec;
+//            //cout.precision(15);
+//            //cout <<*avec<<endl;
+//            avec++;
+//          }
+//          VecRestoreArray(Stress_Homo,&avec);
+//        }
+//      }
+//      
+//      /*************************************************************************
+//       *
+//       *  4. FINISH
+//       *
+//       ************************************************************************/
+//      
+//      //Destroy matrices and vectors
+//      for(int ii = 0;ii<6;ii++) {
+//        ierr = VecDestroy(&F[ii]); CHKERRQ(ierr);
+//      }
+//      ierr = VecDestroy(&D); CHKERRQ(ierr);
+//      ierr = MatDestroy(&Aij); CHKERRQ(ierr);
+//      ierr = KSPDestroy(&solver); CHKERRQ(ierr);
+//      ierr = VecDestroy(&RVE_volume_Vec); CHKERRQ(ierr);
+//      ierr = VecDestroy(&Stress_Homo); CHKERRQ(ierr);
+//      
+//      PetscFunctionReturn(0);
+//    }
     
     
     // =========================================================================

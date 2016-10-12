@@ -3374,12 +3374,13 @@ namespace MoFEM {
             }
             else if ((vars_name[ivar+1].compare(0,2,"XT")==0) && (vars_name[jvar+1].compare(0,2,"XT")==0)) {
               // XT XT
+              cout<<"StressGP: "<<ivar<<"\t"<<jvar<<"\t"<<StressGP<<endl;
               double F12_XTXT = -3/8*pow(X_T*X_C*Y_T*Y_C,-2.5)*pow(X_C*Y_T*Y_C,2);
               double F1_XTXT  = 2/(X_T*X_T*X_T);
               double F11_XTXT = 2/(X_T*X_T*X_T*X_C);
               hess_lsf(ivar, jvar) = - (  F1_XTXT*StressGP(0,0)
                                  + F11_XTXT*StressGP(0,0)*StressGP(0,0)
-                                 + 2*F12_XTXT*StressGP(0,0)*(StressGP(1,1)+StressGP(2,2)));
+                                        + 2*F12_XTXT*StressGP(0,0)*(StressGP(1,1)+StressGP(2,2)));
             }
             else if (((vars_name[ivar+1].compare(0,2,"XT")==0) && (vars_name[jvar+1].compare(0,2,"XC")==0))
                      || ((vars_name[ivar+1].compare(0,2,"XC")==0) && (vars_name[jvar+1].compare(0,2,"XT")==0))) {

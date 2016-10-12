@@ -253,7 +253,8 @@ struct SORM{
     gramschmidt(A,Q);
     fliplr(Q);
     Q = trans(Q);
-    cout<<"\n"<<"Orthogonal matrix: "<<Q<<endl;
+    
+    // cout<<"\n"<<"Orthogonal matrix: "<<Q<<endl;
     
     PetscFunctionReturn(0);
   }
@@ -288,11 +289,51 @@ struct SORM{
     }
     
     Hess_G.resize(nvars,nvars); Hess_G.clear();
-    ublas::matrix<double> temp_Hess_G;
-    temp_Hess_G = prod(Hess_g,mat_dxdu);cout<<"\nHess x: "<<Hess_x<<endl;
-    Hess_G = prod(mat_dxdu,temp_Hess_G) + prod(mat_grad_g, Hess_x);
+    
+    for (int i = 0; i<nvars; i++) {
+      for (int j = 0; j<nvars; j++) {
+        if (i==j) {
+          Hess_G(i,j) = Hess_g(i,i)*dxdu(i)*dxdu(j) + grad_g(i)*Hess_x(i,j);
+        } else {
+          Hess_G(i,j) = Hess_g(i,j)*dxdu(i)*dxdu(j);
+        }
+      }
+    }
     
     PetscFunctionReturn(0);
   }
+  
+//  virtual PetscErrorCode Hessian_Matrix(ublas::vector<double> dxdu,
+//                                        ublas::vector<double> grad_g,
+//                                        ublas::matrix<double> Hess_g,
+//                                        ublas::matrix<double> &Hess_G,
+//                                        ublas::matrix<double> Hess_x) {
+//    
+//    PetscFunctionBegin;
+//    
+//    //
+//    // ddG/dudu = ddg/dxdx*(dx/du)^2 + dg/dx*(ddx/dudu)
+//    //
+//    int nvars;
+//    nvars = dxdu.size();
+//    ublas::matrix<double> mat_grad_g;
+//    ublas::matrix<double> mat_dxdu;
+//    
+//    mat_grad_g.resize(nvars,nvars); mat_grad_g.clear();
+//    mat_dxdu.resize(nvars,nvars); mat_dxdu.clear();
+//    
+//    
+//    for (int i=0; i<nvars; i++) {
+//      mat_grad_g(i,i) = grad_g(i);
+//      mat_dxdu(i,i) = dxdu(i);
+//    }
+//    
+//    Hess_G.resize(nvars,nvars); Hess_G.clear();
+//    ublas::matrix<double> temp_Hess_G;
+//    temp_Hess_G = prod(Hess_g,mat_dxdu);//cout<<"\nHess x: "<<Hess_x<<endl;
+//    Hess_G = prod(mat_dxdu,temp_Hess_G) + prod(mat_grad_g, Hess_x);
+//    
+//    PetscFunctionReturn(0);
+//  }
   
 };

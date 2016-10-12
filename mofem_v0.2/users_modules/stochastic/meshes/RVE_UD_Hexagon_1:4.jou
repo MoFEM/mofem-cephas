@@ -3,21 +3,21 @@
 cubit.cmd('new')
 
 autofactor=6; 
-cubit.cmd('brick x 1 y 1 z 1')
+cubit.cmd('brick x 1 y 1 z 0.25')
 
-cubit.cmd('cylinder height 1 rad 0.309')
+cubit.cmd('cylinder height 0.25 rad 0.309')
 cubit.cmd('move volume 2 x 0.5 y 0.5 z 0')
 
-cubit.cmd('cylinder height 1 rad 0.309')
+cubit.cmd('cylinder height 0.25 rad 0.309')
 cubit.cmd('move volume 3 x 0.5 y -0.5 z 0')
 
-cubit.cmd('cylinder height 1 rad 0.309')
+cubit.cmd('cylinder height 0.25 rad 0.309')
 cubit.cmd('move volume 4 x -0.5 y 0.5 z 0')
 
-cubit.cmd('cylinder height 1 rad 0.309')
+cubit.cmd('cylinder height 0.25 rad 0.309')
 cubit.cmd('move volume 5 x -0.5 y -0.5 z 0')
 
-cubit.cmd('cylinder height 1 rad 0.309')
+cubit.cmd('cylinder height 0.25 rad 0.309')
 
 cubit.cmd('subtract volume 2 3 4 5 6 from volume 1 keep')
 cubit.cmd('delete volume 2 3 4 5 6')

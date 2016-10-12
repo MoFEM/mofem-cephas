@@ -457,7 +457,7 @@ namespace ObosleteUsersModules {
         int gg = 0;
         
         // calculate zeroth-order displacement iduced strain/stress
-        for(;viit!=GradU_at_GaussPt.end();viit++,viit_du_r++,viit_du_s,viit_ddu++,mit++,gg++) {
+        for(;viit!=GradU_at_GaussPt.end();viit++,viit_du_r++,viit_du_s++,viit_ddu++,mit++,gg++) {
           
           
           ublas::matrix< FieldData > GradU = *viit;
@@ -482,10 +482,10 @@ namespace ObosleteUsersModules {
             //[ dU/dX1 dU/dX2 dU/dX3 ]
             //[ dV/dX1 dV/dX2 dV/dX3 ] = GradU * invH
             //[ dW/dX1 dW/dX2 dW/dX3 ]
-            GradU     = prod( GradU,    invH[gg] );
+            GradU     = prod( GradU,     invH[gg] );
             Grad_dU_r = prod( Grad_dU_r, invH[gg] );
             Grad_dU_s = prod( Grad_dU_s, invH[gg] );
-            Grad_ddU  = prod( Grad_ddU, invH[gg] );
+            Grad_ddU  = prod( Grad_ddU,  invH[gg] );
           }
           ublas::matrix< FieldData > Strain;       Strain.resize(3,3);       Strain      = 0.5*( GradU     + trans(GradU)   );
           ublas::matrix< FieldData > Strain_du_r;  Strain_du_r.resize(3,3);  Strain_du_r = 0.5*( Grad_dU_r + trans(Grad_dU_r) );

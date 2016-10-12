@@ -1224,7 +1224,7 @@ namespace MoFEM {
       boost::random::normal_distribution<> my_norm(0,1);
       
       ofstream MCIS_File;
-      MCIS_File.open("//mnt//home//Dropbox//DURACOMP_Cal//009_MoFEM//04_ReliabilityAnalysis//Result_MCIS.txt",ofstream::out);
+      MCIS_File.open("//mnt//home//Dropbox_XZ//DURACOMP_Cal//009_MoFEM//04_ReliabilityAnalysis//Result_MCIS.txt",ofstream::out);
       
       for (int imcs=1; imcs<=no_mcs; imcs++) {
         
