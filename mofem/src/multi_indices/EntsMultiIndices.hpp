@@ -338,7 +338,7 @@ struct interface_RefEntity {
  * \param ordered_non_unique EntType_mi_tag
  * \param ordered_non_unique ParentEntType_mi_tag
  * \param ordered_non_unique Composite_EntType_And_ParentEntType_mi_tag
- * \param ordered_non_unique Composite_Ent_And_ParentEntType_mi_tag
+ * \param ordered_non_unique Composite_ParentEnt_And_EntType_mi_tag
  */
 typedef multi_index_container<
   boost::shared_ptr<RefEntity>,
@@ -364,7 +364,7 @@ typedef multi_index_container<
       	const_mem_fun<RefEntity::BasicEntity,EntityType,&RefEntity::getEntType>,
       	const_mem_fun<RefEntity,EntityType,&RefEntity::getParentEntType> > >,
     ordered_non_unique<
-      tag<Composite_Ent_And_ParentEntType_mi_tag>,
+      tag<Composite_ParentEnt_And_EntType_mi_tag>,
       composite_key<
       	RefEntity,
       	const_mem_fun<RefEntity,EntityHandle,&RefEntity::getParentEnt>,

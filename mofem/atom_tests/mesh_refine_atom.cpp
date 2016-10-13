@@ -19,7 +19,7 @@ using namespace MoFEM;
 ErrorCode rval;
 PetscErrorCode ierr;
 
-static char help[] = "teting mesh refinement algorithm\n\n";
+static char help[] = "testing mesh refinement algorithm\n\n";
 
 int main(int argc, char *argv[]) {
 

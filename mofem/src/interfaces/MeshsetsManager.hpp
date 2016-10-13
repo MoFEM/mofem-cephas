@@ -3,6 +3,7 @@
 
  Interface to manage material and boundary sets
 
+ * \ingroup mofem_bc
  */
 
 /*
