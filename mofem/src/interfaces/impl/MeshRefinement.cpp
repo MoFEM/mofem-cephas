@@ -40,11 +40,11 @@
 
 #include <LoopMethods.hpp>
 #include <Interface.hpp>
-#include <MeshRefinement.hpp>
 #include <PrismInterface.hpp>
 #include <SeriesRecorder.hpp>
 #include <Core.hpp>
 
+#include <MeshRefinement.hpp>
 #include <EntityRefine.hpp>
 
 namespace MoFEM {
