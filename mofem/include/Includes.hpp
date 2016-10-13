@@ -94,6 +94,7 @@ extern "C" {
 
 #include <boost/iostreams/tee.hpp>
 #include <boost/iostreams/stream.hpp>
+#include <boost/format.hpp>
 
 //MOAB
 #include <moab/ParallelComm.hpp>
