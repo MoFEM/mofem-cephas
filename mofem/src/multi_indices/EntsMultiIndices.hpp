@@ -220,6 +220,7 @@ struct RefEntity: public BasicEntity {
   RefEntity(boost::shared_ptr<BasicEntityData> basic_data_ptr,const EntityHandle _ent);
 
   static PetscErrorCode getPatentEnt(Interface &moab,Range ents,std::vector<EntityHandle> vec_patent_ent);
+
   static PetscErrorCode getBitRefLevel(Interface &moab,Range ents,std::vector<BitRefLevel> vec_bit_ref_level);
 
   /**
@@ -267,6 +268,11 @@ struct RefEntity: public BasicEntity {
   */
   inline const BitRefLevel& getBitRefLevel() const { return *getBitRefLevelPtr(); }
 
+  /** \brief Get entity ref bit refinement as ulong
+  */
+  inline unsigned long int getBitRefLevelULong() const { return getBitRefLevel().to_ulong(); }
+
+
   friend std::ostream& operator<<(std::ostream& os,const RefEntity& e);
 
 };
@@ -289,7 +295,13 @@ struct interface_RefEntity {
 
   inline EntityHandle getParentEnt() const { return this->sPtr->getParentEnt(); }
 
-  inline const BitRefLevel& getBitRefLevel() const { return this->sPtr->getBitRefLevel(); }
+  inline const BitRefLevel& getBitRefLevel() const {
+    return this->sPtr->getBitRefLevel();
+  }
+
+  inline unsigned long int getBitRefLevelULong() const {
+    return this->sPtr->getBitRefLevelULong();
+  }
 
   inline EntityType getEntType() const { return this->sPtr->getEntType(); };
 
@@ -303,7 +315,9 @@ struct interface_RefEntity {
 
   inline int* getSharingProcsPtr() const { return this->sPtr->getSharingProcsPtr(); }
 
-  inline EntityHandle* getSharingHandlersPtr() const { return this->sPtr->getSharingHandlersPtr(); }
+  inline EntityHandle* getSharingHandlersPtr() const {
+    return this->sPtr->getSharingHandlersPtr();
+  }
 
   virtual ~interface_RefEntity() {}
 
@@ -324,7 +338,7 @@ struct interface_RefEntity {
  * \param ordered_non_unique EntType_mi_tag
  * \param ordered_non_unique ParentEntType_mi_tag
  * \param ordered_non_unique Composite_EntType_And_ParentEntType_mi_tag
- * \param ordered_non_unique Composite_Ent_And_ParentEntType_mi_tag
+ * \param ordered_non_unique Composite_ParentEnt_And_EntType_mi_tag
  */
 typedef multi_index_container<
   boost::shared_ptr<RefEntity>,
@@ -350,7 +364,7 @@ typedef multi_index_container<
       	const_mem_fun<RefEntity::BasicEntity,EntityType,&RefEntity::getEntType>,
       	const_mem_fun<RefEntity,EntityType,&RefEntity::getParentEntType> > >,
     ordered_non_unique<
-      tag<Composite_Ent_And_ParentEntType_mi_tag>,
+      tag<Composite_ParentEnt_And_EntType_mi_tag>,
       composite_key<
       	RefEntity,
       	const_mem_fun<RefEntity,EntityHandle,&RefEntity::getParentEnt>,

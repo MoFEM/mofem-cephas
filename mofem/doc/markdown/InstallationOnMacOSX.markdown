@@ -108,7 +108,7 @@ mkdir $MOFEM_INSTALL_DIR/lib
 cd $MOFEM_INSTALL_DIR/lib
 
 # Configuring and compiling code:
-cmake -DCMAKE_Fortran_COMPILER=/usr/local/bin/gfortran -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_FLAGS="-Wall"  -DCMAKE_CXX_FLAGS="-Wall -Wno-bind-to-temporary-copy -Wno-overloaded-virtual" -DPETSC_DIR=$MOFEM_INSTALL_DIR/petsc/ -DPETSC_ARCH=arch-darwin-c-opt -DMOAB_DIR=$MOFEM_INSTALL_DIR/petsc/arch-darwin-c-opt/ -DADOL-C_DIR=$MOFEM_INSTALL_DIR/local/ -DTETGEN_DIR=$MOFEM_INSTALL_DIR/tetgen1.5.0 -DCMAKE_INSTALL_PREFIX=$MOFEM_INSTALL_DIR/users_modules $MOFEM_INSTALL_DIR/mofem-cephas/mofem
+cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_FLAGS="-Wall"  -DCMAKE_CXX_FLAGS="-Wall -Wno-bind-to-temporary-copy -Wno-overloaded-virtual" -DPETSC_DIR=$MOFEM_INSTALL_DIR/petsc/ -DPETSC_ARCH=arch-darwin-c-opt -DMOAB_DIR=$MOFEM_INSTALL_DIR/petsc/arch-darwin-c-opt/ -DADOL-C_DIR=$MOFEM_INSTALL_DIR/local/ -DTETGEN_DIR=$MOFEM_INSTALL_DIR/tetgen1.5.0 -DCMAKE_INSTALL_PREFIX=$MOFEM_INSTALL_DIR/users_modules $MOFEM_INSTALL_DIR/mofem-cephas/mofem
 
 # Building code (assuming that you have computer with 4 cores):
 make -j4 install

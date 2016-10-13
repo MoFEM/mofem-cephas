@@ -199,7 +199,6 @@ PetscErrorCode NodeMergerInterface::mergeNodes(
       double quality = volume_length_quality(coords);
       min_quality0 = (min_quality0>quality) ? quality : min_quality0;
       // cerr << "min_quality0 " << min_quality0 << endl;
-
     }
     double min_quality = 1;
     for(Range::iterator tit = mother_tets.begin();tit!=mother_tets.end();tit++) {

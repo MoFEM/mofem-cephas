@@ -1,6 +1,7 @@
 /** \file MeshRefinement.hpp
  * \brief Interface for mesh refinement
  *
+ * \ingroup mofem_refiner
  */
 
 /*
