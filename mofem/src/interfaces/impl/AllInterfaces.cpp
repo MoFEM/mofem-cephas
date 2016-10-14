@@ -13,10 +13,6 @@ const static int debug = 1;
   #include "impl/TetGenInterface.cpp"
 #endif
 
-#ifdef WITH_NETGEN
-  #include "impl/NetGenInterface.cpp"
-#endif
-
 #ifdef WITH_MED
   #include "impl/MedInterface.cpp"
 #endif

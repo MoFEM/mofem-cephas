@@ -2,6 +2,8 @@
  * \brief NodeMerger interface
  *
  * Node merger interface
+ *
+ * \ingroup mofem_node_merger
  */
 
 /* MoFEM is distributed in the hope that it will be useful, but WITHOUT
@@ -22,7 +24,8 @@ namespace MoFEM {
 static const MOFEMuuid IDD_MOFEMNodeMerger = MOFEMuuid( BitIntefaceId(NODEMERGER_INTERFACE) );
 
 /** \brief merge node from two bit levels
-  * \ingroup mofem
+  *
+  * \ingroup mofem_node_merger
   */
 struct NodeMergerInterface: public UnknownInterface {
 
@@ -106,3 +109,10 @@ private:
 }
 
 #endif //__NODE_MERGER_HPP__
+
+/***************************************************************************//**
+ * \defgroup mofem_node_merger Node merger
+ * \brief Interface for node merger
+ *
+ * \ingroup mofem
+ ******************************************************************************/

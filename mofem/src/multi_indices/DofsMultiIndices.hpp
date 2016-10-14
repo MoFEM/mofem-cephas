@@ -173,7 +173,7 @@ struct NumeredDofEntity: public interface_DofEntity<DofEntity> {
 
   inline unsigned int getPart() const { return part;  }
 
-  inline bool getHasLocalIndex() const { return !signbit(petsc_local_dof_idx); }
+  inline bool getHasLocalIndex() const { return !std::signbit(petsc_local_dof_idx); }
 
   NumeredDofEntity(const boost::shared_ptr<DofEntity> _DofEntity_ptr);
   inline bool operator<(const NumeredDofEntity& _dof) const { return (UId)getGlobalUniqueId()<(UId)_dof.getGlobalUniqueId(); }

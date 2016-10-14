@@ -91,7 +91,7 @@ namespace MoFEM {
   struct Composite_mi_tag {};
   struct Composite_Unique_mi_tag {};
   struct Composite_EntType_and_ParentEntType_mi_tag {};
-  struct Composite_Ent_And_ParentEntType_mi_tag {};
+  struct Composite_ParentEnt_And_EntType_mi_tag {};
   struct Composite_ParentEnt_And_BitsOfRefinedEdges_mi_tag {};
   struct Composite_Name_And_Ent_And_EndDofIdx_mi_tag {};
   struct Composite_Name_And_Ent_mi_tag {};

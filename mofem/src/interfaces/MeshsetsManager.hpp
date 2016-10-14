@@ -3,6 +3,7 @@
 
  Interface to manage material and boundary sets
 
+ * \ingroup mofem_bc
  */
 
 /*
@@ -82,8 +83,6 @@ namespace MoFEM {
    IT!=MESHSET_MANAGER.get_meshsets_manager_ptr()->getEnd(NAME); IT++
 
   static const MOFEMuuid IDD_MOFEMMeshsetsManager = MOFEMuuid( BitIntefaceId(MESHSETSMANAGER_INTERFACE) );
-
-  struct Core;
 
   /** \brief Interface for managing meshsets containing materials and boundary conditions
    * \ingroup mofem_bc

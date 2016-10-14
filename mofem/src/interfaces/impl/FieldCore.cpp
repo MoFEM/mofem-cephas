@@ -1464,8 +1464,8 @@ PetscErrorCode Core::update_meshset_by_entities_children(
     std::cerr << moab.type_from_handle(parent) <<  " " << MBENTITYSET << std::endl;
   } CHKERRQ_MOAB(rval);
 
-  typedef RefEntity_multiIndex::index<Composite_Ent_And_ParentEntType_mi_tag>::type RefEntsByComposite;
-  RefEntsByComposite &ref_ents = refinedEntities.get<Composite_Ent_And_ParentEntType_mi_tag>();
+  typedef RefEntity_multiIndex::index<Composite_ParentEnt_And_EntType_mi_tag>::type RefEntsByComposite;
+  RefEntsByComposite &ref_ents = refinedEntities.get<Composite_ParentEnt_And_EntType_mi_tag>();
   Range::iterator eit = ents.begin();
   for(;eit!=ents.end();eit++) {
     if(verb>2) {
