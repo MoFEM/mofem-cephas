@@ -181,32 +181,6 @@ struct Core: public Interface, SeriesRecorder {
   PetscErrorCode clear_database(int verb  = -1);
   PetscErrorCode rebuild_database(int verb = -1);
 
-  PetscErrorCode get_msId_3dENTS_sides(
-    const int msId,
-    const CubitBCType cubit_bc_type,
-    const BitRefLevel mesh_bit_level,
-    const bool recursive,int verb = -1
-  );
-  PetscErrorCode get_msId_3dENTS_sides(
-    const EntityHandle SIDESET,
-    const BitRefLevel mesh_bit_level,
-    const bool recursive,int verb = -1
-  );
-  PetscErrorCode get_msId_3dENTS_split_sides(
-    const EntityHandle meshset,const BitRefLevel &bit,
-    const int msId,const CubitBCType cubit_bc_type,
-    const bool add_iterfece_entities,const bool recursive = false,int verb = -1
-  );
-  PetscErrorCode get_msId_3dENTS_split_sides(
-    const EntityHandle meshset,const BitRefLevel &bit,
-    const EntityHandle SIDESET,const bool add_iterfece_entities,const bool recursive = false,int verb = -1
-  );
-  PetscErrorCode get_msId_3dENTS_split_sides(
-    const EntityHandle meshset,const BitRefLevel &bit,
-    const BitRefLevel &inheret_from_bit_level,const BitRefLevel &inheret_from_bit_level_mask,
-    const EntityHandle SIDESET,const bool add_iterfece_entities,const bool recursive = false,int verb = -1
-  );
-
   //cubit meshsets
 
   MeshsetsManager* meshsetsManagerPtr;

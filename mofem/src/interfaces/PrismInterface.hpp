@@ -47,12 +47,24 @@ struct PrismInterface: public UnknownInterface {
     * \param mesh_bit_level add interface on bit level is bit_level = BitRefLevel.set() then add interface on all bit levels
     * \param recursive if true parent meshset is searched recursively
     */
-  virtual PetscErrorCode get_msId_3dENTS_sides(
+  virtual PetscErrorCode getSides(
     const int msId,
     const CubitBCType cubit_bc_type,
     const BitRefLevel mesh_bit_level,
     const bool recursive,int verb = -1
   );
+
+
+  /// \deprecated Use getSides instead
+  DEPRECATED inline PetscErrorCode get_msId_3dENTS_sides(
+    const int msId,
+    const CubitBCType cubit_bc_type,
+    const BitRefLevel mesh_bit_level,
+    const bool recursive,int verb = -1
+  ) {
+    return getSides(msId,cubit_bc_type,mesh_bit_level,recursive,verb);
+  }
+
 
   /** \brief create two children meshsets in the meshset containing tetrahedral on two sides of faces
    *
@@ -63,11 +75,20 @@ struct PrismInterface: public UnknownInterface {
    * After that simply iterate under all tets on one side which are adjacent to the face are found.
    * Side tets are stored in to children meshsets of the SIDESET meshset.
    */
-  virtual PetscErrorCode get_msId_3dENTS_sides(
-    const EntityHandle SIDESET,
+  virtual PetscErrorCode getSides(
+    const EntityHandle sideset,
     const BitRefLevel mesh_bit_level,
     const bool recursive,int verb = -1
   );
+
+  /// \deprecated Use getSides instead
+  DEPRECATED inline PetscErrorCode get_msId_3dENTS_sides(
+    const EntityHandle sideset,
+    const BitRefLevel mesh_bit_level,
+    const bool recursive,int verb = -1
+  ) {
+    return getSides(sideset,mesh_bit_level,recursive,verb);
+  }
 
   /**
    * \brief split nodes and other entities of tetrahedral in children sets and add prism elements
@@ -93,22 +114,40 @@ struct PrismInterface: public UnknownInterface {
    * inteface element.
    *
    */
-  virtual PetscErrorCode get_msId_3dENTS_split_sides(
+  virtual PetscErrorCode splitSides(
     const EntityHandle meshset,const BitRefLevel &bit,
     const int msId,const CubitBCType cubit_bc_type,
     const bool add_iterfece_entities,const bool recursive = false,int verb = -1
   );
+
+  /// \deprecated Use splitSides instead
+  DEPRECATED inline PetscErrorCode get_msId_3dENTS_split_sides(
+    const EntityHandle meshset,const BitRefLevel &bit,
+    const int msId,const CubitBCType cubit_bc_type,
+    const bool add_iterfece_entities,const bool recursive = false,int verb = -1
+  ) {
+    return splitSides(meshset,bit,msId,cubit_bc_type,add_iterfece_entities,recursive,verb);
+  }
 
   /**
    * \brief split nodes and other entities of tetrahedral in children sets and add prism elements
    *
    * The all new entities (prisms, tets) are added to refinement level given by bit
    */
-  virtual PetscErrorCode get_msId_3dENTS_split_sides(
+  virtual PetscErrorCode splitSides(
     const EntityHandle meshset,const BitRefLevel &bit,
-    const EntityHandle SIDESET,const bool add_iterfece_entities,
+    const EntityHandle sideset,const bool add_iterfece_entities,
     const bool recursive = false,int verb = -1
   );
+
+  inline DEPRECATED PetscErrorCode get_msId_3dENTS_split_sides(
+    const EntityHandle meshset,const BitRefLevel &bit,
+    const EntityHandle sideset,const bool add_iterfece_entities,
+    const bool recursive = false,int verb = -1
+  ) {
+    return splitSides(meshset,bit,sideset,add_iterfece_entities,recursive,verb);
+  }
+
 
   /**
    * \brief split nodes and other entities of tetrahedrons in children sets and add prism elements
@@ -126,11 +165,23 @@ struct PrismInterface: public UnknownInterface {
    * not splitting faces. Inheriting those nodes will not split faces.
    *
    */
-  virtual PetscErrorCode get_msId_3dENTS_split_sides(
+  virtual PetscErrorCode splitSides(
     const EntityHandle meshset,const BitRefLevel &bit,
     const BitRefLevel &inheret_from_bit_level,const BitRefLevel &inheret_from_bit_level_mask,
-    const EntityHandle SIDESET,const bool add_iterfece_entities,const bool recursive = false,int verb = -1
+    const EntityHandle sideset,const bool add_iterfece_entities,const bool recursive = false,int verb = -1
   );
+
+  DEPRECATED inline PetscErrorCode get_msId_3dENTS_split_sides(
+    const EntityHandle meshset,const BitRefLevel &bit,
+    const BitRefLevel &inheret_from_bit_level,const BitRefLevel &inheret_from_bit_level_mask,
+    const EntityHandle sideset,const bool add_iterfece_entities,const bool recursive = false,int verb = -1
+  ) {
+    return splitSides(
+      meshset,bit,inheret_from_bit_level,inheret_from_bit_level_mask,
+      sideset,add_iterfece_entities,recursive,verb
+    );
+  }
+
 
 };
 

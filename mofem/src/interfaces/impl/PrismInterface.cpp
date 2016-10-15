@@ -69,7 +69,7 @@ PrismInterface::PrismInterface(const MoFEM::Core &core):
 cOre(const_cast<MoFEM::Core&>(core)) {
 }
 
-PetscErrorCode PrismInterface::get_msId_3dENTS_sides(
+PetscErrorCode PrismInterface::getSides(
   const int msId,const CubitBCType cubit_bc_type,const BitRefLevel mesh_bit_level,const bool recursive,int verb
 ) {
   PetscErrorCode ierr;
@@ -81,14 +81,14 @@ PetscErrorCode PrismInterface::get_msId_3dENTS_sides(
   miit = meshsets_manager_ptr->getMeshsetsMultindex().get<Composite_Cubit_msId_And_MeshSetType_mi_tag>()
   .find(boost::make_tuple(msId,cubit_bc_type.to_ulong()));
   if(miit!=meshsets_manager_ptr->getMeshsetsMultindex().get<Composite_Cubit_msId_And_MeshSetType_mi_tag>().end()) {
-    ierr = get_msId_3dENTS_sides(miit->meshset,mesh_bit_level,recursive,verb); CHKERRQ(ierr);
+    ierr = getSides(miit->meshset,mesh_bit_level,recursive,verb); CHKERRQ(ierr);
   } else {
     SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_FOUND,"msId is not there");
   }
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode PrismInterface::get_msId_3dENTS_sides(const EntityHandle SIDESET,const BitRefLevel mesh_bit_level,const bool recursive,int verb) {
+PetscErrorCode PrismInterface::getSides(const EntityHandle SIDESET,const BitRefLevel mesh_bit_level,const bool recursive,int verb) {
   PetscErrorCode ierr;
   MoABErrorCode rval;
   MoFEM::Interface &m_field = cOre;
@@ -256,7 +256,7 @@ PetscErrorCode PrismInterface::get_msId_3dENTS_sides(const EntityHandle SIDESET,
   }
   PetscFunctionReturn(0);
 }
-PetscErrorCode PrismInterface::get_msId_3dENTS_split_sides(
+PetscErrorCode PrismInterface::splitSides(
   const EntityHandle meshset,const BitRefLevel &bit,
   const int msId,const CubitBCType cubit_bc_type,const bool add_iterfece_entities,const bool recursive,int verb
 ) {
@@ -268,26 +268,26 @@ PetscErrorCode PrismInterface::get_msId_3dENTS_split_sides(
   CubitMeshSet_multiIndex::index<Composite_Cubit_msId_And_MeshSetType_mi_tag>::type::iterator
     miit = meshsets_manager_ptr->getMeshsetsMultindex().get<Composite_Cubit_msId_And_MeshSetType_mi_tag>().find(boost::make_tuple(msId,cubit_bc_type.to_ulong()));
   if(miit!=meshsets_manager_ptr->getMeshsetsMultindex().get<Composite_Cubit_msId_And_MeshSetType_mi_tag>().end()) {
-    ierr = get_msId_3dENTS_split_sides(
+    ierr = splitSides(
       meshset,bit,miit->meshset,add_iterfece_entities,recursive,verb); CHKERRQ(ierr);
   } else {
     SETERRQ(PETSC_COMM_SELF,1,"msId is not there");
   }
   PetscFunctionReturn(0);
 }
-PetscErrorCode PrismInterface::get_msId_3dENTS_split_sides(
+PetscErrorCode PrismInterface::splitSides(
   const EntityHandle meshset,const BitRefLevel &bit,
   const EntityHandle SIDESET,const bool add_iterfece_entities,const bool recursive,
   int verb
 ) {
   PetscErrorCode ierr;
   PetscFunctionBegin;
-  ierr = get_msId_3dENTS_split_sides(meshset,bit,
+  ierr = splitSides(meshset,bit,
     BitRefLevel(),BitRefLevel(),SIDESET,add_iterfece_entities,recursive,verb
   ); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
-PetscErrorCode PrismInterface::get_msId_3dENTS_split_sides(
+PetscErrorCode PrismInterface::splitSides(
   const EntityHandle meshset,const BitRefLevel &bit,
   const BitRefLevel &inheret_from_bit_level,const BitRefLevel &inheret_from_bit_level_mask,
   const EntityHandle SIDESET,const bool add_iterfece_entities,const bool recursive,
@@ -628,15 +628,15 @@ PetscErrorCode PrismInterface::get_msId_3dENTS_split_sides(
 	      EntityHandle out_meshset;
 	      rval = moab.create_meshset(MESHSET_SET|MESHSET_TRACK_OWNER,out_meshset); CHKERRQ_MOAB(rval);
 	      rval = moab.add_entities(out_meshset,&*eit,1); CHKERRQ_MOAB(rval);
-	      rval = moab.write_file("debug_get_msId_3dENTS_split_sides.vtk","VTK","",&out_meshset,1); CHKERRQ_MOAB(rval);
+	      rval = moab.write_file("debug_splitSides.vtk","VTK","",&out_meshset,1); CHKERRQ_MOAB(rval);
 	      rval = moab.delete_entities(&out_meshset,1); CHKERRQ_MOAB(rval);
 	      rval = moab.create_meshset(MESHSET_SET|MESHSET_TRACK_OWNER,out_meshset); CHKERRQ_MOAB(rval);
 	      rval = moab.add_entities(out_meshset,side_ents3d); CHKERRQ_MOAB(rval);
-	      rval = moab.write_file("debug_get_msId_3dENTS_split_sides_side_ents3d.vtk","VTK","",&out_meshset,1); CHKERRQ_MOAB(rval);
+	      rval = moab.write_file("debug_splitSides_side_ents3d.vtk","VTK","",&out_meshset,1); CHKERRQ_MOAB(rval);
 	      rval = moab.delete_entities(&out_meshset,1); CHKERRQ_MOAB(rval);
 	      rval = moab.create_meshset(MESHSET_SET|MESHSET_TRACK_OWNER,out_meshset); CHKERRQ_MOAB(rval);
 	      rval = moab.add_entities(out_meshset,other_ents3d); CHKERRQ_MOAB(rval);
-	      rval = moab.write_file("debug_get_msId_3dENTS_split_sides_other_ents3d.vtk","VTK","",&out_meshset,1); CHKERRQ_MOAB(rval);
+	      rval = moab.write_file("debug_splitSides_other_ents3d.vtk","VTK","",&out_meshset,1); CHKERRQ_MOAB(rval);
 	      rval = moab.delete_entities(&out_meshset,1); CHKERRQ_MOAB(rval);
 	      rval = moab.create_meshset(MESHSET_SET|MESHSET_TRACK_OWNER,out_meshset); CHKERRQ_MOAB(rval);
 	      rval = moab.add_entities(out_meshset,triangles); CHKERRQ_MOAB(rval);
