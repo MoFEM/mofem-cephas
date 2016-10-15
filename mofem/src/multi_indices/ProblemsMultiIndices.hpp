@@ -55,14 +55,14 @@ struct MoFEMProblem {
     *
     */
   #define _IT_NUMEREDFEMOFEMENTITY_BY_NAME_FOR_LOOP_(MOFEMPROBLEM,NAME,IT) \
-    NumeredEntFiniteElement_multiIndex::index<FiniteElement_name_mi_tag>::type::iterator IT = MOFEMPROBLEM->getNumeredFEsBegin(NAME); \
+    NumeredEntFiniteElementbyName::iterator IT = MOFEMPROBLEM->getNumeredFEsBegin(NAME); \
     IT!=MOFEMPROBLEM->getNumeredFEsEnd(NAME); IT++
 
-  NumeredEntFiniteElement_multiIndex::index<FiniteElement_name_mi_tag>::type::iterator getNumeredFEsBegin(std::string fe_name) const {
+  NumeredEntFiniteElementbyName::iterator getNumeredFEsBegin(std::string fe_name) const {
     return numeredFiniteElements.get<FiniteElement_name_mi_tag>().lower_bound(fe_name);
   }
 
-  NumeredEntFiniteElement_multiIndex::index<FiniteElement_name_mi_tag>::type::iterator getNumeredFEsEnd(std::string fe_name) const {
+  NumeredEntFiniteElementbyName::iterator getNumeredFEsEnd(std::string fe_name) const {
     return numeredFiniteElements.get<FiniteElement_name_mi_tag>().upper_bound(fe_name);
   }
 

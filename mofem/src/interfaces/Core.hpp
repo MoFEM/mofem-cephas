@@ -643,8 +643,8 @@ struct Core: public Interface, PrismInterface, SeriesRecorder {
   DofEntityByNameAndType::iterator get_dofs_by_name_and_type_begin(const std::string &field_name,const EntityType type) const;
   DofEntityByNameAndType::iterator get_dofs_by_name_and_type_end(const std::string &field_name,const EntityType ent) const;
 
-  EntFiniteElement_multiIndex::index<FiniteElement_name_mi_tag>::type::iterator get_fe_by_name_begin(const std::string &fe_name) const;
-  EntFiniteElement_multiIndex::index<FiniteElement_name_mi_tag>::type::iterator get_fe_by_name_end(const std::string &fe_name) const;
+  EntFiniteElementbyName::iterator get_fe_by_name_begin(const std::string &fe_name) const;
+  EntFiniteElementbyName::iterator get_fe_by_name_end(const std::string &fe_name) const;
 
   //Copy field values to another field
   PetscErrorCode field_axpy(const double alpha,const std::string& fiel_name_x,const std::string& field_name_y,bool error_if_missing = false,bool creat_if_missing = false);

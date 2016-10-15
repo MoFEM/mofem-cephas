@@ -2300,7 +2300,7 @@ struct Interface: public UnknownInterface {
     *
     * \param fe_name
     */
-  virtual EntFiniteElement_multiIndex::index<FiniteElement_name_mi_tag>::type::iterator
+  virtual EntFiniteElementbyName::iterator
   get_fe_by_name_begin(const std::string &fe_name) const = 0;
 
   /**
@@ -2313,14 +2313,14 @@ struct Interface: public UnknownInterface {
     *
     * \param fe_name
     */
-  virtual EntFiniteElement_multiIndex::index<FiniteElement_name_mi_tag>::type::iterator
+  virtual EntFiniteElementbyName::iterator
   get_fe_by_name_end(const std::string &fe_name) const = 0;
 
   /** \brief loop over all finite elements from a moFEM field and FE
     * \ingroup mofem_access
     */
   #define _IT_GET_FES_BY_NAME_FOR_LOOP_(MFIELD,NAME,IT) \
-    EntFiniteElement_multiIndex::index<FiniteElement_name_mi_tag>::type::iterator IT = MFIELD.get_fe_by_name_begin(NAME); \
+    EntFiniteElementbyName::iterator IT = MFIELD.get_fe_by_name_begin(NAME); \
       IT != MFIELD.get_fe_by_name_end(NAME); IT++
 
 
