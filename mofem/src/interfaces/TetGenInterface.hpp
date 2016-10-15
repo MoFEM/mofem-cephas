@@ -3,6 +3,8 @@
  *
  * MoFEM TetGen interface
  *
+ *
+ * \ingroup mesh_tetgen
  */
 
 /*
@@ -27,7 +29,8 @@ namespace MoFEM {
 static const MOFEMuuid IDD_MOFEMTetGegInterface = MOFEMuuid( BitIntefaceId(TETGEN_INTERFACE) );
 
 /** \brief use TetGen to generate mesh
-  * \ingroup mofem
+
+  * \ingroup mesh_tetgen
   */
 struct TetGenInterface: public UnknownInterface {
 
@@ -206,3 +209,10 @@ struct TetGenInterface: public UnknownInterface {
 }
 
 #endif //__TETGENINTERFACE_HPP__
+
+/***************************************************************************//**
+ * \defgroup mesh_tetgen TetGen interface
+ * \brief Interface to run TetGen
+ *
+ * \ingroup mofem
+ ******************************************************************************/
