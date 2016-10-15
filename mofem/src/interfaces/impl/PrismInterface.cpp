@@ -1,7 +1,6 @@
 /** \file PrismInterfaceCore.cpp
  & \brief Inserting prims interface elements
  * \todo FIXME this is no so good implementation
- * \todo Such functionality should be moved to independent interface
  */
 
 /* MoFEM is free software: you can redistribute it and/or modify it under
@@ -43,43 +42,73 @@
 
 #include <LoopMethods.hpp>
 #include <Interface.hpp>
-#include <MeshRefinement.hpp>
-#include <PrismInterface.hpp>
 #include <SeriesRecorder.hpp>
 #include <Core.hpp>
 
+#include <PrismInterface.hpp>
+#include <MeshsetsManager.hpp>
+
 namespace MoFEM {
 
-PetscErrorCode Core::get_msId_3dENTS_sides(const int msId,const CubitBCType cubit_bc_type,const BitRefLevel mesh_bit_level,const bool recursive,int verb) {
+PetscErrorCode PrismInterface::queryInterface(const MOFEMuuid& uuid, UnknownInterface** iface) {
   PetscFunctionBegin;
-  if(verb==-1) verb = verbose;
+  *iface = NULL;
+  if(uuid == IDD_MOFEMPrismInterface) {
+    *iface = dynamic_cast<PrismInterface*>(this);
+    PetscFunctionReturn(0);
+  }
+  if(uuid == IDD_MOFEMUnknown) {
+    *iface = dynamic_cast<UnknownInterface*>(this);
+    PetscFunctionReturn(0);
+  }
+  SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"unknown interface");
+  PetscFunctionReturn(0);
+}
+
+PrismInterface::PrismInterface(const MoFEM::Core &core):
+cOre(const_cast<MoFEM::Core&>(core)) {
+}
+
+PetscErrorCode PrismInterface::get_msId_3dENTS_sides(
+  const int msId,const CubitBCType cubit_bc_type,const BitRefLevel mesh_bit_level,const bool recursive,int verb
+) {
+  PetscErrorCode ierr;
+  MoFEM::Interface &m_field = cOre;
+  MeshsetsManager *meshsets_manager_ptr;
+  PetscFunctionBegin;
+  ierr = m_field.query_interface(meshsets_manager_ptr); CHKERRQ(ierr);
   CubitMeshSet_multiIndex::index<Composite_Cubit_msId_And_MeshSetType_mi_tag>::type::iterator
-    miit = meshsetsManagerPtr->getMeshsetsMultindex().get<Composite_Cubit_msId_And_MeshSetType_mi_tag>().find(boost::make_tuple(msId,cubit_bc_type.to_ulong()));
-  if(miit!=meshsetsManagerPtr->getMeshsetsMultindex().get<Composite_Cubit_msId_And_MeshSetType_mi_tag>().end()) {
-    ierr = Core::get_msId_3dENTS_sides(miit->meshset,mesh_bit_level,recursive,verb); CHKERRQ(ierr);
+  miit = meshsets_manager_ptr->getMeshsetsMultindex().get<Composite_Cubit_msId_And_MeshSetType_mi_tag>()
+  .find(boost::make_tuple(msId,cubit_bc_type.to_ulong()));
+  if(miit!=meshsets_manager_ptr->getMeshsetsMultindex().get<Composite_Cubit_msId_And_MeshSetType_mi_tag>().end()) {
+    ierr = get_msId_3dENTS_sides(miit->meshset,mesh_bit_level,recursive,verb); CHKERRQ(ierr);
   } else {
     SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_FOUND,"msId is not there");
   }
   PetscFunctionReturn(0);
 }
-PetscErrorCode Core::get_msId_3dENTS_sides(const EntityHandle SIDESET,const BitRefLevel mesh_bit_level,const bool recursive,int verb) {
+
+PetscErrorCode PrismInterface::get_msId_3dENTS_sides(const EntityHandle SIDESET,const BitRefLevel mesh_bit_level,const bool recursive,int verb) {
+  PetscErrorCode ierr;
+  MoABErrorCode rval;
+  MoFEM::Interface &m_field = cOre;
+  moab::Interface &moab = m_field.get_moab();
   PetscFunctionBegin;
-  if(verb==-1) verb = verbose;
   Range mesh_level_ents3d,mesh_level_ents3d_tris;
   Range mesh_level_tris;
   Range mesh_level_edges;
   Range mesh_level_nodes;
   if(mesh_bit_level.any()) {
-    ierr = get_entities_by_type_and_ref_level(mesh_bit_level,BitRefLevel().set(),MBTET,mesh_level_ents3d); CHKERRQ(ierr);
-    ierr = get_entities_by_type_and_ref_level(mesh_bit_level,BitRefLevel().set(),MBTRI,mesh_level_tris); CHKERRQ(ierr);
-    ierr = get_entities_by_type_and_ref_level(mesh_bit_level,BitRefLevel().set(),MBEDGE,mesh_level_edges); CHKERRQ(ierr);
-    ierr = get_entities_by_type_and_ref_level(mesh_bit_level,BitRefLevel().set(),MBVERTEX,mesh_level_nodes); CHKERRQ(ierr);
+    ierr = m_field.get_entities_by_type_and_ref_level(mesh_bit_level,BitRefLevel().set(),MBTET,mesh_level_ents3d); CHKERRQ(ierr);
+    ierr = m_field.get_entities_by_type_and_ref_level(mesh_bit_level,BitRefLevel().set(),MBTRI,mesh_level_tris); CHKERRQ(ierr);
+    ierr = m_field.get_entities_by_type_and_ref_level(mesh_bit_level,BitRefLevel().set(),MBEDGE,mesh_level_edges); CHKERRQ(ierr);
+    ierr = m_field.get_entities_by_type_and_ref_level(mesh_bit_level,BitRefLevel().set(),MBVERTEX,mesh_level_nodes); CHKERRQ(ierr);
     rval = moab.get_adjacencies(mesh_level_ents3d,2,false,mesh_level_ents3d_tris,moab::Interface::UNION); CHKERRQ_MOAB(rval);
 
   }
   Range mesh_level_prisms;
   if(mesh_bit_level.any()) {
-    ierr = get_entities_by_type_and_ref_level(mesh_bit_level,BitRefLevel().set(),MBPRISM,mesh_level_prisms); CHKERRQ(ierr);
+    ierr = m_field.get_entities_by_type_and_ref_level(mesh_bit_level,BitRefLevel().set(),MBPRISM,mesh_level_prisms); CHKERRQ(ierr);
     mesh_level_ents3d.merge(mesh_level_prisms);
   }
   Skinner skin(&moab);
@@ -90,7 +119,7 @@ PetscErrorCode Core::get_msId_3dENTS_sides(const EntityHandle SIDESET,const BitR
     triangles = intersect(triangles,mesh_level_ents3d_tris);
   }
   if(verb>1) {
-    PetscPrintf(comm,"Nb. of triangles in set %u\n",triangles.size());
+    PetscPrintf(m_field.get_comm(),"Nb. of triangles in set %u\n",triangles.size());
   }
   //get nodes, edges and 3d ents (i.e. tets and prisms)
   Range nodes; // nodes from triangles
@@ -107,14 +136,14 @@ PetscErrorCode Core::get_msId_3dENTS_sides(const EntityHandle SIDESET,const BitR
   //take skin edges (boundary of surface if there is any)
   Range skin_edges_boundary; //skin edges from triangles
   rval = skin.find_skin(0,triangles,false,skin_edges_boundary); CHKERR_MOAB(rval);
-  if(verb>3) PetscPrintf(comm,"skin_edges_boundary %u\n",skin_edges_boundary.size());
+  if(verb>3) PetscPrintf(m_field.get_comm(),"skin_edges_boundary %u\n",skin_edges_boundary.size());
   //take all edges on skin faces (i.e. skin surface)
   Range skin_faces_edges; //edges from skin faces of 3d ents
   rval = moab.get_adjacencies(skin_faces,1,false,skin_faces_edges,moab::Interface::UNION); CHKERRQ_MOAB(rval);
   if(mesh_bit_level.any()) {
     skin_faces_edges = intersect(skin_faces_edges,mesh_level_edges);
   }
-  if(verb>3) PetscPrintf(comm,"skin_faces_edges %u\n",skin_faces_edges.size());
+  if(verb>3) PetscPrintf(m_field.get_comm(),"skin_faces_edges %u\n",skin_faces_edges.size());
   //note: that skin faces edges do not contain internal boundary
   //note: that prisms are not included in ents3d, so if ents3d have border with other inteface is like external boundary
   //skin edges boundary are internal edge <- skin_faces_edges contains edges which are on the body boundary <- that is the trick
@@ -134,7 +163,7 @@ PetscErrorCode Core::get_msId_3dENTS_sides(const EntityHandle SIDESET,const BitR
     rval = moab.write_file("skin_edges_boundary.vtk","VTK","",&out_meshset,1); CHKERRQ_MOAB(rval);
     rval = moab.delete_entities(&out_meshset,1); CHKERRQ_MOAB(rval);
   }
-  if(verb>3) PetscPrintf(comm,"subtract skin_edges_boundary %u\n",skin_edges_boundary.size());
+  if(verb>3) PetscPrintf(m_field.get_comm(),"subtract skin_edges_boundary %u\n",skin_edges_boundary.size());
   //Get nodes on boundary edge
   Range skin_nodes_boundary;
   rval = moab.get_connectivity(skin_edges_boundary,skin_nodes_boundary,true); CHKERRQ_MOAB(rval);
@@ -142,10 +171,10 @@ PetscErrorCode Core::get_msId_3dENTS_sides(const EntityHandle SIDESET,const BitR
   Range prisms_nodes;
   rval = moab.get_connectivity(ents3d_with_prisms.subset_by_type(MBPRISM),prisms_nodes,true); CHKERRQ_MOAB(rval);
   skin_nodes_boundary = subtract(skin_nodes_boundary,prisms_nodes);
-  if(verb>3) PetscPrintf(comm,"subtract skin_nodes_boundary %u\n",skin_nodes_boundary.size());
+  if(verb>3) PetscPrintf(m_field.get_comm(),"subtract skin_nodes_boundary %u\n",skin_nodes_boundary.size());
   //use nodes on body boundary and interface (without internal boundary) to find adjacent tets
   Range nodes_without_front = subtract(nodes,skin_nodes_boundary); // nodes_without_front adjacent to all splitted face edges except those on internal edge
-  if(verb>3) PetscPrintf(comm,"adj. node if ents3d but not on the internal edge %u\n",nodes_without_front.size());
+  if(verb>3) PetscPrintf(m_field.get_comm(),"adj. node if ents3d but not on the internal edge %u\n",nodes_without_front.size());
   //ents3 that are adjacent to front nodes on splitted faces but not those which are on the front nodes on internal edgea
   ents3d.clear();
   ents3d_with_prisms.clear();
@@ -154,14 +183,14 @@ PetscErrorCode Core::get_msId_3dENTS_sides(const EntityHandle SIDESET,const BitR
     ents3d_with_prisms = intersect(ents3d_with_prisms,mesh_level_ents3d);
   }
   ents3d = ents3d_with_prisms.subset_by_type(MBTET);
-  if(verb>3) PetscPrintf(comm,"adj. ents3d to fornt nodes %u\n",ents3d.size());
+  if(verb>3) PetscPrintf(m_field.get_comm(),"adj. ents3d to fornt nodes %u\n",ents3d.size());
   Range side_ents3d;
   unsigned int nb_side_ents3d = side_ents3d.size();
   side_ents3d.insert(*ents3d.begin());
   do {
     Range adj_tris,adj_ents3d;
     nb_side_ents3d = side_ents3d.size();
-    if(verb>2) PetscPrintf(comm,"nb_side_ents3d %u\n",nb_side_ents3d);
+    if(verb>2) PetscPrintf(m_field.get_comm(),"nb_side_ents3d %u\n",nb_side_ents3d);
     //get faces
     rval = moab.get_adjacencies(side_ents3d.subset_by_type(MBTET),2,false,adj_tris,moab::Interface::UNION); CHKERRQ_MOAB(rval);
     if(mesh_bit_level.any()) {
@@ -169,12 +198,12 @@ PetscErrorCode Core::get_msId_3dENTS_sides(const EntityHandle SIDESET,const BitR
     }
     //subtrace from faces interface
     adj_tris = subtract(adj_tris,triangles);
-    if(verb>2) PetscPrintf(comm,"adj_tris %u\n",adj_tris.size());
+    if(verb>2) PetscPrintf(m_field.get_comm(),"adj_tris %u\n",adj_tris.size());
     //get tets adjacent to faces
     rval = moab.get_adjacencies(adj_tris,3,true,adj_ents3d,moab::Interface::UNION); CHKERRQ_MOAB(rval);
     //intersect tets with tets adjacent to inetface
     adj_ents3d = intersect(adj_ents3d,ents3d_with_prisms);
-    if(verb>2) PetscPrintf(comm,"adj_ents3d %u\n",adj_ents3d.size());
+    if(verb>2) PetscPrintf(m_field.get_comm(),"adj_ents3d %u\n",adj_ents3d.size());
     //add tets to side
     side_ents3d.insert(adj_ents3d.begin(),adj_ents3d.end());
   } while (nb_side_ents3d != side_ents3d.size());
@@ -217,9 +246,9 @@ PetscErrorCode Core::get_msId_3dENTS_sides(const EntityHandle SIDESET,const BitR
   rval = moab.add_entities(child_nodes_and_skin_edges,nodes_without_front); CHKERRQ_MOAB(rval);
   rval = moab.add_entities(child_nodes_and_skin_edges,skin_edges_boundary); CHKERRQ_MOAB(rval);
   if(verb>1) {
-    PetscPrintf(comm,"Nb. of side ents3d in set %u\n",side_ents3d.size());
-    PetscPrintf(comm,"Nb. of other side ents3d in set %u\n",other_side.size());
-    PetscPrintf(comm,"Nb. of boudary edges %u\n",skin_edges_boundary.size());
+    PetscPrintf(m_field.get_comm(),"Nb. of side ents3d in set %u\n",side_ents3d.size());
+    PetscPrintf(m_field.get_comm(),"Nb. of other side ents3d in set %u\n",other_side.size());
+    PetscPrintf(m_field.get_comm(),"Nb. of boudary edges %u\n",skin_edges_boundary.size());
   }
   if(verb>3) {
     ierr = moab.write_file("side.vtk","VTK","",&children[0],1); CHKERRQ(ierr);
@@ -227,37 +256,48 @@ PetscErrorCode Core::get_msId_3dENTS_sides(const EntityHandle SIDESET,const BitR
   }
   PetscFunctionReturn(0);
 }
-PetscErrorCode Core::get_msId_3dENTS_split_sides(
+PetscErrorCode PrismInterface::get_msId_3dENTS_split_sides(
   const EntityHandle meshset,const BitRefLevel &bit,
-  const int msId,const CubitBCType cubit_bc_type,const bool add_iterfece_entities,const bool recursive,int verb) {
+  const int msId,const CubitBCType cubit_bc_type,const bool add_iterfece_entities,const bool recursive,int verb
+) {
+  PetscErrorCode ierr;
+  MoFEM::Interface &m_field = cOre;
+  MeshsetsManager *meshsets_manager_ptr;
   PetscFunctionBegin;
-  if(verb==-1) verb = verbose;
+  ierr = m_field.query_interface(meshsets_manager_ptr); CHKERRQ(ierr);
   CubitMeshSet_multiIndex::index<Composite_Cubit_msId_And_MeshSetType_mi_tag>::type::iterator
-    miit = meshsetsManagerPtr->getMeshsetsMultindex().get<Composite_Cubit_msId_And_MeshSetType_mi_tag>().find(boost::make_tuple(msId,cubit_bc_type.to_ulong()));
-  if(miit!=meshsetsManagerPtr->getMeshsetsMultindex().get<Composite_Cubit_msId_And_MeshSetType_mi_tag>().end()) {
-    ierr = Core::get_msId_3dENTS_split_sides(
+    miit = meshsets_manager_ptr->getMeshsetsMultindex().get<Composite_Cubit_msId_And_MeshSetType_mi_tag>().find(boost::make_tuple(msId,cubit_bc_type.to_ulong()));
+  if(miit!=meshsets_manager_ptr->getMeshsetsMultindex().get<Composite_Cubit_msId_And_MeshSetType_mi_tag>().end()) {
+    ierr = get_msId_3dENTS_split_sides(
       meshset,bit,miit->meshset,add_iterfece_entities,recursive,verb); CHKERRQ(ierr);
   } else {
     SETERRQ(PETSC_COMM_SELF,1,"msId is not there");
   }
   PetscFunctionReturn(0);
 }
-PetscErrorCode Core::get_msId_3dENTS_split_sides(
+PetscErrorCode PrismInterface::get_msId_3dENTS_split_sides(
   const EntityHandle meshset,const BitRefLevel &bit,
   const EntityHandle SIDESET,const bool add_iterfece_entities,const bool recursive,
-  int verb) {
+  int verb
+) {
+  PetscErrorCode ierr;
   PetscFunctionBegin;
   ierr = get_msId_3dENTS_split_sides(meshset,bit,
-    BitRefLevel(),BitRefLevel(),SIDESET,add_iterfece_entities,recursive,verb); CHKERRQ(ierr);
+    BitRefLevel(),BitRefLevel(),SIDESET,add_iterfece_entities,recursive,verb
+  ); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
-PetscErrorCode Core::get_msId_3dENTS_split_sides(
+PetscErrorCode PrismInterface::get_msId_3dENTS_split_sides(
   const EntityHandle meshset,const BitRefLevel &bit,
   const BitRefLevel &inheret_from_bit_level,const BitRefLevel &inheret_from_bit_level_mask,
   const EntityHandle SIDESET,const bool add_iterfece_entities,const bool recursive,
-  int verb) {
+  int verb
+) {
+  PetscErrorCode ierr;
+  MoABErrorCode rval;
+  MoFEM::Interface &m_field = cOre;
+  moab::Interface &moab = m_field.get_moab();
   PetscFunctionBegin;
-  if(verb==-1) verb = verbose;
   std::vector<EntityHandle> children;
   //get children meshsets
   rval = moab.get_child_meshsets(SIDESET,children);  CHKERRQ_MOAB(rval);
@@ -287,19 +327,24 @@ PetscErrorCode Core::get_msId_3dENTS_split_sides(
   other_ents3d = intersect(meshset_3d_ents,other_ents3d);
   triangles = intersect(meshset_2d_ents,triangles);
   if(verb>3) {
-    PetscPrintf(comm,"triangles %u\n",triangles.size());
-    PetscPrintf(comm,"side_ents3d %u\n",side_ents3d.size());
-    PetscPrintf(comm,"nodes %u\n",nodes.size());
+    PetscPrintf(m_field.get_comm(),"triangles %u\n",triangles.size());
+    PetscPrintf(m_field.get_comm(),"side_ents3d %u\n",side_ents3d.size());
+    PetscPrintf(m_field.get_comm(),"nodes %u\n",nodes.size());
   }
-  typedef RefEntity_multiIndex::index<Ent_mi_tag>::type ref_ents_by_ent_type;
-  typedef RefEntity_multiIndex::index<Composite_EntType_and_ParentEntType_mi_tag>::type ref_ents_by_composite;
-  ref_ents_by_ent_type &ref_ents_by_ent = refinedEntities.get<Ent_mi_tag>();
+
+  const RefEntity_multiIndex *refined_ents_ptr;
+  ierr = m_field.get_ref_ents(&refined_ents_ptr); CHKERRQ(ierr);
+  typedef RefEntity_multiIndex::index<Ent_mi_tag>::type RefEntsByEntType;
+  const RefEntsByEntType &ref_ents_by_type = refined_ents_ptr->get<Ent_mi_tag>();
   RefEntity_multiIndex_view_by_parent_entity ref_parent_ents_view;
   //create view index by parent entity
   {
-    ref_ents_by_composite &ref_ents = refinedEntities.get<Composite_EntType_and_ParentEntType_mi_tag>();
-    ref_ents_by_composite::iterator miit;
-    ref_ents_by_composite::iterator hi_miit;
+    typedef RefEntity_multiIndex::index<Composite_EntType_and_ParentEntType_mi_tag>::type RefEntsByComposite;
+    const RefEntsByComposite &ref_ents =
+    refined_ents_ptr->get<Composite_EntType_and_ParentEntType_mi_tag>();
+
+    RefEntsByComposite::iterator miit;
+    RefEntsByComposite::iterator hi_miit;
     //view by parent type (VERTEX)
     miit = ref_ents.lower_bound(boost::make_tuple(MBVERTEX,MBVERTEX));
     hi_miit = ref_ents.upper_bound(boost::make_tuple(MBVERTEX,MBVERTEX));
@@ -319,14 +364,14 @@ PetscErrorCode Core::get_msId_3dENTS_split_sides(
   std::map<
     EntityHandle, /*node on "mather" side*/
     EntityHandle /*node on "father" side*/
-    > map_nodes;
+  > map_nodes;
   //add new nodes on interface and create map
   Range::iterator nit = nodes.begin();
   double coord[3];
   for(;nit!=nodes.end();nit++) {
     //find ref enet
-    ref_ents_by_ent_type::iterator miit_ref_ent = ref_ents_by_ent.find(*nit);
-    if(miit_ref_ent == ref_ents_by_ent.end()) {
+    RefEntsByEntType::iterator miit_ref_ent = ref_ents_by_type.find(*nit);
+    if(miit_ref_ent == ref_ents_by_type.end()) {
       SETERRQ(PETSC_COMM_SELF,1,"can not find node in MoFEM database");
     }
     EntityHandle child_entity = 0;
@@ -334,7 +379,7 @@ PetscErrorCode Core::get_msId_3dENTS_split_sides(
     RefEntity_multiIndex_view_by_parent_entity::iterator child_iit;
     child_iit = ref_parent_ents_view.find(*nit);
     if(child_iit != ref_parent_ents_view.end()) {
-      child_it = refinedEntities.find((*child_iit)->getRefEnt());
+      child_it = refined_ents_ptr->find((*child_iit)->getRefEnt());
       BitRefLevel bit_child = (*child_it)->getBitRefLevel();
       if( (inheret_from_bit_level&bit_child).none() ) {
         SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
@@ -350,22 +395,27 @@ PetscErrorCode Core::get_msId_3dENTS_split_sides(
       map_nodes[*nit] = new_node;
       //create new node on "father" side
       //parent is node on "mather" side
-      rval = moab.tag_set_data(th_RefParentHandle,&new_node,1,&*nit); CHKERRQ_MOAB(rval);
-      std::pair<RefEntity_multiIndex::iterator,bool> p_ref_ent = refinedEntities.insert(
-        boost::shared_ptr<RefEntity>(new RefEntity(basicEntityDataPtr,new_node))
+      rval = moab.tag_set_data(cOre.get_th_RefParentHandle(),&new_node,1,&*nit); CHKERRQ_MOAB(rval);
+      std::pair<RefEntity_multiIndex::iterator,bool> p_ref_ent =
+      const_cast<RefEntity_multiIndex*>(refined_ents_ptr)->insert(
+        boost::shared_ptr<RefEntity>
+        (new RefEntity(m_field.get_basic_entity_data_ptr(),new_node))
       );
       //set ref bit level to node on "father" side
-      success = refinedEntities.modify(p_ref_ent.first,RefEntity_change_add_bit(bit));
-      if(!success) SETERRQ(PETSC_COMM_SELF,1,"modification unsucceeded");
+      success = const_cast<RefEntity_multiIndex*>(refined_ents_ptr)->
+      modify(p_ref_ent.first,RefEntity_change_add_bit(bit));
+      if(!success) SETERRQ(m_field.get_comm(),MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
     } else {
       map_nodes[*nit] = child_entity;
       //set ref bit level to node on "father" side
-      success = refinedEntities.modify(child_it,RefEntity_change_add_bit(bit));
-      if(!success) SETERRQ(PETSC_COMM_SELF,1,"modification unsucceeded");
+      success = const_cast<RefEntity_multiIndex*>(refined_ents_ptr)->
+      modify(child_it,RefEntity_change_add_bit(bit));
+      if(!success) SETERRQ(m_field.get_comm(),MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
     }
     //set ref bit level to node on "mather" side
-    success = refinedEntities.modify(miit_ref_ent,RefEntity_change_add_bit(bit));
-    if(!success) SETERRQ(PETSC_COMM_SELF,1,"modification unsucceeded");
+    success = const_cast<RefEntity_multiIndex*>(refined_ents_ptr)->
+    modify(miit_ref_ent,RefEntity_change_add_bit(bit));
+    if(!success) SETERRQ(m_field.get_comm(),MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
   }
   //crete meshset for new mesh bit level
   EntityHandle meshset_for_bit_level;
@@ -385,8 +435,10 @@ PetscErrorCode Core::get_msId_3dENTS_split_sides(
   Range new_3d_ents;
   Range::iterator eit3d = side_ents3d.begin();
   for(;eit3d!=side_ents3d.end();eit3d++) {
-    ref_ents_by_ent_type::iterator miit_ref_ent = ref_ents_by_ent.find(*eit3d);
-    if(miit_ref_ent==ref_ents_by_ent.end()) SETERRQ(PETSC_COMM_SELF,1,"tet not in database");
+    RefEntsByEntType::iterator miit_ref_ent = ref_ents_by_type.find(*eit3d);
+    if(miit_ref_ent==ref_ents_by_type.end()) {
+      SETERRQ(m_field.get_comm(),MOFEM_OPERATION_UNSUCCESSFUL,"tet not in database");
+    }
     int num_nodes;
     const EntityHandle* conn;
     rval = moab.get_connectivity(*eit3d,conn,num_nodes,true); CHKERRQ_MOAB(rval);
@@ -399,7 +451,7 @@ PetscErrorCode Core::get_msId_3dENTS_split_sides(
         new_conn[ii] = mit->second;
         nb_new_conn++;
         if(verb>6) {
-          PetscPrintf(comm,"nodes %u -> %d\n",conn[ii],new_conn[ii]);
+          PetscPrintf(m_field.get_comm(),"nodes %u -> %d\n",conn[ii],new_conn[ii]);
         }
       } else {
         new_conn[ii] = conn[ii];
@@ -416,12 +468,16 @@ PetscErrorCode Core::get_msId_3dENTS_split_sides(
       }
       SETERRQ1(PETSC_COMM_SELF,1,"database inconsistency, in side_ent3 is a tet which has no common node with interface, num_nodes = %d",num_nodes);
     }
-    //here is created new or prism is on inteface
+
+    const RefElement_multiIndex *refined_finite_elements_ptr;
+    ierr = m_field.get_ref_finite_elements(&refined_finite_elements_ptr); CHKERRQ(ierr);
+
+    //here is created new or prism is on interface
     EntityHandle existing_ent = 0;
     /* check if tet element whith new connectivity is in database*/
     RefElement_multiIndex::index<Ent_Ent_mi_tag>::type::iterator child_iit,hi_child_iit;
-    child_iit = refinedFiniteElements.get<Ent_Ent_mi_tag>().lower_bound(*eit3d);
-    hi_child_iit = refinedFiniteElements.get<Ent_Ent_mi_tag>().upper_bound(*eit3d);
+    child_iit = refined_finite_elements_ptr->get<Ent_Ent_mi_tag>().lower_bound(*eit3d);
+    hi_child_iit = refined_finite_elements_ptr->get<Ent_Ent_mi_tag>().upper_bound(*eit3d);
     for(;child_iit!=hi_child_iit;child_iit++) {
       const EntityHandle* conn_ref_tet;
       rval = moab.get_connectivity(child_iit->getRefEnt(),conn_ref_tet,num_nodes,true); CHKERRQ_MOAB(rval);
@@ -433,30 +489,30 @@ PetscErrorCode Core::get_msId_3dENTS_split_sides(
       }
       if(nn == num_nodes) {
         if(existing_ent != 0) {
-          SETERRQ(PETSC_COMM_SELF,1,"database inconsistency");
+          SETERRQ(m_field.get_comm(),MOFEM_DATA_INCONSISTENCY,"database inconsistency");
         }
         existing_ent = child_iit->getRefEnt();
       }
     }
     switch (moab.type_from_handle(*eit3d)) {
       case MBTET: {
-        ref_ents_by_ent_type::iterator child_it;
+        RefEntsByEntType::iterator child_it;
         EntityHandle tet;
         if(existing_ent == 0) {
           Range new_conn_tet;
           rval = moab.get_adjacencies(new_conn,4,3,false,new_conn_tet); CHKERR_MOAB(rval);
           if(new_conn_tet.empty()) {
             rval = moab.create_element(MBTET,new_conn,4,tet); CHKERRQ_MOAB(rval);
-            rval = moab.tag_set_data(th_RefParentHandle,&tet,1,&*eit3d); CHKERRQ_MOAB(rval);
+            rval = moab.tag_set_data(cOre.get_th_RefParentHandle(),&tet,1,&*eit3d); CHKERRQ_MOAB(rval);
           } else {
             RefElement_multiIndex::index<Ent_mi_tag>::type::iterator rit,new_rit;
-            rit = refinedFiniteElements.get<Ent_mi_tag>().find(*eit3d);
-            if(rit==refinedFiniteElements.get<Ent_mi_tag>().end()) {
-              SETERRQ(PETSC_COMM_SELF,1,"can't find this in database");
+            rit = refined_finite_elements_ptr->get<Ent_mi_tag>().find(*eit3d);
+            if(rit==refined_finite_elements_ptr->get<Ent_mi_tag>().end()) {
+              SETERRQ(m_field.get_comm(),MOFEM_DATA_INCONSISTENCY,"can't find this in database");
             }
-            new_rit  = refinedFiniteElements.get<Ent_mi_tag>().find(*new_conn_tet.begin());
-            if(new_rit==refinedFiniteElements.get<Ent_mi_tag>().end()) {
-              SETERRQ(PETSC_COMM_SELF,1,"can't find this in database");
+            new_rit  = refined_finite_elements_ptr->get<Ent_mi_tag>().find(*new_conn_tet.begin());
+            if(new_rit==refined_finite_elements_ptr->get<Ent_mi_tag>().end()) {
+              SETERRQ(m_field.get_comm(),MOFEM_DATA_INCONSISTENCY,"can't find this in database");
             }
             tet = *new_conn_tet.begin();
             /*std::ostringstream ss;
@@ -479,16 +535,16 @@ PetscErrorCode Core::get_msId_3dENTS_split_sides(
       case MBPRISM: {
         EntityHandle prism;
         if(verb>3) {
-          PetscPrintf(comm,"prims nb_new_nodes %d\n",nb_new_conn);
+          PetscPrintf(m_field.get_comm(),"prims nb_new_nodes %d\n",nb_new_conn);
         }
         if(existing_ent == 0) {
           Range new_conn_prism;
           rval = moab.get_adjacencies(new_conn,6,3,false,new_conn_prism); CHKERR_MOAB(rval);
           if(new_conn_prism.empty()) {
             rval = moab.create_element(MBPRISM,new_conn,6,prism); CHKERRQ_MOAB(rval);
-            rval = moab.tag_set_data(th_RefParentHandle,&prism,1,&*eit3d); CHKERRQ_MOAB(rval);
+            rval = moab.tag_set_data(cOre.get_th_RefParentHandle(),&prism,1,&*eit3d); CHKERRQ_MOAB(rval);
           } else {
-            SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
+            SETERRQ(m_field.get_comm(),MOFEM_DATA_INCONSISTENCY,"data inconsistency");
           }
         } else {
           prism = existing_ent;
@@ -498,7 +554,7 @@ PetscErrorCode Core::get_msId_3dENTS_split_sides(
         new_3d_ents.insert(prism);
       } break;
       default:
-      SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+      SETERRQ(m_field.get_comm(),MOFEM_DATA_INCONSISTENCY,"not implemented");
     }
   }
   Range new_ents;
@@ -526,18 +582,18 @@ PetscErrorCode Core::get_msId_3dENTS_split_sides(
     for(;ii<num_nodes; ii++) {
       std::map<EntityHandle,EntityHandle>::iterator mit = map_nodes.find(conn[ii]);
       if(mit != map_nodes.end()) {
-	new_conn[ii] = mit->second;
-	nb_new_conn++;
-	if(verb>6) {
-	  PetscPrintf(comm,"nodes %u -> %d\n",conn[ii],new_conn[ii]);
-	}
+        new_conn[ii] = mit->second;
+        nb_new_conn++;
+        if(verb>6) {
+          PetscPrintf(m_field.get_comm(),"nodes %u -> %d\n",conn[ii],new_conn[ii]);
+        }
       } else {
-	new_conn[ii] = conn[ii];
+        new_conn[ii] = conn[ii];
       }
     }
     if(nb_new_conn==0) continue;
-    ref_ents_by_ent_type::iterator miit_ref_ent = ref_ents_by_ent.find(*eit);
-    if(miit_ref_ent == ref_ents_by_ent.end()) {
+    RefEntsByEntType::iterator miit_ref_ent = ref_ents_by_type.find(*eit);
+    if(miit_ref_ent == ref_ents_by_type.end()) {
       SETERRQ(PETSC_COMM_SELF,1,"this entity (edge or tri) should be already in database");
     }
     Range new_ent; //contains all entities (edges or triangles) added to mofem database
@@ -548,7 +604,7 @@ PetscErrorCode Core::get_msId_3dENTS_split_sides(
 	  if(new_ent.size() != 1) SETERRQ(PETSC_COMM_SELF,1,"this tri should be in moab database");
 	  int new_side = 1;
 	  rval = moab.tag_set_data(th_interface_side,&*new_ent.begin(),1,&new_side); CHKERRQ_MOAB(rval);
-	  if(verb>3) PetscPrintf(comm,"new_ent %u\n",new_ent.size());
+	  if(verb>3) PetscPrintf(m_field.get_comm(),"new_ent %u\n",new_ent.size());
 	  //add prism element
 	  if(add_iterfece_entities) {
 	    if(inheret_from_bit_level.any()) {
@@ -561,14 +617,14 @@ PetscErrorCode Core::get_msId_3dENTS_split_sides(
 	    };
 	    EntityHandle prism;
 	    rval = moab.create_element(MBPRISM,prism_conn,6,prism); CHKERRQ_MOAB(rval);
-	    ierr = addPrismToDatabase(prism,verb); CHKERRQ(ierr);
+	    ierr = cOre.addPrismToDatabase(prism,verb); CHKERRQ(ierr);
 	    rval = moab.add_entities(meshset_for_bit_level,&prism,1); CHKERRQ_MOAB(rval);
 	  }
 	} break;
       case MBEDGE: {
 	  rval = moab.get_adjacencies(new_conn,2,1,false,new_ent); CHKERRQ_MOAB(rval);
 	  if(new_ent.size()!=1) {
-	    if(rAnk==0) {
+	    if(m_field.getCommRank()==0) {
 	      EntityHandle out_meshset;
 	      rval = moab.create_meshset(MESHSET_SET|MESHSET_TRACK_OWNER,out_meshset); CHKERRQ_MOAB(rval);
 	      rval = moab.add_entities(out_meshset,&*eit,1); CHKERRQ_MOAB(rval);
@@ -599,12 +655,13 @@ PetscErrorCode Core::get_msId_3dENTS_split_sides(
       SETERRQ1(PETSC_COMM_SELF,1,"new_ent.size() = %u, size always should be 1",new_ent.size());
     }
     //set parent
-    rval = moab.tag_set_data(th_RefParentHandle,&*new_ent.begin(),1,&*eit); CHKERRQ_MOAB(rval);
+    rval = moab.tag_set_data(cOre.get_th_RefParentHandle(),&*new_ent.begin(),1,&*eit); CHKERRQ_MOAB(rval);
     //add to database
-    std::pair<RefEntity_multiIndex::iterator,bool> p_ref_ent = refinedEntities.insert(
-      boost::shared_ptr<RefEntity>(new RefEntity(basicEntityDataPtr,new_ent[0]))
-    );
-    refinedEntities.modify(p_ref_ent.first,RefEntity_change_add_bit(bit));
+    std::pair<RefEntity_multiIndex::iterator,bool> p_ref_ent =
+    const_cast<RefEntity_multiIndex*>(refined_ents_ptr)->
+    insert(boost::shared_ptr<RefEntity>(new RefEntity(m_field.get_basic_entity_data_ptr(),new_ent[0])));
+    const_cast<RefEntity_multiIndex*>(refined_ents_ptr)->
+    modify(p_ref_ent.first,RefEntity_change_add_bit(bit));
     new_ents_in_database.insert(new_ent.begin(),new_ent.end());
   }
   //all other entities, some ents like triangles and faces on the side of tets
@@ -624,59 +681,61 @@ PetscErrorCode Core::get_msId_3dENTS_split_sides(
     for(;ii<num_nodes; ii++) {
       std::map<EntityHandle,EntityHandle>::iterator mit = map_nodes.find(conn[ii]);
       if(mit != map_nodes.end()) {
-	new_conn[ii] = mit->second;
-	nb_new_conn++;
-	if(verb>6) {
-	  PetscPrintf(comm,"nodes %u -> %d\n",conn[ii],new_conn[ii]);
-	}
+        new_conn[ii] = mit->second;
+        nb_new_conn++;
+        if(verb>6) {
+          PetscPrintf(m_field.get_comm(),"nodes %u -> %d\n",conn[ii],new_conn[ii]);
+        }
       } else {
-	new_conn[ii] = conn[ii];
+        new_conn[ii] = conn[ii];
       }
     }
     if(nb_new_conn==0) continue;
-    ref_ents_by_ent_type::iterator miit_ref_ent = ref_ents_by_ent.find(*eit);
-    if(miit_ref_ent == ref_ents_by_ent.end()) {
+    RefEntsByEntType::iterator miit_ref_ent = ref_ents_by_type.find(*eit);
+    if(miit_ref_ent == ref_ents_by_type.end()) {
       SETERRQ1(PETSC_COMM_SELF,1,"entity should be in MoFem database, num_nodes = %d",num_nodes);
     }
     Range new_ent;
     switch (moab.type_from_handle(*eit)) {
       case MBTRI: {
-	  rval = moab.get_adjacencies(new_conn,3,2,false,new_ent); CHKERRQ_MOAB(rval);
-	}
-	break;
+        rval = moab.get_adjacencies(new_conn,3,2,false,new_ent); CHKERRQ_MOAB(rval);
+      }
+      break;
       case MBEDGE: {
-	  rval = moab.get_adjacencies(new_conn,2,1,false,new_ent); CHKERRQ_MOAB(rval);
-	}
-	break;
+        rval = moab.get_adjacencies(new_conn,2,1,false,new_ent); CHKERRQ_MOAB(rval);
+      }
+      break;
       default:
-	SETERRQ(PETSC_COMM_SELF,1,"houston we have a problem");
+      SETERRQ(m_field.get_comm(),MOFEM_DATA_INCONSISTENCY,"Houston we have a problem");
     }
     if(new_ent.size()!=1) {
-      SETERRQ1(PETSC_COMM_SELF,1,"database inconsistency, new_ent.size() = %u",new_ent.size());
+      SETERRQ1(m_field.get_comm(),MOFEM_DATA_INCONSISTENCY,"database inconsistency, new_ent.size() = %u",new_ent.size());
     }
     //add entity to mofem database
-    rval = moab.tag_set_data(th_RefParentHandle,&*new_ent.begin(),1,&*eit); CHKERRQ_MOAB(rval);
-    std::pair<RefEntity_multiIndex::iterator,bool> p_ref_ent
-    = refinedEntities.insert(
-      boost::shared_ptr<RefEntity>(new RefEntity(basicEntityDataPtr,new_ent[0]))
+    rval = moab.tag_set_data(cOre.get_th_RefParentHandle(),&*new_ent.begin(),1,&*eit); CHKERRQ_MOAB(rval);
+    std::pair<RefEntity_multiIndex::iterator,bool> p_ref_ent =
+    const_cast<RefEntity_multiIndex*>(refined_ents_ptr)->
+    insert(
+      boost::shared_ptr<RefEntity>(new RefEntity(m_field.get_basic_entity_data_ptr(),new_ent[0]))
     );
-    refinedEntities.modify(p_ref_ent.first,RefEntity_change_add_bit(bit));
-    if(verb>3) PetscPrintf(comm,"new_ent %u\n",new_ent.size());
+    const_cast<RefEntity_multiIndex*>(refined_ents_ptr)->
+    modify(p_ref_ent.first,RefEntity_change_add_bit(bit));
+    if(verb>3) PetscPrintf(m_field.get_comm(),"new_ent %u\n",new_ent.size());
     new_ents_in_database.insert(new_ent.begin(),new_ent.end());
   }
   //add new prisms which parents are part of other intefaces
   Range new_3d_prims = new_3d_ents.subset_by_type(MBPRISM);
   for(Range::iterator pit = new_3d_prims.begin();pit!=new_3d_prims.end();pit++) {
-    ierr = addPrismToDatabase(*pit,verb); CHKERRQ(ierr);
+    ierr = cOre.addPrismToDatabase(*pit,verb); CHKERRQ(ierr);
     //get parent entity
     EntityHandle parent_prism;
-    rval = moab.tag_get_data(th_RefParentHandle,&*pit,1,&parent_prism); CHKERRQ_MOAB(rval);
+    rval = moab.tag_get_data(cOre.get_th_RefParentHandle(),&*pit,1,&parent_prism); CHKERRQ_MOAB(rval);
     const EntityHandle root_meshset = moab.get_root_set();
     if(parent_prism == root_meshset)  {
-      SETERRQ(PETSC_COMM_SELF,1,"this prism should have parent");
+      SETERRQ(m_field.get_comm(),MOFEM_DATA_INCONSISTENCY,"this prism should have parent");
     }
     if(moab.type_from_handle(parent_prism)!=MBPRISM) {
-      SETERRQ(PETSC_COMM_SELF,1,"this prism should have parent which is prism as well");
+      SETERRQ(m_field.get_comm(),MOFEM_DATA_INCONSISTENCY,"this prism should have parent which is prism as well");
     }
     int num_nodes;
     //parent prism
@@ -686,10 +745,10 @@ PetscErrorCode Core::get_msId_3dENTS_split_sides(
     rval = moab.get_adjacencies(conn_parent,3,2,false,face_side3_parent); CHKERRQ_MOAB(rval);
     rval = moab.get_adjacencies(&conn_parent[3],3,2,false,face_side4_parent); CHKERRQ_MOAB(rval);
     if(face_side3_parent.size()!=1) {
-      SETERRQ1(PETSC_COMM_SELF,1,"parent face3.size() = %u",face_side3_parent.size());
+      SETERRQ1(m_field.get_comm(),MOFEM_DATA_INCONSISTENCY,"parent face3.size() = %u",face_side3_parent.size());
     }
     if(face_side4_parent.size()!=1) {
-      SETERRQ1(PETSC_COMM_SELF,1,"parent face4.size() = %u",face_side4_parent.size());
+      SETERRQ1(m_field.get_comm(),MOFEM_DATA_INCONSISTENCY,"parent face4.size() = %u",face_side4_parent.size());
     }
     //new prism
     const EntityHandle* conn;
@@ -698,10 +757,10 @@ PetscErrorCode Core::get_msId_3dENTS_split_sides(
     rval = moab.get_adjacencies(conn,3,2,false,face_side3); CHKERRQ_MOAB(rval);
     rval = moab.get_adjacencies(&conn[3],3,2,false,face_side4); CHKERRQ_MOAB(rval);
     if(face_side3.size()!=1) {
-      SETERRQ(PETSC_COMM_SELF,1,"face3 is missing");
+      SETERRQ(m_field.get_comm(),MOFEM_DATA_INCONSISTENCY,"face3 is missing");
     }
     if(face_side4.size()!=1) {
-      SETERRQ(PETSC_COMM_SELF,1,"face4 is missing");
+      SETERRQ(m_field.get_comm(),MOFEM_DATA_INCONSISTENCY,"face4 is missing");
     }
     //
     std::vector<EntityHandle> face(2),parent_face(2);
@@ -715,21 +774,21 @@ PetscErrorCode Core::get_msId_3dENTS_split_sides(
       rval = moab.tag_get_data(th_interface_side,&parent_face[ff],1,&interface_side); CHKERRQ_MOAB(rval);
       rval = moab.tag_set_data(th_interface_side,&face[ff],1,&interface_side); CHKERRQ_MOAB(rval);
       EntityHandle parent_tri;
-      rval = moab.tag_get_data(th_RefParentHandle,&face[ff],1,&parent_tri); CHKERRQ_MOAB(rval);
+      rval = moab.tag_get_data(cOre.get_th_RefParentHandle(),&face[ff],1,&parent_tri); CHKERRQ_MOAB(rval);
       if(parent_tri != parent_face[ff]) {
         SETERRQ1(PETSC_COMM_SELF,1,"wrong parent %lu",parent_tri);
       }
       if(new_ents_in_database.find(face[ff])==new_ents_in_database.end()) {
         RefEntity_multiIndex::index<Ent_mi_tag>::type::iterator miit_ref_ent
-        = refinedEntities.get<Ent_mi_tag>().find(face[ff]);
-        if(miit_ref_ent==refinedEntities.get<Ent_mi_tag>().end()) {
-          SETERRQ(PETSC_COMM_SELF,1,"this is not in database, but should not be");
+        = refined_ents_ptr->get<Ent_mi_tag>().find(face[ff]);
+        if(miit_ref_ent==refined_ents_ptr->get<Ent_mi_tag>().end()) {
+          SETERRQ(m_field.get_comm(),MOFEM_DATA_INCONSISTENCY,"this is not in database, but should not be");
         }
       }
     }
   }
   //finalise by adding new tets and prism ti bitlelvel
-  ierr = seed_ref_level_3D(meshset_for_bit_level,bit); CHKERRQ(ierr);
+  ierr = m_field.seed_ref_level_3D(meshset_for_bit_level,bit); CHKERRQ(ierr);
   rval = moab.delete_entities(&meshset_for_bit_level,1); CHKERRQ_MOAB(rval);
   ierr = moab.clear_meshset(&children[0],3); CHKERRQ(ierr);
   PetscFunctionReturn(0);

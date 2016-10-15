@@ -41,12 +41,13 @@
 #include <UnknownInterface.hpp>
 #include <LoopMethods.hpp>
 #include <Interface.hpp>
-#include <PrismInterface.hpp>
 #include <SeriesRecorder.hpp>
 #include <Core.hpp>
 
 // Interfaces
 #include <MeshRefinement.hpp>
+#include <PrismInterface.hpp>
+#include <CutMeshInterface.hpp>
 #include <MeshsetsManager.hpp>
 #include <CoordSystemsManager.hpp>
 #include <TetGenInterface.hpp>
@@ -76,14 +77,6 @@ PetscErrorCode print_MoFem_verison(MPI_Comm comm) {
 PetscErrorCode Core::queryInterface(const MOFEMuuid& uuid,UnknownInterface** iface) {
   PetscFunctionBegin;
   *iface = NULL;
-  if(uuid == IDD_MOFEMPrismInterface) {
-    *iface = dynamic_cast<PrismInterface*>(this);
-    PetscFunctionReturn(0);
-  }
-  if(uuid == IDD_MOFEMMeshRefine) {
-    *iface = dynamic_cast<MeshRefinement*>(this);
-    PetscFunctionReturn(0);
-  }
   if(uuid == IDD_MOFEMSeriesRecorder) {
     *iface = dynamic_cast<SeriesRecorder*>(this);
     PetscFunctionReturn(0);
@@ -178,10 +171,15 @@ PetscErrorCode Core::query_interface_type(const std::type_info& type,void*& ptr)
     PetscFunctionReturn(0);
   }
 
+  if(type == typeid(PrismInterface)) {
+    if(iFaces.find(IDD_MOFEMPrismInterface.uUId.to_ulong()) == iFaces.end()) {
+      iFaces[IDD_MOFEMPrismInterface.uUId.to_ulong()] = new PrismInterface(*this);
+    }
+    ptr = iFaces.at(IDD_MOFEMPrismInterface.uUId.to_ulong());
+    PetscFunctionReturn(0);
+  }
   if(type == typeid(SeriesRecorder)) {
     ptr = static_cast<SeriesRecorder*>(const_cast<Core*>(this));
-  } else if(type == typeid(PrismInterface)) {
-    ptr = static_cast<PrismInterface*>(const_cast<Core*>(this));
   } else {
     SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"unknown interface");
   }

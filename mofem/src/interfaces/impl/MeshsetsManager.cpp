@@ -48,7 +48,6 @@
 
 #include <LoopMethods.hpp>
 #include <Interface.hpp>
-#include <PrismInterface.hpp>
 #include <SeriesRecorder.hpp>
 #include <Core.hpp>
 

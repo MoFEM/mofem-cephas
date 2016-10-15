@@ -35,7 +35,7 @@ struct MeshsetsManager;
   without interfering with users modules programmer work.
 
  */
-struct Core: public Interface, PrismInterface, SeriesRecorder {
+struct Core: public Interface, SeriesRecorder {
 
   PetscErrorCode queryInterface(const MOFEMuuid& uuid, UnknownInterface** iface);
   PetscErrorCode query_interface_type(const std::type_info& iface_type,void*& ptr) const;

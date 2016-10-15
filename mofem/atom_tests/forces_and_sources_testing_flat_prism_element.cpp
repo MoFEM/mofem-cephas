@@ -53,7 +53,8 @@ int main(int argc, char *argv[]) {
   //Create MoFEM (Joseph) database
   MoFEM::Core core(moab);
   MoFEM::Interface& m_field = core;
-  PrismInterface& interface = core;
+  PrismInterface *interface;
+  ierr = m_field.query_interface(interface); CHKERRQ(ierr);
 
   //set entitities bit level
   ierr = m_field.seed_ref_level_3D(0,BitRefLevel().set(0)); CHKERRQ(ierr);
@@ -74,11 +75,11 @@ int main(int argc, char *argv[]) {
       Range ref_level_tets;
       rval = moab.get_entities_by_handle(ref_level_meshset,ref_level_tets,true); CHKERRQ_MOAB(rval);
       //get faces and test to split
-      ierr = interface.get_msId_3dENTS_sides(cubit_meshset,bit_levels.back(),true,0); CHKERRQ(ierr);
+      ierr = interface->get_msId_3dENTS_sides(cubit_meshset,bit_levels.back(),true,0); CHKERRQ(ierr);
       //set new bit level
       bit_levels.push_back(BitRefLevel().set(ll++));
       //split faces and
-      ierr = interface.get_msId_3dENTS_split_sides(ref_level_meshset,bit_levels.back(),cubit_meshset,true,true,0); CHKERRQ(ierr);
+      ierr = interface->get_msId_3dENTS_split_sides(ref_level_meshset,bit_levels.back(),cubit_meshset,true,true,0); CHKERRQ(ierr);
       //clean meshsets
       rval = moab.delete_entities(&ref_level_meshset,1); CHKERRQ_MOAB(rval);
     }
