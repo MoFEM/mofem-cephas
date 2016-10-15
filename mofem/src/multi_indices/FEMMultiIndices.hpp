@@ -1030,7 +1030,7 @@ IT!=FEPTR->cols_dofs->end(); IT++
  * \ingroup fe_multi_indices
  */
 #define _IT_FENUMEREDDOFMOFEMENTITY_BY_NAME_ROW_FOR_LOOP_(FEPTR,NAME,IT) \
-FENumeredDofEntity_multiIndex::index<FieldName_mi_tag>::type::iterator IT = FEPTR->rows_dofs->get<FieldName_mi_tag>().lower_bound(NAME); \
+FENumeredDofEntityByFieldName::iterator IT = FEPTR->rows_dofs->get<FieldName_mi_tag>().lower_bound(NAME); \
 IT!=FEPTR->rows_dofs->get<FieldName_mi_tag>().upper_bound(NAME); IT++
 
 /**
@@ -1042,7 +1042,7 @@ IT!=FEPTR->rows_dofs->get<FieldName_mi_tag>().upper_bound(NAME); IT++
  * \ingroup fe_multi_indices
  */
 #define _IT_FENUMEREDDOFMOFEMENTITY_BY_NAME_COL_FOR_LOOP_(FEPTR,NAME,IT) \
-FENumeredDofEntity_multiIndex::index<FieldName_mi_tag>::type::iterator IT = FEPTR->cols_dofs->get<FieldName_mi_tag>().lower_bound(NAME); \
+FENumeredDofEntityByFieldName::iterator IT = FEPTR->cols_dofs->get<FieldName_mi_tag>().lower_bound(NAME); \
 IT!=FEPTR->cols_dofs->get<FieldName_mi_tag>().upper_bound(NAME); IT++
 
 #endif // __FEMMULTIINDICES_HPP__

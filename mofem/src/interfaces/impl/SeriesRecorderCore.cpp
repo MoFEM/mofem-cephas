@@ -128,11 +128,11 @@ PetscErrorCode Core::record_field(const std::string& serie_name,const std::strin
   if(sit==sEries.get<SeriesName_mi_tag>().end()) {
     SETERRQ1(PETSC_COMM_SELF,1,"serie recorder <%s> not exist",serie_name.c_str());
   }
-  DofEntity_multiIndex::index<FieldName_mi_tag>::type::iterator dit = dofsField.get<FieldName_mi_tag>().lower_bound(field_name);
+  DofEntityByFieldName::iterator dit = dofsField.get<FieldName_mi_tag>().lower_bound(field_name);
   if(dit == dofsField.get<FieldName_mi_tag>().end()) {
     SETERRQ1(PETSC_COMM_SELF,1,"field <%s> not exist",field_name.c_str());
   }
-  DofEntity_multiIndex::index<FieldName_mi_tag>::type::iterator hi_dit = dofsField.get<FieldName_mi_tag>().upper_bound(field_name);
+  DofEntityByFieldName::iterator hi_dit = dofsField.get<FieldName_mi_tag>().upper_bound(field_name);
   for(;dit!=hi_dit;dit++) {
     const BitRefLevel &dof_bit = (*dit)->getBitRefLevel();
     if((dof_bit&mask) != dof_bit) continue;

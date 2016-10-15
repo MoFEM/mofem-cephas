@@ -129,7 +129,7 @@ namespace MoFEM {
     if(verb==-1) verb = verbose;
     Range::iterator eit = ents.begin();
     for(;eit!=ents.end();eit++) {
-      DofEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type::iterator dit,hi_dit;
+      DofEntityByNameAndEnt::iterator dit,hi_dit;
       dit = dofsField.get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple(name,*eit));
       hi_dit = dofsField.get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple(name,*eit));
       for(;dit!=hi_dit;) {

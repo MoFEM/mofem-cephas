@@ -254,7 +254,7 @@ struct MoFEMProblem {
     *
     */
   #define _IT_NUMEREDDOFMOFEMENTITY_ROW_BY_NAME_FOR_LOOP_(MOFEMPROBLEM,NAME,IT) \
-    NumeredDofEntity_multiIndex::index<FieldName_mi_tag>::type::iterator IT = MOFEMPROBLEM->getNumeredDofsRowsBegin(NAME); \
+    NumeredDofEntityByFieldName::iterator IT = MOFEMPROBLEM->getNumeredDofsRowsBegin(NAME); \
     IT!=MOFEMPROBLEM->getNumeredDofsRowsEnd(NAME); IT++
 
   /**
@@ -269,23 +269,23 @@ struct MoFEMProblem {
     *
     */
   #define _IT_NUMEREDDOFMOFEMENTITY_COL_BY_NAME_FOR_LOOP_(MOFEMPROBLEM,NAME,IT) \
-    NumeredDofEntity_multiIndex::index<FieldName_mi_tag>::type::iterator IT = MOFEMPROBLEM->getNumeredDofsColsBegin(NAME); \
+    NumeredDofEntityByFieldName::iterator IT = MOFEMPROBLEM->getNumeredDofsColsBegin(NAME); \
     IT!=MOFEMPROBLEM->getNumeredDofsColsEnd(NAME); IT++
 
   /// get begin iterator for numered_dofs_rows (insted you can use #_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_NAME_FOR_LOOP_ for loops)
-  NumeredDofEntity_multiIndex::index<FieldName_mi_tag>::type::iterator getNumeredDofsRowsBegin(const std::string& name) const
+  NumeredDofEntityByFieldName::iterator getNumeredDofsRowsBegin(const std::string& name) const
     { return numered_dofs_rows->get<FieldName_mi_tag>().lower_bound(name); }
 
   /// get end iterator for numered_dofs_rows (insted you can use #_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_NAME_FOR_LOOP_ for loops)
-  NumeredDofEntity_multiIndex::index<FieldName_mi_tag>::type::iterator getNumeredDofsRowsEnd(const std::string& name) const
+  NumeredDofEntityByFieldName::iterator getNumeredDofsRowsEnd(const std::string& name) const
     { return numered_dofs_rows->get<FieldName_mi_tag>().upper_bound(name); }
 
   /// get begin iterator for numered_dofs_cols (insted you can use #_IT_NUMEREDDOFMOFEMENTITY_COL_BY_NAME_FOR_LOOP_ for loops)
-  NumeredDofEntity_multiIndex::index<FieldName_mi_tag>::type::iterator getNumeredDofsColsBegin(const std::string& name) const
+  NumeredDofEntityByFieldName::iterator getNumeredDofsColsBegin(const std::string& name) const
     { return numered_dofs_cols->get<FieldName_mi_tag>().lower_bound(name); }
 
   /// get end iterator for numered_dofs_cols (insted you can use #_IT_NUMEREDDOFMOFEMENTITY_COL_BY_NAME_FOR_LOOP_ for loops)
-  NumeredDofEntity_multiIndex::index<FieldName_mi_tag>::type::iterator getNumeredDofsColsEnd(const std::string& name) const
+  NumeredDofEntityByFieldName::iterator getNumeredDofsColsEnd(const std::string& name) const
     { return numered_dofs_cols->get<FieldName_mi_tag>().upper_bound(name); }
 
   /**

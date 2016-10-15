@@ -854,7 +854,7 @@ PetscErrorCode Core::set_field_order(const Range &ents,const BitFieldId id,const
       	//order is increased (note that dofs are not build if order is
       	//increased)
 
-        typedef DofEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type dof_set_type;
+        typedef DofEntityByNameAndEnt dof_set_type;
         dof_set_type& set_set = dofsField.get<Composite_Name_And_Ent_mi_tag>();
         dof_set_type::iterator dit = set_set.lower_bound(boost::make_tuple((*miit)->getNameRef(),(*miit)->getEnt()));
         dof_set_type::iterator hi_dit = set_set.upper_bound(boost::make_tuple((*miit)->getNameRef(),(*miit)->getEnt()));
@@ -1285,7 +1285,7 @@ PetscErrorCode Core::build_fields(int verb) {
 }
 PetscErrorCode Core::list_dofs_by_field_name(const std::string &field_name) const {
   PetscFunctionBegin;
-  DofEntity_multiIndex::index<FieldName_mi_tag>::type::iterator dit,hi_dit;
+  DofEntityByFieldName::iterator dit,hi_dit;
   dit = dofsField.get<FieldName_mi_tag>().lower_bound(field_name);
   hi_dit = dofsField.get<FieldName_mi_tag>().upper_bound(field_name);
   for(;dit!=hi_dit;dit++) {
@@ -1551,31 +1551,31 @@ PetscErrorCode Core::get_problem_finite_elements_entities(const std::string &pro
   PetscFunctionReturn(0);
 }
 
-MoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator Core::get_ent_moabfield_by_name_begin(const std::string &field_name) const {
+MoFEMEntityByFieldName::iterator Core::get_ent_moabfield_by_name_begin(const std::string &field_name) const {
   return entsFields.get<FieldName_mi_tag>().lower_bound(field_name);
 }
-MoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator Core::get_ent_moabfield_by_name_end(const std::string &field_name) const {
+MoFEMEntityByFieldName::iterator Core::get_ent_moabfield_by_name_end(const std::string &field_name) const {
   return entsFields.get<FieldName_mi_tag>().upper_bound(field_name);
 }
-DofEntity_multiIndex::index<FieldName_mi_tag>::type::iterator Core::get_dofs_by_name_begin(const std::string &field_name) const {
+DofEntityByFieldName::iterator Core::get_dofs_by_name_begin(const std::string &field_name) const {
   return dofsField.get<FieldName_mi_tag>().lower_bound(field_name);
 }
-DofEntity_multiIndex::index<FieldName_mi_tag>::type::iterator Core::get_dofs_by_name_end(const std::string &field_name) const {
+DofEntityByFieldName::iterator Core::get_dofs_by_name_end(const std::string &field_name) const {
   return dofsField.get<FieldName_mi_tag>().upper_bound(field_name);
 }
-DofEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type::iterator
+DofEntityByNameAndEnt::iterator
 Core::get_dofs_by_name_and_ent_begin(const std::string &field_name,const EntityHandle ent) const {
   return dofsField.get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple(field_name,ent));
 }
-DofEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type::iterator
+DofEntityByNameAndEnt::iterator
 Core::get_dofs_by_name_and_ent_end(const std::string &field_name,const EntityHandle ent) const {
   return dofsField.get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple(field_name,ent));
 }
-DofEntity_multiIndex::index<Composite_Name_And_Type_mi_tag>::type::iterator
+DofEntityByNameAndType::iterator
 Core::get_dofs_by_name_and_type_begin(const std::string &field_name,const EntityType type) const {
   return dofsField.get<Composite_Name_And_Type_mi_tag>().lower_bound(boost::make_tuple(field_name,type));
 }
-DofEntity_multiIndex::index<Composite_Name_And_Type_mi_tag>::type::iterator
+DofEntityByNameAndType::iterator
 Core::get_dofs_by_name_and_type_end(const std::string &field_name,const EntityType type) const {
   return dofsField.get<Composite_Name_And_Type_mi_tag>().upper_bound(boost::make_tuple(field_name,type));
 }

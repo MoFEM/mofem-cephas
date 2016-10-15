@@ -633,15 +633,15 @@ struct Core: public Interface, PrismInterface, SeriesRecorder {
   PetscErrorCode get_dofs(const DofEntity_multiIndex **dofs_ptr) const ;
   PetscErrorCode get_finite_elements(const FiniteElement_multiIndex **finiteElements_ptr) const;
 
-  MoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator get_ent_moabfield_by_name_begin(const std::string &field_name) const;
-  MoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator get_ent_moabfield_by_name_end(const std::string &field_name) const;
+  MoFEMEntityByFieldName::iterator get_ent_moabfield_by_name_begin(const std::string &field_name) const;
+  MoFEMEntityByFieldName::iterator get_ent_moabfield_by_name_end(const std::string &field_name) const;
 
-  DofEntity_multiIndex::index<FieldName_mi_tag>::type::iterator get_dofs_by_name_begin(const std::string &field_name) const;
-  DofEntity_multiIndex::index<FieldName_mi_tag>::type::iterator get_dofs_by_name_end(const std::string &field_name) const;
-  DofEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type::iterator get_dofs_by_name_and_ent_begin(const std::string &field_name,const EntityHandle ent) const;
-  DofEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type::iterator get_dofs_by_name_and_ent_end(const std::string &field_name,const EntityHandle ent) const;
-  DofEntity_multiIndex::index<Composite_Name_And_Type_mi_tag>::type::iterator get_dofs_by_name_and_type_begin(const std::string &field_name,const EntityType type) const;
-  DofEntity_multiIndex::index<Composite_Name_And_Type_mi_tag>::type::iterator get_dofs_by_name_and_type_end(const std::string &field_name,const EntityType ent) const;
+  DofEntityByFieldName::iterator get_dofs_by_name_begin(const std::string &field_name) const;
+  DofEntityByFieldName::iterator get_dofs_by_name_end(const std::string &field_name) const;
+  DofEntityByNameAndEnt::iterator get_dofs_by_name_and_ent_begin(const std::string &field_name,const EntityHandle ent) const;
+  DofEntityByNameAndEnt::iterator get_dofs_by_name_and_ent_end(const std::string &field_name,const EntityHandle ent) const;
+  DofEntityByNameAndType::iterator get_dofs_by_name_and_type_begin(const std::string &field_name,const EntityType type) const;
+  DofEntityByNameAndType::iterator get_dofs_by_name_and_type_end(const std::string &field_name,const EntityType ent) const;
 
   EntFiniteElement_multiIndex::index<FiniteElement_name_mi_tag>::type::iterator get_fe_by_name_begin(const std::string &fe_name) const;
   EntFiniteElement_multiIndex::index<FiniteElement_name_mi_tag>::type::iterator get_fe_by_name_end(const std::string &fe_name) const;

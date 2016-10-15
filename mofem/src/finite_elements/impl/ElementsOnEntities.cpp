@@ -276,12 +276,12 @@ PetscErrorCode ForcesAndSurcesCore::getDataOrderSpaceAndBase(
     data[side].getSpace() = NOSPACE;
   }
 
-  FEDofEntity_multiIndex::index<Composite_Name_And_Type_mi_tag>::type &data_dofs =
-  const_cast<FEDofEntity_multiIndex::index<Composite_Name_And_Type_mi_tag>::type&>(
+  FEDofEntityByNameAndType &data_dofs =
+  const_cast<FEDofEntityByNameAndType&>(
     numeredEntFiniteElementPtr->getDataDofs().get<Composite_Name_And_Type_mi_tag>()
   );
 
-  FEDofEntity_multiIndex::index<Composite_Name_And_Type_mi_tag>::type::iterator dit,hi_dit;
+  FEDofEntityByNameAndType::iterator dit,hi_dit;
   dit = data_dofs.lower_bound(boost::make_tuple(field_name,type));
   hi_dit = data_dofs.upper_bound(boost::make_tuple(field_name,type));
 
@@ -355,7 +355,7 @@ PetscErrorCode ForcesAndSurcesCore::getNodesIndices(
 ) const {
   PetscErrorCode ierr;
   PetscFunctionBegin;
-  FENumeredDofEntity_multiIndex::index<Composite_Name_And_Type_mi_tag>::type::iterator dit,hi_dit,it;
+  FENumeredDofEntityByNameAndType::iterator dit,hi_dit,it;
   dit = dofs.get<Composite_Name_And_Type_mi_tag>().lower_bound(boost::make_tuple(field_name,MBVERTEX));
   hi_dit = dofs.get<Composite_Name_And_Type_mi_tag>().upper_bound(boost::make_tuple(field_name,MBVERTEX));
 
@@ -463,7 +463,7 @@ PetscErrorCode ForcesAndSurcesCore::getTypeIndices(
     data[siiit->get()->side_number].getIndices().resize(0,false);
     data[siiit->get()->side_number].getLocalIndices().resize(0,false);
   }
-  FENumeredDofEntity_multiIndex::index<Composite_Name_And_Type_mi_tag>::type::iterator dit,hi_dit;
+  FENumeredDofEntityByNameAndType::iterator dit,hi_dit;
   dit = dofs.get<Composite_Name_And_Type_mi_tag>().lower_bound(boost::make_tuple(field_name,type));
   if(dit == dofs.get<Composite_Name_And_Type_mi_tag>().end()) {
     PetscFunctionReturn(0);
@@ -616,7 +616,7 @@ PetscErrorCode ForcesAndSurcesCore::getNoFieldIndices(
 ) const {
   PetscErrorCode ierr;
   PetscFunctionBegin;
-  FENumeredDofEntity_multiIndex::index<FieldName_mi_tag>::type::iterator dit,hi_dit;
+  FENumeredDofEntityByFieldName::iterator dit,hi_dit;
   dit = dofs.get<FieldName_mi_tag>().lower_bound(field_name);
   hi_dit = dofs.get<FieldName_mi_tag>().upper_bound(field_name);
   indices.resize(distance(dit,hi_dit));
@@ -768,7 +768,7 @@ PetscErrorCode ForcesAndSurcesCore::getNodesFieldData(
   PetscErrorCode ierr;
   PetscFunctionBegin;
   try {
-    FEDofEntity_multiIndex::index<Composite_Name_And_Type_mi_tag>::type::iterator dit,hi_dit,it;
+    FEDofEntityByNameAndType::iterator dit,hi_dit,it;
     dit = dofs.get<Composite_Name_And_Type_mi_tag>().lower_bound(boost::make_tuple(field_name,MBVERTEX));
     hi_dit = dofs.get<Composite_Name_And_Type_mi_tag>().upper_bound(boost::make_tuple(field_name,MBVERTEX));
 
@@ -892,7 +892,7 @@ PetscErrorCode ForcesAndSurcesCore::getTypeFieldData(
     data[siiit->get()->side_number].getFieldData().resize(0,false);
     data[siiit->get()->side_number].getFieldDofs().resize(0,false);
   }
-  FEDofEntity_multiIndex::index<Composite_Name_And_Type_mi_tag>::type::iterator dit,hi_dit;
+  FEDofEntityByNameAndType::iterator dit,hi_dit;
   dit = dofs.get<Composite_Name_And_Type_mi_tag>().lower_bound(boost::make_tuple(field_name,type));
   if(dit == dofs.get<Composite_Name_And_Type_mi_tag>().end()) {
     PetscFunctionReturn(0);
@@ -945,7 +945,7 @@ PetscErrorCode ForcesAndSurcesCore::getNoFieldFieldData(
 ) const {
   PetscErrorCode ierr;
   PetscFunctionBegin;
-  FEDofEntity_multiIndex::index<FieldName_mi_tag>::type::iterator dit,hi_dit;
+  FEDofEntityByFieldName::iterator dit,hi_dit;
   dit = dofs.get<FieldName_mi_tag>().lower_bound(field_name);
   hi_dit = dofs.get<FieldName_mi_tag>().upper_bound(field_name);
   int size = distance(dit,hi_dit);

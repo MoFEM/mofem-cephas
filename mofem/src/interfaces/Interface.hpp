@@ -2126,7 +2126,7 @@ struct Interface: public UnknownInterface {
     *
     * \param field_name
     */
-  virtual MoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator get_ent_moabfield_by_name_begin(const std::string &field_name) const = 0;
+  virtual MoFEMEntityByFieldName::iterator get_ent_moabfield_by_name_begin(const std::string &field_name) const = 0;
 
   /**
     * \brief get begin iterator of filed dofs of given name (instead you can use _IT_GET_ENT_FIELD_BY_NAME_FOR_LOOP_(MFIELD,NAME,IT)
@@ -2138,13 +2138,13 @@ struct Interface: public UnknownInterface {
     *
     * \param field_name
     */
-  virtual MoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator get_ent_moabfield_by_name_end(const std::string &field_name) const = 0;
+  virtual MoFEMEntityByFieldName::iterator get_ent_moabfield_by_name_end(const std::string &field_name) const = 0;
 
   /** \brief loop over all dofs from a moFEM field and particular field
     * \ingroup mofem_field
     */
   #define _IT_GET_ENT_FIELD_BY_NAME_FOR_LOOP_(MFIELD,NAME,IT) \
-    MoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator IT = MFIELD.get_ent_moabfield_by_name_begin(NAME); \
+    MoFEMEntityByFieldName::iterator IT = MFIELD.get_ent_moabfield_by_name_begin(NAME); \
       IT != MFIELD.get_ent_moabfield_by_name_end(NAME); IT++
 
   /**
@@ -2157,7 +2157,7 @@ struct Interface: public UnknownInterface {
     *
     * \param field_name
     */
-  virtual DofEntity_multiIndex::index<FieldName_mi_tag>::type::iterator get_dofs_by_name_begin(const std::string &field_name) const = 0;
+  virtual DofEntityByFieldName::iterator get_dofs_by_name_begin(const std::string &field_name) const = 0;
 
   /**
     * \brief get begin iterator of filed dofs of given name (instead you can use _IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(MFIELD,NAME,IT)
@@ -2169,13 +2169,13 @@ struct Interface: public UnknownInterface {
     *
     * \param field_name
     */
-  virtual DofEntity_multiIndex::index<FieldName_mi_tag>::type::iterator get_dofs_by_name_end(const std::string &field_name) const = 0;
+  virtual DofEntityByFieldName::iterator get_dofs_by_name_end(const std::string &field_name) const = 0;
 
   /** loop over all dofs from a moFEM field and particular field
     * \ingroup mofem_field
     */
   #define _IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(MFIELD,NAME,IT) \
-    DofEntity_multiIndex::index<FieldName_mi_tag>::type::iterator IT = MFIELD.get_dofs_by_name_begin(NAME); \
+    DofEntityByFieldName::iterator IT = MFIELD.get_dofs_by_name_begin(NAME); \
       IT != MFIELD.get_dofs_by_name_end(NAME); IT++
 
   /**
@@ -2188,7 +2188,7 @@ struct Interface: public UnknownInterface {
     *
     * \param field_name
     */
-  virtual DofEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type::iterator
+  virtual DofEntityByNameAndEnt::iterator
   get_dofs_by_name_and_ent_begin(const std::string &field_name,const EntityHandle ent) const = 0;
 
   /**
@@ -2201,14 +2201,14 @@ struct Interface: public UnknownInterface {
     *
     * \param field_name
     */
-  virtual DofEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type::iterator
+  virtual DofEntityByNameAndEnt::iterator
   get_dofs_by_name_and_ent_end(const std::string &field_name,const EntityHandle ent) const = 0;
 
   /** \brief loop over all dofs from a moFEM field and particular field
     * \ingroup mofem_access
     */
   #define _IT_GET_DOFS_FIELD_BY_NAME_AND_ENT_FOR_LOOP_(MFIELD,NAME,ENT,IT) \
-    DofEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type::iterator IT = MFIELD.get_dofs_by_name_and_ent_begin(NAME,ENT); \
+    DofEntityByNameAndEnt::iterator IT = MFIELD.get_dofs_by_name_and_ent_begin(NAME,ENT); \
       IT != MFIELD.get_dofs_by_name_and_ent_end(NAME,ENT); IT++
 
   /**
@@ -2261,7 +2261,7 @@ struct Interface: public UnknownInterface {
     *
     * \param field_name
     */
-  virtual DofEntity_multiIndex::index<Composite_Name_And_Type_mi_tag>::type::iterator
+  virtual DofEntityByNameAndType::iterator
   get_dofs_by_name_and_type_begin(const std::string &field_name,const EntityType type) const = 0;
 
   /**
@@ -2274,14 +2274,14 @@ struct Interface: public UnknownInterface {
     *
     * \param field_name
     */
-  virtual DofEntity_multiIndex::index<Composite_Name_And_Type_mi_tag>::type::iterator
+  virtual DofEntityByNameAndType::iterator
   get_dofs_by_name_and_type_end(const std::string &field_name,const EntityType type) const = 0;
 
   /** \brief loop over all dofs from a moFEM field and particular field
     * \ingroup mofem_field
     */
   #define _IT_GET_DOFS_FIELD_BY_NAME_AND_TYPE_FOR_LOOP_(MFIELD,NAME,TYPE,IT) \
-    DofEntity_multiIndex::index<Composite_Name_And_Type_mi_tag>::type::iterator IT = MFIELD.get_dofs_by_name_and_type_begin(NAME,TYPE); \
+    DofEntityByNameAndType::iterator IT = MFIELD.get_dofs_by_name_and_type_begin(NAME,TYPE); \
       IT != MFIELD.get_dofs_by_name_and_type_end(NAME,TYPE); IT++
 
   /** \brief Get finite elements multi index
