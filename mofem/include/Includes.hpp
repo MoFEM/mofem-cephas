@@ -104,6 +104,7 @@ extern "C" {
 #include <MBTagConventions.hpp>
 #include <moab/Skinner.hpp>
 #include <moab/AdaptiveKDTree.hpp>
+#include <moab/OrientedBoxTreeTool.hpp>
 #include <moab/MeshTopoUtil.hpp>
 #include <moab/ReadUtilIface.hpp>
 

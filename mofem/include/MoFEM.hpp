@@ -66,6 +66,7 @@
 #ifdef WITH_MED
   #include <MedInterface.hpp>
 #endif //WITH_MED
+#include <CutMeshInterface.hpp>
 #include <BitLevelCoupler.hpp>
 #include <NodeMerger.hpp>
 #include <PrismsFromSurfaceInterface.hpp>

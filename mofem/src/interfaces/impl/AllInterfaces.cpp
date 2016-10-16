@@ -16,3 +16,5 @@ const static int debug = 1;
 #ifdef WITH_MED
   #include "impl/MedInterface.cpp"
 #endif
+
+#include "impl/CutMeshInterface.cpp"

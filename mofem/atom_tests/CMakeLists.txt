@@ -301,8 +301,32 @@ target_link_libraries(mesh_refine_atom
   ${PROJECT_LIBS}
 )
 
-add_test(mesh_refine_atom ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/mesh_refine_atom -my_file templar.h5m)
-add_test(mesh_refine_atom_test_compare ${CMAKE_COMMAND} -E compare_files ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/mesh_refine.txt ${CMAKE_BINARY_DIR}/atom_tests/mesh_refine.txt)
+add_test(
+  mesh_refine_atom
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+  ${CMAKE_CURRENT_BINARY_DIR}/mesh_refine_atom -my_file templar.h5m
+)
+
+add_test(
+  mesh_refine_atom_test_compare
+  ${CMAKE_COMMAND} -E compare_files
+  ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/mesh_refine.txt
+  ${CMAKE_BINARY_DIR}/atom_tests/mesh_refine.txt
+)
+
+# Tetsing mesh cuttiong
+
+cm_export_file("../meshes/mesh_cut_test.cub" export_atom_tests)
+my_add_executable(mesh_cut_test mesh_cut_test.cpp)
+target_link_libraries(mesh_cut_test
+  mofem_interfaces
+  mofem_multi_indices
+  mofem_petsc
+  mofem_approx
+  mofem_cblas
+  mofem_third_party
+  ${PROJECT_LIBS}
+)
 
 #mesh_insert_interface_atom
 cm_export_file("../meshes/Tinterface.h5m" export_atom_tests)
