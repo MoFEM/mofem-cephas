@@ -282,8 +282,6 @@ verbose(_verbose) {
     print_MoFem_verison(comm);
   }
 
-  ierr = query_interface(meshsetsManagerPtr); CHKERRABORT(PETSC_COMM_WORLD,ierr);
-
   ierr = getTags(); CHKERRABORT(PETSC_COMM_WORLD,ierr);
   ierr = clearMap(); CHKERRABORT(PETSC_COMM_WORLD,ierr);
   basicEntityDataPtr = boost::shared_ptr<BasicEntityData>(new BasicEntityData(moab));
@@ -976,41 +974,41 @@ PetscErrorCode Core::print_cubit_materials_set() const {
 }
 
 bool Core::check_msId_meshset(const int ms_id,const CubitBCType cubit_bc_type) {
-  return meshsetsManagerPtr->checkMeshset(ms_id,cubit_bc_type);
+  return get_meshsets_manager_ptr()->checkMeshset(ms_id,cubit_bc_type);
 }
 
 PetscErrorCode Core::add_cubit_msId(const CubitBCType cubit_bc_type,const int ms_id,const std::string name) {
-  return meshsetsManagerPtr->addMeshset(cubit_bc_type,ms_id,name);
+  return get_meshsets_manager_ptr()->addMeshset(cubit_bc_type,ms_id,name);
 }
 
 PetscErrorCode Core::set_cubit_msId_attribites(
   const CubitBCType cubit_bc_type,const int ms_id,const std::vector<double> &attributes,const std::string name
 ) {
-  return meshsetsManagerPtr->setAttribites(cubit_bc_type,ms_id,attributes,name);
+  return get_meshsets_manager_ptr()->setAttribites(cubit_bc_type,ms_id,attributes,name);
 }
 PetscErrorCode Core::set_cubit_msId_attribites_data_structure(
   const CubitBCType cubit_bc_type,const int ms_id,const GenericAttributeData &data,const std::string name
 ) {
-  return meshsetsManagerPtr->setAttribitesByDataStructure(cubit_bc_type,ms_id,data,name);
+  return get_meshsets_manager_ptr()->setAttribitesByDataStructure(cubit_bc_type,ms_id,data,name);
 }
 PetscErrorCode Core::set_cubit_msId_bc_data_structure(
   const CubitBCType cubit_bc_type,const int ms_id,const GenericCubitBcData &data
 ) {
-  return meshsetsManagerPtr->setBcData(cubit_bc_type,ms_id,data);
+  return get_meshsets_manager_ptr()->setBcData(cubit_bc_type,ms_id,data);
 }
 PetscErrorCode Core::delete_cubit_msId(const CubitBCType cubit_bc_type,const int ms_id) {
-  return meshsetsManagerPtr->deleteMeshset(cubit_bc_type,ms_id);
+  return get_meshsets_manager_ptr()->deleteMeshset(cubit_bc_type,ms_id);
 }
 PetscErrorCode Core::get_cubit_msId(const int ms_id,const CubitBCType cubit_bc_type,const CubitMeshSets **cubit_meshset_ptr) {
-  return meshsetsManagerPtr->getCubitMeshsetPtr(ms_id,cubit_bc_type,cubit_meshset_ptr);
+  return get_meshsets_manager_ptr()->getCubitMeshsetPtr(ms_id,cubit_bc_type,cubit_meshset_ptr);
 }
 PetscErrorCode Core::get_cubit_msId_entities_by_dimension(
   const int msId,const CubitBCType cubit_bc_type,const int dimension,Range &entities,const bool recursive
 ) {
-  return meshsetsManagerPtr->getEntitiesByDimension(msId,cubit_bc_type.to_ulong(),dimension,entities,recursive);
+  return get_meshsets_manager_ptr()->getEntitiesByDimension(msId,cubit_bc_type.to_ulong(),dimension,entities,recursive);
 }
 PetscErrorCode Core::get_cubit_msId_entities_by_dimension(const int msId,const CubitBCType cubit_bc_type,Range &entities,const bool recursive) {
-  return meshsetsManagerPtr->getEntitiesByDimension(msId,cubit_bc_type.to_ulong(),entities,recursive);
+  return get_meshsets_manager_ptr()->getEntitiesByDimension(msId,cubit_bc_type.to_ulong(),entities,recursive);
 }
 PetscErrorCode Core::get_cubit_msId_entities_by_dimension(
   const int ms_id,const unsigned int cubit_bc_type,const int dimension,Range &entities,const bool recursive
@@ -1027,11 +1025,11 @@ PetscErrorCode Core::get_cubit_msId_entities_by_dimension(const int ms_id,const 
 }
 
 PetscErrorCode Core::get_cubit_msId_meshset(const int ms_id,const unsigned int cubit_bc_type,EntityHandle &meshset) {
-  return meshsetsManagerPtr->getMeshset(ms_id,cubit_bc_type,meshset);
+  return get_meshsets_manager_ptr()->getMeshset(ms_id,cubit_bc_type,meshset);
 }
 
 PetscErrorCode Core::get_cubit_meshsets(const unsigned int cubit_bc_type,Range &meshsets) {
-  return meshsetsManagerPtr->getMeshsetsByType(cubit_bc_type,meshsets);
+  return get_meshsets_manager_ptr()->getMeshsetsByType(cubit_bc_type,meshsets);
 }
 
 PetscErrorCode Core::get_fields(const Field_multiIndex **fields_ptr) const {
@@ -1217,6 +1215,19 @@ PetscErrorCode Core::seed_ref_level_MESHSET(const EntityHandle meshset,const Bit
   }
   PetscFunctionReturn(0);
 }
+
+MeshsetsManager* Core::get_meshsets_manager_ptr() {
+  MeshsetsManager* meshsets_manager_ptr;
+  query_interface(meshsets_manager_ptr);
+  return meshsets_manager_ptr;
+}
+
+const MeshsetsManager* Core::get_meshsets_manager_ptr() const {
+  MeshsetsManager* meshsets_manager_ptr;
+  query_interface(meshsets_manager_ptr);
+  return meshsets_manager_ptr;
+}
+
 
 
 }

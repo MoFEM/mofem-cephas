@@ -161,11 +161,14 @@ struct Core: public Interface {
 
   //cubit meshsets
 
-  MeshsetsManager* meshsetsManagerPtr;
-  MeshsetsManager* get_meshsets_manager_ptr() { return meshsetsManagerPtr; }
-  const MeshsetsManager* get_meshsets_manager_ptr() const { return meshsetsManagerPtr; }
-  MeshsetsManager& get_meshsets_manager() { return *meshsetsManagerPtr; }
-  const MeshsetsManager& get_meshsets_manager() const { return *meshsetsManagerPtr; }
+  MeshsetsManager* get_meshsets_manager_ptr();
+  const MeshsetsManager* get_meshsets_manager_ptr() const;
+  inline MeshsetsManager& get_meshsets_manager() {
+    return *get_meshsets_manager_ptr();
+  }
+  inline const MeshsetsManager& get_meshsets_manager() const {
+    return *get_meshsets_manager_ptr();
+  }
 
   DEPRECATED bool check_msId_meshset(const int ms_id,const CubitBCType cubit_bc_type);
   DEPRECATED PetscErrorCode add_cubit_msId(const CubitBCType cubit_bc_type,const int ms_id,const std::string name = "");
