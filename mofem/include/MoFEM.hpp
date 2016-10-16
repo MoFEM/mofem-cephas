@@ -53,9 +53,10 @@
 //SRC/INTERFACES
 #include <LoopMethods.hpp>
 #include <Interface.hpp>
-#include <SeriesRecorder.hpp>
 #include <Core.hpp>
+
 #include <MeshRefinement.hpp>
+#include <SeriesRecorder.hpp>
 #include <PrismInterface.hpp>
 #include <MeshsetsManager.hpp>
 #include <CoordSystemsManager.hpp>

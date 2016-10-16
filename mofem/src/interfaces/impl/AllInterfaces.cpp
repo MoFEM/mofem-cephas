@@ -4,7 +4,7 @@ const static int debug = 1;
 #include "impl/CoordSystemsManager.cpp"
 #include "impl/MeshRefinement.cpp"
 #include "impl/PrismInterface.cpp"
-#include "impl/SeriesRecorderCore.cpp"
+#include "impl/SeriesRecorder.cpp"
 #include "impl/NodeMerger.cpp"
 #include "impl/BitLevelCoupler.cpp"
 #include "impl/PrismsFromSurfaceInterface.cpp"

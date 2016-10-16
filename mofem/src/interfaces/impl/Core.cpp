@@ -41,11 +41,11 @@
 #include <UnknownInterface.hpp>
 #include <LoopMethods.hpp>
 #include <Interface.hpp>
-#include <SeriesRecorder.hpp>
 #include <Core.hpp>
 
 // Interfaces
 #include <MeshRefinement.hpp>
+#include <SeriesRecorder.hpp>
 #include <PrismInterface.hpp>
 #include <CutMeshInterface.hpp>
 #include <MeshsetsManager.hpp>
@@ -77,10 +77,6 @@ PetscErrorCode print_MoFem_verison(MPI_Comm comm) {
 PetscErrorCode Core::queryInterface(const MOFEMuuid& uuid,UnknownInterface** iface) {
   PetscFunctionBegin;
   *iface = NULL;
-  if(uuid == IDD_MOFEMSeriesRecorder) {
-    *iface = dynamic_cast<SeriesRecorder*>(this);
-    PetscFunctionReturn(0);
-  }
   if(uuid == IDD_MOFEMInterface) {
     *iface = dynamic_cast<Interface*>(this);
     PetscFunctionReturn(0);
@@ -178,11 +174,24 @@ PetscErrorCode Core::query_interface_type(const std::type_info& type,void*& ptr)
     ptr = iFaces.at(IDD_MOFEMPrismInterface.uUId.to_ulong());
     PetscFunctionReturn(0);
   }
-  if(type == typeid(SeriesRecorder)) {
-    ptr = static_cast<SeriesRecorder*>(const_cast<Core*>(this));
-  } else {
-    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"unknown interface");
+
+  if(type == typeid(CutMeshInterface)) {
+    if(iFaces.find(IDD_MOFEMCutMesh.uUId.to_ulong()) == iFaces.end()) {
+      iFaces[IDD_MOFEMCutMesh.uUId.to_ulong()] = new CutMeshInterface(*this);
+    }
+    ptr = iFaces.at(IDD_MOFEMCutMesh.uUId.to_ulong());
+    PetscFunctionReturn(0);
   }
+
+  if(type == typeid(SeriesRecorder)) {
+    if(iFaces.find(IDD_MOFEMSeriesRecorder.uUId.to_ulong()) == iFaces.end()) {
+      iFaces[IDD_MOFEMSeriesRecorder.uUId.to_ulong()] = new SeriesRecorder(*this);
+    }
+    ptr = iFaces.at(IDD_MOFEMSeriesRecorder.uUId.to_ulong());
+    PetscFunctionReturn(0);
+  }
+
+  SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"unknown interface");
 
   PetscFunctionReturn(0);
 }
@@ -379,6 +388,19 @@ BitProblemId Core::getProblemShift() {
 PetscErrorCode Core::clearMap() {
   PetscErrorCode ierr;
   PetscFunctionBegin;
+
+  // Cleaning databases in iterfaces
+  SeriesRecorder *series_recorder_ptr;
+  ierr = query_interface(series_recorder_ptr); CHKERRQ(ierr);
+  ierr = series_recorder_ptr->clearMap(); CHKERRQ(ierr);
+  MeshsetsManager *m_manger_ptr;
+  ierr = query_interface(m_manger_ptr); CHKERRQ(ierr);
+  ierr = m_manger_ptr->clearMap(); CHKERRQ(ierr);
+  CoordSystemsManager *cs_manger_ptr;
+  ierr = query_interface(cs_manger_ptr); CHKERRQ(ierr);
+  ierr = cs_manger_ptr->clearMap(); CHKERRQ(ierr);
+
+  // Cleaning databases
   refinedEntities.clear();
   refinedFiniteElements.clear();
   fIelds.clear();
@@ -388,16 +410,7 @@ PetscErrorCode Core::clearMap() {
   entsFiniteElements.clear();
   entFEAdjacencies.clear();
   pRoblems.clear();
-  sEries.clear();
-  seriesSteps.clear();
 
-  MeshsetsManager *m_manger_ptr;
-  ierr = query_interface(m_manger_ptr); CHKERRQ(ierr);
-  ierr = m_manger_ptr->clearMap(); CHKERRQ(ierr);
-
-  CoordSystemsManager *cs_manger_ptr;
-  ierr = query_interface(cs_manger_ptr); CHKERRQ(ierr);
-  ierr = cs_manger_ptr->clearMap(); CHKERRQ(ierr);
 
   PetscFunctionReturn(0);
 }
@@ -644,15 +657,16 @@ PetscErrorCode Core::getTags(int verb) {
   rval = moab.tag_get_handle("_MoFEMBuild",1,MB_TYPE_INTEGER,th_MoFEMBuild,MB_TAG_CREAT|MB_TAG_MESH,&def_bool);
   if(rval==MB_ALREADY_ALLOCATED) rval = MB_SUCCESS;
   rval = moab.tag_get_by_ptr(th_MoFEMBuild,&root_meshset,1,(const void **)&buildMoFEM); CHKERRQ_MOAB(rval);
-  //Series
-  rval = moab.tag_get_handle("_SeriesName",def_val_len,MB_TYPE_OPAQUE,
-    th_SeriesName,MB_TAG_CREAT|MB_TAG_BYTES|MB_TAG_VARLEN|MB_TAG_SPARSE,NULL
-  ); CHKERRQ_MOAB(rval);
 
   //Meshsets with boundary conditions and material sets
   MeshsetsManager *meshsets_manager_ptr;
   ierr = query_interface(meshsets_manager_ptr); CHKERRQ(ierr);
   ierr = meshsets_manager_ptr->getTags(verb); CHKERRQ(ierr);
+
+  // Series recorder
+  SeriesRecorder *series_recorder_ptr;
+  ierr = query_interface(series_recorder_ptr); CHKERRQ(ierr);
+  ierr = series_recorder_ptr->getTags(verb); CHKERRQ(ierr);
 
   //Coordinate systems
   CoordSystemsManager *cs_manger_ptr;
@@ -686,13 +700,14 @@ PetscErrorCode Core::rebuild_database(int verb) {
 PetscErrorCode Core::initialiseDatabseInformationFromMesh(int verb) {
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
-  MeshsetsManager *m_manger_ptr;
-  ierr = query_interface(m_manger_ptr); CHKERRQ(ierr);
-  ierr = m_manger_ptr->initialiseDatabseInformationFromMesh(verb); CHKERRQ(ierr);
+
   CoordSystemsManager *cs_manger_ptr;
   ierr = query_interface(cs_manger_ptr); CHKERRQ(ierr);
+
+  // Initialize coordinate systems
   ierr = cs_manger_ptr->initialiseDatabseInformationFromMesh(verb); CHKERRQ(ierr);
 
+  // Initialize database
   Range meshsets;
   rval = moab.get_entities_by_type(0,MBENTITYSET,meshsets,true);  CHKERRQ_MOAB(rval);
   Range::iterator mit;
@@ -842,19 +857,6 @@ PetscErrorCode Core::initialiseDatabseInformationFromMesh(int verb) {
       }
     }
     //check if meshset is Series meshset
-    {
-      const void* tag_name_data;
-      int tag_name_size;
-      rval = moab.tag_get_by_ptr(th_SeriesName,&*mit,1,(const void **)&tag_name_data,&tag_name_size);
-      if(rval == MB_SUCCESS) {
-        std::pair<Series_multiIndex::iterator,bool> p = sEries.insert(MoFEMSeries(moab,*mit));
-        if(verb > 0) {
-          std::ostringstream ss;
-          ss << "read series " << *p.first << std::endl;
-          PetscPrintf(comm,ss.str().c_str());
-        }
-      }
-    }
   }
   //build ref entities meshset
   for(int dd = 0;dd<=3;dd++) {
@@ -883,25 +885,21 @@ PetscErrorCode Core::initialiseDatabseInformationFromMesh(int verb) {
       p = refinedEntities.insert(mofem_ent);
     }
   }
-  //build series steps
-  for(Series_multiIndex::iterator sit = sEries.begin();sit!=sEries.end();sit++) {
-    int nb_steps;
-    ierr = sit->get_nb_steps(moab,nb_steps); CHKERRQ(ierr);
-    int ss = 0;
-    for(;ss<nb_steps;ss++) {
-      std::pair<SeriesStep_multiIndex::iterator,bool> p = seriesSteps.insert(MoFEMSeriesStep(moab,&*sit,ss));
-      if(verb > 0) {
-        std::ostringstream ss;
-        ss << "add series step " << *p.first << std::endl;
-        PetscPrintf(comm,ss.str().c_str());
-      }
-    }
-  }
+
   if(verb > 2) {
     list_fields();
     list_finite_elements();
     list_problem();
   }
+
+  // Initialize interfaces
+  MeshsetsManager *m_manger_ptr;
+  ierr = query_interface(m_manger_ptr); CHKERRQ(ierr);
+  ierr = m_manger_ptr->initialiseDatabseInformationFromMesh(verb); CHKERRQ(ierr);
+  SeriesRecorder *series_recorder_ptr;
+  ierr = query_interface(series_recorder_ptr); CHKERRQ(ierr);
+  ierr = series_recorder_ptr->initialiseDatabseInformationFromMesh(verb); CHKERRQ(ierr);
+
   PetscFunctionReturn(0);
 }
 

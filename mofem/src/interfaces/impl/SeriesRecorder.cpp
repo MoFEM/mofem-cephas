@@ -1,5 +1,5 @@
-/** \file SeriesRecorderCore.cpp
- * \brief Mylti-index containers, data structures and other low-level functions
+/** \file SeriesRecorder.cpp
+ * \brief Record and save data series in time or load steps
  */
 
 /* MoFEM is free software: you can redistribute it and/or modify it under
@@ -50,7 +50,93 @@ namespace MoFEM {
 
 // const static int debug = 1;
 
-PetscErrorCode Core::add_series_recorder(const std::string &series_name) {
+PetscErrorCode SeriesRecorder::queryInterface(const MOFEMuuid& uuid, UnknownInterface** iface) {
+  PetscFunctionBegin;
+  *iface = NULL;
+  if(uuid == IDD_MOFEMSeriesRecorder) {
+    *iface = dynamic_cast<SeriesRecorder*>(this);
+    PetscFunctionReturn(0);
+  }
+  if(uuid == IDD_MOFEMUnknown) {
+    *iface = dynamic_cast<UnknownInterface*>(this);
+    PetscFunctionReturn(0);
+  }
+  SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"unknown interface");
+  PetscFunctionReturn(0);
+}
+
+SeriesRecorder::SeriesRecorder(const MoFEM::Core &core):
+cOre(const_cast<MoFEM::Core&>(core)) {
+}
+
+PetscErrorCode SeriesRecorder::getTags(int verb) {
+  MoABErrorCode rval;
+  MoFEM::Interface &m_field = cOre;
+  moab::Interface &moab = m_field.get_moab();
+  PetscFunctionBegin;
+  const int def_val_len = 0;
+  rval = moab.tag_get_handle("_SeriesName",def_val_len,MB_TYPE_OPAQUE,
+    th_SeriesName,MB_TAG_CREAT|MB_TAG_BYTES|MB_TAG_VARLEN|MB_TAG_SPARSE,NULL
+  ); CHKERRQ_MOAB(rval);
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode SeriesRecorder::clearMap() {
+  PetscFunctionBegin;
+  sEries.clear();
+  seriesSteps.clear();
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode SeriesRecorder::initialiseDatabseInformationFromMesh(int verb) {
+  PetscErrorCode ierr;
+  MoABErrorCode rval;
+  MoFEM::Interface &m_field = cOre;
+  moab::Interface &moab = m_field.get_moab();
+  PetscFunctionBegin;
+  Range meshsets;
+  const int def_val_len = 0;
+  rval = moab.tag_get_handle("_SeriesName",def_val_len,MB_TYPE_OPAQUE,
+    th_SeriesName,MB_TAG_CREAT|MB_TAG_BYTES|MB_TAG_VARLEN|MB_TAG_SPARSE,NULL
+  ); CHKERRQ_MOAB(rval);
+
+  rval = moab.get_entities_by_type(0,MBENTITYSET,meshsets,true);  CHKERRQ_MOAB(rval);
+  for(Range::iterator mit = meshsets.begin();mit!=meshsets.end();mit++) {
+    const void* tag_name_data;
+    int tag_name_size;
+    rval = moab.tag_get_by_ptr(
+      th_SeriesName,&*mit,1,(const void **)&tag_name_data,&tag_name_size
+    );
+    if(rval == MB_SUCCESS) {
+      std::pair<Series_multiIndex::iterator,bool> p = sEries.insert(MoFEMSeries(moab,*mit));
+      if(verb > 0) {
+        std::ostringstream ss;
+        ss << "read series " << *p.first << std::endl;
+        PetscPrintf(m_field.get_comm(),ss.str().c_str());
+      }
+    }
+  }
+  // //build series steps
+  for(Series_multiIndex::iterator sit = sEries.begin();sit!=sEries.end();sit++) {
+    int nb_steps;
+    ierr = sit->get_nb_steps(moab,nb_steps); CHKERRQ(ierr);
+    int ss = 0;
+    for(;ss<nb_steps;ss++) {
+      std::pair<SeriesStep_multiIndex::iterator,bool> p = seriesSteps.insert(MoFEMSeriesStep(moab,&*sit,ss));
+      if(verb > 0) {
+        std::ostringstream ss;
+        ss << "add series step " << *p.first << std::endl;
+        PetscPrintf(m_field.get_comm(),ss.str().c_str());
+      }
+    }
+  }
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode SeriesRecorder::add_series_recorder(const std::string &series_name) {
+  MoABErrorCode rval;
+  MoFEM::Interface &m_field = cOre;
+  moab::Interface &moab = m_field.get_moab();
   PetscFunctionBegin;
   EntityHandle meshset;
   rval = moab.create_meshset(MESHSET_SET|MESHSET_TRACK_OWNER,meshset); CHKERRQ_MOAB(rval);
@@ -59,14 +145,16 @@ PetscErrorCode Core::add_series_recorder(const std::string &series_name) {
   rval = moab.tag_set_by_ptr(th_SeriesName,&meshset,1,tag_data,tag_sizes); CHKERRQ_MOAB(rval);
   std::pair<Series_multiIndex::iterator,bool> p = sEries.insert(MoFEMSeries(moab,meshset));
   if(!p.second) {
-    SETERRQ1(PETSC_COMM_SELF,1,"serie recorder <%s> is already there",series_name.c_str());
+    SETERRQ1(PETSC_COMM_SELF,1,"series recorder <%s> is already there",series_name.c_str());
   }
   PetscFunctionReturn(0);
 }
-PetscErrorCode Core::delete_recorder_series(const std::string& series_name) {
+
+PetscErrorCode SeriesRecorder::delete_recorder_series(const std::string& series_name) {
+  MoABErrorCode rval;
+  MoFEM::Interface &m_field = cOre;
+  moab::Interface &moab = m_field.get_moab();
   PetscFunctionBegin;
-  //PetscErrorCode ierr;
-  ErrorCode rval;
   SeriesStep_multiIndex::index<SeriesName_mi_tag>::type::iterator ssit,hi_ssit;
   ssit = seriesSteps.get<SeriesName_mi_tag>().lower_bound(series_name);
   hi_ssit = seriesSteps.get<SeriesName_mi_tag>().upper_bound(series_name);
@@ -74,7 +162,10 @@ PetscErrorCode Core::delete_recorder_series(const std::string& series_name) {
   Series_multiIndex::index<SeriesName_mi_tag>::type::iterator sit;
   sit = sEries.get<SeriesName_mi_tag>().find(series_name);
   if(sit == sEries.get<SeriesName_mi_tag>().end()) {
-    SETERRQ1(PETSC_COMM_SELF,1,"serie recorder <%s> not exist and can be deleted",series_name.c_str());
+    SETERRQ1(
+      m_field.get_comm(),MOFEM_DATA_INCONSISTENCY,
+      "series recorder <%s> not exist and can be deleted",series_name.c_str()
+    );
   }
   EntityHandle series_meshset = sit->getMeshset();
   rval = moab.tag_delete(sit->th_SeriesTime); CHKERRQ_MOAB(rval);
@@ -89,7 +180,8 @@ PetscErrorCode Core::delete_recorder_series(const std::string& series_name) {
   rval = moab.delete_entities(&series_meshset,1); CHKERRQ_MOAB(rval);
   PetscFunctionReturn(0);
 }
-PetscErrorCode Core::record_problem(const std::string& serie_name,const MoFEMProblem *problemPtr,RowColData rc) {
+
+PetscErrorCode SeriesRecorder::record_problem(const std::string& serie_name,const MoFEMProblem *problemPtr,RowColData rc) {
   PetscFunctionBegin;
   PetscErrorCode ierr;
   Series_multiIndex::index<SeriesName_mi_tag>::type::iterator sit = sEries.get<SeriesName_mi_tag>().find(serie_name);
@@ -112,27 +204,35 @@ PetscErrorCode Core::record_problem(const std::string& serie_name,const MoFEMPro
   }
   PetscFunctionReturn(0);
 }
-PetscErrorCode Core::record_problem(const std::string& serie_name,const std::string& problem_name,RowColData rc) {
-  PetscFunctionBegin;
+
+PetscErrorCode SeriesRecorder::record_problem(const std::string& serie_name,const std::string& problem_name,RowColData rc) {
   PetscErrorCode ierr;
-  const MoFEMProblem *problemPtr;
-  ierr = get_problem(problem_name,&problemPtr); CHKERRQ(ierr);
-  ierr = record_problem(serie_name,problemPtr,rc); CHKERRQ(ierr);
+  MoFEM::Interface &m_field = cOre;
+  PetscFunctionBegin;
+  const MoFEMProblem *problem_ptr;
+  ierr = m_field.get_problem(problem_name,&problem_ptr); CHKERRQ(ierr);
+  ierr = record_problem(serie_name,problem_ptr,rc); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
-PetscErrorCode Core::record_field(const std::string& serie_name,const std::string& field_name,
-  const BitRefLevel &bit,const BitRefLevel &mask) {
-  Series_multiIndex::index<SeriesName_mi_tag>::type::iterator sit = sEries.get<SeriesName_mi_tag>().find(serie_name);
-  PetscFunctionBegin;
+
+PetscErrorCode SeriesRecorder::record_field(
+  const std::string& serie_name,const std::string& field_name,
+  const BitRefLevel &bit,const BitRefLevel &mask
+) {
   PetscErrorCode ierr;
+  MoFEM::Interface &m_field = cOre;
+  const DofEntity_multiIndex *dofs_ptr;
+  PetscFunctionBegin;
+  ierr = m_field.get_dofs(&dofs_ptr); CHKERRQ(ierr);
+  Series_multiIndex::index<SeriesName_mi_tag>::type::iterator sit = sEries.get<SeriesName_mi_tag>().find(serie_name);
   if(sit==sEries.get<SeriesName_mi_tag>().end()) {
     SETERRQ1(PETSC_COMM_SELF,1,"serie recorder <%s> not exist",serie_name.c_str());
   }
-  DofEntityByFieldName::iterator dit = dofsField.get<FieldName_mi_tag>().lower_bound(field_name);
-  if(dit == dofsField.get<FieldName_mi_tag>().end()) {
+  DofEntityByFieldName::iterator dit = dofs_ptr->get<FieldName_mi_tag>().lower_bound(field_name);
+  if(dit == dofs_ptr->get<FieldName_mi_tag>().end()) {
     SETERRQ1(PETSC_COMM_SELF,1,"field <%s> not exist",field_name.c_str());
   }
-  DofEntityByFieldName::iterator hi_dit = dofsField.get<FieldName_mi_tag>().upper_bound(field_name);
+  DofEntityByFieldName::iterator hi_dit = dofs_ptr->get<FieldName_mi_tag>().upper_bound(field_name);
   for(;dit!=hi_dit;dit++) {
     const BitRefLevel &dof_bit = (*dit)->getBitRefLevel();
     if((dof_bit&mask) != dof_bit) continue;
@@ -145,7 +245,9 @@ PetscErrorCode Core::record_field(const std::string& serie_name,const std::strin
   }
   PetscFunctionReturn(0);
 }
-PetscErrorCode Core::record_begin(const std::string& serie_name) {
+
+PetscErrorCode SeriesRecorder::record_begin(const std::string& serie_name) {
+  PetscErrorCode ierr;
   PetscFunctionBegin;
   Series_multiIndex::index<SeriesName_mi_tag>::type::iterator sit = sEries.get<SeriesName_mi_tag>().find(serie_name);
   if(sit==sEries.get<SeriesName_mi_tag>().end()) {
@@ -154,7 +256,9 @@ PetscErrorCode Core::record_begin(const std::string& serie_name) {
   ierr = const_cast<MoFEMSeries*>(&*sit)->begin(); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
-PetscErrorCode Core::record_end(const std::string& serie_name,double time) {
+
+PetscErrorCode SeriesRecorder::record_end(const std::string& serie_name,double time) {
+  PetscErrorCode ierr;
   PetscFunctionBegin;
   Series_multiIndex::index<SeriesName_mi_tag>::type::iterator sit = sEries.get<SeriesName_mi_tag>().find(serie_name);
   if(sit==sEries.get<SeriesName_mi_tag>().end()) {
@@ -163,9 +267,12 @@ PetscErrorCode Core::record_end(const std::string& serie_name,double time) {
   ierr = const_cast<MoFEMSeries*>(&*sit)->end(time); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
-PetscErrorCode Core::initialize_series_recorder(const std::string& serie_name) {
-  PetscFunctionBegin;
+
+PetscErrorCode SeriesRecorder::initialize_series_recorder(const std::string& serie_name) {
   PetscErrorCode ierr;
+  MoFEM::Interface &m_field = cOre;
+  moab::Interface &moab = m_field.get_moab();
+  PetscFunctionBegin;
   Series_multiIndex::index<SeriesName_mi_tag>::type::iterator sit = sEries.get<SeriesName_mi_tag>().find(serie_name);
   if(sit==sEries.get<SeriesName_mi_tag>().end()) {
     SETERRQ1(PETSC_COMM_SELF,1,"serie recorder <%s> not exist",serie_name.c_str());
@@ -175,9 +282,12 @@ PetscErrorCode Core::initialize_series_recorder(const std::string& serie_name) {
   const_cast<MoFEMSeries*>(&*sit)->record_end = false;
   PetscFunctionReturn(0);
 }
-PetscErrorCode Core::finalize_series_recorder(const std::string& serie_name) {
-  PetscFunctionBegin;
+
+PetscErrorCode SeriesRecorder::finalize_series_recorder(const std::string& serie_name) {
   PetscErrorCode ierr;
+  MoFEM::Interface &m_field = cOre;
+  moab::Interface &moab = m_field.get_moab();
+  PetscFunctionBegin;
   Series_multiIndex::index<SeriesName_mi_tag>::type::iterator sit = sEries.get<SeriesName_mi_tag>().find(serie_name);
   if(sit==sEries.get<SeriesName_mi_tag>().end()) {
     SETERRQ1(PETSC_COMM_SELF,1,"serie recorder <%s> not exist",serie_name.c_str());
@@ -191,7 +301,10 @@ PetscErrorCode Core::finalize_series_recorder(const std::string& serie_name) {
   }
   PetscFunctionReturn(0);
 }
-PetscErrorCode Core::print_series_steps() {
+
+PetscErrorCode SeriesRecorder::print_series_steps() {
+  PetscErrorCode ierr;
+  MoFEM::Interface &m_field = cOre;
   PetscFunctionBegin;
   std::ostringstream ss;
   Series_multiIndex::index<SeriesName_mi_tag>::type::iterator sit = sEries.get<SeriesName_mi_tag>().begin();
@@ -202,29 +315,37 @@ PetscErrorCode Core::print_series_steps() {
   for(;ssit!=seriesSteps.get<SeriesName_mi_tag>().end();ssit++) {
     ss << "serises steps " << *ssit << std::endl;
   }
-  PetscPrintf(comm,ss.str().c_str());
+  PetscPrintf(m_field.get_comm(),ss.str().c_str());
   PetscFunctionReturn(0);
 }
-bool Core::check_series(const std::string& name) const {
+
+bool SeriesRecorder::check_series(const std::string& name) const {
   Series_multiIndex::index<SeriesName_mi_tag>::type::iterator sit = sEries.get<SeriesName_mi_tag>().find(name);
   if(sit!=sEries.get<SeriesName_mi_tag>().end()) return true;
   return false;
 }
-PetscErrorCode Core::load_series_data(const std::string& serie_name,const int step_number) {
-  PetscFunctionBegin;
+
+PetscErrorCode SeriesRecorder::load_series_data(const std::string& serie_name,const int step_number) {
   PetscErrorCode ierr;
+  MoFEM::Interface &m_field = cOre;
+  moab::Interface &moab = m_field.get_moab();
+  const DofEntity_multiIndex *dofs_ptr;
+  PetscFunctionBegin;
   SeriesStep_multiIndex::index<Composite_SeriesName_And_Step_mi_tag>::type::iterator sit;
   sit = seriesSteps.get<Composite_SeriesName_And_Step_mi_tag>().find(boost::make_tuple(serie_name,step_number));
   if(sit == seriesSteps.get<Composite_SeriesName_And_Step_mi_tag>().end()) {
     SETERRQ2(PETSC_COMM_SELF,1,"series <%s> and step %d not found",serie_name.c_str(),step_number);
   }
-  ierr = sit->get(moab,dofsField); CHKERRQ(ierr);
+  ierr = m_field.get_dofs(&dofs_ptr); CHKERRQ(ierr);
+  ierr = sit->get(moab,*(const_cast<DofEntity_multiIndex*>(dofs_ptr))); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
-SeriesStep_multiIndex::index<SeriesName_mi_tag>::type::iterator Core::get_series_steps_byName_begin(const std::string& name) {
+
+SeriesStep_multiIndex::index<SeriesName_mi_tag>::type::iterator SeriesRecorder::get_series_steps_byName_begin(const std::string& name) {
   return seriesSteps.get<SeriesName_mi_tag>().lower_bound(name);
 }
-SeriesStep_multiIndex::index<SeriesName_mi_tag>::type::iterator Core::get_series_steps_byName_end(const std::string& name) {
+
+SeriesStep_multiIndex::index<SeriesName_mi_tag>::type::iterator SeriesRecorder::get_series_steps_byName_end(const std::string& name) {
   return seriesSteps.get<SeriesName_mi_tag>().upper_bound(name);
 }
 

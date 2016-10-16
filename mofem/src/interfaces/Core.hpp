@@ -35,7 +35,7 @@ struct MeshsetsManager;
   without interfering with users modules programmer work.
 
  */
-struct Core: public Interface, SeriesRecorder {
+struct Core: public Interface {
 
   PetscErrorCode queryInterface(const MOFEMuuid& uuid, UnknownInterface** iface);
   PetscErrorCode query_interface_type(const std::type_info& iface_type,void*& ptr) const;
@@ -50,6 +50,7 @@ struct Core: public Interface, SeriesRecorder {
   inline Tag get_th_RefBitLevel() const { return th_RefBitLevel; }
   inline Tag get_th_RefBitEdge() const { return th_RefBitEdge; }
   inline Tag get_th_RefType() const { return th_RefType; }
+
 
   //add prims element FIXME This is wrong solution
   PetscErrorCode addPrismToDatabase(const EntityHandle prism,int verb = -1);
@@ -75,7 +76,7 @@ struct Core: public Interface, SeriesRecorder {
   Tag th_ProblemLocalNbDofCol,th_ProblemGhostNbDofCol;
   Tag th_ProblemShift,th_FieldShift,th_FEShift;
   Tag th_ElemType;                    ///< Needed for VTK files
-  Tag th_SeriesName;                  ///< Recorded series name
+  // Tag th_SeriesName;                  ///< Recorded series name
 
   boost::shared_ptr<BasicEntityData> basicEntityDataPtr;
 
@@ -109,9 +110,9 @@ struct Core: public Interface, SeriesRecorder {
   MoFEMProblem_multiIndex pRoblems;					 ///< problems
   //cubit
   // CubitMeshSet_multiIndex cubitMeshsets;	   ///< cubit meshsets
-  //series
-  Series_multiIndex sEries;							///< recorded series
-  SeriesStep_multiIndex seriesSteps;						///< recorded series steps
+  // //series
+  // Series_multiIndex sEries;							///< recorded series
+  // SeriesStep_multiIndex seriesSteps;						///< recorded series steps
 
   //safety nets
   Tag th_MoFEMBuild;
@@ -146,29 +147,6 @@ struct Core: public Interface, SeriesRecorder {
 
   //communicator MoFEM
   MPI_Comm get_comm() const;
-
-  //SeriesRecorder
-  //add/delete series
-  PetscErrorCode add_series_recorder(const std::string& series_name);
-  PetscErrorCode delete_recorder_series(const std::string& series_name);
-  //initialize/finalize recording
-  PetscErrorCode initialize_series_recorder(const std::string& serie_name);
-  PetscErrorCode finalize_series_recorder(const std::string& serie_name);
-  //start recording
-  PetscErrorCode record_begin(const std::string& serie_name);
-  //recording functions
-  PetscErrorCode record_problem(const std::string& serie_name,const MoFEMProblem *problemPtr,RowColData rc);
-  PetscErrorCode record_problem(const std::string& serie_name,const std::string& problem_name,RowColData rc);
-  PetscErrorCode record_field(const std::string& serie_name,const std::string& field_name,const BitRefLevel &bit,const BitRefLevel &mask);
-  //end recording
-  PetscErrorCode record_end(const std::string& serie_name,double time = 0);
-  PetscErrorCode print_series_steps();
-  bool check_series(const std::string& name) const;
-  //get data back
-  PetscErrorCode load_series_data(const std::string& serie_name,const int step_number);
-
-  SeriesStep_multiIndex::index<SeriesName_mi_tag>::type::iterator get_series_steps_byName_begin(const std::string& name);
-  SeriesStep_multiIndex::index<SeriesName_mi_tag>::type::iterator get_series_steps_byName_end(const std::string& name);
 
   //FiedlInterface
 

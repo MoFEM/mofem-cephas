@@ -103,34 +103,35 @@ int main(int argc, char *argv[]) {
   ierr = m_field.set_field(0,MBVERTEX,"FIELD_B"); CHKERRQ(ierr);
   ierr = m_field.set_field(1,MBVERTEX,"FIELD_A"); CHKERRQ(ierr);
 
-  SeriesRecorder& recorder = core;
+  SeriesRecorder *recorder_ptr;
+  ierr = m_field.query_interface(recorder_ptr); CHKERRQ(ierr);
 
-  ierr = recorder.add_series_recorder("TEST_SERIES1"); CHKERRQ(ierr);
-  ierr = recorder.add_series_recorder("TEST_SERIES2"); CHKERRQ(ierr);
+  ierr = recorder_ptr->add_series_recorder("TEST_SERIES1"); CHKERRQ(ierr);
+  ierr = recorder_ptr->add_series_recorder("TEST_SERIES2"); CHKERRQ(ierr);
 
   //initialize
-  ierr = recorder.initialize_series_recorder("TEST_SERIES1"); CHKERRQ(ierr);
+  ierr = recorder_ptr->initialize_series_recorder("TEST_SERIES1"); CHKERRQ(ierr);
 
-  ierr = recorder.record_begin("TEST_SERIES1"); CHKERRQ(ierr);
-  ierr = recorder.record_field("TEST_SERIES1","FIELD_B",bit_level0,bit_level0); CHKERRQ(ierr);
-  ierr = recorder.record_end("TEST_SERIES1",1); CHKERRQ(ierr);
+  ierr = recorder_ptr->record_begin("TEST_SERIES1"); CHKERRQ(ierr);
+  ierr = recorder_ptr->record_field("TEST_SERIES1","FIELD_B",bit_level0,bit_level0); CHKERRQ(ierr);
+  ierr = recorder_ptr->record_end("TEST_SERIES1",1); CHKERRQ(ierr);
 
   ierr = m_field.field_axpy(1.,"FIELD_A","FIELD_B"); CHKERRQ(ierr);
-  ierr = recorder.record_begin("TEST_SERIES1"); CHKERRQ(ierr);
-  ierr = recorder.record_field("TEST_SERIES1","FIELD_B",bit_level0,bit_level0); CHKERRQ(ierr);
+  ierr = recorder_ptr->record_begin("TEST_SERIES1"); CHKERRQ(ierr);
+  ierr = recorder_ptr->record_field("TEST_SERIES1","FIELD_B",bit_level0,bit_level0); CHKERRQ(ierr);
 
-  ierr = recorder.initialize_series_recorder("TEST_SERIES2"); CHKERRQ(ierr);
-  ierr = recorder.record_begin("TEST_SERIES2"); CHKERRQ(ierr);
-  ierr = recorder.record_field("TEST_SERIES2","FIELD_A",bit_level0,bit_level0); CHKERRQ(ierr);
-  ierr = recorder.record_field("TEST_SERIES2","FIELD_B",bit_level0,bit_level0); CHKERRQ(ierr);
-  ierr = recorder.record_end("TEST_SERIES2",1); CHKERRQ(ierr);
-  ierr = recorder.finalize_series_recorder("TEST_SERIES2"); CHKERRQ(ierr);
+  ierr = recorder_ptr->initialize_series_recorder("TEST_SERIES2"); CHKERRQ(ierr);
+  ierr = recorder_ptr->record_begin("TEST_SERIES2"); CHKERRQ(ierr);
+  ierr = recorder_ptr->record_field("TEST_SERIES2","FIELD_A",bit_level0,bit_level0); CHKERRQ(ierr);
+  ierr = recorder_ptr->record_field("TEST_SERIES2","FIELD_B",bit_level0,bit_level0); CHKERRQ(ierr);
+  ierr = recorder_ptr->record_end("TEST_SERIES2",1); CHKERRQ(ierr);
+  ierr = recorder_ptr->finalize_series_recorder("TEST_SERIES2"); CHKERRQ(ierr);
 
-  ierr = recorder.record_end("TEST_SERIES1",2); CHKERRQ(ierr);
+  ierr = recorder_ptr->record_end("TEST_SERIES1",2); CHKERRQ(ierr);
 
   //finalize
-  ierr = recorder.finalize_series_recorder("TEST_SERIES1"); CHKERRQ(ierr);
-  ierr = recorder.print_series_steps(); CHKERRQ(ierr);
+  ierr = recorder_ptr->finalize_series_recorder("TEST_SERIES1"); CHKERRQ(ierr);
+  ierr = recorder_ptr->print_series_steps(); CHKERRQ(ierr);
 
   ierr = m_field.field_scale(2,"FIELD_A"); CHKERRQ(ierr);
 
@@ -146,13 +147,14 @@ int main(int argc, char *argv[]) {
   TeeDevice my_tee(std::cout, ofs);
   TeeStream my_split(my_tee);
 
-  SeriesRecorder& recorder2 = core2;
-  ierr = recorder2.print_series_steps(); CHKERRQ(ierr);
+  SeriesRecorder *recorder2_ptr;
+  ierr = m_field2.query_interface(recorder2_ptr); CHKERRQ(ierr);
+  ierr = recorder2_ptr->print_series_steps(); CHKERRQ(ierr);
 
   my_split << "TEST_SERIES1" << std::endl;
-  for(_IT_SERIES_STEPS_BY_NAME_FOR_LOOP_((&recorder2),"TEST_SERIES1",sit)) {
+  for(_IT_SERIES_STEPS_BY_NAME_FOR_LOOP_(recorder2_ptr,"TEST_SERIES1",sit)) {
 
-    ierr = recorder2.load_series_data("TEST_SERIES1",sit->get_step_number()); CHKERRQ(ierr);
+    ierr = recorder2_ptr->load_series_data("TEST_SERIES1",sit->get_step_number()); CHKERRQ(ierr);
 
     my_split << "next step:\n";
     my_split << *sit << std::endl;
@@ -164,9 +166,9 @@ int main(int argc, char *argv[]) {
   }
 
   my_split << "TEST_SERIES2" << std::endl;
-  for(_IT_SERIES_STEPS_BY_NAME_FOR_LOOP_((&recorder2),"TEST_SERIES2",sit)) {
+  for(_IT_SERIES_STEPS_BY_NAME_FOR_LOOP_(recorder2_ptr,"TEST_SERIES2",sit)) {
 
-    ierr = recorder2.load_series_data("TEST_SERIES2",sit->get_step_number()); CHKERRQ(ierr);
+    ierr = recorder2_ptr->load_series_data("TEST_SERIES2",sit->get_step_number()); CHKERRQ(ierr);
 
     my_split << "next step:\n";
     for(_IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(m_field2,"FIELD_A",dof)) {
