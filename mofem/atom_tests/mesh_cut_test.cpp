@@ -92,7 +92,9 @@ int main(int argc, char *argv[]) {
   // cut tets
   BitRefLevel bit_level1;
   bit_level1.set(1);
+  #ifdef WITH_TETGEN
   ierr = cut_mesh->imprintFront(bit_level1,175,10); CHKERRQ(ierr);
+  #endif
 
   // ierr = cut_mesh->cutTets(bit_level1); CHKERRQ(ierr);
   // ierr = cut_mesh->moveNodes(); CHKERRQ(ierr);

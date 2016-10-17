@@ -328,12 +328,18 @@ namespace MoFEM {
     rval = skin.find_skin(0,frontTets,false,front_skin); CHKERR_MOAB(rval);
     Range vertices;
     rval = moab.get_connectivity(frontTets,vertices,false); CHKERR_MOAB(rval);
+    cerr << "AAA " << vertices.size() << endl;
     Range internal_front_skin = subtract(front_skin,vol_skin);
+    Range front_tets_faces;
+    rval = moab.get_adjacencies(
+      frontTets,2,false,front_tets_faces,moab::Interface::UNION
+    ); CHKERR_MOAB(rval);
     for(
-      Range::iterator fit = internal_front_skin.begin();
-      fit!=internal_front_skin.end();
+      Range::iterator fit = front_tets_faces.begin();
+      fit!=front_tets_faces.end();
       fit++
     ) {
+      // cerr << *fit << endl;
       map<EntityHandle,EdgeData>::iterator mit = facesFrontToRemesh.find(*fit);
       if(mit!=facesFrontToRemesh.end()) {
         double s = mit->second.dIst;
@@ -341,6 +347,7 @@ namespace MoFEM {
         EntityHandle vertex;
         rval = moab.create_vertex(&new_coors[0],vertex); CHKERRQ_MOAB(rval);
         vertices.insert(vertex);
+        cerr << vertex << endl;
         rval = moab.tag_set_data(
           cOre.get_th_RefParentHandle(),&vertex,1,&*fit
         ); CHKERRQ_MOAB(rval);
@@ -357,85 +364,105 @@ namespace MoFEM {
           );
         }
       }
-
-      map<int,Range> types_ents;
-      //RIDGEVERTEX
-      types_ents[TetGenInterface::RIDGEVERTEX].merge(vertices);
-      //FREESEGVERTEX
-      // types_ents[TetGenInterface::FREESEGVERTEX]
-      //FREEFACETVERTEX
-      // types_ents[TetGenInterface::FREEFACETVERTEX]
-      //FREEVOLVERTEX
-      // types_ents[TetGenInterface::FREEVOLVERTEX]
-
-      Tag th_marker;
-      int def_marker = 0;
-      rval = moab.tag_get_handle(
-        "TETGEN_MARKER",1,MB_TYPE_INTEGER,th_marker,MB_TAG_CREAT|MB_TAG_SPARSE,&def_marker
-      ); CHKERRQ_MOAB(rval);
-      vector<int> markers;
-      fill(markers.begin(),markers.end(),0);
-      rval = moab.tag_set_data(th_marker,vertices,&*markers.begin()); CHKERRQ_MOAB(rval);
-
-
-      TetGenInterface *tetgen_iface;
-      ierr = m_field.query_interface(tetgen_iface); CHKERRQ(ierr);
-
-      tetGenData.clear();
-      if(tetGenData.size()<1) {
-        tetGenData.push_back(new tetgenio);
-      }
-      tetgenio &in = tetGenData.back();
-
-
-      Range ents_to_tetgen;
-      ents_to_tetgen.merge(vertices);
-      ents_to_tetgen.merge(internal_front_skin);
-
-      ierr = tetgen_iface->inData(ents_to_tetgen,in,moabTetGenMap,tetGenMoabMap); CHKERRQ(ierr);
-      ierr = tetgen_iface->setGeomData(in,moabTetGenMap,tetGenMoabMap,types_ents); CHKERRQ(ierr);
-      {
-        vector<pair<Range,int> > markers;
-        ierr = tetgen_iface->setFaceData(markers,in,moabTetGenMap,tetGenMoabMap); CHKERRQ(ierr);
-      }
-
-      if(verb>5) {
-        if(m_field.getCommRank()==0) {
-          char tetgen_in_file_name[] = "in";
-          in.save_nodes(tetgen_in_file_name);
-          in.save_elements(tetgen_in_file_name);
-          in.save_faces(tetgen_in_file_name);
-          in.save_edges(tetgen_in_file_name);
-          in.save_poly(tetgen_in_file_name);
-        }
-      }
-
-      std::string tetgen_switches;
-      {
-        ostringstream ss;
-        ss << "rp" << tetgen_face_angle << "sqRS0JVV";
-        tetgen_switches = ss.str();
-      }
-
-      tetGenData.push_back(new tetgenio);
-      tetgenio &out = tetGenData.back();
-      ierr = tetgen_iface->tetRahedralize(
-        const_cast<char*>(tetgen_switches.c_str()),in,out
-      ); CHKERRQ(ierr);
-
-      //save elems
-      if(verb>5) {
-        char tetgen_out_file_name[] = "out";
-        out.save_nodes(tetgen_out_file_name);
-        out.save_elements(tetgen_out_file_name);
-        out.save_faces(tetgen_out_file_name);
-        out.save_edges(tetgen_out_file_name);
-        out.save_poly(tetgen_out_file_name);
-      }
-
-
-
     }
+    cerr << "BBB " << vertices.size() << endl;
+
+    map<int,Range> types_ents;
+    //RIDGEVERTEX
+    types_ents[TetGenInterface::RIDGEVERTEX].merge(vertices);
+    //FREESEGVERTEX
+    // types_ents[TetGenInterface::FREESEGVERTEX]
+    //FREEFACETVERTEX
+    // types_ents[TetGenInterface::FREEFACETVERTEX]
+    //FREEVOLVERTEX
+    // types_ents[TetGenInterface::FREEVOLVERTEX]
+
+    Tag th_marker;
+    int def_marker = 0;
+    rval = moab.tag_get_handle(
+      "TETGEN_MARKER",1,MB_TYPE_INTEGER,th_marker,MB_TAG_CREAT|MB_TAG_SPARSE,&def_marker
+    ); CHKERRQ_MOAB(rval);
+    vector<int> markers;
+    markers.resize(vertices.size());
+    fill(markers.begin(),markers.end(),0);
+    rval = moab.tag_set_data(th_marker,vertices,&*markers.begin()); CHKERRQ_MOAB(rval);
+    markers.resize(front_skin.size());
+    fill(markers.begin(),markers.end(),0);
+    rval = moab.tag_set_data(th_marker,front_skin,&*markers.begin()); CHKERRQ_MOAB(rval);
+    Range front_skin_edges;
+    rval = moab.get_adjacencies(
+      front_skin,1,false,front_skin_edges,moab::Interface::UNION
+    ); CHKERRQ_MOAB(rval);
+    markers.resize(front_skin_edges.size());
+    fill(markers.begin(),markers.end(),0);
+    rval = moab.tag_set_data(th_marker,front_skin_edges,&*markers.begin()); CHKERRQ_MOAB(rval);
+
+    TetGenInterface *tetgen_iface;
+    ierr = m_field.query_interface(tetgen_iface); CHKERRQ(ierr);
+
+    tetGenData.clear();
+    tetGenData.push_back(new tetgenio);
+    tetgenio &in = tetGenData.back();
+
+    Range ents_to_tetgen;
+    ents_to_tetgen.merge(vertices);
+    ents_to_tetgen.merge(internal_front_skin);
+    rval = moab.get_adjacencies(
+      internal_front_skin,1,false,ents_to_tetgen,moab::Interface::UNION
+    ); CHKERRQ_MOAB(rval);
+    ents_to_tetgen.merge(frontTets);
+
+    ierr = tetgen_iface->inData(ents_to_tetgen,in,moabTetGenMap,tetGenMoabMap); CHKERRQ(ierr);
+    ierr = tetgen_iface->setGeomData(in,moabTetGenMap,tetGenMoabMap,types_ents); CHKERRQ(ierr);
+    {
+      vector<pair<Range,int> > face_markers;
+      for(
+        Range::iterator fit = internal_front_skin.begin();
+        fit!=internal_front_skin.end();fit++
+      ) {
+        Range facet;
+        facet.insert(*fit);
+        face_markers.push_back(pair<Range,int>(facet,1));
+      }
+      ierr = tetgen_iface->setFaceData(face_markers,in,moabTetGenMap,tetGenMoabMap); CHKERRQ(ierr);
+    }
+
+    if(verb>5) {
+      if(m_field.getCommRank()==0) {
+        char tetgen_in_file_name[] = "in";
+        in.save_nodes(tetgen_in_file_name);
+        in.save_elements(tetgen_in_file_name);
+        in.save_faces(tetgen_in_file_name);
+        in.save_edges(tetgen_in_file_name);
+        in.save_poly(tetgen_in_file_name);
+      }
+    }
+
+    std::string tetgen_switches;
+    {
+      ostringstream ss;
+      ss << "piJYVV";
+      // ss << "pYAVV" << endl;
+      tetgen_switches = ss.str();
+    }
+
+    tetGenData.push_back(new tetgenio);
+    tetgenio &out = tetGenData.back();
+    ierr = tetgen_iface->tetRahedralize(
+      const_cast<char*>(tetgen_switches.c_str()),in,out
+    ); CHKERRQ(ierr);
+
+    //save elems
+    if(verb>5) {
+      char tetgen_out_file_name[] = "out";
+      out.save_nodes(tetgen_out_file_name);
+      out.save_elements(tetgen_out_file_name);
+      out.save_faces(tetgen_out_file_name);
+      out.save_edges(tetgen_out_file_name);
+      out.save_poly(tetgen_out_file_name);
+    }
+
+
 
     PetscFunctionReturn(0);
   }
