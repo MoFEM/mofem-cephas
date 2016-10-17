@@ -82,8 +82,8 @@ format running script
 and prostporcess results in ParaView <http://www.paraview.org>.
 
 As result of postprocessing in ParaView we have created following output
-\image html l-shape-adaptivity.gif "h-adaptivity" width=6cm
-\image html l-shape-adaptivity_singularity.gif "Flux singularity" width=6cm
+\image html l-shape-adaptivity.gif "h-adaptivity" width=700px
+\image html l-shape-adaptivity_singularity.gif "Flux singularity" width=700px
 You can note that subsequent mesh refinement reduces error and make it more
 uniformly distributed through the mesh. You can also observe that mesh is
 getting denser at the corner where singularity is located.
@@ -107,7 +107,7 @@ brick, prism, ...) we attach bit tag, i.e. \ref MoFEM::BitRefLevel. Using that t
 can make selections of entities and other operations on meshes.
 
 It would be easier to understand if you look at the figure below
-\image html mesh_bit_levels.png "Mesh bit refinement levels (Example)" width=6cm
+\image html mesh_bit_levels.png "Mesh bit refinement levels (Example)" width=700px
 
 Imagine that we load the mesh with the topology like in the top-left figure. We
 seed the mesh (\ref MoFEM::Interface::seed_ref_level) by  tagging each entity
@@ -198,7 +198,7 @@ MoFEM::Interface& m_field = core;   ///< Create interface to database
 \endcode
 
 In file \erf l-shape.msh following geometry and mesh is described
-\image html gmesh_blocksets.png "Blocksets and GMesh mesh" width=6cm
+\image html gmesh_blocksets.png "Blocksets and GMesh mesh" width=700px
 where as result of reading of that mesh into MoFEM database, following information is printed on the
 screen
 \verbatim
