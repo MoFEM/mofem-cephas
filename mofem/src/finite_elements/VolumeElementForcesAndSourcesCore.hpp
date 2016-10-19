@@ -125,7 +125,9 @@ struct VolumeElementForcesAndSourcesCore: public ForcesAndSurcesCore {
       static_cast<VolumeElementForcesAndSourcesCore*>(ptrFE)->coords;
     }
 
-    /** \brief matrix of Gauss pts
+    /** \brief matrix of integration (Gauss) points for Volume Element
+      *  where columns 0,1,2 are x,y,z coordinates respectively and column 3 is a weight value
+      * for example getGaussPts()(1,13) returns y coordinate of 13th Gauss point on particular volume element
       */
     inline MatrixDouble& getGaussPts() {
       return static_cast<VolumeElementForcesAndSourcesCore*>(ptrFE)->gaussPts;

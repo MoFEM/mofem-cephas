@@ -180,8 +180,10 @@ struct FaceElementForcesAndSourcesCore: public ForcesAndSurcesCore {
       return FTensor::Tensor1<double*,3>(ptr,&ptr[1],&ptr[2],3);
     }
 
-    /** \brief get triangle Gauss pts.
-     */
+    /** \brief get matrix of integration (Gauss) points on Face Element
+    *  where columns 0,1 are x,y coordinates respectively and column 2 is a value of weight
+    * for example getGaussPts()(1,13) returns y coordinate of 13th Gauss point on particular face element
+    */
     inline MatrixDouble& getGaussPts() {
       return static_cast<FaceElementForcesAndSourcesCore*>(ptrFE)->gaussPts;
     }

@@ -105,7 +105,9 @@ struct EdgeElementForcesAndSurcesCore: public ForcesAndSurcesCore {
     }
 
     /**
-     * \brief get integration points on the edge
+     * \brief get matrix of integration (Gauss) points on the edge
+     *  where column 0 is a coordinate X and column 1 is a value of weight
+     * for example getGaussPts()(0,13) returns 0 coordinate of 13th Gauss point on particular edge element
      */
     inline MatrixDouble& getGaussPts() {
       return static_cast<EdgeElementForcesAndSurcesCore*>(ptrFE)->gaussPts;
