@@ -132,8 +132,10 @@ struct FlatPrismElementForcesAndSurcesCore: public ForcesAndSurcesCore {
       return static_cast<FlatPrismElementForcesAndSurcesCore*>(ptrFE)->coords;
     }
 
-    /** \brief get triangle Gauss pts.
-     */
+    /** \brief get matrix of integration (Gauss) points on Triangle Element
+    *  where columns 0,1 are x,y coordinates respectively and column 2 is a value of weight
+    * for example getGaussPts()(1,13) returns y coordinate of 13th Gauss point on particular triangle element
+    */
     inline MatrixDouble& getGaussPts() {
       return static_cast<FlatPrismElementForcesAndSurcesCore*>(ptrFE)->gaussPts;
     }
