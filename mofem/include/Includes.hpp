@@ -107,6 +107,8 @@ extern "C" {
 #include <moab/OrientedBoxTreeTool.hpp>
 #include <moab/MeshTopoUtil.hpp>
 #include <moab/ReadUtilIface.hpp>
+#include <moab/GeomUtil.hpp>
+#include <moab/Util.hpp>
 
 //Name spaces
 using namespace moab;
