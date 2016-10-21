@@ -39,7 +39,7 @@ namespace MoFEM {
   of its coordinate system.
 
   In this data structure a generic two-point tensors are considered,
-  see \cite  marsden1994mathematical. To each field \ref MoFEM::MoFEMField a CoordSys data
+  see \cite  marsden1994mathematical. To each field \ref MoFEM::Field a CoordSys data
   structure can be attached, carrying information about tensor structure
   approximated by the field.
 
@@ -121,13 +121,13 @@ namespace MoFEM {
       PetscFunctionReturn(0);
     }
 
-    inline EntityHandle getMeshSet() const { return meshSet; };
+    inline EntityHandle getMeshset() const { return meshSet; };
     inline boost::string_ref getNameRef() const { return boost::string_ref((char *)tagCoordSysName,tagCoordSysNameSize); };
-    inline string getName() const { return string((char *)tagCoordSysName,tagCoordSysNameSize); };
+    inline std::string getName() const { return std::string((char *)tagCoordSysName,tagCoordSysNameSize); };
   };
 
   typedef multi_index_container<
-    CoordSys,
+    boost::shared_ptr<CoordSys>,
     indexed_by<
       ordered_unique<
         tag<Meshset_mi_tag>, member<CoordSys,EntityHandle,&CoordSys::meshSet>

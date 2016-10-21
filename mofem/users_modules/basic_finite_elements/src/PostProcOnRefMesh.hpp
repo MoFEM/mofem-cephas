@@ -3,6 +3,8 @@
  *
  * Create refined mesh, without enforcing continuity between element. Calculate
  * field values on nodes of that mesh.
+ *
+ * \ingroup mofem_fs_post_proc
  */
 
 /* This file is part of MoFEM.
@@ -22,30 +24,50 @@
 #ifndef __POSTPROC_ON_REF_MESH_HPP
 #define __POSTPROC_ON_REF_MESH_HPP
 
+/** \brief Set of operators and data structures used for post-processing
+
+This set of functions works that for given problem a new MoAB instance is crated
+only used for post-processing. For each post-processed element  in the problem
+an element entity in post-processing mesh is created. Post-processed elements do
+not share nodes and any others entities between them, such that discontinuities
+between element could be shown.
+
+Post-processed entities could be represented by ho-elements, for example 10 node
+tetrahedrons. Moreover each element could be refined such that higher order
+polynomials  could be well represented.
+
+* \ingroup mofem_fs_post_proc
+
+*/
 struct PostProcCommonOnRefMesh {
 
   struct CommonData {
-    map<string,vector<ublas::vector<double> > > fieldMap;
-    map<string,vector<ublas::matrix<double> > > gradMap;
+    std::map<std::string,std::vector<ublas::vector<double> > > fieldMap;
+    std::map<std::string,std::vector<ublas::matrix<double> > > gradMap;
   };
 
-  struct OpGetFieldValues: public ForcesAndSurcesCore::UserDataOperator {
+  /**
+   * \brief operator to post-process (save gardients on refined post-processing mesh) field gradient
+   * \ingroup mofem_fs_post_proc
+   *
+   */
+  struct OpGetFieldValues: public MoFEM::ForcesAndSurcesCore::UserDataOperator {
 
-    Interface &postProcMesh;
-    vector<EntityHandle> &mapGaussPts;
+    moab::Interface &postProcMesh;
+    std::vector<EntityHandle> &mapGaussPts;
     CommonData &commonData;
-    const string tagName;
+    const std::string tagName;
     Vec V;
 
     OpGetFieldValues(
-      Interface &post_proc_mesh,
-      vector<EntityHandle> &map_gauss_pts,
-      const string field_name,
-      const string tag_name,
+      moab::Interface &post_proc_mesh,
+      std::vector<EntityHandle> &map_gauss_pts,
+      const std::string field_name,
+      const std::string tag_name,
       CommonData &common_data,
       Vec v = PETSC_NULL
     ):
-    ForcesAndSurcesCore::UserDataOperator(field_name,UserDataOperator::OPCOL),
+    MoFEM::ForcesAndSurcesCore::UserDataOperator(field_name,UserDataOperator::OPCOL),
     postProcMesh(post_proc_mesh),
     mapGaussPts(map_gauss_pts),
     commonData(common_data),
@@ -63,23 +85,28 @@ struct PostProcCommonOnRefMesh {
 
   };
 
-  struct OpGetFieldGradientValues: public ForcesAndSurcesCore::UserDataOperator {
+  /**
+   * \brief operator to post-process (save gradients on refined post-processing mesh) field gradient
+   * \ingroup mofem_fs_post_proc
+   *
+   */
+  struct OpGetFieldGradientValues: public MoFEM::ForcesAndSurcesCore::UserDataOperator {
 
-    Interface &postProcMesh;
-    vector<EntityHandle> &mapGaussPts;
+    moab::Interface &postProcMesh;
+    std::vector<EntityHandle> &mapGaussPts;
     CommonData &commonData;
-    const string tagName;
+    const std::string tagName;
     Vec V;
 
     OpGetFieldGradientValues(
-      Interface &post_proc_mesh,
-      vector<EntityHandle> &map_gauss_pts,
-      const string field_name,
-      const string tag_name,
+      moab::Interface &post_proc_mesh,
+      std::vector<EntityHandle> &map_gauss_pts,
+      const std::string field_name,
+      const std::string tag_name,
       CommonData &common_data,
       Vec v = PETSC_NULL
     ):
-    ForcesAndSurcesCore::UserDataOperator(field_name,UserDataOperator::OPCOL),
+    MoFEM::ForcesAndSurcesCore::UserDataOperator(field_name,UserDataOperator::OPCOL),
     postProcMesh(post_proc_mesh),
     mapGaussPts(map_gauss_pts),
     commonData(common_data),
@@ -100,20 +127,27 @@ struct PostProcCommonOnRefMesh {
 
 };
 
+/**
+ * \brief Generic post-pocessing class
+ *
+ * Generate refined mesh and save data on vertices
+ *
+ * \ingroup mofem_fs_post_proc
+ */
 template<class ELEMENT>
 struct PostProcTemplateOnRefineMesh: public ELEMENT {
 
   moab::Core coreMesh;
-  Interface &postProcMesh;
-  vector<EntityHandle> mapGaussPts;
+  moab::Interface &postProcMesh;
+  std::vector<EntityHandle> mapGaussPts;
 
-  PostProcTemplateOnRefineMesh(FieldInterface &m_field):
+  PostProcTemplateOnRefineMesh(MoFEM::Interface &m_field):
   ELEMENT(m_field),
   postProcMesh(coreMesh) {
   }
 
   virtual PostProcCommonOnRefMesh::CommonData& getCommonData() {
-    THROW_AT_LINE("not implemented");
+    THROW_MESSAGE("not implemented");
   }
 
   /** \brief Add operator to post-process L2 or H1 field value
@@ -124,8 +158,10 @@ struct PostProcTemplateOnRefineMesh: public ELEMENT {
     Note:
     Name of the tag to store values on post-process mesh is the same as field name
 
+    * \ingroup mofem_fs_post_proc
+
   */
-  PetscErrorCode addFieldValuesPostProc(const string field_name,Vec v = PETSC_NULL) {
+  PetscErrorCode addFieldValuesPostProc(const std::string field_name,Vec v = PETSC_NULL) {
     PetscFunctionBegin;
     ELEMENT::getOpPtrVector().push_back(
       new PostProcCommonOnRefMesh::OpGetFieldValues(
@@ -141,8 +177,10 @@ struct PostProcTemplateOnRefineMesh: public ELEMENT {
     \param tag_name to store results on post-process mesh
     \param v If vector is given, values from vector are used to set tags on mesh
 
+    * \ingroup mofem_fs_post_proc
+
   */
-  PetscErrorCode addFieldValuesPostProc(const string field_name,const string tag_name,Vec v = PETSC_NULL) {
+  PetscErrorCode addFieldValuesPostProc(const std::string field_name,const std::string tag_name,Vec v = PETSC_NULL) {
     PetscFunctionBegin;
     ELEMENT::getOpPtrVector().push_back(
       new PostProcCommonOnRefMesh::OpGetFieldValues(
@@ -161,8 +199,10 @@ struct PostProcTemplateOnRefineMesh: public ELEMENT {
     Note:
     Name of the tag to store values on post-process mesh is the same as field name
 
+    * \ingroup mofem_fs_post_proc
+
   */
-  PetscErrorCode addFieldValuesGradientPostProc(const string field_name,Vec v = PETSC_NULL) {
+  PetscErrorCode addFieldValuesGradientPostProc(const std::string field_name,Vec v = PETSC_NULL) {
     PetscFunctionBegin;
     ELEMENT::getOpPtrVector().push_back(
       new PostProcCommonOnRefMesh::OpGetFieldGradientValues(
@@ -178,8 +218,10 @@ struct PostProcTemplateOnRefineMesh: public ELEMENT {
     \param tag_name to store results on post-process mesh
     \param v If vector is given, values from vector are used to set tags on mesh
 
+    * \ingroup mofem_fs_post_proc
+
   */
-  PetscErrorCode addFieldValuesGradientPostProc(const string field_name,const string tag_name,Vec v = PETSC_NULL) {
+  PetscErrorCode addFieldValuesGradientPostProc(const std::string field_name,const std::string tag_name,Vec v = PETSC_NULL) {
     PetscFunctionBegin;
     ELEMENT::getOpPtrVector().push_back(
       new PostProcCommonOnRefMesh::OpGetFieldGradientValues(
@@ -194,17 +236,17 @@ struct PostProcTemplateOnRefineMesh: public ELEMENT {
 /** \brief Post processing
   * \ingroup mofem_fs_post_proc
   */
-struct PostProcVolumeOnRefinedMesh: public PostProcTemplateOnRefineMesh<VolumeElementForcesAndSourcesCore> {
+struct PostProcVolumeOnRefinedMesh: public PostProcTemplateOnRefineMesh<MoFEM::VolumeElementForcesAndSourcesCore> {
 
   bool tenNodesPostProcTets;
   int nbOfRefLevels;
 
   PostProcVolumeOnRefinedMesh(
-    FieldInterface &m_field,
+    MoFEM::Interface &m_field,
     bool ten_nodes_post_proc_tets = true,
     int nb_ref_levels = -1
   ):
-  PostProcTemplateOnRefineMesh<VolumeElementForcesAndSourcesCore>(m_field),
+  PostProcTemplateOnRefineMesh<MoFEM::VolumeElementForcesAndSourcesCore>(m_field),
   tenNodesPostProcTets(ten_nodes_post_proc_tets),
   nbOfRefLevels(nb_ref_levels) {
   }
@@ -216,6 +258,8 @@ struct PostProcVolumeOnRefinedMesh: public PostProcTemplateOnRefineMesh<VolumeEl
     }
   }
 
+  ublas::matrix<double> shapeFunctions;
+  ublas::matrix<double> coordsAtGaussPts;
   ublas::matrix<int> refTets;
   ublas::matrix<double> gaussPts_FirstOrder;
 
@@ -264,19 +308,21 @@ struct PostProcVolumeOnRefinedMesh: public PostProcTemplateOnRefineMesh<VolumeEl
 
   PetscErrorCode postProcess();
 
+  PetscErrorCode writeFile(const std::string file_name);
+
   /** \brief Add operator to post-process Hdiv field
   */
-  PetscErrorCode addHdivFunctionsPostProc(const string field_name);
+  PetscErrorCode addHdivFunctionsPostProc(const std::string field_name);
 
-  struct OpHdivFunctions: public VolumeElementForcesAndSourcesCore::UserDataOperator {
+  struct OpHdivFunctions: public MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator {
 
-    Interface &postProcMesh;
-    vector<EntityHandle> &mapGaussPts;
+    moab::Interface &postProcMesh;
+    std::vector<EntityHandle> &mapGaussPts;
 
     OpHdivFunctions(
-      Interface &post_proc_mesh,
-      vector<EntityHandle> &map_gauss_pts,
-      const string field_name
+      moab::Interface &post_proc_mesh,
+      std::vector<EntityHandle> &map_gauss_pts,
+      const std::string field_name
     ):
     VolumeElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPCOL),
     postProcMesh(post_proc_mesh),
@@ -293,17 +339,24 @@ struct PostProcVolumeOnRefinedMesh: public PostProcTemplateOnRefineMesh<VolumeEl
 
 };
 
+/** \deprecated Use PostPocOnRefinedMesh instead
+*/
 DEPRECATED typedef PostProcVolumeOnRefinedMesh PostPocOnRefinedMesh;
 
-struct PostProcFatPrismOnRefinedMesh: public PostProcTemplateOnRefineMesh<FatPrismElementForcesAndSurcesCore> {
+/**
+ *  \brief Postprocess on prism
+ *
+ * \ingroup mofem_fs_post_proc
+ */
+struct PostProcFatPrismOnRefinedMesh: public PostProcTemplateOnRefineMesh<MoFEM::FatPrismElementForcesAndSurcesCore> {
 
   bool tenNodesPostProcTets;
 
   PostProcFatPrismOnRefinedMesh(
-    FieldInterface &m_field,
+    MoFEM::Interface &m_field,
     bool ten_nodes_post_proc_tets = true
   ):
-  PostProcTemplateOnRefineMesh<FatPrismElementForcesAndSurcesCore>(m_field),
+  PostProcTemplateOnRefineMesh<MoFEM::FatPrismElementForcesAndSurcesCore>(m_field),
   tenNodesPostProcTets(ten_nodes_post_proc_tets) {
   }
 
@@ -317,11 +370,89 @@ struct PostProcFatPrismOnRefinedMesh: public PostProcTemplateOnRefineMesh<FatPri
   int getRuleTrianglesOnly(int order) { return -1; };
   int getRuleThroughThickness(int order) { return -1; };
 
+  struct PointsMap3D {
+    const int kSi;
+    const int eTa;
+    const int zEta;
+    int nN;
+    PointsMap3D(
+      const int ksi,
+      const int eta,
+      const int zeta,
+      const int nn
+    ):
+    kSi(ksi),
+    eTa(eta),
+    zEta(zeta),
+    nN(nn) {
+    }
+  };
+
+  typedef multi_index_container<
+    PointsMap3D,
+    indexed_by<
+      ordered_unique<
+        composite_key<
+        PointsMap3D,
+        member<PointsMap3D,const int,&PointsMap3D::kSi>,
+        member<PointsMap3D,const int,&PointsMap3D::eTa>,
+        member<PointsMap3D,const int,&PointsMap3D::zEta>
+      >
+    >
+  > > PointsMap3D_multiIndex;
+
+  PointsMap3D_multiIndex pointsMap;
+
   PetscErrorCode setGaussPtsTrianglesOnly(int order_triangles_only);
   PetscErrorCode setGaussPtsThroughThickness(int order_thickness);
   PetscErrorCode generateReferenceElementMesh();
 
-  map<EntityHandle,EntityHandle> elementsMap;
+  std::map<EntityHandle,EntityHandle> elementsMap;
+
+  PetscErrorCode preProcess();
+  PetscErrorCode postProcess();
+
+  struct CommonData: PostProcCommonOnRefMesh::CommonData {
+  };
+  CommonData commonData;
+
+  virtual PostProcCommonOnRefMesh::CommonData& getCommonData() {
+    return commonData;
+  }
+
+};
+
+/**
+ * \brief Postprocess on face
+ *
+ * \ingroup mofem_fs_post_proc
+ */
+struct PostProcFaceOnRefinedMesh: public PostProcTemplateOnRefineMesh<MoFEM::FaceElementForcesAndSourcesCore> {
+
+  bool sixNodePostProcTris;
+
+  PostProcFaceOnRefinedMesh(
+    MoFEM::Interface &m_field,
+    bool six_node_post_proc_tris = true
+  ):
+  PostProcTemplateOnRefineMesh<MoFEM::FaceElementForcesAndSourcesCore>(m_field),
+  sixNodePostProcTris(six_node_post_proc_tris) {
+  }
+
+  virtual ~PostProcFaceOnRefinedMesh() {
+    ParallelComm* pcomm_post_proc_mesh = ParallelComm::get_pcomm(&postProcMesh,MYPCOMM_INDEX);
+    if(pcomm_post_proc_mesh != NULL) {
+      delete pcomm_post_proc_mesh;
+    }
+  }
+
+  // Gauss pts set on refined mesh
+  int getRule(int order) { return -1; };
+
+  PetscErrorCode generateReferenceElementMesh();
+  PetscErrorCode setGaussPts(int order);
+
+  std::map<EntityHandle,EntityHandle> elementsMap;
 
   PetscErrorCode preProcess();
   PetscErrorCode postProcess();

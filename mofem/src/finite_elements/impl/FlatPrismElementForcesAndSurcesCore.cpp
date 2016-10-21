@@ -19,15 +19,18 @@
 * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
 #include <Includes.hpp>
-// #include <version.h>
+#include <version.h>
 #include <definitions.h>
 #include <Common.hpp>
 
+#include <base_functions.h>
 #include <h1_hdiv_hcurl_l2.h>
 #include <fem_tools.h>
 
+#include <UnknownInterface.hpp>
+
 #include <MaterialBlocks.hpp>
-#include <CubitBCData.hpp>
+#include <BCData.hpp>
 #include <TagMultiIndices.hpp>
 #include <CoordSysMultiIndices.hpp>
 #include <FieldMultiIndices.hpp>
@@ -41,15 +44,19 @@
 #include <SeriesMultiIndices.hpp>
 
 #include <LoopMethods.hpp>
-#include <FieldInterface.hpp>
-#include <MeshRefinment.hpp>
+#include <Interface.hpp>
+#include <MeshRefinement.hpp>
 #include <PrismInterface.hpp>
 #include <SeriesRecorder.hpp>
 #include <Core.hpp>
 
+#include <FTensor.hpp>
 #include <DataStructures.hpp>
 #include <DataOperators.hpp>
 #include <ElementsOnEntities.hpp>
+#include <BaseFunction.hpp>
+#include <EntPolynomialBaseCtx.hpp>
+#include <FlatPrismPolynomialBase.hpp>
 #include <FlatPrismElementForcesAndSurcesCore.hpp>
 
 #ifdef __cplusplus
@@ -65,47 +72,52 @@ extern "C" {
 
 namespace MoFEM {
 
-
 PetscErrorCode FlatPrismElementForcesAndSurcesCore::operator()() {
   PetscFunctionBegin;
 
-  if(fePtr->get_ent_type() != MBPRISM) PetscFunctionReturn(0);
+  if(numeredEntFiniteElementPtr->getEntType() != MBPRISM) PetscFunctionReturn(0);
 
   try {
 
-    ierr = getSpacesOnEntities(dataH1); CHKERRQ(ierr);
+    EntityHandle ent = numeredEntFiniteElementPtr->getEnt();
+    int num_nodes;
+    const EntityHandle* conn;
+    rval = mField.get_moab().get_connectivity(ent,conn,num_nodes,true); CHKERRQ_MOAB(rval);
+    {
+      coords.resize(num_nodes*3,false);
+      rval = mField.get_moab().get_coords(conn,num_nodes,&*coords.data().begin()); CHKERRQ_MOAB(rval);
+
+      double diff_n[6];
+      ierr = ShapeDiffMBTRI(diff_n); CHKERRQ(ierr);
+      normal.resize(6,false);
+      ierr = ShapeFaceNormalMBTRI(diff_n,&coords[0],&normal[0]); CHKERRQ(ierr);
+      ierr = ShapeFaceNormalMBTRI(diff_n, &coords[9],&normal[3]); CHKERRQ(ierr);
+      aRea[0] = cblas_dnrm2(3,&normal[0],1)*0.5;
+      aRea[1] = cblas_dnrm2(3,&normal[3],1)*0.5;
+    }
+
+    ierr = getSpacesAndBaseOnEntities(dataH1); CHKERRQ(ierr);
 
     //H1
     if((dataH1.spacesOnEntities[MBEDGE]).test(H1)) {
       ierr = getEdgesSense(dataH1); CHKERRQ(ierr);
       ierr = getTrisSense(dataH1); CHKERRQ(ierr);
-      ierr = getEdgesOrder(dataH1,H1); CHKERRQ(ierr);
-      ierr = getTrisOrder(dataH1,H1); CHKERRQ(ierr);
+      ierr = getEdgesDataOrder(dataH1,H1); CHKERRQ(ierr);
+      ierr = getTrisDataOrder(dataH1,H1); CHKERRQ(ierr);
     }
 
     //Hdiv
     if((dataH1.spacesOnEntities[MBTRI]).test(HDIV)) {
       ierr = getTrisSense(dataHdiv); CHKERRQ(ierr);
-      ierr = getTrisOrder(dataHdiv,HDIV); CHKERRQ(ierr);
+      ierr = getTrisDataOrder(dataHdiv,HDIV); CHKERRQ(ierr);
     }
 
-    int order = 1;
-    for(unsigned int ee = 0;ee<3;ee++) {
-      order = max(
-        order,dataH1.dataOnEntities[MBEDGE][ee].getOrder()
-      );
-    }
-    for(unsigned int ee = 6;ee<dataH1.dataOnEntities[MBEDGE].size();ee++) {
-      order = max(
-        order,dataH1.dataOnEntities[MBEDGE][ee].getOrder()
-      );
-    }
-    for(unsigned int ff = 0;ff<dataHdiv.dataOnEntities[MBTRI].size();ff++) {
-      order = max(order,dataHdiv.dataOnEntities[MBTRI][ff].getOrder());
-    }
-
+    int order_data = getMaxDataOrder();
+    int order_row = getMaxRowOrder();
+    int order_col = getMaxColOrder();
+    int rule = getRule(order_row,order_col,order_data);
     int nb_gauss_pts;
-    int rule = getRule(order);
+    // int rule = getRule(order);
     if(rule >= 0) {
       if(rule<QUAD_2D_TABLE_SIZE) {
         if(QUAD_2D_TABLE[rule]->dim!=2) {
@@ -128,6 +140,11 @@ PetscErrorCode FlatPrismElementForcesAndSurcesCore::operator()() {
         cblas_dcopy(
           nb_gauss_pts,QUAD_2D_TABLE[rule]->weights,1,&gaussPts(2,0),1
         );
+        dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE).resize(nb_gauss_pts,3,false);
+        double *shape_ptr = &*dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE).data().begin();
+        cblas_dcopy(
+          3*nb_gauss_pts,QUAD_2D_TABLE[rule]->points,1,shape_ptr,1
+        );
       } else {
         SETERRQ2(
           PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"rule > quadrature order %d < %d",
@@ -135,47 +152,69 @@ PetscErrorCode FlatPrismElementForcesAndSurcesCore::operator()() {
         );
         nb_gauss_pts = 0;
       }
-      // nb_gauss_pts = gm_rule_size(rule,2);
-      // gaussPts.resize(3,nb_gauss_pts,false);
-      // ierr = Grundmann_Moeller_integration_points_2D_TRI(
-      //   rule,&gaussPts(0,0),&gaussPts(1,0),&gaussPts(2,0)
-      // ); CHKERRQ(ierr);
     } else {
-      ierr = setGaussPts(order); CHKERRQ(ierr);
+      ierr = setGaussPts(order_row,order_col,order_data); CHKERRQ(ierr);
       nb_gauss_pts = gaussPts.size2();
+      dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE).resize(nb_gauss_pts,3,false);
+      if(nb_gauss_pts) {
+        ierr = ShapeMBTRI(
+          &*dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE).data().begin(),
+          &gaussPts(0,0),
+          &gaussPts(1,0),
+          nb_gauss_pts
+        ); CHKERRQ(ierr);
+      }
     }
     if(nb_gauss_pts == 0) PetscFunctionReturn(0);
 
-    ierr = shapeFlatPRISMFunctions_H1(dataH1,&gaussPts(0,0),&gaussPts(1,0),nb_gauss_pts); CHKERRQ(ierr);
-    if(dataH1.spacesOnEntities[MBTRI].test(HDIV)) {
-      ierr = shapeFlatPRISMFunctions_Hdiv(dataHdiv,&gaussPts(0,0),&gaussPts(1,0),nb_gauss_pts); CHKERRQ(ierr); CHKERRQ(ierr);
+    {
+      coordsAtGaussPts.resize(nb_gauss_pts,6,false);
+      for(int gg = 0;gg<nb_gauss_pts;gg++) {
+        for(int dd = 0;dd<3;dd++) {
+          coordsAtGaussPts(gg,dd) = cblas_ddot(3,&dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE)(gg,0),1,&coords[dd],3);
+          coordsAtGaussPts(gg,3+dd) = cblas_ddot(3,&dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE)(gg,0),1,&coords[9+dd],3);
+        }
+      }
     }
 
-    EntityHandle ent = fePtr->get_ent();
-    int num_nodes;
-    const EntityHandle* conn;
-    rval = mField.get_moab().get_connectivity(ent,conn,num_nodes,true); CHKERR_PETSC(rval);
-    coords.resize(num_nodes*3,false);
-    rval = mField.get_moab().get_coords(conn,num_nodes,&*coords.data().begin()); CHKERR_PETSC(rval);
+    try {
 
-    normal.resize(6,false);
-    ierr = ShapeFaceNormalMBTRI(
-      &*dataH1.dataOnEntities[MBVERTEX][0].getDiffN().data().begin(),
-      &coords[0],&normal[0]
-    ); CHKERRQ(ierr);
-    ierr = ShapeFaceNormalMBTRI(
-      &*dataH1.dataOnEntities[MBVERTEX][0].getDiffN().data().begin(),
-      &coords[9],&normal[3]
-    ); CHKERRQ(ierr);
-    aRea[0] = cblas_dnrm2(3,&normal[0],1)*0.5;
-    aRea[1] = cblas_dnrm2(3,&normal[3],1)*0.5;
-
-    coordsAtGaussPts.resize(nb_gauss_pts,6,false);
-    for(int gg = 0;gg<nb_gauss_pts;gg++) {
-      for(int dd = 0;dd<3;dd++) {
-        coordsAtGaussPts(gg,dd) = cblas_ddot(3,&dataH1.dataOnEntities[MBVERTEX][0].getN()(gg,0),1,&coords[dd],3);
-        coordsAtGaussPts(gg,3+dd) = cblas_ddot(3,&dataH1.dataOnEntities[MBVERTEX][0].getN()(gg,0),1,&coords[9+dd],3);
+      std::vector<FieldApproximationBase> shape_functions_for_bases;
+      for(int b = AINSWORTH_COLE_BASE;b!=LASTBASE;b++) {
+        if(dataH1.bAse.test(b)) {
+          switch (ApproximationBaseArray[b]) {
+            case AINSWORTH_COLE_BASE:
+            case LOBATTO_BASE:
+            if(dataH1.spacesOnEntities[MBVERTEX].test(H1)) {
+              ierr = FlatPrismPolynomialBase().getValue(
+                gaussPts,
+                boost::shared_ptr<BaseFunctionCtx>(
+                  new FlatPrismPolynomialBaseCtx(
+                    dataH1,mField.get_moab(),numeredEntFiniteElementPtr,H1,ApproximationBaseArray[b],NOBASE
+                  )
+                )
+              ); CHKERRQ(ierr);
+            }
+            if(dataH1.spacesOnEntities[MBTRI].test(HDIV)) {
+              SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"Not yet implemented");
+            }
+            if(dataH1.spacesOnEntities[MBEDGE].test(HCURL)) {
+              SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"Not yet implemented");
+            }
+            if(dataH1.spacesOnEntities[MBTET].test(L2)) {
+              SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"Not yet implemented");
+            }
+            break;
+            default:
+            SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"Not yet implemented");
+          }
+        }
       }
+
+    } catch (std::exception& ex) {
+      std::ostringstream ss;
+      ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
+      SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
     }
 
     try {
@@ -192,16 +231,16 @@ PetscErrorCode FlatPrismElementForcesAndSurcesCore::operator()() {
         nOrmals_at_GaussPtF4.resize(nb_gauss_pts,3,false);
         tAngent1_at_GaussPtF4.resize(nb_gauss_pts,3,false);
         tAngent2_at_GaussPtF4.resize(nb_gauss_pts,3,false);
-        ierr = getEdgesOrder(dataH1,meshPositionsFieldName); CHKERRQ(ierr);
-        ierr = getTrisOrder(dataH1,meshPositionsFieldName); CHKERRQ(ierr);
+        ierr = getEdgesDataOrderSpaceAndBase(dataH1,meshPositionsFieldName); CHKERRQ(ierr);
+        ierr = getTrisDataOrderSpaceAndBase(dataH1,meshPositionsFieldName); CHKERRQ(ierr);
         ierr = getNodesFieldData(dataH1,meshPositionsFieldName); CHKERRQ(ierr);
         ierr = getEdgesFieldData(dataH1,meshPositionsFieldName); CHKERRQ(ierr);
         ierr = getTrisFieldData(dataH1,meshPositionsFieldName); CHKERRQ(ierr);
         try {
           ierr = opHOCoordsAndNormals.opRhs(dataH1); CHKERRQ(ierr);
           ierr = opHOCoordsAndNormals.calculateNormals(); CHKERRQ(ierr);
-        } catch (exception& ex) {
-          ostringstream ss;
+        } catch (std::exception& ex) {
+          std::ostringstream ss;
           ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
           SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
         }
@@ -215,8 +254,8 @@ PetscErrorCode FlatPrismElementForcesAndSurcesCore::operator()() {
         tAngent1_at_GaussPtF4.resize(0,0,false);
         tAngent2_at_GaussPtF4.resize(0,0,false);
       }
-    } catch (exception& ex) {
-      ostringstream ss;
+    } catch (std::exception& ex) {
+      std::ostringstream ss;
       ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
       SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
     }
@@ -228,9 +267,10 @@ PetscErrorCode FlatPrismElementForcesAndSurcesCore::operator()() {
     const UserDataOperator::OpType types[2] = {
       UserDataOperator::OPROW, UserDataOperator::OPCOL
     };
-    vector<string> last_eval_field_name(2);
+    std::vector<std::string> last_eval_field_name(2);
     DataForcesAndSurcesCore *op_data[2];
     FieldSpace space[2];
+    FieldApproximationBase base[2];
 
     boost::ptr_vector<UserDataOperator>::iterator oit,hi_oit;
     oit = opPtrVector.begin();
@@ -242,9 +282,11 @@ PetscErrorCode FlatPrismElementForcesAndSurcesCore::operator()() {
 
       for(int ss = 0;ss!=2;ss++) {
 
-        string field_name = !ss ? oit->rowFieldName : oit->colFieldName;
-        BitFieldId data_id = mField.get_field_structure(field_name)->get_id();
-        if((oit->getMoFEMFEPtr()->get_BitFieldId_data()&data_id).none()) {
+        std::string field_name = !ss ? oit->rowFieldName : oit->colFieldName;
+        const Field* field_struture = mField.get_field_structure(field_name);
+        BitFieldId data_id = field_struture->getId();
+
+        if((oit->getNumeredEntFiniteElementPtr()->getBitFieldIdData()&data_id).none()) {
           SETERRQ2(
             PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"no data field < %s > on finite element < %s >",
             field_name.c_str(),feName.c_str()
@@ -253,9 +295,10 @@ PetscErrorCode FlatPrismElementForcesAndSurcesCore::operator()() {
 
         if(oit->getOpType()&types[ss] || oit->getOpType()&UserDataOperator::OPROWCOL) {
 
-          space[ss] = mField.get_field_structure(field_name)->get_space();
-
+          space[ss] = field_struture->getSpace();
           switch(space[ss]) {
+            case NOSPACE:
+            SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"unknown space");
             case H1:
             op_data[ss] = !ss ? &dataH1 : &derivedDataH1;
             break;
@@ -276,9 +319,21 @@ PetscErrorCode FlatPrismElementForcesAndSurcesCore::operator()() {
             break;
           }
 
+          base[ss] = field_struture->getApproxBase();
+          switch(base[ss]) {
+            case AINSWORTH_COLE_BASE:
+            case LOBATTO_BASE:
+            break;
+            default:
+            SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"unknown or not implemented base");
+            break;
+          }
+
           if(last_eval_field_name[ss]!=field_name) {
 
             switch(space[ss]) {
+              case NOSPACE:
+              SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"unknown space");
               case H1:
               if(!ss) {
                 ierr = getRowNodesIndices(*op_data[ss],field_name); CHKERRQ(ierr);
@@ -292,7 +347,7 @@ PetscErrorCode FlatPrismElementForcesAndSurcesCore::operator()() {
               } else {
                 ierr = getEdgesColIndices(*op_data[ss],field_name); CHKERRQ(ierr);
               }
-              ierr = getEdgesOrder(*op_data[ss],field_name); CHKERRQ(ierr);
+              ierr = getEdgesDataOrderSpaceAndBase(*op_data[ss],field_name); CHKERRQ(ierr);
               ierr = getEdgesFieldData(*op_data[ss],field_name); CHKERRQ(ierr);
               // ierr = getEdgesFieldDofs(*op_data[ss],field_name); CHKERRQ(ierr);
               case HDIV:
@@ -301,7 +356,7 @@ PetscErrorCode FlatPrismElementForcesAndSurcesCore::operator()() {
               } else {
                 ierr = getTrisColIndices(*op_data[ss],field_name); CHKERRQ(ierr);
               }
-              ierr = getTrisOrder(*op_data[ss],field_name); CHKERRQ(ierr);
+              ierr = getTrisDataOrderSpaceAndBase(*op_data[ss],field_name); CHKERRQ(ierr);
               ierr = getTrisFieldData(*op_data[ss],field_name); CHKERRQ(ierr);
               // ierr = getTrisFieldDofs(*op_data[ss],field_name); CHKERRQ(ierr);
               break;
@@ -340,8 +395,8 @@ PetscErrorCode FlatPrismElementForcesAndSurcesCore::operator()() {
             false,
             false
           ); CHKERRQ(ierr);
-        } catch (exception& ex) {
-          ostringstream ss;
+        } catch (std::exception& ex) {
+          std::ostringstream ss;
           ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
           SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
         }
@@ -359,8 +414,8 @@ PetscErrorCode FlatPrismElementForcesAndSurcesCore::operator()() {
             false,
             false
           ); CHKERRQ(ierr);
-        } catch (exception& ex) {
-          ostringstream ss;
+        } catch (std::exception& ex) {
+          std::ostringstream ss;
           ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
           SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
         }
@@ -370,8 +425,8 @@ PetscErrorCode FlatPrismElementForcesAndSurcesCore::operator()() {
       if(oit->getOpType()&UserDataOperator::OPROWCOL) {
         try {
           ierr = oit->opLhs(*op_data[0],*op_data[1],oit->sYmm); CHKERRQ(ierr);
-        } catch (exception& ex) {
-          ostringstream ss;
+        } catch (std::exception& ex) {
+          std::ostringstream ss;
           ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
           SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
         }
@@ -379,8 +434,8 @@ PetscErrorCode FlatPrismElementForcesAndSurcesCore::operator()() {
 
     }
 
-  } catch (exception& ex) {
-    ostringstream ss;
+  } catch (std::exception& ex) {
+    std::ostringstream ss;
     ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
     SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
   }

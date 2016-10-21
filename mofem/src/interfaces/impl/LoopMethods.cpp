@@ -16,6 +16,7 @@
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 */
 
+#include <version.h>
 #include <Includes.hpp>
 #include <definitions.h>
 #include <Common.hpp>
@@ -23,7 +24,7 @@
 #include <h1_hdiv_hcurl_l2.h>
 
 #include <MaterialBlocks.hpp>
-#include <CubitBCData.hpp>
+#include <BCData.hpp>
 #include <TagMultiIndices.hpp>
 #include <CoordSysMultiIndices.hpp>
 #include <FieldMultiIndices.hpp>
@@ -36,6 +37,7 @@
 #include <CoreDataStructures.hpp>
 #include <SeriesMultiIndices.hpp>
 
+#include <UnknownInterface.hpp>
 #include <LoopMethods.hpp>
 
 namespace MoFEM {
@@ -150,7 +152,7 @@ PetscErrorCode BasicMethod::copy_basic_method(const BasicMethod &basic) {
 //FEMethod
 FEMethod::FEMethod():
 BasicMethod(),
-fePtr(NULL),
+numeredEntFiniteElementPtr(NULL),
 dataPtr(NULL),
 rowPtr(NULL),
 colPtr(NULL) {

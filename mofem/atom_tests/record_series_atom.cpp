@@ -14,11 +14,6 @@
 
 #include <MoFEM.hpp>
 
-#include <boost/iostreams/tee.hpp>
-#include <boost/iostreams/stream.hpp>
-#include <fstream>
-#include <iostream>
-
 namespace bio = boost::iostreams;
 using bio::tee_device;
 using bio::stream;
@@ -35,19 +30,27 @@ int main(int argc, char *argv[]) {
   PetscInitialize(&argc,&argv,PETSC_NULL,help);
 
   moab::Core mb_instance;
-  Interface& moab = mb_instance;
+  moab::Interface& moab = mb_instance;
   int rank;
   MPI_Comm_rank(PETSC_COMM_WORLD,&rank);
 
   //Reade parameters from line command
   PetscBool flg = PETSC_TRUE;
   char mesh_file_name[255];
-  ierr = PetscOptionsGetString(PETSC_NULL,"-my_file",mesh_file_name,255,&flg); CHKERRQ(ierr);
+  #if PETSC_VERSION_GE(3,6,4)
+  ierr = PetscOptionsGetString(PETSC_NULL,"","-my_file",mesh_file_name,255,&flg); CHKERRQ(ierr);
+  #else
+  ierr = PetscOptionsGetString(PETSC_NULL,PETSC_NULL,"-my_file",mesh_file_name,255,&flg); CHKERRQ(ierr);
+  #endif
   if(flg != PETSC_TRUE) {
     SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_file (MESH FILE NEEDED)");
   }
   PetscInt order;
-  ierr = PetscOptionsGetInt(PETSC_NULL,"-my_order",&order,&flg); CHKERRQ(ierr);
+  #if PETSC_VERSION_GE(3,6,4)
+  ierr = PetscOptionsGetInt(PETSC_NULL,"","-my_order",&order,&flg); CHKERRQ(ierr);
+  #else
+  ierr = PetscOptionsGetInt(PETSC_NULL,PETSC_NULL,"-my_order",&order,&flg); CHKERRQ(ierr);
+  #endif
   if(flg != PETSC_TRUE) {
     order = 3;
   }
@@ -55,13 +58,13 @@ int main(int argc, char *argv[]) {
   //Read mesh to MOAB
   const char *option;
   option = "";//"PARALLEL=BCAST;";//;DEBUG_IO";
-  rval = moab.load_file(mesh_file_name, 0, option); CHKERR_PETSC(rval); 
+  rval = moab.load_file(mesh_file_name, 0, option); CHKERRQ_MOAB(rval);
   ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
   if(pcomm == NULL) pcomm =  new ParallelComm(&moab,PETSC_COMM_WORLD);
 
   //Create MoFEM (Joseph) database
   MoFEM::Core core(moab);
-  FieldInterface& m_field = core;
+  MoFEM::Interface& m_field = core;
 
   //ref meshset ref level 0
   ierr = m_field.seed_ref_level_3D(0,0); CHKERRQ(ierr);
@@ -70,7 +73,7 @@ int main(int argc, char *argv[]) {
   BitRefLevel bit_level0;
   bit_level0.set(0);
   EntityHandle meshset_level0;
-  rval = moab.create_meshset(MESHSET_SET,meshset_level0); CHKERR_PETSC(rval);
+  rval = moab.create_meshset(MESHSET_SET,meshset_level0); CHKERRQ_MOAB(rval);
   ierr = m_field.seed_ref_level_3D(0,bit_level0); CHKERRQ(ierr);
   ierr = m_field.get_entities_by_ref_level(bit_level0,BitRefLevel().set(),meshset_level0); CHKERRQ(ierr);
 
@@ -132,45 +135,45 @@ int main(int argc, char *argv[]) {
   ierr = m_field.field_scale(2,"FIELD_A"); CHKERRQ(ierr);
 
   MoFEM::Core core2(moab);
-  FieldInterface& m_field2 = core2;
+  MoFEM::Interface& m_field2 = core2;
 
   //build field
   ierr = m_field2.build_fields(); CHKERRQ(ierr);
 
-  typedef tee_device<ostream, ofstream> TeeDevice;
+  typedef tee_device<std::ostream, std::ofstream> TeeDevice;
   typedef stream<TeeDevice> TeeStream;
-  ofstream ofs("record_series_atom.txt");
-  TeeDevice my_tee(cout, ofs); 
+  std::ofstream ofs("record_series_atom.txt");
+  TeeDevice my_tee(std::cout, ofs);
   TeeStream my_split(my_tee);
 
   SeriesRecorder& recorder2 = core2;
   ierr = recorder2.print_series_steps(); CHKERRQ(ierr);
 
-  my_split << "TEST_SERIES1" << endl;
+  my_split << "TEST_SERIES1" << std::endl;
   for(_IT_SERIES_STEPS_BY_NAME_FOR_LOOP_((&recorder2),"TEST_SERIES1",sit)) {
 
     ierr = recorder2.load_series_data("TEST_SERIES1",sit->get_step_number()); CHKERRQ(ierr);
 
     my_split << "next step:\n";
-    my_split << *sit << endl;
+    my_split << *sit << std::endl;
 
     for(_IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(m_field2,"FIELD_B",dof)) {
-      my_split << *dof << "\n";
+      my_split << *(*dof) << "\n";
     }
 
   }
 
-  my_split << "TEST_SERIES2" << endl;
+  my_split << "TEST_SERIES2" << std::endl;
   for(_IT_SERIES_STEPS_BY_NAME_FOR_LOOP_((&recorder2),"TEST_SERIES2",sit)) {
 
     ierr = recorder2.load_series_data("TEST_SERIES2",sit->get_step_number()); CHKERRQ(ierr);
 
     my_split << "next step:\n";
     for(_IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(m_field2,"FIELD_A",dof)) {
-      my_split << *dof << "\n";
+      my_split << *(*dof) << "\n";
     }
     for(_IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(m_field2,"FIELD_B",dof)) {
-      my_split << *dof << "\n";
+      my_split << *(*dof) << "\n";
     }
 
 
@@ -180,4 +183,3 @@ int main(int argc, char *argv[]) {
   return 0;
 
 }
-

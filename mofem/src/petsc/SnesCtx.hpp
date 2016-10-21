@@ -21,7 +21,7 @@
 
 namespace MoFEM {
 
-/** \brief Interface for KSP solver
+/** \brief Interface for nonlinear (SNES) solver
   * \ingroup petsc_context_struture
   */
 struct SnesCtx {
@@ -29,18 +29,19 @@ struct SnesCtx {
   ErrorCode rval;
   PetscErrorCode ierr;
 
-  FieldInterface &mField;
-  Interface &moab;
+  MoFEM::Interface &mField;
+  moab::Interface &moab;
 
-  string problemName;
-  bool zeroPreCondMatrixB;
+  std::string problemName;
+  MoFEMTypes bH;  ///< If set to MF_EXIST check if element exist, default MF_EXIST
+  bool zeroPreCondMatrixB; ///< If true zero matrix, otherwise user need to do it, default true
 
-  typedef pair<string,FEMethod*> loop_pair_type;
-  typedef vector<loop_pair_type > loops_to_do_type;
+  typedef std::pair<std::string,FEMethod*> loop_pair_type;
+  typedef std::vector<loop_pair_type > loops_to_do_type;
   loops_to_do_type loops_to_do_Mat;
   loops_to_do_type loops_to_do_Rhs;
 
-  typedef vector<BasicMethod*> basic_method_to_do;
+  typedef std::vector<BasicMethod*> basic_method_to_do;
   basic_method_to_do preProcess_Mat;
   basic_method_to_do postProcess_Mat;
   basic_method_to_do preProcess_Rhs;
@@ -49,17 +50,19 @@ struct SnesCtx {
   PetscLogEvent USER_EVENT_SnesRhs;
   PetscLogEvent USER_EVENT_SnesMat;
 
-  SnesCtx(FieldInterface &m_field,const string &problem_name):
+  SnesCtx(Interface &m_field,const std::string &problem_name):
     mField(m_field),
     moab(m_field.get_moab()),
     problemName(problem_name),
+    bH(MF_EXIST),
     zeroPreCondMatrixB(true) {
     PetscLogEventRegister("LoopSNESRhs",0,&USER_EVENT_SnesRhs);
     PetscLogEventRegister("LoopSNESMat",0,&USER_EVENT_SnesMat);
   }
+  virtual ~SnesCtx() {}
 
-  const FieldInterface& getm_field() const { return mField; }
-  const Interface& get_moab() const { return moab; }
+  const MoFEM::Interface& getm_field() const { return mField; }
+  const moab::Interface& get_moab() const { return moab; }
 
   loops_to_do_type& get_loops_to_do_Mat() { return loops_to_do_Mat; }
   loops_to_do_type& get_loops_to_do_Rhs() { return loops_to_do_Rhs; }
@@ -73,7 +76,20 @@ struct SnesCtx {
 
 };
 
+/**
+ * \brief This is MoFEM implementation for the right side evaluation in SNES solver
+ *
+ * For more information pleas look to PETSc manual, i.e. SNESSetFunction
+ * <http://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/SNES/SNESSetFunction.html>
+ *
+ * @param  snes SNES solver
+ * @param  x    Solution vector at current iteration
+ * @param  f    The right hand side vector
+ * @param  ctx  Pointer to context thata, i.e. SnesCtx
+ * @return      Error code
+ */
 PetscErrorCode SnesRhs(SNES snes,Vec x,Vec f,void *ctx);
+
 PetscErrorCode SnesMat(SNES snes,Vec x,Mat A,Mat B,void *ctx);
 
 }

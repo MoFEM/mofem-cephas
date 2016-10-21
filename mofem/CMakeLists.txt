@@ -17,32 +17,72 @@ cmake_minimum_required (VERSION 2.8.7)
 include(cmake/FindPETSC.cmake)
 include(cmake/FindMOAB.cmake)
 
-message(${PETSCVAR_CXX})
+# message(${PETSCVAR_CXX})
 
 set(CMAKE_C_COMPILER ${PETSCVAR_CC} )
 string(REGEX MATCH  "^.*mpicxx" PETSCVAR_CXX_ "${PETSCVAR_CXX}")
 set(CMAKE_CXX_COMPILER ${PETSCVAR_CXX_})
+if(PETSCVAR_FC)
+  set(CMAKE_Fortran_COMPILER ${PETSCVAR_FC})
+endif(PETSCVAR_FC)
 
 #get mpipath bin directory
 string(REGEX REPLACE "mpicc" "" "MPI_BIN_PATH" ${CMAKE_C_COMPILER})
 find_program(MPI_RUN mpirun HINTS ${MPI_BIN_PATH} /usr/bin PATH ${MPI_BIN_PATH})
 include(cmake/ResolveCompilerPaths.cmake)
 
-project(MoFEM C Fortran CXX)
+project(MoFEM C CXX)
+
+# If fortrns is set by PETSc or user
+if(CMAKE_Fortran_COMPILER)
+  # Optional language
+  enable_language(Fortran)
+endif(CMAKE_Fortran_COMPILER)
+
+set(MoFEM_VERSION_MAJOR 0)
+set(MoFEM_VERSION_MINOR 5)
+set(MoFEM_VERSION_BUILD 9)
+
+include(CheckCXXSourceCompiles)
+CHECK_CXX_SOURCE_COMPILES(
+  "int main() { double * __restrict__ x;}\n"
+  SYMM_RESTRICT
+)
+if(SYMM_RESTRICT)
+  set(DEFINE_RESTRICT "-Drestrict=__restrict__")
+else(SYMM_RESTRICT)
+  set(DEFINE_RESTRICT "-Drestrict=")
+  add_definitions("-Drestrict=")
+endif(SYMM_RESTRICT)
+add_definitions(${DEFINE_RESTRICT})
+
+# Installing extermal packages
+include(ExternalProject)
+execute_process(
+  COMMAND ${CMAKE_COMMAND} -E make_directory ${PROJECT_BINARY_DIR}/external/include
+  COMMAND ${CMAKE_COMMAND} -E make_directory ${PROJECT_BINARY_DIR}/external/lib
+  COMMAND ${CMAKE_COMMAND} -E make_directory ${PROJECT_BINARY_DIR}/external/lib64
+  COMMAND ${CMAKE_COMMAND} -E make_directory ${PROJECT_BINARY_DIR}/external/bin
+)
+add_custom_target(
+  install_prerequisites
+  # COMMAND ${CMAKE_COMMAND} -E touch_nocreate ${PROJECT_BINARY_DIR}/CMakeCache.txt
+  COMMENT "Install prerequisites compiled with MoFEM"
+)
 
 #SIGMA tools
-include(cmake/FindTetGen.cmake)
-include(cmake/FindNetGen.cmake)
-include(cmake/FindTriangle.cmake)
-include(cmake/FindiMesh.cmake)
 include(cmake/FindCGM.cmake)
-include(cmake/FindLASSO.cmake)
 include(cmake/FindMESHKIT.cmake)
-include(cmake/FindADOL-C.cmake)
 
 #PETSC tools
 include(cmake/FindTAO.cmake)
 include(cmake/FindSLEPC.cmake)
+
+#Other tools
+include(cmake/FindADOL-C.cmake)
+include(cmake/FindTetGen.cmake)
+include(cmake/FindTriangle.cmake)
+include(cmake/FindMed.cmake)
 
 #CGAL tools
 #find_package(CGAL HINTS ${CGAL_DIR}/lib/CGAL)
@@ -56,26 +96,9 @@ include(cmake/FindSLEPC.cmake)
 #other
 include(cmake/ExportFile.cmake)
 
-set(MoFEM_VERSION_MAJOR 0)
-set(MoFEM_VERSION_MINOR 3)
-set(MoFEM_VERSION_BUILD 3)
-
 #git revision
 include(cmake/GetGitRevisionDescription.cmake)
 get_git_head_revision(GIT_REFSPEC GIT_SHA1)
-#add_definitions("-DGIT_SHA1=${GIT_SHA1}")
-
-# configure a header file to pass some of the CMake settings
-# to the source code
-configure_file(
-  "${PROJECT_SOURCE_DIR}/include/config.h.in"
-  "${PROJECT_SOURCE_DIR}/include/config.h"
-  )
-configure_file(
-  "${PROJECT_SOURCE_DIR}/include/version.h.in"
-  "${PROJECT_SOURCE_DIR}/include/version.h"
-  )
-include_directories("${PROJECT_SOURCE_DIR}/include")
 
 #add coverage
 if(WITHCOVERAGE)
@@ -88,31 +111,50 @@ endif(WITHCOVERAGE)
 add_custom_target(check COMMAND ${CMAKE_CTEST_COMMAND} --verbose)
 
 resolve_includes(PROJECT_INCLUDE_DIRECTORIES
-  "${PETSCVAR_PACKAGES_INCLUDES} ${MOAB_INCLUDES0} ${MOAB_INCLUDES}"
-  )
+  "${PETSCVAR_PACKAGES_INCLUDES} ${MOAB_INCLUDES0} ${MOAB_INCLUDES1}"
+)
 
 include_directories(
   ${PROJECT_INCLUDE_DIRECTORIES}
   ${PETSC_DIR}/${PETSC_ARCH}/include
   ${PETSCVAR_DIR}/include
-  )
+)
 
 if(TAO_LIBRARY)
   include_directories(${TAO_DIR}/include)
   add_definitions(-DTAO)
 endif(TAO_LIBRARY)
 
+# Add boost directory
+if(NOT BOOST_DIR)
+  set(BOOST_DIR $ENV{BOOST_DIR})
+endif(NOT BOOST_DIR)
+find_library(
+  BOOST_PROGRAM_OPTIONS_LIB NAMES boost_program_options
+  HINTS
+  ${BOOST_DIR}/lib
+  ${PETSC_DIR}/${PETSC_ARCH}/lib
+)
+if(NOT BOOST_PROGRAM_OPTIONS_LIB)
+  message(FATAL_ERROR "boost program options library not found")
+endif(NOT BOOST_PROGRAM_OPTIONS_LIB)
+if(BOOST_DIR)
+  include_directories(${BOOST_DIR}/include)
+endif(BOOST_DIR)
+
 resolve_libraries(PROJECT_LIBS "
   ${SLEPC_LIBRARY}
-  ${ADOL-C_LIBRARY}
-  ${TETGEN_LIBRARY}
-  ${NETGEN_LIBRARY}
-  ${MOAB_LIBS_LINK}
+  ${TAO_LIBRARY}
   -L${PETSC_DIR}/${PETSC_ARCH}/lib
   ${PETSCVAR_PETSC_WITH_EXTERNAL_LIB}
-  ${TAO_LIBRARY}
+  ${MESHKIT_LIBS_LINK}
+  ${MOAB_LIBS_LINK}
+  ${TETGEN_LIBRARY}
+  ${MED_LIBRARY}
   ${MPI_F90_LIB}
-  ${MPI_F77_LIB}"
+  ${MPI_F77_LIB}
+  ${ADOL-C_LIBRARY}
+  ${BOOST_PROGRAM_OPTIONS_LIB}"
 )
 
 message(STATUS ${PROJECT_LIBS})
@@ -121,11 +163,14 @@ file(COPY
   DESTINATION ${PROJECT_BINARY_DIR}
 )
 
-#add executable library form subdirectory
+# Add executable library form subdirectory
 enable_testing()
 include(CTest)
 
-#add generation of examplaes
+# Precompiled headers
+include(cmake/PrecompiledHeaders.cmake)
+
+# Sdd generation of examplaes
 configure_file(
   ${PROJECT_SOURCE_DIR}/MoFEMConfig.cmake.in
   ${PROJECT_BINARY_DIR}/MoFEMConfig.cmake
@@ -138,10 +183,13 @@ configure_file(
 install(FILES ${PROJECT_BINARY_DIR}/MoFEMConfig.cmake DESTINATION ${CMAKE_INSTALL_PREFIX})
 install(FILES ${PROJECT_BINARY_DIR}/MoFEMConfig-version.cmake DESTINATION ${CMAKE_INSTALL_PREFIX})
 
-add_subdirectory("${PROJECT_SOURCE_DIR}/scripts")
-add_subdirectory("${PROJECT_SOURCE_DIR}/third_party")
-add_subdirectory("${PROJECT_SOURCE_DIR}/include")
-add_subdirectory("${PROJECT_SOURCE_DIR}/src")
-add_subdirectory("${PROJECT_SOURCE_DIR}/atom_tests")
-add_subdirectory("${PROJECT_SOURCE_DIR}/users_modules.in")
-add_subdirectory("${PROJECT_SOURCE_DIR}/doc")
+add_subdirectory(${PROJECT_SOURCE_DIR}/include)
+include_directories(${PROJECT_BINARY_DIR}/include)
+include_directories(${PROJECT_SOURCE_DIR}/include)
+
+add_subdirectory(${PROJECT_SOURCE_DIR}/scripts)
+add_subdirectory(${PROJECT_SOURCE_DIR}/third_party)
+add_subdirectory(${PROJECT_SOURCE_DIR}/src)
+add_subdirectory(${PROJECT_SOURCE_DIR}/atom_tests)
+add_subdirectory(${PROJECT_SOURCE_DIR}/users_modules.in)
+add_subdirectory(${PROJECT_SOURCE_DIR}/doc)

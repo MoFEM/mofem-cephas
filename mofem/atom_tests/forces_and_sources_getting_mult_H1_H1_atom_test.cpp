@@ -20,11 +20,6 @@
 
 #include <MoFEM.hpp>
 
-#include <boost/iostreams/tee.hpp>
-#include <boost/iostreams/stream.hpp>
-#include <fstream>
-#include <iostream>
-
 namespace bio = boost::iostreams;
 using bio::tee_device;
 using bio::stream;
@@ -41,20 +36,24 @@ int main(int argc, char *argv[]) {
   PetscInitialize(&argc,&argv,(char *)0,help);
 
   moab::Core mb_instance;
-  Interface& moab = mb_instance;
+  moab::Interface& moab = mb_instance;
   int rank;
   MPI_Comm_rank(PETSC_COMM_WORLD,&rank);
 
   PetscBool flg = PETSC_TRUE;
   char mesh_file_name[255];
-  ierr = PetscOptionsGetString(PETSC_NULL,"-my_file",mesh_file_name,255,&flg); CHKERRQ(ierr);
+  #if PETSC_VERSION_GE(3,6,4)
+  ierr = PetscOptionsGetString(PETSC_NULL,"","-my_file",mesh_file_name,255,&flg); CHKERRQ(ierr);
+  #else
+  ierr = PetscOptionsGetString(PETSC_NULL,PETSC_NULL,"-my_file",mesh_file_name,255,&flg); CHKERRQ(ierr);
+  #endif
   if(flg != PETSC_TRUE) {
     SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_file (MESH FILE NEEDED)");
   }
 
   //Create MoFEM (Joseph) database
   MoFEM::Core core(moab);
-  FieldInterface& m_field = core;
+  MoFEM::Interface& m_field = core;
 
   ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
   if(pcomm == NULL) pcomm =  new ParallelComm(&moab,PETSC_COMM_WORLD);
@@ -62,14 +61,14 @@ int main(int argc, char *argv[]) {
   const char *option;
   option = "";//"PARALLEL=BCAST;";//;DEBUG_IO";
   BARRIER_RANK_START(pcomm)
-  rval = moab.load_file(mesh_file_name, 0, option); CHKERR_PETSC(rval);
+  rval = moab.load_file(mesh_file_name, 0, option); CHKERRQ_MOAB(rval);
   BARRIER_RANK_END(pcomm)
 
   //set entitities bit level
   BitRefLevel bit_level0;
   bit_level0.set(0);
   EntityHandle meshset_level0;
-  rval = moab.create_meshset(MESHSET_SET,meshset_level0); CHKERR_PETSC(rval);
+  rval = moab.create_meshset(MESHSET_SET,meshset_level0); CHKERRQ_MOAB(rval);
   ierr = m_field.seed_ref_level_3D(0,bit_level0); CHKERRQ(ierr);
 
   //Fields
@@ -90,7 +89,7 @@ int main(int argc, char *argv[]) {
 
   //set finite elements for problem
   ierr = m_field.modify_problem_add_finite_element("TEST_PROBLEM","TEST_FE"); CHKERRQ(ierr);
-  //set refinment level for problem
+  //set refinement level for problem
   ierr = m_field.modify_problem_ref_level_add_bit("TEST_PROBLEM",bit_level0); CHKERRQ(ierr);
 
 
@@ -139,18 +138,18 @@ int main(int argc, char *argv[]) {
     ErrorCode rval;
     PetscErrorCode ierr;
 
-    typedef tee_device<ostream, ofstream> TeeDevice;
+    typedef tee_device<std::ostream, std::ofstream> TeeDevice;
     typedef stream<TeeDevice> TeeStream;
 
     struct my_mult_H1_H1: public DataOperator {
 
-      ofstream ofs;
+      std::ofstream ofs;
       TeeDevice my_tee;
       TeeStream my_split;
 
       my_mult_H1_H1():
       ofs("forces_and_sources_getting_mult_H1_H1_atom_test.txt"),
-      my_tee(cout, ofs),my_split(my_tee
+      my_tee(std::cout, ofs),my_split(my_tee
       ) {};
 
       ~my_mult_H1_H1() {
@@ -163,20 +162,23 @@ int main(int argc, char *argv[]) {
         int row_side,int col_side,
         EntityType row_type,EntityType col_type,
         DataForcesAndSurcesCore::EntData &row_data,
-        DataForcesAndSurcesCore::EntData &col_data) {
+        DataForcesAndSurcesCore::EntData &col_data
+      ) {
           PetscFunctionBegin;
 
+          row_data.getBase() = AINSWORTH_COLE_BASE;
+          col_data.getBase() = AINSWORTH_COLE_BASE;
           int nb_row_dofs = row_data.getN().size2();
           int nb_col_dofs = col_data.getN().size2();
 
-          my_split << row_side << " " << col_side << " " << row_type << " " << col_type << endl;
-          my_split << "nb_row_dofs " << nb_row_dofs << " nb_col_dofs " << nb_col_dofs << endl;
+          my_split << row_side << " " << col_side << " " << row_type << " " << col_type << std::endl;
+          my_split << "nb_row_dofs " << nb_row_dofs << " nb_col_dofs " << nb_col_dofs << std::endl;
           NN.resize(nb_row_dofs,nb_col_dofs);
 
 
           my_split.precision(2);
-          my_split << row_data.getN() << endl;
-          my_split << col_data.getN() << endl;
+          my_split << row_data.getN() << std::endl;
+          my_split << col_data.getN() << std::endl;
 
           for(unsigned int gg = 0;gg<row_data.getN().size1();gg++) {
 
@@ -189,24 +191,24 @@ int main(int argc, char *argv[]) {
 
               my_split << "gg " << gg << " : ";
               my_split.precision(2);
-              //my_split << NN << endl;
-              my_split << NN - outer_prod(row_data.getN(gg),col_data.getN(gg)) << endl;
+              //my_split << NN << std::endl;
+              my_split << NN - outer_prod(row_data.getN(gg),col_data.getN(gg)) << std::endl;
               if(row_type != MBVERTEX) {
-                my_split << row_data.getDiffN(gg) << endl;
+                my_split << row_data.getDiffN(gg) << std::endl;
               }
 
               if(row_type == MBVERTEX) {
-                my_split << row_data.getDiffN() << endl;
+                my_split << row_data.getDiffN() << std::endl;
               } else {
                 typedef ublas::array_adaptor<FieldData> storage_t;
                 storage_t st(nb_row_dofs*3,&row_data.getDiffN()(gg,0));
                 ublas::matrix<FieldData,ublas::row_major,storage_t> digNatGaussPt(nb_row_dofs,3,st);
-                my_split << endl << digNatGaussPt << endl;
+                my_split << std::endl << digNatGaussPt << std::endl;
               }
 
             }
 
-            my_split << endl;
+            my_split << std::endl;
 
             PetscFunctionReturn(0);
           }
@@ -215,7 +217,7 @@ int main(int argc, char *argv[]) {
 
     my_mult_H1_H1 op;
 
-    ForcesAndSurcesCore_TestFE(FieldInterface &_m_field):
+    ForcesAndSurcesCore_TestFE(MoFEM::Interface &_m_field):
       ForcesAndSurcesCore(_m_field),data_row(MBTET),data_col(MBTET) {};
 
     PetscErrorCode preProcess() {
@@ -228,20 +230,28 @@ int main(int argc, char *argv[]) {
     PetscErrorCode operator()() {
       PetscFunctionBegin;
 
-      ierr = getSpacesOnEntities(data_row); CHKERRQ(ierr);
-      ierr = getSpacesOnEntities(data_col); CHKERRQ(ierr);
+      ierr = getSpacesAndBaseOnEntities(data_row); CHKERRQ(ierr);
+      ierr = getSpacesAndBaseOnEntities(data_col); CHKERRQ(ierr);
 
       ierr = getEdgesSense(data_row); CHKERRQ(ierr);
       ierr = getTrisSense(data_row); CHKERRQ(ierr);
       ierr = getEdgesSense(data_col); CHKERRQ(ierr);
       ierr = getTrisSense(data_col); CHKERRQ(ierr);
 
-      ierr = getEdgesOrder(data_row,H1); CHKERRQ(ierr);
-      ierr = getEdgesOrder(data_col,H1); CHKERRQ(ierr);
-      ierr = getTrisOrder(data_row,H1); CHKERRQ(ierr);
-      ierr = getTrisOrder(data_col,H1); CHKERRQ(ierr);
-      ierr = getTetsOrder(data_row,H1); CHKERRQ(ierr);
-      ierr = getTetsOrder(data_col,H1); CHKERRQ(ierr);
+      ierr = getEdgesDataOrder(data_row,H1); CHKERRQ(ierr);
+      ierr = getEdgesDataOrder(data_col,H1); CHKERRQ(ierr);
+      ierr = getTrisDataOrder(data_row,H1); CHKERRQ(ierr);
+      ierr = getTrisDataOrder(data_col,H1); CHKERRQ(ierr);
+      ierr = getTetDataOrder(data_row,H1); CHKERRQ(ierr);
+      ierr = getTetDataOrder(data_col,H1); CHKERRQ(ierr);
+      data_row.dataOnEntities[MBVERTEX][0].getBase() = AINSWORTH_COLE_BASE;
+      ierr = getEdgesDataOrderSpaceAndBase(data_row,"FIELD1"); CHKERRQ(ierr);
+      ierr = getTrisDataOrderSpaceAndBase(data_row,"FIELD1"); CHKERRQ(ierr);
+      ierr = getTetDataOrderSpaceAndBase(data_row,"FIELD1"); CHKERRQ(ierr);
+      data_col.dataOnEntities[MBVERTEX][0].getBase() = AINSWORTH_COLE_BASE;
+      ierr = getEdgesDataOrderSpaceAndBase(data_col,"FIELD2"); CHKERRQ(ierr);
+      ierr = getTrisDataOrderSpaceAndBase(data_col,"FIELD2"); CHKERRQ(ierr);
+      ierr = getTetDataOrderSpaceAndBase(data_col,"FIELD2"); CHKERRQ(ierr);
       ierr = getRowNodesIndices(data_row,"FIELD1"); CHKERRQ(ierr);
       ierr = getColNodesIndices(data_row,"FIELD2"); CHKERRQ(ierr);
       ierr = getEdgesRowIndices(data_row,"FIELD1"); CHKERRQ(ierr);
@@ -253,20 +263,32 @@ int main(int argc, char *argv[]) {
       ierr = getFaceTriNodes(data_row); CHKERRQ(ierr);
       ierr = getFaceTriNodes(data_col); CHKERRQ(ierr);
 
-      data_row.dataOnEntities[MBVERTEX][0].getN().resize(4,4,false);
-      ierr = ShapeMBTET(
-        &*data_row.dataOnEntities[MBVERTEX][0].getN().data().begin(),G_TET_X4,G_TET_Y4,G_TET_Z4,4
+      MatrixDouble gauss_pts(4,4);
+      for(int gg = 0;gg<4;gg++) {
+        gauss_pts(0,gg) = G_TET_X4[gg];
+        gauss_pts(1,gg) = G_TET_Y4[gg];
+        gauss_pts(2,gg) = G_TET_Z4[gg];
+        gauss_pts(3,gg) = G_TET_W4[gg];
+      }
+      ierr = TetPolynomialBase().getValue(
+        gauss_pts,
+        boost::shared_ptr<BaseFunctionCtx>(
+          new EntPolynomialBaseCtx(data_row,H1,AINSWORTH_COLE_BASE)
+        )
       ); CHKERRQ(ierr);
-      data_col.dataOnEntities[MBVERTEX][0].getN() = data_row.dataOnEntities[MBVERTEX][0].getN();
-      ierr = shapeTETFunctions_H1(data_row,G_TET_X4,G_TET_Y4,G_TET_Z4,4); CHKERRQ(ierr);
-      ierr = shapeTETFunctions_H1(data_col,G_TET_X4,G_TET_Y4,G_TET_Z4,4); CHKERRQ(ierr);
+      ierr = TetPolynomialBase().getValue(
+        gauss_pts,
+        boost::shared_ptr<BaseFunctionCtx>(
+          new EntPolynomialBaseCtx(data_col,H1,AINSWORTH_COLE_BASE)
+        )
+      ); CHKERRQ(ierr);
 
       try {
-	ierr = op.opLhs(data_row,data_col,true); CHKERRQ(ierr);
-      } catch (exception& ex) {
-	ostringstream ss;
-	ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__ << endl;
-	SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+        ierr = op.opLhs(data_row,data_col,true); CHKERRQ(ierr);
+      } catch (std::exception& ex) {
+        std::ostringstream ss;
+        ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__ << std::endl;
+        SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
 
       PetscFunctionReturn(0);

@@ -37,7 +37,7 @@ struct KelvinVoigtDamper {
     DAMPERSTRESS
   };
 
-  FieldInterface &mField;
+  MoFEM::Interface &mField;
 
   /** \brief Dumper material parameters
   \ingroup nonlinear_elastic_elem
@@ -55,7 +55,7 @@ struct KelvinVoigtDamper {
 
   };
 
-  map<int,BlockMaterialData> blockMaterialDataMap;
+  std::map<int,BlockMaterialData> blockMaterialDataMap;
 
   /** \brief Constitutive model functions
   \ingroup nonlinear_elastic_elem
@@ -213,17 +213,17 @@ struct KelvinVoigtDamper {
     string spatialPositionName;
     string spatialPositionNameDot;
 
-    map<string,vector<VectorDouble > > dataAtGaussPts;
-    map<string,vector<MatrixDouble > > gradAtGaussPts;
+    std::map<std::string,std::vector<VectorDouble > > dataAtGaussPts;
+    std::map<std::string,std::vector<MatrixDouble > > gradAtGaussPts;
 
-    vector<ublas::matrix<double> > dashpotFirstPiolaKirchhoffStress;
+    std::vector<ublas::matrix<double> > dashpotFirstPiolaKirchhoffStress;
 
-    vector<double*> jacRowPtr;
-    vector<ublas::matrix<double> > jacStress;
+    std::vector<double*> jacRowPtr;
+    std::vector<ublas::matrix<double> > jacStress;
 
     bool recordOn;
     bool skipThis;
-    map<int,int> nbActiveVariables,nbActiveResults;
+    std::map<int,int> nbActiveVariables,nbActiveResults;
 
     CommonData():
     recordOn(true),
@@ -234,13 +234,13 @@ struct KelvinVoigtDamper {
   CommonData commonData;
 
   /// \brief definition of volume element
-  struct DamperFE: public VolumeElementForcesAndSourcesCore {
+  struct DamperFE: public MoFEM::VolumeElementForcesAndSourcesCore {
 
     CommonData &commonData;
     int addToRule; ///< Takes into account HO geometry
 
-    DamperFE(FieldInterface &m_field,CommonData &common_data):
-    VolumeElementForcesAndSourcesCore(m_field),
+    DamperFE(MoFEM::Interface &m_field,CommonData &common_data):
+    MoFEM::VolumeElementForcesAndSourcesCore(m_field),
     commonData(common_data),
     addToRule(1) {
     }
@@ -251,7 +251,7 @@ struct KelvinVoigtDamper {
 
     PetscErrorCode preProcess() {
       PetscFunctionBegin;
-      ierr = VolumeElementForcesAndSourcesCore::preProcess(); CHKERRQ(ierr);
+      ierr = MoFEM::VolumeElementForcesAndSourcesCore::preProcess(); CHKERRQ(ierr);
 
       if(ts_ctx == CTX_TSSETIFUNCTION) {
 
@@ -267,7 +267,7 @@ struct KelvinVoigtDamper {
     PetscErrorCode postProcess() {
       PetscFunctionBegin;
 
-      ierr = VolumeElementForcesAndSourcesCore::postProcess(); CHKERRQ(ierr);
+      ierr = MoFEM::VolumeElementForcesAndSourcesCore::postProcess(); CHKERRQ(ierr);
 
       if(ts_ctx == CTX_TSSETIFUNCTION) {
         ierr = VecAssemblyBegin(ts_F); CHKERRQ(ierr);
@@ -285,13 +285,13 @@ struct KelvinVoigtDamper {
 
   DamperFE feRhs,feLhs;
 
-  KelvinVoigtDamper(FieldInterface &m_field):
+  KelvinVoigtDamper(MoFEM::Interface &m_field):
   mField(m_field),
   feRhs(m_field,commonData),
   feLhs(m_field,commonData) {
   }
 
-  struct OpGetDataAtGaussPts: public VolumeElementForcesAndSourcesCore::UserDataOperator {
+  struct OpGetDataAtGaussPts: public MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator {
 
     CommonData &commonData;
     bool calcVal;
@@ -299,13 +299,13 @@ struct KelvinVoigtDamper {
     EntityType zeroAtType;
 
     OpGetDataAtGaussPts(
-      const string field_name,
+      const std::string field_name,
       CommonData &common_data,
       bool calc_val,
       bool calc_grad,
       EntityType zero_at_type = MBVERTEX
     ):
-    VolumeElementForcesAndSourcesCore::UserDataOperator(
+    MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator(
       field_name,UserDataOperator::OPCOL
     ),
     commonData(common_data),
@@ -328,7 +328,7 @@ struct KelvinVoigtDamper {
         if(nb_dofs == 0) {
           PetscFunctionReturn(0);
         }
-        int rank = data.getFieldDofs()[0]->get_nb_of_coeffs();
+        int rank = data.getFieldDofs()[0]->getNbOfCoeffs();
         int nb_gauss_pts = data.getN().size1();
 
         // Initialize
@@ -378,8 +378,8 @@ struct KelvinVoigtDamper {
         }
 
       } catch (const std::exception& ex) {
-        ostringstream ss;
-        ss << "throw in method: " << ex.what() << endl;
+        std::ostringstream ss;
+        ss << "throw in method: " << ex.what() << std::endl;
         SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
 
@@ -388,27 +388,27 @@ struct KelvinVoigtDamper {
 
   };
 
-  struct OpJacobian: public VolumeElementForcesAndSourcesCore::UserDataOperator {
+  struct OpJacobian: public MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator {
 
-    vector<int> tagS;
+    std::vector<int> tagS;
     KelvinVoigtDamper::ConstitutiveEquation<adouble> &cE;
     CommonData &commonData;
 
     bool calculateResidualBool;
     bool calculateJacobianBool;
     bool &recordOn;
-    map<int,int> &nbActiveVariables;
-    map<int,int> &nbActiveResults;
+    std::map<int,int> &nbActiveVariables;
+    std::map<int,int> &nbActiveResults;
 
     OpJacobian(
-      const string field_name,
-      vector<int> tags,
+      const std::string field_name,
+      std::vector<int> tags,
       KelvinVoigtDamper::ConstitutiveEquation<adouble> &ce,
       CommonData &common_data,
       bool calculate_residual,
       bool calculate_jacobian
     ):
-    VolumeElementForcesAndSourcesCore::UserDataOperator(
+    MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator(
       field_name,UserDataOperator::OPROW
     ),
     tagS(tags),
@@ -471,8 +471,8 @@ struct KelvinVoigtDamper {
         }
         trace_off();
       } catch (const std::exception& ex) {
-        ostringstream ss;
-        ss << "throw in method: " << ex.what() << endl;
+        std::ostringstream ss;
+        ss << "throw in method: " << ex.what() << std::endl;
         SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
       PetscFunctionReturn(0);
@@ -513,8 +513,8 @@ struct KelvinVoigtDamper {
           SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"ADOL-C function evaluation with error");
         }
       } catch (const std::exception& ex) {
-        ostringstream ss;
-        ss << "throw in method: " << ex.what() << endl;
+        std::ostringstream ss;
+        ss << "throw in method: " << ex.what() << std::endl;
         SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
       PetscFunctionReturn(0);
@@ -583,8 +583,8 @@ struct KelvinVoigtDamper {
         }
 
       } catch (const std::exception& ex) {
-        ostringstream ss;
-        ss << "throw in method: " << ex.what() << endl;
+        std::ostringstream ss;
+        ss << "throw in method: " << ex.what() << std::endl;
         SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
 
@@ -601,7 +601,7 @@ struct KelvinVoigtDamper {
       nbGaussPts = row_data.getN().size1();
 
       commonData.skipThis = false;
-      if(cE.dAta.tEts.find(getMoFEMFEPtr()->get_ent())==cE.dAta.tEts.end()) {
+      if(cE.dAta.tEts.find(getNumeredEntFiniteElementPtr()->getEnt())==cE.dAta.tEts.end()) {
         commonData.skipThis =true;
         PetscFunctionReturn(0);
       }
@@ -614,8 +614,8 @@ struct KelvinVoigtDamper {
         ierr = calculateAtIntPtsDamperStress(); CHKERRQ(ierr);
 
       } catch (const std::exception& ex) {
-        ostringstream ss;
-        ss << "throw in method: " << ex.what() << endl;
+        std::ostringstream ss;
+        ss << "throw in method: " << ex.what() << std::endl;
         SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
 
@@ -624,9 +624,9 @@ struct KelvinVoigtDamper {
 
   };
 
-  struct AssembleVector: VolumeElementForcesAndSourcesCore::UserDataOperator {
+  struct AssembleVector: MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator {
     AssembleVector(string field_name):
-    VolumeElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROW) {
+    MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROW) {
     }
     PetscErrorCode ierr;
     ublas::vector<double> nF;
@@ -641,8 +641,8 @@ struct KelvinVoigtDamper {
           getFEMethod()->ts_F,nb_dofs,indices_ptr,&nF[0],ADD_VALUES
         ); CHKERRQ(ierr);
       } catch (const std::exception& ex) {
-        ostringstream ss;
-        ss << "throw in method: " << ex.what() << endl;
+        std::ostringstream ss;
+        ss << "throw in method: " << ex.what() << std::endl;
         SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
       PetscFunctionReturn(0);
@@ -693,17 +693,17 @@ struct KelvinVoigtDamper {
         }
         ierr = aSemble(row_side,row_type,row_data); CHKERRQ(ierr);
       } catch (const std::exception& ex) {
-        ostringstream ss;
-        ss << "throw in method: " << ex.what() << endl;
+        std::ostringstream ss;
+        ss << "throw in method: " << ex.what() << std::endl;
         SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
       PetscFunctionReturn(0);
     }
   };
 
-  struct AssembleMatrix: VolumeElementForcesAndSourcesCore::UserDataOperator {
+  struct AssembleMatrix: MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator {
     AssembleMatrix(string row_name,string col_name):
-    VolumeElementForcesAndSourcesCore::UserDataOperator(
+    MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator(
       row_name,col_name,UserDataOperator::OPROWCOL) {
     }
     PetscErrorCode ierr;
@@ -740,8 +740,8 @@ struct KelvinVoigtDamper {
           }
         }
       } catch (const std::exception& ex) {
-        ostringstream ss;
-        ss << "throw in method: " << ex.what() << endl;
+        std::ostringstream ss;
+        ss << "throw in method: " << ex.what() << std::endl;
         SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
       PetscFunctionReturn(0);
@@ -781,8 +781,8 @@ struct KelvinVoigtDamper {
           }
         }
       } catch (const std::exception& ex) {
-        ostringstream ss;
-        ss << "throw in method: " << ex.what() << endl;
+        std::ostringstream ss;
+        ss << "throw in method: " << ex.what() << std::endl;
         SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
       PetscFunctionReturn(0);
@@ -813,7 +813,7 @@ struct KelvinVoigtDamper {
           if(getHoGaussPtsDetJac().size()>0) {
             val *= getHoGaussPtsDetJac()[gg]; ///< higher order geometry
           }
-          //cerr << dStress_dx << endl;
+          //std::cerr << dStress_dx << std::endl;
           dStress_dx *= val;
           const MatrixAdaptor &diffN = row_data.getDiffN(gg,nb_row/3);
           { //integrate element stiffness matrix
@@ -832,14 +832,14 @@ struct KelvinVoigtDamper {
             }
           }
         }
-        //cerr << "G " << getMoFEMFEPtr()->get_ref_ent() << endl << K << endl;
+        //std::cerr << "G " << getNumeredEntFiniteElementPtr()->getRefEnt() << std::endl << K << std::endl;
         ierr = aSemble(
           row_side,col_side,row_type,col_type,row_data,col_data
         ); CHKERRQ(ierr);
 
       } catch (const std::exception& ex) {
-        ostringstream ss;
-        ss << "throw in method: " << ex.what() << endl;
+        std::ostringstream ss;
+        ss << "throw in method: " << ex.what() << std::endl;
         SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
       PetscFunctionReturn(0);
@@ -879,8 +879,8 @@ struct KelvinVoigtDamper {
           }
         }
       } catch (const std::exception& ex) {
-        ostringstream ss;
-        ss << "throw in method: " << ex.what() << endl;
+        std::ostringstream ss;
+        ss << "throw in method: " << ex.what() << std::endl;
         SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
       PetscFunctionReturn(0);
@@ -911,7 +911,7 @@ struct KelvinVoigtDamper {
           if(getHoGaussPtsDetJac().size()>0) {
             val *= getHoGaussPtsDetJac()[gg]; ///< higher order geometry
           }
-          //cerr << dStress_dot << endl;
+          //std::cerr << dStress_dot << std::endl;
           dStress_dot *= val;
           const MatrixAdaptor &diffN = row_data.getDiffN(gg,nb_row/3);
           { //integrate element stiffness matrix
@@ -930,14 +930,14 @@ struct KelvinVoigtDamper {
             }
           }
         }
-        //cerr << "G " << getMoFEMFEPtr()->get_ref_ent() << endl << K << endl;
+        //std::cerr << "G " << getNumeredEntFiniteElementPtr()->getRefEnt() << std::endl << K << std::endl;
         ierr = aSemble(
           row_side,col_side,row_type,col_type,row_data,col_data
         ); CHKERRQ(ierr);
 
       } catch (const std::exception& ex) {
-        ostringstream ss;
-        ss << "throw in method: " << ex.what() << endl;
+        std::ostringstream ss;
+        ss << "throw in method: " << ex.what() << std::endl;
         SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
       PetscFunctionReturn(0);
@@ -949,17 +949,17 @@ struct KelvinVoigtDamper {
     ErrorCode rval;
     PetscErrorCode ierr;
     for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BLOCKSET,it)) {
-      if(it->get_name().compare(0,6,"DAMPER") == 0) {
-        vector<double> data;
-        ierr = it->get_attributes(data); CHKERRQ(ierr);
+      if(it->getName().compare(0,6,"DAMPER") == 0) {
+        std::vector<double> data;
+        ierr = it->getAttributes(data); CHKERRQ(ierr);
         if(data.size()<2) {
           SETERRQ(PETSC_COMM_SELF,1,"Data inconsistency");
         }
         rval = mField.get_moab().get_entities_by_type(
-          it->meshset,MBTET,blockMaterialDataMap[it->get_msId()].tEts,true
-        ); CHKERR_PETSC(rval);
-        blockMaterialDataMap[it->get_msId()].gBeta = data[0];
-        blockMaterialDataMap[it->get_msId()].vBeta = data[1];
+          it->meshset,MBTET,blockMaterialDataMap[it->getMeshsetId()].tEts,true
+        ); CHKERRQ_MOAB(rval);
+        blockMaterialDataMap[it->getMeshsetId()].gBeta = data[0];
+        blockMaterialDataMap[it->getMeshsetId()].vBeta = data[1];
       }
     }
     PetscFunctionReturn(0);
@@ -979,7 +979,7 @@ struct KelvinVoigtDamper {
     }
 
     // attach tags for each recorder
-    vector<int> tags;
+    std::vector<int> tags;
     tags.push_back(tag);
 
     ConstitutiveEquationMap::iterator mit = constitutiveEquationMap.begin();

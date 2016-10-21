@@ -13,21 +13,21 @@
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
 
-struct PostPorcStress: public VolumeElementForcesAndSourcesCore::UserDataOperator {
+struct PostPorcHookStress: public MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator {
 
-  FieldInterface& mField;
-  Interface &postProcMesh;
-  vector<EntityHandle> &mapGaussPts;
+  MoFEM::Interface& mField;
+  moab::Interface &postProcMesh;
+  std::vector<EntityHandle> &mapGaussPts;
 
   PostProcVolumeOnRefinedMesh::CommonData &commonData;
 
-  PostPorcStress(
-    FieldInterface& m_field,
-    Interface &post_proc_mesh,
-    vector<EntityHandle> &map_gauss_pts,
-    const string field_name,
+  PostPorcHookStress(
+    MoFEM::Interface& m_field,
+    moab::Interface& post_proc_mesh,
+    std::vector<EntityHandle> &map_gauss_pts,
+    const std::string field_name,
     PostProcVolumeOnRefinedMesh::CommonData &common_data):
-    VolumeElementForcesAndSourcesCore::UserDataOperator(field_name,ForcesAndSurcesCore::UserDataOperator::OPROW),
+    MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator(field_name,ForcesAndSurcesCore::UserDataOperator::OPROW),
     mField(m_field),
     postProcMesh(post_proc_mesh),
     mapGaussPts(map_gauss_pts),
@@ -42,19 +42,19 @@ struct PostPorcStress: public VolumeElementForcesAndSourcesCore::UserDataOperato
     *_lambda = 1;
     *_mu = 1;
 
-    EntityHandle ent = getMoFEMFEPtr()->get_ent();
+    EntityHandle ent = getNumeredEntFiniteElementPtr()->getEnt();
     for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BLOCKSET|MAT_ELASTICSET,it)) {
       Mat_Elastic mydata;
-      ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
+      ierr = it->getAttributeDataStructure(mydata); CHKERRQ(ierr);
 
       Range meshsets;
-      rval = mField.get_moab().get_entities_by_type(it->meshset,MBENTITYSET,meshsets,true); CHKERR_PETSC(rval);
+      rval = mField.get_moab().get_entities_by_type(it->meshset,MBENTITYSET,meshsets,true); CHKERRQ_MOAB(rval);
       meshsets.insert(it->meshset);
       for(Range::iterator mit = meshsets.begin();mit != meshsets.end(); mit++) {
         if( mField.get_moab().contains_entities(*mit,&ent,1) ) {
           *_lambda = LAMBDA(mydata.data.Young,mydata.data.Poisson);
           *_mu = MU(mydata.data.Young,mydata.data.Poisson);
-          *_block_id = it->get_msId();
+          *_block_id = it->getMeshsetId();
           PetscFunctionReturn(0);
         }
       }
@@ -62,7 +62,7 @@ struct PostPorcStress: public VolumeElementForcesAndSourcesCore::UserDataOperato
 
     SETERRQ(PETSC_COMM_SELF,1,
       "Element is not in elastic block, however you run linear elastic analysis with that element\n"
-      "top tip: check if you update block sets after mesh refinments or interface insertion");
+      "top tip: check if you update block sets after mesh refinements or interface insertion");
 
     PetscFunctionReturn(0);
   }
@@ -80,7 +80,7 @@ struct PostPorcStress: public VolumeElementForcesAndSourcesCore::UserDataOperato
     ErrorCode rval;
     PetscErrorCode ierr;
 
-    //const MoFEM::FEDofMoFEMEntity *dof_ptr = data.getFieldDofs()[0];
+    //const MoFEM::FEDofEntity *dof_ptr = data.getFieldDofs()[0];
 
     int id;
     double lambda,mu;
@@ -106,28 +106,28 @@ struct PostPorcStress: public VolumeElementForcesAndSourcesCore::UserDataOperato
     bzero(def_VAL,tag_length*sizeof(double));
     Tag th_stress;
     rval = postProcMesh.tag_get_handle(
-      "STRESS",9,MB_TYPE_DOUBLE,th_stress,MB_TAG_CREAT|MB_TAG_SPARSE,def_VAL); CHKERR_PETSC(rval);
+      "STRESS",9,MB_TYPE_DOUBLE,th_stress,MB_TAG_CREAT|MB_TAG_SPARSE,def_VAL); CHKERRQ_MOAB(rval);
 
     Tag th_prin_stress_vect1,th_prin_stress_vect2,th_prin_stress_vect3;
     rval = postProcMesh.tag_get_handle(
-      "S1",3,MB_TYPE_DOUBLE,th_prin_stress_vect1,MB_TAG_CREAT|MB_TAG_SPARSE,def_VAL); CHKERR_PETSC(rval);
+      "S1",3,MB_TYPE_DOUBLE,th_prin_stress_vect1,MB_TAG_CREAT|MB_TAG_SPARSE,def_VAL); CHKERRQ_MOAB(rval);
     rval = postProcMesh.tag_get_handle(
-      "S2",3,MB_TYPE_DOUBLE,th_prin_stress_vect2,MB_TAG_CREAT|MB_TAG_SPARSE,def_VAL); CHKERR_PETSC(rval);
+      "S2",3,MB_TYPE_DOUBLE,th_prin_stress_vect2,MB_TAG_CREAT|MB_TAG_SPARSE,def_VAL); CHKERRQ_MOAB(rval);
     rval = postProcMesh.tag_get_handle(
-      "S3",3,MB_TYPE_DOUBLE,th_prin_stress_vect3,MB_TAG_CREAT|MB_TAG_SPARSE,def_VAL); CHKERR_PETSC(rval);
+      "S3",3,MB_TYPE_DOUBLE,th_prin_stress_vect3,MB_TAG_CREAT|MB_TAG_SPARSE,def_VAL); CHKERRQ_MOAB(rval);
 
     Tag th_prin_stress_vals;
     rval = postProcMesh.tag_get_handle(
-      "PRINCIPAL_STRESS",3,MB_TYPE_DOUBLE,th_prin_stress_vals,MB_TAG_CREAT|MB_TAG_SPARSE,def_VAL); CHKERR_PETSC(rval);
+      "PRINCIPAL_STRESS",3,MB_TYPE_DOUBLE,th_prin_stress_vals,MB_TAG_CREAT|MB_TAG_SPARSE,def_VAL); CHKERRQ_MOAB(rval);
 
     Tag th_id;
     int def_block_id = -1;
     rval = postProcMesh.tag_get_handle(
       "BLOCK_ID",1,MB_TYPE_INTEGER,th_id,MB_TAG_CREAT|MB_TAG_SPARSE,&def_block_id
-    ); CHKERR_PETSC(rval);
+    ); CHKERRQ_MOAB(rval);
     Range::iterator tit = commonData.tEts.begin();
     for(;tit!=commonData.tEts.end();tit++) {
-      rval = postProcMesh.tag_set_data(th_id,&*tit,1,&id);  CHKERR_PETSC(rval);
+      rval = postProcMesh.tag_set_data(th_id,&*tit,1,&id);  CHKERRQ_MOAB(rval);
     }
 
     ublas::vector<double> strain;
@@ -165,7 +165,7 @@ struct PostPorcStress: public VolumeElementForcesAndSourcesCore::UserDataOperato
       Stress(1,2) = Stress(2,1) = stress[4];
       Stress(2,0) = Stress(0,2) = stress[5];
 
-      rval = postProcMesh.tag_set_data(th_stress,&mapGaussPts[gg],1,&Stress(0,0)); CHKERR_PETSC(rval);
+      rval = postProcMesh.tag_set_data(th_stress,&mapGaussPts[gg],1,&Stress(0,0)); CHKERRQ_MOAB(rval);
 
       ublas::matrix< FieldData > eigen_vectors = Stress;
       ublas::vector<double> eigen_values(3);
@@ -191,10 +191,10 @@ struct PostPorcStress: public VolumeElementForcesAndSourcesCore::UserDataOperato
       }
 
       //Tag principle stress vectors 1, 2, 3
-      rval = postProcMesh.tag_set_data(th_prin_stress_vect1,&mapGaussPts[gg],1,&prin_stress_vect1[0]); CHKERR_PETSC(rval);
-      rval = postProcMesh.tag_set_data(th_prin_stress_vect2,&mapGaussPts[gg],1,&prin_stress_vect2[0]); CHKERR_PETSC(rval);
-      rval = postProcMesh.tag_set_data(th_prin_stress_vect3,&mapGaussPts[gg],1,&prin_stress_vect3[0]); CHKERR_PETSC(rval);
-      rval = postProcMesh.tag_set_data(th_prin_stress_vals,&mapGaussPts[gg],1,&prin_vals_vect[0]); CHKERR_PETSC(rval);
+      rval = postProcMesh.tag_set_data(th_prin_stress_vect1,&mapGaussPts[gg],1,&prin_stress_vect1[0]); CHKERRQ_MOAB(rval);
+      rval = postProcMesh.tag_set_data(th_prin_stress_vect2,&mapGaussPts[gg],1,&prin_stress_vect2[0]); CHKERRQ_MOAB(rval);
+      rval = postProcMesh.tag_set_data(th_prin_stress_vect3,&mapGaussPts[gg],1,&prin_stress_vect3[0]); CHKERRQ_MOAB(rval);
+      rval = postProcMesh.tag_set_data(th_prin_stress_vals,&mapGaussPts[gg],1,&prin_vals_vect[0]); CHKERRQ_MOAB(rval);
 
     }
 

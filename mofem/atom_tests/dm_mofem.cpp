@@ -35,7 +35,11 @@ int main(int argc, char *argv[]) {
 
   PetscBool flg = PETSC_TRUE;
   char mesh_file_name[255];
-  ierr = PetscOptionsGetString(PETSC_NULL,"-my_file",mesh_file_name,255,&flg); CHKERRQ(ierr);
+  #if PETSC_VERSION_GE(3,6,4)
+  ierr = PetscOptionsGetString(PETSC_NULL,"","-my_file",mesh_file_name,255,&flg); CHKERRQ(ierr);
+  #else
+  ierr = PetscOptionsGetString(PETSC_NULL,PETSC_NULL,"-my_file",mesh_file_name,255,&flg); CHKERRQ(ierr);
+  #endif
   if(flg != PETSC_TRUE) {
     SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_file (MESH FILE NEEDED)");
   }
@@ -53,10 +57,10 @@ int main(int argc, char *argv[]) {
 
   //read mesh and create moab and mofem datastrutures
   moab::Core mb_instance;
-  Interface& moab = mb_instance;
-  rval = moab.load_file(mesh_file_name, 0, option); CHKERR_PETSC(rval);
+  moab::Interface& moab = mb_instance;
+  rval = moab.load_file(mesh_file_name, 0, option); CHKERRQ_MOAB(rval);
   MoFEM::Core core(moab);
-  FieldInterface& m_field = core;
+  MoFEM::Interface& m_field = core;
 
   EntityHandle root_set = moab.get_root_set();
   //add all entities to database, all of them will be used
@@ -104,7 +108,7 @@ int main(int argc, char *argv[]) {
   ierr = DMCreateMatrix(dm,&m); CHKERRQ(ierr);
 
   //glob loc
-  ierr = VecSet(g,1); CHKERRQ(ierr);
+  ierr = VecSet(g,1.1); CHKERRQ(ierr);
   ierr = VecGhostUpdateBegin(g,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
   ierr = VecGhostUpdateEnd(g,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 

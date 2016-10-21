@@ -23,7 +23,7 @@
 #include <h1_hdiv_hcurl_l2.h>
 
 #include <MaterialBlocks.hpp>
-#include <CubitBCData.hpp>
+#include <BCData.hpp>
 #include <TagMultiIndices.hpp>
 #include <CoordSysMultiIndices.hpp>
 
@@ -36,12 +36,12 @@ namespace MoFEM {
     ErrorCode rval;
     // dim
     Tag th_coord_sys_dim;
-    rval = moab.tag_get_handle("_CoordSysDim",th_coord_sys_dim); CHKERR_THROW(rval);
-    rval = moab.tag_get_by_ptr(th_coord_sys_dim,&meshSet,1,(const void **)&tagCoordSysDim); CHKERR_THROW(rval);
+    rval = moab.tag_get_handle("_CoordSysDim",th_coord_sys_dim); MOAB_THROW(rval);
+    rval = moab.tag_get_by_ptr(th_coord_sys_dim,&meshSet,1,(const void **)&tagCoordSysDim); MOAB_THROW(rval);
     // Coord Sys Name
     Tag th_coord_sys_name;
-    rval = moab.tag_get_handle("_CoordSysName",th_coord_sys_name); CHKERR(rval);
-    rval = moab.tag_get_by_ptr(th_coord_sys_name,&meshset,1,(const void **)&tagCoordSysName,&tagCoordSysNameSize); CHKERR_THROW(rval);
+    rval = moab.tag_get_handle("_CoordSysName",th_coord_sys_name); MOAB_THROW(rval);
+    rval = moab.tag_get_by_ptr(th_coord_sys_name,&meshset,1,(const void **)&tagCoordSysName,&tagCoordSysNameSize); MOAB_THROW(rval);
 
   }
 

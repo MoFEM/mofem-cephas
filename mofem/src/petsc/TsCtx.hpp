@@ -21,7 +21,7 @@
 
 namespace MoFEM {
 
-/** \brief Interface for KSP solver
+/** \brief Interface for Time Stepping (TS) solver
   * \ingroup petsc_context_struture
   */
 struct TsCtx {
@@ -29,18 +29,19 @@ struct TsCtx {
   ErrorCode rval;
   PetscErrorCode ierr;
 
-  FieldInterface &mField;
-  Interface &moab;
+  MoFEM::Interface &mField;
+  moab::Interface &moab;
 
-  string problemName;
+  std::string problemName;
+  MoFEMTypes bH; ///< If set to MF_EXIST check if element exist
 
-  typedef pair<string,FEMethod*> loop_pair_type;
-  typedef vector<loop_pair_type > loops_to_do_type;
+  typedef std::pair<std::string,FEMethod*> loop_pair_type;
+  typedef std::vector<loop_pair_type > loops_to_do_type;
   loops_to_do_type loops_to_do_IJacobian;
   loops_to_do_type loops_to_do_IFunction;
   loops_to_do_type loops_to_do_Monitor;
 
-  typedef vector<BasicMethod*> basic_method_to_do;
+  typedef std::vector<BasicMethod*> basic_method_to_do;
   basic_method_to_do preProcess_IJacobian;
   basic_method_to_do postProcess_IJacobian;
   basic_method_to_do preProcess_IFunction;
@@ -55,9 +56,11 @@ struct TsCtx {
   PetscLogEvent USER_EVENT_TsCtxMonitor;
 
   bool zeroMatrix;
-  TsCtx(FieldInterface &m_field,const string &problem_name):
-    mField(m_field),moab(m_field.get_moab()),
+  TsCtx(MoFEM::Interface &m_field,const std::string &problem_name):
+    mField(m_field),
+    moab(m_field.get_moab()),
     problemName(problem_name),
+    bH(MF_EXIST),
     zeroMatrix(true) {
     PetscLogEventRegister("LoopTsIFunction",0,&USER_EVENT_TsCtxIFunction);
     PetscLogEventRegister("LoopTsIJacobian",0,&USER_EVENT_TsCtxIJacobian);
@@ -66,8 +69,9 @@ struct TsCtx {
     PetscLogEventRegister("LoopTsMonitor",0,&USER_EVENT_TsCtxMonitor);
   }
 
-  const FieldInterface& getm_field() const { return mField; }
-  const Interface& get_moab() const { return moab; }
+  const MoFEM::Interface& getMoFEM() const { return mField; }
+  const moab::Interface& getMoAB() const { return moab; }
+
   loops_to_do_type& get_loops_to_do_IFunction() { return loops_to_do_IFunction; }
   loops_to_do_type& get_loops_to_do_IJacobian() { return loops_to_do_IJacobian; }
   loops_to_do_type& get_loops_to_do_Monitor() { return loops_to_do_Monitor; }

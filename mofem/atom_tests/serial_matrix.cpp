@@ -19,11 +19,6 @@
 
 #include <MoFEM.hpp>
 
-#include <boost/iostreams/tee.hpp>
-#include <boost/iostreams/stream.hpp>
-#include <fstream>
-#include <iostream>
-
 namespace bio = boost::iostreams;
 using bio::tee_device;
 using bio::stream;
@@ -40,17 +35,25 @@ int main(int argc, char *argv[]) {
   PetscInitialize(&argc,&argv,PETSC_NULL,help);
 
   moab::Core mb_instance;
-  Interface& moab = mb_instance;
+  moab::Interface& moab = mb_instance;
 
   //Reade parameters from line command
   PetscBool flg = PETSC_TRUE;
   char mesh_file_name[255];
-  ierr = PetscOptionsGetString(PETSC_NULL,"-my_file",mesh_file_name,255,&flg); CHKERRQ(ierr);
+  #if PETSC_VERSION_GE(3,6,4)
+  ierr = PetscOptionsGetString(PETSC_NULL,"","-my_file",mesh_file_name,255,&flg); CHKERRQ(ierr);
+  #else
+  ierr = PetscOptionsGetString(PETSC_NULL,PETSC_NULL,"-my_file",mesh_file_name,255,&flg); CHKERRQ(ierr);
+  #endif
   if(flg != PETSC_TRUE) {
     SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_file (MESH FILE NEEDED)");
   }
   PetscInt order;
-  ierr = PetscOptionsGetInt(PETSC_NULL,"-my_order",&order,&flg); CHKERRQ(ierr);
+  #if PETSC_VERSION_GE(3,6,4)
+  ierr = PetscOptionsGetInt(PETSC_NULL,"","-my_order",&order,&flg); CHKERRQ(ierr);
+  #else
+  ierr = PetscOptionsGetInt(PETSC_NULL,PETSC_NULL,"-my_order",&order,&flg); CHKERRQ(ierr);
+  #endif
   if(flg != PETSC_TRUE) {
     order = 1;
   }
@@ -58,7 +61,7 @@ int main(int argc, char *argv[]) {
   //Read mesh to MOAB
   const char *option;
   option = "";//"PARALLEL=BCAST;";//;DEBUG_IO";
-  rval = moab.load_file(mesh_file_name, 0, option); CHKERR_PETSC(rval); 
+  rval = moab.load_file(mesh_file_name, 0, option); CHKERRQ_MOAB(rval);
   ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
   if(pcomm == NULL) pcomm =  new ParallelComm(&moab,PETSC_COMM_WORLD);
 
@@ -70,7 +73,7 @@ int main(int argc, char *argv[]) {
   //second argument set communicator for sequential problem
   //last argument make mofem quaiet
   MoFEM::Core core(moab,PETSC_COMM_SELF,-1);
-  FieldInterface& m_field = core;
+  MoFEM::Interface& m_field = core;
 
   //ref meshset ref level 0
   ierr = m_field.seed_ref_level_3D(0,0); CHKERRQ(ierr);
@@ -79,7 +82,7 @@ int main(int argc, char *argv[]) {
   BitRefLevel bit_level0;
   bit_level0.set(0);
   EntityHandle meshset_level0;
-  rval = moab.create_meshset(MESHSET_SET,meshset_level0); CHKERR_PETSC(rval);
+  rval = moab.create_meshset(MESHSET_SET,meshset_level0); CHKERRQ_MOAB(rval);
   ierr = m_field.seed_ref_level_3D(0,bit_level0); CHKERRQ(ierr);
   ierr = m_field.get_entities_by_ref_level(bit_level0,BitRefLevel().set(),meshset_level0); CHKERRQ(ierr);
 
@@ -87,8 +90,8 @@ int main(int argc, char *argv[]) {
   //Define problem
 
   //Fields
-  ierr = m_field.add_field("FIELD_A",H1,3); CHKERRQ(ierr);
-  ierr = m_field.add_field("FIELD_B",L2,1); CHKERRQ(ierr);
+  ierr = m_field.add_field("FIELD_A",H1,AINSWORTH_COLE_BASE,3,MB_TAG_DENSE); CHKERRQ(ierr);
+  ierr = m_field.add_field("FIELD_B",L2,AINSWORTH_COLE_BASE,1,MB_TAG_DENSE); CHKERRQ(ierr);
 
   ierr = m_field.add_ents_to_field_by_TETs(0,"FIELD_A"); CHKERRQ(ierr);
   ierr = m_field.add_ents_to_field_by_TETs(0,"FIELD_B"); CHKERRQ(ierr);
@@ -135,7 +138,7 @@ int main(int argc, char *argv[]) {
   //Problem
   ierr = m_field.add_problem("TEST_PROBLEM"); CHKERRQ(ierr);
 
-  //set refinment level for problem
+  //set refinement level for problem
   ierr = m_field.modify_problem_ref_level_add_bit("TEST_PROBLEM",bit_level0); CHKERRQ(ierr);
   ierr = m_field.modify_problem_add_finite_element("TEST_PROBLEM","FE1"); CHKERRQ(ierr);
   ierr = m_field.modify_problem_add_finite_element("TEST_PROBLEM","FE2"); CHKERRQ(ierr);
@@ -152,9 +155,10 @@ int main(int argc, char *argv[]) {
   ierr = m_field.VecCreateGhost("TEST_PROBLEM",ROW,&F); CHKERRQ(ierr);
   Mat A;
   ierr = m_field.MatCreateMPIAIJWithArrays("TEST_PROBLEM",&A); CHKERRQ(ierr);
- 
+
   PetscViewer viewer;
-  ierr = PetscViewerASCIIOpen(PETSC_COMM_SELF,"serial_matrix.txt",&viewer); CHKERRQ(ierr); 
+  ierr = PetscViewerASCIIOpen(PETSC_COMM_SELF,"serial_matrix.txt",&viewer); CHKERRQ(ierr);
+  ierr = PetscViewerSetFormat(viewer,PETSC_VIEWER_ASCII_INFO); CHKERRQ(ierr);
   ierr = MatView(A,viewer); CHKERRQ(ierr);
 
   //ierr = MatView(A,PETSC_VIEWER_DRAW_SELF); CHKERRQ(ierr);
@@ -166,13 +170,12 @@ int main(int argc, char *argv[]) {
 
   }
 
-  if(pcomm->rank()!=(unsigned int)do_for_rank) {
-    std::string wait;
-    std::cin >> wait;
-  }
+  // if(pcomm->rank()!=(unsigned int)do_for_rank) {
+  //   std::string wait;
+  //   std::cin >> wait;
+  // }
 
   PetscFinalize();
   return 0;
 
 }
-

@@ -1,6 +1,3 @@
-set(CTEST_SOURCE_DIRECTORY "/home/lukasz/tmp/cephas_users_modules/users_modules")
-set(CTEST_BINARY_DIRECTORY "/home/lukasz/tmp/cephas_users_modules/build")
-
 set(CTEST_PROJECT_NAME "MoFEM-UsersModules")
 set(CTEST_CMAKE_GENERATOR "Unix Makefiles")
 set(CTEST_BUILD_CONFIGURATION "Debug")
@@ -26,10 +23,11 @@ set(CTEST_CUSTOM_MEMCHECK_IGNORE
 )
 
 ctest_configure()
+ctest_build(TARGET checkout_CDashTesting)
+ctest_build(TARGET update_users_modules)
 ctest_build()
 ctest_test()
 if(CTEST_COVERAGE_COMMAND)
   ctest_coverage()
 endif(CTEST_COVERAGE_COMMAND)
 ctest_submit()
-

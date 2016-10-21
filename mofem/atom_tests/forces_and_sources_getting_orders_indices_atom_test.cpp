@@ -18,11 +18,6 @@
 
 #include <MoFEM.hpp>
 
-#include <boost/iostreams/tee.hpp>
-#include <boost/iostreams/stream.hpp>
-#include <fstream>
-#include <iostream>
-
 namespace bio = boost::iostreams;
 using bio::tee_device;
 using bio::stream;
@@ -39,20 +34,24 @@ int main(int argc, char *argv[]) {
   PetscInitialize(&argc,&argv,(char *)0,help);
 
   moab::Core mb_instance;
-  Interface& moab = mb_instance;
+  moab::Interface& moab = mb_instance;
   int rank;
   MPI_Comm_rank(PETSC_COMM_WORLD,&rank);
 
   PetscBool flg = PETSC_TRUE;
   char mesh_file_name[255];
-  ierr = PetscOptionsGetString(PETSC_NULL,"-my_file",mesh_file_name,255,&flg); CHKERRQ(ierr);
+  #if PETSC_VERSION_GE(3,6,4)
+  ierr = PetscOptionsGetString(PETSC_NULL,"","-my_file",mesh_file_name,255,&flg); CHKERRQ(ierr);
+  #else
+  ierr = PetscOptionsGetString(PETSC_NULL,PETSC_NULL,"-my_file",mesh_file_name,255,&flg); CHKERRQ(ierr);
+  #endif
   if(flg != PETSC_TRUE) {
     SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_file (MESH FILE NEEDED)");
   }
 
   //Create MoFEM (Joseph) database
   MoFEM::Core core(moab);
-  FieldInterface& m_field = core;
+  MoFEM::Interface& m_field = core;
 
   ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
   if(pcomm == NULL) pcomm =  new ParallelComm(&moab,PETSC_COMM_WORLD);
@@ -60,14 +59,14 @@ int main(int argc, char *argv[]) {
   const char *option;
   option = "";//"PARALLEL=BCAST;";//;DEBUG_IO";
   BARRIER_RANK_START(pcomm)
-  rval = moab.load_file(mesh_file_name, 0, option); CHKERR_PETSC(rval);
+  rval = moab.load_file(mesh_file_name, 0, option); CHKERRQ_MOAB(rval);
   BARRIER_RANK_END(pcomm)
 
   //set entitities bit level
   BitRefLevel bit_level0;
   bit_level0.set(0);
   EntityHandle meshset_level0;
-  rval = moab.create_meshset(MESHSET_SET,meshset_level0); CHKERR_PETSC(rval);
+  rval = moab.create_meshset(MESHSET_SET,meshset_level0); CHKERRQ_MOAB(rval);
   ierr = m_field.seed_ref_level_3D(0,bit_level0); CHKERRQ(ierr);
 
   //Fields
@@ -88,7 +87,7 @@ int main(int argc, char *argv[]) {
 
   //set finite elements for problem
   ierr = m_field.modify_problem_add_finite_element("TEST_PROBLEM","TEST_FE"); CHKERRQ(ierr);
-  //set refinment level for problem
+  //set refinement level for problem
   ierr = m_field.modify_problem_ref_level_add_bit("TEST_PROBLEM",bit_level0); CHKERRQ(ierr);
 
 
@@ -137,21 +136,22 @@ int main(int argc, char *argv[]) {
     ErrorCode rval;
     PetscErrorCode ierr;
 
-    typedef tee_device<ostream, ofstream> TeeDevice;
+    typedef tee_device<std::ostream, std::ofstream> TeeDevice;
     typedef stream<TeeDevice> TeeStream;
 
-    ofstream ofs;
+    std::ofstream ofs;
     TeeDevice my_tee;
     TeeStream my_split;
 
     DataForcesAndSurcesCore data;
     DerivedDataForcesAndSurcesCore derived_data;
 
-    ForcesAndSurcesCore_TestFE(FieldInterface &_m_field):
+    ForcesAndSurcesCore_TestFE(MoFEM::Interface &_m_field):
       ForcesAndSurcesCore(_m_field),
       ofs("forces_and_sources_getting_orders_indices_atom_test.txt"),
-      my_tee(cout, ofs),my_split(my_tee),
-      data(MBTET),derived_data(data) {};
+      my_tee(std::cout, ofs),my_split(my_tee),
+      data(MBTET),
+      derived_data(data) {};
 
     PetscErrorCode preProcess() {
       PetscFunctionBegin;
@@ -163,39 +163,55 @@ int main(int argc, char *argv[]) {
 
       my_split << "\n\nNEXT ELEM\n\n";
 
-      ierr = getSpacesOnEntities(data); CHKERRQ(ierr);
+      ierr = getSpacesAndBaseOnEntities(data); CHKERRQ(ierr);
 
       ierr = getEdgesSense(data); CHKERRQ(ierr);
       ierr = getTrisSense(data); CHKERRQ(ierr);
-      ierr = getEdgesOrder(data,H1); CHKERRQ(ierr);
-      ierr = getTrisOrder(data,H1); CHKERRQ(ierr);
-      ierr = getTetsOrder(data,H1); CHKERRQ(ierr);
+      ierr = getEdgesDataOrder(data,H1); CHKERRQ(ierr);
+      ierr = getTrisDataOrder(data,H1); CHKERRQ(ierr);
+      ierr = getTetDataOrder(data,H1); CHKERRQ(ierr);
       ierr = getFaceTriNodes(data); CHKERRQ(ierr);
 
-      data.dataOnEntities[MBVERTEX][0].getN().resize(4,4,false);
-      ierr = ShapeMBTET(
-        &*data.dataOnEntities[MBVERTEX][0].getN().data().begin(),G_TET_X4,G_TET_Y4,G_TET_Z4,4
+      MatrixDouble gauss_pts(4,4);
+      for(int gg = 0;gg<4;gg++) {
+        gauss_pts(0,gg) = G_TET_X4[gg];
+        gauss_pts(1,gg) = G_TET_Y4[gg];
+        gauss_pts(2,gg) = G_TET_Z4[gg];
+        gauss_pts(3,gg) = G_TET_W4[gg];
+      }
+      ierr = TetPolynomialBase().getValue(
+        gauss_pts,
+        boost::shared_ptr<BaseFunctionCtx>(
+          new EntPolynomialBaseCtx(data,H1,AINSWORTH_COLE_BASE)
+        )
       ); CHKERRQ(ierr);
-      ierr = shapeTETFunctions_H1(data,G_TET_X4,G_TET_Y4,G_TET_Z4,4); CHKERRQ(ierr);
 
+      ierr = getEdgesDataOrderSpaceAndBase(data,"FIELD1"); CHKERRQ(ierr);
+      ierr = getTrisDataOrderSpaceAndBase(data,"FIELD1"); CHKERRQ(ierr);
+      ierr = getTetDataOrderSpaceAndBase(data,"FIELD1"); CHKERRQ(ierr);
       ierr = getRowNodesIndices(data,"FIELD1"); CHKERRQ(ierr);
       ierr = getEdgesRowIndices(data,"FIELD1"); CHKERRQ(ierr);
       ierr = getTrisRowIndices(data,"FIELD1"); CHKERRQ(ierr);
       ierr = getTetsRowIndices(data,"FIELD1"); CHKERRQ(ierr);
+      ierr = getNodesFieldData(data,"FIELD1"); CHKERRQ(ierr);
+      data.dataOnEntities[MBVERTEX][0].getFieldData().resize(0);
 
       my_split << "FIELD1:\n";
-      my_split << data << endl;
+      my_split << data << std::endl;
 
-      ierr = getEdgesOrder(derived_data,"FIELD2"); CHKERRQ(ierr);
-      ierr = getTrisOrder(derived_data,"FIELD2"); CHKERRQ(ierr);
-      ierr = getTetsOrder(derived_data,"FIELD2"); CHKERRQ(ierr);
+      derived_data.dataOnEntities[MBVERTEX][0].getBase() = AINSWORTH_COLE_BASE;
+      ierr = getEdgesDataOrderSpaceAndBase(derived_data,"FIELD2"); CHKERRQ(ierr);
+      ierr = getTrisDataOrderSpaceAndBase(derived_data,"FIELD2"); CHKERRQ(ierr);
+      ierr = getTetDataOrderSpaceAndBase(derived_data,"FIELD2"); CHKERRQ(ierr);
       ierr = getColNodesIndices(derived_data,"FIELD2"); CHKERRQ(ierr);
       ierr = getEdgesColIndices(derived_data,"FIELD2"); CHKERRQ(ierr);
       ierr = getTrisColIndices(derived_data,"FIELD2"); CHKERRQ(ierr);
       ierr = getTetsColIndices(derived_data,"FIELD2"); CHKERRQ(ierr);
+      ierr = getNodesFieldData(derived_data,"FIELD2"); CHKERRQ(ierr);
+      derived_data.dataOnEntities[MBVERTEX][0].getFieldData().resize(0);
 
       my_split << "FIELD2:\n";
-      my_split << derived_data << endl;
+      my_split << derived_data << std::endl;
 
       PetscFunctionReturn(0);
     }

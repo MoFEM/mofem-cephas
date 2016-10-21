@@ -24,8 +24,8 @@ void dotest(int nfft)
 
     FFT fft(nfft,false);
 
-    vector<cpx_type> inbuf(nfft);
-    vector<cpx_type> outbuf(nfft);
+    std::vector<cpx_type> inbuf(nfft);
+    std::vector<cpx_type> outbuf(nfft);
     for (int k=0;k<nfft;++k)
         inbuf[k]= cpx_type( 
                 (T)(rand()/(double)RAND_MAX - .5),
@@ -54,7 +54,7 @@ void dotest(int nfft)
         fft.transform( &inbuf[0] , &outbuf[0] );
     }
     double t1 = curtime();
-    cout << " MSPS:" << ( (nits*nfft)*1e-6/ (t1-t0) ) << endl;
+    cout << " MSPS:" << ( (nits*nfft)*1e-6/ (t1-t0) ) << std::endl;
 }
 
 int main(int argc,char ** argv)

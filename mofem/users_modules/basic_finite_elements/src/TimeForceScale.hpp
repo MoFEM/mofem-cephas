@@ -22,12 +22,15 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
+#ifndef __TIMEFORCESCALE_HPP__
+#define __TIMEFORCESCALE_HPP__
+
 /** \brief Force scale operator for reading two columns
   */
 struct TimeForceScale: public MethodForForceScaling {
   //Hassan: This function to read data file (once) and save it in a pair vector ts
 
-  map<double,double> tSeries;
+  std::map<double,double> tSeries;
   int readFile,debug;
   string nAme;
   bool errorIfFileNotGiven;
@@ -51,7 +54,7 @@ struct TimeForceScale: public MethodForForceScaling {
   PetscErrorCode timeData() {
     PetscFunctionBegin;
     char time_file_name[255];
-    ierr = PetscOptionsGetString(PETSC_NULL,nAme.c_str(),time_file_name,255,&fLg); CHKERRQ(ierr);
+    ierr = PetscOptionsGetString(PETSC_NULL,PETSC_NULL,nAme.c_str(),time_file_name,255,&fLg); CHKERRQ(ierr);
     if(!fLg && errorIfFileNotGiven) {
       SETERRQ1(PETSC_COMM_SELF,1,"*** ERROR %s (time_data FILE NEEDED)",nAme.c_str());
     }
@@ -77,7 +80,7 @@ struct TimeForceScale: public MethodForForceScaling {
     }
     int r = fclose(time_data);
     if(debug) {
-      map<double, double>::iterator tit = tSeries.begin();
+      std::map<double, double>::iterator tit = tSeries.begin();
       for(;tit!=tSeries.end();tit++) {
         PetscPrintf(PETSC_COMM_WORLD,"** read time series %3.2e time %3.2e\n",tit->first,tit->second);
       }
@@ -92,6 +95,7 @@ struct TimeForceScale: public MethodForForceScaling {
   PetscErrorCode getForceScale(const double ts_t,double &scale) {
     PetscFunctionBegin;
     if(!fLg) {
+      scale = 1; // not scale at all, no history file
       PetscFunctionReturn(0);
     }
     if(readFile==0) {
@@ -99,7 +103,7 @@ struct TimeForceScale: public MethodForForceScaling {
     }
     scale = 0;
     double t0 = 0,t1,s0 = tSeries[0],s1,dt;
-    map<double, double>::iterator tit = tSeries.begin();
+    std::map<double, double>::iterator tit = tSeries.begin();
     for(;tit!=tSeries.end();tit++) {
       if(tit->first > ts_t) {
         t1 = tit->first;
@@ -129,7 +133,7 @@ struct TimeForceScale: public MethodForForceScaling {
 
 struct TimeAccelerogram: public MethodForForceScaling {
 
-  map<double,ublas::vector<double> > tSeries;
+  std::map<double,ublas::vector<double> > tSeries;
   int readFile,debug;
   string nAme;
 
@@ -148,7 +152,7 @@ struct TimeAccelerogram: public MethodForForceScaling {
     PetscFunctionBegin;
     char time_file_name[255];
     PetscBool flg = PETSC_TRUE;
-    ierr = PetscOptionsGetString(PETSC_NULL,nAme.c_str(),time_file_name,255,&flg); CHKERRQ(ierr);
+    ierr = PetscOptionsGetString(PETSC_NULL,PETSC_NULL,nAme.c_str(),time_file_name,255,&flg); CHKERRQ(ierr);
     if(flg != PETSC_TRUE) {
       SETERRQ1(PETSC_COMM_SELF,1,"*** ERROR %s (time_data FILE NEEDED)",nAme.c_str());
     }
@@ -172,7 +176,7 @@ struct TimeAccelerogram: public MethodForForceScaling {
     }
     int r = fclose(time_data);
     if(debug) {
-      map<double,ublas::vector<double> >::iterator tit = tSeries.begin();
+      std::map<double,ublas::vector<double> >::iterator tit = tSeries.begin();
       for(;tit!=tSeries.end();tit++) {
         PetscPrintf(
           PETSC_COMM_WORLD,
@@ -197,7 +201,7 @@ struct TimeAccelerogram: public MethodForForceScaling {
     ublas::vector<double> acc(3);
     ublas::vector<double> acc0 = tSeries[0],acc1(3);
     double t0 = 0,t1,dt;
-    map<double,ublas::vector<double> >::iterator tit = tSeries.begin();
+    std::map<double,ublas::vector<double> >::iterator tit = tSeries.begin();
     for(;tit!=tSeries.end();tit++) {
       if(tit->first > ts_t) {
         t1 = tit->first;
@@ -215,3 +219,5 @@ struct TimeAccelerogram: public MethodForForceScaling {
   }
 
 };
+
+#endif // __TIMEFORCESCALE_HPP__

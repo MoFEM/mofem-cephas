@@ -23,7 +23,7 @@
 #include <h1_hdiv_hcurl_l2.h>
 
 #include <MaterialBlocks.hpp>
-#include <CubitBCData.hpp>
+#include <BCData.hpp>
 #include <TagMultiIndices.hpp>
 #include <CoordSysMultiIndices.hpp>
 #include <FieldMultiIndices.hpp>
@@ -43,55 +43,68 @@ const bool PetscLocalIdx_mi_tag::IamNotPartitioned = false;
 const bool Part_mi_tag::IamNotPartitioned = false;
 
 //fields
-MoFEMField::MoFEMField(Interface &moab,const EntityHandle meshset,const CoordSys *coord_sys_ptr):
-  meshSet(meshset),
-  coordSysPtr(coord_sys_ptr),
-  tag_id_data(NULL),
-  tag_space_data(NULL),
-  tag_rank_data(NULL),
-  tag_name_data(NULL),
-  tag_name_size(0) {
+Field::Field(
+  Interface &_moab,
+  const EntityHandle meshset,
+  const boost::shared_ptr<CoordSys> coord_sys_ptr
+):
+moab(_moab),
+meshSet(meshset),
+coordSysPtr(coord_sys_ptr),
+tag_id_data(NULL),
+tag_space_data(NULL),
+tag_nb_coeff_data(NULL),
+tag_name_data(NULL),
+tag_name_size(0) {
   //Change those tags only by modifiers
   ErrorCode rval;
   //id
   Tag th_field_id;
-  rval = moab.tag_get_handle("_FieldId",th_field_id); CHKERR(rval);
-  rval = moab.tag_get_by_ptr(th_field_id,&meshSet,1,(const void **)&tag_id_data); CHKERR_THROW(rval);
+  rval = moab.tag_get_handle("_FieldId",th_field_id); CHKERR_MOAB(rval);
+  rval = moab.tag_get_by_ptr(th_field_id,&meshSet,1,(const void **)&tag_id_data); MOAB_THROW(rval);
   //space
   Tag th_field_space;
-  rval = moab.tag_get_handle("_FieldSpace",th_field_space); CHKERR(rval);
-  rval = moab.tag_get_by_ptr(th_field_space,&meshSet,1,(const void **)&tag_space_data); CHKERR_THROW(rval);
+  rval = moab.tag_get_handle("_FieldSpace",th_field_space); CHKERR_MOAB(rval);
+  rval = moab.tag_get_by_ptr(th_field_space,&meshSet,1,(const void **)&tag_space_data); MOAB_THROW(rval);
+  //approx. base
+  Tag th_field_base;
+  rval = moab.tag_get_handle("_FieldBase",th_field_base); CHKERR_MOAB(rval);
+  rval = moab.tag_get_by_ptr(th_field_base,&meshSet,1,(const void **)&tag_base_data); MOAB_THROW(rval);
   //name
   Tag th_field_name;
-  rval = moab.tag_get_handle("_FieldName",th_field_name); CHKERR(rval);
-  rval = moab.tag_get_by_ptr(th_field_name,&meshSet,1,(const void **)&tag_name_data,&tag_name_size); CHKERR_THROW(rval);
+  rval = moab.tag_get_handle("_FieldName",th_field_name); CHKERR_MOAB(rval);
+  rval = moab.tag_get_by_ptr(th_field_name,&meshSet,1,(const void **)&tag_name_data,&tag_name_size); MOAB_THROW(rval);
   //name prefix
   Tag th_field_name_data_name_prefix;
-  rval = moab.tag_get_handle("_FieldName_DataNamePrefix",th_field_name_data_name_prefix); CHKERR(rval);
-  rval = moab.tag_get_by_ptr(th_field_name_data_name_prefix,&meshSet,1,(const void **)&tag_name_prefix_data,&tag_name_prefix_size); CHKERR_THROW(rval);
-  string name_data_prefix((char *)tag_name_prefix_data,tag_name_prefix_size);
+  rval = moab.tag_get_handle("_FieldName_DataNamePrefix",th_field_name_data_name_prefix); CHKERR_MOAB(rval);
+  rval = moab.tag_get_by_ptr(th_field_name_data_name_prefix,&meshSet,1,(const void **)&tag_name_prefix_data,&tag_name_prefix_size); MOAB_THROW(rval);
+  std::string name_data_prefix((char *)tag_name_prefix_data,tag_name_prefix_size);
   //data
-  string tag_data_name = name_data_prefix+get_name();
-  rval = moab.tag_get_handle(tag_data_name.c_str(),th_FieldData); CHKERR_THROW(rval);
+  std::string tag_data_name = name_data_prefix+getName();
+  rval = moab.tag_get_handle(tag_data_name.c_str(),th_FieldData); MOAB_THROW(rval);
   //order
-  string tag_approximation_order_name = "_App_Order_"+get_name();
-  rval = moab.tag_get_handle(tag_approximation_order_name.c_str(),th_AppOrder); CHKERR_THROW(rval);
+  std::string tag_approximation_order_name = "_App_Order_"+getName();
+  rval = moab.tag_get_handle(tag_approximation_order_name.c_str(),th_AppOrder); MOAB_THROW(rval);
   //dof order
-  string tag_dof_approximation_order_name = "_App_Dof_Order"+get_name();
-  rval = moab.tag_get_handle(tag_dof_approximation_order_name.c_str(),th_AppDofOrder); CHKERR_THROW(rval);
+  std::string tag_dof_approximation_order_name = "_App_Dof_Order"+getName();
+  rval = moab.tag_get_handle(tag_dof_approximation_order_name.c_str(),th_AppDofOrder); MOAB_THROW(rval);
   //rank
   Tag th_rank;
-  string Tag_rank_name = "_Field_Rank_"+get_name();
-  rval = moab.tag_get_handle(Tag_rank_name.c_str(),th_rank); CHKERR_THROW(rval);
-  rval = moab.tag_get_by_ptr(th_rank,&meshSet,1,(const void **)&tag_rank_data); CHKERR_THROW(rval);
+  std::string Tag_rank_name = "_Field_Rank_"+getName();
+  rval = moab.tag_get_handle(Tag_rank_name.c_str(),th_rank); MOAB_THROW(rval);
+  rval = moab.tag_get_by_ptr(th_rank,&meshSet,1,(const void **)&tag_nb_coeff_data); MOAB_THROW(rval);
   //dof rank
-  string Tag_dof_rank_name = "_Field_Dof_Rank_"+get_name();
-  rval = moab.tag_get_handle(Tag_dof_rank_name.c_str(),th_DofRank); CHKERR_THROW(rval);
+  std::string Tag_dof_rank_name = "_Field_Dof_Rank_"+getName();
+  rval = moab.tag_get_handle(Tag_dof_rank_name.c_str(),th_DofRank); MOAB_THROW(rval);
+  bit_number = getBitNumberCalculate();
   for(int tt = 0;tt<MBMAXTYPE;tt++) {
     forder_table[tt] = NULL;
   }
-  switch (*tag_space_data) {
-    case H1:
+  switch(*tag_base_data) {
+    case AINSWORTH_COLE_BASE:
+    case LOBATTO_BASE:
+    switch(*tag_space_data) {
+      case H1:
       forder_table[MBVERTEX] = fNBVERTEX_H1;
       forder_table[MBEDGE] = fNBEDGE_H1;
       forder_table[MBTRI] = fNBFACETRI_H1;
@@ -99,56 +112,74 @@ MoFEMField::MoFEMField(Interface &moab,const EntityHandle meshset,const CoordSys
       forder_table[MBTET] = fNBVOLUMETET_H1;
       forder_table[MBPRISM] = fNBVOLUMEPRISM_H1;
       break;
-    case HDIV:
+      case HDIV:
       forder_table[MBVERTEX] = fNBVERTEX_HDIV;
       forder_table[MBEDGE] = fNBEDGE_HDIV;
       forder_table[MBTRI] = fNBFACETRI_HDIV;
       forder_table[MBTET] = fNBVOLUMETET_HDIV;
       break;
-    case HCURL:
+      case HCURL:
       forder_table[MBVERTEX] = fNBVERTEX_HCURL;
       forder_table[MBEDGE] = fNBEDGE_HCURL;
       forder_table[MBTRI] = fNBFACETRI_HCURL;
       forder_table[MBTET] = fNBVOLUMETET_HCURL;
       break;
-    case L2:
+      case L2:
       forder_table[MBVERTEX] = fNBVERTEX_L2;
       forder_table[MBEDGE] = fNBEDGE_L2;
       forder_table[MBTRI] = fNBFACETRI_L2;
       forder_table[MBTET] = fNBVOLUMETET_L2;
       break;
-    case NOFIELD:
-    for(EntityType t = MBVERTEX;t<MBMAXTYPE;t++) {
-      // Concept of approximation order make no sense is there is no field
-      forder_table[t] = fNBENTITYSET_NOFIELD;
-    }
+      case NOFIELD:
+      for(EntityType t = MBVERTEX;t<MBMAXTYPE;t++) {
+        // Concept of approximation order make no sense is there is no field
+        forder_table[t] = fNBENTITYSET_NOFIELD;
+      }
       break;
+      default:
+      THROW_MESSAGE("unknown approximation space");
+    }
+    break;
+    case BERNSTEIN_BEZIER_BASE:
+      THROW_MESSAGE("BERNSTEIN_BEZIER_BASE not implemented yer")
+    break;
+    case USER_BASE:
+    for(int ee = 0;ee<MBMAXTYPE;ee++) {
+      forder_table[ee] = fNBENTITY_GENERIC;
+    }
+    break;
     default:
-      THROW_AT_LINE("not implemented");
+    THROW_MESSAGE("unknown approximation base");
   }
 }
 
-ostream& operator<<(ostream& os,const MoFEMField& e) {
-  os << "name "<<e.get_name_ref()<<" BitFieldId "<< e.get_id().to_ulong() << " bit number " << e.get_bit_number()
-    << " space " << FieldSpaceNames[e.get_space()] << " rank " << e.get_nb_of_coeffs() << " meshset " << e.meshSet;
+std::ostream& operator<<(std::ostream& os,const Field& e) {
+  os
+  << "name " <<e.getNameRef()
+  << " BitFieldId "<< e.getId().to_ulong()
+  << " bit number " << e.getBitNumber()
+  << " space " << FieldSpaceNames[e.getSpace()]
+  << " approximation base " << ApproximationBaseNames[e.getApproxBase()]
+  << " rank " << e.getNbOfCoeffs()
+  << " meshset " << e.meshSet;
   return os;
 }
 
-//MoFEMEntityEntMoFEMFiniteElementAdjacencyMap
-MoFEMEntityEntMoFEMFiniteElementAdjacencyMap::MoFEMEntityEntMoFEMFiniteElementAdjacencyMap(
-  const MoFEMEntity *_MoFEMEntity_ptr,const EntMoFEMFiniteElement *_EntMoFEMFiniteElement_ptr
+//MoFEMEntityEntFiniteElementAdjacencyMap
+MoFEMEntityEntFiniteElementAdjacencyMap::MoFEMEntityEntFiniteElementAdjacencyMap(
+  const boost::shared_ptr<MoFEMEntity> mofem_ent_ptr,
+  const boost::shared_ptr<EntFiniteElement> ent_fe_ptr
 ):
 by_other(0),
-MoFEMEntity_ptr(_MoFEMEntity_ptr),
-EntMoFEMFiniteElement_ptr(_EntMoFEMFiniteElement_ptr) {}
+mofemEntPtr(mofem_ent_ptr),
+entFePtr(ent_fe_ptr) {}
 
-ostream& operator<<(ostream& os,const MoFEMEntityEntMoFEMFiniteElementAdjacencyMap& e) {
-  os << "by_other " << bitset<3>(e.by_other) << " "
-    << *e.MoFEMEntity_ptr << endl << *e.EntMoFEMFiniteElement_ptr->fe_ptr;
+std::ostream& operator<<(std::ostream& os,const MoFEMEntityEntFiniteElementAdjacencyMap& e) {
+  os << "by_other " << std::bitset<3>(e.by_other) << " "
+    << *e.mofemEntPtr << std::endl << *e.entFePtr->sFePtr;
   return os;
 }
 
-//....
 PetscErrorCode test_moab(Interface &moab,const EntityHandle ent) {
   PetscFunctionBegin;
   //tets type

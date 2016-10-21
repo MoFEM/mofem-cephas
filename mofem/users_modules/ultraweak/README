@@ -1,3 +1,0 @@
-To solve larger problem, use mumps or percodintioner which would work with saddle problems. Otherwaise you will have problems.
-
-SuperLU works but only for very small problems.

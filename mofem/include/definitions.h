@@ -19,6 +19,16 @@
 #ifndef __DEFINITONS_H__
 #define __DEFINITONS_H__
 
+//taken from http://stackoverflow.com/questions/295120/c-mark-as-deprecated
+#ifdef __GNUC__
+  #define DEPRECATED __attribute__((deprecated))
+#elif defined(_MSC_VER)
+  #define DEPRECATED __declspec(deprecated)
+#else
+  #pragma message("WARNING: You need to implement DEPRECATED for this compiler")
+  #define DEPRECATED
+#endif
+
 /** \brief Interfaces IDs
   *
   * To manage different complexities related to field, finite elements mesh
@@ -28,22 +38,54 @@
   *
   */
 enum MoFEMInterfaces {
-  FIELD_UNKNOWNINTERFACE = 1<<0,
+  UNKNOWNINTERFACE              = 1<<0,
   //Field Interface
-  FIELD_INTERFACE = 1<<0|1<<1,
-  MESH_REFINE = 1<<1|1<<2,
-  PRISM_INTEFACE = 1<<1|1<<3,
-  SERIES_RECORDER = 1<<1|1<<4,
+  FIELD_INTERFACE               = 1<<0|1<<1,
+  MESH_REFINE                   = 1<<1|1<<2,
+  PRISM_INTEFACE                = 1<<1|1<<3,
+  SERIES_RECORDER               = 1<<1|1<<4,
+  //Independent Interfaces
+  TETGEN_INTERFACE              = 1<<3|1<<4,  ///< used to generate mesh using TetGen
+  MED_INTERFACE                 = 1<<3|1<<5,	///< interface to med data format
+  NODEMERGER_INTERFACE          = 1<<3|1<<6,	///< used to merge nodes
+  BITLEVELCOUPLER_INTERFACE     = 1<<3|1<<7,  ///< used to couple bit levels by finding parent children relation
+  PRISMSFROMSURFACE_INTERFACE   = 1<<3|1<<8,  ///< create prisms from surface elements
+  MESHSETSMANAGER_INTERFACE     = 1<<3|1<<9,  ///< Interface to manage meshsets with materials and boundary conditions
+  COORDSSYSTEMMANAGER_INTERFACE = 1<<3|1<<10  ///< Interface to manage coordinate systems
+};
+
+enum LoopInterfaces {
   //Loop Methods
-  BASIC_METHOD = 1<<2|1<<3|1<<4,
-  FE_METHOD = 1<<2|1<<3|1<<4|1<<5,
-  ENT_METHOD = 1<<2|1<<3|1<<4|1<<6,
-  //Independet Interfaces
-  TETGEN_INTERFACE = 1<<3|1<<4,		///< used to generate mesh using TetGen
-  NETGEN_INTERFACE = 1<<3|1<<5,		///< used to generate mesh using NetGen
-  NODEMERGER_INTERFACE = 1<<3|1<<6,	///< used to merge nodes
-  BITLEVELCOUPLER_INTERFACE = 1<<3|1<<7, ///< used to couple bit levels by finding parent children relation
-  PRISMSFROMSURFACE_INTERFACE = 1<<3|1<<8 ///< create prisms from surface elements
+  KSP_METHOD    = 1<<0,
+  SNES_METHOD   = 1<<1,
+  TS_METHOD     = 1<<2,
+  BASIC_METHOD  = 1<<0|1<<1|1<<2,
+  FE_METHOD     = 1<<0|1<<1|1<<2|1<<3,
+  ENT_METHOD    = 1<<0|1<<1|1<<2|1<<4
+};
+
+/**
+ * \brief interfaces for PETSc DM interfaces
+ */
+enum DMInterfaces {
+  UNKNOWN_DM_INTERFACE = 1<<0,
+  DMCTX_INTERFACE = 1<<1
+};
+
+/**
+ * \brief Interfaces uses to manage base functions
+ */
+enum BaseIntefaces {
+  UNKNOWN_BASE_FUNCTION_INTERFACE     = 1<<0,
+  LEGENDRE_BASE_FUNCTION_INTERFACE    = 1<<1,
+  LOBATTO_BASE_FUNCTION_INTERFACE     = 1<<2,
+  KERNEL_BASE_FUNCTION_INTERFACE      = 1<<3,
+  ENT_BASE_FUNCTION_INTERFACE         = 1<<4,
+  TET_BASE_FUNCTION_INTERFACE         = 1<<1|1<<3|1<<3,
+  TRI_BASE_FUNCTION_INTERFACE         = 1<<1|1<<3|1<<4,
+  EDGE_BASE_FUNCTION_INTERFACE        = 1<<1|1<<3|1<<5,
+  FATPRISM_BASE_FUNCTION_INTERFACE    = 1<<1|1<<3|1<<6,
+  FLATPRISM_BASE_FUNCTION_INTERFACE   = 1<<1|1<<3|1<<7
 };
 
 /** \brief Error handling
@@ -55,31 +97,62 @@ enum MoFEMInterfaces {
   *
   */
 enum MoFEMErrorCodes {
-  MOFEM_SUCESS = 0,
-  MOFEM_DATA_INCONSISTENCY = 100,
-  MOFEM_NOT_IMPLEMENTED = 101,
-  MOFEM_NOT_FOUND = 102,
-  MOFEM_OPERATION_UNSUCCESSFUL = 103,
-  MOFEM_IMPOSIBLE_CASE = 104,
-  MOFEM_MOFEMEXCEPTION_THROW = 105,
-  MOFEM_STD_EXCEPTION_THROW = 106,
-  MOFEM_INVALID_DATA = 107,
-  MOFEM_ATOM_TEST_INVALID = 108,
-  MOFEM_MOAB_ERROR = 109
+  MOFEM_SUCESS                  = 0,
+  MOFEM_DATA_INCONSISTENCY      = 100,
+  MOFEM_NOT_IMPLEMENTED         = 101,
+  MOFEM_NOT_FOUND               = 102,
+  MOFEM_OPERATION_UNSUCCESSFUL  = 103,
+  MOFEM_IMPOSIBLE_CASE          = 104,
+  MOFEM_MOFEMEXCEPTION_THROW    = 105,
+  MOFEM_STD_EXCEPTION_THROW     = 106,
+  MOFEM_INVALID_DATA            = 107,
+  MOFEM_ATOM_TEST_INVALID       = 108,
+  MOFEM_MOAB_ERROR              = 109
 };
+
+/// \brief approximation base
+enum FieldApproximationBase {
+  NOBASE = 0,
+  AINSWORTH_COLE_BASE = 1, ///< Ainsworth Cole (Legendre) approx. base \cite NME:NME847
+  LOBATTO_BASE,            ///< Like AINSWORTH_COLE_BASE but with Lobatto base instead Legendre \cite beriot2015efficient
+  BERNSTEIN_BEZIER_BASE,   ///< Not yet implemented, in implementation we will follow \cite ainsworth2011bernstein
+  USER_BASE,               ///< user implemented approximation base
+  LASTBASE
+};
+
+const static char * const ApproximationBaseNames[] = {
+  "NOBASE",
+  "AINSWORTH_COLE_BASE",
+  "LOBATTO_BASE",
+  "BERNSTEIN_BEZIER_BASE",
+  "USER_BASE",
+  "LASTBASE"
+};
+
+#ifdef __cplusplus
+const static FieldApproximationBase ApproximationBaseArray[] = {
+  NOBASE,
+  AINSWORTH_COLE_BASE,
+  LOBATTO_BASE,
+  BERNSTEIN_BEZIER_BASE,
+  USER_BASE,
+  LASTBASE
+};
+#endif // __cplusplus
 
 /// \brief approximation spaces
 enum FieldSpace {
+  NOSPACE = 0,
   NOFIELD = 1, 	///< scalar or vector of scalars describe (no true field)
-  H1, 		///< continuous field
-  HDIV,		///< field with continuous normal traction
-  HCURL,	///< field with continuous tangents
-  L2,		///< field with C-1 continuity
-  LASTSPACE 	///< FieldSpace in [ 0, LASTSPACE )
+  H1, 		      ///< continuous field
+  HDIV,		      ///< field with continuous normal traction
+  HCURL,	      ///< field with continuous tangents
+  L2,		        ///< field with C-1 continuity
+  LASTSPACE 	  ///< FieldSpace in [ 0, LASTSPACE )
 };
 
 const static char * const FieldSpaceNames[] = {
-  "", // empty space
+  "NOSPACE",
   "NOFIELD",
   "H1",
   "HDIV",
@@ -91,56 +164,119 @@ const static char * const FieldSpaceNames[] = {
 /// \brief Those types control how functions respond on arguments, f.e. error handling
 enum MoFEMTypes {
   MF_ZERO = 0,
-  MF_EXCL = 1<<0
+  MF_EXCL = 1<<0,
+  MF_EXIST = 1<<1
 };
 
 /// \brief RowColData
 enum RowColData {
-  ROW,COL,DATA,LASTROWCOLDATA
+  ROW = 0,COL,DATA,LASTROWCOLDATA
 };
 
 enum ByWhat {
-  BYROW = 1<<0, BYCOL = 1<<1, BYDATA = 1<<2,
-  BYROWDATA = 1<<0|1<<2, BYCOLDATA = 1<<1|1<<2, BYROWCOL = 1<<0|1<<1,
-  BYALL = 1<<0|1<<1|1<<2
+  BYROW     = 1<<0,
+  BYCOL     = 1<<1,
+  BYDATA    = 1<<2,
+  BYROWDATA = 1<<0|1<<2,
+  BYCOLDATA = 1<<1|1<<2,
+  BYROWCOL  = 1<<0|1<<1,
+  BYALL     = 1<<0|1<<1|1<<2
 };
 
 /**
-  * Types of sets and boundary conditions
+  * \bief Types of sets and boundary conditions
   *
   */
 enum CubitBC {
-  UNKNOWNSET = 0,
-  NODESET = 1<<0,
-  SIDESET = 1<<1,
-  BLOCKSET = 1<<2,
-  MATERIALSET = 1<<3,
-  DISPLACEMENTSET = 1<<4,
-  FORCESET = 1<<5,
-  PRESSURESET = 1<<6,
-  VELOCITYSET = 1<<7,
-  ACCELERATIONSET = 1<<8,
-  TEMPERATURESET = 1<<9,
-  HEATFLUXSET = 1<<10,
-  INTERFACESET = 1<<11,
-  UNKNOWNCUBITNAME = 1<< 12,
-  MAT_ELASTICSET = 1<<13,	///< block name is "MAT_ELASTIC"
-  MAT_INTERFSET = 1 <<14,
-  MAT_THERMALSET = 1<<15,	///< block name is "MAT_THERMAL"
-  BODYFORCESSET = 1<<16,	///< block name is "BODY_FORCES"
-  MAT_MOISTURESET = 1<<17, 	///< block name is "MAT_MOISTURE"
-  LASTCUBITSET
+  UNKNOWNSET       = 0,
+  NODESET          = 1<<0,
+  SIDESET          = 1<<1,
+  BLOCKSET         = 1<<2,
+  MATERIALSET      = 1<<3,
+  DISPLACEMENTSET  = 1<<4,
+  FORCESET         = 1<<5,
+  PRESSURESET      = 1<<6,
+  VELOCITYSET      = 1<<7,
+  ACCELERATIONSET  = 1<<8,
+  TEMPERATURESET   = 1<<9,
+  HEATFLUXSET      = 1<<10,
+  INTERFACESET     = 1<<11,
+  UNKNOWNNAME      = 1<<12,
+  MAT_ELASTICSET   = 1<<13,	  ///< block name is "MAT_ELASTIC"
+  MAT_INTERFSET    = 1<<14,
+  MAT_THERMALSET   = 1<<15,	  ///< block name is "MAT_THERMAL"
+  BODYFORCESSET    = 1<<16, 	///< block name is "BODY_FORCES"
+  MAT_MOISTURESET  = 1<<17, 	///< block name is "MAT_MOISTURE"
+  DIRICHLET_BC     = 1<<18,
+  NEUMANN_BC       = 1<<19,
+  LASTSET_BC       = 1<<20
 };
 
-//taken from http://stackoverflow.com/questions/295120/c-mark-as-deprecated
-#ifdef __GNUC__
-  #define DEPRECATED __attribute__((deprecated))
-#elif defined(_MSC_VER)
-  #define DEPRECATED __declspec(deprecated)
-#else
-  #pragma message("WARNING: You need to implement DEPRECATED for this compiler")
-  #define DEPRECATED
-#endif
+DEPRECATED static const unsigned int UNKNOWNCUBITNAME = UNKNOWNNAME;
+DEPRECATED static const unsigned int LASTCUBITSET = LASTSET_BC;
+
+/**
+ * \brief Names of types of sets and boundary conditions
+ */
+const static char * const CubitBCNames[] = {
+  "UNKNOWNSET",
+  "NODESET",
+  "SIDESET",
+  "BLOCKSET",
+  "MATERIALSET",
+  "DISPLACEMENTSET",
+  "FORCESET",
+  "PRESSURESET",
+  "VELOCITYSET",
+  "ACCELERATIONSET",
+  "TEMPERATURESET",
+  "HEATFLUXSET",
+  "INTERFACESET",
+  "UNKNOWNNAME",
+  "MAT_ELASTICSET",
+  "MAT_INTERFSET",
+  "MAT_THERMALSET",
+  "BODYFORCESSET",
+  "MAT_MOISTURESET",
+  "DIRICHLET_BC",
+  "NEUMANN_BC",
+  "LASTCUBITSET"
+};
+
+/**
+ * \brief Format of rows in gradients of H1 base functions
+ */
+enum H1DiffFormating {
+  H1_0 = 0,H1_1,H1_2
+};
+
+/**
+ * \brief Format in rows of Hdiv base functions
+ */
+enum HDivFormatting {
+  HDIV0 = 0,HDIV1,HDIV2
+};
+
+/**
+ * \brief Format in rows of Hdiv gradients of base functions
+ */
+enum HDivDiffFormatting {
+  HDIV0_0 = 0,HDIV1_0,HDIV2_0,HDIV0_1,HDIV1_1,HDIV2_1,HDIV0_2,HDIV1_2,HDIV2_2
+};
+
+/**
+ * \brief Format in rows of Hcurl base functions
+ */
+enum HCurlFormatting {
+  HCURL0 = 0,HCURL1,HCURL2
+};
+
+/**
+ * \brief Format in rows of Hcurl gradients of base functions
+ */
+enum HCurlDiffFormatting {
+  HCURL0_0 = 0,HCURL1_0,HCURL2_0,HCURL0_1,HCURL1_1,HCURL2_1,HCURL0_2,HCURL1_2,HCURL2_2
+};
 
 #define BITREFEDGES_SIZE 6 /*number of edges on tetrahedral*/
 #define BITREFLEVEL_SIZE 128 /*max number of refinements*/
@@ -149,7 +285,7 @@ enum CubitBC {
 #define BITPROBLEMID_SIZE 32 /*max number of problems*/
 #define BITINTERFACEUID_SIZE 32
 
-//// default comunicator number
+//// default communicator number
 #define MYPCOMM_INDEX 0
 
 //This Is form MOAB
@@ -165,31 +301,71 @@ enum CubitBC {
 #define NOT_USED(x) ( (void)(x) )
 
 /** \brief set barrier start
- *
  * Run code in sequence, starting from process 0, and ends on last process.
+ *
+ * It can be only used for testing. Do not use that function as a part of these
+ * code.
+ *
  */
 #define BARRIER_RANK_START(PCMB) \
   { for(unsigned int i = 0; \
   i<PCMB->proc_config().proc_rank(); i++) MPI_Barrier(PCMB->proc_config().proc_comm()); };
-/// set barrier end
+
+/** \brief set barrier start
+  * Run code in sequence, starting from process 0, and ends on last process.
+  *
+  * It can be only used for testing. Do not use that function as a part of these
+  * code.
+  *
+  */
 #define BARRIER_RANK_END(PCMB) \
   { for(unsigned int i = PCMB->proc_config().proc_rank(); \
   i<PCMB->proc_config().proc_size(); i++) MPI_Barrier(PCMB->proc_config().proc_comm()); };
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
-//ERROR
-/// check moab error
-#define CHKERR(a) do { \
+/**
+ * \brief Is used to indicate that macro is deprecated
+ * Do nothing just triggers error at the compilation
+ */
+DEPRECATED void macro_is_depracted_using_deprecated_function();
+
+#ifdef __cplusplus
+}
+#endif
+
+/**
+ * \brief check error code of MoAB functions and print on screen error
+ * @param  a error code
+ */
+#define CHKERR_MOAB(a) do { \
   ErrorCode val = (a); \
   if (MB_SUCCESS != val) { \
-    cerr << "Error code  " << val << " at " << __FILE__ << ":" << __LINE__ << std::endl; \
+    std::cerr << "Error code  " << val << " at " << __FILE__ << ":" << __LINE__ << std::endl; \
     assert(1); \
   } \
 } while (false)
 
+/**
+ * \brief do not use that macro it will be removed in future
+ */
+#define CHKERR(a) \
+  macro_is_depracted_using_deprecated_function(); \
+  do { \
+  ErrorCode val = (a); \
+  if (MB_SUCCESS != val) { \
+    std::cerr << "Error code  " << val << " at " << __FILE__ << ":" << __LINE__ << std::endl; \
+    assert(1); \
+  } \
+} while (false)
 
-/// check moab error and communicate it using petsc interface
-#define CHKERR_PETSC(a) do { \
+/**
+ * \brief check error code of MoAB function
+ * @param  a MoABErrorCode
+ */
+#define CHKERRQ_MOAB(a) do { \
   ErrorCode val = (a); \
   if (MB_SUCCESS != val) { \
     std::ostringstream ss; \
@@ -199,7 +375,26 @@ enum CubitBC {
   } \
 } while (false)
 
-#define CHKERR_THROW(a) do { \
+/**
+ * \brief do not use that macro it will be removed in future
+ */
+#define CHKERR_PETSC(a) \
+  macro_is_depracted_using_deprecated_function(); \
+  do { \
+  ErrorCode val = (a); \
+  if (MB_SUCCESS != val) { \
+    std::ostringstream ss; \
+    ss << "Error code  " << val << " at " << __FILE__ << ":" << __LINE__ << std::endl; \
+    std::string str(ss.str()); \
+    SETERRQ(PETSC_COMM_SELF,MOFEM_MOAB_ERROR,str.c_str()); \
+  } \
+} while (false)
+
+/**
+ * \bried Check error code of MoAB function and throw MoFEM exception
+ * @param  a MoABErrorCode
+ */
+#define MOAB_THROW(a) do { \
   ErrorCode val = (a); \
   if (MB_SUCCESS != val) { \
     std::ostringstream ss; \
@@ -208,13 +403,44 @@ enum CubitBC {
   } \
 } while (false)
 
-#define THROW_AT_LINE(a) { \
+/**
+ * \brief do not use that macro it will be removed in future
+ */
+#define CHKERR_THROW(a) \
+  macro_is_depracted_using_deprecated_function(); \
+  do { \
+  ErrorCode val = (a); \
+  if (MB_SUCCESS != val) { \
+    std::ostringstream ss; \
+    ss << "Error code  " << val << " at " << __FILE__ << ":" << __LINE__ << std::endl; \
+    throw MoFEMException(MOFEM_MOAB_ERROR,ss.str().c_str() ); \
+  } \
+} while (false)
+
+/**
+ * \brief Throw MoFEM exception
+ * @param  a message
+ */
+#define THROW_MESSAGE(a) { \
   std::ostringstream ss; \
   ss << a << " " << " at " << __FILE__ << ":" << __LINE__ << std::endl; \
-  throw MoFEMException( MOFEM_MOFEMEXCEPTION_THROW,ss.str().c_str() ); \
+  throw MoFEMException(MOFEM_MOFEMEXCEPTION_THROW,ss.str().c_str() ); \
 }
 
-#define SSTR( x ) dynamic_cast< std::ostringstream & >( \
-  ( std::ostringstream() << std::dec << x ) ).str()
+/**
+ * \brief do not use that macro it will be removed in future
+ */
+#define THROW_AT_LINE(a) { \
+  macro_is_depracted_using_deprecated_function(); \
+  std::ostringstream ss; \
+  ss << a << " " << " at " << __FILE__ << ":" << __LINE__ << std::endl; \
+  throw MoFEMException(MOFEM_MOFEMEXCEPTION_THROW,ss.str().c_str() ); \
+}
+
+/**
+ * \brief Convert number to string
+ * @param  x number
+ */
+#define SSTR(x) toString(x)
 
 #endif //__DEFINITONS_H__

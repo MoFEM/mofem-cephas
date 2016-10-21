@@ -15,16 +15,37 @@ project(MoFEM-UserModules C CXX)
 
 cmake_minimum_required(VERSION 2.8.7)
 
-find_package(MoFEM 0.3.0
+find_package(MoFEM 0.3.35
   REQUIRED HINTS ${MOFEM_DIR} ../ ../../ $ENV{MOFEM_DIR}
 )
+message(STATUS "MoFEM version ${MoFEM_VERSION}")
+add_definitions(${MoFEM_DEFINE_RESTRICT})
 
-find_package( PythonInterp )
-find_package( PythonLibs )
-if(PYTHON_INCLUDE_DIRS)
-  include_directories ( ${PYTHON_INCLUDE_DIRS} )
-endif(PYTHON_INCLUDE_DIRS)
+macro(CHECK_MOFEM_VERSION VERSION_MAJOR VERSION_MINOR VERSION_PATCH)
 
+  if(${MoFEM_VERSION} VERSION_LESS ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH})
+    message(
+      FATAL_ERROR
+      "(Update MoFEM) Wrong MoFEM version: "
+      "${MoFEM_VERSION} < ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH}"
+    )
+  endif(${MoFEM_VERSION} VERSION_LESS ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_PATCH})
+
+endmacro(CHECK_MOFEM_VERSION)
+
+find_package(Git)
+# find_package(PythonInterp)
+# find_package(PythonLibs)
+# if(PYTHON_INCLUDE_DIRS)
+#   include_directories ( ${PYTHON_INCLUDE_DIRS} )
+# endif(PYTHON_INCLUDE_DIRS)
+
+find_program(
+  MBCONVERT NAMES mbconvert
+  PATH ${MoFEM_PETSC_DIR}/${MoFEM_PETSC_ARCH}/bin
+)
+
+include(ExternalProject)
 include(${MoFEM_PROJECT_SOURCE_DIR}/cmake/ExportFile.cmake)
 
 set(CMAKE_C_COMPILER ${MoFEM_CMAKE_C_COMPILER})
@@ -36,26 +57,22 @@ include_directories(
   ${MoFEM_PETSCVAR_DIR}/include
 )
 
-include_directories("${MoFEM_PROJECT_SOURCE_DIR}/include")
-include_directories("${MoFEM_PROJECT_SOURCE_DIR}/third_party")
-include_directories("${MoFEM_PROJECT_SOURCE_DIR}/third_party/cblas")
-include_directories("${MoFEM_PROJECT_SOURCE_DIR}/src/approximation")
-include_directories("${MoFEM_PROJECT_SOURCE_DIR}/src/approximation/c")
-include_directories("${MoFEM_PROJECT_SOURCE_DIR}/src/multi_indices")
-include_directories("${MoFEM_PROJECT_SOURCE_DIR}/src/interfaces")
-include_directories("${MoFEM_PROJECT_SOURCE_DIR}/src/petsc")
-include_directories("${MoFEM_PROJECT_SOURCE_DIR}/src/finite_elements")
+add_definitions(${MOAB_DEFINITIONS})
 
-include_directories("${MoFEM_PROJECT_BINARY_DIR}/include")
+include_directories(${MoFEM_PROJECT_SOURCE_DIR}/include)
+include_directories(${MoFEM_INSTALL_DIR}/include)
 
-link_directories("${MoFEM_PROJECT_BINARY_DIR}/src/approximation")
-link_directories("${MoFEM_PROJECT_BINARY_DIR}/src/multi_indices")
-link_directories("${MoFEM_PROJECT_BINARY_DIR}/src/interfaces")
-link_directories("${MoFEM_PROJECT_BINARY_DIR}/src/petsc")
-link_directories("${MoFEM_PROJECT_BINARY_DIR}/src/finite_elements")
-link_directories("${MoFEM_PROJECT_BINARY_DIR}/third_party")
-link_directories("${MoFEM_PROJECT_BINARY_DIR}/third_party/cblas")
+include_directories(${MoFEM_PROJECT_SOURCE_DIR}/third_party)
+include_directories(${MoFEM_PROJECT_SOURCE_DIR}/third_party/cblas)
+include_directories(${MoFEM_PROJECT_SOURCE_DIR}/src/ftensor/src)
+include_directories(${MoFEM_PROJECT_SOURCE_DIR}/src/approximation)
+include_directories(${MoFEM_PROJECT_SOURCE_DIR}/src/approximation/c)
+include_directories(${MoFEM_PROJECT_SOURCE_DIR}/src/multi_indices)
+include_directories(${MoFEM_PROJECT_SOURCE_DIR}/src/interfaces)
+include_directories(${MoFEM_PROJECT_SOURCE_DIR}/src/petsc)
+include_directories(${MoFEM_PROJECT_SOURCE_DIR}/src/finite_elements)
 
+link_directories(${MoFEM_INSTALL_DIR}/lib)
 link_directories(${PROJECT_BINARY_DIR})
 
 #add executable library form subdirectory
@@ -104,6 +121,12 @@ if(ADOL-C_LIBRARY)
   add_definitions( -DWITH_ADOL_C )
   message(STATUS "WITH ADLOC-C")
 endif(ADOL-C_LIBRARY)
+
+if(MED_LIBRARY)
+  include_directories("${MED_DIR}/include")
+  add_definitions(-DWITH_MED )
+  message(STATUS "WITH MED")
+endif(MED_LIBRARY)
 
 if(SLEPC_LIBRARY)
   include_directories("${SLEPC_DIR}/${PETSC_ARCH}/include")

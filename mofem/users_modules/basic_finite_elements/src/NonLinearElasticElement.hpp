@@ -41,14 +41,14 @@
 struct NonlinearElasticElement {
 
   /// \brief  definition of volume element
-  struct MyVolumeFE: public VolumeElementForcesAndSourcesCore {
+  struct MyVolumeFE: public MoFEM::VolumeElementForcesAndSourcesCore {
 
     Mat A;
     Vec F;
 
     int addToRule;
 
-    MyVolumeFE(FieldInterface &m_field);
+    MyVolumeFE(MoFEM::Interface &m_field);
 
     /** \brief it is used to calculate nb. of Gauss integration points
      *
@@ -83,11 +83,11 @@ struct NonlinearElasticElement {
   MyVolumeFE feEnergy; ///< calculate elastic energy
   MyVolumeFE& getLoopFeEnergy() { return feEnergy; } ///< get energy fe
 
-  FieldInterface &mField;
+  MoFEM::Interface &mField;
   short int tAg;
 
   NonlinearElasticElement(
-    FieldInterface &m_field,short int tag);
+    MoFEM::Interface &m_field,short int tag);
 
   template<typename TYPE>
   struct FunctionsToCalculatePiolaKirchhoffI;
@@ -107,19 +107,19 @@ struct NonlinearElasticElement {
     Range forcesOnlyOnEntitiesRow;
     Range forcesOnlyOnEntitiesCol;
   };
-  map<int,BlockData> setOfBlocks; ///< maps block set id with appropriate BlockData
+  std::map<int,BlockData> setOfBlocks; ///< maps block set id with appropriate BlockData
 
   /** \brief common data used by volume elements
     * \ingroup nonlinear_elastic_elem
     */
   struct CommonData {
-    map<string,vector<VectorDouble > > dataAtGaussPts;
-    map<string,vector<MatrixDouble > > gradAtGaussPts;
+    std::map<std::string,std::vector<VectorDouble > > dataAtGaussPts;
+    std::map<std::string,std::vector<MatrixDouble > > gradAtGaussPts;
     string spatialPositions;
     string meshPositions;
-    vector<MatrixDouble > sTress;
-    vector<vector<double*> > jacStressRowPtr;
-    vector<MatrixDouble > jacStress; ///< this is simply material tangent operator
+    std::vector<MatrixDouble > sTress;
+    std::vector<std::vector<double*> > jacStressRowPtr;
+    std::vector<MatrixDouble > jacStress; ///< this is simply material tangent operator
    };
   CommonData commonData;
 
@@ -178,7 +178,7 @@ struct NonlinearElasticElement {
 
     int gG;	///< Gauss point number
     CommonData *commonDataPtr; ///< common data shared between entities (f.e. field values at Gauss pts.)
-    VolumeElementForcesAndSourcesCore::UserDataOperator *opPtr; ///< pointer to finite element tetrahedral operator
+    MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator *opPtr; ///< pointer to finite element tetrahedral operator
 
     PetscErrorCode calculateC_CauchyDefromationTensor() {
       PetscFunctionBegin;
@@ -238,7 +238,7 @@ struct NonlinearElasticElement {
       */
     virtual PetscErrorCode calculateP_PiolaKirchhoffI(
       const BlockData block_data,
-      const NumeredMoFEMFiniteElement *fe_ptr
+      const NumeredEntFiniteElement *fe_ptr
     ) {
       PetscFunctionBegin;
       PetscErrorCode ierr;
@@ -249,7 +249,7 @@ struct NonlinearElasticElement {
       ierr = calculateS_PiolaKirchhoffII(); CHKERRQ(ierr);
       P.resize(3,3);
       noalias(P) = prod(F,S);
-      //cerr << "P: " << P << endl;
+      //std::cerr << "P: " << P << std::endl;
       PetscFunctionReturn(0);
     }
 
@@ -271,7 +271,7 @@ struct NonlinearElasticElement {
       */
     virtual PetscErrorCode calculateElasticEnergy(
       const BlockData block_data,
-      const NumeredMoFEMFiniteElement *fe_ptr
+      const NumeredEntFiniteElement *fe_ptr
     ) {
       PetscFunctionBegin;
       PetscErrorCode ierr;
@@ -296,7 +296,7 @@ struct NonlinearElasticElement {
     */
     virtual PetscErrorCode calculateSiGma_EshelbyStress(
       const BlockData block_data,
-      const NumeredMoFEMFiniteElement *fe_ptr
+      const NumeredEntFiniteElement *fe_ptr
     ) {
       PetscFunctionBegin;
       PetscErrorCode ierr;
@@ -313,8 +313,8 @@ struct NonlinearElasticElement {
     /** \brief Do operations when pre-process
     */
     virtual PetscErrorCode getDataOnPostProcessor(
-      map<string,vector<ublas::vector<double> > > &field_map,
-      map<string,vector<ublas::matrix<double> > > &grad_map
+      std::map<std::string,std::vector<ublas::vector<double> > > &field_map,
+      std::map<std::string,std::vector<ublas::matrix<double> > > &grad_map
     ) {
       PetscFunctionBegin;
       PetscFunctionReturn(0);
@@ -322,15 +322,15 @@ struct NonlinearElasticElement {
 
   };
 
-  struct OpGetDataAtGaussPts: public VolumeElementForcesAndSourcesCore::UserDataOperator {
+  struct OpGetDataAtGaussPts: public MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator {
 
-    vector<VectorDouble > &valuesAtGaussPts;
-    vector<MatrixDouble > &gradientAtGaussPts;
+    std::vector<VectorDouble > &valuesAtGaussPts;
+    std::vector<MatrixDouble > &gradientAtGaussPts;
     const EntityType zeroAtType;
 
-    OpGetDataAtGaussPts(const string field_name,
-      vector<VectorDouble > &values_at_gauss_pts,
-      vector<MatrixDouble > &gardient_at_gauss_pts);
+    OpGetDataAtGaussPts(const std::string field_name,
+      std::vector<VectorDouble > &values_at_gauss_pts,
+      std::vector<MatrixDouble > &gardient_at_gauss_pts);
 
     /** \brief operator calculating deformation gradient
       *
@@ -342,10 +342,10 @@ struct NonlinearElasticElement {
   };
 
   struct OpGetCommonDataAtGaussPts: public OpGetDataAtGaussPts {
-    OpGetCommonDataAtGaussPts(const string field_name,CommonData &common_data);
+    OpGetCommonDataAtGaussPts(const std::string field_name,CommonData &common_data);
   };
 
-  struct OpJacobianPiolaKirchhoffStress: public VolumeElementForcesAndSourcesCore::UserDataOperator {
+  struct OpJacobianPiolaKirchhoffStress: public MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator {
 
     BlockData &dAta;
     CommonData &commonData;
@@ -367,7 +367,7 @@ struct NonlinearElasticElement {
 
     */
     OpJacobianPiolaKirchhoffStress(
-      const string field_name,
+      const std::string field_name,
       BlockData &data,
       CommonData &common_data,
       int tag,
@@ -379,8 +379,8 @@ struct NonlinearElasticElement {
     VectorDouble activeVariables;
     int nb_active_variables;
 
-    vector<MatrixDouble > *ptrh;
-    vector<MatrixDouble > *ptrH;
+    std::vector<MatrixDouble > *ptrh;
+    std::vector<MatrixDouble > *ptrH;
 
 
     virtual PetscErrorCode calculateStress();
@@ -389,7 +389,7 @@ struct NonlinearElasticElement {
 
   };
 
-  struct OpRhsPiolaKirchhoff: public VolumeElementForcesAndSourcesCore::UserDataOperator {
+  struct OpRhsPiolaKirchhoff: public MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator {
 
     BlockData &dAta;
     CommonData &commonData;
@@ -397,7 +397,7 @@ struct NonlinearElasticElement {
     bool aLe;
 
     ublas::vector<int> iNdices;
-    OpRhsPiolaKirchhoff(const string field_name,BlockData &data,CommonData &common_data);
+    OpRhsPiolaKirchhoff(const std::string field_name,BlockData &data,CommonData &common_data);
 
     VectorDouble nf;
     PetscErrorCode doWork(
@@ -410,21 +410,21 @@ struct NonlinearElasticElement {
 
   };
 
-  struct OpEnergy: public VolumeElementForcesAndSourcesCore::UserDataOperator {
+  struct OpEnergy: public MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator {
 
     BlockData &dAta;
     CommonData &commonData;
     Vec *Vptr;
     bool fieldDisp;
 
-    OpEnergy(const string field_name,BlockData &data,CommonData &common_data,Vec *v_ptr,bool field_disp);
+    OpEnergy(const std::string field_name,BlockData &data,CommonData &common_data,Vec *v_ptr,bool field_disp);
 
     PetscErrorCode doWork(
       int row_side,EntityType row_type,DataForcesAndSurcesCore::EntData &row_data);
 
   };
 
-  struct OpLhsPiolaKirchhoff_dx: public VolumeElementForcesAndSourcesCore::UserDataOperator {
+  struct OpLhsPiolaKirchhoff_dx: public MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator {
 
     BlockData &dAta;
     CommonData &commonData;
@@ -434,7 +434,7 @@ struct NonlinearElasticElement {
     ublas::vector<int> rowIndices;
     ublas::vector<int> colIndices;
 
-    OpLhsPiolaKirchhoff_dx(const string vel_field,const string field_name,BlockData &data,CommonData &common_data);
+    OpLhsPiolaKirchhoff_dx(const std::string vel_field,const std::string field_name,BlockData &data,CommonData &common_data);
 
     MatrixDouble k,trans_k,jac,F;
 
@@ -468,7 +468,7 @@ struct NonlinearElasticElement {
 
   struct OpLhsPiolaKirchhoff_dX: public OpLhsPiolaKirchhoff_dx {
 
-    OpLhsPiolaKirchhoff_dX(const string vel_field,const string field_name,BlockData &data,CommonData &common_data);
+    OpLhsPiolaKirchhoff_dX(const std::string vel_field,const std::string field_name,BlockData &data,CommonData &common_data);
 
     /// \brief Derivative of Piola Kirchhoff stress over material DOFs
     PetscErrorCode getJac(DataForcesAndSurcesCore::EntData &col_data,int gg);
@@ -485,7 +485,7 @@ struct NonlinearElasticElement {
   struct OpJacobianEshelbyStress: public OpJacobianPiolaKirchhoffStress {
 
     OpJacobianEshelbyStress(
-      const string field_name,
+      const std::string field_name,
       BlockData &data,
       CommonData &common_data,
       int tag,
@@ -500,7 +500,7 @@ struct NonlinearElasticElement {
   struct OpRhsEshelbyStrees: public OpRhsPiolaKirchhoff {
 
     OpRhsEshelbyStrees(
-      const string field_name,BlockData &data,CommonData &common_data
+      const std::string field_name,BlockData &data,CommonData &common_data
     );
 
   };
@@ -508,7 +508,7 @@ struct NonlinearElasticElement {
   struct OpLhsEshelby_dx: public OpLhsPiolaKirchhoff_dX {
 
     OpLhsEshelby_dx(
-      const string vel_field,const string field_name,BlockData &data,CommonData &common_data
+      const std::string vel_field,const std::string field_name,BlockData &data,CommonData &common_data
     );
 
     PetscErrorCode getJac(DataForcesAndSurcesCore::EntData &col_data,int gg);
@@ -518,7 +518,7 @@ struct NonlinearElasticElement {
   struct OpLhsEshelby_dX: public OpLhsPiolaKirchhoff_dx {
 
     OpLhsEshelby_dX(
-      const string vel_field,const string field_name,BlockData &data,CommonData &common_data
+      const std::string vel_field,const std::string field_name,BlockData &data,CommonData &common_data
     );
 
     PetscErrorCode getJac(DataForcesAndSurcesCore::EntData &col_data,int gg);

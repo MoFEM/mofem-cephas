@@ -1,7 +1,3 @@
-set(GID_SOURCE_REPO "$ENV{HOME}/tmp/cephas/source")
-set(CTEST_SOURCE_DIRECTORY "${GID_SOURCE_REPO}/mofem")
-set(CTEST_BINARY_DIRECTORY "$ENV{HOME}/tmp/cephas/build")
-
 set(CTEST_PROJECT_NAME "MoFEM")
 set(CTEST_CMAKE_GENERATOR "Unix Makefiles")
 set(CTEST_BUILD_CONFIGURATION "Debug")
@@ -36,135 +32,6 @@ ctest_start(${DASHBOARDTEST})
 
 ctest_update(SOURCE "${GID_SOURCE_REPO}" RETURN_VALUE DOTEST)
 
-# modules - obsolete
-if(NOT EXISTS "${CTEST_SOURCE_DIRECTORY}/users_modules/obsolete")
-  exec_program(
-    ${CTEST_GIT_COMMAND}
-    "${CTEST_SOURCE_DIRECTORY}/users_modules"
-    ARGS clone https://likask@bitbucket.org/likask/mofem_um_obsolete.git
-    "${CTEST_SOURCE_DIRECTORY}/users_modules/obsolete"
-  )
-else(EXISTS "${CTEST_SOURCE_DIRECTORY}/users_modules/obsolete")
-  exec_program(
-    ${CTEST_GIT_COMMAND}
-    "${CTEST_SOURCE_DIRECTORY}/users_modules/obsolete"
-    ARGS pull
-  )
-endif()
-
-# modules - small strain plasticty
-if(NOT EXISTS "${CTEST_SOURCE_DIRECTORY}/users_modules/small_strain_plasticity")
-  exec_program(
-    ${CTEST_GIT_COMMAND}
-    "${CTEST_SOURCE_DIRECTORY}/users_modules"
-    ARGS clone https://likask@bitbucket.org/likask/mofem_um_small_strain_plasticity.git
-    "${CTEST_SOURCE_DIRECTORY}/users_modules/small_strain_plasticity"
-  )
-else(EXISTS "${CTEST_SOURCE_DIRECTORY}/users_modules/small_strain_plasticity")
-  exec_program(
-    ${CTEST_GIT_COMMAND}
-    "${CTEST_SOURCE_DIRECTORY}/users_modules/small_strain_plasticity"
-    ARGS pull
-  )
-endif()
-
-# modules - moisture_transport
-if(NOT EXISTS "${CTEST_SOURCE_DIRECTORY}/users_modules/moisture_transport")
-  exec_program(
-    ${CTEST_GIT_COMMAND}
-    "${CTEST_SOURCE_DIRECTORY}/users_modules"
-    ARGS clone https://likask@bitbucket.org/likask/mofem_um_moisture_transport.git
-    "${CTEST_SOURCE_DIRECTORY}/users_modules/moisture_transport"
-  )
-else(EXISTS "${CTEST_SOURCE_DIRECTORY}/users_modules/moisture_transport")
-  exec_program(
-    ${CTEST_GIT_COMMAND}
-    "${CTEST_SOURCE_DIRECTORY}/users_modules/moisture_transport"
-    ARGS pull
-  )
-endif()
-
-# modules - homogenisation
-if(NOT EXISTS "${CTEST_SOURCE_DIRECTORY}/users_modules/homogenisation")
-  exec_program(
-    ${CTEST_GIT_COMMAND}
-    "${CTEST_SOURCE_DIRECTORY}/users_modules"
-    ARGS clone https://bitbucket.org/likask/mofem_um_homogenisation.git
-    "${CTEST_SOURCE_DIRECTORY}/users_modules/homogenisation"
-  )
-else(EXISTS "${CTEST_SOURCE_DIRECTORY}/users_modules/homogenisation")
-  exec_program(
-    ${CTEST_GIT_COMMAND}
-    "${CTEST_SOURCE_DIRECTORY}/users_modules/homogenisation"
-    ARGS pull
-  )
-endif()
-
-
-# modules - gels
-if(NOT EXISTS "${CTEST_SOURCE_DIRECTORY}/users_modules/gels")
-  exec_program(
-    ${CTEST_GIT_COMMAND}
-    "${CTEST_SOURCE_DIRECTORY}/users_modules"
-    ARGS clone https://bitbucket.org/likask/mofem_um_gels.git
-    "${CTEST_SOURCE_DIRECTORY}/users_modules/gels"
-  )
-else(EXISTS "${CTEST_SOURCE_DIRECTORY}/users_modules/gels")
-  exec_program(
-    ${CTEST_GIT_COMMAND}
-    "${CTEST_SOURCE_DIRECTORY}/users_modules/gels"
-    ARGS pull
-  )
-endif()
-
-# modules - fracture_mechanics
-if(NOT EXISTS "${CTEST_SOURCE_DIRECTORY}/users_modules/fracture_mechanics")
-  exec_program(
-    ${CTEST_GIT_COMMAND}
-    "${CTEST_SOURCE_DIRECTORY}/users_modules"
-    ARGS clone https://bitbucket.org/likask/mofem_um_fracture_mechanics.git
-    "${CTEST_SOURCE_DIRECTORY}/users_modules/fracture_mechanics"
-  )
-else(EXISTS "${CTEST_SOURCE_DIRECTORY}/users_modules/fracture_mechanics")
-  exec_program(
-    ${CTEST_GIT_COMMAND}
-    "${CTEST_SOURCE_DIRECTORY}/users_modules/fracture_mechanics"
-    ARGS pull
-  )
-endif()
-
-# modules - ground_surface_temperature
-if(NOT EXISTS "${CTEST_SOURCE_DIRECTORY}/users_modules/ground_surface_temperature")
-  exec_program(
-    ${CTEST_GIT_COMMAND}
-    "${CTEST_SOURCE_DIRECTORY}/users_modules"
-    ARGS clone https://likask@bitbucket.org/likask/mofem_um_ground_surface_temperature.git
-    "${CTEST_SOURCE_DIRECTORY}/users_modules/ground_surface_temperature"
-  )
-else(EXISTS "${CTEST_SOURCE_DIRECTORY}/users_modules/ground_surface_temperature")
-  exec_program(
-    ${CTEST_GIT_COMMAND}
-    "${CTEST_SOURCE_DIRECTORY}/users_modules/ground_surface_temperature"
-    ARGS pull
-  )
-endif()
-
-# modules - ground_surface_temperature
-if(NOT EXISTS "${CTEST_SOURCE_DIRECTORY}/users_modules/solid_shell_prism_element")
-  exec_program(
-    ${CTEST_GIT_COMMAND}
-    "${CTEST_SOURCE_DIRECTORY}/users_modules"
-    ARGS clone https://likask@bitbucket.org/likask/mofem_um_solid_shell_prism_element.git
-    "${CTEST_SOURCE_DIRECTORY}/users_modules/solid_shell_prism_element"
-  )
-else(EXISTS "${CTEST_SOURCE_DIRECTORY}/users_modules/solid_shell_prism_element")
-  exec_program(
-    ${CTEST_GIT_COMMAND}
-    "${CTEST_SOURCE_DIRECTORY}/users_modules/solid_shell_prism_element"
-    ARGS pull
-  )
-endif()
-
 if(INIT_REPOSITORY)
   set(DOTEST 1)
   message("Force Init Build")
@@ -195,7 +62,6 @@ set(CTEST_CUSTOM_MEMCHECK_IGNORE
   cubit_bc_atom_test_inlet_outlet_compare
   cubit_meshset_loop_test_compare
   field_axpy_compare
-  projection_from_10node_tet_atom_compare
   mesh_refine_atom_test_compare
   mesh_insert_interface_atom_test_compare
   mesh_insert_T_interface_atom_test_compare
@@ -204,23 +70,18 @@ set(CTEST_CUSTOM_MEMCHECK_IGNORE
   forces_and_sources_getting_mult_H1_H1_test_compare
   forces_and_sources_calculate_jacobian_test_compare
   forces_and_sources_testing_volume_element_test_compare
-  forces_and_sources_testing_field_approximation_test_compare
-  forces_and_sources_body_force_atom_test_compare
   forces_and_sources_getting_higher_order_skin_normals_atom_test_compare
   forces_and_sources_testing_triangle_element_test_compare
   forces_and_sources_testing_edge_element_test_compare
   forces_and_sources_testing_vertex_element_test_compare
-  forces_and_sources_neumann_elasticity_atom_test_01X_pressure_compare
-  forces_and_sources_neumann_elasticity_atom_test_01X_compare
-  forces_and_sources_neumann_sphre_pressure_test_compare
-  forces_and_sources_fluid_pressure_element_atom_test_compare
-  forces_and_sources_thermal_elem_atom_test_compare
-  forces_and_sources_thermal_elem_unsteady_atom_test_compare
-  forces_and_sources_thermal_stress_elem_atom_test_compare
+  forces_and_sources_testing_flat_prism_element_test_compare
   record_series_atom_test_compare
   forces_and_sources_hdiv_approximation_functions_atom_compare
-  forces_and_sources_hdiv_continuity_check_atom_compare
-  forces_and_sources_ultra_weak_transport_atom_compare
+  forces_and_sources_hcurl_approximation_functions_atom_compare
+  dm_mofem_atom_compare
+  dm_build_partitioned_mesh_atom_compare
+  serial_matrix_compare
+  projection_from_10node_tet_atom_compare
 )
 
 if(${DOTEST} GREATER 0)

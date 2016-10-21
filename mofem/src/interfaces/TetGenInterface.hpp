@@ -18,7 +18,7 @@
 #ifndef __TETGENINTERFACE_HPP__
 #define __TETGENINTERFACE_HPP__
 
-#include "FieldUnknownInterface.hpp"
+#include "UnknownInterface.hpp"
 
 class tetgenio;
 
@@ -29,16 +29,17 @@ static const MOFEMuuid IDD_MOFEMTetGegInterface = MOFEMuuid( BitIntefaceId(TETGE
 /** \brief use TetGen to generate mesh
   * \ingroup mofem
   */
-struct TetGenInterface: public FieldUnknownInterface {
+struct TetGenInterface: public UnknownInterface {
 
-  PetscErrorCode queryInterface(const MOFEMuuid& uuid, FieldUnknownInterface** iface);
+  PetscErrorCode queryInterface(const MOFEMuuid& uuid, UnknownInterface** iface);
 
   MoFEM::Core& cOre;
-  TetGenInterface(MoFEM::Core& core): cOre(core) {};
+  TetGenInterface(const MoFEM::Core& core):
+  cOre(const_cast<MoFEM::Core&>(core)) {}
 
-  typedef map<EntityHandle,unsigned long> moabTetGen_Map;
-  typedef map<unsigned long,EntityHandle> tetGenMoab_Map;
-  typedef map<int,Range> idxRange_Map;
+  typedef std::map<EntityHandle,unsigned long> moabTetGen_Map;
+  typedef std::map<unsigned long,EntityHandle> tetGenMoab_Map;
+  typedef std::map<int,Range> idxRange_Map;
 
 
   /** \brief create TetGen data structure form range of moab entities
@@ -65,7 +66,7 @@ struct TetGenInterface: public FieldUnknownInterface {
   Set type of entity, look in TetGen manual for details
 
   \code
-  map<int,Range> types_ents;
+  std::map<int,Range> types_ents;
   //RIDGEVERTEX
   types_ents[TetGenInterface::RIDGEVERTEX].merge(region_tets_skin_without_boundary_nodes);
   //FREESEGVERTEX
@@ -86,7 +87,7 @@ struct TetGenInterface: public FieldUnknownInterface {
     tetgenio& in,
     moabTetGen_Map& moab_tetgen_map,
     tetGenMoab_Map& tetgen_moab_map,
-    map<int,Range> &type_ents);
+    std::map<int,Range> &type_ents);
 
   /** \brief get entities for TetGen data structure
 
@@ -135,7 +136,7 @@ struct TetGenInterface: public FieldUnknownInterface {
 
     */
   PetscErrorCode setFaceData(
-    vector<pair<Range,int> >& markers,
+    std::vector<std::pair<Range,int> >& markers,
     tetgenio& in,
     moabTetGen_Map& moab_tetgen_map,
     tetGenMoab_Map& tetgen_moab_map);
@@ -155,7 +156,7 @@ struct TetGenInterface: public FieldUnknownInterface {
 
   /** \brief set region data to tetrahedral
     */
-  PetscErrorCode setReginData(vector<pair<EntityHandle,int> >& regions,tetgenio& in);
+  PetscErrorCode setReginData(std::vector<std::pair<EntityHandle,int> >& regions,tetgenio& in);
 
 
   /** \brief get region data to tetrahedral
@@ -175,7 +176,7 @@ struct TetGenInterface: public FieldUnknownInterface {
   //Tools for TetGen, i.e. geometry reconstruction from mesh
 
   PetscErrorCode checkPlanar_Trinagle(double coords[],bool *result,const double eps = 1e-9);
-  PetscErrorCode groupPlanar_Triangle(Range &tris,vector<Range> &sorted,const double eps = 1e-9);
+  PetscErrorCode groupPlanar_Triangle(Range &tris,std::vector<Range> &sorted,const double eps = 1e-9);
 
   /** \brief Group surface triangles in planar regions
 
@@ -184,7 +185,7 @@ struct TetGenInterface: public FieldUnknownInterface {
     \param eps tolerance
 
   */
-  PetscErrorCode groupRegion_Triangle(Range &tris,vector<vector<Range> > &sorted,const double eps = 1e-9);
+  PetscErrorCode groupRegion_Triangle(Range &tris,std::vector<std::vector<Range> > &sorted,const double eps = 1e-9);
 
   /** make planar polygon facet
 

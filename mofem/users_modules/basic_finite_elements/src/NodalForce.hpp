@@ -24,11 +24,11 @@
   */
 struct NodalForce {
 
-  FieldInterface &mField;
-  NodalForce(FieldInterface &m_field): mField(m_field),fe(m_field) {}
+  MoFEM::Interface &mField;
+  NodalForce(MoFEM::Interface &m_field): mField(m_field),fe(m_field) {}
 
-  struct MyFE: public VertexElementForcesAndSourcesCore {
-    MyFE(FieldInterface &m_field);
+  struct MyFE: public MoFEM::VertexElementForcesAndSourcesCore {
+    MyFE(MoFEM::Interface &m_field);
   };
 
   MyFE fe;
@@ -38,19 +38,19 @@ struct NodalForce {
     ForceCubitBcData data;
     Range nOdes;
   };
-  map<int,bCForce> mapForce;
+  std::map<int,bCForce> mapForce;
 
   boost::ptr_vector<MethodForForceScaling> methodsOp;
 
   /// \brief Operator to assemble nodal force into right hand side vector
-  struct OpNodalForce: public VertexElementForcesAndSourcesCore::UserDataOperator {
+  struct OpNodalForce: public MoFEM::VertexElementForcesAndSourcesCore::UserDataOperator {
 
     Vec F;
     bool useSnesF;
     bCForce &dAta;
     boost::ptr_vector<MethodForForceScaling> &methodsOp;
 
-    OpNodalForce(const string field_name,Vec _F,bCForce &data,
+    OpNodalForce(const std::string field_name,Vec _F,bCForce &data,
       boost::ptr_vector<MethodForForceScaling> &methods_op,
       bool use_snes_f = false);
 
@@ -63,7 +63,7 @@ struct NodalForce {
 
   };
 
-  PetscErrorCode addForce(const string field_name,Vec F,int ms_id,bool use_snes_f = false);
+  PetscErrorCode addForce(const std::string field_name,Vec F,int ms_id,bool use_snes_f = false);
 
 };
 
@@ -75,17 +75,17 @@ struct MetaNodalForces {
 
   */
   struct TagForceScale: public MethodForForceScaling {
-    FieldInterface &mField;
+    MoFEM::Interface &mField;
     double *sCale;
     Tag thScale;
 
-    TagForceScale(FieldInterface &m_field);
+    TagForceScale(MoFEM::Interface &m_field);
     PetscErrorCode scaleNf(const FEMethod *fe,ublas::vector<FieldData> &Nf);
 
   };
 
   /// Add element taking information from NODESET
-  static PetscErrorCode addElement (FieldInterface &m_field,const string field_name) {
+  static PetscErrorCode addElement (MoFEM::Interface &m_field,const std::string field_name) {
     PetscFunctionBegin;
     PetscErrorCode ierr;
     ErrorCode rval;
@@ -95,15 +95,15 @@ struct MetaNodalForces {
     ierr = m_field.modify_finite_element_add_field_data("FORCE_FE",field_name); CHKERRQ(ierr);
     for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,NODESET|FORCESET,it)) {
       Range tris;
-      rval = m_field.get_moab().get_entities_by_type(it->meshset,MBTRI,tris,true); CHKERR_PETSC(rval);
+      rval = m_field.get_moab().get_entities_by_type(it->meshset,MBTRI,tris,true); CHKERRQ_MOAB(rval);
       Range edges;
-      rval = m_field.get_moab().get_entities_by_type(it->meshset,MBEDGE,edges,true); CHKERR_PETSC(rval);
+      rval = m_field.get_moab().get_entities_by_type(it->meshset,MBEDGE,edges,true); CHKERRQ_MOAB(rval);
       Range tris_nodes;
-      rval = m_field.get_moab().get_connectivity(tris,tris_nodes); CHKERR_PETSC(rval);
+      rval = m_field.get_moab().get_connectivity(tris,tris_nodes); CHKERRQ_MOAB(rval);
       Range edges_nodes;
-      rval = m_field.get_moab().get_connectivity(edges,edges_nodes); CHKERR_PETSC(rval);
+      rval = m_field.get_moab().get_connectivity(edges,edges_nodes); CHKERRQ_MOAB(rval);
       Range nodes;
-      rval = m_field.get_moab().get_entities_by_type(it->meshset,MBVERTEX,nodes,true); CHKERR_PETSC(rval);
+      rval = m_field.get_moab().get_entities_by_type(it->meshset,MBVERTEX,nodes,true); CHKERRQ_MOAB(rval);
       nodes = subtract(nodes,tris_nodes);
       nodes = subtract(nodes,edges_nodes);
       ierr = m_field.add_ents_to_finite_element_by_VERTICEs(nodes,"FORCE_FE"); CHKERRQ(ierr);
@@ -113,14 +113,14 @@ struct MetaNodalForces {
 
   /// Set integration point operators
   static PetscErrorCode setOperators(
-    FieldInterface &m_field, boost::ptr_map<string,NodalForce> &nodal_forces, Vec F,const string field_name
+    MoFEM::Interface &m_field, boost::ptr_map<std::string,NodalForce> &nodal_forces, Vec F,const std::string field_name
   ) {
     PetscFunctionBegin;
     PetscErrorCode ierr;
     string fe_name = "FORCE_FE";
     nodal_forces.insert(fe_name,new NodalForce(m_field));
     for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,NODESET|FORCESET,it)) {
-      ierr = nodal_forces.at(fe_name).addForce(field_name,F,it->get_msId());  CHKERRQ(ierr);
+      ierr = nodal_forces.at(fe_name).addForce(field_name,F,it->getMeshsetId());  CHKERRQ(ierr);
     }
     PetscFunctionReturn(0);
   }

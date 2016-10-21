@@ -28,7 +28,7 @@
 #include <h1_hdiv_hcurl_l2.h>
 
 #include <MaterialBlocks.hpp>
-#include <CubitBCData.hpp>
+#include <BCData.hpp>
 #include <TagMultiIndices.hpp>
 #include <CoordSysMultiIndices.hpp>
 #include <FieldMultiIndices.hpp>
@@ -38,20 +38,30 @@
 namespace MoFEM {
 
 //moab dof
-DofMoFEMEntity::DofMoFEMEntity(
-  const MoFEMEntity *entity_ptr,
+DofEntity::DofEntity(
+  const boost::shared_ptr<MoFEMEntity> entity_ptr,
   const ApproximationOrder dof_order,
-  const ApproximationRank dof_rank,
-  const DofIdx _dof
+  const FieldCoefficientsNumber dof_rank,
+  const DofIdx dof
 ):
 interface_MoFEMEntity<MoFEMEntity>(entity_ptr),
-dof(_dof),
-active(false) {
+active(false),
+dof(dof) {
 
-  if(field_ptr->tag_dof_order_data==NULL) {
-    ostringstream ss;
+  if(!entity_ptr) {
+    THROW_MESSAGE("MoFEMEntity pinter not initialized");
+  }
+  if(!sPtr) {
+    THROW_MESSAGE("MoFEMEntity pinter not initialized");
+  }
+  if(!getMoFEMEntityPtr()) {
+    THROW_MESSAGE("MoFEMEntity pinter not initialized");
+  }
+
+  if(sFieldPtr->tag_dof_order_data==NULL) {
+    std::ostringstream ss;
     ss << "at " << __LINE__ << " in " << __FILE__;
-    ss << " field_ptr->tag_dof_order_data==NULL";
+    ss << " sFieldPtr->tag_dof_order_data==NULL";
     ss << " (top tip: check if order set to vertices is 1)";
     //throw(ss.str().c_str());
     PetscTraceBackErrorHandler(
@@ -64,87 +74,92 @@ active(false) {
       MOFEM_DATA_INCONSISTENCY,PETSC_ERROR_INITIAL,ss.str().c_str(),PETSC_NULL
     );
   }
-  assert(field_ptr->tag_dof_rank_data!=NULL);
-  ((ApproximationOrder*)field_ptr->tag_dof_order_data)[dof] = dof_order;
-  ((ApproximationRank*)field_ptr->tag_dof_rank_data)[dof] = dof_rank;
-  local_uid = get_local_unique_id_calculate();
-  global_uid = get_global_unique_id_calculate();
-  short_uid = get_non_nonunique_short_id_calculate();
-
+  assert(sFieldPtr->tag_dof_rank_data!=NULL);
+  ((ApproximationOrder*)sFieldPtr->tag_dof_order_data)[dof] = dof_order;
+  ((FieldCoefficientsNumber*)sFieldPtr->tag_dof_rank_data)[dof] = dof_rank;
+  // short_uid = get_non_nonunique_short_id_calculate(dof);
 }
 
-ostream& operator<<(ostream& os,const DofMoFEMEntity& e) {
-  os << "dof_uid " << e.get_global_unique_id()
-  << " dof_order " << e.get_dof_order()
-  << " dof_rank " << e.get_dof_coeff_idx()
-  << " dof " << e.dof
+std::ostream& operator<<(std::ostream& os,const DofEntity& e) {
+  os << "dof_uid " << e.getGlobalUniqueId()
+  << " dof_order " << e.getDofOrder()
+  << " dof_rank " << e.getDofCoeffIdx()
+  << " dof " << e.getEntDofIdx()
   << " active " << e.active
-  << " " << *(e.field_ptr);
+  << " " << *(e.sFieldPtr);
   return os;
 }
 
-DofMoFEMEntity_active_change::DofMoFEMEntity_active_change(bool _active): active(_active) {}
-void DofMoFEMEntity_active_change::operator()(DofMoFEMEntity &_dof_) {
-  _dof_.active = active;
-  assert((_dof_.get_dof_order()<=_dof_.get_max_order()));
+DofEntity_active_change::DofEntity_active_change(bool _active): active(_active) {}
+void DofEntity_active_change::operator()(boost::shared_ptr<DofEntity> &_dof_) {
+  _dof_->active = active;
+  if(active && _dof_->getDofOrder()>_dof_->getMaxOrder()) {
+    cerr << *_dof_ << endl;
+    THROW_MESSAGE("Set DoF active which has order larger than maximal order set to entity");
+  }
 }
 
 //numered dof
-NumeredDofMoFEMEntity::NumeredDofMoFEMEntity(const DofMoFEMEntity* _DofMoFEMEntity_ptr):
-interface_DofMoFEMEntity<DofMoFEMEntity>(_DofMoFEMEntity_ptr),
+NumeredDofEntity::NumeredDofEntity(const boost::shared_ptr<DofEntity> _DofEntity_ptr):
+interface_DofEntity<DofEntity>(_DofEntity_ptr),
 dof_idx(-1),
 petsc_gloabl_dof_idx(-1),
 petsc_local_dof_idx(-1),
 part(-1) {
 }
 
-ostream& operator<<(ostream& os,const NumeredDofMoFEMEntity& e) {
+std::ostream& operator<<(std::ostream& os,const NumeredDofEntity& e) {
   os << "idx " << e.dof_idx << " part " << e.part
   << " petsc idx " << e.petsc_gloabl_dof_idx
   << " ( " << e.petsc_local_dof_idx <<  " ) "
-  << *e.field_ptr;
+  << *e.sFieldPtr;
   return os;
 }
 
-FEDofMoFEMEntity::FEDofMoFEMEntity(boost::tuple<SideNumber *,const DofMoFEMEntity *> t):
-BaseFEDofMoFEMEntity(t.get<0>()), interface_DofMoFEMEntity<DofMoFEMEntity>(t.get<1>()) {
-}
-
-
-FEDofMoFEMEntity::FEDofMoFEMEntity(
-  SideNumber *_side_number_ptr,
-  const DofMoFEMEntity *_DofMoFEMEntity_ptr
+FEDofEntity::FEDofEntity(
+  boost::tuple<boost::shared_ptr<SideNumber>,const boost::shared_ptr<DofEntity> > t
 ):
-BaseFEDofMoFEMEntity(_side_number_ptr), interface_DofMoFEMEntity<DofMoFEMEntity>(_DofMoFEMEntity_ptr) {
+BaseFEDofEntity(t.get<0>()),
+interface_DofEntity<DofEntity>(t.get<1>()) {
 }
 
-ostream& operator<<(ostream& os,const FEDofMoFEMEntity& e) {
-  os << "local dof MoFEMFiniteElement idx "
-    << "side_number " << e.side_number_ptr->side_number << " "
-    << "sense " << e.side_number_ptr->sense << " "
-    << *e.field_ptr;
+
+FEDofEntity::FEDofEntity(
+  boost::shared_ptr<SideNumber> side_number_ptr,
+  const boost::shared_ptr<DofEntity> dof_ptr
+):
+BaseFEDofEntity(side_number_ptr),
+interface_DofEntity<DofEntity>(dof_ptr) {
+}
+
+std::ostream& operator<<(std::ostream& os,const FEDofEntity& e) {
+  os << "local dof FiniteElement idx "
+    << "side_number " << e.sideNumberPtr->side_number << " "
+    << "sense " << e.sideNumberPtr->sense << " "
+    << *e.sFieldPtr;
   return os;
 }
 
-FENumeredDofMoFEMEntity::FENumeredDofMoFEMEntity(
-  SideNumber *_side_number_ptr,
-  const NumeredDofMoFEMEntity *_NumeredDofMoFEMEntity_ptr
+FENumeredDofEntity::FENumeredDofEntity(
+  boost::shared_ptr<SideNumber> side_number_ptr,
+  const boost::shared_ptr<NumeredDofEntity> dof_ptr
 ):
-BaseFEDofMoFEMEntity(_side_number_ptr),
-interface_NumeredDofMoFEMEntity<NumeredDofMoFEMEntity>(_NumeredDofMoFEMEntity_ptr) {
+BaseFEDofEntity(side_number_ptr),
+interface_NumeredDofEntity<NumeredDofEntity>(dof_ptr) {
 }
 
-FENumeredDofMoFEMEntity::FENumeredDofMoFEMEntity(
-  boost::tuple<SideNumber *,const NumeredDofMoFEMEntity *> t
+FENumeredDofEntity::FENumeredDofEntity(
+  boost::tuple<boost::shared_ptr<SideNumber>,const boost::shared_ptr<NumeredDofEntity> > t
 ):
-BaseFEDofMoFEMEntity(t.get<0>()), interface_NumeredDofMoFEMEntity<NumeredDofMoFEMEntity>(t.get<1>()) {
+BaseFEDofEntity(t.get<0>()),
+interface_NumeredDofEntity<NumeredDofEntity>(t.get<1>()) {
 }
 
-ostream& operator<<(ostream& os,const FENumeredDofMoFEMEntity& e) {
-  os << "local dof MoFEMFiniteElement idx "
-    << "side_number " << e.side_number_ptr->side_number << " "
-    << "sense " << e.side_number_ptr->sense << " "
-    << *e.field_ptr;
+std::ostream& operator<<(std::ostream& os,const FENumeredDofEntity& e) {
+  os << "local dof FiniteElement idx "
+    << "side_number " << e.sideNumberPtr->side_number << " "
+    << "sense " << e.sideNumberPtr->sense << " "
+    << *e.sFieldPtr;
   return os;
 }
 

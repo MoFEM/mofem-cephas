@@ -15,19 +15,30 @@
 #ifndef __MOFEM_HPP__
 #define __MOFEM_HPP__
 
+//Include system and libraries files
 #include <Includes.hpp>
 
 //SRC APPROXIMATION
+#include <version.h>
 #include <config.h>
 #include <definitions.h>
+
+//FTensor
+#include <FTensor.hpp>
+#include <Common.hpp>
+#include <UnknownInterface.hpp>
+
+//SRC/APPROXIMATION
+#include <base_functions.h>
 #include <h1_hdiv_hcurl_l2.h>
 #include <fem_tools.h>
-
-#include <Common.hpp>
+#include <BaseFunction.hpp>
+#include <LegendrePolynomial.hpp>
+#include <LobattoPolynomial.hpp>
 
 //SRC/MULTI-INDICES
 #include <MaterialBlocks.hpp>
-#include <CubitBCData.hpp>
+#include <BCData.hpp>
 #include <TagMultiIndices.hpp>
 #include <CoordSysMultiIndices.hpp>
 #include <FieldMultiIndices.hpp>
@@ -41,18 +52,46 @@
 
 //SRC/INTERFACES
 #include <LoopMethods.hpp>
-#include <FieldInterface.hpp>
-#include <MeshRefinment.hpp>
+#include <Interface.hpp>
 #include <PrismInterface.hpp>
 #include <SeriesRecorder.hpp>
 #include <Core.hpp>
+#include <MeshRefinement.hpp>
+#include <MeshsetsManager.hpp>
+#include <CoordSystemsManager.hpp>
+#ifdef WITH_TETGEN
+  #include <TetGenInterface.hpp>
+#endif //WITH_TETGEN
+#ifdef WITH_MED
+  #include <MedInterface.hpp>
+#endif //WITH_MED
+#include <BitLevelCoupler.hpp>
+#include <NodeMerger.hpp>
+#include <PrismsFromSurfaceInterface.hpp>
 
 //SRC/PETSC
+#include <KspCtx.hpp>
 #include <SnesCtx.hpp>
 #include <TsCtx.hpp>
 #include <DMMoFEM.hpp>
 
 //SRC/FINITE_ELEMENTS
-#include <ForcesAndSurcesCore.hpp>
+#include <DataStructures.hpp>
+#include <EntPolynomialBaseCtx.hpp>
+#include <TetPolynomialBase.hpp> // Base functions on tet
+#include <TriPolynomialBase.hpp> // Base functions on tri
+#include <EdgePolynomialBase.hpp> // Base functions on tri
+#include <FlatPrismPolynomialBase.hpp> // Base functions on tri
+#include <DataOperators.hpp>
+#include <ElementsOnEntities.hpp>
+#include <UserDataOperators.hpp>
+#include <VolumeElementForcesAndSourcesCore.hpp>
+#include <FaceElementForcesAndSourcesCore.hpp>
+#include <EdgeElementForcesAndSurcesCore.hpp>
+#include <VertexElementForcesAndSourcesCore.hpp>
+#include <FlatPrismElementForcesAndSurcesCore.hpp>
+#include <FatPrismElementForcesAndSurcesCore.hpp>
+#include <Projection10NodeCoordsOnField.hpp>
+
 
 #endif //MOFEM_HPP__

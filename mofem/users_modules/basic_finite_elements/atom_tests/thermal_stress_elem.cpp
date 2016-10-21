@@ -12,21 +12,13 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
-#include <boost/iostreams/tee.hpp>
-#include <boost/iostreams/stream.hpp>
-#include <fstream>
-#include <iostream>
+#include <BasicFiniteElements.hpp>
+using namespace MoFEM;
 
 namespace bio = boost::iostreams;
 using bio::tee_device;
 using bio::stream;
 
-#include <MoFEM.hpp>
-using namespace MoFEM;
-
-#include <MethodForForceScaling.hpp>
-#include <DirichletBC.hpp>
-#include <ThermalStressElement.hpp>
 static char help[] = "...\n\n";
 
 int main(int argc, char *argv[]) {
@@ -37,13 +29,13 @@ int main(int argc, char *argv[]) {
   PetscInitialize(&argc,&argv,(char *)0,help);
 
   moab::Core mb_instance;
-  Interface& moab = mb_instance;
+  moab::Interface& moab = mb_instance;
   int rank;
   MPI_Comm_rank(PETSC_COMM_WORLD,&rank);
 
   PetscBool flg = PETSC_TRUE;
   char mesh_file_name[255];
-  ierr = PetscOptionsGetString(PETSC_NULL,"-my_file",mesh_file_name,255,&flg); CHKERRQ(ierr);
+  ierr = PetscOptionsGetString(PETSC_NULL,PETSC_NULL,"-my_file",mesh_file_name,255,&flg); CHKERRQ(ierr);
   if(flg != PETSC_TRUE) {
     SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_file (MESH FILE NEEDED)");
   }
@@ -54,18 +46,18 @@ int main(int argc, char *argv[]) {
   const char *option;
   option = "";//"PARALLEL=BCAST;";//;DEBUG_IO";
   BARRIER_RANK_START(pcomm)
-  rval = moab.load_file(mesh_file_name, 0, option); CHKERR_PETSC(rval);
+  rval = moab.load_file(mesh_file_name, 0, option); CHKERRQ_MOAB(rval);
   BARRIER_RANK_END(pcomm)
 
   //Create MoFEM (Joseph) database
   MoFEM::Core core(moab);
-  FieldInterface& m_field = core;
+  MoFEM::Interface& m_field = core;
 
   //set entitities bit level
   BitRefLevel bit_level0;
   bit_level0.set(0);
   EntityHandle meshset_level0;
-  rval = moab.create_meshset(MESHSET_SET,meshset_level0); CHKERR_PETSC(rval);
+  rval = moab.create_meshset(MESHSET_SET,meshset_level0); CHKERRQ_MOAB(rval);
   ierr = m_field.seed_ref_level_3D(0,bit_level0); CHKERRQ(ierr);
 
   //Fields
@@ -75,7 +67,7 @@ int main(int argc, char *argv[]) {
   //Problem
   ierr = m_field.add_problem("PROB"); CHKERRQ(ierr);
 
-  //set refinment level for problem
+  //set refinement level for problem
   ierr = m_field.modify_problem_ref_level_add_bit("PROB",bit_level0); CHKERRQ(ierr);
 
   //meshset consisting all entities in mesh
@@ -123,10 +115,10 @@ int main(int argc, char *argv[]) {
 
   //set temerature at nodes
   for(_IT_GET_DOFS_FIELD_BY_NAME_AND_TYPE_FOR_LOOP_(m_field,"TEMP",MBVERTEX,dof)) {
-    EntityHandle ent = dof->get_ent();
+    EntityHandle ent = dof->get()->getEnt();
     ublas::vector<double> coords(3);
-    rval = moab.get_coords(&ent,1,&coords[0]); CHKERR_PETSC(rval);
-    dof->get_FieldData() = 1;
+    rval = moab.get_coords(&ent,1,&coords[0]); CHKERRQ_MOAB(rval);
+    dof->get()->getFieldData() = 1;
   }
 
   Vec F;
@@ -137,11 +129,25 @@ int main(int argc, char *argv[]) {
   ierr = VecAssemblyBegin(F); CHKERRQ(ierr);
   ierr = VecAssemblyEnd(F); CHKERRQ(ierr);
 
-  PetscViewer viewer;
-  ierr = PetscViewerASCIIOpen(PETSC_COMM_WORLD,"forces_and_sources_thermal_stress_elem.txt",&viewer); CHKERRQ(ierr);
-  ierr = VecChop(F,1e-4); CHKERRQ(ierr);
-  ierr = VecView(F,viewer); CHKERRQ(ierr);
-  ierr = PetscViewerDestroy(&viewer); CHKERRQ(ierr);
+  // PetscViewer viewer;
+  // ierr = PetscViewerASCIIOpen(PETSC_COMM_WORLD,"forces_and_sources_thermal_stress_elem.txt",&viewer); CHKERRQ(ierr);
+  // ierr = VecChop(F,1e-4); CHKERRQ(ierr);
+  // ierr = VecView(F,viewer); CHKERRQ(ierr);
+  // ierr = PetscViewerDestroy(&viewer); CHKERRQ(ierr);
+
+  double sum = 0;
+  ierr = VecSum(F,&sum); CHKERRQ(ierr);
+  ierr = PetscPrintf(PETSC_COMM_WORLD,"sum  = %9.8f\n",sum); CHKERRQ(ierr);
+  double fnorm;
+  ierr = VecNorm(F,NORM_2,&fnorm); CHKERRQ(ierr);
+  ierr = PetscPrintf(PETSC_COMM_WORLD,"fnorm  = %9.8e\n",fnorm); CHKERRQ(ierr);
+  if(fabs(sum)>1e-7) {
+    SETERRQ(PETSC_COMM_WORLD,MOFEM_ATOM_TEST_INVALID,"Failed to pass test");
+  }
+  if(fabs(fnorm-2.64638118e+00)>1e-7) {
+    SETERRQ(PETSC_COMM_WORLD,MOFEM_ATOM_TEST_INVALID,"Failed to pass test");
+  }
+
 
   ierr = VecZeroEntries(F); CHKERRQ(ierr);
 

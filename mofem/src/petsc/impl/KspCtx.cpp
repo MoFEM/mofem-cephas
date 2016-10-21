@@ -14,14 +14,14 @@
 
 
 #include <Includes.hpp>
-// #include <version.h>
+#include <version.h>
 #include <definitions.h>
 #include <Common.hpp>
 
 #include <h1_hdiv_hcurl_l2.h>
 
 #include <MaterialBlocks.hpp>
-#include <CubitBCData.hpp>
+#include <BCData.hpp>
 #include <TagMultiIndices.hpp>
 #include <CoordSysMultiIndices.hpp>
 #include <FieldMultiIndices.hpp>
@@ -34,9 +34,10 @@
 #include <CoreDataStructures.hpp>
 #include <SeriesMultiIndices.hpp>
 
+#include <UnknownInterface.hpp>
+
 #include <LoopMethods.hpp>
-#include <FieldInterface.hpp>
-#include <MeshRefinment.hpp>
+#include <Interface.hpp>
 #include <PrismInterface.hpp>
 #include <SeriesRecorder.hpp>
 #include <Core.hpp>
@@ -63,7 +64,7 @@ PetscErrorCode KspRhs(KSP ksp,Vec f,void *ctx) {
     ierr = lit->second->set_ksp_ctx(KspMethod::CTX_SETFUNCTION);  CHKERRQ(ierr);
     ierr = lit->second->set_ksp(ksp); CHKERRQ(ierr);
     lit->second->ksp_f = f;
-    ierr = ksp_ctx->mField.loop_finite_elements(ksp_ctx->problemName,lit->first,*(lit->second));  CHKERRQ(ierr);
+    ierr = ksp_ctx->mField.loop_finite_elements(ksp_ctx->problemName,lit->first,*(lit->second),ksp_ctx->bH);  CHKERRQ(ierr);
     ierr = lit->second->set_ksp_ctx(KspMethod::CTX_KSPNONE);  CHKERRQ(ierr);
   }
   bit = ksp_ctx->postProcess_Rhs.begin();
@@ -97,7 +98,7 @@ PetscErrorCode KspMat(KSP ksp,Mat A,Mat B,void *ctx) {
     ierr = lit->second->set_ksp(ksp); CHKERRQ(ierr);
     lit->second->ksp_A = A;
     lit->second->ksp_B = B;
-    ierr = ksp_ctx->mField.loop_finite_elements(ksp_ctx->problemName,lit->first,*(lit->second));  CHKERRQ(ierr);
+    ierr = ksp_ctx->mField.loop_finite_elements(ksp_ctx->problemName,lit->first,*(lit->second),ksp_ctx->bH);  CHKERRQ(ierr);
     ierr = lit->second->set_ksp_ctx(KspMethod::CTX_KSPNONE);
   }
   bit = ksp_ctx->postProcess_Mat.begin();

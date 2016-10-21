@@ -32,7 +32,16 @@ PetscErrorCode DMRegister_MoFEM(const char sname[]);
   * \brief Must be called by user to set MoFEM data structures
   * \ingroup dm
   */
-PetscErrorCode DMMoFEMCreateMoFEM(DM dm,MoFEM::FieldInterface *m_field_ptr,const char problem_name[],const MoFEM::BitRefLevel &bit_level);
+PetscErrorCode DMMoFEMCreateMoFEM(DM dm,MoFEM::Interface *m_field_ptr,const char problem_name[],const MoFEM::BitRefLevel &bit_level);
+
+/**
+ * \brief Get pointer to MoFEM::Interface
+ * @param  dm          Distributed mesh manager
+ * @param  m_field_ptr Pointer to pointer of field interface
+ * @return             Error code
+ * \ingroup dm
+ */
+PetscErrorCode DMoFEMGetInterfacePtr(DM dm,const MoFEM::Interface **m_field_ptr);
 
 /**
   * \brief Get pointer to problem data structure
@@ -59,6 +68,44 @@ PetscErrorCode DMMoFEMSetSquareProblem(DM dm,PetscBool square_problem);
 
   */
 PetscErrorCode DMMoFEMGetSquareProblem(DM dm,PetscBool *square_problem);
+
+/**
+ * \brief Resolve shared entities
+ * @param  dm      dm
+ * @param  fe_name finite element for which shared entities are resolved
+ * @return         error code
+ *
+
+ * This allows for tag reduction or tag exchange, f.e.
+
+ \code
+ ierr = DMMoFEMGetSquareProblem(dm,"SHELL_ELEMENT"); CHKERRQ(ierr);
+ Tag th;
+ rval = mField.get_moab().tag_get_handle("ADAPT_ORDER",th); CHKERRQ_MOAB(rval);
+ ParallelComm* pcomm = ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
+ // rval = pcomm->reduce_tags(th,MPI_SUM,prisms);
+ rval = pcomm->exchange_tags(th,prisms);
+ \endcode
+
+ * \ingroup dm
+ */
+PetscErrorCode DMMoFEMResolveSharedEntities(DM dm,const char fe_name[]);
+
+/**
+ * \brief Get finite elements layout in the problem
+ *
+ * In layout is stored information how many elements is on each processor, for
+ * more information look int petsc documentation
+ * <http://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/IS/PetscLayoutCreate.html#PetscLayoutCreate>
+ *
+ * @param  dm     discrete manager for this problem
+ * @param  fe_name finite element name
+ * @param  layout pointer to layout, for created layout user takes responsibility for destroying it.
+ * @return        error code
+ *
+ * \ingroup dm
+ */
+PetscErrorCode DMMoFEMGetProblemFiniteElementLayout(DM dm,const char fe_name[],PetscLayout *layout);
 
 /**
   * \brief add element to dm
@@ -115,9 +162,25 @@ PetscErrorCode DMoFEMPreProcessFiniteElements(DM dm,MoFEM::FEMethod *method);
 PetscErrorCode DMoFEMPostProcessFiniteElements(DM dm,MoFEM::FEMethod *method);
 
 /**
-  * \brief execute finite element method for each element in dm (problem)
-  * \ingroup dm
-  */
+ * \brief Executes FEMethod for finite elements in DM
+ * @param  dm       MoFEM discrete manager
+ * @param  fe_name  name of finite element
+ * @param  method   pointer to \ref MoFEM::FEMethod
+ * @param  low_rank lowest rank of processor
+ * @param  up_rank  upper run of processor
+ * @return          Error code
+ * \ingroup dm
+ */
+PetscErrorCode DMoFEMLoopFiniteElementsUpAndLowRank(DM dm,const char fe_name[],MoFEM::FEMethod *method,int low_rank,int up_rank);
+
+/**
+ * \brief Executes FEMethod for finite elements in DM
+ * @param  dm      MoFEM discrete manager
+ * @param  fe_name name of element
+ * @param  method  pointer to \ref MOFEM::FEMethod
+ * @return         Error code
+ * \ingroup dm
+ */
 PetscErrorCode DMoFEMLoopFiniteElements(DM dm,const char fe_name[],MoFEM::FEMethod *method);
 
 /**
@@ -126,6 +189,16 @@ PetscErrorCode DMoFEMLoopFiniteElements(DM dm,const char fe_name[],MoFEM::FEMeth
   */
 PetscErrorCode DMoFEMLoopDofs(DM dm,const char field_name[],MoFEM::EntMethod *method);
 
+// /**
+//  * \brief Set compute operator for KSP solver via sub-matrix and IS
+//  *
+//  * @param  dm   DM
+//  * @return      error code
+//  *
+//  * \ingroup dm
+//  */
+// PetscErrorCode DMMoFEMKSPSetComputeOperatorsViaSubMatrixbByIs(DM dm);
+
 /**
   * \brief set KSP right hand side evaluation function
   * \ingroup dm
@@ -133,9 +206,17 @@ PetscErrorCode DMoFEMLoopDofs(DM dm,const char field_name[],MoFEM::EntMethod *me
 PetscErrorCode DMMoFEMKSPSetComputeRHS(DM dm,const char fe_name[],MoFEM::FEMethod *method,MoFEM::FEMethod *pre_only,MoFEM::FEMethod *post_only);
 
 /**
-  * \brief set KSP matrix evaluation function
-  * \ingroup dm
-  */
+ * \brief Set KSP opetators and push mofem finite element methods
+ *
+ * @param  dm        DM
+ * @param  fe_name   finite element name
+ * @param  method    method on the element (executed for each element in the problem which given name)
+ * @param  pre_only  method for pre-process before element method
+ * @param  post_only method for post-process after element method
+ * @return           error code
+ *
+ * \ingroup dm
+ */
 PetscErrorCode DMMoFEMKSPSetComputeOperators(DM dm,const char fe_name[],MoFEM::FEMethod *method,MoFEM::FEMethod *pre_only,MoFEM::FEMethod *post_only);
 
 /**
@@ -223,6 +304,14 @@ PetscErrorCode DMMoFEMSetIsPartitioned(DM dm,PetscBool is_partitioned);
 PetscErrorCode DMMoFEMGetIsPartitioned(DM dm,PetscBool *is_partitioned);
 
 /**
+ * \brief Set operators for MoFEM dm
+ * @param  dm
+ * @return  error code
+ * \ingroup dm
+ */
+PetscErrorCode DMSetOperators_MoFEM(DM dm);
+
+/**
   * \brief Create dm data structure with MoFEM data structure
   * \ingroup dm
   */
@@ -264,10 +353,12 @@ PetscErrorCode DMCreateMatrix_MoFEM(DM dm,Mat *M);
   * Set options for MoFEM DM
   * \ingroup dm
   */
-#if PETSC_VERSION_GE(3,5,3)
-    PetscErrorCode DMSetFromOptions_MoFEM(PetscOptions *PetscOptionsObject,DM dm);
+#if PETSC_VERSION_GE(3,7,0)
+  PetscErrorCode DMSetFromOptions_MoFEM(PetscOptionItems *PetscOptionsObject,DM dm);
+#elif PETSC_VERSION_GE(3,5,3)
+  PetscErrorCode DMSetFromOptions_MoFEM(PetscOptions *PetscOptionsObject,DM dm);
 #else
-    PetscErrorCode DMSetFromOptions_MoFEM(DM dm);
+  PetscErrorCode DMSetFromOptions_MoFEM(DM dm);
 #endif
 
 /**
@@ -322,9 +413,59 @@ PetscErrorCode DMLocalToGlobalBegin_MoFEM(DM,Vec,InsertMode,Vec);
   */
 PetscErrorCode DMLocalToGlobalEnd_MoFEM(DM,Vec,InsertMode,Vec);
 
+
+namespace MoFEM {
+
+  static const MOFEMuuid IDD_DMCTX = MOFEMuuid(BitIntefaceId(DMCTX_INTERFACE));
+
+  /**
+   * \brief PETSc  Discrete Manager data structure
+   *
+   * This structure should not be accessed or modified by user. Is not available
+   * from outside MoFEM DM manager. However user can inherit dat class and
+   * add data for additional functionality.
+   *
+   * This is part of implementation for PETSc interface, see more details in
+   * <http://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/DM/index.html>
+   *
+   * \ingroup dm
+   *
+   */
+  struct DMCtx: public MoFEM::UnknownInterface {
+
+    PetscErrorCode queryInterface(const MOFEMuuid& uuid,UnknownInterface** iface);
+
+    Interface *mField_ptr; 		///< MoFEM interface
+    PetscBool isProblemBuild;      ///< True if problem is build
+    std::string problemName;			        ///< Problem name
+
+    KspCtx *kspCtx;			  ///< data structure KSP
+    SnesCtx *snesCtx;			///< data structure SNES
+    TsCtx	*tsCtx;				   ///< data structure for TS solver
+
+    //options
+    PetscBool isPartitioned;		///< true if read mesh is on parts
+    PetscBool isSquareMatrix;		///< true if rows equals to cols
+    PetscInt verbosity;			    ///< verbosity
+
+    int rAnk,sIze;
+
+    //pointer to data structures
+    const MoFEMProblem *problemPtr;	  ///< pinter to problem data structure
+
+    DMCtx();
+    virtual ~DMCtx();
+
+    int referenceNumber;
+
+  };
+
+
+}
+
 #endif //__DMMMOFEM_H
 
 /***************************************************************************//**
- * \defgroup dm Discreet manager
+ * \defgroup dm Distributed mesh manager
  * \ingroup mofem
  ******************************************************************************/

@@ -37,12 +37,12 @@ struct AnalyticalDirichletBC {
     struct MyTriFE: public FaceElementForcesAndSourcesCore {
 
       int addToRule; ///< this is add to integration rule if 2nd order geometry approximation
-      MyTriFE(FieldInterface &m_field): FaceElementForcesAndSourcesCore(m_field),addToRule(1) {}
+      MyTriFE(MoFEM::Interface &m_field): FaceElementForcesAndSourcesCore(m_field),addToRule(1) {}
       int getRule(int order) { return order+addToRule; };
 
     };
 
-    ApproxField(FieldInterface &m_field): feApprox(m_field) {}
+    ApproxField(MoFEM::Interface &m_field): feApprox(m_field) {}
     virtual ~ApproxField() {}
 
     MyTriFE feApprox;
@@ -52,7 +52,7 @@ struct AnalyticalDirichletBC {
     struct OpHoCoord: public FaceElementForcesAndSourcesCore::UserDataOperator {
 
       ublas::matrix<double> &hoCoords;
-      OpHoCoord(const string field_name,ublas::matrix<double> &ho_coords);
+      OpHoCoord(const std::string field_name,ublas::matrix<double> &ho_coords);
 
       PetscErrorCode doWork(
         int side,EntityType type,DataForcesAndSurcesCore::EntData &data
@@ -66,7 +66,7 @@ struct AnalyticalDirichletBC {
     struct OpLhs:public FaceElementForcesAndSourcesCore::UserDataOperator {
 
       ublas::matrix<double> &hoCoords;
-      OpLhs(const string field_name,ublas::matrix<double> &ho_coords);
+      OpLhs(const std::string field_name,ublas::matrix<double> &ho_coords);
 
       ublas::matrix<FieldData> NN,transNN;
       PetscErrorCode doWork(
@@ -88,7 +88,7 @@ struct AnalyticalDirichletBC {
       boost::shared_ptr<FUNEVAL> functionEvaluator;
       int fieldNumber;
 
-      OpRhs(const string field_name,Range tris,
+      OpRhs(const std::string field_name,Range tris,
         ublas::matrix<double> &ho_coords,
         boost::shared_ptr<FUNEVAL> function_evaluator,int field_number
       ):
@@ -113,13 +113,13 @@ struct AnalyticalDirichletBC {
 
           unsigned int nb_row = data.getIndices().size();
           if(nb_row==0) PetscFunctionReturn(0);
-          if(tRis.find(getMoFEMFEPtr()->get_ent()) == tRis.end()) {
+          if(tRis.find(getNumeredEntFiniteElementPtr()->getEnt()) == tRis.end()) {
             PetscFunctionReturn(0);
           }
 
-          const FENumeredDofMoFEMEntity *dof_ptr;
-          ierr = getMoFEMFEPtr()->get_row_dofs_by_petsc_gloabl_dof_idx(data.getIndices()[0],&dof_ptr); CHKERRQ(ierr);
-          unsigned int rank = dof_ptr->get_nb_of_coeffs();
+          const FENumeredDofEntity *dof_ptr;
+          ierr = getNumeredEntFiniteElementPtr()->getRowDofsByPetscGlobalDofIdx(data.getIndices()[0],&dof_ptr); CHKERRQ(ierr);
+          unsigned int rank = dof_ptr->getNbOfCoeffs();
 
           NTf.resize(nb_row/rank);
           iNdices.resize(nb_row/rank);
@@ -129,7 +129,7 @@ struct AnalyticalDirichletBC {
             double x,y,z;
             double val = getGaussPts()(2,gg);
             if(hoCoords.size1() == data.getN().size1()) {
-              double area = norm_2(getNormals_at_GaussPt(gg))*0.5;
+              double area = norm_2(getNormalsAtGaussPt(gg))*0.5;
               val *= area;
               x = hoCoords(gg,0);
               y = hoCoords(gg,1);
@@ -146,8 +146,8 @@ struct AnalyticalDirichletBC {
 
               a = (*functionEvaluator)(x,y,z)[fieldNumber];
 
-            } catch (exception& ex) {
-              ostringstream ss;
+            } catch (std::exception& ex) {
+              std::ostringstream ss;
               ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
               SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
             }
@@ -171,8 +171,8 @@ struct AnalyticalDirichletBC {
 
 
         } catch (const std::exception& ex) {
-          ostringstream ss;
-          ss << "throw in method: " << ex.what() << endl;
+          std::ostringstream ss;
+          ss << "throw in method: " << ex.what() << std::endl;
           SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
         }
 
@@ -188,11 +188,11 @@ struct AnalyticalDirichletBC {
   struct DirichletBC : public DisplacementBCFEMethodPreAndPostProc {
 
     DirichletBC(
-      FieldInterface& m_field,const string &field,Mat A,Vec X,Vec F
+      MoFEM::Interface& m_field,const std::string &field,Mat A,Vec X,Vec F
     );
 
     DirichletBC(
-      FieldInterface& m_field,const string &field
+      MoFEM::Interface& m_field,const std::string &field
     );
 
     Range *tRis_ptr;
@@ -203,11 +203,11 @@ struct AnalyticalDirichletBC {
   };
 
   ApproxField approxField;
-  AnalyticalDirichletBC(FieldInterface& m_field);
+  AnalyticalDirichletBC(MoFEM::Interface& m_field);
 
   template<typename FUNEVAL>
   PetscErrorCode setApproxOps(
-    FieldInterface &m_field,
+    MoFEM::Interface &m_field,
     string field_name,Range& tris,
     boost::shared_ptr<FUNEVAL> funtcion_evaluator,int field_number = 0,
     string nodals_positions = "MESH_NODE_POSITIONS") {
@@ -223,7 +223,7 @@ struct AnalyticalDirichletBC {
     }
 
   PetscErrorCode initializeProblem(
-    FieldInterface &m_field,string fe,string field,Range& tris,
+    MoFEM::Interface &m_field,string fe,string field,Range& tris,
     string nodals_positions = "MESH_NODE_POSITIONS"
   );
 
@@ -231,11 +231,11 @@ struct AnalyticalDirichletBC {
   Vec D,F;
   KSP kspSolver;
   PetscErrorCode setProblem(
-    FieldInterface &m_field,string problem
+    MoFEM::Interface &m_field,string problem
   );
 
   PetscErrorCode solveProblem(
-    FieldInterface &m_field,string problem,string fe,DirichletBC &bc,Range &tris
+    MoFEM::Interface &m_field,string problem,string fe,DirichletBC &bc,Range &tris
   );
 
   PetscErrorCode destroyProblem();

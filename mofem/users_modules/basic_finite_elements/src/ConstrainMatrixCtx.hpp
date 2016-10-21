@@ -26,7 +26,7 @@
   *
   */
 struct ConstrainMatrixCtx {
-  FieldInterface& mField;
+  MoFEM::Interface& mField;
   KSP kSP;
   VecScatter sCatter;
   Mat C,CT,CCT,CTC,K;
@@ -44,7 +44,7 @@ struct ConstrainMatrixCtx {
   PetscLogEvent USER_EVENT_projRT;
   PetscLogEvent USER_EVENT_projCTC_QTKQ;
 
-  ConstrainMatrixCtx(FieldInterface& m_field,string x_problem,string y_problem,bool create_ksp = true);
+  ConstrainMatrixCtx(MoFEM::Interface& m_field,string x_problem,string y_problem,bool create_ksp = true);
 
   PetscReal rTol,absTol,dTol;
   PetscInt maxIts;

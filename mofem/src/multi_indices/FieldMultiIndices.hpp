@@ -34,7 +34,7 @@ typedef int (*FieldOrderFunct)(const int order);
   * \brief Provide data structure for (tensor) field approximation.
   * \ingroup dof_multi_indices
 
-  The MoFEMField is intended to provide support for fields, with a strong bias
+  The Field is intended to provide support for fields, with a strong bias
   towards supporting first and best the capabilities required for scientific
   computing applications. Since we work with discrete spaces, data structure
   has to carry information about type of approximation space, its regularity
@@ -43,31 +43,53 @@ typedef int (*FieldOrderFunct)(const int order);
   <https://redmine.scorec.rpi.edu/anonsvn/itaps/software/trunk/tools/doxygen/html/ifield.html>
 
   */
-struct MoFEMField {
+struct Field {
+
+  moab::Interface &moab;
 
   EntityHandle meshSet; 		///< keeps entities for this meshset
-  const CoordSys *coordSysPtr;
+  boost::shared_ptr<CoordSys> coordSysPtr;
 
   Tag th_FieldData,th_AppOrder;
   Tag th_AppDofOrder,th_DofRank;
 
   BitFieldId* tag_id_data; 		///< tag keeps field id
   FieldSpace* tag_space_data;		///< tag keeps field space
-  ApproximationRank* tag_rank_data; 	///< tag keeps field rank (dimension, f.e. Temperature field has rank 1, displacements field in 3d has rank 3)
+  FieldApproximationBase* tag_base_data;		///< tag keeps field space
+  FieldCoefficientsNumber* tag_nb_coeff_data; 	///< tag keeps field rank (dimension, f.e. Temperature field has rank 1, displacements field in 3d has rank 3)
   const void* tag_name_data; 		///< tag keeps name of the field
   int tag_name_size; 			///< number of bits necessary to keep field name
   const void* tag_name_prefix_data; 	///< tag keeps name prefix of the field
   int tag_name_prefix_size; 		///< number of bits necessary to keep field name prefix
   FieldOrderTable forder_table;		///< nb. dofs table for entities
+  unsigned int bit_number;
+
 
   /**
     * \brief constructor for moab field
     *
     * \param meshset which keeps entities for this field
     */
-  MoFEMField(Interface &moab,const EntityHandle meshset,const CoordSys *coord_sys_ptr);
+  Field(Interface &moab,const EntityHandle meshset,const boost::shared_ptr<CoordSys> coord_sys_ptr);
 
-  inline EntityHandle get_meshset() const { return meshSet; };
+  /**
+   * \brief Get field meshset
+   *
+
+   * To meshsets entity are attached Tags which keeps basic information about
+   * field. Those information is field name, approximation base, approximation
+   * space, id, etc.
+
+   * In meshset contains entities on which given filed is sparing. Type of entities
+   * depended on approximations space.
+
+   * @return EntityHandle
+   */
+  inline EntityHandle getMeshset() const { return meshSet; }
+
+  /** \deprecated use getMeshset() instead
+  */
+  DEPRECATED inline EntityHandle get_meshset() const { return getMeshset(); }
 
   /**
     * \brief Get dimension of general two-point tensor \ref MoFEM::CoordSys::getDim
@@ -76,45 +98,151 @@ struct MoFEMField {
 
     */
   inline int getCoordSysDim(const int d = 0) const { return coordSysPtr->getDim(d); }
+
+  /**
+   * \brief   Get reference base vectors
+   * @param   Array where coefficients (covariant) are returned
+   * @return  Error code
+   */
   inline PetscErrorCode get_E_Base(const double m[]) const {
     PetscFunctionBegin;
     PetscFunctionReturn(coordSysPtr->get_E_Base(m));
   }
+
+  /**
+   * \brief   Get reference dual base vectors
+   * @param   Array where coefficients (contravariant) are returned
+   * @return  Error code
+   */
   inline PetscErrorCode get_E_DualBase(const double m[]) const {
     PetscFunctionBegin;
     PetscFunctionReturn(coordSysPtr->get_E_DualBase(m));
   }
+
+  /**
+   * \brief   Get current dual base vectors
+   * @param   Array where coefficients (covariant) are returned
+   * @return  Error code
+   */
   inline PetscErrorCode get_e_Base(const double m[]) const {
     PetscFunctionBegin;
     PetscFunctionReturn(coordSysPtr->get_e_Base(m));
   }
+
+  /**
+   * \brief   Get current dual base vectors
+   * @param   Array where coefficients (covariant) are returned
+   * @return  Error code
+   */
   inline PetscErrorCode get_e_DualBase(const double m[]) const {
     PetscFunctionBegin;
     PetscFunctionReturn(coordSysPtr->get_e_DualBase(m));
   }
 
-  inline EntityHandle getCoordSysMeshSet() const { return coordSysPtr->getMeshSet(); }
-  inline string getCoordSysName() const { return coordSysPtr->getName(); };
+  /**
+   * \brief Returns meshset on which Tags defining coordinate system are stored
+   * @return Coordinate system EntityHandle
+   */
+  inline EntityHandle getCoordSysMeshSet() const { return coordSysPtr->getMeshset(); }
+
+  /**
+   * \brief   Get coordinate system name
+   * @return  Coordinate system name
+   */
+  inline std::string getCoordSysName() const { return coordSysPtr->getName(); }
+
+  /**
+   * \brief   Get coordinate system name
+   * @return Return string_ref with name.
+   */
   inline boost::string_ref getCoordSysNameRef() const {
     return coordSysPtr->getNameRef();
-  };
+  }
 
-  inline const BitFieldId& get_id() const { return *((BitFieldId*)tag_id_data); };
-  inline boost::string_ref get_name_ref() const { return boost::string_ref((char *)tag_name_data,tag_name_size); };
-  inline string get_name() const { return string((char *)tag_name_data,tag_name_size); };
-  inline FieldSpace get_space() const { return *tag_space_data; };
-  DEPRECATED inline ApproximationRank get_max_rank() const { return *tag_rank_data; };
+  /**
+   * \brief Get unique field id.
+   * @return Filed ID
+   */
+  inline const BitFieldId& getId() const { return *((BitFieldId*)tag_id_data); }
 
-  /* \brief get number of field coefficients
+  /** \deprecated use getId() instead
   */
-  inline ApproximationRank get_nb_of_coeffs() const { return *tag_rank_data; };
+  DEPRECATED inline const BitFieldId& get_id() const { return getId(); }
+
+  /**
+   * \brief Get string reference to field name
+   * @return Field name
+   */
+  inline boost::string_ref getNameRef() const { return boost::string_ref((char *)tag_name_data,tag_name_size); }
+
+  /** \deprecated use getNameRef() instead
+  */
+  DEPRECATED boost::string_ref get_name_ref() const { return getNameRef(); }
+
+  /**
+   * \brief   Get field name
+   * @return  Field name
+   */
+  inline std::string getName() const { return std::string((char *)tag_name_data,tag_name_size); }
+
+  /** \deprecated use getName() instead
+  */
+  DEPRECATED inline std::string get_name() const { return getName(); }
+
+  /**
+   * \brief   Get field approximation space
+   * @return  approximation space
+   */
+  inline FieldSpace getSpace() const { return *tag_space_data; }
+
+  /** \deprecated Use getSpace() instead
+  */
+  DEPRECATED inline FieldSpace get_space() const { return getSpace(); }
+
+  /**
+   * \brief   Get approximation base
+   * @return  Approximation base
+   */
+  inline FieldApproximationBase getApproxBase() const { return *tag_base_data; }
+
+  /** \deprecated Use getApproxBase() instead
+  */
+  DEPRECATED inline FieldApproximationBase get_approx_base() const { return getApproxBase(); }
+
+
+  /** \brief Get number of field coefficients
+    *
+
+    * Scalar field has only one coefficient, vector field in 3D has three. In
+    * general number determine space needed to keep data on entities. What coefficient
+    * means depend on interpretation and associated coordinate system. For example
+    * 3 coefficient means could be covariant or contravariant, or mean three temperatures
+    * for mixture of solid, air and water, etc.
+
+
+  */
+  inline FieldCoefficientsNumber getNbOfCoeffs() const { return *tag_nb_coeff_data; };
+
+  /** \deprecated Use getNbOfCoeffs() instead
+  */
+  DEPRECATED inline FieldCoefficientsNumber get_nb_of_coeffs() const { return getNbOfCoeffs(); };
+
+  /**
+    * \brief Get number of set bit in Field ID.
+    * Each field has uid, get getBitNumber get number of bit set for given field. Field ID has only one bit set for each field.
+    */
+  inline unsigned int getBitNumber() const { return bit_number; }
+
+  /** \deprecated Use getBitNumber() instead
+  */
+  DEPRECATED inline unsigned int get_bit_number() const { return getBitNumber(); }
 
 
   /**
-    * \brief get number of set bit in Field ID.
-    * Each field has uid, get get_bit_number get number of bit set for given field. Field ID has only one bit set for each field.
+    * \brief Calculate number of set bit in Field ID.
+    * Each field has uid, get getBitNumber get number of bit set for given field. Field ID has only one bit set for each field.
     */
-  inline unsigned int get_bit_number() const {
+  inline unsigned int getBitNumberCalculate() const {
     int b = ffsl(((BitFieldId*)tag_id_data)->to_ulong());
     if(b != 0) return b;
     for(int ll = 1;ll<BITFIELDID_SIZE/32;ll++) {
@@ -125,21 +253,27 @@ struct MoFEMField {
     }
     return 0;
   }
-  const MoFEMField* get_MoFEMField_ptr() const { return this; };
-  friend ostream& operator<<(ostream& os,const MoFEMField& e);
+
+  friend std::ostream& operator<<(std::ostream& os,const Field& e);
 };
 
 /**
- * \brief interface for MoFEMField
+ * \brief interface for Field
  * \ingroup dof_multi_indices
  */
 template <typename T>
-struct interface_MoFEMField {
-  const T *field_ptr;
-  interface_MoFEMField(const T *_field_ptr): field_ptr(_field_ptr) {};
-  inline EntityHandle get_meshset() const { return field_ptr->get_meshset(); };
+struct interface_Field {
+  const boost::shared_ptr<T> sFieldPtr;
 
-  inline int getCoordSysId() const { return field_ptr->getCoordSysId(); }
+  interface_Field(const boost::shared_ptr<T> field_ptr): sFieldPtr(field_ptr) {};
+
+  inline EntityHandle getMeshset() const { return this->sFieldPtr->getMeshset(); }
+
+  /** \deprecated Use getMeshset() instead
+  */
+  DEPRECATED inline EntityHandle get_meshset() const { return this->sFieldPtr->getMeshset(); }
+
+  inline int getCoordSysId() const { return this->sFieldPtr->getCoordSysId(); }
 
   /**
     * \brief Get dimension of general two-point tensor \ref MoFEM::CoordSys::getDim
@@ -147,81 +281,109 @@ struct interface_MoFEMField {
     See details here \ref MoFEM::CoordSys::getDim
 
     */
-  inline int getCoordSysDim(const int d = 0) const { return field_ptr->getCoordSysDim(d); }
+  inline int getCoordSysDim(const int d = 0) const { return this->sFieldPtr->getCoordSysDim(d); }
   inline PetscErrorCode get_E_Base(const double m[]) const {
     PetscFunctionBegin;
-    PetscFunctionReturn(field_ptr->get_E_Base(m));
+    PetscFunctionReturn(this->sFieldPtr->get_E_Base(m));
   }
   inline PetscErrorCode get_E_DualBase(const double m[]) const {
     PetscFunctionBegin;
-    PetscFunctionReturn(field_ptr->get_E_DualBase(m));
+    PetscFunctionReturn(this->sFieldPtr->get_E_DualBase(m));
   }
   inline PetscErrorCode get_e_Base(const double m[]) const {
     PetscFunctionBegin;
-    PetscFunctionReturn(field_ptr->get_e_Base(m));
+    PetscFunctionReturn(this->sFieldPtr->get_e_Base(m));
   }
   inline PetscErrorCode get_e_DualBase(const double m[]) const {
     PetscFunctionBegin;
-    PetscFunctionReturn(field_ptr->get_e_DualBase(m));
+    PetscFunctionReturn(this->sFieldPtr->get_e_DualBase(m));
   }
-  inline EntityHandle getCoordSysMeshSet() const { return field_ptr->getCoordSysMeshSet(); }
-  inline string getCoordSysName() const { return field_ptr->getCoordSysName(); };
-  inline boost::string_ref getCoordSysNameRef() const {
-    return field_ptr->getCoordSysNameRef();
-  };
+  inline EntityHandle getCoordSysMeshSet() const { return this->sFieldPtr->getCoordSysMeshSet(); }
+  inline std::string getCoordSysName() const { return this->sFieldPtr->getCoordSysName(); }
+  inline boost::string_ref getCoordSysNameRef() const { return this->sFieldPtr->getCoordSysNameRef(); }
 
-  inline const BitFieldId& get_id() const { return field_ptr->get_id(); };
-  inline unsigned int get_bit_number() const { return field_ptr->get_bit_number(); }
-  inline boost::string_ref get_name_ref() const { return field_ptr->get_name_ref(); };
-  inline string get_name() const { return field_ptr->get_name(); };
-  inline FieldSpace get_space() const { return field_ptr->get_space(); };
+  inline const BitFieldId& getId() const { return this->sFieldPtr->getId(); }
 
-  DEPRECATED inline ApproximationRank get_max_rank() const { return field_ptr->get_nb_of_coeffs(); };
-
-  /* \brief get number of field coefficients
+  /** \deprecated Use getId() instead
   */
-  inline ApproximationRank get_nb_of_coeffs() const { return field_ptr->get_nb_of_coeffs(); };
+  DEPRECATED inline const BitFieldId& get_id() const { return this->sFieldPtr->getId(); }
 
+  inline boost::string_ref getNameRef() const { return this->sFieldPtr->getNameRef(); }
 
-  inline const MoFEMField* get_MoFEMField_ptr() const { return field_ptr->get_MoFEMField_ptr(); };
+  /** \deprecated Use getNameRef() instead
+  */
+  DEPRECATED inline boost::string_ref get_name_ref() const { return this->sFieldPtr->getNameRef(); }
+
+  inline std::string getName() const { return this->sFieldPtr->getName(); }
+
+  /** \deprecated Use getName() instead
+  */
+  DEPRECATED inline std::string get_name() const { return this->sFieldPtr->getName(); }
+
+  inline FieldSpace getSpace() const { return this->sFieldPtr->getSpace(); }
+
+  /** \deprecated Use getSpace() instead
+  */
+  DEPRECATED inline FieldSpace get_space() const { return this->sFieldPtr->getSpace(); }
+
+  inline FieldApproximationBase getApproxBase() const { return this->sFieldPtr->getApproxBase(); }
+
+  /** \deprecated Use getApproxBase() instead
+  */
+  DEPRECATED inline FieldApproximationBase get_approx_base() const { return this->sFieldPtr->getApproxBase(); }
+
+  inline FieldCoefficientsNumber getNbOfCoeffs() const { return this->sFieldPtr->getNbOfCoeffs(); }
+
+  /** \deprecated Use getNbOfCoeffs() instead.
+  */
+  DEPRECATED inline FieldCoefficientsNumber get_nb_of_coeffs() const { return this->sFieldPtr->getNbOfCoeffs(); }
+
+  inline unsigned int getBitNumber() const { return this->sFieldPtr->getBitNumber(); }
+
+  /** \deprecated Use getBitNumber() instead.
+  */
+  DEPRECATED inline unsigned int get_bit_number() const { return this->sFieldPtr->getBitNumber(); }
+
+  inline const boost::shared_ptr<T> getFieldPtr() const { return this->sFieldPtr; }
+
 };
 
 /**
  * @relates multi_index_container
- * \brief MoFEMField_multiIndex for MoFEMField
+ * \brief Field_multiIndex for Field
  *
  */
 typedef multi_index_container<
-  MoFEMField,
+  boost::shared_ptr<Field>,
   indexed_by<
     hashed_unique<
-      tag<BitFieldId_mi_tag>, const_mem_fun<MoFEMField,const BitFieldId&,&MoFEMField::get_id>, HashBit<BitFieldId>, EqBit<BitFieldId> >,
+      tag<BitFieldId_mi_tag>, const_mem_fun<Field,const BitFieldId&,&Field::getId>, HashBit<BitFieldId>, EqBit<BitFieldId> >,
     ordered_unique<
-      tag<Meshset_mi_tag>, member<MoFEMField,EntityHandle,&MoFEMField::meshSet> >,
+      tag<Meshset_mi_tag>, member<Field,EntityHandle,&Field::meshSet> >,
     ordered_unique<
-      tag<FieldName_mi_tag>, const_mem_fun<MoFEMField,boost::string_ref,&MoFEMField::get_name_ref> >,
+      tag<FieldName_mi_tag>, const_mem_fun<Field,boost::string_ref,&Field::getNameRef> >,
     ordered_non_unique<
-      tag<BitFieldId_space_mi_tag>, const_mem_fun<MoFEMField,FieldSpace,&MoFEMField::get_space> >
-  > > MoFEMField_multiIndex;
+      tag<BitFieldId_space_mi_tag>, const_mem_fun<Field,FieldSpace,&Field::getSpace> >
+  > > Field_multiIndex;
 
 typedef multi_index_container<
-  const MoFEMField*,
+  boost::shared_ptr<Field>,
   indexed_by<
     ordered_unique<
-      tag<BitFieldId_mi_tag>, const_mem_fun<MoFEMField,const BitFieldId&,&MoFEMField::get_id>, LtBit<BitFieldId>
+      tag<BitFieldId_mi_tag>, const_mem_fun<Field,const BitFieldId&,&Field::getId>, LtBit<BitFieldId>
     >
-> > MoFEMField_multiIndex_view;
+> > Field_multiIndex_view;
 
 /** \brief Set field coordinate system
  * \ingroup ent_multi_indices
   */
-struct MoFEMFieldChangeCoordinateSystem {
-  const CoordSys *csPtr;
-  MoFEMFieldChangeCoordinateSystem(const CoordSys *cs_ptr):
+struct FieldChangeCoordinateSystem {
+  boost::shared_ptr<CoordSys> csPtr;
+  FieldChangeCoordinateSystem(boost::shared_ptr<CoordSys> cs_ptr):
   csPtr(cs_ptr) {
   }
-  void operator()(MoFEMField &e) {
-    e.coordSysPtr = csPtr;
+  void operator()(boost::shared_ptr<Field> &e) {
+    e->coordSysPtr = csPtr;
   }
 };
 

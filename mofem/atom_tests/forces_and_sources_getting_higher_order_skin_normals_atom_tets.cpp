@@ -19,14 +19,6 @@
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
 #include <MoFEM.hpp>
-#include <Projection10NodeCoordsOnField.hpp>
-
-#include <moab/Skinner.hpp>
-
-#include <boost/iostreams/tee.hpp>
-#include <boost/iostreams/stream.hpp>
-#include <fstream>
-#include <iostream>
 
 namespace bio = boost::iostreams;
 using bio::tee_device;
@@ -44,33 +36,37 @@ int main(int argc, char *argv[]) {
   PetscInitialize(&argc,&argv,(char *)0,help);
 
   moab::Core mb_instance;
-  Interface& moab = mb_instance;
+  moab::Interface& moab = mb_instance;
   int rank;
   MPI_Comm_rank(PETSC_COMM_WORLD,&rank);
 
   PetscBool flg = PETSC_TRUE;
   char mesh_file_name[255];
-  ierr = PetscOptionsGetString(PETSC_NULL,"-my_file",mesh_file_name,255,&flg); CHKERRQ(ierr);
+  #if PETSC_VERSION_GE(3,6,4)
+  ierr = PetscOptionsGetString(PETSC_NULL,"","-my_file",mesh_file_name,255,&flg); CHKERRQ(ierr);
+  #else
+  ierr = PetscOptionsGetString(PETSC_NULL,PETSC_NULL,"-my_file",mesh_file_name,255,&flg); CHKERRQ(ierr);
+  #endif
   if(flg != PETSC_TRUE) {
     SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_file (MESH FILE NEEDED)");
   }
 
   //Create MoFEM (Joseph) database
   MoFEM::Core core(moab);
-  FieldInterface& m_field = core;
+  MoFEM::Interface& m_field = core;
 
   ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
   if(pcomm == NULL) pcomm =  new ParallelComm(&moab,PETSC_COMM_WORLD);
 
   const char *option;
   option = "";//"PARALLEL=BCAST;";//;DEBUG_IO";
-  rval = moab.load_file(mesh_file_name, 0, option); CHKERR_PETSC(rval);
+  rval = moab.load_file(mesh_file_name, 0, option); CHKERRQ_MOAB(rval);
 
   //set entitities bit level
   BitRefLevel bit_level0;
   bit_level0.set(0);
   EntityHandle meshset_level0;
-  rval = moab.create_meshset(MESHSET_SET,meshset_level0); CHKERR_PETSC(rval);
+  rval = moab.create_meshset(MESHSET_SET,meshset_level0); CHKERRQ_MOAB(rval);
   ierr = m_field.seed_ref_level_3D(0,bit_level0); CHKERRQ(ierr);
 
   //Fields
@@ -89,7 +85,7 @@ int main(int argc, char *argv[]) {
 
   //set finite elements for problem
   ierr = m_field.modify_problem_add_finite_element("TEST_PROBLEM","TEST_FE"); CHKERRQ(ierr);
-  //set refinment level for problem
+  //set refinement level for problem
   ierr = m_field.modify_problem_ref_level_add_bit("TEST_PROBLEM",bit_level0); CHKERRQ(ierr);
 
   //meshset consisting all entities in mesh
@@ -98,10 +94,10 @@ int main(int argc, char *argv[]) {
   ierr = m_field.add_ents_to_field_by_TETs(root_set,"FIELD1"); CHKERRQ(ierr);
   //add entities to finite element
   Range tets;
-  rval = moab.get_entities_by_type(0,MBTET,tets,false); CHKERR_PETSC(rval);
+  rval = moab.get_entities_by_type(0,MBTET,tets,false); CHKERRQ_MOAB(rval);
   Skinner skin(&m_field.get_moab());
   Range tets_skin;
-  rval = skin.find_skin(0,tets,false,tets_skin); CHKERR(rval);
+  rval = skin.find_skin(0,tets,false,tets_skin); CHKERR_MOAB(rval);
   ierr = m_field.add_ents_to_finite_element_by_TRIs(tets_skin,"TEST_FE"); CHKERRQ(ierr);
 
   //set app. order
@@ -146,19 +142,19 @@ int main(int argc, char *argv[]) {
     DataForcesAndSurcesCore data;
     OpGetCoordsAndNormalsOnFace op;
 
-    typedef tee_device<ostream, ofstream> TeeDevice;
+    typedef tee_device<std::ostream, std::ofstream> TeeDevice;
     typedef stream<TeeDevice> TeeStream;
-    ofstream ofs;
+    std::ofstream ofs;
     TeeDevice my_tee;
     TeeStream my_split;
 
-    ForcesAndSurcesCore_TestFE(FieldInterface &_m_field):
+    ForcesAndSurcesCore_TestFE(MoFEM::Interface &_m_field):
       ForcesAndSurcesCore(_m_field),data(MBTRI),
       op(
         hoCoords_at_GaussPt,nOrmals_at_GaussPt,tAngent1_at_GaussPt,tAngent2_at_GaussPt
       ),
       ofs("forces_and_sources_getting_higher_order_skin_normals_atom.txt"),
-      my_tee(cout,ofs),my_split(my_tee) {};
+      my_tee(std::cout,ofs),my_split(my_tee) {};
 
     PetscErrorCode preProcess() {
       PetscFunctionBegin;
@@ -168,11 +164,13 @@ int main(int argc, char *argv[]) {
     PetscErrorCode operator()() {
       PetscFunctionBegin;
 
-      ierr = getSpacesOnEntities(data); CHKERRQ(ierr);
+      ierr = getSpacesAndBaseOnEntities(data); CHKERRQ(ierr);
 
       ierr = getEdgesSense(data); CHKERRQ(ierr);
-      ierr = getEdgesOrder(data,H1); CHKERRQ(ierr);
-      ierr = getTrisOrder(data,H1); CHKERRQ(ierr);
+      ierr = getEdgesDataOrder(data,H1); CHKERRQ(ierr);
+      ierr = getTrisDataOrder(data,H1); CHKERRQ(ierr);
+      ierr = getEdgesDataOrderSpaceAndBase(data,"FIELD1"); CHKERRQ(ierr);
+      ierr = getTrisDataOrderSpaceAndBase(data,"FIELD1"); CHKERRQ(ierr);
       ierr = getRowNodesIndices(data,"FIELD1"); CHKERRQ(ierr);
       ierr = getEdgesRowIndices(data,"FIELD1"); CHKERRQ(ierr);
       ierr = getTrisRowIndices(data,"FIELD1"); CHKERRQ(ierr);
@@ -180,12 +178,24 @@ int main(int argc, char *argv[]) {
       ierr = getEdgesFieldData(data,"FIELD1"); CHKERRQ(ierr);
       ierr = getTrisFieldData(data,"FIELD1"); CHKERRQ(ierr);
 
-      data.dataOnEntities[MBVERTEX][0].getN().resize(4,3,false);
+      data.dataOnEntities[MBVERTEX][0].getN(NOBASE).resize(4,3,false);
       ierr = ShapeMBTRI(
-        &*data.dataOnEntities[MBVERTEX][0].getN().data().begin(),
+        &*data.dataOnEntities[MBVERTEX][0].getN(NOBASE).data().begin(),
         G_TRI_X4,G_TRI_Y4,4
       ); CHKERRQ(ierr);
-      ierr = shapeTRIFunctions_H1(data,G_TRI_X4,G_TRI_Y4,4); CHKERRQ(ierr);
+
+      MatrixDouble gauss_pts(2,4,false);
+      for(int gg = 0;gg<4;gg++) {
+        gauss_pts(0,gg) = G_TRI_X4[gg];
+        gauss_pts(1,gg) = G_TRI_Y4[gg];
+      }
+
+      ierr = TriPolynomialBase().getValue(
+        gauss_pts,
+        boost::shared_ptr<BaseFunctionCtx>(
+          new EntPolynomialBaseCtx(data,H1,AINSWORTH_COLE_BASE,NOBASE)
+        )
+      ); CHKERRQ(ierr);
 
       nOrmals_at_GaussPt.resize(4,3);
       tAngent1_at_GaussPt.resize(4,3);
@@ -194,17 +204,17 @@ int main(int argc, char *argv[]) {
       try {
         ierr = op.opRhs(data); CHKERRQ(ierr);
         ierr = op.calculateNormals(); CHKERRQ(ierr);
-      } catch (exception& ex) {
-        ostringstream ss;
-        ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__ << endl;
+      } catch (std::exception& ex) {
+        std::ostringstream ss;
+        ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__ << std::endl;
         SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
 
       my_split.precision(3);
-      my_split << "coords: " << hoCoords_at_GaussPt << endl;
-      my_split << "normals: " << nOrmals_at_GaussPt << endl;
-      my_split << "tangent1: " << tAngent1_at_GaussPt << endl;
-      my_split << "tangent2: " << tAngent2_at_GaussPt << endl;
+      my_split << "coords: " << hoCoords_at_GaussPt << std::endl;
+      my_split << "normals: " << nOrmals_at_GaussPt << std::endl;
+      my_split << "tangent1: " << tAngent1_at_GaussPt << std::endl;
+      my_split << "tangent2: " << tAngent2_at_GaussPt << std::endl;
 
       PetscFunctionReturn(0);
     }

@@ -19,6 +19,12 @@
 #ifndef __INCLUDES_HPP__
 #define __INCLUDES_HPP__
 
+//TETHEN
+#ifdef WITH_TETGEN
+  #include <tetgen.h>
+  #undef REAL
+#endif //WITH_TETGEN
+
 //LAPACK
 #ifdef __cplusplus
 extern "C" {
@@ -30,6 +36,10 @@ extern "C" {
 }
 #endif
 
+//STD
+#include <fstream>
+#include <iostream>
+
 //PETSc
 #include <petscsys.h>
 #include <petscvec.h>
@@ -38,6 +48,7 @@ extern "C" {
 #include <petscts.h>
 #include <petscdm.h>
 #include <petscao.h>
+#include <petscis.h>
 
 //STL
 #include <string>
@@ -70,11 +81,20 @@ extern "C" {
 
 #include <boost/numeric/ublas/storage.hpp>
 #include <boost/numeric/ublas/matrix.hpp>
+#include <boost/numeric/ublas/vector.hpp>
 #include <boost/numeric/ublas/matrix_proxy.hpp>
+#include <boost/numeric/ublas/vector_proxy.hpp>
 #include <boost/numeric/ublas/io.hpp>
 
 #include <boost/ptr_container/ptr_vector.hpp>
 #include <boost/ptr_container/ptr_map.hpp>
+#include <boost/scoped_ptr.hpp>
+#include <boost/scoped_array.hpp>
+#include <boost/shared_ptr.hpp>
+
+#include <boost/iostreams/tee.hpp>
+#include <boost/iostreams/stream.hpp>
+#include <boost/format.hpp>
 
 //MOAB
 #include <moab/ParallelComm.hpp>
@@ -83,6 +103,9 @@ extern "C" {
 #include <moab/Range.hpp>
 #include <MBTagConventions.hpp>
 #include <moab/Skinner.hpp>
+#include <moab/AdaptiveKDTree.hpp>
+#include <moab/MeshTopoUtil.hpp>
+#include <moab/ReadUtilIface.hpp>
 
 //Name spaces
 using namespace moab;

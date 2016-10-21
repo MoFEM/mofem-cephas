@@ -14,18 +14,6 @@
 
 #include <MoFEM.hpp>
 
-//#include <DirichletBC.hpp>
-//#include <PostProcOnRefMesh.hpp>
-
-#include <Projection10NodeCoordsOnField.hpp>
-
-#include <boost/iostreams/tee.hpp>
-#include <boost/iostreams/stream.hpp>
-#include <fstream>
-#include <iostream>
-
-#include<moab/Skinner.hpp>
-
 namespace bio = boost::iostreams;
 using bio::tee_device;
 using bio::stream;
@@ -49,32 +37,36 @@ int main(int argc, char *argv[]) {
   PetscInitialize(&argc,&argv,(char *)0,help);
 
   moab::Core mb_instance;
-  Interface& moab = mb_instance;
+  moab::Interface& moab = mb_instance;
   int rank;
   MPI_Comm_rank(PETSC_COMM_WORLD,&rank);
 
   PetscBool flg = PETSC_TRUE;
   char mesh_file_name[255];
-  ierr = PetscOptionsGetString(PETSC_NULL,"-my_file",mesh_file_name,255,&flg); CHKERRQ(ierr);
+  #if PETSC_VERSION_GE(3,6,4)
+  ierr = PetscOptionsGetString(PETSC_NULL,"","-my_file",mesh_file_name,255,&flg); CHKERRQ(ierr);
+  #else
+  ierr = PetscOptionsGetString(PETSC_NULL,PETSC_NULL,"-my_file",mesh_file_name,255,&flg); CHKERRQ(ierr);
+  #endif
   if(flg != PETSC_TRUE) {
     SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_file (MESH FILE NEEDED)");
   }
   const char *option;
   option = "";
-  rval = moab.load_file(mesh_file_name, 0, option); CHKERR_PETSC(rval);
+  rval = moab.load_file(mesh_file_name, 0, option); CHKERRQ_MOAB(rval);
 
   ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
   if(pcomm == NULL) pcomm =  new ParallelComm(&moab,PETSC_COMM_WORLD);
 
   //Create MoFEM (Joseph) database
   MoFEM::Core core(moab);
-  FieldInterface& m_field = core;
+  MoFEM::Interface& m_field = core;
 
   //set entitities bit level
   BitRefLevel bit_level0;
   bit_level0.set(0);
   EntityHandle meshset_level0;
-  rval = moab.create_meshset(MESHSET_SET,meshset_level0); CHKERR_PETSC(rval);
+  rval = moab.create_meshset(MESHSET_SET,meshset_level0); CHKERRQ_MOAB(rval);
   ierr = m_field.seed_ref_level_3D(0,bit_level0); CHKERRQ(ierr);
 
   //Fields
@@ -110,7 +102,7 @@ int main(int argc, char *argv[]) {
   ierr = m_field.modify_problem_add_finite_element("TEST_PROBLEM","SKIN_FE"); CHKERRQ(ierr);
   ierr = m_field.modify_problem_add_finite_element("TEST_PROBLEM","TRI_FE"); CHKERRQ(ierr);
 
-  //set refinment level for problem
+  //set refinement level for problem
   ierr = m_field.modify_problem_ref_level_add_bit("TEST_PROBLEM",bit_level0); CHKERRQ(ierr);
 
   //meshset consisting all entities in mesh
@@ -125,7 +117,7 @@ int main(int argc, char *argv[]) {
   ierr = m_field.get_entities_by_type_and_ref_level(BitRefLevel().set(0),BitRefLevel().set(),MBTET,tets); CHKERRQ(ierr);
   Skinner skin(&moab);
   Range skin_faces; // skin faces from 3d ents
-  rval = skin.find_skin(0,tets,false,skin_faces); CHKERR(rval);
+  rval = skin.find_skin(0,tets,false,skin_faces); CHKERR_MOAB(rval);
   ierr = m_field.add_ents_to_finite_element_by_TRIs(skin_faces,"SKIN_FE"); CHKERRQ(ierr);
 
   Range faces;
@@ -167,18 +159,25 @@ int main(int argc, char *argv[]) {
   //what are ghost nodes, see Petsc Manual
   ierr = m_field.partition_ghost_dofs("TEST_PROBLEM"); CHKERRQ(ierr);
 
-  typedef tee_device<ostream, ofstream> TeeDevice;
+  Vec v;
+  ierr = m_field.VecCreateGhost("TEST_PROBLEM",ROW,&v);
+  ierr = VecSetRandom(v,PETSC_NULL); CHKERRQ(ierr);
+  ierr = m_field.set_local_ghost_vector("TEST_PROBLEM",ROW,v,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  ierr = VecDestroy(&v); CHKERRQ(ierr);
+
+
+  typedef tee_device<std::ostream, std::ofstream> TeeDevice;
   typedef stream<TeeDevice> TeeStream;
-  ofstream ofs("forces_and_sources_hdiv_continuity_check.txt");
-  TeeDevice my_tee(cout, ofs);
+  std::ofstream ofs("forces_and_sources_hdiv_continuity_check.txt");
+  TeeDevice my_tee(std::cout, ofs);
   TeeStream my_split(my_tee);
 
   struct OpTetFluxes: public VolumeElementForcesAndSourcesCore::UserDataOperator {
 
-    FieldInterface &m_field;
+    MoFEM::Interface &m_field;
     Tag tH;
 
-    OpTetFluxes(FieldInterface &m_field,Tag _th):
+    OpTetFluxes(MoFEM::Interface &m_field,Tag _th):
       VolumeElementForcesAndSourcesCore::UserDataOperator("HDIV",UserDataOperator::OPROW),
       m_field(m_field),tH(_th) {}
 
@@ -194,11 +193,13 @@ int main(int argc, char *argv[]) {
 
       if(type == MBTRI) {
 
-        const NumeredMoFEMFiniteElement *mofem_fe = getMoFEMFEPtr();
-        SideNumber_multiIndex &side_table = mofem_fe->get_side_number_table();
-        EntityHandle face = side_table.get<1>().find(boost::make_tuple(type,side))->ent;
+        const NumeredEntFiniteElement *mofem_fe = getNumeredEntFiniteElementPtr();
+        SideNumber_multiIndex &side_table = mofem_fe->getSideNumberTable();
+        EntityHandle face = side_table.get<1>().find(boost::make_tuple(type,side))->get()->ent;
+        int sense = side_table.get<1>().find(boost::make_tuple(type,side))->get()->sense;
 
-        int sense = side_table.get<1>().find(boost::make_tuple(type,side))->sense;
+        // cerr << data.getHcurlN() << endl;
+
 
         ublas::vector<FieldData> t(3,0);
         int dd = 0;
@@ -206,18 +207,16 @@ int main(int argc, char *argv[]) {
         for(;dd<nb_dofs;dd++) {
           int ddd = 0;
           for(;ddd<3;ddd++) {
-            t(ddd) += data.getHdivN(side)(dd,ddd);
+            t(ddd) += data.getHdivN(side)(dd,ddd)*data.getFieldData()[dd];
           }
         }
 
         double *t_ptr;
-        rval = m_field.get_moab().tag_get_by_ptr(tH,&face,1,(const void **)&t_ptr); CHKERR_PETSC(rval);
+        rval = m_field.get_moab().tag_get_by_ptr(tH,&face,1,(const void **)&t_ptr); CHKERRQ_MOAB(rval);
         dd = 0;
         for(;dd<3;dd++) {
           t_ptr[dd] += sense*t[dd];
         }
-
-
 
       }
 
@@ -228,7 +227,8 @@ int main(int argc, char *argv[]) {
 
   struct MyTetFE: public VolumeElementForcesAndSourcesCore {
 
-    MyTetFE(FieldInterface &m_field): VolumeElementForcesAndSourcesCore(m_field) {}
+    MyTetFE(MoFEM::Interface &m_field):
+    VolumeElementForcesAndSourcesCore(m_field) {}
     int getRule(int order) { return -1; };
 
     ublas::matrix<double> N_tri;
@@ -237,25 +237,25 @@ int main(int argc, char *argv[]) {
 
       try {
 
-	N_tri.resize(1,3);
-	ierr = ShapeMBTRI(&N_tri(0,0),G_TRI_X1,G_TRI_Y1,1); CHKERRQ(ierr);
+        N_tri.resize(1,3);
+        ierr = ShapeMBTRI(&N_tri(0,0),G_TRI_X1,G_TRI_Y1,1); CHKERRQ(ierr);
 
-	gaussPts.resize(4,4);
-	int ff = 0;
-	for(;ff<4;ff++) {
-	  int dd = 0;
-	  for(;dd<3;dd++) {
-	    gaussPts(dd,ff) = cblas_ddot(3,&N_tri(0,0),1,&face_coords[ff][dd],3);
-	  }
-	  gaussPts(3,ff) = G_TRI_W1[0];
-	}
+        gaussPts.resize(4,4);
+        int ff = 0;
+        for(;ff<4;ff++) {
+          int dd = 0;
+          for(;dd<3;dd++) {
+            gaussPts(dd,ff) = cblas_ddot(3,&N_tri(0,0),1,&face_coords[ff][dd],3);
+          }
+          gaussPts(3,ff) = G_TRI_W1[0];
+        }
 
-	//cerr << gaussPts << endl;
+        //std::cerr << gaussPts << std::endl;
 
-      } catch (exception& ex) {
-	ostringstream ss;
-	ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
-	SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
+      } catch (std::exception& ex) {
+        std::ostringstream ss;
+        ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
+        SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
       }
 
       PetscFunctionReturn(0);
@@ -266,11 +266,11 @@ int main(int argc, char *argv[]) {
 
   struct OpFacesSkinFluxes: public FaceElementForcesAndSourcesCore::UserDataOperator {
 
-    FieldInterface &m_field;
+    MoFEM::Interface &m_field;
     Tag tH1,tH2;
     TeeStream &mySplit;
 
-    OpFacesSkinFluxes(FieldInterface &m_field,Tag _th1,Tag _th2,TeeStream &my_split):
+    OpFacesSkinFluxes(MoFEM::Interface &m_field,Tag _th1,Tag _th2,TeeStream &my_split):
       FaceElementForcesAndSourcesCore::UserDataOperator("HDIV",UserDataOperator::OPROW),
       m_field(m_field),tH1(_th1),tH2(_th2),mySplit(my_split) {}
 
@@ -284,27 +284,38 @@ int main(int argc, char *argv[]) {
 
       if(type != MBTRI) PetscFunctionReturn(0);
 
-      EntityHandle face = getMoFEMFEPtr()->get_ent();
+      EntityHandle face = getNumeredEntFiniteElementPtr()->getEnt();
 
       double *t_ptr;
-      rval = m_field.get_moab().tag_get_by_ptr(tH1,&face,1,(const void **)&t_ptr); CHKERR_PETSC(rval);
+      rval = m_field.get_moab().tag_get_by_ptr(tH1,&face,1,(const void **)&t_ptr); CHKERRQ_MOAB(rval);
       double *tn_ptr;
-      rval = m_field.get_moab().tag_get_by_ptr(tH2,&face,1,(const void **)&tn_ptr); CHKERR_PETSC(rval);
+      rval = m_field.get_moab().tag_get_by_ptr(tH2,&face,1,(const void **)&tn_ptr); CHKERRQ_MOAB(rval);
 
-      *tn_ptr = getNormals_at_GaussPt()(0,0)*t_ptr[0]+getNormals_at_GaussPt()(0,1)*t_ptr[1]+getNormals_at_GaussPt()(0,2)*t_ptr[2];
+      *tn_ptr = getNormalsAtGaussPt()(0,0)*t_ptr[0]+getNormalsAtGaussPt()(0,1)*t_ptr[1]+getNormalsAtGaussPt()(0,2)*t_ptr[2];
 
       int nb_dofs = data.getHdivN().size2()/3;
       int dd = 0;
       for(;dd<nb_dofs;dd++) {
         *tn_ptr +=
-        -getNormals_at_GaussPt()(0,0)*data.getHdivN()(0,3*dd+0)
-        -getNormals_at_GaussPt()(0,1)*data.getHdivN()(0,3*dd+1)
-        -getNormals_at_GaussPt()(0,2)*data.getHdivN()(0,3*dd+2);
+        -getNormalsAtGaussPt()(0,0)*data.getHdivN()(0,3*dd+0)*data.getFieldData()[dd]
+        -getNormalsAtGaussPt()(0,1)*data.getHdivN()(0,3*dd+1)*data.getFieldData()[dd]
+        -getNormalsAtGaussPt()(0,2)*data.getHdivN()(0,3*dd+2)*data.getFieldData()[dd];
+      }
+
+      const double eps = 1e-8;
+      if(fabs(*tn_ptr)>eps) {
+        SETERRQ1(
+          PETSC_COMM_SELF,
+          MOFEM_ATOM_TEST_INVALID,
+          "HDiv continuity failed %6.4e",
+          *tn_ptr
+        );
       }
 
       mySplit.precision(5);
 
-      mySplit << face << " " << std::fixed << fabs(*tn_ptr) << endl;
+
+      mySplit << face << " " /*<< std::fixed*/ << fabs(*tn_ptr) << std::endl;
 
       PetscFunctionReturn(0);
     }
@@ -313,11 +324,11 @@ int main(int argc, char *argv[]) {
 
   struct OpFacesFluxes: public FaceElementForcesAndSourcesCore::UserDataOperator {
 
-    FieldInterface &m_field;
+    MoFEM::Interface &m_field;
     Tag tH1,tH2;
     TeeStream &mySplit;
 
-    OpFacesFluxes(FieldInterface &m_field,Tag _th1,Tag _th2,TeeStream &my_split):
+    OpFacesFluxes(MoFEM::Interface &m_field,Tag _th1,Tag _th2,TeeStream &my_split):
       FaceElementForcesAndSourcesCore::UserDataOperator("HDIV",UserDataOperator::OPROW),
       m_field(m_field),tH1(_th1),tH2(_th2),mySplit(my_split) {}
 
@@ -331,18 +342,28 @@ int main(int argc, char *argv[]) {
 
       if(type != MBTRI) PetscFunctionReturn(0);
 
-      EntityHandle face = getMoFEMFEPtr()->get_ent();
+      EntityHandle face = getNumeredEntFiniteElementPtr()->getEnt();
 
       double *t_ptr;
-      rval = m_field.get_moab().tag_get_by_ptr(tH1,&face,1,(const void **)&t_ptr); CHKERR_PETSC(rval);
+      rval = m_field.get_moab().tag_get_by_ptr(tH1,&face,1,(const void **)&t_ptr); CHKERRQ_MOAB(rval);
       double *tn_ptr;
-      rval = m_field.get_moab().tag_get_by_ptr(tH2,&face,1,(const void **)&tn_ptr); CHKERR_PETSC(rval);
+      rval = m_field.get_moab().tag_get_by_ptr(tH2,&face,1,(const void **)&tn_ptr); CHKERRQ_MOAB(rval);
 
-      *tn_ptr = getNormals_at_GaussPt()(0,0)*t_ptr[0]+getNormals_at_GaussPt()(0,1)*t_ptr[1]+getNormals_at_GaussPt()(0,2)*t_ptr[2];
+      *tn_ptr = getNormalsAtGaussPt()(0,0)*t_ptr[0]+getNormalsAtGaussPt()(0,1)*t_ptr[1]+getNormalsAtGaussPt()(0,2)*t_ptr[2];
+
+      const double eps = 1e-8;
+      if(fabs(*tn_ptr)>eps) {
+        SETERRQ1(
+          PETSC_COMM_SELF,
+          MOFEM_ATOM_TEST_INVALID,
+          "HDiv continuity failed %6.4e",
+          *tn_ptr
+        );
+      }
 
       mySplit.precision(5);
 
-      mySplit << face << " " << std::fixed << fabs(*tn_ptr) << endl;
+      mySplit << face << " " /*<< std::fixed*/ << fabs(*tn_ptr) << std::endl;
 
       PetscFunctionReturn(0);
     }
@@ -351,7 +372,7 @@ int main(int argc, char *argv[]) {
 
   struct MyTriFE: public FaceElementForcesAndSourcesCore {
 
-    MyTriFE(FieldInterface &m_field): FaceElementForcesAndSourcesCore(m_field) {}
+    MyTriFE(MoFEM::Interface &m_field): FaceElementForcesAndSourcesCore(m_field) {}
     int getRule(int order) { return -1; };
 
     PetscErrorCode setGaussPts(int order) {
@@ -374,17 +395,17 @@ int main(int argc, char *argv[]) {
 
   Tag th1;
   double def_val[] = {0,0,0};
-  rval = moab.tag_get_handle("T",3,MB_TYPE_DOUBLE,th1,MB_TAG_CREAT|MB_TAG_SPARSE,&def_val); CHKERR_PETSC(rval);
+  rval = moab.tag_get_handle("T",3,MB_TYPE_DOUBLE,th1,MB_TAG_CREAT|MB_TAG_SPARSE,&def_val); CHKERRQ_MOAB(rval);
   tet_fe.getOpPtrVector().push_back(new OpTetFluxes(m_field,th1));
 
   Tag th2;
-  rval = moab.tag_get_handle("TN",1,MB_TYPE_DOUBLE,th2,MB_TAG_CREAT|MB_TAG_SPARSE,&def_val); CHKERR_PETSC(rval);
+  rval = moab.tag_get_handle("TN",1,MB_TYPE_DOUBLE,th2,MB_TAG_CREAT|MB_TAG_SPARSE,&def_val); CHKERRQ_MOAB(rval);
   tri_fe.getOpPtrVector().push_back(new OpFacesFluxes(m_field,th1,th2,my_split));
   skin_fe.getOpPtrVector().push_back(new OpFacesSkinFluxes(m_field,th1,th2,my_split));
 
   for(Range::iterator fit = faces.begin();fit!=faces.end();fit++) {
-    rval = moab.tag_set_data(th1,&*fit,1,&def_val); CHKERR_PETSC(rval);
-    rval = moab.tag_set_data(th2,&*fit,1,&def_val); CHKERR_PETSC(rval);
+    rval = moab.tag_set_data(th1,&*fit,1,&def_val); CHKERRQ_MOAB(rval);
+    rval = moab.tag_set_data(th2,&*fit,1,&def_val); CHKERRQ_MOAB(rval);
   }
 
   ierr = m_field.loop_finite_elements("TEST_PROBLEM","TET_FE",tet_fe);  CHKERRQ(ierr);
@@ -394,9 +415,9 @@ int main(int argc, char *argv[]) {
   ierr = m_field.loop_finite_elements("TEST_PROBLEM","SKIN_FE",skin_fe);  CHKERRQ(ierr);
 
   EntityHandle meshset;
-  rval = moab.create_meshset(MESHSET_SET,meshset); CHKERR_PETSC(rval);
+  rval = moab.create_meshset(MESHSET_SET,meshset); CHKERRQ_MOAB(rval);
   ierr = m_field.get_entities_by_type_and_ref_level(BitRefLevel().set(0),BitRefLevel().set(),MBTRI,meshset); CHKERRQ(ierr);
-  rval = moab.write_file("out.vtk","VTK","",&meshset,1); CHKERR_PETSC(rval);
+  rval = moab.write_file("out.vtk","VTK","",&meshset,1); CHKERRQ_MOAB(rval);
 
   ierr = PetscFinalize(); CHKERRQ(ierr);
 }

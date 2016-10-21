@@ -23,12 +23,12 @@
 #ifndef __VOLUME_CALCULATION_HPP__
 #define __VOLUME_CALCULATION_HPP__
 
-struct VolumeCalculation: public VolumeElementForcesAndSourcesCore::UserDataOperator {
+struct VolumeCalculation: public MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator {
 
   Vec volumeVec;
 
-  VolumeCalculation(const string &field_name,Vec volume_vec):
-  VolumeElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROW),
+  VolumeCalculation(const std::string &field_name,Vec volume_vec):
+  MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROW),
   volumeVec(volume_vec) {
   }
 

@@ -18,29 +18,12 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
-#include <boost/iostreams/tee.hpp>
-#include <boost/iostreams/stream.hpp>
-#include <fstream>
-#include <iostream>
+#include <BasicFiniteElements.hpp>
+using namespace MoFEM;
 
 namespace bio = boost::iostreams;
 using bio::tee_device;
 using bio::stream;
-
-#include <MoFEM.hpp>
-#include <Projection10NodeCoordsOnField.hpp>
-using namespace MoFEM;
-
-
-#include <moab/Skinner.hpp>
-
-#include <boost/iostreams/tee.hpp>
-#include <boost/iostreams/stream.hpp>
-#include <fstream>
-#include <iostream>
-
-#include <MethodForForceScaling.hpp>
-#include <FluidPressure.hpp>
 
 static char help[] = "...\n\n";
 
@@ -52,28 +35,28 @@ int main(int argc, char *argv[]) {
   PetscInitialize(&argc,&argv,(char *)0,help);
 
   moab::Core mb_instance;
-  Interface& moab = mb_instance;
+  moab::Interface& moab = mb_instance;
 
   PetscBool flg = PETSC_TRUE;
   char mesh_file_name[255];
-  ierr = PetscOptionsGetString(PETSC_NULL,"-my_file",mesh_file_name,255,&flg); CHKERRQ(ierr);
+  ierr = PetscOptionsGetString(PETSC_NULL,PETSC_NULL,"-my_file",mesh_file_name,255,&flg); CHKERRQ(ierr);
   if(flg != PETSC_TRUE) {
     SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_file (MESH FILE NEEDED)");
   }
 
   const char *option;
   option = "";//"PARALLEL=BCAST;";//;DEBUG_IO";
-  rval = moab.load_file(mesh_file_name, 0, option); CHKERR_PETSC(rval);
+  rval = moab.load_file(mesh_file_name, 0, option); CHKERRQ_MOAB(rval);
 
   //Create MoFEM (Joseph) database
   MoFEM::Core core(moab);
-  FieldInterface& m_field = core;
+  MoFEM::Interface& m_field = core;
 
   //set entitities bit level
   BitRefLevel bit_level0;
   bit_level0.set(0);
   EntityHandle meshset_level0;
-  rval = moab.create_meshset(MESHSET_SET,meshset_level0); CHKERR_PETSC(rval);
+  rval = moab.create_meshset(MESHSET_SET,meshset_level0); CHKERRQ_MOAB(rval);
   ierr = m_field.seed_ref_level_3D(0,bit_level0); CHKERRQ(ierr);
 
   //Definitions
@@ -105,8 +88,8 @@ int main(int argc, char *argv[]) {
   ///add probelem which will be solved, could be more than one problem
   //operating on some subset of defined approximatons spces
   ierr = m_field.add_problem("TEST_PROBLEM"); CHKERRQ(ierr);
-  //mesh could have several refinment levels which share some subset of entities between them.
-  //below defines on which set of entities (on refinment level 0) build approximation spaces for TEST_PROBLEM
+  //mesh could have several Refinement levels which share some subset of entities between them.
+  //below defines on which set of entities (on Refinement level 0) build approximation spaces for TEST_PROBLEM
   ierr = m_field.modify_problem_ref_level_add_bit("TEST_PROBLEM",bit_level0); CHKERRQ(ierr);
 
   //add finite element to test problem
@@ -141,26 +124,36 @@ int main(int argc, char *argv[]) {
 
   //ierr = VecView(F,PETSC_VIEWER_STDOUT_WORLD); CHKERRQ(ierr);
 
-  PetscViewer viewer;
-  ierr = PetscViewerASCIIOpen(PETSC_COMM_WORLD,"fluid_pressure_element.txt",&viewer); CHKERRQ(ierr);
-  ierr = VecChop(F,1e-4); CHKERRQ(ierr);
-  ierr = VecView(F,viewer); CHKERRQ(ierr);
-  ierr = PetscViewerDestroy(&viewer); CHKERRQ(ierr);
+  // PetscViewer viewer;
+  // ierr = PetscViewerASCIIOpen(PETSC_COMM_WORLD,"fluid_pressure_element.txt",&viewer); CHKERRQ(ierr);
+  // ierr = VecChop(F,1e-4); CHKERRQ(ierr);
+  // ierr = VecView(F,viewer); CHKERRQ(ierr);
+  // ierr = PetscViewerDestroy(&viewer); CHKERRQ(ierr);
 
   double sum = 0;
   ierr = VecSum(F,&sum); CHKERRQ(ierr);
-  ierr = PetscPrintf(PETSC_COMM_WORLD,"sum  = %4.3f\n",sum); CHKERRQ(ierr);
+  ierr = PetscPrintf(PETSC_COMM_WORLD,"sum  = %4.3e\n",sum); CHKERRQ(ierr);
+  if(fabs(sum-1.0)>1e-8) {
+    SETERRQ(PETSC_COMM_WORLD,MOFEM_ATOM_TEST_INVALID,"Failed to pass test");
+  }
+  double fnorm;
+  ierr = VecNorm(F,NORM_2,&fnorm); CHKERRQ(ierr);
+  ierr = PetscPrintf(PETSC_COMM_WORLD,"fnorm  = %9.8e\n",fnorm); CHKERRQ(ierr);
+  if(fabs(fnorm-6.23059402e-01)>1e-6) {
+    SETERRQ(PETSC_COMM_WORLD,MOFEM_ATOM_TEST_INVALID,"Failed to pass test");
+  }
 
-  // map<EntityHandle,ublas::vector<double> > tags_vals;
+
+  // std::map<EntityHandle,ublas::vector<double> > tags_vals;
   // for(_IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(m_field,"DISPLACEMENT",dof)) {
-  //   tags_vals[dof->get_ent()].resize(3);
-  //   tags_vals[dof->get_ent()][dof->get_dof_coeff_idx()] = dof->get_FieldData();
+  //   tags_vals[dof->getEnt()].resize(3);
+  //   tags_vals[dof->getEnt()][dof->getDofCoeffIdx()] = dof->getFieldData();
   // }
-  // vector<EntityHandle> ents;
+  // std::vector<EntityHandle> ents;
   // ents.resize(tags_vals.size());
-  // vector<double> vals(3*tags_vals.size());
+  // std::vector<double> vals(3*tags_vals.size());
   // int idx = 0;
-  // for(map<EntityHandle,ublas::vector<double> >::iterator mit = tags_vals.begin();
+  // for(std::map<EntityHandle,ublas::vector<double> >::iterator mit = tags_vals.begin();
   //   mit!=tags_vals.end();mit++,idx++) {
   //   ents[idx] = mit->first;
   //   vals[3*idx + 0] = mit->second[0];
@@ -170,14 +163,14 @@ int main(int argc, char *argv[]) {
   //
   // double def_VAL[3] = {0,0,0};
   // Tag th_vals;
-  // rval = moab.tag_get_handle("FLUID_PRESURE_FORCES",3,MB_TYPE_DOUBLE,th_vals,MB_TAG_CREAT|MB_TAG_SPARSE,def_VAL); CHKERR_PETSC(rval);
-  // rval = moab.tag_set_data(th_vals,&ents[0],ents.size(),&vals[0]); CHKERR_PETSC(rval);
+  // rval = moab.tag_get_handle("FLUID_PRESURE_FORCES",3,MB_TYPE_DOUBLE,th_vals,MB_TAG_CREAT|MB_TAG_SPARSE,def_VAL); CHKERRQ_MOAB(rval);
+  // rval = moab.tag_set_data(th_vals,&ents[0],ents.size(),&vals[0]); CHKERRQ_MOAB(rval);
   //
   // EntityHandle out_meshset;
-  // rval = moab.create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
+  // rval = moab.create_meshset(MESHSET_SET,out_meshset); CHKERRQ_MOAB(rval);
   // ierr = m_field.get_problem_finite_elements_entities("TEST_PROBLEM","FLUID_PRESSURE_FE",out_meshset); CHKERRQ(ierr);
-  // rval = moab.write_file("out.vtk","VTK","",&out_meshset,1); CHKERR_PETSC(rval);
-  // rval = moab.delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
+  // rval = moab.write_file("out.vtk","VTK","",&out_meshset,1); CHKERRQ_MOAB(rval);
+  // rval = moab.delete_entities(&out_meshset,1); CHKERRQ_MOAB(rval);
 
   //destroy vector
   ierr = VecDestroy(&F); CHKERRQ(ierr);

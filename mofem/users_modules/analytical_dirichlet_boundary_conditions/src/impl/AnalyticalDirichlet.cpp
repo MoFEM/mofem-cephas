@@ -27,7 +27,7 @@ using namespace MoFEM;
 #include <boost/numeric/ublas/vector_proxy.hpp>
 #include <AnalyticalDirichlet.hpp>
 
-AnalyticalDirichletBC::ApproxField::OpHoCoord::OpHoCoord(const string field_name,ublas::matrix<double> &ho_coords):
+AnalyticalDirichletBC::ApproxField::OpHoCoord::OpHoCoord(const std::string field_name,ublas::matrix<double> &ho_coords):
 FaceElementForcesAndSourcesCore::UserDataOperator(field_name,ForcesAndSurcesCore::UserDataOperator::OPROW),
 hoCoords(ho_coords) {}
 
@@ -53,15 +53,15 @@ PetscErrorCode AnalyticalDirichletBC::ApproxField::OpHoCoord::doWork(
     }
 
   } catch (const std::exception& ex) {
-    ostringstream ss;
-    ss << "throw in method: " << ex.what() << endl;
+    std::ostringstream ss;
+    ss << "throw in method: " << ex.what() << std::endl;
     SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
   }
 
   PetscFunctionReturn(0);
 }
 
-AnalyticalDirichletBC::ApproxField::OpLhs::OpLhs(const string field_name,ublas::matrix<double> &ho_coords):
+AnalyticalDirichletBC::ApproxField::OpLhs::OpLhs(const std::string field_name,ublas::matrix<double> &ho_coords):
 FaceElementForcesAndSourcesCore::UserDataOperator(field_name,ForcesAndSurcesCore::UserDataOperator::OPROWCOL),
 hoCoords(ho_coords)
 {
@@ -81,9 +81,9 @@ PetscErrorCode AnalyticalDirichletBC::ApproxField::OpLhs::doWork(
 
   PetscErrorCode ierr;
 
-  const FENumeredDofMoFEMEntity *dof_ptr;
-  ierr = getMoFEMFEPtr()->get_row_dofs_by_petsc_gloabl_dof_idx(row_data.getIndices()[0],&dof_ptr); CHKERRQ(ierr);
-  int rank = dof_ptr->get_nb_of_coeffs();
+  const FENumeredDofEntity *dof_ptr;
+  ierr = getNumeredEntFiniteElementPtr()->getRowDofsByPetscGlobalDofIdx(row_data.getIndices()[0],&dof_ptr); CHKERRQ(ierr);
+  int rank = dof_ptr->getNbOfCoeffs();
 
   int nb_row_dofs = row_data.getIndices().size()/rank;
   int nb_col_dofs = col_data.getIndices().size()/rank;
@@ -98,7 +98,7 @@ PetscErrorCode AnalyticalDirichletBC::ApproxField::OpLhs::doWork(
     if(hoCoords.size1() == row_data.getN().size1()) {
 
       // higher order element
-      double area = norm_2(getNormals_at_GaussPt(gg))*0.5;
+      double area = norm_2(getNormalsAtGaussPt(gg))*0.5;
       w *= area;
 
     } else {
@@ -187,7 +187,7 @@ PetscErrorCode AnalyticalDirichletBC::ApproxField::OpLhs::doWork(
   }
 
   AnalyticalDirichletBC::DirichletBC::DirichletBC(
-    FieldInterface& m_field,const string &field,Mat A,Vec X,Vec F
+    MoFEM::Interface& m_field,const std::string &field,Mat A,Vec X,Vec F
   ):
   DisplacementBCFEMethodPreAndPostProc(m_field,field,A,X,F),
   tRis_ptr(NULL)
@@ -196,7 +196,7 @@ PetscErrorCode AnalyticalDirichletBC::ApproxField::OpLhs::doWork(
   }
 
   AnalyticalDirichletBC::DirichletBC::DirichletBC(
-    FieldInterface& m_field,const string &field
+    MoFEM::Interface& m_field,const std::string &field
   ):
   DisplacementBCFEMethodPreAndPostProc(m_field,field),
   tRis_ptr(NULL) {
@@ -219,18 +219,18 @@ PetscErrorCode AnalyticalDirichletBC::ApproxField::OpLhs::doWork(
     PetscFunctionBegin;
     ParallelComm* pcomm = ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
     Range ents;
-    rval = mField.get_moab().get_connectivity(tris,ents,true); CHKERR_PETSC(rval);
-    ierr = mField.get_moab().get_adjacencies(tris,1,false,ents,Interface::UNION); CHKERRQ(ierr);
+    rval = mField.get_moab().get_connectivity(tris,ents,true); CHKERRQ_MOAB(rval);
+    ierr = mField.get_moab().get_adjacencies(tris,1,false,ents,moab::Interface::UNION); CHKERRQ(ierr);
     ents.merge(tris);
     for(Range::iterator eit = ents.begin();eit!=ents.end();eit++) {
       for(_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_NAME_ENT_PART_FOR_LOOP_(problemPtr,fieldName,*eit,pcomm->rank(),dof)) {
-        mapZeroRows[dof->get_petsc_gloabl_dof_idx()] = dof->get_FieldData();
+        mapZeroRows[dof->get()->getPetscGlobalDofIdx()] = dof->get()->getFieldData();
       }
     }
     dofsIndices.resize(mapZeroRows.size());
     dofsValues.resize(mapZeroRows.size());
     int ii = 0;
-    map<DofIdx,FieldData>::iterator mit = mapZeroRows.begin();
+    std::map<DofIdx,FieldData>::iterator mit = mapZeroRows.begin();
     for(;mit!=mapZeroRows.end();mit++,ii++) {
       dofsIndices[ii] = mit->first;
       dofsValues[ii] = mit->second;
@@ -238,10 +238,10 @@ PetscErrorCode AnalyticalDirichletBC::ApproxField::OpLhs::doWork(
     PetscFunctionReturn(0);
   }
 
-  AnalyticalDirichletBC::AnalyticalDirichletBC(FieldInterface& m_field): approxField(m_field) {};
+  AnalyticalDirichletBC::AnalyticalDirichletBC(MoFEM::Interface& m_field): approxField(m_field) {};
 
   PetscErrorCode AnalyticalDirichletBC::initializeProblem(
-    FieldInterface &m_field,string fe,string field,Range& tris,string nodals_positions
+    MoFEM::Interface &m_field,string fe,string field,Range& tris,string nodals_positions
   ) {
     PetscFunctionBegin;
     PetscErrorCode ierr;
@@ -257,7 +257,7 @@ PetscErrorCode AnalyticalDirichletBC::ApproxField::OpLhs::doWork(
   }
 
   PetscErrorCode AnalyticalDirichletBC::setProblem(
-    FieldInterface &m_field,string problem
+    MoFEM::Interface &m_field,string problem
   ) {
     PetscFunctionBegin;
     PetscErrorCode ierr;
@@ -280,7 +280,7 @@ PetscErrorCode AnalyticalDirichletBC::ApproxField::OpLhs::doWork(
   }
 
   PetscErrorCode AnalyticalDirichletBC::solveProblem(
-    FieldInterface &m_field,string problem,string fe,DirichletBC &bc,Range &tris
+    MoFEM::Interface &m_field,string problem,string fe,DirichletBC &bc,Range &tris
   ) {
     PetscFunctionBegin;
     PetscErrorCode ierr;

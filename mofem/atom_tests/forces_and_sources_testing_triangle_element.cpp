@@ -14,14 +14,6 @@
 
 
 #include <MoFEM.hpp>
-#include <Projection10NodeCoordsOnField.hpp>
-
-#include <moab/Skinner.hpp>
-
-#include <boost/iostreams/tee.hpp>
-#include <boost/iostreams/stream.hpp>
-#include <fstream>
-#include <iostream>
 
 namespace bio = boost::iostreams;
 using bio::tee_device;
@@ -39,33 +31,37 @@ int main(int argc, char *argv[]) {
   PetscInitialize(&argc,&argv,(char *)0,help);
 
   moab::Core mb_instance;
-  Interface& moab = mb_instance;
+  moab::Interface& moab = mb_instance;
   int rank;
   MPI_Comm_rank(PETSC_COMM_WORLD,&rank);
 
   PetscBool flg = PETSC_TRUE;
   char mesh_file_name[255];
-  ierr = PetscOptionsGetString(PETSC_NULL,"-my_file",mesh_file_name,255,&flg); CHKERRQ(ierr);
+  #if PETSC_VERSION_GE(3,6,4)
+  ierr = PetscOptionsGetString(PETSC_NULL,"","-my_file",mesh_file_name,255,&flg); CHKERRQ(ierr);
+  #else
+  ierr = PetscOptionsGetString(PETSC_NULL,PETSC_NULL,"-my_file",mesh_file_name,255,&flg); CHKERRQ(ierr);
+  #endif
   if(flg != PETSC_TRUE) {
     SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_file (MESH FILE NEEDED)");
   }
 
   //Create MoFEM (Joseph) database
   MoFEM::Core core(moab);
-  FieldInterface& m_field = core;
+  MoFEM::Interface& m_field = core;
 
   ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
   if(pcomm == NULL) pcomm =  new ParallelComm(&moab,PETSC_COMM_WORLD);
 
   const char *option;
   option = "";//"PARALLEL=BCAST;";//;DEBUG_IO";
-  rval = moab.load_file(mesh_file_name, 0, option); CHKERR_PETSC(rval);
+  rval = moab.load_file(mesh_file_name, 0, option); CHKERRQ_MOAB(rval);
 
   //set entitities bit level
   BitRefLevel bit_level0;
   bit_level0.set(0);
   EntityHandle meshset_level0;
-  rval = moab.create_meshset(MESHSET_SET,meshset_level0); CHKERR_PETSC(rval);
+  rval = moab.create_meshset(MESHSET_SET,meshset_level0); CHKERRQ_MOAB(rval);
   ierr = m_field.seed_ref_level_3D(0,bit_level0); CHKERRQ(ierr);
 
   //Fields
@@ -76,12 +72,12 @@ int main(int argc, char *argv[]) {
     // Creating and adding no field entities.
     const double coords[] = {0,0,0};
     EntityHandle no_field_vertex;
-    rval = m_field.get_moab().create_vertex(coords,no_field_vertex); CHKERR_PETSC(rval);
+    rval = m_field.get_moab().create_vertex(coords,no_field_vertex); CHKERRQ_MOAB(rval);
     Range range_no_field_vertex;
     range_no_field_vertex.insert(no_field_vertex);
     ierr = m_field.seed_ref_level(range_no_field_vertex,BitRefLevel().set()); CHKERRQ(ierr);
     EntityHandle meshset = m_field.get_field_meshset("FIELD2");
-    rval = m_field.get_moab().add_entities(meshset,range_no_field_vertex); CHKERR_PETSC(rval);
+    rval = m_field.get_moab().add_entities(meshset,range_no_field_vertex); CHKERRQ_MOAB(rval);
   }
 
   //FE
@@ -104,7 +100,7 @@ int main(int argc, char *argv[]) {
   //set finite elements for problem
   ierr = m_field.modify_problem_add_finite_element("TEST_PROBLEM","TEST_FE1"); CHKERRQ(ierr);
   ierr = m_field.modify_problem_add_finite_element("TEST_PROBLEM","TEST_FE2"); CHKERRQ(ierr);
-  //set refinment level for problem
+  //set refinement level for problem
   ierr = m_field.modify_problem_ref_level_add_bit("TEST_PROBLEM",bit_level0); CHKERRQ(ierr);
 
   //meshset consisting all entities in mesh
@@ -113,10 +109,10 @@ int main(int argc, char *argv[]) {
   ierr = m_field.add_ents_to_field_by_TETs(root_set,"FIELD1"); CHKERRQ(ierr);
   //add entities to finite element
   Range tets;
-  rval = moab.get_entities_by_type(0,MBTET,tets,false); CHKERR_PETSC(rval);
+  rval = moab.get_entities_by_type(0,MBTET,tets,false); CHKERRQ_MOAB(rval);
   Skinner skin(&m_field.get_moab());
   Range tets_skin;
-  rval = skin.find_skin(0,tets,false,tets_skin); CHKERR(rval);
+  rval = skin.find_skin(0,tets,false,tets_skin); CHKERR_MOAB(rval);
   ierr = m_field.add_ents_to_finite_element_by_TRIs(tets_skin,"TEST_FE1"); CHKERRQ(ierr);
   ierr = m_field.add_ents_to_finite_element_by_TRIs(tets_skin,"TEST_FE2"); CHKERRQ(ierr);
 
@@ -150,11 +146,11 @@ int main(int argc, char *argv[]) {
   //what are ghost nodes, see Petsc Manual
   ierr = m_field.partition_ghost_dofs("TEST_PROBLEM"); CHKERRQ(ierr);
 
-  typedef tee_device<ostream, ofstream> TeeDevice;
+  typedef tee_device<std::ostream, std::ofstream> TeeDevice;
   typedef stream<TeeDevice> TeeStream;
 
-  ofstream ofs("forces_and_sources_testing_triangle_element.txt");
-  TeeDevice my_tee(cout, ofs);
+  std::ofstream ofs("forces_and_sources_testing_triangle_element.txt");
+  TeeDevice my_tee(std::cout, ofs);
   TeeStream my_split(my_tee);
 
   struct MyOp1: public FaceElementForcesAndSourcesCore::UserDataOperator {
@@ -178,18 +174,18 @@ int main(int argc, char *argv[]) {
         *it = fabs(*it)<eps ? 0.0 : *it;
       }
 
-      my_split << "NH1" << endl;
-      my_split << "side: " << side << " type: " << type << endl;
-      my_split << "data: " << data << endl;
-      my_split << setprecision(3) << getCoords() << endl;
-      my_split << setprecision(3) << getCoordsAtGaussPts() << endl;
-      my_split << setprecision(3) << getArea() << endl;
-      my_split << setprecision(3) << getNormal() << endl;
-      my_split << setprecision(3) << getHoCoordsAtGaussPts() << endl;
-      my_split << setprecision(3) << getNormals_at_GaussPt() << endl;
-      my_split << setprecision(3) << getTangent1_at_GaussPt() << endl;
-      my_split << setprecision(3) << getTangent2_at_GaussPt() << endl;
-      my_split << endl;
+      my_split << "NH1" << std::endl;
+      my_split << "side: " << side << " type: " << type << std::endl;
+      my_split << "data: " << data << std::endl;
+      my_split << std::setprecision(3) << getCoords() << std::endl;
+      my_split << std::setprecision(3) << getCoordsAtGaussPts() << std::endl;
+      my_split << std::setprecision(3) << getArea() << std::endl;
+      my_split << std::setprecision(3) << getNormal() << std::endl;
+      my_split << std::setprecision(3) << getHoCoordsAtGaussPts() << std::endl;
+      my_split << std::setprecision(3) << getNormalsAtGaussPt() << std::endl;
+      my_split << std::setprecision(3) << getTangent1AtGaussPt() << std::endl;
+      my_split << std::setprecision(3) << getTangent2AtGaussPt() << std::endl;
+      my_split << std::endl;
       PetscFunctionReturn(0);
     }
 
@@ -201,13 +197,12 @@ int main(int argc, char *argv[]) {
     ) {
 
       PetscFunctionBegin;
-      my_split << "NH1NH1" << endl;
-      my_split << "row side: " << row_side << " row_type: " << row_type << endl;
-      my_split << row_data << endl;
-      my_split << "NH1NH1" << endl;
-      my_split << "col side: " << col_side << " col_type: " << col_type << endl;
-      my_split << row_data << endl;
-
+      my_split << "NH1NH1" << std::endl;
+      my_split << "row side: " << row_side << " row_type: " << row_type << std::endl;
+      my_split << row_data << std::endl;
+      my_split << "NH1NH1" << std::endl;
+      my_split << "col side: " << col_side << " col_type: " << col_type << std::endl;
+      my_split << row_data << std::endl;
 
       PetscErrorCode ierr;
       VectorInt row_indices,col_indices;
@@ -224,21 +219,21 @@ int main(int argc, char *argv[]) {
 
       for(unsigned int rr = 0;rr<row_indices.size();rr++) {
         if(row_indices[rr] != row_data.getIndices()[rr]) {
-          cerr << row_indices << endl;
-          cerr << row_data.getIndices() << endl;
+          std::cerr << row_indices << std::endl;
+          std::cerr << row_data.getIndices() << std::endl;
           SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"row inconsistency");
         }
       }
 
       for(unsigned int cc = 0;cc<col_indices.size();cc++) {
         if(col_indices[cc] != col_data.getIndices()[cc]) {
-          cerr << col_indices << endl;
-          cerr << col_data.getIndices() << endl;
+          std::cerr << col_indices << std::endl;
+          std::cerr << col_data.getIndices() << std::endl;
           SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"row inconsistency");
         }
       }
 
-      my_split << row_data << endl;
+      my_split << row_data << std::endl;
 
       PetscFunctionReturn(0);
     }
@@ -260,9 +255,9 @@ int main(int argc, char *argv[]) {
 
       if(type != MBENTITYSET) PetscFunctionReturn(0);
 
-      my_split << "NOFIELD" << endl;
-      my_split << "side: " << side << " type: " << type << endl;
-      my_split << data << endl;
+      my_split << "NOFIELD" << std::endl;
+      my_split << "side: " << side << " type: " << type << std::endl;
+      my_split << data << std::endl;
       PetscFunctionReturn(0);
     }
 
@@ -277,11 +272,11 @@ int main(int argc, char *argv[]) {
 
       if(row_type != MBENTITYSET) PetscFunctionReturn(0);
 
-      my_split << "NOFILEDH1" << endl;
-      my_split << "row side: " << row_side << " row_type: " << row_type << endl;
-      my_split << row_data << endl;
-      my_split << "col side: " << col_side << " col_type: " << col_type << endl;
-      my_split << col_data << endl;
+      my_split << "NOFILEDH1" << std::endl;
+      my_split << "row side: " << row_side << " row_type: " << row_type << std::endl;
+      my_split << row_data << std::endl;
+      my_split << "col side: " << col_side << " col_type: " << col_type << std::endl;
+      my_split << col_data << std::endl;
 
       PetscFunctionReturn(0);
     }

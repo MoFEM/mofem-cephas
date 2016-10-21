@@ -1,5 +1,5 @@
 /** \file BitLevelCoupler.hpp
- * \brief BitLevelCoupler interface 
+ * \brief BitLevelCoupler interface
 
  * Is used to couple bit levels to enable easy and efficient projection between
  * levels. It is not assumed that print children relation between entities,
@@ -23,18 +23,20 @@ namespace MoFEM {
 
 static const MOFEMuuid IDD_MOFEMBitLevelCoupler = MOFEMuuid( BitIntefaceId(BITLEVELCOUPLER_INTERFACE) );
 
-/** \brief Interface set parent for verrtices, edges, triangles and tetrahedrons. 
+/** \brief Interface set parent for verrtices, edges, triangles and tetrahedrons.
   * \ingroup mofem
   *
   */
-struct BitLevelCouplerInterface: public FieldUnknownInterface {
+struct BitLevelCouplerInterface: public UnknownInterface {
 
-  PetscErrorCode queryInterface(const MOFEMuuid& uuid, FieldUnknownInterface** iface);
+  PetscErrorCode queryInterface(const MOFEMuuid& uuid, UnknownInterface** iface);
 
   MoFEM::Core& cOre;
   bool vErify;	///< by defualt is switched off, swith it on to verify if existing parent is equal to parent set by interface
 
-  BitLevelCouplerInterface(MoFEM::Core& core): cOre(core),vErify(false) {};
+  BitLevelCouplerInterface(const MoFEM::Core& core):
+  cOre(const_cast<MoFEM::Core&>(core)),
+  vErify(false) {}
 
   /** \brief build adaptive kd-tree
     */
@@ -46,23 +48,23 @@ struct BitLevelCouplerInterface: public FieldUnknownInterface {
 
   /** \brief get parent entity
 
-    * Use kd-tree to find tetrahedral or other volume element. 
-  
+    * Use kd-tree to find tetrahedral or other volume element.
+
     \param coordinate
-    \param parent returned parent entity    
+    \param parent returned parent entity
     \param iter_tol tolerance for convergence of point search
     \param inside_tol tolerance for inside element calculation
     \param throw_error if parent can not be found
-    \param verbose level 
+    \param verbose level
 
     */
   PetscErrorCode getParent(const double *coords,EntityHandle &parent,
     bool tet_only = false,const double iter_tol = 1.0e-10,const double inside_tol = 1.0e-6,int verb = 0);
 
-  /** \brief finding parents for vertices 
+  /** \brief finding parents for vertices
     *
-    * Use kd-tree to find tetrahedral or other volume element. 
-  
+    * Use kd-tree to find tetrahedral or other volume element.
+
     \param parent_level bit level of parents
 
     \param children list of vertices for which parents are being set
@@ -72,13 +74,13 @@ struct BitLevelCouplerInterface: public FieldUnknownInterface {
     BEHAVIOUR.
 
     \param iter_tol tolerance for convergence of point search
-    
+
     \param inside_tol tolerance for inside element calculation
 
     \param throw_error if parent can not be found
-  
-    \param verbose level 
-   
+
+    \param verbose level
+
     */
   PetscErrorCode buidlAdjacenciesVerticesOnTets(const BitRefLevel &parent_level,Range &children,
     bool vertex_elements = false,
@@ -101,12 +103,12 @@ struct BitLevelCouplerInterface: public FieldUnknownInterface {
     BEHAVIOUR.
 
     \param iter_tol tolerance for convergence of point search
-    
+
     \param inside_tol tolerance for inside element calculation
 
     \param throw_error if parent can not be found
-  
-    \param verbose level 
+
+    \param verbose level
 
     */
   PetscErrorCode buidlAdjacenciesEdgesFacesVolumes(
@@ -115,14 +117,14 @@ struct BitLevelCouplerInterface: public FieldUnknownInterface {
   /** \brief reset parent entities
 
     This is needed for testing.
-  
+
     */
   PetscErrorCode resetParents(Range &children,bool elements = true,int verb = 0);
 
   private:
 
-  PetscErrorCode chanegParent(RefMoFEMEntity_multiIndex::iterator it,EntityHandle parent,bool element);
-  PetscErrorCode verifyParent(RefMoFEMEntity_multiIndex::iterator it,EntityHandle parent);
+  PetscErrorCode chanegParent(RefEntity_multiIndex::iterator it,EntityHandle parent,bool element);
+  PetscErrorCode verifyParent(RefEntity_multiIndex::iterator it,EntityHandle parent);
 
   double cOords[12+3];
   double diffN[12],N[4];

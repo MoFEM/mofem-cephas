@@ -24,11 +24,11 @@ using namespace MoFEM;
 
 using namespace boost::numeric;
 
-NodalForce::MyFE::MyFE(FieldInterface &m_field): VertexElementForcesAndSourcesCore(m_field) {
+NodalForce::MyFE::MyFE(MoFEM::Interface &m_field): VertexElementForcesAndSourcesCore(m_field) {
 
 }
 
-NodalForce::OpNodalForce::OpNodalForce(const string field_name,Vec _F,bCForce &data,
+NodalForce::OpNodalForce::OpNodalForce(const std::string field_name,Vec _F,bCForce &data,
   boost::ptr_vector<MethodForForceScaling> &methods_op,bool use_snes_f):
   VertexElementForcesAndSourcesCore::UserDataOperator(field_name,ForcesAndSurcesCore::UserDataOperator::OPROW),
   F(_F),
@@ -40,14 +40,14 @@ NodalForce::OpNodalForce::OpNodalForce(const string field_name,Vec _F,bCForce &d
     PetscFunctionBegin;
 
     if(data.getIndices().size()==0) PetscFunctionReturn(0);
-    EntityHandle ent = getMoFEMFEPtr()->get_ent();
+    EntityHandle ent = getNumeredEntFiniteElementPtr()->getEnt();
     if(dAta.nOdes.find(ent)==dAta.nOdes.end()) PetscFunctionReturn(0);
 
     PetscErrorCode ierr;
 
-    const FENumeredDofMoFEMEntity *dof_ptr;
-    ierr = getMoFEMFEPtr()->get_row_dofs_by_petsc_gloabl_dof_idx(data.getIndices()[0],&dof_ptr); CHKERRQ(ierr);
-    int rank = dof_ptr->get_nb_of_coeffs();
+    const FENumeredDofEntity *dof_ptr;
+    ierr = getNumeredEntFiniteElementPtr()->getRowDofsByPetscGlobalDofIdx(data.getIndices()[0],&dof_ptr); CHKERRQ(ierr);
+    int rank = dof_ptr->getNbOfCoeffs();
 
     if(data.getIndices().size()!=(unsigned int)rank) {
       SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
@@ -69,6 +69,16 @@ NodalForce::OpNodalForce::OpNodalForce(const string field_name,Vec _F,bCForce &d
     ierr = MethodForForceScaling::applyScale(getFEMethod(),methodsOp,Nf); CHKERRQ(ierr);
     Vec myF = F;
     if(useSnesF || F == PETSC_NULL) {
+      switch (getFEMethod()->ts_ctx) {
+        case FEMethod::CTX_TSSETIFUNCTION: {
+          const_cast<FEMethod*>(getFEMethod())->snes_ctx = FEMethod::CTX_SNESSETFUNCTION;
+          const_cast<FEMethod*>(getFEMethod())->snes_x = getFEMethod()->ts_u;
+          const_cast<FEMethod*>(getFEMethod())->snes_f = getFEMethod()->ts_F;
+          break;
+        }
+        default:
+        break;
+      }
       myF = getFEMethod()->snes_f;
     }
     ierr = VecSetValues(
@@ -79,29 +89,31 @@ NodalForce::OpNodalForce::OpNodalForce(const string field_name,Vec _F,bCForce &d
     PetscFunctionReturn(0);
   }
 
-  PetscErrorCode NodalForce::addForce(const string field_name,Vec F,int ms_id,bool use_snes_f) {
-    PetscFunctionBegin;
+  PetscErrorCode NodalForce::addForce(const std::string field_name,Vec F,int ms_id,bool use_snes_f) {
     PetscErrorCode ierr;
     ErrorCode rval;
     const CubitMeshSets *cubit_meshset_ptr;
-    ierr = mField.get_cubit_msId(ms_id,NODESET,&cubit_meshset_ptr); CHKERRQ(ierr);
-    ierr = cubit_meshset_ptr->get_bc_data_structure(mapForce[ms_id].data); CHKERRQ(ierr);
-    rval = mField.get_moab().get_entities_by_type(cubit_meshset_ptr->meshset,MBVERTEX,mapForce[ms_id].nOdes,true); CHKERR_PETSC(rval);
+    MeshsetsManager *mmanager_ptr;
+    PetscFunctionBegin;
+    ierr = mField.query_interface(mmanager_ptr); CHKERRQ(ierr);
+    ierr = mmanager_ptr->getCubitMeshsetPtr(ms_id,NODESET,&cubit_meshset_ptr); CHKERRQ(ierr);
+    ierr = cubit_meshset_ptr->getBcDataStructure(mapForce[ms_id].data); CHKERRQ(ierr);
+    rval = mField.get_moab().get_entities_by_type(cubit_meshset_ptr->meshset,MBVERTEX,mapForce[ms_id].nOdes,true); CHKERRQ_MOAB(rval);
     fe.getOpPtrVector().push_back(new OpNodalForce(field_name,F,mapForce[ms_id],methodsOp,use_snes_f));
     PetscFunctionReturn(0);
   }
 
-  MetaNodalForces::TagForceScale::TagForceScale(FieldInterface &m_field): mField(m_field) {
+  MetaNodalForces::TagForceScale::TagForceScale(MoFEM::Interface &m_field): mField(m_field) {
     ErrorCode rval;
     double def_scale = 1.;
     const EntityHandle root_meshset = mField.get_moab().get_root_set();
     rval = mField.get_moab().tag_get_handle("_LoadFactor_Scale_",1,MB_TYPE_DOUBLE,thScale,MB_TAG_CREAT|MB_TAG_EXCL|MB_TAG_MESH,&def_scale);
     if(rval == MB_ALREADY_ALLOCATED) {
-      rval = mField.get_moab().tag_get_by_ptr(thScale,&root_meshset,1,(const void**)&sCale); CHKERR_THROW(rval);
+      rval = mField.get_moab().tag_get_by_ptr(thScale,&root_meshset,1,(const void**)&sCale); MOAB_THROW(rval);
     } else {
-      CHKERR_THROW(rval);
-      rval = mField.get_moab().tag_set_data(thScale,&root_meshset,1,&def_scale); CHKERR_THROW(rval);
-      rval = mField.get_moab().tag_get_by_ptr(thScale,&root_meshset,1,(const void**)&sCale); CHKERR_THROW(rval);
+      MOAB_THROW(rval);
+      rval = mField.get_moab().tag_set_data(thScale,&root_meshset,1,&def_scale); MOAB_THROW(rval);
+      rval = mField.get_moab().tag_get_by_ptr(thScale,&root_meshset,1,(const void**)&sCale); MOAB_THROW(rval);
     }
   }
 

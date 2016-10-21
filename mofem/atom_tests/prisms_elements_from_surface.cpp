@@ -13,12 +13,6 @@
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
 #include <MoFEM.hpp>
-#include <PrismsFromSurfaceInterface.hpp>
-
-#include <boost/iostreams/tee.hpp>
-#include <boost/iostreams/stream.hpp>
-#include <fstream>
-#include <iostream>
 
 namespace bio = boost::iostreams;
 using bio::tee_device;
@@ -39,14 +33,18 @@ int main(int argc, char *argv[]) {
   try {
 
     moab::Core mb_instance;
-    Interface& moab = mb_instance;
+    moab::Interface& moab = mb_instance;
     int rank;
     MPI_Comm_rank(PETSC_COMM_WORLD,&rank);
 
     //Read parameters from line command
     PetscBool flg = PETSC_TRUE;
     char mesh_file_name[255];
-    ierr = PetscOptionsGetString(PETSC_NULL,"-my_file",mesh_file_name,255,&flg); CHKERRQ(ierr);
+    #if PETSC_VERSION_GE(3,6,4)
+    ierr = PetscOptionsGetString(PETSC_NULL,"","-my_file",mesh_file_name,255,&flg); CHKERRQ(ierr);
+    #else
+    ierr = PetscOptionsGetString(PETSC_NULL,PETSC_NULL,"-my_file",mesh_file_name,255,&flg); CHKERRQ(ierr);
+    #endif
     if(flg != PETSC_TRUE) {
       SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_file (MESH FILE NEEDED)");
     }
@@ -54,25 +52,29 @@ int main(int argc, char *argv[]) {
     //Read mesh to MOAB
     const char *option;
     option = "";//"PARALLEL=BCAST;";//;DEBUG_IO";
-    rval = moab.load_file(mesh_file_name, 0, option); CHKERR_PETSC(rval);
+    rval = moab.load_file(mesh_file_name, 0, option); CHKERRQ_MOAB(rval);
     ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
     if(pcomm == NULL) pcomm =  new ParallelComm(&moab,PETSC_COMM_WORLD);
 
     //Create MoFEM (Joseph) databas
     MoFEM::Core core(moab);
-    FieldInterface& m_field = core;
+    MoFEM::Interface& m_field = core;
 
     PrismsFromSurfaceInterface *prisms_from_surface_interface;
     ierr = m_field.query_interface(prisms_from_surface_interface); CHKERRQ(ierr);
 
     Range tris;
-    rval = moab.get_entities_by_type(0,MBTRI,tris,false); CHKERR_PETSC(rval);
+    rval = moab.get_entities_by_type(0,MBTRI,tris,false); CHKERRQ_MOAB(rval);
     Range prisms;
     ierr = prisms_from_surface_interface->createPrisms(tris,prisms); CHKERRQ(ierr);
+    prisms_from_surface_interface->createdVertices.clear();
+    Range add_prims_layer;
+    ierr = prisms_from_surface_interface->createPrismsFromPrisms(prisms,true,add_prims_layer); CHKERRQ(ierr);
+    prisms.merge(add_prims_layer);
 
     EntityHandle meshset;
-    rval = moab.create_meshset(MESHSET_SET,meshset); CHKERR_PETSC(rval);
-    rval = moab.add_entities(meshset,prisms); CHKERR_PETSC(rval);
+    rval = moab.create_meshset(MESHSET_SET|MESHSET_TRACK_OWNER,meshset); CHKERRQ_MOAB(rval);
+    rval = moab.add_entities(meshset,prisms); CHKERRQ_MOAB(rval);
 
     BitRefLevel bit_level0;
     bit_level0.set(0);
@@ -89,10 +91,10 @@ int main(int argc, char *argv[]) {
 
     // ierr = m_field.list_dofs_by_field_name("FIELD1"); CHKERRQ(ierr);
 
-    const DofMoFEMEntity_multiIndex *dofs_ptr;
+    const DofEntity_multiIndex *dofs_ptr;
     ierr = m_field.get_dofs(&dofs_ptr); CHKERRQ(ierr);
     PetscPrintf(PETSC_COMM_WORLD,"dofs_ptr.size() = %d\n",dofs_ptr->size());
-    if(dofs_ptr->size()!=564) {
+    if(dofs_ptr->size()!=887) {
       SETERRQ1(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency 323!=%d",dofs_ptr->size());
     }
 
@@ -101,7 +103,7 @@ int main(int argc, char *argv[]) {
     ierr = m_field.build_fields(10); CHKERRQ(ierr);
 
     PetscPrintf(PETSC_COMM_WORLD,"dofs_ptr.size() = %d\n",dofs_ptr->size());
-    if(dofs_ptr->size()!=724) {
+    if(dofs_ptr->size()!=1207) {
       SETERRQ1(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency 483!=%d",dofs_ptr->size());
     }
 
@@ -109,7 +111,7 @@ int main(int argc, char *argv[]) {
     ierr = m_field.build_fields(); CHKERRQ(ierr);
 
     if(debug) {
-      rval = moab.write_file("prism_mesh.vtk","VTK","",&meshset,1); CHKERR_PETSC(rval);
+      rval = moab.write_file("prism_mesh.vtk","VTK","",&meshset,1); CHKERRQ_MOAB(rval);
     }
 
     //FE
@@ -134,7 +136,7 @@ int main(int argc, char *argv[]) {
 
     //set finite elements for problem
     ierr = m_field.modify_problem_add_finite_element("TEST_PROBLEM","TEST_FE1"); CHKERRQ(ierr);
-    //set refinment level for problem
+    //set refinement level for problem
     ierr = m_field.modify_problem_ref_level_add_bit("TEST_PROBLEM",bit_level0); CHKERRQ(ierr);
 
     //build problem
@@ -145,11 +147,11 @@ int main(int argc, char *argv[]) {
     //what are ghost nodes, see Petsc Manual
     ierr = m_field.partition_ghost_dofs("TEST_PROBLEM"); CHKERRQ(ierr);
 
-    typedef tee_device<ostream, ofstream> TeeDevice;
+    typedef tee_device<std::ostream, std::ofstream> TeeDevice;
     typedef stream<TeeDevice> TeeStream;
 
-    ofstream ofs("prisms_elements_from_surface.txt");
-    TeeDevice my_tee(cout, ofs);
+    std::ofstream ofs("prisms_elements_from_surface.txt");
+    TeeDevice my_tee(std::cout, ofs);
     TeeStream my_split(my_tee);
 
     struct MyOp: public FatPrismElementForcesAndSurcesCore::UserDataOperator {
@@ -179,66 +181,66 @@ int main(int argc, char *argv[]) {
         //   *it = fabs(*it)<eps ? 0.0 : *it;
         // }
         // for(
-        //   ublas::unbounded_array<double>::iterator it = getNormals_at_GaussPtF3().data().begin();
-        //   it!=getNormals_at_GaussPtF3().data().end();it++
+        //   ublas::unbounded_array<double>::iterator it = getNormalsAtGaussPtF3().data().begin();
+        //   it!=getNormalsAtGaussPtF3().data().end();it++
         // ) {
         //   *it = fabs(*it)<eps ? 0.0 : *it;
         // }
         // for(
-        //   ublas::unbounded_array<double>::iterator it = getTangent1_at_GaussPtF3().data().begin();
-        //   it!=getTangent1_at_GaussPtF3().data().end();it++
+        //   ublas::unbounded_array<double>::iterator it = getTangent1AtGaussPtF3().data().begin();
+        //   it!=getTangent1AtGaussPtF3().data().end();it++
         // ) {
         //   *it = fabs(*it)<eps ? 0.0 : *it;
         // }
         // for(
-        //   ublas::unbounded_array<double>::iterator it = getTangent2_at_GaussPtF3().data().begin();
-        //   it!=getTangent2_at_GaussPtF3().data().end();it++
+        //   ublas::unbounded_array<double>::iterator it = getTangent2AtGaussPtF3().data().begin();
+        //   it!=getTangent2AtGaussPtF3().data().end();it++
         // ) {
         //   *it = fabs(*it)<eps ? 0.0 : *it;
         // }
         // for(
-        //   ublas::unbounded_array<double>::iterator it = getNormals_at_GaussPtF4().data().begin();
-        //   it!=getNormals_at_GaussPtF4().data().end();it++
+        //   ublas::unbounded_array<double>::iterator it = getNormalsAtGaussPtF4().data().begin();
+        //   it!=getNormalsAtGaussPtF4().data().end();it++
         // ) {
         //   *it = fabs(*it)<eps ? 0.0 : *it;
         // }
         // for(
-        //   ublas::unbounded_array<double>::iterator it = getTangent1_at_GaussPtF4().data().begin();
-        //   it!=getTangent1_at_GaussPtF4().data().end();it++
+        //   ublas::unbounded_array<double>::iterator it = getTangent1AtGaussPtF4().data().begin();
+        //   it!=getTangent1AtGaussPtF4().data().end();it++
         // ) {
         //   *it = fabs(*it)<eps ? 0.0 : *it;
         // }
         // for(
-        //   ublas::unbounded_array<double>::iterator it = getTangent2_at_GaussPtF4().data().begin();
-        //   it!=getTangent2_at_GaussPtF4().data().end();it++
+        //   ublas::unbounded_array<double>::iterator it = getTangent2AtGaussPtF4().data().begin();
+        //   it!=getTangent2AtGaussPtF4().data().end();it++
         // ) {
         //   *it = fabs(*it)<eps ? 0.0 : *it;
         // }
         //
-        mySplit << "NH1" << endl;
-        mySplit << "side: " << side << " type: " << type << endl;
+        mySplit << "NH1" << std::endl;
+        mySplit << "side: " << side << " type: " << type << std::endl;
         data.getN() *= 1e4;
         data.getDiffN() *= 1e4;
-        mySplit << data << endl;
-        mySplit << "getTroughThicknessDataStructure" << endl;
-        mySplit << getTroughThicknessDataStructure().dataOnEntities[type][side] << endl;
+        mySplit << data << std::endl;
+        mySplit << "getTroughThicknessDataStructure" << std::endl;
+        mySplit << getTroughThicknessDataStructure().dataOnEntities[type][side] << std::endl;
 
-        // mySplit << "integration pts " << getGaussPts() << endl;
-        // mySplit << "coords at integration pts " << getCoordsAtGaussPts() << endl;
-        mySplit << endl << endl;
+        // mySplit << "integration pts " << getGaussPts() << std::endl;
+        // mySplit << "coords at integration pts " << getCoordsAtGaussPts() << std::endl;
+        mySplit << std::endl << std::endl;
 
-        // mySplit << setprecision(3) << getCoords() << endl;
-        // mySplit << setprecision(3) << getCoordsAtGaussPts() << endl;
-        // mySplit << setprecision(3) << getArea(0) << endl;
-        // mySplit << setprecision(3) << getArea(1) << endl;
-        // mySplit << setprecision(3) << "normal F3 " << getNormalF3() << endl;
-        // mySplit << setprecision(3) << "normal F4 " << getNormalF4() << endl;
-        // mySplit << setprecision(3) << "normal at Gauss pt F3 " << getNormals_at_GaussPtF3() << endl;
-        // mySplit << setprecision(3) << getTangent1_at_GaussPtF3() << endl;
-        // mySplit << setprecision(3) << getTangent2_at_GaussPtF3() << endl;
-        // mySplit << setprecision(3) << "normal at Gauss pt F4 " << getNormals_at_GaussPtF4() << endl;
-        // mySplit << setprecision(3) << getTangent1_at_GaussPtF4() << endl;
-        // mySplit << setprecision(3) << getTangent2_at_GaussPtF4() << endl;
+        // mySplit << std::setprecision(3) << getCoords() << std::endl;
+        // mySplit << std::setprecision(3) << getCoordsAtGaussPts() << std::endl;
+        // mySplit << std::setprecision(3) << getArea(0) << std::endl;
+        // mySplit << std::setprecision(3) << getArea(1) << std::endl;
+        // mySplit << std::setprecision(3) << "normal F3 " << getNormalF3() << std::endl;
+        // mySplit << std::setprecision(3) << "normal F4 " << getNormalF4() << std::endl;
+        // mySplit << std::setprecision(3) << "normal at Gauss pt F3 " << getNormalsAtGaussPtF3() << std::endl;
+        // mySplit << std::setprecision(3) << getTangent1AtGaussPtF3() << std::endl;
+        // mySplit << std::setprecision(3) << getTangent2AtGaussPtF3() << std::endl;
+        // mySplit << std::setprecision(3) << "normal at Gauss pt F4 " << getNormalsAtGaussPtF4() << std::endl;
+        // mySplit << std::setprecision(3) << getTangent1AtGaussPtF4() << std::endl;
+        // mySplit << std::setprecision(3) << getTangent2AtGaussPtF4() << std::endl;
         PetscFunctionReturn(0);
       }
 
@@ -252,12 +254,12 @@ int main(int argc, char *argv[]) {
 
         // if(row_data.getFieldData().empty()) PetscFunctionReturn(0);
         //
-        // mySplit << "NH1NH1" << endl;
-        // mySplit << "row side: " << row_side << " row_type: " << row_type << endl;
-        // mySplit << row_data << endl;
-        // mySplit << "NH1NH1" << endl;
-        // mySplit << "col side: " << col_side << " col_type: " << col_type << endl;
-        // mySplit << row_data << endl;
+        // mySplit << "NH1NH1" << std::endl;
+        // mySplit << "row side: " << row_side << " row_type: " << row_type << std::endl;
+        // mySplit << row_data << std::endl;
+        // mySplit << "NH1NH1" << std::endl;
+        // mySplit << "col side: " << col_side << " col_type: " << col_type << std::endl;
+        // mySplit << row_data << std::endl;
 
         PetscFunctionReturn(0);
       }

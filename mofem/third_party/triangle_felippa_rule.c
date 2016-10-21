@@ -1,7 +1,7 @@
 # include <stdlib.h>
 # include <stdio.h>
 # include <time.h>
-# include <string.h>
+# include <std::string.h>
 # include <math.h>
 
 # include "triangle_felippa_rule.h"

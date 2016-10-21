@@ -28,7 +28,6 @@ namespace MoFEM {
   /// MultiIndex Tag for field id
   struct CubitMeshSets_mi_tag {};
   struct CubitMeshSets_mask_meshset_mi_tag {};
-  struct CubitMeshSets_bc_data_mi_tag {};
   struct CubitMeshSets_name {};
   struct Composite_Cubit_msId_And_MeshSetType_mi_tag {};
 
@@ -46,30 +45,29 @@ namespace MoFEM {
     static const bool IamNotPartitioned;
     /// extract dof index from iterator
     template<class IT>
-    static DofIdx get_index(const IT &it) { return it->dof_idx; }
+    static DofIdx get_index(const IT &it) { return (*it)->dof_idx; }
   };
   struct PetscGlobalIdx_mi_tag {
     static const bool IamNotPartitioned;
     /// extract global dof index from iterator
     template<class IT>
-    static DofIdx get_index(const IT &it) { return it->petsc_gloabl_dof_idx; }
+    static DofIdx get_index(const IT &it) { return (*it)->petsc_gloabl_dof_idx; }
   };
   struct PetscLocalIdx_mi_tag {
     static const bool IamNotPartitioned;
     /// extract global dof index from iterator
     template<class IT>
-    static DofIdx get_index(const IT &it) { return it->petsc_local_dof_idx; }
+    static DofIdx get_index(const IT &it) { return (*it)->petsc_local_dof_idx; }
   };
   struct Part_mi_tag {
     static const bool IamNotPartitioned;
     /// extract global dof index from iterator
     template<class IT>
-    static DofIdx get_index(const IT &it) { return it->petsc_gloabl_dof_idx; }
+    static DofIdx get_index(const IT &it) { return (*it)->petsc_gloabl_dof_idx; }
   };
 
   struct Ent_Ent_mi_tag {};
   struct Ent_Owner_mi_tag {};
-  struct Ent_mi_tag2 {};
 
   struct Unique_Ent_mi_tag {};
   struct Unique_FiniteElement_mi_tag {};
@@ -93,7 +91,7 @@ namespace MoFEM {
   struct Composite_mi_tag {};
   struct Composite_Unique_mi_tag {};
   struct Composite_EntType_and_ParentEntType_mi_tag {};
-  struct Composite_Ent_And_ParentEntType_mi_tag {};
+  struct Composite_ParentEnt_And_EntType_mi_tag {};
   struct Composite_ParentEnt_And_BitsOfRefinedEdges_mi_tag {};
   struct Composite_Name_And_Ent_And_EndDofIdx_mi_tag {};
   struct Composite_Name_And_Ent_mi_tag {};

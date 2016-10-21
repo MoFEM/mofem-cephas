@@ -23,16 +23,53 @@ static const MOFEMuuid IDD_MOFEMPrismsFromSurface = MOFEMuuid(BitIntefaceId(PRIS
 /** \brief merge node from two bit levels
   * \ingroup mofem
   */
-struct PrismsFromSurfaceInterface: public FieldUnknownInterface {
+struct PrismsFromSurfaceInterface: public UnknownInterface {
 
-  PetscErrorCode queryInterface(const MOFEMuuid& uuid, FieldUnknownInterface** iface);
+  PetscErrorCode queryInterface(const MOFEMuuid& uuid, UnknownInterface** iface);
 
   MoFEM::Core& cOre;
-  PrismsFromSurfaceInterface(MoFEM::Core& core): cOre(core) {};
+  PrismsFromSurfaceInterface(const MoFEM::Core& core):
+  cOre(const_cast<MoFEM::Core&>(core)) {}
 
-  map<EntityHandle,EntityHandle> createdVertices;
+  std::map<EntityHandle,EntityHandle> createdVertices;
+
+  /**
+   * \brief Make prisms from triangles
+   * @param  ents   Range of triangles
+   * @param  prisms Returned range of prisms
+   * @param  verb   Verbosity level
+   * @return        Error code
+   */
   PetscErrorCode createPrisms(const Range &ents,Range &prisms,int verb = -1);
+
+  /**
+   * \brief Seed prism entities by bit level
+   * @param  prisms Range of entities
+   * @param  bit    BitRefLevel
+   * @param  verb   Verbosity level
+   * @return        Error code
+   */
   PetscErrorCode seedPrismsEntities(Range &prisms,const BitRefLevel &bit,int verb = -1);
+
+  /**
+   * \brief Make prisms by extruding top or bottom prisms
+   * @param  prisms      Input prisms
+   * @param  from_down  Use top or down face, if true from f3
+   * @param  out_prisms  Returned prisms entities
+   * @param  verb        Verbosity level
+   * @return             Error code
+   */
+  PetscErrorCode createPrismsFromPrisms(const Range &prisms,bool from_down,Range &out_prisms,int verb = -1);
+
+
+  /**
+   * Set uniform thickness
+   * @param  prisms   Range of prisms
+   * @param  director3 Displacement of face 3
+   * @param  director4 Displacement of face 4
+   * @return
+   */
+  PetscErrorCode setThickness(const Range &prisms,const double director3[],const double director4[]);
 
 };
 

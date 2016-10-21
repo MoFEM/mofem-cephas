@@ -26,58 +26,54 @@ namespace MoFEM {
  * \brief keeps information about indexed dofs
  * \ingroup dof_multi_indices
 
- \bug active is obsolete and should be removed
-
  */
-struct DofMoFEMEntity: public interface_MoFEMEntity<MoFEMEntity> {
+struct DofEntity: public interface_MoFEMEntity<MoFEMEntity> {
 
-  typedef interface_MoFEMField<MoFEMEntity> interface_type_MoFEMField;
+  typedef interface_Field<MoFEMEntity> interface_type_Field;
   typedef interface_MoFEMEntity<MoFEMEntity> interface_type_MoFEMEntity;
-  typedef interface_RefMoFEMEntity<RefMoFEMEntity> interface_type_RefMoFEMEntity;
+  typedef interface_RefEntity<MoFEMEntity> interface_type_RefEntity;
 
-  static LocalUId get_local_unique_id_calculate(const DofIdx _dof_,const MoFEMEntity *_ent_ptr_) {
-    if(_dof_>=512) THROW_AT_LINE("_dof>=512");
-    LocalUId _uid_ = ((UId)_dof_)|((_ent_ptr_->get_local_unique_id())<<9);
+  static inline GlobalUId getGlobalUniqueIdCalculate(const DofIdx dof,const boost::shared_ptr<MoFEMEntity> ent_ptr) {
+    if(dof>=512) THROW_MESSAGE("_dof>=512");
+    GlobalUId _uid_;
+    _uid_ = ent_ptr->getGlobalUniqueId();
+    _uid_ <<= 9;
+    _uid_ |= (UId)dof;
     return _uid_;
   }
 
-  static GlobalUId get_global_unique_id_calculate(const DofIdx _dof_,const MoFEMEntity *_ent_ptr_) {
-    if(_dof_>=512) THROW_AT_LINE("_dof>=512");
-    GlobalUId _uid_ = ((UId)_dof_)|((_ent_ptr_->get_global_unique_id())<<9);
+
+  static inline ShortId getNonNonuniqueShortId(const DofIdx dof,const boost::shared_ptr<MoFEMEntity> ent_ptr) {
+    if(dof>=512) THROW_MESSAGE("_dof>=512")
+    if(sizeof(ShortId) < sizeof(char)+2) THROW_MESSAGE("sizeof(ShortId)< sizeof(char)+2")
+    const char bit_number = ent_ptr->getBitNumber();
+    ShortId _uid_ = ((ShortId)dof)|(((ShortId)bit_number)<<9);
     return _uid_;
   }
 
-  static ShortId get_non_nonunique_short_id(const DofIdx _dof_,const MoFEMEntity *_ent_ptr_) {
-    if(_dof_>=512) THROW_AT_LINE("_dof>=512")
-    if(sizeof(ShortId) < sizeof(char)+2) THROW_AT_LINE("sizeof(ShortId)< sizeof(char)+2")
-    char bit_number = _ent_ptr_->get_bit_number();
-    ShortId _uid_ = ((ShortId)_dof_)|(((ShortId)bit_number)<<9);
-    return _uid_;
-  }
-
-  DofIdx dof;
   bool active;
-  LocalUId local_uid;
-  GlobalUId global_uid;
-  ShortId short_uid;
+  int dof;
+  // ShortId short_uid;
 
-  DofMoFEMEntity(
-    const MoFEMEntity *entity_ptr,
+  DofEntity(
+    const boost::shared_ptr<MoFEMEntity> entity_ptr,
     const ApproximationOrder dof_order,
-    const ApproximationRank dof_rank,
-    const DofIdx _dof
+    const FieldCoefficientsNumber dof_rank,
+    const DofIdx dof
   );
 
-  inline DofIdx get_EntDofIdx() const { return dof; }
-  inline FieldData& get_FieldData() const { return const_cast<FieldData&>(field_ptr->tag_FieldData[dof]); }
+  inline DofIdx getEntDofIdx() const { return dof; }
 
-  /** \brief unique dof id
+  inline FieldData& getFieldData() const { return const_cast<FieldData&>(this->sPtr->tag_FieldData[getEntDofIdx()]); }
+
+  /** \brief Get unique dof id
     */
-  inline LocalUId get_local_unique_id() const { return local_uid; };
-  inline LocalUId get_local_unique_id_calculate() const { return get_local_unique_id_calculate(dof,get_MoFEMEntity_ptr()); }
+  inline GlobalUId getGlobalUniqueId() const { return getGlobalUniqueIdCalculate(getEntDofIdx(),getMoFEMEntityPtr()); }
 
-  inline GlobalUId get_global_unique_id() const { return global_uid; };
-  inline GlobalUId get_global_unique_id_calculate() const { return get_global_unique_id_calculate(dof,get_MoFEMEntity_ptr()); }
+  /** \brief Get entity unique dof id
+    */
+  inline GlobalUId getEntGlobalUniqueId() const { return this->sPtr->getGlobalUniqueId(); }
+
 
   /** \brief get short uid it is unique in combination with entity handle
     *
@@ -94,471 +90,505 @@ struct DofMoFEMEntity: public interface_MoFEMEntity<MoFEMEntity> {
     * reading those data using different MoAB instances.
     *
     */
-  inline ShortId get_non_nonunique_short_id() const  { return short_uid; }
-  inline ShortId get_non_nonunique_short_id_calculate() const { return get_non_nonunique_short_id(dof,get_MoFEMEntity_ptr()); }
-  inline EntityHandle get_ent() const { return field_ptr->get_ent(); };
-  //inline EntityType get_ent_type() const { return field_ptr->get_ent_type(); };
-  inline ApproximationOrder get_dof_order() const {
-    return ((ApproximationOrder*)field_ptr->tag_dof_order_data)[dof];
-  };
+  inline ShortId getNonNonuniqueShortId() const  { return getNonNonuniqueShortId(dof,getMoFEMEntityPtr()); }
 
-  DEPRECATED inline ApproximationRank get_dof_rank() const {
-    return ((ApproximationRank*)field_ptr->tag_dof_rank_data)[dof];
-  };
+  inline EntityHandle getEnt() const { return this->sPtr->getEnt(); }
+
+  inline ApproximationOrder getDofOrder() const {
+    return ((ApproximationOrder*)this->sPtr->tag_dof_order_data)[getEntDofIdx()];
+  }
 
   /** \brief Get dof coefficient
   */
-  inline ApproximationRank get_dof_coeff_idx() const {
-    return ((ApproximationRank*)field_ptr->tag_dof_rank_data)[dof];
-  };
+  inline FieldCoefficientsNumber getDofCoeffIdx() const {
+    return ((FieldCoefficientsNumber*)this->sPtr->tag_dof_rank_data)[getEntDofIdx()];
+  }
 
   //check if node is active
-  inline int get_active() const { return active ? 1 : 0; }
-  friend ostream& operator<<(ostream& os,const DofMoFEMEntity& e);
+  inline char getActive() const { return active ? 1 : 0; }
 
-  inline const DofMoFEMEntity* get_DofMoFEMEntity_ptr() const { return const_cast<DofMoFEMEntity*>(this); };
+  friend std::ostream& operator<<(std::ostream& os,const DofEntity& e);
 
 };
 
 /**
- * \brief interface to DofMoFEMEntitys
+ * \brief interface to DofEntitys
  * \ingroup dof_multi_indices
  */
 template <typename T>
-struct interface_DofMoFEMEntity: public interface_MoFEMEntity<T> {
-  interface_DofMoFEMEntity(const T *_ptr): interface_MoFEMEntity<T>(_ptr) {};
-  inline LocalUId get_local_unique_id() const { return interface_MoFEMEntity<T>::field_ptr->get_local_unique_id(); }
-  inline GlobalUId get_global_unique_id() const { return interface_MoFEMEntity<T>::field_ptr->get_global_unique_id(); }
-  inline ShortId get_non_nonunique_short_id() const { return interface_MoFEMEntity<T>::field_ptr->get_non_nonunique_short_id(); }
-  inline DofIdx get_EntDofIdx() const { return interface_MoFEMEntity<T>::field_ptr->get_EntDofIdx(); }
-  inline FieldData& get_FieldData() const { return interface_MoFEMEntity<T>::field_ptr->get_FieldData(); }
-  inline EntityHandle get_ent() const { return interface_MoFEMEntity<T>::field_ptr->get_ent(); };
-  inline ApproximationOrder get_dof_order() const { return interface_MoFEMEntity<T>::field_ptr->get_dof_order(); };
+struct interface_DofEntity: public interface_MoFEMEntity<T> {
 
-  DEPRECATED inline ApproximationRank get_dof_rank() const {
-    return interface_MoFEMEntity<T>::field_ptr->get_dof_coeff_idx();
-  };
+  interface_DofEntity(const boost::shared_ptr<T> sptr):
+  interface_MoFEMEntity<T>(sptr) {
+  }
 
-  inline ApproximationRank get_dof_coeff_idx() const {
-    return interface_MoFEMEntity<T>::field_ptr->get_dof_coeff_idx();
-  };
+  inline const GlobalUId getGlobalUniqueId() const { return this->sPtr->getGlobalUniqueId(); }
 
-  inline int get_active() const { return interface_MoFEMEntity<T>::field_ptr->get_active(); }
-  inline const DofMoFEMEntity* get_DofMoFEMEntity_ptr() const {
-    return interface_MoFEMEntity<T>::field_ptr->get_DofMoFEMEntity_ptr();
-  };
+  inline const GlobalUId getEntGlobalUniqueId() const { return this->sPtr->getEntGlobalUniqueId(); }
+
+  inline ShortId getNonNonuniqueShortId() const { return this->sPtr->getNonNonuniqueShortId(); }
+
+  inline DofIdx getEntDofIdx() const { return this->sPtr->getEntDofIdx(); }
+
+  inline FieldData& getFieldData() const { return this->sPtr->getFieldData(); }
+
+  inline EntityHandle getEnt() const { return this->sPtr->getEnt(); };
+
+  inline ApproximationOrder getDofOrder() const { return this->sPtr->getDofOrder(); };
+
+  inline FieldCoefficientsNumber getDofCoeffIdx() const {
+    return this->sPtr->getDofCoeffIdx();
+  }
+
+  inline char getActive() const { return this->sPtr->getActive(); }
+
+  inline const boost::shared_ptr<DofEntity> getDofEntityPtr() const {
+    return this->sPtr;
+  }
+
+  inline const boost::shared_ptr<MoFEMEntity> getMoFEMEntityPtr() const {
+    return this->sPtr->getMoFEMEntityPtr();
+  }
+
 };
 
 /**
  * \brief keeps information about indexed dofs for the problem
  * \ingroup dof_multi_indices
  */
-struct NumeredDofMoFEMEntity: public interface_DofMoFEMEntity<DofMoFEMEntity> {
-  typedef interface_MoFEMField<DofMoFEMEntity> interface_type_MoFEMField;
-  typedef interface_MoFEMEntity<DofMoFEMEntity> interface_type_MoFEMEntity;
-  typedef interface_DofMoFEMEntity<DofMoFEMEntity> interface_type_DofMoFEMEntity;
+struct NumeredDofEntity: public interface_DofEntity<DofEntity> {
+  typedef interface_Field<DofEntity> interface_type_Field;
+  typedef interface_MoFEMEntity<DofEntity> interface_type_MoFEMEntity;
+  typedef interface_DofEntity<DofEntity> interface_type_DofEntity;
   DofIdx dof_idx;
   DofIdx petsc_gloabl_dof_idx;
   DofIdx petsc_local_dof_idx;
   unsigned int part;
-  inline DofIdx get_dof_idx() const { return dof_idx; }
-  inline DofIdx get_petsc_gloabl_dof_idx() const { return petsc_gloabl_dof_idx;  }
-  inline DofIdx get_petsc_local_dof_idx() const { return petsc_local_dof_idx; }
-  inline unsigned int get_part() const { return part;  }
-  inline bool get_has_local_index() const { return !signbit(petsc_local_dof_idx); }
-  NumeredDofMoFEMEntity(const DofMoFEMEntity* _DofMoFEMEntity_ptr);
-  inline const NumeredDofMoFEMEntity* get_NumeredDofMoFEMEntity_ptr() const { return this; };
-  inline bool operator<(const NumeredDofMoFEMEntity& _dof) const { return (UId)get_global_unique_id()<(UId)_dof.get_global_unique_id(); }
-  friend ostream& operator<<(ostream& os,const NumeredDofMoFEMEntity& e);
+
+  inline DofIdx getDofIdx() const { return dof_idx; }
+
+  inline DofIdx getPetscGlobalDofIdx() const { return petsc_gloabl_dof_idx;  }
+
+  inline DofIdx getPetscLocalDofIdx() const { return petsc_local_dof_idx; }
+
+  inline unsigned int getPart() const { return part;  }
+
+  inline bool getHasLocalIndex() const { return !std::signbit(petsc_local_dof_idx); }
+
+  NumeredDofEntity(const boost::shared_ptr<DofEntity> _DofEntity_ptr);
+  inline bool operator<(const NumeredDofEntity& _dof) const { return (UId)getGlobalUniqueId()<(UId)_dof.getGlobalUniqueId(); }
+  friend std::ostream& operator<<(std::ostream& os,const NumeredDofEntity& e);
 };
 
 /**
- * \brief interface to NumeredDofMoFEMEntity
+ * \brief interface to NumeredDofEntity
  * \ingroup dof_multi_indices
  */
 template <typename T>
-struct interface_NumeredDofMoFEMEntity: public interface_DofMoFEMEntity<T> {
-  interface_NumeredDofMoFEMEntity(const T *_ptr): interface_DofMoFEMEntity<T>(_ptr) {};
-  inline DofIdx get_dof_idx() const { return interface_DofMoFEMEntity<T>::field_ptr->get_dof_idx(); }
-  inline DofIdx get_petsc_gloabl_dof_idx() const { return interface_DofMoFEMEntity<T>::field_ptr->get_petsc_gloabl_dof_idx();  }
-  inline DofIdx get_petsc_local_dof_idx() const { return interface_DofMoFEMEntity<T>::field_ptr->get_petsc_local_dof_idx(); }
-  inline unsigned int get_part() const { return interface_DofMoFEMEntity<T>::field_ptr->get_part();  }
-  inline bool get_has_local_index() const { return interface_DofMoFEMEntity<T>::field_ptr->get_has_local_index(); }
-  inline const NumeredDofMoFEMEntity* get_NumeredDofMoFEMEntity_ptr() const { return interface_DofMoFEMEntity<T>::field_ptr->get_NumeredDofMoFEMEntity_ptr(); };
+struct interface_NumeredDofEntity: public interface_DofEntity<T> {
+
+  interface_NumeredDofEntity(const boost::shared_ptr<T> sptr): interface_DofEntity<T>(sptr) {};
+
+  inline DofIdx getDofIdx() const { return this->sPtr->getDofIdx(); }
+
+  inline DofIdx getPetscGlobalDofIdx() const { return this->sPtr->getPetscGlobalDofIdx();  }
+
+  inline DofIdx getPetscLocalDofIdx() const { return this->sPtr->getPetscLocalDofIdx(); }
+
+  inline unsigned int getPart() const { return this->sPtr->getPart();  }
+
+  inline bool getHasLocalIndex() const { return this->sPtr->getHasLocalIndex(); }
+
+  inline boost::shared_ptr<NumeredDofEntity> getNumeredDofEntityPtr() const { return this->sPtr; };
+
 };
 
 /**
  * \brief keeps basic information about indexed dofs for the finite element
  */
-struct BaseFEDofMoFEMEntity {
-  BaseFEDofMoFEMEntity(SideNumber *_side_number_ptr): side_number_ptr(_side_number_ptr) {};
-  SideNumber *side_number_ptr;
+struct BaseFEDofEntity {
+  BaseFEDofEntity(boost::shared_ptr<SideNumber> side_number_ptr):
+  sideNumberPtr(side_number_ptr) {};
+  boost::shared_ptr<SideNumber> sideNumberPtr;
 };
 
 /**
  * \brief keeps information about indexed dofs for the finite element
  * \ingroup dof_multi_indices
  */
-struct FEDofMoFEMEntity: public BaseFEDofMoFEMEntity,interface_DofMoFEMEntity<DofMoFEMEntity> {
-  typedef interface_MoFEMField<DofMoFEMEntity> interface_type_MoFEMField;
-  typedef interface_DofMoFEMEntity<DofMoFEMEntity> interface_type_DofMoFEMEntity;
-  typedef interface_RefMoFEMEntity<RefMoFEMEntity> interface_type_RefMoFEMEntity;
-  FEDofMoFEMEntity(
-    SideNumber *_side_number_ptr,
-    const DofMoFEMEntity *_DofMoFEMEntity_ptr);
-  FEDofMoFEMEntity(boost::tuple<SideNumber *,const DofMoFEMEntity *> t);
-  friend ostream& operator<<(ostream& os,const FEDofMoFEMEntity& e);
+struct FEDofEntity: public BaseFEDofEntity,interface_DofEntity<DofEntity> {
+  typedef interface_Field<DofEntity> interface_type_Field;
+  typedef interface_DofEntity<DofEntity> interface_type_DofEntity;
+  typedef interface_RefEntity<DofEntity> interface_type_RefEntity;
+  FEDofEntity(
+    boost::shared_ptr<SideNumber> side_number_ptr,
+    const boost::shared_ptr<DofEntity> dof_ptr
+  );
+  FEDofEntity(
+    boost::tuple<boost::shared_ptr<SideNumber>,const boost::shared_ptr<DofEntity> > t
+  );
+  friend std::ostream& operator<<(std::ostream& os,const FEDofEntity& e);
 };
 
 /**
  * \brief keeps information about indexed dofs for the finite element
  * \ingroup dof_multi_indices
  */
-struct FENumeredDofMoFEMEntity: public BaseFEDofMoFEMEntity,interface_NumeredDofMoFEMEntity<NumeredDofMoFEMEntity> {
-  typedef interface_MoFEMField<NumeredDofMoFEMEntity> interface_type_MoFEMField;
-  typedef interface_DofMoFEMEntity<NumeredDofMoFEMEntity> interface_type_DofMoFEMEntity;
-  typedef interface_RefMoFEMEntity<RefMoFEMEntity> interface_type_RefMoFEMEntity;
-  typedef interface_NumeredDofMoFEMEntity<NumeredDofMoFEMEntity> interface_type_NumeredDofMoFEMEntity;
-  FENumeredDofMoFEMEntity(
-    SideNumber *_side_number_ptr,
-    const NumeredDofMoFEMEntity *_NumeredDofMoFEMEntity_ptr);
-  FENumeredDofMoFEMEntity(
-    boost::tuple<SideNumber *,const NumeredDofMoFEMEntity *> t);
-  friend ostream& operator<<(ostream& os,const FENumeredDofMoFEMEntity& e);
-};
+ struct FENumeredDofEntity:
+ public
+ BaseFEDofEntity,
+ interface_NumeredDofEntity<NumeredDofEntity> {
+   typedef interface_Field<NumeredDofEntity> interface_type_Field;
+   typedef interface_DofEntity<NumeredDofEntity> interface_type_DofEntity;
+   typedef interface_RefEntity<NumeredDofEntity> interface_type_RefEntity;
+   typedef interface_NumeredDofEntity<NumeredDofEntity> interface_type_NumeredDofEntity;
+   FENumeredDofEntity(
+     boost::shared_ptr<SideNumber> side_number_ptr,
+     const boost::shared_ptr<NumeredDofEntity> dof_ptr
+   );
+   FENumeredDofEntity(
+     boost::tuple<boost::shared_ptr<SideNumber>,const boost::shared_ptr<NumeredDofEntity> > t
+   );
+   friend std::ostream& operator<<(std::ostream& os,const FENumeredDofEntity& e);
+ };
 
 /**
  * @relates multi_index_container
- * \brief MultiIndex container keeps DofMoFEMEntity
+ * \brief MultiIndex container keeps DofEntity
  * \ingroup dof_multi_indices
  */
 typedef multi_index_container<
-  DofMoFEMEntity,
+  boost::shared_ptr<DofEntity>,
   indexed_by<
     //uniqe
     ordered_unique<
-      tag<Unique_mi_tag>, const_mem_fun<DofMoFEMEntity,GlobalUId,&DofMoFEMEntity::get_global_unique_id> >,
+      tag<Unique_mi_tag>, const_mem_fun<DofEntity,GlobalUId,&DofEntity::getGlobalUniqueId> >,
     ordered_unique<
       tag<Composite_Ent_and_ShortId_mi_tag>,
         composite_key<
-        DofMoFEMEntity,
-          const_mem_fun<DofMoFEMEntity,EntityHandle,&DofMoFEMEntity::get_ent>,
-          const_mem_fun<DofMoFEMEntity,ShortId,&DofMoFEMEntity::get_non_nonunique_short_id>
+        DofEntity,
+          const_mem_fun<DofEntity,EntityHandle,&DofEntity::getEnt>,
+          const_mem_fun<DofEntity,ShortId,&DofEntity::getNonNonuniqueShortId>
         > >,
     ordered_unique<
       tag<Composite_Name_And_Ent_And_EndDofIdx_mi_tag>,
       composite_key<
-        DofMoFEMEntity,
-          const_mem_fun<DofMoFEMEntity::interface_type_MoFEMField,boost::string_ref,&DofMoFEMEntity::get_name_ref>,
-          const_mem_fun<DofMoFEMEntity,EntityHandle,&DofMoFEMEntity::get_ent>,
-          const_mem_fun<DofMoFEMEntity,DofIdx,&DofMoFEMEntity::get_EntDofIdx>
+        DofEntity,
+          const_mem_fun<DofEntity::interface_type_Field,boost::string_ref,&DofEntity::getNameRef>,
+          const_mem_fun<DofEntity,EntityHandle,&DofEntity::getEnt>,
+          const_mem_fun<DofEntity,DofIdx,&DofEntity::getEntDofIdx>
     > >,
     //non_unique
     ordered_non_unique<
-      tag<FieldName_mi_tag>, const_mem_fun<DofMoFEMEntity::interface_type_MoFEMField,boost::string_ref,&DofMoFEMEntity::get_name_ref> >,
+      tag<Unique_Ent_mi_tag>, const_mem_fun<DofEntity,GlobalUId,&DofEntity::getEntGlobalUniqueId> >,
     ordered_non_unique<
-      tag<Ent_mi_tag>, const_mem_fun<DofMoFEMEntity,EntityHandle,&DofMoFEMEntity::get_ent> >,
+      const_mem_fun<DofEntity,char,&DofEntity::getActive> >,
     ordered_non_unique<
-      tag<BitFieldId_mi_tag>, const_mem_fun<DofMoFEMEntity::interface_type_MoFEMField,const BitFieldId&,&DofMoFEMEntity::get_id>, LtBit<BitFieldId> >,
+      tag<FieldName_mi_tag>, const_mem_fun<DofEntity::interface_type_Field,boost::string_ref,&DofEntity::getNameRef> >,
+    ordered_non_unique<
+      tag<Ent_mi_tag>, const_mem_fun<DofEntity,EntityHandle,&DofEntity::getEnt> >,
+    ordered_non_unique<
+      tag<BitFieldId_mi_tag>, const_mem_fun<DofEntity::interface_type_Field,const BitFieldId&,&DofEntity::getId>, LtBit<BitFieldId> >,
     ordered_non_unique<
       tag<Composite_Name_And_Ent_mi_tag>,
       composite_key<
-        DofMoFEMEntity,
-        const_mem_fun<DofMoFEMEntity::interface_type_MoFEMField,boost::string_ref,&DofMoFEMEntity::get_name_ref>,
-        const_mem_fun<DofMoFEMEntity,EntityHandle,&DofMoFEMEntity::get_ent>
+        DofEntity,
+        const_mem_fun<DofEntity::interface_type_Field,boost::string_ref,&DofEntity::getNameRef>,
+        const_mem_fun<DofEntity,EntityHandle,&DofEntity::getEnt>
       > >,
       ordered_non_unique<
         tag<Composite_Name_And_Type_mi_tag>,
       composite_key<
-        DofMoFEMEntity,
-        const_mem_fun<DofMoFEMEntity::interface_type_MoFEMField,boost::string_ref,&DofMoFEMEntity::get_name_ref>,
-        const_mem_fun<DofMoFEMEntity::interface_type_RefMoFEMEntity,EntityType,&DofMoFEMEntity::get_ent_type>
+        DofEntity,
+        const_mem_fun<DofEntity::interface_type_Field,boost::string_ref,&DofEntity::getNameRef>,
+        const_mem_fun<DofEntity::interface_type_RefEntity,EntityType,&DofEntity::getEntType>
       > >,
         ordered_non_unique<
         tag<Composite_Name_Ent_Order_And_CoeffIdx_mi_tag>,
         composite_key<
-        DofMoFEMEntity,
-          const_mem_fun<DofMoFEMEntity::interface_type_MoFEMField,boost::string_ref,&DofMoFEMEntity::get_name_ref>,
-          const_mem_fun<DofMoFEMEntity,EntityHandle,&DofMoFEMEntity::get_ent>,
-          const_mem_fun<DofMoFEMEntity,ApproximationOrder,&DofMoFEMEntity::get_dof_order>,
-          const_mem_fun<DofMoFEMEntity,ApproximationRank,&DofMoFEMEntity::get_dof_coeff_idx>
+        DofEntity,
+          const_mem_fun<DofEntity::interface_type_Field,boost::string_ref,&DofEntity::getNameRef>,
+          const_mem_fun<DofEntity,EntityHandle,&DofEntity::getEnt>,
+          const_mem_fun<DofEntity,ApproximationOrder,&DofEntity::getDofOrder>,
+          const_mem_fun<DofEntity,FieldCoefficientsNumber,&DofEntity::getDofCoeffIdx>
         > >
-  > > DofMoFEMEntity_multiIndex;
+  > > DofEntity_multiIndex;
 
-/** \brief multi-index view on DofMoFEMEntity by uid
+/** \brief multi-index view on DofEntity by uid
   \ingroup dof_multi_indices
 */
 typedef multi_index_container<
-  const DofMoFEMEntity*,
+  boost::shared_ptr<DofEntity>,
   indexed_by<
     ordered_unique<
-      member<DofMoFEMEntity,const GlobalUId,&DofMoFEMEntity::global_uid> >
-  > > DofMoFEMEntity_multiIndex_uid_view;
+      const_mem_fun<DofEntity,GlobalUId,&DofEntity::getGlobalUniqueId>
+    >
+  > > DofEntity_multiIndex_uid_view;
 
-/** \brief multi-index view on DofMoFEMEntity activity
+/** \brief multi-index view on DofEntity activity
   \ingroup dof_multi_indices
 */
 typedef multi_index_container<
-  const DofMoFEMEntity*,
+  boost::shared_ptr<DofEntity>,
   indexed_by<
     ordered_unique<
-      const_mem_fun<DofMoFEMEntity,GlobalUId,&DofMoFEMEntity::get_global_unique_id> >,
+      const_mem_fun<DofEntity,GlobalUId,&DofEntity::getGlobalUniqueId> >,
     ordered_non_unique<
-      const_mem_fun<DofMoFEMEntity,int,&DofMoFEMEntity::get_active> >
-  > > DofMoFEMEntity_multiIndex_active_view;
+      const_mem_fun<DofEntity,char,&DofEntity::getActive> >
+  > > DofEntity_multiIndex_active_view;
 
-/** \brief multi-index view on DofMoFEMEntity order
+/** \brief multi-index view on DofEntity order
   \ingroup dof_multi_indices
 */
 typedef multi_index_container<
-  const DofMoFEMEntity*,
+  boost::shared_ptr<DofEntity>,
   indexed_by<
     ordered_non_unique<
-      const_mem_fun<DofMoFEMEntity,ApproximationOrder,&DofMoFEMEntity::get_dof_order> >
-  > > DofMoFEMEntity_multiIndex_order_view;
+      const_mem_fun<DofEntity,ApproximationOrder,&DofEntity::getDofOrder> >
+  > > DofEntity_multiIndex_order_view;
 
-/** \brief multi-index view on DofMoFEMEntity type
+/** \brief multi-index view on DofEntity type
   \ingroup dof_multi_indices
 */
 typedef multi_index_container<
-  const DofMoFEMEntity*,
+  boost::shared_ptr<DofEntity>,
   indexed_by<
     ordered_non_unique<
-      const_mem_fun<DofMoFEMEntity::interface_type_RefMoFEMEntity,EntityType,&DofMoFEMEntity::get_ent_type> >
-  > > DofMoFEMEntity_multiIndex_ent_type_view;
+      const_mem_fun<DofEntity::interface_type_RefEntity,EntityType,&DofEntity::getEntType> >
+  > > DofEntity_multiIndex_ent_type_view;
 
 /**
  * @relates multi_index_container
- * \brief MultiIndex container keeps FEDofMoFEMEntity
+ * \brief MultiIndex container keeps FEDofEntity
  * \ingroup dof_multi_indices
 
  */
 typedef multi_index_container<
-  FEDofMoFEMEntity,
+  boost::shared_ptr<FEDofEntity>,
   indexed_by<
     ordered_unique<
-      tag<Unique_mi_tag>, const_mem_fun<FEDofMoFEMEntity::interface_type_DofMoFEMEntity,GlobalUId,&FEDofMoFEMEntity::get_global_unique_id> >,
+      tag<Unique_mi_tag>, const_mem_fun<FEDofEntity::interface_type_DofEntity,const GlobalUId,&FEDofEntity::getGlobalUniqueId> >,
     ordered_non_unique<
-      tag<Ent_mi_tag>, const_mem_fun<FEDofMoFEMEntity::interface_type_DofMoFEMEntity,EntityHandle,&FEDofMoFEMEntity::get_ent> >,
+      tag<Ent_mi_tag>, const_mem_fun<FEDofEntity::interface_type_DofEntity,EntityHandle,&FEDofEntity::getEnt> >,
     ordered_non_unique<
-      tag<FieldName_mi_tag>, const_mem_fun<FEDofMoFEMEntity::interface_type_MoFEMField,boost::string_ref,&FEDofMoFEMEntity::get_name_ref> >,
+      tag<FieldName_mi_tag>, const_mem_fun<FEDofEntity::interface_type_Field,boost::string_ref,&FEDofEntity::getNameRef> >,
     ordered_non_unique<
-      tag<EntType_mi_tag>, const_mem_fun<FEDofMoFEMEntity::interface_type_RefMoFEMEntity,EntityType,&FEDofMoFEMEntity::get_ent_type> >,
+      tag<EntType_mi_tag>, const_mem_fun<FEDofEntity::interface_type_RefEntity,EntityType,&FEDofEntity::getEntType> >,
     ordered_non_unique<
       tag<Composite_Name_Type_And_Side_Number_mi_tag>,
       composite_key<
-	FEDofMoFEMEntity,
-	  const_mem_fun<FEDofMoFEMEntity::interface_type_MoFEMField,boost::string_ref,&FEDofMoFEMEntity::get_name_ref>,
-	  const_mem_fun<FEDofMoFEMEntity::interface_type_RefMoFEMEntity,EntityType,&FEDofMoFEMEntity::get_ent_type>,
+	FEDofEntity,
+	  const_mem_fun<FEDofEntity::interface_type_Field,boost::string_ref,&FEDofEntity::getNameRef>,
+	  const_mem_fun<FEDofEntity::interface_type_RefEntity,EntityType,&FEDofEntity::getEntType>,
 	  KeyFromKey<
-	    member<SideNumber,int,&SideNumber::side_number>,
-	    member<FEDofMoFEMEntity::BaseFEDofMoFEMEntity,SideNumber *,&FEDofMoFEMEntity::side_number_ptr>
+	    member<SideNumber,char,&SideNumber::side_number>,
+	    member<FEDofEntity::BaseFEDofEntity,boost::shared_ptr<SideNumber>,&FEDofEntity::sideNumberPtr>
 	  >
       > >,
     ordered_non_unique<
       tag<Composite_Name_And_Type_mi_tag>,
       composite_key<
-	FEDofMoFEMEntity,
-	  const_mem_fun<FEDofMoFEMEntity::interface_type_MoFEMField,boost::string_ref,&FEDofMoFEMEntity::get_name_ref>,
-	  const_mem_fun<FEDofMoFEMEntity::interface_type_RefMoFEMEntity,EntityType,&FEDofMoFEMEntity::get_ent_type>
+	FEDofEntity,
+	  const_mem_fun<FEDofEntity::interface_type_Field,boost::string_ref,&FEDofEntity::getNameRef>,
+	  const_mem_fun<FEDofEntity::interface_type_RefEntity,EntityType,&FEDofEntity::getEntType>
 	> >,
     ordered_non_unique<
       tag<Composite_Name_And_Ent_mi_tag>,
       composite_key<
-	FEDofMoFEMEntity,
-	  const_mem_fun<FEDofMoFEMEntity::interface_type_MoFEMField,boost::string_ref,&FEDofMoFEMEntity::get_name_ref>,
-	  const_mem_fun<FEDofMoFEMEntity::interface_type_DofMoFEMEntity,EntityHandle,&FEDofMoFEMEntity::get_ent>
+	FEDofEntity,
+	  const_mem_fun<FEDofEntity::interface_type_Field,boost::string_ref,&FEDofEntity::getNameRef>,
+	  const_mem_fun<FEDofEntity::interface_type_DofEntity,EntityHandle,&FEDofEntity::getEnt>
 	> >,
     ordered_non_unique<
       tag<Composite_EntType_and_Space_mi_tag>,
       composite_key<
-	FEDofMoFEMEntity,
-	  const_mem_fun<FEDofMoFEMEntity::interface_type_RefMoFEMEntity,EntityType,&FEDofMoFEMEntity::get_ent_type>,
-	  const_mem_fun<FEDofMoFEMEntity::interface_type_MoFEMField,FieldSpace,&FEDofMoFEMEntity::get_space>
+	FEDofEntity,
+	  const_mem_fun<FEDofEntity::interface_type_RefEntity,EntityType,&FEDofEntity::getEntType>,
+	  const_mem_fun<FEDofEntity::interface_type_Field,FieldSpace,&FEDofEntity::getSpace>
 	> >
-  > > FEDofMoFEMEntity_multiIndex;
+  > > FEDofEntity_multiIndex;
 
 /**
  * @relates multi_index_container
- * \brief MultiIndex container keeps FENumeredDofMoFEMEntity
+ * \brief MultiIndex container keeps FENumeredDofEntity
  * \ingroup dof_multi_indices
  *
  */
 typedef multi_index_container<
-  FENumeredDofMoFEMEntity,
+  boost::shared_ptr<FENumeredDofEntity>,
   indexed_by<
     ordered_unique<
-      tag<Unique_mi_tag>, const_mem_fun<FENumeredDofMoFEMEntity::interface_type_DofMoFEMEntity,GlobalUId,&FENumeredDofMoFEMEntity::get_global_unique_id> >,
+      tag<Unique_mi_tag>, const_mem_fun<FENumeredDofEntity::interface_type_DofEntity,const GlobalUId,&FENumeredDofEntity::getGlobalUniqueId> >,
     ordered_non_unique<
-      tag<Ent_mi_tag>, const_mem_fun<FENumeredDofMoFEMEntity::interface_type_DofMoFEMEntity,EntityHandle,&FENumeredDofMoFEMEntity::get_ent> >,
+      tag<Ent_mi_tag>, const_mem_fun<FENumeredDofEntity::interface_type_DofEntity,EntityHandle,&FENumeredDofEntity::getEnt> >,
     ordered_non_unique<
-      tag<FieldName_mi_tag>, const_mem_fun<FENumeredDofMoFEMEntity::interface_type_MoFEMField,boost::string_ref,&FENumeredDofMoFEMEntity::get_name_ref> >,
+      tag<FieldName_mi_tag>, const_mem_fun<FENumeredDofEntity::interface_type_Field,boost::string_ref,&FENumeredDofEntity::getNameRef> >,
     ordered_non_unique<
-      tag<PetscGlobalIdx_mi_tag>, const_mem_fun<FENumeredDofMoFEMEntity::interface_type_NumeredDofMoFEMEntity,DofIdx,&FENumeredDofMoFEMEntity::get_petsc_gloabl_dof_idx> >,
+      tag<PetscGlobalIdx_mi_tag>, const_mem_fun<FENumeredDofEntity::interface_type_NumeredDofEntity,DofIdx,&FENumeredDofEntity::getPetscGlobalDofIdx> >,
     ordered_non_unique<
       tag<Composite_Name_Type_And_Side_Number_mi_tag>,
       composite_key<
-	FENumeredDofMoFEMEntity,
-	  const_mem_fun<FENumeredDofMoFEMEntity::interface_type_MoFEMField,boost::string_ref,&FENumeredDofMoFEMEntity::get_name_ref>,
-	  const_mem_fun<FENumeredDofMoFEMEntity::interface_type_RefMoFEMEntity,EntityType,&FENumeredDofMoFEMEntity::get_ent_type>,
+	FENumeredDofEntity,
+	  const_mem_fun<FENumeredDofEntity::interface_type_Field,boost::string_ref,&FENumeredDofEntity::getNameRef>,
+	  const_mem_fun<FENumeredDofEntity::interface_type_RefEntity,EntityType,&FENumeredDofEntity::getEntType>,
 	  KeyFromKey<
-	    member<SideNumber,int,&SideNumber::side_number>,
-	    member<FENumeredDofMoFEMEntity::BaseFEDofMoFEMEntity,SideNumber*,&FENumeredDofMoFEMEntity::side_number_ptr>
+	    member<SideNumber,char,&SideNumber::side_number>,
+	    member<FENumeredDofEntity::BaseFEDofEntity,boost::shared_ptr<SideNumber>,&FENumeredDofEntity::sideNumberPtr>
 	  >
       > >,
     ordered_non_unique<
       tag<Composite_Name_And_Type_mi_tag>,
       composite_key<
-	FENumeredDofMoFEMEntity,
-	  const_mem_fun<FENumeredDofMoFEMEntity::interface_type_MoFEMField,boost::string_ref,&FENumeredDofMoFEMEntity::get_name_ref>,
-	  const_mem_fun<FENumeredDofMoFEMEntity::interface_type_RefMoFEMEntity,EntityType,&FENumeredDofMoFEMEntity::get_ent_type>
+	FENumeredDofEntity,
+	  const_mem_fun<FENumeredDofEntity::interface_type_Field,boost::string_ref,&FENumeredDofEntity::getNameRef>,
+	  const_mem_fun<FENumeredDofEntity::interface_type_RefEntity,EntityType,&FENumeredDofEntity::getEntType>
 	> >,
     ordered_non_unique<
       tag<Composite_Name_And_Ent_mi_tag>,
       composite_key<
-	FENumeredDofMoFEMEntity,
-	  const_mem_fun<FENumeredDofMoFEMEntity::interface_type_MoFEMField,boost::string_ref,&FENumeredDofMoFEMEntity::get_name_ref>,
-	  const_mem_fun<FENumeredDofMoFEMEntity::interface_type_DofMoFEMEntity,EntityHandle,&FENumeredDofMoFEMEntity::get_ent>
+	FENumeredDofEntity,
+	  const_mem_fun<FENumeredDofEntity::interface_type_Field,boost::string_ref,&FENumeredDofEntity::getNameRef>,
+	  const_mem_fun<FENumeredDofEntity::interface_type_DofEntity,EntityHandle,&FENumeredDofEntity::getEnt>
 	> >
-  > > FENumeredDofMoFEMEntity_multiIndex;
+  > > FENumeredDofEntity_multiIndex;
 
 /**
  * @relates multi_index_container
- * \brief MultiIndex container keeps NumeredDofMoFEMEntity
+ * \brief MultiIndex container keeps NumeredDofEntity
  * \ingroup dof_multi_indices
  */
 typedef multi_index_container<
-  NumeredDofMoFEMEntity,
+  boost::shared_ptr<NumeredDofEntity>,
   //unique
   indexed_by<
     ordered_unique<
       tag<Unique_mi_tag>,
-      const_mem_fun<NumeredDofMoFEMEntity::interface_type_DofMoFEMEntity,GlobalUId,&NumeredDofMoFEMEntity::get_global_unique_id> >,
-    ordered_unique<
+      const_mem_fun<NumeredDofEntity::interface_type_DofEntity,const GlobalUId,&NumeredDofEntity::getGlobalUniqueId> >,
+    ordered_non_unique<
       tag<Composite_Name_And_Ent_And_EndDofIdx_mi_tag>,
       composite_key<
-	      NumeredDofMoFEMEntity,
-	      const_mem_fun<NumeredDofMoFEMEntity::interface_type_MoFEMField,boost::string_ref,&NumeredDofMoFEMEntity::get_name_ref>,
-	      const_mem_fun<NumeredDofMoFEMEntity::interface_type_DofMoFEMEntity,EntityHandle,&NumeredDofMoFEMEntity::get_ent>,
-	      const_mem_fun<NumeredDofMoFEMEntity::interface_type_DofMoFEMEntity,DofIdx,&NumeredDofMoFEMEntity::get_EntDofIdx>
+	      NumeredDofEntity,
+	      const_mem_fun<NumeredDofEntity::interface_type_Field,boost::string_ref,&NumeredDofEntity::getNameRef>,
+	      const_mem_fun<NumeredDofEntity::interface_type_DofEntity,EntityHandle,&NumeredDofEntity::getEnt>,
+	      const_mem_fun<NumeredDofEntity::interface_type_DofEntity,DofIdx,&NumeredDofEntity::getEntDofIdx>
     > >,
     //non unique
     ordered_non_unique<
-      tag<Idx_mi_tag>, member<NumeredDofMoFEMEntity,DofIdx,&NumeredDofMoFEMEntity::dof_idx> >,
+      tag<Idx_mi_tag>, member<NumeredDofEntity,DofIdx,&NumeredDofEntity::dof_idx> >,
     ordered_non_unique<
-      tag<FieldName_mi_tag>, const_mem_fun<NumeredDofMoFEMEntity::interface_type_MoFEMField,boost::string_ref,&NumeredDofMoFEMEntity::get_name_ref> >,
+      tag<FieldName_mi_tag>, const_mem_fun<NumeredDofEntity::interface_type_Field,boost::string_ref,&NumeredDofEntity::getNameRef> >,
     ordered_non_unique<
-      tag<PetscGlobalIdx_mi_tag>, member<NumeredDofMoFEMEntity,DofIdx,&NumeredDofMoFEMEntity::petsc_gloabl_dof_idx> >,
+      tag<PetscGlobalIdx_mi_tag>, member<NumeredDofEntity,DofIdx,&NumeredDofEntity::petsc_gloabl_dof_idx> >,
     ordered_non_unique<
-      tag<PetscLocalIdx_mi_tag>, member<NumeredDofMoFEMEntity,DofIdx,&NumeredDofMoFEMEntity::petsc_local_dof_idx> >,
+      tag<PetscLocalIdx_mi_tag>, member<NumeredDofEntity,DofIdx,&NumeredDofEntity::petsc_local_dof_idx> >,
     ordered_non_unique<
-      tag<Part_mi_tag>, member<NumeredDofMoFEMEntity,unsigned int,&NumeredDofMoFEMEntity::part> >,
+      tag<Part_mi_tag>, member<NumeredDofEntity,unsigned int,&NumeredDofEntity::part> >,
     ordered_non_unique<
-      tag<Ent_mi_tag>, const_mem_fun<NumeredDofMoFEMEntity::interface_type_DofMoFEMEntity,EntityHandle,&NumeredDofMoFEMEntity::get_ent> >,
+      tag<Ent_mi_tag>, const_mem_fun<NumeredDofEntity::interface_type_DofEntity,EntityHandle,&NumeredDofEntity::getEnt> >,
     ordered_non_unique<
-      tag<Order_mi_tag>, const_mem_fun<NumeredDofMoFEMEntity::interface_type_DofMoFEMEntity,ApproximationOrder,&NumeredDofMoFEMEntity::get_dof_order> >,
+      tag<Order_mi_tag>, const_mem_fun<NumeredDofEntity::interface_type_DofEntity,ApproximationOrder,&NumeredDofEntity::getDofOrder> >,
     ordered_non_unique<
       tag<Composite_Part_And_Oder_mi_tag>,
       composite_key<
-	      NumeredDofMoFEMEntity,
-	       member<NumeredDofMoFEMEntity,unsigned int,&NumeredDofMoFEMEntity::part>,
-	      const_mem_fun<NumeredDofMoFEMEntity::interface_type_DofMoFEMEntity,ApproximationOrder,&NumeredDofMoFEMEntity::get_dof_order>
+	      NumeredDofEntity,
+	       member<NumeredDofEntity,unsigned int,&NumeredDofEntity::part>,
+	      const_mem_fun<NumeredDofEntity::interface_type_DofEntity,ApproximationOrder,&NumeredDofEntity::getDofOrder>
 	    > >,
     ordered_non_unique<
       tag<Composite_Name_Part_And_CoeffIdx_mi_tag>,
       composite_key<
-	     NumeredDofMoFEMEntity,
-	      const_mem_fun<NumeredDofMoFEMEntity::interface_type_MoFEMField,boost::string_ref,&NumeredDofMoFEMEntity::get_name_ref>,
-	      member<NumeredDofMoFEMEntity,unsigned int,&NumeredDofMoFEMEntity::part>,
-	      const_mem_fun<NumeredDofMoFEMEntity::interface_type_DofMoFEMEntity,ApproximationRank,&NumeredDofMoFEMEntity::get_dof_coeff_idx>
+	     NumeredDofEntity,
+	      const_mem_fun<NumeredDofEntity::interface_type_Field,boost::string_ref,&NumeredDofEntity::getNameRef>,
+	      member<NumeredDofEntity,unsigned int,&NumeredDofEntity::part>,
+	      const_mem_fun<NumeredDofEntity::interface_type_DofEntity,FieldCoefficientsNumber,&NumeredDofEntity::getDofCoeffIdx>
 	    > >,
     ordered_non_unique<
       tag<Composite_Name_And_Part_mi_tag>,
       composite_key<
-	     NumeredDofMoFEMEntity,
-	     const_mem_fun<NumeredDofMoFEMEntity::interface_type_MoFEMField,boost::string_ref,&NumeredDofMoFEMEntity::get_name_ref>,
-	     member<NumeredDofMoFEMEntity,unsigned int,&NumeredDofMoFEMEntity::part>
+	     NumeredDofEntity,
+	     const_mem_fun<NumeredDofEntity::interface_type_Field,boost::string_ref,&NumeredDofEntity::getNameRef>,
+	     member<NumeredDofEntity,unsigned int,&NumeredDofEntity::part>
 	  > >,
     ordered_non_unique<
       tag<Composite_Name_Ent_And_Part_mi_tag>,
       composite_key<
-	     NumeredDofMoFEMEntity,
-	     const_mem_fun<NumeredDofMoFEMEntity::interface_type_MoFEMField,boost::string_ref,&NumeredDofMoFEMEntity::get_name_ref>,
-	     const_mem_fun<NumeredDofMoFEMEntity::interface_type_DofMoFEMEntity,EntityHandle,&NumeredDofMoFEMEntity::get_ent>,
-	     member<NumeredDofMoFEMEntity,unsigned int,&NumeredDofMoFEMEntity::part>
+	     NumeredDofEntity,
+	     const_mem_fun<NumeredDofEntity::interface_type_Field,boost::string_ref,&NumeredDofEntity::getNameRef>,
+	     const_mem_fun<NumeredDofEntity::interface_type_DofEntity,EntityHandle,&NumeredDofEntity::getEnt>,
+	     member<NumeredDofEntity,unsigned int,&NumeredDofEntity::part>
 	  > >,
     ordered_non_unique<
       tag<Composite_Name_And_HasLocalIdx_mi_tag>,
       composite_key<
-	     NumeredDofMoFEMEntity,
-	     const_mem_fun<NumeredDofMoFEMEntity::interface_type_MoFEMField,boost::string_ref,&NumeredDofMoFEMEntity::get_name_ref>,
-	     const_mem_fun<NumeredDofMoFEMEntity,bool,&NumeredDofMoFEMEntity::get_has_local_index>
+	     NumeredDofEntity,
+	     const_mem_fun<NumeredDofEntity::interface_type_Field,boost::string_ref,&NumeredDofEntity::getNameRef>,
+	     const_mem_fun<NumeredDofEntity,bool,&NumeredDofEntity::getHasLocalIndex>
 	  > >
-  > > NumeredDofMoFEMEntity_multiIndex;
+  > > NumeredDofEntity_multiIndex;
 
 typedef multi_index_container<
-  const NumeredDofMoFEMEntity*,
+  boost::shared_ptr<NumeredDofEntity>,
   indexed_by<
     ordered_unique<
-      const_mem_fun<NumeredDofMoFEMEntity,DofIdx,&NumeredDofMoFEMEntity::get_dof_idx> >
-  > > NumeredDofMoFEMEntity_multiIndex_uid_view_ordered;
+      const_mem_fun<NumeredDofEntity,DofIdx,&NumeredDofEntity::getDofIdx> >
+  > > NumeredDofEntity_multiIndex_uid_view_ordered;
 
 typedef multi_index_container<
-  const NumeredDofMoFEMEntity*,
+  boost::shared_ptr<NumeredDofEntity>,
   indexed_by<
     hashed_unique<
-      const_mem_fun<NumeredDofMoFEMEntity,DofIdx,&NumeredDofMoFEMEntity::get_dof_idx> >
-  > > NumeredDofMoFEMEntity_multiIndex_uid_view_hashed;
+      const_mem_fun<NumeredDofEntity,DofIdx,&NumeredDofEntity::getDofIdx> >
+  > > NumeredDofEntity_multiIndex_uid_view_hashed;
 
 typedef multi_index_container<
-  const NumeredDofMoFEMEntity*,
+  boost::shared_ptr<NumeredDofEntity>,
   indexed_by<
     ordered_non_unique<
-      const_mem_fun<NumeredDofMoFEMEntity,DofIdx,&NumeredDofMoFEMEntity::get_petsc_local_dof_idx> >
-  > > NumeredDofMoFEMEntity_multiIndex_petsc_local_dof_view_ordered_non_unique;
+      const_mem_fun<NumeredDofEntity,DofIdx,&NumeredDofEntity::getPetscLocalDofIdx> >
+  > > NumeredDofEntity_multiIndex_petsc_local_dof_view_ordered_non_unique;
 
-struct DofMoFEMEntity_active_change {
+struct DofEntity_active_change {
   bool active;
-  DofMoFEMEntity_active_change(bool _active);
-  void operator()(DofMoFEMEntity &_dof_);
+  DofEntity_active_change(bool _active);
+  void operator()(boost::shared_ptr<DofEntity> &_dof_);
 };
 
-struct NumeredDofMoFEMEntity_part_change {
-  unsigned int part;
-  DofIdx petsc_gloabl_dof_idx;
-  NumeredDofMoFEMEntity_part_change(const unsigned int _part,const DofIdx _petsc_gloabl_dof_idx):
-    part(_part),
-    petsc_gloabl_dof_idx(_petsc_gloabl_dof_idx) {};
-  void operator()(NumeredDofMoFEMEntity &dof) {
-    dof.part = part;
-    dof.petsc_gloabl_dof_idx = petsc_gloabl_dof_idx;
+struct NumeredDofEntity_part_change {
+  unsigned int pArt;
+  DofIdx petscGloablDofIdx;
+  NumeredDofEntity_part_change(const unsigned int part,const DofIdx petsc_gloabl_dof_idx):
+  pArt(part),
+  petscGloablDofIdx(petsc_gloabl_dof_idx) {};
+  void operator()(boost::shared_ptr<NumeredDofEntity> &dof) {
+    dof->part = pArt;
+    dof->petsc_gloabl_dof_idx = petscGloablDofIdx;
   }
 };
 
-struct NumeredDofMoFEMEntity_local_idx_change {
-  DofIdx petsc_local_dof_idx;
-  NumeredDofMoFEMEntity_local_idx_change(const DofIdx _petsc_local_dof_idx):
-    petsc_local_dof_idx(_petsc_local_dof_idx) {};
-  void operator()(NumeredDofMoFEMEntity &dof) {
-    dof.petsc_local_dof_idx = petsc_local_dof_idx;
+struct NumeredDofEntity_local_idx_change {
+  DofIdx petscLocalDofIdx;
+  NumeredDofEntity_local_idx_change(const DofIdx petsc_local_dof_idx):
+  petscLocalDofIdx(petsc_local_dof_idx) {};
+  void operator()(boost::shared_ptr<NumeredDofEntity> &dof) {
+    dof->petsc_local_dof_idx = petscLocalDofIdx;
   }
 };
 
-struct NumeredDofMoFEMEntity_mofem_index_change {
-  DofIdx mofem_idx;
-  NumeredDofMoFEMEntity_mofem_index_change(const DofIdx _mofem_idx):
-    mofem_idx(_mofem_idx) {};
-  void operator()(NumeredDofMoFEMEntity &dof) {
-    dof.dof_idx = mofem_idx;
+struct NumeredDofEntity_mofem_index_change {
+  DofIdx mofemIdx;
+  NumeredDofEntity_mofem_index_change(const DofIdx mofem_idx):
+  mofemIdx(mofem_idx) {};
+  void operator()(boost::shared_ptr<NumeredDofEntity> &dof) {
+    dof->dof_idx = mofemIdx;
   }
 };
 
 typedef multi_index_container<
-  const NumeredDofMoFEMEntity*,
+  boost::shared_ptr<NumeredDofEntity>,
   indexed_by<
     ordered_unique<
-      member<NumeredDofMoFEMEntity,const DofIdx,&NumeredDofMoFEMEntity::petsc_gloabl_dof_idx> >
- > > NumeredDofMoFEMEntity_multiIndex_global_index_view;
+      member<NumeredDofEntity,const DofIdx,&NumeredDofEntity::petsc_gloabl_dof_idx> >
+ > > NumeredDofEntity_multiIndex_global_index_view;
 
 }
 #endif // __DOFSMULTIINDICES_HPP__

@@ -13,7 +13,6 @@
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
 #include <MoFEM.hpp>
-#include <Projection10NodeCoordsOnField.hpp>
 
 using namespace MoFEM;
 
@@ -31,8 +30,8 @@ double roundn(double n) {
     fract = modf(n,&intp);
 
     // case where n approximates zero, set n to "positive" zero
-    if (abs(intp)==0) {
-      if(abs(fract)<=RND_EPS) {
+    if (std::abs(intp)==0) {
+      if(std::abs(fract)<=RND_EPS) {
 	n=0.000;
       }
     }
@@ -48,29 +47,33 @@ int main(int argc, char *argv[]) {
   try {
 
   moab::Core mb_instance;
-  Interface& moab = mb_instance;
+  moab::Interface& moab = mb_instance;
   int rank;
   MPI_Comm_rank(PETSC_COMM_WORLD,&rank);
   /*if(rank==0) {
     EntityHandle dummy_meshset;
-    rval = moab.create_meshset(MESHSET_SET,dummy_meshset); CHKERR_PETSC(rval);
+    rval = moab.create_meshset(MESHSET_SET,dummy_meshset); CHKERRQ_MOAB(rval);
   }*/
 
   PetscBool flg = PETSC_TRUE;
   char mesh_file_name[255];
-  ierr = PetscOptionsGetString(PETSC_NULL,"-my_file",mesh_file_name,255,&flg); CHKERRQ(ierr);
+  #if PETSC_VERSION_GE(3,6,4)
+  ierr = PetscOptionsGetString(PETSC_NULL,"","-my_file",mesh_file_name,255,&flg); CHKERRQ(ierr);
+  #else
+  ierr = PetscOptionsGetString(PETSC_NULL,PETSC_NULL,"-my_file",mesh_file_name,255,&flg); CHKERRQ(ierr);
+  #endif
   if(flg != PETSC_TRUE) {
     SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_file (MESH FILE NEEDED)");
   }
 
   const char *option;
   option = "";//"PARALLEL=BCAST;";//;DEBUG_IO";
-  rval = moab.load_file(mesh_file_name, 0, option); CHKERR(rval);
+  rval = moab.load_file(mesh_file_name, 0, option); CHKERR_MOAB(rval);
   ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
   if(pcomm == NULL) pcomm =  new ParallelComm(&moab,PETSC_COMM_WORLD);
 
   MoFEM::Core core(moab);
-  FieldInterface& m_field = core;
+  MoFEM::Interface& m_field = core;
 
   //add filds
   ierr = m_field.add_field("MESH_NODE_POSITIONS",H1,3); CHKERRQ(ierr);
@@ -92,9 +95,9 @@ int main(int argc, char *argv[]) {
   bit_level0.set(0);
   ierr = m_field.seed_ref_level_3D(0,bit_level0); CHKERRQ(ierr);
   Range tets;
-  rval = moab.get_entities_by_type(0,MBTET,tets,true); CHKERR_PETSC(rval);
+  rval = moab.get_entities_by_type(0,MBTET,tets,true); CHKERRQ_MOAB(rval);
   Range edges;
-  rval = moab.get_entities_by_type(0,MBEDGE,edges,true); CHKERR_PETSC(rval);
+  rval = moab.get_entities_by_type(0,MBEDGE,edges,true); CHKERRQ_MOAB(rval);
   ierr = m_field.seed_finite_elements(edges); CHKERRQ(ierr);
 
   //add ents to field and set app. order
@@ -130,37 +133,37 @@ int main(int argc, char *argv[]) {
   ierr = m_field.loop_dofs("MESH_NODE_POSITIONS",ent_method); CHKERRQ(ierr);
 
     //Open mesh_file_name.txt for writing
-    ofstream myfile;
+    std::ofstream myfile;
     myfile.open ("10node_sphere.txt");
 
     //Output displacements
-    cout << "<<<< Dofs (X-Translation, Y-Translation, Z-Translation) >>>>>" << endl;
-    myfile << "<<<< Dofs (X-Translation, Y-Translation, Z-Translation) >>>>>" << endl;
+    std::cout << "<<<< Dofs (X-Translation, Y-Translation, Z-Translation) >>>>>" << std::endl;
+    myfile << "<<<< Dofs (X-Translation, Y-Translation, Z-Translation) >>>>>" << std::endl;
 
     for(_IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(m_field,"MESH_NODE_POSITIONS",dof_ptr))
     {
-        //if(dof_ptr->get_ent_type()!=MBEDGE) continue;
+        //if(dof_ptr->getEntType()!=MBEDGE) continue;
 
-        if(dof_ptr->get_dof_coeff_idx()==0)
+        if((*dof_ptr)->getDofCoeffIdx()==0)
         {
             //Round and truncate to 3 decimal places
-            double fval = dof_ptr->get_FieldData();
-            cout << boost::format("%.3lf") % roundn(fval) << "  ";
+            double fval = (*dof_ptr)->getFieldData();
+            std::cout << boost::format("%.3lf") % roundn(fval) << "  ";
             myfile << boost::format("%.3lf") % roundn(fval) << "  ";
         }
-        if(dof_ptr->get_dof_coeff_idx()==1)
+        if((*dof_ptr)->getDofCoeffIdx()==1)
         {
             //Round and truncate to 3 decimal places
-            double fval = dof_ptr->get_FieldData();
-            cout << boost::format("%.3lf") % roundn(fval) << "  ";
+            double fval = (*dof_ptr)->getFieldData();
+            std::cout << boost::format("%.3lf") % roundn(fval) << "  ";
             myfile << boost::format("%.3lf") % roundn(fval) << "  ";
         }
-        if(dof_ptr->get_dof_coeff_idx()==2)
+        if((*dof_ptr)->getDofCoeffIdx()==2)
         {
             //Round and truncate to 3 decimal places
-            double fval = dof_ptr->get_FieldData();
-            cout << boost::format("%.3lf") % roundn(fval) << endl;
-            myfile << boost::format("%.3lf") % roundn(fval) << endl;
+            double fval = (*dof_ptr)->getFieldData();
+            std::cout << boost::format("%.3lf") % roundn(fval) << std::endl;
+            myfile << boost::format("%.3lf") % roundn(fval) << std::endl;
         }
 
     }
@@ -169,8 +172,8 @@ int main(int argc, char *argv[]) {
   } catch (MoFEMException const &e) {
     SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
   } catch (const std::exception& ex) {
-    ostringstream ss;
-    ss << "thorw in method: " << ex.what() << endl;
+    std::ostringstream ss;
+    ss << "thorw in method: " << ex.what() << std::endl;
     SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
   }
 

@@ -12,21 +12,11 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
-#include <boost/iostreams/tee.hpp>
-#include <boost/iostreams/stream.hpp>
-#include <fstream>
-#include <iostream>
+#include <BasicFiniteElements.hpp>
 
 namespace bio = boost::iostreams;
 using bio::tee_device;
 using bio::stream;
-
-#include <MoFEM.hpp>
-#include <Projection10NodeCoordsOnField.hpp>
-
-using namespace MoFEM;
-#include <boost/numeric/ublas/vector_proxy.hpp>
-#include <FieldApproximation.hpp>
 
 #define HOON
 
@@ -35,9 +25,9 @@ static char help[] = "...\n\n";
 /// Example approx. function
 struct MyFunApprox {
 
-  vector<ublas::vector<double> > result;
+  std::vector<ublas::vector<double> > result;
 
-  vector<ublas::vector<double> >& operator()(double x, double y, double z) {
+  std::vector<ublas::vector<double> >& operator()(double x, double y, double z) {
     result.resize(1);
     result[0].resize(3);
     (result[0])[0] = x;
@@ -56,20 +46,20 @@ int main(int argc, char *argv[]) {
   PetscInitialize(&argc,&argv,(char *)0,help);
 
   moab::Core mb_instance;
-  Interface& moab = mb_instance;
+  moab::Interface& moab = mb_instance;
   int rank;
   MPI_Comm_rank(PETSC_COMM_WORLD,&rank);
 
   PetscBool flg = PETSC_TRUE;
   char mesh_file_name[255];
-  ierr = PetscOptionsGetString(PETSC_NULL,"-my_file",mesh_file_name,255,&flg); CHKERRQ(ierr);
+  ierr = PetscOptionsGetString(PETSC_NULL,PETSC_NULL,"-my_file",mesh_file_name,255,&flg); CHKERRQ(ierr);
   if(flg != PETSC_TRUE) {
     SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_file (MESH FILE NEEDED)");
   }
 
   //Create MoFEM (Joseph) database
   MoFEM::Core core(moab);
-  FieldInterface& m_field = core;
+  MoFEM::Interface& m_field = core;
 
   ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
   if(pcomm == NULL) pcomm =  new ParallelComm(&moab,PETSC_COMM_WORLD);
@@ -77,14 +67,14 @@ int main(int argc, char *argv[]) {
   const char *option;
   option = "";//"PARALLEL=BCAST;";//;DEBUG_IO";
   BARRIER_RANK_START(pcomm)
-  rval = moab.load_file(mesh_file_name, 0, option); CHKERR_PETSC(rval);
+  rval = moab.load_file(mesh_file_name, 0, option); CHKERRQ_MOAB(rval);
   BARRIER_RANK_END(pcomm)
 
   //set entitities bit level
   BitRefLevel bit_level0;
   bit_level0.set(0);
   EntityHandle meshset_level0;
-  rval = moab.create_meshset(MESHSET_SET,meshset_level0); CHKERR_PETSC(rval);
+  rval = moab.create_meshset(MESHSET_SET,meshset_level0); CHKERRQ_MOAB(rval);
   ierr = m_field.seed_ref_level_3D(0,bit_level0); CHKERRQ(ierr);
 
   //Fields
@@ -109,7 +99,7 @@ int main(int argc, char *argv[]) {
 
   //set finite elements for problem
   ierr = m_field.modify_problem_add_finite_element("TEST_PROBLEM","TEST_FE"); CHKERRQ(ierr);
-  //set refinment level for problem
+  //set refinement level for problem
   ierr = m_field.modify_problem_ref_level_add_bit("TEST_PROBLEM",bit_level0); CHKERRQ(ierr);
 
   //meshset consisting all entities in mesh
@@ -126,7 +116,7 @@ int main(int argc, char *argv[]) {
   //set app. order
   //see Hierarchic Finite Element Bases on Unstructured Tetrahedral Meshes (Mark Ainsworth & Joe Coyle)
   int order = 3;
-  ierr = PetscOptionsGetInt(PETSC_NULL,"-my_order",&order,&flg); CHKERRQ(ierr);
+  ierr = PetscOptionsGetInt(PETSC_NULL,PETSC_NULL,"-my_order",&order,&flg); CHKERRQ(ierr);
   if(flg != PETSC_TRUE) {
     order = 3;
   }
@@ -170,7 +160,7 @@ int main(int argc, char *argv[]) {
   ierr = m_field.VecCreateGhost("TEST_PROBLEM",ROW,&F); CHKERRQ(ierr);
   ierr = m_field.VecCreateGhost("TEST_PROBLEM",COL,&D); CHKERRQ(ierr);
 
-  vector<Vec> vec_F;
+  std::vector<Vec> vec_F;
   vec_F.push_back(F);
 
   {
@@ -206,14 +196,14 @@ int main(int argc, char *argv[]) {
 
   EntityHandle fe_meshset = m_field.get_finite_element_meshset("TEST_FE");
   Range tets;
-  rval = moab.get_entities_by_type(fe_meshset,MBTET,tets,true); CHKERR_PETSC(rval);
+  rval = moab.get_entities_by_type(fe_meshset,MBTET,tets,true); CHKERRQ_MOAB(rval);
   Range tets_edges;
-  rval = moab.get_adjacencies(tets,1,false,tets_edges,Interface::UNION); CHKERR(rval);
+  rval = moab.get_adjacencies(tets,1,false,tets_edges,moab::Interface::UNION); CHKERR_MOAB(rval);
   EntityHandle edges_meshset;
-  rval = moab.create_meshset(MESHSET_SET,edges_meshset); CHKERR_PETSC(rval);
-  rval = moab.add_entities(edges_meshset,tets); CHKERR_PETSC(rval);
-  rval = moab.add_entities(edges_meshset,tets_edges); CHKERR_PETSC(rval);
-  rval = moab.convert_entities(edges_meshset,true,false,false); CHKERR_PETSC(rval);
+  rval = moab.create_meshset(MESHSET_SET,edges_meshset); CHKERRQ_MOAB(rval);
+  rval = moab.add_entities(edges_meshset,tets); CHKERRQ_MOAB(rval);
+  rval = moab.add_entities(edges_meshset,tets_edges); CHKERRQ_MOAB(rval);
+  rval = moab.convert_entities(edges_meshset,true,false,false); CHKERRQ_MOAB(rval);
 
   ProjectionFieldOn10NodeTet ent_method_field1_on_10nodeTet(m_field,"FIELD1",true,false,"FIELD1");
   ierr = m_field.loop_dofs("FIELD1",ent_method_field1_on_10nodeTet); CHKERRQ(ierr);
@@ -222,25 +212,25 @@ int main(int argc, char *argv[]) {
 
   if(pcomm->rank()==0) {
     EntityHandle out_meshset;
-    rval = moab.create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
+    rval = moab.create_meshset(MESHSET_SET,out_meshset); CHKERRQ_MOAB(rval);
     ierr = m_field.get_problem_finite_elements_entities("TEST_PROBLEM","TEST_FE",out_meshset); CHKERRQ(ierr);
-    rval = moab.write_file("out.vtk","VTK","",&out_meshset,1); CHKERR_PETSC(rval);
-    rval = moab.delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
+    rval = moab.write_file("out.vtk","VTK","",&out_meshset,1); CHKERRQ_MOAB(rval);
+    rval = moab.delete_entities(&out_meshset,1); CHKERRQ_MOAB(rval);
   }
 
-  typedef tee_device<ostream, ofstream> TeeDevice;
+  typedef tee_device<std::ostream, std::ofstream> TeeDevice;
   typedef stream<TeeDevice> TeeStream;
 
-  ofstream ofs("field_approximation.txt");
+  std::ofstream ofs("field_approximation.txt");
   TeeDevice tee(cout, ofs);
   TeeStream my_split(tee);
 
   Range nodes;
-  rval = moab.get_entities_by_type(0,MBVERTEX,nodes,true); CHKERR(rval);
+  rval = moab.get_entities_by_type(0,MBVERTEX,nodes,true); CHKERR_MOAB(rval);
   ublas::matrix<double> nodes_vals;
   nodes_vals.resize(nodes.size(),3);
   rval = moab.tag_get_data(
-    ent_method_field1_on_10nodeTet.th,nodes,&*nodes_vals.data().begin()); CHKERR(rval);
+    ent_method_field1_on_10nodeTet.th,nodes,&*nodes_vals.data().begin()); CHKERR_MOAB(rval);
 
   const double eps = 1e-4;
 
@@ -251,17 +241,17 @@ int main(int argc, char *argv[]) {
     it!=nodes_vals.data().end();it++) {
     *it = fabs(*it)<eps ? 0.0 : *it;
   }
-  my_split << nodes_vals << endl;
+  my_split << nodes_vals << std::endl;
 
   const MoFEMProblem *problemPtr;
   ierr = m_field.get_problem("TEST_PROBLEM",&problemPtr); CHKERRQ(ierr);
-  map<EntityHandle,double> m0,m1,m2;
+  std::map<EntityHandle,double> m0,m1,m2;
   for(_IT_NUMEREDDOFMOFEMENTITY_ROW_FOR_LOOP_(problemPtr,dit)) {
 
     my_split.precision(3);
     my_split.setf(std::ios::fixed);
-    double val = fabs(dit->get_FieldData())<eps ? 0.0 : dit->get_FieldData();
-    my_split << dit->get_petsc_gloabl_dof_idx() << " " << val << endl;
+    double val = fabs(dit->get()->getFieldData())<eps ? 0.0 : dit->get()->getFieldData();
+    my_split << dit->get()->getPetscGlobalDofIdx() << " " << val << std::endl;
 
   }
 

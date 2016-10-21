@@ -17,22 +17,9 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
-#include <MoFEM.hpp>
+#include <BasicFiniteElements.hpp>
 using namespace MoFEM;
-#include <PostProcOnRefMesh.hpp>
-#include <Projection10NodeCoordsOnField.hpp>
 
-#include <boost/numeric/ublas/vector_proxy.hpp>
-#include <boost/numeric/ublas/matrix.hpp>
-#include <boost/numeric/ublas/matrix_proxy.hpp>
-#include <boost/numeric/ublas/vector.hpp>
-#include <adolc/adolc.h>
-#include <KelvinVoigtDamper.hpp>
-
-#include <boost/iostreams/tee.hpp>
-#include <boost/iostreams/stream.hpp>
-#include <fstream>
-#include <iostream>
 namespace bio = boost::iostreams;
 using bio::tee_device;
 using bio::stream;
@@ -46,24 +33,24 @@ int main(int argc, char *argv[]) {
   PetscInitialize(&argc,&argv,(char *)0,help);
 
   moab::Core mb_instance;
-  Interface& moab = mb_instance;
+  moab::Interface& moab = mb_instance;
 
   {
     PetscBool flg = PETSC_TRUE;
     char mesh_file_name[255];
-    ierr = PetscOptionsGetString(PETSC_NULL,"-my_file",mesh_file_name,255,&flg); CHKERRQ(ierr);
+    ierr = PetscOptionsGetString(PETSC_NULL,PETSC_NULL,"-my_file",mesh_file_name,255,&flg); CHKERRQ(ierr);
     if(flg != PETSC_TRUE) {
       SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_file (MESH FILE NEEDED)");
     }
     const char *option;
     option = "";//"PARALLEL=BCAST;";//;DEBUG_IO";
-    rval = moab.load_file(mesh_file_name, 0, option); CHKERR_PETSC(rval);
+    rval = moab.load_file(mesh_file_name, 0, option); CHKERRQ_MOAB(rval);
     ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
     if(pcomm == NULL) pcomm =  new ParallelComm(&moab,PETSC_COMM_WORLD);
   }
 
   MoFEM::Core core(moab);
-  FieldInterface& m_field = core;
+  MoFEM::Interface& m_field = core;
   BitRefLevel bit_level0;
   bit_level0.set(0);
   ierr = m_field.seed_ref_level_3D(0,bit_level0); CHKERRQ(ierr);
@@ -92,7 +79,7 @@ int main(int argc, char *argv[]) {
 
       PetscBool flg;
       PetscInt order;
-      ierr = PetscOptionsGetInt(PETSC_NULL,"-my_order",&order,&flg); CHKERRQ(ierr);
+      ierr = PetscOptionsGetInt(PETSC_NULL,PETSC_NULL,"-my_order",&order,&flg); CHKERRQ(ierr);
       if(flg != PETSC_TRUE) {
         order = 2;
       }
@@ -160,7 +147,7 @@ int main(int argc, char *argv[]) {
     );
 
     // Set material parameters
-    rval = moab.get_entities_by_type(0,MBTET,material_data.tEts); CHKERR_PETSC(rval);
+    rval = moab.get_entities_by_type(0,MBTET,material_data.tEts); CHKERRQ_MOAB(rval);
     material_data.gBeta = 1;
     material_data.vBeta = 0.3;
 
@@ -179,7 +166,7 @@ int main(int argc, char *argv[]) {
     }
 
     // attach tags for each recorder
-    vector<int> tags;
+    std::vector<int> tags;
     tags.push_back(1);
 
     KelvinVoigtDamper::ConstitutiveEquation<adouble> &ce = damper.constitutiveEquationMap.at(id);

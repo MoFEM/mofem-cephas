@@ -18,18 +18,8 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
-
-#include <MoFEM.hpp>
+#include <BasicFiniteElements.hpp>
 using namespace MoFEM;
-#include <Projection10NodeCoordsOnField.hpp>
-
-#include <boost/numeric/ublas/vector_proxy.hpp>
-#include <BodyForce.hpp>
-
-#include <boost/iostreams/tee.hpp>
-#include <boost/iostreams/stream.hpp>
-#include <fstream>
-#include <iostream>
 
 namespace bio = boost::iostreams;
 using bio::tee_device;
@@ -45,13 +35,13 @@ int main(int argc, char *argv[]) {
   PetscInitialize(&argc,&argv,(char *)0,help);
 
   moab::Core mb_instance;
-  Interface& moab = mb_instance;
+  moab::Interface& moab = mb_instance;
   int rank;
   MPI_Comm_rank(PETSC_COMM_WORLD,&rank);
 
   PetscBool flg = PETSC_TRUE;
   char mesh_file_name[255];
-  ierr = PetscOptionsGetString(PETSC_NULL,"-my_file",mesh_file_name,255,&flg); CHKERRQ(ierr);
+  ierr = PetscOptionsGetString(PETSC_NULL,PETSC_NULL,"-my_file",mesh_file_name,255,&flg); CHKERRQ(ierr);
   if(flg != PETSC_TRUE) {
     SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_file (MESH FILE NEEDED)");
   }
@@ -61,17 +51,17 @@ int main(int argc, char *argv[]) {
 
   const char *option;
   option = "";//"PARALLEL=BCAST;";//;DEBUG_IO";
-  rval = moab.load_file(mesh_file_name, 0, option); CHKERR_PETSC(rval);
+  rval = moab.load_file(mesh_file_name, 0, option); CHKERRQ_MOAB(rval);
 
   //Create MoFEM (Joseph) database
   MoFEM::Core core(moab);
-  FieldInterface& m_field = core;
+  MoFEM::Interface& m_field = core;
 
   //set entitities bit level
   BitRefLevel bit_level0;
   bit_level0.set(0);
   EntityHandle meshset_level0;
-  rval = moab.create_meshset(MESHSET_SET,meshset_level0); CHKERR_PETSC(rval);
+  rval = moab.create_meshset(MESHSET_SET,meshset_level0); CHKERRQ_MOAB(rval);
   ierr = m_field.seed_ref_level_3D(0,bit_level0); CHKERRQ(ierr);
 
   //Fields
@@ -93,7 +83,7 @@ int main(int argc, char *argv[]) {
 
   //set finite elements for problem
   ierr = m_field.modify_problem_add_finite_element("TEST_PROBLEM","TEST_FE"); CHKERRQ(ierr);
-  //set refinment level for problem
+  //set refinement level for problem
   ierr = m_field.modify_problem_ref_level_add_bit("TEST_PROBLEM",bit_level0); CHKERRQ(ierr);
 
 
@@ -144,10 +134,10 @@ int main(int argc, char *argv[]) {
   Vec F;
   ierr = m_field.VecCreateGhost("TEST_PROBLEM",ROW,&F); CHKERRQ(ierr);
 
-  typedef tee_device<ostream, ofstream> TeeDevice;
+  typedef tee_device<std::ostream, std::ofstream> TeeDevice;
   typedef stream<TeeDevice> TeeStream;
-  ofstream ofs("body_force_atom_test.txt");
-  TeeDevice my_tee(cout, ofs);
+  std::ofstream ofs("body_force_atom_test.txt");
+  TeeDevice my_tee(std::cout, ofs);
   TeeStream my_split(my_tee);
 
   ierr = VecZeroEntries(F); CHKERRQ(ierr);
@@ -155,9 +145,9 @@ int main(int argc, char *argv[]) {
 
   for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,BLOCKSET|BODYFORCESSET,it)) {
     Block_BodyForces mydata;
-    ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
-    my_split << mydata << endl;
-    ierr = body_forces_methods.addBlock("DISPLACEMENT",F,it->get_msId()); CHKERRQ(ierr);
+    ierr = it->getAttributeDataStructure(mydata); CHKERRQ(ierr);
+    my_split << mydata << std::endl;
+    ierr = body_forces_methods.addBlock("DISPLACEMENT",F,it->getMeshsetId()); CHKERRQ(ierr);
   }
   ierr = m_field.loop_finite_elements("TEST_PROBLEM","TEST_FE",body_forces_methods.getLoopFe()); CHKERRQ(ierr);
   ierr = VecAssemblyBegin(F); CHKERRQ(ierr);
@@ -167,20 +157,20 @@ int main(int argc, char *argv[]) {
 
   const MoFEMProblem *problemPtr;
   ierr = m_field.get_problem("TEST_PROBLEM",&problemPtr); CHKERRQ(ierr);
-  map<EntityHandle,double> m0,m1,m2;
+  std::map<EntityHandle,double> m0,m1,m2;
   for(_IT_NUMEREDDOFMOFEMENTITY_ROW_FOR_LOOP_(problemPtr,dit)) {
 
-    if(dit->get_dof_coeff_idx()!=1) continue;
+    if(dit->get()->getDofCoeffIdx()!=1) continue;
 
     my_split.precision(3);
     my_split.setf(std::ios::fixed);
-    my_split << dit->get_petsc_gloabl_dof_idx() << " " << dit->get_FieldData() << endl;
+    my_split << dit->get()->getPetscGlobalDofIdx() << " " << dit->get()->getFieldData() << std::endl;
 
   }
 
   double sum = 0;
   ierr = VecSum(F,&sum); CHKERRQ(ierr);
-  my_split << endl << "Sum : " << setprecision(3) << sum << endl;
+  my_split << std::endl << "Sum : " << std::setprecision(3) << sum << std::endl;
 
   ierr = VecDestroy(&F); CHKERRQ(ierr);
 

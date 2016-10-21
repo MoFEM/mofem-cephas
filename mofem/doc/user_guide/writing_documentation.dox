@@ -1,14 +1,12 @@
-/*! \page  a_guide_to_writing_documentation A guide to writing documentation
+/*! \page  a_guide_to_writing_documentation Writing documentation
+\brief A guide why and how to write documentation.
 
 \section why_write_documentation Why write documentation?
 
 Code documentation is essential for its future. MoFEM will live only if others
-know how to do work with it. Not necessary the best code will survive but that
-one with the best documentation. Because all of that always document what you are doing,
-
-- Follow <http://www.stack.nl/~dimitri/doxygen/manual/docblocks.html>
-
-- Think about yourself, you will forget.
+know how to use it. It is believed that not necessary the best code will survive but that
+one with the best documentation. Because all of that always document what you are doing in
+MoFEM.
 
 - Good documentation allow to revise your own code.
 
@@ -19,9 +17,11 @@ one with the best documentation. Because all of that always document what you ar
 - Think about different kind of users, f.e. end user who execute only code,
   beginner programmers and advanced developers.
 
-- Link different part and your work in \em Modules.
+- Link different part and your work in \em modules.
 
-- Use latex formulas to place your equations.
+- Follow <http://www.stack.nl/~dimitri/doxygen/manual/docblocks.html>
+
+- Think about yourself, you will forget. Documentation helps to remind what you have done.
 
 \section genaral_about_writting About writing manual
 
@@ -39,6 +39,8 @@ propose if it.
 
 - User references to other part of documentation if applicable.
 
+- Use latex formulas to place your equations.
+
 - Use link to other sources in internet, f.e. Wikipedia.
 
 \section building_documentation Building manual
@@ -48,7 +50,7 @@ It is simple, you execute command in your shell,
 make doc
 \endcode
 
-Now you can see documentation in web-browser, by opening a file
+Now you can see documentation in web-browser, by opening file
 \code
 $MOFEM_DIR/htm/index.html
 \endcode
@@ -57,8 +59,7 @@ $MOFEM_DIR/htm/index.html
 
 Follow Doxygen <http://www.stack.nl/~dimitri/doxygen/index.html> to
 write your documentation files. Another option is Markdown which is
-supported by Doxygen
-<http://www.stack.nl/~dimitri/doxygen/manual/markdown.html>. Before you
+supported by Doxygen <http://www.stack.nl/~dimitri/doxygen/manual/markdown.html>. Before you
 start you can look how existing documentation is written and follow that example.
 
 - Useful list of command in Doxygen <http://www.stack.nl/~dimitri/doxygen/manual/commands.html>

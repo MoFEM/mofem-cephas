@@ -24,7 +24,7 @@ using namespace MoFEM;
 #include <EdgeForce.hpp>
 
 EdgeForce::OpEdgeForce::OpEdgeForce(
-  const string field_name,Vec f,bCForce &data,
+  const std::string field_name,Vec f,bCForce &data,
   boost::ptr_vector<MethodForForceScaling> &methods_op,
   bool use_snes_f
 ):
@@ -41,7 +41,7 @@ PetscErrorCode EdgeForce::OpEdgeForce::doWork(int side,EntityType type,DataForce
   if(data.getIndices().size()==0) {
     PetscFunctionReturn(0);
   }
-  EntityHandle ent = getMoFEMFEPtr()->get_ent();
+  EntityHandle ent = getNumeredEntFiniteElementPtr()->getEnt();
   if(dAta.eDges.find(ent)==dAta.eDges.end()) {
     PetscFunctionReturn(0);
   }
@@ -49,9 +49,9 @@ PetscErrorCode EdgeForce::OpEdgeForce::doWork(int side,EntityType type,DataForce
   PetscErrorCode ierr;
 
   // Get pointer to DOF and its rank
-  const FENumeredDofMoFEMEntity *dof_ptr;
-  ierr = getMoFEMFEPtr()->get_row_dofs_by_petsc_gloabl_dof_idx(data.getIndices()[0],&dof_ptr); CHKERRQ(ierr);
-  int rank = dof_ptr->get_nb_of_coeffs();
+  const FENumeredDofEntity *dof_ptr;
+  ierr = getNumeredEntFiniteElementPtr()->getRowDofsByPetscGlobalDofIdx(data.getIndices()[0],&dof_ptr); CHKERRQ(ierr);
+  int rank = dof_ptr->getNbOfCoeffs();
 
   int nb_dofs =  data.getIndices().size();
 
@@ -81,10 +81,10 @@ PetscErrorCode EdgeForce::OpEdgeForce::doWork(int side,EntityType type,DataForce
 
       if(!rr) {
         wEights[gg] = 0;
-        if(getTangetAtGaussPtrs().size1()>0) {
+        if(getTangetAtGaussPts().size1()>0) {
           // This is if edge is curved, i.e. HO geometry
           for(int dd = 0;dd<3;dd++) {
-            wEights[gg] += pow(getTangetAtGaussPtrs()(gg,dd),2);
+            wEights[gg] += pow(getTangetAtGaussPts()(gg,dd),2);
           }
           wEights[gg] = sqrt(wEights[gg]);
         } else {
@@ -106,6 +106,16 @@ PetscErrorCode EdgeForce::OpEdgeForce::doWork(int side,EntityType type,DataForce
   // Assemble force into right-hand vector
   Vec myF = F;
   if(useSnesF || F == PETSC_NULL) {
+    switch (getFEMethod()->ts_ctx) {
+      case FEMethod::CTX_TSSETIFUNCTION: {
+        const_cast<FEMethod*>(getFEMethod())->snes_ctx = FEMethod::CTX_SNESSETFUNCTION;
+        const_cast<FEMethod*>(getFEMethod())->snes_x = getFEMethod()->ts_u;
+        const_cast<FEMethod*>(getFEMethod())->snes_f = getFEMethod()->ts_F;
+        break;
+      }
+      default:
+      break;
+    }
     myF = getFEMethod()->snes_f;
   }
   ierr = VecSetValues(
@@ -116,14 +126,16 @@ PetscErrorCode EdgeForce::OpEdgeForce::doWork(int side,EntityType type,DataForce
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode EdgeForce::addForce(const string field_name,Vec F,int ms_id,bool use_snes_f) {
-  PetscFunctionBegin;
+PetscErrorCode EdgeForce::addForce(const std::string field_name,Vec F,int ms_id,bool use_snes_f) {
   PetscErrorCode ierr;
   ErrorCode rval;
   const CubitMeshSets *cubit_meshset_ptr;
-  ierr = mField.get_cubit_msId(ms_id,NODESET,&cubit_meshset_ptr); CHKERRQ(ierr);
-  ierr = cubit_meshset_ptr->get_bc_data_structure(mapForce[ms_id].data); CHKERRQ(ierr);
-  rval = mField.get_moab().get_entities_by_type(cubit_meshset_ptr->meshset,MBEDGE,mapForce[ms_id].eDges,true); CHKERR_PETSC(rval);
+  MeshsetsManager *mmanager_ptr;
+  PetscFunctionBegin;
+  ierr = mField.query_interface(mmanager_ptr); CHKERRQ(ierr);
+  ierr = mmanager_ptr->getCubitMeshsetPtr(ms_id,NODESET,&cubit_meshset_ptr); CHKERRQ(ierr);
+  ierr = cubit_meshset_ptr->getBcDataStructure(mapForce[ms_id].data); CHKERRQ(ierr);
+  rval = mField.get_moab().get_entities_by_type(cubit_meshset_ptr->meshset,MBEDGE,mapForce[ms_id].eDges,true); CHKERRQ_MOAB(rval);
   // Add operator for element, set data and entities operating on the data
   fe.getOpPtrVector().push_back(new OpEdgeForce(field_name,F,mapForce[ms_id],methodsOp,use_snes_f));
   PetscFunctionReturn(0);

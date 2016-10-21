@@ -1,5 +1,5 @@
 #include <stdlib.h>
-#include <string.h>
+#include <std::string.h>
 #include <stdio.h>
 #include "kiss_fft.h"
 #include "kiss_fftr.h"

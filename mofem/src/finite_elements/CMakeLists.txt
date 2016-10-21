@@ -11,24 +11,23 @@
 # You should have received a copy of the GNU Lesser General Public
 # License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 
-include_directories("${PROJECT_SOURCE_DIR}/third_party/phg-quadrule")
+include_directories(${PROJECT_SOURCE_DIR}/src/ftensor/src)
+include_directories(${PROJECT_SOURCE_DIR}/third_party/phg-quadrule)
 
 #finite elements
-add_library(mofem_finite_elements
-  impl/DataStructures.cpp
-  impl/DataOperators.cpp
-  impl/ElementsOnEntities.cpp
-  impl/VolumeElementForcesAndSourcesCore.cpp
-  impl/FaceElementForcesAndSourcesCore.cpp
-  impl/EdgeElementForcesAndSurcesCore.cpp
-  impl/VertexElementForcesAndSourcesCore.cpp
-  impl/FlatPrismElementForcesAndSurcesCore.cpp
-  impl/FatPrismElementForcesAndSurcesCore.cpp
+if(PRECOMPILED_HEADRES)
+  set_source_files_properties(
+    All.cpp
+    PROPERTIES
+    COMPILE_FLAGS "-include ${PROJECT_BINARY_DIR}/include/precompiled/Includes.hpp"
+  )
+endif(PRECOMPILED_HEADRES)
+add_library(
+  mofem_finite_elements
+  impl/All.cpp
 )
-
-#install(FILES
-#  ForcesAndSurcesCore.hpp
-#  PostProcOnRefMesh.hpp
-#  DESTINATION ${CMAKE_INSTALL_PREFIX}/include)
+if(PRECOMPILED_HEADRES)
+  add_dependencies(mofem_finite_elements Includes.hpp.pch_copy)
+endif(PRECOMPILED_HEADRES)
 
 install(TARGETS mofem_finite_elements DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)

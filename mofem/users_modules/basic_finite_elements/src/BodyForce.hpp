@@ -32,10 +32,10 @@
   */
 struct BodyFroceConstantField {
 
-  FieldInterface &mField;
+  MoFEM::Interface &mField;
 
-  struct MyVolumeFE: public VolumeElementForcesAndSourcesCore {
-    MyVolumeFE(FieldInterface &m_field): VolumeElementForcesAndSourcesCore(m_field) {}
+  struct MyVolumeFE: public MoFEM::VolumeElementForcesAndSourcesCore {
+    MyVolumeFE(MoFEM::Interface &m_field): MoFEM::VolumeElementForcesAndSourcesCore(m_field) {}
     int getRule(int order) { return order; };
   };
 
@@ -43,16 +43,16 @@ struct BodyFroceConstantField {
   MyVolumeFE& getLoopFe() { return fe; }
 
   BodyFroceConstantField(
-    FieldInterface &m_field):
+    MoFEM::Interface &m_field):
     mField(m_field),fe(m_field) {}
 
-  struct OpBodyForce: public VolumeElementForcesAndSourcesCore::UserDataOperator {
+  struct OpBodyForce: public MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator {
 
     Vec F;
     Block_BodyForces &dAta;
     Range blockTets;
-    OpBodyForce(const string field_name,Vec _F,Block_BodyForces &data,Range block_tets):
-      VolumeElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROW),
+    OpBodyForce(const std::string field_name,Vec _F,Block_BodyForces &data,Range block_tets):
+      MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROW),
       F(_F),dAta(data),blockTets(block_tets) {}
 
     ublas::vector<FieldData> Nf;
@@ -62,13 +62,13 @@ struct BodyFroceConstantField {
       PetscFunctionBegin;
 
       if(data.getIndices().size()==0) PetscFunctionReturn(0);
-      if(blockTets.find(getMoFEMFEPtr()->get_ent())==blockTets.end()) PetscFunctionReturn(0);
+      if(blockTets.find(getNumeredEntFiniteElementPtr()->getEnt())==blockTets.end()) PetscFunctionReturn(0);
 
       PetscErrorCode ierr;
 
-      const FENumeredDofMoFEMEntity *dof_ptr;
-      ierr = getMoFEMFEPtr()->get_row_dofs_by_petsc_gloabl_dof_idx(data.getIndices()[0],&dof_ptr); CHKERRQ(ierr);
-      int rank = dof_ptr->get_nb_of_coeffs();
+      const FENumeredDofEntity *dof_ptr;
+      ierr = getNumeredEntFiniteElementPtr()->getRowDofsByPetscGlobalDofIdx(data.getIndices()[0],&dof_ptr); CHKERRQ(ierr);
+      int rank = dof_ptr->getNbOfCoeffs();
 
       int nb_row_dofs = data.getIndices().size()/rank;
 
@@ -98,11 +98,11 @@ struct BodyFroceConstantField {
 
         }
       }
-      // cerr << dAta.data.acceleration_x << endl;
-      // cerr << dAta.data.acceleration_y << endl;
-      // cerr << dAta.data.acceleration_z << endl;
-      // cerr << dAta.data.density << endl;
-      // cerr << Nf << endl;
+      // std::cerr << dAta.data.acceleration_x << std::endl;
+      // std::cerr << dAta.data.acceleration_y << std::endl;
+      // std::cerr << dAta.data.acceleration_z << std::endl;
+      // std::cerr << dAta.data.density << std::endl;
+      // std::cerr << Nf << std::endl;
 
       ierr = VecSetValues(F,data.getIndices().size(),
         &data.getIndices()[0],&Nf[0],ADD_VALUES
@@ -114,16 +114,18 @@ struct BodyFroceConstantField {
 
   };
 
-  PetscErrorCode addBlock(const string field_name,Vec &F,int ms_id) {
-    PetscFunctionBegin;
+  PetscErrorCode addBlock(const std::string field_name,Vec &F,int ms_id) {
     PetscErrorCode ierr;
     ErrorCode rval;
     const CubitMeshSets *cubit_meshset_ptr;
-    ierr = mField.get_cubit_msId(ms_id,BLOCKSET,&cubit_meshset_ptr); CHKERRQ(ierr);
-    ierr = cubit_meshset_ptr->get_attribute_data_structure(mapData[ms_id]); CHKERRQ(ierr);
-    EntityHandle meshset = cubit_meshset_ptr->get_meshset();
+    MeshsetsManager *mmanager_ptr;
+    PetscFunctionBegin;
+    ierr = mField.query_interface(mmanager_ptr); CHKERRQ(ierr);
+    ierr = mmanager_ptr->getCubitMeshsetPtr(ms_id,BLOCKSET,&cubit_meshset_ptr); CHKERRQ(ierr);
+    ierr = cubit_meshset_ptr->getAttributeDataStructure(mapData[ms_id]); CHKERRQ(ierr);
+    EntityHandle meshset = cubit_meshset_ptr->getMeshset();
     Range tets;
-    rval = mField.get_moab().get_entities_by_type(meshset,MBTET,tets,true); CHKERR_PETSC(rval);
+    rval = mField.get_moab().get_entities_by_type(meshset,MBTET,tets,true); CHKERRQ_MOAB(rval);
     fe.getOpPtrVector().push_back(new OpBodyForce(field_name,F,mapData[ms_id],tets));
     PetscFunctionReturn(0);
   }
@@ -131,7 +133,7 @@ struct BodyFroceConstantField {
 
   private:
 
-  map<int,Block_BodyForces> mapData;
+  std::map<int,Block_BodyForces> mapData;
 
 };
 

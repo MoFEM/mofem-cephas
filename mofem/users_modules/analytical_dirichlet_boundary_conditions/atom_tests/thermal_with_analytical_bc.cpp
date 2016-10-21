@@ -45,9 +45,9 @@ static char help[] = "...\n\n";
 
 struct AnaliticalFunction {
 
-  vector<ublas::vector<double> > val;
+  std::vector<ublas::vector<double> > val;
 
-  vector<ublas::vector<double> >& operator()(double x,double y,double z) {
+  std::vector<ublas::vector<double> >& operator()(double x,double y,double z) {
     val.resize(1);
     val[0].resize(1);
     (val[0])[0] = pow(x,1);
@@ -63,13 +63,13 @@ int main(int argc, char *argv[]) {
   PetscInitialize(&argc,&argv,(char *)0,help);
 
   moab::Core mb_instance;
-  Interface& moab = mb_instance;
+  moab::Interface& moab = mb_instance;
   int rank;
   MPI_Comm_rank(PETSC_COMM_WORLD,&rank);
 
   PetscBool flg = PETSC_TRUE;
   char mesh_file_name[255];
-  ierr = PetscOptionsGetString(PETSC_NULL,"-my_file",mesh_file_name,255,&flg); CHKERRQ(ierr);
+  ierr = PetscOptionsGetString(PETSC_NULL,PETSC_NULL,"-my_file",mesh_file_name,255,&flg); CHKERRQ(ierr);
   if(flg != PETSC_TRUE) {
     SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_file (MESH FILE NEEDED)");
   }
@@ -80,18 +80,18 @@ int main(int argc, char *argv[]) {
   const char *option;
   option = "";//"PARALLEL=BCAST;";//;DEBUG_IO";
   BARRIER_RANK_START(pcomm)
-  rval = moab.load_file(mesh_file_name, 0, option); CHKERR_PETSC(rval);
+  rval = moab.load_file(mesh_file_name, 0, option); CHKERRQ_MOAB(rval);
   BARRIER_RANK_END(pcomm)
 
   //Create MoFEM (Joseph) database
   MoFEM::Core core(moab);
-  FieldInterface& m_field = core;
+  MoFEM::Interface& m_field = core;
 
   //set entitities bit level
   BitRefLevel bit_level0;
   bit_level0.set(0);
   EntityHandle meshset_level0;
-  rval = moab.create_meshset(MESHSET_SET,meshset_level0); CHKERR_PETSC(rval);
+  rval = moab.create_meshset(MESHSET_SET,meshset_level0); CHKERRQ_MOAB(rval);
   ierr = m_field.seed_ref_level_3D(0,bit_level0); CHKERRQ(ierr);
 
   //Fields
@@ -101,7 +101,7 @@ int main(int argc, char *argv[]) {
   ierr = m_field.add_problem("TEST_PROBLEM"); CHKERRQ(ierr);
   ierr = m_field.add_problem("BC_PROBLEM"); CHKERRQ(ierr);
 
-  //set refinment level for problem
+  //set refinement level for problem
   ierr = m_field.modify_problem_ref_level_add_bit("TEST_PROBLEM",bit_level0); CHKERRQ(ierr);
   ierr = m_field.modify_problem_ref_level_add_bit("BC_PROBLEM",bit_level0); CHKERRQ(ierr);
 
@@ -120,7 +120,7 @@ int main(int argc, char *argv[]) {
   //set app. order
   //see Hierarchic Finite Element Bases on Unstructured Tetrahedral Meshes (Mark Ainsworth & Joe Coyle)
   PetscInt order;
-  ierr = PetscOptionsGetInt(PETSC_NULL,"-my_order",&order,&flg); CHKERRQ(ierr);
+  ierr = PetscOptionsGetInt(PETSC_NULL,PETSC_NULL,"-my_order",&order,&flg); CHKERRQ(ierr);
   if(flg != PETSC_TRUE) {
     order = 2;
   }
@@ -135,7 +135,7 @@ int main(int argc, char *argv[]) {
 
   Range bc_tris;
   for(_IT_CUBITMESHSETS_BY_NAME_FOR_LOOP_(m_field,"ANALYTICAL_BC",it)) {
-    rval = moab.get_entities_by_type(it->get_meshset(),MBTRI,bc_tris,true); CHKERR_PETSC(rval);
+    rval = moab.get_entities_by_type(it->getMeshset(),MBTRI,bc_tris,true); CHKERRQ_MOAB(rval);
   }
 
   AnalyticalDirichletBC analytical_bc(m_field);
@@ -203,7 +203,8 @@ int main(int argc, char *argv[]) {
 
   ierr = m_field.loop_finite_elements("TEST_PROBLEM","THERMAL_FE",thermal_elements.getLoopFeRhs()); CHKERRQ(ierr);
   ierr = m_field.loop_finite_elements("TEST_PROBLEM","THERMAL_FE",thermal_elements.getLoopFeLhs()); CHKERRQ(ierr);
-  ierr = m_field.loop_finite_elements("TEST_PROBLEM","THERMAL_FLUX_FE",thermal_elements.getLoopFeFlux()); CHKERRQ(ierr);
+  if(m_field.check_finite_element("THERMAL_FLUX_FE"))
+    ierr = m_field.loop_finite_elements("TEST_PROBLEM","THERMAL_FLUX_FE",thermal_elements.getLoopFeFlux()); CHKERRQ(ierr);
 
   //postproc
   ierr = m_field.problem_basic_method_postProcess("TEST_PROBLEM",analytical_ditihlet_bc); CHKERRQ(ierr);
@@ -245,11 +246,26 @@ int main(int argc, char *argv[]) {
   ierr = VecMax(T,NULL,&pointwisenorm);
   std::cout << "\n The Global Pointwise Norm of error for this problem is : " << pointwisenorm << std::endl;
 
-  PetscViewer viewer;
-  PetscViewerASCIIOpen(PETSC_COMM_WORLD,"thermal_with_analytical_bc.txt",&viewer);
-  ierr = VecChop(T,1e-4); CHKERRQ(ierr);
-  ierr = VecView(T,viewer); CHKERRQ(ierr);
-  ierr = PetscViewerDestroy(&viewer); CHKERRQ(ierr);
+  // PetscViewer viewer;
+  // PetscViewerASCIIOpen(PETSC_COMM_WORLD,"thermal_with_analytical_bc.txt",&viewer);
+  // ierr = VecChop(T,1e-4); CHKERRQ(ierr);
+  // ierr = VecView(T,viewer); CHKERRQ(ierr);
+  // ierr = PetscViewerDestroy(&viewer); CHKERRQ(ierr);
+
+
+  double sum = 0;
+  ierr = VecSum(T,&sum); CHKERRQ(ierr);
+  ierr = PetscPrintf(PETSC_COMM_WORLD,"sum  = %9.8e\n",sum); CHKERRQ(ierr);
+  double fnorm;
+  ierr = VecNorm(T,NORM_2,&fnorm); CHKERRQ(ierr);
+  ierr = PetscPrintf(PETSC_COMM_WORLD,"fnorm  = %9.8e\n",fnorm); CHKERRQ(ierr);
+  if(fabs(sum+6.46079983e-01)>1e-7) {
+    SETERRQ(PETSC_COMM_WORLD,MOFEM_ATOM_TEST_INVALID,"Failed to pass test");
+  }
+  if(fabs(fnorm-4.26080052e+00)>1e-6) {
+    SETERRQ(PETSC_COMM_WORLD,MOFEM_ATOM_TEST_INVALID,"Failed to pass test");
+  }
+
 
   if(debug) {
 
@@ -259,7 +275,7 @@ int main(int argc, char *argv[]) {
     ierr = post_proc.addFieldValuesPostProc("MESH_NODE_POSITIONS"); CHKERRQ(ierr);
     ierr = post_proc.addFieldValuesGradientPostProc("TEMP"); CHKERRQ(ierr);
     ierr = m_field.loop_finite_elements("TEST_PROBLEM","THERMAL_FE",post_proc); CHKERRQ(ierr);
-    rval = post_proc.postProcMesh.write_file("out.h5m","MOAB","PARALLEL=WRITE_PART"); CHKERR_PETSC(rval);
+    ierr = post_proc.writeFile("out.h5m"); CHKERRQ(ierr);
 
   }
 

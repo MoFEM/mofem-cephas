@@ -13,14 +13,16 @@
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
 #include <Includes.hpp>
-// #include <version.h>
+#include <version.h>
 #include <definitions.h>
 #include <Common.hpp>
 
 #include <h1_hdiv_hcurl_l2.h>
 
+#include <UnknownInterface.hpp>
+
 #include <MaterialBlocks.hpp>
-#include <CubitBCData.hpp>
+#include <BCData.hpp>
 #include <TagMultiIndices.hpp>
 #include <CoordSysMultiIndices.hpp>
 #include <FieldMultiIndices.hpp>
@@ -34,8 +36,8 @@
 #include <SeriesMultiIndices.hpp>
 
 #include <LoopMethods.hpp>
-#include <FieldInterface.hpp>
-#include <MeshRefinment.hpp>
+#include <Interface.hpp>
+#include <MeshRefinement.hpp>
 #include <PrismInterface.hpp>
 #include <SeriesRecorder.hpp>
 #include <Core.hpp>
@@ -82,7 +84,7 @@ PetscErrorCode f_TSSetIFunction(TS ts,PetscReal t,Vec u,Vec u_t,Vec F,void *ctx)
     lit->second->ts_step = step;
     ierr = lit->second->set_ts_ctx(TSMethod::CTX_TSSETIFUNCTION);
     ierr = lit->second->set_ts(ts); CHKERRQ(ierr);
-    ierr = ts_ctx->mField.loop_finite_elements(ts_ctx->problemName,lit->first,*(lit->second)); CHKERRQ(ierr);
+    ierr = ts_ctx->mField.loop_finite_elements(ts_ctx->problemName,lit->first,*(lit->second),ts_ctx->bH); CHKERRQ(ierr);
     ierr = lit->second->set_ts_ctx(TSMethod::CTX_TSNONE);
   }
   //post process
@@ -146,7 +148,7 @@ PetscErrorCode f_TSSetIJacobian(TS ts,PetscReal t,Vec u,Vec u_t,PetscReal a,Mat 
     lit->second->ts_step = step;
     ierr = lit->second->set_ts_ctx(TSMethod::CTX_TSSETIJACOBIAN);
     ierr = lit->second->set_ts(ts); CHKERRQ(ierr);
-    ierr = ts_ctx->mField.loop_finite_elements(ts_ctx->problemName,lit->first,*(lit->second)); CHKERRQ(ierr);
+    ierr = ts_ctx->mField.loop_finite_elements(ts_ctx->problemName,lit->first,*(lit->second),ts_ctx->bH); CHKERRQ(ierr);
     ierr = lit->second->set_ts_ctx(TSMethod::CTX_TSNONE); CHKERRQ(ierr);
   }
   //post process
@@ -199,7 +201,7 @@ PetscErrorCode f_TSMonitorSet(TS ts,PetscInt step,PetscReal t,Vec u,void *ctx) {
     lit->second->ts_F = PETSC_NULL;
     ierr = lit->second->set_ts_ctx(TSMethod::CTX_TSTSMONITORSET);
     ierr = lit->second->set_ts(ts); CHKERRQ(ierr);
-    ierr = ts_ctx->mField.loop_finite_elements(ts_ctx->problemName,lit->first,*(lit->second)); CHKERRQ(ierr);
+    ierr = ts_ctx->mField.loop_finite_elements(ts_ctx->problemName,lit->first,*(lit->second),ts_ctx->bH); CHKERRQ(ierr);
     ierr = lit->second->set_ts_ctx(TSMethod::CTX_TSNONE);
   }
   //post process

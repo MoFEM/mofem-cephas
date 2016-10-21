@@ -14,18 +14,6 @@
 
 #include <MoFEM.hpp>
 
-//#include <DirichletBC.hpp>
-//#include <PostProcOnRefMesh.hpp>
-
-#include <Projection10NodeCoordsOnField.hpp>
-
-#include <boost/iostreams/tee.hpp>
-#include <boost/iostreams/stream.hpp>
-#include <fstream>
-#include <iostream>
-
-#include<moab/Skinner.hpp>
-
 namespace bio = boost::iostreams;
 using bio::tee_device;
 using bio::stream;
@@ -42,32 +30,49 @@ int main(int argc, char *argv[]) {
   PetscInitialize(&argc,&argv,(char *)0,help);
 
   moab::Core mb_instance;
-  Interface& moab = mb_instance;
+  moab::Interface& moab = mb_instance;
   int rank;
   MPI_Comm_rank(PETSC_COMM_WORLD,&rank);
 
-  //create one tet
-  double tet_coords[] = {
-    0,0,0,
-    0.5,0,0,
-    0,0.5,0,
-    0,0,0.5
-  };
-
-  EntityHandle nodes[4];
-  for(int nn = 0;nn<4;nn++) {
-    rval = moab.create_vertex(&tet_coords[3*nn],nodes[nn]); CHKERR_PETSC(rval);
+  PetscBool flg = PETSC_TRUE;
+  char mesh_file_name[255];
+  #if PETSC_VERSION_GE(3,6,4)
+  ierr = PetscOptionsGetString(PETSC_NULL,"","-my_file",mesh_file_name,255,&flg); CHKERRQ(ierr);
+  #else
+  ierr = PetscOptionsGetString(PETSC_NULL,PETSC_NULL,"-my_file",mesh_file_name,255,&flg); CHKERRQ(ierr);
+  #endif
+  if(flg != PETSC_TRUE) {
+    SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_file (MESH FILE NEEDED)");
   }
-
-  EntityHandle tet;
-  rval = moab.create_element(MBTET,nodes,4,tet); CHKERR_PETSC(rval);
+  const char *option;
+  option = "";
+  rval = moab.load_file(mesh_file_name, 0, option); CHKERRQ_MOAB(rval);
 
   ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
   if(pcomm == NULL) pcomm =  new ParallelComm(&moab,PETSC_COMM_WORLD);
 
+  // //create one tet
+  // double tet_coords[] = {
+  //   0,0,0,
+  //   0.5,0,0,
+  //   0,0.5,0,
+  //   0,0,0.5
+  // };
+  //
+  // EntityHandle nodes[4];
+  // for(int nn = 0;nn<4;nn++) {
+  //   rval = moab.create_vertex(&tet_coords[3*nn],nodes[nn]); CHKERRQ_MOAB(rval);
+  // }
+  //
+  // EntityHandle tet;
+  // rval = moab.create_element(MBTET,nodes,4,tet); CHKERRQ_MOAB(rval);
+  //
+  // ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
+  // if(pcomm == NULL) pcomm =  new ParallelComm(&moab,PETSC_COMM_WORLD);
+
   //create MoFEM (Joseph) database
   MoFEM::Core core(moab);
-  FieldInterface& m_field = core;
+  MoFEM::Interface& m_field = core;
   //meshset consisting all entities in mesh
   EntityHandle root_set = moab.get_root_set();
 
@@ -75,7 +80,7 @@ int main(int argc, char *argv[]) {
   BitRefLevel bit_level0;
   bit_level0.set(0);
   EntityHandle meshset_level0;
-  rval = moab.create_meshset(MESHSET_SET,meshset_level0); CHKERR_PETSC(rval);
+  rval = moab.create_meshset(MESHSET_SET,meshset_level0); CHKERRQ_MOAB(rval);
   ierr = m_field.seed_ref_level_3D(0,bit_level0); CHKERRQ(ierr);
 
   //fields
@@ -106,7 +111,7 @@ int main(int argc, char *argv[]) {
   ierr = m_field.get_entities_by_type_and_ref_level(BitRefLevel().set(0),BitRefLevel().set(),MBTET,tets); CHKERRQ(ierr);
   Skinner skin(&moab);
   Range skin_faces; // skin faces from 3d ents
-  rval = skin.find_skin(0,tets,false,skin_faces); CHKERR(rval);
+  rval = skin.find_skin(0,tets,false,skin_faces); CHKERR_MOAB(rval);
   ierr = m_field.add_ents_to_finite_element_by_TRIs(skin_faces,"SKIN_FE"); CHKERRQ(ierr);
 
   //build finite elemnts
@@ -120,7 +125,7 @@ int main(int argc, char *argv[]) {
   //set finite elements for problem
   ierr = m_field.modify_problem_add_finite_element("TEST_PROBLEM","TET_FE"); CHKERRQ(ierr);
   ierr = m_field.modify_problem_add_finite_element("TEST_PROBLEM","SKIN_FE"); CHKERRQ(ierr);
-  //set refinment level for problem
+  //set refinement level for problem
   ierr = m_field.modify_problem_ref_level_add_bit("TEST_PROBLEM",bit_level0); CHKERRQ(ierr);
   //build problem
   ierr = m_field.build_problems(); CHKERRQ(ierr);
@@ -134,9 +139,10 @@ int main(int argc, char *argv[]) {
 
   struct OpTetDivergence: public VolumeElementForcesAndSourcesCore::UserDataOperator {
 
-    FieldData &dIv;
-    OpTetDivergence(FieldData &div):
-      VolumeElementForcesAndSourcesCore::UserDataOperator("HDIV",UserDataOperator::OPROW),dIv(div) {}
+    double &dIv;
+    OpTetDivergence(double &div):
+    VolumeElementForcesAndSourcesCore::UserDataOperator("HDIV",UserDataOperator::OPROW),
+    dIv(div) {}
 
     PetscErrorCode doWork(
       int side,
@@ -151,7 +157,7 @@ int main(int argc, char *argv[]) {
 
       if(data.getFieldData().size()==0) PetscFunctionReturn(0);
 
-      //cout << "type " << type << " side " << side << endl;
+      //cout << "type " << type << " side " << side << std::endl;
 
       int nb_gauss_pts = data.getDiffHdivN().size1();
       int nb_dofs = data.getFieldData().size();
@@ -161,8 +167,8 @@ int main(int argc, char *argv[]) {
 
       int gg = 0;
       for(;gg<nb_gauss_pts;gg++) {
-        ierr = getDivergenceMatrixOperato_Hdiv(side,type,data,gg,div_vec); CHKERRQ(ierr);
-        //cout << std::fixed << div_vec << endl;
+        ierr = getDivergenceOfHDivBaseFunctions(side,type,data,gg,div_vec); CHKERRQ(ierr);
+        //cout << std::fixed << div_vec << std::endl;
         unsigned int dd = 0;
         for(;dd<div_vec.size();dd++) {
           double w = getGaussPts()(3,gg)*getVolume();
@@ -171,11 +177,11 @@ int main(int argc, char *argv[]) {
           }
           dIv += div_vec[dd]*w;
         }
-        //cout << std::fixed << data.getDiffHdivN(gg) << endl;
+        //cout << std::fixed << data.getDiffHdivN(gg) << std::endl;
       }
 
-      //cout << std::fixed << data.getDiffHdivN() << endl;
-      //cout << endl;
+      //cout << std::fixed << data.getDiffHdivN() << std::endl;
+      //cout << std::endl;
 
 
       PetscFunctionReturn(0);
@@ -185,15 +191,17 @@ int main(int argc, char *argv[]) {
 
   struct MyFE: public VolumeElementForcesAndSourcesCore {
 
-    MyFE(FieldInterface &m_field): VolumeElementForcesAndSourcesCore(m_field) {}
-    int getRule(int order) { return order; }; //order/2; };
+    MyFE(MoFEM::Interface &m_field):
+    VolumeElementForcesAndSourcesCore(m_field) {}
+    int getRule(int order) { return 2*order; }; //order/2; };
 
   };
 
   struct MyTriFE: public FaceElementForcesAndSourcesCore {
 
-    MyTriFE(FieldInterface &m_field): FaceElementForcesAndSourcesCore(m_field) {}
-    int getRule(int order) { return order; };//2*order; }; //order/2; };
+    MyTriFE(MoFEM::Interface &m_field):
+    FaceElementForcesAndSourcesCore(m_field) {}
+    int getRule(int order) { return 2*order; };//2*order; }; //order/2; };
 
   };
 
@@ -201,13 +209,14 @@ int main(int argc, char *argv[]) {
 
     double &dIv;
     OpFacesFluxes(double &div):
-      FaceElementForcesAndSourcesCore::UserDataOperator("HDIV",UserDataOperator::OPROW),
-      dIv(div) {}
+    FaceElementForcesAndSourcesCore::UserDataOperator("HDIV",UserDataOperator::OPROW),
+    dIv(div) {}
 
     PetscErrorCode doWork(
       int side,
       EntityType type,
-      DataForcesAndSurcesCore::EntData &data) {
+      DataForcesAndSurcesCore::EntData &data
+    ) {
       PetscFunctionBegin;
 
       if(type != MBTRI) PetscFunctionReturn(0);
@@ -221,9 +230,9 @@ int main(int argc, char *argv[]) {
         for(;dd<nb_dofs;dd++) {
           double area;
           VectorDouble n;
-          if(getNormals_at_GaussPt().size1() == (unsigned int)nb_gauss_pts) {
-            n = getNormals_at_GaussPt(gg);
-            area = norm_2(getNormals_at_GaussPt(gg))*0.5;
+          if(getNormalsAtGaussPt().size1() == (unsigned int)nb_gauss_pts) {
+            n = getNormalsAtGaussPt(gg);
+            area = norm_2(getNormalsAtGaussPt(gg))*0.5;
           } else {
             n = getNormal();
             area = getArea();
@@ -235,7 +244,7 @@ int main(int argc, char *argv[]) {
           n[2]*data.getHdivN(gg)(dd,2) )
           *getGaussPts()(2,gg)*area;
         }
-        //cout << getNormal() << endl;
+        //cout << getNormal() << std::endl;
       }
 
       PetscFunctionReturn(0);
@@ -256,33 +265,41 @@ int main(int argc, char *argv[]) {
   ierr = m_field.loop_finite_elements("TEST_PROBLEM","TET_FE",tet_fe);  CHKERRQ(ierr);
   ierr = m_field.loop_finite_elements("TEST_PROBLEM","SKIN_FE",skin_fe);  CHKERRQ(ierr);
 
-  cout.precision(12);
+  std::cout.precision(12);
 
-  cout << "divergence_vol " << divergence_vol << endl;
-  cout << "divergence_skin " << divergence_skin << endl;
+  std::cout << "divergence_vol " << divergence_vol << std::endl;
+  std::cout << "divergence_skin " << divergence_skin << std::endl;
 
   const double eps = 1e-6;
-  if(fabs(divergence_vol-1.-1./3)>eps) {
-     SETERRQ2(PETSC_COMM_SELF,MOFEM_ATOM_TEST_INVALID,"invalid divergence_vol = %6.4e, should be %6.4e\n",
-	divergence_vol,1+1./3.);
+  if(fabs(divergence_vol-8.0)>eps) {
+    SETERRQ2(
+      PETSC_COMM_SELF,
+      MOFEM_ATOM_TEST_INVALID,
+      "invalid divergence_vol = %6.4e, should be %6.4e\n",
+      divergence_vol,8.0
+    );
   }
-  if(fabs(divergence_skin-1.-1./3)>eps) {
+  if(fabs(divergence_skin-8.0)>eps) {
      SETERRQ2(PETSC_COMM_SELF,MOFEM_ATOM_TEST_INVALID,"invalid fluxes = %6.4e, should be %6.4e\n",
-	divergence_skin,1+1./3.);
+	    divergence_skin,8.0);
   }
 
   ierr = m_field.add_field("MESH_NODE_POSITIONS",H1,3); CHKERRQ(ierr);
 
   ierr = m_field.add_ents_to_field_by_TETs(0,"MESH_NODE_POSITIONS"); CHKERRQ(ierr);
   ierr = m_field.set_field_order(0,MBVERTEX,"MESH_NODE_POSITIONS",1); CHKERRQ(ierr);
-  ierr = m_field.set_field_order(0,MBEDGE,"MESH_NODE_POSITIONS",1); CHKERRQ(ierr);
-  ierr = m_field.set_field_order(0,MBTRI,"MESH_NODE_POSITIONS",1); CHKERRQ(ierr);
-  ierr = m_field.set_field_order(0,MBTET,"MESH_NODE_POSITIONS",1); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(0,MBEDGE,"MESH_NODE_POSITIONS",2); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(0,MBTRI,"MESH_NODE_POSITIONS",2); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(0,MBTET,"MESH_NODE_POSITIONS",2); CHKERRQ(ierr);
 
   ierr = m_field.modify_finite_element_add_field_data("TET_FE","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
   ierr = m_field.modify_finite_element_add_field_data("SKIN_FE","MESH_NODE_POSITIONS"); CHKERRQ(ierr);
 
   ierr = m_field.build_fields(); CHKERRQ(ierr);
+  //project geometry form 10 node tets on higher order approx. functions
+  Projection10NodeCoordsOnField ent_method(m_field,"MESH_NODE_POSITIONS");
+  ierr = m_field.loop_dofs("MESH_NODE_POSITIONS",ent_method); CHKERRQ(ierr);
+
   ierr = m_field.build_finite_elements(); CHKERRQ(ierr);
   ierr = m_field.build_adjacencies(bit_level0); CHKERRQ(ierr);
   ierr = m_field.build_problems(); CHKERRQ(ierr);
@@ -292,16 +309,16 @@ int main(int argc, char *argv[]) {
   ierr = m_field.partition_finite_elements("TEST_PROBLEM"); CHKERRQ(ierr);
   ierr = m_field.partition_ghost_dofs("TEST_PROBLEM"); CHKERRQ(ierr);
 
-  for(_IT_GET_DOFS_FIELD_BY_NAME_AND_TYPE_FOR_LOOP_(m_field,"MESH_NODE_POSITIONS",MBVERTEX,dof)) {
-    EntityHandle vert = dof->get_ent();
-    double coords[3];
-    rval = moab.get_coords(&vert,1,coords); CHKERR(rval);
-    coords[0] *= 2;
-    coords[1] *= 4;
-    coords[2] *= 0.5;
-
-    dof->get_FieldData() = coords[dof->get_dof_coeff_idx()];
-  }
+  // for(_IT_GET_DOFS_FIELD_BY_NAME_AND_TYPE_FOR_LOOP_(m_field,"MESH_NODE_POSITIONS",MBVERTEX,dof)) {
+  //   EntityHandle vert = (*dof)->getEnt();
+  //   double coords[3];
+  //   rval = moab.get_coords(&vert,1,coords); CHKERR_MOAB(rval);
+  //   coords[0] *= 2;
+  //   coords[1] *= 4;
+  //   coords[2] *= 0.5;
+  //
+  //   (*dof)->getFieldData() = coords[(*dof)->getDofCoeffIdx()];
+  // }
 
   divergence_vol = 0;
   divergence_skin = 0;
@@ -309,16 +326,19 @@ int main(int argc, char *argv[]) {
   ierr = m_field.loop_finite_elements("TEST_PROBLEM","TET_FE",tet_fe);  CHKERRQ(ierr);
   ierr = m_field.loop_finite_elements("TEST_PROBLEM","SKIN_FE",skin_fe);  CHKERRQ(ierr);
 
-  cout.precision(12);
+  std::cout.precision(12);
 
-  cout << "divergence_vol " << divergence_vol << endl;
-  cout << "divergence_skin " << divergence_skin << endl;
+  std::cout << "divergence_vol " << divergence_vol << std::endl;
+  std::cout << "divergence_skin " << divergence_skin << std::endl;
 
   if(fabs(divergence_skin-divergence_vol)>eps) {
-     SETERRQ2(PETSC_COMM_SELF,MOFEM_ATOM_TEST_INVALID,"invalid surface flux or divergence or both\n",
-	divergence_skin,divergence_vol);
+     SETERRQ2(
+       PETSC_COMM_SELF,
+       MOFEM_ATOM_TEST_INVALID,
+       "invalid surface flux or divergence or both\n",
+	    divergence_skin,divergence_vol
+    );
   }
-
 
   ierr = PetscFinalize(); CHKERRQ(ierr);
 }

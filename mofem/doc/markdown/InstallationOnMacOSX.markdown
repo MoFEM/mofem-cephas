@@ -1,5 +1,10 @@
 ## Installation on OS X ##
 
+Installation of MoFEM on MacOS X can be made as well within docker see details
+[go to this page](doc/markdown/InstalltionWithDocker.markdown). Installation in
+docker is faster where prebuild enviroent is downloaded directly form
+[docker hub](https://hub.docker.com/r/likask/ubuntu_mofem/).
+
 If you have any problems, feedback or would like to suggest corrections,
 please email [cmatgu@googlegroups.com](mailto:cmatgu@googlegroups.com).
 Before you start you need to install
@@ -77,20 +82,6 @@ make install
 
 ###5. Install other libraries
 
-####5.3 Boost 1.57
-
-~~~~~~
-cd $MOFEM_INSTALL_DIR
-# Download boost from http://www.boost.org/users/history/version_1_57_0.html
-# and place it in mofem install directory ($MOFEM_INSTALL_DIR)
-tar -xvvzf boost_1_57_0.tar.gz
-cd boost_1_57_0
-./bootstrap.sh --prefix=$MOFEM_INSTALL_DIR/local
-./b2 install
-~~~~~~
-
-Note: It will take some time to build boost.
-
 ####5.2 TetGen
 
 ~~~~~~
@@ -117,7 +108,7 @@ mkdir $MOFEM_INSTALL_DIR/lib
 cd $MOFEM_INSTALL_DIR/lib
 
 # Configuring and compiling code:
-cmake -DCMAKE_Fortran_COMPILER=/usr/local/bin/gfortran -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_FLAGS="-Wall"  -DCMAKE_CXX_FLAGS="-Wall -Wno-bind-to-temporary-copy -Wno-overloaded-virtual" -DPETSC_DIR=$MOFEM_INSTALL_DIR/petsc/ -DPETSC_ARCH=arch-darwin-c-opt -DMOAB_DIR=$MOFEM_INSTALL_DIR/petsc/arch-darwin-c-opt/ -DADOL-C_DIR=$MOFEM_INSTALL_DIR/local/ -DTETGEN_DIR=$MOFEM_INSTALL_DIR/tetgen1.5.0 -DCMAKE_INSTALL_PREFIX=$MOFEM_INSTALL_DIR/users_modules $MOFEM_INSTALL_DIR/mofem-cephas/mofem
+cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_FLAGS="-Wall"  -DCMAKE_CXX_FLAGS="-Wall -Wno-bind-to-temporary-copy -Wno-overloaded-virtual" -DPETSC_DIR=$MOFEM_INSTALL_DIR/petsc/ -DPETSC_ARCH=arch-darwin-c-opt -DMOAB_DIR=$MOFEM_INSTALL_DIR/petsc/arch-darwin-c-opt/ -DADOL-C_DIR=$MOFEM_INSTALL_DIR/local/ -DTETGEN_DIR=$MOFEM_INSTALL_DIR/tetgen1.5.0 -DCMAKE_INSTALL_PREFIX=$MOFEM_INSTALL_DIR/users_modules $MOFEM_INSTALL_DIR/mofem-cephas/mofem
 
 # Building code (assuming that you have computer with 4 cores):
 make -j4 install
@@ -146,32 +137,6 @@ cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_FLAGS="-Wall"  -DCMAKE_CXX_FLAGS="-Wa
 # Build:
 make -j4
 ~~~~~~
-
-###8. Dynamic Linked Shared Libraries
-
-When executing a binary there may be a `dyld` related error. This is because the required dynamic libraries haven not been linked to the executable.
-
-There are two ways of solving this problem:
-
-1. Hack
-
-  Add this to your ~/.bashrc:
-  ~~~~~
-  export MOFEM_INSTALL_DIR=$HOME/mofem_installation
-  export PATH=$PATH:$MOFEM_INSTALL_DIR/petsc/arch-darwin-c-opt/bin
-  export DYLD_LIBRARY_PATH=$DYLD_LIBRARY_PATH:$MOFEM_INSTALL_DIR/local/lib64:$MOFEM_INSTALL_DIR/local/lib
-  ~~~~~
-
-  Note: you'll need to reload the current session for this to take effect
-
-2. Linking
-
-  If you don't want to-do the above hack you can instead link the required dylib files to your executable. This requires `install_name_tool` and `otool`, which should come as part of Xcode.
-
-  `otool` can check a binary for dynamicallly linked libraries e.g. `otool -L arc_length_nonlinear_elasticity`. Check the printout to see which libraries are not linked correctly. That can be a case when two or more version of the same library is installed
-  in the system.
-
-  Then change the libraries that are not linked correclty e.g. `install_name_tool -change libboost_program_options.dylib $MOFEM_INSTALL_DIR/local/lib/libboost_program_options.dylib arc_length_nonlinear_elasticity`
 
 ###9. Testing
 

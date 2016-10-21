@@ -28,7 +28,7 @@ double roundn(double n)
 	//break n into fractional part (fract) and integral part (intp)
     double fract, intp;
     fract = modf(n,&intp);
-    
+
 //    //round up
 //    if (fract>=.5)
 //    {
@@ -44,9 +44,9 @@ double roundn(double n)
 //        n/=10;
 //    }
     // case where n approximates zero, set n to "positive" zero
-    if (abs(intp)==0)
+    if (std::abs(intp)==0)
     {
-        if(abs(fract)<=RND_EPS)
+        if(std::abs(fract)<=RND_EPS)
            {
                n=0.000;
            }
@@ -59,19 +59,27 @@ int main(int argc, char *argv[]) {
   PetscInitialize(&argc,&argv,PETSC_NULL,help);
 
   moab::Core mb_instance;
-  Interface& moab = mb_instance;
+  moab::Interface& moab = mb_instance;
   int rank;
   MPI_Comm_rank(PETSC_COMM_WORLD,&rank);
 
   //Reade parameters from line command
   PetscBool flg = PETSC_TRUE;
   char mesh_file_name[255];
-  ierr = PetscOptionsGetString(PETSC_NULL,"-my_file",mesh_file_name,255,&flg); CHKERRQ(ierr);
+  #if PETSC_VERSION_GE(3,6,4)
+  ierr = PetscOptionsGetString(PETSC_NULL,"","-my_file",mesh_file_name,255,&flg); CHKERRQ(ierr);
+  #else
+  ierr = PetscOptionsGetString(PETSC_NULL,PETSC_NULL,"-my_file",mesh_file_name,255,&flg); CHKERRQ(ierr);
+  #endif
   if(flg != PETSC_TRUE) {
     SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_file (MESH FILE NEEDED)");
   }
   PetscInt order;
-  ierr = PetscOptionsGetInt(PETSC_NULL,"-my_order",&order,&flg); CHKERRQ(ierr);
+  #if PETSC_VERSION_GE(3,6,4)
+  ierr = PetscOptionsGetInt(PETSC_NULL,"","-my_order",&order,&flg); CHKERRQ(ierr);
+  #else
+  ierr = PetscOptionsGetInt(PETSC_NULL,PETSC_NULL,"-my_order",&order,&flg); CHKERRQ(ierr);
+  #endif
   if(flg != PETSC_TRUE) {
     order = 1;
   }
@@ -79,111 +87,111 @@ int main(int argc, char *argv[]) {
   //Read mesh to MOAB
   const char *option;
   option = "";//"PARALLEL=BCAST;";//;DEBUG_IO";
-  rval = moab.load_file(mesh_file_name, 0, option); CHKERR_PETSC(rval); 
+  rval = moab.load_file(mesh_file_name, 0, option); CHKERRQ_MOAB(rval);
   ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
   if(pcomm == NULL) pcomm =  new ParallelComm(&moab,PETSC_COMM_WORLD);
 
   //Create MoFEM (Joseph) database
   MoFEM::Core core(moab);
-  FieldInterface& mField = core;
+  MoFEM::Interface& m_field = core;
 
   //ref meshset ref level 0
-  ierr = mField.seed_ref_level_3D(0,0); CHKERRQ(ierr);
+  ierr = m_field.seed_ref_level_3D(0,0); CHKERRQ(ierr);
 
   // stl::bitset see for more details
   BitRefLevel bit_level0;
   bit_level0.set(0);
   EntityHandle meshset_level0;
-  rval = moab.create_meshset(MESHSET_SET,meshset_level0); CHKERR_PETSC(rval);
-  ierr = mField.seed_ref_level_3D(0,bit_level0); CHKERRQ(ierr);
-  ierr = mField.get_entities_by_ref_level(bit_level0,BitRefLevel().set(),meshset_level0); CHKERRQ(ierr);
+  rval = moab.create_meshset(MESHSET_SET,meshset_level0); CHKERRQ_MOAB(rval);
+  ierr = m_field.seed_ref_level_3D(0,bit_level0); CHKERRQ(ierr);
+  ierr = m_field.get_entities_by_ref_level(bit_level0,BitRefLevel().set(),meshset_level0); CHKERRQ(ierr);
 
   /***/
   //Define problem
 
   //Fields
-  ierr = mField.add_field("FIELD_A",H1,3); CHKERRQ(ierr);
-  ierr = mField.add_field("FIELD_B",H1,3); CHKERRQ(ierr);
+  ierr = m_field.add_field("FIELD_A",H1,3); CHKERRQ(ierr);
+  ierr = m_field.add_field("FIELD_B",H1,3); CHKERRQ(ierr);
 
-  ierr = mField.add_ents_to_field_by_TETs(0,"FIELD_A"); CHKERRQ(ierr);
-  ierr = mField.add_ents_to_field_by_TETs(0,"FIELD_B"); CHKERRQ(ierr);
+  ierr = m_field.add_ents_to_field_by_TETs(0,"FIELD_A"); CHKERRQ(ierr);
+  ierr = m_field.add_ents_to_field_by_TETs(0,"FIELD_B"); CHKERRQ(ierr);
 
-  ierr = mField.set_field_order(0,MBTET,"FIELD_A",order+1); CHKERRQ(ierr);
-  ierr = mField.set_field_order(0,MBTRI,"FIELD_A",order+1); CHKERRQ(ierr);
-  ierr = mField.set_field_order(0,MBEDGE,"FIELD_A",order+1); CHKERRQ(ierr);
-  ierr = mField.set_field_order(0,MBVERTEX,"FIELD_A",1); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(0,MBTET,"FIELD_A",order+1); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(0,MBTRI,"FIELD_A",order+1); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(0,MBEDGE,"FIELD_A",order+1); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(0,MBVERTEX,"FIELD_A",1); CHKERRQ(ierr);
 
-  ierr = mField.set_field_order(0,MBTET,"FIELD_B",order); CHKERRQ(ierr);
-  ierr = mField.set_field_order(0,MBTRI,"FIELD_B",order); CHKERRQ(ierr);
-  ierr = mField.set_field_order(0,MBEDGE,"FIELD_B",order); CHKERRQ(ierr);
-  ierr = mField.set_field_order(0,MBVERTEX,"FIELD_B",1); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(0,MBTET,"FIELD_B",order); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(0,MBTRI,"FIELD_B",order); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(0,MBEDGE,"FIELD_B",order); CHKERRQ(ierr);
+  ierr = m_field.set_field_order(0,MBVERTEX,"FIELD_B",1); CHKERRQ(ierr);
 
   //build field
-  ierr = mField.build_fields(); CHKERRQ(ierr);
+  ierr = m_field.build_fields(); CHKERRQ(ierr);
 
-  ierr = mField.set_field(+1,MBVERTEX,"FIELD_A"); CHKERRQ(ierr);
-  ierr = mField.set_field(-2,MBVERTEX,"FIELD_B"); CHKERRQ(ierr);
+  ierr = m_field.set_field(+1,MBVERTEX,"FIELD_A"); CHKERRQ(ierr);
+  ierr = m_field.set_field(-2,MBVERTEX,"FIELD_B"); CHKERRQ(ierr);
 
-  ierr = mField.field_axpy(+0.5,"FIELD_B","FIELD_A"); CHKERRQ(ierr);
-  ierr = mField.field_scale(-0.5,"FIELD_B"); CHKERRQ(ierr);
+  ierr = m_field.field_axpy(+0.5,"FIELD_B","FIELD_A"); CHKERRQ(ierr);
+  ierr = m_field.field_scale(-0.5,"FIELD_B"); CHKERRQ(ierr);
 
   //Open mesh_file_name.txt for writing
-  ofstream myfile;
+  std::ofstream myfile;
   myfile.open("field_axpy_test.txt");
 
-  for(_IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(mField,"FIELD_A",dof_ptr))
+  for(_IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(m_field,"FIELD_A",dof_ptr))
     {
-        if(dof_ptr->get_ent_type()!=MBVERTEX) continue;
-        
-        if(dof_ptr->get_dof_coeff_idx()==0)
+        if((*dof_ptr)->getEntType()!=MBVERTEX) continue;
+
+        if((*dof_ptr)->getDofCoeffIdx()==0)
         {
             //Round and truncate to 3 decimal places
-            double fval = dof_ptr->get_FieldData();
-            cout << boost::format("%.3lf") % roundn(fval) << "  ";
+            double fval = (*dof_ptr)->getFieldData();
+            std::cout << boost::format("%.3lf") % roundn(fval) << "  ";
             myfile << boost::format("%.3lf") % roundn(fval) << "  ";
         }
-        if(dof_ptr->get_dof_coeff_idx()==1)
+        if((*dof_ptr)->getDofCoeffIdx()==1)
         {
             //Round and truncate to 3 decimal places
-            double fval = dof_ptr->get_FieldData();
-            cout << boost::format("%.3lf") % roundn(fval) << "  ";
+            double fval = (*dof_ptr)->getFieldData();
+            std::cout << boost::format("%.3lf") % roundn(fval) << "  ";
             myfile << boost::format("%.3lf") % roundn(fval) << "  ";
         }
-        if(dof_ptr->get_dof_coeff_idx()==2)
+        if((*dof_ptr)->getDofCoeffIdx()==2)
         {
             //Round and truncate to 3 decimal places
-            double fval = dof_ptr->get_FieldData();
-            cout << boost::format("%.3lf") % roundn(fval) << endl;
-            myfile << boost::format("%.3lf") % roundn(fval) << endl;
+            double fval = (*dof_ptr)->getFieldData();
+            std::cout << boost::format("%.3lf") % roundn(fval) << std::endl;
+            myfile << boost::format("%.3lf") % roundn(fval) << std::endl;
         }
-        
+
     }
-  for(_IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(mField,"FIELD_B",dof_ptr))
+  for(_IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(m_field,"FIELD_B",dof_ptr))
     {
-        if(dof_ptr->get_ent_type()!=MBVERTEX) continue;
-        
-        if(dof_ptr->get_dof_coeff_idx()==0)
+        if((*dof_ptr)->getEntType()!=MBVERTEX) continue;
+
+        if((*dof_ptr)->getDofCoeffIdx()==0)
         {
             //Round and truncate to 3 decimal places
-            double fval = dof_ptr->get_FieldData();
-            cout << boost::format("%.3lf") % roundn(fval) << "  ";
+            double fval = (*dof_ptr)->getFieldData();
+            std::cout << boost::format("%.3lf") % roundn(fval) << "  ";
             myfile << boost::format("%.3lf") % roundn(fval) << "  ";
         }
-        if(dof_ptr->get_dof_coeff_idx()==1)
+        if((*dof_ptr)->getDofCoeffIdx()==1)
         {
             //Round and truncate to 3 decimal places
-            double fval = dof_ptr->get_FieldData();
-            cout << boost::format("%.3lf") % roundn(fval) << "  ";
+            double fval = (*dof_ptr)->getFieldData();
+            std::cout << boost::format("%.3lf") % roundn(fval) << "  ";
             myfile << boost::format("%.3lf") % roundn(fval) << "  ";
         }
-        if(dof_ptr->get_dof_coeff_idx()==2)
+        if((*dof_ptr)->getDofCoeffIdx()==2)
         {
             //Round and truncate to 3 decimal places
-            double fval = dof_ptr->get_FieldData();
-            cout << boost::format("%.3lf") % roundn(fval) << endl;
-            myfile << boost::format("%.3lf") % roundn(fval) << endl;
+            double fval = (*dof_ptr)->getFieldData();
+            std::cout << boost::format("%.3lf") % roundn(fval) << std::endl;
+            myfile << boost::format("%.3lf") % roundn(fval) << std::endl;
         }
-        
+
     }
 
   myfile.close();
@@ -193,4 +201,3 @@ int main(int argc, char *argv[]) {
   return 0;
 
 }
-

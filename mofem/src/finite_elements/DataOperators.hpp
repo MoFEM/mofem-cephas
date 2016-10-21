@@ -49,7 +49,11 @@ struct DataOperator {
     PetscFunctionReturn(0);
   }
 
-  virtual PetscErrorCode opLhs(DataForcesAndSurcesCore &row_data,DataForcesAndSurcesCore &col_data,bool symm = true);
+  virtual PetscErrorCode opLhs(
+    DataForcesAndSurcesCore &row_data,
+    DataForcesAndSurcesCore &col_data,
+    bool symm = true
+  );
 
   /** \brief Operator for linear form, usually to calculate values on left hand side
     */
@@ -64,35 +68,158 @@ struct DataOperator {
 
   virtual PetscErrorCode opRhs(
     DataForcesAndSurcesCore &data,
-    const bool doVertices = true,
-    const bool doEdges = true,
-    const bool doQuads = true,
-    const bool doTris = true,
-    const bool doTets = true,
-    const bool doPrisms = true
+    const bool do_vertices = true,
+    const bool do_edges = true,
+    const bool do_quads = true,
+    const bool do_tris = true,
+    const bool do_tets = true,
+    const bool do_prisms = true,
+    const bool er_ror_if_no_base = true
+  );
+
+};
+
+/**
+ * \brief Calculate inverse of tensor rank 2 at integration points
+ */
+template<int Tensor_Dim,class T,class L,class A>
+inline PetscErrorCode invertTensor3by3(
+  ublas::matrix<T,L,A> &jac_data,
+  ublas::vector<T,A> &det_data,
+  ublas::matrix<T,L,A> &inv_jac_data
+) {
+  PetscFunctionBegin;
+  SETERRQ(
+    PETSC_COMM_SELF,
+    MOFEM_NOT_IMPLEMENTED,
+    "Specialization for this template not yet implemented"
+  );
+  PetscFunctionReturn(0);
+}
+
+template<>
+inline PetscErrorCode invertTensor3by3<3,double,ublas::row_major,ublas::unbounded_array<double> >(
+  MatrixDouble &jac_data,
+  VectorDouble &det_data,
+  MatrixDouble &inv_jac_data
+);
+
+/**
+ * \brief Calculate determinant
+ */
+template<class T1,class T2>
+inline PetscErrorCode determinantTensor3by3(
+  T1 &t,T2 &det
+) {
+  PetscFunctionBegin;
+  det =
+    +t(0,0)*t(1,1)*t(2,2) + t(1,0)*t(2,1)*t(0,2)
+    +t(2,0)*t(0,1)*t(1,2) - t(0,0)*t(2,1)*t(1,2)
+    -t(2,0)*t(1,1)*t(0,2) - t(1,0)*t(0,1)*t(2,2);
+  PetscFunctionReturn(0);
+}
+
+/**
+ * \brief Calculate matrix inverse
+ */
+template<class T1,class T2,class T3>
+inline PetscErrorCode invertTensor3by3(
+  T1 &t,T2 &det,T3 &inv_t
+) {
+  PetscFunctionBegin;
+  inv_t(0,0) = (t(1,1)*t(2,2)-t(1,2)*t(2,1))/det;
+  inv_t(0,1) = (t(0,2)*t(2,1)-t(0,1)*t(2,2))/det;
+  inv_t(0,2) = (t(0,1)*t(1,2)-t(0,2)*t(1,1))/det;
+  inv_t(1,0) = (t(1,2)*t(2,0)-t(1,0)*t(2,2))/det;
+  inv_t(1,1) = (t(0,0)*t(2,2)-t(0,2)*t(2,0))/det;
+  inv_t(1,2) = (t(0,2)*t(1,0)-t(0,0)*t(1,2))/det;
+  inv_t(2,0) = (t(1,0)*t(2,1)-t(1,1)*t(2,0))/det;
+  inv_t(2,1) = (t(0,1)*t(2,0)-t(0,0)*t(2,1))/det;
+  inv_t(2,2) = (t(0,0)*t(1,1)-t(0,1)*t(1,0))/det;
+  PetscFunctionReturn(0);
+}
+
+/**
+ * \brief Specialization for symmetric tensor
+ */
+template<>
+inline PetscErrorCode invertTensor3by3<
+FTensor::Tensor2_symmetric<double,3>,double,FTensor::Tensor2_symmetric<double,3>
+>(
+  FTensor::Tensor2_symmetric<double,3> &t,
+  double &det,
+  FTensor::Tensor2_symmetric<double,3> &inv_t
+) {
+  PetscFunctionBegin;
+  inv_t(0,0) = (t(1,1)*t(2,2)-t(1,2)*t(2,1))/det;
+  inv_t(0,1) = (t(0,2)*t(2,1)-t(0,1)*t(2,2))/det;
+  inv_t(0,2) = (t(0,1)*t(1,2)-t(0,2)*t(1,1))/det;
+  inv_t(1,1) = (t(0,0)*t(2,2)-t(0,2)*t(2,0))/det;
+  inv_t(1,2) = (t(0,2)*t(1,0)-t(0,0)*t(1,2))/det;
+  inv_t(2,2) = (t(0,0)*t(1,1)-t(0,1)*t(1,0))/det;
+  PetscFunctionReturn(0);
+}
+
+/**
+ * \brief Specialization for symmetric (pointer) tensor
+ */
+template<>
+inline PetscErrorCode invertTensor3by3<
+FTensor::Tensor2_symmetric<double,3>,double,FTensor::Tensor2_symmetric<double*,3>
+>(
+  FTensor::Tensor2_symmetric<double,3> &t,
+  double &det,
+  FTensor::Tensor2_symmetric<double*,3> &inv_t
+) {
+  PetscFunctionBegin;
+  inv_t(0,0) = (t(1,1)*t(2,2)-t(1,2)*t(2,1))/det;
+  inv_t(0,1) = (t(0,2)*t(2,1)-t(0,1)*t(2,2))/det;
+  inv_t(0,2) = (t(0,1)*t(1,2)-t(0,2)*t(1,1))/det;
+  inv_t(1,1) = (t(0,0)*t(2,2)-t(0,2)*t(2,0))/det;
+  inv_t(1,2) = (t(0,2)*t(1,0)-t(0,0)*t(1,2))/det;
+  inv_t(2,2) = (t(0,0)*t(1,1)-t(0,1)*t(1,0))/det;
+  PetscFunctionReturn(0);
+}
+
+/// \brief Transform local reference derivatives of shape function to global derivatives
+struct OpSetInvJacH1: public DataOperator {
+
+  FTensor::Tensor2<double*,3,3> tInvJac;
+  FTensor::Index<'i',3> i;
+  FTensor::Index<'j',3> j;
+
+  OpSetInvJacH1(MatrixDouble3by3 &inv_jac):
+  tInvJac(
+    &inv_jac(0,0),&inv_jac(0,1),&inv_jac(0,2),
+    &inv_jac(1,0),&inv_jac(1,1),&inv_jac(1,2),
+    &inv_jac(2,0),&inv_jac(2,1),&inv_jac(2,2)
+  ) {
+  }
+
+  MatrixDouble diffNinvJac;
+  PetscErrorCode doWork(
+    int side,EntityType type,DataForcesAndSurcesCore::EntData &data
   );
 
 };
 
 /// \brief Transform local reference derivatives of shape function to global derivatives
-struct OpSetInvJacH1: public DataOperator {
+struct OpSetInvJacHdivAndHcurl: public DataOperator {
 
-  MatrixDouble &invJac;
-  OpSetInvJacH1(MatrixDouble &_invJac): invJac(_invJac) {}
+  FTensor::Tensor2<double*,3,3> tInvJac;
+  FTensor::Index<'i',3> i;
+  FTensor::Index<'j',3> j;
+  FTensor::Index<'k',3> k;
 
-  MatrixDouble diffNinvJac;
-  PetscErrorCode doWork(
-    int side,EntityType type,DataForcesAndSurcesCore::EntData &data);
+  OpSetInvJacHdivAndHcurl(MatrixDouble3by3 &inv_jac):
+  tInvJac(
+    &inv_jac(0,0),&inv_jac(0,1),&inv_jac(0,2),
+    &inv_jac(1,0),&inv_jac(1,1),&inv_jac(1,2),
+    &inv_jac(2,0),&inv_jac(2,1),&inv_jac(2,2)
+  ) {
+  }
 
-};
-
-/// \brief Transform local reference derivatives of shape function to global derivatives
-struct OpSetInvJacHdiv: public DataOperator {
-
-  MatrixDouble &invJac;
-  OpSetInvJacHdiv(MatrixDouble &_invJac): invJac(_invJac) {}
-
-  MatrixDouble diffHdiv_invJac;
+  MatrixDouble diffHdivInvJac;
   PetscErrorCode doWork(
     int side,EntityType type,DataForcesAndSurcesCore::EntData &data);
 
@@ -103,6 +230,8 @@ struct OpSetInvJacHdiv: public DataOperator {
 struct OpSetHoInvJacH1: public DataOperator {
 
   MatrixDouble &invHoJac;
+  FTensor::Index<'i',3> i;
+  FTensor::Index<'j',3> j;
   OpSetHoInvJacH1(MatrixDouble &inv_ho_jac): invHoJac(inv_ho_jac) {}
 
   MatrixDouble diffNinvJac;
@@ -110,49 +239,133 @@ struct OpSetHoInvJacH1: public DataOperator {
 
 };
 
-
 /** \brief transform local reference derivatives of shape function to global derivatives if higher order geometry is given
   */
-struct OpSetHoInvJacHdiv: public DataOperator {
+struct OpSetHoInvJacHdivAndHcurl: public DataOperator {
 
   MatrixDouble &invHoJac;
-  OpSetHoInvJacHdiv(MatrixDouble &inv_ho_jac): invHoJac(inv_ho_jac) {}
+  FTensor::Index<'i',3> i;
+  FTensor::Index<'j',3> j;
+  FTensor::Index<'k',3> k;
 
-  MatrixDouble diffHdiv_invJac;
+  OpSetHoInvJacHdivAndHcurl(MatrixDouble &inv_ho_jac): invHoJac(inv_ho_jac) {}
+
+  MatrixDouble diffHdivInvJac;
   PetscErrorCode doWork(
-    int side,EntityType type,DataForcesAndSurcesCore::EntData &data);
+    int side,EntityType type,DataForcesAndSurcesCore::EntData &data
+  );
 
 };
 
-/** \brief apply covariant (Piola) transfer for Hdiv space
+/** \brief apply contravariant (Piola) transfer to Hdiv space
+
+Contravariant Piola transformation
+\f[
+\psi_i|_t = \frac{1}{\textrm{det}(J)}J_{ij}\hat{\psi}_j\\
+\left.\frac{\partial \psi_i}{\partial \xi_j}\right|_t
+=
+\frac{1}{\textrm{det}(J)}J_{ik}\frac{\partial \hat{\psi}_k}{\partial \xi_j}
+\f]
+
 */
-struct OpSetPiolaTransform: public DataOperator {
+struct OpSetContravariantPiolaTransform: public DataOperator {
 
   double &vOlume;
-  MatrixDouble &Jac;
-  OpSetPiolaTransform(double &_vOlume,MatrixDouble &_Jac):
-  vOlume(_vOlume),Jac(_Jac) {}
+  // MatrixDouble3by3 &jAc;
+
+  FTensor::Tensor2<double*,3,3> tJac;
+  FTensor::Index<'i',3> i;
+  FTensor::Index<'j',3> j;
+  FTensor::Index<'k',3> k;
+
+  OpSetContravariantPiolaTransform(double &volume,MatrixDouble3by3 &jac):
+  vOlume(volume),
+  // jAc(jac),
+  tJac(
+    &jac(0,0),&jac(0,1),&jac(0,2),
+    &jac(1,0),&jac(1,1),&jac(1,2),
+    &jac(2,0),&jac(2,1),&jac(2,2)
+  ) {
+  }
 
   MatrixDouble piolaN;
   MatrixDouble piolaDiffN;
+
   PetscErrorCode doWork(int side,EntityType type,DataForcesAndSurcesCore::EntData &data);
 
 };
 
-/** \brief Apply covariant (Piola) transfer for Hdiv space for HO geometry
+/** \brief Apply contravariant (Piola) transfer to Hdiv space for HO geometry
 */
-struct OpSetHoPiolaTransform: public DataOperator {
+struct OpSetHoContravariantPiolaTransform: public DataOperator {
 
   VectorDouble &detHoJac;
   MatrixDouble &hoJac;
-  OpSetHoPiolaTransform(VectorDouble &det_jac,MatrixDouble &jac):
+  FTensor::Index<'i',3> i;
+  FTensor::Index<'j',3> j;
+  FTensor::Index<'k',3> k;
+
+  OpSetHoContravariantPiolaTransform(VectorDouble &det_jac,MatrixDouble &jac):
   detHoJac(det_jac),hoJac(jac) {}
 
   MatrixDouble piolaN;
   MatrixDouble piolaDiffN;
   PetscErrorCode doWork(int side,EntityType type,DataForcesAndSurcesCore::EntData &data);
 
-  };
+};
+
+/** \brief Apply covariant (Piola) transfer to Hcurl space for HO geometry
+*/
+struct OpSetHoCovariantPiolaTransform: public DataOperator {
+
+  MatrixDouble &hoInvJac;
+  FTensor::Index<'i',3> i;
+  FTensor::Index<'j',3> j;
+  FTensor::Index<'k',3> k;
+
+  OpSetHoCovariantPiolaTransform(MatrixDouble &inv_jac):
+  hoInvJac(inv_jac) {}
+
+  MatrixDouble piolaN;
+  MatrixDouble piolaDiffN;
+  PetscErrorCode doWork(int side,EntityType type,DataForcesAndSurcesCore::EntData &data);
+
+};
+
+
+/** \brief apply covariant transfer to Hcurl space
+
+Contravariant Piola transformation
+\f[
+\psi_i|_t = \frac{1}{\textrm{det}(J)}J_{ij}\hat{\psi}_j\\
+\left.\frac{\partial \psi_i}{\partial \xi_j}\right|_t
+=
+\frac{1}{\textrm{det}(J)}J_{ik}\frac{\partial \hat{\psi}_k}{\partial \xi_j}
+\f]
+
+*/
+struct OpSetCovariantPiolaTransform: public DataOperator {
+
+
+  FTensor::Tensor2<double*,3,3> tInvJac;
+  FTensor::Index<'i',3> i;
+  FTensor::Index<'j',3> j;
+  FTensor::Index<'k',3> k;
+
+  OpSetCovariantPiolaTransform(MatrixDouble3by3 &inv_jac):
+  tInvJac(
+    &inv_jac(0,0),&inv_jac(0,1),&inv_jac(0,2),
+    &inv_jac(1,0),&inv_jac(1,1),&inv_jac(1,2),
+    &inv_jac(2,0),&inv_jac(2,1),&inv_jac(2,2)
+  ) {
+  }
+
+  MatrixDouble piolaN;
+  MatrixDouble piolaDiffN;
+
+  PetscErrorCode doWork(int side,EntityType type,DataForcesAndSurcesCore::EntData &data);
+
+};
 
 
 /** \brief Get field values and gradients at Gauss points
@@ -163,23 +376,25 @@ struct OpGetDataAndGradient: public DataOperator {
   MatrixDouble &data_at_GaussPt;
   MatrixDouble &dataGrad_at_GaussPt;
 
-  const unsigned int dim;
-  const ApproximationRank rank;
+  const unsigned int dIm;
+  const FieldCoefficientsNumber rAnk;
 
   OpGetDataAndGradient(
     MatrixDouble &data_at_gauss_pt,
     MatrixDouble &data_grad_at_gauss_pt,
-    ApproximationRank _rank,
-    unsigned int _dim = 3):
-      data_at_GaussPt(data_at_gauss_pt),
-      dataGrad_at_GaussPt(data_grad_at_gauss_pt),
-      dim(_dim),
-      rank(_rank) {}
+    FieldCoefficientsNumber rank,
+    int dim = 3
+  ):
+  data_at_GaussPt(data_at_gauss_pt),
+  dataGrad_at_GaussPt(data_grad_at_gauss_pt),
+  dIm(dim),
+  rAnk(rank) {}
 
   PetscErrorCode doWork(
     int side,
     EntityType type,
-    DataForcesAndSurcesCore::EntData &data);
+    DataForcesAndSurcesCore::EntData &data
+  );
 
 };
 
@@ -257,23 +472,60 @@ struct OpGetCoordsAndNormalsOnPrism: public DataOperator {
 
 };
 
-
-/** \brief transform Hdiv space fluxes from reference element to physical triangle
+/** \brief transform Hdiv base fluxes from reference element to physical triangle
  */
-struct OpSetPiolaTransoformOnTriangle: public DataOperator {
+struct OpSetContravariantPiolaTransoformOnTriangle: public DataOperator {
 
-  const VectorDouble &normal;
-  const MatrixDouble &nOrmals_at_GaussPt;
+  const VectorDouble &nOrmal;
+  const MatrixDouble &normalsAtGaussPt;
 
-  OpSetPiolaTransoformOnTriangle(
-    const VectorDouble &_normal,
-    const MatrixDouble &_nOrmals_at_GaussPt):
-    normal(_normal),nOrmals_at_GaussPt(_nOrmals_at_GaussPt) {}
+  OpSetContravariantPiolaTransoformOnTriangle(
+    const VectorDouble &normal,
+    const MatrixDouble &normals_at_pts
+  ):
+  nOrmal(normal),
+  normalsAtGaussPt(normals_at_pts) {}
 
   PetscErrorCode doWork(
     int side,
     EntityType type,
-    DataForcesAndSurcesCore::EntData &data);
+    DataForcesAndSurcesCore::EntData &data
+  );
+
+};
+
+/** \brief transform Hcurl base fluxes from reference element to physical triangle
+ */
+struct OpSetCovariantPiolaTransoformOnTriangle: public DataOperator {
+
+  const VectorDouble &nOrmal;
+  const MatrixDouble &normalsAtGaussPt;
+  const VectorDouble &tAngent0;
+  const MatrixDouble &tangent0AtGaussPt;
+  const VectorDouble &tAngent1;
+  const MatrixDouble &tangent1AtGaussPt;
+
+  OpSetCovariantPiolaTransoformOnTriangle(
+    const VectorDouble &normal,
+    const MatrixDouble &normals_at_pts,
+    const VectorDouble &tangent0,
+    const MatrixDouble &tangent0_at_pts,
+    const VectorDouble &tangent1,
+    const MatrixDouble &tangent1_at_pts
+  ):
+  nOrmal(normal),
+  normalsAtGaussPt(normals_at_pts),
+  tAngent0(tangent0),
+  tangent0AtGaussPt(tangent0_at_pts),
+  tAngent1(tangent1),
+  tangent1AtGaussPt(tangent1_at_pts)
+  {}
+
+  PetscErrorCode doWork(
+    int side,
+    EntityType type,
+    DataForcesAndSurcesCore::EntData &data
+  );
 
 };
 
@@ -290,6 +542,28 @@ struct OpGetHoTangentOnEdge: public DataOperator {
 
 };
 
+/** \brief transform Hcurl base fluxes from reference element to physical edge
+ */
+struct OpSetCovariantPiolaTransoformOnEdge: public DataOperator {
+
+  const VectorDouble &tAngent;
+  const MatrixDouble &tangentAtGaussPt;
+
+  OpSetCovariantPiolaTransoformOnEdge(
+    const VectorDouble &tangent,
+    const MatrixDouble &tangent_at_pts
+  ):
+  tAngent(tangent),
+  tangentAtGaussPt(tangent_at_pts)
+  {}
+
+  PetscErrorCode doWork(
+    int side,
+    EntityType type,
+    DataForcesAndSurcesCore::EntData &data
+  );
+
+};
 
 }
 

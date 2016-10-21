@@ -52,7 +52,7 @@ struct FlatPrismElementForcesAndSurcesCore: public ForcesAndSurcesCore {
   DerivedDataForcesAndSurcesCore derivedDataHdiv;
   DataForcesAndSurcesCore dataNoField,dataNoFieldCol;
 
-  string meshPositionsFieldName;
+  std::string meshPositionsFieldName;
 
   MatrixDouble hoCoordsAtGaussPtsF3;
   MatrixDouble nOrmals_at_GaussPtF3;
@@ -64,7 +64,7 @@ struct FlatPrismElementForcesAndSurcesCore: public ForcesAndSurcesCore {
   MatrixDouble tAngent2_at_GaussPtF4;
   OpGetCoordsAndNormalsOnPrism opHOCoordsAndNormals;
 
-  FlatPrismElementForcesAndSurcesCore(FieldInterface &m_field):
+  FlatPrismElementForcesAndSurcesCore(Interface &m_field):
     ForcesAndSurcesCore(m_field),
     dataH1(MBPRISM),derivedDataH1(dataH1),
     dataHdiv(MBPRISM),derivedDataHdiv(dataHdiv),
@@ -81,11 +81,11 @@ struct FlatPrismElementForcesAndSurcesCore: public ForcesAndSurcesCore {
     */
   struct UserDataOperator: public ForcesAndSurcesCore::UserDataOperator {
 
-    UserDataOperator(const string &field_name,const char type):
+    UserDataOperator(const std::string &field_name,const char type):
     ForcesAndSurcesCore::UserDataOperator(field_name,type) {}
 
     UserDataOperator(
-      const string &row_field_name,const string &col_field_name,const char type
+      const std::string &row_field_name,const std::string &col_field_name,const char type
     ):
     ForcesAndSurcesCore::UserDataOperator(row_field_name,col_field_name,type) {
     }
@@ -93,25 +93,33 @@ struct FlatPrismElementForcesAndSurcesCore: public ForcesAndSurcesCore {
     /** \brief get face aRea
     \param dd if dd == 0 it is for face F3 if dd == 1 is for face F4
     */
-    inline double getArea(const int dd) { return ptrFE->aRea[0]; }
+    inline double getArea(const int dd) {
+      return static_cast<FlatPrismElementForcesAndSurcesCore*>(ptrFE)->aRea[0];
+    }
 
-    inline double getAreaF3() { return ptrFE->aRea[0]; }
-    inline double getAreaF4() { return ptrFE->aRea[1]; }
+    inline double getAreaF3() {
+      return static_cast<FlatPrismElementForcesAndSurcesCore*>(ptrFE)->aRea[0];
+    }
+    inline double getAreaF4() {
+      return static_cast<FlatPrismElementForcesAndSurcesCore*>(ptrFE)->aRea[1];
+    }
 
     /** \brief get triangle normal
 
     Normal has 6 elements, first 3 are for face F3 another three for face F4
 
      */
-    inline VectorDouble& getNormal() { return ptrFE->normal; }
+    inline VectorDouble& getNormal() {
+      return static_cast<FlatPrismElementForcesAndSurcesCore*>(ptrFE)->normal;
+    }
 
     inline VectorAdaptor getNormalF3() {
-      double *data  = &(ptrFE->normal[0]);
+      double *data  = &(static_cast<FlatPrismElementForcesAndSurcesCore*>(ptrFE)->normal[0]);
       return VectorAdaptor(3,ublas::shallow_array_adaptor<double>(3,data));
     }
 
     inline VectorAdaptor getNormalF4() {
-      double *data  = &(ptrFE->normal[3]);
+      double *data  = &(static_cast<FlatPrismElementForcesAndSurcesCore*>(ptrFE)->normal[3]);
       return VectorAdaptor(3,ublas::shallow_array_adaptor<double>(3,data));
     }
 
@@ -120,49 +128,53 @@ struct FlatPrismElementForcesAndSurcesCore: public ForcesAndSurcesCore {
       Vector has 6 elements, i.e. coordinates on face F3 and F4
 
      */
-    inline VectorDouble& getCoords() { return ptrFE->coords; }
+    inline VectorDouble& getCoords() {
+      return static_cast<FlatPrismElementForcesAndSurcesCore*>(ptrFE)->coords;
+    }
 
     /** \brief get triangle Gauss pts.
      */
-    inline MatrixDouble& getGaussPts() { return ptrFE->gaussPts; }
+    inline MatrixDouble& getGaussPts() {
+      return static_cast<FlatPrismElementForcesAndSurcesCore*>(ptrFE)->gaussPts;
+    }
 
     /** \brief get coordinates at Gauss pts.
 
       Matrix has size (nb integration points)x(coordinates on F3 and F4 = 6), i.e. coordinates on face F3 and F4
 
      */
-    inline MatrixDouble& getCoordsAtGaussPts() { return ptrFE->coordsAtGaussPts; }
+    inline MatrixDouble& getCoordsAtGaussPts() {
+      return static_cast<FlatPrismElementForcesAndSurcesCore*>(ptrFE)->coordsAtGaussPts;
+    }
 
     /** \brief coordinate at Gauss points on face 3 (if hierarchical approximation of element geometry)
       */
-    inline MatrixDouble& getHoCoordsAtGaussPtsF3() { return ptrFE->hoCoordsAtGaussPtsF3; }
+    inline MatrixDouble& getHoCoordsAtGaussPtsF3() {
+      return static_cast<FlatPrismElementForcesAndSurcesCore*>(ptrFE)->hoCoordsAtGaussPtsF3;
+    }
 
     /** \brief coordinate at Gauss points on face 4 (if hierarchical approximation of element geometry)
       */
-    inline MatrixDouble& getHoCoordsAtGaussPtsF4() { return ptrFE->hoCoordsAtGaussPtsF4; }
+    inline MatrixDouble& getHoCoordsAtGaussPtsF4() {
+      return static_cast<FlatPrismElementForcesAndSurcesCore*>(ptrFE)->hoCoordsAtGaussPtsF4;
+    }
 
     /** \brief if higher order geometry return normals at face F3 at Gauss pts.
      *
      * Face 3 is top face in canonical triangle numeration, see \cite tautges2010canonical
      *
      */
-    inline MatrixDouble& getNormals_at_GaussPtF3() { return ptrFE->nOrmals_at_GaussPtF3; }
+    inline MatrixDouble& getNormalsAtGaussPtF3() {
+      return static_cast<FlatPrismElementForcesAndSurcesCore*>(ptrFE)->nOrmals_at_GaussPtF3;
+    }
 
     /** \brief if higher order geometry return normals at face F4 at Gauss pts.
      *
      * Face 4 is top face in canonical triangle numeration, see \cite tautges2010canonical
      *
      */
-    inline MatrixDouble& getNormals_at_GaussPtF4() { return ptrFE->nOrmals_at_GaussPtF4; }
-
-    /** \brief if higher order geometry return normals at Gauss pts.
-      *
-      * Face 3 is top face in canonical triangle numeration, see \cite tautges2010canonical
-      *
-      * \param gg gauss point number
-      */
-    inline ublas::matrix_row<MatrixDouble > getNormals_at_GaussPtF3(const int gg) {
-      return ublas::matrix_row<MatrixDouble >(ptrFE->nOrmals_at_GaussPtF3,gg);
+    inline MatrixDouble& getNormalsAtGaussPtF4() {
+      return static_cast<FlatPrismElementForcesAndSurcesCore*>(ptrFE)->nOrmals_at_GaussPtF4;
     }
 
     /** \brief if higher order geometry return normals at Gauss pts.
@@ -171,39 +183,97 @@ struct FlatPrismElementForcesAndSurcesCore: public ForcesAndSurcesCore {
       *
       * \param gg gauss point number
       */
-    inline ublas::matrix_row<MatrixDouble > getNormals_at_GaussPtF4(const int gg) {
-      return ublas::matrix_row<MatrixDouble >(ptrFE->nOrmals_at_GaussPtF4,gg);
+    inline ublas::matrix_row<MatrixDouble > getNormalsAtGaussPtF3(const int gg) {
+      return ublas::matrix_row<MatrixDouble >(static_cast<FlatPrismElementForcesAndSurcesCore*>(ptrFE)->nOrmals_at_GaussPtF3,gg);
+    }
+
+    /** \brief if higher order geometry return normals at Gauss pts.
+      *
+      * Face 3 is top face in canonical triangle numeration, see \cite tautges2010canonical
+      *
+      * \param gg gauss point number
+      */
+    inline ublas::matrix_row<MatrixDouble > getNormalsAtGaussPtF4(const int gg) {
+      return ublas::matrix_row<MatrixDouble >(static_cast<FlatPrismElementForcesAndSurcesCore*>(ptrFE)->nOrmals_at_GaussPtF4,gg);
+    }
+
+    /** \deprecated Use getNormalsAtGaussPtF3() instead
+    */
+    DEPRECATED inline ublas::matrix_row<MatrixDouble > getNormals_at_GaussPtF3(const int gg) {
+      return getNormalsAtGaussPtF3(gg);
+    }
+
+    /** \deprecated Use getNormalsAtGaussPtF3() instead
+    */
+    DEPRECATED inline MatrixDouble& getNormals_at_GaussPtF3() {
+      return getNormalsAtGaussPtF3();
+    }
+
+    /** \deprecated Use getTangent1AtGaussPtF3() instead
+    */
+    DEPRECATED inline MatrixDouble& getTangent1_at_GaussPtF3() {
+      return getTangent1AtGaussPtF3();
+    }
+
+    /** \deprecated Use getTangent2AtGaussPtF3() instead
+    */
+    DEPRECATED inline MatrixDouble& getTangent2_at_GaussPtF3() {
+      return getTangent2AtGaussPtF3();
+    }
+
+    /** \deprecated Use getNormalsAtGaussPtF4() instead
+    */
+    DEPRECATED inline ublas::matrix_row<MatrixDouble > getNormals_at_GaussPtF4(const int gg) {
+      return getNormalsAtGaussPtF4(gg);
+    }
+
+    /** \deprecated Use getNormalsAtGaussPtF4() instead
+    */
+    DEPRECATED inline MatrixDouble& getNormals_at_GaussPtF4() {
+      return getNormalsAtGaussPtF4();
+    }
+
+    /** \deprecated Use getTangent1AtGaussPtF4() instead
+    */
+    DEPRECATED inline MatrixDouble& getTangent1_at_GaussPtF4() {
+      return getTangent1AtGaussPtF4();
+    }
+
+    /** \deprecated Use getTangent2AtGaussPtF4() instead
+    */
+    DEPRECATED inline MatrixDouble& getTangent2_at_GaussPtF4() {
+      return getTangent2AtGaussPtF4();
     }
 
     /** \brief if higher order geometry return tangent vector to triangle at Gauss pts.
      */
-    inline MatrixDouble& getTangent1_at_GaussPtF3() { return ptrFE->tAngent1_at_GaussPtF3; }
+    inline MatrixDouble& getTangent1AtGaussPtF3() {
+      return static_cast<FlatPrismElementForcesAndSurcesCore*>(ptrFE)->tAngent1_at_GaussPtF3;
+    }
 
     /** \brief if higher order geometry return tangent vector to triangle at Gauss pts.
      */
-    inline MatrixDouble& getTangent2_at_GaussPtF3() { return ptrFE->tAngent2_at_GaussPtF3; }
+    inline MatrixDouble& getTangent2AtGaussPtF3() {
+      return static_cast<FlatPrismElementForcesAndSurcesCore*>(ptrFE)->tAngent2_at_GaussPtF3;
+    }
 
     /** \brief if higher order geometry return tangent vector to triangle at Gauss pts.
      */
-    inline MatrixDouble& getTangent1_at_GaussPtF4() { return ptrFE->tAngent1_at_GaussPtF4; }
+    inline MatrixDouble& getTangent1AtGaussPtF4() {
+      return static_cast<FlatPrismElementForcesAndSurcesCore*>(ptrFE)->tAngent1_at_GaussPtF4;
+    }
 
     /** \brief if higher order geometry return tangent vector to triangle at Gauss pts.
      */
-    inline MatrixDouble& getTangent2_at_GaussPtF4() { return ptrFE->tAngent2_at_GaussPtF4; }
+    inline MatrixDouble& getTangent2AtGaussPtF4() {
+      return static_cast<FlatPrismElementForcesAndSurcesCore*>(ptrFE)->tAngent2_at_GaussPtF4;
+    }
 
     /** \brief return pointer to triangle finite element object
      */
-    inline const FlatPrismElementForcesAndSurcesCore* getFlatPrismElementForcesAndSurcesCore() { return ptrFE; }
-
-    PetscErrorCode setPtrFE(ForcesAndSurcesCore *ptr) {
-      PetscFunctionBegin;
-      ptrFE = dynamic_cast<FlatPrismElementForcesAndSurcesCore*>(ptr);
-      ForcesAndSurcesCore::UserDataOperator::setPtrFE(ptr);
-      PetscFunctionReturn(0);
+    inline const FlatPrismElementForcesAndSurcesCore* getFlatPrismElementForcesAndSurcesCore() {
+      return static_cast<FlatPrismElementForcesAndSurcesCore*>(ptrFE);
     }
-
-    protected:
-    FlatPrismElementForcesAndSurcesCore *ptrFE;
 
   };
 
@@ -222,3 +292,8 @@ struct FlatPrismElementForcesAndSurcesCore: public ForcesAndSurcesCore {
 }
 
 #endif //__FLATPRISMELEMENTFORCESANDSURCESCORE_HPP__
+
+/***************************************************************************//**
+ * \defgroup mofem_forces_and_sources_prism_element Prism Element
+ * \ingroup mofem_forces_and_sources
+ ******************************************************************************/

@@ -11,35 +11,34 @@
 # You should have received a copy of the GNU Lesser General Public
 # License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 
+include_directories(${PROJECT_SOURCE_DIR}/src/ftensor/src)
+
 #multi_indices
 set(MOFEM_INTERFACES_SRC
-  impl/LoopMethods.cpp
-  #Core
-  impl/Core.cpp
-  impl/CreateMat.cpp
-  impl/Vectors.cpp
-  impl/FieldBlas.cpp
-  impl/GetAdjacancies.cpp
-  impl/FieldInterfaceCore.cpp
-  impl/ProblemsCore.cpp
-  impl/MeshRefinmentCore.cpp
-  impl/PrismInterfaceCore.cpp
-  impl/SeriesRecorderCore.cpp
-  impl/NodeMerger.cpp
-  impl/BitLevelCoupler.cpp
-  impl/PrismsFromSurfaceInterface.cpp
+  impl/All.cpp
+  impl/AllInterfaces.cpp
 )
 
-if(TETGEN_LIBRARY)
-  set(MOFEM_INTERFACES_SRC ${MOFEM_INTERFACES_SRC} impl/TetGenInterface.cpp)
-endif(TETGEN_LIBRARY)
-
-if(NETGEN_LIBRARY)
-  set(MOFEM_INTERFACES_SRC ${MOFEM_INTERFACES_SRC} impl/NetGenInterface.cpp)
-endif(NETGEN_LIBRARY)
-
-add_library(mofem_interfaces
+if(PRECOMPILED_HEADRES)
+  set_source_files_properties(
+    All.cpp
+    PROPERTIES
+    COMPILE_FLAGS "-include ${PROJECT_BINARY_DIR}/include/precompiled/Includes.hpp"
+  )
+  set_source_files_properties(
+    AllInterfaces.cpp
+    PROPERTIES
+    COMPILE_FLAGS "-include ${PROJECT_BINARY_DIR}/include/precompiled/Includes.hpp"
+  )
+endif(PRECOMPILED_HEADRES)
+add_library(
+  mofem_interfaces
   ${MOFEM_INTERFACES_SRC}
 )
+add_dependencies(mofem_interfaces install_prerequisites)
+if(PRECOMPILED_HEADRES)
+  add_dependencies(mofem_interfaces Includes.hpp.pch_copy)
+endif(PRECOMPILED_HEADRES)
+
 
 install(TARGETS mofem_interfaces DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)

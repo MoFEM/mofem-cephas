@@ -12,24 +12,12 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
-#include <boost/iostreams/tee.hpp>
-#include <boost/iostreams/stream.hpp>
-#include <fstream>
-#include <iostream>
+#include <BasicFiniteElements.hpp>
+using namespace MoFEM;
 
 namespace bio = boost::iostreams;
 using bio::tee_device;
 using bio::stream;
-
-#include <MoFEM.hpp>
-using namespace MoFEM;
-
-#include <MethodForForceScaling.hpp>
-#include <DirichletBC.hpp>
-#include <PostProcOnRefMesh.hpp>
-#include <ThermalElement.hpp>
-
-#include <Projection10NodeCoordsOnField.hpp>
 
 static char help[] = "...\n\n";
 
@@ -41,13 +29,13 @@ int main(int argc, char *argv[]) {
   PetscInitialize(&argc,&argv,(char *)0,help);
 
   moab::Core mb_instance;
-  Interface& moab = mb_instance;
+  moab::Interface& moab = mb_instance;
   int rank;
   MPI_Comm_rank(PETSC_COMM_WORLD,&rank);
 
   PetscBool flg = PETSC_TRUE;
   char mesh_file_name[255];
-  ierr = PetscOptionsGetString(PETSC_NULL,"-my_file",mesh_file_name,255,&flg); CHKERRQ(ierr);
+  ierr = PetscOptionsGetString(PETSC_NULL,PETSC_NULL,"-my_file",mesh_file_name,255,&flg); CHKERRQ(ierr);
   if(flg != PETSC_TRUE) {
     SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_file (MESH FILE NEEDED)");
   }
@@ -58,18 +46,18 @@ int main(int argc, char *argv[]) {
   const char *option;
   option = "";//"PARALLEL=BCAST;";//;DEBUG_IO";
   BARRIER_RANK_START(pcomm)
-  rval = moab.load_file(mesh_file_name, 0, option); CHKERR_PETSC(rval);
+  rval = moab.load_file(mesh_file_name, 0, option); CHKERRQ_MOAB(rval);
   BARRIER_RANK_END(pcomm)
 
   //Create MoFEM (Joseph) database
   MoFEM::Core core(moab);
-  FieldInterface& m_field = core;
+  MoFEM::Interface& m_field = core;
 
   //set entitities bit level
   BitRefLevel bit_level0;
   bit_level0.set(0);
   EntityHandle meshset_level0;
-  rval = moab.create_meshset(MESHSET_SET,meshset_level0); CHKERR_PETSC(rval);
+  rval = moab.create_meshset(MESHSET_SET,meshset_level0); CHKERRQ_MOAB(rval);
   ierr = m_field.seed_ref_level_3D(0,bit_level0); CHKERRQ(ierr);
 
   //Fields
@@ -79,7 +67,7 @@ int main(int argc, char *argv[]) {
   //Problem
   ierr = m_field.add_problem("TEST_PROBLEM"); CHKERRQ(ierr);
 
-  //set refinment level for problem
+  //set refinement level for problem
   ierr = m_field.modify_problem_ref_level_add_bit("TEST_PROBLEM",bit_level0); CHKERRQ(ierr);
 
   //meshset consisting all entities in mesh
@@ -173,6 +161,9 @@ int main(int argc, char *argv[]) {
   ierr = recorder_ptr->add_series_recorder("THEMP_SERIES"); CHKERRQ(ierr);
   ierr = recorder_ptr->initialize_series_recorder("THEMP_SERIES"); CHKERRQ(ierr);
 
+  #if PETSC_VERSION_GE(3,7,0)
+  ierr = TSSetExactFinalTime(ts,TS_EXACTFINALTIME_STEPOVER); CHKERRQ(ierr);
+  #endif
   ierr = TSSolve(ts,T); CHKERRQ(ierr);
   ierr = TSGetTime(ts,&ftime); CHKERRQ(ierr);
 
@@ -188,30 +179,52 @@ int main(int argc, char *argv[]) {
     "steps %D (%D rejected, %D SNES fails), ftime %g, nonlinits %D, linits %D\n",
     steps,rejects,snesfails,ftime,nonlinits,linits);
 
-  PetscViewer viewer;
-  PetscViewerASCIIOpen(PETSC_COMM_WORLD,"thermal_elem_unsteady.txt",&viewer);
+  // PetscViewer viewer;
+  // PetscViewerASCIIOpen(PETSC_COMM_WORLD,"thermal_elem_unsteady.txt",&viewer);
+
+  double sum = 0;
+  double fnorm = 0;
 
   for(_IT_SERIES_STEPS_BY_NAME_FOR_LOOP_(recorder_ptr,"THEMP_SERIES",sit)) {
 
     ierr = recorder_ptr->load_series_data("THEMP_SERIES",sit->get_step_number()); CHKERRQ(ierr);
     ierr = m_field.set_local_ghost_vector("TEST_PROBLEM",ROW,T,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 
-    ierr = VecChop(T,1e-4); CHKERRQ(ierr);
-    ierr = VecView(T,viewer); CHKERRQ(ierr);
+    double sum0;
+    ierr = VecSum(T,&sum0); CHKERRQ(ierr);
+    ierr = PetscPrintf(PETSC_COMM_WORLD,"sum0  = %9.8e\n",sum0); CHKERRQ(ierr);
+    double fnorm0;
+    ierr = VecNorm(T,NORM_2,&fnorm0); CHKERRQ(ierr);
+    ierr = PetscPrintf(PETSC_COMM_WORLD,"fnorm0  = %9.8e\n",fnorm0); CHKERRQ(ierr);
+
+    sum += sum0;
+    fnorm += fnorm0;
+
+    // ierr = VecChop(T,1e-4); CHKERRQ(ierr);
+    // ierr = VecView(T,viewer); CHKERRQ(ierr);
 
   }
+  ierr = PetscPrintf(PETSC_COMM_WORLD,"sum  = %9.8e\n",sum); CHKERRQ(ierr);
+  ierr = PetscPrintf(PETSC_COMM_WORLD,"fnorm  = %9.8e\n",fnorm); CHKERRQ(ierr);
+  if(fabs(sum+1.32314077e+01)>1e-7) {
+    SETERRQ(PETSC_COMM_WORLD,MOFEM_ATOM_TEST_INVALID,"Failed to pass test");
+  }
+  if(fabs(fnorm-4.59664623e+00)>1e-6) {
+    SETERRQ(PETSC_COMM_WORLD,MOFEM_ATOM_TEST_INVALID,"Failed to pass test");
+  }
 
-  ierr = PetscViewerDestroy(&viewer); CHKERRQ(ierr);
+
+  // ierr = PetscViewerDestroy(&viewer); CHKERRQ(ierr);
 
 
   /*PostProcVertexMethod ent_method(moab,"TEMP");
   ierr = m_field.loop_dofs("TEST_PROBLEM","TEMP",ROW,ent_method); CHKERRQ(ierr);
   if(pcomm->rank()==0) {
     EntityHandle out_meshset;
-    rval = moab.create_meshset(MESHSET_SET,out_meshset); CHKERR_PETSC(rval);
+    rval = moab.create_meshset(MESHSET_SET,out_meshset); CHKERRQ_MOAB(rval);
     ierr = m_field.get_problem_finite_elements_entities("TEST_PROBLEM","THERMAL_FE",out_meshset); CHKERRQ(ierr);
-    rval = moab.write_file("out.vtk","VTK","",&out_meshset,1); CHKERR_PETSC(rval);
-    rval = moab.delete_entities(&out_meshset,1); CHKERR_PETSC(rval);
+    rval = moab.write_file("out.vtk","VTK","",&out_meshset,1); CHKERRQ_MOAB(rval);
+    rval = moab.delete_entities(&out_meshset,1); CHKERRQ_MOAB(rval);
   }*/
 
   ierr = TSDestroy(&ts);CHKERRQ(ierr);

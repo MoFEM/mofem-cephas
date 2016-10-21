@@ -28,13 +28,13 @@ using namespace boost::numeric;
   */
 struct FieldApproximationH1 {
 
-  FieldInterface &mField;
-  const string problemName;
+  MoFEM::Interface &mField;
+  const std::string problemName;
   VolumeElementForcesAndSourcesCore feVolume;
-  FaceElementForcesAndSourcesCore feFace;
+  MoFEM::FaceElementForcesAndSourcesCore feFace;
 
   FieldApproximationH1(
-    FieldInterface &m_field):
+    MoFEM::Interface &m_field):
     mField(m_field),
     feVolume(m_field),
     feFace(m_field) {
@@ -45,20 +45,20 @@ struct FieldApproximationH1 {
     * Function work on volumes (Terahedrons & Bricks)
     */
   template<typename FUNEVAL>
-  struct OpApproxVolume: public VolumeElementForcesAndSourcesCore::UserDataOperator {
+  struct OpApproxVolume: public MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator {
 
     Mat A;
-    vector<Vec> &vecF;
+    std::vector<Vec> &vecF;
     FUNEVAL &functionEvaluator;
 
-    OpApproxVolume(const string &field_name,Mat _A,vector<Vec> &vec_F,FUNEVAL &function_evaluator):
+    OpApproxVolume(const std::string &field_name,Mat _A,std::vector<Vec> &vec_F,FUNEVAL &function_evaluator):
       VolumeElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROW|UserDataOperator::OPROWCOL),
       A(_A),vecF(vec_F),functionEvaluator(function_evaluator) {}
     virtual ~OpApproxVolume() {}
 
     MatrixDouble NN;
     MatrixDouble transNN;
-    vector<VectorDouble > Nf;
+    std::vector<VectorDouble > Nf;
 
     /** \brief calculate matrix
       */
@@ -75,9 +75,9 @@ struct FieldApproximationH1 {
 
       PetscErrorCode ierr;
 
-      const FENumeredDofMoFEMEntity *dof_ptr;
-      ierr = getMoFEMFEPtr()->get_row_dofs_by_petsc_gloabl_dof_idx(row_data.getIndices()[0],&dof_ptr); CHKERRQ(ierr);
-      int rank = dof_ptr->get_nb_of_coeffs();
+      const FENumeredDofEntity *dof_ptr;
+      ierr = getNumeredEntFiniteElementPtr()->getRowDofsByPetscGlobalDofIdx(row_data.getIndices()[0],&dof_ptr); CHKERRQ(ierr);
+      int rank = dof_ptr->getNbOfCoeffs();
 
       int nb_row_dofs = row_data.getIndices().size()/rank;
       int nb_col_dofs = col_data.getIndices().size()/rank;
@@ -181,9 +181,9 @@ struct FieldApproximationH1 {
 
       //PetscAttachDebugger();
 
-      const FENumeredDofMoFEMEntity *dof_ptr;
-      ierr = getMoFEMFEPtr()->get_row_dofs_by_petsc_gloabl_dof_idx(data.getIndices()[0],&dof_ptr); CHKERRQ(ierr);
-      unsigned int rank = dof_ptr->get_nb_of_coeffs();
+      const FENumeredDofEntity *dof_ptr;
+      ierr = getNumeredEntFiniteElementPtr()->getRowDofsByPetscGlobalDofIdx(data.getIndices()[0],&dof_ptr); CHKERRQ(ierr);
+      unsigned int rank = dof_ptr->getNbOfCoeffs();
 
       int nb_row_dofs = data.getIndices().size()/rank;
 
@@ -214,13 +214,13 @@ struct FieldApproximationH1 {
           z = getCoordsAtGaussPts()(gg,2);
         }
 
-        vector<ublas::vector<double> > fun_val;
+        std::vector<ublas::vector<double> > fun_val;
         try {
 
           fun_val = functionEvaluator(x,y,z);
 
-        } catch (exception& ex) {
-          ostringstream ss;
+        } catch (std::exception& ex) {
+          std::ostringstream ss;
           ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
           SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
         }
@@ -270,11 +270,11 @@ struct FieldApproximationH1 {
   struct OpApproxFace: public FaceElementForcesAndSourcesCore::UserDataOperator {
 
     Mat A;
-    vector<Vec> &vecF;
+    std::vector<Vec> &vecF;
     FUNEVAL &functionEvaluator;
 
-    OpApproxFace(const string &field_name,Mat _A,vector<Vec> &vec_F,FUNEVAL &function_evaluator):
-      FaceElementForcesAndSourcesCore::UserDataOperator(
+    OpApproxFace(const std::string &field_name,Mat _A,std::vector<Vec> &vec_F,FUNEVAL &function_evaluator):
+      MoFEM::FaceElementForcesAndSourcesCore::UserDataOperator(
         field_name,UserDataOperator::OPROW|UserDataOperator::OPROWCOL
       ),
       A(_A),
@@ -284,7 +284,7 @@ struct FieldApproximationH1 {
 
     ublas::matrix<double> NN;
     ublas::matrix<double> transNN;
-    vector<ublas::vector<double> > Nf;
+    std::vector<ublas::vector<double> > Nf;
 
     /** \brief calculate matrix
       */
@@ -299,9 +299,9 @@ struct FieldApproximationH1 {
       if(row_data.getIndices().size()==0) PetscFunctionReturn(0);
       if(col_data.getIndices().size()==0) PetscFunctionReturn(0);
       PetscErrorCode ierr;
-      const FENumeredDofMoFEMEntity *dof_ptr;
-      ierr = getMoFEMFEPtr()->get_row_dofs_by_petsc_gloabl_dof_idx(row_data.getIndices()[0],&dof_ptr); CHKERRQ(ierr);
-      int rank = dof_ptr->get_nb_of_coeffs();
+      const FENumeredDofEntity *dof_ptr;
+      ierr = getNumeredEntFiniteElementPtr()->getRowDofsByPetscGlobalDofIdx(row_data.getIndices()[0],&dof_ptr); CHKERRQ(ierr);
+      int rank = dof_ptr->getNbOfCoeffs();
       int nb_row_dofs = row_data.getIndices().size()/rank;
       int nb_col_dofs = col_data.getIndices().size()/rank;
       NN.resize(nb_row_dofs,nb_col_dofs,false);
@@ -309,8 +309,8 @@ struct FieldApproximationH1 {
       unsigned int nb_gauss_pts = row_data.getN().size1();
       for(unsigned int gg = 0;gg!=nb_gauss_pts;gg++) {
         double w = getGaussPts()(2,gg);
-        if(getNormals_at_GaussPt().size1()) {
-          w *= 0.5*cblas_dnrm2(3,&getNormals_at_GaussPt()(gg,0),1);
+        if(getNormalsAtGaussPt().size1()) {
+          w *= 0.5*cblas_dnrm2(3,&getNormalsAtGaussPt()(gg,0),1);
         } else {
           w *= getArea();
         }
@@ -388,9 +388,9 @@ struct FieldApproximationH1 {
       PetscErrorCode ierr;
 
       //PetscAttachDebugger();
-      const FENumeredDofMoFEMEntity *dof_ptr;
-      ierr = getMoFEMFEPtr()->get_row_dofs_by_petsc_gloabl_dof_idx(data.getIndices()[0],&dof_ptr); CHKERRQ(ierr);
-      unsigned int rank = dof_ptr->get_nb_of_coeffs();
+      const FENumeredDofEntity *dof_ptr;
+      ierr = getNumeredEntFiniteElementPtr()->getRowDofsByPetscGlobalDofIdx(data.getIndices()[0],&dof_ptr); CHKERRQ(ierr);
+      unsigned int rank = dof_ptr->getNbOfCoeffs();
 
       int nb_row_dofs = data.getIndices().size()/rank;
 
@@ -412,8 +412,8 @@ struct FieldApproximationH1 {
       for(unsigned int gg = 0;gg != nb_gauss_pts;gg++) {
         double x,y,z,w;
         w = getGaussPts()(2,gg);
-        if(getNormals_at_GaussPt().size1()) {
-          w *= 0.5*cblas_dnrm2(3,&getNormals_at_GaussPt()(gg,0),1);
+        if(getNormalsAtGaussPt().size1()) {
+          w *= 0.5*cblas_dnrm2(3,&getNormalsAtGaussPt()(gg,0),1);
         } else {
           w *= getArea();
         }
@@ -430,22 +430,22 @@ struct FieldApproximationH1 {
           z = getCoordsAtGaussPts()(gg,2);
         }
 
-        if(getNormals_at_GaussPt().size1()) {
-         noalias(normal) = getNormals_at_GaussPt(gg);
+        if(getNormalsAtGaussPt().size1()) {
+         noalias(normal) = getNormalsAtGaussPt(gg);
          for(int dd = 0;dd<3;dd++) {
-          tangent1[dd] = getTangent1_at_GaussPt()(gg,dd);
-          tangent2[dd] = getTangent2_at_GaussPt()(gg,dd);
+          tangent1[dd] = getTangent1AtGaussPt()(gg,dd);
+          tangent2[dd] = getTangent2AtGaussPt()(gg,dd);
         }
        } else {
          noalias(normal) = getNormal();
        }
 
-        vector<ublas::vector<double> > fun_val;
+        std::vector<ublas::vector<double> > fun_val;
         try {
-          EntityHandle ent = getFEMethod()->fePtr->get_ent();
+          EntityHandle ent = getFEMethod()->numeredEntFiniteElementPtr->getEnt();
           fun_val = functionEvaluator(ent,x,y,z,normal,tangent1,tangent2);
-        } catch (exception& ex) {
-          ostringstream ss;
+        } catch (std::exception& ex) {
+          std::ostringstream ss;
           ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
           SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
         }
@@ -488,9 +488,9 @@ struct FieldApproximationH1 {
   */
   template<typename FUNEVAL>
   PetscErrorCode setOperatorsVolume(
-    const string &field_name,
+    const std::string &field_name,
     Mat A,
-    vector<Vec> &vec_F,
+    std::vector<Vec> &vec_F,
     FUNEVAL &function_evaluator
   ) {
     PetscFunctionBegin;
@@ -507,9 +507,9 @@ struct FieldApproximationH1 {
   */
   template<typename FUNEVAL>
   PetscErrorCode setOperatorsFace(
-    const string &field_name,
+    const std::string &field_name,
     Mat A,
-    vector<Vec> &vec_F,
+    std::vector<Vec> &vec_F,
     FUNEVAL &function_evaluator
   ) {
     PetscFunctionBegin;
@@ -526,10 +526,10 @@ struct FieldApproximationH1 {
     */
   template<typename FUNEVAL>
   PetscErrorCode loopMatrixAndVectorVolume(
-    const string &problem_name,
-    const string &fe_name,
-    const string &field_name,
-    Mat A,vector<Vec> &vec_F,
+    const std::string &problem_name,
+    const std::string &fe_name,
+    const std::string &field_name,
+    Mat A,std::vector<Vec> &vec_F,
     FUNEVAL &function_evaluator
   ) {
     PetscFunctionBegin;
@@ -551,12 +551,14 @@ struct FieldApproximationH1 {
     PetscFunctionReturn(0);
   }
 
+  /** \deprecated Use loopMatrixAndVectorVolume instead
+  */
   template<typename FUNEVAL>
   DEPRECATED PetscErrorCode loopMatrixAndVector(
-    const string &problem_name,
-    const string &fe_name,
-    const string &field_name,
-    Mat A,vector<Vec> &vec_F,
+    const std::string &problem_name,
+    const std::string &fe_name,
+    const std::string &field_name,
+    Mat A,std::vector<Vec> &vec_F,
     FUNEVAL &function_evaluator
   ) {
     PetscFunctionBegin;

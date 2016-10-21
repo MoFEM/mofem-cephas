@@ -40,27 +40,27 @@ using namespace boost::numeric;
 /** \brief Set Dirichlet boundary conditions on displacements
   * \ingroup Dirichlet_bc
   */
-struct DisplacementBCFEMethodPreAndPostProc: public FEMethod {
+struct DisplacementBCFEMethodPreAndPostProc: public MoFEM::FEMethod {
 
-  FieldInterface& mField;
-  const string fieldName;			///< field name to set Dirichlet BC
+  MoFEM::Interface& mField;
+  const std::string fieldName;			///< field name to set Dirichlet BC
   double dIag;					      ///< diagonal value set on zeroed column and rows
 
   DisplacementBCFEMethodPreAndPostProc(
-    FieldInterface& m_field,const string &field_name,
+    MoFEM::Interface& m_field,const std::string &field_name,
     Mat Aij,Vec X,Vec F
   );
   DisplacementBCFEMethodPreAndPostProc(
-    FieldInterface& m_field,const string &field_name
+    MoFEM::Interface& m_field,const std::string &field_name
   );
 
   PetscErrorCode ierr;
   ErrorCode rval;
 
-  map<DofIdx,FieldData> mapZeroRows;
-  vector<int> dofsIndices;
-  vector<double> dofsValues;
-  vector<double> dofsXValues;
+  std::map<DofIdx,FieldData> mapZeroRows;
+  std::vector<int> dofsIndices;
+  std::vector<double> dofsValues;
+  std::vector<double> dofsXValues;
   virtual PetscErrorCode iNitalize();
 
   PetscErrorCode preProcess();
@@ -76,14 +76,14 @@ struct DisplacementBCFEMethodPreAndPostProc: public FEMethod {
 struct SpatialPositionsBCFEMethodPreAndPostProc: public DisplacementBCFEMethodPreAndPostProc {
 
   SpatialPositionsBCFEMethodPreAndPostProc(
-    FieldInterface& m_field,const string &field_name,Mat aij,Vec x,Vec f):
+    MoFEM::Interface& m_field,const std::string &field_name,Mat aij,Vec x,Vec f):
     DisplacementBCFEMethodPreAndPostProc(m_field,field_name,aij,x,f) {}
 
   SpatialPositionsBCFEMethodPreAndPostProc(
-    FieldInterface& m_field,const string &field_name):
+    MoFEM::Interface& m_field,const std::string &field_name):
     DisplacementBCFEMethodPreAndPostProc(m_field,field_name) {}
 
-  vector<string> fixFields;
+  std::vector<std::string> fixFields;
 
   ublas::vector<double> cOords;
   PetscErrorCode iNitalize();
@@ -93,11 +93,11 @@ struct SpatialPositionsBCFEMethodPreAndPostProc: public DisplacementBCFEMethodPr
 struct TemperatureBCFEMethodPreAndPostProc: public DisplacementBCFEMethodPreAndPostProc {
 
   TemperatureBCFEMethodPreAndPostProc(
-    FieldInterface& m_field,const string &field_name,Mat aij,Vec x,Vec f):
+    MoFEM::Interface& m_field,const std::string &field_name,Mat aij,Vec x,Vec f):
     DisplacementBCFEMethodPreAndPostProc(m_field,field_name,aij,x,f) {}
 
   TemperatureBCFEMethodPreAndPostProc(
-    FieldInterface& m_field,const string &field_name):
+    MoFEM::Interface& m_field,const std::string &field_name):
     DisplacementBCFEMethodPreAndPostProc(m_field,field_name) {}
 
   PetscErrorCode iNitalize();
@@ -110,10 +110,10 @@ struct TemperatureBCFEMethodPreAndPostProc: public DisplacementBCFEMethodPreAndP
 struct FixBcAtEntities: public DisplacementBCFEMethodPreAndPostProc {
 
   Range &eNts;
-  vector<string> fieldNames;
+  std::vector<std::string> fieldNames;
   FixBcAtEntities(
-    FieldInterface& m_field,
-    const string &field_name,
+    MoFEM::Interface& m_field,
+    const std::string &field_name,
     Mat aij,Vec x,Vec f,
     Range &ents
   ):
@@ -122,7 +122,7 @@ struct FixBcAtEntities: public DisplacementBCFEMethodPreAndPostProc {
   }
 
   FixBcAtEntities(
-    FieldInterface& m_field,const string &field_name,Range &ents
+    MoFEM::Interface& m_field,const std::string &field_name,Range &ents
   ):
   DisplacementBCFEMethodPreAndPostProc(m_field,field_name),eNts(ents) {
     fieldNames.push_back(fieldName);
@@ -141,19 +141,72 @@ struct FixBcAtEntities: public DisplacementBCFEMethodPreAndPostProc {
   * Implementation of generalized Dirichlet Boundary Conditions from CUBIT Blockset
   * (or not using CUBIT building boundary conditions, e.g. Temperature or Displacements etc).
   * It can work for any Problem rank (1,2,3)
+  *
+  *    Usage in Cubit for displacement:
+       block 1 surface 12
+       block 1 name "DISPLACEMENT_1"
+       block 1 attribute count 3
+       block 1 attribute index 1 0       # value for x direction
+       block 1 attribute index 2 2       # value for y direction
+       block 1 attribute index 3 0       # value for z direction
+
+      With above command we set displacement of 2 on y-direction and constrain x,z direction (0 displacement)
+  *
 **/
 struct DirichletBCFromBlockSetFEMethodPreAndPostProc: public DisplacementBCFEMethodPreAndPostProc {
 
-  const string blocksetName;
+  const std::string blocksetName;
   DirichletBCFromBlockSetFEMethodPreAndPostProc(
-    FieldInterface& m_field,const string &field_name,const string &blockset_name,Mat aij,Vec x,Vec f
+    MoFEM::Interface& m_field,const std::string &field_name,const std::string &blockset_name,Mat aij,Vec x,Vec f
   ):
   DisplacementBCFEMethodPreAndPostProc(m_field,field_name,aij,x,f),
   blocksetName(blockset_name) {
   }
 
   DirichletBCFromBlockSetFEMethodPreAndPostProc(
-    FieldInterface& m_field,const string &field_name,const string &blockset_name
+    MoFEM::Interface& m_field,const std::string &field_name,const std::string &blockset_name
+  ):
+  DisplacementBCFEMethodPreAndPostProc(m_field,field_name),
+  blocksetName(blockset_name) {
+  }
+
+  PetscErrorCode iNitalize();
+
+};
+
+/**
+ * \brief Add boundary conditions form block set having 6 attributes
+ *
+ * First 3 values are magnitudes of dofs e.g. in x,y,z direction and next 3 are flags, respectively.
+ * If flag is false ( = 0), particular dof is not taken into account.
+    Usage in Cubit for displacement:
+     block 1 tri 28 32
+     block 1 name "DISPLACEMENT_1"
+     block 1 attribute count 6
+     block 1 attribute index 1 97    # any value (Cubit doesnt allow for blank attributes)
+     block 1 attribute index 2 0
+     block 1 attribute index 3 0
+     block 1 attribute index 4 0       # flag for x direction
+     block 1 attribute index 5 1       # flag for y direction
+     block 1 attribute index 6 1       # flag for z direction
+    This means that we set zero displacement on y and z direction and on x set direction freely.
+    (value 97 is irrelevant because flag for 1 value is 0 (false))
+    It can be usefull if we want to set boundary conditions directly to triangles e.g,
+    since standard boundary conditions in Cubit allow only using nodeset or surface
+    which might not work with mesh based on facet engine (e.g. STL file)
+ */
+struct DirichletBCFromBlockSetFEMethodPreAndPostProcWithFlags: public DisplacementBCFEMethodPreAndPostProc {
+
+  const std::string blocksetName;
+  DirichletBCFromBlockSetFEMethodPreAndPostProcWithFlags(
+    MoFEM::Interface& m_field,const std::string &field_name,const std::string &blockset_name,Mat aij,Vec x,Vec f
+  ):
+  DisplacementBCFEMethodPreAndPostProc(m_field,field_name,aij,x,f),
+  blocksetName(blockset_name) {
+  }
+
+  DirichletBCFromBlockSetFEMethodPreAndPostProcWithFlags(
+    MoFEM::Interface& m_field,const std::string &field_name,const std::string &blockset_name
   ):
   DisplacementBCFEMethodPreAndPostProc(m_field,field_name),
   blocksetName(blockset_name) {

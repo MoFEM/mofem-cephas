@@ -20,11 +20,6 @@
 
 #include <MoFEM.hpp>
 
-#include <boost/iostreams/tee.hpp>
-#include <boost/iostreams/stream.hpp>
-#include <fstream>
-#include <iostream>
-
 namespace bio = boost::iostreams;
 using bio::tee_device;
 using bio::stream;
@@ -41,20 +36,24 @@ int main(int argc, char *argv[]) {
   PetscInitialize(&argc,&argv,(char *)0,help);
 
   moab::Core mb_instance;
-  Interface& moab = mb_instance;
+  moab::Interface& moab = mb_instance;
   int rank;
   MPI_Comm_rank(PETSC_COMM_WORLD,&rank);
 
   PetscBool flg = PETSC_TRUE;
   char mesh_file_name[255];
-  ierr = PetscOptionsGetString(PETSC_NULL,"-my_file",mesh_file_name,255,&flg); CHKERRQ(ierr);
+  #if PETSC_VERSION_GE(3,6,4)
+  ierr = PetscOptionsGetString(PETSC_NULL,"","-my_file",mesh_file_name,255,&flg); CHKERRQ(ierr);
+  #else
+  ierr = PetscOptionsGetString(PETSC_NULL,PETSC_NULL,"-my_file",mesh_file_name,255,&flg); CHKERRQ(ierr);
+  #endif
   if(flg != PETSC_TRUE) {
     SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_file (MESH FILE NEEDED)");
   }
 
   //Create MoFEM (Joseph) database
   MoFEM::Core core(moab);
-  FieldInterface& m_field = core;
+  MoFEM::Interface& m_field = core;
 
   ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
   if(pcomm == NULL) pcomm =  new ParallelComm(&moab,PETSC_COMM_WORLD);
@@ -62,7 +61,7 @@ int main(int argc, char *argv[]) {
   const char *option;
   option = "";//"PARALLEL=BCAST;";//;DEBUG_IO";
   BARRIER_RANK_START(pcomm)
-  rval = moab.load_file(mesh_file_name, 0, option); CHKERR_PETSC(rval);
+  rval = moab.load_file(mesh_file_name, 0, option); CHKERRQ_MOAB(rval);
   BARRIER_RANK_END(pcomm)
 
   //set entitities bit level
@@ -86,7 +85,7 @@ int main(int argc, char *argv[]) {
 
   //set finite elements for problem
   ierr = m_field.modify_problem_add_finite_element("TEST_PROBLEM","TEST_FE"); CHKERRQ(ierr);
-  //set refinment level for problem
+  //set refinement level for problem
   ierr = m_field.modify_problem_ref_level_add_bit("TEST_PROBLEM",bit_level0); CHKERRQ(ierr);
 
 
@@ -129,32 +128,45 @@ int main(int argc, char *argv[]) {
     ErrorCode rval;
     PetscErrorCode ierr;
 
-    typedef tee_device<ostream, ofstream> TeeDevice;
+    typedef tee_device<std::ostream, std::ofstream> TeeDevice;
     typedef stream<TeeDevice> TeeStream;
 
-    ofstream ofs;
+    std::ofstream ofs;
     TeeDevice my_tee;
     TeeStream my_split;
 
     struct PrintJacobian: public DataOperator {
 
       TeeStream &my_split;
-      PrintJacobian(TeeStream &_my_split): my_split(_my_split) {};
+      PrintJacobian(TeeStream &_my_split): my_split(_my_split) {
+
+      }
 
       ~PrintJacobian() {
         my_split.close();
       }
 
       PetscErrorCode doWork(
-        int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
-          PetscFunctionBegin;
-          my_split << "side: " << side << " type: " << type << data.getDiffN() << endl;
-          PetscFunctionReturn(0);
+        int side,EntityType type,DataForcesAndSurcesCore::EntData &data
+      ) {
+        PetscFunctionBegin;
+        const double eps = 1e-6;
+        for(unsigned int ii = 0;ii!=data.getDiffN().size1();ii++) {
+          for(unsigned int jj = 0;jj!=data.getDiffN().size2();jj++) {
+            if(fabs(data.getDiffN()(ii,jj))<eps) {
+              data.getDiffN()(ii,jj) = 0;
+            }
+          }
         }
+        my_split << "side: " << side << " type: " << type
+        << std::fixed << std::setprecision(4)
+        << data.getDiffN() << std::endl;
+        PetscFunctionReturn(0);
+      }
 
-      };
+    };
 
-    MatrixDouble invJac;
+    MatrixDouble3by3 invJac;
     MatrixDouble dataFIELD1;
     MatrixDouble dataDiffFIELD1;
     VectorDouble coords;
@@ -162,11 +174,12 @@ int main(int argc, char *argv[]) {
     OpSetInvJacH1 opSetInvJac;
     OpGetDataAndGradient opGetData_FIELD1;
 
-    ForcesAndSurcesCore_TestFE(FieldInterface &_m_field):
+    ForcesAndSurcesCore_TestFE(MoFEM::Interface &_m_field):
     ForcesAndSurcesCore(_m_field),
     ofs("forces_and_sources_calculate_jacobian.txt"),
-    my_tee(cout, ofs),
+    my_tee(std::cout, ofs),
     my_split(my_tee),
+    invJac(3,3),
     opPrintJac(my_split),
     opSetInvJac(invJac),
     opGetData_FIELD1(dataFIELD1,dataDiffFIELD1,1),
@@ -183,20 +196,18 @@ int main(int argc, char *argv[]) {
     PetscErrorCode operator()() {
       PetscFunctionBegin;
 
-      ierr = getSpacesOnEntities(data); CHKERRQ(ierr);
+      ierr = getSpacesAndBaseOnEntities(data); CHKERRQ(ierr);
 
       ierr = getEdgesSense(data); CHKERRQ(ierr);
       ierr = getTrisSense(data); CHKERRQ(ierr);
-      ierr = getEdgesOrder(data,H1); CHKERRQ(ierr);
-      ierr = getTrisOrder(data,H1); CHKERRQ(ierr);
-      ierr = getTetsOrder(data,H1); CHKERRQ(ierr);
+      ierr = getEdgesDataOrder(data,H1); CHKERRQ(ierr);
+      ierr = getTrisDataOrder(data,H1); CHKERRQ(ierr);
+      ierr = getTetDataOrder(data,H1); CHKERRQ(ierr);
       ierr = getFaceTriNodes(data); CHKERRQ(ierr);
 
-      data.dataOnEntities[MBVERTEX][0].getN().resize(4,4,false);
-      ierr = ShapeMBTET(
-        &*data.dataOnEntities[MBVERTEX][0].getN().data().begin(),G_TET_X4,G_TET_Y4,G_TET_Z4,4
-      ); CHKERRQ(ierr);
-      ierr = shapeTETFunctions_H1(data,G_TET_X4,G_TET_Y4,G_TET_Z4,4); CHKERRQ(ierr);
+      ierr = getEdgesDataOrderSpaceAndBase(data,"FIELD1"); CHKERRQ(ierr);
+      ierr = getTrisDataOrderSpaceAndBase(data,"FIELD1"); CHKERRQ(ierr);
+      ierr = getTetDataOrderSpaceAndBase(data,"FIELD1"); CHKERRQ(ierr);
 
       ierr = getRowNodesIndices(data,"FIELD1"); CHKERRQ(ierr);
       ierr = getEdgesRowIndices(data,"FIELD1"); CHKERRQ(ierr);
@@ -208,31 +219,46 @@ int main(int argc, char *argv[]) {
       ierr = getTrisFieldData(data,"FIELD1"); CHKERRQ(ierr);
       ierr = getTetsFieldData(data,"FIELD1"); CHKERRQ(ierr);
 
-      EntityHandle ent = fePtr->get_ent();
+      MatrixDouble gauss_pts(4,4);
+      for(int gg = 0;gg<4;gg++) {
+        gauss_pts(0,gg) = G_TET_X4[gg];
+        gauss_pts(1,gg) = G_TET_Y4[gg];
+        gauss_pts(2,gg) = G_TET_Z4[gg];
+        gauss_pts(3,gg) = G_TET_W4[gg];
+      }
+      ierr = TetPolynomialBase().getValue(
+        gauss_pts,
+        boost::shared_ptr<BaseFunctionCtx>(
+          new EntPolynomialBaseCtx(data,H1,AINSWORTH_COLE_BASE)
+        )
+      ); CHKERRQ(ierr);
+
+      EntityHandle ent = numeredEntFiniteElementPtr->getEnt();
       int num_nodes;
       const EntityHandle* conn;
-      rval = mField.get_moab().get_connectivity(ent,conn,num_nodes,true); CHKERR_PETSC(rval);
+      rval = mField.get_moab().get_connectivity(ent,conn,num_nodes,true); CHKERRQ_MOAB(rval);
       coords.resize(num_nodes*3);
-      rval = mField.get_moab().get_coords(conn,num_nodes,&*coords.data().begin()); CHKERR_PETSC(rval);
+      rval = mField.get_moab().get_coords(conn,num_nodes,&*coords.data().begin()); CHKERRQ_MOAB(rval);
 
-      invJac.resize(3,3);
-      ierr = ShapeJacMBTET(&*data.dataOnEntities[MBVERTEX][0].getDiffN().data().begin(),&*coords.begin(),&*invJac.data().begin()); CHKERRQ(ierr);
+      ierr = ShapeJacMBTET(
+        &*data.dataOnEntities[MBVERTEX][0].getDiffN().data().begin(),&*coords.begin(),&*invJac.data().begin()
+      ); CHKERRQ(ierr);
       ierr = ShapeInvJacVolume(&*invJac.data().begin()); CHKERRQ(ierr);
 
       try {
         ierr = opSetInvJac.opRhs(data); CHKERRQ(ierr);
         ierr = opPrintJac.opRhs(data); CHKERRQ(ierr);
         ierr = opGetData_FIELD1.opRhs(data); CHKERRQ(ierr);
-      } catch (exception& ex) {
-        ostringstream ss;
-        ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__ << endl;
+      } catch (std::exception& ex) {
+        std::ostringstream ss;
+        ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__ << std::endl;
         SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
 
-      my_split << "data FIELD1:" << endl;
-      my_split << dataFIELD1 << endl;
-      my_split << "data diff FIELD1:" << endl;
-      my_split << dataDiffFIELD1 << endl;
+      my_split << "data FIELD1:" << std::endl;
+      my_split << dataFIELD1 << std::endl;
+      my_split << "data diff FIELD1:" << std::endl;
+      my_split << dataDiffFIELD1 << std::endl;
 
       PetscFunctionReturn(0);
     }

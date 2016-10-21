@@ -13,14 +13,14 @@
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
 #include <Includes.hpp>
-// #include <version.h>
+#include <version.h>
 #include <definitions.h>
 #include <Common.hpp>
 
 #include <h1_hdiv_hcurl_l2.h>
 
 #include <MaterialBlocks.hpp>
-#include <CubitBCData.hpp>
+#include <BCData.hpp>
 #include <TagMultiIndices.hpp>
 #include <CoordSysMultiIndices.hpp>
 #include <FieldMultiIndices.hpp>
@@ -33,9 +33,11 @@
 #include <CoreDataStructures.hpp>
 #include <SeriesMultiIndices.hpp>
 
+#include <UnknownInterface.hpp>
+
 #include <LoopMethods.hpp>
-#include <FieldInterface.hpp>
-#include <MeshRefinment.hpp>
+#include <Interface.hpp>
+#include <MeshRefinement.hpp>
 #include <PrismInterface.hpp>
 #include <SeriesRecorder.hpp>
 #include <Core.hpp>
@@ -72,7 +74,7 @@ PetscErrorCode SnesRhs(SNES snes,Vec x,Vec f,void *ctx) {
     lit->second->snes_f = f;
     //PetscSynchronizedPrintf(PETSC_COMM_WORLD,"\t\tLoop FE for Rhs: %s\n",lit->first.c_str());
     //PetscSynchronizedFlush(PETSC_COMM_WORLD);
-    ierr = snes_ctx->mField.loop_finite_elements(snes_ctx->problemName,lit->first,*(lit->second));  CHKERRQ(ierr);
+    ierr = snes_ctx->mField.loop_finite_elements(snes_ctx->problemName,lit->first,*(lit->second),snes_ctx->bH);  CHKERRQ(ierr);
     ierr = lit->second->set_snes_ctx(SnesMethod::CTX_SNESNONE);  CHKERRQ(ierr);
   }
   bit = snes_ctx->postProcess_Rhs.begin();
@@ -118,7 +120,7 @@ PetscErrorCode SnesMat(SNES snes,Vec x,Mat A,Mat B,void *ctx) {
     lit->second->snes_B = B;
     //PetscSynchronizedPrintf(PETSC_COMM_WORLD,"\t\tLoop FE for Mat: %s\n",lit->first.c_str());
     //PetscSynchronizedFlush(PETSC_COMM_WORLD);
-    ierr = snes_ctx->mField.loop_finite_elements(snes_ctx->problemName,lit->first,*(lit->second));  CHKERRQ(ierr);
+    ierr = snes_ctx->mField.loop_finite_elements(snes_ctx->problemName,lit->first,*(lit->second),snes_ctx->bH);  CHKERRQ(ierr);
     ierr = lit->second->set_snes_ctx(SnesMethod::CTX_SNESNONE);
   }
   bit = snes_ctx->postProcess_Mat.begin();

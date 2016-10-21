@@ -1,0 +1,84 @@
+/** \file LegendrePolynomial.hpp
+\brief Implementation of Legendre polynomial
+
+*/
+
+/* This file is part of MoFEM.
+* MoFEM is free software: you can redistribute it and/or modify it under
+* the terms of the GNU Lesser General Public License as published by the
+* Free Software Foundation, either version 3 of the License, or (at your
+* option) any later version.
+*
+* MoFEM is distributed in the hope that it will be useful, but WITHOUT
+* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
+* License for more details.
+*
+* You should have received a copy of the GNU Lesser General Public
+* License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
+
+#ifndef __LEGENDREPOLYNOMIALS_HPP__
+#define __LEGENDREPOLYNOMIALS_HPP__
+
+namespace MoFEM {
+
+  static const MOFEMuuid IDD_LEGENDRE_BASE_FUNCTION = MOFEMuuid(BitIntefaceId(LEGENDRE_BASE_FUNCTION_INTERFACE));
+
+  /**
+   * \brief Class used to give arguments to Legendre base functions
+   * \ingroup mofem_base_functions
+   */
+  struct LegendrePolynomialCtx: public BaseFunctionCtx {
+
+    PetscErrorCode queryInterface(const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface);
+
+    int P;
+    double *diffS;
+    int dIm;
+    boost::shared_ptr<ublas::matrix<double> > baseFunPtr;
+    boost::shared_ptr<ublas::matrix<double> > baseDiffFunPtr;
+
+    PetscErrorCode (*basePolynomials)(
+      int p,double s,double *diff_s,double *L,double *diffL,const int dim
+    );
+
+    LegendrePolynomialCtx(
+      int p,
+      double *diff_s,
+      int dim,
+      boost::shared_ptr<ublas::matrix<double> > base_fun_ptr,
+      boost::shared_ptr<ublas::matrix<double> > base_diff_fun_ptr
+    ):
+    P(p),
+    diffS(diff_s),
+    dIm(dim),
+    baseFunPtr(base_fun_ptr),
+    baseDiffFunPtr(base_diff_fun_ptr),
+    basePolynomials(Legendre_polynomials) {
+    }
+    ~LegendrePolynomialCtx() {}
+
+  };
+
+  /**
+   * \brief Calculating Legendre base functions
+   * \ingroup mofem_base_functions
+   */
+  struct LegendrePolynomial: public BaseFunction {
+
+    PetscErrorCode queryInterface(const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface);
+
+    LegendrePolynomial() {}
+    ~LegendrePolynomial() {}
+
+    PetscErrorCode getValue(
+      ublas::matrix<double> &pts,
+      boost::shared_ptr<BaseFunctionCtx> ctx_ptr
+    );
+
+  };
+
+}
+
+
+#endif //__LEGENDREPOLYNOMIALS_HPP__

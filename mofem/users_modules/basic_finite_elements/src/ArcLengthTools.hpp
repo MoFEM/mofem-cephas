@@ -25,6 +25,7 @@
 
 /**
  * \brief Store variables for ArcLength analysis
+ *
  * \ingroup arc_length_control
 
  The constrain function if given by
@@ -64,7 +65,7 @@
  */
 struct ArcLengthCtx {
 
-  FieldInterface &mField;
+  MoFEM::Interface &mField;
 
   double s;	///< arc length radius
   double beta; 	///< force scaling factor
@@ -96,26 +97,26 @@ struct ArcLengthCtx {
    */
   PetscErrorCode setAlphaBeta(double alpha,double beta);
 
-  ArcLengthCtx(FieldInterface &m_field,const string &problem_name);
+  ArcLengthCtx(MoFEM::Interface &m_field,const std::string &problem_name);
   virtual ~ArcLengthCtx();
 
-  NumeredDofMoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator dIt;
+  NumeredDofEntity_multiIndex::index<FieldName_mi_tag>::type::iterator dIt;
 
   /** \brief Get global index of load factor
   */
-  DofIdx getPetscGloablDofIdx() { return dIt->get_petsc_gloabl_dof_idx(); };
+  DofIdx getPetscGlobalDofIdx() { return (*dIt)->getPetscGlobalDofIdx(); };
 
   /** \brief Get local index of load factor
   */
-  DofIdx getPetscLocalDofIdx() { return dIt->get_petsc_local_dof_idx(); };
+  DofIdx getPetscLocalDofIdx() { return (*dIt)->getPetscLocalDofIdx(); };
 
   /** \brief Get value of load factor
   */
-  FieldData& getFieldData() { return dIt->get_FieldData(); }
+  FieldData& getFieldData() { return (*dIt)->getFieldData(); }
 
   /** \brief Get proc owning lambda dof
   */
-  int getPart() { return dIt->get_part(); };
+  int getPart() { return (*dIt)->getPart(); };
 
 };
 
@@ -128,7 +129,7 @@ struct ArcLengthCtx {
 struct ArcLengthSnesCtx: public SnesCtx {
   ArcLengthCtx* arcPtr;
   ArcLengthSnesCtx(
-    FieldInterface &m_field,const string &problem_name,ArcLengthCtx* arc_ptr
+    MoFEM::Interface &m_field,const std::string &problem_name,ArcLengthCtx* arc_ptr
   ):
   SnesCtx(m_field,problem_name),
   arcPtr(arc_ptr) {
@@ -146,7 +147,7 @@ struct ArcLengthSnesCtx: public SnesCtx {
 struct ArcLengthTsCtx: public TsCtx {
   ArcLengthCtx* arcPtr;
   ArcLengthTsCtx(
-    FieldInterface &m_field,const string &problem_name,ArcLengthCtx* arc_ptr
+    MoFEM::Interface &m_field,const std::string &problem_name,ArcLengthCtx* arc_ptr
   ):
   TsCtx(m_field,problem_name),
   arcPtr(arc_ptr) {
@@ -156,6 +157,7 @@ struct ArcLengthTsCtx: public TsCtx {
 #endif // __TSCTX_HPP__
 
 /** \brief shell matrix for arc-length method
+ *
  * \ingroup arc_length_control
 
  Shell matrix which has structure:

@@ -1,6 +1,8 @@
 /** \file UltraWeakTransportElement.hpp
  * \brief Ultra weak implementation of transport element
  *
+ * \ingroup mofem_ultra_weak_transport_elem
+ *
  */
 
 /*
@@ -24,49 +26,80 @@
 /** \brief Ultra weak transport problem
   \ingroup mofem_ultra_weak_transport_elem
 
-  Note to solve this system you need to use direct solver or propper preconditioner
+  Note to solve this system you need to use direct solver or proper preconditioner
   for saddle problem.
+
+  It is based on \cite arnold2006differential \cite arnold2012mixed \cite reviartthomas1996
+  <https://www.researchgate.net/profile/Richard_Falk/publication/226454406_Differential_Complexes_and_Stability_of_Finite_Element_Methods_I._The_de_Rham_Complex/links/02e7e5214f0426ff77000000.pdf>
+
+  General problem have form,
+  \f[
+  \mathbf{A} \boldsymbol\sigma + \textrm{grad}[u] = \mathbf{0} \; \textrm{on} \; \Omega \\
+  \textrm{div}[\boldsymbol\sigma] = f \; \textrm{on} \; \Omega
+  \f]
 
 */
 struct UltraWeakTransportElement {
 
-  FieldInterface &mField;
+  MoFEM::Interface &mField;
 
-  /// \brief  definition of volume element
-  struct MyVolumeFE: public VolumeElementForcesAndSourcesCore {
-    MyVolumeFE(FieldInterface &m_field): VolumeElementForcesAndSourcesCore(m_field) {}
-    int getRule(int order) { return 2*order; };
+  /**
+   * \brief definition of volume element
+
+   * It is used to calculate volume integrals. On volume element we set-up
+   * operators to cal;ulcerate components of matrix and vector.
+
+   */
+  struct MyVolumeFE: public MoFEM::VolumeElementForcesAndSourcesCore {
+    MyVolumeFE(MoFEM::Interface &m_field): MoFEM::VolumeElementForcesAndSourcesCore(m_field) {}
+    int getRule(int order) { return 2*order+1; };
   };
 
-  MyVolumeFE feVol;
+  MyVolumeFE feVol;   ///< Instance of volume element
 
-  /** \brief define surface element
-    *
+  /** \brief definition of surface element
+
+    * It is used to calculate surface integrals. On volume element are operators
+    * evaluating natural boundary conditions.
+
     */
-  struct MyTriFE: public FaceElementForcesAndSourcesCore {
-    MyTriFE(FieldInterface &m_field): FaceElementForcesAndSourcesCore(m_field) {}
-    int getRule(int order) { return 2*order; };
+  struct MyTriFE: public MoFEM::FaceElementForcesAndSourcesCore {
+    MyTriFE(MoFEM::Interface &m_field): MoFEM::FaceElementForcesAndSourcesCore(m_field) {}
+    int getRule(int order) { return 2*order+1; };
   };
 
-  MyTriFE feTriFluxValue;
+  MyTriFE feTri;   ///< Instance of surface element
 
-  UltraWeakTransportElement(FieldInterface &m_field):
+  /**
+   * \brief construction of this data structure
+   */
+  UltraWeakTransportElement(MoFEM::Interface &m_field):
   mField(m_field),
-  feVol(m_field),feTriFluxValue(m_field) {};
+  feVol(m_field),
+  feTri(m_field) {};
 
+  /**
+   * \brief destructor
+   */
   virtual ~UltraWeakTransportElement() {}
 
-  VectorDouble valuesAtGaussPts;
-  ublas::vector<VectorDouble > valuesGradientAtGaussPts;
-  VectorDouble divergenceAtGaussPts;
-  ublas::vector<VectorDouble > fluxesAtGaussPts;
+  VectorDouble valuesAtGaussPts;                          ///< values at integration points on element
+  ublas::vector<VectorDouble > valuesGradientAtGaussPts;  ///< gradients at integration points on element
+  VectorDouble divergenceAtGaussPts;                      ///< divergence at integration points on element
+  ublas::vector<VectorDouble > fluxesAtGaussPts;          ///< fluxes at integration points on element
 
-  set<PetscInt> bcIndices;
+  set<int> bcIndices;
+
+  /**
+   * \brief get dof indices where essential boundary conditions are applied
+   * @param  is indices
+   * @return    error code
+   */
   PetscErrorCode getDirichletBCIndices(IS *is) {
     PetscFunctionBegin;
-    vector<PetscInt> ids;
-    ids.insert(ids.begin(),bcIndices.begin(),bcIndices.end());
+    std::vector<int> ids;
     PetscErrorCode ierr;
+    ids.insert(ids.begin(),bcIndices.begin(),bcIndices.end());
     IS is_local;
     ierr = ISCreateGeneral(
       mField.get_comm(),ids.size(),ids.empty()?PETSC_NULL:&ids[0],PETSC_COPY_VALUES,&is_local
@@ -76,7 +109,16 @@ struct UltraWeakTransportElement {
     PetscFunctionReturn(0);
   }
 
-  virtual PetscErrorCode getFlux(
+   /**
+    * \brief set source term
+    * @param  ent  handle to entity on which function is evaluated
+    * @param  x    coord
+    * @param  y    coord
+    * @param  z    coord
+    * @param  flux reference to source term set by function
+    * @return      error code
+    */
+  virtual PetscErrorCode getSource(
     const EntityHandle ent,
     const double x,const double y,const double z,
     double &flux) {
@@ -85,19 +127,37 @@ struct UltraWeakTransportElement {
     PetscFunctionReturn(0);
   }
 
+   /**
+    * \brief natural (Dirihlet) boundary conditions (set values)
+    * @param  ent   handle to finite element entity
+    * @param  x     coord
+    * @param  y     coord
+    * @param  z     coord
+    * @param  value reference to value set by function
+    * @return       error code
+    */
   virtual PetscErrorCode getResistivity(
     const EntityHandle ent,
     const double x,const double y,const double z,
-    ublas::matrix<FieldData> &inv_k) {
+    ublas::matrix<FieldData> &inv_k
+  ) {
     PetscFunctionBegin;
-    inv_k.resize(3,3);
-    bzero(&*inv_k.data().begin(),9*sizeof(FieldData));
+    inv_k.clear();
     for(int dd = 0;dd<3;dd++) {
       inv_k(dd,dd) = 1;
     }
     PetscFunctionReturn(0);
   }
 
+  /**
+   * \brief evaluate natural (Dirichlet) boundary conditions
+   * @param  ent   entity on which bc is evaluated
+   * @param  x     coordinate
+   * @param  y     coordinate
+   * @param  z     coordinate
+   * @param  value vale
+   * @return       error code
+   */
   virtual PetscErrorCode getBcOnValues(
     const EntityHandle ent,
     const double x,const double y,const double z,
@@ -107,6 +167,15 @@ struct UltraWeakTransportElement {
     PetscFunctionReturn(0);
   }
 
+  /**
+   * \brief essential (Neumann) boundary condition (set fluxes)
+   * @param  ent  handle to finite element entity
+   * @param  x    coord
+   * @param  y    coord
+   * @param  z    coord
+   * @param  flux reference to flux which is set by function
+   * @return      [description]
+   */
   virtual PetscErrorCode getBcOnFluxes(
     const EntityHandle ent,
     const double x,const double y,const double z,
@@ -124,17 +193,52 @@ struct UltraWeakTransportElement {
     double cApacity;
     Range tEts; ///< constatins elements in block set
   };
-  map<int,BlockData> setOfBlocks; ///< maps block set id with appropiate BlockData
+  std::map<int,BlockData> setOfBlocks; ///< maps block set id with appropriate BlockData
+
+  /**
+   * \brief Add fields to database
+   * @param  values name of the fields
+   * @param  fluxes name of filed for fluxes
+   * @param  order  order of approximation
+   * @return        error code
+   */
+  PetscErrorCode addFields(const std::string &values,const std::string &fluxes,const int order) {
+    PetscErrorCode ierr;
+    PetscFunctionBegin;
+    //Fields
+    ierr = mField.add_field(fluxes,HDIV,1); CHKERRQ(ierr);
+    ierr = mField.add_field(values,L2,1); CHKERRQ(ierr);
+
+    //meshset consisting all entities in mesh
+    EntityHandle root_set = mField.get_moab().get_root_set();
+    //add entities to field
+    ierr = mField.add_ents_to_field_by_TETs(root_set,fluxes); CHKERRQ(ierr);
+    ierr = mField.add_ents_to_field_by_TETs(root_set,values); CHKERRQ(ierr);
+    ierr = mField.set_field_order(root_set,MBTET,fluxes,order+1); CHKERRQ(ierr);
+    ierr = mField.set_field_order(root_set,MBTRI,fluxes,order+1); CHKERRQ(ierr);
+    ierr = mField.set_field_order(root_set,MBTET,values,order); CHKERRQ(ierr);
+
+
+    PetscFunctionReturn(0);
+  }
 
   /// \brief add finite elements
   PetscErrorCode addFiniteElements(
-    const string &fluxes_name,const string &values_name,
-    const string &error_name,const string mesh_nodals_positions = "MESH_NODE_POSITIONS") {
+    const std::string &fluxes_name,
+    const std::string &values_name,
+    const std::string mesh_nodals_positions = "MESH_NODE_POSITIONS"
+  ) {
     PetscFunctionBegin;
 
     PetscErrorCode ierr;
     ErrorCode rval;
 
+    // Set up volume element operators. Operators are used to calculate components
+    // of stiffness matrix & right hand side, in essence are used to do volume integrals over
+    // tetrahedral in this case.
+
+    // Define element "ULTRAWEAK". Note that this element will work with fluxes_name and
+    // values_name. This reflect bilinear form for the problem
     ierr = mField.add_finite_element("ULTRAWEAK",MF_ZERO); CHKERRQ(ierr);
     ierr = mField.modify_finite_element_add_field_row("ULTRAWEAK",fluxes_name); CHKERRQ(ierr);
     ierr = mField.modify_finite_element_add_field_col("ULTRAWEAK",fluxes_name); CHKERRQ(ierr);
@@ -142,56 +246,436 @@ struct UltraWeakTransportElement {
     ierr = mField.modify_finite_element_add_field_col("ULTRAWEAK",values_name); CHKERRQ(ierr);
     ierr = mField.modify_finite_element_add_field_data("ULTRAWEAK",fluxes_name); CHKERRQ(ierr);
     ierr = mField.modify_finite_element_add_field_data("ULTRAWEAK",values_name); CHKERRQ(ierr);
+
+    // Define finite element to integrate over skeleton, we need that to evaluate error
+    ierr = mField.add_finite_element("ULTRAWEAK_SKELETON",MF_ZERO); CHKERRQ(ierr);
+    ierr = mField.modify_finite_element_add_field_row("ULTRAWEAK_SKELETON",fluxes_name); CHKERRQ(ierr);
+    ierr = mField.modify_finite_element_add_field_col("ULTRAWEAK_SKELETON",fluxes_name); CHKERRQ(ierr);
+    ierr = mField.modify_finite_element_add_field_data("ULTRAWEAK_SKELETON",fluxes_name); CHKERRQ(ierr);
+
+    // In some cases you like to use HO geometry to describe shape of the bode, curved edges and faces, for
+    // example body is a sphere. HO geometry is approximated by a field,  which can be hierarchical, so shape of
+    // the edges could be given by polynomial of arbitrary order.
+    //
+    // Check if field "mesh_nodals_positions" is defined, and if it is add that field to data of finite
+    // element. MoFEM will use that that to calculate Jacobian as result that geometry in nonlinear.
     if(mField.check_field(mesh_nodals_positions)) {
       ierr = mField.modify_finite_element_add_field_data("ULTRAWEAK",mesh_nodals_positions); CHKERRQ(ierr);
+      ierr = mField.modify_finite_element_add_field_data("ULTRAWEAK_SKELETON",mesh_nodals_positions); CHKERRQ(ierr);
     }
-
-    ierr = mField.add_finite_element("ULTRAWEAK_ERROR",MF_ZERO); CHKERRQ(ierr);
-    ierr = mField.modify_finite_element_add_field_row("ULTRAWEAK_ERROR",error_name); CHKERRQ(ierr);
-    ierr = mField.modify_finite_element_add_field_col("ULTRAWEAK_ERROR",error_name); CHKERRQ(ierr);
-    ierr = mField.modify_finite_element_add_field_data("ULTRAWEAK_ERROR",fluxes_name); CHKERRQ(ierr);
-    ierr = mField.modify_finite_element_add_field_data("ULTRAWEAK_ERROR",values_name); CHKERRQ(ierr);
-    ierr = mField.modify_finite_element_add_field_data("ULTRAWEAK_ERROR",error_name); CHKERRQ(ierr);
-    if(mField.check_field(mesh_nodals_positions)) {
-      ierr = mField.modify_finite_element_add_field_data("ULTRAWEAK_ERROR",mesh_nodals_positions); CHKERRQ(ierr);
-    }
-
+    // Look for all BLOCKSET which are MAT_THERMALSET, takes entities from those BLOCKSETS
+    // and add them to "ULTRAWEAK" finite element. In addition get data form that meshset
+    // and set cOnductivity which is used to calculate fluxes from gradients of concentration
+    // or gradient of temperature, depending how you interpret variables.
     for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BLOCKSET|MAT_THERMALSET,it)) {
 
+      // cerr << *it << endl;
+
       Mat_Thermal temp_data;
-      ierr = it->get_attribute_data_structure(temp_data); CHKERRQ(ierr);
-      setOfBlocks[it->get_msId()].cOnductivity = temp_data.data.Conductivity;
-      setOfBlocks[it->get_msId()].cApacity = temp_data.data.HeatCapacity;
-      rval = mField.get_moab().get_entities_by_type(it->meshset,MBTET,setOfBlocks[it->get_msId()].tEts,true); CHKERR_PETSC(rval);
-      ierr = mField.add_ents_to_finite_element_by_TETs(setOfBlocks[it->get_msId()].tEts,"ULTRAWEAK"); CHKERRQ(ierr);
-      ierr = mField.add_ents_to_finite_element_by_TETs(setOfBlocks[it->get_msId()].tEts,"ULTRAWEAK_ERROR"); CHKERRQ(ierr);
+      ierr = it->getAttributeDataStructure(temp_data); CHKERRQ(ierr);
+      setOfBlocks[it->getMeshsetId()].cOnductivity = temp_data.data.Conductivity;
+      setOfBlocks[it->getMeshsetId()].cApacity = temp_data.data.HeatCapacity;
+      rval = mField.get_moab().get_entities_by_type(
+        it->meshset,MBTET,setOfBlocks[it->getMeshsetId()].tEts,true
+      ); CHKERRQ_MOAB(rval);
+      ierr = mField.add_ents_to_finite_element_by_TETs(
+        setOfBlocks[it->getMeshsetId()].tEts,"ULTRAWEAK"
+      ); CHKERRQ(ierr);
+
+      Range skeleton;
+      rval = mField.get_moab().get_adjacencies(
+        setOfBlocks[it->getMeshsetId()].tEts,2,false,skeleton,moab::Interface::UNION
+      );
+      ierr = mField.add_ents_to_finite_element_by_TRIs(
+        skeleton,"ULTRAWEAK_SKELETON"
+      ); CHKERRQ(ierr);
 
     }
 
-    ierr = mField.add_finite_element("ULTRAWEAK_FLUXNEUMANN",MF_ZERO); CHKERRQ(ierr);
-    ierr = mField.modify_finite_element_add_field_row("ULTRAWEAK_FLUXNEUMANN",fluxes_name); CHKERRQ(ierr);
-    ierr = mField.modify_finite_element_add_field_col("ULTRAWEAK_FLUXNEUMANN",fluxes_name); CHKERRQ(ierr);
-    ierr = mField.modify_finite_element_add_field_data("ULTRAWEAK_FLUXNEUMANN",fluxes_name); CHKERRQ(ierr);
-    ierr = mField.modify_finite_element_add_field_data("ULTRAWEAK_FLUXNEUMANN",values_name); CHKERRQ(ierr);
+    // Define element to integrate natural boundary conditions, i.e. set values.
+    ierr = mField.add_finite_element("ULTRAWEAK_BCVALUE",MF_ZERO); CHKERRQ(ierr);
+    ierr = mField.modify_finite_element_add_field_row("ULTRAWEAK_BCVALUE",fluxes_name); CHKERRQ(ierr);
+    ierr = mField.modify_finite_element_add_field_col("ULTRAWEAK_BCVALUE",fluxes_name); CHKERRQ(ierr);
+    ierr = mField.modify_finite_element_add_field_data("ULTRAWEAK_BCVALUE",fluxes_name); CHKERRQ(ierr);
+    ierr = mField.modify_finite_element_add_field_data("ULTRAWEAK_BCVALUE",values_name); CHKERRQ(ierr);
     if(mField.check_field(mesh_nodals_positions)) {
-      ierr = mField.modify_finite_element_add_field_data("ULTRAWEAK_FLUXNEUMANN",mesh_nodals_positions); CHKERRQ(ierr);
+      ierr = mField.modify_finite_element_add_field_data("ULTRAWEAK_BCVALUE",mesh_nodals_positions); CHKERRQ(ierr);
     }
 
-    ierr = mField.add_finite_element("ULTRAWEAK_FLUXDIRICHLET",MF_ZERO); CHKERRQ(ierr);
-    ierr = mField.modify_finite_element_add_field_row("ULTRAWEAK_FLUXDIRICHLET",fluxes_name); CHKERRQ(ierr);
-    ierr = mField.modify_finite_element_add_field_col("ULTRAWEAK_FLUXDIRICHLET",fluxes_name); CHKERRQ(ierr);
-    ierr = mField.modify_finite_element_add_field_data("ULTRAWEAK_FLUXDIRICHLET",fluxes_name); CHKERRQ(ierr);
-    ierr = mField.modify_finite_element_add_field_data("ULTRAWEAK_FLUXDIRICHLET",values_name); CHKERRQ(ierr);
+    // Define element to apply essential boundary conditions.
+    ierr = mField.add_finite_element("ULTRAWEAK_BCFLUX",MF_ZERO); CHKERRQ(ierr);
+    ierr = mField.modify_finite_element_add_field_row("ULTRAWEAK_BCFLUX",fluxes_name); CHKERRQ(ierr);
+    ierr = mField.modify_finite_element_add_field_col("ULTRAWEAK_BCFLUX",fluxes_name); CHKERRQ(ierr);
+    ierr = mField.modify_finite_element_add_field_data("ULTRAWEAK_BCFLUX",fluxes_name); CHKERRQ(ierr);
+    ierr = mField.modify_finite_element_add_field_data("ULTRAWEAK_BCFLUX",values_name); CHKERRQ(ierr);
     if(mField.check_field(mesh_nodals_positions)) {
-      ierr = mField.modify_finite_element_add_field_data("ULTRAWEAK_FLUXDIRICHLET",mesh_nodals_positions); CHKERRQ(ierr);
+      ierr = mField.modify_finite_element_add_field_data("ULTRAWEAK_BCFLUX",mesh_nodals_positions); CHKERRQ(ierr);
     }
 
     PetscFunctionReturn(0);
   }
 
-  /** \brief tau,sigma in Hdiv, calculates Aij = Asemble int sigma_dot_tau dTet
+  /**
+   * \brief Build problem
+   * @param  ref_level mesh refinement on which mesh problem you like to built.
+   * @return           error code
+   */
+  PetscErrorCode buildProblem(BitRefLevel &ref_level) {
+    PetscErrorCode ierr;
+    PetscFunctionBegin;
+    //build field
+    ierr = mField.build_fields(); CHKERRQ(ierr);
+    // get tetrahedrons which has been build previously and now in so called garbage bit level
+    Range done_tets;
+    ierr = mField.get_entities_by_type_and_ref_level(
+      BitRefLevel().set(0),BitRefLevel().set(),MBTET,done_tets
+    ); CHKERRQ(ierr);
+    ierr = mField.get_entities_by_type_and_ref_level(
+      BitRefLevel().set(BITREFLEVEL_SIZE-1),BitRefLevel().set(),MBTET,done_tets
+    ); CHKERRQ(ierr);
+    // get tetrahedrons which belong to problem bit level
+    Range ref_tets;
+    ierr = mField.get_entities_by_type_and_ref_level(
+      ref_level,BitRefLevel().set(),MBTET,ref_tets
+    ); CHKERRQ(ierr);
+    ref_tets = subtract(ref_tets,done_tets);
+    ierr = mField.build_finite_elements("ULTRAWEAK",&ref_tets,2); CHKERRQ(ierr);
+    // get triangles which has been build previously and now in so called garbage bit level
+    Range done_faces;
+    ierr = mField.get_entities_by_type_and_ref_level(
+      BitRefLevel().set(0),BitRefLevel().set(),MBTRI,done_faces
+    ); CHKERRQ(ierr);
+    ierr = mField.get_entities_by_type_and_ref_level(
+      BitRefLevel().set(BITREFLEVEL_SIZE-1),BitRefLevel().set(),MBTRI,done_faces
+    ); CHKERRQ(ierr);
+    // get triangles which belong to problem bit level
+    Range ref_faces;
+    ierr = mField.get_entities_by_type_and_ref_level(
+      ref_level,BitRefLevel().set(),MBTRI,ref_faces
+    ); CHKERRQ(ierr);
+    ref_faces = subtract(ref_faces,done_faces);
+    //build finite elements structures
+    ierr = mField.build_finite_elements("ULTRAWEAK_BCFLUX",&ref_faces,2); CHKERRQ(ierr);
+    ierr = mField.build_finite_elements("ULTRAWEAK_BCVALUE",&ref_faces,2); CHKERRQ(ierr);
+    ierr = mField.build_finite_elements("ULTRAWEAK_SKELETON",&ref_faces,2); CHKERRQ(ierr);
+    //Build adjacencies of degrees of freedom and elements
+    ierr = mField.build_adjacencies(ref_level); CHKERRQ(ierr);
+    //Define problem
+    ierr = mField.add_problem("ULTRAWEAK",MF_ZERO); CHKERRQ(ierr);
+    //set refinement level for problem
+    ierr = mField.modify_problem_ref_level_set_bit("ULTRAWEAK",ref_level); CHKERRQ(ierr);
+    // Add element to problem
+    ierr = mField.modify_problem_add_finite_element("ULTRAWEAK","ULTRAWEAK"); CHKERRQ(ierr);
+    ierr = mField.modify_problem_add_finite_element("ULTRAWEAK","ULTRAWEAK_SKELETON"); CHKERRQ(ierr);
+    // Boundary conditions
+    ierr = mField.modify_problem_add_finite_element("ULTRAWEAK","ULTRAWEAK_BCFLUX"); CHKERRQ(ierr);
+    ierr = mField.modify_problem_add_finite_element("ULTRAWEAK","ULTRAWEAK_BCVALUE"); CHKERRQ(ierr);
+    //build problem
+    ierr = mField.build_problems(); CHKERRQ(ierr);
+    //mesh partitioning
+    //partition
+    ierr = mField.partition_problem("ULTRAWEAK"); CHKERRQ(ierr);
+    ierr = mField.partition_finite_elements("ULTRAWEAK"); CHKERRQ(ierr);
+    //what are ghost nodes, see Petsc Manual
+    ierr = mField.partition_ghost_dofs("ULTRAWEAK"); CHKERRQ(ierr);
+    PetscFunctionReturn(0);
+  }
+
+  struct OpPostProc: MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator {
+    moab::Interface &postProcMesh;
+    std::vector<EntityHandle> &mapGaussPts;
+    OpPostProc(
+      moab::Interface &post_proc_mesh,
+      std::vector<EntityHandle> &map_gauss_pts
+    ):
+    MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator("VALUES",UserDataOperator::OPCOL),
+    postProcMesh(post_proc_mesh),
+    mapGaussPts(map_gauss_pts) {
+    }
+    PetscErrorCode doWork(
+      int side,
+      EntityType type,
+      DataForcesAndSurcesCore::EntData &data
+    ) {
+      MoABErrorCode rval;
+      PetscFunctionBegin;
+      if(type != MBTET) PetscFunctionReturn(0);
+      EntityHandle fe_ent = getNumeredEntFiniteElementPtr()->getEnt();
+      Tag th_error_flux;
+      rval = getVolumeFE()->mField.get_moab().tag_get_handle("ERROR_FLUX",th_error_flux); CHKERRQ_MOAB(rval);
+      double* error_flux_ptr;
+      rval = getVolumeFE()->mField.get_moab().tag_get_by_ptr(
+        th_error_flux,&fe_ent,1,(const void**)&error_flux_ptr
+      ); CHKERRQ_MOAB(rval);
+
+      Tag th_error_div;
+      rval = getVolumeFE()->mField.get_moab().tag_get_handle("ERROR_DIV",th_error_div); CHKERRQ_MOAB(rval);
+      double* error_div_ptr;
+      rval = getVolumeFE()->mField.get_moab().tag_get_by_ptr(
+        th_error_div,&fe_ent,1,(const void**)&error_div_ptr
+      ); CHKERRQ_MOAB(rval);
+
+      Tag th_error_jump;
+      rval = getVolumeFE()->mField.get_moab().tag_get_handle("ERROR_JUMP",th_error_jump); CHKERRQ_MOAB(rval);
+      double* error_jump_ptr;
+      rval = getVolumeFE()->mField.get_moab().tag_get_by_ptr(
+        th_error_jump,&fe_ent,1,(const void**)&error_jump_ptr
+      ); CHKERRQ_MOAB(rval);
+
+      {
+        double def_val = 0;
+        Tag th_error_flux;
+        rval = postProcMesh.tag_get_handle(
+          "ERROR_FLUX",1,MB_TYPE_DOUBLE,th_error_flux,MB_TAG_CREAT|MB_TAG_SPARSE,&def_val
+        ); CHKERRQ_MOAB(rval);
+        for(vector<EntityHandle>::iterator vit = mapGaussPts.begin();vit!=mapGaussPts.end();vit++) {
+          rval = postProcMesh.tag_set_data(th_error_flux,&*vit,1,error_flux_ptr); CHKERRQ_MOAB(rval);
+        }
+
+        Tag th_error_div;
+        rval = postProcMesh.tag_get_handle(
+          "ERROR_DIV",1,MB_TYPE_DOUBLE,th_error_div,MB_TAG_CREAT|MB_TAG_SPARSE,&def_val
+        ); CHKERRQ_MOAB(rval);
+        for(vector<EntityHandle>::iterator vit = mapGaussPts.begin();vit!=mapGaussPts.end();vit++) {
+          rval = postProcMesh.tag_set_data(th_error_div,&*vit,1,error_div_ptr); CHKERRQ_MOAB(rval);
+        }
+
+        Tag th_error_jump;
+        rval = postProcMesh.tag_get_handle(
+          "ERROR_JUMP",1,MB_TYPE_DOUBLE,th_error_jump,MB_TAG_CREAT|MB_TAG_SPARSE,&def_val
+        ); CHKERRQ_MOAB(rval);
+        for(vector<EntityHandle>::iterator vit = mapGaussPts.begin();vit!=mapGaussPts.end();vit++) {
+          rval = postProcMesh.tag_set_data(th_error_jump,&*vit,1,error_jump_ptr); CHKERRQ_MOAB(rval);
+        }
+
+      }
+      PetscFunctionReturn(0);
+    }
+  };
+
+  /**
+   * \brief Post process results
+   * @return error code
+   */
+  PetscErrorCode postProc(const string out_file) {
+    PetscErrorCode ierr;
+    PetscFunctionBegin;
+    PostProcVolumeOnRefinedMesh post_proc(mField);
+    ierr = post_proc.generateReferenceElementMesh(); CHKERRQ(ierr);
+    ierr = post_proc.addFieldValuesPostProc("VALUES"); CHKERRQ(ierr);
+    ierr = post_proc.addFieldValuesGradientPostProc("VALUES"); CHKERRQ(ierr);
+    ierr = post_proc.addFieldValuesPostProc("FLUXES"); CHKERRQ(ierr);
+    post_proc.getOpPtrVector().push_back(new OpPostProc(post_proc.postProcMesh,post_proc.mapGaussPts));
+    ierr = mField.loop_finite_elements("ULTRAWEAK","ULTRAWEAK",post_proc);  CHKERRQ(ierr);
+    ierr = post_proc.writeFile(out_file.c_str()); CHKERRQ(ierr);
+    PetscFunctionReturn(0);
+  }
+
+  Vec D,D0,F;
+  Mat Aij;
+
+  /// \brief create matrices
+  PetscErrorCode createMatrices() {
+    PetscErrorCode ierr;
+    PetscFunctionBegin;
+    ierr = mField.MatCreateMPIAIJWithArrays("ULTRAWEAK",&Aij); CHKERRQ(ierr);
+    ierr = mField.VecCreateGhost("ULTRAWEAK",COL,&D); CHKERRQ(ierr);
+    ierr = mField.VecCreateGhost("ULTRAWEAK",COL,&D0); CHKERRQ(ierr);
+    ierr = mField.VecCreateGhost("ULTRAWEAK",ROW,&F); CHKERRQ(ierr);
+    PetscFunctionReturn(0);
+  }
+
+  /**
+   * \brief solve problem
+   * @return error code
+   */
+  PetscErrorCode solveProblem() {
+    PetscErrorCode ierr;
+    PetscFunctionBegin;
+
+    ierr = MatZeroEntries(Aij); CHKERRQ(ierr);
+    ierr = VecZeroEntries(F); CHKERRQ(ierr);
+    ierr = VecGhostUpdateBegin(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+    ierr = VecGhostUpdateEnd(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+    ierr = VecZeroEntries(D0); CHKERRQ(ierr);
+    ierr = VecGhostUpdateBegin(D0,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+    ierr = VecGhostUpdateEnd(D0,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+    ierr = VecZeroEntries(D); CHKERRQ(ierr);
+    ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+    ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+
+    ierr = mField.set_global_ghost_vector("ULTRAWEAK",COL,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+
+    // Calculate essential boundary conditions
+
+    // clear essential bc indices, it could have dofs from other mesh refinement
+    bcIndices.clear();
+    // clear operator, just in case if some other operators are left on this element
+    feTri.getOpPtrVector().clear();
+    // set operator to calculate essential boundary conditions
+    feTri.getOpPtrVector().push_back(new OpEvaluateBcOnFluxes(*this,"FLUXES",D0));
+    ierr = mField.loop_finite_elements("ULTRAWEAK","ULTRAWEAK_BCFLUX",feTri); CHKERRQ(ierr);
+    ierr = VecGhostUpdateBegin(D0,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+    ierr = VecGhostUpdateEnd(D0,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+    ierr = VecAssemblyBegin(D0); CHKERRQ(ierr);
+    ierr = VecAssemblyEnd(D0); CHKERRQ(ierr);
+
+    // set operators to calculate matrix and right hand side vectors
+    feVol.getOpPtrVector().clear();
+    feVol.getOpPtrVector().push_back(new OpL2Source(*this,"VALUES",F));
+    feVol.getOpPtrVector().push_back(new OpFluxDivergenceAtGaussPts(*this,"FLUXES"));
+    feVol.getOpPtrVector().push_back(new OpValuesAtGaussPts(*this,"VALUES"));
+    feVol.getOpPtrVector().push_back(new OpDivTauU_HdivL2(*this,"FLUXES","VALUES",Aij,F));
+    feVol.getOpPtrVector().push_back(new OpTauDotSigma_HdivHdiv(*this,"FLUXES",Aij,F));
+    feVol.getOpPtrVector().push_back(new OpVDotDivSigma_L2Hdiv(*this,"VALUES","FLUXES",Aij,F));
+    ierr = mField.loop_finite_elements("ULTRAWEAK","ULTRAWEAK",feVol); CHKERRQ(ierr);
+
+    // calculate right hand side for natural boundary conditions
+    feTri.getOpPtrVector().clear();
+    feTri.getOpPtrVector().push_back(new OpRhsBcOnValues(*this,"FLUXES",F));
+    ierr = mField.loop_finite_elements("ULTRAWEAK","ULTRAWEAK_BCVALUE",feTri); CHKERRQ(ierr);
+
+    // assemble matrices
+    ierr = MatAssemblyBegin(Aij,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+    ierr = MatAssemblyEnd(Aij,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+    ierr = VecGhostUpdateBegin(F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+    ierr = VecGhostUpdateEnd(F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+    ierr = VecAssemblyBegin(F); CHKERRQ(ierr);
+    ierr = VecAssemblyEnd(F); CHKERRQ(ierr);
+
+    {
+      double nrm2_F;
+      ierr = VecNorm(F,NORM_2,&nrm2_F); CHKERRQ(ierr);
+      PetscPrintf(PETSC_COMM_WORLD,"nrm2_F = %6.4e\n",nrm2_F);
+    }
+
+    // for ksp solver vector is moved into rhs side
+    // for snes it is left ond the left
+    ierr = VecScale(F,-1); CHKERRQ(ierr);
+
+    //MatView(Aij,PETSC_VIEWER_DRAW_WORLD);
+    //MatView(Aij,PETSC_VIEWER_STDOUT_WORLD);
+    // std::string wait;
+    //std::cin >> wait;
+    IS essential_bc_ids;
+    ierr = getDirichletBCIndices(&essential_bc_ids); CHKERRQ(ierr);
+    ierr = MatZeroRowsIS(Aij,essential_bc_ids,1,D0,F); CHKERRQ(ierr);
+    ierr = ISDestroy(&essential_bc_ids); CHKERRQ(ierr);
+
+    // MatView(Aij,PETSC_VIEWER_DRAW_WORLD);
+    // std::cin >> wait;
+
+    // Solve
+    KSP solver;
+    ierr = KSPCreate(PETSC_COMM_WORLD,&solver); CHKERRQ(ierr);
+    ierr = KSPSetOperators(solver,Aij,Aij); CHKERRQ(ierr);
+    ierr = KSPSetFromOptions(solver); CHKERRQ(ierr);
+    ierr = KSPSetUp(solver); CHKERRQ(ierr);
+    ierr = KSPSolve(solver,F,D); CHKERRQ(ierr);
+    ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+    ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+    ierr = KSPDestroy(&solver); CHKERRQ(ierr);
+
+    // copy data form vector on mesh
+    ierr = mField.set_global_ghost_vector("ULTRAWEAK",COL,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+
+    PetscFunctionReturn(0);
+  }
+
+  /// \brief calculate residual
+  PetscErrorCode calculateResidual() {
+    PetscErrorCode ierr;
+    PetscFunctionBegin;
+    ierr = VecZeroEntries(F); CHKERRQ(ierr);
+    ierr = VecGhostUpdateBegin(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+    ierr = VecGhostUpdateEnd(F,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+    ierr = VecAssemblyBegin(F); CHKERRQ(ierr);
+    ierr = VecAssemblyEnd(F); CHKERRQ(ierr);
+    //calculate residuals
+    feVol.getOpPtrVector().clear();
+    feVol.getOpPtrVector().push_back(new OpL2Source(*this,"VALUES",F));
+    feVol.getOpPtrVector().push_back(new OpFluxDivergenceAtGaussPts(*this,"FLUXES"));
+    feVol.getOpPtrVector().push_back(new OpValuesAtGaussPts(*this,"VALUES"));
+    feVol.getOpPtrVector().push_back(new OpDivTauU_HdivL2(*this,"FLUXES","VALUES",PETSC_NULL,F));
+    feVol.getOpPtrVector().push_back(new OpTauDotSigma_HdivHdiv(*this,"FLUXES",PETSC_NULL,F));
+    feVol.getOpPtrVector().push_back(new OpVDotDivSigma_L2Hdiv(*this,"VALUES","FLUXES",PETSC_NULL,F));
+    ierr = mField.loop_finite_elements("ULTRAWEAK","ULTRAWEAK",feVol); CHKERRQ(ierr);
+    feTri.getOpPtrVector().clear();
+    feTri.getOpPtrVector().push_back(new OpRhsBcOnValues(*this,"FLUXES",F));
+    ierr = mField.loop_finite_elements("ULTRAWEAK","ULTRAWEAK_BCVALUE",feTri); CHKERRQ(ierr);
+    ierr = VecGhostUpdateBegin(F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+    ierr = VecGhostUpdateEnd(F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+    ierr = VecAssemblyBegin(F); CHKERRQ(ierr);
+    ierr = VecAssemblyEnd(F); CHKERRQ(ierr);
+    // ierr = VecAXPY(F,-1.,D0); CHKERRQ(ierr);
+    // ierr = MatZeroRowsIS(Aij,essential_bc_ids,1,PETSC_NULL,F); CHKERRQ(ierr);
+    {
+      std::vector<int> ids;
+      ids.insert(ids.begin(),bcIndices.begin(),bcIndices.end());
+      std::vector<double> vals(ids.size(),0);
+      ierr = VecSetValues(F,ids.size(),&*ids.begin(),&*vals.begin(),INSERT_VALUES); CHKERRQ(ierr);
+      ierr = VecAssemblyBegin(F); CHKERRQ(ierr);
+      ierr = VecAssemblyEnd(F); CHKERRQ(ierr);
+    }
+    {
+      double nrm2_F;
+      ierr = VecNorm(F,NORM_2,&nrm2_F); CHKERRQ(ierr);
+      PetscPrintf(PETSC_COMM_WORLD,"nrm2_F = %6.4e\n",nrm2_F);
+      const double eps = 1e-8;
+      if(nrm2_F > eps) {
+        //SETERRQ(PETSC_COMM_SELF,MOFEM_ATOM_TEST_INVALID,"problem with residual");
+      }
+    }
+    PetscFunctionReturn(0);
+  }
+
+  /** \brief Calculate error on elements
+
+    \todo this functions runs serial, in future should be parallel and work on
+    distributed meshes.
+
   */
-  struct OpTauDotSigma_HdivHdiv: public VolumeElementForcesAndSourcesCore::UserDataOperator {
+  PetscErrorCode evaluateError() {
+    PetscErrorCode ierr;
+    PetscFunctionBegin;
+    errorMap.clear();
+    sumErrorFlux = 0;
+    sumErrorDiv = 0;
+    sumErrorJump = 0;
+    feTri.getOpPtrVector().clear();
+    feTri.getOpPtrVector().push_back(new OpSkeleton(*this,"FLUXES"));
+    ierr = mField.loop_finite_elements("ULTRAWEAK","ULTRAWEAK_SKELETON",feTri,0,mField.getCommSize()); CHKERRQ(ierr);
+    feVol.getOpPtrVector().clear();
+    feVol.getOpPtrVector().push_back(new OpFluxDivergenceAtGaussPts(*this,"FLUXES"));
+    feVol.getOpPtrVector().push_back(new OpValuesGradientAtGaussPts(*this,"VALUES"));
+    feVol.getOpPtrVector().push_back(new OpError(*this,"VALUES"));
+    ierr = mField.loop_finite_elements("ULTRAWEAK","ULTRAWEAK",feVol,0,mField.getCommSize()); CHKERRQ(ierr);
+    const MoFEMProblem *problem_ptr;
+    ierr = mField.get_problem("ULTRAWEAK",&problem_ptr); CHKERRQ(ierr);
+    PetscPrintf(
+      mField.get_comm(),
+      "Nb dofs %d error flux^2 = %6.4e error div^2 = %6.4e error jump^2 = %6.4e error tot^2 = %6.4e\n",
+      problem_ptr->getNbDofsRow(),
+      sumErrorFlux,sumErrorDiv,sumErrorJump,sumErrorFlux+sumErrorDiv+sumErrorJump
+    );
+    PetscFunctionReturn(0);
+  }
+
+  /// \brief destroy matrices
+  PetscErrorCode destroyMatrices() {
+    PetscErrorCode ierr;
+    PetscFunctionBegin;
+    ierr = MatDestroy(&Aij); CHKERRQ(ierr);
+    ierr = VecDestroy(&D); CHKERRQ(ierr);
+    ierr = VecDestroy(&D0); CHKERRQ(ierr);
+    ierr = VecDestroy(&F); CHKERRQ(ierr);
+    PetscFunctionReturn(0);
+  }
+
+
+  /** \brief Assemble \f$ \int_\mathcal{T} \mathbf{A} \boldsymbol\sigma \cdot \boldsymbol\tau \textrm{d}\mathcal{T} \f$
+  */
+  struct OpTauDotSigma_HdivHdiv: public MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator {
 
     UltraWeakTransportElement &cTx;
     Mat Aij;
@@ -199,68 +683,91 @@ struct UltraWeakTransportElement {
 
     OpTauDotSigma_HdivHdiv(
       UltraWeakTransportElement &ctx,
-      const string field_name,Mat _Aij,Vec _F
+      const std::string flux_name,Mat aij,Vec f
     ):
-    VolumeElementForcesAndSourcesCore::UserDataOperator(
-      field_name,
+    MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator(
+      flux_name,
       UserDataOperator::OPROW|UserDataOperator::OPROWCOL
     ),
-    cTx(ctx),Aij(_Aij),F(_F) {}
-    virtual ~OpTauDotSigma_HdivHdiv() {}
+    cTx(ctx),
+    Aij(aij),
+    F(f) {}
 
-    ublas::matrix<FieldData> NN,transNN;
-    ublas::matrix<FieldData> invK,invKN;
+    MatrixDouble NN,transNN,invK;
     VectorDouble Nf;
-    VectorDouble invKFlux;
 
+    /**
+     * \brief Assemble matrix
+     * @param  row_side local index of row entity on element
+     * @param  col_side local index of col entity on element
+     * @param  row_type type of row entity, f.e. MBVERTEX, MBEDGE, or MBTET
+     * @param  col_type type of col entity, f.e. MBVERTEX, MBEDGE, or MBTET
+     * @param  row_data data for row
+     * @param  col_data data for col
+     * @return          error code
+     */
     PetscErrorCode doWork(
       int row_side,int col_side,
       EntityType row_type,EntityType col_type,
       DataForcesAndSurcesCore::EntData &row_data,
       DataForcesAndSurcesCore::EntData &col_data
     ) {
-      PetscFunctionBegin;
-
       PetscErrorCode ierr;
-
+      PetscFunctionBegin;
       try {
-
+        if(Aij == PETSC_NULL) PetscFunctionReturn(0);
         if(row_data.getFieldData().size()==0) PetscFunctionReturn(0);
         if(col_data.getFieldData().size()==0) PetscFunctionReturn(0);
-
-        EntityHandle fe_ent = getMoFEMFEPtr()->get_ent();
-
+        EntityHandle fe_ent = getNumeredEntFiniteElementPtr()->getEnt();
         int nb_row = row_data.getFieldData().size();
         int nb_col = col_data.getFieldData().size();
-        NN.resize(nb_row,nb_col);
-        bzero(&NN(0,0),NN.data().size()*sizeof(FieldData));
-
-        invKN.resize(3,nb_col);
+        NN.resize(nb_row,nb_col,false);
+        NN.clear();
+        FTensor::Index<'i',3> i;
+        FTensor::Index<'j',3> j;
+        invK.resize(3,3,false);
+        // get access to resistivity data by tensor rank 2
+        FTensor::Tensor2<double*,3,3> t_inv_k(
+          &invK(0,0),&invK(0,1),&invK(0,2),
+          &invK(1,0),&invK(1,1),&invK(1,2),
+          &invK(2,0),&invK(2,1),&invK(2,2)
+        );
+        // get base functions
+        FTensor::Tensor1<double*,3> t_n_hdiv_row = row_data.getFTensor1HdivN<3>();
         int nb_gauss_pts = row_data.getHdivN().size1();
-        int gg = 0;
-        for(;gg<nb_gauss_pts;gg++) {
-
+        for(int gg = 0;gg<nb_gauss_pts;gg++) {
+          // get integration weight and multiply by element volume
           double w = getGaussPts()(3,gg)*getVolume();
+          // in case that HO geometry is defined that below take into account that
+          // edges of element are curved
           if(getHoGaussPtsDetJac().size()>0) {
             w *= getHoGaussPtsDetJac()(gg);
           }
-
           const double x = getCoordsAtGaussPts()(gg,0);
           const double y = getCoordsAtGaussPts()(gg,1);
           const double z = getCoordsAtGaussPts()(gg,2);
+          // calculate receptivity (invers of conductivity)
           ierr = cTx.getResistivity(fe_ent,x,y,z,invK); CHKERRQ(ierr);
-          noalias(invKN) = prod(invK,trans(col_data.getHdivN(gg)));
-          noalias(NN) += w*prod(row_data.getHdivN(gg),invKN);
-
+          for(int kk = 0;kk!=nb_row;kk++) {
+            FTensor::Tensor1<const double*,3> t_n_hdiv_col(
+              &col_data.getHdivN(gg)(0,HDIV0),
+              &col_data.getHdivN(gg)(0,HDIV1),
+              &col_data.getHdivN(gg)(0,HDIV2),3
+            );
+            for(int ll = 0;ll!=nb_col;ll++) {
+              NN(kk,ll) += w*t_n_hdiv_row(i)*t_inv_k(i,j)*t_n_hdiv_col(j);
+              ++t_n_hdiv_col;
+            }
+            ++t_n_hdiv_row;
+          }
         }
-
+        // matrix is symmetric, assemble other part
         ierr = MatSetValues(
           Aij,
           nb_row,&row_data.getIndices()[0],
           nb_col,&col_data.getIndices()[0],
           &NN(0,0),ADD_VALUES
         ); CHKERRQ(ierr);
-
         if(row_side != col_side || row_type != col_type) {
           transNN.resize(nb_col,nb_row);
           noalias(transNN) = trans(NN);
@@ -274,71 +781,79 @@ struct UltraWeakTransportElement {
 
 
       } catch (const std::exception& ex) {
-        ostringstream ss;
-        ss << "throw in method: " << ex.what() << endl;
+        std::ostringstream ss;
+        ss << "throw in method: " << ex.what() << std::endl;
         SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
       }
 
       PetscFunctionReturn(0);
     }
 
-
+    /**
+     * \brief Assemble matrix
+     * @param  side local index of row entity on element
+     * @param  type type of row entity, f.e. MBVERTEX, MBEDGE, or MBTET
+     * @param  data data for row
+     * @return          error code
+     */
     PetscErrorCode doWork(
       int side,EntityType type,DataForcesAndSurcesCore::EntData &data
     ) {
-      PetscFunctionBegin;
-
       PetscErrorCode ierr;
-
+      PetscFunctionBegin;
       try {
-
         if(data.getFieldData().size()==0) PetscFunctionReturn(0);
-
-        EntityHandle fe_ent = getMoFEMFEPtr()->get_ent();
-
+        FTensor::Index<'i',3> i;
+        FTensor::Index<'j',3> j;
+        invK.resize(3,3,false);
+        EntityHandle fe_ent = getNumeredEntFiniteElementPtr()->getEnt();
         int nb_row = data.getFieldData().size();
         Nf.resize(nb_row);
-        bzero(&*Nf.data().begin(),Nf.data().size()*sizeof(FieldData));
-
+        Nf.clear();
+        // get access to resistivity data by tensor rank 2
+        FTensor::Tensor2<double*,3,3> t_inv_k(
+          &invK(0,0),&invK(0,1),&invK(0,2),
+          &invK(1,0),&invK(1,1),&invK(1,2),
+          &invK(2,0),&invK(2,1),&invK(2,2)
+        );
+        // get base functions
+        FTensor::Tensor1<double*,3> t_n_hdiv = data.getFTensor1HdivN<3>();
         int nb_gauss_pts = data.getHdivN().size1();
-        int gg = 0;
-        for(;gg<nb_gauss_pts;gg++) {
-
+        for(int gg = 0;gg<nb_gauss_pts;gg++) {
           double w = getGaussPts()(3,gg)*getVolume();
           if(getHoGaussPtsDetJac().size()>0) {
             w *= getHoGaussPtsDetJac()(gg);
           }
-
           const double x = getCoordsAtGaussPts()(gg,0);
           const double y = getCoordsAtGaussPts()(gg,1);
           const double z = getCoordsAtGaussPts()(gg,2);
           ierr = cTx.getResistivity(fe_ent,x,y,z,invK); CHKERRQ(ierr);
-
-          invKFlux.resize(3);
-          noalias(invKFlux) = prod(invK,cTx.fluxesAtGaussPts[gg]);
-          noalias(Nf) += w*prod(data.getHdivN(gg),invKFlux);
-
+          FTensor::Tensor1<double*,3> t_flux(
+            &cTx.fluxesAtGaussPts[gg][0],
+            &cTx.fluxesAtGaussPts[gg][1],
+            &cTx.fluxesAtGaussPts[gg][2]
+          );
+          for(int ll = 0;ll!=nb_row;ll++) {
+            Nf[ll] += w*t_n_hdiv(i)*t_inv_k(i,j)*t_flux(j);
+            ++t_n_hdiv;
+          }
         }
-
         ierr = VecSetValues(
-          F,nb_row,&data.getIndices()[0],
-          &Nf[0],ADD_VALUES
+          F,nb_row,&data.getIndices()[0],&Nf[0],ADD_VALUES
         ); CHKERRQ(ierr);
-
       } catch (const std::exception& ex) {
-        ostringstream ss;
-        ss << "throw in method: " << ex.what() << endl;
+        std::ostringstream ss;
+        ss << "throw in method: " << ex.what() << std::endl;
         SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
       }
-
       PetscFunctionReturn(0);
     }
 
   };
 
-  /** \brief u in L2 and tau in Hdiv, calculates Aij = Asemble int u * div(tau) dTet
+  /** \brief Assemble \f$ \int_\mathcal{T} u \textrm{div}[\boldsymbol\tau] \textrm{d}\mathcal{T} \f$
     */
-  struct OpDivTauU_HdivL2: public VolumeElementForcesAndSourcesCore::UserDataOperator {
+  struct OpDivTauU_HdivL2: public MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator {
 
     UltraWeakTransportElement &cTx;
     Mat Aij;
@@ -346,349 +861,237 @@ struct UltraWeakTransportElement {
 
     OpDivTauU_HdivL2(
       UltraWeakTransportElement &ctx,
-      const string field_name_row,string field_name_col,Mat _Aij,Vec _F
+      const std::string flux_name_row,string val_name_col,Mat aij,Vec f
     ):
-    VolumeElementForcesAndSourcesCore::UserDataOperator(
-      field_name_row,field_name_col,
+    MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator(
+      flux_name_row,val_name_col,
       UserDataOperator::OPROW
     ),
     cTx(ctx),
-    Aij(_Aij),
-    F(_F) {
-      //this operator is not symmetric settig this varible makes element
+    Aij(aij),
+    F(f) {
+      //this operator is not symmetric setting this variable makes element
       //operator to loop over element entities (subsimplicies) without
       //assumption that off-diagonal matrices are symmetric.
       sYmm = false;
     }
-    virtual ~OpDivTauU_HdivL2() {}
 
-    VectorDouble div_vec,Nf;
+    VectorDouble divVec,Nf;
 
     PetscErrorCode doWork(
       int side,EntityType type,
       DataForcesAndSurcesCore::EntData &data
     ) {
-      PetscFunctionBegin;
-
       PetscErrorCode ierr;
-
+      PetscFunctionBegin;
       try {
-
         if(data.getFieldData().size()==0) PetscFunctionReturn(0);
-
         int nb_row = data.getIndices().size();
         Nf.resize(nb_row);
-        bzero(&*Nf.data().begin(),Nf.data().size()*sizeof(FieldData));
-
-        div_vec.resize(data.getHdivN().size2()/3,0);
-        if(div_vec.size()!=data.getIndices().size()) {
+        Nf.clear();
+        divVec.resize(data.getHdivN().size2()/3,0);
+        if(divVec.size()!=data.getIndices().size()) {
           SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
         }
-
         int nb_gauss_pts = data.getN().size1();
         int gg = 0;
         for(;gg<nb_gauss_pts;gg++) {
-
           double w = getGaussPts()(3,gg)*getVolume();
           if(getHoGaussPtsDetJac().size()>0) {
             w *= getHoGaussPtsDetJac()(gg);
           }
-
-          ierr = getDivergenceMatrixOperato_Hdiv(side,type,data,gg,div_vec); CHKERRQ(ierr);
-
-          noalias(Nf) -= w*div_vec*cTx.valuesAtGaussPts[gg];
-
+          ierr = getDivergenceOfHDivBaseFunctions(side,type,data,gg,divVec); CHKERRQ(ierr);
+          noalias(Nf) -= w*divVec*cTx.valuesAtGaussPts[gg];
         }
-
         ierr = VecSetValues(
           F,nb_row,&data.getIndices()[0],
           &Nf[0],ADD_VALUES
         ); CHKERRQ(ierr);
-
       } catch (const std::exception& ex) {
-        ostringstream ss;
-        ss << "throw in method: " << ex.what() << endl;
+        std::ostringstream ss;
+        ss << "throw in method: " << ex.what() << std::endl;
         SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
       }
-
       PetscFunctionReturn(0);
     }
 
   };
 
-  /** \brief V in L2 and sigma in Hdiv, calculates Aij = Asemble int V * div(sigma) dTet
+  /** \brief \f$ \int_\mathcal{T} \textrm{div}[\boldsymbol\sigma] v \textrm{d}\mathcal{T} \f$
     */
-  struct OpVDotDivSigma_L2Hdiv: public VolumeElementForcesAndSourcesCore::UserDataOperator {
+  struct OpVDotDivSigma_L2Hdiv: public MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator {
 
     UltraWeakTransportElement &cTx;
     Mat Aij;
     Vec F;
 
+    /**
+     * \brief Constructor
+     */
     OpVDotDivSigma_L2Hdiv(
       UltraWeakTransportElement &ctx,
-      const string field_name_row,string field_name_col,Mat _Aij,Vec _F
+      const std::string val_name_row,string flux_name_col,Mat aij,Vec f
     ):
-    VolumeElementForcesAndSourcesCore::UserDataOperator(
-      field_name_row,field_name_col,
+    MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator(
+      val_name_row,flux_name_col,
       UserDataOperator::OPROW|UserDataOperator::OPROWCOL
     ),
-    cTx(ctx),Aij(_Aij),F(_F) {
+    cTx(ctx),
+    Aij(aij),
+    F(f) {
 
-      //this operator is not symmetric settig this varible makes element
-      //operator to loop over element entities (subsimplicies) without
+      //this operator is not symmetric setting this variable makes element
+      //operator to loop over element entities without
       //assumption that off-diagonal matrices are symmetric.
       sYmm = false;
 
     }
-    virtual ~OpVDotDivSigma_L2Hdiv() {}
 
     ublas::matrix<FieldData> NN,transNN;
-    VectorDouble div_vec,Nf;
+    VectorDouble divVec,Nf;
 
+    /**
+     * \brief Do calculations
+     * @param  row_side local index of entity on row
+     * @param  col_side local index of entity on column
+     * @param  row_type type of row entity
+     * @param  col_type type of col entity
+     * @param  row_data row data structure carrying information about base functions, DOFs indices, etc.
+     * @param  col_data column data structure carrying information about base functions, DOFs indices, etc.
+     * @return          error code
+     */
     PetscErrorCode doWork(
       int row_side,int col_side,
       EntityType row_type,EntityType col_type,
       DataForcesAndSurcesCore::EntData &row_data,
       DataForcesAndSurcesCore::EntData &col_data
     ) {
-      PetscFunctionBegin;
-
       PetscErrorCode ierr;
-
+      PetscFunctionBegin;
       try {
-
+        if(Aij == PETSC_NULL) PetscFunctionReturn(0);
         if(row_data.getFieldData().size()==0) PetscFunctionReturn(0);
         if(col_data.getFieldData().size()==0) PetscFunctionReturn(0);
-
         int nb_row = row_data.getFieldData().size();
         int nb_col = col_data.getFieldData().size();
         NN.resize(nb_row,nb_col);
-        bzero(&NN(0,0),NN.data().size()*sizeof(FieldData));
-
-        div_vec.resize(nb_col,0);
-
+        NN.clear();
+        divVec.resize(nb_col,false);
         int nb_gauss_pts = row_data.getHdivN().size1();
-        int gg = 0;
-        for(;gg<nb_gauss_pts;gg++) {
-
+        for(int gg = 0;gg<nb_gauss_pts;gg++) {
           double w = getGaussPts()(3,gg)*getVolume();
           if(getHoGaussPtsDetJac().size()>0) {
             w *= getHoGaussPtsDetJac()(gg);
           }
-
-          ierr = getDivergenceMatrixOperato_Hdiv(
-            col_side,col_type,col_data,gg,div_vec); CHKERRQ(ierr);
-
-            //FIXME this multiplication should be done in blas or ublas
-            for(int rr = 0;rr<nb_row;rr++) {
-              for(int cc = 0;cc<nb_col;cc++) {
-                NN(rr,cc) -= w*(row_data.getN(gg)[rr]*div_vec[cc]);
-              }
-            }
-
-          }
-
-          ierr = MatSetValues(
-            Aij,
-            nb_row,&row_data.getIndices()[0],
-            nb_col,&col_data.getIndices()[0],
-            &NN(0,0),ADD_VALUES
+          ierr = getDivergenceOfHDivBaseFunctions(
+            col_side,col_type,col_data,gg,divVec
           ); CHKERRQ(ierr);
-
-          transNN.resize(nb_col,nb_row);
-          ublas::noalias(transNN) = trans(NN);
-          ierr = MatSetValues(
-            Aij,
-            nb_col,&col_data.getIndices()[0],
-            nb_row,&row_data.getIndices()[0],
-            &transNN(0,0),ADD_VALUES
-          ); CHKERRQ(ierr);
-
-
-        } catch (const std::exception& ex) {
-          ostringstream ss;
-          ss << "throw in method: " << ex.what() << endl;
-          SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
+          noalias(NN) += w*outer_prod(row_data.getN(gg),divVec);
         }
-
-        PetscFunctionReturn(0);
+        ierr = MatSetValues(
+          Aij,
+          nb_row,&row_data.getIndices()[0],
+          nb_col,&col_data.getIndices()[0],
+          &NN(0,0),ADD_VALUES
+        ); CHKERRQ(ierr);
+        transNN.resize(nb_col,nb_row);
+        ublas::noalias(transNN) = -trans(NN);
+        ierr = MatSetValues(
+          Aij,
+          nb_col,&col_data.getIndices()[0],
+          nb_row,&row_data.getIndices()[0],
+          &transNN(0,0),ADD_VALUES
+        ); CHKERRQ(ierr);
+      } catch (const std::exception& ex) {
+        std::ostringstream ss;
+        ss << "throw in method: " << ex.what() << std::endl;
+        SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
       }
+      PetscFunctionReturn(0);
+    }
 
-      PetscErrorCode doWork(
-        int side,EntityType type,
-        DataForcesAndSurcesCore::EntData &data
-      ) {
-        PetscFunctionBegin;
-
-        PetscErrorCode ierr;
-
-        try {
-
-          if(data.getIndices().size()==0) PetscFunctionReturn(0);
-          if(data.getIndices().size()!=data.getN().size2()) {
-            SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
-          }
-
-          int nb_row = data.getIndices().size();
-          Nf.resize(nb_row);
-          bzero(&*Nf.data().begin(),Nf.data().size()*sizeof(FieldData));
-
-          int nb_gauss_pts = data.getN().size1();
-          int gg = 0;
-          for(;gg<nb_gauss_pts;gg++) {
-
-            double w = getGaussPts()(3,gg)*getVolume();
-            if(getHoGaussPtsDetJac().size()>0) {
-              w *= getHoGaussPtsDetJac()(gg);
-            }
-
-            noalias(Nf) -= w*data.getN(gg)*cTx.divergenceAtGaussPts[gg];
-
-          }
-
-          ierr = VecSetValues(
-            F,nb_row,&data.getIndices()[0],
-            &Nf[0],ADD_VALUES
-          ); CHKERRQ(ierr);
-
-        } catch (const std::exception& ex) {
-          ostringstream ss;
-          ss << "throw in method: " << ex.what() << endl;
-          SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+    PetscErrorCode doWork(
+      int side,EntityType type,
+      DataForcesAndSurcesCore::EntData &data
+    ) {
+      PetscErrorCode ierr;
+      PetscFunctionBegin;
+      try {
+        if(data.getIndices().size()==0) PetscFunctionReturn(0);
+        if(data.getIndices().size()!=data.getN().size2()) {
+          SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
         }
-
-        PetscFunctionReturn(0);
+        int nb_row = data.getIndices().size();
+        Nf.resize(nb_row);
+        Nf.clear();
+        int nb_gauss_pts = data.getN().size1();
+        for(int gg = 0;gg<nb_gauss_pts;gg++) {
+          double w = getGaussPts()(3,gg)*getVolume();
+          if(getHoGaussPtsDetJac().size()>0) {
+            w *= getHoGaussPtsDetJac()(gg);
+          }
+          noalias(Nf) += w*data.getN(gg)*cTx.divergenceAtGaussPts[gg];
+        }
+        ierr = VecSetValues(
+          F,nb_row,&data.getIndices()[0],
+          &Nf[0],ADD_VALUES
+        ); CHKERRQ(ierr);
+      } catch (const std::exception& ex) {
+        std::ostringstream ss;
+        ss << "throw in method: " << ex.what() << std::endl;
+        SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+      }
+      PetscFunctionReturn(0);
     }
 
   };
 
-  /** \brief calculate source therms
+  /** \brief Calculate source therms, i.e. \f$\int_\mathcal{T} f v \textrm{d}\mathcal{T}\f$
   */
-  struct OpL2Source: public VolumeElementForcesAndSourcesCore::UserDataOperator {
+  struct OpL2Source: public MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator {
 
     UltraWeakTransportElement &cTx;
     Vec F;
 
     OpL2Source(
       UltraWeakTransportElement &ctx,
-      const string field_name,Vec _F
+      const std::string val_name,
+      Vec f
     ):
-    VolumeElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROW),
+    MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator(val_name,UserDataOperator::OPROW),
     cTx(ctx),
-    F(_F) {}
-
-    virtual ~OpL2Source() {}
-
-    VectorDouble Nf;
-    PetscErrorCode doWork(
-      int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
-        PetscFunctionBegin;
-
-        PetscErrorCode ierr;
-
-        try {
-
-          if(data.getFieldData().size()==0) PetscFunctionReturn(0);
-          EntityHandle fe_ent = getMoFEMFEPtr()->get_ent();
-
-          int nb_row = data.getFieldData().size();
-          Nf.resize(nb_row);
-          bzero(&Nf[0],Nf.data().size()*sizeof(FieldData));
-
-          int nb_gauss_pts = data.getHdivN().size1();
-          int gg = 0;
-          for(;gg<nb_gauss_pts;gg++) {
-
-            double w = getGaussPts()(3,gg)*getVolume();
-            if(getHoGaussPtsDetJac().size()>0) {
-              w *= getHoGaussPtsDetJac()(gg);
-            }
-
-
-            const double x = getCoordsAtGaussPts()(gg,0);
-            const double y = getCoordsAtGaussPts()(gg,1);
-            const double z = getCoordsAtGaussPts()(gg,2);
-            double flux;
-            ierr = cTx.getFlux(fe_ent,x,y,z,flux); CHKERRQ(ierr);
-
-            for(int rr = 0;rr<nb_row;rr++) {
-              Nf[rr] += w*data.getN(gg)[rr]*flux;
-            }
-
-          }
-
-          ierr = VecSetValues(
-            F,nb_row,&data.getIndices()[0],
-            &Nf[0],ADD_VALUES
-          ); CHKERRQ(ierr);
-
-        } catch (const std::exception& ex) {
-          ostringstream ss;
-          ss << "throw in method: " << ex.what() << endl;
-          SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
-        }
-
-        PetscFunctionReturn(0);
-      }
-
-    };
-
-  /** \brief calualte F = int_\gamma tau*n u_bar d d\Gamma
-    */
-  struct OpRhsBcOnValues: public FaceElementForcesAndSourcesCore::UserDataOperator {
-
-    UltraWeakTransportElement &cTx;
-    Vec F;
-
-    OpRhsBcOnValues(
-      UltraWeakTransportElement &ctx,const string field_name,Vec _F):
-      FaceElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROW),
-      cTx(ctx),F(_F) {}
+    F(f) {}
 
     VectorDouble Nf;
     PetscErrorCode doWork(
       int side,EntityType type,DataForcesAndSurcesCore::EntData &data
     ) {
-      PetscFunctionBegin;
-
       PetscErrorCode ierr;
-
+      PetscFunctionBegin;
       try {
-
         if(data.getFieldData().size()==0) PetscFunctionReturn(0);
-        EntityHandle fe_ent = getMoFEMFEPtr()->get_ent();
-
-        Nf.resize(data.getIndices().size());
-        bzero(&*Nf.data().begin(),Nf.size()*sizeof(FieldData));
-
+        EntityHandle fe_ent = getNumeredEntFiniteElementPtr()->getEnt();
+        int nb_row = data.getFieldData().size();
+        Nf.resize(nb_row,false);
+        Nf.clear();
         int nb_gauss_pts = data.getHdivN().size1();
         for(int gg = 0;gg<nb_gauss_pts;gg++) {
-
+          double w = getGaussPts()(3,gg)*getVolume();
+          if(getHoGaussPtsDetJac().size()>0) {
+            w *= getHoGaussPtsDetJac()(gg);
+          }
           const double x = getCoordsAtGaussPts()(gg,0);
           const double y = getCoordsAtGaussPts()(gg,1);
           const double z = getCoordsAtGaussPts()(gg,2);
-
-          double value;
-          ierr = cTx.getBcOnValues(fe_ent,x,y,z,value); CHKERRQ(ierr);
-
-          double w = getGaussPts()(2,gg)*0.5;
-          if(getNormals_at_GaussPt().size1() == (unsigned int)nb_gauss_pts) {
-            noalias(Nf) += w*prod(data.getHdivN(gg),getNormals_at_GaussPt(gg))*value;
-          } else {
-            noalias(Nf) += w*prod(data.getHdivN(gg),getNormal())*value;
-          }
-
+          double flux = 0;
+          ierr = cTx.getSource(fe_ent,x,y,z,flux); CHKERRQ(ierr);
+          noalias(Nf) += w*data.getN(gg)*flux;
         }
-
-        //cerr << Nf << endl << endl;
-
-        ierr = VecSetValues(F,data.getIndices().size(),
-        &data.getIndices()[0],&Nf[0],ADD_VALUES); CHKERRQ(ierr);
-
+        ierr = VecSetValues(F,nb_row,&data.getIndices()[0],&Nf[0],ADD_VALUES); CHKERRQ(ierr);
       } catch (const std::exception& ex) {
-        ostringstream ss;
-        ss << "throw in method: " << ex.what() << endl;
-        SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
+        std::ostringstream ss;
+        ss << "throw in method: " << ex.what() << std::endl;
+        SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
 
       PetscFunctionReturn(0);
@@ -696,75 +1099,191 @@ struct UltraWeakTransportElement {
 
   };
 
-  struct OpEvaluateBcOnFluxes: public FaceElementForcesAndSourcesCore::UserDataOperator {
+  /**
+   * \brief calculate \f$ \int_\mathcal{S} {\boldsymbol\tau} \cdot \mathbf{n}u \textrm{d}\mathcal{S} \f$
+
+   * This terms comes from differentiation by parts. Note that in this Dirihlet
+   * boundary conditions are natural.
+
+   */
+  struct OpRhsBcOnValues: public MoFEM::FaceElementForcesAndSourcesCore::UserDataOperator {
 
     UltraWeakTransportElement &cTx;
-    Vec X;
+    Vec F;
 
-    OpEvaluateBcOnFluxes(
-      UltraWeakTransportElement &ctx,const string field_name,Vec _X):
-      FaceElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROW),
-      cTx(ctx),X(_X) {}
-    virtual ~OpEvaluateBcOnFluxes() {}
+    /**
+     * \brief Constructor
+     */
+    OpRhsBcOnValues(
+      UltraWeakTransportElement &ctx,const std::string fluxes_name,Vec f
+    ):
+    MoFEM::FaceElementForcesAndSourcesCore::UserDataOperator(fluxes_name,UserDataOperator::OPROW),
+    cTx(ctx),
+    F(f) {}
 
-    ublas::matrix<FieldData> NN,L;
-    VectorDouble Nf,normalN,x;
-    PetscErrorCode doWork(int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
-      PetscFunctionBegin;
+    VectorDouble Nf;
+
+    /**
+     * \brief Integrate boundary condition
+     * @param  side local index of entity
+     * @param  type type of entity
+     * @param  data data on entity
+     * @return      error code
+     */
+    PetscErrorCode doWork(
+      int side,EntityType type,DataForcesAndSurcesCore::EntData &data
+    ) {
       PetscErrorCode ierr;
-
+      PetscFunctionBegin;
       try {
-
         if(data.getFieldData().size()==0) PetscFunctionReturn(0);
-        EntityHandle fe_ent = getMoFEMFEPtr()->get_ent();
-
-        int nb_dofs = data.getFieldData().size();
-        NN.resize(nb_dofs,nb_dofs);
-        L.resize(nb_dofs,nb_dofs);
-        Nf.resize(nb_dofs);
-        normalN.resize(nb_dofs);
-
-        bzero(&*NN.data().begin(),NN.data().size()*sizeof(FieldData));
-        bzero(&*Nf.data().begin(),Nf.data().size()*sizeof(FieldData));
-        L.resize(NN.size1(),NN.size2());
-
+        EntityHandle fe_ent = getNumeredEntFiniteElementPtr()->getEnt();
+        Nf.resize(data.getIndices().size());
+        Nf.clear();
         int nb_gauss_pts = data.getHdivN().size1();
         for(int gg = 0;gg<nb_gauss_pts;gg++) {
+          const double x = getCoordsAtGaussPts()(gg,0);
+          const double y = getCoordsAtGaussPts()(gg,1);
+          const double z = getCoordsAtGaussPts()(gg,2);
+          double value;
+          ierr = cTx.getBcOnValues(fe_ent,x,y,z,value); CHKERRQ(ierr);
+          double w = getGaussPts()(2,gg)*0.5;
+          if(getNormalsAtGaussPt().size1() == (unsigned int)nb_gauss_pts) {
+            noalias(Nf) += w*prod(data.getHdivN(gg),getNormalsAtGaussPt(gg))*value;
+          } else {
+            noalias(Nf) += w*prod(data.getHdivN(gg),getNormal())*value;
+          }
+        }
+        ierr = VecSetValues(F,data.getIndices().size(),
+        &data.getIndices()[0],&Nf[0],ADD_VALUES); CHKERRQ(ierr);
+      } catch (const std::exception& ex) {
+        std::ostringstream ss;
+        ss << "throw in method: " << ex.what() << std::endl;
+        SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
+      }
+      PetscFunctionReturn(0);
+    }
+  };
 
+  /**
+   * \brief Evaluate boundary conditions on fluxes.
+   *
+   * Note that Neumann boundary conditions here are essential. So it is opposite
+   * what you find in displacement finite element method.
+   *
+
+   * Here we have to solve for degrees of freedom on boundary such base functions
+   * approximate flux.
+
+   *
+   */
+  struct OpEvaluateBcOnFluxes: public MoFEM::FaceElementForcesAndSourcesCore::UserDataOperator {
+    UltraWeakTransportElement &cTx;
+    Vec X;
+    OpEvaluateBcOnFluxes(
+      UltraWeakTransportElement &ctx,const std::string flux_name,Vec x
+    ):
+    MoFEM::FaceElementForcesAndSourcesCore::UserDataOperator(flux_name,UserDataOperator::OPROW),
+    cTx(ctx),
+    X(x) {
+    }
+    virtual ~OpEvaluateBcOnFluxes() {}
+    MatrixDouble NN;
+    VectorDouble Nf;
+    PetscErrorCode doWork(int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
+      PetscErrorCode ierr;
+      PetscFunctionBegin;
+      try {
+        if(data.getFieldData().size()==0) PetscFunctionReturn(0);
+        EntityHandle fe_ent = getNumeredEntFiniteElementPtr()->getEnt();
+        int nb_dofs = data.getFieldData().size();
+        int nb_gauss_pts = data.getHdivN().size1();
+        if(3*nb_dofs!=data.getHdivN().size2()) {
+          SETERRQ(PETSC_COMM_WORLD,MOFEM_DATA_INCONSISTENCY,"wrong number of dofs");
+        }
+        NN.resize(nb_dofs,nb_dofs);
+        Nf.resize(nb_dofs);
+        // get base functions on rows
+        FTensor::Index<'i',3> i;
+
+        // Get normal vector. Note that when higher order geometry is set, then
+        // face element could be curved, i.e. normal can be different at each integration
+        // point.
+        double *normal_ptr;
+        if(getNormalsAtGaussPt().size1() == (unsigned int)nb_gauss_pts) {
+          // HO geometry
+          normal_ptr = &getNormalsAtGaussPt(0)[0];
+        } else {
+          // Linear geometry, i.e. constant normal on face
+          normal_ptr = &getNormal()[0];
+        }
+        // set tensor from pointer
+        FTensor::Tensor1<const double*,3> t_normal(normal_ptr,&normal_ptr[1],&normal_ptr[2],3);
+
+        // get base functions
+        FTensor::Tensor1<double*,3> t_n_hdiv_row = data.getFTensor1HdivN<3>();
+
+        NN.clear();
+        Nf.clear();
+        double nrm2 = 0;
+
+        // loop over integration points
+        for(int gg = 0;gg<nb_gauss_pts;gg++) {
+
+          // get integration point coordinates
           const double x = getCoordsAtGaussPts()(gg,0);
           const double y = getCoordsAtGaussPts()(gg,1);
           const double z = getCoordsAtGaussPts()(gg,2);
 
+          // get flux on fece for given element handle and coordinates
           double flux;
           ierr = cTx.getBcOnFluxes(fe_ent,x,y,z,flux); CHKERRQ(ierr);
-
-          //cerr << data.getHdivN() << endl;
-
-          double area;
-          if(getNormals_at_GaussPt().size1() == (unsigned int)nb_gauss_pts) {
-            area = 2.*norm_2(getNormals_at_GaussPt(gg));
-            noalias(normalN) = prod(data.getHdivN(gg),getNormals_at_GaussPt(gg))/area;
-          } else {
-            area = 2.*getArea();
-            noalias(normalN) = prod(data.getHdivN(gg),getNormal())/area;
+          // get weight for integration rule
+          double w = getGaussPts()(2,gg);
+          if(gg == 0) {
+            nrm2  = sqrt(t_normal(i)*t_normal(i));
           }
 
-          double w = getGaussPts()(2,gg);
-          noalias(NN) += w*outer_prod(normalN,normalN);
-          noalias(Nf) -= w*normalN*flux;
+          // set tensor of rank 0 to matrix NN elements
+          // loop over base functions on rows and columns
+          for(int ll = 0;ll!=nb_dofs;ll++) {
+            // get column on shape functions
+            FTensor::Tensor1<const double*,3> t_n_hdiv_col(
+              &data.getHdivN(gg)(0,HDIV0),
+              &data.getHdivN(gg)(0,HDIV1),
+              &data.getHdivN(gg)(0,HDIV2),3
+            );
+            for(int kk = 0;kk<=ll;kk++) {
+              NN(ll,kk) += w*t_n_hdiv_row(i)*t_n_hdiv_col(i);
+              ++t_n_hdiv_col;
+            }
+            // right hand side
+            Nf[ll] += w*t_n_hdiv_row(i)*t_normal(i)*flux/nrm2;
+            ++t_n_hdiv_row;
+          }
+
+          // If HO geometry increment t_normal to next integration point
+          if(getNormalsAtGaussPt().size1() == (unsigned int)nb_gauss_pts) {
+            ++t_normal;
+            nrm2  = sqrt(t_normal(i)*t_normal(i));
+          }
 
         }
 
+        // get global dofs indices on element
         cTx.bcIndices.insert(data.getIndices().begin(),data.getIndices().end());
 
-        cholesky_decompose(NN,L);
-        cholesky_solve(L,Nf,ublas::lower());
+        // factor matrix
+        cholesky_decompose(NN);
+        // solve local problem
+        cholesky_solve(NN,Nf,ublas::lower());
 
+        // set solution to vector
         ierr = VecSetValues(X,data.getIndices().size(),&data.getIndices()[0],&Nf[0],INSERT_VALUES); CHKERRQ(ierr);
 
       } catch (const std::exception& ex) {
-        ostringstream ss;
-        ss << "throw in method: " << ex.what() << endl;
+        std::ostringstream ss;
+        ss << "throw in method: " << ex.what() << std::endl;
         SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
 
@@ -773,15 +1292,18 @@ struct UltraWeakTransportElement {
 
   };
 
-  struct OpValuesAtGaussPts: public VolumeElementForcesAndSourcesCore::UserDataOperator {
+  /**
+   * \brief Calculate values at integration points
+   */
+  struct OpValuesAtGaussPts: public MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator {
 
     UltraWeakTransportElement &cTx;
 
     OpValuesAtGaussPts(
       UltraWeakTransportElement &ctx,
-      const string field_name
+      const std::string val_name = "VALUES"
     ):
-    VolumeElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROW),
+    MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator(val_name,UserDataOperator::OPROW),
     cTx(ctx) {}
 
     virtual ~OpValuesAtGaussPts() {}
@@ -800,8 +1322,8 @@ struct UltraWeakTransportElement {
         }
 
       } catch (const std::exception& ex) {
-        ostringstream ss;
-        ss << "throw in method: " << ex.what() << endl;
+        std::ostringstream ss;
+        ss << "throw in method: " << ex.what() << std::endl;
         SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
 
@@ -810,38 +1332,35 @@ struct UltraWeakTransportElement {
 
   };
 
-  struct OpValuesGradientAtGaussPts: public VolumeElementForcesAndSourcesCore::UserDataOperator {
+  /**
+   * \brief Calculate gradients of values at integration points
+   */
+  struct OpValuesGradientAtGaussPts: public MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator {
 
     UltraWeakTransportElement &cTx;
 
     OpValuesGradientAtGaussPts(
       UltraWeakTransportElement &ctx,
-      const string field_name
+      const std::string val_name = "VALUES"
     ):
-    VolumeElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROW),
+    MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator(val_name,UserDataOperator::OPROW),
     cTx(ctx) {}
     virtual ~OpValuesGradientAtGaussPts() {}
 
     PetscErrorCode doWork(int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
       PetscFunctionBegin;
-
       try {
-
         if(data.getFieldData().size() == 0)  PetscFunctionReturn(0);
-
         int nb_gauss_pts = data.getDiffN().size1();
-
+        // cerr << data.getDiffN() << endl;
         cTx.valuesGradientAtGaussPts.resize(nb_gauss_pts);
-
         for(int gg = 0;gg<nb_gauss_pts;gg++) {
-
-          cTx.valuesGradientAtGaussPts[gg].resize(3);
+          cTx.valuesGradientAtGaussPts[gg].resize(3,false);
           noalias(cTx.valuesGradientAtGaussPts[gg]) = prod( trans(data.getDiffN(gg)), data.getFieldData() );
         }
-
       } catch (const std::exception& ex) {
-        ostringstream ss;
-        ss << "throw in method: " << ex.what() << endl;
+        std::ostringstream ss;
+        ss << "throw in method: " << ex.what() << std::endl;
         SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
 
@@ -850,143 +1369,158 @@ struct UltraWeakTransportElement {
 
   };
 
-  struct OpFluxDivergenceAtGaussPts: public VolumeElementForcesAndSourcesCore::UserDataOperator {
+  /**
+   * \brief calculate flux at integration point
+   */
+  struct OpFluxDivergenceAtGaussPts: public MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator {
 
     UltraWeakTransportElement &cTx;
 
     OpFluxDivergenceAtGaussPts(
       UltraWeakTransportElement &ctx,
-      const string field_name
+      const std::string field_name
     ):
-    VolumeElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROW),
+    MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROW),
     cTx(ctx) {}
 
     virtual ~OpFluxDivergenceAtGaussPts() {}
 
-    VectorDouble div_vec;
+    VectorDouble divVec;
     PetscErrorCode doWork(int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
       PetscFunctionBegin;
       PetscErrorCode ierr;
-
       try {
-
-      if(data.getFieldData().size() == 0)  PetscFunctionReturn(0);
-
-      int nb_gauss_pts = data.getDiffN().size1();
-      int nb_dofs = data.getFieldData().size();
-
-      cTx.fluxesAtGaussPts.resize(nb_gauss_pts);
-      cTx.divergenceAtGaussPts.resize(nb_gauss_pts);
-      if(type == MBTRI && side == 0) {
-        for(int gg = 0;gg<nb_gauss_pts;gg++) {
-          cTx.fluxesAtGaussPts[gg].resize(3);
-          cTx.fluxesAtGaussPts[gg].clear();
+        if(data.getFieldData().size() == 0)  PetscFunctionReturn(0);
+        int nb_gauss_pts = data.getDiffN().size1();
+        int nb_dofs = data.getFieldData().size();
+        cTx.fluxesAtGaussPts.resize(nb_gauss_pts);
+        cTx.divergenceAtGaussPts.resize(nb_gauss_pts);
+        if(type == MBTRI && side == 0) {
+          for(int gg = 0;gg<nb_gauss_pts;gg++) {
+            cTx.fluxesAtGaussPts[gg].resize(3,false);
+            cTx.fluxesAtGaussPts[gg].clear();
+          }
+          cTx.divergenceAtGaussPts.clear();
         }
-        cTx.divergenceAtGaussPts.clear();
+        divVec.resize(nb_dofs);
+        for(int gg = 0;gg<nb_gauss_pts;gg++) {
+          ierr = getDivergenceOfHDivBaseFunctions(side,type,data,gg,divVec); CHKERRQ(ierr);
+          cTx.divergenceAtGaussPts[gg] += inner_prod(divVec,data.getFieldData());
+          noalias(cTx.fluxesAtGaussPts[gg]) += prod(trans(data.getHdivN(gg)),data.getFieldData());
+        }
+      } catch (const std::exception& ex) {
+        std::ostringstream ss;
+        ss << "throw in method: " << ex.what() << std::endl;
+        SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
-
-      div_vec.resize(nb_dofs);
-      for(int gg = 0;gg<nb_gauss_pts;gg++) {
-
-        ierr = getDivergenceMatrixOperato_Hdiv(side,type,data,gg,div_vec); CHKERRQ(ierr);
-        cTx.divergenceAtGaussPts[gg] += inner_prod(div_vec,data.getFieldData());
-        noalias(cTx.fluxesAtGaussPts[gg]) += prod( trans(data.getHdivN(gg)), data.getFieldData());
-
-      }
-
-    } catch (const std::exception& ex) {
-      ostringstream ss;
-      ss << "throw in method: " << ex.what() << endl;
-      SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+      PetscFunctionReturn(0);
     }
 
-    PetscFunctionReturn(0);
-  }
+  };
 
-};
-
+  map<double,EntityHandle> errorMap;
+  double sumErrorFlux;
+  double sumErrorDiv;
+  double sumErrorJump;
 
   /** \brief calculate error evaluator
     */
-  struct OpError_L2Norm: public VolumeElementForcesAndSourcesCore::UserDataOperator {
+  struct OpError: public MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator {
 
     UltraWeakTransportElement &cTx;
 
-    OpError_L2Norm(
+    OpError(
       UltraWeakTransportElement &ctx,
-      const string field_name):
-      VolumeElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROW),
+      const std::string field_name):
+      MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROW),
       cTx(ctx) {}
-    virtual ~OpError_L2Norm() {}
+    virtual ~OpError() {}
 
     VectorDouble deltaFlux;
-    PetscErrorCode doWork(
-      int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
-      PetscFunctionBegin;
+    MatrixDouble invK;
 
+    PetscErrorCode doWork(
+      int side,EntityType type,DataForcesAndSurcesCore::EntData &data
+    ) {
       PetscErrorCode ierr;
       ErrorCode rval;
-
+      PetscFunctionBegin;
       try {
-
-        if(data.getFieldData().size() == 0)  PetscFunctionReturn(0);
+        if(type != MBTET) PetscFunctionReturn(0);
+        invK.resize(3,3,false);
         int nb_gauss_pts = data.getN().size1();
-        EntityHandle fe_ent = getMoFEMFEPtr()->get_ent();
+        EntityHandle fe_ent = getNumeredEntFiniteElementPtr()->getEnt();
+        double def_val = 0;
+        Tag th_error_flux,th_error_div;
+        rval = cTx.mField.get_moab().tag_get_handle(
+          "ERROR_FLUX",1,MB_TYPE_DOUBLE,th_error_flux,MB_TAG_CREAT|MB_TAG_SPARSE,&def_val
+        ); CHKERRQ_MOAB(rval);
+        double* error_flux_ptr;
+        rval = cTx.mField.get_moab().tag_get_by_ptr(
+          th_error_flux,&fe_ent,1,(const void**)&error_flux_ptr
+        ); CHKERRQ_MOAB(rval);
 
-        double def_VAL = 0;
-        Tag th_error_div_sigma;
-        rval = cTx.mField.get_moab().tag_get_handle("ERRORL2_DIVSIGMA_F",1,MB_TYPE_DOUBLE,th_error_div_sigma,MB_TAG_CREAT|MB_TAG_SPARSE,&def_VAL); CHKERR_PETSC(rval);
-        Tag th_error_flux;
-        rval = cTx.mField.get_moab().tag_get_handle("ERRORL2_FLUX",1,MB_TYPE_DOUBLE,th_error_flux,MB_TAG_CREAT|MB_TAG_SPARSE,&def_VAL); CHKERR_PETSC(rval);
-        if(type == MBTRI && side == 0) {
-          cTx.mField.get_moab().tag_set_data(th_error_div_sigma,&fe_ent,1,&def_VAL);
+        rval = cTx.mField.get_moab().tag_get_handle(
+          "ERROR_DIV",1,MB_TYPE_DOUBLE,th_error_div,MB_TAG_CREAT|MB_TAG_SPARSE,&def_val
+        ); CHKERRQ_MOAB(rval);
+        double* error_div_ptr;
+        rval = cTx.mField.get_moab().tag_get_by_ptr(
+          th_error_div,&fe_ent,1,(const void**)&error_div_ptr
+        ); CHKERRQ_MOAB(rval);
+
+        Tag th_error_jump;
+        rval = cTx.mField.get_moab().tag_get_handle(
+          "ERROR_JUMP",1,MB_TYPE_DOUBLE,th_error_jump,MB_TAG_CREAT|MB_TAG_SPARSE,&def_val
+        ); CHKERRQ_MOAB(rval);
+        double* error_jump_ptr;
+        rval = cTx.mField.get_moab().tag_get_by_ptr(
+          th_error_jump,&fe_ent,1,(const void**)&error_jump_ptr
+        ); CHKERRQ_MOAB(rval);
+        *error_jump_ptr = 0;
+
+        /// characteristic size of the element
+        const double h = pow(getVolume()*12/sqrt(2),(double)1/3);
+
+        for(int ff = 0;ff!=4;ff++) {
+          EntityHandle face;
+          rval = cTx.mField.get_moab().side_element(fe_ent,2,ff,face); CHKERRQ_MOAB(rval);
+          double* error_face_jump_ptr;
+          rval = cTx.mField.get_moab().tag_get_by_ptr(
+            th_error_jump,&face,1,(const void**)&error_face_jump_ptr
+          ); CHKERRQ_MOAB(rval);
+          *error_face_jump_ptr = (1/sqrt(h))*sqrt(*error_face_jump_ptr);
+          *error_face_jump_ptr = pow(*error_face_jump_ptr,2);
+          *error_jump_ptr += *error_face_jump_ptr;
         }
 
-        double* error_div_ptr;
-        rval = cTx.mField.get_moab().tag_get_by_ptr(th_error_div_sigma,&fe_ent,1,(const void**)&error_div_ptr); CHKERR_PETSC(rval);
-        double* error_flux_ptr;
-        rval = cTx.mField.get_moab().tag_get_by_ptr(th_error_flux,&fe_ent,1,(const void**)&error_flux_ptr); CHKERR_PETSC(rval);
-
-        deltaFlux.resize(3);
+        *error_flux_ptr = 0;
+        *error_div_ptr = 0;
+        deltaFlux.resize(3,false);
         for(int gg = 0;gg<nb_gauss_pts;gg++) {
           double w = getGaussPts()(3,gg)*getVolume();
           if(getHoGaussPtsDetJac().size()>0) {
             w *= getHoGaussPtsDetJac()(gg);
           }
-
           const double x = getCoordsAtGaussPts()(gg,0);
           const double y = getCoordsAtGaussPts()(gg,1);
           const double z = getCoordsAtGaussPts()(gg,2);
           double flux;
-          ierr = cTx.getFlux(fe_ent,x,y,z,flux); CHKERRQ(ierr);
-
-          if(gg == 0) {
-            *error_div_ptr = 0;
-            *error_flux_ptr = 0;
-          }
-
-          *error_div_ptr += w*( pow(cTx.divergenceAtGaussPts[gg] + flux,2) );
-          noalias(deltaFlux) = cTx.fluxesAtGaussPts[gg]+cTx.valuesGradientAtGaussPts[gg];
-          *error_flux_ptr += w*( inner_prod(deltaFlux,deltaFlux) );
-
-          //cerr << cTx.fluxesAtGaussPts[gg] << " " << cTx.valuesGradientAtGaussPts[gg] << endl;
-
+          ierr = cTx.getSource(fe_ent,x,y,z,flux); CHKERRQ(ierr);
+          *error_div_ptr += w*pow(cTx.divergenceAtGaussPts[gg]-flux,2);
+          ierr = cTx.getResistivity(fe_ent,x,y,z,invK); CHKERRQ(ierr);
+          noalias(deltaFlux) = prod(invK,cTx.fluxesAtGaussPts[gg])+cTx.valuesGradientAtGaussPts[gg];
+          *error_flux_ptr += w*inner_prod(deltaFlux,deltaFlux);
         }
-
-        if(type == MBTET) {
-          *error_div_ptr = sqrt(*error_div_ptr);
-          *error_flux_ptr = sqrt(*error_flux_ptr);
-        }
-
-        const FENumeredDofMoFEMEntity *dof_ptr;
-        ierr = getMoFEMFEPtr()->get_row_dofs_by_petsc_gloabl_dof_idx(
-          data.getIndices()[0],&dof_ptr
-        ); CHKERRQ(ierr);
-        dof_ptr->get_FieldData() = *error_flux_ptr;
-
+        *error_div_ptr = h*sqrt(*error_div_ptr);
+        *error_div_ptr = pow(*error_div_ptr,2);
+        cTx.sumErrorFlux += *error_flux_ptr;
+        cTx.sumErrorDiv += *error_div_ptr;
+        // FIXME: Summation should be while skeleton is calculated
+        cTx.sumErrorJump += *error_jump_ptr; /// FIXME: this need to be fixed
+        cTx.errorMap[sqrt(*error_flux_ptr+*error_div_ptr+*error_jump_ptr)] = fe_ent;
       } catch (const std::exception& ex) {
-        ostringstream ss;
-        ss << "throw in method: " << ex.what() << endl;
+        std::ostringstream ss;
+        ss << "throw in method: " << ex.what() << std::endl;
         SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
 
@@ -994,6 +1528,147 @@ struct UltraWeakTransportElement {
     }
 
   };
+
+  /**
+   * \brief calculate jump on entities
+   */
+  struct OpSkeleton: public MoFEM::FaceElementForcesAndSourcesCore::UserDataOperator {
+
+    /**
+     * \brief volume element to get values from adjacent tets to face
+     */
+    VolumeElementForcesAndSourcesCoreOnSide volSideFe;
+
+    /** store values at integration point, key of the map is sense of face in
+     * respect to adjacent tetrahedra
+     */
+    map<int,VectorDouble> valMap;
+
+    /**
+     * \brief calculate values on adjacent tetrahedra to face
+     */
+    struct OpVolSide: public VolumeElementForcesAndSourcesCoreOnSide::UserDataOperator {
+      map<int,VectorDouble> &valMap;
+      OpVolSide(map<int,VectorDouble> &val_map):
+      VolumeElementForcesAndSourcesCoreOnSide::UserDataOperator("VALUES",UserDataOperator::OPROW),
+      valMap(val_map) {
+      }
+      PetscErrorCode doWork(int side, EntityType type,DataForcesAndSurcesCore::EntData &data) {
+        PetscFunctionBegin;
+        try {
+          if(data.getFieldData().size() == 0)  PetscFunctionReturn(0);
+          int nb_gauss_pts = data.getN().size1();
+          valMap[getFaceSense()].resize(nb_gauss_pts);
+          for(int gg = 0;gg<nb_gauss_pts;gg++) {
+            valMap[getFaceSense()][gg] = inner_prod(trans(data.getN(gg)),data.getFieldData());
+          }
+        } catch (const std::exception& ex) {
+          std::ostringstream ss;
+          ss << "throw in method: " << ex.what() << std::endl;
+          SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+        }
+        PetscFunctionReturn(0);
+      }
+    };
+
+    UltraWeakTransportElement &cTx;
+
+    OpSkeleton(
+      UltraWeakTransportElement &ctx,const std::string flux_name
+    ):
+    MoFEM::FaceElementForcesAndSourcesCore::UserDataOperator(flux_name,UserDataOperator::OPROW),
+    volSideFe(ctx.mField),
+    cTx(ctx) {
+      volSideFe.getOpPtrVector().push_back(new OpSkeleton::OpVolSide(valMap));
+    }
+
+    PetscErrorCode doWork(int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
+      MoABErrorCode rval;
+      PetscErrorCode ierr;
+      PetscFunctionBegin;
+      try {
+
+        if(type == MBTRI) {
+          EntityHandle fe_ent = getNumeredEntFiniteElementPtr()->getEnt();
+
+          double def_val = 0;
+          Tag th_error_jump;
+          rval = cTx.mField.get_moab().tag_get_handle(
+            "ERROR_JUMP",1,MB_TYPE_DOUBLE,th_error_jump,MB_TAG_CREAT|MB_TAG_SPARSE,&def_val
+          ); CHKERRQ_MOAB(rval);
+          double* error_jump_ptr;
+          rval = cTx.mField.get_moab().tag_get_by_ptr(
+            th_error_jump,&fe_ent,1,(const void**)&error_jump_ptr
+          ); CHKERRQ_MOAB(rval);
+          *error_jump_ptr = 0;
+
+          // check if this is essential boundary condition
+          EntityHandle essential_bc_meshset = cTx.mField.get_finite_element_meshset("ULTRAWEAK_BCFLUX");
+          if(cTx.mField.get_moab().contains_entities(essential_bc_meshset,&fe_ent,1)) {
+            // essential bc, np jump then, exit and go to next face
+            PetscFunctionReturn(0);
+          }
+
+          // calculate values form adjacent tets
+          valMap.clear();
+          ierr = loopSideVolumes("ULTRAWEAK",volSideFe); CHKERRQ(ierr);
+
+          int nb_gauss_pts = data.getHdivN().size1();
+
+          // it is only one face, so it has to be bc natural boundary condition
+          if(valMap.size()==1) {
+            if(valMap.begin()->second.size()!=nb_gauss_pts) {
+              SETERRQ(PETSC_COMM_WORLD,MOFEM_DATA_INCONSISTENCY,"wrong number of integration points");
+            }
+            for(int gg = 0;gg!=nb_gauss_pts;gg++) {
+              const double x = getCoordsAtGaussPts()(gg,0);
+              const double y = getCoordsAtGaussPts()(gg,1);
+              const double z = getCoordsAtGaussPts()(gg,2);
+              double value;
+              ierr = cTx.getBcOnValues(fe_ent,x,y,z,value); CHKERRQ(ierr);
+              double w = getGaussPts()(2,gg);
+              if(getNormalsAtGaussPt().size1() == (unsigned int)nb_gauss_pts) {
+                w *= norm_2(getNormalsAtGaussPt(gg))*0.5;
+              } else {
+                w *= getArea();
+              }
+              *error_jump_ptr += w*pow(value-valMap.begin()->second[gg],2);
+            }
+          } else if(valMap.size()==2) {
+            for(int gg = 0;gg!=nb_gauss_pts;gg++) {
+              double w = getGaussPts()(2,gg);
+              if(getNormalsAtGaussPt().size1() == (unsigned int)nb_gauss_pts) {
+                w *= norm_2(getNormalsAtGaussPt(gg))*0.5;
+              } else {
+                w *= getArea();
+              }
+              double delta = valMap.at(1)[gg]-valMap.at(-1)[gg];
+              *error_jump_ptr += w*pow(delta,2);
+            }
+          } else {
+            SETERRQ1(
+              PETSC_COMM_WORLD,MOFEM_DATA_INCONSISTENCY,
+              "data inconsistency, wrong number of neighbors valMap.size() = %d",
+              valMap.size()
+            );
+          }
+        }
+
+      } catch (const std::out_of_range& ex) {
+        std::ostringstream ss;
+        ss << "throw in method: " << ex.what() << std::endl;
+        SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
+      } catch (const std::exception& ex) {
+        std::ostringstream ss;
+        ss << "throw in method: " << ex.what() << std::endl;
+        SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
+      }
+
+      PetscFunctionReturn(0);
+    }
+
+  };
+
 
 };
 

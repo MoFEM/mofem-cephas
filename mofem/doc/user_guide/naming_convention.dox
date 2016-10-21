@@ -1,11 +1,11 @@
 /*! \page coding_practice Coding practice
-
+\brief Naming conventions and coding policies and principles in MoFEM.
 
 \section mofam_and_user_modules MoFEM and User Modules
 
 All new finite elements or modification or finite elements are implemented in
 users modules (UM). In future it will be always single version of MoFEM library but
-many UM forks. Some UM can be in developed independently from MoFEM library
+many UM forks. UM are developed independently from MoFEM library
 repository. How to add user modules see \ref adding_user_module
 
 \section Making Repository Commits
@@ -30,7 +30,7 @@ leaks.
 Some guidance about branches:
 - Make often updates (git pull)
 - Do not commits to other people branch. You can commit only to branches created by yourself.
-- If you like to commit to other (not own created) branch, do pull request.
+- If you like to commit to other (not own created) branch you have to do pull request.
 - Before marking pull request, pull from branch to which you like to commit.
 - Pull regularly form CDashTesting branch.
 - If you working on two different tasks make two different branches. This simplifies code revision.
@@ -101,7 +101,7 @@ if (...) {
   - It is advised that names of vectors should start with "v", e.g. VectorDouble v_coordinate_vector;
     VectorDouble vCoordinateVector, respectively for local variables and class members.
 
-  - It is advised names of vectors should start with "m", e.g. MatrixDouble m_deformation_gradient;
+  - It is advised names of matrices should start with "m", e.g. MatrixDouble m_deformation_gradient;
     MatrixDouble mDeformationGradient, respectively for local variables and class members.
 
   - Use a verb-noun method to name routines that perform some
@@ -135,10 +135,10 @@ if (...) {
 
   - If variable is a pointer, it should have name as follows \code
 class A {
-  double *valPtr; ///< class member variable
+  boost::shared_ptr<double> valPtr; ///< class member variable
 };
 
-double *val_ptr; ///< local variable
+boost::shared_ptr<double> val_ptr; ///< local variable
 \endcode
 
 
@@ -148,8 +148,8 @@ double *val_ptr; ///< local variable
   - If you commit your code remove are depreciated functions names. Use of OLD function name (or old functions
     arguments) generate compilation warring, f.e. \code
 In file included from mofem/users_modules/basic_finite_elements/src/impl/DirichletBC.cpp:39:0:
-mofem/src/interfaces/FieldInterface.hpp: In member function 'PetscErrorCode MoFEM::FieldInterface::set_other_local_VecCreateGhost(const MoFEM::MoFEMProblem*, const string&, const string&, RowColData, Vec, InsertMode, ScatterMode, int)':
-mofem/src/interfaces/FieldInterface.hpp:1300:107: warning: 'PetscErrorCode MoFEM::FieldInterface::set_other_local_VecCreateGhost(const MoFEM::MoFEMProblem*, const string&, const string&, RowColData, Vec, InsertMode, ScatterMode, int)' is deprecated (declared at mofem/src/interfaces/FieldInterface.hpp:1296) [-Wdeprecated-declarations]
+mofem/src/interfaces/Interface.hpp: In member function 'PetscErrorCode MoFEM::Interface::set_other_local_VecCreateGhost(const MoFEM::MoFEMProblem*, const std::string&, const std::string&, RowColData, Vec, InsertMode, ScatterMode, int)':
+mofem/src/interfaces/Interface.hpp:1300:107: warning: 'PetscErrorCode MoFEM::Interface::set_other_local_VecCreateGhost(const MoFEM::MoFEMProblem*, const std::string&, const std::string&, RowColData, Vec, InsertMode, ScatterMode, int)' is deprecated (declared at mofem/src/interfaces/Interface.hpp:1296) [-Wdeprecated-declarations]
      ierr = set_other_local_VecCreateGhost(problem_ptr,fiel_name,cpy_field_name,rc,V,mode,scatter_mode,verb); CHKERRQ(ierr);
 \endcode
 
@@ -201,7 +201,7 @@ ierr = fun(); CHKERRQ(ierr);
     existing code uses regular pointer, take opportunity and change it to smart
     pointer.
 
-  - Check program with line command argument -log_summary, verifying if number of created PTESc
+  - Check program with line command argument -log_view, verifying if number of created PTESc
     objects is equal to number of destroyed objects \code
 Memory usage is given in bytes:
 
@@ -228,6 +228,16 @@ Star Forest Bipartite Graph     5              5         4136     0
               Viewer     1              0            0     0
 \endcode
 
-
+- Make member functions of class constant always when possible. Try to code that you can
+create such class members. Constant member function does not change
+state of the class. So it does not influences results or actions of other members
+of that class. That simplifies searching for bug, testing and overall limits likelihood
+of the error. Example of constant class member
+\code
+struct {
+  PetscErrorCode someFunction(const int some_argument,const double &some_return_value) const {
+  }
+};
+\endcode
 
 */

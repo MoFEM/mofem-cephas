@@ -1,8 +1,5 @@
 /*! \mainpage Index Page
 
-Search for any phrase in documentation:
-\htmlinclude doc/google_search_widget.html
-
 \htmlinclude doc/search_tags.html
 
 \section introduction Introduction
@@ -21,15 +18,17 @@ for L2,H1,H-div and H-curl spaces, see \cite NME:NME847.
 MoFEM is the blend of the Boost MultiIndex containers, MOAB (Mesh Oriented
 Database) \cite tautges_moab:2004 and PETSc (Portable, Extensible Toolkit for
 Scientific Computation) \cite petsc-web-page. MoFEM is developed in C++ and it
-is open-source software under the GNU Lesser General Public License (see Legal
+is open-source software under the GNU Lesser General Public License (see \ref legal_stuff)
 Stuff).
 
 MoFEM can read and write number of mesh file formats using functionality
 provided by MoAB.  The current version of MoFEM has full support for
-CUBIT/TRELIS, TetGEN, NetGEN for pre-processing and ParaView for
-post-processing.
+CUBIT/TRELIS, TetGEN, Salome/Code_Aster (MED format) for pre-processing and
+ParaView for post-processing.
 
-\subsection Motivation
+\tableofcontents
+
+\section Motivation
 
 Building a scientific simulation environment for finite element methods is a
 complicated task. The greatest part of finite element code development is often
@@ -58,10 +57,18 @@ add industry. Since each \em user \em module is implemented with MoFEM, using
 its internal database, data between modules can be exchanged without prior
 knowledge how each module is developed.
 
-\subsection download_repository MoFEM repository, user modules and testing
+\section download_repository MoFEM repository
 
 - Version repository <https://bitbucket.org/likask/mofem-cephas>
 - Testing webpage (CDash) <http://cdash.eng.gla.ac.uk/cdash/>
+- Current build status of latest branch push (Drone.io) \htmlonly
+<a href="https://drone.io/bitbucket.org/likask/mofem-cephas/latest">
+<img border="0" alt="drone.io" src="https://drone.io/bitbucket.org/likask/mofem-cephas/status.png">
+</a>
+\endhtmlonly
+
+
+\section users_modules User modules
 
 List of some user modules,
 - Obsolete (Elements and methods used by some modules no longer developed, not recommend
@@ -69,26 +76,27 @@ to use in new developments) <https://bitbucket.org/likask/mofem_um_obsolete>
 - Homogenistaion <https://bitbucket.org/likask/mofem_um_homogenisation>
 - Fracture Mechanics <https://bitbucket.org/likask/mofem_um_fracture_mechanics>
 - Gel Models <https://bitbucket.org/likask/mofem_um_gels>
-- Moisture Transport <https://bitbucket.org/likask/mofem_um_moisture_transport>
-- Ground Surface Temperature <https://bitbucket.org/likask/mofem_um_ground_surface_temperature>
 - Small strain plasticity <https://bitbucket.org/likask/mofem_um_small_strain_plasticity>
 - Solid Shell Prism Element <https://bitbucket.org/likask/mofem_um_solid_shell_prism_element>
+- Minimal surface equation <https://bitbucket.org/likask/mofem_um_minimal_surface_equation>
+- Bone remodeling <https://bitbucket.org/likask/mofem_um_bone_remodelling>
 
-\subsection contact Contact us and get involved
+\section contact Contact us and get involved
 
 Contributions are welcome and is an important part of the open spirit of the
 project. It's hoped a community will develop around the project whose
 contributions will improve it further.
 
-Contact: <cmatgu@googlegroups.com>
+- Contact: <cmatgu@googlegroups.com>
+- Discussion channel: <https://mofem.slack.com/>
 
-\subsection twitter_and_google_plus Recent developments and news
+\section twitter_and_google_plus Recent developments and news
 
 \htmlinclude doc/twitter_widged.html
 
 See as well Google+ <https://plus.google.com/110439315415517980382/posts>
 
-\subsection thrid_party Third party libraries
+\section thrid_party Third party libraries
 
 List of third party libraries and packages used by MoFEM:
 
@@ -101,7 +109,7 @@ List of third party libraries and packages used by MoFEM:
 - CMake <http://www.cmake.org>
 - ParaView <http://www.paraview.org>
 
-\subsection License
+\section legal_stuff Legal stuff
 
 MoFEM is free software: you can redistribute it and/or modify it under the terms
 of the GNU Lesser General Public License as published by the Free Software
@@ -115,11 +123,11 @@ PARTICULAR PURPOSE.  See the GNU Lesser General Public License for more details.
 You should have received a copy of the GNU Lesser General Public License along
 with MoFEM. If not, see <http://www.gnu.org/licenses/>
 
-\subsection contributors Contributors list
+\section contributors Contributors list
 
 MoFEM is copyright by Lukasz Kaczmarczyk (Lukasz.Kaczmarczyk at glasgow.ac.uk)
 and has received contributions by several people. MoFEM can be used freely for
-educational and research purposes by other institutions.
+educational, research or commercial purposes by other institutions.
 
 Users modules are not part of MoFEM library and can be created privately,
 independently form MoFEM developers. User modules may follow different license
@@ -128,14 +136,19 @@ University are under the same license agreement as main MoFEM library.
 
 List is generated automatically at time when documentation is build based on
 contributions to main git repository. Note that particular module can have
-spearte contributors list. If one author uses more than one name the same person
-can appear more than one.
+separate contributors list. If one author uses more than one name the same person
+can appear more than once.
+
+Detailed git-statistic for core lib only <http://mofem.eng.gla.ac.uk/mofem/html/git-stats>
 
 \verbinclude doc/contributors_list
+\verbinclude users_modules/doc/contributors_list_modules
 
 List is generated with command,
 \code
 git shortlog -s -e -n
 \endcode
+
+Note that contributions to forked module are not on the list.
 
 */

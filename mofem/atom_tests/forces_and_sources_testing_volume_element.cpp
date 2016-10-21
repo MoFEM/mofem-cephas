@@ -13,12 +13,6 @@
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
 #include <MoFEM.hpp>
-#include <Projection10NodeCoordsOnField.hpp>
-
-#include <boost/iostreams/tee.hpp>
-#include <boost/iostreams/stream.hpp>
-#include <fstream>
-#include <iostream>
 
 namespace bio = boost::iostreams;
 using bio::tee_device;
@@ -36,20 +30,24 @@ int main(int argc, char *argv[]) {
   PetscInitialize(&argc,&argv,(char *)0,help);
 
   moab::Core mb_instance;
-  Interface& moab = mb_instance;
+  moab::Interface& moab = mb_instance;
   int rank;
   MPI_Comm_rank(PETSC_COMM_WORLD,&rank);
 
   PetscBool flg = PETSC_TRUE;
   char mesh_file_name[255];
-  ierr = PetscOptionsGetString(PETSC_NULL,"-my_file",mesh_file_name,255,&flg); CHKERRQ(ierr);
+  #if PETSC_VERSION_GE(3,6,4)
+  ierr = PetscOptionsGetString(PETSC_NULL,"","-my_file",mesh_file_name,255,&flg); CHKERRQ(ierr);
+  #else
+  ierr = PetscOptionsGetString(PETSC_NULL,PETSC_NULL,"-my_file",mesh_file_name,255,&flg); CHKERRQ(ierr);
+  #endif
   if(flg != PETSC_TRUE) {
     SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"*** ERROR -my_file (MESH FILE NEEDED)");
   }
 
   //Create MoFEM (Joseph) database
   MoFEM::Core core(moab);
-  FieldInterface& m_field = core;
+  MoFEM::Interface& m_field = core;
 
   ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
   if(pcomm == NULL) pcomm =  new ParallelComm(&moab,PETSC_COMM_WORLD);
@@ -57,14 +55,14 @@ int main(int argc, char *argv[]) {
   const char *option;
   option = "";//"PARALLEL=BCAST;";//;DEBUG_IO";
   BARRIER_RANK_START(pcomm)
-  rval = moab.load_file(mesh_file_name, 0, option); CHKERR_PETSC(rval);
+  rval = moab.load_file(mesh_file_name, 0, option); CHKERRQ_MOAB(rval);
   BARRIER_RANK_END(pcomm)
 
   //set entitities bit level
   BitRefLevel bit_level0;
   bit_level0.set(0);
   EntityHandle meshset_level0;
-  rval = moab.create_meshset(MESHSET_SET,meshset_level0); CHKERR_PETSC(rval);
+  rval = moab.create_meshset(MESHSET_SET,meshset_level0); CHKERRQ_MOAB(rval);
   ierr = m_field.seed_ref_level_3D(0,bit_level0); CHKERRQ(ierr);
 
   //Fields
@@ -77,12 +75,12 @@ int main(int argc, char *argv[]) {
     // Creating and adding no field entities.
     const double coords[] = {0,0,0};
     EntityHandle no_field_vertex;
-    rval = m_field.get_moab().create_vertex(coords,no_field_vertex); CHKERR_PETSC(rval);
+    rval = m_field.get_moab().create_vertex(coords,no_field_vertex); CHKERRQ_MOAB(rval);
     Range range_no_field_vertex;
     range_no_field_vertex.insert(no_field_vertex);
     ierr = m_field.seed_ref_level(range_no_field_vertex,BitRefLevel().set()); CHKERRQ(ierr);
     EntityHandle meshset = m_field.get_field_meshset("FIELD3");
-    rval = m_field.get_moab().add_entities(meshset,range_no_field_vertex); CHKERR_PETSC(rval);
+    rval = m_field.get_moab().add_entities(meshset,range_no_field_vertex); CHKERRQ_MOAB(rval);
   }
 
   //FE
@@ -108,7 +106,7 @@ int main(int argc, char *argv[]) {
   //set finite elements for problem
   ierr = m_field.modify_problem_add_finite_element("TEST_PROBLEM","TEST_FE1"); CHKERRQ(ierr);
   ierr = m_field.modify_problem_add_finite_element("TEST_PROBLEM","TEST_FE2"); CHKERRQ(ierr);
-  //set refinment level for problem
+  //set refinement level for problem
   ierr = m_field.modify_problem_ref_level_add_bit("TEST_PROBLEM",bit_level0); CHKERRQ(ierr);
 
 
@@ -164,11 +162,11 @@ int main(int argc, char *argv[]) {
   ierr = m_field.loop_dofs("MESH_NODE_POSITIONS",ent_method); CHKERRQ(ierr);
 
 
-  typedef tee_device<ostream, ofstream> TeeDevice;
+  typedef tee_device<std::ostream, std::ofstream> TeeDevice;
   typedef stream<TeeDevice> TeeStream;
 
-  ofstream ofs("forces_and_sources_testing_volume_element.txt");
-  TeeDevice my_tee(cout, ofs);
+  std::ofstream ofs("forces_and_sources_testing_volume_element.txt");
+  TeeDevice my_tee(std::cout, ofs);
   TeeStream my_split(my_tee);
 
   struct MyOp1: public VolumeElementForcesAndSourcesCore::UserDataOperator {
@@ -183,12 +181,12 @@ int main(int argc, char *argv[]) {
       EntityType type,
       DataForcesAndSurcesCore::EntData &data) {
       PetscFunctionBegin;
-      my_split << "NH1" << endl;
-      my_split << "side: " << side << " type: " << type << endl;
-      my_split << data << endl;
-      my_split << setprecision(3) << getVolume() << endl;
-      my_split << setprecision(3) << getCoords() << endl;
-      my_split << setprecision(3) << getCoordsAtGaussPts() << endl;
+      my_split << "NH1" << std::endl;
+      my_split << "side: " << side << " type: " << type << std::endl;
+      my_split << data << std::endl;
+      my_split << std::setprecision(3) << getVolume() << std::endl;
+      my_split << std::setprecision(3) << getCoords() << std::endl;
+      my_split << std::setprecision(3) << getCoordsAtGaussPts() << std::endl;
       PetscFunctionReturn(0);
     }
 
@@ -198,12 +196,12 @@ int main(int argc, char *argv[]) {
       DataForcesAndSurcesCore::EntData &row_data,
       DataForcesAndSurcesCore::EntData &col_data) {
       PetscFunctionBegin;
-      my_split << "NH1NH1" << endl;
-      my_split << "row side: " << row_side << " row_type: " << row_type << endl;
-      my_split << row_data << endl;
-      my_split << "NH1NH1" << endl;
-      my_split << "col side: " << col_side << " col_type: " << col_type << endl;
-      my_split << col_data << endl;
+      my_split << "NH1NH1" << std::endl;
+      my_split << "row side: " << row_side << " row_type: " << row_type << std::endl;
+      my_split << row_data << std::endl;
+      my_split << "NH1NH1" << std::endl;
+      my_split << "col side: " << col_side << " col_type: " << col_type << std::endl;
+      my_split << col_data << std::endl;
 
       PetscErrorCode ierr;
       VectorInt row_indices,col_indices;
@@ -211,8 +209,8 @@ int main(int argc, char *argv[]) {
       ierr = getPorblemColIndices("FIELD2",col_type,col_side,col_indices); CHKERRQ(ierr);
 
       if(row_indices.size()!=row_data.getIndices().size()) {
-        cerr << row_indices << endl;
-        cerr << row_data.getIndices() << endl;
+        std::cerr << row_indices << std::endl;
+        std::cerr << row_data.getIndices() << std::endl;
         SETERRQ2(
           PETSC_COMM_SELF,
           MOFEM_DATA_INCONSISTENCY,
@@ -234,16 +232,16 @@ int main(int argc, char *argv[]) {
 
       for(unsigned int rr = 0;rr<row_indices.size();rr++) {
         if(row_indices[rr] != row_data.getIndices()[rr]) {
-          cerr << row_indices << endl;
-          cerr << row_data.getIndices() << endl;
+          std::cerr << row_indices << std::endl;
+          std::cerr << row_data.getIndices() << std::endl;
           SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"row inconsistency");
         }
       }
 
       for(unsigned int cc = 0;cc<col_indices.size();cc++) {
         if(col_indices[cc] != col_data.getIndices()[cc]) {
-          cerr << col_indices << endl;
-          cerr << col_data.getIndices() << endl;
+          std::cerr << col_indices << std::endl;
+          std::cerr << col_data.getIndices() << std::endl;
           SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"row inconsistency");
         }
       }
@@ -268,9 +266,9 @@ int main(int argc, char *argv[]) {
 
       if(type != MBENTITYSET) PetscFunctionReturn(0);
 
-      my_split << "NOFIELD" << endl;
-      my_split << "side: " << side << " type: " << type << endl;
-      my_split << data << endl;
+      my_split << "NOFIELD" << std::endl;
+      my_split << "side: " << side << " type: " << type << std::endl;
+      my_split << data << std::endl;
       PetscFunctionReturn(0);
     }
 
@@ -285,11 +283,11 @@ int main(int argc, char *argv[]) {
 
       if(row_type != MBENTITYSET) PetscFunctionReturn(0);
 
-      my_split << "NOFILEDH1" << endl;
-      my_split << "row side: " << row_side << " row_type: " << row_type << endl;
-      my_split << row_data << endl;
-      my_split << "col side: " << col_side << " col_type: " << col_type << endl;
-      my_split << col_data << endl;
+      my_split << "NOFILEDH1" << std::endl;
+      my_split << "row side: " << row_side << " row_type: " << row_type << std::endl;
+      my_split << row_data << std::endl;
+      my_split << "col side: " << col_side << " col_type: " << col_type << std::endl;
+      my_split << col_data << std::endl;
 
       PetscFunctionReturn(0);
     }

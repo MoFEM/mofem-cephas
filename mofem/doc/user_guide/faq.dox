@@ -1,5 +1,61 @@
 /*! \page faqs Frequently Asked Questions
 
+\section policy_of_for_version How MoFEM version is changed?
+
+The current MoFEM version can be identified by \e Semantic \e Versioning and \e
+Git \e Commit \e Id. \e Git \e Commit \e Id is unique and points to particular
+code commit. \e Semantic \e Versioning is not unique, more than one commits to git
+repository can have the same version.
+
+First two lines of every executed code which is build with MoFEM library look like that
+\code
+version 0.3.24  <---  (MAJOR_VERSION.MINOR_VERSION.BUILD_VERSION)
+git commit id 3d06924d27973df16e3260c6e962929330cf9348
+\endcode
+That allows to identify \em git commit id and human readable MoFEM version.
+
+MoFEM is developed continuously (see \ref validation_and_verfication) and any
+commit which introducing changes that directly have an impact on users
+modules implementation should result in increment \e build \e version. For
+example if new functionality is added, name of interface function changed or
+some function deprecated etc. that will result in incremented build version.
+Note that each users module has set minimal MoFEM version to which is
+compatible, see \ref adding_user_module for details.
+
+On the other hand changes/improvements to core library like modification of local
+variable name or when local documentation added, that will result in new commit
+however will NOT result in new \e build \e version, since implementation of
+users modules is not influenced by changes in main library.
+
+Build version is in range from 0-100, at the end of the range minor version
+should be automatically incremented. Minor version is in the range from 0-10, at
+the end of the range major version should be automatically incremented. The
+minor or major version could be changed at any time when major/minor feature is
+initiated.
+
+In addition to above rules, the general principles could apply, in short,
+- 3.7.11 (bug fix), incremental change in build version
+- 3.7.12 (partial new feature, hidden behind a Feature Toggle.), incremental change in build version
+- 3.7.13 (performance improvement), incremental change in build version
+- 3.8.0 (completed feature initiated in 3.7.12), direct change in minor version
+- 4.0.0 (breaking changes in public API), direct change in major version
+
+The MoFEM version can be set in CMakeList.txt located in root source directory,
+in lines
+\code
+set(MoFEM_VERSION_MAJOR 0)
+set(MoFEM_VERSION_MINOR 3)
+set(MoFEM_VERSION_BUILD 24)
+\endcode
+
+\section validation_and_verfication How MoFEM is developed?
+
+MoFEM is developed continuously, i.e. any merged pull request to the
+\em CDashTesting branch triggers automatic testing on the development server. Code is
+verified during when pull request is accepted and merged and validated when
+test on the development server are passed. If tests are passed \em CDashBranch is
+merged to \em release branch.
+
 \section own_documentation How to generate this documentation on your local machine?
 
 In you library directory execute
@@ -14,6 +70,8 @@ If problem is large, mesh can be partitioned for to save memory and improve effi
 \code
 mbpart -t -p PartKway  16 cylinder.cub cylinder_16parts.h5m
 \endcode
+
+The tool \em mbpart is part of MoAB. To have it you need compile MoAB with Zoltan library.
 
 \section running_multi_grid How to multi-grid solver via approximation orders?
 
@@ -134,6 +192,8 @@ git clone https://likask@bitbucket.org/likask/mofem_um_homogenisation.git homoge
 In user module directory directory should be file file, \em
 InstalledAddModule.cmake, with content,
 \code
+# Check monimimal version of MoFEM with this module works
+check_mofem_version(0 3 6)
 add_subdirectory(${PROJECT_SOURCE_DIR}/homogenisation)
 \endcode
 
@@ -171,7 +231,65 @@ It is strongly advised users modules should have one name space, that potential
 naming conflicts, f.e. \code
 namespace SolidShellModule {
 }
-\end
+\endcode
 
+\section prfiling_code_mac_os_x How to profile code using XCode tools?
+
+To profile code in MacOS X environment, from line command you execute \em instruments,
+for example
+\code
+instruments -v -t "Time Profiler" \
+./elasticity -my_file LShape.h5m  -ksp_type fgmres -ksp_monitor -my_order 5 \
+-pc_type mg -mofem_mg_verbose 1 -mofem_mg_coarse_order 1 \
+-mofem_mg_levels 5 -mg_coarse_ksp_type preonly \
+-mg_coarse_pc_type lu -mg_coarse_pc_factor_mat_solver_package mumps \
+-pc_mg_smoothup 10 -pc_mg_smoothdown 10 -pc_mg_type multiplicative -log_view
+\endcode
+
+This generates directory \em instrumentscli0.trace and for next run
+\em instrumentscli1.trace, and similarly for subsequent runs. You can see changes
+in execution of the code by
+\code
+open instrumentscli0.trace
+\endcode
+
+If you use Linux you can alternatively use Valgrind, see \ref profiling_code_with_valgrind.
+
+\section profiling_code_stages How to profile code using PETSc tools?
+
+See PETSc documentation
+<http://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/Profiling/PetscLogStageRegister.html>
+and examples
+<http://www.mcs.anl.gov/petsc/petsc-current/src/ksp/ksp/examples/tutorials/ex9.c.html>
+
+\section profiling_code_with_valgrind How to profile code with Valgrind?
+
+You have to install Valgrind <http://valgrind.org> and graphic user interface
+KCachegrind <http://kcachegrind.sourceforge.net/html/Home.html>. If you using Linux,
+for example ubuntu you can do that executing following commands,
+\code
+sudo apt-get install valgrind kcachegrind
+\endcode
+If you using OS X you can use Homebrew <http://brew.sh> to make installation,
+\code
+brew install valgrind
+brew install qcachegrind --with-graphviz
+\endcode
+
+If you have packages installed, follow instruction from <http://kcachegrind.sourceforge.net/html/Documentation.html>
+
+\section debugging_in_docker How to make debugging in docekr?
+
+You can use gdb inside docker, remembering to set cmake with debugging
+build type, for example
+\code
+cmake -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_FLAGS="-Wall" users_modules
+\endcode
+
+It is one non trivial trick that you have to do, to make debugging possible in
+docker, you need to run docker container in \em privileged mode, for example
+\code
+docker run --privileged -it --name work --hostname mofem -v $HOME:/mnt/home -v mofem_build:/my_build likask/mofem_build:v0.2 /bin/bash
+\endcode
 
 */

@@ -166,12 +166,12 @@
   \mathbf{B}=
   \int_\Gamma
   \lambda
-  \mathbf{N}^\mathsf{T}_\mathbf{X}
-    \left(
+  (\mathbf{X}-\mathbf{X}_0)\cdot
+  \left(
     \textrm{Spin}\left[\frac{\partial\mathbf{X}}{\partial\xi}\right]\cdot\mathbf{B}_\eta
     -
     \textrm{Spin}\left[\frac{\partial\mathbf{X}}{\partial\eta}\right]\cdot\mathbf{B}_\xi
-    \right)
+  \right)
   \textrm{d}\Gamma
   \f]
   and
@@ -190,15 +190,15 @@
 */
 struct SurfaceSlidingConstrains {
 
-  FieldInterface &mField;
+  MoFEM::Interface &mField;
 
-  struct MyTriangleFE: public FaceElementForcesAndSourcesCore {
+  struct MyTriangleFE: public MoFEM::FaceElementForcesAndSourcesCore {
 
     Mat B;
     Vec F;
 
-    MyTriangleFE(FieldInterface &m_field):
-    FaceElementForcesAndSourcesCore(m_field),
+    MyTriangleFE(MoFEM::Interface &m_field):
+    MoFEM::FaceElementForcesAndSourcesCore(m_field),
     B(PETSC_NULL),
     F(PETSC_NULL)
     {}
@@ -208,7 +208,7 @@ struct SurfaceSlidingConstrains {
       PetscFunctionBegin;
       PetscErrorCode ierr;
 
-      ierr = FaceElementForcesAndSourcesCore::preProcess(); CHKERRQ(ierr);
+      ierr = MoFEM::FaceElementForcesAndSourcesCore::preProcess(); CHKERRQ(ierr);
 
       if(B != PETSC_NULL) {
         snes_B = B;
@@ -258,7 +258,7 @@ struct SurfaceSlidingConstrains {
 
     int elementOrientation;
 
-    virtual PetscErrorCode getElementOrientation(FieldInterface &m_field,const FEMethod *fe_method_ptr) {
+    virtual PetscErrorCode getElementOrientation(MoFEM::Interface &m_field,const FEMethod *fe_method_ptr) {
       PetscFunctionBegin;
       elementOrientation = 1;
       PetscFunctionReturn(0);
@@ -268,7 +268,7 @@ struct SurfaceSlidingConstrains {
 
   DriverElementOrientation &crackFrontOrientation;
 
-  SurfaceSlidingConstrains(FieldInterface &m_field,DriverElementOrientation &orientation):
+  SurfaceSlidingConstrains(MoFEM::Interface &m_field,DriverElementOrientation &orientation):
   mField(m_field),
   feRhs(m_field),
   feLhs(m_field),
@@ -296,7 +296,7 @@ struct SurfaceSlidingConstrains {
     double aRea;
     double lAmbda;
 
-    vector<bool> nodesWithoutLambda;
+    std::vector<bool> nodesWithoutLambda;
 
     static PetscErrorCode calcSpin(
       ublas::matrix<double> &spin,ublas::vector<double> &vec
@@ -328,8 +328,8 @@ struct SurfaceSlidingConstrains {
         }
 
       } catch (const std::exception& ex) {
-        ostringstream ss;
-        ss << "throw in method: " << ex.what() << endl;
+        std::ostringstream ss;
+        ss << "throw in method: " << ex.what() << std::endl;
         SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
       PetscFunctionReturn(0);
@@ -354,8 +354,8 @@ struct SurfaceSlidingConstrains {
           }
         }
       } catch (const std::exception& ex) {
-        ostringstream ss;
-        ss << "throw in method: " << ex.what() << endl;
+        std::ostringstream ss;
+        ss << "throw in method: " << ex.what() << std::endl;
         SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
       PetscFunctionReturn(0);
@@ -371,25 +371,25 @@ struct SurfaceSlidingConstrains {
         noalias(nOrmal) = 0.5*prod(sPin,dXdEta);
         aRea = norm_2(nOrmal);
       } catch (const std::exception& ex) {
-        ostringstream ss;
-        ss << "throw in method: " << ex.what() << endl;
+        std::ostringstream ss;
+        ss << "throw in method: " << ex.what() << std::endl;
         SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
       PetscFunctionReturn(0);
     }
   };
 
-  vector<AuxFunctions> cUrrent;
+  std::vector<AuxFunctions> cUrrent;
 
   /** \brief Operator calculate material positions and tangent vectors to element surface
    */
-  struct OpPositions: public FaceElementForcesAndSourcesCore::UserDataOperator {
+  struct OpPositions: public MoFEM::FaceElementForcesAndSourcesCore::UserDataOperator {
 
-    vector<AuxFunctions> &aUx;
+    std::vector<AuxFunctions> &aUx;
     DriverElementOrientation &oRientation;
 
-    OpPositions(const string field_name,vector<AuxFunctions> &aux,DriverElementOrientation &orientation):
-    FaceElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPCOL),
+    OpPositions(const std::string field_name,std::vector<AuxFunctions> &aux,DriverElementOrientation &orientation):
+    MoFEM::FaceElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPCOL),
     aUx(aux),
     oRientation(orientation)
     {}
@@ -429,8 +429,8 @@ struct SurfaceSlidingConstrains {
 
 
       } catch (const std::exception& ex) {
-        ostringstream ss;
-        ss << "throw in method: " << ex.what() << endl;
+        std::ostringstream ss;
+        ss << "throw in method: " << ex.what() << std::endl;
         SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
 
@@ -441,12 +441,12 @@ struct SurfaceSlidingConstrains {
 
   /** \brief Operator calculate Lagrange multiplier values at integration points
   */
-  struct OpLambda: public FaceElementForcesAndSourcesCore::UserDataOperator {
+  struct OpLambda: public MoFEM::FaceElementForcesAndSourcesCore::UserDataOperator {
 
-    vector<AuxFunctions> &aUx;
+    std::vector<AuxFunctions> &aUx;
 
-    OpLambda(const string field_name,vector <AuxFunctions> &aux):
-    FaceElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROW),
+    OpLambda(const std::string field_name,vector <AuxFunctions> &aux):
+    MoFEM::FaceElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROW),
     aUx(aux) {
     }
 
@@ -491,8 +491,8 @@ struct SurfaceSlidingConstrains {
         }
 
       } catch (const std::exception& ex) {
-        ostringstream ss;
-        ss << "throw in method: " << ex.what() << endl;
+        std::ostringstream ss;
+        ss << "throw in method: " << ex.what() << std::endl;
         SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
       }
 
@@ -503,13 +503,13 @@ struct SurfaceSlidingConstrains {
 
   /** \brief Operator calculate \f$\overline{\lambda}\mathbf{C}^\mathsf{T}\f$
   */
-  struct OpF: public FaceElementForcesAndSourcesCore::UserDataOperator {
+  struct OpF: public MoFEM::FaceElementForcesAndSourcesCore::UserDataOperator {
 
-    vector<AuxFunctions> &aUx;
+    std::vector<AuxFunctions> &aUx;
     DriverElementOrientation &oRientation;
 
-    OpF(const string field_name,vector<AuxFunctions> &aux,DriverElementOrientation &orientation):
-    FaceElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROW),
+    OpF(const std::string field_name,std::vector<AuxFunctions> &aux,DriverElementOrientation &orientation):
+    MoFEM::FaceElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROW),
     aUx(aux),
     oRientation(orientation)
     {}
@@ -584,8 +584,8 @@ struct SurfaceSlidingConstrains {
 
 
       } catch (const std::exception& ex) {
-        ostringstream ss;
-        ss << "throw in method: " << ex.what() << endl;
+        std::ostringstream ss;
+        ss << "throw in method: " << ex.what() << std::endl;
         SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
 
@@ -594,13 +594,15 @@ struct SurfaceSlidingConstrains {
 
   };
 
-  struct OpG: public FaceElementForcesAndSourcesCore::UserDataOperator {
+  /** \brief Calculate residual \$ \mathbf{g} = \int_\Gamma \mathbf{N}_\lambda \mathbf{N}\left( \mathbf{X}-\mathbf{X}_0 \right) \$
+  */
+  struct OpG: public MoFEM::FaceElementForcesAndSourcesCore::UserDataOperator {
 
-    vector<AuxFunctions> &aUx;
+    std::vector<AuxFunctions> &aUx;
     DriverElementOrientation &oRientation;
 
-    OpG(const string field_name,vector<AuxFunctions> &aux,DriverElementOrientation &orientation):
-    FaceElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROW),
+    OpG(const std::string field_name,std::vector<AuxFunctions> &aux,DriverElementOrientation &orientation):
+    MoFEM::FaceElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROW),
     aUx(aux),
     oRientation(orientation)
     {}
@@ -664,8 +666,8 @@ struct SurfaceSlidingConstrains {
         ); CHKERRQ(ierr);
 
       } catch (const std::exception& ex) {
-        ostringstream ss;
-        ss << "throw in method: " << ex.what() << endl;
+        std::ostringstream ss;
+        ss << "throw in method: " << ex.what() << std::endl;
         SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
 
@@ -676,19 +678,19 @@ struct SurfaceSlidingConstrains {
 
   /** \brief Operator calculating matrix \b C
   */
-  struct OpC: public FaceElementForcesAndSourcesCore::UserDataOperator {
+  struct OpC: public MoFEM::FaceElementForcesAndSourcesCore::UserDataOperator {
 
-    vector<AuxFunctions> &aUx;
+    std::vector<AuxFunctions> &aUx;
     DriverElementOrientation &oRientation;
     bool assembleTranspose;
 
     OpC(
-      const string lambda_field_name,
-      const string positions_field_name,
-      vector<AuxFunctions> &aux,
+      const std::string lambda_field_name,
+      const std::string positions_field_name,
+      std::vector<AuxFunctions> &aux,
       DriverElementOrientation &orientation,
       bool assemble_transpose):
-    FaceElementForcesAndSourcesCore::UserDataOperator(
+    MoFEM::FaceElementForcesAndSourcesCore::UserDataOperator(
       lambda_field_name,
       positions_field_name,
       UserDataOperator::OPROWCOL
@@ -796,8 +798,8 @@ struct SurfaceSlidingConstrains {
         }
 
       } catch (const std::exception& ex) {
-        ostringstream ss;
-        ss << "throw in method: " << ex.what() << endl;
+        std::ostringstream ss;
+        ss << "throw in method: " << ex.what() << std::endl;
         SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
       PetscFunctionReturn(0);
@@ -807,13 +809,13 @@ struct SurfaceSlidingConstrains {
 
   /** \brief Operator calculating matrix \b B
   */
-  struct OpB: public FaceElementForcesAndSourcesCore::UserDataOperator {
+  struct OpB: public MoFEM::FaceElementForcesAndSourcesCore::UserDataOperator {
 
-    vector<AuxFunctions> &aUx;
+    std::vector<AuxFunctions> &aUx;
     DriverElementOrientation &oRientation;
 
-    OpB(const string field_name,vector<AuxFunctions> &aux,DriverElementOrientation &orientation):
-    FaceElementForcesAndSourcesCore::UserDataOperator(
+    OpB(const std::string field_name,std::vector<AuxFunctions> &aux,DriverElementOrientation &orientation):
+    MoFEM::FaceElementForcesAndSourcesCore::UserDataOperator(
       field_name,field_name,UserDataOperator::OPROWCOL
     ),
     aUx(aux),
@@ -901,8 +903,8 @@ struct SurfaceSlidingConstrains {
 
 
       } catch (const std::exception& ex) {
-        ostringstream ss;
-        ss << "throw in method: " << ex.what() << endl;
+        std::ostringstream ss;
+        ss << "throw in method: " << ex.what() << std::endl;
         SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
 
@@ -913,18 +915,18 @@ struct SurfaceSlidingConstrains {
 
   /** \brief Operator calculating matrix \b A
   */
-  struct OpA: public FaceElementForcesAndSourcesCore::UserDataOperator {
+  struct OpA: public MoFEM::FaceElementForcesAndSourcesCore::UserDataOperator {
 
-    vector<AuxFunctions> &aUx;
+    std::vector<AuxFunctions> &aUx;
     DriverElementOrientation &oRientation;
 
     OpA(
-      const string lagrange_multipliers_field_name,
-      const string field_name,
-      vector<AuxFunctions> &aux,
+      const std::string lagrange_multipliers_field_name,
+      const std::string field_name,
+      std::vector<AuxFunctions> &aux,
       DriverElementOrientation &orientation
     ):
-    FaceElementForcesAndSourcesCore::UserDataOperator(
+    MoFEM::FaceElementForcesAndSourcesCore::UserDataOperator(
       lagrange_multipliers_field_name,field_name,UserDataOperator::OPROWCOL
     ),
     aUx(aux),
@@ -1005,8 +1007,8 @@ struct SurfaceSlidingConstrains {
 
 
       } catch (const std::exception& ex) {
-        ostringstream ss;
-        ss << "throw in method: " << ex.what() << endl;
+        std::ostringstream ss;
+        ss << "throw in method: " << ex.what() << std::endl;
         SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
       }
 
@@ -1018,8 +1020,8 @@ struct SurfaceSlidingConstrains {
   /** \brief Driver function setting operators to calculate \b C matrix only
   */
   PetscErrorCode setOperatorsCOnly(
-    const string lagrange_multipliers_field_name,
-    const string material_field_name) {
+    const std::string lagrange_multipliers_field_name,
+    const std::string material_field_name) {
     PetscFunctionBegin;
 
     // Adding operators to calculate the left hand side
@@ -1042,8 +1044,8 @@ struct SurfaceSlidingConstrains {
   /** \brief Driver function setting operators to calculate nonlinear problems with sliding points on the surface
   */
   PetscErrorCode setOperatorsWithLinearGeometry(
-    const string lagrange_multipliers_field_name,
-    const string material_field_name,
+    const std::string lagrange_multipliers_field_name,
+    const std::string material_field_name,
     bool assemble_transpose,
     bool add_nonlinear_term
   ) {

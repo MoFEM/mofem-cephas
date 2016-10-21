@@ -13,9 +13,10 @@
 
 #include subdirectory
 
-include_directories("${PROJECT_SOURCE_DIR}/include")
 include_directories("${PROJECT_SOURCE_DIR}/third_party")
 include_directories("${PROJECT_SOURCE_DIR}/third_party/cblas")
+
+add_subdirectory(${PROJECT_SOURCE_DIR}/src/ftensor)
 
 include_directories("${PROJECT_SOURCE_DIR}/src/approximation")
 include_directories("${PROJECT_SOURCE_DIR}/src/approximation/c")

@@ -15,7 +15,7 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 #include <stdlib.h>
 #include <math.h>
 #include <stdio.h>
-#include <string.h>
+#include <std::string.h>
 #include <unistd.h>
 #include <png.h>
 

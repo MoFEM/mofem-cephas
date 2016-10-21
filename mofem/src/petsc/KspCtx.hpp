@@ -21,7 +21,7 @@
 
 namespace MoFEM {
 
-/** \brief Interface for KSP solver
+/** \brief Interface for linear (KSP) solver
   * \ingroup petsc_context_struture
   */
 struct KspCtx {
@@ -29,17 +29,18 @@ struct KspCtx {
   ErrorCode rval;
   PetscErrorCode ierr;
 
-  FieldInterface &mField;
-  Interface &moab;
+  MoFEM::Interface &mField;
+  moab::Interface &moab;
 
-  string problemName;
+  std::string problemName;   ///< Problem name
+  MoFEMTypes bH; ///< If set to MF_EXIST check if element exist
 
-  typedef pair<string,FEMethod*> loop_pair_type;
-  typedef vector<loop_pair_type > loops_to_do_type;
+  typedef std::pair<std::string,FEMethod*> loop_pair_type;
+  typedef std::vector<loop_pair_type > loops_to_do_type;
   loops_to_do_type loops_to_do_Mat;
   loops_to_do_type loops_to_do_Rhs;
 
-  typedef vector<BasicMethod*> basic_method_to_do;
+  typedef std::vector<BasicMethod*> basic_method_to_do;
   basic_method_to_do preProcess_Mat;
   basic_method_to_do postProcess_Mat;
   basic_method_to_do preProcess_Rhs;
@@ -48,14 +49,18 @@ struct KspCtx {
   PetscLogEvent USER_EVENT_KspRhs;
   PetscLogEvent USER_EVENT_KspMat;
 
-  KspCtx(FieldInterface &m_field,const string &_problem_name):
-    mField(m_field),moab(m_field.get_moab()),problemName(_problem_name) {
+  KspCtx(MoFEM::Interface &m_field,const std::string &_problem_name):
+    mField(m_field),
+    moab(m_field.get_moab()),
+    problemName(_problem_name),
+    bH(MF_EXIST) {
     PetscLogEventRegister("LoopKSPRhs",0,&USER_EVENT_KspRhs);
     PetscLogEventRegister("LoopKSPMat",0,&USER_EVENT_KspMat);
   }
+  virtual ~KspCtx() {}
 
-  const FieldInterface& getm_field() const { return mField; }
-  const Interface& get_moab() const { return moab; }
+  const MoFEM::Interface& get_mField() const { return mField; }
+  const moab::Interface& get_moab() const { return moab; }
 
   loops_to_do_type& get_loops_to_do_Mat() { return loops_to_do_Mat; }
   loops_to_do_type& get_loops_to_do_Rhs() { return loops_to_do_Rhs; }
@@ -64,8 +69,8 @@ struct KspCtx {
   basic_method_to_do& get_preProcess_to_do_Mat() { return preProcess_Mat; }
   basic_method_to_do& get_postProcess_to_do_Mat() { return postProcess_Mat; }
 
-  friend PetscErrorCode KspRhs(KSP ksp,Vec x,Vec f,void *ctx);
-  friend PetscErrorCode KspMat(KSP ksp,Vec x,Mat A,Mat B,void *ctx);
+  friend PetscErrorCode KspRhs(KSP ksp,Vec f,void *ctx);
+  friend PetscErrorCode KspMat(KSP ksp,Mat A,Mat B,void *ctx);
 
 };
 
@@ -76,6 +81,8 @@ PetscErrorCode KspMat(KSP ksp,Mat A,Mat B,void *ctx);
 
 /***************************************************************************//**
  * \defgroup petsc_context_struture Solver context structures
+ * \brief Context structures used to exchange information between PETSc and MoFEM
+ *
  * \ingroup mofem
  ******************************************************************************/
 

@@ -12,28 +12,12 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
-#include <boost/iostreams/tee.hpp>
-#include <boost/iostreams/stream.hpp>
-#include <fstream>
-#include <iostream>
+#include <BasicFiniteElements.hpp>
+using namespace MoFEM;
 
 namespace bio = boost::iostreams;
 using bio::tee_device;
 using bio::stream;
-
-#include <MoFEM.hpp>
-using namespace MoFEM;
-#include <Projection10NodeCoordsOnField.hpp>
-
-#include <moab/Skinner.hpp>
-
-#include <boost/iostreams/tee.hpp>
-#include <boost/iostreams/stream.hpp>
-#include <fstream>
-#include <iostream>
-
-#include <MethodForForceScaling.hpp>
-#include <SurfacePressure.hpp>
 
 static char help[] = "...\n\n";
 
@@ -45,13 +29,13 @@ int main(int argc, char *argv[]) {
   PetscInitialize(&argc,&argv,(char *)0,help);
 
   moab::Core mb_instance;
-  Interface& moab = mb_instance;
+  moab::Interface& moab = mb_instance;
   int rank;
   MPI_Comm_rank(PETSC_COMM_WORLD,&rank);
 
   PetscBool flg = PETSC_TRUE;
   char mesh_file_name[255];
-  ierr = PetscOptionsGetString(PETSC_NULL,"-my_file",mesh_file_name,255,&flg); CHKERRQ(ierr);
+  ierr = PetscOptionsGetString(PETSC_NULL,PETSC_NULL,"-my_file",mesh_file_name,255,&flg); CHKERRQ(ierr);
   if(flg != PETSC_TRUE) {
     SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_file (MESH FILE NEEDED)");
   }
@@ -62,18 +46,18 @@ int main(int argc, char *argv[]) {
   const char *option;
   option = "";//"PARALLEL=BCAST;";//;DEBUG_IO";
   BARRIER_RANK_START(pcomm)
-  rval = moab.load_file(mesh_file_name, 0, option); CHKERR_PETSC(rval);
+  rval = moab.load_file(mesh_file_name, 0, option); CHKERRQ_MOAB(rval);
   BARRIER_RANK_END(pcomm)
 
   //Create MoFEM (Joseph) database
   MoFEM::Core core(moab);
-  FieldInterface& m_field = core;
+  MoFEM::Interface& m_field = core;
 
   //set entitities bit level
   BitRefLevel bit_level0;
   bit_level0.set(0);
   EntityHandle meshset_level0;
-  rval = moab.create_meshset(MESHSET_SET,meshset_level0); CHKERR_PETSC(rval);
+  rval = moab.create_meshset(MESHSET_SET,meshset_level0); CHKERRQ_MOAB(rval);
   ierr = m_field.seed_ref_level_3D(0,bit_level0); CHKERRQ(ierr);
 
   //Fields
@@ -82,7 +66,7 @@ int main(int argc, char *argv[]) {
 
   //Problem
   ierr = m_field.add_problem("TEST_PROBLEM"); CHKERRQ(ierr);
-  //set refinment level for problem
+  //set refinement level for problem
   ierr = m_field.modify_problem_ref_level_add_bit("TEST_PROBLEM",bit_level0); CHKERRQ(ierr);
 
   //meshset consisting all entities in mesh
@@ -93,8 +77,8 @@ int main(int argc, char *argv[]) {
 
   for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,NODESET|FORCESET,it)) {
 
-    ostringstream fe_name;
-    fe_name << "FORCE_FE_" << it->get_msId();
+    std::ostringstream fe_name;
+    fe_name << "FORCE_FE_" << it->getMeshsetId();
     ierr = m_field.add_finite_element(fe_name.str()); CHKERRQ(ierr);
     ierr = m_field.modify_finite_element_add_field_row(fe_name.str(),"DISPLACEMENT"); CHKERRQ(ierr);
     ierr = m_field.modify_finite_element_add_field_col(fe_name.str(),"DISPLACEMENT"); CHKERRQ(ierr);
@@ -102,15 +86,15 @@ int main(int argc, char *argv[]) {
     ierr = m_field.modify_problem_add_finite_element("TEST_PROBLEM",fe_name.str()); CHKERRQ(ierr);
 
     Range tris;
-    rval = moab.get_entities_by_type(it->meshset,MBTRI,tris,true); CHKERR_PETSC(rval);
+    rval = moab.get_entities_by_type(it->meshset,MBTRI,tris,true); CHKERRQ_MOAB(rval);
     ierr = m_field.add_ents_to_finite_element_by_TRIs(tris,fe_name.str()); CHKERRQ(ierr);
 
   }
 
   for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,SIDESET|PRESSURESET,it)) {
 
-    ostringstream fe_name;
-    fe_name << "PRESSURE_FE_" << it->get_msId();
+    std::ostringstream fe_name;
+    fe_name << "PRESSURE_FE_" << it->getMeshsetId();
     ierr = m_field.add_finite_element(fe_name.str()); CHKERRQ(ierr);
     ierr = m_field.modify_finite_element_add_field_row(fe_name.str(),"DISPLACEMENT"); CHKERRQ(ierr);
     ierr = m_field.modify_finite_element_add_field_col(fe_name.str(),"DISPLACEMENT"); CHKERRQ(ierr);
@@ -119,7 +103,7 @@ int main(int argc, char *argv[]) {
     ierr = m_field.modify_problem_add_finite_element("TEST_PROBLEM",fe_name.str()); CHKERRQ(ierr);
 
     Range tris;
-    rval = moab.get_entities_by_type(it->meshset,MBTRI,tris,true); CHKERR_PETSC(rval);
+    rval = moab.get_entities_by_type(it->meshset,MBTRI,tris,true); CHKERRQ_MOAB(rval);
     ierr = m_field.add_ents_to_finite_element_by_TRIs(tris,fe_name.str()); CHKERRQ(ierr);
 
   }
@@ -162,39 +146,39 @@ int main(int argc, char *argv[]) {
   Vec F;
   ierr = m_field.VecCreateGhost("TEST_PROBLEM",ROW,&F); CHKERRQ(ierr);
 
-  typedef tee_device<ostream, ofstream> TeeDevice;
+  typedef tee_device<std::ostream, std::ofstream> TeeDevice;
   typedef stream<TeeDevice> TeeStream;
-  ostringstream txt_name;
+  std::ostringstream txt_name;
   txt_name << "forces_and_sources_" << mesh_file_name << ".txt";
-  ofstream ofs(txt_name.str().c_str());
-  TeeDevice my_tee(cout, ofs);
+  std::ofstream ofs(txt_name.str().c_str());
+  TeeDevice my_tee(std::cout, ofs);
   TeeStream my_split(my_tee);
 
   ierr = VecZeroEntries(F); CHKERRQ(ierr);
-  boost::ptr_map<string,NeummanForcesSurface> neumann_forces;
+  boost::ptr_map<std::string,NeummanForcesSurface> neumann_forces;
   for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,NODESET|FORCESET,it)) {
-    ostringstream fe_name;
-    fe_name << "FORCE_FE_" << it->get_msId();
+    std::ostringstream fe_name;
+    fe_name << "FORCE_FE_" << it->getMeshsetId();
     string fe_name_str = fe_name.str();
     neumann_forces.insert(fe_name_str,new NeummanForcesSurface(m_field));
-    neumann_forces.at(fe_name_str).addForce("DISPLACEMENT",F,it->get_msId()); CHKERRQ(ierr);
+    neumann_forces.at(fe_name_str).addForce("DISPLACEMENT",F,it->getMeshsetId()); CHKERRQ(ierr);
     ForceCubitBcData data;
-    ierr = it->get_bc_data_structure(data); CHKERRQ(ierr);
-    my_split << *it << endl;
-    my_split << data << endl;
+    ierr = it->getBcDataStructure(data); CHKERRQ(ierr);
+    my_split << *it << std::endl;
+    my_split << data << std::endl;
   }
   for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,SIDESET|PRESSURESET,it)) {
-    ostringstream fe_name;
-    fe_name << "PRESSURE_FE_" << it->get_msId();
+    std::ostringstream fe_name;
+    fe_name << "PRESSURE_FE_" << it->getMeshsetId();
     string fe_name_str = fe_name.str();
     neumann_forces.insert(fe_name_str,new NeummanForcesSurface(m_field));
-    neumann_forces.at(fe_name_str).addPreassure("DISPLACEMENT",F,it->get_msId()); CHKERRQ(ierr);
+    neumann_forces.at(fe_name_str).addPreassure("DISPLACEMENT",F,it->getMeshsetId()); CHKERRQ(ierr);
     PressureCubitBcData data;
-    ierr = it->get_bc_data_structure(data); CHKERRQ(ierr);
-    my_split << *it << endl;
-    my_split << data << endl;
+    ierr = it->getBcDataStructure(data); CHKERRQ(ierr);
+    my_split << *it << std::endl;
+    my_split << data << std::endl;
   }
-  boost::ptr_map<string,NeummanForcesSurface>::iterator mit = neumann_forces.begin();
+  boost::ptr_map<std::string,NeummanForcesSurface>::iterator mit = neumann_forces.begin();
   for(;mit!=neumann_forces.end();mit++) {
     ierr = m_field.loop_finite_elements("TEST_PROBLEM",mit->first,mit->second->getLoopFe()); CHKERRQ(ierr);
   }
@@ -211,15 +195,15 @@ int main(int argc, char *argv[]) {
 
     my_split.precision(3);
     my_split.setf(std::ios::fixed);
-    double val = fabs(dit->get_FieldData())<eps ? 0.0 : dit->get_FieldData();
-    my_split << dit->get_petsc_gloabl_dof_idx() << " " << val << endl;
+    double val = fabs(dit->get()->getFieldData())<eps ? 0.0 : dit->get()->getFieldData();
+    my_split << dit->get()->getPetscGlobalDofIdx() << " " << val << std::endl;
 
   }
 
   double sum = 0;
   ierr = VecSum(F,&sum); CHKERRQ(ierr);
   sum = fabs(sum)<eps ? 0.0 : sum;
-  my_split << endl << "Sum : " << setprecision(3) << sum << endl;
+  my_split << std::endl << "Sum : " << std::setprecision(3) << sum << std::endl;
 
   ierr = VecDestroy(&F); CHKERRQ(ierr);
 

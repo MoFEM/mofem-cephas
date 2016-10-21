@@ -26,19 +26,27 @@ int main(int argc, char *argv[]) {
   PetscInitialize(&argc,&argv,PETSC_NULL,help);
 
   moab::Core mb_instance;
-  Interface& moab = mb_instance;
+  moab::Interface& moab = mb_instance;
   int rank;
   MPI_Comm_rank(PETSC_COMM_WORLD,&rank);
 
   //Reade parameters from line command
   PetscBool flg = PETSC_TRUE;
   char mesh_file_name[255];
-  ierr = PetscOptionsGetString(PETSC_NULL,"-my_file",mesh_file_name,255,&flg); CHKERRQ(ierr);
+  #if PETSC_VERSION_GE(3,6,4)
+  ierr = PetscOptionsGetString(PETSC_NULL,"","-my_file",mesh_file_name,255,&flg); CHKERRQ(ierr);
+  #else
+  ierr = PetscOptionsGetString(PETSC_NULL,PETSC_NULL,"-my_file",mesh_file_name,255,&flg); CHKERRQ(ierr);
+  #endif
   if(flg != PETSC_TRUE) {
     SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_file (MESH FILE NEEDED)");
   }
   PetscInt order;
-  ierr = PetscOptionsGetInt(PETSC_NULL,"-my_order",&order,&flg); CHKERRQ(ierr);
+  #if PETSC_VERSION_GE(3,6,4)
+  ierr = PetscOptionsGetInt(PETSC_NULL,"","-my_order",&order,&flg); CHKERRQ(ierr);
+  #else
+  ierr = PetscOptionsGetInt(PETSC_NULL,PETSC_NULL,"-my_order",&order,&flg); CHKERRQ(ierr);
+  #endif
   if(flg != PETSC_TRUE) {
     order = 1;
   }
@@ -46,13 +54,13 @@ int main(int argc, char *argv[]) {
   //Read mesh to MOAB
   const char *option;
   option = "";//"PARALLEL=BCAST;";//;DEBUG_IO";
-  rval = moab.load_file(mesh_file_name, 0, option); CHKERR_PETSC(rval);
+  rval = moab.load_file(mesh_file_name, 0, option); CHKERRQ_MOAB(rval);
   ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
   if(pcomm == NULL) pcomm =  new ParallelComm(&moab,PETSC_COMM_WORLD);
 
   //Create MoFEM (Joseph) database
   MoFEM::Core core(moab);
-  FieldInterface& m_field = core;
+  MoFEM::Interface& m_field = core;
 
   //ref meshset ref level 0
   ierr = m_field.seed_ref_level_3D(0,0); CHKERRQ(ierr);
@@ -61,7 +69,7 @@ int main(int argc, char *argv[]) {
   BitRefLevel bit_level0;
   bit_level0.set(0);
   EntityHandle meshset_level0;
-  rval = moab.create_meshset(MESHSET_SET,meshset_level0); CHKERR_PETSC(rval);
+  rval = moab.create_meshset(MESHSET_SET,meshset_level0); CHKERRQ_MOAB(rval);
   ierr = m_field.seed_ref_level_3D(0,bit_level0); CHKERRQ(ierr);
   ierr = m_field.get_entities_by_ref_level(bit_level0,BitRefLevel().set(),meshset_level0); CHKERRQ(ierr);
 
@@ -69,14 +77,16 @@ int main(int argc, char *argv[]) {
   //Define problem
 
   //Coord system
+  CoordSystemsManager *cs_manger_ptr;
+  ierr = m_field.query_interface(cs_manger_ptr); CHKERRQ(ierr);
   {
     int cs_dim[] = {0,3,0,3};
-    ierr = m_field.add_coordinate_system(cs_dim,"BASE_FOR_TWO_POINT_TENSOR"); CHKERRQ(ierr);
+    ierr = cs_manger_ptr->addCoordinateSystem(cs_dim,"BASE_FOR_TWO_POINT_TENSOR"); CHKERRQ(ierr);
   }
 
   //Fields
   ierr = m_field.add_field("FIELD_A",H1,9); CHKERRQ(ierr);
-  ierr = m_field.set_field_coordinate_system("FIELD_A","BASE_FOR_TWO_POINT_TENSOR"); CHKERRQ(ierr);
+  ierr = cs_manger_ptr->setFieldCoordinateSystem("FIELD_A","BASE_FOR_TWO_POINT_TENSOR"); CHKERRQ(ierr);
 
   ierr = m_field.add_ents_to_field_by_TETs(0,"FIELD_A"); CHKERRQ(ierr);
 
@@ -89,13 +99,13 @@ int main(int argc, char *argv[]) {
   ierr = m_field.build_fields(); CHKERRQ(ierr);
 
   int cs_dim[4];
-  string cs_name;
+  std::string cs_name;
 
   //Open mesh_file_name.txt for writing
   for(_IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(m_field,"FIELD_A",dof_ptr)) {
 
     for(int alpha = 0;alpha<4;alpha++) {
-      cs_dim[alpha] = dof_ptr->getCoordSysDim(alpha);
+      cs_dim[alpha] = (*dof_ptr)->getCoordSysDim(alpha);
     }
 
     if(cs_dim[1]!=3) {

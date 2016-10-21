@@ -19,15 +19,17 @@
 * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
 #include <Includes.hpp>
-// #include <version.h>
+#include <version.h>
 #include <definitions.h>
 #include <Common.hpp>
 
 #include <h1_hdiv_hcurl_l2.h>
 #include <fem_tools.h>
 
+#include <UnknownInterface.hpp>
+
 #include <MaterialBlocks.hpp>
-#include <CubitBCData.hpp>
+#include <BCData.hpp>
 #include <TagMultiIndices.hpp>
 #include <CoordSysMultiIndices.hpp>
 #include <FieldMultiIndices.hpp>
@@ -41,12 +43,13 @@
 #include <SeriesMultiIndices.hpp>
 
 #include <LoopMethods.hpp>
-#include <FieldInterface.hpp>
-#include <MeshRefinment.hpp>
+#include <Interface.hpp>
+#include <MeshRefinement.hpp>
 #include <PrismInterface.hpp>
 #include <SeriesRecorder.hpp>
 #include <Core.hpp>
 
+#include <FTensor.hpp>
 #include <DataStructures.hpp>
 #include <DataOperators.hpp>
 #include <ElementsOnEntities.hpp>
@@ -67,16 +70,16 @@ namespace MoFEM {
 PetscErrorCode VertexElementForcesAndSourcesCore::operator()() {
   PetscFunctionBegin;
 
-  if(fePtr->get_ent_type() != MBVERTEX) PetscFunctionReturn(0);
+  if(numeredEntFiniteElementPtr->getEntType() != MBVERTEX) PetscFunctionReturn(0);
 
-  EntityHandle ent = fePtr->get_ent();
+  EntityHandle ent = numeredEntFiniteElementPtr->getEnt();
   coords.resize(3,false);
-  rval = mField.get_moab().get_coords(&ent,1,&*coords.data().begin()); CHKERR_PETSC(rval);
+  rval = mField.get_moab().get_coords(&ent,1,&*coords.data().begin()); CHKERRQ_MOAB(rval);
 
   const UserDataOperator::OpType types[2] = {
     UserDataOperator::OPROW, UserDataOperator::OPCOL
   };
-  vector<string> last_eval_field_name(2);
+  std::vector<std::string> last_eval_field_name(2);
   DataForcesAndSurcesCore *op_data[2];
   FieldSpace space[2];
 
@@ -90,9 +93,9 @@ PetscErrorCode VertexElementForcesAndSourcesCore::operator()() {
 
     for(int ss = 0;ss!=2;ss++) {
 
-      string field_name = !ss ? oit->rowFieldName : oit->colFieldName;
-      BitFieldId data_id = mField.get_field_structure(field_name)->get_id();
-      if((oit->getMoFEMFEPtr()->get_BitFieldId_data()&data_id).none()) {
+      std::string field_name = !ss ? oit->rowFieldName : oit->colFieldName;
+      BitFieldId data_id = mField.get_field_structure(field_name)->getId();
+      if((oit->getNumeredEntFiniteElementPtr()->getBitFieldIdData()&data_id).none()) {
         SETERRQ2(
           PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"no data field < %s > on finite element < %s >",
           field_name.c_str(),feName.c_str()
@@ -101,9 +104,11 @@ PetscErrorCode VertexElementForcesAndSourcesCore::operator()() {
 
       if(oit->getOpType()&types[ss] || oit->getOpType()&UserDataOperator::OPROWCOL) {
 
-        space[ss] = mField.get_field_structure(field_name)->get_space();
+        space[ss] = mField.get_field_structure(field_name)->getSpace();
 
         switch(space[ss]) {
+          case NOSPACE:
+          SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"unknown space");
           case H1:
           op_data[ss] = !ss ? &data : &derivedData;
           break;
@@ -127,6 +132,8 @@ PetscErrorCode VertexElementForcesAndSourcesCore::operator()() {
         if(last_eval_field_name[ss]!=field_name) {
 
           switch(space[ss]) {
+            case NOSPACE:
+            SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"unknown space");
             case H1:
             if(!ss) {
               ierr = getRowNodesIndices(*op_data[ss],field_name); CHKERRQ(ierr);
@@ -176,8 +183,8 @@ PetscErrorCode VertexElementForcesAndSourcesCore::operator()() {
           false,
           false
         ); CHKERRQ(ierr);
-      } catch (exception& ex) {
-        ostringstream ss;
+      } catch (std::exception& ex) {
+        std::ostringstream ss;
         ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
         SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
       }
@@ -195,8 +202,8 @@ PetscErrorCode VertexElementForcesAndSourcesCore::operator()() {
           false,
           false
         ); CHKERRQ(ierr);
-      } catch (exception& ex) {
-        ostringstream ss;
+      } catch (std::exception& ex) {
+        std::ostringstream ss;
         ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
         SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
       }
@@ -206,8 +213,8 @@ PetscErrorCode VertexElementForcesAndSourcesCore::operator()() {
     if(oit->getOpType()&UserDataOperator::OPROWCOL) {
       try {
         ierr = oit->opLhs(*op_data[0],*op_data[1],oit->sYmm); CHKERRQ(ierr);
-      } catch (exception& ex) {
-        ostringstream ss;
+      } catch (std::exception& ex) {
+        std::ostringstream ss;
         ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
         SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
       }

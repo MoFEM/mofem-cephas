@@ -1,14 +1,16 @@
-meshset 12682136550675316768 type 00000000000000000000000001000010 msId 1
+meshset 12682136550675316768 type SIDESET PRESSURESET msId 1
 
 P r e s s u r e 
  
+Pressure flag2: 0
 Pressure value: -4
  
 
-meshset 12682136550675316769 type 00000000000000000000000001000010 msId 2
+meshset 12682136550675316769 type SIDESET PRESSURESET msId 2
 
 P r e s s u r e 
  
+Pressure flag2: 0
 Pressure value: -4
  
 
