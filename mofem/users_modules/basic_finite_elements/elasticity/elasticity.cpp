@@ -43,7 +43,7 @@ struct BlockOptionData {
   BlockOptionData():
     oRder(-1),
     yOung(-1),
-    pOisson(-1),
+    pOisson(-2),
     initTemp(0) {}
 };
 
@@ -106,6 +106,14 @@ int main(int argc, char *argv[]) {
   //Create MoFEM (Joseph) database
   MoFEM::Core core(moab);
   MoFEM::Interface& m_field = core;
+
+  //print bcs
+  MeshsetsManager *mmanager_ptr;
+  ierr = m_field.query_interface(mmanager_ptr); CHKERRQ(ierr);
+  ierr = mmanager_ptr->printDisplacementSet(); CHKERRQ(ierr);
+  ierr = mmanager_ptr->printForceSet(); CHKERRQ(ierr);
+  //print block sets with materials
+  ierr = mmanager_ptr->printMaterialsSet(); CHKERRQ(ierr);
 
   // stl::bitset see for more details
   BitRefLevel bit_level0;
@@ -175,7 +183,7 @@ int main(int argc, char *argv[]) {
         std::ostringstream str_capa;
         str_capa << "block_" << it->getMeshsetId() << ".poisson_ratio";
         config_file_options.add_options()
-        (str_capa.str().c_str(),po::value<double>(&block_data[it->getMeshsetId()].pOisson)->default_value(-1));
+        (str_capa.str().c_str(),po::value<double>(&block_data[it->getMeshsetId()].pOisson)->default_value(-2));
         std::ostringstream str_init_temp;
         str_init_temp << "block_" << it->getMeshsetId() << ".initial_temperature";
         config_file_options.add_options()
@@ -218,6 +226,23 @@ int main(int argc, char *argv[]) {
   ierr = elastic.setBlocks(&hooke_double,&hooke_adouble); CHKERRQ(ierr);
   ierr = elastic.addElement("ELASTIC","DISPLACEMENT"); CHKERRQ(ierr);
   ierr = elastic.setOperators("DISPLACEMENT","MESH_NODE_POSITIONS",false,true); CHKERRQ(ierr);
+
+  // Update material parameters
+  for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,BLOCKSET,it)) {
+    int id = it->getMeshsetId();
+    if(block_data[id].yOung>0) {
+      elastic.setOfBlocks[id].E = block_data[id].yOung;
+      ierr = PetscPrintf(
+        PETSC_COMM_WORLD,"Block %d set Young modulus %3.4g\n",id,elastic.setOfBlocks[id].E
+      ); CHKERRQ(ierr);
+    }
+    if(block_data[id].pOisson>=-1) {
+      elastic.setOfBlocks[id].PoissonRatio = block_data[id].pOisson;
+      ierr = PetscPrintf(
+        PETSC_COMM_WORLD,"Block %d set Poisson ratio %3.4g\n",id,elastic.setOfBlocks[id].PoissonRatio
+      ); CHKERRQ(ierr);
+    }
+  }
 
   ierr = m_field.add_finite_element("BODY_FORCE"); CHKERRQ(ierr);
   ierr = m_field.modify_finite_element_add_field_row("BODY_FORCE","DISPLACEMENT"); CHKERRQ(ierr);
@@ -282,14 +307,6 @@ int main(int argc, char *argv[]) {
   ierr = m_field.build_finite_elements(); CHKERRQ(ierr);
   //build adjacencies
   ierr = m_field.build_adjacencies(bit_level0); CHKERRQ(ierr);
-
-  //print bcs
-  MeshsetsManager *mmanager_ptr;
-  ierr = m_field.query_interface(mmanager_ptr); CHKERRQ(ierr);
-  ierr = mmanager_ptr->printDisplacementSet(); CHKERRQ(ierr);
-  ierr = mmanager_ptr->printForceSet(); CHKERRQ(ierr);
-  //print block sets with materials
-  ierr = mmanager_ptr->printMaterialsSet(); CHKERRQ(ierr);
 
   //define problems
   ierr = m_field.add_problem("ELASTIC_PROB"); CHKERRQ(ierr);
@@ -462,7 +479,8 @@ int main(int argc, char *argv[]) {
 	    post_proc.postProcMesh,
 	    post_proc.mapGaussPts,
 	    "DISPLACEMENT",
-	    post_proc.commonData
+	    post_proc.commonData,
+      &elastic.setOfBlocks
     )
   );
 
