@@ -8,7 +8,7 @@ surface 7  size auto factor 7
 surface 7 scheme TriMesh
 mesh surface 7
 
-volume 1 size auto factor 6
+volume 1 size auto factor 4
 volume 1 scheme Tetmesh
 mesh volume 1
 
