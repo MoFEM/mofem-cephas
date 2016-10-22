@@ -456,10 +456,10 @@ PetscErrorCode Core::getTags(int verb) {
   {
     Version version;
     ierr = getFileVersion(moab,version); CHKERRQ(ierr);
-    PetscPrintf(
-      comm,"file version %d.%d.%d\n",
-      version.majorVersion,version.minorVersion,version.buildVersion
-    );
+    // PetscPrintf(
+    //   comm,"file version %d.%d.%d\n",
+    //   version.majorVersion,version.minorVersion,version.buildVersion
+    // );
   }
 
   // Global Variables
