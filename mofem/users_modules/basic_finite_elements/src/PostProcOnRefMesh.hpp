@@ -231,6 +231,14 @@ struct PostProcTemplateOnRefineMesh: public ELEMENT {
     PetscFunctionReturn(0);
   }
 
+  /**
+   * \brief wrote results in (MOAB) format, use "file_name.h5m"
+   * @param  file_name file name (should always end with .h5m)
+   * @return           error code
+
+   * \ingroup mofem_fs_post_proc
+
+   */
   PetscErrorCode writeFile(const std::string file_name) {
     PetscFunctionBegin;
     MoABErrorCode rval;
