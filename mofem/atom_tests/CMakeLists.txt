@@ -952,7 +952,7 @@ list(INSERT testing_base_list
   h1tri
   hdivtri
   hcurltri
-  #l2tri
+  l2tri
   h1edge
   hcurledge
 )

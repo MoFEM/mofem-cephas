@@ -505,7 +505,26 @@ int main(int argc, char *argv[]) {
   }
 
   if(choise_value==L2TRI) {
-    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"wrong result");
+    ierr = TriPolynomialBase().getValue(
+      pts_tri,
+      boost::shared_ptr<BaseFunctionCtx>(
+        new EntPolynomialBaseCtx(tri_data,L2,AINSWORTH_COLE_BASE,NOBASE)
+      )
+    ); CHKERRQ(ierr);
+    if(
+      tri_data.dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE).get()!=
+      tri_data.dataOnEntities[MBVERTEX][0].getNSharedPtr(AINSWORTH_COLE_BASE).get()
+    ) {
+      SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"Different pointers");
+    }
+    double sum = 0;
+    std::cout << "Face\n";
+    std::cout << tri_data.dataOnEntities[MBTRI][0].getN(AINSWORTH_COLE_BASE) << std::endl;
+    sum += sum_matrix(tri_data.dataOnEntities[MBTRI][0].getN(AINSWORTH_COLE_BASE));
+    std::cout << "sum  " << sum << std::endl;
+    if(fabs(1.42187-sum)>eps) {
+      SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"wrong result");
+    }
   }
 
   DataForcesAndSurcesCore edge_data(MBTRI);
