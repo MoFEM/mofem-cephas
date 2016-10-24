@@ -1648,6 +1648,15 @@ namespace MoFEM {
             Trans_Iso_Rhs_r_PSFEM my_fe_k_r_Gzp(m_field_RVE,Aij,D,dF,"DISP_RVE","ShearZP","transversely_isotropic","reinforcement");
             ierr = m_field_RVE.loop_finite_elements("ELASTIC_PROBLEM_RVE","TRAN_ISO_FE_RVE",my_fe_k_r_Gzp);  CHKERRQ(ierr);
           }
+          else if (VarName.compare(0,2,"Ef") == 0) { // due to Young's modulus of fibre - isotropic material
+            Trans_Iso_Rhs_r_PSFEM my_fe_k_r_Ef(m_field_RVE,Aij,D,dF,"DISP_RVE","Young", "isotropic", "reinforcement");
+            ierr = m_field_RVE.loop_finite_elements("ELASTIC_PROBLEM_RVE","TRAN_ISO_FE_RVE",my_fe_k_r_Ef);  CHKERRQ(ierr);
+          }
+          else if (VarName.compare(0,3,"NUf") == 0) { // due to Poisson's ratio of fibre - isotropic material
+            Trans_Iso_Rhs_r_PSFEM my_fe_k_r_NUf(m_field_RVE,Aij,D,dF,"DISP_RVE","Poisson", "isotropic", "reinforcement");
+            ierr = m_field_RVE.loop_finite_elements("ELASTIC_PROBLEM_RVE","TRAN_ISO_FE_RVE",my_fe_k_r_NUf);  CHKERRQ(ierr);
+          }
+          
           VarName.clear();
 
           ostringstream ss_field;
@@ -1777,6 +1786,20 @@ namespace MoFEM {
               material_type     = "transversely_isotropic";
               idx_sf            = 6;
             }
+            else if (VarName_1st.compare(0,2,"Ef") == 0) {       // due to Young's modulus of matrix - isotropic
+              first_var         = "Young";
+              first_field       = "DISP_RVE_r_Ef";
+              material_function = "reinforcement";
+              material_type     = "isotropic";
+              idx_sf            = 0;
+            }
+            else if (VarName_1st.compare(0,3,"NUf") == 0) { // due to Poisson's ratio of matrix - isotropic
+              first_var         = "Poisson";
+              first_field       = "DISP_RVE_r_NUf";
+              material_function = "reinforcement";
+              material_type     = "isotropic";
+              idx_sf            = 1;
+            }
             idx_sf = irv;
             first_field_r.clear();
             ostringstream first_field_r;
@@ -1821,6 +1844,14 @@ namespace MoFEM {
                 second_var = "ShearZP";
                 ix_mat_rv  = 1;
               }
+              else if (VarName_2nd.compare(0,2,"Ef") == 0) {       // due to Young's modulus of fibre - isotropic
+                second_var = "Young";
+                ix_mat_rv  = 1;
+              }
+              else if (VarName_2nd.compare(0,3,"NUf") == 0) { // due to Poisson's ratio of fibre - isotropic
+                second_var = "Poisson";
+                ix_mat_rv  = 1;
+              }
               VarName_2nd.clear(); // cout<<"\n\n first_var and second_var are : "<<first_var<<"\t"<<second_var<<endl;
               
               first_field_s.clear();
@@ -1842,7 +1873,13 @@ namespace MoFEM {
                                                       second_var,
                                                       material_type,
                                                       material_function);
-                if (material_type.compare(0,5,"trans") == 0) {
+//                if (material_type.compare(0,5,"trans") == 0) {
+//                  ierr = m_field_RVE.loop_finite_elements("ELASTIC_PROBLEM_RVE","TRAN_ISO_FE_RVE",my_fe_k_rs);  CHKERRQ(ierr);
+//                } else {
+//                  ierr = m_field_RVE.loop_finite_elements("ELASTIC_PROBLEM_RVE","ELASTIC_FE_RVE",my_fe_k_rs);  CHKERRQ(ierr);
+//                }
+                
+                if (material_function.compare(0,13,"reinforcement") == 0) {
                   ierr = m_field_RVE.loop_finite_elements("ELASTIC_PROBLEM_RVE","TRAN_ISO_FE_RVE",my_fe_k_rs);  CHKERRQ(ierr);
                 } else {
                   ierr = m_field_RVE.loop_finite_elements("ELASTIC_PROBLEM_RVE","ELASTIC_FE_RVE",my_fe_k_rs);  CHKERRQ(ierr);
@@ -4134,7 +4171,7 @@ namespace MoFEM {
       for (int ii = 0; ii<num_ply_vars; ii++) {
         string VariableName;
         VariableName = ply_vars_name[ii];
-        if (VariableName.compare(0,5,"force") == 0) {
+        if (VariableName.compare(0,5,"force") == 0) {cout<<"\n\n ii: "<<ii<<endl;
           idx_force = ii;
         }
       }
@@ -4781,6 +4818,7 @@ namespace MoFEM {
       
       // int PSFE_order = 2;
       if (PSFE_order == 2) {
+        
         cout<<"\n"<<endl;
         cout<<"///////////////////////////////////////////////////////////"<<endl;
         cout<<"//"<<endl;
@@ -4791,6 +4829,7 @@ namespace MoFEM {
         int sub_nvars = 0;
         int num_2nd_elem = 0;
         for (int ivar = 0; ivar<num_ply_vars; ivar++) {          // num_ply_vars
+          
           ostringstream first_field_r;
           first_field_r.str(""); first_field_r.clear();
           first_field_r << "DISP_MACRO" << stochastic_fields_ply[ivar]; // cout<<"\n\n FE2 1st_Field_r: "<<first_field_r.str().c_str()<<endl;
@@ -5382,7 +5421,6 @@ namespace MoFEM {
               ierr = VecCopy(ddD, D_rs[num_2nd_elem - 1]); CHKERRQ(ierr);
               
             }
-            //else if ((ply_vars_name[ivar].compare(0,5,"force")==0) && (ply_vars_name[jvar].compare(0,5,"force")==0)) {
             else {
               // =============================================================
               //

@@ -79,7 +79,10 @@ cubit.cmd(str1); cubit.cmd(str2); cubit.cmd(str3); cubit.cmd(str4)
 #cubit.cmd('create force 2 on surface 5 11 17 vector 0 -900 0 0 0 0') 
 #cubit.cmd('create force 3 on surface 1      vector 90 0 0 0 0 0') 
 
-cubit.cmd('save as "/Users/nxz6/MyBuild/mofem-cephas/mofem_v0.2/users_modules/stochastic/meshes/WWFE_Laminate_Type_2.cub" overwrite')  
+# cubit.cmd('save as "/Users/nxz6/MyBuild/mofem-cephas/mofem_v0.2/users_modules/stochastic/meshes/WWFE_Laminate_Type_2.cub" overwrite')  
+
+cubit.cmd('save as "/Users/nxz6/mofem_installation/mofem-cephas/mofem/users_modules/reliability/meshes/WWFE_Laminate_T323_RVE.cub" overwrite')
+
 
 
 

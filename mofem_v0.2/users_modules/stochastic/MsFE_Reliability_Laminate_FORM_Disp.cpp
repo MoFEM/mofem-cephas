@@ -397,7 +397,7 @@ void REL_Stress_Transformation_Theta(double theta, ublas::matrix<double> Stress_
 int main(int argc, char *argv[]) {
   
   clock_t start_time, finish_time;
-  double total_time;
+  double total_time_FORM, total_time_SORM;
   start_time = clock();
   
   const char* args_1st[] = {
@@ -1398,6 +1398,7 @@ int main(int argc, char *argv[]) {
   //////////////////////////////////////////////////////////////////////////////
   
   double beta;                    // Reliability index
+  vector <double> betas;
   
   /*
    *  Set reliability calculation options
@@ -1575,10 +1576,10 @@ int main(int argc, char *argv[]) {
     cout<<"*    This is "<<istep<<" step!"<<"\n*\n";
     cout<<"*************************************************\n";
     
-    if (echo_flag) {
-      cout<<"-------------------------------- \n";
-      cout<<"Now carrying out iteration number: \t"<<istep<<endl;
-    }
+//    if (echo_flag) {
+//      cout<<"-------------------------------- \n";
+//      cout<<"Now carrying out iteration number: \t"<<istep<<endl;
+//    }
     
     
     ////////////////////////////////////////////////////////////////////////////
@@ -1841,12 +1842,38 @@ int main(int argc, char *argv[]) {
     alpha = -grad_G/norm_2(grad_G);
     cout<<"\nDirection cosine:\n "<<alpha<<endl;
     
+    cout<<"\n\nReliability index estimate at "<<istep<<" is: "<<((val_G/norm_2(grad_G)) + inner_prod(alpha, u));
+    cout<<"\t"<<norm_2(u)<<"\t"<<inner_prod(alpha,u)<<endl;
+    
+    betas.push_back(inner_prod(alpha,u));
+    
     //
     // Check convergence
     //
-    if (((abs(val_G/val_G0)<e1) && (norm_2(u-inner_prod(alpha,u)*alpha)<e2)) || (istep == istep_max)) {
+    if (istep < 20 ) {
+      if (((abs(val_G/val_G0)<e1) && (norm_2(u-inner_prod(alpha,u)*alpha)<e2)) || (istep == istep_max)) {
+        conv_flag = 1;
+      }
+    } else if (istep == istep_max) {
       conv_flag = 1;
+    } else { // Additional convergence criterion when iteration number is greater than 20
+      double beta_k, beta_m, beta_tol = 0;
+      beta_k = betas[istep -1];
+      for (int m = 1; m <= 5; m ++) {
+        beta_m = betas[istep - 1 - m];
+        beta_tol = max(beta_tol, abs((beta_m - beta_k)/beta_k));
+      }
+      
+      cout << "\n\nMaximum relative difference in last five steps is: " << beta_tol << endl;
+      
+      if (((abs(val_G/val_G0)<e1) && (norm_2(u-inner_prod(alpha,u)*alpha)<e2)) || (beta_tol < 0.001) ) {
+        conv_flag = 1;
+      }
     }
+    
+//    if (((abs(val_G/val_G0)<e1) && (norm_2(u-inner_prod(alpha,u)*alpha)<e2)) || (istep == istep_max)) {
+//      conv_flag = 1;
+//    }
     
     ////////////////////////////////////////////////////////////////////////////
     //                                                                        //
@@ -1880,8 +1907,6 @@ int main(int argc, char *argv[]) {
         conv_flag = 1;
       }
       
-      cout<<"\n\nReliability index estimate at "<<istep<<" is: "<<((val_G/norm_2(grad_G)) + inner_prod(alpha, u));
-      cout<<"\t"<<norm_2(u)<<"\t"<<inner_prod(alpha,u)<<endl;
       //cout<<"design point: "<<u<<endl;
       
       // Write reliability index in file
@@ -1923,12 +1948,19 @@ int main(int argc, char *argv[]) {
   
   beta = inner_prod(alpha,u);
   
+  finish_time = clock();
+  total_time_FORM  = (double)(finish_time - start_time)/CLOCKS_PER_SEC;
+  
+  
+  
   //////////////////////////////////////////////////////////////////////////////
   //                                                                          //
   //        STEP 9: Adjust the estimate of reliability index by using         //
   //                the Second Order Reliability Method (SORM)                //
   //                                                                          //
   //////////////////////////////////////////////////////////////////////////////
+  
+  
   
   PSFE_order = probdata.AnalysisType;
   
@@ -1984,9 +2016,9 @@ int main(int argc, char *argv[]) {
         // D matrix for the 1st ply
         //--------------------------
         
-        for (int i=0; i<nvars_ply_mat; i++) {
+        for (int i=0; i<nvars_ply_mat; i++) {cout<<"\n\nNew step 1"<<endl;
           Dmat_r(i) = Solve_FE2_Problem.Ply_1st_Dmat_r(i);
-          for (int j=0; j<nvars_ply_mat; j++) {
+          for (int j=0; j<nvars_ply_mat; j++) {cout<<"\n\nNew step 2"<<endl;
             Dmat_rs(i,j) = Solve_FE2_Problem.Ply_1st_Dmat_rs(i,j);
           }
         }
@@ -2036,22 +2068,26 @@ int main(int argc, char *argv[]) {
         break;
       }
     }
-    
+    //cout<<"\n\nNew step 3"<<endl;
     int sub_nvars = 0;
     int var_pos;
     int num_2nd_elem = 0;
     // cout<<"\nDmat is:\n "<<Dmat<<endl;
     // cout<<"\nDmat new is:\n "<<Solve_FE2_Problem.Dmat_1st_Ply<<endl;
     for (int ivar = 0; ivar<nvars_ply_mat; ivar++) {
+      
+      /*
       // Get the first-order field
       ostringstream first_field_r;
       first_field_r.str(""); first_field_r.clear();
       first_field_r << "DISP_MACRO" << stochastic_fields_ply[ivar];
+       */
       
       for (int jvar = ivar; jvar<nvars_ply_mat; jvar++) {
         
         num_2nd_elem = num_2nd_elem + 1 ;
         
+        /*
         // Get the first-order derivative of field w.r.t. - j-th variable
         ostringstream first_field_s;
         first_field_s.str(""); first_field_s.clear();
@@ -2070,6 +2106,7 @@ int main(int argc, char *argv[]) {
         second_field.str(""); second_field.clear();
         second_field << "DISP_MACRO" << stochastic_fields_ply[var_pos + nvars_ply_mat -1];
         // cout<<"\n\nThe second-order field is:\t "<<second_field.str().c_str()<<endl;
+        */
         
         ierr = m_field_Macro.set_other_global_ghost_vector("ELASTIC_PROBLEM_MACRO","DISP_MACRO","DISP_MACRO_r", ROW,D_r[ivar],INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
         ierr = m_field_Macro.set_other_global_ghost_vector("ELASTIC_PROBLEM_MACRO","DISP_MACRO","DISP_MACRO_s", ROW,D_r[jvar],INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
@@ -2102,7 +2139,7 @@ int main(int argc, char *argv[]) {
         // cout<<"\nStress_rs at GP in 123 space:\n "<<StressGP_rs(ivar,jvar)<<endl;
       }
     }
-    
+    //cout<<"\n\nNew step 4"<<endl;
     // =======================================
     //
     // 9.4 Calculate Hessian matrix of LSF in x-space
@@ -2161,13 +2198,25 @@ int main(int argc, char *argv[]) {
     // cout<<"\nA matrix: "<<A_Matrix<<endl;
 
     ublas::matrix<double> New_A_Matrix;
-    int Size_A; Size_A = A_Matrix.size1() - 1;
-    New_A_Matrix.resize(Size_A,Size_A); New_A_Matrix.clear();
-    for (int i = 0; i<Size_A; i++) {
-      for (int j = 0; j<Size_A; j++) {
-        New_A_Matrix(i,j) = A_Matrix(i,j);
+    int Size_A;
+    if (nvars_ply_mat>1) {
+      Size_A = A_Matrix.size1() - 1;
+      New_A_Matrix.resize(Size_A,Size_A); New_A_Matrix.clear();
+      for (int i = 0; i<Size_A; i++) {
+        for (int j = 0; j<Size_A; j++) {
+          New_A_Matrix(i,j) = A_Matrix(i,j);
+        }
+      }
+    } else { //  !!! How to deal with single random variable case for SORM ?.
+      Size_A = A_Matrix.size1();
+      New_A_Matrix.resize(Size_A,Size_A); New_A_Matrix.clear();
+      for (int i = 0; i<Size_A; i++) {
+        for (int j = 0; j<Size_A; j++) {
+          New_A_Matrix(i,j) = A_Matrix(i,j);
+        }
       }
     }
+    
 
     //LAPACK - eigenvalues and vectors. Applied twice for initial creates memory space
     ublas::matrix<double> eigen_vectors = New_A_Matrix;
@@ -2184,7 +2233,8 @@ int main(int argc, char *argv[]) {
     
     // =======================================
     //
-    // 9.8 Compute the failure probability using Breitung's formulation
+    // 9.8 Compute the failure probability
+    //       using Breitung's formulation
     //
     // =======================================
     
@@ -2203,6 +2253,44 @@ int main(int argc, char *argv[]) {
     cout<<"\nThe Breitung reliability index is: ";
     
     if (pf_Breitung<1 && pf_Breitung>0) cout<<-quantile(snorm,pf_Breitung)<<endl;
+    
+    // =======================================
+    //
+    // 9.8 Compute the failure probability
+    //       using principal curvature
+    //
+    // =======================================
+    
+    double pf_PC = cdf(snorm,-beta) ;
+    ublas::matrix<double> Scaled_Hess_G;
+    Scaled_Hess_G.resize(Hess_G.size1(), Hess_G.size2()); Scaled_Hess_G.clear();
+    Scaled_Hess_G = Hess_G / norm_2(grad_G);
+    
+    // Calculate the sum of the principle curvatures
+    double Ks = 0;
+    for (int j = 0 ; j < probdata.num_vars; j ++) {
+      Ks = Ks + Scaled_Hess_G( j, j );
+    }
+    
+    Ks = Ks - inner_prod( prod ( alpha , Scaled_Hess_G ) , alpha ) ;
+    
+    double R; // Average Principle Curvature;
+    R = ( probdata.num_vars - 1 ) / Ks ;
+    
+    // Compute probability of failure
+    
+    if ( Ks < 0 ) {
+      pf_PC = cdf( snorm, - ( beta * ( 1 + 2.5*Ks/(2*probdata.num_vars - 5*R + 25*(23 - 5*beta)/R/R)) + Ks/2*(1 + Ks / 40 ) ) );
+    } else {
+      pf_PC = pf_PC * pow( 1 + pdf(snorm, beta) / R / pf_PC, ( - ( probdata.num_vars - 1 ) * (1 + 2*Ks/10/(1 + 2*beta))/2));
+    }
+    
+    cout << "\n\n The sum of principal curvature is: " << Ks << endl;
+    cout << "\n\n New SORM probability of failure: " << pf_PC << endl;
+    cout << "\n\n New SORM reliability index is: ";
+    
+    if (pf_PC < 1 && pf_PC > 0) cout << -quantile(snorm,pf_PC) << endl;
+    
   }
   
   //////////////////////////////////////////////////////////////////////////////
@@ -2212,7 +2300,7 @@ int main(int argc, char *argv[]) {
   //////////////////////////////////////////////////////////////////////////////
   
   finish_time = clock();
-  total_time  = (double)(finish_time - start_time)/CLOCKS_PER_SEC;
+  total_time_SORM  = (double)(finish_time - start_time)/CLOCKS_PER_SEC;
   
   cout<<"\n\n*************************************************\n*\n";
   
@@ -2226,7 +2314,8 @@ int main(int argc, char *argv[]) {
   
   cout<<"*  Optimal reliability index (beta) is: "<<beta<<endl;
   cout<<"*  The failure criterion used is: "<<NameOfFailureCriterion<<endl;
-  cout<<"*  Elapsed time is "<<total_time<<" seconds.\n";
+  cout<<"*  Elapsed time for FORM is "<<total_time_FORM<<" seconds.\n";
+  cout<<"*  Elapsed time for SORM is "<<total_time_SORM<<" seconds.\n";
   cout<<"*  The program finishes !!! \n*\n";
   cout<<"*************************************************"<<endl;
   

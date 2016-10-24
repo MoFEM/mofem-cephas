@@ -1048,22 +1048,22 @@ int main(int argc, char *argv[]) {
   LimitStateFunction_MCS TheLSF;
   
   ofstream MCSFile_MS;
-  MCSFile_MS.open("//mnt//home//Dropbox//DURACOMP_Cal//009_MoFEM//04_ReliabilityAnalysis//Result_MCS_MS.txt",ofstream::out);
+  MCSFile_MS.open("//mnt//home//Dropbox_XZ//DURACOMP_Cal//009_MoFEM//04_ReliabilityAnalysis//Result_MCS_MS.txt",ofstream::out);
   
   ofstream MCSFile_Hashin;
-  MCSFile_Hashin.open("//mnt//home//Dropbox//DURACOMP_Cal//009_MoFEM//04_ReliabilityAnalysis//Result_MCS_Hashin.txt",ofstream::out);
+  MCSFile_Hashin.open("//mnt//home//Dropbox_XZ//DURACOMP_Cal//009_MoFEM//04_ReliabilityAnalysis//Result_MCS_Hashin.txt",ofstream::out);
   
   ofstream MCSFile_TW;
-  MCSFile_TW.open("//mnt//home//Dropbox//DURACOMP_Cal//009_MoFEM//04_ReliabilityAnalysis//Result_MCS_TW.txt",ofstream::out);
+  MCSFile_TW.open("//mnt//home//Dropbox_XZ//DURACOMP_Cal//009_MoFEM//04_ReliabilityAnalysis//Result_MCS_TW.txt",ofstream::out);
   
   ofstream MCSFile_TH;
-  MCSFile_TH.open("//mnt//home//Dropbox//DURACOMP_Cal//009_MoFEM//04_ReliabilityAnalysis//Result_MCS_TH.txt",ofstream::out);
+  MCSFile_TH.open("//mnt//home//Dropbox_XZ//DURACOMP_Cal//009_MoFEM//04_ReliabilityAnalysis//Result_MCS_TH.txt",ofstream::out);
   
   ofstream MCSFile_RC;
-  MCSFile_RC.open("//mnt//home//Dropbox//DURACOMP_Cal//009_MoFEM//04_ReliabilityAnalysis//Result_MCS_RC.txt",ofstream::out);
+  MCSFile_RC.open("//mnt//home//Dropbox_XZ//DURACOMP_Cal//009_MoFEM//04_ReliabilityAnalysis//Result_MCS_RC.txt",ofstream::out);
   
   ofstream MCSFile_Hoffman;
-  MCSFile_Hoffman.open("//mnt//home//Dropbox//DURACOMP_Cal//009_MoFEM//04_ReliabilityAnalysis//Result_MCS_Hoffman.txt",ofstream::out);
+  MCSFile_Hoffman.open("//mnt//home//Dropbox_XZ//DURACOMP_Cal//009_MoFEM//04_ReliabilityAnalysis//Result_MCS_Hoffman.txt",ofstream::out);
   
   double val_G;
   double val_G_MS_LD, val_G_MS_TD, val_G_MS_Shear;

@@ -1634,16 +1634,28 @@ namespace MoFEM {
       else if (material_type.compare(0,3,"iso") == 0){
         // cout<<"Isotropic material \t";
         double _young,_pois;
-        for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BLOCKSET,it)){
-          string name = it->get_name();
-          if (name.compare(0,13,"MAT_ELASTIC_1") == 0){
-            Mat_Elastic mydata;
-            ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
-            //cout << mydata;
-            _young = mydata.data.Young;
-            _pois  = mydata.data.Poisson;
+        
+        if (material_function.compare(0,13,"reinforcement")==0){
+          double _E_p, _E_z, _nu_p, _nu_pz, _G_zp;
+          ierr = GetMatParameters(&_E_p,&_E_z,&_nu_p,&_nu_pz,&_G_zp); CHKERRQ(ierr);
+          _young = _E_p;
+          _pois  = _nu_p;
+        }
+        else if (material_function.compare(0,6,"matrix")==0){
+          for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BLOCKSET,it)){
+            //cout << endl << *it << endl;
+            //Get block name
+            string name = it->get_name();
+            if (name.compare(0,13,"MAT_ELASTIC_1") == 0){
+              Mat_Elastic mydata;
+              ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
+              //cout << mydata;
+              _young = mydata.data.Young;
+              _pois  = mydata.data.Poisson;
+            }
           }
         }
+        
         ierr = calculateD_r_Iso(_young,_pois); CHKERRQ(ierr);
         //cout<<"_young "<< _young <<endl;
         //cout<<"_pois "<< _pois <<endl;
@@ -1712,16 +1724,28 @@ namespace MoFEM {
       else if (material_type.compare(0,3,"iso") == 0){
         // cout<<"Isotropic material \t";
         double _young,_pois;
-        for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BLOCKSET,it)){
-          string name = it->get_name();
-          if (name.compare(0,13,"MAT_ELASTIC_1") == 0){
-            Mat_Elastic mydata;
-            ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
-            //cout << mydata;
-            _young = mydata.data.Young;
-            _pois  = mydata.data.Poisson;
+        
+        if (material_function.compare(0,13,"reinforcement")==0){
+          double _E_p, _E_z, _nu_p, _nu_pz, _G_zp;
+          ierr = GetMatParameters(&_E_p,&_E_z,&_nu_p,&_nu_pz,&_G_zp); CHKERRQ(ierr);
+          _young = _E_p;
+          _pois  = _nu_p;
+        }
+        else if (material_function.compare(0,6,"matrix")==0){
+          for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BLOCKSET,it)){
+            //cout << endl << *it << endl;
+            //Get block name
+            string name = it->get_name();
+            if (name.compare(0,13,"MAT_ELASTIC_1") == 0){
+              Mat_Elastic mydata;
+              ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
+              //cout << mydata;
+              _young = mydata.data.Young;
+              _pois  = mydata.data.Poisson;
+            }
           }
         }
+        
         ierr = calculateD_s_Iso(_young,_pois); CHKERRQ(ierr);
         //cout<<"_young "<< _young <<endl;
         //cout<<"_pois "<< _pois <<endl;
@@ -1788,15 +1812,28 @@ namespace MoFEM {
       else if (material_type.compare(0,3,"iso") == 0){
         // cout<<"Isotropic material \t";
         double _young,_pois;
-        for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BLOCKSET,it)){
-          string name = it->get_name();
-          if (name.compare(0,13,"MAT_ELASTIC_1") == 0){
-            Mat_Elastic mydata;
-            ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
-            _young = mydata.data.Young;
-            _pois  = mydata.data.Poisson;
+        
+        if (material_function.compare(0,13,"reinforcement")==0){
+          double _E_p, _E_z, _nu_p, _nu_pz, _G_zp;
+          ierr = GetMatParameters(&_E_p,&_E_z,&_nu_p,&_nu_pz,&_G_zp); CHKERRQ(ierr);
+          _young = _E_p;
+          _pois  = _nu_p;
+        }
+        else if (material_function.compare(0,6,"matrix")==0){
+          for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BLOCKSET,it)){
+            //cout << endl << *it << endl;
+            //Get block name
+            string name = it->get_name();
+            if (name.compare(0,13,"MAT_ELASTIC_1") == 0){
+              Mat_Elastic mydata;
+              ierr = it->get_attribute_data_structure(mydata); CHKERRQ(ierr);
+              //cout << mydata;
+              _young = mydata.data.Young;
+              _pois  = mydata.data.Poisson;
+            }
           }
         }
+        
         ierr = calculateD_rs_Iso(_young,_pois); CHKERRQ(ierr);
         //cout<<"_young "<< _young <<endl;
         //cout<<"_pois "<< _pois <<endl;

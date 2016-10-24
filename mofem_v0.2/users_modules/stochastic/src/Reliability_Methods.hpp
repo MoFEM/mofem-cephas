@@ -938,6 +938,9 @@ namespace MoFEM {
       FE2_Macro_Solver_MCS Solve_FE2_Problem;
       LimitStateFunction_MCS TheLSF;
       
+      
+      ofstream MCSFile_TW;
+      MCSFile_TW.open("//mnt//home//Dropbox_XZ//DURACOMP_Cal//009_MoFEM//04_ReliabilityAnalysis//Result_MCS_TW_2vars_30.txt",ofstream::out);
       for (int imcs=1; imcs<=no_mcs; imcs++) {
         cout<<"\n\n*************************************************\n*\n";
         cout<<"*    This is "<<imcs<<" step!"<<"\n*\n";
@@ -1086,6 +1089,9 @@ namespace MoFEM {
             //
             MsFE_Reliability_Results.NameOfFailureCriterion = "Tsai-Wu";
             ierr = TheLSF.gfun_ply_Tsai_Wu(x,probdata.NameVars,probdata.MatStrength,StressGP,val_G_TW); CHKERRQ(ierr);
+            
+            MCSFile_TW<<setprecision(15)<<val_G_TW<<"\n";
+            
             
             if (val_G_TW<0) { no_fail++;}
             break;
