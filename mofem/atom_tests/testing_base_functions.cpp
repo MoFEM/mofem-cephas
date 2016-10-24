@@ -522,7 +522,7 @@ int main(int argc, char *argv[]) {
     std::cout << tri_data.dataOnEntities[MBTRI][0].getN(AINSWORTH_COLE_BASE) << std::endl;
     sum += sum_matrix(tri_data.dataOnEntities[MBTRI][0].getN(AINSWORTH_COLE_BASE));
     std::cout << "sum  " << sum << std::endl;
-    if(fabs(1.42187-sum)>eps) {
+    if(fabs(0.671875-sum)>eps) {
       SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"wrong result");
     }
   }

@@ -36,17 +36,17 @@ PetscErrorCode L2_ShapeFunctions_MBTRI(
   int dd = 0;
   for(;dd<2;dd++) {
     diff_ksiL01[dd] = ( diffN[1*2 + dd] - diffN[0*2 + dd] );
-    diff_ksiL20[dd] = ( diffN[0*2 + dd] - diffN[2*2 + dd] );
+    diff_ksiL20[dd] = ( diffN[2*2 + dd] - diffN[0*2 + dd] );
   }
   int ii = 0;
   for(;ii<GDIM;ii++) {
     int node_shift = ii*3;
     double ksiL01 = N[ node_shift+1 ] - N[ node_shift + 0];
-    double ksiL20 = N[ node_shift+0 ] - N[ node_shift + 2];
+    double ksiL20 = N[ node_shift+2 ] - N[ node_shift + 0];
     double L01[ p+1 ],L20[ p+1 ];
     double diffL01[ 2*(p+1) ],diffL20[ 2*(p+1) ];
-    ierr = Legendre_polynomials(p,ksiL01,diff_ksiL01,L01,diffL01,2); CHKERRQ(ierr);
-    ierr = Legendre_polynomials(p,ksiL20,diff_ksiL20,L20,diffL20,2); CHKERRQ(ierr);
+    ierr = base_polynomials(p,ksiL01,diff_ksiL01,L01,diffL01,2); CHKERRQ(ierr);
+    ierr = base_polynomials(p,ksiL20,diff_ksiL20,L20,diffL20,2); CHKERRQ(ierr);
     int shift = ii*P;
     int jj = 0;
     int oo = 0;
