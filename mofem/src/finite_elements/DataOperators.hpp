@@ -81,6 +81,8 @@ struct DataOperator {
 
 /**
  * \brief Calculate inverse of tensor rank 2 at integration points
+
+ * \ingroup mofem_forces_and_sources
  */
 template<int Tensor_Dim,class T,class L,class A>
 inline PetscErrorCode invertTensor3by3(
@@ -106,6 +108,8 @@ inline PetscErrorCode invertTensor3by3<3,double,ublas::row_major,ublas::unbounde
 
 /**
  * \brief Calculate determinant
+
+ * \ingroup mofem_forces_and_sources
  */
 template<class T1,class T2>
 inline PetscErrorCode determinantTensor3by3(
@@ -121,6 +125,8 @@ inline PetscErrorCode determinantTensor3by3(
 
 /**
  * \brief Calculate matrix inverse
+
+ * \ingroup mofem_forces_and_sources
  */
 template<class T1,class T2,class T3>
 inline PetscErrorCode invertTensor3by3(
@@ -141,6 +147,8 @@ inline PetscErrorCode invertTensor3by3(
 
 /**
  * \brief Specialization for symmetric tensor
+
+ * \ingroup mofem_forces_and_sources
  */
 template<>
 inline PetscErrorCode invertTensor3by3<
@@ -162,6 +170,8 @@ FTensor::Tensor2_symmetric<double,3>,double,FTensor::Tensor2_symmetric<double,3>
 
 /**
  * \brief Specialization for symmetric (pointer) tensor
+
+ * \ingroup mofem_forces_and_sources
  */
 template<>
 inline PetscErrorCode invertTensor3by3<
@@ -181,7 +191,11 @@ FTensor::Tensor2_symmetric<double,3>,double,FTensor::Tensor2_symmetric<double*,3
   PetscFunctionReturn(0);
 }
 
-/// \brief Transform local reference derivatives of shape function to global derivatives
+/**
+ * \brief Transform local reference derivatives of shape function to global derivatives
+
+ * \ingroup mofem_forces_and_sources
+ */
 struct OpSetInvJacH1: public DataOperator {
 
   FTensor::Tensor2<double*,3,3> tInvJac;
@@ -203,7 +217,11 @@ struct OpSetInvJacH1: public DataOperator {
 
 };
 
-/// \brief Transform local reference derivatives of shape function to global derivatives
+/**
+ * \brief brief Transform local reference derivatives of shape function to global derivatives
+
+ * \ingroup mofem_forces_and_sources
+ */
 struct OpSetInvJacHdivAndHcurl: public DataOperator {
 
   FTensor::Tensor2<double*,3,3> tInvJac;
@@ -225,8 +243,11 @@ struct OpSetInvJacHdivAndHcurl: public DataOperator {
 
 };
 
-/** \brief transform local reference derivatives of shape function to global derivatives if higher order geometry is given
-  */
+/**
+ * \brief transform local reference derivatives of shape function to global derivatives if higher order geometry is given
+
+ * \ingroup mofem_forces_and_sources
+*/
 struct OpSetHoInvJacH1: public DataOperator {
 
   MatrixDouble &invHoJac;
@@ -239,8 +260,12 @@ struct OpSetHoInvJacH1: public DataOperator {
 
 };
 
-/** \brief transform local reference derivatives of shape function to global derivatives if higher order geometry is given
-  */
+/**
+ * \brief transform local reference derivatives of shape function to global derivatives if higher order geometry is given
+ *
+
+ * \ingroup mofem_forces_and_sources
+*/
 struct OpSetHoInvJacHdivAndHcurl: public DataOperator {
 
   MatrixDouble &invHoJac;
@@ -266,6 +291,8 @@ Contravariant Piola transformation
 =
 \frac{1}{\textrm{det}(J)}J_{ik}\frac{\partial \hat{\psi}_k}{\partial \xi_j}
 \f]
+
+* \ingroup mofem_forces_and_sources
 
 */
 struct OpSetContravariantPiolaTransform: public DataOperator {
@@ -295,7 +322,9 @@ struct OpSetContravariantPiolaTransform: public DataOperator {
 
 };
 
-/** \brief Apply contravariant (Piola) transfer to Hdiv space for HO geometry
+/** \brief Apply contravariant (Piola) transfer to Hdiv space for HO geometr
+
+* \ingroup mofem_forces_and_sources
 */
 struct OpSetHoContravariantPiolaTransform: public DataOperator {
 
@@ -343,6 +372,8 @@ Contravariant Piola transformation
 \frac{1}{\textrm{det}(J)}J_{ik}\frac{\partial \hat{\psi}_k}{\partial \xi_j}
 \f]
 
+
+* \ingroup mofem_forces_and_sources
 */
 struct OpSetCovariantPiolaTransform: public DataOperator {
 
@@ -473,6 +504,7 @@ struct OpGetCoordsAndNormalsOnPrism: public DataOperator {
 };
 
 /** \brief transform Hdiv base fluxes from reference element to physical triangle
+ * \ingroup mofem_forces_and_sources
  */
 struct OpSetContravariantPiolaTransoformOnTriangle: public DataOperator {
 
@@ -495,6 +527,7 @@ struct OpSetContravariantPiolaTransoformOnTriangle: public DataOperator {
 };
 
 /** \brief transform Hcurl base fluxes from reference element to physical triangle
+ * \ingroup mofem_forces_and_sources
  */
 struct OpSetCovariantPiolaTransoformOnTriangle: public DataOperator {
 
@@ -530,6 +563,7 @@ struct OpSetCovariantPiolaTransoformOnTriangle: public DataOperator {
 };
 
 /** \brief Calculate tangent vector on edge form HO geometry approximation
+ * \ingroup mofem_forces_and_sources
  */
 struct OpGetHoTangentOnEdge: public DataOperator {
 
@@ -543,6 +577,7 @@ struct OpGetHoTangentOnEdge: public DataOperator {
 };
 
 /** \brief transform Hcurl base fluxes from reference element to physical edge
+ * \ingroup mofem_forces_and_sources
  */
 struct OpSetCovariantPiolaTransoformOnEdge: public DataOperator {
 
