@@ -48,7 +48,7 @@ namespace MoFEM {
 
     /**
      * \brier initialize container form data on mesh
-     * @return [description]
+     * @return error code
      */
     PetscErrorCode initialiseDatabseInformationFromMesh(int verb = 0);
 

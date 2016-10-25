@@ -45,16 +45,97 @@ struct MOFEMuuid {
 **/
 static const MOFEMuuid IDD_MOFEMUnknown = MOFEMuuid( BitIntefaceId(UNKNOWNINTERFACE) );
 
+struct Version {
+  int majorVersion;
+  int minorVersion;
+  int buildVersion;
+  Version():
+  majorVersion(MoFEM_VERSION_MAJOR),
+  minorVersion(MoFEM_VERSION_MINOR),
+  buildVersion(MoFEM_VERSION_BUILD) {
+  }  
+  Version(const int v[3]):
+  majorVersion(v[0]),
+  minorVersion(v[1]),
+  buildVersion(v[2]) {
+  }
+  Version(const int minor,const int major,const int build):
+  majorVersion(minor),
+  minorVersion(major),
+  buildVersion(build) {
+  }
+};
+
 /** \brief base class for all interface classes
   * \ingroup mofem
 **/
 struct UnknownInterface {
+
   virtual PetscErrorCode queryInterface (const MOFEMuuid& uuid, UnknownInterface** iface) = 0;
   virtual ~UnknownInterface() {}
-  virtual int getInterfaceMajorVersion() const { return MoFEM_VERSION_MAJOR; }
-  virtual int getInterfaceMinorVersion() const { return MoFEM_VERSION_MINOR; }
-  virtual int getIntefaceBuild() const { return MoFEM_VERSION_BUILD; }
-  virtual std::string getGitIDCommitName() const { return std::string(GIT_SHA1_NAME); }
+
+  /**
+   * \brief Get library version
+   *
+   * This is library version.
+   *
+   * @return error code
+   */
+  virtual PetscErrorCode getLibVersion(Version &version) const {
+    PetscFunctionBegin;
+    version = Version(MoFEM_VERSION_MAJOR,MoFEM_VERSION_MINOR,MoFEM_VERSION_BUILD);
+    PetscFunctionReturn(0);
+   }
+
+  /**
+  * \brief Get database major version
+  *
+  * This is database version. MoFEM can read DataBase from file created by older
+  * version. Then library version and database version could be different.
+  *
+  * @return error code
+  */
+  virtual const PetscErrorCode getFileVersion(moab::Interface &moab,Version &version) const {
+    MoABErrorCode rval;
+    PetscFunctionBegin;
+    const EntityHandle root_meshset = 0;
+    const int def_version[] = {-1,-1,-1};
+    Tag th;
+    rval = moab.tag_get_handle(
+      "MOFEM_VERSION",3,MB_TYPE_INTEGER,th,MB_TAG_CREAT|MB_TAG_MESH,&def_version
+    );
+    int *version_ptr;
+    if(rval==MB_ALREADY_ALLOCATED) {
+      const void* tag_data[1];
+      rval = moab.tag_get_by_ptr(th,&root_meshset,1,tag_data); CHKERRQ_MOAB(rval);
+      version_ptr = (int*)tag_data[0];
+    } else {
+      CHKERRQ_MOAB(rval);
+      const void* tag_data[1];
+      rval = moab.tag_get_by_ptr(th,&root_meshset,1,tag_data); CHKERRQ_MOAB(rval);
+      version_ptr = (int*)tag_data[0];
+      version_ptr[0] = MoFEM_VERSION_MAJOR;
+      version_ptr[1] = MoFEM_VERSION_MINOR;
+      version_ptr[2] = MoFEM_VERSION_BUILD;
+    }
+    version = Version(version_ptr);
+    PetscFunctionReturn(0);
+  }
+
+  /**
+   * \brief Get database major version
+   *
+   * Implementation of particular interface could be different than main lib. For
+   * example user could use older interface, to keep back compatibility.
+   *
+   * @return error code
+   */
+  virtual PetscErrorCode getInterfaceVersion(Version &version) const {
+    PetscFunctionBegin;
+    version = Version(MoFEM_VERSION_MAJOR,MoFEM_VERSION_MINOR,MoFEM_VERSION_BUILD);
+    PetscFunctionReturn(0);
+  }
+
 };
 
 }

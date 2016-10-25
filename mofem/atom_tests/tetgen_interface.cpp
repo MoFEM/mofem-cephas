@@ -1,3 +1,9 @@
+/** \file tetgen_interface.cpp
+  * \brief test for TetGen interface
+  *
+  * \ingroup mesh_tetgen
+  */
+
 /*
  * This file is part of MoFEM.
  * MoFEM is free software: you can redistribute it and/or modify it under
@@ -151,12 +157,12 @@ int main(int argc, char *argv[]) {
       rval = m_field.get_moab().get_adjacencies(
         *viit,1,false,viit_edges,moab::Interface::UNION); CHKERRQ_MOAB(rval);
       for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,SIDESET,sit)) {
-	Range faces;
-	rval = moab.get_entities_by_type(sit->meshset,MBTRI,faces,true); CHKERRQ_MOAB(rval);
-	Range faces_edges;
-	rval = m_field.get_moab().get_adjacencies(
-	  faces,1,false,faces_edges,moab::Interface::UNION); CHKERRQ_MOAB(rval);
-	aa.merge(intersect(faces_edges,viit_edges));
+	      Range faces;
+	      rval = moab.get_entities_by_type(sit->meshset,MBTRI,faces,true); CHKERRQ_MOAB(rval);
+	      Range faces_edges;
+	      rval = m_field.get_moab().get_adjacencies(
+	      faces,1,false,faces_edges,moab::Interface::UNION); CHKERRQ_MOAB(rval);
+	      aa.merge(intersect(faces_edges,viit_edges));
       }
       markers.push_back(std::pair<Range,int>(unite(polygons,aa),-1));
       //markers.push_back(std::pair<Range,int>(polygons,-1));

@@ -695,7 +695,7 @@ PetscErrorCode Core::set_other_global_ghost_vector(
   PetscErrorCode ierr;
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
-  typedef NumeredDofEntity_multiIndex::index<FieldName_mi_tag>::type DofsByName;
+  typedef NumeredDofEntityByFieldName DofsByName;
   DofsByName *dofs;
   DofIdx nb_dofs;
   switch (rc) {
@@ -774,7 +774,7 @@ PetscErrorCode Core::set_other_global_ghost_vector(
             if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
           }
           //create field moabdof
-          DofEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type::iterator hi_diit,diit;
+          DofEntityByNameAndEnt::iterator hi_diit,diit;
           diit = dofsField.get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple(field_name,(*miit)->getEnt()));
           hi_diit = dofsField.get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple(field_name,(*miit)->getEnt()));
           for(;diit!=hi_diit;diit++) {

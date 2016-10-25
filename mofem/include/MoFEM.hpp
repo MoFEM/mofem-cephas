@@ -53,10 +53,11 @@
 //SRC/INTERFACES
 #include <LoopMethods.hpp>
 #include <Interface.hpp>
-#include <PrismInterface.hpp>
-#include <SeriesRecorder.hpp>
 #include <Core.hpp>
+
 #include <MeshRefinement.hpp>
+#include <SeriesRecorder.hpp>
+#include <PrismInterface.hpp>
 #include <MeshsetsManager.hpp>
 #include <CoordSystemsManager.hpp>
 #ifdef WITH_TETGEN
@@ -65,6 +66,7 @@
 #ifdef WITH_MED
   #include <MedInterface.hpp>
 #endif //WITH_MED
+#include <CutMeshInterface.hpp>
 #include <BitLevelCoupler.hpp>
 #include <NodeMerger.hpp>
 #include <PrismsFromSurfaceInterface.hpp>

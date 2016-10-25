@@ -35,7 +35,7 @@ struct MeshsetsManager;
   without interfering with users modules programmer work.
 
  */
-struct Core: public Interface, PrismInterface, SeriesRecorder {
+struct Core: public Interface {
 
   PetscErrorCode queryInterface(const MOFEMuuid& uuid, UnknownInterface** iface);
   PetscErrorCode query_interface_type(const std::type_info& iface_type,void*& ptr) const;
@@ -50,6 +50,7 @@ struct Core: public Interface, PrismInterface, SeriesRecorder {
   inline Tag get_th_RefBitLevel() const { return th_RefBitLevel; }
   inline Tag get_th_RefBitEdge() const { return th_RefBitEdge; }
   inline Tag get_th_RefType() const { return th_RefType; }
+
 
   //add prims element FIXME This is wrong solution
   PetscErrorCode addPrismToDatabase(const EntityHandle prism,int verb = -1);
@@ -75,7 +76,7 @@ struct Core: public Interface, PrismInterface, SeriesRecorder {
   Tag th_ProblemLocalNbDofCol,th_ProblemGhostNbDofCol;
   Tag th_ProblemShift,th_FieldShift,th_FEShift;
   Tag th_ElemType;                    ///< Needed for VTK files
-  Tag th_SeriesName;                  ///< Recorded series name
+  // Tag th_SeriesName;                  ///< Recorded series name
 
   boost::shared_ptr<BasicEntityData> basicEntityDataPtr;
 
@@ -109,9 +110,9 @@ struct Core: public Interface, PrismInterface, SeriesRecorder {
   MoFEMProblem_multiIndex pRoblems;					 ///< problems
   //cubit
   // CubitMeshSet_multiIndex cubitMeshsets;	   ///< cubit meshsets
-  //series
-  Series_multiIndex sEries;							///< recorded series
-  SeriesStep_multiIndex seriesSteps;						///< recorded series steps
+  // //series
+  // Series_multiIndex sEries;							///< recorded series
+  // SeriesStep_multiIndex seriesSteps;						///< recorded series steps
 
   //safety nets
   Tag th_MoFEMBuild;
@@ -147,29 +148,6 @@ struct Core: public Interface, PrismInterface, SeriesRecorder {
   //communicator MoFEM
   MPI_Comm get_comm() const;
 
-  //SeriesRecorder
-  //add/delete series
-  PetscErrorCode add_series_recorder(const std::string& series_name);
-  PetscErrorCode delete_recorder_series(const std::string& series_name);
-  //initialize/finalize recording
-  PetscErrorCode initialize_series_recorder(const std::string& serie_name);
-  PetscErrorCode finalize_series_recorder(const std::string& serie_name);
-  //start recording
-  PetscErrorCode record_begin(const std::string& serie_name);
-  //recording functions
-  PetscErrorCode record_problem(const std::string& serie_name,const MoFEMProblem *problemPtr,RowColData rc);
-  PetscErrorCode record_problem(const std::string& serie_name,const std::string& problem_name,RowColData rc);
-  PetscErrorCode record_field(const std::string& serie_name,const std::string& field_name,const BitRefLevel &bit,const BitRefLevel &mask);
-  //end recording
-  PetscErrorCode record_end(const std::string& serie_name,double time = 0);
-  PetscErrorCode print_series_steps();
-  bool check_series(const std::string& name) const;
-  //get data back
-  PetscErrorCode load_series_data(const std::string& serie_name,const int step_number);
-
-  SeriesStep_multiIndex::index<SeriesName_mi_tag>::type::iterator get_series_steps_byName_begin(const std::string& name);
-  SeriesStep_multiIndex::index<SeriesName_mi_tag>::type::iterator get_series_steps_byName_end(const std::string& name);
-
   //FiedlInterface
 
   //check consistency
@@ -181,39 +159,16 @@ struct Core: public Interface, PrismInterface, SeriesRecorder {
   PetscErrorCode clear_database(int verb  = -1);
   PetscErrorCode rebuild_database(int verb = -1);
 
-  PetscErrorCode get_msId_3dENTS_sides(
-    const int msId,
-    const CubitBCType cubit_bc_type,
-    const BitRefLevel mesh_bit_level,
-    const bool recursive,int verb = -1
-  );
-  PetscErrorCode get_msId_3dENTS_sides(
-    const EntityHandle SIDESET,
-    const BitRefLevel mesh_bit_level,
-    const bool recursive,int verb = -1
-  );
-  PetscErrorCode get_msId_3dENTS_split_sides(
-    const EntityHandle meshset,const BitRefLevel &bit,
-    const int msId,const CubitBCType cubit_bc_type,
-    const bool add_iterfece_entities,const bool recursive = false,int verb = -1
-  );
-  PetscErrorCode get_msId_3dENTS_split_sides(
-    const EntityHandle meshset,const BitRefLevel &bit,
-    const EntityHandle SIDESET,const bool add_iterfece_entities,const bool recursive = false,int verb = -1
-  );
-  PetscErrorCode get_msId_3dENTS_split_sides(
-    const EntityHandle meshset,const BitRefLevel &bit,
-    const BitRefLevel &inheret_from_bit_level,const BitRefLevel &inheret_from_bit_level_mask,
-    const EntityHandle SIDESET,const bool add_iterfece_entities,const bool recursive = false,int verb = -1
-  );
-
   //cubit meshsets
 
-  MeshsetsManager* meshsetsManagerPtr;
-  MeshsetsManager* get_meshsets_manager_ptr() { return meshsetsManagerPtr; }
-  const MeshsetsManager* get_meshsets_manager_ptr() const { return meshsetsManagerPtr; }
-  MeshsetsManager& get_meshsets_manager() { return *meshsetsManagerPtr; }
-  const MeshsetsManager& get_meshsets_manager() const { return *meshsetsManagerPtr; }
+  MeshsetsManager* get_meshsets_manager_ptr();
+  const MeshsetsManager* get_meshsets_manager_ptr() const;
+  inline MeshsetsManager& get_meshsets_manager() {
+    return *get_meshsets_manager_ptr();
+  }
+  inline const MeshsetsManager& get_meshsets_manager() const {
+    return *get_meshsets_manager_ptr();
+  }
 
   DEPRECATED bool check_msId_meshset(const int ms_id,const CubitBCType cubit_bc_type);
   DEPRECATED PetscErrorCode add_cubit_msId(const CubitBCType cubit_bc_type,const int ms_id,const std::string name = "");
@@ -633,18 +588,18 @@ struct Core: public Interface, PrismInterface, SeriesRecorder {
   PetscErrorCode get_dofs(const DofEntity_multiIndex **dofs_ptr) const ;
   PetscErrorCode get_finite_elements(const FiniteElement_multiIndex **finiteElements_ptr) const;
 
-  MoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator get_ent_moabfield_by_name_begin(const std::string &field_name) const;
-  MoFEMEntity_multiIndex::index<FieldName_mi_tag>::type::iterator get_ent_moabfield_by_name_end(const std::string &field_name) const;
+  MoFEMEntityByFieldName::iterator get_ent_moabfield_by_name_begin(const std::string &field_name) const;
+  MoFEMEntityByFieldName::iterator get_ent_moabfield_by_name_end(const std::string &field_name) const;
 
-  DofEntity_multiIndex::index<FieldName_mi_tag>::type::iterator get_dofs_by_name_begin(const std::string &field_name) const;
-  DofEntity_multiIndex::index<FieldName_mi_tag>::type::iterator get_dofs_by_name_end(const std::string &field_name) const;
-  DofEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type::iterator get_dofs_by_name_and_ent_begin(const std::string &field_name,const EntityHandle ent) const;
-  DofEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type::iterator get_dofs_by_name_and_ent_end(const std::string &field_name,const EntityHandle ent) const;
-  DofEntity_multiIndex::index<Composite_Name_And_Type_mi_tag>::type::iterator get_dofs_by_name_and_type_begin(const std::string &field_name,const EntityType type) const;
-  DofEntity_multiIndex::index<Composite_Name_And_Type_mi_tag>::type::iterator get_dofs_by_name_and_type_end(const std::string &field_name,const EntityType ent) const;
+  DofEntityByFieldName::iterator get_dofs_by_name_begin(const std::string &field_name) const;
+  DofEntityByFieldName::iterator get_dofs_by_name_end(const std::string &field_name) const;
+  DofEntityByNameAndEnt::iterator get_dofs_by_name_and_ent_begin(const std::string &field_name,const EntityHandle ent) const;
+  DofEntityByNameAndEnt::iterator get_dofs_by_name_and_ent_end(const std::string &field_name,const EntityHandle ent) const;
+  DofEntityByNameAndType::iterator get_dofs_by_name_and_type_begin(const std::string &field_name,const EntityType type) const;
+  DofEntityByNameAndType::iterator get_dofs_by_name_and_type_end(const std::string &field_name,const EntityType ent) const;
 
-  EntFiniteElement_multiIndex::index<FiniteElement_name_mi_tag>::type::iterator get_fe_by_name_begin(const std::string &fe_name) const;
-  EntFiniteElement_multiIndex::index<FiniteElement_name_mi_tag>::type::iterator get_fe_by_name_end(const std::string &fe_name) const;
+  EntFiniteElementbyName::iterator get_fe_by_name_begin(const std::string &fe_name) const;
+  EntFiniteElementbyName::iterator get_fe_by_name_end(const std::string &fe_name) const;
 
   //Copy field values to another field
   PetscErrorCode field_axpy(const double alpha,const std::string& fiel_name_x,const std::string& field_name_y,bool error_if_missing = false,bool creat_if_missing = false);

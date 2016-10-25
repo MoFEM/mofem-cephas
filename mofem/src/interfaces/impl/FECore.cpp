@@ -824,11 +824,11 @@ namespace MoFEM {
     *finiteElements_ptr = &finiteElements;
     PetscFunctionReturn(0);
   }
-  EntFiniteElement_multiIndex::index<FiniteElement_name_mi_tag>::type::iterator
+  EntFiniteElementbyName::iterator
   Core::get_fe_by_name_begin(const std::string &fe_name) const {
     return entsFiniteElements.get<FiniteElement_name_mi_tag>().lower_bound(fe_name);
   }
-  EntFiniteElement_multiIndex::index<FiniteElement_name_mi_tag>::type::iterator
+  EntFiniteElementbyName::iterator
   Core::get_fe_by_name_end(const std::string &fe_name) const {
     return entsFiniteElements.get<FiniteElement_name_mi_tag>().upper_bound(fe_name);
   }

@@ -199,7 +199,6 @@ PetscErrorCode TetPolynomialBase::getValueL2(
     base_polynomials
   ); CHKERRQ(ierr);
 
-
   PetscFunctionReturn(0);
 }
 

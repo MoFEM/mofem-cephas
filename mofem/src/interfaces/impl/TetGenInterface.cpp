@@ -940,11 +940,11 @@ PetscErrorCode TetGenInterface::makePolygonFacet(Range &ents,Range &polygons,
       double dot = cblas_dnrm2(3,&coords[3*1],1);
       //std::cerr << mm << " " << mc << " " << mp << " " << dot << std::endl;
       if(dot<eps) {
-	polygon_nodes.erase(pit);
-	pit = polygon_nodes.begin();
-	//std::cerr << std::endl;
+        polygon_nodes.erase(pit);
+        pit = polygon_nodes.begin();
+        //std::cerr << std::endl;
       } else {
-	pit++;
+        pit++;
       }
     }
   }
