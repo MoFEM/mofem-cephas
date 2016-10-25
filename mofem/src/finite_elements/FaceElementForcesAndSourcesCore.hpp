@@ -72,7 +72,7 @@ struct FaceElementForcesAndSourcesCore: public ForcesAndSurcesCore {
     dataH1(MBTRI),derivedDataH1(dataH1),
     dataHdiv(MBTRI),derivedDataHdiv(dataHdiv),
     dataHcurl(MBTRI),derivedDataHcurl(dataHcurl),
-    dataL2(MBTRI),derivedDataL2(dataHdiv),
+    dataL2(MBTRI),derivedDataL2(dataL2),
     dataNoField(MBTRI),dataNoFieldCol(MBTRI),
     meshPositionsFieldName("MESH_NODE_POSITIONS"),
     opHOCoordsAndNormals(
