@@ -337,19 +337,27 @@ PetscErrorCode Core::add_ents_to_field_by_TRIs(const Range &tris,const BitFieldI
     }
     break;
     case HCURL:
-
-    // You would add h-div space on edge here if you would have 2d hdiv space. At the
-    // moment attention is focussed on 3d problems.
-
-    SETERRQ(comm,MOFEM_NOT_IMPLEMENTED,"sorry, not implemented, HCURL not implemented for triangle");
-
+    rval = moab.add_entities(idm,tris); CHKERRQ_MOAB(rval);
+    rval = moab.get_adjacencies(tris,1,false,edges,moab::Interface::UNION); CHKERRQ_MOAB(rval);
+    rval = moab.add_entities(idm,edges); CHKERRQ_MOAB(rval);
+    if(verb>1) {
+      std::ostringstream ss;
+      ss << "add entities to field " << get_BitFieldId_name(id);
+      ss << " nb. add tris " << tris.size();
+      ss << " nb. add edges " << edges.size();
+      ss << std::endl;
+      PetscPrintf(comm,ss.str().c_str());
+    }
     break;
     case HDIV:
-
-    // You would add h-div space on edge here if you would have 2d hdiv space. At the MOFEM_NOT_IMPLEMENTED
-    // attention is focussed on 3d problems.
-
-    SETERRQ(comm,MOFEM_NOT_IMPLEMENTED,"sorry, not implemented, HDIV not implemented for triangle");
+    rval = moab.add_entities(idm,tris); CHKERRQ_MOAB(rval);
+    if(verb>1) {
+      std::ostringstream ss;
+      ss << "add entities to field " << get_BitFieldId_name(id);
+      ss << " nb. add tris " << tris.size();
+      ss << std::endl;
+      PetscPrintf(comm,ss.str().c_str());
+    }
     break;
     default:
     SETERRQ(comm,MOFEM_DATA_INCONSISTENCY,"sorry, unknown field is applied to triangle entity");
