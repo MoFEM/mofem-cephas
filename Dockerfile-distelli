@@ -60,5 +60,5 @@ $MOFEM_SRC_DIR \
 && cd $MOFEM_INSTALL_DIR  \
 && $CMAKE -DCMAKE_CXX_FLAGS="-Wall" users_modules \
 && make \
-&& $CTEST --output-on-failure -D Experimental \
+&& $CTEST --output-on-failure -D Experimental -R basic_ \
 && make clean

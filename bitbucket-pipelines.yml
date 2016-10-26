@@ -45,6 +45,6 @@ pipelines:
             users_modules
           - echo "Build users modules"
           - make
-          - ctest --output-on-failure -D Experimental
+          - ctest --output-on-failure -D Experimental -R basic_
           - make clean
           - echo "All done"
