@@ -17,18 +17,27 @@ include_directories("${PROJECT_BINARY_DIR}/src/ftensor/src")
 file(GLOB_RECURSE FTENSOR_CONFORMANCE_TEST_FILES
   ${PROJECT_SOURCE_DIR}/src/ftensor/tests/conformance/test_*.cpp
 )
-file(REMOVE ${CMAKE_CURRENT_BINARY_DIR}/All.cpp)
+file(REMOVE ${CMAKE_CURRENT_BINARY_DIR}/All.cpp_tmp)
 foreach(LINE ${FTENSOR_CONFORMANCE_TEST_FILES})
   set(TO_INCLUDE "#include \"${LINE}\"\n")
-  file(APPEND ${CMAKE_CURRENT_BINARY_DIR}/All.cpp ${TO_INCLUDE})
+  file(APPEND ${CMAKE_CURRENT_BINARY_DIR}/All.cpp_tmp ${TO_INCLUDE})
 endforeach(LINE ${TENSOR_CONFORMANCE_TEST_FILES})
-# set_source_files_properties(All.cpp PROPERTIES GENERATED TRUE)
+add_custom_target(
+  all_cpp_generate_for_ftensor
+  ${CMAKE_COMMAND} -E copy_if_different
+  ${CMAKE_CURRENT_BINARY_DIR}/All.cpp_tmp
+  ${CMAKE_CURRENT_BINARY_DIR}/All.cpp
+  COMMENT
+  "Copy gnerated ftensor All.cpp file"
+)
+set_source_files_properties(All.cpp PROPERTIES GENERATED TRUE)
 
 add_executable(
   ftensor_conformance_test
   ${PROJECT_SOURCE_DIR}/src/ftensor/tests/conformance/main.cpp
   ${CMAKE_CURRENT_BINARY_DIR}/All.cpp
 )
+add_dependencies(ftensor_conformance_test all_cpp_generate_for_ftensor)
 add_test(
   ftensor_conformance_test ${CMAKE_CURRENT_BINARY_DIR}/ftensor_conformance_test
 )
