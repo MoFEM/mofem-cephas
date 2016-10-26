@@ -53,6 +53,7 @@ extern "C" {
   #include <ConvectiveMassElement.hpp>
   #include <NitscheMethod.hpp>
 #endif
+#include <SurfacePressureComplexForLazy.hpp>
 #include <PCMGSetUpViaApproxOrders.hpp>
 #include <PostProcHookStresses.hpp>
 #include <SurfacePressure.hpp>

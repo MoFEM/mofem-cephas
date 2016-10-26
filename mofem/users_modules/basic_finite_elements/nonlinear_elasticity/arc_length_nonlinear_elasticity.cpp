@@ -34,7 +34,6 @@ namespace po = boost::program_options;
 #include <NeoHookean.hpp>
 
 #include <SurfacePressureComplexForLazy.hpp>
-using namespace ObosleteUsersModules;
 
 ErrorCode rval;
 PetscErrorCode ierr;

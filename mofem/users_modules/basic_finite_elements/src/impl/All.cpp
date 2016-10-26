@@ -28,6 +28,7 @@
 #include <SurfacePressure.cpp>
 #include <ThermalElement.cpp>
 #include <FluidPressure.cpp>
+#include <SurfacePressureComplexForLazy.cpp>
 
 #ifdef WITH_ADOL_C
   #include <NonLinearElasticElement.cpp>
