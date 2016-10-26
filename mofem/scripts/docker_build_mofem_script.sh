@@ -44,6 +44,6 @@ cd $MOFEM_INSTALL_DIR
 /opt/local/bin/cmake -DBUILD_SHARED_LIBS=yes -DCMAKE_CXX_FLAGS="-Wall" users_modules
 echo "Build users modules"
 make -j $NB
-ctest --output-on-failure -D Experimental
+ctest --output-on-failure -D Experimental -R basic
 make clean
 echo "All done"

@@ -28,7 +28,6 @@ if(ADOL-C_LIBRARY)
     mofem_interfaces
     mofem_multi_indices
     mofem_petsc
-    users_modules_obsolete
     mofem_approx
     mofem_third_party
     mofem_cblas
@@ -93,7 +92,6 @@ target_link_libraries(nonlinear_dynamics
   mofem_interfaces
   mofem_multi_indices
   mofem_petsc
-  users_modules_obsolete
   mofem_approx
   mofem_third_party
   mofem_cblas
@@ -124,7 +122,6 @@ if(SLEPC_LIBRARY)
     mofem_interfaces
     mofem_multi_indices
     mofem_petsc
-    users_modules_obsolete
     mofem_approx
     mofem_third_party
     mofem_cblas
