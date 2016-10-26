@@ -28,7 +28,6 @@ if(MoFEM_PRECOMPILED_HEADRES)
     PROPERTIES
     LANGUAGE CXX
     COMPILE_FLAGS "-x c++-header"
-    OBJECT_OUTPUTS "BasicFiniteElements.hpp.pch"
   )
   add_library(
     BasicFiniteElements.hpp.pch

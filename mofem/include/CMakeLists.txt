@@ -62,16 +62,15 @@ if(PRECOMPILED_HEADRES)
     PROPERTIES
     LANGUAGE CXX
     COMPILE_FLAGS "-x c++-header"
-    OBJECT_OUTPUTS "Includes.hpp.pch"
   )
   add_library(Includes.hpp.pch OBJECT Includes.hpp)
   add_custom_target(
     Includes.hpp.pch_copy
-    ${CMAKE_COMMAND} -E copy
+    ${CMAKE_COMMAND} -E copy_if_different
     ${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/Includes.hpp.pch.dir/Includes.hpp.o
     ${CMAKE_CURRENT_BINARY_DIR}/precompiled/Includes.hpp.${OUT_PCH_SUFFIX}
     COMMAND
-    ${CMAKE_COMMAND} -E copy
+    ${CMAKE_COMMAND} -E copy_if_different
     ${CMAKE_CURRENT_SOURCE_DIR}/Includes.hpp
     ${CMAKE_CURRENT_BINARY_DIR}/precompiled/Includes.hpp
     COMMENT
@@ -85,16 +84,15 @@ if(PRECOMPILED_HEADRES)
     PROPERTIES
     LANGUAGE CXX
     COMPILE_FLAGS "-x c++-header"
-    OBJECT_OUTPUTS "MoFEM.hpp.pch"
   )
   add_library(MoFEM.hpp.pch OBJECT MoFEM.hpp)
   add_custom_target(
     MoFEM.hpp.pch_copy
-    ${CMAKE_COMMAND} -E copy
+    ${CMAKE_COMMAND} -E copy_if_different
     ${CMAKE_CURRENT_BINARY_DIR}/CMakeFiles/MoFEM.hpp.pch.dir/MoFEM.hpp.o
     ${CMAKE_CURRENT_BINARY_DIR}/precompiled/MoFEM.hpp.${OUT_PCH_SUFFIX}
     COMMAND
-    ${CMAKE_COMMAND} -E copy
+    ${CMAKE_COMMAND} -E copy_if_different
     ${CMAKE_CURRENT_SOURCE_DIR}/MoFEM.hpp
     ${CMAKE_CURRENT_BINARY_DIR}/precompiled/MoFEM.hpp
     COMMENT

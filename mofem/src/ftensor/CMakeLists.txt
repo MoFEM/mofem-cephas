@@ -22,7 +22,7 @@ foreach(LINE ${FTENSOR_CONFORMANCE_TEST_FILES})
   set(TO_INCLUDE "#include \"${LINE}\"\n")
   file(APPEND ${CMAKE_CURRENT_BINARY_DIR}/All.cpp ${TO_INCLUDE})
 endforeach(LINE ${TENSOR_CONFORMANCE_TEST_FILES})
-# set_source_files_properties(All.cpp PROPERTIES GENERATED TRUE)
+set_source_files_properties(All.cpp PROPERTIES GENERATED TRUE)
 
 add_executable(
   ftensor_conformance_test
