@@ -199,7 +199,7 @@ add_test(
   -my_file elasticity_atom_test_01X_pressure.h5m
   -ksp_monitor -ksp_type fgmres -pc_type bjacobi -ksp_atol 0 -ksp_rtol 1e-12
 )
-add_test(f
+add_test(
   basic_field_approximation_test_compare ${CMAKE_COMMAND} -E compare_files
   ${CMAKE_CURRENT_SOURCE_DIR}/blessed_files/field_approximation.txt
   ${CMAKE_CURRENT_BINARY_DIR}/field_approximation.txt
