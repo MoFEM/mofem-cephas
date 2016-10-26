@@ -34,8 +34,6 @@ namespace po = boost::program_options;
 
 #define BLOCKED_PROBLEM
 
-using namespace ObosleteUsersModules;
-
 ErrorCode rval;
 PetscErrorCode ierr;
 
