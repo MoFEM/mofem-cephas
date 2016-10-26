@@ -21,6 +21,12 @@
 
 namespace MoFEM {
 
+  typedef CubitMeshSet_multiIndex::index<CubitMeshSets_mi_tag>::type CubitMeshsetByType;
+
+  typedef CubitMeshSet_multiIndex::index<CubitMeshSets_mask_meshset_mi_tag>::type CubitMeshsetByMask;
+
+  typedef CubitMeshSet_multiIndex::index<CubitMeshSets_name>::type CubitMeshsetByName;
+
   /**
    * \brief Iterator that loops over all the Cubit MeshSets in a moFEM field
    * \ingroup mofem_bc
@@ -43,7 +49,7 @@ namespace MoFEM {
    * \param iterator
    */
    #define _IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(MESHSET_MANAGER,CUBITBCTYPE,IT) \
-   CubitMeshSet_multiIndex::index<CubitMeshSets_mi_tag>::type::iterator IT = MESHSET_MANAGER.get_meshsets_manager_ptr()->getBegin(CUBITBCTYPE); \
+   CubitMeshsetByType::iterator IT = MESHSET_MANAGER.get_meshsets_manager_ptr()->getBegin(CUBITBCTYPE); \
    IT!=MESHSET_MANAGER.get_meshsets_manager_ptr()->getEnd(CUBITBCTYPE); IT++
 
    /**
@@ -61,7 +67,7 @@ namespace MoFEM {
    * } \endcode
    */
    #define _IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(MESHSET_MANAGER,CUBITBCTYPE,IT) \
-   CubitMeshSet_multiIndex::index<CubitMeshSets_mask_meshset_mi_tag>::type::iterator IT = MESHSET_MANAGER.get_meshsets_manager_ptr()->getBySetTypeBegin(CUBITBCTYPE); \
+  CubitMeshsetByMask::iterator IT = MESHSET_MANAGER.get_meshsets_manager_ptr()->getBySetTypeBegin(CUBITBCTYPE); \
    IT!=MESHSET_MANAGER.get_meshsets_manager_ptr()->getBySetTypeEnd(CUBITBCTYPE); IT++
 
    /**
@@ -79,7 +85,7 @@ namespace MoFEM {
    * } \endcode
    */
    #define _IT_CUBITMESHSETS_BY_NAME_FOR_LOOP_(MESHSET_MANAGER,NAME,IT) \
-   CubitMeshSet_multiIndex::index<CubitMeshSets_name>::type::iterator IT = MESHSET_MANAGER.get_meshsets_manager_ptr()->getBegin(NAME); \
+   CubitMeshsetByName::iterator IT = MESHSET_MANAGER.get_meshsets_manager_ptr()->getBegin(NAME); \
    IT!=MESHSET_MANAGER.get_meshsets_manager_ptr()->getEnd(NAME); IT++
 
   static const MOFEMuuid IDD_MOFEMMeshsetsManager = MOFEMuuid( BitIntefaceId(MESHSETSMANAGER_INTERFACE) );
@@ -258,7 +264,7 @@ namespace MoFEM {
       *
       * \param  type of meshset (NODESET, SIDESET or BLOCKSET and more)
       */
-    inline CubitMeshSet_multiIndex::index<CubitMeshSets_mi_tag>::type::iterator
+    inline CubitMeshsetByType::iterator
     getBegin(const unsigned int cubit_bc_type) const {
       return cubitMeshsets.get<CubitMeshSets_mi_tag>().lower_bound(cubit_bc_type);
     }
@@ -274,7 +280,7 @@ namespace MoFEM {
       *
       * \param  type of meshset (NODESET, SIDESET or BLOCKSET and more)
       */
-    inline CubitMeshSet_multiIndex::index<CubitMeshSets_mi_tag>::type::iterator
+    inline CubitMeshsetByType::iterator
     getEnd(const unsigned int cubit_bc_type) const {
       return cubitMeshsets.get<CubitMeshSets_mi_tag>().upper_bound(cubit_bc_type);
     }
@@ -290,7 +296,7 @@ namespace MoFEM {
       *
       * \param  type of meshset (NODESET, SIDESET or BLOCKSET and more)
       */
-    inline CubitMeshSet_multiIndex::index<CubitMeshSets_mask_meshset_mi_tag>::type::iterator
+    inline CubitMeshsetByMask::iterator
     getBySetTypeBegin(const unsigned int cubit_bc_type) const {
       return cubitMeshsets.get<CubitMeshSets_mask_meshset_mi_tag>().lower_bound(cubit_bc_type);
     }
@@ -306,7 +312,7 @@ namespace MoFEM {
       *
       * \param  type of meshset (NODESET, SIDESET or BLOCKSET and more)
       */
-    inline CubitMeshSet_multiIndex::index<CubitMeshSets_mask_meshset_mi_tag>::type::iterator
+    inline CubitMeshsetByMask::iterator
     getBySetTypeEnd(const unsigned int cubit_bc_type) const {
       return cubitMeshsets.get<CubitMeshSets_mask_meshset_mi_tag>().upper_bound(cubit_bc_type);
     }
@@ -322,7 +328,7 @@ namespace MoFEM {
       *
       * \param  type of meshset (NODESET, SIDESET or BLOCKSET and more)
       */
-    inline CubitMeshSet_multiIndex::index<CubitMeshSets_name>::type::iterator
+    inline CubitMeshsetByName::iterator
     getBegin(const std::string& name) const {
       return cubitMeshsets.get<CubitMeshSets_name>().lower_bound(name);
     }
@@ -338,7 +344,7 @@ namespace MoFEM {
       *
       * \param  type of meshset (NODESET, SIDESET or BLOCKSET and more)
       */
-    inline CubitMeshSet_multiIndex::index<CubitMeshSets_name>::type::iterator
+    inline CubitMeshsetByName::iterator
     getEnd(const std::string& name) const {
       return cubitMeshsets.get<CubitMeshSets_name>().upper_bound(name);
     }
