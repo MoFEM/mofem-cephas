@@ -497,6 +497,9 @@ namespace MoFEM {
 
      Example of config file
      \code
+
+     [block_1001]
+
      # Example applying attributes to blockset
 
      id=2001
@@ -562,7 +565,6 @@ namespace MoFEM {
      add=SIDESET
      pressure_flag2=1       # 0: Pressure is interpreted as pure pressure 1: pressure is interpreted as total force
      pressure_magnitude=1
-     \endcode
 
      * @param  file_name config file
      * @return           error code
@@ -592,6 +594,8 @@ namespace MoFEM {
      name=MAT_THERMAL # Hast to be set for Thermal Mat
      conductivity=1
      capacity=1
+
+     \endcode
 
      */
     PetscErrorCode setMeshsetFromFile(const string file_name);
