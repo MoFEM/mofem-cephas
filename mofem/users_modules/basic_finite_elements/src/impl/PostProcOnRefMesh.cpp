@@ -550,20 +550,6 @@ PetscErrorCode PostProcVolumeOnRefinedMesh::postProcess() {
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode PostProcVolumeOnRefinedMesh::writeFile(const std::string file_name) {
- PetscFunctionBegin;
- MoABErrorCode rval;
- // #ifdef MOAB_HDF5_PARALLEL
-  rval = postProcMesh.write_file(file_name.c_str(),"MOAB","PARALLEL=WRITE_PART"); CHKERRQ_MOAB(rval);
- // #else
- //  #warning "No parallel HDF5, not most efficient way of writing files"
- //  if(mField.getCommRank()==0) {
- //    rval = postProcMesh.write_file(file_name.c_str(),"MOAB",""); CHKERRQ_MOAB(rval);
- //  }
- // #endif
- PetscFunctionReturn(0);
-}
-
 PetscErrorCode PostProcVolumeOnRefinedMesh::OpHdivFunctions::doWork(
   int side,
   EntityType type,

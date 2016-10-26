@@ -312,7 +312,26 @@ typedef multi_index_container<
           const_mem_fun<DofEntity,ApproximationOrder,&DofEntity::getDofOrder>,
           const_mem_fun<DofEntity,FieldCoefficientsNumber,&DofEntity::getDofCoeffIdx>
         > >
-  > > DofEntity_multiIndex;
+  >
+> DofEntity_multiIndex;
+
+/** \brief Dof entity multi-index by field name
+  *
+  * \ingroup dof_multi_indices
+  */
+typedef DofEntity_multiIndex::index<FieldName_mi_tag>::type DofEntityByFieldName;
+
+/** \brief Dof entity multi-index by field name and entity
+  *
+  * \ingroup dof_multi_indices
+  */
+typedef DofEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type DofEntityByNameAndEnt;
+
+/** \brief Dof entity multi-index by field name and entity type
+  *
+  * \ingroup dof_multi_indices
+  */
+typedef DofEntity_multiIndex::index<Composite_Name_And_Type_mi_tag>::type DofEntityByNameAndType;
 
 /** \brief multi-index view on DofEntity by uid
   \ingroup dof_multi_indices
@@ -406,51 +425,96 @@ typedef multi_index_container<
 	  const_mem_fun<FEDofEntity::interface_type_RefEntity,EntityType,&FEDofEntity::getEntType>,
 	  const_mem_fun<FEDofEntity::interface_type_Field,FieldSpace,&FEDofEntity::getSpace>
 	> >
-  > > FEDofEntity_multiIndex;
+  >
+> FEDofEntity_multiIndex;
+
+/** \brief Finite element DoF multi-index by field name
+  *
+  * \ingroup dof_multi_indices
+  */
+typedef FEDofEntity_multiIndex::index<FieldName_mi_tag>::type FEDofEntityByFieldName;
+
+/** \brief Dof entity multi-index by field name and entity
+  *
+  * \ingroup dof_multi_indices
+  */
+typedef FEDofEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type FEDofEntityByNameAndEnt;
+
+/** \brief Dof entity multi-index by field name and entity type
+  *
+  * \ingroup dof_multi_indices
+  */
+typedef FEDofEntity_multiIndex::index<Composite_Name_And_Type_mi_tag>::type FEDofEntityByNameAndType;
 
 /**
  * @relates multi_index_container
- * \brief MultiIndex container keeps FENumeredDofEntity
+ * \brief MultiIndex container keeps FENumeredDofEntitya
+
  * \ingroup dof_multi_indices
- *
  */
 typedef multi_index_container<
   boost::shared_ptr<FENumeredDofEntity>,
   indexed_by<
     ordered_unique<
-      tag<Unique_mi_tag>, const_mem_fun<FENumeredDofEntity::interface_type_DofEntity,const GlobalUId,&FENumeredDofEntity::getGlobalUniqueId> >,
+      tag<Unique_mi_tag>, const_mem_fun<FENumeredDofEntity::interface_type_DofEntity,const GlobalUId,&FENumeredDofEntity::getGlobalUniqueId>
+    >,
     ordered_non_unique<
-      tag<Ent_mi_tag>, const_mem_fun<FENumeredDofEntity::interface_type_DofEntity,EntityHandle,&FENumeredDofEntity::getEnt> >,
+      tag<Ent_mi_tag>, const_mem_fun<FENumeredDofEntity::interface_type_DofEntity,EntityHandle,&FENumeredDofEntity::getEnt>
+    >,
     ordered_non_unique<
-      tag<FieldName_mi_tag>, const_mem_fun<FENumeredDofEntity::interface_type_Field,boost::string_ref,&FENumeredDofEntity::getNameRef> >,
+      tag<FieldName_mi_tag>, const_mem_fun<FENumeredDofEntity::interface_type_Field,boost::string_ref,&FENumeredDofEntity::getNameRef>
+    >,
     ordered_non_unique<
-      tag<PetscGlobalIdx_mi_tag>, const_mem_fun<FENumeredDofEntity::interface_type_NumeredDofEntity,DofIdx,&FENumeredDofEntity::getPetscGlobalDofIdx> >,
+      tag<PetscGlobalIdx_mi_tag>, const_mem_fun<FENumeredDofEntity::interface_type_NumeredDofEntity,DofIdx,&FENumeredDofEntity::getPetscGlobalDofIdx>
+    >,
     ordered_non_unique<
       tag<Composite_Name_Type_And_Side_Number_mi_tag>,
       composite_key<
-	FENumeredDofEntity,
-	  const_mem_fun<FENumeredDofEntity::interface_type_Field,boost::string_ref,&FENumeredDofEntity::getNameRef>,
-	  const_mem_fun<FENumeredDofEntity::interface_type_RefEntity,EntityType,&FENumeredDofEntity::getEntType>,
-	  KeyFromKey<
-	    member<SideNumber,char,&SideNumber::side_number>,
-	    member<FENumeredDofEntity::BaseFEDofEntity,boost::shared_ptr<SideNumber>,&FENumeredDofEntity::sideNumberPtr>
-	  >
-      > >,
+	     FENumeredDofEntity,
+	     const_mem_fun<FENumeredDofEntity::interface_type_Field,boost::string_ref,&FENumeredDofEntity::getNameRef>,
+	     const_mem_fun<FENumeredDofEntity::interface_type_RefEntity,EntityType,&FENumeredDofEntity::getEntType>,
+	     KeyFromKey<
+	      member<SideNumber,char,&SideNumber::side_number>,
+	      member<FENumeredDofEntity::BaseFEDofEntity,boost::shared_ptr<SideNumber>,&FENumeredDofEntity::sideNumberPtr>
+	     >
+      >
+    >,
     ordered_non_unique<
       tag<Composite_Name_And_Type_mi_tag>,
       composite_key<
-	FENumeredDofEntity,
-	  const_mem_fun<FENumeredDofEntity::interface_type_Field,boost::string_ref,&FENumeredDofEntity::getNameRef>,
-	  const_mem_fun<FENumeredDofEntity::interface_type_RefEntity,EntityType,&FENumeredDofEntity::getEntType>
-	> >,
+	     FENumeredDofEntity,
+	     const_mem_fun<FENumeredDofEntity::interface_type_Field,boost::string_ref,&FENumeredDofEntity::getNameRef>,
+	     const_mem_fun<FENumeredDofEntity::interface_type_RefEntity,EntityType,&FENumeredDofEntity::getEntType>
+	    >
+    >,
     ordered_non_unique<
       tag<Composite_Name_And_Ent_mi_tag>,
       composite_key<
-	FENumeredDofEntity,
-	  const_mem_fun<FENumeredDofEntity::interface_type_Field,boost::string_ref,&FENumeredDofEntity::getNameRef>,
-	  const_mem_fun<FENumeredDofEntity::interface_type_DofEntity,EntityHandle,&FENumeredDofEntity::getEnt>
-	> >
-  > > FENumeredDofEntity_multiIndex;
+	     FENumeredDofEntity,
+	     const_mem_fun<FENumeredDofEntity::interface_type_Field,boost::string_ref,&FENumeredDofEntity::getNameRef>,
+	     const_mem_fun<FENumeredDofEntity::interface_type_DofEntity,EntityHandle,&FENumeredDofEntity::getEnt>
+	    >
+    >
+  >
+> FENumeredDofEntity_multiIndex;
+
+/** \brief Finite element numbered DoF multi-index by field name
+  *
+  * \ingroup dof_multi_indices
+  */
+typedef FENumeredDofEntity_multiIndex::index<FieldName_mi_tag>::type FENumeredDofEntityByFieldName;
+
+/** \brief Dof entity multi-index by field name and entity
+  *
+  * \ingroup dof_multi_indices
+  */
+typedef FENumeredDofEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type FENumeredDofEntityByNameAndEnt;
+
+/** \brief Dof entity multi-index by field name and entity type
+  *
+  * \ingroup dof_multi_indices
+  */
+typedef FENumeredDofEntity_multiIndex::index<Composite_Name_And_Type_mi_tag>::type FENumeredDofEntityByNameAndType;
 
 /**
  * @relates multi_index_container
@@ -524,7 +588,14 @@ typedef multi_index_container<
 	     const_mem_fun<NumeredDofEntity::interface_type_Field,boost::string_ref,&NumeredDofEntity::getNameRef>,
 	     const_mem_fun<NumeredDofEntity,bool,&NumeredDofEntity::getHasLocalIndex>
 	  > >
-  > > NumeredDofEntity_multiIndex;
+  >
+> NumeredDofEntity_multiIndex;
+
+/** \brief Numbered DoF multi-index by field name
+  *
+  * \ingroup dof_multi_indices
+  */
+typedef NumeredDofEntity_multiIndex::index<FieldName_mi_tag>::type NumeredDofEntityByFieldName;
 
 typedef multi_index_container<
   boost::shared_ptr<NumeredDofEntity>,

@@ -3,8 +3,8 @@ const static int debug = 1;
 #include "impl/MeshsetsManager.cpp"
 #include "impl/CoordSystemsManager.cpp"
 #include "impl/MeshRefinement.cpp"
-#include "impl/PrismInterfaceCore.cpp"
-#include "impl/SeriesRecorderCore.cpp"
+#include "impl/PrismInterface.cpp"
+#include "impl/SeriesRecorder.cpp"
 #include "impl/NodeMerger.cpp"
 #include "impl/BitLevelCoupler.cpp"
 #include "impl/PrismsFromSurfaceInterface.cpp"
@@ -16,3 +16,5 @@ const static int debug = 1;
 #ifdef WITH_MED
   #include "impl/MedInterface.cpp"
 #endif
+
+#include "impl/CutMeshInterface.cpp"

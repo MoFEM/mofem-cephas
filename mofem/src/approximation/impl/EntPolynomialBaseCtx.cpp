@@ -94,12 +94,11 @@ PetscErrorCode EntPolynomialBaseCtx::setBase() {
       case NOFIELD:
       SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"Makes no sense");
       case H1:
-      case HDIV:
       case HCURL:
+      case HDIV:
+      case L2:
       basePolynomials = LobattoKernel_polynomials;
       break;
-      case L2:
-      SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"No implemented");
       case LASTSPACE:
       SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"Makes no sense");
     }

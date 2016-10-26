@@ -306,7 +306,7 @@ struct Smoother {
         ierr = VecGetArray(smootherData.tangentFrontF,&f_tangent_front_mesh_array); CHKERRQ(ierr);
         for(int nn = 0;nn<4;nn++) {
 
-          FENumeredDofEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type::iterator dit,hi_dit;
+          FENumeredDofEntityByNameAndEnt::iterator dit,hi_dit;
           dit = getFEMethod()->rowPtr->get<Composite_Name_And_Ent_mi_tag>().
           lower_bound(boost::make_tuple("LAMBDA_CRACK_TANGENT_CONSTRAIN",getConn()[nn]));
           hi_dit = getFEMethod()->rowPtr->get<Composite_Name_And_Ent_mi_tag>().
@@ -314,7 +314,7 @@ struct Smoother {
 
           if(distance(dit,hi_dit)>0) {
 
-            FENumeredDofEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type::iterator diit,hi_diit;
+            FENumeredDofEntityByNameAndEnt::iterator diit,hi_diit;
 
             diit = getFEMethod()->rowPtr->get<Composite_Name_And_Ent_mi_tag>().
             lower_bound(boost::make_tuple("MESH_NODE_POSITIONS",getConn()[nn]));

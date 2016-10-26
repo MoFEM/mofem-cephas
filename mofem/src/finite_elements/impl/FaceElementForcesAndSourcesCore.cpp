@@ -199,6 +199,13 @@ PetscErrorCode FaceElementForcesAndSourcesCore::operator()() {
     dataHcurl.spacesOnEntities[MBTRI].set(HDIV);
   }
 
+  //L2
+  if(dataH1.spacesOnEntities[MBTRI].test(L2)) {
+    ierr = getTrisSense(dataL2); CHKERRQ(ierr);
+    ierr = getTrisDataOrder(dataL2,L2); CHKERRQ(ierr);
+    dataHcurl.spacesOnEntities[MBTRI].set(L2);
+  }
+
   // Set integration points
   int nb_gauss_pts;
   int order_data = getMaxDataOrder();
@@ -414,7 +421,7 @@ PetscErrorCode FaceElementForcesAndSourcesCore::operator()() {
           op_data[ss] = !ss ? &dataHdiv : &derivedDataHdiv;
           break;
           case L2:
-          SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not make sense on face");
+          op_data[ss] = !ss ? &dataL2 : &derivedDataL2;
           break;
           case NOFIELD:
           op_data[ss] = !ss ? &dataNoField : &dataNoFieldCol;
@@ -463,7 +470,13 @@ PetscErrorCode FaceElementForcesAndSourcesCore::operator()() {
             ierr = getTrisFieldData(*op_data[ss],field_name); CHKERRQ(ierr);
             break;
             case L2:
-            SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not make sanes on face");
+            if(!ss) {
+              ierr = getTrisRowIndices(*op_data[ss],field_name); CHKERRQ(ierr);
+            } else {
+              ierr = getTrisColIndices(*op_data[ss],field_name); CHKERRQ(ierr);
+            }
+            ierr = getTrisDataOrderSpaceAndBase(*op_data[ss],field_name); CHKERRQ(ierr);
+            ierr = getTrisFieldData(*op_data[ss],field_name); CHKERRQ(ierr);
             break;
             case NOFIELD:
             if(!getNinTheLoop()) {

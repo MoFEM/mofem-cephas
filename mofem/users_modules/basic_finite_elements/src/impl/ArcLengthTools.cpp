@@ -55,7 +55,7 @@ ArcLengthCtx::ArcLengthCtx(MoFEM::Interface &m_field,const std::string &problem_
   const MoFEMProblem *problem_ptr;
   ierr = m_field.get_problem(problem_name,&problem_ptr); CHKERRABORT(PETSC_COMM_WORLD,ierr);
   boost::shared_ptr<NumeredDofEntity_multiIndex> dofs_ptr_no_const = problem_ptr->numered_dofs_rows;
-  NumeredDofEntity_multiIndex::index<FieldName_mi_tag>::type::iterator hi_dit;
+  NumeredDofEntityByFieldName::iterator hi_dit;
   dIt = dofs_ptr_no_const->get<FieldName_mi_tag>().lower_bound("LAMBDA");
   hi_dit = dofs_ptr_no_const->get<FieldName_mi_tag>().upper_bound("LAMBDA");
   if(distance(dIt,hi_dit)!=1) {

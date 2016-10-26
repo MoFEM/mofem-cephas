@@ -8,7 +8,7 @@ nonlinear_elastic_elem. Stiffness matrix and internal force vector is calulated
 in \ref NonlinearElasticElement, damping matrix is implemented in \ref KelvinVoigtDamper
 and mass matrix is implemented in \ref ConvectiveMassElement.
 
-\image html dam_dynamics.gif "Arch dam - erthquace load" width=6cm
+\image html dam_dynamics.gif "Arch dam - erthquace load" width=700px
 
 \tableofcontents
 

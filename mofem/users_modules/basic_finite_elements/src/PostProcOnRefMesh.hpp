@@ -231,6 +231,28 @@ struct PostProcTemplateOnRefineMesh: public ELEMENT {
     PetscFunctionReturn(0);
   }
 
+  /**
+   * \brief wrote results in (MOAB) format, use "file_name.h5m"
+   * @param  file_name file name (should always end with .h5m)
+   * @return           error code
+
+   * \ingroup mofem_fs_post_proc
+
+   */
+  PetscErrorCode writeFile(const std::string file_name) {
+    PetscFunctionBegin;
+    MoABErrorCode rval;
+    // #ifdef MOAB_HDF5_PARALLEL
+     rval = postProcMesh.write_file(file_name.c_str(),"MOAB","PARALLEL=WRITE_PART"); CHKERRQ_MOAB(rval);
+    // #else
+    //  #warning "No parallel HDF5, not most efficient way of writing files"
+    //  if(mField.getCommRank()==0) {
+    //    rval = postProcMesh.write_file(file_name.c_str(),"MOAB",""); CHKERRQ_MOAB(rval);
+    //  }
+    // #endif
+    PetscFunctionReturn(0);
+  }
+
 };
 
 /** \brief Post processing
@@ -308,7 +330,6 @@ struct PostProcVolumeOnRefinedMesh: public PostProcTemplateOnRefineMesh<MoFEM::V
 
   PetscErrorCode postProcess();
 
-  PetscErrorCode writeFile(const std::string file_name);
 
   /** \brief Add operator to post-process Hdiv field
   */

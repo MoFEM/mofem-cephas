@@ -306,7 +306,7 @@ namespace MoFEM {
       }
       max_id++;
       ierr = meshsets_manager_ptr->addMeshset(BLOCKSET,max_id++,string(mesh_name)); CHKERRQ(ierr);
-      CubitMeshSet_multiIndex::index<CubitMeshSets_name>::type::iterator cit =
+      CubitMeshsetByName::iterator cit =
       meshsets_manager_ptr->getMeshsetsMultindex().get<CubitMeshSets_name>().find(string(mesh_name));
       mesh_meshset = cit->getMeshset();
     }
@@ -570,7 +570,7 @@ namespace MoFEM {
     ) {
       // cerr << "AAA\n";
       ierr = meshsets_manager_ptr->addMeshset(BLOCKSET,max_id++,git->first); CHKERRQ(ierr);
-      CubitMeshSet_multiIndex::index<CubitMeshSets_name>::type::iterator cit =
+      CubitMeshsetByName::iterator cit =
       meshsets_manager_ptr->getMeshsetsMultindex().get<CubitMeshSets_name>().find(git->first);
       EntityHandle meshsets = cit->getMeshset();
       rval = m_field.get_moab().add_entities(meshsets,git->second); CHKERR_MOAB(rval);

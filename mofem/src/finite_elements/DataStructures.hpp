@@ -498,7 +498,6 @@ struct DataForcesAndSurcesCore {
     *
     * \param base Approximation base
     * \param gg nb. of Gauss point
-    * \param number of of base functions
     *
     */
     inline const MatrixAdaptor getHdivN(const FieldApproximationBase base,const int gg) {

@@ -45,13 +45,14 @@ enum MoFEMInterfaces {
   PRISM_INTEFACE                = 1<<1|1<<3,
   SERIES_RECORDER               = 1<<1|1<<4,
   //Independent Interfaces
-  TETGEN_INTERFACE              = 1<<3|1<<4,  ///< used to generate mesh using TetGen
-  MED_INTERFACE                 = 1<<3|1<<5,	///< interface to med data format
-  NODEMERGER_INTERFACE          = 1<<3|1<<6,	///< used to merge nodes
-  BITLEVELCOUPLER_INTERFACE     = 1<<3|1<<7,  ///< used to couple bit levels by finding parent children relation
-  PRISMSFROMSURFACE_INTERFACE   = 1<<3|1<<8,  ///< create prisms from surface elements
-  MESHSETSMANAGER_INTERFACE     = 1<<3|1<<9,  ///< Interface to manage meshsets with materials and boundary conditions
-  COORDSSYSTEMMANAGER_INTERFACE = 1<<3|1<<10  ///< Interface to manage coordinate systems
+  TETGEN_INTERFACE              = 1<<3|1<<4,    ///< used to generate mesh using TetGen
+  MED_INTERFACE                 = 1<<3|1<<5,	  ///< interface to med data format
+  NODEMERGER_INTERFACE          = 1<<3|1<<6,	  ///< used to merge nodes
+  BITLEVELCOUPLER_INTERFACE     = 1<<3|1<<7,    ///< used to couple bit levels by finding parent children relation
+  PRISMSFROMSURFACE_INTERFACE   = 1<<3|1<<8,    ///< create prisms from surface elements
+  MESHSETSMANAGER_INTERFACE     = 1<<3|1<<9,    ///< Interface to manage meshsets with materials and boundary conditions
+  COORDSSYSTEMMANAGER_INTERFACE = 1<<3|1<<10,   ///< Interface to manage coordinate systems
+  CUTMESH_INTERFACE             = 1<<3|1<<11    ///< Cutting mesh
 };
 
 enum LoopInterfaces {

@@ -586,9 +586,7 @@ PetscErrorCode DefaultElementAdjacency::defaultTri(
     }
     break;
     case L2:
-    //FIXME this is matter of convention what should be done here
-    //no ajacencies for L2 field
-    //adjacency.insert(fe_ent); // add this just in case, if L2 is on skeleton
+    adjacency.insert(fe_ent); // add this just in case, if L2 is on skeleton
     break;
     default:
     SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"this field is not implemented for TRI finite element");

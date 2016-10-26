@@ -683,6 +683,12 @@ typedef multi_index_container<
       > >
   > > MoFEMEntity_multiIndex;
 
+  /** \brief Entity nulti index by field name
+    *
+    * \ingroup ent_multi_indices
+    */
+  typedef MoFEMEntity_multiIndex::index<FieldName_mi_tag>::type MoFEMEntityByFieldName;
+
   typedef multi_index_container<
     boost::shared_ptr<MoFEMEntity>,
     indexed_by<

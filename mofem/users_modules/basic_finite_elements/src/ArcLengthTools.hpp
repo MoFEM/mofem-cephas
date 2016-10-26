@@ -100,7 +100,7 @@ struct ArcLengthCtx {
   ArcLengthCtx(MoFEM::Interface &m_field,const std::string &problem_name);
   virtual ~ArcLengthCtx();
 
-  NumeredDofEntity_multiIndex::index<FieldName_mi_tag>::type::iterator dIt;
+  NumeredDofEntityByFieldName::iterator dIt;
 
   /** \brief Get global index of load factor
   */

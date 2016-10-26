@@ -2,6 +2,8 @@
  * \brief MoFEM interface
  *
  * Interface for recording and saving data series, for example in time or load stepping problems.
+ *
+ * \ingroup mofem_series
  */
 
 /*
@@ -24,15 +26,50 @@ namespace MoFEM {
 static const MOFEMuuid IDD_MOFEMSeriesRecorder = MOFEMuuid( BitIntefaceId(SERIES_RECORDER) );
 
 /** Record (time) data series
- * \ingroup mofem
+ * \ingroup mofem_series
 
   Is abstraction of Core interface.
 
  */
 struct SeriesRecorder: public UnknownInterface {
 
+  PetscErrorCode queryInterface(const MOFEMuuid& uuid, UnknownInterface** iface);
+
+  MoFEM::Core& cOre;
+  SeriesRecorder(const MoFEM::Core &core);
+
   ///destructor
-  virtual ~SeriesRecorder() {}
+  ~SeriesRecorder() {}
+
+  /**
+   * \brief get tags handlers used on meshsets
+
+   */
+  PetscErrorCode getTags(int verb = -1);
+
+  inline Tag get_th_SeriesName() { return th_SeriesName; }
+
+  /**
+   * \brief clear multi-index container
+   * @return error code
+   */
+  PetscErrorCode clearMap();
+
+  /**
+   * \brier initialize container form data on mesh
+   * @return error code
+   */
+  PetscErrorCode initialiseDatabseInformationFromMesh(int verb = 0);
+
+  /**
+   * \brief return pointer to meshset manager
+   */
+  SeriesRecorder* get_series_recorder_ptr() { return this; }
+
+  /**
+   * \brief return pointer to meshset manager
+   */
+  const SeriesRecorder* get_series_recorder_ptr() const { return this; }
 
  /**
     * \ingroup mofem_series
@@ -40,7 +77,7 @@ struct SeriesRecorder: public UnknownInterface {
     *
     * \param name of series
     */
-  virtual PetscErrorCode add_series_recorder(const std::string& series_name) = 0;
+  virtual PetscErrorCode add_series_recorder(const std::string& series_name);
 
  /**
     * \ingroup mofem_series
@@ -48,7 +85,7 @@ struct SeriesRecorder: public UnknownInterface {
     *
     * \param name of series
     */
-  virtual PetscErrorCode delete_recorder_series(const std::string& series_name) = 0;
+  virtual PetscErrorCode delete_recorder_series(const std::string& series_name);
 
   /**
     * \ingroup mofem_series
@@ -56,7 +93,7 @@ struct SeriesRecorder: public UnknownInterface {
     *
     * \param series name
     */
-  virtual PetscErrorCode initialize_series_recorder(const std::string& serie_name) = 0;
+  virtual PetscErrorCode initialize_series_recorder(const std::string& serie_name);
 
   /**
     * \ingroup mofem_series
@@ -64,7 +101,7 @@ struct SeriesRecorder: public UnknownInterface {
     *
     * \param series name
     */
-  virtual PetscErrorCode finalize_series_recorder(const std::string& serie_name) = 0;
+  virtual PetscErrorCode finalize_series_recorder(const std::string& serie_name);
 
   /**
     * \ingroup mofem_series
@@ -72,7 +109,7 @@ struct SeriesRecorder: public UnknownInterface {
     *
     * \param series name
     */
-  virtual PetscErrorCode record_begin(const std::string& serie_name) = 0;
+  virtual PetscErrorCode record_begin(const std::string& serie_name);
 
   /**
     * \ingroup mofem_series
@@ -82,7 +119,7 @@ struct SeriesRecorder: public UnknownInterface {
     * \param problem pointer
     * \param rc could be Row or Col
     */
-  virtual PetscErrorCode record_problem(const std::string& serie_name,const MoFEMProblem *problemPtr,RowColData rc) = 0;
+  virtual PetscErrorCode record_problem(const std::string& serie_name,const MoFEMProblem *problemPtr,RowColData rc);
 
   /**
     * \ingroup mofem_series
@@ -92,7 +129,7 @@ struct SeriesRecorder: public UnknownInterface {
     * \param problem name
     * \param rc could be Row or Col
     */
-  virtual PetscErrorCode record_problem(const std::string& serie_name,const std::string& problem_name,RowColData rc) = 0;
+  virtual PetscErrorCode record_problem(const std::string& serie_name,const std::string& problem_name,RowColData rc);
 
   /**
     * \ingroup mofem_series
@@ -102,7 +139,7 @@ struct SeriesRecorder: public UnknownInterface {
     * \param bit ref level
     * \param mask for bit ref level
     */
-  virtual PetscErrorCode record_field(const std::string& serie_name,const std::string& field_name,const BitRefLevel &bit,const BitRefLevel &mask) = 0;
+  virtual PetscErrorCode record_field(const std::string& serie_name,const std::string& field_name,const BitRefLevel &bit,const BitRefLevel &mask);
 
   /**
     * \ingroup mofem_series
@@ -110,7 +147,7 @@ struct SeriesRecorder: public UnknownInterface {
     *
     * \param series name
     */
-  virtual PetscErrorCode record_end(const std::string& serie_name,double time = 0) = 0;
+  virtual PetscErrorCode record_end(const std::string& serie_name,double time = 0);
 
   /**
     * \ingroup mofem_series
@@ -119,13 +156,13 @@ struct SeriesRecorder: public UnknownInterface {
     * \param series name
     * \param step number
     */
-  virtual PetscErrorCode load_series_data(const std::string& serie_name,const int step_number) = 0;
+  virtual PetscErrorCode load_series_data(const std::string& serie_name,const int step_number);
 
   /**
     * \ingroup mofem_series
     * print series
     */
-  virtual PetscErrorCode print_series_steps() = 0;
+  virtual PetscErrorCode print_series_steps();
 
   /** \brief check if series is in database
    * \ingroup mofem_series
@@ -134,10 +171,18 @@ struct SeriesRecorder: public UnknownInterface {
    * \return true if field exist
    *
    */
-  virtual bool check_series(const std::string& name) const = 0;
+  virtual bool check_series(const std::string& name) const;
 
-  virtual SeriesStep_multiIndex::index<SeriesName_mi_tag>::type::iterator get_series_steps_byName_begin(const std::string& name) = 0;
-  virtual SeriesStep_multiIndex::index<SeriesName_mi_tag>::type::iterator get_series_steps_byName_end(const std::string& name) = 0;
+  virtual SeriesStep_multiIndex::index<SeriesName_mi_tag>::type::iterator get_series_steps_byName_begin(const std::string& name);
+  virtual SeriesStep_multiIndex::index<SeriesName_mi_tag>::type::iterator get_series_steps_byName_end(const std::string& name);
+
+protected:
+
+  Tag th_SeriesName;                    ///< Recorded series name
+
+  Series_multiIndex sEries;							///< recorded series
+  SeriesStep_multiIndex seriesSteps;		///< recorded series steps
+
 
   /** \brief loop over recorded series step
     * \ingroup mofem_series
@@ -155,6 +200,9 @@ struct SeriesRecorder: public UnknownInterface {
   #define _IT_SERIES_STEPS_BY_NAME_FOR_LOOP_(RECORDER,NAME,IT) \
     SeriesStep_multiIndex::index<SeriesName_mi_tag>::type::iterator IT = (RECORDER)->get_series_steps_byName_begin(NAME); \
     IT!=(RECORDER)->get_series_steps_byName_end(NAME); IT++
+
+
+
 
 };
 

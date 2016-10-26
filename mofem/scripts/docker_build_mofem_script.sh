@@ -31,19 +31,19 @@ echo "Configure"
   -DMESHKIT_DIR=$PETSC_DIR/$PETSC_ARCH \
   -DMED_DIR=/opt/med \
   -DADOL-C_DIR=/usr/lib \
+  -DTETGEN_DIR=/opt/tetgen1.5.0 \
   -DBUILD_SHARED_LIBS=yes \
   -DCMAKE_INSTALL_PREFIX=$MOFEM_INSTALL_DIR $MOFEM_SRC_DIR
 echo "Build"
 make -j $NB install
-ctest --output-on-failure
+ctest --output-on-failure -D Experimental
 make clean
 
 echo "Configure users modules"
 cd $MOFEM_INSTALL_DIR
 /opt/local/bin/cmake -DBUILD_SHARED_LIBS=yes -DCMAKE_CXX_FLAGS="-Wall" users_modules
 echo "Build users modules"
-cd $MOFEM_INSTALL_DIR/basic_finite_elements/atom_tests
 make -j $NB
-ctest --output-on-failure
+ctest --output-on-failure -D Experimental -R basic
 make clean
 echo "All done"

@@ -1,3 +1,10 @@
+/**
+ * \file PostPorcHookStress.hpp
+ * \brief Post-proc stresses for linear Hooke'e isotropic material
+ *
+ * \ingroup nonlinear_elastic_elem
+ */
+
 /* This file is part of MoFEM.
  * MoFEM is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the
@@ -12,27 +19,84 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
+/**
+ * \brief Operator post-procesing stresses for Hook'e isotropic material
 
+ * Example how to use it
+
+ \code
+ PostProcVolumeOnRefinedMesh post_proc(m_field);
+ {
+   ierr = post_proc.generateReferenceElementMesh(); CHKERRQ(ierr);
+   ierr = post_proc.addFieldValuesPostProc("DISPLACEMENT"); CHKERRQ(ierr);
+   ierr = post_proc.addFieldValuesPostProc("MESH_NODE_POSITIONS"); CHKERRQ(ierr);
+   ierr = post_proc.addFieldValuesGradientPostProc("DISPLACEMENT"); CHKERRQ(ierr);
+   //add postpocessing for sresses
+   post_proc.getOpPtrVector().push_back(
+     new PostPorcHookStress(
+       m_field,
+       post_proc.postProcMesh,
+       post_proc.mapGaussPts,
+       "DISPLACEMENT",
+       post_proc.commonData,
+       &elastic.setOfBlocks
+     )
+   );
+   ierr = DMoFEMLoopFiniteElements(dm,"ELASTIC",&post_proc); CHKERRQ(ierr);
+   ierr = post_proc.writeFile("out.h5m"); CHKERRQ(ierr);
+ }
+
+ \endcode
+
+ */
 struct PostPorcHookStress: public MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator {
 
   MoFEM::Interface& mField;
   moab::Interface &postProcMesh;
   std::vector<EntityHandle> &mapGaussPts;
 
+  #ifdef __NONLINEAR_ELASTIC_HPP
+  /// Material block data, ket is block id
+  const std::map<int,NonlinearElasticElement::BlockData> *setOfBlocksMaterialDataPtr;
+  #endif //__NONLINEAR_ELASTIC_HPP
+
   PostProcVolumeOnRefinedMesh::CommonData &commonData;
 
+  /**
+   * Constructor
+   */
   PostPorcHookStress(
     MoFEM::Interface& m_field,
     moab::Interface& post_proc_mesh,
     std::vector<EntityHandle> &map_gauss_pts,
     const std::string field_name,
-    PostProcVolumeOnRefinedMesh::CommonData &common_data):
-    MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator(field_name,ForcesAndSurcesCore::UserDataOperator::OPROW),
-    mField(m_field),
-    postProcMesh(post_proc_mesh),
-    mapGaussPts(map_gauss_pts),
-    commonData(common_data) {}
+    PostProcVolumeOnRefinedMesh::CommonData &common_data,
+    #ifdef __NONLINEAR_ELASTIC_HPP
+    const std::map<int,NonlinearElasticElement::BlockData> *set_of_block_data_ptr = NULL
+    #endif //__NONLINEAR_ELASTIC_HPP
+  ):
+  MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator(
+    field_name,ForcesAndSurcesCore::UserDataOperator::OPROW
+  ),
+  mField(m_field),
+  postProcMesh(post_proc_mesh),
+  mapGaussPts(map_gauss_pts),
+  commonData(common_data),
+  setOfBlocksMaterialDataPtr(set_of_block_data_ptr) {
+  }
 
+  /**
+   * \brief get material parameter
+
+   * Material parameters are read form BlockSet, however if block data are present,
+   * use data how are set for elastic element operators.
+
+   * @param  _lambda   elastic material constant
+   * @param  _mu       elastci material constant
+   * @param  _block_id  block id
+   * @return           error code
+
+   */
   PetscErrorCode getMatParameters(double *_lambda,double *_mu,int *_block_id) {
     PetscFunctionBegin;
 
@@ -55,6 +119,10 @@ struct PostPorcHookStress: public MoFEM::VolumeElementForcesAndSourcesCore::User
           *_lambda = LAMBDA(mydata.data.Young,mydata.data.Poisson);
           *_mu = MU(mydata.data.Young,mydata.data.Poisson);
           *_block_id = it->getMeshsetId();
+          if(setOfBlocksMaterialDataPtr) {
+            *_lambda = LAMBDA(setOfBlocksMaterialDataPtr->at(*_block_id).E,setOfBlocksMaterialDataPtr->at(*_block_id).PoissonRatio);
+            *_mu = MU(setOfBlocksMaterialDataPtr->at(*_block_id).E,setOfBlocksMaterialDataPtr->at(*_block_id).PoissonRatio);
+          }
           PetscFunctionReturn(0);
         }
       }
@@ -67,7 +135,9 @@ struct PostPorcHookStress: public MoFEM::VolumeElementForcesAndSourcesCore::User
     PetscFunctionReturn(0);
   }
 
-
+  /**
+   * \brief Here real work is done
+   */
   PetscErrorCode doWork(
     int side,
     EntityType type,

@@ -1787,7 +1787,7 @@ PetscErrorCode Core::loop_dofs(const std::string &field_name,EntMethod &method,i
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
   SET_BASIC_METHOD(method,NULL);
-  DofEntity_multiIndex::index<FieldName_mi_tag>::type::iterator miit,hi_miit;
+  DofEntityByFieldName::iterator miit,hi_miit;
   miit = dofsField.get<FieldName_mi_tag>().lower_bound(field_name);
   hi_miit = dofsField.get<FieldName_mi_tag>().upper_bound(field_name);
   method.loopSize = distance(miit,hi_miit);

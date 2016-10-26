@@ -135,13 +135,33 @@ PetscErrorCode TriPolynomialBase::getValueH1(ublas::matrix<double> &pts) {
 PetscErrorCode TriPolynomialBase::getValueL2(
   ublas::matrix<double> &pts
 ) {
-  // PetscErrorCode ierr;
+  PetscErrorCode ierr;
   PetscFunctionBegin;
 
-  SETERRQ(
-    PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,
-    "Make no sense unless problem is 2d (2d not implemented yet)"
+  DataForcesAndSurcesCore& data = cTx->dAta;
+  const FieldApproximationBase base = cTx->bAse;
+  PetscErrorCode (*base_polynomials)(
+    int p,double s,double *diff_s,double *L,double *diffL,const int dim
+  ) = cTx->basePolynomials;
+
+  int nb_gauss_pts = pts.size2();
+
+  data.dataOnEntities[MBTRI][0].getN(base).resize(
+    nb_gauss_pts,NBFACETRI_L2(data.dataOnEntities[MBTRI][0].getDataOrder()),false
   );
+  data.dataOnEntities[MBTRI][0].getDiffN(base).resize(
+    nb_gauss_pts,2*NBFACETRI_L2(data.dataOnEntities[MBTRI][0].getDataOrder()),false
+  );
+
+  ierr = L2_ShapeFunctions_MBTRI(
+    data.dataOnEntities[MBTRI][0].getDataOrder(),
+    &*data.dataOnEntities[MBVERTEX][0].getN(base).data().begin(),
+    &*data.dataOnEntities[MBVERTEX][0].getDiffN(base).data().begin(),
+    &*data.dataOnEntities[MBTRI][0].getN(base).data().begin(),
+    &*data.dataOnEntities[MBTRI][0].getDiffN(base).data().begin(),
+    nb_gauss_pts,
+    base_polynomials
+  ); CHKERRQ(ierr);
 
   PetscFunctionReturn(0);
 }
