@@ -28,7 +28,7 @@ ParaView for post-processing.
 
 \tableofcontents
 
-\section Motivation
+\section mofem_motivation Motivation and unique capabilities
 
 Building a scientific simulation environment for finite element methods is a
 complicated task. The greatest part of finite element code development is often
@@ -57,6 +57,62 @@ add industry. Since each \em user \em module is implemented with MoFEM, using
 its internal database, data between modules can be exchanged without prior
 knowledge how each module is developed.
 
+\subsection mofem_features Properties and features
+
+\subsubsection mofem_features_ho Higher-order finite element spaces
+
+- MoFEM supports wide range of spaces, L2, H1, H-div and H-curl
+- Numerical trace (interfacial) spaces, on faces and edges
+- Integration on skeleton, for example, enabling easy implementation of Discontinuous Galerkin on Nitsche method
+
+\subsubsection mofem_features_discretisation Flexible discretization
+
+- Mixed and coupled finite elements
+
+- Interface (e.g. cohesive) elements and shell elements
+
+- Automatic differentiation, e.g. automatic calculation of consistent tangent
+	matrix for any smooth plastic surface and non-sccociated plastic flow potential
+
+\subsubsection mofem_features_mesh_types Range of mesh types and topological operations
+
+MoFEM is implemented with the use of MoAB and deliver the great flexibility of
+managing meshes. We can manage range elements types, e.g. prisms, triangles,
+quads, bricks and more.
+
+- Unique and extremely flexible \e BitRef Levels (see \ref uw_mesh_refinement)
+
+- Conforming mesh refinement and through MoAB non-conforming mesh refinement.
+
+- Spatial searching and ray tracing (MOAB)
+
+- Distributed meshes (MOAB)
+
+- Arbitrary order definition of mesh geometry
+
+- Readers and writers for many file formats
+
+- Meshing and meshing on the flay
+
+- Ability to capture evolving topologies, e.g. implicit crack propagation analysis
+
+- Mesh smoothing and Arbitrary Lagrangian Eulerian Formulation
+
+\subsubsection mofem_features_hpc Parallel and scalable
+
+MoFEM supports MPI-based parallelism throughout the library, and can readily be
+used as a scalable unstructured finite element problem generator. Algebra is
+building on top of PETSc and geometry description on top of MoAB, both
+implementations are tailored for massive parallel calculations.
+
+- %Number of solvers available from PETSc
+
+- Multi-grid solvers
+
+- Efficient tensor library (see \ref ftenso_readme)
+
+- h/p- mesh adaptivity
+
 \section download_repository MoFEM repository
 
 - Version repository <https://bitbucket.org/likask/mofem-cephas>
@@ -66,7 +122,6 @@ knowledge how each module is developed.
 <img border="0" alt="drone.io" src="https://drone.io/bitbucket.org/likask/mofem-cephas/status.png">
 </a>
 \endhtmlonly
-
 
 \section users_modules User modules
 
@@ -81,21 +136,6 @@ to use in new developments) <https://bitbucket.org/likask/mofem_um_obsolete>
 - Minimal surface equation <https://bitbucket.org/likask/mofem_um_minimal_surface_equation>
 - Bone remodeling <https://bitbucket.org/likask/mofem_um_bone_remodelling>
 
-\section contact Contact us and get involved
-
-Contributions are welcome and is an important part of the open spirit of the
-project. It's hoped a community will develop around the project whose
-contributions will improve it further.
-
-- Contact: <cmatgu@googlegroups.com>
-- Discussion channel: <https://mofem.slack.com/>
-
-\section twitter_and_google_plus Recent developments and news
-
-\htmlinclude doc/twitter_widged.html
-
-See as well Google+ <https://plus.google.com/110439315415517980382/posts>
-
 \section thrid_party Third party libraries
 
 List of third party libraries and packages used by MoFEM:
@@ -108,6 +148,12 @@ List of third party libraries and packages used by MoFEM:
 - ADOL-C <https://projects.coin-or.org/ADOL-C>
 - CMake <http://www.cmake.org>
 - ParaView <http://www.paraview.org>
+
+\section twitter_and_google_plus Recent developments and news
+
+\htmlinclude doc/twitter_widged.html
+
+See as well Google+ <https://plus.google.com/110439315415517980382/posts>
 
 \section legal_stuff Legal stuff
 
@@ -122,6 +168,15 @@ PARTICULAR PURPOSE.  See the GNU Lesser General Public License for more details.
 
 You should have received a copy of the GNU Lesser General Public License along
 with MoFEM. If not, see <http://www.gnu.org/licenses/>
+
+\section contact Contact us and get involved
+
+Contributions are welcome and is an important part of the open spirit of the
+project. It's hoped a community will develop around the project whose
+contributions will improve it further.
+
+- Contact: <cmatgu@googlegroups.com>
+- Discussion channel: <https://mofem.slack.com/>
 
 \section contributors Contributors list
 
