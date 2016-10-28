@@ -511,7 +511,11 @@ PetscErrorCode FaceElementForcesAndSourcesCore::operator()() {
         ); CHKERRQ(ierr);
       } catch (std::exception& ex) {
         std::ostringstream ss;
-        ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
+        ss << "Operator " << typeid(*oit).name()
+        << " operator number " << std::distance<boost::ptr_vector<UserDataOperator>::iterator>(opPtrVector.begin(),oit)
+        << " thorw in method: " << ex.what()
+        << " at line " << __LINE__
+        << " in file " << __FILE__;
         SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
       }
     }
@@ -530,7 +534,11 @@ PetscErrorCode FaceElementForcesAndSourcesCore::operator()() {
         ); CHKERRQ(ierr);
       } catch (std::exception& ex) {
         std::ostringstream ss;
-        ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
+        ss << "Operator " << typeid(*oit).name()
+        << " operator number " << std::distance<boost::ptr_vector<UserDataOperator>::iterator>(opPtrVector.begin(),oit)
+        << " thorw in method: " << ex.what()
+        << " at line " << __LINE__
+        << " in file " << __FILE__;
         SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
       }
     }
@@ -541,7 +549,11 @@ PetscErrorCode FaceElementForcesAndSourcesCore::operator()() {
         ierr = oit->opLhs(*op_data[0],*op_data[1],oit->sYmm); CHKERRQ(ierr);
       } catch (std::exception& ex) {
         std::ostringstream ss;
-        ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
+        ss << "Operator " << typeid(*oit).name()
+        << " operator number " << std::distance<boost::ptr_vector<UserDataOperator>::iterator>(opPtrVector.begin(),oit)
+        << " thorw in method: " << ex.what()
+        << " at line " << __LINE__
+        << " in file " << __FILE__;
         SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
       }
     }
