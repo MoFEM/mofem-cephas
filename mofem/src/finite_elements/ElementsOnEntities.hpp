@@ -282,7 +282,39 @@ struct ForcesAndSurcesCore: public FEMethod {
   ublas::vector<MatrixDouble > diffN_volume_face;
   MatrixDouble diffN_volume_bubble;
 
-  /// \brief It could be be removed in the future use other variant
+  /** \brief set integration rule for finite element
+
+  This function is overloaded by the user. The integration rule
+  is set such that specific operator implemented by the user is integrated
+  accurately. For example if user implement bilinear operator
+  \f[
+  b(u,v) =
+  \int_\mathcal{T}
+  \frac{\partial u_i}{\partial x_j}\frac{\partial v_i}{\partial x_j}
+  \textrm{d}\mathcal{T}
+  \f]
+  then if \f$u\f$ and \f$v\f$ are polynomial of given \em order, then exact
+  integral would be
+  \code
+  int getRule(int order) { return 2*(order-1); };
+  \endcode
+
+  The integration points and weights are set appropriately for given entity
+  type and integration rule from \ref quad.c
+
+  Method \ref ForcesAndSurcesCore::getRule takes at argument takes maximal
+  polynomial order set on the element on all fields defined on the element. If a
+  user likes to have more control, another variant of this function can be
+  called which distinguishing between field orders on rows, columns and data,
+  the i.e. first argument of a bilinear form, the second argument of bilinear
+  form and field coefficents on the element.
+
+  \note If user set rule to -1 or any other negative integer, then method
+  \ref ForcesAndSurcesCore::setGaussPts is called. In that method user can implement
+  own (specific) integration method.
+
+
+  */
   virtual int getRule(int order) { return 2*order; };
 
   virtual int getRule(
@@ -291,7 +323,8 @@ struct ForcesAndSurcesCore: public FEMethod {
     return getRule(order_data);
   };
 
-  /// !\brief It will be removed in the future use other variant
+  /** \brief It will be removed in the future use other variant
+    */
   virtual PetscErrorCode setGaussPts(int order) {
     PetscFunctionBegin;
     SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"sorry, not implemented");
@@ -303,9 +336,10 @@ struct ForcesAndSurcesCore: public FEMethod {
     This function allows for user defined integration rule. The key is to
     called matrix gaussPts, which is used by other MoFEM procedures. Matrix has
     number of rows equal to problem dimension plus one, where last index is used to
-    store weight values. Number of columns is equal to number of integration points.
+    store weight values. %Number of columns is equal to number of integration points.
 
-    Note: that matrix is called gussPts, however user can keep in it any integration rule.
+    \note This function is called if method \ref ForcesAndSurcesCore::getRule is
+    returning integer -1 or any other negative integer.
 
     User sets
     \code
@@ -329,7 +363,7 @@ struct ForcesAndSurcesCore: public FEMethod {
     * \ingroup mofem_forces_and_sources
 
     Is inherited and implemented by user to do calculations. It can be used in many
-    different ways but typically is used to integrate matrices (f.e. stiffness matrux) and
+    different ways but typically is used to integrate matrices (f.e. stiffness matrix) and
     the right hand vector (f.e. force vector).
 
     Note: It is assumed that operator is executed for symmetric problem. That means that
