@@ -403,7 +403,8 @@ PetscErrorCode CreateRowComressedADJMatrix::createMatArrays(
     // are on the same entity. For simplicity is assumed that those share the
     // same adjacencies.
     if(
-      (!mofem_ent_ptr)?1:(mofem_ent_ptr->getGlobalUniqueId()!=(*miit_row)->getMoFEMEntityPtr()->getGlobalUniqueId())
+      (!mofem_ent_ptr)?1:(mofem_ent_ptr->getGlobalUniqueId()!=
+      (*miit_row)->getMoFEMEntityPtr()->getGlobalUniqueId())
     ) {
 
       // get entity adjacencies
@@ -450,12 +451,14 @@ PetscErrorCode CreateRowComressedADJMatrix::createMatArrays(
         std::map<int,std::vector<int> >::iterator mit;
         mit = adjacent_dofs_on_other_parts.find(row_last_evaluated_idx);
         if(mit == adjacent_dofs_on_other_parts.end()) {
-          std::cerr << *miit_row << std::endl;
-          SETERRQ1(
-            PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,
-            "data inconsistency row_last_evaluated_idx = %d",
-            row_last_evaluated_idx
-          );
+          // NOTE: Dof can adjacent to other part but no elements are there which
+          // use that dof
+          // std::cerr << *miit_row << std::endl;
+          // SETERRQ1(
+          //   PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,
+          //   "data inconsistency row_last_evaluated_idx = %d",
+          //   row_last_evaluated_idx
+          // );
         } else {
           dofs_vec.insert(dofs_vec.end(),mit->second.begin(),mit->second.end());
         }

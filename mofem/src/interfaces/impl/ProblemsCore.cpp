@@ -257,7 +257,7 @@ PetscErrorCode Core::build_problem_on_distributed_mesh(MoFEMProblem *problem_ptr
     problem_ptr->numered_dofs_cols = boost::shared_ptr<NumeredDofEntity_multiIndex>(new NumeredDofEntity_multiIndex());
   }
 
-  //get rows and cols dofs view based on data on elements
+  // get rows and cols dofs view based on data on elements
   DofEntity_multiIndex_active_view dofs_rows,dofs_cols;
   {
     //fe_miit iterator for finite elements
@@ -279,7 +279,7 @@ PetscErrorCode Core::build_problem_on_distributed_mesh(MoFEMProblem *problem_ptr
     }
   }
 
-  //get problem bit level
+  // get problem bit level
   const BitRefLevel &problem_bit_level = problem_ptr->get_DofMask_BitRefLevel();
 
   //add dofs for rows and cols and set ownership
@@ -357,7 +357,7 @@ PetscErrorCode Core::build_problem_on_distributed_mesh(MoFEMProblem *problem_ptr
   //   );
   // }
 
-  //set local and global indices on own dofs
+  // set local and global indices on own dofs
   const size_t idx_data_type_size = sizeof(IdxDataType);
   const size_t data_block_size = idx_data_type_size/sizeof(int);
   if(sizeof(IdxDataType) % sizeof(int)) {
@@ -365,7 +365,7 @@ PetscErrorCode Core::build_problem_on_distributed_mesh(MoFEMProblem *problem_ptr
   }
   std::vector<std::vector<IdxDataType> > ids_data_packed_rows(sIze),ids_data_packed_cols(sIze);
 
-  //ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
+  // ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
   // Loop over dofs on this processor and prepare those dofs to send on another proc
   for(int ss = 0;ss<loop_size;ss++) {
 
@@ -376,24 +376,34 @@ PetscErrorCode Core::build_problem_on_distributed_mesh(MoFEMProblem *problem_ptr
     for(;mit!=hi_mit;mit++) {
 
       bool success;
-      success = numered_dofs_ptr[ss]->modify( numered_dofs_ptr[ss]->project<0>(mit),NumeredDofEntity_local_idx_change(local_idx));
+      success = numered_dofs_ptr[ss]->modify(
+        numered_dofs_ptr[ss]->project<0>(mit),NumeredDofEntity_local_idx_change(local_idx)
+      );
       if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
       int glob_idx = start_ranges[ss]+local_idx;
-      success = numered_dofs_ptr[ss]->modify( numered_dofs_ptr[ss]->project<0>(mit),NumeredDofEntity_mofem_index_change(glob_idx));
+      success = numered_dofs_ptr[ss]->modify(
+        numered_dofs_ptr[ss]->project<0>(mit),NumeredDofEntity_mofem_index_change(glob_idx)
+      );
       if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
-      success = numered_dofs_ptr[ss]->modify( numered_dofs_ptr[ss]->project<0>(mit),NumeredDofEntity_part_change((*mit)->getPart(),glob_idx));
+      success = numered_dofs_ptr[ss]->modify(
+        numered_dofs_ptr[ss]->project<0>(mit),NumeredDofEntity_part_change((*mit)->getPart(),glob_idx)
+      );
       if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
       local_idx++;
       unsigned char pstatus = (*mit)->getPStatus();
 
-      //check id dof is shared
+      // check id dof is shared
       if(pstatus>0) {
 
         for(int proc = 0; proc<MAX_SHARING_PROCS && -1 != (*mit)->getSharingProcsPtr()[proc]; proc++) {
           if(ss == 0) {
-            ids_data_packed_rows[(*mit)->getSharingProcsPtr()[proc]].push_back(IdxDataType((*mit)->getGlobalUniqueId(),glob_idx));
+            ids_data_packed_rows[(*mit)->getSharingProcsPtr()[proc]].push_back(
+              IdxDataType((*mit)->getGlobalUniqueId(),glob_idx)
+            );
           } else {
-            ids_data_packed_cols[(*mit)->getSharingProcsPtr()[proc]].push_back(IdxDataType((*mit)->getGlobalUniqueId(),glob_idx));
+            ids_data_packed_cols[(*mit)->getSharingProcsPtr()[proc]].push_back(
+              IdxDataType((*mit)->getGlobalUniqueId(),glob_idx)
+            );
           }
           if(!(pstatus&PSTATUS_MULTISHARED)) {
             break;
@@ -436,9 +446,11 @@ PetscErrorCode Core::build_problem_on_distributed_mesh(MoFEMProblem *problem_ptr
   // Computes info about messages that a MPI-node will receive, including (from-id,length) pairs for each message.
   int *onodes_rows;	// list of node-ids from which messages are expected
   int *olengths_rows;	// corresponding message lengths
-  ierr = PetscGatherMessageLengths(comm,
+  ierr = PetscGatherMessageLengths(
+    comm,
     nsends_rows,nrecvs_rows,
-    &lengths_rows[0],&onodes_rows,&olengths_rows);  CHKERRQ(ierr);
+    &lengths_rows[0],&onodes_rows,&olengths_rows
+  );  CHKERRQ(ierr);
 
   // Gets a unique new tag from a PETSc communicator. All processors that share
   // the communicator MUST call this routine EXACTLY the same number of times.
@@ -454,7 +466,9 @@ PetscErrorCode Core::build_problem_on_distributed_mesh(MoFEMProblem *problem_ptr
   // rbuf has a pointers to messeges. It has size of of nrecvs (number of
   // messages) +1. In the first index a block is allocated,
   // such that rbuf[i] = rbuf[i-1]+olengths[i-1].
-  ierr = PetscPostIrecvInt(comm,tag_row,nrecvs_rows,onodes_rows,olengths_rows,&rbuf_row,&r_waits_row); CHKERRQ(ierr);
+  ierr = PetscPostIrecvInt(
+    comm,tag_row,nrecvs_rows,onodes_rows,olengths_rows,&rbuf_row,&r_waits_row
+  ); CHKERRQ(ierr);
   ierr = PetscFree(onodes_rows); CHKERRQ(ierr);
 
 
@@ -468,7 +482,8 @@ PetscErrorCode Core::build_problem_on_distributed_mesh(MoFEMProblem *problem_ptr
       &(ids_data_packed_rows[proc])[0], // buffer to send
       lengths_rows[proc], 		// message length
       MPIU_INT,proc, 			// to proc
-      tag_row,comm,s_waits_row+kk); CHKERRQ(ierr);
+      tag_row,comm,s_waits_row+kk
+    ); CHKERRQ(ierr);
     kk++;
   }
 
@@ -482,7 +497,7 @@ PetscErrorCode Core::build_problem_on_distributed_mesh(MoFEMProblem *problem_ptr
   ierr = PetscFree(r_waits_row); CHKERRQ(ierr);
   ierr = PetscFree(s_waits_row); CHKERRQ(ierr);
 
-  //cols
+  // cols
   int nrecvs_cols = nrecvs_rows;
   int *olengths_cols = olengths_rows;
   PetscInt **rbuf_col = rbuf_row;
@@ -554,36 +569,44 @@ PetscErrorCode Core::build_problem_on_distributed_mesh(MoFEMProblem *problem_ptr
 
     NumeredDofEntity_multiIndex::iterator dit;
     for(int kk=0; kk<nrecvs; kk++) {
-
       int len = olengths[kk];
       int *data_from_proc = data_procs[kk];
       for(int dd = 0;dd<len;dd+=data_block_size) {
-
         idx_data = (IdxDataType*)(&data_from_proc[dd]);
         bcopy(idx_data->uId,&uid,sizeof(UId));
         dit = numered_dofs_ptr[ss]->find(uid);
         if(dit == numered_dofs_ptr[ss]->end()) {
-          DofEntity_multiIndex::iterator ddit = dofsField.find(uid);
-          if(ddit!=dofsField.end()) {
-            std::cerr << *ddit << std::endl;
-          } else {
-            std::ostringstream zz;
-            zz << uid << std::endl;
-            SETERRQ1(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"no such dof %s in mofem database",zz.str().c_str());
-          }
-          std::ostringstream zz;
-          zz << uid << std::endl;
-          SETERRQ1(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"dof %s not found",zz.str().c_str());
+          // Dof is shared to this processor, however there is no element which
+          // have this dof
+          continue;
+          // DofEntity_multiIndex::iterator ddit = dofsField.find(uid);
+          // if(ddit!=dofsField.end()) {
+          //   std::cerr << **ddit << std::endl;
+          // } else {
+          //   std::ostringstream zz;
+          //   zz << uid << std::endl;
+          //   SETERRQ1(
+          //     PETSC_COMM_SELF,
+          //     MOFEM_OPERATION_UNSUCCESSFUL,
+          //     "no such dof %s in mofem database",zz.str().c_str()
+          //   );
+          // }
+          // std::ostringstream zz;
+          // zz << uid << std::endl;
+          // SETERRQ1(
+          //   PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"dof %s not found",zz.str().c_str()
+          // );
         }
         int global_idx = idx_data->globalDof;
+        if(global_idx<0) {
+          SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"received negative dof");
+        }
         bool success;
         success = numered_dofs_ptr[ss]->modify(dit,NumeredDofEntity_mofem_index_change(global_idx));
         if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
         success = numered_dofs_ptr[ss]->modify(dit,NumeredDofEntity_part_change((*dit)->getPart(),global_idx));
         if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
-
       }
-
     }
 
   }
