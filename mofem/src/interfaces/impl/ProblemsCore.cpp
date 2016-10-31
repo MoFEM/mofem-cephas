@@ -1305,7 +1305,8 @@ PetscErrorCode Core::debugPartitionedProblem(const MoFEMProblem *problem_ptr,int
     typedef NumeredDofEntity_multiIndex::index<Idx_mi_tag>::type NumeredDofEntitys_by_idx;
     NumeredDofEntitys_by_idx::iterator dit,hi_dit;
     const NumeredDofEntitys_by_idx* numered_dofs_ptr[] = {
-      &(problem_ptr->numered_dofs_rows->get<Idx_mi_tag>()), &(problem_ptr->numered_dofs_rows->get<Idx_mi_tag>())
+      &(problem_ptr->numered_dofs_rows->get<Idx_mi_tag>()),
+      &(problem_ptr->numered_dofs_cols->get<Idx_mi_tag>())
     };
 
     int* nbdof_ptr[] = {
@@ -1318,32 +1319,52 @@ PetscErrorCode Core::debugPartitionedProblem(const MoFEMProblem *problem_ptr,int
     for(int ss = 0;ss<2;ss++) {
 
       dit = numered_dofs_ptr[ss]->begin();
-      hi_dit = problem_ptr->numered_dofs_rows->get<Idx_mi_tag>().end();
+      hi_dit = numered_dofs_ptr[ss]->end();
       for(;dit!=hi_dit;dit++) {
         if((*dit)->getPart()==(unsigned int)rAnk) {
           if((*dit)->getPetscLocalDofIdx()<0) {
             std::ostringstream zz;
             zz << "rank " << rAnk << " " << **dit;
-            SETERRQ2(PETSC_COMM_SELF,MOFEM_IMPOSIBLE_CASE,"local dof index for %d (0-row, 1-col) not set, i.e. has negative value\n %s",ss,zz.str().c_str());
+            SETERRQ2(
+              PETSC_COMM_SELF,
+              MOFEM_IMPOSIBLE_CASE,
+              "local dof index for %d (0-row, 1-col) not set, i.e. has negative value\n %s",
+              ss,zz.str().c_str()
+            );
           }
           if((*dit)->getPetscLocalDofIdx()>=*local_nbdof_ptr[ss]) {
             std::ostringstream zz;
             zz << "rank " << rAnk << " " << **dit;
-            SETERRQ2(PETSC_COMM_SELF,MOFEM_IMPOSIBLE_CASE,"local dofs for %d (0-row, 1-col) out of range\n %s",ss,zz.str().c_str());
+            SETERRQ2(
+              PETSC_COMM_SELF,
+              MOFEM_IMPOSIBLE_CASE,
+              "local dofs for %d (0-row, 1-col) out of range\n %s",
+              ss,zz.str().c_str()
+            );
           }
         } else {
           if((*dit)->getPetscGlobalDofIdx()<0) {
             std::ostringstream zz;
             zz << "rank " << rAnk << " " << **dit;
-            SETERRQ2(PETSC_COMM_SELF,MOFEM_IMPOSIBLE_CASE,"global dof index for %d (0-row, 1-col) row not set, i.e. has negative value\n %s",ss,zz.str().c_str());
+            SETERRQ2(
+              PETSC_COMM_SELF,
+              MOFEM_IMPOSIBLE_CASE,
+              "global dof index for %d (0-row, 1-col) row not set, i.e. has negative value\n %s",
+              ss,zz.str().c_str()
+            );
           }
           if((*dit)->getPetscGlobalDofIdx()>=*nbdof_ptr[ss]) {
             std::ostringstream zz;
             zz << "rank " << rAnk << " " << **dit;
-            SETERRQ2(PETSC_COMM_SELF,MOFEM_IMPOSIBLE_CASE,"global dofs for %d (0-row, 1-col) out of range\n %s",ss,zz.str().c_str());
+            SETERRQ2(
+              PETSC_COMM_SELF,
+              MOFEM_IMPOSIBLE_CASE,
+              "global dofs for %d (0-row, 1-col) out of range\n %s",ss,zz.str().c_str()
+            );
           }
         }
       }
+
     }
 
   }
@@ -1386,30 +1407,42 @@ PetscErrorCode Core::partition_finite_elements(
   EntFiniteElement_multiIndex::iterator miit2 = entsFiniteElements.begin();
   EntFiniteElement_multiIndex::iterator hi_miit2 = entsFiniteElements.end();
   for(;miit2!=hi_miit2;miit2++) {
-    if(((*miit2)->getId()&p_miit->getBitFEId()).none()) continue; // if element is not part of problem
-    if(((*miit2)->getBitRefLevel()&p_miit->getBitRefLevel())!=p_miit->getBitRefLevel()) continue; // if entity is not problem refinement level
+    // if element is not part of problem
+    if(((*miit2)->getId()&p_miit->getBitFEId()).none()) continue;
+    // if entity is not problem refinement level
+    if(((*miit2)->getBitRefLevel()&p_miit->getBitRefLevel())!=p_miit->getBitRefLevel()) continue;
+    // create element
     boost::shared_ptr<NumeredEntFiniteElement> numered_fe(new NumeredEntFiniteElement(*miit2));
+    // check if rows and columns are the same on this element
     bool do_cols_fe = true;
     if(numered_fe->sPtr->row_dof_view == numered_fe->sPtr->col_dof_view && do_cols_prob) {
       do_cols_fe = false;
       numered_fe->cols_dofs = numered_fe->rows_dofs;
     } else {
-      numered_fe->cols_dofs = boost::shared_ptr<FENumeredDofEntity_multiIndex>(new FENumeredDofEntity_multiIndex());
+      // different dofs on rows and columns
+      numered_fe->cols_dofs = boost::shared_ptr<FENumeredDofEntity_multiIndex>(
+        new FENumeredDofEntity_multiIndex()
+      );
     }
+    // get pointer to dofs multi-index on rows and columns
     boost::shared_ptr<FENumeredDofEntity_multiIndex> rows_dofs = numered_fe->rows_dofs;
     boost::shared_ptr<FENumeredDofEntity_multiIndex> cols_dofs = numered_fe->cols_dofs;
+    // clear multi-indices
     rows_dofs->clear();
     if(do_cols_fe) {
       cols_dofs->clear();
     }
+    NumeredDofEntity_multiIndex_uid_view_ordered rows_view;
+    NumeredDofEntity_multiIndex_uid_view_ordered::iterator viit_rows;
+    // set partition to the element
     {
-      NumeredDofEntity_multiIndex_uid_view_ordered rows_view;
-      NumeredDofEntity_multiIndex_uid_view_ordered::iterator viit_rows;
       if(part_from_moab) {
+        // if partition is taken from moab partition
         int proc = (*miit2)->getOwnerProc();
         NumeredEntFiniteElement_change_part(proc).operator()(numered_fe);
       } else {
-        //rows_view
+        // count partition of the dofs in row, the larges dofs with given partition
+        // is used to set partition of the element
         ierr = (*miit2)->getRowDofView(
             *(p_miit->numered_dofs_rows),rows_view,moab::Interface::UNION
         ); CHKERRQ(ierr);
@@ -1422,19 +1455,22 @@ PetscErrorCode Core::partition_finite_elements(
         unsigned int max_part = distance(parts.begin(),pos);
         NumeredEntFiniteElement_change_part(max_part).operator()(numered_fe);
       }
-      if(
-        (numered_fe->getPart()>=(unsigned int)low_proc)&&
-        (numered_fe->getPart()<=(unsigned int)hi_proc)
-      ) {
+    }
+    // set dofs on rows and columns (if are different)
+    if(
+      (numered_fe->getPart()>=(unsigned int)low_proc)&&
+      (numered_fe->getPart()<=(unsigned int)hi_proc)
+    ) {
+      // set rows
+      {
         if(part_from_moab) {
-          //rows_view
+          // get row_view
           ierr = (*miit2)->getRowDofView(
             *(p_miit->numered_dofs_rows),rows_view,moab::Interface::UNION
           ); CHKERRQ(ierr);
         }
         //rows element dof multi-indices
-        viit_rows = rows_view.begin();
-        for(;viit_rows!=rows_view.end();viit_rows++) {
+        for(viit_rows = rows_view.begin();viit_rows!=rows_view.end();viit_rows++) {
           try {
             boost::shared_ptr<SideNumber> side_number_ptr = (*miit2)->getSideNumberPtr(moab,(*viit_rows)->getEnt());
             rows_dofs->insert(boost::shared_ptr<FENumeredDofEntity>(new FENumeredDofEntity(side_number_ptr,*viit_rows)));
@@ -1442,41 +1478,40 @@ PetscErrorCode Core::partition_finite_elements(
             SETERRQ(comm,e.errorCode,e.errorMessage);
           }
         }
-        if(do_cols_fe) {
-          //cols_views
-          NumeredDofEntity_multiIndex_uid_view_ordered cols_view;
-          ierr = (*miit2)->getColDofView(
-            *(p_miit->numered_dofs_cols),cols_view,moab::Interface::UNION
-          ); CHKERRQ(ierr);
-          //cols element dof multi-indices
-          NumeredDofEntity_multiIndex_uid_view_ordered::iterator viit_cols;;
-          viit_cols = cols_view.begin();
-          for(;viit_cols!=cols_view.end();viit_cols++) {
-            try {
-              boost::shared_ptr<SideNumber> side_number_ptr = (*miit2)->getSideNumberPtr(moab,(*viit_cols)->getEnt());
-              cols_dofs->insert(boost::shared_ptr<FENumeredDofEntity>(new FENumeredDofEntity(side_number_ptr,*viit_cols)));
-            } catch (MoFEMException const &e) {
-              SETERRQ(comm,e.errorCode,e.errorMessage);
-            }
+      }
+      if(do_cols_fe) {
+        // get cols_views
+        NumeredDofEntity_multiIndex_uid_view_ordered cols_view;
+        ierr = (*miit2)->getColDofView(
+          *(p_miit->numered_dofs_cols),cols_view,moab::Interface::UNION
+        ); CHKERRQ(ierr);
+        // cols element dof multi-indices
+        NumeredDofEntity_multiIndex_uid_view_ordered::iterator viit_cols;
+        for(viit_cols = cols_view.begin();viit_cols!=cols_view.end();viit_cols++) {
+          try {
+            boost::shared_ptr<SideNumber> side_number_ptr = (*miit2)->getSideNumberPtr(moab,(*viit_cols)->getEnt());
+            cols_dofs->insert(boost::shared_ptr<FENumeredDofEntity>(new FENumeredDofEntity(side_number_ptr,*viit_cols)));
+          } catch (MoFEMException const &e) {
+            SETERRQ(comm,e.errorCode,e.errorMessage);
           }
         }
       }
-      std::pair<NumeredEntFiniteElement_multiIndex::iterator,bool> p;
-      p = numeredFiniteElements.insert(numered_fe);
-      if(!p.second) {
-        SETERRQ(comm,MOFEM_NOT_FOUND,"element is there");
-      }
-      if(verb>1) {
-        std::ostringstream ss;
-        ss << *p_miit << std::endl;
-        ss << *p.first << std::endl;
-        typedef FENumeredDofEntity_multiIndex::index<Unique_mi_tag>::type FENumeredDofEntity_multiIndex_by_Unique_mi_tag;
-        FENumeredDofEntity_multiIndex_by_Unique_mi_tag::iterator miit = (*p.first)->rows_dofs->get<Unique_mi_tag>().begin();
-        for(;miit!= (*p.first)->rows_dofs->get<Unique_mi_tag>().end();miit++) ss << "rows: " << *(*miit) << std::endl;
-        miit = (*p.first)->cols_dofs->get<Unique_mi_tag>().begin();
-        for(;miit!=(*p.first)->cols_dofs->get<Unique_mi_tag>().end();miit++) ss << "cols: " << *(*miit) << std::endl;
-        PetscSynchronizedPrintf(comm,ss.str().c_str());
-      }
+    }
+    std::pair<NumeredEntFiniteElement_multiIndex::iterator,bool> p;
+    p = numeredFiniteElements.insert(numered_fe);
+    if(!p.second) {
+      SETERRQ(comm,MOFEM_NOT_FOUND,"element is there");
+    }
+    if(verb>1) {
+      std::ostringstream ss;
+      ss << *p_miit << std::endl;
+      ss << *p.first << std::endl;
+      typedef FENumeredDofEntity_multiIndex::index<Unique_mi_tag>::type FENumeredDofEntity_multiIndex_by_Unique_mi_tag;
+      FENumeredDofEntity_multiIndex_by_Unique_mi_tag::iterator miit = (*p.first)->rows_dofs->get<Unique_mi_tag>().begin();
+      for(;miit!= (*p.first)->rows_dofs->get<Unique_mi_tag>().end();miit++) ss << "rows: " << *(*miit) << std::endl;
+      miit = (*p.first)->cols_dofs->get<Unique_mi_tag>().begin();
+      for(;miit!=(*p.first)->cols_dofs->get<Unique_mi_tag>().end();miit++) ss << "cols: " << *(*miit) << std::endl;
+      PetscSynchronizedPrintf(comm,ss.str().c_str());
     }
   }
   if(verb>0) {
@@ -1540,7 +1575,10 @@ PetscErrorCode Core::partition_ghost_dofs(const std::string &name,int verb) {
       }
     }
     DofIdx *nb_ghost_dofs[2] = { &nb_col_ghost_dofs, &nb_row_ghost_dofs };
-    DofIdx nb_local_dofs[2] = { *((DofIdx*)p_miit->tag_local_nbdof_data_col), *((DofIdx*)p_miit->tag_local_nbdof_data_row) };
+    DofIdx nb_local_dofs[2] = {
+      *((DofIdx*)p_miit->tag_local_nbdof_data_col),
+      *((DofIdx*)p_miit->tag_local_nbdof_data_row)
+    };
     NumeredDofEntity_multiIndex_uid_view_ordered *ghost_idx_view[2] = { &ghost_idx_col_view, &ghost_idx_row_view };
     typedef NumeredDofEntity_multiIndex::index<Unique_mi_tag>::type NumeredDofEntitys_by_unique_id;
     NumeredDofEntitys_by_unique_id *dof_by_uid_no_const[2] = {
