@@ -770,9 +770,9 @@ PetscErrorCode Core::set_field_order(const Range &ents,const BitFieldId id,const
   *buildMoFEM = 0;
 
   //check field & meshset
-  typedef Field_multiIndex::index<BitFieldId_mi_tag>::type field_set_by_id;
-  const field_set_by_id &set_id = fIelds.get<BitFieldId_mi_tag>();
-  field_set_by_id::iterator miit = set_id.find(id);
+  typedef Field_multiIndex::index<BitFieldId_mi_tag>::type FieldSetById;
+  const FieldSetById &set_id = fIelds.get<BitFieldId_mi_tag>();
+  FieldSetById::iterator miit = set_id.find(id);
   if(miit==set_id.end()) SETERRQ(comm,MOFEM_NOT_FOUND,"no filed found");
   EntityHandle idm;
   try {
@@ -1018,10 +1018,10 @@ PetscErrorCode Core::BuildFieldForNoField(
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
   //field it
-  typedef Field_multiIndex::index<BitFieldId_mi_tag>::type field_set_by_id;
-  const field_set_by_id &set_id = fIelds.get<BitFieldId_mi_tag>();
+  typedef Field_multiIndex::index<BitFieldId_mi_tag>::type FieldSetById;
+  const FieldSetById &set_id = fIelds.get<BitFieldId_mi_tag>();
   //find fiels
-  field_set_by_id::iterator miit = set_id.find(id);
+  FieldSetById::iterator miit = set_id.find(id);
   if(miit == set_id.end()) {
     SETERRQ(comm,MOFEM_NOT_FOUND,"field not found");
   }
@@ -1107,10 +1107,10 @@ PetscErrorCode Core::BuildFieldForL2H1HcurlHdiv(
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
   //field it
-  typedef Field_multiIndex::index<BitFieldId_mi_tag>::type field_set_by_id;
+  typedef Field_multiIndex::index<BitFieldId_mi_tag>::type FieldSetById;
   //find field
-  const field_set_by_id &set_id = fIelds.get<BitFieldId_mi_tag>();
-  field_set_by_id::iterator miit = set_id.find(id);
+  const FieldSetById &set_id = fIelds.get<BitFieldId_mi_tag>();
+  FieldSetById::iterator miit = set_id.find(id);
   if(miit == set_id.end()) {
     SETERRQ(comm,MOFEM_NOT_FOUND,"field not found");
   }
@@ -1241,9 +1241,9 @@ PetscErrorCode Core::BuildFieldForL2H1HcurlHdiv(
 PetscErrorCode Core::build_fields(int verb) {
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
-  typedef Field_multiIndex::index<BitFieldId_mi_tag>::type field_set_by_id;
-  field_set_by_id &set_id = fIelds.get<BitFieldId_mi_tag>();
-  field_set_by_id::iterator miit = set_id.begin();
+  typedef Field_multiIndex::index<BitFieldId_mi_tag>::type FieldSetById;
+  FieldSetById &set_id = fIelds.get<BitFieldId_mi_tag>();
+  FieldSetById::iterator miit = set_id.begin();
   for(;miit!=set_id.end();miit++) {
     std::map<EntityType,int> dof_counter;
     std::map<EntityType,int> inactive_dof_counter;
@@ -1322,9 +1322,9 @@ PetscErrorCode Core::list_dofs_by_field_name(const std::string &field_name) cons
 }
 PetscErrorCode Core::list_fields() const {
   PetscFunctionBegin;
-  typedef Field_multiIndex::index<BitFieldId_mi_tag>::type field_set_by_id;
-  const field_set_by_id &set_id = fIelds.get<BitFieldId_mi_tag>();
-  field_set_by_id::iterator miit = set_id.begin();
+  typedef Field_multiIndex::index<BitFieldId_mi_tag>::type FieldSetById;
+  const FieldSetById &set_id = fIelds.get<BitFieldId_mi_tag>();
+  FieldSetById::iterator miit = set_id.begin();
   for(;miit!=set_id.end();miit++) {
     std::ostringstream ss;
     ss << *miit << std::endl;
