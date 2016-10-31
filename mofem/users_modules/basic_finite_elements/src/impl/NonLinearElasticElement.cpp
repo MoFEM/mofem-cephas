@@ -816,7 +816,7 @@ PetscErrorCode NonlinearElasticElement::OpLhsPiolaKirchhoff_dx::doWork(
     PetscFunctionReturn(0);
   }
 
-  const int nb_base_functions = row_data.getN().size2();
+  // const int nb_base_functions = row_data.getN().size2();
   const int nb_gauss_pts = row_data.getN().size1();
 
   FTensor::Index<'i',3> i;

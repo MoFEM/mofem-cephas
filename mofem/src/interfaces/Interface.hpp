@@ -1386,8 +1386,7 @@ struct Interface: public UnknownInterface {
     * \param problem_for_cols problem used to index cols
     * \param copy_cols just copy cols dofs
     *
-    * If copy_rows/copy_cols is set to false only partition is copied between problems. This method is used to
-    * build problem of partition numeration between to problems is used to reduce need for interprocess communication.
+    * If copy_rows/copy_cols is set to false only partition is copied between problems. 
     *
     */
   virtual PetscErrorCode partition_compose_problem(

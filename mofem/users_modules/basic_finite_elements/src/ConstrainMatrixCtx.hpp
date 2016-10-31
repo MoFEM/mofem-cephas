@@ -33,9 +33,8 @@ struct ConstrainMatrixCtx {
   Vec Cx,CCTm1_Cx,CT_CCTm1_Cx,CTCx;
   Vec X,Qx,KQx;
   string xProblem,yProblem;
-  bool initQorP,initQTKQ,createKSP;
-
-  PetscErrorCode getKsp(const KSP *ksp);
+  bool initQorP,initQTKQ;
+  bool createKSP,createScatter;
 
   PetscLogEvent USER_EVENT_projInit;
   PetscLogEvent USER_EVENT_projQ;
@@ -44,7 +43,18 @@ struct ConstrainMatrixCtx {
   PetscLogEvent USER_EVENT_projRT;
   PetscLogEvent USER_EVENT_projCTC_QTKQ;
 
-  ConstrainMatrixCtx(MoFEM::Interface& m_field,string x_problem,string y_problem,bool create_ksp = true);
+  ConstrainMatrixCtx(
+    MoFEM::Interface& m_field,
+    string x_problem,
+    string y_problem,
+    bool create_ksp = true
+  );
+
+  ConstrainMatrixCtx(
+    MoFEM::Interface& m_field,
+    VecScatter scatter,
+    bool create_ksp = true
+  );
 
   PetscReal rTol,absTol,dTol;
   PetscInt maxIts;
@@ -101,6 +111,9 @@ struct ConstrainMatrixCtx {
   * ierr = MatShellSetOperation(Q,(void(*)(void))mat_destroy_PorQ); CHKERRQ(ierr);
   *
   * \endcode
+
+  * \ingroup projection_matrix
+
   */
 PetscErrorCode PorjectionMatrixMultOpQ(Mat Q,Vec x,Vec f);
 
@@ -114,6 +127,9 @@ PetscErrorCode PorjectionMatrixMultOpQ(Mat Q,Vec x,Vec f);
   * ierr = MatShellSetOperation(P,MATOP_MULT,(void(*)(void))ConstrainMatrixMultOpP); CHKERRQ(ierr);
   *
   * \endcode
+
+  * \ingroup projection_matrix
+
   */
 PetscErrorCode ConstrainMatrixMultOpP(Mat P,Vec x,Vec f);
 
@@ -127,6 +143,9 @@ PetscErrorCode ConstrainMatrixMultOpP(Mat P,Vec x,Vec f);
   * ierr = MatShellSetOperation(R,MATOP_MULT,(void(*)(void))ConstrainMatrixMultOpR); CHKERRQ(ierr);
   *
   * \endcode
+
+  * \ingroup projection_matrix
+
   */
 PetscErrorCode ConstrainMatrixMultOpR(Mat R,Vec x,Vec f);
 
@@ -140,6 +159,9 @@ PetscErrorCode ConstrainMatrixMultOpR(Mat R,Vec x,Vec f);
   * ierr = MatShellSetOperation(RT,MATOP_MULT,(void(*)(void))ConstrainMatrixMultOpRT); CHKERRQ(ierr);
   *
   * \endcode
+
+  * \ingroup projection_matrix
+
   */
 PetscErrorCode ConstrainMatrixMultOpRT(Mat RT,Vec x,Vec f);
 
@@ -154,6 +176,10 @@ PetscErrorCode ConstrainMatrixMultOpRT(Mat RT,Vec x,Vec f);
   * ierr = MatShellSetOperation(CTC_QTKQ,MATOP_DESTROY,(void(*)(void))mat_destroy_QTKQ); CHKERRQ(ierr);
   *
   * \endcode
+  *
+
+  * \ingroup projection_matrix
+
   */
 PetscErrorCode ConstrainMatrixMultOpCTC_QTKQ(Mat CTC_QTKQ,Vec x,Vec f);
 
@@ -168,6 +194,9 @@ PetscErrorCode ConstrainMatrixMultOpCTC_QTKQ(Mat CTC_QTKQ,Vec x,Vec f);
   * ierr = MatShellSetOperation(Q,(void(*)(void))mat_destroy_PorQ); CHKERRQ(ierr);
   *
   * \endcode
+
+  * \ingroup projection_matrix
+
   */
 PetscErrorCode ConstrainMatrixDestroyOpPorQ(Mat Q);
 
@@ -182,6 +211,9 @@ PetscErrorCode ConstrainMatrixDestroyOpPorQ(Mat Q);
   * ierr = MatShellSetOperation(Q,MATOP_DESTROY,(void(*)(void))mat_destroy_QTKQ); CHKERRQ(ierr);
   *
   * \endcode
+
+  * \ingroup projection_matrix
+
   */
 PetscErrorCode ConstrainMatrixDestroyOpQTKQ(Mat QTKQ);
 

@@ -174,7 +174,10 @@ PetscErrorCode DisplacementBCFEMethodPreAndPostProc::postProcess() {
       ierr = MatAssemblyBegin(snes_B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
       ierr = MatAssemblyEnd(snes_B,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
       ierr = MatZeroRowsColumns(
-        snes_B,dofsIndices.size(),dofsIndices.empty()?PETSC_NULL:&dofsIndices[0],dIag,PETSC_NULL,PETSC_NULL
+        snes_B,
+        dofsIndices.size(),
+        dofsIndices.empty()?PETSC_NULL:&dofsIndices[0],
+        dIag,PETSC_NULL,PETSC_NULL
       ); CHKERRQ(ierr);
     }
     if(snes_f) {

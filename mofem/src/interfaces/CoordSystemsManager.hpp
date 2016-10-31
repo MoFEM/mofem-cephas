@@ -86,11 +86,10 @@ namespace MoFEM {
      */
     PetscErrorCode getCoordSysPtr(const string name,boost::shared_ptr<CoordSys> &cs_ptr);
 
-    inline Tag get_th_CoordSysMeshset() const { return th_CoordSysMeshset; }
+    inline Tag get_th_CoordSysName() const { return th_CoordSysName; }
 
   protected:
 
-    Tag th_CoordSysMeshset;             ///< Tag on field meshset pointing to coordinate system meshset
     Tag th_CoordSysName;                ///< Name of coordinate system
     Tag th_CoordSysDim;                 ///< Tag on cordsys meshset for dimension of coordinate system associated to fields
 

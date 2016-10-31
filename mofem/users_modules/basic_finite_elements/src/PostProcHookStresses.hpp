@@ -81,8 +81,10 @@ struct PostPorcHookStress: public MoFEM::VolumeElementForcesAndSourcesCore::User
   mField(m_field),
   postProcMesh(post_proc_mesh),
   mapGaussPts(map_gauss_pts),
-  commonData(common_data),
-  setOfBlocksMaterialDataPtr(set_of_block_data_ptr) {
+  #ifdef __NONLINEAR_ELASTIC_HPP
+  setOfBlocksMaterialDataPtr(set_of_block_data_ptr),
+  #endif //__NONLINEAR_ELASTIC_HPP
+  commonData(common_data) {
   }
 
   /**

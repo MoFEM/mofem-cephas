@@ -163,7 +163,7 @@ struct MagneticElement {
    * @return error code
    */
   PetscErrorCode createFields() {
-    MoABErrorCode rval;
+    // MoABErrorCode rval;
     PetscErrorCode ierr;
     PetscFunctionBegin;
 

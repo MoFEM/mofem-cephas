@@ -24,19 +24,27 @@ using namespace MoFEM;
 
 const static bool debug = false;
 
-PetscErrorCode ConstrainMatrixCtx::getKsp(const KSP *ksp) {
-  PetscFunctionBegin;
-  ksp = &kSP;
-  PetscFunctionReturn(0);
-}
-
-ConstrainMatrixCtx::ConstrainMatrixCtx(MoFEM::Interface& m_field,string x_problem,string y_problem,bool create_ksp):
-  mField(m_field),
-  C(PETSC_NULL),CT(PETSC_NULL),CCT(PETSC_NULL),CTC(PETSC_NULL),K(PETSC_NULL),
-  Cx(PETSC_NULL),CCTm1_Cx(PETSC_NULL),CT_CCTm1_Cx(PETSC_NULL),CTCx(PETSC_NULL),
-  Qx(PETSC_NULL),KQx(PETSC_NULL),
-  xProblem(x_problem),yProblem(y_problem),
-  initQorP(true),initQTKQ(true),createKSP(create_ksp) {
+ConstrainMatrixCtx::ConstrainMatrixCtx(
+  MoFEM::Interface& m_field,string x_problem,string y_problem,bool create_ksp
+):
+mField(m_field),
+C(PETSC_NULL),
+CT(PETSC_NULL),
+CCT(PETSC_NULL),
+CTC(PETSC_NULL),
+K(PETSC_NULL),
+Cx(PETSC_NULL),
+CCTm1_Cx(PETSC_NULL),
+CT_CCTm1_Cx(PETSC_NULL),
+CTCx(PETSC_NULL),
+Qx(PETSC_NULL),
+KQx(PETSC_NULL),
+xProblem(x_problem),
+yProblem(y_problem),
+initQorP(true),
+initQTKQ(true),
+createKSP(create_ksp),
+createScatter(true) {
   PetscLogEventRegister("ProjectionInit",0,&USER_EVENT_projInit);
   PetscLogEventRegister("ProjectionQ",0,&USER_EVENT_projQ);
   PetscLogEventRegister("ProjectionP",0,&USER_EVENT_projP);
@@ -44,6 +52,37 @@ ConstrainMatrixCtx::ConstrainMatrixCtx(MoFEM::Interface& m_field,string x_proble
   PetscLogEventRegister("ProjectionRT",0,&USER_EVENT_projRT);
   PetscLogEventRegister("ProjectionCTC_QTKQ",0,&USER_EVENT_projCTC_QTKQ);
 }
+
+ConstrainMatrixCtx::ConstrainMatrixCtx(
+  MoFEM::Interface& m_field,
+  VecScatter scatter,
+  bool create_ksp
+):
+mField(m_field),
+sCatter(scatter),
+C(PETSC_NULL),
+CT(PETSC_NULL),
+CCT(PETSC_NULL),
+CTC(PETSC_NULL),
+K(PETSC_NULL),
+Cx(PETSC_NULL),
+CCTm1_Cx(PETSC_NULL),
+CT_CCTm1_Cx(PETSC_NULL),
+CTCx(PETSC_NULL),
+Qx(PETSC_NULL),
+KQx(PETSC_NULL),
+initQorP(true),
+initQTKQ(true),
+createKSP(create_ksp),
+createScatter(false) {
+  PetscLogEventRegister("ProjectionInit",0,&USER_EVENT_projInit);
+  PetscLogEventRegister("ProjectionQ",0,&USER_EVENT_projQ);
+  PetscLogEventRegister("ProjectionP",0,&USER_EVENT_projP);
+  PetscLogEventRegister("ProjectionR",0,&USER_EVENT_projR);
+  PetscLogEventRegister("ProjectionRT",0,&USER_EVENT_projRT);
+  PetscLogEventRegister("ProjectionCTC_QTKQ",0,&USER_EVENT_projCTC_QTKQ);
+}
+
 
 PetscErrorCode ConstrainMatrixCtx::initializeQorP(Vec x) {
     PetscFunctionBegin;
@@ -72,7 +111,9 @@ PetscErrorCode ConstrainMatrixCtx::initializeQorP(Vec x) {
       ierr = MatGetVecs(CCT,PETSC_NULL,&CCTm1_Cx); CHKERRQ(ierr);
       #endif
       ierr = VecDuplicate(X,&CT_CCTm1_Cx); CHKERRQ(ierr);
-      ierr = mField.VecScatterCreate(x,xProblem,ROW,X,yProblem,COL,&sCatter); CHKERRQ(ierr);
+      if(createScatter) {
+        ierr = mField.VecScatterCreate(x,xProblem,ROW,X,yProblem,COL,&sCatter); CHKERRQ(ierr);
+      }
       PetscLogEventEnd(USER_EVENT_projInit,0,0,0,0);
     }
     PetscFunctionReturn(0);
@@ -100,7 +141,9 @@ PetscErrorCode ConstrainMatrixCtx::destroyQorP() {
     ierr = VecDestroy(&Cx); CHKERRQ(ierr);
     ierr = VecDestroy(&CCTm1_Cx); CHKERRQ(ierr);
     ierr = VecDestroy(&CT_CCTm1_Cx); CHKERRQ(ierr);
-    ierr = VecScatterDestroy(&sCatter); CHKERRQ(ierr);
+    if(createScatter) {
+      ierr = VecScatterDestroy(&sCatter); CHKERRQ(ierr);
+    }
     initQorP = true;
     PetscFunctionReturn(0);
 }
