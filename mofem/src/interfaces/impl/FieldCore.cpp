@@ -145,10 +145,14 @@ PetscErrorCode Core::add_field(
       ierr = query_interface(cs_manger_ptr); CHKERRQ(ierr);
       boost::shared_ptr<CoordSys > undefined_cs_ptr;
       ierr = cs_manger_ptr->getCoordSysPtr("UNDEFINED",undefined_cs_ptr); CHKERRQ(ierr);
-      EntityHandle coord_sys_id = undefined_cs_ptr->getMeshset();
-      rval = moab.tag_set_data(
-        cs_manger_ptr->get_th_CoordSysMeshset(),&meshset,1,&coord_sys_id
+      int sys_name_size[1];
+      sys_name_size[0] = undefined_cs_ptr->getName().size();
+      void const* sys_name[] = { &*undefined_cs_ptr->getNameRef().begin() };
+      rval = moab.tag_set_by_ptr(
+        cs_manger_ptr->get_th_CoordSysName(),&meshset,1,sys_name,sys_name_size
       ); CHKERRQ_MOAB(rval);
+      EntityHandle coord_sys_id = undefined_cs_ptr->getMeshset();
+      rval = moab.add_entities(coord_sys_id,&meshset,1); CHKERR_MOAB(rval);
       p = fIelds.insert(boost::shared_ptr<Field>(new Field(moab,meshset,undefined_cs_ptr)));
       if(bh == MF_EXCL) {
         if(!p.second) SETERRQ1(
