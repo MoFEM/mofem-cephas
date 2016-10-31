@@ -786,7 +786,10 @@ PetscErrorCode Core::set_field_order(const Range &ents,const BitFieldId id,const
   rval = moab.get_entities_by_handle(idm,ents_of_id_meshset,false); CHKERRQ_MOAB(rval);
   Range ents_ = intersect(ents,ents_of_id_meshset);
   if(verb>1) {
-    PetscSynchronizedPrintf(comm,"nb. of ents for order change in the field %d\n",ents_.size());
+    PetscSynchronizedPrintf(
+      comm,"nb. of ents for order change in the field <%s> %d\n",
+      miit->get()->getName().c_str(),ents_.size()
+  );
   }
 
   //ent view by field id (in set all MoabEnts has the same FieldId)
@@ -801,7 +804,10 @@ PetscErrorCode Core::set_field_order(const Range &ents,const BitFieldId id,const
     }
   }
   if(verb>1) {
-    PetscSynchronizedPrintf(comm,"nb. of ents in the multi index field %d\n",ents_id_view.size());
+    PetscSynchronizedPrintf(
+      comm,"nb. of ents in the multi index field <%s> %d\n",
+      miit->get()->getName().c_str(),ents_id_view.size()
+    );
   }
 
 
@@ -916,9 +922,18 @@ PetscErrorCode Core::set_field_order(const Range &ents,const BitFieldId id,const
   }
 
   if(verb>1) {
-    PetscSynchronizedPrintf(comm,"nb. of entities for which order was increased %d (order %d)\n",nb_ents_set_order_up,order);
-    PetscSynchronizedPrintf(comm,"nb. of entities for which order was reduced %d (order %d)\n",nb_ents_set_order_down,order);
-    PetscSynchronizedPrintf(comm,"nb. of entities for which order set %d (order %d)\n",nb_ents_set_order_new,order);
+    PetscSynchronizedPrintf(
+      comm,"nb. of entities in field <%s> for which order was increased %d (order %d)\n",
+      miit->get()->getName().c_str(),nb_ents_set_order_up,order
+    );
+    PetscSynchronizedPrintf(
+      comm,"nb. of entities in field <%s> for which order was reduced %d (order %d)\n",
+      miit->get()->getName().c_str(),nb_ents_set_order_down,order
+    );
+    PetscSynchronizedPrintf(
+      comm,"nb. of entities in field <%s> for which order set %d (order %d)\n",
+      miit->get()->getName().c_str(),nb_ents_set_order_new,order
+    );
     PetscSynchronizedFlush(comm,PETSC_STDOUT);
   }
 
