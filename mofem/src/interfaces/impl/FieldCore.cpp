@@ -145,10 +145,14 @@ PetscErrorCode Core::add_field(
       ierr = query_interface(cs_manger_ptr); CHKERRQ(ierr);
       boost::shared_ptr<CoordSys > undefined_cs_ptr;
       ierr = cs_manger_ptr->getCoordSysPtr("UNDEFINED",undefined_cs_ptr); CHKERRQ(ierr);
-      EntityHandle coord_sys_id = undefined_cs_ptr->getMeshset();
-      rval = moab.tag_set_data(
-        cs_manger_ptr->get_th_CoordSysMeshset(),&meshset,1,&coord_sys_id
+      int sys_name_size[1];
+      sys_name_size[0] = undefined_cs_ptr->getName().size();
+      void const* sys_name[] = { &*undefined_cs_ptr->getNameRef().begin() };
+      rval = moab.tag_set_by_ptr(
+        cs_manger_ptr->get_th_CoordSysName(),&meshset,1,sys_name,sys_name_size
       ); CHKERRQ_MOAB(rval);
+      EntityHandle coord_sys_id = undefined_cs_ptr->getMeshset();
+      rval = moab.add_entities(coord_sys_id,&meshset,1); CHKERR_MOAB(rval);
       p = fIelds.insert(boost::shared_ptr<Field>(new Field(moab,meshset,undefined_cs_ptr)));
       if(bh == MF_EXCL) {
         if(!p.second) SETERRQ1(
@@ -770,9 +774,9 @@ PetscErrorCode Core::set_field_order(const Range &ents,const BitFieldId id,const
   *buildMoFEM = 0;
 
   //check field & meshset
-  typedef Field_multiIndex::index<BitFieldId_mi_tag>::type field_set_by_id;
-  const field_set_by_id &set_id = fIelds.get<BitFieldId_mi_tag>();
-  field_set_by_id::iterator miit = set_id.find(id);
+  typedef Field_multiIndex::index<BitFieldId_mi_tag>::type FieldSetById;
+  const FieldSetById &set_id = fIelds.get<BitFieldId_mi_tag>();
+  FieldSetById::iterator miit = set_id.find(id);
   if(miit==set_id.end()) SETERRQ(comm,MOFEM_NOT_FOUND,"no filed found");
   EntityHandle idm;
   try {
@@ -786,7 +790,10 @@ PetscErrorCode Core::set_field_order(const Range &ents,const BitFieldId id,const
   rval = moab.get_entities_by_handle(idm,ents_of_id_meshset,false); CHKERRQ_MOAB(rval);
   Range ents_ = intersect(ents,ents_of_id_meshset);
   if(verb>1) {
-    PetscSynchronizedPrintf(comm,"nb. of ents for order change in the field %d\n",ents_.size());
+    PetscSynchronizedPrintf(
+      comm,"nb. of ents for order change in the field <%s> %d\n",
+      miit->get()->getName().c_str(),ents_.size()
+  );
   }
 
   //ent view by field id (in set all MoabEnts has the same FieldId)
@@ -801,7 +808,10 @@ PetscErrorCode Core::set_field_order(const Range &ents,const BitFieldId id,const
     }
   }
   if(verb>1) {
-    PetscSynchronizedPrintf(comm,"nb. of ents in the multi index field %d\n",ents_id_view.size());
+    PetscSynchronizedPrintf(
+      comm,"nb. of ents in the multi index field <%s> %d\n",
+      miit->get()->getName().c_str(),ents_id_view.size()
+    );
   }
 
 
@@ -916,9 +926,18 @@ PetscErrorCode Core::set_field_order(const Range &ents,const BitFieldId id,const
   }
 
   if(verb>1) {
-    PetscSynchronizedPrintf(comm,"nb. of entities for which order was increased %d (order %d)\n",nb_ents_set_order_up,order);
-    PetscSynchronizedPrintf(comm,"nb. of entities for which order was reduced %d (order %d)\n",nb_ents_set_order_down,order);
-    PetscSynchronizedPrintf(comm,"nb. of entities for which order set %d (order %d)\n",nb_ents_set_order_new,order);
+    PetscSynchronizedPrintf(
+      comm,"nb. of entities in field <%s> for which order was increased %d (order %d)\n",
+      miit->get()->getName().c_str(),nb_ents_set_order_up,order
+    );
+    PetscSynchronizedPrintf(
+      comm,"nb. of entities in field <%s> for which order was reduced %d (order %d)\n",
+      miit->get()->getName().c_str(),nb_ents_set_order_down,order
+    );
+    PetscSynchronizedPrintf(
+      comm,"nb. of entities in field <%s> for which order set %d (order %d)\n",
+      miit->get()->getName().c_str(),nb_ents_set_order_new,order
+    );
     PetscSynchronizedFlush(comm,PETSC_STDOUT);
   }
 
@@ -1003,10 +1022,10 @@ PetscErrorCode Core::BuildFieldForNoField(
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
   //field it
-  typedef Field_multiIndex::index<BitFieldId_mi_tag>::type field_set_by_id;
-  const field_set_by_id &set_id = fIelds.get<BitFieldId_mi_tag>();
+  typedef Field_multiIndex::index<BitFieldId_mi_tag>::type FieldSetById;
+  const FieldSetById &set_id = fIelds.get<BitFieldId_mi_tag>();
   //find fiels
-  field_set_by_id::iterator miit = set_id.find(id);
+  FieldSetById::iterator miit = set_id.find(id);
   if(miit == set_id.end()) {
     SETERRQ(comm,MOFEM_NOT_FOUND,"field not found");
   }
@@ -1092,10 +1111,10 @@ PetscErrorCode Core::BuildFieldForL2H1HcurlHdiv(
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
   //field it
-  typedef Field_multiIndex::index<BitFieldId_mi_tag>::type field_set_by_id;
+  typedef Field_multiIndex::index<BitFieldId_mi_tag>::type FieldSetById;
   //find field
-  const field_set_by_id &set_id = fIelds.get<BitFieldId_mi_tag>();
-  field_set_by_id::iterator miit = set_id.find(id);
+  const FieldSetById &set_id = fIelds.get<BitFieldId_mi_tag>();
+  FieldSetById::iterator miit = set_id.find(id);
   if(miit == set_id.end()) {
     SETERRQ(comm,MOFEM_NOT_FOUND,"field not found");
   }
@@ -1226,9 +1245,9 @@ PetscErrorCode Core::BuildFieldForL2H1HcurlHdiv(
 PetscErrorCode Core::build_fields(int verb) {
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
-  typedef Field_multiIndex::index<BitFieldId_mi_tag>::type field_set_by_id;
-  field_set_by_id &set_id = fIelds.get<BitFieldId_mi_tag>();
-  field_set_by_id::iterator miit = set_id.begin();
+  typedef Field_multiIndex::index<BitFieldId_mi_tag>::type FieldSetById;
+  FieldSetById &set_id = fIelds.get<BitFieldId_mi_tag>();
+  FieldSetById::iterator miit = set_id.begin();
   for(;miit!=set_id.end();miit++) {
     std::map<EntityType,int> dof_counter;
     std::map<EntityType,int> inactive_dof_counter;
@@ -1307,9 +1326,9 @@ PetscErrorCode Core::list_dofs_by_field_name(const std::string &field_name) cons
 }
 PetscErrorCode Core::list_fields() const {
   PetscFunctionBegin;
-  typedef Field_multiIndex::index<BitFieldId_mi_tag>::type field_set_by_id;
-  const field_set_by_id &set_id = fIelds.get<BitFieldId_mi_tag>();
-  field_set_by_id::iterator miit = set_id.begin();
+  typedef Field_multiIndex::index<BitFieldId_mi_tag>::type FieldSetById;
+  const FieldSetById &set_id = fIelds.get<BitFieldId_mi_tag>();
+  FieldSetById::iterator miit = set_id.begin();
   for(;miit!=set_id.end();miit++) {
     std::ostringstream ss;
     ss << *miit << std::endl;

@@ -725,13 +725,14 @@ PetscErrorCode Core::initialiseDatabseInformationFromMesh(int verb) {
     if(field_id!=0) {
       std::pair<Field_multiIndex::iterator,bool> p;
       try {
-        EntityHandle coord_sys_id;
-        rval = moab.tag_get_data(
-          cs_manger_ptr->get_th_CoordSysMeshset(),&*mit,1,&coord_sys_id
-        ); CHKERRQ_MOAB(rval);
+        const char *cs_name;
+        int cs_name_size;
+        rval = moab.tag_get_by_ptr(
+          cs_manger_ptr->get_th_CoordSysName(),&*mit,1,(const void **)&cs_name,&cs_name_size
+        );
         boost::shared_ptr<CoordSys> cs_ptr;
-        if(coord_sys_id!=0) {
-          ierr = cs_manger_ptr->getCoordSysPtr(coord_sys_id,cs_ptr); CHKERRQ(ierr);
+        if(rval == MB_SUCCESS && cs_name_size) {
+          ierr = cs_manger_ptr->getCoordSysPtr(std::string(cs_name,cs_name_size),cs_ptr); CHKERRQ(ierr);
         } else {
           ierr = cs_manger_ptr->getCoordSysPtr("UNDEFINED",cs_ptr); CHKERRQ(ierr);
         }

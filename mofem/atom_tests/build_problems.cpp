@@ -91,8 +91,8 @@ int main(int argc, char *argv[]) {
   ierr = m_field.add_finite_element("E3"); CHKERRQ(ierr);
 
   ierr = m_field.modify_finite_element_add_field_row("E1","F1"); CHKERRQ(ierr);
-  ierr = m_field.modify_finite_element_add_field_row("E2","F2"); CHKERRQ(ierr);
   ierr = m_field.modify_finite_element_add_field_col("E1","F1"); CHKERRQ(ierr);
+  ierr = m_field.modify_finite_element_add_field_row("E2","F2"); CHKERRQ(ierr);
   ierr = m_field.modify_finite_element_add_field_col("E2","F2"); CHKERRQ(ierr);
   //To build composite problem
   ierr = m_field.modify_finite_element_add_field_row("E3","F1"); CHKERRQ(ierr);
@@ -120,12 +120,12 @@ int main(int argc, char *argv[]) {
   //build problems
   ierr = m_field.build_problems(); CHKERRQ(ierr);
   ierr = m_field.partition_problem("P1"); CHKERRQ(ierr);
-  ierr = m_field.partition_problem("P2"); CHKERRQ(ierr);
   ierr = m_field.partition_finite_elements("P1"); CHKERRQ(ierr);
-  ierr = m_field.partition_finite_elements("P2"); CHKERRQ(ierr);
   ierr = m_field.partition_ghost_dofs("P1"); CHKERRQ(ierr);
-  ierr = m_field.partition_ghost_dofs("P2"); CHKERRQ(ierr);
   ierr = m_field.partition_check_matrix_fill_in("P1",-1,-1,0); CHKERRQ(ierr);
+  ierr = m_field.partition_problem("P2"); CHKERRQ(ierr);
+  ierr = m_field.partition_finite_elements("P2"); CHKERRQ(ierr);
+  ierr = m_field.partition_ghost_dofs("P2"); CHKERRQ(ierr);
   ierr = m_field.partition_check_matrix_fill_in("P2",-1,-1,0); CHKERRQ(ierr);
 
   //compose problem

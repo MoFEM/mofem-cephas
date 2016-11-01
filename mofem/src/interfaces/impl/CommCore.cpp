@@ -176,7 +176,7 @@ namespace MoFEM {
     }
 
     if(verb>0) {
-      PetscSynchronizedPrintf(comm,"nb. before ents %u\n",ents.size());
+      PetscSynchronizedPrintf(comm,"Rank %d nb. before ents %u\n",rAnk,ents.size());
     }
 
     // synchronise range
@@ -205,7 +205,7 @@ namespace MoFEM {
     }
 
     if(verb>0) {
-      PetscSynchronizedPrintf(comm,"nb. after ents %u\n",ents.size());
+      PetscSynchronizedPrintf(comm,"Rank %d nb. after ents %u\n",rAnk,ents.size());
     }
 
 

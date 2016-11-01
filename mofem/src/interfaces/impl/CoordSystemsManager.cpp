@@ -104,10 +104,6 @@ namespace MoFEM {
     rval = moab.tag_get_handle(
       "_CoordSysDim",4,MB_TYPE_INTEGER,th_CoordSysDim,MB_TAG_CREAT|MB_TAG_SPARSE,&def_coord_sys_dim
     ); CHKERRQ_MOAB(rval);
-    EntityHandle def_coor_sys_meshset = 0;
-    rval = moab.tag_get_handle(
-      "_CoordSysMeshSet",1,MB_TYPE_HANDLE,th_CoordSysMeshset,MB_TAG_CREAT|MB_TAG_SPARSE,&def_coor_sys_meshset
-    ); CHKERRQ_MOAB(rval);
     rval = moab.tag_get_handle(
       "_CoordSysName",
       def_val_len,
@@ -143,12 +139,17 @@ namespace MoFEM {
         int cs_name_size;
         rval = moab.tag_get_by_ptr(
           th_CoordSysName,&*mit,1,(const void **)&cs_name,&cs_name_size
-        );
+        ) ;
         if(rval == MB_SUCCESS && cs_name_size) {
-          boost::shared_ptr<CoordSys> coord_sys(new CoordSys(moab,*mit));
-          std::pair<CoordSys_multiIndex::iterator,bool> p = coordinateSystems.insert(coord_sys);
-          if(!p.second) {
-            SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"meshset to coord system not inserted");
+          int dim[4];
+          rval = moab.tag_get_data(th_CoordSysDim,&*mit,1,dim); CHKERRQ_MOAB(rval);
+          if((dim[0]+dim[1]+dim[2]+dim[3])!=0) {
+            // cerr << m_field.getCommRank() << " " << cs_name << " " <<  *mit << endl;
+            boost::shared_ptr<CoordSys> coord_sys(new CoordSys(moab,*mit));
+            std::pair<CoordSys_multiIndex::iterator,bool> p = coordinateSystems.insert(coord_sys);
+            if(!p.second) {
+              SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"meshset to coord system not inserted");
+            }
           }
         }
       } catch (MoFEMException const &e) {
@@ -303,7 +304,12 @@ namespace MoFEM {
     CoordSys_multiIndex::index<Meshset_mi_tag>::type::iterator cs_it;
     cs_it = coordinateSystems.get<Meshset_mi_tag>().find(id);
     if(cs_it==coordinateSystems.get<Meshset_mi_tag>().end()) {
-      SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"Unknown Coordinate System");
+      SETERRQ1(
+        PETSC_COMM_SELF,
+        MOFEM_DATA_INCONSISTENCY,
+        "Unknown Coordinate System ms_id %lu",
+        id
+      );
     }
     cs_ptr = *cs_it;
     PetscFunctionReturn(0);
@@ -314,7 +320,12 @@ namespace MoFEM {
     CoordSys_multiIndex::index<CoordSysName_mi_tag>::type::iterator cs_it;
     cs_it = coordinateSystems.get<CoordSysName_mi_tag>().find(name);
     if(cs_it==coordinateSystems.get<CoordSysName_mi_tag>().end()) {
-      SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"Unknown Coordinate System");
+      SETERRQ1(
+        PETSC_COMM_SELF,
+        MOFEM_DATA_INCONSISTENCY,
+        "Unknown Coordinate System <%s>",
+        name.c_str()
+      );
     }
     cs_ptr = *cs_it;
     PetscFunctionReturn(0);
