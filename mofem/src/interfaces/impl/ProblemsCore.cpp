@@ -1765,7 +1765,10 @@ PetscErrorCode Core::loop_finite_elements(
       PetscLogEventEnd(USER_EVENT_operator,0,0,0,0);
     } catch (const std::exception& ex) {
       std::ostringstream ss;
-      ss << "throw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__ << std::endl;
+      ss << "FE method " << typeid(method).name()
+      << "   throw in method: " << ex.what()
+      << " at line " << __LINE__
+      << " in file " << __FILE__ << std::endl;
       SETERRQ(comm,MOFEM_DATA_INCONSISTENCY,ss.str().c_str());
     }
 
