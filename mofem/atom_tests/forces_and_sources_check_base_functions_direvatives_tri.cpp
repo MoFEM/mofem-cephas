@@ -66,8 +66,8 @@ int main(int argc, char *argv[]) {
   // create one tet
   double tri_coords[] = {
     0,0,0,
-    0.5,0,0,
-    0,0.5,0
+    .5,0,0,
+    0,1.,0
   };
   EntityHandle nodes[3];
   for(int nn = 0;nn<3;nn++) {
@@ -179,7 +179,7 @@ int main(int argc, char *argv[]) {
         const int nb_dofs = data.getN().size2();
         for(int dd = 0;dd!=nb_dofs;dd++) {
           const double dksi = (data.getN()(1,dd)-data.getN()(0,dd))/eps;
-          const double deta = (data.getN()(3,dd)-data.getN()(2,dd))/eps;
+          const double deta = (data.getN()(3,dd)-data.getN()(2,dd))/(2*eps);
           mySplit << "DKsi " << dksi << std::endl;
           mySplit << "DEta " << deta << std::endl;
           mySplit << "diffN " << data.getDiffN()(4,2*dd+0) << std::endl;
@@ -240,7 +240,7 @@ int main(int argc, char *argv[]) {
         gaussPts(2,ii) = 1;
       }
 
-      cerr << gaussPts << endl;
+      // cerr << gaussPts << endl;
 
       PetscFunctionReturn(0);
     }
