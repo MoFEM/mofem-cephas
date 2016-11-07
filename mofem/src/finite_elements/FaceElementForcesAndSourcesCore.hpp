@@ -349,8 +349,6 @@ struct OpCalculateInvJacForFace: public FaceElementForcesAndSourcesCore::UserDat
 
 /** \brief Transform local reference derivatives of shape functions to global derivatives
 
-It is used for 2d problems.
-
 \ingroup mofem_forces_and_sources_tri_element
 
 */
