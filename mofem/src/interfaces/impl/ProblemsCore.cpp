@@ -847,9 +847,9 @@ PetscErrorCode Core::partition_mesh(Range &ents,int dim,int adj_dim,int n_parts,
           // std::cerr << " " << parts_ents[pp].size() << std::endl;
         }
       }
-      for(int pp = 0;pp!=n_parts;pp++) {
-        rval = moab.add_entities(tagged_sets[pp],parts_ents[pp]); CHKERR_MOAB(rval);
-      }
+      // for(int pp = 0;pp!=n_parts;pp++) {
+      //   rval = moab.add_entities(tagged_sets[pp],parts_ents[pp]); CHKERR_MOAB(rval);
+      // }
 
       // set gid to lower dimension entities
       for(int dd = 0;dd<dim;dd++) {
@@ -858,9 +858,9 @@ PetscErrorCode Core::partition_mesh(Range &ents,int dim,int adj_dim,int n_parts,
           Range dim_ents = parts_ents[pp].subset_by_dimension(dd);
           // std::cerr << dim_ents.size() << " " << dd  << " " << pp << std::endl;
           for(Range::iterator eit = dim_ents.begin();eit!=dim_ents.end();eit++) {
-            if(dd>0) {
-              rval = moab.tag_set_data(part_tag,&*eit,1,&pp); CHKERRQ_MOAB(rval);
-            }
+            // if(dd>0) {
+            //   rval = moab.tag_set_data(part_tag,&*eit,1,&pp); CHKERRQ_MOAB(rval);
+            // }
             rval = moab.tag_set_data(gid_tag,&*eit,1,&gid); CHKERRQ_MOAB(rval);
             gid++;
           }
