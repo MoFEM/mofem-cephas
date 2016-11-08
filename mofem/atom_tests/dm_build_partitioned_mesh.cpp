@@ -111,11 +111,18 @@ int main(int argc, char *argv[]) {
   ierr = DMMoFEMAddElement(dm,"FE"); CHKERRQ(ierr);
   ierr = DMSetUp(dm); CHKERRQ(ierr);
 
-  ierr = m_field.partition_check_matrix_fill_in("DMMOFEM",-1,-1,1); CHKERRQ(ierr);
-
   // dump data to file, just to check if something was changed
   Mat m;
   ierr = DMCreateMatrix(dm,&m); CHKERRQ(ierr);
+
+  // if(1) {
+  //   MatView(m,PETSC_VIEWER_DRAW_WORLD);
+  //   std::string wait;
+  //   std::cin >> wait;
+  // }
+
+  ierr = m_field.partition_check_matrix_fill_in("DMMOFEM",-1,-1,1); CHKERRQ(ierr);
+
 
   PetscBool save_file = PETSC_TRUE;
 
