@@ -137,7 +137,7 @@ PetscErrorCode H1_FaceShapeFunctions_MBTRI(
   int ii = 0;
   for(;ii<GDIM;ii++) {
     int node_shift = ii*3;
-    double ksi_faces[8];
+    double ksi_faces[2];
     ksi_faces[0] = N[ node_shift+face_nodes[1] ] - N[ node_shift+face_nodes[0] ];
     ksi_faces[1] = N[ node_shift+face_nodes[2] ] - N[ node_shift+face_nodes[0] ];
     double L0[ p+1 ],L1[ p+1 ];
@@ -147,10 +147,10 @@ PetscErrorCode H1_FaceShapeFunctions_MBTRI(
     double v = N[node_shift+face_nodes[0]]*N[node_shift+face_nodes[1]]*N[node_shift+face_nodes[2]];
     double v2[2] = { 0,0 };
     if(diff_faceN!=NULL) {
-      dd = 0;
       double n1n2 = N[node_shift+face_nodes[1]]*N[node_shift+face_nodes[2]];
       double n0n2 = N[node_shift+face_nodes[0]]*N[node_shift+face_nodes[2]];
       double n0n1 = N[node_shift+face_nodes[0]]*N[node_shift+face_nodes[1]];
+      dd = 0;
       for(;dd<2;dd++) {
         v2[dd] =
         diffN[face_nodes[0]*2+dd]*n1n2+

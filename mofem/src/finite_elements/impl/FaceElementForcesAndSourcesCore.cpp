@@ -577,17 +577,14 @@ PetscErrorCode OpCalculateInvJacForFace::doWork(
       VectorDouble &coords = getCoords();
       double *coords_ptr = &*coords.data().begin();
       double *diff_n = &*data.getDiffN().data().begin();
-      int size = data.getN().size2();
-      int idx = 0;
       double j00,j01,j10,j11;
       for(int gg = 0;gg<1;gg++) {
         // this is triangle, derivative of nodal shape functions is constant.
         // So only need to do one node.
-        j00 = cblas_ddot(size,&coords_ptr[0],3,&diff_n[idx+0],2);
-        j01 = cblas_ddot(size,&coords_ptr[0],3,&diff_n[idx+1],2);
-        j10 = cblas_ddot(size,&coords_ptr[1],3,&diff_n[idx+0],2);
-        j11 = cblas_ddot(size,&coords_ptr[1],3,&diff_n[idx+1],2);
-        idx += 2*size;
+        j00 = cblas_ddot(3,&coords_ptr[0],3,&diff_n[0],2);
+        j01 = cblas_ddot(3,&coords_ptr[0],3,&diff_n[1],2);
+        j10 = cblas_ddot(3,&coords_ptr[1],3,&diff_n[0],2);
+        j11 = cblas_ddot(3,&coords_ptr[1],3,&diff_n[1],2);
       }
       double det = j00*j11-j01*j10;
       invJac.resize(2,2,false);
@@ -629,7 +626,7 @@ PetscErrorCode OpSetInvJacH1ForFace::doWork(
     if(type!=MBVERTEX) {
       if(nb_dofs != data.getDiffN().size2()/2) {
         SETERRQ2(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,
-          "data inconsistency nb_dofs != data.diffN.size2()/3 ( %u != %u/2 )",
+          "data inconsistency nb_dofs != data.diffN.size2()/2 ( %u != %u/2 )",
           nb_dofs,data.getDiffN().size2()
         );
       }
@@ -645,10 +642,10 @@ PetscErrorCode OpSetInvJacH1ForFace::doWork(
         for(unsigned int gg = 0;gg<nb_gauss_pts;gg++) {
           for(unsigned int dd = 0;dd<nb_dofs;dd++) {
             cblas_dgemv(
-              CblasRowMajor,CblasTrans,2,2,1.,
+              CblasRowMajor,CblasTrans,2,2,1,
               &*invJac.data().begin(),2,
               &data.getDiffN()(gg,2*dd),1,
-              0.,&diffNinvJac(gg,2*dd),1
+              0,&diffNinvJac(gg,2*dd),1
             );
           }
         }
