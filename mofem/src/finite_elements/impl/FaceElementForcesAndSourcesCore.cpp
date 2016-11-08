@@ -461,14 +461,6 @@ PetscErrorCode FaceElementForcesAndSourcesCore::operator()() {
             ierr = getEdgesDataOrderSpaceAndBase(*op_data[ss],field_name); CHKERRQ(ierr);
             ierr = getEdgesFieldData(*op_data[ss],field_name); CHKERRQ(ierr);
             case HDIV:
-            if(!ss) {
-              ierr = getTrisRowIndices(*op_data[ss],field_name); CHKERRQ(ierr);
-            } else {
-              ierr = getTrisColIndices(*op_data[ss],field_name); CHKERRQ(ierr);
-            }
-            ierr = getTrisDataOrderSpaceAndBase(*op_data[ss],field_name); CHKERRQ(ierr);
-            ierr = getTrisFieldData(*op_data[ss],field_name); CHKERRQ(ierr);
-            break;
             case L2:
             if(!ss) {
               ierr = getTrisRowIndices(*op_data[ss],field_name); CHKERRQ(ierr);

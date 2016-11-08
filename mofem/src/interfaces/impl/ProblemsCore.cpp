@@ -248,10 +248,8 @@ PetscErrorCode Core::build_problem_on_distributed_mesh(MoFEMProblem *problem_ptr
   ProblemClearNumeredFiniteElementsChange().operator()(*problem_ptr);
 
   int loop_size = 2;
-  bool do_cols = true;
   if(square_matrix) {
     loop_size = 1;
-    do_cols = false;
     problem_ptr->numered_dofs_cols = problem_ptr->numered_dofs_rows;
   } else if(problem_ptr->numered_dofs_cols == problem_ptr->numered_dofs_rows) {
     problem_ptr->numered_dofs_cols = boost::shared_ptr<NumeredDofEntity_multiIndex>(new NumeredDofEntity_multiIndex());
@@ -271,7 +269,7 @@ PetscErrorCode Core::build_problem_on_distributed_mesh(MoFEMProblem *problem_ptr
         if(((*fe_miit)->getBitRefLevel()&problem_ptr->getBitRefLevel())==problem_ptr->getBitRefLevel()) {
           //get dof uids for rows and columns
           ierr = (*fe_miit)->getRowDofView(dofsField,dofs_rows); CHKERRQ(ierr);
-          if(do_cols) {
+          if(!square_matrix) {
             ierr = (*fe_miit)->getColDofView(dofsField,dofs_cols); CHKERRQ(ierr);
           }
         }
@@ -301,6 +299,7 @@ PetscErrorCode Core::build_problem_on_distributed_mesh(MoFEMProblem *problem_ptr
     *(local_nbdof_ptr[ss]) = 0;
     *(ghost_nbdof_ptr[ss]) = 0;
   }
+
   //Loop over dofs on rows and columns and add to multi-indices in dofs problem structure,
   //set partition for each dof
   int nb_local_dofs[] = { 0,0 };
@@ -313,22 +312,10 @@ PetscErrorCode Core::build_problem_on_distributed_mesh(MoFEMProblem *problem_ptr
       if((dof_bit_level&problem_bit_level)!=dof_bit_level) {
         continue;
       }
-      boost::shared_ptr<NumeredDofEntity> dof(new NumeredDofEntity(*miit));
-      std::pair<NumeredDofEntity_multiIndex::iterator,bool> p = numered_dofs_ptr[ss]->insert(dof);
-      int owner_proc = (*p.first)->getOwnerProc();
-      if(owner_proc<0) {
-        SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
-      }
+      int owner_proc = (*miit)->getOwnerProc();
       if(owner_proc == rAnk) {
         nb_local_dofs[ss]++;
       }
-      bool success;
-      success = numered_dofs_ptr[ss]->modify(p.first,NumeredDofEntity_part_change(owner_proc,-1));
-      if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
-      success = numered_dofs_ptr[ss]->modify(p.first,NumeredDofEntity_mofem_index_change(-1));
-      if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
-      success = numered_dofs_ptr[ss]->modify(p.first,NumeredDofEntity_local_idx_change(-1));
-      if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
     }
   }
 
@@ -344,9 +331,11 @@ PetscErrorCode Core::build_problem_on_distributed_mesh(MoFEMProblem *problem_ptr
     ierr = PetscLayoutGetRange(layout,&start_ranges[ss],&end_ranges[ss]); CHKERRQ(ierr); //get ranges
     ierr = PetscLayoutDestroy(&layout); CHKERRQ(ierr);
   }
-  if(!do_cols) {
+  if(square_matrix) {
     nbdof_ptr[1] = nbdof_ptr[0];
     nb_local_dofs[1] = nb_local_dofs[0];
+    start_ranges[1] = start_ranges[0];
+    end_ranges[1] = end_ranges[0];
   }
 
   // if(sizeof(UId) != SIZEOFUID) {
@@ -369,54 +358,89 @@ PetscErrorCode Core::build_problem_on_distributed_mesh(MoFEMProblem *problem_ptr
   // Loop over dofs on this processor and prepare those dofs to send on another proc
   for(int ss = 0;ss<loop_size;ss++) {
 
-    NumeredDofEntity_multiIndex::index<Part_mi_tag>::type::iterator mit,hi_mit;
-    mit = numered_dofs_ptr[ss]->get<Part_mi_tag>().lower_bound(rAnk);
-    hi_mit = numered_dofs_ptr[ss]->get<Part_mi_tag>().upper_bound(rAnk);
+    DofEntity_multiIndex_active_view::nth_index<0>::type::iterator miit,hi_miit;
+    miit = dofs_ptr[ss]->get<0>().begin();
+    hi_miit = dofs_ptr[ss]->get<0>().end();
+
     int &local_idx = *local_nbdof_ptr[ss];
-    for(;mit!=hi_mit;mit++) {
+    for(;miit!=hi_miit;miit++) {
 
-      bool success;
-      success = numered_dofs_ptr[ss]->modify(
-        numered_dofs_ptr[ss]->project<0>(mit),NumeredDofEntity_local_idx_change(local_idx)
-      );
-      if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
-      int glob_idx = start_ranges[ss]+local_idx;
-      success = numered_dofs_ptr[ss]->modify(
-        numered_dofs_ptr[ss]->project<0>(mit),NumeredDofEntity_mofem_index_change(glob_idx)
-      );
-      if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
-      success = numered_dofs_ptr[ss]->modify(
-        numered_dofs_ptr[ss]->project<0>(mit),NumeredDofEntity_part_change((*mit)->getPart(),glob_idx)
-      );
-      if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
-      local_idx++;
-      unsigned char pstatus = (*mit)->getPStatus();
+      // Only set global idx for dofs on this processor part
+      if(!(miit->get()->getActive())) continue;
 
-      // check id dof is shared
-      if(pstatus>0) {
+      const BitRefLevel &dof_bit_level = (*miit)->getBitRefLevel();
+      if((dof_bit_level&problem_bit_level)!=dof_bit_level) {
+        continue;
+      }
 
-        for(int proc = 0; proc<MAX_SHARING_PROCS && -1 != (*mit)->getSharingProcsPtr()[proc]; proc++) {
-          if(ss == 0) {
-            ids_data_packed_rows[(*mit)->getSharingProcsPtr()[proc]].push_back(
-              IdxDataType((*mit)->getGlobalUniqueId(),glob_idx)
-            );
-          } else {
-            ids_data_packed_cols[(*mit)->getSharingProcsPtr()[proc]].push_back(
-              IdxDataType((*mit)->getGlobalUniqueId(),glob_idx)
-            );
-          }
-          if(!(pstatus&PSTATUS_MULTISHARED)) {
-            break;
+      boost::shared_ptr<NumeredDofEntity> dof(new NumeredDofEntity(*miit));
+      std::pair<NumeredDofEntity_multiIndex::iterator,bool> p = numered_dofs_ptr[ss]->insert(dof);
+      int owner_proc = (*p.first)->getOwnerProc();
+      if(owner_proc<0) {
+        SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
+      }
+
+      if(owner_proc!=rAnk) {
+        bool success = numered_dofs_ptr[ss]->modify(
+          p.first,NumeredDofEntity_mofem_part_and_all_index_change(owner_proc,-1,-1,-1)
+        );
+      } else {
+        // Set part and indexes
+        int glob_idx = start_ranges[ss]+local_idx;
+        bool success = numered_dofs_ptr[ss]->modify(
+          p.first,NumeredDofEntity_mofem_part_and_all_index_change(owner_proc,glob_idx,glob_idx,local_idx)
+        );
+        if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
+        local_idx++;
+        unsigned char pstatus = (*p.first)->getPStatus();
+
+        // check id dof is shared, if that is a case global idx added to data structure and is
+        // sended to other processors
+        if(pstatus>0) {
+
+          for(int proc = 0; proc<MAX_SHARING_PROCS && -1 != (*p.first)->getSharingProcsPtr()[proc]; proc++) {
+            // make it different for rows and columns when needed
+            if(ss == 0) {
+              ids_data_packed_rows[(*p.first)->getSharingProcsPtr()[proc]].push_back(
+                IdxDataType((*p.first)->getGlobalUniqueId(),glob_idx)
+              );
+            } else {
+              ids_data_packed_cols[(*p.first)->getSharingProcsPtr()[proc]].push_back(
+                IdxDataType((*p.first)->getGlobalUniqueId(),glob_idx)
+              );
+            }
+            if(!(pstatus&PSTATUS_MULTISHARED)) {
+              break;
+            }
           }
         }
-
       }
     }
 
   }
-  if(!do_cols) {
+  if(square_matrix) {
     local_nbdof_ptr[1] = local_nbdof_ptr[0];
   }
+
+  // If columns and rows have the same dofs indexing should be the same on both of them
+  // {
+  //   NumeredDofEntity_multiIndex::iterator dit_row = numered_dofs_ptr[0]->begin();
+  //   NumeredDofEntity_multiIndex::iterator hi_dit_row = numered_dofs_ptr[0]->end();
+  //   NumeredDofEntity_multiIndex::iterator dit_col = numered_dofs_ptr[1]->begin();
+  //   NumeredDofEntity_multiIndex::iterator hi_dit_col = numered_dofs_ptr[1]->end();
+  //   for(;dit_row!=hi_dit_row;dit_row++,dit_col++) {
+  //     if(dit_row->get()->getPetscGlobalDofIdx()!=dit_col->get()->getPetscGlobalDofIdx()) {
+  //       cerr << **dit_row << endl;
+  //       cerr << **dit_col << endl;
+  //     }
+  //     if(dit_row->get()->getGlobalUniqueId()!=dit_col->get()->getGlobalUniqueId()) {
+  //       cerr << "C " << **dit_row << endl;
+  //       cerr << "R " << **dit_col << endl;
+  //     }
+  //
+  //   }
+  // }
+
 
   int nsends_rows = 0,nsends_cols = 0;
   // Non zero lengths[i] represent a message to i of length lengths[i].
@@ -433,69 +457,77 @@ PetscErrorCode Core::build_problem_on_distributed_mesh(MoFEMProblem *problem_ptr
   MPI_Status *status;
   ierr = PetscMalloc1(sIze,&status);CHKERRQ(ierr);
 
-  // make sure it is a PETSc comm
-  ierr = PetscCommDuplicate(comm,&comm,NULL); CHKERRQ(ierr);
-
-  //rows
-
-  // Computes the number of messages a node expects to receive
+  // Do rows
   int nrecvs_rows;	// number of messages received
-  ierr = PetscGatherNumberOfMessages(comm,NULL,&lengths_rows[0],&nrecvs_rows); CHKERRQ(ierr);
-  //std::cerr << nrecvs_rows << std::endl;
-
-  // Computes info about messages that a MPI-node will receive, including (from-id,length) pairs for each message.
   int *onodes_rows;	// list of node-ids from which messages are expected
   int *olengths_rows;	// corresponding message lengths
-  ierr = PetscGatherMessageLengths(
-    comm,
-    nsends_rows,nrecvs_rows,
-    &lengths_rows[0],&onodes_rows,&olengths_rows
-  );  CHKERRQ(ierr);
-
-  // Gets a unique new tag from a PETSc communicator. All processors that share
-  // the communicator MUST call this routine EXACTLY the same number of times.
-  // This tag should only be used with the current objects communicator; do NOT
-  // use it with any other MPI communicator.
-  int tag_row;
-  ierr = PetscCommGetNewTag(comm,&tag_row); CHKERRQ(ierr);
-
-  // Allocate a buffer sufficient to hold messages of size specified in
-  // olengths. And post Irecvs on these buffers using node info from onodes
   int **rbuf_row;	// must bee freed by user
-  MPI_Request *r_waits_row; // must bee freed by user
-  // rbuf has a pointers to messeges. It has size of of nrecvs (number of
-  // messages) +1. In the first index a block is allocated,
-  // such that rbuf[i] = rbuf[i-1]+olengths[i-1].
-  ierr = PetscPostIrecvInt(
-    comm,tag_row,nrecvs_rows,onodes_rows,olengths_rows,&rbuf_row,&r_waits_row
-  ); CHKERRQ(ierr);
-  ierr = PetscFree(onodes_rows); CHKERRQ(ierr);
+
+  {
 
 
-  MPI_Request *s_waits_row; // status of sens messages
-  ierr = PetscMalloc1(nsends_rows,&s_waits_row);CHKERRQ(ierr);
+    // make sure it is a PETSc comm
+    ierr = PetscCommDuplicate(comm,&comm,NULL); CHKERRQ(ierr);
 
-  // Send messeges
-  for(int proc=0,kk=0; proc<sIze; proc++) {
-    if(!lengths_rows[proc]) continue; 	// no message to send to this proc
-    ierr = MPI_Isend(
-      &(ids_data_packed_rows[proc])[0], // buffer to send
-      lengths_rows[proc], 		// message length
-      MPIU_INT,proc, 			// to proc
-      tag_row,comm,s_waits_row+kk
+    //rows
+
+    // Computes the number of messages a node expects to receive
+    ierr = PetscGatherNumberOfMessages(comm,NULL,&lengths_rows[0],&nrecvs_rows); CHKERRQ(ierr);
+    //std::cerr << nrecvs_rows << std::endl;
+
+    // Computes info about messages that a MPI-node will receive, including (from-id,length) pairs for each message.
+    ierr = PetscGatherMessageLengths(
+      comm,
+      nsends_rows,nrecvs_rows,
+      &lengths_rows[0],&onodes_rows,&olengths_rows
+    );  CHKERRQ(ierr);
+
+    // Gets a unique new tag from a PETSc communicator. All processors that share
+    // the communicator MUST call this routine EXACTLY the same number of times.
+    // This tag should only be used with the current objects communicator; do NOT
+    // use it with any other MPI communicator.
+    int tag_row;
+    ierr = PetscCommGetNewTag(comm,&tag_row); CHKERRQ(ierr);
+
+    // Allocate a buffer sufficient to hold messages of size specified in
+    // olengths. And post Irecvs on these buffers using node info from onodes
+    MPI_Request *r_waits_row; // must bee freed by user
+    // rbuf has a pointers to messeges. It has size of of nrecvs (number of
+    // messages) +1. In the first index a block is allocated,
+    // such that rbuf[i] = rbuf[i-1]+olengths[i-1].
+    ierr = PetscPostIrecvInt(
+      comm,tag_row,nrecvs_rows,onodes_rows,olengths_rows,&rbuf_row,&r_waits_row
     ); CHKERRQ(ierr);
-    kk++;
-  }
+    ierr = PetscFree(onodes_rows); CHKERRQ(ierr);
 
-  if(nrecvs_rows) {
-    ierr = MPI_Waitall(nrecvs_rows,r_waits_row,status);CHKERRQ(ierr);
-  }
-  if(nsends_rows) {
-    ierr = MPI_Waitall(nsends_rows,s_waits_row,status);CHKERRQ(ierr);
-  }
 
-  ierr = PetscFree(r_waits_row); CHKERRQ(ierr);
-  ierr = PetscFree(s_waits_row); CHKERRQ(ierr);
+    MPI_Request *s_waits_row; // status of sens messages
+    ierr = PetscMalloc1(nsends_rows,&s_waits_row);CHKERRQ(ierr);
+
+    // Send messeges
+    for(int proc=0,kk=0; proc<sIze; proc++) {
+      if(!lengths_rows[proc]) continue; 	// no message to send to this proc
+      ierr = MPI_Isend(
+        &(ids_data_packed_rows[proc])[0], // buffer to send
+        lengths_rows[proc], 		// message length
+        MPIU_INT,proc, 			// to proc
+        tag_row,comm,s_waits_row+kk
+      ); CHKERRQ(ierr);
+      kk++;
+    }
+
+    if(nrecvs_rows) {
+      ierr = MPI_Waitall(nrecvs_rows,r_waits_row,status);CHKERRQ(ierr);
+    }
+    if(nsends_rows) {
+      ierr = MPI_Waitall(nsends_rows,s_waits_row,status);CHKERRQ(ierr);
+    }
+
+    ierr = PetscFree(r_waits_row); CHKERRQ(ierr);
+    ierr = PetscFree(s_waits_row); CHKERRQ(ierr);
+
+
+  }
 
   // cols
   int nrecvs_cols = nrecvs_rows;
@@ -510,7 +542,8 @@ PetscErrorCode Core::build_problem_on_distributed_mesh(MoFEMProblem *problem_ptr
     int *onodes_cols;
     ierr = PetscGatherMessageLengths(comm,
       nsends_cols,nrecvs_cols,
-      &lengths_cols[0],&onodes_cols,&olengths_cols);  CHKERRQ(ierr);
+      &lengths_cols[0],&onodes_cols,&olengths_cols
+    );  CHKERRQ(ierr);
 
     // Gets a unique new tag from a PETSc communicator.
     int tag_col;
@@ -547,6 +580,8 @@ PetscErrorCode Core::build_problem_on_distributed_mesh(MoFEMProblem *problem_ptr
     ierr = PetscFree(s_waits_col); CHKERRQ(ierr);
 
   }
+
+  ierr = PetscFree(status); CHKERRQ(ierr);
 
   // set values received from other processors
   for(int ss = 0;ss<loop_size;ss++) {
@@ -624,8 +659,6 @@ PetscErrorCode Core::build_problem_on_distributed_mesh(MoFEMProblem *problem_ptr
     ierr = PetscFree(rbuf_col[0]); CHKERRQ(ierr);
     ierr = PetscFree(rbuf_col); CHKERRQ(ierr);
   }
-
-  ierr = PetscFree(status); CHKERRQ(ierr);
 
   if(square_matrix) {
     if(numered_dofs_ptr[0]->size()!=numered_dofs_ptr[1]->size()) {
