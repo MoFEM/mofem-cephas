@@ -101,15 +101,29 @@ PetscErrorCode FlatPrismElementForcesAndSurcesCore::operator()() {
     //H1
     if((dataH1.spacesOnEntities[MBEDGE]).test(H1)) {
       ierr = getEdgesSense(dataH1); CHKERRQ(ierr);
-      ierr = getTrisSense(dataH1); CHKERRQ(ierr);
       ierr = getEdgesDataOrder(dataH1,H1); CHKERRQ(ierr);
+      ierr = getTrisSense(dataH1); CHKERRQ(ierr);
       ierr = getTrisDataOrder(dataH1,H1); CHKERRQ(ierr);
+    }
+
+    //H1
+    if((dataH1.spacesOnEntities[MBEDGE]).test(HCURL)) {
+      ierr = getEdgesSense(dataHcurl); CHKERRQ(ierr);
+      ierr = getEdgesDataOrder(dataHcurl,HCURL); CHKERRQ(ierr);
+      ierr = getTrisSense(dataHcurl); CHKERRQ(ierr);
+      ierr = getTrisDataOrder(dataHcurl,HCURL); CHKERRQ(ierr);
     }
 
     //Hdiv
     if((dataH1.spacesOnEntities[MBTRI]).test(HDIV)) {
       ierr = getTrisSense(dataHdiv); CHKERRQ(ierr);
       ierr = getTrisDataOrder(dataHdiv,HDIV); CHKERRQ(ierr);
+    }
+
+    //Hdiv
+    if((dataH1.spacesOnEntities[MBTRI]).test(L2)) {
+      ierr = getTrisSense(dataL2); CHKERRQ(ierr);
+      ierr = getTrisDataOrder(dataL2,L2); CHKERRQ(ierr);
     }
 
     int order_data = getMaxDataOrder();
@@ -167,6 +181,9 @@ PetscErrorCode FlatPrismElementForcesAndSurcesCore::operator()() {
     }
     if(nb_gauss_pts == 0) PetscFunctionReturn(0);
 
+    dataHdiv.dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE) = dataH1.dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE);
+    dataHcurl.dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE) = dataH1.dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE);
+    dataL2.dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE) = dataH1.dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE);
     {
       coordsAtGaussPts.resize(nb_gauss_pts,6,false);
       for(int gg = 0;gg<nb_gauss_pts;gg++) {
@@ -303,13 +320,13 @@ PetscErrorCode FlatPrismElementForcesAndSurcesCore::operator()() {
             op_data[ss] = !ss ? &dataH1 : &derivedDataH1;
             break;
             case HCURL:
-            SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented yet");
+            op_data[ss] = !ss ? &dataHcurl : &derivedDataHcurl;
             break;
             case HDIV:
             op_data[ss] = !ss ? &dataHdiv : &derivedDataHdiv;
             break;
             case L2:
-            SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not make sanes on face");
+            op_data[ss] = !ss ? &dataL2 : &derivedDataL2;
             break;
             case NOFIELD:
             op_data[ss] = !ss ? &dataNoField : &dataNoFieldCol;
@@ -349,8 +366,8 @@ PetscErrorCode FlatPrismElementForcesAndSurcesCore::operator()() {
               }
               ierr = getEdgesDataOrderSpaceAndBase(*op_data[ss],field_name); CHKERRQ(ierr);
               ierr = getEdgesFieldData(*op_data[ss],field_name); CHKERRQ(ierr);
-              // ierr = getEdgesFieldDofs(*op_data[ss],field_name); CHKERRQ(ierr);
               case HDIV:
+              case L2:
               if(!ss) {
                 ierr = getTrisRowIndices(*op_data[ss],field_name); CHKERRQ(ierr);
               } else {
@@ -358,10 +375,6 @@ PetscErrorCode FlatPrismElementForcesAndSurcesCore::operator()() {
               }
               ierr = getTrisDataOrderSpaceAndBase(*op_data[ss],field_name); CHKERRQ(ierr);
               ierr = getTrisFieldData(*op_data[ss],field_name); CHKERRQ(ierr);
-              // ierr = getTrisFieldDofs(*op_data[ss],field_name); CHKERRQ(ierr);
-              break;
-              case L2:
-              SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not make sanes on face");
               break;
               case NOFIELD:
               if(!getNinTheLoop()) {
@@ -397,7 +410,11 @@ PetscErrorCode FlatPrismElementForcesAndSurcesCore::operator()() {
           ); CHKERRQ(ierr);
         } catch (std::exception& ex) {
           std::ostringstream ss;
-          ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
+          ss << "Operator " << typeid(*oit).name()
+          << " operator number " << std::distance<boost::ptr_vector<UserDataOperator>::iterator>(opPtrVector.begin(),oit)
+          << " thorw in method: " << ex.what()
+          << " at line " << __LINE__
+          << " in file " << __FILE__;
           SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
         }
       }
@@ -416,7 +433,11 @@ PetscErrorCode FlatPrismElementForcesAndSurcesCore::operator()() {
           ); CHKERRQ(ierr);
         } catch (std::exception& ex) {
           std::ostringstream ss;
-          ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
+          ss << "Operator " << typeid(*oit).name()
+          << " operator number " << std::distance<boost::ptr_vector<UserDataOperator>::iterator>(opPtrVector.begin(),oit)
+          << " thorw in method: " << ex.what()
+          << " at line " << __LINE__
+          << " in file " << __FILE__;
           SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
         }
       }
@@ -427,7 +448,11 @@ PetscErrorCode FlatPrismElementForcesAndSurcesCore::operator()() {
           ierr = oit->opLhs(*op_data[0],*op_data[1],oit->sYmm); CHKERRQ(ierr);
         } catch (std::exception& ex) {
           std::ostringstream ss;
-          ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
+          ss << "Operator " << typeid(*oit).name()
+          << " operator number " << std::distance<boost::ptr_vector<UserDataOperator>::iterator>(opPtrVector.begin(),oit)
+          << " thorw in method: " << ex.what()
+          << " at line " << __LINE__
+          << " in file " << __FILE__;
           SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
         }
       }

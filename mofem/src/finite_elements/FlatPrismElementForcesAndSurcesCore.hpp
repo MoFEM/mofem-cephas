@@ -48,8 +48,12 @@ struct FlatPrismElementForcesAndSurcesCore: public ForcesAndSurcesCore {
 
   DataForcesAndSurcesCore dataH1;
   DerivedDataForcesAndSurcesCore derivedDataH1;
+  DataForcesAndSurcesCore dataHcurl;
+  DerivedDataForcesAndSurcesCore derivedDataHcurl;
   DataForcesAndSurcesCore dataHdiv;
   DerivedDataForcesAndSurcesCore derivedDataHdiv;
+  DataForcesAndSurcesCore dataL2;
+  DerivedDataForcesAndSurcesCore derivedDataL2;
   DataForcesAndSurcesCore dataNoField,dataNoFieldCol;
 
   std::string meshPositionsFieldName;
@@ -67,7 +71,9 @@ struct FlatPrismElementForcesAndSurcesCore: public ForcesAndSurcesCore {
   FlatPrismElementForcesAndSurcesCore(Interface &m_field):
     ForcesAndSurcesCore(m_field),
     dataH1(MBPRISM),derivedDataH1(dataH1),
+    dataHcurl(MBPRISM),derivedDataHcurl(dataHcurl),
     dataHdiv(MBPRISM),derivedDataHdiv(dataHdiv),
+    dataL2(MBPRISM),derivedDataL2(dataL2),
     dataNoField(MBPRISM),dataNoFieldCol(MBPRISM),
     meshPositionsFieldName("MESH_NODE_POSITIONS"),
     opHOCoordsAndNormals(
