@@ -670,6 +670,33 @@ struct NumeredDofEntity_mofem_index_change {
   }
 };
 
+/**
+ * Change part and mofem/pestc global and local index (multi-index modifier)
+ * \ingroup dof_multi_indices
+ */
+struct NumeredDofEntity_mofem_part_and_all_index_change {
+  unsigned int pArt;
+  DofIdx mofemIdx;
+  DofIdx petscGloablDofIdx;
+  DofIdx petscLocalDofIdx;
+  NumeredDofEntity_mofem_part_and_all_index_change(
+    const unsigned int part,
+    const DofIdx mofem_idx,
+    const DofIdx petsc_gloabl_dof_idx,
+    const DofIdx petsc_local_dof_idx
+  ):
+  pArt(part),
+  mofemIdx(mofem_idx),
+  petscGloablDofIdx(petsc_gloabl_dof_idx),
+  petscLocalDofIdx(petsc_local_dof_idx) {};
+  void operator()(boost::shared_ptr<NumeredDofEntity> &dof) {
+    dof->part = pArt;
+    dof->dof_idx = mofemIdx;
+    dof->petsc_gloabl_dof_idx = petscGloablDofIdx;
+    dof->petsc_local_dof_idx = petscLocalDofIdx;
+  }
+};
+
 typedef multi_index_container<
   boost::shared_ptr<NumeredDofEntity>,
   indexed_by<
