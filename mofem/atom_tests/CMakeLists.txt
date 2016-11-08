@@ -560,10 +560,10 @@ add_test(forces_and_sources_testing_flat_prism_element_test_compare ${CMAKE_COMM
 
 # Checking direvatives
 my_add_executable(
-  forces_and_sources_check_base_functions_direvatives
-  forces_and_sources_check_base_functions_direvatives.cpp
+  forces_and_sources_check_base_functions_direvatives_tet
+  forces_and_sources_check_base_functions_direvatives_tet.cpp
 )
-target_link_libraries(forces_and_sources_check_base_functions_direvatives
+target_link_libraries(forces_and_sources_check_base_functions_direvatives_tet
   mofem_finite_elements
   mofem_interfaces
   mofem_multi_indices
@@ -572,17 +572,35 @@ target_link_libraries(forces_and_sources_check_base_functions_direvatives
   mofem_third_party
   ${PROJECT_LIBS}
 )
-add_test(forces_and_sources_check_h1_base_functions_direvatives_atom
+add_test(forces_and_sources_check_h1_base_functions_direvatives_tet_atom
   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
-  ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_check_base_functions_direvatives -base H1TET
+  ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_check_base_functions_direvatives_tet -base H1TET
 )
-add_test(forces_and_sources_check_hdiv_base_functions_direvatives_atom
+add_test(forces_and_sources_check_hdiv_base_functions_direvatives_tet_atom
   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
-  ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_check_base_functions_direvatives -base HDIVTET
+  ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_check_base_functions_direvatives_tet -base HDIVTET
 )
-add_test(forces_and_sources_check_hcurl_base_functions_direvatives_atom
+add_test(forces_and_sources_check_hcurl_base_functions_direvatives_tet_atom
   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
-  ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_check_base_functions_direvatives -base HCURLTET
+  ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_check_base_functions_direvatives_tet -base HCURLTET
+)
+
+my_add_executable(
+  forces_and_sources_check_base_functions_direvatives_tri
+  forces_and_sources_check_base_functions_direvatives_tri.cpp
+)
+target_link_libraries(forces_and_sources_check_base_functions_direvatives_tri
+  mofem_finite_elements
+  mofem_interfaces
+  mofem_multi_indices
+  mofem_approx
+  mofem_cblas
+  mofem_third_party
+  ${PROJECT_LIBS}
+)
+add_test(forces_and_sources_check_h1_base_functions_direvatives_tri_atom
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+  ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_check_base_functions_direvatives_tri -base H1TRI
 )
 
 # Continuity check on tet for h1 space
