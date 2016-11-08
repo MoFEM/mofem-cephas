@@ -618,12 +618,20 @@ typedef multi_index_container<
       const_mem_fun<NumeredDofEntity,DofIdx,&NumeredDofEntity::getPetscLocalDofIdx> >
   > > NumeredDofEntity_multiIndex_petsc_local_dof_view_ordered_non_unique;
 
+  /**
+   * Activate or deactivate dofs (multi-index modifier)
+   * \ingroup dof_multi_indices
+   */
 struct DofEntity_active_change {
   bool active;
   DofEntity_active_change(bool _active);
   void operator()(boost::shared_ptr<DofEntity> &_dof_);
 };
 
+/**
+ * Change part and global pestc index (multi-index modifier)
+ * \ingroup dof_multi_indices
+ */
 struct NumeredDofEntity_part_change {
   unsigned int pArt;
   DofIdx petscGloablDofIdx;
@@ -636,6 +644,10 @@ struct NumeredDofEntity_part_change {
   }
 };
 
+/**
+ * Change part and local pestc index (multi-index modifier)
+ * \ingroup dof_multi_indices
+ */
 struct NumeredDofEntity_local_idx_change {
   DofIdx petscLocalDofIdx;
   NumeredDofEntity_local_idx_change(const DofIdx petsc_local_dof_idx):
@@ -645,6 +657,10 @@ struct NumeredDofEntity_local_idx_change {
   }
 };
 
+/**
+ * Change part and mofem index (multi-index modifier)
+ * \ingroup dof_multi_indices
+ */
 struct NumeredDofEntity_mofem_index_change {
   DofIdx mofemIdx;
   NumeredDofEntity_mofem_index_change(const DofIdx mofem_idx):
