@@ -90,9 +90,9 @@ quads, bricks and more.
 
 - Arbitrary order definition of mesh geometry
 
-- Readers and writers for many file formats
+- Readers and writers for many file formats (MOAB)
 
-- Meshing and meshing on the flay
+- Meshing and re-meshing on the flay
 
 - Ability to capture evolving topologies, e.g. implicit crack propagation analysis
 
