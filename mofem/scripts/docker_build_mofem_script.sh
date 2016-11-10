@@ -42,7 +42,7 @@ make clean
 echo "Configure users modules"
 cd $MOFEM_INSTALL_DIR
 
-if [ -e ./*remodelling* ]
+if [ -e $MOFEM_SRC_DIR/users_modules/*bone_remodelling* ]
 then
 /opt/local/bin/cmake -DBUILD_SHARED_LIBS=yes -DCMAKE_CXX_FLAGS="-Wall" -DWITH_METAIO=1  users_modules;
 else
