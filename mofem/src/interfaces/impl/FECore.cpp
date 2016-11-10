@@ -48,6 +48,14 @@
 
 namespace MoFEM {
 
+  bool Core::check_finite_element(const std::string &name) const {
+    typedef FiniteElement_multiIndex::index<FiniteElement_name_mi_tag>::type FeSetByName;
+    const FeSetByName &set = finiteElements.get<FiniteElement_name_mi_tag>();
+    FeSetByName::iterator miit = set.find(name);
+    if(miit==set.end()) return false;
+    return true;
+  }
+
   PetscErrorCode Core::add_finite_element(const std::string &fe_name,enum MoFEMTypes bh) {
     PetscFunctionBegin;
     *buildMoFEM &= 1<<0;
@@ -221,6 +229,42 @@ namespace MoFEM {
 
   EntityHandle Core::get_finite_element_meshset(const std::string& name) const {
     return get_finite_element_meshset(getBitFEId(name));
+  }
+
+  PetscErrorCode Core::get_finite_element_entities_by_dimension(const std::string name,int dim,Range &ents) const {
+    MoABErrorCode rval;
+    PetscFunctionBegin;
+    try {
+      EntityHandle meshset = get_finite_element_meshset(name);
+      rval = moab.get_entities_by_dimension(meshset,dim,ents,true); CHKERRQ_MOAB(rval);
+    } catch (MoFEMException const &e) {
+      SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
+    }
+    PetscFunctionReturn(0);
+  }
+
+  PetscErrorCode Core::get_finite_element_entities_by_type(const std::string name,EntityType type,Range &ents) const {
+    MoABErrorCode rval;
+    PetscFunctionBegin;
+    try {
+      EntityHandle meshset = get_finite_element_meshset(name);
+      rval = moab.get_entities_by_type(meshset,type,ents,true); CHKERRQ_MOAB(rval);
+    } catch (MoFEMException const &e) {
+      SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
+    }
+    PetscFunctionReturn(0);
+  }
+
+  PetscErrorCode Core::get_finite_element_entities_by_handle(const std::string name,Range &ents) const {
+    MoABErrorCode rval;
+    PetscFunctionBegin;
+    try {
+      EntityHandle meshset = get_finite_element_meshset(name);
+      rval = moab.get_entities_by_handle(meshset,ents,true); CHKERRQ_MOAB(rval);
+    } catch (MoFEMException const &e) {
+      SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
+    }
+    PetscFunctionReturn(0);
   }
 
   PetscErrorCode Core::list_finite_elements() const {
