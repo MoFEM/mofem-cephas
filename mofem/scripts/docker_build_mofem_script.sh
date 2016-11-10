@@ -41,7 +41,14 @@ make clean
 
 echo "Configure users modules"
 cd $MOFEM_INSTALL_DIR
+
+if [ -e ./*remodelling* ]
+then
+/opt/local/bin/cmake -DBUILD_SHARED_LIBS=yes -DCMAKE_CXX_FLAGS="-Wall" -DWITH_METAIO=1  users_modules;
+else
 /opt/local/bin/cmake -DBUILD_SHARED_LIBS=yes -DCMAKE_CXX_FLAGS="-Wall" users_modules
+fi
+
 echo "Build users modules"
 make -j $NB
 ctest --output-on-failure -D Experimental -R basic
