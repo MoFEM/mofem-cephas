@@ -64,7 +64,7 @@ struct MoFEMProblem {
     const int rank,
     const RowColData row_or_col,
     boost::shared_ptr<NumeredDofEntity> &dof_ptr
-  );
+  ) const;
 
   /**
     * use with loops to iterate problem fes

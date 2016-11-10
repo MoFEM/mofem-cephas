@@ -148,7 +148,7 @@ PetscErrorCode MoFEMProblem::getDofByNameEntAndNbOfCoeffient(
   const int rank,
   const RowColData row_or_col,
   boost::shared_ptr<NumeredDofEntity> &dof_ptr
-) {
+) const {
   PetscFunctionBegin;
   typedef NumeredDofEntity_multiIndex::index<
   Composite_Name_And_Ent_And_EntDofIdx_mi_tag
