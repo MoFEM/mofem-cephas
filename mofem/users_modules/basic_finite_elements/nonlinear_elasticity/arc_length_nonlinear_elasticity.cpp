@@ -389,7 +389,7 @@ int main(int argc, char *argv[]) {
       boost::shared_ptr<NumeredDofEntity_multiIndex> numered_dofs_rows = problemPtr->numered_dofs_rows;
       Range::iterator nit = nodeSet.begin();
       for(;nit!=nodeSet.end();nit++) {
-        NumeredDofEntity_multiIndex::index<Ent_mi_tag>::type::iterator dit,hi_dit;
+        NumeredDofEntityByEnt::iterator dit,hi_dit;
         dit = numered_dofs_rows->get<Ent_mi_tag>().lower_bound(*nit);
         hi_dit = numered_dofs_rows->get<Ent_mi_tag>().upper_bound(*nit);
         for(;dit!=hi_dit;dit++) {

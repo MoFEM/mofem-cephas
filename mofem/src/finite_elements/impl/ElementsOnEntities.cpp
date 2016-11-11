@@ -673,9 +673,9 @@ PetscErrorCode ForcesAndSurcesCore::getProblemNodesIndices(
     if(siit->get()->side_number == -1) continue;
 
     const EntityHandle ent = siit->get()->ent;
-    NumeredDofEntity_multiIndex::index<Composite_Name_And_Ent_And_EndDofIdx_mi_tag>::type::iterator dit,hi_dit;
-    dit = dofs.get<Composite_Name_And_Ent_And_EndDofIdx_mi_tag>().lower_bound(boost::make_tuple(field_name,ent,0));
-    hi_dit = dofs.get<Composite_Name_And_Ent_And_EndDofIdx_mi_tag>().upper_bound(boost::make_tuple(field_name,ent,10000));  /// very large number
+    NumeredDofEntity_multiIndex::index<Composite_Name_And_Ent_And_EntDofIdx_mi_tag>::type::iterator dit,hi_dit;
+    dit = dofs.get<Composite_Name_And_Ent_And_EntDofIdx_mi_tag>().lower_bound(boost::make_tuple(field_name,ent,0));
+    hi_dit = dofs.get<Composite_Name_And_Ent_And_EntDofIdx_mi_tag>().upper_bound(boost::make_tuple(field_name,ent,10000));  /// very large number
 
     if(dit!=hi_dit) {
 
@@ -711,9 +711,9 @@ PetscErrorCode ForcesAndSurcesCore::getProblemTypeIndices(
     if(siit->get()->side_number == -1) continue;
 
     const EntityHandle ent = siit->get()->ent;
-    NumeredDofEntity_multiIndex::index<Composite_Name_And_Ent_And_EndDofIdx_mi_tag>::type::iterator dit,hi_dit;
-    dit = dofs.get<Composite_Name_And_Ent_And_EndDofIdx_mi_tag>().lower_bound(boost::make_tuple(field_name,ent,0));
-    hi_dit = dofs.get<Composite_Name_And_Ent_And_EndDofIdx_mi_tag>().upper_bound(boost::make_tuple(field_name,ent,10000));  /// very large number
+    NumeredDofEntity_multiIndex::index<Composite_Name_And_Ent_And_EntDofIdx_mi_tag>::type::iterator dit,hi_dit;
+    dit = dofs.get<Composite_Name_And_Ent_And_EntDofIdx_mi_tag>().lower_bound(boost::make_tuple(field_name,ent,0));
+    hi_dit = dofs.get<Composite_Name_And_Ent_And_EntDofIdx_mi_tag>().upper_bound(boost::make_tuple(field_name,ent,10000));  /// very large number
 
     indices.resize(distance(dit,hi_dit));
     for(;dit!=hi_dit;dit++) {

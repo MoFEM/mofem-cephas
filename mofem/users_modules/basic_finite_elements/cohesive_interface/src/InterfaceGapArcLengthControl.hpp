@@ -115,7 +115,7 @@ struct ArcLengthIntElemFEMethod: public FEMethod {
   PetscErrorCode calculate_lambda_int(double &_lambda_int_) {
     PetscFunctionBegin;
     ParallelComm* pcomm = ParallelComm::get_pcomm(&mOab,MYPCOMM_INDEX);
-    NumeredDofEntity_multiIndex::index<PetscLocalIdx_mi_tag>::type::iterator dit,hi_dit;
+    NumeredDofEntityByLocalIdx::iterator dit,hi_dit;
     dit = problemPtr->numered_dofs_rows->get<PetscLocalIdx_mi_tag>().lower_bound(0);
     hi_dit = problemPtr->numered_dofs_rows->get<PetscLocalIdx_mi_tag>().upper_bound(problemPtr->getNbLocalDofsRow());
     double *array;
@@ -159,7 +159,7 @@ struct ArcLengthIntElemFEMethod: public FEMethod {
     ierr = VecZeroEntries(arcPtr->db); CHKERRQ(ierr);
     ierr = VecGhostUpdateBegin(arcPtr->db,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
     ierr = VecGhostUpdateEnd(arcPtr->db,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-    NumeredDofEntity_multiIndex::index<PetscLocalIdx_mi_tag>::type::iterator dit,hi_dit;
+    NumeredDofEntityByLocalIdx::iterator dit,hi_dit;
     dit = problemPtr->numered_dofs_rows->get<PetscLocalIdx_mi_tag>().lower_bound(0);
     hi_dit = problemPtr->numered_dofs_rows->get<PetscLocalIdx_mi_tag>().upper_bound(
       problemPtr->getNbLocalDofsRow()+problemPtr->getNbGhostDofsRow()
