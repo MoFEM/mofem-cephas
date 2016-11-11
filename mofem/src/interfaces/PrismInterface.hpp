@@ -2,6 +2,8 @@
  * \brief MoFEM interface
  *
  * Low level data structures not used directly by user
+
+ * \ingroup mofem_prism_interface
  */
 
 /*
@@ -27,6 +29,8 @@ static const MOFEMuuid IDD_MOFEMPrismInterface = MOFEMuuid( BitIntefaceId(PRISM_
 
   \todo FIXME Names of methods do not follow naming convention and are difficult
   to work with.
+
+  \ingroup mofem_prism_interface
 
 */
 struct PrismInterface: public UnknownInterface {
