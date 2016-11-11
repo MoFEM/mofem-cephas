@@ -116,7 +116,8 @@ namespace MoFEM {
 
   struct CoordSysName_mi_tag {};
 
-
+  /** \deprecated Composite_Name_And_Ent_And_EntDofIdx_mi_tag instead
+  */
   DEPRECATED typedef Composite_Name_And_Ent_And_EntDofIdx_mi_tag
   Composite_Name_And_Ent_And_EndDofIdx_mi_tag;
 
