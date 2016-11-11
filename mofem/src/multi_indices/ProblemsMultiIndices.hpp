@@ -51,17 +51,22 @@ struct MoFEMProblem {
 
   /**
    * \brief get dof from problem
+   *
+   * Note that \e ent_dof_idx is not coefficient number, is local number of dof on
+   * the entity. The coefficient number and local index of dof or entity are
+   * the same on vertices and H1 approximation.
+   *
    * @param  name       field name
    * @param  ent        entity handle
-   * @param  coeff      coefficient number
+   * @param  ent_dof_idx index of dof on entity
    * @param  row_or_col ROW or COL
    * @param  dof_ptr    shared pointer to dof if found
    * @return            error code
    */
-  PetscErrorCode getDofByNameEntAndNbOfCoeffient(
+  PetscErrorCode getDofByNameEntAndEntDofIdx(
     const string name,
     const EntityHandle ent,
-    const int rank,
+    const int ent_dof_idx,
     const RowColData row_or_col,
     boost::shared_ptr<NumeredDofEntity> &dof_ptr
   ) const;

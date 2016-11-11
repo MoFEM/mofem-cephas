@@ -142,10 +142,10 @@ PetscErrorCode MoFEMProblem::getNumberOfElementsByPart(MPI_Comm comm,PetscLayout
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode MoFEMProblem::getDofByNameEntAndNbOfCoeffient(
+PetscErrorCode MoFEMProblem::getDofByNameEntAndEntDofIdx(
   const string name,
   const EntityHandle ent,
-  const int rank,
+  const int ent_dof_idx,
   const RowColData row_or_col,
   boost::shared_ptr<NumeredDofEntity> &dof_ptr
 ) const {
@@ -175,7 +175,7 @@ PetscErrorCode MoFEMProblem::getDofByNameEntAndNbOfCoeffient(
     );
   }
   it = numered_dofs->get<Composite_Name_And_Ent_And_EntDofIdx_mi_tag>().find(
-    boost::make_tuple(name,ent,rank)
+    boost::make_tuple(name,ent,ent_dof_idx)
   );
   if(it!=numered_dofs->get<Composite_Name_And_Ent_And_EntDofIdx_mi_tag>().end()) {
     dof_ptr = *it;
