@@ -93,7 +93,7 @@ namespace MoFEM {
   struct Composite_EntType_and_ParentEntType_mi_tag {};
   struct Composite_ParentEnt_And_EntType_mi_tag {};
   struct Composite_ParentEnt_And_BitsOfRefinedEdges_mi_tag {};
-  struct Composite_Name_And_Ent_And_EndDofIdx_mi_tag {};
+  struct Composite_Name_And_Ent_And_EntDofIdx_mi_tag {};
   struct Composite_Name_And_Ent_mi_tag {};
   struct Composite_Part_And_Oder_mi_tag {};
   struct Composite_Name_Ent_And_CoeffIdx_mi_tag {};

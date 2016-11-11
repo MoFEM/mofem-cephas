@@ -271,7 +271,7 @@ typedef multi_index_container<
           const_mem_fun<DofEntity,ShortId,&DofEntity::getNonNonuniqueShortId>
         > >,
     ordered_unique<
-      tag<Composite_Name_And_Ent_And_EndDofIdx_mi_tag>,
+      tag<Composite_Name_And_Ent_And_EntDofIdx_mi_tag>,
       composite_key<
         DofEntity,
           const_mem_fun<DofEntity::interface_type_Field,boost::string_ref,&DofEntity::getNameRef>,
@@ -516,6 +516,18 @@ typedef FENumeredDofEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::typ
   */
 typedef FENumeredDofEntity_multiIndex::index<Composite_Name_And_Type_mi_tag>::type FENumeredDofEntityByNameAndType;
 
+/** \brief Dof entity multi-index by UId
+  *
+  * \ingroup dof_multi_indices
+  */
+typedef FENumeredDofEntity_multiIndex::index<Unique_mi_tag>::type FENumeredDofEntityByUId;
+
+/** \brief Numbered DoF multi-index by entity
+  *
+  * \ingroup dof_multi_indices
+  */
+typedef FENumeredDofEntity_multiIndex::index<Ent_mi_tag>::type FENumeredDofEntityByEnt;
+
 /**
  * @relates multi_index_container
  * \brief MultiIndex container keeps NumeredDofEntity
@@ -529,7 +541,7 @@ typedef multi_index_container<
       tag<Unique_mi_tag>,
       const_mem_fun<NumeredDofEntity::interface_type_DofEntity,const GlobalUId,&NumeredDofEntity::getGlobalUniqueId> >,
     ordered_non_unique<
-      tag<Composite_Name_And_Ent_And_EndDofIdx_mi_tag>,
+      tag<Composite_Name_And_Ent_And_EntDofIdx_mi_tag>,
       composite_key<
 	      NumeredDofEntity,
 	      const_mem_fun<NumeredDofEntity::interface_type_Field,boost::string_ref,&NumeredDofEntity::getNameRef>,
@@ -596,6 +608,37 @@ typedef multi_index_container<
   * \ingroup dof_multi_indices
   */
 typedef NumeredDofEntity_multiIndex::index<FieldName_mi_tag>::type NumeredDofEntityByFieldName;
+
+/** \brief Numbered DoF multi-index by UId
+  *
+  * \ingroup dof_multi_indices
+  */
+typedef NumeredDofEntity_multiIndex::index<Unique_mi_tag>::type NumeredDofEntityByUId;
+
+/** \brief Numbered DoF multi-index by local index
+  *
+  * \ingroup dof_multi_indices
+  */
+typedef NumeredDofEntity_multiIndex::index<PetscLocalIdx_mi_tag>::type NumeredDofEntityByLocalIdx;
+
+/** \brief Numbered DoF multi-index by entity
+  *
+  * \ingroup dof_multi_indices
+  */
+typedef NumeredDofEntity_multiIndex::index<Ent_mi_tag>::type NumeredDofEntityByEnt;
+
+/** \brief Numbered DoF multi-index by name entity and partition
+  *
+  * \ingroup dof_multi_indices
+  */
+typedef NumeredDofEntity_multiIndex::index<Composite_Name_Ent_And_Part_mi_tag>::type
+NumeredDofEntityByNameEntAndPart;
+
+/** \brief Numbered DoF multi-index by partition
+  *
+  * \ingroup dof_multi_indices
+  */
+typedef NumeredDofEntity_multiIndex::index<Part_mi_tag>::type NumeredDofEntityByPart;
 
 typedef multi_index_container<
   boost::shared_ptr<NumeredDofEntity>,

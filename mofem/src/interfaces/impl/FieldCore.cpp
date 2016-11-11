@@ -48,6 +48,88 @@
 
 namespace MoFEM {
 
+BitFieldId Core::get_BitFieldId(const std::string& name) const {
+  typedef Field_multiIndex::index<FieldName_mi_tag>::type FieldSetByName;
+  const FieldSetByName &set = fIelds.get<FieldName_mi_tag>();
+  FieldSetByName::iterator miit = set.find(name);
+  if(miit==set.end()) {
+    THROW_MESSAGE("field < "+name+" > not in database (top tip: check spelling)");
+  }
+  return (*miit)->getId();
+}
+std::string Core::get_BitFieldId_name(const BitFieldId id) const {
+  typedef Field_multiIndex::index<BitFieldId_mi_tag>::type FieldSetById;
+  const FieldSetById &set = fIelds.get<BitFieldId_mi_tag>();
+  FieldSetById::iterator miit = set.find(id);
+  return (*miit)->getName();
+}
+EntityHandle Core::get_field_meshset(const BitFieldId id) const {
+  typedef Field_multiIndex::index<BitFieldId_mi_tag>::type FieldSetById;
+  const FieldSetById &set = fIelds.get<BitFieldId_mi_tag>();
+  FieldSetById::iterator miit = set.find(id);
+  if(miit==set.end()) THROW_MESSAGE("field not in database (top tip: check spelling)");
+  return (*miit)->meshSet;
+}
+EntityHandle Core::get_field_meshset(const std::string& name) const {
+  return get_field_meshset(get_BitFieldId(name));
+}
+
+bool Core::check_field(const std::string &name) const {
+  typedef Field_multiIndex::index<FieldName_mi_tag>::type FieldSetByName;
+  const FieldSetByName &set = fIelds.get<FieldName_mi_tag>();
+  FieldSetByName::iterator miit = set.find(name);
+  if(miit==set.end()) return false;
+  return true;
+}
+
+const Field* Core::get_field_structure(const std::string& name) {
+  typedef Field_multiIndex::index<FieldName_mi_tag>::type FieldSetByName;
+  const FieldSetByName &set = fIelds.get<FieldName_mi_tag>();
+  FieldSetByName::iterator miit = set.find(name);
+  if(miit==set.end()) {
+    throw MoFEMException(
+      MOFEM_NOT_FOUND,
+      std::string("field < "+name+" > not in databse (top tip: check spelling)").c_str()
+    );
+  }
+  return miit->get();
+}
+
+PetscErrorCode Core::get_field_entities_by_dimension(const std::string name,int dim,Range &ents) const {
+  MoABErrorCode rval;
+  PetscFunctionBegin;
+  try {
+    EntityHandle meshset = get_field_meshset(name);
+    rval = moab.get_entities_by_dimension(meshset,dim,ents,true); CHKERRQ_MOAB(rval);
+  } catch (MoFEMException const &e) {
+    SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
+  }
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode Core::get_field_entities_by_type(const std::string name,EntityType type,Range &ents) const {
+  MoABErrorCode rval;
+  PetscFunctionBegin;
+  try {
+    EntityHandle meshset = get_field_meshset(name);
+    rval = moab.get_entities_by_type(meshset,type,ents,true); CHKERRQ_MOAB(rval);
+  } catch (MoFEMException const &e) {
+    SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
+  }
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode Core::get_field_entities_by_handle(const std::string name,Range &ents) const {
+  MoABErrorCode rval;
+  PetscFunctionBegin;
+  try {
+    EntityHandle meshset = get_field_meshset(name);
+    rval = moab.get_entities_by_handle(meshset,ents,true); CHKERRQ_MOAB(rval);
+  } catch (MoFEMException const &e) {
+    SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
+  }
+  PetscFunctionReturn(0);
+}
 
 PetscErrorCode Core::add_field(
   const std::string& name,

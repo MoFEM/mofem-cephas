@@ -340,6 +340,12 @@ struct Core: public Interface {
   std::string get_BitFieldId_name(const BitFieldId id) const;
   EntityHandle get_field_meshset(const BitFieldId id) const;
   EntityHandle get_field_meshset(const std::string& name) const;
+  PetscErrorCode get_field_entities_by_dimension(const std::string name,int dim,Range &ents) const;
+  PetscErrorCode get_field_entities_by_type(const std::string name,EntityType type,Range &ents) const;
+  PetscErrorCode get_field_entities_by_handle(const std::string name,Range &ents) const;
+
+
+
   bool check_field(const std::string& name) const;
   const Field* get_field_structure(const std::string& name);
 
@@ -381,6 +387,15 @@ struct Core: public Interface {
   std::string getBitFEId_name(const BitFEId id) const;
   EntityHandle get_finite_element_meshset(const BitFEId id) const;
   EntityHandle get_finite_element_meshset(const std::string& name) const;
+  PetscErrorCode get_finite_element_entities_by_dimension(
+    const std::string name,int dim,Range &ents
+  ) const;
+  PetscErrorCode get_finite_element_entities_by_type(
+    const std::string name,EntityType type,Range &ents
+  ) const;
+  PetscErrorCode get_finite_element_entities_by_handle(
+    const std::string name,Range &ents
+  ) const;
   PetscErrorCode list_finite_elements() const;
 
   //problem

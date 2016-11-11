@@ -880,9 +880,9 @@ PetscErrorCode Core::partition_mesh(Range &ents,int dim,int adj_dim,int n_parts,
           // std::cerr << " " << parts_ents[pp].size() << std::endl;
         }
       }
-      // for(int pp = 0;pp!=n_parts;pp++) {
-      //   rval = moab.add_entities(tagged_sets[pp],parts_ents[pp]); CHKERR_MOAB(rval);
-      // }
+      for(int pp = 0;pp!=n_parts;pp++) {
+        rval = moab.add_entities(tagged_sets[pp],parts_ents[pp]); CHKERR_MOAB(rval);
+      }
 
       // set gid to lower dimension entities
       for(int dd = 0;dd<dim;dd++) {
@@ -891,9 +891,9 @@ PetscErrorCode Core::partition_mesh(Range &ents,int dim,int adj_dim,int n_parts,
           Range dim_ents = parts_ents[pp].subset_by_dimension(dd);
           // std::cerr << dim_ents.size() << " " << dd  << " " << pp << std::endl;
           for(Range::iterator eit = dim_ents.begin();eit!=dim_ents.end();eit++) {
-            // if(dd>0) {
-            //   rval = moab.tag_set_data(part_tag,&*eit,1,&pp); CHKERRQ_MOAB(rval);
-            // }
+            if(dd>0) {
+              rval = moab.tag_set_data(part_tag,&*eit,1,&pp); CHKERRQ_MOAB(rval);
+            }
             rval = moab.tag_set_data(gid_tag,&*eit,1,&gid); CHKERRQ_MOAB(rval);
             gid++;
           }
@@ -1192,7 +1192,6 @@ PetscErrorCode Core::partition_compose_problem(const std::string &name,const std
   if(!(*buildMoFEM&BUILD_PROBLEM)) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"pRoblems not build");
 
   typedef MoFEMProblem_multiIndex::index<Problem_mi_tag>::type MoFEMProblem_multiIndex_by_name;
-  typedef NumeredDofEntity_multiIndex::index<Unique_mi_tag>::type NumeredDofEntitys_by_uid;
 
   //find p_miit
   MoFEMProblem_multiIndex_by_name &pRoblems_set = pRoblems.get<Problem_mi_tag>();
@@ -1247,10 +1246,10 @@ PetscErrorCode Core::partition_compose_problem(const std::string &name,const std
       // only copy indices which are belong to some elements if this porblem
       std::vector<int> is_local,is_new;
 
-      NumeredDofEntitys_by_uid &dofs_by_uid = const_cast<NumeredDofEntitys_by_uid&>(copied_dofs[ss]->get<Unique_mi_tag>());
+      NumeredDofEntityByUId &dofs_by_uid = const_cast<NumeredDofEntityByUId&>(copied_dofs[ss]->get<Unique_mi_tag>());
       for(NumeredDofEntity_multiIndex::iterator dit = composed_dofs[ss]->begin();dit!=composed_dofs[ss]->end();dit++) {
 
-        NumeredDofEntitys_by_uid::iterator diit = dofs_by_uid.find((*dit)->getGlobalUniqueId());
+        NumeredDofEntityByUId::iterator diit = dofs_by_uid.find((*dit)->getGlobalUniqueId());
         if(diit==dofs_by_uid.end()) {
           SETERRQ(
             PETSC_COMM_SELF,
@@ -1562,7 +1561,7 @@ PetscErrorCode Core::partition_finite_elements(
       std::ostringstream ss;
       ss << *p_miit << std::endl;
       ss << *p.first << std::endl;
-      typedef FENumeredDofEntity_multiIndex::index<Unique_mi_tag>::type FENumeredDofEntity_multiIndex_by_Unique_mi_tag;
+      typedef FENumeredDofEntityByUId FENumeredDofEntity_multiIndex_by_Unique_mi_tag;
       FENumeredDofEntity_multiIndex_by_Unique_mi_tag::iterator miit = (*p.first)->rows_dofs->get<Unique_mi_tag>().begin();
       for(;miit!= (*p.first)->rows_dofs->get<Unique_mi_tag>().end();miit++) ss << "rows: " << *(*miit) << std::endl;
       miit = (*p.first)->cols_dofs->get<Unique_mi_tag>().begin();
@@ -1636,10 +1635,9 @@ PetscErrorCode Core::partition_ghost_dofs(const std::string &name,int verb) {
       *((DofIdx*)p_miit->tag_local_nbdof_data_row)
     };
     NumeredDofEntity_multiIndex_uid_view_ordered *ghost_idx_view[2] = { &ghost_idx_col_view, &ghost_idx_row_view };
-    typedef NumeredDofEntity_multiIndex::index<Unique_mi_tag>::type NumeredDofEntitys_by_unique_id;
-    NumeredDofEntitys_by_unique_id *dof_by_uid_no_const[2] = {
-      const_cast<NumeredDofEntitys_by_unique_id*>(&p_miit->numered_dofs_cols->get<Unique_mi_tag>()),
-      const_cast<NumeredDofEntitys_by_unique_id*>(&p_miit->numered_dofs_rows->get<Unique_mi_tag>())
+    NumeredDofEntityByUId *dof_by_uid_no_const[2] = {
+      const_cast<NumeredDofEntityByUId*>(&p_miit->numered_dofs_cols->get<Unique_mi_tag>()),
+      const_cast<NumeredDofEntityByUId*>(&p_miit->numered_dofs_rows->get<Unique_mi_tag>())
     };
     int loop_size = 2;
     if(p_miit->numered_dofs_cols==p_miit->numered_dofs_rows) {
@@ -1648,7 +1646,7 @@ PetscErrorCode Core::partition_ghost_dofs(const std::string &name,int verb) {
     for(int ss = 0;ss<loop_size;ss++) {
       NumeredDofEntity_multiIndex_uid_view_ordered::iterator ghost_idx_miit = ghost_idx_view[ss]->begin();
       for(;ghost_idx_miit!=ghost_idx_view[ss]->end();ghost_idx_miit++) {
-        NumeredDofEntitys_by_unique_id::iterator diit = dof_by_uid_no_const[ss]->find((*ghost_idx_miit)->getGlobalUniqueId());
+        NumeredDofEntityByUId::iterator diit = dof_by_uid_no_const[ss]->find((*ghost_idx_miit)->getGlobalUniqueId());
         if((*diit)->petsc_local_dof_idx!=(DofIdx)-1) {
           SETERRQ(comm,MOFEM_DATA_INCONSISTENCY,"inconsistent data, ghost dof already set");
         }
@@ -1767,12 +1765,10 @@ PetscErrorCode Core::loop_finite_elements(
   ierr = method.preProcess(); CHKERRQ(ierr);
   PetscLogEventEnd(USER_EVENT_preProcess,0,0,0,0);
 
-  typedef NumeredEntFiniteElement_multiIndex::index<Composite_Name_And_Part_mi_tag>::type FEByComposite;
-
-  FEByComposite &numered_fe =
+  NumeredEntFiniteElementbyNameAndPart &numered_fe =
     (const_cast<NumeredEntFiniteElement_multiIndex&>(problem_ptr->numeredFiniteElements)).get<Composite_Name_And_Part_mi_tag>();
-  FEByComposite::iterator miit = numered_fe.lower_bound(boost::make_tuple(fe_name,lower_rank));
-  FEByComposite::iterator hi_miit = numered_fe.upper_bound(boost::make_tuple(fe_name,upper_rank));
+  NumeredEntFiniteElementbyNameAndPart::iterator miit = numered_fe.lower_bound(boost::make_tuple(fe_name,lower_rank));
+  NumeredEntFiniteElementbyNameAndPart::iterator hi_miit = numered_fe.upper_bound(boost::make_tuple(fe_name,upper_rank));
 
   if(miit==hi_miit && bh&MF_EXIST) {
     if(!check_finite_element(fe_name)) {
@@ -1780,7 +1776,7 @@ PetscErrorCode Core::loop_finite_elements(
     }
   }
 
-  // FEByComposite::iterator back_miit = hi_miit;
+  // NumeredEntFiniteElementbyNameAndPart::iterator back_miit = hi_miit;
   method.loopSize = distance(miit,hi_miit);
   for(int nn = 0;miit!=hi_miit;miit++,nn++) {
 

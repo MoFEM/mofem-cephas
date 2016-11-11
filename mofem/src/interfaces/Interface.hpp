@@ -820,7 +820,6 @@ struct Interface: public UnknownInterface {
   virtual PetscErrorCode list_fields() const = 0;
 
   /** \brief get field meshset
-   * \ingroup mofem_field
    *
    * \param name of Field
    * Example:\code
@@ -828,6 +827,45 @@ struct Interface: public UnknownInterface {
    * \endcode
    */
   virtual EntityHandle get_field_meshset(const std::string& name) const = 0;
+
+  /**
+   * \brief get entities in the field by dimension
+   * @param  name field name
+   * @param  dim  dim
+   * @param  ents ents
+   * @return      error code
+
+   * \ingroup mofem_field
+   */
+  virtual PetscErrorCode get_field_entities_by_dimension(
+    const std::string name,int dim,Range &ents
+  ) const = 0;
+
+  /**
+   * \brief get entities in the field by type
+   * @param  name field name
+   * @param  type entity type
+   * @param  ents ents
+   * @return      error code
+
+   * \ingroup mofem_field
+   */
+  virtual PetscErrorCode get_field_entities_by_type(
+    const std::string name,EntityType type,Range &ents
+  ) const = 0;
+
+  /**
+   * \brief get entities in the field by handle
+   * @param  name field name
+   * @param  ents ents
+   * @return      error code
+
+   * \ingroup mofem_field
+   */
+  virtual PetscErrorCode get_field_entities_by_handle(
+    const std::string name,Range &ents
+  ) const = 0;
+
 
   /** \brief check if field is in database
    * \ingroup mofem_field
@@ -1017,6 +1055,45 @@ struct Interface: public UnknownInterface {
    *
    */
   virtual EntityHandle get_finite_element_meshset(const std::string& name) const = 0;
+
+  /**
+   * \brief get entities in the finite element by dimension
+   * @param  name finite element name
+   * @param  dim  dim
+   * @param  ents ents
+   * @return      error code
+
+   * \ingroup mofem_field
+   */
+  virtual PetscErrorCode get_finite_element_entities_by_dimension(
+    const std::string name,int dim,Range &ents
+  ) const = 0;
+
+  /**
+   * \brief get entities in the finite element by type
+   * @param  name finite element name
+   * @param  type entity type
+   * @param  ents ents
+   * @return      error code
+
+   * \ingroup mofem_field
+   */
+  virtual PetscErrorCode get_finite_element_entities_by_type(
+    const std::string name,EntityType type,Range &ents
+  ) const = 0;
+
+  /**
+   * \brief get entities in the finite element by handle
+   * @param  name finite element name
+   * @param  ents ents
+   * @return      error code
+
+   * \ingroup mofem_field
+   */
+  virtual PetscErrorCode get_finite_element_entities_by_handle(
+    const std::string name,Range &ents
+  ) const = 0;
+
 
   /** \brief remove elements from given refinement level to finite element database
    * \ingroup mofem_fe
@@ -1386,7 +1463,7 @@ struct Interface: public UnknownInterface {
     * \param problem_for_cols problem used to index cols
     * \param copy_cols just copy cols dofs
     *
-    * If copy_rows/copy_cols is set to false only partition is copied between problems. 
+    * If copy_rows/copy_cols is set to false only partition is copied between problems.
     *
     */
   virtual PetscErrorCode partition_compose_problem(

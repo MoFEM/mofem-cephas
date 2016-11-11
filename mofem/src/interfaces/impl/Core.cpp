@@ -306,60 +306,7 @@ const moab::Interface& Core::get_moab() const {
 MPI_Comm Core::get_comm() const {
   return comm;
 }
-BitFieldId Core::get_BitFieldId(const std::string& name) const {
-  typedef Field_multiIndex::index<FieldName_mi_tag>::type FieldSetByName;
-  const FieldSetByName &set = fIelds.get<FieldName_mi_tag>();
-  FieldSetByName::iterator miit = set.find(name);
-  if(miit==set.end()) {
-    THROW_MESSAGE("field < "+name+" > not in database (top tip: check spelling)");
-  }
-  return (*miit)->getId();
-}
-std::string Core::get_BitFieldId_name(const BitFieldId id) const {
-  typedef Field_multiIndex::index<BitFieldId_mi_tag>::type FieldSetById;
-  const FieldSetById &set = fIelds.get<BitFieldId_mi_tag>();
-  FieldSetById::iterator miit = set.find(id);
-  return (*miit)->getName();
-}
-EntityHandle Core::get_field_meshset(const BitFieldId id) const {
-  typedef Field_multiIndex::index<BitFieldId_mi_tag>::type FieldSetById;
-  const FieldSetById &set = fIelds.get<BitFieldId_mi_tag>();
-  FieldSetById::iterator miit = set.find(id);
-  if(miit==set.end()) THROW_MESSAGE("field not in database (top tip: check spelling)");
-  return (*miit)->meshSet;
-}
-EntityHandle Core::get_field_meshset(const std::string& name) const {
-  return get_field_meshset(get_BitFieldId(name));
-}
 
-bool Core::check_field(const std::string &name) const {
-  typedef Field_multiIndex::index<FieldName_mi_tag>::type FieldSetByName;
-  const FieldSetByName &set = fIelds.get<FieldName_mi_tag>();
-  FieldSetByName::iterator miit = set.find(name);
-  if(miit==set.end()) return false;
-  return true;
-}
-
-bool Core::check_finite_element(const std::string &name) const {
-  typedef FiniteElement_multiIndex::index<FiniteElement_name_mi_tag>::type FeSetByName;
-  const FeSetByName &set = finiteElements.get<FiniteElement_name_mi_tag>();
-  FeSetByName::iterator miit = set.find(name);
-  if(miit==set.end()) return false;
-  return true;
-}
-
-const Field* Core::get_field_structure(const std::string& name) {
-  typedef Field_multiIndex::index<FieldName_mi_tag>::type FieldSetByName;
-  const FieldSetByName &set = fIelds.get<FieldName_mi_tag>();
-  FieldSetByName::iterator miit = set.find(name);
-  if(miit==set.end()) {
-    throw MoFEMException(
-      MOFEM_NOT_FOUND,
-      std::string("field < "+name+" > not in databse (top tip: check spelling)").c_str()
-    );
-  }
-  return miit->get();
-}
 BitFieldId Core::getFieldShift() {
   if(*fShift >= BITFIELDID_SIZE) {
     char msg[] = "number of fields exceeded";
