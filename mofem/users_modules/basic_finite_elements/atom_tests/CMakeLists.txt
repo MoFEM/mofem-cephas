@@ -177,6 +177,35 @@ add_test(
   -my_max_post_proc_ref_level 0 -my_order 0
 )
 
+cm_export_file("sphere.jou" export_analytical_bc_atom_tests)
+cm_export_file("sphere.cub" export_analytical_bc_atom_tests)
+
+# Analytical dirihlet boundary condition
+
+add_executable(thermal_with_analytical_bc
+${UM_CURRENT_SOURCE_DIR}/thermal_with_analytical_bc.cpp
+)
+
+target_link_libraries(thermal_with_analytical_bc
+  users_modules
+  mofem_finite_elements
+  mofem_interfaces
+  mofem_multi_indices
+  mofem_petsc
+  mofem_approx
+  mofem_third_party
+  mofem_cblas
+  ${MoFEM_PROJECT_LIBS}
+)
+
+add_test(thermal_with_analytical_bc_atom
+  ${MoFEM_MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+  ${CMAKE_CURRENT_BINARY_DIR}/thermal_with_analytical_bc
+  -my_file sphere.cub
+  -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package mumps
+  -ksp_monitor
+)
+
 # Testing field approximation
 bfe_add_executable(
   field_approximation ${UM_CURRENT_SOURCE_DIR}/field_approximation.cpp
