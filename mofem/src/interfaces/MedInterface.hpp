@@ -3,6 +3,9 @@
  *
  * Interface loading mesh and data on mesh directly to mofem & moab
  *
+ * \todo Reading higher order entities
+ * \todo Reading fields data
+ *
  */
 
 /*
@@ -25,11 +28,9 @@ namespace MoFEM {
   static const MOFEMuuid IDD_MOFEMMedInterface = MOFEMuuid( BitIntefaceId(MED_INTERFACE) );
 
   /** \brief Interface for load MED files
-  * \ingroup mofem_med_files
 
-  \todo Reading higher order entities
-  \todo Reading fields data
-  
+    * \ingroup mofem_med_files
+
   */
   struct MedInterface: public UnknownInterface {
 
@@ -79,7 +80,6 @@ namespace MoFEM {
      *
      * File name is form command line
      *
-     * @param  file filed name
      * @param  verb verbosity level
      * @return      error code
      */

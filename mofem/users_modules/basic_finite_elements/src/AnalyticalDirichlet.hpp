@@ -214,11 +214,17 @@ struct AnalyticalDirichletBC {
       PetscFunctionBegin;
       if(approxField.getLoopFeApprox().getOpPtrVector().empty()) {
         if(m_field.check_field(nodals_positions)) {
-          approxField.getLoopFeApprox().getOpPtrVector().push_back(new ApproxField::OpHoCoord(nodals_positions,approxField.hoCoords));
+          approxField.getLoopFeApprox().getOpPtrVector().push_back(
+            new ApproxField::OpHoCoord(nodals_positions,approxField.hoCoords)
+          );
         }
-        approxField.getLoopFeApprox().getOpPtrVector().push_back(new ApproxField::OpLhs(field_name,approxField.hoCoords));
+        approxField.getLoopFeApprox().getOpPtrVector().push_back(
+          new ApproxField::OpLhs(field_name,approxField.hoCoords)
+        );
       }
-      approxField.getLoopFeApprox().getOpPtrVector().push_back(new ApproxField::OpRhs<FUNEVAL>(field_name,tris,approxField.hoCoords,funtcion_evaluator,field_number));
+      approxField.getLoopFeApprox().getOpPtrVector().push_back(
+        new ApproxField::OpRhs<FUNEVAL>(field_name,tris,approxField.hoCoords,funtcion_evaluator,field_number)
+      );
       PetscFunctionReturn(0);
     }
 

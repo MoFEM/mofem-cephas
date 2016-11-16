@@ -55,10 +55,8 @@ struct PostPorcHookStress: public MoFEM::VolumeElementForcesAndSourcesCore::User
   moab::Interface &postProcMesh;
   std::vector<EntityHandle> &mapGaussPts;
 
-  #ifdef __NONLINEAR_ELASTIC_HPP
   /// Material block data, ket is block id
   const std::map<int,NonlinearElasticElement::BlockData> *setOfBlocksMaterialDataPtr;
-  #endif //__NONLINEAR_ELASTIC_HPP
 
   PostProcVolumeOnRefinedMesh::CommonData &commonData;
 
@@ -71,9 +69,7 @@ struct PostPorcHookStress: public MoFEM::VolumeElementForcesAndSourcesCore::User
     std::vector<EntityHandle> &map_gauss_pts,
     const std::string field_name,
     PostProcVolumeOnRefinedMesh::CommonData &common_data,
-    #ifdef __NONLINEAR_ELASTIC_HPP
     const std::map<int,NonlinearElasticElement::BlockData> *set_of_block_data_ptr = NULL
-    #endif //__NONLINEAR_ELASTIC_HPP
   ):
   MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator(
     field_name,ForcesAndSurcesCore::UserDataOperator::OPROW
@@ -81,9 +77,7 @@ struct PostPorcHookStress: public MoFEM::VolumeElementForcesAndSourcesCore::User
   mField(m_field),
   postProcMesh(post_proc_mesh),
   mapGaussPts(map_gauss_pts),
-  #ifdef __NONLINEAR_ELASTIC_HPP
   setOfBlocksMaterialDataPtr(set_of_block_data_ptr),
-  #endif //__NONLINEAR_ELASTIC_HPP
   commonData(common_data) {
   }
 
@@ -125,14 +119,17 @@ struct PostPorcHookStress: public MoFEM::VolumeElementForcesAndSourcesCore::User
             *_lambda = LAMBDA(setOfBlocksMaterialDataPtr->at(*_block_id).E,setOfBlocksMaterialDataPtr->at(*_block_id).PoissonRatio);
             *_mu = MU(setOfBlocksMaterialDataPtr->at(*_block_id).E,setOfBlocksMaterialDataPtr->at(*_block_id).PoissonRatio);
           }
+
           PetscFunctionReturn(0);
         }
       }
     }
 
-    SETERRQ(PETSC_COMM_SELF,1,
+    SETERRQ(
+      PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,
       "Element is not in elastic block, however you run linear elastic analysis with that element\n"
-      "top tip: check if you update block sets after mesh refinements or interface insertion");
+      "top tip: check if you update block sets after mesh refinements or interface insertion"
+    );
 
     PetscFunctionReturn(0);
   }
