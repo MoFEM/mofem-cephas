@@ -27,6 +27,38 @@ struct NeummanForcesSurface {
 
   MoFEM::Interface &mField;
 
+  /**
+   * \brief Analytical force method
+   */
+  struct MethodForAnaliticalForce {
+
+    /**
+     * User implemented analytical force
+     * @param  coords coordinates of integration point
+     * @param  normal normal at integration point
+     * @param  force  returned force
+     * @return        error code
+     */
+    virtual PetscErrorCode getForce(
+      const EntityHandle ent,
+      const VectorDouble3 &coords,
+      const VectorDouble3 &normal,
+      VectorDouble3 &force
+    ) {
+      PetscFunctionBegin;
+      SETERRQ(
+        PETSC_COMM_SELF,
+        MOFEM_NOT_IMPLEMENTED,
+        "You need to implement this"
+      );
+      PetscFunctionReturn(0);
+    }
+
+  };
+
+  /**
+   * Definition of face element used for integration
+   */
   struct MyTriangleFE: public MoFEM::FaceElementForcesAndSourcesCore {
     MyTriangleFE(MoFEM::Interface &m_field);
     int getRule(int order) { return order; };
@@ -36,8 +68,10 @@ struct NeummanForcesSurface {
   MyTriangleFE& getLoopFe() { return fe; }
 
   NeummanForcesSurface(
-    MoFEM::Interface &m_field):
-    mField(m_field),fe(m_field) {}
+    MoFEM::Interface &m_field
+  ):
+  mField(m_field),
+  fe(m_field) {}
 
   struct bCForce {
     ForceCubitBcData data;
@@ -51,6 +85,7 @@ struct NeummanForcesSurface {
   std::map<int,bCPreassure> mapPreassure;
 
   boost::ptr_vector<MethodForForceScaling> methodsOp;
+  boost::ptr_vector<MethodForAnaliticalForce> analyticalForceOp;
 
   /// Operator for force element
   struct OpNeumannForce: public MoFEM::FaceElementForcesAndSourcesCore::UserDataOperator {
@@ -58,6 +93,7 @@ struct NeummanForcesSurface {
     Vec F;
     bCForce &dAta;
     boost::ptr_vector<MethodForForceScaling> &methodsOp;
+
     bool hoGeometry;
 
     OpNeumannForce(
@@ -66,11 +102,37 @@ struct NeummanForcesSurface {
       bool ho_geometry = false
     );
 
-    ublas::vector<FieldData> Nf;
+    ublas::vector<FieldData> Nf; //< Local force vector
 
     PetscErrorCode doWork(int side,EntityType type,DataForcesAndSurcesCore::EntData &data);
 
   };
+
+  /// Operator for force element
+  struct OpNeumannForceAnalytical: public MoFEM::FaceElementForcesAndSourcesCore::UserDataOperator {
+
+    Vec F;
+    const Range tRis;
+    boost::ptr_vector<MethodForForceScaling> &methodsOp;
+    boost::ptr_vector<MethodForAnaliticalForce> &analyticalForceOp;
+
+    bool hoGeometry;
+
+    OpNeumannForceAnalytical(
+      const std::string field_name,
+      Vec _F,
+      const Range tris,
+      boost::ptr_vector<MethodForForceScaling> &methods_op,
+      boost::ptr_vector<MethodForAnaliticalForce> &analytical_force_op,
+      bool ho_geometry = false
+    );
+
+    ublas::vector<FieldData> Nf; //< Local force vector
+
+    PetscErrorCode doWork(int side,EntityType type,DataForcesAndSurcesCore::EntData &data);
+
+  };
+
 
   /// Operator for pressure element
   struct OpNeumannPreassure:public MoFEM::FaceElementForcesAndSourcesCore::UserDataOperator {
