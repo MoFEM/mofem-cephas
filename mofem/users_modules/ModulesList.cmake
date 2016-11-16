@@ -17,16 +17,9 @@ set(UM_LIB_SOURCES "")
 # Those are default sub-modules
 # FIXME: This has to find solution as a install with sub-modules
 include(${UM_SOURCE_DIR}/basic_finite_elements/AddModule.cmake)
-include(${UM_SOURCE_DIR}/analytical_dirichlet_boundary_conditions/AddModule.cmake)
 
 # Users modules library, common for all programs
 add_library(users_modules ${UM_LIB_SOURCES})
-
-# FIXME: Atom test user modules
-add_subdirectory(
-  ${UM_SOURCE_DIR}/analytical_dirichlet_boundary_conditions/atom_tests
-  ${PROJECT_BINARY_DIR}/analytical_dirichlet_boundary_conditions/atom_tests
-)
 
 # Those modules could be downloaded with MoFEM
 if(WITH_MODULE_OBSOLETE)

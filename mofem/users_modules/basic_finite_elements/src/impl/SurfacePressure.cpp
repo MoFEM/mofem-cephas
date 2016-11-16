@@ -40,7 +40,6 @@ F(_F),
 dAta(data),
 methodsOp(methods_op),
 hoGeometry(ho_geometry) {
-
 }
 
 PetscErrorCode NeummanForcesSurface::OpNeumannForce::doWork(
@@ -66,6 +65,7 @@ PetscErrorCode NeummanForcesSurface::OpNeumannForce::doWork(
 
   for (unsigned int gg = 0;gg<data.getN().size1();gg++) {
 
+    // get integration weight and Jacobian of integration point (area of face)
     double val = getGaussPts()(2,gg);
     if(hoGeometry) {
       val *= 0.5*cblas_dnrm2(3,&getNormalsAtGaussPt()(gg,0),1);
@@ -73,8 +73,8 @@ PetscErrorCode NeummanForcesSurface::OpNeumannForce::doWork(
       val *= getArea();
     }
 
+    // use data from module
     for (int rr = 0;rr<rank;rr++) {
-
       double force;
       if(rr == 0) {
         force = dAta.data.data.value3;
@@ -87,14 +87,15 @@ PetscErrorCode NeummanForcesSurface::OpNeumannForce::doWork(
       }
       force *= dAta.data.data.value1;
       cblas_daxpy(nb_row_dofs,val*force,&data.getN()(gg,0),1,&Nf[rr],rank);
-
     }
 
   }
 
+  // Scale force using user defined scaling operator
   ierr = MethodForForceScaling::applyScale(getFEMethod(), methodsOp, Nf); CHKERRQ(ierr);
   {
     Vec my_f;
+    // If user vector is not set, use vector from snes or ts solvers
     if(F == PETSC_NULL) {
       switch (getFEMethod()->ts_ctx) {
         case FEMethod::CTX_TSSETIFUNCTION: {
@@ -110,6 +111,8 @@ PetscErrorCode NeummanForcesSurface::OpNeumannForce::doWork(
     } else {
       my_f = F;
     }
+
+    // Assemble force into vector
     ierr = VecSetValues(
       my_f,data.getIndices().size(),&data.getIndices()[0],&Nf[0],ADD_VALUES
     ); CHKERRQ(ierr);
@@ -117,6 +120,110 @@ PetscErrorCode NeummanForcesSurface::OpNeumannForce::doWork(
 
   PetscFunctionReturn(0);
 }
+
+NeummanForcesSurface::OpNeumannForceAnalytical::OpNeumannForceAnalytical(
+  const std::string field_name,
+  Vec _F,
+  const Range tris,
+  boost::ptr_vector<MethodForForceScaling> &methods_op,
+  boost::ptr_vector<MethodForAnaliticalForce> &analytical_force_op,
+  bool ho_geometry
+):
+FaceElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROW),
+F(_F),
+tRis(tris),
+methodsOp(methods_op),
+analyticalForceOp(analytical_force_op),
+hoGeometry(ho_geometry) {
+}
+
+PetscErrorCode NeummanForcesSurface::OpNeumannForceAnalytical::doWork(
+  int side,EntityType type,DataForcesAndSurcesCore::EntData &data
+) {
+  PetscFunctionBegin;
+
+  if(data.getIndices().size()==0) PetscFunctionReturn(0);
+  EntityHandle ent = getNumeredEntFiniteElementPtr()->getEnt();
+  if(tRis.find(ent)==tRis.end()) PetscFunctionReturn(0);
+
+  PetscErrorCode ierr;
+
+  const FENumeredDofEntity *dof_ptr;
+  ierr = getNumeredEntFiniteElementPtr()->getRowDofsByPetscGlobalDofIdx(
+    data.getIndices()[0],&dof_ptr
+  ); CHKERRQ(ierr);
+  int rank = dof_ptr->getNbOfCoeffs();
+  int nb_row_dofs = data.getIndices().size()/rank;
+
+  Nf.resize(data.getIndices().size(),false);
+  Nf.clear();
+
+  VectorDouble3 coords(3);
+  VectorDouble3 normal(3);
+  VectorDouble3 force(3);
+
+  for (unsigned int gg = 0;gg<data.getN().size1();gg++) {
+
+    // get integration weight and Jacobian of integration point (area of face)
+    double val = getGaussPts()(2,gg);
+    if(hoGeometry) {
+      val *= 0.5*cblas_dnrm2(3,&getNormalsAtGaussPt()(gg,0),1);
+      for(int dd = 0;dd!=3;dd++) {
+        coords[dd] = getHoCoordsAtGaussPts()(gg,dd);
+        normal[dd] = getNormalsAtGaussPt()(gg,dd);
+      }
+    } else {
+      val *= getArea();
+      for(int dd = 0;dd!=3;dd++) {
+        coords[dd] = getCoordsAtGaussPts()(gg,dd);
+        normal = getNormal();
+      }
+
+    }
+
+    for(
+      boost::ptr_vector<MethodForAnaliticalForce>::iterator vit = analyticalForceOp.begin();
+      vit!=analyticalForceOp.end();vit++
+    ) {
+      ierr = vit->getForce(ent,coords,normal,force); CHKERRQ(ierr);
+      for(int rr = 0;rr!=3;rr++) {
+        cblas_daxpy(nb_row_dofs,val*force[rr],&data.getN()(gg,0),1,&Nf[rr],rank);
+      }
+    }
+
+  }
+
+  // Scale force using user defined scaling operator
+  ierr = MethodForForceScaling::applyScale(getFEMethod(), methodsOp, Nf); CHKERRQ(ierr);
+
+  {
+    Vec my_f;
+    // If user vector is not set, use vector from snes or ts solvers
+    if(F == PETSC_NULL) {
+      switch (getFEMethod()->ts_ctx) {
+        case FEMethod::CTX_TSSETIFUNCTION: {
+          const_cast<FEMethod*>(getFEMethod())->snes_ctx = FEMethod::CTX_SNESSETFUNCTION;
+          const_cast<FEMethod*>(getFEMethod())->snes_x = getFEMethod()->ts_u;
+          const_cast<FEMethod*>(getFEMethod())->snes_f = getFEMethod()->ts_F;
+          break;
+        }
+        default:
+        break;
+      }
+      my_f = getFEMethod()->snes_f;
+    } else {
+      my_f = F;
+    }
+
+    // Assemble force into vector
+    ierr = VecSetValues(
+      my_f,data.getIndices().size(),&data.getIndices()[0],&Nf[0],ADD_VALUES
+    ); CHKERRQ(ierr);
+  }
+
+  PetscFunctionReturn(0);
+}
+
 
 NeummanForcesSurface::OpNeumannPreassure::OpNeumannPreassure(
   const std::string field_name, Vec _F,bCPreassure &data,boost::ptr_vector<MethodForForceScaling> &methods_op,bool ho_geometry

@@ -15,7 +15,7 @@ project(MoFEM-UserModules C CXX)
 
 cmake_minimum_required(VERSION 2.8.7)
 
-find_package(MoFEM 0.3.35
+find_package(MoFEM 0.5.12
   REQUIRED HINTS ${MOFEM_DIR} ../ ../../ $ENV{MOFEM_DIR}
 )
 message(STATUS "MoFEM version ${MoFEM_VERSION}")
@@ -135,4 +135,8 @@ if(SLEPC_LIBRARY)
   message(STATUS "WITH SLEPC")
 endif(SLEPC_LIBRARY)
 
+# Complle tools
+add_subdirectory(${PROJECT_SOURCE_DIR}/tools)
+
+# Add modules
 include(ModulesList.cmake)

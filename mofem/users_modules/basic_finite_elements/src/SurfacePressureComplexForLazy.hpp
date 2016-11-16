@@ -27,7 +27,7 @@
 struct NeummanForcesSurfaceComplexForLazy {
 
   struct MyTriangleSpatialFE;
-  struct AuxMethodSpatial: public FaceElementForcesAndSourcesCore::UserDataOperator {
+  struct AuxMethodSpatial: public MoFEM::FaceElementForcesAndSourcesCore::UserDataOperator {
 
     MyTriangleSpatialFE *myPtr;
     AuxMethodSpatial(const string &field_name,MyTriangleSpatialFE *my_ptr,const char type);
@@ -35,7 +35,7 @@ struct NeummanForcesSurfaceComplexForLazy {
 
   };
 
-  struct AuxMethodMaterial: public FaceElementForcesAndSourcesCore::UserDataOperator {
+  struct AuxMethodMaterial: public MoFEM::FaceElementForcesAndSourcesCore::UserDataOperator {
 
     MyTriangleSpatialFE *myPtr;
     AuxMethodMaterial(const string &field_name,MyTriangleSpatialFE *my_ptr,const char type);
@@ -43,7 +43,7 @@ struct NeummanForcesSurfaceComplexForLazy {
 
   };
 
-  struct MyTriangleSpatialFE: public FaceElementForcesAndSourcesCore {
+  struct MyTriangleSpatialFE: public MoFEM::FaceElementForcesAndSourcesCore {
 
     double *sCaleLhs;
     double *sCaleRhs;

@@ -208,7 +208,11 @@ PetscErrorCode AnalyticalDirichletBC::ApproxField::OpLhs::doWork(
     PetscFunctionBegin;
     if(mapZeroRows.empty()) {
       if(tRis_ptr == NULL) {
-        SETERRQ(PETSC_COMM_SELF,1,"need to initialised from AnalyticalDirichletBC::solveProblem");
+        SETERRQ(
+          PETSC_COMM_SELF,
+          MOFEM_DATA_INCONSISTENCY,
+          "Need to initialized from AnalyticalDirichletBC::solveProblem"
+        );
       }
       ierr = iNitalize(*tRis_ptr); CHKERRQ(ierr);
     }
