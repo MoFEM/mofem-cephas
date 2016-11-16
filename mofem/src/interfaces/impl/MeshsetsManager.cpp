@@ -244,13 +244,27 @@ namespace MoFEM {
   }
 
 
-  bool MeshsetsManager::checkMeshset(const int ms_id,const CubitBCType cubit_bc_type) {
+  bool MeshsetsManager::checkMeshset(const int ms_id,const CubitBCType cubit_bc_type) const {
     CubitMeshSet_multiIndex::index<Composite_Cubit_msId_And_MeshSetType_mi_tag>::type::iterator
       miit = cubitMeshsets.get<Composite_Cubit_msId_And_MeshSetType_mi_tag>().find(boost::make_tuple(ms_id,cubit_bc_type.to_ulong()));
     if(miit!=cubitMeshsets.get<Composite_Cubit_msId_And_MeshSetType_mi_tag>().end()) {
       return true;
     }
     return false;
+  }
+
+  bool MeshsetsManager::checkMeshset(const string name,int *const number_of_meshsets_ptr) const {
+    CubitMeshSet_multiIndex::index<CubitMeshSets_name>::type::iterator
+      miit = cubitMeshsets.get<CubitMeshSets_name>().lower_bound(name);
+    CubitMeshSet_multiIndex::index<CubitMeshSets_name>::type::iterator
+      hi_miit = cubitMeshsets.get<CubitMeshSets_name>().upper_bound(name);
+    if(distance(miit,hi_miit)==0) {
+      return false;
+    }
+    if(number_of_meshsets_ptr) {
+      *number_of_meshsets_ptr = std::distance(miit,hi_miit);
+    }
+    return true;
   }
 
   PetscErrorCode MeshsetsManager::addMeshset(const CubitBCType cubit_bc_type,const int ms_id,const std::string name) {
@@ -397,16 +411,50 @@ namespace MoFEM {
     PetscFunctionReturn(0);
   }
 
-  PetscErrorCode MeshsetsManager::getCubitMeshsetPtr(const int ms_id,const CubitBCType cubit_bc_type,const CubitMeshSets **cubit_meshset_ptr) {
+  PetscErrorCode MeshsetsManager::getCubitMeshsetPtr(
+    const int ms_id,
+    const CubitBCType cubit_bc_type,
+    const CubitMeshSets **cubit_meshset_ptr
+  ) {
     MoFEM::Interface &m_field = cOre;
     PetscFunctionBegin;
     CubitMeshSet_multiIndex::index<Composite_Cubit_msId_And_MeshSetType_mi_tag>::type::iterator
-      miit = cubitMeshsets.get<Composite_Cubit_msId_And_MeshSetType_mi_tag>().find(boost::make_tuple(ms_id,cubit_bc_type.to_ulong()));
+      miit = cubitMeshsets.get<Composite_Cubit_msId_And_MeshSetType_mi_tag>().find(
+        boost::make_tuple(ms_id,cubit_bc_type.to_ulong())
+      );
     if(miit!=cubitMeshsets.get<Composite_Cubit_msId_And_MeshSetType_mi_tag>().end()) {
       *cubit_meshset_ptr = &*miit;
     } else {
       SETERRQ1(m_field.get_comm(),MOFEM_DATA_INCONSISTENCY,"msId = %d is not there",ms_id);
     }
+    PetscFunctionReturn(0);
+  }
+
+  PetscErrorCode MeshsetsManager::getCubitMeshsetPtr(
+    const string name,
+    const CubitMeshSets **cubit_meshset_ptr
+  ) {
+    MoFEM::Interface &m_field = cOre;
+    PetscFunctionBegin;
+    CubitMeshSet_multiIndex::index<CubitMeshSets_name>::type::iterator
+      miit = cubitMeshsets.get<CubitMeshSets_name>().lower_bound(name);
+    CubitMeshSet_multiIndex::index<CubitMeshSets_name>::type::iterator
+      hi_miit = cubitMeshsets.get<CubitMeshSets_name>().upper_bound(name);
+    if(std::distance(miit,hi_miit)==0) {
+      SETERRQ1(
+        m_field.get_comm(),
+        MOFEM_DATA_INCONSISTENCY,
+        "meshset name = %s is not there",name.c_str()
+      );
+    }
+    if(std::distance(miit,hi_miit)>1) {
+      SETERRQ1(
+        m_field.get_comm(),
+        MOFEM_DATA_INCONSISTENCY,
+        "meshset name = %s is not there",name.c_str()
+      );
+    }
+    *cubit_meshset_ptr = &*miit;
     PetscFunctionReturn(0);
   }
 

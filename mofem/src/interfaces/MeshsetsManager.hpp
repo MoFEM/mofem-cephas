@@ -358,7 +358,14 @@ namespace MoFEM {
       * \param ms_id id of the BLOCKSET/SIDESET/BLOCKSET: from CUBIT
       * \param  see CubitBC (NODESET, SIDESET or BLOCKSET and more)
       */
-    bool checkMeshset(const int ms_id,const CubitBCType cubit_bc_type);
+    bool checkMeshset(const int ms_id,const CubitBCType cubit_bc_type) const;
+
+    /**
+     * \brief check if meshset of given name exist
+     * @param  name name of meshset
+     * @return      error code
+     */
+    bool checkMeshset(const string name,int *const number_of_meshsets_ptr = NULL) const;
 
     /**
       * \brief add cubit meshset
@@ -441,7 +448,21 @@ namespace MoFEM {
       * \ingroup mofem_bc
 
       */
-    PetscErrorCode getCubitMeshsetPtr(const int ms_id,const CubitBCType cubit_bc_type,const CubitMeshSets **cubit_meshset_ptr);
+    PetscErrorCode getCubitMeshsetPtr(
+      const int ms_id,
+      const CubitBCType cubit_bc_type,
+      const CubitMeshSets **cubit_meshset_ptr
+    );
+
+    /**
+      * \brief get cubit meshset
+      * \ingroup mofem_bc
+
+      */
+    PetscErrorCode getCubitMeshsetPtr(
+      const string name,
+      const CubitMeshSets **cubit_meshset_ptr
+    );
 
     /**
       * \brief get entities from CUBIT/meshset of a particular entity dimension
@@ -572,9 +593,6 @@ namespace MoFEM {
      pressure_flag2=1       # 0: Pressure is interpreted as pure pressure 1: pressure is interpreted as total force
      pressure_magnitude=1
 
-     * @param  file_name config file
-     * @return           error code
-
      # Example applying temperature boundary conditions
 
      [block_1006]
@@ -602,6 +620,9 @@ namespace MoFEM {
      capacity=1
 
      \endcode
+
+     * @param  file_name config file
+     * @return           error code
 
      */
     PetscErrorCode setMeshsetFromFile(const string file_name);
