@@ -55,8 +55,10 @@ struct PostPorcHookStress: public MoFEM::VolumeElementForcesAndSourcesCore::User
   moab::Interface &postProcMesh;
   std::vector<EntityHandle> &mapGaussPts;
 
+  #ifdef __NONLINEAR_ELASTIC_HPP
   /// Material block data, ket is block id
   const std::map<int,NonlinearElasticElement::BlockData> *setOfBlocksMaterialDataPtr;
+  #endif //__NONLINEAR_ELASTIC_HPP
 
   PostProcVolumeOnRefinedMesh::CommonData &commonData;
 
@@ -68,8 +70,10 @@ struct PostPorcHookStress: public MoFEM::VolumeElementForcesAndSourcesCore::User
     moab::Interface& post_proc_mesh,
     std::vector<EntityHandle> &map_gauss_pts,
     const std::string field_name,
-    PostProcVolumeOnRefinedMesh::CommonData &common_data,
-    const std::map<int,NonlinearElasticElement::BlockData> *set_of_block_data_ptr = NULL
+    PostProcVolumeOnRefinedMesh::CommonData &common_data
+    #ifdef __NONLINEAR_ELASTIC_HPP
+    ,const std::map<int,NonlinearElasticElement::BlockData> *set_of_block_data_ptr = NULL
+    #endif
   ):
   MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator(
     field_name,ForcesAndSurcesCore::UserDataOperator::OPROW
@@ -77,7 +81,9 @@ struct PostPorcHookStress: public MoFEM::VolumeElementForcesAndSourcesCore::User
   mField(m_field),
   postProcMesh(post_proc_mesh),
   mapGaussPts(map_gauss_pts),
+  #ifdef __NONLINEAR_ELASTIC_HPP
   setOfBlocksMaterialDataPtr(set_of_block_data_ptr),
+  #endif //__NONLINEAR_ELASTIC_HPP
   commonData(common_data) {
   }
 
@@ -115,11 +121,12 @@ struct PostPorcHookStress: public MoFEM::VolumeElementForcesAndSourcesCore::User
           *_lambda = LAMBDA(mydata.data.Young,mydata.data.Poisson);
           *_mu = MU(mydata.data.Young,mydata.data.Poisson);
           *_block_id = it->getMeshsetId();
+          #ifdef __NONLINEAR_ELASTIC_HPP
           if(setOfBlocksMaterialDataPtr) {
             *_lambda = LAMBDA(setOfBlocksMaterialDataPtr->at(*_block_id).E,setOfBlocksMaterialDataPtr->at(*_block_id).PoissonRatio);
             *_mu = MU(setOfBlocksMaterialDataPtr->at(*_block_id).E,setOfBlocksMaterialDataPtr->at(*_block_id).PoissonRatio);
           }
-
+          #endif //__NONLINEAR_ELASTIC_HPP
           PetscFunctionReturn(0);
         }
       }
