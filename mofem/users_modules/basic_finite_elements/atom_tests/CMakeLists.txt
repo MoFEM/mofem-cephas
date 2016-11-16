@@ -202,7 +202,7 @@ add_test(thermal_with_analytical_bc_atom
   ${MoFEM_MPI_RUN} ${MPI_RUN_FLAGS} -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/thermal_with_analytical_bc
   -my_file sphere.cub
-  -ksp_type fgmres -pc_type bjacobi
+  -ksp_type fgmres -pc_type bjacobi -sub_pc_type lu -ksp_rtol 0 -ksp_atol 1e-12
   -ksp_monitor
 )
 
