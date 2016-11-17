@@ -657,20 +657,24 @@ PetscErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::operator
 }
 
 PetscErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::addForce(int ms_id) {
-  PetscFunctionBegin;
-  PetscErrorCode ierr;
+  MeshsetsManager *mesh_manager_ptr;
   const CubitMeshSets *cubit_meshset_ptr;
-  ierr = mField.get_cubit_msId(ms_id,NODESET,&cubit_meshset_ptr); CHKERRQ(ierr);
+  PetscErrorCode ierr;
+  PetscFunctionBegin;
+  ierr = mField.query_interface(mesh_manager_ptr); CHKERRQ(ierr);
+  ierr = mesh_manager_ptr->getCubitMeshsetPtr(ms_id,NODESET,&cubit_meshset_ptr); CHKERRQ(ierr);
   ierr = cubit_meshset_ptr->getBcDataStructure(mapForce[ms_id].data); CHKERRQ(ierr);
   rval = mField.get_moab().get_entities_by_type(cubit_meshset_ptr->meshset,MBTRI,mapForce[ms_id].tRis,true); CHKERRQ_MOAB(rval);
   PetscFunctionReturn(0);
 }
 
 PetscErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::addPreassure(int ms_id) {
-  PetscFunctionBegin;
-  PetscErrorCode ierr;
+  MeshsetsManager *mesh_manager_ptr;
   const CubitMeshSets *cubit_meshset_ptr;
-  ierr = mField.get_cubit_msId(ms_id,SIDESET,&cubit_meshset_ptr); CHKERRQ(ierr);
+  PetscErrorCode ierr;
+  PetscFunctionBegin;
+  ierr = mField.query_interface(mesh_manager_ptr); CHKERRQ(ierr);
+  ierr = mesh_manager_ptr->getCubitMeshsetPtr(ms_id,SIDESET,&cubit_meshset_ptr); CHKERRQ(ierr);
   ierr = cubit_meshset_ptr->getBcDataStructure(mapPreassure[ms_id].data); CHKERRQ(ierr);
   rval = mField.get_moab().get_entities_by_type(cubit_meshset_ptr->meshset,MBTRI,mapPreassure[ms_id].tRis,true); CHKERRQ_MOAB(rval);
   PetscFunctionReturn(0);

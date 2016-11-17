@@ -64,6 +64,7 @@ extern "C" {
 #include <UltraWeakTransportElement.hpp>
 #include <MagneticElement.hpp>
 #include <VolumeCalculation.hpp>
+#include <AnalyticalDirichlet.hpp>
 #ifdef WITH_ADOL_C
 #endif
 
