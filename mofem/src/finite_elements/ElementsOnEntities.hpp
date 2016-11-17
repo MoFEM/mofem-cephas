@@ -496,6 +496,12 @@ struct ForcesAndSurcesCore: public FEMethod {
      */
     inline const NumeredEntFiniteElement* getNumeredEntFiniteElementPtr() const { return ptrFE->numeredEntFiniteElementPtr; };
 
+    /**
+     * \brief Return finite element entity handle
+     * @return Finite element entity handle
+     */
+    inline EntityHandle getFEEntityHandle() { return getNumeredEntFiniteElementPtr()->getEnt(); }
+
     /** \brief Get row indices
 
     Field could be or not declared for this element but is declared for problem
