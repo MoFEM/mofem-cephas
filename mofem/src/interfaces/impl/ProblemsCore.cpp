@@ -61,6 +61,15 @@ struct __attribute__ ((__packed__)) IdxDataType {
   }
 };
 
+bool Core::check_problem(const string name) {
+  MoFEMProblem_multiIndex::index<Problem_mi_tag>::type::iterator pit;
+  pit = pRoblems.get<Problem_mi_tag>().find(name);
+  if(pit==pRoblems.get<Problem_mi_tag>().end()) {
+    return false;
+  }
+  return true;
+}
+
 PetscErrorCode Core::add_problem(const BitProblemId id,const std::string& name) {
   PetscFunctionBegin;
   EntityHandle meshset;

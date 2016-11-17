@@ -401,6 +401,7 @@ struct Core: public Interface {
   //problem
   PetscErrorCode add_problem(const BitProblemId id,const std::string& name);
   PetscErrorCode add_problem(const std::string& name,enum MoFEMTypes bh = MF_EXCL,int verb = -1);
+  bool check_problem(const std::string name);
   PetscErrorCode delete_problem(const std::string name);
   PetscErrorCode modify_problem_add_finite_element(const std::string &name_problem,const std::string &MoFEMFiniteElement_name);
   PetscErrorCode modify_problem_unset_finite_element(const std::string &name_problem,const std::string &MoFEMFiniteElement_name);

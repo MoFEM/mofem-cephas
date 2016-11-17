@@ -1147,6 +1147,13 @@ struct Interface: public UnknownInterface {
    */
   virtual PetscErrorCode add_problem(const std::string& name,enum MoFEMTypes bh = MF_EXCL,int verb = -1) = 0;
 
+  /**
+   * \brief check if problem exist
+   * @param  name problem name
+   * @return      true if problem is in database
+   */
+  virtual bool check_problem(const std::string name) = 0;
+
   /** \brief Delete problem
   * \ingroup mofem_problems
   */
