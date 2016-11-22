@@ -32,7 +32,18 @@ PetscErrorCode DMRegister_MoFEM(const char sname[]);
   * \brief Must be called by user to set MoFEM data structures
   * \ingroup dm
   */
-PetscErrorCode DMMoFEMCreateMoFEM(DM dm,MoFEM::Interface *m_field_ptr,const char problem_name[],const MoFEM::BitRefLevel &bit_level);
+PetscErrorCode DMMoFEMCreateMoFEM(
+  DM dm,
+  MoFEM::Interface *m_field_ptr,
+  const char problem_name[],
+  const MoFEM::BitRefLevel &bit_level
+);
+
+/**
+  * \brief Must be called by user to set Sub DM MoFEM data structures
+  * \ingroup dm
+  */
+PetscErrorCode DMMoFEMCreateSubDM(DM subdm,DM dm,const char problem_name[]);
 
 /**
  * \brief Get pointer to MoFEM::Interface
@@ -368,6 +379,24 @@ PetscErrorCode DMCreateMatrix_MoFEM(DM dm,Mat *M);
 PetscErrorCode DMSetUp_MoFEM(DM dm);
 
 /**
+  * Sets up the MoFEM structures inside a DM object for sub dm
+  * \ingroup dm
+ */
+PetscErrorCode DMSubDMSetUp_MoFEM(DM subdm);
+
+/**
+  * Add field to sub dm problem on rows
+  * \ingroup dm
+ */
+PetscErrorCode DMMoFEMAddSubFieldRow(DM dm,const char field_name[]);
+
+/**
+  * Add field to sub dm problem on columns
+  * \ingroup dm
+ */
+PetscErrorCode DMMoFEMAddSubFieldCol(DM dm,const char field_name[]);
+
+/**
   * destroy the MoFEM structure
   * \ingroup dm
   */
@@ -446,16 +475,22 @@ namespace MoFEM {
     //options
     PetscBool isPartitioned;		///< true if read mesh is on parts
     PetscBool isSquareMatrix;		///< true if rows equals to cols
-    PetscInt verbosity;			    ///< verbosity
 
     int rAnk,sIze;
 
     //pointer to data structures
     const MoFEMProblem *problemPtr;	  ///< pinter to problem data structure
 
+    // sub problem
+    bool isSubDM;
+    std::vector<std::string> rowFields;
+    std::vector<std::string> colFields;
+    const MoFEMProblem *problemMainOfSubPtr;	  ///< pinter to main problem to sub-problem
+
     DMCtx();
     virtual ~DMCtx();
 
+    PetscInt verbosity;			    ///< verbosity
     int referenceNumber;
 
   };

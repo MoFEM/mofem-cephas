@@ -1393,7 +1393,9 @@ struct Interface: public UnknownInterface {
    function has to call this function.
 
    */
-  virtual PetscErrorCode build_problem_on_partitioned_mesh(MoFEMProblem *problem_ptr,bool square_matrix = true,int verb = -1) = 0;
+  virtual PetscErrorCode build_problem_on_partitioned_mesh(
+    MoFEMProblem *problem_ptr,const bool square_matrix = true,int verb = -1
+  ) = 0;
 
   /** \brief build problem data structures, assuming that mesh is distributed (collective)
    * \ingroup mofem_problems
@@ -1405,7 +1407,9 @@ struct Interface: public UnknownInterface {
    function has to call this function.
 
    */
-  virtual PetscErrorCode build_problem_on_distributed_mesh(const std::string &name,bool square_matrix = true,int verb = -1) = 0;
+  virtual PetscErrorCode build_problem_on_distributed_mesh(
+    const std::string &name,const bool square_matrix = true,int verb = -1
+  ) = 0;
 
   /** \brief build problem data structures, assuming that mesh is distributed (collective)
    * \ingroup mofem_problems
@@ -1417,7 +1421,11 @@ struct Interface: public UnknownInterface {
    function has to call this function.
 
    */
-  virtual PetscErrorCode build_problem_on_distributed_mesh(MoFEMProblem *problem_ptr,bool square_matrix = true,int verb = -1) = 0;
+  virtual PetscErrorCode build_problem_on_distributed_mesh(
+    MoFEMProblem *problem_ptr,
+    const bool square_matrix = true,
+    int verb = -1
+  ) = 0;
 
   /** \brief build problem data structures, assuming that mesh is distributed (collective)
    * \ingroup mofem_problems
@@ -1444,7 +1452,9 @@ struct Interface: public UnknownInterface {
    * @param  verb        Verbosity level
    * @return             Error code
    */
-  virtual PetscErrorCode partition_mesh(Range &ents,int dim,int adj_dim,int n_parts,int verb = -1) = 0;
+  virtual PetscErrorCode partition_mesh(
+    const Range &ents,const int dim,const int adj_dim,const int n_parts,int verb = -1
+  ) = 0;
 
   /** \brief partition problem dofs
    * \ingroup mofem_problems
@@ -1474,9 +1484,30 @@ struct Interface: public UnknownInterface {
     *
     */
   virtual PetscErrorCode partition_compose_problem(
-    const std::string &name,const std::string &problem_for_rows,bool copy_rows,const std::string &problem_for_cols,bool copy_cols,int verb = -1
+    const std::string &name,
+    const std::string &problem_for_rows,
+    const bool copy_rows,
+    const std::string &problem_for_cols,
+    const bool copy_cols,
+    int verb = -1
   ) = 0;
 
+  /**
+   * \brief build sub problem
+   * @param  out_name problem
+   * @param  fields_row  vector of fields composing problem
+   * @param  fields_col  vector of fields composing problem
+   * @param  main_problem main problem
+   * @return              error code
+   */
+  virtual PetscErrorCode build_sub_problem(
+    const std::string &out_name,
+    const std::vector<std::string> &fields_row,
+    const std::vector<std::string> &fields_col,
+    const std::string &main_problem,
+    const bool square_matrix = true,
+    int verb = -1
+  ) = 0;
 
   /** \brief determine ghost nodes
    * \ingroup mofem_field
