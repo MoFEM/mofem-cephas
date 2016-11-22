@@ -1474,9 +1474,29 @@ struct Interface: public UnknownInterface {
     *
     */
   virtual PetscErrorCode partition_compose_problem(
-    const std::string &name,const std::string &problem_for_rows,bool copy_rows,const std::string &problem_for_cols,bool copy_cols,int verb = -1
+    const std::string &name,
+    const std::string &problem_for_rows,
+    bool copy_rows,
+    const std::string &problem_for_cols,
+    bool copy_cols,
+    int verb = -1
   ) = 0;
 
+  /**
+   * \brief build sub problem
+   * @param  out_name problem
+   * @param  fields_row  vector of fields composing problem
+   * @param  fields_col  vector of fields composing problem
+   * @param  main_problem main problem
+   * @return              error code
+   */
+  virtual PetscErrorCode build_sub_problem(
+    const std::string &out_name,
+    const std::vector<std::string> &fields_row,
+    const std::vector<std::string> &fields_col,
+    const std::string &main_problem,
+    int verb = -1
+  ) = 0;
 
   /** \brief determine ghost nodes
    * \ingroup mofem_field

@@ -444,7 +444,21 @@ struct Core: public Interface {
   PetscErrorCode clear_problems(int verb = -1);
   PetscErrorCode partition_simple_problem(const std::string &name,int verb = -1);
   PetscErrorCode partition_problem(const std::string &name,int verb = -1);
-  PetscErrorCode partition_compose_problem(const std::string &name,const std::string &problem_for_rows,bool copy_rows,const std::string &problem_for_cols,bool copy_cols,int verb = -1);
+  PetscErrorCode partition_compose_problem(
+    const std::string &name,
+    const std::string &problem_for_rows,
+    bool copy_rows,
+    const std::string &problem_for_cols,
+    bool copy_cols,
+    int verb = -1
+  );
+  PetscErrorCode build_sub_problem(
+    const std::string &out_name,
+    const std::vector<std::string> &fields_row,
+    const std::vector<std::string> &fields_col,
+    const std::string &main_problem,
+    int verb = -1
+  );
   PetscErrorCode partition_ghost_dofs(const std::string &name,int verb = -1);
   PetscErrorCode partition_finite_elements(const std::string &name,bool part_from_moab = false,int low_proc = -1,int hi_proc = -1,int verb = -1);
   PetscErrorCode partition_check_matrix_fill_in(const std::string &problem_neme,int row,int col,int verb);
