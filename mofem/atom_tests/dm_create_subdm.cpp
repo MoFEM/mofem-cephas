@@ -69,7 +69,7 @@ int main(int argc, char *argv[]) {
     const char *option;
     option = "PARALLEL=BCAST_DELETE;PARALLEL_RESOLVE_SHARED_ENTS;PARTITION=PARALLEL_PARTITION;";
     rval = moab.load_file(mesh_file_name, 0, option); CHKERRQ_MOAB(rval);
-    
+
     MoFEM::Core core(moab);
     MoFEM::Interface& m_field = core;
 
@@ -137,6 +137,7 @@ int main(int argc, char *argv[]) {
     ierr = m_field.partition_check_matrix_fill_in(dm_name,-1,-1,1); CHKERRQ(ierr);
 
     ierr = DMMoFEMCreateSubDM(subdm0,dm,"SUB0"); CHKERRQ(ierr);
+    ierr = DMMoFEMSetSquareProblem(subdm0,PETSC_TRUE); CHKERRQ(ierr);
     ierr = DMMoFEMAddElement(subdm0,"FE00"); CHKERRQ(ierr);
     ierr = DMMoFEMAddSubFieldRow(subdm0,"FIELD0"); CHKERRQ(ierr);
     ierr = DMMoFEMAddSubFieldCol(subdm0,"FIELD0"); CHKERRQ(ierr);
@@ -144,6 +145,7 @@ int main(int argc, char *argv[]) {
     ierr = m_field.partition_check_matrix_fill_in("SUB0",-1,-1,1); CHKERRQ(ierr);
 
     ierr = DMMoFEMCreateSubDM(subdm1,dm,"SUB1"); CHKERRQ(ierr);
+    ierr = DMMoFEMSetSquareProblem(subdm1,PETSC_FALSE); CHKERRQ(ierr);
     ierr = DMMoFEMAddElement(subdm1,"FE01"); CHKERRQ(ierr);
     ierr = DMMoFEMAddSubFieldRow(subdm1,"FIELD0"); CHKERRQ(ierr);
     ierr = DMMoFEMAddSubFieldCol(subdm1,"FIELD1"); CHKERRQ(ierr);

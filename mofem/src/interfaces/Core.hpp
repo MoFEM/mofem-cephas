@@ -432,11 +432,19 @@ struct Core: public Interface {
   PetscErrorCode list_adjacencies() const;
 
   //problem building
-  PetscErrorCode build_problem_on_partitioned_mesh(MoFEMProblem *problem_ptr,bool square_matrix = true,int verb = -1);
+  PetscErrorCode build_problem_on_partitioned_mesh(
+    MoFEMProblem *problem_ptr,const bool square_matrix = true,int verb = -1
+  );
   PetscErrorCode build_problem_on_distributed_mesh(int verb = -1);
-  PetscErrorCode build_problem_on_distributed_mesh(const std::string &name,bool square_matrix = true,int verb = -1);
-  PetscErrorCode build_problem_on_distributed_mesh(MoFEMProblem *problem_ptr,bool square_matrix = true,int verb = -1);
-  PetscErrorCode partition_mesh(Range &ents,int dim,int adj_dim,int n_parts,int verb = -1);
+  PetscErrorCode build_problem_on_distributed_mesh(
+    const std::string &name,const bool square_matrix = true,int verb = -1
+  );
+  PetscErrorCode build_problem_on_distributed_mesh(
+    MoFEMProblem *problem_ptr,const bool square_matrix = true,int verb = -1
+  );
+  PetscErrorCode partition_mesh(
+    const Range &ents,const int dim,const int adj_dim,const int n_parts,int verb = -1
+  );
   PetscErrorCode build_problem(const std::string &name,int verb = -1);
   PetscErrorCode clear_problem(const std::string &name,int verb = -1);
   PetscErrorCode build_problem(MoFEMProblem *problem_ptr,int verb = -1);
@@ -447,9 +455,9 @@ struct Core: public Interface {
   PetscErrorCode partition_compose_problem(
     const std::string &name,
     const std::string &problem_for_rows,
-    bool copy_rows,
+    const bool copy_rows,
     const std::string &problem_for_cols,
-    bool copy_cols,
+    const bool copy_cols,
     int verb = -1
   );
   PetscErrorCode build_sub_problem(
@@ -457,6 +465,7 @@ struct Core: public Interface {
     const std::vector<std::string> &fields_row,
     const std::vector<std::string> &fields_col,
     const std::string &main_problem,
+    const bool square_matrix = true,
     int verb = -1
   );
   PetscErrorCode partition_ghost_dofs(const std::string &name,int verb = -1);

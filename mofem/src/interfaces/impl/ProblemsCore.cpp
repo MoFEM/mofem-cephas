@@ -214,7 +214,9 @@ PetscErrorCode Core::modify_problem_dof_mask_ref_level_set_bit(const std::string
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode Core::build_problem_on_partitioned_mesh(MoFEMProblem *problem_ptr,bool square_matrix,int verb) {
+PetscErrorCode Core::build_problem_on_partitioned_mesh(
+  MoFEMProblem *problem_ptr,const bool square_matrix,int verb
+) {
   PetscFunctionBegin;
 
   SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not yet implemented");
@@ -231,7 +233,9 @@ PetscErrorCode Core::build_problem_on_partitioned_mesh(MoFEMProblem *problem_ptr
 }
 
 
-PetscErrorCode Core::build_problem_on_distributed_mesh(const std::string &name,bool square_matrix,int verb) {
+PetscErrorCode Core::build_problem_on_distributed_mesh(
+  const std::string &name,const bool square_matrix,int verb
+) {
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
   if(!((*buildMoFEM)&BUILD_FIELD)) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"fields not build");
@@ -244,7 +248,9 @@ PetscErrorCode Core::build_problem_on_distributed_mesh(const std::string &name,b
   *buildMoFEM |= PARTITION_PROBLEM;
   PetscFunctionReturn(0);
 }
-PetscErrorCode Core::build_problem_on_distributed_mesh(MoFEMProblem *problem_ptr,bool square_matrix,int verb) {
+PetscErrorCode Core::build_problem_on_distributed_mesh(
+  MoFEMProblem *problem_ptr,const bool square_matrix,int verb
+) {
   PetscFunctionBegin;
   PetscLogEventBegin(USER_EVENT_buildProblem,0,0,0,0);
 
@@ -707,7 +713,9 @@ PetscErrorCode Core::build_problem_on_distributed_mesh(int verb) {
   }
   PetscFunctionReturn(0);
 }
-PetscErrorCode Core::partition_mesh(Range &ents,int dim,int adj_dim,int n_parts,int verb) {
+PetscErrorCode Core::partition_mesh(
+  const Range &ents,const int dim,const int adj_dim,const int n_parts,int verb
+) {
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
 
@@ -1121,8 +1129,10 @@ PetscErrorCode Core::partition_simple_problem(const std::string &name,int verb) 
   MoFEMProblem_multiIndex_by_name::iterator p_miit = pRoblems_set.find(name);
   if(p_miit==pRoblems_set.end()) SETERRQ1(PETSC_COMM_SELF,1,"problem < %s > is not found (top tip: check spelling)",name.c_str());
   typedef boost::multi_index::index<NumeredDofEntity_multiIndex,Idx_mi_tag>::type NumeredDofEntitys_by_idx;
-  NumeredDofEntitys_by_idx &dofs_row_by_idx = const_cast<NumeredDofEntitys_by_idx&>(p_miit->numered_dofs_rows->get<Idx_mi_tag>());
-  NumeredDofEntitys_by_idx &dofs_col_by_idx = const_cast<NumeredDofEntitys_by_idx&>(p_miit->numered_dofs_cols->get<Idx_mi_tag>());
+  NumeredDofEntitys_by_idx &dofs_row_by_idx = const_cast<NumeredDofEntitys_by_idx&>
+  (p_miit->numered_dofs_rows->get<Idx_mi_tag>());
+  NumeredDofEntitys_by_idx &dofs_col_by_idx = const_cast<NumeredDofEntitys_by_idx&>
+  (p_miit->numered_dofs_cols->get<Idx_mi_tag>());
   boost::multi_index::index<NumeredDofEntity_multiIndex,Idx_mi_tag>::type::iterator miit_row,hi_miit_row;
   boost::multi_index::index<NumeredDofEntity_multiIndex,Idx_mi_tag>::type::iterator miit_col,hi_miit_col;
   DofIdx &nb_row_local_dofs = *((DofIdx*)p_miit->tag_local_nbdof_data_row);
@@ -1343,6 +1353,7 @@ PetscErrorCode Core::build_sub_problem(
   const std::vector<std::string> &fields_row,
   const std::vector<std::string> &fields_col,
   const std::string &main_problem,
+  const bool square_matrix,
   int verb
 ) {
   PetscFunctionBegin;
@@ -1399,7 +1410,7 @@ PetscErrorCode Core::build_sub_problem(
   std::vector<std::string> fields[] = { fields_row,fields_col };
 
   // Loop over rows and columns
-  for(int ss = 0;ss!=2;ss++) {
+  for(int ss = 0;ss!=(square_matrix ? 1 : 2);ss++) {
 
     // reset dofs and colimns counters
     (*nb_local_dofs[ss]) = 0;
@@ -1502,6 +1513,15 @@ PetscErrorCode Core::build_sub_problem(
       }
       ierr = AODestroy(&ao); CHKERRQ(ierr);
     }
+  }
+
+  if(square_matrix) {
+
+    const_cast<MoFEMProblem*>(&*out_problem_it)->numered_dofs_cols =
+    out_problem_it->numered_dofs_rows;
+
+    *(out_problem_it->tag_local_nbdof_data_col) = *(out_problem_it->tag_local_nbdof_data_row);
+    *(out_problem_it->tag_nbdof_data_col) = *(out_problem_it->tag_nbdof_data_row);
   }
 
   ierr = printPartitionedProblem(&*out_problem_it,verb); CHKERRQ(ierr);
@@ -2017,20 +2037,24 @@ PetscErrorCode Core::loop_dofs(
 ) {
   PetscFunctionBegin;
   SET_BASIC_METHOD(method,&*problem_ptr);
-  typedef NumeredDofEntity_multiIndex::index<Composite_Name_And_Part_mi_tag>::type numerd_dofs;
-  numerd_dofs *dofs;
+  typedef NumeredDofEntity_multiIndex::index<Composite_Name_And_Part_mi_tag>::type NumeredDofsByNameAndPart;
+  NumeredDofsByNameAndPart *dofs;
   switch (rc) {
     case ROW:
-      dofs = const_cast<numerd_dofs*>(&problem_ptr->numered_dofs_rows->get<Composite_Name_And_Part_mi_tag>());
+      dofs = const_cast<NumeredDofsByNameAndPart*>(
+        &problem_ptr->numered_dofs_rows->get<Composite_Name_And_Part_mi_tag>()
+      );
       break;
     case COL:
-      dofs = const_cast<numerd_dofs*>(&problem_ptr->numered_dofs_cols->get<Composite_Name_And_Part_mi_tag>());
+      dofs = const_cast<NumeredDofsByNameAndPart*>(
+        &problem_ptr->numered_dofs_cols->get<Composite_Name_And_Part_mi_tag>()
+      );
       break;
     default:
      SETERRQ(comm,MOFEM_DATA_INCONSISTENCY,"not implemented");
   }
-  numerd_dofs::iterator miit = dofs->lower_bound(boost::make_tuple(field_name,lower_rank));
-  numerd_dofs::iterator hi_miit = dofs->upper_bound(boost::make_tuple(field_name,upper_rank));
+  NumeredDofsByNameAndPart::iterator miit = dofs->lower_bound(boost::make_tuple(field_name,lower_rank));
+  NumeredDofsByNameAndPart::iterator hi_miit = dofs->upper_bound(boost::make_tuple(field_name,upper_rank));
   ierr = method.preProcess(); CHKERRQ(ierr);
   for(;miit!=hi_miit;miit++) {
     method.dofPtr = &(*(*miit)->getDofEntityPtr());

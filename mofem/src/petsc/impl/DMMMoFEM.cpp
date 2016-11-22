@@ -635,7 +635,8 @@ PetscErrorCode DMSubDMSetUp_MoFEM(DM subdm) {
     subdm_field->problemName,
     subdm_field->rowFields,
     subdm_field->colFields,
-    subdm_field->problemMainOfSubPtr->getName()
+    subdm_field->problemMainOfSubPtr->getName(),
+    subdm_field->isSquareMatrix
   ); CHKERRQ(ierr);
 
   // partition problem
