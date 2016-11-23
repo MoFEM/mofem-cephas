@@ -25,6 +25,8 @@ using namespace MoFEM;
 
 static char help[] = "...\n\n";
 
+static const bool debug = false;
+
 int main(int argc, char *argv[]) {
 
     ErrorCode rval;
@@ -32,6 +34,8 @@ int main(int argc, char *argv[]) {
 
     //initialize petsc
     PetscInitialize(&argc,&argv,(char *)0,help);
+
+    try {
 
     PetscBool flg = PETSC_TRUE;
     char mesh_file_name[255];
@@ -138,11 +142,19 @@ int main(int argc, char *argv[]) {
 
     ierr = DMMoFEMCreateSubDM(subdm0,dm,"SUB0"); CHKERRQ(ierr);
     ierr = DMMoFEMSetSquareProblem(subdm0,PETSC_TRUE); CHKERRQ(ierr);
-    ierr = DMMoFEMAddElement(subdm0,"FE00"); CHKERRQ(ierr);
-    ierr = DMMoFEMAddSubFieldRow(subdm0,"FIELD0"); CHKERRQ(ierr);
-    ierr = DMMoFEMAddSubFieldCol(subdm0,"FIELD0"); CHKERRQ(ierr);
+    ierr = DMMoFEMAddElement(subdm0,"FE11"); CHKERRQ(ierr);
+    ierr = DMMoFEMAddSubFieldRow(subdm0,"FIELD1"); CHKERRQ(ierr);
+    ierr = DMMoFEMAddSubFieldCol(subdm0,"FIELD1"); CHKERRQ(ierr);
     ierr = DMSetUp(subdm0); CHKERRQ(ierr);
     ierr = m_field.partition_check_matrix_fill_in("SUB0",-1,-1,1); CHKERRQ(ierr);
+    if(debug) {
+      Mat A;
+      ierr = DMCreateMatrix(subdm0,&A); CHKERRQ(ierr);
+      MatView(A,PETSC_VIEWER_DRAW_WORLD);
+      std::string wait;
+      std::cin >> wait;
+      ierr = MatDestroy(&A); CHKERRQ(ierr);
+    }
 
     ierr = DMMoFEMCreateSubDM(subdm1,dm,"SUB1"); CHKERRQ(ierr);
     ierr = DMMoFEMSetSquareProblem(subdm1,PETSC_FALSE); CHKERRQ(ierr);
@@ -152,11 +164,25 @@ int main(int argc, char *argv[]) {
     ierr = DMSetUp(subdm1); CHKERRQ(ierr);
     ierr = m_field.partition_check_matrix_fill_in("SUB1",-1,-1,1); CHKERRQ(ierr);
 
+    if(debug) {
+      Mat B;
+      ierr = DMCreateMatrix(subdm1,&B); CHKERRQ(ierr);
+      MatView(B,PETSC_VIEWER_DRAW_WORLD);
+      std::string wait;
+      std::cin >> wait;
+      ierr = MatDestroy(&B); CHKERRQ(ierr);
+    }
+
+
     //destry dm
     ierr = DMDestroy(&dm); CHKERRQ(ierr);
     ierr = DMDestroy(&subdm0); CHKERRQ(ierr);
     ierr = DMDestroy(&subdm1); CHKERRQ(ierr);
 
+    } catch (MoFEMException const &e) {
+      SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
+    }
+    
     //finish work cleaning memory, getting statistics, ect.
     ierr = PetscFinalize(); CHKERRQ(ierr);
 

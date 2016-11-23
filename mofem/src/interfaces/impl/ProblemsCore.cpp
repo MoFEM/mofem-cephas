@@ -228,7 +228,6 @@ PetscErrorCode Core::build_problem_on_partitioned_mesh(
   //zero finite elements
   ProblemClearNumeredFiniteElementsChange().operator()(*problem_ptr);
 
-
   PetscFunctionReturn(0);
 }
 
@@ -1406,8 +1405,17 @@ PetscErrorCode Core::build_sub_problem(
     out_problem_it->tag_nbdof_data_col
   };
 
+  // set number of ghost nodes to zero
+  {
+    *out_problem_it->tag_ghost_nbdof_data_row = 0;
+    *out_problem_it->tag_ghost_nbdof_data_col = 0;
+  }
+
   // put rows & columns field names in array
   std::vector<std::string> fields[] = { fields_row,fields_col };
+
+  const_cast<MoFEMProblem*>(&*out_problem_it)->subProblemData
+  = boost::shared_ptr<MoFEMProblem::SubProblemData>(new MoFEMProblem::SubProblemData());
 
   // Loop over rows and columns
   for(int ss = 0;ss!=(square_matrix ? 1 : 2);ss++) {
@@ -1417,6 +1425,8 @@ PetscErrorCode Core::build_sub_problem(
     (*nb_dofs[ss]) = 0;
     // clear arrays
     out_problem_dofs[ss]->clear();
+
+    int mofem_dof_idx = 0;
 
     // get dofs by field name and insert them in out problem multi-indices
     for(
@@ -1433,7 +1443,7 @@ PetscErrorCode Core::build_sub_problem(
         bool success = out_problem_dofs[ss]->modify(
           p.first,NumeredDofEntity_mofem_part_and_all_index_change(
             dit->get()->getPart(),
-            dit->get()->getPetscLocalDofIdx(),
+            mofem_dof_idx++,
             dit->get()->getPetscGlobalDofIdx(),
             dit->get()->getPetscLocalDofIdx()
           )
@@ -1472,6 +1482,15 @@ PetscErrorCode Core::build_sub_problem(
       // create map form main problem global indices to out problem global indices
       AO ao;
       ierr = AOCreateMappingIS(is,PETSC_NULL,&ao); CHKERRQ(ierr);
+      if(ss == 0) {
+        ierr = ISDuplicate(is,&(out_problem_it->getSubData()->rowIs));
+        out_problem_it->getSubData()->rowMap = ao;
+        ierr = PetscObjectReference((PetscObject)ao); CHKERRQ(ierr);
+      } else {
+        ierr = ISDuplicate(is,&(out_problem_it->getSubData()->colIs));
+        out_problem_it->getSubData()->colMap = ao;
+        ierr = PetscObjectReference((PetscObject)ao); CHKERRQ(ierr);
+      }
       ierr = AOApplicationToPetscIS(ao,is); CHKERRQ(ierr);
       // set global number of DOFs
       ierr = ISGetSize(is,nb_dofs[ss]); CHKERRQ(ierr);
@@ -1482,7 +1501,7 @@ PetscErrorCode Core::build_sub_problem(
         bool success = out_problem_dofs[ss]->modify(
           out_problem_dofs[ss]->project<0>(dit),
           NumeredDofEntity_mofem_part_and_all_index_change(
-            dit->get()->getPart(),*it,*it,dit->get()->getPetscLocalDofIdx()
+            dit->get()->getPart(),dit->get()->getDofIdx(),*it,dit->get()->getPetscLocalDofIdx()
           )
         );
       }
@@ -1506,7 +1525,7 @@ PetscErrorCode Core::build_sub_problem(
           bool success = out_problem_dofs[ss]->modify(
             out_problem_dofs[ss]->project<0>(dit),
             NumeredDofEntity_mofem_part_and_all_index_change(
-              dit->get()->getPart(),*it,*it,dit->get()->getPetscLocalDofIdx()
+              dit->get()->getPart(),dit->get()->getDofIdx(),*it,dit->get()->getPetscLocalDofIdx()
             )
           );
         }
@@ -1516,12 +1535,14 @@ PetscErrorCode Core::build_sub_problem(
   }
 
   if(square_matrix) {
-
     const_cast<MoFEMProblem*>(&*out_problem_it)->numered_dofs_cols =
     out_problem_it->numered_dofs_rows;
-
     *(out_problem_it->tag_local_nbdof_data_col) = *(out_problem_it->tag_local_nbdof_data_row);
     *(out_problem_it->tag_nbdof_data_col) = *(out_problem_it->tag_nbdof_data_row);
+    out_problem_it->getSubData()->colIs = out_problem_it->getSubData()->rowIs;
+    out_problem_it->getSubData()->colMap = out_problem_it->getSubData()->rowMap;
+    ierr = PetscObjectReference((PetscObject)out_problem_it->getSubData()->rowIs); CHKERRQ(ierr);
+    ierr = PetscObjectReference((PetscObject)out_problem_it->getSubData()->rowMap); CHKERRQ(ierr);
   }
 
   ierr = printPartitionedProblem(&*out_problem_it,verb); CHKERRQ(ierr);
@@ -1543,21 +1564,21 @@ PetscErrorCode Core::printPartitionedProblem(const MoFEMProblem *problem_ptr,int
     PetscSynchronizedFlush(comm,PETSC_STDOUT);
   }
   if(verb>1) {
-    std::ostringstream ss;
-    ss << "rank = " << rAnk << " FEs row dofs "<< *problem_ptr << " Nb. row dof " << problem_ptr->getNbDofsRow()
+    // std::ostringstream ss;
+    std::cout << "rank = " << rAnk << " FEs row dofs "<< *problem_ptr << " Nb. row dof " << problem_ptr->getNbDofsRow()
     << " Nb. local dof " << problem_ptr->getNbLocalDofsRow() << std::endl;
     NumeredDofEntity_multiIndex::iterator miit_dd_row = problem_ptr->numered_dofs_rows->begin();
     for(;miit_dd_row!=problem_ptr->numered_dofs_rows->end();miit_dd_row++) {
-      ss<<*miit_dd_row<<std::endl;
+      std::cout<<**miit_dd_row<<std::endl;
     }
-    ss << "rank = " << rAnk << " FEs col dofs "<< *problem_ptr << " Nb. col dof " << problem_ptr->getNbDofsCol()
+    std::cout << "rank = " << rAnk << " FEs col dofs "<< *problem_ptr << " Nb. col dof " << problem_ptr->getNbDofsCol()
     << " Nb. local dof " << problem_ptr->getNbLocalDofsCol() << std::endl;
     NumeredDofEntity_multiIndex::iterator miit_dd_col = problem_ptr->numered_dofs_cols->begin();
     for(;miit_dd_col!=problem_ptr->numered_dofs_cols->end();miit_dd_col++) {
-      ss<<*miit_dd_col<<std::endl;
+      std::cout<<**miit_dd_col<<std::endl;
     }
-    PetscSynchronizedPrintf(comm,ss.str().c_str());
-    PetscSynchronizedFlush(comm,PETSC_STDOUT);
+    // PetscSynchronizedPrintf(comm,ss.str().c_str());
+    // PetscSynchronizedFlush(comm,PETSC_STDOUT);
   }
   PetscFunctionReturn(0);
 }

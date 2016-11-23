@@ -50,6 +50,41 @@ struct MoFEMProblem {
   NumeredEntFiniteElement_multiIndex numeredFiniteElements;
 
   /**
+   * \brief Subproblem problem data
+   */
+  struct SubProblemData {
+    IS rowIs; ///< indices of main problem of which sub problem is this
+    IS colIs; ///< indices of main problem of which sub problem is this
+    AO rowMap; ///< mapping form main problem indices to sub-problem indices
+    AO colMap;
+    SubProblemData():
+    rowIs(PETSC_NULL),
+    colIs(PETSC_NULL),
+    rowMap(PETSC_NULL),
+    colMap(PETSC_NULL) {}
+    ~SubProblemData() {
+      int flg;
+      MPI_Finalized(&flg);
+      if(!flg) {
+        ISDestroy(&rowIs);
+        ISDestroy(&colIs);
+        AODestroy(&rowMap);
+        AODestroy(&colMap);
+      }
+    }
+  };
+
+  boost::shared_ptr<SubProblemData> subProblemData;
+
+  /**
+   * \brief Get main problem of sub-problem is
+   * @return    sub problem data structure
+   */
+  inline boost::shared_ptr<SubProblemData> getSubData() const {
+    return subProblemData;
+  }
+
+  /**
    * \brief get dof from problem
    *
    * Note that \e ent_dof_idx is not coefficient number, is local number of dof on
@@ -426,6 +461,9 @@ struct MoFEMProblem {
   }
 
   MoFEMProblem(Interface &moab,const EntityHandle _meshset);
+
+  virtual ~MoFEMProblem();
+
   inline BitProblemId getId() const { return *((BitProblemId*)tag_id_data); }
 
   inline std::string getName() const { return std::string((char *)tag_name_data,tag_name_size); }

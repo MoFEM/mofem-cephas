@@ -30,6 +30,8 @@ int main(int argc, char *argv[]) {
 
   PetscInitialize(&argc,&argv,(char *)0,help);
 
+  try {
+
   moab::Core mb_instance;
   moab::Interface& moab = mb_instance;
   ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
@@ -342,6 +344,11 @@ int main(int argc, char *argv[]) {
   fe2.getOpPtrVector().push_back(new MyOp2(my_split,ForcesAndSurcesCore::UserDataOperator::OPCOL));
   fe2.getOpPtrVector().push_back(new MyOp2(my_split,ForcesAndSurcesCore::UserDataOperator::OPROWCOL));
   ierr = m_field.loop_finite_elements("TEST_PROBLEM","TEST_FE2",fe2);  CHKERRQ(ierr);
+
+
+  } catch (MoFEMException const &e) {
+    SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
+  }
 
   ierr = PetscFinalize(); CHKERRQ(ierr);
 

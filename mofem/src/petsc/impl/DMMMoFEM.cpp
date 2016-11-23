@@ -612,14 +612,15 @@ PetscErrorCode DMSetUp_MoFEM(DM dm) {
     ierr = dm_field->mField_ptr->partition_finite_elements(
       dm_field->problemName,true,0,dm_field->sIze,1
     ); CHKERRQ(ierr);
-    dm_field->isProblemBuild = PETSC_TRUE;
   } else {
     ierr = dm_field->mField_ptr->build_problem(dm_field->problemName); CHKERRQ(ierr);
     ierr = dm_field->mField_ptr->partition_problem(dm_field->problemName); CHKERRQ(ierr);
     ierr = dm_field->mField_ptr->partition_finite_elements(dm_field->problemName); CHKERRQ(ierr);
-    dm_field->isProblemBuild = PETSC_TRUE;
   }
   ierr = dm_field->mField_ptr->partition_ghost_dofs(dm_field->problemName); CHKERRQ(ierr);
+
+  dm_field->isProblemBuild = PETSC_TRUE;
+
   PetscFunctionReturn(0);
 }
 
@@ -645,13 +646,13 @@ PetscErrorCode DMSubDMSetUp_MoFEM(DM subdm) {
     ierr = subdm_field->mField_ptr->partition_finite_elements(
       subdm_field->problemName,true,0,subdm_field->sIze,1
     ); CHKERRQ(ierr);
-    subdm_field->isProblemBuild = PETSC_TRUE;
   } else {
     ierr = subdm_field->mField_ptr->partition_finite_elements(subdm_field->problemName); CHKERRQ(ierr);
-    subdm_field->isProblemBuild = PETSC_TRUE;
   }
   // set ghost nodes
   ierr = subdm_field->mField_ptr->partition_ghost_dofs(subdm_field->problemName); CHKERRQ(ierr);
+
+  subdm_field->isProblemBuild = PETSC_TRUE;
 
   PetscFunctionReturn(0);
 }

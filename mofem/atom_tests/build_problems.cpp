@@ -32,6 +32,8 @@ int main(int argc, char *argv[]) {
 
   PetscInitialize(&argc,&argv,(char *)0,help);
 
+  try {
+
   moab::Core mb_instance;
   moab::Interface& moab = mb_instance;
   int rank;
@@ -146,6 +148,10 @@ int main(int argc, char *argv[]) {
   MatView(m,viewer);
   ierr = PetscViewerDestroy(&viewer); CHKERRQ(ierr);
   ierr = MatDestroy(&m); CHKERRQ(ierr);*/
+
+  } catch (MoFEMException const &e) {
+    SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
+  }
 
   //finish work cleaning memory, getting statistics, ect.
   ierr = PetscFinalize(); CHKERRQ(ierr);
