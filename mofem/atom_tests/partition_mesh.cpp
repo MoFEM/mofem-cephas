@@ -32,7 +32,7 @@ int main(int argc, char *argv[]) {
   //initialize petsc
   PetscInitialize(&argc,&argv,(char *)0,help);
 
-  {
+  try {
 
     PetscBool flg = PETSC_TRUE;
     char mesh_file_name[255];
@@ -77,6 +77,9 @@ int main(int argc, char *argv[]) {
       // rval = moab.write_file("partitioned_mesh.h5m"); CHKERRQ_MOAB(rval);
     }
 
+
+  } catch (MoFEMException const &e) {
+    SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
   }
 
   PetscBarrier(PETSC_NULL);

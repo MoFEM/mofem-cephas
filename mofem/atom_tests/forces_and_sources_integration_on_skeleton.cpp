@@ -30,6 +30,8 @@ int main(int argc, char *argv[]) {
 
   PetscInitialize(&argc,&argv,(char *)0,help);
 
+  try {
+
   moab::Core mb_instance;
   moab::Interface& moab = mb_instance;
   int rank;
@@ -164,6 +166,11 @@ int main(int argc, char *argv[]) {
   FaceElementForcesAndSourcesCore face_fe(m_field);
   face_fe.getOpPtrVector().push_back(new SkeletonFE(m_field));
   ierr = m_field.loop_finite_elements("P1","S2",face_fe);  CHKERRQ(ierr);
+
+
+  } catch (MoFEMException const &e) {
+    SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
+  }
 
   ierr = PetscFinalize(); CHKERRQ(ierr);
 

@@ -34,7 +34,8 @@ int main(int argc, char *argv[]) {
 
     //initialize petsc
     PetscInitialize(&argc,&argv,(char *)0,help);
-    {
+
+    try {
 
     PetscBool flg = PETSC_TRUE;
     char mesh_file_name[255];
@@ -178,7 +179,10 @@ int main(int argc, char *argv[]) {
     ierr = DMDestroy(&subdm0); CHKERRQ(ierr);
     ierr = DMDestroy(&subdm1); CHKERRQ(ierr);
 
+    } catch (MoFEMException const &e) {
+      SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
     }
+    
     //finish work cleaning memory, getting statistics, ect.
     ierr = PetscFinalize(); CHKERRQ(ierr);
 

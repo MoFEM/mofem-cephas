@@ -25,6 +25,8 @@ int main(int argc, char *argv[]) {
 
   PetscInitialize(&argc,&argv,(char *)0,help);
 
+  try {
+
   PetscBool flg = PETSC_TRUE;
   char mesh_file_name[255];
   #if PETSC_VERSION_GE(3,6,4)
@@ -245,6 +247,11 @@ int main(int argc, char *argv[]) {
   std::cerr << tris.size() << " : " << prisms.size() << std::endl;
   rval = moab.add_entities(out_meshset_tris,tris); CHKERRQ_MOAB(rval);
   rval = moab.write_file("out_tris.vtk","VTK","",&out_meshset_tris,1); CHKERRQ_MOAB(rval);
+
+
+  } catch (MoFEMException const &e) {
+    SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
+  }
 
   PetscFinalize();
 
