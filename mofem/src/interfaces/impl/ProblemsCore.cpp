@@ -1414,6 +1414,9 @@ PetscErrorCode Core::build_sub_problem(
   // put rows & columns field names in array
   std::vector<std::string> fields[] = { fields_row,fields_col };
 
+  const_cast<MoFEMProblem*>(&*out_problem_it)->subProblemData
+  = boost::shared_ptr<MoFEMProblem::SubProblemData>(new MoFEMProblem::SubProblemData());
+
   // Loop over rows and columns
   for(int ss = 0;ss!=(square_matrix ? 1 : 2);ss++) {
 
@@ -1479,6 +1482,15 @@ PetscErrorCode Core::build_sub_problem(
       // create map form main problem global indices to out problem global indices
       AO ao;
       ierr = AOCreateMappingIS(is,PETSC_NULL,&ao); CHKERRQ(ierr);
+      if(ss == 0) {
+        ierr = ISDuplicate(is,&(out_problem_it->getSubData()->rowIs));
+        out_problem_it->getSubData()->rowMap = ao;
+        ierr = PetscObjectReference((PetscObject)ao); CHKERRQ(ierr);
+      } else {
+        ierr = ISDuplicate(is,&(out_problem_it->getSubData()->colIs));
+        out_problem_it->getSubData()->colMap = ao;
+        ierr = PetscObjectReference((PetscObject)ao); CHKERRQ(ierr);
+      }
       ierr = AOApplicationToPetscIS(ao,is); CHKERRQ(ierr);
       // set global number of DOFs
       ierr = ISGetSize(is,nb_dofs[ss]); CHKERRQ(ierr);
@@ -1527,6 +1539,10 @@ PetscErrorCode Core::build_sub_problem(
     out_problem_it->numered_dofs_rows;
     *(out_problem_it->tag_local_nbdof_data_col) = *(out_problem_it->tag_local_nbdof_data_row);
     *(out_problem_it->tag_nbdof_data_col) = *(out_problem_it->tag_nbdof_data_row);
+    out_problem_it->getSubData()->colIs = out_problem_it->getSubData()->rowIs;
+    out_problem_it->getSubData()->colMap = out_problem_it->getSubData()->rowMap;
+    ierr = PetscObjectReference((PetscObject)out_problem_it->getSubData()->rowIs); CHKERRQ(ierr);
+    ierr = PetscObjectReference((PetscObject)out_problem_it->getSubData()->rowMap); CHKERRQ(ierr);
   }
 
   ierr = printPartitionedProblem(&*out_problem_it,verb); CHKERRQ(ierr);

@@ -25,7 +25,7 @@ using namespace MoFEM;
 
 static char help[] = "...\n\n";
 
-static const bool debug = true;
+static const bool debug = false;
 
 int main(int argc, char *argv[]) {
 
@@ -34,6 +34,7 @@ int main(int argc, char *argv[]) {
 
     //initialize petsc
     PetscInitialize(&argc,&argv,(char *)0,help);
+    {
 
     PetscBool flg = PETSC_TRUE;
     char mesh_file_name[255];
@@ -177,6 +178,7 @@ int main(int argc, char *argv[]) {
     ierr = DMDestroy(&subdm0); CHKERRQ(ierr);
     ierr = DMDestroy(&subdm1); CHKERRQ(ierr);
 
+    }
     //finish work cleaning memory, getting statistics, ect.
     ierr = PetscFinalize(); CHKERRQ(ierr);
 
