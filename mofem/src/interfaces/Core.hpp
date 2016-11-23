@@ -57,7 +57,7 @@ struct Core: public Interface {
 
   protected:
 
-  mutable boost::ptr_map<unsigned long,UnknownInterface *> iFaces;
+  mutable boost::ptr_map<unsigned long,UnknownInterface> iFaces;
 
   //Database
   ErrorCode rval;

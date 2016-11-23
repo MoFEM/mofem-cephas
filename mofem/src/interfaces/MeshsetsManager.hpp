@@ -99,6 +99,7 @@ namespace MoFEM {
 
     MoFEM::Core& cOre;
     MeshsetsManager(const MoFEM::Core& core);
+    ~MeshsetsManager() {}
 
     /**
      * \brief get tags handlers used on meshsets
