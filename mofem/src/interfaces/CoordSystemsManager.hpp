@@ -35,6 +35,11 @@ namespace MoFEM {
     CoordSystemsManager(const MoFEM::Core& core);
 
     /**
+     * \brief Destructor
+     */
+    virtual ~CoordSystemsManager();
+
+    /**
      * \brief get tags handlers used on meshsets conating information about coordinate systems
 
      */

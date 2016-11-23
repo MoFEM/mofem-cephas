@@ -296,6 +296,10 @@ verbose(_verbose) {
 
 }
 Core::~Core() {
+  // if(isGloballyInitialised) {
+  //   PetscPopErrorHandler();
+  //   isGloballyInitialised = false;
+  // }
 }
 moab::Interface& Core::get_moab() {
   return moab;
