@@ -93,6 +93,8 @@ namespace MoFEM {
   cOre(const_cast<MoFEM::Core&>(core)) {
   }
 
+  CoordSystemsManager::~CoordSystemsManager() {}
+
   PetscErrorCode CoordSystemsManager::getTags(int verb) {
     MoABErrorCode rval;
     MoFEM::Interface &m_field = cOre;
