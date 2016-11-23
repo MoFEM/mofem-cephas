@@ -40,6 +40,7 @@ int main(int argc, char *argv[]) {
 
   const char *list[] = {
     "h1tri",
+    "hcurltri"
   };
 
   PetscBool flg;
