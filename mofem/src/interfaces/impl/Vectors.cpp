@@ -246,7 +246,7 @@ PetscErrorCode Core::ISCreateFromProblemFieldToOtherProblemField(
       hi_y_dit = p_y->numered_dofs_cols->get<PetscLocalIdx_mi_tag>().upper_bound(p_y->getNbLocalDofsCol()-1);
       break;
     default:
-     SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented");
+     SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"only makes sense for ROWS and COLS");
   }
   typedef NumeredDofEntity_multiIndex::index<Composite_Name_And_Ent_And_EntDofIdx_mi_tag>::type dofs_by_name_ent_dof;
   const dofs_by_name_ent_dof* x_numered_dofs_by_ent_name_dof;
@@ -258,16 +258,28 @@ PetscErrorCode Core::ISCreateFromProblemFieldToOtherProblemField(
       x_numered_dofs_by_ent_name_dof = &(p_x->numered_dofs_cols->get<Composite_Name_And_Ent_And_EntDofIdx_mi_tag>());
       break;
     default:
-     SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented");
+     SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"only makes sense for ROWS and COLS");
   }
+  std::map<int,int> global_dofs_map;
   for(;y_dit!=hi_y_dit;y_dit++) {
     if((*y_dit)->getPart()!=(unsigned int)rAnk) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
     if((*y_dit)->getName()!=y_field_name) continue;
     dofs_by_name_ent_dof::iterator x_dit;
     x_dit = x_numered_dofs_by_ent_name_dof->find(boost::make_tuple(x_field_name,(*y_dit)->getEnt(),(*y_dit)->getEntDofIdx()));
     if(x_dit==x_numered_dofs_by_ent_name_dof->end()) continue;
-    idx.push_back((*x_dit)->getPetscGlobalDofIdx());
-    idy.push_back((*y_dit)->getPetscGlobalDofIdx());
+    global_dofs_map[(*x_dit)->getPetscGlobalDofIdx()] = (*y_dit)->getPetscGlobalDofIdx();
+  }
+  idx.resize(global_dofs_map.size());
+  idy.resize(global_dofs_map.size());
+  {
+    std::vector<int>::iterator ix,iy;
+    ix = idx.begin();
+    iy = idy.begin();
+    map<int,int>::iterator mit = global_dofs_map.begin();
+    for(;mit!=global_dofs_map.end();mit++,ix++,iy++) {
+      *ix = mit->first;
+      *iy = mit->second;
+    }
   }
   PetscFunctionReturn(0);
 }

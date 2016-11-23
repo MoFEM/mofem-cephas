@@ -96,9 +96,10 @@ PetscErrorCode Core::query_interface_type(const std::type_info& type,void*& ptr)
   #ifdef WITH_TETGEN
   if(type == typeid(TetGenInterface)) {
     if(iFaces.find(IDD_MOFEMTetGegInterface.uUId.to_ulong()) == iFaces.end()) {
-      iFaces[IDD_MOFEMTetGegInterface.uUId.to_ulong()] = new TetGenInterface(*this);
+      unsigned long int uid = IDD_MOFEMTetGegInterface.uUId.to_ulong();
+      iFaces.insert(uid,new TetGenInterface(*this));
     }
-    ptr = iFaces.at(IDD_MOFEMTetGegInterface.uUId.to_ulong());
+    ptr = &iFaces.at(IDD_MOFEMTetGegInterface.uUId.to_ulong());
     PetscFunctionReturn(0);
   }
   #endif
@@ -107,9 +108,10 @@ PetscErrorCode Core::query_interface_type(const std::type_info& type,void*& ptr)
   #ifdef WITH_MED
   if(type == typeid(MedInterface)) {
     if(iFaces.find(IDD_MOFEMMedInterface.uUId.to_ulong()) == iFaces.end()) {
-      iFaces[IDD_MOFEMMedInterface.uUId.to_ulong()] = new MedInterface(*this);
+      unsigned long int uid = IDD_MOFEMMedInterface.uUId.to_ulong();
+      iFaces.insert(uid,new MedInterface(*this));
     }
-    ptr = iFaces.at(IDD_MOFEMMedInterface.uUId.to_ulong());
+    ptr = &iFaces.at(IDD_MOFEMMedInterface.uUId.to_ulong());
     PetscFunctionReturn(0);
   }
   #endif
@@ -117,77 +119,86 @@ PetscErrorCode Core::query_interface_type(const std::type_info& type,void*& ptr)
   //Meshsets manager
   if(type == typeid(MeshsetsManager)) {
     if(iFaces.find(IDD_MOFEMMeshsetsManager.uUId.to_ulong()) == iFaces.end()) {
-      iFaces[IDD_MOFEMMeshsetsManager.uUId.to_ulong()] = new MeshsetsManager(*this);
+      unsigned long int uid = IDD_MOFEMMeshsetsManager.uUId.to_ulong();
+      iFaces.insert(uid,new MeshsetsManager(*this));
     }
-    ptr = iFaces.at(IDD_MOFEMMeshsetsManager.uUId.to_ulong());
+    ptr = &iFaces.at(IDD_MOFEMMeshsetsManager.uUId.to_ulong());
     PetscFunctionReturn(0);
   }
 
   //Cooordinate systems manager
   if(type == typeid(CoordSystemsManager)) {
     if(iFaces.find(IDD_MOFEMCoordsSystemsManager.uUId.to_ulong()) == iFaces.end()) {
-      iFaces[IDD_MOFEMCoordsSystemsManager.uUId.to_ulong()] = new CoordSystemsManager(*this);
+      unsigned long int uid = IDD_MOFEMCoordsSystemsManager.uUId.to_ulong();
+      iFaces.insert(uid,new CoordSystemsManager(*this));
     }
-    ptr = iFaces.at(IDD_MOFEMCoordsSystemsManager.uUId.to_ulong());
+    ptr = &iFaces.at(IDD_MOFEMCoordsSystemsManager.uUId.to_ulong());
     PetscFunctionReturn(0);
   }
 
   //Node merger
   if(type == typeid(NodeMergerInterface)) {
     if(iFaces.find(IDD_MOFEMNodeMerger.uUId.to_ulong()) == iFaces.end()) {
-      iFaces[IDD_MOFEMNodeMerger.uUId.to_ulong()] = new NodeMergerInterface(*this);
+      unsigned long int uid = IDD_MOFEMNodeMerger.uUId.to_ulong();
+      iFaces.insert(uid,new NodeMergerInterface(*this));
     }
-    ptr = iFaces.at(IDD_MOFEMNodeMerger.uUId.to_ulong());
+    ptr = &iFaces.at(IDD_MOFEMNodeMerger.uUId.to_ulong());
     PetscFunctionReturn(0);
   }
 
   //BitLevelCoupler
   if(type == typeid(BitLevelCouplerInterface)) {
     if(iFaces.find(IDD_MOFEMBitLevelCoupler.uUId.to_ulong()) == iFaces.end()) {
-      iFaces[IDD_MOFEMBitLevelCoupler.uUId.to_ulong()] = new BitLevelCouplerInterface(*this);
+      unsigned long int uid = IDD_MOFEMBitLevelCoupler.uUId.to_ulong();
+      iFaces.insert(uid,new BitLevelCouplerInterface(*this));
     }
-    ptr = iFaces.at(IDD_MOFEMBitLevelCoupler.uUId.to_ulong());
+    ptr = &iFaces.at(IDD_MOFEMBitLevelCoupler.uUId.to_ulong());
     PetscFunctionReturn(0);
   }
 
   //Create prism elements from surface Elements
   if(type == typeid(PrismsFromSurfaceInterface)) {
     if(iFaces.find(IDD_MOFEMPrismsFromSurface.uUId.to_ulong()) == iFaces.end()) {
-      iFaces[IDD_MOFEMPrismsFromSurface.uUId.to_ulong()] = new PrismsFromSurfaceInterface(*this);
+      unsigned long int uid = IDD_MOFEMPrismsFromSurface.uUId.to_ulong();
+      iFaces.insert(uid,new PrismsFromSurfaceInterface(*this));
     }
-    ptr = iFaces.at(IDD_MOFEMPrismsFromSurface.uUId.to_ulong());
+    ptr = &iFaces.at(IDD_MOFEMPrismsFromSurface.uUId.to_ulong());
     PetscFunctionReturn(0);
   }
 
   if(type == typeid(MeshRefinement)) {
     if(iFaces.find(IDD_MOFEMMeshRefine.uUId.to_ulong()) == iFaces.end()) {
-      iFaces[IDD_MOFEMMeshRefine.uUId.to_ulong()] = new MeshRefinement(*this);
+      unsigned long int uid = IDD_MOFEMMeshRefine.uUId.to_ulong();
+      iFaces.insert(uid,new MeshRefinement(*this));
     }
-    ptr = iFaces.at(IDD_MOFEMMeshRefine.uUId.to_ulong());
+    ptr = &iFaces.at(IDD_MOFEMMeshRefine.uUId.to_ulong());
     PetscFunctionReturn(0);
   }
 
   if(type == typeid(PrismInterface)) {
     if(iFaces.find(IDD_MOFEMPrismInterface.uUId.to_ulong()) == iFaces.end()) {
-      iFaces[IDD_MOFEMPrismInterface.uUId.to_ulong()] = new PrismInterface(*this);
+      unsigned long int uid = IDD_MOFEMPrismInterface.uUId.to_ulong();
+      iFaces.insert(uid,new PrismInterface(*this));
     }
-    ptr = iFaces.at(IDD_MOFEMPrismInterface.uUId.to_ulong());
+    ptr = &iFaces.at(IDD_MOFEMPrismInterface.uUId.to_ulong());
     PetscFunctionReturn(0);
   }
 
   if(type == typeid(CutMeshInterface)) {
     if(iFaces.find(IDD_MOFEMCutMesh.uUId.to_ulong()) == iFaces.end()) {
-      iFaces[IDD_MOFEMCutMesh.uUId.to_ulong()] = new CutMeshInterface(*this);
+      unsigned long int uid = IDD_MOFEMCutMesh.uUId.to_ulong();
+      iFaces.insert(uid,new CutMeshInterface(*this));
     }
-    ptr = iFaces.at(IDD_MOFEMCutMesh.uUId.to_ulong());
+    ptr = &iFaces.at(IDD_MOFEMCutMesh.uUId.to_ulong());
     PetscFunctionReturn(0);
   }
 
   if(type == typeid(SeriesRecorder)) {
     if(iFaces.find(IDD_MOFEMSeriesRecorder.uUId.to_ulong()) == iFaces.end()) {
-      iFaces[IDD_MOFEMSeriesRecorder.uUId.to_ulong()] = new SeriesRecorder(*this);
+      unsigned long int uid = IDD_MOFEMSeriesRecorder.uUId.to_ulong();
+      iFaces.insert(uid,new SeriesRecorder(*this));
     }
-    ptr = iFaces.at(IDD_MOFEMSeriesRecorder.uUId.to_ulong());
+    ptr = &iFaces.at(IDD_MOFEMSeriesRecorder.uUId.to_ulong());
     PetscFunctionReturn(0);
   }
 
@@ -296,6 +307,7 @@ verbose(_verbose) {
 
 }
 Core::~Core() {
+  iFaces.clear();
   if(isGloballyInitialised) {
     int flg;
     MPI_Finalized(&flg);

@@ -37,7 +37,7 @@ namespace MoFEM {
     /**
      * \brief Destructor
      */
-    virtual ~CoordSystemsManager();
+    ~CoordSystemsManager();
 
     /**
      * \brief get tags handlers used on meshsets conating information about coordinate systems
@@ -98,7 +98,7 @@ namespace MoFEM {
     Tag th_CoordSysName;                ///< Name of coordinate system
     Tag th_CoordSysDim;                 ///< Tag on cordsys meshset for dimension of coordinate system associated to fields
 
-    //coordinate sysrems
+    /// Coordinate systems multi-index
     CoordSys_multiIndex coordinateSystems;
 
 
