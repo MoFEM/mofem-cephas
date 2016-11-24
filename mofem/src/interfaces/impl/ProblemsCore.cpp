@@ -864,9 +864,9 @@ PetscErrorCode Core::partition_mesh(
       }
       // write a tag to those sets denoting they're partition sets, with a value of the
       // proc number
-      int *dum_ids = new int[n_parts];
+      std::vector<int> dum_ids(n_parts);
       for(int i = 0;i<n_parts;i++) dum_ids[i] = i;
-      rval = moab.tag_set_data(part_tag,tagged_sets,dum_ids); CHKERR_MOAB(rval);
+      rval = moab.tag_set_data(part_tag,tagged_sets,&*dum_ids.begin()); CHKERR_MOAB(rval);
       for(int i = 0;i<n_parts;i++) {
         rval = moab.add_entities(tagged_sets[i],parts_ents[i]); CHKERR_MOAB(rval);
       }
