@@ -1334,7 +1334,9 @@ PetscErrorCode Core::build_fields(int verb) {
     std::map<EntityType,int> dof_counter;
     std::map<EntityType,int> inactive_dof_counter;
     if (verb > 0) {
-      PetscSynchronizedPrintf(comm,"Build Field %s (rank %d)\n",(*miit)->getName().c_str(),rAnk);
+      PetscSynchronizedPrintf(
+        comm,"Build Field %s (rank %d)\n",(*miit)->getName().c_str(),rAnk
+      );
     }
     switch ((*miit)->getSpace()) {
       case NOFIELD:
@@ -1355,25 +1357,53 @@ PetscErrorCode Core::build_fields(int verb) {
       for(std::map<EntityType,int>::iterator it = dof_counter.begin();it!=dof_counter.end();it++) {
         switch (it->first) {
           case MBVERTEX:
-          PetscSynchronizedPrintf(comm,"nb added dofs (vertices) %d (inactive %d)\n",it->second,inactive_dof_counter[it->first]);
+          PetscSynchronizedPrintf(
+            comm,
+            "nb added dofs (vertices) %d (inactive %d)\n",
+            it->second,inactive_dof_counter[it->first]
+          );
           break;
           case MBEDGE:
-          PetscSynchronizedPrintf(comm,"nb added dofs (edges) %d (inactive %d)\n",it->second,inactive_dof_counter[it->first]);
+          PetscSynchronizedPrintf(
+            comm,
+            "nb added dofs (edges) %d (inactive %d)\n",
+            it->second,inactive_dof_counter[it->first]
+          );
           break;
           case MBTRI:
-          PetscSynchronizedPrintf(comm,"nb added dofs (triangles) %d (inactive %d)\n",it->second,inactive_dof_counter[it->first]);
+          PetscSynchronizedPrintf(
+            comm,
+            "nb added dofs (triangles) %d (inactive %d)\n",
+            it->second,inactive_dof_counter[it->first]
+          );
           break;
           case MBQUAD:
-          PetscSynchronizedPrintf(comm,"nb added dofs (quads) %d (inactive %d)\n",it->second,inactive_dof_counter[it->first]);
+          PetscSynchronizedPrintf(
+            comm,
+            "nb added dofs (quads) %d (inactive %d)\n",
+            it->second,inactive_dof_counter[it->first]
+          );
           break;
           case MBTET:
-          PetscSynchronizedPrintf(comm,"nb added dofs (tets) %d (inactive %d)\n",it->second,inactive_dof_counter[it->first]);
+          PetscSynchronizedPrintf(
+            comm,
+            "nb added dofs (tets) %d (inactive %d)\n",
+            it->second,inactive_dof_counter[it->first]
+          );
           break;
           case MBPRISM:
-          PetscSynchronizedPrintf(comm,"nb added dofs (prisms) %d (inactive %d)\n",it->second,inactive_dof_counter[it->first]);
+          PetscSynchronizedPrintf(
+            comm,
+            "nb added dofs (prisms) %d (inactive %d)\n",
+            it->second,inactive_dof_counter[it->first]
+          );
           break;
           case MBENTITYSET:
-          PetscSynchronizedPrintf(comm,"nb added dofs (meshsets) %d (inactive %d)\n",it->second,inactive_dof_counter[it->first]);
+          PetscSynchronizedPrintf(
+            comm,
+            "nb added dofs (meshsets) %d (inactive %d)\n",
+            it->second,inactive_dof_counter[it->first]
+          );
           break;
           default:
           SETERRQ(comm,MOFEM_NOT_IMPLEMENTED,"not implemented");
@@ -1381,14 +1411,20 @@ PetscErrorCode Core::build_fields(int verb) {
         nb_added_dofs += it->second;
         nb_inactive_added_dofs += inactive_dof_counter[it->first];
       }
-      PetscSynchronizedPrintf(comm,"nb added dofs %d (number of inactive dofs %d)\n",nb_added_dofs,nb_inactive_added_dofs);
+      if(verbose>0) {
+        PetscSynchronizedPrintf(
+          comm,
+          "nb added dofs %d (number of inactive dofs %d)\n",
+          nb_added_dofs,nb_inactive_added_dofs
+        );
+      }
     }
   }
   *buildMoFEM = 1<<0;
-  if(verbose>0) {
+  if(verb>0) {
     PetscSynchronizedPrintf(comm,"Nb. dofs %u\n",dofsField.size());
-    PetscSynchronizedFlush(comm,PETSC_STDOUT);
   }
+  PetscSynchronizedFlush(comm,PETSC_STDOUT);
   PetscFunctionReturn(0);
   //return 0;
 }
