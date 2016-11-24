@@ -232,40 +232,61 @@ PetscErrorCode Core::ISCreateFromProblemFieldToOtherProblemField(
   typedef MoFEMProblem_multiIndex::index<Problem_mi_tag>::type ProblemsByName;
   const ProblemsByName &problems_set = pRoblems.get<Problem_mi_tag>();
   ProblemsByName::iterator p_x = problems_set.find(x_problem);
-  if(p_x==problems_set.end()) SETERRQ1(PETSC_COMM_SELF,1,"no such problem %s (top tip check spelling)",x_problem.c_str());
+  if(p_x==problems_set.end()) {
+    SETERRQ1(
+      PETSC_COMM_SELF,
+      MOFEM_DATA_INCONSISTENCY,
+      "no such problem %s (top tip check spelling)",
+      x_problem.c_str());
+  }
   ProblemsByName::iterator p_y = problems_set.find(y_problem);
-  if(p_y==problems_set.end()) SETERRQ1(PETSC_COMM_SELF,1,"no such problem %s (top tip check spelling)",y_problem.c_str());
+  if(p_y==problems_set.end()) {
+    SETERRQ1(
+      PETSC_COMM_SELF,
+      MOFEM_DATA_INCONSISTENCY,
+      "no such problem %s (top tip check spelling)",
+      y_problem.c_str()
+    );
+  }
   NumeredDofEntityByLocalIdx::iterator y_dit,hi_y_dit;
   switch (y_rc) {
     case ROW:
       y_dit = p_y->numered_dofs_rows->get<PetscLocalIdx_mi_tag>().lower_bound(0);
-      hi_y_dit = p_y->numered_dofs_rows->get<PetscLocalIdx_mi_tag>().upper_bound(p_y->getNbLocalDofsRow()-1);
+      hi_y_dit = p_y->numered_dofs_rows->get<PetscLocalIdx_mi_tag>().
+      upper_bound(p_y->getNbLocalDofsRow()-1);
       break;
     case COL:
       y_dit = p_y->numered_dofs_cols->get<PetscLocalIdx_mi_tag>().lower_bound(0);
-      hi_y_dit = p_y->numered_dofs_cols->get<PetscLocalIdx_mi_tag>().upper_bound(p_y->getNbLocalDofsCol()-1);
+      hi_y_dit = p_y->numered_dofs_cols->get<PetscLocalIdx_mi_tag>().
+      upper_bound(p_y->getNbLocalDofsCol()-1);
       break;
     default:
      SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"only makes sense for ROWS and COLS");
   }
-  typedef NumeredDofEntity_multiIndex::index<Composite_Name_And_Ent_And_EntDofIdx_mi_tag>::type dofs_by_name_ent_dof;
-  const dofs_by_name_ent_dof* x_numered_dofs_by_ent_name_dof;
+  typedef NumeredDofEntity_multiIndex::index<Composite_Name_And_Ent_And_EntDofIdx_mi_tag>::type DofsByNameAndEntDofIdx;
+  const DofsByNameAndEntDofIdx* x_numered_dofs_by_ent_name_dof;
   switch (x_rc) {
     case ROW:
-      x_numered_dofs_by_ent_name_dof = &(p_x->numered_dofs_rows->get<Composite_Name_And_Ent_And_EntDofIdx_mi_tag>());
+      x_numered_dofs_by_ent_name_dof =
+      &(p_x->numered_dofs_rows->get<Composite_Name_And_Ent_And_EntDofIdx_mi_tag>());
       break;
     case COL:
-      x_numered_dofs_by_ent_name_dof = &(p_x->numered_dofs_cols->get<Composite_Name_And_Ent_And_EntDofIdx_mi_tag>());
+      x_numered_dofs_by_ent_name_dof =
+      &(p_x->numered_dofs_cols->get<Composite_Name_And_Ent_And_EntDofIdx_mi_tag>());
       break;
     default:
      SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"only makes sense for ROWS and COLS");
   }
   std::map<int,int> global_dofs_map;
   for(;y_dit!=hi_y_dit;y_dit++) {
-    if((*y_dit)->getPart()!=(unsigned int)rAnk) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
+    if((*y_dit)->getPart()!=(unsigned int)rAnk) {
+      SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
+    }
     if((*y_dit)->getName()!=y_field_name) continue;
-    dofs_by_name_ent_dof::iterator x_dit;
-    x_dit = x_numered_dofs_by_ent_name_dof->find(boost::make_tuple(x_field_name,(*y_dit)->getEnt(),(*y_dit)->getEntDofIdx()));
+    DofsByNameAndEntDofIdx::iterator x_dit;
+    x_dit = x_numered_dofs_by_ent_name_dof->find(
+      boost::make_tuple(x_field_name,(*y_dit)->getEnt(),(*y_dit)->getEntDofIdx())
+    );
     if(x_dit==x_numered_dofs_by_ent_name_dof->end()) continue;
     global_dofs_map[(*x_dit)->getPetscGlobalDofIdx()] = (*y_dit)->getPetscGlobalDofIdx();
   }
@@ -290,11 +311,17 @@ PetscErrorCode Core::ISCreateFromProblemFieldToOtherProblemField(
 ) const {
   PetscErrorCode ierr;
   PetscFunctionBegin;
+
   std::vector<int> idx(0),idy(0);
   ierr = ISCreateFromProblemFieldToOtherProblemField(
-    x_problem,x_field_name,x_rc,y_problem,y_field_name,y_rc,
-    idx,idy,verb); CHKERRQ(ierr);
-  ierr = ISCreateGeneral(comm,idx.size(),&idx[0],PETSC_COPY_VALUES,ix); CHKERRQ(ierr);
+    x_problem,x_field_name,x_rc,
+    y_problem,y_field_name,y_rc,idx,idy,
+    verb
+  ); CHKERRQ(ierr);
+
+  if(ix!=PETSC_NULL) {
+    ierr = ISCreateGeneral(comm,idx.size(),&idx[0],PETSC_COPY_VALUES,ix); CHKERRQ(ierr);
+  }
   ierr = ISCreateGeneral(comm,idy.size(),&idy[0],PETSC_COPY_VALUES,iy); CHKERRQ(ierr);
   if(verb>2) {
     ISView(*ix,PETSC_VIEWER_STDOUT_WORLD);

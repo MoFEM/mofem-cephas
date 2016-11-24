@@ -1674,7 +1674,7 @@ struct Interface: public UnknownInterface {
   /** \brief create IS for give two problems and field
     * \ingroup mofem_vectors
 
-    Note that indices are ordered in ascending order of local indices in problem_y
+    Indices are sorted by global PETSCx index in problem_x. 
 
     \param x_problem name of problem
     \param x_field_name name of field in problem_x
@@ -1683,7 +1683,7 @@ struct Interface: public UnknownInterface {
     \param y_field_name name of field in problem_y
     \param y_rc that is ROW or COL
 
-    \retval ix IS indexes in problem_x
+    \retval ix IS indexes in problem_x (can be PETSC_NULL)
     \retval iy IS indexes in problem_y
 
     */
