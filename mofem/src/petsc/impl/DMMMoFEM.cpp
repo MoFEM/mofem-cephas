@@ -69,7 +69,8 @@ snesCtx(NULL),
 tsCtx(NULL),
 isPartitioned(PETSC_FALSE),
 isSquareMatrix(PETSC_TRUE),
-isSubDM(false),
+isSubDM(PETSC_FALSE),
+destroyProblem(PETSC_FALSE),
 verbosity(0),
 referenceNumber(0) {}
 
@@ -133,6 +134,10 @@ PetscErrorCode DMDestroy_MoFEM(DM dm) {
   PetscValidHeaderSpecific(dm,DM_CLASSID,1);
   PetscFunctionBegin;
   if(!((DMCtx*)dm->data)->referenceNumber) {
+    DMCtx *dm_field = (DMCtx*)dm->data;
+    if(dm_field->destroyProblem) {
+      dm_field->mField_ptr->delete_problem(dm_field->problemName);
+    }
     delete (DMCtx*)dm->data;
   } else {
     (((DMCtx*)dm->data)->referenceNumber)--;
@@ -155,8 +160,17 @@ PetscErrorCode DMMoFEMCreateMoFEM(
   }
   dm_field->mField_ptr = m_field_ptr;
   dm_field->problemName = problem_name;
-  ierr = dm_field->mField_ptr->add_problem(dm_field->problemName,MF_ZERO); CHKERRQ(ierr);
-  ierr = dm_field->mField_ptr->modify_problem_ref_level_add_bit(dm_field->problemName,bit_level); CHKERRQ(ierr);
+  if(!m_field_ptr->check_problem(dm_field->problemName)) {
+    // problem is not defined, declare problem internally set bool to destroyProblem
+    // problem with DM
+    dm_field->destroyProblem = PETSC_TRUE;
+    ierr = dm_field->mField_ptr->add_problem(dm_field->problemName); CHKERRQ(ierr);
+  } else {
+    dm_field->destroyProblem = PETSC_FALSE;
+  }
+  ierr = dm_field->mField_ptr->modify_problem_ref_level_add_bit(
+    dm_field->problemName,bit_level); CHKERRQ(ierr
+    );
   dm_field->kspCtx = new KspCtx(*m_field_ptr,problem_name);
   dm_field->snesCtx = new SnesCtx(*m_field_ptr,problem_name);
   dm_field->tsCtx = new TsCtx(*m_field_ptr,problem_name);
@@ -191,7 +205,7 @@ PetscErrorCode DMMoFEMCreateSubDM(DM subdm,DM dm,const char problem_name[]) {
   ); CHKERRQ(ierr);
 
   DMCtx *subdm_field = (DMCtx*)subdm->data;
-  subdm_field->isSubDM = true;
+  subdm_field->isSubDM = PETSC_TRUE;
   subdm_field->problemMainOfSubPtr = dm_field->problemPtr;
   subdm_field->isPartitioned = dm_field->isPartitioned;
   subdm_field->isSquareMatrix = PETSC_FALSE;
@@ -228,6 +242,15 @@ PetscErrorCode DMMoFEMAddSubFieldCol(DM dm,const char field_name[]) {
   PetscFunctionReturn(0);
 }
 
+PetscErrorCode DMMoFEMGetIsSubDM(DM dm,PetscBool *is_sub_dm) {
+  PetscFunctionBegin;
+  PetscValidHeaderSpecific(dm,DM_CLASSID,1);
+  PetscFunctionBegin;
+  DMCtx *dm_field = (DMCtx*)dm->data;
+  *is_sub_dm = dm_field->isSubDM;
+  PetscFunctionReturn(0);
+}
+
 PetscErrorCode DMoFEMGetInterfacePtr(DM dm,const MoFEM::Interface **m_field_ptr) {
   PetscValidHeaderSpecific(dm,DM_CLASSID,1);
   PetscFunctionBegin;
@@ -247,6 +270,24 @@ PetscErrorCode DMMoFEMGetProblemPtr(DM dm,const MoFEM::MoFEMProblem **problem_pt
     SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"data structure for MoFEM not yet created");
   }
   *problem_ptr = dm_field->problemPtr;
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode DMMoFEMSetDestroyProblem(DM dm,PetscBool destroy_problem)  {
+  PetscFunctionBegin;
+  PetscValidHeaderSpecific(dm,DM_CLASSID,1);
+  PetscFunctionBegin;
+  DMCtx *dm_field = (DMCtx*)dm->data;
+  dm_field->destroyProblem = destroy_problem;
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode DMMoFEMGetDestroyProblem(DM dm,PetscBool *destroy_problem)  {
+  PetscFunctionBegin;
+  PetscValidHeaderSpecific(dm,DM_CLASSID,1);
+  PetscFunctionBegin;
+  DMCtx *dm_field = (DMCtx*)dm->data;
+  *destroy_problem = dm_field->destroyProblem;
   PetscFunctionReturn(0);
 }
 
