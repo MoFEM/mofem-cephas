@@ -53,10 +53,60 @@ struct MoFEMProblem {
    * \brief Subproblem problem data
    */
   struct SubProblemData {
+
     IS rowIs; ///< indices of main problem of which sub problem is this
     IS colIs; ///< indices of main problem of which sub problem is this
     AO rowMap; ///< mapping form main problem indices to sub-problem indices
     AO colMap;
+
+    /**
+     * get row Is for sub problem
+     * @param  is create is
+     * @return    error code
+     */
+    inline PetscErrorCode getRowIs(IS *is) {
+      PetscFunctionBegin;
+      PetscObjectReference((PetscObject)rowIs);
+      *is = rowIs;
+      PetscFunctionReturn(0);
+    }
+
+    /**
+     * get col Is for sub problem
+     * @param  is create is
+     * @return    error code
+     */
+    inline PetscErrorCode getColIs(IS *is) {
+      PetscFunctionBegin;
+      PetscObjectReference((PetscObject)colIs);
+      *is = colIs;
+      PetscFunctionReturn(0);
+    };
+
+    /**
+     * get row AO mapping for sub problem
+     * @param  ao get mapping
+     * @return    error code
+     */
+    inline PetscErrorCode getRowMap(AO *ao) {
+      PetscFunctionBegin;
+      PetscObjectReference((PetscObject)rowMap);
+      *ao = rowMap;
+      PetscFunctionReturn(0);
+    }
+
+    /**
+     * get col AO mapping for sub problem
+     * @param  ao get mapping
+     * @return    error code
+     */
+    inline PetscErrorCode getColMap(AO *ao) {
+      PetscFunctionBegin;
+      PetscObjectReference((PetscObject)colMap);
+      *ao = colMap;
+      PetscFunctionReturn(0);
+    }
+
     SubProblemData():
     rowIs(PETSC_NULL),
     colIs(PETSC_NULL),

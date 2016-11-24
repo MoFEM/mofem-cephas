@@ -1,5 +1,44 @@
 {
    <insert_a_suppression_name_here>
+   Memcheck:Addr4
+   fun:H5_build_extpath
+   fun:H5F_open
+   fun:H5Fopen
+   fun:mhdf_openFileWithOpt
+   fun:_ZN4moab8ReadHDF511set_up_readEPKcRKNS_11FileOptionsE
+   fun:_ZN4moab8ReadHDF59load_fileEPKcPKmRKNS_11FileOptionsEPKNS_11ReaderIface10SubsetListEPKPNS_7TagInfoE
+   fun:_ZN4moab4Core16serial_load_fileEPKcPKmRKNS_11FileOptionsEPKNS_11ReaderIface10SubsetListEPKPNS_7TagInfoE
+   fun:_ZN4moab4Core9load_fileEPKcPKmS2_S2_PKii
+   fun:main
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Addr4
+   fun:H5_build_extpath
+   fun:H5F_open
+   fun:H5Fopen
+   fun:mhdf_openFileWithOpt
+   fun:_ZN4moab8ReadHDF511set_up_readEPKcRKNS_11FileOptionsE
+   fun:_ZN4moab8ReadHDF59load_fileEPKcPKmRKNS_11FileOptionsEPKNS_11ReaderIface10SubsetListEPKPNS_7TagInfoE
+   fun:_ZN4moab4Core16serial_load_fileEPKcPKmRKNS_11FileOptionsEPKNS_11ReaderIface10SubsetListEPKPNS_7TagInfoE
+   fun:_ZN4moab4Core9load_fileEPKcPKmS2_S2_PKii
+   fun:main
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   fun:realloc
+   fun:__vasprintf_chk
+   fun:__asprintf_chk
+   obj:*
+   obj:*
+   fun:orte_init
+   obj:/usr/bin/orterun
+   obj:/usr/bin/orterun
+   fun:(below main)
+}
+{
+   <insert_a_suppression_name_here>
    Memcheck:Leak
    fun:realloc
    fun:__vasprintf_chk
