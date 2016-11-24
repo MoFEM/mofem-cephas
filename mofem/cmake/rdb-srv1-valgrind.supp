@@ -1,5 +1,45 @@
 {
    <insert_a_suppression_name_here>
+   Memcheck:Leak
+   fun:malloc
+   fun:opal_class_initialize
+   fun:ompi_comm_nextcid
+   fun:ompi_comm_dup
+   fun:PMPI_Comm_dup
+   fun:PetscCommDuplicate
+   fun:PetscHeaderCreate_Private
+   fun:VecCreate
+   fun:VecCreateSeq
+   fun:_ZNK5MoFEM4Core12VecCreateSeqERKSs10RowColDataPP6_p_Vec
+   fun:main
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   fun:malloc
+   fun:opal_class_initialize
+   fun:ompi_comm_nextcid
+   fun:ompi_comm_dup
+   fun:PMPI_Comm_dup
+   fun:PetscCommDuplicate
+   fun:PetscSynchronizedFlush
+   fun:_ZN5MoFEM4Core12build_fieldsEi
+   fun:main
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   fun:malloc
+   fun:opal_hash_table_set_value_uint32
+   obj:/usr/lib/openmpi/lib/libmpi.so.0.0.2
+   fun:PMPI_Attr_put
+   fun:PetscCommDuplicate
+   fun:PetscSynchronizedFlush
+   fun:_ZN5MoFEM4Core12build_fieldsEi
+   fun:main
+}
+{
+   <insert_a_suppression_name_here>
    Memcheck:Addr4
    fun:H5_build_extpath
    fun:H5F_open
