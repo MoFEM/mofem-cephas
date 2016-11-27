@@ -254,7 +254,8 @@ PetscErrorCode TriPolynomialBase::getValueHCurl(
       SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
     }
     int sense[3],order[3];
-    double *HCurl_edgeN[3];
+    double *hcurl_edge_n[3];
+    double *diff_hcurl_edge_n[3];
     for(int ee = 0;ee<3;ee++) {
       if(data.dataOnEntities[MBEDGE][ee].getSense() == 0) {
         SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
@@ -263,19 +264,22 @@ PetscErrorCode TriPolynomialBase::getValueHCurl(
       order[ee] = data.dataOnEntities[MBEDGE][ee].getDataOrder();
       int nb_dofs = NBEDGE_HCURL(data.dataOnEntities[MBEDGE][ee].getDataOrder());
       data.dataOnEntities[MBEDGE][ee].getN(base).resize(nb_gauss_pts,3*nb_dofs,false);
-      data.dataOnEntities[MBEDGE][0].getDiffN(base).resize(nb_gauss_pts,0,false);
-      HCurl_edgeN[ee] = &*data.dataOnEntities[MBEDGE][ee].getN(base).data().begin();
+      data.dataOnEntities[MBEDGE][ee].getDiffN(base).resize(nb_gauss_pts,2*3*nb_dofs,false);
+      hcurl_edge_n[ee] = &*data.dataOnEntities[MBEDGE][ee].getN(base).data().begin();
+      diff_hcurl_edge_n[ee] = &*data.dataOnEntities[MBEDGE][ee].getDiffN(base).data().begin();
     }
     ierr = Hcurl_EdgeBaseFunctions_MBTET_ON_FACE(
       sense,
       order,
       &*data.dataOnEntities[MBVERTEX][0].getN(base).data().begin(),
       &*data.dataOnEntities[MBVERTEX][0].getDiffN(base).data().begin(),
-      HCurl_edgeN,
-      NULL,
+      hcurl_edge_n,
+      diff_hcurl_edge_n,
       nb_gauss_pts,
       base_polynomials
     ); CHKERRQ(ierr);
+    // cerr << data.dataOnEntities[MBVERTEX][0].getDiffN(base) << endl;
+    // cerr << data.dataOnEntities[MBEDGE][0].getDiffN(base) << endl;
     // cerr << data.dataOnEntities[MBVERTEX][0].getN(base) << endl;
     // cerr << data.dataOnEntities[MBEDGE][0].getN(base) << endl;
   } else {
@@ -297,16 +301,16 @@ PetscErrorCode TriPolynomialBase::getValueHCurl(
     int order = data.dataOnEntities[MBTRI][0].getDataOrder();
     int nb_dofs = NBFACETRI_HCURL(order);
     data.dataOnEntities[MBTRI][0].getN(base).resize(nb_gauss_pts,3*nb_dofs,false);
-    data.dataOnEntities[MBTRI][0].getDiffN(base).resize(nb_gauss_pts,0,false);
+    data.dataOnEntities[MBTRI][0].getDiffN(base).resize(nb_gauss_pts,3*2*nb_dofs,false);
     // cerr << data.dataOnEntities[MBVERTEX][0].getDiffN(base) << endl;
     int face_nodes[] = { 0,1,2 };
     ierr = Hcurl_FaceFunctions_MBTET_ON_FACE(
       face_nodes,
       order,
-      &data.dataOnEntities[MBVERTEX][0].getN(base)(0,0),
-      &data.dataOnEntities[MBVERTEX][0].getDiffN(base)(0,0),
+      &*data.dataOnEntities[MBVERTEX][0].getN(base).data().begin(),
+      &*data.dataOnEntities[MBVERTEX][0].getDiffN(base).data().begin(),
       &*data.dataOnEntities[MBTRI][0].getN(base).data().begin(),
-      NULL,
+      &*data.dataOnEntities[MBTRI][0].getDiffN(base).data().begin(),
       nb_gauss_pts,
       base_polynomials
     ); CHKERRQ(ierr);
@@ -353,8 +357,15 @@ PetscErrorCode TriPolynomialBase::getValue(
       &pts(1,0),
       nb_gauss_pts
     ); CHKERRQ(ierr);
+    data.dataOnEntities[MBVERTEX][0].getDiffN(base).resize(3,2,false);
+    ierr = ShapeDiffMBTRI(
+      &*data.dataOnEntities[MBVERTEX][0].getDiffN(base).data().begin()
+    ); CHKERRQ(ierr);
   } else {
-    data.dataOnEntities[MBVERTEX][0].getNSharedPtr(base) = data.dataOnEntities[MBVERTEX][0].getNSharedPtr(cTx->copyNodeBase);
+    data.dataOnEntities[MBVERTEX][0].getNSharedPtr(base) =
+    data.dataOnEntities[MBVERTEX][0].getNSharedPtr(cTx->copyNodeBase);
+    data.dataOnEntities[MBVERTEX][0].getDiffNSharedPtr(base) =
+    data.dataOnEntities[MBVERTEX][0].getDiffNSharedPtr(cTx->copyNodeBase);
   }
   if(data.dataOnEntities[MBVERTEX][0].getN(base).size1()!=(unsigned int)nb_gauss_pts) {
     SETERRQ1(
@@ -364,25 +375,27 @@ PetscErrorCode TriPolynomialBase::getValue(
       ApproximationBaseNames[base]
     );
   }
-  data.dataOnEntities[MBVERTEX][0].getDiffN(base).resize(3,2,false);
-  ierr = ShapeDiffMBTRI(&*data.dataOnEntities[MBVERTEX][0].getDiffN(base).data().begin()); CHKERRQ(ierr);
 
-  // In linear geometry derivatives are constant,
-  // this in expense of efficiency makes implementation
-  // consistent between vertices and other types of entities
-  MatrixDouble diffN(nb_gauss_pts,6);
-  for(int gg = 0;gg<nb_gauss_pts;gg++) {
-    for(int nn = 0;nn<3;nn++) {
-      for(int dd = 0;dd<2;dd++) {
-        diffN(gg,nn*2+dd) = data.dataOnEntities[MBVERTEX][0].getDiffN(base)(nn,dd);
-      }
-    }
-  }
-  data.dataOnEntities[MBVERTEX][0].getDiffN(base).resize(diffN.size1(),diffN.size2(),false);
-  data.dataOnEntities[MBVERTEX][0].getDiffN(base).data().swap(diffN.data());
 
   switch (cTx->sPace) {
     case H1:
+    {
+      // In linear geometry derivatives are constant,
+      // this in expense of efficiency makes implementation
+      // consistent between vertices and other types of entities
+      MatrixDouble diffN(nb_gauss_pts,6);
+      for(int gg = 0;gg<nb_gauss_pts;gg++) {
+        for(int nn = 0;nn<3;nn++) {
+          for(int dd = 0;dd<2;dd++) {
+            diffN(gg,nn*2+dd) = data.dataOnEntities[MBVERTEX][0].getDiffN(base)(nn,dd);
+          }
+        }
+      }
+      data.dataOnEntities[MBVERTEX][0].getDiffN(base).resize(
+        diffN.size1(),diffN.size2(),false
+      );
+      data.dataOnEntities[MBVERTEX][0].getDiffN(base).data().swap(diffN.data());
+    }
     ierr = getValueH1(pts); CHKERRQ(ierr);
     break;
     case HDIV:

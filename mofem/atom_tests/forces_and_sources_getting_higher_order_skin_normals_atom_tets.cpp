@@ -185,6 +185,10 @@ int main(int argc, char *argv[]) {
         &*data.dataOnEntities[MBVERTEX][0].getN(NOBASE).data().begin(),
         G_TRI_X4,G_TRI_Y4,4
       ); CHKERRQ(ierr);
+      data.dataOnEntities[MBVERTEX][0].getDiffN(NOBASE).resize(3,2,false);
+      ierr = ShapeDiffMBTRI(
+        &*data.dataOnEntities[MBVERTEX][0].getDiffN(NOBASE).data().begin()
+      ); CHKERRQ(ierr);
 
       MatrixDouble gauss_pts(2,4,false);
       for(int gg = 0;gg<4;gg++) {

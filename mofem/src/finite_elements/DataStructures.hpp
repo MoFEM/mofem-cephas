@@ -1042,6 +1042,8 @@ FTensor::Tensor1<double*,2> DataForcesAndSurcesCore::EntData::getFTensor1DiffN<2
   const int bb
 );
 
+// Specifications for HDiv/HCrul
+
 template<>
 FTensor::Tensor1<double*,3> DataForcesAndSurcesCore::EntData::getFTensor1HdivN<3>(
   FieldApproximationBase base
@@ -1054,6 +1056,17 @@ FTensor::Tensor2<double*,3,3> DataForcesAndSurcesCore::EntData::getFTensor2DiffH
 );
 template<>
 FTensor::Tensor2<double*,3,3> DataForcesAndSurcesCore::EntData::getFTensor2DiffHdivN<3,3>();
+
+
+// Specifications 2d 
+
+template<>
+FTensor::Tensor2<double*,3,2> DataForcesAndSurcesCore::EntData::getFTensor2DiffHdivN<3,2>(
+  FieldApproximationBase base
+);
+template<>
+FTensor::Tensor2<double*,3,2> DataForcesAndSurcesCore::EntData::getFTensor2DiffHdivN<3,2>();
+
 
 /** \brief this class derive data form other data structure
   * \ingroup mofem_forces_and_sources

@@ -418,6 +418,10 @@ int main(int argc, char *argv[]) {
       3*nb_gauss_pts,QUAD_2D_TABLE[tri_rule]->points,1,shape_ptr,1
     );
   }
+  tri_data.dataOnEntities[MBVERTEX][0].getDiffN(NOBASE).resize(3,2,false);
+  ierr = ShapeDiffMBTRI(
+    &*tri_data.dataOnEntities[MBVERTEX][0].getDiffN(NOBASE).data().begin()
+  ); CHKERRQ(ierr);
 
   if(choise_value==H1TRI) {
     ierr = TriPolynomialBase().getValue(
