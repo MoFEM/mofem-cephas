@@ -85,6 +85,13 @@ RUN cd /opt \
 && cd /opt && rm -rf boost_1_57_0*
 
 RUN cd /opt \
+&& wget http://www.coin-or.org/download/source/ADOL-C/ADOL-C-2.5.2.tgz \
+&& tar -xzf ADOL-C-2.5.2.tgz \
+&& cd ADOL-C-2.5.2 \
+&& ./configure  CC=${CMAKE_C_COMPILER} CXX=${CMAKE_CXX_COMPILER} --disable-shared --prefix=/opt/local \
+&& make && make install
+
+RUN cd /opt \
 && wget https://cmake.org/files/v3.0/cmake-3.0.1.tar.gz \
 && tar -xzf cmake-3.0.1.tar.gz \
 && cd cmake-3.0.1 && cmake -DCMAKE_INSTALL_PREFIX=/opt/local \

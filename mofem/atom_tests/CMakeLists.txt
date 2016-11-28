@@ -600,7 +600,11 @@ target_link_libraries(forces_and_sources_check_base_functions_direvatives_tri
 )
 add_test(forces_and_sources_check_h1_base_functions_direvatives_tri_atom
   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
-  ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_check_base_functions_direvatives_tri -base H1TRI
+  ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_check_base_functions_direvatives_tri -base h1tri
+)
+add_test(forces_and_sources_check_hcurl_base_functions_direvatives_tri_atom
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+  ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_check_base_functions_direvatives_tri -base hcurltri
 )
 
 # Continuity check on tet for h1 space

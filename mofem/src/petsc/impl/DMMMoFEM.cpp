@@ -136,7 +136,9 @@ PetscErrorCode DMDestroy_MoFEM(DM dm) {
   if(!((DMCtx*)dm->data)->referenceNumber) {
     DMCtx *dm_field = (DMCtx*)dm->data;
     if(dm_field->destroyProblem) {
-      dm_field->mField_ptr->delete_problem(dm_field->problemName);
+      if(dm_field->mField_ptr->check_problem(dm_field->problemName)) {
+        dm_field->mField_ptr->delete_problem(dm_field->problemName);
+      } // else problem has to be deleted by the user
     }
     delete (DMCtx*)dm->data;
   } else {
