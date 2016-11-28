@@ -29,7 +29,6 @@ openmpi-bin \
 openssh-server \
 libblas-dev \
 liblapack-dev \
-libadolc-dev \
 && rm -rf /var/lib/apt/lists/*
 
 RUN wget https://www.dropbox.com/s/ll3g2drxvmk9ul9/mofem_env.tar.gz \
