@@ -9,7 +9,7 @@ if(NOT ADOL-C_DIR)
 endif(NOT ADOL-C_DIR)
 
 if(ADOL-C_DIR)
-  find_library(ADOL-C_LIBRARY NAMES adolc PATHS ${ADOL-C_DIR}/lib)
+  find_library(ADOL-C_LIBRARY NAMES adolc PATHS ${ADOL-C_DIR}/lib ${ADOL-C_DIR}/lib64)
   message(STATUS ${ADOL-C_LIBRARY})
   if(ADOL-C_LIBRARY)
     find_library(COLPACK_LIBLARY NAMES Colpack PATHS /usr/local/lib)
