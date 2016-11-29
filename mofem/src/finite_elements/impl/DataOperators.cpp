@@ -1266,6 +1266,8 @@ PetscErrorCode OpGetDataAndGradient::doWork(
     }
 
     unsigned int nb_dofs = data.getFieldData().size();
+    if(nb_dofs == 0) PetscFunctionReturn(0);
+
     if(nb_dofs % rAnk != 0) {
       SETERRQ4(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,
         "data inconsistency, type %d, side %d, nb_dofs %d, rAnk %d",
@@ -1277,7 +1279,7 @@ PetscErrorCode OpGetDataAndGradient::doWork(
       std::cerr << data.getN() << std::endl;
       std::cerr << data.getN(NOBASE) << std::endl;
       SETERRQ2(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,
-        "data inconsistency nb_dofs >= data.N.size2() %u >= %u",nb_dofs,data.getN().size2()
+        "data inconsistency nb_dofs >= data.N.size2(), i.e. %u >= %u",nb_dofs,data.getN().size2()
       );
     }
 
