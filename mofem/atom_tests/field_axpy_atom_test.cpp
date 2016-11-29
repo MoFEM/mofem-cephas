@@ -196,7 +196,7 @@ int main(int argc, char *argv[]) {
 
     }
 
-  myfile.close();
+    myfile.close();
 
   } catch (MoFEMException const &e) {
     SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);

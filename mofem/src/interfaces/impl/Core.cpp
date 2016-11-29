@@ -309,12 +309,12 @@ verbose(_verbose) {
 Core::~Core() {
   iFaces.clear();
   if(isGloballyInitialised) {
-    // int flg;
-    // MPI_Finalized(&flg);
-    // if(!flg) {
-    //   PetscPopErrorHandler();
-    // }
-    // isGloballyInitialised = false;
+    int flg;
+    MPI_Finalized(&flg);
+    if(!flg) {
+      PetscPopErrorHandler();
+    }
+    isGloballyInitialised = false;
   }
 }
 moab::Interface& Core::get_moab() {
