@@ -309,11 +309,11 @@ verbose(_verbose) {
 Core::~Core() {
   iFaces.clear();
   if(isGloballyInitialised) {
-    int flg;
-    MPI_Finalized(&flg);
-    if(!flg) {
-      PetscPopErrorHandler();
-    }
+    // int flg;
+    // MPI_Finalized(&flg);
+    // if(!flg) {
+    //   PetscPopErrorHandler();
+    // }
     isGloballyInitialised = false;
   }
 }
