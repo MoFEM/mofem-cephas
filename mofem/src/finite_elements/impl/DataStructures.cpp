@@ -526,4 +526,22 @@ FTensor::Tensor2<double*,3,3> DataForcesAndSurcesCore::EntData::getFTensor2DiffH
   return getFTensor2DiffHdivN<3,3>(bAse);
 }
 
+template<>
+FTensor::Tensor2<double*,3,2> DataForcesAndSurcesCore::EntData::getFTensor2DiffHdivN<3,2>(
+  FieldApproximationBase base
+) {
+  double *t_diff_n_ptr = &*getDiffHdivN(base).data().begin();
+  return FTensor::Tensor2<double*,3,2>(
+    t_diff_n_ptr,&t_diff_n_ptr[HCURL0_1],
+    &t_diff_n_ptr[HCURL1_0],&t_diff_n_ptr[HCURL1_1],
+    &t_diff_n_ptr[HCURL2_0],&t_diff_n_ptr[HCURL2_1],
+    6
+  );
+}
+
+template<>
+FTensor::Tensor2<double*,3,2> DataForcesAndSurcesCore::EntData::getFTensor2DiffHdivN<3,2>() {
+  return getFTensor2DiffHdivN<3,2>(bAse);
+}
+
 }

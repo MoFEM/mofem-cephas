@@ -86,7 +86,9 @@ PetscErrorCode FaceElementForcesAndSourcesCore::UserDataOperator::loopSideVolume
   ierr = getTriFE()->mField.get_adjacencies_any(ent,3,adjacent_volumes); CHKERRQ(ierr);
   typedef NumeredEntFiniteElement_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type FEByComposite;
   FEByComposite &numered_fe =
-  (const_cast<NumeredEntFiniteElement_multiIndex&>(problem_ptr->numeredFiniteElements)).get<Composite_Name_And_Ent_mi_tag>();
+  (const_cast<NumeredEntFiniteElement_multiIndex&>(
+    problem_ptr->numeredFiniteElements)
+  ).get<Composite_Name_And_Ent_mi_tag>();
 
   method.feName = fe_name;
 
@@ -247,9 +249,7 @@ PetscErrorCode FaceElementForcesAndSourcesCore::operator()() {
       nb_gauss_pts = 0;
     }
   } else {
-
     // If rule is negative, set user defined integration points
-
     ierr = setGaussPts(order_row,order_col,order_data); CHKERRQ(ierr);
     nb_gauss_pts = gaussPts.size2();
     dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE).resize(nb_gauss_pts,3,false);
@@ -264,11 +264,19 @@ PetscErrorCode FaceElementForcesAndSourcesCore::operator()() {
   }
   if(nb_gauss_pts == 0) PetscFunctionReturn(0);
 
+  dataH1.dataOnEntities[MBVERTEX][0].getDiffN(NOBASE).resize(3,2,false);
+  ierr = ShapeDiffMBTRI(
+    &*dataH1.dataOnEntities[MBVERTEX][0].getDiffN(NOBASE).data().begin()
+  ); CHKERRQ(ierr);
+
   /// Use the some node base
 
   dataHdiv.dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE) = dataH1.dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE);
   dataHcurl.dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE) = dataH1.dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE);
   dataL2.dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE) = dataH1.dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE);
+  dataHdiv.dataOnEntities[MBVERTEX][0].getDiffNSharedPtr(NOBASE) = dataH1.dataOnEntities[MBVERTEX][0].getDiffNSharedPtr(NOBASE);
+  dataHcurl.dataOnEntities[MBVERTEX][0].getDiffNSharedPtr(NOBASE) = dataH1.dataOnEntities[MBVERTEX][0].getDiffNSharedPtr(NOBASE);
+  dataL2.dataOnEntities[MBVERTEX][0].getDiffNSharedPtr(NOBASE) = dataH1.dataOnEntities[MBVERTEX][0].getDiffNSharedPtr(NOBASE);
   {
     double *shape_functions = &*dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE).data().begin();
     coordsAtGaussPts.resize(nb_gauss_pts,3,false);
@@ -647,6 +655,60 @@ PetscErrorCode OpSetInvJacH1ForFace::doWork(
       default:
       SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented");
     }
+
+  } catch (std::exception& ex) {
+    std::ostringstream ss;
+    ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
+    SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
+  }
+
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode OpSetInvJacHcurlFace::doWork(
+  int side,EntityType type,DataForcesAndSurcesCore::EntData &data
+) {
+  PetscFunctionBegin;
+
+  try {
+
+    if(type != MBEDGE && type != MBTRI) PetscFunctionReturn(0);
+
+    FTensor::Tensor2<double*,2,2> t_inv_jac = FTensor::Tensor2<double*,2,2>(
+      &invJac(0,0),&invJac(0,1),&invJac(1,0),&invJac(1,1)
+    );
+
+    const unsigned int nb_base_functions = data.getDiffHcurlN().size2()/6;
+    if(!nb_base_functions) PetscFunctionReturn(0);
+    const unsigned int nb_gauss_pts = data.getDiffHcurlN().size1();
+
+    diffHcurlInvJac.resize(
+      nb_gauss_pts,data.getDiffHcurlN().size2(),false
+    );
+
+    // cerr << data.getDiffHcurlN() << endl;
+
+    FTensor::Tensor2<double*,3,2> t_diff_n = data.getFTensor2DiffHcurlN<3,2>();
+    double *t_inv_diff_n_ptr = &*diffHcurlInvJac.data().begin();
+    FTensor::Tensor2<double*,3,2> t_inv_diff_n(
+      t_inv_diff_n_ptr,
+      &t_inv_diff_n_ptr[HCURL0_1],
+      &t_inv_diff_n_ptr[HCURL1_0],
+      &t_inv_diff_n_ptr[HCURL1_1],
+      &t_inv_diff_n_ptr[HCURL2_0],
+      &t_inv_diff_n_ptr[HCURL2_1],6
+    );
+
+    for(unsigned int gg = 0;gg!=nb_gauss_pts;gg++) {
+      for(unsigned int bb = 0;bb!=nb_base_functions;bb++) {
+        t_inv_diff_n(k,i) = t_diff_n(k,j)*t_inv_jac(j,i);
+        ++t_diff_n;
+        ++t_inv_diff_n;
+      }
+    }
+
+    data.getDiffHcurlN().data().swap(diffHcurlInvJac.data());
+
 
   } catch (std::exception& ex) {
     std::ostringstream ss;

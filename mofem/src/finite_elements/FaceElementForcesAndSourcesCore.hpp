@@ -363,6 +363,32 @@ struct OpSetInvJacH1ForFace: public FaceElementForcesAndSourcesCore::UserDataOpe
   );
 };
 
+/**
+ * \brief brief Transform local reference derivatives of shape function to global derivatives for face
+
+ * \ingroup mofem_forces_and_sources_tri_element
+ */
+struct OpSetInvJacHcurlFace: public FaceElementForcesAndSourcesCore::UserDataOperator {
+
+  FTensor::Index<'i',2> i;
+  FTensor::Index<'j',2> j;
+  FTensor::Index<'k',3> k;
+  MatrixDouble &invJac;
+
+  OpSetInvJacHcurlFace(const std::string &field_name,MatrixDouble &inv_jac):
+  FaceElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROW),
+  invJac(inv_jac) {
+  }
+
+  MatrixDouble diffHcurlInvJac;
+
+  PetscErrorCode doWork(
+    int side,EntityType type,DataForcesAndSurcesCore::EntData &data
+  );
+
+};
+
+
 
 
 }
