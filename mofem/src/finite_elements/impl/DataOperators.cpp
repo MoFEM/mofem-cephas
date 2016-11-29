@@ -1277,7 +1277,6 @@ PetscErrorCode OpGetDataAndGradient::doWork(
     if(nb_dofs/rAnk > data.getN().size2()) {
       std::cerr << side << " " << type << " " << ApproximationBaseNames[data.getBase()] << std::endl;
       std::cerr << data.getN() << std::endl;
-      std::cerr << data.getN(NOBASE) << std::endl;
       SETERRQ2(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,
         "data inconsistency nb_dofs >= data.N.size2(), i.e. %u >= %u",nb_dofs,data.getN().size2()
       );

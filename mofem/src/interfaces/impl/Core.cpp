@@ -314,7 +314,7 @@ Core::~Core() {
     // if(!flg) {
     //   PetscPopErrorHandler();
     // }
-    isGloballyInitialised = false;
+    // isGloballyInitialised = false;
   }
 }
 moab::Interface& Core::get_moab() {
