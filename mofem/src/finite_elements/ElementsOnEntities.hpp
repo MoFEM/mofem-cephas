@@ -387,7 +387,7 @@ struct ForcesAndSurcesCore: public FEMethod {
     NoteL: By default sYmm is set for symmetric problems
 
   */
-  struct UserDataOperator: public DataOperator {
+  struct UserDataOperator: public MoFEM::DataOperator {
 
     std::string rowFieldName;
     std::string colFieldName;
@@ -420,7 +420,7 @@ struct ForcesAndSurcesCore: public FEMethod {
      *
      * For typical problem like Bubnov-Galrekin OPROW and OPCOL are the same. In more
      * general case for example for non-square matrices columns and rows could have
-     * different numeration and/or different set of field.
+     * different numeration and/or different set of fields.
      *
      */
     enum OpType {
@@ -545,14 +545,14 @@ struct ForcesAndSurcesCore: public FEMethod {
 
   };
 
-  boost::ptr_vector<UserDataOperator> opPtrVector;
+  boost::ptr_vector<MoFEM::DataOperator> opPtrVector;
 
   /** \brief Use to push back operator for row operator
 
    It can be used to calculate nodal forces or other quantities on the mesh.
 
    */
-  boost::ptr_vector<UserDataOperator>& getOpPtrVector() { return opPtrVector; }
+  boost::ptr_vector<MoFEM::DataOperator>& getOpPtrVector() { return opPtrVector; }
 
   virtual PetscErrorCode preProcess() {
     PetscFunctionBegin;
