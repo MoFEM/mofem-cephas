@@ -35,6 +35,10 @@ namespace MoFEM {
   */
 struct DataOperator {
 
+  DataOperator(const bool symm = true):
+  sYmm(symm) {
+  }
+
   virtual ~DataOperator() {}
 
   /** \brief Operator for bi-linear form, usually to calculate values on right hand side
@@ -76,6 +80,14 @@ struct DataOperator {
     const bool do_prisms = true,
     const bool error_if_no_base = true
   );
+
+  bool sYmm;          ///< If true assume that matrix is symmetric structure
+
+  /// set if operator is executed taking in account symmetry
+  inline void setSymm() { sYmm = true; }
+
+  /// unset if operator is executed for  non symmetric problem
+  inline void unSetSymm() { sYmm = false; }
 
 };
 

@@ -1,4 +1,4 @@
-/** \file ElementsOnEntities.cpp
+/** \file ForcesAndSurcesCore.cpp
 
 \brief Implementation of Elements on Entities for Forces and Sources
 
@@ -52,7 +52,7 @@
 #include <FTensor.hpp>
 #include <DataStructures.hpp>
 #include <DataOperators.hpp>
-#include <ElementsOnEntities.hpp>
+#include <ForcesAndSurcesCore.hpp>
 #include <UserDataOperators.hpp>
 
 #ifdef __cplusplus

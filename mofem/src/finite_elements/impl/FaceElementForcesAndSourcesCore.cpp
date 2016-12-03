@@ -53,7 +53,7 @@
 #include <FTensor.hpp>
 #include <DataStructures.hpp>
 #include <DataOperators.hpp>
-#include <ElementsOnEntities.hpp>
+#include <ForcesAndSurcesCore.hpp>
 #include <VolumeElementForcesAndSourcesCore.hpp>
 #include <FaceElementForcesAndSourcesCore.hpp>
 
@@ -392,6 +392,7 @@ PetscErrorCode FaceElementForcesAndSourcesCore::operator()() {
   FieldApproximationBase base[2];
 
   boost::ptr_vector<UserDataOperator>::iterator oit,hi_oit;
+  
   oit = opPtrVector.begin();
   hi_oit = opPtrVector.end();
 
@@ -520,7 +521,6 @@ PetscErrorCode FaceElementForcesAndSourcesCore::operator()() {
       }
     }
 
-
     if(oit->getOpType()&UserDataOperator::OPCOL) {
       try {
         ierr = oit->opRhs(
@@ -542,7 +542,6 @@ PetscErrorCode FaceElementForcesAndSourcesCore::operator()() {
         SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
       }
     }
-
 
     if(oit->getOpType()&UserDataOperator::OPROWCOL) {
       try {

@@ -68,23 +68,23 @@ struct FaceElementForcesAndSourcesCore: public ForcesAndSurcesCore {
   OpSetCovariantPiolaTransoformOnTriangle opCovariantTransoform;
 
   FaceElementForcesAndSourcesCore(Interface &m_field):
-    ForcesAndSurcesCore(m_field),
-    dataH1(MBTRI),derivedDataH1(dataH1),
-    dataHdiv(MBTRI),derivedDataHdiv(dataHdiv),
-    dataHcurl(MBTRI),derivedDataHcurl(dataHcurl),
-    dataL2(MBTRI),derivedDataL2(dataL2),
-    dataNoField(MBTRI),dataNoFieldCol(MBTRI),
-    meshPositionsFieldName("MESH_NODE_POSITIONS"),
-    opHOCoordsAndNormals(
-      hoCoordsAtGaussPts,nOrmals_at_GaussPt,tAngent1_at_GaussPt,tAngent2_at_GaussPt
-    ),
-    opContravariantTransoform(normal,nOrmals_at_GaussPt),
-    opCovariantTransoform(
-      normal,nOrmals_at_GaussPt,
-      tangent1,tAngent1_at_GaussPt,
-      tangent2,tAngent2_at_GaussPt
-    ) {
-    }
+  ForcesAndSurcesCore(m_field),
+  dataH1(MBTRI),derivedDataH1(dataH1),
+  dataHdiv(MBTRI),derivedDataHdiv(dataHdiv),
+  dataHcurl(MBTRI),derivedDataHcurl(dataHcurl),
+  dataL2(MBTRI),derivedDataL2(dataL2),
+  dataNoField(MBTRI),dataNoFieldCol(MBTRI),
+  meshPositionsFieldName("MESH_NODE_POSITIONS"),
+  opHOCoordsAndNormals(
+    hoCoordsAtGaussPts,nOrmals_at_GaussPt,tAngent1_at_GaussPt,tAngent2_at_GaussPt
+  ),
+  opContravariantTransoform(normal,nOrmals_at_GaussPt),
+  opCovariantTransoform(
+    normal,nOrmals_at_GaussPt,
+    tangent1,tAngent1_at_GaussPt,
+    tangent2,tAngent2_at_GaussPt
+  ) {
+  }
 
   /** \brief default operator for TRI element
     * \ingroup mofem_forces_and_sources_tri_element

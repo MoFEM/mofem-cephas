@@ -59,7 +59,7 @@
 #include <EntPolynomialBaseCtx.hpp>
 #include <EdgePolynomialBase.hpp> // Base functions on tet
 #include <DataOperators.hpp>
-#include <ElementsOnEntities.hpp>
+#include <ForcesAndSurcesCore.hpp>
 #include <EdgeElementForcesAndSurcesCore.hpp>
 
 #ifdef __cplusplus

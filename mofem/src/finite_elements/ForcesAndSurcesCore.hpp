@@ -1,4 +1,4 @@
-/** \file ElementsOnEntities.hpp
+/** \file ForcesAndSurcesCore.hpp
 
   \brief Implementation of elements on entities.
 
@@ -22,8 +22,8 @@
 * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
 
-#ifndef __ELEMENTSONENTITIES_HPP
-#define __ELEMENTSONENTITIES_HPP
+#ifndef __FORCES_AND_SOURCES_CORE__HPP__
+#define __FORCES_AND_SOURCES_CORE__HPP__
 
 using namespace boost::numeric;
 
@@ -403,51 +403,10 @@ struct ForcesAndSurcesCore: public FEMethod {
     bool doTrisCol;
     bool doTetsCol;
     bool doPrismsCol;
-    bool sYmm;          ///< If true assume that matrix is symmetric structure
 
-    /// set if operator is executed taking in account symmetry
-    inline void setSymm() { sYmm = true; }
-
-    /// unset if operator is executed for  non symmetric problem
-    inline void unSetSymm() { sYmm = false; }
-
-    /**
-     * \brief Controls loop over entities on element
-     *
-     * OPRWO is used if row vector is assembled
-     * OPCOL is usually ised if column vector is assembled
-     * OPROWCOL is usually used for assemble matrices.
-     *
-     * For typical problem like Bubnov-Galrekin OPROW and OPCOL are the same. In more
-     * general case for example for non-square matrices columns and rows could have
-     * different numeration and/or different set of fields.
-     *
-     */
-    enum OpType {
-      OPROW = 1<<0,
-      OPCOL = 1<<1,
-      OPROWCOL = 1<<2
-    };
-    char opType;
-
-    /**
-     * \brief Get operator types
-     * @return Return operator type
-     */
-    inline int getOpType() const { return opType; }
-
-    /**
-     * \brief Set operator type
-     * @param Operator type
-     */
-    inline void setOpType(const OpType type) { opType = type; }
-
-    /**
-     * \brief Add operator type
-     */
-    inline void addOpType(const OpType type) { opType |= type; }
-
-    UserDataOperator(const std::string &field_name,const char type):
+    UserDataOperator(const std::string &field_name,const char type,const bool symm = true):
+    DataOperator(symm),
+    opType(type),
     rowFieldName(field_name),
     colFieldName(field_name),
     doVerticesRow(true),
@@ -462,17 +421,19 @@ struct ForcesAndSurcesCore: public FEMethod {
     doTrisCol(true),
     doTetsCol(true),
     doPrismsCol(true),
-    sYmm(true),
-    opType(type),
     ptrFE(NULL) {
-
     };
 
     UserDataOperator(
-      const std::string &_row_field_name,const std::string &_col_field_name,const char type
+      const std::string &row_field_name,
+      const std::string &col_field_name,
+      const char type,
+      const bool symm = true
     ):
-    rowFieldName(_row_field_name),
-    colFieldName(_col_field_name),
+    DataOperator(symm),
+    opType(type),
+    rowFieldName(row_field_name),
+    colFieldName(col_field_name),
     doVerticesRow(true),
     doEdgesRow(true),
     doQuadsRow(true),
@@ -485,16 +446,16 @@ struct ForcesAndSurcesCore: public FEMethod {
     doTrisCol(true),
     doTetsCol(true),
     doPrismsCol(true),
-    sYmm(true),
-    opType(type),
-    ptrFE(NULL) {}
+    ptrFE(NULL) {
+    }
     virtual ~UserDataOperator() {
-
     }
 
     /** \brief Return raw pointer to NumeredEntFiniteElement
      */
-    inline const NumeredEntFiniteElement* getNumeredEntFiniteElementPtr() const { return ptrFE->numeredEntFiniteElementPtr; };
+    inline const NumeredEntFiniteElement* getNumeredEntFiniteElementPtr() const {
+      return ptrFE->numeredEntFiniteElementPtr;
+    };
 
     /**
      * \brief Return finite element entity handle
@@ -540,19 +501,56 @@ struct ForcesAndSurcesCore: public FEMethod {
      */
     inline const FEMethod* getFEMethod() { return ptrFE; }
 
+    /**
+     * \brief Controls loop over entities on element
+     *
+     * OPRWO is used if row vector is assembled
+     * OPCOL is usually used if column vector is assembled
+     * OPROWCOL is usually used for assemble matrices.
+     *
+     * For typical problem like Bubnov-Galrekin OPROW and OPCOL are the same. In more
+     * general case for example for non-square matrices columns and rows could have
+     * different numeration and/or different set of fields.
+     *
+     */
+    enum OpType {
+      OPROW = 1<<0,
+      OPCOL = 1<<1,
+      OPROWCOL = 1<<2,
+      OPLAST = 1<<3
+    };
+    char opType;
+
+    /**
+     * \brief Get operator types
+     * @return Return operator type
+     */
+    inline int getOpType() const { return opType; }
+
+    /**
+     * \brief Set operator type
+     * @param Operator type
+     */
+    inline void setOpType(const OpType type) { opType = type; }
+
+    /**
+     * \brief Add operator type
+     */
+    inline void addOpType(const OpType type) { opType |= type; }
+
   protected:
     ForcesAndSurcesCore *ptrFE;
 
   };
 
-  boost::ptr_vector<MoFEM::DataOperator> opPtrVector;
+  boost::ptr_vector<UserDataOperator> opPtrVector;
 
   /** \brief Use to push back operator for row operator
 
    It can be used to calculate nodal forces or other quantities on the mesh.
 
    */
-  boost::ptr_vector<MoFEM::DataOperator>& getOpPtrVector() { return opPtrVector; }
+  boost::ptr_vector<UserDataOperator>& getOpPtrVector() { return opPtrVector; }
 
   virtual PetscErrorCode preProcess() {
     PetscFunctionBegin;
@@ -571,7 +569,7 @@ struct ForcesAndSurcesCore: public FEMethod {
 
 }
 
-#endif //__ELEMENTSONENTITIES_HPP
+#endif //__FORCES_AND_SOURCES_CORE__HPP__
 
 /***************************************************************************//**
  * \defgroup mofem_forces_and_sources Forces and sources
