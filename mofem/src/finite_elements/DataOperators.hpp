@@ -74,7 +74,7 @@ struct DataOperator {
     const bool do_tris = true,
     const bool do_tets = true,
     const bool do_prisms = true,
-    const bool er_ror_if_no_base = true
+    const bool error_if_no_base = true
   );
 
 };
