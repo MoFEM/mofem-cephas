@@ -352,8 +352,8 @@ PetscErrorCode EdgeElementForcesAndSurcesCore::operator()() {
       try {
         ierr = oit->opRhs(
           *op_data[0],
-          oit->doVerticesRow,
-          oit->doEdgesRow,
+          oit->doVertices,
+          oit->doEdges,
           false,
           false,
           false,
@@ -371,8 +371,8 @@ PetscErrorCode EdgeElementForcesAndSurcesCore::operator()() {
       try {
         ierr = oit->opRhs(
           *op_data[1],
-          oit->doVerticesCol,
-          oit->doEdgesCol,
+          oit->doVertices,
+          oit->doEdges,
           false,
           false,
           false,

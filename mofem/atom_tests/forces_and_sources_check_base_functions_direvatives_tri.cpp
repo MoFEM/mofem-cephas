@@ -324,12 +324,12 @@ int main(int argc, char *argv[]) {
   MyFE tri_fe(m_field);
 
   MatrixDouble inv_jac;
-  tri_fe.getOpPtrVector().push_back(new OpCalculateInvJacForFace("FIELD",inv_jac));
+  tri_fe.getOpPtrVector().push_back(new OpCalculateInvJacForFace(inv_jac));
   if(space==H1) {
-    tri_fe.getOpPtrVector().push_back(new OpSetInvJacH1ForFace("FIELD",inv_jac));
+    tri_fe.getOpPtrVector().push_back(new OpSetInvJacH1ForFace(inv_jac));
   }
   if(space==HCURL) {
-    tri_fe.getOpPtrVector().push_back(new OpSetInvJacHcurlFace("FIELD",inv_jac));
+    tri_fe.getOpPtrVector().push_back(new OpSetInvJacHcurlFace(inv_jac));
   }
   tri_fe.getOpPtrVector().push_back(new OpCheckingDirevatives(my_split));
   ierr = m_field.loop_finite_elements("TEST_PROBLEM","TRI_FE",tri_fe);  CHKERRQ(ierr);

@@ -35,8 +35,22 @@ namespace MoFEM {
   */
 struct DataOperator {
 
-  DataOperator(const bool symm = true):
-  sYmm(symm) {
+  DataOperator(
+    const bool symm = true,
+    const bool do_vertices = true,
+    const bool do_edges = true,
+    const bool do_quads = true,
+    const bool do_tris = true,
+    const bool do_tets = true,
+    const bool do_prisms = true
+  ):
+  sYmm(symm),
+  doVertices(do_vertices),
+  doEdges(do_edges),
+  doQuads(do_quads),
+  doTris(do_tris),
+  doTets(do_tets),
+  doPrisms(do_prisms) {
   }
 
   virtual ~DataOperator() {}
@@ -59,6 +73,14 @@ struct DataOperator {
     bool symm = true
   );
 
+  virtual PetscErrorCode opLhs(
+    DataForcesAndSurcesCore &row_data,
+    DataForcesAndSurcesCore &col_data
+  ) {
+    return opLhs(row_data,col_data,getSymm());
+  }
+
+
   /** \brief Operator for linear form, usually to calculate values on left hand side
     */
   virtual PetscErrorCode doWork(
@@ -72,16 +94,44 @@ struct DataOperator {
 
   virtual PetscErrorCode opRhs(
     DataForcesAndSurcesCore &data,
-    const bool do_vertices = true,
-    const bool do_edges = true,
-    const bool do_quads = true,
-    const bool do_tris = true,
-    const bool do_tets = true,
-    const bool do_prisms = true,
+    const bool do_vertices,
+    const bool do_edges,
+    const bool do_quads,
+    const bool do_tris,
+    const bool do_tets,
+    const bool do_prisms,
     const bool error_if_no_base = true
   );
 
+  virtual PetscErrorCode opRhs(
+    DataForcesAndSurcesCore &data,
+    const bool error_if_no_base = true
+  ) {
+    return opRhs(
+      data,doVertices,doEdges,doQuads,doTris,doTets,doPrisms,error_if_no_base
+    );
+  }
+
   bool sYmm;          ///< If true assume that matrix is symmetric structure
+
+  bool doVertices; ///< If false skip vertices
+  bool doEdges;    ///< If false skip edges
+  bool doQuads;
+  bool doTris;
+  bool doTets;
+  bool doPrisms;
+
+  /**
+   * \brief Get if operator uses symmetry of DOFs or not
+   *
+   * If symmetry is used, only not repeating combinations of entities are looped.  For
+   * an example pair of (Vertex, Edge_0) and (Edge_0, Vertex) will calculate the
+   * same matrices only transposed. Implementing that this can be exploited by
+   * integrating only one pair.
+   *
+   * @return true if symmetry
+   */
+  inline bool getSymm() const { return sYmm; }
 
   /// set if operator is executed taking in account symmetry
   inline void setSymm() { sYmm = true; }

@@ -568,12 +568,12 @@ PetscErrorCode FatPrismElementForcesAndSurcesCore::operator()() {
         try {
           ierr = oit->opRhs(
             *op_data[0],
-            oit->doVerticesRow,
-            oit->doEdgesRow,
-            oit->doQuadsRow,
-            oit->doTrisRow,
+            oit->doVertices,
+            oit->doEdges,
+            oit->doQuads,
+            oit->doTris,
             false,
-            oit->doPrismsRow
+            oit->doPrisms
           ); CHKERRQ(ierr);
         } catch (std::exception& ex) {
           std::ostringstream ss;
@@ -587,12 +587,12 @@ PetscErrorCode FatPrismElementForcesAndSurcesCore::operator()() {
         try {
           ierr = oit->opRhs(
             *op_data[1],
-            oit->doVerticesCol,
-            oit->doEdgesCol,
-            oit->doQuadsCol,
-            oit->doTrisCol,
+            oit->doVertices,
+            oit->doEdges,
+            oit->doQuads,
+            oit->doTris,
             false,
-            oit->doPrismsCol
+            oit->doPrisms
           ); CHKERRQ(ierr);
         } catch (std::exception& ex) {
           std::ostringstream ss;

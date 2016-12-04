@@ -602,15 +602,7 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::operator()() {
 
       if(oit->getOpType()&UserDataOperator::OPROW) {
         try {
-          ierr = oit->opRhs(
-            *op_data[0],
-            oit->doVerticesRow,
-            oit->doEdgesRow,
-            oit->doQuadsRow,
-            oit->doTrisRow,
-            oit->doTetsRow,
-            false
-          ); CHKERRQ(ierr);
+          ierr = oit->opRhs(*op_data[0],false); CHKERRQ(ierr);
         } catch (std::exception& ex) {
           std::ostringstream ss;
           ss << "Operator " << typeid(*oit).name()
@@ -624,15 +616,7 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::operator()() {
 
       if(oit->getOpType()&UserDataOperator::OPCOL) {
         try {
-          ierr = oit->opRhs(
-            *op_data[1],
-            oit->doVerticesCol,
-            oit->doEdgesCol,
-            oit->doQuadsCol,
-            oit->doTrisCol,
-            oit->doTetsCol,
-            false
-          ); CHKERRQ(ierr);
+          ierr = oit->opRhs(*op_data[1],false); CHKERRQ(ierr);
         } catch (std::exception& ex) {
           std::ostringstream ss;
           ss << "Operator " << typeid(*oit).name()

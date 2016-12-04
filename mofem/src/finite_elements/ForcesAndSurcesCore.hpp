@@ -389,40 +389,45 @@ struct ForcesAndSurcesCore: public FEMethod {
   */
   struct UserDataOperator: public MoFEM::DataOperator {
 
+    /**
+     * \brief Controls loop over entities on element
+     *
+     * OPRWO is used if row vector is assembled
+     * OPCOL is usually used if column vector is assembled
+     * OPROWCOL is usually used for assemble matrices.
+     *
+     * For typical problem like Bubnov-Galrekin OPROW and OPCOL are the same. In more
+     * general case for example for non-square matrices columns and rows could have
+     * different numeration and/or different set of fields.
+     *
+     */
+    enum OpType {
+      OPROW = 1<<0,
+      OPCOL = 1<<1,
+      OPROWCOL = 1<<2,
+      OPLAST = 1<<3
+    };
+
+    char opType;
     std::string rowFieldName;
     std::string colFieldName;
-    bool doVerticesRow; ///< If false skip vertices
-    bool doEdgesRow;    ///< If false skip edges
-    bool doQuadsRow;
-    bool doTrisRow;
-    bool doTetsRow;
-    bool doPrismsRow;
-    bool doVerticesCol;
-    bool doEdgesCol;
-    bool doQuadsCol;
-    bool doTrisCol;
-    bool doTetsCol;
-    bool doPrismsCol;
+    FieldSpace sPace;
+
+    UserDataOperator(const FieldSpace space,const char type = OPLAST,const bool symm = true):
+    DataOperator(symm),
+    opType(type),
+    sPace(space),
+    ptrFE(NULL) {
+    }
 
     UserDataOperator(const std::string &field_name,const char type,const bool symm = true):
     DataOperator(symm),
     opType(type),
     rowFieldName(field_name),
     colFieldName(field_name),
-    doVerticesRow(true),
-    doEdgesRow(true),
-    doQuadsRow(true),
-    doTrisRow(true),
-    doTetsRow(true),
-    doPrismsRow(true),
-    doVerticesCol(true),
-    doEdgesCol(true),
-    doQuadsCol(true),
-    doTrisCol(true),
-    doTetsCol(true),
-    doPrismsCol(true),
+    sPace(LASTSPACE),
     ptrFE(NULL) {
-    };
+    }
 
     UserDataOperator(
       const std::string &row_field_name,
@@ -434,20 +439,10 @@ struct ForcesAndSurcesCore: public FEMethod {
     opType(type),
     rowFieldName(row_field_name),
     colFieldName(col_field_name),
-    doVerticesRow(true),
-    doEdgesRow(true),
-    doQuadsRow(true),
-    doTrisRow(true),
-    doTetsRow(true),
-    doPrismsRow(true),
-    doVerticesCol(true),
-    doEdgesCol(true),
-    doQuadsCol(true),
-    doTrisCol(true),
-    doTetsCol(true),
-    doPrismsCol(true),
+    sPace(LASTSPACE),
     ptrFE(NULL) {
     }
+
     virtual ~UserDataOperator() {
     }
 
@@ -475,7 +470,12 @@ struct ForcesAndSurcesCore: public FEMethod {
     NOTE: Using those indices to assemble matrix will result in error if new non-zero values need to be created.
 
     */
-    PetscErrorCode getPorblemRowIndices(const std::string filed_name,const EntityType type,const int side,VectorInt& indices) const;
+    PetscErrorCode getPorblemRowIndices(
+      const std::string filed_name,
+      const EntityType type,
+      const int side,
+      VectorInt& indices
+    ) const;
 
     /** \brief Get col indices
 
@@ -489,7 +489,12 @@ struct ForcesAndSurcesCore: public FEMethod {
     NOTE: Using those indices to assemble matrix will result in error if new non-zero values need to be created.
 
     */
-    PetscErrorCode getPorblemColIndices(const std::string filed_name,const EntityType type,const int side,VectorInt& indices) const;
+    PetscErrorCode getPorblemColIndices(
+      const std::string filed_name,
+      const EntityType type,
+      const int side,
+      VectorInt& indices
+    ) const;
 
     virtual PetscErrorCode setPtrFE(ForcesAndSurcesCore *ptr) {
       PetscFunctionBegin;
@@ -500,26 +505,6 @@ struct ForcesAndSurcesCore: public FEMethod {
     /** \brief Return raw pointer to Finite Element Method object
      */
     inline const FEMethod* getFEMethod() { return ptrFE; }
-
-    /**
-     * \brief Controls loop over entities on element
-     *
-     * OPRWO is used if row vector is assembled
-     * OPCOL is usually used if column vector is assembled
-     * OPROWCOL is usually used for assemble matrices.
-     *
-     * For typical problem like Bubnov-Galrekin OPROW and OPCOL are the same. In more
-     * general case for example for non-square matrices columns and rows could have
-     * different numeration and/or different set of fields.
-     *
-     */
-    enum OpType {
-      OPROW = 1<<0,
-      OPCOL = 1<<1,
-      OPROWCOL = 1<<2,
-      OPLAST = 1<<3
-    };
-    char opType;
 
     /**
      * \brief Get operator types

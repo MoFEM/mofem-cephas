@@ -392,7 +392,7 @@ PetscErrorCode FaceElementForcesAndSourcesCore::operator()() {
   FieldApproximationBase base[2];
 
   boost::ptr_vector<UserDataOperator>::iterator oit,hi_oit;
-  
+
   oit = opPtrVector.begin();
   hi_oit = opPtrVector.end();
 
@@ -400,161 +400,204 @@ PetscErrorCode FaceElementForcesAndSourcesCore::operator()() {
 
     oit->setPtrFE(this);
 
-    for(int ss = 0;ss!=2;ss++) {
+    if(oit->sPace!=LASTSPACE) {
 
-      std::string field_name = !ss ? oit->rowFieldName : oit->colFieldName;
-      const Field* field_struture = mField.get_field_structure(field_name);
-      BitFieldId data_id = field_struture->getId();
-
-      if((oit->getNumeredEntFiniteElementPtr()->getBitFieldIdData()&data_id).none()) {
-        SETERRQ2(
-          PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,
-          "no data field < %s > on finite element < %s >",
-          field_name.c_str(),feName.c_str()
-        );
+      // Set field
+      switch(oit->sPace) {
+        case NOSPACE:
+        SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"unknown space");
+        case H1:
+        op_data[0] = &dataH1;
+        break;
+        case HCURL:
+        op_data[0] = &dataHcurl;
+        break;
+        case HDIV:
+        op_data[0] = &dataHdiv;
+        break;
+        case L2:
+        op_data[0] = &dataL2;
+        break;
+        case NOFIELD:
+        op_data[0] = &dataNoField;
+        break;
+        case LASTSPACE:
+        SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"unknown space");
       }
 
-      if(oit->getOpType()&types[ss] || oit->getOpType()&UserDataOperator::OPROWCOL) {
+      // Reseat all data which all field dependent
+      op_data[0]->resetFieldDepenentData();
 
-        space[ss] = field_struture->getSpace();
-        switch(space[ss]) {
-          case NOSPACE:
-          SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"unknown space");
-          case H1:
-          op_data[ss] = !ss ? &dataH1 : &derivedDataH1;
-          break;
-          case HCURL:
-          op_data[ss] = !ss ? &dataHcurl : &derivedDataHcurl;
-          break;
-          case HDIV:
-          op_data[ss] = !ss ? &dataHdiv : &derivedDataHdiv;
-          break;
-          case L2:
-          op_data[ss] = !ss ? &dataL2 : &derivedDataL2;
-          break;
-          case NOFIELD:
-          op_data[ss] = !ss ? &dataNoField : &dataNoFieldCol;
-          break;
-          case LASTSPACE:
-          SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"unknown space");
+      // Run operator
+      ierr = oit->opRhs(
+        *op_data[0],
+        oit->doVertices,
+        oit->doEdges,
+        oit->doQuads,
+        oit->doTris,
+        false,
+        false
+      ); CHKERRQ(ierr);
+
+    } else {
+
+      for(int ss = 0;ss!=2;ss++) {
+
+        std::string field_name = !ss ? oit->rowFieldName : oit->colFieldName;
+        const Field* field_struture = mField.get_field_structure(field_name);
+        BitFieldId data_id = field_struture->getId();
+
+        if((oit->getNumeredEntFiniteElementPtr()->getBitFieldIdData()&data_id).none()) {
+          SETERRQ2(
+            PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,
+            "no data field < %s > on finite element < %s >",
+            field_name.c_str(),feName.c_str()
+          );
         }
 
-        base[ss] = field_struture->getApproxBase();
-        switch(base[ss]) {
-          case AINSWORTH_COLE_BASE:
-          case LOBATTO_BASE:
-          break;
-          default:
-          SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"unknown or not implemented base");
-          break;
-        }
+        if(oit->getOpType()&types[ss] || oit->getOpType()&UserDataOperator::OPROWCOL) {
 
-        if(last_eval_field_name[ss]!=field_name) {
-
+          space[ss] = field_struture->getSpace();
           switch(space[ss]) {
             case NOSPACE:
             SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"unknown space");
             case H1:
-            if(!ss) {
-              ierr = getRowNodesIndices(*op_data[ss],field_name); CHKERRQ(ierr);
-            } else {
-              ierr = getColNodesIndices(*op_data[ss],field_name); CHKERRQ(ierr);
-            }
-            ierr = getNodesFieldData(*op_data[ss],field_name); CHKERRQ(ierr);
+            op_data[ss] = !ss ? &dataH1 : &derivedDataH1;
+            break;
             case HCURL:
-            if(!ss) {
-              ierr = getEdgesRowIndices(*op_data[ss],field_name); CHKERRQ(ierr);
-            } else {
-              ierr = getEdgesColIndices(*op_data[ss],field_name); CHKERRQ(ierr);
-            }
-            ierr = getEdgesDataOrderSpaceAndBase(*op_data[ss],field_name); CHKERRQ(ierr);
-            ierr = getEdgesFieldData(*op_data[ss],field_name); CHKERRQ(ierr);
+            op_data[ss] = !ss ? &dataHcurl : &derivedDataHcurl;
+            break;
             case HDIV:
+            op_data[ss] = !ss ? &dataHdiv : &derivedDataHdiv;
+            break;
             case L2:
-            if(!ss) {
-              ierr = getTrisRowIndices(*op_data[ss],field_name); CHKERRQ(ierr);
-            } else {
-              ierr = getTrisColIndices(*op_data[ss],field_name); CHKERRQ(ierr);
-            }
-            ierr = getTrisDataOrderSpaceAndBase(*op_data[ss],field_name); CHKERRQ(ierr);
-            ierr = getTrisFieldData(*op_data[ss],field_name); CHKERRQ(ierr);
+            op_data[ss] = !ss ? &dataL2 : &derivedDataL2;
             break;
             case NOFIELD:
-            if(!getNinTheLoop()) {
-              // NOFIELD data are the same for each element, can be retrieved only once
-              if(!ss) {
-                ierr = getNoFieldRowIndices(*op_data[ss],field_name); CHKERRQ(ierr);
-              } else {
-                ierr = getNoFieldColIndices(*op_data[ss],field_name); CHKERRQ(ierr);
-              }
-              ierr = getNoFieldFieldData(*op_data[ss],field_name); CHKERRQ(ierr);
-            }
+            op_data[ss] = !ss ? &dataNoField : &dataNoFieldCol;
             break;
             case LASTSPACE:
             SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"unknown space");
           }
-          last_eval_field_name[ss]=field_name;
 
+          base[ss] = field_struture->getApproxBase();
+          switch(base[ss]) {
+            case AINSWORTH_COLE_BASE:
+            case LOBATTO_BASE:
+            break;
+            default:
+            SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"unknown or not implemented base");
+            break;
+          }
+
+          if(last_eval_field_name[ss]!=field_name) {
+
+            switch(space[ss]) {
+              case NOSPACE:
+              SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"unknown space");
+              case H1:
+              if(!ss) {
+                ierr = getRowNodesIndices(*op_data[ss],field_name); CHKERRQ(ierr);
+              } else {
+                ierr = getColNodesIndices(*op_data[ss],field_name); CHKERRQ(ierr);
+              }
+              ierr = getNodesFieldData(*op_data[ss],field_name); CHKERRQ(ierr);
+              case HCURL:
+              if(!ss) {
+                ierr = getEdgesRowIndices(*op_data[ss],field_name); CHKERRQ(ierr);
+              } else {
+                ierr = getEdgesColIndices(*op_data[ss],field_name); CHKERRQ(ierr);
+              }
+              ierr = getEdgesDataOrderSpaceAndBase(*op_data[ss],field_name); CHKERRQ(ierr);
+              ierr = getEdgesFieldData(*op_data[ss],field_name); CHKERRQ(ierr);
+              case HDIV:
+              case L2:
+              if(!ss) {
+                ierr = getTrisRowIndices(*op_data[ss],field_name); CHKERRQ(ierr);
+              } else {
+                ierr = getTrisColIndices(*op_data[ss],field_name); CHKERRQ(ierr);
+              }
+              ierr = getTrisDataOrderSpaceAndBase(*op_data[ss],field_name); CHKERRQ(ierr);
+              ierr = getTrisFieldData(*op_data[ss],field_name); CHKERRQ(ierr);
+              break;
+              case NOFIELD:
+              if(!getNinTheLoop()) {
+                // NOFIELD data are the same for each element, can be retrieved only once
+                if(!ss) {
+                  ierr = getNoFieldRowIndices(*op_data[ss],field_name); CHKERRQ(ierr);
+                } else {
+                  ierr = getNoFieldColIndices(*op_data[ss],field_name); CHKERRQ(ierr);
+                }
+                ierr = getNoFieldFieldData(*op_data[ss],field_name); CHKERRQ(ierr);
+              }
+              break;
+              case LASTSPACE:
+              SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"unknown space");
+            }
+            last_eval_field_name[ss]=field_name;
+
+          }
         }
       }
-    }
 
-    if(oit->getOpType()&UserDataOperator::OPROW) {
-      try {
-        ierr = oit->opRhs(
-          *op_data[0],
-          oit->doVerticesRow,
-          oit->doEdgesRow,
-          oit->doQuadsRow,
-          oit->doTrisRow,
-          false,
-          false
-        ); CHKERRQ(ierr);
-      } catch (std::exception& ex) {
-        std::ostringstream ss;
-        ss << "Operator " << typeid(*oit).name()
-        << " operator number " << std::distance<boost::ptr_vector<UserDataOperator>::iterator>(opPtrVector.begin(),oit)
-        << " thorw in method: " << ex.what()
-        << " at line " << __LINE__
-        << " in file " << __FILE__;
-        SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
+      if(oit->getOpType()&UserDataOperator::OPROW) {
+        try {
+          ierr = oit->opRhs(
+            *op_data[0],
+            oit->doVertices,
+            oit->doEdges,
+            oit->doQuads,
+            oit->doTris,
+            false,
+            false
+          ); CHKERRQ(ierr);
+        } catch (std::exception& ex) {
+          std::ostringstream ss;
+          ss << "Operator " << typeid(*oit).name()
+          << " operator number " << std::distance<boost::ptr_vector<UserDataOperator>::iterator>(opPtrVector.begin(),oit)
+          << " thorw in method: " << ex.what()
+          << " at line " << __LINE__
+          << " in file " << __FILE__;
+          SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
+        }
       }
-    }
 
-    if(oit->getOpType()&UserDataOperator::OPCOL) {
-      try {
-        ierr = oit->opRhs(
-          *op_data[1],
-          oit->doVerticesCol,
-          oit->doEdgesCol,
-          oit->doQuadsCol,
-          oit->doTrisCol,
-          false,
-          false
-        ); CHKERRQ(ierr);
-      } catch (std::exception& ex) {
-        std::ostringstream ss;
-        ss << "Operator " << typeid(*oit).name()
-        << " operator number " << std::distance<boost::ptr_vector<UserDataOperator>::iterator>(opPtrVector.begin(),oit)
-        << " thorw in method: " << ex.what()
-        << " at line " << __LINE__
-        << " in file " << __FILE__;
-        SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
+      if(oit->getOpType()&UserDataOperator::OPCOL) {
+        try {
+          ierr = oit->opRhs(
+            *op_data[1],
+            oit->doVertices,
+            oit->doEdges,
+            oit->doQuads,
+            oit->doTris,
+            false,
+            false
+          ); CHKERRQ(ierr);
+        } catch (std::exception& ex) {
+          std::ostringstream ss;
+          ss << "Operator " << typeid(*oit).name()
+          << " operator number " << std::distance<boost::ptr_vector<UserDataOperator>::iterator>(opPtrVector.begin(),oit)
+          << " thorw in method: " << ex.what()
+          << " at line " << __LINE__
+          << " in file " << __FILE__;
+          SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
+        }
       }
-    }
 
-    if(oit->getOpType()&UserDataOperator::OPROWCOL) {
-      try {
-        ierr = oit->opLhs(*op_data[0],*op_data[1],oit->sYmm); CHKERRQ(ierr);
-      } catch (std::exception& ex) {
-        std::ostringstream ss;
-        ss << "Operator " << typeid(*oit).name()
-        << " operator number " << std::distance<boost::ptr_vector<UserDataOperator>::iterator>(opPtrVector.begin(),oit)
-        << " thorw in method: " << ex.what()
-        << " at line " << __LINE__
-        << " in file " << __FILE__;
-        SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
+      if(oit->getOpType()&UserDataOperator::OPROWCOL) {
+        try {
+          ierr = oit->opLhs(*op_data[0],*op_data[1],oit->sYmm); CHKERRQ(ierr);
+        } catch (std::exception& ex) {
+          std::ostringstream ss;
+          ss << "Operator " << typeid(*oit).name()
+          << " operator number " << std::distance<boost::ptr_vector<UserDataOperator>::iterator>(opPtrVector.begin(),oit)
+          << " thorw in method: " << ex.what()
+          << " at line " << __LINE__
+          << " in file " << __FILE__;
+          SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
+        }
       }
+
     }
 
   }
@@ -567,15 +610,16 @@ PetscErrorCode OpCalculateInvJacForFace::doWork(
   EntityType type,
   DataForcesAndSurcesCore::EntData &data
 ) {
+  PetscErrorCode ierr;
   PetscFunctionBegin;
-  // PetscErrorCode ierr;
 
   try {
 
     if(type == MBVERTEX) {
       VectorDouble &coords = getCoords();
       double *coords_ptr = &*coords.data().begin();
-      double *diff_n = &*data.getDiffN().data().begin();
+      double diff_n[6];
+      ierr = ShapeDiffMBTRI(diff_n); CHKERRQ(ierr);
       double j00,j01,j10,j11;
       for(int gg = 0;gg<1;gg++) {
         // this is triangle, derivative of nodal shape functions is constant.
@@ -598,12 +642,12 @@ PetscErrorCode OpCalculateInvJacForFace::doWork(
     SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
   }
 
-  doVerticesRow = true;
-  doEdgesRow = false;
-  doQuadsRow = false;
-  doTrisRow = false;
-  doTetsRow = false;
-  doPrismsRow = false;
+  doVertices = true;
+  doEdges = false;
+  doQuads = false;
+  doTris = false;
+  doTets= false;
+  doPrisms = false;
 
   PetscFunctionReturn(0);
 }
@@ -616,52 +660,59 @@ PetscErrorCode OpSetInvJacH1ForFace::doWork(
   PetscFunctionBegin;
   // PetscErrorCode ierr;
 
-  try {
-    unsigned int nb_dofs = data.getN().size2();
-    if(nb_dofs==0) PetscFunctionReturn(0);
-    unsigned int nb_gauss_pts = data.getN().size1();
-    diffNinvJac.resize(nb_gauss_pts,2*nb_dofs,false);
+  for(int b = AINSWORTH_COLE_BASE; b!=USER_BASE; b++) {
 
-    if(type!=MBVERTEX) {
-      if(nb_dofs != data.getDiffN().size2()/2) {
-        SETERRQ2(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,
-          "data inconsistency nb_dofs != data.diffN.size2()/2 ( %u != %u/2 )",
-          nb_dofs,data.getDiffN().size2()
-        );
-      }
-    }
+    FieldApproximationBase base = ApproximationBaseArray[b];
 
-    //std::cerr << type << std::endl;
-    //std::cerr << data.getDiffN() << std::endl;
-    //std::cerr << std::endl;
-    switch (type) {
-      case MBVERTEX:
-      case MBEDGE:
-      case MBTRI: {
-        for(unsigned int gg = 0;gg<nb_gauss_pts;gg++) {
-          for(unsigned int dd = 0;dd<nb_dofs;dd++) {
-            cblas_dgemv(
-              CblasRowMajor,CblasTrans,2,2,1,
-              &*invJac.data().begin(),2,
-              &data.getDiffN()(gg,2*dd),1,
-              0,&diffNinvJac(gg,2*dd),1
-            );
-          }
+    try {
+
+      unsigned int nb_dofs = data.getN(base).size2();
+      if(nb_dofs==0) PetscFunctionReturn(0);
+      unsigned int nb_gauss_pts = data.getN(base).size1();
+      diffNinvJac.resize(nb_gauss_pts,2*nb_dofs,false);
+
+      if(type!=MBVERTEX) {
+        if(nb_dofs != data.getDiffN(base).size2()/2) {
+          SETERRQ2(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,
+            "data inconsistency nb_dofs != data.diffN.size2()/2 ( %u != %u/2 )",
+            nb_dofs,data.getDiffN(base).size2()
+          );
         }
-        data.getDiffN().data().swap(diffNinvJac.data());
       }
-      break;
-      default:
-      SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented");
+
+      //std::cerr << type << std::endl;
+      //std::cerr << data.getDiffN() << std::endl;
+      //std::cerr << std::endl;
+      switch (type) {
+        case MBVERTEX:
+        case MBEDGE:
+        case MBTRI: {
+          for(unsigned int gg = 0;gg<nb_gauss_pts;gg++) {
+            for(unsigned int dd = 0;dd<nb_dofs;dd++) {
+              cblas_dgemv(
+                CblasRowMajor,CblasTrans,2,2,1,
+                &*invJac.data().begin(),2,
+                &data.getDiffN(base)(gg,2*dd),1,
+                0,&diffNinvJac(gg,2*dd),1
+              );
+            }
+          }
+          data.getDiffN(base).data().swap(diffNinvJac.data());
+        }
+        break;
+        default:
+        SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented");
+      }
+
+    } catch (std::exception& ex) {
+      std::ostringstream ss;
+      ss << "Error in OpSetInvJacH1ForFace "
+      << "thorw in method: "
+      << ex.what()
+      << " at line " << __LINE__ << " in file " << __FILE__;
+      SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
     }
 
-  } catch (std::exception& ex) {
-    std::ostringstream ss;
-    ss << "Error in OpSetInvJacH1ForFace "
-    << "thorw in method: "
-    << ex.what()
-    << " at line " << __LINE__ << " in file " << __FILE__;
-    SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
   }
 
   PetscFunctionReturn(0);
@@ -672,50 +723,56 @@ PetscErrorCode OpSetInvJacHcurlFace::doWork(
 ) {
   PetscFunctionBegin;
 
-  try {
+  for(int b = AINSWORTH_COLE_BASE; b!=USER_BASE; b++) {
 
-    if(type != MBEDGE && type != MBTRI) PetscFunctionReturn(0);
+    FieldApproximationBase base = ApproximationBaseArray[b];
 
-    FTensor::Tensor2<double*,2,2> t_inv_jac = FTensor::Tensor2<double*,2,2>(
-      &invJac(0,0),&invJac(0,1),&invJac(1,0),&invJac(1,1)
-    );
+    try {
 
-    const unsigned int nb_base_functions = data.getDiffHcurlN().size2()/6;
-    if(!nb_base_functions) PetscFunctionReturn(0);
-    const unsigned int nb_gauss_pts = data.getDiffHcurlN().size1();
+      if(type != MBEDGE && type != MBTRI) PetscFunctionReturn(0);
 
-    diffHcurlInvJac.resize(
-      nb_gauss_pts,data.getDiffHcurlN().size2(),false
-    );
+      FTensor::Tensor2<double*,2,2> t_inv_jac = FTensor::Tensor2<double*,2,2>(
+        &invJac(0,0),&invJac(0,1),&invJac(1,0),&invJac(1,1)
+      );
 
-    // cerr << data.getDiffHcurlN() << endl;
+      const unsigned int nb_base_functions = data.getDiffHcurlN(base).size2()/6;
+      if(!nb_base_functions) PetscFunctionReturn(0);
+      const unsigned int nb_gauss_pts = data.getDiffHcurlN(base).size1();
 
-    FTensor::Tensor2<double*,3,2> t_diff_n = data.getFTensor2DiffHcurlN<3,2>();
-    double *t_inv_diff_n_ptr = &*diffHcurlInvJac.data().begin();
-    FTensor::Tensor2<double*,3,2> t_inv_diff_n(
-      t_inv_diff_n_ptr,
-      &t_inv_diff_n_ptr[HCURL0_1],
-      &t_inv_diff_n_ptr[HCURL1_0],
-      &t_inv_diff_n_ptr[HCURL1_1],
-      &t_inv_diff_n_ptr[HCURL2_0],
-      &t_inv_diff_n_ptr[HCURL2_1],6
-    );
+      diffHcurlInvJac.resize(
+        nb_gauss_pts,data.getDiffHcurlN(base).size2(),false
+      );
 
-    for(unsigned int gg = 0;gg!=nb_gauss_pts;gg++) {
-      for(unsigned int bb = 0;bb!=nb_base_functions;bb++) {
-        t_inv_diff_n(k,i) = t_diff_n(k,j)*t_inv_jac(j,i);
-        ++t_diff_n;
-        ++t_inv_diff_n;
+      // cerr << data.getDiffHcurlN(base) << endl;
+
+      FTensor::Tensor2<double*,3,2> t_diff_n = data.getFTensor2DiffHcurlN<3,2>(base);
+      double *t_inv_diff_n_ptr = &*diffHcurlInvJac.data().begin();
+      FTensor::Tensor2<double*,3,2> t_inv_diff_n(
+        t_inv_diff_n_ptr,
+        &t_inv_diff_n_ptr[HCURL0_1],
+        &t_inv_diff_n_ptr[HCURL1_0],
+        &t_inv_diff_n_ptr[HCURL1_1],
+        &t_inv_diff_n_ptr[HCURL2_0],
+        &t_inv_diff_n_ptr[HCURL2_1],6
+      );
+
+      for(unsigned int gg = 0;gg!=nb_gauss_pts;gg++) {
+        for(unsigned int bb = 0;bb!=nb_base_functions;bb++) {
+          t_inv_diff_n(k,i) = t_diff_n(k,j)*t_inv_jac(j,i);
+          ++t_diff_n;
+          ++t_inv_diff_n;
+        }
       }
+
+      data.getDiffHcurlN(base).data().swap(diffHcurlInvJac.data());
+
+
+    } catch (std::exception& ex) {
+      std::ostringstream ss;
+      ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
+      SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
     }
 
-    data.getDiffHcurlN().data().swap(diffHcurlInvJac.data());
-
-
-  } catch (std::exception& ex) {
-    std::ostringstream ss;
-    ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
-    SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
   }
 
   PetscFunctionReturn(0);

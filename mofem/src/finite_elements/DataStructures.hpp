@@ -1109,6 +1109,21 @@ struct DataForcesAndSurcesCore {
 
     friend std::ostream& operator<<(std::ostream& os,const DataForcesAndSurcesCore::EntData &e);
 
+    /**
+     * Reset data associated with particular field name
+     * @return error code
+     */
+    inline PetscErrorCode resetFieldDepenentData() {
+      PetscFunctionBegin;
+      sPace = NOSPACE;
+      bAse = NOBASE;
+      iNdices.resize(0,false);
+      localIndices.resize(0,false);
+      dOfs.resize(0,false);
+      fieldData.resize(0,false);
+      PetscFunctionReturn(0);
+    }
+
   protected:
     int sEnse;                    ///< Entity sense (orientation)
     ApproximationOrder oRder;     ///< Entity order
@@ -1128,6 +1143,22 @@ struct DataForcesAndSurcesCore {
   std::bitset<LASTSPACE> spacesOnEntities[MBMAXTYPE]; 	      ///< spaces on entity types
   std::bitset<LASTBASE> basesOnEntities[MBMAXTYPE]; 	        ///< bases on entity types
   boost::ptr_vector<EntData> dataOnEntities[MBMAXTYPE]; ///< data on nodes, base function, dofs values, etc.
+
+  /**
+   * Reset data associated with particular field name
+   * @return error code
+   */
+  inline PetscErrorCode resetFieldDepenentData() {
+    PetscErrorCode ierr;
+    PetscFunctionBegin;
+    for(EntityType t = MBVERTEX;t!=MBMAXTYPE;t++) {
+      boost::ptr_vector<EntData>::iterator ent_data_it = dataOnEntities[t].begin();
+      for(;ent_data_it!=dataOnEntities[t].end();ent_data_it++) {
+        ierr = ent_data_it->resetFieldDepenentData(); CHKERRQ(ierr);
+      }
+    }
+    PetscFunctionReturn(0);
+  }
 
   DataForcesAndSurcesCore(EntityType type);
   virtual ~DataForcesAndSurcesCore() {}
