@@ -613,6 +613,14 @@ PetscErrorCode OpCalculateInvJacForFace::doWork(
   PetscErrorCode ierr;
   PetscFunctionBegin;
 
+  if(getNumeredEntFiniteElementPtr()->getEntType()!=MBTRI) {
+    SETERRQ(
+      PETSC_COMM_SELF,
+      MOFEM_DATA_INCONSISTENCY,
+      "This operator can be used only with element which is trangle"
+    );
+  }
+
   try {
 
     if(type == MBVERTEX) {
@@ -659,6 +667,18 @@ PetscErrorCode OpSetInvJacH1ForFace::doWork(
 ) {
   PetscFunctionBegin;
   // PetscErrorCode ierr;
+
+  if(
+    getNumeredEntFiniteElementPtr()->getEntType()!=MBTRI &&
+    getNumeredEntFiniteElementPtr()->getEntType()!=MBQUAD
+  ) {
+    SETERRQ(
+      PETSC_COMM_SELF,
+      MOFEM_DATA_INCONSISTENCY,
+      "This operator can be used only with element which is trangle"
+    );
+  }
+
 
   for(int b = AINSWORTH_COLE_BASE; b!=USER_BASE; b++) {
 
@@ -722,6 +742,17 @@ PetscErrorCode OpSetInvJacHcurlFace::doWork(
   int side,EntityType type,DataForcesAndSurcesCore::EntData &data
 ) {
   PetscFunctionBegin;
+
+  if(
+    getNumeredEntFiniteElementPtr()->getEntType()!=MBTRI &&
+    getNumeredEntFiniteElementPtr()->getEntType()!=MBQUAD
+  ) {
+    SETERRQ(
+      PETSC_COMM_SELF,
+      MOFEM_DATA_INCONSISTENCY,
+      "This operator can be used only with element which is trangle"
+    );
+  }
 
   for(int b = AINSWORTH_COLE_BASE; b!=USER_BASE; b++) {
 
