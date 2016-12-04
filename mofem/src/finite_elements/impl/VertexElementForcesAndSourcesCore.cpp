@@ -52,7 +52,7 @@
 #include <FTensor.hpp>
 #include <DataStructures.hpp>
 #include <DataOperators.hpp>
-#include <ElementsOnEntities.hpp>
+#include <ForcesAndSurcesCore.hpp>
 #include <VertexElementForcesAndSourcesCore.hpp>
 
 #ifdef __cplusplus
@@ -176,7 +176,7 @@ PetscErrorCode VertexElementForcesAndSourcesCore::operator()() {
       try {
         ierr = oit->opRhs(
           *op_data[0],
-          oit->doVerticesRow,
+          oit->doVertices,
           false,
           false,
           false,
@@ -195,7 +195,7 @@ PetscErrorCode VertexElementForcesAndSourcesCore::operator()() {
       try {
         ierr = oit->opRhs(
           *op_data[1],
-          oit->doVerticesCol,
+          oit->doVertices,
           false,
           false,
           false,

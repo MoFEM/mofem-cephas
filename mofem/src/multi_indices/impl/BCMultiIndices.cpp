@@ -324,7 +324,7 @@ PetscErrorCode CubitMeshSets::getAttributes(std::vector<double>& attributes) con
 PetscErrorCode CubitMeshSets::setAttributes(moab::Interface &moab,const std::vector<double>& attributes) {
   MoABErrorCode rval;
   PetscFunctionBegin;
-  int tag_size[] = { attributes.size() };
+  int tag_size[] = { (int)attributes.size() };
   void const* tag_data[] = { &*attributes.begin() };
   rval = moab.tag_set_by_ptr(thBlockAttribs,&meshset,1,tag_data,tag_size); CHKERR_MOAB(rval);
   rval = moab.tag_get_by_ptr(
@@ -713,7 +713,7 @@ void CubitMeshSets_change_attributes_data_structure::operator()(CubitMeshSets &e
   MoABErrorCode rval;
   PetscErrorCode ierr;
   // Need to run this to set tag size in number of doubles, don;t know nothing about structure
-  int tag_size[] = { aTtr.getSizeOfData()/sizeof(double) };
+  int tag_size[] = { (int)(aTtr.getSizeOfData()/sizeof(double)) };
   void const* tag_data[] = { aTtr.getDataPtr() };
   rval = mOab.tag_set_by_ptr(e.thBlockAttribs,&e.meshset,1,tag_data,tag_size); MOAB_THROW(rval);
   rval = mOab.tag_get_by_ptr(
@@ -728,7 +728,7 @@ void CubitMeshSets_change_bc_data_structure::operator()(CubitMeshSets &e) {
   MoABErrorCode rval;
   PetscErrorCode ierr;
   // Need to run this to set tag size, don;t know nothing about structure
-  int tag_size[] = { bcData.getSizeOfData() };
+  int tag_size[] = { (int)bcData.getSizeOfData() };
   void const* tag_data[] = { bcData.getDataPtr() };
   if((e.cubitBcType&CubitBCType(NODESET)).any()) {
     rval = mOab.tag_set_by_ptr( e.nsTag_data,&e.meshset,1,tag_data,tag_size

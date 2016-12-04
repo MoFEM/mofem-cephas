@@ -53,7 +53,7 @@
 #include <FTensor.hpp>
 #include <DataStructures.hpp>
 #include <DataOperators.hpp>
-#include <ElementsOnEntities.hpp>
+#include <ForcesAndSurcesCore.hpp>
 #include <BaseFunction.hpp>
 #include <EntPolynomialBaseCtx.hpp>
 #include <FlatPrismPolynomialBase.hpp>
@@ -401,10 +401,10 @@ PetscErrorCode FlatPrismElementForcesAndSurcesCore::operator()() {
         try {
           ierr = oit->opRhs(
             *op_data[0],
-            oit->doVerticesRow,
-            oit->doEdgesRow,
-            oit->doQuadsRow,
-            oit->doTrisRow,
+            oit->doVertices,
+            oit->doEdges,
+            oit->doQuads,
+            oit->doTris,
             false,
             false
           ); CHKERRQ(ierr);
@@ -424,10 +424,10 @@ PetscErrorCode FlatPrismElementForcesAndSurcesCore::operator()() {
         try {
           ierr = oit->opRhs(
             *op_data[1],
-            oit->doVerticesCol,
-            oit->doEdgesCol,
-            oit->doQuadsCol,
-            oit->doTrisCol,
+            oit->doVertices,
+            oit->doEdges,
+            oit->doQuads,
+            oit->doTris,
             false,
             false
           ); CHKERRQ(ierr);
@@ -473,8 +473,8 @@ PetscErrorCode OpCalculateInvJacForFlatPrism::doWork(
   EntityType type,
   DataForcesAndSurcesCore::EntData &data
 ) {
+  PetscErrorCode ierr;
   PetscFunctionBegin;
-  // PetscErrorCode ierr;
 
   try {
 
@@ -482,7 +482,8 @@ PetscErrorCode OpCalculateInvJacForFlatPrism::doWork(
 
       VectorDouble &coords = getCoords();
       double *coords_ptr = &*coords.data().begin();
-      double *diff_n = &*data.getDiffN().data().begin();
+      double diff_n[6];
+      ierr = ShapeDiffMBTRI(diff_n); CHKERRQ(ierr);
       double j00_f3,j01_f3,j10_f3,j11_f3;
       for(int gg = 0;gg<1;gg++) {
         // this is triangle, derivative of nodal shape functions is constant.
@@ -506,12 +507,12 @@ PetscErrorCode OpCalculateInvJacForFlatPrism::doWork(
     SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
   }
 
-  doVerticesRow = true;
-  doEdgesRow = false;
-  doQuadsRow = false;
-  doTrisRow = false;
-  doTetsRow = false;
-  doPrismsRow = false;
+  doVertices = true;
+  doEdges = false;
+  doQuads = false;
+  doTris = false;
+  doTets = false;
+  doPrisms = false;
 
   PetscFunctionReturn(0);
 }
@@ -524,49 +525,55 @@ PetscErrorCode OpSetInvJacH1ForFlatPrism::doWork(
   PetscFunctionBegin;
   // PetscErrorCode ierr;
 
-  try {
-    unsigned int nb_dofs = data.getN().size2();
-    if(nb_dofs==0) PetscFunctionReturn(0);
-    unsigned int nb_gauss_pts = data.getN().size1();
-    diffNinvJac.resize(nb_gauss_pts,2*nb_dofs,false);
+  for(int b = AINSWORTH_COLE_BASE; b!=USER_BASE; b++) {
 
-    if(type!=MBVERTEX) {
-      if(nb_dofs != data.getDiffN().size2()/2) {
-        SETERRQ2(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,
-          "data inconsistency nb_dofs != data.diffN.size2()/2 ( %u != %u/2 )",
-          nb_dofs,data.getDiffN().size2()
-        );
-      }
-    }
+    FieldApproximationBase base = ApproximationBaseArray[b];
 
-    //std::cerr << type << std::endl;
-    //std::cerr << data.getDiffN() << std::endl;
-    //std::cerr << std::endl;
-    switch (type) {
-      case MBVERTEX:
-      case MBEDGE:
-      case MBTRI: {
-        for(unsigned int gg = 0;gg<nb_gauss_pts;gg++) {
-          for(unsigned int dd = 0;dd<nb_dofs;dd++) {
-            cblas_dgemv(
-              CblasRowMajor,CblasTrans,2,2,1,
-              &*invJacF3.data().begin(),2,
-              &data.getDiffN()(gg,2*dd),1,
-              0,&diffNinvJac(gg,2*dd),1
-            );
-          }
+    try {
+      unsigned int nb_dofs = data.getN(base).size2();
+      if(nb_dofs==0) PetscFunctionReturn(0);
+      unsigned int nb_gauss_pts = data.getN(base).size1();
+      diffNinvJac.resize(nb_gauss_pts,2*nb_dofs,false);
+
+      if(type!=MBVERTEX) {
+        if(nb_dofs != data.getDiffN(base).size2()/2) {
+          SETERRQ2(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,
+            "data inconsistency nb_dofs != data.diffN.size2()/2 ( %u != %u/2 )",
+            nb_dofs,data.getDiffN(base).size2()
+          );
         }
-        data.getDiffN().data().swap(diffNinvJac.data());
       }
-      break;
-      default:
-      SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented");
+
+      //std::cerr << type << std::endl;
+      //std::cerr << data.getDiffN(base) << std::endl;
+      //std::cerr << std::endl;
+      switch (type) {
+        case MBVERTEX:
+        case MBEDGE:
+        case MBTRI: {
+          for(unsigned int gg = 0;gg<nb_gauss_pts;gg++) {
+            for(unsigned int dd = 0;dd<nb_dofs;dd++) {
+              cblas_dgemv(
+                CblasRowMajor,CblasTrans,2,2,1,
+                &*invJacF3.data().begin(),2,
+                &data.getDiffN(base)(gg,2*dd),1,
+                0,&diffNinvJac(gg,2*dd),1
+              );
+            }
+          }
+          data.getDiffN(base).data().swap(diffNinvJac.data());
+        }
+        break;
+        default:
+        SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented");
+      }
+
+    } catch (std::exception& ex) {
+      std::ostringstream ss;
+      ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
+      SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
     }
 
-  } catch (std::exception& ex) {
-    std::ostringstream ss;
-    ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
-    SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
   }
 
   PetscFunctionReturn(0);
