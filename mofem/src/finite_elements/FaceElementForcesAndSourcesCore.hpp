@@ -68,35 +68,38 @@ struct FaceElementForcesAndSourcesCore: public ForcesAndSurcesCore {
   OpSetCovariantPiolaTransoformOnTriangle opCovariantTransoform;
 
   FaceElementForcesAndSourcesCore(Interface &m_field):
-    ForcesAndSurcesCore(m_field),
-    dataH1(MBTRI),derivedDataH1(dataH1),
-    dataHdiv(MBTRI),derivedDataHdiv(dataHdiv),
-    dataHcurl(MBTRI),derivedDataHcurl(dataHcurl),
-    dataL2(MBTRI),derivedDataL2(dataL2),
-    dataNoField(MBTRI),dataNoFieldCol(MBTRI),
-    meshPositionsFieldName("MESH_NODE_POSITIONS"),
-    opHOCoordsAndNormals(
-      hoCoordsAtGaussPts,nOrmals_at_GaussPt,tAngent1_at_GaussPt,tAngent2_at_GaussPt
-    ),
-    opContravariantTransoform(normal,nOrmals_at_GaussPt),
-    opCovariantTransoform(
-      normal,nOrmals_at_GaussPt,
-      tangent1,tAngent1_at_GaussPt,
-      tangent2,tAngent2_at_GaussPt
-    ) {
-    }
+  ForcesAndSurcesCore(m_field),
+  dataH1(MBTRI),derivedDataH1(dataH1),
+  dataHdiv(MBTRI),derivedDataHdiv(dataHdiv),
+  dataHcurl(MBTRI),derivedDataHcurl(dataHcurl),
+  dataL2(MBTRI),derivedDataL2(dataL2),
+  dataNoField(MBTRI),dataNoFieldCol(MBTRI),
+  meshPositionsFieldName("MESH_NODE_POSITIONS"),
+  opHOCoordsAndNormals(
+    hoCoordsAtGaussPts,nOrmals_at_GaussPt,tAngent1_at_GaussPt,tAngent2_at_GaussPt
+  ),
+  opContravariantTransoform(normal,nOrmals_at_GaussPt),
+  opCovariantTransoform(
+    normal,nOrmals_at_GaussPt,
+    tangent1,tAngent1_at_GaussPt,
+    tangent2,tAngent2_at_GaussPt
+  ) {
+  }
 
   /** \brief default operator for TRI element
     * \ingroup mofem_forces_and_sources_tri_element
     */
   struct UserDataOperator: public ForcesAndSurcesCore::UserDataOperator {
 
+    UserDataOperator(const FieldSpace space):
+    ForcesAndSurcesCore::UserDataOperator(space) {}
+
     UserDataOperator(const std::string &field_name,const char type):
     ForcesAndSurcesCore::UserDataOperator(field_name,type) {}
 
     UserDataOperator(
-      const std::string &row_field_name,const std::string &col_field_name,const char type):
-      ForcesAndSurcesCore::UserDataOperator(row_field_name,col_field_name,type) {};
+    const std::string &row_field_name,const std::string &col_field_name,const char type):
+    ForcesAndSurcesCore::UserDataOperator(row_field_name,col_field_name,type) {};
 
     inline double getArea() {
       return static_cast<FaceElementForcesAndSourcesCore*>(ptrFE)->aRea;
@@ -339,9 +342,18 @@ struct FaceElementForcesAndSourcesCore: public ForcesAndSurcesCore {
 */
 struct OpCalculateInvJacForFace: public FaceElementForcesAndSourcesCore::UserDataOperator {
   MatrixDouble &invJac;
-  OpCalculateInvJacForFace(const std::string &field_name,MatrixDouble &inv_jac):
-  FaceElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROW),
+
+  /**
+   * \deprecated Field name do not needed to construct class, change v0.5.17.
+   */
+  DEPRECATED OpCalculateInvJacForFace(const std::string &field_name,MatrixDouble &inv_jac):
+  FaceElementForcesAndSourcesCore::UserDataOperator(H1),
   invJac(inv_jac) {}
+
+  OpCalculateInvJacForFace(MatrixDouble &inv_jac):
+  FaceElementForcesAndSourcesCore::UserDataOperator(H1),
+  invJac(inv_jac) {}
+
   PetscErrorCode doWork(
     int side,EntityType type,DataForcesAndSurcesCore::EntData &data
   );
@@ -354,9 +366,18 @@ struct OpCalculateInvJacForFace: public FaceElementForcesAndSourcesCore::UserDat
 */
 struct OpSetInvJacH1ForFace: public FaceElementForcesAndSourcesCore::UserDataOperator {
   MatrixDouble &invJac;
-  OpSetInvJacH1ForFace(const std::string &field_name,MatrixDouble &inv_jac):
-  FaceElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROW),
+
+  /**
+   * \deprecated Field name do not needed to construct class, change v0.5.17.
+   */
+  DEPRECATED OpSetInvJacH1ForFace(const std::string &field_name,MatrixDouble &inv_jac):
+  FaceElementForcesAndSourcesCore::UserDataOperator(H1),
   invJac(inv_jac) {}
+
+  OpSetInvJacH1ForFace(MatrixDouble &inv_jac):
+  FaceElementForcesAndSourcesCore::UserDataOperator(H1),
+  invJac(inv_jac) {}
+
   MatrixDouble diffNinvJac;
   PetscErrorCode doWork(
     int side,EntityType type,DataForcesAndSurcesCore::EntData &data
@@ -375,10 +396,19 @@ struct OpSetInvJacHcurlFace: public FaceElementForcesAndSourcesCore::UserDataOpe
   FTensor::Index<'k',3> k;
   MatrixDouble &invJac;
 
-  OpSetInvJacHcurlFace(const std::string &field_name,MatrixDouble &inv_jac):
-  FaceElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROW),
+  /**
+   * \deprecated Field name do not needed to construct class, change v0.5.17.
+   */
+  DEPRECATED OpSetInvJacHcurlFace(const std::string &field_name,MatrixDouble &inv_jac):
+  FaceElementForcesAndSourcesCore::UserDataOperator(HCURL),
   invJac(inv_jac) {
   }
+
+  OpSetInvJacHcurlFace(MatrixDouble &inv_jac):
+  FaceElementForcesAndSourcesCore::UserDataOperator(HCURL),
+  invJac(inv_jac) {
+  }
+
 
   MatrixDouble diffHcurlInvJac;
 

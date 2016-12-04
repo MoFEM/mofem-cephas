@@ -1,4 +1,4 @@
-/** \file ElementsOnEntities.hpp
+/** \file ForcesAndSurcesCore.hpp
 
   \brief Implementation of elements on entities.
 
@@ -86,6 +86,9 @@ struct FlatPrismElementForcesAndSurcesCore: public ForcesAndSurcesCore {
     * \ingroup mofem_forces_and_sources_prism_element
     */
   struct UserDataOperator: public ForcesAndSurcesCore::UserDataOperator {
+
+    UserDataOperator(const FieldSpace space):
+    ForcesAndSurcesCore::UserDataOperator(space) {}
 
     UserDataOperator(const std::string &field_name,const char type):
     ForcesAndSurcesCore::UserDataOperator(field_name,type) {}
@@ -302,17 +305,19 @@ struct FlatPrismElementForcesAndSurcesCore: public ForcesAndSurcesCore {
   It is assumed that face element is XY plane. Applied
   only for 2d problems.
 
-  \todo Generalize function for arbitrary face orientation in 3d space
+  FIXME Generalize function for arbitrary face orientation in 3d space
+  FIXME Calculate to Jacobins for two faces
 
   \ingroup mofem_forces_and_sources_prism_element
 
 */
 struct OpCalculateInvJacForFlatPrism: public FlatPrismElementForcesAndSurcesCore::UserDataOperator {
+
   MatrixDouble &invJacF3;
   OpCalculateInvJacForFlatPrism(
-    const std::string &field_name,MatrixDouble &inv_jac_f3
+    MatrixDouble &inv_jac_f3
   ):
-  FlatPrismElementForcesAndSurcesCore::UserDataOperator(field_name,UserDataOperator::OPROW),
+  FlatPrismElementForcesAndSurcesCore::UserDataOperator(H1),
   invJacF3(inv_jac_f3){}
   PetscErrorCode doWork(
     int side,EntityType type,DataForcesAndSurcesCore::EntData &data
@@ -321,15 +326,18 @@ struct OpCalculateInvJacForFlatPrism: public FlatPrismElementForcesAndSurcesCore
 
 /** \brief Transform local reference derivatives of shape functions to global derivatives
 
+FIXME Generalize to curved shapes
+FIXME Generalize to case that top and bottom face has different shape
+
 \ingroup mofem_forces_and_sources_prism_element
 
 */
 struct OpSetInvJacH1ForFlatPrism: public FlatPrismElementForcesAndSurcesCore::UserDataOperator {
   MatrixDouble &invJacF3;
   OpSetInvJacH1ForFlatPrism(
-    const std::string &field_name,MatrixDouble &inv_jac_f3
+    MatrixDouble &inv_jac_f3
   ):
-  FlatPrismElementForcesAndSurcesCore::UserDataOperator(field_name,UserDataOperator::OPROW),
+  FlatPrismElementForcesAndSurcesCore::UserDataOperator(H1),
   invJacF3(inv_jac_f3) {
   }
 
