@@ -47,6 +47,7 @@ cm_export_file("../meshes/mat_elastic.h5m" export_atom_tests)
 cm_export_file("../meshes/mat_elastic_transiso.h5m" export_atom_tests)
 cm_export_file("../meshes/mat_interf.h5m" export_atom_tests)
 cm_export_file("../meshes/inlet_outlet.h5m" export_atom_tests)
+cm_export_file("../meshes/rectangle.h5m" export_atom_tests)
 
 set(PERCOMPILED_MOFEM_HEADER "${PROJECT_BINARY_DIR}/include/precompiled/MoFEM.hpp")
 
@@ -622,6 +623,24 @@ add_test(forces_and_sources_h1_continuity_check_atom
   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_h1_continuity_check -my_file sphere.h5m
 )
+
+# Check approximation on Hcurl space in 2d
+my_add_executable(forces_and_sources_polynomoal_approx_on_triangle forces_and_sources_polynomoal_approx_on_triangle.cpp)
+target_link_libraries(forces_and_sources_polynomoal_approx_on_triangle
+  mofem_finite_elements
+  mofem_interfaces
+  mofem_multi_indices
+  mofem_approx
+  mofem_cblas
+  mofem_third_party
+  ${PROJECT_LIBS}
+)
+add_test(forces_and_sources_check_approx_of_hcurl_in_2d
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+  ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_polynomoal_approx_on_triangle
+  -ksp_type fgmres -pc_type lu -ksp_atol 1e-12 -ksp_rtol 0 -ksp_monitor
+)
+
 
 # add test for recording series
 my_add_executable(record_series_atom record_series_atom.cpp)
