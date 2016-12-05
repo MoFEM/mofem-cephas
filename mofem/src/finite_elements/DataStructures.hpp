@@ -51,7 +51,7 @@ FTensor::Tensor0<T*> getTensor0FormData(
   ublas::vector<T,A> &data
 ) {
   std::stringstream s;
-  s << "Not implemented for T = " << boost::core::demangle(typeid(T).name());
+  s << "Not implemented for T = " << typeid(T).name(); //boost::core::demangle(typeid(T).name());
   THROW_MESSAGE(s.str());
   // return FTensor::Tensor0<T*>();
 }
@@ -70,7 +70,7 @@ FTensor::Tensor1<T*,Tensor_Dim> getTensor1FormData(
   ublas::matrix<T,L,A> &data
 ) {
   std::stringstream s;
-  s << "Not implemented for T = " << boost::core::demangle(typeid(T).name());
+  s << "Not implemented for T = " << typeid(T).name(); //boost::core::demangle(typeid(T).name());
   s << " and dim = " << Tensor_Dim;
   THROW_MESSAGE(s.str());
   // return FTensor::Tensor1<T*,Tensor_Dim>();
@@ -109,7 +109,7 @@ FTensor::Tensor2<T*,Tensor_Dim0,Tensor_Dim1> getTensor2FormData(
   ublas::matrix<T,L,A> &data
 ) {
   std::stringstream s;
-  s << "Not implemented for T = " << boost::core::demangle(typeid(T).name());
+  s << "Not implemented for T = " << typeid(T).name(); //boost::core::demangle(typeid(T).name());
   s << " and dim0 = " << Tensor_Dim0;
   s << " dim1 = " << Tensor_Dim1;
   THROW_MESSAGE(s.str());

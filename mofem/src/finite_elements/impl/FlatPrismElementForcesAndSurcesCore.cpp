@@ -410,7 +410,7 @@ PetscErrorCode FlatPrismElementForcesAndSurcesCore::operator()() {
           ); CHKERRQ(ierr);
         } catch (std::exception& ex) {
           std::ostringstream ss;
-          ss << "Operator " << boost::core::demangle(typeid(*oit).name())
+          ss << "Operator " << typeid(*oit).name() //boost::core::demangle(typeid(*oit).name())
           << " operator number " << std::distance<boost::ptr_vector<UserDataOperator>::iterator>(opPtrVector.begin(),oit)
           << " thorw in method: " << ex.what()
           << " at line " << __LINE__
@@ -433,7 +433,7 @@ PetscErrorCode FlatPrismElementForcesAndSurcesCore::operator()() {
           ); CHKERRQ(ierr);
         } catch (std::exception& ex) {
           std::ostringstream ss;
-          ss << "Operator " << boost::core::demangle(typeid(*oit).name())
+          ss << "Operator " << typeid(*oit).name() //boost::core::demangle(typeid(*oit).name())
           << " operator number " << std::distance<boost::ptr_vector<UserDataOperator>::iterator>(opPtrVector.begin(),oit)
           << " thorw in method: " << ex.what()
           << " at line " << __LINE__
@@ -448,7 +448,7 @@ PetscErrorCode FlatPrismElementForcesAndSurcesCore::operator()() {
           ierr = oit->opLhs(*op_data[0],*op_data[1],oit->sYmm); CHKERRQ(ierr);
         } catch (std::exception& ex) {
           std::ostringstream ss;
-          ss << "Operator " << boost::core::demangle(typeid(*oit).name())
+          ss << "Operator " << typeid(*oit).name() //boost::core::demangle(typeid(*oit).name())
           << " operator number " << std::distance<boost::ptr_vector<UserDataOperator>::iterator>(opPtrVector.begin(),oit)
           << " thorw in method: " << ex.what()
           << " at line " << __LINE__

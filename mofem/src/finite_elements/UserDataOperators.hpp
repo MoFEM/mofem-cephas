@@ -63,7 +63,7 @@ PetscErrorCode OpCalculateScalarFieldValues_General<T,A>::doWork(
     PETSC_COMM_SELF,
     MOFEM_NOT_IMPLEMENTED,
     "Not implemented for T = %s",
-    boost::core::demangle(typeid(T).name()).c_str()
+    typeid(T).name() // boost::core::demangle(typeid(T).name()).c_str()
   );
   PetscFunctionReturn(0);
 }
@@ -165,7 +165,7 @@ PetscErrorCode OpCalculateVectorFieldValues_General<Tensor_Dim,T,L,A>::doWork(
     PETSC_COMM_SELF,
     MOFEM_NOT_IMPLEMENTED,
     "Not implemented for T = %s and dim = %d",
-    boost::core::demangle(typeid(T).name()),
+    typeid(T).name(), // boost::core::demangle(typeid(T).name()),
     Tensor_Dim
   );
   PetscFunctionReturn(0);
@@ -303,7 +303,7 @@ PetscErrorCode OpCalculateTensor2FieldValues_General<Tensor_Dim0,Tensor_Dim1,T,L
     PETSC_COMM_SELF,
     MOFEM_NOT_IMPLEMENTED,
     "Not implemented for T = %s, dim0 = %d and dim1 = %d",
-    boost::core::demangle(typeid(T).name()),
+    typeid(T).name(), //boost::core::demangle(typeid(T).name()),
     Tensor_Dim0,
     Tensor_Dim1
   );

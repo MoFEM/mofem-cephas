@@ -2024,7 +2024,7 @@ PetscErrorCode Core::loop_finite_elements(
       PetscLogEventEnd(USER_EVENT_operator,0,0,0,0);
     } catch (const std::exception& ex) {
       std::ostringstream ss;
-      ss << "FE method " << boost::core::demangle(typeid(method).name())
+      ss << "FE method " << typeid(method).name() //boost::core::demangle(typeid(method).name())
       << "   throw in method: " << ex.what()
       << " at line " << __LINE__
       << " in file " << __FILE__ << std::endl;
