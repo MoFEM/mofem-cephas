@@ -605,7 +605,7 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::operator()() {
           ierr = oit->opRhs(*op_data[0],false); CHKERRQ(ierr);
         } catch (std::exception& ex) {
           std::ostringstream ss;
-          ss << "Operator " << typeid(*oit).name()
+          ss << "Operator " << boost::core::demangle(typeid(*oit).name())
           << " operator number " << std::distance<boost::ptr_vector<UserDataOperator>::iterator>(opPtrVector.begin(),oit)
           << " thorw in method: " << ex.what()
           << " at line " << __LINE__
@@ -619,7 +619,7 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::operator()() {
           ierr = oit->opRhs(*op_data[1],false); CHKERRQ(ierr);
         } catch (std::exception& ex) {
           std::ostringstream ss;
-          ss << "Operator " << typeid(*oit).name()
+          ss << "Operator " << boost::core::demangle(typeid(*oit).name())
           << " operator number " << std::distance<boost::ptr_vector<UserDataOperator>::iterator>(opPtrVector.begin(),oit)
           << " thorw in method: " << ex.what()
           << " at line " << __LINE__
@@ -633,7 +633,7 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::operator()() {
           ierr = oit->opLhs(*op_data[0],*op_data[1],oit->sYmm); CHKERRQ(ierr);
         } catch (std::exception& ex) {
           std::ostringstream ss;
-          ss << "Operator " << typeid(*oit).name()
+          ss << "Operator " << boost::core::demangle(typeid(*oit).name())
           << " operator number " << std::distance<boost::ptr_vector<UserDataOperator>::iterator>(opPtrVector.begin(),oit)
           << " thorw in method: " << ex.what()
           << " at line " << __LINE__
