@@ -638,7 +638,7 @@ target_link_libraries(forces_and_sources_polynomoal_approx_on_triangle
 add_test(forces_and_sources_check_approx_of_hcurl_in_2d
   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_polynomoal_approx_on_triangle
-  -ksp_type fgmres -pc_type lu -ksp_atol 1e-12 -ksp_rtol 0 -ksp_monitor
+  -ksp_type fgmres -pc_type bjacobi -ksp_atol 1e-12 -ksp_rtol 0 -ksp_monitor
 )
 
 
