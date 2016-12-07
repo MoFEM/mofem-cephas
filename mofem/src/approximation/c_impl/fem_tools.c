@@ -335,6 +335,38 @@ PetscErrorCode ShapeMBTET_inverse(
   if(info != 0) SETERRQ1(PETSC_COMM_SELF,1,"info == %d",info);
   PetscFunctionReturn(0);
 }
+
+PetscErrorCode ShapeMBTRI_inverse(
+  double *N,double *diffN,const double *elem_coords,const double *glob_coords,double *loc_coords
+) {
+  PetscFunctionBegin;
+  double A[2*2];
+
+  //1st and 2nd element of matrix A
+  A[0] = cblas_ddot(3,&diffN[0],2,&elem_coords[0],2);  //dot product
+  A[1] = cblas_ddot(3,&diffN[1],2,&elem_coords[0],2);
+  loc_coords[0] = glob_coords[0] - cblas_ddot(3,&N[0],1,&elem_coords[0],2);
+
+  //3rd and 4th element of matrix A
+  A[2] = cblas_ddot(3,&diffN[0],2,&elem_coords[1],2);
+  A[3] = cblas_ddot(3,&diffN[1],2,&elem_coords[1],2);
+  loc_coords[1] = glob_coords[1] - cblas_ddot(3,&N[0],1,&elem_coords[1],2);
+
+  //calculate directly the solution (as the size of matrix is only 2x2)
+  double invA[2*2], detA;
+  detA=A[0]*A[3] - A[1]*A[2]; detA=1.0/detA;
+  invA[0]=A[3]*detA;  invA[1]=-1.0*A[1]*detA;
+  invA[2]=-1.0*A[2]*detA; invA[3]=A[0]*detA;
+
+  double loc_coords_new[2];
+  loc_coords_new[0]=invA[0]*loc_coords[0] + invA[1]*loc_coords[1];
+  loc_coords_new[1]=invA[2]*loc_coords[0] + invA[3]*loc_coords[1];
+
+  loc_coords[0]=loc_coords_new[0];   loc_coords[1]=loc_coords_new[1];
+  PetscFunctionReturn(0);
+}
+
+
 PetscErrorCode ShapeDiffMBTETinvJ(double *diffN,double *invJac,double *diffNinvJac) {
   PetscFunctionBegin;
   int ii = 0;
