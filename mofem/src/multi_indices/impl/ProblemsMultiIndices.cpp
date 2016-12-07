@@ -37,9 +37,9 @@ namespace MoFEM {
 
 //moab problem
 MoFEMProblem::MoFEMProblem(Interface &moab,const EntityHandle _meshset):
-meshset(_meshset),
-numered_dofs_rows(boost::shared_ptr<NumeredDofEntity_multiIndex>(new NumeredDofEntity_multiIndex())),
-numered_dofs_cols(boost::shared_ptr<NumeredDofEntity_multiIndex>(new NumeredDofEntity_multiIndex())) {
+  meshset(_meshset),
+  numered_dofs_rows(boost::shared_ptr<NumeredDofEntity_multiIndex>(new NumeredDofEntity_multiIndex())),
+  numered_dofs_cols(boost::shared_ptr<NumeredDofEntity_multiIndex>(new NumeredDofEntity_multiIndex())) {
   ErrorCode rval;
   Tag th_ProblemId;
   rval = moab.tag_get_handle("_ProblemId",th_ProblemId); CHKERR_MOAB(rval);
@@ -74,6 +74,9 @@ numered_dofs_cols(boost::shared_ptr<NumeredDofEntity_multiIndex>(new NumeredDofE
   Tag th_RefBitLevel_Mask;
   rval = moab.tag_get_handle("_RefBitLevelMask",th_RefBitLevel_Mask); CHKERR_MOAB(rval);
   rval = moab.tag_get_by_ptr(th_RefBitLevel_Mask,&meshset,1,(const void **)&tag_BitRefLevel_DofMask); CHKERR_MOAB(rval);
+}
+
+MoFEMProblem::~MoFEMProblem() {
 }
 
 std::ostream& operator<<(std::ostream& os,const MoFEMProblem& e) {
@@ -117,8 +120,7 @@ PetscErrorCode MoFEMProblem::getNumberOfElementsByNameAndPart(MPI_Comm comm,cons
   MPI_Comm_rank(comm,&rank);
   ierr = PetscLayoutCreate(comm,layout); CHKERRQ(ierr);
   ierr = PetscLayoutSetBlockSize(*layout,1); CHKERRQ(ierr);
-  typedef NumeredEntFiniteElement_multiIndex::index<Composite_Name_And_Part_mi_tag>::type FeByNameAndPart;
-  const FeByNameAndPart &fe_by_name_and_part = numeredFiniteElements.get<Composite_Name_And_Part_mi_tag>();
+  const NumeredEntFiniteElementbyNameAndPart &fe_by_name_and_part = numeredFiniteElements.get<Composite_Name_And_Part_mi_tag>();
   int nb_elems;
   nb_elems = fe_by_name_and_part.count(boost::make_tuple(name,rank));
   ierr = PetscLayoutSetLocalSize(*layout,nb_elems); CHKERRQ(ierr);
@@ -142,6 +144,50 @@ PetscErrorCode MoFEMProblem::getNumberOfElementsByPart(MPI_Comm comm,PetscLayout
   ierr = PetscLayoutSetUp(*layout); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
+
+PetscErrorCode MoFEMProblem::getDofByNameEntAndEntDofIdx(
+  const string name,
+  const EntityHandle ent,
+  const int ent_dof_idx,
+  const RowColData row_or_col,
+  boost::shared_ptr<NumeredDofEntity> &dof_ptr
+) const {
+  PetscFunctionBegin;
+  typedef NumeredDofEntity_multiIndex::index<
+  Composite_Name_And_Ent_And_EntDofIdx_mi_tag
+  >::type NumberdDofByNameEntAndEndDofIdx;
+  NumberdDofByNameEntAndEndDofIdx::iterator it;
+  // not use shared pointer is local here, direct pointer is more efficient
+  NumeredDofEntity_multiIndex *numered_dofs;
+  switch (row_or_col) {
+    case ROW:
+    if(!numered_dofs_rows) {
+      SETERRQ(PETSC_COMM_SELF,MOFEM_INVALID_DATA,"Row numbered index in problem not allocated");
+    }
+    numered_dofs = numered_dofs_rows.get();
+    break;
+    case COL:
+    if(!numered_dofs_rows) {
+      SETERRQ(PETSC_COMM_SELF,MOFEM_INVALID_DATA,"Col numbered index in problem not allocated");
+    }
+    numered_dofs = numered_dofs_cols.get();
+    break;
+    default:
+    SETERRQ(
+      PETSC_COMM_SELF,MOFEM_INVALID_DATA,"Only ROW and COL is possible for 3rd argument"
+    );
+  }
+  it = numered_dofs->get<Composite_Name_And_Ent_And_EntDofIdx_mi_tag>().find(
+    boost::make_tuple(name,ent,ent_dof_idx)
+  );
+  if(it!=numered_dofs->get<Composite_Name_And_Ent_And_EntDofIdx_mi_tag>().end()) {
+    dof_ptr = *it;
+  } else {
+    dof_ptr = boost::shared_ptr<NumeredDofEntity>();
+  }
+  PetscFunctionReturn(0);
+}
+
 
 void ProblemFiniteElementChangeBitAdd::operator()(MoFEMProblem &p) {
   *(p.tag_BitFEId_data) |= f_id;
@@ -181,7 +227,7 @@ void ProblemClearNumeredFiniteElementsChange::operator()(MoFEMProblem &e) {
   e.numeredFiniteElements.clear();
 }
 void ProblemRowNumberChange::operator()(MoFEMProblem &e) {
-  NumeredDofEntity_multiIndex::index<Unique_mi_tag>::type::iterator dit;
+  NumeredDofEntityByUId::iterator dit;
   dit = e.numered_dofs_rows->get<Unique_mi_tag>().begin();
   int idx = 0;
   for(;dit!=e.numered_dofs_rows->get<Unique_mi_tag>().end();dit++,idx++) {
@@ -193,7 +239,7 @@ void ProblemRowNumberChange::operator()(MoFEMProblem &e) {
   }
 }
 void ProblemColNumberChange::operator()(MoFEMProblem &e) {
-  NumeredDofEntity_multiIndex::index<Unique_mi_tag>::type::iterator dit;
+  NumeredDofEntityByUId::iterator dit;
   dit = e.numered_dofs_cols->get<Unique_mi_tag>().begin();
   int idx = 0;
   for(;dit!=e.numered_dofs_cols->get<Unique_mi_tag>().end();dit++,idx++) {

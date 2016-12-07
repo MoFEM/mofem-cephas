@@ -33,6 +33,8 @@ int main(int argc, char *argv[]) {
 
   PetscInitialize(&argc,&argv,(char *)0,help);
 
+  try {
+
   enum bases {
     H1TET,
     HDIVTET,
@@ -93,8 +95,6 @@ int main(int argc, char *argv[]) {
   //set entitities bit level
   BitRefLevel bit_level0;
   bit_level0.set(0);
-  EntityHandle meshset_level0;
-  rval = moab.create_meshset(MESHSET_SET,meshset_level0); CHKERRQ_MOAB(rval);
   ierr = m_field.seed_ref_level_3D(0,bit_level0); CHKERRQ(ierr);
 
   //Fields
@@ -360,6 +360,11 @@ int main(int argc, char *argv[]) {
 
   tet_fe.getOpPtrVector().push_back(new OpCheckingDirevatives(my_split));
   ierr = m_field.loop_finite_elements("TEST_PROBLEM","TET_FE",tet_fe);  CHKERRQ(ierr);
+
+
+  } catch (MoFEMException const &e) {
+    SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
+  }
 
   ierr = PetscFinalize(); CHKERRQ(ierr);
 }

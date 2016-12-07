@@ -48,6 +48,88 @@
 
 namespace MoFEM {
 
+BitFieldId Core::get_BitFieldId(const std::string& name) const {
+  typedef Field_multiIndex::index<FieldName_mi_tag>::type FieldSetByName;
+  const FieldSetByName &set = fIelds.get<FieldName_mi_tag>();
+  FieldSetByName::iterator miit = set.find(name);
+  if(miit==set.end()) {
+    THROW_MESSAGE("field < "+name+" > not in database (top tip: check spelling)");
+  }
+  return (*miit)->getId();
+}
+std::string Core::get_BitFieldId_name(const BitFieldId id) const {
+  typedef Field_multiIndex::index<BitFieldId_mi_tag>::type FieldSetById;
+  const FieldSetById &set = fIelds.get<BitFieldId_mi_tag>();
+  FieldSetById::iterator miit = set.find(id);
+  return (*miit)->getName();
+}
+EntityHandle Core::get_field_meshset(const BitFieldId id) const {
+  typedef Field_multiIndex::index<BitFieldId_mi_tag>::type FieldSetById;
+  const FieldSetById &set = fIelds.get<BitFieldId_mi_tag>();
+  FieldSetById::iterator miit = set.find(id);
+  if(miit==set.end()) THROW_MESSAGE("field not in database (top tip: check spelling)");
+  return (*miit)->meshSet;
+}
+EntityHandle Core::get_field_meshset(const std::string& name) const {
+  return get_field_meshset(get_BitFieldId(name));
+}
+
+bool Core::check_field(const std::string &name) const {
+  typedef Field_multiIndex::index<FieldName_mi_tag>::type FieldSetByName;
+  const FieldSetByName &set = fIelds.get<FieldName_mi_tag>();
+  FieldSetByName::iterator miit = set.find(name);
+  if(miit==set.end()) return false;
+  return true;
+}
+
+const Field* Core::get_field_structure(const std::string& name) {
+  typedef Field_multiIndex::index<FieldName_mi_tag>::type FieldSetByName;
+  const FieldSetByName &set = fIelds.get<FieldName_mi_tag>();
+  FieldSetByName::iterator miit = set.find(name);
+  if(miit==set.end()) {
+    throw MoFEMException(
+      MOFEM_NOT_FOUND,
+      std::string("field < "+name+" > not in databse (top tip: check spelling)").c_str()
+    );
+  }
+  return miit->get();
+}
+
+PetscErrorCode Core::get_field_entities_by_dimension(const std::string name,int dim,Range &ents) const {
+  MoABErrorCode rval;
+  PetscFunctionBegin;
+  try {
+    EntityHandle meshset = get_field_meshset(name);
+    rval = moab.get_entities_by_dimension(meshset,dim,ents,true); CHKERRQ_MOAB(rval);
+  } catch (MoFEMException const &e) {
+    SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
+  }
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode Core::get_field_entities_by_type(const std::string name,EntityType type,Range &ents) const {
+  MoABErrorCode rval;
+  PetscFunctionBegin;
+  try {
+    EntityHandle meshset = get_field_meshset(name);
+    rval = moab.get_entities_by_type(meshset,type,ents,true); CHKERRQ_MOAB(rval);
+  } catch (MoFEMException const &e) {
+    SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
+  }
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode Core::get_field_entities_by_handle(const std::string name,Range &ents) const {
+  MoABErrorCode rval;
+  PetscFunctionBegin;
+  try {
+    EntityHandle meshset = get_field_meshset(name);
+    rval = moab.get_entities_by_handle(meshset,ents,true); CHKERRQ_MOAB(rval);
+  } catch (MoFEMException const &e) {
+    SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
+  }
+  PetscFunctionReturn(0);
+}
 
 PetscErrorCode Core::add_field(
   const std::string& name,
@@ -1252,7 +1334,9 @@ PetscErrorCode Core::build_fields(int verb) {
     std::map<EntityType,int> dof_counter;
     std::map<EntityType,int> inactive_dof_counter;
     if (verb > 0) {
-      PetscSynchronizedPrintf(comm,"Build Field %s (rank %d)\n",(*miit)->getName().c_str(),rAnk);
+      PetscSynchronizedPrintf(
+        comm,"Build Field %s (rank %d)\n",(*miit)->getName().c_str(),rAnk
+      );
     }
     switch ((*miit)->getSpace()) {
       case NOFIELD:
@@ -1273,25 +1357,53 @@ PetscErrorCode Core::build_fields(int verb) {
       for(std::map<EntityType,int>::iterator it = dof_counter.begin();it!=dof_counter.end();it++) {
         switch (it->first) {
           case MBVERTEX:
-          PetscSynchronizedPrintf(comm,"nb added dofs (vertices) %d (inactive %d)\n",it->second,inactive_dof_counter[it->first]);
+          PetscSynchronizedPrintf(
+            comm,
+            "nb added dofs (vertices) %d (inactive %d)\n",
+            it->second,inactive_dof_counter[it->first]
+          );
           break;
           case MBEDGE:
-          PetscSynchronizedPrintf(comm,"nb added dofs (edges) %d (inactive %d)\n",it->second,inactive_dof_counter[it->first]);
+          PetscSynchronizedPrintf(
+            comm,
+            "nb added dofs (edges) %d (inactive %d)\n",
+            it->second,inactive_dof_counter[it->first]
+          );
           break;
           case MBTRI:
-          PetscSynchronizedPrintf(comm,"nb added dofs (triangles) %d (inactive %d)\n",it->second,inactive_dof_counter[it->first]);
+          PetscSynchronizedPrintf(
+            comm,
+            "nb added dofs (triangles) %d (inactive %d)\n",
+            it->second,inactive_dof_counter[it->first]
+          );
           break;
           case MBQUAD:
-          PetscSynchronizedPrintf(comm,"nb added dofs (quads) %d (inactive %d)\n",it->second,inactive_dof_counter[it->first]);
+          PetscSynchronizedPrintf(
+            comm,
+            "nb added dofs (quads) %d (inactive %d)\n",
+            it->second,inactive_dof_counter[it->first]
+          );
           break;
           case MBTET:
-          PetscSynchronizedPrintf(comm,"nb added dofs (tets) %d (inactive %d)\n",it->second,inactive_dof_counter[it->first]);
+          PetscSynchronizedPrintf(
+            comm,
+            "nb added dofs (tets) %d (inactive %d)\n",
+            it->second,inactive_dof_counter[it->first]
+          );
           break;
           case MBPRISM:
-          PetscSynchronizedPrintf(comm,"nb added dofs (prisms) %d (inactive %d)\n",it->second,inactive_dof_counter[it->first]);
+          PetscSynchronizedPrintf(
+            comm,
+            "nb added dofs (prisms) %d (inactive %d)\n",
+            it->second,inactive_dof_counter[it->first]
+          );
           break;
           case MBENTITYSET:
-          PetscSynchronizedPrintf(comm,"nb added dofs (meshsets) %d (inactive %d)\n",it->second,inactive_dof_counter[it->first]);
+          PetscSynchronizedPrintf(
+            comm,
+            "nb added dofs (meshsets) %d (inactive %d)\n",
+            it->second,inactive_dof_counter[it->first]
+          );
           break;
           default:
           SETERRQ(comm,MOFEM_NOT_IMPLEMENTED,"not implemented");
@@ -1299,14 +1411,20 @@ PetscErrorCode Core::build_fields(int verb) {
         nb_added_dofs += it->second;
         nb_inactive_added_dofs += inactive_dof_counter[it->first];
       }
-      PetscSynchronizedPrintf(comm,"nb added dofs %d (number of inactive dofs %d)\n",nb_added_dofs,nb_inactive_added_dofs);
+      if(verbose>0) {
+        PetscSynchronizedPrintf(
+          comm,
+          "nb added dofs %d (number of inactive dofs %d)\n",
+          nb_added_dofs,nb_inactive_added_dofs
+        );
+      }
     }
   }
   *buildMoFEM = 1<<0;
-  if(verbose>0) {
+  if(verb>0) {
     PetscSynchronizedPrintf(comm,"Nb. dofs %u\n",dofsField.size());
-    PetscSynchronizedFlush(comm,PETSC_STDOUT);
   }
+  PetscSynchronizedFlush(comm,PETSC_STDOUT);
   PetscFunctionReturn(0);
   //return 0;
 }

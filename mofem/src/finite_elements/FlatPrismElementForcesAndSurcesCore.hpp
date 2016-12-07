@@ -1,4 +1,4 @@
-/** \file ElementsOnEntities.hpp
+/** \file ForcesAndSurcesCore.hpp
 
   \brief Implementation of elements on entities.
 
@@ -48,8 +48,12 @@ struct FlatPrismElementForcesAndSurcesCore: public ForcesAndSurcesCore {
 
   DataForcesAndSurcesCore dataH1;
   DerivedDataForcesAndSurcesCore derivedDataH1;
+  DataForcesAndSurcesCore dataHcurl;
+  DerivedDataForcesAndSurcesCore derivedDataHcurl;
   DataForcesAndSurcesCore dataHdiv;
   DerivedDataForcesAndSurcesCore derivedDataHdiv;
+  DataForcesAndSurcesCore dataL2;
+  DerivedDataForcesAndSurcesCore derivedDataL2;
   DataForcesAndSurcesCore dataNoField,dataNoFieldCol;
 
   std::string meshPositionsFieldName;
@@ -67,7 +71,9 @@ struct FlatPrismElementForcesAndSurcesCore: public ForcesAndSurcesCore {
   FlatPrismElementForcesAndSurcesCore(Interface &m_field):
     ForcesAndSurcesCore(m_field),
     dataH1(MBPRISM),derivedDataH1(dataH1),
+    dataHcurl(MBPRISM),derivedDataHcurl(dataHcurl),
     dataHdiv(MBPRISM),derivedDataHdiv(dataHdiv),
+    dataL2(MBPRISM),derivedDataL2(dataL2),
     dataNoField(MBPRISM),dataNoFieldCol(MBPRISM),
     meshPositionsFieldName("MESH_NODE_POSITIONS"),
     opHOCoordsAndNormals(
@@ -80,6 +86,9 @@ struct FlatPrismElementForcesAndSurcesCore: public ForcesAndSurcesCore {
     * \ingroup mofem_forces_and_sources_prism_element
     */
   struct UserDataOperator: public ForcesAndSurcesCore::UserDataOperator {
+
+    UserDataOperator(const FieldSpace space):
+    ForcesAndSurcesCore::UserDataOperator(space) {}
 
     UserDataOperator(const std::string &field_name,const char type):
     ForcesAndSurcesCore::UserDataOperator(field_name,type) {}
@@ -291,7 +300,57 @@ struct FlatPrismElementForcesAndSurcesCore: public ForcesAndSurcesCore {
 
 };
 
+/** \brief Calculate inverse of jacobian for face element
+
+  It is assumed that face element is XY plane. Applied
+  only for 2d problems.
+
+  FIXME Generalize function for arbitrary face orientation in 3d space
+  FIXME Calculate to Jacobins for two faces
+
+  \ingroup mofem_forces_and_sources_prism_element
+
+*/
+struct OpCalculateInvJacForFlatPrism: public FlatPrismElementForcesAndSurcesCore::UserDataOperator {
+
+  MatrixDouble &invJacF3;
+  OpCalculateInvJacForFlatPrism(
+    MatrixDouble &inv_jac_f3
+  ):
+  FlatPrismElementForcesAndSurcesCore::UserDataOperator(H1),
+  invJacF3(inv_jac_f3){}
+  PetscErrorCode doWork(
+    int side,EntityType type,DataForcesAndSurcesCore::EntData &data
+  );
+};
+
+/** \brief Transform local reference derivatives of shape functions to global derivatives
+
+FIXME Generalize to curved shapes
+FIXME Generalize to case that top and bottom face has different shape
+
+\ingroup mofem_forces_and_sources_prism_element
+
+*/
+struct OpSetInvJacH1ForFlatPrism: public FlatPrismElementForcesAndSurcesCore::UserDataOperator {
+  MatrixDouble &invJacF3;
+  OpSetInvJacH1ForFlatPrism(
+    MatrixDouble &inv_jac_f3
+  ):
+  FlatPrismElementForcesAndSurcesCore::UserDataOperator(H1),
+  invJacF3(inv_jac_f3) {
+  }
+
+  MatrixDouble diffNinvJac;
+  PetscErrorCode doWork(
+    int side,EntityType type,DataForcesAndSurcesCore::EntData &data
+  );
+};
+
+
 }
+
+
 
 #endif //__FLATPRISMELEMENTFORCESANDSURCESCORE_HPP__
 

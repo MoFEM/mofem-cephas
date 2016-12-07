@@ -820,7 +820,6 @@ struct Interface: public UnknownInterface {
   virtual PetscErrorCode list_fields() const = 0;
 
   /** \brief get field meshset
-   * \ingroup mofem_field
    *
    * \param name of Field
    * Example:\code
@@ -828,6 +827,45 @@ struct Interface: public UnknownInterface {
    * \endcode
    */
   virtual EntityHandle get_field_meshset(const std::string& name) const = 0;
+
+  /**
+   * \brief get entities in the field by dimension
+   * @param  name field name
+   * @param  dim  dim
+   * @param  ents ents
+   * @return      error code
+
+   * \ingroup mofem_field
+   */
+  virtual PetscErrorCode get_field_entities_by_dimension(
+    const std::string name,int dim,Range &ents
+  ) const = 0;
+
+  /**
+   * \brief get entities in the field by type
+   * @param  name field name
+   * @param  type entity type
+   * @param  ents ents
+   * @return      error code
+
+   * \ingroup mofem_field
+   */
+  virtual PetscErrorCode get_field_entities_by_type(
+    const std::string name,EntityType type,Range &ents
+  ) const = 0;
+
+  /**
+   * \brief get entities in the field by handle
+   * @param  name field name
+   * @param  ents ents
+   * @return      error code
+
+   * \ingroup mofem_field
+   */
+  virtual PetscErrorCode get_field_entities_by_handle(
+    const std::string name,Range &ents
+  ) const = 0;
+
 
   /** \brief check if field is in database
    * \ingroup mofem_field
@@ -1018,6 +1056,45 @@ struct Interface: public UnknownInterface {
    */
   virtual EntityHandle get_finite_element_meshset(const std::string& name) const = 0;
 
+  /**
+   * \brief get entities in the finite element by dimension
+   * @param  name finite element name
+   * @param  dim  dim
+   * @param  ents ents
+   * @return      error code
+
+   * \ingroup mofem_field
+   */
+  virtual PetscErrorCode get_finite_element_entities_by_dimension(
+    const std::string name,int dim,Range &ents
+  ) const = 0;
+
+  /**
+   * \brief get entities in the finite element by type
+   * @param  name finite element name
+   * @param  type entity type
+   * @param  ents ents
+   * @return      error code
+
+   * \ingroup mofem_field
+   */
+  virtual PetscErrorCode get_finite_element_entities_by_type(
+    const std::string name,EntityType type,Range &ents
+  ) const = 0;
+
+  /**
+   * \brief get entities in the finite element by handle
+   * @param  name finite element name
+   * @param  ents ents
+   * @return      error code
+
+   * \ingroup mofem_field
+   */
+  virtual PetscErrorCode get_finite_element_entities_by_handle(
+    const std::string name,Range &ents
+  ) const = 0;
+
+
   /** \brief remove elements from given refinement level to finite element database
    * \ingroup mofem_fe
    *
@@ -1069,6 +1146,13 @@ struct Interface: public UnknownInterface {
    * \ingroup mofem_problems
    */
   virtual PetscErrorCode add_problem(const std::string& name,enum MoFEMTypes bh = MF_EXCL,int verb = -1) = 0;
+
+  /**
+   * \brief check if problem exist
+   * @param  name problem name
+   * @return      true if problem is in database
+   */
+  virtual bool check_problem(const std::string name) = 0;
 
   /** \brief Delete problem
   * \ingroup mofem_problems
@@ -1309,7 +1393,9 @@ struct Interface: public UnknownInterface {
    function has to call this function.
 
    */
-  virtual PetscErrorCode build_problem_on_partitioned_mesh(MoFEMProblem *problem_ptr,bool square_matrix = true,int verb = -1) = 0;
+  virtual PetscErrorCode build_problem_on_partitioned_mesh(
+    MoFEMProblem *problem_ptr,const bool square_matrix = true,int verb = -1
+  ) = 0;
 
   /** \brief build problem data structures, assuming that mesh is distributed (collective)
    * \ingroup mofem_problems
@@ -1321,7 +1407,9 @@ struct Interface: public UnknownInterface {
    function has to call this function.
 
    */
-  virtual PetscErrorCode build_problem_on_distributed_mesh(const std::string &name,bool square_matrix = true,int verb = -1) = 0;
+  virtual PetscErrorCode build_problem_on_distributed_mesh(
+    const std::string &name,const bool square_matrix = true,int verb = -1
+  ) = 0;
 
   /** \brief build problem data structures, assuming that mesh is distributed (collective)
    * \ingroup mofem_problems
@@ -1333,7 +1421,11 @@ struct Interface: public UnknownInterface {
    function has to call this function.
 
    */
-  virtual PetscErrorCode build_problem_on_distributed_mesh(MoFEMProblem *problem_ptr,bool square_matrix = true,int verb = -1) = 0;
+  virtual PetscErrorCode build_problem_on_distributed_mesh(
+    MoFEMProblem *problem_ptr,
+    const bool square_matrix = true,
+    int verb = -1
+  ) = 0;
 
   /** \brief build problem data structures, assuming that mesh is distributed (collective)
    * \ingroup mofem_problems
@@ -1360,7 +1452,9 @@ struct Interface: public UnknownInterface {
    * @param  verb        Verbosity level
    * @return             Error code
    */
-  virtual PetscErrorCode partition_mesh(Range &ents,int dim,int adj_dim,int n_parts,int verb = -1) = 0;
+  virtual PetscErrorCode partition_mesh(
+    const Range &ents,const int dim,const int adj_dim,const int n_parts,int verb = -1
+  ) = 0;
 
   /** \brief partition problem dofs
    * \ingroup mofem_problems
@@ -1386,13 +1480,34 @@ struct Interface: public UnknownInterface {
     * \param problem_for_cols problem used to index cols
     * \param copy_cols just copy cols dofs
     *
-    * If copy_rows/copy_cols is set to false only partition is copied between problems. 
+    * If copy_rows/copy_cols is set to false only partition is copied between problems.
     *
     */
   virtual PetscErrorCode partition_compose_problem(
-    const std::string &name,const std::string &problem_for_rows,bool copy_rows,const std::string &problem_for_cols,bool copy_cols,int verb = -1
+    const std::string &name,
+    const std::string &problem_for_rows,
+    const bool copy_rows,
+    const std::string &problem_for_cols,
+    const bool copy_cols,
+    int verb = -1
   ) = 0;
 
+  /**
+   * \brief build sub problem
+   * @param  out_name problem
+   * @param  fields_row  vector of fields composing problem
+   * @param  fields_col  vector of fields composing problem
+   * @param  main_problem main problem
+   * @return              error code
+   */
+  virtual PetscErrorCode build_sub_problem(
+    const std::string &out_name,
+    const std::vector<std::string> &fields_row,
+    const std::vector<std::string> &fields_col,
+    const std::string &main_problem,
+    const bool square_matrix = true,
+    int verb = -1
+  ) = 0;
 
   /** \brief determine ghost nodes
    * \ingroup mofem_field
@@ -1559,7 +1674,7 @@ struct Interface: public UnknownInterface {
   /** \brief create IS for give two problems and field
     * \ingroup mofem_vectors
 
-    Note that indices are ordered in ascending order of local indices in problem_y
+    Indices are sorted by global PETSCx index in problem_x. 
 
     \param x_problem name of problem
     \param x_field_name name of field in problem_x
@@ -1568,7 +1683,7 @@ struct Interface: public UnknownInterface {
     \param y_field_name name of field in problem_y
     \param y_rc that is ROW or COL
 
-    \retval ix IS indexes in problem_x
+    \retval ix IS indexes in problem_x (can be PETSC_NULL)
     \retval iy IS indexes in problem_y
 
     */

@@ -37,7 +37,7 @@
   * can me managed with two interfaces with waring level of abstraction.
   *
   */
-enum MoFEMInterfaces {
+enum Interfaces {
   UNKNOWNINTERFACE              = 1<<0,
   //Field Interface
   FIELD_INTERFACE               = 1<<0|1<<1,

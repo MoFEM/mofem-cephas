@@ -29,6 +29,8 @@ int main(int argc, char *argv[]) {
 
   PetscInitialize(&argc,&argv,(char *)0,help);
 
+  try {
+
   moab::Core mb_instance;
   moab::Interface& moab = mb_instance;
   int rank;
@@ -338,6 +340,11 @@ int main(int argc, char *argv[]) {
        "invalid surface flux or divergence or both\n",
 	    divergence_skin,divergence_vol
     );
+  }
+
+
+  } catch (MoFEMException const &e) {
+    SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
   }
 
   ierr = PetscFinalize(); CHKERRQ(ierr);

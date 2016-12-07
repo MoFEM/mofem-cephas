@@ -32,7 +32,18 @@ PetscErrorCode DMRegister_MoFEM(const char sname[]);
   * \brief Must be called by user to set MoFEM data structures
   * \ingroup dm
   */
-PetscErrorCode DMMoFEMCreateMoFEM(DM dm,MoFEM::Interface *m_field_ptr,const char problem_name[],const MoFEM::BitRefLevel &bit_level);
+PetscErrorCode DMMoFEMCreateMoFEM(
+  DM dm,
+  MoFEM::Interface *m_field_ptr,
+  const char problem_name[],
+  const MoFEM::BitRefLevel &bit_level
+);
+
+/**
+  * \brief Must be called by user to set Sub DM MoFEM data structures
+  * \ingroup dm
+  */
+PetscErrorCode DMMoFEMCreateSubDM(DM subdm,DM dm,const char problem_name[]);
 
 /**
  * \brief Get pointer to MoFEM::Interface
@@ -48,6 +59,22 @@ PetscErrorCode DMoFEMGetInterfacePtr(DM dm,const MoFEM::Interface **m_field_ptr)
   * \ingroup dm
   */
 PetscErrorCode DMMoFEMGetProblemPtr(DM dm,const MoFEM::MoFEMProblem **problem_ptr);
+
+/**
+ * If this is set to PETSC_TRUE problem is deleted with DM
+ * @param  dm             the DM object
+ * @param  destroy        if PETSC_TRUE problem is destroyed
+ * @return                error code
+ */
+PetscErrorCode DMMoFEMSetDestroyProblem(DM dm,PetscBool destroy_problem);
+
+/**
+ * Get if problem will be destroyed with DM
+ * @param  dm             the DM object
+ * @param  destroy        return if PETSC_TRUE problem is destroyed
+ * @return                error code
+ */
+PetscErrorCode DMMoFEMGetDestroyProblem(DM dm,PetscBool *destroy_problem);
 
 /**
   * \brief set squared problem
@@ -171,7 +198,9 @@ PetscErrorCode DMoFEMPostProcessFiniteElements(DM dm,MoFEM::FEMethod *method);
  * @return          Error code
  * \ingroup dm
  */
-PetscErrorCode DMoFEMLoopFiniteElementsUpAndLowRank(DM dm,const char fe_name[],MoFEM::FEMethod *method,int low_rank,int up_rank);
+PetscErrorCode DMoFEMLoopFiniteElementsUpAndLowRank(
+  DM dm,const char fe_name[],MoFEM::FEMethod *method,int low_rank,int up_rank
+);
 
 /**
  * \brief Executes FEMethod for finite elements in DM
@@ -203,7 +232,10 @@ PetscErrorCode DMoFEMLoopDofs(DM dm,const char field_name[],MoFEM::EntMethod *me
   * \brief set KSP right hand side evaluation function
   * \ingroup dm
   */
-PetscErrorCode DMMoFEMKSPSetComputeRHS(DM dm,const char fe_name[],MoFEM::FEMethod *method,MoFEM::FEMethod *pre_only,MoFEM::FEMethod *post_only);
+PetscErrorCode DMMoFEMKSPSetComputeRHS(
+  DM dm,const char fe_name[],
+  MoFEM::FEMethod *method,MoFEM::FEMethod *pre_only,MoFEM::FEMethod *post_only
+);
 
 /**
  * \brief Set KSP opetators and push mofem finite element methods
@@ -217,31 +249,46 @@ PetscErrorCode DMMoFEMKSPSetComputeRHS(DM dm,const char fe_name[],MoFEM::FEMetho
  *
  * \ingroup dm
  */
-PetscErrorCode DMMoFEMKSPSetComputeOperators(DM dm,const char fe_name[],MoFEM::FEMethod *method,MoFEM::FEMethod *pre_only,MoFEM::FEMethod *post_only);
+PetscErrorCode DMMoFEMKSPSetComputeOperators(
+  DM dm,const char fe_name[],
+  MoFEM::FEMethod *method,MoFEM::FEMethod *pre_only,MoFEM::FEMethod *post_only
+);
 
 /**
   * \brief set SNES residual evaluation function
   * \ingroup dm
   */
-PetscErrorCode DMMoFEMSNESSetFunction(DM dm,const char fe_name[],MoFEM::FEMethod *method,MoFEM::FEMethod *pre_only,MoFEM::FEMethod *post_only);
+PetscErrorCode DMMoFEMSNESSetFunction(
+  DM dm,const char fe_name[],
+  MoFEM::FEMethod *method,MoFEM::FEMethod *pre_only,MoFEM::FEMethod *post_only
+);
 
 /**
   * \brief set SNES Jacobian evaluation function
   * \ingroup dm
   */
-PetscErrorCode DMMoFEMSNESSetJacobian(DM dm,const char fe_name[],MoFEM::FEMethod *method,MoFEM::FEMethod *pre_only,MoFEM::FEMethod *post_only);
+PetscErrorCode DMMoFEMSNESSetJacobian(
+  DM dm,const char fe_name[],
+  MoFEM::FEMethod *method,MoFEM::FEMethod *pre_only,MoFEM::FEMethod *post_only
+);
 
 /**
   * \brief set TS implicit function evaluation function
   * \ingroup dm
   */
-PetscErrorCode DMMoFEMTSSetIFunction(DM dm,const char fe_name[],MoFEM::FEMethod *method,MoFEM::FEMethod *pre_only,MoFEM::FEMethod *post_only);
+PetscErrorCode DMMoFEMTSSetIFunction(
+  DM dm,const char fe_name[],
+  MoFEM::FEMethod *method,MoFEM::FEMethod *pre_only,MoFEM::FEMethod *post_only
+);
 
 /**
   * \brief set TS Jacobian evaluation function
   * \ingroup dm
   */
-PetscErrorCode DMMoFEMTSSetIJacobian(DM dm,const char fe_name[],MoFEM::FEMethod *method,MoFEM::FEMethod *pre_only,MoFEM::FEMethod *post_only);
+PetscErrorCode DMMoFEMTSSetIJacobian(
+  DM dm,const char fe_name[],
+  MoFEM::FEMethod *method,MoFEM::FEMethod *pre_only,MoFEM::FEMethod *post_only
+);
 
 #ifdef __KSPCTX_HPP__
 
@@ -368,6 +415,32 @@ PetscErrorCode DMCreateMatrix_MoFEM(DM dm,Mat *M);
 PetscErrorCode DMSetUp_MoFEM(DM dm);
 
 /**
+  * Sets up the MoFEM structures inside a DM object for sub dm
+  * \ingroup dm
+ */
+PetscErrorCode DMSubDMSetUp_MoFEM(DM subdm);
+
+/**
+  * Add field to sub dm problem on rows
+  * \ingroup dm
+ */
+PetscErrorCode DMMoFEMAddSubFieldRow(DM dm,const char field_name[]);
+
+/**
+  * Add field to sub dm problem on columns
+  * \ingroup dm
+ */
+PetscErrorCode DMMoFEMAddSubFieldCol(DM dm,const char field_name[]);
+
+/**
+ * Return true if this DM is sub problem
+ * @param  dm            the DM object
+ * @param  is_subproblem true if subproblem
+ * @return               error code
+ */
+PetscErrorCode DMMoFEMGetIsSubDM(DM dm,PetscBool *is_sub_dm);
+
+/**
   * destroy the MoFEM structure
   * \ingroup dm
   */
@@ -446,16 +519,24 @@ namespace MoFEM {
     //options
     PetscBool isPartitioned;		///< true if read mesh is on parts
     PetscBool isSquareMatrix;		///< true if rows equals to cols
-    PetscInt verbosity;			    ///< verbosity
 
     int rAnk,sIze;
 
     //pointer to data structures
     const MoFEMProblem *problemPtr;	  ///< pinter to problem data structure
 
+    // sub problem
+    PetscBool isSubDM;
+    std::vector<std::string> rowFields;
+    std::vector<std::string> colFields;
+    const MoFEMProblem *problemMainOfSubPtr;	  ///< pinter to main problem to sub-problem
+
+    PetscBool destroyProblem;   ///< If true destroy problem with DM
+
     DMCtx();
     virtual ~DMCtx();
 
+    PetscInt verbosity;			    ///< verbosity
     int referenceNumber;
 
   };

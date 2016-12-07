@@ -57,7 +57,7 @@ struct Core: public Interface {
 
   protected:
 
-  mutable boost::ptr_map<unsigned long,UnknownInterface *> iFaces;
+  mutable boost::ptr_map<unsigned long,UnknownInterface> iFaces;
 
   //Database
   ErrorCode rval;
@@ -340,6 +340,12 @@ struct Core: public Interface {
   std::string get_BitFieldId_name(const BitFieldId id) const;
   EntityHandle get_field_meshset(const BitFieldId id) const;
   EntityHandle get_field_meshset(const std::string& name) const;
+  PetscErrorCode get_field_entities_by_dimension(const std::string name,int dim,Range &ents) const;
+  PetscErrorCode get_field_entities_by_type(const std::string name,EntityType type,Range &ents) const;
+  PetscErrorCode get_field_entities_by_handle(const std::string name,Range &ents) const;
+
+
+
   bool check_field(const std::string& name) const;
   const Field* get_field_structure(const std::string& name);
 
@@ -381,11 +387,21 @@ struct Core: public Interface {
   std::string getBitFEId_name(const BitFEId id) const;
   EntityHandle get_finite_element_meshset(const BitFEId id) const;
   EntityHandle get_finite_element_meshset(const std::string& name) const;
+  PetscErrorCode get_finite_element_entities_by_dimension(
+    const std::string name,int dim,Range &ents
+  ) const;
+  PetscErrorCode get_finite_element_entities_by_type(
+    const std::string name,EntityType type,Range &ents
+  ) const;
+  PetscErrorCode get_finite_element_entities_by_handle(
+    const std::string name,Range &ents
+  ) const;
   PetscErrorCode list_finite_elements() const;
 
   //problem
   PetscErrorCode add_problem(const BitProblemId id,const std::string& name);
   PetscErrorCode add_problem(const std::string& name,enum MoFEMTypes bh = MF_EXCL,int verb = -1);
+  bool check_problem(const std::string name);
   PetscErrorCode delete_problem(const std::string name);
   PetscErrorCode modify_problem_add_finite_element(const std::string &name_problem,const std::string &MoFEMFiniteElement_name);
   PetscErrorCode modify_problem_unset_finite_element(const std::string &name_problem,const std::string &MoFEMFiniteElement_name);
@@ -416,11 +432,19 @@ struct Core: public Interface {
   PetscErrorCode list_adjacencies() const;
 
   //problem building
-  PetscErrorCode build_problem_on_partitioned_mesh(MoFEMProblem *problem_ptr,bool square_matrix = true,int verb = -1);
+  PetscErrorCode build_problem_on_partitioned_mesh(
+    MoFEMProblem *problem_ptr,const bool square_matrix = true,int verb = -1
+  );
   PetscErrorCode build_problem_on_distributed_mesh(int verb = -1);
-  PetscErrorCode build_problem_on_distributed_mesh(const std::string &name,bool square_matrix = true,int verb = -1);
-  PetscErrorCode build_problem_on_distributed_mesh(MoFEMProblem *problem_ptr,bool square_matrix = true,int verb = -1);
-  PetscErrorCode partition_mesh(Range &ents,int dim,int adj_dim,int n_parts,int verb = -1);
+  PetscErrorCode build_problem_on_distributed_mesh(
+    const std::string &name,const bool square_matrix = true,int verb = -1
+  );
+  PetscErrorCode build_problem_on_distributed_mesh(
+    MoFEMProblem *problem_ptr,const bool square_matrix = true,int verb = -1
+  );
+  PetscErrorCode partition_mesh(
+    const Range &ents,const int dim,const int adj_dim,const int n_parts,int verb = -1
+  );
   PetscErrorCode build_problem(const std::string &name,int verb = -1);
   PetscErrorCode clear_problem(const std::string &name,int verb = -1);
   PetscErrorCode build_problem(MoFEMProblem *problem_ptr,int verb = -1);
@@ -428,7 +452,22 @@ struct Core: public Interface {
   PetscErrorCode clear_problems(int verb = -1);
   PetscErrorCode partition_simple_problem(const std::string &name,int verb = -1);
   PetscErrorCode partition_problem(const std::string &name,int verb = -1);
-  PetscErrorCode partition_compose_problem(const std::string &name,const std::string &problem_for_rows,bool copy_rows,const std::string &problem_for_cols,bool copy_cols,int verb = -1);
+  PetscErrorCode partition_compose_problem(
+    const std::string &name,
+    const std::string &problem_for_rows,
+    const bool copy_rows,
+    const std::string &problem_for_cols,
+    const bool copy_cols,
+    int verb = -1
+  );
+  PetscErrorCode build_sub_problem(
+    const std::string &out_name,
+    const std::vector<std::string> &fields_row,
+    const std::vector<std::string> &fields_col,
+    const std::string &main_problem,
+    const bool square_matrix = true,
+    int verb = -1
+  );
   PetscErrorCode partition_ghost_dofs(const std::string &name,int verb = -1);
   PetscErrorCode partition_finite_elements(const std::string &name,bool part_from_moab = false,int low_proc = -1,int hi_proc = -1,int verb = -1);
   PetscErrorCode partition_check_matrix_fill_in(const std::string &problem_neme,int row,int col,int verb);

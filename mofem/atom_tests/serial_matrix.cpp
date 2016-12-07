@@ -1,6 +1,7 @@
-/* Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl)
- * --------------------------------------------------------------
- * FIXME: DESCRIPTION
+/**
+ * \file serial_matrix.cpp
+ *
+ * \brief testing create serial/sequential matrix
  */
 
 /* This file is part of MoFEM.
@@ -33,6 +34,8 @@ static char help[] = "...\n\n";
 int main(int argc, char *argv[]) {
 
   PetscInitialize(&argc,&argv,PETSC_NULL,help);
+
+  try {
 
   moab::Core mb_instance;
   moab::Interface& moab = mb_instance;
@@ -152,7 +155,7 @@ int main(int argc, char *argv[]) {
   ierr = m_field.partition_ghost_dofs("TEST_PROBLEM"); CHKERRQ(ierr);
 
   Vec F;
-  ierr = m_field.VecCreateGhost("TEST_PROBLEM",ROW,&F); CHKERRQ(ierr);
+  ierr = m_field.VecCreateSeq("TEST_PROBLEM",ROW,&F); CHKERRQ(ierr);
   Mat A;
   ierr = m_field.MatCreateMPIAIJWithArrays("TEST_PROBLEM",&A); CHKERRQ(ierr);
 
@@ -174,6 +177,10 @@ int main(int argc, char *argv[]) {
   //   std::string wait;
   //   std::cin >> wait;
   // }
+
+  } catch (MoFEMException const &e) {
+    SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
+  }
 
   PetscFinalize();
   return 0;

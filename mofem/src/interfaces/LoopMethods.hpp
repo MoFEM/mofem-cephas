@@ -400,17 +400,17 @@ struct FEMethod: public BasicMethod {
     * \ingroup mofem_loops
     */
   #define _IT_GET_FEROW_DOFS_BY_ENT_FOR_LOOP_(FE,ENT,IT) \
-    FENumeredDofEntity_multiIndex::index<Ent_mi_tag>::type::iterator \
-    IT = FE->get_begin<FENumeredDofEntity_multiIndex::index<Ent_mi_tag>::type>(FE->rowPtr->get<Ent_mi_tag>(),ENT); \
-    IT != FE->get_end<FENumeredDofEntity_multiIndex::index<Ent_mi_tag>::type>(FE->rowPtr->get<Ent_mi_tag>(),ENT); IT++
+    FENumeredDofEntityByEnt::iterator \
+    IT = FE->get_begin<FENumeredDofEntityByEnt>(FE->rowPtr->get<Ent_mi_tag>(),ENT); \
+    IT != FE->get_end<FENumeredDofEntityByEnt>(FE->rowPtr->get<Ent_mi_tag>(),ENT); IT++
 
   /** \brief loop over all dofs which are on a particular FE column and given element entity (handle from moab)
     * \ingroup mofem_loops
     */
   #define _IT_GET_FECOL_DOFS_BY_ENT_FOR_LOOP_(FE,ENT,IT) \
-  FENumeredDofEntity_multiIndex::index<Ent_mi_tag>::type::iterator \
-    IT = FE->get_begin<FENumeredDofEntity_multiIndex::index<Ent_mi_tag>::type>(FE->colPtr->get<Ent_mi_tag>(),ENT); \
-    IT != FE->get_end<FENumeredDofEntity_multiIndex::index<Ent_mi_tag>::type>(FE->colPtr->get<Ent_mi_tag>(),ENT); IT++
+  FENumeredDofEntityByEnt::iterator \
+    IT = FE->get_begin<FENumeredDofEntityByEnt>(FE->colPtr->get<Ent_mi_tag>(),ENT); \
+    IT != FE->get_end<FENumeredDofEntityByEnt>(FE->colPtr->get<Ent_mi_tag>(),ENT); IT++
 
   /** \brief loop over all dofs which are on a particular FE data and given element entity (handle from moab)
     * \ingroup mofem_loops

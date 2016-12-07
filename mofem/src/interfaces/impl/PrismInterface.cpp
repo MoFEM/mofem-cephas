@@ -1,6 +1,8 @@
 /** \file PrismInterfaceCore.cpp
- & \brief Inserting prims interface elements
+ * \brief Inserting prims interface elements
  * \todo FIXME this is no so good implementation
+ *
+ * \ingroup mofem_prism_interface
  */
 
 /* MoFEM is free software: you can redistribute it and/or modify it under

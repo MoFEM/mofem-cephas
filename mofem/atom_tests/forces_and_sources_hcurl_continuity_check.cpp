@@ -45,6 +45,8 @@ int main(int argc, char *argv[]) {
 
   PetscInitialize(&argc,&argv,(char *)0,help);
 
+  try {
+
   moab::Core mb_instance;
   moab::Interface& moab = mb_instance;
   int rank;
@@ -575,6 +577,11 @@ int main(int argc, char *argv[]) {
   rval = moab.create_meshset(MESHSET_SET,meshset); CHKERRQ_MOAB(rval);
   ierr = m_field.get_entities_by_type_and_ref_level(BitRefLevel().set(0),BitRefLevel().set(),MBTRI,meshset); CHKERRQ(ierr);
   rval = moab.write_file("out.vtk","VTK","",&meshset,1); CHKERRQ_MOAB(rval);
+
+
+  } catch (MoFEMException const &e) {
+    SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
+  }
 
   ierr = PetscFinalize(); CHKERRQ(ierr);
 }

@@ -33,6 +33,8 @@ int main(int argc, char *argv[]) {
 
   PetscInitialize(&argc,&argv,(char *)0,help);
 
+  try {
+
   moab::Core mb_instance;
   moab::Interface& moab = mb_instance;
   int rank;
@@ -104,6 +106,10 @@ int main(int argc, char *argv[]) {
       "Data inconsistency, should %d dofs",
       expected_size
     );
+  }
+
+  } catch (MoFEMException const &e) {
+    SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
   }
 
   //finish work cleaning memory, getting statistics, ect.

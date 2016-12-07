@@ -708,9 +708,10 @@ PetscErrorCode OpSetInvJacH1::doWork(
 }
 
 PetscErrorCode OpSetInvJacHdivAndHcurl::doWork(
-    int side,
-    EntityType type,
-    DataForcesAndSurcesCore::EntData &data) {
+  int side,
+  EntityType type,
+  DataForcesAndSurcesCore::EntData &data
+) {
   PetscFunctionBegin;
 
   if(type != MBEDGE && type != MBTRI && type != MBTET) PetscFunctionReturn(0);
@@ -1265,6 +1266,8 @@ PetscErrorCode OpGetDataAndGradient::doWork(
     }
 
     unsigned int nb_dofs = data.getFieldData().size();
+    if(nb_dofs == 0) PetscFunctionReturn(0);
+
     if(nb_dofs % rAnk != 0) {
       SETERRQ4(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,
         "data inconsistency, type %d, side %d, nb_dofs %d, rAnk %d",
@@ -1274,9 +1277,8 @@ PetscErrorCode OpGetDataAndGradient::doWork(
     if(nb_dofs/rAnk > data.getN().size2()) {
       std::cerr << side << " " << type << " " << ApproximationBaseNames[data.getBase()] << std::endl;
       std::cerr << data.getN() << std::endl;
-      std::cerr << data.getN(NOBASE) << std::endl;
       SETERRQ2(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,
-        "data inconsistency nb_dofs >= data.N.size2() %u >= %u",nb_dofs,data.getN().size2()
+        "data inconsistency nb_dofs >= data.N.size2(), i.e. %u >= %u",nb_dofs,data.getN().size2()
       );
     }
 
@@ -1564,6 +1566,7 @@ PetscErrorCode OpSetCovariantPiolaTransoformOnTriangle::doWork(
 
   FTensor::Index<'i',3> i;
   FTensor::Index<'j',3> j;
+  FTensor::Index<'k',2> k;
 
   double zero = 0;
   FTensor::Tensor2<const double*,3,3> t_m(
@@ -1584,6 +1587,7 @@ PetscErrorCode OpSetCovariantPiolaTransoformOnTriangle::doWork(
     int nb_gauss_pts = data.getHcurlN(base).size1();
 
     MatrixDouble piola_n(data.getHcurlN(base).size1(),data.getHcurlN(base).size2());
+    MatrixDouble diff_piola_n(data.getDiffHcurlN(base).size1(),data.getDiffHcurlN(base).size2());
 
     if(nb_dofs>0 && nb_gauss_pts>0) {
 
@@ -1593,10 +1597,20 @@ PetscErrorCode OpSetCovariantPiolaTransoformOnTriangle::doWork(
         &data.getHcurlN(base)(0,HCURL1),
         &data.getHcurlN(base)(0,HCURL2),3
       );
+      FTensor::Tensor2<double*,3,2> t_diff_h_curl(
+        &data.getDiffHcurlN(base)(0,HCURL0_0),&data.getDiffHcurlN(base)(0,HCURL0_1),
+        &data.getDiffHcurlN(base)(0,HCURL1_0),&data.getDiffHcurlN(base)(0,HCURL1_1),
+        &data.getDiffHcurlN(base)(0,HCURL2_0),&data.getDiffHcurlN(base)(0,HCURL2_1),6
+      );
       FTensor::Tensor1<double*,3> t_transformed_h_curl(
         &piola_n(0,HCURL0),
         &piola_n(0,HCURL1),
         &piola_n(0,HCURL2),3
+      );
+      FTensor::Tensor2<double*,3,2> t_transformed_diff_h_curl(
+        &diff_piola_n(0,HCURL0_0),&diff_piola_n(0,HCURL0_1),
+        &diff_piola_n(0,HCURL1_0),&diff_piola_n(0,HCURL1_1),
+        &diff_piola_n(0,HCURL2_0),&diff_piola_n(0,HCURL2_1),6
       );
 
       int cc = 0;
@@ -1612,8 +1626,11 @@ PetscErrorCode OpSetCovariantPiolaTransoformOnTriangle::doWork(
           ierr = invertTensor3by3(t_m_at_pts,det,t_inv_m); CHKERRQ(ierr);
           for(int ll = 0;ll!=nb_dofs;ll++) {
             t_transformed_h_curl(i) = t_inv_m(j,i)*t_h_curl(j);
+            t_transformed_diff_h_curl(i,k) = t_inv_m(j,i)*t_diff_h_curl(j,k);
             ++t_h_curl;
             ++t_transformed_h_curl;
+            ++t_diff_h_curl;
+            ++t_transformed_diff_h_curl;
             ++cc;
           }
           ++t_m_at_pts;
@@ -1622,8 +1639,11 @@ PetscErrorCode OpSetCovariantPiolaTransoformOnTriangle::doWork(
         for(int gg = 0;gg<nb_gauss_pts;gg++) {
           for(int ll = 0;ll!=nb_dofs;ll++) {
             t_transformed_h_curl(i) = t_inv_m(j,i)*t_h_curl(j);
+            t_transformed_diff_h_curl(i,k) = t_inv_m(j,i)*t_diff_h_curl(j,k);
             ++t_h_curl;
             ++t_transformed_h_curl;
+            ++t_diff_h_curl;
+            ++t_transformed_diff_h_curl;
             ++cc;
           }
         }
@@ -1632,6 +1652,7 @@ PetscErrorCode OpSetCovariantPiolaTransoformOnTriangle::doWork(
         SETERRQ(PETSC_COMM_SELF,MOFEM_IMPOSIBLE_CASE,"Data inconsistency");
       }
       data.getHcurlN(base).data().swap(piola_n.data());
+      data.getDiffHcurlN(base).data().swap(diff_piola_n.data());
 
     }
 

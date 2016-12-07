@@ -189,28 +189,27 @@ PetscErrorCode AnalyticalDirichletBC::ApproxField::OpLhs::doWork(
   AnalyticalDirichletBC::DirichletBC::DirichletBC(
     MoFEM::Interface& m_field,const std::string &field,Mat A,Vec X,Vec F
   ):
-  DisplacementBCFEMethodPreAndPostProc(m_field,field,A,X,F),
-  tRis_ptr(NULL)
-  {
-
+  DisplacementBCFEMethodPreAndPostProc(m_field,field,A,X,F) {
   }
 
   AnalyticalDirichletBC::DirichletBC::DirichletBC(
     MoFEM::Interface& m_field,const std::string &field
   ):
-  DisplacementBCFEMethodPreAndPostProc(m_field,field),
-  tRis_ptr(NULL) {
-
+  DisplacementBCFEMethodPreAndPostProc(m_field,field) {
   }
 
 
   PetscErrorCode AnalyticalDirichletBC::DirichletBC::iNitalize() {
     PetscFunctionBegin;
     if(mapZeroRows.empty()) {
-      if(tRis_ptr == NULL) {
-        SETERRQ(PETSC_COMM_SELF,1,"need to initialised from AnalyticalDirichletBC::solveProblem");
+      if(!trisPtr) {
+        SETERRQ(
+          PETSC_COMM_SELF,
+          MOFEM_DATA_INCONSISTENCY,
+          "Need to initialized from AnalyticalDirichletBC::solveProblem"
+        );
       }
-      ierr = iNitalize(*tRis_ptr); CHKERRQ(ierr);
+      ierr = iNitalize(*trisPtr); CHKERRQ(ierr);
     }
     PetscFunctionReturn(0);
   }
@@ -240,7 +239,7 @@ PetscErrorCode AnalyticalDirichletBC::ApproxField::OpLhs::doWork(
 
   AnalyticalDirichletBC::AnalyticalDirichletBC(MoFEM::Interface& m_field): approxField(m_field) {};
 
-  PetscErrorCode AnalyticalDirichletBC::initializeProblem(
+  PetscErrorCode AnalyticalDirichletBC::setFiniteElement(
     MoFEM::Interface &m_field,string fe,string field,Range& tris,string nodals_positions
   ) {
     PetscFunctionBegin;
@@ -256,7 +255,7 @@ PetscErrorCode AnalyticalDirichletBC::ApproxField::OpLhs::doWork(
     PetscFunctionReturn(0);
   }
 
-  PetscErrorCode AnalyticalDirichletBC::setProblem(
+  PetscErrorCode AnalyticalDirichletBC::setUpProblem(
     MoFEM::Interface &m_field,string problem
   ) {
     PetscFunctionBegin;
@@ -304,11 +303,23 @@ PetscErrorCode AnalyticalDirichletBC::ApproxField::OpLhs::doWork(
 
     ierr = m_field.set_global_ghost_vector(problem,ROW,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 
-    bc.tRis_ptr = &tris;
+    bc.trisPtr = boost::shared_ptr<Range>(new Range(tris));
     bc.mapZeroRows.clear();
     bc.dofsIndices.clear();
     bc.dofsValues.clear();
 
+    PetscFunctionReturn(0);
+  }
+
+  PetscErrorCode AnalyticalDirichletBC::solveProblem(
+    MoFEM::Interface &m_field,string problem,string fe,DirichletBC &bc
+  ) {
+    MoABErrorCode rval;
+    PetscFunctionBegin;
+    EntityHandle fe_meshset = m_field.get_finite_element_meshset("BC_FE");
+    Range bc_tris;
+    rval = m_field.get_moab().get_entities_by_type(fe_meshset,MBTRI,bc_tris); CHKERRQ_MOAB(rval);
+    return solveProblem(m_field,problem,fe,bc,bc_tris);
     PetscFunctionReturn(0);
   }
 

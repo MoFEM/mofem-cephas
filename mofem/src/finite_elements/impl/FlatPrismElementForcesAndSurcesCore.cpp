@@ -53,7 +53,7 @@
 #include <FTensor.hpp>
 #include <DataStructures.hpp>
 #include <DataOperators.hpp>
-#include <ElementsOnEntities.hpp>
+#include <ForcesAndSurcesCore.hpp>
 #include <BaseFunction.hpp>
 #include <EntPolynomialBaseCtx.hpp>
 #include <FlatPrismPolynomialBase.hpp>
@@ -101,15 +101,29 @@ PetscErrorCode FlatPrismElementForcesAndSurcesCore::operator()() {
     //H1
     if((dataH1.spacesOnEntities[MBEDGE]).test(H1)) {
       ierr = getEdgesSense(dataH1); CHKERRQ(ierr);
-      ierr = getTrisSense(dataH1); CHKERRQ(ierr);
       ierr = getEdgesDataOrder(dataH1,H1); CHKERRQ(ierr);
+      ierr = getTrisSense(dataH1); CHKERRQ(ierr);
       ierr = getTrisDataOrder(dataH1,H1); CHKERRQ(ierr);
+    }
+
+    //H1
+    if((dataH1.spacesOnEntities[MBEDGE]).test(HCURL)) {
+      ierr = getEdgesSense(dataHcurl); CHKERRQ(ierr);
+      ierr = getEdgesDataOrder(dataHcurl,HCURL); CHKERRQ(ierr);
+      ierr = getTrisSense(dataHcurl); CHKERRQ(ierr);
+      ierr = getTrisDataOrder(dataHcurl,HCURL); CHKERRQ(ierr);
     }
 
     //Hdiv
     if((dataH1.spacesOnEntities[MBTRI]).test(HDIV)) {
       ierr = getTrisSense(dataHdiv); CHKERRQ(ierr);
       ierr = getTrisDataOrder(dataHdiv,HDIV); CHKERRQ(ierr);
+    }
+
+    //Hdiv
+    if((dataH1.spacesOnEntities[MBTRI]).test(L2)) {
+      ierr = getTrisSense(dataL2); CHKERRQ(ierr);
+      ierr = getTrisDataOrder(dataL2,L2); CHKERRQ(ierr);
     }
 
     int order_data = getMaxDataOrder();
@@ -167,6 +181,9 @@ PetscErrorCode FlatPrismElementForcesAndSurcesCore::operator()() {
     }
     if(nb_gauss_pts == 0) PetscFunctionReturn(0);
 
+    dataHdiv.dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE) = dataH1.dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE);
+    dataHcurl.dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE) = dataH1.dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE);
+    dataL2.dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE) = dataH1.dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE);
     {
       coordsAtGaussPts.resize(nb_gauss_pts,6,false);
       for(int gg = 0;gg<nb_gauss_pts;gg++) {
@@ -303,13 +320,13 @@ PetscErrorCode FlatPrismElementForcesAndSurcesCore::operator()() {
             op_data[ss] = !ss ? &dataH1 : &derivedDataH1;
             break;
             case HCURL:
-            SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented yet");
+            op_data[ss] = !ss ? &dataHcurl : &derivedDataHcurl;
             break;
             case HDIV:
             op_data[ss] = !ss ? &dataHdiv : &derivedDataHdiv;
             break;
             case L2:
-            SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not make sanes on face");
+            op_data[ss] = !ss ? &dataL2 : &derivedDataL2;
             break;
             case NOFIELD:
             op_data[ss] = !ss ? &dataNoField : &dataNoFieldCol;
@@ -349,8 +366,8 @@ PetscErrorCode FlatPrismElementForcesAndSurcesCore::operator()() {
               }
               ierr = getEdgesDataOrderSpaceAndBase(*op_data[ss],field_name); CHKERRQ(ierr);
               ierr = getEdgesFieldData(*op_data[ss],field_name); CHKERRQ(ierr);
-              // ierr = getEdgesFieldDofs(*op_data[ss],field_name); CHKERRQ(ierr);
               case HDIV:
+              case L2:
               if(!ss) {
                 ierr = getTrisRowIndices(*op_data[ss],field_name); CHKERRQ(ierr);
               } else {
@@ -358,10 +375,6 @@ PetscErrorCode FlatPrismElementForcesAndSurcesCore::operator()() {
               }
               ierr = getTrisDataOrderSpaceAndBase(*op_data[ss],field_name); CHKERRQ(ierr);
               ierr = getTrisFieldData(*op_data[ss],field_name); CHKERRQ(ierr);
-              // ierr = getTrisFieldDofs(*op_data[ss],field_name); CHKERRQ(ierr);
-              break;
-              case L2:
-              SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not make sanes on face");
               break;
               case NOFIELD:
               if(!getNinTheLoop()) {
@@ -388,16 +401,20 @@ PetscErrorCode FlatPrismElementForcesAndSurcesCore::operator()() {
         try {
           ierr = oit->opRhs(
             *op_data[0],
-            oit->doVerticesRow,
-            oit->doEdgesRow,
-            oit->doQuadsRow,
-            oit->doTrisRow,
+            oit->doVertices,
+            oit->doEdges,
+            oit->doQuads,
+            oit->doTris,
             false,
             false
           ); CHKERRQ(ierr);
         } catch (std::exception& ex) {
           std::ostringstream ss;
-          ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
+          ss << "Operator " << typeid(*oit).name()
+          << " operator number " << std::distance<boost::ptr_vector<UserDataOperator>::iterator>(opPtrVector.begin(),oit)
+          << " thorw in method: " << ex.what()
+          << " at line " << __LINE__
+          << " in file " << __FILE__;
           SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
         }
       }
@@ -407,16 +424,20 @@ PetscErrorCode FlatPrismElementForcesAndSurcesCore::operator()() {
         try {
           ierr = oit->opRhs(
             *op_data[1],
-            oit->doVerticesCol,
-            oit->doEdgesCol,
-            oit->doQuadsCol,
-            oit->doTrisCol,
+            oit->doVertices,
+            oit->doEdges,
+            oit->doQuads,
+            oit->doTris,
             false,
             false
           ); CHKERRQ(ierr);
         } catch (std::exception& ex) {
           std::ostringstream ss;
-          ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
+          ss << "Operator " << typeid(*oit).name()
+          << " operator number " << std::distance<boost::ptr_vector<UserDataOperator>::iterator>(opPtrVector.begin(),oit)
+          << " thorw in method: " << ex.what()
+          << " at line " << __LINE__
+          << " in file " << __FILE__;
           SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
         }
       }
@@ -427,7 +448,11 @@ PetscErrorCode FlatPrismElementForcesAndSurcesCore::operator()() {
           ierr = oit->opLhs(*op_data[0],*op_data[1],oit->sYmm); CHKERRQ(ierr);
         } catch (std::exception& ex) {
           std::ostringstream ss;
-          ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
+          ss << "Operator " << typeid(*oit).name()
+          << " operator number " << std::distance<boost::ptr_vector<UserDataOperator>::iterator>(opPtrVector.begin(),oit)
+          << " thorw in method: " << ex.what()
+          << " at line " << __LINE__
+          << " in file " << __FILE__;
           SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
         }
       }
@@ -438,6 +463,117 @@ PetscErrorCode FlatPrismElementForcesAndSurcesCore::operator()() {
     std::ostringstream ss;
     ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
     SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
+  }
+
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode OpCalculateInvJacForFlatPrism::doWork(
+  int side,
+  EntityType type,
+  DataForcesAndSurcesCore::EntData &data
+) {
+  PetscErrorCode ierr;
+  PetscFunctionBegin;
+
+  try {
+
+    if(type == MBVERTEX) {
+
+      VectorDouble &coords = getCoords();
+      double *coords_ptr = &*coords.data().begin();
+      double diff_n[6];
+      ierr = ShapeDiffMBTRI(diff_n); CHKERRQ(ierr);
+      double j00_f3,j01_f3,j10_f3,j11_f3;
+      for(int gg = 0;gg<1;gg++) {
+        // this is triangle, derivative of nodal shape functions is constant.
+        // So only need to do one node.
+        j00_f3 = cblas_ddot(3,&coords_ptr[0],3,&diff_n[0],2);
+        j01_f3 = cblas_ddot(3,&coords_ptr[0],3,&diff_n[1],2);
+        j10_f3 = cblas_ddot(3,&coords_ptr[1],3,&diff_n[0],2);
+        j11_f3 = cblas_ddot(3,&coords_ptr[1],3,&diff_n[1],2);
+      }
+      double det_f3 = j00_f3*j11_f3-j01_f3*j10_f3;
+      invJacF3.resize(2,2,false);
+      invJacF3(0,0) = j11_f3/det_f3;
+      invJacF3(0,1) = -j01_f3/det_f3;
+      invJacF3(1,0) = -j10_f3/det_f3;
+      invJacF3(1,1) = j00_f3/det_f3;
+
+    }
+  } catch (std::exception& ex) {
+    std::ostringstream ss;
+    ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
+    SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
+  }
+
+  doVertices = true;
+  doEdges = false;
+  doQuads = false;
+  doTris = false;
+  doTets = false;
+  doPrisms = false;
+
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode OpSetInvJacH1ForFlatPrism::doWork(
+  int side,
+  EntityType type,
+  DataForcesAndSurcesCore::EntData &data
+) {
+  PetscFunctionBegin;
+  // PetscErrorCode ierr;
+
+  for(int b = AINSWORTH_COLE_BASE; b!=USER_BASE; b++) {
+
+    FieldApproximationBase base = ApproximationBaseArray[b];
+
+    try {
+      unsigned int nb_dofs = data.getN(base).size2();
+      if(nb_dofs==0) PetscFunctionReturn(0);
+      unsigned int nb_gauss_pts = data.getN(base).size1();
+      diffNinvJac.resize(nb_gauss_pts,2*nb_dofs,false);
+
+      if(type!=MBVERTEX) {
+        if(nb_dofs != data.getDiffN(base).size2()/2) {
+          SETERRQ2(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,
+            "data inconsistency nb_dofs != data.diffN.size2()/2 ( %u != %u/2 )",
+            nb_dofs,data.getDiffN(base).size2()
+          );
+        }
+      }
+
+      //std::cerr << type << std::endl;
+      //std::cerr << data.getDiffN(base) << std::endl;
+      //std::cerr << std::endl;
+      switch (type) {
+        case MBVERTEX:
+        case MBEDGE:
+        case MBTRI: {
+          for(unsigned int gg = 0;gg<nb_gauss_pts;gg++) {
+            for(unsigned int dd = 0;dd<nb_dofs;dd++) {
+              cblas_dgemv(
+                CblasRowMajor,CblasTrans,2,2,1,
+                &*invJacF3.data().begin(),2,
+                &data.getDiffN(base)(gg,2*dd),1,
+                0,&diffNinvJac(gg,2*dd),1
+              );
+            }
+          }
+          data.getDiffN(base).data().swap(diffNinvJac.data());
+        }
+        break;
+        default:
+        SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented");
+      }
+
+    } catch (std::exception& ex) {
+      std::ostringstream ss;
+      ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
+      SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
+    }
+
   }
 
   PetscFunctionReturn(0);

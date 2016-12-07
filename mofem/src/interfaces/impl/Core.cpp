@@ -96,9 +96,10 @@ PetscErrorCode Core::query_interface_type(const std::type_info& type,void*& ptr)
   #ifdef WITH_TETGEN
   if(type == typeid(TetGenInterface)) {
     if(iFaces.find(IDD_MOFEMTetGegInterface.uUId.to_ulong()) == iFaces.end()) {
-      iFaces[IDD_MOFEMTetGegInterface.uUId.to_ulong()] = new TetGenInterface(*this);
+      unsigned long int uid = IDD_MOFEMTetGegInterface.uUId.to_ulong();
+      iFaces.insert(uid,new TetGenInterface(*this));
     }
-    ptr = iFaces.at(IDD_MOFEMTetGegInterface.uUId.to_ulong());
+    ptr = &iFaces.at(IDD_MOFEMTetGegInterface.uUId.to_ulong());
     PetscFunctionReturn(0);
   }
   #endif
@@ -107,9 +108,10 @@ PetscErrorCode Core::query_interface_type(const std::type_info& type,void*& ptr)
   #ifdef WITH_MED
   if(type == typeid(MedInterface)) {
     if(iFaces.find(IDD_MOFEMMedInterface.uUId.to_ulong()) == iFaces.end()) {
-      iFaces[IDD_MOFEMMedInterface.uUId.to_ulong()] = new MedInterface(*this);
+      unsigned long int uid = IDD_MOFEMMedInterface.uUId.to_ulong();
+      iFaces.insert(uid,new MedInterface(*this));
     }
-    ptr = iFaces.at(IDD_MOFEMMedInterface.uUId.to_ulong());
+    ptr = &iFaces.at(IDD_MOFEMMedInterface.uUId.to_ulong());
     PetscFunctionReturn(0);
   }
   #endif
@@ -117,77 +119,86 @@ PetscErrorCode Core::query_interface_type(const std::type_info& type,void*& ptr)
   //Meshsets manager
   if(type == typeid(MeshsetsManager)) {
     if(iFaces.find(IDD_MOFEMMeshsetsManager.uUId.to_ulong()) == iFaces.end()) {
-      iFaces[IDD_MOFEMMeshsetsManager.uUId.to_ulong()] = new MeshsetsManager(*this);
+      unsigned long int uid = IDD_MOFEMMeshsetsManager.uUId.to_ulong();
+      iFaces.insert(uid,new MeshsetsManager(*this));
     }
-    ptr = iFaces.at(IDD_MOFEMMeshsetsManager.uUId.to_ulong());
+    ptr = &iFaces.at(IDD_MOFEMMeshsetsManager.uUId.to_ulong());
     PetscFunctionReturn(0);
   }
 
   //Cooordinate systems manager
   if(type == typeid(CoordSystemsManager)) {
     if(iFaces.find(IDD_MOFEMCoordsSystemsManager.uUId.to_ulong()) == iFaces.end()) {
-      iFaces[IDD_MOFEMCoordsSystemsManager.uUId.to_ulong()] = new CoordSystemsManager(*this);
+      unsigned long int uid = IDD_MOFEMCoordsSystemsManager.uUId.to_ulong();
+      iFaces.insert(uid,new CoordSystemsManager(*this));
     }
-    ptr = iFaces.at(IDD_MOFEMCoordsSystemsManager.uUId.to_ulong());
+    ptr = &iFaces.at(IDD_MOFEMCoordsSystemsManager.uUId.to_ulong());
     PetscFunctionReturn(0);
   }
 
   //Node merger
   if(type == typeid(NodeMergerInterface)) {
     if(iFaces.find(IDD_MOFEMNodeMerger.uUId.to_ulong()) == iFaces.end()) {
-      iFaces[IDD_MOFEMNodeMerger.uUId.to_ulong()] = new NodeMergerInterface(*this);
+      unsigned long int uid = IDD_MOFEMNodeMerger.uUId.to_ulong();
+      iFaces.insert(uid,new NodeMergerInterface(*this));
     }
-    ptr = iFaces.at(IDD_MOFEMNodeMerger.uUId.to_ulong());
+    ptr = &iFaces.at(IDD_MOFEMNodeMerger.uUId.to_ulong());
     PetscFunctionReturn(0);
   }
 
   //BitLevelCoupler
   if(type == typeid(BitLevelCouplerInterface)) {
     if(iFaces.find(IDD_MOFEMBitLevelCoupler.uUId.to_ulong()) == iFaces.end()) {
-      iFaces[IDD_MOFEMBitLevelCoupler.uUId.to_ulong()] = new BitLevelCouplerInterface(*this);
+      unsigned long int uid = IDD_MOFEMBitLevelCoupler.uUId.to_ulong();
+      iFaces.insert(uid,new BitLevelCouplerInterface(*this));
     }
-    ptr = iFaces.at(IDD_MOFEMBitLevelCoupler.uUId.to_ulong());
+    ptr = &iFaces.at(IDD_MOFEMBitLevelCoupler.uUId.to_ulong());
     PetscFunctionReturn(0);
   }
 
   //Create prism elements from surface Elements
   if(type == typeid(PrismsFromSurfaceInterface)) {
     if(iFaces.find(IDD_MOFEMPrismsFromSurface.uUId.to_ulong()) == iFaces.end()) {
-      iFaces[IDD_MOFEMPrismsFromSurface.uUId.to_ulong()] = new PrismsFromSurfaceInterface(*this);
+      unsigned long int uid = IDD_MOFEMPrismsFromSurface.uUId.to_ulong();
+      iFaces.insert(uid,new PrismsFromSurfaceInterface(*this));
     }
-    ptr = iFaces.at(IDD_MOFEMPrismsFromSurface.uUId.to_ulong());
+    ptr = &iFaces.at(IDD_MOFEMPrismsFromSurface.uUId.to_ulong());
     PetscFunctionReturn(0);
   }
 
   if(type == typeid(MeshRefinement)) {
     if(iFaces.find(IDD_MOFEMMeshRefine.uUId.to_ulong()) == iFaces.end()) {
-      iFaces[IDD_MOFEMMeshRefine.uUId.to_ulong()] = new MeshRefinement(*this);
+      unsigned long int uid = IDD_MOFEMMeshRefine.uUId.to_ulong();
+      iFaces.insert(uid,new MeshRefinement(*this));
     }
-    ptr = iFaces.at(IDD_MOFEMMeshRefine.uUId.to_ulong());
+    ptr = &iFaces.at(IDD_MOFEMMeshRefine.uUId.to_ulong());
     PetscFunctionReturn(0);
   }
 
   if(type == typeid(PrismInterface)) {
     if(iFaces.find(IDD_MOFEMPrismInterface.uUId.to_ulong()) == iFaces.end()) {
-      iFaces[IDD_MOFEMPrismInterface.uUId.to_ulong()] = new PrismInterface(*this);
+      unsigned long int uid = IDD_MOFEMPrismInterface.uUId.to_ulong();
+      iFaces.insert(uid,new PrismInterface(*this));
     }
-    ptr = iFaces.at(IDD_MOFEMPrismInterface.uUId.to_ulong());
+    ptr = &iFaces.at(IDD_MOFEMPrismInterface.uUId.to_ulong());
     PetscFunctionReturn(0);
   }
 
   if(type == typeid(CutMeshInterface)) {
     if(iFaces.find(IDD_MOFEMCutMesh.uUId.to_ulong()) == iFaces.end()) {
-      iFaces[IDD_MOFEMCutMesh.uUId.to_ulong()] = new CutMeshInterface(*this);
+      unsigned long int uid = IDD_MOFEMCutMesh.uUId.to_ulong();
+      iFaces.insert(uid,new CutMeshInterface(*this));
     }
-    ptr = iFaces.at(IDD_MOFEMCutMesh.uUId.to_ulong());
+    ptr = &iFaces.at(IDD_MOFEMCutMesh.uUId.to_ulong());
     PetscFunctionReturn(0);
   }
 
   if(type == typeid(SeriesRecorder)) {
     if(iFaces.find(IDD_MOFEMSeriesRecorder.uUId.to_ulong()) == iFaces.end()) {
-      iFaces[IDD_MOFEMSeriesRecorder.uUId.to_ulong()] = new SeriesRecorder(*this);
+      unsigned long int uid = IDD_MOFEMSeriesRecorder.uUId.to_ulong();
+      iFaces.insert(uid,new SeriesRecorder(*this));
     }
-    ptr = iFaces.at(IDD_MOFEMSeriesRecorder.uUId.to_ulong());
+    ptr = &iFaces.at(IDD_MOFEMSeriesRecorder.uUId.to_ulong());
     PetscFunctionReturn(0);
   }
 
@@ -296,6 +307,15 @@ verbose(_verbose) {
 
 }
 Core::~Core() {
+  iFaces.clear();
+  if(isGloballyInitialised) {
+    int flg;
+    MPI_Finalized(&flg);
+    if(!flg) {
+      PetscPopErrorHandler();
+    }
+    isGloballyInitialised = false;
+  }
 }
 moab::Interface& Core::get_moab() {
   return moab;
@@ -306,60 +326,7 @@ const moab::Interface& Core::get_moab() const {
 MPI_Comm Core::get_comm() const {
   return comm;
 }
-BitFieldId Core::get_BitFieldId(const std::string& name) const {
-  typedef Field_multiIndex::index<FieldName_mi_tag>::type FieldSetByName;
-  const FieldSetByName &set = fIelds.get<FieldName_mi_tag>();
-  FieldSetByName::iterator miit = set.find(name);
-  if(miit==set.end()) {
-    THROW_MESSAGE("field < "+name+" > not in database (top tip: check spelling)");
-  }
-  return (*miit)->getId();
-}
-std::string Core::get_BitFieldId_name(const BitFieldId id) const {
-  typedef Field_multiIndex::index<BitFieldId_mi_tag>::type FieldSetById;
-  const FieldSetById &set = fIelds.get<BitFieldId_mi_tag>();
-  FieldSetById::iterator miit = set.find(id);
-  return (*miit)->getName();
-}
-EntityHandle Core::get_field_meshset(const BitFieldId id) const {
-  typedef Field_multiIndex::index<BitFieldId_mi_tag>::type FieldSetById;
-  const FieldSetById &set = fIelds.get<BitFieldId_mi_tag>();
-  FieldSetById::iterator miit = set.find(id);
-  if(miit==set.end()) THROW_MESSAGE("field not in database (top tip: check spelling)");
-  return (*miit)->meshSet;
-}
-EntityHandle Core::get_field_meshset(const std::string& name) const {
-  return get_field_meshset(get_BitFieldId(name));
-}
 
-bool Core::check_field(const std::string &name) const {
-  typedef Field_multiIndex::index<FieldName_mi_tag>::type FieldSetByName;
-  const FieldSetByName &set = fIelds.get<FieldName_mi_tag>();
-  FieldSetByName::iterator miit = set.find(name);
-  if(miit==set.end()) return false;
-  return true;
-}
-
-bool Core::check_finite_element(const std::string &name) const {
-  typedef FiniteElement_multiIndex::index<FiniteElement_name_mi_tag>::type FeSetByName;
-  const FeSetByName &set = finiteElements.get<FiniteElement_name_mi_tag>();
-  FeSetByName::iterator miit = set.find(name);
-  if(miit==set.end()) return false;
-  return true;
-}
-
-const Field* Core::get_field_structure(const std::string& name) {
-  typedef Field_multiIndex::index<FieldName_mi_tag>::type FieldSetByName;
-  const FieldSetByName &set = fIelds.get<FieldName_mi_tag>();
-  FieldSetByName::iterator miit = set.find(name);
-  if(miit==set.end()) {
-    throw MoFEMException(
-      MOFEM_NOT_FOUND,
-      std::string("field < "+name+" > not in databse (top tip: check spelling)").c_str()
-    );
-  }
-  return miit->get();
-}
 BitFieldId Core::getFieldShift() {
   if(*fShift >= BITFIELDID_SIZE) {
     char msg[] = "number of fields exceeded";

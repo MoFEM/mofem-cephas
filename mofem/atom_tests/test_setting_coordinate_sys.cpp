@@ -25,6 +25,8 @@ int main(int argc, char *argv[]) {
 
   PetscInitialize(&argc,&argv,PETSC_NULL,help);
 
+  try {
+
   moab::Core mb_instance;
   moab::Interface& moab = mb_instance;
   int rank;
@@ -116,6 +118,11 @@ int main(int argc, char *argv[]) {
     }
 
     break;
+  }
+
+
+  } catch (MoFEMException const &e) {
+    SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
   }
 
   PetscFinalize();

@@ -25,6 +25,8 @@ int main(int argc, char *argv[]) {
 
   PetscInitialize(&argc,&argv,(char *)0,help);
 
+  try {
+
   PetscBool flg = PETSC_TRUE;
   char mesh_file_name[255];
   ierr = PetscOptionsGetString(PETSC_NULL,"","-my_file",mesh_file_name,255,&flg); CHKERRQ(ierr);
@@ -125,6 +127,11 @@ int main(int argc, char *argv[]) {
 
   ierr = bit_ref_copuler_ptr->buidlAdjacenciesVerticesOnTets(bit_level0,children,true,1e-10,1e-6,true,0); CHKERRQ(ierr);
   ierr = bit_ref_copuler_ptr->buidlAdjacenciesEdgesFacesVolumes(bit_level0,children,true,2); CHKERRQ(ierr);
+
+
+  } catch (MoFEMException const &e) {
+    SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
+  }
 
   PetscFinalize();
 

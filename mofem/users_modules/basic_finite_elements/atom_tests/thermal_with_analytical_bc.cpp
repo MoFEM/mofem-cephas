@@ -139,7 +139,7 @@ int main(int argc, char *argv[]) {
   }
 
   AnalyticalDirichletBC analytical_bc(m_field);
-  ierr = analytical_bc.initializeProblem(m_field,"BC_FE","TEMP",bc_tris); CHKERRQ(ierr);
+  ierr = analytical_bc.setFiniteElement(m_field,"BC_FE","TEMP",bc_tris); CHKERRQ(ierr);
   ierr = m_field.modify_problem_add_finite_element("BC_PROBLEM","BC_FE"); CHKERRQ(ierr);
 
   /****/
@@ -188,12 +188,12 @@ int main(int argc, char *argv[]) {
   AnalyticalDirichletBC::DirichletBC analytical_ditihlet_bc(m_field,"TEMP",A,T,F);
 
   //solve for ditihlet bc dofs
-  ierr = analytical_bc.setProblem(m_field,"BC_PROBLEM"); CHKERRQ(ierr);
+  ierr = analytical_bc.setUpProblem(m_field,"BC_PROBLEM"); CHKERRQ(ierr);
 
   boost::shared_ptr<AnaliticalFunction> testing_function = boost::shared_ptr<AnaliticalFunction>(new AnaliticalFunction);
 
-  ierr = analytical_bc.setApproxOps(m_field,"TEMP",bc_tris,testing_function,0); CHKERRQ(ierr);
-  ierr = analytical_bc.solveProblem(m_field,"BC_PROBLEM","BC_FE",analytical_ditihlet_bc,bc_tris); CHKERRQ(ierr);
+  ierr = analytical_bc.setApproxOps(m_field,"TEMP",testing_function,0); CHKERRQ(ierr);
+  ierr = analytical_bc.solveProblem(m_field,"BC_PROBLEM","BC_FE",analytical_ditihlet_bc); CHKERRQ(ierr);
 
   ierr = analytical_bc.destroyProblem(); CHKERRQ(ierr);
 

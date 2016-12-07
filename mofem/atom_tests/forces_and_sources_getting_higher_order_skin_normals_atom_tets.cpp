@@ -35,6 +35,8 @@ int main(int argc, char *argv[]) {
 
   PetscInitialize(&argc,&argv,(char *)0,help);
 
+  try {
+
   moab::Core mb_instance;
   moab::Interface& moab = mb_instance;
   int rank;
@@ -183,6 +185,10 @@ int main(int argc, char *argv[]) {
         &*data.dataOnEntities[MBVERTEX][0].getN(NOBASE).data().begin(),
         G_TRI_X4,G_TRI_Y4,4
       ); CHKERRQ(ierr);
+      data.dataOnEntities[MBVERTEX][0].getDiffN(NOBASE).resize(3,2,false);
+      ierr = ShapeDiffMBTRI(
+        &*data.dataOnEntities[MBVERTEX][0].getDiffN(NOBASE).data().begin()
+      ); CHKERRQ(ierr);
 
       MatrixDouble gauss_pts(2,4,false);
       for(int gg = 0;gg<4;gg++) {
@@ -229,6 +235,10 @@ int main(int argc, char *argv[]) {
 
   ForcesAndSurcesCore_TestFE fe1(m_field);
   ierr = m_field.loop_finite_elements("TEST_PROBLEM","TEST_FE",fe1);  CHKERRQ(ierr);
+
+  } catch (MoFEMException const &e) {
+    SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
+  }
 
   ierr = PetscFinalize(); CHKERRQ(ierr);
 

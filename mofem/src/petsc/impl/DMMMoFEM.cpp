@@ -69,6 +69,8 @@ snesCtx(NULL),
 tsCtx(NULL),
 isPartitioned(PETSC_FALSE),
 isSquareMatrix(PETSC_TRUE),
+isSubDM(PETSC_FALSE),
+destroyProblem(PETSC_FALSE),
 verbosity(0),
 referenceNumber(0) {}
 
@@ -118,16 +120,12 @@ PetscErrorCode DMSetOperators_MoFEM(DM dm) {
   PetscFunctionReturn(0);
 }
 
-
 PetscErrorCode DMCreate_MoFEM(DM dm) {
   PetscErrorCode ierr;
   PetscValidHeaderSpecific(dm,DM_CLASSID,1);
   PetscFunctionBegin;
-
   dm->data = new DMCtx();
-
   ierr = DMSetOperators_MoFEM(dm); CHKERRQ(ierr);
-
   PetscFunctionReturn(0);
 }
 
@@ -136,6 +134,12 @@ PetscErrorCode DMDestroy_MoFEM(DM dm) {
   PetscValidHeaderSpecific(dm,DM_CLASSID,1);
   PetscFunctionBegin;
   if(!((DMCtx*)dm->data)->referenceNumber) {
+    DMCtx *dm_field = (DMCtx*)dm->data;
+    if(dm_field->destroyProblem) {
+      if(dm_field->mField_ptr->check_problem(dm_field->problemName)) {
+        dm_field->mField_ptr->delete_problem(dm_field->problemName);
+      } // else problem has to be deleted by the user
+    }
     delete (DMCtx*)dm->data;
   } else {
     (((DMCtx*)dm->data)->referenceNumber)--;
@@ -154,12 +158,21 @@ PetscErrorCode DMMoFEMCreateMoFEM(
     SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"data structure for MoFEM not yet created");
   }
   if(!m_field_ptr) {
-    SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"DM function not implemented into MoFEM");
+    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"DM function not implemented into MoFEM");
   }
   dm_field->mField_ptr = m_field_ptr;
   dm_field->problemName = problem_name;
-  ierr = dm_field->mField_ptr->add_problem(dm_field->problemName,MF_ZERO); CHKERRQ(ierr);
-  ierr = dm_field->mField_ptr->modify_problem_ref_level_add_bit(dm_field->problemName,bit_level); CHKERRQ(ierr);
+  if(!m_field_ptr->check_problem(dm_field->problemName)) {
+    // problem is not defined, declare problem internally set bool to destroyProblem
+    // problem with DM
+    dm_field->destroyProblem = PETSC_TRUE;
+    ierr = dm_field->mField_ptr->add_problem(dm_field->problemName); CHKERRQ(ierr);
+  } else {
+    dm_field->destroyProblem = PETSC_FALSE;
+  }
+  ierr = dm_field->mField_ptr->modify_problem_ref_level_add_bit(
+    dm_field->problemName,bit_level); CHKERRQ(ierr
+    );
   dm_field->kspCtx = new KspCtx(*m_field_ptr,problem_name);
   dm_field->snesCtx = new SnesCtx(*m_field_ptr,problem_name);
   dm_field->tsCtx = new TsCtx(*m_field_ptr,problem_name);
@@ -175,9 +188,68 @@ PetscErrorCode DMMoFEMCreateMoFEM(
   MPI_Comm_size(comm,&dm_field->sIze);
   MPI_Comm_rank(comm,&dm_field->rAnk);
 
-  // Problem structure
+  // problem structure
   ierr = dm_field->mField_ptr->get_problem(dm_field->problemName,&dm_field->problemPtr); CHKERRQ(ierr);
 
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode DMMoFEMCreateSubDM(DM subdm,DM dm,const char problem_name[]) {
+  PetscErrorCode ierr;
+  PetscFunctionBegin;
+
+  DMCtx *dm_field = (DMCtx*)dm->data;
+  if(!dm->data) {
+    SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"data structure for MoFEM not yet created");
+  }
+  ierr = DMMoFEMCreateMoFEM(
+    subdm,dm_field->mField_ptr,problem_name,dm_field->problemPtr->getBitRefLevel()
+  ); CHKERRQ(ierr);
+
+  DMCtx *subdm_field = (DMCtx*)subdm->data;
+  subdm_field->isSubDM = PETSC_TRUE;
+  subdm_field->problemMainOfSubPtr = dm_field->problemPtr;
+  subdm_field->isPartitioned = dm_field->isPartitioned;
+  subdm_field->isSquareMatrix = PETSC_FALSE;
+  subdm->ops->setup = DMSubDMSetUp_MoFEM;
+
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode DMMoFEMAddSubFieldRow(DM dm,const char field_name[]) {
+  PetscValidHeaderSpecific(dm,DM_CLASSID,1);
+  PetscFunctionBegin;
+  DMCtx *dm_field = (DMCtx*)dm->data;
+  if(!dm->data) {
+    SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"data structure for MoFEM not yet created");
+  }
+  if(!dm_field->isSubDM) {
+    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"this is not sub-dm");
+  }
+  dm_field->rowFields.push_back(field_name);
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode DMMoFEMAddSubFieldCol(DM dm,const char field_name[]) {
+  PetscValidHeaderSpecific(dm,DM_CLASSID,1);
+  PetscFunctionBegin;
+  DMCtx *dm_field = (DMCtx*)dm->data;
+  if(!dm->data) {
+    SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"data structure for MoFEM not yet created");
+  }
+  if(!dm_field->isSubDM) {
+    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"this is not sub-dm");
+  }
+  dm_field->colFields.push_back(field_name);
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode DMMoFEMGetIsSubDM(DM dm,PetscBool *is_sub_dm) {
+  PetscFunctionBegin;
+  PetscValidHeaderSpecific(dm,DM_CLASSID,1);
+  PetscFunctionBegin;
+  DMCtx *dm_field = (DMCtx*)dm->data;
+  *is_sub_dm = dm_field->isSubDM;
   PetscFunctionReturn(0);
 }
 
@@ -200,6 +272,24 @@ PetscErrorCode DMMoFEMGetProblemPtr(DM dm,const MoFEM::MoFEMProblem **problem_pt
     SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"data structure for MoFEM not yet created");
   }
   *problem_ptr = dm_field->problemPtr;
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode DMMoFEMSetDestroyProblem(DM dm,PetscBool destroy_problem)  {
+  PetscFunctionBegin;
+  PetscValidHeaderSpecific(dm,DM_CLASSID,1);
+  PetscFunctionBegin;
+  DMCtx *dm_field = (DMCtx*)dm->data;
+  dm_field->destroyProblem = destroy_problem;
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode DMMoFEMGetDestroyProblem(DM dm,PetscBool *destroy_problem)  {
+  PetscFunctionBegin;
+  PetscValidHeaderSpecific(dm,DM_CLASSID,1);
+  PetscFunctionBegin;
+  DMCtx *dm_field = (DMCtx*)dm->data;
+  *destroy_problem = dm_field->destroyProblem;
   PetscFunctionReturn(0);
 }
 
@@ -565,14 +655,48 @@ PetscErrorCode DMSetUp_MoFEM(DM dm) {
     ierr = dm_field->mField_ptr->partition_finite_elements(
       dm_field->problemName,true,0,dm_field->sIze,1
     ); CHKERRQ(ierr);
-    dm_field->isProblemBuild = PETSC_TRUE;
   } else {
     ierr = dm_field->mField_ptr->build_problem(dm_field->problemName); CHKERRQ(ierr);
     ierr = dm_field->mField_ptr->partition_problem(dm_field->problemName); CHKERRQ(ierr);
     ierr = dm_field->mField_ptr->partition_finite_elements(dm_field->problemName); CHKERRQ(ierr);
-    dm_field->isProblemBuild = PETSC_TRUE;
   }
   ierr = dm_field->mField_ptr->partition_ghost_dofs(dm_field->problemName); CHKERRQ(ierr);
+
+  dm_field->isProblemBuild = PETSC_TRUE;
+
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode DMSubDMSetUp_MoFEM(DM subdm) {
+  PetscErrorCode ierr;
+  PetscValidHeaderSpecific(subdm,DM_CLASSID,1);
+  PetscFunctionBegin;
+
+  DMCtx *subdm_field = (DMCtx*)subdm->data;
+
+  // build sub dm problem
+  ierr = subdm_field->mField_ptr->build_sub_problem(
+    subdm_field->problemName,
+    subdm_field->rowFields,
+    subdm_field->colFields,
+    subdm_field->problemMainOfSubPtr->getName(),
+    subdm_field->isSquareMatrix
+  ); CHKERRQ(ierr);
+
+  // partition problem
+  subdm_field->isPartitioned = subdm_field->isPartitioned;
+  if(subdm_field->isPartitioned) {
+    ierr = subdm_field->mField_ptr->partition_finite_elements(
+      subdm_field->problemName,true,0,subdm_field->sIze,1
+    ); CHKERRQ(ierr);
+  } else {
+    ierr = subdm_field->mField_ptr->partition_finite_elements(subdm_field->problemName); CHKERRQ(ierr);
+  }
+  // set ghost nodes
+  ierr = subdm_field->mField_ptr->partition_ghost_dofs(subdm_field->problemName); CHKERRQ(ierr);
+
+  subdm_field->isProblemBuild = PETSC_TRUE;
+
   PetscFunctionReturn(0);
 }
 
