@@ -181,6 +181,31 @@ PetscErrorCode ShapeMBTET_inverse(
   double *N,double *diffN,const double *elem_coords,const double *glob_coords,double *loc_coords
 );
 
+/**
+ * \brief calculate local coordinates of trianular element for given global coordinates in 2D (Assume e.g. z=0)
+ \f[
+ \left[\begin{array}{cc}
+\frac{\partial N_{1}}{\partial\xi}x_{N_{1}}+\frac{\partial N_{2}}{\partial\xi}x_{N_{2}}+\frac{\partial N_{3}}{\partial\xi}x_{N_{3}} & \frac{\partial N_{1}}{\partial\eta}x_{N_{1}}+\frac{\partial N_{2}}{\partial\eta}x_{N_{2}}+\frac{\partial N_{3}}{\partial\eta}x_{N_{3}}\\
+\frac{\partial N_{1}}{\partial\xi}y_{N_{1}}+\frac{\partial N_{2}}{\partial\xi}y_{N_{2}}+\frac{\partial N_{3}}{\partial\xi}y_{N_{3}} & \frac{\partial N_{1}}{\partial\eta}y_{N_{1}}+\frac{\partial N_{2}}{\partial\eta}y_{N_{2}}+\frac{\partial N_{3}}{\partial\eta}y_{N_{3}}
+\end{array}\right]\left\{ \begin{array}{c}
+\xi\\
+\eta
+\end{array}\right\} =\left\{ \begin{array}{c}
+x_{gp}-\left(N_{1}x_{N_{1}}+N_{2}x_{N_{2}}+N_{3}x_{N_{3}}\right)\\
+y_{gp}-\left(N_{1}y_{N_{1}}+N_{2}y_{N_{2}}+N_{3}y_{N_{3}}\right)
+\end{array}\right\}
+ \f]
+
+ /// \param N shape function array
+ /// \param diffN array of shape function derivative w.r.t to local coordinates
+ /// \param elem_coords global coordinates of element
+ /// \param glob_coords global coordinates of required point
+ /// \param loc_coords  local coordinates of required point
+ */
+PetscErrorCode ShapeMBTRI_inverse(
+  double *N,double *diffN,const double *elem_coords,const double *glob_coords,double *loc_coords
+);
+
 /// calculate gradient of deformation
 PetscErrorCode GradientOfDeformation(double *diffN,double *dofs,double *F);
 
