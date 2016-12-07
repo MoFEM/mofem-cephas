@@ -181,6 +181,13 @@ PetscErrorCode ShapeMBTET_inverse(
   double *N,double *diffN,const double *elem_coords,const double *glob_coords,double *loc_coords
 );
 
+/**
+ * \brief calculate local coordinates of trianular element for given global coordinates in 2D (Assume e.g. z=0)
+ */
+PetscErrorCode ShapeMBTRI_inverse(
+  double *N,double *diffN,const double *elem_coords,const double *glob_coords,double *loc_coords
+);
+
 /// calculate gradient of deformation
 PetscErrorCode GradientOfDeformation(double *diffN,double *dofs,double *F);
 
