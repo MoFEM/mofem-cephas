@@ -241,7 +241,7 @@ const static char * const CubitBCNames[] = {
   "MAT_MOISTURESET",
   "DIRICHLET_BC",
   "NEUMANN_BC",
-  "LASTCUBITSET"
+  "LASTSET_BC"
 };
 
 /**

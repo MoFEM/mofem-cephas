@@ -519,7 +519,7 @@ namespace MoFEM {
 
   struct BlockData {
 
-    const CubitMeshSets *cubitMeshsetPtr;
+    EntityHandle cubitMeshset;
 
     int iD;
     string addType;
@@ -561,7 +561,7 @@ namespace MoFEM {
       po::options_description config_file_options;
       map<int,BlockData> block_lists;
       for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,BLOCKSET,it)) {
-        block_lists[it->getMeshsetId()].cubitMeshsetPtr = &*it;
+        block_lists[it->getMeshsetId()].cubitMeshset = it->getMeshset();
         std::ostringstream str_add;
         str_add << "block_" << it->getMeshsetId() << ".add";
         std::ostringstream str_id;
@@ -772,6 +772,7 @@ namespace MoFEM {
           ++jj;
         }
         if(bc_type.none()) {
+          block_lists[it->getMeshsetId()].bcType = UNKNOWNSET;
           // Skip the bockset nothing is defined for it
           continue;
         }
@@ -807,18 +808,22 @@ namespace MoFEM {
         ierr = PetscPrintf(m_field.get_comm(),"** WARNING Unrecognized option %s\n",vit->c_str()); CHKERRQ(ierr);
       }
       for(map<int,BlockData>::iterator mit = block_lists.begin();mit!=block_lists.end();mit++) {
+        CubitMeshSet_multiIndex::iterator cubit_meshset_it = cubitMeshsets.find(mit->second.cubitMeshset);
+        if(cubit_meshset_it == cubitMeshsets.end()) {
+          SETERRQ(m_field.get_comm(),MOFEM_DATA_INCONSISTENCY,"Data inconsistency\n");
+        }
         switch(mit->second.bcType) {
           case UNKNOWNSET:
           break;
           case BLOCKSET: {
             if(
-              (CubitBCType(mit->second.bcType)&mit->second.cubitMeshsetPtr->getBcType()).any()&&
-              mit->second.iD==mit->second.cubitMeshsetPtr->getMeshsetId()
+              (CubitBCType(mit->second.bcType)&cubit_meshset_it->getBcType()).any()&&
+              mit->second.iD==cubit_meshset_it->getMeshsetId()
             ) {
               // Meshset is the same, only modification
             } else {
               ierr = addMeshset(mit->second.bcType,mit->second.iD,mit->second.nAme); CHKERRQ(ierr);
-              EntityHandle meshset = mit->second.cubitMeshsetPtr->getMeshset();
+              EntityHandle meshset = cubit_meshset_it->getMeshset();
               ierr = addEntitiesToMeshset(mit->second.bcType,mit->second.iD,&meshset,1); CHKERRQ(ierr);
             }
             //Add attributes
@@ -834,13 +839,13 @@ namespace MoFEM {
           break;
           case NODESET: {
             if(
-              (CubitBCType(mit->second.bcType)&mit->second.cubitMeshsetPtr->getBcType()).any()&&
-              mit->second.iD==mit->second.cubitMeshsetPtr->getMeshsetId()
+              (CubitBCType(mit->second.bcType)&cubit_meshset_it->getBcType()).any()&&
+              mit->second.iD==cubit_meshset_it->getMeshsetId()
             ) {
               // Meshset is the same, only modification
             } else {
               ierr = addMeshset(mit->second.bcType,mit->second.iD); CHKERRQ(ierr);
-              EntityHandle meshset = mit->second.cubitMeshsetPtr->getMeshset();
+              EntityHandle meshset = cubit_meshset_it->getMeshset();
               ierr = addEntitiesToMeshset(mit->second.bcType,mit->second.iD,&meshset,1); CHKERRQ(ierr);
             }
             //Add displacement bc
@@ -886,13 +891,13 @@ namespace MoFEM {
           break;
           case SIDESET: {
             if(
-              (CubitBCType(mit->second.bcType)&mit->second.cubitMeshsetPtr->getBcType()).any()&&
-              mit->second.iD==mit->second.cubitMeshsetPtr->getMeshsetId()
+              (CubitBCType(mit->second.bcType)&cubit_meshset_it->getBcType()).any()&&
+              mit->second.iD==cubit_meshset_it->getMeshsetId()
             ) {
               // Meshset is the same, only modification
             } else {
               ierr = addMeshset(mit->second.bcType,mit->second.iD); CHKERRQ(ierr);
-              EntityHandle meshset = mit->second.cubitMeshsetPtr->getMeshset();
+              EntityHandle meshset = cubit_meshset_it->getMeshset();
               ierr = addEntitiesToMeshset(mit->second.bcType,mit->second.iD,&meshset,1); CHKERRQ(ierr);
             }
             // Add pressure
