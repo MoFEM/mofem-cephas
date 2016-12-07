@@ -38,7 +38,7 @@ struct AnalyticalDirichletBC {
 
       int addToRule; ///< this is add to integration rule if 2nd order geometry approximation
       MyTriFE(MoFEM::Interface &m_field): MoFEM::FaceElementForcesAndSourcesCore(m_field),addToRule(1) {}
-      int getRule(int order) { return order+addToRule; };
+      int getRule(int order) { return 2*order+addToRule; };
 
     };
 
