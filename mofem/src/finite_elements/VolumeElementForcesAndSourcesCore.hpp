@@ -133,11 +133,12 @@ struct VolumeElementForcesAndSourcesCore: public ForcesAndSurcesCore {
       return static_cast<VolumeElementForcesAndSourcesCore*>(ptrFE)->gaussPts;
     }
 
-    /** \brief Gauss points and weight, matrix (nb. of points x 4)
+    /** \brief Gauss points and weight, matrix (nb. of points x 3)
 
-      Column 0-3 and 4 represents Gauss pts coordinate and weight, respectively.
+    Column 0-2 integration points coordinate x, y and z, respectively. At rows are
+    integration points.
 
-      */
+    */
     inline MatrixDouble& getCoordsAtGaussPts() {
       return static_cast<VolumeElementForcesAndSourcesCore*>(ptrFE)->coordsAtGaussPts;
     }

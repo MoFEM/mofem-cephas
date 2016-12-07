@@ -191,8 +191,12 @@ struct FaceElementForcesAndSourcesCore: public ForcesAndSurcesCore {
       return static_cast<FaceElementForcesAndSourcesCore*>(ptrFE)->gaussPts;
     }
 
-    /** \brief get coordinates at Gauss pts.
-     */
+    /** \brief Gauss points and weight, matrix (nb. of points x 3)
+
+    Column 0-2 integration points coordinate x and y, respectively. At rows are
+    integration points.
+
+    */
     inline MatrixDouble& getCoordsAtGaussPts() {
       return static_cast<FaceElementForcesAndSourcesCore*>(ptrFE)->coordsAtGaussPts;
     }
@@ -391,9 +395,6 @@ struct OpSetInvJacH1ForFace: public FaceElementForcesAndSourcesCore::UserDataOpe
  */
 struct OpSetInvJacHcurlFace: public FaceElementForcesAndSourcesCore::UserDataOperator {
 
-  FTensor::Index<'i',2> i;
-  FTensor::Index<'j',2> j;
-  FTensor::Index<'k',3> k;
   MatrixDouble &invJac;
 
   /**
