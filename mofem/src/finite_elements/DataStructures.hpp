@@ -51,7 +51,7 @@ FTensor::Tensor0<T*> getTensor0FormData(
   ublas::vector<T,A> &data
 ) {
   std::stringstream s;
-  s << "Not implemented for T = " << typeid(T).name();
+  s << "Not implemented for T = " << typeid(T).name(); //boost::core::demangle(typeid(T).name());
   THROW_MESSAGE(s.str());
   // return FTensor::Tensor0<T*>();
 }
@@ -70,7 +70,7 @@ FTensor::Tensor1<T*,Tensor_Dim> getTensor1FormData(
   ublas::matrix<T,L,A> &data
 ) {
   std::stringstream s;
-  s << "Not implemented for T = " << typeid(T).name();
+  s << "Not implemented for T = " << typeid(T).name(); //boost::core::demangle(typeid(T).name());
   s << " and dim = " << Tensor_Dim;
   THROW_MESSAGE(s.str());
   // return FTensor::Tensor1<T*,Tensor_Dim>();
@@ -109,17 +109,24 @@ FTensor::Tensor2<T*,Tensor_Dim0,Tensor_Dim1> getTensor2FormData(
   ublas::matrix<T,L,A> &data
 ) {
   std::stringstream s;
-  s << "Not implemented for T = " << typeid(T).name();
+  s << "Not implemented for T = " << typeid(T).name(); //boost::core::demangle(typeid(T).name());
   s << " and dim0 = " << Tensor_Dim0;
   s << " dim1 = " << Tensor_Dim1;
   THROW_MESSAGE(s.str());
   // return FTensor::Tensor1<T*,Tensor_Dim>();
 }
 
+/**
+ * Template specialization for getTensor2FormData
+ */
 template<>
-FTensor::Tensor2<double*,3,3> getTensor2FormData(
-  MatrixDouble &data
-);
+FTensor::Tensor2<double*,3,3> getTensor2FormData(MatrixDouble &data);
+
+/**
+ * Template specialization for getTensor2FormData
+ */
+template<>
+FTensor::Tensor2<double*,3,2> getTensor2FormData(MatrixDouble &data);
 
 /**
  * \brief Get tensor rank 2 (matrix) form data matrix (specialization)
@@ -1003,7 +1010,7 @@ struct DataForcesAndSurcesCore {
     */
     template<int Tensor_Dim0,int Tensor_Dim1>
     inline FTensor::Tensor2<double*,Tensor_Dim0,Tensor_Dim1> getFTensor2DiffHcurlN() {
-      return getFTensor2DiffHdivN<Tensor_Dim0,Tensor_Dim1>(bAse);
+      return getFTensor2DiffHcurlN<Tensor_Dim0,Tensor_Dim1>(bAse);
     }
 
     /** \brief Get derivatives of base functions for Hdiv space at integration pts

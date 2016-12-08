@@ -1331,7 +1331,7 @@ PetscErrorCode MoFEM::Hcurl_FaceFunctions_MBTET_ON_FACE(
           for(int ee = 0;ee!=3;ee++) {
             for(int ll = NBFACETRI_EDGE_HCURL(oo-1);ll!=NBFACETRI_EDGE_HCURL(oo);ll++) {
               t_face_base(i) = t_face_edge_base[ee](i);
-              t_diff_face_base(i,j) = 1000*ee+ll;//t_diff_face_edge_base[ee](i,j);
+              t_diff_face_base(i,j) = t_diff_face_edge_base[ee](i,j);
               ++cc;
               ++t_face_base;
               ++t_face_edge_base[ee];

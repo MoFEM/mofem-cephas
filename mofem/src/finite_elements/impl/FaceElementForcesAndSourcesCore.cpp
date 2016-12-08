@@ -553,7 +553,7 @@ PetscErrorCode FaceElementForcesAndSourcesCore::operator()() {
           ); CHKERRQ(ierr);
         } catch (std::exception& ex) {
           std::ostringstream ss;
-          ss << "Operator " << typeid(*oit).name()
+          ss << "Operator " << typeid(*oit).name() //boost::core::demangle(typeid(*oit).name())
           << " operator number " << std::distance<boost::ptr_vector<UserDataOperator>::iterator>(opPtrVector.begin(),oit)
           << " thorw in method: " << ex.what()
           << " at line " << __LINE__
@@ -575,7 +575,7 @@ PetscErrorCode FaceElementForcesAndSourcesCore::operator()() {
           ); CHKERRQ(ierr);
         } catch (std::exception& ex) {
           std::ostringstream ss;
-          ss << "Operator " << typeid(*oit).name()
+          ss << "Operator " << typeid(*oit).name() //boost::core::demangle(typeid(*oit).name())
           << " operator number " << std::distance<boost::ptr_vector<UserDataOperator>::iterator>(opPtrVector.begin(),oit)
           << " thorw in method: " << ex.what()
           << " at line " << __LINE__
@@ -589,7 +589,7 @@ PetscErrorCode FaceElementForcesAndSourcesCore::operator()() {
           ierr = oit->opLhs(*op_data[0],*op_data[1],oit->sYmm); CHKERRQ(ierr);
         } catch (std::exception& ex) {
           std::ostringstream ss;
-          ss << "Operator " << typeid(*oit).name()
+          ss << "Operator " << typeid(*oit).name() //boost::core::demangle(typeid(*oit).name())
           << " operator number " << std::distance<boost::ptr_vector<UserDataOperator>::iterator>(opPtrVector.begin(),oit)
           << " thorw in method: " << ex.what()
           << " at line " << __LINE__
@@ -617,7 +617,7 @@ PetscErrorCode OpCalculateInvJacForFace::doWork(
     SETERRQ(
       PETSC_COMM_SELF,
       MOFEM_DATA_INCONSISTENCY,
-      "This operator can be used only with element which is trangle"
+      "This operator can be used only with element which is triangle"
     );
   }
 
@@ -675,7 +675,7 @@ PetscErrorCode OpSetInvJacH1ForFace::doWork(
     SETERRQ(
       PETSC_COMM_SELF,
       MOFEM_DATA_INCONSISTENCY,
-      "This operator can be used only with element which is trangle"
+      "This operator can be used only with element which is triangle"
     );
   }
 
@@ -743,16 +743,25 @@ PetscErrorCode OpSetInvJacHcurlFace::doWork(
 ) {
   PetscFunctionBegin;
 
+  if(type != MBEDGE && type != MBTRI) PetscFunctionReturn(0);
+
   if(
-    getNumeredEntFiniteElementPtr()->getEntType()!=MBTRI &&
-    getNumeredEntFiniteElementPtr()->getEntType()!=MBQUAD
+    getNumeredEntFiniteElementPtr()->getEntType()!=MBTRI
   ) {
     SETERRQ(
       PETSC_COMM_SELF,
       MOFEM_DATA_INCONSISTENCY,
-      "This operator can be used only with element which is trangle"
+      "This operator can be used only with element which is triangle"
     );
   }
+
+  FTensor::Tensor2<double*,2,2> t_inv_jac = FTensor::Tensor2<double*,2,2>(
+    &invJac(0,0),&invJac(0,1),&invJac(1,0),&invJac(1,1)
+  );
+
+  FTensor::Index<'i',3> i;
+  FTensor::Index<'j',2> j;
+  FTensor::Index<'k',2> k;
 
   for(int b = AINSWORTH_COLE_BASE; b!=USER_BASE; b++) {
 
@@ -760,14 +769,8 @@ PetscErrorCode OpSetInvJacHcurlFace::doWork(
 
     try {
 
-      if(type != MBEDGE && type != MBTRI) PetscFunctionReturn(0);
-
-      FTensor::Tensor2<double*,2,2> t_inv_jac = FTensor::Tensor2<double*,2,2>(
-        &invJac(0,0),&invJac(0,1),&invJac(1,0),&invJac(1,1)
-      );
-
       const unsigned int nb_base_functions = data.getDiffHcurlN(base).size2()/6;
-      if(!nb_base_functions) PetscFunctionReturn(0);
+      if(!nb_base_functions) continue;
       const unsigned int nb_gauss_pts = data.getDiffHcurlN(base).size1();
 
       diffHcurlInvJac.resize(
@@ -789,7 +792,7 @@ PetscErrorCode OpSetInvJacHcurlFace::doWork(
 
       for(unsigned int gg = 0;gg!=nb_gauss_pts;gg++) {
         for(unsigned int bb = 0;bb!=nb_base_functions;bb++) {
-          t_inv_diff_n(k,i) = t_diff_n(k,j)*t_inv_jac(j,i);
+          t_inv_diff_n(i,j) = t_diff_n(i,k)*t_inv_jac(k,j);
           ++t_diff_n;
           ++t_inv_diff_n;
         }

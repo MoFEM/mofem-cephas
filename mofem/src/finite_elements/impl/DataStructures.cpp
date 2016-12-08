@@ -101,6 +101,18 @@ FTensor::Tensor2<double*,3,3> getTensor2FormData<3,3,double,ublas::row_major,ubl
   );
 }
 
+template<>
+FTensor::Tensor2<double*,3,2> getTensor2FormData<3,2,double,ublas::row_major,ublas::unbounded_array<double> >(
+  MatrixDouble &data
+) {
+  if(data.size1()!=6) {
+    THROW_MESSAGE("Wrong size of data matrix");
+  }
+  return FTensor::Tensor2<double*,3,2>(
+    &data(0,0),&data(1,0),&data(2,0),&data(3,0),&data(4,0),&data(5,0)
+  );
+}
+
 DataForcesAndSurcesCore::EntData::EntData():
 sEnse(0),
 oRder(0),
