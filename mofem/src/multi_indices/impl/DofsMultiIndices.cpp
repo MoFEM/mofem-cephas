@@ -100,18 +100,25 @@ void DofEntity_active_change::operator()(boost::shared_ptr<DofEntity> &_dof_) {
 }
 
 //numered dof
-NumeredDofEntity::NumeredDofEntity(const boost::shared_ptr<DofEntity> _DofEntity_ptr):
+NumeredDofEntity::NumeredDofEntity(
+  const boost::shared_ptr<DofEntity> _DofEntity_ptr,
+  const int dof_idx,
+  const int petsc_gloabl_dof_idx,
+  const int petsc_local_dof_idx,
+  const int part
+
+):
 interface_DofEntity<DofEntity>(_DofEntity_ptr),
-dof_idx(-1),
-petsc_gloabl_dof_idx(-1),
-petsc_local_dof_idx(-1),
-part(-1) {
+dofIdx(dof_idx),
+petscGloablDofIdx(petsc_gloabl_dof_idx),
+petscLocalDofIdx(petsc_local_dof_idx),
+pArt(part) {
 }
 
 std::ostream& operator<<(std::ostream& os,const NumeredDofEntity& e) {
-  os << "idx " << e.dof_idx << " part " << e.part
-  << " petsc idx " << e.petsc_gloabl_dof_idx
-  << " ( " << e.petsc_local_dof_idx <<  " ) "
+  os << "idx " << e.dofIdx << " part " << e.pArt
+  << " petsc idx " << e.petscGloablDofIdx
+  << " ( " << e.petscLocalDofIdx <<  " ) "
   << *e.sFieldPtr;
   return os;
 }
