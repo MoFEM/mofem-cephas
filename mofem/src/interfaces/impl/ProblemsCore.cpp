@@ -1449,14 +1449,6 @@ PetscErrorCode Core::build_sub_problem(
             )
           )
         );
-        // bool success = out_problem_dofs[ss]->modify(
-        //   p.first,NumeredDofEntity_mofem_part_and_all_index_change(
-        //     dit->get()->getPart(),
-        //     mofem_dof_idx++,
-        //     dit->get()->getPetscGlobalDofIdx(),
-        //     dit->get()->getPetscLocalDofIdx()
-        //   )
-        // );
       }
     }
     // Set local indexes

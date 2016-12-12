@@ -101,14 +101,14 @@ void DofEntity_active_change::operator()(boost::shared_ptr<DofEntity> &_dof_) {
 
 //numered dof
 NumeredDofEntity::NumeredDofEntity(
-  const boost::shared_ptr<DofEntity> _DofEntity_ptr,
+  const boost::shared_ptr<DofEntity> dof_entity_ptr,
   const int dof_idx,
   const int petsc_gloabl_dof_idx,
   const int petsc_local_dof_idx,
   const int part
 
 ):
-interface_DofEntity<DofEntity>(_DofEntity_ptr),
+interface_DofEntity<DofEntity>(dof_entity_ptr),
 dofIdx(dof_idx),
 petscGloablDofIdx(petsc_gloabl_dof_idx),
 petscLocalDofIdx(petsc_local_dof_idx),
