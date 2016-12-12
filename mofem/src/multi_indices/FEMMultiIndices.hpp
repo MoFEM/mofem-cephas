@@ -447,7 +447,6 @@ interface_RefElement<RefElement> {
   typedef interface_FiniteElement<FiniteElement> interface_type_MoFEMFiniteElement;
   boost::shared_ptr<DofEntity_multiIndex_uid_view> row_dof_view;
   boost::shared_ptr<DofEntity_multiIndex_uid_view> col_dof_view;
-  // boost::shared_ptr<DofEntity_multiIndex_uid_view> data_dof_view;
   FEDofEntity_multiIndex data_dofs;
   GlobalUId global_uid;
 

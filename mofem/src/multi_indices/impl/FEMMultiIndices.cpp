@@ -885,7 +885,6 @@ interface_FiniteElement<FiniteElement>(fe_ptr),
 interface_RefElement<RefElement>(ref_finite_element),
 row_dof_view(boost::shared_ptr<DofEntity_multiIndex_uid_view>(new DofEntity_multiIndex_uid_view)),
 col_dof_view(boost::shared_ptr<DofEntity_multiIndex_uid_view>(new DofEntity_multiIndex_uid_view)) {
-// data_dof_view(boost::shared_ptr<DofEntity_multiIndex_uid_view>(new DofEntity_multiIndex_uid_view)) {
 
   //get finite element entity
   global_uid =  getGlobalUniqueIdCalculate();
@@ -910,12 +909,12 @@ std::ostream& operator<<(std::ostream& os,const EntFiniteElement& e) {
   for(;cit!=e.col_dof_view->end();cit++) {
     os << (*cit)->getGlobalUniqueId() << " ";
   }
-  // os << "data dof_uids ";
-  // DofEntity_multiIndex_uid_view::iterator dit;
-  // dit = e.data_dof_view->begin();
-  // for(;dit!=e.data_dof_view->end();dit++) {
-  //   os << (*dit)->getGlobalUniqueId() << " ";
-  // }
+  os << "data dof_uids ";
+  FEDofEntity_multiIndex::iterator dit;
+  dit = e.data_dofs.begin();
+  for(;dit!=e.data_dofs.end();dit++) {
+    os << (*dit)->getGlobalUniqueId() << " ";
+  }
   return os;
 }
 

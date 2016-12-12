@@ -543,27 +543,14 @@ namespace MoFEM {
       if(fe_fields[ROW]==fe_fields[COL]) {
          p.first->get()->col_dof_view = p.first->get()->row_dof_view;
       }
-      // if(fe_fields[ROW]==fe_fields[DATA]) {
-      //   p.first->get()->data_dof_view = p.first->get()->row_dof_view;
-      // } else if(fe_fields[COL]==fe_fields[DATA]) {
-      //   p.first->get()->data_dof_view = p.first->get()->col_dof_view;
-      // }
 
       if(fe_fields[ROW]!=fe_fields[COL] && p.first->get()->col_dof_view == p.first->get()->row_dof_view) {
         p.first->get()->col_dof_view
         = boost::shared_ptr<DofEntity_multiIndex_uid_view>(new DofEntity_multiIndex_uid_view());
       }
-      // if(fe_fields[ROW]!=fe_fields[DATA] && p.first->get()->data_dof_view == p.first->get()->row_dof_view) {
-      //   p.first->get()->data_dof_view
-      //   = boost::shared_ptr<DofEntity_multiIndex_uid_view>(new DofEntity_multiIndex_uid_view());
-      // } else if(fe_fields[COL]!=fe_fields[DATA] && p.first->get()->data_dof_view == p.first->get()->col_dof_view) {
-      //   p.first->get()->data_dof_view
-      //   = boost::shared_ptr<DofEntity_multiIndex_uid_view>(new DofEntity_multiIndex_uid_view());
-      // }
 
       p.first->get()->row_dof_view->clear();
       p.first->get()->col_dof_view->clear();
-      // p.first->get()->data_dof_view->clear();
       p.first->get()->data_dofs.clear();
 
       for(unsigned int ii = 0;ii<BitFieldId().size();ii++) {
@@ -633,14 +620,6 @@ namespace MoFEM {
               fe_it->get()->col_dof_view->insert(fe_it->get()->col_dof_view->end(),*dit);
             }
           }
-          // if(
-          //   fe_it->get()->data_dof_view!=fe_it->get()->row_dof_view &&
-          //   fe_it->get()->data_dof_view!=fe_it->get()->col_dof_view
-          // ) {
-          //   if((field_id&fe_it->get()->getBitFieldIdData()).any()) {
-          //     fe_it->get()->data_dof_view->insert(fe_it->get()->data_dof_view->end(),*dit);
-          //   }
-          // }
           if((field_id&fe_it->get()->getBitFieldIdData()).any()) {
             side_number_ptr = fe_it->get()->getSideNumberPtr(moab,(*dit)->getEnt());
             // add dofs to finite element multi_index database
