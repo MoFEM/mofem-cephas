@@ -543,27 +543,27 @@ namespace MoFEM {
       if(fe_fields[ROW]==fe_fields[COL]) {
          p.first->get()->col_dof_view = p.first->get()->row_dof_view;
       }
-      if(fe_fields[ROW]==fe_fields[DATA]) {
-        p.first->get()->data_dof_view = p.first->get()->row_dof_view;
-      } else if(fe_fields[COL]==fe_fields[DATA]) {
-        p.first->get()->data_dof_view = p.first->get()->col_dof_view;
-      }
+      // if(fe_fields[ROW]==fe_fields[DATA]) {
+      //   p.first->get()->data_dof_view = p.first->get()->row_dof_view;
+      // } else if(fe_fields[COL]==fe_fields[DATA]) {
+      //   p.first->get()->data_dof_view = p.first->get()->col_dof_view;
+      // }
 
       if(fe_fields[ROW]!=fe_fields[COL] && p.first->get()->col_dof_view == p.first->get()->row_dof_view) {
         p.first->get()->col_dof_view
         = boost::shared_ptr<DofEntity_multiIndex_uid_view>(new DofEntity_multiIndex_uid_view());
       }
-      if(fe_fields[ROW]!=fe_fields[DATA] && p.first->get()->data_dof_view == p.first->get()->row_dof_view) {
-        p.first->get()->data_dof_view
-        = boost::shared_ptr<DofEntity_multiIndex_uid_view>(new DofEntity_multiIndex_uid_view());
-      } else if(fe_fields[COL]!=fe_fields[DATA] && p.first->get()->data_dof_view == p.first->get()->col_dof_view) {
-        p.first->get()->data_dof_view
-        = boost::shared_ptr<DofEntity_multiIndex_uid_view>(new DofEntity_multiIndex_uid_view());
-      }
+      // if(fe_fields[ROW]!=fe_fields[DATA] && p.first->get()->data_dof_view == p.first->get()->row_dof_view) {
+      //   p.first->get()->data_dof_view
+      //   = boost::shared_ptr<DofEntity_multiIndex_uid_view>(new DofEntity_multiIndex_uid_view());
+      // } else if(fe_fields[COL]!=fe_fields[DATA] && p.first->get()->data_dof_view == p.first->get()->col_dof_view) {
+      //   p.first->get()->data_dof_view
+      //   = boost::shared_ptr<DofEntity_multiIndex_uid_view>(new DofEntity_multiIndex_uid_view());
+      // }
 
       p.first->get()->row_dof_view->clear();
       p.first->get()->col_dof_view->clear();
-      p.first->get()->data_dof_view->clear();
+      // p.first->get()->data_dof_view->clear();
       p.first->get()->data_dofs.clear();
 
       for(unsigned int ii = 0;ii<BitFieldId().size();ii++) {
@@ -587,6 +587,8 @@ namespace MoFEM {
         // uids on finite element tag
         ierr = p.first->get()->getElementAdjacency(moab,*miit,adj_ents); CHKERRQ(ierr);
 
+        // Loop over adjacencies of element and find field entities on those
+        // adjacencies, that create hash map map_uid_fe which is used later
         std::string field_name = miit->get()->getName();
         for(Range::iterator eit = adj_ents.begin();eit!=adj_ents.end();eit++) {
           MoFEMEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type::iterator meit;
@@ -603,6 +605,7 @@ namespace MoFEM {
     typedef DofEntity_multiIndex::index<Unique_Ent_mi_tag>::type DofsByEntUId;
     DofsByEntUId& dofs_by_ent_uid = dofsField.get<Unique_Ent_mi_tag>();
 
+    // Loop over hash map, which has all entities on given elemnts
     boost::shared_ptr<SideNumber> side_number_ptr;
     for(
       std::map<UId,std::vector<boost::shared_ptr<EntFiniteElement> > >::iterator
@@ -616,31 +619,38 @@ namespace MoFEM {
         // cerr << **dit << endl;
         BitFieldId field_id = dit->get()->getId();
         std::vector<boost::shared_ptr<EntFiniteElement> >::iterator fe_it,hi_fe_it;
+        // add dof to finite element
         fe_it = mit->second.begin();
         hi_fe_it = mit->second.end();
         for(;fe_it!=hi_fe_it;fe_it++) {
+          // if rows and columns of finite element are the same, then
+          // we exploit that case
           if((field_id&fe_it->get()->getBitFieldIdRow()).any()) {
-            fe_it->get()->row_dof_view->insert(*dit);
+            fe_it->get()->row_dof_view->insert(fe_it->get()->row_dof_view->end(),*dit);
           }
           if(fe_it->get()->col_dof_view!=fe_it->get()->row_dof_view) {
             if((field_id&fe_it->get()->getBitFieldIdCol()).any()) {
-              fe_it->get()->col_dof_view->insert(*dit);
+              fe_it->get()->col_dof_view->insert(fe_it->get()->col_dof_view->end(),*dit);
             }
           }
-          if(fe_it->get()->data_dof_view!=fe_it->get()->row_dof_view && fe_it->get()->data_dof_view!=fe_it->get()->col_dof_view) {
-            if((field_id&fe_it->get()->getBitFieldIdData()).any()) {
-              fe_it->get()->data_dof_view->insert(*dit);
-            }
-          }
+          // if(
+          //   fe_it->get()->data_dof_view!=fe_it->get()->row_dof_view &&
+          //   fe_it->get()->data_dof_view!=fe_it->get()->col_dof_view
+          // ) {
+          //   if((field_id&fe_it->get()->getBitFieldIdData()).any()) {
+          //     fe_it->get()->data_dof_view->insert(fe_it->get()->data_dof_view->end(),*dit);
+          //   }
+          // }
           if((field_id&fe_it->get()->getBitFieldIdData()).any()) {
             side_number_ptr = fe_it->get()->getSideNumberPtr(moab,(*dit)->getEnt());
-            //add dofs to finite element multi_index database
+            // add dofs to finite element multi_index database
             fe_it->get()->data_dofs.get<Unique_mi_tag>().insert(
               boost::shared_ptr<FEDofEntity>(new FEDofEntity(side_number_ptr,*dit))
             );
           }
         }
       }
+
     }
 
     PetscFunctionReturn(0);
@@ -772,9 +782,9 @@ namespace MoFEM {
       ) {
         MoFEMEntityEntFiniteElementAdjacencyMap_change_ByWhat modify_data(BYDATA);
         ent_uid = UId(0);
-        DofEntity_multiIndex_uid_view::iterator dvit;
-        dvit = (*fit)->data_dof_view->begin();
-        for(;dvit!=(*fit)->data_dof_view->end();dvit++) {
+        FEDofEntity_multiIndex::iterator dvit;
+        dvit = (*fit)->data_dofs.begin();
+        for(;dvit!=(*fit)->data_dofs.end();dvit++) {
           if(ent_uid == (*dvit)->getMoFEMEntityPtr()->getGlobalUniqueId()) continue;
           ent_uid = (*dvit)->getMoFEMEntityPtr()->getGlobalUniqueId();
           std::pair<MoFEMEntityEntFiniteElementAdjacencyMap_multiIndex::iterator,bool> p;

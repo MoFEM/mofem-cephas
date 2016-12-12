@@ -447,7 +447,7 @@ interface_RefElement<RefElement> {
   typedef interface_FiniteElement<FiniteElement> interface_type_MoFEMFiniteElement;
   boost::shared_ptr<DofEntity_multiIndex_uid_view> row_dof_view;
   boost::shared_ptr<DofEntity_multiIndex_uid_view> col_dof_view;
-  boost::shared_ptr<DofEntity_multiIndex_uid_view> data_dof_view;
+  // boost::shared_ptr<DofEntity_multiIndex_uid_view> data_dof_view;
   FEDofEntity_multiIndex data_dofs;
   GlobalUId global_uid;
 
@@ -500,7 +500,7 @@ interface_RefElement<RefElement> {
    * \brief Get number of DOFs on data
    * @return Number of dofs on data
    */
-  inline DofIdx getNbDofsData() const { return data_dof_view->size(); }
+  inline DofIdx getNbDofsData() const { return data_dofs.size(); }
 
   /**
    * \brief Get data data dos multi-index structure
