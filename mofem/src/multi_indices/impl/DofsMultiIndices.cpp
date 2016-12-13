@@ -141,8 +141,8 @@ interface_DofEntity<DofEntity>(dof_ptr) {
 
 std::ostream& operator<<(std::ostream& os,const FEDofEntity& e) {
   os << "local dof FiniteElement idx "
-    << "side_number " << e.sideNumberPtr->side_number << " "
-    << "sense " << e.sideNumberPtr->sense << " "
+    << "side_number " << (int)e.sideNumberPtr->side_number << " "
+    << "sense " << (int)e.sideNumberPtr->sense << " "
     << *e.sFieldPtr;
   return os;
 }
@@ -164,8 +164,8 @@ interface_NumeredDofEntity<NumeredDofEntity>(t.get<1>()) {
 
 std::ostream& operator<<(std::ostream& os,const FENumeredDofEntity& e) {
   os << "local dof FiniteElement idx "
-    << "side_number " << e.sideNumberPtr->side_number << " "
-    << "sense " << e.sideNumberPtr->sense << " "
+    << "side_number " << (int)e.sideNumberPtr->side_number << " "
+    << "sense " << (int)e.sideNumberPtr->sense << " "
     << *e.sFieldPtr;
   return os;
 }
