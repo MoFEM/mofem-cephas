@@ -392,45 +392,57 @@ typedef multi_index_container<
   boost::shared_ptr<FEDofEntity>,
   indexed_by<
     ordered_unique<
-      tag<Unique_mi_tag>, const_mem_fun<FEDofEntity::interface_type_DofEntity,const GlobalUId,&FEDofEntity::getGlobalUniqueId> >,
+      tag<Unique_mi_tag>,
+      const_mem_fun<FEDofEntity::interface_type_DofEntity,const GlobalUId,&FEDofEntity::getGlobalUniqueId>
+    >,
     ordered_non_unique<
-      tag<Ent_mi_tag>, const_mem_fun<FEDofEntity::interface_type_DofEntity,EntityHandle,&FEDofEntity::getEnt> >,
+      tag<Ent_mi_tag>,
+      const_mem_fun<FEDofEntity::interface_type_DofEntity,EntityHandle,&FEDofEntity::getEnt>
+    >,
     ordered_non_unique<
-      tag<FieldName_mi_tag>, const_mem_fun<FEDofEntity::interface_type_Field,boost::string_ref,&FEDofEntity::getNameRef> >,
+      tag<FieldName_mi_tag>,
+      const_mem_fun<FEDofEntity::interface_type_Field,boost::string_ref,&FEDofEntity::getNameRef>
+    >,
     ordered_non_unique<
-      tag<EntType_mi_tag>, const_mem_fun<FEDofEntity::interface_type_RefEntity,EntityType,&FEDofEntity::getEntType> >,
+      tag<EntType_mi_tag>,
+      const_mem_fun<FEDofEntity::interface_type_RefEntity,EntityType,&FEDofEntity::getEntType>
+    >,
     ordered_non_unique<
       tag<Composite_Name_Type_And_Side_Number_mi_tag>,
       composite_key<
-	FEDofEntity,
-	  const_mem_fun<FEDofEntity::interface_type_Field,boost::string_ref,&FEDofEntity::getNameRef>,
-	  const_mem_fun<FEDofEntity::interface_type_RefEntity,EntityType,&FEDofEntity::getEntType>,
-	  KeyFromKey<
-	    member<SideNumber,char,&SideNumber::side_number>,
-	    member<FEDofEntity::BaseFEDofEntity,boost::shared_ptr<SideNumber>,&FEDofEntity::sideNumberPtr>
-	  >
-      > >,
+	    FEDofEntity,
+	     const_mem_fun<FEDofEntity::interface_type_Field,boost::string_ref,&FEDofEntity::getNameRef>,
+	     const_mem_fun<FEDofEntity::interface_type_RefEntity,EntityType,&FEDofEntity::getEntType>,
+	     KeyFromKey<
+	      member<SideNumber,char,&SideNumber::side_number>,
+	      member<FEDofEntity::BaseFEDofEntity,boost::shared_ptr<SideNumber>,&FEDofEntity::sideNumberPtr>
+	     >
+     >
+    >,
     ordered_non_unique<
       tag<Composite_Name_And_Type_mi_tag>,
       composite_key<
-	FEDofEntity,
-	  const_mem_fun<FEDofEntity::interface_type_Field,boost::string_ref,&FEDofEntity::getNameRef>,
-	  const_mem_fun<FEDofEntity::interface_type_RefEntity,EntityType,&FEDofEntity::getEntType>
-	> >,
+	    FEDofEntity,
+	     const_mem_fun<FEDofEntity::interface_type_Field,boost::string_ref,&FEDofEntity::getNameRef>,
+	     const_mem_fun<FEDofEntity::interface_type_RefEntity,EntityType,&FEDofEntity::getEntType>
+	    >
+    >,
     ordered_non_unique<
       tag<Composite_Name_And_Ent_mi_tag>,
       composite_key<
-	FEDofEntity,
-	  const_mem_fun<FEDofEntity::interface_type_Field,boost::string_ref,&FEDofEntity::getNameRef>,
-	  const_mem_fun<FEDofEntity::interface_type_DofEntity,EntityHandle,&FEDofEntity::getEnt>
-	> >,
+	    FEDofEntity,
+	     const_mem_fun<FEDofEntity::interface_type_Field,boost::string_ref,&FEDofEntity::getNameRef>,
+	     const_mem_fun<FEDofEntity::interface_type_DofEntity,EntityHandle,&FEDofEntity::getEnt>
+	    >
+    >,
     ordered_non_unique<
       tag<Composite_EntType_and_Space_mi_tag>,
       composite_key<
-	FEDofEntity,
-	  const_mem_fun<FEDofEntity::interface_type_RefEntity,EntityType,&FEDofEntity::getEntType>,
-	  const_mem_fun<FEDofEntity::interface_type_Field,FieldSpace,&FEDofEntity::getSpace>
-	> >
+	     FEDofEntity,
+	     const_mem_fun<FEDofEntity::interface_type_RefEntity,EntityType,&FEDofEntity::getEntType>,
+	     const_mem_fun<FEDofEntity::interface_type_Field,FieldSpace,&FEDofEntity::getSpace>
+	    >
+    >
   >
 > FEDofEntity_multiIndex;
 
