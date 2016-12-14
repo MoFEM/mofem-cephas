@@ -276,16 +276,16 @@ PetscErrorCode ForcesAndSurcesCore::getDataOrderSpaceAndBase(
     data[side].getSpace() = NOSPACE;
   }
 
-  FEDofEntityByNameAndType &data_dofs =
-  const_cast<FEDofEntityByNameAndType&>(
-    numeredEntFiniteElementPtr->getDataDofs().get<Composite_Name_And_Type_mi_tag>()
-  );
+  const FEDofEntity_multiIndex::index<Composite_Name_Type_And_Side_Number_mi_tag>::type
+  &data_dofs = numeredEntFiniteElementPtr->getDataDofs().get<Composite_Name_Type_And_Side_Number_mi_tag>();
+  FEDofEntity_multiIndex::index<Composite_Name_Type_And_Side_Number_mi_tag>::type::iterator dit,hi_dit;
+  dit = data_dofs.lower_bound(boost::make_tuple(field_name,type,0));
+  if(dit == data_dofs.end()) {
+    PetscFunctionReturn(0);
+  }
+  hi_dit = data_dofs.lower_bound(boost::make_tuple(field_name,type,data.size()));
 
-  FEDofEntityByNameAndType::iterator dit,hi_dit;
-  dit = data_dofs.lower_bound(boost::make_tuple(field_name,type));
-  hi_dit = data_dofs.upper_bound(boost::make_tuple(field_name,type));
-
-  for(;dit!=hi_dit;dit++) {
+  for(;dit!=hi_dit;) {
 
     // std::cerr << ApproximationBaseNames[dit->getApproxBase()] << std::endl;
 
@@ -307,6 +307,9 @@ PetscErrorCode ForcesAndSurcesCore::getDataOrderSpaceAndBase(
       data[(*dit)->sideNumberPtr->brother_side_number].getSpace() = data[side_number].getSpace();
       data[(*dit)->sideNumberPtr->brother_side_number].getDataOrder() = data[side_number].getDataOrder();
     }
+
+    const int nb_dofs_on_ent = (*dit)->getNbDofsOnEnt();
+    for(int i = 0;i!=nb_dofs_on_ent;i++,dit++) {}
 
   }
 
@@ -355,6 +358,7 @@ PetscErrorCode ForcesAndSurcesCore::getNodesIndices(
 ) const {
   PetscErrorCode ierr;
   PetscFunctionBegin;
+
   FENumeredDofEntityByNameAndType::iterator dit,hi_dit,it;
   dit = dofs.get<Composite_Name_And_Type_mi_tag>().lower_bound(boost::make_tuple(field_name,MBVERTEX));
   hi_dit = dofs.get<Composite_Name_And_Type_mi_tag>().upper_bound(boost::make_tuple(field_name,MBVERTEX));
@@ -379,22 +383,23 @@ PetscErrorCode ForcesAndSurcesCore::getNodesIndices(
   }
 
   for(;dit!=hi_dit;dit++) {
-    int idx = (*dit)->getPetscGlobalDofIdx();
-    int local_idx = (*dit)->getPetscLocalDofIdx();
-    int side_number = (*dit)->sideNumberPtr->side_number;
-    int pos = side_number*(*dit)->getNbOfCoeffs()+(*dit)->getDofCoeffIdx();
+    const int idx = (*dit)->getPetscGlobalDofIdx();
+    const int local_idx = (*dit)->getPetscLocalDofIdx();
+    const int side_number = (*dit)->sideNumberPtr->side_number;
+    const int pos = side_number*(*dit)->getNbOfCoeffs()+(*dit)->getDofCoeffIdx();
     nodes_indices[pos] = idx;
     local_nodes_indices[pos] = local_idx;
-    int  brother_side_number = (*dit)->sideNumberPtr->brother_side_number;
+    const int  brother_side_number = (*dit)->sideNumberPtr->brother_side_number;
     if(brother_side_number!=-1) {
       if(nodes_indices.size()<(unsigned int)(brother_side_number*(*dit)->getNbOfCoeffs()+(*dit)->getNbOfCoeffs())) {
         nodes_indices.resize(brother_side_number*(*dit)->getNbOfCoeffs()+(*dit)->getNbOfCoeffs());
       }
-      int elem_idx = brother_side_number*(*dit)->getNbOfCoeffs()+(*dit)->getDofCoeffIdx();
+      const int elem_idx = brother_side_number*(*dit)->getNbOfCoeffs()+(*dit)->getDofCoeffIdx();
       nodes_indices[elem_idx] = idx;
       local_nodes_indices[elem_idx] = local_idx;
     }
   }
+
   PetscFunctionReturn(0);
 }
 

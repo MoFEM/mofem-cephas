@@ -756,18 +756,18 @@ PetscErrorCode Core::partition_problem(const std::string &name,int verb) {
           "check finite element definition, nb. of rows is not equal to columns"
         );
       }
-      if((*miit_dofs_row)->dof_idx!=(*miit_dofs_col)->dof_idx) {
+      if((*miit_dofs_row)->dofIdx!=(*miit_dofs_col)->dofIdx) {
         SETERRQ(
           PETSC_COMM_WORLD,
           MOFEM_DATA_INCONSISTENCY,
           "check finite element definition, nb. of rows is not equal to columns"
         );
       }
-      assert(petsc_idx[(*miit_dofs_row)->dof_idx]>=0);
-      assert(petsc_idx[(*miit_dofs_row)->dof_idx]<(int)p_miit->getNbDofsRow());
+      assert(petsc_idx[(*miit_dofs_row)->dofIdx]>=0);
+      assert(petsc_idx[(*miit_dofs_row)->dofIdx]<(int)p_miit->getNbDofsRow());
       bool success = dofs_row_by_idx_no_const.modify(
         miit_dofs_row,NumeredDofEntity_part_change(
-          part_number[(*miit_dofs_row)->dof_idx],petsc_idx[(*miit_dofs_row)->dof_idx]
+          part_number[(*miit_dofs_row)->dofIdx],petsc_idx[(*miit_dofs_row)->dofIdx]
         )
       );
       if(!success) {
@@ -775,15 +775,15 @@ PetscErrorCode Core::partition_problem(const std::string &name,int verb) {
       }
       success = dofs_col_by_idx_no_const.modify(
         miit_dofs_col,NumeredDofEntity_part_change(
-          part_number[(*miit_dofs_col)->dof_idx],petsc_idx[(*miit_dofs_col)->dof_idx]
+          part_number[(*miit_dofs_col)->dofIdx],petsc_idx[(*miit_dofs_col)->dofIdx]
         )
       );
       if(!success) {
         SETERRQ(PETSC_COMM_WORLD,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
       }
-      if((*miit_dofs_row)->part == (unsigned int)rAnk) {
-        assert((*miit_dofs_row)->part==(*miit_dofs_col)->part);
-        assert((*miit_dofs_row)->petsc_gloabl_dof_idx==(*miit_dofs_col)->petsc_gloabl_dof_idx);
+      if((*miit_dofs_row)->pArt == (unsigned int)rAnk) {
+        assert((*miit_dofs_row)->pArt==(*miit_dofs_col)->pArt);
+        assert((*miit_dofs_row)->petscGloablDofIdx==(*miit_dofs_col)->petscGloablDofIdx);
         success = dofs_row_by_idx_no_const.modify(
           miit_dofs_row,NumeredDofEntity_local_idx_change(nb_row_local_dofs++)
         );

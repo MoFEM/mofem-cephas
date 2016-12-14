@@ -140,6 +140,18 @@ int main(int argc, char *argv[]) {
     ierr = DMSetUp(dm); CHKERRQ(ierr);
     ierr = m_field.partition_check_matrix_fill_in(dm_name,-1,-1,1); CHKERRQ(ierr);
 
+    int nf;
+    char **field_names;
+    IS *fields;
+    ierr = DMCreateFieldIS(dm,&nf,&field_names,&fields); CHKERRQ(ierr);
+    for(int f = 0;f!=nf;f++) {
+      PetscPrintf(PETSC_COMM_WORLD,"%d field %s\n",f,field_names[f]);
+      ierr = PetscFree(field_names[f]); CHKERRQ(ierr);
+      ierr = ISDestroy(&(fields[f])); CHKERRQ(ierr);
+    }
+    ierr = PetscFree(field_names); CHKERRQ(ierr);
+    ierr = PetscFree(fields); CHKERRQ(ierr);
+
     ierr = DMMoFEMCreateSubDM(subdm0,dm,"SUB0"); CHKERRQ(ierr);
     ierr = DMMoFEMSetSquareProblem(subdm0,PETSC_TRUE); CHKERRQ(ierr);
     ierr = DMMoFEMAddElement(subdm0,"FE11"); CHKERRQ(ierr);
@@ -182,7 +194,7 @@ int main(int argc, char *argv[]) {
     } catch (MoFEMException const &e) {
       SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
     }
-    
+
     //finish work cleaning memory, getting statistics, ect.
     ierr = PetscFinalize(); CHKERRQ(ierr);
 
