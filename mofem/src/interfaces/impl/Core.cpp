@@ -1057,7 +1057,7 @@ PetscErrorCode Core::seed_ref_level_2D(const EntityHandle meshset,const BitRefLe
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode Core::seed_ref_level(const Range &ents,const BitRefLevel &bit,int verb) {
+PetscErrorCode Core::seed_ref_level(const Range &ents,const BitRefLevel &bit,const bool only_tets,int verb) {
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
   Range seeded_ents;
@@ -1115,6 +1115,9 @@ PetscErrorCode Core::seed_ref_level(const Range &ents,const BitRefLevel &bit,int
         p_MoFEMFiniteElement = refinedFiniteElements.insert(ptrWrapperRefElement(
           boost::shared_ptr<RefElement>(new RefElement_PRISM(moab,*p_ent.first)))
         );
+        if(!only_tets) {
+          seeded_ents.insert(*tit);
+        }
         break;
         case MBENTITYSET:
         p_MoFEMFiniteElement = refinedFiniteElements.insert(ptrWrapperRefElement(
@@ -1135,7 +1138,7 @@ PetscErrorCode Core::seed_ref_level(const Range &ents,const BitRefLevel &bit,int
       for(int dd = 0;dd<dim;dd++) {
         Range ents;
         rval = moab.get_adjacencies(seeded_ents,dd,true,ents,moab::Interface::UNION); CHKERRQ_MOAB(rval);
-        if(dd == 2) {
+        if(dd == 2 && only_tets) {
           // currently only works with triangles
           ents = ents.subset_by_type(MBTRI);
         }
@@ -1148,7 +1151,7 @@ PetscErrorCode Core::seed_ref_level(const Range &ents,const BitRefLevel &bit,int
           if(!success) SETERRQ(comm,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
           if(verb>2) {
             std::ostringstream ss;
-            ss << *(p_ent.first);
+            ss << *(*p_ent.first);
             PetscSynchronizedPrintf(comm,"%s\n",ss.str().c_str());
           }
         }

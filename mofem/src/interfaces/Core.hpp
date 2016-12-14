@@ -200,7 +200,7 @@ struct Core: public Interface {
   //refine
   PetscErrorCode seed_finite_elements(const Range &entities,int verb = -1);
   PetscErrorCode seed_finite_elements(const EntityHandle meshset,int verb = -1);
-  PetscErrorCode seed_ref_level(const Range &ents,const BitRefLevel &bit,int verb = -1);
+  PetscErrorCode seed_ref_level(const Range &ents,const BitRefLevel &bit,const bool only_tets = true,int verb = -1);
   PetscErrorCode seed_ref_level_2D(const EntityHandle meshset,const BitRefLevel &bit,int verb = -1);
   PetscErrorCode seed_ref_level_3D(const EntityHandle meshset,const BitRefLevel &bit,int verb = -1);
   PetscErrorCode seed_ref_level_MESHSET(const EntityHandle meshset,const BitRefLevel &bit,int verb = -1);

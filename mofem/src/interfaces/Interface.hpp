@@ -378,7 +378,7 @@ struct Interface: public UnknownInterface {
   /**
    * \brief seed entities in the range and their adjacencies in a particular BitRefLevel
    */
-  virtual PetscErrorCode seed_ref_level(const Range &ents,const BitRefLevel &bit,int verb = -1) = 0;
+  virtual PetscErrorCode seed_ref_level(const Range &ents,const BitRefLevel &bit,const bool only_tets = true,int verb = -1) = 0;
 
   /** brief seed ref level by MESHSET that contains entities other than volumes
    *
@@ -1674,7 +1674,7 @@ struct Interface: public UnknownInterface {
   /** \brief create IS for give two problems and field
     * \ingroup mofem_vectors
 
-    Indices are sorted by global PETSCx index in problem_x. 
+    Indices are sorted by global PETSc index in problem_x.
 
     \param x_problem name of problem
     \param x_field_name name of field in problem_x
