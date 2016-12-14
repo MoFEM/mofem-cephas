@@ -884,8 +884,7 @@ EntFiniteElement::EntFiniteElement(
 interface_FiniteElement<FiniteElement>(fe_ptr),
 interface_RefElement<RefElement>(ref_finite_element),
 row_dof_view(boost::shared_ptr<DofEntity_multiIndex_uid_view>(new DofEntity_multiIndex_uid_view)),
-col_dof_view(boost::shared_ptr<DofEntity_multiIndex_uid_view>(new DofEntity_multiIndex_uid_view)),
-data_dof_view(boost::shared_ptr<DofEntity_multiIndex_uid_view>(new DofEntity_multiIndex_uid_view)) {
+col_dof_view(boost::shared_ptr<DofEntity_multiIndex_uid_view>(new DofEntity_multiIndex_uid_view)) {
 
   //get finite element entity
   global_uid =  getGlobalUniqueIdCalculate();
@@ -911,24 +910,25 @@ std::ostream& operator<<(std::ostream& os,const EntFiniteElement& e) {
     os << (*cit)->getGlobalUniqueId() << " ";
   }
   os << "data dof_uids ";
-  DofEntity_multiIndex_uid_view::iterator dit;
-  dit = e.data_dof_view->begin();
-  for(;dit!=e.data_dof_view->end();dit++) {
+  FEDofEntity_multiIndex::iterator dit;
+  dit = e.data_dofs.begin();
+  for(;dit!=e.data_dofs.end();dit++) {
     os << (*dit)->getGlobalUniqueId() << " ";
   }
   return os;
 }
 
-template <typename MOFEM_DOFS,typename MOFEM_DOFS_VIEW>
+template <typename FE_DOFS,typename MOFEM_DOFS,typename MOFEM_DOFS_VIEW>
 static PetscErrorCode get_fe_dof_view(
-  const DofEntity_multiIndex_uid_view &fe_dofs_view,
+  const FE_DOFS &fe_dofs_view,
   const MOFEM_DOFS &mofem_dofs,
   MOFEM_DOFS_VIEW &mofem_dofs_view,
   const int operation_type
 ) {
   PetscFunctionBegin;
   typename boost::multi_index::index<MOFEM_DOFS,Unique_mi_tag>::type::iterator mofem_it,mofem_it_end;
-  DofEntity_multiIndex_uid_view::iterator it,it_end;
+  typename FE_DOFS::iterator it,it_end;
+  // DofEntity_multiIndex_uid_view::iterator it,it_end;
   if(operation_type==moab::Interface::UNION) {
     mofem_it = mofem_dofs.template get<Unique_mi_tag>().begin();
     mofem_it_end = mofem_dofs.template get<Unique_mi_tag>().end();
@@ -978,7 +978,7 @@ PetscErrorCode EntFiniteElement::getDataDofView(
 ) const {
   PetscFunctionBegin;
   PetscErrorCode ierr;
-  ierr = get_fe_dof_view(*data_dof_view,dofs,dofs_view,operation_type); CHKERRQ(ierr);
+  ierr = get_fe_dof_view(data_dofs,dofs,dofs_view,operation_type); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 

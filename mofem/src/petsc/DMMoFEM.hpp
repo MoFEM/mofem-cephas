@@ -486,6 +486,24 @@ PetscErrorCode DMLocalToGlobalBegin_MoFEM(DM,Vec,InsertMode,Vec);
   */
 PetscErrorCode DMLocalToGlobalEnd_MoFEM(DM,Vec,InsertMode,Vec);
 
+/**
+ * Creates a set of IS objects with the global indices of dofs for each field
+ * @param  dm         The number of fields (or NULL if not requested)
+ *
+ * Output:
+ * @param  numFields  The number of fields (or NULL if not requested)
+ * @param  fieldNames The name for each field (or NULL if not requested)
+ * @param  fields     The global indices for each field (or NULL if not requested)
+ *
+ * @return            error code
+
+ * \note The user is responsible for freeing all requested arrays. In particular,
+ * every entry of names should be freed with PetscFree(), every entry of fields
+ * should be destroyed with ISDestroy(), and both arrays should be freed with
+ * PetscFree().
+
+ */
+PetscErrorCode DMCreateFieldIS_MoFEM(DM dm, PetscInt *numFields, char ***fieldNames, IS **fields);
 
 namespace MoFEM {
 

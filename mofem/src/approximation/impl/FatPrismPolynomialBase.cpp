@@ -140,7 +140,7 @@ PetscErrorCode FatPrismPolynomialBase::getValue(
   DataForcesAndSurcesCore& data = cTx->dAta;
 
   if(cTx->copyNodeBase==LASTBASE) {
-    SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"It is assumed that base for vertices is calcuated");
+    SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"It is assumed that base for vertices is calculated");
   } else {
     data.dataOnEntities[MBVERTEX][0].getNSharedPtr(base) = data.dataOnEntities[MBVERTEX][0].getNSharedPtr(cTx->copyNodeBase);
   }

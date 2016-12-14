@@ -39,7 +39,7 @@ namespace MoFEM {
  \todo Need to implement operators that will make this element work as Volume element
 
  */
-struct FatPrismElementForcesAndSurcesCore: public VolumeElementForcesAndSourcesCore {
+struct FatPrismElementForcesAndSurcesCore: public MoFEM::VolumeElementForcesAndSourcesCore {
 
   MoABErrorCode rval;
   double aRea[2];
@@ -91,6 +91,9 @@ struct FatPrismElementForcesAndSurcesCore: public VolumeElementForcesAndSourcesC
     * \ingroup mofem_forces_and_sources_prism_element
     */
   struct UserDataOperator: public VolumeElementForcesAndSourcesCore::UserDataOperator {
+
+    UserDataOperator(const FieldSpace space):
+    VolumeElementForcesAndSourcesCore::UserDataOperator(space) {}
 
     UserDataOperator(const std::string &field_name,const char type):
     VolumeElementForcesAndSourcesCore::UserDataOperator(field_name,type) {}
@@ -319,6 +322,51 @@ struct FatPrismElementForcesAndSurcesCore: public VolumeElementForcesAndSourcesC
     PetscFunctionReturn(0);
   }
 
+};
+
+/** \brief Calculate inverse of jacobian for face element
+
+  It is assumed that face element is XY plane. Applied
+  only for 2d problems.
+
+  FIXME Generalize function for arbitrary face orientation in 3d space
+  FIXME Calculate to Jacobins for two faces
+
+  \ingroup mofem_forces_and_sources_prism_element
+
+*/
+struct OpCalculateInvJacForFatPrism: public FatPrismElementForcesAndSurcesCore::UserDataOperator {
+
+  MatrixDouble &invJac;
+  OpCalculateInvJacForFatPrism(MatrixDouble &inv_jac):
+  FatPrismElementForcesAndSurcesCore::UserDataOperator(H1),
+  invJac(inv_jac) {}
+  PetscErrorCode doWork(
+    int side,EntityType type,DataForcesAndSurcesCore::EntData &data
+  );
+};
+
+/** \brief Transform local reference derivatives of shape functions to global derivatives
+
+FIXME Generalize to curved shapes
+FIXME Generalize to case that top and bottom face has different shape
+
+\ingroup mofem_forces_and_sources_prism_element
+
+*/
+struct OpSetInvJacH1ForFatPrism: public FatPrismElementForcesAndSurcesCore::UserDataOperator {
+
+  MatrixDouble &invJac;
+  OpSetInvJacH1ForFatPrism(MatrixDouble &inv_jac):
+  FatPrismElementForcesAndSurcesCore::UserDataOperator(H1),
+  invJac(inv_jac) {
+  }
+
+  MatrixDouble diffNinvJac;
+  PetscErrorCode doWork(
+    int side,EntityType type,DataForcesAndSurcesCore::EntData &data
+  );
+  
 };
 
 }

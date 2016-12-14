@@ -116,6 +116,7 @@ PetscErrorCode DMSetOperators_MoFEM(DM dm) {
   dm->ops->globaltolocalend         = DMGlobalToLocalEnd_MoFEM;
   dm->ops->localtoglobalbegin       = DMLocalToGlobalBegin_MoFEM;
   dm->ops->localtoglobalend         = DMLocalToGlobalEnd_MoFEM;
+  dm->ops->createfieldis            = DMCreateFieldIS_MoFEM;
 
   PetscFunctionReturn(0);
 }
@@ -774,5 +775,53 @@ PetscErrorCode DMLocalToGlobalBegin_MoFEM(DM dm,Vec l,InsertMode mode,Vec g) {
 PetscErrorCode DMLocalToGlobalEnd_MoFEM(DM,Vec l,InsertMode mode,Vec g) {
   //PetscErrorCode ierr;
   PetscFunctionBegin;
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode DMCreateFieldIS_MoFEM(
+  DM dm,PetscInt *numFields,char ***fieldNames, IS **fields
+) {
+  PetscErrorCode ierr;
+  PetscValidHeaderSpecific(dm,DM_CLASSID,1);
+  PetscFunctionBegin;
+
+  if (numFields) {
+    *numFields = 0;
+  }
+  if (fieldNames) {
+    *fieldNames = NULL;
+  }
+  if (fields) {
+    *fields = NULL;
+  }
+
+  DMCtx *dm_field = (DMCtx*)dm->data;
+  const Field_multiIndex *fields_ptr;
+  ierr = dm_field->mField_ptr->get_fields(&fields_ptr); CHKERRQ(ierr);
+  Field_multiIndex::iterator fit,hi_fit;
+  fit = fields_ptr->begin();
+  hi_fit = fields_ptr->end();
+  *numFields = std::distance(fit,hi_fit);
+
+  if(fieldNames) {
+    PetscMalloc1(*numFields,fieldNames);
+  }
+  if(fields) {
+    PetscMalloc1(*numFields,fields);
+  }
+
+  for(int f = 0;fit!=hi_fit;fit++,f++) {
+    if(fieldNames) {
+      PetscStrallocpy(fit->get()->getName().c_str(),(char**)&(*fieldNames)[f]);
+    }
+    if(fields) {
+      ierr = dm_field->mField_ptr->ISCreateProblemFieldAndRank(
+        dm_field->problemPtr->getName(),
+        ROW,fit->get()->getName(),0,fit->get()->getNbOfCoeffs(),
+        &(*fields)[f]
+      ); CHKERRQ(ierr);
+    }
+  }
+
   PetscFunctionReturn(0);
 }
