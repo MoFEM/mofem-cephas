@@ -956,8 +956,12 @@ PetscErrorCode Core::set_field_order(const Range &ents,const BitFieldId id,const
 
         typedef DofEntityByNameAndEnt dof_set_type;
         dof_set_type& set_set = dofsField.get<Composite_Name_And_Ent_mi_tag>();
-        dof_set_type::iterator dit = set_set.lower_bound(boost::make_tuple((*miit)->getNameRef(),(*miit)->getEnt()));
-        dof_set_type::iterator hi_dit = set_set.upper_bound(boost::make_tuple((*miit)->getNameRef(),(*miit)->getEnt()));
+        dof_set_type::iterator dit = set_set.lower_bound(
+          boost::make_tuple((*miit)->getNameRef(),(*miit)->getEnt())
+        );
+        dof_set_type::iterator hi_dit = set_set.upper_bound(
+          boost::make_tuple((*miit)->getNameRef(),(*miit)->getEnt())
+        );
 
         for(;dit!=hi_dit;dit++) {
           if((*dit)->getDofOrder()<=order) continue;
@@ -1208,6 +1212,10 @@ PetscErrorCode Core::BuildFieldForL2H1HcurlHdiv(
       comm,"ents in field %s meshset %d\n",(*miit)->getName().c_str(),ents_of_id_meshset.size()
     );
   }
+
+  MoFEMEntity_multiIndex::iterator eit_insert_hint = entsFields.end();
+  DofEntity_multiIndex::iterator dit_insert_hint = dofsField.end();
+
   //create dofsField
   Range::iterator eit = ents_of_id_meshset.begin();
   for(;eit!=ents_of_id_meshset.end();eit++) {
@@ -1224,10 +1232,12 @@ PetscErrorCode Core::BuildFieldForL2H1HcurlHdiv(
       std::cerr << "bit level " << ref_ent.getBitRefLevel() << std::endl;
       SETERRQ(comm,MOFEM_DATA_INCONSISTENCY,"database inconsistency");
     }
+
+    boost::shared_ptr<MoFEMEntity> moabent(new MoFEMEntity(*miit,*miit_ref_ent));
     // create mofem entity linked to ref ent
     MoFEMEntity_multiIndex::iterator e_miit;
     try {
-      e_miit = entsFields.find(MoFEMEntity(*miit,*miit_ref_ent).getGlobalUniqueId());
+      e_miit = entsFields.find(moabent->getGlobalUniqueId());
     } catch (MoFEMException const &e) {
       SETERRQ(comm,e.errorCode,e.errorMessage);
     } catch (const std::exception& ex) {
@@ -1235,13 +1245,13 @@ PetscErrorCode Core::BuildFieldForL2H1HcurlHdiv(
       ss << ex.what() << std::endl;
       SETERRQ(comm,MOFEM_OPERATION_UNSUCCESSFUL,ss.str().c_str());
     }
+    // add field entity if not exist
     if(e_miit == entsFields.end()) {
       ApproximationOrder order = -1;
       rval = moab.tag_set_data((*miit)->th_AppOrder,&*eit,1,&order); CHKERRQ_MOAB(rval);
-      std::pair<MoFEMEntity_multiIndex::iterator,bool> p_e_miit;
       try {
-        boost::shared_ptr<MoFEMEntity> moabent(new MoFEMEntity(*miit,*miit_ref_ent));
-        p_e_miit = entsFields.insert(moabent);
+        // boost::shared_ptr<MoFEMEntity> moabent(new MoFEMEntity(*miit,*miit_ref_ent));
+        e_miit = entsFields.insert(eit_insert_hint,moabent);
       } catch (MoFEMException const &e) {
         SETERRQ(comm,e.errorCode,e.errorMessage);
       } catch (const std::exception& ex) {
@@ -1249,11 +1259,12 @@ PetscErrorCode Core::BuildFieldForL2H1HcurlHdiv(
         ss << ex.what() << std::endl;
         SETERRQ(comm,MOFEM_OPERATION_UNSUCCESSFUL,ss.str().c_str());
       }
-      if(!p_e_miit.second) SETERRQ(comm,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
-      bool success = entsFields.modify(p_e_miit.first,MoFEMEntity_change_order(-1));
+      bool success = entsFields.modify(e_miit,MoFEMEntity_change_order(-1));
       if(!success) SETERRQ(comm,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
-      e_miit = p_e_miit.first;
     }
+    eit_insert_hint = e_miit;
+    eit_insert_hint++;
+
     // insert dofmoabent into mofem databse
     int nb_dofs_on_ent = (*e_miit)->getNbDofsOnEnt();
     int nb_active_dosf_on_ent = (*e_miit)->getNbOfCoeffs()*(*e_miit)->getOrderNbDofs((*e_miit)->getMaxOrder());
@@ -1265,51 +1276,41 @@ PetscErrorCode Core::BuildFieldForL2H1HcurlHdiv(
       for(int dd = 0;dd<(*e_miit)->getOrderNbDofsDiff(oo);dd++) {
         //loop rank
         for(int rr = 0;rr<(*e_miit)->getNbOfCoeffs();rr++,DD++) {
-          std::pair<DofEntity_multiIndex::iterator,bool> d_miit;
           try {
             boost::shared_ptr<DofEntity> mdof(new DofEntity(*(e_miit),oo,rr,DD));
-            d_miit = dofsField.insert(mdof);
+            DofEntity_multiIndex::iterator d_miit;
+            d_miit = dofsField.insert(dit_insert_hint,mdof);
+            dit_insert_hint = d_miit; // hint for next insertion
+            dit_insert_hint++;
             bool is_active;
-            if(d_miit.second) {
-              if(DD<nb_active_dosf_on_ent) {
-                is_active = true;
-                dof_counter[(*d_miit.first)->getEntType()]++;
-              } else {
-                is_active = false;
-                inactive_dof_counter[(*d_miit.first)->getEntType()]++;
-              }
-              bool success = dofsField.modify(d_miit.first,DofEntity_active_change(is_active));
-              if(!success) SETERRQ(comm,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
+            if(DD<nb_active_dosf_on_ent) {
+              is_active = true;
+              dof_counter[(*d_miit)->getEntType()]++;
             } else {
-              if(DD<nb_active_dosf_on_ent) {
-              } else {
-                if((*d_miit.first)->getActive()) {
-                  is_active = false;
-                  inactive_dof_counter[(*d_miit.first)->getEntType()]++;
-                  bool success = dofsField.modify(d_miit.first,DofEntity_active_change(is_active));
-                  if(!success) SETERRQ(comm,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
-                }
-              }
+              is_active = false;
+              inactive_dof_counter[(*d_miit)->getEntType()]++;
             }
+            bool success = dofsField.modify(d_miit,DofEntity_active_change(is_active));
+            if(!success) SETERRQ(comm,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
             //check ent
-            if((*d_miit.first)->getEnt()!=(*e_miit)->getEnt()) {
+            if((*d_miit)->getEnt()!=(*e_miit)->getEnt()) {
               SETERRQ(comm,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
             }
-            if((*d_miit.first)->getEntType()!=(*e_miit)->getEntType()) {
+            if((*d_miit)->getEntType()!=(*e_miit)->getEntType()) {
               SETERRQ(comm,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
             }
-            if((*d_miit.first)->getId()!=(*e_miit)->getId()) {
+            if((*d_miit)->getId()!=(*e_miit)->getId()) {
               SETERRQ(comm,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
             }
             //check dof
-            if((*d_miit.first)->getDofOrder()!=oo) {
+            if((*d_miit)->getDofOrder()!=oo) {
               std::ostringstream ss;
               ss << "data inconsistency!" << std::endl;
               ss << "should be " << mdof << std::endl;
-              ss << "but is " << *(*d_miit.first) << std::endl;
+              ss << "but is " << *(*d_miit) << std::endl;
               SETERRQ(comm,MOFEM_DATA_INCONSISTENCY,ss.str().c_str());
             }
-            if((*d_miit.first)->getMaxOrder()!=(*e_miit)->getMaxOrder()) {
+            if((*d_miit)->getMaxOrder()!=(*e_miit)->getMaxOrder()) {
               SETERRQ(comm,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
             }
           } catch (MoFEMException const &e) {

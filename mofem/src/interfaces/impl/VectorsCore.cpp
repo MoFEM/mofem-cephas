@@ -121,7 +121,7 @@ PetscErrorCode Core::VecCreateGhost(const std::string &name,RowColData rc,Vec *V
   std::vector<DofIdx> ghost_idx(count);
   std::vector<DofIdx>::iterator vit = ghost_idx.begin();
   for(;miit!=hi_miit;miit++,vit++) {
-    *vit = (*miit)->petsc_gloabl_dof_idx;
+    *vit = (*miit)->petscGloablDofIdx;
   }
   ierr = ::VecCreateGhost(comm,nb_local_dofs,nb_dofs,nb_ghost_dofs,&ghost_idx[0],V); CHKERRQ(ierr);
   PetscFunctionReturn(0);

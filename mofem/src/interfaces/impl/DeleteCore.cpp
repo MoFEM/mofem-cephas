@@ -65,12 +65,6 @@ namespace MoFEM {
           if(ent_fe_ptr->row_dof_view!=ent_fe_ptr->col_dof_view) {
             ent_fe_ptr->col_dof_view->erase((*dit)->getGlobalUniqueId());
           }
-          if(
-            ent_fe_ptr->row_dof_view!=ent_fe_ptr->data_dof_view||
-            ent_fe_ptr->col_dof_view!=ent_fe_ptr->data_dof_view
-          ) {
-            ent_fe_ptr->data_dof_view->erase((*dit)->getGlobalUniqueId());
-          }
           ent_fe_ptr->data_dofs.get<Unique_mi_tag>().erase((*dit)->getGlobalUniqueId());
         }
         dit = dofsField.erase(dit);
@@ -110,12 +104,6 @@ namespace MoFEM {
           if(ent_fe_ptr->row_dof_view!=ent_fe_ptr->col_dof_view) {
             ent_fe_ptr->col_dof_view->erase((*dit)->getGlobalUniqueId());
           }
-          if(
-            ent_fe_ptr->row_dof_view!=ent_fe_ptr->data_dof_view||
-            ent_fe_ptr->col_dof_view!=ent_fe_ptr->data_dof_view
-          ) {
-            ent_fe_ptr->data_dof_view->erase((*dit)->getGlobalUniqueId());
-          }
           ent_fe_ptr->data_dofs.get<Unique_mi_tag>().erase((*dit)->getGlobalUniqueId());
         }
         dit = dofsField.erase(dit);
@@ -143,13 +131,6 @@ namespace MoFEM {
           if(ent_fe_ptr->row_dof_view!=ent_fe_ptr->col_dof_view) {
             ent_fe_ptr->col_dof_view->erase((*dit)->getGlobalUniqueId());
           }
-          if(
-            ent_fe_ptr->row_dof_view!=ent_fe_ptr->data_dof_view||
-            ent_fe_ptr->col_dof_view!=ent_fe_ptr->data_dof_view
-          ) {
-            ent_fe_ptr->data_dof_view->erase((*dit)->getGlobalUniqueId());
-          }
-          ent_fe_ptr->data_dofs.get<Unique_mi_tag>().erase((*dit)->getGlobalUniqueId());
         }
         dit = dofsField.get<Composite_Name_And_Ent_mi_tag>().erase(dit);
       }

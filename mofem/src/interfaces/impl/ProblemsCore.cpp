@@ -1170,7 +1170,7 @@ PetscErrorCode Core::partition_simple_problem(const std::string &name,int verb) 
       }
       // loop rows
       for(;miit_row!=hi_miit_row;miit_row++) {
-        bool success = dofs_row_by_idx.modify(miit_row,NumeredDofEntity_part_change(part,(*miit_row)->dof_idx));
+        bool success = dofs_row_by_idx.modify(miit_row,NumeredDofEntity_part_change(part,(*miit_row)->dofIdx));
         if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
         if(part == (unsigned int)rAnk) {
           success = dofs_row_by_idx.modify(miit_row,NumeredDofEntity_local_idx_change(nb_row_local_dofs++));
@@ -1187,7 +1187,7 @@ PetscErrorCode Core::partition_simple_problem(const std::string &name,int verb) 
       }
       // loop cols
       for(;miit_col!=hi_miit_col;miit_col++) {
-        bool success = dofs_col_by_idx.modify(miit_col,NumeredDofEntity_part_change(part,(*miit_col)->dof_idx));
+        bool success = dofs_col_by_idx.modify(miit_col,NumeredDofEntity_part_change(part,(*miit_col)->dofIdx));
         if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
         if(part == (unsigned int)rAnk) {
           success = dofs_col_by_idx.modify(miit_col,NumeredDofEntity_local_idx_change(nb_col_local_dofs++));
@@ -1437,15 +1437,16 @@ PetscErrorCode Core::build_sub_problem(
       NumeredDofEntityByFieldName::iterator hi_dit = main_problem_dofs[ss]->get<FieldName_mi_tag>().upper_bound(*fit);
       for(;dit!=hi_dit;dit++) {
         std::pair<NumeredDofEntity_multiIndex::iterator,bool> p;
-        p = out_problem_dofs[ss]->insert(
-          boost::shared_ptr<NumeredDofEntity>(new NumeredDofEntity(dit->get()->getDofEntityPtr()))
-        );
-        bool success = out_problem_dofs[ss]->modify(
-          p.first,NumeredDofEntity_mofem_part_and_all_index_change(
-            dit->get()->getPart(),
-            mofem_dof_idx++,
-            dit->get()->getPetscGlobalDofIdx(),
-            dit->get()->getPetscLocalDofIdx()
+        out_problem_dofs[ss]->insert(
+          out_problem_dofs[ss]->end(),
+          boost::shared_ptr<NumeredDofEntity>(
+            new NumeredDofEntity(
+              dit->get()->getDofEntityPtr(),
+              mofem_dof_idx++,
+              dit->get()->getPetscGlobalDofIdx(),
+              dit->get()->getPetscLocalDofIdx(),
+              dit->get()->getPart()
+            )
           )
         );
       }
@@ -1734,7 +1735,7 @@ PetscErrorCode Core::partition_finite_elements(
         std::vector<int> parts(sIze,0);
         viit_rows = rows_view.begin();
         for(;viit_rows!=rows_view.end();viit_rows++) {
-          parts[(*viit_rows)->part]++;
+          parts[(*viit_rows)->pArt]++;
         }
         std::vector<int>::iterator pos = max_element(parts.begin(),parts.end());
         unsigned int max_part = distance(parts.begin(),pos);
@@ -1877,7 +1878,7 @@ PetscErrorCode Core::partition_ghost_dofs(const std::string &name,int verb) {
       NumeredDofEntity_multiIndex_uid_view_ordered::iterator ghost_idx_miit = ghost_idx_view[ss]->begin();
       for(;ghost_idx_miit!=ghost_idx_view[ss]->end();ghost_idx_miit++) {
         NumeredDofEntityByUId::iterator diit = dof_by_uid_no_const[ss]->find((*ghost_idx_miit)->getGlobalUniqueId());
-        if((*diit)->petsc_local_dof_idx!=(DofIdx)-1) {
+        if((*diit)->petscLocalDofIdx!=(DofIdx)-1) {
           SETERRQ(comm,MOFEM_DATA_INCONSISTENCY,"inconsistent data, ghost dof already set");
         }
         bool success = dof_by_uid_no_const[ss]->modify(diit,NumeredDofEntity_local_idx_change(nb_local_dofs[ss]++));
@@ -1902,8 +1903,8 @@ PetscErrorCode Core::partition_ghost_dofs(const std::string &name,int verb) {
     if(verb>1) {
       NumeredDofEntity_multiIndex::iterator miit_dd_col = p_miit->numered_dofs_cols->begin();
       for(;miit_dd_col!=p_miit->numered_dofs_cols->end();miit_dd_col++) {
-        if((*miit_dd_col)->part==(unsigned int)rAnk) continue;
-        if((*miit_dd_col)->petsc_local_dof_idx==(DofIdx)-1) continue;
+        if((*miit_dd_col)->pArt==(unsigned int)rAnk) continue;
+        if((*miit_dd_col)->petscLocalDofIdx==(DofIdx)-1) continue;
         ss<<*(*miit_dd_col)<<std::endl;
       }
     }

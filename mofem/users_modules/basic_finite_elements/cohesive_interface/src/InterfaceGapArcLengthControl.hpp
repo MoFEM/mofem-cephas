@@ -71,7 +71,6 @@ struct ArcLengthIntElemFEMethod: public FEMethod {
     VecDestroy(&GhostLambdaInt);
   }
 
-
   /** \brief remove nodes of prims which are fully damaged
     *
     */
@@ -130,10 +129,10 @@ struct ArcLengthIntElemFEMethod: public FEMethod {
       if(dit->get()->getEntType() != MBVERTEX) continue;
       if(pcomm->rank() != dit->get()->getPart()) continue;
       if(Nodes3.find(dit->get()->getEnt())!=Nodes3.end()) {
-        array_int_lambda[0] += array[dit->get()->petsc_local_dof_idx];
+        array_int_lambda[0] += array[dit->get()->getPetscLocalDofIdx()];
       }
       if(Nodes4.find(dit->get()->getEnt())!=Nodes4.end()) {
-        array_int_lambda[0] -= array[dit->get()->petsc_local_dof_idx];
+        array_int_lambda[0] -= array[dit->get()->getPetscLocalDofIdx()];
       }
     }
     //PetscSynchronizedPrintf(PETSC_COMM_WORLD,
@@ -168,14 +167,14 @@ struct ArcLengthIntElemFEMethod: public FEMethod {
     ierr = VecGetArray(arcPtr->db,&array); CHKERRQ(ierr);
     for(;dit!=hi_dit;dit++) {
       if(dit->get()->getEntType() != MBVERTEX) {
-        array[dit->get()->petsc_local_dof_idx] = 0;
+        array[dit->get()->getPetscLocalDofIdx()] = 0;
         continue;
       }
       if(Nodes3.find(dit->get()->getEnt())!=Nodes3.end()) {
-        array[dit->get()->petsc_local_dof_idx] = +arcPtr->alpha;
+        array[dit->get()->getPetscLocalDofIdx()] = +arcPtr->alpha;
       } else if(Nodes4.find(dit->get()->getEnt())!=Nodes4.end()) {
-        array[dit->get()->petsc_local_dof_idx] = -arcPtr->alpha;
-      } else array[dit->get()->petsc_local_dof_idx] = 0;
+        array[dit->get()->getPetscLocalDofIdx()] = -arcPtr->alpha;
+      } else array[dit->get()->getPetscLocalDofIdx()] = 0;
     }
     ierr = VecRestoreArray(arcPtr->db,&array); CHKERRQ(ierr);
     PetscFunctionReturn(0);

@@ -89,6 +89,9 @@ struct VolumeElementForcesAndSourcesCore: public ForcesAndSurcesCore {
     */
   struct UserDataOperator: public ForcesAndSurcesCore::UserDataOperator {
 
+    UserDataOperator(const FieldSpace space):
+    ForcesAndSurcesCore::UserDataOperator(space) {}
+
     UserDataOperator(
       const std::string &field_name,const char type
     ):
@@ -121,8 +124,8 @@ struct VolumeElementForcesAndSourcesCore: public ForcesAndSurcesCore {
 
     /** \brief nodal coordinates
       */
-    inline VectorDouble& getCoords() { return
-      static_cast<VolumeElementForcesAndSourcesCore*>(ptrFE)->coords;
+    inline VectorDouble& getCoords() {
+      return static_cast<VolumeElementForcesAndSourcesCore*>(ptrFE)->coords;
     }
 
     /** \brief matrix of integration (Gauss) points for Volume Element
