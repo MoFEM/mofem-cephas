@@ -160,6 +160,7 @@ struct UltraWeakTransportElement {
    */
   virtual PetscErrorCode getBcOnValues(
     const EntityHandle ent,
+    const int gg,
     const double x,const double y,const double z,
     double &value) {
     PetscFunctionBegin;
@@ -1080,9 +1081,16 @@ struct UltraWeakTransportElement {
           if(getHoGaussPtsDetJac().size()>0) {
             w *= getHoGaussPtsDetJac()(gg);
           }
-          const double x = getCoordsAtGaussPts()(gg,0);
-          const double y = getCoordsAtGaussPts()(gg,1);
-          const double z = getCoordsAtGaussPts()(gg,2);
+          double x,y,z;
+          if(getHoCoordsAtGaussPts().size1() == (unsigned int)nb_gauss_pts) {
+            x = getHoCoordsAtGaussPts()(gg,0);
+            y = getHoCoordsAtGaussPts()(gg,1);
+            z = getHoCoordsAtGaussPts()(gg,2);
+          } else {
+            x = getCoordsAtGaussPts()(gg,0);
+            y = getCoordsAtGaussPts()(gg,1);
+            z = getCoordsAtGaussPts()(gg,2);
+         }
           double flux = 0;
           ierr = cTx.getSource(fe_ent,x,y,z,flux); CHKERRQ(ierr);
           noalias(Nf) += w*data.getN(gg)*flux;
@@ -1142,11 +1150,18 @@ struct UltraWeakTransportElement {
         Nf.clear();
         int nb_gauss_pts = data.getHdivN().size1();
         for(int gg = 0;gg<nb_gauss_pts;gg++) {
-          const double x = getCoordsAtGaussPts()(gg,0);
-          const double y = getCoordsAtGaussPts()(gg,1);
-          const double z = getCoordsAtGaussPts()(gg,2);
+          double x,y,z;
+          if(getNormalsAtGaussPt().size1() == (unsigned int)nb_gauss_pts) {
+            x = getHoCoordsAtGaussPts()(gg,0);
+            y = getHoCoordsAtGaussPts()(gg,1);
+            z = getHoCoordsAtGaussPts()(gg,2);
+          } else {
+            x = getCoordsAtGaussPts()(gg,0);
+            y = getCoordsAtGaussPts()(gg,1);
+            z = getCoordsAtGaussPts()(gg,2);
+         }
           double value;
-          ierr = cTx.getBcOnValues(fe_ent,x,y,z,value); CHKERRQ(ierr);
+          ierr = cTx.getBcOnValues(fe_ent,gg,x,y,z,value); CHKERRQ(ierr);
           double w = getGaussPts()(2,gg)*0.5;
           if(getNormalsAtGaussPt().size1() == (unsigned int)nb_gauss_pts) {
             noalias(Nf) += w*prod(data.getHdivN(gg),getNormalsAtGaussPt(gg))*value;
@@ -1154,8 +1169,9 @@ struct UltraWeakTransportElement {
             noalias(Nf) += w*prod(data.getHdivN(gg),getNormal())*value;
           }
         }
-        ierr = VecSetValues(F,data.getIndices().size(),
-        &data.getIndices()[0],&Nf[0],ADD_VALUES); CHKERRQ(ierr);
+        ierr = VecSetValues(
+          F,data.getIndices().size(),&data.getIndices()[0],&Nf[0],ADD_VALUES
+        ); CHKERRQ(ierr);
       } catch (const std::exception& ex) {
         std::ostringstream ss;
         ss << "throw in method: " << ex.what() << std::endl;
@@ -1231,9 +1247,16 @@ struct UltraWeakTransportElement {
         for(int gg = 0;gg<nb_gauss_pts;gg++) {
 
           // get integration point coordinates
-          const double x = getCoordsAtGaussPts()(gg,0);
-          const double y = getCoordsAtGaussPts()(gg,1);
-          const double z = getCoordsAtGaussPts()(gg,2);
+          double x,y,z;
+          if(getNormalsAtGaussPt().size1() == (unsigned int)nb_gauss_pts) {
+            x = getHoCoordsAtGaussPts()(gg,0);
+            y = getHoCoordsAtGaussPts()(gg,1);
+            z = getHoCoordsAtGaussPts()(gg,2);
+          } else {
+            x = getCoordsAtGaussPts()(gg,0);
+            y = getCoordsAtGaussPts()(gg,1);
+            z = getCoordsAtGaussPts()(gg,2);
+          }
 
           // get flux on fece for given element handle and coordinates
           double flux;
@@ -1501,9 +1524,16 @@ struct UltraWeakTransportElement {
           if(getHoGaussPtsDetJac().size()>0) {
             w *= getHoGaussPtsDetJac()(gg);
           }
-          const double x = getCoordsAtGaussPts()(gg,0);
-          const double y = getCoordsAtGaussPts()(gg,1);
-          const double z = getCoordsAtGaussPts()(gg,2);
+          double x,y,z;
+          if(getHoCoordsAtGaussPts().size1() == (unsigned int)nb_gauss_pts) {
+            x = getHoCoordsAtGaussPts()(gg,0);
+            y = getHoCoordsAtGaussPts()(gg,1);
+            z = getHoCoordsAtGaussPts()(gg,2);
+          } else {
+            x = getCoordsAtGaussPts()(gg,0);
+            y = getCoordsAtGaussPts()(gg,1);
+            z = getCoordsAtGaussPts()(gg,2);
+          }
           double flux;
           ierr = cTx.getSource(fe_ent,x,y,z,flux); CHKERRQ(ierr);
           *error_div_ptr += w*pow(cTx.divergenceAtGaussPts[gg]-flux,2);
@@ -1621,11 +1651,18 @@ struct UltraWeakTransportElement {
               SETERRQ(PETSC_COMM_WORLD,MOFEM_DATA_INCONSISTENCY,"wrong number of integration points");
             }
             for(int gg = 0;gg!=nb_gauss_pts;gg++) {
-              const double x = getCoordsAtGaussPts()(gg,0);
-              const double y = getCoordsAtGaussPts()(gg,1);
-              const double z = getCoordsAtGaussPts()(gg,2);
+              double x,y,z;
+              if(getNormalsAtGaussPt().size1() == (unsigned int)nb_gauss_pts) {
+                x = getHoCoordsAtGaussPts()(gg,0);
+                y = getHoCoordsAtGaussPts()(gg,1);
+                z = getHoCoordsAtGaussPts()(gg,2);
+              } else {
+                x = getCoordsAtGaussPts()(gg,0);
+                y = getCoordsAtGaussPts()(gg,1);
+                z = getCoordsAtGaussPts()(gg,2);
+              }
               double value;
-              ierr = cTx.getBcOnValues(fe_ent,x,y,z,value); CHKERRQ(ierr);
+              ierr = cTx.getBcOnValues(fe_ent,gg,x,y,z,value); CHKERRQ(ierr);
               double w = getGaussPts()(2,gg);
               if(getNormalsAtGaussPt().size1() == (unsigned int)nb_gauss_pts) {
                 w *= norm_2(getNormalsAtGaussPt(gg))*0.5;
