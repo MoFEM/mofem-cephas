@@ -450,7 +450,7 @@ int main(int argc, char *argv[]) {
       ierr = m_field.build_problem_on_distributed_mesh("Kuu"); CHKERRQ(ierr);
       ierr = m_field.partition_finite_elements("Kuu",true,0,pcomm->size()); CHKERRQ(ierr);
     } else {
-      ierr = m_field.build_problem("Kuu"); CHKERRQ(ierr);
+      ierr = m_field.build_problem("Kuu",true); CHKERRQ(ierr);
       ierr = m_field.partition_problem("Kuu"); CHKERRQ(ierr);
       ierr = m_field.partition_finite_elements("Kuu"); CHKERRQ(ierr);
     }
@@ -475,7 +475,7 @@ int main(int argc, char *argv[]) {
     ierr = m_field.build_problem_on_distributed_mesh("DYNAMICS"); CHKERRQ(ierr);
     ierr = m_field.partition_finite_elements("DYNAMICS",true,0,pcomm->size()); CHKERRQ(ierr);
   } else {
-    ierr = m_field.build_problem("DYNAMICS"); CHKERRQ(ierr);
+    ierr = m_field.build_problem("DYNAMICS",true); CHKERRQ(ierr);
     ierr = m_field.partition_problem("DYNAMICS"); CHKERRQ(ierr);
     ierr = m_field.partition_finite_elements("DYNAMICS"); CHKERRQ(ierr);
   }

@@ -189,7 +189,7 @@ int main(int argc, char *argv[]) {
   ierr = m_field.build_adjacencies(bit_level0); CHKERRQ(ierr);
 
   //build problem
-  ierr = m_field.build_problems(); CHKERRQ(ierr);
+  ierr = m_field.build_problem("ELASTIC_MECHANICS",true); CHKERRQ(ierr);
 
   //partition
   ierr = m_field.partition_problem("ELASTIC_MECHANICS"); CHKERRQ(ierr);

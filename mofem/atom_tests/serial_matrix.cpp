@@ -146,7 +146,7 @@ int main(int argc, char *argv[]) {
   ierr = m_field.modify_problem_add_finite_element("TEST_PROBLEM","FE1"); CHKERRQ(ierr);
   ierr = m_field.modify_problem_add_finite_element("TEST_PROBLEM","FE2"); CHKERRQ(ierr);
 
-  ierr = m_field.build_problems(); CHKERRQ(ierr);
+  ierr = m_field.build_problem("TEST_PROBLEM",true); CHKERRQ(ierr);
 
   //partition
   ierr = m_field.partition_simple_problem("TEST_PROBLEM"); CHKERRQ(ierr);
@@ -161,7 +161,7 @@ int main(int argc, char *argv[]) {
 
   PetscViewer viewer;
   ierr = PetscViewerASCIIOpen(PETSC_COMM_SELF,"serial_matrix.txt",&viewer); CHKERRQ(ierr);
-  ierr = PetscViewerSetFormat(viewer,PETSC_VIEWER_ASCII_INFO); CHKERRQ(ierr);
+  ierr = PetscViewerPushFormat(viewer,PETSC_VIEWER_ASCII_INFO); CHKERRQ(ierr);
   ierr = MatView(A,viewer); CHKERRQ(ierr);
 
   //ierr = MatView(A,PETSC_VIEWER_DRAW_SELF); CHKERRQ(ierr);

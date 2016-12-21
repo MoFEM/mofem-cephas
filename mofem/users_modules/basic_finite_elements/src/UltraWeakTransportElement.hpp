@@ -372,7 +372,7 @@ struct UltraWeakTransportElement {
     ierr = mField.modify_problem_add_finite_element("ULTRAWEAK","ULTRAWEAK_BCFLUX"); CHKERRQ(ierr);
     ierr = mField.modify_problem_add_finite_element("ULTRAWEAK","ULTRAWEAK_BCVALUE"); CHKERRQ(ierr);
     //build problem
-    ierr = mField.build_problems(); CHKERRQ(ierr);
+    ierr = mField.build_problem("ULTRAWEAK",true); CHKERRQ(ierr);
     //mesh partitioning
     //partition
     ierr = mField.partition_problem("ULTRAWEAK"); CHKERRQ(ierr);

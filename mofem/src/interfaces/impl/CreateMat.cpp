@@ -638,11 +638,13 @@ PetscErrorCode Core::MatCreateSeqAIJWithArrays(const std::string &name,Mat *Aij,
 
 PetscErrorCode Core::partition_problem(const std::string &name,int verb) {
   PetscFunctionBegin;
+
   if(verb==-1) verb = verbose;
   if(!(*buildMoFEM&(1<<0))) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"fields not build");
   if(!(*buildMoFEM&(1<<1))) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"FEs not build");
   if(!(*buildMoFEM&(1<<2))) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"entFEAdjacencies not build");
   if(!(*buildMoFEM&(1<<3))) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"pRoblems not build");
+
   if(verb>0) {
     PetscPrintf(comm,"Partition problem %s\n",name.c_str());
   }
@@ -653,7 +655,13 @@ PetscErrorCode Core::partition_problem(const std::string &name,int verb) {
   // Find problem pointer by name
   ProblemsByName &pRoblems_set = pRoblems.get<Problem_mi_tag>();
   ProblemsByName::iterator p_miit = pRoblems_set.find(name);
-  if(p_miit==pRoblems_set.end()) SETERRQ1(PETSC_COMM_SELF,1,"problem with name %s not defined (top tip check spelling)",name.c_str());
+  if(p_miit==pRoblems_set.end()) {
+    SETERRQ1(
+      PETSC_COMM_SELF,
+      MOFEM_INVALID_DATA,
+      "problem with name %s not defined (top tip check spelling)",
+      name.c_str());
+  }
   DofIdx nb_dofs_row = p_miit->getNbDofsRow();
 
   int *i,*j;
@@ -715,84 +723,123 @@ PetscErrorCode Core::partition_problem(const std::string &name,int verb) {
   int size_is_num,size_is_gather;
   ISGetSize(is_gather,&size_is_gather);
   if(size_is_gather != (int)nb_dofs_row) {
-    SETERRQ2(PETSC_COMM_SELF,PETSC_ERR_ARG_SIZ,"data inconsistency %d != %d",size_is_gather,nb_dofs_row);
+    SETERRQ2(
+      PETSC_COMM_SELF,PETSC_ERR_ARG_SIZ,"data inconsistency %d != %d",
+      size_is_gather,nb_dofs_row
+    );
   }
   ISGetSize(is_num,&size_is_num);
   if(size_is_num != (int)nb_dofs_row) {
-    SETERRQ2(PETSC_COMM_SELF,PETSC_ERR_ARG_SIZ,"data inconsistency %d != %d",size_is_num,nb_dofs_row);
+    SETERRQ2(
+      PETSC_COMM_SELF,PETSC_ERR_ARG_SIZ,
+      "data inconsistency %d != %d",
+      size_is_num,nb_dofs_row
+    );
   }
 
-  //set petsc global indicies
-  NumeredDofEntitysByIdx &dofs_row_by_idx_no_const = const_cast<NumeredDofEntitysByIdx&>(p_miit->numered_dofs_rows->get<Idx_mi_tag>());
-  NumeredDofEntitysByIdx &dofs_col_by_idx_no_const = const_cast<NumeredDofEntitysByIdx&>(p_miit->numered_dofs_cols->get<Idx_mi_tag>());
-  DofIdx &nb_row_local_dofs = *((DofIdx*)p_miit->tag_local_nbdof_data_row);
-  DofIdx &nb_col_local_dofs = *((DofIdx*)p_miit->tag_local_nbdof_data_col);
-  nb_row_local_dofs = 0;
-  nb_col_local_dofs = 0;
-  DofIdx &nb_row_ghost_dofs = *((DofIdx*)p_miit->tag_ghost_nbdof_data_row);
-  DofIdx &nb_col_ghost_dofs = *((DofIdx*)p_miit->tag_ghost_nbdof_data_col);
-  nb_row_ghost_dofs = 0;
-  nb_col_ghost_dofs = 0;
-  NumeredDofEntitysByIdx::iterator miit_dofs_row = dofs_row_by_idx_no_const.begin();
-  NumeredDofEntitysByIdx::iterator miit_dofs_col = dofs_col_by_idx_no_const.begin();
+  bool square_matrix = false;
+  if(p_miit->numered_dofs_rows==p_miit->numered_dofs_cols) {
+    square_matrix = true;
+  }
+  
+  if(!square_matrix) {
+
+    // FIXME: This is for buck compatibility, if deprecate interface function
+    // build interfaces is removed, this part of the code will be obsolete
+    NumeredDofEntitysByIdx::iterator mit_row,hi_mit_row;
+    mit_row = p_miit->numered_dofs_rows->get<Idx_mi_tag>().begin();
+    hi_mit_row = p_miit->numered_dofs_rows->get<Idx_mi_tag>().end();
+    NumeredDofEntitysByIdx::iterator mit_col,hi_mit_col;
+    mit_col = p_miit->numered_dofs_cols->get<Idx_mi_tag>().begin();
+    hi_mit_col = p_miit->numered_dofs_cols->get<Idx_mi_tag>().end();
+    for(;mit_row!=hi_mit_row;mit_row++,mit_col++) {
+      if(mit_col==hi_mit_col) {
+        SETERRQ(
+          comm,
+          MOFEM_DATA_INCONSISTENCY,
+          "check finite element definition, nb. of rows is not equal to number for columns"
+        );
+      }
+      if(mit_row->get()->getGlobalUniqueId()!=mit_col->get()->getGlobalUniqueId()) {
+        SETERRQ(
+          comm,
+          MOFEM_DATA_INCONSISTENCY,
+          "check finite element definition, nb. of rows is not equal to number for columns"
+        );
+      }
+    }
+
+    // SETERRQ(
+    //   comm,
+    //   MOFEM_DATA_INCONSISTENCY,
+    //   "check finite element definition, nb. of rows is not equal to number for columns"
+    // );
+
+  }
+
   if(verb>1) {
     PetscPrintf(comm,"\tloop problem dofs");
   }
 
   try {
 
-    for(;miit_dofs_row!=dofs_row_by_idx_no_const.end();miit_dofs_row++,miit_dofs_col++) {
-      if(miit_dofs_col==dofs_col_by_idx_no_const.end()) {
-        SETERRQ(
-          PETSC_COMM_WORLD,
-          MOFEM_DATA_INCONSISTENCY,
-          "check finite element definition, nb. of rows is not equal to number for columns"
-        );
-      }
-      if((*miit_dofs_row)->getGlobalUniqueId()!=(*miit_dofs_col)->getGlobalUniqueId()) {
-        SETERRQ(
-          PETSC_COMM_WORLD,
-          MOFEM_DATA_INCONSISTENCY,
-          "check finite element definition, nb. of rows is not equal to columns"
-        );
-      }
-      if((*miit_dofs_row)->dofIdx!=(*miit_dofs_col)->dofIdx) {
-        SETERRQ(
-          PETSC_COMM_WORLD,
-          MOFEM_DATA_INCONSISTENCY,
-          "check finite element definition, nb. of rows is not equal to columns"
-        );
-      }
-      assert(petsc_idx[(*miit_dofs_row)->dofIdx]>=0);
-      assert(petsc_idx[(*miit_dofs_row)->dofIdx]<(int)p_miit->getNbDofsRow());
+    //set petsc global indicies
+    NumeredDofEntitysByIdx &dofs_row_by_idx_no_const =
+    const_cast<NumeredDofEntitysByIdx&>(p_miit->numered_dofs_rows->get<Idx_mi_tag>());
+    DofIdx &nb_row_local_dofs = *((DofIdx*)p_miit->tag_local_nbdof_data_row);
+    DofIdx &nb_row_ghost_dofs = *((DofIdx*)p_miit->tag_ghost_nbdof_data_row);
+    nb_row_local_dofs = 0;
+    nb_row_ghost_dofs = 0;
+
+    NumeredDofEntitysByIdx::iterator miit_dofs_row = dofs_row_by_idx_no_const.begin();
+    for(;miit_dofs_row!=dofs_row_by_idx_no_const.end();miit_dofs_row++) {
       bool success = dofs_row_by_idx_no_const.modify(
         miit_dofs_row,NumeredDofEntity_part_change(
-          part_number[(*miit_dofs_row)->dofIdx],petsc_idx[(*miit_dofs_row)->dofIdx]
+          part_number[(*miit_dofs_row)->dofIdx],
+          petsc_idx[(*miit_dofs_row)->dofIdx]
         )
       );
       if(!success) {
-        SETERRQ(PETSC_COMM_WORLD,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
-      }
-      success = dofs_col_by_idx_no_const.modify(
-        miit_dofs_col,NumeredDofEntity_part_change(
-          part_number[(*miit_dofs_col)->dofIdx],petsc_idx[(*miit_dofs_col)->dofIdx]
-        )
-      );
-      if(!success) {
-        SETERRQ(PETSC_COMM_WORLD,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
+        SETERRQ(comm,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
       }
       if((*miit_dofs_row)->pArt == (unsigned int)rAnk) {
-        assert((*miit_dofs_row)->pArt==(*miit_dofs_col)->pArt);
-        assert((*miit_dofs_row)->petscGloablDofIdx==(*miit_dofs_col)->petscGloablDofIdx);
         success = dofs_row_by_idx_no_const.modify(
           miit_dofs_row,NumeredDofEntity_local_idx_change(nb_row_local_dofs++)
         );
         if(!success) {
-          SETERRQ(PETSC_COMM_WORLD,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
+          SETERRQ(comm,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
         }
-        success = dofs_col_by_idx_no_const.modify(miit_dofs_col,NumeredDofEntity_local_idx_change(nb_col_local_dofs++));
+      }
+    }
+
+    DofIdx &nb_col_local_dofs = *((DofIdx*)p_miit->tag_local_nbdof_data_col);
+    DofIdx &nb_col_ghost_dofs = *((DofIdx*)p_miit->tag_ghost_nbdof_data_col);
+    if(square_matrix) {
+      nb_col_local_dofs = nb_row_local_dofs;
+      nb_col_ghost_dofs = nb_row_ghost_dofs;
+    } else {
+      NumeredDofEntitysByIdx &dofs_col_by_idx_no_const =
+      const_cast<NumeredDofEntitysByIdx&>(p_miit->numered_dofs_cols->get<Idx_mi_tag>());
+      NumeredDofEntitysByIdx::iterator miit_dofs_col = dofs_col_by_idx_no_const.begin();
+      nb_col_local_dofs = 0;
+      nb_col_ghost_dofs = 0;
+      for(;miit_dofs_col!=dofs_col_by_idx_no_const.end();miit_dofs_col++) {
+        bool success = dofs_col_by_idx_no_const.modify(
+          miit_dofs_col,NumeredDofEntity_part_change(
+            part_number[(*miit_dofs_col)->dofIdx],
+            petsc_idx[(*miit_dofs_col)->dofIdx]
+          )
+        );
         if(!success) {
-          SETERRQ(PETSC_COMM_WORLD,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
+          SETERRQ(comm,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
+        }
+        if((*miit_dofs_col)->pArt == (unsigned int)rAnk) {
+          success = dofs_col_by_idx_no_const.modify(
+            miit_dofs_col,NumeredDofEntity_local_idx_change(nb_col_local_dofs++)
+          );
+          if(!success) {
+            SETERRQ(comm,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
+          }
         }
       }
     }
@@ -818,6 +865,7 @@ PetscErrorCode Core::partition_problem(const std::string &name,int verb) {
   ierr = MatPartitioningDestroy(&part); CHKERRQ(ierr);
   ierr = MatDestroy(&Adj); CHKERRQ(ierr);
   ierr = printPartitionedProblem(&*p_miit,verb); CHKERRQ(ierr);
+
   *buildMoFEM |= 1<<4;
   PetscFunctionReturn(0);
 }
