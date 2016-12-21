@@ -1102,6 +1102,14 @@ PetscErrorCode ForcesAndSurcesCore::getSpacesAndBaseOnEntities(DataForcesAndSurc
   PetscErrorCode ierr;
   PetscFunctionBegin;
   try {
+    if(nInTheLoop==0) {
+      data.sPace.reset();
+      data.bAse.reset();
+      for(EntityType t = MBVERTEX;t!=MBMAXTYPE;t++) {
+        data.spacesOnEntities[t].reset();
+        data.basesOnEntities[t].reset();
+      }
+    }
     for(_IT_GET_FEDATA_DOFS_FOR_LOOP_(this,dof)) {
       if((*dof)->getEntDofIdx()!=0) continue;
       // std::cerr << *dof << std::endl;

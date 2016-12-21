@@ -211,9 +211,7 @@ struct PostPorcHookStress: public MoFEM::VolumeElementForcesAndSourcesCore::User
     ublas::matrix<double> Stress;
 
     //Combine eigenvalues and vectors to create principal stress vector
-    ublas::vector<double> prin_stress_vect1(3);
-    ublas::vector<double> prin_stress_vect2(3);
-    ublas::vector<double> prin_stress_vect3(3);
+    ublas::matrix<double> prin_stress_vect(3,3);
     ublas::vector<double> prin_vals_vect(3);
 
     int nb_gauss_pts = data.getN().size1();
@@ -256,20 +254,29 @@ struct PostPorcHookStress: public MoFEM::VolumeElementForcesAndSourcesCore::User
       info = lapack_dsyev('V','U',n,&(eigen_vectors.data()[0]),lda,&(eigen_values.data()[0]),work,lwork);
       if(info != 0) SETERRQ1(PETSC_COMM_SELF,1,"is something wrong with lapack_dsyev info = %d",info);
 
-      //eigen_vectors = trans(eigen_vectors);
-      for (int ii=0; ii < 3; ii++) {
-        prin_vals_vect[0] = eigen_values[0];
-        prin_vals_vect[1] = eigen_values[1];
-        prin_vals_vect[2] = eigen_values[2];
-        prin_stress_vect1[ii] = eigen_vectors.data()[ii+3*0];
-        prin_stress_vect2[ii] = eigen_vectors.data()[ii+3*1];
-        prin_stress_vect3[ii] = eigen_vectors.data()[ii+3*2];
+      map<double,int> eigen_sort;
+      eigen_sort[eigen_values[0]] = 0;
+      eigen_sort[eigen_values[1]] = 1;
+      eigen_sort[eigen_values[2]] = 2;
+
+      prin_stress_vect.clear();
+      prin_vals_vect.clear();
+
+      int ii = 0;
+      for(
+        map<double,int>::reverse_iterator mit = eigen_sort.rbegin();mit!=eigen_sort.rend();mit++
+      ) {
+        prin_vals_vect[ii] = eigen_values[mit->second];
+        for(int dd = 0;dd!=3;dd++) {
+          prin_stress_vect(ii,dd) = eigen_vectors.data()[3*mit->second+dd];
+        }
+        ii++;
       }
 
       //Tag principle stress vectors 1, 2, 3
-      rval = postProcMesh.tag_set_data(th_prin_stress_vect1,&mapGaussPts[gg],1,&prin_stress_vect1[0]); CHKERRQ_MOAB(rval);
-      rval = postProcMesh.tag_set_data(th_prin_stress_vect2,&mapGaussPts[gg],1,&prin_stress_vect2[0]); CHKERRQ_MOAB(rval);
-      rval = postProcMesh.tag_set_data(th_prin_stress_vect3,&mapGaussPts[gg],1,&prin_stress_vect3[0]); CHKERRQ_MOAB(rval);
+      rval = postProcMesh.tag_set_data(th_prin_stress_vect1,&mapGaussPts[gg],1,&prin_stress_vect(0,0)); CHKERRQ_MOAB(rval);
+      rval = postProcMesh.tag_set_data(th_prin_stress_vect2,&mapGaussPts[gg],1,&prin_stress_vect(1,0)); CHKERRQ_MOAB(rval);
+      rval = postProcMesh.tag_set_data(th_prin_stress_vect3,&mapGaussPts[gg],1,&prin_stress_vect(2,0)); CHKERRQ_MOAB(rval);
       rval = postProcMesh.tag_set_data(th_prin_stress_vals,&mapGaussPts[gg],1,&prin_vals_vect[0]); CHKERRQ_MOAB(rval);
 
     }

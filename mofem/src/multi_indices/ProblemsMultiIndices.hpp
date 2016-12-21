@@ -112,15 +112,15 @@ struct MoFEMProblem {
     colIs(PETSC_NULL),
     rowMap(PETSC_NULL),
     colMap(PETSC_NULL) {}
-    ~SubProblemData() {
-      int flg;
-      MPI_Finalized(&flg);
-      if(!flg) {
+    virtual ~SubProblemData() {
+      // int flg;
+      // MPI_Finalized(&flg);
+      // if(!flg) {
         ISDestroy(&rowIs);
         ISDestroy(&colIs);
         AODestroy(&rowMap);
         AODestroy(&colMap);
-      }
+      // }
     }
   };
 

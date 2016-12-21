@@ -541,10 +541,13 @@ namespace MoFEM {
       std::pair<EntFiniteElement_multiIndex::iterator,bool> p = entsFiniteElements.insert(ent_fe);
 
       if(fe_fields[ROW]==fe_fields[COL]) {
-         p.first->get()->col_dof_view = p.first->get()->row_dof_view;
+        p.first->get()->col_dof_view = p.first->get()->row_dof_view;
       }
 
-      if(fe_fields[ROW]!=fe_fields[COL] && p.first->get()->col_dof_view == p.first->get()->row_dof_view) {
+      if(
+        fe_fields[ROW]!=fe_fields[COL] &&
+        p.first->get()->col_dof_view == p.first->get()->row_dof_view
+      ) {
         p.first->get()->col_dof_view
         = boost::shared_ptr<DofEntity_multiIndex_uid_view>(new DofEntity_multiIndex_uid_view());
       }

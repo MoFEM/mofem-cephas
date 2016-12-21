@@ -62,6 +62,8 @@ extern "C" {
 #include <limits.h>
 #include <bitset>
 #include <exception>
+#include <complex>
+#include <cmath>
 
 //BOOST
 #include <boost/multi_index_container.hpp>

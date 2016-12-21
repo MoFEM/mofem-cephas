@@ -651,7 +651,7 @@ PetscErrorCode DMSetUp_MoFEM(DM dm) {
   DMCtx *dm_field = (DMCtx*)dm->data;
   if(dm_field->isPartitioned) {
     ierr = dm_field->mField_ptr->build_problem_on_distributed_mesh(
-      dm_field->problemName,dm_field->isSquareMatrix
+      dm_field->problemName,dm_field->isSquareMatrix == PETSC_TRUE
     ); CHKERRQ(ierr);
     ierr = dm_field->mField_ptr->partition_finite_elements(
       dm_field->problemName,true,0,dm_field->sIze,1
@@ -681,7 +681,7 @@ PetscErrorCode DMSubDMSetUp_MoFEM(DM subdm) {
     subdm_field->rowFields,
     subdm_field->colFields,
     subdm_field->problemMainOfSubPtr->getName(),
-    subdm_field->isSquareMatrix
+    subdm_field->isSquareMatrix == PETSC_TRUE
   ); CHKERRQ(ierr);
 
   // partition problem

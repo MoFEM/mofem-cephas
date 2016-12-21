@@ -880,7 +880,7 @@ PetscErrorCode Core::partition_mesh(
           Range adj_ents;
           if(dim > 0 ) {
             rval = moab.get_adjacencies(
-              dim_ents,dd,false,adj_ents,moab::Interface::UNION
+              dim_ents,dd,true,adj_ents,moab::Interface::UNION
             ); CHKERRQ_MOAB(rval);
           } else {
             rval = moab.get_connectivity(dim_ents,adj_ents,true); CHKERRQ_MOAB(rval);
@@ -907,9 +907,9 @@ PetscErrorCode Core::partition_mesh(
           Range dim_ents = parts_ents[pp].subset_by_dimension(dd);
           // std::cerr << dim_ents.size() << " " << dd  << " " << pp << std::endl;
           for(Range::iterator eit = dim_ents.begin();eit!=dim_ents.end();eit++) {
-            if(dd>0) {
-              rval = moab.tag_set_data(part_tag,&*eit,1,&pp); CHKERRQ_MOAB(rval);
-            }
+            // if(dd>0) {
+            //   rval = moab.tag_set_data(part_tag,&*eit,1,&pp); CHKERRQ_MOAB(rval);
+            // }
             rval = moab.tag_set_data(gid_tag,&*eit,1,&gid); CHKERRQ_MOAB(rval);
             gid++;
           }
@@ -1701,7 +1701,10 @@ PetscErrorCode Core::partition_finite_elements(
     boost::shared_ptr<NumeredEntFiniteElement> numered_fe(new NumeredEntFiniteElement(*miit2));
     // check if rows and columns are the same on this element
     bool do_cols_fe = true;
-    if(numered_fe->sPtr->row_dof_view == numered_fe->sPtr->col_dof_view && do_cols_prob) {
+    if(
+      (numered_fe->sPtr->row_dof_view == numered_fe->sPtr->col_dof_view)
+      && !do_cols_prob
+    ) {
       do_cols_fe = false;
       numered_fe->cols_dofs = numered_fe->rows_dofs;
     } else {
@@ -1792,8 +1795,8 @@ PetscErrorCode Core::partition_finite_elements(
       std::ostringstream ss;
       ss << *p_miit << std::endl;
       ss << *p.first << std::endl;
-      typedef FENumeredDofEntityByUId FENumeredDofEntity_multiIndex_by_Unique_mi_tag;
-      FENumeredDofEntity_multiIndex_by_Unique_mi_tag::iterator miit = (*p.first)->rows_dofs->get<Unique_mi_tag>().begin();
+      typedef FENumeredDofEntityByUId FENumeredDofEntityByUId;
+      FENumeredDofEntityByUId::iterator miit = (*p.first)->rows_dofs->get<Unique_mi_tag>().begin();
       for(;miit!= (*p.first)->rows_dofs->get<Unique_mi_tag>().end();miit++) ss << "rows: " << *(*miit) << std::endl;
       miit = (*p.first)->cols_dofs->get<Unique_mi_tag>().begin();
       for(;miit!=(*p.first)->cols_dofs->get<Unique_mi_tag>().end();miit++) ss << "cols: " << *(*miit) << std::endl;
@@ -1801,10 +1804,12 @@ PetscErrorCode Core::partition_finite_elements(
     }
   }
   if(verb>0) {
-    typedef NumeredEntFiniteElement_multiIndex::index<FiniteElement_Part_mi_tag>::type NumeredEntFiniteElement_multiIndex_by_part;
-    NumeredEntFiniteElement_multiIndex_by_part::iterator MoFEMFiniteElement_miit = numeredFiniteElements.get<FiniteElement_Part_mi_tag>().lower_bound(rAnk);
-    NumeredEntFiniteElement_multiIndex_by_part::iterator hi_MoMoFEMFiniteElement_miitFEMFE_miit = numeredFiniteElements.get<FiniteElement_Part_mi_tag>().upper_bound(rAnk);
-    int count = distance(MoFEMFiniteElement_miit,hi_MoMoFEMFiniteElement_miitFEMFE_miit);
+    typedef NumeredEntFiniteElement_multiIndex::index<FiniteElement_Part_mi_tag>::type
+    NumeredEntFiniteElementPart;
+    NumeredEntFiniteElementPart::iterator miit,hi_miit;
+    miit = numeredFiniteElements.get<FiniteElement_Part_mi_tag>().lower_bound(rAnk);
+    hi_miit = numeredFiniteElements.get<FiniteElement_Part_mi_tag>().upper_bound(rAnk);
+    int count = distance(miit,hi_miit);
     std::ostringstream ss;
     ss << *p_miit;
     ss << " Nb. elems " << count << " on proc " << rAnk << std::endl;
