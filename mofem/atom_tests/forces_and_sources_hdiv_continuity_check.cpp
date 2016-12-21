@@ -147,7 +147,7 @@ int main(int argc, char *argv[]) {
   //build adjacencies
   ierr = m_field.build_adjacencies(bit_level0); CHKERRQ(ierr);
   //build problem
-  ierr = m_field.build_problems(); CHKERRQ(ierr);
+  ierr = m_field.build_problem("TEST_PROBLEM",true); CHKERRQ(ierr);
 
   //project geometry form 10 node tets on higher order approx. functions
   Projection10NodeCoordsOnField ent_method(m_field,"MESH_NODE_POSITIONS");

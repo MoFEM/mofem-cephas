@@ -140,7 +140,7 @@ int main(int argc, char *argv[]) {
     ierr = m_field.modify_problem_ref_level_add_bit("TEST_PROBLEM",bit_level0); CHKERRQ(ierr);
 
     //build problem
-    ierr = m_field.build_problems(); CHKERRQ(ierr);
+    ierr = m_field.build_problem("TEST_PROBLEM",true); CHKERRQ(ierr);
     //partition
     ierr = m_field.partition_simple_problem("TEST_PROBLEM"); CHKERRQ(ierr);
     ierr = m_field.partition_finite_elements("TEST_PROBLEM"); CHKERRQ(ierr);

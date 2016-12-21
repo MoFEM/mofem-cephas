@@ -445,10 +445,10 @@ struct Core: public Interface {
   PetscErrorCode partition_mesh(
     const Range &ents,const int dim,const int adj_dim,const int n_parts,int verb = -1
   );
-  PetscErrorCode build_problem(const std::string &name,int verb = -1);
+  PetscErrorCode build_problem(const std::string &name,const bool square_matrix,int verb = -1);
+  PetscErrorCode build_problem(MoFEMProblem *problem_ptr,const bool square_matrix,int verb = -1);
   PetscErrorCode clear_problem(const std::string &name,int verb = -1);
-  PetscErrorCode build_problem(MoFEMProblem *problem_ptr,int verb = -1);
-  PetscErrorCode build_problems(int verb = -1);
+  DEPRECATED PetscErrorCode build_problems(int verb = -1);
   PetscErrorCode clear_problems(int verb = -1);
   PetscErrorCode partition_simple_problem(const std::string &name,int verb = -1);
   PetscErrorCode partition_problem(const std::string &name,int verb = -1);

@@ -657,7 +657,9 @@ PetscErrorCode DMSetUp_MoFEM(DM dm) {
       dm_field->problemName,true,0,dm_field->sIze,1
     ); CHKERRQ(ierr);
   } else {
-    ierr = dm_field->mField_ptr->build_problem(dm_field->problemName); CHKERRQ(ierr);
+    ierr = dm_field->mField_ptr->build_problem(
+      dm_field->problemName,dm_field->isSquareMatrix == PETSC_TRUE
+    ); CHKERRQ(ierr);
     ierr = dm_field->mField_ptr->partition_problem(dm_field->problemName); CHKERRQ(ierr);
     ierr = dm_field->mField_ptr->partition_finite_elements(dm_field->problemName); CHKERRQ(ierr);
   }

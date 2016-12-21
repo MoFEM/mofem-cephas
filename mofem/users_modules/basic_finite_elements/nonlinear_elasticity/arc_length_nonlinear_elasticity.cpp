@@ -264,7 +264,7 @@ int main(int argc, char *argv[]) {
     //ierr = m_field.build_problem_on_distributed_mesh(PETSC_COMM_WORLD,1); CHKERRQ(ierr);
     //ierr = m_field.partition_finite_elements("ELASTIC_MECHANICS",true,0,pcomm->size(),1); CHKERRQ(ierr);
   } else {
-    ierr = m_field.build_problems(); CHKERRQ(ierr);
+    ierr = m_field.build_problem("ELASTIC_MECHANICS",true); CHKERRQ(ierr);
     ierr = m_field.partition_problem("ELASTIC_MECHANICS"); CHKERRQ(ierr);
     ierr = m_field.partition_finite_elements("ELASTIC_MECHANICS"); CHKERRQ(ierr);
   }
