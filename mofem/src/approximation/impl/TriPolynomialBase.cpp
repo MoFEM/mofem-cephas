@@ -376,13 +376,14 @@ PetscErrorCode TriPolynomialBase::getValue(
     );
   }
 
-
   switch (cTx->sPace) {
     case H1:
     {
       // In linear geometry derivatives are constant,
       // this in expense of efficiency makes implementation
       // consistent between vertices and other types of entities
+      data.dataOnEntities[MBVERTEX][0].getDiffN(base).resize(3,2,false);
+      ierr = ShapeDiffMBTRI(&*data.dataOnEntities[MBVERTEX][0].getDiffN(base).data().begin()); CHKERRQ(ierr);
       MatrixDouble diffN(nb_gauss_pts,6);
       for(int gg = 0;gg<nb_gauss_pts;gg++) {
         for(int nn = 0;nn<3;nn++) {
