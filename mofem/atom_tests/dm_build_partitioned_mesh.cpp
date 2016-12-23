@@ -137,7 +137,7 @@ int main(int argc, char *argv[]) {
 
     PetscViewer viewer;
     ierr = PetscViewerASCIIOpen(PETSC_COMM_WORLD,"dm_build_partitioned_mesh.txt",&viewer); CHKERRQ(ierr);
-    ierr = PetscViewerSetFormat(viewer,PETSC_VIEWER_ASCII_INFO); CHKERRQ(ierr);
+    ierr = PetscViewerPushFormat(viewer,PETSC_VIEWER_ASCII_INFO); CHKERRQ(ierr);
     MatView(m,viewer);
     ierr = PetscViewerDestroy(&viewer); CHKERRQ(ierr);
 

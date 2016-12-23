@@ -880,7 +880,7 @@ PetscErrorCode Core::partition_mesh(
           Range adj_ents;
           if(dim > 0 ) {
             rval = moab.get_adjacencies(
-              dim_ents,dd,false,adj_ents,moab::Interface::UNION
+              dim_ents,dd,true,adj_ents,moab::Interface::UNION
             ); CHKERRQ_MOAB(rval);
           } else {
             rval = moab.get_connectivity(dim_ents,adj_ents,true); CHKERRQ_MOAB(rval);
@@ -907,9 +907,9 @@ PetscErrorCode Core::partition_mesh(
           Range dim_ents = parts_ents[pp].subset_by_dimension(dd);
           // std::cerr << dim_ents.size() << " " << dd  << " " << pp << std::endl;
           for(Range::iterator eit = dim_ents.begin();eit!=dim_ents.end();eit++) {
-            if(dd>0) {
-              rval = moab.tag_set_data(part_tag,&*eit,1,&pp); CHKERRQ_MOAB(rval);
-            }
+            // if(dd>0) {
+            //   rval = moab.tag_set_data(part_tag,&*eit,1,&pp); CHKERRQ_MOAB(rval);
+            // }
             rval = moab.tag_set_data(gid_tag,&*eit,1,&gid); CHKERRQ_MOAB(rval);
             gid++;
           }
@@ -932,7 +932,7 @@ PetscErrorCode Core::partition_mesh(
 
   PetscFunctionReturn(0);
 }
-PetscErrorCode Core::build_problem(MoFEMProblem *problem_ptr,int verb) {
+PetscErrorCode Core::build_problem(MoFEMProblem *problem_ptr,const bool square_matrix,int verb) {
   PetscFunctionBegin;
   // Note: Only allowe changes on problem_ptr structure which not influence multindex
   // indexing are allowd.
@@ -948,60 +948,75 @@ PetscErrorCode Core::build_problem(MoFEMProblem *problem_ptr,int verb) {
 
   //zero finite elements
   problem_ptr->numeredFiniteElements.clear();
-  //miit2 iterator for finite elements
-  EntFiniteElement_multiIndex::iterator miit2 = entsFiniteElements.begin();
-  EntFiniteElement_multiIndex::iterator hi_miit2 = entsFiniteElements.end();
+
   DofEntity_multiIndex_active_view dofs_rows,dofs_cols;
-  EntFiniteElement_multiIndex::iterator miit3 = miit2;
-  //iterate all finite element entities in database
-  for(;miit3!=hi_miit2;miit3++) {
-    //if element is in problem
-    if(((*miit3)->getId()&problem_ptr->getBitFEId()).any()) {
-      //if finite element bit level has all refined bits sets
-      if(((*miit3)->getBitRefLevel()&problem_ptr->getBitRefLevel())==problem_ptr->getBitRefLevel()) {
-        //get dof uids for rows and columns
-        ierr = (*miit3)->getRowDofView(dofsField,dofs_rows); CHKERRQ(ierr);
-        ierr = (*miit3)->getColDofView(dofsField,dofs_cols); CHKERRQ(ierr);
+  {
+    EntFiniteElement_multiIndex::iterator miit = entsFiniteElements.begin();
+    EntFiniteElement_multiIndex::iterator hi_miit = entsFiniteElements.end();
+    //iterate all finite element entities in database
+    for(;miit!=hi_miit;miit++) {
+      //if element is in problem
+      if(((*miit)->getId()&problem_ptr->getBitFEId()).any()) {
+        //if finite element bit level has all refined bits sets
+        if(
+          ((*miit)->getBitRefLevel()&problem_ptr->getBitRefLevel()) ==
+          problem_ptr->getBitRefLevel()
+        ) {
+          //get dof uids for rows and columns
+          ierr = (*miit)->getRowDofView(dofsField,dofs_rows); CHKERRQ(ierr);
+          if(!square_matrix) {
+            ierr = (*miit)->getColDofView(dofsField,dofs_cols); CHKERRQ(ierr);
+          }
+        }
       }
     }
   }
 
-  //zero rows
-  *problem_ptr->tag_nbdof_data_row = 0;
-  *problem_ptr->tag_local_nbdof_data_row = 0;
-  *problem_ptr->tag_ghost_nbdof_data_row = 0;
-  problem_ptr->numered_dofs_rows->clear();
-  //zero cols
-  *problem_ptr->tag_nbdof_data_col = 0;
-  *problem_ptr->tag_local_nbdof_data_col = 0;
-  *problem_ptr->tag_ghost_nbdof_data_col = 0;
-  problem_ptr->numered_dofs_cols->clear();
-
-  //add dofs for rows
-  DofEntity_multiIndex_active_view::nth_index<1>::type::iterator miit4,hi_miit4;
-  miit4 = dofs_rows.get<1>().lower_bound(1);
-  hi_miit4 = dofs_rows.get<1>().upper_bound(1);
-  for(;miit4!=hi_miit4;miit4++) {
-    if(((*miit4)->getBitRefLevel()&problem_ptr->get_DofMask_BitRefLevel())!=(*miit4)->getBitRefLevel()) {
-      continue;
+  // Add row dofs to problem
+  {
+    // zero rows
+    *problem_ptr->tag_nbdof_data_row = 0;
+    *problem_ptr->tag_local_nbdof_data_row = 0;
+    *problem_ptr->tag_ghost_nbdof_data_row = 0;
+    problem_ptr->numered_dofs_rows->clear();
+    //add dofs for rows
+    DofEntity_multiIndex_active_view::nth_index<1>::type::iterator miit,hi_miit;
+    miit = dofs_rows.get<1>().lower_bound(1);
+    hi_miit = dofs_rows.get<1>().upper_bound(1);
+    for(;miit!=hi_miit;miit++) {
+      if(((*miit)->getBitRefLevel()&problem_ptr->get_DofMask_BitRefLevel())!=(*miit)->getBitRefLevel()) {
+        continue;
+      }
+      ProblemAddRowDof(*miit).operator()(*problem_ptr);
     }
-    ProblemAddRowDof(*miit4).operator()(*problem_ptr);
+    //number dofs on rows
+    ProblemRowNumberChange().operator()(*problem_ptr);
   }
 
-  //add dofs for cols
-  DofEntity_multiIndex_active_view::nth_index<1>::type::iterator miit5,hi_miit5;
-  miit5 = dofs_cols.get<1>().lower_bound(1);
-  hi_miit5 = dofs_cols.get<1>().upper_bound(1);
-  for(;miit5!=hi_miit5;miit5++) {
-    if(((*miit5)->getBitRefLevel()&problem_ptr->get_DofMask_BitRefLevel())!=(*miit5)->getBitRefLevel()) {
-      continue;
+  // Add col dofs to problem
+  if(!square_matrix) {
+    //zero cols
+    *problem_ptr->tag_nbdof_data_col = 0;
+    *problem_ptr->tag_local_nbdof_data_col = 0;
+    *problem_ptr->tag_ghost_nbdof_data_col = 0;
+    problem_ptr->numered_dofs_cols->clear();
+    //add dofs for cols
+    DofEntity_multiIndex_active_view::nth_index<1>::type::iterator miit,hi_miit;
+    miit = dofs_cols.get<1>().lower_bound(1);
+    hi_miit = dofs_cols.get<1>().upper_bound(1);
+    for(;miit!=hi_miit;miit++) {
+      if(((*miit)->getBitRefLevel()&problem_ptr->get_DofMask_BitRefLevel())!=(*miit)->getBitRefLevel()) {
+        continue;
+      }
+      ProblemAddColDof(*miit).operator()(*problem_ptr);
     }
-    ProblemAddColDof(*miit5).operator()(*problem_ptr);
+    //number dofs on columns
+    ProblemColNumberChange().operator()(*problem_ptr);
+  } else {
+    problem_ptr->numered_dofs_cols = problem_ptr->numered_dofs_rows;
+    *(problem_ptr->tag_local_nbdof_data_col) = *(problem_ptr->tag_local_nbdof_data_row);
+    *(problem_ptr->tag_nbdof_data_col) = *(problem_ptr->tag_nbdof_data_row);
   }
-
-  //number dofs on rows and columns
-  ProblemRowNumberChange().operator()(*problem_ptr);
-  ProblemColNumberChange().operator()(*problem_ptr);
 
   //job done, some debugging and postprocessing
   if(verbose>0) {
@@ -1010,13 +1025,14 @@ PetscErrorCode Core::build_problem(MoFEMProblem *problem_ptr,int verb) {
     problem_ptr->numered_dofs_rows->size(),problem_ptr->numered_dofs_cols->size());
   }
   if(verb>1) {
-    EntFiniteElement_multiIndex::iterator miit_ss = miit2;
+    EntFiniteElement_multiIndex::iterator miit = entsFiniteElements.begin();
+    EntFiniteElement_multiIndex::iterator hi_miit = entsFiniteElements.end();
     std::ostringstream ss;
     ss << "rank " << rAnk << " ";
     ss << "FEs data for problem " << *problem_ptr << std::endl;
-    for(;miit_ss!=hi_miit2;miit_ss++) {
+    for(;miit!=hi_miit;miit++) {
       ss << "rank " << rAnk << " ";
-      ss << **miit_ss << std::endl;
+      ss << **miit << std::endl;
     }
     ss << "rank " << rAnk << " ";
     ss << "FEs row dofs "<< *problem_ptr << " Nb. row dof " << problem_ptr->getNbDofsRow() << std::endl;
@@ -1044,7 +1060,7 @@ PetscErrorCode Core::build_problem(MoFEMProblem *problem_ptr,int verb) {
 
   PetscFunctionReturn(0);
 }
-PetscErrorCode Core::build_problem(const std::string &problem_name,int verb) {
+PetscErrorCode Core::build_problem(const std::string &problem_name,const bool square_matrix,int verb) {
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
   if(!(*buildMoFEM&(1<<0))) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"fields not build");
@@ -1052,7 +1068,7 @@ PetscErrorCode Core::build_problem(const std::string &problem_name,int verb) {
   if(!(*buildMoFEM&(1<<2))) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"adjacencies not build");
   const MoFEMProblem *problem_ptr;
   ierr = get_problem(problem_name,&problem_ptr); CHKERRQ(ierr);
-  ierr = build_problem(const_cast<MoFEMProblem*>(problem_ptr),verb); CHKERRQ(ierr);
+  ierr = build_problem(const_cast<MoFEMProblem*>(problem_ptr),square_matrix,verb); CHKERRQ(ierr);
   *buildMoFEM |= 1<<3; // It is assumed that user who uses this function knows what he is doing
   PetscFunctionReturn(0);
 }
@@ -1089,7 +1105,7 @@ PetscErrorCode Core::build_problems(int verb) {
   MoFEMProblem_multiIndex::iterator p_miit = pRoblems.begin();
   for(;p_miit!=pRoblems.end();p_miit++) {
     MoFEMProblem *problem_ptr =  const_cast<MoFEMProblem*>(&*p_miit);
-    ierr = build_problem(problem_ptr,verb); CHKERRQ(ierr);
+    ierr = build_problem(problem_ptr,false,verb); CHKERRQ(ierr);
   }
   *buildMoFEM |= BUILD_PROBLEM;
   PetscFunctionReturn(0);
@@ -1142,24 +1158,33 @@ PetscErrorCode Core::partition_simple_problem(const std::string &name,int verb) 
   DofIdx &nb_col_ghost_dofs = *((DofIdx*)p_miit->tag_ghost_nbdof_data_col);
   nb_col_local_dofs = 0;
   nb_col_ghost_dofs = 0;
+
+  bool square_matrix = false;
+  if(p_miit->numered_dofs_rows==p_miit->numered_dofs_cols) {
+    square_matrix = true;
+  }
+
   //get row range of local indices
-  DofIdx nb_dofs_row = dofs_row_by_idx.size();
   PetscLayout layout_row;
+  const int *ranges_row;
+
+  DofIdx nb_dofs_row = dofs_row_by_idx.size();
   ierr = PetscLayoutCreate(comm,&layout_row); CHKERRQ(ierr);
   ierr = PetscLayoutSetBlockSize(layout_row,1); CHKERRQ(ierr);
   ierr = PetscLayoutSetSize(layout_row,nb_dofs_row); CHKERRQ(ierr);
   ierr = PetscLayoutSetUp(layout_row); CHKERRQ(ierr);
-  const int *ranges_row;
   ierr = PetscLayoutGetRanges(layout_row,&ranges_row); CHKERRQ(ierr);
   //get col range of local indices
-  DofIdx nb_dofs_col = dofs_col_by_idx.size();
   PetscLayout layout_col;
-  ierr = PetscLayoutCreate(comm,&layout_col); CHKERRQ(ierr);
-  ierr = PetscLayoutSetBlockSize(layout_col,1); CHKERRQ(ierr);
-  ierr = PetscLayoutSetSize(layout_col,nb_dofs_col); CHKERRQ(ierr);
-  ierr = PetscLayoutSetUp(layout_col); CHKERRQ(ierr);
   const int *ranges_col;
-  ierr = PetscLayoutGetRanges(layout_col,&ranges_col); CHKERRQ(ierr);
+  if(!square_matrix) {
+    DofIdx nb_dofs_col = dofs_col_by_idx.size();
+    ierr = PetscLayoutCreate(comm,&layout_col); CHKERRQ(ierr);
+    ierr = PetscLayoutSetBlockSize(layout_col,1); CHKERRQ(ierr);
+    ierr = PetscLayoutSetSize(layout_col,nb_dofs_col); CHKERRQ(ierr);
+    ierr = PetscLayoutSetUp(layout_col); CHKERRQ(ierr);
+    ierr = PetscLayoutGetRanges(layout_col,&ranges_col); CHKERRQ(ierr);
+  }
   for(unsigned int part = 0;part<(unsigned int)sIze;part++) {
     miit_row = dofs_row_by_idx.lower_bound(ranges_row[part]);
     hi_miit_row = dofs_row_by_idx.lower_bound(ranges_row[part+1]);
@@ -1177,26 +1202,34 @@ PetscErrorCode Core::partition_simple_problem(const std::string &name,int verb) 
           if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
         }
       }
-      miit_col = dofs_col_by_idx.lower_bound(ranges_col[part]);
-      hi_miit_col = dofs_col_by_idx.lower_bound(ranges_col[part+1]);
-      if(distance(miit_col,hi_miit_col) != ranges_col[part+1]-ranges_col[part]) {
-        SETERRQ4(PETSC_COMM_SELF,PETSC_ERR_ARG_SIZ,
-          "data inconsistency, distance(miit_col,hi_miit_col) != rend - rstart (%d != %d - %d = %d) ",
-          distance(miit_col,hi_miit_col),ranges_col[part+1],ranges_col[part],ranges_col[part+1]-ranges_col[part]
-        );
-      }
-      // loop cols
-      for(;miit_col!=hi_miit_col;miit_col++) {
-        bool success = dofs_col_by_idx.modify(miit_col,NumeredDofEntity_part_change(part,(*miit_col)->dofIdx));
-        if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
-        if(part == (unsigned int)rAnk) {
-          success = dofs_col_by_idx.modify(miit_col,NumeredDofEntity_local_idx_change(nb_col_local_dofs++));
+      if(!square_matrix) {
+        miit_col = dofs_col_by_idx.lower_bound(ranges_col[part]);
+        hi_miit_col = dofs_col_by_idx.lower_bound(ranges_col[part+1]);
+        if(distance(miit_col,hi_miit_col) != ranges_col[part+1]-ranges_col[part]) {
+          SETERRQ4(PETSC_COMM_SELF,PETSC_ERR_ARG_SIZ,
+            "data inconsistency, distance(miit_col,hi_miit_col) != rend - rstart (%d != %d - %d = %d) ",
+            distance(miit_col,hi_miit_col),ranges_col[part+1],ranges_col[part],ranges_col[part+1]-ranges_col[part]
+          );
+        }
+        // loop cols
+        for(;miit_col!=hi_miit_col;miit_col++) {
+          bool success = dofs_col_by_idx.modify(miit_col,NumeredDofEntity_part_change(part,(*miit_col)->dofIdx));
           if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
+          if(part == (unsigned int)rAnk) {
+            success = dofs_col_by_idx.modify(miit_col,NumeredDofEntity_local_idx_change(nb_col_local_dofs++));
+            if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
+          }
         }
       }
     }
     ierr = PetscLayoutDestroy(&layout_row); CHKERRQ(ierr);
-    ierr = PetscLayoutDestroy(&layout_col); CHKERRQ(ierr);
+    if(!square_matrix) {
+      ierr = PetscLayoutDestroy(&layout_col); CHKERRQ(ierr);
+    }
+    if(square_matrix) {
+      nb_col_local_dofs = nb_row_local_dofs;
+      nb_col_ghost_dofs = nb_row_ghost_dofs;
+    }
     ierr = printPartitionedProblem(&*p_miit,verb); CHKERRQ(ierr);
     *buildMoFEM |= PARTITION_PROBLEM;
     PetscFunctionReturn(0);
@@ -1701,7 +1734,10 @@ PetscErrorCode Core::partition_finite_elements(
     boost::shared_ptr<NumeredEntFiniteElement> numered_fe(new NumeredEntFiniteElement(*miit2));
     // check if rows and columns are the same on this element
     bool do_cols_fe = true;
-    if(numered_fe->sPtr->row_dof_view == numered_fe->sPtr->col_dof_view && do_cols_prob) {
+    if(
+      (numered_fe->sPtr->row_dof_view == numered_fe->sPtr->col_dof_view)
+      && !do_cols_prob
+    ) {
       do_cols_fe = false;
       numered_fe->cols_dofs = numered_fe->rows_dofs;
     } else {
@@ -1792,8 +1828,8 @@ PetscErrorCode Core::partition_finite_elements(
       std::ostringstream ss;
       ss << *p_miit << std::endl;
       ss << *p.first << std::endl;
-      typedef FENumeredDofEntityByUId FENumeredDofEntity_multiIndex_by_Unique_mi_tag;
-      FENumeredDofEntity_multiIndex_by_Unique_mi_tag::iterator miit = (*p.first)->rows_dofs->get<Unique_mi_tag>().begin();
+      typedef FENumeredDofEntityByUId FENumeredDofEntityByUId;
+      FENumeredDofEntityByUId::iterator miit = (*p.first)->rows_dofs->get<Unique_mi_tag>().begin();
       for(;miit!= (*p.first)->rows_dofs->get<Unique_mi_tag>().end();miit++) ss << "rows: " << *(*miit) << std::endl;
       miit = (*p.first)->cols_dofs->get<Unique_mi_tag>().begin();
       for(;miit!=(*p.first)->cols_dofs->get<Unique_mi_tag>().end();miit++) ss << "cols: " << *(*miit) << std::endl;
@@ -1801,10 +1837,12 @@ PetscErrorCode Core::partition_finite_elements(
     }
   }
   if(verb>0) {
-    typedef NumeredEntFiniteElement_multiIndex::index<FiniteElement_Part_mi_tag>::type NumeredEntFiniteElement_multiIndex_by_part;
-    NumeredEntFiniteElement_multiIndex_by_part::iterator MoFEMFiniteElement_miit = numeredFiniteElements.get<FiniteElement_Part_mi_tag>().lower_bound(rAnk);
-    NumeredEntFiniteElement_multiIndex_by_part::iterator hi_MoMoFEMFiniteElement_miitFEMFE_miit = numeredFiniteElements.get<FiniteElement_Part_mi_tag>().upper_bound(rAnk);
-    int count = distance(MoFEMFiniteElement_miit,hi_MoMoFEMFiniteElement_miitFEMFE_miit);
+    typedef NumeredEntFiniteElement_multiIndex::index<FiniteElement_Part_mi_tag>::type
+    NumeredEntFiniteElementPart;
+    NumeredEntFiniteElementPart::iterator miit,hi_miit;
+    miit = numeredFiniteElements.get<FiniteElement_Part_mi_tag>().lower_bound(rAnk);
+    hi_miit = numeredFiniteElements.get<FiniteElement_Part_mi_tag>().upper_bound(rAnk);
+    int count = distance(miit,hi_miit);
     std::ostringstream ss;
     ss << *p_miit;
     ss << " Nb. elems " << count << " on proc " << rAnk << std::endl;

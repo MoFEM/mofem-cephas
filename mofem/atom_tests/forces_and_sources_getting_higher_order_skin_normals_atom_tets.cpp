@@ -122,7 +122,7 @@ int main(int argc, char *argv[]) {
   //build adjacencies
   ierr = m_field.build_adjacencies(bit_level0); CHKERRQ(ierr);
   //build problem
-  ierr = m_field.build_problems(); CHKERRQ(ierr);
+  ierr = m_field.build_problem("TEST_PROBLEM",true); CHKERRQ(ierr);
 
   /****/
   //mesh partitioning

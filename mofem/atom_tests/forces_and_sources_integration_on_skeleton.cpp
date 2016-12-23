@@ -109,7 +109,7 @@ int main(int argc, char *argv[]) {
   ierr = m_field.modify_problem_add_finite_element("P1","S2"); CHKERRQ(ierr);
 
   //build problems
-  ierr = m_field.build_problems(); CHKERRQ(ierr);
+  ierr = m_field.build_problem("P1",true); CHKERRQ(ierr);
   ierr = m_field.partition_problem("P1"); CHKERRQ(ierr);
   ierr = m_field.partition_finite_elements("P1"); CHKERRQ(ierr);
   ierr = m_field.partition_ghost_dofs("P1"); CHKERRQ(ierr);

@@ -423,7 +423,7 @@ int main(int argc, char *argv[]) {
   ierr = m_field.build_adjacencies(problem_bit_level); CHKERRQ(ierr);
 
   //build problem
-  ierr = m_field.build_problems(); CHKERRQ(ierr);
+  ierr = m_field.build_problem("ELASTIC_MECHANICS",true); CHKERRQ(ierr);
 
   /****/
   //mesh partitioning
