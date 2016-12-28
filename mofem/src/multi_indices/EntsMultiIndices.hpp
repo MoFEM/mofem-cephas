@@ -652,7 +652,11 @@ struct MoFEMEntity_change_order {
   std::vector<FieldCoefficientsNumber> data_dof_rank;
   MoFEMEntity_change_order(ApproximationOrder _order):
   order(_order) {};
-  void operator()(boost::shared_ptr<MoFEMEntity> &e);
+  inline void operator()(boost::shared_ptr<MoFEMEntity> &e) {
+    (*this)(e.get());
+  }
+  void operator()(MoFEMEntity *e);
+
 };
 
 /**

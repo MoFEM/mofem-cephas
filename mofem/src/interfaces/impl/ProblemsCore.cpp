@@ -1495,11 +1495,7 @@ PetscErrorCode Core::build_sub_problem(
       dofs_shared_array.reserve(dofs_array->size());
       std::vector<NumeredDofEntity>::iterator vit = dofs_array->begin();
       for( ;vit!=dofs_array->end(); vit++ ) {
-        dofs_shared_array.push_back(
-          boost::shared_ptr<NumeredDofEntity>(
-            dofs_array, &*vit
-          )
-        );
+        dofs_shared_array.emplace_back(dofs_array,&*vit);
       }
       // fill multi-index
       out_problem_dofs[ss]->insert(
@@ -1755,7 +1751,7 @@ PetscErrorCode Core::partition_finite_elements(
 
   // Loop over all elements in database and if right element is there add it
   // to problem finite element multi-index
-  
+
   EntFiniteElement_multiIndex::iterator efit = entsFiniteElements.begin();
   EntFiniteElement_multiIndex::iterator hi_efit = entsFiniteElements.end();
   for(;efit!=hi_efit;efit++) {
@@ -1866,10 +1862,9 @@ PetscErrorCode Core::partition_finite_elements(
         dofs_shared_array.reserve(dofs_array->size());
         for(
           std::vector<FENumeredDofEntity>::iterator
-          viit = dofs_array->begin();viit!=dofs_array->end(); viit++ ) {
-          dofs_shared_array.push_back(
-            boost::shared_ptr<FENumeredDofEntity>(dofs_array,&*viit)
-          );
+          viit = dofs_array->begin();viit!=dofs_array->end(); viit++
+        ) {
+          dofs_shared_array.emplace_back(dofs_array,&*viit);
         }
 
         // finally add DoFS to multi-indices

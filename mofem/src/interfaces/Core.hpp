@@ -323,7 +323,10 @@ struct Core: public Interface {
   //build fiels
   PetscErrorCode buildFieldForNoField(const BitFieldId id,std::map<EntityType,int> &dof_counter,int verb = -1);
   PetscErrorCode buildFieldForL2H1HcurlHdiv(
-    const BitFieldId id,std::map<EntityType,int> &dof_counter,std::map<EntityType,int> &inactive_dof_counter,int verb = -1
+    const BitFieldId id,std::map<EntityType,int> &dof_counter,
+    std::map<EntityType,
+    int> &inactive_dof_counter,
+    int verb = -1
   );
   PetscErrorCode build_fields(int verb = -1);
   PetscErrorCode clear_inactive_dofs(int verb = -1);

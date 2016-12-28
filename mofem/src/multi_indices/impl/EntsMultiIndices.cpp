@@ -196,7 +196,7 @@ std::ostream& operator<<(std::ostream& os,const MoFEMEntity& e) {
     << " order "<<e.getMaxOrder()<<" "<< *e.sFieldPtr;
   return os;
 }
-void MoFEMEntity_change_order::operator()(boost::shared_ptr<MoFEMEntity> &e) {
+void MoFEMEntity_change_order::operator()(MoFEMEntity *e) {
   MoABErrorCode rval;
   moab::Interface &moab = e->sPtr->basicDataPtr->moab;
   int nb_dofs = e->getOrderNbDofs(order)*e->getNbOfCoeffs();
