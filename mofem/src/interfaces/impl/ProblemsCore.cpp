@@ -1470,19 +1470,42 @@ PetscErrorCode Core::build_sub_problem(
     ) {
       NumeredDofEntityByFieldName::iterator dit = main_problem_dofs[ss]->get<FieldName_mi_tag>().lower_bound(*fit);
       NumeredDofEntityByFieldName::iterator hi_dit = main_problem_dofs[ss]->get<FieldName_mi_tag>().upper_bound(*fit);
+
+      // Following reserve memory in sequences, only two allocations are here,
+      // once for array of objects, next for array of shared pointers
+
+      // reserve memory for field  dofs
+      boost::shared_ptr<std::vector<NumeredDofEntity> > dofs_array =
+      boost::shared_ptr<std::vector<NumeredDofEntity> >(new std::vector<NumeredDofEntity>());
+      dofs_array->reserve(std::distance(dit,hi_dit));
+
+      // create elements objects
       for(;dit!=hi_dit;dit++) {
-        out_problem_dofs[ss]->insert(
+        dofs_array->emplace_back(
+          dit->get()->getDofEntityPtr(),
+          mofem_dof_idx++,
+          dit->get()->getPetscGlobalDofIdx(),
+          dit->get()->getPetscLocalDofIdx(),
+          dit->get()->getPart()
+        );
+      }
+      std::vector<boost::shared_ptr<NumeredDofEntity> > dofs_shared_array;
+      
+      // reserve memory for shared pointers now
+      dofs_shared_array.reserve(dofs_array->size());
+      std::vector<NumeredDofEntity>::iterator vit = dofs_array->begin();
+      for( ;vit!=dofs_array->end(); vit++ ) {
+        dofs_shared_array.push_back(
           boost::shared_ptr<NumeredDofEntity>(
-            new NumeredDofEntity(
-              dit->get()->getDofEntityPtr(),
-              mofem_dof_idx++,
-              dit->get()->getPetscGlobalDofIdx(),
-              dit->get()->getPetscLocalDofIdx(),
-              dit->get()->getPart()
-            )
+            dofs_array, &*vit
           )
         );
       }
+      // fill multi-index
+      out_problem_dofs[ss]->insert(
+        dofs_shared_array.begin(),dofs_shared_array.end()
+      );
+
     }
     // Set local indexes
     {
