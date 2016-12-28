@@ -1102,7 +1102,7 @@ PetscErrorCode Core::set_field_order_by_entity_type_and_bit_ref(
   }
   PetscFunctionReturn(0);
 }
-PetscErrorCode Core::BuildFieldForNoField(
+PetscErrorCode Core::buildFieldForNoField(
   const BitFieldId id,std::map<EntityType,int> &dof_counter,int verb
 ) {
   PetscFunctionBegin;
@@ -1188,7 +1188,7 @@ PetscErrorCode Core::BuildFieldForNoField(
   }
   PetscFunctionReturn(0);
 }
-PetscErrorCode Core::BuildFieldForL2H1HcurlHdiv(
+PetscErrorCode Core::buildFieldForL2H1HcurlHdiv(
   const BitFieldId id,
   std::map<EntityType,int> &dof_counter,
   std::map<EntityType,int> &inactive_dof_counter,
@@ -1341,13 +1341,13 @@ PetscErrorCode Core::build_fields(int verb) {
     }
     switch ((*miit)->getSpace()) {
       case NOFIELD:
-      ierr = BuildFieldForNoField((*miit)->getId(),dof_counter,verb); CHKERRQ(ierr);
+      ierr = buildFieldForNoField((*miit)->getId(),dof_counter,verb); CHKERRQ(ierr);
       break;
       case L2:
       case H1:
       case HCURL:
       case HDIV:
-      ierr = BuildFieldForL2H1HcurlHdiv((*miit)->getId(),dof_counter,inactive_dof_counter,verb); CHKERRQ(ierr);
+      ierr = buildFieldForL2H1HcurlHdiv((*miit)->getId(),dof_counter,inactive_dof_counter,verb); CHKERRQ(ierr);
       break;
       default:
       SETERRQ(comm,MOFEM_NOT_IMPLEMENTED,"not implemented");
