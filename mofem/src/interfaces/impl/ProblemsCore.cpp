@@ -1730,34 +1730,41 @@ PetscErrorCode Core::partition_finite_elements(
 
   if(low_proc == -1) low_proc = rAnk;
   if(hi_proc == -1) hi_proc = rAnk;
-  typedef MoFEMProblem_multiIndex::index<Problem_mi_tag>::type mofem_problems_by_name;
+
+  // Find pointer to problem of given name
+  typedef MoFEMProblem_multiIndex::index<Problem_mi_tag>::type ProblemByName;
   //find p_miit
-  mofem_problems_by_name &pRoblems_set = pRoblems.get<Problem_mi_tag>();
-  mofem_problems_by_name::iterator p_miit = pRoblems_set.find(name);
-  if(p_miit == pRoblems_set.end()) {
+  ProblemByName &problems = pRoblems.get<Problem_mi_tag>();
+  ProblemByName::iterator p_miit = problems.find(name);
+  if(p_miit == problems.end()) {
     SETERRQ1(
       comm,1,"problem < %s > not found (top tip: check spelling)",name.c_str()
     );
   }
-  NumeredEntFiniteElement_multiIndex& numeredFiniteElements
-  = const_cast<NumeredEntFiniteElement_multiIndex&>(p_miit->numeredFiniteElements);
-  numeredFiniteElements.clear();
 
+  // Get reference on finite elements multi-index on the problem
+  NumeredEntFiniteElement_multiIndex& problem_finite_elements
+  = const_cast<NumeredEntFiniteElement_multiIndex&>(p_miit->numeredFiniteElements);
+  problem_finite_elements.clear();
+
+  // check if dofs and columns are the same, i.e. structurally symmetric problem
   bool do_cols_prob = true;
   if(p_miit->numered_dofs_rows == p_miit->numered_dofs_cols) {
     do_cols_prob = false;
   }
 
-  //FiniteElement set
-  EntFiniteElement_multiIndex::iterator miit2 = entsFiniteElements.begin();
-  EntFiniteElement_multiIndex::iterator hi_miit2 = entsFiniteElements.end();
-  for(;miit2!=hi_miit2;miit2++) {
+  // Loop over all elements in database and if right element is there add it
+  // to problem finite element multi-index
+  
+  EntFiniteElement_multiIndex::iterator efit = entsFiniteElements.begin();
+  EntFiniteElement_multiIndex::iterator hi_efit = entsFiniteElements.end();
+  for(;efit!=hi_efit;efit++) {
     // if element is not part of problem
-    if(((*miit2)->getId()&p_miit->getBitFEId()).none()) continue;
+    if(((*efit)->getId()&p_miit->getBitFEId()).none()) continue;
     // if entity is not problem refinement level
-    if(((*miit2)->getBitRefLevel()&p_miit->getBitRefLevel())!=p_miit->getBitRefLevel()) continue;
+    if(((*efit)->getBitRefLevel()&p_miit->getBitRefLevel())!=p_miit->getBitRefLevel()) continue;
     // create element
-    boost::shared_ptr<NumeredEntFiniteElement> numered_fe(new NumeredEntFiniteElement(*miit2));
+    boost::shared_ptr<NumeredEntFiniteElement> numered_fe(new NumeredEntFiniteElement(*efit));
     // check if rows and columns are the same on this element
     bool do_cols_fe = true;
     if(
@@ -1787,12 +1794,12 @@ PetscErrorCode Core::partition_finite_elements(
     {
       if(part_from_moab) {
         // if partition is taken from moab partition
-        int proc = (*miit2)->getOwnerProc();
+        int proc = (*efit)->getOwnerProc();
         NumeredEntFiniteElement_change_part(proc).operator()(numered_fe);
       } else {
         // count partition of the dofs in row, the larges dofs with given partition
         // is used to set partition of the element
-        ierr = (*miit2)->getRowDofView(
+        ierr = (*efit)->getRowDofView(
             *(p_miit->numered_dofs_rows),rows_view,moab::Interface::UNION
         ); CHKERRQ(ierr);
         std::vector<int> parts(sIze,0);
@@ -1824,42 +1831,55 @@ PetscErrorCode Core::partition_finite_elements(
         if(ss == 0) {
           if(part_from_moab) {
             // get row_view
-            ierr = (*miit2)->getRowDofView(
+            ierr = (*efit)->getRowDofView(
               *(p_miit->numered_dofs_rows),*dofs_view[ss],moab::Interface::UNION
             ); CHKERRQ(ierr);
           }
         } else {
           // get cols_views
-          ierr = (*miit2)->getColDofView(
+          ierr = (*efit)->getColDofView(
             *(p_miit->numered_dofs_cols),*dofs_view[ss],moab::Interface::UNION
           ); CHKERRQ(ierr);
         }
-        //rows element dof multi-indices
-        for(
-          NumeredDofEntity_multiIndex_uid_view_ordered::iterator
-          viit = dofs_view[ss]->begin(); viit!=dofs_view[ss]->end();viit++
-        ) {
-          try {
-            boost::shared_ptr<SideNumber> side_number_ptr;
-            side_number_ptr = (*miit2)->getSideNumberPtr(moab,(*viit)->getEnt());
-            fe_dofs[ss]->insert(
-              boost::shared_ptr<FENumeredDofEntity>(
-                new FENumeredDofEntity(
-                  side_number_ptr,
-                  *viit
-                )
-              )
-            );
-          } catch (MoFEMException const &e) {
-            SETERRQ(comm,e.errorCode,e.errorMessage);
-          }
+
+        NumeredDofEntity_multiIndex_uid_view_ordered::iterator vit,hi_vit;
+        vit = dofs_view[ss]->begin();
+        hi_vit = dofs_view[ss]->end();
+
+        // Following reserve memory in sequences, only two allocations are here,
+        // once for array of objects, next for array of shared pointers
+
+        // reserve memory for field  dofs
+        boost::shared_ptr<std::vector<FENumeredDofEntity> > dofs_array =
+        boost::shared_ptr<std::vector<FENumeredDofEntity> >(new std::vector<FENumeredDofEntity>());
+        dofs_array->reserve(std::distance(vit,hi_vit));
+
+        // create elements objects
+        for(;vit!=hi_vit;vit++) {
+          boost::shared_ptr<SideNumber> side_number_ptr;
+          side_number_ptr = (*efit)->getSideNumberPtr(moab,(*vit)->getEnt());
+          dofs_array->emplace_back(side_number_ptr,*vit);
         }
+        std::vector<boost::shared_ptr<FENumeredDofEntity> > dofs_shared_array;
+
+        // reserve memory for shared pointers now
+        dofs_shared_array.reserve(dofs_array->size());
+        for(
+          std::vector<FENumeredDofEntity>::iterator
+          viit = dofs_array->begin();viit!=dofs_array->end(); viit++ ) {
+          dofs_shared_array.push_back(
+            boost::shared_ptr<FENumeredDofEntity>(dofs_array,&*viit)
+          );
+        }
+
+        // finally add DoFS to multi-indices
+        fe_dofs[ss]->insert(dofs_shared_array.begin(),dofs_shared_array.end());
 
       }
 
     }
     std::pair<NumeredEntFiniteElement_multiIndex::iterator,bool> p;
-    p = numeredFiniteElements.insert(numered_fe);
+    p = problem_finite_elements.insert(numered_fe);
     if(!p.second) {
       SETERRQ(comm,MOFEM_NOT_FOUND,"element is there");
     }
@@ -1879,8 +1899,8 @@ PetscErrorCode Core::partition_finite_elements(
     typedef NumeredEntFiniteElement_multiIndex::index<FiniteElement_Part_mi_tag>::type
     NumeredEntFiniteElementPart;
     NumeredEntFiniteElementPart::iterator miit,hi_miit;
-    miit = numeredFiniteElements.get<FiniteElement_Part_mi_tag>().lower_bound(rAnk);
-    hi_miit = numeredFiniteElements.get<FiniteElement_Part_mi_tag>().upper_bound(rAnk);
+    miit = problem_finite_elements.get<FiniteElement_Part_mi_tag>().lower_bound(rAnk);
+    hi_miit = problem_finite_elements.get<FiniteElement_Part_mi_tag>().upper_bound(rAnk);
     int count = distance(miit,hi_miit);
     std::ostringstream ss;
     ss << *p_miit;
