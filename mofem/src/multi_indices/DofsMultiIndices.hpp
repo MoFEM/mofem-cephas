@@ -157,6 +157,7 @@ struct interface_DofEntity: public interface_MoFEMEntity<T> {
  * \ingroup dof_multi_indices
  */
 struct NumeredDofEntity: public interface_DofEntity<DofEntity> {
+
   typedef interface_Field<DofEntity> interface_type_Field;
   typedef interface_MoFEMEntity<DofEntity> interface_type_MoFEMEntity;
   typedef interface_DofEntity<DofEntity> interface_type_DofEntity;
@@ -165,18 +166,33 @@ struct NumeredDofEntity: public interface_DofEntity<DofEntity> {
   DofIdx petscLocalDofIdx;
   unsigned int pArt;
 
+  /**
+   * @return MoFEM DoF index
+   */
   inline DofIdx getDofIdx() const { return dofIdx; }
 
+  /**
+   * @return PETSc global DoF index
+   */
   inline DofIdx getPetscGlobalDofIdx() const { return petscGloablDofIdx;  }
 
+  /**
+   * @return PETSc local DoF index
+   */
   inline DofIdx getPetscLocalDofIdx() const { return petscLocalDofIdx; }
 
+  /**
+   * @return Owning partition (i.e. process/processor)
+   */
   inline unsigned int getPart() const { return pArt;  }
 
+  /**
+   * @return True if local index is set
+   */
   inline bool getHasLocalIndex() const { return !std::signbit(petscLocalDofIdx); }
 
   NumeredDofEntity(
-    const boost::shared_ptr<DofEntity> _DofEntity_ptr,
+    const boost::shared_ptr<DofEntity> dof_entity_ptr,
     const int dof_idx = -1,
     const int petsc_gloabl_dof_idx = -1,
     const int petsc_local_dof_idx = -1,
