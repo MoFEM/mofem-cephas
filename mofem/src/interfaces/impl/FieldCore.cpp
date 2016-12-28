@@ -1229,31 +1229,22 @@ PetscErrorCode Core::buildFieldForL2H1HcurlHdiv(
     );
   }
 
-  MoFEMEntity_multiIndex::iterator eit_insert_hint = entsFields.end();
+  // MoFEMEntity_multiIndex::iterator eit_insert_hint = entsFields.end();
   DofEntity_multiIndex::iterator dit_insert_hint = dofsField.end();
 
   //create dofsField
   Range::iterator eit = ents_of_id_meshset.begin();
   for(;eit!=ents_of_id_meshset.end();eit++) {
 
-    // check if ent is in ref meshset
-    RefEntity_multiIndex::index<Ent_mi_tag>::type::iterator miit_ref_ent;
-    miit_ref_ent = refinedEntities.get<Ent_mi_tag>().find(*eit);
-    if(miit_ref_ent==refinedEntities.get<Ent_mi_tag>().end()) {
-      RefEntity ref_ent(basicEntityDataPtr,*eit);
-      if(ref_ent.getBitRefLevel().none()) {
-        continue; // not on any mesh and not in database
-      }
-      std::cerr << ref_ent << std::endl;
-      std::cerr << "bit level " << ref_ent.getBitRefLevel() << std::endl;
-      SETERRQ(comm,MOFEM_DATA_INCONSISTENCY,"database inconsistency");
-    }
-
-    boost::shared_ptr<MoFEMEntity> moabent(new MoFEMEntity(*miit,*miit_ref_ent));
-    // create mofem entity linked to ref ent
-    MoFEMEntity_multiIndex::iterator e_miit;
+    // Find mofem entity
+    boost::shared_ptr<MoFEMEntity> field_ent;
     try {
-      e_miit = entsFields.find(moabent->getGlobalUniqueId());
+      MoFEMEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type::iterator e_miit;
+      e_miit = entsFields.get<Composite_Name_And_Ent_mi_tag>().find(
+        boost::make_tuple((*miit)->getNameRef(),*eit)
+      );
+      if(e_miit == entsFields.get<Composite_Name_And_Ent_mi_tag>().end()) continue;
+      field_ent = *e_miit;
     } catch (MoFEMException const &e) {
       SETERRQ(comm,e.errorCode,e.errorMessage);
     } catch (const std::exception& ex) {
@@ -1261,39 +1252,20 @@ PetscErrorCode Core::buildFieldForL2H1HcurlHdiv(
       ss << ex.what() << std::endl;
       SETERRQ(comm,MOFEM_OPERATION_UNSUCCESSFUL,ss.str().c_str());
     }
-    // add field entity if not exist
-    if(e_miit == entsFields.end()) {
-      ApproximationOrder order = -1;
-      rval = moab.tag_set_data((*miit)->th_AppOrder,&*eit,1,&order); CHKERRQ_MOAB(rval);
-      try {
-        // boost::shared_ptr<MoFEMEntity> moabent(new MoFEMEntity(*miit,*miit_ref_ent));
-        e_miit = entsFields.insert(eit_insert_hint,moabent);
-      } catch (MoFEMException const &e) {
-        SETERRQ(comm,e.errorCode,e.errorMessage);
-      } catch (const std::exception& ex) {
-        std::ostringstream ss;
-        ss << ex.what() << std::endl;
-        SETERRQ(comm,MOFEM_OPERATION_UNSUCCESSFUL,ss.str().c_str());
-      }
-      bool success = entsFields.modify(e_miit,MoFEMEntity_change_order(-1));
-      if(!success) SETERRQ(comm,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
-    }
-    eit_insert_hint = e_miit;
-    eit_insert_hint++;
 
     // insert dofmoabent into mofem databse
-    int nb_dofs_on_ent = (*e_miit)->getNbDofsOnEnt();
-    int nb_active_dosf_on_ent = (*e_miit)->getNbOfCoeffs()*(*e_miit)->getOrderNbDofs((*e_miit)->getMaxOrder());
+    int nb_dofs_on_ent = field_ent->getNbDofsOnEnt();
+    int nb_active_dosf_on_ent = field_ent->getNbOfCoeffs()*field_ent->getOrderNbDofs(field_ent->getMaxOrder());
     int DD = 0;
     int oo = 0;
     // loop orders (loop until max entity order is set)
-    for(;oo<=(*e_miit)->getMaxOrder()||DD<nb_dofs_on_ent;oo++) {
+    for(;oo<=field_ent->getMaxOrder()||DD<nb_dofs_on_ent;oo++) {
       //loop nb. dofs at order oo
-      for(int dd = 0;dd<(*e_miit)->getOrderNbDofsDiff(oo);dd++) {
+      for(int dd = 0;dd<field_ent->getOrderNbDofsDiff(oo);dd++) {
         //loop rank
-        for(int rr = 0;rr<(*e_miit)->getNbOfCoeffs();rr++,DD++) {
+        for(int rr = 0;rr<field_ent->getNbOfCoeffs();rr++,DD++) {
           try {
-            boost::shared_ptr<DofEntity> mdof(new DofEntity(*(e_miit),oo,rr,DD));
+            boost::shared_ptr<DofEntity> mdof(new DofEntity(field_ent,oo,rr,DD));
             DofEntity_multiIndex::iterator d_miit;
             d_miit = dofsField.insert(dit_insert_hint,mdof);
             dit_insert_hint = d_miit; // hint for next insertion
@@ -1309,13 +1281,13 @@ PetscErrorCode Core::buildFieldForL2H1HcurlHdiv(
             bool success = dofsField.modify(d_miit,DofEntity_active_change(is_active));
             if(!success) SETERRQ(comm,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
             //check ent
-            if((*d_miit)->getEnt()!=(*e_miit)->getEnt()) {
+            if((*d_miit)->getEnt()!=field_ent->getEnt()) {
               SETERRQ(comm,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
             }
-            if((*d_miit)->getEntType()!=(*e_miit)->getEntType()) {
+            if((*d_miit)->getEntType()!=field_ent->getEntType()) {
               SETERRQ(comm,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
             }
-            if((*d_miit)->getId()!=(*e_miit)->getId()) {
+            if((*d_miit)->getId()!=field_ent->getId()) {
               SETERRQ(comm,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
             }
             //check dof
@@ -1326,7 +1298,7 @@ PetscErrorCode Core::buildFieldForL2H1HcurlHdiv(
               ss << "but is " << *(*d_miit) << std::endl;
               SETERRQ(comm,MOFEM_DATA_INCONSISTENCY,ss.str().c_str());
             }
-            if((*d_miit)->getMaxOrder()!=(*e_miit)->getMaxOrder()) {
+            if((*d_miit)->getMaxOrder()!=field_ent->getMaxOrder()) {
               SETERRQ(comm,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
             }
           } catch (MoFEMException const &e) {
@@ -1335,7 +1307,7 @@ PetscErrorCode Core::buildFieldForL2H1HcurlHdiv(
         }
       }
     }
-    if(DD != (*e_miit)->getNbDofsOnEnt()) {
+    if(DD != field_ent->getNbDofsOnEnt()) {
       SETERRQ(comm,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
     }
   }
@@ -1752,8 +1724,9 @@ PetscErrorCode Core::check_number_of_ents_in_ents_field(const std::string& name)
   int num_entities;
   MoABErrorCode rval;
   rval = moab.get_number_entities_by_handle(meshset,num_entities); CHKERRQ_MOAB(rval);
-  if(entsFields.get<FieldName_mi_tag>().count((*it)->getName())
-    != (unsigned int)num_entities) {
+  if(
+    entsFields.get<FieldName_mi_tag>().count((*it)->getName()) > (unsigned int)num_entities
+  ) {
     SETERRQ1(comm,1,"not equal number of entities in meshset and field multiindex < %s >",name.c_str());
   }
   PetscFunctionReturn(0);
@@ -1767,7 +1740,7 @@ PetscErrorCode Core::check_number_of_ents_in_ents_field() const {
     MoABErrorCode rval;
     int num_entities;
     rval = moab.get_number_entities_by_handle(meshset,num_entities); CHKERRQ_MOAB(rval);
-    if(entsFields.get<FieldName_mi_tag>().count((*it)->getName()) != (unsigned int)num_entities) {
+    if(entsFields.get<FieldName_mi_tag>().count((*it)->getName()) > (unsigned int)num_entities) {
       SETERRQ1(comm,1,"not equal number of entities in meshset and field multiindex < %s >",(*it)->getName().c_str());
     }
   }
