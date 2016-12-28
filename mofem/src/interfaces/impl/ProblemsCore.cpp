@@ -1421,11 +1421,13 @@ PetscErrorCode Core::build_sub_problem(
 
   // get dofs for row & columns for out problem,
   boost::shared_ptr<NumeredDofEntity_multiIndex> out_problem_dofs[] = {
-    out_problem_it->numered_dofs_rows,out_problem_it->numered_dofs_cols
+    out_problem_it->numered_dofs_rows,
+    out_problem_it->numered_dofs_cols
   };
   // get dofs for row & columns for main problem
   boost::shared_ptr<NumeredDofEntity_multiIndex> main_problem_dofs[] = {
-    main_problem_it->numered_dofs_rows,main_problem_it->numered_dofs_cols
+    main_problem_it->numered_dofs_rows,
+    main_problem_it->numered_dofs_cols
   };
   // get local indices counter
   int* nb_local_dofs[] = {
@@ -1469,9 +1471,7 @@ PetscErrorCode Core::build_sub_problem(
       NumeredDofEntityByFieldName::iterator dit = main_problem_dofs[ss]->get<FieldName_mi_tag>().lower_bound(*fit);
       NumeredDofEntityByFieldName::iterator hi_dit = main_problem_dofs[ss]->get<FieldName_mi_tag>().upper_bound(*fit);
       for(;dit!=hi_dit;dit++) {
-        std::pair<NumeredDofEntity_multiIndex::iterator,bool> p;
         out_problem_dofs[ss]->insert(
-          out_problem_dofs[ss]->end(),
           boost::shared_ptr<NumeredDofEntity>(
             new NumeredDofEntity(
               dit->get()->getDofEntityPtr(),
@@ -1486,8 +1486,9 @@ PetscErrorCode Core::build_sub_problem(
     }
     // Set local indexes
     {
-      NumeredDofEntity_multiIndex::index<Idx_mi_tag>::type::iterator dit = out_problem_dofs[ss]->get<Idx_mi_tag>().begin();
-      NumeredDofEntity_multiIndex::index<Idx_mi_tag>::type::iterator hi_dit = out_problem_dofs[ss]->get<Idx_mi_tag>().end();
+      NumeredDofEntity_multiIndex::index<Idx_mi_tag>::type::iterator dit,hi_dit;
+      dit = out_problem_dofs[ss]->get<Idx_mi_tag>().begin();
+      hi_dit = out_problem_dofs[ss]->get<Idx_mi_tag>().end();
       for(;dit!=hi_dit;dit++) {
         int idx = -1; // if dof is not part of partition, set local index to -1
         if(dit->get()->getPart()==getCommRank()) {
@@ -1518,10 +1519,12 @@ PetscErrorCode Core::build_sub_problem(
       ierr = AOCreateMappingIS(is,PETSC_NULL,&ao); CHKERRQ(ierr);
       if(ss == 0) {
         ierr = ISDuplicate(is,&(out_problem_it->getSubData()->rowIs));
+        // ierr = ISSort(out_problem_it->getSubData()->rowIs); CHKERRQ(ierr);
         out_problem_it->getSubData()->rowMap = ao;
         ierr = PetscObjectReference((PetscObject)ao); CHKERRQ(ierr);
       } else {
         ierr = ISDuplicate(is,&(out_problem_it->getSubData()->colIs));
+        // ierr = ISSort(out_problem_it->getSubData()->colIs); CHKERRQ(ierr);
         out_problem_it->getSubData()->colMap = ao;
         ierr = PetscObjectReference((PetscObject)ao); CHKERRQ(ierr);
       }
