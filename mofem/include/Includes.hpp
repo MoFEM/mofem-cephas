@@ -78,6 +78,7 @@ extern "C" {
 #include <boost/iterator/transform_iterator.hpp>
 #include <boost/multiprecision/cpp_int.hpp>
 #include <boost/utility/string_ref.hpp>
+#include <boost/move/unique_ptr.hpp>
 
 #define BOOST_UBLAS_SHALLOW_ARRAY_ADAPTOR
 
