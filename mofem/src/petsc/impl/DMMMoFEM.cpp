@@ -827,3 +827,16 @@ PetscErrorCode DMCreateFieldIS_MoFEM(
 
   PetscFunctionReturn(0);
 }
+
+PetscErrorCode DMMoFEMGetFieldIS(DM dm,RowColData rc,const char field_name[],IS *is) {
+  PetscErrorCode ierr;
+  PetscValidHeaderSpecific(dm,DM_CLASSID,1);
+  PetscFunctionBegin;
+  DMCtx *dm_field = (DMCtx*)dm->data;
+  ierr = dm_field->mField_ptr->ISCreateProblemFieldAndRank(
+    dm_field->problemPtr->getName(),
+    ROW,field_name,0,1000,
+    is
+  ); CHKERRQ(ierr);
+  PetscFunctionReturn(0);
+}
