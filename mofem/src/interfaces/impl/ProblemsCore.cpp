@@ -1490,7 +1490,7 @@ PetscErrorCode Core::build_sub_problem(
         );
       }
       std::vector<boost::shared_ptr<NumeredDofEntity> > dofs_shared_array;
-      
+
       // reserve memory for shared pointers now
       dofs_shared_array.reserve(dofs_array->size());
       std::vector<NumeredDofEntity>::iterator vit = dofs_array->begin();
@@ -1781,7 +1781,8 @@ PetscErrorCode Core::partition_finite_elements(
       cols_dofs->clear();
     }
     NumeredDofEntity_multiIndex_uid_view_ordered rows_view;
-    NumeredDofEntity_multiIndex_uid_view_ordered::iterator viit_rows;
+    NumeredDofEntity_multiIndex_uid_view_ordered cols_view;
+
     // set partition to the element
     {
       if(part_from_moab) {
@@ -1795,6 +1796,7 @@ PetscErrorCode Core::partition_finite_elements(
             *(p_miit->numered_dofs_rows),rows_view,moab::Interface::UNION
         ); CHKERRQ(ierr);
         std::vector<int> parts(sIze,0);
+        NumeredDofEntity_multiIndex_uid_view_ordered::iterator viit_rows;
         viit_rows = rows_view.begin();
         for(;viit_rows!=rows_view.end();viit_rows++) {
           parts[(*viit_rows)->pArt]++;
@@ -1809,41 +1811,52 @@ PetscErrorCode Core::partition_finite_elements(
       (numered_fe->getPart()>=(unsigned int)low_proc)&&
       (numered_fe->getPart()<=(unsigned int)hi_proc)
     ) {
-      // set rows
-      {
-        if(part_from_moab) {
-          // get row_view
-          ierr = (*miit2)->getRowDofView(
-            *(p_miit->numered_dofs_rows),rows_view,moab::Interface::UNION
+
+      NumeredDofEntity_multiIndex_uid_view_ordered *dofs_view[] = {
+        &rows_view, &cols_view
+      };
+      FENumeredDofEntity_multiIndex *fe_dofs[] = {
+        rows_dofs.get(), cols_dofs.get()
+      };
+
+      for(int ss = 0;ss!=(do_cols_fe ? 2 : 1);ss++) {
+
+        if(ss == 0) {
+          if(part_from_moab) {
+            // get row_view
+            ierr = (*miit2)->getRowDofView(
+              *(p_miit->numered_dofs_rows),*dofs_view[ss],moab::Interface::UNION
+            ); CHKERRQ(ierr);
+          }
+        } else {
+          // get cols_views
+          ierr = (*miit2)->getColDofView(
+            *(p_miit->numered_dofs_cols),*dofs_view[ss],moab::Interface::UNION
           ); CHKERRQ(ierr);
         }
         //rows element dof multi-indices
-        for(viit_rows = rows_view.begin();viit_rows!=rows_view.end();viit_rows++) {
+        for(
+          NumeredDofEntity_multiIndex_uid_view_ordered::iterator
+          viit = dofs_view[ss]->begin(); viit!=dofs_view[ss]->end();viit++
+        ) {
           try {
-            boost::shared_ptr<SideNumber> side_number_ptr = (*miit2)->getSideNumberPtr(moab,(*viit_rows)->getEnt());
-            rows_dofs->insert(boost::shared_ptr<FENumeredDofEntity>(new FENumeredDofEntity(side_number_ptr,*viit_rows)));
+            boost::shared_ptr<SideNumber> side_number_ptr;
+            side_number_ptr = (*miit2)->getSideNumberPtr(moab,(*viit)->getEnt());
+            fe_dofs[ss]->insert(
+              boost::shared_ptr<FENumeredDofEntity>(
+                new FENumeredDofEntity(
+                  side_number_ptr,
+                  *viit
+                )
+              )
+            );
           } catch (MoFEMException const &e) {
             SETERRQ(comm,e.errorCode,e.errorMessage);
           }
         }
+
       }
-      if(do_cols_fe) {
-        // get cols_views
-        NumeredDofEntity_multiIndex_uid_view_ordered cols_view;
-        ierr = (*miit2)->getColDofView(
-          *(p_miit->numered_dofs_cols),cols_view,moab::Interface::UNION
-        ); CHKERRQ(ierr);
-        // cols element dof multi-indices
-        NumeredDofEntity_multiIndex_uid_view_ordered::iterator viit_cols;
-        for(viit_cols = cols_view.begin();viit_cols!=cols_view.end();viit_cols++) {
-          try {
-            boost::shared_ptr<SideNumber> side_number_ptr = (*miit2)->getSideNumberPtr(moab,(*viit_cols)->getEnt());
-            cols_dofs->insert(boost::shared_ptr<FENumeredDofEntity>(new FENumeredDofEntity(side_number_ptr,*viit_cols)));
-          } catch (MoFEMException const &e) {
-            SETERRQ(comm,e.errorCode,e.errorMessage);
-          }
-        }
-      }
+
     }
     std::pair<NumeredEntFiniteElement_multiIndex::iterator,bool> p;
     p = numeredFiniteElements.insert(numered_fe);
