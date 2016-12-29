@@ -497,6 +497,8 @@ struct RefEntity_change_set_nth_bit {
   }
 };
 
+struct DofEntity;
+
 /**
   * \brief Struct keeps handle to entity in the field.
   * \ingroup ent_multi_indices
@@ -600,6 +602,23 @@ struct MoFEMEntity:
   inline const boost::shared_ptr<Field> getFieldPtr() const { return this->sFieldPtr; }
 
   friend std::ostream& operator<<(std::ostream& os,const MoFEMEntity& e);
+
+  /**
+   * \brief Get weak_ptr reference to sequence/vector storing dofs on entity.
+   *
+   * Vector is automatically destroy when last DOF in vector os destroyed. Every
+   * shared_ptr to the DOF has aliased shared_ptr to vector of DOFs in that vector.
+   * That do the trick.
+   *
+   */
+  inline boost::weak_ptr<std::vector<DofEntity> >& getDofsSeqence() const {
+    return dofsSequce;
+  }
+
+private:
+
+  // Keep vector of DoFS on entity
+  mutable boost::weak_ptr<std::vector<DofEntity> > dofsSequce;
 
 };
 

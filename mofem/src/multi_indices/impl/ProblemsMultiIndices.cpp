@@ -195,22 +195,6 @@ void ProblemFiniteElementChangeBitAdd::operator()(MoFEMProblem &p) {
 void ProblemFiniteElementChangeBitUnSet::operator()(MoFEMProblem &p) {
   *(p.tag_BitFEId_data) &= ~f_id;
 }
-ProblemAddRowDof::ProblemAddRowDof(const boost::shared_ptr<DofEntity> _dof_ptr): dof_ptr(_dof_ptr) {
-  assert(dof_ptr->active);
-}
-void ProblemAddRowDof::operator()(MoFEMProblem &e) {
-  p = e.numered_dofs_rows->insert(boost::shared_ptr<NumeredDofEntity>(new NumeredDofEntity(dof_ptr)));
-  if(p.second) {
-    (*(DofIdx*)e.tag_nbdof_data_row)++;
-  }
-}
-ProblemAddColDof::ProblemAddColDof(const boost::shared_ptr<DofEntity> _dof_ptr): dof_ptr(_dof_ptr) {}
-void ProblemAddColDof::operator()(MoFEMProblem &e) {
-  p = e.numered_dofs_cols->insert(boost::shared_ptr<NumeredDofEntity>(new NumeredDofEntity(dof_ptr)));
-  if(p.second) {
-    (*(DofIdx*)e.tag_nbdof_data_col)++;
-  }
-}
 void ProblemZeroNbRowsChange::operator()(MoFEMProblem &e) {
   (*(DofIdx*)e.tag_nbdof_data_row) = 0;
   (*(DofIdx*)e.tag_local_nbdof_data_row) = 0;
@@ -225,30 +209,6 @@ void ProblemZeroNbColsChange::operator()(MoFEMProblem &e) {
 }
 void ProblemClearNumeredFiniteElementsChange::operator()(MoFEMProblem &e) {
   e.numeredFiniteElements.clear();
-}
-void ProblemRowNumberChange::operator()(MoFEMProblem &e) {
-  NumeredDofEntityByUId::iterator dit;
-  dit = e.numered_dofs_rows->get<Unique_mi_tag>().begin();
-  int idx = 0;
-  for(;dit!=e.numered_dofs_rows->get<Unique_mi_tag>().end();dit++,idx++) {
-    bool success =
-      e.numered_dofs_rows->modify(dit,NumeredDofEntity_mofem_index_change(idx));
-    if(!success) {
-      throw "modification unsuccessful";
-    }
-  }
-}
-void ProblemColNumberChange::operator()(MoFEMProblem &e) {
-  NumeredDofEntityByUId::iterator dit;
-  dit = e.numered_dofs_cols->get<Unique_mi_tag>().begin();
-  int idx = 0;
-  for(;dit!=e.numered_dofs_cols->get<Unique_mi_tag>().end();dit++,idx++) {
-    bool success =
-      e.numered_dofs_cols->modify(dit,NumeredDofEntity_mofem_index_change(idx));
-    if(!success) {
-      throw "modification unsuccessful";
-    }
-  }
 }
 
 }

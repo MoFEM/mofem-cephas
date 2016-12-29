@@ -93,7 +93,7 @@ struct CreateRowComressedADJMatrix: public Core {
     ProblemsByName::iterator p_miit,
     typename boost::multi_index::index<NumeredDofEntity_multiIndex,TAG>::type::iterator mit_row,
     boost::shared_ptr<MoFEMEntity> mofem_ent_ptr,
-    NumeredDofEntity_multiIndex_uid_view_hashed &dofs_col_view,
+    NumeredDofEntity_multiIndex_idx_view_hashed &dofs_col_view,
     int verb
   );
 
@@ -104,7 +104,7 @@ PetscErrorCode CreateRowComressedADJMatrix::getEntityAdjacenies(
   ProblemsByName::iterator p_miit,
   typename boost::multi_index::index<NumeredDofEntity_multiIndex,TAG>::type::iterator mit_row,
   boost::shared_ptr<MoFEMEntity> mofem_ent_ptr,
-  NumeredDofEntity_multiIndex_uid_view_hashed &dofs_col_view,
+  NumeredDofEntity_multiIndex_idx_view_hashed &dofs_col_view,
   int verb
 ) {
   PetscFunctionBegin;
@@ -212,7 +212,7 @@ PetscErrorCode CreateRowComressedADJMatrix::createMatArrays(
     std::vector<std::vector<int> > dofs_vec(sIze);
 
     boost::shared_ptr<MoFEMEntity> mofem_ent_ptr;
-    NumeredDofEntity_multiIndex_uid_view_hashed dofs_col_view;
+    NumeredDofEntity_multiIndex_idx_view_hashed dofs_col_view;
 
     typename boost::multi_index::index<NumeredDofEntity_multiIndex,TAG>::type::iterator mit_row,hi_mit_row;
     mit_row = dofs_row_by_idx.begin();
@@ -246,7 +246,7 @@ PetscErrorCode CreateRowComressedADJMatrix::createMatArrays(
           dofs_vec[owner].push_back(TAG::get_index(mit_row)); 	// row index
           dofs_vec[owner].push_back(dofs_col_view.size()); 	// nb. of column adjacencies
           // add adjacent cools
-          NumeredDofEntity_multiIndex_uid_view_hashed::iterator cvit;
+          NumeredDofEntity_multiIndex_idx_view_hashed::iterator cvit;
           cvit = dofs_col_view.begin();
           for(; cvit!=dofs_col_view.end(); cvit++) {
 
@@ -384,7 +384,7 @@ PetscErrorCode CreateRowComressedADJMatrix::createMatArrays(
   int row_last_evaluated_idx = -1;
 
   std::vector<DofIdx> dofs_vec;
-  NumeredDofEntity_multiIndex_uid_view_hashed dofs_col_view;
+  NumeredDofEntity_multiIndex_idx_view_hashed dofs_col_view;
   // loop local rows
   unsigned int rows_to_fill = distance(miit_row,hi_miit_row);
   i.reserve( rows_to_fill+1 );
@@ -415,7 +415,7 @@ PetscErrorCode CreateRowComressedADJMatrix::createMatArrays(
       row_last_evaluated_idx = TAG::get_index(miit_row);
 
       dofs_vec.resize(0);
-      NumeredDofEntity_multiIndex_uid_view_hashed::iterator cvit;
+      NumeredDofEntity_multiIndex_idx_view_hashed::iterator cvit;
 
       cvit = dofs_col_view.begin();
       for(;cvit!=dofs_col_view.end();cvit++) {

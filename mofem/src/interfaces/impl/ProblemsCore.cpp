@@ -266,7 +266,9 @@ PetscErrorCode Core::build_problem_on_distributed_mesh(
     loop_size = 1;
     problem_ptr->numered_dofs_cols = problem_ptr->numered_dofs_rows;
   } else if(problem_ptr->numered_dofs_cols == problem_ptr->numered_dofs_rows) {
-    problem_ptr->numered_dofs_cols = boost::shared_ptr<NumeredDofEntity_multiIndex>(new NumeredDofEntity_multiIndex());
+    problem_ptr->numered_dofs_cols = boost::shared_ptr<NumeredDofEntity_multiIndex>(
+      new NumeredDofEntity_multiIndex()
+    );
   }
 
   // get rows and cols dofs view based on data on elements
@@ -368,59 +370,88 @@ PetscErrorCode Core::build_problem_on_distributed_mesh(
   }
   std::vector<std::vector<IdxDataType> > ids_data_packed_rows(sIze),ids_data_packed_cols(sIze);
 
+  // used to keep shared_ptr
+  std::vector<boost::shared_ptr<NumeredDofEntity> > dofs_shared_array;
+
   // ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
   // Loop over dofs on this processor and prepare those dofs to send on another proc
   for(int ss = 0;ss<loop_size;ss++) {
 
     DofEntity_multiIndex_active_view::nth_index<0>::type::iterator miit,hi_miit;
-    miit = dofs_ptr[ss]->get<0>().begin();
     hi_miit = dofs_ptr[ss]->get<0>().end();
 
+    boost::shared_ptr<std::vector<NumeredDofEntity> > dofs_array =
+    boost::shared_ptr<std::vector<NumeredDofEntity> >(new std::vector<NumeredDofEntity>());
+    int nb_dofs_to_add = 0;
+    miit = dofs_ptr[ss]->get<0>().begin();
+    for(;miit!=hi_miit;miit++) {
+      // Only set global idx for dofs on this processor part
+      if(!(miit->get()->getActive())) continue;
+      const BitRefLevel &dof_bit_level = (*miit)->getBitRefLevel();
+      if((dof_bit_level&problem_bit_level)!=dof_bit_level) {
+        continue;
+      }
+      ++nb_dofs_to_add;
+    }
+    dofs_array->reserve(nb_dofs_to_add);
+    dofs_shared_array.clear();
+    dofs_shared_array.reserve(nb_dofs_to_add);
+    if(ss == 0) {
+      problem_ptr->getRowDofsSeqence() = dofs_array;
+    } else {
+      problem_ptr->getColDofsSeqence() = dofs_array;
+    }
+
     int &local_idx = *local_nbdof_ptr[ss];
+    miit = dofs_ptr[ss]->get<0>().begin();
     for(;miit!=hi_miit;miit++) {
 
       // Only set global idx for dofs on this processor part
       if(!(miit->get()->getActive())) continue;
-
       const BitRefLevel &dof_bit_level = (*miit)->getBitRefLevel();
       if((dof_bit_level&problem_bit_level)!=dof_bit_level) {
         continue;
       }
 
-      boost::shared_ptr<NumeredDofEntity> dof(new NumeredDofEntity(*miit));
-      std::pair<NumeredDofEntity_multiIndex::iterator,bool> p = numered_dofs_ptr[ss]->insert(dof);
-      int owner_proc = (*p.first)->getOwnerProc();
+      dofs_array->emplace_back(NumeredDofEntity(*miit));
+      dofs_shared_array.emplace_back(
+        boost::shared_ptr<NumeredDofEntity>(dofs_array,&dofs_array->back())
+      );
+
+      int owner_proc = dofs_array->back().getOwnerProc();
       if(owner_proc<0) {
         SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
       }
 
       if(owner_proc!=rAnk) {
-        bool success = numered_dofs_ptr[ss]->modify(
-          p.first,NumeredDofEntity_mofem_part_and_all_index_change(owner_proc,-1,-1,-1)
-        );
+        dofs_array->back().pArt = owner_proc;
+        dofs_array->back().dofIdx = -1;
+        dofs_array->back().petscGloablDofIdx = -1;
+        dofs_array->back().petscLocalDofIdx = -1;
       } else {
+
         // Set part and indexes
         int glob_idx = start_ranges[ss]+local_idx;
-        bool success = numered_dofs_ptr[ss]->modify(
-          p.first,NumeredDofEntity_mofem_part_and_all_index_change(owner_proc,glob_idx,glob_idx,local_idx)
-        );
-        if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
+        dofs_array->back().pArt = owner_proc;
+        dofs_array->back().dofIdx = glob_idx;
+        dofs_array->back().petscGloablDofIdx = glob_idx;
+        dofs_array->back().petscLocalDofIdx = local_idx;
         local_idx++;
-        unsigned char pstatus = (*p.first)->getPStatus();
 
+        unsigned char pstatus = dofs_array->back().getPStatus();
         // check id dof is shared, if that is a case global idx added to data structure and is
         // sended to other processors
         if(pstatus>0) {
 
-          for(int proc = 0; proc<MAX_SHARING_PROCS && -1 != (*p.first)->getSharingProcsPtr()[proc]; proc++) {
+          for(int proc = 0; proc<MAX_SHARING_PROCS && -1 != dofs_array->back().getSharingProcsPtr()[proc]; proc++) {
             // make it different for rows and columns when needed
             if(ss == 0) {
-              ids_data_packed_rows[(*p.first)->getSharingProcsPtr()[proc]].push_back(
-                IdxDataType((*p.first)->getGlobalUniqueId(),glob_idx)
+              ids_data_packed_rows[dofs_array->back().getSharingProcsPtr()[proc]].push_back(
+                IdxDataType(dofs_array->back().getGlobalUniqueId(),glob_idx)
               );
             } else {
-              ids_data_packed_cols[(*p.first)->getSharingProcsPtr()[proc]].push_back(
-                IdxDataType((*p.first)->getGlobalUniqueId(),glob_idx)
+              ids_data_packed_cols[dofs_array->back().getSharingProcsPtr()[proc]].push_back(
+                IdxDataType(dofs_array->back().getGlobalUniqueId(),glob_idx)
               );
             }
             if(!(pstatus&PSTATUS_MULTISHARED)) {
@@ -428,8 +459,11 @@ PetscErrorCode Core::build_problem_on_distributed_mesh(
             }
           }
         }
+
       }
     }
+
+    numered_dofs_ptr[ss]->insert(dofs_shared_array.begin(),dofs_shared_array.end());
 
   }
   if(square_matrix) {
@@ -437,23 +471,23 @@ PetscErrorCode Core::build_problem_on_distributed_mesh(
   }
 
   // If columns and rows have the same dofs indexing should be the same on both of them
-  // {
-  //   NumeredDofEntity_multiIndex::iterator dit_row = numered_dofs_ptr[0]->begin();
-  //   NumeredDofEntity_multiIndex::iterator hi_dit_row = numered_dofs_ptr[0]->end();
-  //   NumeredDofEntity_multiIndex::iterator dit_col = numered_dofs_ptr[1]->begin();
-  //   NumeredDofEntity_multiIndex::iterator hi_dit_col = numered_dofs_ptr[1]->end();
-  //   for(;dit_row!=hi_dit_row;dit_row++,dit_col++) {
-  //     if(dit_row->get()->getPetscGlobalDofIdx()!=dit_col->get()->getPetscGlobalDofIdx()) {
-  //       cerr << **dit_row << endl;
-  //       cerr << **dit_col << endl;
-  //     }
-  //     if(dit_row->get()->getGlobalUniqueId()!=dit_col->get()->getGlobalUniqueId()) {
-  //       cerr << "C " << **dit_row << endl;
-  //       cerr << "R " << **dit_col << endl;
-  //     }
-  //
-  //   }
-  // }
+  {
+    NumeredDofEntity_multiIndex::iterator dit_row = numered_dofs_ptr[0]->begin();
+    NumeredDofEntity_multiIndex::iterator hi_dit_row = numered_dofs_ptr[0]->end();
+    NumeredDofEntity_multiIndex::iterator dit_col = numered_dofs_ptr[1]->begin();
+    NumeredDofEntity_multiIndex::iterator hi_dit_col = numered_dofs_ptr[1]->end();
+    for(;dit_row!=hi_dit_row;dit_row++,dit_col++) {
+      if(dit_row->get()->getPetscGlobalDofIdx()!=dit_col->get()->getPetscGlobalDofIdx()) {
+        cerr << **dit_row << endl;
+        cerr << **dit_col << endl;
+      }
+      if(dit_row->get()->getGlobalUniqueId()!=dit_col->get()->getGlobalUniqueId()) {
+        cerr << "C " << **dit_row << endl;
+        cerr << "R " << **dit_col << endl;
+      }
+
+    }
+  }
 
 
   int nsends_rows = 0,nsends_cols = 0;
@@ -979,18 +1013,46 @@ PetscErrorCode Core::build_problem(MoFEMProblem *problem_ptr,const bool square_m
     *problem_ptr->tag_local_nbdof_data_row = 0;
     *problem_ptr->tag_ghost_nbdof_data_row = 0;
     problem_ptr->numered_dofs_rows->clear();
+
     //add dofs for rows
-    DofEntity_multiIndex_active_view::nth_index<1>::type::iterator miit,hi_miit;
-    miit = dofs_rows.get<1>().lower_bound(1);
-    hi_miit = dofs_rows.get<1>().upper_bound(1);
+    DofEntity_multiIndex_active_view::nth_index<0>::type::iterator miit,hi_miit;
+    hi_miit = dofs_rows.get<0>().end();
+
+    int count_dofs = 0;
+    miit = dofs_rows.get<0>().begin();
     for(;miit!=hi_miit;miit++) {
-      if(((*miit)->getBitRefLevel()&problem_ptr->get_DofMask_BitRefLevel())!=(*miit)->getBitRefLevel()) {
+      if(
+        !(*miit)->getActive()||
+        ((*miit)->getBitRefLevel()&problem_ptr->get_DofMask_BitRefLevel())!=
+        (*miit)->getBitRefLevel()
+      ) {
         continue;
       }
-      ProblemAddRowDof(*miit).operator()(*problem_ptr);
+      ++count_dofs;
     }
-    //number dofs on rows
-    ProblemRowNumberChange().operator()(*problem_ptr);
+
+    boost::shared_ptr<std::vector<NumeredDofEntity> > dofs_array =
+    boost::shared_ptr<std::vector<NumeredDofEntity> >(new std::vector<NumeredDofEntity>());
+    problem_ptr->getRowDofsSeqence() = dofs_array;
+    dofs_array->reserve(count_dofs);
+    std::vector<boost::shared_ptr<NumeredDofEntity> > dofs_shared_array;
+    dofs_shared_array.reserve(count_dofs);
+    miit = dofs_rows.get<0>().begin();
+    for(;miit!=hi_miit;miit++) {
+      if(
+        !(*miit)->getActive()||
+        ((*miit)->getBitRefLevel()&problem_ptr->get_DofMask_BitRefLevel())!=
+        (*miit)->getBitRefLevel()
+      ) {
+        continue;
+      }
+      dofs_array->emplace_back(NumeredDofEntity(*miit));
+      dofs_shared_array.emplace_back(
+        boost::shared_ptr<NumeredDofEntity>(dofs_array,&dofs_array->back())
+      );
+      dofs_array->back().dofIdx = (*problem_ptr->tag_nbdof_data_row)++;
+    }
+    problem_ptr->numered_dofs_rows->insert(dofs_shared_array.begin(),dofs_shared_array.end());
   }
 
   // Add col dofs to problem
@@ -1001,17 +1063,46 @@ PetscErrorCode Core::build_problem(MoFEMProblem *problem_ptr,const bool square_m
     *problem_ptr->tag_ghost_nbdof_data_col = 0;
     problem_ptr->numered_dofs_cols->clear();
     //add dofs for cols
-    DofEntity_multiIndex_active_view::nth_index<1>::type::iterator miit,hi_miit;
-    miit = dofs_cols.get<1>().lower_bound(1);
-    hi_miit = dofs_cols.get<1>().upper_bound(1);
+    DofEntity_multiIndex_active_view::nth_index<0>::type::iterator miit,hi_miit;
+    hi_miit = dofs_cols.get<0>().end();
+
+    int count_dofs = 0;
+    miit = dofs_cols.get<0>().begin();
     for(;miit!=hi_miit;miit++) {
-      if(((*miit)->getBitRefLevel()&problem_ptr->get_DofMask_BitRefLevel())!=(*miit)->getBitRefLevel()) {
+      if(
+        !(*miit)->getActive()||
+        ((*miit)->getBitRefLevel()&problem_ptr->get_DofMask_BitRefLevel())!=
+        (*miit)->getBitRefLevel()
+      ) {
         continue;
       }
-      ProblemAddColDof(*miit).operator()(*problem_ptr);
+      count_dofs++;
     }
-    //number dofs on columns
-    ProblemColNumberChange().operator()(*problem_ptr);
+
+    boost::shared_ptr<std::vector<NumeredDofEntity> > dofs_array =
+    boost::shared_ptr<std::vector<NumeredDofEntity> >(new std::vector<NumeredDofEntity>());
+    problem_ptr->getColDofsSeqence() = dofs_array;
+    dofs_array->reserve(count_dofs);
+    std::vector<boost::shared_ptr<NumeredDofEntity> > dofs_shared_array;
+    dofs_shared_array.reserve(count_dofs);
+    miit = dofs_cols.get<0>().begin();
+    for(;miit!=hi_miit;miit++) {
+      if(
+        !(*miit)->getActive()||
+        ((*miit)->getBitRefLevel()&problem_ptr->get_DofMask_BitRefLevel())!=
+        (*miit)->getBitRefLevel()
+      ) {
+        continue;
+      }
+      dofs_array->emplace_back(NumeredDofEntity(*miit));
+      dofs_shared_array.emplace_back(
+        boost::shared_ptr<NumeredDofEntity>(dofs_array,&dofs_array->back())
+      );
+      dofs_array->back().dofIdx = (*problem_ptr->tag_nbdof_data_col)++;
+    }
+    problem_ptr->numered_dofs_cols->insert(
+      dofs_shared_array.begin(),dofs_shared_array.end()
+    );
   } else {
     problem_ptr->numered_dofs_cols = problem_ptr->numered_dofs_rows;
     *(problem_ptr->tag_local_nbdof_data_col) = *(problem_ptr->tag_local_nbdof_data_row);
@@ -1452,6 +1543,9 @@ PetscErrorCode Core::build_sub_problem(
   const_cast<MoFEMProblem*>(&*out_problem_it)->subProblemData
   = boost::shared_ptr<MoFEMProblem::SubProblemData>(new MoFEMProblem::SubProblemData());
 
+  // use to keep shared_ptr
+  std::vector<boost::shared_ptr<NumeredDofEntity> > dofs_shared_array;
+
   // Loop over rows and columns
   for(int ss = 0;ss!=(square_matrix ? 1 : 2);ss++) {
 
@@ -1477,6 +1571,12 @@ PetscErrorCode Core::build_sub_problem(
       // reserve memory for field  dofs
       boost::shared_ptr<std::vector<NumeredDofEntity> > dofs_array =
       boost::shared_ptr<std::vector<NumeredDofEntity> >(new std::vector<NumeredDofEntity>());
+
+      if(ss == 0) {
+        out_problem_it->getRowDofsSeqence() = dofs_array;
+      } else {
+        out_problem_it->getColDofsSeqence() = dofs_array;
+      }
       dofs_array->reserve(std::distance(dit,hi_dit));
 
       // create elements objects
@@ -1489,9 +1589,9 @@ PetscErrorCode Core::build_sub_problem(
           dit->get()->getPart()
         );
       }
-      std::vector<boost::shared_ptr<NumeredDofEntity> > dofs_shared_array;
 
       // reserve memory for shared pointers now
+      dofs_shared_array.clear();
       dofs_shared_array.reserve(dofs_array->size());
       std::vector<NumeredDofEntity>::iterator vit = dofs_array->begin();
       for( ;vit!=dofs_array->end(); vit++ ) {
@@ -1809,6 +1909,10 @@ PetscErrorCode Core::partition_finite_elements(
         NumeredEntFiniteElement_change_part(max_part).operator()(numered_fe);
       }
     }
+
+    // used to keep shared_ptr before inserting them to multi-index
+    std::vector<boost::shared_ptr<FENumeredDofEntity> > dofs_shared_array;
+
     // set dofs on rows and columns (if are different)
     if(
       (numered_fe->getPart()>=(unsigned int)low_proc)&&
@@ -1848,6 +1952,11 @@ PetscErrorCode Core::partition_finite_elements(
         // reserve memory for field  dofs
         boost::shared_ptr<std::vector<FENumeredDofEntity> > dofs_array =
         boost::shared_ptr<std::vector<FENumeredDofEntity> >(new std::vector<FENumeredDofEntity>());
+        if(ss == 0) {
+          numered_fe->getRowDofsSeqence() = dofs_array;
+        } else {
+          numered_fe->getColDofsSeqence() = dofs_array;
+        }
         dofs_array->reserve(std::distance(vit,hi_vit));
 
         // create elements objects
@@ -1856,9 +1965,9 @@ PetscErrorCode Core::partition_finite_elements(
           side_number_ptr = (*efit)->getSideNumberPtr(moab,(*vit)->getEnt());
           dofs_array->emplace_back(side_number_ptr,*vit);
         }
-        std::vector<boost::shared_ptr<FENumeredDofEntity> > dofs_shared_array;
 
         // reserve memory for shared pointers now
+        dofs_shared_array.clear();
         dofs_shared_array.reserve(dofs_array->size());
         for(
           std::vector<FENumeredDofEntity>::iterator

@@ -146,9 +146,9 @@ namespace MoFEM {
           int dim[4];
           rval = moab.tag_get_data(th_CoordSysDim,&*mit,1,dim); CHKERRQ_MOAB(rval);
           if((dim[0]+dim[1]+dim[2]+dim[3])!=0) {
-            // cerr << m_field.getCommRank() << " " << cs_name << " " <<  *mit << endl;
-            boost::shared_ptr<CoordSys> coord_sys(new CoordSys(moab,*mit));
-            std::pair<CoordSys_multiIndex::iterator,bool> p = coordinateSystems.insert(coord_sys);
+            std::pair<CoordSys_multiIndex::iterator,bool> p = coordinateSystems.insert(
+              boost::make_shared<CoordSys>(moab,*mit)
+            );
             if(!p.second) {
               SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"meshset to coord system not inserted");
             }
@@ -173,8 +173,9 @@ namespace MoFEM {
         rval = moab.tag_set_by_ptr(
           th_CoordSysName,&meshset,1,sys_name,sys_name_size
         ); CHKERRQ_MOAB(rval);
-        boost::shared_ptr<CoordSys> coord_sys(new CoordSys(moab,meshset));
-        std::pair<CoordSys_multiIndex ::iterator,bool> p = coordinateSystems.insert(coord_sys);
+        std::pair<CoordSys_multiIndex ::iterator,bool> p = coordinateSystems.insert(
+          boost::make_shared<CoordSys>(moab,meshset)
+        );
         if(!p.second) {
           SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"MeshSet to coord system not inserted");
         }
@@ -192,8 +193,9 @@ namespace MoFEM {
         rval = moab.tag_set_by_ptr(
           th_CoordSysName,&meshset,1,sys_name,sys_name_size
         ); CHKERRQ_MOAB(rval);
-        boost::shared_ptr<CoordSys> coord_sys(new CoordSys(moab,meshset));
-        std::pair<CoordSys_multiIndex ::iterator,bool> p = coordinateSystems.insert(coord_sys);
+        std::pair<CoordSys_multiIndex ::iterator,bool> p = coordinateSystems.insert(
+          boost::make_shared<CoordSys>(moab,meshset)
+        );
         if(!p.second) {
           SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"MeshSet to coord system not inserted");
         }
@@ -223,8 +225,9 @@ namespace MoFEM {
     rval = moab.tag_set_by_ptr(
       th_CoordSysName,&meshset,1,sys_name,sys_name_size
     ); CHKERRQ_MOAB(rval);
-    boost::shared_ptr<CoordSys> coord_sys(new CoordSys(moab,meshset));
-    std::pair<CoordSys_multiIndex ::iterator,bool> p = coordinateSystems.insert(coord_sys);
+    std::pair<CoordSys_multiIndex ::iterator,bool> p = coordinateSystems.insert(
+      boost::make_shared<CoordSys>(moab,meshset)
+    );
     if(!p.second) {
       SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"MeshSet to coord system not inserted");
     }

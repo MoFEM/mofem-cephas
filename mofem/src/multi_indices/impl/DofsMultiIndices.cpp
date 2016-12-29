@@ -42,10 +42,11 @@ DofEntity::DofEntity(
   const boost::shared_ptr<MoFEMEntity> entity_ptr,
   const ApproximationOrder dof_order,
   const FieldCoefficientsNumber dof_rank,
-  const DofIdx dof
+  const DofIdx dof,
+  const bool is_active
 ):
 interface_MoFEMEntity<MoFEMEntity>(entity_ptr),
-active(false),
+active(is_active),
 dof(dof) {
 
   if(!entity_ptr) {
@@ -90,11 +91,11 @@ std::ostream& operator<<(std::ostream& os,const DofEntity& e) {
   return os;
 }
 
-DofEntity_active_change::DofEntity_active_change(bool _active): active(_active) {}
-void DofEntity_active_change::operator()(boost::shared_ptr<DofEntity> &_dof_) {
-  _dof_->active = active;
-  if(active && _dof_->getDofOrder()>_dof_->getMaxOrder()) {
-    cerr << *_dof_ << endl;
+DofEntity_active_change::DofEntity_active_change(bool active): aCtive(active) {}
+void DofEntity_active_change::operator()(boost::shared_ptr<DofEntity> &dof) {
+  dof->active = aCtive;
+  if(aCtive && dof->getDofOrder()>dof->getMaxOrder()) {
+    cerr << *dof << endl;
     THROW_MESSAGE("Set DoF active which has order larger than maximal order set to entity");
   }
 }
@@ -156,7 +157,10 @@ interface_NumeredDofEntity<NumeredDofEntity>(dof_ptr) {
 }
 
 FENumeredDofEntity::FENumeredDofEntity(
-  boost::tuple<boost::shared_ptr<SideNumber>,const boost::shared_ptr<NumeredDofEntity> > t
+  boost::tuple<
+  boost::shared_ptr<SideNumber>,
+  const boost::shared_ptr<NumeredDofEntity>
+  > t
 ):
 BaseFEDofEntity(t.get<0>()),
 interface_NumeredDofEntity<NumeredDofEntity>(t.get<1>()) {

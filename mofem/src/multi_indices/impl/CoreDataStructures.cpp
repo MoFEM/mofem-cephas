@@ -55,7 +55,10 @@ tag_id_data(NULL),
 tag_space_data(NULL),
 tag_nb_coeff_data(NULL),
 tag_name_data(NULL),
-tag_name_size(0) {
+tag_name_size(0),
+sequenceEntContainer(
+  boost::make_shared<SequenceEntContainer>()
+) {
   //Change those tags only by modifiers
   ErrorCode rval;
   //id

@@ -1020,7 +1020,7 @@ PetscErrorCode EntFiniteElement::getColDofView(
   PetscFunctionReturn(0);
 }
 PetscErrorCode EntFiniteElement::getRowDofView(
-  const NumeredDofEntity_multiIndex &dofs,NumeredDofEntity_multiIndex_uid_view_hashed &dofs_view,
+  const NumeredDofEntity_multiIndex &dofs,NumeredDofEntity_multiIndex_idx_view_hashed &dofs_view,
   const int operation_type
 ) const {
   PetscFunctionBegin;
@@ -1030,7 +1030,7 @@ PetscErrorCode EntFiniteElement::getRowDofView(
 }
 
 PetscErrorCode EntFiniteElement::getColDofView(
-    const NumeredDofEntity_multiIndex &dofs,NumeredDofEntity_multiIndex_uid_view_hashed &dofs_view,
+    const NumeredDofEntity_multiIndex &dofs,NumeredDofEntity_multiIndex_idx_view_hashed &dofs_view,
     const int operation_type) const {
   PetscFunctionBegin;
   PetscErrorCode ierr;
