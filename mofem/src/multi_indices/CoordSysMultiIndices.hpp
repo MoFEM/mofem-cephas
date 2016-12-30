@@ -53,7 +53,9 @@ namespace MoFEM {
     const int* tagCoordSysDim;
     const char* tagCoordSysName; 		///< tag keeps name of the field
     int tagCoordSysNameSize;
-    CoordSys(Interface &moab,const EntityHandle meshset);
+    CoordSys(
+      const Interface &moab,const EntityHandle meshset
+    );
 
     /** \brief Get tensor dimension
 

@@ -31,7 +31,7 @@
 #include <FieldMultiIndices.hpp>
 #include <EntsMultiIndices.hpp>
 #include <DofsMultiIndices.hpp>
-#include <FEMMultiIndices.hpp>
+#include <FEMultiIndices.hpp>
 #include <ProblemsMultiIndices.hpp>
 #include <AdjacencyMultiIndices.hpp>
 #include <BCMultiIndices.hpp>
@@ -295,7 +295,7 @@ verbose(_verbose) {
 
   ierr = getTags(); CHKERRABORT(PETSC_COMM_WORLD,ierr);
   ierr = clearMap(); CHKERRABORT(PETSC_COMM_WORLD,ierr);
-  basicEntityDataPtr = boost::shared_ptr<BasicEntityData>(new BasicEntityData(moab));
+  basicEntityDataPtr = boost::make_shared<BasicEntityData>(moab);
   ierr = initialiseDatabseInformationFromMesh(verbose); CHKERRABORT(PETSC_COMM_WORLD,ierr);
 
   // Petsc Logs
@@ -385,7 +385,7 @@ PetscErrorCode Core::addPrismToDatabase(const EntityHandle prism,int verb) {
   if(verb==-1) verb = verbose;
   try {
     std::pair<RefEntity_multiIndex::iterator,bool> p_ent;
-    p_ent = refinedEntities.insert(boost::shared_ptr<RefEntity>(new RefEntity(basicEntityDataPtr,prism)));
+    p_ent = refinedEntities.insert(boost::make_shared<RefEntity>(basicEntityDataPtr,prism));
     if(p_ent.second) {
       std::pair<RefElement_multiIndex::iterator,bool> p_MoFEMFiniteElement;
       p_MoFEMFiniteElement = refinedFiniteElements.insert(
@@ -716,8 +716,8 @@ PetscErrorCode Core::initialiseDatabseInformationFromMesh(int verb) {
         assert((*p.first)->meshSet == *mit);
         //add field to ref ents
         std::pair<RefEntity_multiIndex::iterator,bool> p_ref_ent;
-        p_ref_ent = refinedEntities.insert(boost::shared_ptr<RefEntity>(
-          new RefEntity(basicEntityDataPtr,*mit))
+        p_ref_ent = refinedEntities.insert(
+          boost::make_shared<RefEntity>(basicEntityDataPtr,*mit)
         );
         NOT_USED(p_ref_ent);
       } else {
@@ -728,22 +728,37 @@ PetscErrorCode Core::initialiseDatabseInformationFromMesh(int verb) {
           ss << "read field ents " << ents.size() << std::endl;;
           PetscPrintf(comm,ss.str().c_str());
         }
+        boost::shared_ptr<std::vector<MoFEMEntity> > ents_array =
+        boost::make_shared<std::vector<MoFEMEntity> >(std::vector<MoFEMEntity>());
+        // Add sequence to field data structure. Note that entities are allocated
+        // once into vector. This vector is passed into sequence as a weak_ptr.
+        // Vector is destroyed at the point last entity inside that vector is
+        // destroyed.
+        p.first->get()->getEntSeqenceContainer()->push_back(ents_array);
+        ents_array->reserve(ents.size());
+        std::vector<boost::shared_ptr<MoFEMEntity> > ents_shared_array;
+        ents_shared_array.reserve(ents.size());
         Range::iterator eit = ents.begin();
         for(;eit!=ents.end();eit++) {
           std::pair<RefEntity_multiIndex::iterator,bool> p_ref_ent;
-          p_ref_ent = refinedEntities.insert(boost::shared_ptr<
-            RefEntity>(new RefEntity(basicEntityDataPtr,*eit))
+          p_ref_ent = refinedEntities.insert(
+            boost::make_shared<RefEntity>(basicEntityDataPtr,*eit)
           );
           try {
-            boost::shared_ptr<MoFEMEntity> moabent(new MoFEMEntity(*p.first,*p_ref_ent.first));
-            std::pair<MoFEMEntity_multiIndex::iterator,bool> p_ent = entsFields.insert(moabent);
-            NOT_USED(p_ent);
+            // NOTE: This will work with newer compiler only, use push_back for back compatibility.
+            // ents_array->emplace_back(*p.first,*p_ref_ent.first);
+            // ents_shared_array.emplace_back(ents_array,&ents_array->back());
+            ents_array->push_back(MoFEMEntity(*p.first,*p_ref_ent.first));
+            ents_shared_array.push_back(
+              boost::shared_ptr<MoFEMEntity>(ents_array,&ents_array->back())
+            );
           } catch (const std::exception& ex) {
             std::ostringstream ss;
             ss << ex.what() << std::endl;
             SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
           }
         }
+        entsFields.insert(ents_shared_array.begin(),ents_shared_array.end());
       }
     }
     // Check for finite elements

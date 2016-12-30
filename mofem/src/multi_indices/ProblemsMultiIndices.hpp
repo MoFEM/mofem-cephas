@@ -603,6 +603,36 @@ struct MoFEMProblem {
    */
   PetscErrorCode getNumberOfElementsByPart(MPI_Comm comm,PetscLayout *layout) const;
 
+  /**
+   * \brief Get weak_ptr reference to sequence/vector storing dofs on entity.
+   *
+   * Vector is automatically destroy when last DOF in vector os destroyed. Every
+   * shared_ptr to the DOF has aliased shared_ptr to vector of DOFs in that vector.
+   * That do the trick.
+   *
+   */
+  inline boost::weak_ptr<std::vector<NumeredDofEntity> >& getRowDofsSeqence() const {
+    return dofsRowSequce;
+  }
+
+  /**
+   * \brief Get weak_ptr reference to sequence/vector storing dofs on entity.
+   *
+   * Vector is automatically destroy when last DOF in vector os destroyed. Every
+   * shared_ptr to the DOF has aliased shared_ptr to vector of DOFs in that vector.
+   * That do the trick.
+   *
+   */
+  inline boost::weak_ptr<std::vector<NumeredDofEntity> >& getColDofsSeqence() const {
+    return dofsColSequce;
+  }
+
+private:
+
+  // Keep vector of DoFS on entity
+  mutable boost::weak_ptr<std::vector<NumeredDofEntity> > dofsRowSequce;
+  mutable boost::weak_ptr<std::vector<NumeredDofEntity> > dofsColSequce;
+
 };
 
 /**
@@ -666,26 +696,6 @@ struct ProblemFiniteElementChangeBitUnSet {
   void operator()(MoFEMProblem &p);
 };
 
-/** \brief increase nb. dof in row
-  * \ingroup problems_multi_indices
-  */
-struct ProblemAddRowDof {
-  const boost::shared_ptr<DofEntity> dof_ptr;
-  ProblemAddRowDof(const boost::shared_ptr<DofEntity> _dof_ptr);
-  std::pair<NumeredDofEntity_multiIndex::iterator,bool> p;
-  void operator()(MoFEMProblem &e);
-};
-
-/** \brief increase nb. dof in col
-  * \ingroup problems_multi_indices
-  */
-struct ProblemAddColDof {
-  const boost::shared_ptr<DofEntity> dof_ptr;
-  ProblemAddColDof(const boost::shared_ptr<DofEntity> _dof_ptr);
-  std::pair<NumeredDofEntity_multiIndex::iterator,bool> p;
-  void operator()(MoFEMProblem &e);
-};
-
 /** \brief zero nb. of dofs in row
   * \ingroup problems_multi_indices
   */
@@ -704,22 +714,6 @@ struct ProblemZeroNbColsChange {
   * \ingroup problems_multi_indices
   */
 struct ProblemClearNumeredFiniteElementsChange {
-  void operator()(MoFEMProblem &e);
-};
-
-/** \brief number dofs in row
-  * \ingroup problems_multi_indices
-  */
-struct ProblemRowNumberChange {
-  ProblemRowNumberChange() {};
-  void operator()(MoFEMProblem &e);
-};
-
-/** \brief number dofs in col
-  * \ingroup problems_multi_indices
-  */
-struct ProblemColNumberChange {
-  ProblemColNumberChange() {};
   void operator()(MoFEMProblem &e);
 };
 

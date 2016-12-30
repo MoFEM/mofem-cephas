@@ -140,34 +140,41 @@ int main(int argc, char *argv[]) {
     std::cout << "<<<< Dofs (X-Translation, Y-Translation, Z-Translation) >>>>>" << std::endl;
     myfile << "<<<< Dofs (X-Translation, Y-Translation, Z-Translation) >>>>>" << std::endl;
 
-    for(_IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(m_field,"MESH_NODE_POSITIONS",dof_ptr))
-    {
+    const DofEntity_multiIndex *dofs_ptr;
+    ierr = m_field.get_dofs(&dofs_ptr); CHKERRQ(ierr);
+    DofEntity_multiIndex_uid_view dofs_view;
+    for(_IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(m_field,"MESH_NODE_POSITIONS",dof_ptr)) {
+      dofs_view.insert(*dof_ptr);
+    }
+    for(
+      DofEntity_multiIndex_uid_view::iterator
+      dit=dofs_view.begin();dit!=dofs_view.end();dit++
+    ) {
         //if(dof_ptr->getEntType()!=MBEDGE) continue;
 
-        if((*dof_ptr)->getDofCoeffIdx()==0)
+        if((*dit)->getDofCoeffIdx()==0)
         {
             //Round and truncate to 3 decimal places
-            double fval = (*dof_ptr)->getFieldData();
+            double fval = (*dit)->getFieldData();
             std::cout << boost::format("%.3lf") % roundn(fval) << "  ";
             myfile << boost::format("%.3lf") % roundn(fval) << "  ";
         }
-        if((*dof_ptr)->getDofCoeffIdx()==1)
+        if((*dit)->getDofCoeffIdx()==1)
         {
             //Round and truncate to 3 decimal places
-            double fval = (*dof_ptr)->getFieldData();
+            double fval = (*dit)->getFieldData();
             std::cout << boost::format("%.3lf") % roundn(fval) << "  ";
             myfile << boost::format("%.3lf") % roundn(fval) << "  ";
         }
-        if((*dof_ptr)->getDofCoeffIdx()==2)
+        if((*dit)->getDofCoeffIdx()==2)
         {
             //Round and truncate to 3 decimal places
-            double fval = (*dof_ptr)->getFieldData();
+            double fval = (*dit)->getFieldData();
             std::cout << boost::format("%.3lf") % roundn(fval) << std::endl;
             myfile << boost::format("%.3lf") % roundn(fval) << std::endl;
         }
 
     }
-
 
   } catch (MoFEMException const &e) {
     SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);

@@ -30,6 +30,8 @@ typedef int (*FieldOrderTable[MBMAXTYPE])(const int order);
   */
 typedef int (*FieldOrderFunct)(const int order);
 
+struct MoFEMEntity;
+
 /**
   * \brief Provide data structure for (tensor) field approximation.
   * \ingroup dof_multi_indices
@@ -44,6 +46,13 @@ typedef int (*FieldOrderFunct)(const int order);
 
   */
 struct Field {
+
+  typedef multi_index_container<
+    boost::weak_ptr<std::vector<MoFEMEntity> >,
+    indexed_by<
+      sequenced<>
+    >
+  > SequenceEntContainer;
 
   moab::Interface &moab;
 
@@ -255,6 +264,27 @@ struct Field {
   }
 
   friend std::ostream& operator<<(std::ostream& os,const Field& e);
+
+  /**
+   * \brief Get reference to sequence data container
+   *
+   * In sequence data container data are physically stored. The purpose of this
+   * is to allocate MoFEMEntities data in bulk, having only allocation instead
+   * each time entity is inserted. That makes code efficient.
+   *
+   * The vector in sequence is destroyed if last entity inside that vector is
+   * destroyed. All DOFs have aliased shared_ptr which points to the vector.
+   *
+   * @return MoFEM::Field::SequenceEntContainer
+   */
+  inline boost::shared_ptr<SequenceEntContainer> getEntSeqenceContainer() const {
+    return sequenceEntContainer;
+  }
+
+private:
+
+  mutable boost::shared_ptr<SequenceEntContainer> sequenceEntContainer;
+
 };
 
 /**
@@ -263,9 +293,17 @@ struct Field {
  */
 template <typename T>
 struct interface_Field {
-  const boost::shared_ptr<T> sFieldPtr;
 
-  interface_Field(const boost::shared_ptr<T> field_ptr): sFieldPtr(field_ptr) {};
+  mutable boost::shared_ptr<T> sFieldPtr;
+
+  interface_Field(const boost::shared_ptr<T> &field_ptr):
+  sFieldPtr(field_ptr) {
+  }
+
+  interface_Field(const interface_Field<T> &interface):
+  sFieldPtr(interface.getFieldPtr()) {
+  }
+
 
   inline EntityHandle getMeshset() const { return this->sFieldPtr->getMeshset(); }
 
@@ -344,7 +382,7 @@ struct interface_Field {
   */
   DEPRECATED inline unsigned int get_bit_number() const { return this->sFieldPtr->getBitNumber(); }
 
-  inline const boost::shared_ptr<T> getFieldPtr() const { return this->sFieldPtr; }
+  inline boost::shared_ptr<T>& getFieldPtr() const { return this->sFieldPtr; }
 
 };
 

@@ -32,7 +32,7 @@
 #include <FieldMultiIndices.hpp>
 #include <EntsMultiIndices.hpp>
 #include <DofsMultiIndices.hpp>
-#include <FEMMultiIndices.hpp>
+#include <FEMultiIndices.hpp>
 #include <ProblemsMultiIndices.hpp>
 #include <AdjacencyMultiIndices.hpp>
 #include <BCMultiIndices.hpp>
@@ -850,7 +850,9 @@ PetscErrorCode Core::add_ents_to_field_by_PRISMs(EntityHandle meshset,const std:
   }
   PetscFunctionReturn(0);
 }
-PetscErrorCode Core::set_field_order(const Range &ents,const BitFieldId id,const ApproximationOrder order,int verb) {
+PetscErrorCode Core::set_field_order(
+  const Range &ents,const BitFieldId id,const ApproximationOrder order,int verb
+) {
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
   *buildMoFEM = 0;
@@ -870,24 +872,22 @@ PetscErrorCode Core::set_field_order(const Range &ents,const BitFieldId id,const
   //intersection with field meshset
   Range ents_of_id_meshset;
   rval = moab.get_entities_by_handle(idm,ents_of_id_meshset,false); CHKERRQ_MOAB(rval);
-  Range ents_ = intersect(ents,ents_of_id_meshset);
+  Range field_ents = intersect(ents,ents_of_id_meshset);
   if(verb>1) {
     PetscSynchronizedPrintf(
       comm,"nb. of ents for order change in the field <%s> %d\n",
-      miit->get()->getName().c_str(),ents_.size()
-  );
+      miit->get()->getName().c_str(),field_ents.size()
+    );
   }
 
   //ent view by field id (in set all MoabEnts has the same FieldId)
-  typedef MoFEMEntity_multiIndex::index<BitFieldId_mi_tag>::type ent_set_by_id;
-  ent_set_by_id& set = entsFields.get<BitFieldId_mi_tag>();
-  ent_set_by_id::iterator eiit = set.lower_bound(id);
+  typedef MoFEMEntity_multiIndex::index<BitFieldId_mi_tag>::type EntsByFIeldId;
+  EntsByFIeldId& set = entsFields.get<BitFieldId_mi_tag>();
+  EntsByFIeldId::iterator eiit = set.lower_bound(id);
   MoFEMEntity_multiIndex_ent_view ents_id_view;
   if(eiit != set.end()) {
-    ent_set_by_id::iterator hi_eiit = set.upper_bound(id);
-    for(;eiit!=hi_eiit;eiit++) {
-      ents_id_view.insert(*eiit);
-    }
+    EntsByFIeldId::iterator hi_eiit = set.upper_bound(id);
+    ents_id_view.insert(eiit,hi_eiit);
   }
   if(verb>1) {
     PetscSynchronizedPrintf(
@@ -897,18 +897,14 @@ PetscErrorCode Core::set_field_order(const Range &ents,const BitFieldId id,const
   }
 
 
-  // get tags on entities
-  std::vector<ApproximationOrder*> tag_data_order(ents_.size());
-  rval = moab.tag_get_by_ptr(
-    (*miit)->th_AppOrder,ents_,(const void **)&tag_data_order[0]
-  ); CHKERRQ_MOAB(rval);
-
   //loop over ents
   int nb_ents_set_order_up = 0;
   int nb_ents_set_order_down = 0;
   int nb_ents_set_order_new = 0;
-  Range::iterator eit = ents_.begin();
-  for(unsigned int ee = 0;ee<ents_.size();ee++,eit++) {
+
+  Range new_ents;
+
+  for(Range::iterator eit = field_ents.begin();eit!=field_ents.end();eit++) {
 
     //sanity check
     switch((*miit)->getSpace()) {
@@ -936,6 +932,7 @@ PetscErrorCode Core::set_field_order(const Range &ents,const BitFieldId id,const
       break;
     }
 
+    // Entity is in database, change order only if needed
     MoFEMEntity_multiIndex_ent_view::iterator vit = ents_id_view.find(*eit);
     if(vit!=ents_id_view.end()) {
 
@@ -975,41 +972,69 @@ PetscErrorCode Core::set_field_order(const Range &ents,const BitFieldId id,const
       }
 
     } else {
-
-      //entity is not in database and order is changed or reset
-      *tag_data_order[ee] = order;
-      RefEntity_multiIndex::index<Ent_mi_tag>::type::iterator miit_ref_ent =
-      refinedEntities.get<Ent_mi_tag>().find(*eit);
-      if(miit_ref_ent==refinedEntities.get<Ent_mi_tag>().end()) {
-
-        RefEntity ref_ent(basicEntityDataPtr,*eit);
-        // FIXME: need some consistent policy in that case
-        if(ref_ent.getBitRefLevel().none()) continue; // not on any mesh and not in database
-        std::cerr << ref_ent << std::endl;
-        std::cerr << "bit level " << ref_ent.getBitRefLevel() << std::endl;
-        SETERRQ(comm,MOFEM_DATA_INCONSISTENCY,"Try to add entities which are not seeded or added to database");
-
-      }
-
-      try {
-
-        // increase order
-        boost::shared_ptr<MoFEMEntity> moabent(new MoFEMEntity(*miit,*miit_ref_ent));
-        std::pair<MoFEMEntity_multiIndex::iterator,bool> e_miit = entsFields.insert(moabent);
-        bool success = entsFields.modify(e_miit.first,MoFEMEntity_change_order(order));
-        if(!success) SETERRQ(comm,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
-        nb_ents_set_order_new++;
-
-      } catch (MoFEMException const &e) {
-        SETERRQ(comm,e.errorCode,e.errorMessage);
-      } catch (const std::exception& ex) {
-        std::ostringstream ss;
-        ss << ex.what() << std::endl;
-        SETERRQ(comm,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
-      }
-
+      new_ents.insert(*eit);
     }
+
   }
+
+  // get tags on entities
+  std::vector<ApproximationOrder*> tag_data_order(new_ents.size());
+  rval = moab.tag_get_by_ptr(
+    (*miit)->th_AppOrder,new_ents,(const void **)&tag_data_order[0]
+  ); CHKERRQ_MOAB(rval);
+
+  // reserve memory for field  dofs
+  boost::shared_ptr<std::vector<MoFEMEntity> > ents_array =
+  boost::shared_ptr<std::vector<MoFEMEntity> >(new std::vector<MoFEMEntity>());
+
+  // Add sequence to field data structure. Note that entities are allocated
+  // once into vector. This vector is passed into sequence as a weak_ptr.
+  // Vector is destroyed at the point last entity inside that vector is
+  // destroyed.
+  miit->get()->getEntSeqenceContainer()->push_back(ents_array);
+  ents_array->reserve(new_ents.size());
+
+  MoFEMEntity_change_order modify_order(order);
+
+  Range::iterator eit = new_ents.begin();
+  for(unsigned int ee = 0;ee!=new_ents.size();ee++,eit++) {
+
+    // Set tag value
+    *tag_data_order[ee] = order;
+
+    // Entity is not in database and order is changed or reset
+    RefEntity_multiIndex::index<Ent_mi_tag>::type::iterator miit_ref_ent =
+    refinedEntities.get<Ent_mi_tag>().find(*eit);
+    if(miit_ref_ent==refinedEntities.get<Ent_mi_tag>().end()) {
+      RefEntity ref_ent(basicEntityDataPtr,*eit);
+      // FIXME: need some consistent policy in that case
+      if(ref_ent.getBitRefLevel().none()) continue; // not on any mesh and not in database
+      std::cerr << ref_ent << std::endl;
+      std::cerr << "bit level " << ref_ent.getBitRefLevel() << std::endl;
+      SETERRQ(comm,MOFEM_DATA_INCONSISTENCY,"Try to add entities which are not seeded or added to database");
+    }
+    // NOTE: This will work with newer compiler only, use push_back for back compatibility.
+    // ents_array->emplace_back(*miit,*miit_ref_ent);
+    ents_array->push_back(MoFEMEntity(*miit,*miit_ref_ent));
+    modify_order(&(ents_array->back()));
+    nb_ents_set_order_new++;
+  }
+
+  // Add entities to database
+  std::vector<boost::shared_ptr<MoFEMEntity> > ents_shared_array;
+  ents_shared_array.reserve(ents_array->size());
+  for(
+    std::vector<MoFEMEntity>::iterator
+    vit = ents_array->begin();
+    vit!=ents_array->end();vit++
+  ) {
+    // ents_shared_array.emplace_back(ents_array,&*vit);
+    ents_shared_array.push_back(boost::shared_ptr<MoFEMEntity>(ents_array,&*vit));
+  }
+
+  // Add new ents to database
+  entsFields.insert(ents_shared_array.begin(),ents_shared_array.end());
+
 
   if(verb>1) {
     PetscSynchronizedPrintf(
@@ -1102,7 +1127,7 @@ PetscErrorCode Core::set_field_order_by_entity_type_and_bit_ref(
   }
   PetscFunctionReturn(0);
 }
-PetscErrorCode Core::BuildFieldForNoField(
+PetscErrorCode Core::buildFieldForNoField(
   const BitFieldId id,std::map<EntityType,int> &dof_counter,int verb
 ) {
   PetscFunctionBegin;
@@ -1188,7 +1213,7 @@ PetscErrorCode Core::BuildFieldForNoField(
   }
   PetscFunctionReturn(0);
 }
-PetscErrorCode Core::BuildFieldForL2H1HcurlHdiv(
+PetscErrorCode Core::buildFieldForL2H1HcurlHdiv(
   const BitFieldId id,
   std::map<EntityType,int> &dof_counter,
   std::map<EntityType,int> &inactive_dof_counter,
@@ -1196,15 +1221,22 @@ PetscErrorCode Core::BuildFieldForL2H1HcurlHdiv(
 ) {
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
-  //field it
+
+  // Field by ID
   typedef Field_multiIndex::index<BitFieldId_mi_tag>::type FieldSetById;
-  //find field
+
+  // Find field
   const FieldSetById &set_id = fIelds.get<BitFieldId_mi_tag>();
   FieldSetById::iterator miit = set_id.find(id);
   if(miit == set_id.end()) {
     SETERRQ(comm,MOFEM_NOT_FOUND,"field not found");
   }
-  //ents in the field meshset
+  const int rank = miit->get()->getNbOfCoeffs();
+  const bool dofs_on_field =
+  dofsField.get<BitFieldId_mi_tag>().find(id) != dofsField.get<BitFieldId_mi_tag>().end();
+
+
+  // Ents in the field meshset
   Range ents_of_id_meshset;
   rval = moab.get_entities_by_handle((*miit)->meshSet,ents_of_id_meshset,false); CHKERRQ_MOAB(rval);
   if(verb>5) {
@@ -1213,115 +1245,158 @@ PetscErrorCode Core::BuildFieldForL2H1HcurlHdiv(
     );
   }
 
-  MoFEMEntity_multiIndex::iterator eit_insert_hint = entsFields.end();
-  DofEntity_multiIndex::iterator dit_insert_hint = dofsField.end();
+  std::vector<boost::shared_ptr<DofEntity> > dofs_shared_array;
 
-  //create dofsField
   Range::iterator eit = ents_of_id_meshset.begin();
   for(;eit!=ents_of_id_meshset.end();eit++) {
 
-    // check if ent is in ref meshset
-    RefEntity_multiIndex::index<Ent_mi_tag>::type::iterator miit_ref_ent;
-    miit_ref_ent = refinedEntities.get<Ent_mi_tag>().find(*eit);
-    if(miit_ref_ent==refinedEntities.get<Ent_mi_tag>().end()) {
-      RefEntity ref_ent(basicEntityDataPtr,*eit);
-      if(ref_ent.getBitRefLevel().none()) {
-        continue; // not on any mesh and not in database
-      }
-      std::cerr << ref_ent << std::endl;
-      std::cerr << "bit level " << ref_ent.getBitRefLevel() << std::endl;
-      SETERRQ(comm,MOFEM_DATA_INCONSISTENCY,"database inconsistency");
-    }
+    // Find mofem entity
+    MoFEMEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type::iterator e_miit;
+    e_miit = entsFields.get<Composite_Name_And_Ent_mi_tag>().find(
+      boost::make_tuple((*miit)->getNameRef(),*eit)
+    );
+    if(e_miit == entsFields.get<Composite_Name_And_Ent_mi_tag>().end()) continue;
 
-    boost::shared_ptr<MoFEMEntity> moabent(new MoFEMEntity(*miit,*miit_ref_ent));
-    // create mofem entity linked to ref ent
-    MoFEMEntity_multiIndex::iterator e_miit;
-    try {
-      e_miit = entsFields.find(moabent->getGlobalUniqueId());
-    } catch (MoFEMException const &e) {
-      SETERRQ(comm,e.errorCode,e.errorMessage);
-    } catch (const std::exception& ex) {
-      std::ostringstream ss;
-      ss << ex.what() << std::endl;
-      SETERRQ(comm,MOFEM_OPERATION_UNSUCCESSFUL,ss.str().c_str());
-    }
-    // add field entity if not exist
-    if(e_miit == entsFields.end()) {
-      ApproximationOrder order = -1;
-      rval = moab.tag_set_data((*miit)->th_AppOrder,&*eit,1,&order); CHKERRQ_MOAB(rval);
-      try {
-        // boost::shared_ptr<MoFEMEntity> moabent(new MoFEMEntity(*miit,*miit_ref_ent));
-        e_miit = entsFields.insert(eit_insert_hint,moabent);
-      } catch (MoFEMException const &e) {
-        SETERRQ(comm,e.errorCode,e.errorMessage);
-      } catch (const std::exception& ex) {
-        std::ostringstream ss;
-        ss << ex.what() << std::endl;
-        SETERRQ(comm,MOFEM_OPERATION_UNSUCCESSFUL,ss.str().c_str());
-      }
-      bool success = entsFields.modify(e_miit,MoFEMEntity_change_order(-1));
-      if(!success) SETERRQ(comm,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
-    }
-    eit_insert_hint = e_miit;
-    eit_insert_hint++;
+    // Get shared ptr to entity
+    boost::shared_ptr<MoFEMEntity> field_ent = *e_miit;
 
-    // insert dofmoabent into mofem databse
-    int nb_dofs_on_ent = (*e_miit)->getNbDofsOnEnt();
-    int nb_active_dosf_on_ent = (*e_miit)->getNbOfCoeffs()*(*e_miit)->getOrderNbDofs((*e_miit)->getMaxOrder());
-    int DD = 0;
-    int oo = 0;
-    // loop orders (loop until max entity order is set)
-    for(;oo<=(*e_miit)->getMaxOrder()||DD<nb_dofs_on_ent;oo++) {
-      //loop nb. dofs at order oo
-      for(int dd = 0;dd<(*e_miit)->getOrderNbDofsDiff(oo);dd++) {
-        //loop rank
-        for(int rr = 0;rr<(*e_miit)->getNbOfCoeffs();rr++,DD++) {
-          try {
-            boost::shared_ptr<DofEntity> mdof(new DofEntity(*(e_miit),oo,rr,DD));
-            DofEntity_multiIndex::iterator d_miit;
-            d_miit = dofsField.insert(dit_insert_hint,mdof);
-            dit_insert_hint = d_miit; // hint for next insertion
-            dit_insert_hint++;
-            bool is_active;
-            if(DD<nb_active_dosf_on_ent) {
-              is_active = true;
-              dof_counter[(*d_miit)->getEntType()]++;
-            } else {
-              is_active = false;
-              inactive_dof_counter[(*d_miit)->getEntType()]++;
-            }
-            bool success = dofsField.modify(d_miit,DofEntity_active_change(is_active));
-            if(!success) SETERRQ(comm,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
-            //check ent
-            if((*d_miit)->getEnt()!=(*e_miit)->getEnt()) {
-              SETERRQ(comm,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
-            }
-            if((*d_miit)->getEntType()!=(*e_miit)->getEntType()) {
-              SETERRQ(comm,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
-            }
-            if((*d_miit)->getId()!=(*e_miit)->getId()) {
-              SETERRQ(comm,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
-            }
-            //check dof
-            if((*d_miit)->getDofOrder()!=oo) {
-              std::ostringstream ss;
-              ss << "data inconsistency!" << std::endl;
-              ss << "should be " << mdof << std::endl;
-              ss << "but is " << *(*d_miit) << std::endl;
-              SETERRQ(comm,MOFEM_DATA_INCONSISTENCY,ss.str().c_str());
-            }
-            if((*d_miit)->getMaxOrder()!=(*e_miit)->getMaxOrder()) {
-              SETERRQ(comm,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
-            }
-          } catch (MoFEMException const &e) {
-            SETERRQ(comm,e.errorCode,e.errorMessage);
+    // Current dofs on entity
+    const int current_nb_dofs_on_ent =
+    !dofs_on_field ? 0 : dofsField.get<Composite_Name_And_Ent_mi_tag>().count(
+      boost::make_tuple(miit->get()->getNameRef(),*eit)
+    );
+
+    // Insert DOFs into databse
+    const int nb_dofs_on_ent = field_ent->getNbDofsOnEnt();
+    const int nb_active_dosf_on_ent = rank*field_ent->getOrderNbDofs(field_ent->getMaxOrder());
+
+    if(nb_active_dosf_on_ent==1 && current_nb_dofs_on_ent == 0) {
+
+      // Only one DOF on entity, simply add it and job done
+      // boost::movelib::unique_ptr<DofEntity> mdof
+      // = boost::movelib::make_unique<DofEntity>(field_ent,0,0,0,true);
+      // dofsField.insert(boost::move(mdof));
+      dofsField.insert(
+        boost::make_shared<DofEntity>(field_ent,0,0,0,true)
+      );
+
+    } else if(current_nb_dofs_on_ent>nb_active_dosf_on_ent) {
+
+      // This is when order is reduced, or no dofs on entity are deleted,
+      // then some DOFs are set to inactive.
+
+      // Get all DOFs which index is bigger than number of active DOFs
+      DofEntity_multiIndex::index<Composite_Name_And_Ent_And_EntDofIdx_mi_tag>::type::iterator
+      dit,hi_dit;
+      dit = dofsField.get<Composite_Name_And_Ent_And_EntDofIdx_mi_tag>().lower_bound(
+        boost::make_tuple(
+          miit->get()->getNameRef(),*eit,nb_dofs_on_ent
+        )
+      );
+      hi_dit = dofsField.get<Composite_Name_And_Ent_And_EntDofIdx_mi_tag>().upper_bound(
+        boost::make_tuple(
+          miit->get()->getNameRef(),*eit,current_nb_dofs_on_ent
+        )
+      );
+
+      // Modify DOFs as inactive
+      for(;dit!=hi_dit;dit++) {
+        bool success = dofsField.modify(
+          dofsField.project<0>(dit),DofEntity_active_change(false)
+        );
+        if(!success) {
+          SETERRQ(
+            comm,
+            MOFEM_OPERATION_UNSUCCESSFUL,
+            "modification unsuccessful"
+          );
+        }
+      }
+
+    } else {
+
+      // Allocate space for all dofs on this entity
+      boost::shared_ptr<std::vector<DofEntity> > dofs_array
+      = boost::shared_ptr<std::vector<DofEntity> >(
+        new std::vector<DofEntity>()
+      );
+      dofs_array->reserve(nb_dofs_on_ent);
+
+      // Set weak pointer on entity to vector/seqence with allocated dofs on
+      // this entity
+      field_ent->getDofsSeqence() = dofs_array;
+
+      // Temerary vector to store shared pointers
+      dofs_shared_array.clear();
+      dofs_shared_array.reserve(nb_dofs_on_ent);
+
+      // Create dofs instances and shared pointers
+      int DD = 0;
+      // Loop orders (loop until max entity order is set)
+      for(int oo = 0;oo<=field_ent->getMaxOrder();oo++) {
+        // Loop nb. dofs at order oo
+        for(int dd = 0;dd<field_ent->getOrderNbDofsDiff(oo);dd++) {
+          // Loop rank
+          for(int rr = 0;rr<rank;rr++,DD++) {
+            // push back dofs instanca
+            // dofs_array->emplace_back(
+            //   DofEntity(field_ent,oo,rr,DD,true)
+            // );
+            dofs_array->push_back(
+              DofEntity(field_ent,oo,rr,DD,true)
+            );
+            // Push back shared_ptr for DoFS. Note shared pointer is aliased
+            // to vector keeping all DOFs on the entity
+            // dofs_shared_array.emplace_back(
+            //   boost::shared_ptr<DofEntity>(dofs_array,&dofs_array->back())
+            // );
+            dofs_shared_array.push_back(
+              boost::shared_ptr<DofEntity>(dofs_array,&dofs_array->back())
+            );
           }
         }
       }
+      if(DD != field_ent->getNbDofsOnEnt()) {
+        SETERRQ(comm,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
+      }
+
+      // Finally add dofs to multi-index
+      if(!dofs_shared_array.empty()) {
+
+        // This is in case if some DOFs are already there, then need to
+        // replace existing shared_ptr with new one. Then old sequence will be
+        // released. If this is not done old and new sequence will exist in
+        // memory, that will be waste of space.
+
+        std::vector<boost::shared_ptr<DofEntity> >::iterator vit;
+        vit = dofs_shared_array.begin();
+        // cerr << current_nb_dofs_on_ent << " " << nb_dofs_on_ent << " " << dofs_shared_array.size() << endl;
+        for(int ii = 0;ii!=current_nb_dofs_on_ent;ii++,vit++) {
+          // cerr << current_nb_dofs_on_ent << " " << nb_dofs_on_ent << " " << dofs_shared_array.size() << endl;
+          // cerr << **vit << endl;
+          DofEntity_multiIndex::iterator d_miit;
+          d_miit = dofsField.find(vit->get()->getGlobalUniqueId());
+          if(d_miit == dofsField.end()) {
+            SETERRQ(comm,MOFEM_DATA_INCONSISTENCY,"DOFs is not there, but should be");
+          }
+          bool success = dofsField.modify(
+            d_miit,Dof_shared_ptr_change<DofEntity>(*vit)
+          );
+          if(!success) {
+            SETERRQ(
+              comm,
+              MOFEM_OPERATION_UNSUCCESSFUL,
+              "modification unsuccessful"
+            );
+          }
+        }
+        // Finally insert DOFs to database
+        dofsField.insert(vit,dofs_shared_array.end());
+
+      }
+
     }
-    if(DD != (*e_miit)->getNbDofsOnEnt()) {
-      SETERRQ(comm,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
-    }
+
   }
   PetscFunctionReturn(0);
 }
@@ -1341,13 +1416,20 @@ PetscErrorCode Core::build_fields(int verb) {
     }
     switch ((*miit)->getSpace()) {
       case NOFIELD:
-      ierr = BuildFieldForNoField((*miit)->getId(),dof_counter,verb); CHKERRQ(ierr);
+      ierr = buildFieldForNoField(
+        (*miit)->getId(),dof_counter,verb
+      ); CHKERRQ(ierr);
       break;
       case L2:
       case H1:
       case HCURL:
       case HDIV:
-      ierr = BuildFieldForL2H1HcurlHdiv((*miit)->getId(),dof_counter,inactive_dof_counter,verb); CHKERRQ(ierr);
+      ierr = buildFieldForL2H1HcurlHdiv(
+        (*miit)->getId(),
+        dof_counter,
+        inactive_dof_counter,
+        verb
+      ); CHKERRQ(ierr);
       break;
       default:
       SETERRQ(comm,MOFEM_NOT_IMPLEMENTED,"not implemented");
@@ -1736,8 +1818,9 @@ PetscErrorCode Core::check_number_of_ents_in_ents_field(const std::string& name)
   int num_entities;
   MoABErrorCode rval;
   rval = moab.get_number_entities_by_handle(meshset,num_entities); CHKERRQ_MOAB(rval);
-  if(entsFields.get<FieldName_mi_tag>().count((*it)->getName())
-    != (unsigned int)num_entities) {
+  if(
+    entsFields.get<FieldName_mi_tag>().count((*it)->getName()) > (unsigned int)num_entities
+  ) {
     SETERRQ1(comm,1,"not equal number of entities in meshset and field multiindex < %s >",name.c_str());
   }
   PetscFunctionReturn(0);
@@ -1751,7 +1834,7 @@ PetscErrorCode Core::check_number_of_ents_in_ents_field() const {
     MoABErrorCode rval;
     int num_entities;
     rval = moab.get_number_entities_by_handle(meshset,num_entities); CHKERRQ_MOAB(rval);
-    if(entsFields.get<FieldName_mi_tag>().count((*it)->getName()) != (unsigned int)num_entities) {
+    if(entsFields.get<FieldName_mi_tag>().count((*it)->getName()) > (unsigned int)num_entities) {
       SETERRQ1(comm,1,"not equal number of entities in meshset and field multiindex < %s >",(*it)->getName().c_str());
     }
   }

@@ -29,7 +29,7 @@
 #include <FieldMultiIndices.hpp>
 #include <EntsMultiIndices.hpp>
 #include <DofsMultiIndices.hpp>
-#include <FEMMultiIndices.hpp>
+#include <FEMultiIndices.hpp>
 
 namespace MoFEM {
 
@@ -928,7 +928,6 @@ static PetscErrorCode get_fe_dof_view(
   PetscFunctionBegin;
   typename boost::multi_index::index<MOFEM_DOFS,Unique_mi_tag>::type::iterator mofem_it,mofem_it_end;
   typename FE_DOFS::iterator it,it_end;
-  // DofEntity_multiIndex_uid_view::iterator it,it_end;
   if(operation_type==moab::Interface::UNION) {
     mofem_it = mofem_dofs.template get<Unique_mi_tag>().begin();
     mofem_it_end = mofem_dofs.template get<Unique_mi_tag>().end();
@@ -1021,7 +1020,7 @@ PetscErrorCode EntFiniteElement::getColDofView(
   PetscFunctionReturn(0);
 }
 PetscErrorCode EntFiniteElement::getRowDofView(
-  const NumeredDofEntity_multiIndex &dofs,NumeredDofEntity_multiIndex_uid_view_hashed &dofs_view,
+  const NumeredDofEntity_multiIndex &dofs,NumeredDofEntity_multiIndex_idx_view_hashed &dofs_view,
   const int operation_type
 ) const {
   PetscFunctionBegin;
@@ -1031,7 +1030,7 @@ PetscErrorCode EntFiniteElement::getRowDofView(
 }
 
 PetscErrorCode EntFiniteElement::getColDofView(
-    const NumeredDofEntity_multiIndex &dofs,NumeredDofEntity_multiIndex_uid_view_hashed &dofs_view,
+    const NumeredDofEntity_multiIndex &dofs,NumeredDofEntity_multiIndex_idx_view_hashed &dofs_view,
     const int operation_type) const {
   PetscFunctionBegin;
   PetscErrorCode ierr;

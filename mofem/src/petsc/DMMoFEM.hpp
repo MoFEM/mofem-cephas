@@ -505,6 +505,23 @@ PetscErrorCode DMLocalToGlobalEnd_MoFEM(DM,Vec,InsertMode,Vec);
  */
 PetscErrorCode DMCreateFieldIS_MoFEM(DM dm, PetscInt *numFields, char ***fieldNames, IS **fields);
 
+/**
+ * \brief get field is in the problem
+ * @param  dm         the DM objects
+ * @param  rc         ROW or COL (no difference is problem is squared)
+ * @param  field_name name of the field
+ * @param  is         returned the IS object
+ * @return            error code
+ *
+ * \code
+ * IS is;
+ * ierr = DMMoFEMGetFieldIS(dm,ROW,"DISP",&is_disp); CHKERRQ(ierr);
+ * \endcode
+ *
+ *
+ */
+PetscErrorCode DMMoFEMGetFieldIS(DM dm,RowColData rc,const char field_name[],IS *is);
+
 namespace MoFEM {
 
   static const MOFEMuuid IDD_DMCTX = MOFEMuuid(BitIntefaceId(DMCTX_INTERFACE));

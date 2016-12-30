@@ -1,4 +1,4 @@
-/** \file FEMMultiIndices.hpp
+/** \file FEMultiIndices.hpp
  * \brief Myltiindex contains, data structures for mofem finite elements and other low-level functions
  */
 
@@ -544,12 +544,12 @@ interface_RefElement<RefElement> {
     const int operation_type = moab::Interface::UNION) const;
 
   PetscErrorCode getRowDofView(
-    const NumeredDofEntity_multiIndex &dofs,NumeredDofEntity_multiIndex_uid_view_hashed &dofs_view,
+    const NumeredDofEntity_multiIndex &dofs,NumeredDofEntity_multiIndex_idx_view_hashed &dofs_view,
     const int operation_type = moab::Interface::UNION
   ) const;
 
   PetscErrorCode getColDofView(
-    const NumeredDofEntity_multiIndex &dofs,NumeredDofEntity_multiIndex_uid_view_hashed &dofs_view,
+    const NumeredDofEntity_multiIndex &dofs,NumeredDofEntity_multiIndex_idx_view_hashed &dofs_view,
     const int operation_type = moab::Interface::UNION
   ) const;
 
@@ -731,6 +731,36 @@ struct NumeredEntFiniteElement: public interface_EntFiniteElement<EntFiniteEleme
     os << "part " << e.part << " " << *(e.sFePtr);
     return os;
   }
+
+  /**
+   * \brief Get weak_ptr reference to sequence/vector storing dofs on entity.
+   *
+   * Vector is automatically destroy when last DOF in vector os destroyed. Every
+   * shared_ptr to the DOF has aliased shared_ptr to vector of DOFs in that vector.
+   * That do the trick.
+   *
+   */
+  inline boost::weak_ptr<std::vector<FENumeredDofEntity> >& getRowDofsSeqence() const {
+    return dofsRowSequce;
+  }
+
+  /**
+   * \brief Get weak_ptr reference to sequence/vector storing dofs on entity.
+   *
+   * Vector is automatically destroy when last DOF in vector os destroyed. Every
+   * shared_ptr to the DOF has aliased shared_ptr to vector of DOFs in that vector.
+   * That do the trick.
+   *
+   */
+  inline boost::weak_ptr<std::vector<FENumeredDofEntity> >& getColDofsSeqence() const {
+    return dofsColSequce;
+  }
+
+private:
+
+  // Keep vector of DoFS on entity
+  mutable boost::weak_ptr<std::vector<FENumeredDofEntity> > dofsRowSequce;
+  mutable boost::weak_ptr<std::vector<FENumeredDofEntity> > dofsColSequce;
 
 };
 
