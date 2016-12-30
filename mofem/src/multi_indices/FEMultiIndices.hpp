@@ -1,4 +1,4 @@
-/** \file FEMMultiIndices.hpp
+/** \file FEMultiIndices.hpp
  * \brief Myltiindex contains, data structures for mofem finite elements and other low-level functions
  */
 
