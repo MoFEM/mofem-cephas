@@ -39,7 +39,7 @@ namespace MoFEM {
 
 //moab dof
 DofEntity::DofEntity(
-  const boost::shared_ptr<MoFEMEntity> entity_ptr,
+  const boost::shared_ptr<MoFEMEntity>& entity_ptr,
   const ApproximationOrder dof_order,
   const FieldCoefficientsNumber dof_rank,
   const DofIdx dof,
@@ -102,7 +102,7 @@ void DofEntity_active_change::operator()(boost::shared_ptr<DofEntity> &dof) {
 
 //numered dof
 NumeredDofEntity::NumeredDofEntity(
-  const boost::shared_ptr<DofEntity> dof_entity_ptr,
+  const boost::shared_ptr<DofEntity>& dof_entity_ptr,
   const int dof_idx,
   const int petsc_gloabl_dof_idx,
   const int petsc_local_dof_idx,
@@ -125,7 +125,10 @@ std::ostream& operator<<(std::ostream& os,const NumeredDofEntity& e) {
 }
 
 FEDofEntity::FEDofEntity(
-  boost::tuple<boost::shared_ptr<SideNumber>,const boost::shared_ptr<DofEntity> > t
+  const boost::tuple<
+  const boost::shared_ptr<SideNumber>&,
+  const boost::shared_ptr<DofEntity>&
+  > &t
 ):
 BaseFEDofEntity(t.get<0>()),
 interface_DofEntity<DofEntity>(t.get<1>()) {
@@ -133,8 +136,8 @@ interface_DofEntity<DofEntity>(t.get<1>()) {
 
 
 FEDofEntity::FEDofEntity(
-  boost::shared_ptr<SideNumber> side_number_ptr,
-  const boost::shared_ptr<DofEntity> dof_ptr
+  const boost::shared_ptr<SideNumber>& side_number_ptr,
+  const boost::shared_ptr<DofEntity>& dof_ptr
 ):
 BaseFEDofEntity(side_number_ptr),
 interface_DofEntity<DofEntity>(dof_ptr) {
@@ -149,18 +152,18 @@ std::ostream& operator<<(std::ostream& os,const FEDofEntity& e) {
 }
 
 FENumeredDofEntity::FENumeredDofEntity(
-  boost::shared_ptr<SideNumber> side_number_ptr,
-  const boost::shared_ptr<NumeredDofEntity> dof_ptr
+  const boost::shared_ptr<SideNumber>& side_number_ptr,
+  const boost::shared_ptr<NumeredDofEntity>& dof_ptr
 ):
 BaseFEDofEntity(side_number_ptr),
 interface_NumeredDofEntity<NumeredDofEntity>(dof_ptr) {
 }
 
 FENumeredDofEntity::FENumeredDofEntity(
-  boost::tuple<
-  boost::shared_ptr<SideNumber>,
-  const boost::shared_ptr<NumeredDofEntity>
-  > t
+  const boost::tuple<
+  const boost::shared_ptr<SideNumber>&,
+  const boost::shared_ptr<NumeredDofEntity>&
+  > &t
 ):
 BaseFEDofEntity(t.get<0>()),
 interface_NumeredDofEntity<NumeredDofEntity>(t.get<1>()) {

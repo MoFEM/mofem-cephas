@@ -136,16 +136,16 @@ PetscErrorCode Core::ISCreateProblemOrder(
   const ProblemsByName &problems_set = pRoblems.get<Problem_mi_tag>();
   ProblemsByName::iterator p = problems_set.find(problem);
   if(p==problems_set.end()) SETERRQ1(PETSC_COMM_SELF,1,"no such problem %s (top tip check spelling)",problem.c_str());
-  typedef NumeredDofEntity_multiIndex::index<Composite_Part_And_Oder_mi_tag>::type dofs_order;
+  typedef NumeredDofEntity_multiIndex::index<Composite_Part_And_Order_mi_tag>::type dofs_order;
   dofs_order::iterator it,hi_it;
   switch(rc) {
     case ROW:
-    it = p->numered_dofs_rows->get<Composite_Part_And_Oder_mi_tag>().lower_bound(boost::make_tuple(rAnk,min_order));
-    hi_it = p->numered_dofs_rows->get<Composite_Part_And_Oder_mi_tag>().upper_bound(boost::make_tuple(rAnk,max_order));
+    it = p->numered_dofs_rows->get<Composite_Part_And_Order_mi_tag>().lower_bound(boost::make_tuple(rAnk,min_order));
+    hi_it = p->numered_dofs_rows->get<Composite_Part_And_Order_mi_tag>().upper_bound(boost::make_tuple(rAnk,max_order));
     break;
     case COL:
-    it = p->numered_dofs_cols->get<Composite_Part_And_Oder_mi_tag>().lower_bound(boost::make_tuple(rAnk,min_order));
-    hi_it = p->numered_dofs_cols->get<Composite_Part_And_Oder_mi_tag>().upper_bound(boost::make_tuple(rAnk,max_order));
+    it = p->numered_dofs_cols->get<Composite_Part_And_Order_mi_tag>().lower_bound(boost::make_tuple(rAnk,min_order));
+    hi_it = p->numered_dofs_cols->get<Composite_Part_And_Order_mi_tag>().upper_bound(boost::make_tuple(rAnk,max_order));
     break;
     default:
      SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented");

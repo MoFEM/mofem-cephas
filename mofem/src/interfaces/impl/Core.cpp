@@ -389,7 +389,7 @@ PetscErrorCode Core::addPrismToDatabase(const EntityHandle prism,int verb) {
     if(p_ent.second) {
       std::pair<RefElement_multiIndex::iterator,bool> p_MoFEMFiniteElement;
       p_MoFEMFiniteElement = refinedFiniteElements.insert(
-	      ptrWrapperRefElement(boost::make_shared<RefElement_PRISM>(moab,*p_ent.first))
+	      ptrWrapperRefElement(boost::shared_ptr<RefElement>(new RefElement_PRISM(moab,*p_ent.first)))
       );
       int num_nodes;
       const EntityHandle* conn;
@@ -703,7 +703,7 @@ PetscErrorCode Core::initialiseDatabseInformationFromMesh(int verb) {
         } else {
           ierr = cs_manger_ptr->getCoordSysPtr("UNDEFINED",cs_ptr); CHKERRQ(ierr);
         }
-        p = fIelds.insert(boost::make_shared<Field>(moab,*mit,cs_ptr));
+        p = fIelds.insert(boost::shared_ptr<Field>(new Field(moab,*mit,cs_ptr)));
         if(verb > 0) {
           std::ostringstream ss;
           ss << "read field " << **p.first << std::endl;;
@@ -745,8 +745,13 @@ PetscErrorCode Core::initialiseDatabseInformationFromMesh(int verb) {
             boost::make_shared<RefEntity>(basicEntityDataPtr,*eit)
           );
           try {
-            ents_array->emplace_back(*p.first,*p_ref_ent.first);
-            ents_shared_array.emplace_back(ents_array,&ents_array->back());
+            // NOTE: This will work with newer compiler only, use push_back for back compatibility.
+            // ents_array->emplace_back(*p.first,*p_ref_ent.first);
+            // ents_shared_array.emplace_back(ents_array,&ents_array->back());
+            ents_array->push_back(MoFEMEntity(*p.first,*p_ref_ent.first));
+            ents_shared_array.push_back(
+              boost::shared_ptr<MoFEMEntity>(ents_array,&ents_array->back())
+            );
           } catch (const std::exception& ex) {
             std::ostringstream ss;
             ss << ex.what() << std::endl;

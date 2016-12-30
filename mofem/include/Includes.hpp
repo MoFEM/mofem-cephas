@@ -95,9 +95,9 @@ extern "C" {
 #include <boost/weak_ptr.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/make_shared.hpp>
-#include <boost/move/unique_ptr.hpp>
-#include <boost/move/make_unique.hpp>
-#include <boost/move/move.hpp>
+// #include <boost/move/unique_ptr.hpp>
+// #include <boost/move/make_unique.hpp>
+// #include <boost/move/move.hpp>
 
 #include <boost/iostreams/tee.hpp>
 #include <boost/iostreams/stream.hpp>

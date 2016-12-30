@@ -117,7 +117,8 @@ PetscErrorCode CreateRowComressedADJMatrix::getEntityAdjacenies(
   hi_adj_miit = entFEAdjacencies.get<Unique_mi_tag>().upper_bound(mofem_ent_ptr->getGlobalUniqueId());
 
   dofs_col_view.clear();
-  for (; adj_miit != hi_adj_miit; adj_miit++) {
+  for (;adj_miit!=hi_adj_miit;adj_miit++) {
+
     if (adj_miit->by_other&BYROW) {
       if ((adj_miit->entFePtr->getId()&p_miit->getBitFEId()).none()) {
         // if element is not part of problem
@@ -170,7 +171,6 @@ PetscErrorCode CreateRowComressedADJMatrix::createMatArrays(
 
   // Get multi-indices for rows and columns
   const NumeredDofEntitysByIdx &dofs_row_by_idx = p_miit->numered_dofs_rows->get<TAG>();
-  const NumeredDofEntitysByIdx &dofs_col_by_idx = p_miit->numered_dofs_cols->get<TAG>();
   DofIdx nb_dofs_row = p_miit->getNbDofsRow();
   if(nb_dofs_row == 0) {
     SETERRQ1(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"problem <%s> has zero rows",p_miit->getName().c_str());
@@ -183,7 +183,9 @@ PetscErrorCode CreateRowComressedADJMatrix::createMatArrays(
   // adjacencies form other parts. Note if algebra is only partitioned no need
   // to collect adjacencies form other entities. Those are already on mesh
   // which is assumed that is on each processor the same.
-  typename boost::multi_index::index<NumeredDofEntity_multiIndex,TAG>::type::iterator miit_row,hi_miit_row;
+  typename boost::multi_index::index<NumeredDofEntity_multiIndex,TAG>::type::iterator
+  miit_row,hi_miit_row;
+
   if(TAG::IamNotPartitioned) {
 
     // Get range of local indices
@@ -207,14 +209,18 @@ PetscErrorCode CreateRowComressedADJMatrix::createMatArrays(
         distance(miit_row, hi_miit_row), rend, rstart, rend-rstart
       );
     }
+
   } else {
+
     //get adjacent nodes on other partitions
     std::vector<std::vector<int> > dofs_vec(sIze);
 
     boost::shared_ptr<MoFEMEntity> mofem_ent_ptr;
     NumeredDofEntity_multiIndex_idx_view_hashed dofs_col_view;
 
-    typename boost::multi_index::index<NumeredDofEntity_multiIndex,TAG>::type::iterator mit_row,hi_mit_row;
+    typename boost::multi_index::index<NumeredDofEntity_multiIndex,TAG>::type::iterator
+    mit_row,hi_mit_row;
+
     mit_row = dofs_row_by_idx.begin();
     hi_mit_row = dofs_row_by_idx.end();
     for(;mit_row!=hi_mit_row;mit_row++) {
@@ -374,21 +380,29 @@ PetscErrorCode CreateRowComressedADJMatrix::createMatArrays(
     ierr = PetscFree(onodes); CHKERRQ(ierr);
     ierr = PetscFree(olengths); CHKERRQ(ierr);
 
-    miit_row = dofs_row_by_idx.lower_bound(rAnk);
-    hi_miit_row = dofs_row_by_idx.upper_bound(rAnk);
+    miit_row = dofs_row_by_idx.begin();
+    hi_miit_row = dofs_row_by_idx.end();
+
 
   }
 
-  int nb_loc_row_from_iterators = distance(miit_row,hi_miit_row);
   boost::shared_ptr<MoFEMEntity> mofem_ent_ptr;
   int row_last_evaluated_idx = -1;
 
   std::vector<DofIdx> dofs_vec;
   NumeredDofEntity_multiIndex_idx_view_hashed dofs_col_view;
+
   // loop local rows
-  unsigned int rows_to_fill = distance(miit_row,hi_miit_row);
+  int nb_loc_row_from_iterators = 0;
+  unsigned int rows_to_fill = p_miit->getNbLocalDofsRow();
   i.reserve( rows_to_fill+1 );
   for(;miit_row!=hi_miit_row;miit_row++) {
+
+    if(!TAG::IamNotPartitioned) {
+      if((*miit_row)->getPart()!=rAnk) continue;
+    }
+    // This is only for cross-check if everything is ok
+    nb_loc_row_from_iterators++;
 
     // add next row to compressed matrix
     i.push_back(j.size());
@@ -406,6 +420,12 @@ PetscErrorCode CreateRowComressedADJMatrix::createMatArrays(
       (!mofem_ent_ptr)?1:(mofem_ent_ptr->getGlobalUniqueId()!=
       (*miit_row)->getMoFEMEntityPtr()->getGlobalUniqueId())
     ) {
+
+      if(verb>2) {
+        std::stringstream ss;
+        ss << "rank " << rAnk << ": row " << **miit_row << std::endl;
+        PetscSynchronizedPrintf(comm,"%s",ss.str().c_str());
+      }
 
       // get entity adjacencies
       mofem_ent_ptr = (*miit_row)->getMoFEMEntityPtr();
@@ -622,17 +642,26 @@ PetscErrorCode Core::MatCreateMPIAIJWithArrays(const std::string &name,Mat *Aij,
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
   int *_i,*_j;
-  CreateRowComressedADJMatrix *core_ptr = static_cast<CreateRowComressedADJMatrix*>(const_cast<Core*>(this));
-  ierr = core_ptr->createMat<Part_mi_tag>(name,Aij,MATMPIAIJ,&_i,&_j,PETSC_NULL,false,verb); CHKERRQ(ierr);
+  CreateRowComressedADJMatrix *core_ptr =
+  static_cast<CreateRowComressedADJMatrix*>(const_cast<Core*>(this));
+  ierr = core_ptr->createMat<PetscGlobalIdx_mi_tag>(
+    name,Aij,MATMPIAIJ,&_i,&_j,PETSC_NULL,false,verb
+  ); CHKERRQ(ierr);
   ierr = PetscFree(_i); CHKERRQ(ierr);
   ierr = PetscFree(_j); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
-PetscErrorCode Core::MatCreateSeqAIJWithArrays(const std::string &name,Mat *Aij,PetscInt **i,PetscInt **j,PetscScalar **v,int verb) {
+
+PetscErrorCode Core::MatCreateSeqAIJWithArrays(
+  const std::string &name,Mat *Aij,PetscInt **i,PetscInt **j,PetscScalar **v,int verb
+) {
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
-  CreateRowComressedADJMatrix *core_ptr = static_cast<CreateRowComressedADJMatrix*>(const_cast<Core*>(this));
-  ierr = core_ptr->createMat<PetscLocalIdx_mi_tag>(name,Aij,MATAIJ,i,j,v,false,verb); CHKERRQ(ierr);
+  CreateRowComressedADJMatrix *core_ptr =
+  static_cast<CreateRowComressedADJMatrix*>(const_cast<Core*>(this));
+  ierr = core_ptr->createMat<PetscLocalIdx_mi_tag>(
+    name,Aij,MATAIJ,i,j,v,false,verb
+  ); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 
@@ -741,7 +770,7 @@ PetscErrorCode Core::partition_problem(const std::string &name,int verb) {
   if(p_miit->numered_dofs_rows==p_miit->numered_dofs_cols) {
     square_matrix = true;
   }
-  
+
   if(!square_matrix) {
 
     // FIXME: This is for buck compatibility, if deprecate interface function

@@ -413,8 +413,8 @@ PetscErrorCode Core::build_problem_on_distributed_mesh(
         continue;
       }
 
-      dofs_array->emplace_back(NumeredDofEntity(*miit));
-      dofs_shared_array.emplace_back(
+      dofs_array->push_back(NumeredDofEntity(*miit));
+      dofs_shared_array.push_back(
         boost::shared_ptr<NumeredDofEntity>(dofs_array,&dofs_array->back())
       );
 
@@ -1046,8 +1046,8 @@ PetscErrorCode Core::build_problem(MoFEMProblem *problem_ptr,const bool square_m
       ) {
         continue;
       }
-      dofs_array->emplace_back(NumeredDofEntity(*miit));
-      dofs_shared_array.emplace_back(
+      dofs_array->push_back(NumeredDofEntity(*miit));
+      dofs_shared_array.push_back(
         boost::shared_ptr<NumeredDofEntity>(dofs_array,&dofs_array->back())
       );
       dofs_array->back().dofIdx = (*problem_ptr->tag_nbdof_data_row)++;
@@ -1094,8 +1094,8 @@ PetscErrorCode Core::build_problem(MoFEMProblem *problem_ptr,const bool square_m
       ) {
         continue;
       }
-      dofs_array->emplace_back(NumeredDofEntity(*miit));
-      dofs_shared_array.emplace_back(
+      dofs_array->push_back(NumeredDofEntity(*miit));
+      dofs_shared_array.push_back(
         boost::shared_ptr<NumeredDofEntity>(dofs_array,&dofs_array->back())
       );
       dofs_array->back().dofIdx = (*problem_ptr->tag_nbdof_data_col)++;
@@ -1581,12 +1581,21 @@ PetscErrorCode Core::build_sub_problem(
 
       // create elements objects
       for(;dit!=hi_dit;dit++) {
-        dofs_array->emplace_back(
-          dit->get()->getDofEntityPtr(),
-          mofem_dof_idx++,
-          dit->get()->getPetscGlobalDofIdx(),
-          dit->get()->getPetscLocalDofIdx(),
-          dit->get()->getPart()
+        // dofs_array->emplace_back(
+        //   dit->get()->getDofEntityPtr(),
+        //   mofem_dof_idx++,
+        //   dit->get()->getPetscGlobalDofIdx(),
+        //   dit->get()->getPetscLocalDofIdx(),
+        //   dit->get()->getPart()
+        // );
+        dofs_array->push_back(
+          NumeredDofEntity(
+            dit->get()->getDofEntityPtr(),
+            mofem_dof_idx++,
+            dit->get()->getPetscGlobalDofIdx(),
+            dit->get()->getPetscLocalDofIdx(),
+            dit->get()->getPart()
+          )
         );
       }
 
@@ -1595,7 +1604,9 @@ PetscErrorCode Core::build_sub_problem(
       dofs_shared_array.reserve(dofs_array->size());
       std::vector<NumeredDofEntity>::iterator vit = dofs_array->begin();
       for( ;vit!=dofs_array->end(); vit++ ) {
-        dofs_shared_array.emplace_back(dofs_array,&*vit);
+        dofs_shared_array.push_back(
+          boost::shared_ptr<NumeredDofEntity>(dofs_array,&*vit)
+        );
       }
       // fill multi-index
       out_problem_dofs[ss]->insert(
@@ -1963,7 +1974,7 @@ PetscErrorCode Core::partition_finite_elements(
         for(;vit!=hi_vit;vit++) {
           boost::shared_ptr<SideNumber> side_number_ptr;
           side_number_ptr = (*efit)->getSideNumberPtr(moab,(*vit)->getEnt());
-          dofs_array->emplace_back(side_number_ptr,*vit);
+          dofs_array->push_back(FENumeredDofEntity(side_number_ptr,*vit));
         }
 
         // reserve memory for shared pointers now
@@ -1973,7 +1984,9 @@ PetscErrorCode Core::partition_finite_elements(
           std::vector<FENumeredDofEntity>::iterator
           viit = dofs_array->begin();viit!=dofs_array->end(); viit++
         ) {
-          dofs_shared_array.emplace_back(dofs_array,&*viit);
+          dofs_shared_array.push_back(
+            boost::shared_ptr<FENumeredDofEntity>(dofs_array,&*viit)
+          );
         }
 
         // finally add DoFS to multi-indices

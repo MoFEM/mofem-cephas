@@ -997,7 +997,7 @@ PetscErrorCode Core::set_field_order(
   MoFEMEntity_change_order modify_order(order);
 
   Range::iterator eit = new_ents.begin();
-  for(int ee = 0;ee!=new_ents.size();ee++,eit++) {
+  for(unsigned int ee = 0;ee!=new_ents.size();ee++,eit++) {
 
     // Set tag value
     *tag_data_order[ee] = order;
@@ -1013,7 +1013,9 @@ PetscErrorCode Core::set_field_order(
       std::cerr << "bit level " << ref_ent.getBitRefLevel() << std::endl;
       SETERRQ(comm,MOFEM_DATA_INCONSISTENCY,"Try to add entities which are not seeded or added to database");
     }
-    ents_array->emplace_back(*miit,*miit_ref_ent);
+    // NOTE: This will work with newer compiler only, use push_back for back compatibility.
+    // ents_array->emplace_back(*miit,*miit_ref_ent);
+    ents_array->push_back(MoFEMEntity(*miit,*miit_ref_ent));
     modify_order(&(ents_array->back()));
     nb_ents_set_order_new++;
   }
@@ -1026,7 +1028,8 @@ PetscErrorCode Core::set_field_order(
     vit = ents_array->begin();
     vit!=ents_array->end();vit++
   ) {
-    ents_shared_array.emplace_back(ents_array,&*vit);
+    // ents_shared_array.emplace_back(ents_array,&*vit);
+    ents_shared_array.push_back(boost::shared_ptr<MoFEMEntity>(ents_array,&*vit));
   }
 
   // Add new ents to database
@@ -1270,10 +1273,12 @@ PetscErrorCode Core::buildFieldForL2H1HcurlHdiv(
     if(nb_active_dosf_on_ent==1 && current_nb_dofs_on_ent == 0) {
 
       // Only one DOF on entity, simply add it and job done
-      DofEntity_multiIndex::iterator d_miit;
-      boost::movelib::unique_ptr<DofEntity> mdof
-      = boost::movelib::make_unique<DofEntity>(field_ent,0,0,0,true);
-      dofsField.insert(boost::move(mdof));
+      // boost::movelib::unique_ptr<DofEntity> mdof
+      // = boost::movelib::make_unique<DofEntity>(field_ent,0,0,0,true);
+      // dofsField.insert(boost::move(mdof));
+      dofsField.insert(
+        boost::make_shared<DofEntity>(field_ent,0,0,0,true)
+      );
 
     } else if(current_nb_dofs_on_ent>nb_active_dosf_on_ent) {
 
@@ -1327,20 +1332,25 @@ PetscErrorCode Core::buildFieldForL2H1HcurlHdiv(
 
       // Create dofs instances and shared pointers
       int DD = 0;
-      int oo = 0;
       // Loop orders (loop until max entity order is set)
-      for(;oo<=field_ent->getMaxOrder();oo++) {
+      for(int oo = 0;oo<=field_ent->getMaxOrder();oo++) {
         // Loop nb. dofs at order oo
         for(int dd = 0;dd<field_ent->getOrderNbDofsDiff(oo);dd++) {
           // Loop rank
           for(int rr = 0;rr<rank;rr++,DD++) {
-            // push back dofs instance
-            dofs_array->emplace_back(
+            // push back dofs instanca
+            // dofs_array->emplace_back(
+            //   DofEntity(field_ent,oo,rr,DD,true)
+            // );
+            dofs_array->push_back(
               DofEntity(field_ent,oo,rr,DD,true)
             );
             // Push back shared_ptr for DoFS. Note shared pointer is aliased
             // to vector keeping all DOFs on the entity
-            dofs_shared_array.emplace_back(
+            // dofs_shared_array.emplace_back(
+            //   boost::shared_ptr<DofEntity>(dofs_array,&dofs_array->back())
+            // );
+            dofs_shared_array.push_back(
               boost::shared_ptr<DofEntity>(dofs_array,&dofs_array->back())
             );
           }
@@ -1406,13 +1416,20 @@ PetscErrorCode Core::build_fields(int verb) {
     }
     switch ((*miit)->getSpace()) {
       case NOFIELD:
-      ierr = buildFieldForNoField((*miit)->getId(),dof_counter,verb); CHKERRQ(ierr);
+      ierr = buildFieldForNoField(
+        (*miit)->getId(),dof_counter,verb
+      ); CHKERRQ(ierr);
       break;
       case L2:
       case H1:
       case HCURL:
       case HDIV:
-      ierr = buildFieldForL2H1HcurlHdiv((*miit)->getId(),dof_counter,inactive_dof_counter,verb); CHKERRQ(ierr);
+      ierr = buildFieldForL2H1HcurlHdiv(
+        (*miit)->getId(),
+        dof_counter,
+        inactive_dof_counter,
+        verb
+      ); CHKERRQ(ierr);
       break;
       default:
       SETERRQ(comm,MOFEM_NOT_IMPLEMENTED,"not implemented");

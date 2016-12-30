@@ -293,9 +293,17 @@ private:
  */
 template <typename T>
 struct interface_Field {
-  const boost::shared_ptr<T> sFieldPtr;
 
-  interface_Field(const boost::shared_ptr<T> field_ptr): sFieldPtr(field_ptr) {};
+  mutable boost::shared_ptr<T> sFieldPtr;
+
+  interface_Field(const boost::shared_ptr<T> &field_ptr):
+  sFieldPtr(field_ptr) {
+  }
+
+  interface_Field(const interface_Field<T> &interface):
+  sFieldPtr(interface.getFieldPtr()) {
+  }
+
 
   inline EntityHandle getMeshset() const { return this->sFieldPtr->getMeshset(); }
 
@@ -374,7 +382,7 @@ struct interface_Field {
   */
   DEPRECATED inline unsigned int get_bit_number() const { return this->sFieldPtr->getBitNumber(); }
 
-  inline const boost::shared_ptr<T> getFieldPtr() const { return this->sFieldPtr; }
+  inline boost::shared_ptr<T>& getFieldPtr() const { return this->sFieldPtr; }
 
 };
 
