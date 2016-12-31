@@ -31,6 +31,7 @@ typedef int (*FieldOrderTable[MBMAXTYPE])(const int order);
 typedef int (*FieldOrderFunct)(const int order);
 
 struct MoFEMEntity;
+struct DofEntity;
 
 /**
   * \brief Provide data structure for (tensor) field approximation.
@@ -53,6 +54,14 @@ struct Field {
       sequenced<>
     >
   > SequenceEntContainer;
+
+  typedef multi_index_container<
+    boost::weak_ptr<std::vector<DofEntity> >,
+    indexed_by<
+      sequenced<>
+    >
+  > SequenceDofContainer;
+
 
   moab::Interface &moab;
 
@@ -95,10 +104,6 @@ struct Field {
    * @return EntityHandle
    */
   inline EntityHandle getMeshset() const { return meshSet; }
-
-  /** \deprecated use getMeshset() instead
-  */
-  DEPRECATED inline EntityHandle get_meshset() const { return getMeshset(); }
 
   /**
     * \brief Get dimension of general two-point tensor \ref MoFEM::CoordSys::getDim
@@ -174,19 +179,11 @@ struct Field {
    */
   inline const BitFieldId& getId() const { return *((BitFieldId*)tag_id_data); }
 
-  /** \deprecated use getId() instead
-  */
-  DEPRECATED inline const BitFieldId& get_id() const { return getId(); }
-
   /**
    * \brief Get string reference to field name
    * @return Field name
    */
   inline boost::string_ref getNameRef() const { return boost::string_ref((char *)tag_name_data,tag_name_size); }
-
-  /** \deprecated use getNameRef() instead
-  */
-  DEPRECATED boost::string_ref get_name_ref() const { return getNameRef(); }
 
   /**
    * \brief   Get field name
@@ -194,30 +191,17 @@ struct Field {
    */
   inline std::string getName() const { return std::string((char *)tag_name_data,tag_name_size); }
 
-  /** \deprecated use getName() instead
-  */
-  DEPRECATED inline std::string get_name() const { return getName(); }
-
   /**
    * \brief   Get field approximation space
    * @return  approximation space
    */
   inline FieldSpace getSpace() const { return *tag_space_data; }
 
-  /** \deprecated Use getSpace() instead
-  */
-  DEPRECATED inline FieldSpace get_space() const { return getSpace(); }
-
   /**
    * \brief   Get approximation base
    * @return  Approximation base
    */
   inline FieldApproximationBase getApproxBase() const { return *tag_base_data; }
-
-  /** \deprecated Use getApproxBase() instead
-  */
-  DEPRECATED inline FieldApproximationBase get_approx_base() const { return getApproxBase(); }
-
 
   /** \brief Get number of field coefficients
     *
@@ -232,20 +216,11 @@ struct Field {
   */
   inline FieldCoefficientsNumber getNbOfCoeffs() const { return *tag_nb_coeff_data; };
 
-  /** \deprecated Use getNbOfCoeffs() instead
-  */
-  DEPRECATED inline FieldCoefficientsNumber get_nb_of_coeffs() const { return getNbOfCoeffs(); };
-
   /**
     * \brief Get number of set bit in Field ID.
     * Each field has uid, get getBitNumber get number of bit set for given field. Field ID has only one bit set for each field.
     */
   inline unsigned int getBitNumber() const { return bit_number; }
-
-  /** \deprecated Use getBitNumber() instead
-  */
-  DEPRECATED inline unsigned int get_bit_number() const { return getBitNumber(); }
-
 
   /**
     * \brief Calculate number of set bit in Field ID.
@@ -269,11 +244,11 @@ struct Field {
    * \brief Get reference to sequence data container
    *
    * In sequence data container data are physically stored. The purpose of this
-   * is to allocate MoFEMEntities data in bulk, having only allocation instead
+   * is to allocate MoFEMEntities data in bulk, having only one allocation instead
    * each time entity is inserted. That makes code efficient.
    *
    * The vector in sequence is destroyed if last entity inside that vector is
-   * destroyed. All DOFs have aliased shared_ptr which points to the vector.
+   * destroyed. All MoFEM::MoFEMEntities have aliased shared_ptr which points to the vector.
    *
    * @return MoFEM::Field::SequenceEntContainer
    */
@@ -281,14 +256,43 @@ struct Field {
     return sequenceEntContainer;
   }
 
+  /**
+   * \brief Get reference to sequence data container
+   *
+   * In sequence data container data are physically stored. The purpose of this
+   * is to allocate DofEntity data in bulk, having only one allocation instead
+   * each time entity is inserted. That makes code efficient.
+   *
+   * The vector in sequence is destroyed if last entity inside that vector is
+   * destroyed. All MoFEM::MoFEMEntities have aliased shared_ptr which points to the vector.
+
+   * Not all DOFs are starred in this way, currently such cases are considered;
+   * - DOFs on vertices. That is exploited that for H1 space, there is some
+   * fixed number of DOFs on each vertex
+
+   * For other cases, DOFs are stored locally in each MoFEM::MoFEMEntities.
+
+   * @return MoFEM::Field::SequenceDofContainer
+   */
+  inline boost::shared_ptr<SequenceDofContainer> getDofSeqenceContainer() const {
+    return sequenceDofContainer;
+  }
+
+
 private:
 
   mutable boost::shared_ptr<SequenceEntContainer> sequenceEntContainer;
+  mutable boost::shared_ptr<SequenceDofContainer> sequenceDofContainer;
 
 };
 
 /**
- * \brief interface for Field
+ * \brief Pointer interface for MoFEM::Field
+ *
+ * MoFEM::Field class is keeps data and methods. This class is interface to that class,
+ * and all other classes, like MoFEMEntities, DofEntity and derived form them
+ * inherits pointer interface, not MoFEM::Field class directly.
+ *
  * \ingroup dof_multi_indices
  */
 template <typename T>
@@ -306,10 +310,6 @@ struct interface_Field {
 
 
   inline EntityHandle getMeshset() const { return this->sFieldPtr->getMeshset(); }
-
-  /** \deprecated Use getMeshset() instead
-  */
-  DEPRECATED inline EntityHandle get_meshset() const { return this->sFieldPtr->getMeshset(); }
 
   inline int getCoordSysId() const { return this->sFieldPtr->getCoordSysId(); }
 
@@ -342,45 +342,18 @@ struct interface_Field {
 
   inline const BitFieldId& getId() const { return this->sFieldPtr->getId(); }
 
-  /** \deprecated Use getId() instead
-  */
-  DEPRECATED inline const BitFieldId& get_id() const { return this->sFieldPtr->getId(); }
-
   inline boost::string_ref getNameRef() const { return this->sFieldPtr->getNameRef(); }
-
-  /** \deprecated Use getNameRef() instead
-  */
-  DEPRECATED inline boost::string_ref get_name_ref() const { return this->sFieldPtr->getNameRef(); }
 
   inline std::string getName() const { return this->sFieldPtr->getName(); }
 
-  /** \deprecated Use getName() instead
-  */
-  DEPRECATED inline std::string get_name() const { return this->sFieldPtr->getName(); }
 
   inline FieldSpace getSpace() const { return this->sFieldPtr->getSpace(); }
 
-  /** \deprecated Use getSpace() instead
-  */
-  DEPRECATED inline FieldSpace get_space() const { return this->sFieldPtr->getSpace(); }
-
   inline FieldApproximationBase getApproxBase() const { return this->sFieldPtr->getApproxBase(); }
-
-  /** \deprecated Use getApproxBase() instead
-  */
-  DEPRECATED inline FieldApproximationBase get_approx_base() const { return this->sFieldPtr->getApproxBase(); }
 
   inline FieldCoefficientsNumber getNbOfCoeffs() const { return this->sFieldPtr->getNbOfCoeffs(); }
 
-  /** \deprecated Use getNbOfCoeffs() instead.
-  */
-  DEPRECATED inline FieldCoefficientsNumber get_nb_of_coeffs() const { return this->sFieldPtr->getNbOfCoeffs(); }
-
   inline unsigned int getBitNumber() const { return this->sFieldPtr->getBitNumber(); }
-
-  /** \deprecated Use getBitNumber() instead.
-  */
-  DEPRECATED inline unsigned int get_bit_number() const { return this->sFieldPtr->getBitNumber(); }
 
   inline boost::shared_ptr<T>& getFieldPtr() const { return this->sFieldPtr; }
 

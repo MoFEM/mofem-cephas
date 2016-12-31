@@ -1226,24 +1226,24 @@ PetscErrorCode Core::buildFieldForL2H1HcurlHdiv(
 
   // Find field
   const FieldSetById &set_id = fIelds.get<BitFieldId_mi_tag>();
-  FieldSetById::iterator miit = set_id.find(id);
-  if(miit == set_id.end()) {
+  FieldSetById::iterator field_it = set_id.find(id);
+  if(field_it == set_id.end()) {
     SETERRQ(comm,MOFEM_NOT_FOUND,"field not found");
   }
-  const int rank = miit->get()->getNbOfCoeffs();
+  const int rank = field_it->get()->getNbOfCoeffs();
   const bool dofs_on_field =
   dofsField.get<BitFieldId_mi_tag>().find(id) != dofsField.get<BitFieldId_mi_tag>().end();
 
-
   // Ents in the field meshset
   Range ents_of_id_meshset;
-  rval = moab.get_entities_by_handle((*miit)->meshSet,ents_of_id_meshset,false); CHKERRQ_MOAB(rval);
+  rval = moab.get_entities_by_handle((*field_it)->meshSet,ents_of_id_meshset,false); CHKERRQ_MOAB(rval);
   if(verb>5) {
     PetscSynchronizedPrintf(
-      comm,"ents in field %s meshset %d\n",(*miit)->getName().c_str(),ents_of_id_meshset.size()
+      comm,"ents in field %s meshset %d\n",(*field_it)->getName().c_str(),ents_of_id_meshset.size()
     );
   }
 
+  MoFEMEntity_multiIndex_ent_view ents_view;
   std::vector<boost::shared_ptr<DofEntity> > dofs_shared_array;
 
   Range::iterator eit = ents_of_id_meshset.begin();
@@ -1252,7 +1252,7 @@ PetscErrorCode Core::buildFieldForL2H1HcurlHdiv(
     // Find mofem entity
     MoFEMEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type::iterator e_miit;
     e_miit = entsFields.get<Composite_Name_And_Ent_mi_tag>().find(
-      boost::make_tuple((*miit)->getNameRef(),*eit)
+      boost::make_tuple((*field_it)->getNameRef(),*eit)
     );
     if(e_miit == entsFields.get<Composite_Name_And_Ent_mi_tag>().end()) continue;
 
@@ -1262,22 +1262,27 @@ PetscErrorCode Core::buildFieldForL2H1HcurlHdiv(
     // Current dofs on entity
     const int current_nb_dofs_on_ent =
     !dofs_on_field ? 0 : dofsField.get<Composite_Name_And_Ent_mi_tag>().count(
-      boost::make_tuple(miit->get()->getNameRef(),*eit)
+      boost::make_tuple(field_it->get()->getNameRef(),*eit)
     );
 
     // Insert DOFs into databse
     const int nb_dofs_on_ent = field_ent->getNbDofsOnEnt();
     const int nb_active_dosf_on_ent = rank*field_ent->getOrderNbDofs(field_ent->getMaxOrder());
 
-    if(nb_active_dosf_on_ent==1 && current_nb_dofs_on_ent == 0) {
+    if(
+      field_ent->getEntType() == MBVERTEX &&
+      current_nb_dofs_on_ent == 0
+    ) {
 
-      // Only one DOF on entity, simply add it and job done
-      // boost::movelib::unique_ptr<DofEntity> mdof
-      // = boost::movelib::make_unique<DofEntity>(field_ent,0,0,0,true);
-      // dofsField.insert(boost::move(mdof));
-      dofsField.insert(
-        boost::make_shared<DofEntity>(field_ent,0,0,0,true)
-      );
+      ents_view.insert(field_ent);
+
+      // // Only one DOF on entity, simply add it and job done
+      // // boost::movelib::unique_ptr<DofEntity> mdof
+      // // = boost::movelib::make_unique<DofEntity>(field_ent,0,0,0,true);
+      // // dofsField.insert(boost::move(mdof));
+      // dofsField.insert(
+      //   boost::make_shared<DofEntity>(field_ent,0,0,0,true)
+      // );
 
     } else if(current_nb_dofs_on_ent>nb_active_dosf_on_ent) {
 
@@ -1289,12 +1294,12 @@ PetscErrorCode Core::buildFieldForL2H1HcurlHdiv(
       dit,hi_dit;
       dit = dofsField.get<Composite_Name_And_Ent_And_EntDofIdx_mi_tag>().lower_bound(
         boost::make_tuple(
-          miit->get()->getNameRef(),*eit,nb_dofs_on_ent
+          field_it->get()->getNameRef(),*eit,nb_dofs_on_ent
         )
       );
       hi_dit = dofsField.get<Composite_Name_And_Ent_And_EntDofIdx_mi_tag>().upper_bound(
         boost::make_tuple(
-          miit->get()->getNameRef(),*eit,current_nb_dofs_on_ent
+          field_it->get()->getNameRef(),*eit,current_nb_dofs_on_ent
         )
       );
 
@@ -1395,6 +1400,27 @@ PetscErrorCode Core::buildFieldForL2H1HcurlHdiv(
     }
 
   }
+
+  // Add vertices DOFs by bulk
+  boost::shared_ptr<std::vector<DofEntity> > dofs_array
+  = boost::make_shared<std::vector<DofEntity> >(std::vector<DofEntity>());
+  dofs_array->reserve(rank*ents_view.size());
+  field_it->get()->getDofSeqenceContainer()->push_back(dofs_array);
+  dofs_shared_array.clear();
+  dofs_shared_array.reserve(dofs_array->size());
+  for(
+    MoFEMEntity_multiIndex_ent_view::iterator
+    eit = ents_view.begin();eit!=ents_view.end();eit++
+  ) {
+    for(int r = 0;r!=rank;r++) {
+      dofs_array->push_back(DofEntity(*eit,1,r,r,true));
+      dofs_shared_array.push_back(
+        boost::shared_ptr<DofEntity>(dofs_array,&dofs_array->back())
+      );
+    }
+  }
+  dofsField.insert(dofs_shared_array.begin(),dofs_shared_array.end());
+
   PetscFunctionReturn(0);
 }
 PetscErrorCode Core::build_fields(int verb) {
