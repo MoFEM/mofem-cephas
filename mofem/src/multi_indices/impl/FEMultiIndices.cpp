@@ -885,7 +885,6 @@ void MoFEMFiniteElement_change_bit_off::operator()(boost::shared_ptr<FiniteEleme
 
 //FiniteElement data
 EntFiniteElement::EntFiniteElement(
-  Interface &moab,
   const boost::shared_ptr<RefElement> ref_finite_element,
   const boost::shared_ptr<FiniteElement> fe_ptr
 ):

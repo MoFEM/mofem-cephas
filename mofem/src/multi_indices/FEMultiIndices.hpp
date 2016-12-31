@@ -303,6 +303,14 @@ typedef PetscErrorCode (*ElementAdjacencyFunct)(
  * \ingroup fe_multi_indices
  */
 struct FiniteElement {
+
+  // typedef multi_index_container<
+  //   boost::weak_ptr<std::vector<EntFiniteElement> >,
+  //   indexed_by<
+  //     sequenced<>
+  //   >
+  // > SequenceFEContainer;
+
   EntityHandle meshset;     ///< meshset stores FE ents
   BitFEId* tag_id_data;     ///< ptr to tag storing FE id
   void* tag_name_data;      ///< ptr to tag storing FE name
@@ -367,6 +375,26 @@ struct FiniteElement {
   ElementAdjacencyTable element_adjacency_table;  //<- allow to add user specific adjacency map
 
   friend std::ostream& operator<<(std::ostream& os, const FiniteElement& e);
+
+//   /**
+//    * \brief Get reference to sequence data container
+//    *
+//    * In sequence data container data are physically stored. The purpose of this
+//    * is to allocate MoFEM::EntFiniteElement data in bulk, having only one allocation instead
+//    * each time entity is inserted. That makes code efficient.
+//    *
+//    * The vector in sequence is destroyed if last entity inside that vector is
+//    * destroyed. All MoFEM::EntFiniteElement have aliased shared_ptr which points to the vector.
+//    *
+//    * @return MoFEM::Field::SequenceFEContainer
+//    */
+//   inline boost::shared_ptr<SequenceFEContainer> getFESeqenceContainer() const {
+//     return sequenceFEContainer;
+//   }
+//
+// private:
+//
+//   mutable boost::shared_ptr<SequenceFEContainer> sequenceFEContainer;
 
 };
 
@@ -480,7 +508,6 @@ interface_RefElement<RefElement> {
   GlobalUId global_uid;
 
   EntFiniteElement(
-    Interface &moab,
     const boost::shared_ptr<RefElement> ref_finite_element,
     const boost::shared_ptr<FiniteElement> fe_ptr
   );

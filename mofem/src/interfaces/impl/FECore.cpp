@@ -521,7 +521,7 @@ namespace MoFEM {
     if(ents_ptr) fe_ents = intersect(fe_ents,*ents_ptr);
 
     // map entity uid to pointers
-    std::map<UId,std::vector<boost::shared_ptr<EntFiniteElement> > > map_uid_fe;
+    std::map<UId,std::vector<boost::weak_ptr<EntFiniteElement> > > map_uid_fe;
 
     //loop meshset Ents and add finite elements
     for(Range::iterator eit = fe_ents.begin();eit!=fe_ents.end();eit++) {
@@ -537,10 +537,9 @@ namespace MoFEM {
         ss << " " << *fe;
         SETERRQ(comm,MOFEM_DATA_INCONSISTENCY,ss.str().c_str());
       }
-      boost::shared_ptr<EntFiniteElement> ent_fe = boost::shared_ptr<EntFiniteElement>(
-        new EntFiniteElement(moab,ref_fe_miit->getRefElement(),fe)
+      std::pair<EntFiniteElement_multiIndex::iterator,bool> p = entsFiniteElements.insert(
+        boost::make_shared<EntFiniteElement>(ref_fe_miit->getRefElement(),fe)
       );
-      std::pair<EntFiniteElement_multiIndex::iterator,bool> p = entsFiniteElements.insert(ent_fe);
 
       if(fe_fields[ROW]==fe_fields[COL]) {
         p.first->get()->col_dof_view = p.first->get()->row_dof_view;
@@ -600,7 +599,7 @@ namespace MoFEM {
     // Loop over hash map, which has all entities on given elemnts
     boost::shared_ptr<SideNumber> side_number_ptr;
     for(
-      std::map<UId,std::vector<boost::shared_ptr<EntFiniteElement> > >::iterator
+      std::map<UId,std::vector<boost::weak_ptr<EntFiniteElement> > >::iterator
       mit = map_uid_fe.begin();mit!=map_uid_fe.end();mit++
     ) {
       DofsByEntUId::iterator dit,hi_dit;
@@ -610,24 +609,24 @@ namespace MoFEM {
         // cerr << mit->first << endl;
         // cerr << **dit << endl;
         BitFieldId field_id = dit->get()->getId();
-        std::vector<boost::shared_ptr<EntFiniteElement> >::iterator fe_it,hi_fe_it;
+        std::vector<boost::weak_ptr<EntFiniteElement> >::iterator fe_it,hi_fe_it;
         fe_it = mit->second.begin();
         hi_fe_it = mit->second.end();
         for(;fe_it!=hi_fe_it;fe_it++) {
           // if rows and columns of finite element are the same, then
           // we exploit that case
-          if((field_id&fe_it->get()->getBitFieldIdRow()).any()) {
-            fe_it->get()->row_dof_view->insert(fe_it->get()->row_dof_view->end(),*dit);
+          if((field_id&fe_it->lock().get()->getBitFieldIdRow()).any()) {
+            fe_it->lock().get()->row_dof_view->insert(fe_it->lock().get()->row_dof_view->end(),*dit);
           }
-          if(fe_it->get()->col_dof_view!=fe_it->get()->row_dof_view) {
-            if((field_id&fe_it->get()->getBitFieldIdCol()).any()) {
-              fe_it->get()->col_dof_view->insert(fe_it->get()->col_dof_view->end(),*dit);
+          if(fe_it->lock().get()->col_dof_view!=fe_it->lock().get()->row_dof_view) {
+            if((field_id&fe_it->lock().get()->getBitFieldIdCol()).any()) {
+              fe_it->lock().get()->col_dof_view->insert(fe_it->lock().get()->col_dof_view->end(),*dit);
             }
           }
-          if((field_id&fe_it->get()->getBitFieldIdData()).any()) {
-            side_number_ptr = fe_it->get()->getSideNumberPtr((*dit)->getEnt());
+          if((field_id&fe_it->lock().get()->getBitFieldIdData()).any()) {
+            side_number_ptr = fe_it->lock().get()->getSideNumberPtr((*dit)->getEnt());
             // add dofs to finite element multi_index database
-            fe_it->get()->data_dofs.get<Unique_mi_tag>().insert(
+            fe_it->lock().get()->data_dofs.get<Unique_mi_tag>().insert(
               boost::shared_ptr<FEDofEntity>(new FEDofEntity(side_number_ptr,*dit))
             );
           }
