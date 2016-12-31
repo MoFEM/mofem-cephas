@@ -235,7 +235,7 @@ PetscErrorCode Core::add_field(
       ); CHKERRQ_MOAB(rval);
       EntityHandle coord_sys_id = undefined_cs_ptr->getMeshset();
       rval = moab.add_entities(coord_sys_id,&meshset,1); CHKERR_MOAB(rval);
-      p = fIelds.insert(boost::shared_ptr<Field>(new Field(moab,meshset,undefined_cs_ptr)));
+      p = fIelds.insert(boost::make_shared<Field>(moab,meshset,undefined_cs_ptr));
       if(bh == MF_EXCL) {
         if(!p.second) SETERRQ1(
           comm,MOFEM_NOT_FOUND,
@@ -985,7 +985,7 @@ PetscErrorCode Core::set_field_order(
 
   // reserve memory for field  dofs
   boost::shared_ptr<std::vector<MoFEMEntity> > ents_array =
-  boost::shared_ptr<std::vector<MoFEMEntity> >(new std::vector<MoFEMEntity>());
+  boost::make_shared<std::vector<MoFEMEntity> >(std::vector<MoFEMEntity>());
 
   // Add sequence to field data structure. Note that entities are allocated
   // once into vector. This vector is passed into sequence as a weak_ptr.
@@ -1162,8 +1162,7 @@ PetscErrorCode Core::buildFieldForNoField(
     std::pair<MoFEMEntity_multiIndex::iterator,bool> e_miit;
     try {
       //create database entity
-      boost::shared_ptr<MoFEMEntity> moabent(new MoFEMEntity(*miit,*miit_ref_ent));
-      e_miit = entsFields.insert(moabent);
+      e_miit = entsFields.insert(boost::make_shared<MoFEMEntity>(*miit,*miit_ref_ent));
     } catch (MoFEMException const &e) {
       SETERRQ(comm,e.errorCode,e.errorMessage);
     } catch (const std::exception& ex) {
@@ -1185,7 +1184,7 @@ PetscErrorCode Core::buildFieldForNoField(
       //if dof is not in databse
       if(d_miit.first==dofsField.end()) {
         //insert dof
-        d_miit = dofsField.insert(boost::shared_ptr<DofEntity>(new DofEntity(*(e_miit.first),0,rank,rank)));
+        d_miit = dofsField.insert(boost::make_shared<DofEntity>(*(e_miit.first),0,rank,rank));
         if(d_miit.second) {
           dof_counter[MBENTITYSET]++; // Count entities in the meshset
         }
@@ -1317,9 +1316,7 @@ PetscErrorCode Core::buildFieldForL2H1HcurlHdiv(
 
       // Allocate space for all dofs on this entity
       boost::shared_ptr<std::vector<DofEntity> > dofs_array
-      = boost::shared_ptr<std::vector<DofEntity> >(
-        new std::vector<DofEntity>()
-      );
+      = boost::make_shared<std::vector<DofEntity> >(std::vector<DofEntity>());
       dofs_array->reserve(nb_dofs_on_ent);
 
       // Set weak pointer on entity to vector/seqence with allocated dofs on

@@ -47,11 +47,11 @@ const bool Part_mi_tag::IamNotPartitioned = false;
 
 //fields
 Field::Field(
-  Interface &_moab,
+  const Interface &moab,
   const EntityHandle meshset,
   const boost::shared_ptr<CoordSys> coord_sys_ptr
 ):
-moab(_moab),
+moab(const_cast<Interface&>(moab)),
 meshSet(meshset),
 coordSysPtr(coord_sys_ptr),
 tag_id_data(NULL),
