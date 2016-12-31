@@ -1973,7 +1973,7 @@ PetscErrorCode Core::partition_finite_elements(
         // create elements objects
         for(;vit!=hi_vit;vit++) {
           boost::shared_ptr<SideNumber> side_number_ptr;
-          side_number_ptr = (*efit)->getSideNumberPtr(moab,(*vit)->getEnt());
+          side_number_ptr = (*efit)->getSideNumberPtr((*vit)->getEnt());
           dofs_array->push_back(FENumeredDofEntity(side_number_ptr,*vit));
         }
 

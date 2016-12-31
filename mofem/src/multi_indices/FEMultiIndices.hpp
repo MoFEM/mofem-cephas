@@ -32,7 +32,7 @@ struct RefElement: public interface_RefEntity<RefEntity> {
   static BitRefEdges DummyBitRefEdges;
 
   SideNumber_multiIndex side_number_table;
-  RefElement(Interface &moab,const boost::shared_ptr<RefEntity> ref_ent_ptr);
+  RefElement(const boost::shared_ptr<RefEntity> ref_ent_ptr);
   virtual const BitRefEdges& getBitRefEdges() const { return DummyBitRefEdges; }
 
   virtual int getBitRefEdgesUlong() const { return 0; }
@@ -47,11 +47,25 @@ struct RefElement: public interface_RefEntity<RefEntity> {
     return getSideNumberTable();
   }
 
-  virtual boost::shared_ptr<SideNumber> getSideNumberPtr(Interface &moab,EntityHandle ent) const {
-    NOT_USED(moab);
+  virtual boost::shared_ptr<SideNumber> getSideNumberPtr(const EntityHandle ent) const {
     NOT_USED(ent);
     return boost::shared_ptr<SideNumber>();
   };
+
+  /**
+   * \deprecated First argument is no longer needed
+   */
+  virtual DEPRECATED boost::shared_ptr<SideNumber> getSideNumberPtr(
+    const moab::Interface &moab,const EntityHandle ent
+  ) const {
+    NOT_USED(moab);
+    return getSideNumberPtr(ent);
+  }
+
+  /**
+   * \brief Get pointer to RefEntity
+   */
+  inline boost::shared_ptr<RefEntity>& getRefEntityPtr() const { return this->sPtr; }
 
   friend std::ostream& operator<<(std::ostream& os,const RefElement& e);
 
@@ -62,8 +76,8 @@ struct RefElement: public interface_RefEntity<RefEntity> {
  * \ingroup fe_multi_indices
  */
 struct RefElement_MESHSET: public RefElement {
-  RefElement_MESHSET(Interface &moab,const boost::shared_ptr<RefEntity> ref_ent_ptr);
-  boost::shared_ptr<SideNumber> getSideNumberPtr(Interface &moab,EntityHandle ent) const;
+  RefElement_MESHSET(const boost::shared_ptr<RefEntity> ref_ent_ptr);
+  boost::shared_ptr<SideNumber> getSideNumberPtr(const EntityHandle ent) const;
 };
 /**
  * \brief keeps data about abstract PRISM finite element
@@ -71,8 +85,8 @@ struct RefElement_MESHSET: public RefElement {
  */
 struct RefElement_PRISM: public RefElement {
   BitRefEdges *tag_BitRefEdges;
-  RefElement_PRISM(Interface &moab,const boost::shared_ptr<RefEntity> ref_ent_ptr);
-  boost::shared_ptr<SideNumber> getSideNumberPtr(Interface &moab,EntityHandle ent) const;
+  RefElement_PRISM(const boost::shared_ptr<RefEntity> ref_ent_ptr);
+  boost::shared_ptr<SideNumber> getSideNumberPtr(const EntityHandle ent) const;
   const BitRefEdges& getBitRefEdges() const { return *tag_BitRefEdges; }
   int getBitRefEdgesUlong() const { return getBitRefEdges().to_ulong(); }
 };
@@ -84,8 +98,8 @@ struct RefElement_PRISM: public RefElement {
 struct RefElement_TET: public RefElement {
   BitRefEdges *tag_BitRefEdges;
   const int* tag_type_data;
-  RefElement_TET(Interface &moab,const boost::shared_ptr<RefEntity> ref_ent_ptr);
-  boost::shared_ptr<SideNumber> getSideNumberPtr(Interface &moab,EntityHandle ent) const;
+  RefElement_TET(const boost::shared_ptr<RefEntity> ref_ent_ptr);
+  boost::shared_ptr<SideNumber> getSideNumberPtr(const EntityHandle ent) const;
   SideNumber_multiIndex &getSideNumberTable() const { return const_cast<SideNumber_multiIndex&>(side_number_table); };
   const BitRefEdges& getBitRefEdges() const { return *tag_BitRefEdges; }
   int getBitRefEdgesUlong() const { return getBitRefEdges().to_ulong(); }
@@ -97,8 +111,8 @@ struct RefElement_TET: public RefElement {
  * \ingroup fe_multi_indices
  */
 struct RefElement_TRI: public RefElement {
-  RefElement_TRI(Interface &moab,const boost::shared_ptr<RefEntity> ref_ent_ptr);
-  boost::shared_ptr<SideNumber> getSideNumberPtr(Interface &moab,EntityHandle ent) const;
+  RefElement_TRI(const boost::shared_ptr<RefEntity> ref_ent_ptr);
+  boost::shared_ptr<SideNumber> getSideNumberPtr(const EntityHandle ent) const;
   friend std::ostream& operator<<(std::ostream& os,const RefElement_TRI& e);
 };
 
@@ -107,8 +121,8 @@ struct RefElement_TRI: public RefElement {
  * \ingroup fe_multi_indices
  */
 struct RefElement_EDGE: public RefElement {
-  RefElement_EDGE(Interface &moab,const boost::shared_ptr<RefEntity> ref_ent_ptr);
-  boost::shared_ptr<SideNumber> getSideNumberPtr(Interface &moab,EntityHandle ent) const;
+  RefElement_EDGE(const boost::shared_ptr<RefEntity> ref_ent_ptr);
+  boost::shared_ptr<SideNumber> getSideNumberPtr(const EntityHandle ent) const;
   friend std::ostream& operator<<(std::ostream& os,const RefElement_EDGE& e);
 };
 
@@ -117,8 +131,8 @@ struct RefElement_EDGE: public RefElement {
  * \ingroup fe_multi_indices
  */
 struct RefElement_VERTEX: public RefElement {
-  RefElement_VERTEX(Interface &moab,const boost::shared_ptr<RefEntity> ref_ent_ptr);
-  boost::shared_ptr<SideNumber> getSideNumberPtr(Interface &moab,EntityHandle ent) const;
+  RefElement_VERTEX(const boost::shared_ptr<RefEntity> ref_ent_ptr);
+  boost::shared_ptr<SideNumber> getSideNumberPtr(const EntityHandle ent) const;
   friend std::ostream& operator<<(std::ostream& os,const RefElement_VERTEX& e);
 };
 
@@ -136,18 +150,32 @@ struct interface_RefElement: interface_RefEntity<T> {
 
   interface_RefElement(const boost::shared_ptr<T> sptr):
   interface_RefEntity<T>(sptr),
-  sPtr(sptr) {
+  sPtr(sptr) {}
+
+  inline int getBitRefEdgesUlong() const
+  { return this->sPtr->getBitRefEdgesUlong(); }
+
+  inline SideNumber_multiIndex &getSideNumberTable() const
+  { return this->sPtr->getSideNumberTable(); }
+
+  DEPRECATED inline SideNumber_multiIndex &get_side_number_table() const
+  { return this->sPtr->getSideNumberTable(); }
+
+  inline boost::shared_ptr<SideNumber> getSideNumberPtr(const EntityHandle ent) const
+  { return this->sPtr->getSideNumberPtr(ent); }
+
+  /**
+   * \deprecated First argument is no longer needed
+   */
+  virtual DEPRECATED boost::shared_ptr<SideNumber> getSideNumberPtr(
+    const moab::Interface &moab,const EntityHandle ent
+  ) const {
+    NOT_USED(moab);
+    return getSideNumberPtr(ent);
   }
 
-  inline int getBitRefEdgesUlong() const { return this->sPtr->getBitRefEdgesUlong(); }
-
-  inline SideNumber_multiIndex &getSideNumberTable() const { return this->sPtr->getSideNumberTable(); }
-
-  DEPRECATED inline SideNumber_multiIndex &get_side_number_table() const { return this->sPtr->getSideNumberTable(); }
-
-  inline boost::shared_ptr<SideNumber> getSideNumberPtr(Interface &moab,EntityHandle ent) const {
-    return this->sPtr->getSideNumberPtr(moab,ent);
-  }
+  inline boost::shared_ptr<RefEntity>& getRefEntityPtr() const
+  { return this->sPtr->getRefEntityPtr(); }
 
   inline const boost::shared_ptr<T> getRefElement() const { return this->sPtr; }
 
@@ -442,6 +470,7 @@ struct EntFiniteElement:
 public
 interface_FiniteElement<FiniteElement>,
 interface_RefElement<RefElement> {
+
   typedef interface_RefEntity<RefElement> interface_type_RefEntity;
   typedef interface_RefElement<RefElement> interface_type_RefElement;
   typedef interface_FiniteElement<FiniteElement> interface_type_MoFEMFiniteElement;
@@ -554,21 +583,27 @@ interface_RefElement<RefElement> {
   ) const;
 
   PetscErrorCode getElementAdjacency(
-    Interface &moab,const boost::shared_ptr<Field> field_ptr,Range &adjacency
-  ) {
-    PetscFunctionBegin;
-    PetscErrorCode ierr;
-    const EntFiniteElement *this_fe_ptr = this;
-    if(get_MoFEMFiniteElementPtr()->element_adjacency_table[getEntType()] == NULL) {
-      SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented");
-    }
-    ierr = (get_MoFEMFiniteElementPtr()->element_adjacency_table[getEntType()])(
-      moab,*field_ptr,*this_fe_ptr,adjacency
-    ); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
-  }
+    const boost::shared_ptr<Field> field_ptr,Range &adjacency
+  );
 
   inline const boost::shared_ptr<RefElement> getRefElement() const { return this->sPtr; }
+
+  /**
+   * \brief Get weak_ptr reference to sequence/vector storing dofs on entity.
+   *
+   * Vector is automatically destroy when last DOF in vector os destroyed. Every
+   * shared_ptr to the DOF has aliased shared_ptr to vector of DOFs in that vector.
+   * That do the trick.
+   *
+   */
+  inline boost::weak_ptr<std::vector<FEDofEntity> >& getDofsSeqence() const {
+    return dofsSequce;
+  }
+
+private:
+
+  // Keep vector of DoFS on entity
+  mutable boost::weak_ptr<std::vector<FEDofEntity> > dofsSequce;
 
 };
 
@@ -632,25 +667,16 @@ interface_RefElement<T> {
     return this->sPtr->getSideNumberTable();
   }
 
-  boost::shared_ptr<SideNumber> getSidePumberPtr(Interface &moab,EntityHandle ent) const {
-    return this->sPtr->getSidePumberPtr(moab,ent);
-  }
-
-
-  inline PetscErrorCode getElementAdjacency(Interface &moab,const Field *field_ptr,Range &adjacency) {
-    PetscFunctionBegin;
-    PetscErrorCode ierr;
-    ierr = this->getElementAdjacency(moab,field_ptr,adjacency); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
+  inline PetscErrorCode getElementAdjacency(const Field *field_ptr,Range &adjacency) {
+    return this->getElementAdjacency(field_ptr,adjacency);
   }
 
   /** \deprecated Use getElementAdjacency() instead
   */
-  DEPRECATED inline PetscErrorCode get_element_adjacency(Interface &moab,const Field *field_ptr,Range &adjacency) {
-    PetscFunctionBegin;
-    PetscErrorCode ierr;
-    ierr = this->getElementAdjacency(moab,field_ptr,adjacency); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
+  DEPRECATED inline PetscErrorCode get_element_adjacency(
+    const Field *field_ptr,Range &adjacency
+  ) {
+    return this->getElementAdjacency(field_ptr,adjacency);
   }
 
   inline const boost::shared_ptr<T> getRefElement() const { return this->sPtr->getRefElement(); }

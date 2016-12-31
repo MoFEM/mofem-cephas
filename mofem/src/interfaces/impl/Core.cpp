@@ -389,7 +389,7 @@ PetscErrorCode Core::addPrismToDatabase(const EntityHandle prism,int verb) {
     if(p_ent.second) {
       std::pair<RefElement_multiIndex::iterator,bool> p_MoFEMFiniteElement;
       p_MoFEMFiniteElement = refinedFiniteElements.insert(
-	      ptrWrapperRefElement(boost::shared_ptr<RefElement>(new RefElement_PRISM(moab,*p_ent.first)))
+	      ptrWrapperRefElement(boost::shared_ptr<RefElement>(new RefElement_PRISM(*p_ent.first)))
       );
       int num_nodes;
       const EntityHandle* conn;
@@ -399,8 +399,8 @@ PetscErrorCode Core::addPrismToDatabase(const EntityHandle prism,int verb) {
       rval = moab.get_adjacencies(&conn[3],3,2,false,face_side4); CHKERRQ_MOAB(rval);
       if(face_side3.size()!=1) SETERRQ(PETSC_COMM_SELF,1,"prism don't have side face 3");
       if(face_side4.size()!=1) SETERRQ(PETSC_COMM_SELF,1,"prims don't have side face 4");
-      p_MoFEMFiniteElement.first->getSideNumberPtr(moab,*face_side3.begin());
-      p_MoFEMFiniteElement.first->getSideNumberPtr(moab,*face_side4.begin());
+      p_MoFEMFiniteElement.first->getSideNumberPtr(*face_side3.begin());
+      p_MoFEMFiniteElement.first->getSideNumberPtr(*face_side4.begin());
     }
   } catch (MoFEMException const &e) {
     SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
@@ -791,33 +791,33 @@ PetscErrorCode Core::initialiseDatabseInformationFromMesh(int verb) {
           switch (moab.type_from_handle(*eit)) {
             case MBVERTEX:
             p_MoFEMFiniteElement = refinedFiniteElements.insert(ptrWrapperRefElement(
-              boost::shared_ptr<RefElement>(new RefElement_VERTEX(moab,*p_ref_ent.first)))
+              boost::shared_ptr<RefElement>(new RefElement_VERTEX(*p_ref_ent.first)))
             );
             break;
             case MBEDGE:
             p_MoFEMFiniteElement = refinedFiniteElements.insert(ptrWrapperRefElement(
-              boost::shared_ptr<RefElement>(new RefElement_EDGE(moab,*p_ref_ent.first)))
+              boost::shared_ptr<RefElement>(new RefElement_EDGE(*p_ref_ent.first)))
             );
             break;
             case MBTRI:
             p_MoFEMFiniteElement = refinedFiniteElements.insert(ptrWrapperRefElement(
-              boost::shared_ptr<RefElement>(new RefElement_TRI(moab,*p_ref_ent.first)))
+              boost::shared_ptr<RefElement>(new RefElement_TRI(*p_ref_ent.first)))
             );
             break;
             case MBTET:
             p_MoFEMFiniteElement = refinedFiniteElements.insert(ptrWrapperRefElement(
-              boost::shared_ptr<RefElement>(new RefElement_TET(moab,*p_ref_ent.first)))
+              boost::shared_ptr<RefElement>(new RefElement_TET(*p_ref_ent.first)))
             );
             break;
             case MBPRISM:
             ierr = addPrismToDatabase(*eit,verb); CHKERRQ(ierr);
             p_MoFEMFiniteElement = refinedFiniteElements.insert(ptrWrapperRefElement(
-              boost::shared_ptr<RefElement>(new RefElement_PRISM(moab,*p_ref_ent.first)))
+              boost::shared_ptr<RefElement>(new RefElement_PRISM(*p_ref_ent.first)))
             );
             break;
             case MBENTITYSET:
             p_MoFEMFiniteElement = refinedFiniteElements.insert(ptrWrapperRefElement(
-              boost::shared_ptr<RefElement>(new RefElement_MESHSET(moab,*p_ref_ent.first)))
+              boost::shared_ptr<RefElement>(new RefElement_MESHSET(*p_ref_ent.first)))
             );
             break;
             default:
@@ -1104,31 +1104,31 @@ PetscErrorCode Core::seed_ref_level(const Range &ents,const BitRefLevel &bit,con
       switch((*p_ent.first)->getEntType()) {
         case MBVERTEX:
         p_MoFEMFiniteElement = refinedFiniteElements.insert(ptrWrapperRefElement(
-          boost::shared_ptr<RefElement>(new RefElement_VERTEX(moab,*p_ent.first)))
+          boost::shared_ptr<RefElement>(new RefElement_VERTEX(*p_ent.first)))
         );
         seeded_ents.insert(*tit);
         break;
         case MBEDGE:
         p_MoFEMFiniteElement = refinedFiniteElements.insert(ptrWrapperRefElement(
-          boost::shared_ptr<RefElement>(new RefElement_EDGE(moab,*p_ent.first)))
+          boost::shared_ptr<RefElement>(new RefElement_EDGE(*p_ent.first)))
         );
         seeded_ents.insert(*tit);
         break;
         case MBTRI:
         p_MoFEMFiniteElement = refinedFiniteElements.insert(ptrWrapperRefElement(
-          boost::shared_ptr<RefElement>(new RefElement_TRI(moab,*p_ent.first)))
+          boost::shared_ptr<RefElement>(new RefElement_TRI(*p_ent.first)))
         );
         seeded_ents.insert(*tit);
         break;
         case MBTET:
         p_MoFEMFiniteElement = refinedFiniteElements.insert(ptrWrapperRefElement(
-          boost::shared_ptr<RefElement>(new RefElement_TET(moab,*p_ent.first)))
+          boost::shared_ptr<RefElement>(new RefElement_TET(*p_ent.first)))
         );
         seeded_ents.insert(*tit);
         break;
         case MBPRISM:
         p_MoFEMFiniteElement = refinedFiniteElements.insert(ptrWrapperRefElement(
-          boost::shared_ptr<RefElement>(new RefElement_PRISM(moab,*p_ent.first)))
+          boost::shared_ptr<RefElement>(new RefElement_PRISM(*p_ent.first)))
         );
         if(!only_tets) {
           seeded_ents.insert(*tit);
@@ -1136,7 +1136,7 @@ PetscErrorCode Core::seed_ref_level(const Range &ents,const BitRefLevel &bit,con
         break;
         case MBENTITYSET:
         p_MoFEMFiniteElement = refinedFiniteElements.insert(ptrWrapperRefElement(
-          boost::shared_ptr<RefElement>(new RefElement_MESHSET(moab,*p_ent.first)))
+          boost::shared_ptr<RefElement>(new RefElement_MESHSET(*p_ent.first)))
         );
         break;
         default:
@@ -1198,7 +1198,7 @@ PetscErrorCode Core::seed_ref_level_MESHSET(const EntityHandle meshset,const Bit
   );
   refinedEntities.modify(p_ent.first,RefEntity_change_add_bit(bit));
   ptrWrapperRefElement pack_fe(
-    boost::shared_ptr<RefElement>(new RefElement_MESHSET(moab,*p_ent.first))
+    boost::shared_ptr<RefElement>(new RefElement_MESHSET(*p_ent.first))
   );
   std::pair<RefElement_multiIndex::iterator,bool> p_MoFEMFiniteElement = refinedFiniteElements.insert(pack_fe);
   if(verbose > 0) {
