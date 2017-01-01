@@ -45,19 +45,19 @@ namespace MoFEM {
     static const bool IamNotPartitioned;
     /// extract dof index from iterator
     template<class IT>
-    static DofIdx get_index(const IT &it) { return (*it)->dofIdx; }
+    static DofIdx get_index(const IT &it) { return (*it)->getDofIdx(); }
   };
   struct PetscGlobalIdx_mi_tag {
     static const bool IamNotPartitioned;
     /// extract global dof index from iterator
     template<class IT>
-    static DofIdx get_index(const IT &it) { return (*it)->petscGloablDofIdx; }
+    static DofIdx get_index(const IT &it) { return (*it)->getPetscGlobalDofIdx(); }
   };
   struct PetscLocalIdx_mi_tag {
     static const bool IamNotPartitioned;
     /// extract global dof index from iterator
     template<class IT>
-    static DofIdx get_index(const IT &it) { return (*it)->petscLocalDofIdx; }
+    static DofIdx get_index(const IT &it) { return (*it)->getPetscLocalDofIdx(); }
   };
   struct Part_mi_tag {
     static const bool IamNotPartitioned;
