@@ -146,11 +146,8 @@ struct interface_RefElement: interface_RefEntity<T> {
   typedef interface_RefEntity<T> interface_type_RefEntity;
   typedef interface_RefElement<T> interface_type_RefElement;
 
-  const boost::shared_ptr<T> sPtr;
-
   interface_RefElement(const boost::shared_ptr<T> sptr):
-  interface_RefEntity<T>(sptr),
-  sPtr(sptr) {}
+  interface_RefEntity<T>(sptr) {}
 
   inline int getBitRefEdgesUlong() const
   { return this->sPtr->getBitRefEdgesUlong(); }
@@ -177,7 +174,7 @@ struct interface_RefElement: interface_RefEntity<T> {
   inline boost::shared_ptr<RefEntity>& getRefEntityPtr() const
   { return this->sPtr->getRefEntityPtr(); }
 
-  inline const boost::shared_ptr<T> getRefElement() const { return this->sPtr; }
+  inline const boost::shared_ptr<T>& getRefElement() const { return this->sPtr; }
 
   virtual ~interface_RefElement() {}
 
@@ -431,7 +428,8 @@ struct DefaultElementAdjacency {
 template <typename T>
 struct interface_FiniteElement {
 
-  const boost::shared_ptr<T> sFePtr;
+  mutable boost::shared_ptr<T> sFePtr;
+
   interface_FiniteElement(const boost::shared_ptr<T> ptr): sFePtr(ptr) {};
 
   inline const boost::shared_ptr<FiniteElement> get_MoFEMFiniteElementPtr() { return this->sFePtr; };
@@ -613,7 +611,7 @@ interface_RefElement<RefElement> {
     const boost::shared_ptr<Field> field_ptr,Range &adjacency
   );
 
-  inline const boost::shared_ptr<RefElement> getRefElement() const { return this->sPtr; }
+  inline boost::shared_ptr<RefElement>& getRefElement() const { return this->sPtr; }
 
   /**
    * \brief Get weak_ptr reference to sequence/vector storing dofs on entity.
@@ -706,7 +704,9 @@ interface_RefElement<T> {
     return this->getElementAdjacency(field_ptr,adjacency);
   }
 
-  inline const boost::shared_ptr<T> getRefElement() const { return this->sPtr->getRefElement(); }
+  inline boost::shared_ptr<RefElement>& getRefElement() const {
+    return this->sPtr->getRefElement();
+  }
 
 };
 
@@ -727,6 +727,11 @@ struct NumeredEntFiniteElement: public interface_EntFiniteElement<EntFiniteEleme
   unsigned int part; ///< Partition number
   boost::shared_ptr<FENumeredDofEntity_multiIndex> rows_dofs;  ///< indexed dofs on rows
   boost::shared_ptr<FENumeredDofEntity_multiIndex> cols_dofs;  ///< indexed dofs on columns
+
+
+  inline boost::shared_ptr<EntFiniteElement>& getEntFiniteElement() const {
+    return this->sPtr;
+  }
 
   /**
    * \Construct indexed finite element
@@ -1035,6 +1040,9 @@ struct NumeredEntFiniteElement_change_part {
   NumeredEntFiniteElement_change_part(unsigned int part): pArt(part) {};
   void operator()(boost::shared_ptr<NumeredEntFiniteElement> &fe) {
     fe->part = pArt;
+  }
+  void operator()(NumeredEntFiniteElement &fe) {
+    fe.part = pArt;
   }
 };
 

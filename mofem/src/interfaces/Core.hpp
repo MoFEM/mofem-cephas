@@ -472,7 +472,13 @@ struct Core: public Interface {
     int verb = -1
   );
   PetscErrorCode partition_ghost_dofs(const std::string &name,int verb = -1);
-  PetscErrorCode partition_finite_elements(const std::string &name,bool part_from_moab = false,int low_proc = -1,int hi_proc = -1,int verb = -1);
+  PetscErrorCode partition_finite_elements(
+    const std::string &name,
+    bool part_from_moab = false,
+    int low_proc = -1,
+    int hi_proc = -1,
+    int verb = -1
+  );
   PetscErrorCode partition_check_matrix_fill_in(const std::string &problem_neme,int row,int col,int verb);
   PetscErrorCode printPartitionedProblem(const MoFEMProblem *problem_ptr,int verb = -1);
   PetscErrorCode debugPartitionedProblem(const MoFEMProblem *problem_ptr,int verb = -1);
