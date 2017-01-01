@@ -519,8 +519,8 @@ interface_RefElement<RefElement> {
   const GlobalUId& getGlobalUniqueId() const { return global_uid; }
 
   /**
-   * \brief Generaye UId for finite element entity
-   * @return [description]
+   * \brief Generate UId for finite element entity
+   * @return Finite element entity unique Id
    */
   GlobalUId getGlobalUniqueIdCalculate() const {
     char bit_number = getBitNumber();

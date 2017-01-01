@@ -45,9 +45,10 @@ struct MoFEMProblem {
   BitFEId* tag_BitFEId_data;
   BitRefLevel* tag_BitRefLevel;
   BitRefLevel* tag_BitRefLevel_DofMask;
-  boost::shared_ptr<NumeredDofEntity_multiIndex> numered_dofs_rows;
-  boost::shared_ptr<NumeredDofEntity_multiIndex> numered_dofs_cols;
-  NumeredEntFiniteElement_multiIndex numeredFiniteElements;
+
+  mutable boost::shared_ptr<NumeredDofEntity_multiIndex> numered_dofs_rows; // FIXME name convention
+  mutable boost::shared_ptr<NumeredDofEntity_multiIndex> numered_dofs_cols; // FIXME name convention
+  mutable NumeredEntFiniteElement_multiIndex numeredFiniteElements;
 
   /**
    * \brief Subproblem problem data
@@ -124,7 +125,11 @@ struct MoFEMProblem {
     }
   };
 
-  boost::shared_ptr<SubProblemData> subProblemData;
+  /**
+   * Pointer to data structure. This pointer has allocated data only for
+   * sub problems.
+   */
+  mutable boost::shared_ptr<SubProblemData> subProblemData;
 
   /**
    * \brief Get main problem of sub-problem is

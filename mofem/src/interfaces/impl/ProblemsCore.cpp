@@ -242,7 +242,9 @@ PetscErrorCode Core::build_problem_on_distributed_mesh(
   if(!((*buildMoFEM)&BUILD_ADJ)) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"adjacencies not build");
   const MoFEMProblem *problem_ptr;
   ierr = get_problem(name,&problem_ptr); CHKERRQ(ierr);
-  ierr = build_problem_on_distributed_mesh(const_cast<MoFEMProblem*>(problem_ptr),square_matrix,verb); CHKERRQ(ierr);
+  ierr = build_problem_on_distributed_mesh(
+    const_cast<MoFEMProblem*>(problem_ptr),square_matrix,verb
+  ); CHKERRQ(ierr);
   *buildMoFEM |= BUILD_PROBLEM;
   *buildMoFEM |= PARTITION_PROBLEM;
   PetscFunctionReturn(0);
@@ -1235,10 +1237,8 @@ PetscErrorCode Core::partition_simple_problem(const std::string &name,int verb) 
   MoFEMProblem_multiIndex_by_name::iterator p_miit = pRoblems_set.find(name);
   if(p_miit==pRoblems_set.end()) SETERRQ1(PETSC_COMM_SELF,1,"problem < %s > is not found (top tip: check spelling)",name.c_str());
   typedef boost::multi_index::index<NumeredDofEntity_multiIndex,Idx_mi_tag>::type NumeredDofEntitys_by_idx;
-  NumeredDofEntitys_by_idx &dofs_row_by_idx = const_cast<NumeredDofEntitys_by_idx&>
-  (p_miit->numered_dofs_rows->get<Idx_mi_tag>());
-  NumeredDofEntitys_by_idx &dofs_col_by_idx = const_cast<NumeredDofEntitys_by_idx&>
-  (p_miit->numered_dofs_cols->get<Idx_mi_tag>());
+  NumeredDofEntitys_by_idx &dofs_row_by_idx = p_miit->numered_dofs_rows->get<Idx_mi_tag>();
+  NumeredDofEntitys_by_idx &dofs_col_by_idx = p_miit->numered_dofs_cols->get<Idx_mi_tag>();
   boost::multi_index::index<NumeredDofEntity_multiIndex,Idx_mi_tag>::type::iterator miit_row,hi_miit_row;
   boost::multi_index::index<NumeredDofEntity_multiIndex,Idx_mi_tag>::type::iterator miit_col,hi_miit_col;
   DofIdx &nb_row_local_dofs = *((DofIdx*)p_miit->tag_local_nbdof_data_row);
@@ -1375,7 +1375,7 @@ PetscErrorCode Core::partition_compose_problem(
       "problem with name < %s > not defined (top tip check spelling)",
       problem_for_cols.c_str());
   }
-  const boost::shared_ptr<NumeredDofEntity_multiIndex> dofs_col = p_miit_col->numered_dofs_cols;
+  boost::shared_ptr<NumeredDofEntity_multiIndex> dofs_col = p_miit_col->numered_dofs_cols;
 
   bool copy[] = { copy_rows, copy_cols };
   boost::shared_ptr<NumeredDofEntity_multiIndex> composed_dofs[] = {
@@ -1384,7 +1384,7 @@ PetscErrorCode Core::partition_compose_problem(
 
   int* nb_local_dofs[] = { p_miit->tag_local_nbdof_data_row, p_miit->tag_local_nbdof_data_col };
   int* nb_dofs[] = { p_miit->tag_nbdof_data_row, p_miit->tag_nbdof_data_col };
-  const boost::shared_ptr<NumeredDofEntity_multiIndex> copied_dofs[] = { dofs_row, dofs_col };
+  boost::shared_ptr<NumeredDofEntity_multiIndex> copied_dofs[] = { dofs_row, dofs_col };
 
   for(int ss = 0; ss<2;ss++) {
 
@@ -1395,7 +1395,7 @@ PetscErrorCode Core::partition_compose_problem(
       // only copy indices which are belong to some elements if this problem
       std::vector<int> is_local,is_new;
 
-      NumeredDofEntityByUId &dofs_by_uid = const_cast<NumeredDofEntityByUId&>(copied_dofs[ss]->get<Unique_mi_tag>());
+      NumeredDofEntityByUId &dofs_by_uid = copied_dofs[ss]->get<Unique_mi_tag>();
       for(NumeredDofEntity_multiIndex::iterator dit = composed_dofs[ss]->begin();dit!=composed_dofs[ss]->end();dit++) {
 
         NumeredDofEntityByUId::iterator diit = dofs_by_uid.find((*dit)->getGlobalUniqueId());
@@ -1540,8 +1540,8 @@ PetscErrorCode Core::build_sub_problem(
   // put rows & columns field names in array
   std::vector<std::string> fields[] = { fields_row,fields_col };
 
-  const_cast<MoFEMProblem*>(&*out_problem_it)->subProblemData
-  = boost::shared_ptr<MoFEMProblem::SubProblemData>(new MoFEMProblem::SubProblemData());
+  // make data structure fos sub-problem data
+  out_problem_it->subProblemData = boost::make_shared<MoFEMProblem::SubProblemData>();
 
   // use to keep shared_ptr
   std::vector<boost::shared_ptr<NumeredDofEntity> > dofs_shared_array;
@@ -1702,8 +1702,7 @@ PetscErrorCode Core::build_sub_problem(
   }
 
   if(square_matrix) {
-    const_cast<MoFEMProblem*>(&*out_problem_it)->numered_dofs_cols =
-    out_problem_it->numered_dofs_rows;
+    out_problem_it->numered_dofs_cols = out_problem_it->numered_dofs_rows;
     *(out_problem_it->tag_local_nbdof_data_col) = *(out_problem_it->tag_local_nbdof_data_row);
     *(out_problem_it->tag_nbdof_data_col) = *(out_problem_it->tag_nbdof_data_row);
     out_problem_it->getSubData()->colIs = out_problem_it->getSubData()->rowIs;
@@ -1850,8 +1849,7 @@ PetscErrorCode Core::partition_finite_elements(
   }
 
   // Get reference on finite elements multi-index on the problem
-  NumeredEntFiniteElement_multiIndex& problem_finite_elements
-  = const_cast<NumeredEntFiniteElement_multiIndex&>(p_miit->numeredFiniteElements);
+  NumeredEntFiniteElement_multiIndex& problem_finite_elements = p_miit->numeredFiniteElements;
   problem_finite_elements.clear();
 
   // check if dofs and columns are the same, i.e. structurally symmetric problem
@@ -1866,12 +1864,14 @@ PetscErrorCode Core::partition_finite_elements(
   EntFiniteElement_multiIndex::iterator efit = entsFiniteElements.begin();
   EntFiniteElement_multiIndex::iterator hi_efit = entsFiniteElements.end();
   for(;efit!=hi_efit;efit++) {
+
     // if element is not part of problem
     if(((*efit)->getId()&p_miit->getBitFEId()).none()) continue;
     // if entity is not problem refinement level
     if(((*efit)->getBitRefLevel()&p_miit->getBitRefLevel())!=p_miit->getBitRefLevel()) continue;
     // create element
     boost::shared_ptr<NumeredEntFiniteElement> numered_fe(new NumeredEntFiniteElement(*efit));
+
     // check if rows and columns are the same on this element
     bool do_cols_fe = true;
     if(
@@ -1965,27 +1965,24 @@ PetscErrorCode Core::partition_finite_elements(
         boost::shared_ptr<std::vector<FENumeredDofEntity> >(new std::vector<FENumeredDofEntity>());
         if(ss == 0) {
           numered_fe->getRowDofsSeqence() = dofs_array;
+          if(!do_cols_fe) {
+            numered_fe->getColDofsSeqence() = dofs_array;
+          }
         } else {
           numered_fe->getColDofsSeqence() = dofs_array;
         }
         dofs_array->reserve(std::distance(vit,hi_vit));
+        // reserve memory for shared pointers now
+        dofs_shared_array.clear();
+        dofs_shared_array.reserve(std::distance(vit,hi_vit));
 
         // create elements objects
         for(;vit!=hi_vit;vit++) {
           boost::shared_ptr<SideNumber> side_number_ptr;
           side_number_ptr = (*efit)->getSideNumberPtr((*vit)->getEnt());
           dofs_array->push_back(FENumeredDofEntity(side_number_ptr,*vit));
-        }
-
-        // reserve memory for shared pointers now
-        dofs_shared_array.clear();
-        dofs_shared_array.reserve(dofs_array->size());
-        for(
-          std::vector<FENumeredDofEntity>::iterator
-          viit = dofs_array->begin();viit!=dofs_array->end(); viit++
-        ) {
           dofs_shared_array.push_back(
-            boost::shared_ptr<FENumeredDofEntity>(dofs_array,&*viit)
+            boost::shared_ptr<FENumeredDofEntity>(dofs_array,&dofs_array->back())
           );
         }
 
@@ -2081,8 +2078,8 @@ PetscErrorCode Core::partition_ghost_dofs(const std::string &name,int verb) {
     };
     NumeredDofEntity_multiIndex_uid_view_ordered *ghost_idx_view[2] = { &ghost_idx_col_view, &ghost_idx_row_view };
     NumeredDofEntityByUId *dof_by_uid_no_const[2] = {
-      const_cast<NumeredDofEntityByUId*>(&p_miit->numered_dofs_cols->get<Unique_mi_tag>()),
-      const_cast<NumeredDofEntityByUId*>(&p_miit->numered_dofs_rows->get<Unique_mi_tag>())
+      &p_miit->numered_dofs_cols->get<Unique_mi_tag>(),
+      &p_miit->numered_dofs_rows->get<Unique_mi_tag>()
     };
     int loop_size = 2;
     if(p_miit->numered_dofs_cols==p_miit->numered_dofs_rows) {
@@ -2190,7 +2187,12 @@ PetscErrorCode Core::problem_basic_method_postProcess(const std::string &problem
 
   PetscFunctionReturn(0);
 }
-PetscErrorCode Core::loop_finite_elements(const std::string &problem_name,const std::string &fe_name,FEMethod &method,MoFEMTypes bh,int verb) {
+PetscErrorCode Core::loop_finite_elements(
+  const std::string &problem_name,
+  const std::string &fe_name,
+  FEMethod &method,MoFEMTypes bh,
+  int verb
+) {
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
 
@@ -2199,7 +2201,14 @@ PetscErrorCode Core::loop_finite_elements(const std::string &problem_name,const 
   PetscFunctionReturn(0);
 }
 PetscErrorCode Core::loop_finite_elements(
-  const MoFEMProblem *problem_ptr,const std::string &fe_name,FEMethod &method,int lower_rank,int upper_rank,MoFEMTypes bh,int verb) {
+  const MoFEMProblem *problem_ptr,
+  const std::string &fe_name,
+  FEMethod &method, // reference to finite element implementation
+  int lower_rank, // only elements on part between low and up rank are processed
+  int upper_rank,
+  MoFEMTypes bh, // is set to MF_EXIST, throw error if element is not declared in databse
+  int verb
+) {
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
   // finite element
@@ -2211,9 +2220,11 @@ PetscErrorCode Core::loop_finite_elements(
   PetscLogEventEnd(USER_EVENT_preProcess,0,0,0,0);
 
   NumeredEntFiniteElementbyNameAndPart &numered_fe =
-    (const_cast<NumeredEntFiniteElement_multiIndex&>(problem_ptr->numeredFiniteElements)).get<Composite_Name_And_Part_mi_tag>();
-  NumeredEntFiniteElementbyNameAndPart::iterator miit = numered_fe.lower_bound(boost::make_tuple(fe_name,lower_rank));
-  NumeredEntFiniteElementbyNameAndPart::iterator hi_miit = numered_fe.upper_bound(boost::make_tuple(fe_name,upper_rank));
+  problem_ptr->numeredFiniteElements.get<Composite_Name_And_Part_mi_tag>();
+  NumeredEntFiniteElementbyNameAndPart::iterator miit =
+  numered_fe.lower_bound(boost::make_tuple(fe_name,lower_rank));
+  NumeredEntFiniteElementbyNameAndPart::iterator hi_miit =
+  numered_fe.upper_bound(boost::make_tuple(fe_name,upper_rank));
 
   if(miit==hi_miit && bh&MF_EXIST) {
     if(!check_finite_element(fe_name)) {
@@ -2255,7 +2266,13 @@ PetscErrorCode Core::loop_finite_elements(
   PetscFunctionReturn(0);
 }
 PetscErrorCode Core::loop_finite_elements(
-  const std::string &problem_name,const std::string &fe_name,FEMethod &method,int lower_rank,int upper_rank,MoFEMTypes bh,int verb) {
+  const std::string &problem_name,
+  const std::string &fe_name,
+  FEMethod &method,
+  int lower_rank,
+  int upper_rank,
+  MoFEMTypes bh,int verb
+) {
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
   typedef MoFEMProblem_multiIndex::index<Problem_mi_tag>::type mofem_problems_by_name;
@@ -2277,14 +2294,10 @@ PetscErrorCode Core::loop_dofs(
   NumeredDofsByNameAndPart *dofs;
   switch (rc) {
     case ROW:
-      dofs = const_cast<NumeredDofsByNameAndPart*>(
-        &problem_ptr->numered_dofs_rows->get<Composite_Name_And_Part_mi_tag>()
-      );
+      dofs = &problem_ptr->numered_dofs_rows->get<Composite_Name_And_Part_mi_tag>();
       break;
     case COL:
-      dofs = const_cast<NumeredDofsByNameAndPart*>(
-        &problem_ptr->numered_dofs_cols->get<Composite_Name_And_Part_mi_tag>()
-      );
+      dofs = &problem_ptr->numered_dofs_cols->get<Composite_Name_And_Part_mi_tag>();
       break;
     default:
      SETERRQ(comm,MOFEM_DATA_INCONSISTENCY,"not implemented");
