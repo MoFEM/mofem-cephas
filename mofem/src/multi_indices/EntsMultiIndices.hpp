@@ -585,19 +585,27 @@ struct MoFEMEntity:
    */
   const GlobalUId& getGlobalUniqueId() const { return global_uid; }
 
+  static inline GlobalUId getGlobalUniqueIdCalculate(
+    const int owner_proc,
+    const char bit_number,
+    const EntityHandle moab_owner_handle
+  ) {
+    assert(bit_number<32);
+    assert(owner_proc<1024);
+    return
+    moab_owner_handle
+    |(UId)bit_number << 8*sizeof(EntityHandle)
+    |(UId)owner_proc << 5+8*sizeof(EntityHandle);
+  }
+
   /**
    * \brief Calculate global UId
    * @return Global UId
    */
   inline GlobalUId getGlobalUniqueIdCalculate() const {
-    const char bit_number = getBitNumber();
-    assert(bit_number<32);
-    assert(sPtr->owner_proc<1024);
-    GlobalUId _uid_ = (UId)0;
-    _uid_ |= (UId)sPtr->moab_owner_handle;
-    _uid_ |= (UId)bit_number << 8*sizeof(EntityHandle);
-    _uid_ |= (UId)sPtr->owner_proc << 5+8*sizeof(EntityHandle);
-    return _uid_;
+    return getGlobalUniqueIdCalculate(
+      sPtr->owner_proc,getBitNumber(),sPtr->moab_owner_handle
+    );
   }
 
   /**

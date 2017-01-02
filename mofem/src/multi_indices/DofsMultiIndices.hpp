@@ -36,22 +36,19 @@ struct DofEntity: public interface_MoFEMEntity<MoFEMEntity> {
   static inline GlobalUId getGlobalUniqueIdCalculate(
     const DofIdx dof,const boost::shared_ptr<MoFEMEntity>& ent_ptr
   ) {
-    if(dof>=512) THROW_MESSAGE("_dof>=512");
-    GlobalUId _uid_;
-    _uid_ = ent_ptr->getGlobalUniqueId();
-    _uid_ <<= 9;
-    _uid_ |= (UId)dof;
-    return _uid_;
+    // if(dof>=512) THROW_MESSAGE("_dof>=512");
+    return
+    (UId)dof|
+    ((UId)ent_ptr->getGlobalUniqueId() << 9);
   }
 
   static inline ShortId getNonNonuniqueShortId(
     const DofIdx dof,const boost::shared_ptr<MoFEMEntity>& ent_ptr
   ) {
-    if(dof>=512) THROW_MESSAGE("_dof>=512")
-    if(sizeof(ShortId) < sizeof(char)+2) THROW_MESSAGE("sizeof(ShortId)< sizeof(char)+2")
-    const char bit_number = ent_ptr->getBitNumber();
-    ShortId _uid_ = ((ShortId)dof)|(((ShortId)bit_number)<<9);
-    return _uid_;
+    // if(sizeof(ShortId) < sizeof(char)+2) THROW_MESSAGE("sizeof(ShortId)< sizeof(char)+2")
+    return
+    ((ShortId)dof)
+    |(((ShortId)ent_ptr->getBitNumber())<<9);
   }
 
   bool active;
@@ -68,11 +65,15 @@ struct DofEntity: public interface_MoFEMEntity<MoFEMEntity> {
 
   inline DofIdx getEntDofIdx() const { return dof; }
 
-  inline FieldData& getFieldData() const { return const_cast<FieldData&>(this->sPtr->tag_FieldData[getEntDofIdx()]); }
+  inline FieldData& getFieldData() const {
+    return const_cast<FieldData&>(this->sPtr->tag_FieldData[getEntDofIdx()]);
+  }
 
   /** \brief Get unique dof id
     */
-  inline GlobalUId getGlobalUniqueId() const { return getGlobalUniqueIdCalculate(getEntDofIdx(),getMoFEMEntityPtr()); }
+  inline GlobalUId getGlobalUniqueId() const {
+    return getGlobalUniqueIdCalculate(getEntDofIdx(),getMoFEMEntityPtr());
+  }
 
   /** \brief Get entity unique dof id
     */

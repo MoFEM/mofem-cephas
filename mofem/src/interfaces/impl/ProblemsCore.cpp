@@ -2050,8 +2050,8 @@ PetscErrorCode Core::partition_finite_elements(
         FENumeredDofEntity_multiIndex *fe_dofs[] = {
           vit->rows_dofs.get(), vit->cols_dofs.get()
         };
-        // vit->rows_dofs.get()->clear();
-        // vit->cols_dofs.get()->clear();
+        vit->rows_dofs.get()->clear();
+        vit->cols_dofs.get()->clear();
 
         for(int ss = 0;ss!=(do_cols_fe ? 2 : 1);ss++) {
 
