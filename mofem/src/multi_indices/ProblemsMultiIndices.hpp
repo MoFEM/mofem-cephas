@@ -45,9 +45,10 @@ struct MoFEMProblem {
   BitFEId* tag_BitFEId_data;
   BitRefLevel* tag_BitRefLevel;
   BitRefLevel* tag_BitRefLevel_DofMask;
-  boost::shared_ptr<NumeredDofEntity_multiIndex> numered_dofs_rows;
-  boost::shared_ptr<NumeredDofEntity_multiIndex> numered_dofs_cols;
-  NumeredEntFiniteElement_multiIndex numeredFiniteElements;
+
+  mutable boost::shared_ptr<NumeredDofEntity_multiIndex> numered_dofs_rows; // FIXME name convention
+  mutable boost::shared_ptr<NumeredDofEntity_multiIndex> numered_dofs_cols; // FIXME name convention
+  mutable NumeredEntFiniteElement_multiIndex numeredFiniteElements;
 
   /**
    * \brief Subproblem problem data
@@ -124,7 +125,11 @@ struct MoFEMProblem {
     }
   };
 
-  boost::shared_ptr<SubProblemData> subProblemData;
+  /**
+   * Pointer to data structure. This pointer has allocated data only for
+   * sub problems.
+   */
+  mutable boost::shared_ptr<SubProblemData> subProblemData;
 
   /**
    * \brief Get main problem of sub-problem is
@@ -510,7 +515,8 @@ struct MoFEMProblem {
     return numered_dofs_rows->get<Part_mi_tag>().upper_bound(part);
   }
 
-  MoFEMProblem(Interface &moab,const EntityHandle _meshset);
+
+  MoFEMProblem(Interface &moab,const EntityHandle meshset);
 
   virtual ~MoFEMProblem();
 
@@ -604,34 +610,70 @@ struct MoFEMProblem {
   PetscErrorCode getNumberOfElementsByPart(MPI_Comm comm,PetscLayout *layout) const;
 
   /**
-   * \brief Get weak_ptr reference to sequence/vector storing dofs on entity.
+   * \brief Get weak_ptr reference to sequence/vector storing dofs.
    *
    * Vector is automatically destroy when last DOF in vector os destroyed. Every
    * shared_ptr to the DOF has aliased shared_ptr to vector of DOFs in that vector.
    * That do the trick.
+   *
+   * \note It is week_ptr, so it is no guaranteed that sequence is there. Check
+   * if sequence is there.
+   * \code
+   * if(boost::shared_ptr<std::vector<NumeredDofEntity> > ptr=fe->getRowDofsSeqence().lock()) {
+   *  // use ptr
+   * }
+   * \endcode
    *
    */
   inline boost::weak_ptr<std::vector<NumeredDofEntity> >& getRowDofsSeqence() const {
-    return dofsRowSequce;
+    return dofsRowSequence;
   }
 
   /**
-   * \brief Get weak_ptr reference to sequence/vector storing dofs on entity.
+   * \brief Get weak_ptr reference to sequence/vector storing dofs.
    *
    * Vector is automatically destroy when last DOF in vector os destroyed. Every
    * shared_ptr to the DOF has aliased shared_ptr to vector of DOFs in that vector.
    * That do the trick.
    *
+   * \note It is week_ptr, so it is no guaranteed that sequence is there. Check
+   * if sequence is there.
+   * \code
+   * if(boost::shared_ptr<std::vector<NumeredDofEntity> > ptr=fe->getColDofsSeqence().lock()) {
+   *  // use ptr
+   * }
+   * \endcode
+   *
    */
   inline boost::weak_ptr<std::vector<NumeredDofEntity> >& getColDofsSeqence() const {
-    return dofsColSequce;
+    return dofsColSequence;
   }
+
+  /**
+   * \brief Get weak_ptr reference to sequence/vector storing finite elements.
+   *
+   * \note It is week_ptr, so it is no guaranteed that sequence is there. Check
+   * if sequence is there.
+   * \code
+   * if(boost::shared_ptr<std::vector<NumeredDofEntity> > ptr=fe->getFeSeqence().lock()) {
+   *  // use ptr
+   * }
+   * \endcode
+   *
+   */
+  inline boost::weak_ptr<std::vector<NumeredEntFiniteElement> >& getFeSeqence() const {
+    return feSequence;
+  }
+
 
 private:
 
   // Keep vector of DoFS on entity
-  mutable boost::weak_ptr<std::vector<NumeredDofEntity> > dofsRowSequce;
-  mutable boost::weak_ptr<std::vector<NumeredDofEntity> > dofsColSequce;
+  mutable boost::weak_ptr<std::vector<NumeredDofEntity> > dofsRowSequence;
+  mutable boost::weak_ptr<std::vector<NumeredDofEntity> > dofsColSequence;
+
+  // Keeps finite elements on entities
+  mutable boost::weak_ptr<std::vector<NumeredEntFiniteElement> > feSequence;
 
 };
 

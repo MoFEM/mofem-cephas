@@ -36,8 +36,8 @@
 namespace MoFEM {
 
 //moab problem
-MoFEMProblem::MoFEMProblem(Interface &moab,const EntityHandle _meshset):
-  meshset(_meshset),
+MoFEMProblem::MoFEMProblem(Interface &moab,const EntityHandle meshset):
+  meshset(meshset),
   numered_dofs_rows(boost::shared_ptr<NumeredDofEntity_multiIndex>(new NumeredDofEntity_multiIndex())),
   numered_dofs_cols(boost::shared_ptr<NumeredDofEntity_multiIndex>(new NumeredDofEntity_multiIndex())) {
   ErrorCode rval;

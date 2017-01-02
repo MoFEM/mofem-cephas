@@ -724,7 +724,7 @@ typedef multi_index_container<
   typedef multi_index_container<
     boost::shared_ptr<MoFEMEntity>,
     indexed_by<
-      hashed_non_unique<
+      ordered_unique<
         tag<Ent_mi_tag>, const_mem_fun<MoFEMEntity,EntityHandle,&MoFEMEntity::getEnt> >
   > > MoFEMEntity_multiIndex_ent_view;
 
