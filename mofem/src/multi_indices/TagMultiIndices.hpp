@@ -80,7 +80,6 @@ namespace MoFEM {
   /// MultiIndex Tag for field name
   struct FieldName_mi_tag {};
   struct BitFieldId_space_mi_tag {};
-  struct FiniteElement_Part_mi_tag {};
   struct BitProblemId_mi_tag {};
   struct Problem_mi_tag {};
   struct ParentEntType_mi_tag {};

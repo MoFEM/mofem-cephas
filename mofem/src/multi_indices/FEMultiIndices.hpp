@@ -33,7 +33,9 @@ struct RefElement: public interface_RefEntity<RefEntity> {
 
   SideNumber_multiIndex side_number_table;
   RefElement(const boost::shared_ptr<RefEntity> ref_ent_ptr);
-  virtual const BitRefEdges& getBitRefEdges() const { return DummyBitRefEdges; }
+  virtual const BitRefEdges& getBitRefEdges() const {
+    return DummyBitRefEdges;
+  }
 
   virtual int getBitRefEdgesUlong() const { return 0; }
 
@@ -644,10 +646,11 @@ interface_RefElement<T> {
 
   interface_EntFiniteElement(const boost::shared_ptr<T> sptr):
   interface_FiniteElement<T>(sptr),
-  interface_RefElement<T>(sptr) {
-  };
+  interface_RefElement<T>(sptr) {}
 
-  inline const FEDofEntity_multiIndex& getDataDofs() const { return this->sPtr->getDataDofs(); };
+  inline const FEDofEntity_multiIndex& getDataDofs() const {
+    return this->sPtr->getDataDofs();
+  }
 
   /**
    * \brief Get number of DOFs on row
@@ -943,10 +946,6 @@ typedef multi_index_container<
         boost::string_ref,
         &NumeredEntFiniteElement::getNameRef
       >
-    >,
-    ordered_non_unique<
-      tag<FiniteElement_Part_mi_tag>,
-      member<NumeredEntFiniteElement,unsigned int,&NumeredEntFiniteElement::part>
     >,
     ordered_non_unique<
       tag<Ent_mi_tag>,
