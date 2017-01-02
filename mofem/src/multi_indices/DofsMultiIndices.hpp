@@ -42,6 +42,22 @@ struct DofEntity: public interface_MoFEMEntity<MoFEMEntity> {
     ((UId)ent_ptr->getGlobalUniqueId() << 9);
   }
 
+  static inline GlobalUId getGlobalUniqueIdCalculate_Low_Proc(
+    const int owner_proc
+  ) {
+    return
+    (UId)owner_proc << 9+5+8*sizeof(EntityHandle);
+  }
+
+  static inline GlobalUId getGlobalUniqueIdCalculate_Hi_Proc(
+    const int owner_proc
+  ) {
+    return
+    (UId)MBMAXTYPE << 9
+    |(UId)(BITFIELDID_SIZE-1) << 9+8*sizeof(EntityHandle)
+    |(UId)owner_proc << 9+5+8*sizeof(EntityHandle);
+  }
+
   static inline ShortId getNonNonuniqueShortId(
     const DofIdx dof,const boost::shared_ptr<MoFEMEntity>& ent_ptr
   ) {
@@ -614,8 +630,6 @@ typedef multi_index_container<
     ordered_non_unique<
       tag<PetscLocalIdx_mi_tag>, member<NumeredDofEntity,DofIdx,&NumeredDofEntity::petscLocalDofIdx> >,
     ordered_non_unique<
-      tag<Part_mi_tag>, member<NumeredDofEntity,unsigned int,&NumeredDofEntity::pArt> >,
-    ordered_non_unique<
       tag<Ent_mi_tag>,
       const_mem_fun<NumeredDofEntity::interface_type_DofEntity,EntityHandle,&NumeredDofEntity::getEnt>
       >,
@@ -698,12 +712,6 @@ typedef NumeredDofEntity_multiIndex::index<Ent_mi_tag>::type NumeredDofEntityByE
   */
 typedef NumeredDofEntity_multiIndex::index<Composite_Name_Ent_And_Part_mi_tag>::type
 NumeredDofEntityByNameEntAndPart;
-
-/** \brief Numbered DoF multi-index by partition
-  *
-  * \ingroup dof_multi_indices
-  */
-typedef NumeredDofEntity_multiIndex::index<Part_mi_tag>::type NumeredDofEntityByPart;
 
 typedef multi_index_container<
   boost::shared_ptr<NumeredDofEntity>,

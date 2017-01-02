@@ -473,17 +473,21 @@ struct MoFEMProblem {
    * \endcode
    */
   #define _IT_NUMEREDDOFMOFEMENTITY_ROW_BY_PART_FOR_LOOP_(MOFEMPROBLEM,PART,IT) \
-  NumeredDofEntityByPart::iterator IT = MOFEMPROBLEM->getNumeredDofsRowsBegin(PART); \
+  NumeredDofEntity_multiIndex::iterator IT = MOFEMPROBLEM->getNumeredDofsRowsBegin(PART); \
   IT!=MOFEMPROBLEM->getNumeredDofsRowsEnd(PART); IT++
 
   /// get begin iterator for numered_dofs_rows (insted you can use #_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_PART_FOR_LOOP_ for loops)
-  NumeredDofEntityByPart::iterator getNumeredDofsRowsBegin(const int part) const {
-    return numered_dofs_rows->get<Part_mi_tag>().lower_bound(part);
+  NumeredDofEntity_multiIndex::iterator getNumeredDofsRowsBegin(const int part) const {
+    return numered_dofs_rows->get<Unique_mi_tag>().lower_bound(
+      DofEntity::getGlobalUniqueIdCalculate_Low_Proc(part)
+    );
   }
 
   /// get end iterator for numered_dofs_rows (insted you can use #_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_PART_FOR_LOOP_ for loops)
-  NumeredDofEntityByPart::iterator getNumeredDofsRowsEnd(const int part) const {
-    return numered_dofs_rows->get<Part_mi_tag>().upper_bound(part);
+  NumeredDofEntity_multiIndex::iterator getNumeredDofsRowsEnd(const int part) const {
+    return numered_dofs_rows->get<Unique_mi_tag>().upper_bound(
+      DofEntity::getGlobalUniqueIdCalculate_Hi_Proc(part)
+    );
   }
 
   /**
@@ -502,17 +506,21 @@ struct MoFEMProblem {
    *
    */
   #define _IT_NUMEREDDOFMOFEMENTITY_COL_BY_PART_FOR_LOOP_(MOFEMPROBLEM,PART,IT) \
-  NumeredDofEntityByPart::iterator IT = MOFEMPROBLEM->getNumeredDofsColsBegin(PART); \
+  NumeredDofEntity_multiIndex::iterator IT = MOFEMPROBLEM->getNumeredDofsColsBegin(PART); \
   IT!=MOFEMPROBLEM->getNumeredDofsColsEnd(PART); IT++
 
   /// get begin iterator for numered_dofs_rows (insted you can use #_IT_NUMEREDDOFMOFEMENTITY_COL_BY_PART_FOR_LOOP_ for loops)
-  NumeredDofEntityByPart::iterator getNumeredDofsColsBegin(const int part) const {
-    return numered_dofs_rows->get<Part_mi_tag>().lower_bound(part);
+  NumeredDofEntity_multiIndex::iterator getNumeredDofsColsBegin(const int part) const {
+    return numered_dofs_rows->get<Unique_mi_tag>().lower_bound(
+      DofEntity::getGlobalUniqueIdCalculate_Low_Proc(part)
+    );
   }
 
   /// get end iterator for numered_dofs_rows (insted you can use #_IT_NUMEREDDOFMOFEMENTITY_COL_BY_PART_FOR_LOOP_ for loops)
-  NumeredDofEntityByPart::iterator getNumeredDofsColsEnd(const int part) const {
-    return numered_dofs_rows->get<Part_mi_tag>().upper_bound(part);
+  NumeredDofEntity_multiIndex::iterator getNumeredDofsColsEnd(const int part) const {
+    return numered_dofs_rows->get<Unique_mi_tag>().upper_bound(
+      DofEntity::getGlobalUniqueIdCalculate_Hi_Proc(part)
+    );
   }
 
 
