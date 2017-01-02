@@ -603,9 +603,8 @@ struct MoFEMEntity:
    * @return Global UId
    */
   inline GlobalUId getGlobalUniqueIdCalculate() const {
-    const char bit_number = getBitNumber();
     return getGlobalUniqueIdCalculate(
-      sPtr->owner_proc,bit_number,sPtr->moab_owner_handle
+      sPtr->owner_proc,getBitNumber(),sPtr->moab_owner_handle
     );
   }
 
