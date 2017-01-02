@@ -43,7 +43,6 @@ const bool Idx_mi_tag::IamNotPartitioned = true;
 // This tag is used for partitioned problems
 const bool PetscGlobalIdx_mi_tag::IamNotPartitioned = false;
 const bool PetscLocalIdx_mi_tag::IamNotPartitioned = false;
-const bool Part_mi_tag::IamNotPartitioned = false;
 
 //fields
 Field::Field(

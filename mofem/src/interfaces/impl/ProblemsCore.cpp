@@ -1186,6 +1186,7 @@ PetscErrorCode Core::clear_problem(const std::string &problem_name,int verb) {
   //clear finite elements
   success = prob_by_name.modify(p_miit,ProblemClearNumeredFiniteElementsChange());
   if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
+
   PetscFunctionReturn(0);
 }
 PetscErrorCode Core::build_problems(int verb) {
@@ -1854,12 +1855,14 @@ PetscErrorCode Core::partition_finite_elements(
   if(!(*buildMoFEM&BUILD_PROBLEM)) SETERRQ(comm,MOFEM_DATA_INCONSISTENCY,"problem not build");
   if(!(*buildMoFEM&PARTITION_PROBLEM)) SETERRQ(comm,MOFEM_DATA_INCONSISTENCY,"problem not partitioned");
 
+  // Ok, we don't know for what partitions to build elements, so we build elements
+  // for this processor only.
   if(low_proc == -1) low_proc = rAnk;
   if(hi_proc == -1) hi_proc = rAnk;
 
   // Find pointer to problem of given name
   typedef MoFEMProblem_multiIndex::index<Problem_mi_tag>::type ProblemByName;
-  //find p_miit
+  // Get p_miit
   ProblemByName &problems = pRoblems.get<Problem_mi_tag>();
   ProblemByName::iterator p_miit = problems.find(name);
   if(p_miit == problems.end()) {
@@ -1871,7 +1874,7 @@ PetscErrorCode Core::partition_finite_elements(
   // Get reference on finite elements multi-index on the problem
   NumeredEntFiniteElement_multiIndex& problem_finite_elements = p_miit->numeredFiniteElements;
 
-  // check if dofs and columns are the same, i.e. structurally symmetric problem
+  // Check if dofs and columns are the same, i.e. structurally symmetric problem
   bool do_cols_prob = true;
   if(p_miit->numered_dofs_rows == p_miit->numered_dofs_cols) {
     do_cols_prob = false;
@@ -1880,9 +1883,7 @@ PetscErrorCode Core::partition_finite_elements(
   // Allocate memory for finite elements, if is not there
   boost::shared_ptr<std::vector<NumeredEntFiniteElement> > fe_array;
   if(!(fe_array = p_miit->getFeSeqence().lock())) {
-    fe_array = boost::make_shared<std::vector<NumeredEntFiniteElement> >(
-      std::vector<NumeredEntFiniteElement>()
-    );
+    fe_array = boost::make_shared<std::vector<NumeredEntFiniteElement> >();
     p_miit->getFeSeqence()=fe_array;
     int count = 0;
     EntFiniteElement_multiIndex::iterator efit = entsFiniteElements.begin();
@@ -1921,6 +1922,14 @@ PetscErrorCode Core::partition_finite_elements(
         );
       }
       if(feit==p_miit->numeredFiniteElements.end()) {
+        if(fe_array->capacity()<fe_array->size()+1) {
+          SETERRQ2(
+            PETSC_COMM_SELF,
+            MOFEM_DATA_INCONSISTENCY,
+            "No space for another element %d < %d",
+            fe_array->capacity(),fe_array->size()+1
+          );
+        }
         fe_array->push_back(NumeredEntFiniteElement(*efit));
       }
     }
@@ -2041,8 +2050,8 @@ PetscErrorCode Core::partition_finite_elements(
         FENumeredDofEntity_multiIndex *fe_dofs[] = {
           vit->rows_dofs.get(), vit->cols_dofs.get()
         };
-        vit->rows_dofs.get()->clear();
-        vit->cols_dofs.get()->clear();
+        // vit->rows_dofs.get()->clear();
+        // vit->cols_dofs.get()->clear();
 
         for(int ss = 0;ss!=(do_cols_fe ? 2 : 1);ss++) {
 
