@@ -354,7 +354,7 @@ namespace MoFEM {
           int num_entities;
           rval = moab.get_number_entities_by_handle(meshset,num_entities); CHKERRQ_MOAB(rval);
           PetscPrintf(comm,"\tnumber of entities in database = %u and meshset = %u\n",
-          entsFields.get<BitFieldId_mi_tag>().count((*f_it)->getId()),num_entities);
+          entsFields.get<FieldName_mi_tag>().count((*f_it)->getNameRef()),num_entities);
         }
       }
     }

@@ -593,8 +593,24 @@ struct MoFEMEntity:
     assert(bit_number<32);
     assert(owner_proc<1024);
     return
-    moab_owner_handle
+    (UId)moab_owner_handle
     |(UId)bit_number << 8*sizeof(EntityHandle)
+    |(UId)owner_proc << 5+8*sizeof(EntityHandle);
+  }
+
+  static inline GlobalUId getGlobalUniqueIdCalculate_Low_Proc(
+    const int owner_proc
+  ) {
+    return
+    (UId)owner_proc << 5+8*sizeof(EntityHandle);
+  }
+
+  static inline GlobalUId getGlobalUniqueIdCalculate_Hi_Proc(
+    const int owner_proc
+  ) {
+    return
+    (UId)MBMAXTYPE
+    |(UId)(BITFIELDID_SIZE-1) << 8*sizeof(EntityHandle)
     |(UId)owner_proc << 5+8*sizeof(EntityHandle);
   }
 
@@ -705,15 +721,17 @@ typedef multi_index_container<
   boost::shared_ptr<MoFEMEntity>,
   indexed_by<
     ordered_unique<
-      tag<Unique_mi_tag>, member<MoFEMEntity,GlobalUId,&MoFEMEntity::global_uid> >,
+      tag<Unique_mi_tag>,
+      member<MoFEMEntity,GlobalUId,&MoFEMEntity::global_uid>
+    >,
     ordered_non_unique<
-      tag<Ent_ParallelStatus>, const_mem_fun<MoFEMEntity::interface_type_RefEntity,unsigned char,&MoFEMEntity::getPStatus> >,
-    ordered_non_unique<
-      tag<BitFieldId_mi_tag>, const_mem_fun<MoFEMEntity::interface_type_Field,const BitFieldId&,&MoFEMEntity::getId>, LtBit<BitFieldId> >,
-    ordered_non_unique<
-      tag<FieldName_mi_tag>, const_mem_fun<MoFEMEntity::interface_type_Field,boost::string_ref,&MoFEMEntity::getNameRef> >,
+      tag<FieldName_mi_tag>,
+      const_mem_fun<MoFEMEntity::interface_type_Field,boost::string_ref,&MoFEMEntity::getNameRef>
+    >,
     hashed_non_unique<
-      tag<Ent_mi_tag>, const_mem_fun<MoFEMEntity,EntityHandle,&MoFEMEntity::getEnt> >,
+      tag<Ent_mi_tag>,
+      const_mem_fun<MoFEMEntity,EntityHandle,&MoFEMEntity::getEnt>
+    >,
     ordered_non_unique<
       tag<Composite_Name_And_Ent_mi_tag>,
       composite_key<

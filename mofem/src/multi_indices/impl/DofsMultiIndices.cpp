@@ -59,6 +59,8 @@ dof(dof) {
     THROW_MESSAGE("MoFEMEntity pinter not initialized");
   }
 
+  globalUId = getGlobalUniqueIdCalculate(dof,entity_ptr);
+
   if(sFieldPtr->tag_dof_order_data==NULL) {
     std::ostringstream ss;
     ss << "at " << __LINE__ << " in " << __FILE__;

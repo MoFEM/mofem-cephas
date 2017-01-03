@@ -1131,6 +1131,8 @@ struct DataForcesAndSurcesCore {
       PetscFunctionReturn(0);
     }
 
+    bool semaphore;
+
   protected:
     int sEnse;                    ///< Entity sense (orientation)
     ApproximationOrder oRder;     ///< Entity order
