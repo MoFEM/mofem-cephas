@@ -69,6 +69,8 @@ struct DofEntity: public interface_MoFEMEntity<MoFEMEntity> {
 
   bool active;
   int dof;
+  const GlobalUId globalUId; ///< Global unique id for this dof
+
   // ShortId short_uid;
 
   DofEntity(
@@ -87,9 +89,7 @@ struct DofEntity: public interface_MoFEMEntity<MoFEMEntity> {
 
   /** \brief Get unique dof id
     */
-  inline GlobalUId getGlobalUniqueId() const {
-    return getGlobalUniqueIdCalculate(getEntDofIdx(),getMoFEMEntityPtr());
-  }
+  inline GlobalUId getGlobalUniqueId() const { return globalUId; }
 
   /** \brief Get entity unique dof id
     */
@@ -111,7 +111,9 @@ struct DofEntity: public interface_MoFEMEntity<MoFEMEntity> {
     * reading those data using different MoAB instances.
     *
     */
-  inline ShortId getNonNonuniqueShortId() const  { return getNonNonuniqueShortId(dof,getMoFEMEntityPtr()); }
+  inline ShortId getNonNonuniqueShortId() const  {
+    return getNonNonuniqueShortId(dof,getMoFEMEntityPtr());
+  }
 
   inline EntityHandle getEnt() const { return this->sPtr->getEnt(); }
 
@@ -219,7 +221,6 @@ struct NumeredDofEntity: public interface_DofEntity<DofEntity> {
     const int petsc_local_dof_idx = -1,
     const int part = -1
   );
-  inline bool operator<(const NumeredDofEntity& _dof) const { return (UId)getGlobalUniqueId()<(UId)_dof.getGlobalUniqueId(); }
   friend std::ostream& operator<<(std::ostream& os,const NumeredDofEntity& e);
 };
 
@@ -338,8 +339,6 @@ typedef multi_index_container<
       tag<FieldName_mi_tag>, const_mem_fun<DofEntity::interface_type_Field,boost::string_ref,&DofEntity::getNameRef> >,
     ordered_non_unique<
       tag<Ent_mi_tag>, const_mem_fun<DofEntity,EntityHandle,&DofEntity::getEnt> >,
-    ordered_non_unique<
-      tag<BitFieldId_mi_tag>, const_mem_fun<DofEntity::interface_type_Field,const BitFieldId&,&DofEntity::getId>, LtBit<BitFieldId> >,
     ordered_non_unique<
       tag<Composite_Name_And_Ent_mi_tag>,
       composite_key<

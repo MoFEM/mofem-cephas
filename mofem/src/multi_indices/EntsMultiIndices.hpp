@@ -725,11 +725,6 @@ typedef multi_index_container<
       member<MoFEMEntity,GlobalUId,&MoFEMEntity::global_uid>
     >,
     ordered_non_unique<
-      tag<BitFieldId_mi_tag>,
-      const_mem_fun<MoFEMEntity::interface_type_Field,const BitFieldId&,&MoFEMEntity::getId>,
-      LtBit<BitFieldId>
-    >,
-    ordered_non_unique<
       tag<FieldName_mi_tag>,
       const_mem_fun<MoFEMEntity::interface_type_Field,boost::string_ref,&MoFEMEntity::getNameRef>
     >,

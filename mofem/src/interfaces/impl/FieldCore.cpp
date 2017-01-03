@@ -881,12 +881,12 @@ PetscErrorCode Core::set_field_order(
   }
 
   //ent view by field id (in set all MoabEnts has the same FieldId)
-  typedef MoFEMEntity_multiIndex::index<BitFieldId_mi_tag>::type EntsByFIeldId;
-  EntsByFIeldId& set = entsFields.get<BitFieldId_mi_tag>();
-  EntsByFIeldId::iterator eiit = set.lower_bound(id);
+  typedef MoFEMEntity_multiIndex::index<FieldName_mi_tag>::type EntsByName;
+  EntsByName& set = entsFields.get<FieldName_mi_tag>();
+  EntsByName::iterator eiit = set.lower_bound(miit->get()->getNameRef());
   MoFEMEntity_multiIndex_ent_view ents_id_view;
   if(eiit != set.end()) {
-    EntsByFIeldId::iterator hi_eiit = set.upper_bound(id);
+    EntsByName::iterator hi_eiit = set.upper_bound(miit->get()->getNameRef());
     ents_id_view.insert(eiit,hi_eiit);
   }
   if(verb>1) {
@@ -1198,10 +1198,10 @@ PetscErrorCode Core::buildFieldForNoField(
     }
   }
   if(verb>2) {
-    typedef DofEntity_multiIndex::index<BitFieldId_mi_tag>::type dof_set_by_id;
-    dof_set_by_id &set = dofsField.get<BitFieldId_mi_tag>();
-    dof_set_by_id::iterator miit2 = set.lower_bound(id);
-    dof_set_by_id::iterator hi_miit2 = set.upper_bound(id);
+    typedef DofEntity_multiIndex::index<FieldName_mi_tag>::type DofsByName;
+    DofsByName &set = dofsField.get<FieldName_mi_tag>();
+    DofsByName::iterator miit2 = set.lower_bound(miit->get()->getNameRef());
+    DofsByName::iterator hi_miit2 = set.upper_bound(miit->get()->getNameRef());
     assert(miit2!=hi_miit2);
     for(;miit2!=hi_miit2;miit2++) {
       std::ostringstream ss;
@@ -1232,7 +1232,8 @@ PetscErrorCode Core::buildFieldForL2H1HcurlHdiv(
   }
   const int rank = field_it->get()->getNbOfCoeffs();
   const bool dofs_on_field =
-  dofsField.get<BitFieldId_mi_tag>().find(id) != dofsField.get<BitFieldId_mi_tag>().end();
+  dofsField.get<FieldName_mi_tag>().find(field_it->get()->getNameRef())!=
+  dofsField.get<FieldName_mi_tag>().end();
 
   // Ents in the field meshset
   Range ents_of_id_meshset;
