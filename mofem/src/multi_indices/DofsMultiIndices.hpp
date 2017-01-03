@@ -69,7 +69,7 @@ struct DofEntity: public interface_MoFEMEntity<MoFEMEntity> {
 
   bool active;
   int dof;
-  const GlobalUId globalUId; ///< Global unique id for this dof
+  GlobalUId globalUId; ///< Global unique id for this dof
 
   // ShortId short_uid;
 
@@ -300,8 +300,6 @@ interface_NumeredDofEntity<NumeredDofEntity> {
     > &t
   );
   friend std::ostream& operator<<(std::ostream& os,const FENumeredDofEntity& e);
-private:
-  const std::vector<FENumeredDofEntity>* rawSeqPtr;
 };
 
 /**
@@ -346,22 +344,23 @@ typedef multi_index_container<
         const_mem_fun<DofEntity::interface_type_Field,boost::string_ref,&DofEntity::getNameRef>,
         const_mem_fun<DofEntity,EntityHandle,&DofEntity::getEnt>
       > >,
+    ordered_non_unique<
+      tag<Composite_Name_And_Type_mi_tag>,
+    composite_key<
+      DofEntity,
+      const_mem_fun<DofEntity::interface_type_Field,boost::string_ref,&DofEntity::getNameRef>,
+      const_mem_fun<DofEntity::interface_type_RefEntity,EntityType,&DofEntity::getEntType>
+    > >,
       ordered_non_unique<
-        tag<Composite_Name_And_Type_mi_tag>,
+      tag<Composite_Name_Ent_Order_And_CoeffIdx_mi_tag>,
       composite_key<
-        DofEntity,
+      DofEntity,
         const_mem_fun<DofEntity::interface_type_Field,boost::string_ref,&DofEntity::getNameRef>,
-        const_mem_fun<DofEntity::interface_type_RefEntity,EntityType,&DofEntity::getEntType>
-      > >,
-        ordered_non_unique<
-        tag<Composite_Name_Ent_Order_And_CoeffIdx_mi_tag>,
-        composite_key<
-        DofEntity,
-          const_mem_fun<DofEntity::interface_type_Field,boost::string_ref,&DofEntity::getNameRef>,
-          const_mem_fun<DofEntity,EntityHandle,&DofEntity::getEnt>,
-          const_mem_fun<DofEntity,ApproximationOrder,&DofEntity::getDofOrder>,
-          const_mem_fun<DofEntity,FieldCoefficientsNumber,&DofEntity::getDofCoeffIdx>
-        > >
+        const_mem_fun<DofEntity,EntityHandle,&DofEntity::getEnt>,
+        const_mem_fun<DofEntity,ApproximationOrder,&DofEntity::getDofOrder>,
+        const_mem_fun<DofEntity,FieldCoefficientsNumber,&DofEntity::getDofCoeffIdx>
+      >
+    >
   >
 > DofEntity_multiIndex;
 

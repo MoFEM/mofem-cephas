@@ -47,8 +47,7 @@ DofEntity::DofEntity(
 ):
 interface_MoFEMEntity<MoFEMEntity>(entity_ptr),
 active(is_active),
-dof(dof),
-globalUId(getGlobalUniqueIdCalculate(dof,entity_ptr)) {
+dof(dof) {
 
   if(!entity_ptr) {
     THROW_MESSAGE("MoFEMEntity pinter not initialized");
@@ -59,6 +58,8 @@ globalUId(getGlobalUniqueIdCalculate(dof,entity_ptr)) {
   if(!getMoFEMEntityPtr()) {
     THROW_MESSAGE("MoFEMEntity pinter not initialized");
   }
+
+  globalUId = getGlobalUniqueIdCalculate(dof,entity_ptr);
 
   if(sFieldPtr->tag_dof_order_data==NULL) {
     std::ostringstream ss;
