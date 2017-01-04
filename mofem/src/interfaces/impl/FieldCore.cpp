@@ -1316,6 +1316,7 @@ PetscErrorCode Core::buildFieldForL2H1HcurlHdiv(
             "modification unsuccessful"
           );
         }
+        ++inactive_dof_counter[dit->get()->getEntType()];
       }
 
     } else {
@@ -1373,10 +1374,7 @@ PetscErrorCode Core::buildFieldForL2H1HcurlHdiv(
 
         std::vector<boost::shared_ptr<DofEntity> >::iterator vit;
         vit = dofs_shared_array.begin();
-        // cerr << current_nb_dofs_on_ent << " " << nb_dofs_on_ent << " " << dofs_shared_array.size() << endl;
         for(int ii = 0;ii!=current_nb_dofs_on_ent;ii++,vit++) {
-          // cerr << current_nb_dofs_on_ent << " " << nb_dofs_on_ent << " " << dofs_shared_array.size() << endl;
-          // cerr << **vit << endl;
           DofEntity_multiIndex::iterator d_miit;
           d_miit = dofsField.find(vit->get()->getGlobalUniqueId());
           if(d_miit == dofsField.end()) {
@@ -1393,8 +1391,12 @@ PetscErrorCode Core::buildFieldForL2H1HcurlHdiv(
             );
           }
         }
-        // Finally insert DOFs to database
-        dofsField.insert(vit,dofs_shared_array.end());
+        if(vit!=dofs_shared_array.end()) {
+          // Those DOFs are added
+          dof_counter[vit->get()->getEntType()] += std::distance(vit,dofs_shared_array.end());
+          // Finally insert DOFs to database
+          dofsField.insert(vit,dofs_shared_array.end());
+        }
 
       }
 
@@ -1418,6 +1420,7 @@ PetscErrorCode Core::buildFieldForL2H1HcurlHdiv(
       dofs_shared_array.push_back(
         boost::shared_ptr<DofEntity>(dofs_array,&dofs_array->back())
       );
+      ++dof_counter[MBVERTEX];
     }
   }
   dofsField.insert(dofs_shared_array.begin(),dofs_shared_array.end());
