@@ -550,8 +550,7 @@ namespace MoFEM {
         fe_fields[ROW]!=fe_fields[COL] &&
         p.first->get()->col_dof_view == p.first->get()->row_dof_view
       ) {
-        p.first->get()->col_dof_view
-        = boost::shared_ptr<DofEntity_multiIndex_uid_view>(new DofEntity_multiIndex_uid_view());
+        p.first->get()->col_dof_view = boost::make_shared<DofEntity_multiIndex_uid_view>();
       }
 
       p.first->get()->row_dof_view->clear();
