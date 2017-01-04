@@ -669,9 +669,9 @@ struct MoFEMProblem {
    * \endcode
    *
    */
-  inline boost::weak_ptr<std::vector<NumeredEntFiniteElement> >& getFeSeqence() const {
-    return feSequence;
-  }
+  // inline boost::weak_ptr<std::vector<NumeredEntFiniteElement> >& getFeSeqence() const {
+  //   return feSequence;
+  // }
 
 
 private:
@@ -680,8 +680,8 @@ private:
   mutable boost::weak_ptr<std::vector<NumeredDofEntity> > dofsRowSequence;
   mutable boost::weak_ptr<std::vector<NumeredDofEntity> > dofsColSequence;
 
-  // Keeps finite elements on entities
-  mutable boost::weak_ptr<std::vector<NumeredEntFiniteElement> > feSequence;
+  // // Keeps finite elements on entities
+  // mutable boost::weak_ptr<std::vector<NumeredEntFiniteElement> > feSequence;
 
 };
 

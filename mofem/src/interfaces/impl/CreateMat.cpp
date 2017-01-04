@@ -113,7 +113,11 @@ PetscErrorCode CreateRowComressedADJMatrix::buildFECol(
   PetscFunctionBegin;
 
   if(!ent_fe_ptr) {
-    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"Pointer to EntFiniteElement not given");
+    SETERRQ(
+      PETSC_COMM_SELF,
+      MOFEM_DATA_INCONSISTENCY,
+      "Pointer to EntFiniteElement not given"
+    );
   }
   // if element is not part of problem
   if((ent_fe_ptr->getId()&p_miit->getBitFEId()).none()) PetscFunctionReturn(0);
@@ -126,47 +130,12 @@ PetscErrorCode CreateRowComressedADJMatrix::buildFECol(
   NumeredEntFiniteElement_multiIndex::iterator fe_it
   = p_miit->numeredFiniteElements.find(ent_fe_ptr->getGlobalUniqueId());
 
+  // Create element if is not there
   if(fe_it==p_miit->numeredFiniteElements.end()) {
-    boost::shared_ptr<std::vector<NumeredEntFiniteElement> > fe_array;
-
-    // Allocate memory for finite elements
-    if(!(fe_array = p_miit->getFeSeqence().lock())) {
-      fe_array = boost::make_shared<std::vector<NumeredEntFiniteElement> >(
-        std::vector<NumeredEntFiniteElement>()
-      );
-      p_miit->getFeSeqence()=fe_array;
-      int count = 0;
-      EntFiniteElement_multiIndex::iterator efit = entsFiniteElements.begin();
-      EntFiniteElement_multiIndex::iterator hi_efit = entsFiniteElements.end();
-      for(;efit!=hi_efit;efit++) {
-        // if element is not part of problem
-        if(((*efit)->getId()&p_miit->getBitFEId()).none()) continue;
-        // if entity is not problem refinement level
-        if(
-          ((*efit)->getBitRefLevel()&p_miit->getBitRefLevel())!=
-          p_miit->getBitRefLevel()
-        ) continue;
-        ++count;
-      }
-      fe_array->reserve(count);
-    }
-
     std::pair<NumeredEntFiniteElement_multiIndex::iterator,bool> p;
-    if(fe_array->capacity()<fe_array->size()+1) {
-      // This is odd case, it means that some elements where added to the
-      // problem, and were not presents at the point when finite elements where
-      // partitioned. It is no space for them in the array, so instances are
-      // added one by one.
-      p = p_miit->numeredFiniteElements.insert(
-        boost::make_shared<NumeredEntFiniteElement>(ent_fe_ptr)
-      );
-    } else {
-      fe_array->push_back(NumeredEntFiniteElement(ent_fe_ptr));
-      // Add element
-      p = p_miit->numeredFiniteElements.insert(
-        boost::shared_ptr<NumeredEntFiniteElement>(fe_array,&fe_array->back())
-      );
-    }
+    p = p_miit->numeredFiniteElements.insert(
+      boost::make_shared<NumeredEntFiniteElement>(ent_fe_ptr)
+    );
     if(!p.second) {
       SETERRQ(
         PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,
@@ -174,22 +143,30 @@ PetscErrorCode CreateRowComressedADJMatrix::buildFECol(
       );
     }
     fe_it = p.first;
-    fe_ptr = *fe_it;
+  }
+  fe_ptr = *fe_it;
 
+
+  if(fe_ptr) {
+
+    // Build DOFs on columns
     if(fe_ptr->cols_dofs->empty()) {
+
+      // Get dofs on columns
       NumeredDofEntity_multiIndex_uid_view_ordered cols_view;
       ierr = fe_ptr->getEntFiniteElement()->getColDofView(
         *(p_miit->numered_dofs_cols),cols_view,moab::Interface::UNION
       ); CHKERRQ(ierr);
-      // reserve memory for field  dofs
+
+      // Reserve memory for field  dofs
       boost::shared_ptr<std::vector<FENumeredDofEntity> > dofs_array =
       boost::make_shared<std::vector<FENumeredDofEntity> >();
       fe_ptr->getColDofsSeqence() = dofs_array;
       dofs_array->reserve(cols_view.size());
-      // reserve memory for shared pointers now
+      // Reserve memory for shared pointers now
       std::vector<boost::shared_ptr<FENumeredDofEntity> > dofs_shared_array;
       dofs_shared_array.reserve(dofs_array->size());
-      // create elements objects
+      // Create dofs objects
       for(
         NumeredDofEntity_multiIndex_uid_view_ordered::iterator
         it = cols_view.begin();it!=cols_view.end();it++
@@ -204,26 +181,19 @@ PetscErrorCode CreateRowComressedADJMatrix::buildFECol(
           boost::shared_ptr<FENumeredDofEntity>(dofs_array,&dofs_array->back())
         );
       }
-      // finally add DoFS to multi-indices
+      // Finally add DoFS to multi-indices
       fe_ptr->cols_dofs->insert(
         dofs_shared_array.begin(),dofs_shared_array.end()
       );
-      if(
-        (!do_cols_prob) &&
-        fe_ptr->getEntFiniteElement()->row_dof_view ==
-        fe_ptr->getEntFiniteElement()->col_dof_view
-      ) {
-        fe_ptr->rows_dofs = fe_ptr->cols_dofs;
-        fe_ptr->getRowDofsSeqence() = fe_ptr->getColDofsSeqence();
-      }
-    } else {
-      SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,
-        "Impossible case, element should not have build columns"
-      );
+
     }
+
   } else {
-    // return pointer to existing element
-    fe_ptr = *fe_it;
+    SETERRQ(
+      PETSC_COMM_SELF,
+      MOFEM_DATA_INCONSISTENCY,
+      "At that point ptr to finite element should be well known"
+    );
   }
 
   PetscFunctionReturn(0);
