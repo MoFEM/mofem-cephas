@@ -45,6 +45,7 @@ using namespace MoFEM;
 #include <EntPolynomialBaseCtx.hpp>
 #include <TriPolynomialBase.hpp>
 
+#include <Hdiv.hpp>
 #include <Hcurl.hpp>
 
 TriPolynomialBase::TriPolynomialBase() {}

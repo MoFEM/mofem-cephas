@@ -273,17 +273,18 @@ int main(int argc, char *argv[]) {
   std::cout << "divergence_skin " << divergence_skin << std::endl;
 
   const double eps = 1e-6;
-  if(fabs(divergence_vol-8.0)>eps) {
+  const double expected_result = 8.03630952381;
+  if(fabs(divergence_vol-expected_result)>eps) {
     SETERRQ2(
       PETSC_COMM_SELF,
       MOFEM_ATOM_TEST_INVALID,
       "invalid divergence_vol = %6.4e, should be %6.4e\n",
-      divergence_vol,8.0
+      divergence_vol,expected_result
     );
   }
-  if(fabs(divergence_skin-8.0)>eps) {
+  if(fabs(divergence_skin-expected_result)>eps) {
      SETERRQ2(PETSC_COMM_SELF,MOFEM_ATOM_TEST_INVALID,"invalid fluxes = %6.4e, should be %6.4e\n",
-	    divergence_skin,8.0);
+	    divergence_skin,expected_result);
   }
 
   ierr = m_field.add_field("MESH_NODE_POSITIONS",H1,3); CHKERRQ(ierr);

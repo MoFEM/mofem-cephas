@@ -550,18 +550,33 @@ struct UltraWeakTransportElement {
       PetscPrintf(PETSC_COMM_WORLD,"nrm2_F = %6.4e\n",nrm2_F);
     }
 
+    // ierr = MatMultAdd(Aij,D0,F,F); CHKERRQ(ierr);
+
     // for ksp solver vector is moved into rhs side
     // for snes it is left ond the left
     ierr = VecScale(F,-1); CHKERRQ(ierr);
+
+    IS essential_bc_ids;
+    ierr = getDirichletBCIndices(&essential_bc_ids); CHKERRQ(ierr);
+    ierr = MatZeroRowsColumnsIS(Aij,essential_bc_ids,1,D0,F); CHKERRQ(ierr);
+    ierr = ISDestroy(&essential_bc_ids); CHKERRQ(ierr);
+
+    // {
+    //   double norm;
+    //   ierr = MatNorm(Aij,NORM_FROBENIUS,&norm); CHKERRQ(ierr);
+    //   PetscPrintf(PETSC_COMM_WORLD,"mat norm = %6.4e\n",norm);
+    // }
+
+    {
+      double nrm2_F;
+      ierr = VecNorm(F,NORM_2,&nrm2_F); CHKERRQ(ierr);
+      PetscPrintf(PETSC_COMM_WORLD,"With BC nrm2_F = %6.4e\n",nrm2_F);
+    }
 
     //MatView(Aij,PETSC_VIEWER_DRAW_WORLD);
     //MatView(Aij,PETSC_VIEWER_STDOUT_WORLD);
     // std::string wait;
     //std::cin >> wait;
-    IS essential_bc_ids;
-    ierr = getDirichletBCIndices(&essential_bc_ids); CHKERRQ(ierr);
-    ierr = MatZeroRowsIS(Aij,essential_bc_ids,1,D0,F); CHKERRQ(ierr);
-    ierr = ISDestroy(&essential_bc_ids); CHKERRQ(ierr);
 
     // MatView(Aij,PETSC_VIEWER_DRAW_WORLD);
     // std::cin >> wait;
@@ -573,9 +588,16 @@ struct UltraWeakTransportElement {
     ierr = KSPSetFromOptions(solver); CHKERRQ(ierr);
     ierr = KSPSetUp(solver); CHKERRQ(ierr);
     ierr = KSPSolve(solver,F,D); CHKERRQ(ierr);
+    ierr = KSPDestroy(&solver); CHKERRQ(ierr);
+
+    {
+      double nrm2_D;
+      ierr = VecNorm(D,NORM_2,&nrm2_D); CHKERRQ(ierr);
+      PetscPrintf(PETSC_COMM_WORLD,"nrm2_D = %6.4e\n",nrm2_D);
+    }
     ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
     ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-    ierr = KSPDestroy(&solver); CHKERRQ(ierr);
+
 
     // copy data form vector on mesh
     ierr = mField.set_global_ghost_vector("ULTRAWEAK",COL,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
@@ -717,11 +739,11 @@ struct UltraWeakTransportElement {
       PetscFunctionBegin;
       try {
         if(Aij == PETSC_NULL) PetscFunctionReturn(0);
-        if(row_data.getFieldData().size()==0) PetscFunctionReturn(0);
-        if(col_data.getFieldData().size()==0) PetscFunctionReturn(0);
+        if(row_data.getIndices().size()==0) PetscFunctionReturn(0);
+        if(col_data.getIndices().size()==0) PetscFunctionReturn(0);
         EntityHandle fe_ent = getNumeredEntFiniteElementPtr()->getEnt();
-        int nb_row = row_data.getFieldData().size();
-        int nb_col = col_data.getFieldData().size();
+        int nb_row = row_data.getIndices().size();
+        int nb_col = col_data.getIndices().size();
         NN.resize(nb_row,nb_col,false);
         NN.clear();
         FTensor::Index<'i',3> i;
@@ -803,12 +825,12 @@ struct UltraWeakTransportElement {
       PetscErrorCode ierr;
       PetscFunctionBegin;
       try {
-        if(data.getFieldData().size()==0) PetscFunctionReturn(0);
+        if(data.getIndices().size()==0) PetscFunctionReturn(0);
         FTensor::Index<'i',3> i;
         FTensor::Index<'j',3> j;
         invK.resize(3,3,false);
         EntityHandle fe_ent = getNumeredEntFiniteElementPtr()->getEnt();
-        int nb_row = data.getFieldData().size();
+        int nb_row = data.getIndices().size();
         Nf.resize(nb_row);
         Nf.clear();
         // get access to resistivity data by tensor rank 2
