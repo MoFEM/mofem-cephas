@@ -141,55 +141,30 @@ int main(int argc, char *argv[]) {
     std::ofstream myfile;
     myfile.open("field_axpy_test.txt");
 
-    for(_IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(m_field,"FIELD_A",dof_ptr))
-    {
-      if((*dof_ptr)->getEntType()!=MBVERTEX) continue;
+    const DofEntity_multiIndex *dofs_ptr;
+    ierr = m_field.get_dofs(&dofs_ptr); CHKERRQ(ierr);
+    for(DofEntity_multiIndex::iterator dit = dofs_ptr->begin();dit!=dofs_ptr->end();dit++) {
 
-      if((*dof_ptr)->getDofCoeffIdx()==0)
-      {
-        //Round and truncate to 3 decimal places
-        double fval = (*dof_ptr)->getFieldData();
-        std::cout << boost::format("%.3lf") % roundn(fval) << "  ";
-        myfile << boost::format("%.3lf") % roundn(fval) << "  ";
-      }
-      if((*dof_ptr)->getDofCoeffIdx()==1)
-      {
-        //Round and truncate to 3 decimal places
-        double fval = (*dof_ptr)->getFieldData();
-        std::cout << boost::format("%.3lf") % roundn(fval) << "  ";
-        myfile << boost::format("%.3lf") % roundn(fval) << "  ";
-      }
-      if((*dof_ptr)->getDofCoeffIdx()==2)
-      {
-        //Round and truncate to 3 decimal places
-        double fval = (*dof_ptr)->getFieldData();
-        std::cout << boost::format("%.3lf") % roundn(fval) << std::endl;
-        myfile << boost::format("%.3lf") % roundn(fval) << std::endl;
-      }
+      if((*dit)->getEntType()!=MBVERTEX) continue;
 
-    }
-    for(_IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(m_field,"FIELD_B",dof_ptr))
-    {
-      if((*dof_ptr)->getEntType()!=MBVERTEX) continue;
-
-      if((*dof_ptr)->getDofCoeffIdx()==0)
+      if((*dit)->getDofCoeffIdx()==0)
       {
         //Round and truncate to 3 decimal places
-        double fval = (*dof_ptr)->getFieldData();
+        double fval = (*dit)->getFieldData();
         std::cout << boost::format("%.3lf") % roundn(fval) << "  ";
         myfile << boost::format("%.3lf") % roundn(fval) << "  ";
       }
-      if((*dof_ptr)->getDofCoeffIdx()==1)
+      if((*dit)->getDofCoeffIdx()==1)
       {
         //Round and truncate to 3 decimal places
-        double fval = (*dof_ptr)->getFieldData();
+        double fval = (*dit)->getFieldData();
         std::cout << boost::format("%.3lf") % roundn(fval) << "  ";
         myfile << boost::format("%.3lf") % roundn(fval) << "  ";
       }
-      if((*dof_ptr)->getDofCoeffIdx()==2)
+      if((*dit)->getDofCoeffIdx()==2)
       {
         //Round and truncate to 3 decimal places
-        double fval = (*dof_ptr)->getFieldData();
+        double fval = (*dit)->getFieldData();
         std::cout << boost::format("%.3lf") % roundn(fval) << std::endl;
         myfile << boost::format("%.3lf") % roundn(fval) << std::endl;
       }

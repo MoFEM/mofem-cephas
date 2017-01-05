@@ -153,6 +153,9 @@ int main(int argc, char *argv[]) {
   ierr = m_field2.query_interface(recorder2_ptr); CHKERRQ(ierr);
   ierr = recorder2_ptr->print_series_steps(); CHKERRQ(ierr);
 
+  const DofEntity_multiIndex *dofs_ptr;
+  ierr = m_field.get_dofs(&dofs_ptr); CHKERRQ(ierr);
+
   my_split << "TEST_SERIES1" << std::endl;
   for(_IT_SERIES_STEPS_BY_NAME_FOR_LOOP_(recorder2_ptr,"TEST_SERIES1",sit)) {
 
@@ -161,8 +164,17 @@ int main(int argc, char *argv[]) {
     my_split << "next step:\n";
     my_split << *sit << std::endl;
 
-    for(_IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(m_field2,"FIELD_B",dof)) {
-      my_split << *(*dof) << "\n";
+    {
+      DofEntity_multiIndex_uid_view dofs_view;
+      for(_IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(m_field2,"FIELD_B",dof)) {
+        dofs_view.insert(*dof);
+      }
+      for(
+        DofEntity_multiIndex_uid_view::iterator
+        dit=dofs_view.begin();dit!=dofs_view.end();dit++
+      ) {
+        my_split << **dit << endl;
+      }
     }
 
   }
@@ -173,16 +185,34 @@ int main(int argc, char *argv[]) {
     ierr = recorder2_ptr->load_series_data("TEST_SERIES2",sit->get_step_number()); CHKERRQ(ierr);
 
     my_split << "next step:\n";
-    for(_IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(m_field2,"FIELD_A",dof)) {
-      my_split << *(*dof) << "\n";
+    {
+      DofEntity_multiIndex_uid_view dofs_view;
+      for(_IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(m_field2,"FIELD_A",dof)) {
+        dofs_view.insert(*dof);
+      }
+      for(
+        DofEntity_multiIndex_uid_view::iterator
+        dit=dofs_view.begin();dit!=dofs_view.end();dit++
+      ) {
+        my_split << **dit << endl;
+      }
     }
-    for(_IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(m_field2,"FIELD_B",dof)) {
-      my_split << *(*dof) << "\n";
+    {
+      DofEntity_multiIndex_uid_view dofs_view;
+      for(_IT_GET_DOFS_FIELD_BY_NAME_FOR_LOOP_(m_field2,"FIELD_B",dof)) {
+        dofs_view.insert(*dof);
+      }
+      for(
+        DofEntity_multiIndex_uid_view::iterator
+        dit=dofs_view.begin();dit!=dofs_view.end();dit++
+      ) {
+        my_split << **dit << endl;
+      }
     }
 
 
   }
-  
+
   } catch (MoFEMException const &e) {
     SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
   }

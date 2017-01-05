@@ -29,7 +29,7 @@
 
 namespace MoFEM {
 
-  CoordSys::CoordSys(Interface &moab,const EntityHandle meshset):
+  CoordSys::CoordSys(const Interface &moab,const EntityHandle meshset):
   meshSet(meshset),
   tagCoordSysName(NULL) {
     // Change those tags only by modifiers

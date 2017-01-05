@@ -321,9 +321,12 @@ struct Core: public Interface {
   );
 
   //build fiels
-  PetscErrorCode BuildFieldForNoField(const BitFieldId id,std::map<EntityType,int> &dof_counter,int verb = -1);
-  PetscErrorCode BuildFieldForL2H1HcurlHdiv(
-    const BitFieldId id,std::map<EntityType,int> &dof_counter,std::map<EntityType,int> &inactive_dof_counter,int verb = -1
+  PetscErrorCode buildFieldForNoField(const BitFieldId id,std::map<EntityType,int> &dof_counter,int verb = -1);
+  PetscErrorCode buildFieldForL2H1HcurlHdiv(
+    const BitFieldId id,std::map<EntityType,int> &dof_counter,
+    std::map<EntityType,
+    int> &inactive_dof_counter,
+    int verb = -1
   );
   PetscErrorCode build_fields(int verb = -1);
   PetscErrorCode clear_inactive_dofs(int verb = -1);
@@ -469,7 +472,13 @@ struct Core: public Interface {
     int verb = -1
   );
   PetscErrorCode partition_ghost_dofs(const std::string &name,int verb = -1);
-  PetscErrorCode partition_finite_elements(const std::string &name,bool part_from_moab = false,int low_proc = -1,int hi_proc = -1,int verb = -1);
+  PetscErrorCode partition_finite_elements(
+    const std::string &name,
+    bool part_from_moab = false,
+    int low_proc = -1,
+    int hi_proc = -1,
+    int verb = -1
+  );
   PetscErrorCode partition_check_matrix_fill_in(const std::string &problem_neme,int row,int col,int verb);
   PetscErrorCode printPartitionedProblem(const MoFEMProblem *problem_ptr,int verb = -1);
   PetscErrorCode debugPartitionedProblem(const MoFEMProblem *problem_ptr,int verb = -1);
@@ -558,9 +567,19 @@ struct Core: public Interface {
 
   //local
   PetscErrorCode set_other_local_ghost_vector(
-    const MoFEMProblem *problem_ptr,const std::string& fiel_name,const std::string& cpy_field_name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode,int verb = -1);
+    const MoFEMProblem *problem_ptr,
+    const std::string& fiel_name,
+    const std::string& cpy_field_name,
+    RowColData rc,Vec V,
+    InsertMode mode,ScatterMode scatter_mode,int verb = -1
+  );
   PetscErrorCode set_other_local_ghost_vector(
-    const std::string &name,const std::string& fiel_name,const std::string& cpy_field_name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode,int verb = -1);
+    const std::string &name,
+    const std::string& fiel_name,
+    const std::string& cpy_field_name,
+    RowColData rc,Vec V,
+    InsertMode mode,ScatterMode scatter_mode,int verb = -1
+  );
   //global
   PetscErrorCode set_other_global_ghost_vector(
     const MoFEMProblem *problem_ptr,
@@ -641,7 +660,10 @@ struct Core: public Interface {
   EntFiniteElementbyName::iterator get_fe_by_name_end(const std::string &fe_name) const;
 
   //Copy field values to another field
-  PetscErrorCode field_axpy(const double alpha,const std::string& fiel_name_x,const std::string& field_name_y,bool error_if_missing = false,bool creat_if_missing = false);
+  PetscErrorCode field_axpy(
+    const double alpha,const std::string& fiel_name_x,const std::string& field_name_y,
+    bool error_if_missing = false,bool creat_if_missing = false
+  );
   PetscErrorCode field_scale(const double alpha,const std::string& fiel_name);
   PetscErrorCode set_field(const double val,const EntityType type,const std::string& fiel_name);
   PetscErrorCode set_field(const double val,const EntityType type,const Range &ents,const std::string& field_name);

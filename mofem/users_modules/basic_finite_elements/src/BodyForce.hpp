@@ -1,13 +1,5 @@
-/* Copyright (C) 2013, Lukasz Kaczmarczyk (likask AT wp.pl)
- * --------------------------------------------------------------
- *
- * Test for linar elastic dynamics.
- *
- * This is not exactly procedure for linear elatic dynamics, since jacobian is
- * evaluated at every time step and snes procedure is involved. However it is
- * implemented like that, to test methodology for general nonlinear problem.
- *
- */
+/** \file BodyForce.hpp
+*/
 
 /* This file is part of MoFEM.
  * MoFEM is free software: you can redistribute it and/or modify it under
@@ -67,14 +59,15 @@ struct BodyFroceConstantField {
       PetscErrorCode ierr;
 
       const FENumeredDofEntity *dof_ptr;
-      ierr = getNumeredEntFiniteElementPtr()->getRowDofsByPetscGlobalDofIdx(data.getIndices()[0],&dof_ptr); CHKERRQ(ierr);
+      ierr = getNumeredEntFiniteElementPtr()->getRowDofsByPetscGlobalDofIdx(
+        data.getIndices()[0],&dof_ptr
+      ); CHKERRQ(ierr);
       int rank = dof_ptr->getNbOfCoeffs();
 
       int nb_row_dofs = data.getIndices().size()/rank;
 
       Nf.resize(data.getIndices().size());
       bzero(&*Nf.data().begin(),data.getIndices().size()*sizeof(FieldData));
-
 
       for(unsigned int gg = 0;gg<data.getN().size1();gg++) {
         double val = getVolume()*getGaussPts()(3,gg);

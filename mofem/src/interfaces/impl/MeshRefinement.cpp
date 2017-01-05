@@ -31,7 +31,7 @@
 #include <FieldMultiIndices.hpp>
 #include <EntsMultiIndices.hpp>
 #include <DofsMultiIndices.hpp>
-#include <FEMMultiIndices.hpp>
+#include <FEMultiIndices.hpp>
 #include <ProblemsMultiIndices.hpp>
 #include <AdjacencyMultiIndices.hpp>
 #include <BCMultiIndices.hpp>
@@ -578,7 +578,7 @@ PetscErrorCode MeshRefinement::refine_TET(
           try {
             p_MoFEMFiniteElement =  const_cast<RefElement_multiIndex*>(refined_finite_elements_ptr)->
             insert(ptrWrapperRefElement(
-              boost::shared_ptr<RefElement>(new RefElement_TET(moab,*p_MoFEMEntity.first)))
+              boost::shared_ptr<RefElement>(new RefElement_TET(*p_MoFEMEntity.first)))
             );
           } catch (MoFEMException const &e) {
             SETERRQ(m_field.get_comm(),e.errorCode,e.errorMessage);
@@ -998,7 +998,7 @@ PetscErrorCode MeshRefinement::refine_PRISM(const EntityHandle meshset,const Bit
           try {
             p_fe = const_cast<RefElement_multiIndex*>(refined_finite_elements_ptr)->
             insert(ptrWrapperRefElement(
-              boost::shared_ptr<RefElement>(new RefElement_PRISM(moab,*p_ent.first)))
+              boost::shared_ptr<RefElement>(new RefElement_PRISM(*p_ent.first)))
             );
           } catch (MoFEMException const &e) {
             SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);

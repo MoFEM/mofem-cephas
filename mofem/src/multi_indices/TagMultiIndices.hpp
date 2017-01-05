@@ -45,25 +45,22 @@ namespace MoFEM {
     static const bool IamNotPartitioned;
     /// extract dof index from iterator
     template<class IT>
-    static DofIdx get_index(const IT &it) { return (*it)->dofIdx; }
+    static DofIdx get_index(const IT &it) { return (*it)->getDofIdx(); }
   };
   struct PetscGlobalIdx_mi_tag {
     static const bool IamNotPartitioned;
     /// extract global dof index from iterator
     template<class IT>
-    static DofIdx get_index(const IT &it) { return (*it)->petscGloablDofIdx; }
+    static DofIdx get_index(const IT &it) { return (*it)->getPetscGlobalDofIdx(); }
   };
   struct PetscLocalIdx_mi_tag {
     static const bool IamNotPartitioned;
     /// extract global dof index from iterator
     template<class IT>
-    static DofIdx get_index(const IT &it) { return (*it)->petscLocalDofIdx; }
+    static DofIdx get_index(const IT &it) { return (*it)->getPetscLocalDofIdx(); }
   };
+
   struct Part_mi_tag {
-    static const bool IamNotPartitioned;
-    /// extract global dof index from iterator
-    template<class IT>
-    static DofIdx get_index(const IT &it) { return (*it)->petscGloablDofIdx; }
   };
 
   struct Ent_Ent_mi_tag {};
@@ -80,7 +77,6 @@ namespace MoFEM {
   /// MultiIndex Tag for field name
   struct FieldName_mi_tag {};
   struct BitFieldId_space_mi_tag {};
-  struct FiniteElement_Part_mi_tag {};
   struct BitProblemId_mi_tag {};
   struct Problem_mi_tag {};
   struct ParentEntType_mi_tag {};
@@ -95,7 +91,7 @@ namespace MoFEM {
   struct Composite_ParentEnt_And_BitsOfRefinedEdges_mi_tag {};
   struct Composite_Name_And_Ent_And_EntDofIdx_mi_tag {};
   struct Composite_Name_And_Ent_mi_tag {};
-  struct Composite_Part_And_Oder_mi_tag {};
+  struct Composite_Part_And_Order_mi_tag {};
   struct Composite_Name_Ent_And_CoeffIdx_mi_tag {};
   struct Composite_Name_Ent_Order_And_CoeffIdx_mi_tag {};
   struct Composite_Name_And_Type_mi_tag {};

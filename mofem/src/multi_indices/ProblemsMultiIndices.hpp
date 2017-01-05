@@ -45,9 +45,10 @@ struct MoFEMProblem {
   BitFEId* tag_BitFEId_data;
   BitRefLevel* tag_BitRefLevel;
   BitRefLevel* tag_BitRefLevel_DofMask;
-  boost::shared_ptr<NumeredDofEntity_multiIndex> numered_dofs_rows;
-  boost::shared_ptr<NumeredDofEntity_multiIndex> numered_dofs_cols;
-  NumeredEntFiniteElement_multiIndex numeredFiniteElements;
+
+  mutable boost::shared_ptr<NumeredDofEntity_multiIndex> numered_dofs_rows; // FIXME name convention
+  mutable boost::shared_ptr<NumeredDofEntity_multiIndex> numered_dofs_cols; // FIXME name convention
+  mutable NumeredEntFiniteElement_multiIndex numeredFiniteElements;
 
   /**
    * \brief Subproblem problem data
@@ -124,7 +125,11 @@ struct MoFEMProblem {
     }
   };
 
-  boost::shared_ptr<SubProblemData> subProblemData;
+  /**
+   * Pointer to data structure. This pointer has allocated data only for
+   * sub problems.
+   */
+  mutable boost::shared_ptr<SubProblemData> subProblemData;
 
   /**
    * \brief Get main problem of sub-problem is
@@ -468,17 +473,21 @@ struct MoFEMProblem {
    * \endcode
    */
   #define _IT_NUMEREDDOFMOFEMENTITY_ROW_BY_PART_FOR_LOOP_(MOFEMPROBLEM,PART,IT) \
-  NumeredDofEntityByPart::iterator IT = MOFEMPROBLEM->getNumeredDofsRowsBegin(PART); \
+  NumeredDofEntity_multiIndex::iterator IT = MOFEMPROBLEM->getNumeredDofsRowsBegin(PART); \
   IT!=MOFEMPROBLEM->getNumeredDofsRowsEnd(PART); IT++
 
   /// get begin iterator for numered_dofs_rows (insted you can use #_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_PART_FOR_LOOP_ for loops)
-  NumeredDofEntityByPart::iterator getNumeredDofsRowsBegin(const int part) const {
-    return numered_dofs_rows->get<Part_mi_tag>().lower_bound(part);
+  NumeredDofEntity_multiIndex::iterator getNumeredDofsRowsBegin(const int part) const {
+    return numered_dofs_rows->get<Unique_mi_tag>().lower_bound(
+      DofEntity::getGlobalUniqueIdCalculate_Low_Proc(part)
+    );
   }
 
   /// get end iterator for numered_dofs_rows (insted you can use #_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_PART_FOR_LOOP_ for loops)
-  NumeredDofEntityByPart::iterator getNumeredDofsRowsEnd(const int part) const {
-    return numered_dofs_rows->get<Part_mi_tag>().upper_bound(part);
+  NumeredDofEntity_multiIndex::iterator getNumeredDofsRowsEnd(const int part) const {
+    return numered_dofs_rows->get<Unique_mi_tag>().upper_bound(
+      DofEntity::getGlobalUniqueIdCalculate_Hi_Proc(part)
+    );
   }
 
   /**
@@ -497,20 +506,25 @@ struct MoFEMProblem {
    *
    */
   #define _IT_NUMEREDDOFMOFEMENTITY_COL_BY_PART_FOR_LOOP_(MOFEMPROBLEM,PART,IT) \
-  NumeredDofEntityByPart::iterator IT = MOFEMPROBLEM->getNumeredDofsColsBegin(PART); \
+  NumeredDofEntity_multiIndex::iterator IT = MOFEMPROBLEM->getNumeredDofsColsBegin(PART); \
   IT!=MOFEMPROBLEM->getNumeredDofsColsEnd(PART); IT++
 
   /// get begin iterator for numered_dofs_rows (insted you can use #_IT_NUMEREDDOFMOFEMENTITY_COL_BY_PART_FOR_LOOP_ for loops)
-  NumeredDofEntityByPart::iterator getNumeredDofsColsBegin(const int part) const {
-    return numered_dofs_rows->get<Part_mi_tag>().lower_bound(part);
+  NumeredDofEntity_multiIndex::iterator getNumeredDofsColsBegin(const int part) const {
+    return numered_dofs_rows->get<Unique_mi_tag>().lower_bound(
+      DofEntity::getGlobalUniqueIdCalculate_Low_Proc(part)
+    );
   }
 
   /// get end iterator for numered_dofs_rows (insted you can use #_IT_NUMEREDDOFMOFEMENTITY_COL_BY_PART_FOR_LOOP_ for loops)
-  NumeredDofEntityByPart::iterator getNumeredDofsColsEnd(const int part) const {
-    return numered_dofs_rows->get<Part_mi_tag>().upper_bound(part);
+  NumeredDofEntity_multiIndex::iterator getNumeredDofsColsEnd(const int part) const {
+    return numered_dofs_rows->get<Unique_mi_tag>().upper_bound(
+      DofEntity::getGlobalUniqueIdCalculate_Hi_Proc(part)
+    );
   }
 
-  MoFEMProblem(Interface &moab,const EntityHandle _meshset);
+
+  MoFEMProblem(Interface &moab,const EntityHandle meshset);
 
   virtual ~MoFEMProblem();
 
@@ -603,6 +617,72 @@ struct MoFEMProblem {
    */
   PetscErrorCode getNumberOfElementsByPart(MPI_Comm comm,PetscLayout *layout) const;
 
+  /**
+   * \brief Get weak_ptr reference to sequence/vector storing dofs.
+   *
+   * Vector is automatically destroy when last DOF in vector os destroyed. Every
+   * shared_ptr to the DOF has aliased shared_ptr to vector of DOFs in that vector.
+   * That do the trick.
+   *
+   * \note It is week_ptr, so it is no guaranteed that sequence is there. Check
+   * if sequence is there.
+   * \code
+   * if(boost::shared_ptr<std::vector<NumeredDofEntity> > ptr=fe->getRowDofsSeqence().lock()) {
+   *  // use ptr
+   * }
+   * \endcode
+   *
+   */
+  inline boost::weak_ptr<std::vector<NumeredDofEntity> >& getRowDofsSeqence() const {
+    return dofsRowSequence;
+  }
+
+  /**
+   * \brief Get weak_ptr reference to sequence/vector storing dofs.
+   *
+   * Vector is automatically destroy when last DOF in vector os destroyed. Every
+   * shared_ptr to the DOF has aliased shared_ptr to vector of DOFs in that vector.
+   * That do the trick.
+   *
+   * \note It is week_ptr, so it is no guaranteed that sequence is there. Check
+   * if sequence is there.
+   * \code
+   * if(boost::shared_ptr<std::vector<NumeredDofEntity> > ptr=fe->getColDofsSeqence().lock()) {
+   *  // use ptr
+   * }
+   * \endcode
+   *
+   */
+  inline boost::weak_ptr<std::vector<NumeredDofEntity> >& getColDofsSeqence() const {
+    return dofsColSequence;
+  }
+
+  /**
+   * \brief Get weak_ptr reference to sequence/vector storing finite elements.
+   *
+   * \note It is week_ptr, so it is no guaranteed that sequence is there. Check
+   * if sequence is there.
+   * \code
+   * if(boost::shared_ptr<std::vector<NumeredDofEntity> > ptr=fe->getFeSeqence().lock()) {
+   *  // use ptr
+   * }
+   * \endcode
+   *
+   */
+  // inline boost::weak_ptr<std::vector<NumeredEntFiniteElement> >& getFeSeqence() const {
+  //   return feSequence;
+  // }
+
+
+private:
+
+  // Keep vector of DoFS on entity
+  mutable boost::weak_ptr<std::vector<NumeredDofEntity> > dofsRowSequence;
+  mutable boost::weak_ptr<std::vector<NumeredDofEntity> > dofsColSequence;
+
+  // // Keeps finite elements on entities
+  // mutable boost::weak_ptr<std::vector<NumeredEntFiniteElement> > feSequence;
+
 };
 
 /**
@@ -666,26 +746,6 @@ struct ProblemFiniteElementChangeBitUnSet {
   void operator()(MoFEMProblem &p);
 };
 
-/** \brief increase nb. dof in row
-  * \ingroup problems_multi_indices
-  */
-struct ProblemAddRowDof {
-  const boost::shared_ptr<DofEntity> dof_ptr;
-  ProblemAddRowDof(const boost::shared_ptr<DofEntity> _dof_ptr);
-  std::pair<NumeredDofEntity_multiIndex::iterator,bool> p;
-  void operator()(MoFEMProblem &e);
-};
-
-/** \brief increase nb. dof in col
-  * \ingroup problems_multi_indices
-  */
-struct ProblemAddColDof {
-  const boost::shared_ptr<DofEntity> dof_ptr;
-  ProblemAddColDof(const boost::shared_ptr<DofEntity> _dof_ptr);
-  std::pair<NumeredDofEntity_multiIndex::iterator,bool> p;
-  void operator()(MoFEMProblem &e);
-};
-
 /** \brief zero nb. of dofs in row
   * \ingroup problems_multi_indices
   */
@@ -704,22 +764,6 @@ struct ProblemZeroNbColsChange {
   * \ingroup problems_multi_indices
   */
 struct ProblemClearNumeredFiniteElementsChange {
-  void operator()(MoFEMProblem &e);
-};
-
-/** \brief number dofs in row
-  * \ingroup problems_multi_indices
-  */
-struct ProblemRowNumberChange {
-  ProblemRowNumberChange() {};
-  void operator()(MoFEMProblem &e);
-};
-
-/** \brief number dofs in col
-  * \ingroup problems_multi_indices
-  */
-struct ProblemColNumberChange {
-  ProblemColNumberChange() {};
   void operator()(MoFEMProblem &e);
 };
 

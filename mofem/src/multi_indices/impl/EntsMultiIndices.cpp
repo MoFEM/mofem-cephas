@@ -28,7 +28,7 @@
 #include <FieldMultiIndices.hpp>
 #include <EntsMultiIndices.hpp>
 #include <DofsMultiIndices.hpp>
-#include <FEMMultiIndices.hpp>
+#include <FEMultiIndices.hpp>
 
 #define IS_BUILDING_MB
 #include <moab/Error.hpp>
@@ -56,8 +56,8 @@ inline void* get_tag_ptr(SequenceManager *sequence_manager,Tag th,EntityHandle e
   }
 }
 
-BasicEntityData::BasicEntityData(moab::Interface &moab):
-moab(moab) {
+BasicEntityData::BasicEntityData(const moab::Interface &moab):
+moab(const_cast<moab::Interface&>(moab)) {
   rval = moab.tag_get_handle("_RefParentHandle",th_RefParentHandle); MOAB_THROW(rval);
   rval = moab.tag_get_handle("_RefBitLevel",th_RefBitLevel); MOAB_THROW(rval);
 }
@@ -66,7 +66,8 @@ BasicEntityData::~BasicEntityData() {
 
 //basic moab ent
 BasicEntity::BasicEntity(
-  boost::shared_ptr<BasicEntityData> basic_data_ptr,const EntityHandle ent
+  const boost::shared_ptr<BasicEntityData>& basic_data_ptr,
+  const EntityHandle ent
 ):
 basicDataPtr(basic_data_ptr),
 ent(ent) {
@@ -99,7 +100,9 @@ unsigned char BasicEntity::getPStatus() const {
 
 //ref moab ent
 BitRefEdges MoFEM::RefElement::DummyBitRefEdges = BitRefEdges(0);
-RefEntity::RefEntity(boost::shared_ptr<BasicEntityData> basic_data_ptr, const EntityHandle ent):
+RefEntity::RefEntity(
+  const boost::shared_ptr<BasicEntityData>& basic_data_ptr,
+  const EntityHandle ent):
 BasicEntity(basic_data_ptr,ent) {
 }
 
@@ -149,8 +152,8 @@ std::ostream& operator<<(std::ostream& os,const RefEntity& e) {
 
 //moab ent
 MoFEMEntity::MoFEMEntity(
-  const boost::shared_ptr<Field> field_ptr,
-  const boost::shared_ptr<RefEntity> ref_ent_ptr
+  const boost::shared_ptr<Field>& field_ptr,
+  const boost::shared_ptr<RefEntity>& ref_ent_ptr
 ):
 interface_Field<Field>(field_ptr),
 interface_RefEntity<RefEntity>(ref_ent_ptr),
@@ -196,7 +199,7 @@ std::ostream& operator<<(std::ostream& os,const MoFEMEntity& e) {
     << " order "<<e.getMaxOrder()<<" "<< *e.sFieldPtr;
   return os;
 }
-void MoFEMEntity_change_order::operator()(boost::shared_ptr<MoFEMEntity> &e) {
+void MoFEMEntity_change_order::operator()(MoFEMEntity *e) {
   MoABErrorCode rval;
   moab::Interface &moab = e->sPtr->basicDataPtr->moab;
   int nb_dofs = e->getOrderNbDofs(order)*e->getNbOfCoeffs();

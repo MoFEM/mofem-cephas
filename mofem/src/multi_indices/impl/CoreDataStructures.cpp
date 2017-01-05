@@ -29,7 +29,7 @@
 #include <FieldMultiIndices.hpp>
 #include <EntsMultiIndices.hpp>
 #include <DofsMultiIndices.hpp>
-#include <FEMMultiIndices.hpp>
+#include <FEMultiIndices.hpp>
 #include <ProblemsMultiIndices.hpp>
 #include <AdjacencyMultiIndices.hpp>
 #include <BCMultiIndices.hpp>
@@ -37,25 +37,33 @@
 
 namespace MoFEM {
 
+// Not partitioned
 const bool Idx_mi_tag::IamNotPartitioned = true;
+
+// This tag is used for partitioned problems
 const bool PetscGlobalIdx_mi_tag::IamNotPartitioned = false;
 const bool PetscLocalIdx_mi_tag::IamNotPartitioned = false;
-const bool Part_mi_tag::IamNotPartitioned = false;
 
 //fields
 Field::Field(
-  Interface &_moab,
+  const Interface &moab,
   const EntityHandle meshset,
   const boost::shared_ptr<CoordSys> coord_sys_ptr
 ):
-moab(_moab),
+moab(const_cast<Interface&>(moab)),
 meshSet(meshset),
 coordSysPtr(coord_sys_ptr),
 tag_id_data(NULL),
 tag_space_data(NULL),
 tag_nb_coeff_data(NULL),
 tag_name_data(NULL),
-tag_name_size(0) {
+tag_name_size(0),
+sequenceEntContainer(
+  boost::make_shared<SequenceEntContainer>()
+),
+sequenceDofContainer(
+  boost::make_shared<SequenceDofContainer>()
+) {
   //Change those tags only by modifiers
   ErrorCode rval;
   //id
