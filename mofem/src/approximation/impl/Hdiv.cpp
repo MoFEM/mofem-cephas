@@ -91,11 +91,11 @@ PetscErrorCode MoFEM::Hdiv_EdgeFaceShapeFunctions_MBTET_ON_FACE(
     );
     if(diff_phi_f_e) {
       t_diff_phi_f_e_ptr = boost::shared_ptr<FTensor::Tensor2<double*,3,3> >(
-	new FTensor::Tensor2<double*,3,3>(
-        &diff_phi_f_e[ee][HDIV0_0],&diff_phi_f_e[ee][HDIV0_1],&diff_phi_f_e[ee][HDIV0_2],
-        &diff_phi_f_e[ee][HDIV1_0],&diff_phi_f_e[ee][HDIV1_1],&diff_phi_f_e[ee][HDIV1_2],
-        &diff_phi_f_e[ee][HDIV2_0],&diff_phi_f_e[ee][HDIV2_1],&diff_phi_f_e[ee][HDIV2_2],9
-	)
+        new FTensor::Tensor2<double*,3,3>(
+          &diff_phi_f_e[ee][HDIV0_0],&diff_phi_f_e[ee][HDIV0_1],&diff_phi_f_e[ee][HDIV0_2],
+          &diff_phi_f_e[ee][HDIV1_0],&diff_phi_f_e[ee][HDIV1_1],&diff_phi_f_e[ee][HDIV1_2],
+          &diff_phi_f_e[ee][HDIV2_0],&diff_phi_f_e[ee][HDIV2_1],&diff_phi_f_e[ee][HDIV2_2],9
+        )
       );
     }
     for(int ii = 0;ii!=gdim;ii++) {
@@ -204,9 +204,9 @@ PetscErrorCode MoFEM::Hdiv_FaceBubbleShapeFunctions_MBTET_ON_FACE(
   if(diff_phi_f) {
     t_diff_phi_f_ptr = boost::shared_ptr<FTensor::Tensor2<double*,3,3> >(
       new FTensor::Tensor2<double*,3,3>(
-      &diff_phi_f[HDIV0_0],&diff_phi_f[HDIV0_1],&diff_phi_f[HDIV0_2],
-      &diff_phi_f[HDIV1_0],&diff_phi_f[HDIV1_1],&diff_phi_f[HDIV1_2],
-      &diff_phi_f[HDIV2_0],&diff_phi_f[HDIV2_1],&diff_phi_f[HDIV2_2],9
+        &diff_phi_f[HDIV0_0],&diff_phi_f[HDIV0_1],&diff_phi_f[HDIV0_2],
+        &diff_phi_f[HDIV1_0],&diff_phi_f[HDIV1_1],&diff_phi_f[HDIV1_2],
+        &diff_phi_f[HDIV2_0],&diff_phi_f[HDIV2_1],&diff_phi_f[HDIV2_2],9
       )
     );
   }
