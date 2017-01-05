@@ -525,7 +525,7 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::operator()() {
           oit->doEdges,
           oit->doQuads,
           oit->doTris,
-          false,
+          oit->doTets,
           false
         ); CHKERRQ(ierr);
 
