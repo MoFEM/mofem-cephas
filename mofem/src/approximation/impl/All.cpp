@@ -8,4 +8,5 @@
 #include "impl/EdgePolynomialBase.cpp"
 #include "impl/FlatPrismPolynomialBase.cpp"
 #include "impl/FatPrismPolynomialBase.cpp"
+#include "impl/Hdiv.cpp"
 #include "impl/Hcurl.cpp"

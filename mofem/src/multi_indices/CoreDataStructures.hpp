@@ -56,10 +56,10 @@ inline int fNBVOLUMETET_HCURL(int P) { return NBVOLUMETET_HCURL(P); }
 /// zero number of digrees of freedom on vertex for that space
 inline int fNBVERTEX_HDIV(int P) { (void)P; return 0; }
 /// number of approx. functions for HDIV space on edge
-inline int fNBEDGE_HDIV(int P) { assert(P==P); (void)P; return NBEDGE_HDIV(P); }
+inline int fNBEDGE_HDIV(int P) { (void)P; return NBEDGE_HDIV(P); }
 /// number of approx. functions for HDIV space on face
 inline int fNBFACETRI_HDIV(int P) { return NBFACETRI_HDIV(P); }
-/// number of approx. functions for HDIV space on voulem
+/// number of approx. functions for HDIV space on volume
 inline int fNBVOLUMETET_HDIV(int P) { return NBVOLUMETET_HDIV(P); }
 
 /** \brief Test MoAB entity handle if has structure as is assumed by MoFEM

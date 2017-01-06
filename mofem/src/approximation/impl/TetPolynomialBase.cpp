@@ -47,6 +47,9 @@ using namespace MoFEM;
 #include <EntPolynomialBaseCtx.hpp>
 #include <TetPolynomialBase.hpp>
 
+#include <Hcurl.hpp>
+#include <Hdiv.hpp>
+
 PetscErrorCode TetPolynomialBase::queryInterface(
   const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface
 ) {
