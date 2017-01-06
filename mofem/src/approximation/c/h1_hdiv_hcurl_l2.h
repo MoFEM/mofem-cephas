@@ -135,10 +135,10 @@ PetscErrorCode Hdiv_FaceBasedVolumeShapeFunctions_MBTET(
   int p,double *N,double *diffN,double *PHI_v_f[4],double *diffPHI_v_f[4],int GDIM,
   PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
 );
-PetscErrorCode Hdiv_VolumeBubbleShapeFunctions_MBTET(
-  int p,double *N,double *diffN,double *PHI_v,double *diffPHI_v,int GDIM,
-  PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
-);
+// PetscErrorCode Hdiv_VolumeBubbleShapeFunctions_MBTET(
+//   int p,double *N,double *diffN,double *PHI_v,double *diffPHI_v,int GDIM,
+//   PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
+// );
 // NOTE: This functions is moved to Hdiv.hpp, ultimatly all functions would be moved there for faster
 // PetscErrorCode Hdiv_EdgeFaceShapeFunctions_MBTET_ON_FACE(
 //   int *faces_nodes,int p,double *N,double *diffN,double *PHI_f_e[3],double *diffPHI_f_e[3],int GDIM,int NB,
