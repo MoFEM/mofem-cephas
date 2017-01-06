@@ -90,7 +90,7 @@ int main(int argc, char *argv[]) {
   //add entities to field
   ierr = m_field.add_ents_to_field_by_TETs(root_set,"HDIV"); CHKERRQ(ierr);
   //set app. order
-  int order = 4;
+  int order = 5;
   ierr = m_field.set_field_order(root_set,MBTET,"HDIV",order); CHKERRQ(ierr);
   ierr = m_field.set_field_order(root_set,MBTRI,"HDIV",order); CHKERRQ(ierr);
   //build field
@@ -110,7 +110,9 @@ int main(int argc, char *argv[]) {
   //add entities to finite element
   ierr = m_field.add_ents_to_finite_element_by_TETs(root_set,"TET_FE"); CHKERRQ(ierr);
   Range tets;
-  ierr = m_field.get_entities_by_type_and_ref_level(BitRefLevel().set(0),BitRefLevel().set(),MBTET,tets); CHKERRQ(ierr);
+  ierr = m_field.get_entities_by_type_and_ref_level(
+    BitRefLevel().set(0),BitRefLevel().set(),MBTET,tets
+  ); CHKERRQ(ierr);
   Skinner skin(&moab);
   Range skin_faces; // skin faces from 3d ents
   rval = skin.find_skin(0,tets,false,skin_faces); CHKERR_MOAB(rval);
@@ -195,7 +197,7 @@ int main(int argc, char *argv[]) {
 
     MyFE(MoFEM::Interface &m_field):
     VolumeElementForcesAndSourcesCore(m_field) {}
-    int getRule(int order) { return 2*order; }; //order/2; };
+    int getRule(int order) { return order+1; }; //order/2; };
 
   };
 
@@ -203,7 +205,7 @@ int main(int argc, char *argv[]) {
 
     MyTriFE(MoFEM::Interface &m_field):
     FaceElementForcesAndSourcesCore(m_field) {}
-    int getRule(int order) { return 2*order; };//2*order; }; //order/2; };
+    int getRule(int order) { return order+1; };//2*order; }; //order/2; };
 
   };
 
@@ -273,7 +275,7 @@ int main(int argc, char *argv[]) {
   std::cout << "divergence_skin " << divergence_skin << std::endl;
 
   const double eps = 1e-6;
-  const double expected_result = 8.03630952381;
+  const double expected_result = 9.82857142857;
   if(fabs(divergence_vol-expected_result)>eps) {
     SETERRQ2(
       PETSC_COMM_SELF,

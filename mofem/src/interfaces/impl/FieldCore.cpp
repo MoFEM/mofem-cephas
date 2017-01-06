@@ -1231,6 +1231,8 @@ PetscErrorCode Core::buildFieldForL2H1HcurlHdiv(
     SETERRQ(comm,MOFEM_NOT_FOUND,"field not found");
   }
   const int rank = field_it->get()->getNbOfCoeffs();
+
+  // Just check if there are any DOFs of given field are in database
   const bool dofs_on_field =
   dofsField.get<FieldName_mi_tag>().find(field_it->get()->getNameRef())!=
   dofsField.get<FieldName_mi_tag>().end();
@@ -1244,9 +1246,11 @@ PetscErrorCode Core::buildFieldForL2H1HcurlHdiv(
     );
   }
 
+  // View of vertex entities to which dofs in given field are added
   MoFEMEntity_multiIndex_ent_view ents_view;
   std::vector<boost::shared_ptr<DofEntity> > dofs_shared_array;
 
+  // Loop over all entities and insert dofs by seqences on edges, faces and volumes
   Range::iterator eit = ents_of_id_meshset.begin();
   for(;eit!=ents_of_id_meshset.end();eit++) {
 
@@ -1407,7 +1411,9 @@ PetscErrorCode Core::buildFieldForL2H1HcurlHdiv(
   // Add vertices DOFs by bulk
   boost::shared_ptr<std::vector<DofEntity> > dofs_array
   = boost::make_shared<std::vector<DofEntity> >(std::vector<DofEntity>());
+  // Add seqence of DOFs to sequence container as weak_ptr
   dofs_array->reserve(rank*ents_view.size());
+  // Add seqence of DOFs to sequence container as weak_ptr
   field_it->get()->getDofSeqenceContainer()->push_back(dofs_array);
   dofs_shared_array.clear();
   dofs_shared_array.reserve(dofs_array->size());
@@ -1416,13 +1422,16 @@ PetscErrorCode Core::buildFieldForL2H1HcurlHdiv(
     eit = ents_view.begin();eit!=ents_view.end();eit++
   ) {
     for(int r = 0;r!=rank;r++) {
+      // Construct DOF
       dofs_array->push_back(DofEntity(*eit,1,r,r,true));
+      // Construct aliased shared pointer
       dofs_shared_array.push_back(
         boost::shared_ptr<DofEntity>(dofs_array,&dofs_array->back())
       );
       ++dof_counter[MBVERTEX];
     }
   }
+  // Insert into Multi-Index container
   dofsField.insert(dofs_shared_array.begin(),dofs_shared_array.end());
 
   PetscFunctionReturn(0);
