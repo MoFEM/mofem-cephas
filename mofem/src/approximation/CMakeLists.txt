@@ -31,7 +31,6 @@ add_library(
   c_impl/base_functions.c
   c_impl/fem_tools.c
   c_impl/h1.c
-  c_impl/hdiv.c
   c_impl/l2.c
 )
 if(PRECOMPILED_HEADRES)

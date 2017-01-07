@@ -68,7 +68,7 @@ This create directory \em html. Open file \em html/index.html to see results in 
 
 If problem is large, mesh can be partitioned for to save memory and improve efficiency. This can be done using native MoAB tool,
 \code
-mbpart -t -p PartKway  16 cylinder.cub cylinder_16parts.h5m
+mbpart -m ML_KWAY 16 cylinder.cub cylinder_16parts.h5m
 \endcode
 
 The tool \em mbpart is part of MoAB. To have it you need compile MoAB with Zoltan library.

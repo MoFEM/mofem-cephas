@@ -102,7 +102,7 @@ int main(int argc, char *argv[]) {
   ierr = m_field.build_fields(); CHKERRQ(ierr);
   ierr = m_field.build_finite_elements(); CHKERRQ(ierr);
   ierr = m_field.build_adjacencies(bit_level0); CHKERRQ(ierr);
-  ierr = m_field.build_problems(); CHKERRQ(ierr);
+  ierr = m_field.build_problem("TEST_PROBLEM",true); CHKERRQ(ierr);
 
   //to solve problem it need to be represented in matrix vector form. this
   //demand numeration of dofs and problem  partitioning.

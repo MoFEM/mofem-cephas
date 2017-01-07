@@ -35,7 +35,7 @@
 #include <FieldMultiIndices.hpp>
 #include <EntsMultiIndices.hpp>
 #include <DofsMultiIndices.hpp>
-#include <FEMMultiIndices.hpp>
+#include <FEMultiIndices.hpp>
 #include <ProblemsMultiIndices.hpp>
 #include <AdjacencyMultiIndices.hpp>
 #include <BCMultiIndices.hpp>
@@ -462,48 +462,56 @@ PetscErrorCode ForcesAndSurcesCore::getTypeIndices(
   SideNumber_multiIndex& side_table = const_cast<SideNumber_multiIndex&>(numeredEntFiniteElementPtr->getSideNumberTable());
   SideNumber_multiIndex::nth_index<2>::type::iterator siit = side_table.get<2>().lower_bound(type);
   SideNumber_multiIndex::nth_index<2>::type::iterator hi_siit = side_table.get<2>().upper_bound(type);
-  for(
-    SideNumber_multiIndex::nth_index<2>::type::iterator siiit = siit;
-    siiit!=hi_siit;siiit++) {
-    data[siiit->get()->side_number].getIndices().resize(0,false);
-    data[siiit->get()->side_number].getLocalIndices().resize(0,false);
-  }
+  const boost::tuple<const boost::string_ref,EntityType> tuple
+  = boost::make_tuple(field_name,type);
   FENumeredDofEntityByNameAndType::iterator dit,hi_dit;
-  dit = dofs.get<Composite_Name_And_Type_mi_tag>().lower_bound(boost::make_tuple(field_name,type));
+  dit = dofs.get<Composite_Name_And_Type_mi_tag>().lower_bound(tuple);
   if(dit == dofs.get<Composite_Name_And_Type_mi_tag>().end()) {
+    for(
+      SideNumber_multiIndex::nth_index<2>::type::iterator
+      siiit = siit;siiit!=hi_siit;siiit++
+    ) {
+      data[siiit->get()->side_number].getIndices().resize(0,false);
+      data[siiit->get()->side_number].getLocalIndices().resize(0,false);
+    }
     PetscFunctionReturn(0);
   }
-  hi_dit = dofs.get<Composite_Name_And_Type_mi_tag>().upper_bound(boost::make_tuple(field_name,type));
+  for(
+    SideNumber_multiIndex::nth_index<2>::type::iterator
+    siiit = siit;siiit!=hi_siit;siiit++
+  ) {
+    const int side_number = siiit->get()->side_number;
+    data[side_number].semaphore = false;
+  }
+  hi_dit = dofs.get<Composite_Name_And_Type_mi_tag>().upper_bound(tuple);
   for(;dit!=hi_dit;dit++) {
-    boost::shared_ptr<SideNumber> side_number_ptr = (*dit)->sideNumberPtr;
-    const int side = side_number_ptr->side_number;
-    const int nb_dofs_on_ent = (*dit)->getNbDofsOnEnt();
+    const int side = dit->get()->sideNumberPtr->side_number;
+    const int nb_dofs_on_ent = dit->get()->getNbDofsOnEnt();
     VectorInt &indices = data[side].getIndices();
     VectorInt &local_indices = data[side].getLocalIndices();
-    if(indices.size()!=nb_dofs_on_ent) {
+    if(!data[side].semaphore) {
+      data[side].semaphore = true;
       indices.resize(nb_dofs_on_ent,false);
       local_indices.resize(nb_dofs_on_ent,false);
     }
     if(!nb_dofs_on_ent) {
       continue;
     }
-    const int idx = (*dit)->getEntDofIdx();
-    indices[idx] = (*dit)->getPetscGlobalDofIdx();
-    local_indices[idx] =  (*dit)->getPetscLocalDofIdx();
+    const int idx = dit->get()->getEntDofIdx();
+    indices[idx] = dit->get()->getPetscGlobalDofIdx();
+    local_indices[idx] =  dit->get()->getPetscLocalDofIdx();
   }
   for(;siit!=hi_siit;siit++) {
-    // ierr = getTypeIndices(
-    //   field_name,
-    //   dofs,type,
-    //   siit->get()->side_number,
-    //   data[siit->get()->side_number].getIndices(),
-    //   data[siit->get()->side_number].getLocalIndices()
-    // ); CHKERRQ(ierr);
+    const int side_number = siit->get()->side_number;
+    if(!data[side_number].semaphore) {
+      data[side_number].getIndices().resize(0,false);
+      data[side_number].getLocalIndices().resize(0,false);
+    }
     if(siit->get()->brother_side_number!=-1) {
       ierr = getTypeIndices(
         field_name,
         dofs,type,
-        siit->get()->side_number,
+        side_number,
         data[siit->get()->brother_side_number].getIndices(),
         data[siit->get()->brother_side_number].getLocalIndices()
       ); CHKERRQ(ierr);
@@ -885,55 +893,63 @@ PetscErrorCode ForcesAndSurcesCore::getTypeFieldData(
   PetscErrorCode ierr;
   PetscFunctionBegin;
   SideNumber_multiIndex& side_table = const_cast<SideNumber_multiIndex&>(numeredEntFiniteElementPtr->getSideNumberTable());
-  if(data.size() < side_table.get<2>().count(type)) {
-    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
-  }
+  // if(data.size() < side_table.get<2>().count(type)) {
+  //   SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
+  // }
   SideNumber_multiIndex::nth_index<2>::type::iterator siit,hi_siit;
   siit = side_table.get<2>().lower_bound(type);
   hi_siit = side_table.get<2>().upper_bound(type);
-  for(
-    SideNumber_multiIndex::nth_index<2>::type::iterator siiit = siit;
-    siiit!=hi_siit;siiit++) {
-    data[siiit->get()->side_number].getFieldData().resize(0,false);
-    data[siiit->get()->side_number].getFieldDofs().resize(0,false);
-  }
+  const boost::tuple<const boost::string_ref,EntityType> tuple = boost::make_tuple(field_name,type);
   FEDofEntityByNameAndType::iterator dit,hi_dit;
-  dit = dofs.get<Composite_Name_And_Type_mi_tag>().lower_bound(boost::make_tuple(field_name,type));
+  dit = dofs.get<Composite_Name_And_Type_mi_tag>().lower_bound(tuple);
   if(dit == dofs.get<Composite_Name_And_Type_mi_tag>().end()) {
+    for(
+      SideNumber_multiIndex::nth_index<2>::type::iterator
+      siiit = siit;siiit!=hi_siit;siiit++
+    ) {
+      const int side_number = siiit->get()->side_number;
+      data[side_number].getFieldData().resize(0,false);
+      data[side_number].getFieldDofs().resize(0,false);
+    }
     PetscFunctionReturn(0);
   }
-  hi_dit = dofs.get<Composite_Name_And_Type_mi_tag>().upper_bound(boost::make_tuple(field_name,type));
+  for(
+    SideNumber_multiIndex::nth_index<2>::type::iterator
+    siiit = siit;siiit!=hi_siit;siiit++
+  ) {
+    const int side_number = siiit->get()->side_number;
+    data[side_number].semaphore = false;
+  }
+  hi_dit = dofs.get<Composite_Name_And_Type_mi_tag>().upper_bound(tuple);
   for(;dit!=hi_dit;dit++) {
-    boost::shared_ptr<SideNumber> side_number_ptr = (*dit)->sideNumberPtr;
-    const int side = side_number_ptr->side_number;
+    const int side = dit->get()->sideNumberPtr->side_number;
     const int nb_dofs_on_ent = (*dit)->getNbDofsOnEnt();
     VectorDouble &ent_field_data = data[side].getFieldData();
     VectorDofs &ent_field_dofs = data[side].getFieldDofs();
-    if(ent_field_data.size()!=nb_dofs_on_ent) {
+    if(!data[side].semaphore) {
+      data[side].semaphore = true;
       ent_field_data.resize(nb_dofs_on_ent,false);
       ent_field_dofs.resize(nb_dofs_on_ent,false);
     }
     if(!nb_dofs_on_ent) {
       continue;
     }
-    const FieldData val = (*dit)->getFieldData();
-    const int idx = (*dit)->getEntDofIdx();
-    ent_field_data[idx] = val;
-    ent_field_dofs[idx] = &*(*dit);;
+    const int idx = dit->get()->getEntDofIdx();
+    ent_field_data[idx] = dit->get()->getFieldData();
+    ent_field_dofs[idx] = dit->get();
   }
   for(;siit!=hi_siit;siit++) {
-    // ierr = getTypeFieldData(
-    //   field_name,dofs,type,
-    //   siit->get()->side_number,
-    //   data[siit->get()->side_number].getFieldData(),
-    //   data[siit->get()->side_number].getFieldDofs()
-    // ); CHKERRQ(ierr);
+    const int side_number = siit->get()->side_number;
+    if(!data[side_number].semaphore) {
+      data[side_number].getFieldData().resize(0,false);
+      data[side_number].getFieldDofs().resize(0,false);
+    }
     if(siit->get()->brother_side_number!=-1) {
       if(data.size() < (unsigned int)siit->get()->brother_side_number) {
         SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
       }
       ierr = getTypeFieldData(
-        field_name,dofs,type,siit->get()->side_number,
+        field_name,dofs,type,side_number,
         data[siit->get()->brother_side_number].getFieldData(),
         data[siit->get()->brother_side_number].getFieldDofs()
       ); CHKERRQ(ierr);
@@ -1102,15 +1118,26 @@ PetscErrorCode ForcesAndSurcesCore::getSpacesAndBaseOnEntities(DataForcesAndSurc
   PetscErrorCode ierr;
   PetscFunctionBegin;
   try {
+    if(nInTheLoop==0) {
+      data.sPace.reset();
+      data.bAse.reset();
+      for(EntityType t = MBVERTEX;t!=MBMAXTYPE;t++) {
+        data.spacesOnEntities[t].reset();
+        data.basesOnEntities[t].reset();
+      }
+    }
     for(_IT_GET_FEDATA_DOFS_FOR_LOOP_(this,dof)) {
-      if((*dof)->getEntDofIdx()!=0) continue;
+      if(dof->get()->getEntDofIdx()!=0) continue;
       // std::cerr << *dof << std::endl;
       // std::cerr << dof->getSpace() << " " << data.sPace.size() << std::endl;
       // std::cerr << dof->getApproxBase() << " " << data.bAse.size() << std::endl;
-      data.sPace.set((*dof)->getSpace());
-      data.bAse.set((*dof)->getApproxBase());
-      data.spacesOnEntities[(*dof)->getEntType()].set((*dof)->getSpace());
-      data.basesOnEntities[(*dof)->getEntType()].set((*dof)->getApproxBase());
+      const FieldSpace space = dof->get()->getSpace();
+      const FieldApproximationBase approx = dof->get()->getApproxBase();
+      data.sPace.set(space);
+      data.bAse.set(approx);
+      const EntityType type = dof->get()->getEntType();
+      data.spacesOnEntities[type].set(space);
+      data.basesOnEntities[type].set(approx);
       // std::cerr << "approx base " << ApproximationBaseNames[dof->getApproxBase()] << " " << data.basesOnEntities[dof->getEntType()] << std::endl;
     }
   } catch (std::exception& ex) {

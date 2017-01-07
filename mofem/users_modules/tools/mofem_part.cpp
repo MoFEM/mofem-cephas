@@ -1,6 +1,6 @@
 /** \file reading_med.cpp
 
-  \brief Reading med files
+  \brief Partition mesh and configuring blocksets 
 
 */
 
@@ -30,19 +30,48 @@ int main(int argc, char *argv[]) {
 
   PetscInitialize(&argc,&argv,(char *)0,help);
 
+
+  //global variables
+  char mesh_file_name[255];
+  PetscBool flg_file = PETSC_FALSE;
+  PetscBool flg_n_part = PETSC_FALSE;
+  PetscInt n_partas = 1;
+
+  ierr = PetscOptionsBegin(PETSC_COMM_WORLD,"","none","none"); CHKERRQ(ierr);
+  ierr = PetscOptionsString(
+    "-my_file",
+    "mesh file name","",
+    "mesh.h5m",mesh_file_name,255,&flg_file
+  ); CHKERRQ(ierr);
+
+  ierr = PetscOptionsInt(
+    "-my_nparts",
+    "number of parts","",
+    1,&n_partas,&flg_n_part
+  ); CHKERRQ(ierr);
+
+  ierr = PetscOptionsEnd(); CHKERRQ(ierr);
+
+  if(flg_file != PETSC_TRUE) {
+    SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_file (MESH FILE NEEDED)");
+  }
+
+  if(flg_n_part != PETSC_TRUE) {
+    SETERRQ(PETSC_COMM_SELF,1,"*** ERROR partitioning number not given");
+  }
+
   moab::Core mb_instance;
   moab::Interface& moab = mb_instance;
   ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
   if(pcomm == NULL) pcomm =  new ParallelComm(&moab,PETSC_COMM_WORLD);
 
+  const char *option;
+  option = "";
+  rval = moab.load_file(mesh_file_name, 0, option); CHKERRQ_MOAB(rval);
+
   //Create MoFEM (Joseph) database
   MoFEM::Core core(moab);
   MoFEM::Interface& m_field = core;
-
-  MedInterface *med_interface_ptr;
-  ierr = m_field.query_interface(med_interface_ptr); CHKERRQ(ierr);
-  ierr = med_interface_ptr->readMed(); CHKERRQ(ierr);
-  // ierr = med_interface_ptr->medGetFieldNames(); CHKERRQ(ierr);
 
   MeshsetsManager *meshsets_interface_ptr;
   ierr = m_field.query_interface(meshsets_interface_ptr); CHKERRQ(ierr);
@@ -53,6 +82,12 @@ int main(int argc, char *argv[]) {
     cit!=meshsets_interface_ptr->getEnd(); cit++
   ) {
     std::cout << *cit << endl;
+  }
+
+  {
+    Range ents3d;
+    rval = moab.get_entities_by_dimension(0,3,ents3d,false); CHKERRQ_MOAB(rval);
+    ierr = m_field.partition_mesh(ents3d,3,2,n_partas); CHKERRQ(ierr);
   }
 
   rval = moab.write_file("out.h5m"); CHKERRQ_MOAB(rval);

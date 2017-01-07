@@ -16,7 +16,7 @@ class Tensor0
 template <class T>
 class Tensor0<T*>
 {
-  const int inc;
+  mutable int inc;
   mutable T * restrict data;
 public:
   Tensor0(T *d,const int i = 1): inc(i),data(d) {}

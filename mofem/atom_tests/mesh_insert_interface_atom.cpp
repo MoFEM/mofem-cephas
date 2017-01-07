@@ -148,8 +148,6 @@ int main(int argc, char *argv[]) {
   //for pratical applications consider to build adjacencies
   //only for refinemnt levels which you use for calulations
   ierr = m_field.build_adjacencies(BitRefLevel().set()); CHKERRQ(ierr);
-  //build problem
-  ierr = m_field.build_problems(); CHKERRQ(ierr);
 
   Range tets_back_bit_level;
   ierr = m_field.get_entities_by_ref_level(bit_levels.back(),BitRefLevel().set(),tets_back_bit_level); CHKERRQ(ierr);
@@ -181,8 +179,10 @@ int main(int argc, char *argv[]) {
 
   //partition
   for(int lll = ll-2;lll<ll;lll++) {
+    //build problem
     std::stringstream problem_name;
     problem_name << "PROBLEM_SCALAR_" << lll;
+    ierr = m_field.build_problem(problem_name.str(),true); CHKERRQ(ierr);
     ierr = m_field.partition_problem(problem_name.str()); CHKERRQ(ierr);
     ierr = m_field.partition_finite_elements(problem_name.str()); CHKERRQ(ierr);
     ierr = m_field.partition_ghost_dofs(problem_name.str()); CHKERRQ(ierr);

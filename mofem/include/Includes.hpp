@@ -62,6 +62,8 @@ extern "C" {
 #include <limits.h>
 #include <bitset>
 #include <exception>
+#include <complex>
+#include <cmath>
 
 //BOOST
 #include <boost/multi_index_container.hpp>
@@ -90,7 +92,12 @@ extern "C" {
 #include <boost/ptr_container/ptr_map.hpp>
 #include <boost/scoped_ptr.hpp>
 #include <boost/scoped_array.hpp>
+#include <boost/weak_ptr.hpp>
 #include <boost/shared_ptr.hpp>
+#include <boost/make_shared.hpp>
+// #include <boost/move/unique_ptr.hpp>
+// #include <boost/move/make_unique.hpp>
+// #include <boost/move/move.hpp>
 
 #include <boost/iostreams/tee.hpp>
 #include <boost/iostreams/stream.hpp>

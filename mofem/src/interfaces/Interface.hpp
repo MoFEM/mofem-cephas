@@ -1360,13 +1360,33 @@ struct Interface: public UnknownInterface {
 
   /** \brief build problem data structures
    * \ingroup mofem_problems
+   *
+   * \note If square_matrix is set to true, that indicate that problem is structurally
+   * symmetric, i.e. rows and columns have the same dofs and are indexed in the same
+   * way.
+   *
+   * @param  name          problem name
+   * @param  square_matrix structurally symmetric problem
+   * @param  verb          verbosity level
+   * @return               error code
+   *
    */
-  virtual PetscErrorCode build_problem(const std::string &name,int verb = -1) = 0;
+  virtual PetscErrorCode build_problem(const std::string &name,const bool square_matrix,int verb = -1) = 0;
 
   /** \brief build problem data structures
    * \ingroup mofem_problems
+   *
+   * \note If square_matrix is set to true, that indicate that problem is structurally
+   * symmetric, i.e. rows and columns have the same dofs and are indexed in the same
+   * way.
+   *
+   * @param  name          problem name
+   * @param  square_matrix structurally symmetric problem
+   * @param  verb          verbosity level
+   * @return               error code
+   *
    */
-  virtual PetscErrorCode build_problem(MoFEMProblem *problem_ptr,int verb = -1) = 0;
+  virtual PetscErrorCode build_problem(MoFEMProblem *problem_ptr,const bool square_matrix,int verb = -1) = 0;
 
   /** \brief clear problem
    * \ingroup mofem_problems
@@ -1375,8 +1395,13 @@ struct Interface: public UnknownInterface {
 
   /** \brief build problem data structures
    * \ingroup mofem_problems
+
+   \deprecated Use MoFEM::Interface::build_problem(const std::string &name,const
+   bool square_matrix,int verb = -1) instead. This function not allows to Control
+   if problem is structurally symmetric.
+
    */
-  virtual PetscErrorCode build_problems(int verb = -1) = 0;
+  DEPRECATED virtual PetscErrorCode build_problems(int verb = -1) = 0;
 
   /** \brief clear problems
    * \ingroup mofem_problems

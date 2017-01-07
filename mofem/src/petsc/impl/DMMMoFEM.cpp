@@ -28,7 +28,7 @@
 #include <FieldMultiIndices.hpp>
 #include <EntsMultiIndices.hpp>
 #include <DofsMultiIndices.hpp>
-#include <FEMMultiIndices.hpp>
+#include <FEMultiIndices.hpp>
 #include <ProblemsMultiIndices.hpp>
 #include <AdjacencyMultiIndices.hpp>
 #include <BCMultiIndices.hpp>
@@ -651,13 +651,15 @@ PetscErrorCode DMSetUp_MoFEM(DM dm) {
   DMCtx *dm_field = (DMCtx*)dm->data;
   if(dm_field->isPartitioned) {
     ierr = dm_field->mField_ptr->build_problem_on_distributed_mesh(
-      dm_field->problemName,dm_field->isSquareMatrix
+      dm_field->problemName,dm_field->isSquareMatrix == PETSC_TRUE
     ); CHKERRQ(ierr);
     ierr = dm_field->mField_ptr->partition_finite_elements(
       dm_field->problemName,true,0,dm_field->sIze,1
     ); CHKERRQ(ierr);
   } else {
-    ierr = dm_field->mField_ptr->build_problem(dm_field->problemName); CHKERRQ(ierr);
+    ierr = dm_field->mField_ptr->build_problem(
+      dm_field->problemName,dm_field->isSquareMatrix == PETSC_TRUE
+    ); CHKERRQ(ierr);
     ierr = dm_field->mField_ptr->partition_problem(dm_field->problemName); CHKERRQ(ierr);
     ierr = dm_field->mField_ptr->partition_finite_elements(dm_field->problemName); CHKERRQ(ierr);
   }
@@ -681,7 +683,7 @@ PetscErrorCode DMSubDMSetUp_MoFEM(DM subdm) {
     subdm_field->rowFields,
     subdm_field->colFields,
     subdm_field->problemMainOfSubPtr->getName(),
-    subdm_field->isSquareMatrix
+    subdm_field->isSquareMatrix == PETSC_TRUE
   ); CHKERRQ(ierr);
 
   // partition problem
@@ -823,5 +825,18 @@ PetscErrorCode DMCreateFieldIS_MoFEM(
     }
   }
 
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode DMMoFEMGetFieldIS(DM dm,RowColData rc,const char field_name[],IS *is) {
+  PetscErrorCode ierr;
+  PetscValidHeaderSpecific(dm,DM_CLASSID,1);
+  PetscFunctionBegin;
+  DMCtx *dm_field = (DMCtx*)dm->data;
+  ierr = dm_field->mField_ptr->ISCreateProblemFieldAndRank(
+    dm_field->problemPtr->getName(),
+    ROW,field_name,0,1000,
+    is
+  ); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
