@@ -56,11 +56,11 @@ extern "C" {
 
 #define NBEDGE_HDIV(P) (0)
 #define NBFACETRI_EDGE_HDIV(P) ((P>0) ? P : 0)
-#define NBFACETRI_FACE_HDIV(P) ((P>2) ? ((P-2)*(P-2)+(P-2))/2 : 0)
+#define NBFACETRI_FACE_HDIV(P) ((P>2) ? (P-1)*(P-2)/2 : 0)
 #define NBFACETRI_HDIV(P) ((P>0) ? (P+1)*(P+2)/2 : 0)
-#define NBVOLUMETET_EDGE_HDIV(P) ((P>1) ? P-1 : 0)
-#define NBVOLUMETET_FACE_HDIV(P) ((P>2) ? ((P-2)*(P-2)+(P-2)) : 0)
-#define NBVOLUMETET_VOLUME_HDIV(P) ((P>3) ? ((P-3)*(P-2)*(P-1)/2) : 0)
+#define NBVOLUMETET_EDGE_HDIV(P) ((P>1) ? (P-1) : 0)
+#define NBVOLUMETET_FACE_HDIV(P) ((P>2) ? (P-1)*(P-2) : 0)
+#define NBVOLUMETET_VOLUME_HDIV(P) ((P>3) ? (P-3)*(P-2)*(P-1)/2 : 0)
 #define NBVOLUMETET_HDIV(P) ((P>1) ? (P-1)*(P+1)*(P+2)/2 : 0)
 
 PetscErrorCode L2_ShapeFunctions_MBTRI(
@@ -114,44 +114,7 @@ PetscErrorCode H1_VolumeShapeFunctions_MBPRISM(
   PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
 );
 
-// Hdiv shape functions
-// NOTE: This functions is moved to Hdiv.hpp, ultimatly all functions would be moved there for faster
-// PetscErrorCode Hdiv_EdgeFaceShapeFunctions_MBTET(
-//   int *faces_nodes,int *p,double *N,double *diffN,double *PHI_f_e[4][3],double *diffPHI_f_e[4][3],int GDIM,
-//   PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
-// );
-// PetscErrorCode Hdiv_FaceBubbleShapeFunctions_MBTET(
-//   int *faces_nodes,int *p,double *N,double *diffN,double *PHI_f[4],double *diffPHI_f[4],int GDIM,
-//   PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
-// );
-
-// NOTE: This functions is moved to Hdiv.hpp, ultimatly all functions would be moved there for faster
-// and consistent implementation
-// PetscErrorCode Hdiv_EdgeBasedVolumeShapeFunctions_MBTET(
-//   int p,double *N,double *diffN,double *PHI_v_e[6],double *diffPHI_v_e[6],int GDIM,
-//   PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
-// );
-PetscErrorCode Hdiv_FaceBasedVolumeShapeFunctions_MBTET(
-  int p,double *N,double *diffN,double *PHI_v_f[4],double *diffPHI_v_f[4],int GDIM,
-  PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
-);
-PetscErrorCode Hdiv_VolumeBubbleShapeFunctions_MBTET(
-  int p,double *N,double *diffN,double *PHI_v,double *diffPHI_v,int GDIM,
-  PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
-);
-// NOTE: This functions is moved to Hdiv.hpp, ultimatly all functions would be moved there for faster
-// PetscErrorCode Hdiv_EdgeFaceShapeFunctions_MBTET_ON_FACE(
-//   int *faces_nodes,int p,double *N,double *diffN,double *PHI_f_e[3],double *diffPHI_f_e[3],int GDIM,int NB,
-//   PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
-// );
-// PetscErrorCode Hdiv_FaceBubbleShapeFunctions_MBTET_ON_FACE(
-//   int *faces_nodes,int p,double *N,double *diffN,double *PHI_f,double *diffPHI_f,int GDIM,int NB,
-//   PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
-// );
-
-// Hcurl shape functions
-
-// Hcurl space is independent indecently purely in C++
+// Hdiv and Hcurl are implemented and declared in other files
 
 #ifdef __cplusplus
 }

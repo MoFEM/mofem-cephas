@@ -22,7 +22,7 @@ class Tensor1<T*,Tensor_Dim>
 protected:
   /* Note that the T *'s are mutable, so the pointer can change,
      allowing iterating over a array. */
-  const int inc;
+  mutable int inc;
   mutable T * restrict data[Tensor_Dim];
 public:
   /* Initializations for varying numbers of elements, with each one
