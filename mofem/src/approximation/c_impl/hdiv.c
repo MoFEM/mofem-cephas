@@ -117,111 +117,111 @@ PetscErrorCode Spin(double *spinOmega,double *vecOmega);
 //   }
 //   PetscFunctionReturn(0);
 // }
-PetscErrorCode Hdiv_FaceBasedVolumeShapeFunctions_MBTET(
-  int p,double *N,double *diffN,double *PHI_v_f[],double *diffPHI_v_f[],int GDIM,
-  PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
-) {
-  PetscFunctionBegin;
-  if(p<3) PetscFunctionReturn(0);
-  PetscErrorCode ierr;
-  double coords[] = { 0,0,0, 1,0,0, 0,1,0, 0,0,1 };
-  const int faces_nodes[] = { 0,1,3, 1,2,3, 0,2,3, 0,1,2 };
-  double tau_0i[4][3],tau_0j[4][3];
-  int ff = 0;
-  for(;ff<4;ff++) {
-    int idx_node0 = faces_nodes[3*ff+0];
-    int idx_node1 = faces_nodes[3*ff+1];
-    int idx_node2 = faces_nodes[3*ff+2];
-    cblas_dcopy(3,&coords[3*idx_node1],1,tau_0i[ff],1);
-    cblas_daxpy(3,-1,&coords[3*idx_node0],1,tau_0i[ff],1);
-    // double nrm2_0i = cblas_dnrm2(3,tau_0i[ff],1);
-    // cblas_dscal(3,1./nrm2_0i,tau_0i[ff],1);
-    cblas_dcopy(3,&coords[3*idx_node2],1,tau_0j[ff],1);
-    cblas_daxpy(3,-1,&coords[3*idx_node0],1,tau_0j[ff],1);
-    // double nrm2_0j = cblas_dnrm2(3,tau_0j[ff],1);
-    // cblas_dscal(3,1./nrm2_0j,tau_0j[ff],1);
-  }
-  int ii = 0;
-  for(;ii<GDIM;ii++) {
-    int node_shift = ii*4;
-    ff = 0;
-    for(;ff<4;ff++) {
-      double ksi_0i = N[ node_shift+faces_nodes[3*ff+1] ] - N[ node_shift+faces_nodes[3*ff+0] ];
-      double ksi_0j = N[ node_shift+faces_nodes[3*ff+2] ] - N[ node_shift+faces_nodes[3*ff+0] ];
-      double diff_ksi_0i[3],diff_ksi_0j[3];
-      if(diffPHI_v_f!=NULL) {
-        if(diffN == NULL) {
-          SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
-        }
-        int dd = 0;
-        for(;dd<3;dd++) {
-          diff_ksi_0i[dd] = diffN[ 3*faces_nodes[3*ff+1] + dd ] - diffN[ 3*faces_nodes[3*ff+0] + dd ];
-          diff_ksi_0j[dd] = diffN[ 3*faces_nodes[3*ff+2] + dd ] - diffN[ 3*faces_nodes[3*ff+0] + dd ];
-        }
-      }
-      double Psi_l[ p+1 ],Psi_m[ p+1 ];
-      double diff_Psi_l[ 3*(p+1) ],diff_Psi_m[ 3*(p+1) ];
-      if(diffPHI_v_f != NULL) {
-        ierr = base_polynomials(p,ksi_0i,diff_ksi_0i,Psi_l,diff_Psi_l,3); CHKERRQ(ierr);
-        ierr = base_polynomials(p,ksi_0j,diff_ksi_0j,Psi_m,diff_Psi_m,3); CHKERRQ(ierr);
-      } else {
-        ierr = base_polynomials(p,ksi_0i,NULL,Psi_l,NULL,3); CHKERRQ(ierr);
-        ierr = base_polynomials(p,ksi_0j,NULL,Psi_m,NULL,3); CHKERRQ(ierr);
-      }
-      double Beta_0ij =
-      N[node_shift+faces_nodes[3*ff+0]]*N[node_shift+faces_nodes[3*ff+1]]*N[node_shift+faces_nodes[3*ff+2]];
-      double diff_Beta_0ij[3];
-      if(diffPHI_v_f!=NULL) {
-        int dd = 0;
-        for(;dd<3;dd++) {
-          diff_Beta_0ij[dd] =
-          diffN[3*faces_nodes[3*ff+0]+dd]*N[node_shift+faces_nodes[3*ff+1]]*N[node_shift+faces_nodes[3*ff+2]]+
-          N[node_shift+faces_nodes[3*ff+0]]*diffN[3*faces_nodes[3*ff+1]+dd]*N[node_shift+faces_nodes[3*ff+2]]+
-          N[node_shift+faces_nodes[3*ff+0]]*N[node_shift+faces_nodes[3*ff+1]]*diffN[3*faces_nodes[3*ff+2]+dd];
-        }
-      }
-      int shift = ii*NBVOLUMETET_FACE_HDIV(p);
-      int jj = 0;
-      int oo = 0;
-      for(;oo<=p-3;oo++) {
-        int l = 0;
-        for(;l<=oo;l++) {
-          int m = oo - l;
-          if(m>=0) {
-            double scale = Beta_0ij*Psi_l[l]*Psi_m[m];
-            cblas_dcopy(3,tau_0i[ff],1,&(PHI_v_f[ff])[3*shift + 3*jj],1);
-            cblas_dscal(3,scale,&(PHI_v_f[ff])[3*shift + 3*jj],1);
-            double diff[3];
-            if(diffPHI_v_f!=NULL) {
-              int dd = 0;
-              for(;dd<3;dd++) {
-                cblas_dcopy(3,tau_0i[ff],1,&(diffPHI_v_f[ff])[9*shift + 9*jj + 3*dd],1);
-                diff[dd] =
-                diff_Beta_0ij[dd]*Psi_l[l]*Psi_m[m]+
-                Beta_0ij*diff_Psi_l[dd*(p+1)+l]*Psi_m[m]+
-                Beta_0ij*Psi_l[l]*diff_Psi_m[dd*(p+1)+m];
-                cblas_dscal(3,diff[dd],&(diffPHI_v_f[ff])[9*shift + 9*jj + 3*dd],1);
-              }
-            }
-            jj++;
-            cblas_dcopy(3,tau_0j[ff],1,&(PHI_v_f[ff])[3*shift + 3*jj],1);
-            cblas_dscal(3,scale,&(PHI_v_f[ff])[3*shift + 3*jj],1);
-            if(diffPHI_v_f!=NULL) {
-              int dd = 0;
-              for(;dd<3;dd++) {
-                cblas_dcopy(3,tau_0j[ff],1,&(diffPHI_v_f[ff])[9*shift + 9*jj + 3*dd],1);
-                cblas_dscal(3,diff[dd],&(diffPHI_v_f[ff])[9*shift + 9*jj + 3*dd],1);
-              }
-            }
-            jj++;
-          }
-        }
-      }
-      if(jj!=NBVOLUMETET_FACE_HDIV(p)) SETERRQ2(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"wrong order %d != %d",jj,NBVOLUMETET_FACE_HDIV(p));
-    }
-  }
-  PetscFunctionReturn(0);
-}
+// PetscErrorCode Hdiv_FaceBasedVolumeShapeFunctions_MBTET(
+//   int p,double *N,double *diffN,double *PHI_v_f[],double *diffPHI_v_f[],int GDIM,
+//   PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
+// ) {
+//   PetscFunctionBegin;
+//   if(p<3) PetscFunctionReturn(0);
+//   PetscErrorCode ierr;
+//   double coords[] = { 0,0,0, 1,0,0, 0,1,0, 0,0,1 };
+//   const int faces_nodes[] = { 0,1,3, 1,2,3, 0,2,3, 0,1,2 };
+//   double tau_0i[4][3],tau_0j[4][3];
+//   int ff = 0;
+//   for(;ff<4;ff++) {
+//     int idx_node0 = faces_nodes[3*ff+0];
+//     int idx_node1 = faces_nodes[3*ff+1];
+//     int idx_node2 = faces_nodes[3*ff+2];
+//     cblas_dcopy(3,&coords[3*idx_node1],1,tau_0i[ff],1);
+//     cblas_daxpy(3,-1,&coords[3*idx_node0],1,tau_0i[ff],1);
+//     // double nrm2_0i = cblas_dnrm2(3,tau_0i[ff],1);
+//     // cblas_dscal(3,1./nrm2_0i,tau_0i[ff],1);
+//     cblas_dcopy(3,&coords[3*idx_node2],1,tau_0j[ff],1);
+//     cblas_daxpy(3,-1,&coords[3*idx_node0],1,tau_0j[ff],1);
+//     // double nrm2_0j = cblas_dnrm2(3,tau_0j[ff],1);
+//     // cblas_dscal(3,1./nrm2_0j,tau_0j[ff],1);
+//   }
+//   int ii = 0;
+//   for(;ii<GDIM;ii++) {
+//     int node_shift = ii*4;
+//     ff = 0;
+//     for(;ff<4;ff++) {
+//       double ksi_0i = N[ node_shift+faces_nodes[3*ff+1] ] - N[ node_shift+faces_nodes[3*ff+0] ];
+//       double ksi_0j = N[ node_shift+faces_nodes[3*ff+2] ] - N[ node_shift+faces_nodes[3*ff+0] ];
+//       double diff_ksi_0i[3],diff_ksi_0j[3];
+//       if(diffPHI_v_f!=NULL) {
+//         if(diffN == NULL) {
+//           SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
+//         }
+//         int dd = 0;
+//         for(;dd<3;dd++) {
+//           diff_ksi_0i[dd] = diffN[ 3*faces_nodes[3*ff+1] + dd ] - diffN[ 3*faces_nodes[3*ff+0] + dd ];
+//           diff_ksi_0j[dd] = diffN[ 3*faces_nodes[3*ff+2] + dd ] - diffN[ 3*faces_nodes[3*ff+0] + dd ];
+//         }
+//       }
+//       double Psi_l[ p+1 ],Psi_m[ p+1 ];
+//       double diff_Psi_l[ 3*(p+1) ],diff_Psi_m[ 3*(p+1) ];
+//       if(diffPHI_v_f != NULL) {
+//         ierr = base_polynomials(p,ksi_0i,diff_ksi_0i,Psi_l,diff_Psi_l,3); CHKERRQ(ierr);
+//         ierr = base_polynomials(p,ksi_0j,diff_ksi_0j,Psi_m,diff_Psi_m,3); CHKERRQ(ierr);
+//       } else {
+//         ierr = base_polynomials(p,ksi_0i,NULL,Psi_l,NULL,3); CHKERRQ(ierr);
+//         ierr = base_polynomials(p,ksi_0j,NULL,Psi_m,NULL,3); CHKERRQ(ierr);
+//       }
+//       double Beta_0ij =
+//       N[node_shift+faces_nodes[3*ff+0]]*N[node_shift+faces_nodes[3*ff+1]]*N[node_shift+faces_nodes[3*ff+2]];
+//       double diff_Beta_0ij[3];
+//       if(diffPHI_v_f!=NULL) {
+//         int dd = 0;
+//         for(;dd<3;dd++) {
+//           diff_Beta_0ij[dd] =
+//           diffN[3*faces_nodes[3*ff+0]+dd]*N[node_shift+faces_nodes[3*ff+1]]*N[node_shift+faces_nodes[3*ff+2]]+
+//           N[node_shift+faces_nodes[3*ff+0]]*diffN[3*faces_nodes[3*ff+1]+dd]*N[node_shift+faces_nodes[3*ff+2]]+
+//           N[node_shift+faces_nodes[3*ff+0]]*N[node_shift+faces_nodes[3*ff+1]]*diffN[3*faces_nodes[3*ff+2]+dd];
+//         }
+//       }
+//       int shift = ii*NBVOLUMETET_FACE_HDIV(p);
+//       int jj = 0;
+//       int oo = 0;
+//       for(;oo<=p-3;oo++) {
+//         int l = 0;
+//         for(;l<=oo;l++) {
+//           int m = oo - l;
+//           if(m>=0) {
+//             double scale = Beta_0ij*Psi_l[l]*Psi_m[m];
+//             cblas_dcopy(3,tau_0i[ff],1,&(PHI_v_f[ff])[3*shift + 3*jj],1);
+//             cblas_dscal(3,scale,&(PHI_v_f[ff])[3*shift + 3*jj],1);
+//             double diff[3];
+//             if(diffPHI_v_f!=NULL) {
+//               int dd = 0;
+//               for(;dd<3;dd++) {
+//                 cblas_dcopy(3,tau_0i[ff],1,&(diffPHI_v_f[ff])[9*shift + 9*jj + 3*dd],1);
+//                 diff[dd] =
+//                 diff_Beta_0ij[dd]*Psi_l[l]*Psi_m[m]+
+//                 Beta_0ij*diff_Psi_l[dd*(p+1)+l]*Psi_m[m]+
+//                 Beta_0ij*Psi_l[l]*diff_Psi_m[dd*(p+1)+m];
+//                 cblas_dscal(3,diff[dd],&(diffPHI_v_f[ff])[9*shift + 9*jj + 3*dd],1);
+//               }
+//             }
+//             jj++;
+//             cblas_dcopy(3,tau_0j[ff],1,&(PHI_v_f[ff])[3*shift + 3*jj],1);
+//             cblas_dscal(3,scale,&(PHI_v_f[ff])[3*shift + 3*jj],1);
+//             if(diffPHI_v_f!=NULL) {
+//               int dd = 0;
+//               for(;dd<3;dd++) {
+//                 cblas_dcopy(3,tau_0j[ff],1,&(diffPHI_v_f[ff])[9*shift + 9*jj + 3*dd],1);
+//                 cblas_dscal(3,diff[dd],&(diffPHI_v_f[ff])[9*shift + 9*jj + 3*dd],1);
+//               }
+//             }
+//             jj++;
+//           }
+//         }
+//       }
+//       if(jj!=NBVOLUMETET_FACE_HDIV(p)) SETERRQ2(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"wrong order %d != %d",jj,NBVOLUMETET_FACE_HDIV(p));
+//     }
+//   }
+//   PetscFunctionReturn(0);
+// }
 // PetscErrorCode Hdiv_VolumeBubbleShapeFunctions_MBTET(
 //   int p,double *N,double *diffN,double *PHI_v,double *diffPHI_v,int GDIM,
 //   PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)

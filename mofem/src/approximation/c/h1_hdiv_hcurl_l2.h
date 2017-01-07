@@ -131,10 +131,10 @@ PetscErrorCode H1_VolumeShapeFunctions_MBPRISM(
 //   int p,double *N,double *diffN,double *PHI_v_e[6],double *diffPHI_v_e[6],int GDIM,
 //   PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
 // );
-PetscErrorCode Hdiv_FaceBasedVolumeShapeFunctions_MBTET(
-  int p,double *N,double *diffN,double *PHI_v_f[4],double *diffPHI_v_f[4],int GDIM,
-  PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
-);
+// PetscErrorCode Hdiv_FaceBasedVolumeShapeFunctions_MBTET(
+//   int p,double *N,double *diffN,double *PHI_v_f[4],double *diffPHI_v_f[4],int GDIM,
+//   PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
+// );
 // PetscErrorCode Hdiv_VolumeBubbleShapeFunctions_MBTET(
 //   int p,double *N,double *diffN,double *PHI_v,double *diffPHI_v,int GDIM,
 //   PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
@@ -148,10 +148,9 @@ PetscErrorCode Hdiv_FaceBasedVolumeShapeFunctions_MBTET(
 //   int *faces_nodes,int p,double *N,double *diffN,double *PHI_f,double *diffPHI_f,int GDIM,int NB,
 //   PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
 // );
+//
 
-// Hcurl shape functions
-
-// Hcurl space is independent indecently purely in C++
+// Hdiv and Hcurl are implemented and declared in other files
 
 #ifdef __cplusplus
 }

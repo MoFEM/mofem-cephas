@@ -106,6 +106,21 @@ namespace MoFEM {
     )
   );
 
+  /** Hdiv Face-based interior functions
+   * @param  p                Approximation order on face
+   * @param  N                Shape functions on face
+   * @param  diffN            Derivatives of shape functions of face
+   * @param  phi_v_f          Base functions (returned)
+   * @param  diff_phi_v_f     Derivatives of base functions (returned)
+   * @param  gdim             Number of integration points
+   * @param  base_polynomials Base function (Legendre/Lobbatto-Gauss)
+   * @return                  Error code
+   */
+  PetscErrorCode Hdiv_FaceBasedVolumeShapeFunctions_MBTET(
+    int p,double *N,double *diffN,double *phi_v_f[],double *diff_phi_v_f[],int gdim,
+    PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
+  );
+
   /**
    * \brief Interior bubble functions
    * @param  p                Volume order
