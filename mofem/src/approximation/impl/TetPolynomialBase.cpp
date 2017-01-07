@@ -323,39 +323,99 @@ PetscErrorCode TetPolynomialBase::getValueHdiv(
   // freedom, i.e. in other words dofs form sub-entities has to be group
   // by order.
 
+  FTensor::Index<'i',3> i;
+  FTensor::Index<'j',3> j;
+
   //faces
   if(data.dataOnEntities[MBTRI].size()!=4) {
     SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
   }
-  for(int ff = 0;ff<4;ff++) {
+  for(int ff = 0;ff!=4;ff++) {
     data.dataOnEntities[MBTRI][ff].getHdivN(base).resize(nb_gauss_pts,3*NBFACETRI_HDIV(faces_order[ff]),false);
     data.dataOnEntities[MBTRI][ff].getDiffHdivN(base).resize(nb_gauss_pts,9*NBFACETRI_HDIV(faces_order[ff]),false);
-    int col = 0,diff_col = 0;
-    for(int oo = 0;oo<faces_order[ff];oo++) {
-      for(int ee = 0;ee<3;ee++) {
-        //values
-        for(int dd = 3*NBFACETRI_EDGE_HDIV(oo);dd<3*NBFACETRI_EDGE_HDIV(oo+1);dd++,col++) {
-          for(int gg = 0;gg!=nb_gauss_pts;gg++) {
-            data.dataOnEntities[MBTRI][ff].getHdivN(base)(gg,col) = N_face_edge(ff,ee)(gg,dd);
-          }
+    if(NBFACETRI_HDIV(faces_order[ff])==0) continue;
+    // face
+    double *base_ptr = &*data.dataOnEntities[MBTRI][ff].getHdivN(base).data().begin();
+    FTensor::Tensor1<double*,3> t_base(base_ptr,&base_ptr[HDIV1],&base_ptr[HDIV2],3);
+    double *diff_base_ptr = &*data.dataOnEntities[MBTRI][ff].getDiffHdivN(base).data().begin();
+    FTensor::Tensor2<double*,3,3> t_diff_base(
+      &diff_base_ptr[HDIV0_0],&diff_base_ptr[HDIV0_1],&diff_base_ptr[HDIV0_2],
+      &diff_base_ptr[HDIV1_0],&diff_base_ptr[HDIV1_1],&diff_base_ptr[HDIV1_2],
+      &diff_base_ptr[HDIV2_0],&diff_base_ptr[HDIV2_1],&diff_base_ptr[HDIV2_2],9
+    );
+    // face-face
+    boost::shared_ptr<FTensor::Tensor1<double*,3> > t_base_f;
+    boost::shared_ptr<FTensor::Tensor2<double*,3,3> > t_diff_base_f;
+    if(NBFACETRI_FACE_HDIV(faces_order[ff])>0) {
+      base_ptr = phi_f[ff];
+      t_base_f = boost::shared_ptr<FTensor::Tensor1<double*,3> >(
+        new FTensor::Tensor1<double*,3>
+        (base_ptr,&base_ptr[HDIV1],&base_ptr[HDIV2],3)
+      );
+      diff_base_ptr = diff_phi_f[ff];
+      t_diff_base_f = boost::shared_ptr<FTensor::Tensor2<double*,3,3> >(
+        new FTensor::Tensor2<double*,3,3>
+        (
+          &diff_base_ptr[HDIV0_0],&diff_base_ptr[HDIV0_1],&diff_base_ptr[HDIV0_2],
+          &diff_base_ptr[HDIV1_0],&diff_base_ptr[HDIV1_1],&diff_base_ptr[HDIV1_2],
+          &diff_base_ptr[HDIV2_0],&diff_base_ptr[HDIV2_1],&diff_base_ptr[HDIV2_2],9
+        )
+      );
+    }
+    // edge-face
+    base_ptr = phi_f_e[ff][0];
+    FTensor::Tensor1<double*,3> t_base_f_e0(base_ptr,&base_ptr[HDIV1],&base_ptr[HDIV2],3);
+    diff_base_ptr = diff_phi_f_e[ff][0];
+    FTensor::Tensor2<double*,3,3> t_diff_base_f_e0(
+      &diff_base_ptr[HDIV0_0],&diff_base_ptr[HDIV0_1],&diff_base_ptr[HDIV0_2],
+      &diff_base_ptr[HDIV1_0],&diff_base_ptr[HDIV1_1],&diff_base_ptr[HDIV1_2],
+      &diff_base_ptr[HDIV2_0],&diff_base_ptr[HDIV2_1],&diff_base_ptr[HDIV2_2],9
+    );
+    base_ptr = phi_f_e[ff][1];
+    FTensor::Tensor1<double*,3> t_base_f_e1(base_ptr,&base_ptr[HDIV1],&base_ptr[HDIV2],3);
+    diff_base_ptr = diff_phi_f_e[ff][1];
+    FTensor::Tensor2<double*,3,3> t_diff_base_f_e1(
+      &diff_base_ptr[HDIV0_0],&diff_base_ptr[HDIV0_1],&diff_base_ptr[HDIV0_2],
+      &diff_base_ptr[HDIV1_0],&diff_base_ptr[HDIV1_1],&diff_base_ptr[HDIV1_2],
+      &diff_base_ptr[HDIV2_0],&diff_base_ptr[HDIV2_1],&diff_base_ptr[HDIV2_2],9
+    );
+    base_ptr = phi_f_e[ff][2];
+    FTensor::Tensor1<double*,3> t_base_f_e2(base_ptr,&base_ptr[HDIV1],&base_ptr[HDIV2],3);
+    diff_base_ptr = diff_phi_f_e[ff][2];
+    FTensor::Tensor2<double*,3,3> t_diff_base_f_e2(
+      &diff_base_ptr[HDIV0_0],&diff_base_ptr[HDIV0_1],&diff_base_ptr[HDIV0_2],
+      &diff_base_ptr[HDIV1_0],&diff_base_ptr[HDIV1_1],&diff_base_ptr[HDIV1_2],
+      &diff_base_ptr[HDIV2_0],&diff_base_ptr[HDIV2_1],&diff_base_ptr[HDIV2_2],9
+    );
+    for(int gg = 0;gg!=nb_gauss_pts;gg++) {
+      for(int oo = 0;oo!=faces_order[ff];oo++) {
+        for(int dd = NBFACETRI_EDGE_HDIV(oo);dd!=NBFACETRI_EDGE_HDIV(oo+1);dd++) {
+          t_base(i) = t_base_f_e0(i);
+          ++t_base;
+          ++t_base_f_e0;
+          t_diff_base(i,j) = t_diff_base_f_e0(i,j);
+          ++t_diff_base;
+          ++t_diff_base_f_e0;
+          t_base(i) = t_base_f_e1(i);
+          ++t_base;
+          ++t_base_f_e1;
+          t_diff_base(i,j) = t_diff_base_f_e1(i,j);
+          ++t_diff_base;
+          ++t_diff_base_f_e1;
+          t_base(i) = t_base_f_e2(i);
+          ++t_base;
+          ++t_base_f_e2;
+          t_diff_base(i,j) = t_diff_base_f_e2(i,j);
+          ++t_diff_base;
+          ++t_diff_base_f_e2;
         }
-        //derivatives
-        for(int dd = 9*NBFACETRI_EDGE_HDIV(oo);dd<9*NBFACETRI_EDGE_HDIV(oo+1);dd++,diff_col++) {
-          for(int gg = 0;gg!=nb_gauss_pts;gg++) {
-            data.dataOnEntities[MBTRI][ff].getDiffHdivN(base)(gg,diff_col) = diffN_face_edge(ff,ee)(gg,dd);
-          }
-        }
-      }
-      //values
-      for(int dd = 3*NBFACETRI_FACE_HDIV(oo);dd<3*NBFACETRI_FACE_HDIV(oo+1);dd++,col++) {
-        for(int gg = 0;gg!=nb_gauss_pts;gg++) {
-          data.dataOnEntities[MBTRI][ff].getHdivN(base)(gg,col) = N_face_bubble[ff](gg,dd);
-        }
-      }
-      //derivatives
-      for(int dd = 9*NBFACETRI_FACE_HDIV(oo);dd<9*NBFACETRI_FACE_HDIV(oo+1);dd++,diff_col++) {
-        for(int gg = 0;gg!=nb_gauss_pts;gg++) {
-          data.dataOnEntities[MBTRI][ff].getDiffHdivN(base)(gg,diff_col) = diffN_face_bubble[ff](gg,dd);
+        for(int dd = NBFACETRI_FACE_HDIV(oo);dd!=NBFACETRI_FACE_HDIV(oo+1);dd++) {
+          t_base(i) = (*t_base_f)(i);
+          ++t_base;
+          ++(*t_base_f);
+          t_diff_base(i,j) = (*t_diff_base_f)(i,j);
+          ++t_diff_base;
+          ++(*t_diff_base_f);
         }
       }
     }
