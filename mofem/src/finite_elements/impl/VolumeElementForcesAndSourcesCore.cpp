@@ -773,7 +773,8 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::UserDataOperator::getCurlOfHCu
       SETERRQ1(
         PETSC_COMM_SELF,
         MOFEM_DATA_INCONSISTENCY,
-        "This function should be used for HDIV used but is used with %s",
+        "This function should be used for primarily for HCURL"
+        " but will work with HDIV used but is used with %s",
         FieldSpaceNames[data.getSpace()]
       );
     }
@@ -783,7 +784,7 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::UserDataOperator::getCurlOfHCu
       SETERRQ3(
         PETSC_COMM_SELF,
         MOFEM_DATA_INCONSISTENCY,
-        "Data inositency, wrong number of dofs  = %s "
+        "Data insistency, wrong number of dofs  = %s "
         "%d != %d/9",
         FieldSpaceNames[data.getSpace()],
         nb_dofs,data.getDiffHcurlN().size2()
