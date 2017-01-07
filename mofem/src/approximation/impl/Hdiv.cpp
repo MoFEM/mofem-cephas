@@ -534,20 +534,15 @@ PetscErrorCode MoFEM::Hdiv_VolumeBubbleShapeFunctions_MBTET(
     const double ksi0j = nj-n0;
     const double ksi0k = nk-n0;
     const double beta_v = n0*ni*nj*nk;
-    if(diff_phi_v) {
-      t_diff_beta_v(i) =
-      (ni*nj*nk)*t_node_diff_ksi[0](i)+
-      (n0*nj*nk)*t_node_diff_ksi[1](i)+
-      (n0*ni*nk)*t_node_diff_ksi[2](i)+
-      (n0*ni*nj)*t_node_diff_ksi[3](i);
-      ierr = base_polynomials(p,ksi0i,&t_diff_ksi0i(0),psi_l,diff_psi_l,3); CHKERRQ(ierr);
-      ierr = base_polynomials(p,ksi0j,&t_diff_ksi0j(0),psi_m,diff_psi_m,3); CHKERRQ(ierr);
-      ierr = base_polynomials(p,ksi0k,&t_diff_ksi0k(0),psi_n,diff_psi_n,3); CHKERRQ(ierr);
-    } else {
-      ierr = base_polynomials(p,ksi0i,NULL,psi_l,NULL,3); CHKERRQ(ierr);
-      ierr = base_polynomials(p,ksi0j,NULL,psi_m,NULL,3); CHKERRQ(ierr);
-      ierr = base_polynomials(p,ksi0k,NULL,psi_n,NULL,3); CHKERRQ(ierr);
-    }
+    t_diff_beta_v(i) =
+    (ni*nj*nk)*t_node_diff_ksi[0](i)+
+    (n0*nj*nk)*t_node_diff_ksi[1](i)+
+    (n0*ni*nk)*t_node_diff_ksi[2](i)+
+    (n0*ni*nj)*t_node_diff_ksi[3](i);
+    ierr = base_polynomials(p,ksi0i,&t_diff_ksi0i(0),psi_l,diff_psi_l,3); CHKERRQ(ierr);
+    ierr = base_polynomials(p,ksi0j,&t_diff_ksi0j(0),psi_m,diff_psi_m,3); CHKERRQ(ierr);
+    ierr = base_polynomials(p,ksi0k,&t_diff_ksi0k(0),psi_n,diff_psi_n,3); CHKERRQ(ierr);
+    FTensor::Tensor1<double,3> t_diff_a;
 
     int jj = 0;
     for(int oo = 0;oo<=p-4;oo++) {
@@ -566,55 +561,43 @@ PetscErrorCode MoFEM::Hdiv_VolumeBubbleShapeFunctions_MBTET(
             FTensor::Tensor1<double,3> t_diff_psi_n(
               diff_psi_n[n],diff_psi_n[p+1+n],diff_psi_n[2*p+2+n]
             );
-            t_phi_v(0) = beta_v*t_psi_l*t_psi_m*psi_n[n];
+            const double a = beta_v*t_psi_l*t_psi_m*psi_n[n];
+            t_phi_v(0) = a;
             t_phi_v(1) = 0;
             t_phi_v(2) = 0;
             ++t_phi_v;
             t_phi_v(0) = 0;
-            t_phi_v(1) = beta_v*t_psi_l*t_psi_m*psi_n[n];
+            t_phi_v(1) = a;
             t_phi_v(2) = 0;
             ++t_phi_v;
             t_phi_v(0) = 0;
             t_phi_v(1) = 0;
-            t_phi_v(2) = beta_v*t_psi_l*t_psi_m*psi_n[n];
+            t_phi_v(2) = a;
             ++t_phi_v;
-            if(diff_phi_v) {
-              t_diff_phi_v(N0,j) =
-              (t_psi_l*t_psi_m*psi_n[n])*t_diff_beta_v(j)+
-              (beta_v*t_psi_m*psi_n[n])*t_diff_psi_l(j)+
-              (beta_v*t_psi_l*psi_n[n])*t_diff_psi_m(j)+
-              (beta_v*t_psi_l*t_psi_m)*t_diff_psi_n(j);
-              t_diff_phi_v(N1,j) = 0;
-              t_diff_phi_v(N2,j) = 0;
-              ++t_diff_phi_v;
-              t_diff_phi_v(N0,j) = 0;
-              t_diff_phi_v(N1,j) =
-              (t_psi_l*t_psi_m*psi_n[n])*t_diff_beta_v(j)+
-              (beta_v*t_psi_m*psi_n[n])*t_diff_psi_l(j)+
-              (beta_v*t_psi_l*psi_n[n])*t_diff_psi_m(j)+
-              (beta_v*t_psi_l*t_psi_m)*t_diff_psi_n(j);
-              t_diff_phi_v(N2,j) = 0;
-              ++t_diff_phi_v;
-              t_diff_phi_v(N0,j) = 0;
-              t_diff_phi_v(N1,j) = 0;
-              t_diff_phi_v(N2,j) =
-              (t_psi_l*t_psi_m*psi_n[n])*t_diff_beta_v(j)+
-              (beta_v*t_psi_m*psi_n[n])*t_diff_psi_l(j)+
-              (beta_v*t_psi_l*psi_n[n])*t_diff_psi_m(j)+
-              (beta_v*t_psi_l*t_psi_m)*t_diff_psi_n(j);
-              ++t_diff_phi_v;
-            }
+            t_diff_a(j) =
+            (t_psi_l*t_psi_m*psi_n[n])*t_diff_beta_v(j)+
+            (beta_v*t_psi_m*psi_n[n])*t_diff_psi_l(j)+
+            (beta_v*t_psi_l*psi_n[n])*t_diff_psi_m(j)+
+            (beta_v*t_psi_l*t_psi_m)*t_diff_psi_n(j);
+            t_diff_phi_v(N0,j) = t_diff_a(j);
+            t_diff_phi_v(N1,j) = 0;
+            t_diff_phi_v(N2,j) = 0;
+            ++t_diff_phi_v;
+            t_diff_phi_v(N0,j) = 0;
+            t_diff_phi_v(N1,j) = t_diff_a(j);
+            t_diff_phi_v(N2,j) = 0;
+            ++t_diff_phi_v;
+            t_diff_phi_v(N0,j) = 0;
+            t_diff_phi_v(N1,j) = 0;
+            t_diff_phi_v(N2,j) = t_diff_a(j);
+            ++t_diff_phi_v;
             ++jj;
-            if(diff_phi_v) {
-              ++t_psi_m;
-              ++t_diff_psi_m;
-            }
+            ++t_psi_m;
+            ++t_diff_psi_m;
           }
         }
-        if(diff_phi_v) {
-          ++t_psi_l;
-          ++t_diff_psi_l;
-        }
+        ++t_psi_l;
+        ++t_diff_psi_l;
       }
     }
 
