@@ -534,12 +534,12 @@ PetscErrorCode CreateRowComressedADJMatrix::createMatArrays(
 
     // add next row to compressed matrix
     i.push_back(j.size());
-    if(strcmp(type,MATMPIADJ)==0) {
-      int idx = TAG::get_index(miit_row);
+    // if(strcmp(type,MATMPIADJ)==0) {
+      // int idx = TAG::get_index(miit_row);
       // if((*dofs_col_by_idx.find(idx))->getGlobalUniqueId()!=(*miit_row)->getGlobalUniqueId()) {
       //   SETERRQ(PETSC_COMM_SELF,PETSC_ERR_ARG_SIZ,"data inconsistency");
       // }
-    }
+    // }
 
     // Get entity adjacencies, no need to repeat that operation for dofs when
     // are on the same entity. For simplicity is assumed that those share the

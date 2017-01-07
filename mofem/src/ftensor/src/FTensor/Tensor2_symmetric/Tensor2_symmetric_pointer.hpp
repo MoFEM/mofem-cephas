@@ -18,7 +18,7 @@ inline void Tensor2_symmetric_increment(
 template <class T, int Tensor_Dim>
 class Tensor2_symmetric<T*,Tensor_Dim>
 {
-  const int inc;
+  mutable int inc;
   mutable T* restrict data[(Tensor_Dim*(Tensor_Dim+1))/2];
 public:
   Tensor2_symmetric() {}

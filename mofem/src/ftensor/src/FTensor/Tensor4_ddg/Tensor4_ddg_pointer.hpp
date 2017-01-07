@@ -46,7 +46,7 @@ inline void T4_ddg_increment(
 template <class T, int Tensor_Dim01, int Tensor_Dim23>
 class Tensor4_ddg<T*,Tensor_Dim01,Tensor_Dim23>
 {
-  const int inc;
+  mutable int inc;
   mutable T * restrict data[(Tensor_Dim01*(Tensor_Dim01+1))/2][(Tensor_Dim23*(Tensor_Dim23+1))/2];
 public:
   /* There are two operator(int,int,int,int)'s, one for non-consts

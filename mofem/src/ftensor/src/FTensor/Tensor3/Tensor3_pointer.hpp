@@ -75,7 +75,7 @@ inline void T3_increment(
 template <class T, int Tensor_Dim0, int Tensor_Dim1, int Tensor_Dim2>
 class Tensor3<T*,Tensor_Dim0,Tensor_Dim1,Tensor_Dim2>
 {
-  const int inc;
+  mutable int inc;
   mutable T * restrict data[Tensor_Dim1][Tensor_Dim1][Tensor_Dim2];
 public:
   Tensor3() {}
