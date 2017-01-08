@@ -232,14 +232,13 @@ PetscErrorCode MoFEM::Hdiv_FaceBubbleShapeFunctions_MBTET_ON_FACE(
       ierr = base_polynomials(p,ksi0j,NULL,psi_m,NULL,3); CHKERRQ(ierr);
     }
 
-    FTensor::Tensor0<double*> t_psi_l(&psi_l[0]);
-    FTensor::Tensor1<double*,3> t_diff_psi_l(
-      diff_psi_l,&diff_psi_l[p+1],&diff_psi_l[2*p+2],1
-    );
-
     int jj = 0;
     int oo = 0;
     for(;oo<=p-3;oo++) {
+      FTensor::Tensor0<double*> t_psi_l(&psi_l[0]);
+      FTensor::Tensor1<double*,3> t_diff_psi_l(
+        diff_psi_l,&diff_psi_l[p+1],&diff_psi_l[2*p+2],1
+      );
       for(int l = 0;l<=oo;l++) {
         int m = oo - l;
         if(m>=0) {
@@ -257,10 +256,10 @@ PetscErrorCode MoFEM::Hdiv_FaceBubbleShapeFunctions_MBTET_ON_FACE(
             ++(*t_diff_phi_f_ptr);
           }
         }
+        ++t_psi_l;
+        ++t_diff_psi_l;
         ++jj;
       }
-      ++t_psi_l;
-      ++t_diff_psi_l;
     }
     if(jj!=NBFACETRI_FACE_HDIV(p)) {
       SETERRQ2(
@@ -545,6 +544,7 @@ PetscErrorCode MoFEM::Hdiv_VolumeBubbleShapeFunctions_MBTET(
     ierr = base_polynomials(p,ksi0i,&t_diff_ksi0i(0),psi_l,diff_psi_l,3); CHKERRQ(ierr);
     ierr = base_polynomials(p,ksi0j,&t_diff_ksi0j(0),psi_m,diff_psi_m,3); CHKERRQ(ierr);
     ierr = base_polynomials(p,ksi0k,&t_diff_ksi0k(0),psi_n,diff_psi_n,3); CHKERRQ(ierr);
+
     FTensor::Tensor1<double,3> t_diff_a;
 
     int jj = 0;
@@ -595,9 +595,9 @@ PetscErrorCode MoFEM::Hdiv_VolumeBubbleShapeFunctions_MBTET(
             t_diff_phi_v(N2,j) = t_diff_a(j);
             ++t_diff_phi_v;
             ++jj;
-            ++t_psi_m;
-            ++t_diff_psi_m;
           }
+          ++t_psi_m;
+          ++t_diff_psi_m;
         }
         ++t_psi_l;
         ++t_diff_psi_l;
