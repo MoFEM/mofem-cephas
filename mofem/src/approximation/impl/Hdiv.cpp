@@ -196,7 +196,7 @@ PetscErrorCode MoFEM::Hdiv_FaceBubbleShapeFunctions_MBTET_ON_FACE(
   FTensor::Tensor1<double,3> t_diff_beta_0ij;
 
   FTensor::Tensor1<double*,3> t_psi_f(
-    &phi_f[0],&phi_f[1],&phi_f[2],3
+    &phi_f[HDIV0],&phi_f[HDIV1],&phi_f[HDIV2],3
   );
 
   //FIXME: can be socped_ptr
@@ -212,6 +212,7 @@ PetscErrorCode MoFEM::Hdiv_FaceBubbleShapeFunctions_MBTET_ON_FACE(
   }
 
   for(int ii = 0;ii<gdim;ii++) {
+
     int node_shift = ii*nb;
     const double ni = N[ node_shift+vert_i ];
     const double nj = N[ node_shift+vert_j ];
@@ -231,13 +232,14 @@ PetscErrorCode MoFEM::Hdiv_FaceBubbleShapeFunctions_MBTET_ON_FACE(
       ierr = base_polynomials(p,ksi0j,NULL,psi_m,NULL,3); CHKERRQ(ierr);
     }
 
+    FTensor::Tensor0<double*> t_psi_l(&psi_l[0]);
+    FTensor::Tensor1<double*,3> t_diff_psi_l(
+      diff_psi_l,&diff_psi_l[p+1],&diff_psi_l[2*p+2],1
+    );
+
     int jj = 0;
     int oo = 0;
     for(;oo<=p-3;oo++) {
-      FTensor::Tensor0<double*> t_psi_l(&psi_l[0]);
-      FTensor::Tensor1<double*,3> t_diff_psi_l(
-        diff_psi_l,&diff_psi_l[p+1],&diff_psi_l[2*p+2],1
-      );
       for(int l = 0;l<=oo;l++) {
         int m = oo - l;
         if(m>=0) {
@@ -245,6 +247,7 @@ PetscErrorCode MoFEM::Hdiv_FaceBubbleShapeFunctions_MBTET_ON_FACE(
             diff_psi_m[m],diff_psi_m[p+1+m],diff_psi_m[2*p+2+m]
           );
           t_psi_f(i) = (beta_0ij*t_psi_l*psi_m[m])*t_cross(i);
+          ++t_psi_f;
           if(diff_phi_f) {
             (*t_diff_phi_f_ptr)(i,j) = (
               (t_psi_l*psi_m[m])*t_diff_beta_0ij(j)+
@@ -253,11 +256,11 @@ PetscErrorCode MoFEM::Hdiv_FaceBubbleShapeFunctions_MBTET_ON_FACE(
             )*t_cross(i);
             ++(*t_diff_phi_f_ptr);
           }
-          ++t_psi_f;
-          jj++;
         }
+        ++jj;
       }
       ++t_psi_l;
+      ++t_diff_psi_l;
     }
     if(jj!=NBFACETRI_FACE_HDIV(p)) {
       SETERRQ2(
