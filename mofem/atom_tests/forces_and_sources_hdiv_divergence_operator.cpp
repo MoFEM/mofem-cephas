@@ -275,7 +275,7 @@ int main(int argc, char *argv[]) {
   std::cout << "divergence_skin " << divergence_skin << std::endl;
 
   const double eps = 1e-6;
-  const double expected_result = 9.82857142857;
+  const double expected_result = 9.36666666667;
   if(fabs(divergence_vol-expected_result)>eps) {
     SETERRQ2(
       PETSC_COMM_SELF,
