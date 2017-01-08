@@ -696,26 +696,63 @@ struct UltraWeakTransportElement {
   }
 
 
-  /** \brief Assemble \f$ \int_\mathcal{T} \mathbf{A} \boldsymbol\sigma \cdot \boldsymbol\tau \textrm{d}\mathcal{T} \f$
+  /**
+  \brief Assemble \f$\int_\mathcal{T} \mathbf{A} \boldsymbol\sigma \cdot \boldsymbol\tau \textrm{d}\mathcal{T}\f$
+
+  \note For this implementation we do not use classical Raviart–Thomas, but
+  approximation spaces proposed by Ainsworth & Coyle \cite NME:NME847, which is bigger
+  because it contains complete polynomials, including those divergence free with
+  non-zero curl. That is no needed for this problem but can be exploited in
+  other problems. Using Ainswrth & Coyle base we have additional DOFs and matrix is
+  rank deficient if curl is not controlled. That is simply resolved by adding
+  curl-curl matrix. We going to add Raviart–Thomas (or you can do it, with our help),
+  anyway, simply following \cite fuentes2015orientation, what is essence some
+  sub space of base which we already have.
+
+  \ingroup mofem_ultra_weak_transport_elem
   */
   struct OpTauDotSigma_HdivHdiv: public MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator {
 
     UltraWeakTransportElement &cTx;
     Mat Aij;
     Vec F;
+    const double ePs;
 
     OpTauDotSigma_HdivHdiv(
       UltraWeakTransportElement &ctx,
-      const std::string flux_name,Mat aij,Vec f
+      const std::string flux_name,
+      Mat aij,Vec f,const double eps = 1e-8
     ):
     MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator(
-      flux_name,
-      UserDataOperator::OPROW|UserDataOperator::OPROWCOL
+      flux_name,flux_name,
+      UserDataOperator::OPROWCOL|UserDataOperator::OPCOL
     ),
     cTx(ctx),
     Aij(aij),
-    F(f) {}
+    F(f),
+    ePs(eps) {
+      sYmm = true;
+    }
 
+    OpTauDotSigma_HdivHdiv(
+      UltraWeakTransportElement &ctx,
+      const std::string row_flux_name,
+      const std::string col_flux_name,
+      Mat aij,Vec f,const double eps = 1e-8
+    ):
+    MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator(
+      row_flux_name,
+      col_flux_name,
+      UserDataOperator::OPROWCOL|UserDataOperator::OPCOL
+    ),
+    cTx(ctx),
+    Aij(aij),
+    F(f),
+    ePs(eps) {
+      sYmm = true;
+    }
+
+    MatrixDouble matRowCurl,aveMatRowCurl;
     MatrixDouble NN,transNN,invK;
     VectorDouble Nf;
 
@@ -755,10 +792,19 @@ struct UltraWeakTransportElement {
           &invK(1,0),&invK(1,1),&invK(1,2),
           &invK(2,0),&invK(2,1),&invK(2,2)
         );
-        // get base functions
+        bool penalty_curl = (row_type == MBTET && col_type == MBTET);
+        // Set size for curl matrices
+        if(penalty_curl) {
+          matRowCurl.resize(nb_row,3,false);
+          aveMatRowCurl.resize(nb_row,3,false);
+          aveMatRowCurl.clear();
+        }
+        // Get base functions
         FTensor::Tensor1<double*,3> t_n_hdiv_row = row_data.getFTensor1HdivN<3>();
+        double ave_diag = 0;
+        double x,y,z;
         int nb_gauss_pts = row_data.getHdivN().size1();
-        for(int gg = 0;gg<nb_gauss_pts;gg++) {
+        for(int gg = 0;gg!=nb_gauss_pts;gg++) {
           // get integration weight and multiply by element volume
           double w = getGaussPts()(3,gg)*getVolume();
           // in case that HO geometry is defined that below take into account that
@@ -783,14 +829,38 @@ struct UltraWeakTransportElement {
             }
             ++t_n_hdiv_row;
           }
+          // Calcualte row/col curl
+          if(penalty_curl) {
+            ierr = getCurlOfHCurlBaseFunctions(
+              row_side,row_type,row_data,gg,matRowCurl
+            ); CHKERRQ(ierr);
+            aveMatRowCurl += w*matRowCurl;
+            ave_diag += w*(invK(0,0)+invK(1,1)+invK(2,2));
+          }
         }
-        // matrix is symmetric, assemble other part
+        if(penalty_curl) {
+          const double a = ePs*ave_diag/getVolume();
+          FTensor::Tensor1<double*,3> t_row_ave(
+            &aveMatRowCurl(0,HDIV0),&aveMatRowCurl(0,HDIV1),&aveMatRowCurl(0,HDIV2),3
+          );
+          for(int ii = 0;ii!=6;ii++) {
+            FTensor::Tensor1<double*,3> t_col_ave(
+              &aveMatRowCurl(0,HDIV0),&aveMatRowCurl(0,HDIV1),&aveMatRowCurl(0,HDIV2),3
+            );
+            for(int jj = 0;jj!=6;jj++) {
+              NN(ii,jj) += a*t_row_ave(i)*t_col_ave(i);
+              ++t_col_ave;
+            }
+            ++t_row_ave;
+          }
+        }
         ierr = MatSetValues(
           Aij,
           nb_row,&row_data.getIndices()[0],
           nb_col,&col_data.getIndices()[0],
           &NN(0,0),ADD_VALUES
         ); CHKERRQ(ierr);
+        // matrix is symmetric, assemble other part
         if(row_side != col_side || row_type != col_type) {
           transNN.resize(nb_col,nb_row);
           noalias(transNN) = trans(NN);
@@ -825,12 +895,22 @@ struct UltraWeakTransportElement {
       PetscErrorCode ierr;
       PetscFunctionBegin;
       try {
-        if(data.getIndices().size()==0) PetscFunctionReturn(0);
+        if(F==PETSC_NULL) PetscFunctionReturn(0);
+        int nb_row = data.getIndices().size();
+        if(nb_row==0) PetscFunctionReturn(0);
+        EntityHandle fe_ent = getNumeredEntFiniteElementPtr()->getEnt();
+        Nf.resize(nb_row);
+        Nf.clear();
+        bool penalty_curl = type == MBTET;
+        // Set size for curl matrices
+        if(penalty_curl) {
+          matRowCurl.resize(nb_row,3,false);
+          aveMatRowCurl.resize(nb_row,3,false);
+          aveMatRowCurl.clear();
+        }
         FTensor::Index<'i',3> i;
         FTensor::Index<'j',3> j;
         invK.resize(3,3,false);
-        EntityHandle fe_ent = getNumeredEntFiniteElementPtr()->getEnt();
-        int nb_row = data.getIndices().size();
         Nf.resize(nb_row);
         Nf.clear();
         // get access to resistivity data by tensor rank 2
@@ -840,6 +920,7 @@ struct UltraWeakTransportElement {
           &invK(2,0),&invK(2,1),&invK(2,2)
         );
         // get base functions
+        double ave_diag = 0;
         FTensor::Tensor1<double*,3> t_n_hdiv = data.getFTensor1HdivN<3>();
         int nb_gauss_pts = data.getHdivN().size1();
         for(int gg = 0;gg<nb_gauss_pts;gg++) {
@@ -860,7 +941,34 @@ struct UltraWeakTransportElement {
             Nf[ll] += w*t_n_hdiv(i)*t_inv_k(i,j)*t_flux(j);
             ++t_n_hdiv;
           }
+          // Calcualte row/col curl
+          if(penalty_curl) {
+            ierr = getCurlOfHCurlBaseFunctions(
+              side,type,data,gg,matRowCurl
+            ); CHKERRQ(ierr);
+            aveMatRowCurl += w*matRowCurl;
+            ave_diag += w*(invK(0,0)+invK(1,1)+invK(2,2));
+          }
         }
+
+        if(penalty_curl) {
+          const double a = ePs*ave_diag/getVolume();
+          FTensor::Tensor1<double*,3> t_row_ave(
+            &aveMatRowCurl(0,HDIV0),&aveMatRowCurl(0,HDIV1),&aveMatRowCurl(0,HDIV2),3
+          );
+          for(int ii = 0;ii!=6;ii++) {
+            FTensor::Tensor1<double*,3> t_col_ave(
+              &aveMatRowCurl(0,HDIV0),&aveMatRowCurl(0,HDIV1),&aveMatRowCurl(0,HDIV2),3
+            );
+            for(int jj = 0;jj!=6;jj++) {
+              Nf(ii) += a*t_row_ave(i)*(t_col_ave(i)*data.getFieldData()[jj]);
+              ++t_col_ave;
+            }
+            ++t_row_ave;
+          }
+        }
+
+
         ierr = VecSetValues(
           F,nb_row,&data.getIndices()[0],&Nf[0],ADD_VALUES
         ); CHKERRQ(ierr);
