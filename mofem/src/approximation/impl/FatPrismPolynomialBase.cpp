@@ -190,7 +190,7 @@ PetscErrorCode FatPrismPolynomialBase::getValueH1TrianglesOnly() {
   const FieldApproximationBase base = cTx->bAse;
   // PetscErrorCode (*base_polynomials)(
   //   int p,double s,double *diff_s,double *L,double *diffL,const int dim
-  // ) = cTx->basePolynomials;
+  // ) = cTx->basePolynomialsType0;
 
   ierr = FlatPrismPolynomialBase().getValue(
     cTx->gaussPtsTrianglesOnly,
@@ -212,7 +212,7 @@ PetscErrorCode FatPrismPolynomialBase::getValueH1ThroughThickness() {
   const FieldApproximationBase base = cTx->bAse;
   PetscErrorCode (*base_polynomials)(
     int p,double s,double *diff_s,double *L,double *diffL,const int dim
-  ) = cTx->basePolynomials;
+  ) = cTx->basePolynomialsType0;
 
   int nb_gauss_pts_through_thickness = cTx->gaussPtsThroughThickness.size2();
 
@@ -255,7 +255,7 @@ PetscErrorCode FatPrismPolynomialBase::getValueH1(ublas::matrix<double> &pts) {
   const FieldApproximationBase base = cTx->bAse;
   // PetscErrorCode (*base_polynomials)(
   //   int p,double s,double *diff_s,double *L,double *diffL,const int dim
-  // ) = cTx->basePolynomials;
+  // ) = cTx->basePolynomialsType0;
 
   int nb_gauss_pts = pts.size2();
   int nb_gauss_pts_on_faces = cTx->gaussPtsTrianglesOnly.size2();

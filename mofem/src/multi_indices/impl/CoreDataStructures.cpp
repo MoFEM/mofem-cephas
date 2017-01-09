@@ -109,8 +109,8 @@ sequenceDofContainer(
     forder_table[tt] = NULL;
   }
   switch(*tag_base_data) {
-    case AINSWORTH_COLE_BASE:
-    case LOBATTO_BASE:
+    case AINSWORTH_LEGENDRE_BASE:
+    case AINSWORTH_LOBBATO_BASE:
     switch(*tag_space_data) {
       case H1:
       forder_table[MBVERTEX] = fNBVERTEX_H1;
@@ -148,8 +148,20 @@ sequenceDofContainer(
       THROW_MESSAGE("unknown approximation space");
     }
     break;
-    case BERNSTEIN_BEZIER_BASE:
-      THROW_MESSAGE("BERNSTEIN_BEZIER_BASE not implemented yer")
+    case DEMKOWICZ_JACOBI_BASE:
+    switch(*tag_space_data) {
+      case HDIV:
+      forder_table[MBVERTEX] = fNBVERTEX_HDIV;
+      forder_table[MBEDGE] = fNBEDGE_HDIV;
+      forder_table[MBTRI] = fNBFACETRI_DEMKOWICZ_HDIV;
+      forder_table[MBTET] = fNBVOLUMETET_DEMKOWICZ_HDIV;
+      break;
+      default:
+      THROW_MESSAGE("unknown approximation space or not yet implemented");
+    }
+    break;
+    case AINSOWRTH_BERNSTEIN_BEZIER_BASE:
+      THROW_MESSAGE("AINSOWRTH_BERNSTEIN_BEZIER_BASE not implemented yer")
     break;
     case USER_BASE:
     for(int ee = 0;ee<MBMAXTYPE;ee++) {

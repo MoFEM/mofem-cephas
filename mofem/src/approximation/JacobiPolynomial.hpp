@@ -1,4 +1,4 @@
-/** \file LegendrePolynomial.hpp
+/** \file JacobiPolynomial.hpp
 \brief Implementation of Legendre polynomial
 
 */
@@ -17,46 +17,59 @@
 * You should have received a copy of the GNU Lesser General Public
 * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef __LEGENDREPOLYNOMIALS_HPP__
-#define __LEGENDREPOLYNOMIALS_HPP__
+#ifndef __JACOBIPOLYNOMIALS_HPP__
+#define __JACOBIPOLYNOMIALS_HPP__
 
 namespace MoFEM {
 
-  static const MOFEMuuid IDD_LEGENDRE_BASE_FUNCTION = MOFEMuuid(BitIntefaceId(LEGENDRE_BASE_FUNCTION_INTERFACE));
+  static const MOFEMuuid IDD_JACOBI_BASE_FUNCTION =
+  MOFEMuuid(BitIntefaceId(JACOBI_BASE_FUNCTION_INTERFACE));
 
   /**
    * \brief Class used to give arguments to Legendre base functions
    * \ingroup mofem_base_functions
    */
-  struct LegendrePolynomialCtx: public BaseFunctionCtx {
+  struct JacobiPolynomialCtx: public BaseFunctionCtx {
 
     PetscErrorCode queryInterface(const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface);
 
     int P;
-    double *diffS;
+    double *diffX;
+    double *diffT;
     int dIm;
+
+    double aLpha;
+
     boost::shared_ptr<ublas::matrix<double> > baseFunPtr;
     boost::shared_ptr<ublas::matrix<double> > baseDiffFunPtr;
 
-    PetscErrorCode (*basePolynomialsType0)(
-      int p,double s,double *diff_s,double *L,double *diffL,const int dim
+    PetscErrorCode (*basePolynomialsType1)(
+      int p,double alpha,
+      double x,double t,
+      double *diff_x,double *diff_t,
+      double *L,double *diffL,
+      const int dim
     );
 
-    LegendrePolynomialCtx(
+    JacobiPolynomialCtx(
       int p,
-      double *diff_s,
+      double *diff_x,
+      double *diff_t,
       int dim,
+      double alpha,
       boost::shared_ptr<ublas::matrix<double> > base_fun_ptr,
       boost::shared_ptr<ublas::matrix<double> > base_diff_fun_ptr
     ):
     P(p),
-    diffS(diff_s),
+    diffX(diff_x),
+    diffT(diff_t),
     dIm(dim),
+    aLpha(alpha),
     baseFunPtr(base_fun_ptr),
     baseDiffFunPtr(base_diff_fun_ptr),
-    basePolynomialsType0(Legendre_polynomials) {
+    basePolynomialsType1(Jacobi_polynomials) {
     }
-    ~LegendrePolynomialCtx() {}
+    ~JacobiPolynomialCtx() {}
 
   };
 
@@ -64,15 +77,16 @@ namespace MoFEM {
    * \brief Calculating Legendre base functions
    * \ingroup mofem_base_functions
    */
-  struct LegendrePolynomial: public BaseFunction {
+  struct JacobiPolynomial: public BaseFunction {
 
     PetscErrorCode queryInterface(const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface);
 
-    LegendrePolynomial() {}
-    ~LegendrePolynomial() {}
+    JacobiPolynomial() {}
+    ~JacobiPolynomial() {}
 
     PetscErrorCode getValue(
-      ublas::matrix<double> &pts,
+      ublas::matrix<double> &pts_x,
+      ublas::matrix<double> &pts_t,
       boost::shared_ptr<BaseFunctionCtx> ctx_ptr
     );
 
@@ -80,5 +94,4 @@ namespace MoFEM {
 
 }
 
-
-#endif //__LEGENDREPOLYNOMIALS_HPP__
+#endif //__JACOBIPOLYNOMIALS_HPP__

@@ -77,7 +77,7 @@ PetscErrorCode TetPolynomialBase::getValueH1(ublas::matrix<double> &pts) {
   const FieldApproximationBase base = cTx->bAse;
   PetscErrorCode (*base_polynomials)(
     int p,double s,double *diff_s,double *L,double *diffL,const int dim
-  ) = cTx->basePolynomials;
+  ) = cTx->basePolynomialsType0;
 
   int nb_gauss_pts = pts.size2();
 
@@ -181,7 +181,7 @@ PetscErrorCode TetPolynomialBase::getValueL2(
   const FieldApproximationBase base = cTx->bAse;
   PetscErrorCode (*base_polynomials)(
     int p,double s,double *diff_s,double *L,double *diffL,const int dim
-  ) = cTx->basePolynomials;
+  ) = cTx->basePolynomialsType0;
 
   int nb_gauss_pts = pts.size2();
 
@@ -215,7 +215,7 @@ PetscErrorCode TetPolynomialBase::getValueHdiv(
   const FieldApproximationBase base = cTx->bAse;
   PetscErrorCode (*base_polynomials)(
     int p,double s,double *diff_s,double *L,double *diffL,const int dim
-  ) = cTx->basePolynomials;
+  ) = cTx->basePolynomialsType0;
 
   int nb_gauss_pts = pts.size2();
 
@@ -539,7 +539,7 @@ PetscErrorCode TetPolynomialBase::getValueHCurl(
   const FieldApproximationBase base = cTx->bAse;
   PetscErrorCode (*base_polynomials)(
     int p,double s,double *diff_s,double *L,double *diffL,const int dim
-  ) = cTx->basePolynomials;
+  ) = cTx->basePolynomialsType0;
 
   int nb_gauss_pts = pts.size2();
 

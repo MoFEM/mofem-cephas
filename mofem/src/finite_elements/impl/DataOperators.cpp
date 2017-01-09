@@ -629,7 +629,7 @@ PetscErrorCode OpSetInvJacH1::doWork(
 
   try {
 
-    for(int b = AINSWORTH_COLE_BASE; b!=USER_BASE; b++) {
+    for(int b = AINSWORTH_LEGENDRE_BASE; b!=USER_BASE; b++) {
 
       FieldApproximationBase base = ApproximationBaseArray[b];
       const unsigned int nb_base_functions = data.getN(base).size2();
@@ -733,7 +733,7 @@ PetscErrorCode OpSetInvJacHdivAndHcurl::doWork(
 
   try {
 
-    for(int b = AINSWORTH_COLE_BASE; b!=USER_BASE; b++) {
+    for(int b = AINSWORTH_LEGENDRE_BASE; b!=USER_BASE; b++) {
 
       FieldApproximationBase base = ApproximationBaseArray[b];
 
@@ -792,7 +792,7 @@ PetscErrorCode OpSetContravariantPiolaTransform::doWork(
   try {
 
 
-    for(int b = AINSWORTH_COLE_BASE; b!=USER_BASE; b++) {
+    for(int b = AINSWORTH_LEGENDRE_BASE; b!=USER_BASE; b++) {
 
       FieldApproximationBase base = ApproximationBaseArray[b];
 
@@ -863,7 +863,7 @@ PetscErrorCode OpSetCovariantPiolaTransform::doWork(
 
   try {
 
-    for(int b = AINSWORTH_COLE_BASE; b!=USER_BASE; b++) {
+    for(int b = AINSWORTH_LEGENDRE_BASE; b!=USER_BASE; b++) {
 
       FieldApproximationBase base = ApproximationBaseArray[b];
 
@@ -930,7 +930,7 @@ PetscErrorCode OpSetHoInvJacH1::doWork(
 
     try {
 
-      for(int b = AINSWORTH_COLE_BASE; b!=USER_BASE; b++) {
+      for(int b = AINSWORTH_LEGENDRE_BASE; b!=USER_BASE; b++) {
 
         FieldApproximationBase base = ApproximationBaseArray[b];
         if(data.getDiffN(base).size2()==0) continue;
@@ -1047,7 +1047,7 @@ PetscErrorCode OpSetHoInvJacH1::doWork(
 
     try {
 
-      for(int b = AINSWORTH_COLE_BASE; b!=USER_BASE; b++) {
+      for(int b = AINSWORTH_LEGENDRE_BASE; b!=USER_BASE; b++) {
 
         FieldApproximationBase base = ApproximationBaseArray[b];
 
@@ -1117,7 +1117,7 @@ PetscErrorCode OpSetHoContravariantPiolaTransform::doWork(
 
   try {
 
-    for(int b = AINSWORTH_COLE_BASE; b!=USER_BASE; b++) {
+    for(int b = AINSWORTH_LEGENDRE_BASE; b!=USER_BASE; b++) {
 
       FieldApproximationBase base = ApproximationBaseArray[b];
 
@@ -1192,7 +1192,7 @@ PetscErrorCode OpSetHoCovariantPiolaTransform::doWork(
 
   try {
 
-    for(int b = AINSWORTH_COLE_BASE; b!=USER_BASE; b++) {
+    for(int b = AINSWORTH_LEGENDRE_BASE; b!=USER_BASE; b++) {
 
       FieldApproximationBase base = ApproximationBaseArray[b];
 
@@ -1524,7 +1524,7 @@ PetscErrorCode OpSetContravariantPiolaTransoformOnTriangle::doWork(
 
   // FieldApproximationBase base = data.getBase();
 
-  for(int b = AINSWORTH_COLE_BASE; b!=USER_BASE; b++) {
+  for(int b = AINSWORTH_LEGENDRE_BASE; b!=USER_BASE; b++) {
 
     FieldApproximationBase base = ApproximationBaseArray[b];
     // data.getBase() = ApproximationBaseArray[b];
@@ -1579,7 +1579,7 @@ PetscErrorCode OpSetCovariantPiolaTransoformOnTriangle::doWork(
   ierr = determinantTensor3by3(t_m,det); CHKERRQ(ierr);
   ierr = invertTensor3by3(t_m,det,t_inv_m); CHKERRQ(ierr);
 
-  for(int b = AINSWORTH_COLE_BASE; b!=USER_BASE; b++) {
+  for(int b = AINSWORTH_LEGENDRE_BASE; b!=USER_BASE; b++) {
 
     FieldApproximationBase base = ApproximationBaseArray[b];
 
@@ -1742,7 +1742,7 @@ PetscErrorCode OpSetCovariantPiolaTransoformOnEdge::doWork(
     }
   }
 
-  for(int b = AINSWORTH_COLE_BASE; b!=USER_BASE; b++) {
+  for(int b = AINSWORTH_LEGENDRE_BASE; b!=USER_BASE; b++) {
 
     FieldApproximationBase base = ApproximationBaseArray[b];
     int nb_gauss_pts = data.getHcurlN(base).size1();

@@ -1003,6 +1003,7 @@ list(INSERT testing_base_list
   0
   legendre
   lobatto
+  jacobi
   h1tet
   hcurltet
   hdivtet

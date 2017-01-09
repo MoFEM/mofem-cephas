@@ -184,7 +184,7 @@ int main(int argc, char *argv[]) {
       ierr = TetPolynomialBase().getValue(
         gauss_pts,
         boost::shared_ptr<BaseFunctionCtx>(
-          new EntPolynomialBaseCtx(data,H1,AINSWORTH_COLE_BASE)
+          new EntPolynomialBaseCtx(data,H1,AINSWORTH_LEGENDRE_BASE)
         )
       ); CHKERRQ(ierr);
 
@@ -201,7 +201,7 @@ int main(int argc, char *argv[]) {
       my_split << "FIELD1:\n";
       my_split << data << std::endl;
 
-      derived_data.dataOnEntities[MBVERTEX][0].getBase() = AINSWORTH_COLE_BASE;
+      derived_data.dataOnEntities[MBVERTEX][0].getBase() = AINSWORTH_LEGENDRE_BASE;
       ierr = getEdgesDataOrderSpaceAndBase(derived_data,"FIELD2"); CHKERRQ(ierr);
       ierr = getTrisDataOrderSpaceAndBase(derived_data,"FIELD2"); CHKERRQ(ierr);
       ierr = getTetDataOrderSpaceAndBase(derived_data,"FIELD2"); CHKERRQ(ierr);

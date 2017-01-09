@@ -174,7 +174,7 @@ struct MagneticElement {
     ierr = mField.seed_ref_level_3D(0,BitRefLevel().set(0)); CHKERRQ(ierr);
 
     // add fields
-    ierr = mField.add_field(blockData.fieldName,HCURL,LOBATTO_BASE,1); CHKERRQ(ierr);
+    ierr = mField.add_field(blockData.fieldName,HCURL,AINSWORTH_LOBBATO_BASE,1); CHKERRQ(ierr);
     ierr = mField.add_field("MESH_NODE_POSITIONS",H1,3); CHKERRQ(ierr);
     //meshset consisting all entities in mesh
     EntityHandle root_set = mField.get_moab().get_root_set();

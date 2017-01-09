@@ -100,9 +100,9 @@ struct Projection10NodeCoordsOnField: public EntMethod {
     double edge_shape_function_val = 0.25;
     FieldApproximationBase base = dofPtr->getApproxBase();
     switch (base) {
-      case AINSWORTH_COLE_BASE:
+      case AINSWORTH_LEGENDRE_BASE:
       break;
-      case LOBATTO_BASE:
+      case AINSWORTH_LOBBATO_BASE:
       edge_shape_function_val *= LOBATTO_PHI0(0);
       break;
       default:
@@ -234,10 +234,10 @@ struct ProjectionFieldOn10NodeTet: public Projection10NodeCoordsOnField {
     double approx_val = 0;
     FieldApproximationBase base = dofPtr->getApproxBase();
     switch (base) {
-      case AINSWORTH_COLE_BASE:
+      case AINSWORTH_LEGENDRE_BASE:
       approx_val = 0.25*L[dofPtr->getDofOrder()-2]*dofPtr->getFieldData();
       break;
-      case LOBATTO_BASE:
+      case AINSWORTH_LOBBATO_BASE:
       approx_val = 0.25*K[dofPtr->getDofOrder()-2]*dofPtr->getFieldData();
       break;
       default:

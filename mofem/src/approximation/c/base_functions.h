@@ -53,6 +53,32 @@ PetscErrorCode Legendre_polynomials(
 );
 
 /**
+\brief Calculate Jaconi approximation basis
+
+For more details see \cite fuentes2015orientation
+
+\param p is approximation order
+\param alpha polynomial parameter
+\param x is position \f$s\in[0,t]\f$
+\param t range of polynomial
+\param diff_x derivatives of shape functions, i.e. \f$\frac{\partial s}{\partial \xi_i}\f$
+\param diff_t derivatives of shape functions, i.e. \f$\frac{\partial s}{\partial \xi_i}\f$
+\retval L approximation functions
+\retval diffL derivatives, i.e. \f$\frac{\partial L}{\partial \xi_i}\f$
+\param dim dimension
+\return error code
+
+*/
+PetscErrorCode Jacobi_polynomials(
+  int p,double alpha,
+  double x,double t,
+  double *diff_x,double *diff_t,
+  double *L,double *diffL,
+  const int dim
+);
+
+
+/**
  \brief Calculate Lobatto base functions.
 
  \ingroup mofem_base_functions

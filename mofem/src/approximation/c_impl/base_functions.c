@@ -72,6 +72,83 @@ PetscErrorCode Legendre_polynomials(
   PetscFunctionReturn(0);
 }
 
+PetscErrorCode Jacobi_polynomials(
+  int p,double alpha,
+  double x,double t,
+  double *diff_x,double *diff_t,
+  double *L,double *diffL,
+  const int dim
+) {
+  PetscFunctionBegin;
+  if(dim < 1) SETERRQ(PETSC_COMM_SELF,MOFEM_INVALID_DATA,"dim < 1");
+  if(dim > 3) SETERRQ(PETSC_COMM_SELF,MOFEM_INVALID_DATA,"dim > 3");
+  if(p<0) SETERRQ(PETSC_COMM_SELF,MOFEM_INVALID_DATA,"p < 0");
+  L[0] = 1;
+  if(diffL!=NULL) {
+    diffL[0*(p+1)+0] = 0;
+    if(dim >= 2) {
+      diffL[1*(p+1)+0] = 0;
+      if(dim == 3) {
+        diffL[2*(p+1)+0] = 0;
+      }
+    }
+  }
+  if(p==0) PetscFunctionReturn(0);
+  L[1] = 2*x-t+alpha*x;
+  if(diffL != NULL) {
+    if(diff_x == NULL || diff_t == NULL) {
+      SETERRQ(PETSC_COMM_SELF,MOFEM_INVALID_DATA,"diff_s == NULL");
+    }
+    diffL[0*(p+1)+1] = (2+alpha)*diff_x[0]-diff_t[0];
+    if(dim >= 2) {
+      diffL[1*(p+1)+1] = (2+alpha)*diff_x[1]-diff_t[0];
+      if(dim == 3) {
+        diffL[2*(p+1)+1] = (2+alpha)*diff_x[2]-diff_t[0];
+      }
+    }
+  }
+  if(p==1) PetscFunctionReturn(0);
+  int l = 1;
+  for(;l<p;l++) {
+    int lp1 = l+1;
+    double a = 2*lp1*(lp1+alpha)*(2*lp1+alpha-2);
+    double b = 2*lp1+alpha-1;
+    double c = (2*lp1+alpha)*(2*lp1+alpha-2);
+    double d = 2*(lp1+alpha-1)*(lp1-1)*(2*lp1+alpha);
+    L[l+1] = (b*(c*(2*x-t)+alpha*alpha*t)*L[l]-d*t*t*L[l-1])/a;
+    if(diffL!=NULL) {
+      if(diff_x==NULL || diff_t == NULL) {
+        SETERRQ(PETSC_COMM_SELF,MOFEM_INVALID_DATA,"diff_s == NULL");
+      }
+      diffL[0*(p+1)+l+1] =
+      (
+        b*(c*(2*diff_x[0]-diff_t[0])+alpha*alpha*diff_t[0])*L[l]+
+        b*(c*(2*x-t)+alpha*alpha*t)*diffL[0*(p+1)+l]-
+        2*d*t*diff_t[0]*L[l-1]-
+        d*t*t*diffL[0*(p+1)+l-1]
+      )/a;
+      if(dim >= 2) {
+        diffL[1*(p+1)+l+1] =
+        (
+          b*(c*(2*diff_x[1]-diff_t[1])+alpha*alpha*diff_t[1])*L[l]+
+          b*(c*(2*x-t)+alpha*alpha*t)*diffL[1*(p+1)+l]-
+          2*d*t*diff_t[1]*L[l-1]-
+          d*t*t*diffL[1*(p+1)+l-1]
+        )/a;
+        if(dim == 3) {
+          diffL[2*(p+1)+l+1] =
+          (
+            b*(c*(2*diff_x[2]-diff_t[2])+alpha*alpha*diff_t[2])*L[l]+
+            b*(c*(2*x-t)+alpha*alpha*t)*diffL[2*(p+1)+l]-
+            2*d*t*diff_t[2]*L[l-1]-
+            d*t*t*diffL[2*(p+1)+l-1]
+          )/a;
+        }
+      }
+    }
+  }
+  PetscFunctionReturn(0);
+}
 
 PetscErrorCode Lobatto_polynomials(
   int p,double s,double *diff_s,double *L,double *diffL,const int dim

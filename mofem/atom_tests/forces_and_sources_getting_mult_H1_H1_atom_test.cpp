@@ -168,8 +168,8 @@ int main(int argc, char *argv[]) {
       ) {
           PetscFunctionBegin;
 
-          row_data.getBase() = AINSWORTH_COLE_BASE;
-          col_data.getBase() = AINSWORTH_COLE_BASE;
+          row_data.getBase() = AINSWORTH_LEGENDRE_BASE;
+          col_data.getBase() = AINSWORTH_LEGENDRE_BASE;
           int nb_row_dofs = row_data.getN().size2();
           int nb_col_dofs = col_data.getN().size2();
 
@@ -246,11 +246,11 @@ int main(int argc, char *argv[]) {
       ierr = getTrisDataOrder(data_col,H1); CHKERRQ(ierr);
       ierr = getTetDataOrder(data_row,H1); CHKERRQ(ierr);
       ierr = getTetDataOrder(data_col,H1); CHKERRQ(ierr);
-      data_row.dataOnEntities[MBVERTEX][0].getBase() = AINSWORTH_COLE_BASE;
+      data_row.dataOnEntities[MBVERTEX][0].getBase() = AINSWORTH_LEGENDRE_BASE;
       ierr = getEdgesDataOrderSpaceAndBase(data_row,"FIELD1"); CHKERRQ(ierr);
       ierr = getTrisDataOrderSpaceAndBase(data_row,"FIELD1"); CHKERRQ(ierr);
       ierr = getTetDataOrderSpaceAndBase(data_row,"FIELD1"); CHKERRQ(ierr);
-      data_col.dataOnEntities[MBVERTEX][0].getBase() = AINSWORTH_COLE_BASE;
+      data_col.dataOnEntities[MBVERTEX][0].getBase() = AINSWORTH_LEGENDRE_BASE;
       ierr = getEdgesDataOrderSpaceAndBase(data_col,"FIELD2"); CHKERRQ(ierr);
       ierr = getTrisDataOrderSpaceAndBase(data_col,"FIELD2"); CHKERRQ(ierr);
       ierr = getTetDataOrderSpaceAndBase(data_col,"FIELD2"); CHKERRQ(ierr);
@@ -275,13 +275,13 @@ int main(int argc, char *argv[]) {
       ierr = TetPolynomialBase().getValue(
         gauss_pts,
         boost::shared_ptr<BaseFunctionCtx>(
-          new EntPolynomialBaseCtx(data_row,H1,AINSWORTH_COLE_BASE)
+          new EntPolynomialBaseCtx(data_row,H1,AINSWORTH_LEGENDRE_BASE)
         )
       ); CHKERRQ(ierr);
       ierr = TetPolynomialBase().getValue(
         gauss_pts,
         boost::shared_ptr<BaseFunctionCtx>(
-          new EntPolynomialBaseCtx(data_col,H1,AINSWORTH_COLE_BASE)
+          new EntPolynomialBaseCtx(data_col,H1,AINSWORTH_LEGENDRE_BASE)
         )
       ); CHKERRQ(ierr);
 

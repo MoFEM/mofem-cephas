@@ -199,7 +199,7 @@ int main(int argc, char *argv[]) {
       ierr = TriPolynomialBase().getValue(
         gauss_pts,
         boost::shared_ptr<BaseFunctionCtx>(
-          new EntPolynomialBaseCtx(data,H1,AINSWORTH_COLE_BASE,NOBASE)
+          new EntPolynomialBaseCtx(data,H1,AINSWORTH_LEGENDRE_BASE,NOBASE)
         )
       ); CHKERRQ(ierr);
 

@@ -291,11 +291,11 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::calculateBaseFunctionsOnElemen
     dataHcurl.dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE) = dataH1.dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE);
     dataL2.dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE) = dataH1.dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE);
     std::vector<FieldApproximationBase> shape_functions_for_bases;
-    for(int b = AINSWORTH_COLE_BASE;b!=LASTBASE;b++) {
+    for(int b = AINSWORTH_LEGENDRE_BASE;b!=LASTBASE;b++) {
       if(dataH1.bAse.test(b)) {
         switch (ApproximationBaseArray[b]) {
-          case AINSWORTH_COLE_BASE:
-          case LOBATTO_BASE:
+          case AINSWORTH_LEGENDRE_BASE:
+          case AINSWORTH_LOBBATO_BASE:
           if(dataH1.spacesOnEntities[MBVERTEX].test(H1)) {
             ierr = TetPolynomialBase().getValue(
               gaussPts,
@@ -453,7 +453,7 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::operator()() {
       hoGaussPtsInvJac.resize(0,0,false);
       hoGaussPtsDetJac.resize(0,false);
       try {
-        for(int b = AINSWORTH_COLE_BASE;b!=LASTBASE;b++) {
+        for(int b = AINSWORTH_LEGENDRE_BASE;b!=LASTBASE;b++) {
           if(dataH1.dataOnEntities[MBVERTEX][0].getDiffN(ApproximationBaseArray[b]).size1()!=4) continue;
           if(dataH1.dataOnEntities[MBVERTEX][0].getDiffN(ApproximationBaseArray[b]).size2()!=3) continue;
           MatrixDouble diffN(nbGaussPts,12);
@@ -573,9 +573,9 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::operator()() {
 
             base[ss] = field_struture->getApproxBase();
             switch(base[ss]) {
-              case AINSWORTH_COLE_BASE:
+              case AINSWORTH_LEGENDRE_BASE:
               break;
-              case LOBATTO_BASE:
+              case AINSWORTH_LOBBATO_BASE:
               break;
               default:
               SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"unknown or not implemented base");
