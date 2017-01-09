@@ -63,6 +63,7 @@ namespace MoFEM {
     ublas::vector<MatrixDouble > diffN_volume_face;
     MatrixDouble diffN_volume_bubble;
 
+
     PetscErrorCode getValueHdiv(
       ublas::matrix<double> &pts
     );
@@ -71,6 +72,11 @@ namespace MoFEM {
       ublas::matrix<double> &pts
     );
 
+  private:
+
+    PetscErrorCode getValueHdivAinsworthBase(
+      ublas::matrix<double> &pts
+    );
 
   };
 

@@ -78,7 +78,6 @@ copyNodeBase(copy_node_base) {
   ierr = setBase(); CHKERRABORT(PETSC_COMM_WORLD,ierr);
 }
 
-
 EntPolynomialBaseCtx::~EntPolynomialBaseCtx() {
 }
 

@@ -205,7 +205,7 @@ PetscErrorCode TetPolynomialBase::getValueL2(
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode TetPolynomialBase::getValueHdiv(
+PetscErrorCode TetPolynomialBase::getValueHdivAinsworthBase(
   ublas::matrix<double> &pts
 ) {
   PetscErrorCode ierr;
@@ -250,7 +250,7 @@ PetscErrorCode TetPolynomialBase::getValueHdiv(
     diff_phi_f[ff] = &*(diffN_face_bubble[ff].data().begin());
   }
 
-  ierr = Hdiv_EdgeFaceShapeFunctions_MBTET(
+  ierr = Hdiv_Ainsworth_EdgeFaceShapeFunctions_MBTET(
     &data.facesNodes(0,0),faces_order,
     &data.dataOnEntities[MBVERTEX][0].getN(base)(0,0),
     &data.dataOnEntities[MBVERTEX][0].getDiffN(base)(0,0),
@@ -258,7 +258,7 @@ PetscErrorCode TetPolynomialBase::getValueHdiv(
     base_polynomials
   ); CHKERRQ(ierr);
 
-  ierr = Hdiv_FaceBubbleShapeFunctions_MBTET(
+  ierr = Hdiv_Ainsworth_FaceBubbleShapeFunctions(
     &data.facesNodes(0,0),faces_order,
     &data.dataOnEntities[MBVERTEX][0].getN(base)(0,0),
     &data.dataOnEntities[MBVERTEX][0].getDiffN(base)(0,0),
@@ -285,7 +285,7 @@ PetscErrorCode TetPolynomialBase::getValueHdiv(
     phi_v_e[ee] = &*(N_volume_edge[ee].data().begin());
     diff_phi_v_e[ee] = &*(diffN_volume_edge[ee].data().begin());
   }
-  ierr = Hdiv_EdgeBasedVolumeShapeFunctions_MBTET(
+  ierr = Hdiv_Ainsworth_EdgeBasedVolumeShapeFunctions_MBTET(
     volume_order,&data.dataOnEntities[MBVERTEX][0].getN(base)(0,0),
     &data.dataOnEntities[MBVERTEX][0].getDiffN(base)(0,0),
     phi_v_e,diff_phi_v_e,nb_gauss_pts,
@@ -300,7 +300,7 @@ PetscErrorCode TetPolynomialBase::getValueHdiv(
     phi_v_f[ff] = &*(N_volume_face[ff].data().begin());
     diff_phi_v_f[ff] = &*(diffN_volume_face[ff].data().begin());
   }
-  ierr = Hdiv_FaceBasedVolumeShapeFunctions_MBTET(
+  ierr = Hdiv_Ainsworth_FaceBasedVolumeShapeFunctions_MBTET(
     volume_order,&data.dataOnEntities[MBVERTEX][0].getN(base)(0,0),
     &data.dataOnEntities[MBVERTEX][0].getDiffN(base)(0,0),
     phi_v_f,diff_phi_v_f,nb_gauss_pts,
@@ -311,7 +311,7 @@ PetscErrorCode TetPolynomialBase::getValueHdiv(
   diffN_volume_bubble.resize(nb_gauss_pts,9*NBVOLUMETET_VOLUME_HDIV(volume_order),false);
   phi_v = &*(N_volume_bubble.data().begin());
   diff_phi_v = &*(diffN_volume_bubble.data().begin());
-  ierr = Hdiv_VolumeBubbleShapeFunctions_MBTET(
+  ierr = Hdiv_Ainsworth_VolumeBubbleShapeFunctions_MBTET(
     volume_order,&data.dataOnEntities[MBVERTEX][0].getN(base)(0,0),
     &data.dataOnEntities[MBVERTEX][0].getDiffN(base)(0,0),
     phi_v,diff_phi_v,nb_gauss_pts,
@@ -524,6 +524,25 @@ PetscErrorCode TetPolynomialBase::getValueHdiv(
       }
     }
   }
+
+  PetscFunctionReturn(0);
+}
+
+
+PetscErrorCode TetPolynomialBase::getValueHdiv(
+  ublas::matrix<double> &pts
+) {
+  PetscFunctionBegin;
+
+  switch (cTx->bAse) {
+    case AINSWORTH_LEGENDRE_BASE:
+    case AINSWORTH_LOBBATO_BASE:
+    return getValueHdivAinsworthBase(pts);
+    case DEMKOWICZ_JACOBI_BASE:
+    default:
+    SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"Not implemented");
+  }
+
   PetscFunctionReturn(0);
 }
 
