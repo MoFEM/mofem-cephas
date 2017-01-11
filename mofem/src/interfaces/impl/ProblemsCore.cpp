@@ -1572,8 +1572,6 @@ PetscErrorCode Core::build_sub_problem(
     // If DOFs are cleared clear finite elements too.
     out_problem_it->numeredFiniteElements.clear();
 
-    int mofem_dof_idx = 0;
-
     // get dofs by field name and insert them in out problem multi-indices
     for(
       std::vector<std::string>::iterator fit = fields[ss].begin();
@@ -1598,17 +1596,10 @@ PetscErrorCode Core::build_sub_problem(
 
       // create elements objects
       for(;dit!=hi_dit;dit++) {
-        // dofs_array->emplace_back(
-        //   dit->get()->getDofEntityPtr(),
-        //   mofem_dof_idx++,
-        //   dit->get()->getPetscGlobalDofIdx(),
-        //   dit->get()->getPetscLocalDofIdx(),
-        //   dit->get()->getPart()
-        // );
         dofs_array->push_back(
           NumeredDofEntity(
             dit->get()->getDofEntityPtr(),
-            mofem_dof_idx++,
+            dit->get()->getPetscGlobalDofIdx(),
             dit->get()->getPetscGlobalDofIdx(),
             dit->get()->getPetscLocalDofIdx(),
             dit->get()->getPart()
@@ -1685,7 +1676,7 @@ PetscErrorCode Core::build_sub_problem(
         bool success = out_problem_dofs[ss]->modify(
           out_problem_dofs[ss]->project<0>(dit),
           NumeredDofEntity_mofem_part_and_all_index_change(
-            dit->get()->getPart(),dit->get()->getDofIdx(),*it,dit->get()->getPetscLocalDofIdx()
+            dit->get()->getPart(),*it,*it,dit->get()->getPetscLocalDofIdx()
           )
         );
       }
