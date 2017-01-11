@@ -293,9 +293,14 @@ PetscErrorCode FaceElementForcesAndSourcesCore::operator()() {
     for(int b = AINSWORTH_LEGENDRE_BASE;b!=LASTBASE;b++) {
       if(dataH1.bAse.test(b)) {
         switch (ApproximationBaseArray[b]) {
+          case NOBASE:
+          break;
           case AINSWORTH_LEGENDRE_BASE:
           case AINSWORTH_LOBBATO_BASE:
-          if(dataH1.spacesOnEntities[MBVERTEX].test(H1)) {
+          if(
+            dataH1.spacesOnEntities[MBVERTEX].test(H1)&&
+            dataH1.basesOnEntities[MBVERTEX].test(b)
+          ) {
             ierr = TriPolynomialBase().getValue(
               gaussPts,
               boost::shared_ptr<BaseFunctionCtx>(
@@ -303,7 +308,10 @@ PetscErrorCode FaceElementForcesAndSourcesCore::operator()() {
               )
             ); CHKERRQ(ierr);
           }
-          if(dataH1.spacesOnEntities[MBEDGE].test(HCURL)) {
+          if(
+            dataH1.spacesOnEntities[MBEDGE].test(HCURL)&&
+            dataH1.basesOnEntities[MBEDGE].test(b)
+          ) {
             ierr = TriPolynomialBase().getValue(
               gaussPts,
               boost::shared_ptr<BaseFunctionCtx>(
@@ -311,7 +319,10 @@ PetscErrorCode FaceElementForcesAndSourcesCore::operator()() {
               )
             ); CHKERRQ(ierr);
           }
-          if(dataH1.spacesOnEntities[MBTRI].test(HDIV)) {
+          if(
+            dataH1.spacesOnEntities[MBTRI].test(HDIV)&&
+            dataH1.basesOnEntities[MBTRI].test(b)
+          ) {
             ierr = TriPolynomialBase().getValue(
               gaussPts,
               boost::shared_ptr<BaseFunctionCtx>(
@@ -319,7 +330,10 @@ PetscErrorCode FaceElementForcesAndSourcesCore::operator()() {
               )
             ); CHKERRQ(ierr);
           }
-          if(dataH1.spacesOnEntities[MBTRI].test(L2)) {
+          if(
+            dataH1.spacesOnEntities[MBTRI].test(L2)&&
+            dataH1.basesOnEntities[MBTRI].test(b)
+          ) {
             ierr = TriPolynomialBase().getValue(
               gaussPts,
               boost::shared_ptr<BaseFunctionCtx>(
@@ -328,8 +342,26 @@ PetscErrorCode FaceElementForcesAndSourcesCore::operator()() {
             ); CHKERRQ(ierr);
           }
           break;
+          case DEMKOWICZ_JACOBI_BASE:
+          if(
+            dataH1.spacesOnEntities[MBTRI].test(HDIV)&&
+            dataH1.basesOnEntities[MBTRI].test(b)
+          ) {
+            ierr = TriPolynomialBase().getValue(
+              gaussPts,
+              boost::shared_ptr<BaseFunctionCtx>(
+                new EntPolynomialBaseCtx(dataHdiv,HDIV,ApproximationBaseArray[b],NOBASE)
+              )
+            ); CHKERRQ(ierr);
+          }
+          break;
           default:
-          SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"Not yet implemented");
+          SETERRQ1(
+            PETSC_COMM_SELF,
+            MOFEM_DATA_INCONSISTENCY,
+            "Base <%s> not yet implemented",
+            ApproximationBaseNames[ApproximationBaseArray[b]]
+          );
         }
       }
     }
@@ -482,8 +514,10 @@ PetscErrorCode FaceElementForcesAndSourcesCore::operator()() {
 
           base[ss] = field_struture->getApproxBase();
           switch(base[ss]) {
+            case NOBASE:
             case AINSWORTH_LEGENDRE_BASE:
             case AINSWORTH_LOBBATO_BASE:
+            case DEMKOWICZ_JACOBI_BASE:
             break;
             default:
             SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"unknown or not implemented base");

@@ -64,12 +64,16 @@ int main(int argc, char *argv[]) {
       // or as entities which carry some approximation field.
 
       bool check_if_spatial_field_exist = m_field.check_field("SPATIAL_POSITION");
-      ierr = m_field.add_field("SPATIAL_POSITION",H1,3,MF_ZERO); CHKERRQ(ierr);
-      ierr = m_field.add_field("SPATIAL_POSITION_DOT",H1,3,MF_ZERO); CHKERRQ(ierr);
+      ierr = m_field.add_field(
+        "SPATIAL_POSITION",H1,AINSWORTH_LEGENDRE_BASE,3,MB_TAG_SPARSE,MF_ZERO
+      ); CHKERRQ(ierr);
+      ierr = m_field.add_field(
+        "SPATIAL_POSITION_DOT",H1,AINSWORTH_LEGENDRE_BASE,3,MB_TAG_SPARSE,MF_ZERO
+      ); CHKERRQ(ierr);
 
       //Add field H1 space rank 3 to approximate geometry using hierarchical basis
       //For 10 node tetrahedral, before use, geometry is projected on that field (see below)
-      ierr = m_field.add_field("MESH_NODE_POSITIONS",H1,3,MF_ZERO); CHKERRQ(ierr);
+      ierr = m_field.add_field("MESH_NODE_POSITIONS",H1,AINSWORTH_LEGENDRE_BASE,3,MB_TAG_SPARSE,MF_ZERO); CHKERRQ(ierr);
 
       //meshset consisting all entities in mesh
       EntityHandle root_set = moab.get_root_set();

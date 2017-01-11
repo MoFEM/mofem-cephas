@@ -57,9 +57,6 @@ PetscErrorCode Legendre_polynomials(
     double B = ( (double)l/((double)l+1) );
     L[l+1] = A*s*L[l] - B*L[l-1];
     if(diffL!=NULL) {
-      if(diff_s==NULL) {
-        SETERRQ(PETSC_COMM_SELF,MOFEM_INVALID_DATA,"diff_s == NULL");
-      }
       diffL[0*(p+1)+l+1] = A*(s*diffL[0*(p+1)+l] + diff_s[0]*L[l]) - B*diffL[0*(p+1)+l-1];
       if(dim >= 2) {
         diffL[1*(p+1)+l+1] = A*(s*diffL[1*(p+1)+l] + diff_s[1]*L[l]) - B*diffL[1*(p+1)+l-1];
@@ -96,14 +93,17 @@ PetscErrorCode Jacobi_polynomials(
   if(p==0) PetscFunctionReturn(0);
   L[1] = 2*x-t+alpha*x;
   if(diffL != NULL) {
-    if(diff_x == NULL || diff_t == NULL) {
+    if(diff_x == NULL) {
       SETERRQ(PETSC_COMM_SELF,MOFEM_INVALID_DATA,"diff_s == NULL");
     }
-    diffL[0*(p+1)+1] = (2+alpha)*diff_x[0]-diff_t[0];
+    double d_t = (diff_t) ? diff_t[0] : 0;
+    diffL[0*(p+1)+1] = (2+alpha)*diff_x[0]-d_t;
     if(dim >= 2) {
-      diffL[1*(p+1)+1] = (2+alpha)*diff_x[1]-diff_t[0];
+      double d_t = (diff_t) ? diff_t[1] : 0;
+      diffL[1*(p+1)+1] = (2+alpha)*diff_x[1]-d_t;
       if(dim == 3) {
-        diffL[2*(p+1)+1] = (2+alpha)*diff_x[2]-diff_t[0];
+        double d_t = (diff_t) ? diff_t[2] : 0;
+        diffL[2*(p+1)+1] = (2+alpha)*diff_x[2]-d_t;
       }
     }
   }
@@ -115,34 +115,30 @@ PetscErrorCode Jacobi_polynomials(
     double b = 2*lp1+alpha-1;
     double c = (2*lp1+alpha)*(2*lp1+alpha-2);
     double d = 2*(lp1+alpha-1)*(lp1-1)*(2*lp1+alpha);
-    L[l+1] = (b*(c*(2*x-t)+alpha*alpha*t)*L[l]-d*t*t*L[l-1])/a;
+    double A = b*(c*(2*x-t)+alpha*alpha*t)/a;
+    double B = d*t*t/a;
+    L[lp1] = A*L[l]-B*L[l-1];
     if(diffL!=NULL) {
-      if(diff_x==NULL || diff_t == NULL) {
-        SETERRQ(PETSC_COMM_SELF,MOFEM_INVALID_DATA,"diff_s == NULL");
-      }
-      diffL[0*(p+1)+l+1] =
-      (
-        b*(c*(2*diff_x[0]-diff_t[0])+alpha*alpha*diff_t[0])*L[l]+
-        b*(c*(2*x-t)+alpha*alpha*t)*diffL[0*(p+1)+l]-
-        2*d*t*diff_t[0]*L[l-1]-
-        d*t*t*diffL[0*(p+1)+l-1]
-      )/a;
+      double d_t = (diff_t) ? diff_t[0] : 0;
+      double diffA = b*(c*(2*diff_x[0]-d_t)+alpha*alpha*d_t)/a;
+      double diffB = d*2*t*d_t/a;
+      diffL[0*(p+1)+lp1] =
+      A*diffL[0*(p+1)+l]-B*diffL[0*(p+1)+l-1]+
+      diffA*L[l]-diffB*L[l-1];
       if(dim >= 2) {
-        diffL[1*(p+1)+l+1] =
-        (
-          b*(c*(2*diff_x[1]-diff_t[1])+alpha*alpha*diff_t[1])*L[l]+
-          b*(c*(2*x-t)+alpha*alpha*t)*diffL[1*(p+1)+l]-
-          2*d*t*diff_t[1]*L[l-1]-
-          d*t*t*diffL[1*(p+1)+l-1]
-        )/a;
+        double d_t = (diff_t) ? diff_t[1] : 0;
+        double diffA = b*(c*(2*diff_x[1]-d_t)+alpha*alpha*d_t)/a;
+        double diffB = d*2*t*d_t/a;
+        diffL[1*(p+1)+lp1] =
+        A*diffL[1*(p+1)+l]-B*diffL[1*(p+1)+l-1]+
+        diffA*L[l]-diffB*L[l-1];
         if(dim == 3) {
-          diffL[2*(p+1)+l+1] =
-          (
-            b*(c*(2*diff_x[2]-diff_t[2])+alpha*alpha*diff_t[2])*L[l]+
-            b*(c*(2*x-t)+alpha*alpha*t)*diffL[2*(p+1)+l]-
-            2*d*t*diff_t[2]*L[l-1]-
-            d*t*t*diffL[2*(p+1)+l-1]
-          )/a;
+          double d_t = (diff_t) ? diff_t[2] : 0;
+          double diffA = b*(c*(2*diff_x[2]-d_t)+alpha*alpha*d_t)/a;
+          double diffB = d*2*t*d_t/a;
+          diffL[2*(p+1)+lp1] =
+          A*diffL[2*(p+1)+l]-B*diffL[2*(p+1)+l-1]+
+          diffA*L[l]-diffB*L[l-1];
         }
       }
     }

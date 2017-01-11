@@ -84,12 +84,12 @@ int main(int argc, char *argv[]) {
     ierr = m_field.seed_ref_level_3D(root_set,bit_level0); CHKERRQ(ierr);
     //define & build field
     const int field_rank = 1;
-    ierr = m_field.add_field("FIELD0",H1,field_rank); CHKERRQ(ierr);
+    ierr = m_field.add_field("FIELD0",H1,AINSWORTH_LEGENDRE_BASE,field_rank); CHKERRQ(ierr);
     //add entities to field
     ierr = m_field.add_ents_to_field_by_TETs(root_set,"FIELD0"); CHKERRQ(ierr);
     //set app. order
     ierr = m_field.set_field_order(root_set,MBVERTEX,"FIELD0",1); CHKERRQ(ierr);
-    ierr = m_field.add_field("FIELD1",H1,field_rank); CHKERRQ(ierr);
+    ierr = m_field.add_field("FIELD1",H1,AINSWORTH_LEGENDRE_BASE,field_rank); CHKERRQ(ierr);
     //add entities to field
     ierr = m_field.add_ents_to_field_by_TETs(root_set,"FIELD1"); CHKERRQ(ierr);
     //set app. order

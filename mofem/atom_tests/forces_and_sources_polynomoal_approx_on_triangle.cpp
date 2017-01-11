@@ -256,7 +256,7 @@ int main(int argc, char *argv[]) {
     ierr = m_field.seed_ref_level_2D(0,bit_level0); CHKERRQ(ierr);
 
     // Declare elements
-    ierr = m_field.add_field("FIELD1",HCURL,1); CHKERRQ(ierr);
+    ierr = m_field.add_field("FIELD1",HCURL,AINSWORTH_LEGENDRE_BASE,1); CHKERRQ(ierr);
     ierr = m_field.add_finite_element("TEST_FE1"); CHKERRQ(ierr);
     //Define rows/cols and element data
     ierr = m_field.modify_finite_element_add_field_row("TEST_FE1","FIELD1"); CHKERRQ(ierr);

@@ -14,7 +14,7 @@
 namespace MoFEM {
 
   /**
-   * \brief Hdiv base functions, Edge-based face functions
+   * \brief Hdiv base functions, Edge-based face functions by Ainsworth \cite NME:NME847
    * @param  faces_nodes      Face nodes on tetrahedral
    * @param  p                Approximation order on faces
    * @param  N                Shape functions
@@ -31,7 +31,7 @@ namespace MoFEM {
   );
 
   /**
-   * \brief Hdiv base functions, Edge-based face functions
+   * \brief Hdiv base functions, Edge-based face functions by Ainsworth \cite NME:NME847
    * @param  faces_nodes      Face nodes on face
    * @param  p                Approximation order on faces
    * @param  N                Shape functions
@@ -49,7 +49,7 @@ namespace MoFEM {
   );
 
   /**
-   * \brief Face bubble functions
+   * \brief Face bubble functions by Ainsworth \cite NME:NME847
    * @param  faces_nodes      Face nodes on tetrahedral
    * @param  p                Approx. order on faces
    * @param  N                Shape function
@@ -66,7 +66,7 @@ namespace MoFEM {
   );
 
   /**
-   * \brief Face bubble functions
+   * \brief Face bubble functions by Ainsworth \cite NME:NME847
    * @param  faces_nodes      Face nodes on face
    * @param  p                Approx. order on face
    * @param  N                Shape function
@@ -84,7 +84,7 @@ namespace MoFEM {
   );
 
   /**
-   * \brief Hdiv base function, Edge-based interior (volume) functions
+   * \brief Hdiv base function, Edge-based interior (volume) functions by Ainsworth \cite NME:NME847
    * @param  p                volume approx. order
    * @param  N                shape functions
    * @param  diffN            derivatives of shape functions
@@ -106,7 +106,7 @@ namespace MoFEM {
     )
   );
 
-  /** Hdiv Face-based interior functions
+  /** Hdiv Face-based interior functions by Ainsworth \cite NME:NME847
    * @param  p                Approximation order on face
    * @param  N                Shape functions on face
    * @param  diffN            Derivatives of shape functions of face
@@ -122,7 +122,7 @@ namespace MoFEM {
   );
 
   /**
-   * \brief Interior bubble functions
+   * \brief Interior bubble functions by Ainsworth \cite NME:NME847
    * @param  p                Volume order
    * @param  N                Shape functions
    * @param  diffN            Derivatives of shape functions
@@ -137,6 +137,50 @@ namespace MoFEM {
     PetscErrorCode (*base_polynomials)(
       int p,double s,double *diff_s,double *L,double *diffL,const int dim
     )
+  );
+
+  /**
+   * \brirf HDiv base finuctions on triangle by Demkowicz \cite fuentes2015orientation
+   *
+   * @param  faces_nodes Nodes on face
+   * @param  p           Approx. order
+   * @param  N           Shape functions
+   * @param  diffN       Derivatives of shape functions
+   * @param  phi_f       Returned base functions on face
+   * @param  diff_phi_f  Returned derivatives of base functions on face
+   * @param  gdim        Number of integration points
+   * @param  nb          nb is 4 for face on tetrahedral and 3 for face
+   * @return             error code
+   */
+  PetscErrorCode Hdiv_Demkowicz_Face_MBTET_ON_FACE(
+    int *faces_nodes,
+    int p,
+    double *N,double *diffN,
+    double *phi_f,double *diff_phi_f,
+    int gdim,int nb
+  );
+
+  /**
+   * \brirf HDiv base finuctions in tetrahedral interior by Demkowicz \cite fuentes2015orientation
+   *
+   * @param  p           Approximation order
+   * @param  N           Shape functions
+   * @param  diffN       Derivatives of base functions
+   * @param  p_face      Max order on faces
+   * @param  phi_f       Precalculated face base functions
+   * @param  diff_phi_f  Precalculated derivatives of face base functions
+   * @param  phi_v       Returned base functions in volume
+   * @param  diff_phi_v  Returned derivatives of base functions in volume
+   * @param  gdim        Number of integration points
+   * @return             error code
+   */
+  PetscErrorCode Hdiv_Demkowicz_Interior_MBTET(
+    int p,
+    double *N,double *diffN,
+    int p_face[],
+    double *phi_f[4],double *diff_phi_f[4],
+    double *phi_v,double *diff_phi_v,
+    int gdim
   );
 
 }

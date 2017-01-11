@@ -128,6 +128,7 @@ PetscErrorCode EntPolynomialBaseCtx::setBase() {
       case LASTSPACE:
       SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"Makes no sense");
     }
+    break;
     default:
     SETERRQ1(
       PETSC_COMM_SELF,

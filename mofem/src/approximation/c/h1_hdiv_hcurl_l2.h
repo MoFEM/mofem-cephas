@@ -55,15 +55,15 @@ extern "C" {
 // H div
 
 #define NBEDGE_HDIV(P) (0)
-#define NBFACETRI_EDGE_HDIV(P) ((P>0) ? P : 0)
-#define NBFACETRI_FACE_HDIV(P) ((P>2) ? (P-1)*(P-2)/2 : 0)
-#define NBFACETRI_HDIV(P) ((P>0) ? (P+1)*(P+2)/2 : 0)
-#define NBVOLUMETET_EDGE_HDIV(P) ((P>1) ? (P-1) : 0)
-#define NBVOLUMETET_FACE_HDIV(P) ((P>2) ? (P-1)*(P-2) : 0)
-#define NBVOLUMETET_VOLUME_HDIV(P) ((P>3) ? (P-3)*(P-2)*(P-1)/2 : 0)
-#define NBVOLUMETET_HDIV(P) ((P>1) ? (P-1)*(P+1)*(P+2)/2 : 0)
-#define NBFACETRI_DEMKOWICZ_HDIV(P) ((P>0) ? P*(P+1)/2 : 0)
-#define NBVOLUMETET_DEMKOWICZ_HDIV(P) ((P>1) ? P*(P-1)*(P+1)/2 : 0)
+#define NBFACETRI_AINSWORTH_EDGE_HDIV(P) ((P>0) ? (P) : 0)
+#define NBFACETRI_AINSWORTH_FACE_HDIV(P) ((P>2) ? (P-1)*(P-2)/2 : 0)
+#define NBFACETRI_AINSWORTH_HDIV(P) ((P>0) ? (P+1)*(P+2)/2 : 0)
+#define NBVOLUMETET_AINSWORTH_EDGE_HDIV(P) ((P>1) ? (P-1) : 0)
+#define NBVOLUMETET_AINSOWRTH_FACE_HDIV(P) ((P>2) ? (P-1)*(P-2) : 0)
+#define NBVOLUMETET_AINSWORTH_VOLUME_HDIV(P) ((P>3) ? (P-3)*(P-2)*(P-1)/2 : 0)
+#define NBVOLUMETET_AINSWORTH_HDIV(P) ((P>1) ? (P-1)*(P+1)*(P+2)/2 : 0)
+#define NBFACETRI_DEMKOWICZ_HDIV(P) ((P>0) ? (P)*(P+1)/2 : 0)
+#define NBVOLUMETET_DEMKOWICZ_HDIV(P) ((P>1) ? (P)*(P-1)*(P+1)/2 : 0)
 
 PetscErrorCode L2_ShapeFunctions_MBTRI(
   int p,double *N,double *diffN,double *L2N,double *diff_L2N,int GDIM,

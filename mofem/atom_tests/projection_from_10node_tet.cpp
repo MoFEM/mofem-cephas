@@ -76,7 +76,7 @@ int main(int argc, char *argv[]) {
   MoFEM::Interface& m_field = core;
 
   //add filds
-  ierr = m_field.add_field("MESH_NODE_POSITIONS",H1,3); CHKERRQ(ierr);
+  ierr = m_field.add_field("MESH_NODE_POSITIONS",H1,AINSWORTH_LEGENDRE_BASE,3); CHKERRQ(ierr);
 
   //add finite elements
   ierr = m_field.add_finite_element("TET_ELEM"); CHKERRQ(ierr);

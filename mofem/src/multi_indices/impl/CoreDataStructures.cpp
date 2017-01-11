@@ -123,8 +123,8 @@ sequenceDofContainer(
       case HDIV:
       forder_table[MBVERTEX] = fNBVERTEX_HDIV;
       forder_table[MBEDGE] = fNBEDGE_HDIV;
-      forder_table[MBTRI] = fNBFACETRI_HDIV;
-      forder_table[MBTET] = fNBVOLUMETET_HDIV;
+      forder_table[MBTRI] = fNBFACETRI_AINSWORTH_HDIV;
+      forder_table[MBTET] = fNBVOLUMETET_AINSWORTH_HDIV;
       break;
       case HCURL:
       forder_table[MBVERTEX] = fNBVERTEX_HCURL;
@@ -169,7 +169,13 @@ sequenceDofContainer(
     }
     break;
     default:
-    THROW_MESSAGE("unknown approximation base");
+    if(*tag_space_data!=NOFIELD) {
+      THROW_MESSAGE("unknown approximation base");
+    } else {
+      for(EntityType t = MBVERTEX;t<MBMAXTYPE;t++) {
+        forder_table[t] = fNBENTITYSET_NOFIELD;
+      }
+    }
   }
 }
 

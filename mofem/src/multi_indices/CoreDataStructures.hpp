@@ -58,9 +58,9 @@ inline int fNBVERTEX_HDIV(int P) { (void)P; return 0; }
 /// number of approx. functions for HDIV space on edge
 inline int fNBEDGE_HDIV(int P) { (void)P; return NBEDGE_HDIV(P); }
 /// number of approx. functions for HDIV space on face
-inline int fNBFACETRI_HDIV(int P) { return NBFACETRI_HDIV(P); }
+inline int fNBFACETRI_AINSWORTH_HDIV(int P) { return NBFACETRI_AINSWORTH_HDIV(P); }
 /// number of approx. functions for HDIV space on volume
-inline int fNBVOLUMETET_HDIV(int P) { return NBVOLUMETET_HDIV(P); }
+inline int fNBVOLUMETET_AINSWORTH_HDIV(int P) { return NBVOLUMETET_AINSWORTH_HDIV(P); }
 
 inline int fNBFACETRI_DEMKOWICZ_HDIV(int P) { return NBFACETRI_DEMKOWICZ_HDIV(P); }
 /// number of approx. functions for HDIV space on volume

@@ -207,8 +207,8 @@ struct UltraWeakTransportElement {
     PetscErrorCode ierr;
     PetscFunctionBegin;
     //Fields
-    ierr = mField.add_field(fluxes,HDIV,1); CHKERRQ(ierr);
-    ierr = mField.add_field(values,L2,1); CHKERRQ(ierr);
+    ierr = mField.add_field(fluxes,HDIV,DEMKOWICZ_JACOBI_BASE,1); CHKERRQ(ierr);
+    ierr = mField.add_field(values,L2,AINSWORTH_LEGENDRE_BASE,1); CHKERRQ(ierr);
 
     //meshset consisting all entities in mesh
     EntityHandle root_set = mField.get_moab().get_root_set();
@@ -466,6 +466,7 @@ struct UltraWeakTransportElement {
     ierr = post_proc.addFieldValuesPostProc("VALUES"); CHKERRQ(ierr);
     ierr = post_proc.addFieldValuesGradientPostProc("VALUES"); CHKERRQ(ierr);
     ierr = post_proc.addFieldValuesPostProc("FLUXES"); CHKERRQ(ierr);
+    // ierr = post_proc.addHdivFunctionsPostProc("FLUXES"); CHKERRQ(ierr);
     post_proc.getOpPtrVector().push_back(new OpPostProc(post_proc.postProcMesh,post_proc.mapGaussPts));
     ierr = mField.loop_finite_elements("ULTRAWEAK","ULTRAWEAK",post_proc);  CHKERRQ(ierr);
     ierr = post_proc.writeFile(out_file.c_str()); CHKERRQ(ierr);
@@ -792,13 +793,13 @@ struct UltraWeakTransportElement {
           &invK(1,0),&invK(1,1),&invK(1,2),
           &invK(2,0),&invK(2,1),&invK(2,2)
         );
-        bool penalty_curl = (row_type == MBTET && col_type == MBTET);
-        // Set size for curl matrices
-        if(penalty_curl) {
-          matRowCurl.resize(nb_row,3,false);
-          aveMatRowCurl.resize(nb_row,3,false);
-          aveMatRowCurl.clear();
-        }
+        // bool penalty_curl = (row_type == MBTET && col_type == MBTET);
+        // // Set size for curl matrices
+        // if(penalty_curl) {
+        //   matRowCurl.resize(nb_row,3,false);
+        //   aveMatRowCurl.resize(nb_row,3,false);
+        //   aveMatRowCurl.clear();
+        // }
         // Get base functions
         FTensor::Tensor1<double*,3> t_n_hdiv_row = row_data.getFTensor1HdivN<3>();
         double ave_diag = 0;
@@ -829,31 +830,31 @@ struct UltraWeakTransportElement {
             }
             ++t_n_hdiv_row;
           }
-          // Calcualte row/col curl
-          if(penalty_curl) {
-            ierr = getCurlOfHCurlBaseFunctions(
-              row_side,row_type,row_data,gg,matRowCurl
-            ); CHKERRQ(ierr);
-            aveMatRowCurl += w*matRowCurl;
-            ave_diag += w*(invK(0,0)+invK(1,1)+invK(2,2));
-          }
+          // // Calcualte row/col curl
+          // if(penalty_curl) {
+          //   ierr = getCurlOfHCurlBaseFunctions(
+          //     row_side,row_type,row_data,gg,matRowCurl
+          //   ); CHKERRQ(ierr);
+          //   aveMatRowCurl += w*matRowCurl;
+          //   ave_diag += w*(invK(0,0)+invK(1,1)+invK(2,2));
+          // }
         }
-        if(penalty_curl) {
-          const double a = ePs*ave_diag/getVolume();
-          FTensor::Tensor1<double*,3> t_row_ave(
-            &aveMatRowCurl(0,HDIV0),&aveMatRowCurl(0,HDIV1),&aveMatRowCurl(0,HDIV2),3
-          );
-          for(int ii = 0;ii!=6;ii++) {
-            FTensor::Tensor1<double*,3> t_col_ave(
-              &aveMatRowCurl(0,HDIV0),&aveMatRowCurl(0,HDIV1),&aveMatRowCurl(0,HDIV2),3
-            );
-            for(int jj = 0;jj!=6;jj++) {
-              NN(ii,jj) += a*t_row_ave(i)*t_col_ave(i);
-              ++t_col_ave;
-            }
-            ++t_row_ave;
-          }
-        }
+        // if(penalty_curl) {
+        //   const double a = ePs*ave_diag/getVolume();
+        //   FTensor::Tensor1<double*,3> t_row_ave(
+        //     &aveMatRowCurl(0,HDIV0),&aveMatRowCurl(0,HDIV1),&aveMatRowCurl(0,HDIV2),3
+        //   );
+        //   for(int ii = 0;ii!=6;ii++) {
+        //     FTensor::Tensor1<double*,3> t_col_ave(
+        //       &aveMatRowCurl(0,HDIV0),&aveMatRowCurl(0,HDIV1),&aveMatRowCurl(0,HDIV2),3
+        //     );
+        //     for(int jj = 0;jj!=6;jj++) {
+        //       NN(ii,jj) += a*t_row_ave(i)*t_col_ave(i);
+        //       ++t_col_ave;
+        //     }
+        //     ++t_row_ave;
+        //   }
+        // }
         ierr = MatSetValues(
           Aij,
           nb_row,&row_data.getIndices()[0],
@@ -898,16 +899,19 @@ struct UltraWeakTransportElement {
         if(F==PETSC_NULL) PetscFunctionReturn(0);
         int nb_row = data.getIndices().size();
         if(nb_row==0) PetscFunctionReturn(0);
+
         EntityHandle fe_ent = getNumeredEntFiniteElementPtr()->getEnt();
+        // cerr << data.getIndices() << endl;
+        // cerr << data.getHdivN() << endl;
         Nf.resize(nb_row);
         Nf.clear();
-        bool penalty_curl = type == MBTET;
-        // Set size for curl matrices
-        if(penalty_curl) {
-          matRowCurl.resize(nb_row,3,false);
-          aveMatRowCurl.resize(nb_row,3,false);
-          aveMatRowCurl.clear();
-        }
+        // bool penalty_curl = type == MBTET;
+        // // Set size for curl matrices
+        // if(penalty_curl) {
+        //   matRowCurl.resize(nb_row,3,false);
+        //   aveMatRowCurl.resize(nb_row,3,false);
+        //   aveMatRowCurl.clear();
+        // }
         FTensor::Index<'i',3> i;
         FTensor::Index<'j',3> j;
         invK.resize(3,3,false);
@@ -942,39 +946,46 @@ struct UltraWeakTransportElement {
             ++t_n_hdiv;
           }
           // Calcualte row/col curl
-          if(penalty_curl) {
-            ierr = getCurlOfHCurlBaseFunctions(
-              side,type,data,gg,matRowCurl
-            ); CHKERRQ(ierr);
-            aveMatRowCurl += w*matRowCurl;
-            ave_diag += w*(invK(0,0)+invK(1,1)+invK(2,2));
-          }
+          // if(penalty_curl) {
+          //   ierr = getCurlOfHCurlBaseFunctions(
+          //     side,type,data,gg,matRowCurl
+          //   ); CHKERRQ(ierr);
+          //   aveMatRowCurl += w*matRowCurl;
+          //   ave_diag += w*(invK(0,0)+invK(1,1)+invK(2,2));
+          // }
         }
 
-        if(penalty_curl) {
-          const double a = ePs*ave_diag/getVolume();
-          FTensor::Tensor1<double*,3> t_row_ave(
-            &aveMatRowCurl(0,HDIV0),&aveMatRowCurl(0,HDIV1),&aveMatRowCurl(0,HDIV2),3
-          );
-          for(int ii = 0;ii!=6;ii++) {
-            FTensor::Tensor1<double*,3> t_col_ave(
-              &aveMatRowCurl(0,HDIV0),&aveMatRowCurl(0,HDIV1),&aveMatRowCurl(0,HDIV2),3
-            );
-            for(int jj = 0;jj!=6;jj++) {
-              Nf(ii) += a*t_row_ave(i)*(t_col_ave(i)*data.getFieldData()[jj]);
-              ++t_col_ave;
-            }
-            ++t_row_ave;
-          }
-        }
-
+        // if(penalty_curl) {
+        //   const double a = ePs*ave_diag/getVolume();
+        //   FTensor::Tensor1<double*,3> t_row_ave(
+        //     &aveMatRowCurl(0,HDIV0),&aveMatRowCurl(0,HDIV1),&aveMatRowCurl(0,HDIV2),3
+        //   );
+        //   for(int ii = 0;ii!=6;ii++) {
+        //     FTensor::Tensor1<double*,3> t_col_ave(
+        //       &aveMatRowCurl(0,HDIV0),&aveMatRowCurl(0,HDIV1),&aveMatRowCurl(0,HDIV2),3
+        //     );
+        //     for(int jj = 0;jj!=6;jj++) {
+        //       Nf(ii) += a*t_row_ave(i)*(t_col_ave(i)*data.getFieldData()[jj]);
+        //       ++t_col_ave;
+        //     }
+        //     ++t_row_ave;
+        //   }
+        // }
 
         ierr = VecSetValues(
           F,nb_row,&data.getIndices()[0],&Nf[0],ADD_VALUES
         ); CHKERRQ(ierr);
+
       } catch (const std::exception& ex) {
+        cerr << data.getFieldData() << endl;
+        cerr << data.getIndices() << endl;
+        cerr << data.getN() << endl;
+        cerr << data.getDiffN() << endl;
         std::ostringstream ss;
-        ss << "throw in method: " << ex.what() << std::endl;
+        ss << "throw in method:"
+        << " type: " << type
+        << " side: " << side << " "
+        << ex.what() << std::endl;
         SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
       }
       PetscFunctionReturn(0);

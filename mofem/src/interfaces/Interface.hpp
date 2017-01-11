@@ -563,7 +563,7 @@ struct Interface: public UnknownInterface {
    * \brief Add field
    * @param  name              name of the filed
    * @param  space             space (L2,H1,Hdiv,Hcurl)
-   * @param  base              approximation base (AINSWORTH_LEGENDRE_BASE, LOBATTO, AINSOWRTH_BERNSTEIN_BEZIER_BASE, ... see FieldApproximationBase)
+   * @param  base              approximation base, see FieldApproximationBase
    * @param  nb_of_cooficients number of field coefficients
    * @param  tag_type          type of the tag MB_TAG_DENSE or MB_TAG_SPARSE (DENSE is faster and uses less memory, SPARSE is more flexible if you define field on subdomains)
    * @param  bh                if MF_EXCL throws error if field exits, MF_ZERO no error if field exist
@@ -581,7 +581,11 @@ struct Interface: public UnknownInterface {
   ) = 0;
 
   /**
+  * \deprecated
   * \brief Add field with default AINSWORTH_LEGENDRE_BASE approximation base
+  *
+  * \note This function is deprecated, use version where base argument is spevified
+  * explicityly.
   *
   * @param  name              name of the filed
   * @param  space             space (L2,H1,Hdiv,Hcurl)
@@ -590,17 +594,20 @@ struct Interface: public UnknownInterface {
   * @param  verb              verbosity level
   * @return                   error code
   */
-  inline PetscErrorCode add_field(
+  DEPRECATED inline PetscErrorCode add_field(
     const std::string& name,
     const FieldSpace space,
     const FieldCoefficientsNumber nb_of_cooficients,
     const enum MoFEMTypes bh = MF_EXCL,
     int verb = -1
   ) {
-    PetscErrorCode ierr;
-    PetscFunctionBegin;
-    ierr = add_field(name,space,AINSWORTH_LEGENDRE_BASE,nb_of_cooficients,MB_TAG_SPARSE,bh,verb); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
+    return add_field(
+      name,
+      space,
+      AINSWORTH_LEGENDRE_BASE,
+      nb_of_cooficients,
+      MB_TAG_SPARSE,bh,verb
+    );
   }
 
   /**

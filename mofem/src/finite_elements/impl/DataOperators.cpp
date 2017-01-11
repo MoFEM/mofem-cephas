@@ -727,7 +727,7 @@ PetscErrorCode OpSetInvJacHdivAndHcurl::doWork(
     SETERRQ(
       PETSC_COMM_SELF,
       MOFEM_DATA_INCONSISTENCY,
-      "Data inconsistency between Hcurl and Hdiv struture of base functions"
+      "Data inconsistency between Hcurl and Hdiv structure of base functions"
     );
   }
 
@@ -748,15 +748,9 @@ PetscErrorCode OpSetInvJacHdivAndHcurl::doWork(
       FTensor::Tensor2<double*,3,3> t_diff_n = data.getFTensor2DiffHdivN<3,3>(base);
       double *t_inv_diff_n_ptr = &*diffHdivInvJac.data().begin();
       FTensor::Tensor2<double*,3,3> t_inv_diff_n(
-        t_inv_diff_n_ptr,
-        &t_inv_diff_n_ptr[HDIV0_1],
-        &t_inv_diff_n_ptr[HDIV0_2],
-        &t_inv_diff_n_ptr[HDIV1_0],
-        &t_inv_diff_n_ptr[HDIV1_1],
-        &t_inv_diff_n_ptr[HDIV1_2],
-        &t_inv_diff_n_ptr[HDIV2_0],
-        &t_inv_diff_n_ptr[HDIV2_1],
-        &t_inv_diff_n_ptr[HDIV2_2],9
+        t_inv_diff_n_ptr,&t_inv_diff_n_ptr[HDIV0_1],&t_inv_diff_n_ptr[HDIV0_2],
+        &t_inv_diff_n_ptr[HDIV1_0],&t_inv_diff_n_ptr[HDIV1_1],&t_inv_diff_n_ptr[HDIV1_2],
+        &t_inv_diff_n_ptr[HDIV2_0],&t_inv_diff_n_ptr[HDIV2_1],&t_inv_diff_n_ptr[HDIV2_2],9
       );
 
       for(unsigned int gg = 0;gg!=nb_gauss_pts;gg++) {

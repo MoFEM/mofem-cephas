@@ -110,13 +110,13 @@ int main(int argc, char *argv[]) {
     problem_bit_level = bit_levels.back();
 
     //Fields
-    ierr = m_field.add_field("SPATIAL_POSITION",H1,3); CHKERRQ(ierr);
-    ierr = m_field.add_field("MESH_NODE_POSITIONS",H1,3); CHKERRQ(ierr);
+    ierr = m_field.add_field("SPATIAL_POSITION",H1,AINSWORTH_LEGENDRE_BASE,3); CHKERRQ(ierr);
+    ierr = m_field.add_field("MESH_NODE_POSITIONS",H1,AINSWORTH_LEGENDRE_BASE,3); CHKERRQ(ierr);
 
-    ierr = m_field.add_field("LAMBDA",NOFIELD,1); CHKERRQ(ierr);
+    ierr = m_field.add_field("LAMBDA",NOFIELD,NOBASE,1); CHKERRQ(ierr);
 
     //Field for ArcLength
-    ierr = m_field.add_field("X0_SPATIAL_POSITION",H1,3); CHKERRQ(ierr);
+    ierr = m_field.add_field("X0_SPATIAL_POSITION",H1,AINSWORTH_LEGENDRE_BASE,3); CHKERRQ(ierr);
 
     //FE
     ierr = m_field.add_finite_element("ELASTIC"); CHKERRQ(ierr);

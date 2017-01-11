@@ -438,6 +438,14 @@ PetscErrorCode PostProcVolumeOnRefinedMesh::setGaussPts(int order) {
 
     ErrorCode rval;
 
+    Tag th;
+    int def_in_the_loop = -1;
+    rval = postProcMesh.tag_get_handle(
+      "NB_IN_THE_LOOP",1,MB_TYPE_INTEGER,th,
+      MB_TAG_CREAT|MB_TAG_SPARSE,
+      &def_in_the_loop
+    ); CHKERRQ_MOAB(rval);
+
     mapGaussPts.resize(gaussPts_FirstOrder.size1());
     for(unsigned int gg = 0;gg<gaussPts_FirstOrder.size1();gg++) {
       rval = postProcMesh.create_vertex(
@@ -454,6 +462,7 @@ PetscErrorCode PostProcVolumeOnRefinedMesh::setGaussPts(int order) {
       }
       EntityHandle tet;
       rval = postProcMesh.create_element(MBTET,conn,num_nodes,tet); CHKERRQ_MOAB(rval);
+      rval = postProcMesh.tag_set_data(th,&tet,1,&nInTheLoop); CHKERRQ_MOAB(rval);
       commonData.tEts.insert(tet);
     }
 

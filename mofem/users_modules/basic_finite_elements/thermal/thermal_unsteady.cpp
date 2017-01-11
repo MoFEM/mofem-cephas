@@ -166,12 +166,14 @@ int main(int argc, char *argv[]) {
   ierr = m_field.seed_ref_level_3D(0,bit_level0); CHKERRQ(ierr);
 
   //Fields H1 space rank 1
-  ierr = m_field.add_field("TEMP",H1,1,MF_ZERO); CHKERRQ(ierr);
-  ierr = m_field.add_field("TEMP_RATE",H1,1,MF_ZERO); CHKERRQ(ierr);
+  ierr = m_field.add_field("TEMP",H1,AINSWORTH_LEGENDRE_BASE,1,MB_TAG_SPARSE,MF_ZERO); CHKERRQ(ierr);
+  ierr = m_field.add_field("TEMP_RATE",H1,AINSWORTH_LEGENDRE_BASE,1,MB_TAG_SPARSE,MF_ZERO); CHKERRQ(ierr);
 
   //Add field H1 space rank 3 to approximate gemetry using heierachical basis
   //For 10 node tets, before use, gemetry is projected on that field (see below)
-  ierr = m_field.add_field("MESH_NODE_POSITIONS",H1,3,MF_ZERO); CHKERRQ(ierr);
+  ierr = m_field.add_field(
+    "MESH_NODE_POSITIONS",H1,AINSWORTH_LEGENDRE_BASE,3,MB_TAG_SPARSE,MF_ZERO
+  ); CHKERRQ(ierr);
 
   //meshset consisting all entities in mesh
   EntityHandle root_set = moab.get_root_set();

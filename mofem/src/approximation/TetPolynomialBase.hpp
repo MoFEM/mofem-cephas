@@ -1,5 +1,5 @@
 /** \file TetPolynomialBase.hpp
-\brief Implementation of Ainsworth-Cole H1 base on tetrahedral
+\brief Implementation of Ainsworth-Coyle / Demkowicz or any other H1 base on tetrahedral
 
 */
 
@@ -75,6 +75,10 @@ namespace MoFEM {
   private:
 
     PetscErrorCode getValueHdivAinsworthBase(
+      ublas::matrix<double> &pts
+    );
+
+    PetscErrorCode getValueHdivDemkowiczBase(
       ublas::matrix<double> &pts
     );
 

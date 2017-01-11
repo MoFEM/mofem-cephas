@@ -715,9 +715,12 @@ PetscErrorCode ForcesAndSurcesCore::getProblemTypeIndices(
 
   indices.resize(0);
 
-  SideNumber_multiIndex& side_table = const_cast<SideNumber_multiIndex&>(numeredEntFiniteElementPtr->getSideNumberTable());
-  SideNumber_multiIndex::nth_index<1>::type::iterator siit = side_table.get<1>().lower_bound(boost::make_tuple(type,side_number));
-  SideNumber_multiIndex::nth_index<1>::type::iterator hi_siit = side_table.get<1>().upper_bound(boost::make_tuple(type,side_number));
+  SideNumber_multiIndex& side_table =
+  const_cast<SideNumber_multiIndex&>(numeredEntFiniteElementPtr->getSideNumberTable());
+  SideNumber_multiIndex::nth_index<1>::type::iterator siit =
+  side_table.get<1>().lower_bound(boost::make_tuple(type,side_number));
+  SideNumber_multiIndex::nth_index<1>::type::iterator hi_siit =
+  side_table.get<1>().upper_bound(boost::make_tuple(type,side_number));
 
   for(;siit!=hi_siit;siit++) {
 
