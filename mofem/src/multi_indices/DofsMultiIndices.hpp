@@ -135,7 +135,11 @@ struct DofEntity: public interface_MoFEMEntity<MoFEMEntity> {
 };
 
 /**
- * \brief interface to DofEntitys
+ * \brief Interface to DofEntitys
+ *
+ * In MoFEM DOFs classes (and Ent and Finite Element classes) are derived by interface,
+ * i.e. not class is derived but interface to it. 
+ *
  * \ingroup dof_multi_indices
  */
 template <typename T>

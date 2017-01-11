@@ -170,6 +170,17 @@ struct VolumeElementForcesAndSourcesCore: public ForcesAndSurcesCore {
      *
      * Works only for H-div space.
      *
+     * How to use it:
+     * \code
+     * VectorDouble div_vec(data.getFieldData().size());
+     * for(int gg = 0;gg<nb_gauss_pts;gg++) {
+     *  ierr = getDivergenceOfHDivBaseFunctions(side,type,data,gg,div_vec); CHKERRQ(ierr);
+     *  // do somthing with vec_div
+     * }
+     * \endcode
+     * wheee vec_div has size of nb. of dofs, at each element represents divergence
+     * of base functions.
+     *
      * @param  side side (local) number of entity on element
      * @param  type type of entity
      * @param  data data structure
@@ -188,14 +199,26 @@ struct VolumeElementForcesAndSourcesCore: public ForcesAndSurcesCore {
     /**
      * \brief Get curl of base functions at integration point
      *
-     * Works only for H-curl space.
+     * Works only for H-curl and H-div space.
+     *
+     * How to use it:
+     * \code
+     * MatrixDouble curl_mat(data.getFieldData().size(),3);
+     * for(int gg = 0;gg<nb_gauss_pts;gg++) {
+     *  ierr = getDivergenceOfHDivBaseFunctions(side,type,data,gg,curl_mat); CHKERRQ(ierr);
+     *  // do somthing with vec_div
+     * }
+     * \endcode
+     * where curl_mat is matrix which number of rows is eqal to nb. of base
+     * functions. Number of columns is 3, since we work in 3d here. Rows represents
+     * curl of vase functions.
      *
      * @param  side side (local) number of entity on element
      * @param  type type of entity
      * @param  data data structure
      * @param  gg   gauss pts
      * @param  curl curl matrix, nb. of rows is equal to number of base functions, columns are curl of base vector
-     * @return      error code
+     * @return      error codea
      */
     PetscErrorCode getCurlOfHCurlBaseFunctions(
       int side,
