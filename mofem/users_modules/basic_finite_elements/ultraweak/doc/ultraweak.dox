@@ -1332,7 +1332,7 @@ Our a posteriori estimates will be based on residuals. There will be
 contributions from the tetrahedrons as
 \f[
 \begin{split}
-\eta_{T,R,1} &:= \| \textrm{grad}[\mathbf{u}] - \boldsymbol\sigma \|_{0,T} \\
+\eta_{T,R,1} &:= \| \mathbf{A} \boldsymbol\sigma + \textrm{grad}[\mathbf{u}] \|_{0,T} \\
 \eta_{T,R,2} &:= h\| \textrm{div}[\boldsymbol\sigma] -\mathbf{f} \|_{0,T}
 \end{split}
 \f]

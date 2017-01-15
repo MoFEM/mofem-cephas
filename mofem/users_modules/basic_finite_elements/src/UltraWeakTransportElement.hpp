@@ -1611,11 +1611,12 @@ struct UltraWeakTransportElement {
         }
         *error_div_ptr = h*sqrt(*error_div_ptr);
         *error_div_ptr = pow(*error_div_ptr,2);
-        cTx.sumErrorFlux += *error_flux_ptr;
-        cTx.sumErrorDiv += *error_div_ptr;
-        // FIXME: Summation should be while skeleton is calculated
-        cTx.sumErrorJump += *error_jump_ptr; /// FIXME: this need to be fixed
         cTx.errorMap[sqrt(*error_flux_ptr+*error_div_ptr+*error_jump_ptr)] = fe_ent;
+        // Sum/Integrate all errors
+        cTx.sumErrorFlux += *error_flux_ptr*getVolume();
+        cTx.sumErrorDiv += *error_div_ptr*getVolume();
+        // FIXME: Summation should be while skeleton is calculated
+        cTx.sumErrorJump += *error_jump_ptr*getVolume(); /// FIXME: this need to be fixed
       } catch (const std::exception& ex) {
         std::ostringstream ss;
         ss << "throw in method: " << ex.what() << std::endl;
