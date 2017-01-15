@@ -90,10 +90,12 @@ PetscErrorCode MoFEM::Hdiv_Ainsworth_EdgeFaceShapeFunctions_MBTET_ON_FACE(
       &phi_f_e[ee][0],&phi_f_e[ee][1],&phi_f_e[ee][2],3
     );
     if(diff_phi_f_e) {
-      t_diff_phi_f_e_ptr = boost::make_shared<FTensor::Tensor2<double*,3,3> >(
-        &diff_phi_f_e[ee][HDIV0_0],&diff_phi_f_e[ee][HDIV0_1],&diff_phi_f_e[ee][HDIV0_2],
-        &diff_phi_f_e[ee][HDIV1_0],&diff_phi_f_e[ee][HDIV1_1],&diff_phi_f_e[ee][HDIV1_2],
-        &diff_phi_f_e[ee][HDIV2_0],&diff_phi_f_e[ee][HDIV2_1],&diff_phi_f_e[ee][HDIV2_2],9
+      t_diff_phi_f_e_ptr = boost::shared_ptr<FTensor::Tensor2<double*,3,3> >(
+        new FTensor::Tensor2<double*,3,3>(
+          &diff_phi_f_e[ee][HDIV0_0],&diff_phi_f_e[ee][HDIV0_1],&diff_phi_f_e[ee][HDIV0_2],
+          &diff_phi_f_e[ee][HDIV1_0],&diff_phi_f_e[ee][HDIV1_1],&diff_phi_f_e[ee][HDIV1_2],
+          &diff_phi_f_e[ee][HDIV2_0],&diff_phi_f_e[ee][HDIV2_1],&diff_phi_f_e[ee][HDIV2_2],9
+        )
       );
     }
     for(int ii = 0;ii!=gdim;ii++) {
@@ -197,13 +199,14 @@ PetscErrorCode MoFEM::Hdiv_Ainsworth_FaceBubbleShapeFunctions_ON_FACE(
     &phi_f[HDIV0],&phi_f[HDIV1],&phi_f[HDIV2],3
   );
 
-  //FIXME: can be socped_ptr
   boost::shared_ptr<FTensor::Tensor2<double*,3,3> > t_diff_phi_f_ptr;
   if(diff_phi_f) {
-    t_diff_phi_f_ptr = boost::make_shared<FTensor::Tensor2<double*,3,3> >(
-      &diff_phi_f[HDIV0_0],&diff_phi_f[HDIV0_1],&diff_phi_f[HDIV0_2],
-      &diff_phi_f[HDIV1_0],&diff_phi_f[HDIV1_1],&diff_phi_f[HDIV1_2],
-      &diff_phi_f[HDIV2_0],&diff_phi_f[HDIV2_1],&diff_phi_f[HDIV2_2],9
+    t_diff_phi_f_ptr = boost::shared_ptr<FTensor::Tensor2<double*,3,3> >(
+      new FTensor::Tensor2<double*,3,3>(
+        &diff_phi_f[HDIV0_0],&diff_phi_f[HDIV0_1],&diff_phi_f[HDIV0_2],
+        &diff_phi_f[HDIV1_0],&diff_phi_f[HDIV1_1],&diff_phi_f[HDIV1_2],
+        &diff_phi_f[HDIV2_0],&diff_phi_f[HDIV2_1],&diff_phi_f[HDIV2_2],9
+      )
     );
   }
 
@@ -683,10 +686,12 @@ PetscErrorCode MoFEM::Hdiv_Demkowicz_Face_MBTET_ON_FACE(
   FTensor::Tensor1<double*,3> t_phi(&phi_f[HDIV0],&phi_f[HDIV1],&phi_f[HDIV2],3);
   boost::shared_ptr<FTensor::Tensor2<double*,3,3> > t_diff_phi_ptr;
   if(diff_phi_f) {
-    t_diff_phi_ptr = boost::make_shared<FTensor::Tensor2<double*,3,3> >(
-      &diff_phi_f[HDIV0_0],&diff_phi_f[HDIV0_1],&diff_phi_f[HDIV0_2],
-      &diff_phi_f[HDIV1_0],&diff_phi_f[HDIV1_1],&diff_phi_f[HDIV1_2],
-      &diff_phi_f[HDIV2_0],&diff_phi_f[HDIV2_1],&diff_phi_f[HDIV2_2],9
+    t_diff_phi_ptr = boost::shared_ptr<FTensor::Tensor2<double*,3,3> >(
+      new FTensor::Tensor2<double*,3,3>(
+        &diff_phi_f[HDIV0_0],&diff_phi_f[HDIV0_1],&diff_phi_f[HDIV0_2],
+        &diff_phi_f[HDIV1_0],&diff_phi_f[HDIV1_1],&diff_phi_f[HDIV1_2],
+        &diff_phi_f[HDIV2_0],&diff_phi_f[HDIV2_1],&diff_phi_f[HDIV2_2],9
+      )
     );
   }
 
