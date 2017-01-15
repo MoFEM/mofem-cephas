@@ -700,16 +700,6 @@ struct UltraWeakTransportElement {
   /**
   \brief Assemble \f$\int_\mathcal{T} \mathbf{A} \boldsymbol\sigma \cdot \boldsymbol\tau \textrm{d}\mathcal{T}\f$
 
-  \note For this implementation we do not use classical Raviart–Thomas, but
-  approximation spaces proposed by Ainsworth & Coyle \cite NME:NME847, which is bigger
-  because it contains complete polynomials, including those divergence free with
-  non-zero curl. That is no needed for this problem but can be exploited in
-  other problems. Using Ainswrth & Coyle base we have additional DOFs and matrix is
-  rank deficient if curl is not controlled. That is simply resolved by adding
-  curl-curl matrix. We going to add Raviart–Thomas (or you can do it, with our help),
-  anyway, simply following \cite fuentes2015orientation, what is essence some
-  sub space of base which we already have.
-
   \ingroup mofem_ultra_weak_transport_elem
   */
   struct OpTauDotSigma_HdivHdiv: public MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator {
@@ -793,13 +783,6 @@ struct UltraWeakTransportElement {
           &invK(1,0),&invK(1,1),&invK(1,2),
           &invK(2,0),&invK(2,1),&invK(2,2)
         );
-        // bool penalty_curl = (row_type == MBTET && col_type == MBTET);
-        // // Set size for curl matrices
-        // if(penalty_curl) {
-        //   matRowCurl.resize(nb_row,3,false);
-        //   aveMatRowCurl.resize(nb_row,3,false);
-        //   aveMatRowCurl.clear();
-        // }
         // Get base functions
         FTensor::Tensor1<double*,3> t_n_hdiv_row = row_data.getFTensor1HdivN<3>();
         double ave_diag = 0;
@@ -830,31 +813,7 @@ struct UltraWeakTransportElement {
             }
             ++t_n_hdiv_row;
           }
-          // // Calcualte row/col curl
-          // if(penalty_curl) {
-          //   ierr = getCurlOfHCurlBaseFunctions(
-          //     row_side,row_type,row_data,gg,matRowCurl
-          //   ); CHKERRQ(ierr);
-          //   aveMatRowCurl += w*matRowCurl;
-          //   ave_diag += w*(invK(0,0)+invK(1,1)+invK(2,2));
-          // }
         }
-        // if(penalty_curl) {
-        //   const double a = ePs*ave_diag/getVolume();
-        //   FTensor::Tensor1<double*,3> t_row_ave(
-        //     &aveMatRowCurl(0,HDIV0),&aveMatRowCurl(0,HDIV1),&aveMatRowCurl(0,HDIV2),3
-        //   );
-        //   for(int ii = 0;ii!=6;ii++) {
-        //     FTensor::Tensor1<double*,3> t_col_ave(
-        //       &aveMatRowCurl(0,HDIV0),&aveMatRowCurl(0,HDIV1),&aveMatRowCurl(0,HDIV2),3
-        //     );
-        //     for(int jj = 0;jj!=6;jj++) {
-        //       NN(ii,jj) += a*t_row_ave(i)*t_col_ave(i);
-        //       ++t_col_ave;
-        //     }
-        //     ++t_row_ave;
-        //   }
-        // }
         ierr = MatSetValues(
           Aij,
           nb_row,&row_data.getIndices()[0],
@@ -905,13 +864,6 @@ struct UltraWeakTransportElement {
         // cerr << data.getHdivN() << endl;
         Nf.resize(nb_row);
         Nf.clear();
-        // bool penalty_curl = type == MBTET;
-        // // Set size for curl matrices
-        // if(penalty_curl) {
-        //   matRowCurl.resize(nb_row,3,false);
-        //   aveMatRowCurl.resize(nb_row,3,false);
-        //   aveMatRowCurl.clear();
-        // }
         FTensor::Index<'i',3> i;
         FTensor::Index<'j',3> j;
         invK.resize(3,3,false);
@@ -945,32 +897,7 @@ struct UltraWeakTransportElement {
             Nf[ll] += w*t_n_hdiv(i)*t_inv_k(i,j)*t_flux(j);
             ++t_n_hdiv;
           }
-          // Calcualte row/col curl
-          // if(penalty_curl) {
-          //   ierr = getCurlOfHCurlBaseFunctions(
-          //     side,type,data,gg,matRowCurl
-          //   ); CHKERRQ(ierr);
-          //   aveMatRowCurl += w*matRowCurl;
-          //   ave_diag += w*(invK(0,0)+invK(1,1)+invK(2,2));
-          // }
         }
-
-        // if(penalty_curl) {
-        //   const double a = ePs*ave_diag/getVolume();
-        //   FTensor::Tensor1<double*,3> t_row_ave(
-        //     &aveMatRowCurl(0,HDIV0),&aveMatRowCurl(0,HDIV1),&aveMatRowCurl(0,HDIV2),3
-        //   );
-        //   for(int ii = 0;ii!=6;ii++) {
-        //     FTensor::Tensor1<double*,3> t_col_ave(
-        //       &aveMatRowCurl(0,HDIV0),&aveMatRowCurl(0,HDIV1),&aveMatRowCurl(0,HDIV2),3
-        //     );
-        //     for(int jj = 0;jj!=6;jj++) {
-        //       Nf(ii) += a*t_row_ave(i)*(t_col_ave(i)*data.getFieldData()[jj]);
-        //       ++t_col_ave;
-        //     }
-        //     ++t_row_ave;
-        //   }
-        // }
 
         ierr = VecSetValues(
           F,nb_row,&data.getIndices()[0],&Nf[0],ADD_VALUES
