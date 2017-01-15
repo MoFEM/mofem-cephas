@@ -357,11 +357,11 @@ PetscErrorCode FatPrismElementForcesAndSurcesCore::operator()() {
   }
 
   // Calculate base functions on prism
-  for(int b = AINSWORTH_COLE_BASE;b!=LASTBASE;b++) {
+  for(int b = AINSWORTH_LEGENDRE_BASE;b!=LASTBASE;b++) {
     if(dataH1.bAse.test(b)) {
       switch (ApproximationBaseArray[b]) {
-        case AINSWORTH_COLE_BASE:
-        case LOBATTO_BASE:
+        case AINSWORTH_LEGENDRE_BASE:
+        case AINSWORTH_LOBBATO_BASE:
         if(dataH1.spacesOnEntities[MBVERTEX].test(H1)) {
           ierr = FatPrismPolynomialBase().getValue(
             gaussPts,
@@ -542,8 +542,8 @@ PetscErrorCode FatPrismElementForcesAndSurcesCore::operator()() {
 
             base[ss] = field_struture->getApproxBase();
             switch(base[ss]) {
-              case AINSWORTH_COLE_BASE:
-              case LOBATTO_BASE:
+              case AINSWORTH_LEGENDRE_BASE:
+              case AINSWORTH_LOBBATO_BASE:
               break;
               default:
               SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"unknown or not implemented base");
@@ -750,7 +750,7 @@ PetscErrorCode OpSetInvJacH1ForFatPrism::doWork(
 ) {
   PetscFunctionBegin;
 
-  for(int b = AINSWORTH_COLE_BASE; b!=USER_BASE; b++) {
+  for(int b = AINSWORTH_LEGENDRE_BASE; b!=USER_BASE; b++) {
 
     FieldApproximationBase base = ApproximationBaseArray[b];
     if(data.getN(base).size2()==0) continue;

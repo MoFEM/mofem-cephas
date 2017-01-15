@@ -35,6 +35,7 @@
 #include <BaseFunction.hpp>
 #include <LegendrePolynomial.hpp>
 #include <LobattoPolynomial.hpp>
+#include <JacobiPolynomial.hpp>
 
 //SRC/MULTI-INDICES
 #include <MaterialBlocks.hpp>

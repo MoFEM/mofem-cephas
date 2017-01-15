@@ -31,12 +31,31 @@ int main(int argc, char *argv[]) {
 
   try {
 
+  enum bases {
+    HDIV_AINSWORTH,
+    HDIV_DEMKOWICZ,
+    LASTOP
+  };
+
+  const char *list[] = {
+    "hdiv_ainsworth",
+    "hdiv_demkowicz"
+  };
+
+  PetscBool flg;
+  PetscInt choise_value = HDIV_AINSWORTH;
+  ierr = PetscOptionsGetEList(
+    PETSC_NULL,NULL,"-base",list,LASTOP,&choise_value,&flg
+  ); CHKERRQ(ierr);
+  if(flg != PETSC_TRUE) {
+    SETERRQ(PETSC_COMM_SELF,MOFEM_IMPOSIBLE_CASE,"base not set");
+  }
+
   moab::Core mb_instance;
   moab::Interface& moab = mb_instance;
   int rank;
   MPI_Comm_rank(PETSC_COMM_WORLD,&rank);
 
-  PetscBool flg = PETSC_TRUE;
   char mesh_file_name[255];
   #if PETSC_VERSION_GE(3,6,4)
   ierr = PetscOptionsGetString(PETSC_NULL,"","-my_file",mesh_file_name,255,&flg); CHKERRQ(ierr);
@@ -86,7 +105,15 @@ int main(int argc, char *argv[]) {
   ierr = m_field.seed_ref_level_3D(0,bit_level0); CHKERRQ(ierr);
 
   //fields
-  ierr = m_field.add_field("HDIV",HDIV,1); CHKERRQ(ierr);
+  switch (choise_value) {
+    case HDIV_AINSWORTH:
+    ierr = m_field.add_field("HDIV",HDIV,AINSWORTH_LEGENDRE_BASE,1); CHKERRQ(ierr);
+    break;
+    case HDIV_DEMKOWICZ:
+    ierr = m_field.add_field("HDIV",HDIV,DEMKOWICZ_JACOBI_BASE,1); CHKERRQ(ierr);
+    break;
+  }
+
   //add entities to field
   ierr = m_field.add_ents_to_field_by_TETs(root_set,"HDIV"); CHKERRQ(ierr);
   //set app. order
@@ -275,21 +302,16 @@ int main(int argc, char *argv[]) {
   std::cout << "divergence_skin " << divergence_skin << std::endl;
 
   const double eps = 1e-6;
-  const double expected_result = 9.36666666667;
-  if(fabs(divergence_vol-expected_result)>eps) {
-    SETERRQ2(
-      PETSC_COMM_SELF,
-      MOFEM_ATOM_TEST_INVALID,
-      "invalid divergence_vol = %6.4e, should be %6.4e\n",
-      divergence_vol,expected_result
+  if(fabs(divergence_skin-divergence_vol)>eps) {
+     SETERRQ2(
+       PETSC_COMM_SELF,
+       MOFEM_ATOM_TEST_INVALID,
+       "invalid surface flux or divergence or both\n",
+      divergence_skin,divergence_vol
     );
   }
-  if(fabs(divergence_skin-expected_result)>eps) {
-     SETERRQ2(PETSC_COMM_SELF,MOFEM_ATOM_TEST_INVALID,"invalid fluxes = %6.4e, should be %6.4e\n",
-	    divergence_skin,expected_result);
-  }
 
-  ierr = m_field.add_field("MESH_NODE_POSITIONS",H1,3); CHKERRQ(ierr);
+  ierr = m_field.add_field("MESH_NODE_POSITIONS",H1,AINSWORTH_LEGENDRE_BASE,3); CHKERRQ(ierr);
 
   ierr = m_field.add_ents_to_field_by_TETs(0,"MESH_NODE_POSITIONS"); CHKERRQ(ierr);
   ierr = m_field.set_field_order(0,MBVERTEX,"MESH_NODE_POSITIONS",1); CHKERRQ(ierr);

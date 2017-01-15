@@ -94,7 +94,7 @@ int main(int argc, char *argv[]) {
   }
 
   //add filds
-  ierr = m_field.add_field("H1FIELD_SCALAR",H1,1); CHKERRQ(ierr);
+  ierr = m_field.add_field("H1FIELD_SCALAR",H1,AINSWORTH_LEGENDRE_BASE,1); CHKERRQ(ierr);
 
   //add finite elements
   ierr = m_field.add_finite_element("ELEM_SCALAR"); CHKERRQ(ierr);

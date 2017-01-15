@@ -166,11 +166,11 @@ PetscErrorCode EdgeElementForcesAndSurcesCore::operator()() {
 
   try {
 
-    for(int b = AINSWORTH_COLE_BASE;b!=LASTBASE;b++) {
+    for(int b = AINSWORTH_LEGENDRE_BASE;b!=LASTBASE;b++) {
       if(dataH1.bAse.test(b)) {
         switch (ApproximationBaseArray[b]) {
-          case AINSWORTH_COLE_BASE:
-          case LOBATTO_BASE:
+          case AINSWORTH_LEGENDRE_BASE:
+          case AINSWORTH_LOBBATO_BASE:
           if(dataH1.spacesOnEntities[MBVERTEX].test(H1)) {
             ierr = EdgePolynomialBase().getValue(
               gaussPts,
@@ -224,7 +224,7 @@ PetscErrorCode EdgeElementForcesAndSurcesCore::operator()() {
   }
 
   if(dataH1.spacesOnEntities[MBEDGE].test(HCURL)) {
-    // cerr << dataHcurl.dataOnEntities[MBEDGE][0].getN(AINSWORTH_COLE_BASE) << endl;
+    // cerr << dataHcurl.dataOnEntities[MBEDGE][0].getN(AINSWORTH_LEGENDRE_BASE) << endl;
     ierr = opCovariantTransoform.opRhs(dataHcurl); CHKERRQ(ierr);
   }
 
@@ -292,9 +292,9 @@ PetscErrorCode EdgeElementForcesAndSurcesCore::operator()() {
 
         base[ss] = field_struture->getApproxBase();
         switch(base[ss]) {
-          case AINSWORTH_COLE_BASE:
+          case AINSWORTH_LEGENDRE_BASE:
           break;
-          case LOBATTO_BASE:
+          case AINSWORTH_LOBBATO_BASE:
           break;
           default:
           SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"unknown or not implemented base");

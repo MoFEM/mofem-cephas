@@ -291,12 +291,17 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::calculateBaseFunctionsOnElemen
     dataHcurl.dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE) = dataH1.dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE);
     dataL2.dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE) = dataH1.dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE);
     std::vector<FieldApproximationBase> shape_functions_for_bases;
-    for(int b = AINSWORTH_COLE_BASE;b!=LASTBASE;b++) {
+    for(int b = AINSWORTH_LEGENDRE_BASE;b!=LASTBASE;b++) {
       if(dataH1.bAse.test(b)) {
         switch (ApproximationBaseArray[b]) {
-          case AINSWORTH_COLE_BASE:
-          case LOBATTO_BASE:
-          if(dataH1.spacesOnEntities[MBVERTEX].test(H1)) {
+          case NOBASE:
+          break;
+          case AINSWORTH_LEGENDRE_BASE:
+          case AINSWORTH_LOBBATO_BASE:
+          if(
+            dataH1.spacesOnEntities[MBVERTEX].test(H1)&&
+            dataH1.basesOnEntities[MBVERTEX].test(b)
+          ) {
             ierr = TetPolynomialBase().getValue(
               gaussPts,
               boost::shared_ptr<BaseFunctionCtx>(
@@ -304,15 +309,10 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::calculateBaseFunctionsOnElemen
               )
             ); CHKERRQ(ierr);
           }
-          if(dataH1.spacesOnEntities[MBTRI].test(HDIV)) {
-            ierr = TetPolynomialBase().getValue(
-              gaussPts,
-              boost::shared_ptr<BaseFunctionCtx>(
-                new EntPolynomialBaseCtx(dataHdiv,HDIV,ApproximationBaseArray[b],NOBASE)
-              )
-            ); CHKERRQ(ierr);
-          }
-          if(dataH1.spacesOnEntities[MBEDGE].test(HCURL)) {
+          if(
+            dataH1.spacesOnEntities[MBEDGE].test(HCURL)&&
+            dataH1.basesOnEntities[MBEDGE].test(b)
+          ) {
             ierr = TetPolynomialBase().getValue(
               gaussPts,
               boost::shared_ptr<BaseFunctionCtx>(
@@ -320,7 +320,21 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::calculateBaseFunctionsOnElemen
               )
             ); CHKERRQ(ierr);
           }
-          if(dataH1.spacesOnEntities[MBTET].test(L2)) {
+          if(
+            dataH1.spacesOnEntities[MBTRI].test(HDIV)&&
+            dataH1.basesOnEntities[MBTRI].test(b)
+          ) {
+            ierr = TetPolynomialBase().getValue(
+              gaussPts,
+              boost::shared_ptr<BaseFunctionCtx>(
+                new EntPolynomialBaseCtx(dataHdiv,HDIV,ApproximationBaseArray[b],NOBASE)
+              )
+            ); CHKERRQ(ierr);
+          }
+          if(
+            dataH1.spacesOnEntities[MBTET].test(L2)&&
+            dataH1.basesOnEntities[MBTET].test(b)
+          ) {
             ierr = TetPolynomialBase().getValue(
               gaussPts,
               boost::shared_ptr<BaseFunctionCtx>(
@@ -329,8 +343,26 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::calculateBaseFunctionsOnElemen
             ); CHKERRQ(ierr);
           }
           break;
+          case DEMKOWICZ_JACOBI_BASE:
+          if(
+            dataH1.spacesOnEntities[MBTRI].test(HDIV)&&
+            dataH1.basesOnEntities[MBTRI].test(b)
+          ) {
+            ierr = TetPolynomialBase().getValue(
+              gaussPts,
+              boost::shared_ptr<BaseFunctionCtx>(
+                new EntPolynomialBaseCtx(dataHdiv,HDIV,ApproximationBaseArray[b],NOBASE)
+              )
+            ); CHKERRQ(ierr);
+          }
+          break;
           default:
-          SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"Not yet implemented");
+          SETERRQ1(
+            PETSC_COMM_SELF,
+            MOFEM_DATA_INCONSISTENCY,
+            "Base <%s> not yet implemented",
+            ApproximationBaseNames[ApproximationBaseArray[b]]
+          );
         }
       }
     }
@@ -453,7 +485,7 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::operator()() {
       hoGaussPtsInvJac.resize(0,0,false);
       hoGaussPtsDetJac.resize(0,false);
       try {
-        for(int b = AINSWORTH_COLE_BASE;b!=LASTBASE;b++) {
+        for(int b = AINSWORTH_LEGENDRE_BASE;b!=LASTBASE;b++) {
           if(dataH1.dataOnEntities[MBVERTEX][0].getDiffN(ApproximationBaseArray[b]).size1()!=4) continue;
           if(dataH1.dataOnEntities[MBVERTEX][0].getDiffN(ApproximationBaseArray[b]).size2()!=3) continue;
           MatrixDouble diffN(nbGaussPts,12);
@@ -573,9 +605,10 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::operator()() {
 
             base[ss] = field_struture->getApproxBase();
             switch(base[ss]) {
-              case AINSWORTH_COLE_BASE:
-              break;
-              case LOBATTO_BASE:
+              case NOBASE:
+              case AINSWORTH_LEGENDRE_BASE:
+              case AINSWORTH_LOBBATO_BASE:
+              case DEMKOWICZ_JACOBI_BASE:
               break;
               default:
               SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"unknown or not implemented base");
@@ -838,7 +871,11 @@ PetscErrorCode VolumeElementForcesAndSourcesCoreOnSide::setGaussPts(int order) {
     faceConnMap[nn] = std::distance(conn,find(conn,&conn[4],faceFEPtr->conn[nn]));
     tetConnMap[faceConnMap[nn]] = nn;
     if(faceConnMap[nn]>3) {
-      SETERRQ(PETSC_COMM_WORLD,MOFEM_DATA_INCONSISTENCY,"No common node on face and element can not be found");
+      SETERRQ(
+        PETSC_COMM_WORLD,
+        MOFEM_DATA_INCONSISTENCY,
+        "No common node on face and element can not be found"
+      );
     }
   }
   oppositeNode = std::distance(tetConnMap,find(tetConnMap,&tetConnMap[4],-1));

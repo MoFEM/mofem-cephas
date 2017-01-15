@@ -81,7 +81,8 @@ enum BaseIntefaces {
   LEGENDRE_BASE_FUNCTION_INTERFACE    = 1<<1,
   LOBATTO_BASE_FUNCTION_INTERFACE     = 1<<2,
   KERNEL_BASE_FUNCTION_INTERFACE      = 1<<3,
-  ENT_BASE_FUNCTION_INTERFACE         = 1<<4,
+  JACOBI_BASE_FUNCTION_INTERFACE      = 1<<4,
+  ENT_BASE_FUNCTION_INTERFACE         = 1<<5,
   TET_BASE_FUNCTION_INTERFACE         = 1<<1|1<<3|1<<3,
   TRI_BASE_FUNCTION_INTERFACE         = 1<<1|1<<3|1<<4,
   EDGE_BASE_FUNCTION_INTERFACE        = 1<<1|1<<3|1<<5,
@@ -114,18 +115,20 @@ enum MoFEMErrorCodes {
 /// \brief approximation base
 enum FieldApproximationBase {
   NOBASE = 0,
-  AINSWORTH_COLE_BASE = 1, ///< Ainsworth Cole (Legendre) approx. base \cite NME:NME847
-  LOBATTO_BASE,            ///< Like AINSWORTH_COLE_BASE but with Lobatto base instead Legendre \cite beriot2015efficient
-  BERNSTEIN_BEZIER_BASE,   ///< Not yet implemented, in implementation we will follow \cite ainsworth2011bernstein
+  AINSWORTH_LEGENDRE_BASE = 1,   ///< Ainsworth Cole (Legendre) approx. base \cite NME:NME847
+  AINSWORTH_LOBBATO_BASE,        ///< Like AINSWORTH_LEGENDRE_BASE but with Lobatto base instead Legendre \cite beriot2015efficient
+  AINSOWRTH_BERNSTEIN_BEZIER_BASE,   ///< Not yet implemented, in implementation we will follow \cite ainsworth2011bernstein
+  DEMKOWICZ_JACOBI_BASE,             ///< Construction of base is by Demkowicz \cite fuentes2015orientation
   USER_BASE,               ///< user implemented approximation base
   LASTBASE
 };
 
 const static char * const ApproximationBaseNames[] = {
   "NOBASE",
-  "AINSWORTH_COLE_BASE",
-  "LOBATTO_BASE",
-  "BERNSTEIN_BEZIER_BASE",
+  "AINSWORTH_LEGENDRE_BASE",
+  "AINSWORTH_LOBBATO_BASE",
+  "AINSOWRTH_BERNSTEIN_BEZIER_BASE",
+  "DEMKOWICZ_JACOBI_BASE",
   "USER_BASE",
   "LASTBASE"
 };
@@ -133,9 +136,10 @@ const static char * const ApproximationBaseNames[] = {
 #ifdef __cplusplus
 const static FieldApproximationBase ApproximationBaseArray[] = {
   NOBASE,
-  AINSWORTH_COLE_BASE,
-  LOBATTO_BASE,
-  BERNSTEIN_BEZIER_BASE,
+  AINSWORTH_LEGENDRE_BASE,
+  AINSWORTH_LOBBATO_BASE,
+  AINSOWRTH_BERNSTEIN_BEZIER_BASE,
+  DEMKOWICZ_JACOBI_BASE,  
   USER_BASE,
   LASTBASE
 };

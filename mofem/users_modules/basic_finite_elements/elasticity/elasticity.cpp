@@ -128,8 +128,8 @@ int main(int argc, char *argv[]) {
   //Define problem
 
   //Fields
-  ierr = m_field.add_field("DISPLACEMENT",H1,LOBATTO_BASE,3,MB_TAG_SPARSE,MF_ZERO); CHKERRQ(ierr);
-  ierr = m_field.add_field("MESH_NODE_POSITIONS",H1,AINSWORTH_COLE_BASE,3,MB_TAG_SPARSE,MF_ZERO); CHKERRQ(ierr);
+  ierr = m_field.add_field("DISPLACEMENT",H1,AINSWORTH_LOBBATO_BASE,3,MB_TAG_SPARSE,MF_ZERO); CHKERRQ(ierr);
+  ierr = m_field.add_field("MESH_NODE_POSITIONS",H1,AINSWORTH_LEGENDRE_BASE,3,MB_TAG_SPARSE,MF_ZERO); CHKERRQ(ierr);
 
   //Declare problem
 

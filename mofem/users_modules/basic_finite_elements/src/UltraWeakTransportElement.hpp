@@ -207,8 +207,8 @@ struct UltraWeakTransportElement {
     PetscErrorCode ierr;
     PetscFunctionBegin;
     //Fields
-    ierr = mField.add_field(fluxes,HDIV,1); CHKERRQ(ierr);
-    ierr = mField.add_field(values,L2,1); CHKERRQ(ierr);
+    ierr = mField.add_field(fluxes,HDIV,DEMKOWICZ_JACOBI_BASE,1); CHKERRQ(ierr);
+    ierr = mField.add_field(values,L2,AINSWORTH_LEGENDRE_BASE,1); CHKERRQ(ierr);
 
     //meshset consisting all entities in mesh
     EntityHandle root_set = mField.get_moab().get_root_set();
@@ -466,6 +466,7 @@ struct UltraWeakTransportElement {
     ierr = post_proc.addFieldValuesPostProc("VALUES"); CHKERRQ(ierr);
     ierr = post_proc.addFieldValuesGradientPostProc("VALUES"); CHKERRQ(ierr);
     ierr = post_proc.addFieldValuesPostProc("FLUXES"); CHKERRQ(ierr);
+    // ierr = post_proc.addHdivFunctionsPostProc("FLUXES"); CHKERRQ(ierr);
     post_proc.getOpPtrVector().push_back(new OpPostProc(post_proc.postProcMesh,post_proc.mapGaussPts));
     ierr = mField.loop_finite_elements("ULTRAWEAK","ULTRAWEAK",post_proc);  CHKERRQ(ierr);
     ierr = post_proc.writeFile(out_file.c_str()); CHKERRQ(ierr);
@@ -696,26 +697,53 @@ struct UltraWeakTransportElement {
   }
 
 
-  /** \brief Assemble \f$ \int_\mathcal{T} \mathbf{A} \boldsymbol\sigma \cdot \boldsymbol\tau \textrm{d}\mathcal{T} \f$
+  /**
+  \brief Assemble \f$\int_\mathcal{T} \mathbf{A} \boldsymbol\sigma \cdot \boldsymbol\tau \textrm{d}\mathcal{T}\f$
+
+  \ingroup mofem_ultra_weak_transport_elem
   */
   struct OpTauDotSigma_HdivHdiv: public MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator {
 
     UltraWeakTransportElement &cTx;
     Mat Aij;
     Vec F;
+    const double ePs;
 
     OpTauDotSigma_HdivHdiv(
       UltraWeakTransportElement &ctx,
-      const std::string flux_name,Mat aij,Vec f
+      const std::string flux_name,
+      Mat aij,Vec f,const double eps = 1e-8
     ):
     MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator(
-      flux_name,
-      UserDataOperator::OPROW|UserDataOperator::OPROWCOL
+      flux_name,flux_name,
+      UserDataOperator::OPROWCOL|UserDataOperator::OPCOL
     ),
     cTx(ctx),
     Aij(aij),
-    F(f) {}
+    F(f),
+    ePs(eps) {
+      sYmm = true;
+    }
 
+    OpTauDotSigma_HdivHdiv(
+      UltraWeakTransportElement &ctx,
+      const std::string row_flux_name,
+      const std::string col_flux_name,
+      Mat aij,Vec f,const double eps = 1e-8
+    ):
+    MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator(
+      row_flux_name,
+      col_flux_name,
+      UserDataOperator::OPROWCOL|UserDataOperator::OPCOL
+    ),
+    cTx(ctx),
+    Aij(aij),
+    F(f),
+    ePs(eps) {
+      sYmm = true;
+    }
+
+    MatrixDouble matRowCurl,aveMatRowCurl;
     MatrixDouble NN,transNN,invK;
     VectorDouble Nf;
 
@@ -755,10 +783,12 @@ struct UltraWeakTransportElement {
           &invK(1,0),&invK(1,1),&invK(1,2),
           &invK(2,0),&invK(2,1),&invK(2,2)
         );
-        // get base functions
+        // Get base functions
         FTensor::Tensor1<double*,3> t_n_hdiv_row = row_data.getFTensor1HdivN<3>();
+        double ave_diag = 0;
+        double x,y,z;
         int nb_gauss_pts = row_data.getHdivN().size1();
-        for(int gg = 0;gg<nb_gauss_pts;gg++) {
+        for(int gg = 0;gg!=nb_gauss_pts;gg++) {
           // get integration weight and multiply by element volume
           double w = getGaussPts()(3,gg)*getVolume();
           // in case that HO geometry is defined that below take into account that
@@ -784,13 +814,13 @@ struct UltraWeakTransportElement {
             ++t_n_hdiv_row;
           }
         }
-        // matrix is symmetric, assemble other part
         ierr = MatSetValues(
           Aij,
           nb_row,&row_data.getIndices()[0],
           nb_col,&col_data.getIndices()[0],
           &NN(0,0),ADD_VALUES
         ); CHKERRQ(ierr);
+        // matrix is symmetric, assemble other part
         if(row_side != col_side || row_type != col_type) {
           transNN.resize(nb_col,nb_row);
           noalias(transNN) = trans(NN);
@@ -825,12 +855,18 @@ struct UltraWeakTransportElement {
       PetscErrorCode ierr;
       PetscFunctionBegin;
       try {
-        if(data.getIndices().size()==0) PetscFunctionReturn(0);
+        if(F==PETSC_NULL) PetscFunctionReturn(0);
+        int nb_row = data.getIndices().size();
+        if(nb_row==0) PetscFunctionReturn(0);
+
+        EntityHandle fe_ent = getNumeredEntFiniteElementPtr()->getEnt();
+        // cerr << data.getIndices() << endl;
+        // cerr << data.getHdivN() << endl;
+        Nf.resize(nb_row);
+        Nf.clear();
         FTensor::Index<'i',3> i;
         FTensor::Index<'j',3> j;
         invK.resize(3,3,false);
-        EntityHandle fe_ent = getNumeredEntFiniteElementPtr()->getEnt();
-        int nb_row = data.getIndices().size();
         Nf.resize(nb_row);
         Nf.clear();
         // get access to resistivity data by tensor rank 2
@@ -840,6 +876,7 @@ struct UltraWeakTransportElement {
           &invK(2,0),&invK(2,1),&invK(2,2)
         );
         // get base functions
+        double ave_diag = 0;
         FTensor::Tensor1<double*,3> t_n_hdiv = data.getFTensor1HdivN<3>();
         int nb_gauss_pts = data.getHdivN().size1();
         for(int gg = 0;gg<nb_gauss_pts;gg++) {
@@ -861,12 +898,21 @@ struct UltraWeakTransportElement {
             ++t_n_hdiv;
           }
         }
+
         ierr = VecSetValues(
           F,nb_row,&data.getIndices()[0],&Nf[0],ADD_VALUES
         ); CHKERRQ(ierr);
+
       } catch (const std::exception& ex) {
+        cerr << data.getFieldData() << endl;
+        cerr << data.getIndices() << endl;
+        cerr << data.getN() << endl;
+        cerr << data.getDiffN() << endl;
         std::ostringstream ss;
-        ss << "throw in method: " << ex.what() << std::endl;
+        ss << "throw in method:"
+        << " type: " << type
+        << " side: " << side << " "
+        << ex.what() << std::endl;
         SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
       }
       PetscFunctionReturn(0);

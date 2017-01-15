@@ -69,7 +69,7 @@ int main(int argc, char *argv[]) {
   ierr = m_field.get_entities_by_ref_level(bit_level0,BitRefLevel().set(),meshset_level0); CHKERRQ(ierr);
 
   //Fields
-  ierr = m_field.add_field("SPATIAL_POSITION",H1,3); CHKERRQ(ierr);
+  ierr = m_field.add_field("SPATIAL_POSITION",H1,AINSWORTH_LEGENDRE_BASE,3); CHKERRQ(ierr);
   //add entitities (by tets) to the field
   ierr = m_field.add_ents_to_field_by_TETs(0,"SPATIAL_POSITION"); CHKERRQ(ierr);
   //set app. order

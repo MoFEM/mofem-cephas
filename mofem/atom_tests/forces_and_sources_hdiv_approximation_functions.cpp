@@ -65,7 +65,7 @@ int main(int argc, char *argv[]) {
   ierr = m_field.seed_ref_level_3D(0,bit_level0); CHKERRQ(ierr);
 
   //Fields
-  ierr = m_field.add_field("HDIV",HDIV,1); CHKERRQ(ierr);
+  ierr = m_field.add_field("HDIV",HDIV,AINSWORTH_LEGENDRE_BASE,1); CHKERRQ(ierr);
 
   //FE TET
   ierr = m_field.add_finite_element("HDIV_TET_FE"); CHKERRQ(ierr);
@@ -234,13 +234,6 @@ int main(int argc, char *argv[]) {
 
   ierr = m_field.loop_finite_elements("TEST_PROBLEM","HDIV_TET_FE",tet_fe);  CHKERRQ(ierr);
   ierr = m_field.loop_finite_elements("TEST_PROBLEM","HDIV_TRI_FE",tri_fe);  CHKERRQ(ierr);
-
-  /*PostProcVolumeOnRefinedMesh post_proc(m_field);
-  ierr = post_proc.generateReferenceElementMesh(); CHKERRQ(ierr);
-  ierr = post_proc.addHdivFunctionsPostProc("HDIV");  CHKERRQ(ierr);
-  ierr = m_field.loop_finite_elements("TEST_PROBLEM","HDIV_TET_FE",post_proc);  CHKERRQ(ierr);
-  rval = post_proc.postProcMesh.write_file("out.vtk","VTK",""); CHKERRQ_MOAB(rval);*/
-
 
   } catch (MoFEMException const &e) {
     SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);

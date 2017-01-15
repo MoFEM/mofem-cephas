@@ -81,7 +81,7 @@ int main(int argc, char *argv[]) {
   #else
   ierr = PetscOptionsGetInt(PETSC_NULL,PETSC_NULL,"-my_field_rank",&field_rank,&flg); CHKERRQ(ierr);
   #endif
-  ierr = m_field.add_field("FIELD",H1,AINSWORTH_COLE_BASE,field_rank); CHKERRQ(ierr);
+  ierr = m_field.add_field("FIELD",H1,AINSWORTH_LEGENDRE_BASE,field_rank); CHKERRQ(ierr);
   //add entities to field
   ierr = m_field.add_ents_to_field_by_TETs(root_set,"FIELD"); CHKERRQ(ierr);
   //set app. order
