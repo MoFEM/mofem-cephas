@@ -87,7 +87,7 @@ int main(int argc, char *argv[]) {
   }
 
   //Fields
-  ierr = m_field.add_field("FIELD_A",H1,9); CHKERRQ(ierr);
+  ierr = m_field.add_field("FIELD_A",H1,AINSWORTH_LEGENDRE_BASE,9); CHKERRQ(ierr);
   ierr = cs_manger_ptr->setFieldCoordinateSystem("FIELD_A","BASE_FOR_TWO_POINT_TENSOR"); CHKERRQ(ierr);
 
   ierr = m_field.add_ents_to_field_by_TETs(0,"FIELD_A"); CHKERRQ(ierr);

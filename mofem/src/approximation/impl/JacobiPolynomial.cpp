@@ -1,4 +1,4 @@
-/** \file BaseFunction.cpp
+/** \file legendrepolynomial.cpp
  * \brief implementation of multi-grid solver for p- adaptivity
  *
  * MoFEM is free software: you can redistribute it and/or modify it under
@@ -19,63 +19,77 @@
 #include <config.h>
 #include <definitions.h>
 #include <Includes.hpp>
+
+#include <base_functions.h>
 #include <Common.hpp>
 #include <UnknownInterface.hpp>
 using namespace MoFEM;
 
 #include <BaseFunction.hpp>
+#include <JacobiPolynomial.hpp>
 
-PetscErrorCode BaseFunctionCtx::queryInterface(
+PetscErrorCode JacobiPolynomialCtx::queryInterface(
   const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface
 ) {
+  PetscErrorCode ierr;
   PetscFunctionBegin;
   *iface = NULL;
-  if(uuid == IDD_UNKNOWN_BASE_FUNCTION) {
-    *iface = static_cast<BaseFunctionCtx*>(this);
+  if(uuid == IDD_JACOBI_BASE_FUNCTION) {
+    *iface = static_cast<JacobiPolynomialCtx*>(this);
     PetscFunctionReturn(0);
   } else {
     SETERRQ(PETSC_COMM_WORLD,MOFEM_DATA_INCONSISTENCY,"wrong interference");
   }
+  ierr = BaseFunctionCtx::queryInterface(uuid,iface); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode BaseFunction::queryInterface(
+PetscErrorCode JacobiPolynomial::queryInterface(
   const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface
 ) {
+  PetscErrorCode ierr;
   PetscFunctionBegin;
   *iface = NULL;
-  if(uuid == IDD_UNKNOWN_BASE_FUNCTION) {
-    *iface = static_cast<BaseFunction*>(this);
+  if(uuid == IDD_JACOBI_BASE_FUNCTION) {
+    *iface = static_cast<JacobiPolynomial*>(this);
     PetscFunctionReturn(0);
   } else {
     SETERRQ(PETSC_COMM_WORLD,MOFEM_DATA_INCONSISTENCY,"wrong interference");
   }
+  ierr = BaseFunction::queryInterface(uuid,iface); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode BaseFunction::getValue(
-  ublas::matrix<double> &pts,
-  boost::shared_ptr<BaseFunctionCtx> ctx_ptr
-) {
-  PetscFunctionBegin;
-  SETERRQ(
-    PETSC_COMM_SELF,
-    MOFEM_NOT_IMPLEMENTED,
-    "BaseFunction has not valid implementation of any shape function"
-  );
-  PetscFunctionReturn(0);
-}
-
-PetscErrorCode BaseFunction::getValue(
+PetscErrorCode JacobiPolynomial::getValue(
   ublas::matrix<double> &pts_x,
   ublas::matrix<double> &pts_t,
   boost::shared_ptr<BaseFunctionCtx> ctx_ptr
 ) {
+  PetscErrorCode ierr;
   PetscFunctionBegin;
-  SETERRQ(
-    PETSC_COMM_SELF,
-    MOFEM_NOT_IMPLEMENTED,
-    "BaseFunction has not valid implementation of any shape function"
-  );
+  MoFEM::UnknownInterface *iface;
+  ierr = ctx_ptr->queryInterface(IDD_JACOBI_BASE_FUNCTION,&iface); CHKERRQ(ierr);
+  JacobiPolynomialCtx *ctx = reinterpret_cast<JacobiPolynomialCtx*>(iface);
+  ctx->baseFunPtr->resize(pts_x.size2(),ctx->P+1,false);
+  ctx->baseDiffFunPtr->resize(pts_x.size2(),ctx->dIm*(ctx->P+1),false);
+  if(
+    pts_x.size1()!=pts_t.size1() ||
+    pts_x.size2()!=pts_t.size2()
+  ) {
+    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"Inconsistent size of arguments");
+  }
+  double *l = NULL;
+  double *diff_l = NULL;
+  for(unsigned int gg = 0;gg<pts_x.size2();gg++) {
+    if(ctx->baseFunPtr) l = &((*ctx->baseFunPtr)(gg,0));
+    if(ctx->baseDiffFunPtr) diff_l = &((*ctx->baseDiffFunPtr)(gg,0));
+    ierr = (ctx->basePolynomialsType1)(
+      ctx->P,ctx->aLpha,
+      pts_x(0,gg),pts_t(0,gg),
+      ctx->diffX,ctx->diffT,
+      l,diff_l,
+      ctx->dIm
+    ); CHKERRQ(ierr);
+  }
   PetscFunctionReturn(0);
 }

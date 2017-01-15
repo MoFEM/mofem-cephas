@@ -65,7 +65,7 @@ int main(int argc, char *argv[]) {
   ierr = m_field.seed_ref_level_3D(0,bit_level0); CHKERRQ(ierr);
 
   //Fields
-  ierr = m_field.add_field("F2",HDIV,1); CHKERRQ(ierr);
+  ierr = m_field.add_field("F2",HDIV,AINSWORTH_LEGENDRE_BASE,1); CHKERRQ(ierr);
 
   //meshset consisting all entities in mesh
   EntityHandle root_set = moab.get_root_set();

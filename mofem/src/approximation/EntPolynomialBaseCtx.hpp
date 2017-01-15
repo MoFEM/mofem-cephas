@@ -28,16 +28,25 @@ namespace MoFEM {
 
   /**
    * \brief Class used to pass element data to calculate base functions on tet,triangle,edge
-   * 
+   *
    * \ingroup mofem_base_functions
    */
   struct EntPolynomialBaseCtx: public BaseFunctionCtx {
 
     PetscErrorCode queryInterface(const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface);
 
-    PetscErrorCode (*basePolynomials)(
+    PetscErrorCode (*basePolynomialsType0)(
       int p,double s,double *diff_s,double *L,double *diffL,const int dim
     );
+
+    PetscErrorCode (*basePolynomialsType1)(
+      int p,double alpha,
+      double x,double t,
+      double *diff_x,double *diff_t,
+      double *L,double *diffL,
+      const int dim
+    );
+
     DataForcesAndSurcesCore &dAta;
     const FieldSpace sPace;
     const FieldApproximationBase bAse;

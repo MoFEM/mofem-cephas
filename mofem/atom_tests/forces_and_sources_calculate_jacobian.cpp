@@ -72,7 +72,7 @@ int main(int argc, char *argv[]) {
   ierr = m_field.seed_ref_level_3D(0,bit_level0); CHKERRQ(ierr);
 
   //Fields
-  ierr = m_field.add_field("FIELD1",H1,1); CHKERRQ(ierr);
+  ierr = m_field.add_field("FIELD1",H1,AINSWORTH_LEGENDRE_BASE,1); CHKERRQ(ierr);
 
   //FE
   ierr = m_field.add_finite_element("TEST_FE"); CHKERRQ(ierr);
@@ -231,7 +231,7 @@ int main(int argc, char *argv[]) {
       ierr = TetPolynomialBase().getValue(
         gauss_pts,
         boost::shared_ptr<BaseFunctionCtx>(
-          new EntPolynomialBaseCtx(data,H1,AINSWORTH_COLE_BASE)
+          new EntPolynomialBaseCtx(data,H1,AINSWORTH_LEGENDRE_BASE)
         )
       ); CHKERRQ(ierr);
 

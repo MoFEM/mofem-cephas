@@ -46,12 +46,15 @@ int main(int argc, char *argv[]) {
   enum bases {
     LEGENDREPOLYNOMIAL,
     LOBATTOPOLYNOMIAL,
+    JACOBIPOLYNOMIAL,
     H1TET,
-    HDIVTET,
+    HDIVTET_AINSWORTH,
+    HDIVTET_DEMKOWICZ,
     HCURLTET,
     L2TET,
     H1TRI,
-    HDIVTRI,
+    HDIVTRI_AINSWORTH,
+    HDIVTRI_DEMKOWICZ,
     HCURLTRI,
     L2TRI,
     H1EDGE,
@@ -64,12 +67,15 @@ int main(int argc, char *argv[]) {
   const char *list[] = {
     "legendre",
     "lobatto",
+    "jacobi",
     "h1tet",
-    "hdivtet",
+    "hdivtet_ainsworth",
+    "hdivtet_demkowicz",
     "hcurltet",
     "l2tet",
     "h1tri",
-    "hdivtri",
+    "hdivtri_ainsworth",
+    "hdivtri_demkowicz",
     "hcurltri",
     "l2tri",
     "h1edge",
@@ -190,6 +196,59 @@ int main(int argc, char *argv[]) {
     }
   }
 
+  if(choise_value==JACOBIPOLYNOMIAL) {
+
+    int n = 21;
+    ublas::matrix<double> pts_1d(1,n);
+    pts_1d.resize(1,n,false);
+    ublas::matrix<double> pts_1d_t(1,n);
+    for(int ii = 0;ii!=n;ii++) {
+      pts_1d(0,ii) = (double)ii/20.;
+      pts_1d_t(0,ii) = 1;
+    }
+
+    base_ptr->clear();
+    diff_base_ptr->clear();
+
+    double diff_x = 1;
+    double diff_t = 0;
+    ierr = JacobiPolynomial().getValue(
+      pts_1d,pts_1d_t,
+      boost::shared_ptr<BaseFunctionCtx>(
+        new JacobiPolynomialCtx(
+          5,
+          &diff_x,&diff_t,1,0,
+          base_ptr,diff_base_ptr
+        )
+      )
+    ); CHKERRQ(ierr);
+    for(int ii = 0;ii!=n;ii++) {
+      double s = pts_1d(0,ii);
+      std::cerr
+      << "lobatto_plot "
+      << s << " "
+      << (*base_ptr)(ii,4) << " "
+      << (*diff_base_ptr)(ii,4)
+      << std::endl;
+    }
+    std::cout << "JacobiPolynomial\n";
+    std::cout << pts_1d << std::endl;
+    std::cout << *base_ptr << std::endl;
+    std::cout << *diff_base_ptr << std::endl;
+    {
+      double sum = sum_matrix(*base_ptr);
+      double diff_sum = sum_matrix(*diff_base_ptr);
+      std::cout << sum << std::endl;
+      std::cout << diff_sum << std::endl;
+      if(fabs(23.2164-sum)>eps) {
+        SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"wrong result");
+      }
+      if(fabs(167.995-diff_sum)>eps) {
+        SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"wrong result");
+      }
+    }
+  }
+
   DataForcesAndSurcesCore tet_data(MBTET);
   for(int type = MBVERTEX;type!=MBMAXTYPE;type++) {
     tet_data.spacesOnEntities[type].set(L2);
@@ -254,12 +313,12 @@ int main(int argc, char *argv[]) {
     ierr = TetPolynomialBase().getValue(
       pts_tet,
       boost::shared_ptr<BaseFunctionCtx>(
-        new EntPolynomialBaseCtx(tet_data,H1,AINSWORTH_COLE_BASE,NOBASE)
+        new EntPolynomialBaseCtx(tet_data,H1,AINSWORTH_LEGENDRE_BASE,NOBASE)
       )
     ); CHKERRQ(ierr);
     if(
       tet_data.dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE).get()!=
-      tet_data.dataOnEntities[MBVERTEX][0].getNSharedPtr(AINSWORTH_COLE_BASE).get()
+      tet_data.dataOnEntities[MBVERTEX][0].getNSharedPtr(AINSWORTH_LEGENDRE_BASE).get()
     ) {
       SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"Different pointers");
     }
@@ -267,23 +326,23 @@ int main(int argc, char *argv[]) {
     double sum = 0,diff_sum = 0;
     std::cout << "Edges\n";
     for(int ee = 0;ee<6;ee++) {
-      std::cout << tet_data.dataOnEntities[MBEDGE][ee].getN(AINSWORTH_COLE_BASE) << std::endl;
-      std::cout << tet_data.dataOnEntities[MBEDGE][ee].getDiffN(AINSWORTH_COLE_BASE) << std::endl;
-      sum += sum_matrix(tet_data.dataOnEntities[MBEDGE][ee].getN(AINSWORTH_COLE_BASE));
-      diff_sum += sum_matrix(tet_data.dataOnEntities[MBEDGE][ee].getDiffN(AINSWORTH_COLE_BASE));
+      std::cout << tet_data.dataOnEntities[MBEDGE][ee].getN(AINSWORTH_LEGENDRE_BASE) << std::endl;
+      std::cout << tet_data.dataOnEntities[MBEDGE][ee].getDiffN(AINSWORTH_LEGENDRE_BASE) << std::endl;
+      sum += sum_matrix(tet_data.dataOnEntities[MBEDGE][ee].getN(AINSWORTH_LEGENDRE_BASE));
+      diff_sum += sum_matrix(tet_data.dataOnEntities[MBEDGE][ee].getDiffN(AINSWORTH_LEGENDRE_BASE));
     }
     std::cout << "Faces\n";
     for(int ff = 0;ff<4;ff++) {
-      std::cout << tet_data.dataOnEntities[MBTRI][ff].getN(AINSWORTH_COLE_BASE) << std::endl;
-      std::cout << tet_data.dataOnEntities[MBTRI][ff].getDiffN(AINSWORTH_COLE_BASE) << std::endl;
-      sum += sum_matrix(tet_data.dataOnEntities[MBTRI][ff].getN(AINSWORTH_COLE_BASE));
-      diff_sum += sum_matrix(tet_data.dataOnEntities[MBTRI][ff].getDiffN(AINSWORTH_COLE_BASE));
+      std::cout << tet_data.dataOnEntities[MBTRI][ff].getN(AINSWORTH_LEGENDRE_BASE) << std::endl;
+      std::cout << tet_data.dataOnEntities[MBTRI][ff].getDiffN(AINSWORTH_LEGENDRE_BASE) << std::endl;
+      sum += sum_matrix(tet_data.dataOnEntities[MBTRI][ff].getN(AINSWORTH_LEGENDRE_BASE));
+      diff_sum += sum_matrix(tet_data.dataOnEntities[MBTRI][ff].getDiffN(AINSWORTH_LEGENDRE_BASE));
     }
     std::cout << "Tets\n";
-    std::cout << tet_data.dataOnEntities[MBTET][0].getN(AINSWORTH_COLE_BASE) << std::endl;
-    std::cout << tet_data.dataOnEntities[MBTET][0].getDiffN(AINSWORTH_COLE_BASE) << std::endl;
-    sum += sum_matrix(tet_data.dataOnEntities[MBTET][0].getN(AINSWORTH_COLE_BASE));
-    diff_sum += sum_matrix(tet_data.dataOnEntities[MBTET][0].getDiffN(AINSWORTH_COLE_BASE));
+    std::cout << tet_data.dataOnEntities[MBTET][0].getN(AINSWORTH_LEGENDRE_BASE) << std::endl;
+    std::cout << tet_data.dataOnEntities[MBTET][0].getDiffN(AINSWORTH_LEGENDRE_BASE) << std::endl;
+    sum += sum_matrix(tet_data.dataOnEntities[MBTET][0].getN(AINSWORTH_LEGENDRE_BASE));
+    diff_sum += sum_matrix(tet_data.dataOnEntities[MBTET][0].getDiffN(AINSWORTH_LEGENDRE_BASE));
     std::cout << "sum  " << sum << std::endl;
     std::cout << "diff_sum " << diff_sum << std::endl;
     if(fabs(1.3509-sum)>eps) {
@@ -294,28 +353,28 @@ int main(int argc, char *argv[]) {
     }
   }
 
-  if(choise_value==HDIVTET) {
+  if(choise_value==HDIVTET_AINSWORTH) {
     ierr = TetPolynomialBase().getValue(
       pts_tet,
       boost::shared_ptr<BaseFunctionCtx>(
-        new EntPolynomialBaseCtx(tet_data,HDIV,AINSWORTH_COLE_BASE)
+        new EntPolynomialBaseCtx(tet_data,HDIV,AINSWORTH_LEGENDRE_BASE)
       )
     ); CHKERRQ(ierr);
     double sum = 0,diff_sum = 0;
     std::cout << "Faces\n";
     for(int ff = 0;ff<4;ff++) {
-      std::cout << tet_data.dataOnEntities[MBTRI][ff].getN(AINSWORTH_COLE_BASE) << std::endl;
-      std::cout << tet_data.dataOnEntities[MBTRI][ff].getDiffN(AINSWORTH_COLE_BASE) << std::endl;
-      sum += sum_matrix(tet_data.dataOnEntities[MBTRI][ff].getN(AINSWORTH_COLE_BASE));
-      diff_sum += sum_matrix(tet_data.dataOnEntities[MBTRI][ff].getDiffN(AINSWORTH_COLE_BASE));
+      std::cout << tet_data.dataOnEntities[MBTRI][ff].getN(AINSWORTH_LEGENDRE_BASE) << std::endl;
+      std::cout << tet_data.dataOnEntities[MBTRI][ff].getDiffN(AINSWORTH_LEGENDRE_BASE) << std::endl;
+      sum += sum_matrix(tet_data.dataOnEntities[MBTRI][ff].getN(AINSWORTH_LEGENDRE_BASE));
+      diff_sum += sum_matrix(tet_data.dataOnEntities[MBTRI][ff].getDiffN(AINSWORTH_LEGENDRE_BASE));
     }
     std::cout << "Tets\n";
-    std::cout << tet_data.dataOnEntities[MBTET][0].getN(AINSWORTH_COLE_BASE) << std::endl;
-    std::cout << tet_data.dataOnEntities[MBTET][0].getDiffN(AINSWORTH_COLE_BASE) << std::endl;
-    sum += sum_matrix(tet_data.dataOnEntities[MBTET][0].getN(AINSWORTH_COLE_BASE));
-    diff_sum += sum_matrix(tet_data.dataOnEntities[MBTET][0].getDiffN(AINSWORTH_COLE_BASE));
-    std::cout << "sum  " << sum << std::endl;
-    std::cout << "diff_sum " << diff_sum << std::endl;
+    std::cout << tet_data.dataOnEntities[MBTET][0].getN(AINSWORTH_LEGENDRE_BASE) << std::endl;
+    std::cout << tet_data.dataOnEntities[MBTET][0].getDiffN(AINSWORTH_LEGENDRE_BASE) << std::endl;
+    sum += sum_matrix(tet_data.dataOnEntities[MBTET][0].getN(AINSWORTH_LEGENDRE_BASE));
+    diff_sum += sum_matrix(tet_data.dataOnEntities[MBTET][0].getDiffN(AINSWORTH_LEGENDRE_BASE));
+    std::cout << "sum  " << 1e8*sum << std::endl;
+    std::cout << "diff_sum " << 1e8*diff_sum << std::endl;
     if(fabs(0.188636-sum)>eps) {
       SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"wrong result");
     }
@@ -324,33 +383,65 @@ int main(int argc, char *argv[]) {
     }
   }
 
+  if(choise_value==HDIVTET_DEMKOWICZ) {
+    ierr = TetPolynomialBase().getValue(
+      pts_tet,
+      boost::shared_ptr<BaseFunctionCtx>(
+        new EntPolynomialBaseCtx(tet_data,HDIV,DEMKOWICZ_JACOBI_BASE)
+      )
+    ); CHKERRQ(ierr);
+    double sum = 0,diff_sum = 0;
+    std::cout << "Faces\n";
+    for(int ff = 0;ff<4;ff++) {
+      std::cout << tet_data.dataOnEntities[MBTRI][ff].getN(DEMKOWICZ_JACOBI_BASE) << std::endl;
+      std::cout << tet_data.dataOnEntities[MBTRI][ff].getDiffN(DEMKOWICZ_JACOBI_BASE) << std::endl;
+      sum += sum_matrix(tet_data.dataOnEntities[MBTRI][ff].getN(DEMKOWICZ_JACOBI_BASE));
+      diff_sum += sum_matrix(tet_data.dataOnEntities[MBTRI][ff].getDiffN(DEMKOWICZ_JACOBI_BASE));
+    }
+    std::cout << "Tets\n";
+    std::cout << tet_data.dataOnEntities[MBTET][0].getN(DEMKOWICZ_JACOBI_BASE) << std::endl;
+    std::cout << tet_data.dataOnEntities[MBTET][0].getDiffN(DEMKOWICZ_JACOBI_BASE) << std::endl;
+    sum += sum_matrix(tet_data.dataOnEntities[MBTET][0].getN(DEMKOWICZ_JACOBI_BASE));
+    diff_sum += sum_matrix(tet_data.dataOnEntities[MBTET][0].getDiffN(DEMKOWICZ_JACOBI_BASE));
+    std::cout << "sum  " << sum << std::endl;
+    std::cout << "diff_sum " << diff_sum << std::endl;
+    const double expected_result = -74.0942;
+    const double expected_diff_result = 1083.47;
+    if(fabs((expected_result-sum)/expected_result)>eps) {
+      SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"wrong result");
+    }
+    if(fabs((expected_diff_result-diff_sum)/expected_diff_result)>eps) {
+      SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"wrong result");
+    }
+  }
+
   if(choise_value==HCURLTET) {
     ierr = TetPolynomialBase().getValue(
       pts_tet,
       boost::shared_ptr<BaseFunctionCtx>(
-        new EntPolynomialBaseCtx(tet_data,HCURL,AINSWORTH_COLE_BASE)
+        new EntPolynomialBaseCtx(tet_data,HCURL,AINSWORTH_LEGENDRE_BASE)
       )
     ); CHKERRQ(ierr);
     double sum = 0,diff_sum = 0;
     std::cout << "Edges\n";
     for(int ee = 0;ee<6;ee++) {
-      std::cout << tet_data.dataOnEntities[MBEDGE][ee].getN(AINSWORTH_COLE_BASE) << std::endl;
-      std::cout << tet_data.dataOnEntities[MBEDGE][ee].getDiffN(AINSWORTH_COLE_BASE) << std::endl;
-      sum += sum_matrix(tet_data.dataOnEntities[MBEDGE][ee].getN(AINSWORTH_COLE_BASE));
-      diff_sum += sum_matrix(tet_data.dataOnEntities[MBEDGE][ee].getDiffN(AINSWORTH_COLE_BASE));
+      std::cout << tet_data.dataOnEntities[MBEDGE][ee].getN(AINSWORTH_LEGENDRE_BASE) << std::endl;
+      std::cout << tet_data.dataOnEntities[MBEDGE][ee].getDiffN(AINSWORTH_LEGENDRE_BASE) << std::endl;
+      sum += sum_matrix(tet_data.dataOnEntities[MBEDGE][ee].getN(AINSWORTH_LEGENDRE_BASE));
+      diff_sum += sum_matrix(tet_data.dataOnEntities[MBEDGE][ee].getDiffN(AINSWORTH_LEGENDRE_BASE));
     }
     std::cout << "Faces\n";
     for(int ff = 0;ff<4;ff++) {
-      std::cout << tet_data.dataOnEntities[MBTRI][ff].getN(AINSWORTH_COLE_BASE) << std::endl;
-      std::cout << tet_data.dataOnEntities[MBTRI][ff].getDiffN(AINSWORTH_COLE_BASE) << std::endl;
-      sum += sum_matrix(tet_data.dataOnEntities[MBTRI][ff].getN(AINSWORTH_COLE_BASE));
-      diff_sum += sum_matrix(tet_data.dataOnEntities[MBTRI][ff].getDiffN(AINSWORTH_COLE_BASE));
+      std::cout << tet_data.dataOnEntities[MBTRI][ff].getN(AINSWORTH_LEGENDRE_BASE) << std::endl;
+      std::cout << tet_data.dataOnEntities[MBTRI][ff].getDiffN(AINSWORTH_LEGENDRE_BASE) << std::endl;
+      sum += sum_matrix(tet_data.dataOnEntities[MBTRI][ff].getN(AINSWORTH_LEGENDRE_BASE));
+      diff_sum += sum_matrix(tet_data.dataOnEntities[MBTRI][ff].getDiffN(AINSWORTH_LEGENDRE_BASE));
     }
     std::cout << "Tets\n";
-    std::cout << tet_data.dataOnEntities[MBTET][0].getN(AINSWORTH_COLE_BASE) << std::endl;
-    std::cout << tet_data.dataOnEntities[MBTET][0].getDiffN(AINSWORTH_COLE_BASE) << std::endl;
-    sum += sum_matrix(tet_data.dataOnEntities[MBTET][0].getN(AINSWORTH_COLE_BASE));
-    diff_sum += sum_matrix(tet_data.dataOnEntities[MBTET][0].getDiffN(AINSWORTH_COLE_BASE));
+    std::cout << tet_data.dataOnEntities[MBTET][0].getN(AINSWORTH_LEGENDRE_BASE) << std::endl;
+    std::cout << tet_data.dataOnEntities[MBTET][0].getDiffN(AINSWORTH_LEGENDRE_BASE) << std::endl;
+    sum += sum_matrix(tet_data.dataOnEntities[MBTET][0].getN(AINSWORTH_LEGENDRE_BASE));
+    diff_sum += sum_matrix(tet_data.dataOnEntities[MBTET][0].getDiffN(AINSWORTH_LEGENDRE_BASE));
     std::cout << "sum  " << sum << std::endl;
     std::cout << "diff_sum " << diff_sum << std::endl;
     if(fabs(-1.7798-sum)>eps) {
@@ -365,15 +456,15 @@ int main(int argc, char *argv[]) {
     ierr = TetPolynomialBase().getValue(
       pts_tet,
       boost::shared_ptr<BaseFunctionCtx>(
-        new EntPolynomialBaseCtx(tet_data,L2,AINSWORTH_COLE_BASE)
+        new EntPolynomialBaseCtx(tet_data,L2,AINSWORTH_LEGENDRE_BASE)
       )
     ); CHKERRQ(ierr);
     double sum = 0,diff_sum = 0;
     std::cout << "Tets\n";
-    std::cout << tet_data.dataOnEntities[MBTET][0].getN(AINSWORTH_COLE_BASE) << std::endl;
-    std::cout << tet_data.dataOnEntities[MBTET][0].getDiffN(AINSWORTH_COLE_BASE) << std::endl;
-    sum += sum_matrix(tet_data.dataOnEntities[MBTET][0].getN(AINSWORTH_COLE_BASE));
-    diff_sum += sum_matrix(tet_data.dataOnEntities[MBTET][0].getDiffN(AINSWORTH_COLE_BASE));
+    std::cout << tet_data.dataOnEntities[MBTET][0].getN(AINSWORTH_LEGENDRE_BASE) << std::endl;
+    std::cout << tet_data.dataOnEntities[MBTET][0].getDiffN(AINSWORTH_LEGENDRE_BASE) << std::endl;
+    sum += sum_matrix(tet_data.dataOnEntities[MBTET][0].getN(AINSWORTH_LEGENDRE_BASE));
+    diff_sum += sum_matrix(tet_data.dataOnEntities[MBTET][0].getDiffN(AINSWORTH_LEGENDRE_BASE));
     std::cout << "sum  " << sum << std::endl;
     std::cout << "diff_sum " << diff_sum << std::endl;
     if(fabs(3.60352-sum)>eps) {
@@ -427,28 +518,28 @@ int main(int argc, char *argv[]) {
     ierr = TriPolynomialBase().getValue(
       pts_tri,
       boost::shared_ptr<BaseFunctionCtx>(
-        new EntPolynomialBaseCtx(tri_data,H1,AINSWORTH_COLE_BASE,NOBASE)
+        new EntPolynomialBaseCtx(tri_data,H1,AINSWORTH_LEGENDRE_BASE,NOBASE)
       )
     ); CHKERRQ(ierr);
     if(
       tri_data.dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE).get()!=
-      tri_data.dataOnEntities[MBVERTEX][0].getNSharedPtr(AINSWORTH_COLE_BASE).get()
+      tri_data.dataOnEntities[MBVERTEX][0].getNSharedPtr(AINSWORTH_LEGENDRE_BASE).get()
     ) {
       SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"Different pointers");
     }
     double sum = 0,diff_sum = 0;
     std::cout << "Edges\n";
     for(int ee = 0;ee<3;ee++) {
-      std::cout << tri_data.dataOnEntities[MBEDGE][ee].getN(AINSWORTH_COLE_BASE) << std::endl;
-      std::cout << tri_data.dataOnEntities[MBEDGE][ee].getDiffN(AINSWORTH_COLE_BASE) << std::endl;
-      sum += sum_matrix(tri_data.dataOnEntities[MBEDGE][ee].getN(AINSWORTH_COLE_BASE));
-      diff_sum += sum_matrix(tri_data.dataOnEntities[MBEDGE][ee].getDiffN(AINSWORTH_COLE_BASE));
+      std::cout << tri_data.dataOnEntities[MBEDGE][ee].getN(AINSWORTH_LEGENDRE_BASE) << std::endl;
+      std::cout << tri_data.dataOnEntities[MBEDGE][ee].getDiffN(AINSWORTH_LEGENDRE_BASE) << std::endl;
+      sum += sum_matrix(tri_data.dataOnEntities[MBEDGE][ee].getN(AINSWORTH_LEGENDRE_BASE));
+      diff_sum += sum_matrix(tri_data.dataOnEntities[MBEDGE][ee].getDiffN(AINSWORTH_LEGENDRE_BASE));
     }
     std::cout << "Face\n";
-    std::cout << tri_data.dataOnEntities[MBTRI][0].getN(AINSWORTH_COLE_BASE) << std::endl;
-    std::cout << tri_data.dataOnEntities[MBTRI][0].getDiffN(AINSWORTH_COLE_BASE) << std::endl;
-    sum += sum_matrix(tri_data.dataOnEntities[MBTRI][0].getN(AINSWORTH_COLE_BASE));
-    diff_sum += sum_matrix(tri_data.dataOnEntities[MBTRI][0].getDiffN(AINSWORTH_COLE_BASE));
+    std::cout << tri_data.dataOnEntities[MBTRI][0].getN(AINSWORTH_LEGENDRE_BASE) << std::endl;
+    std::cout << tri_data.dataOnEntities[MBTRI][0].getDiffN(AINSWORTH_LEGENDRE_BASE) << std::endl;
+    sum += sum_matrix(tri_data.dataOnEntities[MBTRI][0].getN(AINSWORTH_LEGENDRE_BASE));
+    diff_sum += sum_matrix(tri_data.dataOnEntities[MBTRI][0].getDiffN(AINSWORTH_LEGENDRE_BASE));
     std::cout << "sum  " << sum << std::endl;
     std::cout << "diff_sum " << diff_sum << std::endl;
     if(fabs(0.805556-sum)>eps) {
@@ -459,25 +550,49 @@ int main(int argc, char *argv[]) {
     }
   }
 
-  if(choise_value==HDIVTRI) {
+  if(choise_value==HDIVTRI_AINSWORTH) {
     ierr = TriPolynomialBase().getValue(
       pts_tri,
       boost::shared_ptr<BaseFunctionCtx>(
-        new EntPolynomialBaseCtx(tri_data,HDIV,AINSWORTH_COLE_BASE,NOBASE)
+        new EntPolynomialBaseCtx(tri_data,HDIV,AINSWORTH_LEGENDRE_BASE,NOBASE)
       )
     ); CHKERRQ(ierr);
     if(
       tri_data.dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE).get()!=
-      tri_data.dataOnEntities[MBVERTEX][0].getNSharedPtr(AINSWORTH_COLE_BASE).get()
+      tri_data.dataOnEntities[MBVERTEX][0].getNSharedPtr(AINSWORTH_LEGENDRE_BASE).get()
     ) {
       SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"Different pointers");
     }
     double sum = 0;
     std::cout << "Face\n";
-    std::cout << tri_data.dataOnEntities[MBTRI][0].getN(AINSWORTH_COLE_BASE) << std::endl;
-    sum += sum_matrix(tri_data.dataOnEntities[MBTRI][0].getN(AINSWORTH_COLE_BASE));
+    std::cout << tri_data.dataOnEntities[MBTRI][0].getN(AINSWORTH_LEGENDRE_BASE) << std::endl;
+    sum += sum_matrix(tri_data.dataOnEntities[MBTRI][0].getN(AINSWORTH_LEGENDRE_BASE));
     std::cout << "sum  " << sum << std::endl;
     if(fabs(1.93056-sum)>eps) {
+      SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"wrong result");
+    }
+  }
+
+  if(choise_value==HDIVTRI_DEMKOWICZ) {
+    ierr = TriPolynomialBase().getValue(
+      pts_tri,
+      boost::shared_ptr<BaseFunctionCtx>(
+        new EntPolynomialBaseCtx(tri_data,HDIV,DEMKOWICZ_JACOBI_BASE,NOBASE)
+      )
+    ); CHKERRQ(ierr);
+    if(
+      tri_data.dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE).get()!=
+      tri_data.dataOnEntities[MBVERTEX][0].getNSharedPtr(DEMKOWICZ_JACOBI_BASE).get()
+    ) {
+      SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"Different pointers");
+    }
+    double sum = 0;
+    std::cout << "Face\n";
+    std::cout << tri_data.dataOnEntities[MBTRI][0].getN(DEMKOWICZ_JACOBI_BASE) << std::endl;
+    sum += sum_matrix(tri_data.dataOnEntities[MBTRI][0].getN(DEMKOWICZ_JACOBI_BASE));
+    std::cout << "sum  " << sum << std::endl;
+    const double expected_result = 28.25;
+    if(fabs((expected_result-sum)/expected_result)>eps) {
       SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"wrong result");
     }
   }
@@ -486,24 +601,24 @@ int main(int argc, char *argv[]) {
     ierr = TriPolynomialBase().getValue(
       pts_tri,
       boost::shared_ptr<BaseFunctionCtx>(
-        new EntPolynomialBaseCtx(tri_data,HCURL,AINSWORTH_COLE_BASE,NOBASE)
+        new EntPolynomialBaseCtx(tri_data,HCURL,AINSWORTH_LEGENDRE_BASE,NOBASE)
       )
     ); CHKERRQ(ierr);
     if(
       tri_data.dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE).get()!=
-      tri_data.dataOnEntities[MBVERTEX][0].getNSharedPtr(AINSWORTH_COLE_BASE).get()
+      tri_data.dataOnEntities[MBVERTEX][0].getNSharedPtr(AINSWORTH_LEGENDRE_BASE).get()
     ) {
       SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"Different pointers");
     }
     double sum = 0,diff_sum = 0;
     std::cout << "Edges\n";
     for(int ee = 0;ee<3;ee++) {
-      std::cout << tri_data.dataOnEntities[MBEDGE][ee].getN(AINSWORTH_COLE_BASE) << std::endl;
-      sum += sum_matrix(tri_data.dataOnEntities[MBEDGE][ee].getN(AINSWORTH_COLE_BASE));
+      std::cout << tri_data.dataOnEntities[MBEDGE][ee].getN(AINSWORTH_LEGENDRE_BASE) << std::endl;
+      sum += sum_matrix(tri_data.dataOnEntities[MBEDGE][ee].getN(AINSWORTH_LEGENDRE_BASE));
     }
     std::cout << "Face\n";
-    std::cout << tri_data.dataOnEntities[MBTRI][0].getN(AINSWORTH_COLE_BASE) << std::endl;
-    sum += sum_matrix(tri_data.dataOnEntities[MBTRI][0].getN(AINSWORTH_COLE_BASE));
+    std::cout << tri_data.dataOnEntities[MBTRI][0].getN(AINSWORTH_LEGENDRE_BASE) << std::endl;
+    sum += sum_matrix(tri_data.dataOnEntities[MBTRI][0].getN(AINSWORTH_LEGENDRE_BASE));
     std::cout << "sum  " << sum << std::endl;
     if(fabs(0.333333-sum)>eps) {
       SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"wrong result");
@@ -514,19 +629,19 @@ int main(int argc, char *argv[]) {
     ierr = TriPolynomialBase().getValue(
       pts_tri,
       boost::shared_ptr<BaseFunctionCtx>(
-        new EntPolynomialBaseCtx(tri_data,L2,AINSWORTH_COLE_BASE,NOBASE)
+        new EntPolynomialBaseCtx(tri_data,L2,AINSWORTH_LEGENDRE_BASE,NOBASE)
       )
     ); CHKERRQ(ierr);
     if(
       tri_data.dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE).get()!=
-      tri_data.dataOnEntities[MBVERTEX][0].getNSharedPtr(AINSWORTH_COLE_BASE).get()
+      tri_data.dataOnEntities[MBVERTEX][0].getNSharedPtr(AINSWORTH_LEGENDRE_BASE).get()
     ) {
       SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"Different pointers");
     }
     double sum = 0;
     std::cout << "Face\n";
-    std::cout << tri_data.dataOnEntities[MBTRI][0].getN(AINSWORTH_COLE_BASE) << std::endl;
-    sum += sum_matrix(tri_data.dataOnEntities[MBTRI][0].getN(AINSWORTH_COLE_BASE));
+    std::cout << tri_data.dataOnEntities[MBTRI][0].getN(AINSWORTH_LEGENDRE_BASE) << std::endl;
+    sum += sum_matrix(tri_data.dataOnEntities[MBTRI][0].getN(AINSWORTH_LEGENDRE_BASE));
     std::cout << "sum  " << sum << std::endl;
     if(fabs(0.671875-sum)>eps) {
       SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"wrong result");
@@ -565,21 +680,21 @@ int main(int argc, char *argv[]) {
     ierr = EdgePolynomialBase().getValue(
       pts_edge,
       boost::shared_ptr<BaseFunctionCtx>(
-        new EntPolynomialBaseCtx(edge_data,H1,AINSWORTH_COLE_BASE,NOBASE)
+        new EntPolynomialBaseCtx(edge_data,H1,AINSWORTH_LEGENDRE_BASE,NOBASE)
       )
     ); CHKERRQ(ierr);
     if(
       edge_data.dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE).get()!=
-      edge_data.dataOnEntities[MBVERTEX][0].getNSharedPtr(AINSWORTH_COLE_BASE).get()
+      edge_data.dataOnEntities[MBVERTEX][0].getNSharedPtr(AINSWORTH_LEGENDRE_BASE).get()
     ) {
       SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"Different pointers");
     }
     double sum = 0,diff_sum = 0;
     std::cout << "Edge\n";
-    std::cout << edge_data.dataOnEntities[MBEDGE][0].getN(AINSWORTH_COLE_BASE) << std::endl;
-    std::cout << edge_data.dataOnEntities[MBEDGE][0].getDiffN(AINSWORTH_COLE_BASE) << std::endl;
-    sum += sum_matrix(edge_data.dataOnEntities[MBEDGE][0].getN(AINSWORTH_COLE_BASE));
-    diff_sum += sum_matrix(edge_data.dataOnEntities[MBEDGE][0].getDiffN(AINSWORTH_COLE_BASE));
+    std::cout << edge_data.dataOnEntities[MBEDGE][0].getN(AINSWORTH_LEGENDRE_BASE) << std::endl;
+    std::cout << edge_data.dataOnEntities[MBEDGE][0].getDiffN(AINSWORTH_LEGENDRE_BASE) << std::endl;
+    sum += sum_matrix(edge_data.dataOnEntities[MBEDGE][0].getN(AINSWORTH_LEGENDRE_BASE));
+    diff_sum += sum_matrix(edge_data.dataOnEntities[MBEDGE][0].getDiffN(AINSWORTH_LEGENDRE_BASE));
     std::cout << "sum  " << sum << std::endl;
     std::cout << "diff sum " << diff_sum << std::endl;
     if(fabs(0.506122-sum)>eps) {
@@ -594,18 +709,18 @@ int main(int argc, char *argv[]) {
     ierr = EdgePolynomialBase().getValue(
       pts_edge,
       boost::shared_ptr<BaseFunctionCtx>(
-        new EntPolynomialBaseCtx(edge_data,HCURL,AINSWORTH_COLE_BASE,NOBASE)
+        new EntPolynomialBaseCtx(edge_data,HCURL,AINSWORTH_LEGENDRE_BASE,NOBASE)
       )
     ); CHKERRQ(ierr);
     if(
       edge_data.dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE).get()!=
-      edge_data.dataOnEntities[MBVERTEX][0].getNSharedPtr(AINSWORTH_COLE_BASE).get()
+      edge_data.dataOnEntities[MBVERTEX][0].getNSharedPtr(AINSWORTH_LEGENDRE_BASE).get()
     ) {
       SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"Different pointers");
     }
-    std::cout << edge_data.dataOnEntities[MBEDGE][0].getN(AINSWORTH_COLE_BASE) << std::endl;
+    std::cout << edge_data.dataOnEntities[MBEDGE][0].getN(AINSWORTH_LEGENDRE_BASE) << std::endl;
     int sum = 0;
-    sum += sum_matrix(edge_data.dataOnEntities[MBEDGE][0].getN(AINSWORTH_COLE_BASE));
+    sum += sum_matrix(edge_data.dataOnEntities[MBEDGE][0].getN(AINSWORTH_LEGENDRE_BASE));
     std::cout << "sum  " << sum << std::endl;
     if(fabs(-4-sum)>eps) {
       SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"wrong result");

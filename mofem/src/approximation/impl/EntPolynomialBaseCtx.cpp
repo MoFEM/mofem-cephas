@@ -78,17 +78,13 @@ copyNodeBase(copy_node_base) {
   ierr = setBase(); CHKERRABORT(PETSC_COMM_WORLD,ierr);
 }
 
-
 EntPolynomialBaseCtx::~EntPolynomialBaseCtx() {
 }
 
 PetscErrorCode EntPolynomialBaseCtx::setBase() {
   PetscFunctionBegin;
   switch(bAse) {
-    case AINSWORTH_COLE_BASE:
-    basePolynomials = Legendre_polynomials;
-    break;
-    case LOBATTO_BASE:
+    case AINSWORTH_LEGENDRE_BASE:
     switch (sPace) {
       case NOSPACE:
       case NOFIELD:
@@ -97,7 +93,37 @@ PetscErrorCode EntPolynomialBaseCtx::setBase() {
       case HCURL:
       case HDIV:
       case L2:
-      basePolynomials = LobattoKernel_polynomials;
+      basePolynomialsType0 = Legendre_polynomials;
+      break;
+      case LASTSPACE:
+      SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"Makes no sense");
+    }
+    break;
+    case AINSWORTH_LOBBATO_BASE:
+    switch (sPace) {
+      case NOSPACE:
+      case NOFIELD:
+      SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"Makes no sense");
+      case H1:
+      case HCURL:
+      case HDIV:
+      case L2:
+      basePolynomialsType0 = LobattoKernel_polynomials;
+      break;
+      case LASTSPACE:
+      SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"Makes no sense");
+    }
+    break;
+    case DEMKOWICZ_JACOBI_BASE:
+    switch (sPace) {
+      case NOSPACE:
+      case NOFIELD:
+      SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"Makes no sense");
+      case H1:
+      case HCURL:
+      case HDIV:
+      case L2:
+      basePolynomialsType1 = Jacobi_polynomials;
       break;
       case LASTSPACE:
       SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"Makes no sense");

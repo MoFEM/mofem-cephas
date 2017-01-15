@@ -142,7 +142,7 @@ PetscErrorCode EdgePolynomialBase::getValueH1(ublas::matrix<double> &pts) {
   const FieldApproximationBase base = cTx->bAse;
   PetscErrorCode (*base_polynomials)(
     int p,double s,double *diff_s,double *L,double *diffL,const int dim
-  ) = cTx->basePolynomials;
+  ) = cTx->basePolynomialsType0;
 
   int nb_gauss_pts = pts.size2();
 
@@ -233,7 +233,7 @@ PetscErrorCode EdgePolynomialBase::getValueHCurl(ublas::matrix<double> &pts) {
   const FieldApproximationBase base = cTx->bAse;
   PetscErrorCode (*base_polynomials)(
     int p,double s,double *diff_s,double *L,double *diffL,const int dim
-  ) = cTx->basePolynomials;
+  ) = cTx->basePolynomialsType0;
 
   int nb_gauss_pts = pts.size2();
 

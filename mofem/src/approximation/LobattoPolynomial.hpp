@@ -41,7 +41,7 @@ namespace MoFEM {
       boost::shared_ptr<ublas::matrix<double> > base_diff_fun_ptr
     ):
     LegendrePolynomialCtx(p,diff_s,dim,base_fun_ptr,base_diff_fun_ptr) {
-      basePolynomials = Lobatto_polynomials;
+      basePolynomialsType0 = Lobatto_polynomials;
     }
     ~LobattoPolynomialCtx() {}
 
@@ -81,7 +81,7 @@ namespace MoFEM {
       boost::shared_ptr<ublas::matrix<double> > base_diff_fun_ptr
     ):
     LegendrePolynomialCtx(p,diff_s,dim,base_fun_ptr,base_diff_fun_ptr) {
-      basePolynomials = LobattoKernel_polynomials;
+      basePolynomialsType0 = LobattoKernel_polynomials;
     }
     ~KernelLobattoPolynomialCtx() {}
 

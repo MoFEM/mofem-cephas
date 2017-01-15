@@ -78,7 +78,7 @@ PetscErrorCode LobattoPolynomial::getValue(
   for(unsigned int gg = 0;gg<pts.size2();gg++) {
     if(ctx->baseFunPtr) l = &((*ctx->baseFunPtr)(gg,0));
     if(ctx->baseDiffFunPtr) diff_l = &((*ctx->baseDiffFunPtr)(gg,0));
-    ierr = (ctx->basePolynomials)(ctx->P,pts(0,gg),ctx->diffS,l,diff_l,ctx->dIm); CHKERRQ(ierr);
+    ierr = (ctx->basePolynomialsType0)(ctx->P,pts(0,gg),ctx->diffS,l,diff_l,ctx->dIm); CHKERRQ(ierr);
   }
   PetscFunctionReturn(0);
 }
@@ -131,7 +131,7 @@ PetscErrorCode KernelLobattoPolynomial::getValue(
   for(unsigned int gg = 0;gg<pts.size2();gg++) {
     if(ctx->baseFunPtr) l = &((*ctx->baseFunPtr)(gg,0));
     if(ctx->baseDiffFunPtr) diff_l = &((*ctx->baseDiffFunPtr)(gg,0));
-    ierr = (ctx->basePolynomials)(ctx->P,pts(0,gg),ctx->diffS,l,diff_l,ctx->dIm); CHKERRQ(ierr);
+    ierr = (ctx->basePolynomialsType0)(ctx->P,pts(0,gg),ctx->diffS,l,diff_l,ctx->dIm); CHKERRQ(ierr);
   }
   PetscFunctionReturn(0);
 }

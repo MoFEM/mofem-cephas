@@ -77,7 +77,7 @@ PetscErrorCode TetPolynomialBase::getValueH1(ublas::matrix<double> &pts) {
   const FieldApproximationBase base = cTx->bAse;
   PetscErrorCode (*base_polynomials)(
     int p,double s,double *diff_s,double *L,double *diffL,const int dim
-  ) = cTx->basePolynomials;
+  ) = cTx->basePolynomialsType0;
 
   int nb_gauss_pts = pts.size2();
 
@@ -181,7 +181,7 @@ PetscErrorCode TetPolynomialBase::getValueL2(
   const FieldApproximationBase base = cTx->bAse;
   PetscErrorCode (*base_polynomials)(
     int p,double s,double *diff_s,double *L,double *diffL,const int dim
-  ) = cTx->basePolynomials;
+  ) = cTx->basePolynomialsType0;
 
   int nb_gauss_pts = pts.size2();
 
@@ -205,7 +205,7 @@ PetscErrorCode TetPolynomialBase::getValueL2(
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode TetPolynomialBase::getValueHdiv(
+PetscErrorCode TetPolynomialBase::getValueHdivAinsworthBase(
   ublas::matrix<double> &pts
 ) {
   PetscErrorCode ierr;
@@ -215,7 +215,7 @@ PetscErrorCode TetPolynomialBase::getValueHdiv(
   const FieldApproximationBase base = cTx->bAse;
   PetscErrorCode (*base_polynomials)(
     int p,double s,double *diff_s,double *L,double *diffL,const int dim
-  ) = cTx->basePolynomials;
+  ) = cTx->basePolynomialsType0;
 
   int nb_gauss_pts = pts.size2();
 
@@ -239,18 +239,18 @@ PetscErrorCode TetPolynomialBase::getValueHdiv(
     faces_order[ff] = data.dataOnEntities[MBTRI][ff].getDataOrder();
     //three edges on face
     for(int ee = 0;ee<3;ee++) {
-      N_face_edge(ff,ee).resize(nb_gauss_pts,3*NBFACETRI_EDGE_HDIV(faces_order[ff]),false);
-      diffN_face_edge(ff,ee).resize(nb_gauss_pts,9*NBFACETRI_EDGE_HDIV(faces_order[ff]),false);
+      N_face_edge(ff,ee).resize(nb_gauss_pts,3*NBFACETRI_AINSWORTH_EDGE_HDIV(faces_order[ff]),false);
+      diffN_face_edge(ff,ee).resize(nb_gauss_pts,9*NBFACETRI_AINSWORTH_EDGE_HDIV(faces_order[ff]),false);
       phi_f_e[ff][ee] = &((N_face_edge(ff,ee))(0,0));
       diff_phi_f_e[ff][ee] = &((diffN_face_edge(ff,ee))(0,0));
     }
-    N_face_bubble[ff].resize(nb_gauss_pts,3*NBFACETRI_FACE_HDIV(faces_order[ff]),false);
-    diffN_face_bubble[ff].resize(nb_gauss_pts,9*NBFACETRI_FACE_HDIV(faces_order[ff]),false);
+    N_face_bubble[ff].resize(nb_gauss_pts,3*NBFACETRI_AINSWORTH_FACE_HDIV(faces_order[ff]),false);
+    diffN_face_bubble[ff].resize(nb_gauss_pts,9*NBFACETRI_AINSWORTH_FACE_HDIV(faces_order[ff]),false);
     phi_f[ff] = &*(N_face_bubble[ff].data().begin());
     diff_phi_f[ff] = &*(diffN_face_bubble[ff].data().begin());
   }
 
-  ierr = Hdiv_EdgeFaceShapeFunctions_MBTET(
+  ierr = Hdiv_Ainsworth_EdgeFaceShapeFunctions_MBTET(
     &data.facesNodes(0,0),faces_order,
     &data.dataOnEntities[MBVERTEX][0].getN(base)(0,0),
     &data.dataOnEntities[MBVERTEX][0].getDiffN(base)(0,0),
@@ -258,7 +258,7 @@ PetscErrorCode TetPolynomialBase::getValueHdiv(
     base_polynomials
   ); CHKERRQ(ierr);
 
-  ierr = Hdiv_FaceBubbleShapeFunctions_MBTET(
+  ierr = Hdiv_Ainsworth_FaceBubbleShapeFunctions(
     &data.facesNodes(0,0),faces_order,
     &data.dataOnEntities[MBVERTEX][0].getN(base)(0,0),
     &data.dataOnEntities[MBVERTEX][0].getDiffN(base)(0,0),
@@ -280,12 +280,12 @@ PetscErrorCode TetPolynomialBase::getValueHdiv(
   N_volume_edge.resize(6,false);
   diffN_volume_edge.resize(6,false);
   for(int ee = 0;ee<6;ee++) {
-    N_volume_edge[ee].resize(nb_gauss_pts,3*NBVOLUMETET_EDGE_HDIV(volume_order),false);
-    diffN_volume_edge[ee].resize(nb_gauss_pts,9*NBVOLUMETET_EDGE_HDIV(volume_order),false);
+    N_volume_edge[ee].resize(nb_gauss_pts,3*NBVOLUMETET_AINSWORTH_EDGE_HDIV(volume_order),false);
+    diffN_volume_edge[ee].resize(nb_gauss_pts,9*NBVOLUMETET_AINSWORTH_EDGE_HDIV(volume_order),false);
     phi_v_e[ee] = &*(N_volume_edge[ee].data().begin());
     diff_phi_v_e[ee] = &*(diffN_volume_edge[ee].data().begin());
   }
-  ierr = Hdiv_EdgeBasedVolumeShapeFunctions_MBTET(
+  ierr = Hdiv_Ainsworth_EdgeBasedVolumeShapeFunctions_MBTET(
     volume_order,&data.dataOnEntities[MBVERTEX][0].getN(base)(0,0),
     &data.dataOnEntities[MBVERTEX][0].getDiffN(base)(0,0),
     phi_v_e,diff_phi_v_e,nb_gauss_pts,
@@ -295,23 +295,23 @@ PetscErrorCode TetPolynomialBase::getValueHdiv(
   N_volume_face.resize(4,false);
   diffN_volume_face.resize(4,false);
   for(int ff = 0;ff<4;ff++) {
-    N_volume_face[ff].resize(nb_gauss_pts,3*NBVOLUMETET_FACE_HDIV(volume_order),false);
-    diffN_volume_face[ff].resize(nb_gauss_pts,9*NBVOLUMETET_FACE_HDIV(volume_order),false);
+    N_volume_face[ff].resize(nb_gauss_pts,3*NBVOLUMETET_AINSOWRTH_FACE_HDIV(volume_order),false);
+    diffN_volume_face[ff].resize(nb_gauss_pts,9*NBVOLUMETET_AINSOWRTH_FACE_HDIV(volume_order),false);
     phi_v_f[ff] = &*(N_volume_face[ff].data().begin());
     diff_phi_v_f[ff] = &*(diffN_volume_face[ff].data().begin());
   }
-  ierr = Hdiv_FaceBasedVolumeShapeFunctions_MBTET(
+  ierr = Hdiv_Ainsworth_FaceBasedVolumeShapeFunctions_MBTET(
     volume_order,&data.dataOnEntities[MBVERTEX][0].getN(base)(0,0),
     &data.dataOnEntities[MBVERTEX][0].getDiffN(base)(0,0),
     phi_v_f,diff_phi_v_f,nb_gauss_pts,
     base_polynomials
   ); CHKERRQ(ierr);
 
-  N_volume_bubble.resize(nb_gauss_pts,3*NBVOLUMETET_VOLUME_HDIV(volume_order),false);
-  diffN_volume_bubble.resize(nb_gauss_pts,9*NBVOLUMETET_VOLUME_HDIV(volume_order),false);
+  N_volume_bubble.resize(nb_gauss_pts,3*NBVOLUMETET_AINSWORTH_VOLUME_HDIV(volume_order),false);
+  diffN_volume_bubble.resize(nb_gauss_pts,9*NBVOLUMETET_AINSWORTH_VOLUME_HDIV(volume_order),false);
   phi_v = &*(N_volume_bubble.data().begin());
   diff_phi_v = &*(diffN_volume_bubble.data().begin());
-  ierr = Hdiv_VolumeBubbleShapeFunctions_MBTET(
+  ierr = Hdiv_Ainsworth_VolumeBubbleShapeFunctions_MBTET(
     volume_order,&data.dataOnEntities[MBVERTEX][0].getN(base)(0,0),
     &data.dataOnEntities[MBVERTEX][0].getDiffN(base)(0,0),
     phi_v,diff_phi_v,nb_gauss_pts,
@@ -331,9 +331,9 @@ PetscErrorCode TetPolynomialBase::getValueHdiv(
     SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
   }
   for(int ff = 0;ff!=4;ff++) {
-    data.dataOnEntities[MBTRI][ff].getHdivN(base).resize(nb_gauss_pts,3*NBFACETRI_HDIV(faces_order[ff]),false);
-    data.dataOnEntities[MBTRI][ff].getDiffHdivN(base).resize(nb_gauss_pts,9*NBFACETRI_HDIV(faces_order[ff]),false);
-    if(NBFACETRI_HDIV(faces_order[ff])==0) continue;
+    data.dataOnEntities[MBTRI][ff].getHdivN(base).resize(nb_gauss_pts,3*NBFACETRI_AINSWORTH_HDIV(faces_order[ff]),false);
+    data.dataOnEntities[MBTRI][ff].getDiffHdivN(base).resize(nb_gauss_pts,9*NBFACETRI_AINSWORTH_HDIV(faces_order[ff]),false);
+    if(NBFACETRI_AINSWORTH_HDIV(faces_order[ff])==0) continue;
     // face
     double *base_ptr = &*data.dataOnEntities[MBTRI][ff].getHdivN(base).data().begin();
     FTensor::Tensor1<double*,3> t_base(base_ptr,&base_ptr[HDIV1],&base_ptr[HDIV2],3);
@@ -346,7 +346,7 @@ PetscErrorCode TetPolynomialBase::getValueHdiv(
     // face-face
     boost::shared_ptr<FTensor::Tensor1<double*,3> > t_base_f;
     boost::shared_ptr<FTensor::Tensor2<double*,3,3> > t_diff_base_f;
-    if(NBFACETRI_FACE_HDIV(faces_order[ff])>0) {
+    if(NBFACETRI_AINSWORTH_FACE_HDIV(faces_order[ff])>0) {
       base_ptr = phi_f[ff];
       t_base_f = boost::shared_ptr<FTensor::Tensor1<double*,3> >(
         new FTensor::Tensor1<double*,3>
@@ -389,7 +389,7 @@ PetscErrorCode TetPolynomialBase::getValueHdiv(
     );
     for(int gg = 0;gg!=nb_gauss_pts;gg++) {
       for(int oo = 0;oo!=faces_order[ff];oo++) {
-        for(int dd = NBFACETRI_EDGE_HDIV(oo);dd!=NBFACETRI_EDGE_HDIV(oo+1);dd++) {
+        for(int dd = NBFACETRI_AINSWORTH_EDGE_HDIV(oo);dd!=NBFACETRI_AINSWORTH_EDGE_HDIV(oo+1);dd++) {
           t_base(i) = t_base_f_e0(i);
           ++t_base;
           ++t_base_f_e0;
@@ -409,7 +409,7 @@ PetscErrorCode TetPolynomialBase::getValueHdiv(
           ++t_diff_base;
           ++t_diff_base_f_e2;
         }
-        for(int dd = NBFACETRI_FACE_HDIV(oo);dd!=NBFACETRI_FACE_HDIV(oo+1);dd++) {
+        for(int dd = NBFACETRI_AINSWORTH_FACE_HDIV(oo);dd!=NBFACETRI_AINSWORTH_FACE_HDIV(oo+1);dd++) {
           t_base(i) = (*t_base_f)(i);
           ++t_base;
           ++(*t_base_f);
@@ -422,9 +422,9 @@ PetscErrorCode TetPolynomialBase::getValueHdiv(
   }
 
   //volume
-  data.dataOnEntities[MBTET][0].getHdivN(base).resize(nb_gauss_pts,3*NBVOLUMETET_HDIV(volume_order),false);
-  data.dataOnEntities[MBTET][0].getDiffHdivN(base).resize(nb_gauss_pts,9*NBVOLUMETET_HDIV(volume_order),false);
-  if(NBVOLUMETET_HDIV(volume_order)>0) {
+  data.dataOnEntities[MBTET][0].getHdivN(base).resize(nb_gauss_pts,3*NBVOLUMETET_AINSWORTH_HDIV(volume_order),false);
+  data.dataOnEntities[MBTET][0].getDiffHdivN(base).resize(nb_gauss_pts,9*NBVOLUMETET_AINSWORTH_HDIV(volume_order),false);
+  if(NBVOLUMETET_AINSWORTH_HDIV(volume_order)>0) {
     double *base_ptr = &*data.dataOnEntities[MBTET][0].getHdivN(base).data().begin();
     FTensor::Tensor1<double*,3> t_base(base_ptr,&base_ptr[HDIV1],&base_ptr[HDIV2],3);
     double *diff_base_ptr = &*data.dataOnEntities[MBTET][0].getDiffHdivN(base).data().begin();
@@ -457,7 +457,7 @@ PetscErrorCode TetPolynomialBase::getValueHdiv(
     t_base_v_f.reserve(4);
     std::vector<FTensor::Tensor2<double*,3,3> > t_diff_base_v_f;
     t_diff_base_v_f.reserve(4);
-    if(NBVOLUMETET_FACE_HDIV(volume_order)>0) {
+    if(NBVOLUMETET_AINSOWRTH_FACE_HDIV(volume_order)>0) {
       for(int ff = 0;ff!=4;ff++) {
         base_ptr = phi_v_f[ff];
         diff_base_ptr = diff_phi_v_f[ff];
@@ -475,7 +475,7 @@ PetscErrorCode TetPolynomialBase::getValueHdiv(
     }
     boost::shared_ptr<FTensor::Tensor1<double*,3> > t_base_v;
     boost::shared_ptr<FTensor::Tensor2<double*,3,3> > t_diff_base_v;
-    if(NBVOLUMETET_VOLUME_HDIV(volume_order)>0) {
+    if(NBVOLUMETET_AINSWORTH_VOLUME_HDIV(volume_order)>0) {
       base_ptr = phi_v;
       t_base_v = boost::shared_ptr<FTensor::Tensor1<double*,3> >(
         new FTensor::Tensor1<double*,3>
@@ -493,7 +493,7 @@ PetscErrorCode TetPolynomialBase::getValueHdiv(
     }
     for(int gg = 0;gg!=nb_gauss_pts;gg++) {
       for(int oo = 0;oo<volume_order;oo++) {
-        for(int dd = NBVOLUMETET_EDGE_HDIV(oo);dd<NBVOLUMETET_EDGE_HDIV(oo+1);dd++) {
+        for(int dd = NBVOLUMETET_AINSWORTH_EDGE_HDIV(oo);dd<NBVOLUMETET_AINSWORTH_EDGE_HDIV(oo+1);dd++) {
           for(int ee = 0;ee<6;ee++) {
             t_base(i) = t_base_v_e[ee](i);
             ++t_base;
@@ -503,7 +503,7 @@ PetscErrorCode TetPolynomialBase::getValueHdiv(
             ++t_diff_base_v_e[ee];
           }
         }
-        for(int dd = NBVOLUMETET_FACE_HDIV(oo);dd<NBVOLUMETET_FACE_HDIV(oo+1);dd++) {
+        for(int dd = NBVOLUMETET_AINSOWRTH_FACE_HDIV(oo);dd<NBVOLUMETET_AINSOWRTH_FACE_HDIV(oo+1);dd++) {
           for(int ff = 0;ff<4;ff++) {
             t_base(i) = t_base_v_f[ff](i);
             ++t_base;
@@ -513,7 +513,7 @@ PetscErrorCode TetPolynomialBase::getValueHdiv(
             ++t_diff_base_v_f[ff];
           }
         }
-        for(int dd = NBVOLUMETET_VOLUME_HDIV(oo);dd<NBVOLUMETET_VOLUME_HDIV(oo+1);dd++) {
+        for(int dd = NBVOLUMETET_AINSWORTH_VOLUME_HDIV(oo);dd<NBVOLUMETET_AINSWORTH_VOLUME_HDIV(oo+1);dd++) {
           t_base(i) = (*t_base_v)(i);
           ++t_base;
           ++(*t_base_v);
@@ -524,6 +524,108 @@ PetscErrorCode TetPolynomialBase::getValueHdiv(
       }
     }
   }
+
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode TetPolynomialBase::getValueHdivDemkowiczBase(
+  ublas::matrix<double> &pts
+) {
+  PetscErrorCode ierr;
+  PetscFunctionBegin;
+
+  DataForcesAndSurcesCore& data = cTx->dAta;
+  const FieldApproximationBase base = cTx->bAse;
+  if(base != DEMKOWICZ_JACOBI_BASE) {
+    SETERRQ1(
+      PETSC_COMM_SELF,
+      MOFEM_DATA_INCONSISTENCY,
+      "This should be used only with DEMKOWICZ_JACOBI_BASE "
+      "but base is %s",ApproximationBaseNames[base]
+    );
+  }
+  int nb_gauss_pts = pts.size2();
+
+  int volume_order = data.dataOnEntities[MBTET][0].getDataOrder();
+
+  int p_f[4];
+  double *phi_f[4];
+  double *diff_phi_f[4];
+
+  // Calculate base function on tet faces
+  for(int ff = 0;ff!=4;ff++) {
+    int face_order = data.dataOnEntities[MBTRI][ff].getDataOrder();
+    int order = volume_order>face_order ? volume_order : face_order;
+    data.dataOnEntities[MBTRI][ff].getHdivN(base).resize(
+      nb_gauss_pts,3*NBFACETRI_DEMKOWICZ_HDIV(order),false
+    );
+    data.dataOnEntities[MBTRI][ff].getDiffHdivN(base).resize(
+      nb_gauss_pts,9*NBFACETRI_DEMKOWICZ_HDIV(order),false
+    );
+    p_f[ff] = order;
+    phi_f[ff] = &*data.dataOnEntities[MBTRI][ff].getHdivN(base).data().begin();
+    diff_phi_f[ff] =
+    &*data.dataOnEntities[MBTRI][ff].getDiffHdivN(base).data().begin();
+    if(NBFACETRI_DEMKOWICZ_HDIV(order)==0) continue;
+    ierr = Hdiv_Demkowicz_Face_MBTET_ON_FACE(
+      &data.facesNodes(ff,0),
+      order,
+      &*data.dataOnEntities[MBVERTEX][0].getN(base).data().begin(),
+      &*data.dataOnEntities[MBVERTEX][0].getDiffN(base).data().begin(),
+      phi_f[ff],diff_phi_f[ff],nb_gauss_pts,4
+    ); CHKERRQ(ierr);
+  }
+
+  // Calculate base functions in tet interior
+  if(NBVOLUMETET_DEMKOWICZ_HDIV(volume_order)>0) {
+    data.dataOnEntities[MBTET][0].getHdivN(base).resize(
+      nb_gauss_pts,3*NBVOLUMETET_DEMKOWICZ_HDIV(volume_order),false
+    );
+    data.dataOnEntities[MBTET][0].getDiffHdivN(base).resize(
+      nb_gauss_pts,9*NBVOLUMETET_DEMKOWICZ_HDIV(volume_order),false
+    );
+    double *phi_v = &*data.dataOnEntities[MBTET][0].getHdivN(base).data().begin();
+    double *diff_phi_v = &*data.dataOnEntities[MBTET][0].getDiffHdivN(base).data().begin();
+    ierr = Hdiv_Demkowicz_Interior_MBTET(
+      volume_order,
+      &data.dataOnEntities[MBVERTEX][0].getN(base)(0,0),
+      &data.dataOnEntities[MBVERTEX][0].getDiffN(base)(0,0),
+      p_f,phi_f,diff_phi_f,
+      phi_v,diff_phi_v,
+      nb_gauss_pts
+    ); CHKERRQ(ierr);
+  }
+
+  // Set size of face base correctly
+  for(int ff = 0;ff!=4;ff++) {
+    int face_order = data.dataOnEntities[MBTRI][ff].getDataOrder();
+    data.dataOnEntities[MBTRI][ff].getHdivN(base).resize(
+      nb_gauss_pts,3*NBFACETRI_DEMKOWICZ_HDIV(face_order),true
+    );
+    data.dataOnEntities[MBTRI][ff].getDiffHdivN(base).resize(
+      nb_gauss_pts,9*NBFACETRI_DEMKOWICZ_HDIV(face_order),true
+    );
+  }
+
+  PetscFunctionReturn(0);
+}
+
+
+PetscErrorCode TetPolynomialBase::getValueHdiv(
+  ublas::matrix<double> &pts
+) {
+  PetscFunctionBegin;
+
+  switch (cTx->bAse) {
+    case AINSWORTH_LEGENDRE_BASE:
+    case AINSWORTH_LOBBATO_BASE:
+    return getValueHdivAinsworthBase(pts);
+    case DEMKOWICZ_JACOBI_BASE:
+    return getValueHdivDemkowiczBase(pts);
+    default:
+    SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"Not implemented");
+  }
+
   PetscFunctionReturn(0);
 }
 
@@ -539,7 +641,7 @@ PetscErrorCode TetPolynomialBase::getValueHCurl(
   const FieldApproximationBase base = cTx->bAse;
   PetscErrorCode (*base_polynomials)(
     int p,double s,double *diff_s,double *L,double *diffL,const int dim
-  ) = cTx->basePolynomials;
+  ) = cTx->basePolynomialsType0;
 
   int nb_gauss_pts = pts.size2();
 
@@ -718,7 +820,7 @@ PetscErrorCode TetPolynomialBase::getValue(
 
   switch (cTx->sPace) {
     case H1:
-    ierr = getValueH1(pts); CHKERRQ(ierr);
+    return getValueH1(pts); CHKERRQ(ierr);
     break;
     case HDIV:
     ierr = getValueHdiv(pts); CHKERRQ(ierr);

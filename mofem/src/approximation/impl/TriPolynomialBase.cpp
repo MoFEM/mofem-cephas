@@ -75,7 +75,7 @@ PetscErrorCode TriPolynomialBase::getValueH1(ublas::matrix<double> &pts) {
   const FieldApproximationBase base = cTx->bAse;
   PetscErrorCode (*base_polynomials)(
     int p,double s,double *diff_s,double *L,double *diffL,const int dim
-  ) = cTx->basePolynomials;
+  ) = cTx->basePolynomialsType0;
 
   int nb_gauss_pts = pts.size2();
 
@@ -143,7 +143,7 @@ PetscErrorCode TriPolynomialBase::getValueL2(
   const FieldApproximationBase base = cTx->bAse;
   PetscErrorCode (*base_polynomials)(
     int p,double s,double *diff_s,double *L,double *diffL,const int dim
-  ) = cTx->basePolynomials;
+  ) = cTx->basePolynomialsType0;
 
   int nb_gauss_pts = pts.size2();
 
@@ -167,7 +167,7 @@ PetscErrorCode TriPolynomialBase::getValueL2(
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode TriPolynomialBase::getValueHdiv(
+PetscErrorCode TriPolynomialBase::getValueHdivAinsworthBase(
   ublas::matrix<double> &pts
 ) {
   PetscErrorCode ierr;
@@ -177,7 +177,7 @@ PetscErrorCode TriPolynomialBase::getValueHdiv(
   const FieldApproximationBase base = cTx->bAse;
   PetscErrorCode (*base_polynomials)(
     int p,double s,double *diff_s,double *L,double *diffL,const int dim
-  ) = cTx->basePolynomials;
+  ) = cTx->basePolynomialsType0;
 
   int nb_gauss_pts = pts.size2();
 
@@ -189,21 +189,21 @@ PetscErrorCode TriPolynomialBase::getValueHdiv(
   int face_order = data.dataOnEntities[MBTRI][0].getDataOrder();
   //three edges on face
   for(int ee = 0;ee<3;ee++) {
-    N_face_edge(0,ee).resize(nb_gauss_pts,3*NBFACETRI_EDGE_HDIV(face_order),false);
+    N_face_edge(0,ee).resize(nb_gauss_pts,3*NBFACETRI_AINSWORTH_EDGE_HDIV(face_order),false);
     PHI_f_e[ee] = &((N_face_edge(0,ee))(0,0));
   }
-  N_face_bubble[0].resize(nb_gauss_pts,3*NBFACETRI_FACE_HDIV(face_order),false);
+  N_face_bubble[0].resize(nb_gauss_pts,3*NBFACETRI_AINSWORTH_FACE_HDIV(face_order),false);
   PHI_f = &*(N_face_bubble[0].data().begin());
 
   int face_nodes[3] = { 0,1,2 };
-  ierr = Hdiv_EdgeFaceShapeFunctions_MBTET_ON_FACE(
+  ierr = Hdiv_Ainsworth_EdgeFaceShapeFunctions_MBTET_ON_FACE(
     face_nodes,face_order,
     &data.dataOnEntities[MBVERTEX][0].getN(base)(0,0),
     NULL,
     PHI_f_e,NULL,nb_gauss_pts,3,
     base_polynomials
   ); CHKERRQ(ierr);
-  ierr = Hdiv_FaceBubbleShapeFunctions_MBTET_ON_FACE(
+  ierr = Hdiv_Ainsworth_FaceBubbleShapeFunctions_ON_FACE(
     face_nodes,face_order,
     &data.dataOnEntities[MBVERTEX][0].getN(base)(0,0),
     NULL,
@@ -215,21 +215,78 @@ PetscErrorCode TriPolynomialBase::getValueHdiv(
   if(data.dataOnEntities[MBTRI].size()!=1) {
     SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
   }
-  data.dataOnEntities[MBTRI][0].getHdivN(base).resize(nb_gauss_pts,3*NBFACETRI_HDIV(face_order),false);
+  data.dataOnEntities[MBTRI][0].getHdivN(base).resize(nb_gauss_pts,3*NBFACETRI_AINSWORTH_HDIV(face_order),false);
   int col = 0;
   for(int oo = 0;oo<face_order;oo++) {
     for(int ee = 0;ee<3;ee++) {
-      for(int dd = 3*NBFACETRI_EDGE_HDIV(oo);dd<3*NBFACETRI_EDGE_HDIV(oo+1);dd++,col++) {
+      for(int dd = 3*NBFACETRI_AINSWORTH_EDGE_HDIV(oo);dd<3*NBFACETRI_AINSWORTH_EDGE_HDIV(oo+1);dd++,col++) {
         for(int gg = 0;gg<nb_gauss_pts;gg++) {
           data.dataOnEntities[MBTRI][0].getHdivN(base)(gg,col) = N_face_edge(0,ee)(gg,dd);
         }
       }
     }
-    for(int dd = 3*NBFACETRI_FACE_HDIV(oo);dd<3*NBFACETRI_FACE_HDIV(oo+1);dd++,col++) {
+    for(int dd = 3*NBFACETRI_AINSWORTH_FACE_HDIV(oo);dd<3*NBFACETRI_AINSWORTH_FACE_HDIV(oo+1);dd++,col++) {
       for(int gg = 0;gg<nb_gauss_pts;gg++) {
         data.dataOnEntities[MBTRI][0].getHdivN(base)(gg,col) = N_face_bubble[0](gg,dd);
       }
     }
+  }
+
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode TriPolynomialBase::getValueHdivDemkowiczBase(
+  ublas::matrix<double> &pts
+) {
+  PetscErrorCode ierr;
+  PetscFunctionBegin;
+
+  DataForcesAndSurcesCore& data = cTx->dAta;
+  // set shape functions into data structure
+  if(data.dataOnEntities[MBTRI].size()!=1) {
+    SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
+  }
+
+  const FieldApproximationBase base = cTx->bAse;
+  if(base != DEMKOWICZ_JACOBI_BASE) {
+    SETERRQ1(
+      PETSC_COMM_SELF,
+      MOFEM_DATA_INCONSISTENCY,
+      "This should be used only with DEMKOWICZ_JACOBI_BASE "
+      "but base is %s",ApproximationBaseNames[base]
+    );
+  }
+  int order = data.dataOnEntities[MBTRI][0].getDataOrder();
+  int nb_gauss_pts = pts.size2();
+  data.dataOnEntities[MBTRI][0].getHdivN(base).resize(
+    nb_gauss_pts,3*NBFACETRI_DEMKOWICZ_HDIV(order),false
+  );
+  double *phi_f = &*data.dataOnEntities[MBTRI][0].getHdivN(base).data().begin();
+  if(NBFACETRI_DEMKOWICZ_HDIV(order)==0) PetscFunctionReturn(0);
+  int face_nodes[3] = { 0,1,2 };
+  ierr = Hdiv_Demkowicz_Face_MBTET_ON_FACE(
+    face_nodes,order,
+    &*data.dataOnEntities[MBVERTEX][0].getN(base).data().begin(),
+    &*data.dataOnEntities[MBVERTEX][0].getDiffN(base).data().begin(),
+    phi_f,NULL,nb_gauss_pts,3
+  ); CHKERRQ(ierr);
+
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode TriPolynomialBase::getValueHdiv(
+  ublas::matrix<double> &pts
+) {
+  PetscFunctionBegin;
+
+  switch (cTx->bAse) {
+    case AINSWORTH_LEGENDRE_BASE:
+    case AINSWORTH_LOBBATO_BASE:
+    return getValueHdivAinsworthBase(pts);
+    case DEMKOWICZ_JACOBI_BASE:
+    return getValueHdivDemkowiczBase(pts);
+    default:
+    SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"Not implemented");
   }
 
   PetscFunctionReturn(0);
@@ -245,7 +302,7 @@ PetscErrorCode TriPolynomialBase::getValueHCurl(
   const FieldApproximationBase base = cTx->bAse;
   PetscErrorCode (*base_polynomials)(
     int p,double s,double *diff_s,double *L,double *diffL,const int dim
-  ) = cTx->basePolynomials;
+  ) = cTx->basePolynomialsType0;
 
   int nb_gauss_pts = pts.size2();
 

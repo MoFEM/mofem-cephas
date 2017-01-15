@@ -63,7 +63,7 @@ int main(int argc, char *argv[]) {
 
   //add DISPLACEMENT field, Hilbert space H1, veror field rank 3 (displacemnt
   //has three components ux,uy,uz)
-  ierr = m_field.add_field("DISPLACEMENT",H1,3); CHKERRQ(ierr);
+  ierr = m_field.add_field("DISPLACEMENT",H1,AINSWORTH_LEGENDRE_BASE,3); CHKERRQ(ierr);
 
 
   //add entities on wich DISPLACEMENT field is approximated, you can add

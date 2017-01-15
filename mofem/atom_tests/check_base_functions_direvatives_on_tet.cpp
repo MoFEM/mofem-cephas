@@ -22,9 +22,8 @@ using namespace MoFEM;
 
 static char help[] = "...\n\n";
 
-static const double eps = 1e-8;
-static const double eps_diff = 1e-6;
-
+static const double eps = 1e-6;
+static const double eps_diff = 1e-8;
 
 int main(int argc, char *argv[]) {
 
@@ -35,35 +34,60 @@ int main(int argc, char *argv[]) {
 
   try {
 
-  enum bases {
+  // Select space
+  enum spaces {
     H1TET,
     HDIVTET,
     HCURLTET,
-    LASTOP
+    LASTSPACEOP
   };
 
-  const char *list[] = {
+  const char *list_spaces[] = {
     "h1tet",
     "hdivtet",
-    "hcurltet",
+    "hcurltet"
   };
 
   PetscBool flg;
-  PetscInt choise_value = H1TET;
+  PetscInt choise_space_value = H1TET;
   ierr = PetscOptionsGetEList(
-    PETSC_NULL,NULL,"-base",list,LASTOP,&choise_value,&flg
+    PETSC_NULL,NULL,"-space",list_spaces,LASTSPACEOP,&choise_space_value,&flg
   ); CHKERRQ(ierr);
   if(flg != PETSC_TRUE) {
     SETERRQ(PETSC_COMM_SELF,MOFEM_IMPOSIBLE_CASE,"base not set");
   }
 
   FieldSpace space = LASTSPACE;
-  if(choise_value == H1TET) {
+  if(choise_space_value == H1TET) {
     space = H1;
-  } else if(choise_value == HDIVTET) {
+  } else if(choise_space_value == HDIVTET) {
     space = HDIV;
-  } else if(choise_value == HCURLTET) {
+  } else if(choise_space_value == HCURLTET) {
     space = HCURL;
+  }
+
+  // Select base
+  enum bases {
+    AINSWORTH,DEMKOWICZ,LASBASETOP
+  };
+
+  const char *list_bases[] = {
+    "ainsworth","demkowicz"
+  };
+
+  PetscInt choise_base_value = AINSWORTH;
+  ierr = PetscOptionsGetEList(
+    PETSC_NULL,NULL,"-base",list_bases,LASBASETOP,&choise_base_value,&flg
+  ); CHKERRQ(ierr);
+  if(flg != PETSC_TRUE) {
+    SETERRQ(PETSC_COMM_SELF,MOFEM_IMPOSIBLE_CASE,"base not set");
+  }
+
+  FieldApproximationBase base;
+  if(choise_base_value==AINSWORTH) {
+    base = AINSWORTH_LEGENDRE_BASE;
+  } else if(choise_base_value==DEMKOWICZ) {
+    base = DEMKOWICZ_JACOBI_BASE;
   }
 
   moab::Core mb_instance;
@@ -98,7 +122,7 @@ int main(int argc, char *argv[]) {
   ierr = m_field.seed_ref_level_3D(0,bit_level0); CHKERRQ(ierr);
 
   //Fields
-  ierr = m_field.add_field("FIELD",space,1); CHKERRQ(ierr);
+  ierr = m_field.add_field("FIELD",space,base,1); CHKERRQ(ierr);
 
   //FE TET
   ierr = m_field.add_finite_element("TET_FE"); CHKERRQ(ierr);
