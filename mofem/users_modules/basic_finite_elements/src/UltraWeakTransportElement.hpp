@@ -787,6 +787,7 @@ struct UltraWeakTransportElement {
         FTensor::Tensor1<double*,3> t_n_hdiv_row = row_data.getFTensor1HdivN<3>();
         double ave_diag = 0;
         double x,y,z;
+        FTensor::Tensor1<double,3> t_row;
         int nb_gauss_pts = row_data.getHdivN().size1();
         for(int gg = 0;gg!=nb_gauss_pts;gg++) {
           // get integration weight and multiply by element volume
@@ -807,8 +808,9 @@ struct UltraWeakTransportElement {
               &col_data.getHdivN(gg)(0,HDIV1),
               &col_data.getHdivN(gg)(0,HDIV2),3
             );
+            t_row(j) = w*t_n_hdiv_row(i)*t_inv_k(i,j);
             for(int ll = 0;ll!=nb_col;ll++) {
-              NN(kk,ll) += w*t_n_hdiv_row(i)*t_inv_k(i,j)*t_n_hdiv_col(j);
+              NN(kk,ll) += t_row(j)*t_n_hdiv_col(j);
               ++t_n_hdiv_col;
             }
             ++t_n_hdiv_row;
