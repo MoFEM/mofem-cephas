@@ -109,8 +109,6 @@ namespace MoFEM {
 
     PetscErrorCode trimEdgesInTheMiddle(const BitRefLevel bit);
 
-
-
     // PetscErrorCode findTetOnTheFront(int verb = 0);
     // #ifdef WITH_TETGEN
     // PetscErrorCode imprintFront(
@@ -120,9 +118,7 @@ namespace MoFEM {
     // );
     // #endif //WITH_TETGEN
 
-
     inline const Range& getCutEdges() const { return cutEdges; }
-    inline const Range& getCutEdgesOutside() const { return cutEdgesOutside; }
     inline const Range& getCutVolumes() const { return cutVolumes; }
     inline const Range& getNewCutVolumes() const { return cutNewVolumes; }
     inline const Range& getNewCutSurfaces() const { return cutNewSurfaces; }
@@ -142,28 +138,23 @@ namespace MoFEM {
     Range vOlume;
 
     boost::shared_ptr<OrientedBoxTreeTool> treeSurfPtr;
-    boost::shared_ptr<OrientedBoxTreeTool> treeVolPtr;
     EntityHandle rootSetSurf;
-    EntityHandle rootSetVol;
 
     Range verticesOnSurface;
 
     Range cutEdges;
-    Range cutEdgesOutside;
     Range cutVolumes;
     Range cutNewVolumes;
     Range cutNewSurfaces;
     Range cutNewVertices;
 
+    Range outsideEdges;
     Range trimNewVolumes;
     Range trimNewVertices;
     Range trimNewSurfaces;
 
 
     Range trimEdges;
-    Range outsideEdges;
-
-    // Range frontTets;
 
     struct TreeData {
       double dIst;
