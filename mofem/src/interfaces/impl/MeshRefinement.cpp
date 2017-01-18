@@ -623,6 +623,7 @@ PetscErrorCode MeshRefinement::refine_TET(
     Range::iterator fit=tit_faces.begin();
     for(int ff = 0;fit!=tit_faces.end();fit++,ff++) {
       rval = moab.get_connectivity(&*fit,1,faces_nodes[ff],true); CHKERRQ_MOAB(rval);
+      // Get edges on face and loop over those edges to add mid-nodes to range
       Range fit_edges;
       rval = moab.get_adjacencies(&*fit,1,1,false,fit_edges); CHKERRQ_MOAB(rval);
       for(Range::iterator eit2 =  fit_edges.begin();eit2 != fit_edges.end();eit2++) {
@@ -636,16 +637,19 @@ PetscErrorCode MeshRefinement::refine_TET(
     //tet_nodes contains all nodes on tet including mid edge nodes
     Range tet_nodes;
     rval = moab.get_connectivity(&*tit,1,tet_nodes,true); CHKERRQ_MOAB(rval);
-    for(std::map<EntityHandle,const RefEntity*>::iterator map_miit = map_ref_nodes_by_edges.begin();
-    map_miit != map_ref_nodes_by_edges.end();map_miit++) {
+    for(
+      std::map<EntityHandle,const RefEntity*>::iterator
+      map_miit = map_ref_nodes_by_edges.begin();
+      map_miit != map_ref_nodes_by_edges.end();map_miit++
+    ) {
       tet_nodes.insert(map_miit->second->getRefEnt());
     }
     Range ref_edges;
-    //get all all edges of refined tets
+    // Get all all edges of refined tets
     rval = moab.get_adjacencies(
       ref_tets,nb_new_tets,1,true,ref_edges,moab::Interface::UNION
     ); CHKERRQ_MOAB(rval);
-    //check for all ref edge and set parents
+    // Check for all ref edge and set parents
     for(Range::iterator reit = ref_edges.begin();reit!=ref_edges.end();reit++) {
       Range ref_edges_nodes;
       rval = moab.get_connectivity(&*reit,1,ref_edges_nodes,true); CHKERRQ_MOAB(rval);
@@ -655,11 +659,11 @@ PetscErrorCode MeshRefinement::refine_TET(
           "data inconsistency, edge should have 2 nodes"
         );
       }
-      //check if ref edge is an coarse edge
+      // Check if ref edge is an coarse edge (loop over coarse tet edges)
       int ee = 0;
       for(;ee<6;ee++) {
-        //two nodes are common (node[0],node[1],ref_node (if exist))
-        //this tests if given edge is contained by edge of refined tetrahedral
+        // Two nodes are common (node[0],node[1],ref_node (if exist))
+        // this tests if given edge is contained by edge of refined tetrahedral
         if(intersect(edges_nodes[ee],ref_edges_nodes).size()==2) {
           EntityHandle edge = tit_edges[ee];
           std::pair<RefEntity_multiIndex::iterator,bool> p_ent =
@@ -758,7 +762,7 @@ PetscErrorCode MeshRefinement::refine_TET(
         continue;
       }
 
-      //this will help to debug error
+      // This will help to debug error
       Range ref_edges_nodes_tets;
       rval = moab.get_adjacencies(ref_edges_nodes,3,true,ref_edges_nodes_tets,moab::Interface::UNION); CHKERRQ_MOAB(rval);
       ref_edges_nodes_tets = intersect(ref_edges_nodes_tets,tets);
@@ -770,7 +774,7 @@ PetscErrorCode MeshRefinement::refine_TET(
       rval = moab.write_file("debug_error.vtk","VTK","",&meshset_out,1); CHKERRQ_MOAB(rval);
       rval = moab.delete_entities(&meshset_out,1); CHKERRQ_MOAB(rval);
 
-      //refined edge is not child of any edge, face or tetrahedral, this is imposible edge
+      // Refined edge is not child of any edge, face or tetrahedral, this is imposible edge
       SETERRQ(m_field.get_comm(),MOFEM_DATA_INCONSISTENCY,"impossible refined edge");
     }
 
@@ -784,22 +788,22 @@ PetscErrorCode MeshRefinement::refine_TET(
       "INTERFACE_SIDE",1,MB_TYPE_INTEGER,
       th_interface_side,MB_TAG_CREAT|MB_TAG_SPARSE,def_side
     ); CHKERRQ_MOAB(rval);
-    // check for all ref faces
+    // Check for all ref faces
     for(Range::iterator rfit = ref_faces.begin();rfit!=ref_faces.end();rfit++) {
       Range ref_faces_nodes;
       rval = moab.get_connectivity(&*rfit,1,ref_faces_nodes,true); CHKERRQ_MOAB(rval);
-      // check if ref face is in coarse face
+      // Check if ref face is in coarse face
       int ff = 0;
       for(;ff<4;ff++) {
-        //check if refined edge is contained by face of tetrahedral
+        // Check if refined triangle is contained by face of tetrahedral
         if(intersect(faces_nodes[ff],ref_faces_nodes).size()==3) {
           EntityHandle face = tit_faces[ff];
           rval = moab.tag_set_data(cOre.get_th_RefParentHandle(),&*rfit,1,&face); CHKERRQ_MOAB(rval);
           int side = 0;
-          //set face side if it is on interface
+          // Set face side if it is on interface
           rval = moab.tag_get_data(th_interface_side,&face,1,&side); CHKERRQ_MOAB(rval);
           rval = moab.tag_set_data(th_interface_side,&*rfit,1,&side); CHKERRQ_MOAB(rval);
-          //add face to refinedEntities
+          // Add face to refinedEntities
           std::pair<RefEntity_multiIndex::iterator,bool> p_ent =
           const_cast<RefEntity_multiIndex*>(refined_ents_ptr)->insert(
             boost::shared_ptr<RefEntity>(new RefEntity(m_field.get_basic_entity_data_ptr(),*rfit))
