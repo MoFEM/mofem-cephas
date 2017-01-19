@@ -108,7 +108,7 @@ PetscErrorCode NodeMergerInterface::queryInterface(const MOFEMuuid& uuid, Unknow
 PetscErrorCode NodeMergerInterface::mergeNodes(
   EntityHandle father,
   EntityHandle mother,
-  BitRefLevel bit,
+  Range &out_tets,
   Range *tets_ptr,
   const bool only_if_improve_quality,
   const double move
@@ -146,7 +146,7 @@ PetscErrorCode NodeMergerInterface::mergeNodes(
     if(tets_ptr!=NULL) {
       seed_tets.merge(*tets_ptr);
     }
-    ierr = m_field.seed_ref_level(seed_tets,bit); CHKERRQ(ierr);
+    out_tets = seed_tets;
     successMerge = false;
     PetscFunctionReturn(0);
   }
@@ -173,7 +173,7 @@ PetscErrorCode NodeMergerInterface::mergeNodes(
   // Mother tets, has only one mother vertex and no father vertex.
   mother_tets = subtract(mother_tets,edge_tets);
 
-  // Intersect with ptr_tets (usually assciated with some bit level)
+  // Intersect with ptr_tets (usually associated with some bit level)
   if(tets_ptr!=NULL) {
     father_tets = intersect(father_tets,*tets_ptr);
     mother_tets = intersect(mother_tets,*tets_ptr);
@@ -239,7 +239,7 @@ PetscErrorCode NodeMergerInterface::mergeNodes(
       if(tets_ptr!=NULL) {
         seed_tets.merge(*tets_ptr);
       }
-      ierr = m_field.seed_ref_level(seed_tets,bit); CHKERRQ(ierr);
+      out_tets = seed_tets;
       successMerge = false;
       PetscFunctionReturn(0);
     }
@@ -284,7 +284,7 @@ PetscErrorCode NodeMergerInterface::mergeNodes(
     created_tets.insert(tet);
   }
 
-  // Loop over father adjacent entities to use them as parents
+  // Loop over mother adjacent entities to use them as parents
   Range adj_ents;
   rval = m_field.get_moab().get_adjacencies(mother_tets,1,false,adj_ents,moab::Interface::UNION); CHKERRQ_MOAB(rval);
   rval = m_field.get_moab().get_adjacencies(mother_tets,2,false,adj_ents,moab::Interface::UNION); CHKERRQ_MOAB(rval);
@@ -333,23 +333,44 @@ PetscErrorCode NodeMergerInterface::mergeNodes(
   seed_tets = subtract(seed_tets,edge_tets);
   seed_tets.merge(created_tets);
 
-  ierr = m_field.seed_ref_level(seed_tets,bit); CHKERRQ(ierr);
+  out_tets = seed_tets;
 
   successMerge = true;
 
   PetscFunctionReturn(0);
 }
+
+PetscErrorCode NodeMergerInterface::mergeNodes(
+  EntityHandle father,
+  EntityHandle mother,
+  BitRefLevel bit,
+  Range *tets_ptr,
+  const bool only_if_improve_quality,
+  const double move
+) {
+  MoFEM::Interface& m_field = cOre;
+  PetscErrorCode ierr;
+  PetscFunctionBegin;
+  Range out_tets;
+  ierr = mergeNodes(
+    father,mother,out_tets,tets_ptr,only_if_improve_quality,move
+  ); CHKERRQ(ierr);
+  ierr = m_field.seed_ref_level(out_tets,bit); CHKERRQ(ierr);
+  PetscFunctionReturn(0);
+}
+
 PetscErrorCode NodeMergerInterface::mergeNodes(
   EntityHandle father,
   EntityHandle mother,
   BitRefLevel bit,
   BitRefLevel tets_from_bit_ref_level,
-  const bool only_if_improve_quality,const double move
+  const bool only_if_improve_quality,
+  const double move
 ) {
-  PetscFunctionBegin;
   MoFEM::Interface& m_field = cOre;
   PetscErrorCode ierr;
 
+  PetscFunctionBegin;
   Range level_tets;
   ierr = m_field.get_entities_by_type_and_ref_level(
     tets_from_bit_ref_level,BitRefLevel().set(),MBTET,level_tets
@@ -358,5 +379,6 @@ PetscErrorCode NodeMergerInterface::mergeNodes(
 
   PetscFunctionReturn(0);
 }
+
 
 }

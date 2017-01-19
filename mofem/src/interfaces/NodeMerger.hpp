@@ -52,6 +52,15 @@ struct NodeMergerInterface: public UnknownInterface {
     errorIfNoCommonEdge = b;
   }
 
+  PetscErrorCode mergeNodes(
+    EntityHandle father,
+    EntityHandle mother,
+    Range &out_tets,
+    Range *tets_ptr = NULL,
+    const bool only_if_improve_quality = false,
+    const double move = 0
+  );
+
 
   /** \brief merge nodes which sharing edge
 
