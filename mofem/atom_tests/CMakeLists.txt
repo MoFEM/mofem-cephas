@@ -552,7 +552,9 @@ target_link_libraries(forces_and_sources_testing_flat_prism_element
   ${PROJECT_LIBS})
 
 add_test(forces_and_sources_testing_flat_prism_element_test
-  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_testing_flat_prism_element -my_file templar.h5m
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+  ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_testing_flat_prism_element
+  -my_file templar.h5m
 )
 add_test(forces_and_sources_testing_flat_prism_element_test_compare ${CMAKE_COMMAND} -E compare_files
   ${CMAKE_SOURCE_DIR}/atom_tests/blessed_files/forces_and_sources_testing_flat_prism_element.txt
@@ -561,10 +563,10 @@ add_test(forces_and_sources_testing_flat_prism_element_test_compare ${CMAKE_COMM
 
 # Checking direvatives
 my_add_executable(
-  forces_and_sources_check_base_functions_direvatives_tet
-  forces_and_sources_check_base_functions_direvatives_tet.cpp
+  check_base_functions_direvatives_on_tet
+  check_base_functions_direvatives_on_tet.cpp
 )
-target_link_libraries(forces_and_sources_check_base_functions_direvatives_tet
+target_link_libraries(check_base_functions_direvatives_on_tet
   mofem_finite_elements
   mofem_interfaces
   mofem_multi_indices
@@ -573,17 +575,25 @@ target_link_libraries(forces_and_sources_check_base_functions_direvatives_tet
   mofem_third_party
   ${PROJECT_LIBS}
 )
-add_test(forces_and_sources_check_h1_base_functions_direvatives_tet_atom
+add_test(check_h1_ainsworth_base_functions_direvatives_on_tet
   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
-  ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_check_base_functions_direvatives_tet -base H1TET
+  ${CMAKE_CURRENT_BINARY_DIR}/check_base_functions_direvatives_on_tet
+  -space H1TET -base ainsworth
 )
-add_test(forces_and_sources_check_hdiv_base_functions_direvatives_tet_atom
+add_test(check_hdiv_ainsworth_base_functions_direvatives_on_tet
   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
-  ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_check_base_functions_direvatives_tet -base HDIVTET
+  ${CMAKE_CURRENT_BINARY_DIR}/check_base_functions_direvatives_on_tet
+  -space HDIVTET -base ainsworth
 )
-add_test(forces_and_sources_check_hcurl_base_functions_direvatives_tet_atom
+add_test(check_hdiv_demkowicz_base_functions_direvatives_on_tet
   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
-  ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_check_base_functions_direvatives_tet -base HCURLTET
+  ${CMAKE_CURRENT_BINARY_DIR}/check_base_functions_direvatives_on_tet
+  -space HDIVTET -base demkowicz
+)
+add_test(check_hcurl_ainsworth_base_functions_direvatives_on_tet
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+  ${CMAKE_CURRENT_BINARY_DIR}/check_base_functions_direvatives_on_tet
+  -space HCURLTET -base ainsworth
 )
 
 my_add_executable(
@@ -718,8 +728,8 @@ add_test(forces_and_sources_hdiv_approximation_functions_atom_compare ${CMAKE_CO
 )
 
 # add test for hdiv space - check approximation continuity
-my_add_executable(forces_and_sources_hdiv_continuity_check forces_and_sources_hdiv_continuity_check.cpp)
-target_link_libraries(forces_and_sources_hdiv_continuity_check
+my_add_executable(hdiv_continuity_check hdiv_continuity_check.cpp)
+target_link_libraries(hdiv_continuity_check
   mofem_finite_elements
   mofem_interfaces
   mofem_multi_indices
@@ -728,13 +738,20 @@ target_link_libraries(forces_and_sources_hdiv_continuity_check
   mofem_third_party
   ${PROJECT_LIBS}
 )
-add_test(forces_and_sources_hdiv_continuity_check_atom
-  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_hdiv_continuity_check -my_file sphere.h5m
+add_test(hdiv_continuity_check_ainsworth_base
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+  ${CMAKE_CURRENT_BINARY_DIR}/hdiv_continuity_check
+  -my_file sphere.h5m -base hdiv_ainsworth
+)
+add_test(hdiv_continuity_check_demkowicz_base
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+  ${CMAKE_CURRENT_BINARY_DIR}/hdiv_continuity_check
+  -my_file sphere.h5m -base hdiv_demkowicz
 )
 
 # add test for hdvi divergence operator
-my_add_executable(forces_and_sources_hdiv_divergence_operator forces_and_sources_hdiv_divergence_operator.cpp)
-target_link_libraries(forces_and_sources_hdiv_divergence_operator
+my_add_executable(hdiv_divergence_operator hdiv_divergence_operator.cpp)
+target_link_libraries(hdiv_divergence_operator
   mofem_finite_elements
   mofem_interfaces
   mofem_multi_indices
@@ -743,8 +760,15 @@ target_link_libraries(forces_and_sources_hdiv_divergence_operator
   mofem_third_party
   ${PROJECT_LIBS}
 )
-add_test(forces_and_sources_hdiv_divergence_operator_atom
-  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/forces_and_sources_hdiv_divergence_operator -my_file sphere.h5m
+add_test(hdiv_divergence_operator_ainsworth_atom
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+  ${CMAKE_CURRENT_BINARY_DIR}/hdiv_divergence_operator
+  -my_file sphere.h5m -base hdiv_ainsworth
+)
+add_test(hdiv_divergence_operator_demkowicz_atom
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+  ${CMAKE_CURRENT_BINARY_DIR}/hdiv_divergence_operator
+  -my_file sphere.h5m -base hdiv_demkowicz
 )
 
 # add test for hcurl curl operator
@@ -1003,12 +1027,15 @@ list(INSERT testing_base_list
   0
   legendre
   lobatto
+  jacobi
   h1tet
   hcurltet
-  hdivtet
+  hdivtet_ainsworth
+  hdivtet_demkowicz
   l2tet
   h1tri
-  hdivtri
+  hdivtri_ainsworth
+  hdivtri_demkowicz
   hcurltri
   l2tri
   h1edge

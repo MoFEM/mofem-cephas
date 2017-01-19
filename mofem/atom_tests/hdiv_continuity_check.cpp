@@ -38,17 +38,42 @@ int main(int argc, char *argv[]) {
 
   try {
 
+  enum bases {
+    HDIV_AINSWORTH,
+    HDIV_DEMKOWICZ,
+    LASTOP
+  };
+
+  const char *list[] = {
+    "hdiv_ainsworth",
+    "hdiv_demkowicz"
+  };
+
+  PetscErrorCode ierr;
+
+  PetscBool flg;
+  PetscInt choise_value = HDIV_AINSWORTH;
+  ierr = PetscOptionsGetEList(
+    PETSC_NULL,NULL,"-base",list,LASTOP,&choise_value,&flg
+  ); CHKERRQ(ierr);
+  if(flg != PETSC_TRUE) {
+    SETERRQ(PETSC_COMM_SELF,MOFEM_IMPOSIBLE_CASE,"base not set");
+  }
+
   moab::Core mb_instance;
   moab::Interface& moab = mb_instance;
   int rank;
   MPI_Comm_rank(PETSC_COMM_WORLD,&rank);
 
-  PetscBool flg = PETSC_TRUE;
   char mesh_file_name[255];
   #if PETSC_VERSION_GE(3,6,4)
-  ierr = PetscOptionsGetString(PETSC_NULL,"","-my_file",mesh_file_name,255,&flg); CHKERRQ(ierr);
+  ierr = PetscOptionsGetString(
+    PETSC_NULL,"","-my_file",mesh_file_name,255,&flg
+  ); CHKERRQ(ierr);
   #else
-  ierr = PetscOptionsGetString(PETSC_NULL,PETSC_NULL,"-my_file",mesh_file_name,255,&flg); CHKERRQ(ierr);
+  ierr = PetscOptionsGetString(
+    PETSC_NULL,PETSC_NULL,"-my_file",mesh_file_name,255,&flg
+  ); CHKERRQ(ierr);
   #endif
   if(flg != PETSC_TRUE) {
     SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_file (MESH FILE NEEDED)");
@@ -72,8 +97,15 @@ int main(int argc, char *argv[]) {
   ierr = m_field.seed_ref_level_3D(0,bit_level0); CHKERRQ(ierr);
 
   //Fields
-  ierr = m_field.add_field("MESH_NODE_POSITIONS",H1,3); CHKERRQ(ierr);
-  ierr = m_field.add_field("HDIV",HDIV,1); CHKERRQ(ierr);
+  ierr = m_field.add_field("MESH_NODE_POSITIONS",H1,AINSWORTH_LEGENDRE_BASE,3); CHKERRQ(ierr);
+  switch (choise_value) {
+    case HDIV_AINSWORTH:
+    ierr = m_field.add_field("HDIV",HDIV,AINSWORTH_LEGENDRE_BASE,1); CHKERRQ(ierr);
+    break;
+    case HDIV_DEMKOWICZ:
+    ierr = m_field.add_field("HDIV",HDIV,DEMKOWICZ_JACOBI_BASE,1); CHKERRQ(ierr);
+    break;
+  }
 
   //FE
   ierr = m_field.add_finite_element("TET_FE"); CHKERRQ(ierr);

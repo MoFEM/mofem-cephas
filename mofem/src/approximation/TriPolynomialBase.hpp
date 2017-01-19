@@ -1,5 +1,5 @@
 /** \file TriPolynomialBase.hpp
-\brief Implementation of Ainsworth-Cole H1 base on triangle
+\brief Implementation of Ainsworth-Cole, Demkowicz  and other bases H1 base on triangle
 
 */
 
@@ -24,7 +24,7 @@ namespace MoFEM {
 
   /**
    * \brief Calculate base functions on triangle
-   * 
+   *
    * \ingroup mofem_base_functions
    */
   struct TriPolynomialBase: public BaseFunction {
@@ -64,6 +64,15 @@ namespace MoFEM {
       ublas::matrix<double> &pts
     );
 
+  private:
+
+    PetscErrorCode getValueHdivAinsworthBase(
+      ublas::matrix<double> &pts
+    );
+
+    PetscErrorCode getValueHdivDemkowiczBase(
+      ublas::matrix<double> &pts
+    );
 
   };
 

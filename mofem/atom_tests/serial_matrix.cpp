@@ -93,8 +93,8 @@ int main(int argc, char *argv[]) {
   //Define problem
 
   //Fields
-  ierr = m_field.add_field("FIELD_A",H1,AINSWORTH_COLE_BASE,3,MB_TAG_DENSE); CHKERRQ(ierr);
-  ierr = m_field.add_field("FIELD_B",L2,AINSWORTH_COLE_BASE,1,MB_TAG_DENSE); CHKERRQ(ierr);
+  ierr = m_field.add_field("FIELD_A",H1,AINSWORTH_LEGENDRE_BASE,3,MB_TAG_DENSE); CHKERRQ(ierr);
+  ierr = m_field.add_field("FIELD_B",L2,AINSWORTH_LEGENDRE_BASE,1,MB_TAG_DENSE); CHKERRQ(ierr);
 
   ierr = m_field.add_ents_to_field_by_TETs(0,"FIELD_A"); CHKERRQ(ierr);
   ierr = m_field.add_ents_to_field_by_TETs(0,"FIELD_B"); CHKERRQ(ierr);

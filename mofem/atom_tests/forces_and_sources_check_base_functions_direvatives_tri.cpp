@@ -98,7 +98,7 @@ int main(int argc, char *argv[]) {
   ierr = m_field.seed_ref_level_2D(0,bit_level0); CHKERRQ(ierr);
 
   //Fields
-  ierr = m_field.add_field("FIELD",space,1); CHKERRQ(ierr);
+  ierr = m_field.add_field("FIELD",space,AINSWORTH_LEGENDRE_BASE,1); CHKERRQ(ierr);
 
   //FE TET
   ierr = m_field.add_finite_element("TRI_FE"); CHKERRQ(ierr);

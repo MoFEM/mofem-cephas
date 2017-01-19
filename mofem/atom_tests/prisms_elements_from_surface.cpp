@@ -82,7 +82,7 @@ int main(int argc, char *argv[]) {
     ierr = prisms_from_surface_interface->seedPrismsEntities(prisms,bit_level0); CHKERRQ(ierr);
 
     //Fields
-    ierr = m_field.add_field("FIELD1",H1,1); CHKERRQ(ierr);
+    ierr = m_field.add_field("FIELD1",H1,AINSWORTH_LEGENDRE_BASE,1); CHKERRQ(ierr);
     ierr = m_field.add_ents_to_field_by_PRISMs(meshset,"FIELD1",10); CHKERRQ(ierr);
 
     ierr = m_field.set_field_order(0,MBVERTEX,"FIELD1",1); CHKERRQ(ierr);

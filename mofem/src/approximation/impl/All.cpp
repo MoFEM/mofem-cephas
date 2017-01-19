@@ -2,6 +2,7 @@
 #include "impl/BaseFunction.cpp"
 #include "impl/LegendrePolynomial.cpp"
 #include "impl/LobattoPolynomial.cpp"
+#include "impl/JacobiPolynomial.cpp"
 #include "impl/EntPolynomialBaseCtx.cpp"
 #include "impl/TriPolynomialBase.cpp"
 #include "impl/TetPolynomialBase.cpp"
