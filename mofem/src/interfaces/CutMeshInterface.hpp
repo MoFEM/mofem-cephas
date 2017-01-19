@@ -109,6 +109,13 @@ namespace MoFEM {
 
     PetscErrorCode trimEdgesInTheMiddle(const BitRefLevel bit);
 
+    /**
+     * \brief move trimed edges mid nodes
+     * @return error code
+     */
+    PetscErrorCode moveMidNodesOnTrimedEdges();
+
+
     // PetscErrorCode findTetOnTheFront(int verb = 0);
     // #ifdef WITH_TETGEN
     // PetscErrorCode imprintFront(
@@ -123,7 +130,6 @@ namespace MoFEM {
     inline const Range& getNewCutVolumes() const { return cutNewVolumes; }
     inline const Range& getNewCutSurfaces() const { return cutNewSurfaces; }
     inline const Range& getNewCutVertices() const { return cutNewVertices; }
-    // inline const Range& getFrontTets() const { return frontTets; }
 
     inline const Range& getTrimEdges() const { return trimEdges; }
     inline const Range& getOutsideEdges() const { return outsideEdges; }

@@ -92,6 +92,7 @@ int main(int argc, char *argv[]) {
     ierr = cut_mesh->moveMidNodesOnCutEdges(); CHKERRQ(ierr);
     ierr = cut_mesh->findEdgesToTrim(0); CHKERRQ(ierr);
     ierr = cut_mesh->trimEdgesInTheMiddle(bit_level2); CHKERRQ(ierr);
+    ierr = cut_mesh->moveMidNodesOnTrimedEdges(); CHKERRQ(ierr);
 
     EntityHandle meshset_vol;
     rval = moab.create_meshset(MESHSET_SET,meshset_vol); CHKERRQ_MOAB(rval);
