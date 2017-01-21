@@ -52,6 +52,21 @@ struct NodeMergerInterface: public UnknownInterface {
     errorIfNoCommonEdge = b;
   }
 
+  /** \brief merge nodes which sharing edge
+
+    Father is sties, mother is merged.
+
+    \param father node to which mother is merged to.
+    \param mother merged node
+    \param tetrahedra after merge
+    \param test only tets_ptr from range are changed
+    \param only_if_improve_quality Do merge if that improve quality
+    \param move father by fraction of edge length move=[0,1]
+
+    Move node on the edge, 0 not move, 1 move to mother side, 0.5 will be in the
+    middle.
+
+    */
   PetscErrorCode mergeNodes(
     EntityHandle father,
     EntityHandle mother,
@@ -68,6 +83,7 @@ struct NodeMergerInterface: public UnknownInterface {
 
     \param father node to which mother is merged to.
     \param mother merged node
+    \param bit level of mesh merged nodes mesh
     \param test only tets_ptr from range are changed
     \param only_if_improve_quality Do merge if that improve quality
     \param move father by fraction of edge length move=[0,1]

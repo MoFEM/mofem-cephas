@@ -125,13 +125,20 @@ PetscErrorCode NodeMergerInterface::mergeNodes(
   Range mother_edges;
   rval = m_field.get_moab().get_adjacencies(&mother,1,1,false,mother_edges); CHKERRQ_MOAB(rval);
 
+  // Get tets adjacent to mother and father
+  Range father_tets;
+  rval = m_field.get_moab().get_adjacencies(&father,1,3,false,father_tets); CHKERRQ_MOAB(rval);
+  Range mother_tets;
+  rval = m_field.get_moab().get_adjacencies(&mother,1,3,false,mother_tets); CHKERRQ_MOAB(rval);
+
   // Find common edge
   Range common_edge;
   common_edge = intersect(father_edges,mother_edges);
   if(tets_ptr!=NULL) {
+    Range tets = intersect(*tets_ptr,unite(father_tets,mother_tets));
     Range tets_edges;
     rval = m_field.get_moab().get_adjacencies(
-      *tets_ptr,1,false,tets_edges,moab::Interface::UNION
+      tets,1,false,tets_edges,moab::Interface::UNION
     ); CHKERRQ_MOAB(rval);
     common_edge = intersect(common_edge,tets_edges);
     father_edges = intersect(father_edges,tets_edges);
@@ -151,22 +158,6 @@ PetscErrorCode NodeMergerInterface::mergeNodes(
     PetscFunctionReturn(0);
   }
 
-  if(move) {
-    EntityHandle conn[] = {father,mother};
-    double coords[6];
-    rval = m_field.get_moab().get_coords(conn,2,coords); CHKERRQ_MOAB(rval);
-    coords[0] += move*(coords[3]-coords[0]);
-    coords[1] += move*(coords[4]-coords[1]);
-    coords[2] += move*(coords[5]-coords[2]);
-    rval = m_field.get_moab().set_coords(conn,1,coords); CHKERRQ_MOAB(rval);
-  }
-
-  // Get tets adjacent to mother and father
-  Range father_tets;
-  rval = m_field.get_moab().get_adjacencies(&father,1,3,false,father_tets); CHKERRQ_MOAB(rval);
-  Range mother_tets;
-  rval = m_field.get_moab().get_adjacencies(&mother,1,3,false,mother_tets); CHKERRQ_MOAB(rval);
-
   // Common edge tets, that tests will be squashed
   Range edge_tets;
   rval = m_field.get_moab().get_adjacencies(common_edge,3,true,edge_tets); CHKERRQ_MOAB(rval);
@@ -180,10 +171,32 @@ PetscErrorCode NodeMergerInterface::mergeNodes(
     edge_tets = intersect(edge_tets,*tets_ptr);
   }
 
+  // move father coord is move > 0
+  double coords_move[3];
+  if(move>0) {
+    EntityHandle conn[] = {father,mother};
+    double coords[6];
+    rval = m_field.get_moab().get_coords(conn,2,coords); CHKERRQ_MOAB(rval);
+    for(int nn = 0;nn!=3;nn++) {
+      coords[0] += move*(coords[3]-coords[0]);
+      coords[1] += move*(coords[4]-coords[1]);
+      coords[2] += move*(coords[5]-coords[2]);
+      coords_move[0] = coords[0];
+      coords_move[1] = coords[1];
+      coords_move[2] = coords[2];
+    }
+  }
+
   if(only_if_improve_quality) {
     double min_quality0 = 1;
     double coords[12];
-    for(Range::iterator tit = mother_tets.begin(); tit!=mother_tets.end();tit++) {
+    Range check_tests;
+    if(move>0) {
+      check_tests = unite(father_tets,mother_tets);
+    } else {
+      check_tests = mother_tets;
+    }
+    for(Range::iterator tit = check_tests.begin(); tit!=check_tests.end();tit++) {
       const EntityHandle* conn;
       int num_nodes;
       rval = m_field.get_moab().get_connectivity(*tit,conn,num_nodes,true); CHKERRQ_MOAB(rval);
@@ -201,35 +214,43 @@ PetscErrorCode NodeMergerInterface::mergeNodes(
       // cerr << "min_quality0 " << min_quality0 << endl;
     }
     double min_quality = 1;
-    for(Range::iterator tit = mother_tets.begin();tit!=mother_tets.end();tit++) {
+    for(Range::iterator tit = check_tests.begin();tit!=check_tests.end();tit++) {
       const EntityHandle* conn;
       int num_nodes;
       rval = m_field.get_moab().get_connectivity(*tit,conn,num_nodes,true); CHKERRQ_MOAB(rval);
       EntityHandle new_conn[4];
       // Replace mother vertices by father vertices
       int nb_mother_verts = 0;
+      int father_nn = 0;
       for(int nn = 0;nn<4;nn++) {
         if(conn[nn] == father) {
-          SETERRQ(
-            PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,
-            "Tet has father vertex, impossible but here it is"
-          );
+          father_nn = nn;
+          // SETERRQ(
+          //   PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,
+          //   "Tet has father vertex, impossible but here it is"
+          // );
         }
         if(conn[nn] == mother) {
           new_conn[nn] = father;
+          father_nn = nn;
           nb_mother_verts++;
         } else {
           new_conn[nn] = conn[nn];
         }
       }
-      if(nb_mother_verts!=1) {
+      if(nb_mother_verts>1) {
         SETERRQ1(
           PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,
-          "Tet should have only one vertex but have %d",
+          "Tet should have only one vertex (if father 0) but have %d",
           nb_mother_verts
         );
       }
       rval = m_field.get_moab().get_coords(new_conn,num_nodes,coords); CHKERRQ_MOAB(rval);
+      if(move>0) {
+        coords[3*father_nn + 0] = coords_move[0];
+        coords[3*father_nn + 1] = coords_move[1];
+        coords[3*father_nn + 2] = coords_move[2];
+      }
       double quality = volume_length_quality(coords);
       min_quality = (min_quality>quality) ? quality : min_quality;
       // cerr << "min_quality " << min_quality << endl;
@@ -322,6 +343,11 @@ PetscErrorCode NodeMergerInterface::mergeNodes(
         cOre.get_th_RefParentHandle(),&*new_ent.begin(),1,&*eit
       ); CHKERRQ_MOAB(rval);
     }
+  }
+
+  // Move node
+  if(move>0) {
+    rval = m_field.get_moab().set_coords(&father,1,coords_move); CHKERRQ_MOAB(rval);
   }
 
   // Seed tets to given bit level

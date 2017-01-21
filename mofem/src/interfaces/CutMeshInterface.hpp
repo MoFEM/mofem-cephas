@@ -115,6 +115,11 @@ namespace MoFEM {
      */
     PetscErrorCode moveMidNodesOnTrimedEdges();
 
+    /**
+     * \brief Merge nodes to improve mesh quality
+     * @return error code
+     */
+    PetscErrorCode nodeMergeCutSurface(const BitRefLevel bit);
 
     // PetscErrorCode findTetOnTheFront(int verb = 0);
     // #ifdef WITH_TETGEN
@@ -137,6 +142,7 @@ namespace MoFEM {
     inline const Range& getNewTrimVolumes() const { return trimNewVolumes; }
     inline const Range& getNewTrimSurfaces() const { return trimNewSurfaces; }
     inline const Range& getNewTrimVertices() const { return trimNewVertices; }
+
 
   private:
 
