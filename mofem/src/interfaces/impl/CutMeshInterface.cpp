@@ -515,12 +515,24 @@ namespace MoFEM {
     ierr = m_field.query_interface(node_merger_ptr); CHKERRQ(ierr);
 
     // Get nodes on surface and surface edges
+    Range surf_edges;
+    rval = moab.get_adjacencies(cutNewSurfaces,1,false,surf_edges,moab::Interface::UNION); CHKERRQ_MOAB(rval);
     Range surf_nodes;
-    rval = moab.get_connectivity(cutNewSurfaces,surf_nodes,true);
-    Range surf_skin;
-    rval = skin.find_skin(0,cutNewSurfaces,false,surf_skin); CHKERR_MOAB(rval);
-    Range surf_skin_nodes;
-    rval = moab.get_connectivity(surf_skin,surf_skin_nodes,true);
+    rval = moab.get_connectivity(surf_edges,surf_nodes,true);
+    Range skin_surf;
+    rval = skin.find_skin(0,cutNewSurfaces,false,skin_surf); CHKERR_MOAB(rval);
+    Range skin_surf_nodes;
+    rval = moab.get_connectivity(skin_surf,skin_surf_nodes,true);
+    surf_edges = subtract(surf_edges,skin_surf);
+    surf_nodes = subtract(surf_nodes,skin_surf_nodes);
+
+    {
+      EntityHandle meshset;
+      rval = moab.create_meshset(MESHSET_SET,meshset); CHKERRQ_MOAB(rval);
+      rval = moab.add_entities(meshset,surf_edges); CHKERRQ_MOAB(rval);
+      rval = moab.write_file("out_surf_edges.vtk","VTK","",&meshset,1); CHKERRQ_MOAB(rval);
+    }
+
 
     // Get tets adjacent to surface nodes
     Range adj_tets;
@@ -528,18 +540,90 @@ namespace MoFEM {
       surf_nodes,3,false,adj_tets,moab::Interface::UNION
     ); CHKERRQ_MOAB(rval);
     adj_tets = intersect(adj_tets,cutNewVolumes);
+    // Take tets nodes and tet adjacencies to those nodes (two level (bridge) adjacencies)
+    Range adj_tets_nodes;
+    rval = moab.get_connectivity(adj_tets,adj_tets_nodes,true); CHKERRQ_MOAB(rval);
+    rval = moab.get_adjacencies(
+      adj_tets_nodes,3,false,adj_tets,moab::Interface::UNION
+    ); CHKERRQ_MOAB(rval);
+    adj_tets = intersect(adj_tets,cutNewVolumes);
+
     Range adj_tets_edges;
     rval = moab.get_adjacencies(
       adj_tets,1,false,adj_tets_edges,moab::Interface::UNION
     ); CHKERRQ_MOAB(rval);
+
+    // Take body skin and bridge tets skin
     Range skin_adj_tets;
     rval = skin.find_skin(0,adj_tets,false,skin_adj_tets); CHKERR_MOAB(rval);
+    Range skin_body;
+    rval = skin.find_skin(0,cutNewVolumes,false,skin_body); CHKERR_MOAB(rval);
+    skin_body = intersect(skin_body,skin_adj_tets);
+    skin_adj_tets = subtract(skin_adj_tets,skin_body);
 
+    {
+      EntityHandle meshset;
+      rval = moab.create_meshset(MESHSET_SET,meshset); CHKERRQ_MOAB(rval);
+      rval = moab.add_entities(meshset,skin_body); CHKERRQ_MOAB(rval);
+      rval = moab.write_file("out_skin_body.vtk","VTK","",&meshset,1); CHKERRQ_MOAB(rval);
+    }
+
+    {
+      EntityHandle meshset;
+      rval = moab.create_meshset(MESHSET_SET,meshset); CHKERRQ_MOAB(rval);
+      rval = moab.add_entities(meshset,skin_adj_tets); CHKERRQ_MOAB(rval);
+      rval = moab.write_file("out_skin_adj_tets.vtk","VTK","",&meshset,1); CHKERRQ_MOAB(rval);
+    }
+
+    // Take egdes on skin, body skin and bridges edges skin
     Range skin_adj_tets_edges;
     rval = moab.get_adjacencies(skin_adj_tets,1,false,skin_adj_tets_edges,moab::Interface::UNION);
+    Range skin_body_edges;
+    rval = moab.get_adjacencies(skin_body,1,false,skin_body_edges,moab::Interface::UNION);
+    Range skin_body_edges_nodes;
+    rval = moab.get_connectivity(skin_body_edges,skin_body_edges_nodes,true); CHKERRQ_MOAB(rval);
+
     adj_tets_edges = subtract(adj_tets_edges,skin_adj_tets_edges);
 
-    map<double,EntityHandle> map_edges;
+    {
+      EntityHandle meshset;
+      rval = moab.create_meshset(MESHSET_SET,meshset); CHKERRQ_MOAB(rval);
+      rval = moab.add_entities(meshset,adj_tets_edges); CHKERRQ_MOAB(rval);
+      rval = moab.write_file("out_adj_tets_edges.vtk","VTK","",&meshset,1); CHKERRQ_MOAB(rval);
+    }
+
+
+    struct MapEdges {
+      EntityHandle eDge;
+      double lEnght;
+      MapEdges(EntityHandle e,double l):
+      eDge(e),
+      lEnght(l) {}
+    };
+
+    struct ModifyMapEdge {
+      EntityHandle eDge;
+      ModifyMapEdge(EntityHandle e):
+      eDge(e) {
+      }
+      void operator()(MapEdges &m) {
+        m.eDge = eDge;
+      }
+    };
+
+    typedef multi_index_container<
+      MapEdges,
+      indexed_by<
+        hashed_unique<
+          member<MapEdges,EntityHandle,&MapEdges::eDge>
+        >,
+        ordered_non_unique<
+          member<MapEdges,double,&MapEdges::lEnght>
+        >
+      >
+    > MapEdges_multiIndex;
+
+    MapEdges_multiIndex map_edges;
     for(
       Range::iterator
       eit = adj_tets_edges.begin();eit!=adj_tets_edges.end();eit++
@@ -551,50 +635,58 @@ namespace MoFEM {
       rval = moab.get_coords(conn,num_nodes,coords); CHKERR_MOAB(rval);
       VectorAdaptor s0(3,ublas::shallow_array_adaptor<double>(3,&coords[0]));
       VectorAdaptor s1(3,ublas::shallow_array_adaptor<double>(3,&coords[3]));
-      map_edges[norm_2(s0-s1)] = *eit;
+      map_edges.insert(MapEdges(*eit,norm_2(s0-s1)));;
     }
 
     Range merged_edges;
     Range in_tets = adj_tets;
-    for(map<double,EntityHandle>::iterator mit = map_edges.begin();mit!=map_edges.end();mit++) {
+    for(
+      MapEdges_multiIndex::nth_index<1>::type::iterator
+      mit = map_edges.get<1>().begin();mit!=map_edges.get<1>().end();mit++
+    ) {
 
-      if(merged_edges.find(mit->second)!=merged_edges.end()) {
-        continue;
-      }
+      // if(merged_edges.find(mit->eDge)!=merged_edges.end()) {
+      //   continue;
+      // }
 
       int num_nodes;
       const EntityHandle *conn;
-      rval = moab.get_connectivity(mit->second,conn,num_nodes,true); CHKERRQ_MOAB(rval);
+      rval = moab.get_connectivity(mit->eDge,conn,num_nodes,true); CHKERRQ_MOAB(rval);
 
       int fixed[] = {0,0};
       for(int nn = 0;nn!=2;nn++) {
-        if(surf_skin_nodes.find(conn[nn])!=surf_skin_nodes.end()) {
-          fixed[nn] = 2;
+        if(skin_surf_nodes.find(conn[nn])!=skin_surf_nodes.end()) {
+          fixed[nn] = 3;
         } else if(surf_nodes.find(conn[nn])!=surf_nodes.end()) {
+          fixed[nn] = 2;
+        } else if(skin_body_edges_nodes.find(conn[nn])!=skin_body_edges_nodes.end()) {
           fixed[nn] = 1;
         }
       }
-      if(
-        fixed[0] == 2 && fixed[1] == 2 &&
-        surf_skin_nodes.find(mit->second)==surf_skin_nodes.end()
-      ) {
-        continue;
-      }
-      if(
-        fixed[0] == 1 && fixed[1] == 1 &&
-        surf_nodes.find(mit->second)!=surf_nodes.end()
-      ) {
-        continue;
-      }
 
+      if(
+        fixed[0] == 3 && fixed[1] == 3 &&
+        skin_surf.find(mit->eDge)==skin_surf.end()
+      ) {
+        continue;
+      } else if(
+        fixed[0] == 2 && fixed[1] == 2 &&
+        surf_edges.find(mit->eDge)==surf_edges.end()
+      ) {
+        continue;
+      } else if(
+        fixed[0] == 1 && fixed[1] == 1 &&
+        skin_body_edges.find(mit->eDge)==skin_body_edges.end()
+      ) {
+        continue;
+      }
 
       EntityHandle father,mother;
-
       double move = -1;
       if(fixed[0] == fixed[1]) {
         father = conn[0];
         mother = conn[1];
-        move = 0.5;
+        move = 1;
       } else if(fixed[0] > fixed[1]) {
         father = conn[0];
         mother = conn[1];
@@ -608,24 +700,22 @@ namespace MoFEM {
         SETERRQ(m_field.get_comm(),MOFEM_DATA_INCONSISTENCY,"Don't know what to do");
       }
 
-
       Range out_tets;
       ierr = node_merger_ptr->mergeNodes(
-        father,mother,out_tets,&in_tets,true,move
+        father,mother,out_tets,&in_tets,true,move,(move>0)?6:0
       ); CHKERRQ(ierr);
       if(!node_merger_ptr->getSucessMerge()) continue;
+      if(fixed[0]==2 && fixed[1]==2) cerr << "<-sucess\n";
 
-      Range adj_edge_faces;
-      rval = moab.get_adjacencies(&mit->second,1,2,false,adj_edge_faces); CHKERRQ_MOAB(rval);
-      Range adj_edge_faces_edges;
-      rval = moab.get_adjacencies(
-        adj_edge_faces,1,false,adj_edge_faces_edges,moab::Interface::UNION
-      ); CHKERRQ_MOAB(rval);
-      merged_edges.merge(adj_edge_faces_edges);
+      in_tets = subtract(out_tets,in_tets);
+
+      // cutNewVolumes = unite(cutNewVolumes,new_tets);
+      // // cutNewVolumes.merge(new_tets);
 
       // Update entities on surface
+      Range mother_faces;
+      rval = moab.get_adjacencies(&mother,1,2,false,mother_faces); CHKERRQ_MOAB(rval);
       Range adj_in_tets_faces;
-      in_tets = subtract(out_tets,in_tets);
       rval = moab.get_adjacencies(
         in_tets,2,false,adj_in_tets_faces,moab::Interface::UNION
       ); CHKERRQ_MOAB(rval);
@@ -644,7 +734,33 @@ namespace MoFEM {
           cutNewSurfaces.insert(*fit);
         }
       }
-      cutNewSurfaces = subtract(cutNewSurfaces,adj_edge_faces);
+      cutNewSurfaces = subtract(cutNewSurfaces,mother_faces);
+
+      // Update edges
+      Range in_tets_edges;
+      rval = moab.get_adjacencies(
+        in_tets,1,false,in_tets_edges,moab::Interface::UNION
+      ); CHKERRQ_MOAB(rval);
+      EntityHandle edge = mit->eDge;
+      Range mother_edges;
+      rval = moab.get_adjacencies(&mother,1,1,false,mother_edges); CHKERRQ_MOAB(rval);
+      merged_edges.merge(mother_edges);
+      Range father_edges;
+      rval = moab.get_adjacencies(&father,1,1,false,father_edges); CHKERRQ_MOAB(rval);
+      father_edges = intersect(father_edges,in_tets_edges);
+      for(Range::iterator eiit = father_edges.begin();eiit!=father_edges.end();eiit++) {
+        EntityHandle parent_ent;
+        rval = m_field.get_moab().tag_get_data(
+          cOre.get_th_RefParentHandle(),&*eiit,1,&parent_ent
+        ); CHKERRQ_MOAB(rval);
+        if(mother_edges.find(parent_ent)!=mother_edges.end()) {
+          MapEdges_multiIndex::iterator miit = map_edges.find(parent_ent);
+          if(miit!=map_edges.end()) {
+            map_edges.modify(miit,ModifyMapEdge((*eiit)));
+          }
+        }
+      }
+      mit = map_edges.project<1>(map_edges.find(edge));
 
       in_tets = out_tets;
 

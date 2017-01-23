@@ -73,7 +73,8 @@ struct NodeMergerInterface: public UnknownInterface {
     Range &out_tets,
     Range *tets_ptr = NULL,
     const bool only_if_improve_quality = false,
-    const double move = 0
+    const double move = 0,
+    const int line_search = 0
   );
 
 
@@ -128,6 +129,22 @@ private:
 
   bool successMerge; ///< True if marge is success
   bool errorIfNoCommonEdge; ///< Send error if no common edge
+
+  PetscErrorCode minQuality(
+    Range &check_tests,
+    EntityHandle father,
+    EntityHandle mother,
+    double *coords_move,
+    double &min_quality
+  );
+
+  PetscErrorCode lineSearch(
+    Range &check_tests,
+    EntityHandle father,
+    EntityHandle mother,
+    int line_search,
+    double *coords_move
+  );
 
 };
 

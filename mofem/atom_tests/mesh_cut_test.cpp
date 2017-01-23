@@ -93,6 +93,8 @@ int main(int argc, char *argv[]) {
     ierr = cut_mesh->cutEdgesInMiddle(bit_level1); CHKERRQ(ierr);
     ierr = cut_mesh->moveMidNodesOnCutEdges(); CHKERRQ(ierr);
     ierr = cut_mesh->nodeMergeCutSurface(bit_level2); CHKERRQ(ierr);
+    // ierr = cut_mesh->nodeMergeCutSurface(bit_level3); CHKERRQ(ierr);
+
     // ierr = cut_mesh->findEdgesToTrim(0); CHKERRQ(ierr);
     // ierr = cut_mesh->trimEdgesInTheMiddle(bit_level3); CHKERRQ(ierr);
     // ierr = cut_mesh->moveMidNodesOnTrimedEdges(); CHKERRQ(ierr);

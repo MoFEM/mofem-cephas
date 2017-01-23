@@ -143,7 +143,6 @@ namespace MoFEM {
     inline const Range& getNewTrimSurfaces() const { return trimNewSurfaces; }
     inline const Range& getNewTrimVertices() const { return trimNewVertices; }
 
-
   private:
 
     Range sUrface;
