@@ -92,12 +92,9 @@ int main(int argc, char *argv[]) {
     ierr = cut_mesh->findEdgesToCut(0); CHKERRQ(ierr);
     ierr = cut_mesh->cutEdgesInMiddle(bit_level1); CHKERRQ(ierr);
     ierr = cut_mesh->moveMidNodesOnCutEdges(); CHKERRQ(ierr);
-    ierr = cut_mesh->nodeMergeCutSurface(bit_level2); CHKERRQ(ierr);
-    // ierr = cut_mesh->nodeMergeCutSurface(bit_level3); CHKERRQ(ierr);
-
-    // ierr = cut_mesh->findEdgesToTrim(0); CHKERRQ(ierr);
-    // ierr = cut_mesh->trimEdgesInTheMiddle(bit_level3); CHKERRQ(ierr);
-    // ierr = cut_mesh->moveMidNodesOnTrimedEdges(); CHKERRQ(ierr);
+    ierr = cut_mesh->findEdgesToTrim(0); CHKERRQ(ierr);
+    ierr = cut_mesh->trimEdgesInTheMiddle(bit_level3); CHKERRQ(ierr);
+    ierr = cut_mesh->moveMidNodesOnTrimedEdges(); CHKERRQ(ierr);
 
     EntityHandle meshset_vol;
     rval = moab.create_meshset(MESHSET_SET,meshset_vol); CHKERRQ_MOAB(rval);
@@ -129,20 +126,20 @@ int main(int argc, char *argv[]) {
     rval = moab.add_entities(meshset_new_faces,cut_mesh->getNewCutSurfaces()); CHKERRQ_MOAB(rval);
     rval = moab.write_file("out_cut_new_faces.vtk","VTK","",&meshset_new_faces,1); CHKERRQ_MOAB(rval);
 
-    // EntityHandle meshset_trim_edges;
-    // rval = moab.create_meshset(MESHSET_SET,meshset_trim_edges); CHKERRQ_MOAB(rval);
-    // rval = moab.add_entities(meshset_trim_edges,cut_mesh->getTrimEdges()); CHKERRQ_MOAB(rval);
-    // rval = moab.write_file("out_trim_edges.vtk","VTK","",&meshset_trim_edges,1); CHKERRQ_MOAB(rval);
-    //
-    // EntityHandle meshset_outside_edges;
-    // rval = moab.create_meshset(MESHSET_SET,meshset_outside_edges); CHKERRQ_MOAB(rval);
-    // rval = moab.add_entities(meshset_outside_edges,cut_mesh->getOutsideEdges()); CHKERRQ_MOAB(rval);
-    // rval = moab.write_file("out_outside_edges.vtk","VTK","",&meshset_outside_edges,1); CHKERRQ_MOAB(rval);
-    //
-    // EntityHandle meshset_trim_new_surface;
-    // rval = moab.create_meshset(MESHSET_SET,meshset_trim_new_surface); CHKERRQ_MOAB(rval);
-    // rval = moab.add_entities(meshset_trim_new_surface,cut_mesh->getNewTrimSurfaces()); CHKERRQ_MOAB(rval);
-    // rval = moab.write_file("out_trim_new_surface.vtk","VTK","",&meshset_trim_new_surface,1); CHKERRQ_MOAB(rval);
+    EntityHandle meshset_trim_edges;
+    rval = moab.create_meshset(MESHSET_SET,meshset_trim_edges); CHKERRQ_MOAB(rval);
+    rval = moab.add_entities(meshset_trim_edges,cut_mesh->getTrimEdges()); CHKERRQ_MOAB(rval);
+    rval = moab.write_file("out_trim_edges.vtk","VTK","",&meshset_trim_edges,1); CHKERRQ_MOAB(rval);
+
+    EntityHandle meshset_outside_edges;
+    rval = moab.create_meshset(MESHSET_SET,meshset_outside_edges); CHKERRQ_MOAB(rval);
+    rval = moab.add_entities(meshset_outside_edges,cut_mesh->getOutsideEdges()); CHKERRQ_MOAB(rval);
+    rval = moab.write_file("out_outside_edges.vtk","VTK","",&meshset_outside_edges,1); CHKERRQ_MOAB(rval);
+
+    EntityHandle meshset_trim_new_surface;
+    rval = moab.create_meshset(MESHSET_SET,meshset_trim_new_surface); CHKERRQ_MOAB(rval);
+    rval = moab.add_entities(meshset_trim_new_surface,cut_mesh->getNewTrimSurfaces()); CHKERRQ_MOAB(rval);
+    rval = moab.write_file("out_trim_new_surface.vtk","VTK","",&meshset_trim_new_surface,1); CHKERRQ_MOAB(rval);
 
 
   } catch (MoFEMException const &e) {
