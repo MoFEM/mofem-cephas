@@ -93,7 +93,7 @@ namespace MoFEM {
      * \brief projecting of mid edge nodes on new mesh on surface
      * @return error code
      */
-    PetscErrorCode moveMidNodesOnCutEdges();
+    PetscErrorCode moveMidNodesOnCutEdges(Tag th = NULL);
 
     /**
      * \brief Find edges to trimEdges
@@ -105,7 +105,7 @@ namespace MoFEM {
      * @param  verb verbosity level
      * @return      error code
      */
-    PetscErrorCode findEdgesToTrim(int verb = 0);
+    PetscErrorCode findEdgesToTrim(Tag th = NULL,int verb = 0);
 
     PetscErrorCode trimEdgesInTheMiddle(const BitRefLevel bit);
 
@@ -113,7 +113,7 @@ namespace MoFEM {
      * \brief move trimed edges mid nodes
      * @return error code
      */
-    PetscErrorCode moveMidNodesOnTrimedEdges();
+    PetscErrorCode moveMidNodesOnTrimedEdges(Tag th = NULL);
 
     /**
      * \brief Merge nodes to improve mesh quality

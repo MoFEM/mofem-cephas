@@ -359,7 +359,7 @@ namespace MoFEM {
 
   }
 
-  PetscErrorCode CutMeshInterface::moveMidNodesOnCutEdges() {
+  PetscErrorCode CutMeshInterface::moveMidNodesOnCutEdges(Tag th) {
     PetscFunctionBegin;
     MoABErrorCode rval;
     MoFEM::Interface &m_field = cOre;
@@ -373,14 +373,18 @@ namespace MoFEM {
       double dist = mit->second.dIst;
       // cout << s << " " << mit->second.dIst << " " << mit->second.lEngth << endl;
       VectorDouble3 new_coors = mit->second.rayPoint+dist*mit->second.unitRayDir;
-      rval = moab.set_coords(&mit->first,1,&new_coors[0]); CHKERRQ_MOAB(rval);
+      if(th) {
+        rval = moab.tag_set_data(th,&mit->first,1,&new_coors[0]); CHKERRQ_MOAB(rval);
+      } else {
+        rval = moab.set_coords(&mit->first,1,&new_coors[0]); CHKERRQ_MOAB(rval);
+      }
     }
 
     PetscFunctionReturn(0);
   }
 
 
-  PetscErrorCode CutMeshInterface::moveMidNodesOnTrimedEdges() {
+  PetscErrorCode CutMeshInterface::moveMidNodesOnTrimedEdges(Tag th) {
     MoABErrorCode rval;
     MoFEM::Interface &m_field = cOre;
     moab::Interface &moab = m_field.get_moab();
@@ -393,12 +397,16 @@ namespace MoFEM {
       double dist = mit->second.dIst;
       // cout << s << " " << mit->second.dIst << " " << mit->second.lEngth << endl;
       VectorDouble3 new_coors = mit->second.rayPoint+dist*mit->second.unitRayDir;
-      rval = moab.set_coords(&mit->first,1,&new_coors[0]); CHKERRQ_MOAB(rval);
+      if(th) {
+        rval = moab.tag_set_data(th,&mit->first,1,&new_coors[0]); CHKERRQ_MOAB(rval);
+      } else {
+        rval = moab.set_coords(&mit->first,1,&new_coors[0]); CHKERRQ_MOAB(rval);
+      }
     }
     PetscFunctionReturn(0);
   }
 
-  PetscErrorCode CutMeshInterface::findEdgesToTrim(int verb) {
+  PetscErrorCode CutMeshInterface::findEdgesToTrim(Tag th,int verb) {
     MoABErrorCode rval;
     MoFEM::Interface &m_field = cOre;
     moab::Interface &moab = m_field.get_moab();
@@ -418,7 +426,11 @@ namespace MoFEM {
       const EntityHandle *conn;
       rval = moab.get_connectivity(*eit,conn,num_nodes,true); CHKERRQ_MOAB(rval);
       double coords[3*num_nodes];
-      rval = moab.get_coords(conn,num_nodes,coords); CHKERR_MOAB(rval);
+      if(th) {
+        rval = moab.tag_get_data(th,conn,num_nodes,coords); CHKERR_MOAB(rval);
+      } else {
+        rval = moab.get_coords(conn,num_nodes,coords); CHKERR_MOAB(rval);
+      }
       // Put edges coords into boost vectors
       VectorAdaptor s0(3,ublas::shallow_array_adaptor<double>(3,&coords[0]));
       VectorAdaptor s1(3,ublas::shallow_array_adaptor<double>(3,&coords[3]));

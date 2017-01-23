@@ -87,14 +87,25 @@ int main(int argc, char *argv[]) {
     BitRefLevel bit_level3;
     bit_level3.set(3);
 
+    double def_val[] = {0,0,0};
+    Tag th;
+    rval = moab.tag_get_handle(
+      "POSITION",3,MB_TYPE_DOUBLE,th,MB_TAG_CREAT|MB_TAG_SPARSE,&def_val
+    ); CHKERRQ_MOAB(rval);
+
+    Range nodes;
+    rval = moab.get_entities_by_type(0,MBVERTEX,nodes); CHKERRQ_MOAB(rval);
+    std::vector<double> coords(3*nodes.size());
+    rval = moab.get_coords(nodes,&coords[0]); CHKERRQ_MOAB(rval);
+    rval = moab.tag_set_data(th,nodes,&coords[0]); CHKERRQ_MOAB(rval);
 
     // // find edges to cut
-    ierr = cut_mesh->findEdgesToCut(0); CHKERRQ(ierr);
+    ierr = cut_mesh->findEdgesToCut(); CHKERRQ(ierr);
     ierr = cut_mesh->cutEdgesInMiddle(bit_level1); CHKERRQ(ierr);
-    ierr = cut_mesh->moveMidNodesOnCutEdges(); CHKERRQ(ierr);
-    ierr = cut_mesh->findEdgesToTrim(0); CHKERRQ(ierr);
+    ierr = cut_mesh->moveMidNodesOnCutEdges(th); CHKERRQ(ierr);
+    ierr = cut_mesh->findEdgesToTrim(th); CHKERRQ(ierr);
     ierr = cut_mesh->trimEdgesInTheMiddle(bit_level3); CHKERRQ(ierr);
-    ierr = cut_mesh->moveMidNodesOnTrimedEdges(); CHKERRQ(ierr);
+    ierr = cut_mesh->moveMidNodesOnTrimedEdges(th); CHKERRQ(ierr);
 
     EntityHandle meshset_vol;
     rval = moab.create_meshset(MESHSET_SET,meshset_vol); CHKERRQ_MOAB(rval);
