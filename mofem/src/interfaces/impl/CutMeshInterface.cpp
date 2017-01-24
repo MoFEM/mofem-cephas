@@ -562,4 +562,41 @@ namespace MoFEM {
     return 1;
   }
 
+  PetscErrorCode CutMeshInterface::splitSides(
+    const BitRefLevel split_bit,
+    const BitRefLevel bit,
+    const Range &ents
+  ) {
+    PetscErrorCode ierr;
+    MoABErrorCode rval;
+    MoFEM::Interface &m_field = cOre;
+    moab::Interface &moab = m_field.get_moab();
+    PrismInterface *interface;
+    PetscFunctionBegin;
+    ierr = m_field.query_interface(interface); CHKERRQ(ierr);
+    EntityHandle meshset;
+    rval = moab.create_meshset(MESHSET_SET,meshset); CHKERRQ_MOAB(rval);
+    ierr = m_field.get_entities_by_type_and_ref_level(
+      split_bit,BitRefLevel().set(),MBTET,meshset
+    ); CHKERRQ(ierr);
+    EntityHandle meshset_trim_new_surface;
+    rval = moab.create_meshset(MESHSET_SET,meshset_trim_new_surface); CHKERRQ_MOAB(rval);
+    rval = moab.add_entities(meshset_trim_new_surface,ents); CHKERRQ_MOAB(rval);
+    ierr = interface->getSides(meshset_trim_new_surface,split_bit,true); CHKERRQ(ierr);
+    ierr = interface->splitSides(meshset,bit,meshset_trim_new_surface,true,true); CHKERRQ(ierr);
+    rval = moab.delete_entities(&meshset,1); CHKERRQ_MOAB(rval);
+    rval = moab.delete_entities(&meshset_trim_new_surface,1); CHKERRQ_MOAB(rval);
+    PetscFunctionReturn(0);
+  }
+
+  PetscErrorCode CutMeshInterface::splitTrimSides(
+    const BitRefLevel split_bit,
+    const BitRefLevel bit
+  ) {
+    PetscErrorCode ierr;
+    PetscFunctionBegin;
+    ierr = splitSides(split_bit,bit,getNewTrimSurfaces()); CHKERRQ(ierr);
+    PetscFunctionReturn(0);
+  }
+
 }

@@ -116,10 +116,31 @@ namespace MoFEM {
     PetscErrorCode moveMidNodesOnTrimedEdges(Tag th = NULL);
 
     /**
-     * \brief Merge nodes to improve mesh quality
-     * @return error code
+     * \brief split sides
+     * @param  split_bit split bit level
+     * @param  bit       bit level of split mesh
+     * @param  ents      ents on the surface which is going to be split
+     * @return           error code
      */
-    PetscErrorCode nodeMergeCutSurface(const BitRefLevel bit);
+    PetscErrorCode splitSides(
+      const BitRefLevel split_bit,
+      const BitRefLevel bit,
+      const Range &ents
+    );
+
+    /**
+     * \brief split sides of trimmed surface
+     * @param  split_bit split bit level
+     * @param  bit       bit level of split mesh
+     * @return           error code
+     */
+    PetscErrorCode splitTrimSides(
+      const BitRefLevel split_bit,
+      const BitRefLevel bit
+    );
+
+    
+
 
     // PetscErrorCode findTetOnTheFront(int verb = 0);
     // #ifdef WITH_TETGEN
