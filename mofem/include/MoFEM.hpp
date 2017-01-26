@@ -56,6 +56,7 @@
 #include <Interface.hpp>
 #include <Core.hpp>
 
+#include <ProblemsManager.hpp>
 #include <MeshRefinement.hpp>
 #include <SeriesRecorder.hpp>
 #include <PrismInterface.hpp>

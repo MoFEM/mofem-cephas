@@ -177,15 +177,19 @@ int main(int argc, char *argv[]) {
 
   }
 
+
+  ProblemsManager *prb_mng_ptr;
+  ierr = m_field.query_interface(prb_mng_ptr); CHKERRQ(ierr);
+
   //partition
   for(int lll = ll-2;lll<ll;lll++) {
     //build problem
     std::stringstream problem_name;
     problem_name << "PROBLEM_SCALAR_" << lll;
-    ierr = m_field.build_problem(problem_name.str(),true); CHKERRQ(ierr);
-    ierr = m_field.partition_problem(problem_name.str()); CHKERRQ(ierr);
-    ierr = m_field.partition_finite_elements(problem_name.str()); CHKERRQ(ierr);
-    ierr = m_field.partition_ghost_dofs(problem_name.str()); CHKERRQ(ierr);
+    ierr = prb_mng_ptr->buildProblem(problem_name.str(),true); CHKERRQ(ierr);
+    ierr = prb_mng_ptr->partitionProblem(problem_name.str()); CHKERRQ(ierr);
+    ierr = prb_mng_ptr->partitionFiniteElements(problem_name.str()); CHKERRQ(ierr);
+    ierr = prb_mng_ptr->partitionGhostDofs(problem_name.str()); CHKERRQ(ierr);
   }
 
   std::ofstream myfile;

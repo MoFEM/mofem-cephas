@@ -132,12 +132,15 @@ int main(int argc, char *argv[]) {
   ierr = m_field.modify_problem_add_finite_element("TEST_PROBLEM","SKIN_FE"); CHKERRQ(ierr);
   //set refinement level for problem
   ierr = m_field.modify_problem_ref_level_add_bit("TEST_PROBLEM",bit_level0); CHKERRQ(ierr);
+
   //build problem
-  ierr = m_field.build_problem("TEST_PROBLEM",true); CHKERRQ(ierr);
+  ProblemsManager *prb_mng_ptr;
+  ierr = m_field.query_interface(prb_mng_ptr); CHKERRQ(ierr);
+  ierr = prb_mng_ptr->buildProblem("TEST_PROBLEM",true); CHKERRQ(ierr);
 
   //mesh partitioning
   //partition
-  ierr = m_field.partition_simple_problem("TEST_PROBLEM"); CHKERRQ(ierr);
+  ierr = prb_mng_ptr->partitionSimpleProblem("TEST_PROBLEM"); CHKERRQ(ierr);
   ierr = m_field.partition_finite_elements("TEST_PROBLEM"); CHKERRQ(ierr);
   //what are ghost nodes, see Petsc Manual
   ierr = m_field.partition_ghost_dofs("TEST_PROBLEM"); CHKERRQ(ierr);
@@ -306,10 +309,10 @@ int main(int argc, char *argv[]) {
 
   ierr = m_field.build_finite_elements(); CHKERRQ(ierr);
   ierr = m_field.build_adjacencies(bit_level0); CHKERRQ(ierr);
-  ierr = m_field.build_problem("TEST_PROBLEM",true); CHKERRQ(ierr);
 
   //mesh partitioning
-  ierr = m_field.partition_simple_problem("TEST_PROBLEM"); CHKERRQ(ierr);
+  ierr = prb_mng_ptr->buildProblem("TEST_PROBLEM",true); CHKERRQ(ierr);
+  ierr = prb_mng_ptr->partitionSimpleProblem("TEST_PROBLEM"); CHKERRQ(ierr);
   ierr = m_field.partition_finite_elements("TEST_PROBLEM"); CHKERRQ(ierr);
   ierr = m_field.partition_ghost_dofs("TEST_PROBLEM"); CHKERRQ(ierr);
 

@@ -48,6 +48,18 @@
 
 namespace MoFEM {
 
+  PetscErrorCode Core::get_finite_elements(const FiniteElement_multiIndex **fe_ptr) const {
+    PetscFunctionBegin;
+    *fe_ptr = &finiteElements;
+    PetscFunctionReturn(0);
+  }
+
+  PetscErrorCode Core::get_ents_finite_elements(const EntFiniteElement_multiIndex **fe_ent_ptr) const {
+    PetscFunctionBegin;
+    *fe_ent_ptr = &entsFiniteElements;
+    PetscFunctionReturn(0);
+  }
+
   bool Core::check_finite_element(const std::string &name) const {
     typedef FiniteElement_multiIndex::index<FiniteElement_name_mi_tag>::type FeSetByName;
     const FeSetByName &set = finiteElements.get<FiniteElement_name_mi_tag>();
@@ -911,11 +923,6 @@ namespace MoFEM {
     PetscFunctionReturn(0);
   }
 
-  PetscErrorCode Core::get_finite_elements(const FiniteElement_multiIndex **finiteElements_ptr) const {
-    PetscFunctionBegin;
-    *finiteElements_ptr = &finiteElements;
-    PetscFunctionReturn(0);
-  }
   EntFiniteElementbyName::iterator
   Core::get_fe_by_name_begin(const std::string &fe_name) const {
     return entsFiniteElements.get<FiniteElement_name_mi_tag>().lower_bound(fe_name);

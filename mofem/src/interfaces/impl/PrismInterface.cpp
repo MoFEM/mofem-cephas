@@ -90,7 +90,7 @@ PetscErrorCode PrismInterface::getSides(
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode PrismInterface::getSides(const EntityHandle SIDESET,const BitRefLevel mesh_bit_level,const bool recursive,int verb) {
+PetscErrorCode PrismInterface::getSides(const EntityHandle sideset,const BitRefLevel mesh_bit_level,const bool recursive,int verb) {
   PetscErrorCode ierr;
   MoABErrorCode rval;
   MoFEM::Interface &m_field = cOre;
@@ -116,7 +116,7 @@ PetscErrorCode PrismInterface::getSides(const EntityHandle SIDESET,const BitRefL
   Skinner skin(&moab);
   //get interface triangles from side set
   Range triangles;
-  rval = moab.get_entities_by_type(SIDESET,MBTRI,triangles,recursive);  CHKERRQ_MOAB(rval);
+  rval = moab.get_entities_by_type(sideset,MBTRI,triangles,recursive);  CHKERRQ_MOAB(rval);
   if(mesh_bit_level.any()) {
     triangles = intersect(triangles,mesh_level_ents3d_tris);
   }
@@ -224,15 +224,15 @@ PetscErrorCode PrismInterface::getSides(const EntityHandle SIDESET,const BitRefL
   skin_edges_boundary = intersect(skin_edges_boundary,side_edges);
   //make child meshsets
   std::vector<EntityHandle> children;
-  rval = moab.get_child_meshsets(SIDESET,children);  CHKERRQ_MOAB(rval);
+  rval = moab.get_child_meshsets(sideset,children);  CHKERRQ_MOAB(rval);
   if(children.empty()) {
     children.resize(3);
     rval = moab.create_meshset(MESHSET_SET|MESHSET_TRACK_OWNER,children[0]); CHKERRQ_MOAB(rval);
     rval = moab.create_meshset(MESHSET_SET|MESHSET_TRACK_OWNER,children[1]); CHKERRQ_MOAB(rval);
     rval = moab.create_meshset(MESHSET_SET|MESHSET_TRACK_OWNER,children[2]); CHKERRQ_MOAB(rval);
-    rval = moab.add_child_meshset(SIDESET,children[0]); CHKERRQ_MOAB(rval);
-    rval = moab.add_child_meshset(SIDESET,children[1]); CHKERRQ_MOAB(rval);
-    rval = moab.add_child_meshset(SIDESET,children[2]); CHKERRQ_MOAB(rval);
+    rval = moab.add_child_meshset(sideset,children[0]); CHKERRQ_MOAB(rval);
+    rval = moab.add_child_meshset(sideset,children[1]); CHKERRQ_MOAB(rval);
+    rval = moab.add_child_meshset(sideset,children[2]); CHKERRQ_MOAB(rval);
   } else {
     if(children.size()!=3) {
       SETERRQ(PETSC_COMM_SELF,1,"this meshset shuld have 3 children meshsets");
@@ -279,20 +279,20 @@ PetscErrorCode PrismInterface::splitSides(
 }
 PetscErrorCode PrismInterface::splitSides(
   const EntityHandle meshset,const BitRefLevel &bit,
-  const EntityHandle SIDESET,const bool add_iterfece_entities,const bool recursive,
+  const EntityHandle sideset,const bool add_iterfece_entities,const bool recursive,
   int verb
 ) {
   PetscErrorCode ierr;
   PetscFunctionBegin;
   ierr = splitSides(meshset,bit,
-    BitRefLevel(),BitRefLevel(),SIDESET,add_iterfece_entities,recursive,verb
+    BitRefLevel(),BitRefLevel(),sideset,add_iterfece_entities,recursive,verb
   ); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 PetscErrorCode PrismInterface::splitSides(
   const EntityHandle meshset,const BitRefLevel &bit,
   const BitRefLevel &inheret_from_bit_level,const BitRefLevel &inheret_from_bit_level_mask,
-  const EntityHandle SIDESET,const bool add_iterfece_entities,const bool recursive,
+  const EntityHandle sideset,const bool add_iterfece_entities,const bool recursive,
   int verb
 ) {
   PetscErrorCode ierr;
@@ -302,7 +302,7 @@ PetscErrorCode PrismInterface::splitSides(
   PetscFunctionBegin;
   std::vector<EntityHandle> children;
   //get children meshsets
-  rval = moab.get_child_meshsets(SIDESET,children);  CHKERRQ_MOAB(rval);
+  rval = moab.get_child_meshsets(sideset,children);  CHKERRQ_MOAB(rval);
   if(children.size()!=3) {
     SETERRQ(PETSC_COMM_SELF,1,"should be 3 child meshsets, each of them contains tets on two sides of interface");
   }
@@ -314,7 +314,7 @@ PetscErrorCode PrismInterface::splitSides(
   rval = moab.get_entities_by_handle(children[1],other_ents3d,false);  CHKERRQ_MOAB(rval);
   //faces of interface
   Range triangles;
-  rval = moab.get_entities_by_type(SIDESET,MBTRI,triangles,recursive);  CHKERRQ_MOAB(rval);
+  rval = moab.get_entities_by_type(sideset,MBTRI,triangles,recursive);  CHKERRQ_MOAB(rval);
   Range side_ents3d_tris;
   rval = moab.get_adjacencies(side_ents3d,2,true,side_ents3d_tris,moab::Interface::UNION); CHKERRQ_MOAB(rval);
   triangles = intersect(triangles,side_ents3d_tris);

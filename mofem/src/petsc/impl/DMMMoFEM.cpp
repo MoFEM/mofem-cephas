@@ -40,6 +40,7 @@
 #include <MeshRefinement.hpp>
 #include <PrismInterface.hpp>
 #include <SeriesRecorder.hpp>
+#include <ProblemsManager.hpp>
 #include <Core.hpp>
 
 #include <KspCtx.hpp>
@@ -647,23 +648,25 @@ PetscErrorCode DMSetFromOptions_MoFEM(DM dm) {
 PetscErrorCode DMSetUp_MoFEM(DM dm) {
   PetscErrorCode ierr;
   PetscValidHeaderSpecific(dm,DM_CLASSID,1);
+  ProblemsManager *prb_mng_ptr;
   PetscFunctionBegin;
   DMCtx *dm_field = (DMCtx*)dm->data;
+  ierr = dm_field->mField_ptr->query_interface(prb_mng_ptr); CHKERRQ(ierr);
   if(dm_field->isPartitioned) {
-    ierr = dm_field->mField_ptr->build_problem_on_distributed_mesh(
+    ierr = prb_mng_ptr->buildProblemOnDistributedMesh(
       dm_field->problemName,dm_field->isSquareMatrix == PETSC_TRUE
     ); CHKERRQ(ierr);
-    ierr = dm_field->mField_ptr->partition_finite_elements(
+    ierr = prb_mng_ptr->partitionFiniteElements(
       dm_field->problemName,true,0,dm_field->sIze,1
     ); CHKERRQ(ierr);
   } else {
-    ierr = dm_field->mField_ptr->build_problem(
+    ierr = prb_mng_ptr->buildProblem(
       dm_field->problemName,dm_field->isSquareMatrix == PETSC_TRUE
     ); CHKERRQ(ierr);
-    ierr = dm_field->mField_ptr->partition_problem(dm_field->problemName); CHKERRQ(ierr);
-    ierr = dm_field->mField_ptr->partition_finite_elements(dm_field->problemName); CHKERRQ(ierr);
+    ierr = prb_mng_ptr->partitionProblem(dm_field->problemName); CHKERRQ(ierr);
+    ierr = prb_mng_ptr->partitionFiniteElements(dm_field->problemName); CHKERRQ(ierr);
   }
-  ierr = dm_field->mField_ptr->partition_ghost_dofs(dm_field->problemName); CHKERRQ(ierr);
+  ierr = prb_mng_ptr->partitionGhostDofs(dm_field->problemName); CHKERRQ(ierr);
 
   dm_field->isProblemBuild = PETSC_TRUE;
 
@@ -673,12 +676,14 @@ PetscErrorCode DMSetUp_MoFEM(DM dm) {
 PetscErrorCode DMSubDMSetUp_MoFEM(DM subdm) {
   PetscErrorCode ierr;
   PetscValidHeaderSpecific(subdm,DM_CLASSID,1);
+  ProblemsManager *prb_mng_ptr;
   PetscFunctionBegin;
 
   DMCtx *subdm_field = (DMCtx*)subdm->data;
 
   // build sub dm problem
-  ierr = subdm_field->mField_ptr->build_sub_problem(
+  ierr = subdm_field->mField_ptr->query_interface(prb_mng_ptr); CHKERRQ(ierr);
+  ierr = prb_mng_ptr->buildSubProblem(
     subdm_field->problemName,
     subdm_field->rowFields,
     subdm_field->colFields,
@@ -689,14 +694,16 @@ PetscErrorCode DMSubDMSetUp_MoFEM(DM subdm) {
   // partition problem
   subdm_field->isPartitioned = subdm_field->isPartitioned;
   if(subdm_field->isPartitioned) {
-    ierr = subdm_field->mField_ptr->partition_finite_elements(
+    ierr = prb_mng_ptr->partitionFiniteElements(
       subdm_field->problemName,true,0,subdm_field->sIze,1
     ); CHKERRQ(ierr);
   } else {
-    ierr = subdm_field->mField_ptr->partition_finite_elements(subdm_field->problemName); CHKERRQ(ierr);
+    ierr = prb_mng_ptr->partitionFiniteElements(
+      subdm_field->problemName
+    ); CHKERRQ(ierr);
   }
   // set ghost nodes
-  ierr = subdm_field->mField_ptr->partition_ghost_dofs(subdm_field->problemName); CHKERRQ(ierr);
+  ierr = prb_mng_ptr->partitionGhostDofs(subdm_field->problemName); CHKERRQ(ierr);
 
   subdm_field->isProblemBuild = PETSC_TRUE;
 
