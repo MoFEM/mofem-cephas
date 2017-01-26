@@ -44,6 +44,7 @@
 #include <Core.hpp>
 
 // Interfaces
+#include <ProblemsManager.hpp>
 #include <MeshRefinement.hpp>
 #include <SeriesRecorder.hpp>
 #include <PrismInterface.hpp>
@@ -116,6 +117,16 @@ PetscErrorCode Core::query_interface_type(const std::type_info& type,void*& ptr)
   }
   #endif
 
+  // Problems manager
+  if(type == typeid(ProblemsManager)) {
+    if(iFaces.find(IDD_MOFEMProblemsManager.uUId.to_ulong()) == iFaces.end()) {
+      unsigned long int uid = IDD_MOFEMProblemsManager.uUId.to_ulong();
+      iFaces.insert(uid,new MedInterface(*this));
+    }
+    ptr = &iFaces.at(IDD_MOFEMProblemsManager.uUId.to_ulong());
+    PetscFunctionReturn(0);
+  }
+
   //Meshsets manager
   if(type == typeid(MeshsetsManager)) {
     if(iFaces.find(IDD_MOFEMMeshsetsManager.uUId.to_ulong()) == iFaces.end()) {
@@ -126,7 +137,9 @@ PetscErrorCode Core::query_interface_type(const std::type_info& type,void*& ptr)
     PetscFunctionReturn(0);
   }
 
-  //Cooordinate systems manager
+  //Problems manager
+
+  //Coordinate systems manager
   if(type == typeid(CoordSystemsManager)) {
     if(iFaces.find(IDD_MOFEMCoordsSystemsManager.uUId.to_ulong()) == iFaces.end()) {
       unsigned long int uid = IDD_MOFEMCoordsSystemsManager.uUId.to_ulong();
@@ -323,7 +336,8 @@ moab::Interface& Core::get_moab() {
 const moab::Interface& Core::get_moab() const {
   return moab;
 }
-MPI_Comm Core::get_comm() const {
+
+MPI_Comm& Core::get_comm() const {
   return comm;
 }
 
@@ -1053,6 +1067,13 @@ PetscErrorCode Core::get_problem(const std::string &problem_name,const MoFEMProb
   *problem_ptr = &*p_miit;
   PetscFunctionReturn(0);
 }
+
+PetscErrorCode Core::get_problems(const MoFEMProblem_multiIndex **problems_ptr) const {
+  PetscFunctionBegin;
+  *problems_ptr = &pRoblems;
+  PetscFunctionReturn(0);
+}
+
 PetscErrorCode Core::get_field_ents(const MoFEMEntity_multiIndex **field_ents) const {
   PetscFunctionBegin;
   *field_ents = &entsFields;
