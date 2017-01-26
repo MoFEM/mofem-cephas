@@ -121,7 +121,7 @@ PetscErrorCode Core::query_interface_type(const std::type_info& type,void*& ptr)
   if(type == typeid(ProblemsManager)) {
     if(iFaces.find(IDD_MOFEMProblemsManager.uUId.to_ulong()) == iFaces.end()) {
       unsigned long int uid = IDD_MOFEMProblemsManager.uUId.to_ulong();
-      iFaces.insert(uid,new MedInterface(*this));
+      iFaces.insert(uid,new ProblemsManager(*this));
     }
     ptr = &iFaces.at(IDD_MOFEMProblemsManager.uUId.to_ulong());
     PetscFunctionReturn(0);
