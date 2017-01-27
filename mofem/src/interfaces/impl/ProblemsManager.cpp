@@ -1593,7 +1593,7 @@ namespace MoFEM {
     PetscFunctionReturn(0);
   }
 
-  PetscErrorCode ProblemsManager::partitionComposeProblem(
+  PetscErrorCode ProblemsManager::inheretPartition(
     const std::string &name,
     const std::string &problem_for_rows,
     bool copy_rows,
@@ -1606,10 +1606,8 @@ namespace MoFEM {
     const MoFEMProblem_multiIndex *problems_ptr;
     PetscFunctionBegin;
 
-    if(!(cOre.getBuildMoFEM()&Core::BUILD_FIELD)) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"fields not build");
-    if(!(cOre.getBuildMoFEM()&Core::BUILD_FE)) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"FEs not build");
-    if(!(cOre.getBuildMoFEM()&Core::BUILD_ADJ)) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"adjacencies not build");
-    if(!(cOre.getBuildMoFEM()&Core::BUILD_PROBLEM)) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"pRoblems not build");
+    if(!(cOre.getBuildMoFEM()&Core::BUILD_PROBLEM))
+    SETERRQ(m_field.get_comm(),MOFEM_DATA_INCONSISTENCY,"pRoblems not build");
 
     typedef MoFEMProblem_multiIndex::index<Problem_mi_tag>::type MoFEMProblemByName;
 
@@ -1618,7 +1616,11 @@ namespace MoFEM {
     MoFEMProblemByName &problems_by_name = const_cast<MoFEMProblemByName&>(problems_ptr->get<Problem_mi_tag>());
     MoFEMProblemByName::iterator p_miit = problems_by_name.find(name);
     if(p_miit==problems_by_name.end()) {
-      SETERRQ1(PETSC_COMM_SELF,1,"problem with name < %s > not defined (top tip check spelling)",name.c_str());
+      SETERRQ1(
+        m_field.get_comm(),MOFEM_NOT_FOUND,
+        "problem with name < %s > not defined (top tip check spelling)",
+        name.c_str()
+      );
     }
     if(verb>0) {
       PetscPrintf(
@@ -1634,7 +1636,7 @@ namespace MoFEM {
     MoFEMProblemByName::iterator p_miit_row = problems_by_name.find(problem_for_rows);
     if(p_miit_row==problems_by_name.end()) {
       SETERRQ1(
-        PETSC_COMM_SELF,
+        m_field.get_comm(),
         MOFEM_DATA_INCONSISTENCY,
         "problem with name < %s > not defined (top tip check spelling)",
         problem_for_rows.c_str()
@@ -1646,10 +1648,11 @@ namespace MoFEM {
     MoFEMProblemByName::iterator p_miit_col = problems_by_name.find(problem_for_cols);
     if(p_miit_col==problems_by_name.end()) {
       SETERRQ1(
-        PETSC_COMM_SELF,
+        m_field.get_comm(),
         MOFEM_DATA_INCONSISTENCY,
         "problem with name < %s > not defined (top tip check spelling)",
-        problem_for_cols.c_str());
+        problem_for_cols.c_str()
+      );
     }
     boost::shared_ptr<NumeredDofEntity_multiIndex> dofs_col = p_miit_col->numered_dofs_cols;
 
@@ -1679,7 +1682,7 @@ namespace MoFEM {
           NumeredDofEntityByUId::iterator diit = dofs_by_uid.find((*dit)->getGlobalUniqueId());
           if(diit==dofs_by_uid.end()) {
             SETERRQ(
-              PETSC_COMM_SELF,
+              m_field.get_comm(),
               MOFEM_DATA_INCONSISTENCY,
               "data inconsistency, could not find dof in composite problem"
             );
@@ -1688,10 +1691,20 @@ namespace MoFEM {
           int petsc_global_dof = (*diit)->getPetscGlobalDofIdx();
           bool success;
           success = composed_dofs[ss]->modify(dit,NumeredDofEntity_part_change(part_number,petsc_global_dof));
-          if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
+          if(!success) {
+            SETERRQ(
+              m_field.get_comm(),
+              MOFEM_OPERATION_UNSUCCESSFUL,
+              "modification unsuccessful"
+            );
+          }
           if((*dit)->getPart() == (unsigned int)m_field.getCommRank()) {
             success =composed_dofs[ss]->modify(dit,NumeredDofEntity_local_idx_change((*nb_local_dofs[ss])++));
-            if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
+            if(!success) {
+              SETERRQ(
+                m_field.get_comm(),MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful"
+              );
+            }
             is_local.push_back(petsc_global_dof);
           }
         }
@@ -1717,7 +1730,11 @@ namespace MoFEM {
           int petsc_global_dof = is_local[idx2++];
           bool success;
           success = composed_dofs[ss]->modify(dit,NumeredDofEntity_part_change(part_number,petsc_global_dof));
-          if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
+          if(!success) {
+            SETERRQ(
+              m_field.get_comm(),MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful"
+            );
+          }
         }
 
         ierr = AODestroy(&ao); CHKERRQ(ierr);
@@ -1740,12 +1757,18 @@ namespace MoFEM {
           int petsc_global_dof = (*dit)->getPetscGlobalDofIdx();
           bool success;
           success = composed_dofs[ss]->modify(p.first,NumeredDofEntity_mofem_index_change(dof_idx));
-          if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
+          if(!success) {
+            SETERRQ(m_field.get_comm(),MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
+          }
           success = composed_dofs[ss]->modify(p.first,NumeredDofEntity_part_change(part_number,petsc_global_dof));
-          if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
+          if(!success) {
+            SETERRQ(m_field.get_comm(),MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
+          }
           if((*p.first)->getPart() == (unsigned int)m_field.getCommRank()) {
             success =composed_dofs[ss]->modify(p.first,NumeredDofEntity_local_idx_change((*nb_local_dofs[ss])++));
-            if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
+            if(!success) {
+              SETERRQ(m_field.get_comm(),MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
+            }
           }
         }
 

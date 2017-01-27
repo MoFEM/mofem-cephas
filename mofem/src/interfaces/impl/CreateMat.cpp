@@ -348,6 +348,9 @@ PetscErrorCode CreateRowComressedADJMatrix::createMatArrays(
 
   } else {
 
+    // Make sure it is a PETSc comm
+    ierr = PetscCommDuplicate(comm,&comm,NULL); CHKERRQ(ierr);
+
     //get adjacent nodes on other partitions
     std::vector<std::vector<int> > dofs_vec(sIze);
 
@@ -403,9 +406,6 @@ PetscErrorCode CreateRowComressedADJMatrix::createMatArrays(
         }
       }
     }
-
-    // Make sure it is a PETSc comm
-    ierr = PetscCommDuplicate(comm,&comm,NULL); CHKERRQ(ierr);
 
     int nsends = 0; 			// number of messages to send
     std::vector<int> dofs_vec_length(sIze);	// length of the message to proc
@@ -963,6 +963,7 @@ PetscErrorCode Core::partition_check_matrix_fill_in(const std::string &problem_n
       PetscFunctionBegin;
       PetscErrorCode ierr;
 
+      // cerr << mFieldPtr->getCommRank() << endl;
       ierr = MatAssemblyBegin(A,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
       ierr = MatAssemblyEnd(A,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
 
@@ -1000,8 +1001,8 @@ PetscErrorCode Core::partition_check_matrix_fill_in(const std::string &problem_n
   }
 
   //Loop all elements in problem and check if assemble is without error
-  NumeredEntFiniteElement_multiIndex::iterator fe = p_miit->numeredFiniteElements.begin();
-  NumeredEntFiniteElement_multiIndex::iterator hi_fe = p_miit->numeredFiniteElements.end();
+  FiniteElement_multiIndex::iterator fe = finiteElements.begin();
+  FiniteElement_multiIndex::iterator hi_fe = finiteElements.end();
   for(;fe!=hi_fe;fe++) {
 
     if(verb>0) {

@@ -354,12 +354,12 @@ typedef multi_index_container<
   indexed_by<
     hashed_unique<
       tag<Ent_mi_tag>, member<RefEntity::BasicEntity,EntityHandle,&RefEntity::ent> >,
-    hashed_non_unique<
-      tag<Ent_Owner_mi_tag>, member<RefEntity::BasicEntity,EntityHandle,&RefEntity::moab_owner_handle> >,
-    ordered_non_unique<
-      tag<Proc_mi_tag>, member<RefEntity::BasicEntity,int,&RefEntity::owner_proc> >,
-    ordered_non_unique<
-      tag<Ent_ParallelStatus>, const_mem_fun<RefEntity::BasicEntity,unsigned char,&RefEntity::getPStatus> >,
+    // hashed_non_unique<
+    //   tag<Ent_Owner_mi_tag>, member<RefEntity::BasicEntity,EntityHandle,&RefEntity::moab_owner_handle> >,
+    // ordered_non_unique<
+    //   tag<Proc_mi_tag>, member<RefEntity::BasicEntity,int,&RefEntity::owner_proc> >,
+    // ordered_non_unique<
+    //   tag<Ent_ParallelStatus>, const_mem_fun<RefEntity::BasicEntity,unsigned char,&RefEntity::getPStatus> >,
     ordered_non_unique<
       tag<Ent_Ent_mi_tag>, const_mem_fun<RefEntity,EntityHandle,&RefEntity::getParentEnt> >,
     ordered_non_unique<
