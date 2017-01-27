@@ -116,8 +116,12 @@ int main(int argc, char *argv[]) {
   ierr = m_field.build_finite_elements(); CHKERRQ(ierr);
   //build adjacencies
   ierr = m_field.build_adjacencies(bit_level0); CHKERRQ(ierr);
+
+
+  ProblemsManager *prb_mng_ptr;
+  ierr = m_field.query_interface(prb_mng_ptr); CHKERRQ(ierr);
   //build problem
-  ierr = m_field.build_problem("THERMAL_PROBLEM",true); CHKERRQ(ierr);
+  ierr = prb_mng_ptr->buildProblem("THERMAL_PROBLEM",true); CHKERRQ(ierr);
 
   Projection10NodeCoordsOnField ent_method_material(m_field,"MESH_NODE_POSITIONS");
   ierr = m_field.loop_dofs("MESH_NODE_POSITIONS",ent_method_material); CHKERRQ(ierr);
@@ -125,10 +129,10 @@ int main(int argc, char *argv[]) {
   /****/
   //mesh partitioning
   //partition
-  ierr = m_field.partition_problem("THERMAL_PROBLEM"); CHKERRQ(ierr);
-  ierr = m_field.partition_finite_elements("THERMAL_PROBLEM"); CHKERRQ(ierr);
+  ierr = prb_mng_ptr->partitionProblem("THERMAL_PROBLEM"); CHKERRQ(ierr);
+  ierr = prb_mng_ptr->partitionFiniteElements("THERMAL_PROBLEM"); CHKERRQ(ierr);
   //what are ghost nodes, see Petsc Manual
-  ierr = m_field.partition_ghost_dofs("THERMAL_PROBLEM"); CHKERRQ(ierr);
+  ierr = prb_mng_ptr->partitionGhostDofs("THERMAL_PROBLEM"); CHKERRQ(ierr);
 
   Vec F;
   ierr = m_field.VecCreateGhost("THERMAL_PROBLEM",ROW,&F); CHKERRQ(ierr);

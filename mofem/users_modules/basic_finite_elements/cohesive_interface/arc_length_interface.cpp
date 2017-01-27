@@ -422,17 +422,16 @@ int main(int argc, char *argv[]) {
   //build adjacencies
   ierr = m_field.build_adjacencies(problem_bit_level); CHKERRQ(ierr);
 
-  //build problem
-  ierr = m_field.build_problem("ELASTIC_MECHANICS",true); CHKERRQ(ierr);
-
   /****/
-  //mesh partitioning
-
+  ProblemsManager *prb_mng_ptr;
+  ierr = m_field.query_interface(prb_mng_ptr); CHKERRQ(ierr);
+  //build problem
+  ierr = prb_mng_ptr->buildProblem("ELASTIC_MECHANICS",true); CHKERRQ(ierr);
   //partition
-  ierr = m_field.partition_problem("ELASTIC_MECHANICS"); CHKERRQ(ierr);
-  ierr = m_field.partition_finite_elements("ELASTIC_MECHANICS",false,0,pcomm->size()); CHKERRQ(ierr);
+  ierr = prb_mng_ptr->partitionProblem("ELASTIC_MECHANICS"); CHKERRQ(ierr);
+  ierr = prb_mng_ptr->partitionFiniteElements("ELASTIC_MECHANICS",false,0,pcomm->size()); CHKERRQ(ierr);
   //what are ghost nodes, see Petsc Manual
-  ierr = m_field.partition_ghost_dofs("ELASTIC_MECHANICS"); CHKERRQ(ierr);
+  ierr = prb_mng_ptr->partitionGhostDofs("ELASTIC_MECHANICS"); CHKERRQ(ierr);
 
   //print bcs
   MeshsetsManager *mmanager_ptr;

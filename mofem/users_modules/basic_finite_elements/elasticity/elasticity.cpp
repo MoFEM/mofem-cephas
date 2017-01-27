@@ -274,7 +274,7 @@ int main(int argc, char *argv[]) {
       }
     }
     if(add_temp_field) {
-      ierr = m_field.add_field("TEMP",H1,1,MF_ZERO); CHKERRQ(ierr);
+      ierr = m_field.add_field("TEMP",H1,AINSWORTH_LEGENDRE_BASE,1,MB_TAG_SPARSE,MF_ZERO); CHKERRQ(ierr);
       ierr = m_field.add_ents_to_field_by_TETs(0,"TEMP"); CHKERRQ(ierr);
       ierr = m_field.set_field_order(0,MBVERTEX,"TEMP",1); CHKERRQ(ierr);
     }
