@@ -372,13 +372,16 @@ struct UltraWeakTransportElement {
     ierr = mField.modify_problem_add_finite_element("ULTRAWEAK","ULTRAWEAK_BCFLUX"); CHKERRQ(ierr);
     ierr = mField.modify_problem_add_finite_element("ULTRAWEAK","ULTRAWEAK_BCVALUE"); CHKERRQ(ierr);
     //build problem
-    ierr = mField.build_problem("ULTRAWEAK",true); CHKERRQ(ierr);
+
+    ProblemsManager *prb_mng_ptr;
+    ierr = mField.query_interface(prb_mng_ptr); CHKERRQ(ierr);
+    ierr = prb_mng_ptr->buildProblem("ULTRAWEAK",true); CHKERRQ(ierr);
     //mesh partitioning
     //partition
-    ierr = mField.partition_problem("ULTRAWEAK"); CHKERRQ(ierr);
-    ierr = mField.partition_finite_elements("ULTRAWEAK"); CHKERRQ(ierr);
+    ierr = prb_mng_ptr->partitionProblem("ULTRAWEAK"); CHKERRQ(ierr);
+    ierr = prb_mng_ptr->partitionFiniteElements("ULTRAWEAK"); CHKERRQ(ierr);
     //what are ghost nodes, see Petsc Manual
-    ierr = mField.partition_ghost_dofs("ULTRAWEAK"); CHKERRQ(ierr);
+    ierr = prb_mng_ptr->partitionGhostDofs("ULTRAWEAK"); CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }
 

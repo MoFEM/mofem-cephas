@@ -1,7 +1,5 @@
 /** \file dm_build_partitioned_mesh.cpp
-  \brief Atom test for build mesh which is paragoned
-
-  Data Manager (DM) MoFEM interface is used here for convinience
+  \brief Testing problem for portioned mesh
 
 */
 

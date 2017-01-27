@@ -93,7 +93,7 @@ namespace MoFEM {
      * \brief projecting of mid edge nodes on new mesh on surface
      * @return error code
      */
-    PetscErrorCode moveMidNodesOnCutEdges();
+    PetscErrorCode moveMidNodesOnCutEdges(Tag th = NULL);
 
     /**
      * \brief Find edges to trimEdges
@@ -105,10 +105,41 @@ namespace MoFEM {
      * @param  verb verbosity level
      * @return      error code
      */
-    PetscErrorCode findEdgesToTrim(int verb = 0);
+    PetscErrorCode findEdgesToTrim(Tag th = NULL,int verb = 0);
 
     PetscErrorCode trimEdgesInTheMiddle(const BitRefLevel bit);
 
+    /**
+     * \brief move trimed edges mid nodes
+     * @return error code
+     */
+    PetscErrorCode moveMidNodesOnTrimedEdges(Tag th = NULL);
+
+    /**
+     * \brief split sides
+     * @param  split_bit split bit level
+     * @param  bit       bit level of split mesh
+     * @param  ents      ents on the surface which is going to be split
+     * @return           error code
+     */
+    PetscErrorCode splitSides(
+      const BitRefLevel split_bit,
+      const BitRefLevel bit,
+      const Range &ents
+    );
+
+    /**
+     * \brief split sides of trimmed surface
+     * @param  split_bit split bit level
+     * @param  bit       bit level of split mesh
+     * @return           error code
+     */
+    PetscErrorCode splitTrimSides(
+      const BitRefLevel split_bit,
+      const BitRefLevel bit
+    );
+
+    
 
 
     // PetscErrorCode findTetOnTheFront(int verb = 0);
@@ -120,14 +151,11 @@ namespace MoFEM {
     // );
     // #endif //WITH_TETGEN
 
-
     inline const Range& getCutEdges() const { return cutEdges; }
-    inline const Range& getCutEdgesOutside() const { return cutEdgesOutside; }
     inline const Range& getCutVolumes() const { return cutVolumes; }
     inline const Range& getNewCutVolumes() const { return cutNewVolumes; }
     inline const Range& getNewCutSurfaces() const { return cutNewSurfaces; }
     inline const Range& getNewCutVertices() const { return cutNewVertices; }
-    // inline const Range& getFrontTets() const { return frontTets; }
 
     inline const Range& getTrimEdges() const { return trimEdges; }
     inline const Range& getOutsideEdges() const { return outsideEdges; }
@@ -142,28 +170,23 @@ namespace MoFEM {
     Range vOlume;
 
     boost::shared_ptr<OrientedBoxTreeTool> treeSurfPtr;
-    boost::shared_ptr<OrientedBoxTreeTool> treeVolPtr;
     EntityHandle rootSetSurf;
-    EntityHandle rootSetVol;
 
     Range verticesOnSurface;
 
     Range cutEdges;
-    Range cutEdgesOutside;
     Range cutVolumes;
     Range cutNewVolumes;
     Range cutNewSurfaces;
     Range cutNewVertices;
 
+    Range outsideEdges;
     Range trimNewVolumes;
     Range trimNewVertices;
     Range trimNewSurfaces;
 
 
     Range trimEdges;
-    Range outsideEdges;
-
-    // Range frontTets;
 
     struct TreeData {
       double dIst;

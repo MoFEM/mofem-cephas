@@ -283,13 +283,15 @@ int main(int argc, char *argv[]) {
     ierr = m_field.build_finite_elements(); CHKERRQ(ierr);
     //build adjacencies
     ierr = m_field.build_adjacencies(bit_level0); CHKERRQ(ierr);
-    //build problem
-    ierr = m_field.build_problem("TEST_PROBLEM",true); CHKERRQ(ierr);
 
+    //build problem
+    ProblemsManager *prb_mng_ptr;
+    ierr = m_field.query_interface(prb_mng_ptr); CHKERRQ(ierr);
+    ierr = prb_mng_ptr->buildProblem("TEST_PROBLEM",true); CHKERRQ(ierr);
     // Partition
-    ierr = m_field.partition_simple_problem("TEST_PROBLEM"); CHKERRQ(ierr);
-    ierr = m_field.partition_finite_elements("TEST_PROBLEM"); CHKERRQ(ierr);
-    ierr = m_field.partition_ghost_dofs("TEST_PROBLEM"); CHKERRQ(ierr);
+    ierr = prb_mng_ptr->partitionSimpleProblem("TEST_PROBLEM"); CHKERRQ(ierr);
+    ierr = prb_mng_ptr->partitionFiniteElements("TEST_PROBLEM"); CHKERRQ(ierr);
+    ierr = prb_mng_ptr->partitionGhostDofs("TEST_PROBLEM"); CHKERRQ(ierr);
 
     // Create matrices
     Mat A;

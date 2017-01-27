@@ -329,15 +329,17 @@ int main(int argc, char *argv[]) {
   ierr = m_field.build_adjacencies(bit_level0); CHKERRQ(ierr);
 
   //build database
+  ProblemsManager *prb_mng_ptr;
+  ierr = m_field.query_interface(prb_mng_ptr); CHKERRQ(ierr);
   if(is_partitioned) {
-    ierr = m_field.build_problem_on_distributed_mesh(true); CHKERRQ(ierr);
-    ierr = m_field.partition_finite_elements("ELASTIC_MECHANICS",true,0,pcomm->size(),1); CHKERRQ(ierr);
+    ierr = prb_mng_ptr->buildProblemOnDistributedMesh(true); CHKERRQ(ierr);
+    ierr = prb_mng_ptr->partitionFiniteElements("ELASTIC_MECHANICS",true,0,pcomm->size(),1); CHKERRQ(ierr);
   } else {
-    ierr = m_field.build_problems(); CHKERRQ(ierr);
-    ierr = m_field.partition_problem("ELASTIC_MECHANICS"); CHKERRQ(ierr);
-    ierr = m_field.partition_finite_elements("ELASTIC_MECHANICS"); CHKERRQ(ierr);
+    ierr = prb_mng_ptr->buildProblem(); CHKERRQ(ierr);
+    ierr = prb_mng_ptr->partitionProblem("ELASTIC_MECHANICS"); CHKERRQ(ierr);
+    ierr = prb_mng_ptr->partitionFiniteElements("ELASTIC_MECHANICS"); CHKERRQ(ierr);
   }
-  ierr = m_field.partition_ghost_dofs("ELASTIC_MECHANICS"); CHKERRQ(ierr);
+  ierr = prb_mng_ptr->partitionGhostDofs("ELASTIC_MECHANICS"); CHKERRQ(ierr);
 
   //create matrices
   Vec F;

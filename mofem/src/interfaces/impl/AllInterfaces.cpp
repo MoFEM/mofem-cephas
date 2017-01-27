@@ -1,5 +1,6 @@
 const static int debug = 1;
 
+#include "impl/ProblemsManager.cpp"
 #include "impl/MeshsetsManager.cpp"
 #include "impl/CoordSystemsManager.cpp"
 #include "impl/MeshRefinement.cpp"

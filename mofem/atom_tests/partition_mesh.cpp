@@ -64,7 +64,10 @@ int main(int argc, char *argv[]) {
     EntityHandle root_set = moab.get_root_set();
     Range tets;
     moab.get_entities_by_type(root_set,MBTET,tets,false);
-    ierr = m_field.partition_mesh(tets,3,2,2); CHKERRQ(ierr);
+
+    ProblemsManager *prb_mng_ptr;
+    ierr = m_field.query_interface(prb_mng_ptr); CHKERRQ(ierr);
+    ierr = prb_mng_ptr->partitionMesh(tets,3,2,2); CHKERRQ(ierr);
 
     EntityHandle meshset;
     rval = moab.create_meshset(MESHSET_SET,meshset); CHKERRQ_MOAB(rval);
