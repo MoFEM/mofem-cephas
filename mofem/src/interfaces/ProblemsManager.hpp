@@ -182,8 +182,6 @@ namespace MoFEM {
      * Function which partition finite elements based on dofs partitioning.<br>
      * In addition it sets information about local row and cols dofs at given element on partition.
      *
-     * \deprecated Use ProblemsManager to build and partition problems
-     *
      * \param name problem name
      */
     PetscErrorCode partitionFiniteElements(const std::string &name,
