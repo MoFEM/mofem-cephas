@@ -273,7 +273,7 @@ int main(int argc, char *argv[]) {
     bit_level0, BitRefLevel().set(), meshset_level0); CHKERRQ(ierr);
 
   //Fields
-  ierr = m_field.add_field("MESH_NODE_POSITIONS", H1, 3, MF_ZERO); CHKERRQ(ierr);
+  ierr = m_field.add_field("MESH_NODE_POSITIONS",H1,AINSWORTH_LEGENDRE_BASE,3,MB_TAG_SPARSE,MF_ZERO); CHKERRQ(ierr);
   ierr = m_field.add_ents_to_field_by_TETs(0, "MESH_NODE_POSITIONS", 2); CHKERRQ(ierr);
   ierr = m_field.set_field_order(0, MBTET,"MESH_NODE_POSITIONS", 2); CHKERRQ(ierr);
   ierr = m_field.set_field_order(0, MBTRI,"MESH_NODE_POSITIONS", 2); CHKERRQ(ierr);
@@ -281,7 +281,7 @@ int main(int argc, char *argv[]) {
   ierr = m_field.set_field_order(0, MBVERTEX,"MESH_NODE_POSITIONS", 1); CHKERRQ(ierr);
 
   bool check_if_spatial_field_exist = m_field.check_field("SPATIAL_POSITION");
-  ierr = m_field.add_field("SPATIAL_POSITION", H1, 3, MF_ZERO); CHKERRQ(ierr);
+  ierr = m_field.add_field("SPATIAL_POSITION",H1,AINSWORTH_LEGENDRE_BASE,3,MB_TAG_SPARSE,MF_ZERO); CHKERRQ(ierr);
   //add entitities (by tets) to the field
   ierr = m_field.add_ents_to_field_by_TETs(0, "SPATIAL_POSITION"); CHKERRQ(ierr);
 
@@ -328,7 +328,7 @@ int main(int argc, char *argv[]) {
   );
 
   // Velocity
-  ierr = m_field.add_field("SPATIAL_VELOCITY",H1,3,MF_ZERO); CHKERRQ(ierr);
+  ierr = m_field.add_field("SPATIAL_VELOCITY",H1,AINSWORTH_LEGENDRE_BASE,3,MB_TAG_SPARSE,MF_ZERO); CHKERRQ(ierr);
   ierr = m_field.add_ents_to_field_by_TETs(0,"SPATIAL_VELOCITY"); CHKERRQ(ierr);
 
   ierr = m_field.set_field_order(0,MBTET,"SPATIAL_VELOCITY",vel_order); CHKERRQ(ierr);
@@ -336,13 +336,13 @@ int main(int argc, char *argv[]) {
   ierr = m_field.set_field_order(0,MBEDGE,"SPATIAL_VELOCITY",vel_order); CHKERRQ(ierr);
   ierr = m_field.set_field_order(0,MBVERTEX,"SPATIAL_VELOCITY",1); CHKERRQ(ierr);
 
-  ierr = m_field.add_field("DOT_SPATIAL_POSITION",H1,3,MF_ZERO); CHKERRQ(ierr);
+  ierr = m_field.add_field("DOT_SPATIAL_POSITION",H1,AINSWORTH_LEGENDRE_BASE,3,MB_TAG_SPARSE,MF_ZERO); CHKERRQ(ierr);
   ierr = m_field.add_ents_to_field_by_TETs(0,"DOT_SPATIAL_POSITION"); CHKERRQ(ierr);
   ierr = m_field.set_field_order(0,MBTET,"DOT_SPATIAL_POSITION",disp_order); CHKERRQ(ierr);
   ierr = m_field.set_field_order(0,MBTRI,"DOT_SPATIAL_POSITION",disp_order); CHKERRQ(ierr);
   ierr = m_field.set_field_order(0,MBEDGE,"DOT_SPATIAL_POSITION",disp_order); CHKERRQ(ierr);
   ierr = m_field.set_field_order(0,MBVERTEX,"DOT_SPATIAL_POSITION",1); CHKERRQ(ierr);
-  ierr = m_field.add_field("DOT_SPATIAL_VELOCITY",H1,3,MF_ZERO); CHKERRQ(ierr);
+  ierr = m_field.add_field("DOT_SPATIAL_VELOCITY",H1,AINSWORTH_LEGENDRE_BASE,3,MB_TAG_SPARSE,MF_ZERO); CHKERRQ(ierr);
   ierr = m_field.add_ents_to_field_by_TETs(0,"DOT_SPATIAL_VELOCITY"); CHKERRQ(ierr);
   ierr = m_field.set_field_order(0,MBTET,"DOT_SPATIAL_VELOCITY",vel_order); CHKERRQ(ierr);
   ierr = m_field.set_field_order(0,MBTRI,"DOT_SPATIAL_VELOCITY",vel_order); CHKERRQ(ierr);
@@ -446,15 +446,18 @@ int main(int argc, char *argv[]) {
     ierr = m_field.modify_problem_add_finite_element("Kuu","FORCE_FE"); CHKERRQ(ierr);
     ierr = m_field.modify_problem_add_finite_element("Kuu","FLUID_PRESSURE_FE"); CHKERRQ(ierr);
     ierr = m_field.modify_problem_ref_level_add_bit("Kuu",bit_level0); CHKERRQ(ierr);
+
+    ProblemsManager *prb_mng_ptr;
+    ierr = m_field.query_interface(prb_mng_ptr); CHKERRQ(ierr);
     if(is_partitioned) {
-      ierr = m_field.build_problem_on_distributed_mesh("Kuu"); CHKERRQ(ierr);
-      ierr = m_field.partition_finite_elements("Kuu",true,0,pcomm->size()); CHKERRQ(ierr);
+      ierr = prb_mng_ptr->buildProblemOnDistributedMesh("Kuu",true); CHKERRQ(ierr);
+      ierr = prb_mng_ptr->partitionFiniteElements("Kuu",true,0,pcomm->size()); CHKERRQ(ierr);
     } else {
-      ierr = m_field.build_problem("Kuu",true); CHKERRQ(ierr);
-      ierr = m_field.partition_problem("Kuu"); CHKERRQ(ierr);
-      ierr = m_field.partition_finite_elements("Kuu"); CHKERRQ(ierr);
+      ierr = prb_mng_ptr->buildProblem("Kuu",true); CHKERRQ(ierr);
+      ierr = prb_mng_ptr->partitionProblem("Kuu"); CHKERRQ(ierr);
+      ierr = prb_mng_ptr->partitionFiniteElements("Kuu"); CHKERRQ(ierr);
     }
-    ierr = m_field.partition_ghost_dofs("Kuu"); CHKERRQ(ierr);
+    ierr = prb_mng_ptr->partitionGhostDofs("Kuu"); CHKERRQ(ierr);
     //ierr = m_field.partition_check_matrix_fill_in("Kuu",-1,-1,0); CHKERRQ(ierr);
   }
   #endif
@@ -471,15 +474,17 @@ int main(int argc, char *argv[]) {
   //set refinement level for problem
   ierr = m_field.modify_problem_ref_level_add_bit("DYNAMICS",bit_level0); CHKERRQ(ierr);
 
+  ProblemsManager *prb_mng_ptr;
+  ierr = m_field.query_interface(prb_mng_ptr); CHKERRQ(ierr);
   if(is_partitioned) {
-    ierr = m_field.build_problem_on_distributed_mesh("DYNAMICS"); CHKERRQ(ierr);
-    ierr = m_field.partition_finite_elements("DYNAMICS",true,0,pcomm->size()); CHKERRQ(ierr);
+    ierr = prb_mng_ptr->buildProblemOnDistributedMesh("DYNAMICS",true); CHKERRQ(ierr);
+    ierr = prb_mng_ptr->partitionFiniteElements("DYNAMICS",true,0,pcomm->size()); CHKERRQ(ierr);
   } else {
-    ierr = m_field.build_problem("DYNAMICS",true); CHKERRQ(ierr);
-    ierr = m_field.partition_problem("DYNAMICS"); CHKERRQ(ierr);
-    ierr = m_field.partition_finite_elements("DYNAMICS"); CHKERRQ(ierr);
+    ierr = prb_mng_ptr->buildProblem("DYNAMICS",true); CHKERRQ(ierr);
+    ierr = prb_mng_ptr->partitionProblem("DYNAMICS"); CHKERRQ(ierr);
+    ierr = prb_mng_ptr->partitionFiniteElements("DYNAMICS"); CHKERRQ(ierr);
   }
-  ierr = m_field.partition_ghost_dofs("DYNAMICS"); CHKERRQ(ierr);
+  ierr = prb_mng_ptr->partitionGhostDofs("DYNAMICS"); CHKERRQ(ierr);
 
   Vec F;
   ierr = m_field.VecCreateGhost("DYNAMICS",COL,&F); CHKERRQ(ierr);

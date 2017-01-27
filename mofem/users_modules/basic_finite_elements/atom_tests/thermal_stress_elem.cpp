@@ -102,16 +102,17 @@ int main(int argc, char *argv[]) {
   ierr = m_field.build_finite_elements(); CHKERRQ(ierr);
   //build adjacencies
   ierr = m_field.build_adjacencies(bit_level0); CHKERRQ(ierr);
-  //build problem
-  ierr = m_field.build_problem("PROB",true); CHKERRQ(ierr);
 
-  /****/
+  //build problem
+  ProblemsManager *prb_mng_ptr;
+  ierr = m_field.query_interface(prb_mng_ptr); CHKERRQ(ierr);
+  ierr = prb_mng_ptr->buildProblem("PROB",true); CHKERRQ(ierr);
   //mesh partitioning
   //partition
-  ierr = m_field.partition_simple_problem("PROB"); CHKERRQ(ierr);
-  ierr = m_field.partition_finite_elements("PROB"); CHKERRQ(ierr);
+  ierr = prb_mng_ptr->partitionSimpleProblem("PROB"); CHKERRQ(ierr);
+  ierr = prb_mng_ptr->partitionFiniteElements("PROB"); CHKERRQ(ierr);
   //what are ghost nodes, see Petsc Manual
-  ierr = m_field.partition_ghost_dofs("PROB"); CHKERRQ(ierr);
+  ierr = prb_mng_ptr->partitionGhostDofs("PROB"); CHKERRQ(ierr);
 
   //set temerature at nodes
   for(_IT_GET_DOFS_FIELD_BY_NAME_AND_TYPE_FOR_LOOP_(m_field,"TEMP",MBVERTEX,dof)) {

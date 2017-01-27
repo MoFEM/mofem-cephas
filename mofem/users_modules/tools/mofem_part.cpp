@@ -1,6 +1,6 @@
 /** \file reading_med.cpp
 
-  \brief Partition mesh and configuring blocksets 
+  \brief Partition mesh and configuring blocksets
 
 */
 
@@ -87,7 +87,9 @@ int main(int argc, char *argv[]) {
   {
     Range ents3d;
     rval = moab.get_entities_by_dimension(0,3,ents3d,false); CHKERRQ_MOAB(rval);
-    ierr = m_field.partition_mesh(ents3d,3,2,n_partas); CHKERRQ(ierr);
+    ProblemsManager *prb_mng_ptr;
+    ierr = m_field.query_interface(prb_mng_ptr); CHKERRQ(ierr);
+    ierr = prb_mng_ptr->partitionMesh(ents3d,3,2,n_partas); CHKERRQ(ierr);
   }
 
   rval = moab.write_file("out.h5m"); CHKERRQ_MOAB(rval);

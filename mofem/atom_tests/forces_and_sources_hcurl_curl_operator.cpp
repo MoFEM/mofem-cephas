@@ -141,9 +141,9 @@ int main(int argc, char *argv[]) {
   //mesh partitioning
   //partition
   ierr = prb_mng_ptr->partitionSimpleProblem("TEST_PROBLEM"); CHKERRQ(ierr);
-  ierr = m_field.partition_finite_elements("TEST_PROBLEM"); CHKERRQ(ierr);
+  ierr = prb_mng_ptr->partitionFiniteElements("TEST_PROBLEM"); CHKERRQ(ierr);
   //what are ghost nodes, see Petsc Manual
-  ierr = m_field.partition_ghost_dofs("TEST_PROBLEM"); CHKERRQ(ierr);
+  ierr = prb_mng_ptr->partitionGhostDofs("TEST_PROBLEM"); CHKERRQ(ierr);
 
   Vec v;
   ierr = m_field.VecCreateGhost("TEST_PROBLEM",ROW,&v);
@@ -313,8 +313,8 @@ int main(int argc, char *argv[]) {
   //mesh partitioning
   ierr = prb_mng_ptr->buildProblem("TEST_PROBLEM",true); CHKERRQ(ierr);
   ierr = prb_mng_ptr->partitionSimpleProblem("TEST_PROBLEM"); CHKERRQ(ierr);
-  ierr = m_field.partition_finite_elements("TEST_PROBLEM"); CHKERRQ(ierr);
-  ierr = m_field.partition_ghost_dofs("TEST_PROBLEM"); CHKERRQ(ierr);
+  ierr = prb_mng_ptr->partitionFiniteElements("TEST_PROBLEM"); CHKERRQ(ierr);
+  ierr = prb_mng_ptr->partitionGhostDofs("TEST_PROBLEM"); CHKERRQ(ierr);
 
   t_curl_vol(i) = 0;
   t_curl_skin(i) = 0;
