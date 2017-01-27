@@ -53,7 +53,7 @@ namespace MoFEM {
      * @return             Error code
      */
     PetscErrorCode partitionMesh(
-      const Range &ents,const int dim,const int adj_dim,const int n_parts,int verb = 0
+      const Range &ents,const int dim,const int adj_dim,const int n_parts,int verb = 1
     );
 
     /** \brief build problem data structures
@@ -69,7 +69,7 @@ namespace MoFEM {
      * @return               error code
      *
      */
-     PetscErrorCode buildProblem(const std::string &name,const bool square_matrix,int verb = 0);
+     PetscErrorCode buildProblem(const std::string &name,const bool square_matrix,int verb = 1);
 
      /** \brief build problem data structures
       * \ingroup mofem_problems
@@ -84,7 +84,7 @@ namespace MoFEM {
       * @return               error code
       *
       */
-    PetscErrorCode buildProblem(MoFEMProblem *problem_ptr,const bool square_matrix,int verb = 0);
+    PetscErrorCode buildProblem(MoFEMProblem *problem_ptr,const bool square_matrix,int verb = 1);
 
     /** \brief build problem data structures, assuming that mesh is distributed (collective)
      * \ingroup mofem_problems
@@ -97,7 +97,7 @@ namespace MoFEM {
 
      */
     PetscErrorCode buildProblemOnDistributedMesh(
-      const std::string &name,const bool square_matrix,int verb = 0
+      const std::string &name,const bool square_matrix,int verb = 1
     );
 
     /** \brief build problem data structures, assuming that mesh is distributed (collective)
@@ -113,7 +113,7 @@ namespace MoFEM {
     PetscErrorCode buildProblemOnDistributedMesh(
       MoFEMProblem *problem_ptr,
       const bool square_matrix = true,
-      int verb = 0
+      int verb = 1
     );
 
     /**
@@ -130,7 +130,7 @@ namespace MoFEM {
       const std::vector<std::string> &fields_col,
       const std::string &main_problem,
       const bool square_matrix = true,
-      int verb = 0
+      int verb = 1
     );
 
     /**
@@ -146,13 +146,13 @@ namespace MoFEM {
       * If copy_rows/copy_cols is set to false only partition is copied between problems.
       *
       */
-    PetscErrorCode partitionComposeProblem(
+    PetscErrorCode inheretPartition(
       const std::string &name,
       const std::string &problem_for_rows,
       bool copy_rows,
       const std::string &problem_for_cols,
       bool copy_cols,
-      int verb = 0
+      int verb = 1
     );
 
     /** \brief partition problem dofs
@@ -160,21 +160,21 @@ namespace MoFEM {
      *
      * \param name problem name
      */
-    PetscErrorCode partitionSimpleProblem(const std::string &name,int verb = 0);
+    PetscErrorCode partitionSimpleProblem(const std::string &name,int verb = 1);
 
     /** \brief partition problem dofs (collective)
      * \ingroup mofem_problems
      *
      * \param name problem name
      */
-    PetscErrorCode partitionProblem(const std::string &name,int verb = 0);
+    PetscErrorCode partitionProblem(const std::string &name,int verb = 1);
 
     PetscErrorCode printPartitionedProblem(
-      const MoFEMProblem *problem_ptr,int verb = 0
+      const MoFEMProblem *problem_ptr,int verb = 1
     );
 
     PetscErrorCode debugPartitionedProblem(
-      const MoFEMProblem *problem_ptr,int verb = 0
+      const MoFEMProblem *problem_ptr,int verb = 1
     );
 
     /** \brief partition finite elements
@@ -182,12 +182,10 @@ namespace MoFEM {
      * Function which partition finite elements based on dofs partitioning.<br>
      * In addition it sets information about local row and cols dofs at given element on partition.
      *
-     * \deprecated Use ProblemsManager to build and partition problems
-     *
      * \param name problem name
      */
     PetscErrorCode partitionFiniteElements(const std::string &name,
-      bool part_from_moab = false,int low_proc = -1,int hi_proc = -1,int verb = 0
+      bool part_from_moab = false,int low_proc = -1,int hi_proc = -1,int verb = 1
     );
 
     /** \brief determine ghost nodes
@@ -195,7 +193,7 @@ namespace MoFEM {
      *
      * \param name problem name
      */
-    PetscErrorCode partitionGhostDofs(const std::string &name,int verb = 0);
+    PetscErrorCode partitionGhostDofs(const std::string &name,int verb = 1);
 
 
   private:
