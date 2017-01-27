@@ -146,7 +146,7 @@ namespace MoFEM {
       * If copy_rows/copy_cols is set to false only partition is copied between problems.
       *
       */
-    PetscErrorCode partitionComposeProblem(
+    PetscErrorCode inheretPartition(
       const std::string &name,
       const std::string &problem_for_rows,
       bool copy_rows,

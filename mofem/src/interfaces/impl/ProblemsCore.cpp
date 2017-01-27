@@ -354,7 +354,7 @@ PetscErrorCode Core::partition_compose_problem(
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
   ierr = query_interface(problem_manager_ptr); CHKERRQ(ierr);
-  ierr = problem_manager_ptr->partitionComposeProblem(
+  ierr = problem_manager_ptr->inheretPartition(
     name,problem_for_rows,copy_rows,problem_for_cols,copy_cols,verb
   ); CHKERRQ(ierr);
   PetscFunctionReturn(0);

@@ -1593,7 +1593,7 @@ namespace MoFEM {
     PetscFunctionReturn(0);
   }
 
-  PetscErrorCode ProblemsManager::partitionComposeProblem(
+  PetscErrorCode ProblemsManager::inheretPartition(
     const std::string &name,
     const std::string &problem_for_rows,
     bool copy_rows,

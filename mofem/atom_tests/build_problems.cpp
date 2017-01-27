@@ -1,6 +1,6 @@
 /** \file build_problems.cpp
 
-  \brief Atom test for building composite problem
+  \brief Atom test for building problems
 
   \bug Not verifying what if partitioned mesh is loaded.
 
@@ -140,7 +140,7 @@ int main(int argc, char *argv[]) {
     ierr = m_field.modify_problem_add_finite_element("P3","E3"); CHKERRQ(ierr);
 
     ierr = prb_mng_ptr->buildProblem("P3",false); CHKERRQ(ierr);
-    ierr = prb_mng_ptr->partitionComposeProblem("P3","P1",false,"P2",true); CHKERRQ(ierr);
+    ierr = prb_mng_ptr->inheretPartition("P3","P1",false,"P2",true); CHKERRQ(ierr);
     ierr = prb_mng_ptr->partitionFiniteElements("P3"); CHKERRQ(ierr);
     ierr = prb_mng_ptr->partitionGhostDofs("P3"); CHKERRQ(ierr);
     ierr = m_field.partition_check_matrix_fill_in("P3",-1,-1,0); CHKERRQ(ierr);
@@ -157,7 +157,7 @@ int main(int argc, char *argv[]) {
     SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
   }
 
-  //finish work cleaning memory, getting statistics, ect.
+  //finish work cleaning memory, getting statistics, etc.
   ierr = PetscFinalize(); CHKERRQ(ierr);
 
   return 0;
