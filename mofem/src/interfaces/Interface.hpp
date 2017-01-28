@@ -46,8 +46,14 @@ struct Interface: public UnknownInterface {
     PetscFunctionReturn(0);
   }
 
-  /// get moab interface
+  /**
+   * get moab instance
+   */
   virtual moab::Interface& get_moab() = 0;
+
+  /**
+   * get moab instance interface
+   */
   virtual const moab::Interface& get_moab() const = 0;
 
   /**
@@ -59,13 +65,19 @@ struct Interface: public UnknownInterface {
    */
   virtual boost::shared_ptr<BasicEntityData> get_basic_entity_data_ptr() = 0;
 
-  /// get communicator
+  /**
+   * get MPI communicator
+   */
   virtual MPI_Comm& get_comm() const = 0;
 
-  /// get communicator size
+  /**
+   * get communicator size
+   */
   virtual int getCommSize() const = 0;
 
-  /// get communicator rank
+  /**
+   * get comm rank
+   */
   virtual int getCommRank() const = 0;
 
   /**
