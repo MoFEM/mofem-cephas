@@ -26,20 +26,17 @@ struct MoFEMProblem;
 struct ComposedProblemsData {
 
   std::vector<const MoFEMProblem*> rowProblemsAdd;
-  std::vector<IS> rowIs;
-  std::vector<AO> rowMap;
   std::vector<const MoFEMProblem*> colProblemsAdd;
+
+  std::vector<IS> rowIs;
   std::vector<IS> colIs;
-  std::vector<AO> colMap;
 
   virtual ~ComposedProblemsData() {
     for(int ii = 0;ii!=rowIs.size();ii++) {
       ISDestroy(&rowIs[ii]);
-      AODestroy(&rowMap[ii]);
     }
     for(int jj = 0;jj!=colIs.size();jj++) {
       ISDestroy(&colIs[jj]);
-      AODestroy(&colMap[jj]);
     }
   }
 

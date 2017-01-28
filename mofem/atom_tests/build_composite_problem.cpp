@@ -65,6 +65,7 @@ int main(int argc, char *argv[]) {
     ierr = prb_mng_ptr->partitionMesh(tets,3,2,m_field.getCommSize()); CHKERRQ(ierr);
 
     Tag part_tag = pcomm->part_tag();
+    Range proc_ents;
     Range tagged_sets;
     rval = m_field.get_moab().get_entities_by_type_and_tag(
       0,MBENTITYSET,&part_tag,NULL,1,tagged_sets,moab::Interface::UNION
@@ -73,37 +74,77 @@ int main(int argc, char *argv[]) {
       int part;
       rval = moab.tag_get_data(part_tag,&*mit,1,&part); CHKERRQ_MOAB(rval);
       if(part==m_field.getCommRank()) {
-        pcomm->partition_sets().insert(*mit);
+        // pcomm->partition_sets().insert(*mit);
+        rval = moab.get_entities_by_type(*mit,MBTET,proc_ents,true); CHKERRQ_MOAB(rval);
       }
     }
-    rval = pcomm->resolve_shared_ents(0,3); CHKERRQ_MOAB(rval);
 
-    Range owned_tets;
-    rval = pcomm->get_part_entities(owned_tets,3); MB_CHK_ERR(rval);
+    Skinner skin(&m_field.get_moab());
+    Range tets_skin;
+    rval = skin.find_skin(0,tets,false,tets_skin); CHKERR_MOAB(rval);
+    Range proc_ents_skin[4];
+    proc_ents_skin[3] = proc_ents;
+    rval = skin.find_skin(0,proc_ents,false,proc_ents_skin[2]); CHKERR_MOAB(rval);
+    proc_ents_skin[2] = subtract(proc_ents_skin[2],tets_skin);
+    rval = moab.get_adjacencies(
+      proc_ents_skin[2],1,false,proc_ents_skin[1],moab::Interface::UNION
+    ); CHKERR_MOAB(rval);
+    rval = moab.get_connectivity(proc_ents_skin[1],proc_ents_skin[0],true); CHKERRQ_MOAB(rval);
 
-    std::ostringstream file_owned;
-    file_owned << "out_owned_" << m_field.getCommRank() << ".vtk";
-    EntityHandle meshset_owned;
-    rval = moab.create_meshset(MESHSET_SET,meshset_owned); CHKERRQ_MOAB(rval);
-    rval = moab.add_entities(meshset_owned,owned_tets); CHKERRQ_MOAB(rval);
-    rval = moab.write_file(file_owned.str().c_str(),"VTK","",&meshset_owned,1); CHKERRQ_MOAB(rval);
+    if(0) {
+      std::ostringstream file_skin;
+      file_skin << "out_skin_" << m_field.getCommRank() << ".vtk";
+      EntityHandle meshset_skin;
+      rval = moab.create_meshset(MESHSET_SET,meshset_skin); CHKERRQ_MOAB(rval);
+      rval = moab.add_entities(meshset_skin,proc_ents_skin[2]); CHKERRQ_MOAB(rval);
+      rval = moab.add_entities(meshset_skin,proc_ents_skin[1]); CHKERRQ_MOAB(rval);
+      rval = moab.add_entities(meshset_skin,proc_ents_skin[0]); CHKERRQ_MOAB(rval);
+      rval = moab.write_file(file_skin.str().c_str(),"VTK","",&meshset_skin,1); CHKERRQ_MOAB(rval);
+    }
 
+    rval = pcomm->resolve_shared_ents(0,proc_ents,3,-1,proc_ents_skin); CHKERRQ_MOAB(rval);
+    Range owned_tets = proc_ents;
+
+    // rval = pcomm->get_part_entities(owned_tets,3); MB_CHK_ERR(rval);
+    // if(m_field.getCommRank()==1) {
+    //   Range verts;
+    //   rval = moab.get_connectivity(owned_tets,verts,true); CHKERRQ_MOAB(rval);
+    //   for(Range::iterator vit = verts.begin();vit!=verts.end();vit++) {
+    //     EntityHandle moab_owner_handle;
+    //     int owner_proc;
+    //     unsigned char pstatus;
+    //     moab.tag_get_data(pcomm->pstatus_tag(),&*vit,1,&pstatus); MOAB_THROW(rval);
+    //     rval = pcomm->get_owner_handle(*vit,owner_proc,moab_owner_handle); MOAB_THROW(rval);
+    //     cerr << *vit << " " <<  std::bitset<8>(pstatus) << " " << owner_proc << " " << moab_owner_handle << endl;
+    //   }
+    // }
+
+    if(0) {
+      std::ostringstream file_owned;
+      file_owned << "out_owned_" << m_field.getCommRank() << ".vtk";
+      EntityHandle meshset_owned;
+      rval = moab.create_meshset(MESHSET_SET,meshset_owned); CHKERRQ_MOAB(rval);
+      rval = moab.add_entities(meshset_owned,owned_tets); CHKERRQ_MOAB(rval);
+      rval = moab.write_file(file_owned.str().c_str(),"VTK","",&meshset_owned,1); CHKERRQ_MOAB(rval);
+    }
     Range shared_ents;
     // Get entities shared with all other processors
     rval = pcomm->get_shared_entities(-1,shared_ents);MB_CHK_ERR(rval);
 
-    std::ostringstream file_shared_owned;
-    file_shared_owned << "out_shared_owned_" << m_field.getCommRank() << ".vtk";
-    EntityHandle meshset_shared_owned;
-    rval = moab.create_meshset(MESHSET_SET,meshset_shared_owned); CHKERRQ_MOAB(rval);
-    rval = moab.add_entities(meshset_shared_owned,shared_ents); CHKERRQ_MOAB(rval);
-    rval = moab.write_file(file_shared_owned.str().c_str(),"VTK","",&meshset_shared_owned,1); CHKERRQ_MOAB(rval);
-
+    if(0) {
+      std::ostringstream file_shared_owned;
+      file_shared_owned << "out_shared_owned_" << m_field.getCommRank() << ".vtk";
+      EntityHandle meshset_shared_owned;
+      rval = moab.create_meshset(MESHSET_SET,meshset_shared_owned); CHKERRQ_MOAB(rval);
+      rval = moab.add_entities(meshset_shared_owned,shared_ents); CHKERRQ_MOAB(rval);
+      rval = moab.write_file(file_shared_owned.str().c_str(),"VTK","",&meshset_shared_owned,1); CHKERRQ_MOAB(rval);
+    }
+    
     // set entitities bit level
     BitRefLevel bit_level0;
     bit_level0.set(0);
     EntityHandle part_set = pcomm->partition_sets().front();
-    ierr = m_field.seed_ref_level_3D(0,bit_level0); CHKERRQ(ierr);
+    ierr = m_field.seed_ref_level_3D(part_set,bit_level0); CHKERRQ(ierr);
 
     //Fields
     ierr = m_field.add_field("F1",H1,AINSWORTH_LEGENDRE_BASE,1); CHKERRQ(ierr);
@@ -164,7 +205,27 @@ int main(int argc, char *argv[]) {
     ierr = m_field.partition_check_matrix_fill_in("P1",-1,-1,1); CHKERRQ(ierr);
     ierr = m_field.partition_check_matrix_fill_in("P2",-1,-1,1); CHKERRQ(ierr);
 
+    ierr = m_field.add_problem("COMP"); CHKERRQ(ierr);
+    ierr = m_field.modify_problem_ref_level_add_bit("COMP",bit_level0); CHKERRQ(ierr);
+    ierr = m_field.modify_problem_add_finite_element("COMP","E1"); CHKERRQ(ierr);
+    ierr = m_field.modify_problem_add_finite_element("COMP","E2"); CHKERRQ(ierr);
+    std::vector<std::string> add_problems;
+    add_problems.push_back("P1");
+    add_problems.push_back("P2");
+    ierr = prb_mng_ptr->buildCompsedProblem("COMP",add_problems,add_problems,true,1); CHKERRQ(ierr);
+    ierr = prb_mng_ptr->partitionFiniteElements("COMP",true,0,m_field.getCommSize(),1); CHKERRQ(ierr);
+    ierr = prb_mng_ptr->partitionGhostDofs("COMP",1); CHKERRQ(ierr);
 
+    if(0) {
+      Mat m;
+      ierr = m_field.MatCreateMPIAIJWithArrays("COMP",&m); CHKERRQ(ierr);
+      MatView(m,PETSC_VIEWER_DRAW_WORLD);
+      std::string wait;
+      std::cin >> wait;
+      ierr = MatDestroy(&m); CHKERRQ(ierr);
+    }
+
+    ierr = m_field.partition_check_matrix_fill_in("COMP",-1,-1,1); CHKERRQ(ierr);
 
   } catch (MoFEMException const &e) {
     SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
