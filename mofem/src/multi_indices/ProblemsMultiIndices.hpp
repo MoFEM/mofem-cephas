@@ -21,6 +21,31 @@
 
 namespace MoFEM {
 
+struct MoFEMProblem;
+
+struct ComposedProblemsData {
+
+  std::vector<const MoFEMProblem*> rowProblemsAdd;
+  std::vector<IS> rowIs;
+  std::vector<AO> rowMap;
+  std::vector<const MoFEMProblem*> colProblemsAdd;
+  std::vector<IS> colIs;
+  std::vector<AO> colMap;
+
+  virtual ~ComposedProblemsData() {
+    for(int ii = 0;ii!=rowIs.size();ii++) {
+      ISDestroy(&rowIs[ii]);
+      AODestroy(&rowMap[ii]);
+    }
+    for(int jj = 0;jj!=colIs.size();jj++) {
+      ISDestroy(&colIs[jj]);
+      AODestroy(&colMap[jj]);
+    }
+  }
+
+};
+
+
 /** \brief keeps basic data about problem
   * \ingroup problems_multi_indices
   *
@@ -49,6 +74,7 @@ struct MoFEMProblem {
   mutable boost::shared_ptr<NumeredDofEntity_multiIndex> numered_dofs_rows; // FIXME name convention
   mutable boost::shared_ptr<NumeredDofEntity_multiIndex> numered_dofs_cols; // FIXME name convention
   mutable NumeredEntFiniteElement_multiIndex numeredFiniteElements;
+
 
   /**
    * \brief Subproblem problem data
@@ -137,6 +163,18 @@ struct MoFEMProblem {
    */
   inline boost::shared_ptr<SubProblemData> getSubData() const {
     return subProblemData;
+  }
+
+  /**
+   * Pointer to data structure from which this problem is composed
+   */
+  mutable boost::shared_ptr<ComposedProblemsData> composedProblemsData;
+
+  /**
+   * \brief Het composed problems data structure
+   */
+  inline boost::shared_ptr<ComposedProblemsData> getComposedProblemsData() const {
+    return composedProblemsData;
   }
 
   /**
@@ -523,7 +561,6 @@ struct MoFEMProblem {
     );
   }
 
-
   MoFEMProblem(Interface &moab,const EntityHandle meshset);
 
   virtual ~MoFEMProblem();
@@ -539,22 +576,6 @@ struct MoFEMProblem {
   inline DofIdx getNbGhostDofsRow() const { return *((DofIdx*)tag_ghost_nbdof_data_row); }
   inline DofIdx getNbGhostDofsCol() const { return *((DofIdx*)tag_ghost_nbdof_data_col); }
 
-  /** \deprecated use getNbLocalDofsRow
-  */
-  DEPRECATED inline DofIdx get_nb_local_dofs_row() const { return getNbLocalDofsRow(); }
-
-  /** \deprecated use getNbLocalDofsCol
-  */
-  DEPRECATED inline DofIdx get_nb_local_dofs_col() const { return getNbLocalDofsCol(); }
-
-  /** \deprecated use getNbGhostDofsRow
-  */
-  DEPRECATED inline DofIdx get_nb_ghost_dofs_row() const { return getNbGhostDofsRow(); }
-
-  /** \deprecated use getNbGhostDofsCol
-  */
-  DEPRECATED inline DofIdx get_nb_ghost_dofs_col() const { return getNbGhostDofsCol(); }
-
   inline BitRefLevel getBitRefLevel() const { return *tag_BitRefLevel; }
 
   inline BitRefLevel get_DofMask_BitRefLevel() const { return *tag_BitRefLevel_DofMask; }
@@ -562,11 +583,6 @@ struct MoFEMProblem {
   PetscErrorCode getColDofsByPetscGlobalDofIdx(DofIdx idx,const NumeredDofEntity **dof_ptr) const;
 
   BitFEId getBitFEId() const;
-
-  /** \deprecated use getBitFEId
-  */
-  DEPRECATED BitFEId get_BitFEId() const { return getBitFEId(); }
-
 
   friend std::ostream& operator<<(std::ostream& os,const MoFEMProblem& e);
 
@@ -694,12 +710,19 @@ typedef multi_index_container<
   MoFEMProblem,
   indexed_by<
     ordered_unique<
-      tag<Meshset_mi_tag>, member<MoFEMProblem,EntityHandle,&MoFEMProblem::meshset> >,
+      tag<Meshset_mi_tag>,
+      member<MoFEMProblem,EntityHandle,&MoFEMProblem::meshset>
+    >,
     hashed_unique<
-      tag<BitProblemId_mi_tag>, const_mem_fun<MoFEMProblem,BitProblemId,&MoFEMProblem::getId>, HashBit<BitProblemId>, EqBit<BitProblemId> >,
+      tag<BitProblemId_mi_tag>,
+      const_mem_fun<MoFEMProblem,BitProblemId,&MoFEMProblem::getId>, HashBit<BitProblemId>, EqBit<BitProblemId>
+    >,
     hashed_unique<
-      tag<Problem_mi_tag>, const_mem_fun<MoFEMProblem,std::string,&MoFEMProblem::getName> >
-  > > MoFEMProblem_multiIndex;
+      tag<Problem_mi_tag>,
+      const_mem_fun<MoFEMProblem,std::string,&MoFEMProblem::getName>
+    >
+  >
+> MoFEMProblem_multiIndex;
 
 /** \brief add ref level to problem
   * \ingroup problems_multi_indices
