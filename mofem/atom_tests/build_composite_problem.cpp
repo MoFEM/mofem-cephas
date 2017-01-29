@@ -139,7 +139,7 @@ int main(int argc, char *argv[]) {
       rval = moab.add_entities(meshset_shared_owned,shared_ents); CHKERRQ_MOAB(rval);
       rval = moab.write_file(file_shared_owned.str().c_str(),"VTK","",&meshset_shared_owned,1); CHKERRQ_MOAB(rval);
     }
-    
+
     // set entitities bit level
     BitRefLevel bit_level0;
     bit_level0.set(0);
@@ -205,16 +205,33 @@ int main(int argc, char *argv[]) {
     ierr = m_field.partition_check_matrix_fill_in("P1",-1,-1,1); CHKERRQ(ierr);
     ierr = m_field.partition_check_matrix_fill_in("P2",-1,-1,1); CHKERRQ(ierr);
 
-    ierr = m_field.add_problem("COMP"); CHKERRQ(ierr);
-    ierr = m_field.modify_problem_ref_level_add_bit("COMP",bit_level0); CHKERRQ(ierr);
-    ierr = m_field.modify_problem_add_finite_element("COMP","E1"); CHKERRQ(ierr);
-    ierr = m_field.modify_problem_add_finite_element("COMP","E2"); CHKERRQ(ierr);
-    std::vector<std::string> add_problems;
-    add_problems.push_back("P1");
-    add_problems.push_back("P2");
-    ierr = prb_mng_ptr->buildCompsedProblem("COMP",add_problems,add_problems,true,1); CHKERRQ(ierr);
-    ierr = prb_mng_ptr->partitionFiniteElements("COMP",true,0,m_field.getCommSize(),1); CHKERRQ(ierr);
-    ierr = prb_mng_ptr->partitionGhostDofs("COMP",1); CHKERRQ(ierr);
+    //register new dm type, i.e. mofem
+    DMType dm_name = "MOFEM";
+    ierr = DMRegister_MoFEM(dm_name); CHKERRQ(ierr);
+    //craete dm instance
+    DM dm;
+    ierr = DMCreate(PETSC_COMM_WORLD,&dm);CHKERRQ(ierr);
+    ierr = DMSetType(dm,dm_name);CHKERRQ(ierr);
+
+    ierr = DMMoFEMCreateMoFEM(dm,&m_field,"COMP",bit_level0); CHKERRQ(ierr);
+    ierr = DMSetFromOptions(dm); CHKERRQ(ierr);
+    ierr = DMMoFEMSetIsPartitioned(dm,PETSC_TRUE); CHKERRQ(ierr);
+    ierr = DMMoFEMAddElement(dm,"E1"); CHKERRQ(ierr);
+    ierr = DMMoFEMAddElement(dm,"E2"); CHKERRQ(ierr);
+    ierr = DMMoFEMAddRowCompositeProblem(dm,"P1"); CHKERRQ(ierr);
+    ierr = DMMoFEMAddRowCompositeProblem(dm,"P2"); CHKERRQ(ierr);
+    ierr = DMSetUp(dm); CHKERRQ(ierr);
+
+    // ierr = m_field.add_problem("COMP"); CHKERRQ(ierr);
+    // ierr = m_field.modify_problem_ref_level_add_bit("COMP",bit_level0); CHKERRQ(ierr);
+    // ierr = m_field.modify_problem_add_finite_element("COMP","E1"); CHKERRQ(ierr);
+    // ierr = m_field.modify_problem_add_finite_element("COMP","E2"); CHKERRQ(ierr);
+    // std::vector<std::string> add_problems;
+    // add_problems.push_back("P1");
+    // add_problems.push_back("P2");
+    // ierr = prb_mng_ptr->buildCompsedProblem("COMP",add_problems,add_problems,true,1); CHKERRQ(ierr);
+    // ierr = prb_mng_ptr->partitionFiniteElements("COMP",true,0,m_field.getCommSize(),1); CHKERRQ(ierr);
+    // ierr = prb_mng_ptr->partitionGhostDofs("COMP",1); CHKERRQ(ierr);
 
     if(0) {
       Mat m;
@@ -226,6 +243,8 @@ int main(int argc, char *argv[]) {
     }
 
     ierr = m_field.partition_check_matrix_fill_in("COMP",-1,-1,1); CHKERRQ(ierr);
+    
+    ierr = DMDestroy(&dm); CHKERRQ(ierr);
 
   } catch (MoFEMException const &e) {
     SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);

@@ -71,6 +71,7 @@ tsCtx(NULL),
 isPartitioned(PETSC_FALSE),
 isSquareMatrix(PETSC_TRUE),
 isSubDM(PETSC_FALSE),
+isCompDM(PETSC_FALSE),
 destroyProblem(PETSC_FALSE),
 verbosity(0),
 referenceNumber(0) {}
@@ -174,7 +175,7 @@ PetscErrorCode DMMoFEMCreateMoFEM(
   }
   ierr = dm_field->mField_ptr->modify_problem_ref_level_add_bit(
     dm_field->problemName,bit_level); CHKERRQ(ierr
-    );
+  );
   dm_field->kspCtx = new KspCtx(*m_field_ptr,problem_name);
   dm_field->snesCtx = new SnesCtx(*m_field_ptr,problem_name);
   dm_field->tsCtx = new TsCtx(*m_field_ptr,problem_name);
@@ -252,6 +253,53 @@ PetscErrorCode DMMoFEMGetIsSubDM(DM dm,PetscBool *is_sub_dm) {
   PetscFunctionBegin;
   DMCtx *dm_field = (DMCtx*)dm->data;
   *is_sub_dm = dm_field->isSubDM;
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode DMMoFEMAddRowCompositeProblem(DM dm,const char prb_name[]) {
+  PetscValidHeaderSpecific(dm,DM_CLASSID,1);
+  PetscFunctionBegin;
+  DMCtx *dm_field = (DMCtx*)dm->data;
+  if(!dm->data) {
+    SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"data structure for MoFEM not yet created");
+  }
+  if(!dm_field->isCompDM) {
+    dm_field->isCompDM = PETSC_TRUE;
+  }
+  dm_field->rowCompPrb.push_back(prb_name);
+  if(dm_field->isSquareMatrix) {
+    dm_field->colCompPrb.push_back(prb_name);
+  }
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode DMMoFEMAddColCompositeProblem(DM dm,const char prb_name[]) {
+  PetscValidHeaderSpecific(dm,DM_CLASSID,1);
+  PetscFunctionBegin;
+  DMCtx *dm_field = (DMCtx*)dm->data;
+  if(!dm->data) {
+    SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"data structure for MoFEM not yet created");
+  }
+  if(!dm_field->isCompDM) {
+    dm_field->isCompDM = PETSC_TRUE;
+  }
+  if(dm_field->isSquareMatrix) {
+    SETERRQ(
+      PETSC_COMM_SELF,
+      MOFEM_INVALID_DATA,
+      "No need to add problem on column when problem block structurally symmetric"
+    );
+  }
+  dm_field->colCompPrb.push_back(prb_name);
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode DMMoFEMGetIsCompDM(DM dm,PetscBool *is_comp_dm) {
+  PetscFunctionBegin;
+  PetscValidHeaderSpecific(dm,DM_CLASSID,1);
+  PetscFunctionBegin;
+  DMCtx *dm_field = (DMCtx*)dm->data;
+  *is_comp_dm = dm_field->isCompDM;
   PetscFunctionReturn(0);
 }
 
@@ -652,22 +700,42 @@ PetscErrorCode DMSetUp_MoFEM(DM dm) {
   PetscFunctionBegin;
   DMCtx *dm_field = (DMCtx*)dm->data;
   ierr = dm_field->mField_ptr->query_interface(prb_mng_ptr); CHKERRQ(ierr);
-  if(dm_field->isPartitioned) {
-    ierr = prb_mng_ptr->buildProblemOnDistributedMesh(
-      dm_field->problemName,dm_field->isSquareMatrix == PETSC_TRUE
+
+  if(dm_field->isCompDM) {
+    // It is composite probelm
+    ierr = prb_mng_ptr->buildCompsedProblem(
+      dm_field->problemName,
+      dm_field->rowCompPrb,
+      dm_field->colCompPrb,
+      dm_field->isSquareMatrix == PETSC_TRUE
     ); CHKERRQ(ierr);
+  } else {
+    if(dm_field->isPartitioned) {
+      ierr = prb_mng_ptr->buildProblemOnDistributedMesh(
+        dm_field->problemName,dm_field->isSquareMatrix == PETSC_TRUE
+      ); CHKERRQ(ierr);
+    } else {
+      ierr = prb_mng_ptr->buildProblem(
+        dm_field->problemName,dm_field->isSquareMatrix == PETSC_TRUE
+      ); CHKERRQ(ierr);
+      ierr = prb_mng_ptr->partitionProblem(dm_field->problemName); CHKERRQ(ierr);
+    }
+  }
+
+  // Partition finite elements
+  if(dm_field->isPartitioned) {
     ierr = prb_mng_ptr->partitionFiniteElements(
       dm_field->problemName,true,0,dm_field->sIze,1
     ); CHKERRQ(ierr);
   } else {
-    ierr = prb_mng_ptr->buildProblem(
-      dm_field->problemName,dm_field->isSquareMatrix == PETSC_TRUE
+    ierr = prb_mng_ptr->partitionFiniteElements(
+      dm_field->problemName
     ); CHKERRQ(ierr);
-    ierr = prb_mng_ptr->partitionProblem(dm_field->problemName); CHKERRQ(ierr);
-    ierr = prb_mng_ptr->partitionFiniteElements(dm_field->problemName); CHKERRQ(ierr);
   }
+  // Get ghost DOFs
   ierr = prb_mng_ptr->partitionGhostDofs(dm_field->problemName); CHKERRQ(ierr);
 
+  // Set flag that problem is build and partitioned
   dm_field->isProblemBuild = PETSC_TRUE;
 
   PetscFunctionReturn(0);

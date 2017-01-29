@@ -23,6 +23,9 @@ namespace MoFEM {
 
 struct MoFEMProblem;
 
+/**
+ * Data structure created when composite problem is created
+ */
 struct ComposedProblemsData {
 
   std::vector<const MoFEMProblem*> rowProblemsAdd;
@@ -30,6 +33,32 @@ struct ComposedProblemsData {
 
   std::vector<IS> rowIs;
   std::vector<IS> colIs;
+
+  inline PetscErrorCode getRowIs(IS *is,int pp) {
+    PetscFunctionBegin;
+    PetscObjectReference((PetscObject)rowIs[pp]);
+    if(pp<=rowIs.size()) {
+      SETERRQ1(
+        PETSC_COMM_WORLD,MOFEM_INVALID_DATA,
+        "Exceed size of array pp<%d",rowIs.size()
+      );
+    }
+    *is = rowIs[pp];
+    PetscFunctionReturn(0);
+  }
+
+  inline PetscErrorCode getColIs(IS *is,int pp) {
+    PetscFunctionBegin;
+    PetscObjectReference((PetscObject)colIs[pp]);
+    if(pp<=colIs.size()) {
+      SETERRQ1(
+        PETSC_COMM_WORLD,MOFEM_INVALID_DATA,
+        "Exceed size of array pp<%d",colIs.size()
+      );
+    }
+    *is = colIs[pp];
+    PetscFunctionReturn(0);
+  }
 
   virtual ~ComposedProblemsData() {
     for(int ii = 0;ii!=rowIs.size();ii++) {

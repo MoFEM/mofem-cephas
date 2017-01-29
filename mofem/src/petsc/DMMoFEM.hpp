@@ -441,6 +441,36 @@ PetscErrorCode DMMoFEMAddSubFieldCol(DM dm,const char field_name[]);
 PetscErrorCode DMMoFEMGetIsSubDM(DM dm,PetscBool *is_sub_dm);
 
 /**
+ * \brief Add problem to composite DM on row
+ *
+ * This create block on row with DOFs from problem of given name
+ *
+ * @param  dm       the DM object
+ * @param  prb_name add problem name
+ * @return          error code
+ */
+PetscErrorCode DMMoFEMAddRowCompositeProblem(DM dm,const char prb_name[]);
+
+/**
+ * \brief Add problem to composite DM on col
+ *
+ * This create block on col with DOFs from problem of given name
+ *
+ * @param  dm       the DM object
+ * @param  prb_name add problem name
+ * @return          error code
+ */
+PetscErrorCode DMMoFEMAddColCompositeProblem(DM dm,const char prb_name[]);
+
+/**
+ * \brief Get if this DM is composite DM
+ * @param  dm         the DM object
+ * @param  is_comp_dm return true if composite problem here
+ * @return            error code
+ */
+PetscErrorCode DMMoFEMGetIsCompDM(DM dm,PetscBool *is_comp_dm);
+
+/**
   * destroy the MoFEM structure
   * \ingroup dm
   */
@@ -565,6 +595,10 @@ namespace MoFEM {
     std::vector<std::string> rowFields;
     std::vector<std::string> colFields;
     const MoFEMProblem *problemMainOfSubPtr;	  ///< pinter to main problem to sub-problem
+
+    PetscBool isCompDM;
+    std::vector<std::string> rowCompPrb;
+    std::vector<std::string> colCompPrb;
 
     PetscBool destroyProblem;   ///< If true destroy problem with DM
 
