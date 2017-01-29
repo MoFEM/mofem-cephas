@@ -330,16 +330,6 @@ Core::~Core() {
     isGloballyInitialised = false;
   }
 }
-moab::Interface& Core::get_moab() {
-  return moab;
-}
-const moab::Interface& Core::get_moab() const {
-  return moab;
-}
-
-MPI_Comm& Core::get_comm() const {
-  return comm;
-}
 
 BitFieldId Core::getFieldShift() {
   if(*fShift >= BITFIELDID_SIZE) {
