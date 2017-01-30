@@ -134,6 +134,23 @@ namespace MoFEM {
     );
 
     /**
+     * \brief build composite problem
+     * @param  out_name         name of build problem
+     * @param  add_row_problems vector of add row problems
+     * @param  add_col_problems vector of add col problems
+     * @param  square_matrix    true if structurally squared matrix
+     * @param  verb             verbosity level
+     * @return                  error code
+     */
+    PetscErrorCode buildCompsedProblem(
+      const std::string &out_name,
+      const std::vector<std::string> add_row_problems,
+      const std::vector<std::string> add_col_problems,
+      const bool square_matrix = true,
+      int verb = 1
+    );
+
+    /**
       * \brief build indexing and partition problem inheriting indexing and partitioning from two other problems
       * \ingroup mofem_problems
       *

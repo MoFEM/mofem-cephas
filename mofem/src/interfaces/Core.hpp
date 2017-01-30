@@ -144,11 +144,8 @@ struct Core: public Interface {
   PetscErrorCode initialiseDatabseInformationFromMesh(int verb = -1);
 
   //moab interface
-  moab::Interface& get_moab();
-  const moab::Interface& get_moab() const;
-
-  //communicator MoFEM
-  MPI_Comm& get_comm() const;
+  inline moab::Interface& get_moab() { return moab; }
+  inline const moab::Interface& get_moab() const { return moab; }
 
   //FiedlInterface
 
@@ -723,11 +720,14 @@ struct Core: public Interface {
   PetscLogEvent USER_EVENT_createMat;
   PetscLogEvent USER_EVENT_buildProblem;
 
-
   // size and rank of communicator
+
+  /// communicator MoFEM
+  inline MPI_Comm& get_comm() const { return comm; }
+
   int sIze,rAnk;
-  int getCommSize() const { return sIze; }
-  int getCommRank() const { return rAnk; }
+  inline int getCommSize() const { return sIze; }
+  inline int getCommRank() const { return rAnk; }
 
   private:
 

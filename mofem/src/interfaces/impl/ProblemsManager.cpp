@@ -237,11 +237,9 @@ namespace MoFEM {
         std::vector<int> dum_ids(n_parts);
         for(int i = 0;i<n_parts;i++) dum_ids[i] = i;
         rval = m_field.get_moab().tag_set_data(part_tag,tagged_sets,&*dum_ids.begin()); CHKERR_MOAB(rval);
-        for(int i = 0;i<n_parts;i++) {
-          rval = m_field.get_moab().add_entities(tagged_sets[i],parts_ents[i]); CHKERR_MOAB(rval);
-        }
-
-        rval = pcomm->assign_global_ids(0,dim,0,false); CHKERR_MOAB(rval);
+        // for(int i = 0;i<n_parts;i++) {
+        //   rval = m_field.get_moab().add_entities(tagged_sets[i],parts_ents[i]); CHKERR_MOAB(rval);
+        // }
 
         // get lower dimension entities on each part
         for(int pp = 0;pp!=n_parts;pp++) {
@@ -271,15 +269,15 @@ namespace MoFEM {
         }
 
         // set gid to lower dimension entities
-        for(int dd = 0;dd<dim;dd++) {
-          int gid = 0; // moab indexing from 1
+        for(int dd = 0;dd<=dim;dd++) {
+          int gid = 1; // moab indexing from 1
           for(int pp = 0;pp!=n_parts;pp++) {
             Range dim_ents = parts_ents[pp].subset_by_dimension(dd);
             // std::cerr << dim_ents.size() << " " << dd  << " " << pp << std::endl;
             for(Range::iterator eit = dim_ents.begin();eit!=dim_ents.end();eit++) {
-              // if(dd>0) {
-              //   rval = moab.tag_set_data(part_tag,&*eit,1,&pp); CHKERRQ_MOAB(rval);
-              // }
+              if(dd>0) {
+                rval = m_field.get_moab().tag_set_data(part_tag,&*eit,1,&pp); CHKERRQ_MOAB(rval);
+              }
               rval = m_field.get_moab().tag_set_data(gid_tag,&*eit,1,&gid); CHKERRQ_MOAB(rval);
               gid++;
             }
@@ -1188,7 +1186,7 @@ namespace MoFEM {
         // crate is with global dofs
         IS is;
         ierr = ISCreateGeneral(
-          PETSC_COMM_WORLD,nb,&*main_indices.begin(),PETSC_USE_POINTER,&is
+          m_field.get_comm(),nb,&*main_indices.begin(),PETSC_USE_POINTER,&is
         ); CHKERRQ(ierr);
         // create map form main problem global indices to out problem global indices
         AO ao;
@@ -1229,7 +1227,7 @@ namespace MoFEM {
           }
           IS is;
           ierr = ISCreateGeneral(
-            PETSC_COMM_WORLD,nb,&*main_indices_non_local.begin(),PETSC_USE_POINTER,&is
+            m_field.get_comm(),nb,&*main_indices_non_local.begin(),PETSC_USE_POINTER,&is
           ); CHKERRQ(ierr);
           ierr = AOApplicationToPetscIS(ao,is); CHKERRQ(ierr);
           ierr = ISDestroy(&is); CHKERRQ(ierr);
@@ -1255,6 +1253,292 @@ namespace MoFEM {
       out_problem_it->getSubData()->colMap = out_problem_it->getSubData()->rowMap;
       ierr = PetscObjectReference((PetscObject)out_problem_it->getSubData()->rowIs); CHKERRQ(ierr);
       ierr = PetscObjectReference((PetscObject)out_problem_it->getSubData()->rowMap); CHKERRQ(ierr);
+    }
+
+    ierr = printPartitionedProblem(&*out_problem_it,verb); CHKERRQ(ierr);
+    ierr = debugPartitionedProblem(&*out_problem_it,verb); CHKERRQ(ierr);
+
+    PetscFunctionReturn(0);
+  }
+
+   PetscErrorCode ProblemsManager::buildCompsedProblem(
+    const std::string &out_name,
+    const std::vector<std::string> add_row_problems,
+    const std::vector<std::string> add_col_problems,
+    const bool square_matrix,
+    int verb
+  ) {
+
+    PetscErrorCode ierr;
+    MoFEM::Interface &m_field = cOre;
+    const MoFEMProblem_multiIndex *problems_ptr;
+    PetscFunctionBegin;
+
+    ierr = m_field.clear_problem(out_name); CHKERRQ(ierr);
+    ierr = m_field.get_problems(&problems_ptr); CHKERRQ(ierr);
+    // get reference to all problems
+    typedef MoFEMProblem_multiIndex::index<Problem_mi_tag>::type MoFEMProblemByName;
+    MoFEMProblemByName &problems_by_name =
+    const_cast<MoFEMProblemByName&>(problems_ptr->get<Problem_mi_tag>());
+
+    // Get iterators to out problem, i.e. build problem
+    MoFEMProblemByName::iterator out_problem_it = problems_by_name.find(out_name);
+    if(out_problem_it==problems_by_name.end()) {
+      SETERRQ1(
+        PETSC_COMM_SELF,
+        MOFEM_DATA_INCONSISTENCY,
+        "problem with name < %s > not defined (top tip check spelling)",
+        out_name.c_str()
+      );
+    }
+    // Make data structure for composed-problem data
+    out_problem_it->composedProblemsData = boost::make_shared<ComposedProblemsData>();
+    boost::shared_ptr<ComposedProblemsData> cmp_prb_data = out_problem_it->getComposedProblemsData();
+
+    const std::vector<std::string>* add_prb[] = {
+      &add_row_problems,&add_col_problems
+    };
+    std::vector<const MoFEMProblem*>* add_prb_ptr[] = {
+      &cmp_prb_data->rowProblemsAdd,&cmp_prb_data->colProblemsAdd
+    };
+    std::vector<IS>* add_prb_is[] = {&cmp_prb_data->rowIs,&cmp_prb_data->colIs};
+
+    // Get DOFs for row & columns for out problem,
+    boost::shared_ptr<NumeredDofEntity_multiIndex> out_problem_dofs[] = {
+      out_problem_it->numered_dofs_rows,
+      out_problem_it->numered_dofs_cols
+    };
+    // Get local indices counter
+    int* nb_local_dofs[] = {
+      out_problem_it->tag_local_nbdof_data_row,
+      out_problem_it->tag_local_nbdof_data_col
+    };
+    // Get global indices counter
+    int* nb_dofs[] = {
+      out_problem_it->tag_nbdof_data_row,
+      out_problem_it->tag_nbdof_data_col
+    };
+
+    // Set number of ghost nodes to zero
+    {
+      *out_problem_it->tag_nbdof_data_row = 0;
+      *out_problem_it->tag_nbdof_data_col = 0;
+      *out_problem_it->tag_local_nbdof_data_row = 0;
+      *out_problem_it->tag_local_nbdof_data_col = 0;
+      *out_problem_it->tag_ghost_nbdof_data_row = 0;
+      *out_problem_it->tag_ghost_nbdof_data_col = 0;
+    }
+    int nb_dofs_reserve[] = {0,0};
+
+    // cerr << "AAA " << ((square_matrix)?1:2) << "\n";
+    for(int ss = 0;ss!=((square_matrix)?1:2);ss++) {
+      // cerr << "SS " << ss << endl;
+      // cerr << add_prb[ss]->size() << endl;
+      // cerr << add_prb_ptr[ss]->size() << endl;
+      add_prb_ptr[ss]->reserve(add_prb[ss]->size());
+      add_prb_is[ss]->reserve(add_prb[ss]->size());
+      for(
+        std::vector<std::string>::const_iterator
+        vit=add_prb[ss]->begin();vit!=add_prb[ss]->end();vit++
+      ) {
+        MoFEMProblemByName::iterator prb_it = problems_by_name.find(*vit);
+        if(prb_it==problems_by_name.end()) {
+          SETERRQ1(
+            PETSC_COMM_SELF,
+            MOFEM_DATA_INCONSISTENCY,
+            "problem with name < %s > not defined (top tip check spelling)",
+            vit->c_str()
+          );
+        }
+        add_prb_ptr[ss]->push_back(&*prb_it);
+        if(ss==0) {
+          *nb_dofs[ss] += add_prb_ptr[ss]->back()->getNbDofsRow();
+          *nb_local_dofs[ss] += add_prb_ptr[ss]->back()->getNbLocalDofsRow();
+          nb_dofs_reserve[ss] += add_prb_ptr[ss]->back()->numered_dofs_rows->size();
+        } else {
+          *nb_dofs[ss] += add_prb_ptr[ss]->back()->getNbDofsCol();
+          *nb_local_dofs[ss] += add_prb_ptr[ss]->back()->getNbLocalDofsRow();
+          nb_dofs_reserve[ss] += add_prb_ptr[ss]->back()->numered_dofs_cols->size();
+        }
+      }
+    }
+    if(square_matrix) {
+      add_prb_ptr[1]->reserve(add_prb_ptr[0]->size());
+      add_prb_is[1]->reserve(add_prb_ptr[0]->size());
+      out_problem_it->numered_dofs_cols = out_problem_it->numered_dofs_rows;
+      *nb_dofs[1] = *nb_dofs[0];
+      *nb_local_dofs[1] = *nb_local_dofs[0];
+    }
+
+    boost::shared_ptr<std::vector<NumeredDofEntity> > dofs_array[2];
+
+    // Reserve memory
+    for(int ss = 0;ss!=((square_matrix)?1:2);ss++) {
+      dofs_array[ss] = boost::make_shared<std::vector<NumeredDofEntity> >();
+      dofs_array[ss]->reserve(nb_dofs_reserve[ss]);
+      if(ss==0) {
+        out_problem_it->getRowDofsSeqence() = dofs_array[ss];
+      }
+      if(ss==0) {
+        out_problem_it->getColDofsSeqence() = dofs_array[ss];
+      }
+    }
+
+    // Push back DOFs
+     for(int ss = 0;ss!=((square_matrix)?1:2);ss++) {
+      NumeredDofEntity_multiIndex::index<PetscGlobalIdx_mi_tag>::type::iterator dit,hi_dit;
+      int shift_glob = 0;
+      int shift_loc = 0;
+      for(int pp = 0;pp!=add_prb_ptr[ss]->size();pp++) {
+        PetscInt *dofs_out_idx_ptr;
+        int nb_local_dofs = (*add_prb_ptr[ss])[pp]->getNbLocalDofsRow();
+        ierr = PetscMalloc(nb_local_dofs*sizeof(int),&dofs_out_idx_ptr); CHKERRQ(ierr);
+        if(ss == 0) {
+          dit = (*add_prb_ptr[ss])[pp]->numered_dofs_rows->get<PetscGlobalIdx_mi_tag>().begin();
+          hi_dit = (*add_prb_ptr[ss])[pp]->numered_dofs_rows->get<PetscGlobalIdx_mi_tag>().end();
+        } else {
+          dit = (*add_prb_ptr[ss])[pp]->numered_dofs_cols->get<PetscGlobalIdx_mi_tag>().begin();
+          hi_dit = (*add_prb_ptr[ss])[pp]->numered_dofs_cols->get<PetscGlobalIdx_mi_tag>().end();
+        }
+        int is_nb = 0;
+        for(;dit!=hi_dit;dit++) {
+          // cerr << **dit << endl;d
+          const int glob_idx = shift_glob+dit->get()->getPetscGlobalDofIdx();
+          const int loc_idx =
+          (dit->get()->getPart()==m_field.getCommRank())?(shift_loc+dit->get()->getPetscLocalDofIdx()):-1;
+          // if(m_field.getCommRank()==1) {
+          //   cerr << dit->get()->getPart() << " " << loc_idx << endl;
+          // }
+          dofs_array[ss]->push_back(
+            NumeredDofEntity(
+              dit->get()->getDofEntityPtr(),glob_idx,glob_idx,loc_idx,dit->get()->getPart()
+            )
+          );
+          if(dit->get()->getPart()==m_field.getCommRank()) {
+            dofs_out_idx_ptr[is_nb++] = glob_idx;
+          }
+        }
+        if(is_nb!=nb_local_dofs) {
+          SETERRQ(m_field.get_comm(),MOFEM_DATA_INCONSISTENCY,"Data inconsistency");
+        }
+        IS is;
+        ierr = ISCreateGeneral(
+          m_field.get_comm(),is_nb,dofs_out_idx_ptr,PETSC_OWN_POINTER,&is
+        ); CHKERRQ(ierr);
+        // cerr << "Push " << ss << " " << pp << endl;
+        (*add_prb_is[ss]).push_back(is);
+        if(ss==0) {
+          shift_glob+=(*add_prb_ptr[ss])[pp]->getNbDofsRow();
+          shift_loc+=(*add_prb_ptr[ss])[pp]->getNbLocalDofsRow();
+        } else {
+          shift_glob+=(*add_prb_ptr[ss])[pp]->getNbDofsCol();
+          shift_loc+=(*add_prb_ptr[ss])[pp]->getNbLocalDofsCol();
+        }
+        if(square_matrix) {
+          (*add_prb_ptr[1]).push_back((*add_prb_ptr[0])[pp]);
+          // cerr << "Push square " << ss << " " << pp << endl;
+          (*add_prb_is[1]).push_back(is);
+          ierr = PetscObjectReference((PetscObject)is); CHKERRQ(ierr);
+        }
+      }
+    }
+
+    if((*add_prb_is[1]).size()!=(*add_prb_is[0]).size()) {
+      SETERRQ(m_field.get_comm(),MOFEM_DATA_INCONSISTENCY,"Data inconsistency");
+    }
+
+    // Insert DOFs to problem multi-index
+    std::vector<boost::shared_ptr<NumeredDofEntity> > dofs_shared_array;
+    for(int ss = 0;ss!=((square_matrix)?1:2);ss++) {
+      dofs_shared_array.clear();
+      dofs_shared_array.reserve(dofs_array[ss]->size());
+      for(
+        std::vector<NumeredDofEntity>::iterator
+        dit = dofs_array[ss]->begin();dit!=dofs_array[ss]->end();dit++
+      ) {
+        dofs_shared_array.push_back(boost::shared_ptr<NumeredDofEntity>(dofs_array[ss],&*dit));
+      }
+      if(ss==0) {
+        out_problem_it->numered_dofs_rows->insert(dofs_shared_array.begin(),dofs_shared_array.end());
+      } else {
+        out_problem_it->numered_dofs_cols->insert(dofs_shared_array.begin(),dofs_shared_array.end());
+      }
+    }
+
+    // Compress DOFs
+    for(int ss = 0;ss!=((square_matrix)?1:2);ss++) {
+      // if(ss == 0 && !enumerate_row) continue;
+      // if(ss == 1 && !enumerate_col) continue;
+      *nb_local_dofs[ss] = 0;
+      boost::shared_ptr<NumeredDofEntity_multiIndex> dofs_ptr;
+      NumeredDofEntity_multiIndex::index<PetscGlobalIdx_mi_tag>::type::iterator dit,hi_dit;
+      if(ss == 0) {
+        dofs_ptr = out_problem_it->numered_dofs_rows;
+      } else {
+        dofs_ptr = out_problem_it->numered_dofs_cols;
+      }
+      dit = dofs_ptr->get<PetscGlobalIdx_mi_tag>().begin();
+      hi_dit = dofs_ptr->get<PetscGlobalIdx_mi_tag>().end();
+      std::vector<int> idx;
+      idx.reserve(std::distance(dit,hi_dit));
+      for(;dit!=hi_dit;dit++) {
+        if(dit->get()->getPart()==m_field.getCommRank()) {
+          bool success =
+          dofs_ptr->get<PetscGlobalIdx_mi_tag>().modify(
+            dit,NumeredDofEntity_local_idx_change((*nb_local_dofs[ss])++)
+          );
+          if(!success) {
+            SETERRQ(
+              m_field.get_comm(),MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful"
+            );
+          }
+          idx.push_back(dit->get()->getPetscGlobalDofIdx());
+        }
+      }
+      IS is;
+      ierr = ISCreateGeneral(
+        m_field.get_comm(),idx.size(),&*idx.begin(),PETSC_USE_POINTER,&is
+      ); CHKERRQ(ierr);
+      AO ao;
+      ierr = AOCreateMappingIS(is,PETSC_NULL,&ao); CHKERRQ(ierr);
+      for(int pp = 0;pp!=(*add_prb_is[ss]).size();pp++) {
+        ierr = AOApplicationToPetscIS(ao,(*add_prb_is[ss])[pp]); CHKERRQ(ierr);
+      }
+      // Set DOFs numeration
+      {
+        std::vector<int> idx_new;
+        idx_new.reserve(dofs_ptr->size());
+        for(
+          NumeredDofEntity_multiIndex::iterator
+          dit = dofs_ptr->begin();dit!=dofs_ptr->end();dit++
+        ) {
+          idx_new.push_back(dit->get()->getPetscGlobalDofIdx());
+        }
+        IS is_new;
+        ierr = ISCreateGeneral(
+          m_field.get_comm(),idx_new.size(),&*idx_new.begin(),PETSC_USE_POINTER,&is_new
+        ); CHKERRQ(ierr);
+        ierr = AOApplicationToPetscIS(ao,is_new); CHKERRQ(ierr);
+        std::vector<int>::iterator vit = idx_new.begin();
+        for(
+          NumeredDofEntity_multiIndex::iterator
+          dit = dofs_ptr->begin();dit!=dofs_ptr->end();dit++
+        ) {
+          bool success =
+          dofs_ptr->modify(
+            dit,NumeredDofEntity_part_change(dit->get()->getPart(),*(vit++))
+          );
+          if(!success) {
+            SETERRQ(
+              m_field.get_comm(),MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful"
+            );
+          }
+        }
+        ierr = ISDestroy(&is_new); CHKERRQ(ierr);
+      }
+      ierr = ISDestroy(&is); CHKERRQ(ierr);
+      ierr = AODestroy(&ao); CHKERRQ(ierr);
+
     }
 
     ierr = printPartitionedProblem(&*out_problem_it,verb); CHKERRQ(ierr);
