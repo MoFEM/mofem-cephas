@@ -105,7 +105,7 @@ namespace MoFEM {
     PetscFunctionReturn(0);
   }
 
-  PetscErrorCode CutMeshInterface::findEdgesToCut(int verb) {
+  PetscErrorCode CutMeshInterface::findEdgesToCut(const double low_tol,int verb) {
     MoABErrorCode rval;
     MoFEM::Interface &m_field = cOre;
     moab::Interface &moab = m_field.get_moab();
@@ -155,7 +155,6 @@ namespace MoFEM {
       rval = moab.tag_set_data(th_dist_normal,&*vit,1,&dist_normal); CHKERRQ_MOAB(rval);
     }
 
-    const double low_tol = 0;
     Range vol_edges;
     rval = moab.get_adjacencies(
       vOlume,1,true,vol_edges,moab::Interface::UNION
@@ -406,7 +405,7 @@ namespace MoFEM {
     PetscFunctionReturn(0);
   }
 
-  PetscErrorCode CutMeshInterface::findEdgesToTrim(Tag th,int verb) {
+  PetscErrorCode CutMeshInterface::findEdgesToTrim(Tag th,const double tol,int verb) {
     MoABErrorCode rval;
     MoFEM::Interface &m_field = cOre;
     moab::Interface &moab = m_field.get_moab();
@@ -434,6 +433,7 @@ namespace MoFEM {
       // Put edges coords into boost vectors
       VectorAdaptor s0(3,ublas::shallow_array_adaptor<double>(3,&coords[0]));
       VectorAdaptor s1(3,ublas::shallow_array_adaptor<double>(3,&coords[3]));
+      double length = norm_2(s1-s0);
       // Find point on surface closet to surface
       double point_out0[3];
       EntityHandle facets_out0;
@@ -460,8 +460,7 @@ namespace MoFEM {
       double min_dist = fmin(dist0,dist1);
       double max_dist = fmax(dist0,dist1);
       // If one of nodes is on the surface and other is not, that edge is to trim
-      const double tol = 1e-4;
-      if(min_dist < tol && max_dist > tol) {
+      if(min_dist/length < tol && max_dist/length > tol) {
         trimEdges.insert(*eit);
         if(max_dist==dist0) {
           VectorDouble3 ray = p0-s0;

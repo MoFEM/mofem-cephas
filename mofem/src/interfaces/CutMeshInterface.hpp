@@ -75,7 +75,7 @@ namespace MoFEM {
      * @param  verb verbosity level
      * @return      error code
      */
-    PetscErrorCode findEdgesToCut(int verb = 0);
+    PetscErrorCode findEdgesToCut(const double low_tol = 0,int verb = 0);
 
     /**
      * \brief cut edges
@@ -105,7 +105,7 @@ namespace MoFEM {
      * @param  verb verbosity level
      * @return      error code
      */
-    PetscErrorCode findEdgesToTrim(Tag th = NULL,int verb = 0);
+    PetscErrorCode findEdgesToTrim(Tag th = NULL,const double tol = 1e-4,int verb = 0);
 
     PetscErrorCode trimEdgesInTheMiddle(const BitRefLevel bit);
 
@@ -139,7 +139,7 @@ namespace MoFEM {
       const BitRefLevel bit
     );
 
-    
+
 
 
     // PetscErrorCode findTetOnTheFront(int verb = 0);
