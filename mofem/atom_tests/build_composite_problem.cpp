@@ -64,6 +64,8 @@ int main(int argc, char *argv[]) {
     ierr = m_field.query_interface(prb_mng_ptr); CHKERRQ(ierr);
     ierr = prb_mng_ptr->partitionMesh(tets,3,2,m_field.getCommSize()); CHKERRQ(ierr);
 
+    EntityHandle part_set;
+    rval = moab.create_meshset(MESHSET_SET,part_set); CHKERRQ_MOAB(rval);
     Tag part_tag = pcomm->part_tag();
     Range proc_ents;
     Range tagged_sets;
@@ -76,6 +78,7 @@ int main(int argc, char *argv[]) {
       if(part==m_field.getCommRank()) {
         // pcomm->partition_sets().insert(*mit);
         rval = moab.get_entities_by_type(*mit,MBTET,proc_ents,true); CHKERRQ_MOAB(rval);
+        rval = moab.add_entities(part_set,proc_ents); CHKERRQ_MOAB(rval);
       }
     }
 
@@ -90,6 +93,9 @@ int main(int argc, char *argv[]) {
       proc_ents_skin[2],1,false,proc_ents_skin[1],moab::Interface::UNION
     ); CHKERR_MOAB(rval);
     rval = moab.get_connectivity(proc_ents_skin[1],proc_ents_skin[0],true); CHKERRQ_MOAB(rval);
+    for(int dd = 0;dd!=3;dd++) {
+      rval = moab.add_entities(part_set,proc_ents_skin[dd]); CHKERRQ_MOAB(rval);
+    }
 
     if(0) {
       std::ostringstream file_skin;
@@ -143,7 +149,6 @@ int main(int argc, char *argv[]) {
     // set entitities bit level
     BitRefLevel bit_level0;
     bit_level0.set(0);
-    EntityHandle part_set = pcomm->partition_sets().front();
     ierr = m_field.seed_ref_level_3D(part_set,bit_level0); CHKERRQ(ierr);
 
     //Fields
@@ -243,7 +248,7 @@ int main(int argc, char *argv[]) {
     }
 
     ierr = m_field.partition_check_matrix_fill_in("COMP",-1,-1,1); CHKERRQ(ierr);
-    
+
     ierr = DMDestroy(&dm); CHKERRQ(ierr);
 
   } catch (MoFEMException const &e) {

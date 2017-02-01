@@ -757,24 +757,24 @@ namespace MoFEM {
       local_nbdof_ptr[1] = local_nbdof_ptr[0];
     }
 
-    // If columns and rows have the same dofs indexing should be the same on both of them
-    {
-      NumeredDofEntity_multiIndex::iterator dit_row = numered_dofs_ptr[0]->begin();
-      NumeredDofEntity_multiIndex::iterator hi_dit_row = numered_dofs_ptr[0]->end();
-      NumeredDofEntity_multiIndex::iterator dit_col = numered_dofs_ptr[1]->begin();
-      NumeredDofEntity_multiIndex::iterator hi_dit_col = numered_dofs_ptr[1]->end();
-      for(;dit_row!=hi_dit_row;dit_row++,dit_col++) {
-        if(dit_row->get()->getPetscGlobalDofIdx()!=dit_col->get()->getPetscGlobalDofIdx()) {
-          cerr << **dit_row << endl;
-          cerr << **dit_col << endl;
-        }
-        if(dit_row->get()->getGlobalUniqueId()!=dit_col->get()->getGlobalUniqueId()) {
-          cerr << "C " << **dit_row << endl;
-          cerr << "R " << **dit_col << endl;
-        }
-
-      }
-    }
+    // // If columns and rows have the same dofs indexing should be the same on both of them
+    // {
+    //   NumeredDofEntity_multiIndex::iterator dit_row = numered_dofs_ptr[0]->begin();
+    //   NumeredDofEntity_multiIndex::iterator hi_dit_row = numered_dofs_ptr[0]->end();
+    //   NumeredDofEntity_multiIndex::iterator dit_col = numered_dofs_ptr[1]->begin();
+    //   NumeredDofEntity_multiIndex::iterator hi_dit_col = numered_dofs_ptr[1]->end();
+    //   for(;dit_row!=hi_dit_row;dit_row++,dit_col++) {
+    //     if(dit_row->get()->getPetscGlobalDofIdx()!=dit_col->get()->getPetscGlobalDofIdx()) {
+    //       cerr << **dit_row << endl;
+    //       cerr << **dit_col << endl;
+    //     }
+    //     if(dit_row->get()->getGlobalUniqueId()!=dit_col->get()->getGlobalUniqueId()) {
+    //       cerr << "C " << **dit_row << endl;
+    //       cerr << "R " << **dit_col << endl;
+    //     }
+    //
+    //   }
+    // }
 
 
     int nsends_rows = 0,nsends_cols = 0;
@@ -947,7 +947,7 @@ namespace MoFEM {
           if(dit == numered_dofs_ptr[ss]->end()) {
             // Dof is shared to this processor, however there is no element which
             // have this dof
-            continue;
+            // continue;
             // DofEntity_multiIndex::iterator ddit = dofsField.find(uid);
             // if(ddit!=dofsField.end()) {
             //   std::cerr << **ddit << std::endl;
@@ -960,11 +960,11 @@ namespace MoFEM {
             //     "no such dof %s in mofem database",zz.str().c_str()
             //   );
             // }
-            // std::ostringstream zz;
-            // zz << uid << std::endl;
-            // SETERRQ1(
-            //   PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"dof %s not found",zz.str().c_str()
-            // );
+            std::ostringstream zz;
+            zz << uid << std::endl;
+            SETERRQ1(
+              PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"dof %s not found",zz.str().c_str()
+            );
           }
           int global_idx = idx_data->globalDof;
           if(global_idx<0) {

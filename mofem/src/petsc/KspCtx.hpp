@@ -35,12 +35,40 @@ struct KspCtx {
   std::string problemName;   ///< Problem name
   MoFEMTypes bH; ///< If set to MF_EXIST check if element exist
 
-  typedef std::pair<std::string,FEMethod*> loop_pair_type;
+  struct LoopPairType: public std::pair<std::string,FEMethod*> {
+    LoopPairType(std::string name,FEMethod *ptr):
+    std::pair<std::string,FEMethod*>(name,ptr) {}
+    LoopPairType(std::string name,boost::shared_ptr<FEMethod> ptr):
+    std::pair<std::string,FEMethod*>(name,ptr.get()),
+    fePtr(ptr) {
+    }
+    virtual ~LoopPairType() {}
+  private:
+    boost::shared_ptr<FEMethod> fePtr;
+  };
+  typedef LoopPairType loop_pair_type;
+
   typedef std::vector<loop_pair_type > loops_to_do_type;
   loops_to_do_type loops_to_do_Mat;
   loops_to_do_type loops_to_do_Rhs;
 
-  typedef std::vector<BasicMethod*> basic_method_to_do;
+  struct BasicMethodPtr {
+    BasicMethodPtr(BasicMethod *ptr):
+    rawPtr(ptr) {}
+    BasicMethodPtr(boost::shared_ptr<BasicMethod> ptr):
+    rawPtr(ptr.get()),
+    bmPtr(ptr) {}
+    BasicMethodPtr(boost::shared_ptr<FEMethod> ptr):
+    rawPtr(ptr.get()),
+    bmPtr(ptr) {}
+    inline BasicMethod& operator*() const { return *rawPtr; };
+    inline BasicMethod* operator->() const { return rawPtr; }
+  private:
+    BasicMethod* rawPtr;
+    boost::shared_ptr<BasicMethod> bmPtr;
+  };
+  typedef std::vector<BasicMethodPtr> basic_method_to_do;
+  
   basic_method_to_do preProcess_Mat;
   basic_method_to_do postProcess_Mat;
   basic_method_to_do preProcess_Rhs;
