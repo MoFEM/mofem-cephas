@@ -508,7 +508,7 @@ int main(int argc, char *argv[]) {
   SnesCtx::loops_to_do_type& loops_to_do_Rhs = snes_ctx.get_loops_to_do_Rhs();
   snes_ctx.get_preProcess_to_do_Rhs().push_back(&my_dirichlet_bc);
   snes_ctx.get_preProcess_to_do_Rhs().push_back(&pre_post_method);
-  loops_to_do_Rhs.push_back(TsCtx::loop_pair_type("ELASTIC",&elastic.getLoopFeRhs()));
+  loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("ELASTIC",&elastic.getLoopFeRhs()));
   //surface forces and pressures
   loops_to_do_Rhs.push_back(SnesCtx::loop_pair_type("NEUAMNN_FE",&fe_neumann));
 
@@ -547,7 +547,7 @@ int main(int argc, char *argv[]) {
 
   SnesCtx::loops_to_do_type& loops_to_do_Mat = snes_ctx.get_loops_to_do_Mat();
   snes_ctx.get_preProcess_to_do_Mat().push_back(&my_dirichlet_bc);
-  loops_to_do_Mat.push_back(TsCtx::loop_pair_type("ELASTIC",&elastic.getLoopFeLhs()));
+  loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("ELASTIC",&elastic.getLoopFeLhs()));
   loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("NEUAMNN_FE",&fe_neumann));
   loops_to_do_Mat.push_back(SnesCtx::loop_pair_type("ARC_LENGTH",&arc_method));
   snes_ctx.get_postProcess_to_do_Mat().push_back(&my_dirichlet_bc);
