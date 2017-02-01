@@ -166,10 +166,19 @@ PetscErrorCode NeummanForcesSurfaceComplexForLazy::
     switch (type) {
       case MBVERTEX: {
         if(data.getFieldData().size()!=9) {
-          SETERRQ(PETSC_COMM_SELF,1,"it should be 9 dofs on vertices");
+          SETERRQ1(
+            PETSC_COMM_SELF,
+            MOFEM_DATA_INCONSISTENCY,
+            "it should be 9 dofs on vertices but is %d",
+            data.getFieldData().size()
+          );
         }
         if(data.getN().size2()!=3) {
-          SETERRQ(PETSC_COMM_SELF,1,"it should 3 shape functions for 3 nodes");
+          SETERRQ(
+            PETSC_COMM_SELF,
+            MOFEM_DATA_INCONSISTENCY,
+            "it should 3 shape functions for 3 nodes"
+          );
         }
         myPtr->N = &*data.getN().data().begin();
         myPtr->diffN = &*data.getDiffN().data().begin();

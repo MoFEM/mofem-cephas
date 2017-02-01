@@ -502,40 +502,80 @@ PetscErrorCode DMMoFEMKSPSetComputeOperators(DM dm,const char fe_name[],MoFEM::F
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode DMMoFEMSNESSetFunction(DM dm,const char fe_name[],MoFEM::FEMethod *method,MoFEM::FEMethod *pre_only,MoFEM::FEMethod *post_only) {
+template<class S,class T>
+static PetscErrorCode DMMoFEMSNESSetFunction(DM dm,S fe_name,T method,T pre_only,T post_only) {
   PetscErrorCode ierr;
   PetscValidHeaderSpecific(dm,DM_CLASSID,1);
   PetscFunctionBegin;
   DMCtx *dm_field = (DMCtx*)dm->data;
-  if(pre_only!=NULL) {
+  if(pre_only) {
     dm_field->snesCtx->get_preProcess_to_do_Rhs().push_back(pre_only);
   }
-  if(method!=NULL) {
-    dm_field->snesCtx->get_loops_to_do_Rhs().push_back(KspCtx::loop_pair_type(fe_name,method));
+  if(method) {
+    dm_field->snesCtx->get_loops_to_do_Rhs().push_back(SnesCtx::loop_pair_type(fe_name,method));
   }
-  if(post_only!=NULL) {
+  if(post_only) {
     dm_field->snesCtx->get_postProcess_to_do_Rhs().push_back(post_only);
   }
   ierr = DMSNESSetFunction(dm,SnesRhs,dm_field->snesCtx); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode DMMoFEMSNESSetJacobian(DM dm,const char fe_name[],MoFEM::FEMethod *method,MoFEM::FEMethod *pre_only,MoFEM::FEMethod *post_only) {
+
+PetscErrorCode DMMoFEMSNESSetFunction(
+  DM dm,const char fe_name[],MoFEM::FEMethod *method,MoFEM::FEMethod *pre_only,MoFEM::FEMethod *post_only
+) {
+  return DMMoFEMSNESSetFunction<const char *,MoFEM::FEMethod*>(dm,fe_name,method,pre_only,post_only);
+}
+
+PetscErrorCode DMMoFEMSNESSetFunction(
+  DM dm,const std::string fe_name,
+  boost::shared_ptr<MoFEM::FEMethod> method,
+  boost::shared_ptr<MoFEM::FEMethod> pre_only,
+  boost::shared_ptr<MoFEM::FEMethod> post_only
+) {
+  return DMMoFEMSNESSetFunction<std::string,boost::shared_ptr<MoFEM::FEMethod> >(
+    dm,fe_name,method,pre_only,post_only
+  );
+}
+
+template<class S,class T>
+static PetscErrorCode DMMoFEMSNESSetJacobian(DM dm,S fe_name,T method,T pre_only,T post_only) {
   PetscErrorCode ierr;
   PetscValidHeaderSpecific(dm,DM_CLASSID,1);
   PetscFunctionBegin;
   DMCtx *dm_field = (DMCtx*)dm->data;
-  if(pre_only!=NULL) {
+  if(pre_only) {
     dm_field->snesCtx->get_preProcess_to_do_Mat().push_back(pre_only);
   }
-  if(method!=NULL) {
-    dm_field->snesCtx->get_loops_to_do_Mat().push_back(KspCtx::loop_pair_type(fe_name,method));
+  if(method) {
+    dm_field->snesCtx->get_loops_to_do_Mat().push_back(SnesCtx::loop_pair_type(fe_name,method));
   }
-  if(post_only!=NULL) {
+  if(post_only) {
     dm_field->snesCtx->get_postProcess_to_do_Mat().push_back(post_only);
   }
   ierr = DMSNESSetJacobian(dm,SnesMat,dm_field->snesCtx); CHKERRQ(ierr);
   PetscFunctionReturn(0);
+}
+
+PetscErrorCode DMMoFEMSNESSetJacobian(
+  DM dm,const char fe_name[],
+  MoFEM::FEMethod *method,
+  MoFEM::FEMethod *pre_only,
+  MoFEM::FEMethod *post_only
+) {
+  return DMMoFEMSNESSetJacobian<const char *,MoFEM::FEMethod*>(dm,fe_name,method,pre_only,post_only);
+}
+
+PetscErrorCode DMMoFEMSNESSetJacobian(
+  DM dm,std::string fe_name,
+  boost::shared_ptr<MoFEM::FEMethod> method,
+  boost::shared_ptr<MoFEM::FEMethod> pre_only,
+  boost::shared_ptr<MoFEM::FEMethod> post_only
+) {
+  return DMMoFEMSNESSetJacobian<std::string,boost::shared_ptr<MoFEM::FEMethod> >(
+    dm,fe_name,method,pre_only,post_only
+  );
 }
 
 PetscErrorCode DMMoFEMTSSetIFunction(DM dm,const char fe_name[],MoFEM::FEMethod *method,MoFEM::FEMethod *pre_only,MoFEM::FEMethod *post_only) {
@@ -547,7 +587,7 @@ PetscErrorCode DMMoFEMTSSetIFunction(DM dm,const char fe_name[],MoFEM::FEMethod 
     dm_field->tsCtx->get_preProcess_to_do_IFunction().push_back(pre_only);
   }
   if(method!=NULL) {
-    dm_field->tsCtx->get_loops_to_do_IFunction().push_back(KspCtx::loop_pair_type(fe_name,method));
+    dm_field->tsCtx->get_loops_to_do_IFunction().push_back(TsCtx::loop_pair_type(fe_name,method));
   }
   if(post_only!=NULL) {
     dm_field->tsCtx->get_postProcess_to_do_IFunction().push_back(post_only);
@@ -565,7 +605,7 @@ PetscErrorCode DMMoFEMTSSetIJacobian(DM dm,const char fe_name[],MoFEM::FEMethod 
     dm_field->tsCtx->get_preProcess_to_do_IJacobian().push_back(pre_only);
   }
   if(method!=NULL) {
-    dm_field->tsCtx->get_loops_to_do_IJacobian().push_back(KspCtx::loop_pair_type(fe_name,method));
+    dm_field->tsCtx->get_loops_to_do_IJacobian().push_back(TsCtx::loop_pair_type(fe_name,method));
   }
   if(post_only!=NULL) {
     dm_field->tsCtx->get_postProcess_to_do_IJacobian().push_back(post_only);
