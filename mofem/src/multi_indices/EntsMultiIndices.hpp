@@ -101,6 +101,10 @@ struct BasicEntity {
     const EntityHandle ent
   );
 
+  inline boost::shared_ptr<BasicEntityData> getBasicDataPtr() {
+    return basicDataPtr;
+  }
+
   /** \brief Get entity type
   */
   inline EntityType getEntType() const { return (EntityType)((ent&MB_TYPE_MASK)>>MB_ID_WIDTH); }
@@ -115,7 +119,15 @@ struct BasicEntity {
 
   /** \brief Get processor owning entity
     */
-  inline EntityHandle getOwnerProc() const { return owner_proc; }
+  inline int getOwnerProc() const { return owner_proc; }
+
+  /** \brief Owner handle on this or other processors
+    */
+  inline EntityHandle& getOwnerEnt() { return moab_owner_handle; }
+
+  /** \brief Get processor owning entity
+    */
+  inline int& getOwnerProc() { return owner_proc; }
 
   /** \brief get pstatus
     * This tag stores various aspects of parallel status in bits; see also
@@ -297,6 +309,9 @@ struct interface_RefEntity {
   interface_RefEntity(const interface_RefEntity<T> &interface):
   sPtr(interface.getRefEntityPtr()) {}
 
+  inline boost::shared_ptr<BasicEntityData> getBasicDataPtr() {
+    return this->sPtr->getBasicDataPtr();
+  }
 
   inline EntityHandle getRefEnt() const { return this->sPtr->getRefEnt(); }
 
@@ -318,7 +333,11 @@ struct interface_RefEntity {
 
   inline EntityHandle getOwnerEnt() const { return this->sPtr->getOwnerEnt(); }
 
-  inline EntityHandle getOwnerProc() const { return this->sPtr->getOwnerProc(); }
+  inline int getOwnerProc() const { return this->sPtr->getOwnerProc(); }
+
+  inline EntityHandle& getOwnerEnt() { return this->sPtr->getOwnerEnt(); }
+
+  inline int& getOwnerProc() { return this->sPtr->getOwnerProc(); }
 
   inline unsigned char getPStatus() const { return this->sPtr->getPStatus(); }
 
@@ -353,32 +372,35 @@ typedef multi_index_container<
   boost::shared_ptr<RefEntity>,
   indexed_by<
     hashed_unique<
-      tag<Ent_mi_tag>, member<RefEntity::BasicEntity,EntityHandle,&RefEntity::ent> >,
-    // hashed_non_unique<
-    //   tag<Ent_Owner_mi_tag>, member<RefEntity::BasicEntity,EntityHandle,&RefEntity::moab_owner_handle> >,
-    // ordered_non_unique<
-    //   tag<Proc_mi_tag>, member<RefEntity::BasicEntity,int,&RefEntity::owner_proc> >,
-    // ordered_non_unique<
-    //   tag<Ent_ParallelStatus>, const_mem_fun<RefEntity::BasicEntity,unsigned char,&RefEntity::getPStatus> >,
+      tag<Ent_mi_tag>, member<RefEntity::BasicEntity,EntityHandle,&RefEntity::ent>
+    >,
     ordered_non_unique<
-      tag<Ent_Ent_mi_tag>, const_mem_fun<RefEntity,EntityHandle,&RefEntity::getParentEnt> >,
+      tag<Ent_Ent_mi_tag>, const_mem_fun<RefEntity,EntityHandle,&RefEntity::getParentEnt>
+    >,
     ordered_non_unique<
-      tag<EntType_mi_tag>, const_mem_fun<RefEntity::BasicEntity,EntityType,&RefEntity::getEntType> >,
+      tag<EntType_mi_tag>, const_mem_fun<RefEntity::BasicEntity,EntityType,&RefEntity::getEntType>
+    >,
     ordered_non_unique<
-      tag<ParentEntType_mi_tag>, const_mem_fun<RefEntity,EntityType,&RefEntity::getParentEntType> >,
+      tag<ParentEntType_mi_tag>, const_mem_fun<RefEntity,EntityType,&RefEntity::getParentEntType>
+    >,
     ordered_non_unique<
       tag<Composite_EntType_and_ParentEntType_mi_tag>,
       composite_key<
       	RefEntity,
       	const_mem_fun<RefEntity::BasicEntity,EntityType,&RefEntity::getEntType>,
-      	const_mem_fun<RefEntity,EntityType,&RefEntity::getParentEntType> > >,
+      	const_mem_fun<RefEntity,EntityType,&RefEntity::getParentEntType>
+      >
+    >,
     ordered_non_unique<
       tag<Composite_ParentEnt_And_EntType_mi_tag>,
       composite_key<
       	RefEntity,
       	const_mem_fun<RefEntity,EntityHandle,&RefEntity::getParentEnt>,
-      	const_mem_fun<RefEntity::BasicEntity,EntityType,&RefEntity::getEntType> > >
-  > > RefEntity_multiIndex;
+      	const_mem_fun<RefEntity::BasicEntity,EntityType,&RefEntity::getEntType>
+      >
+    >
+  >
+> RefEntity_multiIndex;
 
 /** \brief multi-index view of RefEntity by parent entity
   \ingroup ent_multi_indices
@@ -387,14 +409,30 @@ typedef multi_index_container<
   boost::shared_ptr<RefEntity>,
   indexed_by<
     hashed_unique<
-      const_mem_fun<RefEntity,EntityHandle,&RefEntity::getParentEnt> >,
+      const_mem_fun<RefEntity,EntityHandle,&RefEntity::getParentEnt>
+    >,
     hashed_unique<
       tag<Composite_EntType_and_ParentEntType_mi_tag>,
-    composite_key<
-	    boost::shared_ptr<RefEntity>,
-	    const_mem_fun<RefEntity,EntityHandle,&RefEntity::getRefEnt>,
-	    const_mem_fun<RefEntity,EntityHandle,&RefEntity::getParentEnt> > >
-  > > RefEntity_multiIndex_view_by_parent_entity;
+      composite_key<
+	     boost::shared_ptr<RefEntity>,
+	     const_mem_fun<RefEntity,EntityHandle,&RefEntity::getRefEnt>,
+	     const_mem_fun<RefEntity,EntityHandle,&RefEntity::getParentEnt>
+      >
+    >
+  >
+> RefEntity_multiIndex_view_by_parent_entity;
+
+template<class T>
+struct Entity_update_pcomm_data {
+  ErrorCode rval;
+  Entity_update_pcomm_data() {
+  }
+  void operator()(boost::shared_ptr<T> &e) {
+    ParallelComm* pcomm = ParallelComm::get_pcomm(&e->getBasicDataPtr()->moab,MYPCOMM_INDEX);
+    if(pcomm == NULL) THROW_MESSAGE("pcomm is null");
+    rval = pcomm->get_owner_handle(e->getRefEnt(),e->getOwnerProc(),e->getOwnerEnt()); MOAB_THROW(rval);
+  }
+};
 
 /** \brief ref mofem entity, remove parent
  * \ingroup ent_multi_indices
