@@ -121,11 +121,14 @@ PetscErrorCode CreateRowComressedADJMatrix::buildFECol(
   }
   // if element is not part of problem
   if((ent_fe_ptr->getId()&p_miit->getBitFEId()).none()) PetscFunctionReturn(0);
+
+
+  BitRefLevel prb_bit = p_miit->getBitRefLevel();
+  BitRefLevel prb_mask = p_miit->getMaskBitRefLevel();
+  BitRefLevel fe_bit = ent_fe_ptr->getBitRefLevel();
   // if entity is not problem refinement level
-  if(
-    (ent_fe_ptr->getBitRefLevel()&p_miit->getBitRefLevel())!=
-    p_miit->getBitRefLevel()
-  ) PetscFunctionReturn(0);
+  if((fe_bit&prb_mask)!=fe_bit) PetscFunctionReturn(0);
+  if((fe_bit&prb_bit)!=prb_bit) PetscFunctionReturn(0);
 
   NumeredEntFiniteElement_multiIndex::iterator fe_it
   = p_miit->numeredFiniteElements.find(ent_fe_ptr->getGlobalUniqueId());
@@ -230,18 +233,16 @@ PetscErrorCode CreateRowComressedADJMatrix::getEntityAdjacenies(
         // if element is not part of problem
         continue;
       }
+
+      BitRefLevel prb_bit = p_miit->getBitRefLevel();
+      BitRefLevel prb_mask = p_miit->getMaskBitRefLevel();
+      BitRefLevel fe_bit = adj_miit->entFePtr->getBitRefLevel();
       // if entity is not problem refinement level
-      if(
-        (adj_miit->entFePtr->getBitRefLevel()&p_miit->getBitRefLevel())!=
-        p_miit->getBitRefLevel()
-      ) continue;
-      // if element is the same bit level what row entity is
-      if(
-        (adj_miit->entFePtr->getBitRefLevel()&mit_row->get()->getBitRefLevel()).none()
-      ) {
-        // if entity is not problem refinement level
-        continue;
-      }
+      if((fe_bit&prb_mask)!=fe_bit) continue;
+      if((fe_bit&prb_bit)!=prb_bit) continue;
+      BitRefLevel dof_bit = mit_row->get()->getBitRefLevel();
+      // if entity is not problem refinement level
+      if((fe_bit&dof_bit).none()) continue;
 
       boost::shared_ptr<NumeredEntFiniteElement> fe_ptr;
       // get element, if element is not in database build columns dofs
@@ -881,6 +882,7 @@ PetscErrorCode Core::partition_check_matrix_fill_in(const std::string &problem_n
           ss << "dof: " << (*rit)->getBitRefLevel() << std::endl;
           ss << "fe: " << numeredEntFiniteElementPtr->getBitRefLevel() << std::endl;
           ss << "problem: " << problemPtr->getBitRefLevel() << std::endl;
+          ss << "problem mask: " << problemPtr->getMaskBitRefLevel() << std::endl;
           PetscPrintf(mFieldPtr->get_comm(),"%s",ss.str().c_str());
           SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"adjacencies data inconsistency");
         } else {

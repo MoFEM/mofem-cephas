@@ -35,7 +35,9 @@ int main(int argc, char *argv[]) {
 
     PetscBool flg = PETSC_TRUE;
     char mesh_file_name[255];
-    ierr = PetscOptionsGetString(PETSC_NULL,"","-my_file",mesh_file_name,255,&flg); CHKERRQ(ierr);
+    ierr = PetscOptionsGetString(
+      PETSC_NULL,"","-my_file",mesh_file_name,255,&flg
+    ); CHKERRQ(ierr);
     if(flg != PETSC_TRUE) {
       SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_file (MESH FILE NEEDED)");
     }
@@ -70,12 +72,22 @@ int main(int argc, char *argv[]) {
 
     // get surface entities
     Range surface;
-    ierr = meshset_manager->getEntitiesByDimension(1,SIDESET,2,surface,true); CHKERRQ(ierr);
+    if(meshset_manager->checkMeshset(200,SIDESET)) {
+      ierr = meshset_manager->getEntitiesByDimension(200,SIDESET,2,surface,true); CHKERRQ(ierr);
+    }
+    if(surface.empty()) {
+      ierr = meshset_manager->getEntitiesByDimension(1,SIDESET,2,surface,true); CHKERRQ(ierr);
+    }
     // get volume entities
     Range tets;
     ierr = moab.get_entities_by_dimension(0,3,tets,false); CHKERRQ(ierr);
     // set mesh cutter entities
-    ierr = cut_mesh->setSurface(surface); CHKERRQ(ierr);
+    if(meshset_manager->checkMeshset(200,SIDESET)) {
+      double shift[] = {1,1,0};
+      ierr = cut_mesh->copySurface(surface,NULL,shift); CHKERRQ(ierr);
+    } else {
+      ierr = cut_mesh->setSurface(surface); CHKERRQ(ierr);
+    }
     ierr = cut_mesh->setVolume(tets); CHKERRQ(ierr);
     // build tree
     ierr = cut_mesh->buildTree(); CHKERRQ(ierr);
@@ -98,10 +110,10 @@ int main(int argc, char *argv[]) {
     rval = moab.tag_set_data(th,nodes,&coords[0]); CHKERRQ_MOAB(rval);
 
     // // find edges to cut
-    ierr = cut_mesh->findEdgesToCut(); CHKERRQ(ierr);
+    ierr = cut_mesh->findEdgesToCut(1e-2); CHKERRQ(ierr);
     ierr = cut_mesh->cutEdgesInMiddle(bit_level1); CHKERRQ(ierr);
     ierr = cut_mesh->moveMidNodesOnCutEdges(th); CHKERRQ(ierr);
-    ierr = cut_mesh->findEdgesToTrim(th); CHKERRQ(ierr);
+    ierr = cut_mesh->findEdgesToTrim(th,1e-4); CHKERRQ(ierr);
     ierr = cut_mesh->trimEdgesInTheMiddle(bit_level2); CHKERRQ(ierr);
     ierr = cut_mesh->moveMidNodesOnTrimedEdges(th); CHKERRQ(ierr);
 
@@ -150,24 +162,9 @@ int main(int argc, char *argv[]) {
     rval = moab.add_entities(meshset_trim_new_surface,cut_mesh->getNewTrimSurfaces()); CHKERRQ_MOAB(rval);
     rval = moab.write_file("out_trim_new_surface.vtk","VTK","",&meshset_trim_new_surface,1); CHKERRQ_MOAB(rval);
 
-    // PrismInterface *interface;
-    // ierr = m_field.query_interface(interface); CHKERRQ(ierr);
-    //
-    // EntityHandle meshset_level2;
-    // rval = moab.create_meshset(MESHSET_SET,meshset_level2); CHKERRQ_MOAB(rval);
-    // Range tets_level2;
-    // ierr = m_field.get_entities_by_type_and_ref_level(
-    //   bit_level2,BitRefLevel().set(),MBTET,meshset_level2
-    // ); CHKERRQ(ierr);
-    //
-    // ierr = interface->getSides(meshset_trim_new_surface,bit_level2,true,4); CHKERRQ(ierr);
-    // BitRefLevel bit_level3;
-    // bit_level3.set(3);
-    // ierr = interface->splitSides(meshset_level2,bit_level3,meshset_trim_new_surface,true,true,0); CHKERRQ(ierr);
-
     BitRefLevel bit_level3;
     bit_level3.set(3);
-    ierr = cut_mesh->splitTrimSides(bit_level2,bit_level3); CHKERRQ(ierr);
+    ierr = cut_mesh->splitTrimSides(bit_level2,bit_level3,th); CHKERRQ(ierr);
 
     Range tets_level3;
     ierr = m_field.get_entities_by_type_and_ref_level(

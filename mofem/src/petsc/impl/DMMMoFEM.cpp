@@ -151,7 +151,11 @@ PetscErrorCode DMDestroy_MoFEM(DM dm) {
 }
 
 PetscErrorCode DMMoFEMCreateMoFEM(
-  DM dm,MoFEM::Interface *m_field_ptr,const char problem_name[],const MoFEM::BitRefLevel &bit_level
+  DM dm,
+  MoFEM::Interface *m_field_ptr,
+  const char problem_name[],
+  const MoFEM::BitRefLevel bit_level,
+  const MoFEM::BitRefLevel bit_mask
 ) {
   PetscErrorCode ierr;
   PetscFunctionBegin;
@@ -174,8 +178,11 @@ PetscErrorCode DMMoFEMCreateMoFEM(
     dm_field->destroyProblem = PETSC_FALSE;
   }
   ierr = dm_field->mField_ptr->modify_problem_ref_level_add_bit(
-    dm_field->problemName,bit_level); CHKERRQ(ierr
-  );
+    dm_field->problemName,bit_level
+  ); CHKERRQ(ierr);
+  ierr = dm_field->mField_ptr->modify_problem_mask_ref_level_set_bit(
+    dm_field->problemName,bit_mask
+  ); CHKERRQ(ierr);
   dm_field->kspCtx = new KspCtx(*m_field_ptr,problem_name);
   dm_field->snesCtx = new SnesCtx(*m_field_ptr,problem_name);
   dm_field->tsCtx = new TsCtx(*m_field_ptr,problem_name);

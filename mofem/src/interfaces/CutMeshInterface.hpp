@@ -44,6 +44,19 @@ namespace MoFEM {
     PetscErrorCode setSurface(const Range &surface);
 
     /**
+     * \brief copy surface entities
+     * @param  surface entities which going to be added
+     * @return         error code
+     */
+    PetscErrorCode copySurface(
+      const Range &surface,
+      Tag th = NULL,
+      double *shift = NULL,
+      double *origin = NULL,
+      double *transform = NULL
+    );
+
+    /**
      * \brief set volume entities
      * @param  volume entities which going to be added
      * @return         error code
@@ -75,7 +88,7 @@ namespace MoFEM {
      * @param  verb verbosity level
      * @return      error code
      */
-    PetscErrorCode findEdgesToCut(int verb = 0);
+    PetscErrorCode findEdgesToCut(const double low_tol = 0,int verb = 0);
 
     /**
      * \brief cut edges
@@ -105,7 +118,7 @@ namespace MoFEM {
      * @param  verb verbosity level
      * @return      error code
      */
-    PetscErrorCode findEdgesToTrim(Tag th = NULL,int verb = 0);
+    PetscErrorCode findEdgesToTrim(Tag th = NULL,const double tol = 1e-4,int verb = 0);
 
     PetscErrorCode trimEdgesInTheMiddle(const BitRefLevel bit);
 
@@ -125,7 +138,8 @@ namespace MoFEM {
     PetscErrorCode splitSides(
       const BitRefLevel split_bit,
       const BitRefLevel bit,
-      const Range &ents
+      const Range &ents,
+      Tag th = NULL
     );
 
     /**
@@ -136,10 +150,11 @@ namespace MoFEM {
      */
     PetscErrorCode splitTrimSides(
       const BitRefLevel split_bit,
-      const BitRefLevel bit
+      const BitRefLevel bit,
+      Tag th = NULL
     );
 
-    
+
 
 
     // PetscErrorCode findTetOnTheFront(int verb = 0);
@@ -151,6 +166,7 @@ namespace MoFEM {
     // );
     // #endif //WITH_TETGEN
 
+    inline const Range& getVerticesOnSurface() const { return verticesOnSurface; }
     inline const Range& getCutEdges() const { return cutEdges; }
     inline const Range& getCutVolumes() const { return cutVolumes; }
     inline const Range& getNewCutVolumes() const { return cutNewVolumes; }

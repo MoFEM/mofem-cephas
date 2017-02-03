@@ -36,7 +36,8 @@ PetscErrorCode DMMoFEMCreateMoFEM(
   DM dm,
   MoFEM::Interface *m_field_ptr,
   const char problem_name[],
-  const MoFEM::BitRefLevel &bit_level
+  const MoFEM::BitRefLevel bit_level,
+  const MoFEM::BitRefLevel bit_maks = MoFEM::BitRefLevel().set()
 );
 
 /**

@@ -95,7 +95,7 @@ struct MoFEMProblem {
   DofIdx* tag_ghost_nbdof_data_col;
   BitFEId* tag_BitFEId_data;
   BitRefLevel* tag_BitRefLevel;
-  BitRefLevel* tag_BitRefLevel_DofMask;
+  BitRefLevel* tag_MaskBitRefLevel;
 
   mutable boost::shared_ptr<NumeredDofEntity_multiIndex> numered_dofs_rows; // FIXME name convention
   mutable boost::shared_ptr<NumeredDofEntity_multiIndex> numered_dofs_cols; // FIXME name convention
@@ -603,8 +603,8 @@ struct MoFEMProblem {
   inline DofIdx getNbGhostDofsCol() const { return *((DofIdx*)tag_ghost_nbdof_data_col); }
 
   inline BitRefLevel getBitRefLevel() const { return *tag_BitRefLevel; }
+  inline BitRefLevel getMaskBitRefLevel() const { return *tag_MaskBitRefLevel; }
 
-  inline BitRefLevel get_DofMask_BitRefLevel() const { return *tag_BitRefLevel_DofMask; }
   PetscErrorCode getRowDofsByPetscGlobalDofIdx(DofIdx idx,const NumeredDofEntity **dof_ptr) const;
   PetscErrorCode getColDofsByPetscGlobalDofIdx(DofIdx idx,const NumeredDofEntity **dof_ptr) const;
 
@@ -774,7 +774,7 @@ struct ProblemChangeRefLevelBitSet {
 struct ProblemChangeRefLevelBitDofMaskSet {
   BitRefLevel bit;
   ProblemChangeRefLevelBitDofMaskSet(const BitRefLevel _bit): bit(_bit) {};
-  void operator()(MoFEMProblem &p) { *(p.tag_BitRefLevel_DofMask) = bit; };
+  void operator()(MoFEMProblem &p) { *(p.tag_MaskBitRefLevel) = bit; };
 };
 
 /** \brief add finite element to problem
