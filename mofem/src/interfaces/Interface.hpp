@@ -1240,7 +1240,7 @@ struct Interface: public UnknownInterface {
    * \ingroup mofem_problems
    *
    */
-  virtual PetscErrorCode modify_problem_dof_mask_ref_level_set_bit(const std::string &name_problem,const BitRefLevel &bit) = 0;
+  virtual PetscErrorCode modify_problem_mask_ref_level_set_bit(const std::string &name_problem,const BitRefLevel &bit) = 0;
 
   /** \brief list problems
    * \ingroup mofem_problems

@@ -423,7 +423,7 @@ struct Core: public Interface {
   PetscErrorCode modify_problem_unset_finite_element(const std::string &name_problem,const std::string &MoFEMFiniteElement_name);
   PetscErrorCode modify_problem_ref_level_add_bit(const std::string &name_problem,const BitRefLevel &bit);
   PetscErrorCode modify_problem_ref_level_set_bit(const std::string &name_problem,const BitRefLevel &bit);
-  PetscErrorCode modify_problem_dof_mask_ref_level_set_bit(const std::string &name_problem,const BitRefLevel &bit);
+  PetscErrorCode modify_problem_mask_ref_level_set_bit(const std::string &name_problem,const BitRefLevel &bit);
   BitProblemId get_BitProblemId(const std::string& name) const;
   PetscErrorCode list_problem() const;
   PetscErrorCode clear_problem(const std::string &name,int verb = -1);

@@ -328,9 +328,6 @@ namespace MoFEM {
     if(problem_ptr->getBitRefLevel().none()) {
       SETERRQ1(PETSC_COMM_SELF,1,"problem <%s> refinement level not set",problem_ptr->getName().c_str());
     }
-    if(problem_ptr->getBitRefLevel().none()) {
-      SETERRQ1(PETSC_COMM_SELF,1,"problem <%s> refinement level not set",problem_ptr->getName().c_str());
-    }
     ierr = m_field.clear_problem(problem_ptr->getName()); CHKERRQ(ierr);
     ierr = m_field.get_ents_finite_elements(&fe_ent_ptr); CHKERRQ(ierr);
     ierr = m_field.get_dofs(&dofs_field_ptr); CHKERRQ(ierr);
@@ -346,16 +343,16 @@ namespace MoFEM {
       for(;miit!=hi_miit;miit++) {
         //if element is in problem
         if(((*miit)->getId()&problem_ptr->getBitFEId()).any()) {
-          //if finite element bit level has all refined bits sets
-          if(
-            ((*miit)->getBitRefLevel()&problem_ptr->getBitRefLevel()) ==
-            problem_ptr->getBitRefLevel()
-          ) {
-            //get dof uids for rows and columns
-            ierr = (*miit)->getRowDofView(*dofs_field_ptr,dofs_rows); CHKERRQ(ierr);
-            if(!square_matrix) {
-              ierr = (*miit)->getColDofView(*dofs_field_ptr,dofs_cols); CHKERRQ(ierr);
-            }
+          BitRefLevel prb_bit = problem_ptr->getBitRefLevel();
+          BitRefLevel prb_mask = problem_ptr->getMaskBitRefLevel();
+          BitRefLevel fe_bit = (*miit)->getBitRefLevel();
+          // if entity is not problem refinement level
+          if((fe_bit&prb_mask)!=fe_bit) continue;
+          if((fe_bit&prb_bit)!=prb_bit) continue;
+          //get dof uids for rows and columns
+          ierr = (*miit)->getRowDofView(*dofs_field_ptr,dofs_rows); CHKERRQ(ierr);
+          if(!square_matrix) {
+            ierr = (*miit)->getColDofView(*dofs_field_ptr,dofs_cols); CHKERRQ(ierr);
           }
         }
       }
@@ -375,11 +372,7 @@ namespace MoFEM {
       int count_dofs = 0;
       miit = dofs_rows.get<0>().begin();
       for(;miit!=hi_miit;miit++) {
-        if(
-          !(*miit)->getActive()||
-          ((*miit)->getBitRefLevel()&problem_ptr->get_DofMask_BitRefLevel())!=
-          (*miit)->getBitRefLevel()
-        ) {
+        if(!(*miit)->getActive()) {
           continue;
         }
         ++count_dofs;
@@ -393,11 +386,7 @@ namespace MoFEM {
       dofs_shared_array.reserve(count_dofs);
       miit = dofs_rows.get<0>().begin();
       for(;miit!=hi_miit;miit++) {
-        if(
-          !(*miit)->getActive()||
-          ((*miit)->getBitRefLevel()&problem_ptr->get_DofMask_BitRefLevel())!=
-          (*miit)->getBitRefLevel()
-        ) {
+        if(!(*miit)->getActive()) {
           continue;
         }
         dofs_array->push_back(NumeredDofEntity(*miit));
@@ -423,11 +412,7 @@ namespace MoFEM {
       int count_dofs = 0;
       miit = dofs_cols.get<0>().begin();
       for(;miit!=hi_miit;miit++) {
-        if(
-          !(*miit)->getActive()||
-          ((*miit)->getBitRefLevel()&problem_ptr->get_DofMask_BitRefLevel())!=
-          (*miit)->getBitRefLevel()
-        ) {
+        if(!(*miit)->getActive()) {
           continue;
         }
         count_dofs++;
@@ -441,11 +426,7 @@ namespace MoFEM {
       dofs_shared_array.reserve(count_dofs);
       miit = dofs_cols.get<0>().begin();
       for(;miit!=hi_miit;miit++) {
-        if(
-          !(*miit)->getActive()||
-          ((*miit)->getBitRefLevel()&problem_ptr->get_DofMask_BitRefLevel())!=
-          (*miit)->getBitRefLevel()
-        ) {
+        if(!(*miit)->getActive()) {
           continue;
         }
         dofs_array->push_back(NumeredDofEntity(*miit));
@@ -568,20 +549,23 @@ namespace MoFEM {
       for(;fe_miit!=hi_fe_miit;fe_miit++) {
         //if element is in problem
         if(((*fe_miit)->getId()&problem_ptr->getBitFEId()).any()) {
-          //if finite element bit level has all refined bits sets
-          if(((*fe_miit)->getBitRefLevel()&problem_ptr->getBitRefLevel())==problem_ptr->getBitRefLevel()) {
-            //get dof uids for rows and columns
-            ierr = (*fe_miit)->getRowDofView(*dofs_field_ptr,dofs_rows); CHKERRQ(ierr);
-            if(!square_matrix) {
-              ierr = (*fe_miit)->getColDofView(*dofs_field_ptr,dofs_cols); CHKERRQ(ierr);
-            }
+
+          BitRefLevel prb_bit = problem_ptr->getBitRefLevel();
+          BitRefLevel prb_mask = problem_ptr->getMaskBitRefLevel();
+          BitRefLevel fe_bit = (*fe_miit)->getBitRefLevel();
+          // if entity is not problem refinement level
+          if((fe_bit&prb_mask)!=fe_bit) continue;
+          if((fe_bit&prb_bit)!=prb_bit) continue;
+
+          //get dof uids for rows and columns
+          ierr = (*fe_miit)->getRowDofView(*dofs_field_ptr,dofs_rows); CHKERRQ(ierr);
+          if(!square_matrix) {
+            ierr = (*fe_miit)->getColDofView(*dofs_field_ptr,dofs_cols); CHKERRQ(ierr);
           }
+
         }
       }
     }
-
-    // get problem bit level
-    const BitRefLevel &problem_bit_level = problem_ptr->get_DofMask_BitRefLevel();
 
     //add dofs for rows and cols and set ownership
     DofEntity_multiIndex_active_view* dofs_ptr[] = { &dofs_rows, &dofs_cols };
@@ -611,10 +595,6 @@ namespace MoFEM {
       miit = dofs_ptr[ss]->get<1>().lower_bound(1);
       hi_miit = dofs_ptr[ss]->get<1>().upper_bound(1);
       for(;miit!=hi_miit;miit++) {
-        const BitRefLevel &dof_bit_level = (*miit)->getBitRefLevel();
-        if((dof_bit_level&problem_bit_level)!=dof_bit_level) {
-          continue;
-        }
         int owner_proc = (*miit)->getOwnerProc();
         if(owner_proc == m_field.getCommRank()) {
           nb_local_dofs[ss]++;
@@ -674,10 +654,6 @@ namespace MoFEM {
       for(;miit!=hi_miit;miit++) {
         // Only set global idx for dofs on this processor part
         if(!(miit->get()->getActive())) continue;
-        const BitRefLevel &dof_bit_level = (*miit)->getBitRefLevel();
-        if((dof_bit_level&problem_bit_level)!=dof_bit_level) {
-          continue;
-        }
         ++nb_dofs_to_add;
       }
       dofs_array->reserve(nb_dofs_to_add);
@@ -695,10 +671,6 @@ namespace MoFEM {
 
         // Only set global idx for dofs on this processor part
         if(!(miit->get()->getActive())) continue;
-        const BitRefLevel &dof_bit_level = (*miit)->getBitRefLevel();
-        if((dof_bit_level&problem_bit_level)!=dof_bit_level) {
-          continue;
-        }
 
         dofs_array->push_back(NumeredDofEntity(*miit));
         dofs_shared_array.push_back(
@@ -2239,8 +2211,14 @@ namespace MoFEM {
 
       // if element is not part of problem
       if(((*efit)->getId()&p_miit->getBitFEId()).none()) continue;
+
+      BitRefLevel prb_bit = p_miit->getBitRefLevel();
+      BitRefLevel prb_mask = p_miit->getMaskBitRefLevel();
+      BitRefLevel fe_bit = (*efit)->getBitRefLevel();
       // if entity is not problem refinement level
-      if(((*efit)->getBitRefLevel()&p_miit->getBitRefLevel())!=p_miit->getBitRefLevel()) continue;
+      if((fe_bit&prb_mask)!=fe_bit) continue;
+      if((fe_bit&prb_bit)!=prb_bit) continue;
+
       // create element
       boost::shared_ptr<NumeredEntFiniteElement> numered_fe(new NumeredEntFiniteElement(*efit));
 

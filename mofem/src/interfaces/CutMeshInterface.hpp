@@ -44,6 +44,19 @@ namespace MoFEM {
     PetscErrorCode setSurface(const Range &surface);
 
     /**
+     * \brief copy surface entities
+     * @param  surface entities which going to be added
+     * @return         error code
+     */
+    PetscErrorCode copySurface(
+      const Range &surface,
+      Tag th = NULL,
+      double *shift = NULL,
+      double *origin = NULL,
+      double *transform = NULL
+    );
+
+    /**
      * \brief set volume entities
      * @param  volume entities which going to be added
      * @return         error code
@@ -125,7 +138,8 @@ namespace MoFEM {
     PetscErrorCode splitSides(
       const BitRefLevel split_bit,
       const BitRefLevel bit,
-      const Range &ents
+      const Range &ents,
+      Tag th = NULL
     );
 
     /**
@@ -136,7 +150,8 @@ namespace MoFEM {
      */
     PetscErrorCode splitTrimSides(
       const BitRefLevel split_bit,
-      const BitRefLevel bit
+      const BitRefLevel bit,
+      Tag th = NULL
     );
 
 
@@ -151,6 +166,7 @@ namespace MoFEM {
     // );
     // #endif //WITH_TETGEN
 
+    inline const Range& getVerticesOnSurface() const { return verticesOnSurface; }
     inline const Range& getCutEdges() const { return cutEdges; }
     inline const Range& getCutVolumes() const { return cutVolumes; }
     inline const Range& getNewCutVolumes() const { return cutNewVolumes; }
