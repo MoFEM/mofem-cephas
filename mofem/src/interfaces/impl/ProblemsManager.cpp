@@ -212,9 +212,12 @@ namespace MoFEM {
         rval = m_field.get_moab().get_entities_by_type_and_tag(
           0,MBENTITYSET,&part_tag,NULL,1,tagged_sets,moab::Interface::UNION
         ); CHKERRQ_MOAB(rval);
+        // if(!tagged_sets.empty()) {
+        //   rval = m_field.get_moab().delete_entities(tagged_sets); CHKERR_MOAB(rval);
+        //   tagged_sets.clear();
+        // }
         if(!tagged_sets.empty()) {
           rval = m_field.get_moab().tag_delete_data(part_tag,tagged_sets); CHKERRQ_MOAB(rval);
-          // rval = moab.delete_entities(tagged_sets); CHKERRQ_MOAB(rval);
         }
         if(n_parts > (int) tagged_sets.size()) {
           // too few partition sets - create missing ones
@@ -237,9 +240,7 @@ namespace MoFEM {
         std::vector<int> dum_ids(n_parts);
         for(int i = 0;i<n_parts;i++) dum_ids[i] = i;
         rval = m_field.get_moab().tag_set_data(part_tag,tagged_sets,&*dum_ids.begin()); CHKERR_MOAB(rval);
-        // for(int i = 0;i<n_parts;i++) {
-        //   rval = m_field.get_moab().add_entities(tagged_sets[i],parts_ents[i]); CHKERR_MOAB(rval);
-        // }
+        rval = m_field.get_moab().clear_meshset(tagged_sets); CHKERRQ_MOAB(rval);
 
         // get lower dimension entities on each part
         for(int pp = 0;pp!=n_parts;pp++) {
@@ -264,9 +265,27 @@ namespace MoFEM {
             // std::cerr << " " << parts_ents[pp].size() << std::endl;
           }
         }
+        if(verb>1) {
+          for(int rr = 0;rr!=m_field.getCommSize();rr++) {
+            ostringstream ss;
+            ss << "out_part_" << rr << ".vtk";
+            EntityHandle meshset;
+            rval = m_field.get_moab().create_meshset(MESHSET_SET,meshset); CHKERRQ_MOAB(rval);
+            rval = m_field.get_moab().add_entities(meshset,parts_ents[rr]); CHKERRQ_MOAB(rval);
+            rval = m_field.get_moab().write_file(ss.str().c_str(),"VTK","",&meshset,1); CHKERRQ_MOAB(rval);
+            rval = m_field.get_moab().delete_entities(&meshset,1); CHKERRQ_MOAB(rval);
+          }
+        }
         for(int pp = 0;pp!=n_parts;pp++) {
           rval = m_field.get_moab().add_entities(tagged_sets[pp],parts_ents[pp]); CHKERR_MOAB(rval);
         }
+        for(int rr = 0;rr!=m_field.getCommSize();rr++) {
+          ostringstream ss;
+          ss << "out_part_meshsets_" << rr << ".vtk";
+          EntityHandle meshset = tagged_sets[rr];
+          rval = m_field.get_moab().write_file(ss.str().c_str(),"VTK","",&meshset,1); CHKERRQ_MOAB(rval);
+        }
+
 
         // set gid to lower dimension entities
         for(int dd = 0;dd<=dim;dd++) {
