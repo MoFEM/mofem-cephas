@@ -399,7 +399,7 @@ namespace MoFEM {
 
       boost::shared_ptr<std::vector<NumeredDofEntity> > dofs_array =
       boost::shared_ptr<std::vector<NumeredDofEntity> >(new std::vector<NumeredDofEntity>());
-      problem_ptr->getRowDofsSeqence() = dofs_array;
+      problem_ptr->getRowDofsSeqence()->push_back(dofs_array);
       dofs_array->reserve(count_dofs);
       std::vector<boost::shared_ptr<NumeredDofEntity> > dofs_shared_array;
       dofs_shared_array.reserve(count_dofs);
@@ -439,7 +439,7 @@ namespace MoFEM {
 
       boost::shared_ptr<std::vector<NumeredDofEntity> > dofs_array =
       boost::shared_ptr<std::vector<NumeredDofEntity> >(new std::vector<NumeredDofEntity>());
-      problem_ptr->getColDofsSeqence() = dofs_array;
+      problem_ptr->getColDofsSeqence()->push_back(dofs_array);
       dofs_array->reserve(count_dofs);
       std::vector<boost::shared_ptr<NumeredDofEntity> > dofs_shared_array;
       dofs_shared_array.reserve(count_dofs);
@@ -679,9 +679,9 @@ namespace MoFEM {
       dofs_shared_array.clear();
       dofs_shared_array.reserve(nb_dofs_to_add);
       if(ss == 0) {
-        problem_ptr->getRowDofsSeqence() = dofs_array;
+        problem_ptr->getRowDofsSeqence()->push_back(dofs_array);
       } else {
-        problem_ptr->getColDofsSeqence() = dofs_array;
+        problem_ptr->getColDofsSeqence()->push_back(dofs_array);
       }
 
       int &local_idx = *local_nbdof_ptr[ss];
@@ -939,18 +939,33 @@ namespace MoFEM {
             // Dof is shared to this processor, however there is no element which
             // have this dof
             // continue;
-            // DofEntity_multiIndex::iterator ddit = dofsField.find(uid);
-            // if(ddit!=dofsField.end()) {
-            //   std::cerr << **ddit << std::endl;
-            // } else {
-            //   std::ostringstream zz;
-            //   zz << uid << std::endl;
-            //   SETERRQ1(
-            //     PETSC_COMM_SELF,
-            //     MOFEM_OPERATION_UNSUCCESSFUL,
-            //     "no such dof %s in mofem database",zz.str().c_str()
-            //   );
-            // }
+            const DofEntity_multiIndex *dofs_ptr;
+            ierr = m_field.get_dofs(&dofs_ptr); CHKERRQ(ierr);
+            DofEntity_multiIndex::iterator ddit = dofs_ptr->find(uid);
+            if(ddit!=dofs_ptr->end()) {
+              unsigned char pstatus = ddit->get()->getPStatus();
+              if(pstatus>0) {
+                continue;
+              } else {
+                std::ostringstream zz;
+                zz << **ddit << std::endl;
+                SETERRQ1(
+                  PETSC_COMM_SELF,
+                  MOFEM_OPERATION_UNSUCCESSFUL,
+                  "data inconsistency, dofs is not shared, but received from other proc\n"
+                  "%s",zz.str().c_str()
+                );
+
+              }
+            } else {
+              std::ostringstream zz;
+              zz << uid << std::endl;
+              SETERRQ1(
+                PETSC_COMM_SELF,
+                MOFEM_OPERATION_UNSUCCESSFUL,
+                "no such dof %s in mofem database",zz.str().c_str()
+              );
+            }
             std::ostringstream zz;
             zz << uid << std::endl;
             SETERRQ1(
@@ -1115,9 +1130,9 @@ namespace MoFEM {
         boost::shared_ptr<std::vector<NumeredDofEntity> >(new std::vector<NumeredDofEntity>());
 
         if(ss == 0) {
-          out_problem_it->getRowDofsSeqence() = dofs_array;
+          out_problem_it->getRowDofsSeqence()->push_back(dofs_array);
         } else {
-          out_problem_it->getColDofsSeqence() = dofs_array;
+          out_problem_it->getColDofsSeqence()->push_back(dofs_array);
         }
         dofs_array->reserve(std::distance(dit,hi_dit));
 
@@ -1348,7 +1363,7 @@ namespace MoFEM {
           nb_dofs_reserve[ss] += add_prb_ptr[ss]->back()->numered_dofs_rows->size();
         } else {
           *nb_dofs[ss] += add_prb_ptr[ss]->back()->getNbDofsCol();
-          *nb_local_dofs[ss] += add_prb_ptr[ss]->back()->getNbLocalDofsRow();
+          *nb_local_dofs[ss] += add_prb_ptr[ss]->back()->getNbLocalDofsCol();
           nb_dofs_reserve[ss] += add_prb_ptr[ss]->back()->numered_dofs_cols->size();
         }
       }
@@ -1368,10 +1383,10 @@ namespace MoFEM {
       dofs_array[ss] = boost::make_shared<std::vector<NumeredDofEntity> >();
       dofs_array[ss]->reserve(nb_dofs_reserve[ss]);
       if(ss==0) {
-        out_problem_it->getRowDofsSeqence() = dofs_array[ss];
+        out_problem_it->getRowDofsSeqence()->push_back(dofs_array[ss]);
       }
-      if(ss==0) {
-        out_problem_it->getColDofsSeqence() = dofs_array[ss];
+      if(ss==1) {
+        out_problem_it->getColDofsSeqence()->push_back(dofs_array[ss]);
       }
     }
 
@@ -1393,19 +1408,20 @@ namespace MoFEM {
         }
         int is_nb = 0;
         for(;dit!=hi_dit;dit++) {
-          // cerr << **dit << endl;d
+          // cerr << **dit << endl;
+          const int rank = m_field.getCommRank();
+          const int part = dit->get()->getPart();
           const int glob_idx = shift_glob+dit->get()->getPetscGlobalDofIdx();
-          const int loc_idx =
-          (dit->get()->getPart()==m_field.getCommRank())?(shift_loc+dit->get()->getPetscLocalDofIdx()):-1;
+          const int loc_idx = (part==rank)?(shift_loc+dit->get()->getPetscLocalDofIdx()):-1;
           // if(m_field.getCommRank()==1) {
           //   cerr << dit->get()->getPart() << " " << loc_idx << endl;
           // }
           dofs_array[ss]->push_back(
             NumeredDofEntity(
-              dit->get()->getDofEntityPtr(),glob_idx,glob_idx,loc_idx,dit->get()->getPart()
+              dit->get()->getDofEntityPtr(),glob_idx,glob_idx,loc_idx,part
             )
           );
-          if(dit->get()->getPart()==m_field.getCommRank()) {
+          if(part==rank) {
             dofs_out_idx_ptr[is_nb++] = glob_idx;
           }
         }
@@ -1456,11 +1472,17 @@ namespace MoFEM {
       }
     }
 
+    // PetscSynchronizedPrintf(m_field.get_comm(),"nb local dofs %d\n",*nb_local_dofs[0]);
+    // PetscSynchronizedFlush(m_field.get_comm(),PETSC_STDOUT);
+
     // Compress DOFs
+    *nb_dofs[0] = 0;
+    *nb_dofs[1] = 0;
+    *nb_local_dofs[0] = 0;
+    *nb_local_dofs[1] = 0;
     for(int ss = 0;ss!=((square_matrix)?1:2);ss++) {
       // if(ss == 0 && !enumerate_row) continue;
       // if(ss == 1 && !enumerate_col) continue;
-      *nb_local_dofs[ss] = 0;
       boost::shared_ptr<NumeredDofEntity_multiIndex> dofs_ptr;
       NumeredDofEntity_multiIndex::index<PetscGlobalIdx_mi_tag>::type::iterator dit,hi_dit;
       if(ss == 0) {
@@ -1484,12 +1506,30 @@ namespace MoFEM {
             );
           }
           idx.push_back(dit->get()->getPetscGlobalDofIdx());
+        } else {
+          if(dit->get()->getPetscLocalDofIdx()!=-1) {
+            SETERRQ(
+              m_field.get_comm(),MOFEM_DATA_INCONSISTENCY,"local index should be negative"
+            );
+          }
         }
+      }
+      if(square_matrix) {
+        *nb_local_dofs[1] = *nb_local_dofs[0];
       }
       IS is;
       ierr = ISCreateGeneral(
         m_field.get_comm(),idx.size(),&*idx.begin(),PETSC_USE_POINTER,&is
       ); CHKERRQ(ierr);
+      ierr = ISGetSize(is,nb_dofs[ss]); CHKERRQ(ierr);
+      if(square_matrix) {
+        *nb_dofs[1] = *nb_dofs[0];
+      }
+      // {
+      //   PetscSynchronizedPrintf(m_field.get_comm(),"nb dofs %d %d %d\n",*nb_local_dofs[0],idx.size(),*nb_dofs[0]);
+      //   PetscSynchronizedFlush(m_field.get_comm(),PETSC_STDOUT);
+      // }
+
       AO ao;
       ierr = AOCreateMappingIS(is,PETSC_NULL,&ao); CHKERRQ(ierr);
       for(int pp = 0;pp!=(*add_prb_is[ss]).size();pp++) {
@@ -1529,7 +1569,6 @@ namespace MoFEM {
       }
       ierr = ISDestroy(&is); CHKERRQ(ierr);
       ierr = AODestroy(&ao); CHKERRQ(ierr);
-
     }
 
     ierr = printPartitionedProblem(&*out_problem_it,verb); CHKERRQ(ierr);
@@ -2137,7 +2176,9 @@ namespace MoFEM {
           } else {
             if((*dit)->getPetscGlobalDofIdx()<0) {
               std::ostringstream zz;
-              zz << "rank " << m_field.getCommRank() << " " << **dit;
+              zz << "rank " << m_field.getCommRank()
+              << " " << dit->get()->getBitRefLevel()
+              << " " << **dit;
               SETERRQ2(
                 PETSC_COMM_SELF,
                 MOFEM_IMPOSIBLE_CASE,
@@ -2147,7 +2188,9 @@ namespace MoFEM {
             }
             if((*dit)->getPetscGlobalDofIdx()>=*nbdof_ptr[ss]) {
               std::ostringstream zz;
-              zz << "rank " << m_field.getCommRank() << " " << **dit;
+              zz << "rank " << m_field.getCommRank()
+              << " nb_dofs " << *nbdof_ptr[ss]
+              << " " << **dit;
               SETERRQ2(
                 PETSC_COMM_SELF,
                 MOFEM_IMPOSIBLE_CASE,

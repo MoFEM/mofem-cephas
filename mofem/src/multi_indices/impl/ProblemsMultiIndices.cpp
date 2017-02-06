@@ -39,7 +39,9 @@ namespace MoFEM {
 MoFEMProblem::MoFEMProblem(Interface &moab,const EntityHandle meshset):
   meshset(meshset),
   numered_dofs_rows(boost::shared_ptr<NumeredDofEntity_multiIndex>(new NumeredDofEntity_multiIndex())),
-  numered_dofs_cols(boost::shared_ptr<NumeredDofEntity_multiIndex>(new NumeredDofEntity_multiIndex())) {
+  numered_dofs_cols(boost::shared_ptr<NumeredDofEntity_multiIndex>(new NumeredDofEntity_multiIndex())),
+  sequenceRowDofContainer(boost::make_shared<SequenceDofContainer>()),
+  sequenceColDofContainer(boost::make_shared<SequenceDofContainer>()) {
   ErrorCode rval;
   Tag th_ProblemId;
   rval = moab.tag_get_handle("_ProblemId",th_ProblemId); CHKERR_MOAB(rval);
