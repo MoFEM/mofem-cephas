@@ -230,11 +230,49 @@ struct VolumeElementForcesAndSourcesCore: public ForcesAndSurcesCore {
 
   };
 
-  int nbGaussPts;
+  int nbGaussPts; ///< Number of integration points
+
+  // Note that functions below could be overloaded by user to change default
+  // behavior of the element.
+
+  /**
+   * \brief Set integration points
+   * @return Error code
+   */
   virtual PetscErrorCode setIntegartionPts();
+
+  /**
+   * \brief Calculate element volume and Jacobian
+   *
+   * Note that at that point is assumed that geometry is exclusively defined by
+   * corner nodes.
+   *
+   * @return Error code
+   */
   virtual PetscErrorCode calculateVolumeAndJacobian();
+
+  /**
+   * \brief Transform base functions based on geometric element Jacobian.
+   * @return Error code
+   */
+  virtual PetscErrorCode transformBaseFunctions();
+
+  /**
+   * \brief Calculate coordinate at integration points
+   * @return Error code
+   */
   virtual PetscErrorCode calculateCoordinatesAtGaussPts();
+
+  /**
+   * \brief Determine approximation space and order of base functions
+   * @return Error code
+   */
   virtual PetscErrorCode getSpaceBaseAndOrderOnElement();
+
+  /**
+   * \brief Calculate base functions
+   * @return Error code
+   */
   virtual PetscErrorCode calculateBaseFunctionsOnElement();
 
   PetscErrorCode preProcess() {

@@ -77,6 +77,11 @@ struct BasicEntityData {
   Tag th_RefBitLevel;
   BasicEntityData(const moab::Interface &mfield);
   virtual ~BasicEntityData();
+  inline void setDistributedMesh() { distributedMesh = true; }
+  inline void unSetDistributedMesh() { distributedMesh = false; }
+  inline bool trueIfDistrubutedMesh() const { return distributedMesh; }
+private:
+  bool distributedMesh;
 };
 
 /**
@@ -93,7 +98,8 @@ struct BasicEntity {
   mutable boost::shared_ptr<BasicEntityData> basicDataPtr;
 
   EntityHandle ent;
-  int owner_proc;
+
+  int owner_proc; ///< this never can not be changed
   EntityHandle moab_owner_handle;
 
   BasicEntity(
@@ -104,6 +110,11 @@ struct BasicEntity {
   inline boost::shared_ptr<BasicEntityData> getBasicDataPtr() {
     return basicDataPtr;
   }
+
+  inline const boost::shared_ptr<BasicEntityData> getBasicDataPtr() const {
+    return basicDataPtr;
+  }
+
 
   /** \brief Get entity type
   */
@@ -310,6 +321,10 @@ struct interface_RefEntity {
   sPtr(interface.getRefEntityPtr()) {}
 
   inline boost::shared_ptr<BasicEntityData> getBasicDataPtr() {
+    return this->sPtr->getBasicDataPtr();
+  }
+
+  inline const boost::shared_ptr<BasicEntityData> getBasicDataPtr() const {
     return this->sPtr->getBasicDataPtr();
   }
 
@@ -626,14 +641,21 @@ struct MoFEMEntity:
   static inline GlobalUId getGlobalUniqueIdCalculate(
     const int owner_proc,
     const char bit_number,
-    const EntityHandle moab_owner_handle
+    const EntityHandle moab_owner_handle,
+    const bool true_if_distributed_mesh
   ) {
     assert(bit_number<32);
     assert(owner_proc<1024);
-    return
-    (UId)moab_owner_handle
-    |(UId)bit_number << 8*sizeof(EntityHandle)
-    |(UId)owner_proc << 5+8*sizeof(EntityHandle);
+    if(true_if_distributed_mesh) {
+      return
+      (UId)moab_owner_handle
+      |(UId)bit_number << 8*sizeof(EntityHandle)
+      |(UId)owner_proc << 5+8*sizeof(EntityHandle);
+    } else {
+      return
+      (UId)moab_owner_handle
+      |(UId)bit_number << 8*sizeof(EntityHandle);
+    }
   }
 
   static inline GlobalUId getGlobalUniqueIdCalculate_Low_Proc(
@@ -658,7 +680,10 @@ struct MoFEMEntity:
    */
   inline GlobalUId getGlobalUniqueIdCalculate() const {
     return getGlobalUniqueIdCalculate(
-      sPtr->owner_proc,getBitNumber(),sPtr->moab_owner_handle
+      sPtr->owner_proc,
+      getBitNumber(),
+      sPtr->moab_owner_handle,
+      getBasicDataPtr()->trueIfDistrubutedMesh()
     );
   }
 
