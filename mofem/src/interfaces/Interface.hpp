@@ -21,7 +21,7 @@ namespace MoFEM {
 
 struct MeshsetsManager;
 
-static const MOFEMuuid IDD_MOFEMInterface = MOFEMuuid( BitIntefaceId(FIELD_INTERFACE) );
+static const MOFEMuuid IDD_MOFEMInterface = MOFEMuuid( BitIntefaceId(CORE_INTERFACE) );
 
 /**
  * \brief Interface
@@ -46,8 +46,14 @@ struct Interface: public UnknownInterface {
     PetscFunctionReturn(0);
   }
 
-  /// get moab interface
+  /**
+   * get moab instance
+   */
   virtual moab::Interface& get_moab() = 0;
+
+  /**
+   * get moab instance interface
+   */
   virtual const moab::Interface& get_moab() const = 0;
 
   /**
@@ -59,13 +65,19 @@ struct Interface: public UnknownInterface {
    */
   virtual boost::shared_ptr<BasicEntityData> get_basic_entity_data_ptr() = 0;
 
-  /// get communicator
-  virtual MPI_Comm get_comm() const = 0;
+  /**
+   * get MPI communicator
+   */
+  virtual MPI_Comm& get_comm() const = 0;
 
-  /// get communicator size
+  /**
+   * get communicator size
+   */
   virtual int getCommSize() const = 0;
 
-  /// get communicator rank
+  /**
+   * get comm rank
+   */
   virtual int getCommRank() const = 0;
 
   /**
@@ -425,6 +437,7 @@ struct Interface: public UnknownInterface {
   virtual PetscErrorCode get_entities_by_ref_level(const BitRefLevel &bit,const BitRefLevel &mask,const EntityHandle meshset) = 0;
 
   /**\brief add all ents from ref level given by bit to meshset
+   * \ingroup mofem_ref_ents
    *
    * \param BitRefLevel bitLevel
    * \param BitRefLevel mask
@@ -1228,7 +1241,7 @@ struct Interface: public UnknownInterface {
    * \ingroup mofem_problems
    *
    */
-  virtual PetscErrorCode modify_problem_dof_mask_ref_level_set_bit(const std::string &name_problem,const BitRefLevel &bit) = 0;
+  virtual PetscErrorCode modify_problem_mask_ref_level_set_bit(const std::string &name_problem,const BitRefLevel &bit) = 0;
 
   /** \brief list problems
    * \ingroup mofem_problems
@@ -1371,14 +1384,17 @@ struct Interface: public UnknownInterface {
    * \note If square_matrix is set to true, that indicate that problem is structurally
    * symmetric, i.e. rows and columns have the same dofs and are indexed in the same
    * way.
+
+   \deprecated Use ProblemsManager to build and partition problems
+
    *
-   * @param  name          problem name
+   * @param  problem pointer
    * @param  square_matrix structurally symmetric problem
    * @param  verb          verbosity level
    * @return               error code
    *
    */
-  virtual PetscErrorCode build_problem(const std::string &name,const bool square_matrix,int verb = -1) = 0;
+  DEPRECATED virtual PetscErrorCode build_problem(const std::string &name,const bool square_matrix,int verb = -1) = 0;
 
   /** \brief build problem data structures
    * \ingroup mofem_problems
@@ -1386,14 +1402,16 @@ struct Interface: public UnknownInterface {
    * \note If square_matrix is set to true, that indicate that problem is structurally
    * symmetric, i.e. rows and columns have the same dofs and are indexed in the same
    * way.
-   *
+
+   \deprecated Use ProblemsManager to build and partition problems
+
    * @param  name          problem name
    * @param  square_matrix structurally symmetric problem
    * @param  verb          verbosity level
    * @return               error code
    *
    */
-  virtual PetscErrorCode build_problem(MoFEMProblem *problem_ptr,const bool square_matrix,int verb = -1) = 0;
+  DEPRECATED virtual PetscErrorCode build_problem(MoFEMProblem *problem_ptr,const bool square_matrix,int verb = -1) = 0;
 
   /** \brief clear problem
    * \ingroup mofem_problems
@@ -1415,22 +1433,10 @@ struct Interface: public UnknownInterface {
    */
   virtual PetscErrorCode clear_problems(int verb = -1) = 0;
 
-  /** \brief build problem data structures, assuming that mesh is partitioned and not distributed (collective)
-   * \ingroup mofem_problems
-
-   Mesh partitioned, that means that to each finite element in the problem is part of partition, it belongs to
-   partition meshsets/has tag indicating to which partition it belongs.
-
-   Collective - need to be run on all processors in communicator, i.e. each
-   function has to call this function.
-
-   */
-  virtual PetscErrorCode build_problem_on_partitioned_mesh(
-    MoFEMProblem *problem_ptr,const bool square_matrix = true,int verb = -1
-  ) = 0;
-
   /** \brief build problem data structures, assuming that mesh is distributed (collective)
    * \ingroup mofem_problems
+
+   \deprecated Use ProblemsManager to build and partition problems
 
    Mesh is distributed, that means that each processor keeps only own part of
    the mesh and shared entities.
@@ -1439,13 +1445,15 @@ struct Interface: public UnknownInterface {
    function has to call this function.
 
    */
-  virtual PetscErrorCode build_problem_on_distributed_mesh(
+  DEPRECATED virtual PetscErrorCode build_problem_on_distributed_mesh(
     const std::string &name,const bool square_matrix = true,int verb = -1
   ) = 0;
 
   /** \brief build problem data structures, assuming that mesh is distributed (collective)
    * \ingroup mofem_problems
 
+   \deprecated Use ProblemsManager to build and partition problems
+
    Mesh is distributed, that means that each processor keeps only own part of
    the mesh and shared entities.
 
@@ -1453,7 +1461,7 @@ struct Interface: public UnknownInterface {
    function has to call this function.
 
    */
-  virtual PetscErrorCode build_problem_on_distributed_mesh(
+  DEPRECATED virtual PetscErrorCode build_problem_on_distributed_mesh(
     MoFEMProblem *problem_ptr,
     const bool square_matrix = true,
     int verb = -1
@@ -1462,6 +1470,8 @@ struct Interface: public UnknownInterface {
   /** \brief build problem data structures, assuming that mesh is distributed (collective)
    * \ingroup mofem_problems
 
+   \deprecated Use ProblemsManager to build and partition problems
+
    Mesh is distributed, that means that each processor keeps only own part of
    the mesh and shared entities.
 
@@ -1469,7 +1479,7 @@ struct Interface: public UnknownInterface {
    function has to call this function.
 
    */
-  virtual PetscErrorCode build_problem_on_distributed_mesh(int verb = -1) = 0;
+  DEPRECATED virtual PetscErrorCode build_problem_on_distributed_mesh(int verb = -1) = 0;
 
   /**
    * \brief Set partition tag to each finite element in the problem
@@ -1484,28 +1494,35 @@ struct Interface: public UnknownInterface {
    * @param  verb        Verbosity level
    * @return             Error code
    */
-  virtual PetscErrorCode partition_mesh(
+  DEPRECATED virtual PetscErrorCode partition_mesh(
     const Range &ents,const int dim,const int adj_dim,const int n_parts,int verb = -1
   ) = 0;
 
   /** \brief partition problem dofs
    * \ingroup mofem_problems
+
+   \deprecated Use ProblemsManager to build and partition problems
+
    *
    * \param name problem name
    */
-  virtual PetscErrorCode partition_simple_problem(const std::string &name,int verb = -1) = 0;
+  DEPRECATED virtual PetscErrorCode partition_simple_problem(const std::string &name,int verb = -1) = 0;
 
   /** \brief partition problem dofs (collective)
    * \ingroup mofem_problems
+
+   \deprecated Use ProblemsManager to build and partition problems
+
    *
    * \param name problem name
    */
-  virtual PetscErrorCode partition_problem(const std::string &name,int verb = -1) = 0;
+  DEPRECATED virtual PetscErrorCode partition_problem(const std::string &name,int verb = -1) = 0;
 
   /**
     * \brief build indexing and partition problem inheriting indexing and partitioning from two other problems
     * \ingroup mofem_problems
     *
+    \deprecated Use ProblemsManager to build and partition problems
     * \param name problem name
     * \param problem_for_rows problem used to index rows
     * \param copy_rows just copy rows dofs
@@ -1515,7 +1532,7 @@ struct Interface: public UnknownInterface {
     * If copy_rows/copy_cols is set to false only partition is copied between problems.
     *
     */
-  virtual PetscErrorCode partition_compose_problem(
+  DEPRECATED virtual PetscErrorCode partition_compose_problem(
     const std::string &name,
     const std::string &problem_for_rows,
     const bool copy_rows,
@@ -1526,13 +1543,16 @@ struct Interface: public UnknownInterface {
 
   /**
    * \brief build sub problem
+
+   \deprecated Use ProblemsManager to build and partition problems
+
    * @param  out_name problem
    * @param  fields_row  vector of fields composing problem
    * @param  fields_col  vector of fields composing problem
    * @param  main_problem main problem
    * @return              error code
    */
-  virtual PetscErrorCode build_sub_problem(
+  DEPRECATED virtual PetscErrorCode build_sub_problem(
     const std::string &out_name,
     const std::vector<std::string> &fields_row,
     const std::vector<std::string> &fields_col,
@@ -1543,19 +1563,22 @@ struct Interface: public UnknownInterface {
 
   /** \brief determine ghost nodes
    * \ingroup mofem_field
+   * \deprecated Use ProblemsManager to build and partition problems
    *
    * \param name problem name
    */
-  virtual PetscErrorCode partition_ghost_dofs(const std::string &name,int verb = -1) = 0;
+  DEPRECATED virtual PetscErrorCode partition_ghost_dofs(const std::string &name,int verb = -1) = 0;
 
   /** \brief partition finite elements
    *
    * Function which partition finite elements based on dofs partitioning.<br>
    * In addition it sets information about local row and cols dofs at given element on partition.
    *
+   * \deprecated Use ProblemsManager to build and partition problems
+   *
    * \param name problem name
    */
-  virtual PetscErrorCode partition_finite_elements(const std::string &name,
+  DEPRECATED virtual PetscErrorCode partition_finite_elements(const std::string &name,
     bool part_from_moab = false,int low_proc = -1,int hi_proc = -1,int verb = -1
   ) = 0;
 
@@ -1570,7 +1593,9 @@ struct Interface: public UnknownInterface {
     \param col print info at particular col
 
     */
-  virtual PetscErrorCode partition_check_matrix_fill_in(const std::string &problem_name,int row,int col,int verb) = 0;
+  virtual PetscErrorCode partition_check_matrix_fill_in(
+    const std::string &problem_name,int row,int col,int verb
+  ) = 0;
 
   /**
    * \brief resolve shared entities for finite elements in the problem
@@ -1637,6 +1662,7 @@ struct Interface: public UnknownInterface {
     const std::string &name,const std::string &fe_name,PetscLayout *layout,int verb = -1
   ) = 0;
 
+
   /**
     * \brief add finite elements to the meshset
     * \ingroup mofem_problems
@@ -1673,6 +1699,17 @@ struct Interface: public UnknownInterface {
     * \param name of the problem
     */
   virtual PetscErrorCode MatCreateMPIAIJWithArrays(const std::string &name,Mat *Aij,int verb = -1) = 0;
+
+  /**
+   * \brief Create Adj matrix
+   * @param  name [description]
+   * @param  Adj  [description]
+   * @param  verb [description]
+   * @return      [description]
+   */
+  virtual PetscErrorCode MatCreateMPIAdj_with_Idx_mi_tag(const std::string &name,Mat *Adj,int verb = -1) = 0;
+
+
 
   /**
     * \brief create Mat (AIJ) for problem
@@ -2243,10 +2280,26 @@ struct Interface: public UnknownInterface {
     */
   virtual PetscErrorCode get_ref_finite_elements(const RefElement_multiIndex **refined_finite_elements_ptr) const = 0;
 
+  /** \brief Get finite elements multi-index
+    * \ingroup mofem_access
+    */
+  virtual PetscErrorCode get_finite_elements(const FiniteElement_multiIndex **fe_ptr) const = 0;
+
+  /** \brief Get entities finite elements multi-index
+    * \ingroup mofem_access
+    */
+  virtual PetscErrorCode get_ents_finite_elements(const EntFiniteElement_multiIndex **fe_ent_ptr) const = 0;
+
   /** \brief Get problem database (data structure)
     * \ingroup mofem_access
     */
   virtual PetscErrorCode get_problem(const std::string &problem_name,const MoFEMProblem **problem_ptr) const = 0;
+
+  /**
+   * \brief Get pointer to problems multi-index
+   * \ingroup mofem_access
+   */
+  virtual PetscErrorCode get_problems(const MoFEMProblem_multiIndex **problems_ptr) const = 0;
 
   /** \brief Get field multi index
     *
@@ -2429,12 +2482,6 @@ struct Interface: public UnknownInterface {
   #define _IT_GET_DOFS_FIELD_BY_NAME_AND_TYPE_FOR_LOOP_(MFIELD,NAME,TYPE,IT) \
     DofEntityByNameAndType::iterator IT = MFIELD.get_dofs_by_name_and_type_begin(NAME,TYPE); \
       IT != MFIELD.get_dofs_by_name_and_type_end(NAME,TYPE); IT++
-
-  /** \brief Get finite elements multi index
-    * \ingroup mofem_access
-    *
-    */
-  virtual PetscErrorCode get_finite_elements(const FiniteElement_multiIndex **finiteElementsPtr_ptr) const = 0;
 
   /**
     * \brief get begin iterator of finite elements of given name (instead you can use _IT_GET_FES_BY_NAME_FOR_LOOP_(MFIELD,NAME,IT)

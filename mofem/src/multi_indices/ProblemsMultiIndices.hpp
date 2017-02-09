@@ -21,6 +21,57 @@
 
 namespace MoFEM {
 
+struct MoFEMProblem;
+
+/**
+ * Data structure created when composite problem is created
+ */
+struct ComposedProblemsData {
+
+  std::vector<const MoFEMProblem*> rowProblemsAdd;
+  std::vector<const MoFEMProblem*> colProblemsAdd;
+
+  std::vector<IS> rowIs;
+  std::vector<IS> colIs;
+
+  inline PetscErrorCode getRowIs(IS *is,int pp) {
+    PetscFunctionBegin;
+    PetscObjectReference((PetscObject)rowIs[pp]);
+    if(pp<=rowIs.size()) {
+      SETERRQ1(
+        PETSC_COMM_WORLD,MOFEM_INVALID_DATA,
+        "Exceed size of array pp<%d",rowIs.size()
+      );
+    }
+    *is = rowIs[pp];
+    PetscFunctionReturn(0);
+  }
+
+  inline PetscErrorCode getColIs(IS *is,int pp) {
+    PetscFunctionBegin;
+    PetscObjectReference((PetscObject)colIs[pp]);
+    if(pp<=colIs.size()) {
+      SETERRQ1(
+        PETSC_COMM_WORLD,MOFEM_INVALID_DATA,
+        "Exceed size of array pp<%d",colIs.size()
+      );
+    }
+    *is = colIs[pp];
+    PetscFunctionReturn(0);
+  }
+
+  virtual ~ComposedProblemsData() {
+    for(int ii = 0;ii!=rowIs.size();ii++) {
+      ISDestroy(&rowIs[ii]);
+    }
+    for(int jj = 0;jj!=colIs.size();jj++) {
+      ISDestroy(&colIs[jj]);
+    }
+  }
+
+};
+
+
 /** \brief keeps basic data about problem
   * \ingroup problems_multi_indices
   *
@@ -44,11 +95,12 @@ struct MoFEMProblem {
   DofIdx* tag_ghost_nbdof_data_col;
   BitFEId* tag_BitFEId_data;
   BitRefLevel* tag_BitRefLevel;
-  BitRefLevel* tag_BitRefLevel_DofMask;
+  BitRefLevel* tag_MaskBitRefLevel;
 
   mutable boost::shared_ptr<NumeredDofEntity_multiIndex> numered_dofs_rows; // FIXME name convention
   mutable boost::shared_ptr<NumeredDofEntity_multiIndex> numered_dofs_cols; // FIXME name convention
   mutable NumeredEntFiniteElement_multiIndex numeredFiniteElements;
+
 
   /**
    * \brief Subproblem problem data
@@ -137,6 +189,18 @@ struct MoFEMProblem {
    */
   inline boost::shared_ptr<SubProblemData> getSubData() const {
     return subProblemData;
+  }
+
+  /**
+   * Pointer to data structure from which this problem is composed
+   */
+  mutable boost::shared_ptr<ComposedProblemsData> composedProblemsData;
+
+  /**
+   * \brief Het composed problems data structure
+   */
+  inline boost::shared_ptr<ComposedProblemsData> getComposedProblemsData() const {
+    return composedProblemsData;
   }
 
   /**
@@ -523,7 +587,6 @@ struct MoFEMProblem {
     );
   }
 
-
   MoFEMProblem(Interface &moab,const EntityHandle meshset);
 
   virtual ~MoFEMProblem();
@@ -539,34 +602,13 @@ struct MoFEMProblem {
   inline DofIdx getNbGhostDofsRow() const { return *((DofIdx*)tag_ghost_nbdof_data_row); }
   inline DofIdx getNbGhostDofsCol() const { return *((DofIdx*)tag_ghost_nbdof_data_col); }
 
-  /** \deprecated use getNbLocalDofsRow
-  */
-  DEPRECATED inline DofIdx get_nb_local_dofs_row() const { return getNbLocalDofsRow(); }
-
-  /** \deprecated use getNbLocalDofsCol
-  */
-  DEPRECATED inline DofIdx get_nb_local_dofs_col() const { return getNbLocalDofsCol(); }
-
-  /** \deprecated use getNbGhostDofsRow
-  */
-  DEPRECATED inline DofIdx get_nb_ghost_dofs_row() const { return getNbGhostDofsRow(); }
-
-  /** \deprecated use getNbGhostDofsCol
-  */
-  DEPRECATED inline DofIdx get_nb_ghost_dofs_col() const { return getNbGhostDofsCol(); }
-
   inline BitRefLevel getBitRefLevel() const { return *tag_BitRefLevel; }
+  inline BitRefLevel getMaskBitRefLevel() const { return *tag_MaskBitRefLevel; }
 
-  inline BitRefLevel get_DofMask_BitRefLevel() const { return *tag_BitRefLevel_DofMask; }
   PetscErrorCode getRowDofsByPetscGlobalDofIdx(DofIdx idx,const NumeredDofEntity **dof_ptr) const;
   PetscErrorCode getColDofsByPetscGlobalDofIdx(DofIdx idx,const NumeredDofEntity **dof_ptr) const;
 
   BitFEId getBitFEId() const;
-
-  /** \deprecated use getBitFEId
-  */
-  DEPRECATED BitFEId get_BitFEId() const { return getBitFEId(); }
-
 
   friend std::ostream& operator<<(std::ostream& os,const MoFEMProblem& e);
 
@@ -617,71 +659,50 @@ struct MoFEMProblem {
    */
   PetscErrorCode getNumberOfElementsByPart(MPI_Comm comm,PetscLayout *layout) const;
 
+  typedef multi_index_container<
+    boost::weak_ptr<std::vector<NumeredDofEntity> >,
+    indexed_by<
+      sequenced<>
+    >
+  > SequenceDofContainer;
+
   /**
-   * \brief Get weak_ptr reference to sequence/vector storing dofs.
+   * \brief Get reference to sequence data numbered dof container
    *
-   * Vector is automatically destroy when last DOF in vector os destroyed. Every
-   * shared_ptr to the DOF has aliased shared_ptr to vector of DOFs in that vector.
-   * That do the trick.
+   * In sequence data container data are physically stored. The purpose of this
+   * is to allocate NumeredDofEntity data in bulk, having only one allocation instead
+   * each time entity is inserted. That makes code efficient.
    *
-   * \note It is week_ptr, so it is no guaranteed that sequence is there. Check
-   * if sequence is there.
-   * \code
-   * if(boost::shared_ptr<std::vector<NumeredDofEntity> > ptr=fe->getRowDofsSeqence().lock()) {
-   *  // use ptr
-   * }
-   * \endcode
-   *
+   * The vector in sequence is destroyed if last entity inside that vector is
+   * destroyed. All MoFEM::NumeredDofEntity have aliased shared_ptr which points to the vector.
+
+   * @return MoFEM::MoFEMProblem::SequenceDofContainer
    */
-  inline boost::weak_ptr<std::vector<NumeredDofEntity> >& getRowDofsSeqence() const {
-    return dofsRowSequence;
+  inline boost::shared_ptr<SequenceDofContainer> getRowDofsSeqence() const {
+    return sequenceRowDofContainer;
   }
 
   /**
-   * \brief Get weak_ptr reference to sequence/vector storing dofs.
+   * \brief Get reference to sequence data numbered dof container
    *
-   * Vector is automatically destroy when last DOF in vector os destroyed. Every
-   * shared_ptr to the DOF has aliased shared_ptr to vector of DOFs in that vector.
-   * That do the trick.
+   * In sequence data container data are physically stored. The purpose of this
+   * is to allocate NumeredDofEntity data in bulk, having only one allocation instead
+   * each time entity is inserted. That makes code efficient.
    *
-   * \note It is week_ptr, so it is no guaranteed that sequence is there. Check
-   * if sequence is there.
-   * \code
-   * if(boost::shared_ptr<std::vector<NumeredDofEntity> > ptr=fe->getColDofsSeqence().lock()) {
-   *  // use ptr
-   * }
-   * \endcode
-   *
+   * The vector in sequence is destroyed if last entity inside that vector is
+   * destroyed. All MoFEM::NumeredDofEntity have aliased shared_ptr which points to the vector.
+
+   * @return MoFEM::MoFEMProblem::SequenceDofContainer
    */
-  inline boost::weak_ptr<std::vector<NumeredDofEntity> >& getColDofsSeqence() const {
-    return dofsColSequence;
+  inline boost::shared_ptr<SequenceDofContainer> getColDofsSeqence() const {
+    return sequenceColDofContainer;
   }
-
-  /**
-   * \brief Get weak_ptr reference to sequence/vector storing finite elements.
-   *
-   * \note It is week_ptr, so it is no guaranteed that sequence is there. Check
-   * if sequence is there.
-   * \code
-   * if(boost::shared_ptr<std::vector<NumeredDofEntity> > ptr=fe->getFeSeqence().lock()) {
-   *  // use ptr
-   * }
-   * \endcode
-   *
-   */
-  // inline boost::weak_ptr<std::vector<NumeredEntFiniteElement> >& getFeSeqence() const {
-  //   return feSequence;
-  // }
-
 
 private:
 
   // Keep vector of DoFS on entity
-  mutable boost::weak_ptr<std::vector<NumeredDofEntity> > dofsRowSequence;
-  mutable boost::weak_ptr<std::vector<NumeredDofEntity> > dofsColSequence;
-
-  // // Keeps finite elements on entities
-  // mutable boost::weak_ptr<std::vector<NumeredEntFiniteElement> > feSequence;
+  mutable boost::shared_ptr<SequenceDofContainer> sequenceRowDofContainer;
+  mutable boost::shared_ptr<SequenceDofContainer> sequenceColDofContainer;
 
 };
 
@@ -694,12 +715,19 @@ typedef multi_index_container<
   MoFEMProblem,
   indexed_by<
     ordered_unique<
-      tag<Meshset_mi_tag>, member<MoFEMProblem,EntityHandle,&MoFEMProblem::meshset> >,
+      tag<Meshset_mi_tag>,
+      member<MoFEMProblem,EntityHandle,&MoFEMProblem::meshset>
+    >,
     hashed_unique<
-      tag<BitProblemId_mi_tag>, const_mem_fun<MoFEMProblem,BitProblemId,&MoFEMProblem::getId>, HashBit<BitProblemId>, EqBit<BitProblemId> >,
+      tag<BitProblemId_mi_tag>,
+      const_mem_fun<MoFEMProblem,BitProblemId,&MoFEMProblem::getId>, HashBit<BitProblemId>, EqBit<BitProblemId>
+    >,
     hashed_unique<
-      tag<Problem_mi_tag>, const_mem_fun<MoFEMProblem,std::string,&MoFEMProblem::getName> >
-  > > MoFEMProblem_multiIndex;
+      tag<Problem_mi_tag>,
+      const_mem_fun<MoFEMProblem,std::string,&MoFEMProblem::getName>
+    >
+  >
+> MoFEMProblem_multiIndex;
 
 /** \brief add ref level to problem
   * \ingroup problems_multi_indices
@@ -725,7 +753,7 @@ struct ProblemChangeRefLevelBitSet {
 struct ProblemChangeRefLevelBitDofMaskSet {
   BitRefLevel bit;
   ProblemChangeRefLevelBitDofMaskSet(const BitRefLevel _bit): bit(_bit) {};
-  void operator()(MoFEMProblem &p) { *(p.tag_BitRefLevel_DofMask) = bit; };
+  void operator()(MoFEMProblem &p) { *(p.tag_MaskBitRefLevel) = bit; };
 };
 
 /** \brief add finite element to problem

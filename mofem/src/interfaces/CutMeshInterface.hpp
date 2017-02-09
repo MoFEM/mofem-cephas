@@ -44,6 +44,19 @@ namespace MoFEM {
     PetscErrorCode setSurface(const Range &surface);
 
     /**
+     * \brief copy surface entities
+     * @param  surface entities which going to be added
+     * @return         error code
+     */
+    PetscErrorCode copySurface(
+      const Range &surface,
+      Tag th = NULL,
+      double *shift = NULL,
+      double *origin = NULL,
+      double *transform = NULL
+    );
+
+    /**
      * \brief set volume entities
      * @param  volume entities which going to be added
      * @return         error code
@@ -75,7 +88,7 @@ namespace MoFEM {
      * @param  verb verbosity level
      * @return      error code
      */
-    PetscErrorCode findEdgesToCut(int verb = 0);
+    PetscErrorCode findEdgesToCut(const double low_tol = 0,int verb = 0);
 
     /**
      * \brief cut edges
@@ -93,7 +106,7 @@ namespace MoFEM {
      * \brief projecting of mid edge nodes on new mesh on surface
      * @return error code
      */
-    PetscErrorCode moveMidNodesOnCutEdges();
+    PetscErrorCode moveMidNodesOnCutEdges(Tag th = NULL);
 
     /**
      * \brief Find edges to trimEdges
@@ -105,9 +118,42 @@ namespace MoFEM {
      * @param  verb verbosity level
      * @return      error code
      */
-    PetscErrorCode findEdgesToTrim(int verb = 0);
+    PetscErrorCode findEdgesToTrim(Tag th = NULL,const double tol = 1e-4,int verb = 0);
 
     PetscErrorCode trimEdgesInTheMiddle(const BitRefLevel bit);
+
+    /**
+     * \brief move trimed edges mid nodes
+     * @return error code
+     */
+    PetscErrorCode moveMidNodesOnTrimedEdges(Tag th = NULL);
+
+    /**
+     * \brief split sides
+     * @param  split_bit split bit level
+     * @param  bit       bit level of split mesh
+     * @param  ents      ents on the surface which is going to be split
+     * @return           error code
+     */
+    PetscErrorCode splitSides(
+      const BitRefLevel split_bit,
+      const BitRefLevel bit,
+      const Range &ents,
+      Tag th = NULL
+    );
+
+    /**
+     * \brief split sides of trimmed surface
+     * @param  split_bit split bit level
+     * @param  bit       bit level of split mesh
+     * @return           error code
+     */
+    PetscErrorCode splitTrimSides(
+      const BitRefLevel split_bit,
+      const BitRefLevel bit,
+      Tag th = NULL
+    );
+
 
 
 
@@ -120,14 +166,12 @@ namespace MoFEM {
     // );
     // #endif //WITH_TETGEN
 
-
+    inline const Range& getVerticesOnSurface() const { return verticesOnSurface; }
     inline const Range& getCutEdges() const { return cutEdges; }
-    inline const Range& getCutEdgesOutside() const { return cutEdgesOutside; }
     inline const Range& getCutVolumes() const { return cutVolumes; }
     inline const Range& getNewCutVolumes() const { return cutNewVolumes; }
     inline const Range& getNewCutSurfaces() const { return cutNewSurfaces; }
     inline const Range& getNewCutVertices() const { return cutNewVertices; }
-    // inline const Range& getFrontTets() const { return frontTets; }
 
     inline const Range& getTrimEdges() const { return trimEdges; }
     inline const Range& getOutsideEdges() const { return outsideEdges; }
@@ -142,28 +186,23 @@ namespace MoFEM {
     Range vOlume;
 
     boost::shared_ptr<OrientedBoxTreeTool> treeSurfPtr;
-    boost::shared_ptr<OrientedBoxTreeTool> treeVolPtr;
     EntityHandle rootSetSurf;
-    EntityHandle rootSetVol;
 
     Range verticesOnSurface;
 
     Range cutEdges;
-    Range cutEdgesOutside;
     Range cutVolumes;
     Range cutNewVolumes;
     Range cutNewSurfaces;
     Range cutNewVertices;
 
+    Range outsideEdges;
     Range trimNewVolumes;
     Range trimNewVertices;
     Range trimNewSurfaces;
 
 
     Range trimEdges;
-    Range outsideEdges;
-
-    // Range frontTets;
 
     struct TreeData {
       double dIst;

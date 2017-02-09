@@ -40,6 +40,7 @@
 #include <MeshRefinement.hpp>
 #include <PrismInterface.hpp>
 #include <SeriesRecorder.hpp>
+#include <ProblemsManager.hpp>
 #include <Core.hpp>
 
 #include <KspCtx.hpp>
@@ -70,6 +71,7 @@ tsCtx(NULL),
 isPartitioned(PETSC_FALSE),
 isSquareMatrix(PETSC_TRUE),
 isSubDM(PETSC_FALSE),
+isCompDM(PETSC_FALSE),
 destroyProblem(PETSC_FALSE),
 verbosity(0),
 referenceNumber(0) {}
@@ -149,7 +151,11 @@ PetscErrorCode DMDestroy_MoFEM(DM dm) {
 }
 
 PetscErrorCode DMMoFEMCreateMoFEM(
-  DM dm,MoFEM::Interface *m_field_ptr,const char problem_name[],const MoFEM::BitRefLevel &bit_level
+  DM dm,
+  MoFEM::Interface *m_field_ptr,
+  const char problem_name[],
+  const MoFEM::BitRefLevel bit_level,
+  const MoFEM::BitRefLevel bit_mask
 ) {
   PetscErrorCode ierr;
   PetscFunctionBegin;
@@ -172,8 +178,11 @@ PetscErrorCode DMMoFEMCreateMoFEM(
     dm_field->destroyProblem = PETSC_FALSE;
   }
   ierr = dm_field->mField_ptr->modify_problem_ref_level_add_bit(
-    dm_field->problemName,bit_level); CHKERRQ(ierr
-    );
+    dm_field->problemName,bit_level
+  ); CHKERRQ(ierr);
+  ierr = dm_field->mField_ptr->modify_problem_mask_ref_level_set_bit(
+    dm_field->problemName,bit_mask
+  ); CHKERRQ(ierr);
   dm_field->kspCtx = new KspCtx(*m_field_ptr,problem_name);
   dm_field->snesCtx = new SnesCtx(*m_field_ptr,problem_name);
   dm_field->tsCtx = new TsCtx(*m_field_ptr,problem_name);
@@ -251,6 +260,53 @@ PetscErrorCode DMMoFEMGetIsSubDM(DM dm,PetscBool *is_sub_dm) {
   PetscFunctionBegin;
   DMCtx *dm_field = (DMCtx*)dm->data;
   *is_sub_dm = dm_field->isSubDM;
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode DMMoFEMAddRowCompositeProblem(DM dm,const char prb_name[]) {
+  PetscValidHeaderSpecific(dm,DM_CLASSID,1);
+  PetscFunctionBegin;
+  DMCtx *dm_field = (DMCtx*)dm->data;
+  if(!dm->data) {
+    SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"data structure for MoFEM not yet created");
+  }
+  if(!dm_field->isCompDM) {
+    dm_field->isCompDM = PETSC_TRUE;
+  }
+  dm_field->rowCompPrb.push_back(prb_name);
+  if(dm_field->isSquareMatrix) {
+    dm_field->colCompPrb.push_back(prb_name);
+  }
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode DMMoFEMAddColCompositeProblem(DM dm,const char prb_name[]) {
+  PetscValidHeaderSpecific(dm,DM_CLASSID,1);
+  PetscFunctionBegin;
+  DMCtx *dm_field = (DMCtx*)dm->data;
+  if(!dm->data) {
+    SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"data structure for MoFEM not yet created");
+  }
+  if(!dm_field->isCompDM) {
+    dm_field->isCompDM = PETSC_TRUE;
+  }
+  if(dm_field->isSquareMatrix) {
+    SETERRQ(
+      PETSC_COMM_SELF,
+      MOFEM_INVALID_DATA,
+      "No need to add problem on column when problem block structurally symmetric"
+    );
+  }
+  dm_field->colCompPrb.push_back(prb_name);
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode DMMoFEMGetIsCompDM(DM dm,PetscBool *is_comp_dm) {
+  PetscFunctionBegin;
+  PetscValidHeaderSpecific(dm,DM_CLASSID,1);
+  PetscFunctionBegin;
+  DMCtx *dm_field = (DMCtx*)dm->data;
+  *is_comp_dm = dm_field->isCompDM;
   PetscFunctionReturn(0);
 }
 
@@ -453,40 +509,80 @@ PetscErrorCode DMMoFEMKSPSetComputeOperators(DM dm,const char fe_name[],MoFEM::F
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode DMMoFEMSNESSetFunction(DM dm,const char fe_name[],MoFEM::FEMethod *method,MoFEM::FEMethod *pre_only,MoFEM::FEMethod *post_only) {
+template<class S,class T>
+static PetscErrorCode DMMoFEMSNESSetFunction(DM dm,S fe_name,T method,T pre_only,T post_only) {
   PetscErrorCode ierr;
   PetscValidHeaderSpecific(dm,DM_CLASSID,1);
   PetscFunctionBegin;
   DMCtx *dm_field = (DMCtx*)dm->data;
-  if(pre_only!=NULL) {
+  if(pre_only) {
     dm_field->snesCtx->get_preProcess_to_do_Rhs().push_back(pre_only);
   }
-  if(method!=NULL) {
-    dm_field->snesCtx->get_loops_to_do_Rhs().push_back(KspCtx::loop_pair_type(fe_name,method));
+  if(method) {
+    dm_field->snesCtx->get_loops_to_do_Rhs().push_back(SnesCtx::loop_pair_type(fe_name,method));
   }
-  if(post_only!=NULL) {
+  if(post_only) {
     dm_field->snesCtx->get_postProcess_to_do_Rhs().push_back(post_only);
   }
   ierr = DMSNESSetFunction(dm,SnesRhs,dm_field->snesCtx); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode DMMoFEMSNESSetJacobian(DM dm,const char fe_name[],MoFEM::FEMethod *method,MoFEM::FEMethod *pre_only,MoFEM::FEMethod *post_only) {
+
+PetscErrorCode DMMoFEMSNESSetFunction(
+  DM dm,const char fe_name[],MoFEM::FEMethod *method,MoFEM::FEMethod *pre_only,MoFEM::FEMethod *post_only
+) {
+  return DMMoFEMSNESSetFunction<const char *,MoFEM::FEMethod*>(dm,fe_name,method,pre_only,post_only);
+}
+
+PetscErrorCode DMMoFEMSNESSetFunction(
+  DM dm,const std::string fe_name,
+  boost::shared_ptr<MoFEM::FEMethod> method,
+  boost::shared_ptr<MoFEM::FEMethod> pre_only,
+  boost::shared_ptr<MoFEM::FEMethod> post_only
+) {
+  return DMMoFEMSNESSetFunction<std::string,boost::shared_ptr<MoFEM::FEMethod> >(
+    dm,fe_name,method,pre_only,post_only
+  );
+}
+
+template<class S,class T>
+static PetscErrorCode DMMoFEMSNESSetJacobian(DM dm,S fe_name,T method,T pre_only,T post_only) {
   PetscErrorCode ierr;
   PetscValidHeaderSpecific(dm,DM_CLASSID,1);
   PetscFunctionBegin;
   DMCtx *dm_field = (DMCtx*)dm->data;
-  if(pre_only!=NULL) {
+  if(pre_only) {
     dm_field->snesCtx->get_preProcess_to_do_Mat().push_back(pre_only);
   }
-  if(method!=NULL) {
-    dm_field->snesCtx->get_loops_to_do_Mat().push_back(KspCtx::loop_pair_type(fe_name,method));
+  if(method) {
+    dm_field->snesCtx->get_loops_to_do_Mat().push_back(SnesCtx::loop_pair_type(fe_name,method));
   }
-  if(post_only!=NULL) {
+  if(post_only) {
     dm_field->snesCtx->get_postProcess_to_do_Mat().push_back(post_only);
   }
   ierr = DMSNESSetJacobian(dm,SnesMat,dm_field->snesCtx); CHKERRQ(ierr);
   PetscFunctionReturn(0);
+}
+
+PetscErrorCode DMMoFEMSNESSetJacobian(
+  DM dm,const char fe_name[],
+  MoFEM::FEMethod *method,
+  MoFEM::FEMethod *pre_only,
+  MoFEM::FEMethod *post_only
+) {
+  return DMMoFEMSNESSetJacobian<const char *,MoFEM::FEMethod*>(dm,fe_name,method,pre_only,post_only);
+}
+
+PetscErrorCode DMMoFEMSNESSetJacobian(
+  DM dm,std::string fe_name,
+  boost::shared_ptr<MoFEM::FEMethod> method,
+  boost::shared_ptr<MoFEM::FEMethod> pre_only,
+  boost::shared_ptr<MoFEM::FEMethod> post_only
+) {
+  return DMMoFEMSNESSetJacobian<std::string,boost::shared_ptr<MoFEM::FEMethod> >(
+    dm,fe_name,method,pre_only,post_only
+  );
 }
 
 PetscErrorCode DMMoFEMTSSetIFunction(DM dm,const char fe_name[],MoFEM::FEMethod *method,MoFEM::FEMethod *pre_only,MoFEM::FEMethod *post_only) {
@@ -498,7 +594,7 @@ PetscErrorCode DMMoFEMTSSetIFunction(DM dm,const char fe_name[],MoFEM::FEMethod 
     dm_field->tsCtx->get_preProcess_to_do_IFunction().push_back(pre_only);
   }
   if(method!=NULL) {
-    dm_field->tsCtx->get_loops_to_do_IFunction().push_back(KspCtx::loop_pair_type(fe_name,method));
+    dm_field->tsCtx->get_loops_to_do_IFunction().push_back(TsCtx::loop_pair_type(fe_name,method));
   }
   if(post_only!=NULL) {
     dm_field->tsCtx->get_postProcess_to_do_IFunction().push_back(post_only);
@@ -516,7 +612,7 @@ PetscErrorCode DMMoFEMTSSetIJacobian(DM dm,const char fe_name[],MoFEM::FEMethod 
     dm_field->tsCtx->get_preProcess_to_do_IJacobian().push_back(pre_only);
   }
   if(method!=NULL) {
-    dm_field->tsCtx->get_loops_to_do_IJacobian().push_back(KspCtx::loop_pair_type(fe_name,method));
+    dm_field->tsCtx->get_loops_to_do_IJacobian().push_back(TsCtx::loop_pair_type(fe_name,method));
   }
   if(post_only!=NULL) {
     dm_field->tsCtx->get_postProcess_to_do_IJacobian().push_back(post_only);
@@ -647,24 +743,46 @@ PetscErrorCode DMSetFromOptions_MoFEM(DM dm) {
 PetscErrorCode DMSetUp_MoFEM(DM dm) {
   PetscErrorCode ierr;
   PetscValidHeaderSpecific(dm,DM_CLASSID,1);
+  ProblemsManager *prb_mng_ptr;
   PetscFunctionBegin;
   DMCtx *dm_field = (DMCtx*)dm->data;
-  if(dm_field->isPartitioned) {
-    ierr = dm_field->mField_ptr->build_problem_on_distributed_mesh(
-      dm_field->problemName,dm_field->isSquareMatrix == PETSC_TRUE
+  ierr = dm_field->mField_ptr->query_interface(prb_mng_ptr); CHKERRQ(ierr);
+
+  if(dm_field->isCompDM) {
+    // It is composite probelm
+    ierr = prb_mng_ptr->buildCompsedProblem(
+      dm_field->problemName,
+      dm_field->rowCompPrb,
+      dm_field->colCompPrb,
+      dm_field->isSquareMatrix == PETSC_TRUE
     ); CHKERRQ(ierr);
-    ierr = dm_field->mField_ptr->partition_finite_elements(
+  } else {
+    if(dm_field->isPartitioned) {
+      ierr = prb_mng_ptr->buildProblemOnDistributedMesh(
+        dm_field->problemName,dm_field->isSquareMatrix == PETSC_TRUE
+      ); CHKERRQ(ierr);
+    } else {
+      ierr = prb_mng_ptr->buildProblem(
+        dm_field->problemName,dm_field->isSquareMatrix == PETSC_TRUE
+      ); CHKERRQ(ierr);
+      ierr = prb_mng_ptr->partitionProblem(dm_field->problemName); CHKERRQ(ierr);
+    }
+  }
+
+  // Partition finite elements
+  if(dm_field->isPartitioned) {
+    ierr = prb_mng_ptr->partitionFiniteElements(
       dm_field->problemName,true,0,dm_field->sIze,1
     ); CHKERRQ(ierr);
   } else {
-    ierr = dm_field->mField_ptr->build_problem(
-      dm_field->problemName,dm_field->isSquareMatrix == PETSC_TRUE
+    ierr = prb_mng_ptr->partitionFiniteElements(
+      dm_field->problemName
     ); CHKERRQ(ierr);
-    ierr = dm_field->mField_ptr->partition_problem(dm_field->problemName); CHKERRQ(ierr);
-    ierr = dm_field->mField_ptr->partition_finite_elements(dm_field->problemName); CHKERRQ(ierr);
   }
-  ierr = dm_field->mField_ptr->partition_ghost_dofs(dm_field->problemName); CHKERRQ(ierr);
+  // Get ghost DOFs
+  ierr = prb_mng_ptr->partitionGhostDofs(dm_field->problemName); CHKERRQ(ierr);
 
+  // Set flag that problem is build and partitioned
   dm_field->isProblemBuild = PETSC_TRUE;
 
   PetscFunctionReturn(0);
@@ -673,12 +791,14 @@ PetscErrorCode DMSetUp_MoFEM(DM dm) {
 PetscErrorCode DMSubDMSetUp_MoFEM(DM subdm) {
   PetscErrorCode ierr;
   PetscValidHeaderSpecific(subdm,DM_CLASSID,1);
+  ProblemsManager *prb_mng_ptr;
   PetscFunctionBegin;
 
   DMCtx *subdm_field = (DMCtx*)subdm->data;
 
   // build sub dm problem
-  ierr = subdm_field->mField_ptr->build_sub_problem(
+  ierr = subdm_field->mField_ptr->query_interface(prb_mng_ptr); CHKERRQ(ierr);
+  ierr = prb_mng_ptr->buildSubProblem(
     subdm_field->problemName,
     subdm_field->rowFields,
     subdm_field->colFields,
@@ -689,14 +809,16 @@ PetscErrorCode DMSubDMSetUp_MoFEM(DM subdm) {
   // partition problem
   subdm_field->isPartitioned = subdm_field->isPartitioned;
   if(subdm_field->isPartitioned) {
-    ierr = subdm_field->mField_ptr->partition_finite_elements(
+    ierr = prb_mng_ptr->partitionFiniteElements(
       subdm_field->problemName,true,0,subdm_field->sIze,1
     ); CHKERRQ(ierr);
   } else {
-    ierr = subdm_field->mField_ptr->partition_finite_elements(subdm_field->problemName); CHKERRQ(ierr);
+    ierr = prb_mng_ptr->partitionFiniteElements(
+      subdm_field->problemName
+    ); CHKERRQ(ierr);
   }
   // set ghost nodes
-  ierr = subdm_field->mField_ptr->partition_ghost_dofs(subdm_field->problemName); CHKERRQ(ierr);
+  ierr = prb_mng_ptr->partitionGhostDofs(subdm_field->problemName); CHKERRQ(ierr);
 
   subdm_field->isProblemBuild = PETSC_TRUE;
 

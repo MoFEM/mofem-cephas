@@ -891,8 +891,32 @@ target_link_libraries(build_problems
   mofem_approx
   mofem_cblas
   mofem_third_party
-  ${PROJECT_LIBS})
-add_test(build_problems_atom ${MPI_RUN} ${MPI_RUN_FLAGS} -np 2 ${CMAKE_CURRENT_BINARY_DIR}/build_problems -my_file disp01.h5m)
+  ${PROJECT_LIBS}
+)
+add_test(
+  build_problems_atom
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 2
+  ${CMAKE_CURRENT_BINARY_DIR}/build_problems -my_file disp01.h5m
+)
+
+# teting build mesh on partinoned (not distributed) mesh and composite problems
+#test for build problems
+my_add_executable(build_composite_problem build_composite_problem.cpp)
+target_link_libraries(build_composite_problem
+  mofem_finite_elements
+  mofem_interfaces
+  mofem_multi_indices
+  mofem_petsc
+  mofem_approx
+  mofem_cblas
+  mofem_third_party
+  ${PROJECT_LIBS}
+)
+add_test(
+  build_composite_problem_atom
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 2
+  ${CMAKE_CURRENT_BINARY_DIR}/build_composite_problem -my_file disp01.h5m
+)
 
 #test inactivating and clearing inactive dofs
 my_add_executable(activate_deactivate_dofs activate_deactivate_dofs.cpp)
@@ -905,7 +929,11 @@ target_link_libraries(activate_deactivate_dofs
   mofem_cblas
   mofem_third_party
   ${PROJECT_LIBS})
-add_test(activate_deactivate_dofs ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/activate_deactivate_dofs -my_file disp01.h5m)
+add_test(
+  activate_deactivate_dofs
+  ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+  ${CMAKE_CURRENT_BINARY_DIR}/activate_deactivate_dofs -my_file disp01.h5m
+)
 
 
 # Projection form and to 10 node tets

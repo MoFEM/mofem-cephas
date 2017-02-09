@@ -36,7 +36,8 @@ PetscErrorCode DMMoFEMCreateMoFEM(
   DM dm,
   MoFEM::Interface *m_field_ptr,
   const char problem_name[],
-  const MoFEM::BitRefLevel &bit_level
+  const MoFEM::BitRefLevel bit_level,
+  const MoFEM::BitRefLevel bit_maks = MoFEM::BitRefLevel().set()
 );
 
 /**
@@ -264,6 +265,17 @@ PetscErrorCode DMMoFEMSNESSetFunction(
 );
 
 /**
+  * \brief set SNES residual evaluation function
+  * \ingroup dm
+  */
+PetscErrorCode DMMoFEMSNESSetFunction(
+  DM dm,const std::string fe_name,
+  boost::shared_ptr<MoFEM::FEMethod> method,
+  boost::shared_ptr<MoFEM::FEMethod> pre_only,
+  boost::shared_ptr<MoFEM::FEMethod> post_only
+);
+
+/**
   * \brief set SNES Jacobian evaluation function
   * \ingroup dm
   */
@@ -271,6 +283,18 @@ PetscErrorCode DMMoFEMSNESSetJacobian(
   DM dm,const char fe_name[],
   MoFEM::FEMethod *method,MoFEM::FEMethod *pre_only,MoFEM::FEMethod *post_only
 );
+
+/**
+  * \brief set SNES Jacobian evaluation function
+  * \ingroup dm
+  */
+PetscErrorCode DMMoFEMSNESSetJacobian(
+  DM dm,const std::string fe_name,
+  boost::shared_ptr<MoFEM::FEMethod> method,
+  boost::shared_ptr<MoFEM::FEMethod> pre_only,
+  boost::shared_ptr<MoFEM::FEMethod> post_only
+);
+
 
 /**
   * \brief set TS implicit function evaluation function
@@ -434,11 +458,46 @@ PetscErrorCode DMMoFEMAddSubFieldCol(DM dm,const char field_name[]);
 
 /**
  * Return true if this DM is sub problem
+  \ingroup dm
  * @param  dm            the DM object
  * @param  is_subproblem true if subproblem
  * @return               error code
  */
 PetscErrorCode DMMoFEMGetIsSubDM(DM dm,PetscBool *is_sub_dm);
+
+/**
+ * \brief Add problem to composite DM on row
+  \ingroup dm
+ *
+ * This create block on row with DOFs from problem of given name
+ *
+ * @param  dm       the DM object
+ * @param  prb_name add problem name
+ * @return          error code
+ */
+PetscErrorCode DMMoFEMAddRowCompositeProblem(DM dm,const char prb_name[]);
+
+/**
+ * \brief Add problem to composite DM on col
+ * \ingroup dm
+ *
+ * This create block on col with DOFs from problem of given name
+ *
+ * @param  dm       the DM object
+ * @param  prb_name add problem name
+ * @return          error code
+ */
+PetscErrorCode DMMoFEMAddColCompositeProblem(DM dm,const char prb_name[]);
+
+/**
+ * \brief Get if this DM is composite DM
+ * \ingroup dm
+ *
+ * @param  dm         the DM object
+ * @param  is_comp_dm return true if composite problem here
+ * @return            error code
+ */
+PetscErrorCode DMMoFEMGetIsCompDM(DM dm,PetscBool *is_comp_dm);
 
 /**
   * destroy the MoFEM structure
@@ -502,6 +561,8 @@ PetscErrorCode DMLocalToGlobalEnd_MoFEM(DM,Vec,InsertMode,Vec);
  * should be destroyed with ISDestroy(), and both arrays should be freed with
  * PetscFree().
 
+  \ingroup dm
+
  */
 PetscErrorCode DMCreateFieldIS_MoFEM(DM dm, PetscInt *numFields, char ***fieldNames, IS **fields);
 
@@ -519,6 +580,7 @@ PetscErrorCode DMCreateFieldIS_MoFEM(DM dm, PetscInt *numFields, char ***fieldNa
  * \endcode
  *
  *
+  \ingroup dm
  */
 PetscErrorCode DMMoFEMGetFieldIS(DM dm,RowColData rc,const char field_name[],IS *is);
 
@@ -565,6 +627,10 @@ namespace MoFEM {
     std::vector<std::string> rowFields;
     std::vector<std::string> colFields;
     const MoFEMProblem *problemMainOfSubPtr;	  ///< pinter to main problem to sub-problem
+
+    PetscBool isCompDM;
+    std::vector<std::string> rowCompPrb;
+    std::vector<std::string> colCompPrb;
 
     PetscBool destroyProblem;   ///< If true destroy problem with DM
 

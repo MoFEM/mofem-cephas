@@ -121,13 +121,15 @@ int main(int argc, char *argv[]) {
   //build adjacencies
   ierr = m_field.build_adjacencies(bit_level0); CHKERRQ(ierr);
   //build problem
-  ierr = m_field.build_problem("TET_PROBLEM",false); CHKERRQ(ierr);
+  ProblemsManager *prb_mng_ptr;
+  ierr = m_field.query_interface(prb_mng_ptr); CHKERRQ(ierr);
+  ierr = prb_mng_ptr->buildProblem("TET_PROBLEM",false); CHKERRQ(ierr);
 
   //partition
-  ierr = m_field.partition_problem("TET_PROBLEM"); CHKERRQ(ierr);
-  ierr = m_field.partition_finite_elements("TET_PROBLEM"); CHKERRQ(ierr);
+  ierr = prb_mng_ptr->partitionProblem("TET_PROBLEM"); CHKERRQ(ierr);
+  ierr = prb_mng_ptr->partitionFiniteElements("TET_PROBLEM"); CHKERRQ(ierr);
   //what are ghost nodes, see Petsc Manual
-  ierr = m_field.partition_ghost_dofs("TET_PROBLEM"); CHKERRQ(ierr);
+  ierr = prb_mng_ptr->partitionGhostDofs("TET_PROBLEM"); CHKERRQ(ierr);
 
   Projection10NodeCoordsOnField ent_method(m_field,"MESH_NODE_POSITIONS");
   ierr = m_field.loop_dofs("MESH_NODE_POSITIONS",ent_method); CHKERRQ(ierr);

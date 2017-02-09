@@ -52,6 +52,31 @@ struct NodeMergerInterface: public UnknownInterface {
     errorIfNoCommonEdge = b;
   }
 
+  /** \brief merge nodes which sharing edge
+
+    Father is sties, mother is merged.
+
+    \param father node to which mother is merged to.
+    \param mother merged node
+    \param tetrahedra after merge
+    \param test only tets_ptr from range are changed
+    \param only_if_improve_quality Do merge if that improve quality
+    \param move father by fraction of edge length move=[0,1]
+
+    Move node on the edge, 0 not move, 1 move to mother side, 0.5 will be in the
+    middle.
+
+    */
+  PetscErrorCode mergeNodes(
+    EntityHandle father,
+    EntityHandle mother,
+    Range &out_tets,
+    Range *tets_ptr = NULL,
+    const bool only_if_improve_quality = false,
+    const double move = 0,
+    const int line_search = 0
+  );
+
 
   /** \brief merge nodes which sharing edge
 
@@ -59,6 +84,7 @@ struct NodeMergerInterface: public UnknownInterface {
 
     \param father node to which mother is merged to.
     \param mother merged node
+    \param bit level of mesh merged nodes mesh
     \param test only tets_ptr from range are changed
     \param only_if_improve_quality Do merge if that improve quality
     \param move father by fraction of edge length move=[0,1]
@@ -103,6 +129,22 @@ private:
 
   bool successMerge; ///< True if marge is success
   bool errorIfNoCommonEdge; ///< Send error if no common edge
+
+  PetscErrorCode minQuality(
+    Range &check_tests,
+    EntityHandle father,
+    EntityHandle mother,
+    double *coords_move,
+    double &min_quality
+  );
+
+  PetscErrorCode lineSearch(
+    Range &check_tests,
+    EntityHandle father,
+    EntityHandle mother,
+    int line_search,
+    double *coords_move
+  );
 
 };
 

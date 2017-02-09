@@ -39,7 +39,9 @@ namespace MoFEM {
 MoFEMProblem::MoFEMProblem(Interface &moab,const EntityHandle meshset):
   meshset(meshset),
   numered_dofs_rows(boost::shared_ptr<NumeredDofEntity_multiIndex>(new NumeredDofEntity_multiIndex())),
-  numered_dofs_cols(boost::shared_ptr<NumeredDofEntity_multiIndex>(new NumeredDofEntity_multiIndex())) {
+  numered_dofs_cols(boost::shared_ptr<NumeredDofEntity_multiIndex>(new NumeredDofEntity_multiIndex())),
+  sequenceRowDofContainer(boost::make_shared<SequenceDofContainer>()),
+  sequenceColDofContainer(boost::make_shared<SequenceDofContainer>()) {
   ErrorCode rval;
   Tag th_ProblemId;
   rval = moab.tag_get_handle("_ProblemId",th_ProblemId); CHKERR_MOAB(rval);
@@ -73,7 +75,7 @@ MoFEMProblem::MoFEMProblem(Interface &moab,const EntityHandle meshset):
   rval = moab.tag_get_by_ptr(th_RefBitLevel,&meshset,1,(const void **)&tag_BitRefLevel); CHKERR_MOAB(rval);
   Tag th_RefBitLevel_Mask;
   rval = moab.tag_get_handle("_RefBitLevelMask",th_RefBitLevel_Mask); CHKERR_MOAB(rval);
-  rval = moab.tag_get_by_ptr(th_RefBitLevel_Mask,&meshset,1,(const void **)&tag_BitRefLevel_DofMask); CHKERR_MOAB(rval);
+  rval = moab.tag_get_by_ptr(th_RefBitLevel_Mask,&meshset,1,(const void **)&tag_MaskBitRefLevel); CHKERR_MOAB(rval);
 }
 
 MoFEMProblem::~MoFEMProblem() {

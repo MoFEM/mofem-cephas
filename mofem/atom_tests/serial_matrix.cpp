@@ -146,13 +146,15 @@ int main(int argc, char *argv[]) {
   ierr = m_field.modify_problem_add_finite_element("TEST_PROBLEM","FE1"); CHKERRQ(ierr);
   ierr = m_field.modify_problem_add_finite_element("TEST_PROBLEM","FE2"); CHKERRQ(ierr);
 
-  ierr = m_field.build_problem("TEST_PROBLEM",true); CHKERRQ(ierr);
+  ProblemsManager *prb_mng_ptr;
+  ierr = m_field.query_interface(prb_mng_ptr); CHKERRQ(ierr);
+  ierr = prb_mng_ptr->buildProblem("TEST_PROBLEM",true); CHKERRQ(ierr);
+  ierr = prb_mng_ptr->partitionSimpleProblem("TEST_PROBLEM"); CHKERRQ(ierr);
 
-  //partition
-  ierr = m_field.partition_simple_problem("TEST_PROBLEM"); CHKERRQ(ierr);
-  ierr = m_field.partition_finite_elements("TEST_PROBLEM"); CHKERRQ(ierr);
-  //what are ghost nodes, see Petsc Manual
-  ierr = m_field.partition_ghost_dofs("TEST_PROBLEM"); CHKERRQ(ierr);
+  // partition finite elements
+  ierr = prb_mng_ptr->partitionFiniteElements("TEST_PROBLEM"); CHKERRQ(ierr);
+  // what are ghost nodes, see Petsc Manual
+  ierr = prb_mng_ptr->partitionGhostDofs("TEST_PROBLEM"); CHKERRQ(ierr);
 
   Vec F;
   ierr = m_field.VecCreateSeq("TEST_PROBLEM",ROW,&F); CHKERRQ(ierr);

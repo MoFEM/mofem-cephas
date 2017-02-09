@@ -37,11 +37,10 @@ struct MeshsetsManager;
  */
 struct Core: public Interface {
 
+  moab::Interface& moab;
+
   PetscErrorCode queryInterface(const MOFEMuuid& uuid, UnknownInterface** iface);
   PetscErrorCode query_interface_type(const std::type_info& iface_type,void*& ptr) const;
-
-  moab::Interface& moab;
-  MPI_Comm comm;
 
   Core(moab::Interface& _moab,MPI_Comm _comm = PETSC_COMM_WORLD,int _verbose = 1);
   ~Core();
@@ -51,13 +50,34 @@ struct Core: public Interface {
   inline Tag get_th_RefBitEdge() const { return th_RefBitEdge; }
   inline Tag get_th_RefType() const { return th_RefType; }
 
+  /**
+   * Is used to check consistency. I n future properly this will be removed and
+   * replaced by other solution. It is only for internal use.
+   */
+  enum SemaphoresBuildMofem {
+    BUILD_FIELD = 1<<0,
+    BUILD_FE = 1<<1,
+    BUILD_ADJ = 1<<2,
+    BUILD_PROBLEM = 1<<3,
+    PARTITION_PROBLEM = 1<<4,
+    PARTITION_FE = 1<<5,
+    PARTITION_GHOST_DOFS = 1<<6,
+    PARTITION_MESH = 1<<7
+  };
+
+  /**
+   * \brief Get flags/semaphores for different stages
+   */
+  inline int& getBuildMoFEM() const { return *buildMoFEM; }
 
   //add prims element FIXME This is wrong solution
   PetscErrorCode addPrismToDatabase(const EntityHandle prism,int verb = -1);
 
   protected:
 
+  mutable MPI_Comm comm;
   mutable boost::ptr_map<unsigned long,UnknownInterface> iFaces;
+  mutable int *buildMoFEM; ///< keeps flags/semaphores for different stages
 
   //Database
   ErrorCode rval;
@@ -76,7 +96,6 @@ struct Core: public Interface {
   Tag th_ProblemLocalNbDofCol,th_ProblemGhostNbDofCol;
   Tag th_ProblemShift,th_FieldShift,th_FEShift;
   Tag th_ElemType;                    ///< Needed for VTK files
-  // Tag th_SeriesName;                  ///< Recorded series name
 
   boost::shared_ptr<BasicEntityData> basicEntityDataPtr;
 
@@ -94,44 +113,27 @@ struct Core: public Interface {
   int *fShift,*feShift,*pShift;
   int verbose;
 
-  //ref
+  // Managing and storing basic entities
   RefEntity_multiIndex refinedEntities;		       ///< refined entities
   RefElement_multiIndex refinedFiniteElements;	 ///< refined elements
-  //field
+
+  // Managing and storung DOFs
   Field_multiIndex fIelds;			           ///< field
   MoFEMEntity_multiIndex entsFields;			 ///< entities on field
   DofEntity_multiIndex dofsField;		       ///< dofs on fiels
-  //finite element
+
+  // Managing and storing finite elements
   FiniteElement_multiIndex finiteElements;		        ///< finite elements
   EntFiniteElement_multiIndex entsFiniteElements;			///< finite element entities
-  //entFEAdjacencies
+
+  // Managing and storing adjacencies
   MoFEMEntityEntFiniteElementAdjacencyMap_multiIndex entFEAdjacencies;	///< adjacencies of elements to dofs
+
   //pRoblems
   MoFEMProblem_multiIndex pRoblems;					 ///< problems
-  //cubit
-  // CubitMeshSet_multiIndex cubitMeshsets;	   ///< cubit meshsets
-  // //series
-  // Series_multiIndex sEries;							///< recorded series
-  // SeriesStep_multiIndex seriesSteps;						///< recorded series steps
 
   //safety nets
   Tag th_MoFEMBuild;
-  int *buildMoFEM;
-
-  /**
-   * Is used to check consistency. I n future properly this will be removed and
-   * replaced by other solution. It is only for internal use.
-   */
-  enum SemaphoresBuildMofem {
-    BUILD_FIELD = 1<<0,
-    BUILD_FE = 1<<1,
-    BUILD_ADJ = 1<<2,
-    BUILD_PROBLEM = 1<<3,
-    PARTITION_PROBLEM = 1<<4,
-    PARTITION_FE = 1<<5,
-    PARTITION_GHOST_DOFS = 1<<6,
-    PARTITION_MESH = 1<<7
-  };
 
   //core methods
   PetscErrorCode getTags(int verb = -1);
@@ -142,11 +144,8 @@ struct Core: public Interface {
   PetscErrorCode initialiseDatabseInformationFromMesh(int verb = -1);
 
   //moab interface
-  moab::Interface& get_moab();
-  const moab::Interface& get_moab() const;
-
-  //communicator MoFEM
-  MPI_Comm get_comm() const;
+  inline moab::Interface& get_moab() { return moab; }
+  inline const moab::Interface& get_moab() const { return moab; }
 
   //FiedlInterface
 
@@ -170,6 +169,7 @@ struct Core: public Interface {
     return *get_meshsets_manager_ptr();
   }
 
+  // Should not be used, access data meshesets by MeshsetsManager interface
   DEPRECATED bool check_msId_meshset(const int ms_id,const CubitBCType cubit_bc_type);
   DEPRECATED PetscErrorCode add_cubit_msId(const CubitBCType cubit_bc_type,const int ms_id,const std::string name = "");
   DEPRECATED PetscErrorCode set_cubit_msId_attribites(
@@ -182,14 +182,27 @@ struct Core: public Interface {
     const CubitBCType cubit_bc_type,const int ms_id,const GenericCubitBcData &data
   );
   DEPRECATED PetscErrorCode delete_cubit_msId(const CubitBCType cubit_bc_type,const int ms_id);
-  DEPRECATED PetscErrorCode get_cubit_msId(const int ms_id,const CubitBCType cubit_bc_type,const CubitMeshSets **cubit_meshset_ptr);
-  DEPRECATED PetscErrorCode get_cubit_msId_entities_by_dimension(const int ms_id,const CubitBCType cubit_bc_type, const int dimension,Range &entities,const bool recursive = false);
-  DEPRECATED PetscErrorCode get_cubit_msId_entities_by_dimension(const int ms_id,const CubitBCType cubit_bc_type, Range &entities,const bool recursive = false);
-  DEPRECATED PetscErrorCode get_cubit_msId_entities_by_dimension(const int ms_id,const unsigned int cubit_bc_type, const int dimension,Range &entities,const bool recursive = false);
-  DEPRECATED PetscErrorCode get_cubit_msId_entities_by_dimension(const int ms_id,const unsigned int cubit_bc_type, Range &entities,const bool recursive = false);
-  DEPRECATED PetscErrorCode get_cubit_msId_meshset(const int ms_id,const unsigned int cubit_bc_type,EntityHandle &meshset);
-  DEPRECATED PetscErrorCode get_cubit_meshsets(const unsigned int cubit_bc_type,Range &meshsets);
-
+  DEPRECATED PetscErrorCode get_cubit_msId(
+    const int ms_id,const CubitBCType cubit_bc_type,const CubitMeshSets **cubit_meshset_ptr
+  );
+  DEPRECATED PetscErrorCode get_cubit_msId_entities_by_dimension(
+    const int ms_id,const CubitBCType cubit_bc_type, const int dimension,Range &entities,const bool recursive = false
+  );
+  DEPRECATED PetscErrorCode get_cubit_msId_entities_by_dimension(
+    const int ms_id,const CubitBCType cubit_bc_type, Range &entities,const bool recursive = false
+  );
+  DEPRECATED PetscErrorCode get_cubit_msId_entities_by_dimension(
+    const int ms_id,const unsigned int cubit_bc_type, const int dimension,Range &entities,const bool recursive = false
+  );
+  DEPRECATED PetscErrorCode get_cubit_msId_entities_by_dimension(
+    const int ms_id,const unsigned int cubit_bc_type, Range &entities,const bool recursive = false
+  );
+  DEPRECATED PetscErrorCode get_cubit_msId_meshset(
+    const int ms_id,const unsigned int cubit_bc_type,EntityHandle &meshset
+  );
+  DEPRECATED PetscErrorCode get_cubit_meshsets(
+    const unsigned int cubit_bc_type,Range &meshsets
+  );
   DEPRECATED PetscErrorCode print_cubit_displacement_set() const;
   DEPRECATED PetscErrorCode print_cubit_pressure_set() const;
   DEPRECATED PetscErrorCode print_cubit_force_set() const;
@@ -410,9 +423,11 @@ struct Core: public Interface {
   PetscErrorCode modify_problem_unset_finite_element(const std::string &name_problem,const std::string &MoFEMFiniteElement_name);
   PetscErrorCode modify_problem_ref_level_add_bit(const std::string &name_problem,const BitRefLevel &bit);
   PetscErrorCode modify_problem_ref_level_set_bit(const std::string &name_problem,const BitRefLevel &bit);
-  PetscErrorCode modify_problem_dof_mask_ref_level_set_bit(const std::string &name_problem,const BitRefLevel &bit);
+  PetscErrorCode modify_problem_mask_ref_level_set_bit(const std::string &name_problem,const BitRefLevel &bit);
   BitProblemId get_BitProblemId(const std::string& name) const;
   PetscErrorCode list_problem() const;
+  PetscErrorCode clear_problem(const std::string &name,int verb = -1);
+  PetscErrorCode clear_problems(int verb = -1);
 
   ///add entity EntFe to finite element data databse and resolve dofs on that entity
   //loop over all finite elements, resolve its meshsets, and resolve dofs on that entitie
@@ -422,6 +437,12 @@ struct Core: public Interface {
   PetscErrorCode build_finite_elements(const string fe_name,const Range *ents_ptr = NULL,int verb = -1);
   PetscErrorCode clear_finite_elements(const BitRefLevel &bit,const BitRefLevel &mask,int verb = -1);
   PetscErrorCode clear_finite_elements(const std::string &name,const Range &ents,int verb = -1);
+  PetscErrorCode resolve_shared_ents(const MoFEMProblem *problem_ptr,const std::string &fe_name,int verb = -1);
+  PetscErrorCode resolve_shared_ents(const std::string &name,const std::string &fe_name,int verb = -1);
+  PetscErrorCode get_problem_elements_layout(
+    const std::string &name,const std::string &fe_name,PetscLayout *layout,int verb = -1
+  );
+
 
   //entFEAdjacencies
   PetscErrorCode build_adjacencies(const Range &ents,int verb = -1);
@@ -435,27 +456,23 @@ struct Core: public Interface {
   PetscErrorCode list_adjacencies() const;
 
   //problem building
-  PetscErrorCode build_problem_on_partitioned_mesh(
-    MoFEMProblem *problem_ptr,const bool square_matrix = true,int verb = -1
-  );
-  PetscErrorCode build_problem_on_distributed_mesh(int verb = -1);
-  PetscErrorCode build_problem_on_distributed_mesh(
+  DEPRECATED PetscErrorCode build_problem_on_distributed_mesh(int verb = -1);
+  DEPRECATED PetscErrorCode build_problem_on_distributed_mesh(
     const std::string &name,const bool square_matrix = true,int verb = -1
   );
-  PetscErrorCode build_problem_on_distributed_mesh(
+  DEPRECATED PetscErrorCode build_problem_on_distributed_mesh(
     MoFEMProblem *problem_ptr,const bool square_matrix = true,int verb = -1
   );
-  PetscErrorCode partition_mesh(
+
+  DEPRECATED PetscErrorCode partition_mesh(
     const Range &ents,const int dim,const int adj_dim,const int n_parts,int verb = -1
   );
-  PetscErrorCode build_problem(const std::string &name,const bool square_matrix,int verb = -1);
-  PetscErrorCode build_problem(MoFEMProblem *problem_ptr,const bool square_matrix,int verb = -1);
-  PetscErrorCode clear_problem(const std::string &name,int verb = -1);
+  DEPRECATED PetscErrorCode build_problem(const std::string &name,const bool square_matrix,int verb = -1);
+  DEPRECATED PetscErrorCode build_problem(MoFEMProblem *problem_ptr,const bool square_matrix,int verb = -1);
   DEPRECATED PetscErrorCode build_problems(int verb = -1);
-  PetscErrorCode clear_problems(int verb = -1);
-  PetscErrorCode partition_simple_problem(const std::string &name,int verb = -1);
-  PetscErrorCode partition_problem(const std::string &name,int verb = -1);
-  PetscErrorCode partition_compose_problem(
+  DEPRECATED PetscErrorCode partition_simple_problem(const std::string &name,int verb = -1);
+  DEPRECATED PetscErrorCode partition_problem(const std::string &name,int verb = -1);
+  DEPRECATED PetscErrorCode partition_compose_problem(
     const std::string &name,
     const std::string &problem_for_rows,
     const bool copy_rows,
@@ -463,7 +480,7 @@ struct Core: public Interface {
     const bool copy_cols,
     int verb = -1
   );
-  PetscErrorCode build_sub_problem(
+  DEPRECATED PetscErrorCode build_sub_problem(
     const std::string &out_name,
     const std::vector<std::string> &fields_row,
     const std::vector<std::string> &fields_col,
@@ -471,21 +488,18 @@ struct Core: public Interface {
     const bool square_matrix = true,
     int verb = -1
   );
-  PetscErrorCode partition_ghost_dofs(const std::string &name,int verb = -1);
-  PetscErrorCode partition_finite_elements(
+  DEPRECATED PetscErrorCode printPartitionedProblem(const MoFEMProblem *problem_ptr,int verb = -1);
+  DEPRECATED PetscErrorCode debugPartitionedProblem(const MoFEMProblem *problem_ptr,int verb = -1);
+  DEPRECATED PetscErrorCode partition_ghost_dofs(const std::string &name,int verb = -1);
+  DEPRECATED PetscErrorCode partition_finite_elements(
     const std::string &name,
     bool part_from_moab = false,
     int low_proc = -1,
     int hi_proc = -1,
     int verb = -1
   );
-  PetscErrorCode partition_check_matrix_fill_in(const std::string &problem_neme,int row,int col,int verb);
-  PetscErrorCode printPartitionedProblem(const MoFEMProblem *problem_ptr,int verb = -1);
-  PetscErrorCode debugPartitionedProblem(const MoFEMProblem *problem_ptr,int verb = -1);
-  PetscErrorCode resolve_shared_ents(const MoFEMProblem *problem_ptr,const std::string &fe_name,int verb = -1);
-  PetscErrorCode resolve_shared_ents(const std::string &name,const std::string &fe_name,int verb = -1);
-  PetscErrorCode get_problem_elements_layout(
-    const std::string &name,const std::string &fe_name,PetscLayout *layout,int verb = -1
+  PetscErrorCode partition_check_matrix_fill_in(
+    const std::string &problem_neme,int row,int col,int verb
   );
 
   ///save meshsets
@@ -493,6 +507,8 @@ struct Core: public Interface {
 
   //vector and matrices
   PetscErrorCode MatCreateMPIAIJWithArrays(const std::string &name,Mat *Aij,int verb = -1);
+  PetscErrorCode MatCreateMPIAdj_with_Idx_mi_tag(const std::string &name,Mat *Adj,int verb = -1);
+
   PetscErrorCode MatCreateSeqAIJWithArrays(const std::string &name,Mat *Aij,PetscInt **i,PetscInt **j,PetscScalar **v,int verb = -1);
 
   PetscErrorCode VecCreateSeq(const std::string &name,RowColData rc,Vec *V) const;
@@ -641,10 +657,13 @@ struct Core: public Interface {
   PetscErrorCode get_fields(const Field_multiIndex **fields_ptr) const;
   PetscErrorCode get_ref_ents(const RefEntity_multiIndex **refined_entities_ptr) const;
   PetscErrorCode get_ref_finite_elements(const RefElement_multiIndex **refined_finite_elements_ptr) const;
-  PetscErrorCode get_problem(const std::string &problem_name,const MoFEMProblem **problem_ptr) const;
+  PetscErrorCode get_finite_elements(const FiniteElement_multiIndex **fe_ptr) const;
+  PetscErrorCode get_ents_finite_elements(const EntFiniteElement_multiIndex **fe_ent_ptr) const;
   PetscErrorCode get_field_ents(const MoFEMEntity_multiIndex **field_ents) const;
   PetscErrorCode get_dofs(const DofEntity_multiIndex **dofs_ptr) const ;
-  PetscErrorCode get_finite_elements(const FiniteElement_multiIndex **finiteElements_ptr) const;
+  PetscErrorCode get_problem(const std::string &problem_name,const MoFEMProblem **problem_ptr) const;
+  PetscErrorCode get_problems(const MoFEMProblem_multiIndex **problems_ptr) const;
+
 
   MoFEMEntityByFieldName::iterator get_ent_moabfield_by_name_begin(const std::string &field_name) const;
   MoFEMEntityByFieldName::iterator get_ent_moabfield_by_name_end(const std::string &field_name) const;
@@ -701,11 +720,14 @@ struct Core: public Interface {
   PetscLogEvent USER_EVENT_createMat;
   PetscLogEvent USER_EVENT_buildProblem;
 
-
   // size and rank of communicator
+
+  /// communicator MoFEM
+  inline MPI_Comm& get_comm() const { return comm; }
+
   int sIze,rAnk;
-  int getCommSize() const { return sIze; }
-  int getCommRank() const { return rAnk; }
+  inline int getCommSize() const { return sIze; }
+  inline int getCommRank() const { return rAnk; }
 
   private:
 

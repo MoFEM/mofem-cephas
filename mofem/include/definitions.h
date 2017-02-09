@@ -40,7 +40,8 @@
 enum Interfaces {
   UNKNOWNINTERFACE              = 1<<0,
   //Field Interface
-  FIELD_INTERFACE               = 1<<0|1<<1,
+  CORE_INTERFACE                = 1<<0|1<<1,
+  PROBLEMSMANAGER_INTERFACE     = 1<<0|1<<2,
   MESH_REFINE                   = 1<<1|1<<2,
   PRISM_INTEFACE                = 1<<1|1<<3,
   SERIES_RECORDER               = 1<<1|1<<4,
@@ -139,7 +140,7 @@ const static FieldApproximationBase ApproximationBaseArray[] = {
   AINSWORTH_LEGENDRE_BASE,
   AINSWORTH_LOBBATO_BASE,
   AINSOWRTH_BERNSTEIN_BEZIER_BASE,
-  DEMKOWICZ_JACOBI_BASE,  
+  DEMKOWICZ_JACOBI_BASE,
   USER_BASE,
   LASTBASE
 };
