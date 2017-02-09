@@ -196,6 +196,30 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::calculateVolumeAndJacobian() {
   PetscFunctionReturn(0);
 }
 
+PetscErrorCode VolumeElementForcesAndSourcesCore::transformBaseFunctions() {
+  PetscFunctionBegin;
+  try {
+    ierr = opSetInvJacH1.opRhs(dataH1); CHKERRQ(ierr);
+    if(dataH1.spacesOnEntities[MBEDGE].test(HCURL)) {
+      ierr = opCovariantPiolaTransform.opRhs(dataHcurl); CHKERRQ(ierr);
+      ierr = opSetInvJacHdivAndHcurl.opRhs(dataHcurl); CHKERRQ(ierr);
+    }
+    if(dataH1.spacesOnEntities[MBTRI].test(HDIV)) {
+      ierr = opContravariantPiolaTransform.opRhs(dataHdiv); CHKERRQ(ierr);
+      ierr = opSetInvJacHdivAndHcurl.opRhs(dataHdiv); CHKERRQ(ierr);
+    }
+    if(dataH1.spacesOnEntities[MBTET].test(L2)) {
+      ierr = opSetInvJacH1.opRhs(dataL2); CHKERRQ(ierr);
+    }
+  } catch (std::exception& ex) {
+    std::ostringstream ss;
+    ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
+    SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
+  }
+  PetscFunctionReturn(0);
+}
+
+
 PetscErrorCode VolumeElementForcesAndSourcesCore::calculateCoordinatesAtGaussPts() {
   PetscFunctionBegin;
   try {
@@ -387,25 +411,7 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::operator()() {
     if(nbGaussPts == 0) PetscFunctionReturn(0);
     ierr = calculateCoordinatesAtGaussPts(); CHKERRQ(ierr);
     ierr = calculateBaseFunctionsOnElement(); CHKERRQ(ierr);
-
-    try {
-      ierr = opSetInvJacH1.opRhs(dataH1); CHKERRQ(ierr);
-      if(dataH1.spacesOnEntities[MBEDGE].test(HCURL)) {
-        ierr = opCovariantPiolaTransform.opRhs(dataHcurl); CHKERRQ(ierr);
-        ierr = opSetInvJacHdivAndHcurl.opRhs(dataHcurl); CHKERRQ(ierr);
-      }
-      if(dataH1.spacesOnEntities[MBTRI].test(HDIV)) {
-        ierr = opContravariantPiolaTransform.opRhs(dataHdiv); CHKERRQ(ierr);
-        ierr = opSetInvJacHdivAndHcurl.opRhs(dataHdiv); CHKERRQ(ierr);
-      }
-      if(dataH1.spacesOnEntities[MBTET].test(L2)) {
-        ierr = opSetInvJacH1.opRhs(dataL2); CHKERRQ(ierr);
-      }
-    } catch (std::exception& ex) {
-      std::ostringstream ss;
-      ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
-      SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
-    }
+    ierr = transformBaseFunctions(); CHKERRQ(ierr);
 
     if(
       dataPtr->get<FieldName_mi_tag>().find(meshPositionsFieldName)!=
@@ -431,6 +437,7 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::operator()() {
       try {
         ierr = opHOatGaussPoints.opRhs(dataH1); CHKERRQ(ierr);
         hoGaussPtsInvJac.resize(hoGaussPtsJac.size1(),hoGaussPtsJac.size2(),false);
+        // Express Jacobian as tensor
         FTensor::Tensor2<double*,3,3> jac(
           &hoGaussPtsJac(0,0),&hoGaussPtsJac(0,1),&hoGaussPtsJac(0,2),
           &hoGaussPtsJac(0,3),&hoGaussPtsJac(0,4),&hoGaussPtsJac(0,5),
@@ -443,6 +450,7 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::operator()() {
         );
         hoGaussPtsDetJac.resize(nbGaussPts,false);
         FTensor::Tensor0<double*> det(&hoGaussPtsDetJac[0]);
+        // Calculate inverse and determinant
         for(int gg = 0;gg!=nbGaussPts;gg++) {
           ierr = determinantTensor3by3(jac,det); CHKERRQ(ierr);
           // if(det<0) {
@@ -453,15 +461,7 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::operator()() {
           ++inv_jac;
           ++det;
         }
-        // MatrixDouble jac(3,3);
-        // for(int gg = 0;gg<nbGaussPts;gg++) {
-          // cblas_dcopy(9,&hoGaussPtsJac(gg,0),1,&jac(0,0),1);
-        //   hoGaussPtsDetJac[gg] = ShapeDetJacVolume(&jac(0,0));
-        //   if(hoGaussPtsDetJac[gg]<0) {
-        //     SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"Negative volume");
-        //   }
-        //   ierr = ShapeInvJacVolume(&hoGaussPtsInvJac(gg,0)); CHKERRQ(ierr);
-        // }
+        // Transform derivatives of base functions and apply Piola transformation if needed.
         ierr = opSetHoInvJacH1.opRhs(dataH1); CHKERRQ(ierr);
         if(dataH1.spacesOnEntities[MBTET].test(L2)) {
           ierr = opSetHoInvJacH1.opRhs(dataL2); CHKERRQ(ierr);
