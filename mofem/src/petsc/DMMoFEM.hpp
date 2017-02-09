@@ -458,6 +458,7 @@ PetscErrorCode DMMoFEMAddSubFieldCol(DM dm,const char field_name[]);
 
 /**
  * Return true if this DM is sub problem
+  \ingroup dm
  * @param  dm            the DM object
  * @param  is_subproblem true if subproblem
  * @return               error code
@@ -466,6 +467,7 @@ PetscErrorCode DMMoFEMGetIsSubDM(DM dm,PetscBool *is_sub_dm);
 
 /**
  * \brief Add problem to composite DM on row
+  \ingroup dm
  *
  * This create block on row with DOFs from problem of given name
  *
@@ -477,6 +479,7 @@ PetscErrorCode DMMoFEMAddRowCompositeProblem(DM dm,const char prb_name[]);
 
 /**
  * \brief Add problem to composite DM on col
+ * \ingroup dm
  *
  * This create block on col with DOFs from problem of given name
  *
@@ -488,6 +491,8 @@ PetscErrorCode DMMoFEMAddColCompositeProblem(DM dm,const char prb_name[]);
 
 /**
  * \brief Get if this DM is composite DM
+ * \ingroup dm
+ *
  * @param  dm         the DM object
  * @param  is_comp_dm return true if composite problem here
  * @return            error code
@@ -556,6 +561,8 @@ PetscErrorCode DMLocalToGlobalEnd_MoFEM(DM,Vec,InsertMode,Vec);
  * should be destroyed with ISDestroy(), and both arrays should be freed with
  * PetscFree().
 
+  \ingroup dm
+
  */
 PetscErrorCode DMCreateFieldIS_MoFEM(DM dm, PetscInt *numFields, char ***fieldNames, IS **fields);
 
@@ -573,6 +580,7 @@ PetscErrorCode DMCreateFieldIS_MoFEM(DM dm, PetscInt *numFields, char ***fieldNa
  * \endcode
  *
  *
+  \ingroup dm
  */
 PetscErrorCode DMMoFEMGetFieldIS(DM dm,RowColData rc,const char field_name[],IS *is);
 

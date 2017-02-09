@@ -2,6 +2,12 @@
 
 FIXME: Move code to cpp file.
 
+Project displacements/coordinates from 10 node tetrahedra on hierarchical
+approximation base.
+
+This is example how to use MoFEM::EntMethod when some operator for each node need
+to be applied.
+
 */
 
 
@@ -31,11 +37,11 @@ namespace MoFEM {
 struct Projection10NodeCoordsOnField: public EntMethod {
 
   Interface& mField;
-  std::string field_name;
+  std::string fieldName;
   int vErbose;
 
-  Projection10NodeCoordsOnField(MoFEM::Interface& m_field,std::string _field_name,int verb = 0):
-    mField(m_field),field_name(_field_name),vErbose(verb) {
+  Projection10NodeCoordsOnField(MoFEM::Interface& m_field,std::string field_name,int verb = 0):
+    mField(m_field),fieldName(field_name),vErbose(verb) {
   }
 
   PetscErrorCode ierr;
@@ -47,17 +53,17 @@ struct Projection10NodeCoordsOnField: public EntMethod {
   }
 
   ublas::vector<double> coords;
-  ublas::vector<double,ublas::bounded_array<double,3> > ave_mid_coord;
-  ublas::vector<double,ublas::bounded_array<double,3> > mid_node_coord;
-  ublas::vector<double,ublas::bounded_array<double,3> > diff_node_coord;
-  ublas::vector<double,ublas::bounded_array<double,3> > Dof;
+  ublas::vector<double,ublas::bounded_array<double,3> > aveMidCoord;
+  ublas::vector<double,ublas::bounded_array<double,3> > midNodeCoord;
+  ublas::vector<double,ublas::bounded_array<double,3> > diffNodeCoord;
+  ublas::vector<double,ublas::bounded_array<double,3> > dOf;
 
   PetscErrorCode operator()() {
     PetscFunctionBegin;
     if(dofPtr == NULL) {
       SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
     }
-    if(dofPtr->getName() != field_name) PetscFunctionReturn(0);
+    if(dofPtr->getName() != fieldName) PetscFunctionReturn(0);
     if(dofPtr->getEntType() == MBVERTEX) {
       EntityHandle node = dofPtr->getEnt();
       coords.resize(3);
@@ -87,14 +93,14 @@ struct Projection10NodeCoordsOnField: public EntMethod {
     }
     coords.resize(num_nodes*3);
     rval = mField.get_moab().get_coords(conn,num_nodes,&*coords.data().begin());  CHKERR_MOAB(rval);
-    ave_mid_coord.resize(3);
-    mid_node_coord.resize(3);
+    aveMidCoord.resize(3);
+    midNodeCoord.resize(3);
     for(int dd = 0;dd<3;dd++) {
-      ave_mid_coord[dd] = (coords[0*3+dd]+coords[1*3+dd])*0.5;
+      aveMidCoord[dd] = (coords[0*3+dd]+coords[1*3+dd])*0.5;
       if(num_nodes == 3) {
-        mid_node_coord[dd] = coords[2*3+dd];
+        midNodeCoord[dd] = coords[2*3+dd];
       } else {
-        mid_node_coord[dd] = ave_mid_coord[dd];
+        midNodeCoord[dd] = aveMidCoord[dd];
       }
     }
     double edge_shape_function_val = 0.25;
@@ -109,19 +115,14 @@ struct Projection10NodeCoordsOnField: public EntMethod {
       SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not yet implemented");
     }
 
-    diff_node_coord.resize(3);
-    ublas::noalias(diff_node_coord) = mid_node_coord-ave_mid_coord;
-    // Dof*edge_shape_function_val + ave_mid_coord = mid_node_coord
-    // Dof = (mid_node_coord-ave_mid_coord)/edge_shape_function_val
-    Dof.resize(3);
-    ublas::noalias(Dof) = diff_node_coord/edge_shape_function_val;
-    /*if(dofPtr->getDofOrder() != 2) {
-      SETERRQ(PETSC_COMM_SELF,1,"this method works only fileds which are order 2");
-    }*/
+    diffNodeCoord.resize(3);
+    ublas::noalias(diffNodeCoord) = midNodeCoord-aveMidCoord;
+    dOf.resize(3);
+    ublas::noalias(dOf) = diffNodeCoord/edge_shape_function_val;
     if(dofPtr->getNbOfCoeffs() != 3) {
       SETERRQ(PETSC_COMM_SELF,1,"this method works only fields which are rank 3");
     }
-    dofPtr->getFieldData() = Dof[dofPtr->getDofCoeffIdx()];
+    dofPtr->getFieldData() = dOf[dofPtr->getDofCoeffIdx()];
     PetscFunctionReturn(0);
   }
 
@@ -141,9 +142,9 @@ struct ProjectionFieldOn10NodeTet: public Projection10NodeCoordsOnField {
   const int maxApproximationOrder;
 
   ProjectionFieldOn10NodeTet(
-    MoFEM::Interface& m_field,std::string _field_name,bool set_nodes,bool on_coords,std::string on_tag = "NoNE"
+    MoFEM::Interface& m_field,std::string _fieldName,bool set_nodes,bool on_coords,std::string on_tag = "NoNE"
   ):
-  Projection10NodeCoordsOnField(m_field,_field_name),
+  Projection10NodeCoordsOnField(m_field,_fieldName),
   setNodes(set_nodes),
   onCoords(on_coords),
   onTag(on_tag),
@@ -161,9 +162,9 @@ struct ProjectionFieldOn10NodeTet: public Projection10NodeCoordsOnField {
       if(onTag == "NoNE") {
         SETERRQ(PETSC_COMM_SELF,1,"tag name not specified");
       }
-      field_it = fieldsPtr->get<FieldName_mi_tag>().find(field_name);
+      field_it = fieldsPtr->get<FieldName_mi_tag>().find(fieldName);
       if(field_it == fieldsPtr->get<FieldName_mi_tag>().end()) {
-        SETERRQ1(PETSC_COMM_SELF,1,"field not found %s",field_name.c_str());
+        SETERRQ1(PETSC_COMM_SELF,1,"field not found %s",fieldName.c_str());
       }
       int field_rank = (*field_it)->getNbOfCoeffs();
       ublas::vector<double> def_VAL = ublas::zero_vector<double>(field_rank);
@@ -183,7 +184,7 @@ struct ProjectionFieldOn10NodeTet: public Projection10NodeCoordsOnField {
 
   PetscErrorCode operator()() {
     PetscFunctionBegin;
-    if(dofPtr->getName() != field_name) PetscFunctionReturn(0);
+    if(dofPtr->getName() != fieldName) PetscFunctionReturn(0);
     if(setNodes) {
       if(dofPtr->getEntType() == MBVERTEX) {
         EntityHandle node = dofPtr->getEnt();

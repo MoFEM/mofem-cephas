@@ -437,6 +437,7 @@ struct Interface: public UnknownInterface {
   virtual PetscErrorCode get_entities_by_ref_level(const BitRefLevel &bit,const BitRefLevel &mask,const EntityHandle meshset) = 0;
 
   /**\brief add all ents from ref level given by bit to meshset
+   * \ingroup mofem_ref_ents
    *
    * \param BitRefLevel bitLevel
    * \param BitRefLevel mask

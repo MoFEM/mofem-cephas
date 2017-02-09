@@ -57,7 +57,8 @@ inline void* get_tag_ptr(SequenceManager *sequence_manager,Tag th,EntityHandle e
 }
 
 BasicEntityData::BasicEntityData(const moab::Interface &moab):
-moab(const_cast<moab::Interface&>(moab)) {
+moab(const_cast<moab::Interface&>(moab)),
+distributedMesh(true) {
   rval = moab.tag_get_handle("_RefParentHandle",th_RefParentHandle); MOAB_THROW(rval);
   rval = moab.tag_get_handle("_RefBitLevel",th_RefBitLevel); MOAB_THROW(rval);
 }

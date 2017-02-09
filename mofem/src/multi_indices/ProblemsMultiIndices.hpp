@@ -659,71 +659,50 @@ struct MoFEMProblem {
    */
   PetscErrorCode getNumberOfElementsByPart(MPI_Comm comm,PetscLayout *layout) const;
 
+  typedef multi_index_container<
+    boost::weak_ptr<std::vector<NumeredDofEntity> >,
+    indexed_by<
+      sequenced<>
+    >
+  > SequenceDofContainer;
+
   /**
-   * \brief Get weak_ptr reference to sequence/vector storing dofs.
+   * \brief Get reference to sequence data numbered dof container
    *
-   * Vector is automatically destroy when last DOF in vector os destroyed. Every
-   * shared_ptr to the DOF has aliased shared_ptr to vector of DOFs in that vector.
-   * That do the trick.
+   * In sequence data container data are physically stored. The purpose of this
+   * is to allocate NumeredDofEntity data in bulk, having only one allocation instead
+   * each time entity is inserted. That makes code efficient.
    *
-   * \note It is week_ptr, so it is no guaranteed that sequence is there. Check
-   * if sequence is there.
-   * \code
-   * if(boost::shared_ptr<std::vector<NumeredDofEntity> > ptr=fe->getRowDofsSeqence().lock()) {
-   *  // use ptr
-   * }
-   * \endcode
-   *
+   * The vector in sequence is destroyed if last entity inside that vector is
+   * destroyed. All MoFEM::NumeredDofEntity have aliased shared_ptr which points to the vector.
+
+   * @return MoFEM::MoFEMProblem::SequenceDofContainer
    */
-  inline boost::weak_ptr<std::vector<NumeredDofEntity> >& getRowDofsSeqence() const {
-    return dofsRowSequence;
+  inline boost::shared_ptr<SequenceDofContainer> getRowDofsSeqence() const {
+    return sequenceRowDofContainer;
   }
 
   /**
-   * \brief Get weak_ptr reference to sequence/vector storing dofs.
+   * \brief Get reference to sequence data numbered dof container
    *
-   * Vector is automatically destroy when last DOF in vector os destroyed. Every
-   * shared_ptr to the DOF has aliased shared_ptr to vector of DOFs in that vector.
-   * That do the trick.
+   * In sequence data container data are physically stored. The purpose of this
+   * is to allocate NumeredDofEntity data in bulk, having only one allocation instead
+   * each time entity is inserted. That makes code efficient.
    *
-   * \note It is week_ptr, so it is no guaranteed that sequence is there. Check
-   * if sequence is there.
-   * \code
-   * if(boost::shared_ptr<std::vector<NumeredDofEntity> > ptr=fe->getColDofsSeqence().lock()) {
-   *  // use ptr
-   * }
-   * \endcode
-   *
+   * The vector in sequence is destroyed if last entity inside that vector is
+   * destroyed. All MoFEM::NumeredDofEntity have aliased shared_ptr which points to the vector.
+
+   * @return MoFEM::MoFEMProblem::SequenceDofContainer
    */
-  inline boost::weak_ptr<std::vector<NumeredDofEntity> >& getColDofsSeqence() const {
-    return dofsColSequence;
+  inline boost::shared_ptr<SequenceDofContainer> getColDofsSeqence() const {
+    return sequenceColDofContainer;
   }
-
-  /**
-   * \brief Get weak_ptr reference to sequence/vector storing finite elements.
-   *
-   * \note It is week_ptr, so it is no guaranteed that sequence is there. Check
-   * if sequence is there.
-   * \code
-   * if(boost::shared_ptr<std::vector<NumeredDofEntity> > ptr=fe->getFeSeqence().lock()) {
-   *  // use ptr
-   * }
-   * \endcode
-   *
-   */
-  // inline boost::weak_ptr<std::vector<NumeredEntFiniteElement> >& getFeSeqence() const {
-  //   return feSequence;
-  // }
-
 
 private:
 
   // Keep vector of DoFS on entity
-  mutable boost::weak_ptr<std::vector<NumeredDofEntity> > dofsRowSequence;
-  mutable boost::weak_ptr<std::vector<NumeredDofEntity> > dofsColSequence;
-
-  // // Keeps finite elements on entities
-  // mutable boost::weak_ptr<std::vector<NumeredEntFiniteElement> > feSequence;
+  mutable boost::shared_ptr<SequenceDofContainer> sequenceRowDofContainer;
+  mutable boost::shared_ptr<SequenceDofContainer> sequenceColDofContainer;
 
 };
 
