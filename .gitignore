@@ -22,10 +22,9 @@ obsolete
 solid_shell_prism_element
 soft_tissue_materials
 minimal_surface_equation
-bone_remodelling
 helmholtz
 optimal_mass_transport
-cell_engineering
+
 
 _Store
 *.swp

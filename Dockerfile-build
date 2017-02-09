@@ -5,7 +5,8 @@ MAINTAINER Lukasz.Kaczmarczyk@glasgow.ac.uk
 ADD mofem /mofem
 RUN /mofem/scripts/docker_build_mofem_script.sh
 
-VOLUME /mofem_build
+#VOLUME /mofem_build
+CMD mkdir -p /mofem_build
 WORKDIR /mofem_build
 
 CMD /mofem/docker_build_mofem_script.sh

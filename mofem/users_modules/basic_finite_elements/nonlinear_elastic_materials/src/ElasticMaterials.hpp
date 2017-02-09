@@ -22,10 +22,12 @@
 
 #include <Hooke.hpp>
 #include <NeoHookean.hpp>
+#include <MooneyRivlin.hpp>
 
 #define MAT_KIRCHOFF "KIRCHOFF"
 #define MAT_HOOKE "HOOKE"
 #define MAT_NEOHOOKEAN "NEOHOOKEAN"
+#define MAT_MOONEY "MOONEY"
 
 /** \brief Manage setting parameters and constitutive equations for nonlinear/linear elastic materials
   * \ingroup nonlinear_elastic_elem
@@ -88,6 +90,9 @@ struct ElasticMaterials {
     mat_name = MAT_NEOHOOKEAN;
     aDoubleMaterialModel.insert(mat_name,new NeoHookean<adouble>());
     doubleMaterialModel.insert(mat_name,new NeoHookean<double>());
+    mat_name = MAT_MOONEY;
+    aDoubleMaterialModel.insert(mat_name,new MooneyRivlin<adouble>());
+    doubleMaterialModel.insert(mat_name,new MooneyRivlin<double>());
     std::ostringstream avilable_materials;
     avilable_materials << "set elastic material < ";
     boost::ptr_map<std::string,NonlinearElasticElement::FunctionsToCalculatePiolaKirchhoffI<double> >::iterator mit;
@@ -298,6 +303,10 @@ struct ElasticMaterials {
       if(blockData[id].mAterial.compare(MAT_NEOHOOKEAN)==0) {
         set_of_blocks[id].materialDoublePtr = &doubleMaterialModel.at(MAT_NEOHOOKEAN);
         set_of_blocks[id].materialAdoublePtr = &aDoubleMaterialModel.at(MAT_NEOHOOKEAN);
+      } else
+      if(blockData[id].mAterial.compare(MAT_MOONEY)==0) {
+        set_of_blocks[id].materialDoublePtr = &doubleMaterialModel.at(MAT_MOONEY);
+        set_of_blocks[id].materialAdoublePtr = &aDoubleMaterialModel.at(MAT_MOONEY);
       } else {
         SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"field with that space is not implemented");
       }

@@ -173,7 +173,7 @@ struct NonlinearElasticElement {
     }
 
     double lambda,mu;
-    ublas::matrix<TYPE> F,C,E,S,invF,P,SiGma,h,H,invH;
+    ublas::matrix<TYPE> F,C,B,E,S,invF,P,SiGma,h,H,invH;
     TYPE J,eNergy,detH;
 
     int gG;	///< Gauss point number
@@ -184,6 +184,13 @@ struct NonlinearElasticElement {
       PetscFunctionBegin;
       C.resize(3,3);
       noalias(C) = prod(trans(F),F);
+      PetscFunctionReturn(0);
+    }
+
+    PetscErrorCode calculateB_CauchyDefromationTensor() {
+      PetscFunctionBegin;
+      B.resize(3,3);
+      noalias(B) = prod(F,trans(F));
       PetscFunctionReturn(0);
     }
 
