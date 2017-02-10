@@ -125,11 +125,11 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::setIntegartionPts() {
   if(rule >= 0) {
     if(rule<QUAD_3D_TABLE_SIZE) {
       if(QUAD_3D_TABLE[rule]->dim!=3) {
-        SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"wrong dimension");
+        SETERRQ(mField.get_comm(),MOFEM_DATA_INCONSISTENCY,"wrong dimension");
       }
       if(QUAD_3D_TABLE[rule]->order<rule) {
         SETERRQ2(
-          PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"wrong order %d != %d",
+          mField.get_comm(),MOFEM_DATA_INCONSISTENCY,"wrong order %d != %d",
           QUAD_3D_TABLE[rule]->order,rule
         );
       }
@@ -154,7 +154,7 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::setIntegartionPts() {
       );
     } else {
       SETERRQ2(
-        PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"rule > quadrature order %d < %d",
+        mField.get_comm(),MOFEM_DATA_INCONSISTENCY,"rule > quadrature order %d < %d",
         rule,QUAD_3D_TABLE_SIZE
       );
       nbGaussPts = 0;
@@ -214,7 +214,7 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::transformBaseFunctions() {
   } catch (std::exception& ex) {
     std::ostringstream ss;
     ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
-    SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
+    SETERRQ(mField.get_comm(),MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
   }
   PetscFunctionReturn(0);
 }
@@ -245,7 +245,7 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::calculateCoordinatesAtGaussPts
   } catch (std::exception& ex) {
     std::ostringstream ss;
     ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
-    SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
+    SETERRQ(mField.get_comm(),MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
   }
   PetscFunctionReturn(0);
 }
@@ -302,7 +302,7 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::getSpaceBaseAndOrderOnElement(
   } catch (std::exception& ex) {
     std::ostringstream ss;
     ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
-    SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
+    SETERRQ(mField.get_comm(),MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
   }
   PetscFunctionReturn(0);
 }
@@ -382,7 +382,7 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::calculateBaseFunctionsOnElemen
           break;
           default:
           SETERRQ1(
-            PETSC_COMM_SELF,
+            mField.get_comm(),
             MOFEM_DATA_INCONSISTENCY,
             "Base <%s> not yet implemented",
             ApproximationBaseNames[ApproximationBaseArray[b]]
@@ -393,7 +393,7 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::calculateBaseFunctionsOnElemen
   } catch (std::exception& ex) {
     std::ostringstream ss;
     ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
-    SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
+    SETERRQ(mField.get_comm(),MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
   }
   PetscFunctionReturn(0);
 }
@@ -421,7 +421,7 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::operator()() {
       BitFieldId id = field_struture->getId();
 
       if((numeredEntFiniteElementPtr->getBitFieldIdData()&id).none()) {
-        SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_FOUND,"no MESH_NODE_POSITIONS in element data");
+        SETERRQ(mField.get_comm(),MOFEM_NOT_FOUND,"no MESH_NODE_POSITIONS in element data");
       }
 
       ierr = getEdgesDataOrderSpaceAndBase(dataH1,meshPositionsFieldName); CHKERRQ(ierr);
@@ -429,7 +429,7 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::operator()() {
       ierr = getTetDataOrderSpaceAndBase(dataH1,meshPositionsFieldName); CHKERRQ(ierr);
       ierr = getNodesFieldData(dataH1,meshPositionsFieldName); CHKERRQ(ierr);
       if(dataH1.dataOnEntities[MBVERTEX][0].getFieldData().size()!=12) {
-        SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_FOUND,"no MESH_NODE_POSITIONS in element data");
+        SETERRQ(mField.get_comm(),MOFEM_NOT_FOUND,"no MESH_NODE_POSITIONS in element data");
       }
       ierr = getEdgesFieldData(dataH1,meshPositionsFieldName); CHKERRQ(ierr);
       ierr = getTrisFieldData(dataH1,meshPositionsFieldName); CHKERRQ(ierr);
@@ -454,7 +454,7 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::operator()() {
         for(int gg = 0;gg!=nbGaussPts;gg++) {
           ierr = determinantTensor3by3(jac,det); CHKERRQ(ierr);
           // if(det<0) {
-          //   SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"Negative volume");
+          //   SETERRQ(mField.get_comm(),MOFEM_DATA_INCONSISTENCY,"Negative volume");
           // }
           ierr = invertTensor3by3(jac,det,inv_jac); CHKERRQ(ierr);
           ++jac;
@@ -478,7 +478,7 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::operator()() {
       } catch (std::exception& ex) {
         std::ostringstream ss;
         ss << "problem with indices in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
-        SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
+        SETERRQ(mField.get_comm(),MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
       }
     } else {
       hoCoordsAtGaussPts.resize(0,0,false);
@@ -502,7 +502,7 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::operator()() {
       } catch (std::exception& ex) {
         std::ostringstream ss;
         ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
-        SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
+        SETERRQ(mField.get_comm(),MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
       }
     }
 
@@ -527,7 +527,7 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::operator()() {
         // Set field
         switch(oit->sPace) {
           case NOSPACE:
-          SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"unknown space");
+          SETERRQ(mField.get_comm(),MOFEM_DATA_INCONSISTENCY,"unknown space");
           case H1:
           op_data[0] = &dataH1;
           break;
@@ -544,7 +544,7 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::operator()() {
           op_data[0] = &dataNoField;
           break;
           case LASTSPACE:
-          SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"unknown space");
+          SETERRQ(mField.get_comm(),MOFEM_DATA_INCONSISTENCY,"unknown space");
         }
 
         // Reseat all data which all field dependent
@@ -571,7 +571,7 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::operator()() {
 
           if((oit->getNumeredEntFiniteElementPtr()->getBitFieldIdData()&data_id).none()) {
             SETERRQ2(
-              PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"no data field < %s > on finite element < %s >",
+              mField.get_comm(),MOFEM_DATA_INCONSISTENCY,"no data field < %s > on finite element < %s >",
               field_name.c_str(),feName.c_str()
             );
           }
@@ -581,7 +581,7 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::operator()() {
             space[ss] = field_struture->getSpace();
             switch(space[ss]) {
               case NOSPACE:
-              SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"unknown space");
+              SETERRQ(mField.get_comm(),MOFEM_DATA_INCONSISTENCY,"unknown space");
               break;
               case H1:
               op_data[ss] = !ss ? &dataH1 : &derivedDataH1;
@@ -599,7 +599,7 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::operator()() {
               op_data[ss] = !ss ? &dataNoField : &dataNoFieldCol;
               break;
               case LASTSPACE:
-              SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"unknown space");
+              SETERRQ(mField.get_comm(),MOFEM_DATA_INCONSISTENCY,"unknown space");
               break;
             }
 
@@ -611,7 +611,7 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::operator()() {
               case DEMKOWICZ_JACOBI_BASE:
               break;
               default:
-              SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"unknown or not implemented base");
+              SETERRQ(mField.get_comm(),MOFEM_DATA_INCONSISTENCY,"unknown or not implemented base");
               break;
             }
 
@@ -619,7 +619,7 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::operator()() {
 
               switch(space[ss]) {
                 case NOSPACE:
-                SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"unknown space");
+                SETERRQ(mField.get_comm(),MOFEM_DATA_INCONSISTENCY,"unknown space");
                 break;
                 case H1:
                 if(!ss) {
@@ -665,7 +665,7 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::operator()() {
                 }
                 break;
                 case LASTSPACE:
-                SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"unknown space");
+                SETERRQ(mField.get_comm(),MOFEM_DATA_INCONSISTENCY,"unknown space");
                 break;
               }
               last_eval_field_name[ss]=field_name;
@@ -684,7 +684,7 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::operator()() {
             << " thorw in method: " << ex.what()
             << " at line " << __LINE__
             << " in file " << __FILE__;
-            SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
+            SETERRQ(mField.get_comm(),MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
           }
         }
 
@@ -698,7 +698,7 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::operator()() {
             << " thorw in method: " << ex.what()
             << " at line " << __LINE__
             << " in file " << __FILE__;
-            SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
+            SETERRQ(mField.get_comm(),MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
           }
         }
 
@@ -712,7 +712,7 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::operator()() {
             << " thorw in method: " << ex.what()
             << " at line " << __LINE__
             << " in file " << __FILE__;
-            SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
+            SETERRQ(mField.get_comm(),MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
           }
         }
 
@@ -723,7 +723,7 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::operator()() {
   } catch (std::exception& ex) {
     std::ostringstream ss;
     ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
-    SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
+    SETERRQ(mField.get_comm(),MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
   }
 
   PetscFunctionReturn(0);
@@ -744,7 +744,7 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::UserDataOperator::getDivergenc
 
     if(data.getSpace()!=HDIV && data.getSpace()!=HCURL) {
       SETERRQ1(
-        PETSC_COMM_SELF,
+        getVolumeFE()->mField.get_comm(),
         MOFEM_DATA_INCONSISTENCY,
         "This function should be used for HDIV used but is used with %s",
         FieldSpaceNames[data.getSpace()]
@@ -754,7 +754,7 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::UserDataOperator::getDivergenc
     if((unsigned int)nb_dofs != data.getDiffHdivN().size2()/9) {
       std::cerr << "side " << side << " type " << type << std::endl;
       SETERRQ3(
-        PETSC_COMM_SELF,
+        getVolumeFE()->mField.get_comm(),
         MOFEM_DATA_INCONSISTENCY,
         "Data inositency, wrong number of dofs  = %s "
         "%d != %d/9",
@@ -782,7 +782,7 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::UserDataOperator::getDivergenc
   } catch (std::exception& ex) {
     std::ostringstream ss;
     ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
-    SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+    SETERRQ(getVolumeFE()->mField.get_comm(),1,ss.str().c_str());
   }
 
   PetscFunctionReturn(0);
@@ -804,7 +804,7 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::UserDataOperator::getCurlOfHCu
 
     if(data.getSpace()!=HDIV && data.getSpace()!=HCURL) {
       SETERRQ1(
-        PETSC_COMM_SELF,
+        getVolumeFE()->mField.get_comm(),
         MOFEM_DATA_INCONSISTENCY,
         "This function should be used for primarily for HCURL"
         " but will work with HDIV used but is used with %s",
@@ -815,7 +815,7 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::UserDataOperator::getCurlOfHCu
     if((unsigned int)nb_dofs != data.getDiffHcurlN().size2()/9) {
       std::cerr << "side " << side << " type " << type << std::endl;
       SETERRQ3(
-        PETSC_COMM_SELF,
+        getVolumeFE()->mField.get_comm(),
         MOFEM_DATA_INCONSISTENCY,
         "Data insistency, wrong number of dofs  = %s "
         "%d != %d/9",
@@ -845,7 +845,7 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::UserDataOperator::getCurlOfHCu
   } catch (std::exception& ex) {
     std::ostringstream ss;
     ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
-    SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+    SETERRQ(getVolumeFE()->mField.get_comm(),1,ss.str().c_str());
   }
 
   PetscFunctionReturn(0);
