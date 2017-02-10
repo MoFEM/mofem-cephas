@@ -398,6 +398,103 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::calculateBaseFunctionsOnElemen
   PetscFunctionReturn(0);
 }
 
+PetscErrorCode VolumeElementForcesAndSourcesCore::transformHoBaseFunctions() {
+  PetscFunctionBegin;
+  if(
+    dataPtr->get<FieldName_mi_tag>().find(meshPositionsFieldName)!=
+    dataPtr->get<FieldName_mi_tag>().end()
+  ) {
+    const Field* field_struture = mField.get_field_structure(meshPositionsFieldName);
+    BitFieldId id = field_struture->getId();
+
+    if((numeredEntFiniteElementPtr->getBitFieldIdData()&id).none()) {
+      SETERRQ(mField.get_comm(),MOFEM_NOT_FOUND,"no MESH_NODE_POSITIONS in element data");
+    }
+
+    ierr = getEdgesDataOrderSpaceAndBase(dataH1,meshPositionsFieldName); CHKERRQ(ierr);
+    ierr = getTrisDataOrderSpaceAndBase(dataH1,meshPositionsFieldName); CHKERRQ(ierr);
+    ierr = getTetDataOrderSpaceAndBase(dataH1,meshPositionsFieldName); CHKERRQ(ierr);
+    ierr = getNodesFieldData(dataH1,meshPositionsFieldName); CHKERRQ(ierr);
+    if(dataH1.dataOnEntities[MBVERTEX][0].getFieldData().size()!=12) {
+      SETERRQ(mField.get_comm(),MOFEM_NOT_FOUND,"no MESH_NODE_POSITIONS in element data");
+    }
+    ierr = getEdgesFieldData(dataH1,meshPositionsFieldName); CHKERRQ(ierr);
+    ierr = getTrisFieldData(dataH1,meshPositionsFieldName); CHKERRQ(ierr);
+    ierr = getTetsFieldData(dataH1,meshPositionsFieldName); CHKERRQ(ierr);
+    try {
+      ierr = opHOatGaussPoints.opRhs(dataH1); CHKERRQ(ierr);
+      hoGaussPtsInvJac.resize(hoGaussPtsJac.size1(),hoGaussPtsJac.size2(),false);
+      // Express Jacobian as tensor
+      FTensor::Tensor2<double*,3,3> jac(
+        &hoGaussPtsJac(0,0),&hoGaussPtsJac(0,1),&hoGaussPtsJac(0,2),
+        &hoGaussPtsJac(0,3),&hoGaussPtsJac(0,4),&hoGaussPtsJac(0,5),
+        &hoGaussPtsJac(0,6),&hoGaussPtsJac(0,7),&hoGaussPtsJac(0,8),9
+      );
+      FTensor::Tensor2<double*,3,3> inv_jac(
+        &hoGaussPtsInvJac(0,0),&hoGaussPtsInvJac(0,1),&hoGaussPtsInvJac(0,2),
+        &hoGaussPtsInvJac(0,3),&hoGaussPtsInvJac(0,4),&hoGaussPtsInvJac(0,5),
+        &hoGaussPtsInvJac(0,6),&hoGaussPtsInvJac(0,7),&hoGaussPtsInvJac(0,8),9
+      );
+      hoGaussPtsDetJac.resize(nbGaussPts,false);
+      FTensor::Tensor0<double*> det(&hoGaussPtsDetJac[0]);
+      // Calculate inverse and determinant
+      for(int gg = 0;gg!=nbGaussPts;gg++) {
+        ierr = determinantTensor3by3(jac,det); CHKERRQ(ierr);
+        // if(det<0) {
+        //   SETERRQ(mField.get_comm(),MOFEM_DATA_INCONSISTENCY,"Negative volume");
+        // }
+        ierr = invertTensor3by3(jac,det,inv_jac); CHKERRQ(ierr);
+        ++jac;
+        ++inv_jac;
+        ++det;
+      }
+      // Transform derivatives of base functions and apply Piola transformation if needed.
+      ierr = opSetHoInvJacH1.opRhs(dataH1); CHKERRQ(ierr);
+      if(dataH1.spacesOnEntities[MBTET].test(L2)) {
+        ierr = opSetHoInvJacH1.opRhs(dataL2); CHKERRQ(ierr);
+      }
+      if(dataH1.spacesOnEntities[MBTRI].test(HDIV)) {
+        ierr = opHoContravariantTransform.opRhs(dataHdiv); CHKERRQ(ierr);
+        ierr = opSetHoInvJacHdivAndHcurl.opRhs(dataHdiv); CHKERRQ(ierr);
+      }
+      if(dataH1.spacesOnEntities[MBEDGE].test(HCURL)) {
+        ierr = opHoCovariantTransform.opRhs(dataHcurl); CHKERRQ(ierr);
+        ierr = opSetHoInvJacHdivAndHcurl.opRhs(dataHcurl); CHKERRQ(ierr);
+      }
+
+    } catch (std::exception& ex) {
+      std::ostringstream ss;
+      ss << "problem with indices in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
+      SETERRQ(mField.get_comm(),MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
+    }
+  } else {
+    hoCoordsAtGaussPts.resize(0,0,false);
+    hoGaussPtsInvJac.resize(0,0,false);
+    hoGaussPtsDetJac.resize(0,false);
+    try {
+      for(int b = AINSWORTH_LEGENDRE_BASE;b!=LASTBASE;b++) {
+        if(dataH1.dataOnEntities[MBVERTEX][0].getDiffN(ApproximationBaseArray[b]).size1()!=4) continue;
+        if(dataH1.dataOnEntities[MBVERTEX][0].getDiffN(ApproximationBaseArray[b]).size2()!=3) continue;
+        MatrixDouble diffN(nbGaussPts,12);
+        for(int gg = 0;gg<nbGaussPts;gg++) {
+          for(int nn = 0;nn<4;nn++) {
+            for(int dd = 0;dd<3;dd++) {
+              diffN(gg,nn*3+dd) = dataH1.dataOnEntities[MBVERTEX][0].getDiffN(ApproximationBaseArray[b])(nn,dd);
+            }
+          }
+        }
+        dataH1.dataOnEntities[MBVERTEX][0].getDiffN(ApproximationBaseArray[b]).resize(diffN.size1(),diffN.size2(),false);
+        dataH1.dataOnEntities[MBVERTEX][0].getDiffN(ApproximationBaseArray[b]).data().swap(diffN.data());
+      }
+    } catch (std::exception& ex) {
+      std::ostringstream ss;
+      ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
+      SETERRQ(mField.get_comm(),MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
+    }
+  }
+  PetscFunctionReturn(0);
+}
+
 PetscErrorCode VolumeElementForcesAndSourcesCore::operator()() {
   PetscFunctionBegin;
 
@@ -412,99 +509,7 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::operator()() {
     ierr = calculateCoordinatesAtGaussPts(); CHKERRQ(ierr);
     ierr = calculateBaseFunctionsOnElement(); CHKERRQ(ierr);
     ierr = transformBaseFunctions(); CHKERRQ(ierr);
-
-    if(
-      dataPtr->get<FieldName_mi_tag>().find(meshPositionsFieldName)!=
-      dataPtr->get<FieldName_mi_tag>().end()
-    ) {
-      const Field* field_struture = mField.get_field_structure(meshPositionsFieldName);
-      BitFieldId id = field_struture->getId();
-
-      if((numeredEntFiniteElementPtr->getBitFieldIdData()&id).none()) {
-        SETERRQ(mField.get_comm(),MOFEM_NOT_FOUND,"no MESH_NODE_POSITIONS in element data");
-      }
-
-      ierr = getEdgesDataOrderSpaceAndBase(dataH1,meshPositionsFieldName); CHKERRQ(ierr);
-      ierr = getTrisDataOrderSpaceAndBase(dataH1,meshPositionsFieldName); CHKERRQ(ierr);
-      ierr = getTetDataOrderSpaceAndBase(dataH1,meshPositionsFieldName); CHKERRQ(ierr);
-      ierr = getNodesFieldData(dataH1,meshPositionsFieldName); CHKERRQ(ierr);
-      if(dataH1.dataOnEntities[MBVERTEX][0].getFieldData().size()!=12) {
-        SETERRQ(mField.get_comm(),MOFEM_NOT_FOUND,"no MESH_NODE_POSITIONS in element data");
-      }
-      ierr = getEdgesFieldData(dataH1,meshPositionsFieldName); CHKERRQ(ierr);
-      ierr = getTrisFieldData(dataH1,meshPositionsFieldName); CHKERRQ(ierr);
-      ierr = getTetsFieldData(dataH1,meshPositionsFieldName); CHKERRQ(ierr);
-      try {
-        ierr = opHOatGaussPoints.opRhs(dataH1); CHKERRQ(ierr);
-        hoGaussPtsInvJac.resize(hoGaussPtsJac.size1(),hoGaussPtsJac.size2(),false);
-        // Express Jacobian as tensor
-        FTensor::Tensor2<double*,3,3> jac(
-          &hoGaussPtsJac(0,0),&hoGaussPtsJac(0,1),&hoGaussPtsJac(0,2),
-          &hoGaussPtsJac(0,3),&hoGaussPtsJac(0,4),&hoGaussPtsJac(0,5),
-          &hoGaussPtsJac(0,6),&hoGaussPtsJac(0,7),&hoGaussPtsJac(0,8),9
-        );
-        FTensor::Tensor2<double*,3,3> inv_jac(
-          &hoGaussPtsInvJac(0,0),&hoGaussPtsInvJac(0,1),&hoGaussPtsInvJac(0,2),
-          &hoGaussPtsInvJac(0,3),&hoGaussPtsInvJac(0,4),&hoGaussPtsInvJac(0,5),
-          &hoGaussPtsInvJac(0,6),&hoGaussPtsInvJac(0,7),&hoGaussPtsInvJac(0,8),9
-        );
-        hoGaussPtsDetJac.resize(nbGaussPts,false);
-        FTensor::Tensor0<double*> det(&hoGaussPtsDetJac[0]);
-        // Calculate inverse and determinant
-        for(int gg = 0;gg!=nbGaussPts;gg++) {
-          ierr = determinantTensor3by3(jac,det); CHKERRQ(ierr);
-          // if(det<0) {
-          //   SETERRQ(mField.get_comm(),MOFEM_DATA_INCONSISTENCY,"Negative volume");
-          // }
-          ierr = invertTensor3by3(jac,det,inv_jac); CHKERRQ(ierr);
-          ++jac;
-          ++inv_jac;
-          ++det;
-        }
-        // Transform derivatives of base functions and apply Piola transformation if needed.
-        ierr = opSetHoInvJacH1.opRhs(dataH1); CHKERRQ(ierr);
-        if(dataH1.spacesOnEntities[MBTET].test(L2)) {
-          ierr = opSetHoInvJacH1.opRhs(dataL2); CHKERRQ(ierr);
-        }
-        if(dataH1.spacesOnEntities[MBTRI].test(HDIV)) {
-          ierr = opHoContravariantTransform.opRhs(dataHdiv); CHKERRQ(ierr);
-          ierr = opSetHoInvJacHdivAndHcurl.opRhs(dataHdiv); CHKERRQ(ierr);
-        }
-        if(dataH1.spacesOnEntities[MBEDGE].test(HCURL)) {
-          ierr = opHoCovariantTransform.opRhs(dataHcurl); CHKERRQ(ierr);
-          ierr = opSetHoInvJacHdivAndHcurl.opRhs(dataHcurl); CHKERRQ(ierr);
-        }
-
-      } catch (std::exception& ex) {
-        std::ostringstream ss;
-        ss << "problem with indices in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
-        SETERRQ(mField.get_comm(),MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
-      }
-    } else {
-      hoCoordsAtGaussPts.resize(0,0,false);
-      hoGaussPtsInvJac.resize(0,0,false);
-      hoGaussPtsDetJac.resize(0,false);
-      try {
-        for(int b = AINSWORTH_LEGENDRE_BASE;b!=LASTBASE;b++) {
-          if(dataH1.dataOnEntities[MBVERTEX][0].getDiffN(ApproximationBaseArray[b]).size1()!=4) continue;
-          if(dataH1.dataOnEntities[MBVERTEX][0].getDiffN(ApproximationBaseArray[b]).size2()!=3) continue;
-          MatrixDouble diffN(nbGaussPts,12);
-          for(int gg = 0;gg<nbGaussPts;gg++) {
-            for(int nn = 0;nn<4;nn++) {
-              for(int dd = 0;dd<3;dd++) {
-                diffN(gg,nn*3+dd) = dataH1.dataOnEntities[MBVERTEX][0].getDiffN(ApproximationBaseArray[b])(nn,dd);
-              }
-            }
-          }
-          dataH1.dataOnEntities[MBVERTEX][0].getDiffN(ApproximationBaseArray[b]).resize(diffN.size1(),diffN.size2(),false);
-          dataH1.dataOnEntities[MBVERTEX][0].getDiffN(ApproximationBaseArray[b]).data().swap(diffN.data());
-        }
-      } catch (std::exception& ex) {
-        std::ostringstream ss;
-        ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
-        SETERRQ(mField.get_comm(),MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
-      }
-    }
+    ierr = transformHoBaseFunctions(); CHKERRQ(ierr);
 
     const UserDataOperator::OpType types[2] = {
       UserDataOperator::OPROW, UserDataOperator::OPCOL

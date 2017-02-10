@@ -270,6 +270,12 @@ struct VolumeElementForcesAndSourcesCore: public ForcesAndSurcesCore {
   virtual PetscErrorCode getSpaceBaseAndOrderOnElement();
 
   /**
+   * \brief Transform base functions based on ho-geometry element Jacobian.
+   * @return Error code
+   */
+  virtual PetscErrorCode transformHoBaseFunctions();
+
+  /**
    * \brief Calculate base functions
    * @return Error code
    */
