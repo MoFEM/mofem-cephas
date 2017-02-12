@@ -25,6 +25,7 @@ protected:
   mutable int inc;
   mutable T * restrict data[Tensor_Dim];
 public:
+
   /* Initializations for varying numbers of elements, with each one
      defined for a particular Tensor_Dim.  To initialize a different
      dimension, just add the appropriate constructor and call to
@@ -41,6 +42,8 @@ public:
   {
     Tensor1_constructor<T* restrict,Tensor_Dim>(data,d0,d1,d2,d3);
   }
+
+  int get_inc() const { return inc; };
 
   /* There are two operator(int)'s, one for non-consts that lets you
      change the value, and one for consts that doesn't. */
