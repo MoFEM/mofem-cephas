@@ -64,7 +64,7 @@ struct VolumeElementForcesAndSourcesCore: public ForcesAndSurcesCore {
   MatrixDouble hoGaussPtsInvJac;
   VectorDouble hoGaussPtsDetJac;
 
-  OpGetDataAndGradient opHOatGaussPoints; ///< higher order geometry data at Gauss pts
+  OpGetDataAndGradient<3,3> opHOatGaussPoints; ///< higher order geometry data at Gauss pts
   OpSetHoInvJacH1 opSetHoInvJacH1;
   OpSetHoContravariantPiolaTransform opHoContravariantTransform;
   OpSetHoCovariantPiolaTransform opHoCovariantTransform;
@@ -252,12 +252,6 @@ struct VolumeElementForcesAndSourcesCore: public ForcesAndSurcesCore {
   virtual PetscErrorCode calculateVolumeAndJacobian();
 
   /**
-   * \brief Transform base functions based on geometric element Jacobian.
-   * @return Error code
-   */
-  virtual PetscErrorCode transformBaseFunctions();
-
-  /**
    * \brief Calculate coordinate at integration points
    * @return Error code
    */
@@ -274,6 +268,38 @@ struct VolumeElementForcesAndSourcesCore: public ForcesAndSurcesCore {
    * @return Error code
    */
   virtual PetscErrorCode calculateBaseFunctionsOnElement();
+
+  /**
+   * \brief Transform base functions based on geometric element Jacobian.
+   *
+   * This function apply transformation to base functions and its derivatives. For
+   * example when base functions for H-div are present the Piola-Transformarion is
+   * applied to base functions and their derivatives.
+   *
+   * @return Error code
+   */
+  virtual PetscErrorCode transformBaseFunctions();
+
+
+  /** \brief Calculate Jacobian for HO geometry
+    *
+    * MoFEM use hierarchical approximate base to describe geometry of the body. This
+    * function transform derivatives of base functions when HO geometry is set and
+    * calculate Jaobian, inverse of Jacobian and determinant of transformation.
+    *
+    */
+  virtual PetscErrorCode calculateHoJacobian();
+
+  /**
+   * \brief Transform base functions based on ho-geometry element Jacobian.
+   *
+   * This function apply transformation to base functions and its derivatives. For
+   * example when base functions for H-div are present the Piola-Transformarion is
+   * applied to base functions and their derivatives.
+   *
+   * @return Error code
+   */
+  virtual PetscErrorCode transformHoBaseFunctions();
 
   PetscErrorCode preProcess() {
     PetscFunctionBegin;

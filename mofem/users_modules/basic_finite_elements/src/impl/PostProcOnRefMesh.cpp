@@ -406,6 +406,8 @@ PetscErrorCode PostProcVolumeOnRefinedMesh::generateReferenceElementMesh() {
     int num_nodes;
     rval = moab_ref.get_connectivity(*tit,conn,num_nodes,false); CHKERRQ_MOAB(rval);
     if(tt == 0) {
+      // Ref tets has number of rows equal to number of tets on element, columns are number of
+      // gauss points
       refTets.resize(tets.size(),num_nodes);
     }
     for(int nn = 0;nn<num_nodes;nn++) {

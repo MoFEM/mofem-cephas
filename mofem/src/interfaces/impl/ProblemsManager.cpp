@@ -1409,6 +1409,14 @@ namespace MoFEM {
         int is_nb = 0;
         for(;dit!=hi_dit;dit++) {
           // cerr << **dit << endl;
+          //
+          BitRefLevel prb_bit = out_problem_it->getBitRefLevel();
+          BitRefLevel prb_mask = out_problem_it->getMaskBitRefLevel();
+          BitRefLevel dof_bit = dit->get()->getBitRefLevel();
+          if(
+            (dof_bit&prb_bit).none() || ((dof_bit&prb_mask)!=dof_bit)
+          ) continue;
+
           const int rank = m_field.getCommRank();
           const int part = dit->get()->getPart();
           const int glob_idx = shift_glob+dit->get()->getPetscGlobalDofIdx();
@@ -1425,7 +1433,7 @@ namespace MoFEM {
             dofs_out_idx_ptr[is_nb++] = glob_idx;
           }
         }
-        if(is_nb!=nb_local_dofs) {
+        if(is_nb>nb_local_dofs) {
           SETERRQ(m_field.get_comm(),MOFEM_DATA_INCONSISTENCY,"Data inconsistency");
         }
         IS is;
