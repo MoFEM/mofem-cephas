@@ -98,7 +98,7 @@ opContravariantPiolaTransform(vOlume,jAc),
 opCovariantPiolaTransform(invJac),
 opSetInvJacHdivAndHcurl(invJac),
 meshPositionsFieldName("MESH_NODE_POSITIONS"),
-opHOatGaussPoints(hoCoordsAtGaussPts,hoGaussPtsJac,3,3),
+opHOatGaussPoints(hoCoordsAtGaussPts,hoGaussPtsJac),
 opSetHoInvJacH1(hoGaussPtsInvJac),
 opHoContravariantTransform(hoGaussPtsDetJac,hoGaussPtsJac),
 opHoCovariantTransform(hoGaussPtsInvJac),
@@ -195,30 +195,6 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::calculateVolumeAndJacobian() {
   vOlume *= G_TET_W1[0]/6.;
   PetscFunctionReturn(0);
 }
-
-PetscErrorCode VolumeElementForcesAndSourcesCore::transformBaseFunctions() {
-  PetscFunctionBegin;
-  try {
-    ierr = opSetInvJacH1.opRhs(dataH1); CHKERRQ(ierr);
-    if(dataH1.spacesOnEntities[MBEDGE].test(HCURL)) {
-      ierr = opCovariantPiolaTransform.opRhs(dataHcurl); CHKERRQ(ierr);
-      ierr = opSetInvJacHdivAndHcurl.opRhs(dataHcurl); CHKERRQ(ierr);
-    }
-    if(dataH1.spacesOnEntities[MBTRI].test(HDIV)) {
-      ierr = opContravariantPiolaTransform.opRhs(dataHdiv); CHKERRQ(ierr);
-      ierr = opSetInvJacHdivAndHcurl.opRhs(dataHdiv); CHKERRQ(ierr);
-    }
-    if(dataH1.spacesOnEntities[MBTET].test(L2)) {
-      ierr = opSetInvJacH1.opRhs(dataL2); CHKERRQ(ierr);
-    }
-  } catch (std::exception& ex) {
-    std::ostringstream ss;
-    ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
-    SETERRQ(mField.get_comm(),MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
-  }
-  PetscFunctionReturn(0);
-}
-
 
 PetscErrorCode VolumeElementForcesAndSourcesCore::calculateCoordinatesAtGaussPts() {
   PetscFunctionBegin;
@@ -398,7 +374,30 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::calculateBaseFunctionsOnElemen
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode VolumeElementForcesAndSourcesCore::transformHoBaseFunctions() {
+PetscErrorCode VolumeElementForcesAndSourcesCore::transformBaseFunctions() {
+  PetscFunctionBegin;
+  try {
+    ierr = opSetInvJacH1.opRhs(dataH1); CHKERRQ(ierr);
+    if(dataH1.spacesOnEntities[MBEDGE].test(HCURL)) {
+      ierr = opCovariantPiolaTransform.opRhs(dataHcurl); CHKERRQ(ierr);
+      ierr = opSetInvJacHdivAndHcurl.opRhs(dataHcurl); CHKERRQ(ierr);
+    }
+    if(dataH1.spacesOnEntities[MBTRI].test(HDIV)) {
+      ierr = opContravariantPiolaTransform.opRhs(dataHdiv); CHKERRQ(ierr);
+      ierr = opSetInvJacHdivAndHcurl.opRhs(dataHdiv); CHKERRQ(ierr);
+    }
+    if(dataH1.spacesOnEntities[MBTET].test(L2)) {
+      ierr = opSetInvJacH1.opRhs(dataL2); CHKERRQ(ierr);
+    }
+  } catch (std::exception& ex) {
+    std::ostringstream ss;
+    ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
+    SETERRQ(mField.get_comm(),MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
+  }
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode VolumeElementForcesAndSourcesCore::calculateHoJacobian() {
   PetscFunctionBegin;
   if(
     dataPtr->get<FieldName_mi_tag>().find(meshPositionsFieldName)!=
@@ -406,11 +405,9 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::transformHoBaseFunctions() {
   ) {
     const Field* field_struture = mField.get_field_structure(meshPositionsFieldName);
     BitFieldId id = field_struture->getId();
-
     if((numeredEntFiniteElementPtr->getBitFieldIdData()&id).none()) {
       SETERRQ(mField.get_comm(),MOFEM_NOT_FOUND,"no MESH_NODE_POSITIONS in element data");
     }
-
     ierr = getEdgesDataOrderSpaceAndBase(dataH1,meshPositionsFieldName); CHKERRQ(ierr);
     ierr = getTrisDataOrderSpaceAndBase(dataH1,meshPositionsFieldName); CHKERRQ(ierr);
     ierr = getTetDataOrderSpaceAndBase(dataH1,meshPositionsFieldName); CHKERRQ(ierr);
@@ -448,6 +445,25 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::transformHoBaseFunctions() {
         ++inv_jac;
         ++det;
       }
+    } catch (std::exception& ex) {
+      std::ostringstream ss;
+      ss << "problem with indices in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
+      SETERRQ(mField.get_comm(),MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
+    }
+  } else {
+    hoCoordsAtGaussPts.resize(0,0,false);
+    hoGaussPtsInvJac.resize(0,0,false);
+    hoGaussPtsDetJac.resize(0,false);
+  }
+  PetscFunctionReturn(0);
+}
+
+
+PetscErrorCode VolumeElementForcesAndSourcesCore::transformHoBaseFunctions() {
+  PetscFunctionBegin;
+
+  if(hoCoordsAtGaussPts.size1()>0) {
+    try {
       // Transform derivatives of base functions and apply Piola transformation if needed.
       ierr = opSetHoInvJacH1.opRhs(dataH1); CHKERRQ(ierr);
       if(dataH1.spacesOnEntities[MBTET].test(L2)) {
@@ -461,34 +477,9 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::transformHoBaseFunctions() {
         ierr = opHoCovariantTransform.opRhs(dataHcurl); CHKERRQ(ierr);
         ierr = opSetHoInvJacHdivAndHcurl.opRhs(dataHcurl); CHKERRQ(ierr);
       }
-
     } catch (std::exception& ex) {
       std::ostringstream ss;
       ss << "problem with indices in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
-      SETERRQ(mField.get_comm(),MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
-    }
-  } else {
-    hoCoordsAtGaussPts.resize(0,0,false);
-    hoGaussPtsInvJac.resize(0,0,false);
-    hoGaussPtsDetJac.resize(0,false);
-    try {
-      for(int b = AINSWORTH_LEGENDRE_BASE;b!=LASTBASE;b++) {
-        if(dataH1.dataOnEntities[MBVERTEX][0].getDiffN(ApproximationBaseArray[b]).size1()!=4) continue;
-        if(dataH1.dataOnEntities[MBVERTEX][0].getDiffN(ApproximationBaseArray[b]).size2()!=3) continue;
-        MatrixDouble diffN(nbGaussPts,12);
-        for(int gg = 0;gg<nbGaussPts;gg++) {
-          for(int nn = 0;nn<4;nn++) {
-            for(int dd = 0;dd<3;dd++) {
-              diffN(gg,nn*3+dd) = dataH1.dataOnEntities[MBVERTEX][0].getDiffN(ApproximationBaseArray[b])(nn,dd);
-            }
-          }
-        }
-        dataH1.dataOnEntities[MBVERTEX][0].getDiffN(ApproximationBaseArray[b]).resize(diffN.size1(),diffN.size2(),false);
-        dataH1.dataOnEntities[MBVERTEX][0].getDiffN(ApproximationBaseArray[b]).data().swap(diffN.data());
-      }
-    } catch (std::exception& ex) {
-      std::ostringstream ss;
-      ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
       SETERRQ(mField.get_comm(),MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
     }
   }
@@ -509,6 +500,41 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::operator()() {
     ierr = calculateCoordinatesAtGaussPts(); CHKERRQ(ierr);
     ierr = calculateBaseFunctionsOnElement(); CHKERRQ(ierr);
     ierr = transformBaseFunctions(); CHKERRQ(ierr);
+
+    try {
+      for(int b = AINSWORTH_LEGENDRE_BASE;b!=LASTBASE;b++) {
+        FTensor::Index<'i',3> i;
+        FieldApproximationBase base = ApproximationBaseArray[b];
+        DataForcesAndSurcesCore::EntData &data = dataH1.dataOnEntities[MBVERTEX][0];
+        if((data.getDiffN(base).size1()==4)&&(data.getDiffN(base).size2()==3)) {
+          const int nb_base_functions = 4;
+          MatrixDouble new_diff_n(nbGaussPts,3*nb_base_functions);
+          double *new_diff_n_ptr = &*new_diff_n.data().begin();
+          FTensor::Tensor1<double*,3> t_new_diff_n(
+            new_diff_n_ptr,&new_diff_n_ptr[1],&new_diff_n_ptr[2],3
+          );
+          double *t_diff_n_ptr = &*data.getDiffN(base).data().begin();
+          for(unsigned int gg = 0;gg<nbGaussPts;gg++) {
+            FTensor::Tensor1<double*,3> t_diff_n(
+              t_diff_n_ptr,&t_diff_n_ptr[1],&t_diff_n_ptr[2],3
+            );
+            for(unsigned int bb = 0;bb!=nb_base_functions;bb++) {
+              t_new_diff_n(i) = t_diff_n(i);
+              ++t_new_diff_n;
+              ++t_diff_n;
+            }
+          }
+          data.getDiffN(base).resize(new_diff_n.size1(),new_diff_n.size2(),false);
+          data.getDiffN(base).data().swap(new_diff_n.data());
+        }
+      }
+    } catch (std::exception& ex) {
+      std::ostringstream ss;
+      ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
+      SETERRQ(mField.get_comm(),MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
+    }
+
+    ierr = calculateHoJacobian(); CHKERRQ(ierr);
     ierr = transformHoBaseFunctions(); CHKERRQ(ierr);
 
     const UserDataOperator::OpType types[2] = {

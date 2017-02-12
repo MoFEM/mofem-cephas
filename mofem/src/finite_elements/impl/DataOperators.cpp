@@ -934,17 +934,11 @@ PetscErrorCode OpSetHoInvJacH1::doWork(
         unsigned int nb_base_functions = data.getN(base).size2();
         if(nb_base_functions==0) continue;
 
-        // Note for Vetex diffN row has size of number of dof
-        diffNinvJac.resize(nb_gauss_pts,3*nb_base_functions,false);
-        double *t_inv_n_ptr = &*diffNinvJac.data().begin();
-        FTensor::Tensor1<double*,3> t_inv_diff_n(
-          t_inv_n_ptr,&t_inv_n_ptr[1],&t_inv_n_ptr[2],3
-        );
         if(invHoJac.size2()!=9) {
           SETERRQ1(
             PETSC_COMM_SELF,
             MOFEM_DATA_INCONSISTENCY,
-            "It looks that ho inverse of jacobian is not calculated %d != 9",
+            "It looks that ho inverse of Jacobian is not calculated %d != 9",
             invHoJac.size2()
           );
         }
@@ -952,7 +946,7 @@ PetscErrorCode OpSetHoInvJacH1::doWork(
           SETERRQ2(
             PETSC_COMM_SELF,
             MOFEM_DATA_INCONSISTENCY,
-            "It looks that ho inverse of jacobian is not calculated %d != %d",
+            "It looks that ho inverse of Jacobian is not calculated %d != %d",
             invHoJac.size1(),
             nb_gauss_pts
           );
@@ -964,23 +958,14 @@ PetscErrorCode OpSetHoInvJacH1::doWork(
           &t_inv_jac_ptr[6],&t_inv_jac_ptr[7],&t_inv_jac_ptr[8],9
         );
 
+        diffNinvJac.resize(nb_gauss_pts,3*nb_base_functions,false);
+        double *t_inv_n_ptr = &*diffNinvJac.data().begin();
+        FTensor::Tensor1<double*,3> t_inv_diff_n(
+          t_inv_n_ptr,&t_inv_n_ptr[1],&t_inv_n_ptr[2],3
+        );
+
         switch (type) {
-          case MBVERTEX: {
-            // std::cerr << data.getDiffN(base) << std::endl;
-            double *t_diff_n_ptr = &*data.getDiffN(base).data().begin();
-            for(int gg = 0;gg!=nb_gauss_pts;gg++) {
-              FTensor::Tensor1<double*,3> t_diff_n(
-                t_diff_n_ptr,&t_diff_n_ptr[1],&t_diff_n_ptr[2],3
-              );
-              for(unsigned int bb = 0;bb!=nb_base_functions;bb++) {
-                t_inv_diff_n(i) = t_diff_n(j)*t_inv_jac(j,i);
-                ++t_diff_n;
-                ++t_inv_diff_n;
-              }
-              ++t_inv_jac;
-            }
-          }
-          break;
+          case MBVERTEX:
           case MBEDGE:
           case MBTRI:
           case MBTET: {
@@ -1248,82 +1233,6 @@ PetscErrorCode OpSetHoCovariantPiolaTransform::doWork(
 
   PetscFunctionReturn(0);
 }
-
-PetscErrorCode OpGetDataAndGradient::doWork(
-    int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
-  PetscFunctionBegin;
-
-  try {
-
-    if(data.getFieldData().size() == 0) {
-      PetscFunctionReturn(0);
-    }
-
-    unsigned int nb_dofs = data.getFieldData().size();
-    if(nb_dofs == 0) PetscFunctionReturn(0);
-
-    if(nb_dofs % rAnk != 0) {
-      SETERRQ4(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,
-        "data inconsistency, type %d, side %d, nb_dofs %d, rAnk %d",
-        type,side,nb_dofs,rAnk
-      );
-    }
-    if(nb_dofs/rAnk > data.getN().size2()) {
-      std::cerr << side << " " << type << " " << ApproximationBaseNames[data.getBase()] << std::endl;
-      std::cerr << data.getN() << std::endl;
-      SETERRQ2(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,
-        "data inconsistency nb_dofs >= data.N.size2(), i.e. %u >= %u",nb_dofs,data.getN().size2()
-      );
-    }
-
-    if(type == MBVERTEX) {
-      data_at_GaussPt.resize(data.getN().size1(),rAnk,false);
-      dataGrad_at_GaussPt.resize(data.getN().size1(),rAnk*dIm,false);
-      data_at_GaussPt.clear();
-      dataGrad_at_GaussPt.clear();
-      // bzero(&*data_at_GaussPt.data().begin(),data.getN().size1()*rAnk*sizeof(FieldData));
-      // bzero(&*dataGrad_at_GaussPt.data().begin(),data.getN().size1()*rAnk*dIm*sizeof(FieldData));
-      for(int rr = 0;rr<rAnk;rr++) {
-        for(unsigned int dd = 0;dd<dIm;dd++) {
-          dataGrad_at_GaussPt(0,dIm*rr+dd) = cblas_ddot(nb_dofs/rAnk,&data.getDiffN()(0,dd),dIm,&data.getFieldData()[rr],rAnk);
-        }
-      }
-    }
-
-    for(unsigned int gg = 0;gg<data.getN().size1();gg++) {
-      double *data_ptr,*n_ptr,*diff_n_ptr;
-      n_ptr = &data.getN()(gg,0);
-      data_ptr = &data.getFieldData()[0];
-      if(type != MBVERTEX) {
-        diff_n_ptr  = &data.getDiffN()(gg,0);
-      } else {
-        diff_n_ptr  = &data.getDiffN()(0,0);
-      }
-
-      for(int rr = 0;rr<rAnk;rr++,data_ptr++) {
-        data_at_GaussPt(gg,rr) += cblas_ddot(nb_dofs/rAnk,n_ptr,1,data_ptr,rAnk);
-        double *diff_n_ptr2 = diff_n_ptr;
-
-        for(unsigned int dd = 0;dd<dIm;dd++,diff_n_ptr2++) {
-          if(type == MBVERTEX) {
-            if(gg == 0) continue;
-            dataGrad_at_GaussPt(gg,dIm*rr+dd) += dataGrad_at_GaussPt(0,dIm*rr+dd);
-          } else {
-            dataGrad_at_GaussPt(gg,dIm*rr+dd) += cblas_ddot(nb_dofs/rAnk,diff_n_ptr2,dIm,data_ptr,rAnk);
-          }
-        }
-      }
-    }
-
-  } catch (std::exception& ex) {
-    std::ostringstream ss;
-    ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
-    SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
-  }
-
-  PetscFunctionReturn(0);
-}
-
 
 PetscErrorCode OpGetCoordsAndNormalsOnFace::doWork(int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
   PetscFunctionBegin;
@@ -1784,5 +1693,140 @@ PetscErrorCode OpSetCovariantPiolaTransoformOnEdge::doWork(
   PetscFunctionReturn(0);
 }
 
+
+template<>
+template<>
+FTensor::Tensor1<double*,3> OpGetDataAndGradient<3,3>::getValAtGaussPtsTensor<3>(MatrixDouble &data) {
+  double *ptr = &*data.data().begin();
+  return FTensor::Tensor1<double*,3>(ptr,&ptr[1],&ptr[2],3);
+}
+
+template<>
+template<>
+FTensor::Tensor2<double*,3,3> OpGetDataAndGradient<3,3>::getGradAtGaussPtsTensor<3,3>(MatrixDouble &data) {
+  double *ptr = &*data.data().begin();
+  return FTensor::Tensor2<double*,3,3>(
+    ptr,&ptr[1],&ptr[2], &ptr[3],&ptr[4],&ptr[5], &ptr[6],&ptr[7],&ptr[8], 9
+  );
+}
+
+template<>
+PetscErrorCode OpGetDataAndGradient<3,3>::calculateValAndGrad(
+  int side,
+  EntityType type,
+  DataForcesAndSurcesCore::EntData &data
+) {
+  PetscFunctionBegin;
+  const int nb_gauss_pts = data.getN().size1();
+  const int nb_base_functions = data.getN().size2();
+  const int nb_dofs = data.getFieldData().size();
+  FTensor::Tensor0<double*> t_n = data.getFTensor0N();
+  FTensor::Tensor1<double*,3> t_val = getValAtGaussPtsTensor<3>(dataAtGaussPts);
+  FTensor::Tensor2<double*,3,3> t_grad = getGradAtGaussPtsTensor<3,3>(dataGradAtGaussPts);
+  FTensor::Index<'i',3> i;
+  FTensor::Index<'j',3> j;
+  if(
+    type == MBVERTEX&&
+    data.getDiffN().data().size()==3*nb_base_functions
+  ) {
+    for(unsigned int gg = 0;gg!=nb_gauss_pts;gg++) {
+      FTensor::Tensor1<double*,3> t_data = data.getFTensor1FieldData<3>();
+      FTensor::Tensor1<double*,3>  t_diff_n = data.getFTensor1DiffN<3>();
+      int bb = 0;
+      for(;bb!=nb_dofs/3;bb++) {
+        t_val(i) += t_data(i)*t_n;
+        t_grad(i,j) += t_data(i)*t_diff_n(j);
+        ++t_n;
+        ++t_diff_n;
+        ++t_data;
+      }
+      ++t_val;
+      ++t_grad;
+      for(;bb!=nb_base_functions;bb++) {
+        ++t_n;
+      }
+    }
+  } else {
+    FTensor::Tensor1<double*,3> t_diff_n = data.getFTensor1DiffN<3>();
+    for(unsigned int gg = 0;gg!=nb_gauss_pts;gg++) {
+      FTensor::Tensor1<double*,3> t_data = data.getFTensor1FieldData<3>();
+      int bb = 0;
+      for(;bb!=nb_dofs/3;bb++) {
+        t_val(i) += t_data(i)*t_n;
+        t_grad(i,j) += t_data(i)*t_diff_n(j);
+        ++t_n;
+        ++t_diff_n;
+        ++t_data;
+      }
+      ++t_val;
+      ++t_grad;
+      for(;bb!=nb_base_functions;bb++) {
+        ++t_n;
+        ++t_diff_n;
+      }
+    }
+  }
+  PetscFunctionReturn(0);
+}
+
+template<>
+PetscErrorCode OpGetDataAndGradient<1,3>::calculateValAndGrad(
+  int side,
+  EntityType type,
+  DataForcesAndSurcesCore::EntData &data
+) {
+  PetscFunctionBegin;
+  const int nb_gauss_pts = data.getN().size1();
+  const int nb_base_functions = data.getN().size2();
+  bool constant_diff = false;
+  const int nb_dofs = data.getFieldData().size();
+  FTensor::Tensor0<double*> t_n = data.getFTensor0N();
+  FTensor::Tensor0<double*> t_val = FTensor::Tensor0<double*>(&*dataAtGaussPts.data().begin(),1);
+  double *ptr = &*dataGradAtGaussPts.data().begin();
+  FTensor::Tensor1<double*,3> t_grad = FTensor::Tensor1<double*,3>(ptr,&ptr[1],&ptr[2],3);
+  FTensor::Index<'i',3> i;
+  if(
+    type == MBVERTEX&&
+    data.getDiffN().data().size()==3*nb_base_functions
+  ) {
+    for(unsigned int gg = 0;gg!=nb_gauss_pts;gg++) {
+      FTensor::Tensor0<double*> t_data = data.getFTensor0FieldData();
+      FTensor::Tensor1<double*,3>  t_diff_n = data.getFTensor1DiffN<3>();
+      int bb = 0;
+      for(;bb!=nb_dofs/3;bb++) {
+        t_val += t_data*t_n;
+        t_grad(i) += t_data*t_diff_n(i);
+        ++t_n;
+        ++t_diff_n;
+        ++t_data;
+      }
+      ++t_val;
+      ++t_grad;
+      for(;bb!=nb_base_functions;bb++) {
+        ++t_n;
+      }
+    }
+  } else {
+    FTensor::Tensor1<double*,3> t_diff_n = data.getFTensor1DiffN<3>();
+    for(unsigned int gg = 0;gg!=nb_gauss_pts;gg++) {
+      FTensor::Tensor0<double*> t_data = data.getFTensor0FieldData();
+      int bb = 0;
+      for(;bb!=nb_dofs/3;bb++) {
+        t_val += t_data*t_n;
+        t_grad(i) += t_data*t_diff_n(i);
+        ++t_n;
+        ++t_diff_n;
+        ++t_data;
+      }
+      ++t_val;
+      ++t_grad;
+      for(;bb!=nb_base_functions;bb++) {
+        ++t_n;
+        ++t_diff_n;
+      }
+    }
+  }
+  PetscFunctionReturn(0);
+}
 
 }
