@@ -464,32 +464,130 @@ struct OpSetCovariantPiolaTransform: public DataOperator {
 /** \brief Get field values and gradients at Gauss points
   * \ingroup mofem_forces_and_sources
   */
+template<int RANK,int DIM>
 struct OpGetDataAndGradient: public DataOperator {
 
-  MatrixDouble &data_at_GaussPt;
-  MatrixDouble &dataGrad_at_GaussPt;
-
-  const unsigned int dIm;
-  const FieldCoefficientsNumber rAnk;
+  MatrixDouble &dataAtGaussPts;
+  MatrixDouble &dataGradAtGaussPts;
 
   OpGetDataAndGradient(
     MatrixDouble &data_at_gauss_pt,
-    MatrixDouble &data_grad_at_gauss_pt,
-    FieldCoefficientsNumber rank,
-    int dim = 3
+    MatrixDouble &data_grad_at_gauss_pt
   ):
-  data_at_GaussPt(data_at_gauss_pt),
-  dataGrad_at_GaussPt(data_grad_at_gauss_pt),
-  dIm(dim),
-  rAnk(rank) {}
+  dataAtGaussPts(data_at_gauss_pt),
+  dataGradAtGaussPts(data_grad_at_gauss_pt) {}
+
+  template<int R>
+  FTensor::Tensor1<double*,R> getValAtGaussPtsTensor(MatrixDouble &data) {
+    THROW_MESSAGE("Not implemented");
+  }
+
+  template<int R,int D>
+  FTensor::Tensor2<double*,R,D> getGradAtGaussPtsTensor(MatrixDouble &data) {
+    THROW_MESSAGE("Not implemented");
+  }
+
+  PetscErrorCode calculateValAndGrad(
+    int side,EntityType type,DataForcesAndSurcesCore::EntData &data
+  ) {
+    PetscFunctionBegin;
+    const int nb_base_functions = data.getN().size2();
+    bool constant_diff = false;
+    if(
+      type == MBVERTEX&&
+      data.getDiffN().size1()*data.getDiffN().size2()==DIM*nb_base_functions
+    ) {
+      constant_diff = true;
+    }
+    const int nb_dofs = data.getFieldData().size();
+    for(unsigned int gg = 0;gg<data.getN().size1();gg++) {
+      double *data_ptr,*n_ptr,*diff_n_ptr;
+      n_ptr = &data.getN()(gg,0);
+      if(constant_diff) {
+        diff_n_ptr  = &data.getDiffN()(0,0);
+      } else {
+        diff_n_ptr  = &data.getDiffN()(gg,0);
+      }
+      data_ptr = &*data.getFieldData().data().begin();
+      for(int rr = 0;rr<RANK;rr++,data_ptr++) {
+        dataAtGaussPts(gg,rr) += cblas_ddot(nb_dofs/RANK,n_ptr,1,data_ptr,RANK);
+        double *diff_n_ptr2 = diff_n_ptr;
+        for(unsigned int dd = 0;dd<DIM;dd++,diff_n_ptr2++) {
+          dataGradAtGaussPts(gg,DIM*rr+dd) += cblas_ddot(nb_dofs/RANK,diff_n_ptr2,DIM,data_ptr,RANK);
+        }
+      }
+    }
+    PetscFunctionReturn(0);
+  }
 
   PetscErrorCode doWork(
     int side,
     EntityType type,
     DataForcesAndSurcesCore::EntData &data
-  );
+  ) {
+    PetscErrorCode ierr;
+    PetscFunctionBegin;
+
+    try {
+
+      if(data.getFieldData().size() == 0) {
+        PetscFunctionReturn(0);
+      }
+
+      unsigned int nb_dofs = data.getFieldData().size();
+      if(nb_dofs == 0) PetscFunctionReturn(0);
+
+      if(nb_dofs % RANK != 0) {
+        SETERRQ4(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,
+          "data inconsistency, type %d, side %d, nb_dofs %d, rank %d",
+          type,side,nb_dofs,RANK
+        );
+      }
+      if(nb_dofs/RANK > data.getN().size2()) {
+        std::cerr << side << " " << type << " " << ApproximationBaseNames[data.getBase()] << std::endl;
+        std::cerr << data.getN() << std::endl;
+        SETERRQ2(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,
+          "data inconsistency nb_dofs >= data.N.size2(), i.e. %u >= %u",nb_dofs,data.getN().size2()
+        );
+      }
+
+      if(type == MBVERTEX) {
+        dataAtGaussPts.resize(data.getN().size1(),RANK,false);
+        dataGradAtGaussPts.resize(data.getN().size1(),RANK*DIM,false);
+        dataAtGaussPts.clear();
+        dataGradAtGaussPts.clear();
+      }
+
+      ierr = calculateValAndGrad(side,type,data); CHKERRQ(ierr);
+
+    } catch (std::exception& ex) {
+      std::ostringstream ss;
+      ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
+      SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
+    }
+
+    PetscFunctionReturn(0);
+  }
 
 };
+
+template<>
+template<>
+FTensor::Tensor1<double*,3> OpGetDataAndGradient<3,3>::getValAtGaussPtsTensor<3>(MatrixDouble &data);
+
+template<>
+template<>
+FTensor::Tensor2<double*,3,3> OpGetDataAndGradient<3,3>::getGradAtGaussPtsTensor<3,3>(MatrixDouble &data);
+
+template<>
+PetscErrorCode OpGetDataAndGradient<3,3>::calculateValAndGrad(
+  int side,EntityType type,DataForcesAndSurcesCore::EntData &data
+);
+
+template<>
+PetscErrorCode OpGetDataAndGradient<1,3>::calculateValAndGrad(
+  int side,EntityType type,DataForcesAndSurcesCore::EntData &data
+);
 
 /** \brief Calculate normals at Gauss points of triangle element
   * \ingroup mofem_forces_and_source

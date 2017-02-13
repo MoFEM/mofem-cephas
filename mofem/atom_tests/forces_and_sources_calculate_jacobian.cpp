@@ -176,7 +176,7 @@ int main(int argc, char *argv[]) {
     VectorDouble coords;
     PrintJacobian opPrintJac;
     OpSetInvJacH1 opSetInvJac;
-    OpGetDataAndGradient opGetData_FIELD1;
+    OpGetDataAndGradient<1,3> opGetData_FIELD1;
 
     ForcesAndSurcesCore_TestFE(MoFEM::Interface &_m_field):
     ForcesAndSurcesCore(_m_field),
@@ -186,7 +186,7 @@ int main(int argc, char *argv[]) {
     invJac(3,3),
     opPrintJac(my_split),
     opSetInvJac(invJac),
-    opGetData_FIELD1(dataFIELD1,dataDiffFIELD1,1),
+    opGetData_FIELD1(dataFIELD1,dataDiffFIELD1),
     data(MBTET) {
     }
 
