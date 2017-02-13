@@ -1694,28 +1694,28 @@ PetscErrorCode Core::get_entities_by_ref_level(const BitRefLevel &bit,const BitR
   }
   PetscFunctionReturn(0);
 }
-PetscErrorCode Core::add_ref_level_to_entities(const BitRefLevel &bit,Range &ents) {
-  PetscFunctionBegin;
-  Range::iterator eit = ents.begin();
-  for(;eit!=ents.end();eit++) {
-    BitRefLevel bit2;
-    rval = moab.tag_get_data(th_RefBitLevel,&*eit,1,&bit2); CHKERRQ_MOAB(rval);
-    bit2 |= bit;
-    rval = moab.tag_set_data(th_RefBitLevel,&*eit,1,&bit2); CHKERRQ_MOAB(rval);
-  }
-  PetscFunctionReturn(0);
-}
-PetscErrorCode Core::set_ref_level_to_entities(const BitRefLevel &bit,Range &ents) {
-  PetscFunctionBegin;
-  Range::iterator eit = ents.begin();
-  for(;eit!=ents.end();eit++) {
-    BitRefLevel bit2;
-    rval = moab.tag_get_data(th_RefBitLevel,&*eit,1,&bit2); CHKERRQ_MOAB(rval);
-    bit2 = bit;
-    rval = moab.tag_set_data(th_RefBitLevel,&*eit,1,&bit2); CHKERRQ_MOAB(rval);
-  }
-  PetscFunctionReturn(0);
-}
+// PetscErrorCode Core::add_ref_level_to_entities(const BitRefLevel &bit,Range &ents) {
+//   PetscFunctionBegin;
+//   Range::iterator eit = ents.begin();
+//   for(;eit!=ents.end();eit++) {
+//     BitRefLevel bit2;
+//     rval = moab.tag_get_data(th_RefBitLevel,&*eit,1,&bit2); CHKERRQ_MOAB(rval);
+//     bit2 |= bit;
+//     rval = moab.tag_set_data(th_RefBitLevel,&*eit,1,&bit2); CHKERRQ_MOAB(rval);
+//   }
+//   PetscFunctionReturn(0);
+// }
+// PetscErrorCode Core::set_ref_level_to_entities(const BitRefLevel &bit,Range &ents) {
+//   PetscFunctionBegin;
+//   Range::iterator eit = ents.begin();
+//   for(;eit!=ents.end();eit++) {
+//     BitRefLevel bit2;
+//     rval = moab.tag_get_data(th_RefBitLevel,&*eit,1,&bit2); CHKERRQ_MOAB(rval);
+//     bit2 = bit;
+//     rval = moab.tag_set_data(th_RefBitLevel,&*eit,1,&bit2); CHKERRQ_MOAB(rval);
+//   }
+//   PetscFunctionReturn(0);
+// }
 PetscErrorCode Core::update_meshset_by_entities_children(
     const EntityHandle parent, const BitRefLevel &child_bit,const EntityHandle child, EntityType child_type,const bool recursive,int verb) {
   PetscFunctionBegin;

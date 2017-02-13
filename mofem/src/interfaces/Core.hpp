@@ -221,8 +221,8 @@ struct Core: public Interface {
   PetscErrorCode get_entities_by_type_and_ref_level(const BitRefLevel &bit,const BitRefLevel &mask,const EntityType type,Range &ents,int verb = -1);
   PetscErrorCode get_entities_by_ref_level(const BitRefLevel &bit,const BitRefLevel &mask,const EntityHandle meshset);
   PetscErrorCode get_entities_by_ref_level(const BitRefLevel &bit,const BitRefLevel &mask,Range &ents);
-  PetscErrorCode add_ref_level_to_entities(const BitRefLevel &bit,Range &ents);
-  PetscErrorCode set_ref_level_to_entities(const BitRefLevel &bit,Range &ents);
+  // PetscErrorCode add_ref_level_to_entities(const BitRefLevel &bit,Range &ents);
+  // PetscErrorCode set_ref_level_to_entities(const BitRefLevel &bit,Range &ents);
   PetscErrorCode update_meshset_by_entities_children(
     const EntityHandle parent, const BitRefLevel &child_bit,const EntityHandle child, EntityType child_type,
     const bool recursive = false, int verb = -1
