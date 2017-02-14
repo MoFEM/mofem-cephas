@@ -135,7 +135,7 @@ int main(int argc, char *argv[]) {
     }
     Range shared_ents;
     // Get entities shared with all other processors
-    rval = pcomm->get_shared_entities(-1,shared_ents);MB_CHK_ERR(rval);
+    rval = pcomm->get_shared_entities(-1,shared_ents);CHKERRQ_MOAB(rval);
 
     if(0) {
       std::ostringstream file_shared_owned;
