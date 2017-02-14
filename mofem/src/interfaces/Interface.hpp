@@ -445,24 +445,24 @@ struct Interface: public UnknownInterface {
    */
   virtual PetscErrorCode get_entities_by_ref_level(const BitRefLevel &bit,const BitRefLevel &mask,Range &ents) = 0;
 
-  /**\brief add ref level to entities
+  // /**\brief add ref level to entities
+  //
+  //  Add bit level to entities
+  //  \param bit bit level to add
+  //  \paran ents range of entities to which bit level is added
+  //
+  //  */
+  // virtual PetscErrorCode add_ref_level_to_entities(const BitRefLevel &bit,Range &ents) = 0;
 
-   Add bit level to entities
-   \param bit bit level to add
-   \paran ents range of entities to which bit level is added
-
-   */
-  virtual PetscErrorCode add_ref_level_to_entities(const BitRefLevel &bit,Range &ents) = 0;
-
-  /**\brief add ref level to entities
-
-    Set bit level to entities
-    Add bit level to entities
-    \param bit bit level to add
-    \paran ents range of entities to which bit level is set
-
-   */
-  virtual PetscErrorCode set_ref_level_to_entities(const BitRefLevel &bit,Range &ents) = 0;
+  // /**\brief add ref level to entities
+  //
+  //   Set bit level to entities
+  //   Add bit level to entities
+  //   \param bit bit level to add
+  //   \paran ents range of entities to which bit level is set
+  //
+  //  */
+  // virtual PetscErrorCode set_ref_level_to_entities(const BitRefLevel &bit,Range &ents) = 0;
 
   /** \brief Get the adjacencies associated with a entity to entities of a specified dimension.
     * \ingroup mofem_ref_ents
