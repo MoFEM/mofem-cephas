@@ -274,8 +274,9 @@ struct PostProcTemplateVolumeOnRefinedMesh: public PostProcTemplateOnRefineMesh<
   }
 
   virtual ~PostProcTemplateVolumeOnRefinedMesh() {
+    moab::Interface &moab = T::coreMesh;
     ParallelComm* pcomm_post_proc_mesh = ParallelComm::get_pcomm(
-      &(T::postProcMesh),MYPCOMM_INDEX
+      &moab,MYPCOMM_INDEX
     );
     if(pcomm_post_proc_mesh != NULL) {
       delete pcomm_post_proc_mesh;
@@ -460,7 +461,8 @@ struct PostProcTemplateVolumeOnRefinedMesh: public PostProcTemplateOnRefineMesh<
         }
         EntityHandle tet;
         rval = T::postProcMesh.create_element(MBTET,conn,num_nodes,tet); CHKERRQ_MOAB(rval);
-        rval = T::postProcMesh.tag_set_data(th,&tet,1,&(T::nInTheLoop)); CHKERRQ_MOAB(rval);
+        int n_in_loop = T::nInTheLoop;
+        rval = T::postProcMesh.tag_set_data(th,&tet,1,&n_in_loop); CHKERRQ_MOAB(rval);
         commonData.tEts.insert(tet);
       }
 
@@ -518,7 +520,8 @@ struct PostProcTemplateVolumeOnRefinedMesh: public PostProcTemplateOnRefineMesh<
   PetscErrorCode preProcess() {
     PetscFunctionBegin;
     ErrorCode rval;
-    ParallelComm* pcomm_post_proc_mesh = ParallelComm::get_pcomm(&(T::postProcMesh),MYPCOMM_INDEX);
+    moab::Interface &moab = T::coreMesh;
+    ParallelComm* pcomm_post_proc_mesh = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
     if(pcomm_post_proc_mesh != NULL) {
       delete pcomm_post_proc_mesh;
     }
@@ -530,10 +533,11 @@ struct PostProcTemplateVolumeOnRefinedMesh: public PostProcTemplateOnRefineMesh<
     MoABErrorCode rval;
     PetscFunctionBegin;
 
+    moab::Interface &moab = T::coreMesh;
     ParallelComm* pcomm = ParallelComm::get_pcomm(&T::mField.get_moab(),MYPCOMM_INDEX);
-    ParallelComm* pcomm_post_proc_mesh = ParallelComm::get_pcomm(&(T::postProcMesh),MYPCOMM_INDEX);
+    ParallelComm* pcomm_post_proc_mesh = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
     if(pcomm_post_proc_mesh == NULL) {
-      pcomm_post_proc_mesh = new ParallelComm(&(T::postProcMesh),T::mField.get_comm());
+      pcomm_post_proc_mesh = new ParallelComm(&moab,T::mField.get_comm());
     }
 
     Range edges;
