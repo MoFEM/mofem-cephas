@@ -56,7 +56,8 @@ struct PostPorcStress: public MoFEM::VolumeElementForcesAndSourcesCore::UserData
   PetscErrorCode doWork(
     int side,
     EntityType type,
-    DataForcesAndSurcesCore::EntData &data) {
+    DataForcesAndSurcesCore::EntData &data
+  ) {
     PetscFunctionBegin;
 
     if(type != MBVERTEX) PetscFunctionReturn(0);
@@ -90,9 +91,11 @@ struct PostPorcStress: public MoFEM::VolumeElementForcesAndSourcesCore::UserData
     bzero(def_VAL,tag_length*sizeof(double));
     Tag th_piola1,th_energy;
     rval = postProcMesh.tag_get_handle(
-      tag_name_piola1.c_str(),tag_length,MB_TYPE_DOUBLE,th_piola1,MB_TAG_CREAT|MB_TAG_SPARSE,def_VAL); CHKERRQ_MOAB(rval);
+      tag_name_piola1.c_str(),tag_length,MB_TYPE_DOUBLE,th_piola1,MB_TAG_CREAT|MB_TAG_SPARSE,def_VAL
+    ); CHKERRQ_MOAB(rval);
     rval = postProcMesh.tag_get_handle(
-      tag_name_energy.c_str(),1,MB_TYPE_DOUBLE,th_energy,MB_TAG_CREAT|MB_TAG_SPARSE,def_VAL); CHKERRQ_MOAB(rval);
+      tag_name_energy.c_str(),1,MB_TYPE_DOUBLE,th_energy,MB_TAG_CREAT|MB_TAG_SPARSE,def_VAL
+    ); CHKERRQ_MOAB(rval);
 
     int nb_gauss_pts = data.getN().size1();
     if(mapGaussPts.size()!=(unsigned int)nb_gauss_pts) {
