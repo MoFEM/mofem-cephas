@@ -134,10 +134,10 @@ PetscErrorCode PrismInterface::getSides(const EntityHandle sideset,const BitRefL
   ents3d = ents3d_with_prisms.subset_by_type(MBTET); // take only tets, add prism later
   //take skin faces
   Range skin_faces; // skin faces from 3d ents
-  rval = skin.find_skin(0,ents3d,false,skin_faces); CHKERR_MOAB(rval);
+  rval = skin.find_skin(0,ents3d,false,skin_faces); CHKERRQ_MOAB(rval);
   //take skin edges (boundary of surface if there is any)
   Range skin_edges_boundary; //skin edges from triangles
-  rval = skin.find_skin(0,triangles,false,skin_edges_boundary); CHKERR_MOAB(rval);
+  rval = skin.find_skin(0,triangles,false,skin_edges_boundary); CHKERRQ_MOAB(rval);
   if(verb>3) PetscPrintf(m_field.get_comm(),"skin_edges_boundary %u\n",skin_edges_boundary.size());
   //take all edges on skin faces (i.e. skin surface)
   Range skin_faces_edges; //edges from skin faces of 3d ents
@@ -393,7 +393,7 @@ PetscErrorCode PrismInterface::splitSides(
     if(child_entity == 0) {
       rval = moab.get_coords(&*nit,1,coord); CHKERRQ_MOAB(rval);
       EntityHandle new_node;
-      rval = moab.create_vertex(coord,new_node); CHKERR_MOAB(rval);
+      rval = moab.create_vertex(coord,new_node); CHKERRQ_MOAB(rval);
       map_nodes[*nit] = new_node;
       //create new node on "father" side
       //parent is node on "mather" side
@@ -502,7 +502,7 @@ PetscErrorCode PrismInterface::splitSides(
         EntityHandle tet;
         if(existing_ent == 0) {
           Range new_conn_tet;
-          rval = moab.get_adjacencies(new_conn,4,3,false,new_conn_tet); CHKERR_MOAB(rval);
+          rval = moab.get_adjacencies(new_conn,4,3,false,new_conn_tet); CHKERRQ_MOAB(rval);
           if(new_conn_tet.empty()) {
             rval = moab.create_element(MBTET,new_conn,4,tet); CHKERRQ_MOAB(rval);
             rval = moab.tag_set_data(cOre.get_th_RefParentHandle(),&tet,1,&*eit3d); CHKERRQ_MOAB(rval);
@@ -541,7 +541,7 @@ PetscErrorCode PrismInterface::splitSides(
         }
         if(existing_ent == 0) {
           Range new_conn_prism;
-          rval = moab.get_adjacencies(new_conn,6,3,false,new_conn_prism); CHKERR_MOAB(rval);
+          rval = moab.get_adjacencies(new_conn,6,3,false,new_conn_prism); CHKERRQ_MOAB(rval);
           if(new_conn_prism.empty()) {
             rval = moab.create_element(MBPRISM,new_conn,6,prism); CHKERRQ_MOAB(rval);
             rval = moab.tag_set_data(cOre.get_th_RefParentHandle(),&prism,1,&*eit3d); CHKERRQ_MOAB(rval);

@@ -242,7 +242,7 @@ int main(int argc, char *argv[]) {
         if(block_data[it->getMeshsetId()].oRder == order) continue;
         PetscPrintf(PETSC_COMM_WORLD,"Set block %d oRder to %d\n",it->getMeshsetId(),block_data[it->getMeshsetId()].oRder);
         Range block_ents;
-        rval = moab.get_entities_by_handle(it->meshset,block_ents,true); CHKERR_MOAB(rval);
+        rval = moab.get_entities_by_handle(it->meshset,block_ents,true); CHKERRQ_MOAB(rval);
         Range ents_to_set_order;
         ierr = moab.get_adjacencies(block_ents,3,false,ents_to_set_order,moab::Interface::UNION); CHKERRQ(ierr);
         ents_to_set_order = ents_to_set_order.subset_by_type(MBTET);
@@ -315,7 +315,7 @@ int main(int argc, char *argv[]) {
   for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,BLOCKSET,it)) {
     if(block_data[it->getMeshsetId()].initTemp!=0) {
       Range block_ents;
-      rval = moab.get_entities_by_handle(it->meshset,block_ents,true); CHKERR_MOAB(rval);
+      rval = moab.get_entities_by_handle(it->meshset,block_ents,true); CHKERRQ_MOAB(rval);
       Range vertices;
       rval = moab.get_connectivity(block_ents,vertices,true); CHKERRQ_MOAB(rval);
       ierr = m_field.set_field(block_data[it->getMeshsetId()].initTemp,MBVERTEX,vertices,"TEMP"); CHKERRQ(ierr);

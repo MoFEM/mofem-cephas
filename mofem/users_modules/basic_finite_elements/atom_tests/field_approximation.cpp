@@ -200,7 +200,7 @@ int main(int argc, char *argv[]) {
   Range tets;
   rval = moab.get_entities_by_type(fe_meshset,MBTET,tets,true); CHKERRQ_MOAB(rval);
   Range tets_edges;
-  rval = moab.get_adjacencies(tets,1,false,tets_edges,moab::Interface::UNION); CHKERR_MOAB(rval);
+  rval = moab.get_adjacencies(tets,1,false,tets_edges,moab::Interface::UNION); CHKERRQ_MOAB(rval);
   EntityHandle edges_meshset;
   rval = moab.create_meshset(MESHSET_SET,edges_meshset); CHKERRQ_MOAB(rval);
   rval = moab.add_entities(edges_meshset,tets); CHKERRQ_MOAB(rval);
@@ -228,11 +228,11 @@ int main(int argc, char *argv[]) {
   TeeStream my_split(tee);
 
   Range nodes;
-  rval = moab.get_entities_by_type(0,MBVERTEX,nodes,true); CHKERR_MOAB(rval);
+  rval = moab.get_entities_by_type(0,MBVERTEX,nodes,true); CHKERRQ_MOAB(rval);
   ublas::matrix<double> nodes_vals;
   nodes_vals.resize(nodes.size(),3);
   rval = moab.tag_get_data(
-    ent_method_field1_on_10nodeTet.th,nodes,&*nodes_vals.data().begin()); CHKERR_MOAB(rval);
+    ent_method_field1_on_10nodeTet.th,nodes,&*nodes_vals.data().begin()); CHKERRQ_MOAB(rval);
 
   const double eps = 1e-4;
 

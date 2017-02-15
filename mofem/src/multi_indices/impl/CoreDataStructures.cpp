@@ -68,23 +68,23 @@ sequenceDofContainer(
   ErrorCode rval;
   //id
   Tag th_field_id;
-  rval = moab.tag_get_handle("_FieldId",th_field_id); CHKERR_MOAB(rval);
+  rval = moab.tag_get_handle("_FieldId",th_field_id); MOAB_THROW(rval);
   rval = moab.tag_get_by_ptr(th_field_id,&meshSet,1,(const void **)&tag_id_data); MOAB_THROW(rval);
   //space
   Tag th_field_space;
-  rval = moab.tag_get_handle("_FieldSpace",th_field_space); CHKERR_MOAB(rval);
+  rval = moab.tag_get_handle("_FieldSpace",th_field_space); MOAB_THROW(rval);
   rval = moab.tag_get_by_ptr(th_field_space,&meshSet,1,(const void **)&tag_space_data); MOAB_THROW(rval);
   //approx. base
   Tag th_field_base;
-  rval = moab.tag_get_handle("_FieldBase",th_field_base); CHKERR_MOAB(rval);
+  rval = moab.tag_get_handle("_FieldBase",th_field_base); MOAB_THROW(rval);
   rval = moab.tag_get_by_ptr(th_field_base,&meshSet,1,(const void **)&tag_base_data); MOAB_THROW(rval);
   //name
   Tag th_field_name;
-  rval = moab.tag_get_handle("_FieldName",th_field_name); CHKERR_MOAB(rval);
+  rval = moab.tag_get_handle("_FieldName",th_field_name); MOAB_THROW(rval);
   rval = moab.tag_get_by_ptr(th_field_name,&meshSet,1,(const void **)&tag_name_data,&tag_name_size); MOAB_THROW(rval);
   //name prefix
   Tag th_field_name_data_name_prefix;
-  rval = moab.tag_get_handle("_FieldName_DataNamePrefix",th_field_name_data_name_prefix); CHKERR_MOAB(rval);
+  rval = moab.tag_get_handle("_FieldName_DataNamePrefix",th_field_name_data_name_prefix); MOAB_THROW(rval);
   rval = moab.tag_get_by_ptr(th_field_name_data_name_prefix,&meshSet,1,(const void **)&tag_name_prefix_data,&tag_name_prefix_size); MOAB_THROW(rval);
   std::string name_data_prefix((char *)tag_name_prefix_data,tag_name_prefix_size);
   //data

@@ -39,7 +39,7 @@ MoFEMSeries::MoFEMSeries(Interface &moab,const EntityHandle _meshset):
   ErrorCode rval;
 
   Tag th_SeriesName;
-  rval = moab.tag_get_handle("_SeriesName",th_SeriesName); CHKERR_MOAB(rval);
+  rval = moab.tag_get_handle("_SeriesName",th_SeriesName); MOAB_THROW(rval);
   rval = moab.tag_get_by_ptr(th_SeriesName,&meshset,1,(const void **)&tag_name_data,&tag_name_size); MOAB_THROW(rval);
 
   const int def_val_len = 0;
@@ -130,7 +130,7 @@ PetscErrorCode MoFEMSeries::read(Interface &moab) {
     //time
     {
       double t;
-      rval = moab.tag_set_data(th_SeriesTime,&meshset,1,&t);  CHKERR_MOAB(rval);
+      rval = moab.tag_set_data(th_SeriesTime,&meshset,1,&t);  CHKERRQ_MOAB(rval);
       time.push_back(t);
     }
     //handles
@@ -202,7 +202,7 @@ PetscErrorCode MoFEMSeries::save(Interface &moab) const {
 
   //time
   for(unsigned int ii = 1;ii<ia.size();ii++) {
-    rval = moab.tag_set_data(th_SeriesTime,&contained[ii-1],1,&time[ii-1]);  CHKERR_MOAB(rval);
+    rval = moab.tag_set_data(th_SeriesTime,&contained[ii-1],1,&time[ii-1]);  CHKERRQ_MOAB(rval);
   }
 
   //handles

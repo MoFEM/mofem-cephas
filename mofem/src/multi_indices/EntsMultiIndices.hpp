@@ -184,10 +184,10 @@ struct BasicEntity {
     ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
     if(getPStatus() & PSTATUS_MULTISHARED) {
       // entity is multi shared
-      rval = moab.tag_get_by_ptr(pcomm->sharedps_tag(),&ent,1,(const void **)&sharing_procs_ptr); CHKERR_MOAB(rval);
+      rval = moab.tag_get_by_ptr(pcomm->sharedps_tag(),&ent,1,(const void **)&sharing_procs_ptr); MOAB_THROW(rval);
     } else if(getPStatus() & PSTATUS_SHARED) {
       // shared
-      rval = moab.tag_get_by_ptr(pcomm->sharedp_tag(),&ent,1,(const void **)&sharing_procs_ptr); CHKERR_MOAB(rval);
+      rval = moab.tag_get_by_ptr(pcomm->sharedp_tag(),&ent,1,(const void **)&sharing_procs_ptr); MOAB_THROW(rval);
     }
     return sharing_procs_ptr;
   }
@@ -221,10 +221,10 @@ struct BasicEntity {
     ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
     if(getPStatus() & PSTATUS_MULTISHARED) {
       // entity is multi shared
-      rval = moab.tag_get_by_ptr(pcomm->sharedhs_tag(),&ent,1,(const void **)&sharing_handlers_ptr); CHKERR_MOAB(rval);
+      rval = moab.tag_get_by_ptr(pcomm->sharedhs_tag(),&ent,1,(const void **)&sharing_handlers_ptr); MOAB_THROW(rval);
     } else if(getPStatus() & PSTATUS_SHARED) {
       // shared
-      rval = moab.tag_get_by_ptr(pcomm->sharedh_tag(),&ent,1,(const void **)&sharing_handlers_ptr); CHKERR_MOAB(rval);
+      rval = moab.tag_get_by_ptr(pcomm->sharedh_tag(),&ent,1,(const void **)&sharing_handlers_ptr); MOAB_THROW(rval);
     }
     return sharing_handlers_ptr;
   }
