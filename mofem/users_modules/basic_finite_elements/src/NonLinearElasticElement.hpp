@@ -358,6 +358,7 @@ struct NonlinearElasticElement {
     bool fUnction;
     bool aLe;
     bool fieldDisp;
+    bool lInear; ///< If true Jacobian is evaluated only once
 
     /**
       \brief Construct operator to calculate Piola-Kirchhoff stress or its derivatives over gradient deformation
@@ -376,7 +377,8 @@ struct NonlinearElasticElement {
       int tag,
       bool jacobian,
       bool ale,
-      bool field_disp
+      bool field_disp,
+      bool linear = false
     );
 
     VectorDouble activeVariables;
