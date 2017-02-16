@@ -310,7 +310,7 @@ PetscErrorCode NonlinearElasticElement::OpJacobianPiolaKirchhoffStress::doWork(
 
   //do it only once, no need to repeat this for edges,faces or tets
   if(row_type != MBVERTEX) PetscFunctionReturn(0);
-  if(getFEMethod()->nInTheLoop!=0) {
+  if(getFEMethod()->nInTheLoop!=0 && commonData.jacStress.size()==row_data.getN().size1()) {
     if(!fUnction&&jAcobian&&lInear) {
       PetscFunctionReturn(0);
     }
