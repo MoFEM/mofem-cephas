@@ -109,10 +109,10 @@ int main(int argc, char *argv[]) {
   ); CHKERRQ(ierr);
   Skinner skin(&moab);
   Range skin_faces; // skin faces from 3d ents
-  rval = skin.find_skin(0,tets,false,skin_faces); CHKERR_MOAB(rval);
+  rval = skin.find_skin(0,tets,false,skin_faces); CHKERRQ_MOAB(rval);
   ierr = m_field.add_ents_to_finite_element_by_TRIs(skin_faces,"HCURL_TRI_FE"); CHKERRQ(ierr);
   Range skin_edges;
-  rval = moab.get_adjacencies(skin_faces,1,false,skin_edges,moab::Interface::UNION); CHKERR_MOAB(rval);
+  rval = moab.get_adjacencies(skin_faces,1,false,skin_edges,moab::Interface::UNION); CHKERRQ_MOAB(rval);
   ierr = m_field.add_ents_to_finite_element_by_EDGEs(skin_edges,"HCURL_EDGE_FE"); CHKERRQ(ierr);
 
   //set app. order

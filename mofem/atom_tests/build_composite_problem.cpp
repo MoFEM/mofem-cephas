@@ -84,14 +84,14 @@ int main(int argc, char *argv[]) {
 
     Skinner skin(&m_field.get_moab());
     Range tets_skin;
-    rval = skin.find_skin(0,tets,false,tets_skin); CHKERR_MOAB(rval);
+    rval = skin.find_skin(0,tets,false,tets_skin); CHKERRQ_MOAB(rval);
     Range proc_ents_skin[4];
     proc_ents_skin[3] = proc_ents;
-    rval = skin.find_skin(0,proc_ents,false,proc_ents_skin[2]); CHKERR_MOAB(rval);
+    rval = skin.find_skin(0,proc_ents,false,proc_ents_skin[2]); CHKERRQ_MOAB(rval);
     proc_ents_skin[2] = subtract(proc_ents_skin[2],tets_skin);
     rval = moab.get_adjacencies(
       proc_ents_skin[2],1,false,proc_ents_skin[1],moab::Interface::UNION
-    ); CHKERR_MOAB(rval);
+    ); CHKERRQ_MOAB(rval);
     rval = moab.get_connectivity(proc_ents_skin[1],proc_ents_skin[0],true); CHKERRQ_MOAB(rval);
     for(int dd = 0;dd!=3;dd++) {
       rval = moab.add_entities(part_set,proc_ents_skin[dd]); CHKERRQ_MOAB(rval);

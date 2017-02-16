@@ -114,7 +114,7 @@ int main(int argc, char *argv[]) {
   //get mesh skin
   Skinner skin(&moab);
   Range outer_surface_skin;
-  rval = skin.find_skin(0,tets,false,outer_surface_skin); CHKERR_MOAB(rval);
+  rval = skin.find_skin(0,tets,false,outer_surface_skin); CHKERRQ_MOAB(rval);
 
   //set nodes to TetGen data structures
   ierr = tetgen_iface->inData(nodes,in,moab_tetgen_map,tetgen_moab_map); CHKERRQ(ierr);
