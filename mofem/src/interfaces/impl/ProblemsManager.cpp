@@ -2222,6 +2222,7 @@ namespace MoFEM {
     int verb
   ) {
     PetscErrorCode ierr;
+    MoABErrorCode rval;
     MoFEM::Interface &m_field = cOre;
     const MoFEMProblem_multiIndex *problems_ptr;
     const EntFiniteElement_multiIndex *fe_ent_ptr;
@@ -2244,6 +2245,9 @@ namespace MoFEM {
 
     if(low_proc == -1) low_proc = m_field.getCommRank();
     if(hi_proc == -1) hi_proc = m_field.getCommRank();
+
+    // ParallelComm* pcomm = ParallelComm::get_pcomm(&m_field.get_moab(),MYPCOMM_INDEX);
+    // Tag part_tag = pcomm->part_tag();
 
     // Find pointer to problem of given name
     typedef MoFEMProblem_multiIndex::index<Problem_mi_tag>::type ProblemByName;
@@ -2321,7 +2325,10 @@ namespace MoFEM {
       {
         if(part_from_moab) {
           // if partition is taken from moab partition
-          int proc = (*efit)->getOwnerProc();
+          int proc = (*efit)->getPartProc();
+          // EntityHandle ent = efit->get()->getEnt();
+          // int proc;
+          // rval = m_field.get_moab().tag_get_data(part_tag,&ent,1,&proc); CHKERRQ_MOAB(rval);
           NumeredEntFiniteElement_change_part(proc).operator()(numered_fe);
         } else {
           // count partition of the dofs in row, the larges dofs with given partition

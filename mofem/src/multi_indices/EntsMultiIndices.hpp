@@ -99,7 +99,9 @@ struct BasicEntity {
 
   EntityHandle ent;
 
-  int owner_proc; ///< this never can not be changed
+  int owner_proc; ///< this never can not be changed if distributed mesh
+  int part_proc; ///< this can be changed on distributed
+
   EntityHandle moab_owner_handle;
 
   BasicEntity(
@@ -128,17 +130,29 @@ struct BasicEntity {
     */
   inline EntityHandle getOwnerEnt() const { return moab_owner_handle; }
 
+  /** \brief Owner handle on this or other processors
+    */
+  inline EntityHandle& getOwnerEnt() {
+    return moab_owner_handle;
+  }
+
   /** \brief Get processor owning entity
     */
   inline int getOwnerProc() const { return owner_proc; }
 
-  /** \brief Owner handle on this or other processors
+  /** \brief Get processor owning entity
     */
-  inline EntityHandle& getOwnerEnt() { return moab_owner_handle; }
+  inline int& getOwnerProc() {
+    return owner_proc;
+  }
+
+  /** \brief Get processor
+    */
+  inline int getPartProc() const { return part_proc; }
 
   /** \brief Get processor owning entity
     */
-  inline int& getOwnerProc() { return owner_proc; }
+  inline int& getPartProc() { return part_proc; }
 
   /** \brief get pstatus
     * This tag stores various aspects of parallel status in bits; see also
@@ -348,11 +362,15 @@ struct interface_RefEntity {
 
   inline EntityHandle getOwnerEnt() const { return this->sPtr->getOwnerEnt(); }
 
-  inline int getOwnerProc() const { return this->sPtr->getOwnerProc(); }
-
   inline EntityHandle& getOwnerEnt() { return this->sPtr->getOwnerEnt(); }
 
+  inline int getOwnerProc() const { return this->sPtr->getOwnerProc(); }
+
   inline int& getOwnerProc() { return this->sPtr->getOwnerProc(); }
+
+  inline int getPartProc() const { return this->sPtr->getPartProc(); }
+
+  inline int& getPartProc() { return this->sPtr->getPartProc(); }
 
   inline unsigned char getPStatus() const { return this->sPtr->getPStatus(); }
 
@@ -445,9 +463,28 @@ struct Entity_update_pcomm_data {
   void operator()(boost::shared_ptr<T> &e) {
     ParallelComm* pcomm = ParallelComm::get_pcomm(&e->getBasicDataPtr()->moab,MYPCOMM_INDEX);
     if(pcomm == NULL) THROW_MESSAGE("pcomm is null");
+    if(e->getBasicDataPtr()->trueIfDistrubutedMesh()) {
+      THROW_MESSAGE("Can not change owner proc if distributed mesh, this will make undetermined behavior");
+    }
     rval = pcomm->get_owner_handle(e->getRefEnt(),e->getOwnerProc(),e->getOwnerEnt()); MOAB_THROW(rval);
   }
 };
+
+template<class T>
+struct Entity_update_part_proc {
+  ErrorCode rval;
+  Entity_update_part_proc() {
+  }
+  void operator()(boost::shared_ptr<T> &e) {
+    ParallelComm* pcomm = ParallelComm::get_pcomm(&e->getBasicDataPtr()->moab,MYPCOMM_INDEX);
+    if(pcomm == NULL) THROW_MESSAGE("pcomm is null");
+    EntityHandle ent = e->getRefEnt();
+    rval = e->getBasicDataPtr()->moab.tag_get_data(
+      pcomm->part_tag(),&ent,1,&e->getPartProc()
+    ); MOAB_THROW(rval);
+  }
+};
+
 
 /** \brief ref mofem entity, remove parent
  * \ingroup ent_multi_indices
