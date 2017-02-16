@@ -241,7 +241,7 @@ struct ElasticMaterials {
       if(blockData[it->getMeshsetId()].oRder == disp_order) continue;
       PetscPrintf(mField.get_comm(),"Set block %d oRder to %d\n",it->getMeshsetId(),blockData[it->getMeshsetId()].oRder);
       Range block_ents;
-      rval = mField.get_moab().get_entities_by_handle(it->meshset,block_ents,true); CHKERR_MOAB(rval);
+      rval = mField.get_moab().get_entities_by_handle(it->meshset,block_ents,true); CHKERRQ_MOAB(rval);
       Range ents_to_set_order;
       ierr = mField.get_moab().get_adjacencies(block_ents,3,false,ents_to_set_order,moab::Interface::UNION); CHKERRQ(ierr);
       ents_to_set_order = ents_to_set_order.subset_by_type(MBTET);

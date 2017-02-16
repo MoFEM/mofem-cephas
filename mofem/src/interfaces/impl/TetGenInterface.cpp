@@ -736,7 +736,7 @@ PetscErrorCode TetGenInterface::groupPlanar_Triangle(Range &tris,std::vector<Ran
 
       //get edges on vit skin
       Range skin_edges;
-      rval = skin.find_skin(0,*vit,false,skin_edges); CHKERR_MOAB(rval);
+      rval = skin.find_skin(0,*vit,false,skin_edges); CHKERRQ_MOAB(rval);
 
       //skin edge nodes
       Range skin_edges_nodes;
@@ -871,7 +871,7 @@ PetscErrorCode TetGenInterface::makePolygonFacet(Range &ents,Range &polygons,
   Skinner skin(&m_field.get_moab());
 
   Range skin_edges;
-  rval = skin.find_skin(0,ents,false,skin_edges); CHKERR_MOAB(rval);
+  rval = skin.find_skin(0,ents,false,skin_edges); CHKERRQ_MOAB(rval);
 
   std::vector<EntityHandle> polygon_nodes;
   EntityHandle seed = skin_edges[0];

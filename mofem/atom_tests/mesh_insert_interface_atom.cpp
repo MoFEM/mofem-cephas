@@ -47,7 +47,7 @@ int main(int argc, char *argv[]) {
   moab::Interface& moab = mb_instance;
   const char *option;
   option = "";//"PARALLEL=BCAST";//;DEBUG_IO";
-  rval = moab.load_file(mesh_file_name, 0, option); CHKERR_MOAB(rval);
+  rval = moab.load_file(mesh_file_name, 0, option); CHKERRQ_MOAB(rval);
   ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
   if(pcomm == NULL) pcomm =  new ParallelComm(&moab,PETSC_COMM_WORLD);
 

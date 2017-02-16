@@ -208,7 +208,7 @@ int main(int argc, char *argv[]) {
   Range tets;
   rval = moab.get_entities_by_type(fe_meshset,MBTET,tets,true); CHKERRQ_MOAB(rval);
   Range tets_edges;
-  rval = moab.get_adjacencies(tets,1,false,tets_edges,moab::Interface::UNION); CHKERR_MOAB(rval);
+  rval = moab.get_adjacencies(tets,1,false,tets_edges,moab::Interface::UNION); CHKERRQ_MOAB(rval);
   EntityHandle edges_meshset;
   rval = moab.create_meshset(MESHSET_SET,edges_meshset); CHKERRQ_MOAB(rval);
   rval = moab.add_entities(edges_meshset,tets); CHKERRQ_MOAB(rval);

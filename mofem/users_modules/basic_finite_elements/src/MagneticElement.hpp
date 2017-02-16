@@ -147,7 +147,7 @@ struct MagneticElement {
       rval = mField.get_moab().get_entities_by_type(0,MBTET,tets); CHKERRQ_MOAB(rval);
       Skinner skin(&mField.get_moab());
       Range skin_faces; // skin faces from 3d ents
-      rval = skin.find_skin(0,tets,false,skin_faces); CHKERR_MOAB(rval);
+      rval = skin.find_skin(0,tets,false,skin_faces); CHKERRQ_MOAB(rval);
       skin_faces = subtract(skin_faces,blockData.naturalBc);
       rval = mField.get_moab().get_adjacencies(
         skin_faces,1,true,blockData.essentialBc,moab::Interface::UNION

@@ -62,7 +62,7 @@ PetscErrorCode FluidPressure::addNeumannFluidPressureBCElements(
       rval = mField.get_moab().get_entities_by_type(bit->meshset,MBTRI,setOfFluids[bit->getMeshsetId()].tRis,true); CHKERRQ_MOAB(rval);
       //this get triangles only on block surfaces
       Range tets_skin_tris;
-      rval = skin.find_skin(0,tets,false,tets_skin_tris); CHKERR_MOAB(rval);
+      rval = skin.find_skin(0,tets,false,tets_skin_tris); CHKERRQ_MOAB(rval);
       setOfFluids[bit->getMeshsetId()].tRis.merge(tets_skin_tris);
       std::ostringstream ss;
       ss << setOfFluids[bit->getMeshsetId()] << std::endl;

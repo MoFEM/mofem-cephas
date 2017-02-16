@@ -234,7 +234,7 @@ PetscErrorCode Core::add_field(
         cs_manger_ptr->get_th_CoordSysName(),&meshset,1,sys_name,sys_name_size
       ); CHKERRQ_MOAB(rval);
       EntityHandle coord_sys_id = undefined_cs_ptr->getMeshset();
-      rval = moab.add_entities(coord_sys_id,&meshset,1); CHKERR_MOAB(rval);
+      rval = moab.add_entities(coord_sys_id,&meshset,1); CHKERRQ_MOAB(rval);
       p = fIelds.insert(boost::make_shared<Field>(moab,meshset,undefined_cs_ptr));
       if(bh == MF_EXCL) {
         if(!p.second) SETERRQ1(
