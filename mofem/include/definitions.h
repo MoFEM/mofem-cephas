@@ -347,6 +347,7 @@ DEPRECATED void macro_is_depracted_using_deprecated_function();
  * @param  a error code
  */
 #define CHKERR_MOAB(a) do { \
+  macro_is_depracted_using_deprecated_function(); \
   ErrorCode val = (a); \
   if (MB_SUCCESS != val) { \
     std::cerr << "Error code  " << val << " at " << __FILE__ << ":" << __LINE__ << std::endl; \

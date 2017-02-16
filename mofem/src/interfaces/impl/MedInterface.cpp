@@ -573,7 +573,7 @@ namespace MoFEM {
       CubitMeshsetByName::iterator cit =
       meshsets_manager_ptr->getMeshsetsMultindex().get<CubitMeshSets_name>().find(git->first);
       EntityHandle meshsets = cit->getMeshset();
-      rval = m_field.get_moab().add_entities(meshsets,git->second); CHKERR_MOAB(rval);
+      rval = m_field.get_moab().add_entities(meshsets,git->second); CHKERRQ_MOAB(rval);
       // cerr << git->second << endl;
     }
 

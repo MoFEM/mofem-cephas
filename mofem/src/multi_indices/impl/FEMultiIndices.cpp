@@ -829,18 +829,18 @@ PetscErrorCode DefaultElementAdjacency::defaultMeshset(
 FiniteElement::FiniteElement(Interface &moab,const EntityHandle _meshset): meshset(_meshset) {
   ErrorCode rval;
   Tag th_FEId;
-  rval = moab.tag_get_handle("_FEId",th_FEId); CHKERR_MOAB(rval);
-  rval = moab.tag_get_by_ptr(th_FEId,&meshset,1,(const void **)&tag_id_data); CHKERR_MOAB(rval);
+  rval = moab.tag_get_handle("_FEId",th_FEId); MOAB_THROW(rval);
+  rval = moab.tag_get_by_ptr(th_FEId,&meshset,1,(const void **)&tag_id_data); MOAB_THROW(rval);
   Tag th_FEName;
-  rval = moab.tag_get_handle("_FEName",th_FEName); CHKERR_MOAB(rval);
-  rval = moab.tag_get_by_ptr(th_FEName,&meshset,1,(const void **)&tag_name_data,&tag_name_size); CHKERR_MOAB(rval);
+  rval = moab.tag_get_handle("_FEName",th_FEName); MOAB_THROW(rval);
+  rval = moab.tag_get_by_ptr(th_FEName,&meshset,1,(const void **)&tag_name_data,&tag_name_size); MOAB_THROW(rval);
   Tag th_FEIdCol,th_FEIdRow,th_FEIdData;
-  rval = moab.tag_get_handle("_FEIdCol",th_FEIdCol); CHKERR_MOAB(rval);
-  rval = moab.tag_get_by_ptr(th_FEIdCol,&meshset,1,(const void **)&tag_BitFieldId_col_data); CHKERR_MOAB(rval);
-  rval = moab.tag_get_handle("_FEIdRow",th_FEIdRow); CHKERR_MOAB(rval);
-  rval = moab.tag_get_by_ptr(th_FEIdRow,&meshset,1,(const void **)&tag_BitFieldId_row_data); CHKERR_MOAB(rval);
-  rval = moab.tag_get_handle("_FEIdData",th_FEIdData); CHKERR_MOAB(rval);
-  rval = moab.tag_get_by_ptr(th_FEIdData,&meshset,1,(const void **)&tag_BitFieldId_data); CHKERR_MOAB(rval);
+  rval = moab.tag_get_handle("_FEIdCol",th_FEIdCol); MOAB_THROW(rval);
+  rval = moab.tag_get_by_ptr(th_FEIdCol,&meshset,1,(const void **)&tag_BitFieldId_col_data); MOAB_THROW(rval);
+  rval = moab.tag_get_handle("_FEIdRow",th_FEIdRow); MOAB_THROW(rval);
+  rval = moab.tag_get_by_ptr(th_FEIdRow,&meshset,1,(const void **)&tag_BitFieldId_row_data); MOAB_THROW(rval);
+  rval = moab.tag_get_handle("_FEIdData",th_FEIdData); MOAB_THROW(rval);
+  rval = moab.tag_get_by_ptr(th_FEIdData,&meshset,1,(const void **)&tag_BitFieldId_data); MOAB_THROW(rval);
   //custom adjacency map
   for(int tt = 0;tt<MBMAXTYPE;tt++) {
     element_adjacency_table[tt] = NULL;

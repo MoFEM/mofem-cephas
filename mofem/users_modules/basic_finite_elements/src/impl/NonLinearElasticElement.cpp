@@ -264,17 +264,20 @@ NonlinearElasticElement::OpJacobianPiolaKirchhoffStress::OpJacobianPiolaKirchhof
   int tag,
   bool jacobian,
   bool ale,
-  bool field_disp):
-  VolumeElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROW),
-  dAta(data),
-  commonData(common_data),
-  tAg(tag),
-  adlocReturnValue(0),
-  jAcobian(jacobian),
-  fUnction(!jacobian),
-  aLe(ale),
-  fieldDisp(field_disp)
-  {}
+  bool field_disp,
+  bool linear
+):
+VolumeElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROW),
+dAta(data),
+commonData(common_data),
+tAg(tag),
+adlocReturnValue(0),
+jAcobian(jacobian),
+fUnction(!jacobian),
+aLe(ale),
+fieldDisp(field_disp),
+lInear(linear)
+{}
 
 PetscErrorCode NonlinearElasticElement::OpJacobianPiolaKirchhoffStress::calculateStress() {
   PetscFunctionBegin;
@@ -307,6 +310,11 @@ PetscErrorCode NonlinearElasticElement::OpJacobianPiolaKirchhoffStress::doWork(
 
   //do it only once, no need to repeat this for edges,faces or tets
   if(row_type != MBVERTEX) PetscFunctionReturn(0);
+  if(getFEMethod()->nInTheLoop!=0 && commonData.jacStress.size()==row_data.getN().size1()) {
+    if(!fUnction&&jAcobian&&lInear) {
+      PetscFunctionReturn(0);
+    }
+  }
 
   PetscErrorCode ierr;
   if(dAta.tEts.find(getNumeredEntFiniteElementPtr()->getEnt()) == dAta.tEts.end()) {
@@ -430,8 +438,7 @@ PetscErrorCode NonlinearElasticElement::OpJacobianPiolaKirchhoffStress::doWork(
         }
       }
 
-      if(jAcobian){
-        //if(commonData.jacStressRowPtr[gg].size()!=9) {
+      if(jAcobian) {
         commonData.jacStressRowPtr[gg].resize(9);
         commonData.jacStress[gg].resize(9,nb_active_variables,false);
         for(int dd = 0;dd<9;dd++) {

@@ -116,7 +116,7 @@ int main(int argc, char *argv[]) {
   ); CHKERRQ(ierr);
   Skinner skin(&moab);
   Range skin_faces; // skin faces from 3d ents
-  rval = skin.find_skin(0,tets,false,skin_faces); CHKERR_MOAB(rval);
+  rval = skin.find_skin(0,tets,false,skin_faces); CHKERRQ_MOAB(rval);
   ierr = m_field.add_ents_to_finite_element_by_TRIs(skin_faces,"SKIN_FE"); CHKERRQ(ierr);
 
   //build finite elemnts

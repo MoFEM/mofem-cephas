@@ -81,11 +81,11 @@ int main(int argc, char *argv[]) {
   double def_step_size = 1;
   rval = moab.tag_get_handle("_STEPSIZE",1,MB_TYPE_DOUBLE,th_step_size,MB_TAG_CREAT|MB_TAG_MESH,&def_step_size);
   if(rval==MB_ALREADY_ALLOCATED) rval = MB_SUCCESS;
-  CHKERR_MOAB(rval);
+  CHKERRQ_MOAB(rval);
   int def_step = 1;
   rval = moab.tag_get_handle("_STEP",1,MB_TYPE_INTEGER,th_step,MB_TAG_CREAT|MB_TAG_MESH,&def_step);
   if(rval==MB_ALREADY_ALLOCATED) rval = MB_SUCCESS;
-  CHKERR_MOAB(rval);
+  CHKERRQ_MOAB(rval);
   const void* tag_data_step_size[1];
   EntityHandle root = moab.get_root_set();
   rval = moab.tag_get_by_ptr(th_step_size,&root,1,tag_data_step_size); CHKERRQ_MOAB(rval);

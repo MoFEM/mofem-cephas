@@ -67,7 +67,7 @@ struct Projection10NodeCoordsOnField: public EntMethod {
     if(dofPtr->getEntType() == MBVERTEX) {
       EntityHandle node = dofPtr->getEnt();
       coords.resize(3);
-      rval = mField.get_moab().get_coords(&node,1,&*coords.data().begin());  CHKERR_MOAB(rval);
+      rval = mField.get_moab().get_coords(&node,1,&*coords.data().begin());  CHKERRQ_MOAB(rval);
       dofPtr->getFieldData() = coords[dofPtr->getDofCoeffIdx()];
       if(vErbose>0) {
         PetscPrintf(mField.get_comm(),"val = %6.7e\n",dofPtr->getFieldData());
@@ -92,7 +92,7 @@ struct Projection10NodeCoordsOnField: public EntMethod {
       SETERRQ(PETSC_COMM_SELF,1,"this method works only 4 node and 10 node tets");
     }
     coords.resize(num_nodes*3);
-    rval = mField.get_moab().get_coords(conn,num_nodes,&*coords.data().begin());  CHKERR_MOAB(rval);
+    rval = mField.get_moab().get_coords(conn,num_nodes,&*coords.data().begin());  CHKERRQ_MOAB(rval);
     aveMidCoord.resize(3);
     midNodeCoord.resize(3);
     for(int dd = 0;dd<3;dd++) {
@@ -190,9 +190,9 @@ struct ProjectionFieldOn10NodeTet: public Projection10NodeCoordsOnField {
         EntityHandle node = dofPtr->getEnt();
         if(onCoords) {
           coords.resize(3);
-          rval = mField.get_moab().get_coords(&node,1,&*coords.data().begin());  CHKERR_MOAB(rval);
+          rval = mField.get_moab().get_coords(&node,1,&*coords.data().begin());  CHKERRQ_MOAB(rval);
           coords[dofPtr->getDofCoeffIdx()] = dofPtr->getFieldData();
-          rval = mField.get_moab().set_coords(&node,1,&*coords.data().begin());  CHKERR_MOAB(rval);
+          rval = mField.get_moab().set_coords(&node,1,&*coords.data().begin());  CHKERRQ_MOAB(rval);
         } else {
           int field_rank = (*field_it)->getNbOfCoeffs();
           if(field_rank != dofPtr->getNbOfCoeffs()) {
@@ -247,14 +247,14 @@ struct ProjectionFieldOn10NodeTet: public Projection10NodeCoordsOnField {
 
     if(onCoords) {
       coords.resize(num_nodes*3);
-      rval = mField.get_moab().get_coords(conn,num_nodes,&*coords.data().begin()); CHKERR_MOAB(rval);
+      rval = mField.get_moab().get_coords(conn,num_nodes,&*coords.data().begin()); CHKERRQ_MOAB(rval);
       if(dofPtr->getEntDofIdx() == dofPtr->getDofCoeffIdx()) {
         //add only one when higher order terms present
         double ave_mid = (coords[3*0+dofPtr->getDofCoeffIdx()] + coords[3*1+dofPtr->getDofCoeffIdx()])*0.5;
         coords[2*3+dofPtr->getDofCoeffIdx()] = ave_mid;
       }
       coords[2*3+dofPtr->getDofCoeffIdx()] += approx_val;
-      rval = mField.get_moab().set_coords(&conn[2],1,&coords[3*2]);  CHKERR_MOAB(rval);
+      rval = mField.get_moab().set_coords(&conn[2],1,&coords[3*2]);  CHKERRQ_MOAB(rval);
     } else {
       int tag_size;
       double *tag_value[num_nodes];

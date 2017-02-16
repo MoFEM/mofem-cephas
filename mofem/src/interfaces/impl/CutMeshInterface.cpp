@@ -113,7 +113,7 @@ namespace MoFEM {
           VectorAdaptor vec_shift(3,ublas::shallow_array_adaptor<double>(3,shift));
           mr = mr+vec_shift;
         }
-        rval = moab.create_vertex(&coords(nn,0),new_verts[nn]); CHKERR_MOAB(rval);
+        rval = moab.create_vertex(&coords(nn,0),new_verts[nn]); CHKERRQ_MOAB(rval);
       }
       EntityHandle ele;
       rval = moab.create_element(MBTRI,new_verts,num_nodes,ele); CHKERRQ_MOAB(rval);
@@ -189,11 +189,11 @@ namespace MoFEM {
     rval = moab.get_connectivity(vOlume,vol_vertices,true); CHKERRQ_MOAB(rval);
     for(Range::iterator vit = vol_vertices.begin();vit!=vol_vertices.end();vit++) {
       double coords[3];
-      rval = moab.get_coords(&*vit,1,coords); CHKERR_MOAB(rval);
+      rval = moab.get_coords(&*vit,1,coords); CHKERRQ_MOAB(rval);
       VectorAdaptor point_in(3,ublas::shallow_array_adaptor<double>(3,coords));
       double p_out[3];
       EntityHandle facets_out;
-      rval = treeSurfPtr->closest_to_location(&coords[0],rootSetSurf,p_out,facets_out); CHKERR_MOAB(rval);
+      rval = treeSurfPtr->closest_to_location(&coords[0],rootSetSurf,p_out,facets_out); CHKERRQ_MOAB(rval);
       VectorAdaptor point_out(3,ublas::shallow_array_adaptor<double>(3,p_out));
       double normal[3];
       Util::normal(&moab,facets_out,normal[0],normal[1],normal[2]);
@@ -201,7 +201,7 @@ namespace MoFEM {
       VectorDouble3 delta = point_out-point_in;
       double dist = norm_2(delta);
       double dist_normal = inner_prod(delta,n)/norm_2(n);
-      rval = moab.tag_set_data(th_dist,&*vit,1,&dist); CHKERR_MOAB(rval);
+      rval = moab.tag_set_data(th_dist,&*vit,1,&dist); CHKERRQ_MOAB(rval);
       rval = moab.tag_set_data(th_dist_normal,&*vit,1,&dist_normal); CHKERRQ_MOAB(rval);
     }
 
@@ -230,7 +230,7 @@ namespace MoFEM {
         std::vector< EntityHandle > facets_out;
         rval = treeSurfPtr->ray_intersect_triangles(
           distances_out,facets_out,rootSetSurf,tol,ray_point,unit_ray_dir,&ray_length
-        ); CHKERR_MOAB(rval);
+        ); CHKERRQ_MOAB(rval);
         if(!distances_out.empty()) {
           edgesToCut[*eit].dIst = distances_out[0];
           edgesToCut[*eit].lEngth = ray_length;
@@ -476,9 +476,9 @@ namespace MoFEM {
       rval = moab.get_connectivity(*eit,conn,num_nodes,true); CHKERRQ_MOAB(rval);
       double coords[3*num_nodes];
       if(th) {
-        rval = moab.tag_get_data(th,conn,num_nodes,coords); CHKERR_MOAB(rval);
+        rval = moab.tag_get_data(th,conn,num_nodes,coords); CHKERRQ_MOAB(rval);
       } else {
-        rval = moab.get_coords(conn,num_nodes,coords); CHKERR_MOAB(rval);
+        rval = moab.get_coords(conn,num_nodes,coords); CHKERRQ_MOAB(rval);
       }
       // Put edges coords into boost vectors
       VectorAdaptor s0(3,ublas::shallow_array_adaptor<double>(3,&coords[0]));
@@ -489,12 +489,12 @@ namespace MoFEM {
       EntityHandle facets_out0;
       rval = treeSurfPtr->closest_to_location(
         &coords[0],rootSetSurf,point_out0,facets_out0
-      ); CHKERR_MOAB(rval);
+      ); CHKERRQ_MOAB(rval);
       double point_out1[3];
       EntityHandle facets_out1;
       rval = treeSurfPtr->closest_to_location(
         &coords[3],rootSetSurf,point_out1,facets_out1
-      ); CHKERR_MOAB(rval);
+      ); CHKERRQ_MOAB(rval);
       // Put closest point in boost vectors
       VectorAdaptor p0(3,ublas::shallow_array_adaptor<double>(3,point_out0));
       VectorAdaptor p1(3,ublas::shallow_array_adaptor<double>(3,point_out1));
@@ -575,7 +575,7 @@ namespace MoFEM {
     const EntityHandle *conn;
     rval = moab.get_connectivity(ent,conn,num_nodes,true); CHKERRQ_MOAB(rval);
     double coords[6];
-    rval = moab.get_coords(conn,num_nodes,coords); CHKERR_MOAB(rval);
+    rval = moab.get_coords(conn,num_nodes,coords); CHKERRQ_MOAB(rval);
     VectorAdaptor s0(3,ublas::shallow_array_adaptor<double>(3,&coords[0]));
     VectorAdaptor s1(3,ublas::shallow_array_adaptor<double>(3,&coords[3]));
     noalias(ray_point) = s0;
