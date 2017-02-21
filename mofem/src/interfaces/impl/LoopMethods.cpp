@@ -175,7 +175,7 @@ PetscErrorCode FEMethod::operator()() {
 }
 
 //EntMethod
-EntMethod::EntMethod(): BasicMethod(),dofPtr(NULL),dofNumeredPtr(NULL) {}
+EntMethod::EntMethod(): BasicMethod() {}
 
 PetscErrorCode EntMethod::preProcess() {
   PetscFunctionBegin;
