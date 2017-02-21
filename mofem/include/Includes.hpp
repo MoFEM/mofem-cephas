@@ -103,6 +103,8 @@ extern "C" {
 #include <boost/iostreams/stream.hpp>
 #include <boost/format.hpp>
 
+#include <boost/lexical_cast.hpp>
+
 // #include <boost/core/demangle.hpp>
 
 //MOAB

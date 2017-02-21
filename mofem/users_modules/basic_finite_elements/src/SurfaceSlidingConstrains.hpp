@@ -202,7 +202,7 @@ struct SurfaceSlidingConstrains {
     B(PETSC_NULL),
     F(PETSC_NULL)
     {}
-    int getRule(int order) { return order; };
+    int getRule(int order) { return 2*order; };
 
     PetscErrorCode preProcess() {
       PetscFunctionBegin;
@@ -470,8 +470,10 @@ struct SurfaceSlidingConstrains {
         }
 
         for(int gg = 0;gg<nb_gauss_pts;gg++) {
+          // cerr << data.getN(gg) << endl;
+          // cerr << data.getFieldData() << endl;
 
-          aUx[gg].lAmbda += inner_prod(data.getN(gg),data.getFieldData());
+          aUx[gg].lAmbda += inner_prod(data.getN(gg,nb_dofs),data.getFieldData());
 
           if(aUx[gg].lAmbda!=aUx[gg].lAmbda) {
             SETERRQ(PETSC_COMM_SELF,MOFEM_INVALID_DATA,"NaN value");

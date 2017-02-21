@@ -610,10 +610,19 @@ PetscErrorCode Core::loop_dofs(
   }
   NumeredDofsByNameAndPart::iterator miit = dofs->lower_bound(boost::make_tuple(field_name,lower_rank));
   NumeredDofsByNameAndPart::iterator hi_miit = dofs->upper_bound(boost::make_tuple(field_name,upper_rank));
+  if(miit!=hi_miit) {
+    method.fieldPtr = miit->get()->getFieldPtr();
+  } else {
+    Field_multiIndex::index<FieldName_mi_tag>::type::iterator field_it =
+    fIelds.get<FieldName_mi_tag>().find(field_name);
+    if(field_it!=fIelds.get<FieldName_mi_tag>().end()) {
+      method.fieldPtr = *field_it;
+    }
+  }
   ierr = method.preProcess(); CHKERRQ(ierr);
   for(;miit!=hi_miit;miit++) {
-    method.dofPtr = &(*(*miit)->getDofEntityPtr());
-    method.dofNumeredPtr = &*(*miit);
+    method.dofPtr = miit->get()->getDofEntityPtr();
+    method.dofNumeredPtr = *miit;
     try {
       ierr = method(); CHKERRQ(ierr);
     } catch (const std::exception& ex) {
@@ -663,12 +672,20 @@ PetscErrorCode Core::loop_dofs(const std::string &field_name,EntMethod &method,i
   DofEntityByFieldName::iterator miit,hi_miit;
   miit = dofsField.get<FieldName_mi_tag>().lower_bound(field_name);
   hi_miit = dofsField.get<FieldName_mi_tag>().upper_bound(field_name);
+  if(miit!=hi_miit) {
+    method.fieldPtr = miit->get()->getFieldPtr();
+  } else {
+    Field_multiIndex::index<FieldName_mi_tag>::type::iterator field_it =
+    fIelds.get<FieldName_mi_tag>().find(field_name);
+    if(field_it!=fIelds.get<FieldName_mi_tag>().end()) {
+      method.fieldPtr = *field_it;
+    }
+  }
   method.loopSize = distance(miit,hi_miit);
   ierr = method.preProcess(); CHKERRQ(ierr);
   for(int nn = 0; miit!=hi_miit; miit++, nn++) {
     method.nInTheLoop = nn;
-    method.dofPtr = &*(*miit);
-    method.dofNumeredPtr = NULL;
+    method.dofPtr = *miit;
     try {
       ierr = method(); CHKERRQ(ierr);
     } catch (MoFEMException const &e) {

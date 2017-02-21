@@ -480,8 +480,10 @@ struct EntMethod: public BasicMethod {
   PetscErrorCode operator()();
   PetscErrorCode postProcess();
 
-  const DofEntity *dofPtr;
-  const NumeredDofEntity *dofNumeredPtr;
+  boost::shared_ptr<Field> fieldPtr;
+  boost::shared_ptr<DofEntity> dofPtr;
+  boost::shared_ptr<NumeredDofEntity> dofNumeredPtr;
+  
 };
 
 }
