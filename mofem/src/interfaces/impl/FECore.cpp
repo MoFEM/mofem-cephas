@@ -779,8 +779,8 @@ namespace MoFEM {
   PetscErrorCode Core::build_adjacencies(const Range &ents,int verb) {
     PetscFunctionBegin;
     if(verb==-1) verb = verbose;
-    if(!((*buildMoFEM)&(1<<0))) SETERRQ(comm,MOFEM_NOT_FOUND,"field not build");
-    if(!((*buildMoFEM)&(1<<1))) SETERRQ(comm,MOFEM_NOT_FOUND,"fe not build");
+    if(!((*buildMoFEM)&BUILD_FIELD)) SETERRQ(comm,MOFEM_NOT_FOUND,"field not build");
+    if(!((*buildMoFEM)&BUILD_FE)) SETERRQ(comm,MOFEM_NOT_FOUND,"fe not build");
     EntFiniteElement_multiIndex::iterator fit = entsFiniteElements.begin();
     for(;fit!=entsFiniteElements.end();fit++) {
       if(

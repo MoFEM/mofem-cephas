@@ -531,23 +531,23 @@ struct MoFEMProblem {
    * \ingroup problems_multi_indices
    *
    * \code
-   * for(_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_PART_FOR_LOOP_(PART,IT)) {
+   * for(_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_OWNPROC_FOR_LOOP_(PART,IT)) {
    *   ...
    * }
    * \endcode
    */
-  #define _IT_NUMEREDDOFMOFEMENTITY_ROW_BY_PART_FOR_LOOP_(MOFEMPROBLEM,PART,IT) \
+  #define _IT_NUMEREDDOFMOFEMENTITY_ROW_BY_OWNPROC_FOR_LOOP_(MOFEMPROBLEM,PART,IT) \
   NumeredDofEntity_multiIndex::iterator IT = MOFEMPROBLEM->getNumeredDofsRowsBegin(PART); \
   IT!=MOFEMPROBLEM->getNumeredDofsRowsEnd(PART); IT++
 
-  /// get begin iterator for numered_dofs_rows (insted you can use #_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_PART_FOR_LOOP_ for loops)
+  /// get begin iterator for numered_dofs_rows (insted you can use #_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_OWNPROC_FOR_LOOP_ for loops)
   NumeredDofEntity_multiIndex::iterator getNumeredDofsRowsBegin(const int part) const {
     return numered_dofs_rows->get<Unique_mi_tag>().lower_bound(
       DofEntity::getGlobalUniqueIdCalculate_Low_Proc(part)
     );
   }
 
-  /// get end iterator for numered_dofs_rows (insted you can use #_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_PART_FOR_LOOP_ for loops)
+  /// get end iterator for numered_dofs_rows (insted you can use #_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_OWNPROC_FOR_LOOP_ for loops)
   NumeredDofEntity_multiIndex::iterator getNumeredDofsRowsEnd(const int part) const {
     return numered_dofs_rows->get<Unique_mi_tag>().upper_bound(
       DofEntity::getGlobalUniqueIdCalculate_Hi_Proc(part)

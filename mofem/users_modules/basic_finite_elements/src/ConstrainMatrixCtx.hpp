@@ -26,15 +26,25 @@
   *
   */
 struct ConstrainMatrixCtx {
+
   MoFEM::Interface& mField;
+
   KSP kSP;
-  VecScatter sCatter;
   Mat C,CT,CCT,CTC,K;
   Vec Cx,CCTm1_Cx,CT_CCTm1_Cx,CTCx;
   Vec X,Qx,KQx;
-  string xProblem,yProblem;
   bool initQorP,initQTKQ;
-  bool createKSP,createScatter;
+  bool createKSP;
+  bool createScatter;
+  bool cancelKSPMonitor;
+  bool ownConstrainMatrix;
+
+  // Scatter is created form problem_x to problem_y, or scatter is given
+  // in the constructor
+
+  VecScatter sCatter;
+  string xProblem,yProblem;
+
 
   PetscLogEvent USER_EVENT_projInit;
   PetscLogEvent USER_EVENT_projQ;
@@ -43,49 +53,71 @@ struct ConstrainMatrixCtx {
   PetscLogEvent USER_EVENT_projRT;
   PetscLogEvent USER_EVENT_projCTC_QTKQ;
 
+  /**
+   * Construct data structure to build operators for projection matrices
+   *
+   * User need to set matrix C to make it work
+   *
+   * \param x_problem problem on which vector is projected
+   * \param y_problem problem used to construct projection matrices
+   * \param create_ksp create ksp solver otherwise  user need to set it up
+   */
   ConstrainMatrixCtx(
     MoFEM::Interface& m_field,
     string x_problem,
     string y_problem,
-    bool create_ksp = true
+    bool create_ksp = true,
+    bool own_contrain_matrix = false
   );
 
   ConstrainMatrixCtx(
     MoFEM::Interface& m_field,
     VecScatter scatter,
-    bool create_ksp = true
+    bool create_ksp = true,
+    bool own_contrain_matrix = false
   );
+
+  virtual ~ConstrainMatrixCtx() {
+    PetscErrorCode ierr;
+    ierr = destroyQorP(); CHKERRABORT(mField.get_comm(),ierr);
+    ierr = destroyQTKQ(); CHKERRABORT(mField.get_comm(),ierr);
+    if(ownConstrainMatrix) {
+      ierr = MatDestroy(&C); CHKERRABORT(mField.get_comm(),ierr);
+    }
+  };
 
   PetscReal rTol,absTol,dTol;
   PetscInt maxIts;
 
   /**
-    * \brief initialize vectors and matrices for Q and P shell matrices, stacttering is set based on x_problem and y_problem
+    * \brief initialize vectors and matrices for Q and P shell matrices, scattering is set based on x_problem and y_problem
+    *
+    * \param x is a vector from problem x
     */
   PetscErrorCode initializeQorP(Vec x);
 
   /**
-    * \brief initialize vectors and matrices for CTC+QTKQ shell matrices, stacttering is set based on x_problem and y_problem
+    * \brief initialize vectors and matrices for CTC+QTKQ shell matrices, scattering is set based on x_problem and y_problem
     */
   PetscErrorCode initializeQTKQ();
 
   /**
-    * \brief recalculete CT and CCT if C matrix has been changed since initalisation
+    * \brief recalculete CT and CCT if C matrix has been changed since initialization
     */
   PetscErrorCode recalculateCTandCCT();
 
   /**
-    * \brief recalculete CTC matrix has been changed since initalisation
+    * \brief recalculete CTC matrix has been changed since initialization
     */
   PetscErrorCode recalculateCTC();
 
   /**
-    * \brief destroy submatrices sused for shell marices P, Q, R, RT
+    * \brief destroy sub-matrices used for shell matrices P, Q, R, RT
     */
   PetscErrorCode destroyQorP();
 
   /**
-    * \brief destroy submatrices sused for shell marix QTKQ
+    * \brief destroy sub-matrices used for shell matrix QTKQ
     */
   PetscErrorCode destroyQTKQ();
 
@@ -108,7 +140,7 @@ struct ConstrainMatrixCtx {
   * ConstrainMatrixCtx projection_matrix_ctx(m_fiel,problem_name,contrains_porblem_name);
   * ierr = MatCreateShell(PETSC_COMM_WORLD,m,m,M,M,&projection_matrix_ctx,&Q); CHKERRQ(ierr);
   * ierr = MatShellSetOperation(Q,MATOP_MULT,(void(*)(void))PorjectionMatrixMultOpQ); CHKERRQ(ierr);
-  * ierr = MatShellSetOperation(Q,(void(*)(void))mat_destroy_PorQ); CHKERRQ(ierr);
+  * ierr = MatShellSetOperation(Q,MATOP_DESTROY,(void(*)(void))ConstrainMatrixDestroyOpPorQ); CHKERRQ(ierr);
   *
   * \endcode
 
@@ -173,7 +205,7 @@ PetscErrorCode ConstrainMatrixMultOpRT(Mat RT,Vec x,Vec f);
   * ConstrainMatrixCtx projection_matrix_ctx(m_fiel,problem_name,contrains_porblem_name);
   * ierr = MatCreateShell(PETSC_COMM_WORLD,m,m,M,M,&projection_matrix_ctx,&CTC_QTKQ); CHKERRQ(ierr);
   * ierr = MatShellSetOperation(CTC_QTKQ,MATOP_MULT,(void(*)(void))ConstrainMatrixMultOpCTC_QTKQ); CHKERRQ(ierr);
-  * ierr = MatShellSetOperation(CTC_QTKQ,MATOP_DESTROY,(void(*)(void))mat_destroy_QTKQ); CHKERRQ(ierr);
+  * ierr = MatShellSetOperation(CTC_QTKQ,MATOP_DESTROY,(void(*)(void))ConstrainMatrixDestroyOpQTKQ); CHKERRQ(ierr);
   *
   * \endcode
   *
@@ -191,7 +223,7 @@ PetscErrorCode ConstrainMatrixMultOpCTC_QTKQ(Mat CTC_QTKQ,Vec x,Vec f);
   * ConstrainMatrixCtx projection_matrix_ctx(m_fiel,problem_name,contrains_porblem_name);
   * ierr = MatCreateShell(PETSC_COMM_WORLD,m,m,M,M,&projection_matrix_ctx,&Q); CHKERRQ(ierr);
   * ierr = MatShellSetOperation(Q,MATOP_MULT,(void(*)(void))PorjectionMatrixMultOpQ); CHKERRQ(ierr);
-  * ierr = MatShellSetOperation(Q,(void(*)(void))mat_destroy_PorQ); CHKERRQ(ierr);
+  * ierr = MatShellSetOperation(Q,MATOP_DESTROY,(void(*)(void))ConstrainMatrixDestroyOpPorQ); CHKERRQ(ierr);
   *
   * \endcode
 
