@@ -407,6 +407,24 @@ namespace MoFEM {
       ); CHKERRQ_MOAB(rval);
       switch (ent_type) {
         // FIXME: Some connectivity could not work, need to run and test
+        case MBTET:
+        {
+          int ii = 0;
+          for(int ee = 0;ee!=num_ele;ee++) {
+            EntityHandle n[4];
+            for(int nn = 0;nn!=num_nod_per_ele;nn++) {
+              // conn_moab[ii] = verts[conn_med[ii]-1];
+              n[nn] = verts[conn_med[ii+nn]-1];
+            }
+            EntityHandle n0 = n[0];
+            n[0] = n[1];
+            n[1] = n0;
+            for(int nn = 0;nn!=num_nod_per_ele;nn++,ii++) {
+              conn_moab[ii] = n[nn];
+            }
+          }
+        }
+        break;
         default:
         {
           int ii = 0;
