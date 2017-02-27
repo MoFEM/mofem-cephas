@@ -26,8 +26,13 @@ using namespace boost::numeric;
 
 namespace MoFEM {
 
-typedef ublas::unbounded_array<const FEDofEntity*,std::allocator<const FEDofEntity*> > DofsAllacator;
-typedef ublas::vector<const FEDofEntity*,DofsAllacator > VectorDofs;
+typedef ublas::unbounded_array<
+  boost::shared_ptr<const FEDofEntity>,
+  std::allocator<boost::shared_ptr<const FEDofEntity> >
+> DofsAllacator;
+typedef ublas::vector<
+  boost::shared_ptr<const FEDofEntity>,DofsAllacator
+> VectorDofs;
 
 /**
 * \brief Get tensor rank 0 (scalar) form data vector
