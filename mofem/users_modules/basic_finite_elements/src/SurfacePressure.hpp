@@ -61,7 +61,7 @@ struct NeummanForcesSurface {
    */
   struct MyTriangleFE: public MoFEM::FaceElementForcesAndSourcesCore {
     MyTriangleFE(MoFEM::Interface &m_field);
-    int getRule(int order) { return order; };
+    int getRule(int order) { return 2*order; };
   };
 
   MyTriangleFE fe;
