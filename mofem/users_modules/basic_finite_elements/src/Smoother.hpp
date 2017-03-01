@@ -206,8 +206,8 @@ struct Smoother {
         }
         frontIndices.resize(nb_dofs,false);
         noalias(frontIndices) = row_data.getIndices();
-        ublas::vector<const FEDofEntity*>& dofs = row_data.getFieldDofs();
-        ublas::vector<const FEDofEntity*>::iterator dit = dofs.begin();
+        VectorDofs& dofs = row_data.getFieldDofs();
+        VectorDofs::iterator dit = dofs.begin();
         for(int ii = 0;dit!=dofs.end();dit++,ii++) {
           if(dAta.forcesOnlyOnEntitiesRow.find((*dit)->getEnt())!=dAta.forcesOnlyOnEntitiesRow.end()) {
             iNdices[ii] = -1;
@@ -281,8 +281,8 @@ struct Smoother {
         }
         rowFrontIndices.resize(nb_row,false);
         noalias(rowFrontIndices) = row_data.getIndices();
-        ublas::vector<const FEDofEntity*>& dofs = row_data.getFieldDofs();
-        ublas::vector<const FEDofEntity*>::iterator dit = dofs.begin();
+        VectorDofs& dofs = row_data.getFieldDofs();
+        VectorDofs::iterator dit = dofs.begin();
         for(int ii = 0;dit!=dofs.end();dit++,ii++) {
           if(dAta.forcesOnlyOnEntitiesRow.find((*dit)->getEnt())!=dAta.forcesOnlyOnEntitiesRow.end()) {
             rowIndices[ii] = -1;
