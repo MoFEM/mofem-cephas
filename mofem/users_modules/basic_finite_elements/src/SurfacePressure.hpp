@@ -60,8 +60,9 @@ struct NeummanForcesSurface {
    * Definition of face element used for integration
    */
   struct MyTriangleFE: public MoFEM::FaceElementForcesAndSourcesCore {
+    int addToRule;
     MyTriangleFE(MoFEM::Interface &m_field);
-    int getRule(int order) { return order; };
+    int getRule(int order) { return 2*order+addToRule; };
   };
 
   MyTriangleFE fe;

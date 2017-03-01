@@ -64,7 +64,7 @@ PetscErrorCode PostProcCommonOnRefMesh::OpGetFieldValues::doWork(
     vAluesPtr = &data.getFieldData();
   }
 
-  const MoFEM::FEDofEntity *dof_ptr = data.getFieldDofs()[0];
+  const MoFEM::FEDofEntity *dof_ptr = data.getFieldDofs()[0].get();
   int rank = dof_ptr->getNbOfCoeffs();
 
   int tag_length = rank;
@@ -234,7 +234,7 @@ PetscErrorCode PostProcCommonOnRefMesh::OpGetFieldGradientValues::doWork(
     vAluesPtr = &data.getFieldData();
   }
 
-  const MoFEM::FEDofEntity *dof_ptr = data.getFieldDofs()[0];
+  const MoFEM::FEDofEntity *dof_ptr = data.getFieldDofs()[0].get();
   int rank = dof_ptr->getNbOfCoeffs();
 
   int tag_length = rank*3;
