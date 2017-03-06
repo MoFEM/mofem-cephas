@@ -979,6 +979,9 @@ PetscErrorCode OpSetHoInvJacH1::doWork(
           );
         }
         if(invHoJac.size1()!=nb_gauss_pts) {
+          cerr << "type: " << type << " side: " << side << endl;
+          cerr << "shape fun: " << data.getN(base) << endl;
+          cerr << "diff shape fun  " << data.getDiffN(base) << endl;
           SETERRQ2(
             PETSC_COMM_SELF,
             MOFEM_DATA_INCONSISTENCY,
