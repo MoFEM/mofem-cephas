@@ -106,10 +106,14 @@ PetscErrorCode TetPolynomialBase::getValueH1(ublas::matrix<double> &pts) {
       &*data.dataOnEntities[MBVERTEX][0].getDiffN(base).data().begin(),
       h1_edge_n,diff_h1_egde_n,nb_gauss_pts,base_polynomials
     ); CHKERRQ(ierr);
+  } else {
+    for(int ee = 0;ee<6;ee++) {
+      data.dataOnEntities[MBEDGE][ee].getN(base).resize(0,0,false);
+      data.dataOnEntities[MBEDGE][ee].getDiffN(base).resize(0,0,false);
+    }
   }
 
   if(data.spacesOnEntities[MBTRI].test(H1)) {
-
     //faces
     if(data.dataOnEntities[MBTRI].size()!=4) {
       SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
@@ -147,10 +151,14 @@ PetscErrorCode TetPolynomialBase::getValueH1(ublas::matrix<double> &pts) {
     // std::cerr << data.dataOnEntities[MBVERTEX][0].getN(base) << std::endl;
     // std::cerr << ApproximationBaseNames[base] << std::endl;
 
+  } else {
+    for(int ff = 0;ff<4;ff++) {
+      data.dataOnEntities[MBTRI][ff].getN(base).resize(0,false);
+      data.dataOnEntities[MBTRI][ff].getDiffN(base).resize(0,0,false);
+    }
   }
 
   if(data.spacesOnEntities[MBTET].test(H1)) {
-
     //volume
     int order = data.dataOnEntities[MBTET][0].getDataOrder();
     int nb_vol_dofs = NBVOLUMETET_H1(order);
@@ -165,7 +173,9 @@ PetscErrorCode TetPolynomialBase::getValueH1(ublas::matrix<double> &pts) {
       nb_gauss_pts,
       base_polynomials
     ); CHKERRQ(ierr);
-
+  } else {
+    data.dataOnEntities[MBTET][0].getN(base).resize(0,0,false);
+    data.dataOnEntities[MBTET][0].getDiffN(base).resize(0,0,false);
   }
 
   PetscFunctionReturn(0);
