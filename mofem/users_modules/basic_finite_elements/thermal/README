@@ -3,7 +3,7 @@ Steady problem,
 mpirun -np 2 ./thermal_steady \
   -my_file simple_thermal_problem.cub \
   -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package mumps -ksp_monitor \
-  -my_order 4 -my_max_post_proc_ref_level 2 
+  -my_order 4 -my_max_post_proc_ref_level 2
 
 Unsteady problem,
 
@@ -27,7 +27,8 @@ mpirun -np 2 ./thermal_unseady \
   -my_file heat_exchange.cub  \
   -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package mumps -ksp_monitor \
   -snes_type newtonls -snes_linesearch_type basic -snes_max_it 100 -snes_atol 1e-8 -snes_rtol 1e-8 -snes_monitor \
-  -ts_monitor -ts_type beuler -ts_dt 0.0025 -ts_final_time 0.06 -snes_lag_jacobian -2  -my_order 2 -my_max_post_proc_ref_level 1 
+  -ts_monitor -ts_type beuler -ts_dt 0.0025 -ts_final_time 0.01 -snes_lag_jacobian -2 -ts_exact_final_time stepover \
+  -my_order 2 -my_max_post_proc_ref_level 1
 
 mpirun -np 2 ../elasticity/elasticity \
   -my_file ../thermal/solution.h5m \
@@ -37,7 +38,12 @@ mpirun -np 2 ../elasticity/elasticity \
 Example of ranning climate model
 ================================
 
-mpirun -np 3 ./thermal_unseady -my_file solution.h5m -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package mumps -ksp_monitor  -snes_type newtonls -snes_linesearch_type bt -snes_linesearch_monitor -snes_max_it 100 -snes_atol 1e-8 -snes_rtol 1e-8 -snes_stol 0 -snes_monitor -snes_converged_reason -ts_monitor -ts_type alpha -ts_dt 0.1 -ts_final_time 1 -my_order 1 -my_block_config config_blocks.inf -my_ground_analysis_data parameters.in 
+mpirun -np 3 ./thermal_unseady -my_file solution.h5m \
+-ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package mumps -ksp_monitor  \
+-snes_type newtonls -snes_linesearch_type bt -snes_linesearch_monitor \
+-snes_max_it 100 -snes_atol 1e-8 -snes_rtol 1e-8 -snes_stol 0 -snes_monitor -snes_converged_reason \
+-ts_monitor -ts_type alpha -ts_dt 0.1 -ts_final_time 1 -ts_exact_final_time stepover -my_order 1 -my_block_config config_blocks.inf \
+-my_ground_analysis_data parameters.in
 
 Example of block config file
 ============================
@@ -102,7 +108,7 @@ TnigthAtWinter = 8
 # Day in the year with lowes temerature
 DayOfLowTemperature = 0
 
-# Localisation 
+# Localisation
 longitude = 0.127
 latitude = 51.5072
 
@@ -119,9 +125,7 @@ u10 = 0
 CR = 0
 
 # Presssure [Pa]
-Pressure = 101325	
+Pressure = 101325
 
 # observed solar radiation (W/m2)
 Rs = 1361
-
-
