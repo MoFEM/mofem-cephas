@@ -42,7 +42,18 @@ int main(int argc, char *argv[]) {
   MedInterface *med_interface_ptr;
   ierr = m_field.query_interface(med_interface_ptr); CHKERRQ(ierr);
   ierr = med_interface_ptr->readMed(); CHKERRQ(ierr);
-  // ierr = med_interface_ptr->medGetFieldNames(); CHKERRQ(ierr);
+  ierr = med_interface_ptr->medGetFieldNames(); CHKERRQ(ierr);
+
+  for(
+    std::map<std::string,MedInterface::FieldData>::iterator fit =
+    med_interface_ptr->fieldNames.begin();
+    fit!=med_interface_ptr->fieldNames.end();
+    fit++
+  ) {
+    ierr = med_interface_ptr->readFields(
+      med_interface_ptr->medFileName,fit->first,false,0
+    ); CHKERRQ(ierr);
+  }
 
   MeshsetsManager *meshsets_interface_ptr;
   ierr = m_field.query_interface(meshsets_interface_ptr); CHKERRQ(ierr);
