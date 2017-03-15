@@ -27,6 +27,9 @@ namespace MoFEM {
 
   typedef CubitMeshSet_multiIndex::index<CubitMeshSets_name>::type CubitMeshsetByName;
 
+  typedef CubitMeshSet_multiIndex::index<CubitMeshSets_mi_tag>::type CubitMeshsetById;
+
+
   /**
    * \brief Iterator that loops over all the Cubit MeshSets in a moFEM field
    * \ingroup mofem_bc
