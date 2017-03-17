@@ -528,7 +528,13 @@ PetscErrorCode DataOperator::opRhs(
           data.dataOnEntities[MBVERTEX][nn].getBase()==LASTBASE
         )
       ) {
-        SETERRQ1(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"No base on Vertex and side %d",nn);
+        for(
+          VectorDofs::iterator it = data.dataOnEntities[MBVERTEX][nn].getFieldDofs().begin();
+          it!=data.dataOnEntities[MBVERTEX][nn].getFieldDofs().end();
+          it++
+        ) if((*it)&&(*it)->getActive()) {
+          SETERRQ1(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"No base on Vertex and side %d",nn);
+        }
       }
       ierr = doWork(nn,MBVERTEX,data.dataOnEntities[MBVERTEX][nn]); CHKERRQ(ierr);
     }
@@ -543,7 +549,13 @@ PetscErrorCode DataOperator::opRhs(
           data.dataOnEntities[MBEDGE][ee].getBase()==LASTBASE
         )
       ) {
-        SETERRQ1(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"No base on Edge and side %d",ee);
+        for(
+          VectorDofs::iterator it = data.dataOnEntities[MBEDGE][ee].getFieldDofs().begin();
+          it!=data.dataOnEntities[MBEDGE][ee].getFieldDofs().end();
+          it++
+        ) if((*it)&&(*it)->getActive()) {
+          SETERRQ1(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"No base on Edge and side %d",ee);
+        }
       }
       ierr = doWork(ee,MBEDGE,data.dataOnEntities[MBEDGE][ee]); CHKERRQ(ierr);
     }
@@ -558,7 +570,13 @@ PetscErrorCode DataOperator::opRhs(
           data.dataOnEntities[MBTRI][ff].getBase()==LASTBASE
         )
       ) {
-        SETERRQ1(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"No base on Triangle and side %d",ff);
+        for(
+          VectorDofs::iterator it = data.dataOnEntities[MBTRI][ff].getFieldDofs().begin();
+          it!=data.dataOnEntities[MBTRI][ff].getFieldDofs().end();
+          it++
+        ) if((*it)&&(*it)->getActive()) {
+          SETERRQ1(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"No base on Triangle and side %d",ff);
+        }
       }
       ierr = doWork(ff,MBTRI,data.dataOnEntities[MBTRI][ff]); CHKERRQ(ierr);
     }
@@ -573,7 +591,13 @@ PetscErrorCode DataOperator::opRhs(
           data.dataOnEntities[MBQUAD][qq].getBase()==LASTBASE
         )
       ) {
-        SETERRQ1(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"No base on Quad and side %d",qq);
+        for(
+          VectorDofs::iterator it = data.dataOnEntities[MBQUAD][qq].getFieldDofs().begin();
+          it!=data.dataOnEntities[MBQUAD][qq].getFieldDofs().end();
+          it++
+        ) if((*it)&&(*it)->getActive()) {
+          SETERRQ1(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"No base on Quad and side %d",qq);
+        }
       }
       ierr = doWork(qq,MBQUAD,data.dataOnEntities[MBQUAD][qq]); CHKERRQ(ierr);
     }
@@ -588,7 +612,13 @@ PetscErrorCode DataOperator::opRhs(
           data.dataOnEntities[MBTET][vv].getBase()==LASTBASE
         )
       ) {
-        SETERRQ1(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"No base on Tet and side %d",vv);
+        for(
+          VectorDofs::iterator it = data.dataOnEntities[MBTET][vv].getFieldDofs().begin();
+          it!=data.dataOnEntities[MBTET][vv].getFieldDofs().end();
+          it++
+        ) if((*it)&&(*it)->getActive()) {
+          SETERRQ1(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"No base on Tet and side %d",vv);
+        }
       }
       ierr = doWork(vv,MBTET,data.dataOnEntities[MBTET][vv]); CHKERRQ(ierr);
     }
@@ -603,7 +633,13 @@ PetscErrorCode DataOperator::opRhs(
           data.dataOnEntities[MBPRISM][pp].getBase()==LASTBASE
         )
       ) {
-        SETERRQ1(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"No base on Prism and side %d",pp);
+        for(
+          VectorDofs::iterator it = data.dataOnEntities[MBPRISM][pp].getFieldDofs().begin();
+          it!=data.dataOnEntities[MBPRISM][pp].getFieldDofs().end();
+          it++
+        ) if((*it)&&(*it)->getActive()) {
+          SETERRQ1(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"No base on Prism and side %d",pp);
+        }
       }
       ierr = doWork(pp,MBPRISM,data.dataOnEntities[MBPRISM][pp]); CHKERRQ(ierr);
     }
@@ -943,6 +979,9 @@ PetscErrorCode OpSetHoInvJacH1::doWork(
           );
         }
         if(invHoJac.size1()!=nb_gauss_pts) {
+          cerr << "type: " << type << " side: " << side << endl;
+          cerr << "shape fun: " << data.getN(base) << endl;
+          cerr << "diff shape fun  " << data.getDiffN(base) << endl;
           SETERRQ2(
             PETSC_COMM_SELF,
             MOFEM_DATA_INCONSISTENCY,
@@ -1268,12 +1307,21 @@ PetscErrorCode OpGetCoordsAndNormalsOnFace::doWork(int side,EntityType type,Data
         SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
       }
       if(nb_dofs > 3*data.getN().size2()) {
-        SETERRQ1(
-          PETSC_COMM_SELF,
-          MOFEM_DATA_INCONSISTENCY,
-          "data inconsistency for base %s",
-          ApproximationBaseNames[data.getBase()]
-        );
+        int nn = 0;
+        for(;nn!=nb_dofs;nn++) {
+          if(!data.getFieldDofs()[nn]->getActive()) break;
+        }
+        if(nn > 3*data.getN().size2()) {
+          SETERRQ1(
+            PETSC_COMM_SELF,
+            MOFEM_DATA_INCONSISTENCY,
+            "data inconsistency for base %s",
+            ApproximationBaseNames[data.getBase()]
+          );
+        } else {
+          nb_dofs = nn;
+          if(!nb_dofs) PetscFunctionReturn(0);
+        }
       }
       for(int gg = 0;gg<nb_gauss_pts;gg++) {
         for(int dd = 0;dd<3;dd++) {
@@ -1717,9 +1765,11 @@ PetscErrorCode OpGetDataAndGradient<3,3>::calculateValAndGrad(
   DataForcesAndSurcesCore::EntData &data
 ) {
   PetscFunctionBegin;
+  if(data.getBase()==NOBASE) PetscFunctionReturn(0);
   const int nb_gauss_pts = data.getN().size1();
   const int nb_base_functions = data.getN().size2();
   const int nb_dofs = data.getFieldData().size();
+  if(!nb_dofs) PetscFunctionReturn(0);
   FTensor::Tensor0<double*> t_n = data.getFTensor0N();
   FTensor::Tensor1<double*,3> t_val = getValAtGaussPtsTensor<3>(dataAtGaussPts);
   FTensor::Tensor2<double*,3,3> t_grad = getGradAtGaussPtsTensor<3,3>(dataGradAtGaussPts);

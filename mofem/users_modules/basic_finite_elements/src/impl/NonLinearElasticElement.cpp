@@ -153,11 +153,11 @@ PetscErrorCode NonlinearElasticElement::OpGetDataAtGaussPts::doWork(
     if(type == zeroAtType) {
       valuesAtGaussPts.resize(nb_gauss_pts);
       gradientAtGaussPts.resize(nb_gauss_pts);
-      for(int gg = 0;gg<nb_gauss_pts;gg++) {
+      for(int gg = 0;gg!=nb_gauss_pts;gg++) {
         valuesAtGaussPts[gg].resize(rank,false);
         gradientAtGaussPts[gg].resize(rank,3,false);
       }
-      for(int gg = 0;gg<nb_gauss_pts;gg++) {
+      for(int gg = 0;gg!=nb_gauss_pts;gg++) {
         valuesAtGaussPts[gg].clear();
         gradientAtGaussPts[gg].clear();
       }
@@ -264,17 +264,20 @@ NonlinearElasticElement::OpJacobianPiolaKirchhoffStress::OpJacobianPiolaKirchhof
   int tag,
   bool jacobian,
   bool ale,
-  bool field_disp):
-  VolumeElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROW),
-  dAta(data),
-  commonData(common_data),
-  tAg(tag),
-  adlocReturnValue(0),
-  jAcobian(jacobian),
-  fUnction(!jacobian),
-  aLe(ale),
-  fieldDisp(field_disp)
-  {}
+  bool field_disp,
+  bool linear
+):
+VolumeElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROW),
+dAta(data),
+commonData(common_data),
+tAg(tag),
+adlocReturnValue(0),
+jAcobian(jacobian),
+fUnction(!jacobian),
+aLe(ale),
+fieldDisp(field_disp),
+lInear(linear)
+{}
 
 PetscErrorCode NonlinearElasticElement::OpJacobianPiolaKirchhoffStress::calculateStress() {
   PetscFunctionBegin;
@@ -307,6 +310,11 @@ PetscErrorCode NonlinearElasticElement::OpJacobianPiolaKirchhoffStress::doWork(
 
   //do it only once, no need to repeat this for edges,faces or tets
   if(row_type != MBVERTEX) PetscFunctionReturn(0);
+  if(getFEMethod()->nInTheLoop!=0 && commonData.jacStress.size()==row_data.getN().size1()) {
+    if(!fUnction&&jAcobian&&lInear) {
+      PetscFunctionReturn(0);
+    }
+  }
 
   PetscErrorCode ierr;
   if(dAta.tEts.find(getNumeredEntFiniteElementPtr()->getEnt()) == dAta.tEts.end()) {
@@ -381,7 +389,8 @@ PetscErrorCode NonlinearElasticElement::OpJacobianPiolaKirchhoffStress::doWork(
           ); CHKERRQ(ierr);
           dAta.materialAdoublePtr->invH.resize(3,3,false);
           ierr = dAta.materialAdoublePtr->iNvert(
-            dAta.materialAdoublePtr->detH,dAta.materialAdoublePtr->H,dAta.materialAdoublePtr->invH
+            dAta.materialAdoublePtr->detH,dAta.materialAdoublePtr->H,
+            dAta.materialAdoublePtr->invH
           ); CHKERRQ(ierr);
           noalias(dAta.materialAdoublePtr->F) = prod(
             dAta.materialAdoublePtr->h,dAta.materialAdoublePtr->invH
@@ -429,8 +438,7 @@ PetscErrorCode NonlinearElasticElement::OpJacobianPiolaKirchhoffStress::doWork(
         }
       }
 
-      if(jAcobian){
-        //if(commonData.jacStressRowPtr[gg].size()!=9) {
+      if(jAcobian) {
         commonData.jacStressRowPtr[gg].resize(9);
         commonData.jacStress[gg].resize(9,nb_active_variables,false);
         for(int dd = 0;dd<9;dd++) {
@@ -479,8 +487,8 @@ PetscErrorCode NonlinearElasticElement::OpRhsPiolaKirchhoff::aSemble(
     iNdices.resize(nb_dofs,false);
     noalias(iNdices) = row_data.getIndices();
     indices_ptr = &iNdices[0];
-    ublas::vector<const FEDofEntity*>& dofs = row_data.getFieldDofs();
-    ublas::vector<const FEDofEntity*>::iterator dit = dofs.begin();
+    VectorDofs& dofs = row_data.getFieldDofs();
+    VectorDofs::iterator dit = dofs.begin();
     for(int ii = 0;dit!=dofs.end();dit++,ii++) {
       if(dAta.forcesOnlyOnEntitiesRow.find((*dit)->getEnt())==dAta.forcesOnlyOnEntitiesRow.end()) {
         iNdices[ii] = -1;
@@ -549,28 +557,6 @@ PetscErrorCode NonlinearElasticElement::OpRhsPiolaKirchhoff::doWork(
       }
     }
 
-    // for(unsigned int gg = 0;gg<row_data.getN().size1();gg++) {
-    //   //diffN - on rows has degrees of freedom
-    //   //diffN - on columns has derivatives of shape function
-    //   const MatrixAdaptor &diffN = row_data.getDiffN(gg,nb_dofs/3);
-    //   const MatrixDouble& stress = commonData.sTress[gg];
-    //
-    //   double val = getVolume()*getGaussPts()(3,gg);
-    //   if((!aLe)&&getHoGaussPtsDetJac().size()>0) {
-    //     val *= getHoGaussPtsDetJac()[gg]; ///< higher order geometry
-    //   }
-    //   for(int dd = 0;dd<nb_dofs/3;dd++) {
-    //     for(int rr = 0;rr<3;rr++) {
-    //       for(int nn = 0;nn<3;nn++) {
-    //         //std::cerr << "stress : " << stress << std::endl;
-    //         nf[3*dd+rr] += val*diffN(dd,nn)*stress(rr,nn);
-    //       }
-    //     }
-    //   }
-    //
-    // }
-
-
     //std::cerr << "nf : " << nf << std::endl;
     ierr = aSemble(row_side,row_type,row_data); CHKERRQ(ierr);
 
@@ -583,11 +569,14 @@ PetscErrorCode NonlinearElasticElement::OpRhsPiolaKirchhoff::doWork(
   PetscFunctionReturn(0);
 }
 
-NonlinearElasticElement::OpEnergy::OpEnergy(const std::string field_name,BlockData &data,CommonData &common_data,Vec *v_ptr,bool field_disp):
-  VolumeElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROW),
-  dAta(data),commonData(common_data),
-  Vptr(v_ptr),
-  fieldDisp(field_disp) { }
+NonlinearElasticElement::OpEnergy::OpEnergy(
+  const std::string field_name,BlockData &data,CommonData &common_data,Vec *v_ptr,bool field_disp
+):
+VolumeElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROW),
+dAta(data),commonData(common_data),
+Vptr(v_ptr),
+fieldDisp(field_disp) {
+}
 
 PetscErrorCode NonlinearElasticElement::OpEnergy::doWork(
   int row_side,EntityType row_type,DataForcesAndSurcesCore::EntData &row_data
@@ -617,6 +606,7 @@ PetscErrorCode NonlinearElasticElement::OpEnergy::doWork(
           dAta.materialDoublePtr->F(dd,dd) += 1;
         }
       }
+
       ierr = dAta.materialDoublePtr->calculateElasticEnergy(dAta,getNumeredEntFiniteElementPtr()); CHKERRQ(ierr);
       ierr = VecSetValue(*Vptr,0,val*dAta.materialDoublePtr->eNergy,ADD_VALUES); CHKERRQ(ierr);
 
@@ -681,18 +671,6 @@ PetscErrorCode NonlinearElasticElement::OpLhsPiolaKirchhoff_dx::getJac(
     }
     ++t3_1;
   }
-  // const MatrixAdaptor diffN = col_data.getDiffN(gg,nb_col/3);
-  // int nb_col = col_data.getFieldData().size();
-  // // FIXME: this is efficiency bottle neck
-  // for(int dd = 0;dd<nb_col/3;dd++) {
-  //   for(int rr = 0;rr<3;rr++) {
-  //     for(int ii = 0;ii<9;ii++) {
-  //       for(int jj = 0;jj<3;jj++) {
-  //         jac(ii,3*dd+rr) += jac_stress(ii,3*rr+jj)*diffN(dd,jj);
-  //       }
-  //     }
-  //   }
-  // }
   PetscFunctionReturn(0);
 }
 
@@ -723,8 +701,8 @@ PetscErrorCode NonlinearElasticElement::OpLhsPiolaKirchhoff_dx::aSemble(
     rowIndices.resize(nb_row,false);
     noalias(rowIndices) = row_data.getIndices();
     row_indices_ptr = &rowIndices[0];
-    ublas::vector<const FEDofEntity*>& dofs = row_data.getFieldDofs();
-    ublas::vector<const FEDofEntity*>::iterator dit = dofs.begin();
+    VectorDofs& dofs = row_data.getFieldDofs();
+    VectorDofs::iterator dit = dofs.begin();
     for(int ii = 0;dit!=dofs.end();dit++,ii++) {
       if(dAta.forcesOnlyOnEntitiesRow.find((*dit)->getEnt())==dAta.forcesOnlyOnEntitiesRow.end()) {
         rowIndices[ii] = -1;
@@ -736,8 +714,8 @@ PetscErrorCode NonlinearElasticElement::OpLhsPiolaKirchhoff_dx::aSemble(
     colIndices.resize(nb_col,false);
     noalias(colIndices) = col_data.getIndices();
     col_indices_ptr = &colIndices[0];
-    ublas::vector<const FEDofEntity*>& dofs = col_data.getFieldDofs();
-    ublas::vector<const FEDofEntity*>::iterator dit = dofs.begin();
+    VectorDofs& dofs = col_data.getFieldDofs();
+    VectorDofs::iterator dit = dofs.begin();
     for(int ii = 0;dit!=dofs.end();dit++,ii++) {
       if(dAta.forcesOnlyOnEntitiesCol.find((*dit)->getEnt())==dAta.forcesOnlyOnEntitiesCol.end()) {
         colIndices[ii] = -1;
@@ -762,8 +740,8 @@ PetscErrorCode NonlinearElasticElement::OpLhsPiolaKirchhoff_dx::aSemble(
       rowIndices.resize(nb_row,false);
       noalias(rowIndices) = row_data.getIndices();
       row_indices_ptr = &rowIndices[0];
-      ublas::vector<const FEDofEntity*>& dofs = row_data.getFieldDofs();
-      ublas::vector<const FEDofEntity*>::iterator dit = dofs.begin();
+      VectorDofs& dofs = row_data.getFieldDofs();
+      VectorDofs::iterator dit = dofs.begin();
       for(int ii = 0;dit!=dofs.end();dit++,ii++) {
         if(dAta.forcesOnlyOnEntitiesCol.find((*dit)->getEnt())==dAta.forcesOnlyOnEntitiesCol.end()) {
           rowIndices[ii] = -1;
@@ -775,8 +753,8 @@ PetscErrorCode NonlinearElasticElement::OpLhsPiolaKirchhoff_dx::aSemble(
       colIndices.resize(nb_col,false);
       noalias(colIndices) = col_data.getIndices();
       col_indices_ptr = &colIndices[0];
-      ublas::vector<const FEDofEntity*>& dofs = col_data.getFieldDofs();
-      ublas::vector<const FEDofEntity*>::iterator dit = dofs.begin();
+      VectorDofs& dofs = col_data.getFieldDofs();
+      VectorDofs::iterator dit = dofs.begin();
       for(int ii = 0;dit!=dofs.end();dit++,ii++) {
         if(dAta.forcesOnlyOnEntitiesRow.find((*dit)->getEnt())==dAta.forcesOnlyOnEntitiesRow.end()) {
           colIndices[ii] = -1;
@@ -861,33 +839,6 @@ PetscErrorCode NonlinearElasticElement::OpLhsPiolaKirchhoff_dx::doWork(
         ++t3_1;
       }
     }
-    // for(unsigned int gg = 0;gg<row_data.getN().size1();gg++) {
-    //
-    //   ierr = getJac(col_data,gg); CHKERRQ(ierr);
-    //   double val = getVolume()*getGaussPts()(3,gg);
-    //   if((!aLe)&&(getHoGaussPtsDetJac().size()>0)) {
-    //     val *= getHoGaussPtsDetJac()[gg]; ///< higher order geometry
-    //   }
-    //   jac *= val;
-    //
-    //   const MatrixAdaptor &diffN = row_data.getDiffN(gg,nb_row/3);
-    //
-    //   { //integrate element stiffness matrix
-    //     for(int dd1 = 0;dd1<nb_row/3;dd1++) {
-    //       for(int rr1 = 0;rr1<3;rr1++) {
-    //         for(int dd2 = 0;dd2<nb_col/3;dd2++) {
-    //           for(int rr2 = 0;rr2<3;rr2++) {
-    //             k(3*dd1+rr1,3*dd2+rr2) +=
-    //             diffN(dd1,0)*jac(3*rr1+0,3*dd2+rr2)+
-    //             diffN(dd1,1)*jac(3*rr1+1,3*dd2+rr2)+
-    //             diffN(dd1,2)*jac(3*rr1+2,3*dd2+rr2);
-    //           }
-    //         }
-    //       }
-    //     }
-    //   }
-    //
-    // }
 
     //std::cerr << "N " << getNumeredEntFiniteElementPtr()->getRefEnt() << std::endl << k << std::endl;
     ierr = aSemble(row_side,col_side,row_type,col_type,row_data,col_data); CHKERRQ(ierr);
@@ -940,8 +891,8 @@ PetscErrorCode NonlinearElasticElement::OpLhsPiolaKirchhoff_dX::aSemble(
     rowIndices.resize(nb_row,false);
     noalias(rowIndices) = row_data.getIndices();
     row_indices_ptr = &rowIndices[0];
-    ublas::vector<const FEDofEntity*>& dofs = row_data.getFieldDofs();
-    ublas::vector<const FEDofEntity*>::iterator dit = dofs.begin();
+    VectorDofs& dofs = row_data.getFieldDofs();
+    VectorDofs::iterator dit = dofs.begin();
     for(int ii = 0;dit!=dofs.end();dit++,ii++) {
       if(dAta.forcesOnlyOnEntitiesRow.find((*dit)->getEnt())==dAta.forcesOnlyOnEntitiesRow.end()) {
         rowIndices[ii] = -1;
@@ -954,8 +905,8 @@ PetscErrorCode NonlinearElasticElement::OpLhsPiolaKirchhoff_dX::aSemble(
     colIndices.resize(nb_col,false);
     noalias(colIndices) = col_data.getIndices();
     col_indices_ptr = &colIndices[0];
-    ublas::vector<const FEDofEntity*>& dofs = col_data.getFieldDofs();
-    ublas::vector<const FEDofEntity*>::iterator dit = dofs.begin();
+    VectorDofs& dofs = col_data.getFieldDofs();
+    VectorDofs::iterator dit = dofs.begin();
     for(int ii = 0;dit!=dofs.end();dit++,ii++) {
       if(dAta.forcesOnlyOnEntitiesCol.find((*dit)->getEnt())==dAta.forcesOnlyOnEntitiesCol.end()) {
         colIndices[ii] = -1;

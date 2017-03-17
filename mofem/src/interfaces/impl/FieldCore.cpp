@@ -234,7 +234,7 @@ PetscErrorCode Core::add_field(
         cs_manger_ptr->get_th_CoordSysName(),&meshset,1,sys_name,sys_name_size
       ); CHKERRQ_MOAB(rval);
       EntityHandle coord_sys_id = undefined_cs_ptr->getMeshset();
-      rval = moab.add_entities(coord_sys_id,&meshset,1); CHKERR_MOAB(rval);
+      rval = moab.add_entities(coord_sys_id,&meshset,1); CHKERRQ_MOAB(rval);
       p = fIelds.insert(boost::make_shared<Field>(moab,meshset,undefined_cs_ptr));
       if(bh == MF_EXCL) {
         if(!p.second) SETERRQ1(
@@ -1694,28 +1694,28 @@ PetscErrorCode Core::get_entities_by_ref_level(const BitRefLevel &bit,const BitR
   }
   PetscFunctionReturn(0);
 }
-PetscErrorCode Core::add_ref_level_to_entities(const BitRefLevel &bit,Range &ents) {
-  PetscFunctionBegin;
-  Range::iterator eit = ents.begin();
-  for(;eit!=ents.end();eit++) {
-    BitRefLevel bit2;
-    rval = moab.tag_get_data(th_RefBitLevel,&*eit,1,&bit2); CHKERRQ_MOAB(rval);
-    bit2 |= bit;
-    rval = moab.tag_set_data(th_RefBitLevel,&*eit,1,&bit2); CHKERRQ_MOAB(rval);
-  }
-  PetscFunctionReturn(0);
-}
-PetscErrorCode Core::set_ref_level_to_entities(const BitRefLevel &bit,Range &ents) {
-  PetscFunctionBegin;
-  Range::iterator eit = ents.begin();
-  for(;eit!=ents.end();eit++) {
-    BitRefLevel bit2;
-    rval = moab.tag_get_data(th_RefBitLevel,&*eit,1,&bit2); CHKERRQ_MOAB(rval);
-    bit2 = bit;
-    rval = moab.tag_set_data(th_RefBitLevel,&*eit,1,&bit2); CHKERRQ_MOAB(rval);
-  }
-  PetscFunctionReturn(0);
-}
+// PetscErrorCode Core::add_ref_level_to_entities(const BitRefLevel &bit,Range &ents) {
+//   PetscFunctionBegin;
+//   Range::iterator eit = ents.begin();
+//   for(;eit!=ents.end();eit++) {
+//     BitRefLevel bit2;
+//     rval = moab.tag_get_data(th_RefBitLevel,&*eit,1,&bit2); CHKERRQ_MOAB(rval);
+//     bit2 |= bit;
+//     rval = moab.tag_set_data(th_RefBitLevel,&*eit,1,&bit2); CHKERRQ_MOAB(rval);
+//   }
+//   PetscFunctionReturn(0);
+// }
+// PetscErrorCode Core::set_ref_level_to_entities(const BitRefLevel &bit,Range &ents) {
+//   PetscFunctionBegin;
+//   Range::iterator eit = ents.begin();
+//   for(;eit!=ents.end();eit++) {
+//     BitRefLevel bit2;
+//     rval = moab.tag_get_data(th_RefBitLevel,&*eit,1,&bit2); CHKERRQ_MOAB(rval);
+//     bit2 = bit;
+//     rval = moab.tag_set_data(th_RefBitLevel,&*eit,1,&bit2); CHKERRQ_MOAB(rval);
+//   }
+//   PetscFunctionReturn(0);
+// }
 PetscErrorCode Core::update_meshset_by_entities_children(
     const EntityHandle parent, const BitRefLevel &child_bit,const EntityHandle child, EntityType child_type,const bool recursive,int verb) {
   PetscFunctionBegin;

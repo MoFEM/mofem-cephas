@@ -24,27 +24,33 @@ using namespace MoFEM;
 
 const static bool debug = false;
 
+#define INIT_DATA_CONSTRAINMATRIXCTX \
+C(PETSC_NULL), \
+CT(PETSC_NULL),  \
+CCT(PETSC_NULL), \
+CTC(PETSC_NULL), \
+K(PETSC_NULL), \
+Cx(PETSC_NULL), \
+CCTm1_Cx(PETSC_NULL), \
+CT_CCTm1_Cx(PETSC_NULL), \
+CTCx(PETSC_NULL), \
+Qx(PETSC_NULL), \
+KQx(PETSC_NULL), \
+initQorP(true), \
+initQTKQ(true), \
+createKSP(create_ksp), \
+createScatter(true), \
+cancelKSPMonitor(true), \
+ownConstrainMatrix(own_contrain_matrix)
+
 ConstrainMatrixCtx::ConstrainMatrixCtx(
-  MoFEM::Interface& m_field,string x_problem,string y_problem,bool create_ksp
+  MoFEM::Interface& m_field,string x_problem,string y_problem,bool create_ksp,bool own_contrain_matrix
 ):
 mField(m_field),
-C(PETSC_NULL),
-CT(PETSC_NULL),
-CCT(PETSC_NULL),
-CTC(PETSC_NULL),
-K(PETSC_NULL),
-Cx(PETSC_NULL),
-CCTm1_Cx(PETSC_NULL),
-CT_CCTm1_Cx(PETSC_NULL),
-CTCx(PETSC_NULL),
-Qx(PETSC_NULL),
-KQx(PETSC_NULL),
+INIT_DATA_CONSTRAINMATRIXCTX,
 xProblem(x_problem),
-yProblem(y_problem),
-initQorP(true),
-initQTKQ(true),
-createKSP(create_ksp),
-createScatter(true) {
+yProblem(y_problem)
+{
   PetscLogEventRegister("ProjectionInit",0,&USER_EVENT_projInit);
   PetscLogEventRegister("ProjectionQ",0,&USER_EVENT_projQ);
   PetscLogEventRegister("ProjectionP",0,&USER_EVENT_projP);
@@ -56,25 +62,12 @@ createScatter(true) {
 ConstrainMatrixCtx::ConstrainMatrixCtx(
   MoFEM::Interface& m_field,
   VecScatter scatter,
-  bool create_ksp
+  bool create_ksp,
+  bool own_contrain_matrix
 ):
 mField(m_field),
-sCatter(scatter),
-C(PETSC_NULL),
-CT(PETSC_NULL),
-CCT(PETSC_NULL),
-CTC(PETSC_NULL),
-K(PETSC_NULL),
-Cx(PETSC_NULL),
-CCTm1_Cx(PETSC_NULL),
-CT_CCTm1_Cx(PETSC_NULL),
-CTCx(PETSC_NULL),
-Qx(PETSC_NULL),
-KQx(PETSC_NULL),
-initQorP(true),
-initQTKQ(true),
-createKSP(create_ksp),
-createScatter(false) {
+INIT_DATA_CONSTRAINMATRIXCTX,
+sCatter(scatter) {
   PetscLogEventRegister("ProjectionInit",0,&USER_EVENT_projInit);
   PetscLogEventRegister("ProjectionQ",0,&USER_EVENT_projQ);
   PetscLogEventRegister("ProjectionP",0,&USER_EVENT_projP);
@@ -99,7 +92,9 @@ PetscErrorCode ConstrainMatrixCtx::initializeQorP(Vec x) {
         ierr = KSPSetInitialGuessKnoll(kSP,PETSC_TRUE); CHKERRQ(ierr);
         ierr = KSPGetTolerances(kSP,&rTol,&absTol,&dTol,&maxIts); CHKERRQ(ierr);
         ierr = KSPSetUp(kSP); CHKERRQ(ierr);
-        ierr = KSPMonitorCancel(kSP); CHKERRQ(ierr);
+        if(cancelKSPMonitor) {
+          ierr = KSPMonitorCancel(kSP); CHKERRQ(ierr);
+        }
       }
       #if PETSC_VERSION_GE(3,5,3)
       ierr = MatCreateVecs(C,&X,PETSC_NULL); CHKERRQ(ierr);

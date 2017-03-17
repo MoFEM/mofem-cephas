@@ -225,6 +225,15 @@ PetscErrorCode DMMGViaApproxOrdersReplaceCoarseningIS(DM dm,IS *is_vec,int nb_el
   PetscFunctionReturn(0);
 }
 
+PetscErrorCode DMMGViaApproxOrdersGetCtx(DM dm,const DMMGViaApproxOrdersCtx **ctx) {
+  PetscErrorCode ierr;
+  PetscValidHeaderSpecific(dm,DM_CLASSID,1);
+  PetscFunctionBegin;
+  GET_DM_FIELD(dm);
+  *ctx = dm_field;
+  PetscFunctionReturn(0);
+}
+
 PetscErrorCode DMRegister_MGViaApproxOrders(const char sname[]) {
   PetscErrorCode ierr;
   PetscFunctionBegin;
@@ -289,26 +298,29 @@ PetscErrorCode DMCoarsen_MGViaApproxOrders(DM dm, MPI_Comm comm, DM *dmc) {
   PetscValidHeaderSpecific(dm,DM_CLASSID,1);
   PetscFunctionBegin;
   GET_DM_FIELD(dm);
-
   ierr = PetscObjectGetComm((PetscObject)dm,&comm); CHKERRQ(ierr);
   ierr = DMCreate(comm,dmc);CHKERRQ(ierr);
   (*dmc)->data = dm->data;
-  ierr = DMSetType(*dmc,(dm_field->problemName).c_str()); CHKERRQ(ierr);
+  DMType type;
+  ierr = DMGetType(dm,&type); CHKERRQ(ierr);
+  ierr = DMSetType(*dmc,type); CHKERRQ(ierr);
   ierr = PetscObjectReference((PetscObject)(*dmc)); CHKERRQ(ierr);
+  // ierr = PetscObjectReference((PetscObject)(*dmc)); CHKERRQ(ierr);
+  // dm->coarseMesh = *dmc;
+  // ierr = PetscObjectReference((PetscObject)dm->coarseMesh); CHKERRQ(ierr);
   PetscInfo1(dm,"Coarsen DMMGViaApproxOrders leveldown = %d\n",dm->leveldown);
-
   PetscFunctionReturn(0);
 }
 
-struct MGShellProjectionMatrix {
+struct MGShellProjectionMatrixCtx {
 
   int levelUp,levelDown;
   IS isUp,isDown;
   VecScatter sCatter;
-  MGShellProjectionMatrix():
+  MGShellProjectionMatrixCtx():
   sCatter(PETSC_NULL) {
   }
-  virtual ~MGShellProjectionMatrix() {
+  virtual ~MGShellProjectionMatrixCtx() {
     if(sCatter) {
       PetscErrorCode ierr;
       ierr = VecScatterDestroy(&sCatter); CHKERRABORT(PETSC_COMM_WORLD,ierr);
@@ -321,7 +333,7 @@ static PetscErrorCode inerpolation_matrix_destroy(Mat mat) {
   PetscFunctionBegin;
   void *void_ctx;
   ierr = MatShellGetContext(mat,&void_ctx); CHKERRQ(ierr);
-  MGShellProjectionMatrix *ctx = (MGShellProjectionMatrix*)void_ctx;
+  MGShellProjectionMatrixCtx *ctx = (MGShellProjectionMatrixCtx*)void_ctx;
   if(ctx->sCatter) {
     ierr = VecScatterDestroy(&ctx->sCatter); CHKERRQ(ierr);
     ctx->sCatter = PETSC_NULL;
@@ -336,7 +348,7 @@ static PetscErrorCode inerpolation_matrix_mult_generic(Mat mat,Vec x,Vec f,Inser
 
   void *void_ctx;
   ierr = MatShellGetContext(mat,&void_ctx); CHKERRQ(ierr);
-  MGShellProjectionMatrix *ctx = (MGShellProjectionMatrix*)void_ctx;
+  MGShellProjectionMatrixCtx *ctx = (MGShellProjectionMatrixCtx*)void_ctx;
 
   if(!ctx->sCatter) {
 
@@ -458,7 +470,7 @@ PetscErrorCode DMCreateInterpolation_MGViaApproxOrders(DM dm1,DM dm2,Mat *mat,Ve
     dm_down_leveldown,dm_up_leveldown
   );
 
-  MGShellProjectionMatrix *mat_ctx = new MGShellProjectionMatrix();
+  MGShellProjectionMatrixCtx *mat_ctx = new MGShellProjectionMatrixCtx();
   {
     // Coarser mesh
     GET_DM_FIELD(dm_down);
@@ -574,7 +586,7 @@ PetscErrorCode PCMGSetUpViaApproxOrdersCtx::destroyIsAtLevel(int kk,IS *is) {
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode PCMGSetUpViaApproxOrdersCtx::buildProlongationOperator(PC pc,int verb) {
+PetscErrorCode PCMGSetUpViaApproxOrdersCtx::buildProlongationOperator(bool use_mat_a,int verb) {
   PetscFunctionBegin;
   verb = verb > verboseLevel ? verb : verboseLevel;
 
@@ -608,14 +620,16 @@ PetscErrorCode PCMGSetUpViaApproxOrdersCtx::buildProlongationOperator(PC pc,int 
 
   }
 
-  ierr = PCMGSetGalerkin(pc,PETSC_FALSE); CHKERRQ(ierr);
-  ierr = PCMGSetLevels(pc,nbLevels,NULL);  CHKERRQ(ierr);
-
   for(int kk = 0;kk!=nbLevels;kk++) {
     Mat subA;
-    ierr = DMMGViaApproxOrdersPushBackCoarseningIS(dM,is_vec[kk],A,&subA,true); CHKERRQ(ierr);
-    if(subA) {
-      ierr = MatDestroy(&subA); CHKERRQ(ierr);
+    if(kk==nbLevels-1&&use_mat_a) {
+      subA = A;
+      ierr = DMMGViaApproxOrdersPushBackCoarseningIS(dM,is_vec[kk],A,&subA,false); CHKERRQ(ierr);
+    } else {
+      ierr = DMMGViaApproxOrdersPushBackCoarseningIS(dM,is_vec[kk],A,&subA,true); CHKERRQ(ierr);
+      if(subA) {
+        ierr = MatDestroy(&subA); CHKERRQ(ierr);
+      }
     }
   }
 
@@ -641,7 +655,10 @@ PetscErrorCode PCMGSetUpViaApproxOrders(PC pc,PCMGSetUpViaApproxOrdersCtx *ctx,i
     PetscPrintf(comm,"Start PCMGSetUpViaApproxOrders\n");
   }
   ierr = ctx->getOptions(); CHKERRQ(ierr);
-  ierr = ctx->buildProlongationOperator(pc,verb); CHKERRQ(ierr);
+  ierr = ctx->buildProlongationOperator(false,verb); CHKERRQ(ierr);
+  ierr = PCMGSetGalerkin(pc,PETSC_FALSE); CHKERRQ(ierr);
+  ierr = PCMGSetLevels(pc,ctx->nbLevels,NULL);  CHKERRQ(ierr);
+
   if(verb>0) {
     PetscPrintf(comm,"End PCMGSetUpViaApproxOrders\n");
   }

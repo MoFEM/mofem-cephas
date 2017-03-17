@@ -90,7 +90,17 @@ PetscErrorCode DMMGViaApproxOrdersPopBackCoarseningIS(DM);
  * @param  A        Fine matrix
  * @return          Error code
  */
-PetscErrorCode DMMGViaApproxOrdersReplaceCoarseningIS(DM dm,IS *is_vec,int nb_elems,Mat A,int verb = 0);
+PetscErrorCode DMMGViaApproxOrdersReplaceCoarseningIS(
+  DM dm,IS *is_vec,int nb_elems,Mat A,int verb = 0
+);
+
+/**
+ * \brief Get context for DM via approximation orders
+ * @param  dm   the DM object
+ * @param  ctx  data context
+ * @return      error code
+ */
+PetscErrorCode DMMGViaApproxOrdersGetCtx(DM dm,const DMMGViaApproxOrdersCtx **ctx);
 
 /**
  * \brief Register DM for Multi-Grid via approximation orders
@@ -153,6 +163,8 @@ PetscErrorCode DMCreateInterpolation_MGViaApproxOrders(DM dm1,DM dm2,Mat *mat,Ve
  * @return    Error code
  */
 PetscErrorCode DMCreateGlobalVector_MGViaApproxOrders(DM dm,Vec *g);
+
+
 
 /**
  * \brief Set data structures of MG pre-conditioner via approximation orders
@@ -217,7 +229,12 @@ struct PCMGSetUpViaApproxOrdersCtx {
    * @param  verb verbosity level
    * @return      error code
    */
-  virtual PetscErrorCode buildProlongationOperator(PC pc,int verb = 0);
+  virtual PetscErrorCode buildProlongationOperator(bool use_mat_a,int verb = 0);
+
+
+  DEPRECATED  virtual PetscErrorCode buildProlongationOperator(PC pc,int verb = 0) {
+    return buildProlongationOperator(false,verb);
+  }
 
 };
 

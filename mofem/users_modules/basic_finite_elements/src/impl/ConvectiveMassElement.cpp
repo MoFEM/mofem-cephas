@@ -737,8 +737,8 @@ PetscErrorCode ConvectiveMassElement::OpMassJacobian::doWork(
 
       if(!forcesOnlyOnEntities.empty()) {
         ublas::vector<DofIdx> indices = row_data.getIndices();
-        ublas::vector<const FEDofEntity*>& dofs = row_data.getFieldDofs();
-        ublas::vector<const FEDofEntity*>::iterator dit = dofs.begin();
+        VectorDofs& dofs = row_data.getFieldDofs();
+        VectorDofs::iterator dit = dofs.begin();
         for(int ii = 0;dit!=dofs.end();dit++,ii++) {
           if(forcesOnlyOnEntities.find((*dit)->getEnt())==forcesOnlyOnEntities.end()) {
             indices[ii] = -1;
@@ -1724,8 +1724,8 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
         }
         if(!forcesOnlyOnEntities.empty()) {
           ublas::vector<DofIdx> indices = row_data.getIndices();
-          ublas::vector<const FEDofEntity*>& dofs = row_data.getFieldDofs();
-          ublas::vector<const FEDofEntity*>::iterator dit = dofs.begin();
+          VectorDofs& dofs = row_data.getFieldDofs();
+          VectorDofs::iterator dit = dofs.begin();
           for(int ii = 0;dit!=dofs.end();dit++,ii++) {
             if(forcesOnlyOnEntities.find((*dit)->getEnt())==forcesOnlyOnEntities.end()) {
               //std::cerr << **dit << std::endl;

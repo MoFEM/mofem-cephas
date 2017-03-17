@@ -213,7 +213,7 @@ namespace MoFEM {
           0,MBENTITYSET,&part_tag,NULL,1,tagged_sets,moab::Interface::UNION
         ); CHKERRQ_MOAB(rval);
         // if(!tagged_sets.empty()) {
-        //   rval = m_field.get_moab().delete_entities(tagged_sets); CHKERR_MOAB(rval);
+        //   rval = m_field.get_moab().delete_entities(tagged_sets); CHKERRQ_MOAB(rval);
         //   tagged_sets.clear();
         // }
         if(!tagged_sets.empty()) {
@@ -224,7 +224,7 @@ namespace MoFEM {
           int num_new = n_parts - tagged_sets.size();
           for(int i = 0;i < num_new;i++) {
             EntityHandle new_set;
-            rval = m_field.get_moab().create_meshset(MESHSET_SET|MESHSET_TRACK_OWNER, new_set); CHKERR_MOAB(rval);
+            rval = m_field.get_moab().create_meshset(MESHSET_SET|MESHSET_TRACK_OWNER, new_set); CHKERRQ_MOAB(rval);
             tagged_sets.insert(new_set);
           }
         } else if (n_parts < (int)tagged_sets.size()) {
@@ -232,14 +232,14 @@ namespace MoFEM {
           int num_del = tagged_sets.size() - n_parts;
           for(int i = 0; i < num_del; i++) {
             EntityHandle old_set = tagged_sets.pop_back();
-            rval = m_field.get_moab().delete_entities(&old_set, 1); CHKERR_MOAB(rval);
+            rval = m_field.get_moab().delete_entities(&old_set, 1); CHKERRQ_MOAB(rval);
           }
         }
         // write a tag to those sets denoting they're partition sets, with a value of the
         // proc number
         std::vector<int> dum_ids(n_parts);
         for(int i = 0;i<n_parts;i++) dum_ids[i] = i;
-        rval = m_field.get_moab().tag_set_data(part_tag,tagged_sets,&*dum_ids.begin()); CHKERR_MOAB(rval);
+        rval = m_field.get_moab().tag_set_data(part_tag,tagged_sets,&*dum_ids.begin()); CHKERRQ_MOAB(rval);
         rval = m_field.get_moab().clear_meshset(tagged_sets); CHKERRQ_MOAB(rval);
 
         // get lower dimension entities on each part
@@ -277,7 +277,7 @@ namespace MoFEM {
           }
         }
         for(int pp = 0;pp!=n_parts;pp++) {
-          rval = m_field.get_moab().add_entities(tagged_sets[pp],parts_ents[pp]); CHKERR_MOAB(rval);
+          rval = m_field.get_moab().add_entities(tagged_sets[pp],parts_ents[pp]); CHKERRQ_MOAB(rval);
         }
         for(int rr = 0;rr!=m_field.getCommSize();rr++) {
           ostringstream ss;
@@ -2222,6 +2222,7 @@ namespace MoFEM {
     int verb
   ) {
     PetscErrorCode ierr;
+    MoABErrorCode rval;
     MoFEM::Interface &m_field = cOre;
     const MoFEMProblem_multiIndex *problems_ptr;
     const EntFiniteElement_multiIndex *fe_ent_ptr;
@@ -2244,6 +2245,9 @@ namespace MoFEM {
 
     if(low_proc == -1) low_proc = m_field.getCommRank();
     if(hi_proc == -1) hi_proc = m_field.getCommRank();
+
+    // ParallelComm* pcomm = ParallelComm::get_pcomm(&m_field.get_moab(),MYPCOMM_INDEX);
+    // Tag part_tag = pcomm->part_tag();
 
     // Find pointer to problem of given name
     typedef MoFEMProblem_multiIndex::index<Problem_mi_tag>::type ProblemByName;
@@ -2321,7 +2325,10 @@ namespace MoFEM {
       {
         if(part_from_moab) {
           // if partition is taken from moab partition
-          int proc = (*efit)->getOwnerProc();
+          int proc = (*efit)->getPartProc();
+          // EntityHandle ent = efit->get()->getEnt();
+          // int proc;
+          // rval = m_field.get_moab().tag_get_data(part_tag,&ent,1,&proc); CHKERRQ_MOAB(rval);
           NumeredEntFiniteElement_change_part(proc).operator()(numered_fe);
         } else {
           // count partition of the dofs in row, the larges dofs with given partition

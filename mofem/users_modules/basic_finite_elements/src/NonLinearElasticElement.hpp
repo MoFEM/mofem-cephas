@@ -328,16 +328,19 @@ struct NonlinearElasticElement {
     std::vector<MatrixDouble > &gradientAtGaussPts;
     const EntityType zeroAtType;
 
-    OpGetDataAtGaussPts(const std::string field_name,
+    OpGetDataAtGaussPts(
+      const std::string field_name,
       std::vector<VectorDouble > &values_at_gauss_pts,
-      std::vector<MatrixDouble > &gardient_at_gauss_pts);
+      std::vector<MatrixDouble > &gardient_at_gauss_pts
+    );
 
     /** \brief operator calculating deformation gradient
       *
       * temperature gradient is calculated multiplying derivatives of shape functions by degrees of freedom
       */
     PetscErrorCode doWork(
-      int side,EntityType type,DataForcesAndSurcesCore::EntData &data);
+      int side,EntityType type,DataForcesAndSurcesCore::EntData &data
+    );
 
   };
 
@@ -355,6 +358,7 @@ struct NonlinearElasticElement {
     bool fUnction;
     bool aLe;
     bool fieldDisp;
+    bool lInear; ///< If true Jacobian is evaluated only once
 
     /**
       \brief Construct operator to calculate Piola-Kirchhoff stress or its derivatives over gradient deformation
@@ -373,7 +377,8 @@ struct NonlinearElasticElement {
       int tag,
       bool jacobian,
       bool ale,
-      bool field_disp
+      bool field_disp,
+      bool linear = false
     );
 
     VectorDouble activeVariables;
@@ -434,7 +439,11 @@ struct NonlinearElasticElement {
     ublas::vector<int> rowIndices;
     ublas::vector<int> colIndices;
 
-    OpLhsPiolaKirchhoff_dx(const std::string vel_field,const std::string field_name,BlockData &data,CommonData &common_data);
+    OpLhsPiolaKirchhoff_dx(
+      const std::string vel_field,
+      const std::string field_name,
+      BlockData &data,CommonData &common_data
+    );
 
     MatrixDouble k,trans_k,jac,F;
 
@@ -468,7 +477,12 @@ struct NonlinearElasticElement {
 
   struct OpLhsPiolaKirchhoff_dX: public OpLhsPiolaKirchhoff_dx {
 
-    OpLhsPiolaKirchhoff_dX(const std::string vel_field,const std::string field_name,BlockData &data,CommonData &common_data);
+    OpLhsPiolaKirchhoff_dX(
+      const std::string vel_field,
+      const std::string field_name,
+      BlockData &data,
+      CommonData &common_data
+    );
 
     /// \brief Derivative of Piola Kirchhoff stress over material DOFs
     PetscErrorCode getJac(DataForcesAndSurcesCore::EntData &col_data,int gg);

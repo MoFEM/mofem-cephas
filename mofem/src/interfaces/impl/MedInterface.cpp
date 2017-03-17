@@ -103,7 +103,7 @@ namespace MoFEM {
     char mesh_file_name[255];
     PetscFunctionBegin;
     ierr = PetscOptionsBegin(
-      m_field.get_comm(),"","Shell prism configure","none"
+      m_field.get_comm(),"","MED Interface","none"
     ); CHKERRQ(ierr);
     ierr = PetscOptionsString(
       "-med_file",
@@ -113,7 +113,7 @@ namespace MoFEM {
     if(flgFile) {
       medFileName = std::string(mesh_file_name);
     } else {
-      medFileName = std::string("mesh.bed");
+      medFileName = std::string("mesh.med");
     }
     PetscFunctionReturn(0);
   }
@@ -128,7 +128,7 @@ namespace MoFEM {
     med_int num_fields = MEDnField(fid);
     for(int index = 0; index < num_fields; index++){
 
-      med_int num_comp = MEDnChamp(fid, index + 1);
+      med_int num_comp = MEDfieldnComponent(fid, index + 1);
       if(num_comp <= 0){
         SETERRQ(m_field.get_comm(),MOFEM_IMPOSIBLE_CASE,"Could not get number of components for MED field");
       }
@@ -147,7 +147,24 @@ namespace MoFEM {
         SETERRQ(m_field.get_comm(),MOFEM_OPERATION_UNSUCCESSFUL,"Could not get MED field info");
       }
 
-      fieldNames.push_back(name);
+      std::string field_name = std::string(name);
+      fieldNames[field_name] = FieldData();
+      fieldNames[field_name].fieldName = field_name;
+      fieldNames[field_name].meshName = std::string(mesh_name);
+      fieldNames[field_name].localMesh = (local_mesh==MED_TRUE);
+      for(int ff = 0;ff!=num_comp;ff++) {
+        fieldNames[field_name].componentNames.push_back(std::string(&comp_name[ff*MED_SNAME_SIZE],MED_SNAME_SIZE));
+        fieldNames[field_name].componentUnits.push_back(std::string(&comp_unit[ff*MED_SNAME_SIZE],MED_SNAME_SIZE));
+      }
+      fieldNames[field_name].dtUnit = std::string(&dt_unit[0]);
+      fieldNames[field_name].ncSteps = num_steps;
+
+      if(verb>0) {
+        std::ostringstream ss;
+        ss <<  fieldNames[name] << std::endl;
+        ierr = PetscPrintf(m_field.get_comm(),ss.str().c_str()); CHKERRQ(ierr);
+      }
+
     }
     if(MEDfileClose(fid) < 0) {
       SETERRQ1(m_field.get_comm(),MOFEM_OPERATION_UNSUCCESSFUL,"Unable to close file '%s'",file.c_str());
@@ -192,6 +209,8 @@ namespace MoFEM {
 
     for(int i = 0; i < MEDnMesh(fid); i++){
       char mesh_name[MED_NAME_SIZE + 1], mesh_desc[MED_COMMENT_SIZE + 1];
+      bzero(mesh_name,MED_NAME_SIZE);
+      bzero(mesh_desc,MED_COMMENT_SIZE);
       med_int space_dim;
       med_mesh_type mesh_type;
       med_int mesh_dim, n_step;
@@ -205,7 +224,7 @@ namespace MoFEM {
       ) < 0) {
         SETERRQ(m_field.get_comm(),MOFEM_OPERATION_UNSUCCESSFUL,"Unable to read mesh information");
       }
-      meshNames.push_back(mesh_name);
+      meshNames.push_back(std::string(mesh_name));
     }
 
     std::map<int,Range> family_elem_map;
@@ -267,6 +286,8 @@ namespace MoFEM {
     }
 
     char mesh_name[MED_NAME_SIZE + 1], mesh_desc[MED_COMMENT_SIZE + 1];
+    bzero(mesh_name,MED_NAME_SIZE);
+    bzero(mesh_desc,MED_COMMENT_SIZE);
     med_int space_dim;
     med_mesh_type mesh_type;
     med_int mesh_dim, n_step;
@@ -305,9 +326,12 @@ namespace MoFEM {
         max_id = (max_id < cit->getMeshsetId()) ? cit->getMeshsetId() : max_id;
       }
       max_id++;
-      ierr = meshsets_manager_ptr->addMeshset(BLOCKSET,max_id++,string(mesh_name)); CHKERRQ(ierr);
-      CubitMeshsetByName::iterator cit =
-      meshsets_manager_ptr->getMeshsetsMultindex().get<CubitMeshSets_name>().find(string(mesh_name));
+      ierr = meshsets_manager_ptr->addMeshset(BLOCKSET,max_id,std::string(mesh_name)); CHKERRQ(ierr);
+      CubitMeshSet_multiIndex::index<Composite_Cubit_msId_And_MeshSetType_mi_tag>::type::iterator cit;
+      cit = meshsets_manager_ptr->getMeshsetsMultindex().get<Composite_Cubit_msId_And_MeshSetType_mi_tag>().find(
+        boost::make_tuple(max_id,CubitBCType(BLOCKSET).to_ulong())
+      );
+      max_id++;
       mesh_meshset = cit->getMeshset();
     }
 
@@ -407,6 +431,24 @@ namespace MoFEM {
       ); CHKERRQ_MOAB(rval);
       switch (ent_type) {
         // FIXME: Some connectivity could not work, need to run and test
+        case MBTET:
+        {
+          int ii = 0;
+          for(int ee = 0;ee!=num_ele;ee++) {
+            EntityHandle n[4];
+            for(int nn = 0;nn!=num_nod_per_ele;nn++) {
+              // conn_moab[ii] = verts[conn_med[ii]-1];
+              n[nn] = verts[conn_med[ii+nn]-1];
+            }
+            EntityHandle n0 = n[0];
+            n[0] = n[1];
+            n[1] = n0;
+            for(int nn = 0;nn!=num_nod_per_ele;nn++,ii++) {
+              conn_moab[ii] = n[nn];
+            }
+          }
+        }
+        break;
         default:
         {
           int ii = 0;
@@ -533,7 +575,9 @@ namespace MoFEM {
 
       // cerr << family_name << " " << family_num  << " " << num_groups << endl;
       for(int g = 0;g!=num_groups;g++) {
-        group_elem_map[string(&group_names[MED_LNAME_SIZE*g])].merge(family_elem_map.at(family_num));
+        std::string name = std::string(&group_names[MED_LNAME_SIZE*g],MED_LNAME_SIZE-1);
+        name.resize(NAME_TAG_SIZE-1);
+        group_elem_map[name].merge(family_elem_map.at(family_num));
         // cerr << string(&group_names[MED_LNAME_SIZE*g]) << endl;
       }
 
@@ -569,11 +613,16 @@ namespace MoFEM {
       git!=group_elem_map.end();git++
     ) {
       // cerr << "AAA\n";
-      ierr = meshsets_manager_ptr->addMeshset(BLOCKSET,max_id++,git->first); CHKERRQ(ierr);
-      CubitMeshsetByName::iterator cit =
-      meshsets_manager_ptr->getMeshsetsMultindex().get<CubitMeshSets_name>().find(git->first);
+      ierr = meshsets_manager_ptr->addMeshset(BLOCKSET,max_id,git->first); CHKERRQ(ierr);
+      CubitMeshSet_multiIndex::index<Composite_Cubit_msId_And_MeshSetType_mi_tag>::type::iterator cit;
+      cit = meshsets_manager_ptr->getMeshsetsMultindex().get<Composite_Cubit_msId_And_MeshSetType_mi_tag>().find(
+        boost::make_tuple(max_id,CubitBCType(BLOCKSET).to_ulong())
+      );
       EntityHandle meshsets = cit->getMeshset();
-      rval = m_field.get_moab().add_entities(meshsets,git->second); CHKERR_MOAB(rval);
+      if(!git->second.empty()) {
+        rval = m_field.get_moab().add_entities(meshsets,git->second); CHKERRQ_MOAB(rval);
+      }
+      max_id++;
       // cerr << git->second << endl;
     }
 
@@ -608,7 +657,226 @@ namespace MoFEM {
     PetscFunctionReturn(0);
   }
 
+  PetscErrorCode MedInterface::readFields(
+    const std::string &file_name,
+    const std::string &field_name,
+    const bool load_series,
+    const int only_step,
+    int verb
+  ) {
+    MoABErrorCode rval;
+    PetscErrorCode ierr;
+    MoFEM::Interface &m_field = cOre;
+    PetscFunctionBegin;
+    med_idt fid = MEDfileOpen((char*)file_name.c_str(), MED_LECTURE);
+    if(fid < 0){
+      SETERRQ1(m_field.get_comm(),MOFEM_DATA_INCONSISTENCY,"Unable to open file '%s'", file_name.c_str());
+    }
 
+    med_int num_comp = MEDfieldnComponentByName(fid,field_name.c_str());
+    if(num_comp <= 0){
+      SETERRQ(m_field.get_comm(),MOFEM_DATA_INCONSISTENCY,"Could not get number of components for MED field");
+    }
+
+    char meshName[MED_NAME_SIZE + 1];
+    char dtUnit[MED_SNAME_SIZE + 1];
+    std::vector<char> compName(num_comp * MED_SNAME_SIZE + 1);
+    std::vector<char> compUnit(num_comp * MED_SNAME_SIZE + 1);
+    med_int numSteps = 0;
+    med_type_champ type;
+    med_bool localMesh;
+    if(MEDfieldInfoByName(
+      fid, field_name.c_str(), meshName, &localMesh, &type,
+      &compName[0], &compUnit[0], dtUnit, &numSteps
+    ) < 0) {
+      SETERRQ(m_field.get_comm(),MOFEM_DATA_INCONSISTENCY,"Could not get MED field info");
+    }
+
+    // Get meshset
+    MeshsetsManager *meshsets_manager_ptr;
+    ierr = m_field.query_interface(meshsets_manager_ptr); CHKERRQ(ierr);
+    const CubitMeshSets *cubit_meshset_ptr;
+    ierr = meshsets_manager_ptr->getCubitMeshsetPtr(meshName,&cubit_meshset_ptr); CHKERRQ(ierr);
+    EntityHandle meshset = cubit_meshset_ptr->getMeshset();
+
+    int num_comp_msh =
+    (num_comp <= 1) ? 1 : (num_comp <= 3) ? 3 : (num_comp <= 9) ? 9 : num_comp;
+
+    // Create tag to store nodal or cell values read form med file. Note that tag
+    // has prefix MED to avoid collison with other tags.
+    Tag th;
+    std::string tag_name = "MED_"+field_name;
+    {
+      std::vector<double> def_val(num_comp_msh,0);
+      rval = m_field.get_moab().tag_get_handle(
+        tag_name.c_str(),num_comp_msh,MB_TYPE_DOUBLE,th,MB_TAG_CREAT|MB_TAG_SPARSE,&def_val[0]
+      );  CHKERRQ_MOAB(rval);
+    }
+
+    // Warning! The ordering of the elements in the last two lists is
+    // important: it should match the ordering of the MSH element types
+    // (when elements are saved without tags, this governs the order
+    // with which we implicitly index them in GModel::readMED)
+    const med_entity_type entType[] = { MED_NODE, MED_CELL, MED_NODE_ELEMENT };
+    const med_geometrie_element eleType[] = {
+      MED_NONE, MED_SEG2, MED_TRIA3, MED_QUAD4, MED_TETRA4, MED_HEXA8,
+      MED_PENTA6, MED_PYRA5, MED_SEG3, MED_TRIA6, MED_QUAD9, MED_TETRA10,
+      MED_HEXA27, MED_POINT1, MED_QUAD8, MED_HEXA20, MED_PENTA15, MED_PYRA13
+    };
+    const int nodesPerEle[] = {0, 2, 3, 4, 4, 8, 6, 5, 3, 6, 9, 10, 27, 1, 8, 20, 15, 13};
+
+    std::vector<std::pair<int, int> > pairs;
+    for(unsigned int i = 0; i < sizeof(entType) / sizeof(entType[0]); i++){
+      for(unsigned int j = 0; j < sizeof(eleType) / sizeof(eleType[0]); j++){
+        if((!i && !j) || j){
+          med_int n = numSteps;
+          if(n > 0){
+            pairs.push_back(std::pair<int, int>(i, j));
+            numSteps = std::max(numSteps, n);
+          }
+          if(!i && !j) break; // MED_NOEUD does not care about eleType
+        }
+      }
+    }
+
+    if(numSteps < 1 || pairs.empty()){
+      SETERRQ(m_field.get_comm(),MOFEM_DATA_INCONSISTENCY,"Nothing to import from MED file");
+    }
+
+    for(
+      int step = (only_step == -1) ? 0 : only_step;
+      step < numSteps;
+      step++
+    ) {
+
+      if(only_step!=-1 && only_step != step) break;
+
+      // FIXME: in MED3 we might want to loop over all profiles instead
+      // of relying of the default one
+
+      // FIXME: MED3 allows to store multi-step meshes; we should
+
+      for(unsigned int pair = 0; pair < pairs.size(); pair++) {
+
+        // get step info
+        med_entite_maillage ent = entType[pairs[pair].first];
+        med_geometrie_element ele = eleType[pairs[pair].second];
+        med_int numdt, numit, ngauss;
+        med_float dt;
+        if(MEDfieldComputingStepInfo(fid, field_name.c_str(), step + 1, &numdt, &numit, &dt) < 0){
+          SETERRQ(m_field.get_comm(),MOFEM_OPERATION_UNSUCCESSFUL,"Could not read step info");
+        }
+
+        char locName[MED_NAME_SIZE + 1], profileName[MED_NAME_SIZE + 1];
+
+        // get number of values in the field (numVal takes the number of
+        // Gauss points or the number of nodes per element into account,
+        // but not the number of components)
+        med_int profileSize;
+        med_int numVal = MEDfieldnValueWithProfile(
+          fid, field_name.c_str(), numdt, numit, ent, ele,
+          1, MED_COMPACT_STMODE, profileName,
+          &profileSize, locName, &ngauss
+        );
+        numVal *= ngauss;
+
+        if(numVal <= 0) continue;
+
+        int mult = 1;
+        if(ent == MED_NODE_ELEMENT) {
+          mult = nodesPerEle[pairs[pair].second];
+        }
+        else if(ngauss != 1){
+          mult = ngauss;
+        }
+
+        // read field data
+        std::vector<double> val(numVal * num_comp);
+        if(
+          MEDfieldValueWithProfileRd(
+            fid, field_name.c_str(), numdt, numit, ent, ele, MED_COMPACT_STMODE,
+            profileName, MED_FULL_INTERLACE, MED_ALL_CONSTITUENT,
+            (unsigned char*)&val[0]
+          ) < 0
+        ) {
+          SETERRQ(m_field.get_comm(),MOFEM_OPERATION_UNSUCCESSFUL,"Could not read field values");
+        }
+
+        if(verb>2) {
+          // FIXME: This not looks ok for me
+          cerr << ent << " " << ele << endl;
+          cerr << string(meshName)
+          << " : " << string(profileName)
+          << " : " << string(locName) << " : "
+          << profileSize << " : " << ngauss << endl;
+        }
+
+        if(ngauss==1) {
+          switch (ent) {
+            case MED_CELL: {
+              EntityType ent_type;
+              switch (ele) {
+                case MED_TETRA4:
+                case MED_TETRA10:
+                ent_type = MBTET;
+                break;
+                default:
+                SETERRQ(m_field.get_comm(),MOFEM_NOT_IMPLEMENTED,"Not yet implemented");
+              }
+              Range ents;
+              rval = m_field.get_moab().get_entities_by_type(
+                meshset,ent_type,ents,true
+              ); CHKERRQ_MOAB(rval);
+              double e_vals[num_comp_msh];
+              bzero(e_vals,sizeof(double)*num_comp_msh);
+              std::vector<double>::iterator vit = val.begin();
+              for(Range::iterator eit = ents.begin();eit!=ents.end();eit++) {
+                for(int ii = 0;ii!=num_comp;ii++,vit++) {
+                  e_vals[ii] = *vit;
+                }
+                rval = m_field.get_moab().tag_set_data(th,&*eit,1,e_vals); CHKERRQ_MOAB(rval);
+              }
+            }
+            break;
+            case MED_NODE:
+            case MED_NODE_ELEMENT:
+            default:
+            SETERRQ(m_field.get_comm(),MOFEM_NOT_IMPLEMENTED,"Not yet implemented");
+          }
+        } else
+        SETERRQ(m_field.get_comm(),MOFEM_NOT_IMPLEMENTED,"Not implemented");
+      }
+    }
+
+    PetscFunctionReturn(0);
+  }
+
+  std::ostream& operator<<(std::ostream& os,const MedInterface::FieldData& field_data) {
+    os << "field name: " << field_data.fieldName;
+    os << " mesh name: " << field_data.meshName;
+    os << " local mesh: " << ((field_data.localMesh) ? "true" : "false");
+    os << std::endl;
+    // os << " field type: ";
+    // switch (field_data.fieldType) {
+    //   case MED_FLOAT64: os << "MED_FLOAT64"; break;
+    //   case MED_INT32: os << "MED_INT32"; break;
+    //   case MED_INT64: os << "MED_INT64"; break;
+    //   case MED_INT: os << "MED_INT"; break;
+    // };
+    os << " componentNames:";
+    for(int ff = 0;ff!=field_data.componentNames.size();ff++) {
+      os << " " << field_data.componentNames[ff];
+    }
+    os << std::endl;
+    os << " componentUnits:";
+    for(int ff = 0;ff!=field_data.componentUnits.size();ff++) {
+      os << " " << field_data.componentUnits[ff];
+    }
+    os << std::endl;
+    os << " dtUnit: " << field_data.dtUnit;
+    os << " number of steps: " << field_data.ncSteps;
+    return os;
+  }
 
 }
 

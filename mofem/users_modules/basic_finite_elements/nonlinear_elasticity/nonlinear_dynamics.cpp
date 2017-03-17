@@ -72,10 +72,10 @@ struct MonitorPostProc: public FEMethod {
     Tag th_step;
     rval = m_field.get_moab().tag_get_handle("_TsStep_",1,MB_TYPE_INTEGER,th_step,MB_TAG_CREAT|MB_TAG_EXCL|MB_TAG_MESH,&def_t_val);
     if(rval == MB_ALREADY_ALLOCATED) {
-      rval = m_field.get_moab().tag_get_by_ptr(th_step,&root_meshset,1,(const void**)&step); CHKERR_MOAB(rval);
+      rval = m_field.get_moab().tag_get_by_ptr(th_step,&root_meshset,1,(const void**)&step); MOAB_THROW(rval);
     } else {
-      rval = m_field.get_moab().tag_set_data(th_step,&root_meshset,1,&def_t_val); CHKERR_MOAB(rval);
-      rval = m_field.get_moab().tag_get_by_ptr(th_step,&root_meshset,1,(const void**)&step); CHKERR_MOAB(rval);
+      rval = m_field.get_moab().tag_set_data(th_step,&root_meshset,1,&def_t_val); MOAB_THROW(rval);
+      rval = m_field.get_moab().tag_get_by_ptr(th_step,&root_meshset,1,(const void**)&step); MOAB_THROW(rval);
     }
 
     PetscBool flg = PETSC_TRUE;
@@ -163,19 +163,19 @@ struct MonitorRestart: public FEMethod {
     Tag th_time;
     rval = m_field.get_moab().tag_get_handle("_TsTime_",1,MB_TYPE_DOUBLE,th_time,MB_TAG_CREAT|MB_TAG_EXCL|MB_TAG_MESH,&def_t_val);
     if(rval == MB_ALREADY_ALLOCATED) {
-      rval = m_field.get_moab().tag_get_by_ptr(th_time,&root_meshset,1,(const void**)&time); CHKERR_MOAB(rval);
+      rval = m_field.get_moab().tag_get_by_ptr(th_time,&root_meshset,1,(const void**)&time); MOAB_THROW(rval);
       ierr = TSSetTime(ts,*time); CHKERRABORT(PETSC_COMM_WORLD,ierr);
     } else {
-      rval = m_field.get_moab().tag_set_data(th_time,&root_meshset,1,&def_t_val); CHKERR_MOAB(rval);
-      rval = m_field.get_moab().tag_get_by_ptr(th_time,&root_meshset,1,(const void**)&time); CHKERR_MOAB(rval);
+      rval = m_field.get_moab().tag_set_data(th_time,&root_meshset,1,&def_t_val); MOAB_THROW(rval);
+      rval = m_field.get_moab().tag_get_by_ptr(th_time,&root_meshset,1,(const void**)&time); MOAB_THROW(rval);
     }
     Tag th_step;
     rval = m_field.get_moab().tag_get_handle("_TsStep_",1,MB_TYPE_INTEGER,th_step,MB_TAG_CREAT|MB_TAG_EXCL|MB_TAG_MESH,&def_t_val);
     if(rval == MB_ALREADY_ALLOCATED) {
-      rval = m_field.get_moab().tag_get_by_ptr(th_step,&root_meshset,1,(const void**)&step); CHKERR_MOAB(rval);
+      rval = m_field.get_moab().tag_get_by_ptr(th_step,&root_meshset,1,(const void**)&step); MOAB_THROW(rval);
     } else {
-      rval = m_field.get_moab().tag_set_data(th_step,&root_meshset,1,&def_t_val); CHKERR_MOAB(rval);
-      rval = m_field.get_moab().tag_get_by_ptr(th_step,&root_meshset,1,(const void**)&step); CHKERR_MOAB(rval);
+      rval = m_field.get_moab().tag_set_data(th_step,&root_meshset,1,&def_t_val); MOAB_THROW(rval);
+      rval = m_field.get_moab().tag_get_by_ptr(th_step,&root_meshset,1,(const void**)&step); MOAB_THROW(rval);
     }
 
     PetscBool flg = PETSC_TRUE;

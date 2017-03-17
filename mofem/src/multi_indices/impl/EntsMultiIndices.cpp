@@ -90,6 +90,7 @@ ent(ent) {
   // rval = basicDataPtr->
   // moab.tag_get_data(pcomm->pstatus_tag(),&ent,1,&pstatus); MOAB_THROW(rval);
   rval = pcomm->get_owner_handle(ent,owner_proc,moab_owner_handle); MOAB_THROW(rval);
+  part_proc = owner_proc;
 }
 
 unsigned char BasicEntity::getPStatus() const {

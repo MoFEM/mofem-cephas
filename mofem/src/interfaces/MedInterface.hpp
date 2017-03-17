@@ -94,12 +94,42 @@ namespace MoFEM {
      */
     PetscErrorCode writeMed(const string &file,int verb = 1);
 
+    /**
+     * Read fields
+     * @param  file_name   file name
+     * @param  file_index  mesh index
+     * @param  loadSeries  load field into series
+     * @param  onlyStep    read only one step
+     * @return             error code
+     */
+    PetscErrorCode readFields(
+      const std::string &file_name,
+      const std::string &field_name,
+      const bool load_series = true,
+      const int only_tep = -1,
+      int verb = 1
+    );
+
+    struct FieldData {
+      std::string fieldName;
+      std::string meshName;
+      bool localMesh;
+      // Med_field_type fieldType;
+      std::vector<std::string> componentNames;
+      std::vector<std::string> componentUnits;
+      std::string dtUnit;
+      int ncSteps;
+    };
+
+    std::map<std::string,FieldData> fieldNames;
+    std::string medFileName;              ///< MED file name
+
   private:
 
+
     MoFEM::Core& cOre;                    ///< core database
-    std::vector<std::string> fieldNames;  ///< list of fields in MED file
+    // std::vector<std::string> fieldNames;  ///< list of fields in MED file
     std::vector<std::string> meshNames;   ///< list of meshes in MED file
-    std::string medFileName;              ///< MED file name
     PetscBool flgFile;                    ///< true if file name given in command line
 
     /**
@@ -146,6 +176,9 @@ namespace MoFEM {
     );
 
   };
+
+  std::ostream& operator<<(std::ostream& os,const MedInterface::FieldData& field_data);
+
 
 }
 

@@ -413,6 +413,12 @@ struct ForcesAndSurcesCore: public FEMethod {
     std::string colFieldName;
     FieldSpace sPace;
 
+    /**
+     * This Constructor is used typically when some modification base shape functions on
+     * some approx. space is applied. Operator is run for all data on space.
+     *
+     * User has no access to field data from this operator.
+     */
     UserDataOperator(const FieldSpace space,const char type = OPLAST,const bool symm = true):
     DataOperator(symm),
     opType(type),

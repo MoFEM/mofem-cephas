@@ -26,6 +26,7 @@ bone_remodelling
 helmholtz
 optimal_mass_transport
 cell_engineering
+contact_mechanics
 
 _Store
 *.swp
