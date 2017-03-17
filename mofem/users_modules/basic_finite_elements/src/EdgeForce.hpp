@@ -76,7 +76,7 @@ struct EdgeForce {
   struct MetaEdgeForces {
 
     /// Add element taking information from NODESET
-    static PetscErrorCode addElement (MoFEM::Interface &m_field,const std::string field_name) {
+    static PetscErrorCode addElement(MoFEM::Interface &m_field,const std::string field_name,Range *intersect_ptr = NULL) {
       PetscFunctionBegin;
       PetscErrorCode ierr;
       ErrorCode rval;
@@ -95,6 +95,9 @@ struct EdgeForce {
         Range tris_edges;
         rval = m_field.get_moab().get_adjacencies(tris,1,false,tris_edges,moab::Interface::UNION); CHKERRQ_MOAB(rval);
         edges = subtract(edges,tris_edges);
+        if(intersect_ptr) {
+          edges = intersect(edges,*intersect_ptr);
+        }
         ierr = m_field.add_ents_to_finite_element_by_EDGEs(edges,"FORCE_FE"); CHKERRQ(ierr);
       }
       PetscFunctionReturn(0);

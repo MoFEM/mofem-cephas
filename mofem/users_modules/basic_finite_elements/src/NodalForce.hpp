@@ -85,7 +85,9 @@ struct MetaNodalForces {
   };
 
   /// Add element taking information from NODESET
-  static PetscErrorCode addElement (MoFEM::Interface &m_field,const std::string field_name) {
+  static PetscErrorCode addElement(
+    MoFEM::Interface &m_field,const std::string field_name,Range *intersect_ptr = NULL
+  ) {
     PetscFunctionBegin;
     PetscErrorCode ierr;
     ErrorCode rval;
@@ -106,6 +108,9 @@ struct MetaNodalForces {
       rval = m_field.get_moab().get_entities_by_type(it->meshset,MBVERTEX,nodes,true); CHKERRQ_MOAB(rval);
       nodes = subtract(nodes,tris_nodes);
       nodes = subtract(nodes,edges_nodes);
+      if(intersect_ptr) {
+        nodes = intersect(nodes,*intersect_ptr);
+      }
       ierr = m_field.add_ents_to_finite_element_by_VERTICEs(nodes,"FORCE_FE"); CHKERRQ(ierr);
     }
     PetscFunctionReturn(0);
