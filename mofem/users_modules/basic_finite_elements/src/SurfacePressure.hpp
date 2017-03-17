@@ -224,12 +224,15 @@ struct MetaNeummanForces {
    * @param  m_field               Interface insurance
    * @param  field_name            Field name (f.e. DISPLACEMENT)
    * @param  mesh_nodals_positions Name of field on which ho-geometry is defined
+   * @param  intersect_ptr         Pointer to range to interect meshset entities
    * @return                       Error code
    */
   static PetscErrorCode addNeumannBCElements(
     MoFEM::Interface &m_field,
     const std::string field_name,
-    const std::string mesh_nodals_positions = "MESH_NODE_POSITIONS") {
+    const std::string mesh_nodals_positions = "MESH_NODE_POSITIONS",
+    Range *intersect_ptr = NULL
+  ) {
     PetscFunctionBegin;
     PetscErrorCode ierr;
     ErrorCode rval;
@@ -245,6 +248,9 @@ struct MetaNeummanForces {
     for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,NODESET|FORCESET,it)) {
       Range tris;
       rval = m_field.get_moab().get_entities_by_type(it->meshset,MBTRI,tris,true); CHKERRQ_MOAB(rval);
+      if(intersect_ptr) {
+        tris = intersect(tris,*intersect_ptr);
+      }
       ierr = m_field.add_ents_to_finite_element_by_TRIs(tris,"FORCE_FE"); CHKERRQ(ierr);
     }
 
@@ -259,6 +265,9 @@ struct MetaNeummanForces {
     for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,SIDESET|PRESSURESET,it)) {
       Range tris;
       rval = m_field.get_moab().get_entities_by_type(it->meshset,MBTRI,tris,true); CHKERRQ_MOAB(rval);
+      if(intersect_ptr) {
+        tris = intersect(tris,*intersect_ptr);
+      }
       ierr = m_field.add_ents_to_finite_element_by_TRIs(tris,"PRESSURE_FE"); CHKERRQ(ierr);
     }
 
@@ -279,6 +288,9 @@ struct MetaNeummanForces {
         }
         Range tris;
         rval = m_field.get_moab().get_entities_by_type(it->meshset,MBTRI,tris,true); CHKERRQ_MOAB(rval);
+        if(intersect_ptr) {
+          tris = intersect(tris,*intersect_ptr);
+        }
         ierr = m_field.add_ents_to_finite_element_by_TRIs(tris,"FORCE_FE"); CHKERRQ(ierr);
         //cerr << tris << endl;
       }
@@ -296,8 +308,11 @@ struct MetaNeummanForces {
         if(pressure.empty()) {
           SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"Pressure not given");
         }
-        Range tris  ;
+        Range tris;
         rval = m_field.get_moab().get_entities_by_type(it->meshset,MBTRI,tris,true); CHKERRQ_MOAB(rval);
+        if(intersect_ptr) {
+          tris = intersect(tris,*intersect_ptr);
+        }
         // cerr << tris << endl;
         ierr = m_field.add_ents_to_finite_element_by_TRIs(tris,"PRESSURE_FE"); CHKERRQ(ierr);
       }

@@ -93,7 +93,7 @@ int main(int argc, char *argv[]) {
   if(is_partitioned == PETSC_TRUE) {
     //Read mesh to MOAB
     const char *option;
-    option = "PARALLEL=BCAST_DELETE;"
+    option = "PARALLEL=READ_PART;"
       "PARALLEL_RESOLVE_SHARED_ENTS;"
       "PARTITION=PARALLEL_PARTITION;";
     rval = moab.load_file(mesh_file_name, 0, option); CHKERRQ_MOAB(rval);
