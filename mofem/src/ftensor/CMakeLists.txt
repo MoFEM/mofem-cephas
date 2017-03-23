@@ -39,7 +39,7 @@ add_executable(
 )
 add_dependencies(ftensor_conformance_test all_cpp_generate_for_ftensor)
 add_test(
-  ftensor_conformance_test ${CMAKE_CURRENT_BINARY_DIR}/ftensor_conformance_test
+  ftensor_conformance_test ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/ftensor_conformance_test
 )
 add_subdirectory(${PROJECT_SOURCE_DIR}/src/ftensor/tests/speed)
 
