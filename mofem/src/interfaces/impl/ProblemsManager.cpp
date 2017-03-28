@@ -279,13 +279,12 @@ namespace MoFEM {
         for(int pp = 0;pp!=n_parts;pp++) {
           rval = m_field.get_moab().add_entities(tagged_sets[pp],parts_ents[pp]); CHKERRQ_MOAB(rval);
         }
-        for(int rr = 0;rr!=m_field.getCommSize();rr++) {
-          ostringstream ss;
-          ss << "out_part_meshsets_" << rr << ".vtk";
-          EntityHandle meshset = tagged_sets[rr];
-          rval = m_field.get_moab().write_file(ss.str().c_str(),"VTK","",&meshset,1); CHKERRQ_MOAB(rval);
-        }
-
+        // for(int rr = 0;rr!=m_field.getCommSize();rr++) {
+        //   ostringstream ss;
+        //   ss << "out_part_meshsets_" << rr << ".vtk";
+        //   EntityHandle meshset = tagged_sets[rr];
+        //   rval = m_field.get_moab().write_file(ss.str().c_str(),"VTK","",&meshset,1); CHKERRQ_MOAB(rval);
+        // }
 
         // set gid to lower dimension entities
         for(int dd = 0;dd<=dim;dd++) {
