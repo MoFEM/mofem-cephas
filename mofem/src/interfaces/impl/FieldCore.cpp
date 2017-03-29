@@ -1157,7 +1157,11 @@ PetscErrorCode Core::buildFieldForNoField(
     RefEntity_multiIndex::index<Ent_mi_tag>::type::iterator miit_ref_ent;
     miit_ref_ent = refinedEntities.get<Ent_mi_tag>().find(*eit);
     if(miit_ref_ent==refinedEntities.get<Ent_mi_tag>().end()) {
-      SETERRQ(comm,MOFEM_DATA_INCONSISTENCY,"database inconsistency");
+      SETERRQ(
+        comm,
+        MOFEM_DATA_INCONSISTENCY,
+        "Entity is not in MoFEM databse, entities in field meshset need to be seeded (i.e. bit ref level add to them)"
+      );
     }
     std::pair<MoFEMEntity_multiIndex::iterator,bool> e_miit;
     try {
