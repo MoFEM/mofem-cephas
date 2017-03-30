@@ -26,6 +26,13 @@ L. Kaczmarczyk, Z. Ullah, K. Lewandowski, Xuan Meng, Xiao-Yi Zhou, C. Pearce. (2
 }
 \endcode
 
+Each user module can have own DOI and reference. All module references
+supplements  MoFEM reference. For example homogenisation module DOI as follows
+
+\htmlonly
+<a href="https://doi.org/10.5281/zenodo.439368"><img src="https://zenodo.org/badge/DOI/10.5281/zenodo.439368.svg" alt="DOI"></a>
+\endhtmlonly
+
 \endhtmlonly
 
 \section policy_of_for_version How MoFEM version is changed?
