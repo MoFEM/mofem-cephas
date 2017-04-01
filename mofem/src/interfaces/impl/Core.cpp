@@ -66,15 +66,6 @@ extern "C" {
 
 namespace MoFEM {
 
-//const static int debug = 1;
-
-PetscErrorCode print_MoFem_verison(MPI_Comm comm) {
-  PetscFunctionBegin;
-  PetscPrintf(comm,"lib version %d.%d.%d\n",MoFEM_VERSION_MAJOR,MoFEM_VERSION_MINOR,MoFEM_VERSION_BUILD);
-  PetscPrintf(comm,"git commit id %s\n",GIT_SHA1_NAME);
-  PetscFunctionReturn(0);
-}
-
 PetscErrorCode Core::queryInterface(const MOFEMuuid& uuid,UnknownInterface** iface) {
   PetscFunctionBegin;
   *iface = NULL;
@@ -238,7 +229,9 @@ static void error_printf_normal(void) {
 #endif
 }
 
-PetscErrorCode mofem_error_handler(MPI_Comm comm,int line,const char *fun,const char *file,PetscErrorCode n,PetscErrorType p,const char *mess,void *ctx) {
+static PetscErrorCode mofem_error_handler(
+  MPI_Comm comm,int line,const char *fun,const char *file,PetscErrorCode n,PetscErrorType p,const char *mess,void *ctx
+) {
   PetscFunctionBegin;
 
   int rank = 0;
@@ -286,48 +279,66 @@ PetscErrorCode mofem_error_handler(MPI_Comm comm,int line,const char *fun,const 
   PetscFunctionReturn(n);
 }
 
-Core::Core(moab::Interface& _moab,MPI_Comm _comm,int _verbose):
-moab(_moab),
-comm(_comm),
-verbose(_verbose) {
+PetscErrorCode print_verison() {
+  PetscErrorCode ierr;
+  PetscFunctionBegin;
+  PetscFunctionReturn(0);
+}
 
+Core::Core(moab::Interface& moab,MPI_Comm comm,int verbose):
+moab(moab),
+cOmm(0),
+verbose(verbose) {
   if(!isGloballyInitialised) {
     PetscPushErrorHandler(mofem_error_handler,PETSC_NULL);
     isGloballyInitialised = true;
   }
-
-  ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
-  if(pcomm == NULL) pcomm =  new ParallelComm(&moab,comm);
-
-  MPI_Comm_size(comm,&sIze);
-  MPI_Comm_rank(comm,&rAnk);
-
-  if(verbose>0) {
-    print_MoFem_verison(comm);
+  // Duplicate petsc communicator
+  ierr = PetscCommDuplicate(comm,&cOmm,NULL); CHKERRABORT(comm,ierr);
+  MPI_Comm_size(cOmm,&sIze);
+  MPI_Comm_rank(cOmm,&rAnk);
+  // CHeck if moab has set communicator if not set communicator interbally
+  ParallelComm* pComm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
+  if(pComm == NULL) {
+    pComm =  new ParallelComm(&moab,comm);
   }
-
-  ierr = getTags(); CHKERRABORT(PETSC_COMM_WORLD,ierr);
-  ierr = clearMap(); CHKERRABORT(PETSC_COMM_WORLD,ierr);
+  ierr = getTags(); CHKERRABORT(cOmm,ierr);
+  ierr = clearMap(); CHKERRABORT(cOmm,ierr);
   basicEntityDataPtr = boost::make_shared<BasicEntityData>(moab);
-  ierr = initialiseDatabseInformationFromMesh(verbose); CHKERRABORT(PETSC_COMM_WORLD,ierr);
-
+  ierr = initialiseDatabseInformationFromMesh(verbose); CHKERRABORT(cOmm,ierr);
   // Petsc Logs
-  PetscLogEventRegister("FE_preProcess",0,&USER_EVENT_preProcess);
-  PetscLogEventRegister("FE_operator",0,&USER_EVENT_operator);
-  PetscLogEventRegister("FE_postProcess",0,&USER_EVENT_postProcess);
-  PetscLogEventRegister("MoFEMCreateMat",0,&USER_EVENT_createMat);
-  PetscLogEventRegister("MoFEMBuildProblem",0,&USER_EVENT_buildProblem);
+   PetscLogEventRegister("FE_preProcess",0,&USER_EVENT_preProcess);
+   PetscLogEventRegister("FE_operator",0,&USER_EVENT_operator);
+   PetscLogEventRegister("FE_postProcess",0,&USER_EVENT_postProcess);
+   PetscLogEventRegister("MoFEMCreateMat",0,&USER_EVENT_createMat);
+   PetscLogEventRegister("MoFEMBuildProblem",0,&USER_EVENT_buildProblem);
+
+   // Print version
+  if(verbose>0) {
+    ierr = PetscPrintf(
+      cOmm,
+      "lib version %d.%d.%d\n",
+      MoFEM_VERSION_MAJOR,MoFEM_VERSION_MINOR,MoFEM_VERSION_BUILD
+    ); CHKERRABORT(cOmm,ierr);
+    ierr = PetscPrintf(cOmm,"git commit id %s\n",GIT_SHA1_NAME); CHKERRABORT(cOmm,ierr);
+  }
 
 }
 Core::~Core() {
+  int flg;
+  MPI_Finalized(&flg);
+  // Destroy interfaces
   iFaces.clear();
+  // Pop error hanlder
   if(isGloballyInitialised) {
-    int flg;
-    MPI_Finalized(&flg);
     if(!flg) {
       PetscPopErrorHandler();
     }
     isGloballyInitialised = false;
+  }
+  // Destroy communictaor
+  if(!flg) {
+    ierr = PetscCommDestroy(&cOmm); CHKERRABORT(cOmm,ierr);
   }
 }
 
@@ -335,10 +346,10 @@ BitFieldId Core::getFieldShift() {
   if(*fShift >= BITFIELDID_SIZE) {
     char msg[] = "number of fields exceeded";
     PetscTraceBackErrorHandler(
-      comm,
+      cOmm,
       __LINE__,PETSC_FUNCTION_NAME,__FILE__,
       MOFEM_DATA_INCONSISTENCY,PETSC_ERROR_INITIAL,msg,PETSC_NULL);
-    PetscMPIAbortErrorHandler(comm,
+    PetscMPIAbortErrorHandler(cOmm,
       __LINE__,PETSC_FUNCTION_NAME,__FILE__,
       MOFEM_DATA_INCONSISTENCY,PETSC_ERROR_INITIAL,msg,PETSC_NULL);
   }
@@ -711,7 +722,7 @@ PetscErrorCode Core::initialiseDatabseInformationFromMesh(int verb) {
         if(verb > 0) {
           std::ostringstream ss;
           ss << "read field " << **p.first << std::endl;;
-          PetscPrintf(comm,ss.str().c_str());
+          PetscPrintf(cOmm,ss.str().c_str());
         }
       } catch (MoFEMException const &e) {
         SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
@@ -730,7 +741,7 @@ PetscErrorCode Core::initialiseDatabseInformationFromMesh(int verb) {
         if(verb > 1) {
           std::ostringstream ss;
           ss << "read field ents " << ents.size() << std::endl;;
-          PetscPrintf(comm,ss.str().c_str());
+          PetscPrintf(cOmm,ss.str().c_str());
         }
         boost::shared_ptr<std::vector<MoFEMEntity> > ents_array =
         boost::make_shared<std::vector<MoFEMEntity> >(std::vector<MoFEMEntity>());
@@ -777,7 +788,7 @@ PetscErrorCode Core::initialiseDatabseInformationFromMesh(int verb) {
       if(verb > 0) {
         std::ostringstream ss;
         ss << "read finite element " << **p.first << std::endl;;
-        PetscPrintf(comm,ss.str().c_str());
+        PetscPrintf(cOmm,ss.str().c_str());
       }
       NOT_USED(p);
       assert((*p.first)->meshset == *mit);
@@ -828,7 +839,7 @@ PetscErrorCode Core::initialiseDatabseInformationFromMesh(int verb) {
             SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"Only finite elements of type MBTET, MBPRISM and MBENTITYSET are implemented");
           }
           if(p_MoFEMFiniteElement.second) {
-            //PetscPrintf(comm,"Warrning: this entity should be already in refined finite elements database");
+            //PetscPrintf(cOmm,"Warrning: this entity should be already in refined finite elements database");
             //SETERRQ(PETSC_COMM_SELF,1,"data inconsistency, this entity should be already in refined finite elements database");
           }
         } catch (MoFEMException const &e) {
@@ -845,7 +856,7 @@ PetscErrorCode Core::initialiseDatabseInformationFromMesh(int verb) {
       if(verb > 0) {
         std::ostringstream ss;
         ss << "read problem " << *p.first << std::endl;;
-        PetscPrintf(comm,ss.str().c_str());
+        PetscPrintf(cOmm,ss.str().c_str());
       }
     }
     //check if meshset is Series meshset
@@ -1089,7 +1100,7 @@ PetscErrorCode Core::seed_ref_level(const Range &ents,const BitRefLevel &bit,con
   Range seeded_ents;
   try {
     if(verb > 1) {
-      PetscSynchronizedPrintf(comm,"nb. entities for seed %d\n",ents.size());
+      PetscSynchronizedPrintf(cOmm,"nb. entities for seed %d\n",ents.size());
     }
     Range::iterator tit = ents.begin();
     for(;tit!=ents.end();tit++) {
@@ -1103,13 +1114,13 @@ PetscErrorCode Core::seed_ref_level(const Range &ents,const BitRefLevel &bit,con
       bool success = refinedEntities.modify(p_ent.first,RefEntity_change_add_bit(bit));
       if(!success) {
         SETERRQ(
-          comm,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful"
+          cOmm,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful"
         );
       }
       if(verb>2) {
         std::ostringstream ss;
         ss << **p_ent.first;
-        PetscSynchronizedPrintf(comm,"%s\n",ss.str().c_str());
+        PetscSynchronizedPrintf(cOmm,"%s\n",ss.str().c_str());
       }
       std::pair<RefElement_multiIndex::iterator,bool> p_MoFEMFiniteElement;
       switch((*p_ent.first)->getEntType()) {
@@ -1151,12 +1162,12 @@ PetscErrorCode Core::seed_ref_level(const Range &ents,const BitRefLevel &bit,con
         );
         break;
         default:
-        SETERRQ(comm,MOFEM_NOT_IMPLEMENTED,"not implemented");
+        SETERRQ(cOmm,MOFEM_NOT_IMPLEMENTED,"not implemented");
       }
       if(verb>3) {
         std::ostringstream ss;
         ss << *(p_MoFEMFiniteElement.first->getRefElement());
-        PetscSynchronizedPrintf(comm,"%s\n",ss.str().c_str());
+        PetscSynchronizedPrintf(cOmm,"%s\n",ss.str().c_str());
       }
     }
     if(!seeded_ents.empty()) {
@@ -1174,21 +1185,21 @@ PetscErrorCode Core::seed_ref_level(const Range &ents,const BitRefLevel &bit,con
             boost::shared_ptr<RefEntity>(new RefEntity(basicEntityDataPtr,*eit))
           );
           bool success = refinedEntities.modify(p_ent.first,RefEntity_change_add_bit(bit));
-          if(!success) SETERRQ(comm,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
+          if(!success) SETERRQ(cOmm,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
           if(verb>2) {
             std::ostringstream ss;
             ss << *(*p_ent.first);
-            PetscSynchronizedPrintf(comm,"%s\n",ss.str().c_str());
+            PetscSynchronizedPrintf(cOmm,"%s\n",ss.str().c_str());
           }
         }
       }
     }
     if(verb>2) {
-      PetscSynchronizedPrintf(comm,"\n");
-      PetscSynchronizedFlush(comm,PETSC_STDOUT);
+      PetscSynchronizedPrintf(cOmm,"\n");
+      PetscSynchronizedFlush(cOmm,PETSC_STDOUT);
     }
   } catch (MoFEMException const &e) {
-    SETERRQ(comm,e.errorCode,e.errorMessage);
+    SETERRQ(cOmm,e.errorCode,e.errorMessage);
   }
   PetscFunctionReturn(0);
 }
@@ -1215,7 +1226,7 @@ PetscErrorCode Core::seed_ref_level_MESHSET(const EntityHandle meshset,const Bit
   if(verbose > 0) {
     std::ostringstream ss;
     ss << "add meshset as ref_ent " << *(p_MoFEMFiniteElement.first->getRefElement()) << std::endl;
-    PetscPrintf(comm,ss.str().c_str());
+    PetscPrintf(cOmm,ss.str().c_str());
   }
   PetscFunctionReturn(0);
 }

@@ -85,7 +85,7 @@ PetscErrorCode Core::add_problem(const BitProblemId id,const std::string& name) 
   if(verbose>0) {
     std::ostringstream ss;
     ss << "add problem: " << name << std::endl;
-    PetscPrintf(comm,ss.str().c_str());
+    PetscPrintf(cOmm,ss.str().c_str());
   }
   PetscFunctionReturn(0);
 }
@@ -134,7 +134,7 @@ PetscErrorCode Core::list_problem() const {
   for(;miit!=set_id.end();miit++) {
     std::ostringstream ss;
     ss << *miit << std::endl;
-    PetscPrintf(comm,ss.str().c_str());
+    PetscPrintf(cOmm,ss.str().c_str());
   }
   PetscFunctionReturn(0);
 }
@@ -465,7 +465,7 @@ PetscErrorCode Core::problem_basic_method_preProcess(const std::string &problem_
   // find p_miit
   mofem_problems_by_name &pRoblems_set = pRoblems.get<Problem_mi_tag>();
   mofem_problems_by_name::iterator p_miit = pRoblems_set.find(problem_name);
-  if(p_miit == pRoblems_set.end()) SETERRQ1(comm,1,"problem is not in database %s",problem_name.c_str());
+  if(p_miit == pRoblems_set.end()) SETERRQ1(cOmm,1,"problem is not in database %s",problem_name.c_str());
   ierr = problem_basic_method_preProcess(&*p_miit,method,verb); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
@@ -487,7 +487,7 @@ PetscErrorCode Core::problem_basic_method_postProcess(const std::string &problem
   // find p_miit
   mofem_problems_by_name &pRoblems_set = pRoblems.get<Problem_mi_tag>();
   mofem_problems_by_name::iterator p_miit = pRoblems_set.find(problem_name);
-  if(p_miit == pRoblems_set.end()) SETERRQ1(comm,1,"problem is not in database %s",problem_name.c_str());
+  if(p_miit == pRoblems_set.end()) SETERRQ1(cOmm,1,"problem is not in database %s",problem_name.c_str());
 
   ierr = problem_basic_method_postProcess(&*p_miit,method,verb); CHKERRQ(ierr);
 
@@ -534,7 +534,7 @@ PetscErrorCode Core::loop_finite_elements(
 
   if(miit==hi_miit && bh&MF_EXIST) {
     if(!check_finite_element(fe_name)) {
-      SETERRQ1(comm,MOFEM_NOT_FOUND,"finite element < %s > not found",fe_name.c_str());
+      SETERRQ1(cOmm,MOFEM_NOT_FOUND,"finite element < %s > not found",fe_name.c_str());
     }
   }
 
@@ -560,7 +560,7 @@ PetscErrorCode Core::loop_finite_elements(
       << "   throw in method: " << ex.what()
       << " at line " << __LINE__
       << " in file " << __FILE__ << std::endl;
-      SETERRQ(comm,MOFEM_DATA_INCONSISTENCY,ss.str().c_str());
+      SETERRQ(cOmm,MOFEM_DATA_INCONSISTENCY,ss.str().c_str());
     }
 
   }
@@ -585,7 +585,7 @@ PetscErrorCode Core::loop_finite_elements(
   // find p_miit
   mofem_problems_by_name &pRoblems_set = pRoblems.get<Problem_mi_tag>();
   mofem_problems_by_name::iterator p_miit = pRoblems_set.find(problem_name);
-  if(p_miit == pRoblems_set.end()) SETERRQ1(comm,1,"problem is not in database %s",problem_name.c_str());
+  if(p_miit == pRoblems_set.end()) SETERRQ1(cOmm,1,"problem is not in database %s",problem_name.c_str());
 
   ierr = loop_finite_elements(&*p_miit,fe_name,method,lower_rank,upper_rank,bh,verb); CHKERRQ(ierr);
 
@@ -606,7 +606,7 @@ PetscErrorCode Core::loop_dofs(
       dofs = &problem_ptr->numered_dofs_cols->get<Composite_Name_And_Part_mi_tag>();
       break;
     default:
-     SETERRQ(comm,MOFEM_DATA_INCONSISTENCY,"not implemented");
+     SETERRQ(cOmm,MOFEM_DATA_INCONSISTENCY,"not implemented");
   }
   NumeredDofsByNameAndPart::iterator miit = dofs->lower_bound(boost::make_tuple(field_name,lower_rank));
   NumeredDofsByNameAndPart::iterator hi_miit = dofs->upper_bound(boost::make_tuple(field_name,upper_rank));
@@ -628,7 +628,7 @@ PetscErrorCode Core::loop_dofs(
     } catch (const std::exception& ex) {
       std::ostringstream ss;
       ss << "throw in method: " << ex.what() << std::endl;
-      SETERRQ(comm,MOFEM_DATA_INCONSISTENCY,ss.str().c_str());
+      SETERRQ(cOmm,MOFEM_DATA_INCONSISTENCY,ss.str().c_str());
     }
   }
   ierr = method.postProcess(); CHKERRQ(ierr);
@@ -649,7 +649,7 @@ PetscErrorCode Core::loop_dofs(
   // find p_miit
   mofem_problems_by_name &pRoblems_set = pRoblems.get<Problem_mi_tag>();
   mofem_problems_by_name::iterator p_miit = pRoblems_set.find(problem_name);
-  if(p_miit == pRoblems_set.end()) SETERRQ1(comm,1,"problem not in database %s",problem_name.c_str());
+  if(p_miit == pRoblems_set.end()) SETERRQ1(cOmm,1,"problem not in database %s",problem_name.c_str());
   ierr = loop_dofs(&*p_miit,field_name,rc,method,lower_rank,upper_rank,verb); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
@@ -689,11 +689,11 @@ PetscErrorCode Core::loop_dofs(const std::string &field_name,EntMethod &method,i
     try {
       ierr = method(); CHKERRQ(ierr);
     } catch (MoFEMException const &e) {
-      SETERRQ(comm,e.errorCode,e.errorMessage);
+      SETERRQ(cOmm,e.errorCode,e.errorMessage);
     } catch (const std::exception& ex) {
       std::ostringstream ss;
       ss << "throw in method: " << ex.what() << std::endl;
-      SETERRQ(comm,MOFEM_DATA_INCONSISTENCY,ss.str().c_str());
+      SETERRQ(cOmm,MOFEM_DATA_INCONSISTENCY,ss.str().c_str());
     }
   }
   ierr = method.postProcess(); CHKERRQ(ierr);

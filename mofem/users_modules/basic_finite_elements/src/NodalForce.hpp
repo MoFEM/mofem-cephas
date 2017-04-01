@@ -84,6 +84,22 @@ struct MetaNodalForces {
 
   };
 
+  /**
+   * \brief Scale force based on some DOF value
+   *
+   * That dof usiually will be associated with dof used for arc-length control
+   *
+   */
+  struct DofForceScale: public MethodForForceScaling {
+    boost::shared_ptr<DofEntity> dOf;
+    DofForceScale(boost::shared_ptr<DofEntity> dof): dOf(dof) {}
+    PetscErrorCode scaleNf(const FEMethod *fe,ublas::vector<FieldData> &Nf) {
+      PetscFunctionBegin;
+      Nf *= dOf->getFieldData();
+      PetscFunctionReturn(0);
+    }
+  };
+
   /// Add element taking information from NODESET
   static PetscErrorCode addElement(
     MoFEM::Interface &m_field,const std::string field_name,Range *intersect_ptr = NULL

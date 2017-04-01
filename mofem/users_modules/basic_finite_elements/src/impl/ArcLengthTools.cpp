@@ -71,7 +71,7 @@ ArcLengthCtx::ArcLengthCtx(MoFEM::Interface &m_field,const std::string &problem_
       "can not find unique LAMBDA (load factor)",PETSC_NULL
     );
   }
-  if((unsigned int)mField.getCommRank()==(*dIt)->getPart()) {
+  if((unsigned int)mField.get_comm_rank()==(*dIt)->getPart()) {
     ierr = VecCreateGhostWithArray(
       mField.get_comm(),1,1,0,PETSC_NULL,&dLambda,&ghosTdLambda
     ); CHKERRABORT(PETSC_COMM_WORLD,ierr);

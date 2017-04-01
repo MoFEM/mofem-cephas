@@ -130,7 +130,7 @@ PetscErrorCode Core::get_adjacencies(
   if(verb>0) {
     std::ostringstream ss;
     ss << "from: " << bit << std::endl << "to: " << std::endl;
-    PetscPrintf(comm,ss.str().c_str());
+    PetscPrintf(cOmm,ss.str().c_str());
   }
   rval = moab.get_adjacencies(
     from_entities,num_netities,to_dimension,false,adj_entities,operation_type
@@ -145,7 +145,7 @@ PetscErrorCode Core::get_adjacencies(
       RefEntity adj_entiti(basicEntityDataPtr,*eit);
       std::ostringstream ss;
       ss << "\t" << adj_entiti << std::endl;
-      PetscPrintf(comm,ss.str().c_str());
+      PetscPrintf(cOmm,ss.str().c_str());
     }
     if(!((*b_it)&bit).any() ) {
       eit = adj_entities.erase(eit);

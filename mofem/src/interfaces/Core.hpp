@@ -24,15 +24,20 @@ namespace MoFEM {
 
 struct MeshsetsManager;
 
-/** \brief Core Interface class
+/** \brief Core (interface) class
  *  \ingroup mofem
 
-  This class is not used directly by the user. For internal use only.   It is
-  database with basic functions to access data. Abstraction of this is MoFEM
-  Interface structure.
+ This is the implementation of abstract MoFEM::Interface class. Similarly to the
+ convention used in MoAB, we use small letters to name function of purely
+ abstract classes. This is an exception used only here. For more details about
+ naming functions see \ref coding_practice
 
-  It is deign to hide come complexities for users and allow low development
-  without interfering with users modules programmer work.
+ This class is not used directly by the user. For internal use only.   It is
+ database with basic functions to access data. Abstraction of this is MoFEM
+ Interface structure.
+
+ It is deign to hide come complexities for users and allow low development
+ without interfering with users modules programmer work.
 
  */
 struct Core: public Interface {
@@ -42,7 +47,14 @@ struct Core: public Interface {
   PetscErrorCode queryInterface(const MOFEMuuid& uuid, UnknownInterface** iface);
   PetscErrorCode query_interface_type(const std::type_info& iface_type,void*& ptr) const;
 
-  Core(moab::Interface& _moab,MPI_Comm _comm = PETSC_COMM_WORLD,int _verbose = 1);
+  /**
+   * Contruct core database
+   */
+  Core(
+    moab::Interface& moab,              ///< MoAB interface
+    MPI_Comm comm = PETSC_COMM_WORLD,   ///< MPI communicator
+    int verbose = 1                     ///< Verbosity level
+  );
   ~Core();
 
   inline Tag get_th_RefParentHandle() const { return th_RefParentHandle; }
@@ -75,7 +87,6 @@ struct Core: public Interface {
 
   protected:
 
-  mutable MPI_Comm comm;
   mutable boost::ptr_map<unsigned long,UnknownInterface> iFaces;
   mutable int *buildMoFEM; ///< keeps flags/semaphores for different stages
 
@@ -722,12 +733,18 @@ struct Core: public Interface {
 
   // size and rank of communicator
 
-  /// communicator MoFEM
-  inline MPI_Comm& get_comm() const { return comm; }
+  mutable MPI_Comm cOmm;      ///< MoFEM communicator
+  mutable ParallelComm *pComm; ///< MOAB communicator struture
 
-  int sIze,rAnk;
-  inline int getCommSize() const { return sIze; }
-  inline int getCommRank() const { return rAnk; }
+  int sIze; ///< MoFEM communicator size
+  int rAnk; ///< MOFEM communicator rank
+
+  inline MPI_Comm& get_comm() const { return cOmm; }
+  inline int get_comm_size() const { return sIze; }
+  inline int get_comm_rank() const { return rAnk; }
+
+  DEPRECATED inline int getCommSize() const { return sIze; }
+  DEPRECATED inline int getCommRank() const { return rAnk; }
 
   private:
 
