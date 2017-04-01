@@ -372,7 +372,7 @@ PetscErrorCode FixBcAtEntities::iNitalize() {
   if(mapZeroRows.empty()) {
     for(std::vector<std::string>::iterator fit = fieldNames.begin();fit!=fieldNames.end();fit++) {
       for(Range::iterator eit = eNts.begin();eit!=eNts.end();eit++) {
-        for(_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_NAME_ENT_PART_FOR_LOOP_(problemPtr,*fit,*eit,mField.getCommRank(),dof_ptr)) {
+        for(_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_NAME_ENT_PART_FOR_LOOP_(problemPtr,*fit,*eit,mField.get_comm_rank(),dof_ptr)) {
           NumeredDofEntity *dof = dof_ptr->get();
           mapZeroRows[dof->getPetscGlobalDofIdx()] = 0;
         }

@@ -335,7 +335,7 @@ struct MagneticElement {
     ierr = DMMoFEMGetProblemPtr(blockData.dM,&problem_ptr); CHKERRQ(ierr);
     for(Range::iterator eit = blockData.essentialBc.begin();eit!=blockData.essentialBc.end();eit++) {
       for(_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_NAME_ENT_PART_FOR_LOOP_(
-        problem_ptr,blockData.fieldName,*eit,mField.getCommRank(),dof_ptr
+        problem_ptr,blockData.fieldName,*eit,mField.get_comm_rank(),dof_ptr
       )) {
         std::bitset<8> pstatus(dof_ptr->get()->getPStatus());
         if(pstatus.test(0)) continue; //only local

@@ -626,7 +626,7 @@ PetscErrorCode PrismInterface::splitSides(
       case MBEDGE: {
 	  rval = moab.get_adjacencies(new_conn,2,1,false,new_ent); CHKERRQ_MOAB(rval);
 	  if(new_ent.size()!=1) {
-	    if(m_field.getCommRank()==0) {
+	    if(m_field.get_comm_rank()==0) {
 	      EntityHandle out_meshset;
 	      rval = moab.create_meshset(MESHSET_SET|MESHSET_TRACK_OWNER,out_meshset); CHKERRQ_MOAB(rval);
 	      rval = moab.add_entities(out_meshset,&*eit,1); CHKERRQ_MOAB(rval);

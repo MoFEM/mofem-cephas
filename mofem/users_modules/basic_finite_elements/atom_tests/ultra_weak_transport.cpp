@@ -69,73 +69,80 @@ int main(int argc, char *argv[]) {
 
   PetscInitialize(&argc,&argv,(char *)0,help);
 
-  moab::Core mb_instance;
-  moab::Interface& moab = mb_instance;
-  int rank;
-  MPI_Comm_rank(PETSC_COMM_WORLD,&rank);
+  try {
 
-  PetscBool flg = PETSC_TRUE;
-  char mesh_file_name[255];
-  ierr = PetscOptionsGetString(PETSC_NULL,PETSC_NULL,"-my_file",mesh_file_name,255,&flg); CHKERRQ(ierr);
-  if(flg != PETSC_TRUE) {
-    SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_file (MESH FILE NEEDED)");
+    moab::Core mb_instance;
+    moab::Interface& moab = mb_instance;
+    int rank;
+    MPI_Comm_rank(PETSC_COMM_WORLD,&rank);
+
+    PetscBool flg = PETSC_TRUE;
+    char mesh_file_name[255];
+    ierr = PetscOptionsGetString(PETSC_NULL,PETSC_NULL,"-my_file",mesh_file_name,255,&flg); CHKERRQ(ierr);
+    if(flg != PETSC_TRUE) {
+      SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_file (MESH FILE NEEDED)");
+    }
+
+    ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
+    if(pcomm == NULL) pcomm =  new ParallelComm(&moab,PETSC_COMM_WORLD);
+
+    const char *option;
+    option = "";//"PARALLEL=BCAST;";//;DEBUG_IO";
+    BARRIER_RANK_START(pcomm)
+    rval = moab.load_file(mesh_file_name, 0, option); CHKERRQ_MOAB(rval);
+    BARRIER_RANK_END(pcomm)
+
+    //Create MoFEM (Joseph) database
+    MoFEM::Core core(moab);
+    MoFEM::Interface& m_field = core;
+
+    //set entities bit level
+    BitRefLevel ref_level;
+    ref_level.set(0);
+    ierr = m_field.seed_ref_level_3D(0,ref_level); CHKERRQ(ierr);
+
+    //set app. order
+    //see Hierarchic Finite Element Bases on Unstructured Tetrahedral Meshes (Mark Ainsworth & Joe Coyle)
+    PetscInt order;
+    ierr = PetscOptionsGetInt(PETSC_NULL,PETSC_NULL,"-my_order",&order,&flg); CHKERRQ(ierr);
+    if(flg != PETSC_TRUE) {
+      order = 2;
+    }
+
+    //finite elements
+    MyUltraWeakFE ufe(m_field);
+
+    ierr = ufe.addFields("VALUES","FLUXES",order); CHKERRQ(ierr);
+    ierr = ufe.addFiniteElements("FLUXES","VALUES"); CHKERRQ(ierr);
+
+    // Set boundary conditions
+    Range tets;
+    ierr = m_field.get_entities_by_type_and_ref_level(BitRefLevel().set(0),BitRefLevel().set(),MBTET,tets); CHKERRQ(ierr);
+    Skinner skin(&moab);
+    Range skin_faces; // skin faces from 3d ents
+    rval = skin.find_skin(0,tets,false,skin_faces); CHKERRQ_MOAB(rval);
+    ierr = m_field.add_ents_to_finite_element_by_TRIs(skin_faces,"ULTRAWEAK_BCVALUE"); CHKERRQ(ierr);
+
+    ierr = ufe.buildProblem(ref_level); CHKERRQ(ierr);
+    ierr = ufe.createMatrices(); CHKERRQ(ierr);
+    ierr = ufe.solveProblem(); CHKERRQ(ierr);
+    ierr = ufe.calculateResidual(); CHKERRQ(ierr);
+    ierr = ufe.evaluateError(); CHKERRQ(ierr);
+
+    double nrm2_F;
+    ierr = VecNorm(ufe.F,NORM_2,&nrm2_F); CHKERRQ(ierr);
+    // PetscPrintf(PETSC_COMM_WORLD,"nrm2_F = %6.4e\n",nrm2_F);
+    const double eps = 1e-8;
+    if(nrm2_F > eps) {
+      SETERRQ(PETSC_COMM_SELF,MOFEM_ATOM_TEST_INVALID,"problem with residual");
+    }
+
+    ierr = ufe.destroyMatrices(); CHKERRQ(ierr);
+
+
+  } catch (MoFEMException const &e) {
+    SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
   }
-
-  ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
-  if(pcomm == NULL) pcomm =  new ParallelComm(&moab,PETSC_COMM_WORLD);
-
-  const char *option;
-  option = "";//"PARALLEL=BCAST;";//;DEBUG_IO";
-  BARRIER_RANK_START(pcomm)
-  rval = moab.load_file(mesh_file_name, 0, option); CHKERRQ_MOAB(rval);
-  BARRIER_RANK_END(pcomm)
-
-  //Create MoFEM (Joseph) database
-  MoFEM::Core core(moab);
-  MoFEM::Interface& m_field = core;
-
-  //set entities bit level
-  BitRefLevel ref_level;
-  ref_level.set(0);
-  ierr = m_field.seed_ref_level_3D(0,ref_level); CHKERRQ(ierr);
-
-  //set app. order
-  //see Hierarchic Finite Element Bases on Unstructured Tetrahedral Meshes (Mark Ainsworth & Joe Coyle)
-  PetscInt order;
-  ierr = PetscOptionsGetInt(PETSC_NULL,PETSC_NULL,"-my_order",&order,&flg); CHKERRQ(ierr);
-  if(flg != PETSC_TRUE) {
-    order = 2;
-  }
-
-  //finite elements
-  MyUltraWeakFE ufe(m_field);
-
-  ierr = ufe.addFields("VALUES","FLUXES",order); CHKERRQ(ierr);
-  ierr = ufe.addFiniteElements("FLUXES","VALUES"); CHKERRQ(ierr);
-
-  // Set boundary conditions
-  Range tets;
-  ierr = m_field.get_entities_by_type_and_ref_level(BitRefLevel().set(0),BitRefLevel().set(),MBTET,tets); CHKERRQ(ierr);
-  Skinner skin(&moab);
-  Range skin_faces; // skin faces from 3d ents
-  rval = skin.find_skin(0,tets,false,skin_faces); CHKERRQ_MOAB(rval);
-  ierr = m_field.add_ents_to_finite_element_by_TRIs(skin_faces,"ULTRAWEAK_BCVALUE"); CHKERRQ(ierr);
-
-  ierr = ufe.buildProblem(ref_level); CHKERRQ(ierr);
-  ierr = ufe.createMatrices(); CHKERRQ(ierr);
-  ierr = ufe.solveProblem(); CHKERRQ(ierr);
-  ierr = ufe.calculateResidual(); CHKERRQ(ierr);
-  ierr = ufe.evaluateError(); CHKERRQ(ierr);
-
-  double nrm2_F;
-  ierr = VecNorm(ufe.F,NORM_2,&nrm2_F); CHKERRQ(ierr);
-  // PetscPrintf(PETSC_COMM_WORLD,"nrm2_F = %6.4e\n",nrm2_F);
-  const double eps = 1e-8;
-  if(nrm2_F > eps) {
-    SETERRQ(PETSC_COMM_SELF,MOFEM_ATOM_TEST_INVALID,"problem with residual");
-  }
-
-  ierr = ufe.destroyMatrices(); CHKERRQ(ierr);
 
   ierr = PetscFinalize(); CHKERRQ(ierr);
 
