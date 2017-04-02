@@ -1409,12 +1409,12 @@ PetscErrorCode UltraWeakTransportElement::evaluateError() {
   sumErrorJump = 0;
   feTri.getOpPtrVector().clear();
   feTri.getOpPtrVector().push_back(new UltraWeakTransportElement::OpSkeleton(*this,"FLUXES"));
-  ierr = mField.loop_finite_elements("ULTRAWEAK","ULTRAWEAK_SKELETON",feTri,0,mField.getCommSize()); CHKERRQ(ierr);
+  ierr = mField.loop_finite_elements("ULTRAWEAK","ULTRAWEAK_SKELETON",feTri,0,mField.get_comm_size()); CHKERRQ(ierr);
   feVol.getOpPtrVector().clear();
   feVol.getOpPtrVector().push_back(new UltraWeakTransportElement::OpFluxDivergenceAtGaussPts(*this,"FLUXES"));
   feVol.getOpPtrVector().push_back(new UltraWeakTransportElement::OpValuesGradientAtGaussPts(*this,"VALUES"));
   feVol.getOpPtrVector().push_back(new UltraWeakTransportElement::OpError(*this,"VALUES"));
-  ierr = mField.loop_finite_elements("ULTRAWEAK","ULTRAWEAK",feVol,0,mField.getCommSize()); CHKERRQ(ierr);
+  ierr = mField.loop_finite_elements("ULTRAWEAK","ULTRAWEAK",feVol,0,mField.get_comm_size()); CHKERRQ(ierr);
   const MoFEMProblem *problem_ptr;
   ierr = mField.get_problem("ULTRAWEAK",&problem_ptr); CHKERRQ(ierr);
   PetscPrintf(
@@ -1433,7 +1433,7 @@ entity operator to the element object and looping over all triangular elements
 in the problem, as follows
 \code
 feTri.getOpPtrVector().push_back(new UltraWeakTransportElement::OpSkeleton(*this,"FLUXES"));
-ierr = mField.loop_finite_elements("ULTRAWEAK","ULTRAWEAK_SKELETON",feTri,0,mField.getCommSize()); CHKERRQ(ierr);
+ierr = mField.loop_finite_elements("ULTRAWEAK","ULTRAWEAK_SKELETON",feTri,0,mField.get_comm_size()); CHKERRQ(ierr);
 \endcode
 Note that entity operator UltraWeakTransportElement::OpSkeleton is executed for
 every element \e ULTRAWEAK_SKELETON. How this entity operator is implemented is
@@ -1445,7 +1445,7 @@ sequence of entity operators on each volume element, as follows,
 feVol.getOpPtrVector().push_back(new UltraWeakTransportElement::OpFluxDivergenceAtGaussPts(*this,"FLUXES"));
   feVol.getOpPtrVector().push_back(new UltraWeakTransportElement::OpValuesGradientAtGaussPts(*this,"VALUES"));
   feVol.getOpPtrVector().push_back(new UltraWeakTransportElement::OpError(*this,"VALUES"));
-  ierr = mField.loop_finite_elements("ULTRAWEAK","ULTRAWEAK",feVol,0,mField.getCommSize()); CHKERRQ(ierr);
+  ierr = mField.loop_finite_elements("ULTRAWEAK","ULTRAWEAK",feVol,0,mField.get_comm_size()); CHKERRQ(ierr);
 \endcode
 
 Once we loop over all elements and calculate error, we aggregate all element

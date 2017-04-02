@@ -80,7 +80,7 @@ namespace MoFEM {
       if(verb>1) {
         std::ostringstream zz;
         zz << "pstatus " <<  std::bitset<8>(pstatus) << " ";
-        PetscSynchronizedPrintf(comm,"%s",zz.str().c_str());
+        PetscSynchronizedPrintf(cOmm,"%s",zz.str().c_str());
       }
 
       for(int proc = 0; proc<MAX_SHARING_PROCS && -1 != (*meit)->getSharingProcsPtr()[proc]; proc++) {
@@ -93,7 +93,7 @@ namespace MoFEM {
         EntityHandle handle_on_sharing_proc = (*meit)->getSharingHandlersPtr()[proc];
         sbuffer[(*meit)->getSharingProcsPtr()[proc]].push_back(handle_on_sharing_proc);
         if(verb>1) {
-          PetscSynchronizedPrintf(comm,"send %lu (%lu) to %d at %d\n",
+          PetscSynchronizedPrintf(cOmm,"send %lu (%lu) to %d at %d\n",
           (*meit)->getRefEnt(),handle_on_sharing_proc,(*meit)->getSharingProcsPtr()[proc],rAnk);
         }
         if(!(pstatus&PSTATUS_MULTISHARED)) {
@@ -122,26 +122,26 @@ namespace MoFEM {
 
     }
 
-    // Make sure it is a PETSc comm
-    ierr = PetscCommDuplicate(comm,&comm,NULL); CHKERRQ(ierr);
+    // Make sure it is a PETSc cOmm
+    ierr = PetscCommDuplicate(cOmm,&cOmm,NULL); CHKERRQ(ierr);
 
     std::vector<MPI_Status> status(sIze);
 
     // Computes the number of messages a node expects to receive
     int nrecvs;	// number of messages received
-    ierr = PetscGatherNumberOfMessages(comm,NULL,&sbuffer_lengths[0],&nrecvs); CHKERRQ(ierr);
+    ierr = PetscGatherNumberOfMessages(cOmm,NULL,&sbuffer_lengths[0],&nrecvs); CHKERRQ(ierr);
 
     // Computes info about messages that a MPI-node will receive, including (from-id,length) pairs for each message.
     int *onodes;		// list of node-ids from which messages are expected
     int *olengths;	// corresponding message lengths
-    ierr = PetscGatherMessageLengths(comm,nsends,nrecvs,&sbuffer_lengths[0],&onodes,&olengths);  CHKERRQ(ierr);
+    ierr = PetscGatherMessageLengths(cOmm,nsends,nrecvs,&sbuffer_lengths[0],&onodes,&olengths);  CHKERRQ(ierr);
 
     // Gets a unique new tag from a PETSc communicator. All processors that share
     // the communicator MUST call this routine EXACTLY the same number of times.
     // This tag should only be used with the current objects communicator; do NOT
     // use it with any other MPI communicator.
     int tag;
-    ierr = PetscCommGetNewTag(comm,&tag); CHKERRQ(ierr);
+    ierr = PetscCommGetNewTag(cOmm,&tag); CHKERRQ(ierr);
 
     // Allocate a buffer sufficient to hold messages of size specified in
     // olengths. And post Irecvs on these buffers using node info from onodes
@@ -150,7 +150,7 @@ namespace MoFEM {
     // rbuf has a pointers to messages. It has size of of nrecvs (number of
     // messages) +1. In the first index a block is allocated,
     // such that rbuf[i] = rbuf[i-1]+olengths[i-1].
-    ierr = PetscPostIrecvInt(comm,tag,nrecvs,onodes,olengths,&rbuf,&r_waits); CHKERRQ(ierr);
+    ierr = PetscPostIrecvInt(cOmm,tag,nrecvs,onodes,olengths,&rbuf,&r_waits); CHKERRQ(ierr);
 
     MPI_Request *s_waits; // status of sens messages
     ierr = PetscMalloc1(nsends,&s_waits); CHKERRQ(ierr);
@@ -162,7 +162,7 @@ namespace MoFEM {
         &(sbuffer[proc])[0], 	// buffer to send
         sbuffer_lengths[proc], 	// message length
         MPIU_INT,proc,       	// to proc
-        tag,comm,s_waits+kk); CHKERRQ(ierr);
+        tag,cOmm,s_waits+kk); CHKERRQ(ierr);
       kk++;
     }
 
@@ -176,7 +176,7 @@ namespace MoFEM {
     }
 
     if(verb>0) {
-      PetscSynchronizedPrintf(comm,"Rank %d nb. before ents %u\n",rAnk,ents.size());
+      PetscSynchronizedPrintf(cOmm,"Rank %d nb. before ents %u\n",rAnk,ents.size());
     }
 
     // synchronise range
@@ -196,7 +196,7 @@ namespace MoFEM {
             "rank %d entity %lu not exist on database, local entity can not be found for this owner",rAnk,ent);
           }
           if(verb>2) {
-            PetscSynchronizedPrintf(comm,"received %ul (%ul) from %d at %d\n",(*meit)->getRefEnt(),ent,onodes[kk],rAnk);
+            PetscSynchronizedPrintf(cOmm,"received %ul (%ul) from %d at %d\n",(*meit)->getRefEnt(),ent,onodes[kk],rAnk);
           }
           ents.insert((*meit)->getRefEnt());
 
@@ -205,7 +205,7 @@ namespace MoFEM {
     }
 
     if(verb>0) {
-      PetscSynchronizedPrintf(comm,"Rank %d nb. after ents %u\n",rAnk,ents.size());
+      PetscSynchronizedPrintf(cOmm,"Rank %d nb. after ents %u\n",rAnk,ents.size());
     }
 
 
@@ -218,7 +218,7 @@ namespace MoFEM {
     ierr = PetscFree(olengths); CHKERRQ(ierr);
 
     if(verb>0) {
-      PetscSynchronizedFlush(comm,PETSC_STDOUT);
+      PetscSynchronizedFlush(cOmm,PETSC_STDOUT);
     }
 
     PetscFunctionReturn(0);
