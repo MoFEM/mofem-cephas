@@ -545,7 +545,7 @@ PetscErrorCode Core::loop_finite_elements(
     // back_miit--;
 
     method.nInTheLoop = nn;
-    method.numeredEntFiniteElementPtr = &*(*miit);
+    method.numeredEntFiniteElementPtr = *miit;
     method.dataPtr = &((*miit)->sPtr->data_dofs);
     method.rowPtr = (*miit)->rows_dofs.get();
     method.colPtr = (*miit)->cols_dofs.get();

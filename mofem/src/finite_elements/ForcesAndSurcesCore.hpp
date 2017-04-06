@@ -455,7 +455,7 @@ struct ForcesAndSurcesCore: public FEMethod {
     /** \brief Return raw pointer to NumeredEntFiniteElement
      */
     inline const NumeredEntFiniteElement* getNumeredEntFiniteElementPtr() const {
-      return ptrFE->numeredEntFiniteElementPtr;
+      return ptrFE->numeredEntFiniteElementPtr.get();
     };
 
     /**

@@ -80,7 +80,7 @@ struct NeoHookean: public NonlinearElasticElement::FunctionsToCalculatePiolaKirc
     NONLINEAR CONTINUUM MECHANICS FOR FINITE ELEMENT ANALYSIS, Javier Bonet,
     Richard D. Wood
 
-*/
+    */
     PetscErrorCode NeoHookean_ElasticEnergy(){
         PetscFunctionBegin;
         this->eNergy = 0;

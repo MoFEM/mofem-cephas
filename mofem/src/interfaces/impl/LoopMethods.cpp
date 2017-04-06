@@ -152,7 +152,6 @@ PetscErrorCode BasicMethod::copy_basic_method(const BasicMethod &basic) {
 //FEMethod
 FEMethod::FEMethod():
 BasicMethod(),
-numeredEntFiniteElementPtr(NULL),
 dataPtr(NULL),
 rowPtr(NULL),
 colPtr(NULL) {

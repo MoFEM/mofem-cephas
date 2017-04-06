@@ -338,7 +338,7 @@ PetscErrorCode NonlinearElasticElement::OpJacobianPiolaKirchhoffStress::doWork(
       ptrH = &(commonData.gradAtGaussPts[commonData.meshPositions]);
     }
 
-    for(int gg = 0;gg<nb_gauss_pts;gg++) {
+    for(int gg = 0;gg!=nb_gauss_pts;gg++) {
 
       dAta.materialAdoublePtr->gG = gg;
 

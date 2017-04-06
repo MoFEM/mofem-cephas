@@ -207,7 +207,7 @@ PetscErrorCode FlatPrismElementForcesAndSurcesCore::operator()() {
                 gaussPts,
                 boost::shared_ptr<BaseFunctionCtx>(
                   new FlatPrismPolynomialBaseCtx(
-                    dataH1,mField.get_moab(),numeredEntFiniteElementPtr,H1,ApproximationBaseArray[b],NOBASE
+                    dataH1,mField.get_moab(),numeredEntFiniteElementPtr.get(),H1,ApproximationBaseArray[b],NOBASE
                   )
                 )
               ); CHKERRQ(ierr);

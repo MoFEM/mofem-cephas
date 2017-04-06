@@ -255,8 +255,9 @@ struct FEMethod: public BasicMethod {
   PetscErrorCode postProcess();
 
   std::string feName;
-  // const NumeredEntFiniteElement *fePtr;
-  const NumeredEntFiniteElement *numeredEntFiniteElementPtr;
+
+  boost::shared_ptr<const NumeredEntFiniteElement> numeredEntFiniteElementPtr;
+
   const FEDofEntity_multiIndex *dataPtr;
   const FENumeredDofEntity_multiIndex *rowPtr;
   const FENumeredDofEntity_multiIndex *colPtr;
@@ -483,7 +484,7 @@ struct EntMethod: public BasicMethod {
   boost::shared_ptr<Field> fieldPtr;
   boost::shared_ptr<DofEntity> dofPtr;
   boost::shared_ptr<NumeredDofEntity> dofNumeredPtr;
-  
+
 };
 
 }
