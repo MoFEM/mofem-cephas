@@ -238,7 +238,7 @@ struct NonlinearElasticElement {
       */
     virtual PetscErrorCode calculateP_PiolaKirchhoffI(
       const BlockData block_data,
-      const NumeredEntFiniteElement *fe_ptr
+      boost::shared_ptr<const NumeredEntFiniteElement> fe_ptr
     ) {
       PetscFunctionBegin;
       PetscErrorCode ierr;
@@ -271,7 +271,7 @@ struct NonlinearElasticElement {
       */
     virtual PetscErrorCode calculateElasticEnergy(
       const BlockData block_data,
-      const NumeredEntFiniteElement *fe_ptr
+      boost::shared_ptr<const NumeredEntFiniteElement> fe_ptr
     ) {
       PetscFunctionBegin;
       PetscErrorCode ierr;
@@ -296,7 +296,7 @@ struct NonlinearElasticElement {
     */
     virtual PetscErrorCode calculateSiGma_EshelbyStress(
       const BlockData block_data,
-      const NumeredEntFiniteElement *fe_ptr
+      boost::shared_ptr<const NumeredEntFiniteElement> fe_ptr
     ) {
       PetscFunctionBegin;
       PetscErrorCode ierr;
@@ -539,30 +539,30 @@ struct NonlinearElasticElement {
 
   };
 
-  /**
-   * \brief implement NeoHookean material for bone remodelling
-   */
-  template<typename TYPE>
-  struct BoneNeoHookan: public NeoHookean<TYPE> {
-
-    NeoHookean(): NeoHookean<TYPE>() {}
-
-    PetscErrorCode calculateP_PiolaKirchhoffI(
-      const NonlinearElasticElement::BlockData block_data,
-      const NumeredEntFiniteElement *fe_ptr
-    ) {
-      PetscFunctionBegin;
-      PetscFunctionReturn(0);
-    }
-
-
-    PetscErrorCode NeoHookean_ElasticEnergy(){
-        PetscFunctionBegin;
-        PetscFunctionReturn(0);
-    }
-
-
-  };
+  // /**
+  //  * \brief implement NeoHookean material for bone remodelling
+  //  */
+  // template<typename TYPE>
+  // struct BoneNeoHookan: public NeoHookean<TYPE> {
+  //
+  //   NeoHookean(): NeoHookean<TYPE>() {}
+  //
+  //   PetscErrorCode calculateP_PiolaKirchhoffI(
+  //     const NonlinearElasticElement::BlockData block_data,
+  //     const NumeredEntFiniteElement *fe_ptr
+  //   ) {
+  //     PetscFunctionBegin;
+  //     PetscFunctionReturn(0);
+  //   }
+  //
+  //
+  //   PetscErrorCode NeoHookean_ElasticEnergy(){
+  //       PetscFunctionBegin;
+  //       PetscFunctionReturn(0);
+  //   }
+  //
+  //
+  // };
 
   PetscErrorCode setBlocks(
     FunctionsToCalculatePiolaKirchhoffI<double> *materialDoublePtr,
