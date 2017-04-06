@@ -116,7 +116,7 @@ PetscErrorCode FaceElementForcesAndSourcesCore::UserDataOperator::loopSideVolume
       // cerr << (*miit)->getEnt() << endl;
       method.nInTheLoop = nn++;
       method.numeredEntFiniteElementPtr = *miit;
-      method.dataPtr = &((*miit)->sPtr->data_dofs);
+      method.dataPtr = (*miit)->sPtr->data_dofs;
       method.rowPtr = (*miit)->rows_dofs;
       method.colPtr = (*miit)->cols_dofs;
 

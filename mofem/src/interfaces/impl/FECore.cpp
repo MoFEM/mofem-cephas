@@ -567,7 +567,7 @@ namespace MoFEM {
 
       p.first->get()->row_dof_view->clear();
       p.first->get()->col_dof_view->clear();
-      p.first->get()->data_dofs.clear();
+      p.first->get()->data_dofs->clear();
 
       for(unsigned int ii = 0;ii<BitFieldId().size();ii++) {
         // Common field id for ROW, COL and DATA
@@ -688,7 +688,7 @@ namespace MoFEM {
                   boost::shared_ptr<FEDofEntity>(data_dofs_array[fe_ent],&(*vit))
                 );
               }
-              fe_it->lock().get()->data_dofs.get<Unique_mi_tag>().insert(
+              fe_it->lock().get()->data_dofs->get<Unique_mi_tag>().insert(
                 data_dofs_shared_array.begin(),data_dofs_shared_array.end()
               );
               fe_it->lock().get()->getDofsSeqence()=data_dofs_array[fe_ent];
@@ -833,8 +833,8 @@ namespace MoFEM {
         MoFEMEntityEntFiniteElementAdjacencyMap_change_ByWhat modify_data(BYDATA);
         ent_uid = UId(0);
         FEDofEntity_multiIndex::iterator dvit;
-        dvit = (*fit)->data_dofs.begin();
-        for(;dvit!=(*fit)->data_dofs.end();dvit++) {
+        dvit = (*fit)->data_dofs->begin();
+        for(;dvit!=(*fit)->data_dofs->end();dvit++) {
           if(ent_uid == (*dvit)->getMoFEMEntityPtr()->getGlobalUniqueId()) continue;
           ent_uid = (*dvit)->getMoFEMEntityPtr()->getGlobalUniqueId();
           std::pair<MoFEMEntityEntFiniteElementAdjacencyMap_multiIndex::iterator,bool> p;

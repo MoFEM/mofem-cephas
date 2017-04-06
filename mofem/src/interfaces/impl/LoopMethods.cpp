@@ -151,10 +151,7 @@ PetscErrorCode BasicMethod::copy_basic_method(const BasicMethod &basic) {
 
 //FEMethod
 FEMethod::FEMethod():
-BasicMethod(),
-dataPtr(NULL),
-rowPtr(NULL),
-colPtr(NULL) {
+BasicMethod() {
 }
 
 PetscErrorCode FEMethod::preProcess() {

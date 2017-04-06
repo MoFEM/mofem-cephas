@@ -504,7 +504,7 @@ interface_RefElement<RefElement> {
   typedef interface_FiniteElement<FiniteElement> interface_type_MoFEMFiniteElement;
   boost::shared_ptr<DofEntity_multiIndex_uid_view> row_dof_view;
   boost::shared_ptr<DofEntity_multiIndex_uid_view> col_dof_view;
-  FEDofEntity_multiIndex data_dofs;
+  boost::shared_ptr<FEDofEntity_multiIndex> data_dofs;
   GlobalUId global_uid;
 
   EntFiniteElement(
@@ -555,13 +555,13 @@ interface_RefElement<RefElement> {
    * \brief Get number of DOFs on data
    * @return Number of dofs on data
    */
-  inline DofIdx getNbDofsData() const { return data_dofs.size(); }
+  inline DofIdx getNbDofsData() const { return data_dofs->size(); }
 
   /**
    * \brief Get data data dos multi-index structure
    * @return Reference multi-index FEDofEntity_multiIndex
    */
-  inline const FEDofEntity_multiIndex& getDataDofs() const { return data_dofs; };
+  inline const FEDofEntity_multiIndex& getDataDofs() const { return *data_dofs; };
 
   friend std::ostream& operator<<(std::ostream& os,const EntFiniteElement& e);
 
@@ -755,12 +755,12 @@ struct NumeredEntFiniteElement: public interface_EntFiniteElement<EntFiniteEleme
   /** \brief get FE dof on row
     * \ingroup mofem_dofs
     */
-  inline const FENumeredDofEntity_multiIndex& getRowsDofs() const { return *(rows_dofs.get()); };
+  inline const FENumeredDofEntity_multiIndex& getRowsDofs() const { return *rows_dofs; };
 
   /** \brief get FE dof on column
     * \ingroup mofem_dofs
     */
-  inline const FENumeredDofEntity_multiIndex& getColsDofs() const { return *(cols_dofs.get()); };
+  inline const FENumeredDofEntity_multiIndex& getColsDofs() const { return *cols_dofs; };
 
   /** \brief get FE dof by petsc index
     * \ingroup mofem_dofs
