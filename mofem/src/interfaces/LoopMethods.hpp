@@ -257,10 +257,10 @@ struct FEMethod: public BasicMethod {
   std::string feName;
 
   boost::shared_ptr<const NumeredEntFiniteElement> numeredEntFiniteElementPtr;
+  boost::shared_ptr<const FENumeredDofEntity_multiIndex> rowPtr;
+  boost::shared_ptr<const FENumeredDofEntity_multiIndex> colPtr;
 
-  const FEDofEntity_multiIndex *dataPtr;
-  const FENumeredDofEntity_multiIndex *rowPtr;
-  const FENumeredDofEntity_multiIndex *colPtr;
+  const FEDofEntity_multiIndex* dataPtr; ///< FIXME: raw pointer
 
   /** \brief loop over all dofs which are on a particular FE row
     * \ingroup mofem_loops
