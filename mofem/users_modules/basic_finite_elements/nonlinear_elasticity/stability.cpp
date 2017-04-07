@@ -45,7 +45,8 @@ struct MyMat_double: public NonlinearElasticElement::FunctionsToCalculatePiolaKi
 
   virtual PetscErrorCode calculateP_PiolaKirchhoffI(
     const NonlinearElasticElement::BlockData block_data,
-    const NumeredEntFiniteElement *fe_ptr) {
+    boost::shared_ptr<const NumeredEntFiniteElement> fe_ptr
+  ) {
     PetscFunctionBegin;
 
     try {

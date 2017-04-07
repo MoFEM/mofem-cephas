@@ -65,7 +65,7 @@ struct NitscheMethod {
   struct CommonData {
     int nbActiveFaces;
     std::vector<EntityHandle> fAces;
-    std::vector<const NumeredEntFiniteElement *> facesFePtr;
+    std::vector<boost::shared_ptr<const NumeredEntFiniteElement> > facesFePtr;
     std::vector<VectorDouble> cOords;
     std::vector<MatrixDouble> faceNormals;
     std::vector<MatrixDouble> faceGaussPts;
@@ -277,9 +277,9 @@ struct NitscheMethod {
                 blockData.faceElemName.c_str()
               );
             }
-            commonData.facesFePtr[ff] = &*(*it);
+            commonData.facesFePtr[ff] = *it;
           } else {
-            commonData.facesFePtr[ff] = NULL;
+            commonData.facesFePtr[ff].reset();
           }
         }
         commonData.nbTetGaussPts = 0;
@@ -287,15 +287,15 @@ struct NitscheMethod {
         commonData.inTetFaceGaussPtsNumber.clear();
         commonData.inTetFaceGaussPtsNumber.resize(4);
         for(int ff = 0;ff<4;ff++) {
-          if(commonData.facesFePtr[ff]!=NULL) {
-            const NumeredEntFiniteElement *faceFEPtr = commonData.facesFePtr[ff];
+          if(commonData.facesFePtr[ff]) {
+            boost::shared_ptr<const NumeredEntFiniteElement> faceFEPtr = commonData.facesFePtr[ff];
             faceFE.copy_basic_method(*this);
             faceFE.feName = blockData.faceElemName;
             faceFE.nInTheLoop = ff;
             faceFE.numeredEntFiniteElementPtr = faceFEPtr;
-            faceFE.dataPtr = &faceFEPtr->sPtr->data_dofs;
-            faceFE.rowPtr = &*faceFEPtr->rows_dofs;
-            faceFE.colPtr = &*faceFEPtr->cols_dofs;
+            faceFE.dataPtr = faceFEPtr->sPtr->data_dofs;
+            faceFE.rowPtr = faceFEPtr->rows_dofs;
+            faceFE.colPtr = faceFEPtr->cols_dofs;
             faceFE.addToRule = addToRule;
             ierr = faceFE(); CHKERRQ(ierr);
           }
@@ -309,14 +309,14 @@ struct NitscheMethod {
       try {
         int nb_gauss_pts = 0;
         for(int ff = 0;ff<4;ff++) {
-          if(commonData.facesFePtr[ff]==NULL) continue;
+          if(!commonData.facesFePtr[ff]) continue;
           nb_gauss_pts += commonData.faceGaussPts[ff].size2();
         }
         gaussPts.resize(4,nb_gauss_pts,false);
         const double coords_tet[12] = { 0,0,0, 1,0,0, 0,1,0, 0,0,1 };
         int gg = 0;
         for(int ff = 0;ff<4;ff++) {
-          if(commonData.facesFePtr[ff]==NULL) continue;
+          if(!commonData.facesFePtr[ff]) continue;
           int nb_gauss_face_pts = commonData.faceGaussPts[ff].size2();
           //std::cerr << "nb_gauss_face_pts " << nb_gauss_face_pts << std::endl;
           for(int fgg = 0;fgg<nb_gauss_face_pts;fgg++,gg++) {
@@ -536,7 +536,7 @@ struct NitscheMethod {
 
         int gg = 0;
         for(int ff = 0;ff<4;ff++) {
-          if(nitscheCommonData.facesFePtr[ff]==NULL) continue;
+          if(!nitscheCommonData.facesFePtr[ff]) continue;
           int nb_face_gauss_pts = nitscheCommonData.faceGaussPts[ff].size2();
           ierr = getFaceRadius(ff); CHKERRQ(ierr);
           kMatrix0.clear();
@@ -706,7 +706,7 @@ struct NitscheMethod {
 
         int gg = 0;
         for(int ff = 0;ff<4;ff++) {
-          if(nitscheCommonData.facesFePtr[ff]==NULL) continue;
+          if(!nitscheCommonData.facesFePtr[ff]) continue;
           int nb_face_gauss_pts = nitscheCommonData.faceGaussPts[ff].size2();
           ierr = getFaceRadius(ff); CHKERRQ(ierr);
           for(int fgg = 0;fgg<nb_face_gauss_pts;fgg++,gg++) {

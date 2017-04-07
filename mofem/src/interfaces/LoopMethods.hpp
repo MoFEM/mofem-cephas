@@ -255,11 +255,11 @@ struct FEMethod: public BasicMethod {
   PetscErrorCode postProcess();
 
   std::string feName;
-  // const NumeredEntFiniteElement *fePtr;
-  const NumeredEntFiniteElement *numeredEntFiniteElementPtr;
-  const FEDofEntity_multiIndex *dataPtr;
-  const FENumeredDofEntity_multiIndex *rowPtr;
-  const FENumeredDofEntity_multiIndex *colPtr;
+
+  boost::shared_ptr<const NumeredEntFiniteElement> numeredEntFiniteElementPtr;
+  boost::shared_ptr<const FENumeredDofEntity_multiIndex> rowPtr;
+  boost::shared_ptr<const FENumeredDofEntity_multiIndex> colPtr;
+  boost::shared_ptr<const FEDofEntity_multiIndex> dataPtr; 
 
   /** \brief loop over all dofs which are on a particular FE row
     * \ingroup mofem_loops
@@ -483,7 +483,7 @@ struct EntMethod: public BasicMethod {
   boost::shared_ptr<Field> fieldPtr;
   boost::shared_ptr<DofEntity> dofPtr;
   boost::shared_ptr<NumeredDofEntity> dofNumeredPtr;
-  
+
 };
 
 }
