@@ -222,10 +222,10 @@ int main(int argc, char *argv[]) {
   }
 
   // Add elastic element
-  Hooke<adouble> hooke_adouble;
-  Hooke<double> hooke_double;
+  boost::shared_ptr<Hooke<adouble> > hooke_adouble_ptr(new Hooke<adouble>());
+  boost::shared_ptr<Hooke<double> > hooke_double_ptr(new Hooke<double>());
   NonlinearElasticElement elastic(m_field,2);
-  ierr = elastic.setBlocks(&hooke_double,&hooke_adouble); CHKERRQ(ierr);
+  ierr = elastic.setBlocks(hooke_double_ptr,hooke_adouble_ptr); CHKERRQ(ierr);
   ierr = elastic.addElement("ELASTIC","DISPLACEMENT"); CHKERRQ(ierr);
   ierr = elastic.setOperators("DISPLACEMENT","MESH_NODE_POSITIONS",false,true); CHKERRQ(ierr);
 

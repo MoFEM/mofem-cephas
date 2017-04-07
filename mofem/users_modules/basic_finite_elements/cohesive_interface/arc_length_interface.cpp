@@ -510,16 +510,16 @@ int main(int argc, char *argv[]) {
     DisplacementBCFEMethodPreAndPostProc my_dirichlet_bc(m_field,"DISPLACEMENT",Aij,D,F);
     ierr = m_field.get_problem("ELASTIC_MECHANICS",&my_dirichlet_bc.problemPtr); CHKERRQ(ierr);
     ierr = my_dirichlet_bc.iNitalize(); CHKERRQ(ierr);
-    Hooke<adouble> hooke_adouble;
-    Hooke<double> hooke_double;
+    boost::shared_ptr<Hooke<adouble> > hooke_adouble_ptr(new Hooke<adouble>);
+    boost::shared_ptr<Hooke<double> > hooke_double_ptr(new Hooke<double>);
     NonlinearElasticElement elastic(m_field,2);
     {
       int id  = 0;
       elastic.setOfBlocks[id].iD = id;
       elastic.setOfBlocks[id].E = young_modulus;
       elastic.setOfBlocks[id].PoissonRatio = poisson_ratio;
-      elastic.setOfBlocks[id].materialDoublePtr = &hooke_double;
-      elastic.setOfBlocks[id].materialAdoublePtr = &hooke_adouble;
+      elastic.setOfBlocks[id].materialDoublePtr = hooke_double_ptr;
+      elastic.setOfBlocks[id].materialAdoublePtr = hooke_adouble_ptr;
       rval = m_field.get_moab().get_entities_by_type(
         m_field.get_finite_element_meshset("ELASTIC"),MBTET,
         elastic.setOfBlocks[id].tEts,true

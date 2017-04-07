@@ -102,8 +102,8 @@ struct NonlinearElasticElement {
     //Eberlein Fibres stiffness properties
     double k1,k2;
     Range tEts; ///< constrains elements in block set
-    FunctionsToCalculatePiolaKirchhoffI<adouble> *materialAdoublePtr;
-    FunctionsToCalculatePiolaKirchhoffI<double> *materialDoublePtr;
+    boost::shared_ptr<FunctionsToCalculatePiolaKirchhoffI<adouble> > materialAdoublePtr;
+    boost::shared_ptr<FunctionsToCalculatePiolaKirchhoffI<double> > materialDoublePtr;
     Range forcesOnlyOnEntitiesRow;
     Range forcesOnlyOnEntitiesCol;
   };
@@ -539,34 +539,9 @@ struct NonlinearElasticElement {
 
   };
 
-  // /**
-  //  * \brief implement NeoHookean material for bone remodelling
-  //  */
-  // template<typename TYPE>
-  // struct BoneNeoHookan: public NeoHookean<TYPE> {
-  //
-  //   NeoHookean(): NeoHookean<TYPE>() {}
-  //
-  //   PetscErrorCode calculateP_PiolaKirchhoffI(
-  //     const NonlinearElasticElement::BlockData block_data,
-  //     const NumeredEntFiniteElement *fe_ptr
-  //   ) {
-  //     PetscFunctionBegin;
-  //     PetscFunctionReturn(0);
-  //   }
-  //
-  //
-  //   PetscErrorCode NeoHookean_ElasticEnergy(){
-  //       PetscFunctionBegin;
-  //       PetscFunctionReturn(0);
-  //   }
-  //
-  //
-  // };
-
   PetscErrorCode setBlocks(
-    FunctionsToCalculatePiolaKirchhoffI<double> *materialDoublePtr,
-    FunctionsToCalculatePiolaKirchhoffI<adouble> *materialAdoublePtr
+    boost::shared_ptr<FunctionsToCalculatePiolaKirchhoffI<double> > materialDoublePtr,
+    boost::shared_ptr<FunctionsToCalculatePiolaKirchhoffI<adouble> > materialAdoublePtr
   );
 
   PetscErrorCode addElement(string element_name,

@@ -86,9 +86,11 @@ int main(int argc, char *argv[]) {
     ierr = m_field.set_field_order(0,MBVERTEX,"SPATIAL_POSITION",1); CHKERRQ(ierr);
 
     NonlinearElasticElement elastic(m_field,1);
-    NonlinearElasticElement::FunctionsToCalculatePiolaKirchhoffI<double> double_kirchhoff_material;
-    NonlinearElasticElement::FunctionsToCalculatePiolaKirchhoffI<adouble> adouble_kirchhoff_material;
-    ierr = elastic.setBlocks(&double_kirchhoff_material,&adouble_kirchhoff_material); CHKERRQ(ierr);
+    boost::shared_ptr<NonlinearElasticElement::FunctionsToCalculatePiolaKirchhoffI<double> >
+    double_kirchhoff_material_ptr(new NonlinearElasticElement::FunctionsToCalculatePiolaKirchhoffI<double>());
+    boost::shared_ptr<NonlinearElasticElement::FunctionsToCalculatePiolaKirchhoffI<adouble> >
+    adouble_kirchhoff_material_ptr(new NonlinearElasticElement::FunctionsToCalculatePiolaKirchhoffI<adouble>());
+    ierr = elastic.setBlocks(double_kirchhoff_material_ptr,adouble_kirchhoff_material_ptr); CHKERRQ(ierr);
     ierr = elastic.addElement("ELASTIC","SPATIAL_POSITION"); CHKERRQ(ierr);
     ierr = elastic.setOperators("SPATIAL_POSITION"); CHKERRQ(ierr);
 

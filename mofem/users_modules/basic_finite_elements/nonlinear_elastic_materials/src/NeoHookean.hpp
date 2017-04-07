@@ -40,7 +40,7 @@ struct NeoHookean: public NonlinearElasticElement::FunctionsToCalculatePiolaKirc
       Richard D. Wood
 
       */
-    PetscErrorCode NeoHooke_PiolaKirchhoffII() {
+    virtual PetscErrorCode NeoHooke_PiolaKirchhoffII() {
       PetscFunctionBegin;
       PetscErrorCode ierr;
       invC.resize(3,3);
@@ -82,7 +82,7 @@ struct NeoHookean: public NonlinearElasticElement::FunctionsToCalculatePiolaKirc
     Richard D. Wood
 
     */
-    PetscErrorCode NeoHookean_ElasticEnergy(){
+    virtual PetscErrorCode NeoHookean_ElasticEnergy(){
         PetscFunctionBegin;
         this->eNergy = 0;
         for(int ii = 0;ii<3;ii++) {
@@ -94,8 +94,10 @@ struct NeoHookean: public NonlinearElasticElement::FunctionsToCalculatePiolaKirc
         PetscFunctionReturn(0);
     }
 
-    virtual PetscErrorCode calculateElasticEnergy(const NonlinearElasticElement::BlockData block_data,
-      const NumeredEntFiniteElement *fe_ptr) {
+    PetscErrorCode calculateElasticEnergy(
+      const NonlinearElasticElement::BlockData block_data,
+      const NumeredEntFiniteElement *fe_ptr
+    ) {
       PetscFunctionBegin;
       PetscErrorCode ierr;
       this->lambda = LAMBDA(block_data.E,block_data.PoissonRatio);

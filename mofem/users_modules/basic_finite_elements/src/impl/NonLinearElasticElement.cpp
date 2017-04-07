@@ -1120,11 +1120,27 @@ PetscErrorCode NonlinearElasticElement::OpLhsEshelby_dX::getJac(DataForcesAndSur
 }
 
 PetscErrorCode NonlinearElasticElement::setBlocks(
-  FunctionsToCalculatePiolaKirchhoffI<double> *materialDoublePtr,
-  FunctionsToCalculatePiolaKirchhoffI<adouble> *materialAdoublePtr) {
+  boost::shared_ptr<FunctionsToCalculatePiolaKirchhoffI<double> > materialDoublePtr,
+  boost::shared_ptr<FunctionsToCalculatePiolaKirchhoffI<adouble> > materialAdoublePtr
+) {
   PetscFunctionBegin;
   ErrorCode rval;
   PetscErrorCode ierr;
+
+  if(!materialDoublePtr) {
+    SETERRQ(
+      mField.get_comm(),
+      MOFEM_DATA_INCONSISTENCY,
+      "Pointer for materialDoublePtr not allocated"
+    );
+  }
+  if(!materialAdoublePtr) {
+    SETERRQ(
+      mField.get_comm(),
+      MOFEM_DATA_INCONSISTENCY,
+      "Pointer for materialAdoublePtr not allocated"
+    );
+  }
 
   for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BLOCKSET|MAT_ELASTICSET,it)) {
     Mat_Elastic mydata;
