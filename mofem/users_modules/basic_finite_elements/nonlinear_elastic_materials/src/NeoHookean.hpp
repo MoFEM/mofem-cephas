@@ -96,7 +96,7 @@ struct NeoHookean: public NonlinearElasticElement::FunctionsToCalculatePiolaKirc
 
     PetscErrorCode calculateElasticEnergy(
       const NonlinearElasticElement::BlockData block_data,
-      const NumeredEntFiniteElement *fe_ptr
+      boost::shared_ptr<const NumeredEntFiniteElement> fe_ptr
     ) {
       PetscFunctionBegin;
       PetscErrorCode ierr;
