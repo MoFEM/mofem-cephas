@@ -76,7 +76,7 @@ struct Hooke: public NonlinearElasticElement::FunctionsToCalculatePiolaKirchhoff
       */
     virtual PetscErrorCode calculateElasticEnergy(
       const NonlinearElasticElement::BlockData block_data,
-      const NumeredEntFiniteElement *fe_ptr
+      boost::shared_ptr<const NumeredEntFiniteElement> fe_ptr
     ) {
       PetscFunctionBegin;
       this->lambda = LAMBDA(block_data.E,block_data.PoissonRatio);
