@@ -891,8 +891,8 @@ EntFiniteElement::EntFiniteElement(
 interface_FiniteElement<FiniteElement>(fe_ptr),
 interface_RefElement<RefElement>(ref_finite_element),
 row_dof_view(boost::shared_ptr<DofEntity_multiIndex_uid_view>(new DofEntity_multiIndex_uid_view)),
-col_dof_view(boost::shared_ptr<DofEntity_multiIndex_uid_view>(new DofEntity_multiIndex_uid_view)) {
-
+col_dof_view(boost::shared_ptr<DofEntity_multiIndex_uid_view>(new DofEntity_multiIndex_uid_view)),
+data_dofs(boost::shared_ptr<FEDofEntity_multiIndex>(new FEDofEntity_multiIndex)) {
   //get finite element entity
   global_uid =  getGlobalUniqueIdCalculate();
   //add ents to meshset
@@ -918,8 +918,8 @@ std::ostream& operator<<(std::ostream& os,const EntFiniteElement& e) {
   }
   os << "data dof_uids ";
   FEDofEntity_multiIndex::iterator dit;
-  dit = e.data_dofs.begin();
-  for(;dit!=e.data_dofs.end();dit++) {
+  dit = e.data_dofs->begin();
+  for(;dit!=e.data_dofs->end();dit++) {
     os << (*dit)->getGlobalUniqueId() << " ";
   }
   return os;
@@ -984,7 +984,7 @@ PetscErrorCode EntFiniteElement::getDataDofView(
 ) const {
   PetscFunctionBegin;
   PetscErrorCode ierr;
-  ierr = get_fe_dof_view(data_dofs,dofs,dofs_view,operation_type); CHKERRQ(ierr);
+  ierr = get_fe_dof_view(*data_dofs,dofs,dofs_view,operation_type); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 

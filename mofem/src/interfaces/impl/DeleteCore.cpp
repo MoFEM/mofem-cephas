@@ -65,7 +65,7 @@ namespace MoFEM {
           if(ent_fe_ptr->row_dof_view!=ent_fe_ptr->col_dof_view) {
             ent_fe_ptr->col_dof_view->erase((*dit)->getGlobalUniqueId());
           }
-          ent_fe_ptr->data_dofs.get<Unique_mi_tag>().erase((*dit)->getGlobalUniqueId());
+          ent_fe_ptr->data_dofs->get<Unique_mi_tag>().erase((*dit)->getGlobalUniqueId());
         }
         dit = dofsField.erase(dit);
         if(dit==dofsField.end()) break;
@@ -104,7 +104,7 @@ namespace MoFEM {
           if(ent_fe_ptr->row_dof_view!=ent_fe_ptr->col_dof_view) {
             ent_fe_ptr->col_dof_view->erase((*dit)->getGlobalUniqueId());
           }
-          ent_fe_ptr->data_dofs.get<Unique_mi_tag>().erase((*dit)->getGlobalUniqueId());
+          ent_fe_ptr->data_dofs->get<Unique_mi_tag>().erase((*dit)->getGlobalUniqueId());
         }
         dit = dofsField.erase(dit);
       }

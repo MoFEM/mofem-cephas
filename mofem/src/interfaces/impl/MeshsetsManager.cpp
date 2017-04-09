@@ -52,7 +52,6 @@
 
 #include <MeshsetsManager.hpp>
 
-#include <boost/program_options.hpp>
 using namespace std;
 namespace po = boost::program_options;
 
@@ -550,7 +549,7 @@ namespace MoFEM {
 
   };
 
-  PetscErrorCode MeshsetsManager::setMeshsetFromFile(const string file_name) {
+  PetscErrorCode MeshsetsManager::setMeshsetFromFile(const string file_name,bool clean_file_options) {
     PetscErrorCode ierr;
     MoFEM::Interface &m_field = cOre;
     moab::Interface &moab = m_field.get_moab();
@@ -558,7 +557,11 @@ namespace MoFEM {
     try {
       std::ifstream ini_file(file_name.c_str(),std::ifstream::in);
       po::variables_map vm;
-      po::options_description config_file_options;
+      if(clean_file_options) {
+        configFileOptionsPtr = boost::shared_ptr<boost::program_options::options_description>(
+          new po::options_description()
+        );
+      }
       map<int,BlockData> block_lists;
       for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,BLOCKSET,it)) {
         block_lists[it->getMeshsetId()].cubitMeshset = it->getMeshset();
@@ -568,7 +571,7 @@ namespace MoFEM {
         str_id << "block_" << it->getMeshsetId() << ".id";
         std::ostringstream str_name;
         str_name << "block_" << it->getMeshsetId() << ".name";
-        config_file_options.add_options()
+        configFileOptionsPtr->add_options()
         (str_add.str().c_str(),po::value<string>(&block_lists[it->getMeshsetId()].addType)->default_value("UNKNOWNSET"),"Add block set")
         (str_id.str().c_str(),po::value<int>(&block_lists[it->getMeshsetId()].iD)->default_value(-1),"Id of meshset")
         (str_name.str().c_str(),po::value<string>(&block_lists[it->getMeshsetId()].nAme)->default_value(""),"Name of the meshset");
@@ -576,7 +579,7 @@ namespace MoFEM {
         for(int ii = 1;ii<=10;ii++) {
           std::ostringstream str_user;
           str_user << "block_" << it->getMeshsetId() << ".user" << ii;
-          config_file_options.add_options()
+          configFileOptionsPtr->add_options()
           (str_user.str().c_str(),po::value<double>(&block_lists[it->getMeshsetId()].aTtr[ii-1])->default_value(0.0),"Add block attribute");
         }
         // Mat elastic
@@ -590,7 +593,7 @@ namespace MoFEM {
           str_poisson << "block_" << it->getMeshsetId() << ".poisson";
           std::ostringstream str_thermal_expansion;
           str_thermal_expansion << "block_" << it->getMeshsetId() << ".thermalexpansion";
-          config_file_options.add_options()
+          configFileOptionsPtr->add_options()
           (str_young.str().c_str(),po::value<double>(&block_lists[it->getMeshsetId()].matElastic.data.Young)->default_value(-1),"Young modulus")
           (str_poisson.str().c_str(),po::value<double>(&block_lists[it->getMeshsetId()].matElastic.data.Poisson)->default_value(-2),"Poisson ratio")
           (str_thermal_expansion.str().c_str(),po::value<double>(&block_lists[it->getMeshsetId()].matElastic.data.ThermalExpansion)->default_value(-1),"Thermal expansion");
@@ -604,7 +607,7 @@ namespace MoFEM {
           str_conductivity << "block_" << it->getMeshsetId() << ".conductivity";
           std::ostringstream str_capacity;
           str_capacity << "block_" << it->getMeshsetId() << ".capacity";
-          config_file_options.add_options()
+          configFileOptionsPtr->add_options()
           (str_conductivity.str().c_str(),po::value<double>(&block_lists[it->getMeshsetId()].matThermal.data.Conductivity)->default_value(-1),"Conductivity")
           (str_capacity.str().c_str(),po::value<double>(&block_lists[it->getMeshsetId()].matThermal.data.HeatCapacity)->default_value(-1),"Capacity");
           // TODO Add users parameters
@@ -647,7 +650,7 @@ namespace MoFEM {
           str_value5 << "block_" << it->getMeshsetId() << ".disp_ry";
           std::ostringstream str_value6;
           str_value6 << "block_" << it->getMeshsetId() << ".disp_rz";
-          config_file_options.add_options()
+          configFileOptionsPtr->add_options()
           (str_flag1.str().c_str(),po::value<char>(&block_lists[it->getMeshsetId()].dispBc.data.flag1)->default_value(0),"flag1")
           (str_flag2.str().c_str(),po::value<char>(&block_lists[it->getMeshsetId()].dispBc.data.flag2)->default_value(0),"flag2")
           (str_flag3.str().c_str(),po::value<char>(&block_lists[it->getMeshsetId()].dispBc.data.flag3)->default_value(0),"flag3")
@@ -689,7 +692,7 @@ namespace MoFEM {
           str_value7 << "block_" << it->getMeshsetId() << ".moment_my";
           std::ostringstream str_value8;
           str_value8 << "block_" << it->getMeshsetId() << ".moment_mz";
-          config_file_options.add_options()
+          configFileOptionsPtr->add_options()
           (str_value1.str().c_str(),po::value<double>(&block_lists[it->getMeshsetId()].forceBc.data.value1)->default_value(0),"value1")
           (str_value2.str().c_str(),po::value<double>(&block_lists[it->getMeshsetId()].forceBc.data.value2)->default_value(0),"value2")
           (str_value3.str().c_str(),po::value<double>(&block_lists[it->getMeshsetId()].forceBc.data.value3)->default_value(0),"value3")
@@ -719,7 +722,7 @@ namespace MoFEM {
           str_flag1 << "block_" << it->getMeshsetId() << ".temperature_flag1";
           std::ostringstream str_value1;
           str_value1 << "block_" << it->getMeshsetId() << ".temperature_t";
-          config_file_options.add_options()
+          configFileOptionsPtr->add_options()
           (str_flag1.str().c_str(),po::value<char>(&block_lists[it->getMeshsetId()].temperatureBc.data.flag1)->default_value(0),"flag1")
           (str_value1.str().c_str(),po::value<double>(&block_lists[it->getMeshsetId()].temperatureBc.data.value1)->default_value(0),"value1");
           // TODO: Add more cases, see above
@@ -734,7 +737,7 @@ namespace MoFEM {
           str_flag2 << "block_" << it->getMeshsetId() << ".pressure_flag2";
           std::ostringstream str_value1;
           str_value1 << "block_" << it->getMeshsetId() << ".pressure_magnitude";
-          config_file_options.add_options()
+          configFileOptionsPtr->add_options()
           (str_flag2.str().c_str(),po::value<char>(&block_lists[it->getMeshsetId()].pressureBc.data.flag2)->default_value(0),"flag2")
           (str_value1.str().c_str(),po::value<double>(&block_lists[it->getMeshsetId()].pressureBc.data.value1)->default_value(0),"value1");
         }
@@ -752,12 +755,12 @@ namespace MoFEM {
           str_flag1 << "block_" << it->getMeshsetId() << ".heatflux_flag1";
           std::ostringstream str_value1;
           str_value1 << "block_" << it->getMeshsetId() << ".heatflux_magnitude";
-          config_file_options.add_options()
+          configFileOptionsPtr->add_options()
           (str_flag1.str().c_str(),po::value<char>(&block_lists[it->getMeshsetId()].heatFluxBc.data.flag1)->default_value(0),"flag1")
           (str_value1.str().c_str(),po::value<double>(&block_lists[it->getMeshsetId()].heatFluxBc.data.value1)->default_value(0),"value1");
         }
       }
-      po::parsed_options parsed = parse_config_file(ini_file,config_file_options,true);
+      po::parsed_options parsed = parse_config_file(ini_file,*configFileOptionsPtr,true);
       store(parsed,vm);
       po::notify(vm);
       for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,BLOCKSET,it)) {

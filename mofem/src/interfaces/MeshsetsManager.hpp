@@ -629,7 +629,7 @@ namespace MoFEM {
      * @return           error code
 
      */
-    PetscErrorCode setMeshsetFromFile(const string file_name);
+    PetscErrorCode setMeshsetFromFile(const string file_name,const bool clean_file_options = true);
 
     /**
      * \brief get name of config file from line command '-meshsets_config'
@@ -639,6 +639,15 @@ namespace MoFEM {
 
      */
     PetscErrorCode setMeshsetFromFile();
+
+
+    /**
+     * \brief Get confi file options, use with care
+     * @return error code
+     */
+    inline boost::shared_ptr<boost::program_options::options_description>& getConfigFileOptionsPtr() {
+      return configFileOptionsPtr;
+    }
 
 
   protected:
@@ -652,6 +661,8 @@ namespace MoFEM {
 
     //cubit
     CubitMeshSet_multiIndex cubitMeshsets;	   ///< cubit meshsets
+    boost::shared_ptr<boost::program_options::options_description> configFileOptionsPtr; ///< config file options
+
 
   };
 

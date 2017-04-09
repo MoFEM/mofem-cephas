@@ -39,13 +39,16 @@ struct ElasticMaterials {
   bool iNitialized;
 
   ElasticMaterials(MoFEM::Interface &m_field):
-    mField(m_field),defMaterial(MAT_KIRCHOFF),
-    configFile("elastic_material.in"),
-    iNitialized(false) {}
+  mField(m_field),defMaterial(MAT_KIRCHOFF),
+  configFile("elastic_material.in"),
+  iNitialized(false) {}
 
-
-  boost::ptr_map<std::string,NonlinearElasticElement::FunctionsToCalculatePiolaKirchhoffI<adouble> > aDoubleMaterialModel;
-  boost::ptr_map<std::string,NonlinearElasticElement::FunctionsToCalculatePiolaKirchhoffI<double> > doubleMaterialModel;
+  std::map<
+  std::string,boost::shared_ptr<NonlinearElasticElement::FunctionsToCalculatePiolaKirchhoffI<adouble> >
+  > aDoubleMaterialModel;
+  std::map<
+  std::string,boost::shared_ptr<NonlinearElasticElement::FunctionsToCalculatePiolaKirchhoffI<double> >
+  > doubleMaterialModel;
 
   struct BlockOptionData {
     string mAterial;
@@ -79,18 +82,18 @@ struct ElasticMaterials {
     PetscFunctionBegin;
     //add new material below
     string mat_name;
-    mat_name = MAT_KIRCHOFF;
-    aDoubleMaterialModel.insert(mat_name,new NonlinearElasticElement::FunctionsToCalculatePiolaKirchhoffI<adouble>());
-    doubleMaterialModel.insert(mat_name,new NonlinearElasticElement::FunctionsToCalculatePiolaKirchhoffI<double>());
-    mat_name = MAT_HOOKE;
-    aDoubleMaterialModel.insert(mat_name,new Hooke<adouble>());
-    doubleMaterialModel.insert(mat_name,new Hooke<double>());
-    mat_name = MAT_NEOHOOKEAN;
-    aDoubleMaterialModel.insert(mat_name,new NeoHookean<adouble>());
-    doubleMaterialModel.insert(mat_name,new NeoHookean<double>());
+    aDoubleMaterialModel[MAT_KIRCHOFF] = boost::make_shared<NonlinearElasticElement::FunctionsToCalculatePiolaKirchhoffI<adouble> >();
+    doubleMaterialModel[MAT_KIRCHOFF] = boost::make_shared<NonlinearElasticElement::FunctionsToCalculatePiolaKirchhoffI<double> >();
+    aDoubleMaterialModel[MAT_HOOKE] = boost::make_shared<Hooke<adouble> >();
+    doubleMaterialModel[MAT_HOOKE] = boost::make_shared<Hooke<double> >();
+    aDoubleMaterialModel[MAT_NEOHOOKEAN] = boost::make_shared<NeoHookean<adouble> >();
+    doubleMaterialModel[MAT_NEOHOOKEAN] = boost::make_shared<NeoHookean<double> >();
     std::ostringstream avilable_materials;
     avilable_materials << "set elastic material < ";
-    boost::ptr_map<std::string,NonlinearElasticElement::FunctionsToCalculatePiolaKirchhoffI<double> >::iterator mit;
+    std::map<
+    std::string,
+    boost::shared_ptr<NonlinearElasticElement::FunctionsToCalculatePiolaKirchhoffI<double> >
+    >::iterator mit;
     mit = doubleMaterialModel.begin();
     for(;mit!=doubleMaterialModel.end();mit++) {
       avilable_materials << mit->first << " ";
@@ -288,16 +291,16 @@ struct ElasticMaterials {
       PetscPrintf(mField.get_comm(),"Block Id %d Young Modulus %3.2g Poisson Ration %3.2f Material model %s\n",
       id,set_of_blocks[id].E,set_of_blocks[id].PoissonRatio,blockData[id].mAterial.c_str());
       if(blockData[id].mAterial.compare(MAT_KIRCHOFF)==0) {
-        set_of_blocks[id].materialDoublePtr = &doubleMaterialModel.at(MAT_KIRCHOFF);
-        set_of_blocks[id].materialAdoublePtr = &aDoubleMaterialModel.at(MAT_KIRCHOFF);
+        set_of_blocks[id].materialDoublePtr = doubleMaterialModel.at(MAT_KIRCHOFF);
+        set_of_blocks[id].materialAdoublePtr = aDoubleMaterialModel.at(MAT_KIRCHOFF);
       } else
       if(blockData[id].mAterial.compare(MAT_HOOKE)==0) {
-        set_of_blocks[id].materialDoublePtr = &doubleMaterialModel.at(MAT_HOOKE);
-        set_of_blocks[id].materialAdoublePtr = &aDoubleMaterialModel.at(MAT_HOOKE);
+        set_of_blocks[id].materialDoublePtr = doubleMaterialModel.at(MAT_HOOKE);
+        set_of_blocks[id].materialAdoublePtr = aDoubleMaterialModel.at(MAT_HOOKE);
       } else
       if(blockData[id].mAterial.compare(MAT_NEOHOOKEAN)==0) {
-        set_of_blocks[id].materialDoublePtr = &doubleMaterialModel.at(MAT_NEOHOOKEAN);
-        set_of_blocks[id].materialAdoublePtr = &aDoubleMaterialModel.at(MAT_NEOHOOKEAN);
+        set_of_blocks[id].materialDoublePtr = doubleMaterialModel.at(MAT_NEOHOOKEAN);
+        set_of_blocks[id].materialAdoublePtr = aDoubleMaterialModel.at(MAT_NEOHOOKEAN);
       } else {
         SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"field with that space is not implemented");
       }

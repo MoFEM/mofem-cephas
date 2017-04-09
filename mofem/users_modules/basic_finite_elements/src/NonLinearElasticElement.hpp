@@ -102,8 +102,8 @@ struct NonlinearElasticElement {
     //Eberlein Fibres stiffness properties
     double k1,k2;
     Range tEts; ///< constrains elements in block set
-    FunctionsToCalculatePiolaKirchhoffI<adouble> *materialAdoublePtr;
-    FunctionsToCalculatePiolaKirchhoffI<double> *materialDoublePtr;
+    boost::shared_ptr<FunctionsToCalculatePiolaKirchhoffI<adouble> > materialAdoublePtr;
+    boost::shared_ptr<FunctionsToCalculatePiolaKirchhoffI<double> > materialDoublePtr;
     Range forcesOnlyOnEntitiesRow;
     Range forcesOnlyOnEntitiesCol;
   };
@@ -238,7 +238,7 @@ struct NonlinearElasticElement {
       */
     virtual PetscErrorCode calculateP_PiolaKirchhoffI(
       const BlockData block_data,
-      const NumeredEntFiniteElement *fe_ptr
+      boost::shared_ptr<const NumeredEntFiniteElement> fe_ptr
     ) {
       PetscFunctionBegin;
       PetscErrorCode ierr;
@@ -271,7 +271,7 @@ struct NonlinearElasticElement {
       */
     virtual PetscErrorCode calculateElasticEnergy(
       const BlockData block_data,
-      const NumeredEntFiniteElement *fe_ptr
+      boost::shared_ptr<const NumeredEntFiniteElement> fe_ptr
     ) {
       PetscFunctionBegin;
       PetscErrorCode ierr;
@@ -296,7 +296,7 @@ struct NonlinearElasticElement {
     */
     virtual PetscErrorCode calculateSiGma_EshelbyStress(
       const BlockData block_data,
-      const NumeredEntFiniteElement *fe_ptr
+      boost::shared_ptr<const NumeredEntFiniteElement> fe_ptr
     ) {
       PetscFunctionBegin;
       PetscErrorCode ierr;
@@ -540,8 +540,8 @@ struct NonlinearElasticElement {
   };
 
   PetscErrorCode setBlocks(
-    FunctionsToCalculatePiolaKirchhoffI<double> *materialDoublePtr,
-    FunctionsToCalculatePiolaKirchhoffI<adouble> *materialAdoublePtr
+    boost::shared_ptr<FunctionsToCalculatePiolaKirchhoffI<double> > materialDoublePtr,
+    boost::shared_ptr<FunctionsToCalculatePiolaKirchhoffI<adouble> > materialAdoublePtr
   );
 
   PetscErrorCode addElement(string element_name,
