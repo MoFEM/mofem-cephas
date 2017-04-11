@@ -87,7 +87,8 @@ struct NonlinearElasticElement {
   short int tAg;
 
   NonlinearElasticElement(
-    MoFEM::Interface &m_field,short int tag);
+    MoFEM::Interface &m_field,short int tag
+  );
 
   template<typename TYPE>
   struct FunctionsToCalculatePiolaKirchhoffI;
@@ -107,19 +108,27 @@ struct NonlinearElasticElement {
     Range forcesOnlyOnEntitiesRow;
     Range forcesOnlyOnEntitiesCol;
   };
+
   std::map<int,BlockData> setOfBlocks; ///< maps block set id with appropriate BlockData
 
   /** \brief common data used by volume elements
     * \ingroup nonlinear_elastic_elem
     */
   struct CommonData {
+
     std::map<std::string,std::vector<VectorDouble > > dataAtGaussPts;
     std::map<std::string,std::vector<MatrixDouble > > gradAtGaussPts;
     string spatialPositions;
     string meshPositions;
     std::vector<MatrixDouble > sTress;
-    std::vector<std::vector<double*> > jacStressRowPtr;
     std::vector<MatrixDouble > jacStress; ///< this is simply material tangent operator
+
+    // This part can be used to calulate stress directly from potential
+
+    std::vector<double> eNergy;
+    std::vector<VectorDouble > jacEnergy;
+    std::vector<VectorDouble > hessianEnergy;
+
    };
   CommonData commonData;
 
@@ -254,7 +263,8 @@ struct NonlinearElasticElement {
     }
 
     virtual PetscErrorCode setUserActiveVariables(
-      int &nb_active_variables) {
+      int &nb_active_variables
+    ) {
       PetscFunctionBegin;
       PetscFunctionReturn(0);
     }
@@ -358,7 +368,6 @@ struct NonlinearElasticElement {
     bool fUnction;
     bool aLe;
     bool fieldDisp;
-    bool lInear; ///< If true Jacobian is evaluated only once
 
     /**
       \brief Construct operator to calculate Piola-Kirchhoff stress or its derivatives over gradient deformation
@@ -377,20 +386,118 @@ struct NonlinearElasticElement {
       int tag,
       bool jacobian,
       bool ale,
-      bool field_disp,
-      bool linear = false
+      bool field_disp
     );
 
     VectorDouble activeVariables;
-    int nb_active_variables;
+    int nbActiveVariables;
 
     std::vector<MatrixDouble > *ptrh;
     std::vector<MatrixDouble > *ptrH;
 
+    /**
+     * \brief Calculate Paola-Kirchhoff I stress
+     * @return error code
+     */
+    virtual PetscErrorCode calculateStress(const int gg);
 
-    virtual PetscErrorCode calculateStress();
+    /**
+     * \brief Record ADOL-C tape
+     * @return error code
+     */
+    virtual PetscErrorCode recordTag(const int gg);
 
+    /**
+     * \brief Play ADOL-C tape
+     * @return error code
+     */
+    virtual PetscErrorCode playTag(const int gg);
+
+    /**
+     * \brief Cgeck if tape is recorded for given integration point
+     * @param  gg integration point
+     * @return    true if tag is recorded
+     */
+    virtual bool recordTagForIntegrationPoint(const int gg) {
+      if(gg == 0) return true;
+      return false;
+    }
+
+    /**
+     * \brief Calculate stress or jacobian at gauss points
+     *
+     * @param  row_side
+     * @param  row_type
+     * @param  row_data
+     * @return          error code
+     */
     PetscErrorCode doWork(int row_side,EntityType row_type,DataForcesAndSurcesCore::EntData &row_data);
+
+  };
+
+  /**
+   * \brief Calulate explicit direvative of free energy
+   */
+  struct OpJacobianEnergy: public MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator {
+
+    BlockData &dAta;
+    CommonData &commonData;
+
+    int tAg;            ///< tape tag
+    bool gRadient;      ///< if set true gradient of energy is calculated
+    bool hEssian;       ///< if set true hessian of energy is calculated
+    bool aLe;           ///< true if arbitrary Lagrangian-Eulerian formulation
+    bool fieldDisp;     ///< true if displacements instead spatial positions used
+
+    OpJacobianEnergy(
+      const std::string field_name, ///< field name for spatial positions or displacements
+      BlockData &data,
+      CommonData &common_data,
+      int tag,
+      bool gradient,
+      bool hessian,
+      bool ale,
+      bool field_disp
+    );
+
+    VectorDouble activeVariables;
+    int nbActiveVariables;
+
+    std::vector<MatrixDouble > *ptrh;
+    std::vector<MatrixDouble > *ptrH;
+
+    /**
+     * \brief Cgeck if tape is recorded for given integration point
+     * @param  gg integration point
+     * @return    true if tag is recorded
+     */
+    virtual bool recordTagForIntegrationPoint(const int gg) {
+      if(gg == 0) return true;
+      return false;
+    }
+
+    /**
+     * \brief Calculate Paola-Kirchhoff I stress
+     * @return error code
+     */
+    virtual PetscErrorCode calculateEnergy(const int gg);
+
+    /**
+     * \brief Record ADOL-C tape
+     * @return error code
+     */
+    virtual PetscErrorCode recordTag(const int gg);
+
+    /**
+     * \brief Play ADOL-C tape
+     * @return error code
+     */
+    virtual PetscErrorCode playTag(const int gg);
+
+
+    PetscErrorCode doWork(
+      int row_side,EntityType row_type,DataForcesAndSurcesCore::EntData &row_data
+    );
 
   };
 
@@ -507,7 +614,7 @@ struct NonlinearElasticElement {
       bool ale
     );
 
-    PetscErrorCode calculateStress();
+    PetscErrorCode calculateStress(const int gg);
 
   };
 
