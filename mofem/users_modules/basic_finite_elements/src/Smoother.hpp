@@ -146,7 +146,7 @@ struct Smoother {
       field_name,data,common_data,tag,jacobian,false,false
     ) {}
 
-    PetscErrorCode calculateStress() {
+    PetscErrorCode calculateStress(const int gg) {
       PetscFunctionBegin;
 
       try {
@@ -154,10 +154,10 @@ struct Smoother {
         PetscErrorCode ierr;
         ierr = dAta.materialAdoublePtr->calculateP_PiolaKirchhoffI(dAta,getNumeredEntFiniteElementPtr()); CHKERRQ(ierr);
 
-        commonData.sTress[0].resize(3,3,false);
+        commonData.sTress[gg].resize(3,3,false);
         for(int dd1 = 0;dd1<3;dd1++) {
           for(int dd2 = 0;dd2<3;dd2++) {
-            dAta.materialAdoublePtr->P(dd1,dd2) >>= (commonData.sTress[0])(dd1,dd2);
+            dAta.materialAdoublePtr->P(dd1,dd2) >>= (commonData.sTress[gg])(dd1,dd2);
           }
         }
 
