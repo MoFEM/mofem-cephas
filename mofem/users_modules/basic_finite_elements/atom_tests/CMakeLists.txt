@@ -11,6 +11,10 @@
 # You should have received a copy of the GNU Lesser General Public
 # License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 
+include_directories(
+  ${UM_SOURCE_DIR}/basic_finite_elements/nonlinear_elastic_materials/src
+)
+
 set(UM_CURRENT_SOURCE_DIR ${UM_SOURCE_DIR}/basic_finite_elements/atom_tests)
 
 # body forces test
@@ -238,7 +242,10 @@ if(ADOL-C_LIBRARY)
 
   cm_export_file("LShape.h5m" export_atom_tests_basic_fe)
 
-  bfe_add_executable(nonlinear_elastic_basic_test ${UM_CURRENT_SOURCE_DIR}/nonlinear_elastic.cpp)
+  bfe_add_executable(
+    nonlinear_elastic_basic_test
+    ${UM_CURRENT_SOURCE_DIR}/nonlinear_elastic.cpp
+  )
   target_link_libraries(nonlinear_elastic_basic_test
     users_modules
     mofem_finite_elements
@@ -250,10 +257,40 @@ if(ADOL-C_LIBRARY)
     mofem_third_party
     ${MoFEM_PROJECT_LIBS}
   )
-
   add_test(
     basic_nonlinear_elastic_basic_test ${MoFEM_MPI_RUN} ${MPI_RUN_FLAGS} -np 1
     ${CMAKE_CURRENT_BINARY_DIR}/nonlinear_elastic_basic_test -my_file LShape.h5m
+  )
+
+  bfe_add_executable(
+    nonlinear_elastic_test_jacobian
+    ${UM_CURRENT_SOURCE_DIR}/nonlinear_elastic_test_jacobian.cpp
+  )
+  target_link_libraries(
+    nonlinear_elastic_test_jacobian
+    users_modules
+    mofem_finite_elements
+    mofem_interfaces
+    mofem_multi_indices
+    mofem_petsc
+    mofem_approx
+    mofem_cblas
+    mofem_third_party
+    ${MoFEM_PROJECT_LIBS}
+  )
+  add_test(
+    basic_nonlinear_elastic_jacobian_test ${MoFEM_MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+    ${CMAKE_CURRENT_BINARY_DIR}/nonlinear_elastic_test_jacobian -my_file LShape.h5m
+  )
+  add_test(
+    basic_nonlinear_hooke_mat_test ${MoFEM_MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+    ${CMAKE_CURRENT_BINARY_DIR}/nonlinear_elastic_test_jacobian
+    -my_file LShape.h5m -mat HOOKE
+  )
+  add_test(
+    basic_nonlinear_neohookean_mat_test ${MoFEM_MPI_RUN} ${MPI_RUN_FLAGS} -np 1
+    ${CMAKE_CURRENT_BINARY_DIR}/nonlinear_elastic_test_jacobian
+    -my_file LShape.h5m -mat NEOHOOKEAN
   )
 
 endif(ADOL-C_LIBRARY)

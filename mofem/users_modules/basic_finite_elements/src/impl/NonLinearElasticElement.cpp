@@ -243,10 +243,8 @@ PetscErrorCode NonlinearElasticElement::OpGetDataAtGaussPts::doWork(
     //std::cerr << values << std::endl;
     //std::cerr << valuesAtGaussPts[0] << std::endl;
 
-  } catch (const std::exception& ex) {
-    std::ostringstream ss;
-    ss << "throw in method: " << ex.what() << std::endl;
-    SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+  } catch (MoFEMException const &e) {
+    SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
   }
 
   PetscFunctionReturn(0);
@@ -264,8 +262,7 @@ NonlinearElasticElement::OpJacobianPiolaKirchhoffStress::OpJacobianPiolaKirchhof
   int tag,
   bool jacobian,
   bool ale,
-  bool field_disp,
-  bool linear
+  bool field_disp
 ):
 VolumeElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROW),
 dAta(data),
@@ -275,31 +272,135 @@ adlocReturnValue(0),
 jAcobian(jacobian),
 fUnction(!jacobian),
 aLe(ale),
-fieldDisp(field_disp),
-lInear(linear)
-{}
+fieldDisp(field_disp) {
 
-PetscErrorCode NonlinearElasticElement::OpJacobianPiolaKirchhoffStress::calculateStress() {
+}
+
+PetscErrorCode NonlinearElasticElement::OpJacobianPiolaKirchhoffStress::calculateStress(const int gg) {
   PetscFunctionBegin;
   try {
     PetscErrorCode ierr;
-    ierr = dAta.materialAdoublePtr->calculateP_PiolaKirchhoffI(dAta,getNumeredEntFiniteElementPtr()); CHKERRQ(ierr);
+    ierr = dAta.materialAdoublePtr->calculateP_PiolaKirchhoffI(
+      dAta,getNumeredEntFiniteElementPtr()
+    ); CHKERRQ(ierr);
     if(aLe) {
       dAta.materialAdoublePtr->P =
         dAta.materialAdoublePtr->detH*prod(dAta.materialAdoublePtr->P,trans(dAta.materialAdoublePtr->invH));
     }
-    commonData.sTress[0].resize(3,3,false);
+    commonData.sTress[gg].resize(3,3,false);
     for(int dd1 = 0;dd1<3;dd1++) {
       for(int dd2 = 0;dd2<3;dd2++) {
-        dAta.materialAdoublePtr->P(dd1,dd2) >>= (commonData.sTress[0])(dd1,dd2);
+        dAta.materialAdoublePtr->P(dd1,dd2) >>= (commonData.sTress[gg])(dd1,dd2);
       }
     }
     //std::cerr << "P " << dAta.materialAdoublePtr->P << std::endl;
-  } catch (const std::exception& ex) {
-    std::ostringstream ss;
-    ss << "throw in method: " << ex.what() << std::endl;
-    SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+  } catch (MoFEMException const &e) {
+    SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
   }
+
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode NonlinearElasticElement::OpJacobianPiolaKirchhoffStress::recordTag(const int gg) {
+  PetscFunctionBegin;
+
+  trace_on(tAg);
+
+  try {
+
+    dAta.materialAdoublePtr->F.resize(3,3,false);
+
+    if(!aLe) {
+
+      nbActiveVariables = 0;
+      for(int dd1 = 0;dd1<3;dd1++) {
+        for(int dd2 = 0;dd2<3;dd2++) {
+          dAta.materialAdoublePtr->F(dd1,dd2) <<= (*ptrh)[gg](dd1,dd2);
+          if(fieldDisp) {
+            if(dd1 == dd2) {
+              dAta.materialAdoublePtr->F(dd1,dd2) += 1;
+            }
+          }
+          nbActiveVariables++;
+        }
+      }
+
+    } else {
+
+      nbActiveVariables = 0;
+
+      dAta.materialAdoublePtr->h.resize(3,3,false);
+      for(int dd1 = 0;dd1<3;dd1++) {
+        for(int dd2 = 0;dd2<3;dd2++) {
+          dAta.materialAdoublePtr->h(dd1,dd2) <<= (*ptrh)[gg](dd1,dd2);
+          nbActiveVariables++;
+        }
+      }
+
+      dAta.materialAdoublePtr->H.resize(3,3,false);
+      for(int dd1 = 0;dd1<3;dd1++) {
+        for(int dd2 = 0;dd2<3;dd2++) {
+          dAta.materialAdoublePtr->H(dd1,dd2) <<= (*ptrH)[gg](dd1,dd2);
+          nbActiveVariables++;
+        }
+      }
+
+      ierr = dAta.materialAdoublePtr->dEterminatnt(
+        dAta.materialAdoublePtr->H,dAta.materialAdoublePtr->detH
+      ); CHKERRQ(ierr);
+      dAta.materialAdoublePtr->invH.resize(3,3,false);
+      ierr = dAta.materialAdoublePtr->iNvert(
+        dAta.materialAdoublePtr->detH,dAta.materialAdoublePtr->H,
+        dAta.materialAdoublePtr->invH
+      ); CHKERRQ(ierr);
+      noalias(dAta.materialAdoublePtr->F) = prod(
+        dAta.materialAdoublePtr->h,dAta.materialAdoublePtr->invH
+      );
+
+    }
+
+    ierr = dAta.materialAdoublePtr->setUserActiveVariables(nbActiveVariables); CHKERRQ(ierr);
+    ierr = calculateStress(gg); CHKERRQ(ierr);
+
+    trace_off();
+
+  } catch (MoFEMException const &e) {
+    SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
+  }
+
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode NonlinearElasticElement::OpJacobianPiolaKirchhoffStress::playTag(const int gg) {
+  PetscFunctionBegin;
+
+  int r;
+
+  if(fUnction) {
+    commonData.sTress[gg].resize(3,3,false);
+    //play recorder for values
+    r = ::function(tAg,9,nbActiveVariables,&activeVariables[0],&commonData.sTress[gg](0,0));
+    if(r<adlocReturnValue) { // function is locally analytic
+      SETERRQ1(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"ADOL-C function evaluation with error r = %d",r);
+    }
+  }
+
+  if(jAcobian) {
+    commonData.jacStress[gg].resize(9,nbActiveVariables,false);
+    double *jac_ptr[] = {
+      &(commonData.jacStress[gg](0,0)),&(commonData.jacStress[gg](1,0)),&(commonData.jacStress[gg](2,0)),
+      &(commonData.jacStress[gg](3,0)),&(commonData.jacStress[gg](4,0)),&(commonData.jacStress[gg](5,0)),
+      &(commonData.jacStress[gg](6,0)),&(commonData.jacStress[gg](7,0)),&(commonData.jacStress[gg](8,0))
+    };
+    //play recorder for jacobians
+    r = jacobian(
+      tAg,9,nbActiveVariables,&activeVariables[0],jac_ptr
+    );
+    if(r<adlocReturnValue) {
+      SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"ADOL-C function evaluation with error");
+    }
+  }
+
   PetscFunctionReturn(0);
 }
 
@@ -310,11 +411,6 @@ PetscErrorCode NonlinearElasticElement::OpJacobianPiolaKirchhoffStress::doWork(
 
   //do it only once, no need to repeat this for edges,faces or tets
   if(row_type != MBVERTEX) PetscFunctionReturn(0);
-  if(getFEMethod()->nInTheLoop!=0 && commonData.jacStress.size()==row_data.getN().size1()) {
-    if(!fUnction&&jAcobian&&lInear) {
-      PetscFunctionReturn(0);
-    }
-  }
 
   PetscErrorCode ierr;
   if(dAta.tEts.find(getNumeredEntFiniteElementPtr()->getEnt()) == dAta.tEts.end()) {
@@ -330,7 +426,6 @@ PetscErrorCode NonlinearElasticElement::OpJacobianPiolaKirchhoffStress::doWork(
 
     int nb_gauss_pts = row_data.getN().size1();
     commonData.sTress.resize(nb_gauss_pts);
-    commonData.jacStressRowPtr.resize(nb_gauss_pts);
     commonData.jacStress.resize(nb_gauss_pts);
 
     ptrh = &(commonData.gradAtGaussPts[commonData.spatialPositions]);
@@ -342,78 +437,231 @@ PetscErrorCode NonlinearElasticElement::OpJacobianPiolaKirchhoffStress::doWork(
 
       dAta.materialAdoublePtr->gG = gg;
 
-      //ADOL-C tape recorded for only the first Gauss point.
-      if(gg == 0) {
+      // Record tag and calualte stress
+      if(recordTagForIntegrationPoint(gg)) {
+        ierr = recordTag(gg); CHKERRQ(ierr);
+      }
 
-        trace_on(tAg);
-
-        dAta.materialAdoublePtr->F.resize(3,3,false);
-
+      // Set acrive variables vector
+      if(jAcobian||(!recordTagForIntegrationPoint(gg))) {
+        activeVariables.resize(nbActiveVariables,false);
         if(!aLe) {
-
-          nb_active_variables = 0;
           for(int dd1 = 0;dd1<3;dd1++) {
             for(int dd2 = 0;dd2<3;dd2++) {
-              dAta.materialAdoublePtr->F(dd1,dd2) <<= (*ptrh)[gg](dd1,dd2);
-              if(fieldDisp) {
-                if(dd1 == dd2) {
-                  dAta.materialAdoublePtr->F(dd1,dd2) += 1;
-                }
-              }
-              nb_active_variables++;
+              activeVariables(dd1*3+dd2) = (*ptrh)[gg](dd1,dd2);
             }
           }
-
         } else {
-
-          nb_active_variables = 0;
-
-          dAta.materialAdoublePtr->h.resize(3,3,false);
           for(int dd1 = 0;dd1<3;dd1++) {
             for(int dd2 = 0;dd2<3;dd2++) {
-              dAta.materialAdoublePtr->h(dd1,dd2) <<= (*ptrh)[gg](dd1,dd2);
-              nb_active_variables++;
+              activeVariables(dd1*3+dd2) = (*ptrh)[gg](dd1,dd2);
             }
           }
-
-          dAta.materialAdoublePtr->H.resize(3,3,false);
           for(int dd1 = 0;dd1<3;dd1++) {
             for(int dd2 = 0;dd2<3;dd2++) {
-              dAta.materialAdoublePtr->H(dd1,dd2) <<= (*ptrH)[gg](dd1,dd2);
-              nb_active_variables++;
+              activeVariables(9+dd1*3+dd2) = (*ptrH)[gg](dd1,dd2);
             }
           }
-
-          ierr = dAta.materialAdoublePtr->dEterminatnt(
-            dAta.materialAdoublePtr->H,dAta.materialAdoublePtr->detH
-          ); CHKERRQ(ierr);
-          dAta.materialAdoublePtr->invH.resize(3,3,false);
-          ierr = dAta.materialAdoublePtr->iNvert(
-            dAta.materialAdoublePtr->detH,dAta.materialAdoublePtr->H,
-            dAta.materialAdoublePtr->invH
-          ); CHKERRQ(ierr);
-          noalias(dAta.materialAdoublePtr->F) = prod(
-            dAta.materialAdoublePtr->h,dAta.materialAdoublePtr->invH
-          );
-
         }
+        ierr = dAta.materialAdoublePtr->setUserActiveVariables(activeVariables); CHKERRQ(ierr);
 
-        ierr = dAta.materialAdoublePtr->setUserActiveVariables(nb_active_variables); CHKERRQ(ierr);
-        ierr = calculateStress(); CHKERRQ(ierr);
-
-        trace_off();
+        // Play tag and calualte stress or tannget
+        if(jAcobian||!recordTagForIntegrationPoint(gg)) {
+          ierr = playTag(gg); CHKERRQ(ierr);
+        }
 
       }
 
-      activeVariables.resize(nb_active_variables,false);
+    }
 
+  } catch (MoFEMException const &e) {
+    SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
+  }
+
+  PetscFunctionReturn(0);
+}
+
+NonlinearElasticElement::OpJacobianEnergy::OpJacobianEnergy(
+  const std::string field_name, ///< field name for spatial positions or displacements
+  BlockData &data,
+  CommonData &common_data,
+  int tag,
+  bool gradient,
+  bool hessian,
+  bool ale,
+  bool field_disp
+):
+VolumeElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROW),
+dAta(data),
+commonData(common_data),
+tAg(tag),
+gRadient(gradient),
+hEssian(hessian),
+aLe(ale),
+fieldDisp(field_disp) {
+}
+
+PetscErrorCode NonlinearElasticElement::OpJacobianEnergy::calculateEnergy(const int gg) {
+  PetscErrorCode ierr;
+  PetscFunctionBegin;
+  try {
+    ierr = dAta.materialAdoublePtr->calculateElasticEnergy(dAta,getNumeredEntFiniteElementPtr()); CHKERRQ(ierr);
+    dAta.materialAdoublePtr->eNergy >>= commonData.eNergy[gg];
+  } catch (MoFEMException const &e) {
+    SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
+  }
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode NonlinearElasticElement::OpJacobianEnergy::recordTag(const int gg) {
+  PetscErrorCode ierr;
+  PetscFunctionBegin;
+
+  trace_on(tAg);
+
+  try {
+
+    dAta.materialAdoublePtr->F.resize(3,3,false);
+
+    if(!aLe) {
+
+      nbActiveVariables = 0;
+      for(int dd1 = 0;dd1<3;dd1++) {
+        for(int dd2 = 0;dd2<3;dd2++) {
+          dAta.materialAdoublePtr->F(dd1,dd2) <<= (*ptrh)[gg](dd1,dd2);
+          if(fieldDisp) {
+            if(dd1 == dd2) {
+              dAta.materialAdoublePtr->F(dd1,dd2) += 1;
+            }
+          }
+          nbActiveVariables++;
+        }
+      }
+
+    } else {
+
+      nbActiveVariables = 0;
+
+      dAta.materialAdoublePtr->h.resize(3,3,false);
+      for(int dd1 = 0;dd1<3;dd1++) {
+        for(int dd2 = 0;dd2<3;dd2++) {
+          dAta.materialAdoublePtr->h(dd1,dd2) <<= (*ptrh)[gg](dd1,dd2);
+          nbActiveVariables++;
+        }
+      }
+
+      dAta.materialAdoublePtr->H.resize(3,3,false);
+      for(int dd1 = 0;dd1<3;dd1++) {
+        for(int dd2 = 0;dd2<3;dd2++) {
+          dAta.materialAdoublePtr->H(dd1,dd2) <<= (*ptrH)[gg](dd1,dd2);
+          nbActiveVariables++;
+        }
+      }
+
+      ierr = dAta.materialAdoublePtr->dEterminatnt(
+        dAta.materialAdoublePtr->H,dAta.materialAdoublePtr->detH
+      ); CHKERRQ(ierr);
+      dAta.materialAdoublePtr->invH.resize(3,3,false);
+      ierr = dAta.materialAdoublePtr->iNvert(
+        dAta.materialAdoublePtr->detH,dAta.materialAdoublePtr->H,
+        dAta.materialAdoublePtr->invH
+      ); CHKERRQ(ierr);
+      noalias(dAta.materialAdoublePtr->F) = prod(
+        dAta.materialAdoublePtr->h,dAta.materialAdoublePtr->invH
+      );
+
+    }
+
+    ierr = dAta.materialAdoublePtr->setUserActiveVariables(nbActiveVariables); CHKERRQ(ierr);
+    ierr = calculateEnergy(gg); CHKERRQ(ierr);
+
+    trace_off();
+
+  } catch (MoFEMException const &e) {
+    SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
+  }
+
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode NonlinearElasticElement::OpJacobianEnergy::playTag(const int gg) {
+  PetscFunctionBegin;
+
+  int r;
+
+  if(gRadient) {
+    commonData.jacEnergy[gg].resize(nbActiveVariables,false);
+    int r = ::gradient(
+      tAg,nbActiveVariables,&activeVariables[0],&commonData.jacEnergy[gg][0]
+    );
+    if(r<0) {
+      // That means that energy function is not smooth and derivative
+      // can not be calculated,
+      SETERRQ(
+        PETSC_COMM_SELF,
+        MOFEM_OPERATION_UNSUCCESSFUL,
+        "ADOL-C function evaluation with error"
+      );
+    }
+  }
+
+  if(hEssian) {
+    SETERRQ(
+      PETSC_COMM_SELF,
+      MOFEM_NOT_IMPLEMENTED,
+      "Not yet implemented"
+    );
+  }
+
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode NonlinearElasticElement::OpJacobianEnergy::doWork(
+  int row_side,EntityType row_type,DataForcesAndSurcesCore::EntData &row_data
+) {
+  PetscFunctionBegin;
+  PetscFunctionBegin;
+
+  //do it only once, no need to repeat this for edges,faces or tets
+  if(row_type != MBVERTEX) PetscFunctionReturn(0);
+
+  PetscErrorCode ierr;
+  if(dAta.tEts.find(getNumeredEntFiniteElementPtr()->getEnt()) == dAta.tEts.end()) {
+    PetscFunctionReturn(0);
+  }
+
+  int nb_dofs = row_data.getFieldData().size();
+  if(nb_dofs==0) PetscFunctionReturn(0);
+  dAta.materialAdoublePtr->commonDataPtr = &commonData;
+  dAta.materialAdoublePtr->opPtr = this;
+
+  try {
+
+    int nb_gauss_pts = row_data.getN().size1();
+    commonData.eNergy.resize(nb_gauss_pts);
+    commonData.jacEnergy.resize(nb_gauss_pts);
+
+    ptrh = &(commonData.gradAtGaussPts[commonData.spatialPositions]);
+    if(aLe) {
+      ptrH = &(commonData.gradAtGaussPts[commonData.meshPositions]);
+    }
+
+    for(int gg = 0;gg!=nb_gauss_pts;gg++) {
+
+      dAta.materialAdoublePtr->gG = gg;
+
+      // Record tag and calualte stress
+      if(recordTagForIntegrationPoint(gg)) {
+        ierr = recordTag(gg); CHKERRQ(ierr);
+      }
+
+      activeVariables.resize(nbActiveVariables,false);
       if(!aLe) {
         for(int dd1 = 0;dd1<3;dd1++) {
           for(int dd2 = 0;dd2<3;dd2++) {
             activeVariables(dd1*3+dd2) = (*ptrh)[gg](dd1,dd2);
           }
         }
-        //std::cerr << activeVariables << std::endl;
       } else {
         for(int dd1 = 0;dd1<3;dd1++) {
           for(int dd2 = 0;dd2<3;dd2++) {
@@ -428,45 +676,18 @@ PetscErrorCode NonlinearElasticElement::OpJacobianPiolaKirchhoffStress::doWork(
       }
       ierr = dAta.materialAdoublePtr->setUserActiveVariables(activeVariables); CHKERRQ(ierr);
 
-      if(fUnction) {
-        commonData.sTress[gg].resize(3,3,false);
-        int r;
-        //play recorder for values
-        r = ::function(tAg,9,nb_active_variables,&activeVariables[0],&commonData.sTress[gg](0,0));
-        if(r<adlocReturnValue) { // function is locally analytic
-          SETERRQ1(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"ADOL-C function evaluation with error r = %d",r);
-        }
-      }
-
-      if(jAcobian) {
-        commonData.jacStressRowPtr[gg].resize(9);
-        commonData.jacStress[gg].resize(9,nb_active_variables,false);
-        for(int dd = 0;dd<9;dd++) {
-          (commonData.jacStressRowPtr[gg])[dd] = &(commonData.jacStress[gg](dd,0));
-        }
-        //}
-        int r;
-        //play recorder for jacobians
-        r = jacobian(
-          tAg,9,nb_active_variables,
-          &activeVariables[0],
-          &(commonData.jacStressRowPtr[gg])[0]
-        );
-        if(r<adlocReturnValue) {
-          SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"ADOL-C function evaluation with error");
-        }
-      }
+      // Play tag and calualte stress or tannget
+      ierr = playTag(gg); CHKERRQ(ierr);
 
     }
 
-  } catch (const std::exception& ex) {
-    std::ostringstream ss;
-    ss << "throw in method: " << ex.what() << std::endl;
-    SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+  } catch (MoFEMException const &e) {
+    SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
   }
 
   PetscFunctionReturn(0);
 }
+
 
 NonlinearElasticElement::OpRhsPiolaKirchhoff::OpRhsPiolaKirchhoff(const std::string field_name,BlockData &data,CommonData &common_data):
   VolumeElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROW),
@@ -479,9 +700,7 @@ PetscErrorCode NonlinearElasticElement::OpRhsPiolaKirchhoff::aSemble(
 ) {
   PetscFunctionBegin;
   PetscErrorCode ierr;
-
   int nb_dofs = row_data.getIndices().size();
-
   int *indices_ptr = &row_data.getIndices()[0];
   if(!dAta.forcesOnlyOnEntitiesRow.empty()) {
     iNdices.resize(nb_dofs,false);
@@ -495,7 +714,6 @@ PetscErrorCode NonlinearElasticElement::OpRhsPiolaKirchhoff::aSemble(
       }
     }
   }
-
   ierr = VecSetValues(
     getFEMethod()->snes_f,
     nb_dofs,
@@ -503,7 +721,6 @@ PetscErrorCode NonlinearElasticElement::OpRhsPiolaKirchhoff::aSemble(
     &nf[0],
     ADD_VALUES
   ); CHKERRQ(ierr);
-
   PetscFunctionReturn(0);
 }
 
@@ -560,10 +777,8 @@ PetscErrorCode NonlinearElasticElement::OpRhsPiolaKirchhoff::doWork(
     //std::cerr << "nf : " << nf << std::endl;
     ierr = aSemble(row_side,row_type,row_data); CHKERRQ(ierr);
 
-  } catch (const std::exception& ex) {
-    std::ostringstream ss;
-    ss << "throw in method: " << ex.what() << std::endl;
-    SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+  } catch (MoFEMException const &e) {
+    SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
   }
 
   PetscFunctionReturn(0);
@@ -612,10 +827,8 @@ PetscErrorCode NonlinearElasticElement::OpEnergy::doWork(
 
     }
 
-  } catch (const std::exception& ex) {
-    std::ostringstream ss;
-    ss << "throw in method: " << ex.what() << std::endl;
-    SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+  } catch (MoFEMException const &e) {
+    SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
   }
 
   PetscFunctionReturn(0);
@@ -843,10 +1056,8 @@ PetscErrorCode NonlinearElasticElement::OpLhsPiolaKirchhoff_dx::doWork(
     //std::cerr << "N " << getNumeredEntFiniteElementPtr()->getRefEnt() << std::endl << k << std::endl;
     ierr = aSemble(row_side,col_side,row_type,col_type,row_data,col_data); CHKERRQ(ierr);
 
-  } catch (const std::exception& ex) {
-    std::ostringstream ss;
-    ss << "throw in method: " << ex.what() << std::endl;
-    SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+  } catch (MoFEMException const &e) {
+    SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
   }
 
   PetscFunctionReturn(0);
@@ -943,30 +1154,24 @@ NonlinearElasticElement::OpJacobianEshelbyStress::OpJacobianEshelbyStress(
 OpJacobianPiolaKirchhoffStress(field_name,data,common_data,tag,jacobian,ale,false) {
 }
 
-PetscErrorCode NonlinearElasticElement::OpJacobianEshelbyStress::calculateStress() {
+PetscErrorCode NonlinearElasticElement::OpJacobianEshelbyStress::calculateStress(const int gg) {
   PetscFunctionBegin;
-
   try {
-
     PetscErrorCode ierr;
     ierr = dAta.materialAdoublePtr->calculateSiGma_EshelbyStress(dAta,getNumeredEntFiniteElementPtr()); CHKERRQ(ierr);
     if(aLe) {
       dAta.materialAdoublePtr->SiGma =
       dAta.materialAdoublePtr->detH*prod(dAta.materialAdoublePtr->SiGma,trans(dAta.materialAdoublePtr->invH));
     }
-    commonData.sTress[0].resize(3,3,false);
+    commonData.sTress[gg].resize(3,3,false);
     for(int dd1 = 0;dd1<3;dd1++) {
       for(int dd2 = 0;dd2<3;dd2++) {
-        dAta.materialAdoublePtr->SiGma(dd1,dd2) >>= (commonData.sTress[0])(dd1,dd2);
+        dAta.materialAdoublePtr->SiGma(dd1,dd2) >>= (commonData.sTress[gg])(dd1,dd2);
       }
     }
-
-  } catch (const std::exception& ex) {
-    std::ostringstream ss;
-    ss << "throw in method: " << ex.what() << std::endl;
-    SETERRQ(PETSC_COMM_SELF,1,ss.str().c_str());
+  } catch (MoFEMException const &e) {
+    SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
   }
-
   PetscFunctionReturn(0);
 }
 

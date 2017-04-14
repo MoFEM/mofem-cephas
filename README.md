@@ -1,11 +1,9 @@
 # **MoFEM (Cephas)** #
 
-Is a next stage MoFEM development. Cephas is version of Joseph stripped from
-unnecessary or obsolete implementation. Is a rock on which different finite
-elements implementations are build. Is not full framework where whole FE
-application is implemented.
+This repository is a fork of the main MoFEM repository. Releases if this
+repository is merged to a primary MoFEM library.
 
-The objective is to have implementation with reach abstraction (able to
+The objective is to have an implementation with reach abstraction (able to
 implement nontrivial finite elements) while being small and extendable.
 
 ** For more information go to ** [**documentation page**](http://mofem.eng.gla.ac.uk/mofem/html/index.html).
@@ -18,6 +16,6 @@ implement nontrivial finite elements) while being small and extendable.
 
 Contact: [cmatgu@googlegroups.com](cmatgu@googlegroups.com)  
 
-## Current build status
+## Build status
 
 - ### **CDashTesting**: [CDashTesting](http://cdash.eng.gla.ac.uk/cdash/)
