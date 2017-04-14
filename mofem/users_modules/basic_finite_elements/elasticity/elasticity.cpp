@@ -51,32 +51,34 @@ int main(int argc, char *argv[]) {
 
   PetscInitialize(&argc,&argv,(char *)0,help);
 
-  moab::Core mb_instance;
-  moab::Interface& moab = mb_instance;
+  try {
 
-  PetscBool flg_block_config,flg_file;
-  char mesh_file_name[255];
-  char block_config_file[255];
-  PetscInt order = 2;
-  PetscBool is_partitioned = PETSC_FALSE;
+    moab::Core mb_instance;
+    moab::Interface& moab = mb_instance;
 
-  ierr = PetscOptionsBegin(PETSC_COMM_WORLD,"","Elastic Config","none"); CHKERRQ(ierr);
-  ierr = PetscOptionsString(
-    "-my_file",
-    "mesh file name","",
-    "mesh.h5m",mesh_file_name,255,&flg_file
-  ); CHKERRQ(ierr);
-  ierr = PetscOptionsInt(
-    "-my_order",
-    "default approximation order","",
-    2,&order,PETSC_NULL
+    PetscBool flg_block_config,flg_file;
+    char mesh_file_name[255];
+    char block_config_file[255];
+    PetscInt order = 2;
+    PetscBool is_partitioned = PETSC_FALSE;
+
+    ierr = PetscOptionsBegin(PETSC_COMM_WORLD,"","Elastic Config","none"); CHKERRQ(ierr);
+    ierr = PetscOptionsString(
+      "-my_file",
+      "mesh file name","",
+      "mesh.h5m",mesh_file_name,255,&flg_file
     ); CHKERRQ(ierr);
-  ierr = PetscOptionsBool(
-    "-my_is_partitioned",
-    "set if mesh is partitioned (this result that each process keeps only part of the mes","",
-    PETSC_FALSE,&is_partitioned,PETSC_NULL
-  ); CHKERRQ(ierr);
-  ierr = PetscOptionsString("-my_block_config",
+    ierr = PetscOptionsInt(
+      "-my_order",
+      "default approximation order","",
+      2,&order,PETSC_NULL
+    ); CHKERRQ(ierr);
+    ierr = PetscOptionsBool(
+      "-my_is_partitioned",
+      "set if mesh is partitioned (this result that each process keeps only part of the mes","",
+      PETSC_FALSE,&is_partitioned,PETSC_NULL
+    ); CHKERRQ(ierr);
+    ierr = PetscOptionsString("-my_block_config",
     "elastic configure file name","",
     "block_conf.in",block_config_file,255,&flg_block_config
   ); CHKERRQ(ierr);
@@ -94,8 +96,8 @@ int main(int argc, char *argv[]) {
     //Read mesh to MOAB
     const char *option;
     option = "PARALLEL=READ_PART;"
-      "PARALLEL_RESOLVE_SHARED_ENTS;"
-      "PARTITION=PARALLEL_PARTITION;";
+    "PARALLEL_RESOLVE_SHARED_ENTS;"
+    "PARTITION=PARALLEL_PARTITION;";
     rval = moab.load_file(mesh_file_name, 0, option); CHKERRQ_MOAB(rval);
   } else {
     const char *option;
@@ -220,10 +222,10 @@ int main(int argc, char *argv[]) {
   }
 
   // Add elastic element
-  Hooke<adouble> hooke_adouble;
-  Hooke<double> hooke_double;
+  boost::shared_ptr<Hooke<adouble> > hooke_adouble_ptr(new Hooke<adouble>());
+  boost::shared_ptr<Hooke<double> > hooke_double_ptr(new Hooke<double>());
   NonlinearElasticElement elastic(m_field,2);
-  ierr = elastic.setBlocks(&hooke_double,&hooke_adouble); CHKERRQ(ierr);
+  ierr = elastic.setBlocks(hooke_double_ptr,hooke_adouble_ptr); CHKERRQ(ierr);
   ierr = elastic.addElement("ELASTIC","DISPLACEMENT"); CHKERRQ(ierr);
   ierr = elastic.setOperators("DISPLACEMENT","MESH_NODE_POSITIONS",false,true); CHKERRQ(ierr);
 
@@ -475,11 +477,11 @@ int main(int argc, char *argv[]) {
   //add postpocessing for sresses
   post_proc.getOpPtrVector().push_back(
     new PostPorcHookStress(
-	    m_field,
-	    post_proc.postProcMesh,
-	    post_proc.mapGaussPts,
-	    "DISPLACEMENT",
-	    post_proc.commonData,
+      m_field,
+      post_proc.postProcMesh,
+      post_proc.mapGaussPts,
+      "DISPLACEMENT",
+      post_proc.commonData,
       &elastic.setOfBlocks
     )
   );
@@ -590,6 +592,11 @@ int main(int argc, char *argv[]) {
   ierr = MatDestroy(&Aij); CHKERRQ(ierr);
   ierr = KSPDestroy(&solver); CHKERRQ(ierr);
   ierr = DMDestroy(&dm); CHKERRQ(ierr);
+
+
+} catch (MoFEMException const &e) {
+    SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
+  }
 
   PetscFinalize();
 

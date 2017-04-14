@@ -39,7 +39,7 @@ add_executable(
 )
 add_dependencies(ftensor_conformance_test all_cpp_generate_for_ftensor)
 add_test(
-  ftensor_conformance_test ${CMAKE_CURRENT_BINARY_DIR}/ftensor_conformance_test
+  ftensor_conformance_test ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/ftensor_conformance_test
 )
 add_subdirectory(${PROJECT_SOURCE_DIR}/src/ftensor/tests/speed)
 
@@ -56,7 +56,7 @@ if(ADOL-C_LIBRARY)
     add_dependencies(ftensor_and_adolc_tapeless_test install_prerequisites)
     target_link_libraries(ftensor_and_adolc_tapeless_test ${ADOL-C_LIBRARY})
     add_test(
-      ftensor_adloc_tapeless_test ${CMAKE_CURRENT_BINARY_DIR}/ftensor_and_adolc_tapeless_test
+      ftensor_adloc_tapeless_test ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/ftensor_and_adolc_tapeless_test
     )
   endif(TAPLESS_ADOL-C)
 
@@ -67,7 +67,7 @@ if(ADOL-C_LIBRARY)
   add_dependencies(ftensor_and_adolc_test install_prerequisites)
   target_link_libraries(ftensor_and_adolc_test ${ADOL-C_LIBRARY})
   add_test(
-    ftensor_adloc_test ${CMAKE_CURRENT_BINARY_DIR}/ftensor_and_adolc_test
+    ftensor_adloc_test ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1 ${CMAKE_CURRENT_BINARY_DIR}/ftensor_and_adolc_test
   )
 
 endif(ADOL-C_LIBRARY)

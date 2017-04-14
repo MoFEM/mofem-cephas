@@ -74,7 +74,7 @@ int main(int argc, char *argv[]) {
     rval = moab.add_entities(meshset,tets); CHKERRQ_MOAB(rval);
     // // resolve shared entities
     // ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
-    if(!m_field.getCommRank()) {
+    if(!m_field.get_comm_rank()) {
       // rval = moab.write_file("partitioned_mesh.h5m","MOAB","",&meshset,1); CHKERRQ_MOAB(rval);
       rval = moab.write_file("partitioned_mesh.h5m"); CHKERRQ_MOAB(rval);
       // rval = moab.write_file("partitioned_mesh.h5m"); CHKERRQ_MOAB(rval);

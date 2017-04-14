@@ -4,27 +4,33 @@
 
 \section introduction Introduction
 
-MoFEM (Mesh Oriented Finite Element Method) it is C++ library supporting
-solution of finite elements problems. Is developed to o provide free and open,
-inclusive, participation community finite element code for engineers, students
-and academics.
+MoFEM (Mesh Oriented Finite Element Method) \cite mofem_v0.5.42 it is C++
+library supporting the solution of finite elements problems. Is developed to
+provide free and open, inclusive, participation community finite element code
+for engineers, students and academics.
 
 MoFEM is a finite element analysis code tailored for the solution of
 multi-physics problems with arbitrary levels of approximation, different levels
-of mesh refinement and optimised for high-performance computing. It is design
-to be able manage complexities related to heterogeneous order of approximations
-for L2,H1,H-div and H-curl spaces, see \cite NME:NME847.
+of mesh refinement and optimised for high-performance computing. It is designed
+to be able to manage complexities related to a heterogeneous order of
+approximations for L2,H1,H-div and H-curl spaces, see \cite NME:NME847.
 
 MoFEM is the blend of the Boost MultiIndex containers, MOAB (Mesh Oriented
 Database) \cite tautges_moab:2004 and PETSc (Portable, Extensible Toolkit for
 Scientific Computation) \cite petsc-web-page. MoFEM is developed in C++ and it
-is open-source software under the GNU Lesser General Public License (see \ref legal_stuff)
-Stuff).
+is open-source software under the GNU Lesser General Public License (see \ref
+legal_stuff) Stuff.
 
-MoFEM can read and write number of mesh file formats using functionality
+MoFEM can read and write a number of mesh file formats using functionality
 provided by MoAB.  The current version of MoFEM has full support for
 CUBIT/TRELIS, TetGEN, Salome/Code_Aster (MED format) for pre-processing and
 ParaView for post-processing.
+
+\ref mofem_citation
+
+\htmlonly
+<a href="https://doi.org/10.5281/zenodo.438712"><img src="https://zenodo.org/badge/DOI/10.5281/zenodo.438712.svg" alt="DOI"></a>
+\endhtmlonly
 
 \tableofcontents
 
@@ -117,8 +123,6 @@ implementations are tailored for massive parallel calculations.
 
 - Version repository <https://bitbucket.org/likask/mofem-cephas>
 - Testing webpage (CDash) <http://cdash.eng.gla.ac.uk/cdash/>
-
-\endhtmlonly
 
 \section users_modules User modules
 

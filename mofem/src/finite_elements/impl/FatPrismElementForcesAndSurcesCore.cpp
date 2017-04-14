@@ -373,7 +373,7 @@ PetscErrorCode FatPrismElementForcesAndSurcesCore::operator()() {
                 gaussPtsTrianglesOnly,
                 gaussPtsThroughThickness,
                 mField.get_moab(),
-                numeredEntFiniteElementPtr,
+                numeredEntFiniteElementPtr.get(),
                 H1,
                 ApproximationBaseArray[b],
                 NOBASE
@@ -692,7 +692,7 @@ PetscErrorCode OpCalculateInvJacForFatPrism::doWork(
 
       VectorDouble &coords = getCoords();
       double *coords_ptr = &*coords.data().begin();
-      
+
       const int nb_gauss_pts = data.getN(NOBASE).size1();
       FTensor::Tensor1<double*,3> t_diff_n = data.getFTensor1DiffN<3>(NOBASE);
       invJac.resize(9,nb_gauss_pts,false);

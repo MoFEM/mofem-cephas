@@ -223,6 +223,8 @@ int main(int argc, char *argv[]) {
 
   PetscInitialize(&argc, &argv, (char *)0, help);
 
+  try {
+
   moab::Core mb_instance;
   moab::Interface& moab = mb_instance;
   ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
@@ -791,6 +793,11 @@ int main(int argc, char *argv[]) {
   #else
     ierr = MatDestroy(&Aij); CHKERRQ(ierr);
   #endif
+
+
+  } catch (MoFEMException const &e) {
+    SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
+  }
 
   PetscFinalize();
 

@@ -62,7 +62,7 @@ int main(int argc, char *argv[]) {
 
     ProblemsManager *prb_mng_ptr;
     ierr = m_field.query_interface(prb_mng_ptr); CHKERRQ(ierr);
-    ierr = prb_mng_ptr->partitionMesh(tets,3,2,m_field.getCommSize()); CHKERRQ(ierr);
+    ierr = prb_mng_ptr->partitionMesh(tets,3,2,m_field.get_comm_size()); CHKERRQ(ierr);
 
     EntityHandle part_set;
     rval = moab.create_meshset(MESHSET_SET,part_set); CHKERRQ_MOAB(rval);
@@ -75,7 +75,7 @@ int main(int argc, char *argv[]) {
     for(Range::iterator mit = tagged_sets.begin();mit!=tagged_sets.end();mit++) {
       int part;
       rval = moab.tag_get_data(part_tag,&*mit,1,&part); CHKERRQ_MOAB(rval);
-      if(part==m_field.getCommRank()) {
+      if(part==m_field.get_comm_rank()) {
         // pcomm->partition_sets().insert(*mit);
         rval = moab.get_entities_by_type(*mit,MBTET,proc_ents,true); CHKERRQ_MOAB(rval);
         rval = moab.add_entities(part_set,proc_ents); CHKERRQ_MOAB(rval);
@@ -99,7 +99,7 @@ int main(int argc, char *argv[]) {
 
     if(0) {
       std::ostringstream file_skin;
-      file_skin << "out_skin_" << m_field.getCommRank() << ".vtk";
+      file_skin << "out_skin_" << m_field.get_comm_rank() << ".vtk";
       EntityHandle meshset_skin;
       rval = moab.create_meshset(MESHSET_SET,meshset_skin); CHKERRQ_MOAB(rval);
       rval = moab.add_entities(meshset_skin,proc_ents_skin[2]); CHKERRQ_MOAB(rval);
@@ -112,7 +112,7 @@ int main(int argc, char *argv[]) {
     Range owned_tets = proc_ents;
 
     // rval = pcomm->get_part_entities(owned_tets,3); MB_CHK_ERR(rval);
-    // if(m_field.getCommRank()==1) {
+    // if(m_field.get_comm_rank()==1) {
     //   Range verts;
     //   rval = moab.get_connectivity(owned_tets,verts,true); CHKERRQ_MOAB(rval);
     //   for(Range::iterator vit = verts.begin();vit!=verts.end();vit++) {
@@ -127,7 +127,7 @@ int main(int argc, char *argv[]) {
 
     if(0) {
       std::ostringstream file_owned;
-      file_owned << "out_owned_" << m_field.getCommRank() << ".vtk";
+      file_owned << "out_owned_" << m_field.get_comm_rank() << ".vtk";
       EntityHandle meshset_owned;
       rval = moab.create_meshset(MESHSET_SET,meshset_owned); CHKERRQ_MOAB(rval);
       rval = moab.add_entities(meshset_owned,owned_tets); CHKERRQ_MOAB(rval);
@@ -139,7 +139,7 @@ int main(int argc, char *argv[]) {
 
     if(0) {
       std::ostringstream file_shared_owned;
-      file_shared_owned << "out_shared_owned_" << m_field.getCommRank() << ".vtk";
+      file_shared_owned << "out_shared_owned_" << m_field.get_comm_rank() << ".vtk";
       EntityHandle meshset_shared_owned;
       rval = moab.create_meshset(MESHSET_SET,meshset_shared_owned); CHKERRQ_MOAB(rval);
       rval = moab.add_entities(meshset_shared_owned,shared_ents); CHKERRQ_MOAB(rval);
@@ -192,9 +192,9 @@ int main(int argc, char *argv[]) {
     //Build problems
     ierr = prb_mng_ptr->buildProblemOnDistributedMesh("P1",true,1); CHKERRQ(ierr);
     ierr = prb_mng_ptr->buildProblemOnDistributedMesh("P2",true,1); CHKERRQ(ierr);
-    ierr = prb_mng_ptr->partitionFiniteElements("P1",true,0,m_field.getCommSize(),1); CHKERRQ(ierr);
+    ierr = prb_mng_ptr->partitionFiniteElements("P1",true,0,m_field.get_comm_size(),1); CHKERRQ(ierr);
     ierr = prb_mng_ptr->partitionGhostDofs("P1",1); CHKERRQ(ierr);
-    ierr = prb_mng_ptr->partitionFiniteElements("P2",true,0,m_field.getCommSize(),1); CHKERRQ(ierr);
+    ierr = prb_mng_ptr->partitionFiniteElements("P2",true,0,m_field.get_comm_size(),1); CHKERRQ(ierr);
     ierr = prb_mng_ptr->partitionGhostDofs("P2",1); CHKERRQ(ierr);
 
     if(0) {
@@ -235,7 +235,7 @@ int main(int argc, char *argv[]) {
     // add_problems.push_back("P1");
     // add_problems.push_back("P2");
     // ierr = prb_mng_ptr->buildCompsedProblem("COMP",add_problems,add_problems,true,1); CHKERRQ(ierr);
-    // ierr = prb_mng_ptr->partitionFiniteElements("COMP",true,0,m_field.getCommSize(),1); CHKERRQ(ierr);
+    // ierr = prb_mng_ptr->partitionFiniteElements("COMP",true,0,m_field.get_comm_size(),1); CHKERRQ(ierr);
     // ierr = prb_mng_ptr->partitionGhostDofs("COMP",1); CHKERRQ(ierr);
 
     if(0) {

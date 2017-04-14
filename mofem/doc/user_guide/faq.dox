@@ -1,5 +1,40 @@
 /*! \page faqs Frequently Asked Questions
 
+\section mofem_citation How to cite us?
+
+If you write a paper using results obtained with the help of MoFEM, please
+cite one or more of the following references:
+
+\b Version \b 0.5.42 cite as
+
+DOI:
+
+\htmlonly
+<a href="https://doi.org/10.5281/zenodo.438712"><img src="https://zenodo.org/badge/DOI/10.5281/zenodo.438712.svg" alt="DOI"></a>
+\endhtmlonly
+
+L. Kaczmarczyk, Z. Ullah, K. Lewandowski, Xuan Meng, Xiao-Yi Zhou, C. Pearce. (2017). MoFEM-v0.5.42 [Data set]. Zenodo. http://doi.org/10.5281/zenodo.438712
+\code
+@misc{mofem_v0.5.42,
+  author       = {L. Kaczmarczyk, Z. Ullah, K. Lewandowski, Xuan Meng, Xiao-Yi Zhou, Chris Pearce},
+  title        = {MoFEM-v0.5.42},
+  month        = mar,
+  year         = 2017,
+  note         = {http://mofem.eng.gla.ac.uk/mofem/html/},
+  doi          = {10.5281/zenodo.438712},
+  url          = {https://doi.org/10.5281/zenodo.438712}
+}
+\endcode
+
+Each user module can have own DOI and reference. All module references
+supplements  MoFEM reference. For example homogenisation module DOI as follows
+
+\htmlonly
+<a href="https://doi.org/10.5281/zenodo.439368"><img src="https://zenodo.org/badge/DOI/10.5281/zenodo.439368.svg" alt="DOI"></a>
+\endhtmlonly
+
+\endhtmlonly
+
 \section policy_of_for_version How MoFEM version is changed?
 
 The current MoFEM version can be identified by \e Semantic \e Versioning and \e

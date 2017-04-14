@@ -67,18 +67,31 @@ struct Interface: public UnknownInterface {
 
   /**
    * get MPI communicator
+   *
    */
   virtual MPI_Comm& get_comm() const = 0;
 
   /**
    * get communicator size
+   * \deprecated use get_comm_size
    */
-  virtual int getCommSize() const = 0;
+  DEPRECATED virtual int getCommSize() const = 0;
+
+  /**
+   * get comm rank
+   * \deprecated use get_comm_rank
+   */
+  DEPRECATED virtual int getCommRank() const = 0;
+
+  /**
+   * get communicator size
+   */
+  virtual int get_comm_size() const = 0;
 
   /**
    * get comm rank
    */
-  virtual int getCommRank() const = 0;
+  virtual int get_comm_rank() const = 0;
 
   /**
     * \brief check data consistency in entitiesPtr

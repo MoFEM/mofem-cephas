@@ -671,12 +671,12 @@ struct UltraWeakTransportElement {
     sumErrorJump = 0;
     feTri.getOpPtrVector().clear();
     feTri.getOpPtrVector().push_back(new OpSkeleton(*this,"FLUXES"));
-    ierr = mField.loop_finite_elements("ULTRAWEAK","ULTRAWEAK_SKELETON",feTri,0,mField.getCommSize()); CHKERRQ(ierr);
+    ierr = mField.loop_finite_elements("ULTRAWEAK","ULTRAWEAK_SKELETON",feTri,0,mField.get_comm_size()); CHKERRQ(ierr);
     feVol.getOpPtrVector().clear();
     feVol.getOpPtrVector().push_back(new OpFluxDivergenceAtGaussPts(*this,"FLUXES"));
     feVol.getOpPtrVector().push_back(new OpValuesGradientAtGaussPts(*this,"VALUES"));
     feVol.getOpPtrVector().push_back(new OpError(*this,"VALUES"));
-    ierr = mField.loop_finite_elements("ULTRAWEAK","ULTRAWEAK",feVol,0,mField.getCommSize()); CHKERRQ(ierr);
+    ierr = mField.loop_finite_elements("ULTRAWEAK","ULTRAWEAK",feVol,0,mField.get_comm_size()); CHKERRQ(ierr);
     const MoFEMProblem *problem_ptr;
     ierr = mField.get_problem("ULTRAWEAK",&problem_ptr); CHKERRQ(ierr);
     PetscPrintf(

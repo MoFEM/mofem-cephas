@@ -454,7 +454,7 @@ struct ForcesAndSurcesCore: public FEMethod {
 
     /** \brief Return raw pointer to NumeredEntFiniteElement
      */
-    inline const NumeredEntFiniteElement* getNumeredEntFiniteElementPtr() const {
+    inline boost::shared_ptr<const NumeredEntFiniteElement> getNumeredEntFiniteElementPtr() const {
       return ptrFE->numeredEntFiniteElementPtr;
     };
 

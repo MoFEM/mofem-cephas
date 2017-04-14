@@ -65,7 +65,7 @@ namespace MoFEM {
           if(ent_fe_ptr->row_dof_view!=ent_fe_ptr->col_dof_view) {
             ent_fe_ptr->col_dof_view->erase((*dit)->getGlobalUniqueId());
           }
-          ent_fe_ptr->data_dofs.get<Unique_mi_tag>().erase((*dit)->getGlobalUniqueId());
+          ent_fe_ptr->data_dofs->get<Unique_mi_tag>().erase((*dit)->getGlobalUniqueId());
         }
         dit = dofsField.erase(dit);
         if(dit==dofsField.end()) break;
@@ -104,7 +104,7 @@ namespace MoFEM {
           if(ent_fe_ptr->row_dof_view!=ent_fe_ptr->col_dof_view) {
             ent_fe_ptr->col_dof_view->erase((*dit)->getGlobalUniqueId());
           }
-          ent_fe_ptr->data_dofs.get<Unique_mi_tag>().erase((*dit)->getGlobalUniqueId());
+          ent_fe_ptr->data_dofs->get<Unique_mi_tag>().erase((*dit)->getGlobalUniqueId());
         }
         dit = dofsField.erase(dit);
       }
@@ -345,7 +345,7 @@ namespace MoFEM {
       }
       rval = moab.remove_entities(meshset,ents_to_remove); CHKERRQ_MOAB(rval);
       if(verb>0) {
-        PetscPrintf(comm,
+        PetscPrintf(cOmm,
           "number of removed entities = %u from field %s\n",
           ents_to_remove.size(),
           (*f_it)->getName().c_str()
@@ -353,7 +353,7 @@ namespace MoFEM {
         if(verb>1) {
           int num_entities;
           rval = moab.get_number_entities_by_handle(meshset,num_entities); CHKERRQ_MOAB(rval);
-          PetscPrintf(comm,"\tnumber of entities in database = %u and meshset = %u\n",
+          PetscPrintf(cOmm,"\tnumber of entities in database = %u and meshset = %u\n",
           entsFields.get<FieldName_mi_tag>().count((*f_it)->getNameRef()),num_entities);
         }
       }
@@ -422,7 +422,7 @@ namespace MoFEM {
       }
       rval = moab.remove_entities(meshset,ents_to_remove); CHKERRQ_MOAB(rval);
       if(verb>0) {
-        PetscPrintf(comm,
+        PetscPrintf(cOmm,
           "number of removed entities = %u from finite element %s\n",
           ents_to_remove.size(),(*fe_it)->getName().c_str()
         );
@@ -549,8 +549,8 @@ namespace MoFEM {
     }
     ierr = remove_ents_by_bit_ref(bit,mask,verb); CHKERRQ(ierr);
     if(verb>0) {
-      PetscSynchronizedPrintf(comm,"number of deleted entities = %u\n",ents_to_delete.size());
-      PetscSynchronizedFlush(comm,PETSC_STDOUT);
+      PetscSynchronizedPrintf(cOmm,"number of deleted entities = %u\n",ents_to_delete.size());
+      PetscSynchronizedFlush(cOmm,PETSC_STDOUT);
     }
     if(verb>2) {
       EntityHandle out_meshset;

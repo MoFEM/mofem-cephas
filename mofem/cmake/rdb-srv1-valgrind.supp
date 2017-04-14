@@ -66239,3 +66239,51 @@
    fun:_ZN5MoFEM4Core24simple_partition_problemERKSsii
    fun:main
 }
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   fun:malloc
+   fun:opal_hash_table_set_value_uint32
+   obj:/usr/lib/openmpi/lib/libmpi.so.0.0.2
+   fun:PMPI_Attr_put
+   fun:PetscCommDuplicate
+   fun:PetscHeaderCreate_Private
+   fun:DMCreate
+   fun:main
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   fun:malloc
+   fun:opal_class_initialize
+   fun:ompi_comm_nextcid
+   fun:ompi_comm_dup
+   fun:PMPI_Comm_dup
+   fun:PetscCommDuplicate
+   fun:PetscHeaderCreate_Private
+   fun:DMCreate
+   fun:main
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   fun:malloc
+   fun:opal_class_initialize
+   fun:ompi_comm_nextcid
+   fun:ompi_comm_dup
+   fun:PMPI_Comm_dup
+   fun:PetscCommDuplicate
+   fun:_ZN5MoFEM4CoreC1ERN4moab9InterfaceEP19ompi_communicator_ti
+   fun:main
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   fun:malloc
+   fun:opal_hash_table_set_value_uint32
+   obj:/usr/lib/openmpi/lib/libmpi.so.0.0.2
+   fun:PMPI_Attr_put
+   fun:PetscCommDuplicate
+   fun:_ZN5MoFEM4CoreC1ERN4moab9InterfaceEP19ompi_communicator_ti
+   fun:main
+}

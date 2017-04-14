@@ -115,10 +115,11 @@ PetscErrorCode FaceElementForcesAndSourcesCore::UserDataOperator::loopSideVolume
       // cerr << &(**miit) << endl;
       // cerr << (*miit)->getEnt() << endl;
       method.nInTheLoop = nn++;
-      method.numeredEntFiniteElementPtr = &(**miit);
-      method.dataPtr = &((*miit)->sPtr->data_dofs);
-      method.rowPtr = (*miit)->rows_dofs.get();
-      method.colPtr = (*miit)->cols_dofs.get();
+      method.numeredEntFiniteElementPtr = *miit;
+      method.dataPtr = (*miit)->sPtr->data_dofs;
+      method.rowPtr = (*miit)->rows_dofs;
+      method.colPtr = (*miit)->cols_dofs;
+
       try {
         ierr = method(); CHKERRQ(ierr);
       } catch (const std::exception& ex) {

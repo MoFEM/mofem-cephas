@@ -53,7 +53,7 @@ struct Version {
   majorVersion(MoFEM_VERSION_MAJOR),
   minorVersion(MoFEM_VERSION_MINOR),
   buildVersion(MoFEM_VERSION_BUILD) {
-  }  
+  }
   Version(const int v[3]):
   majorVersion(v[0]),
   minorVersion(v[1]),
