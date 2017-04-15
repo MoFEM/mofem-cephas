@@ -1,7 +1,6 @@
 # **MoFEM (Cephas)** #
 
-This repository is a fork of the main MoFEM repository. Releases if this
-repository is merged to a primary MoFEM library.
+This repository is a fork of the main MoFEM repository. Releases of this repository are merged to a primary MoFEM library.
 
 The objective is to have an implementation with reach abstraction (able to
 implement nontrivial finite elements) while being small and extendable.
