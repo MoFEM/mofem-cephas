@@ -262,6 +262,15 @@ struct NonlinearElasticElement {
       PetscFunctionReturn(0);
     }
 
+    /**
+     * \brief add additional active variables
+     *
+     * \note This member function if used should be implement by template member function Specialization,
+     * different implementation needed for TYPE=double or TYPE=adouble
+     *
+     * @param  nb_active_variables number of active variables
+     * @return                     error code
+     */
     virtual PetscErrorCode setUserActiveVariables(
       int &nb_active_variables
     ) {
