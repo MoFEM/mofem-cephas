@@ -21,7 +21,7 @@ To build MoFEM the source code need to be downloaded. The best method to do it i
 to clone repository
 ~~~~~~
 cd $HOME
-git clone https://bitbucket.org/likask/mofem-cephas.git
+git clone https://bitbucket.org/mofem/mofem-cephas.git
 ~~~~~~
 
 ##Build docker image
