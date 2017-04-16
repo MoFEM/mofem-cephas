@@ -428,6 +428,7 @@ struct NonlinearElasticElement {
      * @return    true if tag is recorded
      */
     virtual bool recordTagForIntegrationPoint(const int gg) {
+      // return true;
       if(gg == 0) return true;
       return false;
     }
