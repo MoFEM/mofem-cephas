@@ -121,7 +121,7 @@ implementations are tailored for massive parallel calculations.
 
 \section download_repository MoFEM repository
 
-- Version repository <https://bitbucket.org/mofem/mofem-cephas>
+- Version repository <https://bitbucket.org/likask/mofem-cephas>
 - Testing webpage (CDash) <http://cdash.eng.gla.ac.uk/cdash/>
 
 \section users_modules User modules
