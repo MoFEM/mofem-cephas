@@ -74,13 +74,13 @@ int main(int argc, char *argv[]) {
 
   try {
 
-    enum bases {
+    enum materials {
       HOOKE,
       NEOHOOKEAN,
       LASTOP
     };
 
-    const char *list[] = {
+    const char *materials_list[] = {
       "HOOKE",
       "NEOHOOKEAN"
     };
@@ -90,7 +90,7 @@ int main(int argc, char *argv[]) {
     PetscBool flg_test_mat;
     PetscInt choise_value = HOOKE;
     ierr = PetscOptionsGetEList(
-      PETSC_NULL,NULL,"-mat",list,LASTOP,&choise_value,&flg_test_mat
+      PETSC_NULL,NULL,"-mat",materials_list,LASTOP,&choise_value,&flg_test_mat
     ); CHKERRQ(ierr);
 
     moab::Core mb_instance;
@@ -214,7 +214,7 @@ int main(int argc, char *argv[]) {
 
     // test materials
     if(flg_test_mat==PETSC_TRUE) {
-      PetscPrintf(PETSC_COMM_WORLD,"Testing %s\n",list[ choise_value]);
+      PetscPrintf(PETSC_COMM_WORLD,"Testing %s\n",materials_list[choise_value]);
       std::map<int,NonlinearElasticElement::BlockData>::iterator sit = elastic.setOfBlocks.begin();
       for(;sit!=elastic.setOfBlocks.end();sit++) {
         switch(choise_value) {

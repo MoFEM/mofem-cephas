@@ -68,7 +68,7 @@ cp libtet.a lib/
 cd $MOFEM_INSTALL_DIR
 
 # Cloning MoFEM source code:
-git clone https://bitbucket.org/likask/mofem-cephas.git mofem-cephas
+git clone https://bitbucket.org/mofem/mofem-cephas.git mofem-cephas
 
 # Make a build directory
 mkdir $MOFEM_INSTALL_DIR/lib

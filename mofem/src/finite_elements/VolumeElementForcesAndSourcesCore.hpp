@@ -31,9 +31,9 @@ namespace MoFEM {
 /** \brief Volume finite element
  \ingroup mofem_forces_and_sources_volume_element
 
- User is implementing own operator at Gauss point level, by own object
- derived from VolumeElementForcesAndSourcesCore::UserDataOperator.  Arbitrary
- number of operator added pushing objects to OpPtrVector
+ User is implementing own operator at Gauss point level, by class
+ derived from VolumeElementForcesAndSourcesCore::UserDataOperator. Arbitrary
+ number of operator can be added by pushing objects to OpPtrVector
 
  */
 struct VolumeElementForcesAndSourcesCore: public ForcesAndSurcesCore {
