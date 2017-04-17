@@ -442,7 +442,7 @@ PetscErrorCode NonlinearElasticElement::OpJacobianPiolaKirchhoffStress::doWork(
         ierr = recordTag(gg); CHKERRQ(ierr);
       }
 
-      // Set acrive variables vector
+      // Set active variables vector
       if(jAcobian||(!recordTagForIntegrationPoint(gg))) {
         activeVariables.resize(nbActiveVariables,false);
         if(!aLe) {
@@ -465,8 +465,8 @@ PetscErrorCode NonlinearElasticElement::OpJacobianPiolaKirchhoffStress::doWork(
         }
         ierr = dAta.materialAdoublePtr->setUserActiveVariables(activeVariables); CHKERRQ(ierr);
 
-        // Play tag and calualte stress or tannget
-        if(jAcobian||!recordTagForIntegrationPoint(gg)) {
+        // Play tag and calculate stress or tangent
+        if(jAcobian||(!recordTagForIntegrationPoint(gg))) {
           ierr = playTag(gg); CHKERRQ(ierr);
         }
 

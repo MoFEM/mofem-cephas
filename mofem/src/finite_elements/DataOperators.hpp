@@ -477,16 +477,29 @@ struct OpGetDataAndGradient: public DataOperator {
   dataAtGaussPts(data_at_gauss_pt),
   dataGradAtGaussPts(data_grad_at_gauss_pt) {}
 
+  /**
+   * Return tensor associated with matrix storing values
+   */
   template<int R>
   FTensor::Tensor1<double*,R> getValAtGaussPtsTensor(MatrixDouble &data) {
     THROW_MESSAGE("Not implemented");
   }
 
+  /**
+   * Return tensor associated with matrix storing gradient values
+   */
   template<int R,int D>
   FTensor::Tensor2<double*,R,D> getGradAtGaussPtsTensor(MatrixDouble &data) {
     THROW_MESSAGE("Not implemented");
   }
 
+  /**
+   * \bief calcualte gardient and values at integration points
+   * @param  side side of entity on element
+   * @param  type type of entity
+   * @param  data data storoed on entity (dofs values, dofs indices, etc.)
+   * @return      error code
+   */
   PetscErrorCode calculateValAndGrad(
     int side,EntityType type,DataForcesAndSurcesCore::EntData &data
   ) {
@@ -571,19 +584,31 @@ struct OpGetDataAndGradient: public DataOperator {
 
 };
 
+/**
+ * \brief Specialization for field with 3 coefficients in 3 dimension
+ */
 template<>
 template<>
 FTensor::Tensor1<double*,3> OpGetDataAndGradient<3,3>::getValAtGaussPtsTensor<3>(MatrixDouble &data);
 
+/**
+ * \brief Specialization for field with 3 coefficients in 3 dimension
+ */
 template<>
 template<>
 FTensor::Tensor2<double*,3,3> OpGetDataAndGradient<3,3>::getGradAtGaussPtsTensor<3,3>(MatrixDouble &data);
 
+/**
+ * \brief Specialization for field with 3 coefficients in 3 dimension
+ */
 template<>
 PetscErrorCode OpGetDataAndGradient<3,3>::calculateValAndGrad(
   int side,EntityType type,DataForcesAndSurcesCore::EntData &data
 );
 
+/**
+ * \brief Specialization for field with for scalar field in 3 dimension
+ */
 template<>
 PetscErrorCode OpGetDataAndGradient<1,3>::calculateValAndGrad(
   int side,EntityType type,DataForcesAndSurcesCore::EntData &data
