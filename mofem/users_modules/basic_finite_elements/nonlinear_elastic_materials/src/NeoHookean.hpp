@@ -29,6 +29,7 @@ struct NeoHookean: public NonlinearElasticElement::FunctionsToCalculatePiolaKirc
     NeoHookean(): NonlinearElasticElement::FunctionsToCalculatePiolaKirchhoffI<TYPE>() {}
 
     TYPE detC;
+    TYPE logJ;
     ublas::matrix<TYPE> invC;
 
     /** \brief calculate second Piola Kirchoff
@@ -48,9 +49,14 @@ struct NeoHookean: public NonlinearElasticElement::FunctionsToCalculatePiolaKirc
       ierr = this->dEterminatnt(this->C,detC); CHKERRQ(ierr);
       ierr = this->iNvert(detC,this->C,invC); CHKERRQ(ierr);
       ierr = this->dEterminatnt(this->F,this->J); CHKERRQ(ierr);
+      // if(this->J<=0) {
+      //   cerr << this->J << endl;
+      //   cerr << this->F << endl;
+      // }
+      logJ = log(sqrt(this->J*this->J));
       for(int i = 0;i<3;i++) {
         for(int j = 0;j<3;j++) {
-          this->S(i,j) = this->mu*( ((i==j) ? 1 : 0) - invC(i,j) ) + this->lambda*log(this->J)*invC(i,j);
+          this->S(i,j) = this->mu*( ((i==j) ? 1 : 0) - invC(i,j) ) + this->lambda*logJ*invC(i,j);
         }
       }
       PetscFunctionReturn(0);
@@ -72,8 +78,6 @@ struct NeoHookean: public NonlinearElasticElement::FunctionsToCalculatePiolaKirc
       PetscFunctionReturn(0);
     }
 
-    TYPE logJ;
-
    /** \brief calculate elastic energy density
     *
 
@@ -89,7 +93,8 @@ struct NeoHookean: public NonlinearElasticElement::FunctionsToCalculatePiolaKirc
             this->eNergy += this->C(ii,ii);
         }
         this->eNergy = 0.5*this->mu*(this->eNergy-3);
-        logJ = log(this->J);
+        // logJ = log(this->J);
+        logJ = log(sqrt(this->J*this->J));
         this->eNergy += -this->mu*logJ + 0.5*this->lambda*pow(logJ,2);
         PetscFunctionReturn(0);
     }

@@ -33,23 +33,30 @@
 struct ElasticMaterials {
 
   MoFEM::Interface &mField;
-  string defMaterial;
-  string configFile;
+  std::string defMaterial; ///< default material, if block is set to elastic, this material is used as default
+  std::string configFile;  //< default name of config file
 
-  bool iNitialized;
+  bool iNitialized; ///< true if class is initialized
 
-  ElasticMaterials(MoFEM::Interface &m_field):
-  mField(m_field),defMaterial(MAT_KIRCHOFF),
+  ElasticMaterials(
+    MoFEM::Interface &m_field,std::string def_material = MAT_KIRCHOFF
+  ):
+  mField(m_field),
+  defMaterial(def_material),
   configFile("elastic_material.in"),
   iNitialized(false) {}
 
   std::map<
   std::string,boost::shared_ptr<NonlinearElasticElement::FunctionsToCalculatePiolaKirchhoffI<adouble> >
-  > aDoubleMaterialModel;
+  > aDoubleMaterialModel; ///< Hash map of materials for evaluation with adouble, i.e. ADOL-C
+
   std::map<
   std::string,boost::shared_ptr<NonlinearElasticElement::FunctionsToCalculatePiolaKirchhoffI<double> >
-  > doubleMaterialModel;
+  > doubleMaterialModel; ///< Hash map of materials for evaluation with double
 
+  /**
+   * Structure for material parameters for block
+   */
   struct BlockOptionData {
     string mAterial;
     int oRder;
@@ -72,12 +79,16 @@ struct ElasticMaterials {
     aZ(0) {
     }
   };
-  std::map<int,BlockOptionData> blockData;
 
-  PetscBool isConfigFileSet;
+  std::map<int,BlockOptionData> blockData; ///< Material parameters on blocks
+
+  PetscBool isConfigFileSet; ///< True if config file is set from command line
   po::variables_map vM;
 
-
+  /**
+   * Initialize  model parameters
+   * @return [description]
+   */
   virtual PetscErrorCode iNit() {
     PetscFunctionBegin;
     //add new material below
@@ -103,7 +114,9 @@ struct ElasticMaterials {
     ierr = PetscOptionsBegin(mField.get_comm(),"","Elastic Materials Configuration","none"); CHKERRQ(ierr);
     char default_material[255];
     PetscBool def_mat_set;
-    ierr = PetscOptionsString("-default_material",avilable_materials.str().c_str(),"",MAT_KIRCHOFF,default_material,255,&def_mat_set); CHKERRQ(ierr);
+    ierr = PetscOptionsString(
+      "-default_material",avilable_materials.str().c_str(),"",defMaterial.c_str(),default_material,255,&def_mat_set
+    ); CHKERRQ(ierr);
     if(def_mat_set) {
       defMaterial = default_material;
       if(aDoubleMaterialModel.find(defMaterial)==aDoubleMaterialModel.end()) {
@@ -111,10 +124,12 @@ struct ElasticMaterials {
       }
     }
     char config_file[255];
-    ierr = PetscOptionsString("-elastic_material_configuration","elastic materials configure file name","",configFile.c_str(),config_file,255,&isConfigFileSet); CHKERRQ(ierr);
+    ierr = PetscOptionsString(
+      "-elastic_material_configuration","elastic materials configure file name","",
+      configFile.c_str(),config_file,255,&isConfigFileSet
+    ); CHKERRQ(ierr);
     if(isConfigFileSet) {
       configFile = config_file;
-
     }
     ierr = PetscOptionsEnd(); CHKERRQ(ierr);
     PetscFunctionReturn(0);
