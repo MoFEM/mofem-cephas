@@ -21,7 +21,7 @@ To build MoFEM the source code need to be downloaded. The best method to do it i
 to clone repository
 ~~~~~~
 cd $HOME
-git clone https://bitbucket.org/mofem/mofem-cephas.git
+git clone https://bitbucket.org/likask/mofem-cephas.git
 ~~~~~~
 
 ##Build docker image
@@ -31,8 +31,8 @@ Next step of installation is to configure and compile MoFEM. First command creat
 contains *mofem_build volume*. Volume in container will be shared between other
 containers were MoFEM is compiled and run;
 ~~~~~~
-docker build -t mofem_build:v0.1 --force-rm=true --file=$HOME/mofem-cephas/Dockerfile-build $HOME/mofem-cephas
-docker run --name mofem_build mofem_build:v0.1 /bin/bash
+docker build -t mofem_build --force-rm=true --file=$HOME/mofem-cephas/Dockerfile-build $HOME/mofem-cephas
+docker run --name mofem_build mofem_build /bin/bash
 ~~~~~~
 
 If you do not exactly understand what is *docker image*, *docker container* and
@@ -50,7 +50,7 @@ To run code a *work container* need to be started, container mount *mofem build
 volume* from container which has been created in the previous step
 
 ~~~~~~
-    docker run --rm=true -it --volumes-from mofem_build  -v $HOME/mofem-cephas/mofem:/mofem -v $HOME:$HOME -e HOSTHOME=$HOME mofem_build:v0.1 /bin/bash
+    docker run --rm=true -it --volumes-from mofem_build  -v $HOME/mofem-cephas/mofem:/mofem -v $HOME:$HOME -e HOSTHOME=$HOME mofem_build /bin/bash
 ~~~~~~
 After execution of above command you are working inside docker, this is isolated
 system hosted by your OS (MacOSX, Linux or Windows). You can run several
