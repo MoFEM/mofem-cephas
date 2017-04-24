@@ -718,6 +718,10 @@ struct SurfaceSlidingConstrains {
       PetscFunctionBegin;
       PetscErrorCode ierr;
 
+      if(col_type != MBVERTEX) {
+        PetscFunctionReturn(0);
+      }
+
       try {
 
         int nb_row = row_data.getIndices().size();

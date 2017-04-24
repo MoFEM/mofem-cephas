@@ -56,7 +56,7 @@ PetscErrorCode DMMoFEMCreateSubDM(DM subdm,DM dm,const char problem_name[]);
 PetscErrorCode DMoFEMGetInterfacePtr(DM dm,const MoFEM::Interface **m_field_ptr);
 
 /**
-  * \brief Get pointer to problem data structure
+  * \brief Get pointer to problem data structurGe
   * \ingroup dm
   */
 PetscErrorCode DMMoFEMGetProblemPtr(DM dm,const MoFEM::MoFEMProblem **problem_ptr);
@@ -649,5 +649,13 @@ namespace MoFEM {
 
 /***************************************************************************//**
  * \defgroup dm Distributed mesh manager
+ * \brief Implementation of PETSc DM, managing interactions between mesh data structures and vectors and matrices
+ *
+ * DM objects are used to manage communication between the algebraic structures in
+ * PETSc (Vec and Mat) and mesh data structures in PDE-based (or other)
+ * simulations.
+ *
+ * DM is abstract interface, here is it particular implementation for MoFEM code.
+ *
  * \ingroup mofem
  ******************************************************************************/
