@@ -176,6 +176,14 @@ typedef multi_index_container<
 
 /***************************************************************************//**
  * \defgroup series_multi_indices Series structures and multi-indices
+ * \brief Interface used to record fields and play them back (for example response of structure subjected to earthquake)
+ *
+ * The idea of this interface is taken from Opensees
+ * <http://opensees.berkeley.edu>, tailored and generalised for MoFEM code. In
+ * principle, one can record tape in for a sequence of points (for example steps
+ * in time) and play it back. One can create several tapes and record all fields
+ * or some of them.
+ *
  * \ingroup mofem
  ******************************************************************************/
 
