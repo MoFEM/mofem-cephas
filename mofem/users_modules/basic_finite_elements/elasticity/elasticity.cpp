@@ -160,6 +160,7 @@ int main(int argc, char *argv[]) {
     rval = m_field.get_moab().get_adjacencies(
       faces,1,false,edges,moab::Interface::UNION
     ); CHKERRQ_MOAB(rval);
+    ierr = m_field.synchronise_entities(edges); CHKERRQ(ierr);
     ierr = m_field.set_field_order(edges,"MESH_NODE_POSITIONS",2); CHKERRQ(ierr);
   }
   ierr = m_field.set_field_order(0,MBVERTEX,"MESH_NODE_POSITIONS",1); CHKERRQ(ierr);
