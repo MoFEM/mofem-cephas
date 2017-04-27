@@ -390,7 +390,7 @@ PetscErrorCode FatPrismPolynomialBase::getValueH1(ublas::matrix<double> &pts) {
     {
       MoABErrorCode rval;
       int quads_nodes[3*4];
-      int quad_order[3];
+      int quad_order[3] = { 0, 0, 0};
       double *quad_n[3],*diff_quad_n[3];
       SideNumber_multiIndex& side_table = const_cast<SideNumber_multiIndex&>(cTx->fePtr->getSideNumberTable());
       SideNumber_multiIndex::nth_index<1>::type::iterator siit;
@@ -433,7 +433,7 @@ PetscErrorCode FatPrismPolynomialBase::getValueH1(ublas::matrix<double> &pts) {
           diff_quad_n[siit->get()->side_number] = NULL;
         }
       }
-      {
+      if(quad_order[0]>0||quad_order[1]>0||quad_order[2]>0) {
         double *vertex_n = &*data.dataOnEntities[MBVERTEX][0].getN(base).data().begin();
         double *diff_vertex_n = &*data.dataOnEntities[MBVERTEX][0].getDiffN(base).data().begin();
         ierr = H1_QuadShapeFunctions_MBPRISM(
