@@ -887,7 +887,7 @@ PetscErrorCode Core::set_field_order(
   MoFEMEntity_multiIndex_ent_view ents_id_view;
   if(eiit != set.end()) {
     EntsByName::iterator hi_eiit = set.upper_bound(miit->get()->getNameRef());
-    ents_id_view.insert(eiit,hi_eiit);
+    std::copy(eiit,hi_eiit,std::back_inserter(ents_id_view));
   }
   if(verb>1) {
     PetscSynchronizedPrintf(
@@ -911,7 +911,9 @@ PetscErrorCode Core::set_field_order(
       case H1:
       if(moab.type_from_handle(*eit)==MBVERTEX) {
         if(order!=1) {
-          SETERRQ(cOmm,MOFEM_DATA_INCONSISTENCY,"approximation order for H1 space and vertex different than 1 makes not sense");
+          SETERRQ(cOmm,MOFEM_DATA_INCONSISTENCY,
+            "approximation order for H1 space and vertex different than 1 makes not sense"
+          );
         }
       }
       break;
@@ -933,8 +935,9 @@ PetscErrorCode Core::set_field_order(
     }
 
     // Entity is in database, change order only if needed
-    MoFEMEntity_multiIndex_ent_view::iterator vit = ents_id_view.find(*eit);
-    if(vit!=ents_id_view.end()) {
+    MoFEMEntity_multiIndex_ent_view::nth_index<1>::type::iterator vit;
+    vit = ents_id_view.get<1>().find(*eit);
+    if(vit!=ents_id_view.get<1>().end()) {
 
       //entity is in database and order is changed or reset
       const ApproximationOrder old_approximation_order = (*vit)->getMaxOrder();
@@ -1283,7 +1286,7 @@ PetscErrorCode Core::buildFieldForL2H1HcurlHdiv(
       current_nb_dofs_on_ent == 0
     ) {
 
-      ents_view.insert(field_ent);
+      ents_view.push_back(field_ent);
 
       // // Only one DOF on entity, simply add it and job done
       // // boost::movelib::unique_ptr<DofEntity> mdof

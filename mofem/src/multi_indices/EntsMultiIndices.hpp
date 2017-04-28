@@ -802,8 +802,9 @@ struct MoFEMEntity_change_order {
   std::vector<FieldData> data;
   std::vector<ApproximationOrder> data_dof_order;
   std::vector<FieldCoefficientsNumber> data_dof_rank;
-  MoFEMEntity_change_order(ApproximationOrder _order):
-  order(_order) {};
+  MoFEMEntity_change_order(ApproximationOrder order):
+  order(order) {
+  }
   inline void operator()(boost::shared_ptr<MoFEMEntity> &e) {
     (*this)(e.get());
   }
@@ -850,9 +851,12 @@ typedef multi_index_container<
   typedef multi_index_container<
     boost::shared_ptr<MoFEMEntity>,
     indexed_by<
-      ordered_unique<
-        tag<Ent_mi_tag>, const_mem_fun<MoFEMEntity,EntityHandle,&MoFEMEntity::getEnt> >
-  > > MoFEMEntity_multiIndex_ent_view;
+      sequenced<>,
+      hashed_non_unique<
+        tag<Ent_mi_tag>, const_mem_fun<MoFEMEntity,EntityHandle,&MoFEMEntity::getEnt>
+      >
+    >
+  > MoFEMEntity_multiIndex_ent_view;
 
 }
 
