@@ -1369,7 +1369,15 @@ PetscErrorCode Core::buildFieldForL2H1HcurlHdiv(
         }
       }
       if(DD != field_ent->getNbDofsOnEnt()) {
-        SETERRQ(cOmm,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
+        std::ostringstream ss;
+        ss << "rank " << rAnk << " ";
+        ss << *field_ent << std::endl;
+        SETERRQ3(
+          cOmm,MOFEM_DATA_INCONSISTENCY,
+          "Expected number of DOFs on entity not equal to number added to database (DD = %d != %d = field_ent->getNbDofsOnEnt())\n"
+          "%s",
+          DD,field_ent->getNbDofsOnEnt(),ss.str().c_str()
+        );
       }
 
       // Finally add dofs to multi-index
