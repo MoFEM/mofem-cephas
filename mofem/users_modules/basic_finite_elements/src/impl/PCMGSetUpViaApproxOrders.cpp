@@ -67,7 +67,7 @@ struct PCMGSubMatrixCtx_private: public PCMGSubMatrixCtx {
     }
   }
   template<InsertMode MODE>
-  friend PetscErrorCode sub_mat_mult(Mat a,Vec x,Vec f);
+  friend PetscErrorCode sub_mat_mult_generic(Mat a,Vec x,Vec f);
   friend PetscErrorCode sub_mat_sor(
     Mat mat,Vec b,PetscReal omega,MatSORType flag,PetscReal shift,PetscInt its,PetscInt lits,Vec x
   );
@@ -88,7 +88,7 @@ public:
 };
 
 template<InsertMode MODE>
-PetscErrorCode sub_mat_mult(Mat a,Vec x,Vec f) {
+PetscErrorCode sub_mat_mult_generic(Mat a,Vec x,Vec f) {
   void *void_ctx;
   PetscErrorCode ierr;
   PetscFunctionBegin;
@@ -105,6 +105,14 @@ PetscErrorCode sub_mat_mult(Mat a,Vec x,Vec f) {
   ierr = VecScatterEnd(ctx->sCat,ctx->F,f,MODE,SCATTER_FORWARD); CHKERRQ(ierr);
   PetscLogEventEnd(ctx->USER_EVENT_mult,0,0,0,0);
   PetscFunctionReturn(0);
+}
+
+PetscErrorCode sub_mat_mult(Mat a,Vec x,Vec f) {
+  return sub_mat_mult_generic<INSERT_VALUES>(a,x,f);
+}
+
+PetscErrorCode sub_mat_mult_add(Mat a,Vec x,Vec f) {
+  return sub_mat_mult_generic<ADD_VALUES>(a,x,f);
 }
 
 PetscErrorCode sub_mat_sor(
@@ -222,10 +230,10 @@ PetscErrorCode DMMGViaApproxOrdersPushBackCoarseningIS(
           comm,n,n,N,N,&(dm_field->shellMatrixCtxPtr.back()),subA
         ); CHKERRQ(ierr);
         ierr = MatShellSetOperation(
-          *subA,MATOP_MULT,(void(*)(void))sub_mat_mult<INSERT_VALUES>
+          *subA,MATOP_MULT,(void(*)(void))sub_mat_mult
         ); CHKERRQ(ierr);
         ierr = MatShellSetOperation(
-          *subA,MATOP_MULT_ADD,(void(*)(void))sub_mat_mult<ADD_VALUES>
+          *subA,MATOP_MULT_ADD,(void(*)(void))sub_mat_mult_add
         ); CHKERRQ(ierr);
         ierr = MatShellSetOperation(
           *subA,MATOP_SOR,(void(*)(void))sub_mat_sor
