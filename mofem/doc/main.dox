@@ -53,15 +53,13 @@ calculations using several mesh refinements, different approximation orders,
 multiple degrees of freedom and/or different scales.
 
 MoFEM library itself is designed to be small, modular and extendable. Itself it
-is not library of finite elements solving particular problems of continuum
-mechanics, f.e. problem of thermal conduction. That is implemented in \em users
-\em modules using MoFEM. \em User \em module in principle is independent
-project, located in its own repository, which can be public or private. Can have
-is own copyright and license. Such flexibility, allowing for privacy and
-different licensing parts of the code, is designed for needs both of academics
-add industry. Since each \em user \em module is implemented with MoFEM, using
-its internal database, data between modules can be exchanged without prior
-knowledge how each module is developed.
+is not a library of finite elements solving particular problems of continuum
+mechanics, e.g. problem of thermal conduction. That is implemented in users
+modules using MoFEM. User module in principle is an independent project, located
+in a stand-alone repository, which can be public or private. Can have is own
+copyright and license. Such flexibility, allowing for privacy and different
+licensing parts of the code, is designed for needs both of academics add
+industry.
 
 \subsection mofem_features Properties and features
 
