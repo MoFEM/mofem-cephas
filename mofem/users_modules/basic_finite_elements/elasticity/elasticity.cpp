@@ -155,12 +155,15 @@ int main(int argc, char *argv[]) {
     Skinner skin(&m_field.get_moab());
     Range faces,tets;
     rval = m_field.get_moab().get_entities_by_type(0,MBTET,tets); CHKERRQ_MOAB(rval);
-    rval = skin.find_skin(0,tets,false,faces); CHKERRQ_MOAB(rval);
+    // rval = skin.find_skin(0,tets,false,faces); CHKERRQ_MOAB(rval);
     Range edges;
     rval = m_field.get_moab().get_adjacencies(
-      faces,1,false,edges,moab::Interface::UNION
+      tets,1,false,edges,moab::Interface::UNION
     ); CHKERRQ_MOAB(rval);
-    ierr = m_field.synchronise_entities(edges); CHKERRQ(ierr);
+    // rval = m_field.get_moab().get_adjacencies(
+    //   faces,1,false,edges,moab::Interface::UNION
+    // ); CHKERRQ_MOAB(rval);
+    // ierr = m_field.synchronise_entities(edges); CHKERRQ(ierr);
     ierr = m_field.set_field_order(edges,"MESH_NODE_POSITIONS",2); CHKERRQ(ierr);
   }
   ierr = m_field.set_field_order(0,MBVERTEX,"MESH_NODE_POSITIONS",1); CHKERRQ(ierr);
@@ -370,7 +373,6 @@ int main(int argc, char *argv[]) {
     dirihlet_bc_ptr = boost::shared_ptr<FEMethod>(new DisplacementBCFEMethodPreAndPostProc(m_field,"DISPLACEMENT",Aij,D0,F));
   }
 
-
   dirihlet_bc_ptr->snes_ctx = FEMethod::CTX_SNESNONE;
   dirihlet_bc_ptr->ts_ctx = FEMethod::CTX_TSNONE;
 
@@ -459,7 +461,7 @@ int main(int argc, char *argv[]) {
     ierr = KSPGetPC(solver,&pc); CHKERRQ(ierr);
     PetscObjectTypeCompare((PetscObject)pc,PCMG,&same);
     if (same) {
-      PCMGSetUpViaApproxOrdersCtx pc_ctx(dm,Aij);
+      PCMGSetUpViaApproxOrdersCtx pc_ctx(dm,Aij,true);
       ierr = PCMGSetUpViaApproxOrders(pc,&pc_ctx); CHKERRQ(ierr);
     } else {
       // Operators are already set, do not use DM for doing that
@@ -574,7 +576,6 @@ int main(int argc, char *argv[]) {
     ierr = VecAXPY(D,1.,D0); CHKERRQ(ierr);
     ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
     ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-
     //Save data on mesh
     ierr = DMoFEMMeshToLocalVector(dm,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
     ierr = DMoFEMLoopFiniteElements(dm,"ELASTIC",&post_proc); CHKERRQ(ierr);

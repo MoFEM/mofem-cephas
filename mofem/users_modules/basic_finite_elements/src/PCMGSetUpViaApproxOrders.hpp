@@ -21,6 +21,15 @@
 static const int DMMGVIAAPPROXORDERSCTX_INTERFACE = 1<<2;
 static const MOFEMuuid IDD_DMMGVIAAPPROXORDERSCTX = MOFEMuuid(BitIntefaceId(DMMGVIAAPPROXORDERSCTX_INTERFACE));
 
+struct PCMGSubMatrixCtx {
+  Mat A;
+  Vec X,F;
+  IS iS;
+  VecScatter sCat;
+  PCMGSubMatrixCtx(Mat a,IS is);
+  virtual ~PCMGSubMatrixCtx();
+};
+
 /**
  * \brief Structure for DM for multi-grid via approximation orders
  * \ingroup dm
@@ -35,6 +44,7 @@ struct DMMGViaApproxOrdersCtx: public MoFEM::DMCtx {
   AO aO;
   std::vector<IS> coarseningIS;   ///< Coarsening IS
   std::vector<Mat> kspOperators;  ///< Get KSP operators
+  boost::ptr_vector<PCMGSubMatrixCtx> shellMatrixCtxPtr; ///< Shell sub-matrix context
 
 };
 
@@ -70,7 +80,9 @@ PetscErrorCode DMMGViaApproxOrdersGetCoarseningISSize(DM dm,int *size);
  *
  * \ingroup dm
  */
-PetscErrorCode DMMGViaApproxOrdersPushBackCoarseningIS(DM,IS is,Mat A,Mat *subA,bool create_sub_matrix);
+PetscErrorCode DMMGViaApproxOrdersPushBackCoarseningIS(
+  DM,IS is,Mat A,Mat *subA,bool create_sub_matrix,bool shell_sub_a
+);
 
 /**
  * \brief Pop is form MG via approximation orders
@@ -164,8 +176,6 @@ PetscErrorCode DMCreateInterpolation_MGViaApproxOrders(DM dm1,DM dm2,Mat *mat,Ve
  */
 PetscErrorCode DMCreateGlobalVector_MGViaApproxOrders(DM dm,Vec *g);
 
-
-
 /**
  * \brief Set data structures of MG pre-conditioner via approximation orders
  */
@@ -178,7 +188,7 @@ struct PCMGSetUpViaApproxOrdersCtx {
   Mat A;  ///< Matrix at fine level
 
   PCMGSetUpViaApproxOrdersCtx(
-    DM dm,Mat a
+    DM dm,Mat a,bool shell_sub_a
   ):
   // mFieldPtr(mfield_ptr),
   // problemName(problem_name),
@@ -187,6 +197,7 @@ struct PCMGSetUpViaApproxOrdersCtx {
   nbLevels(2),
   coarseOrder(2),
   orderAtLastLevel(1000),
+  shellSubA(shell_sub_a),
   verboseLevel(0) {
   }
 
@@ -197,6 +208,7 @@ struct PCMGSetUpViaApproxOrdersCtx {
   int coarseOrder;			///< approximation order of coarse level
   int orderAtLastLevel;  ///< set maximal evaluated order
 
+  bool shellSubA;
   int verboseLevel;
 
   PetscErrorCode ierr;
@@ -248,5 +260,6 @@ struct PCMGSetUpViaApproxOrdersCtx {
 PetscErrorCode PCMGSetUpViaApproxOrders(
   PC pc,PCMGSetUpViaApproxOrdersCtx *ctx,int verb = 0
 );
+
 
 #endif //__PCMGSETUP_VIA_APPROX_ORDERS_HPP__
