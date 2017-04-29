@@ -124,7 +124,7 @@ struct DofEntity: public interface_MoFEMEntity<MoFEMEntity> {
   /** \brief Get dof coefficient
   */
   inline FieldCoefficientsNumber getDofCoeffIdx() const {
-    return ((FieldCoefficientsNumber*)this->sPtr->tag_dof_rank_data)[getEntDofIdx()];
+    return getEntDofIdx()%getNbOfCoeffs(); 
   }
 
   //check if node is active
