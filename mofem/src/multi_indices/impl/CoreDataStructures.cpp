@@ -101,9 +101,6 @@ sequenceDofContainer(
   std::string Tag_rank_name = "_Field_Rank_"+getName();
   rval = moab.tag_get_handle(Tag_rank_name.c_str(),th_rank); MOAB_THROW(rval);
   rval = moab.tag_get_by_ptr(th_rank,&meshSet,1,(const void **)&tag_nb_coeff_data); MOAB_THROW(rval);
-  //dof rank
-  std::string Tag_dof_rank_name = "_Field_Dof_Rank_"+getName();
-  rval = moab.tag_get_handle(Tag_dof_rank_name.c_str(),th_DofRank); MOAB_THROW(rval);
   bit_number = getBitNumberCalculate();
   for(int tt = 0;tt<MBMAXTYPE;tt++) {
     forder_table[tt] = NULL;

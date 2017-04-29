@@ -62,25 +62,20 @@ dof(dof) {
   globalUId = getGlobalUniqueIdCalculate(dof,entity_ptr);
 
   if(sFieldPtr->tag_dof_order_data==NULL) {
-    std::ostringstream ss;
-    ss << "at " << __LINE__ << " in " << __FILE__;
-    ss << " sFieldPtr->tag_dof_order_data==NULL";
-    ss << " (top tip: check if order set to vertices is 1)";
-    //throw(ss.str().c_str());
-    PetscTraceBackErrorHandler(
-      PETSC_COMM_WORLD,
-      __LINE__,PETSC_FUNCTION_NAME,__FILE__,
-      MOFEM_DATA_INCONSISTENCY,PETSC_ERROR_INITIAL,ss.str().c_str(),PETSC_NULL
-    );
-    PetscMPIAbortErrorHandler(PETSC_COMM_WORLD,
-      __LINE__,PETSC_FUNCTION_NAME,__FILE__,
-      MOFEM_DATA_INCONSISTENCY,PETSC_ERROR_INITIAL,ss.str().c_str(),PETSC_NULL
+    THROW_MESSAGE(
+      "sFieldPtr->tag_dof_order_data==NULL"
+      " (top tip: check if order set to vertices is 1)"
     );
   }
-  assert(sFieldPtr->tag_dof_rank_data!=NULL);
   ((ApproximationOrder*)sFieldPtr->tag_dof_order_data)[dof] = dof_order;
-  ((FieldCoefficientsNumber*)sFieldPtr->tag_dof_rank_data)[dof] = dof_rank;
-  // short_uid = get_non_nonunique_short_id_calculate(dof);
+  if(dof_rank!=dof%getNbOfCoeffs()) {
+    std::ostringstream ss;
+    ss << dof_rank << " " << dof << " " << getNbOfCoeffs() << endl;
+    ss << *entity_ptr;
+    cerr << ss.str() << endl;
+    THROW_MESSAGE("Inconsitent DOFs rank with index of DOF on entity");
+  }
+
 }
 
 std::ostream& operator<<(std::ostream& os,const DofEntity& e) {
