@@ -37,24 +37,23 @@ struct DofEntity: public interface_MoFEMEntity<MoFEMEntity> {
   ) {
     // if(dof>=512) THROW_MESSAGE("_dof>=512");
     return
-    (UId)dof|
-    ((UId)ent_ptr->getGlobalUniqueId() << 9);
+    static_cast<UId>(dof)|(ent_ptr->getGlobalUniqueId() << 9);
   }
 
   static inline GlobalUId getGlobalUniqueIdCalculate_Low_Proc(
     const int owner_proc
   ) {
     return
-    (UId)owner_proc << 9+5+8*sizeof(EntityHandle);
+    static_cast<UId>(owner_proc) << 9+5+8*sizeof(EntityHandle);
   }
 
   static inline GlobalUId getGlobalUniqueIdCalculate_Hi_Proc(
     const int owner_proc
   ) {
     return
-    (UId)MBMAXTYPE << 9
-    |(UId)(BITFIELDID_SIZE-1) << 9+8*sizeof(EntityHandle)
-    |(UId)owner_proc << 9+5+8*sizeof(EntityHandle);
+    static_cast<UId>(MBMAXTYPE) << 9
+    |static_cast<UId>(BITFIELDID_SIZE-1) << 9+8*sizeof(EntityHandle)
+    |static_cast<UId>(owner_proc) << 9+5+8*sizeof(EntityHandle);
   }
 
   static inline ShortId getNonNonuniqueShortId(
@@ -62,8 +61,7 @@ struct DofEntity: public interface_MoFEMEntity<MoFEMEntity> {
   ) {
     // if(sizeof(ShortId) < sizeof(char)+2) THROW_MESSAGE("sizeof(ShortId)< sizeof(char)+2")
     return
-    ((ShortId)dof)
-    |(((ShortId)ent_ptr->getBitNumber())<<9);
+    static_cast<ShortId>(dof)|(static_cast<ShortId>(ent_ptr->getBitNumber()) << 9);
   }
 
   bool active;         ///< true if dof is active
@@ -78,7 +76,9 @@ struct DofEntity: public interface_MoFEMEntity<MoFEMEntity> {
   );
 
   /// get dof index on entity
-  inline DofIdx getEntDofIdx() const { return (int)(511&globalUId); }
+  inline DofIdx getEntDofIdx() const {
+    return static_cast<int>(MOAB_DOF_UID_MASK&globalUId);
+  }
 
   /// get field data on dof
   inline FieldData& getFieldData() const {
