@@ -646,7 +646,9 @@ struct MoFEMEntity:
    * @param  order Order of approximation
    * @return       Number of DOFs
    */
-  inline int getOrderNbDofs(int order) const { return (this->sFieldPtr->forder_table[getEntType()])(order); }
+  inline int getOrderNbDofs(int order) const {
+    return (this->sFieldPtr->forder_table[getEntType()])(order);
+  }
 
   /**
    * \brief Get difference of number of DOFs between order and order-1
@@ -802,8 +804,9 @@ struct MoFEMEntity_change_order {
   std::vector<FieldData> data;
   std::vector<ApproximationOrder> data_dof_order;
   std::vector<FieldCoefficientsNumber> data_dof_rank;
-  MoFEMEntity_change_order(ApproximationOrder _order):
-  order(_order) {};
+  MoFEMEntity_change_order(ApproximationOrder order):
+  order(order) {
+  }
   inline void operator()(boost::shared_ptr<MoFEMEntity> &e) {
     (*this)(e.get());
   }
@@ -850,9 +853,12 @@ typedef multi_index_container<
   typedef multi_index_container<
     boost::shared_ptr<MoFEMEntity>,
     indexed_by<
-      ordered_unique<
-        tag<Ent_mi_tag>, const_mem_fun<MoFEMEntity,EntityHandle,&MoFEMEntity::getEnt> >
-  > > MoFEMEntity_multiIndex_ent_view;
+      sequenced<>,
+      hashed_non_unique<
+        tag<Ent_mi_tag>, const_mem_fun<MoFEMEntity,EntityHandle,&MoFEMEntity::getEnt>
+      >
+    >
+  > MoFEMEntity_multiIndex_ent_view;
 
 }
 
