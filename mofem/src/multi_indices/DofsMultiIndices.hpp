@@ -67,7 +67,6 @@ struct DofEntity: public interface_MoFEMEntity<MoFEMEntity> {
   }
 
   bool active;         ///< true if dof is active
-  int dof;             ///< dof index on entity
   GlobalUId globalUId; ///< global unique id for this dof
 
   DofEntity(
@@ -78,8 +77,8 @@ struct DofEntity: public interface_MoFEMEntity<MoFEMEntity> {
     const bool is_active = false
   );
 
-  inline DofIdx getEntDofIdx() const { return dof; }
   /// get dof index on entity
+  inline DofIdx getEntDofIdx() const { return (int)(511&globalUId); }
 
   /// get field data on dof
   inline FieldData& getFieldData() const {
@@ -108,7 +107,7 @@ struct DofEntity: public interface_MoFEMEntity<MoFEMEntity> {
     *
     */
   inline ShortId getNonNonuniqueShortId() const  {
-    return getNonNonuniqueShortId(dof,getMoFEMEntityPtr());
+    return getNonNonuniqueShortId(getEntDofIdx(),getMoFEMEntityPtr());
   }
 
   /// get dof entity handle
