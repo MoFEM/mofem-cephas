@@ -23,9 +23,8 @@
 namespace MoFEM {
 
 /**
- * \brief keeps information about indexed dofs
+ * \brief keeps information about DOF on the entity
  * \ingroup dof_multi_indices
-
  */
 struct DofEntity: public interface_MoFEMEntity<MoFEMEntity> {
 
@@ -67,11 +66,9 @@ struct DofEntity: public interface_MoFEMEntity<MoFEMEntity> {
     |(((ShortId)ent_ptr->getBitNumber())<<9);
   }
 
-  bool active;
-  int dof;
-  GlobalUId globalUId; ///< Global unique id for this dof
-
-  // ShortId short_uid;
+  bool active;         ///< true if dof is active
+  int dof;             ///< dof index on entity
+  GlobalUId globalUId; ///< global unique id for this dof
 
   DofEntity(
     const boost::shared_ptr<MoFEMEntity> &entity_ptr,
@@ -82,19 +79,18 @@ struct DofEntity: public interface_MoFEMEntity<MoFEMEntity> {
   );
 
   inline DofIdx getEntDofIdx() const { return dof; }
+  /// get dof index on entity
 
+  /// get field data on dof
   inline FieldData& getFieldData() const {
     return const_cast<FieldData&>(this->sPtr->tag_FieldData[getEntDofIdx()]);
   }
 
-  /** \brief Get unique dof id
-    */
+  /// get unique dof id
   inline GlobalUId getGlobalUniqueId() const { return globalUId; }
 
-  /** \brief Get entity unique dof id
-    */
+  /// get entity unique dof id
   inline GlobalUId getEntGlobalUniqueId() const { return this->sPtr->getGlobalUniqueId(); }
-
 
   /** \brief get short uid it is unique in combination with entity handle
     *
@@ -103,7 +99,7 @@ struct DofEntity: public interface_MoFEMEntity<MoFEMEntity> {
     * EntityHandles to the same entity.
     *
     * Relation between MoAB EntityHandle can be handled by saving entity handle
-    * data into tag, see MB_TYPE_HANDLE. MOAB at time of reading file or
+    * data into tag, see MB_TYPE_HANDLE. MOAB at time of file reading or
     * creating new MOAB instance, substitute tag value by approbate entity
     * handle.
     *
@@ -115,19 +111,20 @@ struct DofEntity: public interface_MoFEMEntity<MoFEMEntity> {
     return getNonNonuniqueShortId(dof,getMoFEMEntityPtr());
   }
 
+  /// get dof entity handle
   inline EntityHandle getEnt() const { return this->sPtr->getEnt(); }
 
+  /// get dof approximation order
   inline ApproximationOrder getDofOrder() const {
     return ((ApproximationOrder*)this->sPtr->tag_dof_order_data)[getEntDofIdx()];
   }
 
-  /** \brief Get dof coefficient
-  */
+  /// get dof coefficient index
   inline FieldCoefficientsNumber getDofCoeffIdx() const {
-    return getEntDofIdx()%getNbOfCoeffs(); 
+    return getEntDofIdx()%getNbOfCoeffs();
   }
 
-  //check if node is active
+  /// return true if dof us active
   inline char getActive() const { return active ? 1 : 0; }
 
   friend std::ostream& operator<<(std::ostream& os,const DofEntity& e);
@@ -135,7 +132,7 @@ struct DofEntity: public interface_MoFEMEntity<MoFEMEntity> {
 };
 
 /**
- * \brief Interface to DofEntitys
+ * \brief Interface to DofEntity
  *
  * In MoFEM DOFs classes (and Ent and Finite Element classes) are derived by interface,
  * i.e. not class is derived but interface to it.
@@ -149,30 +146,41 @@ struct interface_DofEntity: public interface_MoFEMEntity<T> {
   interface_MoFEMEntity<T>(sptr) {
   }
 
+  /// return dof unique id
   inline const GlobalUId getGlobalUniqueId() const { return this->sPtr->getGlobalUniqueId(); }
 
+  /// return entity uniqe id
   inline const GlobalUId getEntGlobalUniqueId() const { return this->sPtr->getEntGlobalUniqueId(); }
 
+  /// return short id (used by data recorder)
   inline ShortId getNonNonuniqueShortId() const { return this->sPtr->getNonNonuniqueShortId(); }
 
+  /// return index of dof on the entuty
   inline DofIdx getEntDofIdx() const { return this->sPtr->getEntDofIdx(); }
 
+  /// return data on dof
   inline FieldData& getFieldData() const { return this->sPtr->getFieldData(); }
 
-  inline EntityHandle getEnt() const { return this->sPtr->getEnt(); };
+  /// return entity handle
+  inline EntityHandle getEnt() const { return this->sPtr->getEnt(); }
 
-  inline ApproximationOrder getDofOrder() const { return this->sPtr->getDofOrder(); };
+  /// get dof approximation order
+  inline ApproximationOrder getDofOrder() const { return this->sPtr->getDofOrder(); }
 
+  /// get dof coefficient index
   inline FieldCoefficientsNumber getDofCoeffIdx() const {
     return this->sPtr->getDofCoeffIdx();
   }
 
+  /// return true if dof is active
   inline char getActive() const { return this->sPtr->getActive(); }
 
+  /// get pointer to dof data structure
   inline boost::shared_ptr<DofEntity>& getDofEntityPtr() const {
     return this->sPtr;
   }
 
+  /// get pioneer do dof's entity data structure
   inline boost::shared_ptr<MoFEMEntity>& getMoFEMEntityPtr() const {
     return this->sPtr->getMoFEMEntityPtr();
   }
