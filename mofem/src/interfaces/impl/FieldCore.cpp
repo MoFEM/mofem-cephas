@@ -906,7 +906,7 @@ PetscErrorCode Core::set_field_order(
 
   for(Range::iterator eit = field_ents.begin();eit!=field_ents.end();eit++) {
 
-    //sanity check
+    // Sanity check
     switch((*miit)->getSpace()) {
       case H1:
       if(moab.type_from_handle(*eit)==MBVERTEX) {
@@ -950,9 +950,9 @@ PetscErrorCode Core::set_field_order(
 
       {
 
-      	//set dofs inactive if order is reduced, and set new order to entity if
-      	//order is increased (note that dofs are not build if order is
-      	//increased)
+      	// set dofs inactive if order is reduced, and set new order to entity if
+      	// order is increased (note that dofs are not build if order is
+      	// increased)
 
         typedef DofEntityByNameAndEnt dof_set_type;
         dof_set_type& set_set = dofsField.get<Composite_Name_And_Ent_mi_tag>();
@@ -975,6 +975,8 @@ PetscErrorCode Core::set_field_order(
       }
 
     } else {
+      // This entity is not in databse, added to the vector of entities to which
+      // tag with new order have to be set.
       new_ents.insert(*eit);
     }
 
@@ -1057,7 +1059,9 @@ PetscErrorCode Core::set_field_order(
 
   PetscFunctionReturn(0);
 }
-PetscErrorCode Core::set_field_order(const EntityHandle meshset,const EntityType type,const BitFieldId id,const ApproximationOrder order,int verb) {
+PetscErrorCode Core::set_field_order(
+  const EntityHandle meshset,const EntityType type,const BitFieldId id,const ApproximationOrder order,int verb
+) {
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
   *buildMoFEM = 0;
@@ -1076,7 +1080,9 @@ PetscErrorCode Core::set_field_order(const EntityHandle meshset,const EntityType
   }
   PetscFunctionReturn(0);
 }
-PetscErrorCode Core::set_field_order(const EntityHandle meshset,const EntityType type,const std::string& name,const ApproximationOrder order,int verb) {
+PetscErrorCode Core::set_field_order(
+  const EntityHandle meshset,const EntityType type,const std::string& name,const ApproximationOrder order,int verb
+) {
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
   *buildMoFEM = 0;

@@ -208,17 +208,17 @@ void MoFEMEntity_change_order::operator()(MoFEMEntity *e) {
   ApproximationOrder& ent_order = *(e->getMaxOrderPtr());
   ent_order = order;
   EntityHandle ent = e->getEnt();
+  // Get pointer and size of field values tag
   rval = moab.tag_get_by_ptr(
     e->sFieldPtr->th_FieldData,
     &ent,1,(const void **)&e->tag_FieldData,&e->tag_FieldData_size
   );
+  // Tag exist and are some data on it
   if(rval == MB_SUCCESS) {
-    //data
-    if( nb_dofs*sizeof(FieldData) == (unsigned int)e->tag_FieldData_size ) {
-      rval = moab.tag_get_by_ptr(
-        e->sFieldPtr->th_FieldData,
-        &ent,1,(const void **)&e->tag_FieldData,&e->tag_FieldData_size
-      ); MOAB_THROW(rval);
+    // Check if size of filed values tag is correct
+    if(nb_dofs*sizeof(FieldData) == (unsigned int)e->tag_FieldData_size) {
+      // Verify if data other on entity are consistent with size of field values tag
+      // Check dof approximation order
       int tag_size[1];
       rval = moab.tag_get_by_ptr(
         e->sFieldPtr->th_AppDofOrder,
@@ -226,19 +226,28 @@ void MoFEMEntity_change_order::operator()(MoFEMEntity *e) {
       ); MOAB_THROW(rval);
       if(tag_size[0]/sizeof(ApproximationOrder) != e->tag_FieldData_size/sizeof(FieldData))
       THROW_MESSAGE("Data inconsistency");
+      // Check dof rank
       rval = moab.tag_get_by_ptr(
         e->sFieldPtr->th_DofRank,&ent,1,(const void **)&e->tag_dof_rank_data,tag_size
       ); MOAB_THROW(rval);
       if(tag_size[0]/sizeof(FieldCoefficientsNumber) != e->tag_FieldData_size/sizeof(FieldData))
       THROW_MESSAGE("Data inconsistency");
       return;
+    } else if(nb_dofs == 0) {
+      // Delete data on this entity
+      rval = moab.tag_delete_data(e->sFieldPtr->th_FieldData,&ent,1); MOAB_THROW(rval);
+      rval = moab.tag_delete_data(e->sFieldPtr->th_AppDofOrder,&ent,1); MOAB_THROW(rval);
+      rval = moab.tag_delete_data(e->sFieldPtr->th_DofRank,&ent,1); MOAB_THROW(rval);
+      e->tag_FieldData_size = 0;
+      return;
     }
+    // Size of tag is different than new seize, so copy data to new container
     data.resize(e->tag_FieldData_size/sizeof(FieldData));
     FieldData *ptr_begin = (FieldData*)e->tag_FieldData;
     FieldData *ptr_end = (FieldData*)e->tag_FieldData + e->tag_FieldData_size/sizeof(FieldData);
     std::copy(ptr_begin,ptr_end,data.begin());
     int tag_size[1];
-    //order
+    // get order
     rval = moab.tag_get_by_ptr(
       e->sFieldPtr->th_AppDofOrder,&ent,1,(const void **)&e->tag_dof_order_data,tag_size
     ); MOAB_THROW(rval);
@@ -248,7 +257,7 @@ void MoFEMEntity_change_order::operator()(MoFEMEntity *e) {
     ApproximationOrder *ptr_dof_order_begin = (ApproximationOrder*)e->tag_dof_order_data;
     ApproximationOrder *ptr_dof_order_end = (ApproximationOrder*)e->tag_dof_order_data + e->tag_FieldData_size/sizeof(FieldData);
     std::copy(ptr_dof_order_begin,ptr_dof_order_end,data_dof_order.begin());
-    //rank
+    // get rank
     rval = moab.tag_get_by_ptr(
       e->sFieldPtr->th_DofRank,&ent,1,(const void **)&e->tag_dof_rank_data,tag_size
     ); MOAB_THROW(rval);
@@ -259,7 +268,9 @@ void MoFEMEntity_change_order::operator()(MoFEMEntity *e) {
     FieldCoefficientsNumber *ptr_dof_rank_end = (FieldCoefficientsNumber*)e->tag_dof_rank_data + e->tag_FieldData_size/sizeof(FieldData);
     std::copy(ptr_dof_rank_begin,ptr_dof_rank_end,data_dof_rank.begin());
   }
+  // Set new data
   if(nb_dofs>0) {
+    // Set field dof data
     data.resize(nb_dofs,0);
     int tag_size[1];
     tag_size[0] = data.size()*sizeof(FieldData);
@@ -271,7 +282,7 @@ void MoFEMEntity_change_order::operator()(MoFEMEntity *e) {
     ); MOAB_THROW(rval);
     if(nb_dofs != e->tag_FieldData_size/sizeof(FieldData))
     THROW_MESSAGE("Data inconsistency");
-    //order
+    // Set dof orders
     data_dof_order.resize(nb_dofs,0);
     tag_size[0] = data_dof_order.size()*sizeof(ApproximationOrder);
     tag_data[0] = &data_dof_order[0];
@@ -282,7 +293,7 @@ void MoFEMEntity_change_order::operator()(MoFEMEntity *e) {
     ); MOAB_THROW(rval);
     if(nb_dofs != tag_size[0]/sizeof(ApproximationOrder))
     THROW_MESSAGE("Data inconsistency");
-    //rank
+    // Set dof rank
     data_dof_rank.resize(nb_dofs,0);
     tag_size[0] = data_dof_rank.size()*sizeof(FieldCoefficientsNumber);
     tag_data[0] = &data_dof_rank[0];

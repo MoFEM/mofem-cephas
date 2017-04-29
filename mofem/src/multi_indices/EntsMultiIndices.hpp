@@ -646,7 +646,9 @@ struct MoFEMEntity:
    * @param  order Order of approximation
    * @return       Number of DOFs
    */
-  inline int getOrderNbDofs(int order) const { return (this->sFieldPtr->forder_table[getEntType()])(order); }
+  inline int getOrderNbDofs(int order) const {
+    return (this->sFieldPtr->forder_table[getEntType()])(order);
+  }
 
   /**
    * \brief Get difference of number of DOFs between order and order-1
