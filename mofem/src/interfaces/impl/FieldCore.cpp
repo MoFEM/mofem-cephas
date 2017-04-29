@@ -168,7 +168,7 @@ PetscErrorCode Core::add_field(
     void const* tag_prefix_data[] = { name_data_prefix.c_str() };
     int tag_prefix_sizes[1]; tag_prefix_sizes[0] = name_data_prefix.size();
     rval = moab.tag_set_by_ptr(th_FieldName_DataNamePrefix,&meshset,1,tag_prefix_data,tag_prefix_sizes); CHKERRQ_MOAB(rval);
-    Tag th_AppOrder,th_FieldData,th_Rank,th_AppDofOrder;
+    Tag th_AppOrder,th_FieldData,th_Rank;
     //data
     std::string Tag_data_name = name_data_prefix+name;
     const int def_len = 0;
@@ -189,15 +189,6 @@ PetscErrorCode Core::add_field(
       MB_TYPE_OPAQUE,
       th_AppOrder,MB_TAG_CREAT|MB_TAG_BYTES|tag_type,
       &def_ApproximationOrder
-    ); CHKERRQ_MOAB(rval);
-    //dof order
-    std::string Tag_dof_ApproximationOrder_name = "_App_Dof_Order"+name;
-    rval = moab.tag_get_handle(
-      Tag_dof_ApproximationOrder_name.c_str(),
-      def_len,MB_TYPE_OPAQUE,
-      th_AppDofOrder,
-      MB_TAG_CREAT|MB_TAG_BYTES|MB_TAG_VARLEN|MB_TAG_SPARSE,
-      NULL
     ); CHKERRQ_MOAB(rval);
     //rank
     int def_rank = 1;

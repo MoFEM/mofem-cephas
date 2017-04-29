@@ -611,7 +611,6 @@ struct MoFEMEntity:
   typedef interface_RefEntity<RefEntity> interface_type_RefEntity;
   const FieldData* tag_FieldData;
   int tag_FieldData_size;
-  const ApproximationOrder* tag_dof_order_data;
   MoFEMEntity(
     const boost::shared_ptr<Field>& field_ptr,
     const boost::shared_ptr<RefEntity>& ref_ent_ptr
@@ -749,6 +748,19 @@ struct MoFEMEntity:
     return dofsSequce;
   }
 
+  /**
+   * \brief get hash-map relating dof index on entity with its order
+   *
+   * DOFs of given field are indexed on entity
+   * of the same type, same space, approximation base and number of coefficients,
+   * are sorted in the way.
+   *
+   */
+  inline std::vector<ApproximationOrder>& getDofOrderMap() const {
+    return getFieldPtr()->getDofOrderMap(getEntType());
+  }
+
+
 private:
 
   // Keep vector of DoFS on entity
@@ -771,26 +783,49 @@ interface_RefEntity<T> {
   interface_MoFEMEntity(const boost::shared_ptr<T>& sptr):
   interface_Field<T>(sptr),
   interface_RefEntity<T>(sptr) {
-  };
+  }
+
+  /// @return get entity handle
   inline EntityHandle getEnt() const { return this->sPtr->getEnt(); }
 
+  /// @return get number of dofs on entity
   inline int getNbDofsOnEnt() const { return this->sPtr->getNbDofsOnEnt(); }
 
+  /// @return get field data on entity
   inline VectorAdaptor getEntFieldData() const { return this->sPtr->getEntFieldData(); }
 
+  /// @return get number of DOFs for given order
   inline int getOrderNbDofs(int order) const { return this->sPtr->getOrderNbDofs(order); }
 
+  /// @return get increase of DOFs by increase to this order
   inline int getOrderNbDofsDiff(int order) const { return this->sPtr->getOrderNbDofsDiff(order); }
 
+  /// @return get maximal order on entity
   inline ApproximationOrder getMaxOrder() const { return this->sPtr->getMaxOrder(); }
 
+  /// @retun get entity UId
   inline GlobalUId getGlobalUniqueId() const { return this->sPtr->getGlobalUniqueId(); }
 
+  /// @return return pointer to reference entity data structure
   inline boost::shared_ptr<RefEntity>& getRefEntityPtr() const { return this->sPtr->getRefEntityPtr(); }
 
+  /// @return get pointer to field data structure
   inline boost::shared_ptr<Field>& getFieldPtr() const { return this->sFieldPtr->getFieldPtr(); }
 
+  /// @return get pointer to mofem entity data structure
   inline boost::shared_ptr<MoFEMEntity>& getMoFEMEntityPtr() const { return this->sPtr; };
+
+  /**
+   * \brief get hash-map relating dof index on entity with its order
+   *
+   * DOFs of given field are indexed on entity
+   * of the same type, same space, approximation base and number of coefficients,
+   * are sorted in the way.
+   *
+   */
+  inline std::vector<ApproximationOrder>& getDofOrderMap() const {
+    return this->sPtr->getDofOrderMap();
+  }
 
 };
 

@@ -60,13 +60,17 @@ active(is_active) {
 
   globalUId = getGlobalUniqueIdCalculate(dof,entity_ptr);
 
-  if(sFieldPtr->tag_dof_order_data==NULL) {
-    THROW_MESSAGE(
-      "sFieldPtr->tag_dof_order_data==NULL"
-      " (top tip: check if order set to vertices is 1)"
-    );
+  // set order to DOF
+  ApproximationOrder& order = getDofOrderMap()[dof];
+  if(order!=dof_order) {
+    if(order!=-1) {
+      cerr << dof << " " << dof_order << " " << order;
+      THROW_MESSAGE("Order of DOFs inconsistent with order set before for entity");
+    }
+    order = dof_order;
   }
-  ((ApproximationOrder*)sFieldPtr->tag_dof_order_data)[dof] = dof_order;
+
+  // verify data consistency
   if(dof_rank!=dof%getNbOfCoeffs()) {
     std::ostringstream ss;
     ss << dof_rank << " " << dof << " " << getNbOfCoeffs() << endl;

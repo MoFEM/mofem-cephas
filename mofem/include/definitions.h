@@ -303,7 +303,8 @@ enum HCurlDiffFormatting {
 #define MB_END_ID ((EntityID)MB_ID_MASK) ///< Last id is the complement of the MASK
 #define MB_ID_MASK (~MB_TYPE_MASK)
 
-#define MOAB_DOF_UID_MASK 511           ///< Mask for DOF number on entity form UId
+#define MAX_DOFS_ON_ENTITY 512                ///< Maximal number of DOFs on entity
+#define DOF_UID_MASK_ON_ENTITY (MAX_DOFS_ON_ENTITY-1)   ///< Mask for DOF number on entity form UId
 
 #define NOT_USED(x) ( (void)(x) )
 
