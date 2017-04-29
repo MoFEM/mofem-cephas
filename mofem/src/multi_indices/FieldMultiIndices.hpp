@@ -84,7 +84,6 @@ struct Field {
 
   Tag th_FieldData;     ///< Tag storing field values on entity in the field
   Tag th_AppOrder;      ///< Tag storing approximation order on entity
-  Tag th_AppDofOrder;   ///< Tag storing of vector of orders on each entity
 
   BitFieldId* tag_id_data; 		             ///< tag keeps field id
   FieldSpace* tag_space_data;		           ///< tag keeps field space
@@ -302,11 +301,25 @@ struct Field {
     return sequenceDofContainer;
   }
 
+  /**
+   * \brief get hash-map relating dof index on entity with its order
+   *
+   * Dofs of given field are indexed on entity
+   * of the same type, same space, approximation base and number of coefficients,
+   * are sorted in the way.
+   *
+   */
+  inline std::vector<ApproximationOrder>& getDofOrderMap(const EntityType type) const {
+    return dofOrderMap[type];
+  }
+
 
 private:
 
   mutable boost::shared_ptr<SequenceEntContainer> sequenceEntContainer;
   mutable boost::shared_ptr<SequenceDofContainer> sequenceDofContainer;
+
+  mutable std::map<EntityHandle,std::vector<int> > dofOrderMap;
 
 };
 
@@ -344,7 +357,7 @@ struct interface_Field {
 
     */
   inline int getCoordSysDim(const int d = 0) const { return this->sFieldPtr->getCoordSysDim(d); }
-  
+
   inline PetscErrorCode get_E_Base(const double m[]) const {
     PetscFunctionBegin;
     PetscFunctionReturn(this->sFieldPtr->get_E_Base(m));
@@ -404,8 +417,8 @@ struct interface_Field {
    * are sorted in the way.
    *
    */
-  inline std::vector<int>& getDofOrderMap(const EntityType type) {
-    return this->getDofOrderMap(type);
+  inline std::vector<ApproximationOrder>& getDofOrderMap(const EntityType type) const {
+    return this->sFieldPtr->getDofOrderMap(type);
   }
 
 

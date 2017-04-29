@@ -93,9 +93,6 @@ sequenceDofContainer(
   //order
   std::string tag_approximation_order_name = "_App_Order_"+getName();
   rval = moab.tag_get_handle(tag_approximation_order_name.c_str(),th_AppOrder); MOAB_THROW(rval);
-  //dof order
-  std::string tag_dof_approximation_order_name = "_App_Dof_Order"+getName();
-  rval = moab.tag_get_handle(tag_dof_approximation_order_name.c_str(),th_AppDofOrder); MOAB_THROW(rval);
   //rank
   Tag th_rank;
   std::string Tag_rank_name = "_Field_Rank_"+getName();
@@ -174,6 +171,10 @@ sequenceDofContainer(
       }
     }
   }
+  // // Set DOFs orders on entities
+  // for(EntityType ee = MBVERTEX;ee!=MBMAXTYPE;ee++) {
+  //   getDofOrderMap(ee).resize(MAX_DOFS_ON_ENTITY,-1);
+  // }
 }
 
 std::ostream& operator<<(std::ostream& os,const Field& e) {
