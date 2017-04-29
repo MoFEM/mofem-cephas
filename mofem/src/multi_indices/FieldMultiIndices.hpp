@@ -1,6 +1,15 @@
 /** \file FieldMultiIndices.hpp
- * \brief Myltindex containes, for mofem fields data structures and other low-level functions
+ * \brief Field data structure storing information about space, approximation
+ * base, coordinate systems, etc.
  *
+ * Also, it stores data needed for book keeping, like tags to data on the
+ * mesh.
+ *
+ * Each filed has unique ID and name. This data structure is shared between entities
+ * on which is spanning and DOFs on those entities.
+ */
+
+/*
  * MoFEM is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the
  * Free Software Foundation, either version 3 of the License, or (at your
@@ -36,15 +45,21 @@ struct DofEntity;
 /**
   * \brief Provide data structure for (tensor) field approximation.
   * \ingroup dof_multi_indices
-
-  The Field is intended to provide support for fields, with a strong bias
-  towards supporting first and best the capabilities required for scientific
-  computing applications. Since we work with discrete spaces, data structure
-  has to carry information about type of approximation space, its regularity
-
-  Note: Some concepts and ideas are taken from iFiedl Interface specification
-  <https://redmine.scorec.rpi.edu/anonsvn/itaps/software/trunk/tools/doxygen/html/ifield.html>
-
+  *
+  * The Field is intended to provide support for fields, with a strong bias
+  * towards supporting first and best the capabilities required for scientific
+  * computing applications. Since we work with discrete spaces, data structure
+  * has to carry information about type of approximation space, its regularity.
+  *
+  *
+  * Field data structure storing information about space, approximation base,
+  * coordinate systems, etc. It stores additional data needed for book keeping,
+  * like tags to data on the mesh.
+  *
+  * Each filed has unique ID and name. This
+  * data structure is shared between entities on which is spanning and DOFs on
+  * those entities.
+  *
   */
 struct Field {
 
@@ -62,33 +77,42 @@ struct Field {
     >
   > SequenceDofContainer;
 
-
   moab::Interface &moab;
 
-  EntityHandle meshSet; 		///< keeps entities for this meshset
-  boost::shared_ptr<CoordSys> coordSysPtr;
+  EntityHandle meshSet; 		                ///< keeps entities for this meshset
+  boost::shared_ptr<CoordSys> coordSysPtr;  ///< Pointer to field coordinate system data structure
 
-  Tag th_FieldData,th_AppOrder;
-  Tag th_AppDofOrder,th_DofRank;
+  Tag th_FieldData;     ///< Tag storing field values on entity in the field
+  Tag th_AppOrder;      ///< Tag storing approximation order on entity
+  Tag th_AppDofOrder;   ///< Tag storing of vector of orders on each entity
 
-  BitFieldId* tag_id_data; 		///< tag keeps field id
-  FieldSpace* tag_space_data;		///< tag keeps field space
-  FieldApproximationBase* tag_base_data;		///< tag keeps field space
-  FieldCoefficientsNumber* tag_nb_coeff_data; 	///< tag keeps field rank (dimension, f.e. Temperature field has rank 1, displacements field in 3d has rank 3)
-  const void* tag_name_data; 		///< tag keeps name of the field
-  int tag_name_size; 			///< number of bits necessary to keep field name
-  const void* tag_name_prefix_data; 	///< tag keeps name prefix of the field
-  int tag_name_prefix_size; 		///< number of bits necessary to keep field name prefix
-  FieldOrderTable forder_table;		///< nb. dofs table for entities
+  BitFieldId* tag_id_data; 		             ///< tag keeps field id
+  FieldSpace* tag_space_data;		           ///< tag keeps field space
+  FieldApproximationBase* tag_base_data;	 ///< tag keeps field spacea
+  /// tag keeps field rank (dimension, f.e. Temperature field has rank 1,
+  /// displacements field in 3d has rank 3)
+  FieldCoefficientsNumber* tag_nb_coeff_data;
+  const void* tag_name_data; 		            ///< tag keeps name of the field
+  int tag_name_size; 			                  ///< number of bits necessary to keep field name
+  const void* tag_name_prefix_data; 	      ///< tag keeps name prefix of the field
+  int tag_name_prefix_size; 		            ///< number of bits necessary to keep field name prefix
+  FieldOrderTable forder_table;		          ///< nb. DOFs table for entities
+
+  /**
+   * Field Id is bit set. Each field has only one bit on, bit_number stores number of set bit
+   */
   unsigned int bit_number;
-
 
   /**
     * \brief constructor for moab field
     *
     * \param meshset which keeps entities for this field
     */
-  Field(const Interface &moab,const EntityHandle meshset,const boost::shared_ptr<CoordSys> coord_sys_ptr);
+  Field(
+    const Interface &moab,
+    const EntityHandle meshset,
+    const boost::shared_ptr<CoordSys> coord_sys_ptr
+  );
 
   /**
    * \brief Get field meshset

@@ -168,7 +168,7 @@ PetscErrorCode Core::add_field(
     void const* tag_prefix_data[] = { name_data_prefix.c_str() };
     int tag_prefix_sizes[1]; tag_prefix_sizes[0] = name_data_prefix.size();
     rval = moab.tag_set_by_ptr(th_FieldName_DataNamePrefix,&meshset,1,tag_prefix_data,tag_prefix_sizes); CHKERRQ_MOAB(rval);
-    Tag th_AppOrder,th_FieldData,th_Rank,th_AppDofOrder,th_DofRank;
+    Tag th_AppOrder,th_FieldData,th_Rank,th_AppDofOrder;
     //data
     std::string Tag_data_name = name_data_prefix+name;
     const int def_len = 0;
@@ -211,15 +211,6 @@ PetscErrorCode Core::add_field(
       &def_rank
     ); CHKERRQ_MOAB(rval);
     rval = moab.tag_set_data(th_Rank,&meshset,1,&nb_of_coefficients); CHKERRQ_MOAB(rval);
-    //dof rank
-    std::string Tag_dof_rank_name = "_Field_Dof_Rank_"+name;
-    rval = moab.tag_get_handle(
-      Tag_dof_rank_name.c_str(),
-      def_len,MB_TYPE_OPAQUE,
-      th_DofRank,
-      MB_TAG_CREAT|MB_TAG_BYTES|MB_TAG_VARLEN|MB_TAG_SPARSE,
-      NULL
-    ); CHKERRQ_MOAB(rval);
     //add meshset
     std::pair<Field_multiIndex::iterator,bool> p;
     try {

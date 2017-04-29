@@ -612,7 +612,6 @@ struct MoFEMEntity:
   const FieldData* tag_FieldData;
   int tag_FieldData_size;
   const ApproximationOrder* tag_dof_order_data;
-  const FieldCoefficientsNumber* tag_dof_rank_data;
   MoFEMEntity(
     const boost::shared_ptr<Field>& field_ptr,
     const boost::shared_ptr<RefEntity>& ref_ent_ptr
