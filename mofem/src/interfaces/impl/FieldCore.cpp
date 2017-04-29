@@ -887,7 +887,7 @@ PetscErrorCode Core::set_field_order(
   MoFEMEntity_multiIndex_ent_view ents_id_view;
   if(eiit != set.end()) {
     EntsByName::iterator hi_eiit = set.upper_bound(miit->get()->getNameRef());
-    ents_id_view.insert(eiit,hi_eiit);
+    std::copy(eiit,hi_eiit,std::back_inserter(ents_id_view));
   }
   if(verb>1) {
     PetscSynchronizedPrintf(
@@ -906,12 +906,14 @@ PetscErrorCode Core::set_field_order(
 
   for(Range::iterator eit = field_ents.begin();eit!=field_ents.end();eit++) {
 
-    //sanity check
+    // Sanity check
     switch((*miit)->getSpace()) {
       case H1:
       if(moab.type_from_handle(*eit)==MBVERTEX) {
         if(order!=1) {
-          SETERRQ(cOmm,MOFEM_DATA_INCONSISTENCY,"approximation order for H1 space and vertex different than 1 makes not sense");
+          SETERRQ(cOmm,MOFEM_DATA_INCONSISTENCY,
+            "approximation order for H1 space and vertex different than 1 makes not sense"
+          );
         }
       }
       break;
@@ -933,8 +935,9 @@ PetscErrorCode Core::set_field_order(
     }
 
     // Entity is in database, change order only if needed
-    MoFEMEntity_multiIndex_ent_view::iterator vit = ents_id_view.find(*eit);
-    if(vit!=ents_id_view.end()) {
+    MoFEMEntity_multiIndex_ent_view::nth_index<1>::type::iterator vit;
+    vit = ents_id_view.get<1>().find(*eit);
+    if(vit!=ents_id_view.get<1>().end()) {
 
       //entity is in database and order is changed or reset
       const ApproximationOrder old_approximation_order = (*vit)->getMaxOrder();
@@ -947,9 +950,9 @@ PetscErrorCode Core::set_field_order(
 
       {
 
-      	//set dofs inactive if order is reduced, and set new order to entity if
-      	//order is increased (note that dofs are not build if order is
-      	//increased)
+      	// set dofs inactive if order is reduced, and set new order to entity if
+      	// order is increased (note that dofs are not build if order is
+      	// increased)
 
         typedef DofEntityByNameAndEnt dof_set_type;
         dof_set_type& set_set = dofsField.get<Composite_Name_And_Ent_mi_tag>();
@@ -972,6 +975,8 @@ PetscErrorCode Core::set_field_order(
       }
 
     } else {
+      // This entity is not in databse, added to the vector of entities to which
+      // tag with new order have to be set.
       new_ents.insert(*eit);
     }
 
@@ -1054,7 +1059,9 @@ PetscErrorCode Core::set_field_order(
 
   PetscFunctionReturn(0);
 }
-PetscErrorCode Core::set_field_order(const EntityHandle meshset,const EntityType type,const BitFieldId id,const ApproximationOrder order,int verb) {
+PetscErrorCode Core::set_field_order(
+  const EntityHandle meshset,const EntityType type,const BitFieldId id,const ApproximationOrder order,int verb
+) {
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
   *buildMoFEM = 0;
@@ -1073,7 +1080,9 @@ PetscErrorCode Core::set_field_order(const EntityHandle meshset,const EntityType
   }
   PetscFunctionReturn(0);
 }
-PetscErrorCode Core::set_field_order(const EntityHandle meshset,const EntityType type,const std::string& name,const ApproximationOrder order,int verb) {
+PetscErrorCode Core::set_field_order(
+  const EntityHandle meshset,const EntityType type,const std::string& name,const ApproximationOrder order,int verb
+) {
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
   *buildMoFEM = 0;
@@ -1283,7 +1292,7 @@ PetscErrorCode Core::buildFieldForL2H1HcurlHdiv(
       current_nb_dofs_on_ent == 0
     ) {
 
-      ents_view.insert(field_ent);
+      ents_view.push_back(field_ent);
 
       // // Only one DOF on entity, simply add it and job done
       // // boost::movelib::unique_ptr<DofEntity> mdof
@@ -1369,7 +1378,15 @@ PetscErrorCode Core::buildFieldForL2H1HcurlHdiv(
         }
       }
       if(DD != field_ent->getNbDofsOnEnt()) {
-        SETERRQ(cOmm,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
+        std::ostringstream ss;
+        ss << "rank " << rAnk << " ";
+        ss << *field_ent << std::endl;
+        SETERRQ3(
+          cOmm,MOFEM_DATA_INCONSISTENCY,
+          "Expected number of DOFs on entity not equal to number added to database (DD = %d != %d = field_ent->getNbDofsOnEnt())\n"
+          "%s",
+          DD,field_ent->getNbDofsOnEnt(),ss.str().c_str()
+        );
       }
 
       // Finally add dofs to multi-index
