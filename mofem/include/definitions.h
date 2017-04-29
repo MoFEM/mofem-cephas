@@ -284,15 +284,14 @@ enum HCurlDiffFormatting {
   HCURL0_0 = 0,HCURL1_0,HCURL2_0,HCURL0_1,HCURL1_1,HCURL2_1,HCURL0_2,HCURL1_2,HCURL2_2
 };
 
-#define BITREFEDGES_SIZE 6 /*number of edges on tetrahedral*/
-#define BITREFLEVEL_SIZE 128 /*max number of refinements*/
-#define BITFIELDID_SIZE 32 /*max number of fields*/
-#define BITFEID_SIZE 32 /*max number of finite elements*/
-#define BITPROBLEMID_SIZE 32 /*max number of problems*/
+#define BITREFEDGES_SIZE 6    ///< number of edges on tetrahedral
+#define BITREFLEVEL_SIZE 128  ///< max number of refinements
+#define BITFIELDID_SIZE 32    ///< max number of fields
+#define BITFEID_SIZE 32       ///< max number of finite elements
+#define BITPROBLEMID_SIZE 32  ///< max number of problems
 #define BITINTERFACEUID_SIZE 32
 
-//// default communicator number
-#define MYPCOMM_INDEX 0
+#define MYPCOMM_INDEX 0       ///< default communicator number PCOMM
 
 //This Is form MOAB
 #define MB_TYPE_WIDTH 4
@@ -300,9 +299,11 @@ enum HCurlDiffFormatting {
 #define MB_TYPE_MASK ((EntityHandle)0xF << MB_ID_WIDTH)
 //             2^MB_TYPE_WIDTH-1 ------^
 
-#define MB_START_ID ((EntityID)1)        //!< All entity id's currently start at 1
-#define MB_END_ID ((EntityID)MB_ID_MASK) //!< Last id is the complement of the MASK
+#define MB_START_ID ((EntityID)1)        ///< All entity id's currently start at 1
+#define MB_END_ID ((EntityID)MB_ID_MASK) ///< Last id is the complement of the MASK
 #define MB_ID_MASK (~MB_TYPE_MASK)
+
+#define MOAB_DOF_UID_MASK 511           ///< Mask for DOF number on entity form UId
 
 #define NOT_USED(x) ( (void)(x) )
 

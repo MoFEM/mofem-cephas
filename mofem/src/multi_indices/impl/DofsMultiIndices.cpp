@@ -46,8 +46,7 @@ DofEntity::DofEntity(
   const bool is_active
 ):
 interface_MoFEMEntity<MoFEMEntity>(entity_ptr),
-active(is_active),
-dof(dof) {
+active(is_active) {
 
   if(!entity_ptr) {
     THROW_MESSAGE("MoFEMEntity pinter not initialized");

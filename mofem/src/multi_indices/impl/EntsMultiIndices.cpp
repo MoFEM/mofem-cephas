@@ -171,7 +171,9 @@ tag_dof_order_data(NULL) {
   if(rval == MB_SUCCESS) {
     if( (unsigned int)tag_FieldData_size != 0 ) {
       int tag_size[1];
-      rval = moab.tag_get_by_ptr(field_ptr->th_AppDofOrder,&ent,1,(const void **)&tag_dof_order_data,tag_size); MOAB_THROW(rval);
+      rval = moab.tag_get_by_ptr(
+        field_ptr->th_AppDofOrder,&ent,1,(const void **)&tag_dof_order_data,tag_size
+      ); MOAB_THROW(rval);
       if(tag_size[0]/sizeof(ApproximationOrder) != tag_FieldData_size/sizeof(FieldData)) {
         THROW_MESSAGE("Inconsistent size of vector of DOFs orders and size of data values vector");
       }
