@@ -162,24 +162,13 @@ interface_Field<Field>(field_ptr),
 interface_RefEntity<RefEntity>(ref_ent_ptr),
 // tag_order_data(NULL),
 tag_FieldData(NULL),
-tag_FieldData_size(0),
-tag_dof_order_data(NULL) {
+tag_FieldData_size(0) {
   MoABErrorCode rval;
   EntityHandle ent = getEnt();
   moab::Interface &moab = ref_ent_ptr->basicDataPtr->moab;
   rval = moab.tag_get_by_ptr(field_ptr->th_FieldData,&ent,1,(const void **)&tag_FieldData,&tag_FieldData_size);
-  if(rval == MB_SUCCESS) {
-    if( (unsigned int)tag_FieldData_size != 0 ) {
-      int tag_size[1];
-      rval = moab.tag_get_by_ptr(
-        field_ptr->th_AppDofOrder,&ent,1,(const void **)&tag_dof_order_data,tag_size
-      ); MOAB_THROW(rval);
-      if(tag_size[0]/sizeof(ApproximationOrder) != tag_FieldData_size/sizeof(FieldData)) {
-        THROW_MESSAGE("Inconsistent size of vector of DOFs orders and size of data values vector");
-      }
-    }
-  }
   global_uid = getGlobalUniqueIdCalculate();
+  getDofOrderMap().resize(MAX_DOFS_ON_ENTITY,-1);
 }
 
 ApproximationOrder* MoFEMEntity::getMaxOrderPtr() {
@@ -219,20 +208,10 @@ void MoFEMEntity_change_order::operator()(MoFEMEntity *e) {
   if(rval == MB_SUCCESS) {
     // Check if size of filed values tag is correct
     if(nb_dofs*sizeof(FieldData) == (unsigned int)e->tag_FieldData_size) {
-      // Verify if data other on entity are consistent with size of field values tag
-      // Check dof approximation order
-      int tag_size[1];
-      rval = moab.tag_get_by_ptr(
-        e->sFieldPtr->th_AppDofOrder,
-        &ent,1,(const void **)&e->tag_dof_order_data,tag_size
-      ); MOAB_THROW(rval);
-      if(tag_size[0]/sizeof(ApproximationOrder) != e->tag_FieldData_size/sizeof(FieldData))
-      THROW_MESSAGE("Data inconsistency");
       return;
     } else if(nb_dofs == 0) {
       // Delete data on this entity
       rval = moab.tag_delete_data(e->sFieldPtr->th_FieldData,&ent,1); MOAB_THROW(rval);
-      rval = moab.tag_delete_data(e->sFieldPtr->th_AppDofOrder,&ent,1); MOAB_THROW(rval);
       e->tag_FieldData_size = 0;
       return;
     }
@@ -241,17 +220,6 @@ void MoFEMEntity_change_order::operator()(MoFEMEntity *e) {
     FieldData *ptr_begin = (FieldData*)e->tag_FieldData;
     FieldData *ptr_end = (FieldData*)e->tag_FieldData + e->tag_FieldData_size/sizeof(FieldData);
     std::copy(ptr_begin,ptr_end,data.begin());
-    int tag_size[1];
-    // get order
-    rval = moab.tag_get_by_ptr(
-      e->sFieldPtr->th_AppDofOrder,&ent,1,(const void **)&e->tag_dof_order_data,tag_size
-    ); MOAB_THROW(rval);
-    if(tag_size[0]/sizeof(ApproximationOrder) != e->tag_FieldData_size/sizeof(FieldData))
-    THROW_MESSAGE("Data inconsistency");
-    data_dof_order.resize(e->tag_FieldData_size/sizeof(FieldData));
-    ApproximationOrder *ptr_dof_order_begin = (ApproximationOrder*)e->tag_dof_order_data;
-    ApproximationOrder *ptr_dof_order_end = (ApproximationOrder*)e->tag_dof_order_data + e->tag_FieldData_size/sizeof(FieldData);
-    std::copy(ptr_dof_order_begin,ptr_dof_order_end,data_dof_order.begin());
   }
   // Set new data
   if(nb_dofs>0) {
@@ -266,17 +234,6 @@ void MoFEMEntity_change_order::operator()(MoFEMEntity *e) {
       &ent,1,(const void **)&e->tag_FieldData,&e->tag_FieldData_size
     ); MOAB_THROW(rval);
     if(nb_dofs != e->tag_FieldData_size/sizeof(FieldData))
-    THROW_MESSAGE("Data inconsistency");
-    // Set dof orders
-    data_dof_order.resize(nb_dofs,0);
-    tag_size[0] = data_dof_order.size()*sizeof(ApproximationOrder);
-    tag_data[0] = &data_dof_order[0];
-    rval = moab.tag_set_by_ptr(e->sFieldPtr->th_AppDofOrder,&ent,1,tag_data,tag_size); MOAB_THROW(rval);
-    rval = moab.tag_get_by_ptr(
-      e->sFieldPtr->th_AppDofOrder,
-      &ent,1,(const void **)&e->tag_dof_order_data,tag_size
-    ); MOAB_THROW(rval);
-    if(nb_dofs != tag_size[0]/sizeof(ApproximationOrder))
     THROW_MESSAGE("Data inconsistency");
   }
 }

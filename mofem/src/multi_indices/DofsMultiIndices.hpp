@@ -77,7 +77,7 @@ struct DofEntity: public interface_MoFEMEntity<MoFEMEntity> {
 
   /// @return get dof index on entity
   inline DofIdx getEntDofIdx() const {
-    return MOAB_DOF_UID_MASK&(*reinterpret_cast<const unsigned int*>(&globalUId));
+    return DOF_UID_MASK_ON_ENTITY&(*reinterpret_cast<const unsigned int*>(&globalUId));
   }
 
   /// @return get field data on dof
@@ -115,7 +115,7 @@ struct DofEntity: public interface_MoFEMEntity<MoFEMEntity> {
 
   /// @return get dof approximation order
   inline ApproximationOrder getDofOrder() const {
-    return ((ApproximationOrder*)this->sPtr->tag_dof_order_data)[getEntDofIdx()];
+    return getDofOrderMap()[getEntDofIdx()];
   }
 
   /// @return get dof coefficient index
