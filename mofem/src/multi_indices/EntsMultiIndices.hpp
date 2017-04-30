@@ -685,13 +685,13 @@ struct MoFEMEntity:
     assert(owner_proc<1024);
     if(true_if_distributed_mesh) {
       return
-      (UId)moab_owner_handle
-      |(UId)bit_number << 8*sizeof(EntityHandle)
-      |(UId)owner_proc << 5+8*sizeof(EntityHandle);
+      static_cast<UId>(moab_owner_handle)|
+      static_cast<UId>(bit_number) << 8*sizeof(EntityHandle)|
+      static_cast<UId>(owner_proc) << 5+8*sizeof(EntityHandle);
     } else {
       return
-      (UId)moab_owner_handle
-      |(UId)bit_number << 8*sizeof(EntityHandle);
+      static_cast<UId>(moab_owner_handle)|
+      static_cast<UId>(bit_number) << 8*sizeof(EntityHandle);
     }
   }
 

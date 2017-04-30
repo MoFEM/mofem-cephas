@@ -268,6 +268,10 @@ struct NonlinearElasticElement {
      * \note This member function if used should be implement by template member function Specialization,
      * different implementation needed for TYPE=double or TYPE=adouble
      *
+     * More complex physical models depend on gradient of defamation and some
+     * additional variables. For example can depend on temperature. This function
+     * adds additional independent variables to the model.
+     *
      * @param  nb_active_variables number of active variables
      * @return                     error code
      */
@@ -278,6 +282,17 @@ struct NonlinearElasticElement {
       PetscFunctionReturn(0);
     }
 
+    /**
+    * \brief Add additional independent variables
+    * More complex physical models depend on gradient of defamation and some
+    * additional variables. For example can depend on temperature. This function
+    * adds additional independent variables to the model.
+    *
+    * /note First 9 elements are reserved for gradient of deformation.
+    * @param  activeVariables vector of deepened variables, values after index 9 should be add.
+     *
+    * @return                 error code
+    */
     virtual PetscErrorCode setUserActiveVariables(
       VectorDouble &activeVariables) {
       PetscFunctionBegin;
@@ -367,16 +382,19 @@ struct NonlinearElasticElement {
     OpGetCommonDataAtGaussPts(const std::string field_name,CommonData &common_data);
   };
 
+  /**
+   * \brief Operator performs automatic differentation.
+   */
   struct OpJacobianPiolaKirchhoffStress: public MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator {
 
-    BlockData &dAta;
-    CommonData &commonData;
-    int tAg;//,lastId;
-    int adlocReturnValue;
-    bool jAcobian;
-    bool fUnction;
-    bool aLe;
-    bool fieldDisp;
+    BlockData &dAta;          ///< Structure keeping data about problem, like material parameters
+    CommonData &commonData;   ///< Structure keeping data abut this particular element, e.g. gradient of deformation at integration points
+    int tAg;//,lastId;        ///< ADOL-C tag used for recording operations
+    int adlocReturnValue;     ///< return value from ADOL-C, if non-zero that is error.
+    bool jAcobian;            ///< if true Jacobian is calculated
+    bool fUnction;            ///< if true stress i calcualted
+    bool aLe;                 ///< true if arbitrary Lagrangian-Eulerian formulation
+    bool fieldDisp;           ///< true if field of displacements is given, usually spatial positions are given.
 
     /**
       \brief Construct operator to calculate Piola-Kirchhoff stress or its derivatives over gradient deformation
