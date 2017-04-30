@@ -520,13 +520,12 @@ interface_RefElement<RefElement> {
 
   /**
    * \brief Generate UId for finite element entity
-   * @return Finite element entity unique Id
+   * @return finite element entity unique Id
    */
   GlobalUId getGlobalUniqueIdCalculate() const {
-    char bit_number = getBitNumber();
-    assert(bit_number<=32);
-    GlobalUId _uid_ = (sPtr->getRefEnt())|(((GlobalUId)bit_number)<<(8*sizeof(EntityHandle)));
-    return _uid_;
+    return
+    static_cast<GlobalUId>(sPtr->getRefEnt())|
+    (static_cast<GlobalUId>(getBitNumber())<<8*sizeof(EntityHandle));
   }
 
   /**
