@@ -523,9 +523,10 @@ interface_RefElement<RefElement> {
    * @return finite element entity unique Id
    */
   GlobalUId getGlobalUniqueIdCalculate() const {
+    assert(getBitNumber()<=32);
     return
     static_cast<GlobalUId>(sPtr->getRefEnt())|
-    (static_cast<GlobalUId>(getBitNumber())<<8*sizeof(EntityHandle));
+    static_cast<GlobalUId>(getBitNumber())<<8*sizeof(EntityHandle);
   }
 
   /**

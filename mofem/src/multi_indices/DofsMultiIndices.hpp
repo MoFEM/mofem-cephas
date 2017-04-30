@@ -51,9 +51,9 @@ struct DofEntity: public interface_MoFEMEntity<MoFEMEntity> {
     const int owner_proc
   ) {
     return
-    static_cast<UId>(MBMAXTYPE) << 9
-    |static_cast<UId>(BITFIELDID_SIZE-1) << 9+8*sizeof(EntityHandle)
-    |static_cast<UId>(owner_proc) << 9+5+8*sizeof(EntityHandle);
+    static_cast<UId>(MBMAXTYPE) << 9|
+    static_cast<UId>(BITFIELDID_SIZE-1) << 9+8*sizeof(EntityHandle)|
+    static_cast<UId>(owner_proc) << 9+5+8*sizeof(EntityHandle);
   }
 
   static inline ShortId getNonNonuniqueShortId(
