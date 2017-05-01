@@ -23,18 +23,18 @@ namespace MoFEM {
 
 static const MOFEMuuid IDD_MOFEMBitLevelCoupler = MOFEMuuid( BitIntefaceId(BITLEVELCOUPLER_INTERFACE) );
 
-/** \brief Interface set parent for verrtices, edges, triangles and tetrahedrons.
+/** \brief Interface set parent for vertices, edges, triangles and tetrahedrons.
   * \ingroup mofem
   *
   */
-struct BitLevelCouplerInterface: public UnknownInterface {
+struct BitLevelCoupler: public UnknownInterface {
 
   PetscErrorCode queryInterface(const MOFEMuuid& uuid, UnknownInterface** iface);
 
   MoFEM::Core& cOre;
-  bool vErify;	///< by defualt is switched off, swith it on to verify if existing parent is equal to parent set by interface
+  bool vErify;	///< by default is switched off, with it on to verify if existing parent is equal to parent set by interface
 
-  BitLevelCouplerInterface(const MoFEM::Core& core):
+  BitLevelCoupler(const MoFEM::Core& core):
   cOre(const_cast<MoFEM::Core&>(core)),
   vErify(false) {}
 
@@ -58,8 +58,14 @@ struct BitLevelCouplerInterface: public UnknownInterface {
     \param verbose level
 
     */
-  PetscErrorCode getParent(const double *coords,EntityHandle &parent,
-    bool tet_only = false,const double iter_tol = 1.0e-10,const double inside_tol = 1.0e-6,int verb = 0);
+  PetscErrorCode getParent(
+    const double *coords,
+    EntityHandle &parent,
+    bool tet_only = false,
+    const double iter_tol = 1.0e-10,
+    const double inside_tol = 1.0e-6,
+    int verb = 0
+  );
 
   /** \brief finding parents for vertices
     *
@@ -82,12 +88,15 @@ struct BitLevelCouplerInterface: public UnknownInterface {
     \param verbose level
 
     */
-  PetscErrorCode buidlAdjacenciesVerticesOnTets(const BitRefLevel &parent_level,Range &children,
+  PetscErrorCode buidlAdjacenciesVerticesOnTets(
+    const BitRefLevel &parent_level,
+    Range &children,
     bool vertex_elements = false,
     const double iter_tol = 1.0e-10,
     const double inside_tol = 1.0e-6,
     bool throw_error = true,
-    int verb = 0);
+    int verb = 0
+  );
 
   /** \brief finding parents for edegs, faces and tets
 
@@ -100,7 +109,7 @@ struct BitLevelCouplerInterface: public UnknownInterface {
 
     \param vertex_elements if true algorithm assumes that vertices elements are
     used. IF NOT SET AND SUCH ELEMENTS EXIST IT WILL RESULT IN UNPREDICTABLE
-    BEHAVIOUR.
+    BEHAVIOR.
 
     \param iter_tol tolerance for convergence of point search
 
@@ -112,7 +121,11 @@ struct BitLevelCouplerInterface: public UnknownInterface {
 
     */
   PetscErrorCode buidlAdjacenciesEdgesFacesVolumes(
-    const BitRefLevel &parent_level,Range &children,bool elements = true,int verb = 0);
+    const BitRefLevel &parent_level,
+    Range &children,
+    bool elements = true,
+    int verb = 0
+  );
 
   /** \brief reset parent entities
 
@@ -120,6 +133,49 @@ struct BitLevelCouplerInterface: public UnknownInterface {
 
     */
   PetscErrorCode resetParents(Range &children,bool elements = true,int verb = 0);
+
+  /**
+   * \brief copy data from parents
+   *
+   * This not approximate date from, simply copy DOFs values from one mesh to another.
+   * This is useful for special case of refinement, e.g. insertion of interface, where
+   * entities on the interface are doubled to create displacement jump.
+   * In general case use this function could lead to wrong results.
+   *
+   * \note Move data only if type of child and parent is the same.
+   *
+   * @param  parent pointer to array of parent entities
+   * @param  children pointer to array of children entities
+   * @param  verify if true verifi consistency with database
+   * @return     error code
+   */
+  PetscErrorCode copyFieldDataFromParentToChildren(
+    const std::vector<EntityHandle> &parents,
+    const std::vector<EntityHandle> &children,
+    const bool verify = true
+  );
+
+  /**
+   * \brief copy data from parents
+   *
+   * This not approximate date from, simply copy DOFs values from one mesh to another.
+   * This is useful for special case of refinement, e.g. insertion of interface, where
+   * entities on the interface are doubled to create displacement jump.
+   *
+   * In general case use this function could lead to wrong results.
+   *
+   *
+   * \note Move data only if type of child and parent is the same.
+   *
+   * @param  bit bit ref level
+   * @param  verify if true verifi consistency with database
+   * @return     error code
+   */
+  PetscErrorCode copyFieldDataFromParentToChildren(
+    const BitRefLevel bit,
+    const BitRefLevel mask,
+    const bool verify = true
+  );
 
   private:
 

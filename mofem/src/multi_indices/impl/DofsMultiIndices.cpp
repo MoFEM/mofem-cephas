@@ -39,48 +39,46 @@ namespace MoFEM {
 
 //moab dof
 DofEntity::DofEntity(
-  const boost::shared_ptr<MoFEMEntity>& entity_ptr,
+  const boost::shared_ptr<FieldEntity>& entity_ptr,
   const ApproximationOrder dof_order,
   const FieldCoefficientsNumber dof_rank,
   const DofIdx dof,
   const bool is_active
 ):
-interface_MoFEMEntity<MoFEMEntity>(entity_ptr),
-active(is_active),
-dof(dof) {
+interface_FieldEntity<FieldEntity>(entity_ptr),
+active(is_active) {
 
   if(!entity_ptr) {
-    THROW_MESSAGE("MoFEMEntity pinter not initialized");
+    THROW_MESSAGE("FieldEntity pinter not initialized");
   }
   if(!sPtr) {
-    THROW_MESSAGE("MoFEMEntity pinter not initialized");
+    THROW_MESSAGE("FieldEntity pinter not initialized");
   }
-  if(!getMoFEMEntityPtr()) {
-    THROW_MESSAGE("MoFEMEntity pinter not initialized");
+  if(!getFieldEntityPtr()) {
+    THROW_MESSAGE("FieldEntity pinter not initialized");
   }
 
   globalUId = getGlobalUniqueIdCalculate(dof,entity_ptr);
 
-  if(sFieldPtr->tag_dof_order_data==NULL) {
-    std::ostringstream ss;
-    ss << "at " << __LINE__ << " in " << __FILE__;
-    ss << " sFieldPtr->tag_dof_order_data==NULL";
-    ss << " (top tip: check if order set to vertices is 1)";
-    //throw(ss.str().c_str());
-    PetscTraceBackErrorHandler(
-      PETSC_COMM_WORLD,
-      __LINE__,PETSC_FUNCTION_NAME,__FILE__,
-      MOFEM_DATA_INCONSISTENCY,PETSC_ERROR_INITIAL,ss.str().c_str(),PETSC_NULL
-    );
-    PetscMPIAbortErrorHandler(PETSC_COMM_WORLD,
-      __LINE__,PETSC_FUNCTION_NAME,__FILE__,
-      MOFEM_DATA_INCONSISTENCY,PETSC_ERROR_INITIAL,ss.str().c_str(),PETSC_NULL
-    );
+  // set order to DOF
+  ApproximationOrder& order = getDofOrderMap()[dof];
+  if(order!=dof_order) {
+    if(order!=-1) {
+      cerr << dof << " " << dof_order << " " << order;
+      THROW_MESSAGE("Order of DOFs inconsistent with order set before for entity");
+    }
+    order = dof_order;
   }
-  assert(sFieldPtr->tag_dof_rank_data!=NULL);
-  ((ApproximationOrder*)sFieldPtr->tag_dof_order_data)[dof] = dof_order;
-  ((FieldCoefficientsNumber*)sFieldPtr->tag_dof_rank_data)[dof] = dof_rank;
-  // short_uid = get_non_nonunique_short_id_calculate(dof);
+
+  // verify data consistency
+  if(dof_rank!=dof%getNbOfCoeffs()) {
+    std::ostringstream ss;
+    ss << dof_rank << " " << dof << " " << getNbOfCoeffs() << endl;
+    ss << *entity_ptr;
+    cerr << ss.str() << endl;
+    THROW_MESSAGE("Inconsitent DOFs rank with index of DOF on entity");
+  }
+
 }
 
 std::ostream& operator<<(std::ostream& os,const DofEntity& e) {

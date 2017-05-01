@@ -228,16 +228,23 @@ Star Forest Bipartite Graph     5              5         4136     0
               Viewer     1              0            0     0
 \endcode
 
-- Make member functions of class constant always when possible. Try to code that you can
-create such class members. Constant member function does not change
-state of the class. So it does not influences results or actions of other members
-of that class. That simplifies searching for bug, testing and overall limits likelihood
-of the error. Example of constant class member
+- Make member functions of class constant always when possible. Try to code that
+  you can create such class members. Constant member function does not a changea
+  state of the class. So it does not influence results or actions of another
+  member of that class. That simplifies searching for the bug, testing and
+  overall limits likelihood of the error. Example of constant class member
 \code
 struct {
   PetscErrorCode someFunction(const int some_argument,const double &some_return_value) const {
   }
 };
 \endcode
+
+- Use static_cast<> and avoid C style casting. The compiler checks C++ style
+  casts. C-style casts aren't and can fail at runtime also, C++ style casts can
+  be searched for easily, whereas it's hard to find C style casts. Another big
+  benefit is that the four different C++ style casts express the intent of the
+  programmer more clearly. When writing C++, always use the C++ ones over the  C
+  style. If you see the C-style cast, please take the opportunity to fix this. 
 
 */

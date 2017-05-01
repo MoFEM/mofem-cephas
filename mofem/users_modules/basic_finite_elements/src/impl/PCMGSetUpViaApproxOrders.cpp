@@ -37,6 +37,105 @@ using namespace MoFEM;
   #include <petsc-private/vecimpl.h> /*I  "petscdm.h"   I*/
 #endif
 
+PCMGSubMatrixCtx::PCMGSubMatrixCtx(Mat a,IS is):
+  A(a),
+  iS(is) {
+  PetscErrorCode ierr;
+  // Increse reference of petsc opbject (works like shared_ptr but unique for PETSc)
+  ierr = PetscObjectReference((PetscObject)A); CHKERRABORT(PETSC_COMM_WORLD,ierr);
+  ierr = PetscObjectReference((PetscObject)iS); CHKERRABORT(PETSC_COMM_WORLD,ierr);
+}
+
+PCMGSubMatrixCtx::~PCMGSubMatrixCtx() {
+  PetscErrorCode ierr;
+  ierr = MatDestroy(&A); CHKERRABORT(PETSC_COMM_WORLD,ierr);
+  ierr = ISDestroy(&iS); CHKERRABORT(PETSC_COMM_WORLD,ierr);
+}
+
+struct PCMGSubMatrixCtx_private: public PCMGSubMatrixCtx {
+  PCMGSubMatrixCtx_private(Mat a,IS is):
+  PCMGSubMatrixCtx(a,is),
+  isInitisalised(false) {
+    PetscLogEventRegister("PCMGSubMatrixCtx_mult",0,&USER_EVENT_mult);
+    PetscLogEventRegister("PCMGSubMatrixCtx_sor",0,&USER_EVENT_sor);
+  }
+  ~PCMGSubMatrixCtx_private() {
+    if(isInitisalised) {
+      ierr = VecScatterDestroy(&sCat); CHKERRABORT(PETSC_COMM_WORLD,ierr);
+      ierr = VecDestroy(&X); CHKERRABORT(PETSC_COMM_WORLD,ierr);
+      ierr = VecDestroy(&F); CHKERRABORT(PETSC_COMM_WORLD,ierr);
+    }
+  }
+  template<InsertMode MODE>
+  friend PetscErrorCode sub_mat_mult_generic(Mat a,Vec x,Vec f);
+  friend PetscErrorCode sub_mat_sor(
+    Mat mat,Vec b,PetscReal omega,MatSORType flag,PetscReal shift,PetscInt its,PetscInt lits,Vec x
+  );
+public:
+  PetscErrorCode initData(Vec x) {
+    PetscErrorCode ierr;
+    PetscFunctionBegin;
+    if(!isInitisalised) {
+      ierr = MatCreateVecs(A,&X,&F); CHKERRQ(ierr);
+      ierr = VecScatterCreate(X,iS,x,PETSC_NULL,&sCat); CHKERRQ(ierr);
+      isInitisalised = true;
+    }
+    PetscFunctionReturn(0);
+  }
+  PetscLogEvent USER_EVENT_mult;
+  PetscLogEvent USER_EVENT_sor;
+  bool isInitisalised;
+};
+
+template<InsertMode MODE>
+PetscErrorCode sub_mat_mult_generic(Mat a,Vec x,Vec f) {
+  void *void_ctx;
+  PetscErrorCode ierr;
+  PetscFunctionBegin;
+  ierr = MatShellGetContext(a,&void_ctx); CHKERRQ(ierr);
+  PCMGSubMatrixCtx_private *ctx = (PCMGSubMatrixCtx_private*)void_ctx;
+  if(!ctx->isInitisalised) {
+    ierr = ctx->initData(x); CHKERRQ(ierr);
+  }
+  PetscLogEventBegin(ctx->USER_EVENT_mult,0,0,0,0);
+  ierr = VecScatterBegin(ctx->sCat,x,ctx->X,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  ierr = VecScatterEnd(ctx->sCat,x,ctx->X,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  ierr = MatMult(ctx->A,ctx->X,ctx->F); CHKERRQ(ierr);
+  ierr = VecScatterBegin(ctx->sCat,ctx->F,f,MODE,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = VecScatterEnd(ctx->sCat,ctx->F,f,MODE,SCATTER_FORWARD); CHKERRQ(ierr);
+  PetscLogEventEnd(ctx->USER_EVENT_mult,0,0,0,0);
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode sub_mat_mult(Mat a,Vec x,Vec f) {
+  return sub_mat_mult_generic<INSERT_VALUES>(a,x,f);
+}
+
+PetscErrorCode sub_mat_mult_add(Mat a,Vec x,Vec f) {
+  return sub_mat_mult_generic<ADD_VALUES>(a,x,f);
+}
+
+PetscErrorCode sub_mat_sor(
+  Mat mat,Vec b,PetscReal omega,MatSORType flag,PetscReal shift,PetscInt its,PetscInt lits,Vec x
+) {
+  void *void_ctx;
+  PetscErrorCode ierr;
+  PetscFunctionBegin;
+  ierr = MatShellGetContext(mat,&void_ctx); CHKERRQ(ierr);
+  PCMGSubMatrixCtx_private *ctx = (PCMGSubMatrixCtx_private*)void_ctx;
+  if(!ctx->isInitisalised) {
+    ierr = ctx->initData(x); CHKERRQ(ierr);
+  }
+  PetscLogEventBegin(ctx->USER_EVENT_sor,0,0,0,0);
+  ierr = VecScatterBegin(ctx->sCat,b,ctx->X,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  ierr = VecScatterEnd(ctx->sCat,b,ctx->X,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+  ierr = MatSOR(ctx->A,ctx->X,omega,flag,shift,its,lits,ctx->F); CHKERRQ(ierr);
+  ierr = VecScatterBegin(ctx->sCat,ctx->F,x,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  ierr = VecScatterEnd(ctx->sCat,ctx->F,x,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+  PetscLogEventEnd(ctx->USER_EVENT_sor,0,0,0,0);
+  PetscFunctionReturn(0);
+}
+
 DMMGViaApproxOrdersCtx::DMMGViaApproxOrdersCtx():
   MoFEM::DMCtx(),
   aO(PETSC_NULL) {
@@ -101,17 +200,18 @@ PetscErrorCode DMMGViaApproxOrdersGetCoarseningISSize(DM dm,int *size) {
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode DMMGViaApproxOrdersPushBackCoarseningIS(DM dm,IS is,Mat A,Mat *subA,bool create_sub_matrix) {
+PetscErrorCode DMMGViaApproxOrdersPushBackCoarseningIS(
+  DM dm,IS is,Mat A,Mat *subA,bool create_sub_matrix,bool shell_sub_a
+) {
   PetscErrorCode ierr;
   PetscValidHeaderSpecific(dm,DM_CLASSID,1);
   PetscFunctionBegin;
   GET_DM_FIELD(dm);
   dm_field->coarseningIS.push_back(is);
+  dm_field->shellMatrixCtxPtr.push_back(new PCMGSubMatrixCtx_private(A,is));
   if(is) {
     ierr = PetscObjectReference((PetscObject)is); CHKERRQ(ierr);
   }
-  // FIXME: If is not the coarse level it would be better to have shell matrix.
-  // It would save memory.
   if(is) {
     IS is2 = is;
     if(dm_field->aO) {
@@ -120,7 +220,27 @@ PetscErrorCode DMMGViaApproxOrdersPushBackCoarseningIS(DM dm,IS is,Mat A,Mat *su
       ierr = AOApplicationToPetscIS(dm_field->aO,is2); CHKERRQ(ierr);
     }
     if(create_sub_matrix) {
-      ierr = MatGetSubMatrix(A,is2,is2,MAT_INITIAL_MATRIX,subA); CHKERRQ(ierr);
+      if(shell_sub_a) {
+        int n,N;
+        ierr = ISGetSize(is,&N); CHKERRQ(ierr);
+        ierr = ISGetLocalSize(is,&n); CHKERRQ(ierr);
+        MPI_Comm comm;
+        ierr = PetscObjectGetComm((PetscObject)A,&comm); CHKERRQ(ierr);
+        ierr = MatCreateShell(
+          comm,n,n,N,N,&(dm_field->shellMatrixCtxPtr.back()),subA
+        ); CHKERRQ(ierr);
+        ierr = MatShellSetOperation(
+          *subA,MATOP_MULT,(void(*)(void))sub_mat_mult
+        ); CHKERRQ(ierr);
+        ierr = MatShellSetOperation(
+          *subA,MATOP_MULT_ADD,(void(*)(void))sub_mat_mult_add
+        ); CHKERRQ(ierr);
+        ierr = MatShellSetOperation(
+          *subA,MATOP_SOR,(void(*)(void))sub_mat_sor
+        ); CHKERRQ(ierr);
+      } else {
+        ierr = MatGetSubMatrix(A,is2,is2,MAT_INITIAL_MATRIX,subA); CHKERRQ(ierr);
+      }
     }
     if(dm_field->aO) {
       ierr = ISDestroy(&is2); CHKERRQ(ierr);
@@ -201,11 +321,11 @@ PetscErrorCode DMMGViaApproxOrdersReplaceCoarseningIS(DM dm,IS *is_vec,int nb_el
   if(dm_field->coarseningIS.size()<nb_elems) {
     for(;ii<nb_elems-1;ii++) {
       Mat subA;
-      ierr = DMMGViaApproxOrdersPushBackCoarseningIS(dm,is_vec[ii],A,&subA,true); CHKERRQ(ierr);
+      ierr = DMMGViaApproxOrdersPushBackCoarseningIS(dm,is_vec[ii],A,&subA,true,false); CHKERRQ(ierr);
       ierr = MatDestroy(&subA); CHKERRQ(ierr);
       nb_added++;
     }
-    ierr = DMMGViaApproxOrdersPushBackCoarseningIS(dm,is_vec[ii],A,&A,false); CHKERRQ(ierr);
+    ierr = DMMGViaApproxOrdersPushBackCoarseningIS(dm,is_vec[ii],A,&A,false,false); CHKERRQ(ierr);
     nb_added++;
   } else {
     for(;ii<dm_field->coarseningIS.size();ii++) {
@@ -559,6 +679,15 @@ PetscErrorCode PCMGSetUpViaApproxOrdersCtx::getOptions() {
     0,&verboseLevel,PETSC_NULL
   ); CHKERRQ(ierr);
 
+  PetscBool shell_sub_a = shellSubA ? PETSC_TRUE : PETSC_FALSE;
+  ierr = PetscOptionsBool(
+    "-mofem_mg_shell_a",
+    "use shell matrix as sub matrix","",
+    shell_sub_a,&shell_sub_a,NULL
+  ); CHKERRQ(ierr);
+  shellSubA = (shellSubA == PETSC_TRUE);
+
+
   ierr = PetscOptionsEnd(); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
@@ -586,7 +715,9 @@ PetscErrorCode PCMGSetUpViaApproxOrdersCtx::destroyIsAtLevel(int kk,IS *is) {
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode PCMGSetUpViaApproxOrdersCtx::buildProlongationOperator(bool use_mat_a,int verb) {
+PetscErrorCode PCMGSetUpViaApproxOrdersCtx::buildProlongationOperator(
+  bool use_mat_a,int verb
+) {
   PetscFunctionBegin;
   verb = verb > verboseLevel ? verb : verboseLevel;
 
@@ -624,9 +755,15 @@ PetscErrorCode PCMGSetUpViaApproxOrdersCtx::buildProlongationOperator(bool use_m
     Mat subA;
     if(kk==nbLevels-1&&use_mat_a) {
       subA = A;
-      ierr = DMMGViaApproxOrdersPushBackCoarseningIS(dM,is_vec[kk],A,&subA,false); CHKERRQ(ierr);
+      ierr = DMMGViaApproxOrdersPushBackCoarseningIS(dM,is_vec[kk],A,&subA,false,false); CHKERRQ(ierr);
     } else {
-      ierr = DMMGViaApproxOrdersPushBackCoarseningIS(dM,is_vec[kk],A,&subA,true); CHKERRQ(ierr);
+      if(kk>0) {
+        // Not coarse level
+        ierr = DMMGViaApproxOrdersPushBackCoarseningIS(dM,is_vec[kk],A,&subA,true,shellSubA); CHKERRQ(ierr);
+      } else {
+        // Coarse lave is compressed matrix allowing for factorisation when needed
+        ierr = DMMGViaApproxOrdersPushBackCoarseningIS(dM,is_vec[kk],A,&subA,true,false); CHKERRQ(ierr);
+      }
       if(subA) {
         ierr = MatDestroy(&subA); CHKERRQ(ierr);
       }

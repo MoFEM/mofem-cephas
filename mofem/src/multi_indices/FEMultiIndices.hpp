@@ -520,13 +520,13 @@ interface_RefElement<RefElement> {
 
   /**
    * \brief Generate UId for finite element entity
-   * @return Finite element entity unique Id
+   * @return finite element entity unique Id
    */
   GlobalUId getGlobalUniqueIdCalculate() const {
-    char bit_number = getBitNumber();
-    assert(bit_number<=32);
-    GlobalUId _uid_ = (sPtr->getRefEnt())|(((GlobalUId)bit_number)<<(8*sizeof(EntityHandle)));
-    return _uid_;
+    assert(getBitNumber()<=32);
+    return
+    static_cast<GlobalUId>(sPtr->getRefEnt())|
+    static_cast<GlobalUId>(getBitNumber())<<8*sizeof(EntityHandle);
   }
 
   /**
@@ -1117,47 +1117,64 @@ struct MoFEMFiniteElement_change_bit_off {
  * Loop over DOFs in row on element
  * @param  FEPTR pointer to element structure \ref NumeredEntFiniteElement
  * @param  IT    iterator
- * @return       user return in for(_IT_FENUMEREDDOFMOFEMENTITY_ROW_FOR_LOOP_(FEPTR,IT))
+ * @return       user return in for(_IT_FENUMEREDDOF_ROW_FOR_LOOP_(FEPTR,IT))
  * \ingroup fe_multi_indices
  */
-#define _IT_FENUMEREDDOFMOFEMENTITY_ROW_FOR_LOOP_(FEPTR,IT) \
+#define _IT_FENUMEREDDOF_ROW_FOR_LOOP_(FEPTR,IT) \
 FENumeredDofEntity_multiIndex::iterator IT = FEPTR->rows_dofs->begin(); \
 IT!=FEPTR->rows_dofs->end(); IT++
+
+/// \deprecated use _IT_FENUMEREDDOF_ROW_FOR_LOOP_
+#define _IT_FENUMEREDDOFMOFEMENTITY_ROW_FOR_LOOP_(FEPTR,IT) \
+_IT_FENUMEREDDOF_ROW_FOR_LOOP_(FEPTR,IT)
 
 /**
  * Loop over DOFs in col on element
  * @param  FEPTR pointer to element structure \ref NumeredEntFiniteElement
  * @param  IT    iterator
- * @return       user return in for(_IT_FENUMEREDDOFMOFEMENTITY_COL_FOR_LOOP_(FEPTR,IT))
+ * @return       user return in for(_IT_FENUMEREDDOF_COL_FOR_LOOP_(FEPTR,IT))
  * \ingroup fe_multi_indices
  */
-#define _IT_FENUMEREDDOFMOFEMENTITY_COL_FOR_LOOP_(FEPTR,IT) \
+#define _IT_FENUMEREDDOF_COL_FOR_LOOP_(FEPTR,IT) \
 FENumeredDofEntity_multiIndex::iterator IT = FEPTR->cols_dofs->begin(); \
 IT!=FEPTR->cols_dofs->end(); IT++
+
+/// \deprecated use _IT_FENUMEREDDOF_COL_FOR_LOOP_ instead
+#define _IT_FENUMEREDDOFMOFEMENTITY_COL_FOR_LOOP_(FEPTR,IT) \
+_IT_FENUMEREDDOF_COL_FOR_LOOP_(FEPTR,IT)
 
 /**
  * Loop over DOFs in row on element for particular filed
  * @param  FEPTR pointer to element structure \ref NumeredEntFiniteElement
  * @param  NAME  name of filed
  * @param  IT    iterator
- * @return       user return in for(_IT_FENUMEREDDOFMOFEMENTITY_BY_NAME_ROW_FOR_LOOP_(FEPTR,NAME,IT))
+ * @return       user return in for(_IT_FENUMEREDDOF_BY_NAME_ROW_FOR_LOOP_(FEPTR,NAME,IT))
  * \ingroup fe_multi_indices
  */
-#define _IT_FENUMEREDDOFMOFEMENTITY_BY_NAME_ROW_FOR_LOOP_(FEPTR,NAME,IT) \
+#define _IT_FENUMEREDDOF_BY_NAME_ROW_FOR_LOOP_(FEPTR,NAME,IT) \
 FENumeredDofEntityByFieldName::iterator IT = FEPTR->rows_dofs->get<FieldName_mi_tag>().lower_bound(NAME); \
 IT!=FEPTR->rows_dofs->get<FieldName_mi_tag>().upper_bound(NAME); IT++
+
+/// \deprecated use _IT_FENUMEREDDOF_BY_NAME_ROW_FOR_LOOP_ instead
+#define _IT_FENUMEREDDOFMOFEMENTITY_BY_NAME_ROW_FOR_LOOP_(FEPTR,NAME,IT) \
+_IT_FENUMEREDDOF_BY_NAME_ROW_FOR_LOOP_(FEPTR,NAME,IT)
 
 /**
  * Loop over DOFs in col on element for particular filed
  * @param  FEPTR pointer to element structure \ref NumeredEntFiniteElement
  * @param  NAME  name of filed
  * @param  IT    iterator
- * @return       user return in for(_IT_FENUMEREDDOFMOFEMENTITY_BY_NAME_COL_FOR_LOOP_(FEPTR,NAME,IT))
+ * @return       user return in for(_IT_FENUMEREDDOF_BY_NAME_COL_FOR_LOOP_(FEPTR,NAME,IT))
  * \ingroup fe_multi_indices
  */
-#define _IT_FENUMEREDDOFMOFEMENTITY_BY_NAME_COL_FOR_LOOP_(FEPTR,NAME,IT) \
+#define _IT_FENUMEREDDOF_BY_NAME_COL_FOR_LOOP_(FEPTR,NAME,IT) \
 FENumeredDofEntityByFieldName::iterator IT = FEPTR->cols_dofs->get<FieldName_mi_tag>().lower_bound(NAME); \
 IT!=FEPTR->cols_dofs->get<FieldName_mi_tag>().upper_bound(NAME); IT++
+
+/// \deprecated use _IT_FENUMEREDDOF_BY_NAME_COL_FOR_LOOP_ instead
+#define _IT_FENUMEREDDOFMOFEMENTITY_BY_NAME_COL_FOR_LOOP_(FEPTR,NAME,IT) \
+_IT_FENUMEREDDOF_BY_NAME_COL_FOR_LOOP_(FEPTR,NAME,IT)
+
 
 #endif // __FEMMULTIINDICES_HPP__
 

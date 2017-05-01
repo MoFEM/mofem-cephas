@@ -227,7 +227,7 @@ int main(int argc, char *argv[]) {
   if(debug) rval = moab.write_file("level_skin2.vtk","VTK","",&meshset_skin_level2,1); CHKERRQ_MOAB(rval);
 
   //test BitLevelCoupler
-  BitLevelCouplerInterface *bit_ref_copuler_ptr;
+  BitLevelCoupler *bit_ref_copuler_ptr;
   ierr = m_field.query_interface(bit_ref_copuler_ptr); CHKERRQ(ierr);
 
   Range children;

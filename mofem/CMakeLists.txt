@@ -41,7 +41,24 @@ endif(CMAKE_Fortran_COMPILER)
 
 set(MoFEM_VERSION_MAJOR 0)
 set(MoFEM_VERSION_MINOR 5)
-set(MoFEM_VERSION_BUILD 47)
+set(MoFEM_VERSION_BUILD 56)
+
+
+# http://cellperformance.beyond3d.com/articles/2006/05/demystifying-the-restrict-keyword.html
+# The restrict keyword can be considered an extension to the strict aliasing rule.
+# It allows the programmer to declare that pointers which share the same type (or
+# were otherwise validly created) do not alias eachother. By using restrict the
+# programmer can declare that any loads and stores through the qualified pointer
+# (or through another pointer copied either directly or indirectly from the
+# restricted pointer) are the only loads and stores to the same address during the
+# lifetime of the pointer. In other words, the pointer is not aliased by any
+# pointers other than its own copies.
+
+# Restrict is a "no data hazards will be generated" contract between the
+# programmer and the compiler. The compiler relies on this information to make
+# optimizations. If the data is, in fact, aliased, the results are undefined and a
+# programmer should not expect the compiler to output a warning. The compiler
+# assumes the programmer is not lying.
 
 include(CheckCXXSourceCompiles)
 CHECK_CXX_SOURCE_COMPILES(
@@ -57,6 +74,7 @@ endif(SYMM_RESTRICT)
 add_definitions(${DEFINE_RESTRICT})
 
 # Installing extermal packages
+# It is used to install prerequisites, adol-c can be installed like that
 include(ExternalProject)
 execute_process(
   COMMAND ${CMAKE_COMMAND} -E make_directory ${PROJECT_BINARY_DIR}/external/include

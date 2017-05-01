@@ -67,13 +67,13 @@ PetscErrorCode Core::field_axpy(const double alpha,const std::string& field_name
   if((*x_fit)->getNbOfCoeffs() != (*y_fit)->getNbOfCoeffs()) {
     SETERRQ2(PETSC_COMM_SELF,1,"rank for field < %s > and field <%s> are not compatible",field_name_x.c_str(),field_name_y.c_str());
   }
-  MoFEMEntityByFieldName::iterator x_eit;
+  FieldEntityByFieldName::iterator x_eit;
   x_eit = entsFields.get<FieldName_mi_tag>().lower_bound(field_name_x.c_str());
   for(;x_eit!=entsFields.get<FieldName_mi_tag>().upper_bound(field_name_x.c_str());x_eit++) {
     int nb_dofs_on_x_entity = (*x_eit)->tag_FieldData_size/sizeof(FieldData);
     for(int dd = 0;dd<nb_dofs_on_x_entity;dd++) {
-      ApproximationOrder dof_order = (*x_eit)->tag_dof_order_data[dd];
-      FieldCoefficientsNumber dof_rank = (*x_eit)->tag_dof_rank_data[dd];
+      ApproximationOrder dof_order = (*x_eit)->getDofOrderMap()[dd];
+      FieldCoefficientsNumber dof_rank = dd%(*x_eit)->getNbOfCoeffs();
       FieldData data = (*x_eit)->tag_FieldData[dd];
       DofEntity_multiIndex::index<Composite_Name_Ent_Order_And_CoeffIdx_mi_tag>::type::iterator dit;
       dit = dofsField.get<Composite_Name_Ent_Order_And_CoeffIdx_mi_tag>().find(

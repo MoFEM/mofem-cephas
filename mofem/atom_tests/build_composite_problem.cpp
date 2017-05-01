@@ -111,7 +111,7 @@ int main(int argc, char *argv[]) {
     rval = pcomm->resolve_shared_ents(0,proc_ents,3,-1,proc_ents_skin); CHKERRQ_MOAB(rval);
     Range owned_tets = proc_ents;
 
-    // rval = pcomm->get_part_entities(owned_tets,3); MB_CHK_ERR(rval);
+    // rval = pcomm->get_part_entities(owned_tets,3); CHKERRQ_MOAB(rval);
     // if(m_field.get_comm_rank()==1) {
     //   Range verts;
     //   rval = moab.get_connectivity(owned_tets,verts,true); CHKERRQ_MOAB(rval);

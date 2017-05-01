@@ -248,11 +248,11 @@ int main(int argc, char *argv[]) {
   ierr = m_field.add_ents_to_field_by_TETs(0,"EIGEN_VECTOR"); CHKERRQ(ierr);
   ierr = m_field.add_ents_to_field_by_TETs(0,"D0"); CHKERRQ(ierr);
 
-  Hooke<double> mat_double;
-  MyMat<adouble> mat_adouble;
+  boost::shared_ptr<Hooke<double> > mat_double = boost::make_shared<Hooke<double> >();
+  boost::shared_ptr<MyMat<adouble> > mat_adouble = boost::make_shared<MyMat<adouble> >();
 
   NonlinearElasticElement elastic(m_field,2);
-  ierr = elastic.setBlocks(&mat_double,&mat_adouble); CHKERRQ(ierr);
+  ierr = elastic.setBlocks(mat_double,mat_adouble); CHKERRQ(ierr);
   ierr = elastic.addElement("ELASTIC","SPATIAL_POSITION"); CHKERRQ(ierr);
   ierr = m_field.modify_finite_element_add_field_data("ELASTIC","EIGEN_VECTOR"); CHKERRQ(ierr);
   ierr = m_field.modify_finite_element_add_field_data("ELASTIC","D0"); CHKERRQ(ierr);
@@ -333,10 +333,10 @@ int main(int argc, char *argv[]) {
   ProblemsManager *prb_mng_ptr;
   ierr = m_field.query_interface(prb_mng_ptr); CHKERRQ(ierr);
   if(is_partitioned) {
-    ierr = prb_mng_ptr->buildProblemOnDistributedMesh(true); CHKERRQ(ierr);
+    ierr = prb_mng_ptr->buildProblemOnDistributedMesh("ELASTIC_MECHANICS",true); CHKERRQ(ierr);
     ierr = prb_mng_ptr->partitionFiniteElements("ELASTIC_MECHANICS",true,0,pcomm->size(),1); CHKERRQ(ierr);
   } else {
-    ierr = prb_mng_ptr->buildProblem(); CHKERRQ(ierr);
+    ierr = prb_mng_ptr->buildProblem("ELASTIC_MECHANICS",true); CHKERRQ(ierr);
     ierr = prb_mng_ptr->partitionProblem("ELASTIC_MECHANICS"); CHKERRQ(ierr);
     ierr = prb_mng_ptr->partitionFiniteElements("ELASTIC_MECHANICS"); CHKERRQ(ierr);
   }
@@ -469,7 +469,7 @@ int main(int argc, char *argv[]) {
   ierr = m_field.problem_basic_method_postProcess("ELASTIC_MECHANICS",my_Dirichlet_bc); CHKERRQ(ierr);*/
 
   //Bij Matrix
-  mat_adouble.doAotherwiseB = false;
+  mat_adouble->doAotherwiseB = false;
   //preproc
   my_Dirichlet_bc.snes_ctx = SnesMethod::CTX_SNESSETJACOBIAN;
   my_Dirichlet_bc.snes_B = Bij;

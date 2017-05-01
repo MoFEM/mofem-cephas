@@ -2319,7 +2319,7 @@ struct Interface: public UnknownInterface {
     * \ingroup mofem_access
     *
     */
-  virtual PetscErrorCode get_field_ents(const MoFEMEntity_multiIndex **field_ents) const = 0;
+  virtual PetscErrorCode get_field_ents(const FieldEntity_multiIndex **field_ents) const = 0;
 
   /** \brief Get dofs multi index
     *
@@ -2338,7 +2338,7 @@ struct Interface: public UnknownInterface {
     *
     * \param field_name
     */
-  virtual MoFEMEntityByFieldName::iterator get_ent_moabfield_by_name_begin(const std::string &field_name) const = 0;
+  virtual FieldEntityByFieldName::iterator get_ent_moabfield_by_name_begin(const std::string &field_name) const = 0;
 
   /**
     * \brief get begin iterator of filed dofs of given name (instead you can use _IT_GET_ENT_FIELD_BY_NAME_FOR_LOOP_(MFIELD,NAME,IT)
@@ -2350,13 +2350,13 @@ struct Interface: public UnknownInterface {
     *
     * \param field_name
     */
-  virtual MoFEMEntityByFieldName::iterator get_ent_moabfield_by_name_end(const std::string &field_name) const = 0;
+  virtual FieldEntityByFieldName::iterator get_ent_moabfield_by_name_end(const std::string &field_name) const = 0;
 
   /** \brief loop over all dofs from a moFEM field and particular field
     * \ingroup mofem_field
     */
   #define _IT_GET_ENT_FIELD_BY_NAME_FOR_LOOP_(MFIELD,NAME,IT) \
-    MoFEMEntityByFieldName::iterator IT = MFIELD.get_ent_moabfield_by_name_begin(NAME); \
+    FieldEntityByFieldName::iterator IT = MFIELD.get_ent_moabfield_by_name_begin(NAME); \
       IT != MFIELD.get_ent_moabfield_by_name_end(NAME); IT++
 
   /**

@@ -567,7 +567,7 @@ PetscErrorCode MeshRefinement::refine_TET(
           rval = moab.tag_set_data(cOre.get_th_RefBitLevel(),&ref_tets[tt],1,&bit); CHKERRQ_MOAB(rval);
           rval = moab.tag_set_data(cOre.get_th_RefBitEdge(),&ref_tets[tt],1,&parent_edges_bit); CHKERRQ_MOAB(rval);
           //add refined entity
-          std::pair<RefEntity_multiIndex::iterator,bool> p_MoFEMEntity =
+          std::pair<RefEntity_multiIndex::iterator,bool> p_FieldEntity =
           const_cast<RefEntity_multiIndex*>(refined_ents_ptr)->insert(
             boost::shared_ptr<RefEntity>(new RefEntity(
               m_field.get_basic_entity_data_ptr(),ref_tets[tt]
@@ -578,7 +578,7 @@ PetscErrorCode MeshRefinement::refine_TET(
           try {
             p_MoFEMFiniteElement =  const_cast<RefElement_multiIndex*>(refined_finite_elements_ptr)->
             insert(ptrWrapperRefElement(
-              boost::shared_ptr<RefElement>(new RefElement_TET(*p_MoFEMEntity.first)))
+              boost::shared_ptr<RefElement>(new RefElement_TET(*p_FieldEntity.first)))
             );
           } catch (MoFEMException const &e) {
             SETERRQ(m_field.get_comm(),e.errorCode,e.errorMessage);

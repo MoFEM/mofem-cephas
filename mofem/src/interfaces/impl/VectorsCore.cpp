@@ -804,10 +804,10 @@ PetscErrorCode Core::set_other_global_ghost_vector(
           rval = moab.add_entities((*cpy_fit)->getMeshset(),&ent,1); CHKERRQ_MOAB(rval);
           //create field moabent
           ApproximationOrder order = (*miit)->getMaxOrder();
-          std::pair<MoFEMEntity_multiIndex::iterator,bool> p_e_miit;
+          std::pair<FieldEntity_multiIndex::iterator,bool> p_e_miit;
           try {
-            boost::shared_ptr<MoFEMEntity> moabent(
-              new MoFEMEntity(*cpy_fit,(*miit)->getRefEntityPtr())
+            boost::shared_ptr<FieldEntity> moabent(
+              new FieldEntity(*cpy_fit,(*miit)->getRefEntityPtr())
             );
             p_e_miit = entsFields.insert(moabent);
           } catch (const std::exception& ex) {
@@ -816,7 +816,7 @@ PetscErrorCode Core::set_other_global_ghost_vector(
             SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,ss.str().c_str());
           }
           if((*p_e_miit.first)->getMaxOrder()<order) {
-            bool success = entsFields.modify(p_e_miit.first,MoFEMEntity_change_order(order));
+            bool success = entsFields.modify(p_e_miit.first,FieldEntity_change_order(order));
             if(!success) SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
           }
           //create field moabdof

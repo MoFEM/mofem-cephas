@@ -93,17 +93,11 @@ sequenceDofContainer(
   //order
   std::string tag_approximation_order_name = "_App_Order_"+getName();
   rval = moab.tag_get_handle(tag_approximation_order_name.c_str(),th_AppOrder); MOAB_THROW(rval);
-  //dof order
-  std::string tag_dof_approximation_order_name = "_App_Dof_Order"+getName();
-  rval = moab.tag_get_handle(tag_dof_approximation_order_name.c_str(),th_AppDofOrder); MOAB_THROW(rval);
   //rank
   Tag th_rank;
   std::string Tag_rank_name = "_Field_Rank_"+getName();
   rval = moab.tag_get_handle(Tag_rank_name.c_str(),th_rank); MOAB_THROW(rval);
   rval = moab.tag_get_by_ptr(th_rank,&meshSet,1,(const void **)&tag_nb_coeff_data); MOAB_THROW(rval);
-  //dof rank
-  std::string Tag_dof_rank_name = "_Field_Dof_Rank_"+getName();
-  rval = moab.tag_get_handle(Tag_dof_rank_name.c_str(),th_DofRank); MOAB_THROW(rval);
   bit_number = getBitNumberCalculate();
   for(int tt = 0;tt<MBMAXTYPE;tt++) {
     forder_table[tt] = NULL;
@@ -177,6 +171,10 @@ sequenceDofContainer(
       }
     }
   }
+  // // Set DOFs orders on entities
+  // for(EntityType ee = MBVERTEX;ee!=MBMAXTYPE;ee++) {
+  //   getDofOrderMap(ee).resize(MAX_DOFS_ON_ENTITY,-1);
+  // }
 }
 
 std::ostream& operator<<(std::ostream& os,const Field& e) {
@@ -191,16 +189,16 @@ std::ostream& operator<<(std::ostream& os,const Field& e) {
   return os;
 }
 
-//MoFEMEntityEntFiniteElementAdjacencyMap
-MoFEMEntityEntFiniteElementAdjacencyMap::MoFEMEntityEntFiniteElementAdjacencyMap(
-  const boost::shared_ptr<MoFEMEntity> mofem_ent_ptr,
+//FieldEntityEntFiniteElementAdjacencyMap
+FieldEntityEntFiniteElementAdjacencyMap::FieldEntityEntFiniteElementAdjacencyMap(
+  const boost::shared_ptr<FieldEntity> mofem_ent_ptr,
   const boost::shared_ptr<EntFiniteElement> ent_fe_ptr
 ):
 by_other(0),
 mofemEntPtr(mofem_ent_ptr),
 entFePtr(ent_fe_ptr) {}
 
-std::ostream& operator<<(std::ostream& os,const MoFEMEntityEntFiniteElementAdjacencyMap& e) {
+std::ostream& operator<<(std::ostream& os,const FieldEntityEntFiniteElementAdjacencyMap& e) {
   os << "by_other " << std::bitset<3>(e.by_other) << " "
     << *e.mofemEntPtr << std::endl << *e.entFePtr->sFePtr;
   return os;

@@ -595,7 +595,7 @@ namespace MoFEM {
         // adjacencies, that create hash map map_uid_fe which is used later
         std::string field_name = miit->get()->getName();
         for(Range::iterator eit = adj_ents.begin();eit!=adj_ents.end();eit++) {
-          MoFEMEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type::iterator meit;
+          FieldEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type::iterator meit;
           meit = entsFields.get<Composite_Name_And_Ent_mi_tag>().find(boost::make_tuple(field_name,*eit));
           if(meit!=entsFields.get<Composite_Name_And_Ent_mi_tag>().end()) {
             UId uid = meit->get()->getGlobalUniqueId();
@@ -794,16 +794,16 @@ namespace MoFEM {
       int by = BYROW;
       if((*fit)->getBitFieldIdRow()!=(*fit)->getBitFieldIdCol()) by |= BYCOL;
       if((*fit)->getBitFieldIdRow()!=(*fit)->getBitFieldIdData()) by |= BYDATA;
-      MoFEMEntityEntFiniteElementAdjacencyMap_change_ByWhat modify_row(by);
+      FieldEntityEntFiniteElementAdjacencyMap_change_ByWhat modify_row(by);
       GlobalUId ent_uid = UId(0);
       DofEntity_multiIndex_uid_view::iterator rvit;
       rvit = (*fit)->row_dof_view->begin();
       for(;rvit!=(*fit)->row_dof_view->end();rvit++) {
-        if(ent_uid == (*rvit)->getMoFEMEntityPtr()->getGlobalUniqueId()) continue;
-        ent_uid = (*rvit)->getMoFEMEntityPtr()->getGlobalUniqueId();
-        std::pair<MoFEMEntityEntFiniteElementAdjacencyMap_multiIndex::iterator,bool> p;
+        if(ent_uid == (*rvit)->getFieldEntityPtr()->getGlobalUniqueId()) continue;
+        ent_uid = (*rvit)->getFieldEntityPtr()->getGlobalUniqueId();
+        std::pair<FieldEntityEntFiniteElementAdjacencyMap_multiIndex::iterator,bool> p;
         p = entFEAdjacencies.insert(
-          MoFEMEntityEntFiniteElementAdjacencyMap((*rvit)->getMoFEMEntityPtr(),*fit)
+          FieldEntityEntFiniteElementAdjacencyMap((*rvit)->getFieldEntityPtr(),*fit)
         );
         bool success = entFEAdjacencies.modify(p.first,modify_row);
         if(!success) SETERRQ(cOmm,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
@@ -811,16 +811,16 @@ namespace MoFEM {
       if((*fit)->getBitFieldIdRow()!=(*fit)->getBitFieldIdCol()) {
         int by = BYCOL;
         if((*fit)->getBitFieldIdCol()!=(*fit)->getBitFieldIdData()) by |= BYDATA;
-        MoFEMEntityEntFiniteElementAdjacencyMap_change_ByWhat modify_col(by);
+        FieldEntityEntFiniteElementAdjacencyMap_change_ByWhat modify_col(by);
         ent_uid = UId(0);
         DofEntity_multiIndex_uid_view::iterator cvit;
         cvit = (*fit)->col_dof_view->begin();
         for(;cvit!=(*fit)->col_dof_view->end();cvit++) {
-          if( ent_uid == (*cvit)->getMoFEMEntityPtr()->getGlobalUniqueId()) continue;
-          ent_uid = (*cvit)->getMoFEMEntityPtr()->getGlobalUniqueId();
-          std::pair<MoFEMEntityEntFiniteElementAdjacencyMap_multiIndex::iterator,bool> p;
+          if( ent_uid == (*cvit)->getFieldEntityPtr()->getGlobalUniqueId()) continue;
+          ent_uid = (*cvit)->getFieldEntityPtr()->getGlobalUniqueId();
+          std::pair<FieldEntityEntFiniteElementAdjacencyMap_multiIndex::iterator,bool> p;
           p = entFEAdjacencies.insert(
-            MoFEMEntityEntFiniteElementAdjacencyMap((*cvit)->getMoFEMEntityPtr(),*fit)
+            FieldEntityEntFiniteElementAdjacencyMap((*cvit)->getFieldEntityPtr(),*fit)
           );
           bool success = entFEAdjacencies.modify(p.first,modify_col);
           if(!success) SETERRQ(cOmm,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
@@ -830,16 +830,16 @@ namespace MoFEM {
         (*fit)->getBitFieldIdRow()!=(*fit)->getBitFieldIdData()||
         (*fit)->getBitFieldIdCol()!=(*fit)->getBitFieldIdData()
       ) {
-        MoFEMEntityEntFiniteElementAdjacencyMap_change_ByWhat modify_data(BYDATA);
+        FieldEntityEntFiniteElementAdjacencyMap_change_ByWhat modify_data(BYDATA);
         ent_uid = UId(0);
         FEDofEntity_multiIndex::iterator dvit;
         dvit = (*fit)->data_dofs->begin();
         for(;dvit!=(*fit)->data_dofs->end();dvit++) {
-          if(ent_uid == (*dvit)->getMoFEMEntityPtr()->getGlobalUniqueId()) continue;
-          ent_uid = (*dvit)->getMoFEMEntityPtr()->getGlobalUniqueId();
-          std::pair<MoFEMEntityEntFiniteElementAdjacencyMap_multiIndex::iterator,bool> p;
+          if(ent_uid == (*dvit)->getFieldEntityPtr()->getGlobalUniqueId()) continue;
+          ent_uid = (*dvit)->getFieldEntityPtr()->getGlobalUniqueId();
+          std::pair<FieldEntityEntFiniteElementAdjacencyMap_multiIndex::iterator,bool> p;
           p = entFEAdjacencies.insert(
-            MoFEMEntityEntFiniteElementAdjacencyMap((*dvit)->getMoFEMEntityPtr(),*fit)
+            FieldEntityEntFiniteElementAdjacencyMap((*dvit)->getFieldEntityPtr(),*fit)
           );
           bool success = entFEAdjacencies.modify(p.first,modify_data);
           if(!success) SETERRQ(cOmm,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");

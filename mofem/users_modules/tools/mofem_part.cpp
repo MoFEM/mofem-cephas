@@ -36,6 +36,7 @@ int main(int argc, char *argv[]) {
   PetscBool flg_file = PETSC_FALSE;
   PetscBool flg_n_part = PETSC_FALSE;
   PetscInt n_partas = 1;
+  PetscBool creare_lower_dim_ents = PETSC_TRUE;
 
   ierr = PetscOptionsBegin(PETSC_COMM_WORLD,"","none","none"); CHKERRQ(ierr);
   ierr = PetscOptionsString(
@@ -49,6 +50,13 @@ int main(int argc, char *argv[]) {
     "number of parts","",
     1,&n_partas,&flg_n_part
   ); CHKERRQ(ierr);
+
+  ierr = PetscOptionsBool(
+    "-my_create_lower_dim_ents",
+    "if tru create lower dimension entitities","",
+    creare_lower_dim_ents,&creare_lower_dim_ents,NULL
+  ); CHKERRQ(ierr);
+
 
   ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
@@ -87,6 +95,12 @@ int main(int argc, char *argv[]) {
   {
     Range ents3d;
     rval = moab.get_entities_by_dimension(0,3,ents3d,false); CHKERRQ_MOAB(rval);
+    if(creare_lower_dim_ents) {
+      Range faces;
+      rval = moab.get_adjacencies(ents3d,2,true,faces,moab::Interface::UNION); CHKERRQ_MOAB(rval);
+      Range edges;
+      rval = moab.get_adjacencies(ents3d,1,true,edges,moab::Interface::UNION); CHKERRQ_MOAB(rval);
+    }
     ProblemsManager *prb_mng_ptr;
     ierr = m_field.query_interface(prb_mng_ptr); CHKERRQ(ierr);
     ierr = prb_mng_ptr->partitionMesh(ents3d,3,2,n_partas); CHKERRQ(ierr);
