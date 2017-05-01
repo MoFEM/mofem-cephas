@@ -74,6 +74,7 @@ endif(SYMM_RESTRICT)
 add_definitions(${DEFINE_RESTRICT})
 
 # Installing extermal packages
+# It is used to install prerequisites, adol-c can be installed like that
 include(ExternalProject)
 execute_process(
   COMMAND ${CMAKE_COMMAND} -E make_directory ${PROJECT_BINARY_DIR}/external/include
