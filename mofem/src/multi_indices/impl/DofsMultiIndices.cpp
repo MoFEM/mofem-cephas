@@ -39,23 +39,23 @@ namespace MoFEM {
 
 //moab dof
 DofEntity::DofEntity(
-  const boost::shared_ptr<MoFEMEntity>& entity_ptr,
+  const boost::shared_ptr<FieldEntity>& entity_ptr,
   const ApproximationOrder dof_order,
   const FieldCoefficientsNumber dof_rank,
   const DofIdx dof,
   const bool is_active
 ):
-interface_MoFEMEntity<MoFEMEntity>(entity_ptr),
+interface_FieldEntity<FieldEntity>(entity_ptr),
 active(is_active) {
 
   if(!entity_ptr) {
-    THROW_MESSAGE("MoFEMEntity pinter not initialized");
+    THROW_MESSAGE("FieldEntity pinter not initialized");
   }
   if(!sPtr) {
-    THROW_MESSAGE("MoFEMEntity pinter not initialized");
+    THROW_MESSAGE("FieldEntity pinter not initialized");
   }
-  if(!getMoFEMEntityPtr()) {
-    THROW_MESSAGE("MoFEMEntity pinter not initialized");
+  if(!getFieldEntityPtr()) {
+    THROW_MESSAGE("FieldEntity pinter not initialized");
   }
 
   globalUId = getGlobalUniqueIdCalculate(dof,entity_ptr);

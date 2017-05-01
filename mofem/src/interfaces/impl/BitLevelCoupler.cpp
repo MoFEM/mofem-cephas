@@ -519,7 +519,7 @@ namespace MoFEM {
         // Verify consistency with database
         if(verify) {
           // Get pointer to multi-index with field entities
-          const MoFEMEntity_multiIndex *field_ents;
+          const FieldEntity_multiIndex *field_ents;
           ierr = m_field.get_field_ents(&field_ents); CHKERRQ(ierr);
           std::vector<EntityHandle>::const_iterator pit = parents.begin();
           std::vector<EntityHandle>::const_iterator cit = children.begin();
@@ -529,11 +529,11 @@ namespace MoFEM {
               SETERRQ(m_field.get_comm(),MOFEM_DATA_INCONSISTENCY,"inconsistent type");
             }
             // create mofem entity opjects
-            boost::shared_ptr<MoFEMEntity> mofem_ent_parent(
-              new MoFEMEntity(*fit,boost::shared_ptr<RefEntity>(new RefEntity(m_field.get_basic_entity_data_ptr(),*pit)))
+            boost::shared_ptr<FieldEntity> mofem_ent_parent(
+              new FieldEntity(*fit,boost::shared_ptr<RefEntity>(new RefEntity(m_field.get_basic_entity_data_ptr(),*pit)))
             );
-            boost::shared_ptr<MoFEMEntity> mofem_ent_child(
-              new MoFEMEntity(*fit,boost::shared_ptr<RefEntity>(new RefEntity(m_field.get_basic_entity_data_ptr(),*pit)))
+            boost::shared_ptr<FieldEntity> mofem_ent_child(
+              new FieldEntity(*fit,boost::shared_ptr<RefEntity>(new RefEntity(m_field.get_basic_entity_data_ptr(),*pit)))
             );
             // check approximation order
             if(mofem_ent_parent->getMaxOrder()==mofem_ent_child->getMaxOrder()) {
@@ -543,10 +543,10 @@ namespace MoFEM {
               }
             } else {
               // approximation odresr is different
-              MoFEMEntity_multiIndex::iterator fcit = field_ents->find(mofem_ent_child->getGlobalUniqueId());
+              FieldEntity_multiIndex::iterator fcit = field_ents->find(mofem_ent_child->getGlobalUniqueId());
               if(fcit==field_ents->end()) {
                 // entity not in database, set order and copy data
-                (MoFEMEntity_change_order(mofem_ent_parent->getMaxOrder()))(mofem_ent_child);
+                (FieldEntity_change_order(mofem_ent_parent->getMaxOrder()))(mofem_ent_child);
                 for(int dd = 0;dd!=mofem_ent_child->getEntFieldData().size();dd++) {
                   mofem_ent_child->getEntFieldData()[dd] = mofem_ent_parent->getEntFieldData()[dd];
                 }

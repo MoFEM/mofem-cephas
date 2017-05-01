@@ -39,7 +39,7 @@ typedef int (*FieldOrderTable[MBMAXTYPE])(const int order);
   */
 typedef int (*FieldOrderFunct)(const int order);
 
-struct MoFEMEntity;
+struct FieldEntity;
 struct DofEntity;
 
 /**
@@ -64,7 +64,7 @@ struct DofEntity;
 struct Field {
 
   typedef multi_index_container<
-    boost::weak_ptr<std::vector<MoFEMEntity> >,
+    boost::weak_ptr<std::vector<FieldEntity> >,
     indexed_by<
       sequenced<>
     >

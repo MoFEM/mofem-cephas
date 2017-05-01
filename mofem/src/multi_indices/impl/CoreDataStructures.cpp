@@ -189,16 +189,16 @@ std::ostream& operator<<(std::ostream& os,const Field& e) {
   return os;
 }
 
-//MoFEMEntityEntFiniteElementAdjacencyMap
-MoFEMEntityEntFiniteElementAdjacencyMap::MoFEMEntityEntFiniteElementAdjacencyMap(
-  const boost::shared_ptr<MoFEMEntity> mofem_ent_ptr,
+//FieldEntityEntFiniteElementAdjacencyMap
+FieldEntityEntFiniteElementAdjacencyMap::FieldEntityEntFiniteElementAdjacencyMap(
+  const boost::shared_ptr<FieldEntity> mofem_ent_ptr,
   const boost::shared_ptr<EntFiniteElement> ent_fe_ptr
 ):
 by_other(0),
 mofemEntPtr(mofem_ent_ptr),
 entFePtr(ent_fe_ptr) {}
 
-std::ostream& operator<<(std::ostream& os,const MoFEMEntityEntFiniteElementAdjacencyMap& e) {
+std::ostream& operator<<(std::ostream& os,const FieldEntityEntFiniteElementAdjacencyMap& e) {
   os << "by_other " << std::bitset<3>(e.by_other) << " "
     << *e.mofemEntPtr << std::endl << *e.entFePtr->sFePtr;
   return os;

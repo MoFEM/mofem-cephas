@@ -26,14 +26,14 @@ namespace MoFEM {
  * \brief keeps information about DOF on the entity
  * \ingroup dof_multi_indices
  */
-struct DofEntity: public interface_MoFEMEntity<MoFEMEntity> {
+struct DofEntity: public interface_FieldEntity<FieldEntity> {
 
-  typedef interface_Field<MoFEMEntity> interface_type_Field;
-  typedef interface_MoFEMEntity<MoFEMEntity> interface_type_MoFEMEntity;
-  typedef interface_RefEntity<MoFEMEntity> interface_type_RefEntity;
+  typedef interface_Field<FieldEntity> interface_type_Field;
+  typedef interface_FieldEntity<FieldEntity> interface_type_FieldEntity;
+  typedef interface_RefEntity<FieldEntity> interface_type_RefEntity;
 
   static inline GlobalUId getGlobalUniqueIdCalculate(
-    const DofIdx dof,const boost::shared_ptr<MoFEMEntity>& ent_ptr
+    const DofIdx dof,const boost::shared_ptr<FieldEntity>& ent_ptr
   ) {
     // if(dof>=512) THROW_MESSAGE("_dof>=512");
     return
@@ -57,7 +57,7 @@ struct DofEntity: public interface_MoFEMEntity<MoFEMEntity> {
   }
 
   static inline ShortId getNonNonuniqueShortId(
-    const DofIdx dof,const boost::shared_ptr<MoFEMEntity>& ent_ptr
+    const DofIdx dof,const boost::shared_ptr<FieldEntity>& ent_ptr
   ) {
     // if(sizeof(ShortId) < sizeof(char)+2) THROW_MESSAGE("sizeof(ShortId)< sizeof(char)+2")
     return
@@ -68,7 +68,7 @@ struct DofEntity: public interface_MoFEMEntity<MoFEMEntity> {
   GlobalUId globalUId; ///< global unique id for this dof
 
   DofEntity(
-    const boost::shared_ptr<MoFEMEntity> &entity_ptr,
+    const boost::shared_ptr<FieldEntity> &entity_ptr,
     const ApproximationOrder dof_order,
     const FieldCoefficientsNumber dof_rank,
     const DofIdx dof,
@@ -107,7 +107,7 @@ struct DofEntity: public interface_MoFEMEntity<MoFEMEntity> {
     *
     */
   inline ShortId getNonNonuniqueShortId() const  {
-    return getNonNonuniqueShortId(getEntDofIdx(),getMoFEMEntityPtr());
+    return getNonNonuniqueShortId(getEntDofIdx(),getFieldEntityPtr());
   }
 
   /// @return get dof entity handle
@@ -139,10 +139,10 @@ struct DofEntity: public interface_MoFEMEntity<MoFEMEntity> {
  * \ingroup dof_multi_indices
  */
 template <typename T>
-struct interface_DofEntity: public interface_MoFEMEntity<T> {
+struct interface_DofEntity: public interface_FieldEntity<T> {
 
   interface_DofEntity(const boost::shared_ptr<T> &sptr):
-  interface_MoFEMEntity<T>(sptr) {
+  interface_FieldEntity<T>(sptr) {
   }
 
   /// @return return dof unique id
@@ -180,8 +180,13 @@ struct interface_DofEntity: public interface_MoFEMEntity<T> {
   }
 
   /// @return get pioneer do dof's entity data structure
-  inline boost::shared_ptr<MoFEMEntity>& getMoFEMEntityPtr() const {
-    return this->sPtr->getMoFEMEntityPtr();
+  inline boost::shared_ptr<FieldEntity>& getFieldEntityPtr() const {
+    return this->sPtr->getFieldEntityPtr();
+  }
+
+  /// \deprecated use getFieldEntityPtr instead
+  DEPRECATED inline boost::shared_ptr<FieldEntity>& getMoFEMEntityPtr() const {
+    return getFieldEntityPtr();
   }
 
 };
@@ -193,7 +198,7 @@ struct interface_DofEntity: public interface_MoFEMEntity<T> {
 struct NumeredDofEntity: public interface_DofEntity<DofEntity> {
 
   typedef interface_Field<DofEntity> interface_type_Field;
-  typedef interface_MoFEMEntity<DofEntity> interface_type_MoFEMEntity;
+  typedef interface_FieldEntity<DofEntity> interface_type_FieldEntity;
   typedef interface_DofEntity<DofEntity> interface_type_DofEntity;
   DofIdx dofIdx;
   DofIdx petscGloablDofIdx;

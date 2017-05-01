@@ -130,7 +130,7 @@ struct Core: public Interface {
 
   // Managing and storung DOFs
   Field_multiIndex fIelds;			           ///< field
-  MoFEMEntity_multiIndex entsFields;			 ///< entities on field
+  FieldEntity_multiIndex entsFields;			 ///< entities on field
   DofEntity_multiIndex dofsField;		       ///< dofs on fiels
 
   // Managing and storing finite elements
@@ -138,7 +138,7 @@ struct Core: public Interface {
   EntFiniteElement_multiIndex entsFiniteElements;			///< finite element entities
 
   // Managing and storing adjacencies
-  MoFEMEntityEntFiniteElementAdjacencyMap_multiIndex entFEAdjacencies;	///< adjacencies of elements to dofs
+  FieldEntityEntFiniteElementAdjacencyMap_multiIndex entFEAdjacencies;	///< adjacencies of elements to dofs
 
   //pRoblems
   MoFEMProblem_multiIndex pRoblems;					 ///< problems
@@ -670,14 +670,14 @@ struct Core: public Interface {
   PetscErrorCode get_ref_finite_elements(const RefElement_multiIndex **refined_finite_elements_ptr) const;
   PetscErrorCode get_finite_elements(const FiniteElement_multiIndex **fe_ptr) const;
   PetscErrorCode get_ents_finite_elements(const EntFiniteElement_multiIndex **fe_ent_ptr) const;
-  PetscErrorCode get_field_ents(const MoFEMEntity_multiIndex **field_ents) const;
+  PetscErrorCode get_field_ents(const FieldEntity_multiIndex **field_ents) const;
   PetscErrorCode get_dofs(const DofEntity_multiIndex **dofs_ptr) const ;
   PetscErrorCode get_problem(const std::string &problem_name,const MoFEMProblem **problem_ptr) const;
   PetscErrorCode get_problems(const MoFEMProblem_multiIndex **problems_ptr) const;
 
 
-  MoFEMEntityByFieldName::iterator get_ent_moabfield_by_name_begin(const std::string &field_name) const;
-  MoFEMEntityByFieldName::iterator get_ent_moabfield_by_name_end(const std::string &field_name) const;
+  FieldEntityByFieldName::iterator get_ent_moabfield_by_name_begin(const std::string &field_name) const;
+  FieldEntityByFieldName::iterator get_ent_moabfield_by_name_end(const std::string &field_name) const;
 
   DofEntityByFieldName::iterator get_dofs_by_name_begin(const std::string &field_name) const;
   DofEntityByFieldName::iterator get_dofs_by_name_end(const std::string &field_name) const;

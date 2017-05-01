@@ -22,15 +22,15 @@
 namespace MoFEM {
 
 /**
-  * \brief MoFEMEntityEntFiniteElementAdjacencyMap of mofem finite element and entities
+  * \brief FieldEntityEntFiniteElementAdjacencyMap of mofem finite element and entities
   *
   */
-struct MoFEMEntityEntFiniteElementAdjacencyMap {
+struct FieldEntityEntFiniteElementAdjacencyMap {
   unsigned int by_other;
-  const boost::shared_ptr<MoFEMEntity> mofemEntPtr; ///< field entity
+  const boost::shared_ptr<FieldEntity> mofemEntPtr; ///< field entity
   const boost::shared_ptr<EntFiniteElement> entFePtr; ///< finite element entity
-  MoFEMEntityEntFiniteElementAdjacencyMap(
-    const boost::shared_ptr<MoFEMEntity> mofem_ent_ptr,
+  FieldEntityEntFiniteElementAdjacencyMap(
+    const boost::shared_ptr<FieldEntity> mofem_ent_ptr,
     const boost::shared_ptr<EntFiniteElement> ent_fe_ptr
   );
 
@@ -102,7 +102,7 @@ struct MoFEMEntityEntFiniteElementAdjacencyMap {
   */
   DEPRECATED BitFEId get_BitFEId() const { return getBitFEId(); }
 
-  friend std::ostream& operator<<(std::ostream& os,const MoFEMEntityEntFiniteElementAdjacencyMap &e);
+  friend std::ostream& operator<<(std::ostream& os,const FieldEntityEntFiniteElementAdjacencyMap &e);
 };
 
 /**
@@ -111,26 +111,26 @@ struct MoFEMEntityEntFiniteElementAdjacencyMap {
 
  */
 typedef multi_index_container<
-  MoFEMEntityEntFiniteElementAdjacencyMap,
+  FieldEntityEntFiniteElementAdjacencyMap,
   indexed_by<
     ordered_unique<
       tag<Composite_Unique_mi_tag>,
       composite_key<
-	MoFEMEntityEntFiniteElementAdjacencyMap,
-	const_mem_fun<MoFEMEntityEntFiniteElementAdjacencyMap,GlobalUId,&MoFEMEntityEntFiniteElementAdjacencyMap::getEntUniqueId>,
-	const_mem_fun<MoFEMEntityEntFiniteElementAdjacencyMap,GlobalUId,&MoFEMEntityEntFiniteElementAdjacencyMap::getFeUniqueId> > >,
+	FieldEntityEntFiniteElementAdjacencyMap,
+	const_mem_fun<FieldEntityEntFiniteElementAdjacencyMap,GlobalUId,&FieldEntityEntFiniteElementAdjacencyMap::getEntUniqueId>,
+	const_mem_fun<FieldEntityEntFiniteElementAdjacencyMap,GlobalUId,&FieldEntityEntFiniteElementAdjacencyMap::getFeUniqueId> > >,
     ordered_non_unique<
-      tag<Unique_mi_tag>, const_mem_fun<MoFEMEntityEntFiniteElementAdjacencyMap,GlobalUId,&MoFEMEntityEntFiniteElementAdjacencyMap::getEntUniqueId> >,
+      tag<Unique_mi_tag>, const_mem_fun<FieldEntityEntFiniteElementAdjacencyMap,GlobalUId,&FieldEntityEntFiniteElementAdjacencyMap::getEntUniqueId> >,
     ordered_non_unique<
-      tag<FEEnt_mi_tag>, const_mem_fun<MoFEMEntityEntFiniteElementAdjacencyMap,EntityHandle,&MoFEMEntityEntFiniteElementAdjacencyMap::getFeHandle> >,
+      tag<FEEnt_mi_tag>, const_mem_fun<FieldEntityEntFiniteElementAdjacencyMap,EntityHandle,&FieldEntityEntFiniteElementAdjacencyMap::getFeHandle> >,
     ordered_non_unique<
-      tag<Ent_mi_tag>, const_mem_fun<MoFEMEntityEntFiniteElementAdjacencyMap,EntityHandle,&MoFEMEntityEntFiniteElementAdjacencyMap::getEntHandle> >
-  > > MoFEMEntityEntFiniteElementAdjacencyMap_multiIndex;
+      tag<Ent_mi_tag>, const_mem_fun<FieldEntityEntFiniteElementAdjacencyMap,EntityHandle,&FieldEntityEntFiniteElementAdjacencyMap::getEntHandle> >
+  > > FieldEntityEntFiniteElementAdjacencyMap_multiIndex;
 
-  struct MoFEMEntityEntFiniteElementAdjacencyMap_change_ByWhat {
+  struct FieldEntityEntFiniteElementAdjacencyMap_change_ByWhat {
     int bY;
-    MoFEMEntityEntFiniteElementAdjacencyMap_change_ByWhat(const int by): bY(by) {}
-    void operator()(MoFEMEntityEntFiniteElementAdjacencyMap &e) {
+    FieldEntityEntFiniteElementAdjacencyMap_change_ByWhat(const int by): bY(by) {}
+    void operator()(FieldEntityEntFiniteElementAdjacencyMap &e) {
       e.by_other |= bY;
     }
   };
