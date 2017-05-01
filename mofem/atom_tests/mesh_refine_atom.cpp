@@ -108,7 +108,7 @@ int main(int argc, char *argv[]) {
 
   //rval = moab.write_file("out_mesh_refine.vtk","VTK","",&out_meshset_tet,1); CHKERRQ_MOAB(rval);
 
-  BitLevelCouplerInterface *bit_ref_copuler_ptr;
+  BitLevelCoupler *bit_ref_copuler_ptr;
   ierr = m_field.query_interface(bit_ref_copuler_ptr); CHKERRQ(ierr);
 
   Range children;

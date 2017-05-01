@@ -67,7 +67,7 @@ PetscErrorCode Core::field_axpy(const double alpha,const std::string& field_name
   if((*x_fit)->getNbOfCoeffs() != (*y_fit)->getNbOfCoeffs()) {
     SETERRQ2(PETSC_COMM_SELF,1,"rank for field < %s > and field <%s> are not compatible",field_name_x.c_str(),field_name_y.c_str());
   }
-  MoFEMEntityByFieldName::iterator x_eit;
+  FieldEntityByFieldName::iterator x_eit;
   x_eit = entsFields.get<FieldName_mi_tag>().lower_bound(field_name_x.c_str());
   for(;x_eit!=entsFields.get<FieldName_mi_tag>().upper_bound(field_name_x.c_str());x_eit++) {
     int nb_dofs_on_x_entity = (*x_eit)->tag_FieldData_size/sizeof(FieldData);

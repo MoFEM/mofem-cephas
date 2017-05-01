@@ -183,11 +183,11 @@ TSMethod {
   const RefElement_multiIndex *refinedFiniteElementsPtr;
   const MoFEMProblem *problemPtr;
   const Field_multiIndex *fieldsPtr;
-  const MoFEMEntity_multiIndex *entitiesPtr;
+  const FieldEntity_multiIndex *entitiesPtr;
   const DofEntity_multiIndex *dofsPtr;
   const FiniteElement_multiIndex *finiteElementsPtr;
   const EntFiniteElement_multiIndex *finiteElementsEntitiesPtr;
-  const MoFEMEntityEntFiniteElementAdjacencyMap_multiIndex *adjacenciesPtr;
+  const FieldEntityEntFiniteElementAdjacencyMap_multiIndex *adjacenciesPtr;
   virtual ~BasicMethod() {};
 
   PetscErrorCode copy_basic_method(const BasicMethod &basic);

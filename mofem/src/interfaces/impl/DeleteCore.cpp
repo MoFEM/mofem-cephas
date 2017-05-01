@@ -55,9 +55,9 @@ namespace MoFEM {
     dit = dofsField.begin();
     for(;dit!=dofsField.end();dit++) {
       if(!(*dit)->getActive()) {
-        MoFEMEntityEntFiniteElementAdjacencyMap_multiIndex::index<Unique_mi_tag>::type::iterator ait,hi_ait;
-        ait = entFEAdjacencies.get<Unique_mi_tag>().lower_bound((*dit)->getMoFEMEntityPtr()->getGlobalUniqueId());
-        hi_ait = entFEAdjacencies.get<Unique_mi_tag>().upper_bound((*dit)->getMoFEMEntityPtr()->getGlobalUniqueId());
+        FieldEntityEntFiniteElementAdjacencyMap_multiIndex::index<Unique_mi_tag>::type::iterator ait,hi_ait;
+        ait = entFEAdjacencies.get<Unique_mi_tag>().lower_bound((*dit)->getFieldEntityPtr()->getGlobalUniqueId());
+        hi_ait = entFEAdjacencies.get<Unique_mi_tag>().upper_bound((*dit)->getFieldEntityPtr()->getGlobalUniqueId());
         for(;ait!=hi_ait;ait++) {
           boost::shared_ptr<EntFiniteElement> ent_fe_ptr;
           ent_fe_ptr = ait->entFePtr;
@@ -94,9 +94,9 @@ namespace MoFEM {
           dit++;
           continue;
         }
-        MoFEMEntityEntFiniteElementAdjacencyMap_multiIndex::index<Unique_mi_tag>::type::iterator ait,hi_ait;
-        ait = entFEAdjacencies.get<Unique_mi_tag>().lower_bound((*dit)->getMoFEMEntityPtr()->getGlobalUniqueId());
-        hi_ait = entFEAdjacencies.get<Unique_mi_tag>().upper_bound((*dit)->getMoFEMEntityPtr()->getGlobalUniqueId());
+        FieldEntityEntFiniteElementAdjacencyMap_multiIndex::index<Unique_mi_tag>::type::iterator ait,hi_ait;
+        ait = entFEAdjacencies.get<Unique_mi_tag>().lower_bound((*dit)->getFieldEntityPtr()->getGlobalUniqueId());
+        hi_ait = entFEAdjacencies.get<Unique_mi_tag>().upper_bound((*dit)->getFieldEntityPtr()->getGlobalUniqueId());
         for(;ait!=hi_ait;ait++) {
           boost::shared_ptr<EntFiniteElement> ent_fe_ptr;
           ent_fe_ptr = ait->entFePtr;
@@ -121,9 +121,9 @@ namespace MoFEM {
       dit = dofsField.get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple(name,*eit));
       hi_dit = dofsField.get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple(name,*eit));
       for(;dit!=hi_dit;) {
-        MoFEMEntityEntFiniteElementAdjacencyMap_multiIndex::index<Unique_mi_tag>::type::iterator ait,hi_ait;
-        ait = entFEAdjacencies.get<Unique_mi_tag>().lower_bound((*dit)->getMoFEMEntityPtr()->getGlobalUniqueId());
-        hi_ait = entFEAdjacencies.get<Unique_mi_tag>().upper_bound((*dit)->getMoFEMEntityPtr()->getGlobalUniqueId());
+        FieldEntityEntFiniteElementAdjacencyMap_multiIndex::index<Unique_mi_tag>::type::iterator ait,hi_ait;
+        ait = entFEAdjacencies.get<Unique_mi_tag>().lower_bound((*dit)->getFieldEntityPtr()->getGlobalUniqueId());
+        hi_ait = entFEAdjacencies.get<Unique_mi_tag>().upper_bound((*dit)->getFieldEntityPtr()->getGlobalUniqueId());
         for(;ait!=hi_ait;ait++) {
           boost::shared_ptr<EntFiniteElement> ent_fe_ptr;
           ent_fe_ptr = ait->entFePtr;
@@ -143,7 +143,7 @@ namespace MoFEM {
     if(verb==-1) verb = verbose;
     ierr = clear_dofs_fields(bit,mask,verb); CHKERRQ(ierr);
     ierr = clear_adjacencies_entities(bit,mask,verb); CHKERRQ(ierr);
-    MoFEMEntity_multiIndex::iterator eit;
+    FieldEntity_multiIndex::iterator eit;
     eit = entsFields.begin();
     for(;eit!=entsFields.end();) {
       if((*eit)->getEntType()==MBENTITYSET) {
@@ -176,7 +176,7 @@ namespace MoFEM {
     ierr = clear_adjacencies_entities(name,ents,verb); CHKERRQ(ierr);
     Range::iterator eit = ents.begin();
     for(;eit!=ents.end();eit++) {
-      MoFEMEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type::iterator dit,hi_dit;
+      FieldEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type::iterator dit,hi_dit;
       dit = entsFields.get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple(name,*eit));
       hi_dit = entsFields.get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple(name,*eit));
       for(;dit!=hi_dit;) {
@@ -228,7 +228,7 @@ namespace MoFEM {
 
   PetscErrorCode Core::clear_adjacencies_finite_elements(const BitRefLevel &bit,const BitRefLevel &mask,int verb) {
     PetscFunctionBegin;
-    MoFEMEntityEntFiniteElementAdjacencyMap_multiIndex::iterator ait;
+    FieldEntityEntFiniteElementAdjacencyMap_multiIndex::iterator ait;
     ait = entFEAdjacencies.begin();
     for(;ait!=entFEAdjacencies.end();) {
       BitRefLevel bit2 = ait->entFePtr->getBitRefLevel();
@@ -253,7 +253,7 @@ namespace MoFEM {
     if(verb==-1) verb = verbose;
     Range::iterator eit = ents.begin();
     for(;eit!=ents.end();eit++) {
-      MoFEMEntityEntFiniteElementAdjacencyMap_multiIndex::index<FEEnt_mi_tag>::type::iterator ait,hi_ait;
+      FieldEntityEntFiniteElementAdjacencyMap_multiIndex::index<FEEnt_mi_tag>::type::iterator ait,hi_ait;
       ait = entFEAdjacencies.get<FEEnt_mi_tag>().lower_bound(*eit);
       hi_ait = entFEAdjacencies.get<FEEnt_mi_tag>().upper_bound(*eit);
       for(;ait!=hi_ait;) {
@@ -270,7 +270,7 @@ namespace MoFEM {
   PetscErrorCode Core::clear_adjacencies_entities(const BitRefLevel &bit,const BitRefLevel &mask,int verb ) {
     PetscFunctionBegin;
     if(verb==-1) verb = verbose;
-    MoFEMEntityEntFiniteElementAdjacencyMap_multiIndex::iterator ait;
+    FieldEntityEntFiniteElementAdjacencyMap_multiIndex::iterator ait;
     ait = entFEAdjacencies.begin();
     for(;ait!=entFEAdjacencies.end();) {
       BitRefLevel bit2 = ait->mofemEntPtr->getBitRefLevel();
@@ -296,7 +296,7 @@ namespace MoFEM {
     if(verb==-1) verb = verbose;
     Range::iterator eit = ents.begin();
     for(;eit!=ents.end();eit++) {
-      MoFEMEntityEntFiniteElementAdjacencyMap_multiIndex::index<Ent_mi_tag>::type::iterator ait,hi_ait;
+      FieldEntityEntFiniteElementAdjacencyMap_multiIndex::index<Ent_mi_tag>::type::iterator ait,hi_ait;
       ait = entFEAdjacencies.get<Ent_mi_tag>().lower_bound(*eit);
       hi_ait = entFEAdjacencies.get<Ent_mi_tag>().upper_bound(*eit);
       for(;ait!=hi_ait;) {
@@ -336,7 +336,7 @@ namespace MoFEM {
           eit = ents_to_remove.erase(eit);
           continue;
         }
-        MoFEMEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type::iterator iit;
+        FieldEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type::iterator iit;
         iit = entsFields.get<Composite_Name_And_Ent_mi_tag>().find(boost::make_tuple((*f_it)->getName(),*eit));
         if(iit != entsFields.get<Composite_Name_And_Ent_mi_tag>().end()) {
           SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");

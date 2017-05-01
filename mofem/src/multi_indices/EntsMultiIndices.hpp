@@ -602,7 +602,7 @@ struct DofEntity;
   * \brief Struct keeps handle to entity in the field.
   * \ingroup ent_multi_indices
   */
-struct MoFEMEntity:
+struct FieldEntity:
   public
   interface_Field<Field>,
   interface_RefEntity<RefEntity> {
@@ -611,11 +611,11 @@ struct MoFEMEntity:
   typedef interface_RefEntity<RefEntity> interface_type_RefEntity;
   const FieldData* tag_FieldData;
   int tag_FieldData_size;
-  MoFEMEntity(
+  FieldEntity(
     const boost::shared_ptr<Field>& field_ptr,
     const boost::shared_ptr<RefEntity>& ref_ent_ptr
   );
-  ~MoFEMEntity();
+  ~FieldEntity();
 
   /**
    * \brief Get entity handle
@@ -734,7 +734,7 @@ struct MoFEMEntity:
    */
   inline boost::shared_ptr<Field>& getFieldPtr() const { return this->sFieldPtr; }
 
-  friend std::ostream& operator<<(std::ostream& os,const MoFEMEntity& e);
+  friend std::ostream& operator<<(std::ostream& os,const FieldEntity& e);
 
   /**
    * \brief Get weak_ptr reference to sequence/vector storing dofs on entity.
@@ -768,19 +768,22 @@ private:
 
 };
 
+/// \deprecated use FieldEntity
+DEPRECATED typedef FieldEntity MoFEMEntity;
+
 /**
- * \brief Interface to MoFEMEntity
+ * \brief Interface to FieldEntity
  * \ingroup ent_multi_indices
  *
- * interface to MoFEMEntity
+ * interface to FieldEntity
  */
 template <typename T>
-struct interface_MoFEMEntity:
+struct interface_FieldEntity:
 public
 interface_Field<T>,
 interface_RefEntity<T> {
 
-  interface_MoFEMEntity(const boost::shared_ptr<T>& sptr):
+  interface_FieldEntity(const boost::shared_ptr<T>& sptr):
   interface_Field<T>(sptr),
   interface_RefEntity<T>(sptr) {
   }
@@ -813,7 +816,12 @@ interface_RefEntity<T> {
   inline boost::shared_ptr<Field>& getFieldPtr() const { return this->sFieldPtr->getFieldPtr(); }
 
   /// @return get pointer to mofem entity data structure
-  inline boost::shared_ptr<MoFEMEntity>& getMoFEMEntityPtr() const { return this->sPtr; };
+  inline boost::shared_ptr<FieldEntity>& getFieldEntityPtr() const { return this->sPtr; };
+
+  /// \deprecated use getFieldEntityPtr instead
+  DEPRECATED inline boost::shared_ptr<FieldEntity>& getMoFEMEntityPtr() const {
+    return getFieldEntityPtr();
+  }
 
   /**
    * \brief get hash-map relating dof index on entity with its order
@@ -830,69 +838,72 @@ interface_RefEntity<T> {
 };
 
 /**
- * \brief structure to chane MoFEMEntity order
+ * \brief structure to chane FieldEntity order
  * \ingroup ent_multi_indices
  */
-struct MoFEMEntity_change_order {
+struct FieldEntity_change_order {
   ApproximationOrder order;
   std::vector<FieldData> data;
   std::vector<ApproximationOrder> data_dof_order;
   std::vector<FieldCoefficientsNumber> data_dof_rank;
-  MoFEMEntity_change_order(ApproximationOrder order):
+  FieldEntity_change_order(ApproximationOrder order):
   order(order) {
   }
-  inline void operator()(boost::shared_ptr<MoFEMEntity> &e) {
+  inline void operator()(boost::shared_ptr<FieldEntity> &e) {
     (*this)(e.get());
   }
-  void operator()(MoFEMEntity *e);
+  void operator()(FieldEntity *e);
 
 };
 
 /**
  * @relates multi_index_container
- * \brief MultiIndex container keeps MoFEMEntity
+ * \brief MultiIndex container keeps FieldEntity
  * \ingroup ent_multi_indices
  *
  */
 typedef multi_index_container<
-  boost::shared_ptr<MoFEMEntity>,
+  boost::shared_ptr<FieldEntity>,
   indexed_by<
     ordered_unique<
       tag<Unique_mi_tag>,
-      member<MoFEMEntity,GlobalUId,&MoFEMEntity::global_uid>
+      member<FieldEntity,GlobalUId,&FieldEntity::global_uid>
     >,
     ordered_non_unique<
       tag<FieldName_mi_tag>,
-      const_mem_fun<MoFEMEntity::interface_type_Field,boost::string_ref,&MoFEMEntity::getNameRef>
+      const_mem_fun<FieldEntity::interface_type_Field,boost::string_ref,&FieldEntity::getNameRef>
     >,
     hashed_non_unique<
       tag<Ent_mi_tag>,
-      const_mem_fun<MoFEMEntity,EntityHandle,&MoFEMEntity::getEnt>
+      const_mem_fun<FieldEntity,EntityHandle,&FieldEntity::getEnt>
     >,
     ordered_non_unique<
       tag<Composite_Name_And_Ent_mi_tag>,
       composite_key<
-      	MoFEMEntity,
-      	const_mem_fun<MoFEMEntity::interface_type_Field,boost::string_ref,&MoFEMEntity::getNameRef>,
-      	const_mem_fun<MoFEMEntity,EntityHandle,&MoFEMEntity::getEnt>
+      	FieldEntity,
+      	const_mem_fun<FieldEntity::interface_type_Field,boost::string_ref,&FieldEntity::getNameRef>,
+      	const_mem_fun<FieldEntity,EntityHandle,&FieldEntity::getEnt>
       > >
-  > > MoFEMEntity_multiIndex;
+  > > FieldEntity_multiIndex;
+
+  /// \deprecated use FieldEntity_multiIndex
+  DEPRECATED typedef FieldEntity_multiIndex MoFEMEntity_multiIndex;
 
   /** \brief Entity nulti index by field name
     *
     * \ingroup ent_multi_indices
     */
-  typedef MoFEMEntity_multiIndex::index<FieldName_mi_tag>::type MoFEMEntityByFieldName;
+  typedef FieldEntity_multiIndex::index<FieldName_mi_tag>::type FieldEntityByFieldName;
 
   typedef multi_index_container<
-    boost::shared_ptr<MoFEMEntity>,
+    boost::shared_ptr<FieldEntity>,
     indexed_by<
       sequenced<>,
       hashed_non_unique<
-        tag<Ent_mi_tag>, const_mem_fun<MoFEMEntity,EntityHandle,&MoFEMEntity::getEnt>
+        tag<Ent_mi_tag>, const_mem_fun<FieldEntity,EntityHandle,&FieldEntity::getEnt>
       >
     >
-  > MoFEMEntity_multiIndex_ent_view;
+  > FieldEntity_multiIndex_ent_view;
 
 }
 
