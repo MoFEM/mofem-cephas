@@ -151,10 +151,10 @@ PetscErrorCode Core::query_interface_type(const std::type_info& type,void*& ptr)
   }
 
   //BitLevelCoupler
-  if(type == typeid(BitLevelCouplerInterface)) {
+  if(type == typeid(BitLevelCoupler)) {
     if(iFaces.find(IDD_MOFEMBitLevelCoupler.uUId.to_ulong()) == iFaces.end()) {
       unsigned long int uid = IDD_MOFEMBitLevelCoupler.uUId.to_ulong();
-      iFaces.insert(uid,new BitLevelCouplerInterface(*this));
+      iFaces.insert(uid,new BitLevelCoupler(*this));
     }
     ptr = &iFaces.at(IDD_MOFEMBitLevelCoupler.uUId.to_ulong());
     PetscFunctionReturn(0);

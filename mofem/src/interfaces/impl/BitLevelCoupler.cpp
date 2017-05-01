@@ -56,11 +56,11 @@ static ErrorCode rval;
 
 namespace MoFEM {
 
-  PetscErrorCode BitLevelCouplerInterface::queryInterface(const MOFEMuuid& uuid, UnknownInterface** iface) {
+  PetscErrorCode BitLevelCoupler::queryInterface(const MOFEMuuid& uuid, UnknownInterface** iface) {
     PetscFunctionBegin;
     *iface = NULL;
     if(uuid == IDD_MOFEMBitLevelCoupler) {
-      *iface = dynamic_cast<BitLevelCouplerInterface*>(this);
+      *iface = dynamic_cast<BitLevelCoupler*>(this);
       PetscFunctionReturn(0);
     }
     if(uuid == IDD_MOFEMUnknown) {
@@ -71,7 +71,7 @@ namespace MoFEM {
     PetscFunctionReturn(0);
   }
 
-  PetscErrorCode BitLevelCouplerInterface::buildTree(const BitRefLevel &parent_level,int verb) {
+  PetscErrorCode BitLevelCoupler::buildTree(const BitRefLevel &parent_level,int verb) {
     PetscFunctionBegin;
     MoFEM::Interface& m_field = cOre;
     treePtr.reset(new AdaptiveKDTree(&m_field.get_moab()));
@@ -86,14 +86,14 @@ namespace MoFEM {
     PetscFunctionReturn(0);
   }
 
-  PetscErrorCode BitLevelCouplerInterface::resetTree(const BitRefLevel &parent_level,int verb) {
+  PetscErrorCode BitLevelCoupler::resetTree(const BitRefLevel &parent_level,int verb) {
     PetscFunctionBegin;
     treePtr->reset_tree();
     treePtr.reset();
     PetscFunctionReturn(0);
   }
 
-  PetscErrorCode BitLevelCouplerInterface::getParent(
+  PetscErrorCode BitLevelCoupler::getParent(
     const double *coords,
     EntityHandle &parent,
     bool tet_only,
@@ -208,7 +208,7 @@ namespace MoFEM {
     PetscFunctionReturn(0);
   }
 
-  PetscErrorCode BitLevelCouplerInterface::buidlAdjacenciesVerticesOnTets(
+  PetscErrorCode BitLevelCoupler::buidlAdjacenciesVerticesOnTets(
     const BitRefLevel &parent_level,Range &children,
     bool vertex_elements,const double iter_tol,const double inside_tol,bool throw_error,int verb
   ) {
@@ -273,7 +273,7 @@ namespace MoFEM {
       PetscFunctionReturn(0);
     }
 
-  PetscErrorCode BitLevelCouplerInterface::buidlAdjacenciesEdgesFacesVolumes(
+  PetscErrorCode BitLevelCoupler::buidlAdjacenciesEdgesFacesVolumes(
       const BitRefLevel &parent_level,Range &children,bool elements,int verb
     ) {
       PetscFunctionBegin;
@@ -380,7 +380,7 @@ namespace MoFEM {
       PetscFunctionReturn(0);
     }
 
-    PetscErrorCode BitLevelCouplerInterface::chanegParent(RefEntity_multiIndex::iterator it,EntityHandle parent,bool element) {
+    PetscErrorCode BitLevelCoupler::chanegParent(RefEntity_multiIndex::iterator it,EntityHandle parent,bool element) {
       PetscFunctionBegin;
 
       MoFEM::Interface& m_field = cOre;
@@ -422,7 +422,7 @@ namespace MoFEM {
       PetscFunctionReturn(0);
     }
 
-    PetscErrorCode BitLevelCouplerInterface::resetParents(Range &children,bool elements,int verb) {
+    PetscErrorCode BitLevelCoupler::resetParents(Range &children,bool elements,int verb) {
       PetscFunctionBegin;
 
       MoFEM::Interface& m_field = cOre;
@@ -448,7 +448,7 @@ namespace MoFEM {
       PetscFunctionReturn(0);
     }
 
-    PetscErrorCode BitLevelCouplerInterface::verifyParent(RefEntity_multiIndex::iterator it,EntityHandle parent) {
+    PetscErrorCode BitLevelCoupler::verifyParent(RefEntity_multiIndex::iterator it,EntityHandle parent) {
       PetscFunctionBegin;
 
       if(parent != (*it)->getParentEnt()) {
@@ -459,7 +459,7 @@ namespace MoFEM {
       PetscFunctionReturn(0);
     }
 
-    PetscErrorCode BitLevelCouplerInterface::getLocCoordsOnTet(EntityHandle tet,const double *glob_coords,int verb) {
+    PetscErrorCode BitLevelCoupler::getLocCoordsOnTet(EntityHandle tet,const double *glob_coords,int verb) {
       MoFEM::Interface& m_field = cOre;
       PetscFunctionBegin;
 
@@ -488,7 +488,7 @@ namespace MoFEM {
       PetscFunctionReturn(0);
     }
 
-    PetscErrorCode BitLevelCouplerInterface::copyFieldDataFromParentToChildren(
+    PetscErrorCode BitLevelCoupler::copyFieldDataFromParentToChildren(
       const std::vector<EntityHandle> &parents,
       const std::vector<EntityHandle> &children,
       const bool verify
@@ -580,15 +580,14 @@ namespace MoFEM {
       PetscFunctionReturn(0);
     }
 
-    PetscErrorCode BitLevelCouplerInterface::copyFieldDataFromParentToChildren(
-      const BitRefLevel bit,const bool verify
-
+    PetscErrorCode BitLevelCoupler::copyFieldDataFromParentToChildren(
+      const BitRefLevel bit,const BitRefLevel mask,const bool verify
     ) {
       MoFEM::Interface& m_field = cOre;
       moab::Interface& moab = m_field.get_moab();
       PetscFunctionBegin;
       Range ents;
-      ierr = m_field.get_entities_by_ref_level(bit,BitRefLevel().set(0),ents); CHKERRQ(ierr);
+      ierr = m_field.get_entities_by_ref_level(bit,mask,ents); CHKERRQ(ierr);
       std::vector<EntityHandle> parents;
       std::vector<EntityHandle> children;
       for(Range::iterator eit = ents.begin();eit!=ents.end();eit++) {
