@@ -533,7 +533,7 @@ namespace MoFEM {
               new FieldEntity(*fit,boost::shared_ptr<RefEntity>(new RefEntity(m_field.get_basic_entity_data_ptr(),*pit)))
             );
             boost::shared_ptr<FieldEntity> mofem_ent_child(
-              new FieldEntity(*fit,boost::shared_ptr<RefEntity>(new RefEntity(m_field.get_basic_entity_data_ptr(),*pit)))
+              new FieldEntity(*fit,boost::shared_ptr<RefEntity>(new RefEntity(m_field.get_basic_entity_data_ptr(),*cit)))
             );
             // check approximation order
             if(mofem_ent_parent->getMaxOrder()==mofem_ent_child->getMaxOrder()) {
@@ -593,8 +593,8 @@ namespace MoFEM {
       for(Range::iterator eit = ents.begin();eit!=ents.end();eit++) {
         RefEntity ref_ent(m_field.get_basic_entity_data_ptr(),*eit);
         if(ref_ent.getParentEntType()==ref_ent.getEntType()) {
-          parents.push_back(*eit);
-          children.push_back(ref_ent.getParentEnt());
+          children.push_back(*eit);
+          parents.push_back(ref_ent.getParentEnt());
         }
       }
       ierr = copyFieldDataFromParentToChildren(parents,children,verify); CHKERRQ(ierr);
