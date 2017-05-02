@@ -501,7 +501,7 @@ interface_RefElement<RefElement> {
 
   typedef interface_RefEntity<RefElement> interface_type_RefEntity;
   typedef interface_RefElement<RefElement> interface_type_RefElement;
-  typedef interface_FiniteElement<FiniteElement> interface_type_MoFEMFiniteElement;
+  typedef interface_FiniteElement<FiniteElement> interface_type_FiniteElement;
   boost::shared_ptr<DofEntity_multiIndex_uid_view> row_dof_view;
   boost::shared_ptr<DofEntity_multiIndex_uid_view> col_dof_view;
   boost::shared_ptr<FEDofEntity_multiIndex> data_dofs;
@@ -724,7 +724,7 @@ interface_RefElement<T> {
  */
 struct NumeredEntFiniteElement: public interface_EntFiniteElement<EntFiniteElement> {
 
-  typedef interface_FiniteElement<EntFiniteElement> interface_type_MoFEMFiniteElement;
+  typedef interface_FiniteElement<EntFiniteElement> interface_type_FiniteElement;
   typedef interface_EntFiniteElement<EntFiniteElement> interface_type_EntFiniteElement;
 
   unsigned int part; ///< Partition number
@@ -875,7 +875,7 @@ typedef multi_index_container<
     ordered_non_unique<
       tag<FiniteElement_name_mi_tag>,
       const_mem_fun<
-        EntFiniteElement::interface_type_MoFEMFiniteElement,
+        EntFiniteElement::interface_type_FiniteElement,
         boost::string_ref,
         &EntFiniteElement::getNameRef
       >
@@ -883,7 +883,7 @@ typedef multi_index_container<
     ordered_non_unique<
       tag<BitFEId_mi_tag>,
       const_mem_fun<
-        EntFiniteElement::interface_type_MoFEMFiniteElement,
+        EntFiniteElement::interface_type_FiniteElement,
         BitFEId,
         &EntFiniteElement::getId
       >,
@@ -902,7 +902,7 @@ typedef multi_index_container<
       composite_key<
 	      EntFiniteElement,
 	      const_mem_fun<
-          EntFiniteElement::interface_type_MoFEMFiniteElement,
+          EntFiniteElement::interface_type_FiniteElement,
           boost::string_ref,
           &EntFiniteElement::getNameRef
         >,
@@ -942,7 +942,7 @@ typedef multi_index_container<
     ordered_non_unique<
       tag<FiniteElement_name_mi_tag>,
       const_mem_fun<
-        NumeredEntFiniteElement::interface_type_MoFEMFiniteElement,
+        NumeredEntFiniteElement::interface_type_FiniteElement,
         boost::string_ref,
         &NumeredEntFiniteElement::getNameRef
       >
@@ -960,7 +960,7 @@ typedef multi_index_container<
       composite_key<
         NumeredEntFiniteElement,
         const_mem_fun<
-          NumeredEntFiniteElement::interface_type_MoFEMFiniteElement,
+          NumeredEntFiniteElement::interface_type_FiniteElement,
           boost::string_ref,
           &NumeredEntFiniteElement::getNameRef
         >,
@@ -976,7 +976,7 @@ typedef multi_index_container<
       composite_key<
         NumeredEntFiniteElement,
         const_mem_fun<
-          NumeredEntFiniteElement::interface_type_MoFEMFiniteElement,
+          NumeredEntFiniteElement::interface_type_FiniteElement,
           boost::string_ref,
           &NumeredEntFiniteElement::getNameRef
         >,
