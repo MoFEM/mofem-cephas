@@ -859,27 +859,27 @@ std::ostream& operator<<(std::ostream& os,const FiniteElement& e) {
     return os;
 }
 
-void MoFEMFiniteElement_col_change_bit_add::operator()(boost::shared_ptr<FiniteElement> &fe) {
+void FiniteElement_col_change_bit_add::operator()(boost::shared_ptr<FiniteElement> &fe) {
   *((BitFieldId*)(fe->tag_BitFieldId_col_data)) |= fIdCol;
 }
 
-void MoFEMFiniteElement_row_change_bit_add::operator()(boost::shared_ptr<FiniteElement> &fe) {
+void FiniteElement_row_change_bit_add::operator()(boost::shared_ptr<FiniteElement> &fe) {
   *((BitFieldId*)(fe->tag_BitFieldId_row_data)) |= fIdRow;
 }
 
-void MoFEMFiniteElement_change_bit_add::operator()(boost::shared_ptr<FiniteElement> &fe) {
+void FiniteElement_change_bit_add::operator()(boost::shared_ptr<FiniteElement> &fe) {
   *((BitFieldId*)(fe->tag_BitFieldId_data)) |= fIdData;
 }
 
-void MoFEMFiniteElement_col_change_bit_off::operator()(boost::shared_ptr<FiniteElement> &fe) {
+void FiniteElement_col_change_bit_off::operator()(boost::shared_ptr<FiniteElement> &fe) {
   *((BitFieldId*)(fe->tag_BitFieldId_col_data)) &= fIdCol.flip();
 }
 
-void MoFEMFiniteElement_row_change_bit_off::operator()(boost::shared_ptr<FiniteElement> &fe) {
+void FiniteElement_row_change_bit_off::operator()(boost::shared_ptr<FiniteElement> &fe) {
   *((BitFieldId*)(fe->tag_BitFieldId_row_data)) &= fIdRow.flip();
 }
 
-void MoFEMFiniteElement_change_bit_off::operator()(boost::shared_ptr<FiniteElement> &fe) {
+void FiniteElement_change_bit_off::operator()(boost::shared_ptr<FiniteElement> &fe) {
   *((BitFieldId*)(fe->tag_BitFieldId_data)) &= fIdData.flip();
 }
 
