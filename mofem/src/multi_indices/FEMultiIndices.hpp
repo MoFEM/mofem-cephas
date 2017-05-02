@@ -1050,9 +1050,9 @@ struct NumeredEntFiniteElement_change_part {
  *
  * \ingroup fe_multi_indices
  */
-struct MoFEMFiniteElement_col_change_bit_add {
+struct FiniteElement_col_change_bit_add {
   BitFieldId fIdCol;
-  MoFEMFiniteElement_col_change_bit_add(const BitFieldId f_id_col): fIdCol(f_id_col) {};
+  FiniteElement_col_change_bit_add(const BitFieldId f_id_col): fIdCol(f_id_col) {};
   void operator()(boost::shared_ptr<FiniteElement> &fe);
 };
 
@@ -1061,9 +1061,9 @@ struct MoFEMFiniteElement_col_change_bit_add {
  *
  * \ingroup fe_multi_indices
  */
-struct MoFEMFiniteElement_row_change_bit_add {
+struct FiniteElement_row_change_bit_add {
   BitFieldId fIdRow;
-  MoFEMFiniteElement_row_change_bit_add(const BitFieldId f_id_row): fIdRow(f_id_row) {};
+  FiniteElement_row_change_bit_add(const BitFieldId f_id_row): fIdRow(f_id_row) {};
   void operator()(boost::shared_ptr<FiniteElement> &fe);
 };
 
@@ -1072,9 +1072,9 @@ struct MoFEMFiniteElement_row_change_bit_add {
  *
  * \ingroup fe_multi_indices
  */
-struct MoFEMFiniteElement_change_bit_add {
+struct FiniteElement_change_bit_add {
   BitFieldId fIdData;
-  MoFEMFiniteElement_change_bit_add(const BitFieldId f_id_data): fIdData(f_id_data) {};
+  FiniteElement_change_bit_add(const BitFieldId f_id_data): fIdData(f_id_data) {};
   void operator()(boost::shared_ptr<FiniteElement> &fe);
 };
 
@@ -1083,9 +1083,9 @@ struct MoFEMFiniteElement_change_bit_add {
  *
  * \ingroup fe_multi_indices
  */
-struct MoFEMFiniteElement_col_change_bit_off {
+struct FiniteElement_col_change_bit_off {
   BitFieldId fIdCol;
-  MoFEMFiniteElement_col_change_bit_off(const BitFieldId f_id_col): fIdCol(f_id_col) {};
+  FiniteElement_col_change_bit_off(const BitFieldId f_id_col): fIdCol(f_id_col) {};
   void operator()(boost::shared_ptr<FiniteElement> &fe);
 };
 
@@ -1094,9 +1094,9 @@ struct MoFEMFiniteElement_col_change_bit_off {
  *
  * \ingroup fe_multi_indices
  */
-struct MoFEMFiniteElement_row_change_bit_off {
+struct FiniteElement_row_change_bit_off {
   BitFieldId fIdRow;
-  MoFEMFiniteElement_row_change_bit_off(const BitFieldId f_id_row): fIdRow(f_id_row) {};
+  FiniteElement_row_change_bit_off(const BitFieldId f_id_row): fIdRow(f_id_row) {};
   void operator()(boost::shared_ptr<FiniteElement> &fe);
 };
 
@@ -1105,9 +1105,9 @@ struct MoFEMFiniteElement_row_change_bit_off {
  *
  * \ingroup fe_multi_indices
  */
-struct MoFEMFiniteElement_change_bit_off {
+struct FiniteElement_change_bit_off {
   BitFieldId fIdData;
-  MoFEMFiniteElement_change_bit_off(const BitFieldId f_id_data): fIdData(f_id_data) {};
+  FiniteElement_change_bit_off(const BitFieldId f_id_data): fIdData(f_id_data) {};
   void operator()(boost::shared_ptr<FiniteElement> &fe);
 };
 

@@ -127,7 +127,7 @@ namespace MoFEM {
     FiniteElements_by_name::iterator it_fe = finite_element_name_set.find(fe_name);
     if(it_fe==finite_element_name_set.end()) SETERRQ(cOmm,MOFEM_NOT_FOUND,"this FiniteElement is there");
     try {
-      bool success = finite_element_name_set.modify(it_fe,MoFEMFiniteElement_change_bit_add(get_BitFieldId(name_data)));
+      bool success = finite_element_name_set.modify(it_fe,FiniteElement_change_bit_add(get_BitFieldId(name_data)));
       if(!success) SETERRQ(cOmm,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
     } catch (MoFEMException const &e) {
       SETERRQ(cOmm,e.errorCode,e.errorMessage);
@@ -143,7 +143,7 @@ namespace MoFEM {
     FiniteElements_by_name::iterator it_fe = finite_element_name_set.find(fe_name);
     if(it_fe==finite_element_name_set.end()) SETERRQ1(cOmm,MOFEM_NOT_FOUND,"this < %s > is not there",fe_name.c_str());
     try {
-      bool success = finite_element_name_set.modify(it_fe,MoFEMFiniteElement_row_change_bit_add(get_BitFieldId(name_row)));
+      bool success = finite_element_name_set.modify(it_fe,FiniteElement_row_change_bit_add(get_BitFieldId(name_row)));
       if(!success) SETERRQ(cOmm,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
     } catch (MoFEMException const &e) {
       SETERRQ(cOmm,e.errorCode,e.errorMessage);
@@ -159,7 +159,7 @@ namespace MoFEM {
     FiniteElements_by_name::iterator it_fe = finite_element_name_set.find(fe_name);
     if(it_fe==finite_element_name_set.end()) SETERRQ(cOmm,MOFEM_OPERATION_UNSUCCESSFUL,"this FiniteElement is there");
     try {
-      bool success = finite_element_name_set.modify(it_fe,MoFEMFiniteElement_col_change_bit_add(get_BitFieldId(name_col)));
+      bool success = finite_element_name_set.modify(it_fe,FiniteElement_col_change_bit_add(get_BitFieldId(name_col)));
       if(!success) SETERRQ(cOmm,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
     } catch (MoFEMException const &e) {
       SETERRQ(cOmm,e.errorCode,e.errorMessage);
@@ -175,7 +175,7 @@ namespace MoFEM {
     FiniteElements_by_name::iterator it_fe = finite_element_name_set.find(fe_name);
     if(it_fe==finite_element_name_set.end()) SETERRQ(cOmm,MOFEM_NOT_FOUND,"this FiniteElement is there");
     try {
-      bool success = finite_element_name_set.modify(it_fe,MoFEMFiniteElement_change_bit_off(get_BitFieldId(name_data)));
+      bool success = finite_element_name_set.modify(it_fe,FiniteElement_change_bit_off(get_BitFieldId(name_data)));
       if(!success) SETERRQ(cOmm,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
     } catch (MoFEMException const &e) {
       SETERRQ(cOmm,e.errorCode,e.errorMessage);
@@ -191,7 +191,7 @@ namespace MoFEM {
     FiniteElements_by_name::iterator it_fe = finite_element_name_set.find(fe_name);
     if(it_fe==finite_element_name_set.end()) SETERRQ1(cOmm,MOFEM_NOT_FOUND,"this < %s > is not there",fe_name.c_str());
     try {
-      bool success = finite_element_name_set.modify(it_fe,MoFEMFiniteElement_row_change_bit_off(get_BitFieldId(name_row)));
+      bool success = finite_element_name_set.modify(it_fe,FiniteElement_row_change_bit_off(get_BitFieldId(name_row)));
       if(!success) SETERRQ(cOmm,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
     } catch (MoFEMException const &e) {
       SETERRQ(cOmm,e.errorCode,e.errorMessage);
@@ -207,7 +207,7 @@ namespace MoFEM {
     FiniteElements_by_name::iterator it_fe = finite_element_name_set.find(fe_name);
     if(it_fe==finite_element_name_set.end()) SETERRQ(cOmm,MOFEM_NOT_FOUND,"this FiniteElement is there");
     try {
-      bool success = finite_element_name_set.modify(it_fe,MoFEMFiniteElement_col_change_bit_off(get_BitFieldId(name_col)));
+      bool success = finite_element_name_set.modify(it_fe,FiniteElement_col_change_bit_off(get_BitFieldId(name_col)));
       if(!success) SETERRQ(cOmm,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
     } catch (MoFEMException const &e) {
       SETERRQ(cOmm,e.errorCode,e.errorMessage);
