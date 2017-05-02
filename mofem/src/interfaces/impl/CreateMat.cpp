@@ -55,7 +55,7 @@ struct CreateRowComressedADJMatrix: public Core {
   Core(moab,comm,verbose) {
   }
 
-  typedef MoFEMEntityEntFiniteElementAdjacencyMap_multiIndex::index<Unique_mi_tag>::type AdjByEnt;
+  typedef FieldEntityEntFiniteElementAdjacencyMap_multiIndex::index<Unique_mi_tag>::type AdjByEnt;
   typedef MoFEMProblem_multiIndex::index<Problem_mi_tag>::type ProblemsByName;
   typedef NumeredDofEntity_multiIndex::index<PetscGlobalIdx_mi_tag>::type DofByGlobalPetscIndex;
 
@@ -91,7 +91,7 @@ struct CreateRowComressedADJMatrix: public Core {
     typename boost::multi_index::index<
       NumeredDofEntity_multiIndex,TAG
     >::type::iterator mit_row,
-    boost::shared_ptr<MoFEMEntity> mofem_ent_ptr,
+    boost::shared_ptr<FieldEntity> mofem_ent_ptr,
     std::vector<int> &dofs_col_view,
     int verb
   );
@@ -209,7 +209,7 @@ PetscErrorCode CreateRowComressedADJMatrix::getEntityAdjacenies(
   typename boost::multi_index::index<
     NumeredDofEntity_multiIndex,TAG
   >::type::iterator mit_row,
-  boost::shared_ptr<MoFEMEntity> mofem_ent_ptr,
+  boost::shared_ptr<FieldEntity> mofem_ent_ptr,
   std::vector<int> &dofs_col_view,
   int verb
 ) {
@@ -356,7 +356,7 @@ PetscErrorCode CreateRowComressedADJMatrix::createMatArrays(
     //get adjacent nodes on other partitions
     std::vector<std::vector<int> > dofs_vec(sIze);
 
-    boost::shared_ptr<MoFEMEntity> mofem_ent_ptr;
+    boost::shared_ptr<FieldEntity> mofem_ent_ptr;
     std::vector<int> dofs_col_view;
 
     typename boost::multi_index::index<NumeredDofEntity_multiIndex,TAG>::type::iterator
@@ -378,7 +378,7 @@ PetscErrorCode CreateRowComressedADJMatrix::createMatArrays(
         if(mofem_ent_ptr) {
           if(
             mofem_ent_ptr->getGlobalUniqueId()==
-            (*mit_row)->getMoFEMEntityPtr()->getGlobalUniqueId()
+            (*mit_row)->getFieldEntityPtr()->getGlobalUniqueId()
           ) {
             get_adj_col = false;
           }
@@ -386,7 +386,7 @@ PetscErrorCode CreateRowComressedADJMatrix::createMatArrays(
 
         if(get_adj_col) {
           // Get entity adjacencies
-          mofem_ent_ptr = (*mit_row)->getMoFEMEntityPtr();
+          mofem_ent_ptr = (*mit_row)->getFieldEntityPtr();
           ierr = getEntityAdjacenies<TAG>(
             p_miit,mit_row,mofem_ent_ptr,dofs_col_view,verb
           ); CHKERRQ(ierr);
@@ -516,7 +516,7 @@ PetscErrorCode CreateRowComressedADJMatrix::createMatArrays(
 
   }
 
-  boost::shared_ptr<MoFEMEntity> mofem_ent_ptr;
+  boost::shared_ptr<FieldEntity> mofem_ent_ptr;
   int row_last_evaluated_idx = -1;
 
   std::vector<int> dofs_vec;
@@ -548,7 +548,7 @@ PetscErrorCode CreateRowComressedADJMatrix::createMatArrays(
     // same adjacencies.
     if(
       (!mofem_ent_ptr)?1:(mofem_ent_ptr->getGlobalUniqueId()!=
-      (*miit_row)->getMoFEMEntityPtr()->getGlobalUniqueId())
+      (*miit_row)->getFieldEntityPtr()->getGlobalUniqueId())
     ) {
 
       if(verb>2) {
@@ -558,7 +558,7 @@ PetscErrorCode CreateRowComressedADJMatrix::createMatArrays(
       }
 
       // get entity adjacencies
-      mofem_ent_ptr = (*miit_row)->getMoFEMEntityPtr();
+      mofem_ent_ptr = (*miit_row)->getFieldEntityPtr();
       ierr = getEntityAdjacenies<TAG>(
         p_miit,miit_row,mofem_ent_ptr,dofs_col_view,verb
       ); CHKERRQ(ierr);
@@ -825,9 +825,9 @@ PetscErrorCode Core::partition_check_matrix_fill_in(const std::string &problem_n
           SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
         }
 
-        MoFEMEntityEntFiniteElementAdjacencyMap_multiIndex::index<Composite_Unique_mi_tag>::type::iterator ait;
+        FieldEntityEntFiniteElementAdjacencyMap_multiIndex::index<Composite_Unique_mi_tag>::type::iterator ait;
         ait = adjacenciesPtr->get<Composite_Unique_mi_tag>().find(
-          boost::make_tuple((*cit)->getMoFEMEntityPtr()->getGlobalUniqueId(),numeredEntFiniteElementPtr->getGlobalUniqueId())
+          boost::make_tuple((*cit)->getFieldEntityPtr()->getGlobalUniqueId(),numeredEntFiniteElementPtr->getGlobalUniqueId())
         );
         if(ait==adjacenciesPtr->end()) {
           SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"adjacencies data inconsistency");
@@ -872,9 +872,9 @@ PetscErrorCode Core::partition_check_matrix_fill_in(const std::string &problem_n
           SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
         }
 
-        MoFEMEntityEntFiniteElementAdjacencyMap_multiIndex::index<Composite_Unique_mi_tag>::type::iterator ait;
+        FieldEntityEntFiniteElementAdjacencyMap_multiIndex::index<Composite_Unique_mi_tag>::type::iterator ait;
         ait = adjacenciesPtr->get<Composite_Unique_mi_tag>().find(
-          boost::make_tuple((*rit)->getMoFEMEntityPtr()->getGlobalUniqueId(),numeredEntFiniteElementPtr->getGlobalUniqueId())
+          boost::make_tuple((*rit)->getFieldEntityPtr()->getGlobalUniqueId(),numeredEntFiniteElementPtr->getGlobalUniqueId())
         );
         if(ait==adjacenciesPtr->end()) {
           std::ostringstream ss;

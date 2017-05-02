@@ -154,7 +154,7 @@ std::ostream& operator<<(std::ostream& os,const RefEntity& e) {
 }
 
 //moab ent
-MoFEMEntity::MoFEMEntity(
+FieldEntity::FieldEntity(
   const boost::shared_ptr<Field>& field_ptr,
   const boost::shared_ptr<RefEntity>& ref_ent_ptr
 ):
@@ -171,20 +171,20 @@ tag_FieldData_size(0) {
   getDofOrderMap().resize(MAX_DOFS_ON_ENTITY,-1);
 }
 
-ApproximationOrder* MoFEMEntity::getMaxOrderPtr() {
+ApproximationOrder* FieldEntity::getMaxOrderPtr() {
   return (ApproximationOrder*)MoFEM::get_tag_ptr(
     static_cast<moab::Core*>(&sFieldPtr->moab)->sequence_manager(),sFieldPtr->th_AppOrder,sPtr->ent,NULL
   );
 }
-ApproximationOrder MoFEMEntity::getMaxOrder() const {
+ApproximationOrder FieldEntity::getMaxOrder() const {
   return *(ApproximationOrder*)MoFEM::get_tag_ptr(
     static_cast<moab::Core*>(&sFieldPtr->moab)->sequence_manager(),sFieldPtr->th_AppOrder,sPtr->ent,NULL
   );
 
 }
 
-MoFEMEntity::~MoFEMEntity() {}
-std::ostream& operator<<(std::ostream& os,const MoFEMEntity& e) {
+FieldEntity::~FieldEntity() {}
+std::ostream& operator<<(std::ostream& os,const FieldEntity& e) {
   os << "ent_global_uid " << (UId)e.getGlobalUniqueId()
     // << " ent_local_uid " << (UId)e.get_local_unique_id()
     << " entity "<< e.getEnt() << " type " << e.getEntType()
@@ -192,7 +192,7 @@ std::ostream& operator<<(std::ostream& os,const MoFEMEntity& e) {
     << " order "<<e.getMaxOrder()<<" "<< *e.sFieldPtr;
   return os;
 }
-void MoFEMEntity_change_order::operator()(MoFEMEntity *e) {
+void FieldEntity_change_order::operator()(FieldEntity *e) {
   MoABErrorCode rval;
   moab::Interface &moab = e->sPtr->basicDataPtr->moab;
   int nb_dofs = e->getOrderNbDofs(order)*e->getNbOfCoeffs();

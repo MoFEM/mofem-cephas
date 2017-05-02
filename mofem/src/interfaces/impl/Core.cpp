@@ -151,10 +151,10 @@ PetscErrorCode Core::query_interface_type(const std::type_info& type,void*& ptr)
   }
 
   //BitLevelCoupler
-  if(type == typeid(BitLevelCouplerInterface)) {
+  if(type == typeid(BitLevelCoupler)) {
     if(iFaces.find(IDD_MOFEMBitLevelCoupler.uUId.to_ulong()) == iFaces.end()) {
       unsigned long int uid = IDD_MOFEMBitLevelCoupler.uUId.to_ulong();
-      iFaces.insert(uid,new BitLevelCouplerInterface(*this));
+      iFaces.insert(uid,new BitLevelCoupler(*this));
     }
     ptr = &iFaces.at(IDD_MOFEMBitLevelCoupler.uUId.to_ulong());
     PetscFunctionReturn(0);
@@ -743,15 +743,15 @@ PetscErrorCode Core::initialiseDatabseInformationFromMesh(int verb) {
           ss << "read field ents " << ents.size() << std::endl;;
           PetscPrintf(cOmm,ss.str().c_str());
         }
-        boost::shared_ptr<std::vector<MoFEMEntity> > ents_array =
-        boost::make_shared<std::vector<MoFEMEntity> >(std::vector<MoFEMEntity>());
+        boost::shared_ptr<std::vector<FieldEntity> > ents_array =
+        boost::make_shared<std::vector<FieldEntity> >(std::vector<FieldEntity>());
         // Add sequence to field data structure. Note that entities are allocated
         // once into vector. This vector is passed into sequence as a weak_ptr.
         // Vector is destroyed at the point last entity inside that vector is
         // destroyed.
         p.first->get()->getEntSeqenceContainer()->push_back(ents_array);
         ents_array->reserve(ents.size());
-        std::vector<boost::shared_ptr<MoFEMEntity> > ents_shared_array;
+        std::vector<boost::shared_ptr<FieldEntity> > ents_shared_array;
         ents_shared_array.reserve(ents.size());
         Range::iterator eit = ents.begin();
         for(;eit!=ents.end();eit++) {
@@ -763,9 +763,9 @@ PetscErrorCode Core::initialiseDatabseInformationFromMesh(int verb) {
             // NOTE: This will work with newer compiler only, use push_back for back compatibility.
             // ents_array->emplace_back(*p.first,*p_ref_ent.first);
             // ents_shared_array.emplace_back(ents_array,&ents_array->back());
-            ents_array->push_back(MoFEMEntity(*p.first,*p_ref_ent.first));
+            ents_array->push_back(FieldEntity(*p.first,*p_ref_ent.first));
             ents_shared_array.push_back(
-              boost::shared_ptr<MoFEMEntity>(ents_array,&ents_array->back())
+              boost::shared_ptr<FieldEntity>(ents_array,&ents_array->back())
             );
           } catch (const std::exception& ex) {
             std::ostringstream ss;
@@ -1075,7 +1075,7 @@ PetscErrorCode Core::get_problems(const MoFEMProblem_multiIndex **problems_ptr) 
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode Core::get_field_ents(const MoFEMEntity_multiIndex **field_ents) const {
+PetscErrorCode Core::get_field_ents(const FieldEntity_multiIndex **field_ents) const {
   PetscFunctionBegin;
   *field_ents = &entsFields;
   PetscFunctionReturn(0);
