@@ -228,7 +228,7 @@ PetscErrorCode CreateRowComressedADJMatrix::getEntityAdjacenies(
   dofs_col_view.clear();
   for(;adj_miit!=hi_adj_miit;adj_miit++) {
 
-    if (adj_miit->by_other&BYROW) {
+    if (adj_miit->byWhat&BYROW) {
 
       if((adj_miit->entFePtr->getId()&p_miit->getBitFEId()).none()) {
         // if element is not part of problem
