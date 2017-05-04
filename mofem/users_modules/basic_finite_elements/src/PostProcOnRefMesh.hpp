@@ -50,6 +50,8 @@ struct PostProcCommonOnRefMesh {
    * \brief operator to post-process (save gardients on refined post-processing mesh) field gradient
    * \ingroup mofem_fs_post_proc
    *
+   * \todo Implamentation of setting values to fieldMap for Hcurl and Hdiv not implemented
+   *
    */
   struct OpGetFieldValues: public MoFEM::ForcesAndSurcesCore::UserDataOperator {
 
@@ -88,6 +90,8 @@ struct PostProcCommonOnRefMesh {
   /**
    * \brief operator to post-process (save gradients on refined post-processing mesh) field gradient
    * \ingroup mofem_fs_post_proc
+   *
+   * \todo Implamentation for Hdiv and Hcurl to be implemented
    *
    */
   struct OpGetFieldGradientValues: public MoFEM::ForcesAndSurcesCore::UserDataOperator {
