@@ -136,6 +136,8 @@ struct PostPorcStress: public MoFEM::VolumeElementForcesAndSourcesCore::UserData
         noalias(dAta.materialDoublePtr->F) = prod(dAta.materialDoublePtr->F,invH);
       }
 
+      int nb_active_variables = 9;
+      ierr = dAta.materialDoublePtr->setUserActiveVariables(nb_active_variables); CHKERRQ(ierr);
       ierr = dAta.materialDoublePtr->calculateP_PiolaKirchhoffI(dAta,getNumeredEntFiniteElementPtr()); CHKERRQ(ierr);
       rval = postProcMesh.tag_set_data(th_piola1,&mapGaussPts[gg],1,&dAta.materialDoublePtr->P(0,0)); CHKERRQ_MOAB(rval);
       dAta.materialDoublePtr->calculateElasticEnergy(dAta,getNumeredEntFiniteElementPtr()); CHKERRQ(ierr);

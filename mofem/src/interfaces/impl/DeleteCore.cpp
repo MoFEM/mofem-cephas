@@ -273,8 +273,8 @@ namespace MoFEM {
     FieldEntityEntFiniteElementAdjacencyMap_multiIndex::iterator ait;
     ait = entFEAdjacencies.begin();
     for(;ait!=entFEAdjacencies.end();) {
-      BitRefLevel bit2 = ait->mofemEntPtr->getBitRefLevel();
-      if(ait->mofemEntPtr->getEntType()==MBENTITYSET) {
+      BitRefLevel bit2 = ait->entFieldPtr->getBitRefLevel();
+      if(ait->entFieldPtr->getEntType()==MBENTITYSET) {
         ait++;
         continue;
       }
@@ -300,7 +300,7 @@ namespace MoFEM {
       ait = entFEAdjacencies.get<Ent_mi_tag>().lower_bound(*eit);
       hi_ait = entFEAdjacencies.get<Ent_mi_tag>().upper_bound(*eit);
       for(;ait!=hi_ait;) {
-        if(ait->mofemEntPtr->getName() == name) {
+        if(ait->entFieldPtr->getName() == name) {
           ait = entFEAdjacencies.get<Ent_mi_tag>().erase(ait);
         } else {
           ait++;
