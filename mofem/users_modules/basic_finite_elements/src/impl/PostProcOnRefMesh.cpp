@@ -123,27 +123,35 @@ PetscErrorCode PostProcCommonOnRefMesh::OpGetFieldValues::doWork(
     rval = postProcMesh.tag_get_by_ptr(th,&mapGaussPts[0],mapGaussPts.size(),tags_ptr); CHKERRQ_MOAB(rval);
     for(int gg = 0;gg<nb_gauss_pts;gg++) {
       for(int rr = 0;rr<rank;rr++) {
-        ((double*)tags_ptr[gg])[rr] += cblas_ddot(
+        const double val = cblas_ddot(
           (vAluesPtr->size()/rank),&(data.getN(gg)[0]),1,&((*vAluesPtr)[rr]),rank
         );
-        (commonData.fieldMap[rowFieldName])[gg][rr] += (*vAluesPtr)[rr];
+        (commonData.fieldMap[rowFieldName])[gg][rr] = ((double*)tags_ptr[gg])[rr] += val;
       }
     }
     break;
     case L2:
+    commonData.fieldMap[rowFieldName].resize(nb_gauss_pts);
+    for(int gg = 0;gg<nb_gauss_pts;gg++) {
+      rval = postProcMesh.tag_set_data(th,&mapGaussPts[gg],1,def_VAL); CHKERRQ_MOAB(rval);
+      (commonData.fieldMap[rowFieldName])[gg].resize(rank);
+      (commonData.fieldMap[rowFieldName])[gg].clear();
+    }
     rval = postProcMesh.tag_get_by_ptr(
       th,&mapGaussPts[0],mapGaussPts.size(),tags_ptr
     ); CHKERRQ_MOAB(rval);
     for(int gg = 0;gg<nb_gauss_pts;gg++) {
       bzero((double*)tags_ptr[gg],sizeof(double)*tag_length);
       for(int rr = 0;rr<rank;rr++) {
-        ((double*)tags_ptr[gg])[rr] = cblas_ddot(
+        const double val = cblas_ddot(
           (vAluesPtr->size()/rank),&(data.getN(gg)[0]),1,&((*vAluesPtr)[rr]),rank
         );
+        (commonData.fieldMap[rowFieldName])[gg][rr] = ((double*)tags_ptr[gg])[rr] = val;
       }
     }
     break;
     case HCURL:
+    // FIXME: fieldMap not set
     if(type == MBEDGE && side == 0) {
       for(int gg = 0;gg<nb_gauss_pts;gg++) {
         rval = postProcMesh.tag_set_data(th,&mapGaussPts[gg],1,def_VAL); CHKERRQ_MOAB(rval);
@@ -172,6 +180,7 @@ PetscErrorCode PostProcCommonOnRefMesh::OpGetFieldValues::doWork(
     }
     break;
     case HDIV:
+    // FIXME: fieldMap not set
     if(type == MBTRI && side == 0) {
       for(int gg = 0;gg<nb_gauss_pts;gg++) {
         rval = postProcMesh.tag_set_data(th,&mapGaussPts[gg],1,def_VAL); CHKERRQ_MOAB(rval);
@@ -281,8 +290,8 @@ PetscErrorCode PostProcCommonOnRefMesh::OpGetFieldGradientValues::doWork(
         for(int rr = 0;rr<rank;rr++) {
           for(int dd = 0;dd<3;dd++) {
             for(unsigned int dof = 0;dof<(vAluesPtr->size()/rank);dof++) {
-              ((double*)tags_ptr[gg])[rank*rr+dd] += data.getDiffN(gg)(dof,dd)*(*vAluesPtr)[rank*dof+rr];
-              (commonData.gradMap[rowFieldName])[gg](rr,dd) += data.getDiffN(gg)(dof,dd)*(*vAluesPtr)[rank*dof+rr];
+              const double val = data.getDiffN(gg)(dof,dd)*(*vAluesPtr)[rank*dof+rr];
+              (commonData.gradMap[rowFieldName])[gg](rr,dd) = ((double*)tags_ptr[gg])[rank*rr+dd] += val;
             }
           }
         }
@@ -300,8 +309,8 @@ PetscErrorCode PostProcCommonOnRefMesh::OpGetFieldGradientValues::doWork(
         for(int rr = 0;rr<rank;rr++) {
           for(int dd = 0;dd<3;dd++) {
             for(unsigned int dof = 0;dof<(vAluesPtr->size()/rank);dof++) {
-              ((double*)tags_ptr[gg])[rank*rr+dd] += data.getDiffN(gg)(dof,dd)*(*vAluesPtr)[rank*dof+rr];
-              (commonData.gradMap[rowFieldName])[gg](rr,dd) += data.getDiffN(gg)(dof,dd)*(*vAluesPtr)[rank*dof+rr];
+              const double val = data.getDiffN(gg)(dof,dd)*(*vAluesPtr)[rank*dof+rr];
+              (commonData.gradMap[rowFieldName])[gg](rr,dd) = ((double*)tags_ptr[gg])[rank*rr+dd] += val;
             }
           }
         }

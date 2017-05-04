@@ -26,11 +26,11 @@ namespace MoFEM {
   *
   */
 struct FieldEntityEntFiniteElementAdjacencyMap {
-  unsigned int by_other;
-  const boost::shared_ptr<FieldEntity> mofemEntPtr; ///< field entity
+  unsigned int byWhat; ///< see options \ref ByWhat
+  const boost::shared_ptr<FieldEntity> entFieldPtr; ///< field entity
   const boost::shared_ptr<EntFiniteElement> entFePtr; ///< finite element entity
   FieldEntityEntFiniteElementAdjacencyMap(
-    const boost::shared_ptr<FieldEntity> mofem_ent_ptr,
+    const boost::shared_ptr<FieldEntity> ent_field_ptr,
     const boost::shared_ptr<EntFiniteElement> ent_fe_ptr
   );
 
@@ -52,22 +52,22 @@ struct FieldEntityEntFiniteElementAdjacencyMap {
   /**
    * \brief get unique iD of entity on field
    */
-  inline GlobalUId getEntUniqueId() const { return mofemEntPtr->getGlobalUniqueId(); }
+  inline GlobalUId getEntUniqueId() const { return entFieldPtr->getGlobalUniqueId(); }
 
   /**
    * \brief get entity meshset carrying its field
    */
-  inline EntityHandle getEntMeshset() const { return mofemEntPtr->getMeshset(); }
+  inline EntityHandle getEntMeshset() const { return entFieldPtr->getMeshset(); }
 
   /**
    * \brief get entity handle
    */
-  inline EntityHandle getEntHandle() const { return mofemEntPtr->getEnt(); }
+  inline EntityHandle getEntHandle() const { return entFieldPtr->getEnt(); }
 
   /**
    * \brief get field iD
    */
-  BitFieldId getEntId() const { return mofemEntPtr->getId(); }
+  BitFieldId getEntId() const { return entFieldPtr->getId(); }
 
   /**
    * \brief get finite element iD
@@ -116,24 +116,48 @@ typedef multi_index_container<
     ordered_unique<
       tag<Composite_Unique_mi_tag>,
       composite_key<
-	FieldEntityEntFiniteElementAdjacencyMap,
-	const_mem_fun<FieldEntityEntFiniteElementAdjacencyMap,GlobalUId,&FieldEntityEntFiniteElementAdjacencyMap::getEntUniqueId>,
-	const_mem_fun<FieldEntityEntFiniteElementAdjacencyMap,GlobalUId,&FieldEntityEntFiniteElementAdjacencyMap::getFeUniqueId> > >,
+	      FieldEntityEntFiniteElementAdjacencyMap,
+	      const_mem_fun<
+          FieldEntityEntFiniteElementAdjacencyMap,GlobalUId,
+          &FieldEntityEntFiniteElementAdjacencyMap::getEntUniqueId
+        >,
+	      const_mem_fun<
+          FieldEntityEntFiniteElementAdjacencyMap,GlobalUId,
+          &FieldEntityEntFiniteElementAdjacencyMap::getFeUniqueId
+        >
+      >
+    >,
     ordered_non_unique<
-      tag<Unique_mi_tag>, const_mem_fun<FieldEntityEntFiniteElementAdjacencyMap,GlobalUId,&FieldEntityEntFiniteElementAdjacencyMap::getEntUniqueId> >,
+      tag<Unique_mi_tag>,
+      const_mem_fun<
+        FieldEntityEntFiniteElementAdjacencyMap,GlobalUId,
+        &FieldEntityEntFiniteElementAdjacencyMap::getEntUniqueId
+      >
+    >,
     ordered_non_unique<
-      tag<FEEnt_mi_tag>, const_mem_fun<FieldEntityEntFiniteElementAdjacencyMap,EntityHandle,&FieldEntityEntFiniteElementAdjacencyMap::getFeHandle> >,
+      tag<FEEnt_mi_tag>,
+      const_mem_fun<
+        FieldEntityEntFiniteElementAdjacencyMap,EntityHandle,
+        &FieldEntityEntFiniteElementAdjacencyMap::getFeHandle
+      >
+    >,
     ordered_non_unique<
-      tag<Ent_mi_tag>, const_mem_fun<FieldEntityEntFiniteElementAdjacencyMap,EntityHandle,&FieldEntityEntFiniteElementAdjacencyMap::getEntHandle> >
-  > > FieldEntityEntFiniteElementAdjacencyMap_multiIndex;
+      tag<Ent_mi_tag>,
+      const_mem_fun<
+        FieldEntityEntFiniteElementAdjacencyMap,EntityHandle,
+        &FieldEntityEntFiniteElementAdjacencyMap::getEntHandle
+      >
+    >
+  >
+> FieldEntityEntFiniteElementAdjacencyMap_multiIndex;
 
-  struct FieldEntityEntFiniteElementAdjacencyMap_change_ByWhat {
-    int bY;
-    FieldEntityEntFiniteElementAdjacencyMap_change_ByWhat(const int by): bY(by) {}
-    void operator()(FieldEntityEntFiniteElementAdjacencyMap &e) {
-      e.by_other |= bY;
-    }
-  };
+struct FieldEntityEntFiniteElementAdjacencyMap_change_ByWhat {
+  int bY;
+  FieldEntityEntFiniteElementAdjacencyMap_change_ByWhat(const int by): bY(by) {}
+  void operator()(FieldEntityEntFiniteElementAdjacencyMap &e) {
+    e.byWhat |= bY;
+  }
+};
 
 }
 
