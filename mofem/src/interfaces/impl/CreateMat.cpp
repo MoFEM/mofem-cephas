@@ -827,7 +827,10 @@ PetscErrorCode Core::partition_check_matrix_fill_in(const std::string &problem_n
 
         FieldEntityEntFiniteElementAdjacencyMap_multiIndex::index<Composite_Unique_mi_tag>::type::iterator ait;
         ait = adjacenciesPtr->get<Composite_Unique_mi_tag>().find(
-          boost::make_tuple((*cit)->getFieldEntityPtr()->getGlobalUniqueId(),numeredEntFiniteElementPtr->getGlobalUniqueId())
+          boost::make_tuple(
+            (*cit)->getFieldEntityPtr()->getGlobalUniqueId(),
+            numeredEntFiniteElementPtr->getGlobalUniqueId()
+          )
         );
         if(ait==adjacenciesPtr->end()) {
           SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"adjacencies data inconsistency");

@@ -113,7 +113,7 @@ struct FieldEntityEntFiniteElementAdjacencyMap {
 typedef multi_index_container<
   FieldEntityEntFiniteElementAdjacencyMap,
   indexed_by<
-    hashed_unique<
+    ordered_unique<
       tag<Composite_Unique_mi_tag>,
       composite_key<
 	      FieldEntityEntFiniteElementAdjacencyMap,
