@@ -179,6 +179,11 @@ enum RowColData {
   ROW = 0,COL,DATA,LASTROWCOLDATA
 };
 
+/**
+ *  Controls adjency multi_index container (e.g. BYROW is adjacenciecy by field on on rows), see
+ *  \ref MoFEM::FieldEntityEntFiniteElementAdjacencyMap
+ *
+ */
 enum ByWhat {
   BYROW     = 1<<0,
   BYCOL     = 1<<1,
