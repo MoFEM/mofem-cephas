@@ -1274,6 +1274,10 @@ namespace MoFEM {
     int verb
   ) {
 
+    if(!(cOre.getBuildMoFEM()&Core::BUILD_FIELD)) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"fields not build");
+    if(!(cOre.getBuildMoFEM()&Core::BUILD_FE)) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"FEs not build");
+    if(!(cOre.getBuildMoFEM()&Core::BUILD_ADJ)) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"adjacencies not build");
+
     PetscErrorCode ierr;
     MoFEM::Interface &m_field = cOre;
     const MoFEMProblem_multiIndex *problems_ptr;
@@ -1334,6 +1338,8 @@ namespace MoFEM {
       *out_problem_it->tag_ghost_nbdof_data_col = 0;
     }
     int nb_dofs_reserve[] = {0,0};
+
+    // Loop over rows and columns in the main problem and sub-problems
 
     // cerr << "AAA " << ((square_matrix)?1:2) << "\n";
     for(int ss = 0;ss!=((square_matrix)?1:2);ss++) {
@@ -1488,8 +1494,8 @@ namespace MoFEM {
     *nb_local_dofs[0] = 0;
     *nb_local_dofs[1] = 0;
     for(int ss = 0;ss!=((square_matrix)?1:2);ss++) {
-      // if(ss == 0 && !enumerate_row) continue;
-      // if(ss == 1 && !enumerate_col) continue;
+      // if(ss == 0 && renumerate_row) continue;
+      // if(ss == 1 && renumerate_col) continue;
       boost::shared_ptr<NumeredDofEntity_multiIndex> dofs_ptr;
       NumeredDofEntity_multiIndex::index<PetscGlobalIdx_mi_tag>::type::iterator dit,hi_dit;
       if(ss == 0) {
@@ -1580,6 +1586,10 @@ namespace MoFEM {
 
     ierr = printPartitionedProblem(&*out_problem_it,verb); CHKERRQ(ierr);
     ierr = debugPartitionedProblem(&*out_problem_it,verb); CHKERRQ(ierr);
+
+    // Inidcate that porble has been build
+    cOre.getBuildMoFEM() |= Core::BUILD_PROBLEM;
+    cOre.getBuildMoFEM() |= Core::PARTITION_PROBLEM;
 
     PetscFunctionReturn(0);
   }
@@ -2235,8 +2245,8 @@ namespace MoFEM {
 
     if(!(cOre.getBuildMoFEM()&Core::BUILD_ADJ))
     SETERRQ(m_field.get_comm(),MOFEM_DATA_INCONSISTENCY,"adjacencies not build");
-    if(!(cOre.getBuildMoFEM()&Core::BUILD_PROBLEM))
 
+    if(!(cOre.getBuildMoFEM()&Core::BUILD_PROBLEM))
     SETERRQ(m_field.get_comm(),MOFEM_DATA_INCONSISTENCY,"problem not build");
 
     if(!(cOre.getBuildMoFEM()&Core::PARTITION_PROBLEM))
