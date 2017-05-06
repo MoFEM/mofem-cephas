@@ -3,27 +3,40 @@
   <!-- Navigation index tabs for HTML output -->
   <navindex>
     <tab type="mainpage" visible="yes" title=""/>
-    <tab type="pages" visible="yes" title="Documentation" intro=""/>
-    <tab type="modules" visible="yes" title="Code Parts" intro=""/>
-    <tab type="namespaces" visible="yes" title="">
-      <tab type="namespacelist" visible="yes" title="" intro=""/>
-      <tab type="namespacemembers" visible="yes" title="" intro=""/>
+    <tab type="usergroup" title="Documentation">
+      <tab type="usergroup" title="Documenting users modules" url="@ref mod_gallery" intro=""/>
+      <tab type="examples" visible="yes" title="Examples and tutorials" intro=""/>
+      <tab type="user" title="Installation" url="@ref installation" intro=""/>
+      <tab type="user" title="Coding pratice" url="@ref coding_practice" intro=""/>
+      <tab type="user" title="Frequently asked questions" url="@ref faqs" intro=""/>
+      <tab type="user" title="Guidelines to report bugs" url="@ref guidelines_bug_reporting" intro=""/>
+      <tab type="user" title="Writing documentation" url="@ref a_guide_to_writing_documentation" intro=""/>
+      <tab type="user" visible="yes" title="Bug list" url="@ref bug" intro=""/>
+      <tab type="user" visible="yes" title="Todo list" url="@ref todo" intro=""/>
+      <tab type="user" visible="yes" title="Deprecated list" url="@ref deprecated" intro=""/>
+      <tab type="user" visible="yes" title="Bibliography" url="@ref citelist" intro=""/>
+      <tab type="pages" visible="yes" title="All pages" intro=""/>
     </tab>
-    <tab type="classes" visible="yes" title="">
-      <tab type="classlist" visible="yes" title="" intro=""/>
-      <tab type="classindex" visible="$ALPHABETICAL_INDEX" title=""/>
-      <tab type="hierarchy" visible="yes" title="" intro=""/>
-      <tab type="classmembers" visible="yes" title="" intro=""/>
+    <tab type="usergroup" title="Source code">
+      <tab type="modules" visible="yes" title="Source groups" intro=""/>
+      <tab type="namespaces" visible="yes" title="">
+        <tab type="namespacelist" visible="yes" title="" intro=""/>
+        <tab type="namespacemembers" visible="yes" title="" intro=""/>
+      </tab>
+      <tab type="classes" visible="yes" title="">
+        <tab type="classlist" visible="yes" title="" intro=""/>
+        <tab type="classindex" visible="$ALPHABETICAL_INDEX" title=""/>
+        <tab type="hierarchy" visible="yes" title="" intro=""/>
+        <tab type="classmembers" visible="yes" title="" intro=""/>
+      </tab>
+      <tab type="files" visible="yes" title="">
+        <tab type="filelist" visible="yes" title="" intro=""/>
+        <tab type="globals" visible="yes" title="" intro=""/>
+      </tab>
     </tab>
-    <tab type="files" visible="yes" title="">
-      <tab type="filelist" visible="yes" title="" intro=""/>
-      <tab type="globals" visible="yes" title="" intro=""/>
-    </tab>
-    <tab type="examples" visible="yes" title="" intro=""/>
     <tab type="user" url="https://bitbucket.org/likask/mofem-cephas" title="Repository"/>
     <tab type="user" url="http://cdash.eng.gla.ac.uk/cdash" title="Testing"/>
     <tab type="user" url="https://zenodo.org/communities/mofem/" title="Zenodo"/>
-
   </navindex>
 
   <!-- Layout definition for a class page -->

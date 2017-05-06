@@ -56,7 +56,7 @@ if(DOXYGEN_FOUND)
     ${DOXYGEN_LINE_COMMAND}
     WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
     COMMENT "Generating documentation with Doxygen" VERBATIM
-    DEPENDS doxygen_generating_header
+    # DEPENDS doxygen_generating_header
   )
   add_custom_target(doc
     DEPENDS doxygen_generating_documenation

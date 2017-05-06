@@ -1,4 +1,4 @@
-##Installation with Docker##
+##Installation with Docker## {#install_docker}
 
 Docker is an open platform that allows for the distribution and deployment of
 applications across different systems. In the context of MoFEM it allows for

@@ -1,6 +1,7 @@
 /** \file MagneticElement.hpp
  * \brief Implementation of magnetic element
  * \ingroup maxwell_element
+ * \example MagneticElement.hpp
  *
  */
 
@@ -23,13 +24,18 @@
 #define __MAGNETICELEMENT_HPP__
 
 /**
- * \brief Implementation of magnetostatic problem (basic Implementation)
+ * \brief Implementation of magneto-static problem (basic Implementation)
  * \ingroup maxwell_element
  *
  *  Look for theory and details here:
  *
  *  \cite ivanyshyn2013computation
  *  <www.hpfem.jku.at/publications/szthesis.pdf>
+ *
+ * Election file and all other problem related file are here \ref maxwell_element.
+ *
+ * \todo Extension for mix formulation
+ * \todo Use appropriate pre-conditioner for large problems
  *
  */
 struct MagneticElement {
