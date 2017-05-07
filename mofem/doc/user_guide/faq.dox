@@ -331,7 +331,7 @@ docker, you need to run docker container in \em privileged mode, for example
 docker run --privileged -it --name work --hostname mofem -v $HOME:/mnt/home -v mofem_build:/my_build likask/mofem_build:v0.2 /bin/bash
 \endcode
 
-\section Who contribuiting to MoFEM?
+\section faq_contributors Who contribuiting to MoFEM?
 
 MoFEM is copyright by Lukasz Kaczmarczyk (Lukasz.Kaczmarczyk at glasgow.ac.uk)
 and has received contributions by several people. MoFEM can be used freely for
