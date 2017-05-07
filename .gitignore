@@ -1,3 +1,5 @@
+mofem/doc/style.html
+
 mofem/include/config.h
 mofem/include/version.h
 mofem/scripts/publish_doc_likask.sh

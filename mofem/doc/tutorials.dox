@@ -1,0 +1,26 @@
+/*! \page tutorials Tutorials
+
+Step by step tutorial for MoFEM developers. We explain here how to implement
+general problem on particular examples.
+
+\tableofcontents
+
+\section snes_nonlinear_tut Nonlinear problem
+
+Minimal surface area (soap film on the wire): Tutorial showing step by step
+implementation of nonlinear problem. It presents how to set up the problem
+from scratch, calculate matrices and solve the problem using MoFEM and
+PETSc
+
+- \subpage sope_film
+
+\section mix_adpativity_tut Mix formulation and h-adaptivity
+
+In example is shown how to solve transport problem using mix element with an
+independent approximation for fluxes and function values.  Also, is shown how to
+integrate over mesh skeleton to evaluate error and how to use a posterior error
+estimator to drive mesh adaptivity (h-adaptivity),
+
+- \subpage ultraw_weak
+
+*/

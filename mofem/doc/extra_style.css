@@ -1,9 +1,3 @@
-body {
-        background-color: #CCC;
-        color: black;
-        margin: 0;
-}
-
 div.contents {
         margin-bottom: 10px;
         padding: 12px;
@@ -17,15 +11,6 @@ div.contents {
 #titlearea {
         background-color: white;
 }
-
-hr.footer {
-        display: none;
-}
-
-.footer {
-        background-color: #AAA;
-}
-
 
 div.image img[src="slice_anim.gif"]{
     width:500px;

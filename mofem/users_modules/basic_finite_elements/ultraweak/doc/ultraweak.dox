@@ -1,4 +1,4 @@
-/*! \example "UltraWeak formulation and integration on skeleton (h-adaptivity)"
+/*! \page ultraw_weak "UltraWeak formulation and integration on skeleton (h-adaptivity)"
 
 \brief Set by step example how to implement mix finite element and do hp-adaptivity
 

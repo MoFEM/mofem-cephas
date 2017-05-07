@@ -4,9 +4,10 @@
   <navindex>
     <tab type="mainpage" visible="yes" title=""/>
     <tab type="usergroup" title="Documentation">
-      <tab type="usergroup" title="Documenting users modules" url="@ref mod_gallery" intro=""/>
-      <tab type="examples" visible="yes" title="Examples and tutorials" intro=""/>
       <tab type="user" title="Installation" url="@ref installation" intro=""/>
+      <tab type="usergroup" title="Developer tutorials" url="@ref tutorials" intro=""/>
+      <tab type="examples" visible="yes" title="Developer examples" intro=""/>
+      <tab type="usergroup" title="Documenting users modules" url="@ref mod_gallery" intro=""/>
       <tab type="user" title="Coding pratice" url="@ref coding_practice" intro=""/>
       <tab type="user" title="Frequently asked questions" url="@ref faqs" intro=""/>
       <tab type="user" title="Guidelines to report bugs" url="@ref guidelines_bug_reporting" intro=""/>
