@@ -568,9 +568,9 @@ namespace MoFEM {
         //if element is in problem
         if(((*fe_miit)->getId()&problem_ptr->getBitFEId()).any()) {
 
-          BitRefLevel prb_bit = problem_ptr->getBitRefLevel();
-          BitRefLevel prb_mask = problem_ptr->getMaskBitRefLevel();
-          BitRefLevel fe_bit = (*fe_miit)->getBitRefLevel();
+          const BitRefLevel prb_bit = problem_ptr->getBitRefLevel();
+          const BitRefLevel prb_mask = problem_ptr->getMaskBitRefLevel();
+          const BitRefLevel fe_bit = (*fe_miit)->getBitRefLevel();
           // if entity is not problem refinement level
           if((fe_bit&prb_mask)!=fe_bit) continue;
           if((fe_bit&prb_bit)!=prb_bit) continue;
