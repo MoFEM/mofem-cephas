@@ -23,7 +23,5 @@ estimator to drive mesh adaptivity (h-adaptivity),
 
 - \subpage ultraw_weak
 
-\htmlinclude doc/chatillo.html
-
 
 */

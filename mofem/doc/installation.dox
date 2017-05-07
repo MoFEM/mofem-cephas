@@ -8,6 +8,4 @@ Installation in docker is faster where prebuild enviroent is downloaded directly
 - \subpage install_ubuntu
 - \subpage install_macosx
 
-\htmlinclude doc/chatillo.html
-
 */
