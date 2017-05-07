@@ -42,13 +42,21 @@ if(DOXYGEN_FOUND)
     ${PROJECT_SOURCE_DIR}/doc/style.html
     ${PROJECT_BINARY_DIR}/Doxyfile
   )
-  add_custom_target(doxygen_generating_header
-    ${DOXYGEN_GENERATE_HEADER}
-    COMMAND cat ${PROJECT_SOURCE_DIR}/doc/google_analytics.html | tee -a ${PROJECT_SOURCE_DIR}/doc/header.html
-    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
-    COMMENT "Generating doxygen header" VERBATIM
-    DEPENDS doc_get_contributors
-  )
+
+  # add_custom_target(doxygen_generating_header
+  #   ${DOXYGEN_GENERATE_HEADER}
+  #   COMMAND cat ${PROJECT_SOURCE_DIR}/doc/google_analytics.html | tee -a ${PROJECT_SOURCE_DIR}/doc/header.html
+  #   WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+  #   COMMENT "Generating doxygen header" VERBATIM
+  # )
+  #
+  # add_custom_target(doxygen_generating_footer
+  #   ${DOXYGEN_GENERATE_HEADER}
+  #   COMMAND cat ${PROJECT_SOURCE_DIR}/doc/chatillo.html | tee -a ${PROJECT_SOURCE_DIR}/doc/footer.html
+  #   WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
+  #   COMMENT "Generating doxygen header" VERBATIM
+  # )
+
   set(DOXYGEN_LINE_COMMAND
     ${DOXYGEN_EXECUTABLE} ${PROJECT_BINARY_DIR}/Doxyfile
   )
@@ -56,8 +64,8 @@ if(DOXYGEN_FOUND)
     ${DOXYGEN_LINE_COMMAND}
     WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}
     COMMENT "Generating documentation with Doxygen" VERBATIM
-    # DEPENDS doxygen_generating_header
   )
+
   add_custom_target(doc
     DEPENDS doxygen_generating_documenation
     COMMENT "Making documentation" VERBATIM
