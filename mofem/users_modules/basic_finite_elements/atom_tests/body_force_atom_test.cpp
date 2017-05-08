@@ -160,7 +160,7 @@ int main(int argc, char *argv[]) {
 
     ierr = m_field.set_global_ghost_vector("TEST_PROBLEM",COL,F,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 
-    const MoFEMProblem *problemPtr;
+    const Problem *problemPtr;
     ierr = m_field.get_problem("TEST_PROBLEM",&problemPtr); CHKERRQ(ierr);
     std::map<EntityHandle,double> m0,m1,m2;
     for(_IT_NUMEREDDOFMOFEMENTITY_ROW_FOR_LOOP_(problemPtr,dit)) {

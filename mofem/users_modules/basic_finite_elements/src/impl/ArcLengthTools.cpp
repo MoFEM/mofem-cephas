@@ -52,7 +52,7 @@ ArcLengthCtx::ArcLengthCtx(MoFEM::Interface &m_field,const std::string &problem_
   ierr = VecDuplicate(F_lambda,&x0); CHKERRABORT(PETSC_COMM_WORLD,ierr);
   ierr = VecDuplicate(F_lambda,&dx); CHKERRABORT(PETSC_COMM_WORLD,ierr);
 
-  const MoFEMProblem *problem_ptr;
+  const Problem *problem_ptr;
   ierr = m_field.get_problem(problem_name,&problem_ptr); CHKERRABORT(PETSC_COMM_WORLD,ierr);
   boost::shared_ptr<NumeredDofEntity_multiIndex> dofs_ptr_no_const = problem_ptr->numered_dofs_rows;
   NumeredDofEntityByFieldName::iterator hi_dit;
@@ -107,7 +107,7 @@ ArcLengthMatShell::ArcLengthMatShell(Mat aij,ArcLengthCtx *arc_ptr,string proble
 PetscErrorCode ArcLengthMatShell::setLambda(Vec ksp_x,double *lambda,ScatterMode scattermode) {
   PetscFunctionBegin;
 
-  const MoFEMProblem *problem_ptr;
+  const Problem *problem_ptr;
   ierr = arcPtr->mField.get_problem(problemName,&problem_ptr); CHKERRQ(ierr);
 
   int part = arcPtr->getPart();

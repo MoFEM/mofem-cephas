@@ -36,7 +36,7 @@
 namespace MoFEM {
 
 //moab problem
-MoFEMProblem::MoFEMProblem(Interface &moab,const EntityHandle meshset):
+Problem::Problem(Interface &moab,const EntityHandle meshset):
   meshset(meshset),
   numered_dofs_rows(boost::shared_ptr<NumeredDofEntity_multiIndex>(new NumeredDofEntity_multiIndex())),
   numered_dofs_cols(boost::shared_ptr<NumeredDofEntity_multiIndex>(new NumeredDofEntity_multiIndex())),
@@ -78,21 +78,21 @@ MoFEMProblem::MoFEMProblem(Interface &moab,const EntityHandle meshset):
   rval = moab.tag_get_by_ptr(th_RefBitLevel_Mask,&meshset,1,(const void **)&tag_MaskBitRefLevel); MOAB_THROW(rval);
 }
 
-MoFEMProblem::~MoFEMProblem() {
+Problem::~Problem() {
 }
 
-std::ostream& operator<<(std::ostream& os,const MoFEMProblem& e) {
+std::ostream& operator<<(std::ostream& os,const Problem& e) {
   os << "problem id " << e.getId()
     << " FiniteElement id " << e.getBitFEId()
     << " name "<<e.getName();
   return os;
 }
 
-BitFEId MoFEMProblem::getBitFEId() const {
+BitFEId Problem::getBitFEId() const {
   return *tag_BitFEId_data;
 }
 
-PetscErrorCode MoFEMProblem::getRowDofsByPetscGlobalDofIdx(DofIdx idx,const NumeredDofEntity **dof_ptr) const {
+PetscErrorCode Problem::getRowDofsByPetscGlobalDofIdx(DofIdx idx,const NumeredDofEntity **dof_ptr) const {
   PetscFunctionBegin;
   NumeredDofEntity_multiIndex::index<PetscGlobalIdx_mi_tag>::type::iterator dit;
   dit = numered_dofs_rows->get<PetscGlobalIdx_mi_tag>().find(idx);
@@ -103,7 +103,7 @@ PetscErrorCode MoFEMProblem::getRowDofsByPetscGlobalDofIdx(DofIdx idx,const Nume
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode MoFEMProblem::getColDofsByPetscGlobalDofIdx(DofIdx idx,const NumeredDofEntity **dof_ptr) const {
+PetscErrorCode Problem::getColDofsByPetscGlobalDofIdx(DofIdx idx,const NumeredDofEntity **dof_ptr) const {
   PetscFunctionBegin;
   NumeredDofEntity_multiIndex::index<PetscGlobalIdx_mi_tag>::type::iterator dit;
   dit = numered_dofs_cols->get<PetscGlobalIdx_mi_tag>().find(idx);
@@ -114,7 +114,7 @@ PetscErrorCode MoFEMProblem::getColDofsByPetscGlobalDofIdx(DofIdx idx,const Nume
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode MoFEMProblem::getNumberOfElementsByNameAndPart(MPI_Comm comm,const std::string name,PetscLayout *layout) const {
+PetscErrorCode Problem::getNumberOfElementsByNameAndPart(MPI_Comm comm,const std::string name,PetscLayout *layout) const {
   PetscFunctionBegin;
   PetscErrorCode ierr;
   int size, rank;
@@ -130,7 +130,7 @@ PetscErrorCode MoFEMProblem::getNumberOfElementsByNameAndPart(MPI_Comm comm,cons
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode MoFEMProblem::getNumberOfElementsByPart(MPI_Comm comm,PetscLayout *layout) const {
+PetscErrorCode Problem::getNumberOfElementsByPart(MPI_Comm comm,PetscLayout *layout) const {
   PetscFunctionBegin;
   PetscErrorCode ierr;
   int size, rank;
@@ -147,7 +147,7 @@ PetscErrorCode MoFEMProblem::getNumberOfElementsByPart(MPI_Comm comm,PetscLayout
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode MoFEMProblem::getDofByNameEntAndEntDofIdx(
+PetscErrorCode Problem::getDofByNameEntAndEntDofIdx(
   const string name,
   const EntityHandle ent,
   const int ent_dof_idx,
@@ -191,25 +191,25 @@ PetscErrorCode MoFEMProblem::getDofByNameEntAndEntDofIdx(
 }
 
 
-void ProblemFiniteElementChangeBitAdd::operator()(MoFEMProblem &p) {
+void ProblemFiniteElementChangeBitAdd::operator()(Problem &p) {
   *(p.tag_BitFEId_data) |= f_id;
 }
-void ProblemFiniteElementChangeBitUnSet::operator()(MoFEMProblem &p) {
+void ProblemFiniteElementChangeBitUnSet::operator()(Problem &p) {
   *(p.tag_BitFEId_data) &= ~f_id;
 }
-void ProblemZeroNbRowsChange::operator()(MoFEMProblem &e) {
+void ProblemZeroNbRowsChange::operator()(Problem &e) {
   (*(DofIdx*)e.tag_nbdof_data_row) = 0;
   (*(DofIdx*)e.tag_local_nbdof_data_row) = 0;
   (*(DofIdx*)e.tag_ghost_nbdof_data_row) = 0;
   e.numered_dofs_rows->clear();
 }
-void ProblemZeroNbColsChange::operator()(MoFEMProblem &e) {
+void ProblemZeroNbColsChange::operator()(Problem &e) {
   (*(DofIdx*)e.tag_nbdof_data_col) = 0;
   (*(DofIdx*)e.tag_local_nbdof_data_col) = 0;
   (*(DofIdx*)e.tag_ghost_nbdof_data_col) = 0;
   e.numered_dofs_cols->clear();
 }
-void ProblemClearNumeredFiniteElementsChange::operator()(MoFEMProblem &e) {
+void ProblemClearNumeredFiniteElementsChange::operator()(Problem &e) {
   e.numeredFiniteElements.clear();
 }
 

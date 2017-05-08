@@ -181,7 +181,7 @@ TSMethod {
   int rAnk,sIze;
   const RefEntity_multiIndex *refinedEntitiesPtr;
   const RefElement_multiIndex *refinedFiniteElementsPtr;
-  const MoFEMProblem *problemPtr;
+  const Problem *problemPtr;
   const Field_multiIndex *fieldsPtr;
   const FieldEntity_multiIndex *entitiesPtr;
   const DofEntity_multiIndex *dofsPtr;

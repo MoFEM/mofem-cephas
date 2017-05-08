@@ -337,7 +337,7 @@ struct MagneticElement {
 
     // Boundary conditions
     std::vector<int> dofs_bc_indices;
-    const MoFEM::MoFEMProblem *problem_ptr;
+    const MoFEM::Problem *problem_ptr;
     ierr = DMMoFEMGetProblemPtr(blockData.dM,&problem_ptr); CHKERRQ(ierr);
     for(Range::iterator eit = blockData.essentialBc.begin();eit!=blockData.essentialBc.end();eit++) {
       for(_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_NAME_ENT_PART_FOR_LOOP_(

@@ -81,7 +81,7 @@ PetscErrorCode FaceElementForcesAndSourcesCore::UserDataOperator::loopSideVolume
   PetscFunctionBegin;
 
   const EntityHandle ent = getNumeredEntFiniteElementPtr()->getEnt();
-  const MoFEMProblem *problem_ptr = getFEMethod()->problemPtr;
+  const Problem *problem_ptr = getFEMethod()->problemPtr;
   Range adjacent_volumes;
   ierr = getTriFE()->mField.get_adjacencies_any(ent,3,adjacent_volumes); CHKERRQ(ierr);
   typedef NumeredEntFiniteElement_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type FEByComposite;

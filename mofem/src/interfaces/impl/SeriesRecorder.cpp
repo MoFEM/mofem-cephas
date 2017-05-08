@@ -181,7 +181,7 @@ PetscErrorCode SeriesRecorder::delete_recorder_series(const std::string& series_
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode SeriesRecorder::record_problem(const std::string& serie_name,const MoFEMProblem *problemPtr,RowColData rc) {
+PetscErrorCode SeriesRecorder::record_problem(const std::string& serie_name,const Problem *problemPtr,RowColData rc) {
   PetscFunctionBegin;
   PetscErrorCode ierr;
   Series_multiIndex::index<SeriesName_mi_tag>::type::iterator sit = sEries.get<SeriesName_mi_tag>().find(serie_name);
@@ -209,7 +209,7 @@ PetscErrorCode SeriesRecorder::record_problem(const std::string& serie_name,cons
   PetscErrorCode ierr;
   MoFEM::Interface &m_field = cOre;
   PetscFunctionBegin;
-  const MoFEMProblem *problem_ptr;
+  const Problem *problem_ptr;
   ierr = m_field.get_problem(problem_name,&problem_ptr); CHKERRQ(ierr);
   ierr = record_problem(serie_name,problem_ptr,rc); CHKERRQ(ierr);
   PetscFunctionReturn(0);

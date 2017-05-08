@@ -119,7 +119,7 @@ struct SeriesRecorder: public UnknownInterface {
     * \param problem pointer
     * \param rc could be Row or Col
     */
-  virtual PetscErrorCode record_problem(const std::string& serie_name,const MoFEMProblem *problemPtr,RowColData rc);
+  virtual PetscErrorCode record_problem(const std::string& serie_name,const Problem *problemPtr,RowColData rc);
 
   /**
     * \ingroup mofem_series

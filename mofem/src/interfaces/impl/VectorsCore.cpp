@@ -53,7 +53,7 @@ namespace MoFEM {
 PetscErrorCode Core::VecCreateSeq(const std::string &name,RowColData rc,Vec *V) const {
   PetscErrorCode ierr;
   PetscFunctionBegin;
-  typedef MoFEMProblem_multiIndex::index<Problem_mi_tag>::type ProblemsByName;
+  typedef Problem_multiIndex::index<Problem_mi_tag>::type ProblemsByName;
   const ProblemsByName &problems_set = pRoblems.get<Problem_mi_tag>();
   ProblemsByName::iterator p_miit = problems_set.find(name);
   if(p_miit==problems_set.end()) {
@@ -83,7 +83,7 @@ PetscErrorCode Core::VecCreateSeq(const std::string &name,RowColData rc,Vec *V) 
 PetscErrorCode Core::VecCreateGhost(const std::string &name,RowColData rc,Vec *V) const {
   PetscErrorCode ierr;
   PetscFunctionBegin;
-  typedef MoFEMProblem_multiIndex::index<Problem_mi_tag>::type ProblemsByName;
+  typedef Problem_multiIndex::index<Problem_mi_tag>::type ProblemsByName;
   const ProblemsByName &problems_set = pRoblems.get<Problem_mi_tag>();
   ProblemsByName::iterator p_miit = problems_set.find(name);
   if(p_miit==problems_set.end()) {
@@ -132,7 +132,7 @@ PetscErrorCode Core::ISCreateProblemOrder(
   PetscErrorCode ierr;
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
-  typedef MoFEMProblem_multiIndex::index<Problem_mi_tag>::type ProblemsByName;
+  typedef Problem_multiIndex::index<Problem_mi_tag>::type ProblemsByName;
   const ProblemsByName &problems_set = pRoblems.get<Problem_mi_tag>();
   ProblemsByName::iterator p = problems_set.find(problem);
   if(p==problems_set.end()) SETERRQ1(PETSC_COMM_SELF,1,"no such problem %s (top tip check spelling)",problem.c_str());
@@ -180,7 +180,7 @@ PetscErrorCode Core::ISCreateProblemFieldAndRank(
   PetscErrorCode ierr;
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
-  typedef MoFEMProblem_multiIndex::index<Problem_mi_tag>::type ProblemsByName;
+  typedef Problem_multiIndex::index<Problem_mi_tag>::type ProblemsByName;
   const ProblemsByName &problems_set = pRoblems.get<Problem_mi_tag>();
   ProblemsByName::iterator p = problems_set.find(problem);
   if(p==problems_set.end()) SETERRQ1(PETSC_COMM_SELF,1,"no such problem %s (top tip check spelling)",problem.c_str());
@@ -229,7 +229,7 @@ PetscErrorCode Core::ISCreateFromProblemFieldToOtherProblemField(
   //PetscErrorCode ierr;
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
-  typedef MoFEMProblem_multiIndex::index<Problem_mi_tag>::type ProblemsByName;
+  typedef Problem_multiIndex::index<Problem_mi_tag>::type ProblemsByName;
   const ProblemsByName &problems_set = pRoblems.get<Problem_mi_tag>();
   ProblemsByName::iterator p_x = problems_set.find(x_problem);
   if(p_x==problems_set.end()) {
@@ -362,7 +362,7 @@ PetscErrorCode Core::ISCreateFromProblemToOtherProblem(
   //PetscErrorCode ierr;
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
-  typedef MoFEMProblem_multiIndex::index<Problem_mi_tag>::type ProblemsByName;
+  typedef Problem_multiIndex::index<Problem_mi_tag>::type ProblemsByName;
   const ProblemsByName &problems_set = pRoblems.get<Problem_mi_tag>();
   ProblemsByName::iterator p_x = problems_set.find(x_problem);
   if(p_x==problems_set.end()) SETERRQ1(PETSC_COMM_SELF,1,"no such problem %s (top tip check spelling)",x_problem.c_str());
@@ -451,7 +451,7 @@ PetscErrorCode Core::VecScatterCreate(
   PetscFunctionReturn(0);
 }
 PetscErrorCode Core::set_local_ghost_vector(
-  const MoFEMProblem *problem_ptr,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode
+  const Problem *problem_ptr,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode
 ) const {
   PetscErrorCode ierr;
   PetscFunctionBegin;
@@ -536,7 +536,7 @@ PetscErrorCode Core::set_local_ghost_vector(
 ) const {
   PetscErrorCode ierr;
   PetscFunctionBegin;
-  typedef MoFEMProblem_multiIndex::index<Problem_mi_tag>::type ProblemsByName;
+  typedef Problem_multiIndex::index<Problem_mi_tag>::type ProblemsByName;
   const ProblemsByName &problems_set = pRoblems.get<Problem_mi_tag>();
   ProblemsByName::iterator p_miit = problems_set.find(name);
   if(p_miit==problems_set.end()) {
@@ -551,7 +551,7 @@ PetscErrorCode Core::set_local_ghost_vector(
   PetscFunctionReturn(0);
 }
 PetscErrorCode Core::set_global_ghost_vector(
-  const MoFEMProblem *problem_ptr,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode
+  const Problem *problem_ptr,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode
 ) const {
   PetscErrorCode ierr;
   PetscFunctionBegin;
@@ -611,7 +611,7 @@ PetscErrorCode Core::set_global_ghost_vector(
 ) const {
   PetscErrorCode ierr;
   PetscFunctionBegin;
-  typedef MoFEMProblem_multiIndex::index<Problem_mi_tag>::type ProblemsByName;
+  typedef Problem_multiIndex::index<Problem_mi_tag>::type ProblemsByName;
   const ProblemsByName &problems_set = pRoblems.get<Problem_mi_tag>();
   ProblemsByName::iterator p_miit = problems_set.find(name);
   if(p_miit==problems_set.end()) SETERRQ1(PETSC_COMM_SELF,1,"problem < %s > not found (top tip: check spelling)",name.c_str());
@@ -619,7 +619,7 @@ PetscErrorCode Core::set_global_ghost_vector(
   PetscFunctionReturn(0);
 }
 PetscErrorCode Core::set_other_local_ghost_vector(
-  const MoFEMProblem *problem_ptr,const std::string& field_name,const std::string& cpy_field_name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode,int verb) {
+  const Problem *problem_ptr,const std::string& field_name,const std::string& cpy_field_name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode,int verb) {
   PetscFunctionBegin;
   typedef NumeredDofEntity_multiIndex::index<Composite_Name_And_HasLocalIdx_mi_tag>::type DofsByNameAndLocalIdx;
   DofsByNameAndLocalIdx *dofs;
@@ -720,7 +720,7 @@ PetscErrorCode Core::set_other_local_ghost_vector(
 ) {
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
-  typedef MoFEMProblem_multiIndex::index<Problem_mi_tag>::type pRoblems_by_name;
+  typedef Problem_multiIndex::index<Problem_mi_tag>::type pRoblems_by_name;
   pRoblems_by_name &pRoblems_set = pRoblems.get<Problem_mi_tag>();
   pRoblems_by_name::iterator p_miit = pRoblems_set.find(name);
   if(p_miit==pRoblems_set.end()) SETERRQ1(PETSC_COMM_SELF,1,"problem < %s > not found",name.c_str());
@@ -728,7 +728,7 @@ PetscErrorCode Core::set_other_local_ghost_vector(
   PetscFunctionReturn(0);
 }
 PetscErrorCode Core::set_other_global_ghost_vector(
-  const MoFEMProblem *problem_ptr,
+  const Problem *problem_ptr,
   const std::string& field_name,
   const std::string& cpy_field_name,
   RowColData rc,
@@ -888,7 +888,7 @@ PetscErrorCode Core::set_other_global_ghost_vector(
   PetscErrorCode ierr;
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
-  typedef MoFEMProblem_multiIndex::index<Problem_mi_tag>::type ProblemsByName;
+  typedef Problem_multiIndex::index<Problem_mi_tag>::type ProblemsByName;
   ProblemsByName &problems_set = pRoblems.get<Problem_mi_tag>();
   ProblemsByName::iterator p_miit = problems_set.find(name);
   if(p_miit==problems_set.end()) SETERRQ1(PETSC_COMM_SELF,1,"problem < %s > not found",name.c_str());

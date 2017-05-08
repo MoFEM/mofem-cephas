@@ -497,7 +497,7 @@ struct Interface: public UnknownInterface {
     * bit ref level of adjacent entities is equal to bit ref level of adjacent entities
     */
   virtual PetscErrorCode get_adjacencies(
-    const MoFEMProblem *problem_ptr,
+    const Problem *problem_ptr,
     const EntityHandle *from_entities,
     const int num_netities,
     const int to_dimension,
@@ -1424,7 +1424,7 @@ struct Interface: public UnknownInterface {
    * @return               error code
    *
    */
-  DEPRECATED virtual PetscErrorCode build_problem(MoFEMProblem *problem_ptr,const bool square_matrix,int verb = -1) = 0;
+  DEPRECATED virtual PetscErrorCode build_problem(Problem *problem_ptr,const bool square_matrix,int verb = -1) = 0;
 
   /** \brief clear problem
    * \ingroup mofem_problems
@@ -1475,7 +1475,7 @@ struct Interface: public UnknownInterface {
 
    */
   DEPRECATED virtual PetscErrorCode build_problem_on_distributed_mesh(
-    MoFEMProblem *problem_ptr,
+    Problem *problem_ptr,
     const bool square_matrix = true,
     int verb = -1
   ) = 0;
@@ -1631,7 +1631,7 @@ struct Interface: public UnknownInterface {
 
    *
    */
-  virtual PetscErrorCode resolve_shared_ents(const MoFEMProblem *problem_ptr,const std::string &fe_name,int verb = -1) = 0;
+  virtual PetscErrorCode resolve_shared_ents(const Problem *problem_ptr,const std::string &fe_name,int verb = -1) = 0;
 
   /**
    * \brief resolve shared entities for finite elements in the problem
@@ -1879,7 +1879,7 @@ struct Interface: public UnknownInterface {
     *
     */
   virtual PetscErrorCode set_local_ghost_vector(
-    const MoFEMProblem *problem_ptr,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode
+    const Problem *problem_ptr,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode
   ) const = 0;
 
   /**
@@ -1917,7 +1917,7 @@ struct Interface: public UnknownInterface {
     *
     */
   virtual PetscErrorCode set_global_ghost_vector(
-    const MoFEMProblem *problem_ptr,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode
+    const Problem *problem_ptr,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode
   ) const = 0;
 
   /**
@@ -1954,7 +1954,7 @@ struct Interface: public UnknownInterface {
     *
     */
   virtual PetscErrorCode set_other_local_ghost_vector(
-    const MoFEMProblem *problem_ptr,
+    const Problem *problem_ptr,
     const std::string& fiel_name,
     const std::string& cpy_field_name,
     RowColData rc,
@@ -2006,7 +2006,7 @@ struct Interface: public UnknownInterface {
     *
     */
   virtual PetscErrorCode set_other_global_ghost_vector(
-    const MoFEMProblem *problem_ptr,
+    const Problem *problem_ptr,
     const std::string& field_name,
     const std::string& cpy_field_name,
     RowColData rc,
@@ -2105,7 +2105,7 @@ struct Interface: public UnknownInterface {
     * \param method user method derived from BasicMethod
     *
   **/
-  virtual PetscErrorCode problem_basic_method_preProcess(const MoFEMProblem *problem_ptr,BasicMethod &method,int verb = -1) = 0;
+  virtual PetscErrorCode problem_basic_method_preProcess(const Problem *problem_ptr,BasicMethod &method,int verb = -1) = 0;
 
   /** \brief Set data for BasicMethod
     *
@@ -2138,7 +2138,7 @@ struct Interface: public UnknownInterface {
     * \param method user method derived from BasicMethod
     *
   **/
-  virtual PetscErrorCode problem_basic_method_postProcess(const MoFEMProblem *problem_ptr,BasicMethod &method,int verb = -1) = 0;
+  virtual PetscErrorCode problem_basic_method_postProcess(const Problem *problem_ptr,BasicMethod &method,int verb = -1) = 0;
 
   /** \brief Set data for BasicMethod
     * \ingroup mofem_loops
@@ -2211,7 +2211,7 @@ struct Interface: public UnknownInterface {
    * \ingroup mofem_loops
   **/
   virtual PetscErrorCode loop_finite_elements(
-    const MoFEMProblem *problem_ptr,const std::string &fe_name,FEMethod &method,
+    const Problem *problem_ptr,const std::string &fe_name,FEMethod &method,
     int lower_rank,int upper_rank,MoFEMTypes bh = MF_EXIST,int verb = -1
   ) = 0;
 
@@ -2249,7 +2249,7 @@ struct Interface: public UnknownInterface {
     * \ingroup mofem_loops
     */
   virtual PetscErrorCode loop_dofs(
-    const MoFEMProblem *problem_ptr,const std::string &field_name,RowColData rc,
+    const Problem *problem_ptr,const std::string &field_name,RowColData rc,
     EntMethod &method,int lower_rank,int upper_rank,int verb = -1
   ) = 0;
 
@@ -2306,13 +2306,13 @@ struct Interface: public UnknownInterface {
   /** \brief Get problem database (data structure)
     * \ingroup mofem_access
     */
-  virtual PetscErrorCode get_problem(const std::string &problem_name,const MoFEMProblem **problem_ptr) const = 0;
+  virtual PetscErrorCode get_problem(const std::string &problem_name,const Problem **problem_ptr) const = 0;
 
   /**
    * \brief Get pointer to problems multi-index
    * \ingroup mofem_access
    */
-  virtual PetscErrorCode get_problems(const MoFEMProblem_multiIndex **problems_ptr) const = 0;
+  virtual PetscErrorCode get_problems(const Problem_multiIndex **problems_ptr) const = 0;
 
   /** \brief Get field multi index
     *
