@@ -11,25 +11,34 @@ industry. Such code structure enables privacy UM, yet enables an industry and
 academics to contribute to open and free core library, without need of code
 branching (which is often the case for industrial versions of open codes).
 
-List of some user modules,
+\section um_modules_list List of some user modules
+
 - Obsolete (Elements and methods used by some modules no longer developed, not recommend
 to use in new developments) <https://bitbucket.org/likask/mofem_um_obsolete>
-- Homogenistaion <https://bitbucket.org/likask/mofem_um_homogenisation>
-- Fracture Mechanics <https://bitbucket.org/likask/mofem_um_fracture_mechanics>
-- Gel Models <https://bitbucket.org/likask/mofem_um_gels>
+- Homogenisation <https://bitbucket.org/likask/mofem_um_homogenisation>
+- Fracture mechanics <https://bitbucket.org/likask/mofem_um_fracture_mechanics>
+- Gel models <https://bitbucket.org/likask/mofem_um_gels>
 - Small strain plasticity <https://bitbucket.org/likask/mofem_um_small_strain_plasticity>
-- Solid Shell Prism Element <https://bitbucket.org/likask/mofem_um_solid_shell_prism_element>
+- Solid-shell prism element <https://bitbucket.org/likask/mofem_um_solid_shell_prism_element>
 - Minimal surface equation <https://bitbucket.org/likask/mofem_um_minimal_surface_equation>
 - Bone remodeling <https://bitbucket.org/likask/mofem_um_bone_remodelling>
 - Cell engineering <https://bitbucket.org/karol41/mofem_um_cell_engineering>
 
+
+You can see more documents, data sets, presentations, conference abstract
+related to users modules in
+\htmlonly
+<a href="https://zenodo.org/communities/mofem"><img src="zenodo-gradient-small.png" alt="Zenodo"></a>
+\endhtmlonly
+library.
+
 \tableofcontents
 
-\section um_basic Basic users modules
+\subsection um_basic Basic users modules
 
 - \subpage elastic_dynamics
 
-\section um_fracture_mechanics Fracture Mechanics
+\subsection um_fracture_mechanics Fracture mechanics
 
 Repository <https://bitbucket.org/likask/mofem_um_fracture_mechanics>
 
@@ -37,7 +46,7 @@ Repository <https://bitbucket.org/likask/mofem_um_fracture_mechanics>
 - \subpage frac_mech_simple_examples
 - \subpage um_fracture_module_readme
 
-\section um_gels Gel Models
+\subsection um_gels Gel models
 
 Repository <https://bitbucket.org/likask/mofem_um_gels>
 
@@ -47,14 +56,14 @@ Repository <https://bitbucket.org/likask/mofem_um_gels>
 - \subpage gel_layered
 - \subpage gel_cell
 
-\section um_bone_remodelling Bone remodeling
+\subsection um_bone_remodelling Bone remodeling
 
 Repository <https://bitbucket.org/likask/mofem_um_bone_remodelling>
 
 - \subpage um_bone_remodelling_readnme
 - \subpage density_map_example
 
-\section um_homogenisation Homogenistaion
+\subsection um_homogenisation Homogenisation
 
 Repository <https://bitbucket.org/likask/mofem_um_homogenisation>
 
@@ -62,19 +71,19 @@ Repository <https://bitbucket.org/likask/mofem_um_homogenisation>
 - \subpage convergence_studies
 - \subpage nitsche_periodic
 
-\section um_cell_engineering Cell engineering
+\subsection um_cell_engineering Cell engineering
 
 Repository <https://bitbucket.org/karol41/mofem_um_cell_engineering>
 
 - \subpage cell_engineering_readme
 
-\section um_small_strain_plasticity Small strain plasticity
+\subsection um_small_strain_plasticity Small strain plasticity
 
 Repository <https://bitbucket.org/likask/mofem_um_small_strain_plasticity>
 
 - \subpage small_strain_plasticity_plate_with_hole
 
-\section Solid Shell Prism Element
+\subsection um_solid_shell Solid-shell prism element
 
 Repository <https://bitbucket.org/likask/mofem_um_solid_shell_prism_element>
 
