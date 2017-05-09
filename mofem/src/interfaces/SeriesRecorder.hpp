@@ -30,6 +30,8 @@ static const MOFEMuuid IDD_MOFEMSeriesRecorder = MOFEMuuid( BitIntefaceId(SERIES
 
   Is abstraction of Core interface.
 
+  \bug fix names of this interface to follow naming convention
+
  */
 struct SeriesRecorder: public UnknownInterface {
 

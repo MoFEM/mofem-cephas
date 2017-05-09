@@ -29,6 +29,7 @@ struct FieldSeriesStep;
  * \ingroup series_multi_indices
  *
  * \bug Fix member functions names. Not follow namining convention.
+ * \bug Member functions not doucmented
  *
  */
 struct FieldSeries {
@@ -220,6 +221,9 @@ typedef multi_index_container<
  * principle, one can record tape in for a sequence of points (for example steps
  * in time) and play it back. One can create several tapes and record all fields
  * or some of them.
+ *
+ * User do not use multi-indices data structures directly, recording and playing
+ * data is by MoFEM::SeriesRecorder interface, more in module \ref mofem_series
  *
  * \ingroup mofem
  ******************************************************************************/
