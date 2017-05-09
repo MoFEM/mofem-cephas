@@ -148,8 +148,8 @@ boost::shared_ptr<double> val_ptr; ///< local variable
   - If you commit your code remove are depreciated functions names. Use of OLD function name (or old functions
     arguments) generate compilation warring, f.e. \code
 In file included from mofem/users_modules/basic_finite_elements/src/impl/DirichletBC.cpp:39:0:
-mofem/src/interfaces/Interface.hpp: In member function 'PetscErrorCode MoFEM::Interface::set_other_local_VecCreateGhost(const MoFEM::MoFEMProblem*, const std::string&, const std::string&, RowColData, Vec, InsertMode, ScatterMode, int)':
-mofem/src/interfaces/Interface.hpp:1300:107: warning: 'PetscErrorCode MoFEM::Interface::set_other_local_VecCreateGhost(const MoFEM::MoFEMProblem*, const std::string&, const std::string&, RowColData, Vec, InsertMode, ScatterMode, int)' is deprecated (declared at mofem/src/interfaces/Interface.hpp:1296) [-Wdeprecated-declarations]
+mofem/src/interfaces/Interface.hpp: In member function 'PetscErrorCode MoFEM::Interface::set_other_local_VecCreateGhost(const MoFEM::Problem*, const std::string&, const std::string&, RowColData, Vec, InsertMode, ScatterMode, int)':
+mofem/src/interfaces/Interface.hpp:1300:107: warning: 'PetscErrorCode MoFEM::Interface::set_other_local_VecCreateGhost(const MoFEM::Problem*, const std::string&, const std::string&, RowColData, Vec, InsertMode, ScatterMode, int)' is deprecated (declared at mofem/src/interfaces/Interface.hpp:1296) [-Wdeprecated-declarations]
      ierr = set_other_local_VecCreateGhost(problem_ptr,fiel_name,cpy_field_name,rc,V,mode,scatter_mode,verb); CHKERRQ(ierr);
 \endcode
 

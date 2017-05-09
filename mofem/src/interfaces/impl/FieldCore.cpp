@@ -1803,7 +1803,7 @@ PetscErrorCode Core::update_finite_element_meshset_by_entities_children(const st
 }
 PetscErrorCode Core::get_problem_finite_elements_entities(const std::string &problem_name,const std::string &fe_name,const EntityHandle meshset) {
   PetscFunctionBegin;
-  typedef MoFEMProblem_multiIndex::index<Problem_mi_tag>::type ProblemsByName;
+  typedef Problem_multiIndex::index<Problem_mi_tag>::type ProblemsByName;
   ProblemsByName &pRoblems_set = pRoblems.get<Problem_mi_tag>();
   ProblemsByName::iterator p_miit = pRoblems_set.find(problem_name);
   if(p_miit == pRoblems_set.end()) SETERRQ1(cOmm,1,"no such problem like < %s >",problem_name.c_str());

@@ -84,7 +84,7 @@ namespace MoFEM {
       * @return               error code
       *
       */
-    PetscErrorCode buildProblem(MoFEMProblem *problem_ptr,const bool square_matrix,int verb = 1);
+    PetscErrorCode buildProblem(Problem *problem_ptr,const bool square_matrix,int verb = 1);
 
     /** \brief build problem data structures, assuming that mesh is distributed (collective)
      * \ingroup mofem_problems
@@ -111,7 +111,7 @@ namespace MoFEM {
 
      */
     PetscErrorCode buildProblemOnDistributedMesh(
-      MoFEMProblem *problem_ptr,
+      Problem *problem_ptr,
       const bool square_matrix = true,
       int verb = 1
     );
@@ -187,11 +187,11 @@ namespace MoFEM {
     PetscErrorCode partitionProblem(const std::string &name,int verb = 1);
 
     PetscErrorCode printPartitionedProblem(
-      const MoFEMProblem *problem_ptr,int verb = 1
+      const Problem *problem_ptr,int verb = 1
     );
 
     PetscErrorCode debugPartitionedProblem(
-      const MoFEMProblem *problem_ptr,int verb = 1
+      const Problem *problem_ptr,int verb = 1
     );
 
     /** \brief partition finite elements

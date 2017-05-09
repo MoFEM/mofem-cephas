@@ -1,6 +1,7 @@
 /** \file NeoHookean.hpp
  * \ingroup nonlinear_elastic_elem
  * \brief Implementation of Neo-Hookean elastic material
+ * \example NeoHookean.hpp
  */
 
 /* This file is part of MoFEM.

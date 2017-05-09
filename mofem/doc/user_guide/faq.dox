@@ -331,4 +331,33 @@ docker, you need to run docker container in \em privileged mode, for example
 docker run --privileged -it --name work --hostname mofem -v $HOME:/mnt/home -v mofem_build:/my_build likask/mofem_build:v0.2 /bin/bash
 \endcode
 
+\section faq_contributors Who contribuiting to MoFEM?
+
+MoFEM is copyright by Lukasz Kaczmarczyk (Lukasz.Kaczmarczyk at glasgow.ac.uk)
+and has received contributions by several people. MoFEM can be used freely for
+educational, research or commercial purposes by other institutions.
+
+Users modules are not part of MoFEM library and can be created privately,
+independently form MoFEM developers. User modules may follow different license
+agreement and copyrights. However, all users modules which are created at Glasgow
+University are under the same license agreement as main MoFEM library.
+
+List is generated automatically at time when documentation is build based on
+contributions to main git repository. Note that particular module can have
+separate contributors list. If one author uses more than one name the same person
+can appear more than once.
+
+Detailed git-statistic for core lib only <http://mofem.eng.gla.ac.uk/mofem/html/git-stats>
+
+\verbinclude doc/contributors_list
+\verbinclude users_modules/doc/contributors_list_modules
+
+List is generated with command,
+\code
+git shortlog -s -e -n
+\endcode
+
+Note that contributions to forked module are not on the list.
+
+
 */

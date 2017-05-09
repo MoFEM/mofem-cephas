@@ -509,7 +509,7 @@ int main(int argc, char *argv[]) {
       D,"DYNAMICS","SPATIAL_VELOCITY",COL,shellAij_ctx->v,"Kuu","SPATIAL_POSITION",COL,&shellAij_ctx->scatterV
     ); CHKERRQ(ierr);
     Mat shell_Aij;
-    const MoFEMProblem *problem_ptr;
+    const Problem *problem_ptr;
     ierr = m_field.get_problem("DYNAMICS",&problem_ptr); CHKERRQ(ierr);
     ierr = MatCreateShell(
       PETSC_COMM_WORLD,

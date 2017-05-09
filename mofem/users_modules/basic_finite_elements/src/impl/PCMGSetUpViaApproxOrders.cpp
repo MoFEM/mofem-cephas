@@ -701,7 +701,7 @@ PetscErrorCode PCMGSetUpViaApproxOrdersCtx::createIsAtLevel(int kk,IS *is) {
   }
   const MoFEM::Interface *m_field_ptr;
   ierr = DMoFEMGetInterfacePtr(dM,&m_field_ptr); CHKERRQ(ierr);
-  const MoFEMProblem *problem_ptr;
+  const Problem *problem_ptr;
   ierr = DMMoFEMGetProblemPtr(dM,&problem_ptr); CHKERRQ(ierr);
   string problem_name = problem_ptr->getName();
   ierr = const_cast<MoFEM::Interface *>(m_field_ptr)

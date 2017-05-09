@@ -21,15 +21,15 @@
 
 namespace MoFEM {
 
-struct MoFEMProblem;
+struct Problem;
 
 /**
  * Data structure created when composite problem is created
  */
 struct ComposedProblemsData {
 
-  std::vector<const MoFEMProblem*> rowProblemsAdd;
-  std::vector<const MoFEMProblem*> colProblemsAdd;
+  std::vector<const Problem*> rowProblemsAdd;
+  std::vector<const Problem*> colProblemsAdd;
 
   std::vector<IS> rowIs;
   std::vector<IS> colIs;
@@ -81,7 +81,7 @@ struct ComposedProblemsData {
   * \todo Implement layouts for DOFs
   *
   */
-struct MoFEMProblem {
+struct Problem {
 
   EntityHandle meshset;
   BitProblemId* tag_id_data;
@@ -652,9 +652,9 @@ struct MoFEMProblem {
     );
   }
 
-  MoFEMProblem(Interface &moab,const EntityHandle meshset);
+  Problem(Interface &moab,const EntityHandle meshset);
 
-  virtual ~MoFEMProblem();
+  virtual ~Problem();
 
   inline BitProblemId getId() const { return *((BitProblemId*)tag_id_data); }
 
@@ -675,7 +675,7 @@ struct MoFEMProblem {
 
   BitFEId getBitFEId() const;
 
-  friend std::ostream& operator<<(std::ostream& os,const MoFEMProblem& e);
+  friend std::ostream& operator<<(std::ostream& os,const Problem& e);
 
   /**
    * \brief Get number of finite elements by name on processors
@@ -741,7 +741,7 @@ struct MoFEMProblem {
    * The vector in sequence is destroyed if last entity inside that vector is
    * destroyed. All MoFEM::NumeredDofEntity have aliased shared_ptr which points to the vector.
 
-   * @return MoFEM::MoFEMProblem::SequenceDofContainer
+   * @return MoFEM::Problem::SequenceDofContainer
    */
   inline boost::shared_ptr<SequenceDofContainer> getRowDofsSeqence() const {
     return sequenceRowDofContainer;
@@ -757,7 +757,7 @@ struct MoFEMProblem {
    * The vector in sequence is destroyed if last entity inside that vector is
    * destroyed. All MoFEM::NumeredDofEntity have aliased shared_ptr which points to the vector.
 
-   * @return MoFEM::MoFEMProblem::SequenceDofContainer
+   * @return MoFEM::Problem::SequenceDofContainer
    */
   inline boost::shared_ptr<SequenceDofContainer> getColDofsSeqence() const {
     return sequenceColDofContainer;
@@ -771,28 +771,31 @@ private:
 
 };
 
+/// \deprecated use just Problem
+DEPRECATED typedef Problem MoFEMProblem;
+
 /**
  * @relates multi_index_container
- * \brief MultiIndex for entities for MoFEMProblem
+ * \brief MultiIndex for entities for Problem
  * \ingroup fe_multi_indices
  */
 typedef multi_index_container<
-  MoFEMProblem,
+  Problem,
   indexed_by<
     ordered_unique<
       tag<Meshset_mi_tag>,
-      member<MoFEMProblem,EntityHandle,&MoFEMProblem::meshset>
+      member<Problem,EntityHandle,&Problem::meshset>
     >,
     hashed_unique<
       tag<BitProblemId_mi_tag>,
-      const_mem_fun<MoFEMProblem,BitProblemId,&MoFEMProblem::getId>, HashBit<BitProblemId>, EqBit<BitProblemId>
+      const_mem_fun<Problem,BitProblemId,&Problem::getId>, HashBit<BitProblemId>, EqBit<BitProblemId>
     >,
     hashed_unique<
       tag<Problem_mi_tag>,
-      const_mem_fun<MoFEMProblem,std::string,&MoFEMProblem::getName>
+      const_mem_fun<Problem,std::string,&Problem::getName>
     >
   >
-> MoFEMProblem_multiIndex;
+> Problem_multiIndex;
 
 /** \brief add ref level to problem
   * \ingroup problems_multi_indices
@@ -800,7 +803,7 @@ typedef multi_index_container<
 struct ProblemChangeRefLevelBitAdd {
   BitRefLevel bit;
   ProblemChangeRefLevelBitAdd(const BitRefLevel _bit): bit(_bit) {};
-  void operator()(MoFEMProblem &p) { *(p.tag_BitRefLevel) |= bit; };
+  void operator()(Problem &p) { *(p.tag_BitRefLevel) |= bit; };
 };
 
 /** \brief set ref level to problem
@@ -809,7 +812,7 @@ struct ProblemChangeRefLevelBitAdd {
 struct ProblemChangeRefLevelBitSet {
   BitRefLevel bit;
   ProblemChangeRefLevelBitSet(const BitRefLevel _bit): bit(_bit) {};
-  void operator()(MoFEMProblem &p) { *(p.tag_BitRefLevel) = bit; };
+  void operator()(Problem &p) { *(p.tag_BitRefLevel) = bit; };
 };
 
 /** \brief set prof dof bit ref mask
@@ -818,7 +821,7 @@ struct ProblemChangeRefLevelBitSet {
 struct ProblemChangeRefLevelBitDofMaskSet {
   BitRefLevel bit;
   ProblemChangeRefLevelBitDofMaskSet(const BitRefLevel _bit): bit(_bit) {};
-  void operator()(MoFEMProblem &p) { *(p.tag_MaskBitRefLevel) = bit; };
+  void operator()(Problem &p) { *(p.tag_MaskBitRefLevel) = bit; };
 };
 
 /** \brief add finite element to problem
@@ -827,7 +830,7 @@ struct ProblemChangeRefLevelBitDofMaskSet {
 struct ProblemFiniteElementChangeBitAdd {
   BitFEId f_id;
   ProblemFiniteElementChangeBitAdd(const BitFEId _f_id): f_id(_f_id) {};
-  void operator()(MoFEMProblem &p);
+  void operator()(Problem &p);
 };
 
 /** \brief remove finite element from problem
@@ -836,28 +839,28 @@ struct ProblemFiniteElementChangeBitAdd {
 struct ProblemFiniteElementChangeBitUnSet {
   BitFEId f_id;
   ProblemFiniteElementChangeBitUnSet(const BitFEId _f_id): f_id(_f_id) {};
-  void operator()(MoFEMProblem &p);
+  void operator()(Problem &p);
 };
 
 /** \brief zero nb. of dofs in row
   * \ingroup problems_multi_indices
   */
 struct ProblemZeroNbRowsChange {
-  void operator()(MoFEMProblem &e);
+  void operator()(Problem &e);
 };
 
 /** \brief zero nb. of dofs in col
   * \ingroup problems_multi_indices
   */
 struct ProblemZeroNbColsChange {
-  void operator()(MoFEMProblem &e);
+  void operator()(Problem &e);
 };
 
 /** \brief clear problem finite elements
   * \ingroup problems_multi_indices
   */
 struct ProblemClearNumeredFiniteElementsChange {
-  void operator()(MoFEMProblem &e);
+  void operator()(Problem &e);
 };
 
 }

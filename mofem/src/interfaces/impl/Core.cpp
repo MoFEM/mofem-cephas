@@ -852,7 +852,7 @@ PetscErrorCode Core::initialiseDatabseInformationFromMesh(int verb) {
     rval = moab.tag_get_data(th_ProblemId,&*mit,1,&problem_id); CHKERRQ_MOAB(rval);
     //check if meshset if problem meshset
     if(problem_id!=0) {
-      std::pair<MoFEMProblem_multiIndex::iterator,bool> p = pRoblems.insert(MoFEMProblem(moab,*mit));
+      std::pair<Problem_multiIndex::iterator,bool> p = pRoblems.insert(Problem(moab,*mit));
       if(verb > 0) {
         std::ostringstream ss;
         ss << "read problem " << *p.first << std::endl;;
@@ -1054,9 +1054,9 @@ PetscErrorCode Core::get_ref_finite_elements(const RefElement_multiIndex **refin
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode Core::get_problem(const std::string &problem_name,const MoFEMProblem **problem_ptr) const {
+PetscErrorCode Core::get_problem(const std::string &problem_name,const Problem **problem_ptr) const {
   PetscFunctionBegin;
-  typedef MoFEMProblem_multiIndex::index<Problem_mi_tag>::type ProblemsByName;
+  typedef Problem_multiIndex::index<Problem_mi_tag>::type ProblemsByName;
   const ProblemsByName &problems = pRoblems.get<Problem_mi_tag>();
   ProblemsByName::iterator p_miit = problems.find(problem_name);
   if(p_miit == problems.end()) {
@@ -1069,7 +1069,7 @@ PetscErrorCode Core::get_problem(const std::string &problem_name,const MoFEMProb
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode Core::get_problems(const MoFEMProblem_multiIndex **problems_ptr) const {
+PetscErrorCode Core::get_problems(const Problem_multiIndex **problems_ptr) const {
   PetscFunctionBegin;
   *problems_ptr = &pRoblems;
   PetscFunctionReturn(0);

@@ -193,7 +193,7 @@ int main(int argc, char *argv[]) {
 
     const double eps = 1e-4;
 
-    const MoFEMProblem *problemPtr;
+    const Problem *problemPtr;
     ierr = m_field.get_problem("TEST_PROBLEM",&problemPtr); CHKERRQ(ierr);
     for(_IT_NUMEREDDOFMOFEMENTITY_ROW_FOR_LOOP_(problemPtr,dit)) {
 
