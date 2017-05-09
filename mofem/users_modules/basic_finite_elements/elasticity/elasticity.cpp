@@ -1,7 +1,9 @@
-/* This file is part of MoFEM.
+/** \file elasticity.cpp
  * \ingroup nonlinear_elastic_elem
+ * \example elasticity.cpp
+*/
 
- * MoFEM is free software: you can redistribute it and/or modify it under
+/* MoFEM is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the
  * Free Software Foundation, either version 3 of the License, or (at your
  * option) any later version.
@@ -596,7 +598,7 @@ int main(int argc, char *argv[]) {
   ierr = DMDestroy(&dm); CHKERRQ(ierr);
 
 
-} catch (MoFEMException const &e) {
+  } catch (MoFEMException const &e) {
     SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
   }
 

@@ -321,7 +321,7 @@ PetscErrorCode DMoFEMGetInterfacePtr(DM dm,const MoFEM::Interface **m_field_ptr)
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode DMMoFEMGetProblemPtr(DM dm,const MoFEM::MoFEMProblem **problem_ptr) {
+PetscErrorCode DMMoFEMGetProblemPtr(DM dm,const MoFEM::Problem **problem_ptr) {
   PetscValidHeaderSpecific(dm,DM_CLASSID,1);
   PetscFunctionBegin;
   DMCtx *dm_field = (DMCtx*)dm->data;

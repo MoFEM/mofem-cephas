@@ -67,7 +67,7 @@ namespace MoFEM {
 
   ProblemsManager::ProblemsManager(const MoFEM::Core& core):
   cOre(const_cast<MoFEM::Core&>(core)) {
-    PetscLogEventRegister("MoFEMProblemsManager",0,&USER_EVENT_ProblemsManager);
+    PetscLogEventRegister("ProblemsManager",0,&USER_EVENT_ProblemsManager);
   }
   ProblemsManager::~ProblemsManager() {
   }
@@ -326,14 +326,14 @@ namespace MoFEM {
     if(!(cOre.getBuildMoFEM()&(1<<0))) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"fields not build");
     if(!(cOre.getBuildMoFEM()&(1<<1))) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"FEs not build");
     if(!(cOre.getBuildMoFEM()&(1<<2))) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"adjacencies not build");
-    const MoFEMProblem *problem_ptr;
+    const Problem *problem_ptr;
     ierr = m_field.get_problem(name,&problem_ptr); CHKERRQ(ierr);
-    ierr = buildProblem(const_cast<MoFEMProblem*>(problem_ptr),square_matrix,verb); CHKERRQ(ierr);
+    ierr = buildProblem(const_cast<Problem*>(problem_ptr),square_matrix,verb); CHKERRQ(ierr);
     cOre.getBuildMoFEM() |= 1<<3; // It is assumed that user who uses this function knows what he is doing
     PetscFunctionReturn(0);
   }
 
-  PetscErrorCode ProblemsManager::buildProblem(MoFEMProblem *problem_ptr,const bool square_matrix,int verb) {
+  PetscErrorCode ProblemsManager::buildProblem(Problem *problem_ptr,const bool square_matrix,int verb) {
     PetscErrorCode ierr;
     MoFEM::Interface &m_field = cOre;
     const EntFiniteElement_multiIndex *fe_ent_ptr;
@@ -516,10 +516,10 @@ namespace MoFEM {
     if(!((cOre.getBuildMoFEM())&Core::BUILD_FE)) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"FEs not build");
     if(!((cOre.getBuildMoFEM())&Core::BUILD_ADJ)) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"adjacencies not build");
 
-    const MoFEMProblem *problem_ptr;
+    const Problem *problem_ptr;
     ierr = m_field.get_problem(name,&problem_ptr); CHKERRQ(ierr);
     ierr = buildProblemOnDistributedMesh(
-      const_cast<MoFEMProblem*>(problem_ptr),square_matrix,verb
+      const_cast<Problem*>(problem_ptr),square_matrix,verb
     ); CHKERRQ(ierr);
 
     cOre.getBuildMoFEM() |= Core::BUILD_PROBLEM;
@@ -529,7 +529,7 @@ namespace MoFEM {
   }
 
   PetscErrorCode ProblemsManager::buildProblemOnDistributedMesh(
-    MoFEMProblem *problem_ptr,const bool square_matrix,int verb
+    Problem *problem_ptr,const bool square_matrix,int verb
   ) {
     PetscErrorCode ierr;
     MoFEM::Interface &m_field = cOre;
@@ -568,9 +568,9 @@ namespace MoFEM {
         //if element is in problem
         if(((*fe_miit)->getId()&problem_ptr->getBitFEId()).any()) {
 
-          BitRefLevel prb_bit = problem_ptr->getBitRefLevel();
-          BitRefLevel prb_mask = problem_ptr->getMaskBitRefLevel();
-          BitRefLevel fe_bit = (*fe_miit)->getBitRefLevel();
+          const BitRefLevel prb_bit = problem_ptr->getBitRefLevel();
+          const BitRefLevel prb_mask = problem_ptr->getMaskBitRefLevel();
+          const BitRefLevel fe_bit = (*fe_miit)->getBitRefLevel();
           // if entity is not problem refinement level
           if((fe_bit&prb_mask)!=fe_bit) continue;
           if((fe_bit&prb_bit)!=prb_bit) continue;
@@ -1035,19 +1035,19 @@ namespace MoFEM {
   ) {
     PetscErrorCode ierr;
     MoFEM::Interface &m_field = cOre;
-    const MoFEMProblem_multiIndex *problems_ptr;
+    const Problem_multiIndex *problems_ptr;
     PetscFunctionBegin;
 
     ierr = m_field.clear_problem(out_name); CHKERRQ(ierr);
     ierr = m_field.get_problems(&problems_ptr); CHKERRQ(ierr);
 
     // get reference to all problems
-    typedef MoFEMProblem_multiIndex::index<Problem_mi_tag>::type MoFEMProblemByName;
-    MoFEMProblemByName &problems_by_name =
-    const_cast<MoFEMProblemByName&>(problems_ptr->get<Problem_mi_tag>());
+    typedef Problem_multiIndex::index<Problem_mi_tag>::type ProblemByName;
+    ProblemByName &problems_by_name =
+    const_cast<ProblemByName&>(problems_ptr->get<Problem_mi_tag>());
 
     // get iterators to out problem, i.e. build problem
-    MoFEMProblemByName::iterator out_problem_it = problems_by_name.find(out_name);
+    ProblemByName::iterator out_problem_it = problems_by_name.find(out_name);
     if(out_problem_it==problems_by_name.end()) {
       SETERRQ1(
         PETSC_COMM_SELF,
@@ -1056,7 +1056,7 @@ namespace MoFEM {
         out_name.c_str());
     }
     // get iterator to main problem, i.e. out problem is sub problem of main problem
-    MoFEMProblemByName::iterator main_problem_it = problems_by_name.find(main_problem);
+    ProblemByName::iterator main_problem_it = problems_by_name.find(main_problem);
     if(main_problem_it==problems_by_name.end()) {
       SETERRQ1(
         PETSC_COMM_SELF,
@@ -1096,7 +1096,7 @@ namespace MoFEM {
     std::vector<std::string> fields[] = { fields_row,fields_col };
 
     // make data structure fos sub-problem data
-    out_problem_it->subProblemData = boost::make_shared<MoFEMProblem::SubProblemData>();
+    out_problem_it->subProblemData = boost::make_shared<Problem::SubProblemData>();
 
     // use to keep shared_ptr
     std::vector<boost::shared_ptr<NumeredDofEntity> > dofs_shared_array;
@@ -1274,20 +1274,24 @@ namespace MoFEM {
     int verb
   ) {
 
+    if(!(cOre.getBuildMoFEM()&Core::BUILD_FIELD)) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"fields not build");
+    if(!(cOre.getBuildMoFEM()&Core::BUILD_FE)) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"FEs not build");
+    if(!(cOre.getBuildMoFEM()&Core::BUILD_ADJ)) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"adjacencies not build");
+
     PetscErrorCode ierr;
     MoFEM::Interface &m_field = cOre;
-    const MoFEMProblem_multiIndex *problems_ptr;
+    const Problem_multiIndex *problems_ptr;
     PetscFunctionBegin;
 
     ierr = m_field.clear_problem(out_name); CHKERRQ(ierr);
     ierr = m_field.get_problems(&problems_ptr); CHKERRQ(ierr);
     // get reference to all problems
-    typedef MoFEMProblem_multiIndex::index<Problem_mi_tag>::type MoFEMProblemByName;
-    MoFEMProblemByName &problems_by_name =
-    const_cast<MoFEMProblemByName&>(problems_ptr->get<Problem_mi_tag>());
+    typedef Problem_multiIndex::index<Problem_mi_tag>::type ProblemByName;
+    ProblemByName &problems_by_name =
+    const_cast<ProblemByName&>(problems_ptr->get<Problem_mi_tag>());
 
     // Get iterators to out problem, i.e. build problem
-    MoFEMProblemByName::iterator out_problem_it = problems_by_name.find(out_name);
+    ProblemByName::iterator out_problem_it = problems_by_name.find(out_name);
     if(out_problem_it==problems_by_name.end()) {
       SETERRQ1(
         PETSC_COMM_SELF,
@@ -1303,7 +1307,7 @@ namespace MoFEM {
     const std::vector<std::string>* add_prb[] = {
       &add_row_problems,&add_col_problems
     };
-    std::vector<const MoFEMProblem*>* add_prb_ptr[] = {
+    std::vector<const Problem*>* add_prb_ptr[] = {
       &cmp_prb_data->rowProblemsAdd,&cmp_prb_data->colProblemsAdd
     };
     std::vector<IS>* add_prb_is[] = {&cmp_prb_data->rowIs,&cmp_prb_data->colIs};
@@ -1335,6 +1339,8 @@ namespace MoFEM {
     }
     int nb_dofs_reserve[] = {0,0};
 
+    // Loop over rows and columns in the main problem and sub-problems
+
     // cerr << "AAA " << ((square_matrix)?1:2) << "\n";
     for(int ss = 0;ss!=((square_matrix)?1:2);ss++) {
       // cerr << "SS " << ss << endl;
@@ -1346,7 +1352,7 @@ namespace MoFEM {
         std::vector<std::string>::const_iterator
         vit=add_prb[ss]->begin();vit!=add_prb[ss]->end();vit++
       ) {
-        MoFEMProblemByName::iterator prb_it = problems_by_name.find(*vit);
+        ProblemByName::iterator prb_it = problems_by_name.find(*vit);
         if(prb_it==problems_by_name.end()) {
           SETERRQ1(
             PETSC_COMM_SELF,
@@ -1488,8 +1494,8 @@ namespace MoFEM {
     *nb_local_dofs[0] = 0;
     *nb_local_dofs[1] = 0;
     for(int ss = 0;ss!=((square_matrix)?1:2);ss++) {
-      // if(ss == 0 && !enumerate_row) continue;
-      // if(ss == 1 && !enumerate_col) continue;
+      // if(ss == 0 && renumerate_row) continue;
+      // if(ss == 1 && renumerate_col) continue;
       boost::shared_ptr<NumeredDofEntity_multiIndex> dofs_ptr;
       NumeredDofEntity_multiIndex::index<PetscGlobalIdx_mi_tag>::type::iterator dit,hi_dit;
       if(ss == 0) {
@@ -1581,13 +1587,17 @@ namespace MoFEM {
     ierr = printPartitionedProblem(&*out_problem_it,verb); CHKERRQ(ierr);
     ierr = debugPartitionedProblem(&*out_problem_it,verb); CHKERRQ(ierr);
 
+    // Inidcate that porble has been build
+    cOre.getBuildMoFEM() |= Core::BUILD_PROBLEM;
+    cOre.getBuildMoFEM() |= Core::PARTITION_PROBLEM;
+
     PetscFunctionReturn(0);
   }
 
   PetscErrorCode ProblemsManager::partitionSimpleProblem(const std::string &name,int verb) {
     PetscErrorCode ierr;
     MoFEM::Interface &m_field = cOre;
-    const MoFEMProblem_multiIndex *problems_ptr;
+    const Problem_multiIndex *problems_ptr;
     PetscFunctionBegin;
     if(!(cOre.getBuildMoFEM()&Core::BUILD_FIELD)) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"fields not build");
     if(!(cOre.getBuildMoFEM()&Core::BUILD_FE)) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"FEs not build");
@@ -1598,9 +1608,9 @@ namespace MoFEM {
     }
     ierr = m_field.get_problems(&problems_ptr); CHKERRQ(ierr);
     // find p_miit
-    typedef MoFEMProblem_multiIndex::index<Problem_mi_tag>::type MoFEMProblemByName;
-    MoFEMProblemByName &problems_set = const_cast<MoFEMProblemByName&>(problems_ptr->get<Problem_mi_tag>());
-    MoFEMProblemByName::iterator p_miit = problems_set.find(name);
+    typedef Problem_multiIndex::index<Problem_mi_tag>::type ProblemByName;
+    ProblemByName &problems_set = const_cast<ProblemByName&>(problems_ptr->get<Problem_mi_tag>());
+    ProblemByName::iterator p_miit = problems_set.find(name);
     if(p_miit==problems_set.end()) {
       SETERRQ1(PETSC_COMM_SELF,1,"problem < %s > is not found (top tip: check spelling)",name.c_str());
     }
@@ -1698,7 +1708,7 @@ namespace MoFEM {
   PetscErrorCode ProblemsManager::partitionProblem(const std::string &name,int verb) {
     PetscErrorCode ierr;
     MoFEM::Interface &m_field = cOre;
-    const MoFEMProblem_multiIndex *problems_ptr;
+    const Problem_multiIndex *problems_ptr;
     PetscFunctionBegin;
 
     if(!(cOre.getBuildMoFEM()&(1<<0))) SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"fields not build");
@@ -1711,7 +1721,7 @@ namespace MoFEM {
     }
 
     typedef NumeredDofEntity_multiIndex::index<Idx_mi_tag>::type NumeredDofEntitysByIdx;
-    typedef MoFEMProblem_multiIndex::index<Problem_mi_tag>::type ProblemsByName;
+    typedef Problem_multiIndex::index<Problem_mi_tag>::type ProblemsByName;
 
     // Find problem pointer by name
     ierr = m_field.get_problems(&problems_ptr); CHKERRQ(ierr);
@@ -1924,18 +1934,18 @@ namespace MoFEM {
   ) {
     PetscErrorCode ierr;
     MoFEM::Interface &m_field = cOre;
-    const MoFEMProblem_multiIndex *problems_ptr;
+    const Problem_multiIndex *problems_ptr;
     PetscFunctionBegin;
 
     if(!(cOre.getBuildMoFEM()&Core::BUILD_PROBLEM))
     SETERRQ(m_field.get_comm(),MOFEM_DATA_INCONSISTENCY,"pRoblems not build");
 
-    typedef MoFEMProblem_multiIndex::index<Problem_mi_tag>::type MoFEMProblemByName;
+    typedef Problem_multiIndex::index<Problem_mi_tag>::type ProblemByName;
 
     //find p_miit
     ierr = m_field.get_problems(&problems_ptr); CHKERRQ(ierr);
-    MoFEMProblemByName &problems_by_name = const_cast<MoFEMProblemByName&>(problems_ptr->get<Problem_mi_tag>());
-    MoFEMProblemByName::iterator p_miit = problems_by_name.find(name);
+    ProblemByName &problems_by_name = const_cast<ProblemByName&>(problems_ptr->get<Problem_mi_tag>());
+    ProblemByName::iterator p_miit = problems_by_name.find(name);
     if(p_miit==problems_by_name.end()) {
       SETERRQ1(
         m_field.get_comm(),MOFEM_NOT_FOUND,
@@ -1954,7 +1964,7 @@ namespace MoFEM {
     }
 
     //find p_miit_row
-    MoFEMProblemByName::iterator p_miit_row = problems_by_name.find(problem_for_rows);
+    ProblemByName::iterator p_miit_row = problems_by_name.find(problem_for_rows);
     if(p_miit_row==problems_by_name.end()) {
       SETERRQ1(
         m_field.get_comm(),
@@ -1966,7 +1976,7 @@ namespace MoFEM {
     const boost::shared_ptr<NumeredDofEntity_multiIndex> dofs_row = p_miit_row->numered_dofs_rows;
 
     //find p_mit_col
-    MoFEMProblemByName::iterator p_miit_col = problems_by_name.find(problem_for_cols);
+    ProblemByName::iterator p_miit_col = problems_by_name.find(problem_for_cols);
     if(p_miit_col==problems_by_name.end()) {
       SETERRQ1(
         m_field.get_comm(),
@@ -2102,7 +2112,7 @@ namespace MoFEM {
     PetscFunctionReturn(0);
   }
 
-  PetscErrorCode ProblemsManager::printPartitionedProblem(const MoFEMProblem *problem_ptr,int verb) {
+  PetscErrorCode ProblemsManager::printPartitionedProblem(const Problem *problem_ptr,int verb) {
     MoFEM::Interface &m_field = cOre;
     PetscFunctionBegin;
     if(verb>0) {
@@ -2135,7 +2145,7 @@ namespace MoFEM {
     PetscFunctionReturn(0);
   }
 
-  PetscErrorCode ProblemsManager::debugPartitionedProblem(const MoFEMProblem *problem_ptr,int verb) {
+  PetscErrorCode ProblemsManager::debugPartitionedProblem(const Problem *problem_ptr,int verb) {
     MoFEM::Interface &m_field = cOre;
     PetscFunctionBegin;
     if(debug>0) {
@@ -2223,7 +2233,7 @@ namespace MoFEM {
     PetscErrorCode ierr;
     MoABErrorCode rval;
     MoFEM::Interface &m_field = cOre;
-    const MoFEMProblem_multiIndex *problems_ptr;
+    const Problem_multiIndex *problems_ptr;
     const EntFiniteElement_multiIndex *fe_ent_ptr;
     PetscFunctionBegin;
 
@@ -2235,8 +2245,8 @@ namespace MoFEM {
 
     if(!(cOre.getBuildMoFEM()&Core::BUILD_ADJ))
     SETERRQ(m_field.get_comm(),MOFEM_DATA_INCONSISTENCY,"adjacencies not build");
-    if(!(cOre.getBuildMoFEM()&Core::BUILD_PROBLEM))
 
+    if(!(cOre.getBuildMoFEM()&Core::BUILD_PROBLEM))
     SETERRQ(m_field.get_comm(),MOFEM_DATA_INCONSISTENCY,"problem not build");
 
     if(!(cOre.getBuildMoFEM()&Core::PARTITION_PROBLEM))
@@ -2249,7 +2259,7 @@ namespace MoFEM {
     // Tag part_tag = pcomm->part_tag();
 
     // Find pointer to problem of given name
-    typedef MoFEMProblem_multiIndex::index<Problem_mi_tag>::type ProblemByName;
+    typedef Problem_multiIndex::index<Problem_mi_tag>::type ProblemByName;
     // Get pointer to problem data struture
     ierr = m_field.get_problems(&problems_ptr); CHKERRQ(ierr);
     ProblemByName &problems = const_cast<ProblemByName&>(problems_ptr->get<Problem_mi_tag>());
@@ -2456,7 +2466,7 @@ namespace MoFEM {
   PetscErrorCode ProblemsManager::partitionGhostDofs(const std::string &name,int verb) {
     PetscErrorCode ierr;
     MoFEM::Interface &m_field = cOre;
-    const MoFEMProblem_multiIndex *problems_ptr;
+    const Problem_multiIndex *problems_ptr;
     PetscFunctionBegin;
 
     if(!(cOre.getBuildMoFEM()&Core::PARTITION_PROBLEM))
@@ -2464,7 +2474,7 @@ namespace MoFEM {
     if(!(cOre.getBuildMoFEM()&Core::PARTITION_FE))
     SETERRQ(m_field.get_comm(),MOFEM_DATA_INCONSISTENCY,"partitions finite elements not build");
 
-    typedef MoFEMProblem_multiIndex::index<Problem_mi_tag>::type ProblemsByName;
+    typedef Problem_multiIndex::index<Problem_mi_tag>::type ProblemsByName;
     //find p_miit
     ierr = m_field.get_problems(&problems_ptr); CHKERRQ(ierr);
     ProblemsByName &problems_set = const_cast<ProblemsByName&>(problems_ptr->get<Problem_mi_tag>());

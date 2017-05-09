@@ -141,7 +141,7 @@ struct Core: public Interface {
   FieldEntityEntFiniteElementAdjacencyMap_multiIndex entFEAdjacencies;	///< adjacencies of elements to dofs
 
   //pRoblems
-  MoFEMProblem_multiIndex pRoblems;					 ///< problems
+  Problem_multiIndex pRoblems;					 ///< problems
 
   //safety nets
   Tag th_MoFEMBuild;
@@ -448,7 +448,7 @@ struct Core: public Interface {
   PetscErrorCode build_finite_elements(const string fe_name,const Range *ents_ptr = NULL,int verb = -1);
   PetscErrorCode clear_finite_elements(const BitRefLevel &bit,const BitRefLevel &mask,int verb = -1);
   PetscErrorCode clear_finite_elements(const std::string &name,const Range &ents,int verb = -1);
-  PetscErrorCode resolve_shared_ents(const MoFEMProblem *problem_ptr,const std::string &fe_name,int verb = -1);
+  PetscErrorCode resolve_shared_ents(const Problem *problem_ptr,const std::string &fe_name,int verb = -1);
   PetscErrorCode resolve_shared_ents(const std::string &name,const std::string &fe_name,int verb = -1);
   PetscErrorCode get_problem_elements_layout(
     const std::string &name,const std::string &fe_name,PetscLayout *layout,int verb = -1
@@ -472,14 +472,14 @@ struct Core: public Interface {
     const std::string &name,const bool square_matrix = true,int verb = -1
   );
   DEPRECATED PetscErrorCode build_problem_on_distributed_mesh(
-    MoFEMProblem *problem_ptr,const bool square_matrix = true,int verb = -1
+    Problem *problem_ptr,const bool square_matrix = true,int verb = -1
   );
 
   DEPRECATED PetscErrorCode partition_mesh(
     const Range &ents,const int dim,const int adj_dim,const int n_parts,int verb = -1
   );
   DEPRECATED PetscErrorCode build_problem(const std::string &name,const bool square_matrix,int verb = -1);
-  DEPRECATED PetscErrorCode build_problem(MoFEMProblem *problem_ptr,const bool square_matrix,int verb = -1);
+  DEPRECATED PetscErrorCode build_problem(Problem *problem_ptr,const bool square_matrix,int verb = -1);
   DEPRECATED PetscErrorCode build_problems(int verb = -1);
   DEPRECATED PetscErrorCode partition_simple_problem(const std::string &name,int verb = -1);
   DEPRECATED PetscErrorCode partition_problem(const std::string &name,int verb = -1);
@@ -499,8 +499,8 @@ struct Core: public Interface {
     const bool square_matrix = true,
     int verb = -1
   );
-  DEPRECATED PetscErrorCode printPartitionedProblem(const MoFEMProblem *problem_ptr,int verb = -1);
-  DEPRECATED PetscErrorCode debugPartitionedProblem(const MoFEMProblem *problem_ptr,int verb = -1);
+  DEPRECATED PetscErrorCode printPartitionedProblem(const Problem *problem_ptr,int verb = -1);
+  DEPRECATED PetscErrorCode debugPartitionedProblem(const Problem *problem_ptr,int verb = -1);
   DEPRECATED PetscErrorCode partition_ghost_dofs(const std::string &name,int verb = -1);
   DEPRECATED PetscErrorCode partition_finite_elements(
     const std::string &name,
@@ -525,9 +525,9 @@ struct Core: public Interface {
   PetscErrorCode VecCreateSeq(const std::string &name,RowColData rc,Vec *V) const;
   PetscErrorCode VecCreateGhost(const std::string &name,RowColData rc,Vec *V) const;
 
-  PetscErrorCode set_local_ghost_vector(const MoFEMProblem *problem_ptr,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode) const;
+  PetscErrorCode set_local_ghost_vector(const Problem *problem_ptr,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode) const;
   PetscErrorCode set_local_ghost_vector(const std::string &name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode) const;
-  PetscErrorCode set_global_ghost_vector(const MoFEMProblem *problem_ptr,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode) const;
+  PetscErrorCode set_global_ghost_vector(const Problem *problem_ptr,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode) const;
   PetscErrorCode set_global_ghost_vector(const std::string &name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode) const;
 
   /// get IS for order
@@ -594,7 +594,7 @@ struct Core: public Interface {
 
   //local
   PetscErrorCode set_other_local_ghost_vector(
-    const MoFEMProblem *problem_ptr,
+    const Problem *problem_ptr,
     const std::string& fiel_name,
     const std::string& cpy_field_name,
     RowColData rc,Vec V,
@@ -609,7 +609,7 @@ struct Core: public Interface {
   );
   //global
   PetscErrorCode set_other_global_ghost_vector(
-    const MoFEMProblem *problem_ptr,
+    const Problem *problem_ptr,
     const std::string& fiel_name,
     const std::string& cpy_field_name,
     RowColData rc,
@@ -630,13 +630,13 @@ struct Core: public Interface {
   );
 
   //loops
-  PetscErrorCode problem_basic_method_preProcess(const MoFEMProblem *problem_ptr,BasicMethod &method,int verb = -1);
+  PetscErrorCode problem_basic_method_preProcess(const Problem *problem_ptr,BasicMethod &method,int verb = -1);
   PetscErrorCode problem_basic_method_preProcess(const std::string &problem_name,BasicMethod &method,int verb = -1);
-  PetscErrorCode problem_basic_method_postProcess(const MoFEMProblem *problem_ptr,BasicMethod &method,int verb = -1);
+  PetscErrorCode problem_basic_method_postProcess(const Problem *problem_ptr,BasicMethod &method,int verb = -1);
   PetscErrorCode problem_basic_method_postProcess(const std::string &problem_name,BasicMethod &method,int verb = -1);
 
   PetscErrorCode loop_finite_elements(
-    const MoFEMProblem *problem_ptr,const std::string &fe_name,FEMethod &method,
+    const Problem *problem_ptr,const std::string &fe_name,FEMethod &method,
     int lower_rank,int upper_rank,MoFEMTypes bh = MF_EXIST,int verb = -1
   );
   PetscErrorCode loop_finite_elements(
@@ -649,7 +649,7 @@ struct Core: public Interface {
   );
 
   PetscErrorCode loop_dofs(
-    const MoFEMProblem *problem_ptr,const std::string &field_name,RowColData rc,
+    const Problem *problem_ptr,const std::string &field_name,RowColData rc,
     EntMethod &method,int lower_rank,int upper_rank,int verb = -1
   );
   PetscErrorCode loop_dofs(
@@ -672,8 +672,8 @@ struct Core: public Interface {
   PetscErrorCode get_ents_finite_elements(const EntFiniteElement_multiIndex **fe_ent_ptr) const;
   PetscErrorCode get_field_ents(const FieldEntity_multiIndex **field_ents) const;
   PetscErrorCode get_dofs(const DofEntity_multiIndex **dofs_ptr) const ;
-  PetscErrorCode get_problem(const std::string &problem_name,const MoFEMProblem **problem_ptr) const;
-  PetscErrorCode get_problems(const MoFEMProblem_multiIndex **problems_ptr) const;
+  PetscErrorCode get_problem(const std::string &problem_name,const Problem **problem_ptr) const;
+  PetscErrorCode get_problems(const Problem_multiIndex **problems_ptr) const;
 
 
   FieldEntityByFieldName::iterator get_ent_moabfield_by_name_begin(const std::string &field_name) const;
@@ -702,7 +702,7 @@ struct Core: public Interface {
   PetscErrorCode get_adjacencies_equality(const EntityHandle from_entiti,const int to_dimension,Range &adj_entities) const;
   PetscErrorCode get_adjacencies_any(const EntityHandle from_entiti,const int to_dimension,Range &adj_entities) const;
   PetscErrorCode get_adjacencies(
-    const MoFEMProblem *problem_ptr,
+    const Problem *problem_ptr,
     const EntityHandle *from_entities,
     const int num_netities,
     const int to_dimension,

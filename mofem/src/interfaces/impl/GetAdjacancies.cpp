@@ -102,7 +102,7 @@ PetscErrorCode Core::get_adjacencies_any(const EntityHandle from_entiti,const in
   PetscFunctionReturn(0);
 }
 PetscErrorCode Core::get_adjacencies(
-  const MoFEMProblem *problem_ptr,
+  const Problem *problem_ptr,
   const EntityHandle *from_entities,
   const int num_netities,
   const int to_dimension,

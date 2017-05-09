@@ -1,0 +1,11 @@
+/*! \page installation Installation
+
+Installation of MoFEM on Mac OS X/Linux/Windows  within docker see details here \ref install_docker.
+Installation in docker is faster where prebuild enviroent is downloaded directly form
+<https://hub.docker.com/r/likask/ubuntu_mofem/>.
+
+- \subpage install_docker
+- \subpage install_ubuntu
+- \subpage install_macosx
+
+*/

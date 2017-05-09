@@ -151,7 +151,7 @@ int main(int argc, char *argv[]) {
   //build problem
   ProblemsManager *prb_mng_ptr;
   ierr = m_field.query_interface(prb_mng_ptr); CHKERRQ(ierr);
-    const MoFEMProblem_multiIndex *problems_ptr;
+    const Problem_multiIndex *problems_ptr;
   ierr = prb_mng_ptr->buildProblem("TEST_PROBLEM",false); CHKERRQ(ierr);
 
   /****/

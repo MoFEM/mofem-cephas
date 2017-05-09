@@ -59,7 +59,7 @@ PetscErrorCode DMoFEMGetInterfacePtr(DM dm,const MoFEM::Interface **m_field_ptr)
   * \brief Get pointer to problem data structurGe
   * \ingroup dm
   */
-PetscErrorCode DMMoFEMGetProblemPtr(DM dm,const MoFEM::MoFEMProblem **problem_ptr);
+PetscErrorCode DMMoFEMGetProblemPtr(DM dm,const MoFEM::Problem **problem_ptr);
 
 /**
  * If this is set to PETSC_TRUE problem is deleted with DM
@@ -620,13 +620,13 @@ namespace MoFEM {
     int rAnk,sIze;
 
     //pointer to data structures
-    const MoFEMProblem *problemPtr;	  ///< pinter to problem data structure
+    const Problem *problemPtr;	  ///< pinter to problem data structure
 
     // sub problem
     PetscBool isSubDM;
     std::vector<std::string> rowFields;
     std::vector<std::string> colFields;
-    const MoFEMProblem *problemMainOfSubPtr;	  ///< pinter to main problem to sub-problem
+    const Problem *problemMainOfSubPtr;	  ///< pinter to main problem to sub-problem
 
     PetscBool isCompDM;
     std::vector<std::string> rowCompPrb;
