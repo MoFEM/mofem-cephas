@@ -56,7 +56,7 @@ struct CreateRowComressedADJMatrix: public Core {
   }
 
   typedef FieldEntityEntFiniteElementAdjacencyMap_multiIndex::index<Unique_mi_tag>::type AdjByEnt;
-  typedef MoFEMProblem_multiIndex::index<Problem_mi_tag>::type ProblemsByName;
+  typedef Problem_multiIndex::index<Problem_mi_tag>::type ProblemsByName;
   typedef NumeredDofEntity_multiIndex::index<PetscGlobalIdx_mi_tag>::type DofByGlobalPetscIndex;
 
   /** \brief Create matrix adjacencies
@@ -995,7 +995,7 @@ PetscErrorCode Core::partition_check_matrix_fill_in(const std::string &problem_n
 
   TestMatrixFillIn method(this,A,row_print,col_print);
 
-  typedef MoFEMProblem_multiIndex::index<Problem_mi_tag>::type ProblemsByName;
+  typedef Problem_multiIndex::index<Problem_mi_tag>::type ProblemsByName;
   //find p_miit
   ProblemsByName &pRoblems_set = pRoblems.get<Problem_mi_tag>();
   ProblemsByName::iterator p_miit = pRoblems_set.find(problem_name);

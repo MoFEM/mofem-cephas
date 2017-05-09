@@ -35,6 +35,7 @@ struct PostPorcStress: public MoFEM::VolumeElementForcesAndSourcesCore::UserData
   NonlinearElasticElement::BlockData &dAta;
   PostProcVolumeOnRefinedMesh::CommonData &commonData;
   bool fieldDisp;
+  bool replaceNonANumberByMaxValue;
 
   PostPorcStress(
     moab::Interface &post_proc_mesh,
@@ -42,14 +43,17 @@ struct PostPorcStress: public MoFEM::VolumeElementForcesAndSourcesCore::UserData
     const std::string field_name,
     NonlinearElasticElement::BlockData &data,
     PostProcVolumeOnRefinedMesh::CommonData &common_data,
-    bool field_disp = false
+    bool field_disp = false,
+    bool replace_nonanumber_by_max_value = false
   ):
   MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator(field_name,ForcesAndSurcesCore::UserDataOperator::OPROW),
   postProcMesh(post_proc_mesh),
   mapGaussPts(map_gauss_pts),
   dAta(data),
   commonData(common_data),
-  fieldDisp(field_disp) {}
+  fieldDisp(field_disp),
+  replaceNonANumberByMaxValue(replace_nonanumber_by_max_value)
+  {}
 
   NonlinearElasticElement::CommonData nonLinearElementCommonData;
 
@@ -117,6 +121,10 @@ struct PostPorcStress: public MoFEM::VolumeElementForcesAndSourcesCore::UserData
     nonLinearElementCommonData.dataAtGaussPts = commonData.fieldMap;
     nonLinearElementCommonData.gradAtGaussPts = commonData.gradMap;
 
+    double max_energy = 0;
+    MatrixDouble3by3 maxP(3,3);
+    maxP.clear();
+
     for(int gg = 0;gg<nb_gauss_pts;gg++) {
 
       dAta.materialDoublePtr->gG = gg;
@@ -139,10 +147,42 @@ struct PostPorcStress: public MoFEM::VolumeElementForcesAndSourcesCore::UserData
       int nb_active_variables = 9;
       ierr = dAta.materialDoublePtr->setUserActiveVariables(nb_active_variables); CHKERRQ(ierr);
       ierr = dAta.materialDoublePtr->calculateP_PiolaKirchhoffI(dAta,getNumeredEntFiniteElementPtr()); CHKERRQ(ierr);
+      ierr = dAta.materialDoublePtr->calculateElasticEnergy(dAta,getNumeredEntFiniteElementPtr()); CHKERRQ(ierr);
+      if(!std::isnormal(dAta.materialDoublePtr->eNergy)&&replaceNonANumberByMaxValue) {
+        // If value is non a number because of singularity repleca it max double value
+        for(int r  = 0;r!=dAta.materialDoublePtr->P.size1();r++) {
+          for(int c = 0;c!=dAta.materialDoublePtr->P.size2();c++) {
+            if(std::isnormal(dAta.materialDoublePtr->P(r,c))) {
+              maxP(r,c) += dAta.materialDoublePtr->P(r,c);
+            }
+          }
+        }
+      }
       rval = postProcMesh.tag_set_data(th_piola1,&mapGaussPts[gg],1,&dAta.materialDoublePtr->P(0,0)); CHKERRQ_MOAB(rval);
-      dAta.materialDoublePtr->calculateElasticEnergy(dAta,getNumeredEntFiniteElementPtr()); CHKERRQ(ierr);
+      if(std::isnormal(dAta.materialDoublePtr->eNergy)&&replaceNonANumberByMaxValue) {
+        // I value is infinity at singularity, set max value
+        max_energy += dAta.materialDoublePtr->eNergy;
+      }
       rval = postProcMesh.tag_set_data(th_energy,&mapGaussPts[gg],1,&dAta.materialDoublePtr->eNergy); CHKERRQ_MOAB(rval);
 
+    }
+
+    if(replaceNonANumberByMaxValue&&max_energy>0) {
+      MatrixDouble3by3 P(3,3);
+      for(int gg = 0;gg!=nb_gauss_pts;gg++) {
+        double val_enrgy;
+        rval = postProcMesh.tag_get_data(th_energy,&mapGaussPts[gg],1,&val_enrgy); CHKERRQ_MOAB(rval);
+        if(!std::isnormal(val_enrgy)) {
+          rval = postProcMesh.tag_set_data(th_energy,&mapGaussPts[gg],1,&max_energy); CHKERRQ_MOAB(rval);
+          rval = postProcMesh.tag_get_data(th_piola1,&mapGaussPts[gg],1,&P(0,0)); CHKERRQ_MOAB(rval);
+          for(int r  = 0;r!=P.size1();r++) {
+            for(int c = 0;c!=P.size2();c++) {
+              if(!std::isnormal(P(r,c))) P(r,c) = maxP(r,c);
+            }
+          }
+          rval = postProcMesh.tag_set_data(th_piola1,&mapGaussPts[gg],1,&P(0,0)); CHKERRQ_MOAB(rval);
+        }
+      }
     }
 
     PetscFunctionReturn(0);

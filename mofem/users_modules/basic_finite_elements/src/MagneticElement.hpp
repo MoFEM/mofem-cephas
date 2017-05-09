@@ -1,6 +1,7 @@
 /** \file MagneticElement.hpp
  * \brief Implementation of magnetic element
  * \ingroup maxwell_element
+ * \example MagneticElement.hpp
  *
  */
 
@@ -23,13 +24,18 @@
 #define __MAGNETICELEMENT_HPP__
 
 /**
- * \brief Implementation of magnetostatic problem (basic Implementation)
+ * \brief Implementation of magneto-static problem (basic Implementation)
  * \ingroup maxwell_element
  *
  *  Look for theory and details here:
  *
  *  \cite ivanyshyn2013computation
  *  <www.hpfem.jku.at/publications/szthesis.pdf>
+ *
+ * Election file and all other problem related file are here \ref maxwell_element.
+ *
+ * \todo Extension for mix formulation
+ * \todo Use appropriate pre-conditioner for large problems
  *
  */
 struct MagneticElement {
@@ -331,7 +337,7 @@ struct MagneticElement {
 
     // Boundary conditions
     std::vector<int> dofs_bc_indices;
-    const MoFEM::MoFEMProblem *problem_ptr;
+    const MoFEM::Problem *problem_ptr;
     ierr = DMMoFEMGetProblemPtr(blockData.dM,&problem_ptr); CHKERRQ(ierr);
     for(Range::iterator eit = blockData.essentialBc.begin();eit!=blockData.essentialBc.end();eit++) {
       for(_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_NAME_ENT_PART_FOR_LOOP_(

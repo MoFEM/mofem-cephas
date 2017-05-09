@@ -677,7 +677,7 @@ struct UltraWeakTransportElement {
     feVol.getOpPtrVector().push_back(new OpValuesGradientAtGaussPts(*this,"VALUES"));
     feVol.getOpPtrVector().push_back(new OpError(*this,"VALUES"));
     ierr = mField.loop_finite_elements("ULTRAWEAK","ULTRAWEAK",feVol,0,mField.get_comm_size()); CHKERRQ(ierr);
-    const MoFEMProblem *problem_ptr;
+    const Problem *problem_ptr;
     ierr = mField.get_problem("ULTRAWEAK",&problem_ptr); CHKERRQ(ierr);
     PetscPrintf(
       mField.get_comm(),

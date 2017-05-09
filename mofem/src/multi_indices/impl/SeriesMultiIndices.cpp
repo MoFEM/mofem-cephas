@@ -33,7 +33,7 @@
 
 namespace MoFEM {
 
-MoFEMSeries::MoFEMSeries(Interface &moab,const EntityHandle _meshset):
+FieldSeries::FieldSeries(Interface &moab,const EntityHandle _meshset):
   meshset(_meshset),tag_name_data(NULL),tag_name_size(0),
   record_begin(false),record_end(false) {
   ErrorCode rval;
@@ -67,14 +67,14 @@ MoFEMSeries::MoFEMSeries(Interface &moab,const EntityHandle _meshset):
 
 }
 
-PetscErrorCode MoFEMSeries::get_nb_steps(Interface &moab,int &nb_steps) const {
+PetscErrorCode FieldSeries::get_nb_steps(Interface &moab,int &nb_steps) const {
   PetscFunctionBegin;
   ErrorCode rval;
   rval = moab.num_contained_meshsets(meshset,&nb_steps); CHKERRQ_MOAB(rval);
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode MoFEMSeries::push_dofs(const EntityHandle ent,const ShortId uid,const FieldData val) {
+PetscErrorCode FieldSeries::push_dofs(const EntityHandle ent,const ShortId uid,const FieldData val) {
   PetscFunctionBegin;
   if(!record_begin) {
     SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"you neet to set recording");
@@ -85,7 +85,7 @@ PetscErrorCode MoFEMSeries::push_dofs(const EntityHandle ent,const ShortId uid,c
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode MoFEMSeries::begin() {
+PetscErrorCode FieldSeries::begin() {
   PetscFunctionBegin;
   if(record_begin) {
     SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"recording already  begin");
@@ -94,7 +94,7 @@ PetscErrorCode MoFEMSeries::begin() {
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode MoFEMSeries::end(double t) {
+PetscErrorCode FieldSeries::end(double t) {
   PetscFunctionBegin;
   if(!record_begin) {
     SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"recording not begin it can not be ended");
@@ -106,7 +106,7 @@ PetscErrorCode MoFEMSeries::end(double t) {
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode MoFEMSeries::read(Interface &moab) {
+PetscErrorCode FieldSeries::read(Interface &moab) {
   PetscFunctionBegin;
   ErrorCode rval;
 
@@ -168,7 +168,7 @@ PetscErrorCode MoFEMSeries::read(Interface &moab) {
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode MoFEMSeries::save(Interface &moab) const {
+PetscErrorCode FieldSeries::save(Interface &moab) const {
   PetscFunctionBegin;
 
   if(record_begin) {
@@ -228,13 +228,13 @@ PetscErrorCode MoFEMSeries::save(Interface &moab) const {
   PetscFunctionReturn(0);
 }
 
-MoFEMSeriesStep::MoFEMSeriesStep(Interface &moab,const MoFEMSeries *_MoFEMSeries_ptr,const int _step_number):
-  interface_MoFEMSeries<MoFEMSeries>(_MoFEMSeries_ptr),step_number(_step_number) {
+FieldSeriesStep::FieldSeriesStep(Interface &moab,const FieldSeries *_FieldSeries_ptr,const int _step_number):
+  interface_FieldSeries<FieldSeries>(_FieldSeries_ptr),step_number(_step_number) {
   PetscErrorCode ierr;
   ierr = get_time_init(moab); CHKERRABORT(PETSC_COMM_WORLD,ierr);
 }
 
-PetscErrorCode MoFEMSeriesStep::get(Interface &moab,DofEntity_multiIndex &dofsField) const {
+PetscErrorCode FieldSeriesStep::get(Interface &moab,DofEntity_multiIndex &dofsField) const {
   PetscFunctionBegin;
   ErrorCode rval;
 
@@ -284,7 +284,7 @@ PetscErrorCode MoFEMSeriesStep::get(Interface &moab,DofEntity_multiIndex &dofsFi
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode MoFEMSeriesStep::get_time_init(Interface &moab) {
+PetscErrorCode FieldSeriesStep::get_time_init(Interface &moab) {
   PetscFunctionBegin;
   ErrorCode rval;
   std::vector<EntityHandle> contained;
@@ -299,13 +299,13 @@ PetscErrorCode MoFEMSeriesStep::get_time_init(Interface &moab) {
   PetscFunctionReturn(0);
 }
 
-std::ostream& operator<<(std::ostream& os,const MoFEMSeries& e) {
+std::ostream& operator<<(std::ostream& os,const FieldSeries& e) {
   os << "name " << e.getName() << " meshset " << e.getMeshset();
   return os;
 }
 
-std::ostream& operator<<(std::ostream& os,const MoFEMSeriesStep& e) {
-  os << *(e.get_MoFEMSeries_ptr()) << " step number " << e.step_number << " time " << e.get_time();
+std::ostream& operator<<(std::ostream& os,const FieldSeriesStep& e) {
+  os << *(e.get_FieldSeries_ptr()) << " step number " << e.step_number << " time " << e.get_time();
   return os;
 }
 

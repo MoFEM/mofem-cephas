@@ -247,7 +247,7 @@ int main(int argc, char *argv[]) {
           }
           my_split << nodes_vals << std::endl;
 
-          const MoFEMProblem *problemPtr;
+          const Problem *problemPtr;
           ierr = m_field.get_problem("TEST_PROBLEM",&problemPtr); CHKERRQ(ierr);
           std::map<EntityHandle,double> m0,m1,m2;
           for(_IT_NUMEREDDOFMOFEMENTITY_ROW_FOR_LOOP_(problemPtr,dit)) {
