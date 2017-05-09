@@ -21,14 +21,17 @@
 
 namespace MoFEM {
 
-struct MoFEMSeriesStep;
+struct FieldSeriesStep;
 
 /**
  * \brief Structure for recording (time) series
  *
  * \ingroup series_multi_indices
+ *
+ * \bug Fix member functions names. Not follow namining convention.
+ *
  */
-struct MoFEMSeries {
+struct FieldSeries {
 
   EntityHandle meshset;
   const void* tag_name_data;		///< tag keeps name of the series
@@ -37,7 +40,7 @@ struct MoFEMSeries {
   bool record_begin;
   bool record_end;
 
-  MoFEMSeries(Interface &moab,const EntityHandle _meshset);
+  FieldSeries(Interface &moab,const EntityHandle _meshset);
 
   /// get meshset
   inline EntityHandle getMeshset() const { return meshset; }
@@ -78,17 +81,19 @@ struct MoFEMSeries {
   PetscErrorCode read(Interface &moab);
   PetscErrorCode save(Interface &moab) const;
 
-  inline const MoFEMSeries* get_MoFEMSeries_ptr() const { return const_cast<MoFEMSeries*>(this); };
+  inline const FieldSeries* get_FieldSeries_ptr() const { return const_cast<FieldSeries*>(this); };
 
-  friend std::ostream& operator<<(std::ostream& os,const MoFEMSeries& e);
-
+  friend std::ostream& operator<<(std::ostream& os,const FieldSeries& e);
 
 };
 
+/// \deprecated use fieldseries
+DEPRECATED typedef FieldSeries MoFEMSeries;
+
 template<typename T>
-struct interface_MoFEMSeries {
+struct interface_FieldSeries {
   const T *ptr;
-  interface_MoFEMSeries(const T *_ptr): ptr(_ptr) {}
+  interface_FieldSeries(const T *_ptr): ptr(_ptr) {}
 
   /// get meshset
   inline EntityHandle getMeshset() const { return ptr->getMeshset(); }
@@ -98,7 +103,7 @@ struct interface_MoFEMSeries {
   /// get series name
   inline std::string getName() const { return ptr->getName(); }
 
-  inline const MoFEMSeries* get_MoFEMSeries_ptr() const { return ptr->get_MoFEMSeries_ptr(); };
+  inline const FieldSeries* get_FieldSeries_ptr() const { return ptr->get_FieldSeries_ptr(); };
 
 };
 
@@ -106,13 +111,15 @@ struct interface_MoFEMSeries {
  * \brief Structure for keeping time and step
  *
  * \ingroup series_multi_indices
- */
-struct MoFEMSeriesStep: public interface_MoFEMSeries<MoFEMSeries> {
+ *
+ * \bug Fix member functions names. Not follow namining convention.
+  */
+struct FieldSeriesStep: public interface_FieldSeries<FieldSeries> {
 
-  typedef interface_MoFEMSeries<MoFEMSeries> interface_type_MoFEMSeries;
+  typedef interface_FieldSeries<FieldSeries> interface_type_FieldSeries;
 
   int step_number;
-  MoFEMSeriesStep(Interface &moab,const MoFEMSeries *_MoFEMSeries_ptr,const int _step_number);
+  FieldSeriesStep(Interface &moab,const FieldSeries *_FieldSeries_ptr,const int _step_number);
 
   inline int get_step_number() const { return step_number; };
   PetscErrorCode get(Interface &moab,DofEntity_multiIndex &dofsField) const;
@@ -121,9 +128,12 @@ struct MoFEMSeriesStep: public interface_MoFEMSeries<MoFEMSeries> {
   PetscErrorCode get_time_init(Interface &moab);
   inline double get_time() const { return time; }
 
-  friend std::ostream& operator<<(std::ostream& os,const MoFEMSeriesStep& e);
+  friend std::ostream& operator<<(std::ostream& os,const FieldSeriesStep& e);
 
 };
+
+/// \deprecated use fieldseries
+DEPRECATED typedef FieldSeriesStep MoFEMSeriesStep;
 
 /**
  * \brief Series multi index
@@ -131,13 +141,18 @@ struct MoFEMSeriesStep: public interface_MoFEMSeries<MoFEMSeries> {
  * \ingroup series_multi_indices
  */
 typedef multi_index_container<
-  MoFEMSeries,
+  FieldSeries,
   indexed_by<
-  ordered_unique<
-    tag<SeriesID_mi_tag>, const_mem_fun<MoFEMSeries,EntityID,&MoFEMSeries::get_meshset_id> >,
-  ordered_unique<
-    tag<SeriesName_mi_tag>, const_mem_fun<MoFEMSeries,boost::string_ref,&MoFEMSeries::getNameRef> >
-  > > Series_multiIndex;
+    ordered_unique<
+      tag<SeriesID_mi_tag>,
+      const_mem_fun<FieldSeries,EntityID,&FieldSeries::get_meshset_id>
+    >,
+    ordered_unique<
+      tag<SeriesName_mi_tag>,
+      const_mem_fun<FieldSeries,boost::string_ref,&FieldSeries::getNameRef>
+    >
+  >
+> Series_multiIndex;
 
 /**
  * \brief Step multi index
@@ -145,32 +160,54 @@ typedef multi_index_container<
  * \ingroup series_multi_indices
  */
 typedef multi_index_container<
-  MoFEMSeriesStep,
+  FieldSeriesStep,
   indexed_by<
-   ordered_unique<
+    ordered_unique<
       tag<Composite_SeriesID_And_Step_mi_tag>,
       composite_key<
-	     MoFEMSeriesStep,
-	    const_mem_fun<MoFEMSeriesStep::interface_type_MoFEMSeries,EntityID,&MoFEMSeriesStep::get_meshset_id>,
-	    member<MoFEMSeriesStep,int,&MoFEMSeriesStep::step_number>
-      > >,
-   ordered_unique<
+	     FieldSeriesStep,
+	     const_mem_fun<
+        FieldSeriesStep::interface_type_FieldSeries,
+        EntityID,
+        &FieldSeriesStep::get_meshset_id
+       >,
+	     member<FieldSeriesStep,int,&FieldSeriesStep::step_number>
+      >
+    >,
+    ordered_unique<
       tag<Composite_SeriesName_And_Step_mi_tag>,
       composite_key<
-	     MoFEMSeriesStep,
-	     const_mem_fun<MoFEMSeriesStep::interface_type_MoFEMSeries,boost::string_ref,&MoFEMSeriesStep::getNameRef>,
-	     member<MoFEMSeriesStep,int,&MoFEMSeriesStep::step_number>
-      > >,
+	     FieldSeriesStep,
+	     const_mem_fun<
+        FieldSeriesStep::interface_type_FieldSeries,
+        boost::string_ref,
+        &FieldSeriesStep::getNameRef
+       >,
+	     member<FieldSeriesStep,int,&FieldSeriesStep::step_number>
+      >
+    >,
     ordered_non_unique<
-      tag<SeriesName_mi_tag>, const_mem_fun<MoFEMSeriesStep::interface_type_MoFEMSeries,boost::string_ref,&MoFEMSeriesStep::getNameRef> >,
-        ordered_non_unique<
-        tag<Composite_SeriesName_And_Time_mi_tag>,
+      tag<SeriesName_mi_tag>,
+      const_mem_fun<
+       FieldSeriesStep::interface_type_FieldSeries,
+       boost::string_ref,
+       &FieldSeriesStep::getNameRef
+      >
+    >,
+    ordered_non_unique<
+      tag<Composite_SeriesName_And_Time_mi_tag>,
       composite_key<
-	     MoFEMSeriesStep,
-	     const_mem_fun<MoFEMSeriesStep::interface_type_MoFEMSeries,boost::string_ref,&MoFEMSeriesStep::getNameRef>,
-	     const_mem_fun<MoFEMSeriesStep,double,&MoFEMSeriesStep::get_time>
-      > >
-  > > SeriesStep_multiIndex;
+	     FieldSeriesStep,
+	     const_mem_fun<
+        FieldSeriesStep::interface_type_FieldSeries,
+        boost::string_ref,
+        &FieldSeriesStep::getNameRef
+       >,
+	     const_mem_fun<FieldSeriesStep,double,&FieldSeriesStep::get_time>
+      >
+    >
+  >
+> SeriesStep_multiIndex;
 
 }
 
