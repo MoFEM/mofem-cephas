@@ -225,6 +225,9 @@ namespace MoFEM {
         SETERRQ(m_field.get_comm(),MOFEM_OPERATION_UNSUCCESSFUL,"Unable to read mesh information");
       }
       meshNames.push_back(std::string(mesh_name));
+      if(verb > 0) {
+        PetscPrintf(m_field.get_comm(),"Check mesh %s nsteps %d\n",mesh_name,n_step);
+      }
     }
 
     std::map<int,Range> family_elem_map;
@@ -286,8 +289,8 @@ namespace MoFEM {
     }
 
     char mesh_name[MED_NAME_SIZE + 1], mesh_desc[MED_COMMENT_SIZE + 1];
-    bzero(mesh_name,MED_NAME_SIZE);
-    bzero(mesh_desc,MED_COMMENT_SIZE);
+    bzero(mesh_name,MED_NAME_SIZE+1);
+    bzero(mesh_desc,MED_COMMENT_SIZE+1);
     med_int space_dim;
     med_mesh_type mesh_type;
     med_int mesh_dim, n_step;
@@ -302,8 +305,9 @@ namespace MoFEM {
       SETERRQ(m_field.get_comm(),MOFEM_OPERATION_UNSUCCESSFUL,"Unable to read mesh information");
     }
     if(verb>0) {
-      PetscPrintf(m_field.get_comm(),"Reading mesh %s\n",mesh_name);
+      PetscPrintf(m_field.get_comm(),"Reading mesh %s nsteps %d\n",mesh_name,n_step);
     }
+
 
     switch (axis_type) {
       case MED_CARTESIAN:
@@ -333,6 +337,7 @@ namespace MoFEM {
       );
       max_id++;
       mesh_meshset = cit->getMeshset();
+      meshMeshsets.push_back(mesh_meshset);
     }
 
     med_bool change_of_coord, geo_transform;
@@ -351,8 +356,8 @@ namespace MoFEM {
     if(num_nodes == 0) {
       SETERRQ(m_field.get_comm(),MOFEM_OPERATION_UNSUCCESSFUL,"No nodes in MED mesh");
     }
-    if(verb>1) {
-      PetscPrintf(m_field.get_comm(),"Read number of node %d\n",num_nodes);
+    if(verb>0) {
+      PetscPrintf(m_field.get_comm(),"Read number of nodes %d\n",num_nodes);
     }
 
     std::vector<med_float> coord_med(space_dim * num_nodes);
@@ -377,19 +382,20 @@ namespace MoFEM {
 
     // get family for vertices
     {
-      std::vector<med_int> fam(num_nodes,0);
+      std::vector<med_int> nodes_tags(num_nodes,0);
       if(MEDmeshEntityFamilyNumberRd(
-        fid,mesh_name,MED_NO_DT,MED_NO_IT,MED_NODE,MED_NO_GEOTYPE,&fam[0]
+        fid,mesh_name,MED_NO_DT,MED_NO_IT,MED_NODE,MED_NO_GEOTYPE,&nodes_tags[0]
       ) < 0) {
-        SETERRQ(
-          m_field.get_comm(),
-          MOFEM_OPERATION_UNSUCCESSFUL,
-          "No family number for elements: using 0 as default family number"
-        );
+        nodes_tags.clear();
+        // SETERRQ(
+        //   m_field.get_comm(),
+        //   MOFEM_OPERATION_UNSUCCESSFUL,
+        //   "No family number for elements: using 0 as default family number"
+        // );
       }
       for(int i = 0; i < num_nodes; i++) {
-        // cerr << verts[i] << " " /*<< ele_tags[j] << " "*/ << fam[i] << endl;
-        family_elem_map[fam[i]].insert(verts[i]);
+        // cerr << verts[i] << " " /*<< ele_tags[j] << " "*/ << nodes_tags[i] << endl;
+        family_elem_map[nodes_tags.empty() ? i : nodes_tags[i]].insert(verts[i]);
       }
     }
 
@@ -743,13 +749,21 @@ namespace MoFEM {
       SETERRQ(m_field.get_comm(),MOFEM_DATA_INCONSISTENCY,"Nothing to import from MED file");
     }
 
+    if(load_series) {
+      SETERRQ(m_field.get_comm(), MOFEM_NOT_IMPLEMENTED, "Not yet implemented");
+    }
+
     for(
       int step = (only_step == -1) ? 0 : only_step;
       step < numSteps;
       step++
     ) {
 
-      if(only_step!=-1 && only_step != step) break;
+
+      if(!load_series && only_step != step) continue;
+
+      // cerr << only_step << " " << step << endl;
+
 
       // FIXME: in MED3 we might want to loop over all profiles instead
       // of relying of the default one
@@ -811,18 +825,25 @@ namespace MoFEM {
           << profileSize << " : " << ngauss << endl;
         }
 
-        if(ngauss==1) {
-          switch (ent) {
-            case MED_CELL: {
-              EntityType ent_type;
-              switch (ele) {
-                case MED_TETRA4:
-                case MED_TETRA10:
-                ent_type = MBTET;
-                break;
-                default:
-                SETERRQ(m_field.get_comm(),MOFEM_NOT_IMPLEMENTED,"Not yet implemented");
-              }
+        switch (ent) {
+          case MED_CELL: {
+            EntityType ent_type;
+            switch (ele) {
+              case MED_TETRA4:
+              case MED_TETRA10:
+              ent_type = MBTET;
+              break;
+              case MED_HEXA8:
+              ent_type = MBHEX;
+              break;
+              default:
+              SETERRQ1(
+                m_field.get_comm(),
+                MOFEM_NOT_IMPLEMENTED,
+                "Not yet implemented for this cell %d",ele
+              );
+            }
+            if(ngauss==1) {
               Range ents;
               rval = m_field.get_moab().get_entities_by_type(
                 meshset,ent_type,ents,true
@@ -836,6 +857,33 @@ namespace MoFEM {
                 }
                 rval = m_field.get_moab().tag_set_data(th,&*eit,1,e_vals); CHKERRQ_MOAB(rval);
               }
+            } else {
+              Range ents;
+              rval = m_field.get_moab().get_entities_by_type(
+                meshset,ent_type,ents,true
+              ); CHKERRQ_MOAB(rval);
+              if(ents.size()*ngauss*num_comp!=val.size()) {
+                SETERRQ(m_field.get_comm(),MOFEM_DATA_INCONSISTENCY,"data inconsistency");
+              }
+              // FIXME simply average gauss values, far from perfect need fix
+              double e_vals[num_comp_msh];
+              std::vector<double>::iterator vit = val.begin();
+              for(Range::iterator eit = ents.begin();eit!=ents.end();eit++) {
+                  bzero(e_vals,sizeof(double)*num_comp_msh);
+                  for(int ii = 0;ii!=num_comp;ii++) {
+                    for(int gg = 0;gg!=ngauss;gg++,vit++) {
+                      e_vals[ii] += *vit;
+                    }
+                  }
+                  rval = m_field.get_moab().tag_set_data(th,&*eit,1,e_vals); CHKERRQ_MOAB(rval);
+                }
+              }
+              // SETERRQ1(
+              //   m_field.get_comm(),
+              //   MOFEM_NOT_IMPLEMENTED,
+              //   "Not implemented for more gauss pts ngauss = %d",
+              //   ngauss
+              // );
             }
             break;
             case MED_NODE:
@@ -843,10 +891,9 @@ namespace MoFEM {
             default:
             SETERRQ(m_field.get_comm(),MOFEM_NOT_IMPLEMENTED,"Not yet implemented");
           }
-        } else
-        SETERRQ(m_field.get_comm(),MOFEM_NOT_IMPLEMENTED,"Not implemented");
+        }
+
       }
-    }
 
     PetscFunctionReturn(0);
   }
@@ -873,7 +920,7 @@ namespace MoFEM {
       os << " " << field_data.componentUnits[ff];
     }
     os << std::endl;
-    os << " dtUnit: " << field_data.dtUnit;
+    os << " dtUnit: " << field_data.dtUnit << endl;
     os << " number of steps: " << field_data.ncSteps;
     return os;
   }
