@@ -874,6 +874,7 @@ namespace MoFEM {
                     for(int gg = 0;gg!=ngauss;gg++,vit++) {
                       e_vals[ii] += *vit;
                     }
+                    e_vals[ii] /= ngauss;
                   }
                   rval = m_field.get_moab().tag_set_data(th,&*eit,1,e_vals); CHKERRQ_MOAB(rval);
                 }
