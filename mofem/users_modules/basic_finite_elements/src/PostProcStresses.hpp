@@ -153,7 +153,7 @@ struct PostPorcStress: public MoFEM::VolumeElementForcesAndSourcesCore::UserData
         for(int r  = 0;r!=dAta.materialDoublePtr->P.size1();r++) {
           for(int c = 0;c!=dAta.materialDoublePtr->P.size2();c++) {
             if(std::isnormal(dAta.materialDoublePtr->P(r,c))) {
-              maxP(r,c) = std::copysign(
+              maxP(r,c) = copysign(
                 std::max(fabs(dAta.materialDoublePtr->P(r,c)),fabs(maxP(r,c))),
                 dAta.materialDoublePtr->P(r,c)
               );
