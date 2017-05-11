@@ -1449,7 +1449,7 @@ feVol.getOpPtrVector().push_back(new UltraWeakTransportElement::OpFluxDivergence
 \endcode
 
 Once we loop over all elements and calculate error, we aggregate all element
-contributions in \b sumErrorFlux and \b sumErrorDiv and \b sumErrorJump wich are
+contributions in \b sumErrorFlux and \b sumErrorDiv and \b sumErrorJump which are
 \f$\eta^2_{T,R,1}\f$, \f$\eta^2_{T,R,2}\f$ and \f$\eta^2_{e,R}\f$, respectively.
 
 \subsection ultraweak_jump Calculate jump on the skeleton
@@ -1519,7 +1519,7 @@ is over skeleton, like face normal vector, face area, etc. Note that nested
 operator UltraWeakTransportElement::OpSkeleton::OpVolSide is added to nested
 volume instance \b volSideFe, in constructor of face operator with the command
 line
-\code[.cpp}]
+\code{.cpp}
 volSideFe.getOpPtrVector().push_back(new UltraWeakTransportElement::OpSkeleton::OpSkeleton::OpVolSide(valMap));
 \endcode
 

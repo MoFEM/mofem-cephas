@@ -39,10 +39,20 @@ int main(int argc, char *argv[]) {
   MoFEM::Core core(moab);
   MoFEM::Interface& m_field = core;
 
+  int time_step = 0;
+  ierr = PetscOptionsBegin(
+    m_field.get_comm(),"","Read MED tool","none"
+  ); CHKERRQ(ierr);
+  ierr = PetscOptionsInt(
+    "-med_time_step","time step","",time_step,&time_step,PETSC_NULL
+  ); CHKERRQ(ierr);
+  ierr = PetscOptionsEnd(); CHKERRQ(ierr);
+
   MedInterface *med_interface_ptr;
   ierr = m_field.query_interface(med_interface_ptr); CHKERRQ(ierr);
   ierr = med_interface_ptr->readMed(); CHKERRQ(ierr);
   ierr = med_interface_ptr->medGetFieldNames(); CHKERRQ(ierr);
+
 
   for(
     std::map<std::string,MedInterface::FieldData>::iterator fit =
@@ -51,7 +61,7 @@ int main(int argc, char *argv[]) {
     fit++
   ) {
     ierr = med_interface_ptr->readFields(
-      med_interface_ptr->medFileName,fit->first,false,0
+      med_interface_ptr->medFileName,fit->first,false,time_step
     ); CHKERRQ(ierr);
   }
 

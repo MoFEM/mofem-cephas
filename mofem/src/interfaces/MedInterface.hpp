@@ -105,8 +105,8 @@ namespace MoFEM {
     PetscErrorCode readFields(
       const std::string &file_name,
       const std::string &field_name,
-      const bool load_series = true,
-      const int only_tep = -1,
+      const bool load_series = false,
+      const int only_step = -1,
       int verb = 1
     );
 
@@ -121,6 +121,8 @@ namespace MoFEM {
       int ncSteps;
     };
 
+    std::vector<std::string> meshNames;       ///< list of meshes in MED file
+    std::vector<EntityHandle> meshMeshsets;   ///< meshset for each mesh
     std::map<std::string,FieldData> fieldNames;
     std::string medFileName;              ///< MED file name
 
@@ -129,7 +131,6 @@ namespace MoFEM {
 
     MoFEM::Core& cOre;                    ///< core database
     // std::vector<std::string> fieldNames;  ///< list of fields in MED file
-    std::vector<std::string> meshNames;   ///< list of meshes in MED file
     PetscBool flgFile;                    ///< true if file name given in command line
 
     /**
