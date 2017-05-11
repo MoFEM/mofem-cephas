@@ -48,6 +48,22 @@ int main(int argc, char *argv[]) {
     ierr = med_interface_ptr->readMed(); CHKERRQ(ierr);
     ierr = med_interface_ptr->medGetFieldNames(); CHKERRQ(ierr);
 
+    // read field tags
+    for(
+      std::map<std::string,MedInterface::FieldData>::iterator fit =
+      med_interface_ptr->fieldNames.begin();
+      fit!=med_interface_ptr->fieldNames.end();
+      fit++
+    ) {
+      ierr = med_interface_ptr->readFields(
+        med_interface_ptr->medFileName,fit->first,false,1
+      ); CHKERRQ(ierr);
+    }
+
+
+    PetscBool check = PETSC_TRUE;
+    ierr = PetscOptionsGetBool(PETSC_NULL,"","-check",&check,PETSC_NULL); CHKERRQ(ierr);
+
     int ii = 0;
     const int check_list[] = { 2163, 624, 65, 104};
     for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,BLOCKSET,cit)) {
@@ -55,15 +71,25 @@ int main(int argc, char *argv[]) {
       int nb_ents;
       rval = moab.get_number_entities_by_handle(meshset,nb_ents,true); CHKERRQ_MOAB(rval);
       ierr = PetscPrintf(PETSC_COMM_WORLD,"Nb of ents in %s %d\n",cit->getName().c_str(),nb_ents); CHKERRQ(ierr);
-      if(nb_ents!=check_list[ii]) {
+      if(check && nb_ents!=check_list[ii]) {
         SETERRQ2(PETSC_COMM_WORLD,MOFEM_ATOM_TEST_INVALID,"Wrong numbers of entities in meshset %d != %d",nb_ents,check_list[ii]);
       }
       ii++;
     }
 
-
-    rval = moab.write_file("out.vtk","VTK",""); CHKERRQ_MOAB(rval);
-
+    MeshsetsManager *meshset_manager_ptr;
+    ierr = m_field.query_interface(meshset_manager_ptr); CHKERRQ(ierr);
+    for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_((*meshset_manager_ptr),BLOCKSET,mit)) {
+      EntityHandle meshset = mit->getMeshset();
+      std::string name = mit->getName();
+      PetscPrintf(m_field.get_comm(),"Write mesh %s\n",name.c_str());
+      rval = moab.write_file(
+        ("out_"+mit->getName()+".vtk").c_str(),
+        NULL,
+        NULL,
+        &meshset,1
+      ); CHKERRQ_MOAB(rval);
+    }
 
   } catch (MoFEMException const &e) {
     SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
