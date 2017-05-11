@@ -153,7 +153,10 @@ struct PostPorcStress: public MoFEM::VolumeElementForcesAndSourcesCore::UserData
         for(int r  = 0;r!=dAta.materialDoublePtr->P.size1();r++) {
           for(int c = 0;c!=dAta.materialDoublePtr->P.size2();c++) {
             if(std::isnormal(dAta.materialDoublePtr->P(r,c))) {
-              maxP(r,c) += dAta.materialDoublePtr->P(r,c);
+              maxP(r,c) = std::copysign(
+                std::max(fabs(dAta.materialDoublePtr->P(r,c)),fabs(maxP(r,c))),
+                dAta.materialDoublePtr->P(r,c)
+              );
             }
           }
         }
@@ -161,7 +164,7 @@ struct PostPorcStress: public MoFEM::VolumeElementForcesAndSourcesCore::UserData
       rval = postProcMesh.tag_set_data(th_piola1,&mapGaussPts[gg],1,&dAta.materialDoublePtr->P(0,0)); CHKERRQ_MOAB(rval);
       if(std::isnormal(dAta.materialDoublePtr->eNergy)&&replaceNonANumberByMaxValue) {
         // I value is infinity at singularity, set max value
-        max_energy += dAta.materialDoublePtr->eNergy;
+        max_energy = std::max(dAta.materialDoublePtr->eNergy,max_energy);
       }
       rval = postProcMesh.tag_set_data(th_energy,&mapGaussPts[gg],1,&dAta.materialDoublePtr->eNergy); CHKERRQ_MOAB(rval);
 
