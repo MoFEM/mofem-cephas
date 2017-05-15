@@ -33,6 +33,7 @@ pipelines:
             $MOFEM_SRC_DIR/mofem
           - echo "Build"
           - ctest --output-on-failure -D Experimental
+          - make install
           - make clean
           - echo "Configure users modules"
           - cd $MOFEM_INSTALL_DIR
