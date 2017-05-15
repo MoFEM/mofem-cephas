@@ -869,32 +869,31 @@ namespace MoFEM {
               double e_vals[num_comp_msh];
               std::vector<double>::iterator vit = val.begin();
               for(Range::iterator eit = ents.begin();eit!=ents.end();eit++) {
-                  bzero(e_vals,sizeof(double)*num_comp_msh);
-                  for(int ii = 0;ii!=num_comp;ii++) {
-                    for(int gg = 0;gg!=ngauss;gg++,vit++) {
-                      e_vals[ii] += *vit;
-                    }
-                    e_vals[ii] /= ngauss;
+                bzero(e_vals,sizeof(double)*num_comp_msh);
+                for(int gg = 0;gg!=ngauss;gg++) {
+                  for(int ii = 0;ii!=num_comp;ii++,vit++) {
+                    e_vals[ii] += *vit/ngauss;
                   }
-                  rval = m_field.get_moab().tag_set_data(th,&*eit,1,e_vals); CHKERRQ_MOAB(rval);
                 }
+                rval = m_field.get_moab().tag_set_data(th,&*eit,1,e_vals); CHKERRQ_MOAB(rval);
               }
-              // SETERRQ1(
-              //   m_field.get_comm(),
-              //   MOFEM_NOT_IMPLEMENTED,
-              //   "Not implemented for more gauss pts ngauss = %d",
-              //   ngauss
-              // );
             }
-            break;
-            case MED_NODE:
-            case MED_NODE_ELEMENT:
-            default:
-            SETERRQ(m_field.get_comm(),MOFEM_NOT_IMPLEMENTED,"Not yet implemented");
+            // SETERRQ1(
+            //   m_field.get_comm(),
+            //   MOFEM_NOT_IMPLEMENTED,
+            //   "Not implemented for more gauss pts ngauss = %d",
+            //   ngauss
+            // );
           }
+          break;
+          case MED_NODE:
+          case MED_NODE_ELEMENT:
+          default:
+          SETERRQ(m_field.get_comm(),MOFEM_NOT_IMPLEMENTED,"Not yet implemented");
         }
-
       }
+
+    }
 
     PetscFunctionReturn(0);
   }
