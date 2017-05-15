@@ -32,7 +32,6 @@ pipelines:
             -DCMAKE_INSTALL_PREFIX=$MOFEM_INSTALL_DIR
             $MOFEM_SRC_DIR/mofem
           - echo "Build"
-          - make install
           - ctest --output-on-failure -D Experimental
           - make clean
           - echo "Configure users modules"
@@ -44,7 +43,6 @@ pipelines:
             -DCMAKE_CXX_FLAGS="-Wall"
             users_modules
           - echo "Build users modules"
-          - make
           - ctest --output-on-failure -D Experimental -R basic_
           - make clean
           - echo "All done"
