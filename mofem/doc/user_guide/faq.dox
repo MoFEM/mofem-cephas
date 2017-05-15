@@ -86,10 +86,10 @@ set(MoFEM_VERSION_BUILD 24)
 \section validation_and_verfication How MoFEM is developed?
 
 MoFEM is developed continuously, i.e. any merged pull request to the
-\em CDashTesting branch triggers automatic testing on the development server. Code is
-verified during when pull request is accepted and merged and validated when
-test on the development server are passed. If tests are passed \em CDashBranch is
-merged to \em release branch.
+CDashTesting branch triggers automatic testing on the development server. The
+code is verified during when a pull request is accepted and merged and validated
+when the test on the development server are passed. If tests are passed
+CDashBranch is merged to release branch.
 
 \section own_documentation How to generate this documentation on your local machine?
 
