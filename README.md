@@ -15,4 +15,4 @@ Contact: [cmatgu@googlegroups.com](cmatgu@googlegroups.com)
 
 ## Build status
 
-- ### **CDashTesting**: [CDashTesting](http://cdash.eng.gla.ac.uk/cdash/)
+- **CDashTesting**: [CDashTesting](http://cdash.eng.gla.ac.uk/cdash/)
