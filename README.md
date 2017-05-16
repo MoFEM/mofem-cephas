@@ -9,7 +9,7 @@ implement nontrivial finite elements) while being small and extendable.
 
 ## Installation
 
-* [Install](http://mofem.eng.gla.ac.uk/mofem/html/installation.html)
+* [Install with Docker other systems](http://mofem.eng.gla.ac.uk/mofem/html/installation.html)
 
 Contact: [cmatgu@googlegroups.com](cmatgu@googlegroups.com)  
 
