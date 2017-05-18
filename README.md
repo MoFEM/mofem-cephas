@@ -7,6 +7,10 @@ implement nontrivial finite elements) while being small and extendable.
 
 ** For more information go to ** [**documentation page**](http://mofem.eng.gla.ac.uk/mofem/html/index.html).
 
+## Build status
+
+[![build-status](https://bitbucket-badges.useast.atlassian.io/badge/likask/mofem-cephas.svg)](https://bitbucket.org/likask/mofem-cephas/addon/pipelines/home)
+
 ## Installation
 
 * [Install with Docker other systems](http://mofem.eng.gla.ac.uk/mofem/html/installation.html)
