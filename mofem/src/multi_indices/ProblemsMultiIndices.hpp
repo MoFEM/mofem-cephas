@@ -125,10 +125,10 @@ struct Problem {
 
 
   /// \deprecated use numeredDofsRows instead
-  const boost::shared_ptr<NumeredDofEntity_multiIndex> &numered_dofs_rows; // FIXME name convention
+  DEPRECATED const boost::shared_ptr<NumeredDofEntity_multiIndex> &numered_dofs_rows; // FIXME name convention
 
   /// \deprecated use numeredDofsRows instead
-  const boost::shared_ptr<NumeredDofEntity_multiIndex> &numered_dofs_cols; // FIXME name convention
+  DEPRECATED const boost::shared_ptr<NumeredDofEntity_multiIndex> &numered_dofs_cols; // FIXME name convention
 
   /**
    * \brief Subproblem problem data
