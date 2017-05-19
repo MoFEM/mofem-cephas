@@ -83,24 +83,24 @@ struct ComposedProblemsData {
   */
 struct Problem {
 
-  EntityHandle meshset;
-  BitProblemId* tag_id_data;
-  const void* tag_name_data;
-  int tag_name_size;
-  DofIdx* tag_nbdof_data_row;
-  DofIdx* tag_nbdof_data_col;
-  DofIdx* tag_local_nbdof_data_row;
-  DofIdx* tag_local_nbdof_data_col;
-  DofIdx* tag_ghost_nbdof_data_row;
-  DofIdx* tag_ghost_nbdof_data_col;
-  BitFEId* tag_BitFEId_data;
-  BitRefLevel* tag_BitRefLevel;
-  BitRefLevel* tag_MaskBitRefLevel;
 
   mutable boost::shared_ptr<NumeredDofEntity_multiIndex> numered_dofs_rows; // FIXME name convention
   mutable boost::shared_ptr<NumeredDofEntity_multiIndex> numered_dofs_cols; // FIXME name convention
   mutable NumeredEntFiniteElement_multiIndex numeredFiniteElements;
 
+  EntityHandle meshset;               ///< Problem meshset (on thags of this meshset all data related to problem are strord)
+  BitProblemId* tag_id_data;          ///< Unique problem ID
+  const void* tag_name_data;          ///< Problem name
+  int tag_name_size;                  ///< Size of problem name
+  DofIdx* tag_nbdof_data_row;         ///< Global number of DOFs in  row
+  DofIdx* tag_nbdof_data_col;         ///< Global number of DOFs in col
+  DofIdx* tag_local_nbdof_data_row;   ///< Local number of DOFs in row
+  DofIdx* tag_local_nbdof_data_col;   ///< Local number of DOFs in colIs
+  DofIdx* tag_ghost_nbdof_data_row;   ///< Number of ghost DOFs in row
+  DofIdx* tag_ghost_nbdof_data_col;   ///< Nymber of ghost DOFs in col
+  BitFEId* tag_BitFEId_data;          ///< IDs of finite elements in problem
+  BitRefLevel* tag_BitRefLevel;       ///< BitRef level of finite elements in problem
+  BitRefLevel* tag_MaskBitRefLevel;   ///< BItRefMask of elements in problem
 
   /**
    * \brief Subproblem problem data
