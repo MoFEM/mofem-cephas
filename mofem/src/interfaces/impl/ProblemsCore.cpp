@@ -600,10 +600,10 @@ PetscErrorCode Core::loop_dofs(
   NumeredDofsByNameAndPart *dofs;
   switch (rc) {
     case ROW:
-      dofs = &problem_ptr->numered_dofs_rows->get<Composite_Name_And_Part_mi_tag>();
+      dofs = &problem_ptr->numeredDofsRows->get<Composite_Name_And_Part_mi_tag>();
       break;
     case COL:
-      dofs = &problem_ptr->numered_dofs_cols->get<Composite_Name_And_Part_mi_tag>();
+      dofs = &problem_ptr->numeredDofsCols->get<Composite_Name_And_Part_mi_tag>();
       break;
     default:
      SETERRQ(cOmm,MOFEM_DATA_INCONSISTENCY,"not implemented");
