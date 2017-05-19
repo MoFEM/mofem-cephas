@@ -78,6 +78,8 @@ struct ComposedProblemsData {
   * This is low level structure with information about problem, what elements
   * compose problem and what dofs are on rows and columns.
   *
+  * \todo fix names folloing name convention
+  *
   */
 struct Problem {
 
