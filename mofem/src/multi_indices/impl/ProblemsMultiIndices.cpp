@@ -40,8 +40,8 @@ Problem::Problem(Interface &moab,const EntityHandle meshset):
   meshset(meshset),
   numeredDofsRows(boost::shared_ptr<NumeredDofEntity_multiIndex>(new NumeredDofEntity_multiIndex())),
   numeredDofsCols(boost::shared_ptr<NumeredDofEntity_multiIndex>(new NumeredDofEntity_multiIndex())),
-  numered_dofs_rows(numeredDofsRows), // this is deprecated
-  numered_dofs_cols(numeredDofsCols), // this is deprecated
+  // numered_dofs_rows(numeredDofsRows), // this is deprecated
+  // numered_dofs_cols(numeredDofsCols), // this is deprecated
   sequenceRowDofContainer(boost::make_shared<SequenceDofContainer>()),
   sequenceColDofContainer(boost::make_shared<SequenceDofContainer>()) {
   ErrorCode rval;

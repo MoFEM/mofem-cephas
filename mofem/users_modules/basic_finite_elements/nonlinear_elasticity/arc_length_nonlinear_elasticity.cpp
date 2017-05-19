@@ -389,7 +389,7 @@ int main(int argc, char *argv[]) {
 
         PetscErrorCode potsProcessLoadPath() {
           PetscFunctionBegin;
-          boost::shared_ptr<NumeredDofEntity_multiIndex> numered_dofs_rows = problemPtr->numered_dofs_rows;
+          boost::shared_ptr<NumeredDofEntity_multiIndex> numered_dofs_rows = problemPtr->getNumeredDofsRows();
           Range::iterator nit = nodeSet.begin();
           for(;nit!=nodeSet.end();nit++) {
             NumeredDofEntityByEnt::iterator dit,hi_dit;
