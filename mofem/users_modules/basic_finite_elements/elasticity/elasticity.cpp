@@ -11,11 +11,11 @@
  - take into account gravitational body forces
  - take in account fluid pressure
  - can work with higher order geometry definition
- - works on distributed messes
+ - works on distributed meshes
  - multi-grid solver where each grid level is approximation order level
  - each mesh block can have different material parameters and approximation order
 
-See example how code can be used \cite jordi:2017, 
+See example how code can be used \cite jordi:2017,
  \image html SquelaDamExampleByJordi.png "Example what you can do with this code. Analysis of the arch dam of Susqueda, located in Catalonia (Spain)" width=800px
 
  This is an example of application code; it does not show how elements are implemented. Example presents how to:
@@ -27,7 +27,7 @@ See example how code can be used \cite jordi:2017,
  - save results
 
 
- If you like to see how to finite elements, material, are other parts of the code  are implemented see
+ If you like to see how to implement finite elements, material, are other parts of the code, look here;
  - Hooke material, see \ref Hooke
  - Thermal-stress assembly, see \ref  ThermalElement
  - Body forces element, see \ref BodyFroceConstantField
