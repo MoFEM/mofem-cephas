@@ -17,5 +17,5 @@ Contact: [cmatgu@googlegroups.com](cmatgu@googlegroups.com)
 
 Tests results are submitted to CDash.
 
-- **Pippelines**: [![build-status](https://bitbucket-badges.useast.atlassian.io/badge/likask/mofem-cephas.svg)](https://bitbucket.org/likask/mofem-cephas/addon/pipelines/home) 
+- **Pipelines**: [![build-status](https://bitbucket-badges.useast.atlassian.io/badge/likask/mofem-cephas.svg)](https://bitbucket.org/likask/mofem-cephas/addon/pipelines/home) 
 - **CDash**: [CDash](http://cdash.eng.gla.ac.uk/cdash/)
