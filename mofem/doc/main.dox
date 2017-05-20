@@ -32,6 +32,12 @@ ParaView for post-processing.
 <a href="https://doi.org/10.5281/zenodo.438712"><img src="https://zenodo.org/badge/DOI/10.5281/zenodo.438712.svg" alt="DOI"></a>
 \endhtmlonly
 
+- Build & testing status:
+\htmlonly
+<a href="http://cdash.eng.gla.ac.uk/cdash/">
+	<img src="https://bitbucket-badges.useast.atlassian.io/badge/likask/mofem-cephas.svg" alt="Pippelines">
+</a>
+\endhtmlonly
 - Contact: <cmatgu@googlegroups.com>
 - Discussion channel: <https://mofem.slack.com/>
 - Version repository: <https://bitbucket.org/likask/mofem-cephas>
