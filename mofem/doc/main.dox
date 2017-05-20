@@ -58,6 +58,8 @@ multiple degrees of freedom and/or different scales.
 
 \subsection mofem_features Properties and features
 
+\image html FigExamples.png width=1000px
+
 \subsubsection mofem_features_ho Higher-order finite element spaces
 
 - MoFEM supports wide range of spaces, L2, H1, H-div and H-curl
@@ -128,6 +130,10 @@ List of third party libraries and packages used by MoFEM:
 \section twitter_and_google_plus Recent developments and news
 
 \htmlinclude doc/twitter_widged.html
+
+\section Acknowledgments
+
+\image html Acknowledgments.png width=1000.px
 
 \section legal_stuff Legal stuff
 
