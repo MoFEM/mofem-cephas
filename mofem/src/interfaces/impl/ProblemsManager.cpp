@@ -413,7 +413,7 @@ namespace MoFEM {
         );
         dofs_array->back().dofIdx = (*problem_ptr->tag_nbdof_data_row)++;
       }
-      problem_ptr->numered_dofs_rows->insert(dofs_shared_array.begin(),dofs_shared_array.end());
+      problem_ptr->numeredDofsRows->insert(dofs_shared_array.begin(),dofs_shared_array.end());
     }
 
     // Add col dofs to problem
@@ -453,11 +453,11 @@ namespace MoFEM {
         );
         dofs_array->back().dofIdx = (*problem_ptr->tag_nbdof_data_col)++;
       }
-      problem_ptr->numered_dofs_cols->insert(
+      problem_ptr->numeredDofsCols->insert(
         dofs_shared_array.begin(),dofs_shared_array.end()
       );
     } else {
-      problem_ptr->numered_dofs_cols = problem_ptr->numered_dofs_rows;
+      problem_ptr->numeredDofsCols = problem_ptr->numeredDofsRows;
       *(problem_ptr->tag_local_nbdof_data_col) = *(problem_ptr->tag_local_nbdof_data_row);
       *(problem_ptr->tag_nbdof_data_col) = *(problem_ptr->tag_nbdof_data_row);
     }
@@ -466,7 +466,7 @@ namespace MoFEM {
     if(verb>0) {
       PetscSynchronizedPrintf(m_field.get_comm(),"Problem %s Nb. rows %u Nb. cols %u\n",
       problem_ptr->getName().c_str(),
-      problem_ptr->numered_dofs_rows->size(),problem_ptr->numered_dofs_cols->size());
+      problem_ptr->numeredDofsRows->size(),problem_ptr->numeredDofsCols->size());
     }
     if(verb>1) {
       EntFiniteElement_multiIndex::iterator miit = fe_ent_ptr->begin();
@@ -480,15 +480,15 @@ namespace MoFEM {
       }
       ss << "rank " << m_field.get_comm_rank() << " ";
       ss << "FEs row dofs "<< *problem_ptr << " Nb. row dof " << problem_ptr->getNbDofsRow() << std::endl;
-      NumeredDofEntity_multiIndex::iterator miit_dd_row = problem_ptr->numered_dofs_rows->begin();
-      for(;miit_dd_row!=problem_ptr->numered_dofs_rows->end();miit_dd_row++) {
+      NumeredDofEntity_multiIndex::iterator miit_dd_row = problem_ptr->numeredDofsRows->begin();
+      for(;miit_dd_row!=problem_ptr->numeredDofsRows->end();miit_dd_row++) {
         ss << "rank " << m_field.get_comm_rank() << " ";
         ss<<**miit_dd_row<<std::endl;
       }
       ss << "rank " << m_field.get_comm_rank() << " ";
       ss << "FEs col dofs "<< *problem_ptr << " Nb. col dof " << problem_ptr->getNbDofsCol() << std::endl;
-      NumeredDofEntity_multiIndex::iterator miit_dd_col = problem_ptr->numered_dofs_cols->begin();
-      for(;miit_dd_col!=problem_ptr->numered_dofs_cols->end();miit_dd_col++) {
+      NumeredDofEntity_multiIndex::iterator miit_dd_col = problem_ptr->numeredDofsCols->begin();
+      for(;miit_dd_col!=problem_ptr->numeredDofsCols->end();miit_dd_col++) {
         ss << "rank " << m_field.get_comm_rank() << " ";
         ss<<**miit_dd_col<<std::endl;
       }
@@ -550,9 +550,9 @@ namespace MoFEM {
     int loop_size = 2;
     if(square_matrix) {
       loop_size = 1;
-      problem_ptr->numered_dofs_cols = problem_ptr->numered_dofs_rows;
-    } else if(problem_ptr->numered_dofs_cols == problem_ptr->numered_dofs_rows) {
-      problem_ptr->numered_dofs_cols = boost::shared_ptr<NumeredDofEntity_multiIndex>(
+      problem_ptr->numeredDofsCols = problem_ptr->numeredDofsRows;
+    } else if(problem_ptr->numeredDofsCols == problem_ptr->numeredDofsRows) {
+      problem_ptr->numeredDofsCols = boost::shared_ptr<NumeredDofEntity_multiIndex>(
         new NumeredDofEntity_multiIndex()
       );
     }
@@ -588,7 +588,7 @@ namespace MoFEM {
     //add dofs for rows and cols and set ownership
     DofEntity_multiIndex_active_view* dofs_ptr[] = { &dofs_rows, &dofs_cols };
     boost::shared_ptr<NumeredDofEntity_multiIndex> numered_dofs_ptr[] = {
-      problem_ptr->numered_dofs_rows, problem_ptr->numered_dofs_cols
+      problem_ptr->numeredDofsRows, problem_ptr->numeredDofsCols
     };
     int* nbdof_ptr[] = {
       problem_ptr->tag_nbdof_data_row, problem_ptr->tag_nbdof_data_col
@@ -1008,7 +1008,7 @@ namespace MoFEM {
           numered_dofs_ptr[0]->size(),numered_dofs_ptr[1]->size()
         );
       }
-      if(problem_ptr->numered_dofs_rows!=problem_ptr->numered_dofs_cols) {
+      if(problem_ptr->numeredDofsRows!=problem_ptr->numeredDofsCols) {
         SETERRQ(
           PETSC_COMM_SELF,
           MOFEM_DATA_INCONSISTENCY,
@@ -1067,13 +1067,13 @@ namespace MoFEM {
 
     // get dofs for row & columns for out problem,
     boost::shared_ptr<NumeredDofEntity_multiIndex> out_problem_dofs[] = {
-      out_problem_it->numered_dofs_rows,
-      out_problem_it->numered_dofs_cols
+      out_problem_it->numeredDofsRows,
+      out_problem_it->numeredDofsCols
     };
     // get dofs for row & columns for main problem
     boost::shared_ptr<NumeredDofEntity_multiIndex> main_problem_dofs[] = {
-      main_problem_it->numered_dofs_rows,
-      main_problem_it->numered_dofs_cols
+      main_problem_it->numeredDofsRows,
+      main_problem_it->numeredDofsCols
     };
     // get local indices counter
     int* nb_local_dofs[] = {
@@ -1251,7 +1251,7 @@ namespace MoFEM {
     }
 
     if(square_matrix) {
-      out_problem_it->numered_dofs_cols = out_problem_it->numered_dofs_rows;
+      out_problem_it->numeredDofsCols = out_problem_it->numeredDofsRows;
       *(out_problem_it->tag_local_nbdof_data_col) = *(out_problem_it->tag_local_nbdof_data_row);
       *(out_problem_it->tag_nbdof_data_col) = *(out_problem_it->tag_nbdof_data_row);
       out_problem_it->getSubData()->colIs = out_problem_it->getSubData()->rowIs;
@@ -1314,8 +1314,8 @@ namespace MoFEM {
 
     // Get DOFs for row & columns for out problem,
     boost::shared_ptr<NumeredDofEntity_multiIndex> out_problem_dofs[] = {
-      out_problem_it->numered_dofs_rows,
-      out_problem_it->numered_dofs_cols
+      out_problem_it->numeredDofsRows,
+      out_problem_it->numeredDofsCols
     };
     // Get local indices counter
     int* nb_local_dofs[] = {
@@ -1365,18 +1365,18 @@ namespace MoFEM {
         if(ss==0) {
           *nb_dofs[ss] += add_prb_ptr[ss]->back()->getNbDofsRow();
           *nb_local_dofs[ss] += add_prb_ptr[ss]->back()->getNbLocalDofsRow();
-          nb_dofs_reserve[ss] += add_prb_ptr[ss]->back()->numered_dofs_rows->size();
+          nb_dofs_reserve[ss] += add_prb_ptr[ss]->back()->numeredDofsRows->size();
         } else {
           *nb_dofs[ss] += add_prb_ptr[ss]->back()->getNbDofsCol();
           *nb_local_dofs[ss] += add_prb_ptr[ss]->back()->getNbLocalDofsCol();
-          nb_dofs_reserve[ss] += add_prb_ptr[ss]->back()->numered_dofs_cols->size();
+          nb_dofs_reserve[ss] += add_prb_ptr[ss]->back()->numeredDofsCols->size();
         }
       }
     }
     if(square_matrix) {
       add_prb_ptr[1]->reserve(add_prb_ptr[0]->size());
       add_prb_is[1]->reserve(add_prb_ptr[0]->size());
-      out_problem_it->numered_dofs_cols = out_problem_it->numered_dofs_rows;
+      out_problem_it->numeredDofsCols = out_problem_it->numeredDofsRows;
       *nb_dofs[1] = *nb_dofs[0];
       *nb_local_dofs[1] = *nb_local_dofs[0];
     }
@@ -1405,11 +1405,11 @@ namespace MoFEM {
         int nb_local_dofs = (*add_prb_ptr[ss])[pp]->getNbLocalDofsRow();
         ierr = PetscMalloc(nb_local_dofs*sizeof(int),&dofs_out_idx_ptr); CHKERRQ(ierr);
         if(ss == 0) {
-          dit = (*add_prb_ptr[ss])[pp]->numered_dofs_rows->get<PetscGlobalIdx_mi_tag>().begin();
-          hi_dit = (*add_prb_ptr[ss])[pp]->numered_dofs_rows->get<PetscGlobalIdx_mi_tag>().end();
+          dit = (*add_prb_ptr[ss])[pp]->numeredDofsRows->get<PetscGlobalIdx_mi_tag>().begin();
+          hi_dit = (*add_prb_ptr[ss])[pp]->numeredDofsRows->get<PetscGlobalIdx_mi_tag>().end();
         } else {
-          dit = (*add_prb_ptr[ss])[pp]->numered_dofs_cols->get<PetscGlobalIdx_mi_tag>().begin();
-          hi_dit = (*add_prb_ptr[ss])[pp]->numered_dofs_cols->get<PetscGlobalIdx_mi_tag>().end();
+          dit = (*add_prb_ptr[ss])[pp]->numeredDofsCols->get<PetscGlobalIdx_mi_tag>().begin();
+          hi_dit = (*add_prb_ptr[ss])[pp]->numeredDofsCols->get<PetscGlobalIdx_mi_tag>().end();
         }
         int is_nb = 0;
         for(;dit!=hi_dit;dit++) {
@@ -1479,9 +1479,9 @@ namespace MoFEM {
         dofs_shared_array.push_back(boost::shared_ptr<NumeredDofEntity>(dofs_array[ss],&*dit));
       }
       if(ss==0) {
-        out_problem_it->numered_dofs_rows->insert(dofs_shared_array.begin(),dofs_shared_array.end());
+        out_problem_it->numeredDofsRows->insert(dofs_shared_array.begin(),dofs_shared_array.end());
       } else {
-        out_problem_it->numered_dofs_cols->insert(dofs_shared_array.begin(),dofs_shared_array.end());
+        out_problem_it->numeredDofsCols->insert(dofs_shared_array.begin(),dofs_shared_array.end());
       }
     }
 
@@ -1499,9 +1499,9 @@ namespace MoFEM {
       boost::shared_ptr<NumeredDofEntity_multiIndex> dofs_ptr;
       NumeredDofEntity_multiIndex::index<PetscGlobalIdx_mi_tag>::type::iterator dit,hi_dit;
       if(ss == 0) {
-        dofs_ptr = out_problem_it->numered_dofs_rows;
+        dofs_ptr = out_problem_it->numeredDofsRows;
       } else {
-        dofs_ptr = out_problem_it->numered_dofs_cols;
+        dofs_ptr = out_problem_it->numeredDofsCols;
       }
       dit = dofs_ptr->get<PetscGlobalIdx_mi_tag>().begin();
       hi_dit = dofs_ptr->get<PetscGlobalIdx_mi_tag>().end();
@@ -1615,8 +1615,8 @@ namespace MoFEM {
       SETERRQ1(PETSC_COMM_SELF,1,"problem < %s > is not found (top tip: check spelling)",name.c_str());
     }
     typedef boost::multi_index::index<NumeredDofEntity_multiIndex,Idx_mi_tag>::type NumeredDofEntitysByIdx;
-    NumeredDofEntitysByIdx &dofs_row_by_idx = p_miit->numered_dofs_rows->get<Idx_mi_tag>();
-    NumeredDofEntitysByIdx &dofs_col_by_idx = p_miit->numered_dofs_cols->get<Idx_mi_tag>();
+    NumeredDofEntitysByIdx &dofs_row_by_idx = p_miit->numeredDofsRows->get<Idx_mi_tag>();
+    NumeredDofEntitysByIdx &dofs_col_by_idx = p_miit->numeredDofsCols->get<Idx_mi_tag>();
     boost::multi_index::index<NumeredDofEntity_multiIndex,Idx_mi_tag>::type::iterator miit_row,hi_miit_row;
     boost::multi_index::index<NumeredDofEntity_multiIndex,Idx_mi_tag>::type::iterator miit_col,hi_miit_col;
     DofIdx &nb_row_local_dofs = *((DofIdx*)p_miit->tag_local_nbdof_data_row);
@@ -1629,7 +1629,7 @@ namespace MoFEM {
     nb_col_ghost_dofs = 0;
 
     bool square_matrix = false;
-    if(p_miit->numered_dofs_rows==p_miit->numered_dofs_cols) {
+    if(p_miit->numeredDofsRows==p_miit->numeredDofsCols) {
       square_matrix = true;
     }
 
@@ -1792,7 +1792,7 @@ namespace MoFEM {
     }
 
     bool square_matrix = false;
-    if(p_miit->numered_dofs_rows==p_miit->numered_dofs_cols) {
+    if(p_miit->numeredDofsRows==p_miit->numeredDofsCols) {
       square_matrix = true;
     }
 
@@ -1801,11 +1801,11 @@ namespace MoFEM {
       // FIXME: This is for back compatibility, if deprecate interface function
       // build interfaces is removed, this part of the code will be obsolete
       NumeredDofEntitysByIdx::iterator mit_row,hi_mit_row;
-      mit_row = p_miit->numered_dofs_rows->get<Idx_mi_tag>().begin();
-      hi_mit_row = p_miit->numered_dofs_rows->get<Idx_mi_tag>().end();
+      mit_row = p_miit->numeredDofsRows->get<Idx_mi_tag>().begin();
+      hi_mit_row = p_miit->numeredDofsRows->get<Idx_mi_tag>().end();
       NumeredDofEntitysByIdx::iterator mit_col,hi_mit_col;
-      mit_col = p_miit->numered_dofs_cols->get<Idx_mi_tag>().begin();
-      hi_mit_col = p_miit->numered_dofs_cols->get<Idx_mi_tag>().end();
+      mit_col = p_miit->numeredDofsCols->get<Idx_mi_tag>().begin();
+      hi_mit_col = p_miit->numeredDofsCols->get<Idx_mi_tag>().end();
       for(;mit_row!=hi_mit_row;mit_row++,mit_col++) {
         if(mit_col==hi_mit_col) {
           SETERRQ(
@@ -1839,7 +1839,7 @@ namespace MoFEM {
 
       // Set petsc global indices
       NumeredDofEntitysByIdx &dofs_row_by_idx_no_const =
-      const_cast<NumeredDofEntitysByIdx&>(p_miit->numered_dofs_rows->get<Idx_mi_tag>());
+      const_cast<NumeredDofEntitysByIdx&>(p_miit->numeredDofsRows->get<Idx_mi_tag>());
       int &nb_row_local_dofs = *((int*)p_miit->tag_local_nbdof_data_row);
       int &nb_row_ghost_dofs = *((int*)p_miit->tag_ghost_nbdof_data_row);
       nb_row_local_dofs = 0;
@@ -1873,7 +1873,7 @@ namespace MoFEM {
         nb_col_ghost_dofs = nb_row_ghost_dofs;
       } else {
         NumeredDofEntitysByIdx &dofs_col_by_idx_no_const =
-        const_cast<NumeredDofEntitysByIdx&>(p_miit->numered_dofs_cols->get<Idx_mi_tag>());
+        const_cast<NumeredDofEntitysByIdx&>(p_miit->numeredDofsCols->get<Idx_mi_tag>());
         NumeredDofEntitysByIdx::iterator miit_dofs_col = dofs_col_by_idx_no_const.begin();
         nb_col_local_dofs = 0;
         nb_col_ghost_dofs = 0;
@@ -1973,7 +1973,7 @@ namespace MoFEM {
         problem_for_rows.c_str()
       );
     }
-    const boost::shared_ptr<NumeredDofEntity_multiIndex> dofs_row = p_miit_row->numered_dofs_rows;
+    const boost::shared_ptr<NumeredDofEntity_multiIndex> dofs_row = p_miit_row->numeredDofsRows;
 
     //find p_mit_col
     ProblemByName::iterator p_miit_col = problems_by_name.find(problem_for_cols);
@@ -1985,11 +1985,11 @@ namespace MoFEM {
         problem_for_cols.c_str()
       );
     }
-    boost::shared_ptr<NumeredDofEntity_multiIndex> dofs_col = p_miit_col->numered_dofs_cols;
+    boost::shared_ptr<NumeredDofEntity_multiIndex> dofs_col = p_miit_col->numeredDofsCols;
 
     bool copy[] = { copy_rows, copy_cols };
     boost::shared_ptr<NumeredDofEntity_multiIndex> composed_dofs[] = {
-      p_miit->numered_dofs_rows, p_miit->numered_dofs_cols
+      p_miit->numeredDofsRows, p_miit->numeredDofsCols
     };
 
     int* nb_local_dofs[] = { p_miit->tag_local_nbdof_data_row, p_miit->tag_local_nbdof_data_col };
@@ -2129,14 +2129,14 @@ namespace MoFEM {
       // std::ostringstream ss;
       std::cout << "rank = " << m_field.get_comm_rank() << " FEs row dofs "<< *problem_ptr << " Nb. row dof " << problem_ptr->getNbDofsRow()
       << " Nb. local dof " << problem_ptr->getNbLocalDofsRow() << std::endl;
-      NumeredDofEntity_multiIndex::iterator miit_dd_row = problem_ptr->numered_dofs_rows->begin();
-      for(;miit_dd_row!=problem_ptr->numered_dofs_rows->end();miit_dd_row++) {
+      NumeredDofEntity_multiIndex::iterator miit_dd_row = problem_ptr->numeredDofsRows->begin();
+      for(;miit_dd_row!=problem_ptr->numeredDofsRows->end();miit_dd_row++) {
         std::cout<<**miit_dd_row<<std::endl;
       }
       std::cout << "rank = " << m_field.get_comm_rank() << " FEs col dofs "<< *problem_ptr << " Nb. col dof " << problem_ptr->getNbDofsCol()
       << " Nb. local dof " << problem_ptr->getNbLocalDofsCol() << std::endl;
-      NumeredDofEntity_multiIndex::iterator miit_dd_col = problem_ptr->numered_dofs_cols->begin();
-      for(;miit_dd_col!=problem_ptr->numered_dofs_cols->end();miit_dd_col++) {
+      NumeredDofEntity_multiIndex::iterator miit_dd_col = problem_ptr->numeredDofsCols->begin();
+      for(;miit_dd_col!=problem_ptr->numeredDofsCols->end();miit_dd_col++) {
         std::cout<<**miit_dd_col<<std::endl;
       }
       // PetscSynchronizedPrintf(comm,ss.str().c_str());
@@ -2153,8 +2153,8 @@ namespace MoFEM {
       typedef NumeredDofEntity_multiIndex::index<Idx_mi_tag>::type NumeredDofEntitysByIdx;
       NumeredDofEntitysByIdx::iterator dit,hi_dit;
       const NumeredDofEntitysByIdx* numered_dofs_ptr[] = {
-        &(problem_ptr->numered_dofs_rows->get<Idx_mi_tag>()),
-        &(problem_ptr->numered_dofs_cols->get<Idx_mi_tag>())
+        &(problem_ptr->numeredDofsRows->get<Idx_mi_tag>()),
+        &(problem_ptr->numeredDofsCols->get<Idx_mi_tag>())
       };
 
       int* nbdof_ptr[] = {
@@ -2281,7 +2281,7 @@ namespace MoFEM {
 
     // Check if dofs and columns are the same, i.e. structurally symmetric problem
     bool do_cols_prob = true;
-    if(p_miit->numered_dofs_rows == p_miit->numered_dofs_cols) {
+    if(p_miit->numeredDofsRows == p_miit->numeredDofsCols) {
       do_cols_prob = false;
     }
 
@@ -2343,7 +2343,7 @@ namespace MoFEM {
           // count partition of the dofs in row, the larges dofs with given partition
           // is used to set partition of the element
           ierr = (*efit)->getRowDofView(
-              *(p_miit->numered_dofs_rows),rows_view,moab::Interface::UNION
+              *(p_miit->numeredDofsRows),rows_view,moab::Interface::UNION
           ); CHKERRQ(ierr);
           std::vector<int> parts(m_field.get_comm_size(),0);
           NumeredDofEntity_multiIndex_uid_view_ordered::iterator viit_rows;
@@ -2379,13 +2379,13 @@ namespace MoFEM {
             if(part_from_moab) {
               // get row_view
               ierr = (*efit)->getRowDofView(
-                *(p_miit->numered_dofs_rows),*dofs_view[ss],moab::Interface::UNION
+                *(p_miit->numeredDofsRows),*dofs_view[ss],moab::Interface::UNION
               ); CHKERRQ(ierr);
             }
           } else {
             // get cols_views
             ierr = (*efit)->getColDofView(
-              *(p_miit->numered_dofs_cols),*dofs_view[ss],moab::Interface::UNION
+              *(p_miit->numeredDofsCols),*dofs_view[ss],moab::Interface::UNION
             ); CHKERRQ(ierr);
           }
 
@@ -2518,11 +2518,11 @@ namespace MoFEM {
       };
       NumeredDofEntity_multiIndex_uid_view_ordered *ghost_idx_view[2] = { &ghost_idx_col_view, &ghost_idx_row_view };
       NumeredDofEntityByUId *dof_by_uid_no_const[2] = {
-        &p_miit->numered_dofs_cols->get<Unique_mi_tag>(),
-        &p_miit->numered_dofs_rows->get<Unique_mi_tag>()
+        &p_miit->numeredDofsCols->get<Unique_mi_tag>(),
+        &p_miit->numeredDofsRows->get<Unique_mi_tag>()
       };
       int loop_size = 2;
-      if(p_miit->numered_dofs_cols==p_miit->numered_dofs_rows) {
+      if(p_miit->numeredDofsCols==p_miit->numeredDofsRows) {
         loop_size = 1;
       }
       for(int ss = 0;ss<loop_size;ss++) {
@@ -2552,8 +2552,8 @@ namespace MoFEM {
       << " Nb. row ghost dof " << p_miit->getNbGhostDofsRow()
       << " Nb. local dof " << p_miit->getNbLocalDofsRow() << std::endl;
       if(verb>1) {
-        NumeredDofEntity_multiIndex::iterator miit_dd_col = p_miit->numered_dofs_cols->begin();
-        for(;miit_dd_col!=p_miit->numered_dofs_cols->end();miit_dd_col++) {
+        NumeredDofEntity_multiIndex::iterator miit_dd_col = p_miit->numeredDofsCols->begin();
+        for(;miit_dd_col!=p_miit->numeredDofsCols->end();miit_dd_col++) {
           if((*miit_dd_col)->pArt==(unsigned int)m_field.get_comm_rank()) continue;
           if((*miit_dd_col)->petscLocalDofIdx==(DofIdx)-1) continue;
           ss<<*(*miit_dd_col)<<std::endl;

@@ -57,7 +57,7 @@ struct FaceElementForcesAndSourcesCore: public ForcesAndSurcesCore {
   DerivedDataForcesAndSurcesCore derivedDataL2;
   DataForcesAndSurcesCore dataNoField,dataNoFieldCol;
 
-  std::string meshPositionsFieldName;
+  std::string meshPositionsFieldName; ///< Name of the field with geometry
 
   MatrixDouble hoCoordsAtGaussPts;
   MatrixDouble nOrmals_at_GaussPt;
@@ -316,6 +316,16 @@ struct FaceElementForcesAndSourcesCore: public ForcesAndSurcesCore {
       return static_cast<FaceElementForcesAndSourcesCore*>(ptrFE);
     }
 
+    /**
+     *
+     * User call this function to loop over elements on the side of face. This
+     * funtion cals MoFEM::VolumeElementForcesAndSourcesCoreOnSide with is
+     * operator to do calulations
+     *
+     * @param  fe_name Name of the element
+     * @param  method  Finite element object
+     * @return         error code
+     */
     PetscErrorCode loopSideVolumes(
       const string &fe_name,VolumeElementForcesAndSourcesCoreOnSide &method
     );

@@ -191,12 +191,12 @@ PetscErrorCode SeriesRecorder::record_problem(const std::string& serie_name,cons
   switch (rc) {
     case ROW:
       ierr = const_cast<FieldSeries*>(&*sit)->push_dofs(
-        problemPtr->numered_dofs_rows->begin(),problemPtr->numered_dofs_rows->end()
+        problemPtr->numeredDofsRows->begin(),problemPtr->numeredDofsRows->end()
       ); CHKERRQ(ierr);
       break;
     case COL:
       ierr = const_cast<FieldSeries*>(&*sit)->push_dofs(
-        problemPtr->numered_dofs_cols->begin(),problemPtr->numered_dofs_cols->end()
+        problemPtr->numeredDofsCols->begin(),problemPtr->numeredDofsCols->end()
       ); CHKERRQ(ierr);
       break;
     default:
