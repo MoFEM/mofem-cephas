@@ -26,12 +26,10 @@ provided by MoAB.  The current version of MoFEM has full support for
 CUBIT/TRELIS, TetGEN, Salome/Code_Aster (MED format) for pre-processing and
 ParaView for post-processing.
 
-\ref mofem_citation
-
+- \ref mofem_citation
 \htmlonly
 <a href="https://doi.org/10.5281/zenodo.438712"><img src="https://zenodo.org/badge/DOI/10.5281/zenodo.438712.svg" alt="DOI"></a>
 \endhtmlonly
-
 - Build & testing status:
 \htmlonly
 <a href="http://cdash.eng.gla.ac.uk/cdash/">
