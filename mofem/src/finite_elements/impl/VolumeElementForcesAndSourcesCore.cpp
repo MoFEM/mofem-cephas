@@ -934,11 +934,11 @@ PetscErrorCode VolumeElementForcesAndSourcesCoreOnSide::setGaussPts(int order) {
 }
 
 VectorDouble& VolumeElementForcesAndSourcesCoreOnSide::UserDataOperator::getNormal() {
-  return getFaceFEPtr()->normal;
+  return getFaceFEPtr()->nOrmal;
 }
 
 MatrixDouble& VolumeElementForcesAndSourcesCoreOnSide::UserDataOperator::getNormalsAtGaussPt() {
-  return getFaceFEPtr()->nOrmals_at_GaussPt;
+  return getFaceFEPtr()->normalsAtGaussPt;
 }
 
 MatrixDouble& VolumeElementForcesAndSourcesCoreOnSide::UserDataOperator::getFaceCoordsAtGaussPts() {

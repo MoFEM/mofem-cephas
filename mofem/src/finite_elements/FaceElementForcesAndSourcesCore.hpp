@@ -42,7 +42,7 @@ struct FaceElementForcesAndSourcesCore: public ForcesAndSurcesCore {
   double aRea;;
   int num_nodes;
   const EntityHandle* conn;
-  VectorDouble normal,tangent1,tangent2;
+  VectorDouble nOrmal,tangentOne,tangentTwo;
   VectorDouble coords;
   MatrixDouble gaussPts;
   MatrixDouble coordsAtGaussPts;
@@ -60,9 +60,9 @@ struct FaceElementForcesAndSourcesCore: public ForcesAndSurcesCore {
   std::string meshPositionsFieldName; ///< Name of the field with geometry
 
   MatrixDouble hoCoordsAtGaussPts;
-  MatrixDouble nOrmals_at_GaussPt;
-  MatrixDouble tAngent1_at_GaussPt;
-  MatrixDouble tAngent2_at_GaussPt;
+  MatrixDouble normalsAtGaussPt;
+  MatrixDouble tangentOneAtGaussPt;
+  MatrixDouble tangentTwoAtGaussPt;
   OpGetCoordsAndNormalsOnFace opHOCoordsAndNormals;
   OpSetContravariantPiolaTransoformOnTriangle opContravariantTransoform;
   OpSetCovariantPiolaTransoformOnTriangle opCovariantTransoform;
@@ -76,13 +76,13 @@ struct FaceElementForcesAndSourcesCore: public ForcesAndSurcesCore {
   dataNoField(MBTRI),dataNoFieldCol(MBTRI),
   meshPositionsFieldName("MESH_NODE_POSITIONS"),
   opHOCoordsAndNormals(
-    hoCoordsAtGaussPts,nOrmals_at_GaussPt,tAngent1_at_GaussPt,tAngent2_at_GaussPt
+    hoCoordsAtGaussPts,normalsAtGaussPt,tangentOneAtGaussPt,tangentTwoAtGaussPt
   ),
-  opContravariantTransoform(normal,nOrmals_at_GaussPt),
+  opContravariantTransoform(nOrmal,normalsAtGaussPt),
   opCovariantTransoform(
-    normal,nOrmals_at_GaussPt,
-    tangent1,tAngent1_at_GaussPt,
-    tangent2,tAngent2_at_GaussPt
+    nOrmal,normalsAtGaussPt,
+    tangentOne,tangentOneAtGaussPt,
+    tangentTwo,tangentTwoAtGaussPt
   ) {
   }
 
@@ -108,19 +108,19 @@ struct FaceElementForcesAndSourcesCore: public ForcesAndSurcesCore {
     /** \brief get triangle normal
      */
     inline VectorDouble& getNormal() {
-      return static_cast<FaceElementForcesAndSourcesCore*>(ptrFE)->normal;
+      return static_cast<FaceElementForcesAndSourcesCore*>(ptrFE)->nOrmal;
     }
 
     /** \brief get triangle tangent 1
      */
     inline VectorDouble& getTangent1() {
-      return static_cast<FaceElementForcesAndSourcesCore*>(ptrFE)->tangent1;
+      return static_cast<FaceElementForcesAndSourcesCore*>(ptrFE)->tangentOne;
     }
 
     /** \brief get triangle tangent 2
      */
     inline VectorDouble& getTangent2() {
-      return static_cast<FaceElementForcesAndSourcesCore*>(ptrFE)->tangent2;
+      return static_cast<FaceElementForcesAndSourcesCore*>(ptrFE)->tangentTwo;
     }
 
     /** \brief get normal as tensor
@@ -130,14 +130,14 @@ struct FaceElementForcesAndSourcesCore: public ForcesAndSurcesCore {
       return FTensor::Tensor1<double*,3>(ptr,&ptr[1],&ptr[2]);
     }
 
-    /** \brief get tangent1 as tensor
+    /** \brief get tangentOne as tensor
     */
     inline FTensor::Tensor1<double*,3> getTensor1Tangent1() {
       double *ptr = &*getTangent1().data().begin();
       return FTensor::Tensor1<double*,3>(ptr,&ptr[1],&ptr[2]);
     }
 
-    /** \brief get tangent2 as tensor
+    /** \brief get tangentTwo as tensor
     */
     inline FTensor::Tensor1<double*,3> getTensor2Tangent1() {
       double *ptr = &*getTangent2().data().begin();
@@ -238,7 +238,7 @@ struct FaceElementForcesAndSourcesCore: public ForcesAndSurcesCore {
 
      */
     inline MatrixDouble& getNormalsAtGaussPt() {
-      return static_cast<FaceElementForcesAndSourcesCore*>(ptrFE)->nOrmals_at_GaussPt;
+      return static_cast<FaceElementForcesAndSourcesCore*>(ptrFE)->normalsAtGaussPt;
     }
 
     /** \brief if higher order geometry return normals at Gauss pts.
@@ -246,7 +246,7 @@ struct FaceElementForcesAndSourcesCore: public ForcesAndSurcesCore {
       * \param gg gauss point number
       */
     inline ublas::matrix_row<MatrixDouble > getNormalsAtGaussPt(const int gg) {
-      return ublas::matrix_row<MatrixDouble >(static_cast<FaceElementForcesAndSourcesCore*>(ptrFE)->nOrmals_at_GaussPt,gg);
+      return ublas::matrix_row<MatrixDouble >(static_cast<FaceElementForcesAndSourcesCore*>(ptrFE)->normalsAtGaussPt,gg);
     }
 
     /** \brief if higher order geometry return tangent vector to triangle at Gauss pts.
@@ -256,7 +256,7 @@ struct FaceElementForcesAndSourcesCore: public ForcesAndSurcesCore {
 
      */
     inline MatrixDouble& getTangent1AtGaussPt() {
-      return static_cast<FaceElementForcesAndSourcesCore*>(ptrFE)->tAngent1_at_GaussPt;
+      return static_cast<FaceElementForcesAndSourcesCore*>(ptrFE)->tangentOneAtGaussPt;
     }
 
     /** \brief if higher order geometry return tangent vector to triangle at Gauss pts.
@@ -266,7 +266,7 @@ struct FaceElementForcesAndSourcesCore: public ForcesAndSurcesCore {
 
      */
     inline MatrixDouble& getTangent2AtGaussPt() {
-      return static_cast<FaceElementForcesAndSourcesCore*>(ptrFE)->tAngent2_at_GaussPt;
+      return static_cast<FaceElementForcesAndSourcesCore*>(ptrFE)->tangentTwoAtGaussPt;
     }
 
     /** \brief get normal at integration points
@@ -331,6 +331,54 @@ struct FaceElementForcesAndSourcesCore: public ForcesAndSurcesCore {
     );
 
   };
+
+
+  /**
+   * \brief Calculate element area and normal of the face
+   *
+   * Note that at that point is assumed that geometry is exclusively defined by
+   * corner nodes.
+   *
+   * @return Error code
+   */
+  virtual PetscErrorCode calculateAreaAndNormal();
+
+
+  int nbGaussPts; ///< Number of integration points
+
+  /**
+   * \brief Set integration points
+   * @return Error code
+   */
+  virtual PetscErrorCode setIntegartionPts();
+
+  /**
+   * \brief Determine approximation space and order of base functions
+   * @return Error code
+   */
+  virtual PetscErrorCode getSpaceBaseAndOrderOnElement();
+
+  /**
+   * \brief Calculate coordinate at integration points
+   * @return Error code
+   */
+  virtual PetscErrorCode calculateCoordinatesAtGaussPts();
+
+  /**
+   * \brief Calculate base functions
+   * @return Error code
+   */
+  virtual PetscErrorCode calculateBaseFunctionsOnElement();
+
+  /**
+   * \brieg Calculate normal on curved elements
+   *
+   *  Geometry is given by other field.
+   *
+   * @return error code
+   */
+  virtual PetscErrorCode calculateHoNormal();
+
 
   PetscErrorCode preProcess() {
     PetscFunctionBegin;

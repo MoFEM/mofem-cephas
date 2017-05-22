@@ -141,34 +141,88 @@ PetscErrorCode FaceElementForcesAndSourcesCore::UserDataOperator::loopSideVolume
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode FaceElementForcesAndSourcesCore::operator()() {
+PetscErrorCode FaceElementForcesAndSourcesCore::calculateAreaAndNormal() {
   PetscFunctionBegin;
+  EntityHandle ent = numeredEntFiniteElementPtr->getEnt();
+  rval = mField.get_moab().get_connectivity(ent,conn,num_nodes,true); CHKERRQ_MOAB(rval);
+  coords.resize(num_nodes*3,false);
+  rval = mField.get_moab().get_coords(conn,num_nodes,&*coords.data().begin()); CHKERRQ_MOAB(rval);
+  double diff_n[6];
+  ierr = ShapeDiffMBTRI(diff_n); CHKERRQ(ierr);
+  nOrmal.resize(3,false);
+  ierr = ShapeFaceNormalMBTRI(
+    diff_n,&*coords.data().begin(),&*nOrmal.data().begin()
+  ); CHKERRQ(ierr);
+  aRea = cblas_dnrm2(3,&*nOrmal.data().begin(),1)*0.5;
+  tangentOne.resize(3,false);
+  tangentTwo.resize(3,false);
+  for(int dd = 0;dd!=3;dd++) {
+    tangentOne[dd] = cblas_ddot(3,&diff_n[0],2,&coords[dd],3);
+    tangentTwo[dd] = cblas_ddot(3,&diff_n[1],2,&coords[dd],3);
+  }
+  PetscFunctionReturn(0);
+}
 
-  if(numeredEntFiniteElementPtr->getEntType() != MBTRI) PetscFunctionReturn(0);
-
-  // Calculate normal and tangent vectors for face geometry given by 3 nodes.
-
-  {
-    EntityHandle ent = numeredEntFiniteElementPtr->getEnt();
-    rval = mField.get_moab().get_connectivity(ent,conn,num_nodes,true); CHKERRQ_MOAB(rval);
-    coords.resize(num_nodes*3,false);
-    rval = mField.get_moab().get_coords(conn,num_nodes,&*coords.data().begin()); CHKERRQ_MOAB(rval);
-
-    double diff_n[6];
-    ierr = ShapeDiffMBTRI(diff_n); CHKERRQ(ierr);
-    normal.resize(3,false);
-    ierr = ShapeFaceNormalMBTRI(
-      diff_n,&*coords.data().begin(),&*normal.data().begin()
-    ); CHKERRQ(ierr);
-    aRea = cblas_dnrm2(3,&*normal.data().begin(),1)*0.5;
-    tangent1.resize(3,false);
-    tangent2.resize(3,false);
-    for(int dd = 0;dd!=3;dd++) {
-      tangent1[dd] = cblas_ddot(3,&diff_n[0],2,&coords[dd],3);
-      tangent2[dd] = cblas_ddot(3,&diff_n[1],2,&coords[dd],3);
+PetscErrorCode FaceElementForcesAndSourcesCore::setIntegartionPts() {
+  PetscFunctionBegin;
+  // Set integration points
+  int order_data = getMaxDataOrder();
+  int order_row = getMaxRowOrder();
+  int order_col = getMaxColOrder();
+  int rule = getRule(order_row,order_col,order_data);
+  if(rule >= 0) {
+    if(rule<QUAD_2D_TABLE_SIZE) {
+      if(QUAD_2D_TABLE[rule]->dim!=2) {
+        SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"wrong dimension");
+      }
+      if(QUAD_2D_TABLE[rule]->order<rule) {
+        SETERRQ2(
+          PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"wrong order %d != %d",
+          QUAD_2D_TABLE[rule]->order,rule
+        );
+      }
+      nbGaussPts = QUAD_2D_TABLE[rule]->npoints;
+      gaussPts.resize(3,nbGaussPts,false);
+      cblas_dcopy(
+        nbGaussPts,&QUAD_2D_TABLE[rule]->points[1],3,&gaussPts(0,0),1
+      );
+      cblas_dcopy(
+        nbGaussPts,&QUAD_2D_TABLE[rule]->points[2],3,&gaussPts(1,0),1
+      );
+      cblas_dcopy(
+        nbGaussPts,QUAD_2D_TABLE[rule]->weights,1,&gaussPts(2,0),1
+      );
+      dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE).resize(nbGaussPts,3,false);
+      double *shape_ptr = &*dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE).data().begin();
+      cblas_dcopy(
+        3*nbGaussPts,QUAD_2D_TABLE[rule]->points,1,shape_ptr,1
+      );
+    } else {
+      SETERRQ2(
+        PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"rule > quadrature order %d < %d",
+        rule,QUAD_2D_TABLE_SIZE
+      );
+      nbGaussPts = 0;
+    }
+  } else {
+    // If rule is negative, set user defined integration points
+    ierr = setGaussPts(order_row,order_col,order_data); CHKERRQ(ierr);
+    nbGaussPts = gaussPts.size2();
+    dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE).resize(nbGaussPts,3,false);
+    if(nbGaussPts) {
+      ierr = ShapeMBTRI(
+        &*dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE).data().begin(),
+        &gaussPts(0,0),
+        &gaussPts(1,0),
+        nbGaussPts
+      ); CHKERRQ(ierr);
     }
   }
+  PetscFunctionReturn(0);
+}
 
+PetscErrorCode FaceElementForcesAndSourcesCore::getSpaceBaseAndOrderOnElement() {
+  PetscFunctionBegin;
   // Get spaces order/base and sense of entities.
 
   ierr = getSpacesAndBaseOnEntities(dataH1); CHKERRQ(ierr);
@@ -209,85 +263,23 @@ PetscErrorCode FaceElementForcesAndSourcesCore::operator()() {
     dataHcurl.spacesOnEntities[MBTRI].set(L2);
   }
 
-  // Set integration points
-  int nb_gauss_pts;
-  int order_data = getMaxDataOrder();
-  int order_row = getMaxRowOrder();
-  int order_col = getMaxColOrder();
-  int rule = getRule(order_row,order_col,order_data);
-  if(rule >= 0) {
-    if(rule<QUAD_2D_TABLE_SIZE) {
-      if(QUAD_2D_TABLE[rule]->dim!=2) {
-        SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"wrong dimension");
-      }
-      if(QUAD_2D_TABLE[rule]->order<rule) {
-        SETERRQ2(
-          PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"wrong order %d != %d",
-          QUAD_2D_TABLE[rule]->order,rule
-        );
-      }
-      nb_gauss_pts = QUAD_2D_TABLE[rule]->npoints;
-      gaussPts.resize(3,nb_gauss_pts,false);
-      cblas_dcopy(
-        nb_gauss_pts,&QUAD_2D_TABLE[rule]->points[1],3,&gaussPts(0,0),1
-      );
-      cblas_dcopy(
-        nb_gauss_pts,&QUAD_2D_TABLE[rule]->points[2],3,&gaussPts(1,0),1
-      );
-      cblas_dcopy(
-        nb_gauss_pts,QUAD_2D_TABLE[rule]->weights,1,&gaussPts(2,0),1
-      );
-      dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE).resize(nb_gauss_pts,3,false);
-      double *shape_ptr = &*dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE).data().begin();
-      cblas_dcopy(
-        3*nb_gauss_pts,QUAD_2D_TABLE[rule]->points,1,shape_ptr,1
-      );
-    } else {
-      SETERRQ2(
-        PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"rule > quadrature order %d < %d",
-        rule,QUAD_2D_TABLE_SIZE
-      );
-      nb_gauss_pts = 0;
-    }
-  } else {
-    // If rule is negative, set user defined integration points
-    ierr = setGaussPts(order_row,order_col,order_data); CHKERRQ(ierr);
-    nb_gauss_pts = gaussPts.size2();
-    dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE).resize(nb_gauss_pts,3,false);
-    if(nb_gauss_pts) {
-      ierr = ShapeMBTRI(
-        &*dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE).data().begin(),
-        &gaussPts(0,0),
-        &gaussPts(1,0),
-        nb_gauss_pts
-      ); CHKERRQ(ierr);
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode FaceElementForcesAndSourcesCore::calculateCoordinatesAtGaussPts() {
+  PetscFunctionBegin;
+  double *shape_functions = &*dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE).data().begin();
+  coordsAtGaussPts.resize(nbGaussPts,3,false);
+  for(int gg = 0;gg<nbGaussPts;gg++) {
+    for(int dd = 0;dd<3;dd++) {
+      coordsAtGaussPts(gg,dd) = cblas_ddot(3,&shape_functions[3*gg],1,&coords[dd],3);
     }
   }
-  if(nb_gauss_pts == 0) PetscFunctionReturn(0);
+  PetscFunctionReturn(0);
+}
 
-  dataH1.dataOnEntities[MBVERTEX][0].getDiffN(NOBASE).resize(3,2,false);
-  ierr = ShapeDiffMBTRI(
-    &*dataH1.dataOnEntities[MBVERTEX][0].getDiffN(NOBASE).data().begin()
-  ); CHKERRQ(ierr);
-
-  /// Use the some node base
-
-  dataHdiv.dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE) = dataH1.dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE);
-  dataHcurl.dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE) = dataH1.dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE);
-  dataL2.dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE) = dataH1.dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE);
-  dataHdiv.dataOnEntities[MBVERTEX][0].getDiffNSharedPtr(NOBASE) = dataH1.dataOnEntities[MBVERTEX][0].getDiffNSharedPtr(NOBASE);
-  dataHcurl.dataOnEntities[MBVERTEX][0].getDiffNSharedPtr(NOBASE) = dataH1.dataOnEntities[MBVERTEX][0].getDiffNSharedPtr(NOBASE);
-  dataL2.dataOnEntities[MBVERTEX][0].getDiffNSharedPtr(NOBASE) = dataH1.dataOnEntities[MBVERTEX][0].getDiffNSharedPtr(NOBASE);
-  {
-    double *shape_functions = &*dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE).data().begin();
-    coordsAtGaussPts.resize(nb_gauss_pts,3,false);
-    for(int gg = 0;gg<nb_gauss_pts;gg++) {
-      for(int dd = 0;dd<3;dd++) {
-        coordsAtGaussPts(gg,dd) = cblas_ddot(3,&shape_functions[3*gg],1,&coords[dd],3);
-      }
-    }
-  }
-
+PetscErrorCode FaceElementForcesAndSourcesCore::calculateBaseFunctionsOnElement() {
+  PetscFunctionBegin;
   // Calculate base base functions for faces.
   try {
 
@@ -371,7 +363,11 @@ PetscErrorCode FaceElementForcesAndSourcesCore::operator()() {
     ss << "thorw in method: " << ex.what() << " at line " << __LINE__ << " in file " << __FILE__;
     SETERRQ(PETSC_COMM_SELF,MOFEM_STD_EXCEPTION_THROW,ss.str().c_str());
   }
+  PetscFunctionReturn(0);
+}
 
+PetscErrorCode FaceElementForcesAndSourcesCore::calculateHoNormal() {
+  PetscFunctionBegin;
   // Check if field for high-order geometry is set and if it is set calculate
   // higher-order normals and face tangent vectors.
   if(
@@ -401,10 +397,45 @@ PetscErrorCode FaceElementForcesAndSourcesCore::operator()() {
     }
   } else {
     hoCoordsAtGaussPts.resize(0,0,false);
-    nOrmals_at_GaussPt.resize(0,0,false);
-    tAngent1_at_GaussPt.resize(0,0,false);
-    tAngent2_at_GaussPt.resize(0,0,false);
+    normalsAtGaussPt.resize(0,0,false);
+    tangentOneAtGaussPt.resize(0,0,false);
+    tangentTwoAtGaussPt.resize(0,0,false);
   }
+  PetscFunctionReturn(0);
+}
+
+
+PetscErrorCode FaceElementForcesAndSourcesCore::operator()() {
+  PetscFunctionBegin;
+
+  if(numeredEntFiniteElementPtr->getEntType() != MBTRI) PetscFunctionReturn(0);
+
+  // Calculate normal and tangent vectors for face geometry given by 3 nodes.
+  ierr = calculateAreaAndNormal(); CHKERRQ(ierr);
+  ierr = getSpaceBaseAndOrderOnElement(); CHKERRQ(ierr);
+
+  ierr = setIntegartionPts(); CHKERRQ(ierr);
+  if(nbGaussPts == 0) PetscFunctionReturn(0);
+
+  dataH1.dataOnEntities[MBVERTEX][0].getDiffN(NOBASE).resize(3,2,false);
+  ierr = ShapeDiffMBTRI(
+    &*dataH1.dataOnEntities[MBVERTEX][0].getDiffN(NOBASE).data().begin()
+  ); CHKERRQ(ierr);
+
+  /// Use the some node base
+
+  ierr = calculateCoordinatesAtGaussPts(); CHKERRQ(ierr);
+
+  // Share base shape functions between spaces
+  dataHdiv.dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE) = dataH1.dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE);
+  dataHcurl.dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE) = dataH1.dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE);
+  dataL2.dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE) = dataH1.dataOnEntities[MBVERTEX][0].getNSharedPtr(NOBASE);
+  dataHdiv.dataOnEntities[MBVERTEX][0].getDiffNSharedPtr(NOBASE) = dataH1.dataOnEntities[MBVERTEX][0].getDiffNSharedPtr(NOBASE);
+  dataHcurl.dataOnEntities[MBVERTEX][0].getDiffNSharedPtr(NOBASE) = dataH1.dataOnEntities[MBVERTEX][0].getDiffNSharedPtr(NOBASE);
+  dataL2.dataOnEntities[MBVERTEX][0].getDiffNSharedPtr(NOBASE) = dataH1.dataOnEntities[MBVERTEX][0].getDiffNSharedPtr(NOBASE);
+
+  ierr = calculateBaseFunctionsOnElement(); CHKERRQ(ierr);
+  ierr = calculateHoNormal(); CHKERRQ(ierr);
 
   // Apply Piola transform to HDiv and HCurl spaces, uses previously calculated
   // faces normal and tangent vectors.
