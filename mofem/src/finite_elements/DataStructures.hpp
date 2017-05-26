@@ -677,8 +677,6 @@ struct DataForcesAndSurcesCore {
      * \param base
      * \return Tensor0
      *
-     * operator++() is moving pointer to next base function.
-     *
      */
     inline FTensor::Tensor0<double*> getFTensor0N(const FieldApproximationBase base) {
       double *ptr = &*getN(base).data().begin();
@@ -691,8 +689,6 @@ struct DataForcesAndSurcesCore {
      * Return base functions for field base
      *
      * \return Tensor0
-     *
-     * operator++() is moving pointer to next base function.
      *
      */
     inline FTensor::Tensor0<double*> getFTensor0N() {
@@ -729,7 +725,6 @@ struct DataForcesAndSurcesCore {
      * \param bb base function
      * \return Tensor0
      *
-     * operator++() is moving pointer to next integration point.
      *
      */
     inline FTensor::Tensor0<double*> getFTensor0N(const int bb) {
@@ -767,8 +762,6 @@ struct DataForcesAndSurcesCore {
      * \param bb base function
      * \return Tensor0
      *
-     * operator++() is moving pointer to next base function.
-     *
      */
     inline FTensor::Tensor0<double*> getFTensor0N(const int gg,const int bb) {
       return getFTensor0N(bAse,gg,bb);
@@ -790,8 +783,6 @@ struct DataForcesAndSurcesCore {
      * \param base functions
      * \return Tensor rank 1 (vector)
      *
-     * operator++() is moving pointer to next base function.
-     *
      */
     template<int Tensor_Dim>
     FTensor::Tensor1<double*,Tensor_Dim> getFTensor1DiffN(const FieldApproximationBase base);
@@ -810,8 +801,6 @@ struct DataForcesAndSurcesCore {
      * \endcode
      *
      * \return Tensor rank 1 (vector)
-     *
-     * operator++() is moving pointer to next base function.
      *
      */
     template<int Tensor_Dim>
