@@ -25,7 +25,7 @@ estimator to drive mesh adaptivity (h-adaptivity),
 
 \section before_finite_element_tut Before you start to look into examples and tuorials
 
-\subsection finite_element_tut Finite element and UserDataOperator
+\subsection finite_element_tut Finite element object and UserDataOperator
 
 The finite element entity is composed of sub entities, like nodes, edges, faces
 (triangle, quad, etc.) and volumes (tetrahedron, hex, prism, etc.)  The element
@@ -54,25 +54,141 @@ are shown in the figure below
 
 The fundamental role in finite element implementation plays \ref
 MoFEM::ForcesAndSurcesCore::UserDataOperator. The generality of this technology
-range of applications 2d or 3d, with Nitsche's method or with H-div or H-curl
-spaces. The UserDataOprator are operated in three distinct types, first usually
-used to evaluate the right-hand side vectors, second to evaluate the left-hand
-side matrices, and third often use to modify base functions.  First two are
-intrinsically linked to operations on particular fields, the last one is
-abstract and should not be used to assemble vectors and matrices. Users
-operators are run in sequence as are added to finite element and executed or
-each entity on that element. If for given field number of DOFs or base functions
-on given entity is zero, such entity is not evaluated.
+range of applications 0d-2d or 3d, with Nitsche's method or with H-div or H-curl
+spaces. The UserDataOprator are operated in three typical ways, first (\a OPROW/
+\a OPCOL) usually used to evaluate the right-hand side vectors, second (\a
+OPROWCOL) to evaluate the left-hand side matrices, and third, often use to
+modify base functions of given space.  First two are intrinsically linked to
+operations on particular fields, the last one is abstract and should not be used
+to assemble vectors and matrices. Type of operator is set in object method and
+by overloading function \c doWrok. Operators are run in sequence as are added to
+finite element and executed or each entity on that element. If for given field
+number of DOFs or base functions on given entity is zero, such entity is not
+evaluated.
 \image html fe_struture_2.png "Types of UserDataOperator" width=800px
 
-Note that data and algorithm operating on data is localised,  and grouped by
+Note that data and algorithm operating on data is localised, and grouped by
 element and by an entity. Elements and entities share data structure avoiding
-unnecessary memory allocation and deallocation.  However, the mobilisation for
-this development is code reusability, which with relatively small code large
-group of problems can be implemented and last but not least enables
-modularisation and testing of each element independently.
+unnecessary memory allocation and deallocation. However, the motivation for this
+development is code elasticity (resilience to change and openness for new finite
+element technologies), reusability, which with relatively small code large group
+of problems can be implemented and last but not least enables modularisation and
+testing of each element independently.
 \image html fe_struture_3.png "Example of implementation" width=800px
+Above example reflect how an engineer would formulate the problem for linear
+thermoelasticity, calculate physical quantities like strain, stress, temperature
+or flux and assemble a system of linear equations to solve it staggered method.
+Another way approaching this problem to think regarding differential operators. One can
+implement set of operators,
+\f[
+(\nabla u ,\nabla u),\;(\nabla \cdot \tau, u),\;(u,u)
+\f]
+and example, assembly of
+\f[
+\mathbf{A} = (\nabla u,\nabla u)_\Omega =  \int_\Omega
+\nabla \mathbf{u} \cdot \nabla \mathbf{v}
+\textrm{d}\Omega
+\f]
+take form
+\code
+struct OpGradGrad: public MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator {
 
+  Mat A;
+  OpGradGrad(Mat a):
+  MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator("U","U",UserDataOperator::OPROWCOL,true).
+  A(a) {
+  }
 
+  MatrixDouble entityLocalMatrix;
+
+  /**
+   * \brief integrate matrix
+   * @param  row_side local number of entity on element for row of the matrix
+   * @param  col_side local number of entity on element for col of the matrix
+   * @param  row_type type of row entity (VERTICES/EDGE0-5/TRIANGLE0-3/TETRAHEDRON)
+   * @param  col_type type of col entity (VERTICES/EDGE0-5/TRIANGLE0-3/TETRAHEDRON)
+   * @param  row_data structure of data, like base functions and associated methods to access those data on rows
+   * @param  col_data structure of data, like base functions and associated methods to access those data on rows
+   * @return          error code
+   */
+  PetscErrorCode doWork(
+    int row_side,int col_side,
+    EntityType row_type,EntityType col_type,
+    DataForcesAndSurcesCore::EntData &row_data,
+    DataForcesAndSurcesCore::EntData &col_data
+  ) {
+    PetscErrorCode ierr;
+    PetscFunctionBegin;
+
+    // get number of dofs on rows
+    const int nb_row_dofs = row_data.getIndices().size();
+    // if no dofs, end here
+    if(nb_row_dofs==0) PetscFunctionReturn(0);
+    // get number of dofs on column
+    const int nb_col_dofs = col_data.getIndices().size();
+    // if no dofs, end here
+    if(nb_col_dofs==0) PetscFunctionReturn(0);
+
+    // resize entity local matrix
+    entityLocalMatrix.resize(nb_row_dofs,nb_col_dofs,false);
+    // zero elements
+    entityLocalMatrix.clear();
+
+    // get number of integration points
+    const int nb_gauss_pts = row_data.getHcurlN().size1();
+
+    // integrate
+    for(int gg = 0;gg!=nb_gauss_pts;gg++) {
+      // get integration weight scaled by volume
+      double w = getGaussPts()(3,gg)*getVolume();
+      // get direvatives of base functions on rows
+      FTensor::Tensor1<double*,Tensor_Dim> t_base_diff_row = row_data.getFTensor1DiffN();
+      // loop rows
+      for(int aa = 0;aa!=nb_row_dofs;aa++) {
+        // take first element in row "aa"
+        FTensor::Tensor0<double*> t_local_mat(
+          &entityLocalMatrix(aa,0),1
+        );
+        // get direvatives of base functions on columns
+        FTensor::Tensor1<double*,Tensor_Dim> t_base_diff_col = col_data.getFTensor1DiffN();
+        // loop column
+        for(int bb = 0;bb!=nb_col_dofs;bb++) {
+          FTensor::Index<'i',3> i;
+          t_local_mat += w*t_base_diff_row(i)*t_base_diff_col(i);
+          ++t_base_diff_col;
+          ++t_local_mat;
+        }
+        ++t_base_diff_row;
+      }
+
+      // if row_side != col_side || row_type != col_type we can exploit
+      // symetry of matrux entityLocalMatrix, for simplicty we do
+      // not do it here
+
+    }
+
+    // assemble global matrix
+    ierr = MatSetValues(
+      blockData.A,
+      nb_row_dofs,&row_data.getIndices()[0],
+      nb_col_dofs,&col_data.getIndices()[0],
+      &entityLocalMatrix(0,0),ADD_VALUES
+    ); CHKERRQ(ierr);
+    // and its transpose
+    if(row_side != col_side || row_type != col_type) {
+      entityLocalMatrix = trans(entityLocalMatrix);
+      ierr = MatSetValues(
+        A,
+        nb_col_dofs,&col_data.getIndices()[0],
+        nb_row_dofs,&row_data.getIndices()[0],
+        &entityLocalMatrix(0,0),ADD_VALUES
+      ); CHKERRQ(ierr);
+    }
+
+    PetscFunctionReturn(0);
+  }
+
+};
+\endcode
 
 */
