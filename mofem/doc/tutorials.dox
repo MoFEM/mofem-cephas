@@ -25,7 +25,35 @@ estimator to drive mesh adaptivity (h-adaptivity),
 
 \section before_finite_element_tut Before you start to look into examples and tuorials
 
-\subsection finite_element_tut Finite element object and UserDataOperator
+\subsection mofem_eccosystem MoFEM software eccosystem
+
+Finite element software is a complex ecosystem, managing mesh and topology
+related complexities, sparse algebra and complications related to approximation,
+integration or dense tensor algebra at integration point level. Each problem by
+itself is a stand alone complicated problem. MoFEM ecosystem is composed of
+three disincentive parts, MoAB managing complexities related to topology, PETSc
+managing complexities related to sparse algebra and solvers and finally MoAB
+core library managing complexities directly related to finite element method.
+Each part has its own design objectives, and appropriate programming tools from
+a spectrum of solutions can be selected \cite knepley2012programming. MoFEM
+unlike other open finite element code wrap PETSc functionality but make PETSc
+part of the solution, by extending PETSc by DMMOFEM interface (several other
+functions work directly on PETSc objects).  MoAB from other hand is internal
+data storage. PETSc is designed to be fast, whereas MoAB aims to be memory
+efficient.
+\image html data_strutures_1.png "MoFEM code parts" width=800px
+
+MoFEM core library is designed to be flexible & extendable. Very often we spend
+more time to implement finite element that time needed to run analysis itself,
+flexibility & extensibility allow for rapid development of finite elements for
+non-standard and complex problems. Utilising PETSc and MoAB scalability is
+second important design objective. Nowadays we can have easy access to the
+computing clusters through could computing or local/regional supercomputers.
+Ultimately core library can not compromise runtime efficiency and use computer
+memory with care. However, we will avoid close particular problem tailored
+solutions, if those limit future applications.
+
+\subsection finite_element_tut Finite element implementation and UserDataOperator
 
 The finite element entity is composed of sub entities, like nodes, edges, faces
 (triangle, quad, etc.) and volumes (tetrahedron, hex, prism, etc.)  The element
@@ -190,5 +218,62 @@ struct OpGradGrad: public MoFEM::VolumeElementForcesAndSourcesCore::UserDataOper
 
 };
 \endcode
+
+\subsection mofem_data_flow Core library and application code
+
+Typically internal data structures are hidden from the user and are no need to
+access them directly. In core library, no single problem or finite element in
+the classical sense is implemented. Core library only provides functionality for
+finite element implementation and application code development. For that reason
+repositories of core library and users, modules are in separate independent
+repositories.
+\image html data_strutures_2.png "MoFEM code parts" width=800px
+
+In the figure above on first instant, a developer is interested in the
+implementation of users data operators and tasks in the yellow boxes. It has to
+define fields, which span on some entities and set approximation order. For example
+\code
+MoFEM::Core core(moab);
+MoFEM::Interface& m_field = core;
+// define fields
+ierr = m_field.add_field("DISP",H1,AINSWORTH_LEGENDRE_BASE,3); CHKERRQ(ierr);
+ierr = m_field.add_field("FLUX",HDIV,DEMKOWICZ_JACOBI_BASE,1); CHKERRQ(ierr);
+// meshset consisting all entities in mesh
+EntityHandle root_set = moab.get_root_set();
+// add entities to field
+ierr = m_field.add_ents_to_field_by_TETs(root_set,"DISP"); CHKERRQ(ierr);
+ierr = m_field.add_ents_to_field_by_TETs(root_set,"FLUX"); CHKERRQ(ierr);
+// set app. order (that is boring same order to all)
+int order = 5;
+ierr = m_field.set_field_order(root_set,MBTET,"DISP",order); CHKERRQ(ierr);
+ierr = m_field.set_field_order(root_set,MBTET,"FLUX",order); CHKERRQ(ierr);
+// build
+ierr = m_field.build_fields(); CHKERRQ(ierr);
+\endcode
+Similarly, defining finite element set implement integration domain and build
+internal data structures. Note, finite element structure is separated from
+implementation. The same element can have several implementations which work on
+some set of users data operators.
+
+\subsection mofem_field_data_structure Internal field structure
+
+You don't have to know how internal data structures works, like the driver of
+the car, does not necessarily know how a spark plug works. So if you get bored,
+you can skip this part.
+\image html data_strutures_3.png "Fields data structures" width=800px
+
+However sometimes is useful to know when something goes wrong. The objective is
+to have an extendable and flexible data structure which can manage a wide range
+of approximations, in particular on hierarchical approximation bases. In the
+same time have easy and fast access to data structures, short set-up time and
+memory efficiency without redundancies.  This aim is realised bu use boost
+multi-indices, aliased shared pointers and vector sequences. See for example
+\ref MoFEM::NumeredDofEntity or \ref MoFEM::DofEntity. Data are accesed by
+multi-indices, for example, defined in \ref DofsMultiIndices.hpp, \ref
+EntsMultiIndices.hpp or \ref FieldMultiIndices.hpp.
+
+
+
+
 
 */
