@@ -746,28 +746,28 @@ PetscErrorCode ForcesAndSurcesCore::getProblemTypeIndices(
 PetscErrorCode ForcesAndSurcesCore::getProblemNodesRowIndices(const std::string &field_name,VectorInt &nodes_indices) const {
   PetscFunctionBegin;
   PetscErrorCode ierr;
-  ierr = getProblemNodesIndices(field_name,*(problemPtr->numered_dofs_rows),nodes_indices); CHKERRQ(ierr);
+  ierr = getProblemNodesIndices(field_name,*(problemPtr->numeredDofsRows),nodes_indices); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 
 PetscErrorCode ForcesAndSurcesCore::getProblemTypeRowIndices(const std::string &field_name,EntityType type,int side_number,VectorInt &indices) const {
   PetscFunctionBegin;
   PetscErrorCode ierr;
-  ierr = getProblemTypeIndices(field_name,*(problemPtr->numered_dofs_rows),type,side_number,indices); CHKERRQ(ierr);
+  ierr = getProblemTypeIndices(field_name,*(problemPtr->numeredDofsRows),type,side_number,indices); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 
 PetscErrorCode ForcesAndSurcesCore::getProblemNodesColIndices(const std::string &field_name,VectorInt &nodes_indices) const {
   PetscFunctionBegin;
   PetscErrorCode ierr;
-  ierr = getProblemNodesIndices(field_name,*(problemPtr->numered_dofs_cols),nodes_indices); CHKERRQ(ierr);
+  ierr = getProblemNodesIndices(field_name,*(problemPtr->numeredDofsCols),nodes_indices); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 
 PetscErrorCode ForcesAndSurcesCore::getProblemTypeColIndices(const std::string &field_name,EntityType type,int side_number,VectorInt &indices) const {
   PetscFunctionBegin;
   PetscErrorCode ierr;
-  ierr = getProblemTypeIndices(field_name,*(problemPtr->numered_dofs_cols),type,side_number,indices); CHKERRQ(ierr);
+  ierr = getProblemTypeIndices(field_name,*(problemPtr->numeredDofsCols),type,side_number,indices); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 

@@ -59,7 +59,7 @@ struct ArcLengthElement: public ArcLengthIntElemFEMethod {
     PetscFunctionBegin;
     FILE *datafile;
     PetscFOpen(PETSC_COMM_SELF,DATAFILENAME,"a+",&datafile);
-    boost::shared_ptr<NumeredDofEntity_multiIndex> numered_dofs_rows = problemPtr->numered_dofs_rows;
+    boost::shared_ptr<NumeredDofEntity_multiIndex> numered_dofs_rows = problemPtr->getNumeredDofsRows();
     NumeredDofEntityByFieldName::iterator lit;
     lit = numered_dofs_rows->get<FieldName_mi_tag>().find("LAMBDA");
     if(lit == numered_dofs_rows->get<FieldName_mi_tag>().end()) PetscFunctionReturn(0);

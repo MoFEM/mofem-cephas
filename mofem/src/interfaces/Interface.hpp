@@ -28,9 +28,10 @@ static const MOFEMuuid IDD_MOFEMInterface = MOFEMuuid( BitIntefaceId(CORE_INTERF
  * \ingroup mofem
  *
  * This interface is used by user to: <br>
- *  (*) create approximation fields,  <br>
- *  (*) define elements, <br>
- *  (*) define problems, <br>
+ * - create approximation fields,  <br>
+ * - declare elements, <br>
+ * - declare problems, <br>
+ *
  */
 struct Interface: public UnknownInterface {
 
@@ -2431,7 +2432,9 @@ struct Interface: public UnknownInterface {
     *
     */
   template <typename DIT>
-  PetscErrorCode get_FielData(const std::string& name,const EntityHandle *ent,const int num_ents,DIT dit,int *count = NULL) {
+  PetscErrorCode get_field_dof_data(
+    const std::string& name,const EntityHandle *ent,const int num_ents,DIT dit,int *count = NULL
+  ) {
     PetscFunctionBegin;
     if(count!=NULL) *count = 0;
     for(int nn = 0;nn<num_ents;nn++) {
@@ -2451,7 +2454,9 @@ struct Interface: public UnknownInterface {
     *
     */
   template <typename DIT>
-  PetscErrorCode get_FielData(const std::string& name,const Range &ents,DIT dit,int *count = NULL) {
+  PetscErrorCode get_field_dof_data(
+    const std::string& name,const Range &ents,DIT dit,int *count = NULL
+  ) {
     PetscFunctionBegin;
     if(count!=NULL) *count = 0;
     for(Range::const_iterator eit = ents.begin();eit!=ents.end();eit++) {

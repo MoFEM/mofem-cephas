@@ -554,7 +554,6 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::operator()() {
       oit->setPtrFE(this);
 
       if(oit->sPace!=LASTSPACE) {
-
         // Set field
         switch(oit->sPace) {
           case NOSPACE:
@@ -580,6 +579,8 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::operator()() {
 
         // Reseat all data which all field dependent
         op_data[0]->resetFieldDepenentData();
+        last_eval_field_name[0] = "";
+        last_eval_field_name[1] = "";
 
         // Run operator
         ierr = oit->opRhs(
@@ -934,11 +935,11 @@ PetscErrorCode VolumeElementForcesAndSourcesCoreOnSide::setGaussPts(int order) {
 }
 
 VectorDouble& VolumeElementForcesAndSourcesCoreOnSide::UserDataOperator::getNormal() {
-  return getFaceFEPtr()->normal;
+  return getFaceFEPtr()->nOrmal;
 }
 
 MatrixDouble& VolumeElementForcesAndSourcesCoreOnSide::UserDataOperator::getNormalsAtGaussPt() {
-  return getFaceFEPtr()->nOrmals_at_GaussPt;
+  return getFaceFEPtr()->normalsAtGaussPt;
 }
 
 MatrixDouble& VolumeElementForcesAndSourcesCoreOnSide::UserDataOperator::getFaceCoordsAtGaussPts() {

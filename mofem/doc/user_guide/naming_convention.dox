@@ -245,6 +245,35 @@ struct {
   be searched for easily, whereas it's hard to find C style casts. Another big
   benefit is that the four different C++ style casts express the intent of the
   programmer more clearly. When writing C++, always use the C++ ones over the  C
-  style. If you see the C-style cast, please take the opportunity to fix this. 
+  style. If you see the C-style cast, please take the opportunity to fix this.
+
+- C++ Partial Template Specialization, see <https://stackoverflow.com/a/6142796/8043075>
+  for details. \code
+  template<typename A, typename B>
+  struct TwoTypes { };
+
+  template<typename A, typename B>
+  struct X {
+    /* forwards ... */
+    void f() { fImpl(TwoTypes<A, B>()); }
+
+    /* special overload for <A, int> */
+    template<typename A1>
+    void fImpl(TwoTypes<A1, int>) {
+      /* ... */
+    }
+
+    /* generic */
+    template<typename A1, typename B1>
+    void fImpl(TwoTypes<A1, B1>) {
+    /* ... */
+    }
+  };
+  \endcode
+  Explicitly specializing functions is never (almost never?) the right way. In
+  my work as a programmer, I've never explicitly specialized a function
+  template. Overloading and partial ordering is superior.
+
+
 
 */

@@ -121,7 +121,7 @@ struct NeummanForcesSurface {
 
     OpNeumannForceAnalytical(
       const std::string field_name,
-      Vec _F,
+      Vec f,
       const Range tris,
       boost::ptr_vector<MethodForForceScaling> &methods_op,
       boost::ptr_vector<MethodForAnaliticalForce> &analytical_force_op,
