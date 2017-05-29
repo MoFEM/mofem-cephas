@@ -491,6 +491,8 @@ PetscErrorCode FaceElementForcesAndSourcesCore::operator()() {
 
       // Reseat all data which all field dependent
       op_data[0]->resetFieldDepenentData();
+      last_eval_field_name[0] = "";
+      last_eval_field_name[1] = "";
 
       // Run operator
       ierr = oit->opRhs(
