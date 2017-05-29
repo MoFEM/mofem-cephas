@@ -29,29 +29,28 @@ estimator to drive mesh adaptivity (h-adaptivity),
 
 Finite element software is a complex ecosystem, managing mesh and topology
 related complexities, sparse algebra and complications related to approximation,
-integration or dense tensor algebra at integration point level. Each problem by
+integration or dense tensor algebra at integration point level. Each element by
 itself is a stand alone complicated problem. MoFEM ecosystem is composed of
 three disincentive parts, MoAB managing complexities related to topology, PETSc
 managing complexities related to sparse algebra and solvers and finally MoAB
 core library managing complexities directly related to finite element method.
 Each part has its own design objectives, and appropriate programming tools from
-a spectrum of solutions can be selected \cite knepley2012programming. MoFEM
-unlike other open finite element code wrap PETSc functionality but make PETSc
-part of the solution, by extending PETSc by DMMOFEM interface (several other
-functions work directly on PETSc objects).  MoAB from other hand is internal
-data storage. PETSc is designed to be fast, whereas MoAB aims to be memory
-efficient.
+a spectrum of solutions can be selected \cite knepley2012programming. MoFEM make
+PETSc integral part of code, by extending PETSc by DMMOFEM interface (several
+other functions work directly on PETSc objects).  MoAB from other hand is
+internal data storage. PETSc is designed to be fast, whereas MoAB aims to be
+memory efficient.
 \image html data_strutures_1.png "MoFEM code parts" width=800px
 
-MoFEM core library is designed to be flexible & extendable. Very often we spend
-more time to implement finite element that time needed to run analysis itself,
-flexibility & extensibility allow for rapid development of finite elements for
-non-standard and complex problems. Utilising PETSc and MoAB scalability is
-second important design objective. Nowadays we can have easy access to the
-computing clusters through could computing or local/regional supercomputers.
-Ultimately core library can not compromise runtime efficiency and use computer
-memory with care. However, we will avoid close particular problem tailored
-solutions, if those limit future applications.
+Code development is a compromise of different goals. First primary deign
+objective is to develop flexible & extendable code easy to test and bug search.
+Very often we spend more time to implement finite element that time needed to
+run analysis itself, flexibility & extensibility allow for rapid development of
+finite elements for non-standard and complex problems. Utilising PETSc and MoAB
+scalability is second important design objective. Nowadays we can have easy
+access to the computing clusters through could computing or local/regional
+supercomputers. Third, core library can not compromise runtime efficiency and
+use computer memory with care.
 
 \subsection finite_element_tut Finite element implementation and UserDataOperator
 
@@ -91,7 +90,7 @@ operations on particular fields, the last one is abstract and should not be used
 to assemble vectors and matrices. Type of operator is set by overloading
 function \c doWrok. Operators are run in sequence as are added to finite element
 and executed or each entity on that element. If for given field number of DOFs
-or base functions on given entity is zero, such entity is not evaluated. 
+or base functions on given entity is zero, such entity is not evaluated.
 \image html fe_struture_2.png "Types of UserDataOperator" width=800px
 
 Note that data and algorithm operating on data is localised, and grouped by
