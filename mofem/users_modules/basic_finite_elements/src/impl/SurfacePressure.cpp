@@ -46,19 +46,14 @@ hoGeometry(ho_geometry) {
 PetscErrorCode NeummanForcesSurface::OpNeumannForce::doWork(
   int side,EntityType type,DataForcesAndSurcesCore::EntData &data
 ) {
+  PetscErrorCode ierr;
   PetscFunctionBegin;
 
   if(data.getIndices().size()==0) PetscFunctionReturn(0);
   EntityHandle ent = getNumeredEntFiniteElementPtr()->getEnt();
   if(dAta.tRis.find(ent)==dAta.tRis.end()) PetscFunctionReturn(0);
 
-  PetscErrorCode ierr;
-
-  const FENumeredDofEntity *dof_ptr;
-  ierr = getNumeredEntFiniteElementPtr()->getRowDofsByPetscGlobalDofIdx(
-    data.getIndices()[0],&dof_ptr
-  ); CHKERRQ(ierr);
-  int rank = dof_ptr->getNbOfCoeffs();
+  int rank = data.getFieldDofs()[0]->getNbOfCoeffs();
   int nb_row_dofs = data.getIndices().size()/rank;
 
   Nf.resize(data.getIndices().size(),false);
@@ -124,14 +119,14 @@ PetscErrorCode NeummanForcesSurface::OpNeumannForce::doWork(
 
 NeummanForcesSurface::OpNeumannForceAnalytical::OpNeumannForceAnalytical(
   const std::string field_name,
-  Vec _F,
+  Vec f,
   const Range tris,
   boost::ptr_vector<MethodForForceScaling> &methods_op,
   boost::ptr_vector<MethodForAnaliticalForce> &analytical_force_op,
   bool ho_geometry
 ):
 FaceElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROW),
-F(_F),
+F(f),
 tRis(tris),
 methodsOp(methods_op),
 analyticalForceOp(analytical_force_op),
@@ -149,11 +144,7 @@ PetscErrorCode NeummanForcesSurface::OpNeumannForceAnalytical::doWork(
 
   PetscErrorCode ierr;
 
-  const FENumeredDofEntity *dof_ptr;
-  ierr = getNumeredEntFiniteElementPtr()->getRowDofsByPetscGlobalDofIdx(
-    data.getIndices()[0],&dof_ptr
-  ); CHKERRQ(ierr);
-  int rank = dof_ptr->getNbOfCoeffs();
+  int rank = data.getFieldDofs()[0]->getNbOfCoeffs();
   int nb_row_dofs = data.getIndices().size()/rank;
 
   Nf.resize(data.getIndices().size(),false);
@@ -179,7 +170,6 @@ PetscErrorCode NeummanForcesSurface::OpNeumannForceAnalytical::doWork(
         coords[dd] = getCoordsAtGaussPts()(gg,dd);
         normal = getNormal();
       }
-
     }
 
     for(
@@ -238,17 +228,15 @@ hoGeometry(ho_geometry) {}
 PetscErrorCode NeummanForcesSurface::OpNeumannPreassure::doWork(
   int side,EntityType type,DataForcesAndSurcesCore::EntData &data
 ) {
+  PetscErrorCode ierr;
   PetscFunctionBegin;
 
   if(data.getIndices().size()==0) PetscFunctionReturn(0);
-  if(dAta.tRis.find(getNumeredEntFiniteElementPtr()->getEnt())==dAta.tRis.end()) PetscFunctionReturn(0);
+  if(dAta.tRis.find(getNumeredEntFiniteElementPtr()->getEnt())==dAta.tRis.end()) {
+    PetscFunctionReturn(0);
+  }
 
-  PetscErrorCode ierr;
-
-  const FENumeredDofEntity *dof_ptr;
-  ierr = getNumeredEntFiniteElementPtr()->getRowDofsByPetscGlobalDofIdx(data.getIndices()[0],&dof_ptr); CHKERRQ(ierr);
-  int rank = dof_ptr->getNbOfCoeffs();
-
+  int rank = data.getFieldDofs()[0]->getNbOfCoeffs();
   int nb_row_dofs = data.getIndices().size()/rank;
 
   Nf.resize(data.getIndices().size(),false);
@@ -323,17 +311,15 @@ hoGeometry(ho_geometry) {}
 PetscErrorCode NeummanForcesSurface::OpNeumannFlux::doWork(
   int side,EntityType type,DataForcesAndSurcesCore::EntData &data
 ) {
+  PetscErrorCode ierr;
   PetscFunctionBegin;
 
   if(data.getIndices().size()==0) PetscFunctionReturn(0);
-  if(dAta.tRis.find(getNumeredEntFiniteElementPtr()->getEnt())==dAta.tRis.end()) PetscFunctionReturn(0);
+  if(dAta.tRis.find(getNumeredEntFiniteElementPtr()->getEnt())==dAta.tRis.end()) {
+    PetscFunctionReturn(0);
+  }
 
-  PetscErrorCode ierr;
-
-  const FENumeredDofEntity *dof_ptr;
-  ierr = getNumeredEntFiniteElementPtr()->getColDofsByPetscGlobalDofIdx(data.getIndices()[0],&dof_ptr); CHKERRQ(ierr);
-  int rank = dof_ptr->getNbOfCoeffs();
-
+  int rank = data.getFieldDofs()[0]->getNbOfCoeffs();
   int nb_row_dofs = data.getIndices().size()/rank;
 
   Nf.resize(data.getIndices().size(),false);

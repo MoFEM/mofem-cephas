@@ -38,8 +38,10 @@ namespace MoFEM {
 //moab problem
 Problem::Problem(Interface &moab,const EntityHandle meshset):
   meshset(meshset),
-  numered_dofs_rows(boost::shared_ptr<NumeredDofEntity_multiIndex>(new NumeredDofEntity_multiIndex())),
-  numered_dofs_cols(boost::shared_ptr<NumeredDofEntity_multiIndex>(new NumeredDofEntity_multiIndex())),
+  numeredDofsRows(boost::shared_ptr<NumeredDofEntity_multiIndex>(new NumeredDofEntity_multiIndex())),
+  numeredDofsCols(boost::shared_ptr<NumeredDofEntity_multiIndex>(new NumeredDofEntity_multiIndex())),
+  // numered_dofs_rows(numeredDofsRows), // this is deprecated
+  // numered_dofs_cols(numeredDofsCols), // this is deprecated
   sequenceRowDofContainer(boost::make_shared<SequenceDofContainer>()),
   sequenceColDofContainer(boost::make_shared<SequenceDofContainer>()) {
   ErrorCode rval;
@@ -95,8 +97,8 @@ BitFEId Problem::getBitFEId() const {
 PetscErrorCode Problem::getRowDofsByPetscGlobalDofIdx(DofIdx idx,const NumeredDofEntity **dof_ptr) const {
   PetscFunctionBegin;
   NumeredDofEntity_multiIndex::index<PetscGlobalIdx_mi_tag>::type::iterator dit;
-  dit = numered_dofs_rows->get<PetscGlobalIdx_mi_tag>().find(idx);
-  if(dit==numered_dofs_rows->get<PetscGlobalIdx_mi_tag>().end()) {
+  dit = numeredDofsRows->get<PetscGlobalIdx_mi_tag>().find(idx);
+  if(dit==numeredDofsRows->get<PetscGlobalIdx_mi_tag>().end()) {
     SETERRQ1(PETSC_COMM_SELF,MOFEM_NOT_FOUND,"row dof <%d> not found",idx);
   }
   *dof_ptr = &*(*dit);
@@ -106,8 +108,8 @@ PetscErrorCode Problem::getRowDofsByPetscGlobalDofIdx(DofIdx idx,const NumeredDo
 PetscErrorCode Problem::getColDofsByPetscGlobalDofIdx(DofIdx idx,const NumeredDofEntity **dof_ptr) const {
   PetscFunctionBegin;
   NumeredDofEntity_multiIndex::index<PetscGlobalIdx_mi_tag>::type::iterator dit;
-  dit = numered_dofs_cols->get<PetscGlobalIdx_mi_tag>().find(idx);
-  if(dit==numered_dofs_cols->get<PetscGlobalIdx_mi_tag>().end()) {
+  dit = numeredDofsCols->get<PetscGlobalIdx_mi_tag>().find(idx);
+  if(dit==numeredDofsCols->get<PetscGlobalIdx_mi_tag>().end()) {
     SETERRQ1(PETSC_COMM_SELF,MOFEM_NOT_FOUND,"row dof <%d> not found",idx);
   }
   *dof_ptr = &*(*dit);
@@ -163,16 +165,16 @@ PetscErrorCode Problem::getDofByNameEntAndEntDofIdx(
   NumeredDofEntity_multiIndex *numered_dofs;
   switch (row_or_col) {
     case ROW:
-    if(!numered_dofs_rows) {
+    if(!numeredDofsRows) {
       SETERRQ(PETSC_COMM_SELF,MOFEM_INVALID_DATA,"Row numbered index in problem not allocated");
     }
-    numered_dofs = numered_dofs_rows.get();
+    numered_dofs = numeredDofsRows.get();
     break;
     case COL:
-    if(!numered_dofs_rows) {
+    if(!numeredDofsRows) {
       SETERRQ(PETSC_COMM_SELF,MOFEM_INVALID_DATA,"Col numbered index in problem not allocated");
     }
-    numered_dofs = numered_dofs_cols.get();
+    numered_dofs = numeredDofsCols.get();
     break;
     default:
     SETERRQ(
@@ -201,13 +203,13 @@ void ProblemZeroNbRowsChange::operator()(Problem &e) {
   (*(DofIdx*)e.tag_nbdof_data_row) = 0;
   (*(DofIdx*)e.tag_local_nbdof_data_row) = 0;
   (*(DofIdx*)e.tag_ghost_nbdof_data_row) = 0;
-  e.numered_dofs_rows->clear();
+  e.numeredDofsRows->clear();
 }
 void ProblemZeroNbColsChange::operator()(Problem &e) {
   (*(DofIdx*)e.tag_nbdof_data_col) = 0;
   (*(DofIdx*)e.tag_local_nbdof_data_col) = 0;
   (*(DofIdx*)e.tag_ghost_nbdof_data_col) = 0;
-  e.numered_dofs_cols->clear();
+  e.numeredDofsCols->clear();
 }
 void ProblemClearNumeredFiniteElementsChange::operator()(Problem &e) {
   e.numeredFiniteElements.clear();

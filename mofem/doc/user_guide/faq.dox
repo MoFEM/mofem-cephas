@@ -89,7 +89,7 @@ MoFEM is developed continuously, i.e. any merged pull request to the
 CDashTesting branch triggers automatic testing on the development server. The
 code is verified during when a pull request is accepted and merged and validated
 when the test on the development server are passed. If tests are passed
-CDashBranch is merged to release branch.
+CDashBranch is merged to master branch.
 
 \section own_documentation How to generate this documentation on your local machine?
 

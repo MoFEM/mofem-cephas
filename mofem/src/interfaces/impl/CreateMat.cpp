@@ -159,7 +159,7 @@ PetscErrorCode CreateRowComressedADJMatrix::buildFECol(
       // Get dofs on columns
       NumeredDofEntity_multiIndex_uid_view_ordered cols_view;
       ierr = fe_ptr->getEntFiniteElement()->getColDofView(
-        *(p_miit->numered_dofs_cols),cols_view,moab::Interface::UNION
+        *(p_miit->numeredDofsCols),cols_view,moab::Interface::UNION
       ); CHKERRQ(ierr);
 
       // Reserve memory for field  dofs
@@ -217,7 +217,7 @@ PetscErrorCode CreateRowComressedADJMatrix::getEntityAdjacenies(
 
   // check if dofs and columns are the same, i.e. structurally symmetric problem
   bool do_cols_prob = true;
-  if(p_miit->numered_dofs_rows == p_miit->numered_dofs_cols) {
+  if(p_miit->numeredDofsRows == p_miit->numeredDofsCols) {
     do_cols_prob = false;
   }
 
@@ -272,7 +272,7 @@ PetscErrorCode CreateRowComressedADJMatrix::getEntityAdjacenies(
         }
         if(verb>2) {
           std::stringstream ss;
-          ss << "rank " << rAnk << ":  numered_dofs_cols" << std::endl;
+          ss << "rank " << rAnk << ":  numeredDofsCols" << std::endl;
           FENumeredDofEntity_multiIndex::iterator dit,hi_dit;
           dit = fe_ptr.get()->cols_dofs->begin();
           hi_dit = fe_ptr.get()->cols_dofs->end();
@@ -308,7 +308,7 @@ PetscErrorCode CreateRowComressedADJMatrix::createMatArrays(
   typedef typename boost::multi_index::index<NumeredDofEntity_multiIndex,TAG>::type NumeredDofEntitysByIdx;
 
   // Get multi-indices for rows and columns
-  const NumeredDofEntitysByIdx &dofs_row_by_idx = p_miit->numered_dofs_rows->get<TAG>();
+  const NumeredDofEntitysByIdx &dofs_row_by_idx = p_miit->numeredDofsRows->get<TAG>();
   int nb_dofs_row = p_miit->getNbDofsRow();
   if(nb_dofs_row == 0) {
     SETERRQ1(cOmm,MOFEM_DATA_INCONSISTENCY,"problem <%s> has zero rows",p_miit->getName().c_str());
@@ -488,8 +488,8 @@ PetscErrorCode CreateRowComressedADJMatrix::createMatArrays(
         if(debug) {
 
           DofByGlobalPetscIndex::iterator dit;
-          dit = p_miit->numered_dofs_rows->get<PetscGlobalIdx_mi_tag>().find(row_idx);
-          if(dit==p_miit->numered_dofs_rows->get<PetscGlobalIdx_mi_tag>().end()) {
+          dit = p_miit->numeredDofsRows->get<PetscGlobalIdx_mi_tag>().find(row_idx);
+          if(dit==p_miit->numeredDofsRows->get<PetscGlobalIdx_mi_tag>().end()) {
             SETERRQ1(cOmm,MOFEM_DATA_INCONSISTENCY,"dof %d can not be found in problem",row_idx);
           }
 
