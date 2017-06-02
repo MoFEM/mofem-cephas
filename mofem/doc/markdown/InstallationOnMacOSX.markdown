@@ -1,7 +1,7 @@
 ## Installation on OS X ## {#install_macosx}
 
 If you have any problems, feedback or would like to suggest corrections,
-please email [cmatgu@googlegroups.com](mailto:cmatgu@googlegroups.com).
+please email [mofem-group@googlegroups.com](https://groups.google.com/forum/#!forum/mofem-group).
 Before you start you need to install
 XCode [https://developer.apple.com/xcode/downloads/](https://developer.apple.com/xcode/downloads/)
 and XQuartz
