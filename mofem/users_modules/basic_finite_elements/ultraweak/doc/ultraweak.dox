@@ -1830,7 +1830,8 @@ for(int ll = 0;ll!=nb_levels;ll++) {
 If you like to contribute to this module (or MoFEM library), you are very
 welcome. Please feel free to add changes, including improving this documentation.
 If you like to work and modify this user module, you can fork this repository,
-make your changes, and do pull request. Contact us <cmatgu@googlegroups.com>  or
+make your changes, and do pull request. Contact us 
+<a href="https://groups.google.com/forum/#!forum/mofem-group">mofem-group@googlegroups.com</a> or
 <https://mofem.slack.com/>  if you need any help or comments.
 
 This is work in progress, and more stuff can be done. You could consider own

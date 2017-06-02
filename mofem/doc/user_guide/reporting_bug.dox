@@ -1,7 +1,7 @@
 /*! \page guidelines_bug_reporting Guidelines for bug reporting
 \brief Instruction how to report bugs.
 
-The MoFEM maintenance e-mail, CMatGU <cmatgu@googlegroups.com>, is intended for users to
+Send error to <a href="https://groups.google.com/forum/#!forum/mofem-group">mofem-group@googlegroups.com</a>, you can
 
 - report bugs,
 - ask for clarification,
@@ -49,7 +49,7 @@ Error Trace:
 [0]PETSC ERROR: -pc_factor_mat_solver_package mumps
 [0]PETSC ERROR: -pc_type lu
 [0]PETSC ERROR: ----------------End of Error Message -------send entire error message to petsc-maint@mcs.anl.gov----------
-[0]PETSC ERROR: ----------MoFEM End of Error Message -------send entire error message to CMatGU <cmatgu@googlegroups.com> ----------
+[0]PETSC ERROR: ----------MoFEM End of Error Message -------send entire error message to mofem-group@googlegroups.com ----------
 \endcode
 
 */

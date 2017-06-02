@@ -263,7 +263,7 @@ static PetscErrorCode mofem_error_handler(
       strs_version << "MoFEM_version_" << MoFEM_VERSION_MAJOR << "." << MoFEM_VERSION_MINOR << "." << MoFEM_VERSION_BUILD;
 
       error_printf_hilight();
-      (*PetscErrorPrintf)("----------MoFEM End of Error Message -------send entire error message to CMatGU <cmatgu@googlegroups.com> ----------\n");
+      (*PetscErrorPrintf)("----------MoFEM End of Error Message -------send entire error message to mofem-group@googlegroups.com ----------\n");
       error_printf_normal();
 
     }
