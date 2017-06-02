@@ -270,18 +270,6 @@ struct ForcesAndSurcesCore: public FEMethod {
   PetscErrorCode getProblemNodesColIndices(const std::string &field_name,VectorInt &nodes_indices) const;
   PetscErrorCode getProblemTypeColIndices(const std::string &field_name,EntityType type,int side_number,VectorInt &indices) const;
 
-  ublas::matrix<MatrixDouble > N_face_edge;
-  ublas::vector<MatrixDouble > N_face_bubble;
-  ublas::vector<MatrixDouble > N_volume_edge;
-  ublas::vector<MatrixDouble > N_volume_face;
-  MatrixDouble N_volume_bubble;
-
-  ublas::matrix<MatrixDouble > diffN_face_edge;
-  ublas::vector<MatrixDouble > diffN_face_bubble;
-  ublas::vector<MatrixDouble > diffN_volume_edge;
-  ublas::vector<MatrixDouble > diffN_volume_face;
-  MatrixDouble diffN_volume_bubble;
-
   /** \brief set integration rule for finite element
 
   This function is overloaded by the user. The integration rule

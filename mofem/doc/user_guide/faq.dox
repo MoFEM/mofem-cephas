@@ -89,7 +89,7 @@ MoFEM is developed continuously, i.e. any merged pull request to the
 CDashTesting branch triggers automatic testing on the development server. The
 code is verified during when a pull request is accepted and merged and validated
 when the test on the development server are passed. If tests are passed
-CDashBranch is merged to release branch.
+CDashBranch is merged to master branch.
 
 \section own_documentation How to generate this documentation on your local machine?
 
@@ -162,7 +162,9 @@ export https_proxy=http://wwwcache.gla.ac.uk:8080
 
 You can run tests and report results to MoFEM CDash web page. Form mofem user
 modules build directory executing  run script
-\code./bin/mofem_fast_check.sh\endcode
+\code
+./bin/mofem_fast_check.sh
+\endcode
 Results of test can be seen on <http://cdash.eng.gla.ac.uk/cdash/>.
 
 Note that test tests for MoFEM library and \em User \em Modules are run independently
@@ -184,7 +186,7 @@ where option -V sets verbose version and all test output is printed on screen
 and -D Experimental tels ctest to submit results to Experimental build on CDash
 MoFEM server.
 
-\section how_to_make_2nd_order_geometry How to make 2nd order gemetry in cubit and transfer it to MoFEM?
+\section how_to_make_2nd_order_geometry How to make 2nd order geometry in cubit and transfer it to MoFEM?
 
 In cubit you need to generate 10 node tetrahedral. You simply create block
 and set element type to TETRA10, as follows
@@ -219,6 +221,46 @@ Look at examples of use to user modules, for example elasticity.cpp.
 
 \section adding_user_module How to add user module?
 
+MoFEM is a core library providing functionality for implementation of user
+modules where applications for particular finite elements or problems are
+implemented. User module is an independent repository, private or public and
+independently managed by its owner.
+
+User module is added to the project by cloning repository into directory
+$HOME/mofem-cephas/mofem/users_modules, for example, module for computational
+homogenisation has repository in Bitbucket and can be added by
+\code
+cd $HOME/mofem-cephas/mofem/users_modules
+git clone https://likask@bitbucket.org/likask/mofem_um_homogenisation.git homogenisation
+\endcode
+Sometimes users modules depend on other modules, in that case, homogenisation
+module uses some old obsolete classes (which should not be used in new
+developments), thus in this particular case addition you have to clone  also
+obsolete module
+\code
+git clone https://likask@bitbucket.org/likask/mofem_um_obsolete.git obsolete
+\endcode
+
+Once the module is added, you have to go main build directory where users
+modules are located and rebuild the code. So you have to do
+\code
+cd $HOME/mofem_build/um
+touch CMakeCache.txt
+make -j 4
+\endcode
+Note the first command is used to trigger reconfiguration of users modules with the new module.
+
+Note, each user module consist InstalledAddModule.cmake, with beginning lines,
+\code
+# Check minimum version of MoFEM with this module works
+check_mofem_version(0 5 63)
+add_subdirectory(${PROJECT_SOURCE_DIR}/homogenisation)
+\endcode
+In that file minimal version of the core library is given (e.g. v0.5.63). Thus
+if you have too old version of core lib, it won't be added and cmake will
+generate an error. In that case, you need to update core library by pulling most
+recent version from Bitbucket repository and install core library.
+
 User module can be independent repository, private or public and independently
 managed and owned form MoFEM library. If user module is part of MoFEM repository
 can be simply added by adding it to \em ModulesLists.cmake in users modules
@@ -234,42 +276,6 @@ InstalledAddModule.cmake, with content,
 # Check monimimal version of MoFEM with this module works
 check_mofem_version(0 3 6)
 add_subdirectory(${PROJECT_SOURCE_DIR}/homogenisation)
-\endcode
-
-If user module has documentation (in principle all user modules should have
-documentation), if file \em AddDocumentation.cmake, it is executed by cmake
-when documentation is build. This cmake script is usually used to copy images and
-other files which are linked in documentation.
-
-In each module you can have two type directory data,
-  -# Simple
-  -# Extended
-
-User module is added to \em ModulesLists.cmake file using cmake command:
-\code
-add_subdirectory(my_new_module)
-\endcode
-Simple directory structure consist no subdirectories. f.e. elasticity. Extended (recommended)
-data structure consist subdirectories, f.e. homogenization, and follows pattern
-
-\code
--> /atom_tests
--> /src <- hpp files
--> /src/impl <- cpp files form library
--> /meshes
--> /data
--> /doc
-\endcode
-
-Not all elements of module source tree are compulsory, however each user module
-and new MoFEM functionality should have associated \em atom \em test verifying
-implementation and each module should have README file or module documentation
-in doc using Doxygen.
-
-It is strongly advised users modules should have one name space, that potential
-naming conflicts, f.e. \code
-namespace SolidShellModule {
-}
 \endcode
 
 \section prfiling_code_mac_os_x How to profile code using XCode tools?

@@ -101,13 +101,13 @@ PetscErrorCode Core::VecCreateGhost(const std::string &name,RowColData rc,Vec *V
       nb_dofs = p_miit->getNbDofsRow();
       nb_local_dofs = p_miit->getNbLocalDofsRow();
       nb_ghost_dofs = p_miit->getNbGhostDofsRow();
-      dofs = const_cast<NumeredDofEntityByLocalIdx*>(&p_miit->numered_dofs_rows->get<PetscLocalIdx_mi_tag>());
+      dofs = const_cast<NumeredDofEntityByLocalIdx*>(&p_miit->numeredDofsRows->get<PetscLocalIdx_mi_tag>());
       break;
     case COL:
       nb_dofs = p_miit->getNbDofsCol();
       nb_local_dofs = p_miit->getNbLocalDofsCol();
       nb_ghost_dofs = p_miit->getNbGhostDofsCol();
-      dofs = const_cast<NumeredDofEntityByLocalIdx*>(&p_miit->numered_dofs_cols->get<PetscLocalIdx_mi_tag>());
+      dofs = const_cast<NumeredDofEntityByLocalIdx*>(&p_miit->numeredDofsCols->get<PetscLocalIdx_mi_tag>());
       break;
     default:
      SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented");
@@ -140,12 +140,12 @@ PetscErrorCode Core::ISCreateProblemOrder(
   dofs_order::iterator it,hi_it;
   switch(rc) {
     case ROW:
-    it = p->numered_dofs_rows->get<Composite_Part_And_Order_mi_tag>().lower_bound(boost::make_tuple(rAnk,min_order));
-    hi_it = p->numered_dofs_rows->get<Composite_Part_And_Order_mi_tag>().upper_bound(boost::make_tuple(rAnk,max_order));
+    it = p->numeredDofsRows->get<Composite_Part_And_Order_mi_tag>().lower_bound(boost::make_tuple(rAnk,min_order));
+    hi_it = p->numeredDofsRows->get<Composite_Part_And_Order_mi_tag>().upper_bound(boost::make_tuple(rAnk,max_order));
     break;
     case COL:
-    it = p->numered_dofs_cols->get<Composite_Part_And_Order_mi_tag>().lower_bound(boost::make_tuple(rAnk,min_order));
-    hi_it = p->numered_dofs_cols->get<Composite_Part_And_Order_mi_tag>().upper_bound(boost::make_tuple(rAnk,max_order));
+    it = p->numeredDofsCols->get<Composite_Part_And_Order_mi_tag>().lower_bound(boost::make_tuple(rAnk,min_order));
+    hi_it = p->numeredDofsCols->get<Composite_Part_And_Order_mi_tag>().upper_bound(boost::make_tuple(rAnk,max_order));
     break;
     default:
      SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented");
@@ -188,12 +188,12 @@ PetscErrorCode Core::ISCreateProblemFieldAndRank(
   dofs_by_name_and_rank::iterator it,hi_it;
   switch(rc) {
     case ROW:
-    it = p->numered_dofs_rows->get<Composite_Name_Part_And_CoeffIdx_mi_tag>().lower_bound(boost::make_tuple(field,rAnk,min_coeff_idx));
-    hi_it = p->numered_dofs_rows->get<Composite_Name_Part_And_CoeffIdx_mi_tag>().upper_bound(boost::make_tuple(field,rAnk,max_coeff_idx));
+    it = p->numeredDofsRows->get<Composite_Name_Part_And_CoeffIdx_mi_tag>().lower_bound(boost::make_tuple(field,rAnk,min_coeff_idx));
+    hi_it = p->numeredDofsRows->get<Composite_Name_Part_And_CoeffIdx_mi_tag>().upper_bound(boost::make_tuple(field,rAnk,max_coeff_idx));
     break;
     case COL:
-    it = p->numered_dofs_cols->get<Composite_Name_Part_And_CoeffIdx_mi_tag>().lower_bound(boost::make_tuple(field,rAnk,min_coeff_idx));
-    hi_it = p->numered_dofs_cols->get<Composite_Name_Part_And_CoeffIdx_mi_tag>().upper_bound(boost::make_tuple(field,rAnk,max_coeff_idx));
+    it = p->numeredDofsCols->get<Composite_Name_Part_And_CoeffIdx_mi_tag>().lower_bound(boost::make_tuple(field,rAnk,min_coeff_idx));
+    hi_it = p->numeredDofsCols->get<Composite_Name_Part_And_CoeffIdx_mi_tag>().upper_bound(boost::make_tuple(field,rAnk,max_coeff_idx));
     break;
     default:
      SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented");
@@ -251,13 +251,13 @@ PetscErrorCode Core::ISCreateFromProblemFieldToOtherProblemField(
   NumeredDofEntityByLocalIdx::iterator y_dit,hi_y_dit;
   switch (y_rc) {
     case ROW:
-      y_dit = p_y->numered_dofs_rows->get<PetscLocalIdx_mi_tag>().lower_bound(0);
-      hi_y_dit = p_y->numered_dofs_rows->get<PetscLocalIdx_mi_tag>().
+      y_dit = p_y->numeredDofsRows->get<PetscLocalIdx_mi_tag>().lower_bound(0);
+      hi_y_dit = p_y->numeredDofsRows->get<PetscLocalIdx_mi_tag>().
       upper_bound(p_y->getNbLocalDofsRow()-1);
       break;
     case COL:
-      y_dit = p_y->numered_dofs_cols->get<PetscLocalIdx_mi_tag>().lower_bound(0);
-      hi_y_dit = p_y->numered_dofs_cols->get<PetscLocalIdx_mi_tag>().
+      y_dit = p_y->numeredDofsCols->get<PetscLocalIdx_mi_tag>().lower_bound(0);
+      hi_y_dit = p_y->numeredDofsCols->get<PetscLocalIdx_mi_tag>().
       upper_bound(p_y->getNbLocalDofsCol()-1);
       break;
     default:
@@ -268,11 +268,11 @@ PetscErrorCode Core::ISCreateFromProblemFieldToOtherProblemField(
   switch (x_rc) {
     case ROW:
       x_numered_dofs_by_ent_name_dof =
-      &(p_x->numered_dofs_rows->get<Composite_Name_And_Ent_And_EntDofIdx_mi_tag>());
+      &(p_x->numeredDofsRows->get<Composite_Name_And_Ent_And_EntDofIdx_mi_tag>());
       break;
     case COL:
       x_numered_dofs_by_ent_name_dof =
-      &(p_x->numered_dofs_cols->get<Composite_Name_And_Ent_And_EntDofIdx_mi_tag>());
+      &(p_x->numeredDofsCols->get<Composite_Name_And_Ent_And_EntDofIdx_mi_tag>());
       break;
     default:
      SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"only makes sense for ROWS and COLS");
@@ -371,12 +371,12 @@ PetscErrorCode Core::ISCreateFromProblemToOtherProblem(
   NumeredDofEntityByLocalIdx::iterator y_dit,hi_y_dit;
   switch (y_rc) {
     case ROW:
-      y_dit = p_y->numered_dofs_rows->get<PetscLocalIdx_mi_tag>().lower_bound(0);
-      hi_y_dit = p_y->numered_dofs_rows->get<PetscLocalIdx_mi_tag>().lower_bound(p_y->getNbLocalDofsRow()); // should be lower
+      y_dit = p_y->numeredDofsRows->get<PetscLocalIdx_mi_tag>().lower_bound(0);
+      hi_y_dit = p_y->numeredDofsRows->get<PetscLocalIdx_mi_tag>().lower_bound(p_y->getNbLocalDofsRow()); // should be lower
       break;
     case COL:
-      y_dit = p_y->numered_dofs_cols->get<PetscLocalIdx_mi_tag>().lower_bound(0);
-      hi_y_dit = p_y->numered_dofs_cols->get<PetscLocalIdx_mi_tag>().lower_bound(p_y->getNbLocalDofsCol()); // should be lower
+      y_dit = p_y->numeredDofsCols->get<PetscLocalIdx_mi_tag>().lower_bound(0);
+      hi_y_dit = p_y->numeredDofsCols->get<PetscLocalIdx_mi_tag>().lower_bound(p_y->getNbLocalDofsCol()); // should be lower
       break;
     default:
      SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented");
@@ -384,10 +384,10 @@ PetscErrorCode Core::ISCreateFromProblemToOtherProblem(
   const NumeredDofEntityByUId* x_numered_dofs_by_uid;
   switch (x_rc) {
     case ROW:
-      x_numered_dofs_by_uid = &(p_x->numered_dofs_rows->get<Unique_mi_tag>());
+      x_numered_dofs_by_uid = &(p_x->numeredDofsRows->get<Unique_mi_tag>());
       break;
     case COL:
-      x_numered_dofs_by_uid = &(p_x->numered_dofs_cols->get<Unique_mi_tag>());
+      x_numered_dofs_by_uid = &(p_x->numeredDofsCols->get<Unique_mi_tag>());
       break;
     default:
      SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented");
@@ -461,12 +461,12 @@ PetscErrorCode Core::set_local_ghost_vector(
     case ROW:
       nb_local_dofs = problem_ptr->getNbLocalDofsRow();
       nb_ghost_dofs = problem_ptr->getNbGhostDofsRow();
-      dofs = const_cast<NumeredDofEntityByLocalIdx*>(&problem_ptr->numered_dofs_rows->get<PetscLocalIdx_mi_tag>());
+      dofs = const_cast<NumeredDofEntityByLocalIdx*>(&problem_ptr->numeredDofsRows->get<PetscLocalIdx_mi_tag>());
       break;
     case COL:
       nb_local_dofs = problem_ptr->getNbLocalDofsCol();
       nb_ghost_dofs = problem_ptr->getNbGhostDofsCol();
-      dofs = const_cast<NumeredDofEntityByLocalIdx*>(&problem_ptr->numered_dofs_cols->get<PetscLocalIdx_mi_tag>());
+      dofs = const_cast<NumeredDofEntityByLocalIdx*>(&problem_ptr->numeredDofsCols->get<PetscLocalIdx_mi_tag>());
       break;
     default:
      SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented");
@@ -561,11 +561,11 @@ PetscErrorCode Core::set_global_ghost_vector(
   switch (rc) {
     case ROW:
       nb_dofs = problem_ptr->getNbDofsRow();
-      dofs = const_cast<DofsByGlobalIdx*>(&problem_ptr->numered_dofs_rows->get<PetscGlobalIdx_mi_tag>());
+      dofs = const_cast<DofsByGlobalIdx*>(&problem_ptr->numeredDofsRows->get<PetscGlobalIdx_mi_tag>());
       break;
     case COL:
       nb_dofs = problem_ptr->getNbDofsCol();
-      dofs = const_cast<DofsByGlobalIdx*>(&problem_ptr->numered_dofs_cols->get<PetscGlobalIdx_mi_tag>());
+      dofs = const_cast<DofsByGlobalIdx*>(&problem_ptr->numeredDofsCols->get<PetscGlobalIdx_mi_tag>());
       break;
     default:
      SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented");
@@ -625,10 +625,10 @@ PetscErrorCode Core::set_other_local_ghost_vector(
   DofsByNameAndLocalIdx *dofs;
   switch (rc) {
     case ROW:
-      dofs = const_cast<DofsByNameAndLocalIdx*>(&problem_ptr->numered_dofs_rows->get<Composite_Name_And_HasLocalIdx_mi_tag>());
+      dofs = const_cast<DofsByNameAndLocalIdx*>(&problem_ptr->numeredDofsRows->get<Composite_Name_And_HasLocalIdx_mi_tag>());
       break;
     case COL:
-      dofs = const_cast<DofsByNameAndLocalIdx*>(&problem_ptr->numered_dofs_cols->get<Composite_Name_And_HasLocalIdx_mi_tag>());
+      dofs = const_cast<DofsByNameAndLocalIdx*>(&problem_ptr->numeredDofsCols->get<Composite_Name_And_HasLocalIdx_mi_tag>());
       break;
     default:
      SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented");
@@ -747,11 +747,11 @@ PetscErrorCode Core::set_other_global_ghost_vector(
   switch (rc) {
     case ROW:
       nb_dofs = problem_ptr->getNbDofsRow();
-      dofs = const_cast<DofsByName*>(&problem_ptr->numered_dofs_rows->get<FieldName_mi_tag>());
+      dofs = const_cast<DofsByName*>(&problem_ptr->numeredDofsRows->get<FieldName_mi_tag>());
       break;
     case COL:
       nb_dofs = problem_ptr->getNbDofsCol();
-      dofs = const_cast<DofsByName*>(&problem_ptr->numered_dofs_cols->get<FieldName_mi_tag>());
+      dofs = const_cast<DofsByName*>(&problem_ptr->numeredDofsCols->get<FieldName_mi_tag>());
       break;
     default:
      SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"not implemented");

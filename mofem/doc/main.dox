@@ -15,24 +15,31 @@ of mesh refinement and optimised for high-performance computing. It is designed
 to be able to manage complexities related to a heterogeneous order of
 approximations for L2,H1,H-div and H-curl spaces, see \cite NME:NME847.
 
-MoFEM is the blend of the Boost MultiIndex containers, MOAB (Mesh Oriented
-Database) \cite tautges_moab:2004 and PETSc (Portable, Extensible Toolkit for
-Scientific Computation) \cite petsc-web-page. MoFEM is developed in C++ and it
-is open-source software under the GNU Lesser General Public License (see \ref
-legal_stuff) Stuff.
+MoFEM manages complexity related to finite element approximation and bookkeeping
+related do degrees of freedom and finite elements. It is part of bigger
+software ecosystem, composed of the Boost MultiIndex containers, MOAB (Mesh
+Oriented Database) \cite tautges_moab:2004 and PETSc (Portable, Extensible
+Toolkit for Scientific Computation) \cite petsc-web-page. MoFEM is developed in
+C++ and it is open-source software under the GNU Lesser General Public License
+(see \ref legal_stuff) Stuff.
 
 MoFEM can read and write a number of mesh file formats using functionality
 provided by MoAB.  The current version of MoFEM has full support for
 CUBIT/TRELIS, TetGEN, Salome/Code_Aster (MED format) for pre-processing and
 ParaView for post-processing.
 
-\ref mofem_citation
-
+- \ref mofem_citation
 \htmlonly
 <a href="https://doi.org/10.5281/zenodo.438712"><img src="https://zenodo.org/badge/DOI/10.5281/zenodo.438712.svg" alt="DOI"></a>
 \endhtmlonly
-
-- Contact: <cmatgu@googlegroups.com>
+- Build & testing status:
+\htmlonly
+<a href="https://bitbucket.org/likask/mofem-cephas/addon/pipelines/home">
+	<img src="https://bitbucket-badges.useast.atlassian.io/badge/likask/mofem-cephas.svg" alt="Pippelines">
+</a>
+\endhtmlonly
+- All results from testing on the clouds are submitted to <a href=http://cdash.eng.gla.ac.uk/cdash/>CDash</a>
+- Mailing list: <a href="https://groups.google.com/forum/#!forum/mofem-group">mofem-group@googlegroups.com</a>
 - Discussion channel: <https://mofem.slack.com/>
 - Version repository: <https://bitbucket.org/likask/mofem-cephas>
 
@@ -57,6 +64,8 @@ calculations using several mesh refinements, different approximation orders,
 multiple degrees of freedom and/or different scales.
 
 \subsection mofem_features Properties and features
+
+\image html FigExamples.png width=1000px
 
 \subsubsection mofem_features_ho Higher-order finite element spaces
 
@@ -128,6 +137,10 @@ List of third party libraries and packages used by MoFEM:
 \section twitter_and_google_plus Recent developments and news
 
 \htmlinclude doc/twitter_widged.html
+
+\section Acknowledgments
+
+\image html Acknowledgments.png width=1000.px
 
 \section legal_stuff Legal stuff
 

@@ -1208,17 +1208,17 @@ extern "C" {
       nn = 0;
       for(;nn<3;nn++) {
         if(Fext!=NULL)
-  	for(dd = 0;dd<3;dd++) {
-  	  Fext[3*nn+dd] += g_w[gg]*N[3*gg+nn]*normal_real[dd]*traction[2];
-  	  Fext[3*nn+dd] += g_w[gg]*N[3*gg+nn]*s1_real[dd]*traction[0];
-  	  Fext[3*nn+dd] += g_w[gg]*N[3*gg+nn]*s2_real[dd]*traction[1];
-  	}
+        for(dd = 0;dd<3;dd++) {
+          Fext[3*nn+dd] += g_w[gg]*N[3*gg+nn]*normal_real[dd]*traction[2];
+          Fext[3*nn+dd] += g_w[gg]*N[3*gg+nn]*s1_real[dd]*traction[0];
+          Fext[3*nn+dd] += g_w[gg]*N[3*gg+nn]*s2_real[dd]*traction[1];
+        }
         if(iFext!=NULL)
-  	for(dd = 0;dd<3;dd++) {
-  	  iFext[3*nn+dd] += g_w[gg]*N[3*gg+nn]*normal_imag[dd]*traction[2];
-  	  iFext[3*nn+dd] += g_w[gg]*N[3*gg+nn]*s1_imag[dd]*traction[0];
-  	  iFext[3*nn+dd] += g_w[gg]*N[3*gg+nn]*s2_imag[dd]*traction[1];
-  	}
+        for(dd = 0;dd<3;dd++) {
+          iFext[3*nn+dd] += g_w[gg]*N[3*gg+nn]*normal_imag[dd]*traction[2];
+          iFext[3*nn+dd] += g_w[gg]*N[3*gg+nn]*s1_imag[dd]*traction[0];
+          iFext[3*nn+dd] += g_w[gg]*N[3*gg+nn]*s2_imag[dd]*traction[1];
+        }
       }
     }
     PetscFunctionReturn(0);
@@ -1229,7 +1229,8 @@ extern "C" {
     double *diffN,double *diffN_face,double *diffN_edge[],
     double *t,double *t_edge[],double *t_face,
     double *dofs_X,double *dofs_X_edge[],double *dofs_X_face,
-    double *KExt_HH,int g_dim,const double *g_w) {
+    double *KExt_HH,int g_dim,const double *g_w
+  ) {
     PetscFunctionBegin;
     int gg,dd,ii,nn;
     bzero(KExt_HH,9*9*sizeof(double));
@@ -1243,26 +1244,27 @@ extern "C" {
         bzero(idofs_X,9*sizeof(double));
         idofs_X[ii] = eps;
         ierr = Normal_hierarchical(
-  	order,order_edge, //FIXME
-  	order,order_edge,
-  	diffN,diffN_face,diffN_edge,
-  	dofs_X,dofs_X_edge,dofs_X_face,
-  	idofs_X,NULL,NULL,
-  	xnormal,xs1,xs2,gg); CHKERRQ(ierr);
+          order,order_edge, //FIXME
+          order,order_edge,
+          diffN,diffN_face,diffN_edge,
+          dofs_X,dofs_X_edge,dofs_X_face,
+          idofs_X,NULL,NULL,
+          xnormal,xs1,xs2,gg
+        ); CHKERRQ(ierr);
         ierr = Base_scale(xnormal,xs1,xs2); CHKERRQ(ierr);
         double normal_imag[3],s1_imag[3],s2_imag[3];
         for(dd = 0;dd<3;dd++) {
-  	normal_imag[dd] = 0.5*xnormal[dd].i/eps;
-  	s1_imag[dd] = 0.5*xs1[dd].i/eps;
-  	s2_imag[dd] = 0.5*xs2[dd].i/eps;
+          normal_imag[dd] = 0.5*xnormal[dd].i/eps;
+          s1_imag[dd] = 0.5*xs1[dd].i/eps;
+          s2_imag[dd] = 0.5*xs2[dd].i/eps;
         }
         nn = 0;
         for(;nn<3;nn++) {
-  	for(dd = 0;dd<3;dd++) {
-  	  KExt_HH[ii+9*3*nn+9*dd] += g_w[gg]*N[3*gg+nn]*normal_imag[dd]*traction[2];
-  	  KExt_HH[ii+9*3*nn+9*dd] += g_w[gg]*N[3*gg+nn]*s1_imag[dd]*traction[0];
-  	  KExt_HH[ii+9*3*nn+9*dd] += g_w[gg]*N[3*gg+nn]*s2_imag[dd]*traction[1];
-  	}
+          for(dd = 0;dd<3;dd++) {
+            KExt_HH[ii+9*3*nn+9*dd] += g_w[gg]*N[3*gg+nn]*normal_imag[dd]*traction[2];
+            KExt_HH[ii+9*3*nn+9*dd] += g_w[gg]*N[3*gg+nn]*s1_imag[dd]*traction[0];
+            KExt_HH[ii+9*3*nn+9*dd] += g_w[gg]*N[3*gg+nn]*s2_imag[dd]*traction[1];
+          }
         }
       }
     }

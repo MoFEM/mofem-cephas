@@ -9,12 +9,13 @@ implement nontrivial finite elements) while being small and extendable.
 
 ## Installation
 
-* [Install on **Linux**/**Mac OSX**/**Windows** using **docker**](http://mofem.eng.gla.ac.uk/mofem/html/md_doc_markdown__installtion_with_docker.html)
-* [Install on **Ubuntu** from scratch](http://mofem.eng.gla.ac.uk/mofem/html/md_doc_markdown__installation_on_ubuntu.html)
-* [Install on **Mac OSX**  from scratch](http://mofem.eng.gla.ac.uk/mofem/html/md_doc_markdown__installation_on_mac_o_s_x.html)
+* [Install with Docker other systems](http://mofem.eng.gla.ac.uk/mofem/html/installation.html)
 
-Contact: [cmatgu@googlegroups.com](cmatgu@googlegroups.com)  
+Mailing list: [mofem-group@googlegroups.com](https://groups.google.com/forum/#!forum/mofem-group)  
 
 ## Build status
 
-- ### **CDashTesting**: [CDashTesting](http://cdash.eng.gla.ac.uk/cdash/)
+Tests results are submitted to CDash.
+
+- **Pipelines**: [![build-status](https://bitbucket-badges.useast.atlassian.io/badge/likask/mofem-cephas.svg)](https://bitbucket.org/likask/mofem-cephas/addon/pipelines/home)
+- **CDash**: [CDash](http://cdash.eng.gla.ac.uk/cdash/)

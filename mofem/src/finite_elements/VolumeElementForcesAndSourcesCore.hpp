@@ -99,9 +99,9 @@ struct VolumeElementForcesAndSourcesCore: public ForcesAndSurcesCore {
     }
 
     UserDataOperator(
-      const std::string &row_field_name,const std::string &col_field_name,const char type
+      const std::string &row_field_name,const std::string &col_field_name,const char type,const bool symm = true
     ):
-    ForcesAndSurcesCore::UserDataOperator(row_field_name,col_field_name,type) {
+    ForcesAndSurcesCore::UserDataOperator(row_field_name,col_field_name,type,symm) {
     }
 
     /** \brief get element number of nodes
@@ -199,13 +199,17 @@ struct VolumeElementForcesAndSourcesCore: public ForcesAndSurcesCore {
     /**
      * \brief Get curl of base functions at integration point
      *
+     * \f[
+     * \nabla \times \mathbf{\phi}
+     * \f]
+     *
      * Works only for H-curl and H-div space.
      *
      * How to use it:
      * \code
      * MatrixDouble curl_mat(data.getFieldData().size(),3);
      * for(int gg = 0;gg<nb_gauss_pts;gg++) {
-     *  ierr = getDivergenceOfHDivBaseFunctions(side,type,data,gg,curl_mat); CHKERRQ(ierr);
+     *  ierr = getCurlOfHCurlBaseFunctions(side,type,data,gg,curl_mat); CHKERRQ(ierr);
      *  // do somthing with vec_div
      * }
      * \endcode
