@@ -39,7 +39,7 @@ ParaView for post-processing.
 </a>
 \endhtmlonly
 - All results from testing on the clouds are submitted to <a href=http://cdash.eng.gla.ac.uk/cdash/>CDash</a>
-- Contact: <cmatgu@googlegroups.com>
+- Mailing list: <a href="https://groups.google.com/forum/#!forum/mofem-group">mofem-group@googlegroups.com</a>
 - Discussion channel: <https://mofem.slack.com/>
 - Version repository: <https://bitbucket.org/likask/mofem-cephas>
 

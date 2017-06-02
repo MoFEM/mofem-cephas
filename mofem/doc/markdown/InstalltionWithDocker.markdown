@@ -95,5 +95,5 @@ MacOS X system.
 
 ##Contact
 
-Any problems with this installation, please contact us by [cmatgu@googlegroups.com](mailto:cmatgu@googlegroups.com)
+Any problems with this installation, please contact us by [mofem-group@googlegroups.com](https://groups.google.com/forum/#!forum/mofem-group)
 or on Slack [MoFEM Slack](https://mofem.slack.com/).

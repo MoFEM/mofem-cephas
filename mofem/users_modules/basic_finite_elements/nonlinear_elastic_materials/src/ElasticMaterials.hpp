@@ -301,6 +301,7 @@ struct ElasticMaterials {
       rval = mField.get_moab().get_entities_by_type(meshset,MBTET,set_of_blocks[id].tEts,true); CHKERRQ_MOAB(rval);
       set_of_blocks[id].iD = id;
       set_of_blocks[id].E = mydata.data.Young;
+      set_of_blocks[id].PoissonRatio = mydata.data.Poisson;
       if(blockData[id].yOung >= 0) set_of_blocks[id].E = blockData[id].yOung;
       if(blockData[id].pOisson >= -1) set_of_blocks[id].PoissonRatio = blockData[id].pOisson;
       PetscPrintf(mField.get_comm(),"Block Id %d Young Modulus %3.2g Poisson Ration %3.2f Material model %s\n",

@@ -14,8 +14,9 @@ contribution.
 strongly encouraged to contribute.
 
 - If you have idea how to improve MoFEM library, f.e. some functions names are not
-clear or new functionality can be added, propose that on our discussion group
-CMatGU cmatgu@googlegroups.com or discussion channel https://mofem.slack.com/
+clear or new functionality can be added, propose that on our mailing forum
+<a href="https://groups.google.com/forum/#!forum/mofem-group">mofem-group@googlegroups.com</a>
+or discussion channel https://mofem.slack.com/
 
 - If you like to start to contribute, writing a usage documentation could be the
 good start. See \ref a_guide_to_writing_documentation.
