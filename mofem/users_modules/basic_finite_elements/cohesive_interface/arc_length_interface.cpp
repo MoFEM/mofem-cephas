@@ -39,7 +39,7 @@ static char help[] = "...\n\n";
 
 struct ArcLengthElement: public ArcLengthIntElemFEMethod {
   MoFEM::Interface& mField;
-  Range PostProcNodes;
+  Range postProcNodes;
   ArcLengthElement(MoFEM::Interface& m_field,ArcLengthCtx *arc_ptr):
   ArcLengthIntElemFEMethod(m_field.get_moab(),arc_ptr),
   mField(m_field) {
@@ -48,10 +48,10 @@ struct ArcLengthElement: public ArcLengthIntElemFEMethod {
       EntityHandle meshset = cit->getMeshset();
       Range nodes;
       rval = mOab.get_entities_by_type(meshset,MBVERTEX,nodes,true); MOAB_THROW(rval);
-      PostProcNodes.merge(nodes);
+      postProcNodes.merge(nodes);
     }
 
-    PetscPrintf(PETSC_COMM_WORLD,"Nb. PostProcNodes %lu\n",PostProcNodes.size());
+    PetscPrintf(PETSC_COMM_WORLD,"Nb. PostProcNodes %lu\n",postProcNodes.size());
 
   };
 
@@ -62,27 +62,39 @@ struct ArcLengthElement: public ArcLengthIntElemFEMethod {
     boost::shared_ptr<NumeredDofEntity_multiIndex> numered_dofs_rows = problemPtr->getNumeredDofsRows();
     NumeredDofEntityByFieldName::iterator lit;
     lit = numered_dofs_rows->get<FieldName_mi_tag>().find("LAMBDA");
-    if(lit == numered_dofs_rows->get<FieldName_mi_tag>().end()) PetscFunctionReturn(0);
-    Range::iterator nit = PostProcNodes.begin();
-    for(;nit!=PostProcNodes.end();nit++) {
+    if(lit == numered_dofs_rows->get<FieldName_mi_tag>().end()) {
+      fclose(datafile);
+      PetscFunctionReturn(0);
+    }
+    Range::iterator nit = postProcNodes.begin();
+    for(;nit!=postProcNodes.end();nit++) {
       NumeredDofEntityByEnt::iterator dit,hi_dit;
       dit = numered_dofs_rows->get<Ent_mi_tag>().lower_bound(*nit);
       hi_dit = numered_dofs_rows->get<Ent_mi_tag>().upper_bound(*nit);
       double coords[3];
       rval = mOab.get_coords(&*nit,1,coords);  MOAB_THROW(rval);
       for(;dit!=hi_dit;dit++) {
-        PetscPrintf(PETSC_COMM_WORLD,"%s [ %d ] %6.4e -> ",lit->get()->getName().c_str(),lit->get()->getDofCoeffIdx(),lit->get()->getFieldData());
-        PetscPrintf(PETSC_COMM_WORLD,"%s [ %d ] %6.4e ",dit->get()->getName().c_str(),dit->get()->getDofCoeffIdx(),dit->get()->getFieldData());
-        PetscPrintf(PETSC_COMM_WORLD,"-> %3.4f %3.4f %3.4f\n",coords[0],coords[1],coords[2]);
-        if (dit->get()->getDofCoeffIdx()==0) {//print displacement and load factor in x-dir
-          PetscFPrintf(PETSC_COMM_WORLD,datafile,"%6.4e %6.4e ",dit->get()->getFieldData(),lit->get()->getFieldData());
-        }
+        PetscPrintf(
+          PETSC_COMM_WORLD,"%s [ %d ] %6.4e -> ",
+          lit->get()->getName().c_str(),lit->get()->getDofCoeffIdx(),lit->get()->getFieldData()
+        );
+        PetscPrintf(
+          PETSC_COMM_WORLD,"%s [ %d ] %6.4e ",
+          dit->get()->getName().c_str(),dit->get()->getDofCoeffIdx(),dit->get()->getFieldData()
+        );
+        PetscPrintf(
+          PETSC_COMM_WORLD,"-> %3.4f %3.4f %3.4f\n",coords[0],coords[1],coords[2]
+        );
+        PetscFPrintf(
+          PETSC_COMM_WORLD,datafile,"%6.4e %6.4e ",dit->get()->getFieldData(),lit->get()->getFieldData()
+        );
       }
     }
     PetscFPrintf(PETSC_COMM_WORLD,datafile,"\n");
     fclose(datafile);
     PetscFunctionReturn(0);
   }
+  
 };
 
 struct AssembleRhsVectors: public FEMethod {
