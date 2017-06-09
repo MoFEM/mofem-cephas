@@ -27,6 +27,15 @@ estimator to drive mesh adaptivity (h-adaptivity),
 
 \subsection mofem_eccosystem MoFEM software eccosystem
 
+MoFEM has not and will not develop all capabilities from scratch. Instead, MoFEM
+integrates advanced scientific computing tools for Algebra (PETSc and associated
+tools) and Topology (MOAB and associated tools) to create its ecosystem. This
+releases developers to focus on the finite element technology and/or the
+physical problem under consideration. Resilience of this ecosystem is ensured
+because the underpinning components have sustainable funding, dynamic and
+established group of developers and significant user base.
+\image html Ecosystem.png "Ecosystem" width=600px
+
 Finite element software is a complex ecosystem, managing mesh and topology
 related complexities, sparse algebra and complications related to approximation,
 integration or dense tensor algebra at integration point level. Each element by
@@ -176,7 +185,7 @@ struct OpGradGrad: public MoFEM::VolumeElementForcesAndSourcesCore::UserDataOper
           &entityLocalMatrix(aa,0),1
         );
         // get direvatives of base functions on columns
-        FTensor::Tensor1<double*,Tensor_Dim> t_base_diff_col = col_data.getFTensor1DiffN();
+        FTensor::Tensor1<double*,Tensor_Dim> t_base_diff_col = col_data.getFTensor1DiffN(gg,0);
         // loop column
         for(int bb = 0;bb!=nb_col_dofs;bb++) {
           FTensor::Index<'i',3> i;
@@ -187,9 +196,10 @@ struct OpGradGrad: public MoFEM::VolumeElementForcesAndSourcesCore::UserDataOper
         ++t_base_diff_row;
       }
 
-      // if row_side != col_side || row_type != col_type we can exploit
-      // symetry of matrux entityLocalMatrix, for simplicty we do
-      // not do it here
+      // for diagonal blocks, 
+      // if row_side == col_side && row_type == col_type we can exploit
+      // symmetry of matrix entityLocalMatrix, for simplicity we do
+      // not do it here.
 
     }
 

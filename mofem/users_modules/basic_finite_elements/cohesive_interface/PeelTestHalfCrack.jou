@@ -26,11 +26,15 @@ block 2 attribute index 2 0
 block 2 attribute index 3 1
 block 2 attribute index 4 1
 
+block 3 vertex 2 1 6 5 10 12 
+block 3 name "LoadPath"
+
 volume all scheme Tetmesh
 volume all size auto factor 7
 mesh volume all
 
 #save as "/Users/likask/MyBuild/mofem-bitbucket/mofem/meshes/PeelTestHalfCrack.cub" overwrite
+
 
 
 

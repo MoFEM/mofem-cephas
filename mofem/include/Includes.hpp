@@ -25,17 +25,6 @@
   #undef REAL
 #endif //WITH_TETGEN
 
-//LAPACK
-#ifdef __cplusplus
-extern "C" {
-#endif
-  #include <cblas.h>
-  #include <lapack_wrap.h>
-  #include <gm_rule.h>
-#ifdef __cplusplus
-}
-#endif
-
 //STD
 #include <fstream>
 #include <iostream>
@@ -123,6 +112,17 @@ extern "C" {
 #include <moab/ReadUtilIface.hpp>
 #include <moab/GeomUtil.hpp>
 #include <moab/Util.hpp>
+
+//LAPACK
+#ifdef __cplusplus
+extern "C" {
+#endif
+  #include <cblas.h>
+  #include <lapack_wrap.h>
+  #include <gm_rule.h>
+#ifdef __cplusplus
+}
+#endif
 
 //Name spaces
 using namespace moab;

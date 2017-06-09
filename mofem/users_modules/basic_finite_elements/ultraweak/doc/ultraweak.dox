@@ -82,8 +82,10 @@ format running script
 and prostporcess results in ParaView <http://www.paraview.org>.
 
 As result of postprocessing in ParaView we have created following output
-\image html l-shape-adaptivity.gif "h-adaptivity" width=700px
-\image html l-shape-adaptivity_singularity.gif "Flux singularity" width=700px
+\image html l-shape-adaptivity.gif "h-adaptivity" width=800px
+\image html l-shape-adaptivity_singularity.gif "Flux singularity" width=800px
+\image html l-shape-convergence.png "Convergence plot" width=800px
+
 You can note that subsequent mesh refinement reduces error and make it more
 uniformly distributed through the mesh. You can also observe that mesh is
 getting denser at the corner where singularity is located.
@@ -107,7 +109,7 @@ brick, prism, ...) we attach bit tag, i.e. \ref MoFEM::BitRefLevel. Using that t
 can make selections of entities and other operations on meshes.
 
 It would be easier to understand if you look at the figure below
-\image html mesh_bit_levels.png "Mesh bit refinement levels (Example)" width=700px
+\image html mesh_bit_levels.png "Mesh bit refinement levels (Example)" width=800px
 
 Imagine that we load the mesh with the topology like in the top-left figure. We
 seed the mesh (\ref MoFEM::Interface::seed_ref_level) by  tagging each entity
@@ -198,7 +200,7 @@ MoFEM::Interface& m_field = core;   ///< Create interface to database
 \endcode
 
 In file \erf l-shape.msh following geometry and mesh is described
-\image html gmesh_blocksets.png "Blocksets and GMesh mesh" width=700px
+\image html gmesh_blocksets.png "Blocksets and GMesh mesh" width=800px
 where as result of reading of that mesh into MoFEM database, following information is printed on the
 screen
 \verbatim
@@ -1830,7 +1832,7 @@ for(int ll = 0;ll!=nb_levels;ll++) {
 If you like to contribute to this module (or MoFEM library), you are very
 welcome. Please feel free to add changes, including improving this documentation.
 If you like to work and modify this user module, you can fork this repository,
-make your changes, and do pull request. Contact us 
+make your changes, and do pull request. Contact us
 <a href="https://groups.google.com/forum/#!forum/mofem-group">mofem-group@googlegroups.com</a> or
 <https://mofem.slack.com/>  if you need any help or comments.
 
@@ -1838,8 +1840,6 @@ This is work in progress, and more stuff can be done. You could consider own
 paper or student project.
 
 \todo Make this documentation better
-
-\todo Make convergence plots and add to documentation
 
 \todo HP-adaptive
 
