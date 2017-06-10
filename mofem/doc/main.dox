@@ -71,7 +71,7 @@ multiple degrees of freedom and/or different scales.
 
 - MoFEM supports wide range of spaces, L2, H1, H-div and H-curl
 - Numerical trace (interfacial) spaces, on faces and edges
-- Integration on skeleton, for example, enabling easy implementation of Discontinuous Galerkin on Nitsche method
+- Integration on skeleton, (enabling easy implementation of Discontinuous Galerkin or Nitsche method)
 
 \subsubsection mofem_features_discretisation Flexible discretization
 
@@ -79,8 +79,8 @@ multiple degrees of freedom and/or different scales.
 
 - Interface (e.g. cohesive) elements and shell elements
 
-- Automatic differentiation, e.g. automatic calculation of consistent tangent
-	matrix for any smooth plastic surface and non-sccociated plastic flow potential
+- Automatic Differentiation by OverLoading in C++ (<a href=ttps://projects.coin-or.org/ADOL-C>ADOL-C</a>). Applied to automatic calculation of consistent tangent
+	matrix for any smooth plastic surface and non-sccociated plastic flow potential.
 
 \subsubsection mofem_features_mesh_types Range of mesh types and topological operations
 

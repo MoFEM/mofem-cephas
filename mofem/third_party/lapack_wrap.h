@@ -12,6 +12,9 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
+
+// FIXME This is obsolete implementation, need to be rewritten
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -43,14 +46,22 @@ typedef struct { __CLPK_doublereal r, i; } __CLPK_doublecomplex;
 
 __CLPK_integer sgetrf_ (__CLPK_integer *m, __CLPK_integer *n,
   float *a, __CLPK_integer *lda, __CLPK_integer *ipiv, __CLPK_integer *info);
-__CLPK_integer dgetrf_ (__CLPK_integer *m, __CLPK_integer *n,
-  __CLPK_doublereal *a, __CLPK_integer *lda, __CLPK_integer *ipiv, __CLPK_integer *info);
+#ifndef MOAB_dgetrf
+__CLPK_integer dgetrf_ (
+  __CLPK_integer *m, __CLPK_integer *n,
+  __CLPK_doublereal *a, __CLPK_integer *lda, __CLPK_integer *ipiv, __CLPK_integer *info
+);
+#endif // MOAB_dgetrf
 __CLPK_integer dgetrs_ (char *trans, __CLPK_integer *n, __CLPK_integer *nrhs, __CLPK_doublereal *a,
   __CLPK_integer *lda, __CLPK_integer *ipiv, __CLPK_doublereal *b, __CLPK_integer *ldb, __CLPK_integer *info);
 __CLPK_integer dgesv_ (__CLPK_integer *n, __CLPK_integer *nrhs, __CLPK_doublereal *a, __CLPK_integer *lda,
   __CLPK_integer *ipiv, __CLPK_doublereal *b, __CLPK_integer *ldb, __CLPK_integer *info);
-__CLPK_integer dgetri_ (__CLPK_integer *n,__CLPK_doublereal *a, __CLPK_integer *lda,
-  __CLPK_integer *ipiv, __CLPK_doublereal *work, __CLPK_integer *lwork, __CLPK_integer *info);
+#ifndef MOAB_dgetri
+__CLPK_integer dgetri_ (
+  __CLPK_integer *n,__CLPK_doublereal *a, __CLPK_integer *lda,
+  __CLPK_integer *ipiv, __CLPK_doublereal *work, __CLPK_integer *lwork, __CLPK_integer *info
+);
+#endif // MOAB_dgetri
 __CLPK_integer dpotrf_ (char *uplo, __CLPK_integer *n,
   __CLPK_doublereal *a, __CLPK_integer *lda, __CLPK_integer *info);
 __CLPK_integer dpotrs_ (char *uplo, __CLPK_integer *n, __CLPK_integer *nrhs, __CLPK_doublereal *a,
@@ -75,9 +86,13 @@ __CLPK_integer dgels_(char *trans, __CLPK_integer *m, __CLPK_integer *n, __CLPK_
 __CLPK_integer dgesdd_(char *jobz, __CLPK_integer *m, __CLPK_integer *n, __CLPK_doublereal *a, __CLPK_integer *lda,
   __CLPK_doublereal *s, __CLPK_doublereal *u, __CLPK_integer *ldu,__CLPK_doublereal *vt, __CLPK_integer *ldvt,
   __CLPK_doublereal *work, __CLPK_integer *lwork, __CLPK_integer *iwork, __CLPK_integer *info);
-__CLPK_integer dsyevd_(char *jobz,char *uplo,__CLPK_integer *n,__CLPK_doublereal  *a,__CLPK_integer *lda,
+#ifndef MOAB_dsyevd
+__CLPK_integer dsyevd_(
+    char *jobz,char *uplo,__CLPK_integer *n,__CLPK_doublereal  *a,__CLPK_integer *lda,
   __CLPK_doublereal *w,__CLPK_doublereal *work,__CLPK_integer *lwork,__CLPK_integer *iwork,
-  __CLPK_integer *liwork,__CLPK_integer *info);
+  __CLPK_integer *liwork,__CLPK_integer *info
+);
+#endif // MOAB_dsyevd
 __CLPK_integer zgetri_(__CLPK_integer *n, __CLPK_doublecomplex *a, __CLPK_integer *lda,
 	__CLPK_integer *ipiv, __CLPK_doublecomplex *work, __CLPK_integer *lwork, __CLPK_integer *info);
 __CLPK_integer zgetrf_(__CLPK_integer *m, __CLPK_integer *n,

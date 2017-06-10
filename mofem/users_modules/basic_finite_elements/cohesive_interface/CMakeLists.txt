@@ -32,10 +32,12 @@ target_link_libraries(arc_length_interface
 )
 
 cm_export_file("PeelTestHalfCrack.h5m" export_files_cohesive_element)
+cm_export_file("PeelTestHalfCrack.cub" export_files_cohesive_element)
 
 file(COPY
-    ${CMAKE_CURRENT_SOURCE_DIR}/README
-    DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/)
+  ${CMAKE_CURRENT_SOURCE_DIR}/README
+  DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/
+)
 
 #testing
 add_test(ArcLengthInterfaceTest
