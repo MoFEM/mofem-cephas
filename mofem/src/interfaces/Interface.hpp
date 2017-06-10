@@ -25,6 +25,7 @@ static const MOFEMuuid IDD_MOFEMInterface = MOFEMuuid( BitIntefaceId(CORE_INTERF
 
 /**
  * \brief Interface
+ * \nosubgrouping
  * \ingroup mofem
  *
  * This interface is used by user to: <br>
@@ -36,6 +37,8 @@ static const MOFEMuuid IDD_MOFEMInterface = MOFEMuuid( BitIntefaceId(CORE_INTERF
 struct Interface: public UnknownInterface {
 
   /** \name Interface */
+
+ /**@{*/
 
   virtual PetscErrorCode query_interface_type(const std::type_info& type,void*& ptr) const = 0;
 
@@ -75,7 +78,11 @@ struct Interface: public UnknownInterface {
   */
   virtual const MeshsetsManager& get_meshsets_manager() const = 0;
 
+ /**@}*/
+
   /** \name Basic entity */
+
+ /**@{*/
 
   /**
    * \brief Get pointer to basic entity data.
@@ -86,7 +93,11 @@ struct Interface: public UnknownInterface {
    */
   virtual boost::shared_ptr<BasicEntityData> get_basic_entity_data_ptr() = 0;
 
+ /**@}*/
+
   /** \name Communicator */
+
+ /**@{*/
 
   /**
    * get MPI communicator
@@ -116,7 +127,11 @@ struct Interface: public UnknownInterface {
    */
   virtual int get_comm_rank() const = 0;
 
+ /**@}*/
+
   /** \name Check consistency */
+
+ /**@{*/
 
   /**
     * \brief check data consistency in entitiesPtr
@@ -142,7 +157,11 @@ struct Interface: public UnknownInterface {
     */
   virtual PetscErrorCode check_number_of_ents_in_ents_finite_element() const = 0;
 
+ /**@}*/
+
   /** \name Mange meshest (ALL FUNCTION DEPRECATED - DO NOT USE THIS) */
+
+ /**@{*/
 
   /**
     * \brief check for CUBIT Id and CUBIT type
@@ -316,7 +335,11 @@ struct Interface: public UnknownInterface {
   */
   DEPRECATED virtual PetscErrorCode print_cubit_materials_set() const = 0;
 
+ /**@}*/
+
   /** \name Database */
+
+ /**@{*/
 
   /**
    * \brief Clear database
@@ -332,7 +355,11 @@ struct Interface: public UnknownInterface {
    */
   virtual PetscErrorCode rebuild_database(int verb = -1) = 0;
 
+ /**@}*/
+
   /** \name Synchronize */
+
+ /**@{*/
 
   /** synchronize entity range on processors (collective)
 
@@ -363,7 +390,11 @@ struct Interface: public UnknownInterface {
     */
   virtual PetscErrorCode synchronise_field_entities(const std::string& name,int verb = -1) = 0;
 
+ /**@}*/
+
   /** \name Seed entities */
+
+ /**@{*/
 
   /**
   * Create finite elements based from entities in meshses. Throw error if entity is not in database
@@ -432,7 +463,11 @@ struct Interface: public UnknownInterface {
    */
   virtual PetscErrorCode seed_ref_level_MESHSET(const EntityHandle meshset,const BitRefLevel &bit,int verb = -1) = 0;
 
+ /**@}*/
+
   /** \name Getting entities by BitRefLevel */
+
+ /**@{*/
 
   /**\brief add all ents from ref level given by bit to meshset
     * \todo Should be outsourced to separate interface, i.e. BitLevelManager
@@ -484,7 +519,11 @@ struct Interface: public UnknownInterface {
    */
   virtual PetscErrorCode get_entities_by_ref_level(const BitRefLevel &bit,const BitRefLevel &mask,Range &ents) = 0;
 
+ /**@}*/
+
   /** \name Get adjacencies */
+
+ /**@{*/
 
   /** \brief Get the adjacencies associated with a entity to entities of a specified dimension.
     * \ingroup mofem_ref_ents
@@ -533,7 +572,11 @@ struct Interface: public UnknownInterface {
     const int verb = 0
   ) const = 0;
 
+ /**@}*/
+
   /** \name Updating entities */
+
+ /**@{*/
 
   /** \brief Get child entities form meshset containing parent entities
     * \todo Should be outsourced to separate interface, i.e. BitLevelManage
@@ -577,7 +620,11 @@ struct Interface: public UnknownInterface {
    */
   virtual PetscErrorCode update_finite_element_meshset_by_entities_children(const std::string name,const BitRefLevel &child_bit,const EntityType fe_ent_type,int verb = -1) = 0;
 
+ /**@}*/
+
   /** \name Delete and remove */
+
+ /**@{*/
 
   /** \brief delete entities form mofem and moab database
     *
@@ -597,7 +644,11 @@ struct Interface: public UnknownInterface {
   virtual PetscErrorCode delete_finite_element(const std::string name,int verb = -1) = 0;
 
 
+ /**@}*/
+
   /** \name Shift BitRefLevl */
+
+ /**@{*/
 
   /** \brief left shift bit ref level
     * this results of deletion of entities on far left side
@@ -610,7 +661,11 @@ struct Interface: public UnknownInterface {
     */
   virtual PetscErrorCode shift_right_bit_ref(const int shift,int verb = -1) = 0;
 
+ /**@}*/
+
   /** \name Fields */
+
+ /**@{*/
 
   /**
    * \brief Add field
@@ -945,7 +1000,11 @@ struct Interface: public UnknownInterface {
    */
   virtual const Field* get_field_structure(const std::string& name) = 0;
 
+ /**@}*/
+
   /** \name Finite elements */
+
+ /**@{*/
 
   /**
    * \brief Check if finite element is in database
@@ -1204,7 +1263,11 @@ struct Interface: public UnknownInterface {
   /// list adjacencies
   virtual PetscErrorCode list_adjacencies() const = 0;
 
+ /**@}*/
+
   /** \name Problems */
+
+ /**@{*/
 
   /** \brief Add problem
    * \ingroup mofem_problems
@@ -1302,7 +1365,11 @@ struct Interface: public UnknownInterface {
    */
   virtual PetscErrorCode list_dofs_by_field_name(const std::string &name) const = 0;
 
+ /**@}*/
+
   /** \name Clear dofs and entities */
+
+ /**@{*/
 
   /** Clear inactive dofs
     * \ingroup mofem_field
@@ -1329,7 +1396,11 @@ struct Interface: public UnknownInterface {
    */
   virtual PetscErrorCode clear_ents_fields(const std::string &name,const Range enst,int verb = -1) = 0;
 
+ /**@}*/
+
   /** \name Build fields, finite elements and problems */
+
+ /**@{*/
 
   /**
    * \brief Build finite elements
@@ -1357,7 +1428,11 @@ struct Interface: public UnknownInterface {
    */
   virtual PetscErrorCode build_finite_elements(const string fe_name,const Range *ents_ptr = NULL,int verb = -1) = 0;
 
+ /**@}*/
+
   /** \name Clear finite elements */
+
+ /**@{*/
 
   /** clear finite elements
     */
@@ -1367,7 +1442,11 @@ struct Interface: public UnknownInterface {
     */
   virtual PetscErrorCode clear_finite_elements(const std::string &name,const Range &ents,int verb = -1) = 0;
 
+ /**@}*/
+
   /** \name Build adjacencies */
+
+ /**@{*/
 
   /** \brief build adjacencies
     *
@@ -1415,7 +1494,11 @@ struct Interface: public UnknownInterface {
     */
   virtual PetscErrorCode build_adjacencies(const BitRefLevel &bit,const BitRefLevel &mask,int verb = -1) = 0;
 
+ /**@}*/
+
   /** \name Clear adjacencies */
+
+ /**@{*/
 
   /** \brief clear adjacency map for finite elements on given bit level
     *
@@ -1431,7 +1514,11 @@ struct Interface: public UnknownInterface {
     */
   virtual PetscErrorCode clear_adjacencies_entities(const BitRefLevel &bit,const BitRefLevel &mask,int verb = -1) = 0;
 
+ /**@}*/
+
   /** \name Build problems (DEPRECATED SHOULD NOT USE THIS)*/
+
+ /**@{*/
 
   /** \brief build problem data structures
    *
@@ -1719,7 +1806,11 @@ struct Interface: public UnknownInterface {
     */
   virtual PetscErrorCode get_problem_finite_elements_entities(const std::string &name,const std::string &fe_name,const EntityHandle meshset) = 0;
 
+ /**@}*/
+
   /** \name Create vectors */
+
+ /**@{*/
 
   /** \brief create local vector for problem
    * \ingroup mofem_vectors
@@ -1741,7 +1832,11 @@ struct Interface: public UnknownInterface {
    */
   virtual PetscErrorCode VecCreateGhost(const std::string &name,RowColData rc,Vec *V) const = 0;
 
+ /**@}*/
+
   /** \name Create matrices */
+
+ /**@{*/
 
   /**
     * \brief create Mat (MPIAIJ) for problem (collective)
@@ -1768,7 +1863,11 @@ struct Interface: public UnknownInterface {
     */
   virtual PetscErrorCode MatCreateSeqAIJWithArrays(const std::string &name,Mat *Aij,PetscInt **i,PetscInt **j,PetscScalar **v,int verb = -1) = 0;
 
+ /**@}*/
+
   /** \name Create IS */
+
+ /**@{*/
 
   /** \brief create IS for give two problems and field
     * \ingroup mofem_vectors
@@ -1851,7 +1950,11 @@ struct Interface: public UnknownInterface {
     int verb = -1
   ) const = 0;
 
+ /**@}*/
+
   /** \name Scatter vectors */
+
+ /**@{*/
 
   /**
     * \brief create scatter for vectors form one to another problem (collective)
@@ -1904,7 +2007,11 @@ struct Interface: public UnknownInterface {
     int verb = -1
   ) const = 0;
 
+ /**@}*/
+
   /** \name Set vector and mesh values */
+
+ /**@{*/
 
   /**
     * \brief set values of vector from/to meshdatabase
@@ -2086,7 +2193,11 @@ struct Interface: public UnknownInterface {
     int verb = -1
   ) = 0;
 
+ /**@}*/
+
   /** \name Field algebra */
+
+ /**@{*/
 
   /** \brief axpy fields
     * \ingroup mofem_field_algebra
@@ -2140,7 +2251,11 @@ struct Interface: public UnknownInterface {
     */
   virtual PetscErrorCode set_field(const double val,const EntityType type,const Range &ents,const std::string& field_name) = 0;
 
+ /**@}*/
+
   /** \name Making loops on elements and entities */
+
+ /**@{*/
 
   /** \brief Set data for BasicMethod
     *
@@ -2329,7 +2444,11 @@ struct Interface: public UnknownInterface {
     */
   virtual PetscErrorCode loop_dofs(const std::string &field_name,EntMethod &method,int verb = -1) = 0;
 
+ /**@}*/
+
   /** \name Get pointers to multi-index databses */
+
+ /**@{*/
 
   /** \brief Get fields multi-index from database
     * \ingroup mofem_access
