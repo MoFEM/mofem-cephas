@@ -681,11 +681,11 @@ namespace MoFEM {
           std::ostringstream str_value2;
           str_value2 << "block_" << it->getMeshsetId() << ".moment_magnitude";
           std::ostringstream str_value3;
-          str_value3 << "block_" << it->getMeshsetId() << ".moment_fx";
+          str_value3 << "block_" << it->getMeshsetId() << ".force_fx";
           std::ostringstream str_value4;
-          str_value4 << "block_" << it->getMeshsetId() << ".moment_fy";
+          str_value4 << "block_" << it->getMeshsetId() << ".force_fy";
           std::ostringstream str_value5;
-          str_value5 << "block_" << it->getMeshsetId() << ".moment_fz";
+          str_value5 << "block_" << it->getMeshsetId() << ".force_fz";
           std::ostringstream str_value6;
           str_value6 << "block_" << it->getMeshsetId() << ".moment_mx";
           std::ostringstream str_value7;
