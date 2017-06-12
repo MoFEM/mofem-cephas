@@ -33,6 +33,7 @@ static const MOFEMuuid IDD_MOFEMInterface = MOFEMuuid( BitIntefaceId(CORE_INTERF
  * - declare elements, <br>
  * - declare problems, <br>
  *
+ *  \todo Clean interface, organize groups outsource some functions to independent interface
  */
 struct Interface: public UnknownInterface {
 
