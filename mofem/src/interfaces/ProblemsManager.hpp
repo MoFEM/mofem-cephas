@@ -1,5 +1,6 @@
 /** \file ProblemsManager.hpp
  * \brief Interface managing problems
+ * \ingroup mofem_problems_manager
  *
  * Managing problems, build and partitioning.
  *
@@ -26,6 +27,8 @@ namespace MoFEM {
 
   /**
    * \brief Problem manager is used to build and partition problems
+   * \mofem_problems_manager
+   *
    */
   struct ProblemsManager: public UnknownInterface {
 
@@ -41,6 +44,7 @@ namespace MoFEM {
 
     /**
      * \brief Set partition tag to each finite element in the problem
+     * \ingroup mofem_problems_manager
      *
      * This will use one of the mesh partitioning programs available from PETSc
      * See <http://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/Mat/MatPartitioningType.html>
@@ -57,7 +61,7 @@ namespace MoFEM {
     );
 
     /** \brief build problem data structures
-     * \ingroup mofem_problems
+     * \ingroup mofem_problems_manager
      *
      * \note If square_matrix is set to true, that indicate that problem is structurally
      * symmetric, i.e. rows and columns have the same dofs and are indexed in the same
@@ -72,7 +76,7 @@ namespace MoFEM {
      PetscErrorCode buildProblem(const std::string &name,const bool square_matrix,int verb = 1);
 
      /** \brief build problem data structures
-      * \ingroup mofem_problems
+      * \ingroup mofem_problems_manager
       *
       * \note If square_matrix is set to true, that indicate that problem is structurally
       * symmetric, i.e. rows and columns have the same dofs and are indexed in the same
@@ -87,7 +91,7 @@ namespace MoFEM {
     PetscErrorCode buildProblem(Problem *problem_ptr,const bool square_matrix,int verb = 1);
 
     /** \brief build problem data structures, assuming that mesh is distributed (collective)
-     * \ingroup mofem_problems
+     * \ingroup mofem_problems_manager
 
      Mesh is distributed, that means that each processor keeps only own part of
      the mesh and shared entities.
@@ -101,7 +105,7 @@ namespace MoFEM {
     );
 
     /** \brief build problem data structures, assuming that mesh is distributed (collective)
-     * \ingroup mofem_problems
+     * \ingroup mofem_problems_manager
 
      Mesh is distributed, that means that each processor keeps only own part of
      the mesh and shared entities.
@@ -152,7 +156,7 @@ namespace MoFEM {
 
     /**
       * \brief build indexing and partition problem inheriting indexing and partitioning from two other problems
-      * \ingroup mofem_problems
+      * \ingroup mofem_problems_manager
       *
       * \param name problem name
       * \param problem_for_rows problem used to index rows
@@ -173,14 +177,14 @@ namespace MoFEM {
     );
 
     /** \brief partition problem dofs
-     * \ingroup mofem_problems
+     * \ingroup mofem_problems_manager
      *
      * \param name problem name
      */
     PetscErrorCode partitionSimpleProblem(const std::string &name,int verb = 1);
 
     /** \brief partition problem dofs (collective)
-     * \ingroup mofem_problems
+     * \ingroup mofem_problems_manager
      *
      * \param name problem name
      */
@@ -195,6 +199,7 @@ namespace MoFEM {
     );
 
     /** \brief partition finite elements
+     * \ingroup mofem_problems_manager
      *
      * Function which partition finite elements based on dofs partitioning.<br>
      * In addition it sets information about local row and cols dofs at given element on partition.
@@ -206,7 +211,7 @@ namespace MoFEM {
     );
 
     /** \brief determine ghost nodes
-     * \ingroup mofem_field
+     * \ingroup mofem_problems_manager
      *
      * \param name problem name
      */
@@ -233,3 +238,11 @@ namespace MoFEM {
 }
 
 #endif //__PROBLEMSMANAGER_HPP__
+
+
+/***************************************************************************//**
+ * \defgroup mofem_problems_manager Problems manager
+ * \brief Adding and managing problems
+ *
+ * \ingroup mofem
+ ******************************************************************************/

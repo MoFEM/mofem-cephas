@@ -750,6 +750,14 @@ typedef multi_index_container<
   >
 > NumeredDofEntity_multiIndex_petsc_local_dof_view_ordered_non_unique;
 
+typedef multi_index_container<
+  boost::shared_ptr<NumeredDofEntity>,
+  indexed_by<
+    ordered_non_unique<
+      const_mem_fun<NumeredDofEntity,DofIdx,&NumeredDofEntity::getPetscGlobalDofIdx> >
+  >
+> NumeredDofEntity_multiIndex_petsc_global_dof_view_ordered_non_unique;
+
 /**
  * Activate or deactivate dofs (multi-index modifier)
  * \ingroup dof_multi_indices

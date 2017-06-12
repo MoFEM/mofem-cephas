@@ -25,6 +25,7 @@ static const MOFEMuuid IDD_MOFEMInterface = MOFEMuuid( BitIntefaceId(CORE_INTERF
 
 /**
  * \brief Interface
+ * \nosubgrouping
  * \ingroup mofem
  *
  * This interface is used by user to: <br>
@@ -34,6 +35,10 @@ static const MOFEMuuid IDD_MOFEMInterface = MOFEMuuid( BitIntefaceId(CORE_INTERF
  *
  */
 struct Interface: public UnknownInterface {
+
+  /** \name Interface */
+
+ /**@{*/
 
   virtual PetscErrorCode query_interface_type(const std::type_info& type,void*& ptr) const = 0;
 
@@ -57,6 +62,28 @@ struct Interface: public UnknownInterface {
    */
   virtual const moab::Interface& get_moab() const = 0;
 
+  /** \brief get MeshsetsManager pointer
+  */
+  virtual MeshsetsManager* get_meshsets_manager_ptr() = 0;
+
+  /** \brief get MeshsetsManager pointer
+  */
+  virtual const MeshsetsManager* get_meshsets_manager_ptr() const = 0;
+
+  /** \brief get MeshsetsManager pointer
+  */
+  virtual MeshsetsManager& get_meshsets_manager() = 0;
+
+  /** \brief get MeshsetsManager pointer
+  */
+  virtual const MeshsetsManager& get_meshsets_manager() const = 0;
+
+ /**@}*/
+
+  /** \name Basic entity */
+
+ /**@{*/
+
   /**
    * \brief Get pointer to basic entity data.
    *
@@ -65,6 +92,12 @@ struct Interface: public UnknownInterface {
    *
    */
   virtual boost::shared_ptr<BasicEntityData> get_basic_entity_data_ptr() = 0;
+
+ /**@}*/
+
+  /** \name Communicator */
+
+ /**@{*/
 
   /**
    * get MPI communicator
@@ -94,6 +127,12 @@ struct Interface: public UnknownInterface {
    */
   virtual int get_comm_rank() const = 0;
 
+ /**@}*/
+
+  /** \name Check consistency */
+
+ /**@{*/
+
   /**
     * \brief check data consistency in entitiesPtr
     *
@@ -118,22 +157,11 @@ struct Interface: public UnknownInterface {
     */
   virtual PetscErrorCode check_number_of_ents_in_ents_finite_element() const = 0;
 
-  /** \brief get MeshsetsManager pointer
-  */
-  virtual MeshsetsManager* get_meshsets_manager_ptr() = 0;
+ /**@}*/
 
-  /** \brief get MeshsetsManager pointer
-  */
-  virtual const MeshsetsManager* get_meshsets_manager_ptr() const = 0;
+  /** \name Mange meshest (ALL FUNCTION DEPRECATED - DO NOT USE THIS) */
 
-  /** \brief get MeshsetsManager pointer
-  */
-  virtual MeshsetsManager& get_meshsets_manager() = 0;
-
-  /** \brief get MeshsetsManager pointer
-  */
-  virtual const MeshsetsManager& get_meshsets_manager() const = 0;
-
+ /**@{*/
 
   /**
     * \brief check for CUBIT Id and CUBIT type
@@ -146,11 +174,11 @@ struct Interface: public UnknownInterface {
     */
   DEPRECATED virtual bool check_msId_meshset(const int msId,const CubitBCType cubit_bc_type) = 0;
 
+
   /**
     * \brief add cubit meshset
 
     \deprecated use MeshsetsManager
-    \todo All cubit interface functions should be outsourced to dedicated interface
 
     * \param see CubitBC (NODESET, SIDESET or BLOCKSET and more)
     * \param ms_id id of the BLOCKSET/SIDESET/BLOCKSET
@@ -163,7 +191,6 @@ struct Interface: public UnknownInterface {
    * \brief set attributes to cubit meshset
 
    \deprecated use MeshsetsManager
-   \todo All cubit interface functions should be outsourced to dedicated interface
 
    * @param  cubit_bc_type type of meshset, see CubitBC, i.e. BLOCKSET, NODESET, SIDESET
    * @param  ms_id         id of meshset
@@ -308,6 +335,12 @@ struct Interface: public UnknownInterface {
   */
   DEPRECATED virtual PetscErrorCode print_cubit_materials_set() const = 0;
 
+ /**@}*/
+
+  /** \name Database */
+
+ /**@{*/
+
   /**
    * \brief Clear database
    * @param  verb Verbosity level
@@ -321,6 +354,12 @@ struct Interface: public UnknownInterface {
    * @return      Error code
    */
   virtual PetscErrorCode rebuild_database(int verb = -1) = 0;
+
+ /**@}*/
+
+  /** \name Synchronize */
+
+ /**@{*/
 
   /** synchronize entity range on processors (collective)
 
@@ -351,8 +390,15 @@ struct Interface: public UnknownInterface {
     */
   virtual PetscErrorCode synchronise_field_entities(const std::string& name,int verb = -1) = 0;
 
+ /**@}*/
+
+  /** \name Seed entities */
+
+ /**@{*/
+
   /**
   * Create finite elements based from entities in meshses. Throw error if entity is not in database
+  * \todo Should be outsourced to separate interface, i.e. BitLevelManager
   *
   * \param EntityHandle meshset
   *
@@ -360,7 +406,8 @@ struct Interface: public UnknownInterface {
   virtual PetscErrorCode seed_finite_elements(const EntityHandle meshset,int verb = -1) = 0;
 
   /**
-  * Create finite elements based from entities in meshses. Throw error if entity is not in database
+  * Create finite elements based from entities in meshsets. Throw error if entity is not in database
+  * \todo Should be outsourced to separate interface, i.e. BitLevelManager
   *
   * \param Range entities
   *
@@ -369,6 +416,7 @@ struct Interface: public UnknownInterface {
 
   /**
   * \brief seed 2D entities (Triangles entities only) in the meshset and their adjacencies (only TRIs adjacencies) in a particular BitRefLevel
+  * \todo Should be outsourced to separate interface, i.e. BitLevelManager
   *
   * \param EntityHandle MeshSet
   * \param BitRefLevel bitLevel
@@ -378,6 +426,7 @@ struct Interface: public UnknownInterface {
 
   /**
   * \brief seed 2D entities in the meshset and their adjacencies (only TETs adjacencies) in a particular BitRefLevel
+  * \todo Should be outsourced to separate interface, i.e. BitLevelManager
   *
   * \param EntityHandle MeshSet
   * \param BitRefLevel bitLevel
@@ -403,6 +452,7 @@ struct Interface: public UnknownInterface {
 
   /**
    * \brief seed entities in the range and their adjacencies in a particular BitRefLevel
+   * \todo Should be outsourced to separate interface, i.e. BitLevelManager
    */
   virtual PetscErrorCode seed_ref_level(const Range &ents,const BitRefLevel &bit,const bool only_tets = true,int verb = -1) = 0;
 
@@ -413,7 +463,14 @@ struct Interface: public UnknownInterface {
    */
   virtual PetscErrorCode seed_ref_level_MESHSET(const EntityHandle meshset,const BitRefLevel &bit,int verb = -1) = 0;
 
+ /**@}*/
+
+  /** \name Getting entities by BitRefLevel */
+
+ /**@{*/
+
   /**\brief add all ents from ref level given by bit to meshset
+    * \todo Should be outsourced to separate interface, i.e. BitLevelManager
     * \ingroup mofem_ref_ents
     *
     * \param BitRefLevel bitLevel
@@ -427,6 +484,7 @@ struct Interface: public UnknownInterface {
   ) = 0;
 
   /**\brief add all ents from ref level given by bit to meshset
+   * \todo Should be outsourced to separate interface, i.e. BitLevelManager
    * \ingroup mofem_ref_ents
    *
    * \param BitRefLevel bitLevel
@@ -441,6 +499,7 @@ struct Interface: public UnknownInterface {
 
 
   /**\brief add all ents from ref level given by bit to meshset
+   * \todo Should be outsourced to separate interface, i.e. BitLevelManager
    * \ingroup mofem_ref_ents
    *
    * \param BitRefLevel bitLevel
@@ -451,6 +510,7 @@ struct Interface: public UnknownInterface {
   virtual PetscErrorCode get_entities_by_ref_level(const BitRefLevel &bit,const BitRefLevel &mask,const EntityHandle meshset) = 0;
 
   /**\brief add all ents from ref level given by bit to meshset
+   * \todo Should be outsourced to separate interface, i.e. BitLevelManager
    * \ingroup mofem_ref_ents
    *
    * \param BitRefLevel bitLevel
@@ -459,27 +519,15 @@ struct Interface: public UnknownInterface {
    */
   virtual PetscErrorCode get_entities_by_ref_level(const BitRefLevel &bit,const BitRefLevel &mask,Range &ents) = 0;
 
-  // /**\brief add ref level to entities
-  //
-  //  Add bit level to entities
-  //  \param bit bit level to add
-  //  \paran ents range of entities to which bit level is added
-  //
-  //  */
-  // virtual PetscErrorCode add_ref_level_to_entities(const BitRefLevel &bit,Range &ents) = 0;
+ /**@}*/
 
-  // /**\brief add ref level to entities
-  //
-  //   Set bit level to entities
-  //   Add bit level to entities
-  //   \param bit bit level to add
-  //   \paran ents range of entities to which bit level is set
-  //
-  //  */
-  // virtual PetscErrorCode set_ref_level_to_entities(const BitRefLevel &bit,Range &ents) = 0;
+  /** \name Get adjacencies */
+
+ /**@{*/
 
   /** \brief Get the adjacencies associated with a entity to entities of a specified dimension.
     * \ingroup mofem_ref_ents
+    * \todo Should be outsourced to separate interface, i.e. BitLevelManager
     *
     * bit ref level of adjacent entities is equal to bit ref level of adjacent entities
     */
@@ -494,6 +542,7 @@ struct Interface: public UnknownInterface {
 
   /** \brief Get the adjacencies associated with a entity to entities of a specified dimension.
     * \ingroup mofem_ref_ents
+    * \todo Should be outsourced to separate interface, i.e. BitLevelManage
     *
     * bit ref level of adjacent entities is equal to bit ref level of adjacent entities
     */
@@ -509,6 +558,7 @@ struct Interface: public UnknownInterface {
 
   /** \brief Get the adjacencies associated with a entity to entities of a specified dimension.
     * \ingroup mofem_ref_ents
+    * \todo Should be outsourced to separate interface, i.e. BitLevelManage
     *
     * bit ref level of adjacent entities is equal to bit ref level of adjacent entities
     */
@@ -522,8 +572,14 @@ struct Interface: public UnknownInterface {
     const int verb = 0
   ) const = 0;
 
+ /**@}*/
 
-  /** \brief Get childed entities form meshset containing parent entities
+  /** \name Updating entities */
+
+ /**@{*/
+
+  /** \brief Get child entities form meshset containing parent entities
+    * \todo Should be outsourced to separate interface, i.e. BitLevelManage
     *
     * Search for refined entities of given type whose parent are entities in the
     * parent meshset. It can be used for example to transfer information about
@@ -548,19 +604,30 @@ struct Interface: public UnknownInterface {
 
   /** \brief update fields meshesets by child entities
     * \ingroup mofem_field
+    * \todo Should be outsourced to separate interface, i.e. BitLevelManage
+    *
     */
   virtual PetscErrorCode update_field_meshset_by_entities_children(const BitRefLevel &child_bit,int verb = -1) = 0;
 
   /** \brief update field mesheset by child entities
     * \ingroup mofem_field
+    * \todo Should be outsourced to separate interface, i.e. BitLevelManage
     */
   virtual PetscErrorCode update_field_meshset_by_entities_children(const std::string name,const BitRefLevel &child_bit,int verb = -1) = 0;
 
   /** \brief update finite element mesheset by child entities
-    */
+   * \todo Should be outsourced to separate interface, i.e. BitLevelManage
+   */
   virtual PetscErrorCode update_finite_element_meshset_by_entities_children(const std::string name,const BitRefLevel &child_bit,const EntityType fe_ent_type,int verb = -1) = 0;
 
-  /** \brief delete enttities form mofem and moab database
+ /**@}*/
+
+  /** \name Delete and remove */
+
+ /**@{*/
+
+  /** \brief delete entities form mofem and moab database
+    *
     */
   virtual PetscErrorCode delete_ents_by_bit_ref(const BitRefLevel &bit,const BitRefLevel &mask,const bool remove_parent = false,int verb = -1) = 0;
 
@@ -576,15 +643,29 @@ struct Interface: public UnknownInterface {
     */
   virtual PetscErrorCode delete_finite_element(const std::string name,int verb = -1) = 0;
 
+
+ /**@}*/
+
+  /** \name Shift BitRefLevl */
+
+ /**@{*/
+
   /** \brief left shift bit ref level
     * this results of deletion of entities on far left side
+    * \todo Should be outsourced to separate interface, i.e. BitLevelManage
     */
   virtual PetscErrorCode shift_left_bit_ref(const int shif,int verb = -1) = 0;
 
   /** \brief right shift bit ref level
-    *
+    * \todo Should be outsourced to separate interface, i.e. BitLevelManage
     */
   virtual PetscErrorCode shift_right_bit_ref(const int shift,int verb = -1) = 0;
+
+ /**@}*/
+
+  /** \name Fields */
+
+ /**@{*/
 
   /**
    * \brief Add field
@@ -919,6 +1000,12 @@ struct Interface: public UnknownInterface {
    */
   virtual const Field* get_field_structure(const std::string& name) = 0;
 
+ /**@}*/
+
+  /** \name Finite elements */
+
+ /**@{*/
+
   /**
    * \brief Check if finite element is in database
    * @param  name Name of finite element
@@ -1176,6 +1263,12 @@ struct Interface: public UnknownInterface {
   /// list adjacencies
   virtual PetscErrorCode list_adjacencies() const = 0;
 
+ /**@}*/
+
+  /** \name Problems */
+
+ /**@{*/
+
   /** \brief Add problem
    * \ingroup mofem_problems
    */
@@ -1272,6 +1365,12 @@ struct Interface: public UnknownInterface {
    */
   virtual PetscErrorCode list_dofs_by_field_name(const std::string &name) const = 0;
 
+ /**@}*/
+
+  /** \name Clear dofs and entities */
+
+ /**@{*/
+
   /** Clear inactive dofs
     * \ingroup mofem_field
    */
@@ -1296,6 +1395,12 @@ struct Interface: public UnknownInterface {
     * \ingroup mofem_field
    */
   virtual PetscErrorCode clear_ents_fields(const std::string &name,const Range enst,int verb = -1) = 0;
+
+ /**@}*/
+
+  /** \name Build fields, finite elements and problems */
+
+ /**@{*/
 
   /**
    * \brief Build finite elements
@@ -1323,6 +1428,11 @@ struct Interface: public UnknownInterface {
    */
   virtual PetscErrorCode build_finite_elements(const string fe_name,const Range *ents_ptr = NULL,int verb = -1) = 0;
 
+ /**@}*/
+
+  /** \name Clear finite elements */
+
+ /**@{*/
 
   /** clear finite elements
     */
@@ -1331,6 +1441,12 @@ struct Interface: public UnknownInterface {
   /** clear finite elements
     */
   virtual PetscErrorCode clear_finite_elements(const std::string &name,const Range &ents,int verb = -1) = 0;
+
+ /**@}*/
+
+  /** \name Build adjacencies */
+
+ /**@{*/
 
   /** \brief build adjacencies
     *
@@ -1378,6 +1494,12 @@ struct Interface: public UnknownInterface {
     */
   virtual PetscErrorCode build_adjacencies(const BitRefLevel &bit,const BitRefLevel &mask,int verb = -1) = 0;
 
+ /**@}*/
+
+  /** \name Clear adjacencies */
+
+ /**@{*/
+
   /** \brief clear adjacency map for finite elements on given bit level
     *
     * \param bit
@@ -1392,8 +1514,13 @@ struct Interface: public UnknownInterface {
     */
   virtual PetscErrorCode clear_adjacencies_entities(const BitRefLevel &bit,const BitRefLevel &mask,int verb = -1) = 0;
 
+ /**@}*/
+
+  /** \name Build problems (DEPRECATED SHOULD NOT USE THIS)*/
+
+ /**@{*/
+
   /** \brief build problem data structures
-   * \ingroup mofem_problems
    *
    * \note If square_matrix is set to true, that indicate that problem is structurally
    * symmetric, i.e. rows and columns have the same dofs and are indexed in the same
@@ -1411,7 +1538,6 @@ struct Interface: public UnknownInterface {
   DEPRECATED virtual PetscErrorCode build_problem(const std::string &name,const bool square_matrix,int verb = -1) = 0;
 
   /** \brief build problem data structures
-   * \ingroup mofem_problems
    *
    * \note If square_matrix is set to true, that indicate that problem is structurally
    * symmetric, i.e. rows and columns have the same dofs and are indexed in the same
@@ -1433,7 +1559,6 @@ struct Interface: public UnknownInterface {
   virtual PetscErrorCode clear_problem(const std::string &name,int verb = -1) = 0;
 
   /** \brief build problem data structures
-   * \ingroup mofem_problems
 
    \deprecated Use MoFEM::Interface::build_problem(const std::string &name,const
    bool square_matrix,int verb = -1) instead. This function not allows to Control
@@ -1448,7 +1573,6 @@ struct Interface: public UnknownInterface {
   virtual PetscErrorCode clear_problems(int verb = -1) = 0;
 
   /** \brief build problem data structures, assuming that mesh is distributed (collective)
-   * \ingroup mofem_problems
 
    \deprecated Use ProblemsManager to build and partition problems
 
@@ -1464,7 +1588,6 @@ struct Interface: public UnknownInterface {
   ) = 0;
 
   /** \brief build problem data structures, assuming that mesh is distributed (collective)
-   * \ingroup mofem_problems
 
    \deprecated Use ProblemsManager to build and partition problems
 
@@ -1482,7 +1605,6 @@ struct Interface: public UnknownInterface {
   ) = 0;
 
   /** \brief build problem data structures, assuming that mesh is distributed (collective)
-   * \ingroup mofem_problems
 
    \deprecated Use ProblemsManager to build and partition problems
 
@@ -1513,7 +1635,6 @@ struct Interface: public UnknownInterface {
   ) = 0;
 
   /** \brief partition problem dofs
-   * \ingroup mofem_problems
 
    \deprecated Use ProblemsManager to build and partition problems
 
@@ -1523,7 +1644,6 @@ struct Interface: public UnknownInterface {
   DEPRECATED virtual PetscErrorCode partition_simple_problem(const std::string &name,int verb = -1) = 0;
 
   /** \brief partition problem dofs (collective)
-   * \ingroup mofem_problems
 
    \deprecated Use ProblemsManager to build and partition problems
 
@@ -1534,7 +1654,6 @@ struct Interface: public UnknownInterface {
 
   /**
     * \brief build indexing and partition problem inheriting indexing and partitioning from two other problems
-    * \ingroup mofem_problems
     *
     \deprecated Use ProblemsManager to build and partition problems
     * \param name problem name
@@ -1687,6 +1806,12 @@ struct Interface: public UnknownInterface {
     */
   virtual PetscErrorCode get_problem_finite_elements_entities(const std::string &name,const std::string &fe_name,const EntityHandle meshset) = 0;
 
+ /**@}*/
+
+  /** \name Create vectors */
+
+ /**@{*/
+
   /** \brief create local vector for problem
    * \ingroup mofem_vectors
    *
@@ -1706,6 +1831,12 @@ struct Interface: public UnknownInterface {
    * \param Vec the vector where data is stored
    */
   virtual PetscErrorCode VecCreateGhost(const std::string &name,RowColData rc,Vec *V) const = 0;
+
+ /**@}*/
+
+  /** \name Create matrices */
+
+ /**@{*/
 
   /**
     * \brief create Mat (MPIAIJ) for problem (collective)
@@ -1731,6 +1862,12 @@ struct Interface: public UnknownInterface {
     * \param name of the problem
     */
   virtual PetscErrorCode MatCreateSeqAIJWithArrays(const std::string &name,Mat *Aij,PetscInt **i,PetscInt **j,PetscScalar **v,int verb = -1) = 0;
+
+ /**@}*/
+
+  /** \name Create IS */
+
+ /**@{*/
 
   /** \brief create IS for give two problems and field
     * \ingroup mofem_vectors
@@ -1813,6 +1950,12 @@ struct Interface: public UnknownInterface {
     int verb = -1
   ) const = 0;
 
+ /**@}*/
+
+  /** \name Scatter vectors */
+
+ /**@{*/
+
   /**
     * \brief create scatter for vectors form one to another problem (collective)
     * \ingroup mofem_vectors
@@ -1863,6 +2006,12 @@ struct Interface: public UnknownInterface {
     VecScatter *newctx,
     int verb = -1
   ) const = 0;
+
+ /**@}*/
+
+  /** \name Set vector and mesh values */
+
+ /**@{*/
 
   /**
     * \brief set values of vector from/to meshdatabase
@@ -2044,8 +2193,15 @@ struct Interface: public UnknownInterface {
     int verb = -1
   ) = 0;
 
+ /**@}*/
+
+  /** \name Field algebra */
+
+ /**@{*/
+
   /** \brief axpy fields
     * \ingroup mofem_field_algebra
+    * \todo should be moved to independent interface, i.e. FieldAlgebra
     *
     * field_y = field_y + alpha*field_x
     *
@@ -2060,6 +2216,7 @@ struct Interface: public UnknownInterface {
 
   /** \brief scale field
     * \ingroup mofem_field_algebra
+    * \todo should be moved to independent interface, i.e. FieldAlgebra
     *
     * \param alpha is a scaling factor
     * \field_name  is a field name
@@ -2069,6 +2226,7 @@ struct Interface: public UnknownInterface {
 
   /** \brief set field
     * \ingroup mofem_field_algebra
+    * \todo should be moved to independent interface, i.e. FieldAlgebra
     *
     * field_y = val
     *
@@ -2081,6 +2239,7 @@ struct Interface: public UnknownInterface {
 
   /** \brief set field
     * \ingroup mofem_field_algebra
+    * \todo should be moved to independent interface, i.e. FieldAlgebra
     *
     * field_y = val
     *
@@ -2091,6 +2250,12 @@ struct Interface: public UnknownInterface {
     *
     */
   virtual PetscErrorCode set_field(const double val,const EntityType type,const Range &ents,const std::string& field_name) = 0;
+
+ /**@}*/
+
+  /** \name Making loops on elements and entities */
+
+ /**@{*/
 
   /** \brief Set data for BasicMethod
     *
@@ -2278,6 +2443,12 @@ struct Interface: public UnknownInterface {
     * \ingroup mofem_field
     */
   virtual PetscErrorCode loop_dofs(const std::string &field_name,EntMethod &method,int verb = -1) = 0;
+
+ /**@}*/
+
+  /** \name Get pointers to multi-index databses */
+
+ /**@{*/
 
   /** \brief Get fields multi-index from database
     * \ingroup mofem_access
