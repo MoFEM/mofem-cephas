@@ -531,6 +531,7 @@ int main(int argc, char *argv[]) {
     if (same) {
       PCMGSetUpViaApproxOrdersCtx pc_ctx(dm,Aij,true);
       ierr = PCMGSetUpViaApproxOrders(pc,&pc_ctx); CHKERRQ(ierr);
+      ierr = PCSetFromOptions(pc); CHKERRQ(ierr);
     } else {
       // Operators are already set, do not use DM for doing that
       ierr = KSPSetDMActive(solver,PETSC_FALSE); CHKERRQ(ierr);
