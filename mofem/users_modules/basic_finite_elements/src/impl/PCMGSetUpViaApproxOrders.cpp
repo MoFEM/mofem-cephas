@@ -801,7 +801,7 @@ PetscErrorCode PCMGSetUpViaApproxOrders(PC pc,PCMGSetUpViaApproxOrdersCtx *ctx,i
     PetscPrintf(comm,"Start PCMGSetUpViaApproxOrders\n");
   }
   ierr = ctx->getOptions(); CHKERRQ(ierr);
-  ierr = ctx->buildProlongationOperator(false,verb); CHKERRQ(ierr);
+  ierr = ctx->buildProlongationOperator(true,verb); CHKERRQ(ierr);
   ierr = PCMGSetGalerkin(pc,PETSC_FALSE); CHKERRQ(ierr);
   ierr = PCMGSetLevels(pc,ctx->nbLevels,NULL);  CHKERRQ(ierr);
 
