@@ -664,7 +664,7 @@ namespace MoFEM {
           (str_value5.str().c_str(),po::value<double>(&block_lists[it->getMeshsetId()].dispBc.data.value5)->default_value(0),"value5")
           (str_value6.str().c_str(),po::value<double>(&block_lists[it->getMeshsetId()].dispBc.data.value6)->default_value(0),"value6");
         }
-        // Fore BC data
+        // Force BC data
         {
           // char zero[3]; //< 3 zeros
           // double value1; //< Force magnitude
