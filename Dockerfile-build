@@ -8,5 +8,4 @@ RUN /mofem/scripts/docker_build_users_modules_script.sh
 
 VOLUME /mofem_build
 WORKDIR /mofem_build
-
 CMD /mofem/docker_build_mofem_script.sh
