@@ -623,6 +623,25 @@ namespace MoFEM {
      conductivity=1
      capacity=1
 
+     [block_1009]
+
+     # Example applying interface
+     id=2009
+     add=SIDESET
+     interface_type=1
+
+     [block_1010]
+
+     # Example applying material block for interface element
+
+     id=2010
+     add=BLOCKSET
+     name=MAT_INTERF
+     interface_alpha = 1
+     interface_beta = 0
+     interface_ft = 1
+     interface_Gf = 1
+
      \endcode
 
      * @param  file_name config file

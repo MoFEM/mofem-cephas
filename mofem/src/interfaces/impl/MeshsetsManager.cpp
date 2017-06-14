@@ -528,6 +528,7 @@ namespace MoFEM {
     // Materials
     Mat_Elastic matElastic;
     Mat_Thermal matThermal;
+    Mat_Interf matInterf;
 
     // BCs
     DisplacementCubitBcData dispBc;
@@ -535,6 +536,7 @@ namespace MoFEM {
     PressureCubitBcData pressureBc;
     TemperatureCubitBcData temperatureBc;
     HeatFluxCubitBcData heatFluxBc;
+    CfgCubitBcData cfgBc;
 
 
     std::vector<double> aTtr;
@@ -545,6 +547,7 @@ namespace MoFEM {
       strncpy(pressureBc.data.name,"Pressure",8);
       strncpy(temperatureBc.data.name,"Temperature",11);
       strncpy(heatFluxBc.data.name,"HeatFlux",8);
+      strncpy(cfgBc.data.name,"cfd_bc",8);
     }
 
   };
@@ -612,6 +615,28 @@ namespace MoFEM {
           (str_capacity.str().c_str(),po::value<double>(&block_lists[it->getMeshsetId()].matThermal.data.HeatCapacity)->default_value(-1),"Capacity");
           // TODO Add users parameters
         }
+        // Mat interface
+        {
+          // double alpha; ///< Elastic modulus multiplier
+          // double beta;  ///< Damage Coupling multiplier between normal and shear (g=sqrt(gn^2 + beta(gt1^2 + gt2^2)))
+          // double ft;    ///< Maximum stress of crack
+          // double Gf;    ///< Fracture Energy
+          std::ostringstream str_alpha;
+          str_alpha << "block_" << it->getMeshsetId() << ".interface_alpha";
+          std::ostringstream str_beta;
+          str_beta << "block_" << it->getMeshsetId() << ".interface_beta";
+          std::ostringstream str_ft;
+          str_ft << "block_" << it->getMeshsetId() << ".interface_ft";
+          std::ostringstream str_gf;
+          str_gf << "block_" << it->getMeshsetId() << ".interface_Gf";
+          configFileOptionsPtr->add_options()
+          (str_alpha.str().c_str(),po::value<double>(&block_lists[it->getMeshsetId()].matInterf.data.alpha)->default_value(-1),"alpha")
+          (str_beta.str().c_str(),po::value<double>(&block_lists[it->getMeshsetId()].matInterf.data.beta)->default_value(-1),"beta")
+          (str_ft.str().c_str(),po::value<double>(&block_lists[it->getMeshsetId()].matInterf.data.ft)->default_value(-1),"ft")
+          (str_gf.str().c_str(),po::value<double>(&block_lists[it->getMeshsetId()].matInterf.data.Gf)->default_value(-1),"Gf");
+          // TODO Add users parameters
+        }
+
         // Displacement bc
         {
           // char flag1; //< Flag for X-Translation (0: N/A, 1: specified)
@@ -759,6 +784,13 @@ namespace MoFEM {
           (str_flag1.str().c_str(),po::value<char>(&block_lists[it->getMeshsetId()].heatFluxBc.data.flag1)->default_value(0),"flag1")
           (str_value1.str().c_str(),po::value<double>(&block_lists[it->getMeshsetId()].heatFluxBc.data.value1)->default_value(0),"value1");
         }
+        // Interface set
+        {
+          std::ostringstream str_type;
+          str_type << "block_" << it->getMeshsetId() << ".interface_type";
+          configFileOptionsPtr->add_options()
+          (str_type.str().c_str(),po::value<char>(&block_lists[it->getMeshsetId()].cfgBc.data.type)->default_value(0),"type");
+        }
       }
       po::parsed_options parsed = parse_config_file(ini_file,*configFileOptionsPtr,true);
       store(parsed,vm);
@@ -802,7 +834,7 @@ namespace MoFEM {
             block_lists[it->getMeshsetId()].iD
           );
         }
-
+        
       }
       std::vector<std::string> additional_parameters;
       additional_parameters = collect_unrecognized(parsed.options,po::include_positional);
@@ -837,6 +869,9 @@ namespace MoFEM {
             }
             if(mit->second.matThermal.data.Conductivity!=-1) {
               ierr = setAttribitesByDataStructure(mit->second.bcType,mit->second.iD,mit->second.matThermal); CHKERRQ(ierr);
+            }
+            if(mit->second.matInterf.data.ft!=-1) {
+              ierr = setAttribitesByDataStructure(mit->second.bcType,mit->second.iD,mit->second.matInterf); CHKERRQ(ierr);
             }
           }
           break;
@@ -916,6 +951,10 @@ namespace MoFEM {
               if(mit->second.heatFluxBc.data.flag1=='N') mit->second.heatFluxBc.data.flag1=0;
               if(mit->second.heatFluxBc.data.flag1) mit->second.heatFluxBc.data.flag1=1;
               ierr = setBcData(mit->second.bcType,mit->second.iD,mit->second.heatFluxBc); CHKERRQ(ierr);
+            }
+            // Add Interface
+            if(mit->second.cfgBc.data.type!=0) {
+              ierr = setBcData(mit->second.bcType,mit->second.iD,mit->second.cfgBc); CHKERRQ(ierr);
             }
           }
           break;
