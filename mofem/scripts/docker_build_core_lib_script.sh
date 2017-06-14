@@ -17,7 +17,7 @@ echo "Configure"
 mkdir -p $MOFEM_BUILD_DIR
 cd $MOFEM_BUILD_DIR
 /opt/local/bin/cmake \
-  -DCMAKE_BUILD_TYPE=MinSizeRel \
+  -DCMAKE_BUILD_TYPE=Release \
   -DCMAKE_CXX_FLAGS="-Wall" \
   -DPETSC_DIR=$PETSC_DIR \
   -DPETSC_ARCH=$PETSC_ARCH \

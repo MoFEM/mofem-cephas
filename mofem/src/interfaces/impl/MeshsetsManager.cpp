@@ -664,7 +664,7 @@ namespace MoFEM {
           (str_value5.str().c_str(),po::value<double>(&block_lists[it->getMeshsetId()].dispBc.data.value5)->default_value(0),"value5")
           (str_value6.str().c_str(),po::value<double>(&block_lists[it->getMeshsetId()].dispBc.data.value6)->default_value(0),"value6");
         }
-        // Fore BC data
+        // Force BC data
         {
           // char zero[3]; //< 3 zeros
           // double value1; //< Force magnitude
@@ -681,11 +681,11 @@ namespace MoFEM {
           std::ostringstream str_value2;
           str_value2 << "block_" << it->getMeshsetId() << ".moment_magnitude";
           std::ostringstream str_value3;
-          str_value3 << "block_" << it->getMeshsetId() << ".moment_fx";
+          str_value3 << "block_" << it->getMeshsetId() << ".force_fx";
           std::ostringstream str_value4;
-          str_value4 << "block_" << it->getMeshsetId() << ".moment_fy";
+          str_value4 << "block_" << it->getMeshsetId() << ".force_fy";
           std::ostringstream str_value5;
-          str_value5 << "block_" << it->getMeshsetId() << ".moment_fz";
+          str_value5 << "block_" << it->getMeshsetId() << ".force_fz";
           std::ostringstream str_value6;
           str_value6 << "block_" << it->getMeshsetId() << ".moment_mx";
           std::ostringstream str_value7;

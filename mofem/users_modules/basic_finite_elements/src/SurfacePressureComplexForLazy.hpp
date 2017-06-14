@@ -149,18 +149,18 @@ struct NeummanForcesSurfaceComplexForLazy {
 
   };
 
-  struct MyTriangleMaterialFE: public MyTriangleSpatialFE {
-
-    MyTriangleMaterialFE(MoFEM::Interface &_mField,Mat _Aij,Vec &_F,double *scale_lhs,double *scale_rhs);
-
-    PetscErrorCode rHs();
-    PetscErrorCode lHs();
-
-  };
+  // struct MyTriangleMaterialFE: public MyTriangleSpatialFE {
+  //
+  //   MyTriangleMaterialFE(MoFEM::Interface &_mField,Mat _Aij,Vec &_F,double *scale_lhs,double *scale_rhs);
+  //
+  //   PetscErrorCode rHs();
+  //   PetscErrorCode lHs();
+  //
+  // };
 
   MoFEM::Interface &mField;
   MyTriangleSpatialFE feSpatial;
-  MyTriangleMaterialFE feMaterial;
+  // MyTriangleMaterialFE feMaterial;
 
   Tag thScale;
 
@@ -172,7 +172,7 @@ struct NeummanForcesSurfaceComplexForLazy {
   }
 
   MyTriangleSpatialFE& getLoopSpatialFe() { return feSpatial; }
-  MyTriangleMaterialFE& getLoopMaterialFe() { return feMaterial; }
+  // MyTriangleMaterialFE& getLoopMaterialFe() { return feMaterial; }
 
   NeummanForcesSurfaceComplexForLazy(MoFEM::Interface &m_field,Mat _Aij,Vec _F,double *scale_lhs,double *scale_rhs);
   NeummanForcesSurfaceComplexForLazy(MoFEM::Interface &m_field,Mat _Aij,Vec _F);

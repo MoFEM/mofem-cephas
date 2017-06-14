@@ -32,7 +32,7 @@ contains *mofem_build volume*. Volume in container will be shared between other
 containers were MoFEM is compiled and run;
 ~~~~~~
 docker build -t mofem_build --force-rm=true --file=$HOME/mofem-cephas/Dockerfile-build $HOME/mofem-cephas
-docker run --name mofem_build mofem_build /bin/bash
+docker run --name mofem_build mofem_build
 ~~~~~~
 
 If you do not exactly understand what is *docker image*, *docker container* and

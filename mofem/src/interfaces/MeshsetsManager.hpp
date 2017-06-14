@@ -581,9 +581,9 @@ namespace MoFEM {
      add=NODESET
      force_magnitude=1
      moment_magnitude=1
-     moment_fx=1
-     moment_fy=1
-     moment_fz=1
+     force_fx=1
+     force_fy=1
+     force_fz=1
      moment_mx=1
      moment_my=1
      moment_mz=1

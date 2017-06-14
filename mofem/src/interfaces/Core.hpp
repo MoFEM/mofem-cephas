@@ -91,7 +91,7 @@ struct Core: public Interface {
   mutable int *buildMoFEM; ///< keeps flags/semaphores for different stages
 
   //Database
-  ErrorCode rval;
+  MoABErrorCode rval;
   PetscErrorCode ierr;
 
   //Data and low level methods

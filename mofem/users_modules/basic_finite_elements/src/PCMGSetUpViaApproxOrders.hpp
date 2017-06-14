@@ -49,6 +49,11 @@ struct DMMGViaApproxOrdersCtx: public MoFEM::DMCtx {
 };
 
 /**
+ * Get DM Ctx
+ */
+ PetscErrorCode DMMGViaApproxOrdersGetCtx(DM dm,DMMGViaApproxOrdersCtx **ctx);
+
+/**
  * \brief Set DM ordering
  *
  * IS can be given is some other ordering, AO will transform indices from coarseningIS ordering

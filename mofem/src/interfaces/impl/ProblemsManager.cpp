@@ -1,5 +1,6 @@
-/** \file ProblemCore.cpp
+/** \file ProblemsManager.cpp
  * \brief Managing complexities for problem
+ * \ingroup mofem_problems_manager
  */
 
 /* MoFEM is free software: you can redistribute it and/or modify it under
