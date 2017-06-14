@@ -468,7 +468,12 @@ struct Mat_Interf: public GenericAttributeData {
   virtual PetscErrorCode fill_data(const std::vector<double>& attributes) {
     PetscFunctionBegin;
     //Fill data
-    if(8*attributes.size()!=sizeof(data)) SETERRQ(PETSC_COMM_SELF,1,"data inconsistency, please review the number of material properties defined");
+    if(8*attributes.size()!=sizeof(data)) {
+      SETERRQ(
+        PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,
+        "data inconsistency, please review the number of material properties defined"
+      );
+    }
     memcpy(&data, &attributes[0], sizeof(data));
     PetscFunctionReturn(0);
   }
