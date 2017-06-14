@@ -60,14 +60,6 @@ int main(int argc, char *argv[]) {
 
   ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
-  if(flg_file != PETSC_TRUE) {
-    SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_file (MESH FILE NEEDED)");
-  }
-
-  if(flg_n_part != PETSC_TRUE) {
-    SETERRQ(PETSC_COMM_SELF,1,"*** ERROR partitioning number not given");
-  }
-
   moab::Core mb_instance;
   moab::Interface& moab = mb_instance;
   ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
@@ -77,9 +69,17 @@ int main(int argc, char *argv[]) {
   option = "";
   rval = moab.load_file(mesh_file_name, 0, option); CHKERRQ_MOAB(rval);
 
-  //Create MoFEM (Joseph) database
+  //Create MoFEM  database
   MoFEM::Core core(moab);
   MoFEM::Interface& m_field = core;
+
+  if(flg_file != PETSC_TRUE) {
+    SETERRQ(PETSC_COMM_SELF,1,"*** ERROR -my_file (MESH FILE NEEDED)");
+  }
+
+  if(flg_n_part != PETSC_TRUE) {
+    SETERRQ(PETSC_COMM_SELF,1,"*** ERROR partitioning number not given");
+  }
 
   MeshsetsManager *meshsets_interface_ptr;
   ierr = m_field.query_interface(meshsets_interface_ptr); CHKERRQ(ierr);
