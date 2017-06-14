@@ -5,10 +5,10 @@
     <tab type="mainpage" visible="yes" title=""/>
     <tab type="usergroup" title="Documentation">
       <tab type="user" title="Installation" url="@ref installation" intro=""/>
-      <tab type="usergroup" title="Basic design" url="@ref genral_data_structure" intro=""/>
-      <tab type="usergroup" title="Developer tutorials" url="@ref tutorials" intro=""/>
-      <tab type="examples" visible="yes" title="Developer examples" intro=""/>
-      <tab type="usergroup" title="Documentation of users modules" url="@ref mod_gallery" intro=""/>
+      <tab type="user" title="Basic design" url="@ref genral_data_structure" intro=""/>
+      <tab type="user" title="Developer tutorials" url="@ref tutorials" intro=""/>
+      <tab type="examples" title="Developer examples" intro=""/>
+      <tab type="user" title="Documentation of users modules" url="@ref mod_gallery" intro=""/>
       <tab type="user" title="Frequently asked questions" url="@ref faqs" intro=""/>
       <tab type="usergroup" title="Coding guidelines">
         <tab type="user" title="Coding pratice" url="@ref coding_practice" intro=""/>
@@ -19,7 +19,8 @@
         <tab type="user" visible="yes" title="Todo list" url="@ref todo" intro=""/>
         <tab type="user" visible="yes" title="Deprecated list" url="@ref deprecated" intro=""/>
       </tab>
-      <tab type="user" visible="yes" title="Bibliography" url="@ref citelist" intro=""/>
+      <tab type="user" title="Bibliography" url="@ref citelist" intro=""/>
+      <tab type="user" title="Search" url="@ref google_search" intro=""/>
       <tab type="pages" visible="yes" title="All pages" intro=""/>
     </tab>
     <tab type="usergroup" title="Source code">
