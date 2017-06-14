@@ -17,9 +17,9 @@ cd $MOFEM_INSTALL_DIR
 
 if [ -e $MOFEM_SRC_DIR/users_modules/*bone_remodelling* ]
 then
-/opt/local/bin/cmake -DBUILD_SHARED_LIBS=yes -DCMAKE_CXX_FLAGS="-Wall" -DWITH_METAIO=1  users_modules;
+/opt/local/bin/cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=yes -DCMAKE_CXX_FLAGS="-Wall" -DWITH_METAIO=1  users_modules;
 else
-/opt/local/bin/cmake -DBUILD_SHARED_LIBS=yes -DCMAKE_CXX_FLAGS="-Wall" users_modules
+/opt/local/bin/cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=yes -DCMAKE_CXX_FLAGS="-Wall" users_modules
 fi
 
 echo "Build users modules"
