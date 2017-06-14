@@ -218,7 +218,7 @@ int main(int argc, char *argv[]) {
     ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
     if(pcomm == NULL) pcomm =  new ParallelComm(&moab,PETSC_COMM_WORLD);
 
-    //data stored on mesh for restart
+    //Data stored on mesh for restart
     Tag th_step_size,th_step;
     double def_step_size = 1;
     rval = moab.tag_get_handle("_STEPSIZE",1,MB_TYPE_DOUBLE,th_step_size,MB_TAG_CREAT|MB_TAG_MESH,&def_step_size);
@@ -238,7 +238,7 @@ int main(int argc, char *argv[]) {
     //end of data stored for restart
     ierr = PetscPrintf(PETSC_COMM_WORLD,"Start step %D and step_size = %6.4e\n",step,step_size); CHKERRQ(ierr);
 
-    //Create MoFEM (Joseph) database
+    //Create MoFEM 2database
     MoFEM::Core core(moab);
     MoFEM::Interface& m_field = core;
 
@@ -256,22 +256,27 @@ int main(int argc, char *argv[]) {
     BitRefLevel problem_bit_level = bit_level0;
 
     if(step == 1) {
+
       //ref meshset ref level 0
       ierr = m_field.seed_ref_level_3D(0,BitRefLevel().set(0)); CHKERRQ(ierr);
       std::vector<BitRefLevel> bit_levels;
       bit_levels.push_back(BitRefLevel().set(0));
 
       int ll = 1;
+      
       for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,SIDESET|INTERFACESET,cit)) {
-        //for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,SIDESET,cit)) {
         ierr = PetscPrintf(PETSC_COMM_WORLD,"Insert Interface %d\n",cit->getMeshsetId()); CHKERRQ(ierr);
         EntityHandle cubit_meshset = cit->getMeshset();
         {
-          //get tet enties form back bit_level
+          //get tet entities form back bit_level
           EntityHandle ref_level_meshset = 0;
           rval = moab.create_meshset(MESHSET_SET,ref_level_meshset); CHKERRQ_MOAB(rval);
-          ierr = m_field.get_entities_by_type_and_ref_level(bit_levels.back(),BitRefLevel().set(),MBTET,ref_level_meshset); CHKERRQ(ierr);
-          ierr = m_field.get_entities_by_type_and_ref_level(bit_levels.back(),BitRefLevel().set(),MBPRISM,ref_level_meshset); CHKERRQ(ierr);
+          ierr = m_field.get_entities_by_type_and_ref_level(
+            bit_levels.back(),BitRefLevel().set(),MBTET,ref_level_meshset
+          ); CHKERRQ(ierr);
+          ierr = m_field.get_entities_by_type_and_ref_level(
+            bit_levels.back(),BitRefLevel().set(),MBPRISM,ref_level_meshset
+          ); CHKERRQ(ierr);
           Range ref_level_tets;
           rval = moab.get_entities_by_handle(ref_level_meshset,ref_level_tets,true); CHKERRQ_MOAB(rval);
           //get faces and test to split
@@ -283,7 +288,7 @@ int main(int argc, char *argv[]) {
           //clean meshsets
           rval = moab.delete_entities(&ref_level_meshset,1); CHKERRQ_MOAB(rval);
         }
-        //update cubit meshsets
+        // Update cubit meshsets
         for(_IT_CUBITMESHSETS_FOR_LOOP_(m_field,ciit)) {
           EntityHandle cubit_meshset = ciit->meshset;
           ierr = m_field.update_meshset_by_entities_children(cubit_meshset,bit_levels.back(),cubit_meshset,MBVERTEX,true); CHKERRQ(ierr);
@@ -422,6 +427,7 @@ int main(int argc, char *argv[]) {
         rval = m_field.get_moab().get_entities_by_type(it->meshset,MBTET,tets,true); CHKERRQ_MOAB(rval);
         ierr = m_field.add_ents_to_finite_element_by_TETs(tets,"BODY_FORCE"); CHKERRQ(ierr);
       }
+
     }
 
     /****/
