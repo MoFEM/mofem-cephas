@@ -271,7 +271,7 @@ namespace MoFEM {
     moab::Interface &moab = m_field.get_moab();
     PetscFunctionBegin;
     if(checkMeshset(ms_id,cubit_bc_type)) {
-      SETERRQ1(PETSC_COMM_SELF,1,"such cubit meshset is already there",ms_id);
+      SETERRQ1(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"such cubit meshset is already there",ms_id);
     }
     try {
       CubitMeshSets cmeshset(moab,cubit_bc_type,ms_id);
@@ -547,7 +547,7 @@ namespace MoFEM {
       strncpy(pressureBc.data.name,"Pressure",8);
       strncpy(temperatureBc.data.name,"Temperature",11);
       strncpy(heatFluxBc.data.name,"HeatFlux",8);
-      strncpy(cfgBc.data.name,"cfd_bc",8);
+      strncpy(cfgBc.data.name,"cfd_bc",6);
     }
 
   };
@@ -834,7 +834,7 @@ namespace MoFEM {
             block_lists[it->getMeshsetId()].iD
           );
         }
-        
+
       }
       std::vector<std::string> additional_parameters;
       additional_parameters = collect_unrecognized(parsed.options,po::include_positional);
