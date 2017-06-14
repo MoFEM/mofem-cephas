@@ -353,8 +353,35 @@ struct CubitMeshSets {
 };
 
 /**
- * @relates multi_index_container
- * \brief CubitMeshSet_multiIndex
+ * \typedef CubitMeshSet_multiIndex
+ * \brief Stores data about meshsets (see CubitMeshSets) storing data about boundary conditions, interfaces, sidesets, nodests, blocksets
+ *
+ *  \param Meshset_mi_tag  index by meshset handle
+ *  \param CubitMeshSets_mi_tag index by bc type, see CubitBC
+ *  \param CubitMeshSets_mask_meshset_mi_tag index by NODESET, SIDESET, BLOCKSET only
+ *  \param CubitMeshSets_name index by meshset name
+ *  \param Composite_Cubit_msId_And_MeshSetType_mi_tag index by meshset id and type NODESET, SIDESET or BLOCKSET
+ *
+ *  Example:
+ *  \code
+ *   MeshsetsManager *m_mng;
+ *   ierr = m_field.query_interface(m_mng); CHKERRQ(ierr);
+ *   CubitMeshSet_multiIndex &meshsets_index = m_mng->etMeshsetsMultindex();
+ *
+ *   CubitMeshSet_multiIndex::index<CubitMeshSets_mask_meshset_mi_tag>::type::iterator mit,hi_mit;
+ *   mit = meshsets_index.get<CubitMeshSets_mask_meshset_mi_tag>().lower_bound(BLOCKSET);
+ *   hi_mit = meshsets_index.get<CubitMeshSets_mask_meshset_mi_tag>().upper_bound(BLOCKSET);
+ *   // Make a loop over all BLOCKSET
+ *   for(;mit!=hi_mit;mit++) {
+ *     int id = mit->getMeshsetId();            // get blockset id
+ *     EntityHandle handle = mit->getMeshset(); // get block meshset
+ *     std::vector< double > attributes;
+ *     // get block attributes
+ *     ierr = mit->getAttributes(attributes); CHKERRQ(ierr);
+ *     // do something
+ *   }
+ *  \endcode
+ *
  */
 typedef multi_index_container<
   CubitMeshSets,
@@ -370,10 +397,13 @@ typedef multi_index_container<
     hashed_unique<
       tag<Composite_Cubit_msId_And_MeshSetType_mi_tag>,
       composite_key<
-	CubitMeshSets,
-	  const_mem_fun<CubitMeshSets,int,&CubitMeshSets::getMeshsetId>,
-	  const_mem_fun<CubitMeshSets,unsigned long int,&CubitMeshSets::getMaksedBcTypeULong> > >
-  > > CubitMeshSet_multiIndex;
+	     CubitMeshSets,
+	     const_mem_fun<CubitMeshSets,int,&CubitMeshSets::getMeshsetId>,
+	     const_mem_fun<CubitMeshSets,unsigned long int,&CubitMeshSets::getMaksedBcTypeULong>
+      >
+    >
+  >
+> CubitMeshSet_multiIndex;
 
 /** \brief change meshset type
 */
