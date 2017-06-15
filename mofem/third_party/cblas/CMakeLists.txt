@@ -19,14 +19,11 @@
 include_directories("${PROJECT_SOURCE_DIR}/third_party/cblas")
 link_directories("${PROJECT_BINARY_DIR}/third_party/cblas")
 
-find_package( BLAS REQUIRED )
-message( STATUS BLAS found: ${BLAS_LIBRARIES} )
-
-if(${BLAS_LIBRARIES})
+if(BLAS_FOUND)
   add_library(mofem_cblas
     all.c
-  ) 
-else(${BLAS_LIBRARIES})
+  )
+else(BLAS_FOUND)
   add_library(mofem_cblas
     all.c
     cdotcsub.f
@@ -50,6 +47,6 @@ else(${BLAS_LIBRARIES})
     zdotcsub.f
     zdotusub.f
   )
-endif(${BLAS_LIBRARIES})
+endif(BLAS_FOUND)
 
 install(TARGETS mofem_cblas DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)

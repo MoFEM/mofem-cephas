@@ -40,6 +40,14 @@ find_package(Git)
 #   include_directories ( ${PYTHON_INCLUDE_DIRS} )
 # endif(PYTHON_INCLUDE_DIRS)
 
+find_package(BLAS)
+if(BLAS_FOUND)
+  if(APPLE)
+    set(CMAKE_EXE_LINKER_FLAGS "-framework Accelerate")
+  endif(APPLE)
+endif(BLAS_FOUND)
+message(STATUS BLAS found: ${BLAS_LIBRARIES})
+
 find_program(
   MBCONVERT NAMES mbconvert
   PATH ${MoFEM_PETSC_DIR}/${MoFEM_PETSC_ARCH}/bin
