@@ -1,13 +1,18 @@
+/*! \page google_search Search in this documentation
+
+\htmlonly
 <script>
   (function() {
     var cx = '007185412221896069505:y8kavnoyavi';
     var gcse = document.createElement('script');
     gcse.type = 'text/javascript';
     gcse.async = true;
-    gcse.src = (document.location.protocol == 'https:' ? 'https:' : 'http:') +
-        '//cse.google.com/cse.js?cx=' + cx;
+    gcse.src = 'https://cse.google.com/cse.js?cx=' + cx;
     var s = document.getElementsByTagName('script')[0];
     s.parentNode.insertBefore(gcse, s);
   })();
 </script>
 <gcse:search></gcse:search>
+\endhtmlonly
+
+*/

@@ -41,7 +41,7 @@ endif(CMAKE_Fortran_COMPILER)
 
 set(MoFEM_VERSION_MAJOR 0)
 set(MoFEM_VERSION_MINOR 5)
-set(MoFEM_VERSION_BUILD 67)
+set(MoFEM_VERSION_BUILD 68)
 
 
 # http://cellperformance.beyond3d.com/articles/2006/05/demystifying-the-restrict-keyword.html
@@ -101,6 +101,14 @@ include(cmake/FindADOL-C.cmake)
 include(cmake/FindTetGen.cmake)
 include(cmake/FindTriangle.cmake)
 include(cmake/FindMed.cmake)
+
+find_package(BLAS)
+if(BLAS_FOUND)
+  if(APPLE)
+    set(CMAKE_EXE_LINKER_FLAGS "-framework Accelerate")
+  endif(APPLE)
+endif(BLAS_FOUND)
+message(STATUS BLAS found: ${BLAS_LIBRARIES})
 
 #CGAL tools
 #find_package(CGAL HINTS ${CGAL_DIR}/lib/CGAL)
@@ -172,7 +180,8 @@ resolve_libraries(PROJECT_LIBS "
   ${MPI_F90_LIB}
   ${MPI_F77_LIB}
   ${ADOL-C_LIBRARY}
-  ${BOOST_PROGRAM_OPTIONS_LIB}"
+  ${BOOST_PROGRAM_OPTIONS_LIB}
+  ${BLAS_LINKER_FLAGS}"
 )
 
 message(STATUS ${PROJECT_LIBS})

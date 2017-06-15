@@ -19,28 +19,34 @@
 include_directories("${PROJECT_SOURCE_DIR}/third_party/cblas")
 link_directories("${PROJECT_BINARY_DIR}/third_party/cblas")
 
-add_library(mofem_cblas
-  all.c
-  cdotcsub.f
-  cdotusub.f
-  dasumsub.f
-  ddotsub.f
-  dnrm2sub.f
-  dsdotsub.f
-  dzasumsub.f
-  dznrm2sub.f
-  icamaxsub.f
-  idamaxsub.f
-  isamaxsub.f
-  izamaxsub.f
-  sasumsub.f
-  scasumsub.f
-  scnrm2sub.f
-  sdotsub.f
-  sdsdotsub.f
-  snrm2sub.f
-  zdotcsub.f
-  zdotusub.f
-)
+if(BLAS_FOUND)
+  add_library(mofem_cblas
+    all.c
+  )
+else(BLAS_FOUND)
+  add_library(mofem_cblas
+    all.c
+    cdotcsub.f
+    cdotusub.f
+    dasumsub.f
+    ddotsub.f
+    dnrm2sub.f
+    dsdotsub.f
+    dzasumsub.f
+    dznrm2sub.f
+    icamaxsub.f
+    idamaxsub.f
+    isamaxsub.f
+    izamaxsub.f
+    sasumsub.f
+    scasumsub.f
+    scnrm2sub.f
+    sdotsub.f
+    sdsdotsub.f
+    snrm2sub.f
+    zdotcsub.f
+    zdotusub.f
+  )
+endif(BLAS_FOUND)
 
 install(TARGETS mofem_cblas DESTINATION ${CMAKE_INSTALL_PREFIX}/lib)

@@ -40,6 +40,15 @@ find_package(Git)
 #   include_directories ( ${PYTHON_INCLUDE_DIRS} )
 # endif(PYTHON_INCLUDE_DIRS)
 
+# No need to add blas for unix like system, is added to project libs by core lib
+if(APPLE)
+  find_package(BLAS)
+  if(BLAS_FOUND)
+    set(CMAKE_EXE_LINKER_FLAGS "-framework Accelerate")
+  endif(BLAS_FOUND)
+endif(APPLE)
+message(STATUS BLAS found: ${BLAS_LIBRARIES})
+
 find_program(
   MBCONVERT NAMES mbconvert
   PATH ${MoFEM_PETSC_DIR}/${MoFEM_PETSC_ARCH}/bin
