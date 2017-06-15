@@ -40,12 +40,13 @@ find_package(Git)
 #   include_directories ( ${PYTHON_INCLUDE_DIRS} )
 # endif(PYTHON_INCLUDE_DIRS)
 
-find_package(BLAS)
-if(BLAS_FOUND)
-  if(APPLE)
+# No need to add blas for unix like system, is added to project libs by core lib
+if(APPLE)
+  find_package(BLAS)
+  if(BLAS_FOUND)
     set(CMAKE_EXE_LINKER_FLAGS "-framework Accelerate")
-  endif(APPLE)
-endif(BLAS_FOUND)
+  endif(BLAS_FOUND)
+endif(APPLE)
 message(STATUS BLAS found: ${BLAS_LIBRARIES})
 
 find_program(
