@@ -118,7 +118,7 @@ enum FieldApproximationBase {
   NOBASE = 0,
   AINSWORTH_LEGENDRE_BASE = 1,   ///< Ainsworth Cole (Legendre) approx. base \cite NME:NME847
   AINSWORTH_LOBBATO_BASE,        ///< Like AINSWORTH_LEGENDRE_BASE but with Lobatto base instead Legendre \cite beriot2015efficient
-  AINSOWRTH_BERNSTEIN_BEZIER_BASE,   ///< Not yet implemented, in implementation we will follow \cite ainsworth2011bernstein
+  AINSWORTH_BERNSTEIN_BEZIER_BASE,   ///< Not yet implemented, in implementation we will follow \cite ainsworth2011bernstein
   DEMKOWICZ_JACOBI_BASE,             ///< Construction of base is by Demkowicz \cite fuentes2015orientation
   USER_BASE,               ///< user implemented approximation base
   LASTBASE
@@ -128,7 +128,7 @@ const static char * const ApproximationBaseNames[] = {
   "NOBASE",
   "AINSWORTH_LEGENDRE_BASE",
   "AINSWORTH_LOBBATO_BASE",
-  "AINSOWRTH_BERNSTEIN_BEZIER_BASE",
+  "AINSWORTH_BERNSTEIN_BEZIER_BASE",
   "DEMKOWICZ_JACOBI_BASE",
   "USER_BASE",
   "LASTBASE"
@@ -139,7 +139,7 @@ const static FieldApproximationBase ApproximationBaseArray[] = {
   NOBASE,
   AINSWORTH_LEGENDRE_BASE,
   AINSWORTH_LOBBATO_BASE,
-  AINSOWRTH_BERNSTEIN_BEZIER_BASE,
+  AINSWORTH_BERNSTEIN_BEZIER_BASE,
   DEMKOWICZ_JACOBI_BASE,
   USER_BASE,
   LASTBASE
