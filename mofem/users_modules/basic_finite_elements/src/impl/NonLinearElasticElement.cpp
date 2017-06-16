@@ -1386,7 +1386,7 @@ PetscErrorCode NonlinearElasticElement::addElement(string element_name,
 
   std::map<int,BlockData>::iterator sit = setOfBlocks.begin();
   for(;sit!=setOfBlocks.end();sit++) {
-    ierr = mField.add_ents_to_finite_element_by_TETs(sit->second.tEts,element_name); CHKERRQ(ierr);
+    ierr = mField.add_ents_to_finite_element_by_type(sit->second.tEts,MBTET,element_name); CHKERRQ(ierr);
   }
 
   PetscFunctionReturn(0);

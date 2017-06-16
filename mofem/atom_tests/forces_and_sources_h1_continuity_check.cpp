@@ -129,26 +129,26 @@ int main(int argc, char *argv[]) {
   ierr = m_field.add_ents_to_field_by_TETs(root_set,"H1"); CHKERRQ(ierr);
 
   //add entities to finite element
-  ierr = m_field.add_ents_to_finite_element_by_TETs(root_set,"TET_FE"); CHKERRQ(ierr);
+  ierr = m_field.add_ents_to_finite_element_by_type(root_set,MBTET,"TET_FE"); CHKERRQ(ierr);
 
   Range tets;
   ierr = m_field.get_entities_by_type_and_ref_level(BitRefLevel().set(0),BitRefLevel().set(),MBTET,tets); CHKERRQ(ierr);
   Skinner skin(&moab);
   Range skin_faces; // skin faces from 3d ents
   rval = skin.find_skin(0,tets,false,skin_faces); CHKERRQ_MOAB(rval);
-  ierr = m_field.add_ents_to_finite_element_by_TRIs(skin_faces,"SKIN_FE"); CHKERRQ(ierr);
+  ierr = m_field.add_ents_to_finite_element_by_type(skin_faces,MBTRI,"SKIN_FE"); CHKERRQ(ierr);
 
   Range faces;
   ierr = m_field.get_entities_by_type_and_ref_level(BitRefLevel().set(0),BitRefLevel().set(),MBTRI,faces); CHKERRQ(ierr);
   faces = subtract(faces,skin_faces);
-  ierr = m_field.add_ents_to_finite_element_by_TRIs(faces,"TRI_FE"); CHKERRQ(ierr);
+  ierr = m_field.add_ents_to_finite_element_by_type(faces,MBTRI,"TRI_FE"); CHKERRQ(ierr);
 
   Range edges;
   ierr = moab.get_adjacencies(faces,1,false,edges,moab::Interface::UNION); CHKERRQ(ierr);
-  ierr = m_field.add_ents_to_finite_element_by_EDGEs(edges,"EDGE_FE"); CHKERRQ(ierr);
+  ierr = m_field.add_ents_to_finite_element_by_type(edges,MBEDGE,"EDGE_FE"); CHKERRQ(ierr);
   Range skin_edges;
   ierr = moab.get_adjacencies(skin_faces,1,false,skin_edges,moab::Interface::UNION); CHKERRQ(ierr);
-  ierr = m_field.add_ents_to_finite_element_by_EDGEs(edges,"EDGE_FE"); CHKERRQ(ierr);
+  ierr = m_field.add_ents_to_finite_element_by_type(edges,MBEDGE,"EDGE_FE"); CHKERRQ(ierr);
 
   //set app. order
   int order = 4;

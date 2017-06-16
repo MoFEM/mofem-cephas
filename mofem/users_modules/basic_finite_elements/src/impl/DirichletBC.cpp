@@ -74,7 +74,7 @@ PetscErrorCode DisplacementBCFEMethodPreAndPostProc::iNitalize() {
           ents.insert(_nodes.begin(),_nodes.end());
         }
         for(Range::iterator eit = ents.begin();eit!=ents.end();eit++) {
-          for(_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_NAME_ENT_PART_FOR_LOOP_(problemPtr,fieldName,*eit,pcomm->rank(),dof_ptr)) {
+          for(_IT_NUMEREDDOF_ROW_BY_NAME_ENT_PART_FOR_LOOP_(problemPtr,fieldName,*eit,pcomm->rank(),dof_ptr)) {
             NumeredDofEntity *dof = dof_ptr->get();
             std::bitset<8> pstatus(dof->getPStatus());
             if(pstatus.test(0)) continue; //only local
@@ -272,7 +272,7 @@ PetscErrorCode SpatialPositionsBCFEMethodPreAndPostProc::iNitalize() {
           ents.insert(_nodes.begin(),_nodes.end());
         }
         for(Range::iterator eit = ents.begin();eit!=ents.end();eit++) {
-          for(_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_NAME_ENT_PART_FOR_LOOP_(problemPtr,fieldName,*eit,pcomm->rank(),dof_ptr)) {
+          for(_IT_NUMEREDDOF_ROW_BY_NAME_ENT_PART_FOR_LOOP_(problemPtr,fieldName,*eit,pcomm->rank(),dof_ptr)) {
             NumeredDofEntity *dof = dof_ptr->get();
             if(dof->getEntType() == MBVERTEX) {
               EntityHandle node = dof->getEnt();
@@ -300,7 +300,7 @@ PetscErrorCode SpatialPositionsBCFEMethodPreAndPostProc::iNitalize() {
             }
           }
           for(std::vector<std::string>::iterator fit = fixFields.begin();fit!=fixFields.end();fit++) {
-            for(_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_NAME_ENT_PART_FOR_LOOP_(problemPtr,*fit,*eit,pcomm->rank(),dof_ptr)) {
+            for(_IT_NUMEREDDOF_ROW_BY_NAME_ENT_PART_FOR_LOOP_(problemPtr,*fit,*eit,pcomm->rank(),dof_ptr)) {
               NumeredDofEntity *dof = dof_ptr->get();
               mapZeroRows[dof->getPetscGlobalDofIdx()] = dof->getFieldData();
             }
@@ -344,7 +344,7 @@ PetscErrorCode TemperatureBCFEMethodPreAndPostProc::iNitalize() {
           ents.insert(_nodes.begin(),_nodes.end());
         }
         for(Range::iterator eit = ents.begin();eit!=ents.end();eit++) {
-          for(_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_NAME_ENT_PART_FOR_LOOP_(problemPtr,fieldName,*eit,pcomm->rank(),dof_ptr)) {
+          for(_IT_NUMEREDDOF_ROW_BY_NAME_ENT_PART_FOR_LOOP_(problemPtr,fieldName,*eit,pcomm->rank(),dof_ptr)) {
             NumeredDofEntity *dof = dof_ptr->get();
             if(dof->getEntType() == MBVERTEX) {
               mapZeroRows[dof->getPetscGlobalDofIdx()] = scaled_values[0];
@@ -372,7 +372,7 @@ PetscErrorCode FixBcAtEntities::iNitalize() {
   if(mapZeroRows.empty()) {
     for(std::vector<std::string>::iterator fit = fieldNames.begin();fit!=fieldNames.end();fit++) {
       for(Range::iterator eit = eNts.begin();eit!=eNts.end();eit++) {
-        for(_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_NAME_ENT_PART_FOR_LOOP_(problemPtr,*fit,*eit,mField.get_comm_rank(),dof_ptr)) {
+        for(_IT_NUMEREDDOF_ROW_BY_NAME_ENT_PART_FOR_LOOP_(problemPtr,*fit,*eit,mField.get_comm_rank(),dof_ptr)) {
           NumeredDofEntity *dof = dof_ptr->get();
           mapZeroRows[dof->getPetscGlobalDofIdx()] = 0;
         }
@@ -497,7 +497,7 @@ PetscErrorCode DirichletBCFromBlockSetFEMethodPreAndPostProc::iNitalize() {
             ents.insert(nodes.begin(),nodes.end());
           }
           for(Range::iterator eit = ents.begin();eit!=ents.end();eit++) {
-            for(_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_NAME_ENT_PART_FOR_LOOP_(problemPtr,fieldName,*eit,pcomm->rank(),dof_ptr)) {
+            for(_IT_NUMEREDDOF_ROW_BY_NAME_ENT_PART_FOR_LOOP_(problemPtr,fieldName,*eit,pcomm->rank(),dof_ptr)) {
               NumeredDofEntity *dof = dof_ptr->get();
               if(dof->getEntType() == MBVERTEX) {
                 if(dof->getDofCoeffIdx() == 0) {
@@ -566,7 +566,7 @@ PetscErrorCode DirichletBCFromBlockSetFEMethodPreAndPostProcWithFlags::iNitalize
             ents.insert(nodes.begin(),nodes.end());
           }
           for(Range::iterator eit = ents.begin();eit!=ents.end();eit++) {
-            for(_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_NAME_ENT_PART_FOR_LOOP_(problemPtr,fieldName,*eit,pcomm->rank(),dof_ptr)) {
+            for(_IT_NUMEREDDOF_ROW_BY_NAME_ENT_PART_FOR_LOOP_(problemPtr,fieldName,*eit,pcomm->rank(),dof_ptr)) {
               NumeredDofEntity *dof = dof_ptr->get();
               if(dof->getEntType() == MBVERTEX) {
                 if(dof->getDofCoeffIdx() == 0) {

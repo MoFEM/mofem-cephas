@@ -127,7 +127,7 @@ struct MetaNodalForces {
       if(intersect_ptr) {
         nodes = intersect(nodes,*intersect_ptr);
       }
-      ierr = m_field.add_ents_to_finite_element_by_VERTICEs(nodes,"FORCE_FE"); CHKERRQ(ierr);
+      ierr = m_field.add_ents_to_finite_element_by_type(nodes,MBVERTEX,"FORCE_FE"); CHKERRQ(ierr);
     }
     PetscFunctionReturn(0);
   }

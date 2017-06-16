@@ -329,7 +329,7 @@ namespace MoFEM {
     PetscFunctionReturn(0);
   }
 
-  PetscErrorCode Core::add_ents_to_finite_element_by_range_type(
+  PetscErrorCode Core::add_ents_to_finite_element_by_type(
     const Range& ents,const EntityType type,const std::string &name
   ) {
     EntityHandle idm = no_handle;
@@ -345,7 +345,7 @@ namespace MoFEM {
     PetscFunctionReturn(0);
   }
 
-  PetscErrorCode Core::add_ents_to_finite_element_by_range_dim(
+  PetscErrorCode Core::add_ents_to_finite_element_by_dim(
     const Range& ents,const int dim,const std::string &name
   ) {
     EntityHandle idm = no_handle;
@@ -365,17 +365,17 @@ namespace MoFEM {
     return add_ents_to_finite_element_by_type(meshset,MBEDGE,name,recursive);
   }
   PetscErrorCode Core::add_ents_to_finite_element_by_EDGEs(const Range& edges,const std::string &name) {
-    return add_ents_to_finite_element_by_range_type(edges,MBEDGE,name);
+    return add_ents_to_finite_element_by_type(edges,MBEDGE,name);
     PetscFunctionReturn(0);
   }
   PetscErrorCode Core::add_ents_to_finite_element_by_VERTICEs(const Range& vert,const std::string &name) {
     PetscFunctionBegin;
-    return add_ents_to_finite_element_by_range_type(vert,MBVERTEX,name);
+    return add_ents_to_finite_element_by_type(vert,MBVERTEX,name);
     PetscFunctionReturn(0);
   }
   PetscErrorCode Core::add_ents_to_finite_element_by_TRIs(const Range& tris,const std::string &name) {
     PetscFunctionBegin;
-    return add_ents_to_finite_element_by_range_type(tris,MBTRI,name);
+    return add_ents_to_finite_element_by_type(tris,MBTRI,name);
     PetscFunctionReturn(0);
   }
   PetscErrorCode Core::add_ents_to_finite_element_by_TRIs(const EntityHandle meshset,const std::string &name,const bool recursive) {
@@ -384,7 +384,7 @@ namespace MoFEM {
   }
   PetscErrorCode Core::add_ents_to_finite_element_by_TETs(const Range& tets,const std::string &name) {
     PetscFunctionBegin;
-    return add_ents_to_finite_element_by_range_type(tets,MBTET,name);
+    return add_ents_to_finite_element_by_type(tets,MBTET,name);
     PetscFunctionReturn(0);
   }
   PetscErrorCode Core::add_ents_to_finite_element_by_TETs(const EntityHandle meshset,const std::string &name,const bool recursive) {
@@ -393,20 +393,24 @@ namespace MoFEM {
   }
   PetscErrorCode Core::add_ents_to_finite_element_by_PRISMs(const Range& prims,const std::string &name) {
     PetscFunctionBegin;
-    return add_ents_to_finite_element_by_range_type(prims,MBPRISM,name);
+    return add_ents_to_finite_element_by_type(prims,MBPRISM,name);
     PetscFunctionReturn(0);
   }
   PetscErrorCode Core::add_ents_to_finite_element_by_PRISMs(const EntityHandle meshset,const std::string &name,const bool recursive) {
     return add_ents_to_finite_element_by_type(meshset,MBPRISM,name,recursive);
   }
 
-  PetscErrorCode Core::add_ents_to_finite_element_EntType_by_bit_ref(const BitRefLevel &bit,const std::string &name,EntityType type,int verb) {
+  PetscErrorCode Core::add_ents_to_finite_element_EntType_by_bit_ref(
+    const BitRefLevel &bit,const std::string &name,EntityType type,int verb
+  ) {
     PetscFunctionBegin;
     ierr = add_ents_to_finite_element_EntType_by_bit_ref(bit,BitRefLevel().set(),name,type,verb); CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }
 
-  PetscErrorCode Core::add_ents_to_finite_element_EntType_by_bit_ref(const BitRefLevel &bit,const BitRefLevel &mask,const std::string &name,EntityType type,int verb) {
+  PetscErrorCode Core::add_ents_to_finite_element_EntType_by_bit_ref(
+    const BitRefLevel &bit,const BitRefLevel &mask,const std::string &name,EntityType type,int verb
+  ) {
     PetscFunctionBegin;
     try {
       if(verb==-1) verb = verbose;
@@ -423,8 +427,6 @@ namespace MoFEM {
       int nb_add_FEs = 0;
       for(;miit!=hi_miit;miit++) {
         BitRefLevel bit2 = miit->getBitRefLevel();
-        //check if all bits in mask are ib fe bit2
-        //if((miit->getBitRefLevel()&bit)!=bit) continue;
         if((bit2&mask) != bit2) continue;
         if((bit2&bit).any()) {
           EntityHandle ent = miit->getRefEnt();

@@ -129,8 +129,8 @@ int main(int argc, char *argv[]) {
   ierr = m_field.modify_finite_element_add_field_data("FE2","FIELD_B"); CHKERRQ(ierr);
 
   //add entities to finite element
-  ierr = m_field.add_ents_to_finite_element_by_TETs(0,"FE1"); CHKERRQ(ierr);
-  ierr = m_field.add_ents_to_finite_element_by_TETs(0,"FE2"); CHKERRQ(ierr);
+  ierr = m_field.add_ents_to_finite_element_by_type(0,MBTET,"FE1"); CHKERRQ(ierr);
+  ierr = m_field.add_ents_to_finite_element_by_type(0,MBTET,"FE2"); CHKERRQ(ierr);
 
   //build finite elemnts
   ierr = m_field.build_finite_elements(); CHKERRQ(ierr);
