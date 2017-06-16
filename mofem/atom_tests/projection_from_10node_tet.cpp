@@ -109,7 +109,7 @@ int main(int argc, char *argv[]) {
   ierr = m_field.set_field_order(0,MBTET,"MESH_NODE_POSITIONS",2); CHKERRQ(ierr);
 
   //add finite elements entities
-  ierr = m_field.add_ents_to_finite_element_by_TETs(tets,"TET_ELEM"); CHKERRQ(ierr);
+  ierr = m_field.add_ents_to_finite_element_by_type(tets,MBTET,"TET_ELEM"); CHKERRQ(ierr);
 
   //set problem level
   ierr = m_field.modify_problem_ref_level_add_bit("TET_PROBLEM",bit_level0); CHKERRQ(ierr);

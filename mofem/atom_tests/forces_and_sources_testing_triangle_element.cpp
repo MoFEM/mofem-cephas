@@ -115,8 +115,8 @@ int main(int argc, char *argv[]) {
   Skinner skin(&m_field.get_moab());
   Range tets_skin;
   rval = skin.find_skin(0,tets,false,tets_skin); CHKERRQ_MOAB(rval);
-  ierr = m_field.add_ents_to_finite_element_by_TRIs(tets_skin,"TEST_FE1"); CHKERRQ(ierr);
-  ierr = m_field.add_ents_to_finite_element_by_TRIs(tets_skin,"TEST_FE2"); CHKERRQ(ierr);
+  ierr = m_field.add_ents_to_finite_element_by_type(tets_skin,MBTRI,"TEST_FE1"); CHKERRQ(ierr);
+  ierr = m_field.add_ents_to_finite_element_by_type(tets_skin,MBTRI,"TEST_FE2"); CHKERRQ(ierr);
 
   //set app. order
   //see Hierarchic Finite Element Bases on Unstructured Tetrahedral Meshes (Mark Ainsworth & Joe Coyle)

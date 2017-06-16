@@ -145,7 +145,7 @@ int main(int argc, char *argv[]) {
   //add entities to field
   ierr = m_field.add_ents_to_field_by_TETs(root_set,"FIELD"); CHKERRQ(ierr);
   //add entities to finite element
-  ierr = m_field.add_ents_to_finite_element_by_TETs(root_set,"TET_FE"); CHKERRQ(ierr);
+  ierr = m_field.add_ents_to_finite_element_by_type(root_set,MBTET,"TET_FE"); CHKERRQ(ierr);
 
   //set app. order
   int order = 5;

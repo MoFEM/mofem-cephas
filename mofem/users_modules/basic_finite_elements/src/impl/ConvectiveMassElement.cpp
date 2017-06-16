@@ -2120,7 +2120,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
       if(!tets.empty()) {
         add_tets = intersect(add_tets,tets);
       }
-      ierr = mField.add_ents_to_finite_element_by_TETs(add_tets,element_name); CHKERRQ(ierr);
+      ierr = mField.add_ents_to_finite_element_by_type(add_tets,MBTET,element_name); CHKERRQ(ierr);
     }
 
     PetscFunctionReturn(0);
@@ -2163,7 +2163,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
         if(!tets.empty()) {
           add_tets = intersect(add_tets,tets);
         }
-        ierr = mField.add_ents_to_finite_element_by_TETs(add_tets,element_name); CHKERRQ(ierr);
+        ierr = mField.add_ents_to_finite_element_by_type(add_tets,MBTET,element_name); CHKERRQ(ierr);
       }
 
       PetscFunctionReturn(0);
@@ -2216,7 +2216,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
       if(!tets.empty()) {
         add_tets = intersect(add_tets,tets);
       }
-      ierr = mField.add_ents_to_finite_element_by_TETs(add_tets,element_name); CHKERRQ(ierr);
+      ierr = mField.add_ents_to_finite_element_by_type(add_tets,MBTET,element_name); CHKERRQ(ierr);
     }
 
     PetscFunctionReturn(0);

@@ -132,7 +132,7 @@ int main(int argc, char *argv[]) {
         ierr = m_field.modify_finite_element_add_field_data("DAMPER_FE","SPATIAL_POSITION"); CHKERRQ(ierr);
         ierr = m_field.modify_finite_element_add_field_data("DAMPER_FE","SPATIAL_POSITION_DOT"); CHKERRQ(ierr);
         EntityHandle root_set = moab.get_root_set();
-        ierr = m_field.add_ents_to_finite_element_by_TETs(root_set,"DAMPER_FE"); CHKERRQ(ierr);
+        ierr = m_field.add_ents_to_finite_element_by_type(root_set,MBTET,"DAMPER_FE"); CHKERRQ(ierr);
 
         //build finite elemnts
         ierr = m_field.build_finite_elements(); CHKERRQ(ierr);

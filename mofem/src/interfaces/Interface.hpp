@@ -1088,89 +1088,185 @@ struct Interface: public UnknownInterface {
      */
   virtual PetscErrorCode modify_finite_element_off_field_col(const std::string &fe_name,const std::string &name_row) = 0;
 
+  /**
+   * \brief add entities to finite element
+   * \ingroup mofem_fe
+   * @param  entities   meshset or range form were entities taken
+   * @param  type      type of entity
+   * @param  name      name of field
+   * @param  recursive take entities from meshsets in meshset
+   * @return           error code
+   */
+  virtual PetscErrorCode add_ents_to_finite_element_by_type(
+    const EntityHandle entities,const EntityType type,const std::string &name,const bool recursive = true
+  ) = 0;
+
+  /**
+   * \brief add entities to finite element
+   * \ingroup mofem_fe
+   * @param  entities  meshset or range form were entities taken
+   * @param  dim       dimension
+   * @param  name      name of field
+   * @param  recursive take entities from meshsets in meshset
+   * @return           error code
+   */
+  virtual PetscErrorCode add_ents_to_finite_element_by_dimension(
+    const EntityHandle entities,const int dim,const std::string &name,const bool recursive = true
+  ) = 0;
+
+  /**
+   * \brief add entities to finite elements
+   * \ingroup mofem_fe
+   * @param  ents range of entities
+   * @param  type type of entity (MBVERTEX, MBEDGE, MBTRI, ...)
+   * @param  name name of finite element
+   * @return      error code
+   */
+  virtual PetscErrorCode add_ents_to_finite_element_by_type(
+    const Range& ents,const EntityType type,const std::string &name
+  ) = 0;
+
+  /**
+   * \brief add entities to finite elements
+   * \ingroup mofem_fe
+   * @param  ents range of entities
+   * @param  dim dimension of entities
+   * @param  name name of finite element
+   * @return      error code
+   */
+  virtual PetscErrorCode add_ents_to_finite_element_by_dim(
+    const Range& ents,const int dim,const std::string &name
+  ) = 0;
+
   /** \brief add EDGES entities from range to finite element database given by name
    * \ingroup mofem_fe
+   *
+   * \deprecated use add_ents_to_finite_element_by_type
    *
    * \param range contains tetrahedron
    * \param name Finite Element name
    */
-  virtual PetscErrorCode add_ents_to_finite_element_by_EDGEs(const Range& edge,const std::string &name) = 0;
+  DEPRECATED virtual PetscErrorCode add_ents_to_finite_element_by_EDGEs(const Range& edge,const std::string &name) = 0;
+
+  /**
+   * \brief add EDGES finite elements
+   *
+   * \deprecated use add_ents_to_finite_element_by_type
+   *
+   * @param  meshset
+   * @param  name      name of finite element
+   * @param  recursive take entities from meshsets in meshset
+   * @return           error code
+   */
+  DEPRECATED virtual PetscErrorCode add_ents_to_finite_element_by_EDGEs(
+    const EntityHandle meshset,const std::string &name,const bool recursive = false
+  ) = 0;
 
   /** \brief add VERTICES entities from range to finite element database given by name
    * \ingroup mofem_fe
    *
-   * \param range contains tetrahedron
-   * \param name Finite Element name
-   */
-  virtual PetscErrorCode add_ents_to_finite_element_by_VERTICEs(const Range& vert,const std::string &name) = 0;
-
-  /** \brief add TRI entities from range to finite element database given by name
-   * \ingroup mofem_fe
+   * \deprecated use add_ents_to_finite_element_by_type
    *
    * \param range contains tetrahedron
    * \param name Finite Element name
    */
-  virtual PetscErrorCode add_ents_to_finite_element_by_TRIs(const Range& tris,const std::string &name) = 0;
+  DEPRECATED virtual PetscErrorCode add_ents_to_finite_element_by_VERTICEs(const Range& vert,const std::string &name) = 0;
+
+  /** \brief add TRI entities from range to finite element database given by name
+   * \ingroup mofem_fe
+   *
+   * \deprecated use add_ents_to_finite_element_by_type
+   *
+   * \param range contains tetrahedron
+   * \param name Finite Element name
+   */
+  DEPRECATED virtual PetscErrorCode add_ents_to_finite_element_by_TRIs(const Range& tris,const std::string &name) = 0;
 
   /** \brief add TRI entities from meshset to finite element database given by name
    * \ingroup mofem_fe
+   *
+   * \deprecated use add_ents_to_finite_element_by_type
    *
    * \param range contains tetrahedron
    * \param name Finite Element name
    * \param recursive if true parent meshset is searched recursively
    */
-  virtual PetscErrorCode add_ents_to_finite_element_by_TRIs(
+  DEPRECATED virtual PetscErrorCode add_ents_to_finite_element_by_TRIs(
     const EntityHandle meshset,const std::string &name,const bool recursive = false
   ) = 0;
 
   /** \brief add TET entities from range to finite element database given by name
    * \ingroup mofem_fe
    *
+   * \deprecated use add_ents_to_finite_element_by_type
+   *
    * \param range contains tetrahedron
    * \param name Finite Element name
    */
-  virtual PetscErrorCode add_ents_to_finite_element_by_TETs(const Range& tets,const std::string &name) = 0;
+  DEPRECATED virtual PetscErrorCode add_ents_to_finite_element_by_TETs(const Range& tets,const std::string &name) = 0;
 
   /** \brief add TET entities from meshset to finite element database given by name
    * \ingroup mofem_fe
+   *
+   * \deprecated use add_ents_to_finite_element_by_type
    *
    * \param meshset contains tetrahedron
    * \param name Finite Element name
    * \param recursive if true parent meshset is searched recursively
    */
-  virtual PetscErrorCode add_ents_to_finite_element_by_TETs(
+  DEPRECATED virtual PetscErrorCode add_ents_to_finite_element_by_TETs(
     const EntityHandle meshset,const std::string &name,const bool recursive = false
   ) = 0;
 
   /** \brief add PRISM entities from meshset to finite element database given by name
    * \ingroup mofem_fe
    *
+   * \deprecated use add_ents_to_finite_element_by_type
+   *
    * \param range contains tetrahedron
    * \param name Finite Element name
    */
-  virtual PetscErrorCode add_ents_to_finite_element_by_PRISMs(const Range& prims,const std::string &name) = 0;
+  DEPRECATED virtual PetscErrorCode add_ents_to_finite_element_by_PRISMs(const Range& prims,const std::string &name) = 0;
 
   /** \brief add TET entities from meshset to finite element database given by name
    * \ingroup mofem_fe
+   *
+   * \deprecated use add_ents_to_finite_element_by_type
    *
    * \param meshset contains tetrahedron
    * \param name Finite Element name
    * \param recursive if true parent meshset is searched recursively
    */
-  virtual PetscErrorCode add_ents_to_finite_element_by_PRISMs(
+  DEPRECATED virtual PetscErrorCode add_ents_to_finite_element_by_PRISMs(
     const EntityHandle meshset,const std::string &name,const bool recursive = false
   ) = 0;
 
   /** \brief add TET elements from given refinement level to finite element database given by name
    * \ingroup mofem_fe
    *
+   * \deprecated use add_ents_to_finite_element_EntType_by_bit_ref with mask explicitly given
+   *
    * \param BitRefLevel bit
-   * \param Finite Element name
-   * \param Finite Elenent type
+   * \param finite element name
+   * \param finite elenent type
    * \param verrbose level
    */
-  virtual PetscErrorCode add_ents_to_finite_element_EntType_by_bit_ref(const BitRefLevel &bit,const std::string &name,EntityType type,int verb = -1) = 0;
+  DEPRECATED virtual PetscErrorCode add_ents_to_finite_element_EntType_by_bit_ref(
+    const BitRefLevel &bit,const std::string &name,EntityType type,int verb = -1
+  ) = 0;
 
+  /** \brief add TET entities from given refinement level to finite element database given by name
+   * \ingroup mofem_fe
+   *
+   * \param BitRefLevel bit
+   * \param BitRefLevel mask
+   * \param finite element name
+   * \param finite element type
+   * \param verrbose level
+   */
+  virtual PetscErrorCode add_ents_to_finite_element_EntType_by_bit_ref(
+    const BitRefLevel &bit,const BitRefLevel &mask,const std::string &name,EntityType type,int verb = -1
+  ) = 0;
 
   /** get finite element meshset
    * \ingroup mofem_fe
@@ -1236,17 +1332,6 @@ struct Interface: public UnknownInterface {
    *
    */
   virtual PetscErrorCode remove_ents_from_finite_element(const std::string &name,const Range &ents,int verb = -1) = 0;
-
-  /** \brief add TET entities from given refinement level to finite element database given by name
-   * \ingroup mofem_fe
-   *
-   * \param BitRefLevel bit
-   * \param BitRefLevel mask
-   * \param Finite Element name
-   * \param Finite Element type
-   * \param verrbose level
-   */
-  virtual PetscErrorCode add_ents_to_finite_element_EntType_by_bit_ref(const BitRefLevel &bit,const BitRefLevel &mask,const std::string &name,EntityType type,int verb = -1) = 0;
 
   /** \brief add MESHSET element to finite element database given by name
    * \ingroup mofem_fe

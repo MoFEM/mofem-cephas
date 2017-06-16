@@ -121,7 +121,7 @@ int main(int argc, char *argv[]) {
     Skinner skin(&moab);
     Range skin_faces; // skin faces from 3d ents
     rval = skin.find_skin(0,tets,false,skin_faces); CHKERRQ_MOAB(rval);
-    ierr = m_field.add_ents_to_finite_element_by_TRIs(skin_faces,"ULTRAWEAK_BCVALUE"); CHKERRQ(ierr);
+    ierr = m_field.add_ents_to_finite_element_by_type(skin_faces,MBTRI,"ULTRAWEAK_BCVALUE"); CHKERRQ(ierr);
 
     ierr = ufe.buildProblem(ref_level); CHKERRQ(ierr);
     ierr = ufe.createMatrices(); CHKERRQ(ierr);

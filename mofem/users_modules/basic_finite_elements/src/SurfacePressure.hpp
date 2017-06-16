@@ -251,7 +251,7 @@ struct MetaNeummanForces {
       if(intersect_ptr) {
         tris = intersect(tris,*intersect_ptr);
       }
-      ierr = m_field.add_ents_to_finite_element_by_TRIs(tris,"FORCE_FE"); CHKERRQ(ierr);
+      ierr = m_field.add_ents_to_finite_element_by_type(tris,MBTRI,"FORCE_FE"); CHKERRQ(ierr);
     }
 
     ierr = m_field.add_finite_element("PRESSURE_FE",MF_ZERO); CHKERRQ(ierr);
@@ -268,7 +268,7 @@ struct MetaNeummanForces {
       if(intersect_ptr) {
         tris = intersect(tris,*intersect_ptr);
       }
-      ierr = m_field.add_ents_to_finite_element_by_TRIs(tris,"PRESSURE_FE"); CHKERRQ(ierr);
+      ierr = m_field.add_ents_to_finite_element_by_type(tris,MBTRI,"PRESSURE_FE"); CHKERRQ(ierr);
     }
 
     // Reading forces from BLOCKSET
@@ -291,7 +291,7 @@ struct MetaNeummanForces {
         if(intersect_ptr) {
           tris = intersect(tris,*intersect_ptr);
         }
-        ierr = m_field.add_ents_to_finite_element_by_TRIs(tris,"FORCE_FE"); CHKERRQ(ierr);
+        ierr = m_field.add_ents_to_finite_element_by_type(tris,MBTRI,"FORCE_FE"); CHKERRQ(ierr);
         //cerr << tris << endl;
       }
     }
@@ -314,7 +314,7 @@ struct MetaNeummanForces {
           tris = intersect(tris,*intersect_ptr);
         }
         // cerr << tris << endl;
-        ierr = m_field.add_ents_to_finite_element_by_TRIs(tris,"PRESSURE_FE"); CHKERRQ(ierr);
+        ierr = m_field.add_ents_to_finite_element_by_type(tris,MBTRI,"PRESSURE_FE"); CHKERRQ(ierr);
       }
     }
 
@@ -413,7 +413,7 @@ struct MetaNeummanForces {
     for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,SIDESET|PRESSURESET,it)) {
       Range tris;
       rval = m_field.get_moab().get_entities_by_type(it->meshset,MBTRI,tris,true); CHKERRQ_MOAB(rval);
-      ierr = m_field.add_ents_to_finite_element_by_TRIs(tris,"FLUX_FE"); CHKERRQ(ierr);
+      ierr = m_field.add_ents_to_finite_element_by_type(tris,MBTRI,"FLUX_FE"); CHKERRQ(ierr);
     }
 
     PetscFunctionReturn(0);

@@ -105,7 +105,7 @@ int main(int argc, char *argv[]) {
   rval = skin.find_skin(0,tets,false,tets_skin); CHKERRQ_MOAB(rval);
   Range tets_skin_edges;
   rval = moab.get_adjacencies(tets_skin,1,false,tets_skin_edges,moab::Interface::UNION); CHKERRQ_MOAB(rval);
-  ierr = m_field.add_ents_to_finite_element_by_EDGEs(tets_skin_edges,"TEST_FE"); CHKERRQ(ierr);
+  ierr = m_field.add_ents_to_finite_element_by_type(tets_skin_edges,MBEDGE,"TEST_FE"); CHKERRQ(ierr);
 
   //set app. order
   //see Hierarchic Finite Element Bases on Unstructured Tetrahedral Meshes (Mark Ainsworth & Joe Coyle)
