@@ -386,21 +386,26 @@ struct Core: public Interface {
   PetscErrorCode modify_finite_element_off_field_data(const std::string &fe_name,const std::string &name_filed);
   PetscErrorCode modify_finite_element_off_field_row(const std::string &fe_name,const std::string &name_row);
   PetscErrorCode modify_finite_element_off_field_col(const std::string &fe_name,const std::string &name_col);
-  PetscErrorCode add_ents_to_finite_element_by_VERTICEs(const Range& vert,const BitFEId id);
+  PetscErrorCode add_ents_to_finite_element_by_type(
+    const EntityHandle meshset,const EntityType type,const std::string &name,const bool recursive
+  );
+  PetscErrorCode add_ents_to_finite_element_by_dimension(
+    const EntityHandle meshset,const int dim,const std::string &name,const bool recursive
+  );
+  PetscErrorCode add_ents_to_finite_element_by_range_type(const Range& ents,const EntityType type,const std::string &name);
+  PetscErrorCode add_ents_to_finite_element_by_range_dim(const Range& ents,const int dim,const std::string &name);
+
   PetscErrorCode add_ents_to_finite_element_by_VERTICEs(const Range& vert,const std::string &name);
-  PetscErrorCode add_ents_to_finite_element_by_EDGEs(const Range& vert,const BitFEId id);
   PetscErrorCode add_ents_to_finite_element_by_EDGEs(const Range& vert,const std::string &name);
-  PetscErrorCode add_ents_to_finite_element_by_TRIs(const Range& tris,const BitFEId id);
+  PetscErrorCode add_ents_to_finite_element_by_EDGEs(const EntityHandle meshset,const std::string &name,const bool recursive = false);
   PetscErrorCode add_ents_to_finite_element_by_TRIs(const Range& tris,const std::string &name);
   PetscErrorCode add_ents_to_finite_element_by_TRIs(const EntityHandle meshset,const std::string &name,const bool recursive = false);
-  PetscErrorCode add_ents_to_finite_element_by_TETs(const Range& tets,const BitFEId id);
   PetscErrorCode add_ents_to_finite_element_by_TETs(const Range& tets,const std::string &name);
-  PetscErrorCode add_ents_to_finite_element_by_TETs(const EntityHandle meshset,const BitFEId id,const bool recursive = false);
   PetscErrorCode add_ents_to_finite_element_by_TETs(const EntityHandle meshset,const std::string &name,const bool recursive = false);
   PetscErrorCode add_ents_to_finite_element_by_PRISMs(const Range& prims,const BitFEId id);
   PetscErrorCode add_ents_to_finite_element_by_PRISMs(const Range& prims,const std::string &name);
-  PetscErrorCode add_ents_to_finite_element_by_PRISMs(const EntityHandle meshset,const BitFEId id,const bool recursive = false);
   PetscErrorCode add_ents_to_finite_element_by_PRISMs(const EntityHandle meshset,const std::string &name,const bool recursive = false);
+
   PetscErrorCode add_ents_to_finite_element_by_MESHSET(const EntityHandle meshset,const std::string& name,const bool recursive = false);
   PetscErrorCode add_ents_to_finite_element_EntType_by_bit_ref(const BitRefLevel &bit,const std::string &name,EntityType type,int verb = -1);
   PetscErrorCode add_ents_to_finite_element_EntType_by_bit_ref(const BitRefLevel &bit,const BitRefLevel &mask,const std::string &name,EntityType type,int verb = -1);

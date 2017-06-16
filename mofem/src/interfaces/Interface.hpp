@@ -1088,6 +1088,56 @@ struct Interface: public UnknownInterface {
      */
   virtual PetscErrorCode modify_finite_element_off_field_col(const std::string &fe_name,const std::string &name_row) = 0;
 
+  /**
+   * \brief add entities to finite element
+   * \ingroup mofem_fe
+   * @param  meshset   meshset form were entities taken
+   * @param  type      type of entity
+   * @param  name      name of field
+   * @param  recursive take entities from meshsets in meshset
+   * @return           error code
+   */
+  virtual PetscErrorCode add_ents_to_finite_element_by_type(
+    const EntityHandle meshset,const EntityType type,const std::string &name,const bool recursive
+  ) = 0;
+
+  /**
+   * \brief add entities to finite element
+   * \ingroup mofem_fe
+   * @param  meshset   meshset form were entities taken
+   * @param  dim       dimension
+   * @param  name      name of field
+   * @param  recursive take entities from meshsets in meshset
+   * @return           error code
+   */
+  virtual PetscErrorCode add_ents_to_finite_element_by_dimension(
+    const EntityHandle meshset,const int dim,const std::string &name,const bool recursive
+  ) = 0;
+
+  /**
+   * \brief add entities to finite elements
+   * \ingroup mofem_fe
+   * @param  ents range of entities
+   * @param  type type of entity (MBVERTEX, MBEDGE, MBTRI, ...)
+   * @param  name name of finite element
+   * @return      error code
+   */
+  virtual PetscErrorCode add_ents_to_finite_element_by_range_type(
+    const Range& ents,const EntityType type,const std::string &name
+  ) = 0;
+
+  /**
+   * \brief add entities to finite elements
+   * \ingroup mofem_fe
+   * @param  ents range of entities
+   * @param  dim dimension of entities
+   * @param  name name of finite element
+   * @return      error code
+   */
+  virtual PetscErrorCode add_ents_to_finite_element_by_range_dim(
+    const Range& ents,const int dim,const std::string &name
+  ) = 0;
+
   /** \brief add EDGES entities from range to finite element database given by name
    * \ingroup mofem_fe
    *
@@ -1095,6 +1145,17 @@ struct Interface: public UnknownInterface {
    * \param name Finite Element name
    */
   virtual PetscErrorCode add_ents_to_finite_element_by_EDGEs(const Range& edge,const std::string &name) = 0;
+
+  /**
+   * \brief add EDGES finite elements
+   * @param  meshset
+   * @param  name      name of finite element
+   * @param  recursive take entities from meshsets in meshset
+   * @return           error code
+   */
+  virtual PetscErrorCode add_ents_to_finite_element_by_EDGEs(
+    const EntityHandle meshset,const std::string &name,const bool recursive = false
+  ) = 0;
 
   /** \brief add VERTICES entities from range to finite element database given by name
    * \ingroup mofem_fe
