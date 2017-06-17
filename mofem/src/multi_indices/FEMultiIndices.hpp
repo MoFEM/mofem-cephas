@@ -43,26 +43,26 @@ struct RefElement: public interface_RefEntity<RefEntity> {
     return const_cast<SideNumber_multiIndex&>(side_number_table);
   }
 
-  /** \deprecated Use getSideNumberTable() instead
-  */
-  DEPRECATED SideNumber_multiIndex &get_side_number_table() const {
-    return getSideNumberTable();
-  }
+  // /** \deprecated Use getSideNumberTable() instead
+  // */
+  // DEPRECATED SideNumber_multiIndex &get_side_number_table() const {
+  //   return getSideNumberTable();
+  // }
 
   virtual boost::shared_ptr<SideNumber> getSideNumberPtr(const EntityHandle ent) const {
     NOT_USED(ent);
     return boost::shared_ptr<SideNumber>();
   };
 
-  /**
-   * \deprecated First argument is no longer needed
-   */
-  virtual DEPRECATED boost::shared_ptr<SideNumber> getSideNumberPtr(
-    const moab::Interface &moab,const EntityHandle ent
-  ) const {
-    NOT_USED(moab);
-    return getSideNumberPtr(ent);
-  }
+  // /**
+  //  * \deprecated First argument is no longer needed
+  //  */
+  // virtual DEPRECATED boost::shared_ptr<SideNumber> getSideNumberPtr(
+  //   const moab::Interface &moab,const EntityHandle ent
+  // ) const {
+  //   NOT_USED(moab);
+  //   return getSideNumberPtr(ent);
+  // }
 
   /**
    * \brief Get pointer to RefEntity
@@ -157,21 +157,21 @@ struct interface_RefElement: interface_RefEntity<T> {
   inline SideNumber_multiIndex &getSideNumberTable() const
   { return this->sPtr->getSideNumberTable(); }
 
-  DEPRECATED inline SideNumber_multiIndex &get_side_number_table() const
-  { return this->sPtr->getSideNumberTable(); }
+  // DEPRECATED inline SideNumber_multiIndex &get_side_number_table() const
+  // { return this->sPtr->getSideNumberTable(); }
 
   inline boost::shared_ptr<SideNumber> getSideNumberPtr(const EntityHandle ent) const
   { return this->sPtr->getSideNumberPtr(ent); }
 
-  /**
-   * \deprecated First argument is no longer needed
-   */
-  virtual DEPRECATED boost::shared_ptr<SideNumber> getSideNumberPtr(
-    const moab::Interface &moab,const EntityHandle ent
-  ) const {
-    NOT_USED(moab);
-    return getSideNumberPtr(ent);
-  }
+  // /**
+  //  * \deprecated First argument is no longer needed
+  //  */
+  // virtual DEPRECATED boost::shared_ptr<SideNumber> getSideNumberPtr(
+  //   const moab::Interface &moab,const EntityHandle ent
+  // ) const {
+  //   NOT_USED(moab);
+  //   return getSideNumberPtr(ent);
+  // }
 
   inline boost::shared_ptr<RefEntity>& getRefEntityPtr() const
   { return this->sPtr->getRefEntityPtr(); }
@@ -535,9 +535,9 @@ interface_RefElement<RefElement> {
    */
   inline EntityHandle getEnt() const { return getRefEnt(); }
 
-  /** \deprecated Use getEnt() instead
-  */
-  DEPRECATED inline EntityHandle get_ent() const { return getEnt(); }
+  // /** \deprecated Use getEnt() instead
+  // */
+  // DEPRECATED inline EntityHandle get_ent() const { return getEnt(); }
 
   /**
    * \brief Get number of DOFs on row
@@ -676,9 +676,9 @@ interface_RefElement<T> {
    */
   inline EntityHandle getEnt() const { return this->sPtr->getRefEnt(); }
 
-  /** \deprecated Use getEnt() instead
-  */
-  DEPRECATED inline EntityHandle get_ent() const { return getEnt(); }
+  // /** \deprecated Use getEnt() instead
+  // */
+  // DEPRECATED inline EntityHandle get_ent() const { return getEnt(); }
 
   /**
    * \brief Get unique UId for finite element entity
@@ -689,23 +689,23 @@ interface_RefElement<T> {
 
   SideNumber_multiIndex &getSideNumberTable() const { return this->sPtr->getSideNumberTable(); }
 
-  /** \deprecated Use getSideNumberTable() instead
-  */
-  DEPRECATED SideNumber_multiIndex &get_side_number_table() const {
-    return this->sPtr->getSideNumberTable();
-  }
+  // /** \deprecated Use getSideNumberTable() instead
+  // */
+  // DEPRECATED SideNumber_multiIndex &get_side_number_table() const {
+  //   return this->sPtr->getSideNumberTable();
+  // }
 
   inline PetscErrorCode getElementAdjacency(const Field *field_ptr,Range &adjacency) {
     return this->getElementAdjacency(field_ptr,adjacency);
   }
 
-  /** \deprecated Use getElementAdjacency() instead
-  */
-  DEPRECATED inline PetscErrorCode get_element_adjacency(
-    const Field *field_ptr,Range &adjacency
-  ) {
-    return this->getElementAdjacency(field_ptr,adjacency);
-  }
+  // /** \deprecated Use getElementAdjacency() instead
+  // */
+  // DEPRECATED inline PetscErrorCode get_element_adjacency(
+  //   const Field *field_ptr,Range &adjacency
+  // ) {
+  //   return this->getElementAdjacency(field_ptr,adjacency);
+  // }
 
   inline boost::shared_ptr<RefElement>& getRefElement() const {
     return this->sPtr->getRefElement();
@@ -767,26 +767,26 @@ struct NumeredEntFiniteElement: public interface_EntFiniteElement<EntFiniteEleme
     */
   PetscErrorCode getRowDofsByPetscGlobalDofIdx(DofIdx idx,const FENumeredDofEntity **dof_ptr) const;
 
-  /** \deprecated Use getRowDofsByPetscGlobalDofIdx() instead
-  */
-  inline DEPRECATED PetscErrorCode get_row_dofs_by_petsc_gloabl_dof_idx(
-    DofIdx idx,const FENumeredDofEntity **dof_ptr
-  ) const {
-    return getRowDofsByPetscGlobalDofIdx(idx,dof_ptr);
-  }
+  // /** \deprecated Use getRowDofsByPetscGlobalDofIdx() instead
+  // */
+  // inline DEPRECATED PetscErrorCode get_row_dofs_by_petsc_gloabl_dof_idx(
+  //   DofIdx idx,const FENumeredDofEntity **dof_ptr
+  // ) const {
+  //   return getRowDofsByPetscGlobalDofIdx(idx,dof_ptr);
+  // }
 
   /** \brief get FE dof by petsc index
     * \ingroup mofem_dofs
     */
   PetscErrorCode getColDofsByPetscGlobalDofIdx(DofIdx idx,const FENumeredDofEntity **dof_ptr) const;
 
-  /** \deprecated Use getColDofsByPetscGlobalDofIdx() instead
-  */
-  inline DEPRECATED PetscErrorCode get_col_dofs_by_petsc_gloabl_dof_idx(
-    DofIdx idx,const FENumeredDofEntity **dof_ptr
-  ) const {
-    return getColDofsByPetscGlobalDofIdx(idx,dof_ptr);
-  }
+  // /** \deprecated Use getColDofsByPetscGlobalDofIdx() instead
+  // */
+  // inline DEPRECATED PetscErrorCode get_col_dofs_by_petsc_gloabl_dof_idx(
+  //   DofIdx idx,const FENumeredDofEntity **dof_ptr
+  // ) const {
+  //   return getColDofsByPetscGlobalDofIdx(idx,dof_ptr);
+  // }
 
   friend std::ostream& operator<<(std::ostream& os,const NumeredEntFiniteElement& e) {
     os << "part " << e.part << " " << *(e.sFePtr);

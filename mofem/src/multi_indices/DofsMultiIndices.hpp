@@ -184,10 +184,10 @@ struct interface_DofEntity: public interface_FieldEntity<T> {
     return this->sPtr->getFieldEntityPtr();
   }
 
-  /// \deprecated use getFieldEntityPtr instead
-  DEPRECATED inline boost::shared_ptr<FieldEntity>& getMoFEMEntityPtr() const {
-    return getFieldEntityPtr();
-  }
+  // /// \deprecated use getFieldEntityPtr instead
+  // DEPRECATED inline boost::shared_ptr<FieldEntity>& getMoFEMEntityPtr() const {
+  //   return getFieldEntityPtr();
+  // }
 
 };
 

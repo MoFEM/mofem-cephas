@@ -768,8 +768,8 @@ private:
 
 };
 
-/// \deprecated use FieldEntity
-DEPRECATED typedef FieldEntity MoFEMEntity;
+// /// \deprecated use FieldEntity
+// DEPRECATED typedef FieldEntity MoFEMEntity;
 
 /**
  * \brief Interface to FieldEntity
@@ -818,10 +818,10 @@ interface_RefEntity<T> {
   /// @return get pointer to mofem entity data structure
   inline boost::shared_ptr<FieldEntity>& getFieldEntityPtr() const { return this->sPtr; };
 
-  /// \deprecated use getFieldEntityPtr instead
-  DEPRECATED inline boost::shared_ptr<FieldEntity>& getMoFEMEntityPtr() const {
-    return getFieldEntityPtr();
-  }
+  // /// \deprecated use getFieldEntityPtr instead
+  // DEPRECATED inline boost::shared_ptr<FieldEntity>& getMoFEMEntityPtr() const {
+  //   return getFieldEntityPtr();
+  // }
 
   /**
    * \brief get hash-map relating dof index on entity with its order
@@ -886,8 +886,8 @@ typedef multi_index_container<
       > >
   > > FieldEntity_multiIndex;
 
-  /// \deprecated use FieldEntity_multiIndex
-  DEPRECATED typedef FieldEntity_multiIndex MoFEMEntity_multiIndex;
+  // /// \deprecated use FieldEntity_multiIndex
+  // DEPRECATED typedef FieldEntity_multiIndex MoFEMEntity_multiIndex;
 
   /** \brief Entity nulti index by field name
     *

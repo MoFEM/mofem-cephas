@@ -361,60 +361,60 @@ namespace MoFEM {
     PetscFunctionReturn(0);
   }
 
-  PetscErrorCode Core::add_ents_to_finite_element_by_EDGEs(const EntityHandle meshset,const std::string &name,const bool recursive) {
-    return add_ents_to_finite_element_by_type(meshset,MBEDGE,name,recursive);
-  }
-  PetscErrorCode Core::add_ents_to_finite_element_by_EDGEs(const Range& edges,const std::string &name) {
-    return add_ents_to_finite_element_by_type(edges,MBEDGE,name);
-    PetscFunctionReturn(0);
-  }
-  PetscErrorCode Core::add_ents_to_finite_element_by_VERTICEs(const Range& vert,const std::string &name) {
-    PetscFunctionBegin;
-    return add_ents_to_finite_element_by_type(vert,MBVERTEX,name);
-    PetscFunctionReturn(0);
-  }
-  PetscErrorCode Core::add_ents_to_finite_element_by_TRIs(const Range& tris,const std::string &name) {
-    PetscFunctionBegin;
-    return add_ents_to_finite_element_by_type(tris,MBTRI,name);
-    PetscFunctionReturn(0);
-  }
-  PetscErrorCode Core::add_ents_to_finite_element_by_TRIs(const EntityHandle meshset,const std::string &name,const bool recursive) {
-    return add_ents_to_finite_element_by_type(meshset,MBTRI,name,recursive);
-    PetscFunctionReturn(0);
-  }
-  PetscErrorCode Core::add_ents_to_finite_element_by_TETs(const Range& tets,const std::string &name) {
-    PetscFunctionBegin;
-    return add_ents_to_finite_element_by_type(tets,MBTET,name);
-    PetscFunctionReturn(0);
-  }
-  PetscErrorCode Core::add_ents_to_finite_element_by_TETs(const EntityHandle meshset,const std::string &name,const bool recursive) {
-    return add_ents_to_finite_element_by_type(meshset,MBTET,name,recursive);
-    PetscFunctionReturn(0);
-  }
-  PetscErrorCode Core::add_ents_to_finite_element_by_PRISMs(const Range& prims,const std::string &name) {
-    PetscFunctionBegin;
-    return add_ents_to_finite_element_by_type(prims,MBPRISM,name);
-    PetscFunctionReturn(0);
-  }
-  PetscErrorCode Core::add_ents_to_finite_element_by_PRISMs(const EntityHandle meshset,const std::string &name,const bool recursive) {
-    return add_ents_to_finite_element_by_type(meshset,MBPRISM,name,recursive);
-  }
-
-  PetscErrorCode Core::add_ents_to_finite_element_EntType_by_bit_ref(
-    const BitRefLevel &bit,const std::string &name,EntityType type,int verb
-  ) {
-    PetscFunctionBegin;
-    ierr = add_ents_to_finite_element_by_bit_ref(bit,BitRefLevel().set(),name,type,verb); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
-  }
-
-  PetscErrorCode Core::add_ents_to_finite_element_EntType_by_bit_ref(
-    const BitRefLevel &bit,const BitRefLevel &mask,const std::string &name,EntityType type,int verb
-  ) {
-    PetscFunctionBegin;
-    ierr = add_ents_to_finite_element_by_bit_ref(bit,mask,name,type,verb); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
-  }
+  // PetscErrorCode Core::add_ents_to_finite_element_by_EDGEs(const EntityHandle meshset,const std::string &name,const bool recursive) {
+  //   return add_ents_to_finite_element_by_type(meshset,MBEDGE,name,recursive);
+  // }
+  // PetscErrorCode Core::add_ents_to_finite_element_by_EDGEs(const Range& edges,const std::string &name) {
+  //   return add_ents_to_finite_element_by_type(edges,MBEDGE,name);
+  //   PetscFunctionReturn(0);
+  // }
+  // PetscErrorCode Core::add_ents_to_finite_element_by_VERTICEs(const Range& vert,const std::string &name) {
+  //   PetscFunctionBegin;
+  //   return add_ents_to_finite_element_by_type(vert,MBVERTEX,name);
+  //   PetscFunctionReturn(0);
+  // }
+  // PetscErrorCode Core::add_ents_to_finite_element_by_TRIs(const Range& tris,const std::string &name) {
+  //   PetscFunctionBegin;
+  //   return add_ents_to_finite_element_by_type(tris,MBTRI,name);
+  //   PetscFunctionReturn(0);
+  // }
+  // PetscErrorCode Core::add_ents_to_finite_element_by_TRIs(const EntityHandle meshset,const std::string &name,const bool recursive) {
+  //   return add_ents_to_finite_element_by_type(meshset,MBTRI,name,recursive);
+  //   PetscFunctionReturn(0);
+  // }
+  // PetscErrorCode Core::add_ents_to_finite_element_by_TETs(const Range& tets,const std::string &name) {
+  //   PetscFunctionBegin;
+  //   return add_ents_to_finite_element_by_type(tets,MBTET,name);
+  //   PetscFunctionReturn(0);
+  // }
+  // PetscErrorCode Core::add_ents_to_finite_element_by_TETs(const EntityHandle meshset,const std::string &name,const bool recursive) {
+  //   return add_ents_to_finite_element_by_type(meshset,MBTET,name,recursive);
+  //   PetscFunctionReturn(0);
+  // }
+  // PetscErrorCode Core::add_ents_to_finite_element_by_PRISMs(const Range& prims,const std::string &name) {
+  //   PetscFunctionBegin;
+  //   return add_ents_to_finite_element_by_type(prims,MBPRISM,name);
+  //   PetscFunctionReturn(0);
+  // }
+  // PetscErrorCode Core::add_ents_to_finite_element_by_PRISMs(const EntityHandle meshset,const std::string &name,const bool recursive) {
+  //   return add_ents_to_finite_element_by_type(meshset,MBPRISM,name,recursive);
+  // }
+  //
+  // PetscErrorCode Core::add_ents_to_finite_element_EntType_by_bit_ref(
+  //   const BitRefLevel &bit,const std::string &name,EntityType type,int verb
+  // ) {
+  //   PetscFunctionBegin;
+  //   ierr = add_ents_to_finite_element_by_bit_ref(bit,BitRefLevel().set(),name,type,verb); CHKERRQ(ierr);
+  //   PetscFunctionReturn(0);
+  // }
+  //
+  // PetscErrorCode Core::add_ents_to_finite_element_EntType_by_bit_ref(
+  //   const BitRefLevel &bit,const BitRefLevel &mask,const std::string &name,EntityType type,int verb
+  // ) {
+  //   PetscFunctionBegin;
+  //   ierr = add_ents_to_finite_element_by_bit_ref(bit,mask,name,type,verb); CHKERRQ(ierr);
+  //   PetscFunctionReturn(0);
+  // }
 
   PetscErrorCode Core::add_ents_to_finite_element_by_bit_ref(
     const BitRefLevel &bit,const BitRefLevel &mask,const std::string &name,EntityType type,int verb

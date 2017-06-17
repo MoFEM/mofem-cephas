@@ -107,7 +107,7 @@ struct MeshRefinement: public UnknownInterface {
 
 };
 
-DEPRECATED typedef MeshRefinement MeshRefinment;
+// DEPRECATED typedef MeshRefinement MeshRefinment;
 
 }
 

@@ -399,20 +399,20 @@ struct Core: public Interface {
   );
   PetscErrorCode add_ents_to_finite_element_by_MESHSET(const EntityHandle meshset,const std::string& name,const bool recursive = false);
 
-  DEPRECATED PetscErrorCode add_ents_to_finite_element_by_VERTICEs(const Range& vert,const std::string &name);
-  DEPRECATED PetscErrorCode add_ents_to_finite_element_by_EDGEs(const Range& vert,const std::string &name);
-  DEPRECATED PetscErrorCode add_ents_to_finite_element_by_EDGEs(const EntityHandle meshset,const std::string &name,const bool recursive = false);
-  DEPRECATED PetscErrorCode add_ents_to_finite_element_by_TRIs(const Range& tris,const std::string &name);
-  DEPRECATED PetscErrorCode add_ents_to_finite_element_by_TRIs(const EntityHandle meshset,const std::string &name,const bool recursive = false);
-  DEPRECATED PetscErrorCode add_ents_to_finite_element_by_TETs(const Range& tets,const std::string &name);
-  DEPRECATED PetscErrorCode add_ents_to_finite_element_by_TETs(const EntityHandle meshset,const std::string &name,const bool recursive = false);
-  DEPRECATED PetscErrorCode add_ents_to_finite_element_by_PRISMs(const Range& prims,const BitFEId id);
-  DEPRECATED PetscErrorCode add_ents_to_finite_element_by_PRISMs(const Range& prims,const std::string &name);
-  DEPRECATED PetscErrorCode add_ents_to_finite_element_by_PRISMs(const EntityHandle meshset,const std::string &name,const bool recursive = false);
-  DEPRECATED PetscErrorCode add_ents_to_finite_element_EntType_by_bit_ref(const BitRefLevel &bit,const std::string &name,EntityType type,int verb = -1);
-  DEPRECATED PetscErrorCode add_ents_to_finite_element_EntType_by_bit_ref(
-    const BitRefLevel &bit,const BitRefLevel &mask,const std::string &name,EntityType type,int verb = -1
-  );
+  // DEPRECATED PetscErrorCode add_ents_to_finite_element_by_VERTICEs(const Range& vert,const std::string &name);
+  // DEPRECATED PetscErrorCode add_ents_to_finite_element_by_EDGEs(const Range& vert,const std::string &name);
+  // DEPRECATED PetscErrorCode add_ents_to_finite_element_by_EDGEs(const EntityHandle meshset,const std::string &name,const bool recursive = false);
+  // DEPRECATED PetscErrorCode add_ents_to_finite_element_by_TRIs(const Range& tris,const std::string &name);
+  // DEPRECATED PetscErrorCode add_ents_to_finite_element_by_TRIs(const EntityHandle meshset,const std::string &name,const bool recursive = false);
+  // DEPRECATED PetscErrorCode add_ents_to_finite_element_by_TETs(const Range& tets,const std::string &name);
+  // DEPRECATED PetscErrorCode add_ents_to_finite_element_by_TETs(const EntityHandle meshset,const std::string &name,const bool recursive = false);
+  // DEPRECATED PetscErrorCode add_ents_to_finite_element_by_PRISMs(const Range& prims,const BitFEId id);
+  // DEPRECATED PetscErrorCode add_ents_to_finite_element_by_PRISMs(const Range& prims,const std::string &name);
+  // DEPRECATED PetscErrorCode add_ents_to_finite_element_by_PRISMs(const EntityHandle meshset,const std::string &name,const bool recursive = false);
+  // DEPRECATED PetscErrorCode add_ents_to_finite_element_EntType_by_bit_ref(const BitRefLevel &bit,const std::string &name,EntityType type,int verb = -1);
+  // DEPRECATED PetscErrorCode add_ents_to_finite_element_EntType_by_bit_ref(
+  //   const BitRefLevel &bit,const BitRefLevel &mask,const std::string &name,EntityType type,int verb = -1
+  // );
   PetscErrorCode remove_ents_from_finite_element_by_bit_ref(const BitRefLevel &bit,const BitRefLevel &mask,int verb = -1);
   PetscErrorCode remove_ents_from_finite_element(const std::string &name,const EntityHandle meshset,const EntityType type,int verb = -1);
   PetscErrorCode remove_ents_from_finite_element(const std::string &name,const Range &ents,int verb = -1);
@@ -752,8 +752,8 @@ struct Core: public Interface {
   inline int get_comm_size() const { return sIze; }
   inline int get_comm_rank() const { return rAnk; }
 
-  DEPRECATED inline int getCommSize() const { return sIze; }
-  DEPRECATED inline int getCommRank() const { return rAnk; }
+  // DEPRECATED inline int getCommSize() const { return sIze; }
+  // DEPRECATED inline int getCommRank() const { return rAnk; }
 
   private:
 

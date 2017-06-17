@@ -405,12 +405,12 @@ struct FaceElementForcesAndSourcesCore: public ForcesAndSurcesCore {
 struct OpCalculateInvJacForFace: public FaceElementForcesAndSourcesCore::UserDataOperator {
   MatrixDouble &invJac;
 
-  /**
-   * \deprecated Field name do not needed to construct class, change v0.5.17.
-   */
-  DEPRECATED OpCalculateInvJacForFace(const std::string &field_name,MatrixDouble &inv_jac):
-  FaceElementForcesAndSourcesCore::UserDataOperator(H1),
-  invJac(inv_jac) {}
+  // /**
+  //  * \deprecated Field name do not needed to construct class, change v0.5.17.
+  //  */
+  // DEPRECATED OpCalculateInvJacForFace(const std::string &field_name,MatrixDouble &inv_jac):
+  // FaceElementForcesAndSourcesCore::UserDataOperator(H1),
+  // invJac(inv_jac) {}
 
   OpCalculateInvJacForFace(MatrixDouble &inv_jac):
   FaceElementForcesAndSourcesCore::UserDataOperator(H1),
@@ -429,12 +429,12 @@ struct OpCalculateInvJacForFace: public FaceElementForcesAndSourcesCore::UserDat
 struct OpSetInvJacH1ForFace: public FaceElementForcesAndSourcesCore::UserDataOperator {
   MatrixDouble &invJac;
 
-  /**
-   * \deprecated Field name do not needed to construct class, change v0.5.17.
-   */
-  DEPRECATED OpSetInvJacH1ForFace(const std::string &field_name,MatrixDouble &inv_jac):
-  FaceElementForcesAndSourcesCore::UserDataOperator(H1),
-  invJac(inv_jac) {}
+  // /**
+  //  * \deprecated Field name do not needed to construct class, change v0.5.17.
+  //  */
+  // DEPRECATED OpSetInvJacH1ForFace(const std::string &field_name,MatrixDouble &inv_jac):
+  // FaceElementForcesAndSourcesCore::UserDataOperator(H1),
+  // invJac(inv_jac) {}
 
   OpSetInvJacH1ForFace(MatrixDouble &inv_jac):
   FaceElementForcesAndSourcesCore::UserDataOperator(H1),
@@ -455,13 +455,13 @@ struct OpSetInvJacHcurlFace: public FaceElementForcesAndSourcesCore::UserDataOpe
 
   MatrixDouble &invJac;
 
-  /**
-   * \deprecated Field name do not needed to construct class, change v0.5.17.
-   */
-  DEPRECATED OpSetInvJacHcurlFace(const std::string &field_name,MatrixDouble &inv_jac):
-  FaceElementForcesAndSourcesCore::UserDataOperator(HCURL),
-  invJac(inv_jac) {
-  }
+  // /**
+  //  * \deprecated Field name do not needed to construct class, change v0.5.17.
+  //  */
+  // DEPRECATED OpSetInvJacHcurlFace(const std::string &field_name,MatrixDouble &inv_jac):
+  // FaceElementForcesAndSourcesCore::UserDataOperator(HCURL),
+  // invJac(inv_jac) {
+  // }
 
   OpSetInvJacHcurlFace(MatrixDouble &inv_jac):
   FaceElementForcesAndSourcesCore::UserDataOperator(HCURL),
