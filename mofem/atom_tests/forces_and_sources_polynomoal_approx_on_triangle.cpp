@@ -275,7 +275,7 @@ int main(int argc, char *argv[]) {
     int order = 6;
     ierr = m_field.set_field_order(0,MBTRI,"FIELD1",order); CHKERRQ(ierr);
     ierr = m_field.set_field_order(0,MBEDGE,"FIELD1",order); CHKERRQ(ierr);
-    ierr = m_field.add_ents_to_finite_element_by_TRIs(0,"TEST_FE1"); CHKERRQ(ierr);
+    ierr = m_field.add_ents_to_finite_element_by_type(0,MBTRI,"TEST_FE1"); CHKERRQ(ierr);
 
     // Build database
     ierr = m_field.build_fields(); CHKERRQ(ierr);

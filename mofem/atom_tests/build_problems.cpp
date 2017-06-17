@@ -100,9 +100,9 @@ int main(int argc, char *argv[]) {
     ierr = m_field.modify_finite_element_add_field_row("E3","F1"); CHKERRQ(ierr);
     ierr = m_field.modify_finite_element_add_field_col("E3","F2"); CHKERRQ(ierr);
 
-    ierr = m_field.add_ents_to_finite_element_by_TETs(root_set,"E1"); CHKERRQ(ierr);
-    ierr = m_field.add_ents_to_finite_element_by_TETs(root_set,"E2"); CHKERRQ(ierr);
-    ierr = m_field.add_ents_to_finite_element_by_TETs(root_set,"E3"); CHKERRQ(ierr);
+    ierr = m_field.add_ents_to_finite_element_by_type(root_set,MBTET,"E1"); CHKERRQ(ierr);
+    ierr = m_field.add_ents_to_finite_element_by_type(root_set,MBTET,"E2"); CHKERRQ(ierr);
+    ierr = m_field.add_ents_to_finite_element_by_type(root_set,MBTET,"E3"); CHKERRQ(ierr);
 
 
     ierr = m_field.build_finite_elements(); CHKERRQ(ierr);

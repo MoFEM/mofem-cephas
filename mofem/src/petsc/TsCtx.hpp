@@ -69,7 +69,7 @@ struct TsCtx {
     boost::shared_ptr<BasicMethod> bmPtr;
   };
   typedef std::vector<BasicMethodPtr> basic_method_to_do;
-  
+
   basic_method_to_do preProcess_IJacobian;
   basic_method_to_do postProcess_IJacobian;
   basic_method_to_do preProcess_IFunction;
@@ -96,9 +96,6 @@ struct TsCtx {
     PetscLogEventRegister("LoopTsRHSJacobian",0,&USER_EVENT_TsCtxRHSJacobian);
     PetscLogEventRegister("LoopTsMonitor",0,&USER_EVENT_TsCtxMonitor);
   }
-
-  const MoFEM::Interface& getMoFEM() const { return mField; }
-  const moab::Interface& getMoAB() const { return moab; }
 
   loops_to_do_type& get_loops_to_do_IFunction() { return loops_to_do_IFunction; }
   loops_to_do_type& get_loops_to_do_IJacobian() { return loops_to_do_IJacobian; }

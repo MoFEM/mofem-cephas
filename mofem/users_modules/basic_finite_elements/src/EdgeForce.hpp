@@ -98,7 +98,7 @@ struct EdgeForce {
         if(intersect_ptr) {
           edges = intersect(edges,*intersect_ptr);
         }
-        ierr = m_field.add_ents_to_finite_element_by_EDGEs(edges,"FORCE_FE"); CHKERRQ(ierr);
+        ierr = m_field.add_ents_to_finite_element_by_type(edges,MBEDGE,"FORCE_FE"); CHKERRQ(ierr);
       }
       PetscFunctionReturn(0);
     }

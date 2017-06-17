@@ -263,7 +263,7 @@ int main(int argc, char *argv[]) {
       bit_levels.push_back(BitRefLevel().set(0));
 
       int ll = 1;
-      
+
       for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,SIDESET|INTERFACESET,cit)) {
         ierr = PetscPrintf(PETSC_COMM_WORLD,"Insert Interface %d\n",cit->getMeshsetId()); CHKERRQ(ierr);
         EntityHandle cubit_meshset = cit->getMeshset();
@@ -357,8 +357,8 @@ int main(int argc, char *argv[]) {
       ierr = m_field.add_ents_to_field_by_TETs(0,"MESH_NODE_POSITIONS"); CHKERRQ(ierr);
 
       //add finite elements entities
-      ierr = m_field.add_ents_to_finite_element_EntType_by_bit_ref(problem_bit_level,"ELASTIC",MBTET); CHKERRQ(ierr);
-      ierr = m_field.add_ents_to_finite_element_EntType_by_bit_ref(problem_bit_level,"INTERFACE",MBPRISM); CHKERRQ(ierr);
+      ierr = m_field.add_ents_to_finite_element_by_bit_ref(problem_bit_level,BitRefLevel().set(),"ELASTIC",MBTET); CHKERRQ(ierr);
+      ierr = m_field.add_ents_to_finite_element_by_bit_ref(problem_bit_level,BitRefLevel().set(),"INTERFACE",MBPRISM); CHKERRQ(ierr);
 
       // Setting up LAMBDA field and ARC_LENGTH interface
       {
@@ -425,7 +425,7 @@ int main(int argc, char *argv[]) {
       for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,BLOCKSET|BODYFORCESSET,it)) {
         Range tets;
         rval = m_field.get_moab().get_entities_by_type(it->meshset,MBTET,tets,true); CHKERRQ_MOAB(rval);
-        ierr = m_field.add_ents_to_finite_element_by_TETs(tets,"BODY_FORCE"); CHKERRQ(ierr);
+        ierr = m_field.add_ents_to_finite_element_by_type(tets,MBTET,"BODY_FORCE"); CHKERRQ(ierr);
       }
 
     }

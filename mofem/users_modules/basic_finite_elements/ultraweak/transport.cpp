@@ -170,9 +170,9 @@ struct ExampleUltraWeak: public UltraWeakTransportElement {
     ierr = mField.get_entities_by_type_and_ref_level(ref_level,BitRefLevel().set(),MBTRI,bit_tris);
     essential_bc = intersect(bit_tris,essential_bc);
     natural_bc = intersect(bit_tris,natural_bc);
-    ierr = mField.add_ents_to_finite_element_by_TRIs(essential_bc,"ULTRAWEAK_BCFLUX"); CHKERRQ(ierr);
-    ierr = mField.add_ents_to_finite_element_by_TRIs(natural_bc,"ULTRAWEAK_BCVALUE"); CHKERRQ(ierr);
-    // ierr = mField.add_ents_to_finite_element_by_TRIs(skin_faces,"ULTRAWEAK_BCVALUE"); CHKERRQ(ierr);
+    ierr = mField.add_ents_to_finite_element_by_type(essential_bc,MBTRI,"ULTRAWEAK_BCFLUX"); CHKERRQ(ierr);
+    ierr = mField.add_ents_to_finite_element_by_type(natural_bc,MBTRI,"ULTRAWEAK_BCVALUE"); CHKERRQ(ierr);
+    // ierr = mField.add_ents_to_finite_element_by_type(skin_faces,MBTRI,"ULTRAWEAK_BCVALUE"); CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }
 
@@ -284,8 +284,8 @@ struct ExampleUltraWeak: public UltraWeakTransportElement {
       ierr = mField.get_entities_by_type_and_ref_level(
         BitRefLevel().set(nb_levels),BitRefLevel().set(),MBTRI,ref_tris
       ); CHKERRQ(ierr);
-      ierr = mField.add_ents_to_finite_element_by_TRIs(
-        ref_tris,"ULTRAWEAK_SKELETON"
+      ierr = mField.add_ents_to_finite_element_by_type(
+        ref_tris,MBTRI,"ULTRAWEAK_SKELETON"
       ); CHKERRQ(ierr);
 
       //add entities to finite elements
@@ -296,7 +296,7 @@ struct ExampleUltraWeak: public UltraWeakTransportElement {
         setOfBlocks[it->getMeshsetId()].cApacity = temp_data.data.HeatCapacity;
         rval = mField.get_moab().get_entities_by_type(it->meshset,MBTET,setOfBlocks[it->getMeshsetId()].tEts,true); CHKERRQ_MOAB(rval);
         setOfBlocks[it->getMeshsetId()].tEts = intersect(ref_tets,setOfBlocks[it->getMeshsetId()].tEts);
-        ierr = mField.add_ents_to_finite_element_by_TETs(setOfBlocks[it->getMeshsetId()].tEts,"ULTRAWEAK"); CHKERRQ(ierr);
+        ierr = mField.add_ents_to_finite_element_by_type(setOfBlocks[it->getMeshsetId()].tEts,MBTET,"ULTRAWEAK"); CHKERRQ(ierr);
       }
     }
     rval = mField.get_moab().delete_entities(&ref_meshset,1); CHKERRQ_MOAB(rval);

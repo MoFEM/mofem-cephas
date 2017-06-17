@@ -120,8 +120,8 @@ int main(int argc, char *argv[]) {
   ierr = m_field.add_ents_to_field_by_TETs(root_set,"MESH_NODE_POSITIONS"); CHKERRQ(ierr);
 
   //add entities to finite element
-  ierr = m_field.add_ents_to_finite_element_by_TETs(root_set,"TEST_FE1"); CHKERRQ(ierr);
-  ierr = m_field.add_ents_to_finite_element_by_TETs(root_set,"TEST_FE2"); CHKERRQ(ierr);
+  ierr = m_field.add_ents_to_finite_element_by_type(root_set,MBTET,"TEST_FE1"); CHKERRQ(ierr);
+  ierr = m_field.add_ents_to_finite_element_by_type(root_set,MBTET,"TEST_FE2"); CHKERRQ(ierr);
 
   //set app. order
   //see Hierarchic Finite Element Bases on Unstructured Tetrahedral Meshes (Mark Ainsworth & Joe Coyle)

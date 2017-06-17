@@ -279,16 +279,16 @@ struct UltraWeakTransportElement {
       rval = mField.get_moab().get_entities_by_type(
         it->meshset,MBTET,setOfBlocks[it->getMeshsetId()].tEts,true
       ); CHKERRQ_MOAB(rval);
-      ierr = mField.add_ents_to_finite_element_by_TETs(
-        setOfBlocks[it->getMeshsetId()].tEts,"ULTRAWEAK"
+      ierr = mField.add_ents_to_finite_element_by_type(
+        setOfBlocks[it->getMeshsetId()].tEts,MBTET,"ULTRAWEAK"
       ); CHKERRQ(ierr);
 
       Range skeleton;
       rval = mField.get_moab().get_adjacencies(
         setOfBlocks[it->getMeshsetId()].tEts,2,false,skeleton,moab::Interface::UNION
       );
-      ierr = mField.add_ents_to_finite_element_by_TRIs(
-        skeleton,"ULTRAWEAK_SKELETON"
+      ierr = mField.add_ents_to_finite_element_by_type(
+        skeleton,MBTRI,"ULTRAWEAK_SKELETON"
       ); CHKERRQ(ierr);
 
     }

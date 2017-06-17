@@ -293,168 +293,132 @@ namespace MoFEM {
     PetscFunctionReturn(0);
   }
 
-  PetscErrorCode Core::add_ents_to_finite_element_by_EDGEs(const Range& edges,const BitFEId id) {
-    PetscFunctionBegin;
-    *buildMoFEM &= 1<<0;
-    const EntityHandle idm = get_finite_element_meshset(id);
-    rval = moab.add_entities(idm,edges.subset_by_type(MBEDGE)); CHKERRQ_MOAB(rval);
-    PetscFunctionReturn(0);
-  }
-  PetscErrorCode Core::add_ents_to_finite_element_by_EDGEs(const Range& edges,const std::string &name) {
-    PetscFunctionBegin;
-    *buildMoFEM &= 1<<0;
-    try {
-      ierr = seed_finite_elements(edges.subset_by_type(MBEDGE)); CHKERRQ(ierr);
-      ierr = add_ents_to_finite_element_by_EDGEs(edges,getBitFEId(name));  CHKERRQ(ierr);
-    } catch (MoFEMException const &e) {
-      SETERRQ(cOmm,e.errorCode,e.errorMessage);
-    }
-    PetscFunctionReturn(0);
-  }
-  PetscErrorCode Core::add_ents_to_finite_element_by_VERTICEs(const Range& vert,const BitFEId id) {
-    PetscFunctionBegin;
-    *buildMoFEM &= 1<<0;
-    const EntityHandle idm = get_finite_element_meshset(id);
-    ierr = seed_finite_elements(vert.subset_by_type(MBVERTEX)); CHKERRQ(ierr);
-    rval = moab.add_entities(idm,vert.subset_by_type(MBVERTEX)); CHKERRQ_MOAB(rval);
-    PetscFunctionReturn(0);
-  }
-  PetscErrorCode Core::add_ents_to_finite_element_by_VERTICEs(const Range& vert,const std::string &name) {
-    PetscFunctionBegin;
-    *buildMoFEM &= 1<<0;
-    try {
-      ierr = add_ents_to_finite_element_by_VERTICEs(vert,getBitFEId(name));  CHKERRQ(ierr);
-    } catch (MoFEMException const &e) {
-      SETERRQ(cOmm,e.errorCode,e.errorMessage);
-    }
-    PetscFunctionReturn(0);
-  }
-  PetscErrorCode Core::add_ents_to_finite_element_by_TRIs(const Range& tris,const BitFEId id) {
-    PetscFunctionBegin;
-    *buildMoFEM &= 1<<0;
-    const EntityHandle idm = get_finite_element_meshset(id);
-    ierr = seed_finite_elements(tris.subset_by_type(MBTRI)); CHKERRQ(ierr);
-    rval = moab.add_entities(idm,tris.subset_by_type(MBTRI)); CHKERRQ_MOAB(rval);
-    PetscFunctionReturn(0);
-  }
-  PetscErrorCode Core::add_ents_to_finite_element_by_TRIs(const Range& tris,const std::string &name) {
-    PetscFunctionBegin;
-    *buildMoFEM &= 1<<0;
-    try {
-      ierr = add_ents_to_finite_element_by_TRIs(tris,getBitFEId(name));  CHKERRQ(ierr);
-    } catch (MoFEMException const &e) {
-      SETERRQ(cOmm,e.errorCode,e.errorMessage);
-    }
-    PetscFunctionReturn(0);
-  }
-  PetscErrorCode Core::add_ents_to_finite_element_by_TRIs(const EntityHandle meshset,const std::string &name,const bool recursive) {
-    PetscFunctionBegin;
+  PetscErrorCode Core::add_ents_to_finite_element_by_type(
+    const EntityHandle meshset,const EntityType type,const std::string &name,const bool recursive
+  ) {
     *buildMoFEM &= 1<<0;
     EntityHandle idm = no_handle;
+    PetscFunctionBegin;
     try {
       idm = get_finite_element_meshset(getBitFEId(name));
     } catch (MoFEMException const &e) {
       SETERRQ(cOmm,e.errorCode,e.errorMessage);
     }
-    Range tris;
-    rval = moab.get_entities_by_type(meshset,MBTRI,tris,recursive); CHKERRQ_MOAB(rval);
-    rval = moab.add_entities(idm,tris); CHKERRQ_MOAB(rval);
+    Range ents;
+    rval = moab.get_entities_by_type(meshset,type,ents,recursive); CHKERRQ_MOAB(rval);
+    ierr = seed_finite_elements(ents.subset_by_type(MBEDGE)); CHKERRQ(ierr);
+    rval = moab.add_entities(idm,ents); CHKERRQ_MOAB(rval);
     PetscFunctionReturn(0);
   }
-  PetscErrorCode Core::add_ents_to_finite_element_by_TETs(const EntityHandle meshset,const BitFEId id,const bool recursive) {
-    PetscFunctionBegin;
-    *buildMoFEM &= 1<<0;
+
+  PetscErrorCode Core::add_ents_to_finite_element_by_dimension(
+    const EntityHandle meshset,const int dim,const std::string &name,const bool recursive
+  ) {
     EntityHandle idm = no_handle;
+    *buildMoFEM &= 1<<0;
+    PetscFunctionBegin;
     try {
-      idm = get_finite_element_meshset(id);
+      idm = get_finite_element_meshset(getBitFEId(name));
     } catch (MoFEMException const &e) {
       SETERRQ(cOmm,e.errorCode,e.errorMessage);
     }
-    Range tets;
-    rval = moab.get_entities_by_type(meshset,MBTET,tets,recursive); CHKERRQ_MOAB(rval);
-    rval = moab.add_entities(idm,tets); CHKERRQ_MOAB(rval);
+    Range ents;
+    rval = moab.get_entities_by_dimension(meshset,dim,ents,recursive); CHKERRQ_MOAB(rval);
+    ierr = seed_finite_elements(ents.subset_by_type(MBEDGE)); CHKERRQ(ierr);
+    rval = moab.add_entities(idm,ents); CHKERRQ_MOAB(rval);
     PetscFunctionReturn(0);
   }
-  PetscErrorCode Core::add_ents_to_finite_element_by_TETs(const Range& tets,const BitFEId id) {
-    PetscFunctionBegin;
+
+  PetscErrorCode Core::add_ents_to_finite_element_by_type(
+    const Range& ents,const EntityType type,const std::string &name
+  ) {
+    EntityHandle idm = no_handle;
     *buildMoFEM &= 1<<0;
-    const EntityHandle idm = get_finite_element_meshset(id);
-    rval = moab.add_entities(idm,tets.subset_by_type(MBTET)); CHKERRQ_MOAB(rval);
+    PetscFunctionBegin;
+    try {
+      idm = get_finite_element_meshset(getBitFEId(name));
+    } catch (MoFEMException const &e) {
+      SETERRQ(cOmm,e.errorCode,e.errorMessage);
+    }
+    ierr = seed_finite_elements(ents.subset_by_type(type)); CHKERRQ(ierr);
+    rval = moab.add_entities(idm,ents.subset_by_type(type)); CHKERRQ_MOAB(rval);
+    PetscFunctionReturn(0);
+  }
+
+  PetscErrorCode Core::add_ents_to_finite_element_by_dim(
+    const Range& ents,const int dim,const std::string &name
+  ) {
+    EntityHandle idm = no_handle;
+    *buildMoFEM &= 1<<0;
+    PetscFunctionBegin;
+    try {
+      idm = get_finite_element_meshset(getBitFEId(name));
+    } catch (MoFEMException const &e) {
+      SETERRQ(cOmm,e.errorCode,e.errorMessage);
+    }
+    ierr = seed_finite_elements(ents.subset_by_dimension(dim)); CHKERRQ(ierr);
+    rval = moab.add_entities(idm,ents.subset_by_dimension(dim)); CHKERRQ_MOAB(rval);
+    PetscFunctionReturn(0);
+  }
+
+  PetscErrorCode Core::add_ents_to_finite_element_by_EDGEs(const EntityHandle meshset,const std::string &name,const bool recursive) {
+    return add_ents_to_finite_element_by_type(meshset,MBEDGE,name,recursive);
+  }
+  PetscErrorCode Core::add_ents_to_finite_element_by_EDGEs(const Range& edges,const std::string &name) {
+    return add_ents_to_finite_element_by_type(edges,MBEDGE,name);
+    PetscFunctionReturn(0);
+  }
+  PetscErrorCode Core::add_ents_to_finite_element_by_VERTICEs(const Range& vert,const std::string &name) {
+    PetscFunctionBegin;
+    return add_ents_to_finite_element_by_type(vert,MBVERTEX,name);
+    PetscFunctionReturn(0);
+  }
+  PetscErrorCode Core::add_ents_to_finite_element_by_TRIs(const Range& tris,const std::string &name) {
+    PetscFunctionBegin;
+    return add_ents_to_finite_element_by_type(tris,MBTRI,name);
+    PetscFunctionReturn(0);
+  }
+  PetscErrorCode Core::add_ents_to_finite_element_by_TRIs(const EntityHandle meshset,const std::string &name,const bool recursive) {
+    return add_ents_to_finite_element_by_type(meshset,MBTRI,name,recursive);
     PetscFunctionReturn(0);
   }
   PetscErrorCode Core::add_ents_to_finite_element_by_TETs(const Range& tets,const std::string &name) {
     PetscFunctionBegin;
-    *buildMoFEM &= 1<<0;
-    try {
-      ierr = add_ents_to_finite_element_by_TETs(tets,getBitFEId(name));  CHKERRQ(ierr);
-    } catch (MoFEMException const &e) {
-      SETERRQ(cOmm,e.errorCode,e.errorMessage);
-    }
+    return add_ents_to_finite_element_by_type(tets,MBTET,name);
     PetscFunctionReturn(0);
   }
   PetscErrorCode Core::add_ents_to_finite_element_by_TETs(const EntityHandle meshset,const std::string &name,const bool recursive) {
-    PetscFunctionBegin;
-    *buildMoFEM &= 1<<0;
-    try {
-      ierr = add_ents_to_finite_element_by_TETs(meshset,getBitFEId(name),recursive);  CHKERRQ(ierr);
-    } catch (MoFEMException const &e) {
-      SETERRQ(cOmm,e.errorCode,e.errorMessage);
-    }
+    return add_ents_to_finite_element_by_type(meshset,MBTET,name,recursive);
     PetscFunctionReturn(0);
   }
-
-  PetscErrorCode Core::add_ents_to_finite_element_by_PRISMs(const EntityHandle meshset,const BitFEId id,const bool recursive) {
-    PetscFunctionBegin;
-    *buildMoFEM &= 1<<0;
-    EntityHandle idm = no_handle;
-    try {
-      idm = get_finite_element_meshset(id);
-    } catch (MoFEMException const &e) {
-      SETERRQ(cOmm,e.errorCode,e.errorMessage);
-    }
-    Range prisms;
-    rval = moab.get_entities_by_type(meshset,MBPRISM,prisms,recursive); CHKERRQ_MOAB(rval);
-    rval = moab.add_entities(idm,prisms); CHKERRQ_MOAB(rval);
-    PetscFunctionReturn(0);
-  }
-
-  PetscErrorCode Core::add_ents_to_finite_element_by_PRISMs(const Range& tets,const BitFEId id) {
-    PetscFunctionBegin;
-    *buildMoFEM &= 1<<0;
-    const EntityHandle idm = get_finite_element_meshset(id);
-    rval = moab.add_entities(idm,tets.subset_by_type(MBPRISM)); CHKERRQ_MOAB(rval);
-    PetscFunctionReturn(0);
-  }
-
   PetscErrorCode Core::add_ents_to_finite_element_by_PRISMs(const Range& prims,const std::string &name) {
     PetscFunctionBegin;
-    *buildMoFEM &= 1<<0;
-    try {
-      ierr = add_ents_to_finite_element_by_PRISMs(prims,getBitFEId(name));  CHKERRQ(ierr);
-    } catch (MoFEMException const &e) {
-      SETERRQ(cOmm,e.errorCode,e.errorMessage);
-    }
+    return add_ents_to_finite_element_by_type(prims,MBPRISM,name);
     PetscFunctionReturn(0);
   }
-
   PetscErrorCode Core::add_ents_to_finite_element_by_PRISMs(const EntityHandle meshset,const std::string &name,const bool recursive) {
+    return add_ents_to_finite_element_by_type(meshset,MBPRISM,name,recursive);
+  }
+
+  PetscErrorCode Core::add_ents_to_finite_element_EntType_by_bit_ref(
+    const BitRefLevel &bit,const std::string &name,EntityType type,int verb
+  ) {
     PetscFunctionBegin;
-    *buildMoFEM &= 1<<0;
-    try {
-      ierr = add_ents_to_finite_element_by_PRISMs(meshset,getBitFEId(name),recursive);  CHKERRQ(ierr);
-    } catch (MoFEMException const &e) {
-      SETERRQ(cOmm,e.errorCode,e.errorMessage);
-    }
+    ierr = add_ents_to_finite_element_by_bit_ref(bit,BitRefLevel().set(),name,type,verb); CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }
 
-  PetscErrorCode Core::add_ents_to_finite_element_EntType_by_bit_ref(const BitRefLevel &bit,const std::string &name,EntityType type,int verb) {
+  PetscErrorCode Core::add_ents_to_finite_element_EntType_by_bit_ref(
+    const BitRefLevel &bit,const BitRefLevel &mask,const std::string &name,EntityType type,int verb
+  ) {
     PetscFunctionBegin;
-    ierr = add_ents_to_finite_element_EntType_by_bit_ref(bit,BitRefLevel().set(),name,type,verb); CHKERRQ(ierr);
+    ierr = add_ents_to_finite_element_by_bit_ref(bit,mask,name,type,verb); CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }
 
-  PetscErrorCode Core::add_ents_to_finite_element_EntType_by_bit_ref(const BitRefLevel &bit,const BitRefLevel &mask,const std::string &name,EntityType type,int verb) {
+  PetscErrorCode Core::add_ents_to_finite_element_by_bit_ref(
+    const BitRefLevel &bit,const BitRefLevel &mask,const std::string &name,EntityType type,int verb
+  ) {
     PetscFunctionBegin;
     try {
       if(verb==-1) verb = verbose;
@@ -471,8 +435,6 @@ namespace MoFEM {
       int nb_add_FEs = 0;
       for(;miit!=hi_miit;miit++) {
         BitRefLevel bit2 = miit->getBitRefLevel();
-        //check if all bits in mask are ib fe bit2
-        //if((miit->getBitRefLevel()&bit)!=bit) continue;
         if((bit2&mask) != bit2) continue;
         if((bit2&bit).any()) {
           EntityHandle ent = miit->getRefEnt();

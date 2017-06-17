@@ -305,7 +305,7 @@ int main(int argc, char *argv[]) {
   for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,BLOCKSET|BODYFORCESSET,it)) {
     Range tets;
     rval = m_field.get_moab().get_entities_by_type(it->meshset,MBTET,tets,true); CHKERRQ_MOAB(rval);
-    ierr = m_field.add_ents_to_finite_element_by_TETs(tets,"BODY_FORCE"); CHKERRQ(ierr);
+    ierr = m_field.add_ents_to_finite_element_by_type(tets,MBTET,"BODY_FORCE"); CHKERRQ(ierr);
   }
 
   // Add Neumann forces, i.e. pressure or traction forces applied on body surface. This

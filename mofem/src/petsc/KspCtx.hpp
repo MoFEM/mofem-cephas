@@ -21,89 +21,137 @@
 
 namespace MoFEM {
 
-/** \brief Interface for linear (KSP) solver
+  /** \brief Interface for linear (KSP) solver
   * \ingroup petsc_context_struture
   */
-struct KspCtx {
+  struct KspCtx {
 
-  ErrorCode rval;
-  PetscErrorCode ierr;
+    ErrorCode rval;
+    PetscErrorCode ierr;
 
-  MoFEM::Interface &mField;
-  moab::Interface &moab;
+    MoFEM::Interface &mField;
+    moab::Interface &moab;
 
-  std::string problemName;   ///< Problem name
-  MoFEMTypes bH; ///< If set to MF_EXIST check if element exist
+    std::string problemName;   ///< Problem name
+    MoFEMTypes bH; ///< If set to MF_EXIST check if element exist
 
-  struct LoopPairType: public std::pair<std::string,FEMethod*> {
-    LoopPairType(std::string name,FEMethod *ptr):
-    std::pair<std::string,FEMethod*>(name,ptr) {}
-    LoopPairType(std::string name,boost::shared_ptr<FEMethod> ptr):
-    std::pair<std::string,FEMethod*>(name,ptr.get()),
-    fePtr(ptr) {
-    }
-    virtual ~LoopPairType() {}
-  private:
-    boost::shared_ptr<FEMethod> fePtr;
-  };
-  typedef LoopPairType loop_pair_type;
+    struct LoopPairType: public std::pair<std::string,FEMethod*> {
+      LoopPairType(std::string name,FEMethod *ptr):
+      std::pair<std::string,FEMethod*>(name,ptr) {}
+      LoopPairType(std::string name,boost::shared_ptr<FEMethod> ptr):
+      std::pair<std::string,FEMethod*>(name,ptr.get()),
+      fePtr(ptr) {
+      }
+      virtual ~LoopPairType() {}
+    private:
+      boost::shared_ptr<FEMethod> fePtr;
+    };
+    typedef LoopPairType loop_pair_type;
 
-  typedef std::vector<loop_pair_type > loops_to_do_type;
-  loops_to_do_type loops_to_do_Mat;
-  loops_to_do_type loops_to_do_Rhs;
+    typedef std::vector<loop_pair_type > loops_to_do_type;
+    loops_to_do_type loops_to_do_Mat;
+    loops_to_do_type loops_to_do_Rhs;
 
-  struct BasicMethodPtr {
-    BasicMethodPtr(BasicMethod *ptr):
-    rawPtr(ptr) {}
-    BasicMethodPtr(boost::shared_ptr<BasicMethod> ptr):
-    rawPtr(ptr.get()),
-    bmPtr(ptr) {}
-    BasicMethodPtr(boost::shared_ptr<FEMethod> ptr):
-    rawPtr(ptr.get()),
-    bmPtr(ptr) {}
-    inline BasicMethod& operator*() const { return *rawPtr; };
-    inline BasicMethod* operator->() const { return rawPtr; }
-  private:
-    BasicMethod* rawPtr;
-    boost::shared_ptr<BasicMethod> bmPtr;
-  };
-  typedef std::vector<BasicMethodPtr> basic_method_to_do;
-  
-  basic_method_to_do preProcess_Mat;
-  basic_method_to_do postProcess_Mat;
-  basic_method_to_do preProcess_Rhs;
-  basic_method_to_do postProcess_Rhs;
+    struct BasicMethodPtr {
+      BasicMethodPtr(BasicMethod *ptr):
+      rawPtr(ptr) {}
+      BasicMethodPtr(boost::shared_ptr<BasicMethod> ptr):
+      rawPtr(ptr.get()),
+      bmPtr(ptr) {}
+      BasicMethodPtr(boost::shared_ptr<FEMethod> ptr):
+      rawPtr(ptr.get()),
+      bmPtr(ptr) {}
+      inline BasicMethod& operator*() const { return *rawPtr; };
+      inline BasicMethod* operator->() const { return rawPtr; }
+    private:
+      BasicMethod* rawPtr;
+      boost::shared_ptr<BasicMethod> bmPtr;
+    };
+    typedef std::vector<BasicMethodPtr> basic_method_to_do;
 
-  PetscLogEvent USER_EVENT_KspRhs;
-  PetscLogEvent USER_EVENT_KspMat;
+    basic_method_to_do preProcess_Mat;
+    basic_method_to_do postProcess_Mat;
+    basic_method_to_do preProcess_Rhs;
+    basic_method_to_do postProcess_Rhs;
 
-  KspCtx(MoFEM::Interface &m_field,const std::string &_problem_name):
+    PetscLogEvent USER_EVENT_KspRhs;
+    PetscLogEvent USER_EVENT_KspMat;
+
+    KspCtx(MoFEM::Interface &m_field,const std::string &_problem_name):
     mField(m_field),
     moab(m_field.get_moab()),
     problemName(_problem_name),
     bH(MF_EXIST) {
-    PetscLogEventRegister("LoopKSPRhs",0,&USER_EVENT_KspRhs);
-    PetscLogEventRegister("LoopKSPMat",0,&USER_EVENT_KspMat);
-  }
-  virtual ~KspCtx() {}
+      PetscLogEventRegister("LoopKSPRhs",0,&USER_EVENT_KspRhs);
+      PetscLogEventRegister("LoopKSPMat",0,&USER_EVENT_KspMat);
+    }
+    virtual ~KspCtx() {}
 
-  const MoFEM::Interface& get_mField() const { return mField; }
-  const moab::Interface& get_moab() const { return moab; }
+    /**
+    * @return return reference to vector with FEMethod to calculate matrix
+    */
+    loops_to_do_type& get_loops_to_do_Mat() { return loops_to_do_Mat; }
 
-  loops_to_do_type& get_loops_to_do_Mat() { return loops_to_do_Mat; }
-  loops_to_do_type& get_loops_to_do_Rhs() { return loops_to_do_Rhs; }
-  basic_method_to_do& get_preProcess_to_do_Rhs() { return preProcess_Rhs; }
-  basic_method_to_do& get_postProcess_to_do_Rhs() { return postProcess_Rhs; }
-  basic_method_to_do& get_preProcess_to_do_Mat() { return preProcess_Mat; }
-  basic_method_to_do& get_postProcess_to_do_Mat() { return postProcess_Mat; }
+    /**
+    * @return return vector to vector with FEMethod to vector
+    */
+    loops_to_do_type& get_loops_to_do_Rhs() { return loops_to_do_Rhs; }
 
-  friend PetscErrorCode KspRhs(KSP ksp,Vec f,void *ctx);
-  friend PetscErrorCode KspMat(KSP ksp,Mat A,Mat B,void *ctx);
+    /**
+    * The sequence of BasicMethod is executed before residual is calculated. It can be
+    * used to setup data structures, e.g. zero global variable which is integrated in
+    * domain, e.g. for calculation of strain energy.
+    *
+    * @return reference to BasicMethod for preprocessing
+    */
+    basic_method_to_do& get_preProcess_to_do_Rhs() { return preProcess_Rhs; }
 
-};
+    /**
+    * The sequence of BasicMethod is executed after residual is calculated. It can be
+    * used to setup data structures, e.g. aggregate data from processors or to apply
+    * essential boundary conditions.
+    *
+    * @return reference to BasicMethod for postprocessing
+    */
+    basic_method_to_do& get_postProcess_to_do_Rhs() { return postProcess_Rhs; }
 
-PetscErrorCode KspRhs(KSP ksp,Vec f,void *ctx);
-PetscErrorCode KspMat(KSP ksp,Mat A,Mat B,void *ctx);
+    /**
+    * @return reference to BasicMethod for preprocessing
+    */
+    basic_method_to_do& get_preProcess_to_do_Mat() { return preProcess_Mat; }
+
+    /**
+    * The sequence of BasicMethod is executed after tangent matrix is calculated. It can be
+    * used to setup data structures, e.g. aggregate data from processors or to apply
+    * essential boundary conditions.
+    *
+    * @return reference to BasicMethod for postprocessing
+    */
+    basic_method_to_do& get_postProcess_to_do_Mat() { return postProcess_Mat; }
+
+    friend PetscErrorCode KspRhs(KSP ksp,Vec f,void *ctx);
+    friend PetscErrorCode KspMat(KSP ksp,Mat A,Mat B,void *ctx);
+
+  };
+
+  /**
+  * \brief Run over elements in the lists
+  * @param  ksp KSP solver
+  * @param  f   the right hand side vector
+  * @param  ctx data context, i.e. KspCtx
+  * @return     error code
+  */
+  PetscErrorCode KspRhs(KSP ksp,Vec f,void *ctx);
+
+  /**
+  * \brief Run over elenents in the list
+  * @param  ksp KSP solver
+  * @param  A   matrix
+  * @param  B   Preconditioner matrix
+  * @param  ctx data context, i.e. KspCtx
+  * @return     error code
+  */
+  PetscErrorCode KspMat(KSP ksp,Mat A,Mat B,void *ctx);
 
 }
 

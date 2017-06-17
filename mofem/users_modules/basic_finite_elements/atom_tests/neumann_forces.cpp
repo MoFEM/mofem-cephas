@@ -89,7 +89,7 @@ int main(int argc, char *argv[]) {
 
       Range tris;
       rval = moab.get_entities_by_type(it->meshset,MBTRI,tris,true); CHKERRQ_MOAB(rval);
-      ierr = m_field.add_ents_to_finite_element_by_TRIs(tris,fe_name.str()); CHKERRQ(ierr);
+      ierr = m_field.add_ents_to_finite_element_by_type(tris,MBTRI,fe_name.str()); CHKERRQ(ierr);
 
     }
 
@@ -106,7 +106,7 @@ int main(int argc, char *argv[]) {
 
       Range tris;
       rval = moab.get_entities_by_type(it->meshset,MBTRI,tris,true); CHKERRQ_MOAB(rval);
-      ierr = m_field.add_ents_to_finite_element_by_TRIs(tris,fe_name.str()); CHKERRQ(ierr);
+      ierr = m_field.add_ents_to_finite_element_by_type(tris,MBTRI,fe_name.str()); CHKERRQ(ierr);
 
     }
 
@@ -195,7 +195,7 @@ int main(int argc, char *argv[]) {
 
     const Problem *problemPtr;
     ierr = m_field.get_problem("TEST_PROBLEM",&problemPtr); CHKERRQ(ierr);
-    for(_IT_NUMEREDDOFMOFEMENTITY_ROW_FOR_LOOP_(problemPtr,dit)) {
+    for(_IT_NUMEREDDOF_ROW_FOR_LOOP_(problemPtr,dit)) {
 
       my_split.precision(3);
       my_split.setf(std::ios::fixed);

@@ -68,7 +68,7 @@ PetscErrorCode FluidPressure::addNeumannFluidPressureBCElements(
       ss << setOfFluids[bit->getMeshsetId()] << std::endl;
       PetscPrintf(mField.get_comm(),ss.str().c_str());
 
-      ierr = mField.add_ents_to_finite_element_by_TRIs(setOfFluids[bit->getMeshsetId()].tRis,"FLUID_PRESSURE_FE"); CHKERRQ(ierr);
+      ierr = mField.add_ents_to_finite_element_by_type(setOfFluids[bit->getMeshsetId()].tRis,MBTRI,"FLUID_PRESSURE_FE"); CHKERRQ(ierr);
 
     }
 

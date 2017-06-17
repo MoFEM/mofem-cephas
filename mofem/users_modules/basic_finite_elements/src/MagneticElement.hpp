@@ -249,8 +249,8 @@ struct MagneticElement {
     ierr = mField.modify_finite_element_add_field_col(blockData.feNaturalBCName,blockData.fieldName); CHKERRQ(ierr);
     ierr = mField.modify_finite_element_add_field_data(blockData.feNaturalBCName,blockData.fieldName); CHKERRQ(ierr);
     ierr = mField.modify_finite_element_add_field_data(blockData.feNaturalBCName,"MESH_NODE_POSITIONS"); CHKERRQ(ierr);
-    ierr = mField.add_ents_to_finite_element_by_TETs(0,blockData.feName); CHKERRQ(ierr);
-    ierr = mField.add_ents_to_finite_element_by_TRIs(blockData.naturalBc,blockData.feNaturalBCName); CHKERRQ(ierr);
+    ierr = mField.add_ents_to_finite_element_by_type(0,MBTET,blockData.feName); CHKERRQ(ierr);
+    ierr = mField.add_ents_to_finite_element_by_type(blockData.naturalBc,MBTRI,blockData.feNaturalBCName); CHKERRQ(ierr);
     //build finite elemnts
     ierr = mField.build_finite_elements(); CHKERRQ(ierr);
     //build adjacencies
@@ -340,7 +340,7 @@ struct MagneticElement {
     const MoFEM::Problem *problem_ptr;
     ierr = DMMoFEMGetProblemPtr(blockData.dM,&problem_ptr); CHKERRQ(ierr);
     for(Range::iterator eit = blockData.essentialBc.begin();eit!=blockData.essentialBc.end();eit++) {
-      for(_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_NAME_ENT_PART_FOR_LOOP_(
+      for(_IT_NUMEREDDOF_ROW_BY_NAME_ENT_PART_FOR_LOOP_(
         problem_ptr,blockData.fieldName,*eit,mField.get_comm_rank(),dof_ptr
       )) {
         std::bitset<8> pstatus(dof_ptr->get()->getPStatus());

@@ -313,12 +313,12 @@ int main(int argc, char *argv[]) {
   for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,NODESET|FORCESET, it)) {
     Range tris;
     rval = moab.get_entities_by_type(it->meshset,MBTRI,tris,true); CHKERRQ_MOAB(rval);
-    ierr = m_field.add_ents_to_finite_element_by_TRIs(tris,"NEUMANN_FE"); CHKERRQ(ierr);
+    ierr = m_field.add_ents_to_finite_element_by_type(tris,MBTRI,"NEUMANN_FE"); CHKERRQ(ierr);
   }
   for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,SIDESET|PRESSURESET,it)) {
     Range tris;
     rval = moab.get_entities_by_type(it->meshset,MBTRI,tris,true); CHKERRQ_MOAB(rval);
-    ierr = m_field.add_ents_to_finite_element_by_TRIs(tris, "NEUMANN_FE"); CHKERRQ(ierr);
+    ierr = m_field.add_ents_to_finite_element_by_type(tris,MBTRI, "NEUMANN_FE"); CHKERRQ(ierr);
   }
   // Add nodal force element
   ierr = MetaNodalForces::addElement(m_field,"SPATIAL_POSITION"); CHKERRQ(ierr);
@@ -402,7 +402,7 @@ int main(int argc, char *argv[]) {
       damper.constitutiveEquationMap.insert(
         id,new KelvinVoigtDamper::ConstitutiveEquation<adouble>(material_data)
       );
-      ierr = m_field.add_ents_to_finite_element_by_TETs(bit->second.tEts,"DAMPER"); CHKERRQ(ierr);
+      ierr = m_field.add_ents_to_finite_element_by_type(bit->second.tEts,MBTET,"DAMPER"); CHKERRQ(ierr);
     }
     ierr = damper.setOperators(3); CHKERRQ(ierr);
   }
