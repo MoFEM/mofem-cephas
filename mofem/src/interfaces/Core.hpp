@@ -258,7 +258,7 @@ struct Core: public Interface {
    * \brief Add filed
    * @param  name           Field name
    * @param  space          Space L2,H1,Hdiv,Hcurl
-   * @param  base           Approximation base AINSWORTH_LEGENDRE_BASE, AINSOWRTH_BERNSTEIN_BEZIER_BASE ...
+   * @param  base           Approximation base AINSWORTH_LEGENDRE_BASE, AINSWORTH_BERNSTEIN_BEZIER_BASE ...
    * @param  nb_cooficients Number of field coefficients
    * @param  tag_type       Tag type, MB_TAG_DENSE or MB_TAG_SPARSE (default)
    * @param  bh             Control behavior, if MF_EXCL throws error if exist

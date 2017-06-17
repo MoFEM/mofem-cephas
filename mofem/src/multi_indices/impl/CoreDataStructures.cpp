@@ -154,8 +154,8 @@ sequenceDofContainer(
       THROW_MESSAGE("unknown approximation space or not yet implemented");
     }
     break;
-    case AINSOWRTH_BERNSTEIN_BEZIER_BASE:
-      THROW_MESSAGE("AINSOWRTH_BERNSTEIN_BEZIER_BASE not implemented yer")
+    case AINSWORTH_BERNSTEIN_BEZIER_BASE:
+      THROW_MESSAGE("AINSWORTH_BERNSTEIN_BEZIER_BASE not implemented yer")
     break;
     case USER_BASE:
     for(int ee = 0;ee<MBMAXTYPE;ee++) {
