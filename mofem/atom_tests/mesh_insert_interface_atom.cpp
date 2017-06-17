@@ -114,7 +114,7 @@ int main(int argc, char *argv[]) {
   //add finite elements entities
   //all TETS and PRIMS are added to finite elements, for testin pruposes.
   //in some practiacl applications to save memory, you would like to add elements
-  //from particular refinement level (see: m_field.add_ents_to_finite_element_EntType_by_bit_ref(...)
+  //from particular refinement level (see: m_field.add_ents_to_finite_element_by_bit_ref(...)
   ierr = m_field.add_ents_to_finite_element_by_type(0,MBTET,"ELEM_SCALAR",true); CHKERRQ(ierr);
   ierr = m_field.add_ents_to_finite_element_by_type(0,MBPRISM,"INTERFACE",true); CHKERRQ(ierr);
 

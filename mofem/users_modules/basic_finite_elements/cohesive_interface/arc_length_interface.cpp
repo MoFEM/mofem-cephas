@@ -357,8 +357,8 @@ int main(int argc, char *argv[]) {
       ierr = m_field.add_ents_to_field_by_TETs(0,"MESH_NODE_POSITIONS"); CHKERRQ(ierr);
 
       //add finite elements entities
-      ierr = m_field.add_ents_to_finite_element_EntType_by_bit_ref(problem_bit_level,BitRefLevel().set(),"ELASTIC",MBTET); CHKERRQ(ierr);
-      ierr = m_field.add_ents_to_finite_element_EntType_by_bit_ref(problem_bit_level,BitRefLevel().set(),"INTERFACE",MBPRISM); CHKERRQ(ierr);
+      ierr = m_field.add_ents_to_finite_element_by_bit_ref(problem_bit_level,BitRefLevel().set(),"ELASTIC",MBTET); CHKERRQ(ierr);
+      ierr = m_field.add_ents_to_finite_element_by_bit_ref(problem_bit_level,BitRefLevel().set(),"INTERFACE",MBPRISM); CHKERRQ(ierr);
 
       // Setting up LAMBDA field and ARC_LENGTH interface
       {

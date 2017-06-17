@@ -89,7 +89,7 @@ int main(int argc, char *argv[]) {
     ierr = m_field.add_ents_to_field_by_TETs(0,"SPATIAL_POSITION"); CHKERRQ(ierr);
 
     //add finite elements entities
-    ierr = m_field.add_ents_to_finite_element_EntType_by_bit_ref(bit_level0,BitRefLevel().set(),"ELASTIC",MBTET); CHKERRQ(ierr);
+    ierr = m_field.add_ents_to_finite_element_by_bit_ref(bit_level0,BitRefLevel().set(),"ELASTIC",MBTET); CHKERRQ(ierr);
 
     //set app. order
     PetscInt order;

@@ -1138,6 +1138,19 @@ struct Interface: public UnknownInterface {
     const Range& ents,const int dim,const std::string &name
   ) = 0;
 
+  /** \brief add TET entities from given refinement level to finite element database given by name
+   * \ingroup mofem_fe
+   *
+   * \param BitRefLevel bit
+   * \param BitRefLevel mask
+   * \param finite element name
+   * \param finite element type
+   * \param verrbose level
+   */
+  virtual PetscErrorCode add_ents_to_finite_element_by_bit_ref(
+    const BitRefLevel &bit,const BitRefLevel &mask,const std::string &name,EntityType type,int verb = -1
+  ) = 0;
+
   /** \brief add EDGES entities from range to finite element database given by name
    * \ingroup mofem_fe
    *
@@ -1244,7 +1257,7 @@ struct Interface: public UnknownInterface {
   /** \brief add TET elements from given refinement level to finite element database given by name
    * \ingroup mofem_fe
    *
-   * \deprecated use add_ents_to_finite_element_EntType_by_bit_ref with mask explicitly given
+   * \deprecated use add_ents_to_finite_element_by_bit_ref with mask explicitly given
    *
    * \param BitRefLevel bit
    * \param finite element name
@@ -1258,15 +1271,18 @@ struct Interface: public UnknownInterface {
   /** \brief add TET entities from given refinement level to finite element database given by name
    * \ingroup mofem_fe
    *
+   * \deprecated use add_ents_to_finite_element_by_bit_ref with mask explicitly given
+   *
    * \param BitRefLevel bit
    * \param BitRefLevel mask
    * \param finite element name
    * \param finite element type
    * \param verrbose level
    */
-  virtual PetscErrorCode add_ents_to_finite_element_EntType_by_bit_ref(
+  DEPRECATED virtual PetscErrorCode add_ents_to_finite_element_EntType_by_bit_ref(
     const BitRefLevel &bit,const BitRefLevel &mask,const std::string &name,EntityType type,int verb = -1
   ) = 0;
+
 
   /** get finite element meshset
    * \ingroup mofem_fe
