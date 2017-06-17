@@ -394,6 +394,10 @@ struct Core: public Interface {
   );
   PetscErrorCode add_ents_to_finite_element_by_type(const Range& ents,const EntityType type,const std::string &name);
   PetscErrorCode add_ents_to_finite_element_by_dim(const Range& ents,const int dim,const std::string &name);
+  PetscErrorCode add_ents_to_finite_element_by_bit_ref(
+    const BitRefLevel &bit,const BitRefLevel &mask,const std::string &name,EntityType type,int verb = -1
+  );
+  PetscErrorCode add_ents_to_finite_element_by_MESHSET(const EntityHandle meshset,const std::string& name,const bool recursive = false);
 
   DEPRECATED PetscErrorCode add_ents_to_finite_element_by_VERTICEs(const Range& vert,const std::string &name);
   DEPRECATED PetscErrorCode add_ents_to_finite_element_by_EDGEs(const Range& vert,const std::string &name);
@@ -405,10 +409,8 @@ struct Core: public Interface {
   DEPRECATED PetscErrorCode add_ents_to_finite_element_by_PRISMs(const Range& prims,const BitFEId id);
   DEPRECATED PetscErrorCode add_ents_to_finite_element_by_PRISMs(const Range& prims,const std::string &name);
   DEPRECATED PetscErrorCode add_ents_to_finite_element_by_PRISMs(const EntityHandle meshset,const std::string &name,const bool recursive = false);
-
-  PetscErrorCode add_ents_to_finite_element_by_MESHSET(const EntityHandle meshset,const std::string& name,const bool recursive = false);
   DEPRECATED PetscErrorCode add_ents_to_finite_element_EntType_by_bit_ref(const BitRefLevel &bit,const std::string &name,EntityType type,int verb = -1);
-  PetscErrorCode add_ents_to_finite_element_EntType_by_bit_ref(
+  DEPRECATED PetscErrorCode add_ents_to_finite_element_EntType_by_bit_ref(
     const BitRefLevel &bit,const BitRefLevel &mask,const std::string &name,EntityType type,int verb = -1
   );
   PetscErrorCode remove_ents_from_finite_element_by_bit_ref(const BitRefLevel &bit,const BitRefLevel &mask,int verb = -1);

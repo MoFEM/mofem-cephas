@@ -404,11 +404,19 @@ namespace MoFEM {
     const BitRefLevel &bit,const std::string &name,EntityType type,int verb
   ) {
     PetscFunctionBegin;
-    ierr = add_ents_to_finite_element_EntType_by_bit_ref(bit,BitRefLevel().set(),name,type,verb); CHKERRQ(ierr);
+    ierr = add_ents_to_finite_element_by_bit_ref(bit,BitRefLevel().set(),name,type,verb); CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }
 
   PetscErrorCode Core::add_ents_to_finite_element_EntType_by_bit_ref(
+    const BitRefLevel &bit,const BitRefLevel &mask,const std::string &name,EntityType type,int verb
+  ) {
+    PetscFunctionBegin;
+    ierr = add_ents_to_finite_element_by_bit_ref(bit,mask,name,type,verb); CHKERRQ(ierr);
+    PetscFunctionReturn(0);
+  }
+
+  PetscErrorCode Core::add_ents_to_finite_element_by_bit_ref(
     const BitRefLevel &bit,const BitRefLevel &mask,const std::string &name,EntityType type,int verb
   ) {
     PetscFunctionBegin;
