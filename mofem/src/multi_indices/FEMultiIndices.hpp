@@ -505,7 +505,7 @@ interface_RefElement<RefElement> {
   boost::shared_ptr<DofEntity_multiIndex_uid_view> row_dof_view;
   boost::shared_ptr<DofEntity_multiIndex_uid_view> col_dof_view;
   boost::shared_ptr<FEDofEntity_multiIndex> data_dofs;
-  UId global_uid;
+  UId globalUid;
 
   EntFiniteElement(
     const boost::shared_ptr<RefElement> ref_finite_element,
@@ -516,7 +516,7 @@ interface_RefElement<RefElement> {
    * \brief Get unique UId for finite element entity
    * @return UId
    */
-  const UId& getGlobalUniqueId() const { return global_uid; }
+  const UId& getGlobalUniqueId() const { return globalUid; }
 
   /**
    * \brief Generate UId for finite element entity
@@ -866,7 +866,7 @@ typedef multi_index_container<
   indexed_by<
     ordered_unique<
       tag<Unique_mi_tag>,
-      member<EntFiniteElement,UId,&EntFiniteElement::global_uid>
+      member<EntFiniteElement,UId,&EntFiniteElement::globalUid>
     >,
     ordered_non_unique<
       tag<Ent_mi_tag>,

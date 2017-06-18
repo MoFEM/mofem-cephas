@@ -667,13 +667,13 @@ struct FieldEntity:
    */
   ApproximationOrder getMaxOrder() const;
 
-  UId global_uid; ///< Global unique id for this entity
+  UId globalUid; ///< Global unique id for this entity
 
   /**
    * \brief Get global unique id
    * @return Global UId
    */
-  const UId& getGlobalUniqueId() const { return global_uid; }
+  const UId& getGlobalUniqueId() const { return globalUid; }
 
   static inline UId getGlobalUniqueIdCalculate(
     const int owner_proc,
@@ -867,7 +867,7 @@ typedef multi_index_container<
   indexed_by<
     ordered_unique<
       tag<Unique_mi_tag>,
-      member<FieldEntity,UId,&FieldEntity::global_uid>
+      member<FieldEntity,UId,&FieldEntity::globalUid>
     >,
     ordered_non_unique<
       tag<FieldName_mi_tag>,
