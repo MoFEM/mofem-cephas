@@ -505,7 +505,7 @@ interface_RefElement<RefElement> {
   boost::shared_ptr<DofEntity_multiIndex_uid_view> row_dof_view;
   boost::shared_ptr<DofEntity_multiIndex_uid_view> col_dof_view;
   boost::shared_ptr<FEDofEntity_multiIndex> data_dofs;
-  GlobalUId global_uid;
+  UId global_uid;
 
   EntFiniteElement(
     const boost::shared_ptr<RefElement> ref_finite_element,
@@ -516,17 +516,17 @@ interface_RefElement<RefElement> {
    * \brief Get unique UId for finite element entity
    * @return UId
    */
-  const GlobalUId& getGlobalUniqueId() const { return global_uid; }
+  const UId& getGlobalUniqueId() const { return global_uid; }
 
   /**
    * \brief Generate UId for finite element entity
    * @return finite element entity unique Id
    */
-  GlobalUId getGlobalUniqueIdCalculate() const {
+  UId getGlobalUniqueIdCalculate() const {
     assert(getBitNumber()<=32);
     return
-    static_cast<GlobalUId>(sPtr->getRefEnt())|
-    static_cast<GlobalUId>(getBitNumber())<<8*sizeof(EntityHandle);
+    static_cast<UId>(sPtr->getRefEnt())|
+    static_cast<UId>(getBitNumber())<<8*sizeof(EntityHandle);
   }
 
   /**
@@ -684,7 +684,7 @@ interface_RefElement<T> {
    * \brief Get unique UId for finite element entity
    * @return UId
    */
-  inline GlobalUId getGlobalUniqueId() const { return this->sPtr->getGlobalUniqueId(); }
+  inline UId getGlobalUniqueId() const { return this->sPtr->getGlobalUniqueId(); }
 
 
   SideNumber_multiIndex &getSideNumberTable() const { return this->sPtr->getSideNumberTable(); }
@@ -866,7 +866,7 @@ typedef multi_index_container<
   indexed_by<
     ordered_unique<
       tag<Unique_mi_tag>,
-      member<EntFiniteElement,GlobalUId,&EntFiniteElement::global_uid>
+      member<EntFiniteElement,UId,&EntFiniteElement::global_uid>
     >,
     ordered_non_unique<
       tag<Ent_mi_tag>,
@@ -931,7 +931,7 @@ typedef multi_index_container<
       tag<Unique_mi_tag>,
       const_mem_fun<
         NumeredEntFiniteElement::interface_type_EntFiniteElement,
-        GlobalUId,
+        UId,
         &NumeredEntFiniteElement::getGlobalUniqueId
       >
     >,

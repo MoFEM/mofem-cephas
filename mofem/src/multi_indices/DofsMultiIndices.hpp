@@ -32,7 +32,7 @@ struct DofEntity: public interface_FieldEntity<FieldEntity> {
   typedef interface_FieldEntity<FieldEntity> interface_type_FieldEntity;
   typedef interface_RefEntity<FieldEntity> interface_type_RefEntity;
 
-  static inline GlobalUId getGlobalUniqueIdCalculate(
+  static inline UId getGlobalUniqueIdCalculate(
     const DofIdx dof,const boost::shared_ptr<FieldEntity>& ent_ptr
   ) {
     // if(dof>=512) THROW_MESSAGE("_dof>=512");
@@ -40,14 +40,14 @@ struct DofEntity: public interface_FieldEntity<FieldEntity> {
     static_cast<UId>(dof)|(ent_ptr->getGlobalUniqueId() << 9);
   }
 
-  static inline GlobalUId getGlobalUniqueIdCalculate_Low_Proc(
+  static inline UId getGlobalUniqueIdCalculate_Low_Proc(
     const int owner_proc
   ) {
     return
     static_cast<UId>(owner_proc) << 9+5+8*sizeof(EntityHandle);
   }
 
-  static inline GlobalUId getGlobalUniqueIdCalculate_Hi_Proc(
+  static inline UId getGlobalUniqueIdCalculate_Hi_Proc(
     const int owner_proc
   ) {
     return
@@ -65,7 +65,7 @@ struct DofEntity: public interface_FieldEntity<FieldEntity> {
   }
 
   bool active;         ///< true if dof is active
-  GlobalUId globalUId; ///< global unique id for this dof
+  UId globalUId; ///< global unique id for this dof
 
   DofEntity(
     const boost::shared_ptr<FieldEntity> &entity_ptr,
@@ -86,10 +86,10 @@ struct DofEntity: public interface_FieldEntity<FieldEntity> {
   }
 
   /// @return get unique dof id
-  inline GlobalUId getGlobalUniqueId() const { return globalUId; }
+  inline UId getGlobalUniqueId() const { return globalUId; }
 
   /// @return get entity unique dof id
-  inline GlobalUId getEntGlobalUniqueId() const { return this->sPtr->getGlobalUniqueId(); }
+  inline UId getEntGlobalUniqueId() const { return this->sPtr->getGlobalUniqueId(); }
 
   /** \brief get short uid it is unique in combination with entity handle
     *
@@ -146,10 +146,10 @@ struct interface_DofEntity: public interface_FieldEntity<T> {
   }
 
   /// @return return dof unique id
-  inline const GlobalUId getGlobalUniqueId() const { return this->sPtr->getGlobalUniqueId(); }
+  inline const UId getGlobalUniqueId() const { return this->sPtr->getGlobalUniqueId(); }
 
   /// @return return entity uniqe id
-  inline const GlobalUId getEntGlobalUniqueId() const { return this->sPtr->getEntGlobalUniqueId(); }
+  inline const UId getEntGlobalUniqueId() const { return this->sPtr->getEntGlobalUniqueId(); }
 
   /// @return return short id (used by data recorder)
   inline ShortId getNonNonuniqueShortId() const { return this->sPtr->getNonNonuniqueShortId(); }
@@ -321,7 +321,7 @@ typedef multi_index_container<
   indexed_by<
     //uniqe
     ordered_unique<
-      tag<Unique_mi_tag>, const_mem_fun<DofEntity,GlobalUId,&DofEntity::getGlobalUniqueId> >,
+      tag<Unique_mi_tag>, const_mem_fun<DofEntity,UId,&DofEntity::getGlobalUniqueId> >,
     ordered_unique<
       tag<Composite_Ent_and_ShortId_mi_tag>,
         composite_key<
@@ -339,7 +339,7 @@ typedef multi_index_container<
     > >,
     //non_unique
     ordered_non_unique<
-      tag<Unique_Ent_mi_tag>, const_mem_fun<DofEntity,GlobalUId,&DofEntity::getEntGlobalUniqueId> >,
+      tag<Unique_Ent_mi_tag>, const_mem_fun<DofEntity,UId,&DofEntity::getEntGlobalUniqueId> >,
     ordered_non_unique<
       const_mem_fun<DofEntity,char,&DofEntity::getActive> >,
     ordered_non_unique<
@@ -398,7 +398,7 @@ typedef multi_index_container<
   boost::shared_ptr<DofEntity>,
   indexed_by<
     ordered_unique<
-      const_mem_fun<DofEntity,GlobalUId,&DofEntity::getGlobalUniqueId>
+      const_mem_fun<DofEntity,UId,&DofEntity::getGlobalUniqueId>
     >
   > > DofEntity_multiIndex_uid_view;
 
@@ -409,7 +409,7 @@ typedef multi_index_container<
   boost::shared_ptr<DofEntity>,
   indexed_by<
     ordered_unique<
-      const_mem_fun<DofEntity,GlobalUId,&DofEntity::getGlobalUniqueId> >,
+      const_mem_fun<DofEntity,UId,&DofEntity::getGlobalUniqueId> >,
     ordered_non_unique<
       const_mem_fun<DofEntity,char,&DofEntity::getActive> >
   > > DofEntity_multiIndex_active_view;
@@ -445,7 +445,7 @@ typedef multi_index_container<
   indexed_by<
     ordered_unique<
       tag<Unique_mi_tag>,
-      const_mem_fun<FEDofEntity::interface_type_DofEntity,const GlobalUId,&FEDofEntity::getGlobalUniqueId>
+      const_mem_fun<FEDofEntity::interface_type_DofEntity,const UId,&FEDofEntity::getGlobalUniqueId>
     >,
     ordered_non_unique<
       tag<Ent_mi_tag>,
@@ -527,7 +527,7 @@ typedef multi_index_container<
   indexed_by<
     ordered_unique<
       tag<Unique_mi_tag>,
-      const_mem_fun<FENumeredDofEntity::interface_type_DofEntity,const GlobalUId,&FENumeredDofEntity::getGlobalUniqueId>
+      const_mem_fun<FENumeredDofEntity::interface_type_DofEntity,const UId,&FENumeredDofEntity::getGlobalUniqueId>
     >,
     ordered_non_unique<
       tag<Ent_mi_tag>,
@@ -614,7 +614,7 @@ typedef multi_index_container<
     ordered_unique<
       tag<Unique_mi_tag>,
       const_mem_fun<NumeredDofEntity::interface_type_DofEntity,
-      const GlobalUId,&NumeredDofEntity::getGlobalUniqueId>
+      const UId,&NumeredDofEntity::getGlobalUniqueId>
     >,
     //non unique
     ordered_non_unique<
@@ -726,7 +726,7 @@ typedef multi_index_container<
     ordered_unique<
       const_mem_fun<
         NumeredDofEntity::interface_type_DofEntity,
-        const GlobalUId,
+        const UId,
         &NumeredDofEntity::getGlobalUniqueId
       >
     >

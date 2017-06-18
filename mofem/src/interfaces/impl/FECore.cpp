@@ -757,7 +757,7 @@ namespace MoFEM {
       if((*fit)->getBitFieldIdRow()!=(*fit)->getBitFieldIdCol()) by |= BYCOL;
       if((*fit)->getBitFieldIdRow()!=(*fit)->getBitFieldIdData()) by |= BYDATA;
       FieldEntityEntFiniteElementAdjacencyMap_change_ByWhat modify_row(by);
-      GlobalUId ent_uid = UId(0);
+      UId ent_uid = UId(0);
       DofEntity_multiIndex_uid_view::iterator rvit;
       rvit = (*fit)->row_dof_view->begin();
       for(;rvit!=(*fit)->row_dof_view->end();rvit++) {

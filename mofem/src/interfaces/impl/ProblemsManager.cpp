@@ -925,7 +925,7 @@ namespace MoFEM {
       }
 
       IdxDataType *idx_data;
-      GlobalUId uid;
+      UId uid;
 
       NumeredDofEntity_multiIndex::iterator dit;
       for(int kk=0; kk<nrecvs; kk++) {

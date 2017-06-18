@@ -941,7 +941,7 @@ static PetscErrorCode get_fe_dof_view(
     it = fe_dofs_view.begin();
     it_end = fe_dofs_view.end();
     for(;it!=it_end;it++) {
-      const GlobalUId &global_uid = (*it)->getGlobalUniqueId();
+      const UId &global_uid = (*it)->getGlobalUniqueId();
       if(mofem_it != mofem_it_end) {
         if((*mofem_it)->getGlobalUniqueId() != global_uid) {
           mofem_it = mofem_dofs.template get<Unique_mi_tag>().find(global_uid);
