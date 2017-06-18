@@ -378,12 +378,12 @@ struct Problem {
   _IT_NUMEREDDOF_COL_BY_UID_(PROBLEMPTR,UID,IT)
 
   /// get iterator of dof in row by uid (instead you can use #_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_UID_FOR_LOOP_)
-  NumeredDofEntityByUId::iterator get_row_dof_by_uid(GlobalUId uid) const {
+  NumeredDofEntityByUId::iterator get_row_dof_by_uid(UId uid) const {
     return numeredDofsRows->get<Unique_mi_tag>().find(uid);
   };
 
   /// get iterator of dof in column by uid (instead you can use #_IT_NUMEREDDOFMOFEMENTITY_COL_BY_UID_FOR_LOOP_)
-  NumeredDofEntityByUId::iterator get_col_dof_by_uid(GlobalUId uid) const {
+  NumeredDofEntityByUId::iterator get_col_dof_by_uid(UId uid) const {
     return numeredDofsCols->get<Unique_mi_tag>().find(uid);
   };
 

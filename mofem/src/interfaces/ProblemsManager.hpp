@@ -225,7 +225,7 @@ namespace MoFEM {
     struct __attribute__ ((__packed__)) IdxDataType {
       int globalDof;
       char uId[sizeof(UId)];
-      IdxDataType(const GlobalUId &uid,int global_dof):
+      IdxDataType(const UId &uid,int global_dof):
         globalDof(global_dof) {
         bcopy(&uid,uId,sizeof(UId));
       }

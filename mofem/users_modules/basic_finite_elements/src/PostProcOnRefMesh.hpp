@@ -664,9 +664,9 @@ struct PostProcVolumeOnRefinedMesh:
 
 };
 
-/** \deprecated Use PostPocOnRefinedMesh instead
-*/
-DEPRECATED typedef PostProcVolumeOnRefinedMesh PostPocOnRefinedMesh;
+// /** \deprecated Use PostPocOnRefinedMesh instead
+// */
+// DEPRECATED typedef PostProcVolumeOnRefinedMesh PostPocOnRefinedMesh;
 
 /**
  *  \brief Postprocess on prism

@@ -379,20 +379,20 @@ struct MetaNeummanForces {
     PetscFunctionReturn(0);
   }
 
-  /** \deprecated Use setMomentumFluxOperators() instead
-  */
-  DEPRECATED static PetscErrorCode setNeumannFiniteElementOperators(
-    MoFEM::Interface &m_field,
-    boost::ptr_map<std::string,NeummanForcesSurface> &neumann_forces,
-    Vec F,const std::string field_name,const std::string mesh_nodals_positions = "MESH_NODE_POSITIONS"
-  ) {
-    PetscErrorCode ierr;
-    PetscFunctionBegin;
-    ierr = setMomentumFluxOperators(
-      m_field,neumann_forces,F,field_name,mesh_nodals_positions
-    );  CHKERRQ(ierr);
-    PetscFunctionReturn(0);
-  }
+  // /** \deprecated Use setMomentumFluxOperators() instead
+  // */
+  // DEPRECATED static PetscErrorCode setNeumannFiniteElementOperators(
+  //   MoFEM::Interface &m_field,
+  //   boost::ptr_map<std::string,NeummanForcesSurface> &neumann_forces,
+  //   Vec F,const std::string field_name,const std::string mesh_nodals_positions = "MESH_NODE_POSITIONS"
+  // ) {
+  //   PetscErrorCode ierr;
+  //   PetscFunctionBegin;
+  //   ierr = setMomentumFluxOperators(
+  //     m_field,neumann_forces,F,field_name,mesh_nodals_positions
+  //   );  CHKERRQ(ierr);
+  //   PetscFunctionReturn(0);
+  // }
 
   static PetscErrorCode addNeumannFluxBCElements(
     MoFEM::Interface &m_field,
@@ -440,20 +440,20 @@ struct MetaNeummanForces {
     PetscFunctionReturn(0);
   }
 
-  /** \deprecated Use setMassFluxOperators() instead
-  */
-  DEPRECATED static PetscErrorCode setNeumannFluxFiniteElementOperators(
-    MoFEM::Interface &m_field,
-    boost::ptr_map<std::string,NeummanForcesSurface> &neumann_forces,
-    Vec F,const std::string field_name,const std::string mesh_nodals_positions = "MESH_NODE_POSITIONS"
-  ) {
-    PetscErrorCode ierr;
-    PetscFunctionBegin;
-    ierr = setMassFluxOperators(
-      m_field,neumann_forces,F,field_name,mesh_nodals_positions
-    ); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
-  }
+  // /** \deprecated Use setMassFluxOperators() instead
+  // */
+  // DEPRECATED static PetscErrorCode setNeumannFluxFiniteElementOperators(
+  //   MoFEM::Interface &m_field,
+  //   boost::ptr_map<std::string,NeummanForcesSurface> &neumann_forces,
+  //   Vec F,const std::string field_name,const std::string mesh_nodals_positions = "MESH_NODE_POSITIONS"
+  // ) {
+  //   PetscErrorCode ierr;
+  //   PetscFunctionBegin;
+  //   ierr = setMassFluxOperators(
+  //     m_field,neumann_forces,F,field_name,mesh_nodals_positions
+  //   ); CHKERRQ(ierr);
+  //   PetscFunctionReturn(0);
+  // }
 
 
 };

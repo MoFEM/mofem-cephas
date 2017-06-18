@@ -167,7 +167,7 @@ tag_FieldData_size(0) {
   EntityHandle ent = getEnt();
   moab::Interface &moab = ref_ent_ptr->basicDataPtr->moab;
   rval = moab.tag_get_by_ptr(field_ptr->th_FieldData,&ent,1,(const void **)&tag_FieldData,&tag_FieldData_size);
-  global_uid = getGlobalUniqueIdCalculate();
+  globalUid = getGlobalUniqueIdCalculate();
   getDofOrderMap().resize(MAX_DOFS_ON_ENTITY,-1);
 }
 

@@ -27,6 +27,7 @@
 #include <FTensor.hpp>
 #include <Common.hpp>
 #include <UnknownInterface.hpp>
+#include <DeprecatedPetsc.hpp>
 
 //SRC/APPROXIMATION
 #include <base_functions.h>
