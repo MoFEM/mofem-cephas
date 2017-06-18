@@ -48,7 +48,7 @@
 
 namespace MoFEM {
 
-BitFieldId Core::get_BitFieldId(const std::string& name) const {
+BitFieldId Core::getBitFieldId(const std::string& name) const {
   typedef Field_multiIndex::index<FieldName_mi_tag>::type FieldSetByName;
   const FieldSetByName &set = fIelds.get<FieldName_mi_tag>();
   FieldSetByName::iterator miit = set.find(name);
@@ -57,7 +57,7 @@ BitFieldId Core::get_BitFieldId(const std::string& name) const {
   }
   return (*miit)->getId();
 }
-std::string Core::get_BitFieldId_name(const BitFieldId id) const {
+std::string Core::getBitFieldIdName(const BitFieldId id) const {
   typedef Field_multiIndex::index<BitFieldId_mi_tag>::type FieldSetById;
   const FieldSetById &set = fIelds.get<BitFieldId_mi_tag>();
   FieldSetById::iterator miit = set.find(id);
@@ -71,7 +71,7 @@ EntityHandle Core::get_field_meshset(const BitFieldId id) const {
   return (*miit)->meshSet;
 }
 EntityHandle Core::get_field_meshset(const std::string& name) const {
-  return get_field_meshset(get_BitFieldId(name));
+  return get_field_meshset(getBitFieldId(name));
 }
 
 bool Core::check_field(const std::string &name) const {
@@ -256,7 +256,7 @@ PetscErrorCode Core::add_ents_to_field_by_EDGEs(const Range &edges,const BitFiel
       rval = moab.add_entities(idm,edges); CHKERRQ_MOAB(rval);
       if(verb>1) {
         std::ostringstream ss;
-        ss << "add entities to field " << get_BitFieldId_name(id);
+        ss << "add entities to field " << getBitFieldIdName(id);
         ss << " nb. add edges " << edges.size();
         ss << std::endl;
         PetscPrintf(cOmm,ss.str().c_str());
@@ -278,7 +278,7 @@ PetscErrorCode Core::add_ents_to_field_by_EDGEs(const Range &edges,const BitFiel
       rval = moab.add_entities(idm,nodes); CHKERRQ_MOAB(rval);
       if(verb>1) {
         std::ostringstream ss;
-        ss << "add entities to field " << get_BitFieldId_name(id);
+        ss << "add entities to field " << getBitFieldIdName(id);
         ss << " nb. add edges " << edges.size();
         ss << " nb. add nodes " << nodes.size();
         ss << std::endl;
@@ -317,7 +317,7 @@ PetscErrorCode Core::add_ents_to_field_by_EDGEs(const Range &edges,const std::st
   if(verb==-1) verb = verbose;
   *buildMoFEM = 0;
   try {
-    ierr = add_ents_to_field_by_EDGEs(edges,get_BitFieldId(name),verb);  CHKERRQ(ierr);
+    ierr = add_ents_to_field_by_EDGEs(edges,getBitFieldId(name),verb);  CHKERRQ(ierr);
   } catch (MoFEMException const &e) {
     SETERRQ(cOmm,e.errorCode,e.errorMessage);
   }
@@ -341,7 +341,7 @@ PetscErrorCode Core::add_ents_to_field_by_EDGEs(const EntityHandle meshset,const
   if(verb==-1) verb = verbose;
   *buildMoFEM = 0;
   try {
-    ierr = add_ents_to_field_by_EDGEs(meshset,get_BitFieldId(name),verb);  CHKERRQ(ierr);
+    ierr = add_ents_to_field_by_EDGEs(meshset,getBitFieldId(name),verb);  CHKERRQ(ierr);
   } catch (MoFEMException const &e) {
     SETERRQ(cOmm,e.errorCode,e.errorMessage);
   }
@@ -372,7 +372,7 @@ PetscErrorCode Core::add_ents_to_field_by_TRIs(const Range &tris,const BitFieldI
     rval = moab.add_entities(idm,tris); CHKERRQ_MOAB(rval);
     if(verb>1) {
       std::ostringstream ss;
-      ss << "add entities to field " << get_BitFieldId_name(id);
+      ss << "add entities to field " << getBitFieldIdName(id);
       ss << " nb. add tris " << tris.size();
       ss << std::endl;
       PetscPrintf(cOmm,ss.str().c_str());
@@ -396,7 +396,7 @@ PetscErrorCode Core::add_ents_to_field_by_TRIs(const Range &tris,const BitFieldI
     rval = moab.add_entities(idm,edges); CHKERRQ_MOAB(rval);
     if(verb>1) {
       std::ostringstream ss;
-      ss << "add entities to field " << get_BitFieldId_name(id);
+      ss << "add entities to field " << getBitFieldIdName(id);
       ss << " nb. add tris " << tris.size();
       ss << " nb. add edges " << edges.size();
       ss << " nb. add nodes " << nodes.size();
@@ -410,7 +410,7 @@ PetscErrorCode Core::add_ents_to_field_by_TRIs(const Range &tris,const BitFieldI
     rval = moab.add_entities(idm,edges); CHKERRQ_MOAB(rval);
     if(verb>1) {
       std::ostringstream ss;
-      ss << "add entities to field " << get_BitFieldId_name(id);
+      ss << "add entities to field " << getBitFieldIdName(id);
       ss << " nb. add tris " << tris.size();
       ss << " nb. add edges " << edges.size();
       ss << std::endl;
@@ -421,7 +421,7 @@ PetscErrorCode Core::add_ents_to_field_by_TRIs(const Range &tris,const BitFieldI
     rval = moab.add_entities(idm,tris); CHKERRQ_MOAB(rval);
     if(verb>1) {
       std::ostringstream ss;
-      ss << "add entities to field " << get_BitFieldId_name(id);
+      ss << "add entities to field " << getBitFieldIdName(id);
       ss << " nb. add tris " << tris.size();
       ss << std::endl;
       PetscPrintf(cOmm,ss.str().c_str());
@@ -437,7 +437,7 @@ PetscErrorCode Core::add_ents_to_field_by_TRIs(const EntityHandle meshset,const 
   if(verb==-1) verb = verbose;
   *buildMoFEM = 0;
   try {
-    ierr = add_ents_to_field_by_TRIs(meshset,get_BitFieldId(name),verb);  CHKERRQ(ierr);
+    ierr = add_ents_to_field_by_TRIs(meshset,getBitFieldId(name),verb);  CHKERRQ(ierr);
   } catch (MoFEMException const &e) {
     SETERRQ(cOmm,e.errorCode,e.errorMessage);
   }
@@ -448,7 +448,7 @@ PetscErrorCode Core::add_ents_to_field_by_TRIs(const Range &tris,const std::stri
   if(verb==-1) verb = verbose;
   *buildMoFEM = 0;
   try {
-    ierr = add_ents_to_field_by_TRIs(tris,get_BitFieldId(name),verb);  CHKERRQ(ierr);
+    ierr = add_ents_to_field_by_TRIs(tris,getBitFieldId(name),verb);  CHKERRQ(ierr);
   } catch (MoFEMException const &e) {
     SETERRQ(cOmm,e.errorCode,e.errorMessage);
   }
@@ -472,7 +472,7 @@ PetscErrorCode Core::add_ents_to_field_by_VERTICEs(const Range &nodes,const BitF
     rval = moab.add_entities(idm,nodes); CHKERRQ_MOAB(rval);
     if(verb>1) {
       std::ostringstream ss;
-      ss << "add entities to field " << get_BitFieldId_name(id);
+      ss << "add entities to field " << getBitFieldIdName(id);
       ss << " nb. add nodes " << nodes.size();
       ss << std::endl;
       PetscPrintf(cOmm,ss.str().c_str());
@@ -497,7 +497,7 @@ PetscErrorCode Core::add_ents_to_field_by_VERTICEs(const Range &nodes,const std:
   if(verb==-1) verb = verbose;
   *buildMoFEM = 0;
   try {
-    ierr = add_ents_to_field_by_VERTICEs(nodes,get_BitFieldId(name),verb);  CHKERRQ(ierr);
+    ierr = add_ents_to_field_by_VERTICEs(nodes,getBitFieldId(name),verb);  CHKERRQ(ierr);
   } catch (MoFEMException const &e) {
     SETERRQ(cOmm,e.errorCode,e.errorMessage);
   }
@@ -508,7 +508,7 @@ PetscErrorCode Core::add_ents_to_field_by_VERTICEs(const EntityHandle meshset,co
   if(verb==-1) verb = verbose;
   *buildMoFEM = 0;
   try {
-    ierr = add_ents_to_field_by_VERTICEs(meshset,get_BitFieldId(name),verb);  CHKERRQ(ierr);
+    ierr = add_ents_to_field_by_VERTICEs(meshset,getBitFieldId(name),verb);  CHKERRQ(ierr);
   } catch (MoFEMException const &e) {
     SETERRQ(cOmm,e.errorCode,e.errorMessage);
   }
@@ -533,7 +533,7 @@ PetscErrorCode Core::add_ents_to_field_by_TETs(const Range &tets,const BitFieldI
     rval = moab.add_entities(idm,tets); CHKERRQ_MOAB(rval);
     if(verb>1) {
       std::ostringstream ss;
-      ss << "add entities to field " << get_BitFieldId_name(id);
+      ss << "add entities to field " << getBitFieldIdName(id);
       ss << " nb. add tets " << tets.size();
       ss << std::endl;
       PetscSynchronizedPrintf(cOmm,ss.str().c_str());
@@ -559,7 +559,7 @@ PetscErrorCode Core::add_ents_to_field_by_TETs(const Range &tets,const BitFieldI
     rval = moab.add_entities(idm,edges); CHKERRQ_MOAB(rval);
     if(verb>1) {
       std::ostringstream ss;
-      ss << "add entities to field " << get_BitFieldId_name(id);
+      ss << "add entities to field " << getBitFieldIdName(id);
       ss << " nb. add tets " << tets.size();
       ss << " nb. add tris " << tris.size();
       ss << " nb. add edges " << edges.size();
@@ -576,7 +576,7 @@ PetscErrorCode Core::add_ents_to_field_by_TETs(const Range &tets,const BitFieldI
     rval = moab.add_entities(idm,edges); CHKERRQ_MOAB(rval);
     if(verb>1) {
       std::ostringstream ss;
-      ss << "add entities to field " << get_BitFieldId_name(id);
+      ss << "add entities to field " << getBitFieldIdName(id);
       ss << " nb. add tets " << tets.size();
       ss << " nb. add tris " << tris.size();
       ss << " nb. add edges " << edges.size();
@@ -590,7 +590,7 @@ PetscErrorCode Core::add_ents_to_field_by_TETs(const Range &tets,const BitFieldI
     rval = moab.add_entities(idm,tris); CHKERRQ_MOAB(rval);
     if(verb>1) {
       std::ostringstream ss;
-      ss << "add entities to field " << get_BitFieldId_name(id);
+      ss << "add entities to field " << getBitFieldIdName(id);
       ss << " nb. add tets " << tets.size();
       ss << " nb. add tris " << tris.size();
       ss << std::endl;
@@ -624,7 +624,7 @@ PetscErrorCode Core::add_ents_to_field_by_TETs(const Range &tets,const std::stri
   if(verb==-1) verb = verbose;
   *buildMoFEM = 0;
   try {
-    ierr = add_ents_to_field_by_TETs(tets,get_BitFieldId(name),verb);  CHKERRQ(ierr);
+    ierr = add_ents_to_field_by_TETs(tets,getBitFieldId(name),verb);  CHKERRQ(ierr);
   } catch (MoFEMException const &e) {
     SETERRQ(cOmm,e.errorCode,e.errorMessage);
   }
@@ -635,7 +635,7 @@ PetscErrorCode Core::add_ents_to_field_by_TETs(const EntityHandle meshset,const 
   if(verb==-1) verb = verbose;
   *buildMoFEM = 0;
   try {
-    ierr = add_ents_to_field_by_TETs(meshset,get_BitFieldId(name),verb);  CHKERRQ(ierr);
+    ierr = add_ents_to_field_by_TETs(meshset,getBitFieldId(name),verb);  CHKERRQ(ierr);
   } catch (MoFEMException const &e) {
     SETERRQ(cOmm,e.errorCode,e.errorMessage);
   }
@@ -659,7 +659,7 @@ PetscErrorCode Core::add_ents_to_field_by_QUADs(const Range &quads,const BitFiel
     rval = moab.add_entities(idm,quads); CHKERRQ_MOAB(rval);
     if(verb>1) {
       std::ostringstream ss;
-      ss << "add entities to field " << get_BitFieldId_name(id);
+      ss << "add entities to field " << getBitFieldIdName(id);
       ss << " nb. add quads " << quads.size();
       ss << std::endl;
       PetscSynchronizedPrintf(cOmm,ss.str().c_str());
@@ -683,7 +683,7 @@ PetscErrorCode Core::add_ents_to_field_by_QUADs(const Range &quads,const BitFiel
     rval = moab.add_entities(idm,edges); CHKERRQ_MOAB(rval);
     if(verb>1) {
       std::ostringstream ss;
-      ss << "add entities to field " << get_BitFieldId_name(id);
+      ss << "add entities to field " << getBitFieldIdName(id);
       ss << " nb. add quads " << quads.size();
       ss << " nb. add edges " << edges.size();
       ss << " nb. add nodes " << nodes.size();
@@ -710,7 +710,7 @@ PetscErrorCode Core::add_ents_to_field_by_QUADs(const Range &quads,const std::st
   if(verb==-1) verb = verbose;
   *buildMoFEM = 0;
   try {
-    ierr = add_ents_to_field_by_QUADs(quads,get_BitFieldId(name),verb);  CHKERRQ(ierr);
+    ierr = add_ents_to_field_by_QUADs(quads,getBitFieldId(name),verb);  CHKERRQ(ierr);
   } catch (MoFEMException const &e) {
     SETERRQ(cOmm,e.errorCode,e.errorMessage);
   }
@@ -753,7 +753,7 @@ PetscErrorCode Core::add_ents_to_field_by_PRISMs(const Range &prisms,const BitFi
     rval = moab.add_entities(idm,prisms); CHKERRQ_MOAB(rval);
     if(verb>1) {
       std::ostringstream ss;
-      ss << "add entities to field " << get_BitFieldId_name(id);
+      ss << "add entities to field " << getBitFieldIdName(id);
       ss << " nb. add prisms " << prisms.size();
       ss << std::endl;
       PetscSynchronizedPrintf(cOmm,ss.str().c_str());
@@ -779,7 +779,7 @@ PetscErrorCode Core::add_ents_to_field_by_PRISMs(const Range &prisms,const BitFi
     rval = moab.add_entities(idm,edges); CHKERRQ_MOAB(rval);
     if(verb>1) {
       std::ostringstream ss;
-      ss << "add entities to field " << get_BitFieldId_name(id);
+      ss << "add entities to field " << getBitFieldIdName(id);
       ss << " nb. add prisms " << prisms.size();
       ss << " nb. add faces " << faces.size();
       ss << " nb. add edges " << edges.size();
@@ -807,7 +807,7 @@ PetscErrorCode Core::add_ents_to_field_by_PRISMs(const Range &prisms,const std::
   if(verb==-1) verb = verbose;
   *buildMoFEM = 0;
   try {
-    ierr = add_ents_to_field_by_PRISMs(prisms,get_BitFieldId(name),verb);  CHKERRQ(ierr);
+    ierr = add_ents_to_field_by_PRISMs(prisms,getBitFieldId(name),verb);  CHKERRQ(ierr);
   } catch (MoFEMException const &e) {
     SETERRQ(cOmm,e.errorCode,e.errorMessage);
   }
@@ -1069,7 +1069,7 @@ PetscErrorCode Core::set_field_order(
   if(verb==-1) verb = verbose;
   *buildMoFEM = 0;
   try{
-    ierr = set_field_order(meshset,type,get_BitFieldId(name),order,verb); CHKERRQ(ierr);
+    ierr = set_field_order(meshset,type,getBitFieldId(name),order,verb); CHKERRQ(ierr);
   } catch (MoFEMException const &e) {
     SETERRQ(cOmm,e.errorCode,e.errorMessage);
   }
@@ -1080,7 +1080,7 @@ PetscErrorCode Core::set_field_order(const Range &ents,const std::string& name,c
   if(verb==-1) verb = verbose;
   *buildMoFEM = 0;
   try{
-    ierr = set_field_order(ents,get_BitFieldId(name),order,verb); CHKERRQ(ierr);
+    ierr = set_field_order(ents,getBitFieldId(name),order,verb); CHKERRQ(ierr);
   } catch (MoFEMException const &e) {
     SETERRQ(cOmm,e.errorCode,e.errorMessage);
   }
@@ -1112,7 +1112,7 @@ PetscErrorCode Core::set_field_order_by_entity_type_and_bit_ref(
   Range ents;
   ierr = get_entities_by_type_and_ref_level(bit,mask,type,ents,verb); CHKERRQ(ierr);
   try{
-    ierr = set_field_order(ents,get_BitFieldId(name),order,verb); CHKERRQ(ierr);
+    ierr = set_field_order(ents,getBitFieldId(name),order,verb); CHKERRQ(ierr);
   } catch (MoFEMException const &e) {
     SETERRQ(cOmm,e.errorCode,e.errorMessage);
   }

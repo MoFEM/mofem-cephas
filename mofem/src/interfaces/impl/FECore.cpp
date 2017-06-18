@@ -127,7 +127,7 @@ namespace MoFEM {
     FiniteElements_by_name::iterator it_fe = finite_element_name_set.find(fe_name);
     if(it_fe==finite_element_name_set.end()) SETERRQ(cOmm,MOFEM_NOT_FOUND,"this FiniteElement is there");
     try {
-      bool success = finite_element_name_set.modify(it_fe,FiniteElement_change_bit_add(get_BitFieldId(name_data)));
+      bool success = finite_element_name_set.modify(it_fe,FiniteElement_change_bit_add(getBitFieldId(name_data)));
       if(!success) SETERRQ(cOmm,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
     } catch (MoFEMException const &e) {
       SETERRQ(cOmm,e.errorCode,e.errorMessage);
@@ -143,7 +143,7 @@ namespace MoFEM {
     FiniteElements_by_name::iterator it_fe = finite_element_name_set.find(fe_name);
     if(it_fe==finite_element_name_set.end()) SETERRQ1(cOmm,MOFEM_NOT_FOUND,"this < %s > is not there",fe_name.c_str());
     try {
-      bool success = finite_element_name_set.modify(it_fe,FiniteElement_row_change_bit_add(get_BitFieldId(name_row)));
+      bool success = finite_element_name_set.modify(it_fe,FiniteElement_row_change_bit_add(getBitFieldId(name_row)));
       if(!success) SETERRQ(cOmm,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
     } catch (MoFEMException const &e) {
       SETERRQ(cOmm,e.errorCode,e.errorMessage);
@@ -159,7 +159,7 @@ namespace MoFEM {
     FiniteElements_by_name::iterator it_fe = finite_element_name_set.find(fe_name);
     if(it_fe==finite_element_name_set.end()) SETERRQ(cOmm,MOFEM_OPERATION_UNSUCCESSFUL,"this FiniteElement is there");
     try {
-      bool success = finite_element_name_set.modify(it_fe,FiniteElement_col_change_bit_add(get_BitFieldId(name_col)));
+      bool success = finite_element_name_set.modify(it_fe,FiniteElement_col_change_bit_add(getBitFieldId(name_col)));
       if(!success) SETERRQ(cOmm,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
     } catch (MoFEMException const &e) {
       SETERRQ(cOmm,e.errorCode,e.errorMessage);
@@ -175,7 +175,7 @@ namespace MoFEM {
     FiniteElements_by_name::iterator it_fe = finite_element_name_set.find(fe_name);
     if(it_fe==finite_element_name_set.end()) SETERRQ(cOmm,MOFEM_NOT_FOUND,"this FiniteElement is there");
     try {
-      bool success = finite_element_name_set.modify(it_fe,FiniteElement_change_bit_off(get_BitFieldId(name_data)));
+      bool success = finite_element_name_set.modify(it_fe,FiniteElement_change_bit_off(getBitFieldId(name_data)));
       if(!success) SETERRQ(cOmm,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
     } catch (MoFEMException const &e) {
       SETERRQ(cOmm,e.errorCode,e.errorMessage);
@@ -191,7 +191,7 @@ namespace MoFEM {
     FiniteElements_by_name::iterator it_fe = finite_element_name_set.find(fe_name);
     if(it_fe==finite_element_name_set.end()) SETERRQ1(cOmm,MOFEM_NOT_FOUND,"this < %s > is not there",fe_name.c_str());
     try {
-      bool success = finite_element_name_set.modify(it_fe,FiniteElement_row_change_bit_off(get_BitFieldId(name_row)));
+      bool success = finite_element_name_set.modify(it_fe,FiniteElement_row_change_bit_off(getBitFieldId(name_row)));
       if(!success) SETERRQ(cOmm,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
     } catch (MoFEMException const &e) {
       SETERRQ(cOmm,e.errorCode,e.errorMessage);
@@ -207,7 +207,7 @@ namespace MoFEM {
     FiniteElements_by_name::iterator it_fe = finite_element_name_set.find(fe_name);
     if(it_fe==finite_element_name_set.end()) SETERRQ(cOmm,MOFEM_NOT_FOUND,"this FiniteElement is there");
     try {
-      bool success = finite_element_name_set.modify(it_fe,FiniteElement_col_change_bit_off(get_BitFieldId(name_col)));
+      bool success = finite_element_name_set.modify(it_fe,FiniteElement_col_change_bit_off(getBitFieldId(name_col)));
       if(!success) SETERRQ(cOmm,MOFEM_OPERATION_UNSUCCESSFUL,"modification unsuccessful");
     } catch (MoFEMException const &e) {
       SETERRQ(cOmm,e.errorCode,e.errorMessage);
@@ -223,7 +223,7 @@ namespace MoFEM {
     return (*miit)->getId();
   }
 
-  std::string Core::getBitFEId_name(const BitFEId id) const {
+  std::string Core::getBitFEIdName(const BitFEId id) const {
     typedef FiniteElement_multiIndex::index<BitFEId_mi_tag>::type finiteElements_by_id;
     const finiteElements_by_id& set = finiteElements.get<BitFEId_mi_tag>();
     finiteElements_by_id::iterator miit = set.find(id);
@@ -361,60 +361,60 @@ namespace MoFEM {
     PetscFunctionReturn(0);
   }
 
-  // PetscErrorCode Core::add_ents_to_finite_element_by_EDGEs(const EntityHandle meshset,const std::string &name,const bool recursive) {
-  //   return add_ents_to_finite_element_by_type(meshset,MBEDGE,name,recursive);
-  // }
-  // PetscErrorCode Core::add_ents_to_finite_element_by_EDGEs(const Range& edges,const std::string &name) {
-  //   return add_ents_to_finite_element_by_type(edges,MBEDGE,name);
-  //   PetscFunctionReturn(0);
-  // }
-  // PetscErrorCode Core::add_ents_to_finite_element_by_VERTICEs(const Range& vert,const std::string &name) {
-  //   PetscFunctionBegin;
-  //   return add_ents_to_finite_element_by_type(vert,MBVERTEX,name);
-  //   PetscFunctionReturn(0);
-  // }
-  // PetscErrorCode Core::add_ents_to_finite_element_by_TRIs(const Range& tris,const std::string &name) {
-  //   PetscFunctionBegin;
-  //   return add_ents_to_finite_element_by_type(tris,MBTRI,name);
-  //   PetscFunctionReturn(0);
-  // }
-  // PetscErrorCode Core::add_ents_to_finite_element_by_TRIs(const EntityHandle meshset,const std::string &name,const bool recursive) {
-  //   return add_ents_to_finite_element_by_type(meshset,MBTRI,name,recursive);
-  //   PetscFunctionReturn(0);
-  // }
-  // PetscErrorCode Core::add_ents_to_finite_element_by_TETs(const Range& tets,const std::string &name) {
-  //   PetscFunctionBegin;
-  //   return add_ents_to_finite_element_by_type(tets,MBTET,name);
-  //   PetscFunctionReturn(0);
-  // }
-  // PetscErrorCode Core::add_ents_to_finite_element_by_TETs(const EntityHandle meshset,const std::string &name,const bool recursive) {
-  //   return add_ents_to_finite_element_by_type(meshset,MBTET,name,recursive);
-  //   PetscFunctionReturn(0);
-  // }
-  // PetscErrorCode Core::add_ents_to_finite_element_by_PRISMs(const Range& prims,const std::string &name) {
-  //   PetscFunctionBegin;
-  //   return add_ents_to_finite_element_by_type(prims,MBPRISM,name);
-  //   PetscFunctionReturn(0);
-  // }
-  // PetscErrorCode Core::add_ents_to_finite_element_by_PRISMs(const EntityHandle meshset,const std::string &name,const bool recursive) {
-  //   return add_ents_to_finite_element_by_type(meshset,MBPRISM,name,recursive);
-  // }
-  //
-  // PetscErrorCode Core::add_ents_to_finite_element_EntType_by_bit_ref(
-  //   const BitRefLevel &bit,const std::string &name,EntityType type,int verb
-  // ) {
-  //   PetscFunctionBegin;
-  //   ierr = add_ents_to_finite_element_by_bit_ref(bit,BitRefLevel().set(),name,type,verb); CHKERRQ(ierr);
-  //   PetscFunctionReturn(0);
-  // }
-  //
-  // PetscErrorCode Core::add_ents_to_finite_element_EntType_by_bit_ref(
-  //   const BitRefLevel &bit,const BitRefLevel &mask,const std::string &name,EntityType type,int verb
-  // ) {
-  //   PetscFunctionBegin;
-  //   ierr = add_ents_to_finite_element_by_bit_ref(bit,mask,name,type,verb); CHKERRQ(ierr);
-  //   PetscFunctionReturn(0);
-  // }
+  PetscErrorCode Core::add_ents_to_finite_element_by_EDGEs(const EntityHandle meshset,const std::string &name,const bool recursive) {
+    return add_ents_to_finite_element_by_type(meshset,MBEDGE,name,recursive);
+  }
+  PetscErrorCode Core::add_ents_to_finite_element_by_EDGEs(const Range& edges,const std::string &name) {
+    return add_ents_to_finite_element_by_type(edges,MBEDGE,name);
+    PetscFunctionReturn(0);
+  }
+  PetscErrorCode Core::add_ents_to_finite_element_by_VERTICEs(const Range& vert,const std::string &name) {
+    PetscFunctionBegin;
+    return add_ents_to_finite_element_by_type(vert,MBVERTEX,name);
+    PetscFunctionReturn(0);
+  }
+  PetscErrorCode Core::add_ents_to_finite_element_by_TRIs(const Range& tris,const std::string &name) {
+    PetscFunctionBegin;
+    return add_ents_to_finite_element_by_type(tris,MBTRI,name);
+    PetscFunctionReturn(0);
+  }
+  PetscErrorCode Core::add_ents_to_finite_element_by_TRIs(const EntityHandle meshset,const std::string &name,const bool recursive) {
+    return add_ents_to_finite_element_by_type(meshset,MBTRI,name,recursive);
+    PetscFunctionReturn(0);
+  }
+  PetscErrorCode Core::add_ents_to_finite_element_by_TETs(const Range& tets,const std::string &name) {
+    PetscFunctionBegin;
+    return add_ents_to_finite_element_by_type(tets,MBTET,name);
+    PetscFunctionReturn(0);
+  }
+  PetscErrorCode Core::add_ents_to_finite_element_by_TETs(const EntityHandle meshset,const std::string &name,const bool recursive) {
+    return add_ents_to_finite_element_by_type(meshset,MBTET,name,recursive);
+    PetscFunctionReturn(0);
+  }
+  PetscErrorCode Core::add_ents_to_finite_element_by_PRISMs(const Range& prims,const std::string &name) {
+    PetscFunctionBegin;
+    return add_ents_to_finite_element_by_type(prims,MBPRISM,name);
+    PetscFunctionReturn(0);
+  }
+  PetscErrorCode Core::add_ents_to_finite_element_by_PRISMs(const EntityHandle meshset,const std::string &name,const bool recursive) {
+    return add_ents_to_finite_element_by_type(meshset,MBPRISM,name,recursive);
+  }
+
+  PetscErrorCode Core::add_ents_to_finite_element_EntType_by_bit_ref(
+    const BitRefLevel &bit,const std::string &name,EntityType type,int verb
+  ) {
+    PetscFunctionBegin;
+    ierr = add_ents_to_finite_element_by_bit_ref(bit,BitRefLevel().set(),name,type,verb); CHKERRQ(ierr);
+    PetscFunctionReturn(0);
+  }
+
+  PetscErrorCode Core::add_ents_to_finite_element_EntType_by_bit_ref(
+    const BitRefLevel &bit,const BitRefLevel &mask,const std::string &name,EntityType type,int verb
+  ) {
+    PetscFunctionBegin;
+    ierr = add_ents_to_finite_element_by_bit_ref(bit,mask,name,type,verb); CHKERRQ(ierr);
+    PetscFunctionReturn(0);
+  }
 
   PetscErrorCode Core::add_ents_to_finite_element_by_bit_ref(
     const BitRefLevel &bit,const BitRefLevel &mask,const std::string &name,EntityType type,int verb

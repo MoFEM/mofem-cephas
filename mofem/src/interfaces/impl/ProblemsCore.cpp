@@ -119,7 +119,7 @@ PetscErrorCode Core::delete_problem(const std::string name) {
   PetscFunctionReturn(0);
 }
 
-BitProblemId Core::get_BitProblemId(const std::string& name) const {
+BitProblemId Core::getBitProblemId(const std::string& name) const {
   typedef Problem_multiIndex::index<Problem_mi_tag>::type mofem_problems_by_name;
   const mofem_problems_by_name& set = pRoblems.get<Problem_mi_tag>();
   mofem_problems_by_name::iterator miit = set.find(name);
