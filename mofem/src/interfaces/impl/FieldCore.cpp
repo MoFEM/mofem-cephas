@@ -238,361 +238,112 @@ PetscErrorCode Core::add_field(
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode Core::add_ents_to_field_by_EDGEs(const Range &edges,const BitFieldId id,int verb) {
-  PetscFunctionBegin;
-  if(verb==-1) verb = verbose;
+PetscErrorCode Core::addEntsToFieldByDim(
+  const Range &ents,const int dim,const std::string& name,int verb
+) {
+  MoABErrorCode rval;
   *buildMoFEM = 0;
   EntityHandle idm = no_handle;
+  if(verb==-1) verb = verbose;
+  PetscFunctionBegin;
   try {
-    idm = get_field_meshset(id);
+    idm = get_field_meshset(name);
   } catch (MoFEMException const &e) {
     SETERRQ(cOmm,e.errorCode,e.errorMessage);
   }
   FieldSpace space;
   rval = moab.tag_get_data(th_FieldSpace,&idm,1,&space); CHKERRQ_MOAB(rval);
-  Range nodes;
-  switch (space) {
+  Range nodes,faces,edges;
+  switch(space) {
     case L2:
-      rval = moab.add_entities(idm,edges); CHKERRQ_MOAB(rval);
-      if(verb>1) {
-        std::ostringstream ss;
-        ss << "add entities to field " << getBitFieldIdName(id);
-        ss << " nb. add edges " << edges.size();
-        ss << std::endl;
-        PetscPrintf(cOmm,ss.str().c_str());
-      }
-      break;
+    rval = moab.add_entities(idm,ents); CHKERRQ_MOAB(rval);
+    if(verb>1) {
+      std::ostringstream ss;
+      ss << "add entities to field " << name;
+      ss << " nb. add ents " << ents.size();
+      ss << std::endl;
+      PetscSynchronizedPrintf(cOmm,ss.str().c_str());
+    }
+    break;
     case H1:
-      rval = moab.add_entities(idm,edges); CHKERRQ_MOAB(rval);
-      //rval = moab.get_connectivity(edges,nodes,true); CHKERRQ_MOAB(rval);
-      //use get adjacencies, this will allow take in account adjacencies set user
-      rval = moab.get_adjacencies(edges,0,false,nodes,moab::Interface::UNION); CHKERRQ_MOAB(rval);
+    rval = moab.add_entities(idm,ents); CHKERRQ_MOAB(rval);
+    if(dim>0) {
+      rval = moab.get_adjacencies(
+        ents,0,false,nodes,moab::Interface::UNION
+      ); CHKERRQ_MOAB(rval);
       {
         Range topo_nodes;
-        rval = moab.get_connectivity(edges,topo_nodes,true); CHKERRQ_MOAB(rval);
+        rval = moab.get_connectivity(
+          ents,topo_nodes,true
+        ); CHKERRQ_MOAB(rval);
         Range mid_nodes;
-        rval = moab.get_connectivity(edges,mid_nodes,false); CHKERRQ_MOAB(rval);
+        rval = moab.get_connectivity(
+          ents,mid_nodes,false
+        ); CHKERRQ_MOAB(rval);
         mid_nodes = subtract(mid_nodes,topo_nodes);
         nodes = subtract(nodes,mid_nodes);
       }
       rval = moab.add_entities(idm,nodes); CHKERRQ_MOAB(rval);
-      if(verb>1) {
-        std::ostringstream ss;
-        ss << "add entities to field " << getBitFieldIdName(id);
-        ss << " nb. add edges " << edges.size();
-        ss << " nb. add nodes " << nodes.size();
-        ss << std::endl;
-        PetscPrintf(cOmm,ss.str().c_str());
+    }
+    if(dim>2) {
+      rval = moab.get_adjacencies(
+        ents,2,false,faces,moab::Interface::UNION
+      ); CHKERRQ_MOAB(rval);
+      rval = moab.add_entities(idm,faces); CHKERRQ_MOAB(rval);
+    }
+    if(dim>1) {
+      rval = moab.get_adjacencies(
+        ents,1,false,edges,moab::Interface::UNION
+      ); CHKERRQ_MOAB(rval);
+      rval = moab.add_entities(idm,edges); CHKERRQ_MOAB(rval);
+    }
+    if(verb>1) {
+      std::ostringstream ss;
+      ss << "add entities to field " << name;
+      ss << " nb. add ents " << ents.size();
+      ss << " nb. add faces " << faces.size();
+      ss << " nb. add edges " << edges.size();
+      ss << " nb. add nodes " << nodes.size();
+      ss << std::endl;
+      PetscSynchronizedPrintf(cOmm,ss.str().c_str());
+    }
+    break;
+    case HCURL:
+    rval = moab.add_entities(idm,ents); CHKERRQ_MOAB(rval);
+    if(dim>2) {
+      rval = moab.get_adjacencies(ents,2,false,faces,moab::Interface::UNION
+      ); CHKERRQ_MOAB(rval);
+      rval = moab.add_entities(idm,faces); CHKERRQ_MOAB(rval);
+    }
+    if(dim>1) {
+      rval = moab.get_adjacencies(
+        ents,1,false,edges,moab::Interface::UNION
+        ); CHKERRQ_MOAB(rval);
+        rval = moab.add_entities(idm,edges); CHKERRQ_MOAB(rval);
       }
-      break;
-    case HCURL:
-
-      // You would add hcurl space on edge here if you would have 1d h-curl space.
-      // Ass far I know that really makes no sense. H-curl space is spanning on
-      // edges, but you would add it by adding space through entities of higher
-      // dimension.
-
-      SETERRQ(
-        cOmm,MOFEM_NOT_IMPLEMENTED,
-        "sorry, not implemented, HCURL not implemented for edge"
-      );
-
-      break;
-    case HDIV:
-
-      // Look to comments above about h-curl spce. That apply as well to h-div space.
-
-      SETERRQ(
-        cOmm,MOFEM_NOT_IMPLEMENTED,
-        "sorry, not implemented, HDIV not implemented for edge"
-      );
-      break;
-    default:
-      SETERRQ(cOmm,MOFEM_DATA_INCONSISTENCY,"sorry, adds unknown field to edge");
-  }
-  PetscFunctionReturn(0);
-}
-PetscErrorCode Core::add_ents_to_field_by_EDGEs(const Range &edges,const std::string& name,int verb) {
-  PetscFunctionBegin;
-  if(verb==-1) verb = verbose;
-  *buildMoFEM = 0;
-  try {
-    ierr = add_ents_to_field_by_EDGEs(edges,getBitFieldId(name),verb);  CHKERRQ(ierr);
-  } catch (MoFEMException const &e) {
-    SETERRQ(cOmm,e.errorCode,e.errorMessage);
-  }
-  PetscFunctionReturn(0);
-}
-PetscErrorCode Core::add_ents_to_field_by_EDGEs(const EntityHandle meshset,const BitFieldId id,int verb) {
-  PetscFunctionBegin;
-  if(verb==-1) verb = verbose;
-  *buildMoFEM = 0;
-  Range edges;
-  rval = moab.get_entities_by_type(meshset,MBEDGE,edges,true); CHKERRQ_MOAB(rval);
-  try {
-    ierr = add_ents_to_field_by_EDGEs(edges,id,verb); CHKERRQ(ierr);
-  } catch (MoFEMException const &e) {
-    SETERRQ(cOmm,e.errorCode,e.errorMessage);
-  }
-  PetscFunctionReturn(0);
-}
-PetscErrorCode Core::add_ents_to_field_by_EDGEs(const EntityHandle meshset,const std::string& name,int verb) {
-  PetscFunctionBegin;
-  if(verb==-1) verb = verbose;
-  *buildMoFEM = 0;
-  try {
-    ierr = add_ents_to_field_by_EDGEs(meshset,getBitFieldId(name),verb);  CHKERRQ(ierr);
-  } catch (MoFEMException const &e) {
-    SETERRQ(cOmm,e.errorCode,e.errorMessage);
-  }
-  PetscFunctionReturn(0);
-}
-PetscErrorCode Core::add_ents_to_field_by_TRIs(const EntityHandle meshset,const BitFieldId id,int verb) {
-  PetscFunctionBegin;
-  Range tris;
-  rval = moab.get_entities_by_type(meshset,MBTRI,tris,true); CHKERRQ_MOAB(rval);
-  ierr = add_ents_to_field_by_TRIs(tris,id,verb); CHKERRQ(ierr);
-  PetscFunctionReturn(0);
-}
-PetscErrorCode Core::add_ents_to_field_by_TRIs(const Range &tris,const BitFieldId id,int verb) {
-  PetscFunctionBegin;
-  if(verb==-1) verb = verbose;
-  *buildMoFEM = 0;
-  EntityHandle idm = no_handle;
-  try {
-    idm = get_field_meshset(id);
-  } catch (MoFEMException const &e) {
-    SETERRQ(cOmm,e.errorCode,e.errorMessage);
-  }
-  FieldSpace space;
-  rval = moab.tag_get_data(th_FieldSpace,&idm,1,&space); CHKERRQ_MOAB(rval);
-  Range nodes,edges;
-  switch(space) {
-    case L2:
-    rval = moab.add_entities(idm,tris); CHKERRQ_MOAB(rval);
     if(verb>1) {
       std::ostringstream ss;
-      ss << "add entities to field " << getBitFieldIdName(id);
-      ss << " nb. add tris " << tris.size();
-      ss << std::endl;
-      PetscPrintf(cOmm,ss.str().c_str());
-    }
-    break;
-    case H1:
-    rval = moab.add_entities(idm,tris); CHKERRQ_MOAB(rval);
-    //rval = moab.get_connectivity(tris,nodes,true); CHKERRQ_MOAB(rval);
-    //use get adjacencies, this will allow take in account adjacencies set user
-    rval = moab.get_adjacencies(tris,0,false,nodes,moab::Interface::UNION); CHKERRQ_MOAB(rval);
-    {
-      Range topo_nodes;
-      rval = moab.get_connectivity(tris,topo_nodes,true); CHKERRQ_MOAB(rval);
-      Range mid_nodes;
-      rval = moab.get_connectivity(tris,mid_nodes,false); CHKERRQ_MOAB(rval);
-      mid_nodes = subtract(mid_nodes,topo_nodes);
-      nodes = subtract(nodes,mid_nodes);
-    }
-    rval = moab.add_entities(idm,nodes); CHKERRQ_MOAB(rval);
-    rval = moab.get_adjacencies(tris,1,false,edges,moab::Interface::UNION); CHKERRQ_MOAB(rval);
-    rval = moab.add_entities(idm,edges); CHKERRQ_MOAB(rval);
-    if(verb>1) {
-      std::ostringstream ss;
-      ss << "add entities to field " << getBitFieldIdName(id);
-      ss << " nb. add tris " << tris.size();
-      ss << " nb. add edges " << edges.size();
-      ss << " nb. add nodes " << nodes.size();
-      ss << std::endl;
-      PetscPrintf(cOmm,ss.str().c_str());
-    }
-    break;
-    case HCURL:
-    rval = moab.add_entities(idm,tris); CHKERRQ_MOAB(rval);
-    rval = moab.get_adjacencies(tris,1,false,edges,moab::Interface::UNION); CHKERRQ_MOAB(rval);
-    rval = moab.add_entities(idm,edges); CHKERRQ_MOAB(rval);
-    if(verb>1) {
-      std::ostringstream ss;
-      ss << "add entities to field " << getBitFieldIdName(id);
-      ss << " nb. add tris " << tris.size();
-      ss << " nb. add edges " << edges.size();
-      ss << std::endl;
-      PetscPrintf(cOmm,ss.str().c_str());
-    }
-    break;
-    case HDIV:
-    rval = moab.add_entities(idm,tris); CHKERRQ_MOAB(rval);
-    if(verb>1) {
-      std::ostringstream ss;
-      ss << "add entities to field " << getBitFieldIdName(id);
-      ss << " nb. add tris " << tris.size();
-      ss << std::endl;
-      PetscPrintf(cOmm,ss.str().c_str());
-    }
-    break;
-    default:
-    SETERRQ(cOmm,MOFEM_DATA_INCONSISTENCY,"sorry, unknown field is applied to triangle entity");
-  }
-  PetscFunctionReturn(0);
-}
-PetscErrorCode Core::add_ents_to_field_by_TRIs(const EntityHandle meshset,const std::string& name,int verb) {
-  PetscFunctionBegin;
-  if(verb==-1) verb = verbose;
-  *buildMoFEM = 0;
-  try {
-    ierr = add_ents_to_field_by_TRIs(meshset,getBitFieldId(name),verb);  CHKERRQ(ierr);
-  } catch (MoFEMException const &e) {
-    SETERRQ(cOmm,e.errorCode,e.errorMessage);
-  }
-  PetscFunctionReturn(0);
-}
-PetscErrorCode Core::add_ents_to_field_by_TRIs(const Range &tris,const std::string& name,int verb) {
-  PetscFunctionBegin;
-  if(verb==-1) verb = verbose;
-  *buildMoFEM = 0;
-  try {
-    ierr = add_ents_to_field_by_TRIs(tris,getBitFieldId(name),verb);  CHKERRQ(ierr);
-  } catch (MoFEMException const &e) {
-    SETERRQ(cOmm,e.errorCode,e.errorMessage);
-  }
-  PetscFunctionReturn(0);
-}
-PetscErrorCode Core::add_ents_to_field_by_VERTICEs(const Range &nodes,const BitFieldId id,int verb) {
-  PetscFunctionBegin;
-  if(verb==-1) verb = verbose;
-  *buildMoFEM = 0;
-  EntityHandle idm = no_handle;
-  try {
-    idm = get_field_meshset(id);
-  } catch (MoFEMException const &e) {
-    SETERRQ(cOmm,e.errorCode,e.errorMessage);
-  }
-  FieldSpace space;
-  rval = moab.tag_get_data(th_FieldSpace,&idm,1,&space); CHKERRQ_MOAB(rval);
-  switch (space) {
-    case L2:
-    case H1:
-    rval = moab.add_entities(idm,nodes); CHKERRQ_MOAB(rval);
-    if(verb>1) {
-      std::ostringstream ss;
-      ss << "add entities to field " << getBitFieldIdName(id);
-      ss << " nb. add nodes " << nodes.size();
-      ss << std::endl;
-      PetscPrintf(cOmm,ss.str().c_str());
-    }
-    break;
-    default:
-    SETERRQ(
-      cOmm,MOFEM_DATA_INCONSISTENCY,
-      "sorry, if it try to span space on vertex entity which makes no sense");
-  }
-  PetscFunctionReturn(0);
-}
-PetscErrorCode Core::add_ents_to_field_by_VERTICEs(const EntityHandle meshset,const BitFieldId id,int verb) {
-  PetscFunctionBegin;
-  Range nodes;
-  rval = moab.get_entities_by_type(meshset,MBVERTEX,nodes,true); CHKERRQ_MOAB(rval);
-  ierr = add_ents_to_field_by_VERTICEs(nodes,id,verb); CHKERRQ(ierr);
-  PetscFunctionReturn(0);
-}
-PetscErrorCode Core::add_ents_to_field_by_VERTICEs(const Range &nodes,const std::string& name,int verb) {
-  PetscFunctionBegin;
-  if(verb==-1) verb = verbose;
-  *buildMoFEM = 0;
-  try {
-    ierr = add_ents_to_field_by_VERTICEs(nodes,getBitFieldId(name),verb);  CHKERRQ(ierr);
-  } catch (MoFEMException const &e) {
-    SETERRQ(cOmm,e.errorCode,e.errorMessage);
-  }
-  PetscFunctionReturn(0);
-}
-PetscErrorCode Core::add_ents_to_field_by_VERTICEs(const EntityHandle meshset,const std::string& name,int verb) {
-  PetscFunctionBegin;
-  if(verb==-1) verb = verbose;
-  *buildMoFEM = 0;
-  try {
-    ierr = add_ents_to_field_by_VERTICEs(meshset,getBitFieldId(name),verb);  CHKERRQ(ierr);
-  } catch (MoFEMException const &e) {
-    SETERRQ(cOmm,e.errorCode,e.errorMessage);
-  }
-  PetscFunctionReturn(0);
-}
-
-PetscErrorCode Core::add_ents_to_field_by_TETs(const Range &tets,const BitFieldId id,int verb) {
-  PetscFunctionBegin;
-  if(verb==-1) verb = verbose;
-  *buildMoFEM = 0;
-  EntityHandle idm = no_handle;
-  try {
-    idm = get_field_meshset(id);
-  } catch (MoFEMException const &e) {
-    SETERRQ(cOmm,e.errorCode,e.errorMessage);
-  }
-  FieldSpace space;
-  rval = moab.tag_get_data(th_FieldSpace,&idm,1,&space); CHKERRQ_MOAB(rval);
-  Range nodes,tris,edges;
-  switch(space) {
-    case L2:
-    rval = moab.add_entities(idm,tets); CHKERRQ_MOAB(rval);
-    if(verb>1) {
-      std::ostringstream ss;
-      ss << "add entities to field " << getBitFieldIdName(id);
-      ss << " nb. add tets " << tets.size();
-      ss << std::endl;
-      PetscSynchronizedPrintf(cOmm,ss.str().c_str());
-    }
-    break;
-    case H1:
-    rval = moab.add_entities(idm,tets); CHKERRQ_MOAB(rval);
-    //rval = moab.get_connectivity(tets,nodes,true); CHKERRQ_MOAB(rval);
-    //use get adjacencies, this will allow take in account adjacencies set user
-    rval = moab.get_adjacencies(tets,0,false,nodes,moab::Interface::UNION); CHKERRQ_MOAB(rval);
-    {
-      Range topo_nodes;
-      rval = moab.get_connectivity(tets,topo_nodes,true); CHKERRQ_MOAB(rval);
-      Range mid_nodes;
-      rval = moab.get_connectivity(tets,mid_nodes,false); CHKERRQ_MOAB(rval);
-      mid_nodes = subtract(mid_nodes,topo_nodes);
-      nodes = subtract(nodes,mid_nodes);
-    }
-    rval = moab.add_entities(idm,nodes); CHKERRQ_MOAB(rval);
-    rval = moab.get_adjacencies(tets,2,false,tris,moab::Interface::UNION); CHKERRQ_MOAB(rval);
-    rval = moab.add_entities(idm,tris); CHKERRQ_MOAB(rval);
-    rval = moab.get_adjacencies(tets,1,false,edges,moab::Interface::UNION); CHKERRQ_MOAB(rval);
-    rval = moab.add_entities(idm,edges); CHKERRQ_MOAB(rval);
-    if(verb>1) {
-      std::ostringstream ss;
-      ss << "add entities to field " << getBitFieldIdName(id);
-      ss << " nb. add tets " << tets.size();
-      ss << " nb. add tris " << tris.size();
-      ss << " nb. add edges " << edges.size();
-      ss << " nb. add nodes " << nodes.size();
-      ss << std::endl;
-      PetscSynchronizedPrintf(cOmm,ss.str().c_str());
-    }
-    break;
-    case HCURL:
-    rval = moab.add_entities(idm,tets); CHKERRQ_MOAB(rval);
-    rval = moab.get_adjacencies(tets,2,false,tris,moab::Interface::UNION); CHKERRQ_MOAB(rval);
-    rval = moab.add_entities(idm,tris); CHKERRQ_MOAB(rval);
-    rval = moab.get_adjacencies(tets,1,false,edges,moab::Interface::UNION); CHKERRQ_MOAB(rval);
-    rval = moab.add_entities(idm,edges); CHKERRQ_MOAB(rval);
-    if(verb>1) {
-      std::ostringstream ss;
-      ss << "add entities to field " << getBitFieldIdName(id);
-      ss << " nb. add tets " << tets.size();
-      ss << " nb. add tris " << tris.size();
+      ss << "add entities to field " << name;
+      ss << " nb. add ents " << ents.size();
+      ss << " nb. add faces " << faces.size();
       ss << " nb. add edges " << edges.size();
       ss << std::endl;
       PetscSynchronizedPrintf(cOmm,ss.str().c_str());
     }
     break;
     case HDIV:
-    rval = moab.add_entities(idm,tets); CHKERRQ_MOAB(rval);
-    rval = moab.get_adjacencies(tets,2,false,tris,moab::Interface::UNION); CHKERRQ_MOAB(rval);
-    rval = moab.add_entities(idm,tris); CHKERRQ_MOAB(rval);
+    rval = moab.add_entities(idm,ents); CHKERRQ_MOAB(rval);
+    if(dim>2) {
+      rval = moab.get_adjacencies(
+        ents,2,false,faces,moab::Interface::UNION
+      ); CHKERRQ_MOAB(rval);
+      rval = moab.add_entities(idm,faces); CHKERRQ_MOAB(rval);
+    }
     if(verb>1) {
       std::ostringstream ss;
-      ss << "add entities to field " << getBitFieldIdName(id);
-      ss << " nb. add tets " << tets.size();
-      ss << " nb. add tris " << tris.size();
+      ss << "add entities to field " << name;
+      ss << " nb. add ents " << ents.size();
+      ss << " nb. add faces " << faces.size();
       ss << std::endl;
       PetscSynchronizedPrintf(cOmm,ss.str().c_str());
     }
@@ -605,232 +356,658 @@ PetscErrorCode Core::add_ents_to_field_by_TETs(const Range &tets,const BitFieldI
   }
   PetscFunctionReturn(0);
 }
-PetscErrorCode Core::add_ents_to_field_by_TETs(const EntityHandle meshset,const BitFieldId id,int verb) {
+
+PetscErrorCode Core::add_ents_to_field_by_dim(
+  const Range &ents,const int dim,const std::string& name,int verb
+) {
+  Range ents_dim = ents.subset_by_dimension(dim);
+  return addEntsToFieldByDim(ents_dim,dim,name,verb);
+}
+
+PetscErrorCode Core::add_ents_to_field_by_type(
+  const Range &ents,const EntityType type,const std::string& name,int verb
+) {
+  PetscErrorCode ierr;
   PetscFunctionBegin;
-  if(verb==-1) verb = verbose;
-  Range tets;
-  rval = moab.get_entities_by_type(meshset,MBTET,tets,true); CHKERRQ_MOAB(rval);
-  if(verb>3) {
-    PetscSynchronizedPrintf(cOmm,"nb. of tets %d\n",tets.size());
-  }
-  ierr = add_ents_to_field_by_TETs(tets,id,verb); CHKERRQ(ierr);
-  if(verb>3) {
-    PetscSynchronizedFlush(cOmm,PETSC_STDOUT);
+  Range ents_type = ents.subset_by_type(type);
+  if(!ents_type.empty()) {
+    const int dim = moab.dimension_from_handle(ents_type[0]);
+    ierr = addEntsToFieldByDim(ents_type,dim,name,verb); CHKERRQ(ierr);
   }
   PetscFunctionReturn(0);
 }
-PetscErrorCode Core::add_ents_to_field_by_TETs(const Range &tets,const std::string& name,int verb) {
+
+PetscErrorCode Core::add_ents_to_field_by_dim(
+  const EntityHandle meshset,const int dim,const std::string& name,const bool recursive,int verb
+) {
+  MoABErrorCode rval;
+  PetscErrorCode ierr;
   PetscFunctionBegin;
-  if(verb==-1) verb = verbose;
-  *buildMoFEM = 0;
-  try {
-    ierr = add_ents_to_field_by_TETs(tets,getBitFieldId(name),verb);  CHKERRQ(ierr);
-  } catch (MoFEMException const &e) {
-    SETERRQ(cOmm,e.errorCode,e.errorMessage);
+  Range ents;
+  rval = moab.get_entities_by_dimension(meshset,dim,ents,recursive); CHKERRQ_MOAB(rval);
+  ierr = addEntsToFieldByDim(ents,dim,name,verb); CHKERRQ(ierr);
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode Core::add_ents_to_field_by_type(
+  const EntityHandle meshset,const EntityType type,const std::string& name,const bool recursive,int verb
+) {
+  MoABErrorCode rval;
+  PetscErrorCode ierr;
+  PetscFunctionBegin;
+  Range ents;
+  rval = moab.get_entities_by_type(meshset,type,ents,recursive); CHKERRQ_MOAB(rval);
+  if(!ents.empty()) {
+    const int dim = moab.dimension_from_handle(ents[0]);
+    ierr = addEntsToFieldByDim(ents,dim,name,verb); CHKERRQ(ierr);
   }
   PetscFunctionReturn(0);
+}
+
+// PetscErrorCode Core::add_ents_to_field_by_EDGEs(const Range &edges,const BitFieldId id,int verb) {
+//   PetscFunctionBegin;
+//   if(verb==-1) verb = verbose;
+//   *buildMoFEM = 0;
+//   EntityHandle idm = no_handle;
+//   try {
+//     idm = get_field_meshset(id);
+//   } catch (MoFEMException const &e) {
+//     SETERRQ(cOmm,e.errorCode,e.errorMessage);
+//   }
+//   FieldSpace space;
+//   rval = moab.tag_get_data(th_FieldSpace,&idm,1,&space); CHKERRQ_MOAB(rval);
+//   Range nodes;
+//   switch (space) {
+//     case L2:
+//       rval = moab.add_entities(idm,edges); CHKERRQ_MOAB(rval);
+//       if(verb>1) {
+//         std::ostringstream ss;
+//         ss << "add entities to field " << getBitFieldIdName(id);
+//         ss << " nb. add edges " << edges.size();
+//         ss << std::endl;
+//         PetscPrintf(cOmm,ss.str().c_str());
+//       }
+//       break;
+//     case H1:
+//       rval = moab.add_entities(idm,edges); CHKERRQ_MOAB(rval);
+//       //rval = moab.get_connectivity(edges,nodes,true); CHKERRQ_MOAB(rval);
+//       //use get adjacencies, this will allow take in account adjacencies set user
+//       rval = moab.get_adjacencies(edges,0,false,nodes,moab::Interface::UNION); CHKERRQ_MOAB(rval);
+//       {
+//         Range topo_nodes;
+//         rval = moab.get_connectivity(edges,topo_nodes,true); CHKERRQ_MOAB(rval);
+//         Range mid_nodes;
+//         rval = moab.get_connectivity(edges,mid_nodes,false); CHKERRQ_MOAB(rval);
+//         mid_nodes = subtract(mid_nodes,topo_nodes);
+//         nodes = subtract(nodes,mid_nodes);
+//       }
+//       rval = moab.add_entities(idm,nodes); CHKERRQ_MOAB(rval);
+//       if(verb>1) {
+//         std::ostringstream ss;
+//         ss << "add entities to field " << getBitFieldIdName(id);
+//         ss << " nb. add edges " << edges.size();
+//         ss << " nb. add nodes " << nodes.size();
+//         ss << std::endl;
+//         PetscPrintf(cOmm,ss.str().c_str());
+//       }
+//       break;
+//     case HCURL:
+//
+//       // You would add hcurl space on edge here if you would have 1d h-curl space.
+//       // Ass far I know that really makes no sense. H-curl space is spanning on
+//       // edges, but you would add it by adding space through entities of higher
+//       // dimension.
+//
+//       SETERRQ(
+//         cOmm,MOFEM_NOT_IMPLEMENTED,
+//         "sorry, not implemented, HCURL not implemented for edge"
+//       );
+//
+//       break;
+//     case HDIV:
+//
+//       // Look to comments above about h-curl spce. That apply as well to h-div space.
+//
+//       SETERRQ(
+//         cOmm,MOFEM_NOT_IMPLEMENTED,
+//         "sorry, not implemented, HDIV not implemented for edge"
+//       );
+//       break;
+//     default:
+//       SETERRQ(cOmm,MOFEM_DATA_INCONSISTENCY,"sorry, adds unknown field to edge");
+//   }
+//   PetscFunctionReturn(0);
+// }
+PetscErrorCode Core::add_ents_to_field_by_EDGEs(const Range &edges,const std::string& name,int verb) {
+  return add_ents_to_field_by_type(edges,MBEDGE,name,verb);
+  // PetscFunctionBegin;
+  // if(verb==-1) verb = verbose;
+  // *buildMoFEM = 0;
+  // try {
+  //   ierr = add_ents_to_field_by_EDGEs(edges,getBitFieldId(name),verb);  CHKERRQ(ierr);
+  // } catch (MoFEMException const &e) {
+  //   SETERRQ(cOmm,e.errorCode,e.errorMessage);
+  // }
+  // PetscFunctionReturn(0);
+}
+// PetscErrorCode Core::add_ents_to_field_by_EDGEs(const EntityHandle meshset,const BitFieldId id,int verb) {
+//   PetscFunctionBegin;
+//   if(verb==-1) verb = verbose;
+//   *buildMoFEM = 0;
+//   Range edges;
+//   rval = moab.get_entities_by_type(meshset,MBEDGE,edges,true); CHKERRQ_MOAB(rval);
+//   try {
+//     ierr = add_ents_to_field_by_EDGEs(edges,id,verb); CHKERRQ(ierr);
+//   } catch (MoFEMException const &e) {
+//     SETERRQ(cOmm,e.errorCode,e.errorMessage);
+//   }
+//   PetscFunctionReturn(0);
+// }
+PetscErrorCode Core::add_ents_to_field_by_EDGEs(const EntityHandle meshset,const std::string& name,int verb) {
+  return add_ents_to_field_by_type(meshset,MBEDGE,name,true,verb);
+  // PetscFunctionBegin;
+  // if(verb==-1) verb = verbose;
+  // *buildMoFEM = 0;
+  // try {
+  //   ierr = add_ents_to_field_by_EDGEs(meshset,getBitFieldId(name),verb);  CHKERRQ(ierr);
+  // } catch (MoFEMException const &e) {
+  //   SETERRQ(cOmm,e.errorCode,e.errorMessage);
+  // }
+  // PetscFunctionReturn(0);
+}
+// PetscErrorCode Core::add_ents_to_field_by_TRIs(const EntityHandle meshset,const BitFieldId id,int verb) {
+//   PetscFunctionBegin;
+//   Range tris;
+//   rval = moab.get_entities_by_type(meshset,MBTRI,tris,true); CHKERRQ_MOAB(rval);
+//   ierr = add_ents_to_field_by_TRIs(tris,id,verb); CHKERRQ(ierr);
+//   PetscFunctionReturn(0);
+// }
+// PetscErrorCode Core::add_ents_to_field_by_TRIs(const Range &tris,const BitFieldId id,int verb) {
+//   PetscFunctionBegin;
+//   if(verb==-1) verb = verbose;
+//   *buildMoFEM = 0;
+//   EntityHandle idm = no_handle;
+//   try {
+//     idm = get_field_meshset(id);
+//   } catch (MoFEMException const &e) {
+//     SETERRQ(cOmm,e.errorCode,e.errorMessage);
+//   }
+//   FieldSpace space;
+//   rval = moab.tag_get_data(th_FieldSpace,&idm,1,&space); CHKERRQ_MOAB(rval);
+//   Range nodes,edges;
+//   switch(space) {
+//     case L2:
+//     rval = moab.add_entities(idm,tris); CHKERRQ_MOAB(rval);
+//     if(verb>1) {
+//       std::ostringstream ss;
+//       ss << "add entities to field " << getBitFieldIdName(id);
+//       ss << " nb. add tris " << tris.size();
+//       ss << std::endl;
+//       PetscPrintf(cOmm,ss.str().c_str());
+//     }
+//     break;
+//     case H1:
+//     rval = moab.add_entities(idm,tris); CHKERRQ_MOAB(rval);
+//     //rval = moab.get_connectivity(tris,nodes,true); CHKERRQ_MOAB(rval);
+//     //use get adjacencies, this will allow take in account adjacencies set user
+//     rval = moab.get_adjacencies(tris,0,false,nodes,moab::Interface::UNION); CHKERRQ_MOAB(rval);
+//     {
+//       Range topo_nodes;
+//       rval = moab.get_connectivity(tris,topo_nodes,true); CHKERRQ_MOAB(rval);
+//       Range mid_nodes;
+//       rval = moab.get_connectivity(tris,mid_nodes,false); CHKERRQ_MOAB(rval);
+//       mid_nodes = subtract(mid_nodes,topo_nodes);
+//       nodes = subtract(nodes,mid_nodes);
+//     }
+//     rval = moab.add_entities(idm,nodes); CHKERRQ_MOAB(rval);
+//     rval = moab.get_adjacencies(tris,1,false,edges,moab::Interface::UNION); CHKERRQ_MOAB(rval);
+//     rval = moab.add_entities(idm,edges); CHKERRQ_MOAB(rval);
+//     if(verb>1) {
+//       std::ostringstream ss;
+//       ss << "add entities to field " << getBitFieldIdName(id);
+//       ss << " nb. add tris " << tris.size();
+//       ss << " nb. add edges " << edges.size();
+//       ss << " nb. add nodes " << nodes.size();
+//       ss << std::endl;
+//       PetscPrintf(cOmm,ss.str().c_str());
+//     }
+//     break;
+//     case HCURL:
+//     rval = moab.add_entities(idm,tris); CHKERRQ_MOAB(rval);
+//     rval = moab.get_adjacencies(tris,1,false,edges,moab::Interface::UNION); CHKERRQ_MOAB(rval);
+//     rval = moab.add_entities(idm,edges); CHKERRQ_MOAB(rval);
+//     if(verb>1) {
+//       std::ostringstream ss;
+//       ss << "add entities to field " << getBitFieldIdName(id);
+//       ss << " nb. add tris " << tris.size();
+//       ss << " nb. add edges " << edges.size();
+//       ss << std::endl;
+//       PetscPrintf(cOmm,ss.str().c_str());
+//     }
+//     break;
+//     case HDIV:
+//     rval = moab.add_entities(idm,tris); CHKERRQ_MOAB(rval);
+//     if(verb>1) {
+//       std::ostringstream ss;
+//       ss << "add entities to field " << getBitFieldIdName(id);
+//       ss << " nb. add tris " << tris.size();
+//       ss << std::endl;
+//       PetscPrintf(cOmm,ss.str().c_str());
+//     }
+//     break;
+//     default:
+//     SETERRQ(cOmm,MOFEM_DATA_INCONSISTENCY,"sorry, unknown field is applied to triangle entity");
+//   }
+//   PetscFunctionReturn(0);
+// }
+PetscErrorCode Core::add_ents_to_field_by_TRIs(const EntityHandle meshset,const std::string& name,int verb) {
+  return add_ents_to_field_by_type(meshset,MBTRI,name,true,verb);
+  // PetscFunctionBegin;
+  // if(verb==-1) verb = verbose;
+  // *buildMoFEM = 0;
+  // try {
+  //   ierr = add_ents_to_field_by_TRIs(meshset,getBitFieldId(name),verb);  CHKERRQ(ierr);
+  // } catch (MoFEMException const &e) {
+  //   SETERRQ(cOmm,e.errorCode,e.errorMessage);
+  // }
+  // PetscFunctionReturn(0);
+}
+PetscErrorCode Core::add_ents_to_field_by_TRIs(const Range &tris,const std::string& name,int verb) {
+  return add_ents_to_field_by_type(tris,MBTRI,name,verb);
+  // PetscFunctionBegin;
+  // if(verb==-1) verb = verbose;
+  // *buildMoFEM = 0;
+  // try {
+  //   ierr = add_ents_to_field_by_TRIs(tris,getBitFieldId(name),verb);  CHKERRQ(ierr);
+  // } catch (MoFEMException const &e) {
+  //   SETERRQ(cOmm,e.errorCode,e.errorMessage);
+  // }
+  // PetscFunctionReturn(0);
+}
+// PetscErrorCode Core::add_ents_to_field_by_VERTICEs(const Range &nodes,const BitFieldId id,int verb) {
+//   PetscFunctionBegin;
+//   if(verb==-1) verb = verbose;
+//   *buildMoFEM = 0;
+//   EntityHandle idm = no_handle;
+//   try {
+//     idm = get_field_meshset(id);
+//   } catch (MoFEMException const &e) {
+//     SETERRQ(cOmm,e.errorCode,e.errorMessage);
+//   }
+//   FieldSpace space;
+//   rval = moab.tag_get_data(th_FieldSpace,&idm,1,&space); CHKERRQ_MOAB(rval);
+//   switch (space) {
+//     case L2:
+//     case H1:
+//     rval = moab.add_entities(idm,nodes); CHKERRQ_MOAB(rval);
+//     if(verb>1) {
+//       std::ostringstream ss;
+//       ss << "add entities to field " << getBitFieldIdName(id);
+//       ss << " nb. add nodes " << nodes.size();
+//       ss << std::endl;
+//       PetscPrintf(cOmm,ss.str().c_str());
+//     }
+//     break;
+//     default:
+//     SETERRQ(
+//       cOmm,MOFEM_DATA_INCONSISTENCY,
+//       "sorry, if it try to span space on vertex entity which makes no sense");
+//   }
+//   PetscFunctionReturn(0);
+// }
+// PetscErrorCode Core::add_ents_to_field_by_VERTICEs(const EntityHandle meshset,const BitFieldId id,int verb) {
+//   PetscFunctionBegin;
+//   Range nodes;
+//   rval = moab.get_entities_by_type(meshset,MBVERTEX,nodes,true); CHKERRQ_MOAB(rval);
+//   ierr = add_ents_to_field_by_VERTICEs(nodes,id,verb); CHKERRQ(ierr);
+//   PetscFunctionReturn(0);
+// }
+PetscErrorCode Core::add_ents_to_field_by_VERTICEs(const Range &nodes,const std::string& name,int verb) {
+  return add_ents_to_field_by_type(nodes,MBVERTEX,name,verb);
+  // PetscFunctionBegin;
+  // if(verb==-1) verb = verbose;
+  // *buildMoFEM = 0;
+  // try {
+  //   ierr = add_ents_to_field_by_VERTICEs(nodes,getBitFieldId(name),verb);  CHKERRQ(ierr);
+  // } catch (MoFEMException const &e) {
+  //   SETERRQ(cOmm,e.errorCode,e.errorMessage);
+  // }
+  // PetscFunctionReturn(0);
+}
+PetscErrorCode Core::add_ents_to_field_by_VERTICEs(const EntityHandle meshset,const std::string& name,int verb) {
+  return add_ents_to_field_by_type(meshset,MBVERTEX,name,true,verb);
+  // PetscFunctionBegin;
+  // if(verb==-1) verb = verbose;
+  // *buildMoFEM = 0;
+  // try {
+  //   ierr = add_ents_to_field_by_VERTICEs(meshset,getBitFieldId(name),verb);  CHKERRQ(ierr);
+  // } catch (MoFEMException const &e) {
+  //   SETERRQ(cOmm,e.errorCode,e.errorMessage);
+  // }
+  // PetscFunctionReturn(0);
+}
+// PetscErrorCode Core::add_ents_to_field_by_TETs(const Range &tets,const BitFieldId id,int verb) {
+//   PetscFunctionBegin;
+//   if(verb==-1) verb = verbose;
+//   *buildMoFEM = 0;
+//   EntityHandle idm = no_handle;
+//   try {
+//     idm = get_field_meshset(id);
+//   } catch (MoFEMException const &e) {
+//     SETERRQ(cOmm,e.errorCode,e.errorMessage);
+//   }
+//   FieldSpace space;
+//   rval = moab.tag_get_data(th_FieldSpace,&idm,1,&space); CHKERRQ_MOAB(rval);
+//   Range nodes,tris,edges;
+//   switch(space) {
+//     case L2:
+//     rval = moab.add_entities(idm,tets); CHKERRQ_MOAB(rval);
+//     if(verb>1) {
+//       std::ostringstream ss;
+//       ss << "add entities to field " << getBitFieldIdName(id);
+//       ss << " nb. add tets " << tets.size();
+//       ss << std::endl;
+//       PetscSynchronizedPrintf(cOmm,ss.str().c_str());
+//     }
+//     break;
+//     case H1:
+//     rval = moab.add_entities(idm,tets); CHKERRQ_MOAB(rval);
+//     //rval = moab.get_connectivity(tets,nodes,true); CHKERRQ_MOAB(rval);
+//     //use get adjacencies, this will allow take in account adjacencies set user
+//     rval = moab.get_adjacencies(tets,0,false,nodes,moab::Interface::UNION); CHKERRQ_MOAB(rval);
+//     {
+//       Range topo_nodes;
+//       rval = moab.get_connectivity(tets,topo_nodes,true); CHKERRQ_MOAB(rval);
+//       Range mid_nodes;
+//       rval = moab.get_connectivity(tets,mid_nodes,false); CHKERRQ_MOAB(rval);
+//       mid_nodes = subtract(mid_nodes,topo_nodes);
+//       nodes = subtract(nodes,mid_nodes);
+//     }
+//     rval = moab.add_entities(idm,nodes); CHKERRQ_MOAB(rval);
+//     rval = moab.get_adjacencies(tets,2,false,tris,moab::Interface::UNION); CHKERRQ_MOAB(rval);
+//     rval = moab.add_entities(idm,tris); CHKERRQ_MOAB(rval);
+//     rval = moab.get_adjacencies(tets,1,false,edges,moab::Interface::UNION); CHKERRQ_MOAB(rval);
+//     rval = moab.add_entities(idm,edges); CHKERRQ_MOAB(rval);
+//     if(verb>1) {
+//       std::ostringstream ss;
+//       ss << "add entities to field " << getBitFieldIdName(id);
+//       ss << " nb. add tets " << tets.size();
+//       ss << " nb. add tris " << tris.size();
+//       ss << " nb. add edges " << edges.size();
+//       ss << " nb. add nodes " << nodes.size();
+//       ss << std::endl;
+//       PetscSynchronizedPrintf(cOmm,ss.str().c_str());
+//     }
+//     break;
+//     case HCURL:
+//     rval = moab.add_entities(idm,tets); CHKERRQ_MOAB(rval);
+//     rval = moab.get_adjacencies(tets,2,false,tris,moab::Interface::UNION); CHKERRQ_MOAB(rval);
+//     rval = moab.add_entities(idm,tris); CHKERRQ_MOAB(rval);
+//     rval = moab.get_adjacencies(tets,1,false,edges,moab::Interface::UNION); CHKERRQ_MOAB(rval);
+//     rval = moab.add_entities(idm,edges); CHKERRQ_MOAB(rval);
+//     if(verb>1) {
+//       std::ostringstream ss;
+//       ss << "add entities to field " << getBitFieldIdName(id);
+//       ss << " nb. add tets " << tets.size();
+//       ss << " nb. add tris " << tris.size();
+//       ss << " nb. add edges " << edges.size();
+//       ss << std::endl;
+//       PetscSynchronizedPrintf(cOmm,ss.str().c_str());
+//     }
+//     break;
+//     case HDIV:
+//     rval = moab.add_entities(idm,tets); CHKERRQ_MOAB(rval);
+//     rval = moab.get_adjacencies(tets,2,false,tris,moab::Interface::UNION); CHKERRQ_MOAB(rval);
+//     rval = moab.add_entities(idm,tris); CHKERRQ_MOAB(rval);
+//     if(verb>1) {
+//       std::ostringstream ss;
+//       ss << "add entities to field " << getBitFieldIdName(id);
+//       ss << " nb. add tets " << tets.size();
+//       ss << " nb. add tris " << tris.size();
+//       ss << std::endl;
+//       PetscSynchronizedPrintf(cOmm,ss.str().c_str());
+//     }
+//     break;
+//     default:
+//     SETERRQ(cOmm,MOFEM_DATA_INCONSISTENCY,"sorry, unknown space added to entity");
+//   }
+//   if(verb>1) {
+//     PetscSynchronizedFlush(cOmm,PETSC_STDOUT);
+//   }
+//   PetscFunctionReturn(0);
+// }
+// PetscErrorCode Core::add_ents_to_field_by_TETs(const EntityHandle meshset,const BitFieldId id,int verb) {
+//   PetscFunctionBegin;
+//   if(verb==-1) verb = verbose;
+//   Range tets;
+//   rval = moab.get_entities_by_type(meshset,MBTET,tets,true); CHKERRQ_MOAB(rval);
+//   if(verb>3) {
+//     PetscSynchronizedPrintf(cOmm,"nb. of tets %d\n",tets.size());
+//   }
+//   ierr = add_ents_to_field_by_TETs(tets,id,verb); CHKERRQ(ierr);
+//   if(verb>3) {
+//     PetscSynchronizedFlush(cOmm,PETSC_STDOUT);
+//   }
+//   PetscFunctionReturn(0);
+// }
+PetscErrorCode Core::add_ents_to_field_by_TETs(const Range &tets,const std::string& name,int verb) {
+  return add_ents_to_field_by_type(tets,MBTET,name,verb);
+  // PetscFunctionBegin;
+  // if(verb==-1) verb = verbose;
+  // *buildMoFEM = 0;
+  // try {
+  //   ierr = add_ents_to_field_by_TETs(tets,getBitFieldId(name),verb);  CHKERRQ(ierr);
+  // } catch (MoFEMException const &e) {
+  //   SETERRQ(cOmm,e.errorCode,e.errorMessage);
+  // }
+  // PetscFunctionReturn(0);
 }
 PetscErrorCode Core::add_ents_to_field_by_TETs(const EntityHandle meshset,const std::string& name,int verb) {
-  PetscFunctionBegin;
-  if(verb==-1) verb = verbose;
-  *buildMoFEM = 0;
-  try {
-    ierr = add_ents_to_field_by_TETs(meshset,getBitFieldId(name),verb);  CHKERRQ(ierr);
-  } catch (MoFEMException const &e) {
-    SETERRQ(cOmm,e.errorCode,e.errorMessage);
-  }
-  PetscFunctionReturn(0);
+  return add_ents_to_field_by_type(meshset,MBTET,name,true,verb);
+  // PetscFunctionBegin;
+  // if(verb==-1) verb = verbose;
+  // *buildMoFEM = 0;
+  // try {
+  //   ierr = add_ents_to_field_by_TETs(meshset,getBitFieldId(name),verb);  CHKERRQ(ierr);
+  // } catch (MoFEMException const &e) {
+  //   SETERRQ(cOmm,e.errorCode,e.errorMessage);
+  // }
+  // PetscFunctionReturn(0);
 }
-PetscErrorCode Core::add_ents_to_field_by_QUADs(const Range &quads,const BitFieldId id,int verb) {
-  PetscFunctionBegin;
-  if(verb==-1) verb = verbose;
-  *buildMoFEM = 0;
-  EntityHandle idm = no_handle;
-  try {
-    idm = get_field_meshset(id);
-  } catch (MoFEMException const &e) {
-    SETERRQ(cOmm,e.errorCode,e.errorMessage);
-  }
-  FieldSpace space;
-  rval = moab.tag_get_data(th_FieldSpace,&idm,1,&space); CHKERRQ_MOAB(rval);
-  Range nodes,faces,edges;
-  switch(space) {
-    case L2:
-    rval = moab.add_entities(idm,quads); CHKERRQ_MOAB(rval);
-    if(verb>1) {
-      std::ostringstream ss;
-      ss << "add entities to field " << getBitFieldIdName(id);
-      ss << " nb. add quads " << quads.size();
-      ss << std::endl;
-      PetscSynchronizedPrintf(cOmm,ss.str().c_str());
-    }
-    break;
-    case H1:
-    rval = moab.add_entities(idm,quads); CHKERRQ_MOAB(rval);
-    //rval = moab.get_connectivity(quads,nodes,true); CHKERRQ_MOAB(rval);
-    //use get adjacencies, this will allow take in account adjacencies set user
-    rval = moab.get_adjacencies(quads,0,false,nodes,moab::Interface::UNION); CHKERRQ_MOAB(rval);
-    {
-      Range topo_nodes;
-      rval = moab.get_connectivity(quads,topo_nodes,true); CHKERRQ_MOAB(rval);
-      Range mid_nodes;
-      rval = moab.get_connectivity(quads,mid_nodes,false); CHKERRQ_MOAB(rval);
-      mid_nodes = subtract(mid_nodes,topo_nodes);
-      nodes = subtract(nodes,mid_nodes);
-    }
-    rval = moab.add_entities(idm,nodes); CHKERRQ_MOAB(rval);
-    rval = moab.get_adjacencies(quads,1,true,edges,moab::Interface::UNION); CHKERRQ_MOAB(rval);
-    rval = moab.add_entities(idm,edges); CHKERRQ_MOAB(rval);
-    if(verb>1) {
-      std::ostringstream ss;
-      ss << "add entities to field " << getBitFieldIdName(id);
-      ss << " nb. add quads " << quads.size();
-      ss << " nb. add edges " << edges.size();
-      ss << " nb. add nodes " << nodes.size();
-      ss << std::endl;
-      PetscSynchronizedPrintf(cOmm,ss.str().c_str());
-    }
-    break;
-    case HCURL:
-    SETERRQ(cOmm,MOFEM_NOT_IMPLEMENTED,"not implemented");
-    break;
-    case HDIV:
-    SETERRQ(cOmm,MOFEM_NOT_IMPLEMENTED,"not implemented");
-    break;
-    default:
-    SETERRQ(cOmm,MOFEM_DATA_INCONSISTENCY,"add_ents_to_field_by_TETs this field not work for TETs");
-  }
-  if(verb>1) {
-    PetscSynchronizedFlush(cOmm,PETSC_STDOUT);
-  }
-  PetscFunctionReturn(0);
-}
+// PetscErrorCode Core::add_ents_to_field_by_QUADs(const Range &quads,const BitFieldId id,int verb) {
+//   PetscFunctionBegin;
+//   if(verb==-1) verb = verbose;
+//   *buildMoFEM = 0;
+//   EntityHandle idm = no_handle;
+//   try {
+//     idm = get_field_meshset(id);
+//   } catch (MoFEMException const &e) {
+//     SETERRQ(cOmm,e.errorCode,e.errorMessage);
+//   }
+//   FieldSpace space;
+//   rval = moab.tag_get_data(th_FieldSpace,&idm,1,&space); CHKERRQ_MOAB(rval);
+//   Range nodes,faces,edges;
+//   switch(space) {
+//     case L2:
+//     rval = moab.add_entities(idm,quads); CHKERRQ_MOAB(rval);
+//     if(verb>1) {
+//       std::ostringstream ss;
+//       ss << "add entities to field " << getBitFieldIdName(id);
+//       ss << " nb. add quads " << quads.size();
+//       ss << std::endl;
+//       PetscSynchronizedPrintf(cOmm,ss.str().c_str());
+//     }
+//     break;
+//     case H1:
+//     rval = moab.add_entities(idm,quads); CHKERRQ_MOAB(rval);
+//     //rval = moab.get_connectivity(quads,nodes,true); CHKERRQ_MOAB(rval);
+//     //use get adjacencies, this will allow take in account adjacencies set user
+//     rval = moab.get_adjacencies(quads,0,false,nodes,moab::Interface::UNION); CHKERRQ_MOAB(rval);
+//     {
+//       Range topo_nodes;
+//       rval = moab.get_connectivity(quads,topo_nodes,true); CHKERRQ_MOAB(rval);
+//       Range mid_nodes;
+//       rval = moab.get_connectivity(quads,mid_nodes,false); CHKERRQ_MOAB(rval);
+//       mid_nodes = subtract(mid_nodes,topo_nodes);
+//       nodes = subtract(nodes,mid_nodes);
+//     }
+//     rval = moab.add_entities(idm,nodes); CHKERRQ_MOAB(rval);
+//     rval = moab.get_adjacencies(quads,1,true,edges,moab::Interface::UNION); CHKERRQ_MOAB(rval);
+//     rval = moab.add_entities(idm,edges); CHKERRQ_MOAB(rval);
+//     if(verb>1) {
+//       std::ostringstream ss;
+//       ss << "add entities to field " << getBitFieldIdName(id);
+//       ss << " nb. add quads " << quads.size();
+//       ss << " nb. add edges " << edges.size();
+//       ss << " nb. add nodes " << nodes.size();
+//       ss << std::endl;
+//       PetscSynchronizedPrintf(cOmm,ss.str().c_str());
+//     }
+//     break;
+//     case HCURL:
+//     SETERRQ(cOmm,MOFEM_NOT_IMPLEMENTED,"not implemented");
+//     break;
+//     case HDIV:
+//     SETERRQ(cOmm,MOFEM_NOT_IMPLEMENTED,"not implemented");
+//     break;
+//     default:
+//     SETERRQ(cOmm,MOFEM_DATA_INCONSISTENCY,"add_ents_to_field_by_TETs this field not work for TETs");
+//   }
+//   if(verb>1) {
+//     PetscSynchronizedFlush(cOmm,PETSC_STDOUT);
+//   }
+//   PetscFunctionReturn(0);
+// }
 PetscErrorCode Core::add_ents_to_field_by_QUADs(const Range &quads,const std::string& name,int verb) {
-  PetscFunctionBegin;
-  if(verb==-1) verb = verbose;
-  *buildMoFEM = 0;
-  try {
-    ierr = add_ents_to_field_by_QUADs(quads,getBitFieldId(name),verb);  CHKERRQ(ierr);
-  } catch (MoFEMException const &e) {
-    SETERRQ(cOmm,e.errorCode,e.errorMessage);
-  }
-  PetscFunctionReturn(0);
+  return add_ents_to_field_by_type(quads,MBQUAD,name,verb);
+  // PetscFunctionBegin;
+  // if(verb==-1) verb = verbose;
+  // *buildMoFEM = 0;
+  // try {
+  //   ierr = add_ents_to_field_by_QUADs(quads,getBitFieldId(name),verb);  CHKERRQ(ierr);
+  // } catch (MoFEMException const &e) {
+  //   SETERRQ(cOmm,e.errorCode,e.errorMessage);
+  // }
+  // PetscFunctionReturn(0);
 }
 PetscErrorCode Core::add_ents_to_field_by_QUADs(EntityHandle meshset,const std::string& name,int verb) {
-  PetscFunctionBegin;
-  if(verb==-1) verb = verbose;
-  *buildMoFEM = 0;
-  try {
-    Range quads;
-    rval = moab.get_entities_by_type(meshset,MBQUAD,quads,true); CHKERRQ_MOAB(rval);
-    if(verb>3) {
-      PetscSynchronizedPrintf(cOmm,"nb. of quads %d\n",quads.size());
-    }
-    ierr = add_ents_to_field_by_QUADs(quads,name,verb);  CHKERRQ(ierr);
-    if(verb>3) {
-      PetscSynchronizedFlush(cOmm,PETSC_STDOUT);
-    }
-  } catch (MoFEMException const &e) {
-    SETERRQ(cOmm,e.errorCode,e.errorMessage);
-  }
-  PetscFunctionReturn(0);
+  return add_ents_to_field_by_type(meshset,MBQUAD,name,true,verb);
+  // PetscFunctionBegin;
+  // if(verb==-1) verb = verbose;
+  // *buildMoFEM = 0;
+  // try {
+  //   Range quads;
+  //   rval = moab.get_entities_by_type(meshset,MBQUAD,quads,true); CHKERRQ_MOAB(rval);
+  //   if(verb>3) {
+  //     PetscSynchronizedPrintf(cOmm,"nb. of quads %d\n",quads.size());
+  //   }
+  //   ierr = add_ents_to_field_by_QUADs(quads,name,verb);  CHKERRQ(ierr);
+  //   if(verb>3) {
+  //     PetscSynchronizedFlush(cOmm,PETSC_STDOUT);
+  //   }
+  // } catch (MoFEMException const &e) {
+  //   SETERRQ(cOmm,e.errorCode,e.errorMessage);
+  // }
+  // PetscFunctionReturn(0);
 }
-PetscErrorCode Core::add_ents_to_field_by_PRISMs(const Range &prisms,const BitFieldId id,int verb) {
-  PetscFunctionBegin;
-  if(verb==-1) verb = verbose;
-  *buildMoFEM = 0;
-  EntityHandle idm = no_handle;
-  try {
-    idm = get_field_meshset(id);
-  } catch (MoFEMException const &e) {
-    SETERRQ(cOmm,e.errorCode,e.errorMessage);
-  }
-  FieldSpace space;
-  rval = moab.tag_get_data(th_FieldSpace,&idm,1,&space); CHKERRQ_MOAB(rval);
-  Range nodes,faces,edges;
-  switch(space) {
-    case L2:
-    rval = moab.add_entities(idm,prisms); CHKERRQ_MOAB(rval);
-    if(verb>1) {
-      std::ostringstream ss;
-      ss << "add entities to field " << getBitFieldIdName(id);
-      ss << " nb. add prisms " << prisms.size();
-      ss << std::endl;
-      PetscSynchronizedPrintf(cOmm,ss.str().c_str());
-    }
-    break;
-    case H1:
-    rval = moab.add_entities(idm,prisms); CHKERRQ_MOAB(rval);
-    //rval = moab.get_connectivity(prisms,nodes,true); CHKERRQ_MOAB(rval);
-    //use get adjacencies, this will allow take in account adjacencies set user
-    rval = moab.get_adjacencies(prisms,0,false,nodes,moab::Interface::UNION); CHKERRQ_MOAB(rval);
-    {
-      Range topo_nodes;
-      rval = moab.get_connectivity(prisms,topo_nodes,true); CHKERRQ_MOAB(rval);
-      Range mid_nodes;
-      rval = moab.get_connectivity(prisms,mid_nodes,false); CHKERRQ_MOAB(rval);
-      mid_nodes = subtract(mid_nodes,topo_nodes);
-      nodes = subtract(nodes,mid_nodes);
-    }
-    rval = moab.add_entities(idm,nodes); CHKERRQ_MOAB(rval);
-    rval = moab.get_adjacencies(prisms,2,true,faces,moab::Interface::UNION); CHKERRQ_MOAB(rval);
-    rval = moab.add_entities(idm,faces); CHKERRQ_MOAB(rval);
-    rval = moab.get_adjacencies(prisms,1,true,edges,moab::Interface::UNION); CHKERRQ_MOAB(rval);
-    rval = moab.add_entities(idm,edges); CHKERRQ_MOAB(rval);
-    if(verb>1) {
-      std::ostringstream ss;
-      ss << "add entities to field " << getBitFieldIdName(id);
-      ss << " nb. add prisms " << prisms.size();
-      ss << " nb. add faces " << faces.size();
-      ss << " nb. add edges " << edges.size();
-      ss << " nb. add nodes " << nodes.size();
-      ss << std::endl;
-      PetscSynchronizedPrintf(cOmm,ss.str().c_str());
-    }
-    break;
-    case HCURL:
-    SETERRQ(cOmm,MOFEM_NOT_IMPLEMENTED,"not implemented");
-    break;
-    case HDIV:
-    SETERRQ(cOmm,MOFEM_NOT_IMPLEMENTED,"not implemented");
-    break;
-    default:
-    SETERRQ(cOmm,MOFEM_DATA_INCONSISTENCY,"add_ents_to_field_by_TETs this field not work for TETs");
-  }
-  if(verb>1) {
-    PetscSynchronizedFlush(cOmm,PETSC_STDOUT);
-  }
-  PetscFunctionReturn(0);
-}
+// PetscErrorCode Core::add_ents_to_field_by_PRISMs(const Range &prisms,const BitFieldId id,int verb) {
+//   PetscFunctionBegin;
+//   if(verb==-1) verb = verbose;
+//   *buildMoFEM = 0;
+//   EntityHandle idm = no_handle;
+//   try {
+//     idm = get_field_meshset(id);
+//   } catch (MoFEMException const &e) {
+//     SETERRQ(cOmm,e.errorCode,e.errorMessage);
+//   }
+//   FieldSpace space;
+//   rval = moab.tag_get_data(th_FieldSpace,&idm,1,&space); CHKERRQ_MOAB(rval);
+//   Range nodes,faces,edges;
+//   switch(space) {
+//     case L2:
+//     rval = moab.add_entities(idm,prisms); CHKERRQ_MOAB(rval);
+//     if(verb>1) {
+//       std::ostringstream ss;
+//       ss << "add entities to field " << getBitFieldIdName(id);
+//       ss << " nb. add prisms " << prisms.size();
+//       ss << std::endl;
+//       PetscSynchronizedPrintf(cOmm,ss.str().c_str());
+//     }
+//     break;
+//     case H1:
+//     rval = moab.add_entities(idm,prisms); CHKERRQ_MOAB(rval);
+//     //rval = moab.get_connectivity(prisms,nodes,true); CHKERRQ_MOAB(rval);
+//     //use get adjacencies, this will allow take in account adjacencies set user
+//     rval = moab.get_adjacencies(prisms,0,false,nodes,moab::Interface::UNION); CHKERRQ_MOAB(rval);
+//     {
+//       Range topo_nodes;
+//       rval = moab.get_connectivity(prisms,topo_nodes,true); CHKERRQ_MOAB(rval);
+//       Range mid_nodes;
+//       rval = moab.get_connectivity(prisms,mid_nodes,false); CHKERRQ_MOAB(rval);
+//       mid_nodes = subtract(mid_nodes,topo_nodes);
+//       nodes = subtract(nodes,mid_nodes);
+//     }
+//     rval = moab.add_entities(idm,nodes); CHKERRQ_MOAB(rval);
+//     rval = moab.get_adjacencies(prisms,2,true,faces,moab::Interface::UNION); CHKERRQ_MOAB(rval);
+//     rval = moab.add_entities(idm,faces); CHKERRQ_MOAB(rval);
+//     rval = moab.get_adjacencies(prisms,1,true,edges,moab::Interface::UNION); CHKERRQ_MOAB(rval);
+//     rval = moab.add_entities(idm,edges); CHKERRQ_MOAB(rval);
+//     if(verb>1) {
+//       std::ostringstream ss;
+//       ss << "add entities to field " << getBitFieldIdName(id);
+//       ss << " nb. add prisms " << prisms.size();
+//       ss << " nb. add faces " << faces.size();
+//       ss << " nb. add edges " << edges.size();
+//       ss << " nb. add nodes " << nodes.size();
+//       ss << std::endl;
+//       PetscSynchronizedPrintf(cOmm,ss.str().c_str());
+//     }
+//     break;
+//     case HCURL:
+//     SETERRQ(cOmm,MOFEM_NOT_IMPLEMENTED,"not implemented");
+//     break;
+//     case HDIV:
+//     SETERRQ(cOmm,MOFEM_NOT_IMPLEMENTED,"not implemented");
+//     break;
+//     default:
+//     SETERRQ(cOmm,MOFEM_DATA_INCONSISTENCY,"add_ents_to_field_by_TETs this field not work for TETs");
+//   }
+//   if(verb>1) {
+//     PetscSynchronizedFlush(cOmm,PETSC_STDOUT);
+//   }
+//   PetscFunctionReturn(0);
+// }
 PetscErrorCode Core::add_ents_to_field_by_PRISMs(const Range &prisms,const std::string& name,int verb) {
-  PetscFunctionBegin;
-  if(verb==-1) verb = verbose;
-  *buildMoFEM = 0;
-  try {
-    ierr = add_ents_to_field_by_PRISMs(prisms,getBitFieldId(name),verb);  CHKERRQ(ierr);
-  } catch (MoFEMException const &e) {
-    SETERRQ(cOmm,e.errorCode,e.errorMessage);
-  }
-  PetscFunctionReturn(0);
+  return add_ents_to_field_by_type(prisms,MBPRISM,name,verb);
+  // PetscFunctionBegin;
+  // if(verb==-1) verb = verbose;
+  // *buildMoFEM = 0;
+  // try {
+  //   ierr = add_ents_to_field_by_PRISMs(prisms,getBitFieldId(name),verb);  CHKERRQ(ierr);
+  // } catch (MoFEMException const &e) {
+  //   SETERRQ(cOmm,e.errorCode,e.errorMessage);
+  // }
+  // PetscFunctionReturn(0);
 }
 PetscErrorCode Core::add_ents_to_field_by_PRISMs(EntityHandle meshset,const std::string& name,int verb) {
-  PetscFunctionBegin;
-  if(verb==-1) verb = verbose;
-  *buildMoFEM = 0;
-  try {
-    Range prisms;
-    rval = moab.get_entities_by_type(meshset,MBPRISM,prisms,true); CHKERRQ_MOAB(rval);
-    if(verb>3) {
-      PetscSynchronizedPrintf(cOmm,"nb. of prisms %d\n",prisms.size());
-    }
-    ierr = add_ents_to_field_by_PRISMs(prisms,name,verb);  CHKERRQ(ierr);
-    if(verb>3) {
-      PetscSynchronizedFlush(cOmm,PETSC_STDOUT);
-    }
-  } catch (MoFEMException const &e) {
-    SETERRQ(cOmm,e.errorCode,e.errorMessage);
-  }
-  PetscFunctionReturn(0);
+  return add_ents_to_field_by_type(meshset,MBPRISM,name,true,verb);
+  // PetscFunctionBegin;
+  // if(verb==-1) verb = verbose;
+  // *buildMoFEM = 0;
+  // try {
+  //   Range prisms;
+  //   rval = moab.get_entities_by_type(meshset,MBPRISM,prisms,true); CHKERRQ_MOAB(rval);
+  //   if(verb>3) {
+  //     PetscSynchronizedPrintf(cOmm,"nb. of prisms %d\n",prisms.size());
+  //   }
+  //   ierr = add_ents_to_field_by_PRISMs(prisms,name,verb);  CHKERRQ(ierr);
+  //   if(verb>3) {
+  //     PetscSynchronizedFlush(cOmm,PETSC_STDOUT);
+  //   }
+  // } catch (MoFEMException const &e) {
+  //   SETERRQ(cOmm,e.errorCode,e.errorMessage);
+  // }
+  // PetscFunctionReturn(0);
 }
 PetscErrorCode Core::set_field_order(
   const Range &ents,const BitFieldId id,const ApproximationOrder order,int verb

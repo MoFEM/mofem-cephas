@@ -721,6 +721,72 @@ struct Interface: public UnknownInterface {
   // }
 
   /**
+   * \brief Add entities to field meshset
+   * \ingroup mofem_field
+   *
+   * The lower dimension entities are added depending on the space type
+   *
+   * @param  ents rnage of entities
+   * @param  dim  dimension of entities
+   * @param  name name of field
+   * @param  verb verbosity level
+   * @return      error code
+   */
+  PetscErrorCode add_ents_to_field_by_dim(
+    const Range &ents,const int dim,const std::string& name,int verb = -1
+  );
+
+  /**
+   * \brief Add entities to field meshset
+   * \ingroup mofem_field
+   *
+   * The lower dimension entities are added depending on the space type
+   *
+   * @param  ents rnage of entities
+   * @param  type  type of entities
+   * @param  name name of field
+   * @param  verb verbosity level
+   * @return      error code
+   */
+  PetscErrorCode add_ents_to_field_by_type(
+    const Range &ents,const EntityType type,const std::string& name,int verb = -1
+  );
+
+  /**
+   * \brief Add entities to field meshset
+   * \ingroup mofem_field
+   *
+   * The lower dimension entities are added depending on the space type
+   *
+   * @param  meshset
+   * @param  dim  diemsipm
+   * @param  name name of field
+   * @param  recursive take entities recursively from embaded entities
+   * @param  verb verbosity level
+   * @return      error code
+   */
+  PetscErrorCode add_ents_to_field_by_dim(
+    const EntityHandle meshset,const int dim,const std::string& name,const bool recursive = true,int verb = -1
+  );
+
+  /**
+   * \brief Add entities to field meshset
+   * \ingroup mofem_field
+   *
+   * The lower dimension entities are added depending on the space type
+   *
+   * @param  meshset
+   * @param  type of entoties
+   * @param  name name of field
+   * @param  recursive take entities recursively from embaded entities
+   * @param  verb verbosity level
+   * @return      error code
+   */
+  PetscErrorCode add_ents_to_field_by_type(
+    const EntityHandle meshset,const EntityType type,const std::string& name,const bool recursive = true,int verb = -1
+  );
+
+  /**
     * \brief set field entities on vertices
     * \ingroup mofem_field
     *
@@ -800,15 +866,15 @@ struct Interface: public UnknownInterface {
     */
   virtual PetscErrorCode add_ents_to_field_by_TETs(const Range &tets,const std::string& name,int verb = -1) = 0;
 
-  /**
-    * \brief set field entities from adjacencies of quads
-    * \ingroup mofem_field
-    *
-    * The lower dimension entities are added depending on the space type
-    * \param quads range of quads
-    * \param id field id
-    */
-  virtual PetscErrorCode add_ents_to_field_by_QUADs(const Range &quads,const BitFieldId id,int verb = -1) = 0;
+  // /**
+  //   * \brief set field entities from adjacencies of quads
+  //   * \ingroup mofem_field
+  //   *
+  //   * The lower dimension entities are added depending on the space type
+  //   * \param quads range of quads
+  //   * \param id field id
+  //   */
+  // virtual PetscErrorCode add_ents_to_field_by_QUADs(const Range &quads,const BitFieldId id,int verb = -1) = 0;
 
   /**
     * \brief set field entities from adjacencies of quads
@@ -830,15 +896,15 @@ struct Interface: public UnknownInterface {
     */
   virtual PetscErrorCode add_ents_to_field_by_QUADs(EntityHandle meshset,const std::string& name,int verb = -1) = 0;
 
-  /**
-    * \brief set field entities from adjacencies of prisms
-    * \ingroup mofem_field
-    *
-    * The lower dimension entities are added depending on the space type
-    * \param prisms range of prisms
-    * \param id field id
-    */
-  virtual PetscErrorCode add_ents_to_field_by_PRISMs(const Range &prisms,const BitFieldId id,int verb = -1) = 0;
+  // /**
+  //   * \brief set field entities from adjacencies of prisms
+  //   * \ingroup mofem_field
+  //   *
+  //   * The lower dimension entities are added depending on the space type
+  //   * \param prisms range of prisms
+  //   * \param id field id
+  //   */
+  // virtual PetscErrorCode add_ents_to_field_by_PRISMs(const Range &prisms,const BitFieldId id,int verb = -1) = 0;
 
   /**
     * \brief set field entities from adjacencies of prisms
