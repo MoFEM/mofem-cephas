@@ -1,5 +1,5 @@
 /** \file Core.hpp
- * \brief Core Interface class for user interface
+ * \brief Core interface class for user interface
  *
  * Low level data structures not used directly by user
  *
@@ -17,8 +17,8 @@
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 */
 
-#ifndef __MOABFIELD_CORE_HPP__
-#define __MOABFIELD_CORE_HPP__
+#ifndef __CORE_HPP__
+#define __CORE_HPP__
 
 namespace MoFEM {
 
@@ -36,7 +36,7 @@ struct MeshsetsManager;
  database with basic functions to access data. Abstraction of this is MoFEM
  Interface structure.
 
- It is deign to hide come complexities for users and allow low development
+ Such deign to hide complexities for users and allow low development
  without interfering with users modules programmer work.
 
  */
@@ -832,4 +832,4 @@ struct Core: public Interface {
 
 }
 
-#endif // __MOABFIELD_CORE_HPP__
+#endif // __CORE_HPP__

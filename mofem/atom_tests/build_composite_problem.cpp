@@ -155,8 +155,8 @@ int main(int argc, char *argv[]) {
     ierr = m_field.add_field("F1",H1,AINSWORTH_LEGENDRE_BASE,1); CHKERRQ(ierr);
     ierr = m_field.add_field("F2",H1,AINSWORTH_LEGENDRE_BASE,1); CHKERRQ(ierr);
     //add entities to field
-    ierr = m_field.add_ents_to_field_by_TETs(part_set,"F1"); CHKERRQ(ierr);
-    ierr = m_field.add_ents_to_field_by_TETs(part_set,"F2"); CHKERRQ(ierr);
+    ierr = m_field.add_ents_to_field_by_type(part_set,MBTET,"F1"); CHKERRQ(ierr);
+    ierr = m_field.add_ents_to_field_by_type(part_set,MBTET,"F2"); CHKERRQ(ierr);
     int order = 4;
     ierr = m_field.set_field_order(part_set,MBTET,"F1",order); CHKERRQ(ierr);
     ierr = m_field.set_field_order(part_set,MBTRI,"F1",order); CHKERRQ(ierr);

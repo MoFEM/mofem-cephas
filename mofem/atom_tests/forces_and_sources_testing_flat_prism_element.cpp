@@ -141,8 +141,8 @@ int main(int argc, char *argv[]) {
   //meshset consisting all entities in mesh
   EntityHandle root_set = moab.get_root_set();
   //add entities to field
-  ierr = m_field.add_ents_to_field_by_TETs(root_set,"FIELD1"); CHKERRQ(ierr);
-  ierr = m_field.add_ents_to_field_by_TETs(root_set,"MESH_NODE_POSITIONS"); CHKERRQ(ierr);
+  ierr = m_field.add_ents_to_field_by_type(root_set,MBTET,"FIELD1"); CHKERRQ(ierr);
+  ierr = m_field.add_ents_to_field_by_type(root_set,MBTET,"MESH_NODE_POSITIONS"); CHKERRQ(ierr);
   //add entities to finite element
   ierr = m_field.add_ents_to_finite_element_by_type(root_set,MBPRISM,"TEST_FE1",10); CHKERRQ(ierr);
   ierr = m_field.add_ents_to_finite_element_by_type(root_set,MBPRISM,"TEST_FE2",10); CHKERRQ(ierr);

@@ -732,9 +732,9 @@ struct Interface: public UnknownInterface {
    * @param  verb verbosity level
    * @return      error code
    */
-  PetscErrorCode add_ents_to_field_by_dim(
+  virtual PetscErrorCode add_ents_to_field_by_dim(
     const Range &ents,const int dim,const std::string& name,int verb = -1
-  );
+  ) = 0;
 
   /**
    * \brief Add entities to field meshset
@@ -748,9 +748,9 @@ struct Interface: public UnknownInterface {
    * @param  verb verbosity level
    * @return      error code
    */
-  PetscErrorCode add_ents_to_field_by_type(
+  virtual PetscErrorCode add_ents_to_field_by_type(
     const Range &ents,const EntityType type,const std::string& name,int verb = -1
-  );
+  ) = 0;
 
   /**
    * \brief Add entities to field meshset
@@ -765,9 +765,9 @@ struct Interface: public UnknownInterface {
    * @param  verb verbosity level
    * @return      error code
    */
-  PetscErrorCode add_ents_to_field_by_dim(
+  virtual PetscErrorCode add_ents_to_field_by_dim(
     const EntityHandle meshset,const int dim,const std::string& name,const bool recursive = true,int verb = -1
-  );
+  ) = 0;
 
   /**
    * \brief Add entities to field meshset
@@ -782,9 +782,9 @@ struct Interface: public UnknownInterface {
    * @param  verb verbosity level
    * @return      error code
    */
-  PetscErrorCode add_ents_to_field_by_type(
+  virtual PetscErrorCode add_ents_to_field_by_type(
     const EntityHandle meshset,const EntityType type,const std::string& name,const bool recursive = true,int verb = -1
-  );
+  ) = 0;
 
   /**
     * \brief set field entities on vertices

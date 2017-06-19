@@ -353,8 +353,8 @@ int main(int argc, char *argv[]) {
       //Declare problem
 
       //add entitities (by tets) to the field
-      ierr = m_field.add_ents_to_field_by_TETs(0,"DISPLACEMENT"); CHKERRQ(ierr);
-      ierr = m_field.add_ents_to_field_by_TETs(0,"MESH_NODE_POSITIONS"); CHKERRQ(ierr);
+      ierr = m_field.add_ents_to_field_by_type(0,MBTET,"DISPLACEMENT"); CHKERRQ(ierr);
+      ierr = m_field.add_ents_to_field_by_type(0,MBTET,"MESH_NODE_POSITIONS"); CHKERRQ(ierr);
 
       //add finite elements entities
       ierr = m_field.add_ents_to_finite_element_by_bit_ref(problem_bit_level,BitRefLevel().set(),"ELASTIC",MBTET); CHKERRQ(ierr);
