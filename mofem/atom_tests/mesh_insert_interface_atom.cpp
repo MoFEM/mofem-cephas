@@ -108,7 +108,7 @@ int main(int argc, char *argv[]) {
   ierr = m_field.modify_finite_element_add_field_data("INTERFACE","H1FIELD_SCALAR"); CHKERRQ(ierr);
 
   //add ents to field and set app. order
-  ierr = m_field.add_ents_to_field_by_TETs(0,"H1FIELD_SCALAR"); CHKERRQ(ierr);
+  ierr = m_field.add_ents_to_field_by_type(0,MBTET,"H1FIELD_SCALAR"); CHKERRQ(ierr);
   ierr = m_field.set_field_order(0,MBVERTEX,"H1FIELD_SCALAR",1); CHKERRQ(ierr);
 
   //add finite elements entities

@@ -270,7 +270,7 @@ int main(int argc, char *argv[]) {
     ierr = m_field.modify_problem_ref_level_add_bit("TEST_PROBLEM",bit_level0); CHKERRQ(ierr);
 
     // Add entities
-    ierr = m_field.add_ents_to_field_by_TRIs(0,"FIELD1"); CHKERRQ(ierr);
+    ierr = m_field.add_ents_to_field_by_type(0,MBTRI,"FIELD1"); CHKERRQ(ierr);
     // Set order
     int order = 6;
     ierr = m_field.set_field_order(0,MBTRI,"FIELD1",order); CHKERRQ(ierr);

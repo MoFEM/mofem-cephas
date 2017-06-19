@@ -72,7 +72,7 @@ int main(int argc, char *argv[]) {
     //entities form several approximation levels at onec. You can as well
     //approximate field only on some mesh subdomain, in that case displacements
     //are approximated on roor moab mesh.
-    ierr = m_field.add_ents_to_field_by_TETs(0,"DISPLACEMENT"); CHKERRQ(ierr);
+    ierr = m_field.add_ents_to_field_by_type(0,MBTET,"DISPLACEMENT"); CHKERRQ(ierr);
 
     //set app. order for displacement fiedl. it is set uniform approximation
     //order. in genreal evry entity can have arbitraty approximation level,

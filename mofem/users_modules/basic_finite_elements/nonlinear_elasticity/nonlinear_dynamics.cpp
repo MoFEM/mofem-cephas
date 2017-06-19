@@ -276,7 +276,7 @@ int main(int argc, char *argv[]) {
 
   //Fields
   ierr = m_field.add_field("MESH_NODE_POSITIONS",H1,AINSWORTH_LEGENDRE_BASE,3,MB_TAG_SPARSE,MF_ZERO); CHKERRQ(ierr);
-  ierr = m_field.add_ents_to_field_by_TETs(0, "MESH_NODE_POSITIONS", 2); CHKERRQ(ierr);
+  ierr = m_field.add_ents_to_field_by_type(0,MBTET,"MESH_NODE_POSITIONS"); CHKERRQ(ierr);
   ierr = m_field.set_field_order(0, MBTET,"MESH_NODE_POSITIONS", 2); CHKERRQ(ierr);
   ierr = m_field.set_field_order(0, MBTRI,"MESH_NODE_POSITIONS", 2); CHKERRQ(ierr);
   ierr = m_field.set_field_order(0, MBEDGE,"MESH_NODE_POSITIONS", 2); CHKERRQ(ierr);
@@ -285,7 +285,7 @@ int main(int argc, char *argv[]) {
   bool check_if_spatial_field_exist = m_field.check_field("SPATIAL_POSITION");
   ierr = m_field.add_field("SPATIAL_POSITION",H1,AINSWORTH_LEGENDRE_BASE,3,MB_TAG_SPARSE,MF_ZERO); CHKERRQ(ierr);
   //add entitities (by tets) to the field
-  ierr = m_field.add_ents_to_field_by_TETs(0, "SPATIAL_POSITION"); CHKERRQ(ierr);
+  ierr = m_field.add_ents_to_field_by_type(0,MBTET, "SPATIAL_POSITION"); CHKERRQ(ierr);
 
   //set app. order
   PetscInt disp_order;
@@ -331,7 +331,7 @@ int main(int argc, char *argv[]) {
 
   // Velocity
   ierr = m_field.add_field("SPATIAL_VELOCITY",H1,AINSWORTH_LEGENDRE_BASE,3,MB_TAG_SPARSE,MF_ZERO); CHKERRQ(ierr);
-  ierr = m_field.add_ents_to_field_by_TETs(0,"SPATIAL_VELOCITY"); CHKERRQ(ierr);
+  ierr = m_field.add_ents_to_field_by_type(0,MBTET,"SPATIAL_VELOCITY"); CHKERRQ(ierr);
 
   ierr = m_field.set_field_order(0,MBTET,"SPATIAL_VELOCITY",vel_order); CHKERRQ(ierr);
   ierr = m_field.set_field_order(0,MBTRI,"SPATIAL_VELOCITY",vel_order); CHKERRQ(ierr);
@@ -339,13 +339,13 @@ int main(int argc, char *argv[]) {
   ierr = m_field.set_field_order(0,MBVERTEX,"SPATIAL_VELOCITY",1); CHKERRQ(ierr);
 
   ierr = m_field.add_field("DOT_SPATIAL_POSITION",H1,AINSWORTH_LEGENDRE_BASE,3,MB_TAG_SPARSE,MF_ZERO); CHKERRQ(ierr);
-  ierr = m_field.add_ents_to_field_by_TETs(0,"DOT_SPATIAL_POSITION"); CHKERRQ(ierr);
+  ierr = m_field.add_ents_to_field_by_type(0,MBTET,"DOT_SPATIAL_POSITION"); CHKERRQ(ierr);
   ierr = m_field.set_field_order(0,MBTET,"DOT_SPATIAL_POSITION",disp_order); CHKERRQ(ierr);
   ierr = m_field.set_field_order(0,MBTRI,"DOT_SPATIAL_POSITION",disp_order); CHKERRQ(ierr);
   ierr = m_field.set_field_order(0,MBEDGE,"DOT_SPATIAL_POSITION",disp_order); CHKERRQ(ierr);
   ierr = m_field.set_field_order(0,MBVERTEX,"DOT_SPATIAL_POSITION",1); CHKERRQ(ierr);
   ierr = m_field.add_field("DOT_SPATIAL_VELOCITY",H1,AINSWORTH_LEGENDRE_BASE,3,MB_TAG_SPARSE,MF_ZERO); CHKERRQ(ierr);
-  ierr = m_field.add_ents_to_field_by_TETs(0,"DOT_SPATIAL_VELOCITY"); CHKERRQ(ierr);
+  ierr = m_field.add_ents_to_field_by_type(0,MBTET,"DOT_SPATIAL_VELOCITY"); CHKERRQ(ierr);
   ierr = m_field.set_field_order(0,MBTET,"DOT_SPATIAL_VELOCITY",vel_order); CHKERRQ(ierr);
   ierr = m_field.set_field_order(0,MBTRI,"DOT_SPATIAL_VELOCITY",vel_order); CHKERRQ(ierr);
   ierr = m_field.set_field_order(0,MBEDGE,"DOT_SPATIAL_VELOCITY",vel_order); CHKERRQ(ierr);

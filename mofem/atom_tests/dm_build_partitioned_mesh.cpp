@@ -81,7 +81,7 @@ int main(int argc, char *argv[]) {
   #endif
   ierr = m_field.add_field("FIELD",H1,AINSWORTH_LEGENDRE_BASE,field_rank); CHKERRQ(ierr);
   //add entities to field
-  ierr = m_field.add_ents_to_field_by_TETs(root_set,"FIELD"); CHKERRQ(ierr);
+  ierr = m_field.add_ents_to_field_by_type(root_set,MBTET,"FIELD"); CHKERRQ(ierr);
   //set app. order
   int order = 4;
   ierr = m_field.set_field_order(root_set,MBTET,"FIELD",order); CHKERRQ(ierr);
