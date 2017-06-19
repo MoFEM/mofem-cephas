@@ -37,7 +37,7 @@ struct FieldEntityEntFiniteElementAdjacencyMap {
   /**
    * \brief get unique iD of finite element entity
    */
-  inline GlobalUId getFeUniqueId() const { return entFePtr->getGlobalUniqueId(); }
+  inline UId getFeUniqueId() const { return entFePtr->getGlobalUniqueId(); }
 
   /**
    * \brief get meshset of finite element
@@ -52,7 +52,7 @@ struct FieldEntityEntFiniteElementAdjacencyMap {
   /**
    * \brief get unique iD of entity on field
    */
-  inline GlobalUId getEntUniqueId() const { return entFieldPtr->getGlobalUniqueId(); }
+  inline UId getEntUniqueId() const { return entFieldPtr->getGlobalUniqueId(); }
 
   /**
    * \brief get entity meshset carrying its field
@@ -74,33 +74,33 @@ struct FieldEntityEntFiniteElementAdjacencyMap {
    */
   BitFEId getBitFEId() const { return entFePtr->getId(); }
 
-  /** \deprecated use getFeUniqueId
-  */
-  DEPRECATED inline GlobalUId get_MoFEMFiniteElement_unique_id() const { return getFeUniqueId(); }
-
-  /** \deprecated use getFeMeshset
-  */
-  DEPRECATED inline EntityHandle get_MoFEMFiniteElement_meshset() const { return getFeMeshset(); }
-
-  /** \deprecated use getFeHandle
-  */
-  DEPRECATED inline EntityHandle get_MoFEMFiniteElement_entity_handle() const { return getFeHandle(); }
-
-  /** \deprecated use getEntUniqueId
-  */
-  DEPRECATED inline GlobalUId get_ent_unique_id() const { return getEntUniqueId(); }
-
-  /** \deprecated use getEntMeshset
-  */
-  DEPRECATED inline EntityHandle get_ent_meshset() const { return getEntMeshset(); }
-
-  /** \deprecated use getEntHandle
-  */
-  DEPRECATED inline EntityHandle get_ent_entity_handle() const { return getEntHandle(); }
-
-  /** \deprecated use getBitFEId
-  */
-  DEPRECATED BitFEId get_BitFEId() const { return getBitFEId(); }
+  // /** \deprecated use getFeUniqueId
+  // */
+  // DEPRECATED inline UId get_MoFEMFiniteElement_unique_id() const { return getFeUniqueId(); }
+  //
+  // /** \deprecated use getFeMeshset
+  // */
+  // DEPRECATED inline EntityHandle get_MoFEMFiniteElement_meshset() const { return getFeMeshset(); }
+  //
+  // /** \deprecated use getFeHandle
+  // */
+  // DEPRECATED inline EntityHandle get_MoFEMFiniteElement_entity_handle() const { return getFeHandle(); }
+  //
+  // /** \deprecated use getEntUniqueId
+  // */
+  // DEPRECATED inline UId get_ent_unique_id() const { return getEntUniqueId(); }
+  //
+  // /** \deprecated use getEntMeshset
+  // */
+  // DEPRECATED inline EntityHandle get_ent_meshset() const { return getEntMeshset(); }
+  //
+  // /** \deprecated use getEntHandle
+  // */
+  // DEPRECATED inline EntityHandle get_ent_entity_handle() const { return getEntHandle(); }
+  //
+  // /** \deprecated use getBitFEId
+  // */
+  // DEPRECATED BitFEId get_BitFEId() const { return getBitFEId(); }
 
   friend std::ostream& operator<<(std::ostream& os,const FieldEntityEntFiniteElementAdjacencyMap &e);
 };
@@ -118,11 +118,11 @@ typedef multi_index_container<
       composite_key<
 	      FieldEntityEntFiniteElementAdjacencyMap,
 	      const_mem_fun<
-          FieldEntityEntFiniteElementAdjacencyMap,GlobalUId,
+          FieldEntityEntFiniteElementAdjacencyMap,UId,
           &FieldEntityEntFiniteElementAdjacencyMap::getEntUniqueId
         >,
 	      const_mem_fun<
-          FieldEntityEntFiniteElementAdjacencyMap,GlobalUId,
+          FieldEntityEntFiniteElementAdjacencyMap,UId,
           &FieldEntityEntFiniteElementAdjacencyMap::getFeUniqueId
         >
       >
@@ -130,7 +130,7 @@ typedef multi_index_container<
     ordered_non_unique<
       tag<Unique_mi_tag>,
       const_mem_fun<
-        FieldEntityEntFiniteElementAdjacencyMap,GlobalUId,
+        FieldEntityEntFiniteElementAdjacencyMap,UId,
         &FieldEntityEntFiniteElementAdjacencyMap::getEntUniqueId
       >
     >,

@@ -118,7 +118,7 @@ int main(int argc, char *argv[]) {
   //meshset consisting all entities in mesh
   EntityHandle root_set = moab.get_root_set();
   //add entities to field
-  ierr = m_field.add_ents_to_field_by_TRIs(root_set,"FIELD"); CHKERRQ(ierr);
+  ierr = m_field.add_ents_to_field_by_type(root_set,MBTRI,"FIELD"); CHKERRQ(ierr);
   //add entities to finite element
   ierr = m_field.add_ents_to_finite_element_by_type(root_set,MBTRI,"TRI_FE"); CHKERRQ(ierr);
 

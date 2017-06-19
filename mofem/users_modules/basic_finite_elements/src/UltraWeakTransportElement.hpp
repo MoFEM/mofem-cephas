@@ -213,8 +213,8 @@ struct UltraWeakTransportElement {
     //meshset consisting all entities in mesh
     EntityHandle root_set = mField.get_moab().get_root_set();
     //add entities to field
-    ierr = mField.add_ents_to_field_by_TETs(root_set,fluxes); CHKERRQ(ierr);
-    ierr = mField.add_ents_to_field_by_TETs(root_set,values); CHKERRQ(ierr);
+    ierr = mField.add_ents_to_field_by_type(root_set,MBTET,fluxes); CHKERRQ(ierr);
+    ierr = mField.add_ents_to_field_by_type(root_set,MBTET,values); CHKERRQ(ierr);
     ierr = mField.set_field_order(root_set,MBTET,fluxes,order+1); CHKERRQ(ierr);
     ierr = mField.set_field_order(root_set,MBTRI,fluxes,order+1); CHKERRQ(ierr);
     ierr = mField.set_field_order(root_set,MBTET,values,order); CHKERRQ(ierr);

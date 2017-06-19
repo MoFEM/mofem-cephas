@@ -894,7 +894,7 @@ row_dof_view(boost::shared_ptr<DofEntity_multiIndex_uid_view>(new DofEntity_mult
 col_dof_view(boost::shared_ptr<DofEntity_multiIndex_uid_view>(new DofEntity_multiIndex_uid_view)),
 data_dofs(boost::shared_ptr<FEDofEntity_multiIndex>(new FEDofEntity_multiIndex)) {
   //get finite element entity
-  global_uid =  getGlobalUniqueIdCalculate();
+  globalUid =  getGlobalUniqueIdCalculate();
   //add ents to meshset
   //EntityHandle meshset = getMeshset();
   //EntityHandle ent = getEnt();
@@ -941,13 +941,13 @@ static PetscErrorCode get_fe_dof_view(
     it = fe_dofs_view.begin();
     it_end = fe_dofs_view.end();
     for(;it!=it_end;it++) {
-      const GlobalUId &global_uid = (*it)->getGlobalUniqueId();
+      const UId &globalUid = (*it)->getGlobalUniqueId();
       if(mofem_it != mofem_it_end) {
-        if((*mofem_it)->getGlobalUniqueId() != global_uid) {
-          mofem_it = mofem_dofs.template get<Unique_mi_tag>().find(global_uid);
+        if((*mofem_it)->getGlobalUniqueId() != globalUid) {
+          mofem_it = mofem_dofs.template get<Unique_mi_tag>().find(globalUid);
         }  // else lucky guess
       } else {
-        mofem_it = mofem_dofs.template get<Unique_mi_tag>().find(global_uid);
+        mofem_it = mofem_dofs.template get<Unique_mi_tag>().find(globalUid);
       }
       if(mofem_it != mofem_it_end) {
         mofem_dofs_view.insert(mofem_dofs_view.end(),*mofem_it);

@@ -1,5 +1,5 @@
 /** \file Core.hpp
- * \brief Core Interface class for user interface
+ * \brief Core interface class for user interface
  *
  * Low level data structures not used directly by user
  *
@@ -17,8 +17,8 @@
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 */
 
-#ifndef __MOABFIELD_CORE_HPP__
-#define __MOABFIELD_CORE_HPP__
+#ifndef __CORE_HPP__
+#define __CORE_HPP__
 
 namespace MoFEM {
 
@@ -36,7 +36,7 @@ struct MeshsetsManager;
  database with basic functions to access data. Abstraction of this is MoFEM
  Interface structure.
 
- It is deign to hide come complexities for users and allow low development
+ Such deign to hide complexities for users and allow low development
  without interfering with users modules programmer work.
 
  */
@@ -48,7 +48,7 @@ struct Core: public Interface {
   PetscErrorCode query_interface_type(const std::type_info& iface_type,void*& ptr) const;
 
   /**
-   * Contruct core database
+   * Construct core database
    */
   Core(
     moab::Interface& moab,              ///< MoAB interface
@@ -121,32 +121,35 @@ struct Core: public Interface {
     return basicEntityDataPtr;
   }
 
-  int *fShift,*feShift,*pShift;
-  int verbose;
+  int *fShift,*feShift,*pShift;   ///< Counting indexes
+  int verbose;                    ///< Verbosity level
 
-  // Managing and storing basic entities
+  /// \name Managing and storing basic entities
+
   RefEntity_multiIndex refinedEntities;		       ///< refined entities
   RefElement_multiIndex refinedFiniteElements;	 ///< refined elements
 
-  // Managing and storung DOFs
+  /// \name  Managing and storung DOFs
+
   Field_multiIndex fIelds;			           ///< field
   FieldEntity_multiIndex entsFields;			 ///< entities on field
   DofEntity_multiIndex dofsField;		       ///< dofs on fiels
 
-  // Managing and storing finite elements
+  /// \name  Managing and storing finite elements
+
   FiniteElement_multiIndex finiteElements;		        ///< finite elements
   EntFiniteElement_multiIndex entsFiniteElements;			///< finite element entities
 
-  // Managing and storing adjacencies
+  /// \name Managing and storing adjacencies
+
   FieldEntityEntFiniteElementAdjacencyMap_multiIndex entFEAdjacencies;	///< adjacencies of elements to dofs
 
-  //pRoblems
-  Problem_multiIndex pRoblems;					 ///< problems
+  /// \name Managing problems
 
-  //safety nets
-  Tag th_MoFEMBuild;
+  Problem_multiIndex pRoblems;					 ///< problems multi-index
 
-  //core methods
+  /// \name Core methods
+
   PetscErrorCode getTags(int verb = -1);
   PetscErrorCode clearMap();
   BitFieldId getFieldShift();
@@ -154,22 +157,26 @@ struct Core: public Interface {
   BitProblemId getProblemShift();
   PetscErrorCode initialiseDatabseInformationFromMesh(int verb = -1);
 
-  //moab interface
+  Tag th_MoFEMBuild;  ///< Internal use storing state, used to detect error and inconsistencies
+
+  /// \name moab interface
+
   inline moab::Interface& get_moab() { return moab; }
   inline const moab::Interface& get_moab() const { return moab; }
 
-  //FiedlInterface
+  /// \name check consistency
 
-  //check consistency
   PetscErrorCode check_number_of_ents_in_ents_field(const std::string& name) const;
   PetscErrorCode check_number_of_ents_in_ents_field() const;
   PetscErrorCode check_number_of_ents_in_ents_finite_element(const std::string& name) const;
   PetscErrorCode check_number_of_ents_in_ents_finite_element() const;
 
+  /// \name clear database
+
   PetscErrorCode clear_database(int verb  = -1);
   PetscErrorCode rebuild_database(int verb = -1);
 
-  //cubit meshsets
+  /// \name cubit meshsets
 
   MeshsetsManager* get_meshsets_manager_ptr();
   const MeshsetsManager* get_meshsets_manager_ptr() const;
@@ -284,34 +291,56 @@ struct Core: public Interface {
     int verb = -1
   );
 
-  PetscErrorCode add_ents_to_field_by_VERTICEs(const Range &nodes,const BitFieldId id,int verb = -1);
-  PetscErrorCode add_ents_to_field_by_VERTICEs(const Range &nodes,const std::string& name,int verb = -1);
-  PetscErrorCode add_ents_to_field_by_VERTICEs(const EntityHandle meshset,const BitFieldId id,int verb = -1);
-  PetscErrorCode add_ents_to_field_by_VERTICEs(const EntityHandle meshset,const std::string& name,int verb = -1);
-  PetscErrorCode add_ents_to_field_by_EDGEs(const Range &edges,const BitFieldId id,int verb = -1);
-  PetscErrorCode add_ents_to_field_by_EDGEs(const Range &edges,const std::string& name,int verb = -1);
-  PetscErrorCode add_ents_to_field_by_EDGEs(const EntityHandle meshset,const BitFieldId id,int verb = -1);
-  PetscErrorCode add_ents_to_field_by_EDGEs(const EntityHandle meshset,const std::string& name,int verb = -1);
-  PetscErrorCode add_ents_to_field_by_TRIs(const EntityHandle meshset,const BitFieldId id,int verb = -1);
-  PetscErrorCode add_ents_to_field_by_TRIs(const EntityHandle meshset,const std::string& name,int verb = -1);
-  PetscErrorCode add_ents_to_field_by_TRIs(const Range &tris,const BitFieldId id,int verb = -1);
-  PetscErrorCode add_ents_to_field_by_TRIs(const Range &tris,const std::string& name,int verb = -1);
-  PetscErrorCode add_ents_to_field_by_TETs(const Range &tets,const BitFieldId id,int verb = -1);
-  PetscErrorCode add_ents_to_field_by_TETs(const EntityHandle meshset,const BitFieldId id,int verb = -1);
-  PetscErrorCode add_ents_to_field_by_TETs(const Range &tets,const std::string& name,int verb = -1);
-  PetscErrorCode add_ents_to_field_by_TETs(const EntityHandle meshset,const std::string& name,int verb = -1);
-  PetscErrorCode add_ents_to_field_by_QUADs(const Range &prisms,const BitFieldId id,int verb = -1);
-  PetscErrorCode add_ents_to_field_by_QUADs(const Range &prisms,const std::string& name,int verb = -1);
-  PetscErrorCode add_ents_to_field_by_QUADs(EntityHandle meshset,const std::string& name,int verb = -1);
-  PetscErrorCode add_ents_to_field_by_PRISMs(const Range &prisms,const BitFieldId id,int verb = -1);
-  PetscErrorCode add_ents_to_field_by_PRISMs(const Range &prisms,const std::string& name,int verb = -1);
-  PetscErrorCode add_ents_to_field_by_PRISMs(EntityHandle meshset,const std::string& name,int verb = -1);
+
+  PetscErrorCode addEntsToFieldByDim(
+    const Range &ents,const int dim,const std::string& name,int verb = -1
+  );
+  PetscErrorCode add_ents_to_field_by_dim(
+    const Range &ents,const int dim,const std::string& name,int verb = -1
+  );
+  PetscErrorCode add_ents_to_field_by_type(
+    const Range &ents,const EntityType type,const std::string& name,int verb = -1
+  );
+  PetscErrorCode add_ents_to_field_by_dim(
+    const EntityHandle meshset,const int dim,const std::string& name,const bool recursive = true,int verb = -1
+  );
+  PetscErrorCode add_ents_to_field_by_type(
+    const EntityHandle meshset,const EntityType type,const std::string& name,const bool recursive = true,int verb = -1
+  );
+
+  // DEPRECATED PetscErrorCode add_ents_to_field_by_VERTICEs(const Range &nodes,const BitFieldId id,int verb = -1);
+  DEPRECATED PetscErrorCode add_ents_to_field_by_VERTICEs(const Range &nodes,const std::string& name,int verb = -1);
+  // DEPRECATED PetscErrorCode add_ents_to_field_by_VERTICEs(const EntityHandle meshset,const BitFieldId id,int verb = -1);
+  DEPRECATED PetscErrorCode add_ents_to_field_by_VERTICEs(const EntityHandle meshset,const std::string& name,int verb = -1);
+  // DEPRECATED PetscErrorCode add_ents_to_field_by_EDGEs(const Range &edges,const BitFieldId id,int verb = -1);
+  DEPRECATED PetscErrorCode add_ents_to_field_by_EDGEs(const Range &edges,const std::string& name,int verb = -1);
+  // DEPRECATED PetscErrorCode add_ents_to_field_by_EDGEs(const EntityHandle meshset,const BitFieldId id,int verb = -1);
+  DEPRECATED PetscErrorCode add_ents_to_field_by_EDGEs(const EntityHandle meshset,const std::string& name,int verb = -1);
+  // DEPRECATED PetscErrorCode add_ents_to_field_by_TRIs(const EntityHandle meshset,const BitFieldId id,int verb = -1);
+  DEPRECATED PetscErrorCode add_ents_to_field_by_TRIs(const EntityHandle meshset,const std::string& name,int verb = -1);
+  // DEPRECATED PetscErrorCode add_ents_to_field_by_TRIs(const Range &tris,const BitFieldId id,int verb = -1);
+  DEPRECATED PetscErrorCode add_ents_to_field_by_TRIs(const Range &tris,const std::string& name,int verb = -1);
+  // DEPRECATED PetscErrorCode add_ents_to_field_by_TETs(const Range &tets,const BitFieldId id,int verb = -1);
+  // DEPRECATED PetscErrorCode add_ents_to_field_by_TETs(const EntityHandle meshset,const BitFieldId id,int verb = -1);
+  DEPRECATED PetscErrorCode add_ents_to_field_by_TETs(const Range &tets,const std::string& name,int verb = -1);
+  DEPRECATED PetscErrorCode add_ents_to_field_by_TETs(const EntityHandle meshset,const std::string& name,int verb = -1);
+  // DEPRECATED PetscErrorCode add_ents_to_field_by_QUADs(const Range &prisms,const BitFieldId id,int verb = -1);
+  DEPRECATED PetscErrorCode add_ents_to_field_by_QUADs(const Range &prisms,const std::string& name,int verb = -1);
+  DEPRECATED PetscErrorCode add_ents_to_field_by_QUADs(EntityHandle meshset,const std::string& name,int verb = -1);
+  // DEPRECATED PetscErrorCode add_ents_to_field_by_PRISMs(const Range &prisms,const BitFieldId id,int verb = -1);
+  DEPRECATED PetscErrorCode add_ents_to_field_by_PRISMs(const Range &prisms,const std::string& name,int verb = -1);
+  DEPRECATED PetscErrorCode add_ents_to_field_by_PRISMs(EntityHandle meshset,const std::string& name,int verb = -1);
+
+  /// \name remove field entities
+
   PetscErrorCode remove_ents_from_field_by_bit_ref(const BitRefLevel &bit,const BitRefLevel &mask,int verb = -1);
   PetscErrorCode remove_ents_from_field(const std::string& name,const EntityHandle meshset,const EntityType type,int verb = -1);
   PetscErrorCode remove_ents_from_field(const std::string& name,const Range &ents,int verb = -1);
 
-  //set apprix oorder
+  /// set approximation order
+
   PetscErrorCode set_field_order(const Range &ents,const BitFieldId id,const ApproximationOrder order,int verb = -1);
+
   PetscErrorCode set_field_order(
     const EntityHandle meshset,
     const EntityType type,
@@ -319,7 +348,9 @@ struct Core: public Interface {
     const ApproximationOrder order,
     int verb = -1
   );
+
   PetscErrorCode set_field_order(const Range &ents,const std::string& name,const ApproximationOrder order,int verb = -1);
+
   PetscErrorCode set_field_order(
     const EntityHandle meshset,
     const EntityType type,
@@ -327,6 +358,7 @@ struct Core: public Interface {
     const ApproximationOrder order,
     int verb = -1
   );
+
   PetscErrorCode set_field_order_by_entity_type_and_bit_ref(
     const BitRefLevel &bit,
     const BitRefLevel &mask,
@@ -344,39 +376,48 @@ struct Core: public Interface {
     int verb = -1
   );
 
-  //build fiels
+  /// \name build fields
+
   PetscErrorCode buildFieldForNoField(const BitFieldId id,std::map<EntityType,int> &dof_counter,int verb = -1);
+
   PetscErrorCode buildFieldForL2H1HcurlHdiv(
     const BitFieldId id,std::map<EntityType,int> &dof_counter,
     std::map<EntityType,
     int> &inactive_dof_counter,
     int verb = -1
   );
+
   PetscErrorCode build_fields(int verb = -1);
+
   PetscErrorCode clear_inactive_dofs(int verb = -1);
+
   PetscErrorCode clear_dofs_fields(const BitRefLevel &bit,const BitRefLevel &mask,int verb = -1);
+
   PetscErrorCode clear_ents_fields(const BitRefLevel &bit,const BitRefLevel &mask,int verb = -1);
+
   PetscErrorCode clear_dofs_fields(const std::string &name,const Range ents,int verb = -1);
+
   PetscErrorCode clear_ents_fields(const std::string &name,const Range enst,int verb = -1);
 
-  //other auxiliary functions for fields
+  /// \name other auxiliary functions for fields
+
   PetscErrorCode list_dofs_by_field_name(const std::string &name) const;
   PetscErrorCode list_fields() const;
 
-  BitFieldId get_BitFieldId(const std::string& name) const;
-  std::string get_BitFieldId_name(const BitFieldId id) const;
+  BitFieldId getBitFieldId(const std::string& name) const;
+  std::string getBitFieldIdName(const BitFieldId id) const;
+
   EntityHandle get_field_meshset(const BitFieldId id) const;
   EntityHandle get_field_meshset(const std::string& name) const;
   PetscErrorCode get_field_entities_by_dimension(const std::string name,int dim,Range &ents) const;
   PetscErrorCode get_field_entities_by_type(const std::string name,EntityType type,Range &ents) const;
   PetscErrorCode get_field_entities_by_handle(const std::string name,Range &ents) const;
 
-
-
   bool check_field(const std::string& name) const;
   const Field* get_field_structure(const std::string& name);
 
-  //FiniteElement
+  /// \name finite elements
+
   bool check_finite_element(const std::string& name) const;
   PetscErrorCode add_finite_element(const std::string &fe_name,enum MoFEMTypes bh = MF_EXCL);
   PetscErrorCode modify_finite_element_adjacency_table(const std::string &fe_name,const EntityType type,ElementAdjacencyFunct function);
@@ -418,11 +459,26 @@ struct Core: public Interface {
   PetscErrorCode remove_ents_from_finite_element(const std::string &name,const Range &ents,int verb = -1);
   PetscErrorCode delete_finite_element(const std::string name,int verb = -1);
 
-  //other auxiliary functions for finite element
+  // \name other auxiliary functions for finite element
+
+  /**
+   * \brief Get field Id
+   * @param  name field name
+   * @return      field id
+   */
   BitFEId getBitFEId(const std::string& name) const;
-  std::string getBitFEId_name(const BitFEId id) const;
+
+  /**
+   * \beief Get field name
+   * @param  id field id
+   * @return    field name
+   */
+  std::string getBitFEIdName(const BitFEId id) const;
+
   EntityHandle get_finite_element_meshset(const BitFEId id) const;
+
   EntityHandle get_finite_element_meshset(const std::string& name) const;
+
   PetscErrorCode get_finite_element_entities_by_dimension(
     const std::string name,int dim,Range &ents
   ) const;
@@ -434,7 +490,8 @@ struct Core: public Interface {
   ) const;
   PetscErrorCode list_finite_elements() const;
 
-  //problem
+  /// \name problems
+
   PetscErrorCode add_problem(const BitProblemId id,const std::string& name);
   PetscErrorCode add_problem(const std::string& name,enum MoFEMTypes bh = MF_EXCL,int verb = -1);
   bool check_problem(const std::string name);
@@ -444,13 +501,16 @@ struct Core: public Interface {
   PetscErrorCode modify_problem_ref_level_add_bit(const std::string &name_problem,const BitRefLevel &bit);
   PetscErrorCode modify_problem_ref_level_set_bit(const std::string &name_problem,const BitRefLevel &bit);
   PetscErrorCode modify_problem_mask_ref_level_set_bit(const std::string &name_problem,const BitRefLevel &bit);
-  BitProblemId get_BitProblemId(const std::string& name) const;
+
+  BitProblemId getBitProblemId(const std::string& name) const;
+
   PetscErrorCode list_problem() const;
   PetscErrorCode clear_problem(const std::string &name,int verb = -1);
   PetscErrorCode clear_problems(int verb = -1);
 
   ///add entity EntFe to finite element data databse and resolve dofs on that entity
   //loop over all finite elements, resolve its meshsets, and resolve dofs on that entitie
+
   PetscErrorCode build_finite_elements(int verb = -1);
   PetscErrorCode build_finite_elements(const BitRefLevel &bit,int verb = -1);
   PetscErrorCode build_finite_elements(const boost::shared_ptr<FiniteElement> fe,const Range *ents_ptr = NULL,int verb = -1);
@@ -463,8 +523,12 @@ struct Core: public Interface {
     const std::string &name,const std::string &fe_name,PetscLayout *layout,int verb = -1
   );
 
+  PetscErrorCode get_problem_finite_elements_entities(
+    const std::string &name,const std::string &fe_name,const EntityHandle meshset
+  );
 
-  //entFEAdjacencies
+  /// \name build adjacencies
+
   PetscErrorCode build_adjacencies(const Range &ents,int verb = -1);
   PetscErrorCode build_adjacencies(const BitRefLevel &bit,int verb = -1);
   PetscErrorCode build_adjacencies(const BitRefLevel &bit,const BitRefLevel &mask,int verb = -1);
@@ -475,7 +539,8 @@ struct Core: public Interface {
 
   PetscErrorCode list_adjacencies() const;
 
-  //problem building
+  // \name problem building (deprecated)
+
   DEPRECATED PetscErrorCode build_problem_on_distributed_mesh(int verb = -1);
   DEPRECATED PetscErrorCode build_problem_on_distributed_mesh(
     const std::string &name,const bool square_matrix = true,int verb = -1
@@ -522,28 +587,32 @@ struct Core: public Interface {
     const std::string &problem_neme,int row,int col,int verb
   );
 
-  ///save meshsets
-  PetscErrorCode get_problem_finite_elements_entities(const std::string &name,const std::string &fe_name,const EntityHandle meshset);
-
-  //vector and matrices
+  /// \name vector and matrices
   PetscErrorCode MatCreateMPIAIJWithArrays(const std::string &name,Mat *Aij,int verb = -1);
   PetscErrorCode MatCreateMPIAdj_with_Idx_mi_tag(const std::string &name,Mat *Adj,int verb = -1);
-
-  PetscErrorCode MatCreateSeqAIJWithArrays(const std::string &name,Mat *Aij,PetscInt **i,PetscInt **j,PetscScalar **v,int verb = -1);
-
+  PetscErrorCode MatCreateSeqAIJWithArrays(
+    const std::string &name,Mat *Aij,PetscInt **i,PetscInt **j,PetscScalar **v,int verb = -1
+  );
   PetscErrorCode VecCreateSeq(const std::string &name,RowColData rc,Vec *V) const;
   PetscErrorCode VecCreateGhost(const std::string &name,RowColData rc,Vec *V) const;
+  PetscErrorCode set_local_ghost_vector(
+    const Problem *problem_ptr,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode
+  ) const;
+  PetscErrorCode set_local_ghost_vector(
+    const std::string &name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode
+  ) const;
+  PetscErrorCode set_global_ghost_vector(
+    const Problem *problem_ptr,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode
+  ) const;
+  PetscErrorCode set_global_ghost_vector(
+    const std::string &name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode
+  ) const;
 
-  PetscErrorCode set_local_ghost_vector(const Problem *problem_ptr,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode) const;
-  PetscErrorCode set_local_ghost_vector(const std::string &name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode) const;
-  PetscErrorCode set_global_ghost_vector(const Problem *problem_ptr,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode) const;
-  PetscErrorCode set_global_ghost_vector(const std::string &name,RowColData rc,Vec V,InsertMode mode,ScatterMode scatter_mode) const;
+  /// \name scatter from problem filed to other problem field
 
-  /// get IS for order
   PetscErrorCode ISCreateProblemOrder(
     const std::string &problem,RowColData rc,int min_order,int max_order,IS *is,int verb = -1
   ) const;
-  /// get IS for field and rank
   PetscErrorCode ISCreateProblemFieldAndRank(
     const std::string &problem,
     RowColData rc,
@@ -554,7 +623,6 @@ struct Core: public Interface {
     int verb = -1
   ) const;
 
-  //scatter from problem filed to other problem field
   PetscErrorCode ISCreateFromProblemFieldToOtherProblemField(
     const std::string &x_problem,const std::string &x_field_name,RowColData x_rc,
     const std::string &y_problem,const std::string &y_field_name,RowColData y_rc,
@@ -571,7 +639,6 @@ struct Core: public Interface {
     VecScatter *newctx,int verb = -1
   ) const;
 
-  //scatter from problem to other problem
   PetscErrorCode ISCreateFromProblemToOtherProblem(
     const std::string &x_problem,
     RowColData x_rc,
@@ -601,7 +668,8 @@ struct Core: public Interface {
     int verb = -1
   ) const;
 
-  //local
+  /// \neme vector local and global projection
+
   PetscErrorCode set_other_local_ghost_vector(
     const Problem *problem_ptr,
     const std::string& fiel_name,
@@ -616,7 +684,6 @@ struct Core: public Interface {
     RowColData rc,Vec V,
     InsertMode mode,ScatterMode scatter_mode,int verb = -1
   );
-  //global
   PetscErrorCode set_other_global_ghost_vector(
     const Problem *problem_ptr,
     const std::string& fiel_name,
@@ -638,7 +705,8 @@ struct Core: public Interface {
     int verb = -1
   );
 
-  //loops
+  /// \name looping over finite elements
+
   PetscErrorCode problem_basic_method_preProcess(const Problem *problem_ptr,BasicMethod &method,int verb = -1);
   PetscErrorCode problem_basic_method_preProcess(const std::string &problem_name,BasicMethod &method,int verb = -1);
   PetscErrorCode problem_basic_method_postProcess(const Problem *problem_ptr,BasicMethod &method,int verb = -1);
@@ -673,7 +741,8 @@ struct Core: public Interface {
     const std::string &field_name,EntMethod &method,int verb = -1
   );
 
-  //get multi_index form database
+  /// \name get multi_index form database
+
   PetscErrorCode get_fields(const Field_multiIndex **fields_ptr) const;
   PetscErrorCode get_ref_ents(const RefEntity_multiIndex **refined_entities_ptr) const;
   PetscErrorCode get_ref_finite_elements(const RefElement_multiIndex **refined_finite_elements_ptr) const;
@@ -683,22 +752,19 @@ struct Core: public Interface {
   PetscErrorCode get_dofs(const DofEntity_multiIndex **dofs_ptr) const ;
   PetscErrorCode get_problem(const std::string &problem_name,const Problem **problem_ptr) const;
   PetscErrorCode get_problems(const Problem_multiIndex **problems_ptr) const;
-
-
   FieldEntityByFieldName::iterator get_ent_moabfield_by_name_begin(const std::string &field_name) const;
   FieldEntityByFieldName::iterator get_ent_moabfield_by_name_end(const std::string &field_name) const;
-
   DofEntityByFieldName::iterator get_dofs_by_name_begin(const std::string &field_name) const;
   DofEntityByFieldName::iterator get_dofs_by_name_end(const std::string &field_name) const;
   DofEntityByNameAndEnt::iterator get_dofs_by_name_and_ent_begin(const std::string &field_name,const EntityHandle ent) const;
   DofEntityByNameAndEnt::iterator get_dofs_by_name_and_ent_end(const std::string &field_name,const EntityHandle ent) const;
   DofEntityByNameAndType::iterator get_dofs_by_name_and_type_begin(const std::string &field_name,const EntityType type) const;
   DofEntityByNameAndType::iterator get_dofs_by_name_and_type_end(const std::string &field_name,const EntityType ent) const;
-
   EntFiniteElementbyName::iterator get_fe_by_name_begin(const std::string &fe_name) const;
   EntFiniteElementbyName::iterator get_fe_by_name_end(const std::string &fe_name) const;
 
-  //Copy field values to another field
+  /// \name field axpy functions
+
   PetscErrorCode field_axpy(
     const double alpha,const std::string& fiel_name_x,const std::string& field_name_y,
     bool error_if_missing = false,bool creat_if_missing = false
@@ -707,7 +773,7 @@ struct Core: public Interface {
   PetscErrorCode set_field(const double val,const EntityType type,const std::string& fiel_name);
   PetscErrorCode set_field(const double val,const EntityType type,const Range &ents,const std::string& field_name);
 
-  //Get adjacencies
+  /// \name get adjacencies
   PetscErrorCode get_adjacencies_equality(const EntityHandle from_entiti,const int to_dimension,Range &adj_entities) const;
   PetscErrorCode get_adjacencies_any(const EntityHandle from_entiti,const int to_dimension,Range &adj_entities) const;
   PetscErrorCode get_adjacencies(
@@ -733,17 +799,20 @@ struct Core: public Interface {
   // DEPRECATED PetscErrorCode add_coordinate_system(const int cs_dim[],const std::string name);
   // DEPRECATED PetscErrorCode set_field_coordinate_system(const std::string field_name,const std::string cs_name);
 
-  //Petsc Logs
+  /// \name logging events
+
   PetscLogEvent USER_EVENT_preProcess;
   PetscLogEvent USER_EVENT_operator;
   PetscLogEvent USER_EVENT_postProcess;
   PetscLogEvent USER_EVENT_createMat;
   PetscLogEvent USER_EVENT_buildProblem;
 
+  /// \name Communication
+
   // size and rank of communicator
 
   mutable MPI_Comm cOmm;      ///< MoFEM communicator
-  mutable ParallelComm *pComm; ///< MOAB communicator struture
+  mutable ParallelComm *pComm; ///< MOAB communicator structure
 
   int sIze; ///< MoFEM communicator size
   int rAnk; ///< MOFEM communicator rank
@@ -752,15 +821,15 @@ struct Core: public Interface {
   inline int get_comm_size() const { return sIze; }
   inline int get_comm_rank() const { return rAnk; }
 
-  DEPRECATED inline int getCommSize() const { return sIze; }
-  DEPRECATED inline int getCommRank() const { return rAnk; }
+  // DEPRECATED inline int getCommSize() const { return sIze; }
+  // DEPRECATED inline int getCommRank() const { return rAnk; }
 
   private:
 
-  static bool isGloballyInitialised;
+  static bool isGloballyInitialised; ///< Core base globally initialized
 
 };
 
 }
 
-#endif // __MOABFIELD_CORE_HPP__
+#endif // __CORE_HPP__

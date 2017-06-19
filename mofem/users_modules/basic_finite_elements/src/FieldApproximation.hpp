@@ -551,23 +551,23 @@ struct FieldApproximationH1 {
     PetscFunctionReturn(0);
   }
 
-  /** \deprecated Use loopMatrixAndVectorVolume instead
-  */
-  template<typename FUNEVAL>
-  DEPRECATED PetscErrorCode loopMatrixAndVector(
-    const std::string &problem_name,
-    const std::string &fe_name,
-    const std::string &field_name,
-    Mat A,std::vector<Vec> &vec_F,
-    FUNEVAL &function_evaluator
-  ) {
-    PetscFunctionBegin;
-    PetscErrorCode ierr;
-    ierr = loopMatrixAndVectorVolume(
-      problem_name,fe_name,field_name,A,vec_F,function_evaluator
-    ); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
-  }
+  // /** \deprecated Use loopMatrixAndVectorVolume instead
+  // */
+  // template<typename FUNEVAL>
+  // DEPRECATED PetscErrorCode loopMatrixAndVector(
+  //   const std::string &problem_name,
+  //   const std::string &fe_name,
+  //   const std::string &field_name,
+  //   Mat A,std::vector<Vec> &vec_F,
+  //   FUNEVAL &function_evaluator
+  // ) {
+  //   PetscFunctionBegin;
+  //   PetscErrorCode ierr;
+  //   ierr = loopMatrixAndVectorVolume(
+  //     problem_name,fe_name,field_name,A,vec_F,function_evaluator
+  //   ); CHKERRQ(ierr);
+  //   PetscFunctionReturn(0);
+  // }
 
 };
 

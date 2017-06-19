@@ -184,8 +184,8 @@ int main(int argc, char *argv[]) {
   // Declare problem
 
   // Add entities (by tets) to the field ( all entities in the mesh, root_set = 0 )
-  ierr = m_field.add_ents_to_field_by_TETs(0,"DISPLACEMENT",2); CHKERRQ(ierr);
-  ierr = m_field.add_ents_to_field_by_TETs(0,"MESH_NODE_POSITIONS",2); CHKERRQ(ierr);
+  ierr = m_field.add_ents_to_field_by_type(0,MBTET,"DISPLACEMENT"); CHKERRQ(ierr);
+  ierr = m_field.add_ents_to_field_by_type(0,MBTET,"MESH_NODE_POSITIONS"); CHKERRQ(ierr);
 
   // Set apportion order.
   // See Hierarchic Finite Element Bases on Unstructured Tetrahedral Meshes.
@@ -334,7 +334,7 @@ int main(int argc, char *argv[]) {
     }
     if(add_temp_field) {
       ierr = m_field.add_field("TEMP",H1,AINSWORTH_LEGENDRE_BASE,1,MB_TAG_SPARSE,MF_ZERO); CHKERRQ(ierr);
-      ierr = m_field.add_ents_to_field_by_TETs(0,"TEMP"); CHKERRQ(ierr);
+      ierr = m_field.add_ents_to_field_by_type(0,MBTET,"TEMP"); CHKERRQ(ierr);
       ierr = m_field.set_field_order(0,MBVERTEX,"TEMP",1); CHKERRQ(ierr);
     }
   }

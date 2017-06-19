@@ -273,8 +273,8 @@ struct ExampleUltraWeak: public UltraWeakTransportElement {
       rval = mField.get_moab().get_entities_by_type(ref_meshset,MBTET,ref_tets); CHKERRQ_MOAB(rval);
 
       //add entities to field
-      ierr = mField.add_ents_to_field_by_TETs(ref_meshset,"FLUXES"); CHKERRQ(ierr);
-      ierr = mField.add_ents_to_field_by_TETs(ref_meshset,"VALUES"); CHKERRQ(ierr);
+      ierr = mField.add_ents_to_field_by_type(ref_meshset,MBTET,"FLUXES"); CHKERRQ(ierr);
+      ierr = mField.add_ents_to_field_by_type(ref_meshset,MBTET,"VALUES"); CHKERRQ(ierr);
       ierr = mField.set_field_order(0,MBTET,"FLUXES",order+1); CHKERRQ(ierr);
       ierr = mField.set_field_order(0,MBTRI,"FLUXES",order+1); CHKERRQ(ierr);
       ierr = mField.set_field_order(0,MBTET,"VALUES",order); CHKERRQ(ierr);

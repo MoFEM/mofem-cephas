@@ -223,8 +223,8 @@ enum CubitBC {
   LASTSET_BC       = 1<<20
 };
 
-DEPRECATED static const unsigned int UNKNOWNCUBITNAME = UNKNOWNNAME;
-DEPRECATED static const unsigned int LASTCUBITSET = LASTSET_BC;
+// OFF_DEPRECATED static const unsigned int UNKNOWNCUBITNAME = UNKNOWNNAME;
+// OFF_DEPRECATED static const unsigned int LASTCUBITSET = LASTSET_BC;
 
 /**
  * \brief Names of types of sets and boundary conditions
@@ -349,31 +349,31 @@ DEPRECATED void macro_is_depracted_using_deprecated_function();
 }
 #endif
 
-/**
- * \brief check error code of MoAB functions and print on screen error
- * @param  a error code
- */
-#define CHKERR_MOAB(a) do { \
-  macro_is_depracted_using_deprecated_function(); \
-  ErrorCode val = (a); \
-  if (MB_SUCCESS != val) { \
-    std::cerr << "Error code  " << val << " at " << __FILE__ << ":" << __LINE__ << std::endl; \
-    assert(1); \
-  } \
-} while (false)
+// /**
+//  * \brief check error code of MoAB functions and print on screen error
+//  * @param  a error code
+//  */
+// #define CHKERR_MOAB(a) do { \
+//   macro_is_depracted_using_deprecated_function(); \
+//   ErrorCode val = (a); \
+//   if (MB_SUCCESS != val) { \
+//     std::cerr << "Error code  " << val << " at " << __FILE__ << ":" << __LINE__ << std::endl; \
+//     assert(1); \
+//   } \
+// } while (false)
 
-/**
- * \brief do not use that macro it will be removed in future
- */
-#define CHKERR(a) \
-  macro_is_depracted_using_deprecated_function(); \
-  do { \
-  ErrorCode val = (a); \
-  if (MB_SUCCESS != val) { \
-    std::cerr << "Error code  " << val << " at " << __FILE__ << ":" << __LINE__ << std::endl; \
-    assert(1); \
-  } \
-} while (false)
+// /**
+//  * \brief do not use that macro it will be removed in future
+//  */
+// #define CHKERR(a) \
+//   macro_is_depracted_using_deprecated_function(); \
+//   do { \
+//   ErrorCode val = (a); \
+//   if (MB_SUCCESS != val) { \
+//     std::cerr << "Error code  " << val << " at " << __FILE__ << ":" << __LINE__ << std::endl; \
+//     assert(1); \
+//   } \
+// } while (false)
 
 /**
  * \brief check error code of MoAB function
@@ -389,20 +389,20 @@ DEPRECATED void macro_is_depracted_using_deprecated_function();
   } \
 } while (false)
 
-/**
- * \brief do not use that macro it will be removed in future
- */
-#define CHKERR_PETSC(a) \
-  macro_is_depracted_using_deprecated_function(); \
-  do { \
-  ErrorCode val = (a); \
-  if (MB_SUCCESS != val) { \
-    std::ostringstream ss; \
-    ss << "Error code  " << val << " at " << __FILE__ << ":" << __LINE__ << std::endl; \
-    std::string str(ss.str()); \
-    SETERRQ(PETSC_COMM_SELF,MOFEM_MOAB_ERROR,str.c_str()); \
-  } \
-} while (false)
+// /**
+//  * \brief do not use that macro it will be removed in future
+//  */
+// #define CHKERR_PETSC(a) \
+//   macro_is_depracted_using_deprecated_function(); \
+//   do { \
+//   ErrorCode val = (a); \
+//   if (MB_SUCCESS != val) { \
+//     std::ostringstream ss; \
+//     ss << "Error code  " << val << " at " << __FILE__ << ":" << __LINE__ << std::endl; \
+//     std::string str(ss.str()); \
+//     SETERRQ(PETSC_COMM_SELF,MOFEM_MOAB_ERROR,str.c_str()); \
+//   } \
+// } while (false)
 
 /**
  * \bried Check error code of MoAB function and throw MoFEM exception
@@ -417,19 +417,19 @@ DEPRECATED void macro_is_depracted_using_deprecated_function();
   } \
 } while (false)
 
-/**
- * \brief do not use that macro it will be removed in future
- */
-#define CHKERR_THROW(a) \
-  macro_is_depracted_using_deprecated_function(); \
-  do { \
-  ErrorCode val = (a); \
-  if (MB_SUCCESS != val) { \
-    std::ostringstream ss; \
-    ss << "Error code  " << val << " at " << __FILE__ << ":" << __LINE__ << std::endl; \
-    throw MoFEMException(MOFEM_MOAB_ERROR,ss.str().c_str() ); \
-  } \
-} while (false)
+// /**
+//  * \brief do not use that macro it will be removed in future
+//  */
+// #define CHKERR_THROW(a) \
+//   macro_is_depracted_using_deprecated_function(); \
+//   do { \
+//   ErrorCode val = (a); \
+//   if (MB_SUCCESS != val) { \
+//     std::ostringstream ss; \
+//     ss << "Error code  " << val << " at " << __FILE__ << ":" << __LINE__ << std::endl; \
+//     throw MoFEMException(MOFEM_MOAB_ERROR,ss.str().c_str() ); \
+//   } \
+// } while (false)
 
 /**
  * \brief Throw MoFEM exception
@@ -441,15 +441,15 @@ DEPRECATED void macro_is_depracted_using_deprecated_function();
   throw MoFEMException(MOFEM_MOFEMEXCEPTION_THROW,ss.str().c_str() ); \
 }
 
-/**
- * \brief do not use that macro it will be removed in future
- */
-#define THROW_AT_LINE(a) { \
-  macro_is_depracted_using_deprecated_function(); \
-  std::ostringstream ss; \
-  ss << a << " " << " at " << __FILE__ << ":" << __LINE__ << std::endl; \
-  throw MoFEMException(MOFEM_MOFEMEXCEPTION_THROW,ss.str().c_str() ); \
-}
+// /**
+//  * \brief do not use that macro it will be removed in future
+//  */
+// #define THROW_AT_LINE(a) { \
+//   macro_is_depracted_using_deprecated_function(); \
+//   std::ostringstream ss; \
+//   ss << a << " " << " at " << __FILE__ << ":" << __LINE__ << std::endl; \
+//   throw MoFEMException(MOFEM_MOFEMEXCEPTION_THROW,ss.str().c_str() ); \
+// }
 
 /**
  * \brief Convert number to string

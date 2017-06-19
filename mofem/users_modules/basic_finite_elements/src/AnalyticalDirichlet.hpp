@@ -252,21 +252,21 @@ struct AnalyticalDirichletBC {
     PetscFunctionReturn(0);
   }
 
-  /**
-   * \deprected no need to use function with argument of triangle range
-   */
-  template<typename FUNEVAL> DEPRECATED PetscErrorCode setApproxOps(
-    MoFEM::Interface &m_field,
-    string field_name,
-    Range& tris,
-    boost::shared_ptr<FUNEVAL> function_evaluator,
-    int field_number = 0,
-    string nodals_positions = "MESH_NODE_POSITIONS"
-  ) {
-    return setApproxOps(
-      m_field,field_name,tris,function_evaluator,field_number,nodals_positions
-    );
-  }
+  // /**
+  //  * \deprected no need to use function with argument of triangle range
+  //  */
+  // template<typename FUNEVAL> DEPRECATED PetscErrorCode setApproxOps(
+  //   MoFEM::Interface &m_field,
+  //   string field_name,
+  //   Range& tris,
+  //   boost::shared_ptr<FUNEVAL> function_evaluator,
+  //   int field_number = 0,
+  //   string nodals_positions = "MESH_NODE_POSITIONS"
+  // ) {
+  //   return setApproxOps(
+  //     m_field,field_name,tris,function_evaluator,field_number,nodals_positions
+  //   );
+  // }
 
   /**
    * \brief set finite element
@@ -285,18 +285,18 @@ struct AnalyticalDirichletBC {
     string nodals_positions = "MESH_NODE_POSITIONS"
   );
 
-  /**
-  \deprected use setFiniteElement instead
-  */
-  DEPRECATED PetscErrorCode initializeProblem(
-    MoFEM::Interface &m_field,
-    string fe,
-    string field,
-    Range& tris,
-    string nodals_positions = "MESH_NODE_POSITIONS"
-  ) {
-    return setFiniteElement(m_field,fe,field,tris,nodals_positions);
-  }
+  // /**
+  // \deprected use setFiniteElement instead
+  // */
+  // DEPRECATED PetscErrorCode initializeProblem(
+  //   MoFEM::Interface &m_field,
+  //   string fe,
+  //   string field,
+  //   Range& tris,
+  //   string nodals_positions = "MESH_NODE_POSITIONS"
+  // ) {
+  //   return setFiniteElement(m_field,fe,field,tris,nodals_positions);
+  // }
 
   Mat A;
   Vec D,F;
@@ -312,14 +312,14 @@ struct AnalyticalDirichletBC {
     MoFEM::Interface &m_field,string problem
   );
 
-  /**
-   * \deprected use setUpProblem instead
-   */
-  DEPRECATED PetscErrorCode setProblem(
-    MoFEM::Interface &m_field,string problem
-  ) {
-    return setUpProblem(m_field,problem);
-  }
+  // /**
+  //  * \deprected use setUpProblem instead
+  //  */
+  // DEPRECATED PetscErrorCode setProblem(
+  //   MoFEM::Interface &m_field,string problem
+  // ) {
+  //   return setUpProblem(m_field,problem);
+  // }
 
   /**
    * \brief solve boundary problem

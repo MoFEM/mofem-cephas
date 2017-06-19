@@ -835,7 +835,7 @@ PetscErrorCode Core::partition_check_matrix_fill_in(const std::string &problem_n
         if(ait==adjacenciesPtr->end()) {
           SETERRQ(mFieldPtr->get_comm(),MOFEM_DATA_INCONSISTENCY,"adjacencies data inconsistency");
         } else {
-          LocalUId uid = ait->getEntUniqueId();
+          UId uid = ait->getEntUniqueId();
           if(entitiesPtr->find(uid) == entitiesPtr->end()) {
             SETERRQ(mFieldPtr->get_comm(),MOFEM_DATA_INCONSISTENCY,"data inconsistency");
           }
@@ -890,7 +890,7 @@ PetscErrorCode Core::partition_check_matrix_fill_in(const std::string &problem_n
           PetscPrintf(mFieldPtr->get_comm(),"%s",ss.str().c_str());
           SETERRQ(mFieldPtr->get_comm(),MOFEM_DATA_INCONSISTENCY,"adjacencies data inconsistency");
         } else {
-          LocalUId uid = ait->getEntUniqueId();
+          UId uid = ait->getEntUniqueId();
           if(entitiesPtr->find(uid) == entitiesPtr->end()) {
             SETERRQ(mFieldPtr->get_comm(),MOFEM_DATA_INCONSISTENCY,"data inconsistency");
           }

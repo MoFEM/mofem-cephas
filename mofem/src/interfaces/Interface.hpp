@@ -55,6 +55,7 @@ struct Interface: public UnknownInterface {
 
   /**
    * get moab instance
+   * \copydoc MoFEM::Core::get_moab
    */
   virtual moab::Interface& get_moab() = 0;
 
@@ -64,7 +65,7 @@ struct Interface: public UnknownInterface {
   virtual const moab::Interface& get_moab() const = 0;
 
   /** \brief get MeshsetsManager pointer
-  */
+    */
   virtual MeshsetsManager* get_meshsets_manager_ptr() = 0;
 
   /** \brief get MeshsetsManager pointer
@@ -76,7 +77,7 @@ struct Interface: public UnknownInterface {
   virtual MeshsetsManager& get_meshsets_manager() = 0;
 
   /** \brief get MeshsetsManager pointer
-  */
+    */
   virtual const MeshsetsManager& get_meshsets_manager() const = 0;
 
  /**@}*/
@@ -106,17 +107,17 @@ struct Interface: public UnknownInterface {
    */
   virtual MPI_Comm& get_comm() const = 0;
 
-  /**
-   * get communicator size
-   * \deprecated use get_comm_size
-   */
-  DEPRECATED virtual int getCommSize() const = 0;
+  // /**
+  //  * get communicator size
+  //  * \deprecated use get_comm_size
+  //  */
+  // DEPRECATED virtual int getCommSize() const = 0;
 
-  /**
-   * get comm rank
-   * \deprecated use get_comm_rank
-   */
-  DEPRECATED virtual int getCommRank() const = 0;
+  // /**
+  //  * get comm rank
+  //  * \deprecated use get_comm_rank
+  //  */
+  // DEPRECATED virtual int getCommRank() const = 0;
 
   /**
    * get communicator size
@@ -689,35 +690,101 @@ struct Interface: public UnknownInterface {
     int verb = -1
   ) = 0;
 
+  // /**
+  // * \deprecated
+  // * \brief Add field with default AINSWORTH_LEGENDRE_BASE approximation base
+  // *
+  // * \note This function is deprecated, use version where base argument is spevified
+  // * explicityly.
+  // *
+  // * @param  name              name of the filed
+  // * @param  space             space (L2,H1,Hdiv,Hcurl)
+  // * @param  nb_of_cooficients number of field coefficients
+  // * @param  bh                if MF_EXCL throws error if field exits, MF_ZERO no error if field exist
+  // * @param  verb              verbosity level
+  // * @return                   error code
+  // */
+  // DEPRECATED inline PetscErrorCode add_field(
+  //   const std::string& name,
+  //   const FieldSpace space,
+  //   const FieldCoefficientsNumber nb_of_cooficients,
+  //   const enum MoFEMTypes bh = MF_EXCL,
+  //   int verb = -1
+  // ) {
+  //   return add_field(
+  //     name,
+  //     space,
+  //     AINSWORTH_LEGENDRE_BASE,
+  //     nb_of_cooficients,
+  //     MB_TAG_SPARSE,bh,verb
+  //   );
+  // }
+
   /**
-  * \deprecated
-  * \brief Add field with default AINSWORTH_LEGENDRE_BASE approximation base
-  *
-  * \note This function is deprecated, use version where base argument is spevified
-  * explicityly.
-  *
-  * @param  name              name of the filed
-  * @param  space             space (L2,H1,Hdiv,Hcurl)
-  * @param  nb_of_cooficients number of field coefficients
-  * @param  bh                if MF_EXCL throws error if field exits, MF_ZERO no error if field exist
-  * @param  verb              verbosity level
-  * @return                   error code
-  */
-  DEPRECATED inline PetscErrorCode add_field(
-    const std::string& name,
-    const FieldSpace space,
-    const FieldCoefficientsNumber nb_of_cooficients,
-    const enum MoFEMTypes bh = MF_EXCL,
-    int verb = -1
-  ) {
-    return add_field(
-      name,
-      space,
-      AINSWORTH_LEGENDRE_BASE,
-      nb_of_cooficients,
-      MB_TAG_SPARSE,bh,verb
-    );
-  }
+   * \brief Add entities to field meshset
+   * \ingroup mofem_field
+   *
+   * The lower dimension entities are added depending on the space type
+   *
+   * @param  ents rnage of entities
+   * @param  dim  dimension of entities
+   * @param  name name of field
+   * @param  verb verbosity level
+   * @return      error code
+   */
+  virtual PetscErrorCode add_ents_to_field_by_dim(
+    const Range &ents,const int dim,const std::string& name,int verb = -1
+  ) = 0;
+
+  /**
+   * \brief Add entities to field meshset
+   * \ingroup mofem_field
+   *
+   * The lower dimension entities are added depending on the space type
+   *
+   * @param  ents rnage of entities
+   * @param  type  type of entities
+   * @param  name name of field
+   * @param  verb verbosity level
+   * @return      error code
+   */
+  virtual PetscErrorCode add_ents_to_field_by_type(
+    const Range &ents,const EntityType type,const std::string& name,int verb = -1
+  ) = 0;
+
+  /**
+   * \brief Add entities to field meshset
+   * \ingroup mofem_field
+   *
+   * The lower dimension entities are added depending on the space type
+   *
+   * @param  meshset
+   * @param  dim  diemsipm
+   * @param  name name of field
+   * @param  recursive take entities recursively from embaded entities
+   * @param  verb verbosity level
+   * @return      error code
+   */
+  virtual PetscErrorCode add_ents_to_field_by_dim(
+    const EntityHandle meshset,const int dim,const std::string& name,const bool recursive = true,int verb = -1
+  ) = 0;
+
+  /**
+   * \brief Add entities to field meshset
+   * \ingroup mofem_field
+   *
+   * The lower dimension entities are added depending on the space type
+   *
+   * @param  meshset
+   * @param  type of entoties
+   * @param  name name of field
+   * @param  recursive take entities recursively from embaded entities
+   * @param  verb verbosity level
+   * @return      error code
+   */
+  virtual PetscErrorCode add_ents_to_field_by_type(
+    const EntityHandle meshset,const EntityType type,const std::string& name,const bool recursive = true,int verb = -1
+  ) = 0;
 
   /**
     * \brief set field entities on vertices
@@ -799,15 +866,15 @@ struct Interface: public UnknownInterface {
     */
   virtual PetscErrorCode add_ents_to_field_by_TETs(const Range &tets,const std::string& name,int verb = -1) = 0;
 
-  /**
-    * \brief set field entities from adjacencies of quads
-    * \ingroup mofem_field
-    *
-    * The lower dimension entities are added depending on the space type
-    * \param quads range of quads
-    * \param id field id
-    */
-  virtual PetscErrorCode add_ents_to_field_by_QUADs(const Range &quads,const BitFieldId id,int verb = -1) = 0;
+  // /**
+  //   * \brief set field entities from adjacencies of quads
+  //   * \ingroup mofem_field
+  //   *
+  //   * The lower dimension entities are added depending on the space type
+  //   * \param quads range of quads
+  //   * \param id field id
+  //   */
+  // virtual PetscErrorCode add_ents_to_field_by_QUADs(const Range &quads,const BitFieldId id,int verb = -1) = 0;
 
   /**
     * \brief set field entities from adjacencies of quads
@@ -829,15 +896,15 @@ struct Interface: public UnknownInterface {
     */
   virtual PetscErrorCode add_ents_to_field_by_QUADs(EntityHandle meshset,const std::string& name,int verb = -1) = 0;
 
-  /**
-    * \brief set field entities from adjacencies of prisms
-    * \ingroup mofem_field
-    *
-    * The lower dimension entities are added depending on the space type
-    * \param prisms range of prisms
-    * \param id field id
-    */
-  virtual PetscErrorCode add_ents_to_field_by_PRISMs(const Range &prisms,const BitFieldId id,int verb = -1) = 0;
+  // /**
+  //   * \brief set field entities from adjacencies of prisms
+  //   * \ingroup mofem_field
+  //   *
+  //   * The lower dimension entities are added depending on the space type
+  //   * \param prisms range of prisms
+  //   * \param id field id
+  //   */
+  // virtual PetscErrorCode add_ents_to_field_by_PRISMs(const Range &prisms,const BitFieldId id,int verb = -1) = 0;
 
   /**
     * \brief set field entities from adjacencies of prisms

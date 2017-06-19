@@ -245,7 +245,7 @@ namespace MoFEM {
     if(verb==-1) verb = verbose;
     *buildMoFEM = 0;
     try {
-      ierr = synchronise_field_entities(get_BitFieldId(name),verb);  CHKERRQ(ierr);
+      ierr = synchronise_field_entities(getBitFieldId(name),verb);  CHKERRQ(ierr);
     } catch (MoFEMException const &e) {
       SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
     }

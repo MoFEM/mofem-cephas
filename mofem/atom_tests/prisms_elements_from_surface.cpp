@@ -83,7 +83,7 @@ int main(int argc, char *argv[]) {
 
     //Fields
     ierr = m_field.add_field("FIELD1",H1,AINSWORTH_LEGENDRE_BASE,1); CHKERRQ(ierr);
-    ierr = m_field.add_ents_to_field_by_PRISMs(meshset,"FIELD1",10); CHKERRQ(ierr);
+    ierr = m_field.add_ents_to_field_by_type(meshset,MBPRISM,"FIELD1",10); CHKERRQ(ierr);
 
     ierr = m_field.set_field_order(0,MBVERTEX,"FIELD1",1); CHKERRQ(ierr);
     ierr = m_field.set_field_order(0,MBEDGE,"FIELD1",3,10); CHKERRQ(ierr);
@@ -122,7 +122,7 @@ int main(int argc, char *argv[]) {
     ierr = m_field.modify_finite_element_add_field_col("TEST_FE1","FIELD1"); CHKERRQ(ierr);
     ierr = m_field.modify_finite_element_add_field_data("TEST_FE1","FIELD1"); CHKERRQ(ierr);
 
-    ierr = m_field.add_ents_to_finite_element_by_PRISMs(prisms,"TEST_FE1"); CHKERRQ(ierr);
+    ierr = m_field.add_ents_to_finite_element_by_type(prisms,MBPRISM,"TEST_FE1"); CHKERRQ(ierr);
 
     //build finite elemnts
     ierr = m_field.build_finite_elements(); CHKERRQ(ierr);

@@ -249,9 +249,9 @@ struct PCMGSetUpViaApproxOrdersCtx {
   virtual PetscErrorCode buildProlongationOperator(bool use_mat_a,int verb = 0);
 
 
-  DEPRECATED  virtual PetscErrorCode buildProlongationOperator(PC pc,int verb = 0) {
-    return buildProlongationOperator(false,verb);
-  }
+  // DEPRECATED  virtual PetscErrorCode buildProlongationOperator(PC pc,int verb = 0) {
+  //   return buildProlongationOperator(false,verb);
+  // }
 
 };
 
