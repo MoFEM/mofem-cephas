@@ -52,7 +52,7 @@ int main(int argc, char *argv[]) {
   DMType dm_name = "DMMOFEM";
   ierr = DMRegister_MoFEM(dm_name); CHKERRQ(ierr);
 
-  //craete dm instance
+  // Create dm instance
   DM dm;
   ierr = DMCreate(PETSC_COMM_WORLD,&dm);CHKERRQ(ierr);
   ierr = DMSetType(dm,dm_name);CHKERRQ(ierr);

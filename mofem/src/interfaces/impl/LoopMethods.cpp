@@ -129,7 +129,7 @@ finiteElementsEntitiesPtr(NULL),
 adjacenciesPtr(NULL) {
 }
 
-PetscErrorCode BasicMethod::copy_basic_method(const BasicMethod &basic) {
+PetscErrorCode BasicMethod::copyBasicMethod(const BasicMethod &basic) {
   PetscFunctionBegin;
 
   this->nInTheLoop = basic.nInTheLoop;
@@ -156,17 +156,26 @@ BasicMethod() {
 
 PetscErrorCode FEMethod::preProcess() {
   PetscFunctionBegin;
-  SETERRQ(PETSC_COMM_SELF,1,"should be implemented by user in derived class (preProcess)");
+  SETERRQ(
+    PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,
+    "should be implemented by user in derived class (preProcess)"
+  );
   PetscFunctionReturn(0);
 }
 PetscErrorCode FEMethod::postProcess() {
   PetscFunctionBegin;
-  SETERRQ(PETSC_COMM_SELF,1,"should be implemented by user in derived class (postProcess)");
+  SETERRQ(
+    PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,
+    "should be implemented by user in derived class (postProcess)"
+  );
   PetscFunctionReturn(0);
 }
 PetscErrorCode FEMethod::operator()() {
   PetscFunctionBegin;
-  SETERRQ(PETSC_COMM_SELF,1,"should be implemented by user in derived class (operator)");
+  SETERRQ(
+    PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,
+    "should be implemented by user in derived class (operator)"
+  );
   PetscFunctionReturn(0);
 }
 
@@ -175,17 +184,26 @@ EntMethod::EntMethod(): BasicMethod() {}
 
 PetscErrorCode EntMethod::preProcess() {
   PetscFunctionBegin;
-  SETERRQ(PETSC_COMM_SELF,1,"should be implemented by user in derived class");
+  SETERRQ(
+    PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,
+    "should be implemented by user in derived class"
+  );
   PetscFunctionReturn(0);
 }
 PetscErrorCode EntMethod::postProcess() {
   PetscFunctionBegin;
-  SETERRQ(PETSC_COMM_SELF,1,"should be implemented by user in derived class");
+  SETERRQ(
+    PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,
+    "should be implemented by user in derived class"
+  );
   PetscFunctionReturn(0);
 }
 PetscErrorCode EntMethod::operator()() {
   PetscFunctionBegin;
-  SETERRQ(PETSC_COMM_SELF,1,"should be implemented by user in derived class");
+  SETERRQ(
+    PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,
+    "should be implemented by user in derived class"
+  );
   PetscFunctionReturn(0);
 }
 

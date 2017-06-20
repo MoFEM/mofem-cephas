@@ -162,6 +162,7 @@ TSMethod {
   }
 
   BasicMethod();
+  virtual ~BasicMethod() {};
 
   int nInTheLoop;
   int loopSize;
@@ -188,9 +189,13 @@ TSMethod {
   const FiniteElement_multiIndex *finiteElementsPtr;
   const EntFiniteElement_multiIndex *finiteElementsEntitiesPtr;
   const FieldEntityEntFiniteElementAdjacencyMap_multiIndex *adjacenciesPtr;
-  virtual ~BasicMethod() {};
 
-  PetscErrorCode copy_basic_method(const BasicMethod &basic);
+  PetscErrorCode copyBasicMethod(const BasicMethod &basic);
+
+  /// \deprecated use copyBasicMethod
+  DEPRECATED inline PetscErrorCode copy_basic_method(const BasicMethod &basic) {
+    return copyBasicMethod(basic);
+  }
 
   private:
   void iNit();
@@ -259,7 +264,7 @@ struct FEMethod: public BasicMethod {
   boost::shared_ptr<const NumeredEntFiniteElement> numeredEntFiniteElementPtr;
   boost::shared_ptr<const FENumeredDofEntity_multiIndex> rowPtr;
   boost::shared_ptr<const FENumeredDofEntity_multiIndex> colPtr;
-  boost::shared_ptr<const FEDofEntity_multiIndex> dataPtr; 
+  boost::shared_ptr<const FEDofEntity_multiIndex> dataPtr;
 
   /** \brief loop over all dofs which are on a particular FE row
     * \ingroup mofem_loops
