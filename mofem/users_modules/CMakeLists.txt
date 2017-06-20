@@ -49,6 +49,23 @@ if(APPLE)
 endif(APPLE)
 message(STATUS BLAS found: ${BLAS_LIBRARIES})
 
+# Add boost directory
+if(NOT MoFEM_BOOST_DIR)
+  set(MoFEM_BOOST_DIR $ENV{MoFEM_BOOST_DIR})
+endif(NOT MoFEM_BOOST_DIR)
+find_path(
+  BOOST_INCLUDE_DIR
+  NAMES boost/multi_index_container.hpp
+  HINTS
+  ${MoFEM_BOOST_DIR}/lib
+  ${MoFEM_PETSC_DIR}/${PETSC_ARCH}/lib
+)
+message(STATUS "Boost include found: " ${BOOST_INCLUDE_DIR})
+if(NOT BOOST_INCLUDE_DIR)
+  message(FATAL_ERROR "boost program incoude dir not found")
+endif(NOT BOOST_INCLUDE_DIR)
+include_directories(${BOOST_INCLUDE_DIR})
+
 find_program(
   MBCONVERT NAMES mbconvert
   PATH ${MoFEM_PETSC_DIR}/${MoFEM_PETSC_ARCH}/bin
