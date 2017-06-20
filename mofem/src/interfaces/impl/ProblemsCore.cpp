@@ -517,7 +517,6 @@ PetscErrorCode Core::loop_finite_elements(
 ) {
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
-  // finite element
 
   method.feName = fe_name;
   SET_BASIC_METHOD(method,&*problem_ptr)
@@ -532,9 +531,12 @@ PetscErrorCode Core::loop_finite_elements(
   NumeredEntFiniteElementbyNameAndPart::iterator hi_miit =
   numered_fe.upper_bound(boost::make_tuple(fe_name,upper_rank));
 
-  if(miit==hi_miit && bh&MF_EXIST) {
+  if(miit==hi_miit&&(bh&MF_EXIST)) {
     if(!check_finite_element(fe_name)) {
-      SETERRQ1(cOmm,MOFEM_NOT_FOUND,"finite element < %s > not found",fe_name.c_str());
+      SETERRQ1(
+        cOmm,MOFEM_NOT_FOUND,
+        "finite element < %s > not found",fe_name.c_str()
+      );
     }
   }
 
@@ -557,7 +559,7 @@ PetscErrorCode Core::loop_finite_elements(
     } catch (const std::exception& ex) {
       std::ostringstream ss;
       ss << "FE method " << typeid(method).name() //boost::core::demangle(typeid(method).name())
-      << "   throw in method: " << ex.what()
+      << " throw in method: " << ex.what()
       << " at line " << __LINE__
       << " in file " << __FILE__ << std::endl;
       SETERRQ(cOmm,MOFEM_DATA_INCONSISTENCY,ss.str().c_str());
