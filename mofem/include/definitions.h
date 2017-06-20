@@ -42,6 +42,7 @@ enum Interfaces {
   //Field Interface
   CORE_INTERFACE                = 1<<0|1<<1,
   PROBLEMSMANAGER_INTERFACE     = 1<<0|1<<2,
+  SIMPLE_INTERFACE              = 1<<0|1<<3,
   MESH_REFINE                   = 1<<1|1<<2,
   PRISM_INTEFACE                = 1<<1|1<<3,
   SERIES_RECORDER               = 1<<1|1<<4,

@@ -54,8 +54,10 @@ set(PERCOMPILED_MOFEM_HEADER "${PROJECT_BINARY_DIR}/include/precompiled/MoFEM.hp
 # add_executable(cubit_bc_test cubit_bc_test.cpp)
 my_add_executable(cubit_bc_test cubit_bc_test.cpp)
 target_link_libraries(cubit_bc_test
+  mofem_finite_elements
   mofem_interfaces
   mofem_multi_indices
+  mofem_petsc
   mofem_approx
   mofem_cblas
   mofem_third_party
@@ -216,8 +218,10 @@ add_test(
 # testing adding cubit meshset
 my_add_executable(add_cubit_meshsets add_cubit_meshsets.cpp)
 target_link_libraries(add_cubit_meshsets
+  mofem_finite_elements
   mofem_interfaces
   mofem_multi_indices
+  mofem_petsc
   mofem_approx
   mofem_cblas
   mofem_third_party
@@ -238,8 +242,10 @@ cm_export_file("../meshes/loop_atom.h5m" export_atom_tests)
 
 my_add_executable(loops_atom_test loops_test.cpp)
 target_link_libraries(loops_atom_test
+  mofem_finite_elements
   mofem_interfaces
   mofem_multi_indices
+  mofem_petsc
   mofem_approx
   mofem_cblas
   mofem_third_party
@@ -294,8 +300,10 @@ cm_export_file("../meshes/templar.h5m" export_atom_tests)
 
 my_add_executable(mesh_refine_atom mesh_refine_atom.cpp)
 target_link_libraries(mesh_refine_atom
+  mofem_finite_elements
   mofem_interfaces
   mofem_multi_indices
+  mofem_petsc
   mofem_approx
   mofem_cblas
   mofem_third_party
@@ -335,8 +343,10 @@ cm_export_file("../meshes/4seasons.h5m" export_atom_tests)
 
 my_add_executable(mesh_insert_interface_atom mesh_insert_interface_atom.cpp)
 target_link_libraries(mesh_insert_interface_atom
+  mofem_finite_elements
   mofem_interfaces
   mofem_multi_indices
+  mofem_petsc
   mofem_approx
   mofem_cblas
   mofem_third_party
@@ -370,6 +380,7 @@ target_link_libraries(forces_and_sources_getting_orders_indices_atom_test
   mofem_finite_elements
   mofem_interfaces
   mofem_multi_indices
+  mofem_petsc
   mofem_approx
   mofem_cblas
   mofem_third_party
@@ -388,6 +399,7 @@ target_link_libraries(forces_and_sources_getting_mult_H1_H1_atom_test
   mofem_finite_elements
   mofem_interfaces
   mofem_multi_indices
+  mofem_petsc
   mofem_approx
   mofem_cblas
   mofem_third_party
@@ -406,6 +418,7 @@ target_link_libraries(forces_and_sources_calculate_jacobian
   mofem_finite_elements
   mofem_interfaces
   mofem_multi_indices
+  mofem_petsc
   mofem_approx
   mofem_cblas
   mofem_third_party
@@ -424,6 +437,7 @@ target_link_libraries(forces_and_sources_testing_volume_element
   mofem_finite_elements
   mofem_interfaces
   mofem_multi_indices
+  mofem_petsc
   mofem_approx
   mofem_cblas
   mofem_third_party
@@ -445,6 +459,7 @@ target_link_libraries(forces_and_sources_testing_ftensor
   mofem_finite_elements
   mofem_interfaces
   mofem_multi_indices
+  mofem_petsc
   mofem_approx
   mofem_cblas
   mofem_third_party
@@ -461,6 +476,7 @@ target_link_libraries(forces_and_sources_getting_higher_order_skin_normals_atom
   mofem_finite_elements
   mofem_interfaces
   mofem_multi_indices
+  mofem_petsc
   mofem_approx
   mofem_cblas
   mofem_third_party
@@ -483,6 +499,7 @@ target_link_libraries(forces_and_sources_testing_triangle_element
   mofem_finite_elements
   mofem_interfaces
   mofem_multi_indices
+  mofem_petsc
   mofem_approx
   mofem_cblas
   mofem_third_party
@@ -504,6 +521,7 @@ target_link_libraries(forces_and_sources_testing_edge_element
   mofem_finite_elements
   mofem_interfaces
   mofem_multi_indices
+  mofem_petsc
   mofem_approx
   mofem_cblas
   mofem_third_party
@@ -525,6 +543,7 @@ target_link_libraries(forces_and_sources_testing_vertex_element
   mofem_finite_elements
   mofem_interfaces
   mofem_multi_indices
+  mofem_petsc
   mofem_approx
   mofem_cblas
   mofem_third_party
@@ -546,10 +565,12 @@ target_link_libraries(forces_and_sources_testing_flat_prism_element
   mofem_finite_elements
   mofem_interfaces
   mofem_multi_indices
+  mofem_petsc
   mofem_approx
   mofem_cblas
   mofem_third_party
-  ${PROJECT_LIBS})
+  ${PROJECT_LIBS}
+)
 
 add_test(forces_and_sources_testing_flat_prism_element_test
   ${MPI_RUN} ${MPI_RUN_FLAGS} -np 1
@@ -570,6 +591,7 @@ target_link_libraries(check_base_functions_direvatives_on_tet
   mofem_finite_elements
   mofem_interfaces
   mofem_multi_indices
+  mofem_petsc
   mofem_approx
   mofem_cblas
   mofem_third_party
@@ -604,6 +626,7 @@ target_link_libraries(forces_and_sources_check_base_functions_direvatives_tri
   mofem_finite_elements
   mofem_interfaces
   mofem_multi_indices
+  mofem_petsc
   mofem_approx
   mofem_cblas
   mofem_third_party
@@ -624,6 +647,7 @@ target_link_libraries(forces_and_sources_h1_continuity_check
   mofem_finite_elements
   mofem_interfaces
   mofem_multi_indices
+  mofem_petsc
   mofem_approx
   mofem_cblas
   mofem_third_party
@@ -640,6 +664,7 @@ target_link_libraries(forces_and_sources_polynomoal_approx_on_triangle
   mofem_finite_elements
   mofem_interfaces
   mofem_multi_indices
+  mofem_petsc
   mofem_approx
   mofem_cblas
   mofem_third_party
@@ -651,12 +676,13 @@ add_test(forces_and_sources_check_approx_of_hcurl_in_2d
   -ksp_type fgmres -pc_type bjacobi -ksp_atol 1e-12 -ksp_rtol 0 -ksp_monitor
 )
 
-
 # add test for recording series
 my_add_executable(record_series_atom record_series_atom.cpp)
 target_link_libraries(record_series_atom
+  mofem_finite_elements
   mofem_interfaces
   mofem_multi_indices
+  mofem_petsc
   mofem_approx
   mofem_cblas
   mofem_third_party
@@ -677,6 +703,7 @@ target_link_libraries(forces_and_sources_hcurl_approximation_functions
   mofem_finite_elements
   mofem_interfaces
   mofem_multi_indices
+  mofem_petsc
   mofem_approx
   mofem_cblas
   mofem_third_party
@@ -696,6 +723,7 @@ target_link_libraries(forces_and_sources_hcurl_continuity_check
   mofem_finite_elements
   mofem_interfaces
   mofem_multi_indices
+  mofem_petsc
   mofem_approx
   mofem_cblas
   mofem_third_party
@@ -712,6 +740,7 @@ target_link_libraries(forces_and_sources_hdiv_approximation_functions
   mofem_finite_elements
   mofem_interfaces
   mofem_multi_indices
+  mofem_petsc
   mofem_approx
   mofem_cblas
   mofem_third_party
@@ -733,6 +762,7 @@ target_link_libraries(hdiv_continuity_check
   mofem_finite_elements
   mofem_interfaces
   mofem_multi_indices
+  mofem_petsc
   mofem_approx
   mofem_cblas
   mofem_third_party
@@ -755,6 +785,7 @@ target_link_libraries(hdiv_divergence_operator
   mofem_finite_elements
   mofem_interfaces
   mofem_multi_indices
+  mofem_petsc
   mofem_approx
   mofem_cblas
   mofem_third_party
@@ -777,6 +808,7 @@ target_link_libraries(forces_and_sources_hcurl_curl_operator
   mofem_finite_elements
   mofem_interfaces
   mofem_multi_indices
+  mofem_petsc
   mofem_approx
   mofem_cblas
   mofem_third_party
@@ -942,6 +974,7 @@ target_link_libraries(projection_from_10node_tet_atom
   mofem_finite_elements
   mofem_interfaces
   mofem_multi_indices
+  mofem_petsc
   mofem_approx
   mofem_cblas
   mofem_third_party
@@ -1106,3 +1139,16 @@ if(MED_LIBRARY)
     ${CMAKE_CURRENT_BINARY_DIR}/reading_med_file -med_file Mesh_1.med
   )
 endif(MED_LIBRARY)
+
+# Simple interface
+my_add_executable(simple_interface simple_interface.cpp)
+target_link_libraries(simple_interface
+  mofem_finite_elements
+  mofem_interfaces
+  mofem_multi_indices
+  mofem_petsc
+  mofem_approx
+  mofem_cblas
+  mofem_third_party
+  ${PROJECT_LIBS}
+)

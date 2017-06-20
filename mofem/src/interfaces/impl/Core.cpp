@@ -45,6 +45,7 @@
 
 // Interfaces
 #include <ProblemsManager.hpp>
+#include <Simple.hpp>
 #include <MeshRefinement.hpp>
 #include <SeriesRecorder.hpp>
 #include <PrismInterface.hpp>
@@ -118,6 +119,16 @@ PetscErrorCode Core::query_interface_type(const std::type_info& type,void*& ptr)
     PetscFunctionReturn(0);
   }
 
+  // Simple interface
+  if(type == typeid(Simple)) {
+    if(iFaces.find(IDD_MOFEMSimple.uUId.to_ulong()) == iFaces.end()) {
+      unsigned long int uid = IDD_MOFEMSimple.uUId.to_ulong();
+      iFaces.insert(uid,new Simple(*this));
+    }
+    ptr = &iFaces.at(IDD_MOFEMSimple.uUId.to_ulong());
+    PetscFunctionReturn(0);
+  }
+
   //Meshsets manager
   if(type == typeid(MeshsetsManager)) {
     if(iFaces.find(IDD_MOFEMMeshsetsManager.uUId.to_ulong()) == iFaces.end()) {
@@ -127,8 +138,6 @@ PetscErrorCode Core::query_interface_type(const std::type_info& type,void*& ptr)
     ptr = &iFaces.at(IDD_MOFEMMeshsetsManager.uUId.to_ulong());
     PetscFunctionReturn(0);
   }
-
-  //Problems manager
 
   //Coordinate systems manager
   if(type == typeid(CoordSystemsManager)) {
