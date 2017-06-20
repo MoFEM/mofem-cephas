@@ -57,8 +57,8 @@ find_path(
   BOOST_INCLUDE_DIR
   NAMES boost/multi_index_container.hpp
   HINTS
-  ${MoFEM_BOOST_DIR}/lib
-  ${MoFEM_PETSC_DIR}/${PETSC_ARCH}/lib
+  ${MoFEM_BOOST_DIR}/include
+  ${MoFEM_PETSC_DIR}/${PETSC_ARCH}/include
 )
 message(STATUS "Boost include found: " ${BOOST_INCLUDE_DIR})
 if(NOT BOOST_INCLUDE_DIR)

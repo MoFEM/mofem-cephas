@@ -155,8 +155,8 @@ find_path(
   BOOST_INCLUDE_DIR
   NAMES boost/multi_index_container.hpp
   HINTS
-  ${BOOST_DIR}/lib
-  ${PETSC_DIR}/${PETSC_ARCH}/lib
+  ${BOOST_DIR}/include
+  ${PETSC_DIR}/${PETSC_ARCH}/include
 )
 message(STATUS "Boost include found: " ${BOOST_INCLUDE_DIR})
 if(NOT BOOST_INCLUDE_DIR)
