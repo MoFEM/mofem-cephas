@@ -101,8 +101,20 @@ struct FaceElementForcesAndSourcesCore: public ForcesAndSurcesCore {
     const std::string &row_field_name,const std::string &col_field_name,const char type):
     ForcesAndSurcesCore::UserDataOperator(row_field_name,col_field_name,type) {};
 
+    /**
+     * \brief get area of face
+     * @return area of face
+     */
     inline double getArea() {
       return static_cast<FaceElementForcesAndSourcesCore*>(ptrFE)->aRea;
+    }
+
+    /**
+     * \brief get measure of element
+     * @return area of face
+     */
+    inline double getMeasure() {
+      return getArea();
     }
 
     /** \brief get triangle normal
@@ -189,6 +201,10 @@ struct FaceElementForcesAndSourcesCore: public ForcesAndSurcesCore {
     */
     inline MatrixDouble& getGaussPts() {
       return static_cast<FaceElementForcesAndSourcesCore*>(ptrFE)->gaussPts;
+    }
+
+    inline FTensor::Tensor0<double*> getIntegrationWeight() {
+      return FTensor::Tensor0<double*>(&(getGaussPts()(2,0)),1);
     }
 
     /** \brief Gauss points and weight, matrix (nb. of points x 3)

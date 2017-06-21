@@ -122,6 +122,14 @@ struct VolumeElementForcesAndSourcesCore: public ForcesAndSurcesCore {
       return static_cast<VolumeElementForcesAndSourcesCore*>(ptrFE)->vOlume;
     }
 
+    /**
+     * \brief get measure of element
+     * @return area of face
+     */
+    inline double getMeasure() {
+      return getVolume();
+    }
+
     /** \brief nodal coordinates
       */
     inline VectorDouble& getCoords() {
@@ -134,6 +142,10 @@ struct VolumeElementForcesAndSourcesCore: public ForcesAndSurcesCore {
       */
     inline MatrixDouble& getGaussPts() {
       return static_cast<VolumeElementForcesAndSourcesCore*>(ptrFE)->gaussPts;
+    }
+
+    inline FTensor::Tensor0<double*> getIntegrationWeight() {
+      return FTensor::Tensor0<double*>(&(getGaussPts()(3,0)),1);
     }
 
     /** \brief Gauss points and weight, matrix (nb. of points x 3)
@@ -155,6 +167,7 @@ struct VolumeElementForcesAndSourcesCore: public ForcesAndSurcesCore {
     inline MatrixDouble& getHoGaussPtsInvJac() {
       return static_cast<VolumeElementForcesAndSourcesCore*>(ptrFE)->hoGaussPtsInvJac;
     }
+
     inline VectorDouble& getHoGaussPtsDetJac() {
       return static_cast<VolumeElementForcesAndSourcesCore*>(ptrFE)->hoGaussPtsDetJac;
     }
