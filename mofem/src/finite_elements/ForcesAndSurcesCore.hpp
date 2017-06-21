@@ -39,8 +39,11 @@ struct ForcesAndSurcesCore: public FEMethod {
 
   Interface& mField;
   ForcesAndSurcesCore(MoFEM::Interface& m_field):
-    mField(m_field) {};
-  virtual ~ForcesAndSurcesCore() {}
+  mField(m_field) {
+  }
+  virtual ~ForcesAndSurcesCore() {
+
+  }
 
   PetscErrorCode getNumberOfNodes(int &num_nodes) const;
 
@@ -271,45 +274,53 @@ struct ForcesAndSurcesCore: public FEMethod {
   PetscErrorCode getProblemTypeColIndices(const std::string &field_name,EntityType type,int side_number,VectorInt &indices) const;
 
   /** \brief set integration rule for finite element
+    *
+    * This function is overloaded by the user. The integration rule
+    * is set such that specific operator implemented by the user is integrated
+    * accurately. For example if user implement bilinear operator
+    * \f[
+    * b(u,v) =
+    * \int_\mathcal{T}
+    * \frac{\partial u_i}{\partial x_j}\frac{\partial v_i}{\partial x_j}
+    * \textrm{d}\mathcal{T}
+    * \f]
+    * then if \f$u\f$ and \f$v\f$ are polynomial of given \em order, then exact
+    * integral would be
+    * \code
+    * int getRule(int order) { return 2*(order-1); };
+    * \endcode
+    *
+    * The integration points and weights are set appropriately for given entity
+    * type and integration rule from \ref quad.c
+    *
+    * Method \ref ForcesAndSurcesCore::getRule takes at argument takes maximal
+    * polynomial order set on the element on all fields defined on the element. If a
+    * user likes to have more control, another variant of this function can be
+    * called which distinguishing between field orders on rows, columns and data,
+    * the i.e. first argument of a bilinear form, the second argument of bilinear
+    * form and field coefficents on the element.
+    *
+    * \note If user set rule to -1 or any other negative integer, then method
+    * \ref ForcesAndSurcesCore::setGaussPts is called. In that method user can implement
+    * own (specific) integration method.
+    *
+    * \bug this function should be const
+    *
+    */
+  virtual int getRule(int order) { return 2*order; }
 
-  This function is overloaded by the user. The integration rule
-  is set such that specific operator implemented by the user is integrated
-  accurately. For example if user implement bilinear operator
-  \f[
-  b(u,v) =
-  \int_\mathcal{T}
-  \frac{\partial u_i}{\partial x_j}\frac{\partial v_i}{\partial x_j}
-  \textrm{d}\mathcal{T}
-  \f]
-  then if \f$u\f$ and \f$v\f$ are polynomial of given \em order, then exact
-  integral would be
-  \code
-  int getRule(int order) { return 2*(order-1); };
-  \endcode
-
-  The integration points and weights are set appropriately for given entity
-  type and integration rule from \ref quad.c
-
-  Method \ref ForcesAndSurcesCore::getRule takes at argument takes maximal
-  polynomial order set on the element on all fields defined on the element. If a
-  user likes to have more control, another variant of this function can be
-  called which distinguishing between field orders on rows, columns and data,
-  the i.e. first argument of a bilinear form, the second argument of bilinear
-  form and field coefficents on the element.
-
-  \note If user set rule to -1 or any other negative integer, then method
-  \ref ForcesAndSurcesCore::setGaussPts is called. In that method user can implement
-  own (specific) integration method.
-
-
-  */
-  virtual int getRule(int order) { return 2*order; };
-
-  virtual int getRule(
-    int order_row,int order_col,int order_data
-  ) {
+  /**
+   * \brief another variant of getRule
+   * @param  order_row  order of base function on row
+   * @param  order_col  order of base function on columns
+   * @param  order_data order of base function approximating data
+   * @return            integration rule
+   *
+   * \bug this function should be const
+   */
+  virtual int getRule(int order_row,int order_col,int order_data) {
     return getRule(order_data);
-  };
+  }
 
   /** \brief It will be removed in the future use other variant
     */
@@ -518,6 +529,7 @@ struct ForcesAndSurcesCore: public FEMethod {
     inline void addOpType(const OpType type) { opType |= type; }
 
   protected:
+
     ForcesAndSurcesCore *ptrFE;
 
   };
@@ -545,6 +557,21 @@ struct ForcesAndSurcesCore: public FEMethod {
   }
 
 };
+
+/// \brief set integration rule
+
+/**
+ * \brief declare element class and set integration rule
+ * @param  MYFE Name of element class
+ * @param  FE   Name of derived class
+ * @param  RULE Integration rule, e.g. 2*order-1
+ * @return      error code
+ */
+#define MAKE_MY_FE_WITH_RULE(MYFE,FE,RULE) \
+struct MYFE: public FE { \
+  MYFE(MoFEM::Interface &m_field): FE(m_field) {} \
+  int getRule(int order) { return (RULE); } \
+}
 
 }
 
