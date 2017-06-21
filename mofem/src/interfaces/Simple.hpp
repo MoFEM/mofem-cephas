@@ -165,6 +165,11 @@ namespace MoFEM {
      */
     PetscErrorCode getDM(DM *dm);
 
+    inline int getDim() const { return dIm; }
+    inline const std::string& getDomainFEName() { return domainFE; }
+    inline const std::string& getBoundaryFEName() { return boundaryFE; }
+    inline const std::string& getSkeletonFEName() { return skeletonFE; }
+
   private:
 
     const BitRefLevel bitLevel;
@@ -184,12 +189,9 @@ namespace MoFEM {
 
     std::map<std::string,int> fieldsOrder;    ///< fields order
 
-    std::vector<std::string> domainFEs;       ///< domain finite elements
-    std::vector<std::string> boundaryFEs;     ///< boundary finite elements
-    std::vector<std::string> skeletonFEs;     ///< skeleton finite elements
-
-    int orderDomain;
-    int orderBoundary;
+    std::string domainFE;      ///< domain finite element
+    std::string boundaryFE;     ///< boundary finite element
+    std::string skeletonFE;     ///< skeleton finite element
 
     char meshFileName[255]; ///< mesh file name
     int dIm;                ///< dimension of problem

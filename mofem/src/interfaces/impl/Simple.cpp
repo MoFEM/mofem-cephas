@@ -73,6 +73,9 @@ namespace MoFEM {
   bitLevel(BitRefLevel().set(0)),
   meshSet(0),
   boundaryMeshset(0),
+  domainFE("dFE"),
+  boundaryFE("bFE"),
+  skeletonFE("sFE"),
   dIm(-1),
   dM(PETSC_NULL) {
     PetscLogEventRegister("LoadMesh",0,&USER_EVENT_SimpleLoadMesh);
@@ -81,9 +84,6 @@ namespace MoFEM {
     PetscLogEventRegister("SimpleSetUp",0,&USER_EVENT_SimpleBuildProblem);
     PetscLogEventRegister("SimpleKSPSolve",0,&USER_EVENT_SimpleKSPSolve);
     strcpy(meshFileName,"mesh.h5m");
-    domainFEs.push_back("dFE");
-    boundaryFEs.push_back("bFE");
-    skeletonFEs.push_back("sFE");
   }
   Simple::~Simple() {
     PetscErrorCode ierr;
@@ -209,28 +209,46 @@ namespace MoFEM {
     MoFEM::Interface &m_field = cOre;
     PetscFunctionBegin;
     // Define finite elements
-    for(unsigned int ee = 0;ee!=domainFEs.size();ee++) {
-      ierr = m_field.add_finite_element(domainFEs[ee]); CHKERRQ(ierr);
+    ierr = m_field.add_finite_element(domainFE); CHKERRQ(ierr);
+    for(unsigned int ff = 0;ff!=domainFields.size();ff++) {
+      ierr = m_field.modify_finite_element_add_field_row(domainFE,domainFields[ff]); CHKERRQ(ierr);
+      ierr = m_field.modify_finite_element_add_field_col(domainFE,domainFields[ff]); CHKERRQ(ierr);
+      ierr = m_field.modify_finite_element_add_field_data(domainFE,domainFields[ff]); CHKERRQ(ierr);
+    }
+    if(!boundaryFields.empty()) {
+      ierr = m_field.add_finite_element(boundaryFE); CHKERRQ(ierr);
       for(unsigned int ff = 0;ff!=domainFields.size();ff++) {
-        ierr = m_field.modify_finite_element_add_field_row(domainFEs[ee],domainFields[ff]); CHKERRQ(ierr);
-        ierr = m_field.modify_finite_element_add_field_col(domainFEs[ee],domainFields[ff]); CHKERRQ(ierr);
-        ierr = m_field.modify_finite_element_add_field_data(domainFEs[ee],domainFields[ff]); CHKERRQ(ierr);
+        ierr = m_field.modify_finite_element_add_field_row(boundaryFE,domainFields[ff]); CHKERRQ(ierr);
+        ierr = m_field.modify_finite_element_add_field_col(boundaryFE,domainFields[ff]); CHKERRQ(ierr);
+        ierr = m_field.modify_finite_element_add_field_data(boundaryFE,domainFields[ff]); CHKERRQ(ierr);
       }
-    }
-    for(unsigned int ee = 0;ee!=boundaryFEs.size();ee++) {
-      ierr = m_field.add_finite_element(boundaryFEs[ee]); CHKERRQ(ierr);
       for(unsigned int ff = 0;ff!=boundaryFields.size();ff++) {
-        ierr = m_field.modify_finite_element_add_field_row(boundaryFEs[ee],boundaryFields[ff]); CHKERRQ(ierr);
-        ierr = m_field.modify_finite_element_add_field_col(boundaryFEs[ee],boundaryFields[ff]); CHKERRQ(ierr);
-        ierr = m_field.modify_finite_element_add_field_data(boundaryFEs[ee],boundaryFields[ff]); CHKERRQ(ierr);
+        ierr = m_field.modify_finite_element_add_field_row(boundaryFE,boundaryFields[ff]); CHKERRQ(ierr);
+        ierr = m_field.modify_finite_element_add_field_col(boundaryFE,boundaryFields[ff]); CHKERRQ(ierr);
+        ierr = m_field.modify_finite_element_add_field_data(boundaryFE,boundaryFields[ff]); CHKERRQ(ierr);
+      }
+      for(unsigned int ff = 0;ff!=skeletonFields.size();ff++) {
+        ierr = m_field.modify_finite_element_add_field_row(boundaryFE,skeletonFields[ff]); CHKERRQ(ierr);
+        ierr = m_field.modify_finite_element_add_field_col(boundaryFE,skeletonFields[ff]); CHKERRQ(ierr);
+        ierr = m_field.modify_finite_element_add_field_data(boundaryFE,skeletonFields[ff]); CHKERRQ(ierr);
       }
     }
-    for(unsigned int ee = 0;ee!=skeletonFEs.size();ee++) {
-      ierr = m_field.add_finite_element(skeletonFEs[ee]); CHKERRQ(ierr);
+    if(!skeletonFields.empty()) {
+      ierr = m_field.add_finite_element(skeletonFE); CHKERRQ(ierr);
+      for(unsigned int ff = 0;ff!=domainFields.size();ff++) {
+        ierr = m_field.modify_finite_element_add_field_row(skeletonFE,domainFields[ff]); CHKERRQ(ierr);
+        ierr = m_field.modify_finite_element_add_field_col(skeletonFE,domainFields[ff]); CHKERRQ(ierr);
+        ierr = m_field.modify_finite_element_add_field_data(skeletonFE,domainFields[ff]); CHKERRQ(ierr);
+      }
+      for(unsigned int ff = 0;ff!=boundaryFE.size();ff++) {
+        ierr = m_field.modify_finite_element_add_field_row(skeletonFE,boundaryFields[ff]); CHKERRQ(ierr);
+        ierr = m_field.modify_finite_element_add_field_col(skeletonFE,boundaryFields[ff]); CHKERRQ(ierr);
+        ierr = m_field.modify_finite_element_add_field_data(skeletonFE,boundaryFields[ff]); CHKERRQ(ierr);
+      }
       for(unsigned int ff = 0;ff!=skeletonFields.size();ff++) {
-        ierr = m_field.modify_finite_element_add_field_row(skeletonFEs[ee],skeletonFields[ff]); CHKERRQ(ierr);
-        ierr = m_field.modify_finite_element_add_field_col(skeletonFEs[ee],skeletonFields[ff]); CHKERRQ(ierr);
-        ierr = m_field.modify_finite_element_add_field_data(skeletonFEs[ee],skeletonFields[ff]); CHKERRQ(ierr);
+        ierr = m_field.modify_finite_element_add_field_row(skeletonFE,skeletonFields[ff]); CHKERRQ(ierr);
+        ierr = m_field.modify_finite_element_add_field_col(skeletonFE,skeletonFields[ff]); CHKERRQ(ierr);
+        ierr = m_field.modify_finite_element_add_field_data(skeletonFE,skeletonFields[ff]); CHKERRQ(ierr);
       }
     }
     PetscFunctionReturn(0);
@@ -249,14 +267,12 @@ namespace MoFEM {
     //set dm data structure which created mofem data structures
     ierr = DMMoFEMCreateMoFEM(dM,&m_field,"SimpleProblem",bitLevel); CHKERRQ(ierr);
     ierr = DMSetFromOptions(dM); CHKERRQ(ierr);
-    for(unsigned int ee = 0;ee!=domainFEs.size();ee++) {
-      ierr = DMMoFEMAddElement(dM,domainFEs[ee].c_str()); CHKERRQ(ierr);
+    ierr = DMMoFEMAddElement(dM,domainFE.c_str()); CHKERRQ(ierr);
+    if(!boundaryFields.empty()) {
+      ierr = DMMoFEMAddElement(dM,boundaryFE.c_str()); CHKERRQ(ierr);
     }
-    for(unsigned int ee = 0;ee!=boundaryFEs.size();ee++) {
-      ierr = DMMoFEMAddElement(dM,boundaryFEs[ee].c_str()); CHKERRQ(ierr);
-    }
-    for(unsigned int ee = 0;ee!=skeletonFEs.size();ee++) {
-      ierr = DMMoFEMAddElement(dM,skeletonFEs[ee].c_str()); CHKERRQ(ierr);
+    if(!skeletonFields.empty()) {
+      ierr = DMMoFEMAddElement(dM,skeletonFE.c_str()); CHKERRQ(ierr);
     }
     ierr = DMMoFEMSetIsPartitioned(dM,PETSC_TRUE); CHKERRQ(ierr);
     PetscFunctionReturn(0);
@@ -403,21 +419,15 @@ namespace MoFEM {
     PetscFunctionBegin;
     PetscLogEventBegin(USER_EVENT_SimpleBuildFiniteElements,0,0,0,0);
     // Add finite elements
-    for(unsigned int ee = 0;ee!=domainFEs.size();ee++) {
-      ierr = m_field.add_ents_to_finite_element_by_dim(meshSet,dIm,domainFEs[ee],true); CHKERRQ(ierr);
-      ierr = m_field.build_finite_elements(domainFEs[ee]); CHKERRQ(ierr);
-    }
+    ierr = m_field.add_ents_to_finite_element_by_dim(meshSet,dIm,domainFE,true); CHKERRQ(ierr);
+    ierr = m_field.build_finite_elements(domainFE); CHKERRQ(ierr);
     if(!boundaryFields.empty()) {
-      for(unsigned int ee = 0;ee!=boundaryFEs.size();ee++) {
-        ierr = m_field.add_ents_to_finite_element_by_dim(boundaryMeshset,dIm-1,boundaryFEs[ee],true); CHKERRQ(ierr);
-        ierr = m_field.build_finite_elements(boundaryFEs[ee]); CHKERRQ(ierr);
-      }
+        ierr = m_field.add_ents_to_finite_element_by_dim(boundaryMeshset,dIm-1,boundaryFE,true); CHKERRQ(ierr);
+        ierr = m_field.build_finite_elements(boundaryFE); CHKERRQ(ierr);
     }
     if(!skeletonFields.empty()) {
-      for(unsigned int ee = 0;ee!=skeletonFEs.size();ee++) {
-        ierr = m_field.add_ents_to_finite_element_by_dim(meshSet,dIm-1,skeletonFEs[ee],true); CHKERRQ(ierr);
-        ierr = m_field.build_finite_elements(skeletonFEs[ee]); CHKERRQ(ierr);
-      }
+      ierr = m_field.add_ents_to_finite_element_by_dim(meshSet,dIm-1,skeletonFE,true); CHKERRQ(ierr);
+      ierr = m_field.build_finite_elements(skeletonFE); CHKERRQ(ierr);
     }
     PetscLogEventEnd(USER_EVENT_SimpleBuildFiniteElements,0,0,0,0);
     PetscFunctionReturn(0);
@@ -451,5 +461,6 @@ namespace MoFEM {
     *dm = dM;
     PetscFunctionReturn(0);
   }
+
 
 }

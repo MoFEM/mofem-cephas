@@ -1152,3 +1152,8 @@ target_link_libraries(simple_interface
   mofem_third_party
   ${PROJECT_LIBS}
 )
+
+add_test(
+  simple_interface ${MPI_RUN} ${MPI_RUN_FLAGS} -np 2
+  ${CMAKE_CURRENT_BINARY_DIR}/simple_interface -file_name disp01_2parts.h5m
+)
