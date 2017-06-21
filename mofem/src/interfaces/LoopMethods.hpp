@@ -46,20 +46,51 @@ struct KspMethod: virtual public UnknownInterface  {
     SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"unknown interface");
   }
 
+  /**
+   * \brief pass information about context of KSP/DM for with finite element is computed
+   */
   enum KSPContext { CTX_SETFUNCTION, CTX_OPERATORS, CTX_KSPNONE };
 
-  KSPContext ksp_ctx;
-  KspMethod(): ksp_ctx(CTX_KSPNONE) {}
-  virtual ~KspMethod() {};
+  KspMethod():
+  ksp_ctx(CTX_KSPNONE) {
+  }
+  virtual ~KspMethod() {}
 
-  PetscErrorCode set_ksp_ctx(const KSPContext ctx_);
+  /**
+   * \brief set operator type
+   * @param  ctx Context, CTX_SETFUNCTION, CTX_OPERATORS, CTX_KSPNONE
+   * @return     error code
+   */
+  PetscErrorCode setKspCtx(const KSPContext ctx);
 
-  KSP ksp;
-  PetscErrorCode set_ksp(KSP _ksp);
-  Vec ksp_f;
-  Mat ksp_A,ksp_B;
+  /**
+   * \brief set solver
+   * @param  ksp solver
+   * @return     error code
+   */
+  PetscErrorCode setKsp(KSP ksp);
 
-  PetscErrorCode copy_ksp(const KspMethod &ksp);
+  /**
+   * \brief copy data form another method
+   * @param  ksp ksp method
+   * @return     error code
+   */
+  PetscErrorCode copyKsp(const KspMethod &ksp);
+
+  /// \deprecated use setKspCtx
+  DEPRECATED PetscErrorCode set_ksp_ctx(const KSPContext ctx);
+
+  /// \deprecated  use setKsp
+  DEPRECATED PetscErrorCode set_ksp(KSP ksp);
+
+  /// \deprecated use copyKsp
+  DEPRECATED PetscErrorCode copy_ksp(const KspMethod &ksp);
+
+  KSPContext ksp_ctx;   ///< Context
+  KSP ksp;              ///< KSP solver
+  Vec ksp_f;            ///< the right hand side vector
+  Mat ksp_A;            ///< matrix
+  Mat ksp_B;            ///< preconditioner matrix
 
 };
 
