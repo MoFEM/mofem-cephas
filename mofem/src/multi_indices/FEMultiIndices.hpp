@@ -162,7 +162,7 @@ struct interface_RefElement: interface_RefEntity<T> {
   // DEPRECATED inline SideNumber_multiIndex &get_side_number_table() const
   // { return this->sPtr->getSideNumberTable(); }
 
-  inline const boost::shared_ptr<SideNumber> getSideNumberPtr(const EntityHandle ent) const
+  inline const boost::shared_ptr<SideNumber>& getSideNumberPtr(const EntityHandle ent) const
   { return this->sPtr->getSideNumberPtr(ent); }
 
   // /**
@@ -741,7 +741,7 @@ struct NumeredEntFiniteElement: public interface_EntFiniteElement<EntFiniteEleme
   /**
    * \Construct indexed finite element
    */
-  NumeredEntFiniteElement(const boost::shared_ptr<EntFiniteElement> sptr):
+  NumeredEntFiniteElement(const boost::shared_ptr<EntFiniteElement>& sptr):
   interface_EntFiniteElement<EntFiniteElement>(sptr),
   part(-1),
   rows_dofs(boost::shared_ptr<FENumeredDofEntity_multiIndex>(new FENumeredDofEntity_multiIndex())),
