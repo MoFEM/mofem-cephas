@@ -253,7 +253,7 @@ struct AnalyticalDirichletBC {
   }
 
   // /**
-  //  * \deprected no need to use function with argument of triangle range
+  //  * \deprecated no need to use function with argument of triangle range
   //  */
   // template<typename FUNEVAL> DEPRECATED PetscErrorCode setApproxOps(
   //   MoFEM::Interface &m_field,
@@ -286,7 +286,7 @@ struct AnalyticalDirichletBC {
   );
 
   // /**
-  // \deprected use setFiniteElement instead
+  // \deprecated use setFiniteElement instead
   // */
   // DEPRECATED PetscErrorCode initializeProblem(
   //   MoFEM::Interface &m_field,
@@ -313,7 +313,7 @@ struct AnalyticalDirichletBC {
   );
 
   // /**
-  //  * \deprected use setUpProblem instead
+  //  * \deprecated use setUpProblem instead
   //  */
   // DEPRECATED PetscErrorCode setProblem(
   //   MoFEM::Interface &m_field,string problem

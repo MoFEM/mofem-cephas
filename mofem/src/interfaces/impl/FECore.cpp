@@ -1,4 +1,4 @@
-/** \file DeleteCore.cpp
+/** \file FECore.cpp
  * \brief Core interface methods for managing deletions and insertion dofs
  */
 

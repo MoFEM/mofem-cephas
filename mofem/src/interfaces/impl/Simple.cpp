@@ -1,6 +1,8 @@
-/** \file ProblemCore.cpp
- * \brief Managing complexities for problem
+/** \file Simple.cpp
+ * \brief Implementation of simple interface
+ * \ingroup mofem_simple_interface
  */
+
 
 /* MoFEM is free software: you can redistribute it and/or modify it under
  * the terms of the GNU Lesser General Public License as published by the
@@ -44,12 +46,12 @@
 #include <Interface.hpp>
 #include <Core.hpp>
 
-#include <Simple.hpp>
+#include <KspCtx.hpp>
+#include <SnesCtx.hpp>
+#include <TsCtx.hpp>
+#include <DMMoFEM.hpp>
 
-#include <../petsc/KspCtx.hpp>
-#include <../petsc/SnesCtx.hpp>
-#include <../petsc/TsCtx.hpp>
-#include <../petsc/DMMoFEM.hpp>
+#include <Simple.hpp>
 
 namespace MoFEM {
 

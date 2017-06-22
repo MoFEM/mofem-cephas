@@ -1,11 +1,11 @@
 /** \file Simple.hpp
- * \brief NodeMerger interface
+ * \brief Header file for simple interface
+ * \ingroup mofem_simple_interface
  *
  * Make simplified interface, to speedup problem setup and analysts.
  * See discussion here
  * <a href=https://groups.google.com/d/msg/mofem-group/Vkc00aia4dU/o9RF3ZmPAAAJ>link to google groups</a>
  *
- * \ingroup mofem_node_merger
  */
 
 /* MoFEM is distributed in the hope that it will be useful, but WITHOUT
@@ -26,6 +26,10 @@ namespace MoFEM {
 
   static const MOFEMuuid IDD_MOFEMSimple = MOFEMuuid( BitIntefaceId(SIMPLE_INTERFACE) );
 
+  /**
+   * \brief Simple interface for fast problem set-up
+   * \ingroup mofem_simple_interface
+   */
   struct Simple: public UnknownInterface {
 
     PetscErrorCode queryInterface(const MOFEMuuid& uuid, UnknownInterface** iface);
@@ -203,3 +207,10 @@ namespace MoFEM {
 }
 
 #endif // __SIMPLE_HPP__
+
+/***************************************************************************//**
+ * \defgroup mofem_simple_interface Simple interface
+ * \brief Implementation of simple interface for fast problem set-up.
+ *
+ * \ingroup mofem
+ ******************************************************************************/

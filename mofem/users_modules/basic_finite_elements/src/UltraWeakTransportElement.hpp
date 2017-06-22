@@ -47,7 +47,7 @@ struct UltraWeakTransportElement {
    * \brief definition of volume element
 
    * It is used to calculate volume integrals. On volume element we set-up
-   * operators to cal;ulcerate components of matrix and vector.
+   * operators to calculate components of matrix and vector.
 
    */
   struct MyVolumeFE: public MoFEM::VolumeElementForcesAndSourcesCore {

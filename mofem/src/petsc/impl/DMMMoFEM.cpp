@@ -456,7 +456,7 @@ PetscErrorCode DMoFEMLoopFiniteElementsUpAndLowRank(DM dm,const char fe_name[],M
 }
 
 PetscErrorCode DMoFEMLoopFiniteElementsUpAndLowRank(
-  DM dm,const std::string& fe_name,boost::shared_ptr<MoFEM::FEMethod> &method,int low_rank,int up_rank
+  DM dm,const std::string& fe_name,boost::shared_ptr<MoFEM::FEMethod> method,int low_rank,int up_rank
 ) {
   return DMoFEMLoopFiniteElementsUpAndLowRank(dm,fe_name.c_str(),method.get(),low_rank,up_rank);
 }
@@ -470,7 +470,7 @@ PetscErrorCode DMoFEMLoopFiniteElements(DM dm,const char fe_name[],MoFEM::FEMeth
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode DMoFEMLoopFiniteElements(DM dm,const std::string& fe_name,boost::shared_ptr<MoFEM::FEMethod> &method) {
+PetscErrorCode DMoFEMLoopFiniteElements(DM dm,const std::string& fe_name,boost::shared_ptr<MoFEM::FEMethod> method) {
   return DMoFEMLoopFiniteElements(dm,fe_name.c_str(),method.get());
 }
 
@@ -509,11 +509,11 @@ PetscErrorCode DMMoFEMKSPSetComputeRHS(DM dm,const char fe_name[],MoFEM::FEMetho
 PetscErrorCode DMMoFEMKSPSetComputeRHS(
   DM dm,
   const std::string& fe_name,
-  boost::shared_ptr<MoFEM::FEMethod>& method,
-  boost::shared_ptr<MoFEM::FEMethod>& pre_only,
-  boost::shared_ptr<MoFEM::FEMethod>& post_only
+  boost::shared_ptr<MoFEM::FEMethod> method,
+  boost::shared_ptr<MoFEM::FEMethod> pre_only,
+  boost::shared_ptr<MoFEM::FEMethod> post_only
 ) {
-  return DMMoFEMKSPSetComputeRHS<const std::string&,boost::shared_ptr<MoFEM::FEMethod>& >(
+  return DMMoFEMKSPSetComputeRHS<const std::string&,boost::shared_ptr<MoFEM::FEMethod> >(
     dm,fe_name,method,pre_only,post_only
   );
 }
@@ -546,11 +546,11 @@ PetscErrorCode DMMoFEMKSPSetComputeOperators(
 PetscErrorCode DMMoFEMKSPSetComputeOperators(
   DM dm,
   const std::string& fe_name,
-  boost::shared_ptr<MoFEM::FEMethod>& method,
-  boost::shared_ptr<MoFEM::FEMethod>& pre_only,
-  boost::shared_ptr<MoFEM::FEMethod>& post_only
+  boost::shared_ptr<MoFEM::FEMethod> method,
+  boost::shared_ptr<MoFEM::FEMethod> pre_only,
+  boost::shared_ptr<MoFEM::FEMethod> post_only
 ) {
-  return DMMoFEMKSPSetComputeOperators<const std::string&,boost::shared_ptr<MoFEM::FEMethod>& >(
+  return DMMoFEMKSPSetComputeOperators<const std::string&,boost::shared_ptr<MoFEM::FEMethod> >(
     dm,fe_name,method,pre_only,post_only
   );
 }
@@ -582,11 +582,11 @@ PetscErrorCode DMMoFEMSNESSetFunction(
 
 PetscErrorCode DMMoFEMSNESSetFunction(
   DM dm,const std::string& fe_name,
-  boost::shared_ptr<MoFEM::FEMethod>& method,
-  boost::shared_ptr<MoFEM::FEMethod>& pre_only,
-  boost::shared_ptr<MoFEM::FEMethod>& post_only
+  boost::shared_ptr<MoFEM::FEMethod> method,
+  boost::shared_ptr<MoFEM::FEMethod> pre_only,
+  boost::shared_ptr<MoFEM::FEMethod> post_only
 ) {
-  return DMMoFEMSNESSetFunction<const std::string&,boost::shared_ptr<MoFEM::FEMethod>& >(
+  return DMMoFEMSNESSetFunction<const std::string&,boost::shared_ptr<MoFEM::FEMethod> >(
     dm,fe_name,method,pre_only,post_only
   );
 }
@@ -620,12 +620,12 @@ PetscErrorCode DMMoFEMSNESSetJacobian(
 }
 
 PetscErrorCode DMMoFEMSNESSetJacobian(
-  DM dm,std::string& fe_name,
-  boost::shared_ptr<MoFEM::FEMethod>& method,
-  boost::shared_ptr<MoFEM::FEMethod>& pre_only,
-  boost::shared_ptr<MoFEM::FEMethod>& post_only
+  DM dm,const std::string& fe_name,
+  boost::shared_ptr<MoFEM::FEMethod> method,
+  boost::shared_ptr<MoFEM::FEMethod> pre_only,
+  boost::shared_ptr<MoFEM::FEMethod> post_only
 ) {
-  return DMMoFEMSNESSetJacobian<std::string&,boost::shared_ptr<MoFEM::FEMethod>& >(
+  return DMMoFEMSNESSetJacobian<const std::string&,boost::shared_ptr<MoFEM::FEMethod> >(
     dm,fe_name,method,pre_only,post_only
   );
 }

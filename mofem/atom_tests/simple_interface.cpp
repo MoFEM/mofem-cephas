@@ -1,10 +1,10 @@
-/** \file simple_interface.cpp
-  * \example simple_interface.hpp
-  * \brief Simple interface
+ /**
+  * \file simple_interface.cpp
+  * \ingroup mofem_simple_interface
+  * \example simple_interface.cpp
   *
-  * This is simple test, calculate volume and apply divergence theorem to surface
-  * integral to calculate volume. Integration on surface and in volume should be
-  * equal to each other.
+  * Calculate volume by integrating volume elements and using divergence theorem
+  * by integrating surface elements.
   *
   */
 
@@ -105,6 +105,7 @@ struct OpFace: public FaceElementForcesAndSourcesCore::UserDataOperator {
 struct VolRule { int operator()(int,int,int) const { return 2; } };
 struct FaceRule { int operator()(int,int,int) const { return 4; } };
 
+
 int main(int argc, char *argv[]) {
 
   ErrorCode rval;
@@ -149,13 +150,13 @@ int main(int argc, char *argv[]) {
       // get dm
       ierr = simple_interface->getDM(&dm); CHKERRQ(ierr);
       // create elements
-      boost::shared_ptr<FEMethod> domainFE =
+      boost::shared_ptr<ForcesAndSurcesCore> domainFE =
       boost::shared_ptr<ForcesAndSurcesCore>(new VolumeElementForcesAndSourcesCore(m_field));
-      boost::shared_ptr<FEMethod> boundaryFE =
+      boost::shared_ptr<ForcesAndSurcesCore> boundaryFE =
       boost::shared_ptr<ForcesAndSurcesCore>(new FaceElementForcesAndSourcesCore(m_field));
       // set integration rule
-      boost::static_pointer_cast<ForcesAndSurcesCore>(domainFE)->getRuleHook = VolRule();
-      boost::static_pointer_cast<ForcesAndSurcesCore>(boundaryFE)->getRuleHook = FaceRule();
+      domainFE->getRuleHook = VolRule();
+      boundaryFE->getRuleHook = FaceRule();
       // create distributed vector to accumulate values from processors.
       int ghosts[] = { 0 };
       Vec vol,surf_vol;
