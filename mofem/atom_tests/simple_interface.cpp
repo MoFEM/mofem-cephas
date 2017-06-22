@@ -150,13 +150,13 @@ int main(int argc, char *argv[]) {
       // get dm
       ierr = simple_interface->getDM(&dm); CHKERRQ(ierr);
       // create elements
-      boost::shared_ptr<FEMethod> domainFE =
+      boost::shared_ptr<ForcesAndSurcesCore> domainFE =
       boost::shared_ptr<ForcesAndSurcesCore>(new VolumeElementForcesAndSourcesCore(m_field));
-      boost::shared_ptr<FEMethod> boundaryFE =
+      boost::shared_ptr<ForcesAndSurcesCore> boundaryFE =
       boost::shared_ptr<ForcesAndSurcesCore>(new FaceElementForcesAndSourcesCore(m_field));
       // set integration rule
-      boost::static_pointer_cast<ForcesAndSurcesCore>(domainFE)->getRuleHook = VolRule();
-      boost::static_pointer_cast<ForcesAndSurcesCore>(boundaryFE)->getRuleHook = FaceRule();
+      domainFE->getRuleHook = VolRule();
+      boundaryFE->getRuleHook = FaceRule();
       // create distributed vector to accumulate values from processors.
       int ghosts[] = { 0 };
       Vec vol,surf_vol;
