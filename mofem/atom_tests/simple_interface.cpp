@@ -1,10 +1,10 @@
-/** \file simple_interface.cpp
-  * \example simple_interface.hpp
-  * \brief Simple interface
+ /**
+  * \file simple_interface.cpp
+  * \ingroup mofem_simple_interface
+  * \example simple_interface.cpp
   *
-  * This is simple test, calculate volume and apply divergence theorem to surface
-  * integral to calculate volume. Integration on surface and in volume should be
-  * equal to each other.
+  * Calculate volume by integrating volume elements and using divergence theorem
+  * by integrating surface elements.
   *
   */
 
@@ -104,6 +104,7 @@ struct OpFace: public FaceElementForcesAndSourcesCore::UserDataOperator {
 
 struct VolRule { int operator()(int,int,int) const { return 2; } };
 struct FaceRule { int operator()(int,int,int) const { return 4; } };
+
 
 int main(int argc, char *argv[]) {
 

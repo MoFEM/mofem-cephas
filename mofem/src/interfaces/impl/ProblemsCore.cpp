@@ -1,4 +1,4 @@
-/** \file ProblemCore.cpp
+/** \file ProblemsCore.cpp
  * \brief Managing complexities for problem
  */
 

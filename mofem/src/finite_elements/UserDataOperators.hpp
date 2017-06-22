@@ -1,4 +1,5 @@
-/** \file UsersDataOperators.hpp
+/** \file UserDataOperators.hpp
+  * \brief User data Operators
 
 */
 
