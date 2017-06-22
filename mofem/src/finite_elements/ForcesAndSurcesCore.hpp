@@ -310,6 +310,14 @@ struct ForcesAndSurcesCore: public FEMethod {
   virtual int getRule(int order) { return 2*order; }
 
   /**
+   * \brief Hook to get rule
+   *
+   * \todo check preferred format how works with gcc and clang,
+   * see <http://www.boost.org/doc/libs/1_64_0/doc/html/function/tutorial.html#idp247873024>
+   */
+  boost::function<int (int order_row,int order_col,int order_data)> getRuleHook;
+
+  /**
    * \brief another variant of getRule
    * @param  order_row  order of base function on row
    * @param  order_col  order of base function on columns
@@ -319,7 +327,7 @@ struct ForcesAndSurcesCore: public FEMethod {
    * \bug this function should be const
    */
   virtual int getRule(int order_row,int order_col,int order_data) {
-    return getRule(order_data);
+    return getRuleHook? getRuleHook(order_row,order_col,order_data) : getRule(order_data);
   }
 
   /** \brief It will be removed in the future use other variant
@@ -557,21 +565,6 @@ struct ForcesAndSurcesCore: public FEMethod {
   }
 
 };
-
-/// \brief set integration rule
-
-/**
- * \brief declare element class and set integration rule
- * @param  MYFE Name of element class
- * @param  FE   Name of derived class
- * @param  RULE Integration rule, e.g. 2*order-1
- * @return      error code
- */
-#define MAKE_MY_FE_WITH_RULE(MYFE,FE,RULE) \
-struct MYFE: public FE { \
-  MYFE(MoFEM::Interface &m_field): FE(m_field) {} \
-  int getRule(int order) { return (RULE); } \
-}
 
 }
 

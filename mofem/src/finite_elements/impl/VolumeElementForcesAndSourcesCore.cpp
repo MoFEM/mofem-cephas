@@ -413,7 +413,10 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::calculateHoJacobian() {
     ierr = getTetDataOrderSpaceAndBase(dataH1,meshPositionsFieldName); CHKERRQ(ierr);
     ierr = getNodesFieldData(dataH1,meshPositionsFieldName); CHKERRQ(ierr);
     if(dataH1.dataOnEntities[MBVERTEX][0].getFieldData().size()!=12) {
-      SETERRQ(mField.get_comm(),MOFEM_NOT_FOUND,"no MESH_NODE_POSITIONS in element data");
+      SETERRQ(
+        mField.get_comm(),MOFEM_NOT_FOUND,
+        "no MESH_NODE_POSITIONS in element data or field has wrong number of coefficients"
+      );
     }
     ierr = getEdgesFieldData(dataH1,meshPositionsFieldName); CHKERRQ(ierr);
     ierr = getTrisFieldData(dataH1,meshPositionsFieldName); CHKERRQ(ierr);

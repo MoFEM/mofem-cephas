@@ -38,12 +38,16 @@ struct OpVolume: public VolumeElementForcesAndSourcesCore::UserDataOperator {
     PetscFunctionBegin;
     if(type!=MBVERTEX) PetscFunctionReturn(0);
     const int nb_int_pts = getGaussPts().size2();
-    FTensor::Tensor0<double*> t_w = getIntegrationWeight();
+    // cerr << nb_int_pts << endl;
+    FTensor::Tensor0<double*> t_w = getFTensor0IntegrationWeight();
+    FTensor::Tensor0<double*> t_ho_det = getFTenosr0HoMeasure();
     double v = getMeasure();
     double vol = 0;
     for(int gg = 0;gg!=nb_int_pts;gg++) {
-      vol += t_w*v;
+      vol += t_w*t_ho_det*v;
+      // cerr << t_ho_det << endl;
       ++t_w;
+      ++t_ho_det;
     }
     ierr = VecSetValue(vOl,0,vol,ADD_VALUES); CHKERRQ(ierr);
     PetscFunctionReturn(0);
@@ -71,13 +75,14 @@ struct OpFace: public FaceElementForcesAndSourcesCore::UserDataOperator {
     PetscFunctionBegin;
     if(type!=MBVERTEX) PetscFunctionReturn(0);
     const int nb_int_pts = getGaussPts().size2();
-    FTensor::Tensor1<double*,3> t_normal = getTensor1Normal();
-    FTensor::Tensor0<double*> t_w = getIntegrationWeight();
-    FTensor::Tensor1<double*,3> t_coords = getTensor1CoordsAtGaussPts();
+    FTensor::Tensor1<double*,3> t_normal = getTensor1NormalsAtGaussPt();
+    FTensor::Tensor0<double*> t_w = getFTensor0IntegrationWeight();
+    FTensor::Tensor1<double*,3> t_coords = getTensor1HoCoordsAtGaussPts();
     FTensor::Index<'i',3> i;
     double vol = 0;
     for(int gg = 0;gg!=nb_int_pts;gg++) {
-      vol -= (t_coords(i)*t_normal(i))*t_w;
+      vol += (t_coords(i)*t_normal(i))*t_w;
+      ++t_normal;
       ++t_w;
       ++t_coords;
     }
@@ -96,6 +101,9 @@ struct OpFace: public FaceElementForcesAndSourcesCore::UserDataOperator {
     PetscFunctionReturn(0);
   }
 };
+
+struct VolRule { int operator()(int,int,int) const { return 2; } };
+struct FaceRule { int operator()(int,int,int) const { return 4; } };
 
 int main(int argc, char *argv[]) {
 
@@ -128,49 +136,71 @@ int main(int argc, char *argv[]) {
       // load mesh file
       ierr = simple_interface->loadFile(); CHKERRQ(ierr);
       // add fields
-      ierr = simple_interface->addDomainField("U",H1,AINSWORTH_LEGENDRE_BASE,1); CHKERRQ(ierr);
-      ierr = simple_interface->addBoundaryField("L",H1,AINSWORTH_LEGENDRE_BASE,1); CHKERRQ(ierr);
+      ierr = simple_interface->addDomainField("MESH_NODE_POSITIONS",H1,AINSWORTH_LEGENDRE_BASE,3); CHKERRQ(ierr);
+      ierr = simple_interface->addBoundaryField("MESH_NODE_POSITIONS",H1,AINSWORTH_LEGENDRE_BASE,3); CHKERRQ(ierr);
       // set fields order
-      ierr = simple_interface->setFieldOrder("U",1); CHKERRQ(ierr);
-      ierr = simple_interface->setFieldOrder("L",1); CHKERRQ(ierr);
+      ierr = simple_interface->setFieldOrder("MESH_NODE_POSITIONS",1); CHKERRQ(ierr);
       // setup problem
       ierr = simple_interface->setUp(); CHKERRQ(ierr);
+      // Project mesh coordinate on mesh
+      Projection10NodeCoordsOnField ent_method(m_field,"MESH_NODE_POSITIONS");
+      ierr = m_field.loop_dofs("MESH_NODE_POSITIONS",ent_method); CHKERRQ(ierr);
       DM dm;
       // get dm
       ierr = simple_interface->getDM(&dm); CHKERRQ(ierr);
-      // Declare finite element class and set integration rule
-      MAKE_MY_FE_WITH_RULE(MyVol,VolumeElementForcesAndSourcesCore,4);
-      MAKE_MY_FE_WITH_RULE(MyFace,FaceElementForcesAndSourcesCore,4);
       // create elements
       boost::shared_ptr<FEMethod> domainFE =
-      boost::shared_ptr<ForcesAndSurcesCore>(new MyVol(m_field));
+      boost::shared_ptr<ForcesAndSurcesCore>(new VolumeElementForcesAndSourcesCore(m_field));
       boost::shared_ptr<FEMethod> boundaryFE =
-      boost::shared_ptr<ForcesAndSurcesCore>(new MyFace(m_field));
-      // set operators to the elements
+      boost::shared_ptr<ForcesAndSurcesCore>(new FaceElementForcesAndSourcesCore(m_field));
+      // set integration rule
+      boost::static_pointer_cast<ForcesAndSurcesCore>(domainFE)->getRuleHook = VolRule();
+      boost::static_pointer_cast<ForcesAndSurcesCore>(boundaryFE)->getRuleHook = FaceRule();
+      // create distributed vector to accumulate values from processors.
       int ghosts[] = { 0 };
-      Vec vol;
+      Vec vol,surf_vol;
       ierr = VecCreateGhost(
         PETSC_COMM_WORLD,m_field.get_comm_rank()==0?1:0,1,m_field.get_comm_rank()==0?0:1,ghosts,&vol
       ); CHKERRQ(ierr);
-      boost::static_pointer_cast<ForcesAndSurcesCore>(domainFE)->getOpPtrVector().push_back(new OpVolume("U",vol));
-      boost::static_pointer_cast<ForcesAndSurcesCore>(boundaryFE)->getOpPtrVector().push_back(new OpFace("U",vol));
-      boost::shared_ptr<FEMethod> null_fe;
+      ierr = VecDuplicate(vol,&surf_vol); CHKERRQ(ierr);
+      // set operator to the volume element
+      boost::static_pointer_cast<ForcesAndSurcesCore>(domainFE)->getOpPtrVector().push_back(
+        new OpVolume("MESH_NODE_POSITIONS",vol)
+      );
+      // set operator to the face element
+      boost::static_pointer_cast<ForcesAndSurcesCore>(boundaryFE)->getOpPtrVector().push_back(
+        new OpFace("MESH_NODE_POSITIONS",surf_vol)
+      );
+      // make integration in volume (here real calculations starts)
       ierr = DMoFEMLoopFiniteElements(dm,simple_interface->getDomainFEName(),domainFE); CHKERRQ(ierr);
+      // make integration on boundary
       ierr = DMoFEMLoopFiniteElements(dm,simple_interface->getBoundaryFEName(),boundaryFE); CHKERRQ(ierr);
+      // assemble volumes from processors and accumulate on processor of rank 0
       ierr = VecAssemblyBegin(vol); CHKERRQ(ierr);
       ierr = VecAssemblyEnd(vol); CHKERRQ(ierr);
       ierr = VecGhostUpdateBegin(vol,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
       ierr = VecGhostUpdateEnd(vol,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+      ierr = VecAssemblyBegin(surf_vol); CHKERRQ(ierr);
+      ierr = VecAssemblyEnd(surf_vol); CHKERRQ(ierr);
+      ierr = VecGhostUpdateBegin(surf_vol,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+      ierr = VecGhostUpdateEnd(surf_vol,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
       if(m_field.get_comm_rank()==0) {
-        double *array;
-        ierr = VecGetArray(vol,&array); CHKERRQ(ierr);
-        cout << "Volume = " << array[0] << endl;
-        if(fabs(array[0])>1e-12) {
+        double *a_vol;
+        ierr = VecGetArray(vol,&a_vol); CHKERRQ(ierr);
+        double *a_surf_vol;
+        ierr = VecGetArray(surf_vol,&a_surf_vol); CHKERRQ(ierr);
+        cout << "Volume = " << a_vol[0] << endl;
+        cout << "Surf Volume = " << a_surf_vol[0] << endl;
+        if(fabs(a_vol[0]-a_surf_vol[0])>1e-12) {
           SETERRQ(PETSC_COMM_SELF,MOFEM_ATOM_TEST_INVALID,"Should be zero");
         }
-        ierr = VecRestoreArray(vol,&array); CHKERRQ(ierr);
+        ierr = VecRestoreArray(vol,&a_vol); CHKERRQ(ierr);
+        ierr = VecRestoreArray(vol,&a_surf_vol); CHKERRQ(ierr);
       }
+      // destroy vector
       ierr = VecDestroy(&vol); CHKERRQ(ierr);
+      ierr = VecDestroy(&surf_vol); CHKERRQ(ierr);
+      // destroy dm
       ierr = DMDestroy(&dm); CHKERRQ(ierr);
    }
 

@@ -121,7 +121,7 @@ struct EdgeElementForcesAndSurcesCore: public ForcesAndSurcesCore {
       return static_cast<EdgeElementForcesAndSurcesCore*>(ptrFE)->gaussPts;
     }
 
-    inline FTensor::Tensor0<double*> getIntegrationWeight() {
+    inline FTensor::Tensor0<double*> getFTensor0IntegrationWeight() {
       return FTensor::Tensor0<double*>(&(getGaussPts()(1,0)),1);
     }
 

@@ -1155,5 +1155,5 @@ target_link_libraries(simple_interface
 
 add_test(
   simple_interface ${MPI_RUN} ${MPI_RUN_FLAGS} -np 2
-  ${CMAKE_CURRENT_BINARY_DIR}/simple_interface -file_name disp01_2parts.h5m
+  ${CMAKE_CURRENT_BINARY_DIR}/simple_interface -file_name disp01_2parts.h5m -log_summary
 )

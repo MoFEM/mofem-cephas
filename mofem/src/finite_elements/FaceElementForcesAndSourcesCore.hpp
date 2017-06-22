@@ -203,7 +203,7 @@ struct FaceElementForcesAndSourcesCore: public ForcesAndSurcesCore {
       return static_cast<FaceElementForcesAndSourcesCore*>(ptrFE)->gaussPts;
     }
 
-    inline FTensor::Tensor0<double*> getIntegrationWeight() {
+    inline FTensor::Tensor0<double*> getFTensor0IntegrationWeight() {
       return FTensor::Tensor0<double*>(&(getGaussPts()(2,0)),1);
     }
 
