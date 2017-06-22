@@ -93,8 +93,8 @@ PetscErrorCode FaceElementForcesAndSourcesCore::UserDataOperator::loopSideVolume
   method.feName = fe_name;
 
   ierr = method.setFaceFEPtr(getTriFE()); CHKERRQ(ierr);
-  ierr = method.copy_basic_method(*getFEMethod()); CHKERRQ(ierr);
-  ierr = method.copy_ksp(*getFEMethod()); CHKERRQ(ierr);
+  ierr = method.copyBasicMethod(*getFEMethod()); CHKERRQ(ierr);
+  ierr = method.copyKsp(*getFEMethod()); CHKERRQ(ierr);
   ierr = method.copy_snes(*getFEMethod()); CHKERRQ(ierr);
   ierr = method.copy_ts(*getFEMethod()); CHKERRQ(ierr);
 

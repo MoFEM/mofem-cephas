@@ -129,7 +129,8 @@ target_link_libraries(thermal_elem_unsteady_atom
   mofem_approx
   mofem_cblas
   mofem_third_party
-  ${MoFEM_PROJECT_LIBS})
+  ${MoFEM_PROJECT_LIBS}
+)
 
 add_test(
   basic_thermal_elem_unsteady_atom_test
@@ -145,9 +146,11 @@ add_test(
 cm_export_file("elasticity_atom_test_thermal_expansion.h5m" export_atom_tests_basic_fe)
 bfe_add_executable(thermal_stress_elem ${UM_CURRENT_SOURCE_DIR}/thermal_stress_elem.cpp)
 target_link_libraries(thermal_stress_elem
+  users_modules
   mofem_finite_elements
   mofem_interfaces
   mofem_multi_indices
+  mofem_petsc
   mofem_approx
   mofem_cblas
   mofem_third_party
