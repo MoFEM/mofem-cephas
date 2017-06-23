@@ -455,7 +455,7 @@ typedef multi_index_container<
   */
 struct FieldChangeCoordinateSystem {
   boost::shared_ptr<CoordSys> csPtr;
-  FieldChangeCoordinateSystem(boost::shared_ptr<CoordSys> cs_ptr):
+  FieldChangeCoordinateSystem(const boost::shared_ptr<CoordSys>& cs_ptr):
   csPtr(cs_ptr) {
   }
   void operator()(boost::shared_ptr<Field> &e) {
