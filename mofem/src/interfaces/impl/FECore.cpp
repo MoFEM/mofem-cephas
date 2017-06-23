@@ -1,4 +1,4 @@
-/** \file DeleteCore.cpp
+/** \file FECore.cpp
  * \brief Core interface methods for managing deletions and insertion dofs
  */
 
@@ -311,7 +311,7 @@ namespace MoFEM {
     PetscFunctionReturn(0);
   }
 
-  PetscErrorCode Core::add_ents_to_finite_element_by_dimension(
+  PetscErrorCode Core::add_ents_to_finite_element_by_dim(
     const EntityHandle meshset,const int dim,const std::string &name,const bool recursive
   ) {
     EntityHandle idm = no_handle;
@@ -324,7 +324,7 @@ namespace MoFEM {
     }
     Range ents;
     rval = moab.get_entities_by_dimension(meshset,dim,ents,recursive); CHKERRQ_MOAB(rval);
-    ierr = seed_finite_elements(ents.subset_by_type(MBEDGE)); CHKERRQ(ierr);
+    ierr = seed_finite_elements(ents.subset_by_dimension(dim)); CHKERRQ(ierr);
     rval = moab.add_entities(idm,ents); CHKERRQ_MOAB(rval);
     PetscFunctionReturn(0);
   }

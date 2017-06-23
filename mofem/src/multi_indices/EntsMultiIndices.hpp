@@ -113,7 +113,7 @@ struct BasicEntity {
     return basicDataPtr;
   }
 
-  inline const boost::shared_ptr<BasicEntityData> getBasicDataPtr() const {
+  inline const boost::shared_ptr<BasicEntityData>& getBasicDataPtr() const {
     return basicDataPtr;
   }
 
@@ -334,11 +334,11 @@ struct interface_RefEntity {
   interface_RefEntity(const interface_RefEntity<T> &interface):
   sPtr(interface.getRefEntityPtr()) {}
 
-  inline boost::shared_ptr<BasicEntityData> getBasicDataPtr() {
+  inline boost::shared_ptr<BasicEntityData>& getBasicDataPtr() {
     return this->sPtr->getBasicDataPtr();
   }
 
-  inline const boost::shared_ptr<BasicEntityData> getBasicDataPtr() const {
+  inline const boost::shared_ptr<BasicEntityData>& getBasicDataPtr() const {
     return this->sPtr->getBasicDataPtr();
   }
 

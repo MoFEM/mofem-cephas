@@ -33,8 +33,10 @@
 
 namespace MoFEM {
 
+const boost::shared_ptr<SideNumber> RefElement::nullSideNumber = boost::shared_ptr<SideNumber>();
+
 //ref moab FiniteElement
-RefElement::RefElement(const boost::shared_ptr<RefEntity> ref_ent_ptr):
+RefElement::RefElement(const boost::shared_ptr<RefEntity>& ref_ent_ptr):
 interface_RefEntity<RefEntity>(ref_ent_ptr) {}
 
 std::ostream& operator<<(std::ostream& os,const RefElement& e) {
@@ -43,7 +45,7 @@ std::ostream& operator<<(std::ostream& os,const RefElement& e) {
   return os;
 }
 
-RefElement_MESHSET::RefElement_MESHSET(const boost::shared_ptr<RefEntity> ref_ent_ptr):
+RefElement_MESHSET::RefElement_MESHSET(const boost::shared_ptr<RefEntity>& ref_ent_ptr):
 RefElement(ref_ent_ptr) {
   switch (ref_ent_ptr->getEntType()) {
     case MBENTITYSET:
@@ -52,18 +54,16 @@ RefElement(ref_ent_ptr) {
       THROW_MESSAGE("this work only for MESHSETs");
   }
 }
-boost::shared_ptr<SideNumber> RefElement_MESHSET::getSideNumberPtr(const EntityHandle ent) const {
+const boost::shared_ptr<SideNumber>& RefElement_MESHSET::getSideNumberPtr(const EntityHandle ent) const {
   NOT_USED(ent);
   SideNumber_multiIndex::iterator miit;
   miit = const_cast<SideNumber_multiIndex&>(side_number_table).insert(
     boost::shared_ptr<SideNumber>(new SideNumber(ent,0,0,0))
   ).first;
   return *miit;
-  THROW_MESSAGE("not implemented");
-  return boost::shared_ptr<SideNumber>();
 }
 RefElement_PRISM::RefElement_PRISM(
-  const boost::shared_ptr<RefEntity> ref_ent_ptr
+  const boost::shared_ptr<RefEntity>& ref_ent_ptr
 ):
 RefElement(ref_ent_ptr) {
   ErrorCode rval;
@@ -88,7 +88,7 @@ RefElement(ref_ent_ptr) {
     );
   }
 }
-boost::shared_ptr<SideNumber> RefElement_PRISM::getSideNumberPtr(const EntityHandle ent) const {
+const boost::shared_ptr<SideNumber>& RefElement_PRISM::getSideNumberPtr(const EntityHandle ent) const {
 
   moab::Interface &moab = getRefEntityPtr()->basicDataPtr->moab;
 
@@ -272,9 +272,9 @@ boost::shared_ptr<SideNumber> RefElement_PRISM::getSideNumberPtr(const EntityHan
   ).first;
   return *miit;
   THROW_MESSAGE("not implemented");
-  return boost::shared_ptr<SideNumber>();
+  return nullSideNumber;
 }
-RefElement_TET::RefElement_TET(const boost::shared_ptr<RefEntity> ref_ent_ptr):
+RefElement_TET::RefElement_TET(const boost::shared_ptr<RefEntity>& ref_ent_ptr):
 RefElement(ref_ent_ptr),tag_BitRefEdges(NULL) {
   ErrorCode rval;
   Tag th_RefBitEdge;
@@ -300,7 +300,7 @@ RefElement(ref_ent_ptr),tag_BitRefEdges(NULL) {
     boost::shared_ptr<SideNumber>(new SideNumber(sPtr->ent,0,0,0))
   );
 }
-boost::shared_ptr<SideNumber> RefElement_TET::getSideNumberPtr(const EntityHandle ent) const {
+const boost::shared_ptr<SideNumber>& RefElement_TET::getSideNumberPtr(const EntityHandle ent) const {
   moab::Interface &moab = getRefEntityPtr()->basicDataPtr->moab;
   SideNumber_multiIndex::iterator miit = side_number_table.find(ent);
   if(miit!=side_number_table.end()) return *miit;
@@ -337,7 +337,7 @@ std::ostream& operator<<(std::ostream& os,const RefElement_TET& e) {
   return os;
 }
 
-RefElement_TRI::RefElement_TRI(const boost::shared_ptr<RefEntity> ref_ent_ptr):
+RefElement_TRI::RefElement_TRI(const boost::shared_ptr<RefEntity>& ref_ent_ptr):
 RefElement(ref_ent_ptr) {
   switch (ref_ent_ptr->getEntType()) {
     case MBTRI:
@@ -369,7 +369,7 @@ RefElement(ref_ent_ptr) {
     boost::shared_ptr<SideNumber>(new SideNumber(tri,0,0,0))
   );
 }
-boost::shared_ptr<SideNumber> RefElement_TRI::getSideNumberPtr(const EntityHandle ent) const {
+const boost::shared_ptr<SideNumber>& RefElement_TRI::getSideNumberPtr(const EntityHandle ent) const {
   moab::Interface &moab = getRefEntityPtr()->basicDataPtr->moab;
   SideNumber_multiIndex::iterator miit = side_number_table.find(ent);
   if(miit!=side_number_table.end()) return *miit;
@@ -398,7 +398,7 @@ std::ostream& operator<<(std::ostream& os,const RefElement_TRI& e) {
   os << *e.sPtr;
   return os;
 }
-RefElement_EDGE::RefElement_EDGE(const boost::shared_ptr<RefEntity> ref_ent_ptr):
+RefElement_EDGE::RefElement_EDGE(const boost::shared_ptr<RefEntity>& ref_ent_ptr):
 RefElement(ref_ent_ptr) {
   switch (ref_ent_ptr->getEntType()) {
     case MBEDGE:
@@ -407,7 +407,7 @@ RefElement(ref_ent_ptr) {
       THROW_MESSAGE("this work only for TRIs");
   }
 }
-boost::shared_ptr<SideNumber> RefElement_EDGE::getSideNumberPtr(const EntityHandle ent) const {
+const boost::shared_ptr<SideNumber>& RefElement_EDGE::getSideNumberPtr(const EntityHandle ent) const {
   moab::Interface &moab = getRefEntityPtr()->basicDataPtr->moab;
   SideNumber_multiIndex::iterator miit = side_number_table.find(ent);
   if(miit!=side_number_table.end()) return *miit;
@@ -436,7 +436,7 @@ std::ostream& operator<<(std::ostream& os,const RefElement_EDGE& e) {
   os << *e.sPtr;
   return os;
 }
-RefElement_VERTEX::RefElement_VERTEX(const boost::shared_ptr<RefEntity> ref_ent_ptr):
+RefElement_VERTEX::RefElement_VERTEX(const boost::shared_ptr<RefEntity>& ref_ent_ptr):
 RefElement(ref_ent_ptr) {
   switch (ref_ent_ptr->getEntType()) {
     case MBVERTEX:
@@ -445,7 +445,7 @@ RefElement(ref_ent_ptr) {
       THROW_MESSAGE("this works only for TRIs");
   }
 }
-boost::shared_ptr<SideNumber> RefElement_VERTEX::getSideNumberPtr(
+const boost::shared_ptr<SideNumber>& RefElement_VERTEX::getSideNumberPtr(
   const EntityHandle ent
 ) const {
   moab::Interface &moab = getRefEntityPtr()->basicDataPtr->moab;
@@ -464,7 +464,7 @@ boost::shared_ptr<SideNumber> RefElement_VERTEX::getSideNumberPtr(
     return *miit;
   }
   THROW_MESSAGE("no side entity for vertex if its is not an vertex itself");
-  return boost::shared_ptr<SideNumber>();
+  return nullSideNumber;
 }
 std::ostream& operator<<(std::ostream& os,const RefElement_VERTEX& e) {
   os << *e.sPtr;

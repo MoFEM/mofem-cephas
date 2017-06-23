@@ -91,6 +91,14 @@ struct EdgeElementForcesAndSurcesCore: public ForcesAndSurcesCore {
     }
 
     /**
+     * \brief get measure of element
+     * @return length of face
+     */
+    inline double getMeasure() {
+      return getLength();
+    }
+
+    /**
      * \brief get edge dIrection
      */
     inline VectorDouble& getDirection() {
@@ -111,6 +119,10 @@ struct EdgeElementForcesAndSurcesCore: public ForcesAndSurcesCore {
      */
     inline MatrixDouble& getGaussPts() {
       return static_cast<EdgeElementForcesAndSurcesCore*>(ptrFE)->gaussPts;
+    }
+
+    inline FTensor::Tensor0<double*> getFTensor0IntegrationWeight() {
+      return FTensor::Tensor0<double*>(&(getGaussPts()(1,0)),1);
     }
 
     /**

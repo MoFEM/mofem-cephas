@@ -1177,7 +1177,7 @@ struct Interface: public UnknownInterface {
    * @param  recursive take entities from meshsets in meshset
    * @return           error code
    */
-  virtual PetscErrorCode add_ents_to_finite_element_by_dimension(
+  virtual PetscErrorCode add_ents_to_finite_element_by_dim(
     const EntityHandle entities,const int dim,const std::string &name,const bool recursive = true
   ) = 0;
 

@@ -67,6 +67,7 @@
 #include <boost/iterator/transform_iterator.hpp>
 #include <boost/multiprecision/cpp_int.hpp>
 #include <boost/utility/string_ref.hpp>
+#include <boost/function.hpp>
 
 #define BOOST_UBLAS_SHALLOW_ARRAY_ADAPTOR
 
@@ -86,6 +87,8 @@
 #include <boost/weak_ptr.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/make_shared.hpp>
+#include <boost/pointer_cast.hpp>
+
 // #include <boost/move/unique_ptr.hpp>
 // #include <boost/move/make_unique.hpp>
 // #include <boost/move/move.hpp>

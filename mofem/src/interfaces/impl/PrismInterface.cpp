@@ -1,4 +1,4 @@
-/** \file PrismInterfaceCore.cpp
+/** \file PrismInterface.cpp
  * \brief Inserting prims interface elements
  * \todo FIXME this is no so good implementation
  *
@@ -192,7 +192,7 @@ PetscErrorCode PrismInterface::getSides(const EntityHandle sideset,const BitRefL
   unsigned int nb_side_ents3d = side_ents3d.size();
   side_ents3d.insert(*ents3d.begin());
   Range side_ents3d_tris_on_surface;
-  
+
   do {
     do {
       Range adj_tris,adj_ents3d;

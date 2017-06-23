@@ -32,7 +32,7 @@ struct RefElement: public interface_RefEntity<RefEntity> {
   static BitRefEdges DummyBitRefEdges;
 
   SideNumber_multiIndex side_number_table;
-  RefElement(const boost::shared_ptr<RefEntity> ref_ent_ptr);
+  RefElement(const boost::shared_ptr<RefEntity>& ref_ent_ptr);
   virtual const BitRefEdges& getBitRefEdges() const {
     return DummyBitRefEdges;
   }
@@ -49,9 +49,11 @@ struct RefElement: public interface_RefEntity<RefEntity> {
   //   return getSideNumberTable();
   // }
 
-  virtual boost::shared_ptr<SideNumber> getSideNumberPtr(const EntityHandle ent) const {
+  static const boost::shared_ptr<SideNumber> nullSideNumber;
+
+  virtual const boost::shared_ptr<SideNumber>& getSideNumberPtr(const EntityHandle ent) const {
     NOT_USED(ent);
-    return boost::shared_ptr<SideNumber>();
+    return nullSideNumber;
   };
 
   // /**
@@ -78,8 +80,8 @@ struct RefElement: public interface_RefEntity<RefEntity> {
  * \ingroup fe_multi_indices
  */
 struct RefElement_MESHSET: public RefElement {
-  RefElement_MESHSET(const boost::shared_ptr<RefEntity> ref_ent_ptr);
-  boost::shared_ptr<SideNumber> getSideNumberPtr(const EntityHandle ent) const;
+  RefElement_MESHSET(const boost::shared_ptr<RefEntity>& ref_ent_ptr);
+  const boost::shared_ptr<SideNumber>& getSideNumberPtr(const EntityHandle ent) const;
 };
 /**
  * \brief keeps data about abstract PRISM finite element
@@ -87,8 +89,8 @@ struct RefElement_MESHSET: public RefElement {
  */
 struct RefElement_PRISM: public RefElement {
   BitRefEdges *tag_BitRefEdges;
-  RefElement_PRISM(const boost::shared_ptr<RefEntity> ref_ent_ptr);
-  boost::shared_ptr<SideNumber> getSideNumberPtr(const EntityHandle ent) const;
+  RefElement_PRISM(const boost::shared_ptr<RefEntity>& ref_ent_ptr);
+  const boost::shared_ptr<SideNumber>& getSideNumberPtr(const EntityHandle ent) const;
   const BitRefEdges& getBitRefEdges() const { return *tag_BitRefEdges; }
   int getBitRefEdgesUlong() const { return getBitRefEdges().to_ulong(); }
 };
@@ -100,8 +102,8 @@ struct RefElement_PRISM: public RefElement {
 struct RefElement_TET: public RefElement {
   BitRefEdges *tag_BitRefEdges;
   const int* tag_type_data;
-  RefElement_TET(const boost::shared_ptr<RefEntity> ref_ent_ptr);
-  boost::shared_ptr<SideNumber> getSideNumberPtr(const EntityHandle ent) const;
+  RefElement_TET(const boost::shared_ptr<RefEntity>& ref_ent_ptr);
+  const boost::shared_ptr<SideNumber>& getSideNumberPtr(const EntityHandle ent) const;
   SideNumber_multiIndex &getSideNumberTable() const { return const_cast<SideNumber_multiIndex&>(side_number_table); };
   const BitRefEdges& getBitRefEdges() const { return *tag_BitRefEdges; }
   int getBitRefEdgesUlong() const { return getBitRefEdges().to_ulong(); }
@@ -113,8 +115,8 @@ struct RefElement_TET: public RefElement {
  * \ingroup fe_multi_indices
  */
 struct RefElement_TRI: public RefElement {
-  RefElement_TRI(const boost::shared_ptr<RefEntity> ref_ent_ptr);
-  boost::shared_ptr<SideNumber> getSideNumberPtr(const EntityHandle ent) const;
+  RefElement_TRI(const boost::shared_ptr<RefEntity>& ref_ent_ptr);
+  const boost::shared_ptr<SideNumber>& getSideNumberPtr(const EntityHandle ent) const;
   friend std::ostream& operator<<(std::ostream& os,const RefElement_TRI& e);
 };
 
@@ -123,8 +125,8 @@ struct RefElement_TRI: public RefElement {
  * \ingroup fe_multi_indices
  */
 struct RefElement_EDGE: public RefElement {
-  RefElement_EDGE(const boost::shared_ptr<RefEntity> ref_ent_ptr);
-  boost::shared_ptr<SideNumber> getSideNumberPtr(const EntityHandle ent) const;
+  RefElement_EDGE(const boost::shared_ptr<RefEntity>& ref_ent_ptr);
+  const boost::shared_ptr<SideNumber>& getSideNumberPtr(const EntityHandle ent) const;
   friend std::ostream& operator<<(std::ostream& os,const RefElement_EDGE& e);
 };
 
@@ -133,8 +135,8 @@ struct RefElement_EDGE: public RefElement {
  * \ingroup fe_multi_indices
  */
 struct RefElement_VERTEX: public RefElement {
-  RefElement_VERTEX(const boost::shared_ptr<RefEntity> ref_ent_ptr);
-  boost::shared_ptr<SideNumber> getSideNumberPtr(const EntityHandle ent) const;
+  RefElement_VERTEX(const boost::shared_ptr<RefEntity>& ref_ent_ptr);
+  const boost::shared_ptr<SideNumber>& getSideNumberPtr(const EntityHandle ent) const;
   friend std::ostream& operator<<(std::ostream& os,const RefElement_VERTEX& e);
 };
 
@@ -148,7 +150,7 @@ struct interface_RefElement: interface_RefEntity<T> {
   typedef interface_RefEntity<T> interface_type_RefEntity;
   typedef interface_RefElement<T> interface_type_RefElement;
 
-  interface_RefElement(const boost::shared_ptr<T> sptr):
+  interface_RefElement(const boost::shared_ptr<T>& sptr):
   interface_RefEntity<T>(sptr) {}
 
   inline int getBitRefEdgesUlong() const
@@ -160,7 +162,7 @@ struct interface_RefElement: interface_RefEntity<T> {
   // DEPRECATED inline SideNumber_multiIndex &get_side_number_table() const
   // { return this->sPtr->getSideNumberTable(); }
 
-  inline boost::shared_ptr<SideNumber> getSideNumberPtr(const EntityHandle ent) const
+  inline const boost::shared_ptr<SideNumber>& getSideNumberPtr(const EntityHandle ent) const
   { return this->sPtr->getSideNumberPtr(ent); }
 
   // /**
@@ -432,9 +434,9 @@ struct interface_FiniteElement {
 
   mutable boost::shared_ptr<T> sFePtr;
 
-  interface_FiniteElement(const boost::shared_ptr<T> ptr): sFePtr(ptr) {};
+  interface_FiniteElement(const boost::shared_ptr<T>& ptr): sFePtr(ptr) {};
 
-  inline const boost::shared_ptr<FiniteElement> get_MoFEMFiniteElementPtr() { return this->sFePtr; };
+  inline const boost::shared_ptr<FiniteElement>& get_MoFEMFiniteElementPtr() { return this->sFePtr; };
 
   /**
    * \brief Get finite element id
@@ -644,7 +646,7 @@ public
 interface_FiniteElement<T>,
 interface_RefElement<T> {
 
-  interface_EntFiniteElement(const boost::shared_ptr<T> sptr):
+  interface_EntFiniteElement(const boost::shared_ptr<T>& sptr):
   interface_FiniteElement<T>(sptr),
   interface_RefElement<T>(sptr) {}
 
@@ -739,7 +741,7 @@ struct NumeredEntFiniteElement: public interface_EntFiniteElement<EntFiniteEleme
   /**
    * \Construct indexed finite element
    */
-  NumeredEntFiniteElement(const boost::shared_ptr<EntFiniteElement> sptr):
+  NumeredEntFiniteElement(const boost::shared_ptr<EntFiniteElement>& sptr):
   interface_EntFiniteElement<EntFiniteElement>(sptr),
   part(-1),
   rows_dofs(boost::shared_ptr<FENumeredDofEntity_multiIndex>(new FENumeredDofEntity_multiIndex())),
@@ -831,7 +833,7 @@ private:
 template <typename T>
 struct interface_NumeredEntFiniteElement: public interface_EntFiniteElement<T> {
 
-  interface_NumeredEntFiniteElement(const boost::shared_ptr<T> sptr): interface_EntFiniteElement<T>(sptr) {};
+  interface_NumeredEntFiniteElement(const boost::shared_ptr<T>& sptr): interface_EntFiniteElement<T>(sptr) {};
 
   /**
    * \brief Get partition number

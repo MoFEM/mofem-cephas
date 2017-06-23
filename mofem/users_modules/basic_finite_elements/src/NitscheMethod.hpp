@@ -289,7 +289,7 @@ struct NitscheMethod {
         for(int ff = 0;ff<4;ff++) {
           if(commonData.facesFePtr[ff]) {
             boost::shared_ptr<const NumeredEntFiniteElement> faceFEPtr = commonData.facesFePtr[ff];
-            faceFE.copy_basic_method(*this);
+            faceFE.copyBasicMethod(*this);
             faceFE.feName = blockData.faceElemName;
             faceFE.nInTheLoop = ff;
             faceFE.numeredEntFiniteElementPtr = faceFEPtr;

@@ -261,6 +261,10 @@ std::ostream& operator<<(std::ostream& os,const DataForcesAndSurcesCore &e) {
   return os;
 }
 
+/** \name Specializations for H1/L2 */
+
+/**@{*/
+
 template<>
 FTensor::Tensor1<double*,3> DataForcesAndSurcesCore::EntData::getFTensor1FieldData<3>() {
   if(dOfs[0]->getNbOfCoeffs()!=3) {
@@ -465,6 +469,12 @@ FTensor::Tensor1<double*,2> DataForcesAndSurcesCore::EntData::getFTensor1DiffN<2
   return getFTensor1DiffN<2>(bAse,gg,bb);
 }
 
+/**@}*/
+
+/** \name Specializations for HDiv/HCrul */
+
+/**@{*/
+
 template<int Tensor_Dim>
 FTensor::Tensor1<double*,Tensor_Dim> DataForcesAndSurcesCore::EntData::getFTensor1HdivN(
   FieldApproximationBase base
@@ -595,5 +605,6 @@ FTensor::Tensor2<double*,3,2> DataForcesAndSurcesCore::EntData::getFTensor2DiffH
   );
 }
 
+/**@}*/
 
 }

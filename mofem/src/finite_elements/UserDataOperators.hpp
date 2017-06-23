@@ -1,4 +1,5 @@
-/** \file UsersDataOperators.hpp
+/** \file UserDataOperators.hpp
+  * \brief User data Operators
 
 */
 
@@ -44,6 +45,13 @@ struct OpCalculateScalarFieldValues_General: public ForcesAndSurcesCore::UserDat
   zeroType(zero_type) {
   }
 
+  /**
+   * \brief calculate values of scalar field at integration points
+   * @param  side side entity number
+   * @param  type side entity type
+   * @param  data entity data
+   * @return      error code
+   */
   PetscErrorCode doWork(
     int side,EntityType type,DataForcesAndSurcesCore::EntData &data
   );
@@ -86,6 +94,13 @@ public OpCalculateScalarFieldValues_General<double,ublas::unbounded_array<double
   ) {
   }
 
+  /**
+   * \brief calculate values of scalar field at integration points
+   * @param  side side entity number
+   * @param  type side entity type
+   * @param  data entity data
+   * @return      error code
+   */
   PetscErrorCode doWork(
     int side,EntityType type,DataForcesAndSurcesCore::EntData &data
   ) {
@@ -150,6 +165,13 @@ struct OpCalculateVectorFieldValues_General: public ForcesAndSurcesCore::UserDat
   zeroType(zero_type) {
   }
 
+  /**
+   * \brief calculate values of vector field at integration points
+   * @param  side side entity number
+   * @param  type side entity type
+   * @param  data entity data
+   * @return      error code
+   */
   PetscErrorCode doWork(
     int side,EntityType type,DataForcesAndSurcesCore::EntData &data
   );
@@ -384,6 +406,13 @@ public OpCalculateVectorFieldValues_General<Tensor_Dim,double,ublas::row_major,u
   ) {
   }
 
+  /**
+   * \brief calculate gradient values of scalar field at integration points
+   * @param  side side entity number
+   * @param  type side entity type
+   * @param  data entity data
+   * @return      error code
+   */
   PetscErrorCode doWork(
     int side,EntityType type,DataForcesAndSurcesCore::EntData &data
   );
@@ -488,6 +517,13 @@ public OpCalculateTensor2FieldValues_General<Tensor_Dim0,Tensor_Dim1,double,ubla
   ) {
   }
 
+  /**
+   * \brief calculate values of vector field at integration points
+   * @param  side side entity number
+   * @param  type side entity type
+   * @param  data entity data
+   * @return      error code
+   */
   PetscErrorCode doWork(
     int side,EntityType type,DataForcesAndSurcesCore::EntData &data
   );

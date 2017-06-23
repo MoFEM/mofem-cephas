@@ -41,8 +41,7 @@ endif(CMAKE_Fortran_COMPILER)
 
 set(MoFEM_VERSION_MAJOR 0)
 set(MoFEM_VERSION_MINOR 5)
-set(MoFEM_VERSION_BUILD 71)
-
+set(MoFEM_VERSION_BUILD 74)
 
 # http://cellperformance.beyond3d.com/articles/2006/05/demystifying-the-restrict-keyword.html
 # The restrict keyword can be considered an extension to the strict aliasing rule.
@@ -102,23 +101,6 @@ include(cmake/FindTetGen.cmake)
 include(cmake/FindTriangle.cmake)
 include(cmake/FindMed.cmake)
 
-find_package(BLAS)
-if(BLAS_FOUND)
-  if(APPLE)
-    set(CMAKE_EXE_LINKER_FLAGS "-framework Accelerate")
-  endif(APPLE)
-endif(BLAS_FOUND)
-message(STATUS BLAS found: ${BLAS_LIBRARIES})
-
-#CGAL tools
-#find_package(CGAL HINTS ${CGAL_DIR}/lib/CGAL)
-#if(CGAL_CONFIG_LOADED)
-#  include_directories(${CGAL_INCLUDE_DIRS})
-#  link_directories(${CGAL_LIBRARIES_DIR})
-#  add_definitions( -DWITH_CGAL )
-#  message(STATUS ${CGAL_Core_LIBRARY})
-#endif(CGAL_CONFIG_LOADED)
-
 #other
 include(cmake/ExportFile.cmake)
 
@@ -146,27 +128,55 @@ include_directories(
   ${PETSCVAR_DIR}/include
 )
 
-if(TAO_LIBRARY)
-  include_directories(${TAO_DIR}/include)
-  add_definitions(-DTAO)
-endif(TAO_LIBRARY)
+find_package(BLAS)
+if(BLAS_FOUND)
+  if(APPLE)
+    set(CMAKE_EXE_LINKER_FLAGS "-framework Accelerate")
+  endif(APPLE)
+endif(BLAS_FOUND)
+message(STATUS "BLAS found: " ${BLAS_LIBRARIES})
 
 # Add boost directory
 if(NOT BOOST_DIR)
   set(BOOST_DIR $ENV{BOOST_DIR})
 endif(NOT BOOST_DIR)
+
 find_library(
   BOOST_PROGRAM_OPTIONS_LIB NAMES boost_program_options
   HINTS
   ${BOOST_DIR}/lib
   ${PETSC_DIR}/${PETSC_ARCH}/lib
 )
+message(STATUS "Boost found: " ${BOOST_PROGRAM_OPTIONS_LIB})
 if(NOT BOOST_PROGRAM_OPTIONS_LIB)
   message(FATAL_ERROR "boost program options library not found")
 endif(NOT BOOST_PROGRAM_OPTIONS_LIB)
-if(BOOST_DIR)
-  include_directories(${BOOST_DIR}/include)
-endif(BOOST_DIR)
+find_path(
+  BOOST_INCLUDE_DIR
+  NAMES boost/multi_index_container.hpp
+  HINTS
+  ${BOOST_DIR}/include
+  ${PETSC_DIR}/${PETSC_ARCH}/include
+)
+message(STATUS "Boost include found: " ${BOOST_INCLUDE_DIR})
+if(NOT BOOST_INCLUDE_DIR)
+  message(FATAL_ERROR "boost program incoude dir not found")
+endif(NOT BOOST_INCLUDE_DIR)
+include_directories(${BOOST_INCLUDE_DIR})
+
+if(TAO_LIBRARY)
+  include_directories(${TAO_DIR}/include)
+  add_definitions(-DTAO)
+endif(TAO_LIBRARY)
+
+#CGAL tools
+#find_package(CGAL HINTS ${CGAL_DIR}/lib/CGAL)
+#if(CGAL_CONFIG_LOADED)
+#  include_directories(${CGAL_INCLUDE_DIRS})
+#  link_directories(${CGAL_LIBRARIES_DIR})
+#  add_definitions( -DWITH_CGAL )
+#  message(STATUS ${CGAL_Core_LIBRARY})
+#endif(CGAL_CONFIG_LOADED)
 
 resolve_libraries(PROJECT_LIBS "
   ${SLEPC_LIBRARY}

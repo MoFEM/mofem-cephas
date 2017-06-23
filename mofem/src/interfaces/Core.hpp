@@ -430,7 +430,7 @@ struct Core: public Interface {
   PetscErrorCode add_ents_to_finite_element_by_type(
     const EntityHandle meshset,const EntityType type,const std::string &name,const bool recursive = true
   );
-  PetscErrorCode add_ents_to_finite_element_by_dimension(
+  PetscErrorCode add_ents_to_finite_element_by_dim(
     const EntityHandle meshset,const int dim,const std::string &name,const bool recursive = true
   );
   PetscErrorCode add_ents_to_finite_element_by_type(const Range& ents,const EntityType type,const std::string &name);
