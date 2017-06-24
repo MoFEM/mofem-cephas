@@ -822,6 +822,8 @@ PetscErrorCode NonlinearElasticElement::OpEnergy::doWork(
         }
       }
 
+      int nb_active_variables = 0;
+      ierr = dAta.materialDoublePtr->setUserActiveVariables(nb_active_variables); CHKERRQ(ierr);
       ierr = dAta.materialDoublePtr->calculateElasticEnergy(dAta,getNumeredEntFiniteElementPtr()); CHKERRQ(ierr);
       ierr = VecSetValue(*Vptr,0,val*dAta.materialDoublePtr->eNergy,ADD_VALUES); CHKERRQ(ierr);
 
