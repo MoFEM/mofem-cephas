@@ -109,7 +109,7 @@ struct BasicEntity {
     const EntityHandle ent
   );
 
-  inline boost::shared_ptr<BasicEntityData> getBasicDataPtr() {
+  inline boost::shared_ptr<BasicEntityData>& getBasicDataPtr() {
     return basicDataPtr;
   }
 
