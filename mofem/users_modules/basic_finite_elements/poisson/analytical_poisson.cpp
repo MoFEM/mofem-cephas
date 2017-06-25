@@ -76,6 +76,7 @@ int main(int argc, char *argv[]) {
   PetscInitialize(&argc,&argv,(char *)0,help);
 
   int order = 3;  //< approximation order
+  PetscBool flg_test = PETSC_FALSE;
   ierr = PetscOptionsBegin(
     PETSC_COMM_WORLD,"",
     "Poisson's problem options","none"
@@ -83,6 +84,10 @@ int main(int argc, char *argv[]) {
   ierr = PetscOptionsInt(
     "-order","approximation order","",order,&order,PETSC_NULL
   ); CHKERRQ(ierr);
+  ierr = PetscOptionsBool(
+    "-test","if true is ctest","",flg_test,&flg_test,PETSC_NULL
+  ); CHKERRQ(ierr);
+
   ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
   try {
@@ -203,13 +208,33 @@ int main(int argc, char *argv[]) {
 
     // Calculate error
     {
+      int ghosts[] = { 0 };
+      Vec global_error;
+      ierr = VecCreateGhost(
+        PETSC_COMM_WORLD,m_field.get_comm_rank()==0?1:0,1,m_field.get_comm_rank()==0?0:1,ghosts,&global_error
+      ); CHKERRQ(ierr);
       boost::shared_ptr<ForcesAndSurcesCore> domain_error;
       domain_error = boost::shared_ptr<ForcesAndSurcesCore>(new VolumeElementForcesAndSourcesCore(m_field));
       domain_error->getRuleHook = VolRule();
       boost::shared_ptr<VectorDouble> values_at_integation_ptrs = boost::make_shared<VectorDouble>();
       domain_error->getOpPtrVector().push_back(new OpCalculateScalarFieldValues("U",values_at_integation_ptrs));
-      domain_error->getOpPtrVector().push_back(new OpErrorL2(exactFunction(),values_at_integation_ptrs));
+      domain_error->getOpPtrVector().push_back(new OpErrorL2(exactFunction(),values_at_integation_ptrs,global_error));
       ierr = DMoFEMLoopFiniteElements(dm,simple_interface->getDomainFEName(),domain_error); CHKERRQ(ierr);
+      ierr = VecAssemblyEnd(global_error); CHKERRQ(ierr);
+      ierr = VecGhostUpdateBegin(global_error,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+      ierr = VecGhostUpdateEnd(global_error,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+      if(m_field.get_comm_rank()==0) {
+        double *e;
+        ierr = VecGetArray(global_error,&e); CHKERRQ(ierr);
+        cout << "Global errror " << e[0] << endl;
+        if(flg_test) {
+          if(e[0]>1e-10) {
+            SETERRQ(PETSC_COMM_SELF,MOFEM_ATOM_TEST_INVALID,"Test failed, error too big");
+          }
+        }
+        ierr = VecRestoreArray(global_error,&e); CHKERRQ(ierr);
+      }
+      ierr = VecDestroy(&global_error); CHKERRQ(ierr);
     }
 
     // Post-process results

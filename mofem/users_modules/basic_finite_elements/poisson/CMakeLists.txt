@@ -30,3 +30,16 @@ target_link_libraries(analytical_poisson
   mofem_cblas
   ${MoFEM_PROJECT_LIBS}
 )
+
+cm_export_file("cube_1part.h5m" export_files_poisson)
+cm_export_file("cube_2part.h5m" export_files_poisson)
+cm_export_file("dense_cube_4parts.h5m" export_files_poisson)
+
+add_test(analytical_poisson
+  ${MoFEM_MPI_RUN} ${MPI_RUN_FLAGS} -np 2
+  ${CMAKE_CURRENT_BINARY_DIR}/analytical_poisson
+  -file_name cube_2part.h5m -order 3
+  -ksp_type fgmres -pc_type lu -pc_factor_mat_solver_package mumps
+  -ksp_atol 1e-12 -ksp_rtol 0  -ksp_monitor
+  -test 1
+)

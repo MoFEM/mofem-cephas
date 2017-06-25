@@ -350,14 +350,17 @@ namespace PoissonOperators {
     typedef boost::function<double (const double,const double,const double)> FVal;
 
     OpErrorL2(
-      FVal f_value,boost::shared_ptr<VectorDouble>& field_vals
+      FVal f_value,boost::shared_ptr<VectorDouble>& field_vals,Vec global_error
     ):
     OpBaseRhs<VolumeElementForcesAndSourcesCore::UserDataOperator>("ERROR"),
+    globalError(global_error),
     fValue(f_value),
     fieldVals(field_vals) {
     }
 
   private:
+
+    Vec globalError;
 
     FTensor::Number<0> NX;
     FTensor::Number<1> NY;
@@ -395,7 +398,7 @@ namespace PoissonOperators {
         double alpha = vol*t_w;
         FTensor::Tensor0<double*> t_a = data.getFTensor0FieldData();
         for(int rr = 0;rr!=nbRows;rr++) {
-          t_a += alpha*t_e*(t_u-fValue(t_coords(NX),t_coords(NY),t_coords(NZ)));
+          t_a += alpha*t_e*fabs(t_u-fValue(t_coords(NX),t_coords(NY),t_coords(NZ)));
           ++t_a;
           ++t_e;
         }
@@ -411,6 +414,9 @@ namespace PoissonOperators {
       FTensor::Tensor0<double*> t_a = data.getFTensor0FieldData();
       for(int rr = 0;rr!=nbRows;rr++) {
         data.getFieldDofs()[rr]->getFieldData() = t_a;
+        if(rr == 0) {
+          ierr = VecSetValue(globalError,0,t_a,ADD_VALUES); CHKERRQ(ierr);
+        }
         ++t_a;
       }
       PetscFunctionReturn(0);

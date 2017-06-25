@@ -164,12 +164,10 @@ int main(int argc, char *argv[]) {
       ); CHKERRQ(ierr);
       ierr = VecDuplicate(vol,&surf_vol); CHKERRQ(ierr);
       // set operator to the volume element
-      boost::static_pointer_cast<ForcesAndSurcesCore>(domain_fe)->getOpPtrVector().push_back(
-        new OpVolume("MESH_NODE_POSITIONS",vol)
+      domain_fe->getOpPtrVector().push_back(new OpVolume("MESH_NODE_POSITIONS",vol)
       );
       // set operator to the face element
-      boost::static_pointer_cast<ForcesAndSurcesCore>(boundary_fe)->getOpPtrVector().push_back(
-        new OpFace("MESH_NODE_POSITIONS",surf_vol)
+      boundary_fe->getOpPtrVector().push_back(new OpFace("MESH_NODE_POSITIONS",surf_vol)
       );
       // make integration in volume (here real calculations starts)
       ierr = DMoFEMLoopFiniteElements(dm,simple_interface->getDomainFEName(),domain_fe); CHKERRQ(ierr);
