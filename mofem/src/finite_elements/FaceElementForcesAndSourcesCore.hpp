@@ -98,8 +98,8 @@ struct FaceElementForcesAndSourcesCore: public ForcesAndSurcesCore {
     ForcesAndSurcesCore::UserDataOperator(field_name,type) {}
 
     UserDataOperator(
-    const std::string &row_field_name,const std::string &col_field_name,const char type):
-    ForcesAndSurcesCore::UserDataOperator(row_field_name,col_field_name,type) {};
+    const std::string &row_field_name,const std::string &col_field_name,const char type,const bool symm = true):
+    ForcesAndSurcesCore::UserDataOperator(row_field_name,col_field_name,type,symm) {};
 
     /**
      * \brief get area of face

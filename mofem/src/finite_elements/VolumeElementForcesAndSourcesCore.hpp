@@ -176,6 +176,39 @@ struct VolumeElementForcesAndSourcesCore: public ForcesAndSurcesCore {
       return FTensor::Tensor0<double*>(getHoGaussPtsDetJac().data().begin());
     }
 
+    /**
+     * \brief Get coordinates at integration points assuming linear geometry
+     *
+     * \code
+     * FTensor::Tensor1<double*> t_coords = getTensor1CoordsAtGaussPts();
+     * for(int gg = 0;gg!=nb_int_ptrs;gg++) {
+     *   // do somthing
+     *   ++t_coords;
+     * }
+     * \endcode
+     *
+     */
+    inline FTensor::Tensor1<double*,3> getTensor1CoordsAtGaussPts() {
+      return FTensor::Tensor1<double*,3>(
+        &getCoordsAtGaussPts()(0,0),
+        &getCoordsAtGaussPts()(0,1),
+        &getCoordsAtGaussPts()(0,2),3
+      );
+    }
+
+    /**
+     * \brief Get coordinates at integration points taking geometry from field
+     *
+     * This is HO geometry given by arbitrary order polynomial
+     * \code
+     * FTensor::Tensor1<double*> t_coords = getTensor1HoCoordsAtGaussPts();
+     * for(int gg = 0;gg!=nb_int_ptrs;gg++) {
+     *   // do somthing
+     *   ++t_coords;
+     * }
+     * \endcode
+     *
+     */
     inline FTensor::Tensor1<double*,3> getFTensor1HoCoordsAtGaussPts() {
       return FTensor::Tensor1<double*,3>(
         &getHoCoordsAtGaussPts()(0,0),
