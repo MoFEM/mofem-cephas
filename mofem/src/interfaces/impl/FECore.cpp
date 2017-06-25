@@ -115,7 +115,7 @@ namespace MoFEM {
     }
     boost::shared_ptr<FiniteElement> fe;
     fe = *it_fe;
-    fe->element_adjacency_table[type] = function;
+    fe->elementAdjacencyTable[type] = function;
     PetscFunctionReturn(0);
   }
 
@@ -532,6 +532,7 @@ namespace MoFEM {
       p.first->get()->data_dofs->clear();
 
       for(unsigned int ii = 0;ii<BitFieldId().size();ii++) {
+
         // Common field id for ROW, COL and DATA
         BitFieldId id_common = 0;
         // Check if the field (ii) is added to finite element
@@ -539,6 +540,7 @@ namespace MoFEM {
           id_common |= fe_fields[ss]&BitFieldId().set(ii);
         }
         if( id_common.none() ) continue;
+
         // Find in database data associated with the field (ii)
         const BitFieldId field_id = BitFieldId().set(ii);
         FieldById::iterator miit = fields_by_id.find(field_id);
@@ -555,18 +557,20 @@ namespace MoFEM {
 
         // Loop over adjacencies of element and find field entities on those
         // adjacencies, that create hash map map_uid_fe which is used later
-        std::string field_name = miit->get()->getName();
+        const bool add_to_data = (field_id&p.first->get()->getBitFieldIdData()).any();
+        boost::string_ref field_name = miit->get()->getName();
+        FieldEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type::iterator meit;
         for(Range::iterator eit = adj_ents.begin();eit!=adj_ents.end();eit++) {
-          FieldEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type::iterator meit;
           meit = entsFields.get<Composite_Name_And_Ent_mi_tag>().find(boost::make_tuple(field_name,*eit));
           if(meit!=entsFields.get<Composite_Name_And_Ent_mi_tag>().end()) {
             UId uid = meit->get()->getGlobalUniqueId();
             map_uid_fe[uid].push_back(*p.first);
-            if((field_id&p.first->get()->getBitFieldIdData()).any()) {
+            if(add_to_data) {
               data_dofs_size[p.first->get()->getEnt()] += meit->get()->getNbDofsOnEnt();
             }
           }
         }
+
       }
 
     }

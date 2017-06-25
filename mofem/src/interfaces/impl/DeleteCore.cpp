@@ -177,11 +177,14 @@ namespace MoFEM {
     Range::iterator eit = ents.begin();
     for(;eit!=ents.end();eit++) {
       FieldEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type::iterator dit,hi_dit;
-      dit = entsFields.get<Composite_Name_And_Ent_mi_tag>().lower_bound(boost::make_tuple(name,*eit));
-      hi_dit = entsFields.get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple(name,*eit));
-      for(;dit!=hi_dit;) {
-        dit = entsFields.get<Composite_Name_And_Ent_mi_tag>().erase(dit);
+      dit = entsFields.get<Composite_Name_And_Ent_mi_tag>().find(boost::make_tuple(name,*eit));
+      if(dit!=entsFields.get<Composite_Name_And_Ent_mi_tag>().end()) {
+        entsFields.get<Composite_Name_And_Ent_mi_tag>().erase(dit);
       }
+      // hi_dit = entsFields.get<Composite_Name_And_Ent_mi_tag>().upper_bound(boost::make_tuple(name,*eit));
+      // for(;dit!=hi_dit;) {
+      //   dit = entsFields.get<Composite_Name_And_Ent_mi_tag>().erase(dit);
+      // }
     }
     PetscFunctionReturn(0);
   }

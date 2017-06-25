@@ -883,27 +883,29 @@ typedef multi_index_container<
       	FieldEntity,
       	const_mem_fun<FieldEntity::interface_type_Field,boost::string_ref,&FieldEntity::getNameRef>,
       	const_mem_fun<FieldEntity,EntityHandle,&FieldEntity::getEnt>
-      > >
-  > > FieldEntity_multiIndex;
-
-  // /// \deprecated use FieldEntity_multiIndex
-  // DEPRECATED typedef FieldEntity_multiIndex MoFEMEntity_multiIndex;
-
-  /** \brief Entity nulti index by field name
-    *
-    * \ingroup ent_multi_indices
-    */
-  typedef FieldEntity_multiIndex::index<FieldName_mi_tag>::type FieldEntityByFieldName;
-
-  typedef multi_index_container<
-    boost::shared_ptr<FieldEntity>,
-    indexed_by<
-      sequenced<>,
-      hashed_non_unique<
-        tag<Ent_mi_tag>, const_mem_fun<FieldEntity,EntityHandle,&FieldEntity::getEnt>
       >
     >
-  > FieldEntity_multiIndex_ent_view;
+  >
+> FieldEntity_multiIndex;
+
+// /// \deprecated use FieldEntity_multiIndex
+// DEPRECATED typedef FieldEntity_multiIndex MoFEMEntity_multiIndex;
+
+/** \brief Entity nulti index by field name
+  *
+  * \ingroup ent_multi_indices
+  */
+typedef FieldEntity_multiIndex::index<FieldName_mi_tag>::type FieldEntityByFieldName;
+
+typedef multi_index_container<
+  boost::shared_ptr<FieldEntity>,
+  indexed_by<
+    sequenced<>,
+    hashed_non_unique<
+      tag<Ent_mi_tag>, const_mem_fun<FieldEntity,EntityHandle,&FieldEntity::getEnt>
+    >
+  >
+> FieldEntity_multiIndex_ent_view;
 
 }
 
