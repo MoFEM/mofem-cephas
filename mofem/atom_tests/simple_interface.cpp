@@ -105,7 +105,6 @@ struct OpFace: public FaceElementForcesAndSourcesCore::UserDataOperator {
 struct VolRule { int operator()(int,int,int) const { return 2; } };
 struct FaceRule { int operator()(int,int,int) const { return 4; } };
 
-
 int main(int argc, char *argv[]) {
 
   ErrorCode rval;
@@ -150,13 +149,13 @@ int main(int argc, char *argv[]) {
       // get dm
       ierr = simple_interface->getDM(&dm); CHKERRQ(ierr);
       // create elements
-      boost::shared_ptr<ForcesAndSurcesCore> domainFE =
+      boost::shared_ptr<ForcesAndSurcesCore> domain_fe =
       boost::shared_ptr<ForcesAndSurcesCore>(new VolumeElementForcesAndSourcesCore(m_field));
-      boost::shared_ptr<ForcesAndSurcesCore> boundaryFE =
+      boost::shared_ptr<ForcesAndSurcesCore> boundary_fe =
       boost::shared_ptr<ForcesAndSurcesCore>(new FaceElementForcesAndSourcesCore(m_field));
       // set integration rule
-      domainFE->getRuleHook = VolRule();
-      boundaryFE->getRuleHook = FaceRule();
+      domain_fe->getRuleHook = VolRule();
+      boundary_fe->getRuleHook = FaceRule();
       // create distributed vector to accumulate values from processors.
       int ghosts[] = { 0 };
       Vec vol,surf_vol;
@@ -165,17 +164,17 @@ int main(int argc, char *argv[]) {
       ); CHKERRQ(ierr);
       ierr = VecDuplicate(vol,&surf_vol); CHKERRQ(ierr);
       // set operator to the volume element
-      boost::static_pointer_cast<ForcesAndSurcesCore>(domainFE)->getOpPtrVector().push_back(
+      boost::static_pointer_cast<ForcesAndSurcesCore>(domain_fe)->getOpPtrVector().push_back(
         new OpVolume("MESH_NODE_POSITIONS",vol)
       );
       // set operator to the face element
-      boost::static_pointer_cast<ForcesAndSurcesCore>(boundaryFE)->getOpPtrVector().push_back(
+      boost::static_pointer_cast<ForcesAndSurcesCore>(boundary_fe)->getOpPtrVector().push_back(
         new OpFace("MESH_NODE_POSITIONS",surf_vol)
       );
       // make integration in volume (here real calculations starts)
-      ierr = DMoFEMLoopFiniteElements(dm,simple_interface->getDomainFEName(),domainFE); CHKERRQ(ierr);
+      ierr = DMoFEMLoopFiniteElements(dm,simple_interface->getDomainFEName(),domain_fe); CHKERRQ(ierr);
       // make integration on boundary
-      ierr = DMoFEMLoopFiniteElements(dm,simple_interface->getBoundaryFEName(),boundaryFE); CHKERRQ(ierr);
+      ierr = DMoFEMLoopFiniteElements(dm,simple_interface->getBoundaryFEName(),boundary_fe); CHKERRQ(ierr);
       // assemble volumes from processors and accumulate on processor of rank 0
       ierr = VecAssemblyBegin(vol); CHKERRQ(ierr);
       ierr = VecAssemblyEnd(vol); CHKERRQ(ierr);
