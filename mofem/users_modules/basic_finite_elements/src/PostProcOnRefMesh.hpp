@@ -154,7 +154,7 @@ struct PostProcTemplateOnRefineMesh: public ELEMENT {
     THROW_MESSAGE("not implemented");
   }
 
-  /** \brief Add operator to post-process L2 or H1 field value
+  /** \brief Add operator to post-process L2, H1, Hdiv, Hcurl field value
 
     \param field_name
     \param v If vector is given, values from vector are used to set tags on mesh
