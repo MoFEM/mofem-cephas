@@ -456,7 +456,7 @@ namespace MoFEM {
         SETERRQ(PETSC_COMM_WORLD,MOFEM_DATA_INCONSISTENCY,"Huston we have a problem");
       }
       if(field->getSpace()==H1) {
-        ierr = m_field.set_field_order(meshSet,MBVERTEX,domainFields[ff],1); CHKERRQ(ierr);
+        ierr = m_field.set_field_order(meshSet,MBVERTEX,skeletonFields[ff],1); CHKERRQ(ierr);
       }
       for(int dd = dds;dd<=dIm-1;dd++) {
         Range ents;
