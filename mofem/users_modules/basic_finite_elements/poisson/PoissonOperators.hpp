@@ -554,7 +554,7 @@ namespace PoissonOperators {
     FTensor::Index<'i',3> i;
     FVal fValue;  ///< function with exact solution
 
-    boost::shared_ptr<VectorDouble>& fieldVals;
+    boost::shared_ptr<VectorDouble> fieldVals;
 
     /**
      * \brief Integrate error
@@ -606,6 +606,103 @@ namespace PoissonOperators {
         }
         ++t_a;
       }
+      PetscFunctionReturn(0);
+    }
+
+  };
+
+
+  struct CreateFiniteElementes {
+
+    PetscErrorCode createFEToAssmbleMatrceAndVector(
+      MoFEM::Interface &m_field,
+      boost::function<int (int order_row,int order_col,int order_data)> vol_rule,
+      boost::function<int (int order_row,int order_col,int order_data)> boundary_rule,
+      boost::function<double (const double,const double,const double)> f_u,
+      boost::function<double (const double,const double,const double)> f_source,
+      boost::shared_ptr<ForcesAndSurcesCore>& domain_lhs_fe,
+      boost::shared_ptr<ForcesAndSurcesCore>& boundary_lhs_fe,
+      boost::shared_ptr<ForcesAndSurcesCore>& domain_rhs_fe,
+      boost::shared_ptr<ForcesAndSurcesCore>& boundary_rhs_fe
+    ) const {
+      PetscFunctionBegin;
+
+      // Create elements element instances
+      domain_lhs_fe = boost::shared_ptr<ForcesAndSurcesCore>(new VolumeElementForcesAndSourcesCore(m_field));
+      boundary_lhs_fe = boost::shared_ptr<ForcesAndSurcesCore>(new FaceElementForcesAndSourcesCore(m_field));
+      domain_rhs_fe = boost::shared_ptr<ForcesAndSurcesCore>(new VolumeElementForcesAndSourcesCore(m_field));
+      boundary_rhs_fe = boost::shared_ptr<ForcesAndSurcesCore>(new FaceElementForcesAndSourcesCore(m_field));
+
+      // Set integration rule to elements instances
+      domain_lhs_fe->getRuleHook = vol_rule;
+      domain_rhs_fe->getRuleHook = vol_rule;
+      boundary_lhs_fe->getRuleHook = boundary_rule;
+      boundary_rhs_fe->getRuleHook = boundary_rule;
+
+      // Ass operators to element instances
+      // Add operator grad-grad for calualte matrix
+      domain_lhs_fe->getOpPtrVector().push_back(new OpGradGrad());
+      // Add operator to calculate source terms
+      domain_rhs_fe->getOpPtrVector().push_back(new OpVF(f_source));
+      // Add operator calculating constrains matrix
+      boundary_lhs_fe->getOpPtrVector().push_back(new OpLU(true));
+      // Add operator calculating constrains vector
+      boundary_rhs_fe->getOpPtrVector().push_back(new OpLg(f_u));
+
+      PetscFunctionReturn(0);
+    }
+
+    PetscErrorCode createFEToEvaluateError(
+      MoFEM::Interface &m_field,
+      boost::function<int (int order_row,int order_col,int order_data)> vol_rule,
+      boost::function<double (const double,const double,const double)> f_u,
+      Vec global_error,
+      boost::shared_ptr<ForcesAndSurcesCore>& domain_error
+    ) const {
+      PetscFunctionBegin;
+      // Create finite element instance to calualte error
+      domain_error = boost::shared_ptr<ForcesAndSurcesCore>(
+        new VolumeElementForcesAndSourcesCore(m_field)
+      );
+      domain_error->getRuleHook = vol_rule;
+      // Set integration rule
+      // Crate shared vector storing values of field "u" on integration points on element. element
+      // is local and is used to exchange data between operators.
+      boost::shared_ptr<VectorDouble> values_at_integation_ptrs = boost::make_shared<VectorDouble>();
+      // Add default operator to calculate field values at integration points
+      domain_error->getOpPtrVector().push_back(new OpCalculateScalarFieldValues("U",values_at_integation_ptrs));
+      // Add operator to integrate error element by element.
+      domain_error->getOpPtrVector().push_back(new OpErrorL2(f_u,values_at_integation_ptrs,global_error));
+      PetscFunctionReturn(0);
+    }
+
+    PetscErrorCode creatFEToPostProcessResults(
+      MoFEM::Interface &m_field,
+      boost::shared_ptr<ForcesAndSurcesCore>& post_proc_volume
+    ) const {
+      PetscErrorCode ierr;
+      PetscFunctionBegin;
+
+      // Note that user can stack together arbitrary number of operators to compose
+      // complex PDEs.
+
+      // Post-process results. This is standard element, with functionality
+      // enabling refining mesh for post-processing. In addition in PostProcOnRefMesh.hpp
+      // are implanted set of  users operators to post-processing fields. Here
+      // using simplified mechanism for post-processing finite element, we
+      // add operators to save data from field on mesh tags for ParaView
+      // visualization.
+      post_proc_volume = boost::shared_ptr<ForcesAndSurcesCore>(new PostProcVolumeOnRefinedMesh(m_field));
+      // Add operators to the elements, starting with some generic
+      ierr = boost::static_pointer_cast<PostProcVolumeOnRefinedMesh>(post_proc_volume)->
+      generateReferenceElementMesh(); CHKERRQ(ierr);
+      ierr = boost::static_pointer_cast<PostProcVolumeOnRefinedMesh>(post_proc_volume)->
+      addFieldValuesPostProc("U"); CHKERRQ(ierr);
+      ierr = boost::static_pointer_cast<PostProcVolumeOnRefinedMesh>(post_proc_volume)->
+      addFieldValuesPostProc("ERROR"); CHKERRQ(ierr);
+      ierr = boost::static_pointer_cast<PostProcVolumeOnRefinedMesh>(post_proc_volume)->
+      addFieldValuesGradientPostProc("U"); CHKERRQ(ierr);
+
       PetscFunctionReturn(0);
     }
 

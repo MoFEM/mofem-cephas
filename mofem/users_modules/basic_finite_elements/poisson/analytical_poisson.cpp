@@ -121,7 +121,7 @@ int main(int argc, char *argv[]) {
 
     // Create MoAB database
     moab::Core moab_core; // create database
-    moab::Interface& moab = moab_core; // craete interface to database
+    moab::Interface& moab = moab_core; // create interface to database
 
     // Create MoFEM database and link it to MoAB
     MoFEM::Core mofem_core(moab); // create database
@@ -131,14 +131,51 @@ int main(int argc, char *argv[]) {
     DMType dm_name = "DMMOFEM"; // name of new DM manager
     ierr = DMRegister_MoFEM(dm_name); CHKERRQ(ierr); // register MoFEM DM in PETSc
 
-    // Get simple interface. MoFEM::Interface is build to solve complex General
-    // problems. Simple interface is simplified version enabling quick and
+    // Create ghost vector to assemble errors from all element on distributed mesh.
+    // Ghost vector has size 1, where one element is owned by processor 0, other processor
+    // have one ghost element of zero element at processor 0.
+    int ghosts[] = { 0 };
+    Vec global_error;
+    ierr = VecCreateGhost(
+      PETSC_COMM_WORLD,m_field.get_comm_rank()==0?1:0,1,
+      m_field.get_comm_rank()==0?0:1,ghosts,&global_error
+    ); CHKERRQ(ierr);
+
+
+    // First we crate elements, implementation of elements is problem independent,
+    // we do not know yet what fields are present in the problem, or
+    // even we do not decided yet what approximation base or spaces we
+    // are going to use. Implementation of element is free from
+    // those constrains and can be used in different context.
+
+    // Elements tised by KSP & DM to assemble system of equations
+    boost::shared_ptr<ForcesAndSurcesCore> domain_lhs_fe;     ///< Volume element for the matrix
+    boost::shared_ptr<ForcesAndSurcesCore> boundary_lhs_fe;   ///< Boundary element for the matrix
+    boost::shared_ptr<ForcesAndSurcesCore> domain_rhs_fe;     ///< Volume element to assemble vector
+    boost::shared_ptr<ForcesAndSurcesCore> boundary_rhs_fe;   ///< Volume element to assemble vector
+    boost::shared_ptr<ForcesAndSurcesCore> domain_error;      ///< Volume element evaluate error
+    boost::shared_ptr<ForcesAndSurcesCore> post_proc_volume;  ///< Volume element to Post-process results
+    boost::shared_ptr<ForcesAndSurcesCore> null;              ///< Null element do nothing
+    {
+      ierr = CreateFiniteElementes().createFEToAssmbleMatrceAndVector(
+        m_field,
+        VolRule(),FaceRule(),
+        ExactFunction(),ExactLaplacianFunction(),
+        domain_lhs_fe,boundary_lhs_fe,domain_rhs_fe,boundary_rhs_fe
+      ); CHKERRQ(ierr);
+      ierr = CreateFiniteElementes().createFEToEvaluateError(
+        m_field,VolRule(),ExactFunction(),global_error,domain_error
+      ); CHKERRQ(ierr);
+      ierr = CreateFiniteElementes().creatFEToPostProcessResults(m_field,post_proc_volume); CHKERRQ(ierr);
+    }
+
+    // Get simple interface is simplified version enabling quick and
     // easy construction of problem.
     Simple *simple_interface;
     // Query interface and get pointer to Simple interface
     ierr = m_field.query_interface(simple_interface); CHKERRQ(ierr);
 
-    // Build problem with simple ineterface
+    // Build problem with simple interface
     {
 
       // Get options for simple interface from command line
@@ -170,43 +207,18 @@ int main(int argc, char *argv[]) {
 
     }
 
-    // Create finite elements and data operators on entities
-    boost::shared_ptr<FEMethod> null;                       // This is used to pass null element
-    boost::shared_ptr<ForcesAndSurcesCore> domain_lhs_fe;   // Domain element used to calculate matrix
-    boost::shared_ptr<ForcesAndSurcesCore> boundary_lhs_fe; // Domain element to evaluate the right hand side
-    boost::shared_ptr<ForcesAndSurcesCore> domain_rhs_fe;   // Boundary element to evaluate boundary constrains matrix
-    boost::shared_ptr<ForcesAndSurcesCore> boundary_rhs_fe; // Boundary element to evaluate constrains vector
-    {
-      // Create elements element instances
-      domain_lhs_fe = boost::shared_ptr<ForcesAndSurcesCore>(new VolumeElementForcesAndSourcesCore(m_field));
-      boundary_lhs_fe = boost::shared_ptr<ForcesAndSurcesCore>(new FaceElementForcesAndSourcesCore(m_field));
-      domain_rhs_fe = boost::shared_ptr<ForcesAndSurcesCore>(new VolumeElementForcesAndSourcesCore(m_field));
-      boundary_rhs_fe = boost::shared_ptr<ForcesAndSurcesCore>(new FaceElementForcesAndSourcesCore(m_field));
-      // Set integration rule to elements instances
-      domain_lhs_fe->getRuleHook = VolRule();
-      domain_rhs_fe->getRuleHook = VolRule();
-      boundary_lhs_fe->getRuleHook = FaceRule();
-      boundary_rhs_fe->getRuleHook = FaceRule();
-
-      // Ass operators to element instances
-      // Add operator grad-grad for calualte matrix
-      domain_lhs_fe->getOpPtrVector().push_back(new OpGradGrad());
-      // Add operator to calculate source terms
-      domain_rhs_fe->getOpPtrVector().push_back(new OpVF(ExactLaplacianFunction()));
-      // Add operator calculating constrains matrix
-      boundary_lhs_fe->getOpPtrVector().push_back(new OpLU(true));
-      // Add operator calculating constrains values
-      boundary_rhs_fe->getOpPtrVector().push_back(new OpLg(ExactFunction()));
-    }
-
-    // Get access to PETSC-MoFEM DM manager. F
+    // Get access to PETSC-MoFEM DM manager.
     // or more derails see <http://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/DM/index.html>
     DM dm;
     // Get dm
     ierr = simple_interface->getDM(&dm); CHKERRQ(ierr);
 
     // Set KSP context for DM. At that point only elements are added to DM operators.
-    // Calculations of matrices and vectors is executed by KSP solver.
+    // Calculations of matrices and vectors is executed by KSP solver. This part
+    // of the code makes connection between implementation of finite elements and
+    // data operators with finite element declarations in DM manager. From that
+    // point DM takes responsibility for executing elements. calculations of
+    // matrices and vectors, and solution of the problem.
     {
       // Set operators for KSP solver
       ierr = DMMoFEMKSPSetComputeOperators(
@@ -257,26 +269,6 @@ int main(int argc, char *argv[]) {
 
     // Calculate error
     {
-      // Create ghost vector to assemble errors from all element on distributed mesh.
-      // Ghost vector has size 1, where one element is owned by processor 0, other processor
-      // have one ghost element of zero element at processor 0.
-      int ghosts[] = { 0 };
-      Vec global_error;
-      ierr = VecCreateGhost(
-        PETSC_COMM_WORLD,m_field.get_comm_rank()==0?1:0,1,m_field.get_comm_rank()==0?0:1,ghosts,&global_error
-      ); CHKERRQ(ierr);
-      // Create finite element instance to calualte error
-      boost::shared_ptr<ForcesAndSurcesCore> domain_error;
-      domain_error = boost::shared_ptr<ForcesAndSurcesCore>(new VolumeElementForcesAndSourcesCore(m_field));
-      // Set integration rule
-      domain_error->getRuleHook = VolRule();
-      // Crate shared vector storing values of field "u" on integration points on element. element
-      // is local and is used to exchange data between operators.
-      boost::shared_ptr<VectorDouble> values_at_integation_ptrs = boost::make_shared<VectorDouble>();
-      // Add default operator to calculate field values at integration points
-      domain_error->getOpPtrVector().push_back(new OpCalculateScalarFieldValues("U",values_at_integation_ptrs));
-      // Add operator to integrate error element by element.
-      domain_error->getOpPtrVector().push_back(new OpErrorL2(ExactFunction(),values_at_integation_ptrs,global_error));
       // Loop over all elements in mesh, and run users operators on each element.
       ierr = DMoFEMLoopFiniteElements(dm,simple_interface->getDomainFEName(),domain_error); CHKERRQ(ierr);
       // Assemble vector with globe error.
@@ -296,33 +288,24 @@ int main(int argc, char *argv[]) {
         }
         ierr = VecRestoreArray(global_error,&e); CHKERRQ(ierr);
       }
-      // Destroy ghost vector
-      ierr = VecDestroy(&global_error); CHKERRQ(ierr);
     }
 
-    // Post-process results. This is standard element, with functionality
-    // enabling refining mesh for post-processing. In addition in PostProcOnRefMesh.hpp
-    // are implanted set of  users operators to post-processing fields. Here
-    // using simplified mechanism for post-processing finite element, we
-    // add operators to save data from field on mesh tags for preview
-    // visualization.
     {
-      PostProcVolumeOnRefinedMesh post_proc_volume(m_field);
-      // Add operators to the elements, starting with some generic
-      ierr = post_proc_volume.generateReferenceElementMesh(); CHKERRQ(ierr);
-      ierr = post_proc_volume.addFieldValuesPostProc("U"); CHKERRQ(ierr);
-      ierr = post_proc_volume.addFieldValuesPostProc("ERROR"); CHKERRQ(ierr);
-      ierr = post_proc_volume.addFieldValuesGradientPostProc("U"); CHKERRQ(ierr);
       // Loop over all elements in the mesh and for each execute post_proc_volume
       // element and operators on it.
       ierr = DMoFEMLoopFiniteElements(
-        dm,simple_interface->getDomainFEName().c_str(),&post_proc_volume
+        dm,simple_interface->getDomainFEName(),post_proc_volume
       ); CHKERRQ(ierr);
-      ierr = post_proc_volume.writeFile("out_vol.h5m"); CHKERRQ(ierr);
+      // Write results
+      ierr = boost::static_pointer_cast<PostProcVolumeOnRefinedMesh>(post_proc_volume)->
+      writeFile("out_vol.h5m"); CHKERRQ(ierr);
     }
 
     // Destroy DM, no longer needed.
     ierr = DMDestroy(&dm); CHKERRQ(ierr);
+
+    // Destroy ghost vector
+    ierr = VecDestroy(&global_error); CHKERRQ(ierr);
 
   } catch (MoFEMException const &e) {
     SETERRQ(PETSC_COMM_SELF,e.errorCode,e.errorMessage);
