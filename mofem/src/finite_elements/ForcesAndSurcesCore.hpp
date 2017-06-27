@@ -39,7 +39,8 @@ struct ForcesAndSurcesCore: public FEMethod {
 
   Interface& mField;
   ForcesAndSurcesCore(MoFEM::Interface& m_field):
-  mField(m_field) {
+  mField(m_field),
+  getRuleHook(0) {
   }
   virtual ~ForcesAndSurcesCore() {
 

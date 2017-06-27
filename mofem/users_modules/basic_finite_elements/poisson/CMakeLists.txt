@@ -33,7 +33,6 @@ target_link_libraries(analytical_poisson
 
 cm_export_file("cube_1part.h5m" export_files_poisson)
 cm_export_file("cube_2part.h5m" export_files_poisson)
-cm_export_file("dense_cube_4parts.h5m" export_files_poisson)
 
 add_test(analytical_poisson
   ${MoFEM_MPI_RUN} ${MPI_RUN_FLAGS} -np 2

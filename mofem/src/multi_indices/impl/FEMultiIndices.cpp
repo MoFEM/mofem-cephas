@@ -495,6 +495,10 @@ PetscErrorCode DefaultElementAdjacency::defaultVertex(
     default:
     SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"this field is not implemented for VERTEX finite element");
   }
+  // build side table
+  for(Range::iterator eit = adjacency.begin();eit!=adjacency.end();eit++) {
+    fe_ptr.getSideNumberPtr(*eit);
+  }
   PetscFunctionReturn(0);
 }
 PetscErrorCode DefaultElementAdjacency::defaultEdge(
@@ -503,7 +507,7 @@ PetscErrorCode DefaultElementAdjacency::defaultEdge(
   PetscFunctionBegin;
   ErrorCode rval;
   EntityHandle fe_ent = fe_ptr.getEnt();
-  Range nodes;
+  // Range nodes;
   switch (field_ptr.getSpace()) {
     case H1:
     rval = moab.get_connectivity(&fe_ent,1,adjacency,true); CHKERRQ_MOAB(rval);
@@ -538,6 +542,10 @@ PetscErrorCode DefaultElementAdjacency::defaultEdge(
     break;
     default:
     SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"this field is not implemented for EDGE finite element");
+  }
+  // build side table
+  for(Range::iterator eit = adjacency.begin();eit!=adjacency.end();eit++) {
+    fe_ptr.getSideNumberPtr(*eit);
   }
   PetscFunctionReturn(0);
 }
@@ -601,6 +609,10 @@ PetscErrorCode DefaultElementAdjacency::defaultTri(
     default:
     SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"this field is not implemented for TRI finite element");
   }
+  // build side table
+  for(Range::iterator eit = adjacency.begin();eit!=adjacency.end();eit++) {
+    fe_ptr.getSideNumberPtr(*eit);
+  }
   PetscFunctionReturn(0);
 }
 PetscErrorCode DefaultElementAdjacency::defaultTet(
@@ -645,6 +657,10 @@ PetscErrorCode DefaultElementAdjacency::defaultTet(
     break;
     default:
     SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"this field is not implemented for TRI finite element");
+  }
+  // build side table
+  for(Range::iterator eit = adjacency.begin();eit!=adjacency.end();eit++) {
+    fe_ptr.getSideNumberPtr(*eit);
   }
   PetscFunctionReturn(0);
 }

@@ -557,8 +557,8 @@ namespace MoFEM {
 
         // Loop over adjacencies of element and find field entities on those
         // adjacencies, that create hash map map_uid_fe which is used later
+        const std::string field_name = miit->get()->getName();
         const bool add_to_data = (field_id&p.first->get()->getBitFieldIdData()).any();
-        boost::string_ref field_name = miit->get()->getName();
         FieldEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type::iterator meit;
         for(Range::iterator eit = adj_ents.begin();eit!=adj_ents.end();eit++) {
           meit = entsFields.get<Composite_Name_And_Ent_mi_tag>().find(boost::make_tuple(field_name,*eit));
