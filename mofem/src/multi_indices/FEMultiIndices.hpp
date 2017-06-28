@@ -287,17 +287,31 @@ struct RefElement_change_parent {
 
 struct EntFiniteElement;
 
-/** \brief user adjacency function table
-  * \ingroup fe_multi_indices
-  */
-typedef PetscErrorCode (*ElementAdjacencyTable[MBMAXTYPE])(
-  Interface &moab,const Field &field_ptr,const EntFiniteElement &fe_ptr,Range &adjacency);
-
 /** \brief user adjacency function
   * \ingroup fe_multi_indices
   */
-typedef PetscErrorCode (*ElementAdjacencyFunct)(
-  Interface &moab,const Field &field_ptr,const EntFiniteElement &fe_ptr,Range &adjacency);
+typedef boost::function<
+  PetscErrorCode (Interface &moab,const Field &field_ptr,const EntFiniteElement &fe_ptr,Range &adjacency)
+> ElementAdjacencyFunct;
+
+// /** \brief user adjacency function table
+//   * \ingroup fe_multi_indices
+//   */
+// typedef ElementAdjacencyFunct[MBMAXTYPE] ElementAdjacencyTable;
+
+// /** \brief user adjacency function table
+//   * \ingroup fe_multi_indices
+//   */
+// typedef PetscErrorCode (*ElementAdjacencyTable[MBMAXTYPE])(
+//   Interface &moab,const Field &field_ptr,const EntFiniteElement &fe_ptr,Range &adjacency
+// );
+//
+// /** \brief user adjacency function
+//   * \ingroup fe_multi_indices
+//   */
+// typedef PetscErrorCode (*ElementAdjacencyFunct)(
+//   Interface &moab,const Field &field_ptr,const EntFiniteElement &fe_ptr,Range &adjacency
+// );
 
 /**
  * \brief Finite element definition
@@ -373,8 +387,15 @@ struct FiniteElement {
    */
   inline unsigned int getBitNumber() const { return ffsl(((BitFieldId*)tag_id_data)->to_ulong()); }
 
-  ElementAdjacencyTable element_adjacency_table;  //<- allow to add user specific adjacency map
+  /**
+   * \brief Table of functions retrieving adjacencies for finite element
+   * User can alter and change default behavior
+   */
+  ElementAdjacencyFunct elementAdjacencyTable[MBMAXTYPE];
 
+  /**
+   * \brief print finite element 
+   */
   friend std::ostream& operator<<(std::ostream& os, const FiniteElement& e);
 
 //   /**

@@ -66,7 +66,7 @@ EdgePolynomialBase::~EdgePolynomialBase() {}
 EdgePolynomialBase::EdgePolynomialBase() {}
 
 PetscErrorCode EdgePolynomialBase::getValue(
-  ublas::matrix<double> &pts,
+  MatrixDouble &pts,
   boost::shared_ptr<BaseFunctionCtx> ctx_ptr
 ) {
   PetscErrorCode ierr;
@@ -134,7 +134,7 @@ PetscErrorCode EdgePolynomialBase::getValue(
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode EdgePolynomialBase::getValueH1(ublas::matrix<double> &pts) {
+PetscErrorCode EdgePolynomialBase::getValueH1(MatrixDouble &pts) {
   PetscErrorCode ierr;
   PetscFunctionBegin;
 
@@ -209,7 +209,7 @@ PetscErrorCode EdgePolynomialBase::getValueH1(ublas::matrix<double> &pts) {
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode EdgePolynomialBase::getValueL2(ublas::matrix<double> &pts) {
+PetscErrorCode EdgePolynomialBase::getValueL2(MatrixDouble &pts) {
   PetscFunctionBegin;
   SETERRQ(
     PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,
@@ -218,14 +218,14 @@ PetscErrorCode EdgePolynomialBase::getValueL2(ublas::matrix<double> &pts) {
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode EdgePolynomialBase::getValueHdiv(ublas::matrix<double> &pts) {
+PetscErrorCode EdgePolynomialBase::getValueHdiv(MatrixDouble &pts) {
   SETERRQ(
     PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,
     "Make no sense, unless problem is 2d (2d not implemented yet)"
   );
 }
 
-PetscErrorCode EdgePolynomialBase::getValueHCurl(ublas::matrix<double> &pts) {
+PetscErrorCode EdgePolynomialBase::getValueHCurl(MatrixDouble &pts) {
   PetscErrorCode ierr;
   PetscFunctionBegin;
 

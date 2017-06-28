@@ -282,24 +282,24 @@ struct SurfaceSlidingConstrains {
     useProjectionFromCrackFront(false) {
     }
 
-    ublas::matrix<double> N;
-    ublas::matrix<double> Bksi;
-    ublas::matrix<double> Beta;
+    MatrixDouble N;
+    MatrixDouble Bksi;
+    MatrixDouble Beta;
 
-    ublas::vector<double> pOsition;
-    ublas::vector<double> dXdKsi;
-    ublas::vector<double> dXdEta;
-    ublas::matrix<double> spinKsi;
-    ublas::matrix<double> spinEta;
-    ublas::vector<double> nOrmal;
-    ublas::matrix<double> sPin;
+    VectorDouble pOsition;
+    VectorDouble dXdKsi;
+    VectorDouble dXdEta;
+    MatrixDouble spinKsi;
+    MatrixDouble spinEta;
+    VectorDouble nOrmal;
+    MatrixDouble sPin;
     double aRea;
     double lAmbda;
 
     std::vector<bool> nodesWithoutLambda;
 
     static PetscErrorCode calcSpin(
-      ublas::matrix<double> &spin,ublas::vector<double> &vec
+      MatrixDouble &spin,VectorDouble &vec
     ) {
       PetscFunctionBegin;
       spin.resize(3,3,false);
@@ -523,8 +523,8 @@ struct SurfaceSlidingConstrains {
     oRientation(orientation)
     {}
 
-    ublas::vector<double> c;
-    ublas::vector<double> nF;
+    VectorDouble c;
+    VectorDouble nF;
     ublas::vector<int> rowIndices;
 
     PetscErrorCode doWork(
@@ -616,7 +616,7 @@ struct SurfaceSlidingConstrains {
     oRientation(orientation)
     {}
 
-    ublas::vector<double> g,dElta;
+    VectorDouble g,dElta;
 
     PetscErrorCode doWork(
       int row_side,EntityType row_type,DataForcesAndSurcesCore::EntData &row_data
@@ -711,9 +711,9 @@ struct SurfaceSlidingConstrains {
     }
 
 
-    ublas::vector<double> c;
-    ublas::matrix<double> C;
-    ublas::matrix<double> transC;
+    VectorDouble c;
+    MatrixDouble C;
+    MatrixDouble transC;
     ublas::vector<int> transRowIndices;
 
     PetscErrorCode doWork(
@@ -837,11 +837,11 @@ struct SurfaceSlidingConstrains {
       sYmm = false;
     }
 
-    ublas::matrix<double> spindXdKsi,spindXdEta;
-    ublas::matrix<double> NdNormal;
-    ublas::matrix<double> dNormal;
+    MatrixDouble spindXdKsi,spindXdEta;
+    MatrixDouble NdNormal;
+    MatrixDouble dNormal;
 
-    ublas::matrix<double> B;
+    MatrixDouble B;
     ublas::vector<int> rowIndices;
 
     PetscErrorCode doWork(
@@ -949,12 +949,12 @@ struct SurfaceSlidingConstrains {
     }
 
 
-    ublas::vector<double> XdNormal;
-    ublas::matrix<double> spindXdKsi,spindXdEta;
-    ublas::matrix<double> dNormal,NXdNormal;
-    ublas::vector<double> dElta;
+    VectorDouble XdNormal;
+    MatrixDouble spindXdKsi,spindXdEta;
+    MatrixDouble dNormal,NXdNormal;
+    VectorDouble dElta;
 
-    ublas::matrix<double> A;
+    MatrixDouble A;
 
     PetscErrorCode doWork(
       int row_side,int col_side,

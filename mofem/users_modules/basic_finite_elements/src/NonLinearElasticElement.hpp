@@ -120,8 +120,8 @@ struct NonlinearElasticElement {
     std::map<std::string,std::vector<MatrixDouble > > gradAtGaussPts;
     string spatialPositions;
     string meshPositions;
-    std::vector<MatrixDouble > sTress;
-    std::vector<MatrixDouble > jacStress; ///< this is simply material tangent operator
+    std::vector<MatrixDouble3by3> sTress;
+    std::vector<MatrixDouble> jacStress; ///< this is simply material tangent operator
 
     // This part can be used to calulate stress directly from potential
 
@@ -140,7 +140,9 @@ struct NonlinearElasticElement {
 
     /** \brief Calculate determinant of 3x3 matrix
       */
-    PetscErrorCode dEterminatnt(ublas::matrix<TYPE> a,TYPE &det) {
+    PetscErrorCode dEterminatnt(
+      ublas::matrix<TYPE,ublas::row_major,ublas::bounded_array<TYPE,9> >& a,TYPE &det
+    ) {
       PetscFunctionBegin;
       // a11a22a33
       //+a21a32a13
@@ -162,7 +164,11 @@ struct NonlinearElasticElement {
 
     /** \brief Calculate inverse of 3x3 matrix
       */
-    PetscErrorCode iNvert(TYPE det,ublas::matrix<TYPE> a,ublas::matrix<TYPE> &inv_a) {
+    PetscErrorCode iNvert(
+      TYPE det,
+      ublas::matrix<TYPE,ublas::row_major,ublas::bounded_array<TYPE,9> >& a,
+      ublas::matrix<TYPE,ublas::row_major,ublas::bounded_array<TYPE,9> >& inv_a
+    ) {
       PetscFunctionBegin;
       //PetscErrorCode ierr;
       inv_a.resize(3,3);
@@ -182,7 +188,7 @@ struct NonlinearElasticElement {
     }
 
     double lambda,mu;
-    ublas::matrix<TYPE> F,C,E,S,invF,P,SiGma,h,H,invH;
+    ublas::matrix<TYPE,ublas::row_major,ublas::bounded_array<TYPE,9> > F,C,E,S,invF,P,SiGma,h,H,invH;
     TYPE J,eNergy,detH;
 
     int gG;	///< Gauss point number
@@ -347,8 +353,8 @@ struct NonlinearElasticElement {
     /** \brief Do operations when pre-process
     */
     virtual PetscErrorCode getDataOnPostProcessor(
-      std::map<std::string,std::vector<ublas::vector<double> > > &field_map,
-      std::map<std::string,std::vector<ublas::matrix<double> > > &grad_map
+      std::map<std::string,std::vector<VectorDouble > > &field_map,
+      std::map<std::string,std::vector<MatrixDouble > > &grad_map
     ) {
       PetscFunctionBegin;
       PetscFunctionReturn(0);

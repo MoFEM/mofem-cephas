@@ -103,7 +103,7 @@ struct NeummanForcesSurface {
       bool ho_geometry = false
     );
 
-    ublas::vector<FieldData> Nf; //< Local force vector
+    VectorDouble Nf; //< Local force vector
 
     PetscErrorCode doWork(int side,EntityType type,DataForcesAndSurcesCore::EntData &data);
 
@@ -128,7 +128,7 @@ struct NeummanForcesSurface {
       bool ho_geometry = false
     );
 
-    ublas::vector<FieldData> Nf; //< Local force vector
+    VectorDouble Nf; //< Local force vector
 
     PetscErrorCode doWork(int side,EntityType type,DataForcesAndSurcesCore::EntData &data);
 
@@ -150,7 +150,7 @@ struct NeummanForcesSurface {
       bool ho_geometry = false
     );
 
-    ublas::vector<FieldData> Nf;
+    VectorDouble Nf;
 
     PetscErrorCode doWork(int side,EntityType type,DataForcesAndSurcesCore::EntData &data);
 
@@ -171,7 +171,7 @@ struct NeummanForcesSurface {
       bool ho_geometry
     );
 
-    ublas::vector<FieldData> Nf;
+    VectorDouble Nf;
 
     PetscErrorCode doWork(int side,EntityType type,DataForcesAndSurcesCore::EntData &data);
 
@@ -279,7 +279,7 @@ struct MetaNeummanForces {
       if(it->getName().compare(0,block_set_force_name.length(),block_set_force_name) == 0) {
         std::vector<double> mydata;
         ierr = it->getAttributes(mydata); CHKERRQ(ierr);
-        ublas::vector<double> force(mydata.size());
+        VectorDouble force(mydata.size());
         for(unsigned int ii = 0;ii<mydata.size();ii++) {
           force[ii] = mydata[ii];
         }
@@ -301,7 +301,7 @@ struct MetaNeummanForces {
       if(it->getName().compare(0,block_set_pressure_name.length(),block_set_pressure_name) == 0) {
         std::vector<double> mydata;
         ierr = it->getAttributes(mydata); CHKERRQ(ierr);
-        ublas::vector<double> pressure(mydata.size());
+        VectorDouble pressure(mydata.size());
         for(unsigned int ii = 0;ii<mydata.size();ii++) {
           pressure[ii] = mydata[ii];
         }

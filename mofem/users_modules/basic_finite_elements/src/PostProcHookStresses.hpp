@@ -162,7 +162,7 @@ struct PostPorcHookStress: public MoFEM::VolumeElementForcesAndSourcesCore::User
     double lambda,mu;
     ierr = getMatParameters(&lambda,&mu,&id); CHKERRQ(ierr);
 
-    ublas::matrix<FieldData> D_lambda,D_mu,D;
+    MatrixDouble D_lambda,D_mu,D;
     D_lambda.resize(6,6);
     D_lambda.clear();
     for(int rr = 0;rr<3;rr++) {
@@ -206,13 +206,13 @@ struct PostPorcHookStress: public MoFEM::VolumeElementForcesAndSourcesCore::User
       rval = postProcMesh.tag_set_data(th_id,&*tit,1,&id);  CHKERRQ_MOAB(rval);
     }
 
-    ublas::vector<double> strain;
-    ublas::vector<double> stress;
-    ublas::matrix<double> Stress;
+    VectorDouble strain;
+    VectorDouble stress;
+    MatrixDouble Stress;
 
     //Combine eigenvalues and vectors to create principal stress vector
-    ublas::matrix<double> prin_stress_vect(3,3);
-    ublas::vector<double> prin_vals_vect(3);
+    MatrixDouble prin_stress_vect(3,3);
+    VectorDouble prin_vals_vect(3);
 
     int nb_gauss_pts = data.getN().size1();
     if(mapGaussPts.size()!=(unsigned int)nb_gauss_pts) {
@@ -242,7 +242,7 @@ struct PostPorcHookStress: public MoFEM::VolumeElementForcesAndSourcesCore::User
       rval = postProcMesh.tag_set_data(th_stress,&mapGaussPts[gg],1,&Stress(0,0)); CHKERRQ_MOAB(rval);
 
       ublas::matrix< FieldData > eigen_vectors = Stress;
-      ublas::vector<double> eigen_values(3);
+      VectorDouble eigen_values(3);
 
       //LAPACK - eigenvalues and vectors. Applied twice for initial creates memory space
       int n = 3, lda = 3, info, lwork = -1;

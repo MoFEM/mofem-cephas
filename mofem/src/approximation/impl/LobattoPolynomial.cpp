@@ -62,7 +62,7 @@ PetscErrorCode LobattoPolynomial::queryInterface(
 }
 
 PetscErrorCode LobattoPolynomial::getValue(
-  ublas::matrix<double> &pts,
+  MatrixDouble &pts,
   boost::shared_ptr<BaseFunctionCtx> ctx_ptr
 ) {
   PetscErrorCode ierr;
@@ -116,7 +116,7 @@ PetscErrorCode KernelLobattoPolynomial::queryInterface(
 }
 
 PetscErrorCode KernelLobattoPolynomial::getValue(
-  ublas::matrix<double> &pts,
+  MatrixDouble &pts,
   boost::shared_ptr<BaseFunctionCtx> ctx_ptr
 ) {
   PetscErrorCode ierr;

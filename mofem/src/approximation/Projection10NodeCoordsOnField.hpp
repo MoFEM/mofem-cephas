@@ -52,7 +52,7 @@ struct Projection10NodeCoordsOnField: public EntMethod {
     PetscFunctionReturn(0);
   }
 
-  ublas::vector<double> coords;
+  VectorDouble coords;
   ublas::vector<double,ublas::bounded_array<double,3> > aveMidCoord;
   ublas::vector<double,ublas::bounded_array<double,3> > midNodeCoord;
   ublas::vector<double,ublas::bounded_array<double,3> > diffNodeCoord;
@@ -153,8 +153,8 @@ struct ProjectionFieldOn10NodeTet: public Projection10NodeCoordsOnField {
 
   Tag th;
   Field_multiIndex::index<FieldName_mi_tag>::type::iterator field_it;
-  ublas::vector<double> L;
-  ublas::vector<double> K;
+  VectorDouble L;
+  VectorDouble K;
 
   PetscErrorCode preProcess() {
     PetscFunctionBegin;
@@ -167,7 +167,7 @@ struct ProjectionFieldOn10NodeTet: public Projection10NodeCoordsOnField {
         SETERRQ1(PETSC_COMM_SELF,1,"field not found %s",fieldName.c_str());
       }
       int field_rank = (*field_it)->getNbOfCoeffs();
-      ublas::vector<double> def_VAL = ublas::zero_vector<double>(field_rank);
+      VectorDouble def_VAL = ublas::zero_vector<double>(field_rank);
       rval = mField.get_moab().tag_get_handle(
         onTag.c_str(),field_rank,MB_TYPE_DOUBLE,
         th,MB_TAG_CREAT|MB_TAG_SPARSE,&*def_VAL.data().begin()

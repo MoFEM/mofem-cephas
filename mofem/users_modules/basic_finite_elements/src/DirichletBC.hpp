@@ -85,7 +85,7 @@ struct SpatialPositionsBCFEMethodPreAndPostProc: public DisplacementBCFEMethodPr
 
   std::vector<std::string> fixFields;
 
-  ublas::vector<double> cOords;
+  VectorDouble cOords;
   PetscErrorCode iNitalize();
 
 };

@@ -55,7 +55,7 @@ PetscErrorCode DisplacementBCFEMethodPreAndPostProc::iNitalize() {
     for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NODESET|DISPLACEMENTSET,it)) {
       DisplacementCubitBcData mydata;
       ierr = it->getBcDataStructure(mydata); CHKERRQ(ierr);
-      ublas::vector<double> scaled_values(3);
+      VectorDouble scaled_values(3);
       scaled_values[0] = mydata.data.value1;
       scaled_values[1] = mydata.data.value2;
       scaled_values[2] = mydata.data.value3;
@@ -253,7 +253,7 @@ PetscErrorCode SpatialPositionsBCFEMethodPreAndPostProc::iNitalize() {
     for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NODESET|DISPLACEMENTSET,it)) {
       DisplacementCubitBcData mydata;
       ierr = it->getBcDataStructure(mydata); CHKERRQ(ierr);
-      ublas::vector<double> scaled_values(3);
+      VectorDouble scaled_values(3);
       scaled_values[0] = mydata.data.value1;
       scaled_values[1] = mydata.data.value2;
       scaled_values[2] = mydata.data.value3;
@@ -327,7 +327,7 @@ PetscErrorCode TemperatureBCFEMethodPreAndPostProc::iNitalize() {
     for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NODESET|TEMPERATURESET,it)) {
       TemperatureCubitBcData mydata;
       ierr = it->getBcDataStructure(mydata); CHKERRQ(ierr);
-      ublas::vector<double> scaled_values(1);
+      VectorDouble scaled_values(1);
       scaled_values[0] = mydata.data.value1;
       ierr = MethodForForceScaling::applyScale(this,methodsOp,scaled_values); CHKERRQ(ierr);
       for(int dim = 0;dim<3;dim++) {
@@ -478,7 +478,7 @@ PetscErrorCode DirichletBCFromBlockSetFEMethodPreAndPostProc::iNitalize() {
       if(it->getName().compare(0,blocksetName.length(),blocksetName) == 0) {
         std::vector<double> mydata;
         ierr = it->getAttributes(mydata); CHKERRQ(ierr);
-        ublas::vector<double> scaled_values(mydata.size());
+        VectorDouble scaled_values(mydata.size());
         for(unsigned int ii = 0;ii<mydata.size();ii++) {
           scaled_values[ii] = mydata[ii];
         }
@@ -546,7 +546,7 @@ PetscErrorCode DirichletBCFromBlockSetFEMethodPreAndPostProcWithFlags::iNitalize
       if(it->getName().compare(0,blocksetName.length(),blocksetName) == 0) {
         std::vector<double> mydata;
         ierr = it->getAttributes(mydata); CHKERRQ(ierr);
-        ublas::vector<double> scaled_values(mydata.size());
+        VectorDouble scaled_values(mydata.size());
         for(unsigned int ii = 0;ii<mydata.size();ii++) {
           scaled_values[ii] = mydata[ii];
         }

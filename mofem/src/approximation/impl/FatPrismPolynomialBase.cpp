@@ -65,8 +65,8 @@ FatPrismPolynomialBaseCtx::FatPrismPolynomialBaseCtx(
   DataForcesAndSurcesCore &data,
   DataForcesAndSurcesCore &data_triangles_only,
   DataForcesAndSurcesCore &data_trough_thickness,
-  ublas::matrix<double>& gauss_pts_triangles_only,
-  ublas::matrix<double>& gauss_pts_through_thickness,
+  MatrixDouble& gauss_pts_triangles_only,
+  MatrixDouble& gauss_pts_through_thickness,
   moab::Interface &moab,
   const NumeredEntFiniteElement *fe_ptr,
   const FieldSpace space,
@@ -106,7 +106,7 @@ FatPrismPolynomialBase::~FatPrismPolynomialBase() {}
 FatPrismPolynomialBase::FatPrismPolynomialBase() {}
 
 PetscErrorCode FatPrismPolynomialBase::getValue(
-  ublas::matrix<double> &pts,
+  MatrixDouble &pts,
   boost::shared_ptr<BaseFunctionCtx> ctx_ptr
 ) {
   PetscErrorCode ierr;
@@ -247,7 +247,7 @@ PetscErrorCode FatPrismPolynomialBase::getValueH1ThroughThickness() {
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode FatPrismPolynomialBase::getValueH1(ublas::matrix<double> &pts) {
+PetscErrorCode FatPrismPolynomialBase::getValueH1(MatrixDouble &pts) {
   PetscErrorCode ierr;
   PetscFunctionBegin;
 
@@ -471,16 +471,16 @@ PetscErrorCode FatPrismPolynomialBase::getValueH1(ublas::matrix<double> &pts) {
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode FatPrismPolynomialBase::getValueL2(ublas::matrix<double> &pts) {
+PetscErrorCode FatPrismPolynomialBase::getValueL2(MatrixDouble &pts) {
   PetscFunctionBegin;
   SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"Not yet implemented");
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode FatPrismPolynomialBase::getValueHdiv(ublas::matrix<double> &pts) {
+PetscErrorCode FatPrismPolynomialBase::getValueHdiv(MatrixDouble &pts) {
   SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"Not yet implemented");
 }
 
-PetscErrorCode FatPrismPolynomialBase::getValueHCurl(ublas::matrix<double> &pts) {
+PetscErrorCode FatPrismPolynomialBase::getValueHCurl(MatrixDouble &pts) {
   SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"Not yet implemented");
 }

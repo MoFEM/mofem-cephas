@@ -48,9 +48,9 @@ struct VolumeLengthQuality: public NonlinearElasticElement::FunctionsToCalculate
       aLpha(alpha),
       gAmma(gamma) {}
 
-    ublas::vector<double> coordsEdges;
+    VectorDouble coordsEdges;
     double lrmsSquared0;
-    ublas::vector<double> deltaChi;
+    VectorDouble deltaChi;
 
     ublas::vector<TYPE> deltaX;
     ublas::matrix<TYPE> Q,dXdChiT;

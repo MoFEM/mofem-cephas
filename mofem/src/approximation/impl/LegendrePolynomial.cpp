@@ -61,7 +61,7 @@ PetscErrorCode LegendrePolynomial::queryInterface(
 }
 
 PetscErrorCode LegendrePolynomial::getValue(
-  ublas::matrix<double> &pts,
+  MatrixDouble &pts,
   boost::shared_ptr<BaseFunctionCtx> ctx_ptr
 ) {
   PetscErrorCode ierr;

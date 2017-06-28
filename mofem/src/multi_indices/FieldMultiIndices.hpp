@@ -388,7 +388,7 @@ struct interface_Field {
   /// @return get field Id
   inline const BitFieldId& getId() const { return this->sFieldPtr->getId(); }
 
-  /// @return get firld name
+  /// @return get field name
   inline boost::string_ref getNameRef() const { return this->sFieldPtr->getNameRef(); }
 
   /// @return get field name

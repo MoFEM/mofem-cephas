@@ -47,7 +47,7 @@ struct BodyFroceConstantField {
       MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROW),
       F(_F),dAta(data),blockTets(block_tets) {}
 
-    ublas::vector<FieldData> Nf;
+    VectorDouble Nf;
 
     PetscErrorCode doWork(
       int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {

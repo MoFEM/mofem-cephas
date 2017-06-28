@@ -162,7 +162,7 @@ inline PetscErrorCode invertTensor3by3(
 }
 
 template<>
-inline PetscErrorCode invertTensor3by3<3,double,ublas::row_major,ublas::unbounded_array<double> >(
+inline PetscErrorCode invertTensor3by3<3,double,ublas::row_major,DoubleAllacator>(
   MatrixDouble &jac_data,
   VectorDouble &det_data,
   MatrixDouble &inv_jac_data

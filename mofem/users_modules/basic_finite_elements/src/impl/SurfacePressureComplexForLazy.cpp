@@ -491,7 +491,7 @@ PetscErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::lHs() {
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::reBaseToFaceLoocalCoordSystem(ublas::matrix<double> &t_glob_nodal) {
+PetscErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::reBaseToFaceLoocalCoordSystem(MatrixDouble &t_glob_nodal) {
   PetscFunctionBegin;
   double s1[3],s2[3],normal[3],q[9];
   ierr = ShapeFaceBaseMBTRI(diffN,&*coords.data().begin(),normal,s1,s2); CHKERRQ(ierr);
@@ -549,7 +549,7 @@ PetscErrorCode NeummanForcesSurfaceComplexForLazy::MyTriangleSpatialFE::calcTrac
     }
   }
 
-  ublas::vector<double> scale(1,1);
+  VectorDouble scale(1,1);
   //cerr << methodsOp.size() << endl;
   ierr = MethodForForceScaling::applyScale(this,methodsOp,scale); CHKERRQ(ierr);
   tLocNodal *= scale[0];

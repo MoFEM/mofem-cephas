@@ -16,10 +16,6 @@ include_directories(
   ${UM_SOURCE_DIR}/basic_finite_elements/nonlinear_elastic_materials/src
 )
 
-include_directories(
-  ${UM_SOURCE_DIR}/nonlinear_elastic_materials/src
-)
-
 bfe_add_executable(elasticity
   ${UM_SOURCE_DIR}/basic_finite_elements/elasticity/elasticity.cpp
 )
