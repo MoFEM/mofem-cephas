@@ -35,7 +35,7 @@ namespace MoFEM {
     ~TriPolynomialBase();
 
     PetscErrorCode getValue(
-      ublas::matrix<double> &pts,
+      MatrixDouble &pts,
       boost::shared_ptr<BaseFunctionCtx> ctx_ptr
     );
 
@@ -44,11 +44,11 @@ namespace MoFEM {
     EntPolynomialBaseCtx *cTx;
 
     PetscErrorCode getValueH1(
-      ublas::matrix<double> &pts
+      MatrixDouble &pts
     );
 
     PetscErrorCode getValueL2(
-      ublas::matrix<double> &pts
+      MatrixDouble &pts
     );
 
     ublas::matrix<MatrixDouble > N_face_edge;
@@ -57,21 +57,21 @@ namespace MoFEM {
     ublas::vector<MatrixDouble > diffN_face_bubble;
 
     PetscErrorCode getValueHdiv(
-      ublas::matrix<double> &pts
+      MatrixDouble &pts
     );
 
     PetscErrorCode getValueHCurl(
-      ublas::matrix<double> &pts
+      MatrixDouble &pts
     );
 
   private:
 
     PetscErrorCode getValueHdivAinsworthBase(
-      ublas::matrix<double> &pts
+      MatrixDouble &pts
     );
 
     PetscErrorCode getValueHdivDemkowiczBase(
-      ublas::matrix<double> &pts
+      MatrixDouble &pts
     );
 
   };

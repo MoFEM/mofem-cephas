@@ -22,7 +22,7 @@ PetscErrorCode ierr;
 
 static char help[] = "testing interface inserting algorithm\n\n";
 
-static double sum_matrix(ublas::matrix<double> &m) {
+static double sum_matrix(MatrixDouble &m) {
   double s = 0;
   for(unsigned int ii = 0;ii<m.size1();ii++) {
     for(unsigned int jj = 0;jj<m.size2();jj++) {
@@ -95,13 +95,13 @@ int main(int argc, char *argv[]) {
     SETERRQ(PETSC_COMM_SELF,MOFEM_IMPOSIBLE_CASE,"base not set");
   }
 
-  ublas::matrix<double> pts_1d(1,3);
+  MatrixDouble pts_1d(1,3);
   pts_1d(0,0)=-0.5;
   pts_1d(0,1)=0.;
   pts_1d(0,2)=+0.5;
 
-  boost::shared_ptr<ublas::matrix<double> > base_ptr(new ublas::matrix<double>);
-  boost::shared_ptr<ublas::matrix<double> > diff_base_ptr(new ublas::matrix<double>);
+  boost::shared_ptr<MatrixDouble > base_ptr(new MatrixDouble);
+  boost::shared_ptr<MatrixDouble > diff_base_ptr(new MatrixDouble);
 
 
   const double eps = 1e-3;
@@ -136,8 +136,8 @@ int main(int argc, char *argv[]) {
     pts_1d(0,ii) = 2*((double)ii/10)-1;
   }
 
-  boost::shared_ptr<ublas::matrix<double> > kernel_base_ptr(new ublas::matrix<double>);
-  boost::shared_ptr<ublas::matrix<double> > diff_kernel_base_ptr(new ublas::matrix<double>);
+  boost::shared_ptr<MatrixDouble > kernel_base_ptr(new MatrixDouble);
+  boost::shared_ptr<MatrixDouble > diff_kernel_base_ptr(new MatrixDouble);
 
   if(choise_value==LOBATTOPOLYNOMIAL) {
     double diff_s = 1;
@@ -199,9 +199,9 @@ int main(int argc, char *argv[]) {
   if(choise_value==JACOBIPOLYNOMIAL) {
 
     int n = 21;
-    ublas::matrix<double> pts_1d(1,n);
+    MatrixDouble pts_1d(1,n);
     pts_1d.resize(1,n,false);
-    ublas::matrix<double> pts_1d_t(1,n);
+    MatrixDouble pts_1d_t(1,n);
     for(int ii = 0;ii!=n;ii++) {
       pts_1d(0,ii) = (double)ii/20.;
       pts_1d_t(0,ii) = 1;
@@ -271,7 +271,7 @@ int main(int argc, char *argv[]) {
   tet_data.dataOnEntities[MBTET].resize(1);
   tet_data.dataOnEntities[MBTET][0].getDataOrder() = 5;
 
-  ublas::matrix<double> pts_tet;
+  MatrixDouble pts_tet;
   int tet_rule = 2;
   int nb_gauss_pts = QUAD_3D_TABLE[tet_rule]->npoints;
   pts_tet.resize(3,nb_gauss_pts,false);
@@ -286,7 +286,7 @@ int main(int argc, char *argv[]) {
   );
   tet_data.dataOnEntities[MBVERTEX][0].getN(NOBASE).resize(nb_gauss_pts,4,false);
   {
-    double *shape_ptr = tet_data.dataOnEntities[MBVERTEX][0].getN(NOBASE).data().begin();
+    double *shape_ptr = &*tet_data.dataOnEntities[MBVERTEX][0].getN(NOBASE).data().begin();
     cblas_dcopy(
       4*nb_gauss_pts,QUAD_3D_TABLE[tet_rule]->points,1,shape_ptr,1
     );
@@ -492,7 +492,7 @@ int main(int argc, char *argv[]) {
   tri_data.dataOnEntities[MBTRI].resize(1);
   tri_data.dataOnEntities[MBTRI][0].getDataOrder() = 4;
 
-  ublas::matrix<double> pts_tri;
+  MatrixDouble pts_tri;
   int tri_rule = 2;
   nb_gauss_pts = QUAD_2D_TABLE[tri_rule]->npoints;
   pts_tri.resize(2,nb_gauss_pts,false);
@@ -504,7 +504,7 @@ int main(int argc, char *argv[]) {
   );
   tri_data.dataOnEntities[MBVERTEX][0].getN(NOBASE).resize(nb_gauss_pts,3,false);
   {
-    double *shape_ptr = tri_data.dataOnEntities[MBVERTEX][0].getN(NOBASE).data().begin();
+    double *shape_ptr = &*tri_data.dataOnEntities[MBVERTEX][0].getN(NOBASE).data().begin();
     cblas_dcopy(
       3*nb_gauss_pts,QUAD_2D_TABLE[tri_rule]->points,1,shape_ptr,1
     );
@@ -661,7 +661,7 @@ int main(int argc, char *argv[]) {
   edge_data.dataOnEntities[MBEDGE][0].getDataOrder() = 4;
   edge_data.dataOnEntities[MBEDGE][0].getSense() = 1;
 
-  ublas::matrix<double> pts_edge;
+  MatrixDouble pts_edge;
   int edge_rule = 6;
   nb_gauss_pts = QUAD_1D_TABLE[edge_rule]->npoints;
   pts_edge.resize(1,nb_gauss_pts,false);
@@ -670,7 +670,7 @@ int main(int argc, char *argv[]) {
   );
   edge_data.dataOnEntities[MBVERTEX][0].getN(NOBASE).resize(nb_gauss_pts,2,false);
   {
-    double *shape_ptr = edge_data.dataOnEntities[MBVERTEX][0].getN(NOBASE).data().begin();
+    double *shape_ptr = &*edge_data.dataOnEntities[MBVERTEX][0].getN(NOBASE).data().begin();
     cblas_dcopy(
       2*nb_gauss_pts,QUAD_1D_TABLE[edge_rule]->points,1,shape_ptr,1
     );

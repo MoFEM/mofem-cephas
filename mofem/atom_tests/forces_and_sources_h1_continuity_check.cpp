@@ -273,7 +273,7 @@ int main(int argc, char *argv[]) {
     VolumeElementForcesAndSourcesCore(m_field) {}
     int getRule(int order) { return -1; };
 
-    ublas::matrix<double> N_tri;
+    MatrixDouble N_tri;
     PetscErrorCode setGaussPts(int order) {
       PetscFunctionBegin;
 

@@ -206,6 +206,26 @@ namespace MoFEM {
     PetscFunctionReturn(0);
   }
 
+  PetscErrorCode Simple::addDataField(
+    const std::string& name,
+    const FieldSpace space,
+    const FieldApproximationBase base,
+    const FieldCoefficientsNumber nb_of_cooficients,
+    const TagType tag_type,
+    const enum MoFEMTypes bh,
+    int verb
+  ) {
+    PetscErrorCode ierr;
+    MoFEM::Interface &m_field = cOre;
+    PetscFunctionBegin;
+    ierr = m_field.add_field(
+      name, space, base, nb_of_cooficients, tag_type, bh, verb
+    ); CHKERRQ(ierr);
+    dataFields.push_back(name);
+    PetscFunctionReturn(0);
+  }
+
+
   PetscErrorCode Simple::defineFiniteElements() {
     PetscErrorCode ierr;
     MoFEM::Interface &m_field = cOre;
@@ -216,6 +236,9 @@ namespace MoFEM {
       ierr = m_field.modify_finite_element_add_field_row(domainFE,domainFields[ff]); CHKERRQ(ierr);
       ierr = m_field.modify_finite_element_add_field_col(domainFE,domainFields[ff]); CHKERRQ(ierr);
       ierr = m_field.modify_finite_element_add_field_data(domainFE,domainFields[ff]); CHKERRQ(ierr);
+    }
+    for(unsigned int ff = 0;ff!=dataFields.size();ff++) {
+      ierr = m_field.modify_finite_element_add_field_data(domainFE,dataFields[ff]); CHKERRQ(ierr);
     }
     if(!boundaryFields.empty()) {
       ierr = m_field.add_finite_element(boundaryFE); CHKERRQ(ierr);
@@ -324,6 +347,9 @@ namespace MoFEM {
     for(unsigned int ff = 0;ff!=domainFields.size();ff++) {
       ierr = m_field.add_ents_to_field_by_dim(meshSet,dIm,domainFields[ff]); CHKERRQ(ierr);
     }
+    for(unsigned int ff = 0;ff!=dataFields.size();ff++) {
+      ierr = m_field.add_ents_to_field_by_dim(meshSet,dIm,dataFields[ff]); CHKERRQ(ierr);
+    }
     for(unsigned int ff = 0;ff!=boundaryFields.size();ff++) {
       ierr = m_field.add_ents_to_field_by_dim(boundaryMeshset,dIm-1,boundaryFields[ff]); CHKERRQ(ierr);
     }
@@ -357,6 +383,34 @@ namespace MoFEM {
         ierr = m_field.set_field_order(ents,domainFields[ff],fieldsOrder.at(domainFields[ff])); CHKERRQ(ierr);
       }
     }
+    // Set order to data fiels
+    for(unsigned int ff = 0;ff!=dataFields.size();ff++) {
+      if(fieldsOrder.find(dataFields[ff])==fieldsOrder.end()) {
+        SETERRQ1(
+          PETSC_COMM_WORLD,MOFEM_INVALID_DATA,
+          "Order for field not set %s",dataFields[ff].c_str()
+        );
+      }
+      int dds = 0;
+      const Field *field = m_field.get_field_structure(dataFields[ff]);
+      switch (field->getSpace()) {
+        case L2: dds = dIm; break;
+        case HDIV: dds = 2; break;
+        case HCURL: dds = 1; break;
+        case H1: dds = 1; break;
+        default:
+        SETERRQ(PETSC_COMM_WORLD,MOFEM_DATA_INCONSISTENCY,"Huston we have a problem");
+      }
+      if(field->getSpace()==H1) {
+        ierr = m_field.set_field_order(meshSet,MBVERTEX,dataFields[ff],1); CHKERRQ(ierr);
+      }
+      for(int dd = dds;dd<=dIm;dd++) {
+        Range ents;
+        ierr = m_field.get_field_entities_by_dimension(dataFields[ff],dd,ents); CHKERRQ(ierr);
+        ierr = m_field.set_field_order(ents,dataFields[ff],fieldsOrder.at(dataFields[ff])); CHKERRQ(ierr);
+      }
+    }
+    // Set order to boundary
     for(unsigned int ff = 0;ff!=boundaryFields.size();ff++) {
       if(fieldsOrder.find(boundaryFields[ff])==fieldsOrder.end()) {
         SETERRQ1(
@@ -383,6 +437,7 @@ namespace MoFEM {
         ierr = m_field.set_field_order(ents,boundaryFields[ff],fieldsOrder.at(boundaryFields[ff])); CHKERRQ(ierr);
       }
     }
+    // Set order to skeleton
     for(unsigned int ff = 0;ff!=skeletonFields.size();ff++) {
       if(fieldsOrder.find(skeletonFields[ff])==fieldsOrder.end()) {
         SETERRQ1(
@@ -401,7 +456,7 @@ namespace MoFEM {
         SETERRQ(PETSC_COMM_WORLD,MOFEM_DATA_INCONSISTENCY,"Huston we have a problem");
       }
       if(field->getSpace()==H1) {
-        ierr = m_field.set_field_order(meshSet,MBVERTEX,domainFields[ff],1); CHKERRQ(ierr);
+        ierr = m_field.set_field_order(meshSet,MBVERTEX,skeletonFields[ff],1); CHKERRQ(ierr);
       }
       for(int dd = dds;dd<=dIm-1;dd++) {
         Range ents;
@@ -409,7 +464,7 @@ namespace MoFEM {
         ierr = m_field.set_field_order(ents,skeletonFields[ff],fieldsOrder.at(skeletonFields[ff])); CHKERRQ(ierr);
       }
     }
-    // build fields
+    // Build fields
     ierr = m_field.build_fields(); CHKERRQ(ierr);
     PetscLogEventEnd(USER_EVENT_SimpleBuildFields,0,0,0,0);
     PetscFunctionReturn(0);

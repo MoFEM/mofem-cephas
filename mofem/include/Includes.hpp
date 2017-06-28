@@ -85,9 +85,9 @@
 #include <boost/scoped_ptr.hpp>
 #include <boost/scoped_array.hpp>
 #include <boost/weak_ptr.hpp>
+#include <boost/pointer_cast.hpp>
 #include <boost/shared_ptr.hpp>
 #include <boost/make_shared.hpp>
-#include <boost/pointer_cast.hpp>
 
 // #include <boost/move/unique_ptr.hpp>
 // #include <boost/move/make_unique.hpp>

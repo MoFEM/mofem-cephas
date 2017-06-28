@@ -482,7 +482,7 @@ PetscErrorCode DataOperator::opLhs(
 }
 
 template<>
-PetscErrorCode invertTensor3by3<3,double,ublas::row_major,ublas::unbounded_array<double> >(
+PetscErrorCode invertTensor3by3<3,double,ublas::row_major,DoubleAllacator>(
   MatrixDouble &jac_data,
   VectorDouble &det_data,
   MatrixDouble &inv_jac_data
@@ -1082,7 +1082,7 @@ PetscErrorCode OpSetHoInvJacH1::doWork(
           &t_inv_diff_n_ptr[HDIV1_0], &t_inv_diff_n_ptr[HDIV1_1], &t_inv_diff_n_ptr[HDIV1_2],
           &t_inv_diff_n_ptr[HDIV2_0], &t_inv_diff_n_ptr[HDIV2_1], &t_inv_diff_n_ptr[HDIV2_2],9
         );
-        double *t_inv_jac_ptr = invHoJac.data().begin();
+        double *t_inv_jac_ptr = &*invHoJac.data().begin();
         // cerr << invHoJac << endl;
         FTensor::Tensor2<double*,3,3> t_inv_jac(
           t_inv_jac_ptr,&t_inv_jac_ptr[1],&t_inv_jac_ptr[2],
@@ -1166,7 +1166,7 @@ PetscErrorCode OpSetHoContravariantPiolaTransform::doWork(
       );
 
       FTensor::Tensor0<double*> t_det(&*detHoJac.data().begin());
-      double *t_jac_ptr = hoJac.data().begin();
+      double *t_jac_ptr = &*hoJac.data().begin();
       FTensor::Tensor2<double*,3,3> t_jac(
         t_jac_ptr,&t_jac_ptr[1],&t_jac_ptr[2],
         &t_jac_ptr[3],&t_jac_ptr[4],&t_jac_ptr[5],
@@ -1240,7 +1240,7 @@ PetscErrorCode OpSetHoCovariantPiolaTransform::doWork(
         &t_transformed_diff_n_ptr[HCURL2_2],9
       );
 
-      double *t_inv_jac_ptr = hoInvJac.data().begin();
+      double *t_inv_jac_ptr = &*hoInvJac.data().begin();
       FTensor::Tensor2<double*,3,3> t_inv_jac(
         t_inv_jac_ptr,&t_inv_jac_ptr[1],&t_inv_jac_ptr[2],
         &t_inv_jac_ptr[3],&t_inv_jac_ptr[4],&t_inv_jac_ptr[5],

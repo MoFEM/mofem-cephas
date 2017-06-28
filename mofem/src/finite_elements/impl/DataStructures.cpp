@@ -63,14 +63,14 @@ extern "C" {
 namespace MoFEM {
 
 template<>
-FTensor::Tensor0<double*> getTensor0FormData<double,ublas::unbounded_array<double> >(
-  ublas::vector<double,ublas::unbounded_array<double> > &data
+FTensor::Tensor0<double*> getTensor0FormData<double,DoubleAllacator >(
+  ublas::vector<double,DoubleAllacator > &data
 ) {
   return FTensor::Tensor0<double*>(&*data.data().begin());
 }
 
 template<>
-FTensor::Tensor1<double*,3> getTensor1FormData<3,double,ublas::row_major,ublas::unbounded_array<double> >(
+FTensor::Tensor1<double*,3> getTensor1FormData<3,double,ublas::row_major,DoubleAllacator>(
   MatrixDouble &data
 ) {
   if(data.size1()!=3) {
@@ -80,7 +80,7 @@ FTensor::Tensor1<double*,3> getTensor1FormData<3,double,ublas::row_major,ublas::
 }
 
 template<>
-FTensor::Tensor1<double*,2> getTensor1FormData<2,double,ublas::row_major,ublas::unbounded_array<double> >(
+FTensor::Tensor1<double*,2> getTensor1FormData<2,double,ublas::row_major,DoubleAllacator>(
   MatrixDouble &data
 ) {
   if(data.size1()!=2) {
@@ -90,7 +90,7 @@ FTensor::Tensor1<double*,2> getTensor1FormData<2,double,ublas::row_major,ublas::
 }
 
 template<>
-FTensor::Tensor2<double*,3,3> getTensor2FormData<3,3,double,ublas::row_major,ublas::unbounded_array<double> >(
+FTensor::Tensor2<double*,3,3> getTensor2FormData<3,3,double,ublas::row_major,DoubleAllacator>(
   MatrixDouble &data
 ) {
   if(data.size1()!=9) {
@@ -102,7 +102,7 @@ FTensor::Tensor2<double*,3,3> getTensor2FormData<3,3,double,ublas::row_major,ubl
 }
 
 template<>
-FTensor::Tensor2<double*,3,2> getTensor2FormData<3,2,double,ublas::row_major,ublas::unbounded_array<double> >(
+FTensor::Tensor2<double*,3,2> getTensor2FormData<3,2,double,ublas::row_major,DoubleAllacator>(
   MatrixDouble &data
 ) {
   if(data.size1()!=6) {

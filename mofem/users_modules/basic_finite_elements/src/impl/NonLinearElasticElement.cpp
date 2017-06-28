@@ -854,7 +854,7 @@ PetscErrorCode NonlinearElasticElement::OpLhsPiolaKirchhoff_dx::getJac(
   FTensor::Index<'i',3> i;
   FTensor::Index<'j',3> j;
   FTensor::Index<'k',3> k;
-  MatrixDouble &jac_stress = commonData.jacStress[gg];
+  MatrixDouble& jac_stress = commonData.jacStress[gg];
   int nb_col = col_data.getFieldData().size();
   double *diff_ptr = const_cast<double*>(&(col_data.getDiffN(gg,nb_col/3)(0,0)));
   // First two indices 'i','j' derivatives of 1st Piola-stress, third index 'k' is

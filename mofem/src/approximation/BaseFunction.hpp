@@ -50,13 +50,13 @@ namespace MoFEM {
     ~BaseFunction() {}
 
     virtual PetscErrorCode getValue(
-      ublas::matrix<double> &pts,
+      MatrixDouble &pts,
       boost::shared_ptr<BaseFunctionCtx> ctx_ptr
     );
 
     virtual PetscErrorCode getValue(
-      ublas::matrix<double> &pts_x,
-      ublas::matrix<double> &pts_t,
+      MatrixDouble &pts_x,
+      MatrixDouble &pts_t,
       boost::shared_ptr<BaseFunctionCtx> ctx_ptr
     );
 

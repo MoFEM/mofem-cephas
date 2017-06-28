@@ -71,7 +71,7 @@ PetscErrorCode ThermalElement::OpThermalRhs::doWork(int side,EntityType type,Dat
 
     for(unsigned int gg = 0;gg<data.getN().size1();gg++) {
 
-      ublas::matrix<double>  val = dAta.cOnductivity_mat*getVolume()*getGaussPts()(3,gg);
+      MatrixDouble  val = dAta.cOnductivity_mat*getVolume()*getGaussPts()(3,gg);
 
       if(getHoGaussPtsDetJac().size()>0) {
         val *= getHoGaussPtsDetJac()[gg]; ///< higher order geometry
@@ -131,7 +131,7 @@ PetscErrorCode ThermalElement::OpThermalLhs::doWork(
     K.clear();
     for(unsigned int gg = 0;gg<row_data.getN().size1();gg++) {
 
-      ublas::matrix<double>  val = dAta.cOnductivity_mat*getVolume()*getGaussPts()(3,gg);
+      MatrixDouble  val = dAta.cOnductivity_mat*getVolume()*getGaussPts()(3,gg);
       if(getHoGaussPtsDetJac().size()>0) {
         val *= getHoGaussPtsDetJac()[gg]; ///< higher order geometry
       }
@@ -145,7 +145,7 @@ PetscErrorCode ThermalElement::OpThermalLhs::doWork(
       //val,diff_N_row,3,diff_N_col,3,1.,&K(0,0),nb_col);
 
       //ublas
-      ublas::matrix<double> K1=prod(row_data.getDiffN(gg,nb_row),val);
+      MatrixDouble K1=prod(row_data.getDiffN(gg,nb_row),val);
       noalias(K) += prod(K1,trans(col_data.getDiffN(gg,nb_col)));
     }
 

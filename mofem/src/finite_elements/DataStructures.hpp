@@ -62,8 +62,8 @@ FTensor::Tensor0<T*> getTensor0FormData(
 }
 
 template<>
-FTensor::Tensor0<double*> getTensor0FormData<double,ublas::unbounded_array<double> >(
-  ublas::vector<double,ublas::unbounded_array<double> > &data
+FTensor::Tensor0<double*> getTensor0FormData<double,DoubleAllacator >(
+  ublas::vector<double,DoubleAllacator > &data
 );
 
 /**
@@ -90,18 +90,18 @@ FTensor::Tensor1<double*,Tensor_Dim> getTensor1FormData(
   MatrixDouble &data
 ) {
   return getTensor1FormData<
-  Tensor_Dim,double,ublas::row_major,ublas::unbounded_array<double>
+  Tensor_Dim,double,ublas::row_major,DoubleAllacator
   >(data);
 }
 
 
 template<>
-FTensor::Tensor1<double*,3> getTensor1FormData<3,double,ublas::row_major,ublas::unbounded_array<double> >(
+FTensor::Tensor1<double*,3> getTensor1FormData<3,double,ublas::row_major,DoubleAllacator>(
   MatrixDouble &data
 );
 
 template<>
-FTensor::Tensor1<double*,2> getTensor1FormData<2,double,ublas::row_major,ublas::unbounded_array<double> >(
+FTensor::Tensor1<double*,2> getTensor1FormData<2,double,ublas::row_major,DoubleAllacator>(
   MatrixDouble &data
 );
 
@@ -142,7 +142,7 @@ FTensor::Tensor2<double*,Tensor_Dim0,Tensor_Dim1> getTensor2FormData(
   MatrixDouble &data
 ) {
   return getTensor2FormData<
-  Tensor_Dim0,Tensor_Dim1,double,ublas::row_major,ublas::unbounded_array<double>
+  Tensor_Dim0,Tensor_Dim1,double,ublas::row_major,DoubleAllacator
   >(data);
 }
 

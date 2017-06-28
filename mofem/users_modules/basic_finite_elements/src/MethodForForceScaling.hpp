@@ -22,8 +22,8 @@
 /// Class used to scale loads, f.e. in arc-length control
 struct MethodForForceScaling {
 
-  virtual PetscErrorCode scaleNf(const FEMethod *fe,ublas::vector<FieldData> &Nf) = 0;
-  virtual PetscErrorCode getForceScale(const double ts_t,double &scale) {
+  virtual PetscErrorCode scaleNf(const FEMethod *fe,VectorDouble& Nf) = 0;
+  virtual PetscErrorCode getForceScale(const double ts_t,double& scale) {
     PetscFunctionBegin;
     SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"not implemented");
     PetscFunctionReturn(0);
@@ -31,7 +31,7 @@ struct MethodForForceScaling {
 
   static PetscErrorCode applyScale(
     const FEMethod *fe,
-    boost::ptr_vector<MethodForForceScaling> &methodsOp,ublas::vector<FieldData> &Nf) {
+    boost::ptr_vector<MethodForForceScaling> &methodsOp,VectorDouble &Nf) {
       PetscErrorCode ierr;
       PetscFunctionBegin;
       boost::ptr_vector<MethodForForceScaling>::iterator vit = methodsOp.begin();

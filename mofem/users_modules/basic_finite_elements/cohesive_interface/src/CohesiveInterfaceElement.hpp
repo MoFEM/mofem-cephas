@@ -26,9 +26,9 @@ namespace CohesiveElement {
 struct CohesiveInterfaceElement {
 
   struct CommonData {
-    ublas::matrix<double> gapGlob;
-    ublas::matrix<double> gapLoc;
-    ublas::vector<ublas::matrix<double> > R;
+    MatrixDouble gapGlob;
+    MatrixDouble gapLoc;
+    ublas::vector<MatrixDouble > R;
   };
   CommonData commonData;
 
@@ -97,7 +97,7 @@ struct CohesiveInterfaceElement {
     \f]
 
     */
-    double calcG(int gg,ublas::matrix<double> gap_loc) {
+    double calcG(int gg,MatrixDouble gap_loc) {
       return sqrt(pow(gap_loc(gg,0),2)+beta*(pow(gap_loc(gg,1),2)+pow(gap_loc(gg,2),2)));
     }
 
@@ -112,7 +112,7 @@ struct CohesiveInterfaceElement {
       ErrorCode rval;
       rval = mField.get_moab().tag_get_by_ptr(thKappa,&ent,1,(const void **)&kappaPtr,&kappaSize);
       if(rval != MB_SUCCESS || kappaSize != nb_gauss_pts) {
-        ublas::vector<double> kappa;
+        VectorDouble kappa;
         kappa.resize(nb_gauss_pts);
         kappa.clear();
         int tag_size[1];
@@ -124,7 +124,7 @@ struct CohesiveInterfaceElement {
       PetscFunctionReturn(0);
     }
 
-    ublas::matrix<double> Dglob,Dloc;
+    MatrixDouble Dglob,Dloc;
 
     /** \brief Calculate stiffness material matrix
 
@@ -138,7 +138,7 @@ struct CohesiveInterfaceElement {
     \f]
 
     */
-    PetscErrorCode calcDglob(const double omega,ublas::matrix<double> &R) {
+    PetscErrorCode calcDglob(const double omega,MatrixDouble &R) {
       PetscFunctionBegin;
       Dglob.resize(3,3);
       Dloc.resize(3,3);
@@ -175,7 +175,7 @@ struct CohesiveInterfaceElement {
 
     /** \brief Calculate tangent material stiffness
     */
-    PetscErrorCode calcTangetDglob(const double omega,double g,const ublas::vector<double>& gap_loc,ublas::matrix<double> &R) {
+    PetscErrorCode calcTangetDglob(const double omega,double g,const VectorDouble& gap_loc,MatrixDouble &R) {
       PetscFunctionBegin;
       Dglob.resize(3,3);
       Dloc.resize(3,3);
@@ -206,7 +206,7 @@ struct CohesiveInterfaceElement {
 
     */
     virtual PetscErrorCode calculateTraction(
-      ublas::vector<double> &traction,
+      VectorDouble &traction,
       int gg,CommonData &common_data,
       const FEMethod *fe_method
     ) {
@@ -226,7 +226,7 @@ struct CohesiveInterfaceElement {
       //std::cerr << gg << " " << omega << std::endl;
       ierr = calcDglob(omega,common_data.R[gg]); CHKERRQ(ierr);
       traction.resize(3);
-      ublas::matrix_row<ublas::matrix<double> > gap_glob(common_data.gapGlob,gg);
+      ublas::matrix_row<MatrixDouble > gap_glob(common_data.gapGlob,gg);
       noalias(traction) = prod(Dglob,gap_glob);
       PetscFunctionReturn(0);
     }
@@ -234,7 +234,7 @@ struct CohesiveInterfaceElement {
     /** \brief Calculate tangent stiffness
     */
     virtual PetscErrorCode calculateTangentStiffeness(
-      ublas::matrix<double> &tangent_matrix,
+      MatrixDouble &tangent_matrix,
       int gg,CommonData &common_data,
       const FEMethod *fe_method
     ) {
@@ -258,7 +258,7 @@ struct CohesiveInterfaceElement {
         if((kappa <= kappaPtr[gg])||(kappa>=kappa1)||(iter <= 1)) {
           ierr = calcDglob(omega,common_data.R[gg]); CHKERRQ(ierr);
         } else {
-          ublas::matrix_row<ublas::matrix<double> > g_loc(common_data.gapLoc,gg);
+          ublas::matrix_row<MatrixDouble > g_loc(common_data.gapLoc,gg);
           ierr = calcTangetDglob(omega,g,g_loc,common_data.R[gg]);
         }
         tangent_matrix.resize(3,3);
@@ -416,8 +416,8 @@ struct CohesiveInterfaceElement {
           int nb_gauss_pts = data.getN().size1();
           commonData.gapLoc.resize(nb_gauss_pts,3);
           for(int gg = 0;gg<nb_gauss_pts;gg++) {
-            ublas::matrix_row<ublas::matrix<double> > gap_glob(commonData.gapGlob,gg);
-            ublas::matrix_row<ublas::matrix<double> > gap_loc(commonData.gapLoc,gg);
+            ublas::matrix_row<MatrixDouble > gap_glob(commonData.gapGlob,gg);
+            ublas::matrix_row<MatrixDouble > gap_loc(commonData.gapLoc,gg);
             gap_loc = prod(commonData.R[gg],gap_glob);
           }
         }
@@ -441,7 +441,7 @@ struct CohesiveInterfaceElement {
       FlatPrismElementForcesAndSurcesCore::UserDataOperator(field_name,ForcesAndSurcesCore::UserDataOperator::OPROW),
       commonData(common_data),physicalEqations(physical_eqations) {}
 
-    ublas::vector<double> traction,Nf;
+    VectorDouble traction,Nf;
     PetscErrorCode doWork(int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
       PetscFunctionBegin;
       PetscErrorCode ierr;
@@ -485,7 +485,7 @@ struct CohesiveInterfaceElement {
     FlatPrismElementForcesAndSurcesCore::UserDataOperator(field_name,ForcesAndSurcesCore::UserDataOperator::OPROWCOL),
     commonData(common_data),physicalEqations(physical_eqations) { sYmm = false; }
 
-    ublas::matrix<double> K,D,ND;
+    MatrixDouble K,D,ND;
     PetscErrorCode doWork(
       int row_side,int col_side,
       EntityType row_type,EntityType col_type,

@@ -315,8 +315,8 @@ struct SmallStrainTranverslyIsotropic: public NonlinearElasticElement::Functions
     PetscFunctionReturn(0);
   }
 
-  ublas::vector<double> normalizedPhi;
-  ublas::vector<double> axVectorDouble;
+  VectorDouble normalizedPhi;
+  VectorDouble axVectorDouble;
   double axAngleDouble;
 
   PetscErrorCode calculateFibreAngles() {
@@ -325,7 +325,7 @@ struct SmallStrainTranverslyIsotropic: public NonlinearElasticElement::Functions
     try {
 
       int gg = this->gG; // number of integration point
-      ublas::matrix<double> &phi = (this->commonDataPtr->gradAtGaussPts["POTENTIAL_FIELD"][gg]);
+      MatrixDouble &phi = (this->commonDataPtr->gradAtGaussPts["POTENTIAL_FIELD"][gg]);
       normalizedPhi.resize(3,false);
       double nrm2_phi = sqrt(pow(phi(0,0),2)+pow(phi(0,1),2)+pow(phi(0,2),2));
       for(int ii = 0;ii<3;ii++) {
@@ -384,8 +384,8 @@ struct SmallStrainTranverslyIsotropicDouble: public SmallStrainTranverslyIsotrop
   }
 
   virtual PetscErrorCode getDataOnPostProcessor(
-    std::map<std::string,std::vector<ublas::vector<double> > > &field_map,
-    std::map<std::string,std::vector<ublas::matrix<double> > > &grad_map
+    std::map<std::string,std::vector<VectorDouble > > &field_map,
+    std::map<std::string,std::vector<MatrixDouble > > &grad_map
   ) {
     PetscFunctionBegin;
     int nb_gauss_pts = grad_map["POTENTIAL_FIELD"].size();
@@ -434,7 +434,7 @@ struct SmallStrainTranverslyIsotropicADouble: public SmallStrainTranverslyIsotro
   }
 
   virtual PetscErrorCode setUserActiveVariables(
-    ublas::vector<double> &active_varibles) {
+    VectorDouble &active_varibles) {
     PetscFunctionBegin;
 
     try {

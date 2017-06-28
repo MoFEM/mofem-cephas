@@ -39,7 +39,7 @@ struct MyMat_double: public NonlinearElasticElement::FunctionsToCalculatePiolaKi
   bool doAotherwiseB;
   MyMat_double(): doAotherwiseB(true) {};
 
-  ublas::matrix<double> D_lambda,D_mu,D;
+  MatrixDouble D_lambda,D_mu,D;
   ublas::vector<TYPE> sTrain,sTrain0,sTress;
   ublas::matrix<adouble> invF,CauchyStress;
 
@@ -132,7 +132,7 @@ struct MyMat: public MyMat_double<TYPE> {
     try {
 
       this->sTrain0.resize(6);
-      ublas::matrix<double> &G0 = (this->commonDataPtr->gradAtGaussPts["D0"][this->gG]);
+      MatrixDouble &G0 = (this->commonDataPtr->gradAtGaussPts["D0"][this->gG]);
       this->sTrain0[0] <<= G0(0,0);
       this->sTrain0[1] <<= G0(1,1);
       this->sTrain0[2] <<= G0(2,2);
@@ -152,13 +152,13 @@ struct MyMat: public MyMat_double<TYPE> {
   }
 
   virtual PetscErrorCode setUserActiveVariables(
-    ublas::vector<double> &active_varibles) {
+    VectorDouble &active_varibles) {
     PetscFunctionBegin;
 
     try {
 
       int shift = nbActiveVariables0; // is a number of elements in F
-      ublas::matrix<double> &G0 = (this->commonDataPtr->gradAtGaussPts["D0"][this->gG]);
+      MatrixDouble &G0 = (this->commonDataPtr->gradAtGaussPts["D0"][this->gG]);
       active_varibles[shift+0] = G0(0,0);
       active_varibles[shift+1] = G0(1,1);
       active_varibles[shift+2] = G0(2,2);

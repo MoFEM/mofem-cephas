@@ -119,6 +119,28 @@ namespace MoFEM {
     );
 
     /**
+     * \brief Add field on domain
+     * @param  name              name of the filed
+     * @param  space             space (L2,H1,Hdiv,Hcurl)
+     * @param  base              approximation base, see FieldApproximationBase
+     * @param  nb_of_cooficients number of field coefficients
+     * @param  tag_type          type of the tag MB_TAG_DENSE or MB_TAG_SPARSE (DENSE is faster and uses less memory, SPARSE is more flexible if you define field on subdomains)
+     * @param  bh                if MF_EXCL throws error if field exits, MF_ZERO no error if field exist
+     * @param  verb              verbosity leve
+     * @return                   error code
+     */
+    PetscErrorCode addDataField(
+      const std::string& name,
+      const FieldSpace space,
+      const FieldApproximationBase base,
+      const FieldCoefficientsNumber nb_of_cooficients,
+      const TagType tag_type = MB_TAG_SPARSE,
+      const enum MoFEMTypes bh = MF_ZERO,
+      int verb = -1
+    );
+
+
+    /**
      * \brief Define finite elements
      * @return         Error code
      */
@@ -190,6 +212,7 @@ namespace MoFEM {
     std::vector<std::string> domainFields;    ///< domain fields
     std::vector<std::string> boundaryFields;  ///< boundary fields
     std::vector<std::string> skeletonFields;  ///< fields on the skeleton
+    std::vector<std::string> dataFields;      ///< Data fields
 
     std::map<std::string,int> fieldsOrder;    ///< fields order
 

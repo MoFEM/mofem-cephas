@@ -139,7 +139,7 @@ struct UltraWeakTransportElement {
   virtual PetscErrorCode getResistivity(
     const EntityHandle ent,
     const double x,const double y,const double z,
-    ublas::matrix<FieldData> &inv_k
+    MatrixDouble3by3& inv_k
   ) {
     PetscFunctionBegin;
     inv_k.clear();
@@ -747,7 +747,8 @@ struct UltraWeakTransportElement {
     }
 
     MatrixDouble matRowCurl,aveMatRowCurl;
-    MatrixDouble NN,transNN,invK;
+    MatrixDouble NN,transNN;
+    MatrixDouble3by3 invK;
     VectorDouble Nf;
 
     /**
@@ -1021,7 +1022,7 @@ struct UltraWeakTransportElement {
 
     }
 
-    ublas::matrix<FieldData> NN,transNN;
+    MatrixDouble NN,transNN;
     VectorDouble divVec,Nf;
 
     /**
@@ -1533,7 +1534,7 @@ struct UltraWeakTransportElement {
     virtual ~OpError() {}
 
     VectorDouble deltaFlux;
-    MatrixDouble invK;
+    MatrixDouble3by3 invK;
 
     PetscErrorCode doWork(
       int side,EntityType type,DataForcesAndSurcesCore::EntData &data

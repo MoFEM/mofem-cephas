@@ -69,7 +69,7 @@ PetscErrorCode TetPolynomialBase::queryInterface(
 TetPolynomialBase::~TetPolynomialBase() {}
 TetPolynomialBase::TetPolynomialBase() {}
 
-PetscErrorCode TetPolynomialBase::getValueH1(ublas::matrix<double> &pts) {
+PetscErrorCode TetPolynomialBase::getValueH1(MatrixDouble &pts) {
   PetscErrorCode ierr;
   PetscFunctionBegin;
 
@@ -182,7 +182,7 @@ PetscErrorCode TetPolynomialBase::getValueH1(ublas::matrix<double> &pts) {
 }
 
 PetscErrorCode TetPolynomialBase::getValueL2(
-  ublas::matrix<double> &pts
+  MatrixDouble &pts
 ) {
   PetscErrorCode ierr;
   PetscFunctionBegin;
@@ -216,7 +216,7 @@ PetscErrorCode TetPolynomialBase::getValueL2(
 }
 
 PetscErrorCode TetPolynomialBase::getValueHdivAinsworthBase(
-  ublas::matrix<double> &pts
+  MatrixDouble &pts
 ) {
   PetscErrorCode ierr;
   PetscFunctionBegin;
@@ -539,7 +539,7 @@ PetscErrorCode TetPolynomialBase::getValueHdivAinsworthBase(
 }
 
 PetscErrorCode TetPolynomialBase::getValueHdivDemkowiczBase(
-  ublas::matrix<double> &pts
+  MatrixDouble &pts
 ) {
   PetscErrorCode ierr;
   PetscFunctionBegin;
@@ -622,7 +622,7 @@ PetscErrorCode TetPolynomialBase::getValueHdivDemkowiczBase(
 
 
 PetscErrorCode TetPolynomialBase::getValueHdiv(
-  ublas::matrix<double> &pts
+  MatrixDouble &pts
 ) {
   PetscFunctionBegin;
 
@@ -640,7 +640,7 @@ PetscErrorCode TetPolynomialBase::getValueHdiv(
 }
 
 PetscErrorCode TetPolynomialBase::getValueHCurl(
-  ublas::matrix<double> &pts
+  MatrixDouble &pts
 ) {
   PetscErrorCode ierr;
   PetscFunctionBegin;
@@ -768,7 +768,7 @@ PetscErrorCode TetPolynomialBase::getValueHCurl(
 }
 
 PetscErrorCode TetPolynomialBase::getValue(
-  ublas::matrix<double> &pts,
+  MatrixDouble &pts,
   boost::shared_ptr<BaseFunctionCtx> ctx_ptr
 ) {
   PetscErrorCode ierr;

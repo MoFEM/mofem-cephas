@@ -381,7 +381,7 @@ PetscErrorCode NeummanForcesSurface::addForce(const std::string field_name,Vec F
     ierr = mmanager_ptr->getCubitMeshsetPtr(ms_id,BLOCKSET,&cubit_meshset_ptr); CHKERRQ(ierr);
     std::vector<double> mydata;
     ierr = cubit_meshset_ptr->getAttributes(mydata); CHKERRQ(ierr);
-    ublas::vector<double> force(mydata.size());
+    VectorDouble force(mydata.size());
     for(unsigned int ii = 0;ii<mydata.size();ii++) {
       force[ii] = mydata[ii];
     }
@@ -432,7 +432,7 @@ PetscErrorCode NeummanForcesSurface::addPreassure(const std::string field_name,V
     ierr = mmanager_ptr->getCubitMeshsetPtr(ms_id,BLOCKSET,&cubit_meshset_ptr); CHKERRQ(ierr);
     std::vector<double> mydata;
     ierr = cubit_meshset_ptr->getAttributes(mydata); CHKERRQ(ierr);
-    ublas::vector<double> pressure(mydata.size());
+    VectorDouble pressure(mydata.size());
     for(unsigned int ii = 0;ii<mydata.size();ii++) {
       pressure[ii] = mydata[ii];
     }
