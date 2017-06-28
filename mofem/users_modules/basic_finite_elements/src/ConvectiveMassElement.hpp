@@ -241,7 +241,7 @@ struct ConvectiveMassElement {
     );
 
     ublas::vector<
-      adouble,ublas::bounded_array<adouble,9>
+      adouble,ublas::bounded_array<adouble,3>
     > a,dot_W,dp_dt,a_res;
     ublas::matrix<
       adouble,ublas::row_major,ublas::bounded_array<adouble,9>
@@ -336,10 +336,10 @@ struct ConvectiveMassElement {
 
     OpVelocityJacobian(const std::string field_name,BlockData &data,CommonData &common_data,int tag,bool jacobian = true);
 
-    ublas::vector<adouble,ublas::bounded_array<adouble,9> > a_res;
-    ublas::vector<adouble,ublas::bounded_array<adouble,9> > v,dot_w,dot_W;
+    ublas::vector<adouble,ublas::bounded_array<adouble,3> > a_res;
+    ublas::vector<adouble,ublas::bounded_array<adouble,3> > v,dot_w,dot_W;
     ublas::matrix<adouble,ublas::row_major,ublas::bounded_array<adouble,9> > h,H,invH,F;
-    ublas::vector<adouble,ublas::bounded_array<adouble,9> > dot_u;
+    ublas::vector<adouble,ublas::bounded_array<adouble,3> > dot_u;
     adouble detH;
 
     std::vector<double> active;
@@ -402,7 +402,7 @@ struct ConvectiveMassElement {
       const std::string field_name,BlockData &data,CommonData &common_data,int tag,bool jacobian = true
     );
 
-    ublas::vector<adouble,ublas::bounded_array<adouble,9>> a,v,a_T;
+    ublas::vector<adouble,ublas::bounded_array<adouble,3> > a,v,a_T;
     ublas::matrix<adouble,ublas::row_major,ublas::bounded_array<adouble,9> > g,H,invH,h,F,G;
     VectorDouble active;
 
