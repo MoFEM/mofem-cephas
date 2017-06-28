@@ -106,7 +106,7 @@ struct ConvectiveMassElement {
     */
   struct BlockData {
     double rho0; ///< reference density
-    ublas::vector<double> a0; ///< constant acceleration
+    VectorDouble a0; ///< constant acceleration
     Range tEts; ///< elements in block set
   };
   std::map<int,BlockData> setOfBlocks; ///< maps block set id with appropriate BlockData
@@ -124,20 +124,20 @@ struct ConvectiveMassElement {
     }
 
 
-    std::map<std::string,std::vector<ublas::vector<double> > > dataAtGaussPts;
-    std::map<std::string,std::vector<ublas::matrix<double> > > gradAtGaussPts;
+    std::map<std::string,std::vector<VectorDouble > > dataAtGaussPts;
+    std::map<std::string,std::vector<MatrixDouble > > gradAtGaussPts;
     string spatialPositions;
     string meshPositions;
     string spatialVelocities;
-    std::vector<ublas::vector<double> > valVel;
+    std::vector<VectorDouble > valVel;
     std::vector<std::vector<double*> > jacVelRowPtr;
-    std::vector<ublas::matrix<double> > jacVel;
-    std::vector<ublas::vector<double> > valMass;
+    std::vector<MatrixDouble > jacVel;
+    std::vector<VectorDouble > valMass;
     std::vector<std::vector<double*> > jacMassRowPtr;
-    std::vector<ublas::matrix<double> > jacMass;
-    std::vector<ublas::vector<double> > valT;
+    std::vector<MatrixDouble > jacMass;
+    std::vector<VectorDouble > valT;
     std::vector<std::vector<double*> > jacTRowPtr;
-    std::vector<ublas::matrix<double> > jacT;
+    std::vector<MatrixDouble > jacT;
 
 
   };
@@ -147,13 +147,13 @@ struct ConvectiveMassElement {
 
   struct OpGetDataAtGaussPts: public VolumeElementForcesAndSourcesCore::UserDataOperator {
 
-    std::vector<ublas::vector<double> > &valuesAtGaussPts;
-    std::vector<ublas::matrix<double> > &gradientAtGaussPts;
+    std::vector<VectorDouble > &valuesAtGaussPts;
+    std::vector<MatrixDouble > &gradientAtGaussPts;
     const EntityType zeroAtType;
 
     OpGetDataAtGaussPts(const std::string field_name,
-      std::vector<ublas::vector<double> > &values_at_gauss_pts,
-      std::vector<ublas::matrix<double> > &gardient_at_gauss_pts
+      std::vector<VectorDouble > &values_at_gauss_pts,
+      std::vector<MatrixDouble > &gardient_at_gauss_pts
     );
 
     /** \brief operator calculating deformation gradient
@@ -172,7 +172,10 @@ struct ConvectiveMassElement {
   struct CommonFunctions {
 
     template<typename TYPE>
-    PetscErrorCode dEterminatnt(ublas::matrix<TYPE> a,TYPE &det) {
+    PetscErrorCode dEterminatnt(
+      ublas::matrix<TYPE,ublas::row_major,ublas::bounded_array<TYPE,9> >& a,
+      TYPE &det
+    ) {
       PetscFunctionBegin;
       //a11a22a33
       //+a21a32a13
@@ -192,7 +195,11 @@ struct ConvectiveMassElement {
     }
 
     template<typename TYPE>
-    PetscErrorCode iNvert(TYPE det,ublas::matrix<TYPE> a,ublas::matrix<TYPE> &inv_a) {
+    PetscErrorCode iNvert(
+      TYPE det,
+      ublas::matrix<TYPE,ublas::row_major,ublas::bounded_array<TYPE,9> >& a,
+      ublas::matrix<TYPE,ublas::row_major,ublas::bounded_array<TYPE,9> >& inv_a
+    ) {
       PetscFunctionBegin;
       //PetscErrorCode ierr;
       inv_a.resize(3,3);
@@ -233,8 +240,12 @@ struct ConvectiveMassElement {
       bool linear = false
     );
 
-    ublas::vector<adouble> a,dot_W,dp_dt,a_res;
-    ublas::matrix<adouble> h,H,invH,F,g,G;
+    ublas::vector<
+      adouble,ublas::bounded_array<adouble,9>
+    > a,dot_W,dp_dt,a_res;
+    ublas::matrix<
+      adouble,ublas::row_major,ublas::bounded_array<adouble,9>
+    > h,H,invH,F,g,G;
     std::vector<double> active;
 
     PetscErrorCode doWork(
@@ -250,7 +261,7 @@ struct ConvectiveMassElement {
 
     OpMassRhs(const std::string field_name,BlockData &data,CommonData &common_data);
 
-    ublas::vector<double> nf;
+    VectorDouble nf;
 
     PetscErrorCode doWork(
       int row_side,EntityType row_type,DataForcesAndSurcesCore::EntData &row_data
@@ -268,7 +279,7 @@ struct ConvectiveMassElement {
       const std::string vel_field,const std::string field_name,BlockData &data,CommonData &common_data,Range *forcesonlyonentities_ptr = NULL
     );
 
-    ublas::matrix<double> k,jac;
+    MatrixDouble k,jac;
 
     virtual PetscErrorCode getJac(DataForcesAndSurcesCore::EntData &col_data,int gg);
 
@@ -307,8 +318,8 @@ struct ConvectiveMassElement {
 
     OpEnergy(const std::string field_name,BlockData &data,CommonData &common_data,Vec *v_ptr);
 
-    ublas::matrix<double> h,H,invH,F;
-    ublas::vector<double> v;
+    MatrixDouble3by3 h,H,invH,F;
+    VectorDouble3 v;
 
     PetscErrorCode doWork(
       int row_side,EntityType row_type,DataForcesAndSurcesCore::EntData &row_data
@@ -325,10 +336,10 @@ struct ConvectiveMassElement {
 
     OpVelocityJacobian(const std::string field_name,BlockData &data,CommonData &common_data,int tag,bool jacobian = true);
 
-    ublas::vector<adouble> a_res;
-    ublas::vector<adouble> v,dot_w,dot_W;
-    ublas::matrix<adouble> h,H,invH,F;
-    ublas::vector<adouble> dot_u;
+    ublas::vector<adouble,ublas::bounded_array<adouble,9> > a_res;
+    ublas::vector<adouble,ublas::bounded_array<adouble,9> > v,dot_w,dot_W;
+    ublas::matrix<adouble,ublas::row_major,ublas::bounded_array<adouble,9> > h,H,invH,F;
+    ublas::vector<adouble,ublas::bounded_array<adouble,9> > dot_u;
     adouble detH;
 
     std::vector<double> active;
@@ -346,7 +357,7 @@ struct ConvectiveMassElement {
 
     OpVelocityRhs(const std::string field_name,BlockData &data,CommonData &common_data);
 
-    ublas::vector<double> nf;
+    VectorDouble nf;
 
     PetscErrorCode doWork(
       int row_side,EntityType row_type,DataForcesAndSurcesCore::EntData &row_data
@@ -391,9 +402,9 @@ struct ConvectiveMassElement {
       const std::string field_name,BlockData &data,CommonData &common_data,int tag,bool jacobian = true
     );
 
-    ublas::vector<adouble> a,v,a_T;
-    ublas::matrix<adouble> g,H,invH,h,F,G;
-    ublas::vector<double> active;
+    ublas::vector<adouble,ublas::bounded_array<adouble,9>> a,v,a_T;
+    ublas::matrix<adouble,ublas::row_major,ublas::bounded_array<adouble,9> > g,H,invH,h,F,G;
+    VectorDouble active;
 
     PetscErrorCode doWork(
       int row_side,EntityType row_type,DataForcesAndSurcesCore::EntData &row_data
@@ -411,7 +422,7 @@ struct ConvectiveMassElement {
       const std::string field_name,BlockData &data,CommonData &common_data,Range *forcesonlyonentities_ptr
     );
 
-    ublas::vector<double> nf;
+    VectorDouble nf;
 
     PetscErrorCode doWork(
       int row_side,EntityType row_type,DataForcesAndSurcesCore::EntData &row_data

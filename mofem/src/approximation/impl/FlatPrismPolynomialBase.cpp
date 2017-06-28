@@ -97,7 +97,7 @@ FlatPrismPolynomialBase::~FlatPrismPolynomialBase() {}
 FlatPrismPolynomialBase::FlatPrismPolynomialBase() {}
 
 PetscErrorCode FlatPrismPolynomialBase::getValue(
-  ublas::matrix<double> &pts,
+  MatrixDouble &pts,
   boost::shared_ptr<BaseFunctionCtx> ctx_ptr
 ) {
   PetscErrorCode ierr;
@@ -209,7 +209,7 @@ PetscErrorCode FlatPrismPolynomialBase::getValue(
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode FlatPrismPolynomialBase::getValueH1(ublas::matrix<double> &pts) {
+PetscErrorCode FlatPrismPolynomialBase::getValueH1(MatrixDouble &pts) {
   PetscErrorCode ierr;
   PetscFunctionBegin;
 
@@ -288,16 +288,16 @@ PetscErrorCode FlatPrismPolynomialBase::getValueH1(ublas::matrix<double> &pts) {
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode FlatPrismPolynomialBase::getValueL2(ublas::matrix<double> &pts) {
+PetscErrorCode FlatPrismPolynomialBase::getValueL2(MatrixDouble &pts) {
   PetscFunctionBegin;
   SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"Not yet implemented");
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode FlatPrismPolynomialBase::getValueHdiv(ublas::matrix<double> &pts) {
+PetscErrorCode FlatPrismPolynomialBase::getValueHdiv(MatrixDouble &pts) {
   SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"Not yet implemented");
 }
 
-PetscErrorCode FlatPrismPolynomialBase::getValueHCurl(ublas::matrix<double> &pts) {
+PetscErrorCode FlatPrismPolynomialBase::getValueHCurl(MatrixDouble &pts) {
   SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"Not yet implemented");
 }

@@ -38,7 +38,7 @@ struct OpCheck: public MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperato
       const double eps = 1e-12;
       const int nb_gauss_pts = data.getN().size1();
       for(int gg = 0;gg!=nb_gauss_pts;gg++) {
-        MatrixDouble &str0 = commonData.sTress[gg];
+        MatrixDouble3by3 &str0 = commonData.sTress[gg];
         FTensor::Tensor2<double,3,3> t_stress_0(
           str0(0,0),str0(0,1),str0(0,2),
           str0(1,0),str0(1,1),str0(1,2),

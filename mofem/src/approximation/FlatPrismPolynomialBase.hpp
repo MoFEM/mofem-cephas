@@ -64,28 +64,28 @@ namespace MoFEM {
     ~FlatPrismPolynomialBase();
 
     PetscErrorCode getValue(
-      ublas::matrix<double> &pts,boost::shared_ptr<BaseFunctionCtx> ctx_ptr
+      MatrixDouble &pts,boost::shared_ptr<BaseFunctionCtx> ctx_ptr
     );
 
   private:
 
     FlatPrismPolynomialBaseCtx *cTx;
 
-    PetscErrorCode getValueH1(ublas::matrix<double> &pts);
+    PetscErrorCode getValueH1(MatrixDouble &pts);
 
-    PetscErrorCode getValueL2(ublas::matrix<double> &pts);
+    PetscErrorCode getValueL2(MatrixDouble &pts);
 
-    PetscErrorCode getValueHdiv(ublas::matrix<double> &pts);
+    PetscErrorCode getValueHdiv(MatrixDouble &pts);
 
-    PetscErrorCode getValueHCurl(ublas::matrix<double> &pts);
+    PetscErrorCode getValueHCurl(MatrixDouble &pts);
 
     int numNodes;
     const EntityHandle *connPrism;
     const EntityHandle *connFace3;
     const EntityHandle *connFace4;
     int faceNodes[2][3];
-    ublas::matrix<double> N;
-    ublas::matrix<double> diffN;
+    MatrixDouble N;
+    MatrixDouble diffN;
 
   };
 

@@ -435,7 +435,7 @@ struct NitscheMethod {
         jac.resize(9,nb,false);
         jac.clear();
         const MatrixAdaptor diffN = data.getDiffN(gg,nb/3);
-        ublas::matrix<double> &jac_stress = commonData.jacStress[gg];
+        MatrixDouble &jac_stress = commonData.jacStress[gg];
         for(int dd = 0;dd<nb/3;dd++) {
           for(int rr = 0;rr<3;rr++) {
             for(int ii = 0;ii<9;ii++) {

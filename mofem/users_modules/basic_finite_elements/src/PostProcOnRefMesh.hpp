@@ -42,8 +42,8 @@ polynomials  could be well represented.
 struct PostProcCommonOnRefMesh {
 
   struct CommonData {
-    std::map<std::string,std::vector<ublas::vector<double> > > fieldMap;
-    std::map<std::string,std::vector<ublas::matrix<double> > > gradMap;
+    std::map<std::string,std::vector<VectorDouble > > fieldMap;
+    std::map<std::string,std::vector<MatrixDouble > > gradMap;
   };
 
   /**
@@ -76,8 +76,8 @@ struct PostProcCommonOnRefMesh {
     tagName(tag_name),
     V(v) {}
 
-    ublas::vector<double> vAlues;
-    ublas::vector<double> *vAluesPtr;
+    VectorDouble vAlues;
+    VectorDouble *vAluesPtr;
 
     PetscErrorCode doWork(
       int side,
@@ -118,8 +118,8 @@ struct PostProcCommonOnRefMesh {
     V(v)
     {}
 
-    ublas::vector<double> vAlues;
-    ublas::vector<double> *vAluesPtr;
+    VectorDouble vAlues;
+    VectorDouble *vAluesPtr;
 
     PetscErrorCode doWork(
       int side,
@@ -287,10 +287,10 @@ struct PostProcTemplateVolumeOnRefinedMesh: public PostProcTemplateOnRefineMesh<
     }
   }
 
-  ublas::matrix<double> shapeFunctions;
-  ublas::matrix<double> coordsAtGaussPts;
+  MatrixDouble shapeFunctions;
+  MatrixDouble coordsAtGaussPts;
   ublas::matrix<int> refTets;
-  ublas::matrix<double> gaussPts_FirstOrder;
+  MatrixDouble gaussPts_FirstOrder;
 
   // Gauss pts set on refined mesh
   int getRule(int order) { return -1; };
@@ -370,7 +370,7 @@ struct PostProcTemplateVolumeOnRefinedMesh: public PostProcTemplateOnRefineMesh<
       // Range edges;
       // rval = moab_ref.get_adjacencies(tets,1,true,edges); CHKERRQ_MOAB(rval);
       EntityHandle meshset;
-      rval = moab_ref.create_meshset(MESHSET_SET|MESHSET_TRACK_OWNER,meshset); CHKERRQ_MOAB(rval);
+      rval = moab_ref.create_meshset(MESHSET_SET,meshset); CHKERRQ_MOAB(rval);
       rval = moab_ref.add_entities(meshset,tets); CHKERRQ_MOAB(rval);
       rval = moab_ref.convert_entities(meshset,true,false,false); CHKERRQ_MOAB(rval);
       rval = moab_ref.delete_entities(&meshset,1); CHKERRQ_MOAB(rval);

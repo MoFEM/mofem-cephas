@@ -50,11 +50,11 @@ struct AnalyticalDirichletBC {
     MyTriFE feApprox;
     MyTriFE& getLoopFeApprox() { return feApprox; }
 
-    ublas::matrix<double> hoCoords;
+    MatrixDouble hoCoords;
     struct OpHoCoord: public MoFEM::FaceElementForcesAndSourcesCore::UserDataOperator {
 
-      ublas::matrix<double> &hoCoords;
-      OpHoCoord(const std::string field_name,ublas::matrix<double> &ho_coords);
+      MatrixDouble &hoCoords;
+      OpHoCoord(const std::string field_name,MatrixDouble &ho_coords);
 
       PetscErrorCode doWork(
         int side,EntityType type,DataForcesAndSurcesCore::EntData &data
@@ -67,10 +67,10 @@ struct AnalyticalDirichletBC {
       */
     struct OpLhs:public MoFEM::FaceElementForcesAndSourcesCore::UserDataOperator {
 
-      ublas::matrix<double> &hoCoords;
-      OpLhs(const std::string field_name,ublas::matrix<double> &ho_coords);
+      MatrixDouble &hoCoords;
+      OpLhs(const std::string field_name,MatrixDouble &ho_coords);
 
-      ublas::matrix<FieldData> NN,transNN;
+      MatrixDouble NN,transNN;
       PetscErrorCode doWork(
         int row_side,int col_side,
         EntityType row_type,EntityType col_type,
@@ -86,14 +86,14 @@ struct AnalyticalDirichletBC {
     struct OpRhs:public MoFEM::FaceElementForcesAndSourcesCore::UserDataOperator {
 
       // Range tRis;
-      ublas::matrix<double> &hoCoords;
+      MatrixDouble &hoCoords;
       boost::shared_ptr<FUNEVAL> functionEvaluator;
       int fieldNumber;
 
       OpRhs(
         const std::string field_name,
         // Range tris,
-        ublas::matrix<double> &ho_coords,
+        MatrixDouble &ho_coords,
         boost::shared_ptr<FUNEVAL> function_evaluator,int field_number
       ):
       MoFEM::FaceElementForcesAndSourcesCore::UserDataOperator(
@@ -105,8 +105,8 @@ struct AnalyticalDirichletBC {
       {
       }
 
-      ublas::vector<FieldData> NTf;
-      ublas::vector<DofIdx> iNdices;
+      VectorDouble NTf;
+      VectorInt iNdices;
 
       PetscErrorCode doWork(
         int side,EntityType type,DataForcesAndSurcesCore::EntData &data
@@ -146,7 +146,7 @@ struct AnalyticalDirichletBC {
               z = getCoordsAtGaussPts()(gg,2);
             }
 
-            ublas::vector<double> a;
+            VectorDouble a;
             try {
 
               a = (*functionEvaluator)(x,y,z)[fieldNumber];
@@ -163,7 +163,7 @@ struct AnalyticalDirichletBC {
 
             for(unsigned int rr = 0;rr<rank;rr++) {
 
-              ublas::noalias(iNdices) = ublas::vector_slice<ublas::vector<int> >
+              ublas::noalias(iNdices) = ublas::vector_slice<VectorInt>
               (data.getIndices(), ublas::slice(rr, rank, data.getIndices().size()/rank));
 
               noalias(NTf) = data.getN(gg,nb_row/rank)*a[rr]*val;

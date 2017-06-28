@@ -52,7 +52,7 @@ struct ThermalStressElement {
   std::map<int,BlockData> setOfBlocks;
 
   struct CommonData {
-    ublas::vector<double> temperatureAtGaussPts;
+    VectorDouble temperatureAtGaussPts;
   };
   CommonData commonData;
 
@@ -103,7 +103,7 @@ struct ThermalStressElement {
     commonData(common_data),
     verb(_verb) { }
 
-    ublas::vector<double> Nf;
+    VectorDouble Nf;
     PetscErrorCode doWork(
       int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
         PetscFunctionBegin;

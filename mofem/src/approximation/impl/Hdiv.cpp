@@ -801,7 +801,7 @@ PetscErrorCode MoFEM::Hdiv_Demkowicz_Interior_MBTET(
     &diff_phi_v[HDIV2_0],&diff_phi_v[HDIV2_1],&diff_phi_v[HDIV2_2],9
   );
 
-  ublas::matrix<double> fk(3,p+1),diff_fk(3,3*p+3);
+  MatrixDouble fk(3,p+1),diff_fk(3,3*p+3);
   double tmp_fk[p+1],tmp_diff_fk[3*p+3];
 
   for(int ii = 0;ii!=gdim;ii++) {

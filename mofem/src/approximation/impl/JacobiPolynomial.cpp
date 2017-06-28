@@ -61,8 +61,8 @@ PetscErrorCode JacobiPolynomial::queryInterface(
 }
 
 PetscErrorCode JacobiPolynomial::getValue(
-  ublas::matrix<double> &pts_x,
-  ublas::matrix<double> &pts_t,
+  MatrixDouble &pts_x,
+  MatrixDouble &pts_t,
   boost::shared_ptr<BaseFunctionCtx> ctx_ptr
 ) {
   PetscErrorCode ierr;

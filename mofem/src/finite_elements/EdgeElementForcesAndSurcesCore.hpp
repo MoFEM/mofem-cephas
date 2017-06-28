@@ -168,7 +168,7 @@ struct EdgeElementForcesAndSurcesCore: public ForcesAndSurcesCore {
 
      */
     inline FTensor::Tensor1<double*,3> getTensor1Coords() {
-      double *ptr = getCoords().data().begin();
+      double *ptr = &*getCoords().data().begin();
       return FTensor::Tensor1<double*,3>(ptr,&ptr[1],&ptr[2],3);
     }
 

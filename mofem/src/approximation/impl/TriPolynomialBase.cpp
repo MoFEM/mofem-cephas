@@ -67,7 +67,7 @@ PetscErrorCode TriPolynomialBase::queryInterface(
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode TriPolynomialBase::getValueH1(ublas::matrix<double> &pts) {
+PetscErrorCode TriPolynomialBase::getValueH1(MatrixDouble &pts) {
   PetscErrorCode ierr;
   PetscFunctionBegin;
 
@@ -134,7 +134,7 @@ PetscErrorCode TriPolynomialBase::getValueH1(ublas::matrix<double> &pts) {
 }
 
 PetscErrorCode TriPolynomialBase::getValueL2(
-  ublas::matrix<double> &pts
+  MatrixDouble &pts
 ) {
   PetscErrorCode ierr;
   PetscFunctionBegin;
@@ -168,7 +168,7 @@ PetscErrorCode TriPolynomialBase::getValueL2(
 }
 
 PetscErrorCode TriPolynomialBase::getValueHdivAinsworthBase(
-  ublas::matrix<double> &pts
+  MatrixDouble &pts
 ) {
   PetscErrorCode ierr;
   PetscFunctionBegin;
@@ -236,7 +236,7 @@ PetscErrorCode TriPolynomialBase::getValueHdivAinsworthBase(
 }
 
 PetscErrorCode TriPolynomialBase::getValueHdivDemkowiczBase(
-  ublas::matrix<double> &pts
+  MatrixDouble &pts
 ) {
   PetscErrorCode ierr;
   PetscFunctionBegin;
@@ -275,7 +275,7 @@ PetscErrorCode TriPolynomialBase::getValueHdivDemkowiczBase(
 }
 
 PetscErrorCode TriPolynomialBase::getValueHdiv(
-  ublas::matrix<double> &pts
+  MatrixDouble &pts
 ) {
   PetscFunctionBegin;
 
@@ -293,7 +293,7 @@ PetscErrorCode TriPolynomialBase::getValueHdiv(
 }
 
 PetscErrorCode TriPolynomialBase::getValueHCurl(
-  ublas::matrix<double> &pts
+  MatrixDouble &pts
 ) {
   PetscErrorCode ierr;
   PetscFunctionBegin;
@@ -382,7 +382,7 @@ PetscErrorCode TriPolynomialBase::getValueHCurl(
 }
 
 PetscErrorCode TriPolynomialBase::getValue(
-  ublas::matrix<double> &pts,
+  MatrixDouble &pts,
   boost::shared_ptr<BaseFunctionCtx> ctx_ptr
 ) {
   PetscErrorCode ierr;

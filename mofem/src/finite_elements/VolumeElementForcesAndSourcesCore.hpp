@@ -173,7 +173,7 @@ struct VolumeElementForcesAndSourcesCore: public ForcesAndSurcesCore {
     }
 
     inline FTensor::Tensor0<double*> getFTenosr0HoMeasure() {
-      return FTensor::Tensor0<double*>(getHoGaussPtsDetJac().data().begin());
+      return FTensor::Tensor0<double*>(&*getHoGaussPtsDetJac().data().begin());
     }
 
     /**

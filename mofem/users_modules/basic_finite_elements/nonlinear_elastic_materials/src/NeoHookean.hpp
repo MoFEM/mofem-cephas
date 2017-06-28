@@ -31,7 +31,7 @@ struct NeoHookean: public NonlinearElasticElement::FunctionsToCalculatePiolaKirc
 
     TYPE detC;
     TYPE logJ;
-    ublas::matrix<TYPE> invC;
+    ublas::matrix<TYPE,ublas::row_major,ublas::bounded_array<TYPE,9> > invC;
 
     /** \brief calculate second Piola Kirchoff
       *

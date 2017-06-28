@@ -237,7 +237,7 @@ int main(int argc, char *argv[]) {
         // cerr << data.getHcurlN() << endl;
 
 
-        ublas::vector<FieldData> t(3,0);
+        VectorDouble t(3,0);
         int dd = 0;
         int nb_dofs = data.getHdivN().size2()/3;
         for(;dd<nb_dofs;dd++) {
@@ -267,7 +267,7 @@ int main(int argc, char *argv[]) {
     VolumeElementForcesAndSourcesCore(m_field) {}
     int getRule(int order) { return -1; };
 
-    ublas::matrix<double> N_tri;
+    MatrixDouble N_tri;
     PetscErrorCode setGaussPts(int order) {
       PetscFunctionBegin;
 

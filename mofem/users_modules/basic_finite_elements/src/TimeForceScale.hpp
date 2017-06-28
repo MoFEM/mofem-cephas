@@ -121,7 +121,7 @@ struct TimeForceScale: public MethodForForceScaling {
 
   //Hassan: this function will loop over data in pair vector ts to find load
   //scale based on ts_t
-  PetscErrorCode scaleNf(const FEMethod *fe,ublas::vector<double> &Nf) {
+  PetscErrorCode scaleNf(const FEMethod *fe,VectorDouble &Nf) {
     PetscFunctionBegin;
     double scale;
     const double ts_t = fe->ts_t;
@@ -133,7 +133,7 @@ struct TimeForceScale: public MethodForForceScaling {
 
 struct TimeAccelerogram: public MethodForForceScaling {
 
-  std::map<double,ublas::vector<double> > tSeries;
+  std::map<double,VectorDouble > tSeries;
   int readFile,debug;
   string nAme;
 
@@ -161,7 +161,7 @@ struct TimeAccelerogram: public MethodForForceScaling {
       SETERRQ1(PETSC_COMM_SELF,1,"*** ERROR data file < %s > open unsuccessful",time_file_name);
     }
     double no1 = 0.0;
-    ublas::vector<double> no2(3);
+    VectorDouble no2(3);
     tSeries[no1] = no2;
     while(! feof (time_data)){
       int n = fscanf(time_data,"%lf %lf %lf %lf",&no1,&no2[0],&no2[1],&no2[2]);
@@ -176,7 +176,7 @@ struct TimeAccelerogram: public MethodForForceScaling {
     }
     int r = fclose(time_data);
     if(debug) {
-      std::map<double,ublas::vector<double> >::iterator tit = tSeries.begin();
+      std::map<double,VectorDouble >::iterator tit = tSeries.begin();
       for(;tit!=tSeries.end();tit++) {
         PetscPrintf(
           PETSC_COMM_WORLD,
@@ -192,16 +192,16 @@ struct TimeAccelerogram: public MethodForForceScaling {
     PetscFunctionReturn(0);
   }
 
-  PetscErrorCode scaleNf(const FEMethod *fe,ublas::vector<double> &Nf) {
+  PetscErrorCode scaleNf(const FEMethod *fe,VectorDouble &Nf) {
     PetscFunctionBegin;
     if(readFile==0) {
       SETERRQ(PETSC_COMM_SELF,1,"data file not read");
     }
     double ts_t = fe->ts_t;
-    ublas::vector<double> acc(3);
-    ublas::vector<double> acc0 = tSeries[0],acc1(3);
+    VectorDouble acc(3);
+    VectorDouble acc0 = tSeries[0],acc1(3);
     double t0 = 0,t1,dt;
-    std::map<double,ublas::vector<double> >::iterator tit = tSeries.begin();
+    std::map<double,VectorDouble >::iterator tit = tSeries.begin();
     for(;tit!=tSeries.end();tit++) {
       if(tit->first > ts_t) {
         t1 = tit->first;

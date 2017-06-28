@@ -191,7 +191,7 @@ struct FaceElementForcesAndSourcesCore: public ForcesAndSurcesCore {
 
      */
     inline FTensor::Tensor1<double*,3> getTensor1Coords() {
-      double *ptr = getCoords().data().begin();
+      double *ptr = &*getCoords().data().begin();
       return FTensor::Tensor1<double*,3>(ptr,&ptr[1],&ptr[2],3);
     }
 
@@ -220,7 +220,7 @@ struct FaceElementForcesAndSourcesCore: public ForcesAndSurcesCore {
     /** \brief get coordinates at Gauss pts.
      */
     inline FTensor::Tensor1<double*,3> getTensor1CoordsAtGaussPts() {
-      double *ptr = getCoordsAtGaussPts().data().begin();
+      double *ptr = &*getCoordsAtGaussPts().data().begin();
       return FTensor::Tensor1<double*,3>(ptr,&ptr[1],&ptr[2],3);
     }
 
@@ -243,7 +243,7 @@ struct FaceElementForcesAndSourcesCore: public ForcesAndSurcesCore {
       ) {
         return getTensor1Coords();
       }
-      double *ptr = getHoCoordsAtGaussPts().data().begin();
+      double *ptr = &*getHoCoordsAtGaussPts().data().begin();
       return FTensor::Tensor1<double*,3>(ptr,&ptr[1],&ptr[2],3);
     }
 

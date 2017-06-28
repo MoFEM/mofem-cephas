@@ -216,10 +216,10 @@ struct KelvinVoigtDamper {
     std::map<std::string,std::vector<VectorDouble > > dataAtGaussPts;
     std::map<std::string,std::vector<MatrixDouble > > gradAtGaussPts;
 
-    std::vector<ublas::matrix<double> > dashpotFirstPiolaKirchhoffStress;
+    std::vector<MatrixDouble > dashpotFirstPiolaKirchhoffStress;
 
     std::vector<double*> jacRowPtr;
-    std::vector<ublas::matrix<double> > jacStress;
+    std::vector<MatrixDouble > jacStress;
 
     bool recordOn;
     bool skipThis;
@@ -357,7 +357,7 @@ struct KelvinVoigtDamper {
           }
         }
 
-        ublas::vector<double> &values = data.getFieldData();
+        VectorDouble &values = data.getFieldData();
 
         // Calculate values at integration points
         for(int gg = 0;gg<nb_gauss_pts;gg++) {
@@ -422,7 +422,7 @@ struct KelvinVoigtDamper {
     }
 
     int nbGaussPts;
-    ublas::vector<double> activeVariables;
+    VectorDouble activeVariables;
 
     PetscErrorCode recordDamperStress() {
       PetscFunctionBegin;
@@ -434,8 +434,8 @@ struct KelvinVoigtDamper {
         PetscErrorCode ierr;
         cE.F.resize(3,3,false);
         cE.FDot.resize(3,3,false);
-        ublas::matrix<double> &F = (commonData.gradAtGaussPts[commonData.spatialPositionName])[0];
-        ublas::matrix<double> &F_dot = (commonData.gradAtGaussPts[commonData.spatialPositionNameDot])[0];
+        MatrixDouble &F = (commonData.gradAtGaussPts[commonData.spatialPositionName])[0];
+        MatrixDouble &F_dot = (commonData.gradAtGaussPts[commonData.spatialPositionNameDot])[0];
         trace_on(tagS[DAMPERSTRESS]);
         {
           // Activate gradient of defamation
@@ -533,8 +533,8 @@ struct KelvinVoigtDamper {
         activeVariables.resize(nbActiveVariables[tagS[DAMPERSTRESS]],false);
         for(int gg = 0;gg<nbGaussPts;gg++) {
 
-          ublas::matrix<double> &F = (commonData.gradAtGaussPts[commonData.spatialPositionName])[gg];
-          ublas::matrix<double> &F_dot = (commonData.gradAtGaussPts[commonData.spatialPositionNameDot])[gg];
+          MatrixDouble &F = (commonData.gradAtGaussPts[commonData.spatialPositionName])[gg];
+          MatrixDouble &F_dot = (commonData.gradAtGaussPts[commonData.spatialPositionNameDot])[gg];
           int nb_active_variables = 0;
 
           // Activate gradient of defamation
@@ -629,7 +629,7 @@ struct KelvinVoigtDamper {
     MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROW) {
     }
     PetscErrorCode ierr;
-    ublas::vector<double> nF;
+    VectorDouble nF;
     PetscErrorCode aSemble(
       int row_side,EntityType row_type,DataForcesAndSurcesCore::EntData &row_data
     ) {
@@ -678,7 +678,7 @@ struct KelvinVoigtDamper {
         int nb_gauss_pts = row_data.getN().size1();
         for(int gg = 0;gg!=nb_gauss_pts;gg++) {
           const MatrixAdaptor &diffN = row_data.getDiffN(gg,nb_dofs/3);
-          const ublas::matrix<double>& stress = commonData.dashpotFirstPiolaKirchhoffStress[gg];
+          const MatrixDouble& stress = commonData.dashpotFirstPiolaKirchhoffStress[gg];
           double val = getVolume()*getGaussPts()(3,gg);
           if(getHoGaussPtsDetJac().size()>0) {
             val *= getHoGaussPtsDetJac()[gg]; ///< higher order geometry
@@ -707,7 +707,7 @@ struct KelvinVoigtDamper {
       row_name,col_name,UserDataOperator::OPROWCOL) {
     }
     PetscErrorCode ierr;
-    ublas::matrix<double> K,transK;
+    MatrixDouble K,transK;
     PetscErrorCode aSemble(
       int row_side,int col_side,
       EntityType row_type,EntityType col_type,
@@ -759,7 +759,7 @@ struct KelvinVoigtDamper {
     ),
     commonData(common_data) {
     }
-    ublas::matrix<double> dStress_dx;
+    MatrixDouble dStress_dx;
     PetscErrorCode get_dStress_dx(
       DataForcesAndSurcesCore::EntData &col_data,int gg
     ) {
@@ -769,7 +769,7 @@ struct KelvinVoigtDamper {
         dStress_dx.resize(9,nb_col,false);
         dStress_dx.clear();
         const MatrixAdaptor diffN = col_data.getDiffN(gg,nb_col/3);
-        ublas::matrix<double> &jac_stress = commonData.jacStress[gg];
+        MatrixDouble &jac_stress = commonData.jacStress[gg];
         for(int dd = 0;dd<nb_col/3;dd++) {  // DoFs in column
           for(int jj = 0;jj<3;jj++) {       // cont. DoFs in column
             double a = diffN(dd,jj);
@@ -857,7 +857,7 @@ struct KelvinVoigtDamper {
     ),
     commonData(common_data) {
     }
-    ublas::matrix<double> dStress_dot;
+    MatrixDouble dStress_dot;
     PetscErrorCode get_dStress_dot(
       DataForcesAndSurcesCore::EntData &col_data,int gg
     ) {
@@ -867,7 +867,7 @@ struct KelvinVoigtDamper {
         dStress_dot.resize(9,nb_col,false);
         dStress_dot.clear();
         const MatrixAdaptor diffN = col_data.getDiffN(gg,nb_col/3);
-        ublas::matrix<double> &jac_stress = commonData.jacStress[gg];
+        MatrixDouble &jac_stress = commonData.jacStress[gg];
         for(int dd = 0;dd<nb_col/3;dd++) {  // DoFs in column
           for(int jj = 0;jj<3;jj++) {       // cont. DoFs in column
             double a = diffN(dd,jj);

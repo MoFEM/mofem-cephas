@@ -229,7 +229,7 @@ int main(int argc, char *argv[]) {
 
         // cerr << data.getHcurlN() << endl;
 
-        ublas::vector<double> t(3,0);
+        VectorDouble t(3,0);
         int nb_dofs = data.getHcurlN().size2()/3;
         for(int dd = 0;dd<nb_dofs;dd++) {
           for(int ddd = 0;ddd<3;ddd++) {
@@ -254,7 +254,7 @@ int main(int argc, char *argv[]) {
         rval = mField.get_moab().get_adjacencies(&edge,1,3,false,adj_tets,moab::Interface::UNION);
         const int nb_adj_tets = adj_tets.size();
 
-        ublas::vector<double> t(3,0);
+        VectorDouble t(3,0);
         int nb_dofs = data.getHcurlN().size2()/3;
         for(int dd = 0;dd<nb_dofs;dd++) {
           for(int ddd = 0;ddd<3;ddd++) {
@@ -281,7 +281,7 @@ int main(int argc, char *argv[]) {
     VolumeElementForcesAndSourcesCore(m_field) {}
     int getRule(int order) { return -1; };
 
-    ublas::matrix<double> N_tri;
+    MatrixDouble N_tri;
     PetscErrorCode setGaussPts(int order) {
       PetscFunctionBegin;
 

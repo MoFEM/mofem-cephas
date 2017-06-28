@@ -1058,7 +1058,7 @@ struct UltraWeakTransportElement::OpVDotDivSigma_L2Hdiv: public MoFEM::VolumeEle
     //assumption that off-diagonal matrices are symmetric.
     sYmm = false;
   }
-  ublas::matrix<FieldData> C;
+  MatrixDouble C;
   VectorDouble divVec,Nf;
   PetscErrorCode doWork(
     int row_side,int col_side,

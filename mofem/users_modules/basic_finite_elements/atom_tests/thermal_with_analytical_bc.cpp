@@ -45,9 +45,9 @@ static char help[] = "...\n\n";
 
 struct AnaliticalFunction {
 
-  std::vector<ublas::vector<double> > val;
+  std::vector<VectorDouble > val;
 
-  std::vector<ublas::vector<double> >& operator()(double x,double y,double z) {
+  std::vector<VectorDouble >& operator()(double x,double y,double z) {
     val.resize(1);
     val[0].resize(1);
     (val[0])[0] = pow(x,1);

@@ -1,0 +1,32 @@
+/*! \page poisson_tut1 "Solving the Poisson equation"
+
+In this tutorial is shown how to solve Poisson equation. We introduce the basic
+concepts in MoFEM and exploiting MoFEM::Simple  to quickly set-up problem.
+
+\section poisson_tut1_matematical_formulation
+
+We solve the most basic of all PDEs, i.e. the Possion equation,
+\f[
+-\nabla^2 u(\mathbf{x}) = f(x),\quad \textrm{in}\Omega\\
+u(x)=\overline{u}(\mathbf{x}),\quad \textrm{on}\partial\Omega
+\f]
+where \f$u=u(\mathbf{x})\f$ is unknown function, \f$f(\mathbf{x})\f$ is given
+source term and \f$\overline{u}\f$ is prescribed function on boundary. The
+laplacian \f$\nabla^2\f$ in 3d space with coordinates takes form
+\f[
+\nabla^2 u(x,y,z) =
+\frac{\partial^2 u}{\partial x^2}+
+\frac{\partial^2 u}{\partial z^2}+
+\frac{\partial^2 u}{\partial z^2}
+\f]
+
+The Poisson equation arises in numerous physical contexts, including heat
+conduction, electrostatics, diffusion of substances, twisting of elastic rods,
+and describes many other physical problems.
+
+
+
+
+
+
+*/
