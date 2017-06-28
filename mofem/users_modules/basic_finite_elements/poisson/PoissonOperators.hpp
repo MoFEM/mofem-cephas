@@ -611,9 +611,17 @@ namespace PoissonOperators {
 
   };
 
-
+  /**
+   * \brief Create finite elements instances
+   *
+   * Create finite element instances and add operators to finite elements.
+   *
+   */
   struct CreateFiniteElementes {
 
+    /**
+     * \brief Create finite element to calculate matrix and vectors
+     */
     PetscErrorCode createFEToAssmbleMatrceAndVector(
       MoFEM::Interface &m_field,
       boost::function<int (int order_row,int order_col,int order_data)> vol_rule,
@@ -652,6 +660,9 @@ namespace PoissonOperators {
       PetscFunctionReturn(0);
     }
 
+    /**
+     * \brief Create finite element to calculate error
+     */
     PetscErrorCode createFEToEvaluateError(
       MoFEM::Interface &m_field,
       boost::function<int (int order_row,int order_col,int order_data)> vol_rule,
@@ -676,6 +687,9 @@ namespace PoissonOperators {
       PetscFunctionReturn(0);
     }
 
+    /**
+     * \brief Create finite element to post-process results
+     */
     PetscErrorCode creatFEToPostProcessResults(
       MoFEM::Interface &m_field,
       boost::shared_ptr<ForcesAndSurcesCore>& post_proc_volume
