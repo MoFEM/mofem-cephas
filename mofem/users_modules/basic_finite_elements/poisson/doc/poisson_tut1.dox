@@ -1,17 +1,34 @@
-/*! \page poisson_tut1 "Solving the Poisson equation"
+/*! \page poisson_tut1 Solving the Poisson equation
 
 In this tutorial is shown how to solve Poisson equation. We introduce the basic
-concepts in MoFEM and exploiting MoFEM::Simple  to quickly set-up problem.
+concepts in MoFEM and exploiting MoFEM::Simple interface to quickly set-up problem.
 
-\section poisson_tut1_matematical_formulation
+We introduce fundamental of MoFEM::Interface and MoFEM::Simple interfaces and
+show how to link MoFEM data structures with PETSc discrete manager. Also, we
+show how to describe fields and how to loop finite elements. This example is
+restricted to linear problem and body is subjected to inhomogeneous Dirichlet
+boundary conditions only. We do not explain here how to implant finite element
+data operator, this is part of next tutorial.
+
+\tableofcontents
+
+\section poisson_tut1_matematical_formulation Mathematical formulation
 
 We solve the most basic of all PDEs, i.e. the Possion equation,
 \f[
 -\nabla^2 u(\mathbf{x}) = f(x),\quad \textrm{in}\Omega\\
-u(x)=\overline{u}(\mathbf{x}),\quad \textrm{on}\partial\Omega
 \f]
 where \f$u=u(\mathbf{x})\f$ is unknown function, \f$f(\mathbf{x})\f$ is given
-source term and \f$\overline{u}\f$ is prescribed function on boundary. The
+source term. The Poisson equation is in so called \e strong from, it has
+to be satisfied at every point of the body without boundary. To solve this PDE we
+need describe problem on the boundary, in this simple case we are self-restricted to
+Dirichlet boubdary conditin where functions values are guiven by
+\f[
+u(x)=\overline{u}(\mathbf{x}),\quad \textrm{on}\partial\Omega
+\f]
+where \f$\overline{u}\f$ is prescribed function on boundary.
+
+The
 laplacian \f$\nabla^2\f$ in 3d space with coordinates takes form
 \f[
 \nabla^2 u(x,y,z) =
@@ -22,10 +39,76 @@ laplacian \f$\nabla^2\f$ in 3d space with coordinates takes form
 
 The Poisson equation arises in numerous physical contexts, including heat
 conduction, electrostatics, diffusion of substances, twisting of elastic rods,
-and describes many other physical problems.
+and describes many other physical problems. In general PDE equation of this form
+emerge form conservation law, e.g. conservation of mass, electric charge or
+energy, one of the fundamental proper of universe.
 
+\section poisson_tut1_variational_formulation Finite element variational formulation
 
-
+It is well established recipe how to change equation in the form convenient for
+finite element calculations. The Poision equation form both sides is multiplied
+by function \f$u\f$ integrated and then differentad by parts. Withoug going to
+details, applying this procedure and enforcing constrains with Lagrange
+multiplier method we get
+\f[
+\mathcal{L}(u,\lambda) =
+\frac{1}{2}\int_\omega \left( \nabla u \right)^2 \textrm{d}\Omega
+-
+\frac{1}{2}\int_\omega uf \textrm{d}\Omega
++
+\int_{\partial\Omega} \lambda (u-\overline{u}) \textrm{d}\partial\Omega
+\f]
+where \f$\lambda\f$ is Lagrange multiplayer. Unknown functions can be
+expressed in finite dimension space, as follows,
+\f[
+u^h = \sum_i^{n_u} \phi^i(\mathbf{x}) U_i = \boldsymbol\phi\cdot\mathbf{U}
+, \quad \mathbf{x} \in \Omega,\\
+\lambda^h = \sum_i^{n_\lambda} \psi^i(\mathbf{x}) L_i = \boldsymbol\psi\cdot\mathbf{L}
+, \quad \mathbf{x} \in \partial\Omega
+\f]
+where \f$U_i\f$ and \f$L_i\f$ are unknown dgrees freedom. The \f$\phi^u\f$ and \f$\psi^i\f$
+are base functions for \f$u^h\f$ and \f$\lambda^h\f$, respectively. The staionary point of
+\f$\mathcal{L}(u^h,\lambda^h)\f$, obtained by minimalisation of Lagrangian gives
+Euler-Lagrange  equations,
+\f[
+\left[
+\begin{array}{cc}
+\mathbf{K} & \mathbf{C}^\textrm{T}\\
+\mathbf{C} & \mathbf{0}
+\end{array}
+\right]
+\left\{
+\begin{array}{c}
+\mathbf{U}\\
+\mathbf{L}
+\end{array}
+\right\}
+=
+\left[
+\begin{array}{c}
+\mathbf{F}\\
+\mathbf{g}
+\end{array}
+\right],\\
+\begin{array}{l}
+\mathbf{K}=
+\int_\Omega \nabla \boldsymbol\phi \cdot \nabla \boldsymbol\phi \textrm{d}\Omega,\quad
+\mathbf{C} = \int_{\partial\Omega} \boldsymbol\psi \boldsymbol\phi \textrm{d}\partial\Omega,\\
+\mathbf{F} = \int_\Omega \boldsymbol\phi f \textrm{d}\Omega,\quad
+\mathbf{g} = \int_{\partial\Omega} \boldsymbol\psi \overline{u} \textrm{d}\partial\Omega.
+\end{array}
+\f]
+Note that Lagrange multiplier has interpretatin of flux here, which is in
+\f$H^{-\frac{1}{2}}(\partial\Omega)\f$ space. Howover in this case approximation
+of Lagrange multiplier by a discontinuous piecewise result in sigular system of
+equations, since values are not bounded for Neumann boundary conditions on all
+\f$\partial\Omega\f$, i.e. solution is defined up to an additive constant. To
+remove that difficult we will use spaces subspace of
+\f$H^{-1}(\partial\Omega)\f$, that will generate as many constrains as meny degrees
+of freedom for \f$u^h\f$ on body boumdary, and thus enforce boundary conditions
+exactly which assumed to be smooth in this case. For reference about spcaces and
+and deeper insight in the Poission equation see \cite demkowicz2006computing or
+\cite brezzi2008mixed.
 
 
 
