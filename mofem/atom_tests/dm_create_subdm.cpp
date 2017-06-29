@@ -86,12 +86,12 @@ int main(int argc, char *argv[]) {
     const int field_rank = 1;
     ierr = m_field.add_field("FIELD0",H1,AINSWORTH_LEGENDRE_BASE,field_rank); CHKERRQ(ierr);
     //add entities to field
-    ierr = m_field.add_ents_to_field_by_TETs(root_set,"FIELD0"); CHKERRQ(ierr);
+    ierr = m_field.add_ents_to_field_by_type(root_set,MBTET,"FIELD0"); CHKERRQ(ierr);
     //set app. order
     ierr = m_field.set_field_order(root_set,MBVERTEX,"FIELD0",1); CHKERRQ(ierr);
     ierr = m_field.add_field("FIELD1",H1,AINSWORTH_LEGENDRE_BASE,field_rank); CHKERRQ(ierr);
     //add entities to field
-    ierr = m_field.add_ents_to_field_by_TETs(root_set,"FIELD1"); CHKERRQ(ierr);
+    ierr = m_field.add_ents_to_field_by_type(root_set,MBTET,"FIELD1"); CHKERRQ(ierr);
     //set app. order
     ierr = m_field.set_field_order(root_set,MBVERTEX,"FIELD1",1); CHKERRQ(ierr);
 
@@ -105,7 +105,7 @@ int main(int argc, char *argv[]) {
     ierr = m_field.modify_finite_element_add_field_col("FE00","FIELD0"); CHKERRQ(ierr);
     ierr = m_field.modify_finite_element_add_field_data("FE00","FIELD0"); CHKERRQ(ierr);
     //add entities to finite element
-    ierr = m_field.add_ents_to_finite_element_by_TETs(root_set,"FE00"); CHKERRQ(ierr);
+    ierr = m_field.add_ents_to_finite_element_by_type(root_set,MBTET,"FE00"); CHKERRQ(ierr);
 
     //define & build finite elements
     ierr = m_field.add_finite_element("FE11"); CHKERRQ(ierr);
@@ -114,7 +114,7 @@ int main(int argc, char *argv[]) {
     ierr = m_field.modify_finite_element_add_field_col("FE11","FIELD1"); CHKERRQ(ierr);
     ierr = m_field.modify_finite_element_add_field_data("FE11","FIELD1"); CHKERRQ(ierr);
     //add entities to finite element
-    ierr = m_field.add_ents_to_finite_element_by_TETs(root_set,"FE11"); CHKERRQ(ierr);
+    ierr = m_field.add_ents_to_finite_element_by_type(root_set,MBTET,"FE11"); CHKERRQ(ierr);
 
     //define & build finite elements
     ierr = m_field.add_finite_element("FE01"); CHKERRQ(ierr);
@@ -124,7 +124,7 @@ int main(int argc, char *argv[]) {
     ierr = m_field.modify_finite_element_add_field_data("FE01","FIELD0"); CHKERRQ(ierr);
     ierr = m_field.modify_finite_element_add_field_data("FE01","FIELD1"); CHKERRQ(ierr);
     //add entities to finite element
-    ierr = m_field.add_ents_to_finite_element_by_TETs(root_set,"FE01"); CHKERRQ(ierr);
+    ierr = m_field.add_ents_to_finite_element_by_type(root_set,MBTET,"FE01"); CHKERRQ(ierr);
 
     //build finite elemnts
     ierr = m_field.build_finite_elements(); CHKERRQ(ierr);

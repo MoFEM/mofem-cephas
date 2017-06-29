@@ -39,7 +39,7 @@ struct MyMat_double: public NonlinearElasticElement::FunctionsToCalculatePiolaKi
   bool doAotherwiseB;
   MyMat_double(): doAotherwiseB(true) {};
 
-  ublas::matrix<double> D_lambda,D_mu,D;
+  MatrixDouble D_lambda,D_mu,D;
   ublas::vector<TYPE> sTrain,sTrain0,sTress;
   ublas::matrix<adouble> invF,CauchyStress;
 
@@ -132,7 +132,7 @@ struct MyMat: public MyMat_double<TYPE> {
     try {
 
       this->sTrain0.resize(6);
-      ublas::matrix<double> &G0 = (this->commonDataPtr->gradAtGaussPts["D0"][this->gG]);
+      MatrixDouble &G0 = (this->commonDataPtr->gradAtGaussPts["D0"][this->gG]);
       this->sTrain0[0] <<= G0(0,0);
       this->sTrain0[1] <<= G0(1,1);
       this->sTrain0[2] <<= G0(2,2);
@@ -152,13 +152,13 @@ struct MyMat: public MyMat_double<TYPE> {
   }
 
   virtual PetscErrorCode setUserActiveVariables(
-    ublas::vector<double> &active_varibles) {
+    VectorDouble &active_varibles) {
     PetscFunctionBegin;
 
     try {
 
       int shift = nbActiveVariables0; // is a number of elements in F
-      ublas::matrix<double> &G0 = (this->commonDataPtr->gradAtGaussPts["D0"][this->gG]);
+      MatrixDouble &G0 = (this->commonDataPtr->gradAtGaussPts["D0"][this->gG]);
       active_varibles[shift+0] = G0(0,0);
       active_varibles[shift+1] = G0(1,1);
       active_varibles[shift+2] = G0(2,2);
@@ -231,22 +231,22 @@ int main(int argc, char *argv[]) {
   ierr = m_field.get_entities_by_ref_level(bit_level0,BitRefLevel().set(),meshset_level0); CHKERRQ(ierr);
 
   //Fields
-  ierr = m_field.add_field("MESH_NODE_POSITIONS",H1,3,MF_ZERO); CHKERRQ(ierr);
-  ierr = m_field.add_ents_to_field_by_TETs(0,"MESH_NODE_POSITIONS",2); CHKERRQ(ierr);
+  ierr = m_field.add_field("MESH_NODE_POSITIONS",H1,AINSWORTH_LEGENDRE_BASE,3,MB_TAG_SPARSE,MF_ZERO); CHKERRQ(ierr);
+  ierr = m_field.add_ents_to_field_by_type(0,MBTET,"MESH_NODE_POSITIONS"); CHKERRQ(ierr);
   ierr = m_field.set_field_order(0,MBTET,"MESH_NODE_POSITIONS",2); CHKERRQ(ierr);
   ierr = m_field.set_field_order(0,MBTRI,"MESH_NODE_POSITIONS",2); CHKERRQ(ierr);
   ierr = m_field.set_field_order(0,MBEDGE,"MESH_NODE_POSITIONS",2); CHKERRQ(ierr);
   ierr = m_field.set_field_order(0,MBVERTEX,"MESH_NODE_POSITIONS",1); CHKERRQ(ierr);
 
   bool check_if_spatial_field_exist = m_field.check_field("SPATIAL_POSITION");
-  ierr = m_field.add_field("SPATIAL_POSITION",H1,3,MF_ZERO); CHKERRQ(ierr);
-  ierr = m_field.add_field("EIGEN_VECTOR",H1,3,MF_ZERO); CHKERRQ(ierr);
-  ierr = m_field.add_field("D0",H1,3,MF_ZERO); CHKERRQ(ierr);
+  ierr = m_field.add_field("SPATIAL_POSITION",H1,AINSWORTH_LEGENDRE_BASE,3,MB_TAG_SPARSE,MF_ZERO); CHKERRQ(ierr);
+  ierr = m_field.add_field("EIGEN_VECTOR",H1,AINSWORTH_LEGENDRE_BASE,3,MB_TAG_SPARSE,MF_ZERO); CHKERRQ(ierr);
+  ierr = m_field.add_field("D0",H1,AINSWORTH_LEGENDRE_BASE,3,MB_TAG_SPARSE,MF_ZERO); CHKERRQ(ierr);
 
   //add entitities (by tets) to the field
-  ierr = m_field.add_ents_to_field_by_TETs(0,"SPATIAL_POSITION"); CHKERRQ(ierr);
-  ierr = m_field.add_ents_to_field_by_TETs(0,"EIGEN_VECTOR"); CHKERRQ(ierr);
-  ierr = m_field.add_ents_to_field_by_TETs(0,"D0"); CHKERRQ(ierr);
+  ierr = m_field.add_ents_to_field_by_type(0,MBTET,"SPATIAL_POSITION"); CHKERRQ(ierr);
+  ierr = m_field.add_ents_to_field_by_type(0,MBTET,"EIGEN_VECTOR"); CHKERRQ(ierr);
+  ierr = m_field.add_ents_to_field_by_type(0,MBTET,"D0"); CHKERRQ(ierr);
 
   boost::shared_ptr<Hooke<double> > mat_double = boost::make_shared<Hooke<double> >();
   boost::shared_ptr<MyMat<adouble> > mat_adouble = boost::make_shared<MyMat<adouble> >();
@@ -300,12 +300,12 @@ int main(int argc, char *argv[]) {
   for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,NODESET|FORCESET,it)) {
     Range tris;
     rval = moab.get_entities_by_type(it->meshset,MBTRI,tris,true); CHKERRQ_MOAB(rval);
-    ierr = m_field.add_ents_to_finite_element_by_TRIs(tris,"NEUAMNN_FE"); CHKERRQ(ierr);
+    ierr = m_field.add_ents_to_finite_element_by_type(tris,MBTRI,"NEUAMNN_FE"); CHKERRQ(ierr);
   }
   for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,SIDESET|PRESSURESET,it)) {
     Range tris;
     rval = moab.get_entities_by_type(it->meshset,MBTRI,tris,true); CHKERRQ_MOAB(rval);
-    ierr = m_field.add_ents_to_finite_element_by_TRIs(tris,"NEUAMNN_FE"); CHKERRQ(ierr);
+    ierr = m_field.add_ents_to_finite_element_by_type(tris,MBTRI,"NEUAMNN_FE"); CHKERRQ(ierr);
   }
   //add nodal force element
   ierr = MetaNodalForces::addElement(m_field,"SPATIAL_POSITION"); CHKERRQ(ierr);

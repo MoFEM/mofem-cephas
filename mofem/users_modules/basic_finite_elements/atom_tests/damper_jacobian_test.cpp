@@ -80,8 +80,8 @@ int main(int argc, char *argv[]) {
         //meshset consisting all entities in mesh
         EntityHandle root_set = moab.get_root_set();
         //add entities to field (root_mesh, i.e. on all mesh entities fields are approx.)
-        ierr = m_field.add_ents_to_field_by_TETs(root_set,"SPATIAL_POSITION"); CHKERRQ(ierr);
-        ierr = m_field.add_ents_to_field_by_TETs(root_set,"SPATIAL_POSITION_DOT"); CHKERRQ(ierr);
+        ierr = m_field.add_ents_to_field_by_type(root_set,MBTET,"SPATIAL_POSITION"); CHKERRQ(ierr);
+        ierr = m_field.add_ents_to_field_by_type(root_set,MBTET,"SPATIAL_POSITION_DOT"); CHKERRQ(ierr);
 
         PetscBool flg;
         PetscInt order;
@@ -104,7 +104,7 @@ int main(int argc, char *argv[]) {
         ierr = m_field.set_field_order(root_set,MBVERTEX,"SPATIAL_POSITION_DOT",1); CHKERRQ(ierr);
 
         //gemetry approximation is set to 2nd oreder
-        ierr = m_field.add_ents_to_field_by_TETs(root_set,"MESH_NODE_POSITIONS"); CHKERRQ(ierr);
+        ierr = m_field.add_ents_to_field_by_type(root_set,MBTET,"MESH_NODE_POSITIONS"); CHKERRQ(ierr);
         ierr = m_field.set_field_order(0,MBTET,"MESH_NODE_POSITIONS",2); CHKERRQ(ierr);
         ierr = m_field.set_field_order(0,MBTRI,"MESH_NODE_POSITIONS",2); CHKERRQ(ierr);
         ierr = m_field.set_field_order(0,MBEDGE,"MESH_NODE_POSITIONS",2); CHKERRQ(ierr);
@@ -132,7 +132,7 @@ int main(int argc, char *argv[]) {
         ierr = m_field.modify_finite_element_add_field_data("DAMPER_FE","SPATIAL_POSITION"); CHKERRQ(ierr);
         ierr = m_field.modify_finite_element_add_field_data("DAMPER_FE","SPATIAL_POSITION_DOT"); CHKERRQ(ierr);
         EntityHandle root_set = moab.get_root_set();
-        ierr = m_field.add_ents_to_finite_element_by_TETs(root_set,"DAMPER_FE"); CHKERRQ(ierr);
+        ierr = m_field.add_ents_to_finite_element_by_type(root_set,MBTET,"DAMPER_FE"); CHKERRQ(ierr);
 
         //build finite elemnts
         ierr = m_field.build_finite_elements(); CHKERRQ(ierr);

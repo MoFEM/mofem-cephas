@@ -98,11 +98,23 @@ struct FaceElementForcesAndSourcesCore: public ForcesAndSurcesCore {
     ForcesAndSurcesCore::UserDataOperator(field_name,type) {}
 
     UserDataOperator(
-    const std::string &row_field_name,const std::string &col_field_name,const char type):
-    ForcesAndSurcesCore::UserDataOperator(row_field_name,col_field_name,type) {};
+    const std::string &row_field_name,const std::string &col_field_name,const char type,const bool symm = true):
+    ForcesAndSurcesCore::UserDataOperator(row_field_name,col_field_name,type,symm) {};
 
+    /**
+     * \brief get area of face
+     * @return area of face
+     */
     inline double getArea() {
       return static_cast<FaceElementForcesAndSourcesCore*>(ptrFE)->aRea;
+    }
+
+    /**
+     * \brief get measure of element
+     * @return area of face
+     */
+    inline double getMeasure() {
+      return getArea();
     }
 
     /** \brief get triangle normal
@@ -179,7 +191,7 @@ struct FaceElementForcesAndSourcesCore: public ForcesAndSurcesCore {
 
      */
     inline FTensor::Tensor1<double*,3> getTensor1Coords() {
-      double *ptr = getCoords().data().begin();
+      double *ptr = &*getCoords().data().begin();
       return FTensor::Tensor1<double*,3>(ptr,&ptr[1],&ptr[2],3);
     }
 
@@ -189,6 +201,10 @@ struct FaceElementForcesAndSourcesCore: public ForcesAndSurcesCore {
     */
     inline MatrixDouble& getGaussPts() {
       return static_cast<FaceElementForcesAndSourcesCore*>(ptrFE)->gaussPts;
+    }
+
+    inline FTensor::Tensor0<double*> getFTensor0IntegrationWeight() {
+      return FTensor::Tensor0<double*>(&(getGaussPts()(2,0)),1);
     }
 
     /** \brief Gauss points and weight, matrix (nb. of points x 3)
@@ -204,7 +220,7 @@ struct FaceElementForcesAndSourcesCore: public ForcesAndSurcesCore {
     /** \brief get coordinates at Gauss pts.
      */
     inline FTensor::Tensor1<double*,3> getTensor1CoordsAtGaussPts() {
-      double *ptr = getCoordsAtGaussPts().data().begin();
+      double *ptr = &*getCoordsAtGaussPts().data().begin();
       return FTensor::Tensor1<double*,3>(ptr,&ptr[1],&ptr[2],3);
     }
 
@@ -227,7 +243,7 @@ struct FaceElementForcesAndSourcesCore: public ForcesAndSurcesCore {
       ) {
         return getTensor1Coords();
       }
-      double *ptr = getHoCoordsAtGaussPts().data().begin();
+      double *ptr = &*getHoCoordsAtGaussPts().data().begin();
       return FTensor::Tensor1<double*,3>(ptr,&ptr[1],&ptr[2],3);
     }
 
@@ -405,12 +421,12 @@ struct FaceElementForcesAndSourcesCore: public ForcesAndSurcesCore {
 struct OpCalculateInvJacForFace: public FaceElementForcesAndSourcesCore::UserDataOperator {
   MatrixDouble &invJac;
 
-  /**
-   * \deprecated Field name do not needed to construct class, change v0.5.17.
-   */
-  DEPRECATED OpCalculateInvJacForFace(const std::string &field_name,MatrixDouble &inv_jac):
-  FaceElementForcesAndSourcesCore::UserDataOperator(H1),
-  invJac(inv_jac) {}
+  // /**
+  //  * \deprecated Field name do not needed to construct class, change v0.5.17.
+  //  */
+  // DEPRECATED OpCalculateInvJacForFace(const std::string &field_name,MatrixDouble &inv_jac):
+  // FaceElementForcesAndSourcesCore::UserDataOperator(H1),
+  // invJac(inv_jac) {}
 
   OpCalculateInvJacForFace(MatrixDouble &inv_jac):
   FaceElementForcesAndSourcesCore::UserDataOperator(H1),
@@ -429,12 +445,12 @@ struct OpCalculateInvJacForFace: public FaceElementForcesAndSourcesCore::UserDat
 struct OpSetInvJacH1ForFace: public FaceElementForcesAndSourcesCore::UserDataOperator {
   MatrixDouble &invJac;
 
-  /**
-   * \deprecated Field name do not needed to construct class, change v0.5.17.
-   */
-  DEPRECATED OpSetInvJacH1ForFace(const std::string &field_name,MatrixDouble &inv_jac):
-  FaceElementForcesAndSourcesCore::UserDataOperator(H1),
-  invJac(inv_jac) {}
+  // /**
+  //  * \deprecated Field name do not needed to construct class, change v0.5.17.
+  //  */
+  // DEPRECATED OpSetInvJacH1ForFace(const std::string &field_name,MatrixDouble &inv_jac):
+  // FaceElementForcesAndSourcesCore::UserDataOperator(H1),
+  // invJac(inv_jac) {}
 
   OpSetInvJacH1ForFace(MatrixDouble &inv_jac):
   FaceElementForcesAndSourcesCore::UserDataOperator(H1),
@@ -455,13 +471,13 @@ struct OpSetInvJacHcurlFace: public FaceElementForcesAndSourcesCore::UserDataOpe
 
   MatrixDouble &invJac;
 
-  /**
-   * \deprecated Field name do not needed to construct class, change v0.5.17.
-   */
-  DEPRECATED OpSetInvJacHcurlFace(const std::string &field_name,MatrixDouble &inv_jac):
-  FaceElementForcesAndSourcesCore::UserDataOperator(HCURL),
-  invJac(inv_jac) {
-  }
+  // /**
+  //  * \deprecated Field name do not needed to construct class, change v0.5.17.
+  //  */
+  // DEPRECATED OpSetInvJacHcurlFace(const std::string &field_name,MatrixDouble &inv_jac):
+  // FaceElementForcesAndSourcesCore::UserDataOperator(HCURL),
+  // invJac(inv_jac) {
+  // }
 
   OpSetInvJacHcurlFace(MatrixDouble &inv_jac):
   FaceElementForcesAndSourcesCore::UserDataOperator(HCURL),

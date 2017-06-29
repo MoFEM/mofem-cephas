@@ -93,14 +93,14 @@ int main(int argc, char *argv[]) {
   //meshset consisting all entities in mesh
   EntityHandle root_set = moab.get_root_set();
   //add entities to field
-  ierr = m_field.add_ents_to_field_by_TETs(root_set,"FIELD1"); CHKERRQ(ierr);
+  ierr = m_field.add_ents_to_field_by_type(root_set,MBTET,"FIELD1"); CHKERRQ(ierr);
   //add entities to finite element
   Range tets;
   rval = moab.get_entities_by_type(0,MBTET,tets,false); CHKERRQ_MOAB(rval);
   Skinner skin(&m_field.get_moab());
   Range tets_skin;
   rval = skin.find_skin(0,tets,false,tets_skin); CHKERRQ_MOAB(rval);
-  ierr = m_field.add_ents_to_finite_element_by_TRIs(tets_skin,"TEST_FE"); CHKERRQ(ierr);
+  ierr = m_field.add_ents_to_finite_element_by_type(tets_skin,MBTRI,"TEST_FE"); CHKERRQ(ierr);
 
   //set app. order
   //see Hierarchic Finite Element Bases on Unstructured Tetrahedral Meshes (Mark Ainsworth & Joe Coyle)

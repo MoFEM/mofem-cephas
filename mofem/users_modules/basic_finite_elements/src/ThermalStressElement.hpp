@@ -52,7 +52,7 @@ struct ThermalStressElement {
   std::map<int,BlockData> setOfBlocks;
 
   struct CommonData {
-    ublas::vector<double> temperatureAtGaussPts;
+    VectorDouble temperatureAtGaussPts;
   };
   CommonData commonData;
 
@@ -103,7 +103,7 @@ struct ThermalStressElement {
     commonData(common_data),
     verb(_verb) { }
 
-    ublas::vector<double> Nf;
+    VectorDouble Nf;
     PetscErrorCode doWork(
       int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
         PetscFunctionBegin;
@@ -206,7 +206,7 @@ struct ThermalStressElement {
         setOfBlocks[it->getMeshsetId()].poissonRatio = mydata.data.Poisson;
         setOfBlocks[it->getMeshsetId()].thermalExpansion = mydata.data.ThermalExpansion;
         rval = mField.get_moab().get_entities_by_type(it->meshset,MBTET,setOfBlocks[it->getMeshsetId()].tEts,true); CHKERRQ_MOAB(rval);
-        ierr = mField.add_ents_to_finite_element_by_TETs(setOfBlocks[it->getMeshsetId()].tEts,fe_name); CHKERRQ(ierr);
+        ierr = mField.add_ents_to_finite_element_by_type(setOfBlocks[it->getMeshsetId()].tEts,MBTET,fe_name); CHKERRQ(ierr);
         double ref_temp;
         PetscBool flg;
         ierr = PetscOptionsGetReal(PETSC_NULL,PETSC_NULL,"-my_ref_temp",&ref_temp,&flg); CHKERRQ(ierr);

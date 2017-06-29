@@ -35,8 +35,8 @@ namespace MoFEM {
     int P;
     double *diffS;
     int dIm;
-    boost::shared_ptr<ublas::matrix<double> > baseFunPtr;
-    boost::shared_ptr<ublas::matrix<double> > baseDiffFunPtr;
+    boost::shared_ptr<MatrixDouble > baseFunPtr;
+    boost::shared_ptr<MatrixDouble > baseDiffFunPtr;
 
     PetscErrorCode (*basePolynomialsType0)(
       int p,double s,double *diff_s,double *L,double *diffL,const int dim
@@ -46,8 +46,8 @@ namespace MoFEM {
       int p,
       double *diff_s,
       int dim,
-      boost::shared_ptr<ublas::matrix<double> > base_fun_ptr,
-      boost::shared_ptr<ublas::matrix<double> > base_diff_fun_ptr
+      boost::shared_ptr<MatrixDouble > base_fun_ptr,
+      boost::shared_ptr<MatrixDouble > base_diff_fun_ptr
     ):
     P(p),
     diffS(diff_s),
@@ -72,7 +72,7 @@ namespace MoFEM {
     ~LegendrePolynomial() {}
 
     PetscErrorCode getValue(
-      ublas::matrix<double> &pts,
+      MatrixDouble &pts,
       boost::shared_ptr<BaseFunctionCtx> ctx_ptr
     );
 

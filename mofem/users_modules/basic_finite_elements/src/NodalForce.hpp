@@ -54,7 +54,7 @@ struct NodalForce {
       boost::ptr_vector<MethodForForceScaling> &methods_op,
       bool use_snes_f = false);
 
-    ublas::vector<FieldData> Nf;
+    VectorDouble Nf;
 
     /** Exeuted for each entity on element, i.e. in this case Vertex element
       has only one entity, that is vertex
@@ -80,7 +80,7 @@ struct MetaNodalForces {
     Tag thScale;
 
     TagForceScale(MoFEM::Interface &m_field);
-    PetscErrorCode scaleNf(const FEMethod *fe,ublas::vector<FieldData> &Nf);
+    PetscErrorCode scaleNf(const FEMethod *fe,VectorDouble &Nf);
 
   };
 
@@ -93,7 +93,7 @@ struct MetaNodalForces {
   struct DofForceScale: public MethodForForceScaling {
     boost::shared_ptr<DofEntity> dOf;
     DofForceScale(boost::shared_ptr<DofEntity> dof): dOf(dof) {}
-    PetscErrorCode scaleNf(const FEMethod *fe,ublas::vector<FieldData> &Nf) {
+    PetscErrorCode scaleNf(const FEMethod *fe,VectorDouble &Nf) {
       PetscFunctionBegin;
       Nf *= dOf->getFieldData();
       PetscFunctionReturn(0);
@@ -127,7 +127,7 @@ struct MetaNodalForces {
       if(intersect_ptr) {
         nodes = intersect(nodes,*intersect_ptr);
       }
-      ierr = m_field.add_ents_to_finite_element_by_VERTICEs(nodes,"FORCE_FE"); CHKERRQ(ierr);
+      ierr = m_field.add_ents_to_finite_element_by_type(nodes,MBVERTEX,"FORCE_FE"); CHKERRQ(ierr);
     }
     PetscFunctionReturn(0);
   }

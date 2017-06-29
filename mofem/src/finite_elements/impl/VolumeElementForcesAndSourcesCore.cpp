@@ -148,7 +148,7 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::setIntegartionPts() {
         nbGaussPts,QUAD_3D_TABLE[rule]->weights,1,&gaussPts(3,0),1
       );
       dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE).resize(nbGaussPts,4,false);
-      double *shape_ptr = dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE).data().begin();
+      double *shape_ptr = &*dataH1.dataOnEntities[MBVERTEX][0].getN(NOBASE).data().begin();
       cblas_dcopy(
         4*nbGaussPts,QUAD_3D_TABLE[rule]->points,1,shape_ptr,1
       );
@@ -413,7 +413,10 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::calculateHoJacobian() {
     ierr = getTetDataOrderSpaceAndBase(dataH1,meshPositionsFieldName); CHKERRQ(ierr);
     ierr = getNodesFieldData(dataH1,meshPositionsFieldName); CHKERRQ(ierr);
     if(dataH1.dataOnEntities[MBVERTEX][0].getFieldData().size()!=12) {
-      SETERRQ(mField.get_comm(),MOFEM_NOT_FOUND,"no MESH_NODE_POSITIONS in element data");
+      SETERRQ(
+        mField.get_comm(),MOFEM_NOT_FOUND,
+        "no MESH_NODE_POSITIONS in element data or field has wrong number of coefficients"
+      );
     }
     ierr = getEdgesFieldData(dataH1,meshPositionsFieldName); CHKERRQ(ierr);
     ierr = getTrisFieldData(dataH1,meshPositionsFieldName); CHKERRQ(ierr);
@@ -502,13 +505,14 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::operator()() {
     ierr = transformBaseFunctions(); CHKERRQ(ierr);
 
     try {
+      MatrixDouble new_diff_n;
       for(int b = AINSWORTH_LEGENDRE_BASE;b!=LASTBASE;b++) {
         FTensor::Index<'i',3> i;
         FieldApproximationBase base = ApproximationBaseArray[b];
         DataForcesAndSurcesCore::EntData &data = dataH1.dataOnEntities[MBVERTEX][0];
         if((data.getDiffN(base).size1()==4)&&(data.getDiffN(base).size2()==3)) {
           const int nb_base_functions = 4;
-          MatrixDouble new_diff_n(nbGaussPts,3*nb_base_functions);
+          new_diff_n.resize(nbGaussPts,3*nb_base_functions,false);
           double *new_diff_n_ptr = &*new_diff_n.data().begin();
           FTensor::Tensor1<double*,3> t_new_diff_n(
             new_diff_n_ptr,&new_diff_n_ptr[1],&new_diff_n_ptr[2],3

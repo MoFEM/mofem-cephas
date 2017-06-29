@@ -1,4 +1,4 @@
-/** \file ProblemCore.cpp
+/** \file ProblemsCore.cpp
  * \brief Managing complexities for problem
  */
 
@@ -55,7 +55,7 @@ namespace MoFEM {
 struct __attribute__ ((__packed__)) IdxDataType {
   int globalDof;
   char uId[sizeof(UId)];
-  IdxDataType(const GlobalUId &uid,int global_dof):
+  IdxDataType(const UId &uid,int global_dof):
     globalDof(global_dof) {
     bcopy(&uid,uId,sizeof(UId));
   }
@@ -119,7 +119,7 @@ PetscErrorCode Core::delete_problem(const std::string name) {
   PetscFunctionReturn(0);
 }
 
-BitProblemId Core::get_BitProblemId(const std::string& name) const {
+BitProblemId Core::getBitProblemId(const std::string& name) const {
   typedef Problem_multiIndex::index<Problem_mi_tag>::type mofem_problems_by_name;
   const mofem_problems_by_name& set = pRoblems.get<Problem_mi_tag>();
   mofem_problems_by_name::iterator miit = set.find(name);
@@ -517,7 +517,6 @@ PetscErrorCode Core::loop_finite_elements(
 ) {
   PetscFunctionBegin;
   if(verb==-1) verb = verbose;
-  // finite element
 
   method.feName = fe_name;
   SET_BASIC_METHOD(method,&*problem_ptr)
@@ -532,9 +531,12 @@ PetscErrorCode Core::loop_finite_elements(
   NumeredEntFiniteElementbyNameAndPart::iterator hi_miit =
   numered_fe.upper_bound(boost::make_tuple(fe_name,upper_rank));
 
-  if(miit==hi_miit && bh&MF_EXIST) {
+  if(miit==hi_miit&&(bh&MF_EXIST)) {
     if(!check_finite_element(fe_name)) {
-      SETERRQ1(cOmm,MOFEM_NOT_FOUND,"finite element < %s > not found",fe_name.c_str());
+      SETERRQ1(
+        cOmm,MOFEM_NOT_FOUND,
+        "finite element < %s > not found",fe_name.c_str()
+      );
     }
   }
 
@@ -557,7 +559,7 @@ PetscErrorCode Core::loop_finite_elements(
     } catch (const std::exception& ex) {
       std::ostringstream ss;
       ss << "FE method " << typeid(method).name() //boost::core::demangle(typeid(method).name())
-      << "   throw in method: " << ex.what()
+      << " throw in method: " << ex.what()
       << " at line " << __LINE__
       << " in file " << __FILE__ << std::endl;
       SETERRQ(cOmm,MOFEM_DATA_INCONSISTENCY,ss.str().c_str());

@@ -1,5 +1,6 @@
-/** \file ProblemCore.cpp
+/** \file ProblemsManager.cpp
  * \brief Managing complexities for problem
+ * \ingroup mofem_problems_manager
  */
 
 /* MoFEM is free software: you can redistribute it and/or modify it under
@@ -924,7 +925,7 @@ namespace MoFEM {
       }
 
       IdxDataType *idx_data;
-      GlobalUId uid;
+      UId uid;
 
       NumeredDofEntity_multiIndex::iterator dit;
       for(int kk=0; kk<nrecvs; kk++) {

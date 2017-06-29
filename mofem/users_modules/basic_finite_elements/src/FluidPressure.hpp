@@ -89,7 +89,7 @@ struct FluidPressure {
     hoGeometry(ho_geometry) {
     }
 
-    ublas::vector<FieldData> Nf;
+    VectorDouble Nf;
     PetscErrorCode ierr;
     PetscErrorCode doWork(
       int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {

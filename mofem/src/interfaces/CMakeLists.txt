@@ -12,6 +12,7 @@
 # License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 
 include_directories(${PROJECT_SOURCE_DIR}/src/ftensor/src)
+include_directories(${PROJECT_SOURCE_DIR}/src/petsc)
 
 #multi_indices
 set(MOFEM_INTERFACES_SRC

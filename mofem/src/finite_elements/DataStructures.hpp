@@ -62,8 +62,8 @@ FTensor::Tensor0<T*> getTensor0FormData(
 }
 
 template<>
-FTensor::Tensor0<double*> getTensor0FormData<double,ublas::unbounded_array<double> >(
-  ublas::vector<double,ublas::unbounded_array<double> > &data
+FTensor::Tensor0<double*> getTensor0FormData<double,DoubleAllacator >(
+  ublas::vector<double,DoubleAllacator > &data
 );
 
 /**
@@ -90,18 +90,18 @@ FTensor::Tensor1<double*,Tensor_Dim> getTensor1FormData(
   MatrixDouble &data
 ) {
   return getTensor1FormData<
-  Tensor_Dim,double,ublas::row_major,ublas::unbounded_array<double>
+  Tensor_Dim,double,ublas::row_major,DoubleAllacator
   >(data);
 }
 
 
 template<>
-FTensor::Tensor1<double*,3> getTensor1FormData<3,double,ublas::row_major,ublas::unbounded_array<double> >(
+FTensor::Tensor1<double*,3> getTensor1FormData<3,double,ublas::row_major,DoubleAllacator>(
   MatrixDouble &data
 );
 
 template<>
-FTensor::Tensor1<double*,2> getTensor1FormData<2,double,ublas::row_major,ublas::unbounded_array<double> >(
+FTensor::Tensor1<double*,2> getTensor1FormData<2,double,ublas::row_major,DoubleAllacator>(
   MatrixDouble &data
 );
 
@@ -142,7 +142,7 @@ FTensor::Tensor2<double*,Tensor_Dim0,Tensor_Dim1> getTensor2FormData(
   MatrixDouble &data
 ) {
   return getTensor2FormData<
-  Tensor_Dim0,Tensor_Dim1,double,ublas::row_major,ublas::unbounded_array<double>
+  Tensor_Dim0,Tensor_Dim1,double,ublas::row_major,DoubleAllacator
   >(data);
 }
 
@@ -157,11 +157,22 @@ struct DataForcesAndSurcesCore {
 
   /** \brief Data on single entity (This is passed as argument to DataOperator::doWork)
     * \ingroup mofem_forces_and_sources_user_data_operators
+    * \nosubgrouping
     */
   struct EntData {
 
+    /** \name Constructor and destructor */
+
+    /**@{*/
+
     EntData();
     virtual ~EntData();
+
+    /**@}*/
+
+    /** \name Sense, order and indices */
+
+    /**@{*/
 
     /// \brief get entity sense, need to calculate base functions with conforming approximation fields
     virtual int getSense() const { return sEnse; }
@@ -197,6 +208,17 @@ struct DataForcesAndSurcesCore {
       return VectorIntAdaptor(size,ublas::shallow_array_adaptor<int>(size,data));
     }
 
+    inline int& getSense() { return sEnse; }
+    inline ApproximationOrder& getDataOrder() { return oRder; }
+    inline VectorInt& getIndices() { return iNdices; }
+    inline VectorInt& getLocalIndices() { return localIndices; }
+
+    /**@}*/
+
+    /** \name Data on entity */
+
+    /**@{*/
+
     /// \brief get dofs values
     inline const VectorDouble& getFieldData() const { return fieldData; }
 
@@ -214,10 +236,6 @@ struct DataForcesAndSurcesCore {
     /// \brief get dofs data stature FEDofEntity
     inline const VectorDofs& getFieldDofs() const { return dOfs; }
 
-    inline int& getSense() { return sEnse; }
-    inline ApproximationOrder& getDataOrder() { return oRder; }
-    inline VectorInt& getIndices() { return iNdices; }
-    inline VectorInt& getLocalIndices() { return localIndices; }
     inline VectorDouble& getFieldData() { return fieldData; }
 
     template<int Tensor_Dim>
@@ -230,6 +248,12 @@ struct DataForcesAndSurcesCore {
     FTensor::Tensor0<double*> getFTensor0FieldData();
 
     inline VectorDofs& getFieldDofs() { return dOfs; }
+
+    /**@}*/
+
+    /** \name Base and space */
+
+    /**@{*/
 
     /**
      * \brief Get approximation base
@@ -271,7 +295,11 @@ struct DataForcesAndSurcesCore {
       return diffN[base];
     }
 
-    // ************ H1/L2 ************
+    /**@}*/
+
+    /** \name Get base functions for H1/L2 */
+
+    /**@{*/
 
     /** \brief get base functions
     * this return matrix (nb. of rows is equal to nb. of Gauss pts, nb. of
@@ -473,7 +501,11 @@ struct DataForcesAndSurcesCore {
       return getDiffN(bAse,gg,nb_base_functions);
     }
 
-    // ************ HDIV ************
+    /**@}*/
+
+    /** \name Get base functions for Hdiv */
+
+    /**@{*/
 
     inline const MatrixDouble& getHdivN(const FieldApproximationBase base) const { return getN(base); };
     inline const MatrixDouble& getDiffHdivN(const FieldApproximationBase base) const { return getDiffN(base); };
@@ -578,7 +610,11 @@ struct DataForcesAndSurcesCore {
       return getDiffHdivN(bAse,dof,gg);
     }
 
-    // ************ HCURL ************
+    /**@}*/
+
+    /** \name Get base functions for Hcurl */
+
+    /**@{*/
 
     inline const MatrixDouble& getHcurlN(const FieldApproximationBase base) const {
       return getN(base);
@@ -669,7 +705,11 @@ struct DataForcesAndSurcesCore {
       return getDiffHcurlN(bAse,gg);
     }
 
-    // ********* Tensors *******
+    /**@}*/
+
+    /** \name Get base functions with FTensor */
+
+    /**@{*/
 
     /**
      * \brief Get base function as Tensor0
@@ -1108,6 +1148,12 @@ struct DataForcesAndSurcesCore {
       return getFTensor1HcurlN<Tensor_Dim>(bAse,gg,bb);
     }
 
+    /**@}*/
+
+    /** \name Auxiliary functions */
+
+    /**@{*/
+
     friend std::ostream& operator<<(std::ostream& os,const DataForcesAndSurcesCore::EntData &e);
 
     /**
@@ -1125,6 +1171,12 @@ struct DataForcesAndSurcesCore {
       PetscFunctionReturn(0);
     }
 
+    /**@}*/
+
+    /**
+     * \brief is internally used (true) if no indices on entity
+     * \note this is ugly fix, some better idea is needed here
+     */
     bool semaphore;
 
   protected:
@@ -1138,6 +1190,7 @@ struct DataForcesAndSurcesCore {
     VectorDouble fieldData;       ///< Field data on entity
     ShapeFunctionBasesVector N;     ///< Base functions
     ShapeFunctionBasesVector diffN; ///< Derivatives of base functions
+
   };
 
   std::bitset<LASTSPACE> sPace;   ///< spaces on element
@@ -1173,15 +1226,13 @@ struct DataForcesAndSurcesCore {
 
 };
 
-/**
- * specialization for dim=3
- */
+/** \name Specializations for H1/L2 */
+
+/**@{*/
+
 template<>
 FTensor::Tensor1<double*,3> DataForcesAndSurcesCore::EntData::getFTensor1FieldData<3>();
 
-/**
- * specialization for dim=2
- */
 template<>
 FTensor::Tensor1<double*,2> DataForcesAndSurcesCore::EntData::getFTensor1FieldData<2>();
 
@@ -1215,7 +1266,11 @@ FTensor::Tensor1<double*,2> DataForcesAndSurcesCore::EntData::getFTensor1DiffN<2
   const int bb
 );
 
-// Specifications for HDiv/HCrul
+/**@}*/
+
+/** \name Specializations for HDiv/HCrul */
+
+/**@{*/
 
 template<>
 FTensor::Tensor1<double*,3> DataForcesAndSurcesCore::EntData::getFTensor1HdivN<3>(
@@ -1234,7 +1289,11 @@ FTensor::Tensor2<double*,3,3> DataForcesAndSurcesCore::EntData::getFTensor2DiffH
   FieldApproximationBase base,const int gg,const int bb
 );
 
-// Specifications 2d
+/**@}*/
+
+/** \name Specializations for HDiv/HCrul in 2d */
+
+/**@{*/
 
 template<>
 FTensor::Tensor2<double*,3,2> DataForcesAndSurcesCore::EntData::getFTensor2DiffHdivN<3,2>(
@@ -1245,6 +1304,7 @@ FTensor::Tensor2<double*,3,2> DataForcesAndSurcesCore::EntData::getFTensor2DiffH
   FieldApproximationBase base,const int gg,const int bb
 );
 
+/**@}*/
 
 /** \brief this class derive data form other data structure
   * \ingroup mofem_forces_and_sources

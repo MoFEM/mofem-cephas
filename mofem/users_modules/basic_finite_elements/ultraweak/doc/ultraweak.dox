@@ -321,8 +321,8 @@ PetscErrorCode UltraWeakTransportElement::addFields(const std::string &values,co
   //meshset consisting all entities in mesh
   EntityHandle root_set = mField.get_moab().get_root_set();
   //add entities to field
-  ierr = mField.add_ents_to_field_by_TETs(root_set,fluxes); CHKERRQ(ierr);
-  ierr = mField.add_ents_to_field_by_TETs(root_set,values); CHKERRQ(ierr);
+  ierr = mField.add_ents_to_field_by_type(root_set,MBTET,fluxes); CHKERRQ(ierr);
+  ierr = mField.add_ents_to_field_by_type(root_set,MBTET,values); CHKERRQ(ierr);
   ierr = mField.set_field_order(root_set,MBTET,fluxes,order+1); CHKERRQ(ierr);
   ierr = mField.set_field_order(root_set,MBTRI,fluxes,order+1); CHKERRQ(ierr);
   ierr = mField.set_field_order(root_set,MBTET,values,order); CHKERRQ(ierr);
@@ -438,8 +438,8 @@ PetscErrorCode UltraWeakTransportElement::addFiniteElements(
     rval = mField.get_moab().get_adjacencies(
       setOfBlocks[it->getMeshsetId()].tEts,2,false,skeleton,moab::Interface::UNION
     );
-    ierr = mField.add_ents_to_finite_element_by_TRIs(
-      skeleton,"ULTRAWEAK_SKELETON"
+    ierr = mField.add_ents_to_finite_element_by_type(
+      skeleton,MBTRI,"ULTRAWEAK_SKELETON"
     ); CHKERRQ(ierr);
 
   }
@@ -485,8 +485,7 @@ which needs to be evaluated at integration points to assemble matrix. In that
 case you add that information using
 MoFEM::Interface::modify_finite_element_add_field_data.
 
-Functions MoFEM::Interface::add_ents_to_finite_element_by_TETs and
-MoFEM::Interface::add_ents_to_finite_element_by_TRIs add tetrahedral and
+Functiond MoFEM::Interface::add_ents_to_finite_element_by_type add tetrahedral and
 triangles to given element respectively. You can think about tetrahedral and
 triangles as domains on which you perform the integration. Note that field can
 be spanned on tetrahedral (3d entities) but you can integrate on triangles, then
@@ -549,9 +548,9 @@ PetscErrorCode ExampleUltraWeak::addBoundaryElements(BitRefLevel &ref_level) {
   ierr = mField.get_entities_by_type_and_ref_level(ref_level,BitRefLevel().set(),MBTRI,bit_tris);
   essential_bc = intersect(bit_tris,essential_bc);
   natural_bc = intersect(bit_tris,natural_bc);
-  ierr = mField.add_ents_to_finite_element_by_TRIs(essential_bc,"ULTRAWEAK_BCFLUX"); CHKERRQ(ierr);
-  ierr = mField.add_ents_to_finite_element_by_TRIs(natural_bc,"ULTRAWEAK_BCVALUE"); CHKERRQ(ierr);
-  // ierr = mField.add_ents_to_finite_element_by_TRIs(skin_faces,"ULTRAWEAK_BCVALUE"); CHKERRQ(ierr);
+  ierr = mField.add_ents_to_finite_element_by_type(essential_bc,MBTRI,"ULTRAWEAK_BCFLUX"); CHKERRQ(ierr);
+  ierr = mField.add_ents_to_finite_element_by_type(natural_bc,MBTRI,"ULTRAWEAK_BCVALUE"); CHKERRQ(ierr);
+  // ierr = mField.add_ents_to_finite_element_by_type(skin_faces,MBTRI,"ULTRAWEAK_BCVALUE"); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 \endcode
@@ -1059,7 +1058,7 @@ struct UltraWeakTransportElement::OpVDotDivSigma_L2Hdiv: public MoFEM::VolumeEle
     //assumption that off-diagonal matrices are symmetric.
     sYmm = false;
   }
-  ublas::matrix<FieldData> C;
+  MatrixDouble C;
   VectorDouble divVec,Nf;
   PetscErrorCode doWork(
     int row_side,int col_side,

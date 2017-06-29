@@ -37,8 +37,8 @@ namespace MoFEM {
       int p,
       double *diff_s,
       int dim,
-      boost::shared_ptr<ublas::matrix<double> > base_fun_ptr,
-      boost::shared_ptr<ublas::matrix<double> > base_diff_fun_ptr
+      boost::shared_ptr<MatrixDouble > base_fun_ptr,
+      boost::shared_ptr<MatrixDouble > base_diff_fun_ptr
     ):
     LegendrePolynomialCtx(p,diff_s,dim,base_fun_ptr,base_diff_fun_ptr) {
       basePolynomialsType0 = Lobatto_polynomials;
@@ -59,7 +59,7 @@ namespace MoFEM {
     ~LobattoPolynomial() {}
 
     PetscErrorCode getValue(
-      ublas::matrix<double> &pts,
+      MatrixDouble &pts,
       boost::shared_ptr<BaseFunctionCtx> ctx_ptr
     );
 
@@ -77,8 +77,8 @@ namespace MoFEM {
       int p,
       double *diff_s,
       int dim,
-      boost::shared_ptr<ublas::matrix<double> > base_fun_ptr,
-      boost::shared_ptr<ublas::matrix<double> > base_diff_fun_ptr
+      boost::shared_ptr<MatrixDouble > base_fun_ptr,
+      boost::shared_ptr<MatrixDouble > base_diff_fun_ptr
     ):
     LegendrePolynomialCtx(p,diff_s,dim,base_fun_ptr,base_diff_fun_ptr) {
       basePolynomialsType0 = LobattoKernel_polynomials;
@@ -99,7 +99,7 @@ namespace MoFEM {
     ~KernelLobattoPolynomial() {}
 
     PetscErrorCode getValue(
-      ublas::matrix<double> &pts,
+      MatrixDouble &pts,
       boost::shared_ptr<BaseFunctionCtx> ctx_ptr
     );
 

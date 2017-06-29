@@ -88,8 +88,8 @@ struct FieldSeries {
 
 };
 
-/// \deprecated use fieldseries
-DEPRECATED typedef FieldSeries MoFEMSeries;
+// /// \deprecated use fieldseries
+// DEPRECATED typedef FieldSeries MoFEMSeries;
 
 template<typename T>
 struct interface_FieldSeries {
@@ -134,7 +134,7 @@ struct FieldSeriesStep: public interface_FieldSeries<FieldSeries> {
 };
 
 /// \deprecated use fieldseries
-DEPRECATED typedef FieldSeriesStep MoFEMSeriesStep;
+// DEPRECATED typedef FieldSeriesStep MoFEMSeriesStep;
 
 /**
  * \brief Series multi index

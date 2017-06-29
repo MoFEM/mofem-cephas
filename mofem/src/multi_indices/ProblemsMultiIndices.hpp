@@ -34,7 +34,7 @@ struct ComposedProblemsData {
   std::vector<IS> rowIs;
   std::vector<IS> colIs;
 
-  inline PetscErrorCode getRowIs(IS *is,int pp) {
+  inline PetscErrorCode getRowIs(IS *is,const unsigned int pp) const {
     PetscFunctionBegin;
     PetscObjectReference((PetscObject)rowIs[pp]);
     if(pp<=rowIs.size()) {
@@ -47,7 +47,7 @@ struct ComposedProblemsData {
     PetscFunctionReturn(0);
   }
 
-  inline PetscErrorCode getColIs(IS *is,int pp) {
+  inline PetscErrorCode getColIs(IS *is,const unsigned int pp) const {
     PetscFunctionBegin;
     PetscObjectReference((PetscObject)colIs[pp]);
     if(pp<=colIs.size()) {
@@ -61,10 +61,10 @@ struct ComposedProblemsData {
   }
 
   virtual ~ComposedProblemsData() {
-    for(int ii = 0;ii!=rowIs.size();ii++) {
+    for(unsigned int ii = 0;ii!=rowIs.size();ii++) {
       ISDestroy(&rowIs[ii]);
     }
-    for(int jj = 0;jj!=colIs.size();jj++) {
+    for(unsigned int jj = 0;jj!=colIs.size();jj++) {
       ISDestroy(&colIs[jj]);
     }
   }
@@ -378,12 +378,12 @@ struct Problem {
   _IT_NUMEREDDOF_COL_BY_UID_(PROBLEMPTR,UID,IT)
 
   /// get iterator of dof in row by uid (instead you can use #_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_UID_FOR_LOOP_)
-  NumeredDofEntityByUId::iterator get_row_dof_by_uid(GlobalUId uid) const {
+  NumeredDofEntityByUId::iterator get_row_dof_by_uid(UId uid) const {
     return numeredDofsRows->get<Unique_mi_tag>().find(uid);
   };
 
   /// get iterator of dof in column by uid (instead you can use #_IT_NUMEREDDOFMOFEMENTITY_COL_BY_UID_FOR_LOOP_)
-  NumeredDofEntityByUId::iterator get_col_dof_by_uid(GlobalUId uid) const {
+  NumeredDofEntityByUId::iterator get_col_dof_by_uid(UId uid) const {
     return numeredDofsCols->get<Unique_mi_tag>().find(uid);
   };
 

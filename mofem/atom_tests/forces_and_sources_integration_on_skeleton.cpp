@@ -70,7 +70,7 @@ int main(int argc, char *argv[]) {
   //meshset consisting all entities in mesh
   EntityHandle root_set = moab.get_root_set();
   //add entities to field
-  ierr = m_field.add_ents_to_field_by_TETs(root_set,"F2"); CHKERRQ(ierr);
+  ierr = m_field.add_ents_to_field_by_type(root_set,MBTET,"F2"); CHKERRQ(ierr);
 
   //set app. order
   //see Hierarchic Finite Element Bases on Unstructured Tetrahedral Meshes (Mark Ainsworth & Joe Coyle)
@@ -90,12 +90,12 @@ int main(int argc, char *argv[]) {
   ierr = m_field.modify_finite_element_add_field_col("S2","F2"); CHKERRQ(ierr);
   ierr = m_field.modify_finite_element_add_field_data("S2","F2"); CHKERRQ(ierr);
 
-  ierr = m_field.add_ents_to_finite_element_by_TETs(root_set,"V1"); CHKERRQ(ierr);
+  ierr = m_field.add_ents_to_finite_element_by_type(root_set,MBTET,"V1"); CHKERRQ(ierr);
   Range faces;
   ierr = m_field.get_entities_by_type_and_ref_level(
     bit_level0,BitRefLevel().set(),MBTRI,faces
   ); CHKERRQ(ierr);
-  ierr = m_field.add_ents_to_finite_element_by_TRIs(faces,"S2"); CHKERRQ(ierr);
+  ierr = m_field.add_ents_to_finite_element_by_type(faces,MBTRI,"S2"); CHKERRQ(ierr);
 
   ierr = m_field.build_finite_elements(); CHKERRQ(ierr);
   ierr = m_field.build_adjacencies(bit_level0); CHKERRQ(ierr);

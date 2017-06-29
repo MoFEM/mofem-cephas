@@ -27,6 +27,7 @@
 #include <FTensor.hpp>
 #include <Common.hpp>
 #include <UnknownInterface.hpp>
+#include <DeprecatedPetsc.hpp>
 
 //SRC/APPROXIMATION
 #include <base_functions.h>
@@ -57,6 +58,7 @@
 #include <Core.hpp>
 
 #include <ProblemsManager.hpp>
+#include <Simple.hpp>
 #include <MeshRefinement.hpp>
 #include <SeriesRecorder.hpp>
 #include <PrismInterface.hpp>

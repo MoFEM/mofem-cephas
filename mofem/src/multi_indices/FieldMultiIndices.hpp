@@ -388,7 +388,7 @@ struct interface_Field {
   /// @return get field Id
   inline const BitFieldId& getId() const { return this->sFieldPtr->getId(); }
 
-  /// @return get firld name
+  /// @return get field name
   inline boost::string_ref getNameRef() const { return this->sFieldPtr->getNameRef(); }
 
   /// @return get field name
@@ -455,7 +455,7 @@ typedef multi_index_container<
   */
 struct FieldChangeCoordinateSystem {
   boost::shared_ptr<CoordSys> csPtr;
-  FieldChangeCoordinateSystem(boost::shared_ptr<CoordSys> cs_ptr):
+  FieldChangeCoordinateSystem(const boost::shared_ptr<CoordSys>& cs_ptr):
   csPtr(cs_ptr) {
   }
   void operator()(boost::shared_ptr<Field> &e) {

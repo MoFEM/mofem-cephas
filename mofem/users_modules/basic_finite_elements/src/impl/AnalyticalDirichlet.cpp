@@ -27,7 +27,7 @@ using namespace MoFEM;
 #include <boost/numeric/ublas/vector_proxy.hpp>
 #include <AnalyticalDirichlet.hpp>
 
-AnalyticalDirichletBC::ApproxField::OpHoCoord::OpHoCoord(const std::string field_name,ublas::matrix<double> &ho_coords):
+AnalyticalDirichletBC::ApproxField::OpHoCoord::OpHoCoord(const std::string field_name,MatrixDouble &ho_coords):
 FaceElementForcesAndSourcesCore::UserDataOperator(field_name,ForcesAndSurcesCore::UserDataOperator::OPROW),
 hoCoords(ho_coords) {}
 
@@ -61,7 +61,7 @@ PetscErrorCode AnalyticalDirichletBC::ApproxField::OpHoCoord::doWork(
   PetscFunctionReturn(0);
 }
 
-AnalyticalDirichletBC::ApproxField::OpLhs::OpLhs(const std::string field_name,ublas::matrix<double> &ho_coords):
+AnalyticalDirichletBC::ApproxField::OpLhs::OpLhs(const std::string field_name,MatrixDouble &ho_coords):
 FaceElementForcesAndSourcesCore::UserDataOperator(field_name,ForcesAndSurcesCore::UserDataOperator::OPROWCOL),
 hoCoords(ho_coords)
 {
@@ -122,7 +122,7 @@ PetscErrorCode AnalyticalDirichletBC::ApproxField::OpLhs::doWork(
 
     double *data = &*NN.data().begin();
     double *trans_data = &*transNN.data().begin();
-    ublas::vector<DofIdx> row_indices,col_indices;
+    VectorInt row_indices,col_indices;
     row_indices.resize(nb_row_dofs);
     col_indices.resize(nb_col_dofs);
 
@@ -144,9 +144,9 @@ PetscErrorCode AnalyticalDirichletBC::ApproxField::OpLhs::doWork(
 
       if(rank > 1) {
 
-        ublas::noalias(row_indices) = ublas::vector_slice<ublas::vector<DofIdx> >
+        ublas::noalias(row_indices) = ublas::vector_slice<VectorInt>
         (row_data.getIndices(), ublas::slice(rr, rank, row_data.getIndices().size()/rank));
-        ublas::noalias(col_indices) = ublas::vector_slice<ublas::vector<DofIdx> >
+        ublas::noalias(col_indices) = ublas::vector_slice<VectorInt>
         (col_data.getIndices(), ublas::slice(rr, rank, col_data.getIndices().size()/rank));
 
         nb_rows = row_indices.size();
@@ -222,7 +222,7 @@ PetscErrorCode AnalyticalDirichletBC::ApproxField::OpLhs::doWork(
     ierr = mField.get_moab().get_adjacencies(tris,1,false,ents,moab::Interface::UNION); CHKERRQ(ierr);
     ents.merge(tris);
     for(Range::iterator eit = ents.begin();eit!=ents.end();eit++) {
-      for(_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_NAME_ENT_PART_FOR_LOOP_(problemPtr,fieldName,*eit,pcomm->rank(),dof)) {
+      for(_IT_NUMEREDDOF_ROW_BY_NAME_ENT_PART_FOR_LOOP_(problemPtr,fieldName,*eit,pcomm->rank(),dof)) {
         mapZeroRows[dof->get()->getPetscGlobalDofIdx()] = dof->get()->getFieldData();
       }
     }
@@ -251,7 +251,7 @@ PetscErrorCode AnalyticalDirichletBC::ApproxField::OpLhs::doWork(
     if(m_field.check_field(nodals_positions)) {
       ierr = m_field.modify_finite_element_add_field_data(fe,nodals_positions); CHKERRQ(ierr);
     }
-    ierr = m_field.add_ents_to_finite_element_by_TRIs(tris,fe); CHKERRQ(ierr);
+    ierr = m_field.add_ents_to_finite_element_by_type(tris,MBTRI,fe); CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }
 

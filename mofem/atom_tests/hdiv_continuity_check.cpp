@@ -142,29 +142,29 @@ int main(int argc, char *argv[]) {
   //meshset consisting all entities in mesh
   EntityHandle root_set = moab.get_root_set();
   //add entities to field
-  ierr = m_field.add_ents_to_field_by_TETs(root_set,"HDIV"); CHKERRQ(ierr);
+  ierr = m_field.add_ents_to_field_by_type(root_set,MBTET,"HDIV"); CHKERRQ(ierr);
 
   //add entities to finite element
-  ierr = m_field.add_ents_to_finite_element_by_TETs(root_set,"TET_FE"); CHKERRQ(ierr);
+  ierr = m_field.add_ents_to_finite_element_by_type(root_set,MBTET,"TET_FE"); CHKERRQ(ierr);
 
   Range tets;
   ierr = m_field.get_entities_by_type_and_ref_level(BitRefLevel().set(0),BitRefLevel().set(),MBTET,tets); CHKERRQ(ierr);
   Skinner skin(&moab);
   Range skin_faces; // skin faces from 3d ents
   rval = skin.find_skin(0,tets,false,skin_faces); CHKERRQ_MOAB(rval);
-  ierr = m_field.add_ents_to_finite_element_by_TRIs(skin_faces,"SKIN_FE"); CHKERRQ(ierr);
+  ierr = m_field.add_ents_to_finite_element_by_type(skin_faces,MBTRI,"SKIN_FE"); CHKERRQ(ierr);
 
   Range faces;
   ierr = m_field.get_entities_by_type_and_ref_level(BitRefLevel().set(0),BitRefLevel().set(),MBTRI,faces); CHKERRQ(ierr);
   faces = subtract(faces,skin_faces);
-  ierr = m_field.add_ents_to_finite_element_by_TRIs(faces,"TRI_FE"); CHKERRQ(ierr);
+  ierr = m_field.add_ents_to_finite_element_by_type(faces,MBTRI,"TRI_FE"); CHKERRQ(ierr);
 
   //set app. order
   int order = 4;
   ierr = m_field.set_field_order(root_set,MBTET,"HDIV",order); CHKERRQ(ierr);
   ierr = m_field.set_field_order(root_set,MBTRI,"HDIV",order); CHKERRQ(ierr);
 
-  ierr = m_field.add_ents_to_field_by_TETs(0,"MESH_NODE_POSITIONS"); CHKERRQ(ierr);
+  ierr = m_field.add_ents_to_field_by_type(0,MBTET,"MESH_NODE_POSITIONS"); CHKERRQ(ierr);
   ierr = m_field.set_field_order(0,MBVERTEX,"MESH_NODE_POSITIONS",1); CHKERRQ(ierr);
   ierr = m_field.set_field_order(0,MBEDGE,"MESH_NODE_POSITIONS",2); CHKERRQ(ierr);
   ierr = m_field.set_field_order(0,MBTRI,"MESH_NODE_POSITIONS",2); CHKERRQ(ierr);
@@ -237,7 +237,7 @@ int main(int argc, char *argv[]) {
         // cerr << data.getHcurlN() << endl;
 
 
-        ublas::vector<FieldData> t(3,0);
+        VectorDouble t(3,0);
         int dd = 0;
         int nb_dofs = data.getHdivN().size2()/3;
         for(;dd<nb_dofs;dd++) {
@@ -267,7 +267,7 @@ int main(int argc, char *argv[]) {
     VolumeElementForcesAndSourcesCore(m_field) {}
     int getRule(int order) { return -1; };
 
-    ublas::matrix<double> N_tri;
+    MatrixDouble N_tri;
     PetscErrorCode setGaussPts(int order) {
       PetscFunctionBegin;
 

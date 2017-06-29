@@ -37,3 +37,15 @@ target_link_libraries(mofem_part
   mofem_third_party
   ${MoFEM_PROJECT_LIBS}
 )
+
+add_executable(split_sideset ${CMAKE_CURRENT_SOURCE_DIR}/split_sideset.cpp)
+target_link_libraries(split_sideset
+  mofem_finite_elements
+  mofem_interfaces
+  mofem_multi_indices
+  mofem_petsc
+  mofem_approx
+  mofem_cblas
+  mofem_third_party
+  ${MoFEM_PROJECT_LIBS}
+)

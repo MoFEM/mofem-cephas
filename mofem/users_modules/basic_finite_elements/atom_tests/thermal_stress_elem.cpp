@@ -75,8 +75,8 @@ int main(int argc, char *argv[]) {
     //meshset consisting all entities in mesh
     EntityHandle root_set = moab.get_root_set();
     //add entities to field
-    ierr = m_field.add_ents_to_field_by_TETs(root_set,"TEMP"); CHKERRQ(ierr);
-    ierr = m_field.add_ents_to_field_by_TETs(root_set,"DISP"); CHKERRQ(ierr);
+    ierr = m_field.add_ents_to_field_by_type(root_set,MBTET,"TEMP"); CHKERRQ(ierr);
+    ierr = m_field.add_ents_to_field_by_type(root_set,MBTET,"DISP"); CHKERRQ(ierr);
 
     //set app. order
     //see Hierarchic Finite Element Bases on Unstructured Tetrahedral Meshes (Mark Ainsworth & Joe Coyle)
@@ -119,7 +119,7 @@ int main(int argc, char *argv[]) {
     //set temerature at nodes
     for(_IT_GET_DOFS_FIELD_BY_NAME_AND_TYPE_FOR_LOOP_(m_field,"TEMP",MBVERTEX,dof)) {
       EntityHandle ent = dof->get()->getEnt();
-      ublas::vector<double> coords(3);
+      VectorDouble coords(3);
       rval = moab.get_coords(&ent,1,&coords[0]); CHKERRQ_MOAB(rval);
       dof->get()->getFieldData() = 1;
     }

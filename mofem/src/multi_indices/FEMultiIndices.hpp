@@ -32,7 +32,7 @@ struct RefElement: public interface_RefEntity<RefEntity> {
   static BitRefEdges DummyBitRefEdges;
 
   SideNumber_multiIndex side_number_table;
-  RefElement(const boost::shared_ptr<RefEntity> ref_ent_ptr);
+  RefElement(const boost::shared_ptr<RefEntity>& ref_ent_ptr);
   virtual const BitRefEdges& getBitRefEdges() const {
     return DummyBitRefEdges;
   }
@@ -43,26 +43,28 @@ struct RefElement: public interface_RefEntity<RefEntity> {
     return const_cast<SideNumber_multiIndex&>(side_number_table);
   }
 
-  /** \deprecated Use getSideNumberTable() instead
-  */
-  DEPRECATED SideNumber_multiIndex &get_side_number_table() const {
-    return getSideNumberTable();
-  }
+  // /** \deprecated Use getSideNumberTable() instead
+  // */
+  // DEPRECATED SideNumber_multiIndex &get_side_number_table() const {
+  //   return getSideNumberTable();
+  // }
 
-  virtual boost::shared_ptr<SideNumber> getSideNumberPtr(const EntityHandle ent) const {
+  static const boost::shared_ptr<SideNumber> nullSideNumber;
+
+  virtual const boost::shared_ptr<SideNumber>& getSideNumberPtr(const EntityHandle ent) const {
     NOT_USED(ent);
-    return boost::shared_ptr<SideNumber>();
+    return nullSideNumber;
   };
 
-  /**
-   * \deprecated First argument is no longer needed
-   */
-  virtual DEPRECATED boost::shared_ptr<SideNumber> getSideNumberPtr(
-    const moab::Interface &moab,const EntityHandle ent
-  ) const {
-    NOT_USED(moab);
-    return getSideNumberPtr(ent);
-  }
+  // /**
+  //  * \deprecated First argument is no longer needed
+  //  */
+  // virtual DEPRECATED boost::shared_ptr<SideNumber> getSideNumberPtr(
+  //   const moab::Interface &moab,const EntityHandle ent
+  // ) const {
+  //   NOT_USED(moab);
+  //   return getSideNumberPtr(ent);
+  // }
 
   /**
    * \brief Get pointer to RefEntity
@@ -78,8 +80,8 @@ struct RefElement: public interface_RefEntity<RefEntity> {
  * \ingroup fe_multi_indices
  */
 struct RefElement_MESHSET: public RefElement {
-  RefElement_MESHSET(const boost::shared_ptr<RefEntity> ref_ent_ptr);
-  boost::shared_ptr<SideNumber> getSideNumberPtr(const EntityHandle ent) const;
+  RefElement_MESHSET(const boost::shared_ptr<RefEntity>& ref_ent_ptr);
+  const boost::shared_ptr<SideNumber>& getSideNumberPtr(const EntityHandle ent) const;
 };
 /**
  * \brief keeps data about abstract PRISM finite element
@@ -87,8 +89,8 @@ struct RefElement_MESHSET: public RefElement {
  */
 struct RefElement_PRISM: public RefElement {
   BitRefEdges *tag_BitRefEdges;
-  RefElement_PRISM(const boost::shared_ptr<RefEntity> ref_ent_ptr);
-  boost::shared_ptr<SideNumber> getSideNumberPtr(const EntityHandle ent) const;
+  RefElement_PRISM(const boost::shared_ptr<RefEntity>& ref_ent_ptr);
+  const boost::shared_ptr<SideNumber>& getSideNumberPtr(const EntityHandle ent) const;
   const BitRefEdges& getBitRefEdges() const { return *tag_BitRefEdges; }
   int getBitRefEdgesUlong() const { return getBitRefEdges().to_ulong(); }
 };
@@ -100,8 +102,8 @@ struct RefElement_PRISM: public RefElement {
 struct RefElement_TET: public RefElement {
   BitRefEdges *tag_BitRefEdges;
   const int* tag_type_data;
-  RefElement_TET(const boost::shared_ptr<RefEntity> ref_ent_ptr);
-  boost::shared_ptr<SideNumber> getSideNumberPtr(const EntityHandle ent) const;
+  RefElement_TET(const boost::shared_ptr<RefEntity>& ref_ent_ptr);
+  const boost::shared_ptr<SideNumber>& getSideNumberPtr(const EntityHandle ent) const;
   SideNumber_multiIndex &getSideNumberTable() const { return const_cast<SideNumber_multiIndex&>(side_number_table); };
   const BitRefEdges& getBitRefEdges() const { return *tag_BitRefEdges; }
   int getBitRefEdgesUlong() const { return getBitRefEdges().to_ulong(); }
@@ -113,8 +115,8 @@ struct RefElement_TET: public RefElement {
  * \ingroup fe_multi_indices
  */
 struct RefElement_TRI: public RefElement {
-  RefElement_TRI(const boost::shared_ptr<RefEntity> ref_ent_ptr);
-  boost::shared_ptr<SideNumber> getSideNumberPtr(const EntityHandle ent) const;
+  RefElement_TRI(const boost::shared_ptr<RefEntity>& ref_ent_ptr);
+  const boost::shared_ptr<SideNumber>& getSideNumberPtr(const EntityHandle ent) const;
   friend std::ostream& operator<<(std::ostream& os,const RefElement_TRI& e);
 };
 
@@ -123,8 +125,8 @@ struct RefElement_TRI: public RefElement {
  * \ingroup fe_multi_indices
  */
 struct RefElement_EDGE: public RefElement {
-  RefElement_EDGE(const boost::shared_ptr<RefEntity> ref_ent_ptr);
-  boost::shared_ptr<SideNumber> getSideNumberPtr(const EntityHandle ent) const;
+  RefElement_EDGE(const boost::shared_ptr<RefEntity>& ref_ent_ptr);
+  const boost::shared_ptr<SideNumber>& getSideNumberPtr(const EntityHandle ent) const;
   friend std::ostream& operator<<(std::ostream& os,const RefElement_EDGE& e);
 };
 
@@ -133,8 +135,8 @@ struct RefElement_EDGE: public RefElement {
  * \ingroup fe_multi_indices
  */
 struct RefElement_VERTEX: public RefElement {
-  RefElement_VERTEX(const boost::shared_ptr<RefEntity> ref_ent_ptr);
-  boost::shared_ptr<SideNumber> getSideNumberPtr(const EntityHandle ent) const;
+  RefElement_VERTEX(const boost::shared_ptr<RefEntity>& ref_ent_ptr);
+  const boost::shared_ptr<SideNumber>& getSideNumberPtr(const EntityHandle ent) const;
   friend std::ostream& operator<<(std::ostream& os,const RefElement_VERTEX& e);
 };
 
@@ -148,7 +150,7 @@ struct interface_RefElement: interface_RefEntity<T> {
   typedef interface_RefEntity<T> interface_type_RefEntity;
   typedef interface_RefElement<T> interface_type_RefElement;
 
-  interface_RefElement(const boost::shared_ptr<T> sptr):
+  interface_RefElement(const boost::shared_ptr<T>& sptr):
   interface_RefEntity<T>(sptr) {}
 
   inline int getBitRefEdgesUlong() const
@@ -157,21 +159,21 @@ struct interface_RefElement: interface_RefEntity<T> {
   inline SideNumber_multiIndex &getSideNumberTable() const
   { return this->sPtr->getSideNumberTable(); }
 
-  DEPRECATED inline SideNumber_multiIndex &get_side_number_table() const
-  { return this->sPtr->getSideNumberTable(); }
+  // DEPRECATED inline SideNumber_multiIndex &get_side_number_table() const
+  // { return this->sPtr->getSideNumberTable(); }
 
-  inline boost::shared_ptr<SideNumber> getSideNumberPtr(const EntityHandle ent) const
+  inline const boost::shared_ptr<SideNumber>& getSideNumberPtr(const EntityHandle ent) const
   { return this->sPtr->getSideNumberPtr(ent); }
 
-  /**
-   * \deprecated First argument is no longer needed
-   */
-  virtual DEPRECATED boost::shared_ptr<SideNumber> getSideNumberPtr(
-    const moab::Interface &moab,const EntityHandle ent
-  ) const {
-    NOT_USED(moab);
-    return getSideNumberPtr(ent);
-  }
+  // /**
+  //  * \deprecated First argument is no longer needed
+  //  */
+  // virtual DEPRECATED boost::shared_ptr<SideNumber> getSideNumberPtr(
+  //   const moab::Interface &moab,const EntityHandle ent
+  // ) const {
+  //   NOT_USED(moab);
+  //   return getSideNumberPtr(ent);
+  // }
 
   inline boost::shared_ptr<RefEntity>& getRefEntityPtr() const
   { return this->sPtr->getRefEntityPtr(); }
@@ -285,17 +287,31 @@ struct RefElement_change_parent {
 
 struct EntFiniteElement;
 
-/** \brief user adjacency function table
-  * \ingroup fe_multi_indices
-  */
-typedef PetscErrorCode (*ElementAdjacencyTable[MBMAXTYPE])(
-  Interface &moab,const Field &field_ptr,const EntFiniteElement &fe_ptr,Range &adjacency);
-
 /** \brief user adjacency function
   * \ingroup fe_multi_indices
   */
-typedef PetscErrorCode (*ElementAdjacencyFunct)(
-  Interface &moab,const Field &field_ptr,const EntFiniteElement &fe_ptr,Range &adjacency);
+typedef boost::function<
+  PetscErrorCode (Interface &moab,const Field &field_ptr,const EntFiniteElement &fe_ptr,Range &adjacency)
+> ElementAdjacencyFunct;
+
+// /** \brief user adjacency function table
+//   * \ingroup fe_multi_indices
+//   */
+// typedef ElementAdjacencyFunct[MBMAXTYPE] ElementAdjacencyTable;
+
+// /** \brief user adjacency function table
+//   * \ingroup fe_multi_indices
+//   */
+// typedef PetscErrorCode (*ElementAdjacencyTable[MBMAXTYPE])(
+//   Interface &moab,const Field &field_ptr,const EntFiniteElement &fe_ptr,Range &adjacency
+// );
+//
+// /** \brief user adjacency function
+//   * \ingroup fe_multi_indices
+//   */
+// typedef PetscErrorCode (*ElementAdjacencyFunct)(
+//   Interface &moab,const Field &field_ptr,const EntFiniteElement &fe_ptr,Range &adjacency
+// );
 
 /**
  * \brief Finite element definition
@@ -371,8 +387,15 @@ struct FiniteElement {
    */
   inline unsigned int getBitNumber() const { return ffsl(((BitFieldId*)tag_id_data)->to_ulong()); }
 
-  ElementAdjacencyTable element_adjacency_table;  //<- allow to add user specific adjacency map
+  /**
+   * \brief Table of functions retrieving adjacencies for finite element
+   * User can alter and change default behavior
+   */
+  ElementAdjacencyFunct elementAdjacencyTable[MBMAXTYPE];
 
+  /**
+   * \brief print finite element 
+   */
   friend std::ostream& operator<<(std::ostream& os, const FiniteElement& e);
 
 //   /**
@@ -432,9 +455,9 @@ struct interface_FiniteElement {
 
   mutable boost::shared_ptr<T> sFePtr;
 
-  interface_FiniteElement(const boost::shared_ptr<T> ptr): sFePtr(ptr) {};
+  interface_FiniteElement(const boost::shared_ptr<T>& ptr): sFePtr(ptr) {};
 
-  inline const boost::shared_ptr<FiniteElement> get_MoFEMFiniteElementPtr() { return this->sFePtr; };
+  inline const boost::shared_ptr<FiniteElement>& get_MoFEMFiniteElementPtr() { return this->sFePtr; };
 
   /**
    * \brief Get finite element id
@@ -505,7 +528,7 @@ interface_RefElement<RefElement> {
   boost::shared_ptr<DofEntity_multiIndex_uid_view> row_dof_view;
   boost::shared_ptr<DofEntity_multiIndex_uid_view> col_dof_view;
   boost::shared_ptr<FEDofEntity_multiIndex> data_dofs;
-  GlobalUId global_uid;
+  UId globalUid;
 
   EntFiniteElement(
     const boost::shared_ptr<RefElement> ref_finite_element,
@@ -516,17 +539,17 @@ interface_RefElement<RefElement> {
    * \brief Get unique UId for finite element entity
    * @return UId
    */
-  const GlobalUId& getGlobalUniqueId() const { return global_uid; }
+  const UId& getGlobalUniqueId() const { return globalUid; }
 
   /**
    * \brief Generate UId for finite element entity
    * @return finite element entity unique Id
    */
-  GlobalUId getGlobalUniqueIdCalculate() const {
+  UId getGlobalUniqueIdCalculate() const {
     assert(getBitNumber()<=32);
     return
-    static_cast<GlobalUId>(sPtr->getRefEnt())|
-    static_cast<GlobalUId>(getBitNumber())<<8*sizeof(EntityHandle);
+    static_cast<UId>(sPtr->getRefEnt())|
+    static_cast<UId>(getBitNumber())<<8*sizeof(EntityHandle);
   }
 
   /**
@@ -535,9 +558,9 @@ interface_RefElement<RefElement> {
    */
   inline EntityHandle getEnt() const { return getRefEnt(); }
 
-  /** \deprecated Use getEnt() instead
-  */
-  DEPRECATED inline EntityHandle get_ent() const { return getEnt(); }
+  // /** \deprecated Use getEnt() instead
+  // */
+  // DEPRECATED inline EntityHandle get_ent() const { return getEnt(); }
 
   /**
    * \brief Get number of DOFs on row
@@ -644,7 +667,7 @@ public
 interface_FiniteElement<T>,
 interface_RefElement<T> {
 
-  interface_EntFiniteElement(const boost::shared_ptr<T> sptr):
+  interface_EntFiniteElement(const boost::shared_ptr<T>& sptr):
   interface_FiniteElement<T>(sptr),
   interface_RefElement<T>(sptr) {}
 
@@ -676,36 +699,36 @@ interface_RefElement<T> {
    */
   inline EntityHandle getEnt() const { return this->sPtr->getRefEnt(); }
 
-  /** \deprecated Use getEnt() instead
-  */
-  DEPRECATED inline EntityHandle get_ent() const { return getEnt(); }
+  // /** \deprecated Use getEnt() instead
+  // */
+  // DEPRECATED inline EntityHandle get_ent() const { return getEnt(); }
 
   /**
    * \brief Get unique UId for finite element entity
    * @return UId
    */
-  inline GlobalUId getGlobalUniqueId() const { return this->sPtr->getGlobalUniqueId(); }
+  inline UId getGlobalUniqueId() const { return this->sPtr->getGlobalUniqueId(); }
 
 
   SideNumber_multiIndex &getSideNumberTable() const { return this->sPtr->getSideNumberTable(); }
 
-  /** \deprecated Use getSideNumberTable() instead
-  */
-  DEPRECATED SideNumber_multiIndex &get_side_number_table() const {
-    return this->sPtr->getSideNumberTable();
-  }
+  // /** \deprecated Use getSideNumberTable() instead
+  // */
+  // DEPRECATED SideNumber_multiIndex &get_side_number_table() const {
+  //   return this->sPtr->getSideNumberTable();
+  // }
 
   inline PetscErrorCode getElementAdjacency(const Field *field_ptr,Range &adjacency) {
     return this->getElementAdjacency(field_ptr,adjacency);
   }
 
-  /** \deprecated Use getElementAdjacency() instead
-  */
-  DEPRECATED inline PetscErrorCode get_element_adjacency(
-    const Field *field_ptr,Range &adjacency
-  ) {
-    return this->getElementAdjacency(field_ptr,adjacency);
-  }
+  // /** \deprecated Use getElementAdjacency() instead
+  // */
+  // DEPRECATED inline PetscErrorCode get_element_adjacency(
+  //   const Field *field_ptr,Range &adjacency
+  // ) {
+  //   return this->getElementAdjacency(field_ptr,adjacency);
+  // }
 
   inline boost::shared_ptr<RefElement>& getRefElement() const {
     return this->sPtr->getRefElement();
@@ -739,7 +762,7 @@ struct NumeredEntFiniteElement: public interface_EntFiniteElement<EntFiniteEleme
   /**
    * \Construct indexed finite element
    */
-  NumeredEntFiniteElement(const boost::shared_ptr<EntFiniteElement> sptr):
+  NumeredEntFiniteElement(const boost::shared_ptr<EntFiniteElement>& sptr):
   interface_EntFiniteElement<EntFiniteElement>(sptr),
   part(-1),
   rows_dofs(boost::shared_ptr<FENumeredDofEntity_multiIndex>(new FENumeredDofEntity_multiIndex())),
@@ -767,26 +790,26 @@ struct NumeredEntFiniteElement: public interface_EntFiniteElement<EntFiniteEleme
     */
   PetscErrorCode getRowDofsByPetscGlobalDofIdx(DofIdx idx,const FENumeredDofEntity **dof_ptr) const;
 
-  /** \deprecated Use getRowDofsByPetscGlobalDofIdx() instead
-  */
-  inline DEPRECATED PetscErrorCode get_row_dofs_by_petsc_gloabl_dof_idx(
-    DofIdx idx,const FENumeredDofEntity **dof_ptr
-  ) const {
-    return getRowDofsByPetscGlobalDofIdx(idx,dof_ptr);
-  }
+  // /** \deprecated Use getRowDofsByPetscGlobalDofIdx() instead
+  // */
+  // inline DEPRECATED PetscErrorCode get_row_dofs_by_petsc_gloabl_dof_idx(
+  //   DofIdx idx,const FENumeredDofEntity **dof_ptr
+  // ) const {
+  //   return getRowDofsByPetscGlobalDofIdx(idx,dof_ptr);
+  // }
 
   /** \brief get FE dof by petsc index
     * \ingroup mofem_dofs
     */
   PetscErrorCode getColDofsByPetscGlobalDofIdx(DofIdx idx,const FENumeredDofEntity **dof_ptr) const;
 
-  /** \deprecated Use getColDofsByPetscGlobalDofIdx() instead
-  */
-  inline DEPRECATED PetscErrorCode get_col_dofs_by_petsc_gloabl_dof_idx(
-    DofIdx idx,const FENumeredDofEntity **dof_ptr
-  ) const {
-    return getColDofsByPetscGlobalDofIdx(idx,dof_ptr);
-  }
+  // /** \deprecated Use getColDofsByPetscGlobalDofIdx() instead
+  // */
+  // inline DEPRECATED PetscErrorCode get_col_dofs_by_petsc_gloabl_dof_idx(
+  //   DofIdx idx,const FENumeredDofEntity **dof_ptr
+  // ) const {
+  //   return getColDofsByPetscGlobalDofIdx(idx,dof_ptr);
+  // }
 
   friend std::ostream& operator<<(std::ostream& os,const NumeredEntFiniteElement& e) {
     os << "part " << e.part << " " << *(e.sFePtr);
@@ -831,7 +854,7 @@ private:
 template <typename T>
 struct interface_NumeredEntFiniteElement: public interface_EntFiniteElement<T> {
 
-  interface_NumeredEntFiniteElement(const boost::shared_ptr<T> sptr): interface_EntFiniteElement<T>(sptr) {};
+  interface_NumeredEntFiniteElement(const boost::shared_ptr<T>& sptr): interface_EntFiniteElement<T>(sptr) {};
 
   /**
    * \brief Get partition number
@@ -866,7 +889,7 @@ typedef multi_index_container<
   indexed_by<
     ordered_unique<
       tag<Unique_mi_tag>,
-      member<EntFiniteElement,GlobalUId,&EntFiniteElement::global_uid>
+      member<EntFiniteElement,UId,&EntFiniteElement::globalUid>
     >,
     ordered_non_unique<
       tag<Ent_mi_tag>,
@@ -931,7 +954,7 @@ typedef multi_index_container<
       tag<Unique_mi_tag>,
       const_mem_fun<
         NumeredEntFiniteElement::interface_type_EntFiniteElement,
-        GlobalUId,
+        UId,
         &NumeredEntFiniteElement::getGlobalUniqueId
       >
     >,

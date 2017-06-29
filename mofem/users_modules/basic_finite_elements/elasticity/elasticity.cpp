@@ -184,8 +184,8 @@ int main(int argc, char *argv[]) {
   // Declare problem
 
   // Add entities (by tets) to the field ( all entities in the mesh, root_set = 0 )
-  ierr = m_field.add_ents_to_field_by_TETs(0,"DISPLACEMENT",2); CHKERRQ(ierr);
-  ierr = m_field.add_ents_to_field_by_TETs(0,"MESH_NODE_POSITIONS",2); CHKERRQ(ierr);
+  ierr = m_field.add_ents_to_field_by_type(0,MBTET,"DISPLACEMENT"); CHKERRQ(ierr);
+  ierr = m_field.add_ents_to_field_by_type(0,MBTET,"MESH_NODE_POSITIONS"); CHKERRQ(ierr);
 
   // Set apportion order.
   // See Hierarchic Finite Element Bases on Unstructured Tetrahedral Meshes.
@@ -305,7 +305,7 @@ int main(int argc, char *argv[]) {
   for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,BLOCKSET|BODYFORCESSET,it)) {
     Range tets;
     rval = m_field.get_moab().get_entities_by_type(it->meshset,MBTET,tets,true); CHKERRQ_MOAB(rval);
-    ierr = m_field.add_ents_to_finite_element_by_TETs(tets,"BODY_FORCE"); CHKERRQ(ierr);
+    ierr = m_field.add_ents_to_finite_element_by_type(tets,MBTET,"BODY_FORCE"); CHKERRQ(ierr);
   }
 
   // Add Neumann forces, i.e. pressure or traction forces applied on body surface. This
@@ -334,7 +334,7 @@ int main(int argc, char *argv[]) {
     }
     if(add_temp_field) {
       ierr = m_field.add_field("TEMP",H1,AINSWORTH_LEGENDRE_BASE,1,MB_TAG_SPARSE,MF_ZERO); CHKERRQ(ierr);
-      ierr = m_field.add_ents_to_field_by_TETs(0,"TEMP"); CHKERRQ(ierr);
+      ierr = m_field.add_ents_to_field_by_type(0,MBTET,"TEMP"); CHKERRQ(ierr);
       ierr = m_field.set_field_order(0,MBVERTEX,"TEMP",1); CHKERRQ(ierr);
     }
   }
@@ -531,6 +531,7 @@ int main(int argc, char *argv[]) {
     if (same) {
       PCMGSetUpViaApproxOrdersCtx pc_ctx(dm,Aij,true);
       ierr = PCMGSetUpViaApproxOrders(pc,&pc_ctx); CHKERRQ(ierr);
+      ierr = PCSetFromOptions(pc); CHKERRQ(ierr);
     } else {
       // Operators are already set, do not use DM for doing that
       ierr = KSPSetDMActive(solver,PETSC_FALSE); CHKERRQ(ierr);

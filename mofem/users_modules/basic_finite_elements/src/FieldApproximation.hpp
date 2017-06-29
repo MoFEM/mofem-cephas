@@ -214,7 +214,7 @@ struct FieldApproximationH1 {
           z = getCoordsAtGaussPts()(gg,2);
         }
 
-        std::vector<ublas::vector<double> > fun_val;
+        std::vector<VectorDouble > fun_val;
         try {
 
           fun_val = functionEvaluator(x,y,z);
@@ -282,9 +282,9 @@ struct FieldApproximationH1 {
       functionEvaluator(function_evaluator) {}
     virtual ~OpApproxFace() {}
 
-    ublas::matrix<double> NN;
-    ublas::matrix<double> transNN;
-    std::vector<ublas::vector<double> > Nf;
+    MatrixDouble NN;
+    MatrixDouble transNN;
+    std::vector<VectorDouble > Nf;
 
     /** \brief calculate matrix
       */
@@ -440,7 +440,7 @@ struct FieldApproximationH1 {
          noalias(normal) = getNormal();
        }
 
-        std::vector<ublas::vector<double> > fun_val;
+        std::vector<VectorDouble > fun_val;
         try {
           EntityHandle ent = getFEMethod()->numeredEntFiniteElementPtr->getEnt();
           fun_val = functionEvaluator(ent,x,y,z,normal,tangent1,tangent2);
@@ -551,23 +551,23 @@ struct FieldApproximationH1 {
     PetscFunctionReturn(0);
   }
 
-  /** \deprecated Use loopMatrixAndVectorVolume instead
-  */
-  template<typename FUNEVAL>
-  DEPRECATED PetscErrorCode loopMatrixAndVector(
-    const std::string &problem_name,
-    const std::string &fe_name,
-    const std::string &field_name,
-    Mat A,std::vector<Vec> &vec_F,
-    FUNEVAL &function_evaluator
-  ) {
-    PetscFunctionBegin;
-    PetscErrorCode ierr;
-    ierr = loopMatrixAndVectorVolume(
-      problem_name,fe_name,field_name,A,vec_F,function_evaluator
-    ); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
-  }
+  // /** \deprecated Use loopMatrixAndVectorVolume instead
+  // */
+  // template<typename FUNEVAL>
+  // DEPRECATED PetscErrorCode loopMatrixAndVector(
+  //   const std::string &problem_name,
+  //   const std::string &fe_name,
+  //   const std::string &field_name,
+  //   Mat A,std::vector<Vec> &vec_F,
+  //   FUNEVAL &function_evaluator
+  // ) {
+  //   PetscFunctionBegin;
+  //   PetscErrorCode ierr;
+  //   ierr = loopMatrixAndVectorVolume(
+  //     problem_name,fe_name,field_name,A,vec_F,function_evaluator
+  //   ); CHKERRQ(ierr);
+  //   PetscFunctionReturn(0);
+  // }
 
 };
 

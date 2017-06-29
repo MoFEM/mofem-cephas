@@ -101,7 +101,7 @@ struct ThermalElement {
     */
   struct BlockData {
     //double cOnductivity;
-    ublas::matrix<double> cOnductivity_mat;  //This is (3x3) conductivity matrix
+    MatrixDouble cOnductivity_mat;  //This is (3x3) conductivity matrix
     double cApacity;   // rou * c_p == material density multiple heat capacity
     Range tEts; ///< contains elements in block set
   };
@@ -143,11 +143,11 @@ struct ThermalElement {
     * \infroup mofem_thermal_elem
     */
   struct CommonData {
-    ublas::vector<double> temperatureAtGaussPts;
-    ublas::vector<double> temperatureRateAtGaussPts;
-    ublas::matrix<double> gradAtGaussPts;
-    inline ublas::matrix_row<ublas::matrix<double> > getGradAtGaussPts(const int gg) {
-      return ublas::matrix_row<ublas::matrix<double> >(gradAtGaussPts,gg);
+    VectorDouble temperatureAtGaussPts;
+    VectorDouble temperatureRateAtGaussPts;
+    MatrixDouble gradAtGaussPts;
+    inline ublas::matrix_row<MatrixDouble > getGradAtGaussPts(const int gg) {
+      return ublas::matrix_row<MatrixDouble >(gradAtGaussPts,gg);
     }
   };
   CommonData commonData;
@@ -174,8 +174,8 @@ struct ThermalElement {
   template<typename OP>
   struct OpGetFieldAtGaussPts: public OP::UserDataOperator {
 
-    ublas::vector<double> &fieldAtGaussPts;
-    OpGetFieldAtGaussPts(const std::string field_name,ublas::vector<double> &field_at_gauss_pts):
+    VectorDouble &fieldAtGaussPts;
+    OpGetFieldAtGaussPts(const std::string field_name,VectorDouble &field_at_gauss_pts):
       OP::UserDataOperator(field_name,OP::UserDataOperator::OPROW),
       fieldAtGaussPts(field_at_gauss_pts) {}
 
@@ -265,7 +265,7 @@ struct ThermalElement {
     F(_F) {
     }
 
-    ublas::vector<double> Nf;
+    VectorDouble Nf;
 
     /** \brief calculate thermal conductivity matrix
       *
@@ -299,7 +299,7 @@ struct ThermalElement {
     useTsB(false),
     A(_A) {}
 
-    ublas::matrix<double> K,transK;
+    MatrixDouble K,transK;
 
     /** \brief calculate thermal conductivity matrix
       *
@@ -328,7 +328,7 @@ struct ThermalElement {
     commonData(common_data) {
     }
 
-    ublas::vector<double> Nf;
+    VectorDouble Nf;
 
     /** \brief calculate thermal conductivity matrix
       *
@@ -350,7 +350,7 @@ struct ThermalElement {
       MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROWCOL),
       dAta(data),commonData(common_data) {}
 
-    ublas::matrix<double> M,transM;
+    MatrixDouble M,transM;
 
     /** \brief calculate heat capacity matrix
       *
@@ -391,7 +391,7 @@ struct ThermalElement {
     F(_F) {
     }
 
-    ublas::vector<FieldData> Nf;
+    VectorDouble Nf;
 
     /** \brief calculate heat flux
       *
@@ -432,7 +432,7 @@ struct ThermalElement {
     A(_A) {
     }
 
-    ublas::matrix<double> N,transN;
+    MatrixDouble N,transN;
 
     /** \brief calculate thermal radiation term in the lhs of equations(Tangent Matrix) for transient Thermal Problem
       *
@@ -473,7 +473,7 @@ struct ThermalElement {
     useTsF(false)
     ,F(_F) {}
 
-    ublas::vector<FieldData> Nf;
+    VectorDouble Nf;
 
     /** \brief calculate Transient Radiation condition on the right hand side residual
       *
@@ -511,7 +511,7 @@ struct ThermalElement {
 
     }
 
-    ublas::vector<FieldData> Nf;
+    VectorDouble Nf;
 
     /** brief calculate Convection condition on the right hand side
       *  R=int_S N^T*alpha*N_f  dS **/
@@ -549,7 +549,7 @@ struct ThermalElement {
     A(_A) {
     }
 
-    ublas::matrix<double> K,transK;
+    MatrixDouble K,transK;
     /** \brief calculate thermal convection term in the lhs of equations
      *
      * K = intS N^T alpha N dS

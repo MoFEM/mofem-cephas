@@ -205,6 +205,20 @@ PetscErrorCode DMoFEMLoopFiniteElementsUpAndLowRank(
 
 /**
  * \brief Executes FEMethod for finite elements in DM
+ * @param  dm       MoFEM discrete manager
+ * @param  fe_name  name of finite element
+ * @param  method   pointer to \ref MoFEM::FEMethod
+ * @param  low_rank lowest rank of processor
+ * @param  up_rank  upper run of processor
+ * @return          Error code
+ * \ingroup dm
+ */
+PetscErrorCode DMoFEMLoopFiniteElementsUpAndLowRank(
+  DM dm,const std::string& fe_name,boost::shared_ptr<MoFEM::FEMethod> method,int low_rank,int up_rank
+);
+
+/**
+ * \brief Executes FEMethod for finite elements in DM
  * @param  dm      MoFEM discrete manager
  * @param  fe_name name of element
  * @param  method  pointer to \ref MOFEM::FEMethod
@@ -212,6 +226,16 @@ PetscErrorCode DMoFEMLoopFiniteElementsUpAndLowRank(
  * \ingroup dm
  */
 PetscErrorCode DMoFEMLoopFiniteElements(DM dm,const char fe_name[],MoFEM::FEMethod *method);
+
+/**
+ * \brief Executes FEMethod for finite elements in DM
+ * @param  dm      MoFEM discrete manager
+ * @param  fe_name name of element
+ * @param  method  pointer to \ref MOFEM::FEMethod
+ * @return         Error code
+ * \ingroup dm
+ */
+PetscErrorCode DMoFEMLoopFiniteElements(DM dm,const std::string& fe_name,boost::shared_ptr<MoFEM::FEMethod> method);
 
 /**
   * \brief execute method for dofs on field in problem
@@ -239,7 +263,19 @@ PetscErrorCode DMMoFEMKSPSetComputeRHS(
 );
 
 /**
- * \brief Set KSP opetators and push mofem finite element methods
+  * \brief set KSP right hand side evaluation function
+  * \ingroup dm
+  */
+PetscErrorCode DMMoFEMKSPSetComputeRHS(
+  DM dm,
+  const std::string& fe_name,
+  boost::shared_ptr<MoFEM::FEMethod> method,
+  boost::shared_ptr<MoFEM::FEMethod> pre_only,
+  boost::shared_ptr<MoFEM::FEMethod> post_only
+);
+
+/**
+ * \brief Set KSP operators and push mofem finite element methods
  *
  * @param  dm        DM
  * @param  fe_name   finite element name
@@ -256,6 +292,26 @@ PetscErrorCode DMMoFEMKSPSetComputeOperators(
 );
 
 /**
+ * \brief Set KSP operators and push mofem finite element methods
+ *
+ * @param  dm        DM
+ * @param  fe_name   finite element name
+ * @param  method    method on the element (executed for each element in the problem which given name)
+ * @param  pre_only  method for pre-process before element method
+ * @param  post_only method for post-process after element method
+ * @return           error code
+ *
+ * \ingroup dm
+ */
+PetscErrorCode DMMoFEMKSPSetComputeOperators(
+  DM dm,
+  const std::string& fe_name,
+  boost::shared_ptr<MoFEM::FEMethod> method,
+  boost::shared_ptr<MoFEM::FEMethod> pre_only,
+  boost::shared_ptr<MoFEM::FEMethod> post_only
+);
+
+/**
   * \brief set SNES residual evaluation function
   * \ingroup dm
   */
@@ -269,7 +325,7 @@ PetscErrorCode DMMoFEMSNESSetFunction(
   * \ingroup dm
   */
 PetscErrorCode DMMoFEMSNESSetFunction(
-  DM dm,const std::string fe_name,
+  DM dm,const std::string& fe_name,
   boost::shared_ptr<MoFEM::FEMethod> method,
   boost::shared_ptr<MoFEM::FEMethod> pre_only,
   boost::shared_ptr<MoFEM::FEMethod> post_only
@@ -289,7 +345,7 @@ PetscErrorCode DMMoFEMSNESSetJacobian(
   * \ingroup dm
   */
 PetscErrorCode DMMoFEMSNESSetJacobian(
-  DM dm,const std::string fe_name,
+  DM dm,const std::string& fe_name,
   boost::shared_ptr<MoFEM::FEMethod> method,
   boost::shared_ptr<MoFEM::FEMethod> pre_only,
   boost::shared_ptr<MoFEM::FEMethod> post_only

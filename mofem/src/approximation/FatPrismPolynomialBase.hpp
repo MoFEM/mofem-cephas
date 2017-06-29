@@ -37,8 +37,8 @@ namespace MoFEM {
     DataForcesAndSurcesCore& dataTrianglesOnly;
     DataForcesAndSurcesCore& dataTroughThickness;
 
-    ublas::matrix<double>& gaussPtsTrianglesOnly;
-    ublas::matrix<double>& gaussPtsThroughThickness;
+    MatrixDouble& gaussPtsTrianglesOnly;
+    MatrixDouble& gaussPtsThroughThickness;
 
     moab::Interface &mOab;
     const NumeredEntFiniteElement *fePtr;
@@ -47,8 +47,8 @@ namespace MoFEM {
       DataForcesAndSurcesCore &data,
       DataForcesAndSurcesCore &data_triangles_only,
       DataForcesAndSurcesCore &data_trough_thickness,
-      ublas::matrix<double>& gauss_pts_triangles_only,
-      ublas::matrix<double>& gauss_pts_through_thickness,
+      MatrixDouble& gauss_pts_triangles_only,
+      MatrixDouble& gauss_pts_through_thickness,
       moab::Interface &moab,
       const NumeredEntFiniteElement *fe_ptr,
       const FieldSpace space,
@@ -74,7 +74,7 @@ namespace MoFEM {
     ~FatPrismPolynomialBase();
 
     PetscErrorCode getValue(
-      ublas::matrix<double> &pts,boost::shared_ptr<BaseFunctionCtx> ctx_ptr
+      MatrixDouble &pts,boost::shared_ptr<BaseFunctionCtx> ctx_ptr
     );
 
   private:
@@ -85,17 +85,17 @@ namespace MoFEM {
 
     PetscErrorCode getValueH1ThroughThickness();
 
-    PetscErrorCode getValueH1(ublas::matrix<double> &pts);
+    PetscErrorCode getValueH1(MatrixDouble &pts);
 
-    PetscErrorCode getValueL2(ublas::matrix<double> &pts);
+    PetscErrorCode getValueL2(MatrixDouble &pts);
 
-    PetscErrorCode getValueHdiv(ublas::matrix<double> &pts);
+    PetscErrorCode getValueHdiv(MatrixDouble &pts);
 
-    PetscErrorCode getValueHCurl(ublas::matrix<double> &pts);
+    PetscErrorCode getValueHCurl(MatrixDouble &pts);
 
     int faceNodes[2][3];
-    ublas::matrix<double> N;
-    ublas::matrix<double> diffN;
+    MatrixDouble N;
+    MatrixDouble diffN;
 
   };
 

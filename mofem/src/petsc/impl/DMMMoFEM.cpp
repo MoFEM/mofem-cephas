@@ -455,6 +455,12 @@ PetscErrorCode DMoFEMLoopFiniteElementsUpAndLowRank(DM dm,const char fe_name[],M
   PetscFunctionReturn(0);
 }
 
+PetscErrorCode DMoFEMLoopFiniteElementsUpAndLowRank(
+  DM dm,const std::string& fe_name,boost::shared_ptr<MoFEM::FEMethod> method,int low_rank,int up_rank
+) {
+  return DMoFEMLoopFiniteElementsUpAndLowRank(dm,fe_name.c_str(),method.get(),low_rank,up_rank);
+}
+
 PetscErrorCode DMoFEMLoopFiniteElements(DM dm,const char fe_name[],MoFEM::FEMethod *method) {
   PetscErrorCode ierr;
   PetscValidHeaderSpecific(dm,DM_CLASSID,1);
@@ -462,6 +468,10 @@ PetscErrorCode DMoFEMLoopFiniteElements(DM dm,const char fe_name[],MoFEM::FEMeth
   DMCtx *dm_field = (DMCtx*)dm->data;
   ierr = DMoFEMLoopFiniteElementsUpAndLowRank(dm,fe_name,method,dm_field->rAnk,dm_field->rAnk); CHKERRQ(ierr);
   PetscFunctionReturn(0);
+}
+
+PetscErrorCode DMoFEMLoopFiniteElements(DM dm,const std::string& fe_name,boost::shared_ptr<MoFEM::FEMethod> method) {
+  return DMoFEMLoopFiniteElements(dm,fe_name.c_str(),method.get());
 }
 
 PetscErrorCode DMoFEMLoopDofs(DM dm,const char field_name[],MoFEM::EntMethod *method) {
@@ -473,40 +483,76 @@ PetscErrorCode DMoFEMLoopDofs(DM dm,const char field_name[],MoFEM::EntMethod *me
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode DMMoFEMKSPSetComputeRHS(DM dm,const char fe_name[],MoFEM::FEMethod *method,MoFEM::FEMethod *pre_only,MoFEM::FEMethod *post_only) {
+template<class S,class T>
+static PetscErrorCode DMMoFEMKSPSetComputeRHS(DM dm,S fe_name,T method,T pre_only,T post_only) {
   PetscErrorCode ierr;
   PetscValidHeaderSpecific(dm,DM_CLASSID,1);
   PetscFunctionBegin;
   DMCtx *dm_field = (DMCtx*)dm->data;
-  if(pre_only!=NULL) {
+  if(pre_only) {
     dm_field->kspCtx->get_preProcess_to_do_Rhs().push_back(pre_only);
   }
-  if(method!=NULL) {
+  if(method) {
     dm_field->kspCtx->get_loops_to_do_Rhs().push_back(KspCtx::loop_pair_type(fe_name,method));
   }
-  if(post_only!=NULL) {
+  if(post_only) {
     dm_field->kspCtx->get_postProcess_to_do_Rhs().push_back(post_only);
   }
   ierr = DMKSPSetComputeRHS(dm,KspRhs,dm_field->kspCtx); CHKERRQ(ierr);
   PetscFunctionReturn(0);
 }
 
-PetscErrorCode DMMoFEMKSPSetComputeOperators(DM dm,const char fe_name[],MoFEM::FEMethod *method,MoFEM::FEMethod *pre_only,MoFEM::FEMethod *post_only) {
+PetscErrorCode DMMoFEMKSPSetComputeRHS(DM dm,const char fe_name[],MoFEM::FEMethod *method,MoFEM::FEMethod *pre_only,MoFEM::FEMethod *post_only) {
+  return DMMoFEMKSPSetComputeRHS<const char *,MoFEM::FEMethod*>(dm,fe_name,method,pre_only,post_only);
+}
+
+PetscErrorCode DMMoFEMKSPSetComputeRHS(
+  DM dm,
+  const std::string& fe_name,
+  boost::shared_ptr<MoFEM::FEMethod> method,
+  boost::shared_ptr<MoFEM::FEMethod> pre_only,
+  boost::shared_ptr<MoFEM::FEMethod> post_only
+) {
+  return DMMoFEMKSPSetComputeRHS<const std::string&,boost::shared_ptr<MoFEM::FEMethod> >(
+    dm,fe_name,method,pre_only,post_only
+  );
+}
+
+template<class S,class T>
+static PetscErrorCode DMMoFEMKSPSetComputeOperators(DM dm,S fe_name,T method,T pre_only,T post_only) {
   PetscErrorCode ierr;
   PetscValidHeaderSpecific(dm,DM_CLASSID,1);
   PetscFunctionBegin;
   DMCtx *dm_field = (DMCtx*)dm->data;
-  if(pre_only!=NULL) {
+  if(pre_only) {
     dm_field->kspCtx->get_preProcess_to_do_Mat().push_back(pre_only);
   }
-  if(method!=NULL) {
+  if(method) {
     dm_field->kspCtx->get_loops_to_do_Mat().push_back(KspCtx::loop_pair_type(fe_name,method));
   }
-  if(post_only!=NULL) {
+  if(post_only) {
     dm_field->kspCtx->get_postProcess_to_do_Mat().push_back(post_only);
   }
   ierr = DMKSPSetComputeOperators(dm,KspMat,dm_field->kspCtx); CHKERRQ(ierr);
   PetscFunctionReturn(0);
+}
+
+PetscErrorCode DMMoFEMKSPSetComputeOperators(
+  DM dm,const char fe_name[],MoFEM::FEMethod *method,MoFEM::FEMethod *pre_only,MoFEM::FEMethod *post_only
+) {
+  return DMMoFEMKSPSetComputeOperators<const char *,MoFEM::FEMethod*>(dm,fe_name,method,pre_only,post_only);
+}
+
+PetscErrorCode DMMoFEMKSPSetComputeOperators(
+  DM dm,
+  const std::string& fe_name,
+  boost::shared_ptr<MoFEM::FEMethod> method,
+  boost::shared_ptr<MoFEM::FEMethod> pre_only,
+  boost::shared_ptr<MoFEM::FEMethod> post_only
+) {
+  return DMMoFEMKSPSetComputeOperators<const std::string&,boost::shared_ptr<MoFEM::FEMethod> >(
+    dm,fe_name,method,pre_only,post_only
+  );
 }
 
 template<class S,class T>
@@ -528,7 +574,6 @@ static PetscErrorCode DMMoFEMSNESSetFunction(DM dm,S fe_name,T method,T pre_only
   PetscFunctionReturn(0);
 }
 
-
 PetscErrorCode DMMoFEMSNESSetFunction(
   DM dm,const char fe_name[],MoFEM::FEMethod *method,MoFEM::FEMethod *pre_only,MoFEM::FEMethod *post_only
 ) {
@@ -536,12 +581,12 @@ PetscErrorCode DMMoFEMSNESSetFunction(
 }
 
 PetscErrorCode DMMoFEMSNESSetFunction(
-  DM dm,const std::string fe_name,
+  DM dm,const std::string& fe_name,
   boost::shared_ptr<MoFEM::FEMethod> method,
   boost::shared_ptr<MoFEM::FEMethod> pre_only,
   boost::shared_ptr<MoFEM::FEMethod> post_only
 ) {
-  return DMMoFEMSNESSetFunction<std::string,boost::shared_ptr<MoFEM::FEMethod> >(
+  return DMMoFEMSNESSetFunction<const std::string&,boost::shared_ptr<MoFEM::FEMethod> >(
     dm,fe_name,method,pre_only,post_only
   );
 }
@@ -575,12 +620,12 @@ PetscErrorCode DMMoFEMSNESSetJacobian(
 }
 
 PetscErrorCode DMMoFEMSNESSetJacobian(
-  DM dm,std::string fe_name,
+  DM dm,const std::string& fe_name,
   boost::shared_ptr<MoFEM::FEMethod> method,
   boost::shared_ptr<MoFEM::FEMethod> pre_only,
   boost::shared_ptr<MoFEM::FEMethod> post_only
 ) {
-  return DMMoFEMSNESSetJacobian<std::string,boost::shared_ptr<MoFEM::FEMethod> >(
+  return DMMoFEMSNESSetJacobian<const std::string&,boost::shared_ptr<MoFEM::FEMethod> >(
     dm,fe_name,method,pre_only,post_only
   );
 }

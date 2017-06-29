@@ -141,11 +141,11 @@ int main(int argc, char *argv[]) {
   //meshset consisting all entities in mesh
   EntityHandle root_set = moab.get_root_set();
   //add entities to field
-  ierr = m_field.add_ents_to_field_by_TETs(root_set,"FIELD1"); CHKERRQ(ierr);
-  ierr = m_field.add_ents_to_field_by_TETs(root_set,"MESH_NODE_POSITIONS"); CHKERRQ(ierr);
+  ierr = m_field.add_ents_to_field_by_type(root_set,MBTET,"FIELD1"); CHKERRQ(ierr);
+  ierr = m_field.add_ents_to_field_by_type(root_set,MBTET,"MESH_NODE_POSITIONS"); CHKERRQ(ierr);
   //add entities to finite element
-  ierr = m_field.add_ents_to_finite_element_by_PRISMs(root_set,"TEST_FE1",10); CHKERRQ(ierr);
-  ierr = m_field.add_ents_to_finite_element_by_PRISMs(root_set,"TEST_FE2",10); CHKERRQ(ierr);
+  ierr = m_field.add_ents_to_finite_element_by_type(root_set,MBPRISM,"TEST_FE1",10); CHKERRQ(ierr);
+  ierr = m_field.add_ents_to_finite_element_by_type(root_set,MBPRISM,"TEST_FE2",10); CHKERRQ(ierr);
 
   //set app. order
   //see Hierarchic Finite Element Bases on Unstructured Tetrahedral Meshes (Mark Ainsworth & Joe Coyle)
@@ -212,43 +212,43 @@ int main(int argc, char *argv[]) {
 
       const double eps = 1e-4;
       for(
-        ublas::unbounded_array<double>::iterator it = getNormal().data().begin();
+        DoubleAllacator::iterator it = getNormal().data().begin();
         it!=getNormal().data().end();it++
       ) {
         *it = fabs(*it)<eps ? 0.0 : *it;
       }
       for(
-        ublas::unbounded_array<double>::iterator it = getNormalsAtGaussPtF3().data().begin();
+        DoubleAllacator::iterator it = getNormalsAtGaussPtF3().data().begin();
         it!=getNormalsAtGaussPtF3().data().end();it++
       ) {
         *it = fabs(*it)<eps ? 0.0 : *it;
       }
       for(
-        ublas::unbounded_array<double>::iterator it = getTangent1AtGaussPtF3().data().begin();
+        DoubleAllacator::iterator it = getTangent1AtGaussPtF3().data().begin();
         it!=getTangent1AtGaussPtF3().data().end();it++
       ) {
         *it = fabs(*it)<eps ? 0.0 : *it;
       }
       for(
-        ublas::unbounded_array<double>::iterator it = getTangent2AtGaussPtF3().data().begin();
+        DoubleAllacator::iterator it = getTangent2AtGaussPtF3().data().begin();
         it!=getTangent2AtGaussPtF3().data().end();it++
       ) {
         *it = fabs(*it)<eps ? 0.0 : *it;
       }
       for(
-        ublas::unbounded_array<double>::iterator it = getNormalsAtGaussPtF4().data().begin();
+        DoubleAllacator::iterator it = getNormalsAtGaussPtF4().data().begin();
         it!=getNormalsAtGaussPtF4().data().end();it++
       ) {
         *it = fabs(*it)<eps ? 0.0 : *it;
       }
       for(
-        ublas::unbounded_array<double>::iterator it = getTangent1AtGaussPtF4().data().begin();
+        DoubleAllacator::iterator it = getTangent1AtGaussPtF4().data().begin();
         it!=getTangent1AtGaussPtF4().data().end();it++
       ) {
         *it = fabs(*it)<eps ? 0.0 : *it;
       }
       for(
-        ublas::unbounded_array<double>::iterator it = getTangent2AtGaussPtF4().data().begin();
+        DoubleAllacator::iterator it = getTangent2AtGaussPtF4().data().begin();
         it!=getTangent2AtGaussPtF4().data().end();it++
       ) {
         *it = fabs(*it)<eps ? 0.0 : *it;

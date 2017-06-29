@@ -92,10 +92,10 @@ int main(int argc, char *argv[]) {
     //meshset consisting all entities in mesh
     EntityHandle root_set = moab.get_root_set();
     //add entities to field
-    ierr = m_field.add_ents_to_field_by_TETs(root_set,"DISPLACEMENT"); CHKERRQ(ierr);
-    ierr = m_field.add_ents_to_field_by_TETs(root_set,"MESH_NODE_POSITIONS"); CHKERRQ(ierr);
+    ierr = m_field.add_ents_to_field_by_type(root_set,MBTET,"DISPLACEMENT"); CHKERRQ(ierr);
+    ierr = m_field.add_ents_to_field_by_type(root_set,MBTET,"MESH_NODE_POSITIONS"); CHKERRQ(ierr);
     //add entities to finite element
-    ierr = m_field.add_ents_to_finite_element_by_TETs(root_set,"TEST_FE"); CHKERRQ(ierr);
+    ierr = m_field.add_ents_to_finite_element_by_type(root_set,MBTET,"TEST_FE"); CHKERRQ(ierr);
 
     //set app. order
     //see Hierarchic Finite Element Bases on Unstructured Tetrahedral Meshes (Mark Ainsworth & Joe Coyle)
@@ -163,7 +163,7 @@ int main(int argc, char *argv[]) {
     const Problem *problemPtr;
     ierr = m_field.get_problem("TEST_PROBLEM",&problemPtr); CHKERRQ(ierr);
     std::map<EntityHandle,double> m0,m1,m2;
-    for(_IT_NUMEREDDOFMOFEMENTITY_ROW_FOR_LOOP_(problemPtr,dit)) {
+    for(_IT_NUMEREDDOF_ROW_FOR_LOOP_(problemPtr,dit)) {
 
       if(dit->get()->getDofCoeffIdx()!=1) continue;
 

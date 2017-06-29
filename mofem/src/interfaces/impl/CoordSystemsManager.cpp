@@ -1,4 +1,4 @@
-/** \file CoordinateSystemsInterface.cpp
+/** \file CoordSystemsManager.cpp
  * \brief Interface managing coordinate systems set to fields
  *
  */

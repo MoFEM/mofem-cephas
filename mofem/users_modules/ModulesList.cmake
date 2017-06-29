@@ -21,7 +21,9 @@ include(${UM_SOURCE_DIR}/basic_finite_elements/AddModule.cmake)
 # Users modules library, common for all programs
 add_library(users_modules ${UM_LIB_SOURCES})
 
-# Those modules could be downloaded with MoFEM
+# Those modules could be downloaded with MoFEM.
+# FIXME: Do not delete this, it is  used with code testing. That will be renoved
+# for testing with docker container.
 if(WITH_MODULE_OBSOLETE)
   if(NOT EXISTS ${UM_SOURCE_DIR}/obsolete)
     execute_process(
@@ -117,10 +119,10 @@ add_custom_target(
   checkout_master
   COMMENT "Checkout master branch ..." VERBATIM
 )
-add_custom_target(
-  merge_CDashTesting
-  COMMENT "Make merge CDashTesting branch ..." VERBATIM
-)
+# add_custom_target(
+#   merge_CDashTesting
+#   COMMENT "Make merge CDashTesting branch ..." VERBATIM
+# )
 add_custom_target(
   get_modules_contributors_init
   COMMAND echo "Modules contributors" > ${PROJECT_SOURCE_DIR}/doc/contributors_list_modules
@@ -188,13 +190,13 @@ foreach(LOOP_MODULE ${INSTLLED_MODULES})
     COMMENT "Checkout master baranch for module ${MODULE_NAME}" VERBATIM
   )
   add_dependencies(checkout_master checkout_master_${MODULE_NAME})
-  add_custom_target(
-    merge_CDashTesting_${MODULE_NAME}
-    COMMAND ${GIT_EXECUTABLE} merge --ff CDashTesting
-    WORKING_DIRECTORY ${MODULE_DIRECTORY}
-    COMMENT "Make merge CDashTesting branch for module ${MODULE_NAME}" VERBATIM
-  )
-  add_dependencies(merge_CDashTesting merge_CDashTesting_${MODULE_NAME})
+  # add_custom_target(
+  #   merge_CDashTesting_${MODULE_NAME}
+  #   COMMAND ${GIT_EXECUTABLE} merge --ff CDashTesting
+  #   WORKING_DIRECTORY ${MODULE_DIRECTORY}
+  #   COMMENT "Make merge CDashTesting branch for module ${MODULE_NAME}" VERBATIM
+  # )
+  # add_dependencies(merge_CDashTesting merge_CDashTesting_${MODULE_NAME})
   # get contributors
   add_custom_target(
     get_module_contributors_${MODULE_NAME}

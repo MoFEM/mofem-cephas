@@ -25,9 +25,9 @@ static char help[] = "...\n\n";
 /// Example approx. function
 struct MyFunApprox {
 
-  std::vector<ublas::vector<double> > result;
+  std::vector<VectorDouble > result;
 
-  std::vector<ublas::vector<double> >& operator()(double x, double y, double z) {
+  std::vector<VectorDouble >& operator()(double x, double y, double z) {
     result.resize(1);
     result[0].resize(3);
     (result[0])[0] = x;
@@ -107,12 +107,12 @@ int main(int argc, char *argv[]) {
     //meshset consisting all entities in mesh
     EntityHandle root_set = moab.get_root_set();
     //add entities to field
-    ierr = m_field.add_ents_to_field_by_TETs(root_set,"FIELD1"); CHKERRQ(ierr);
+    ierr = m_field.add_ents_to_field_by_type(root_set,MBTET,"FIELD1"); CHKERRQ(ierr);
     #ifdef HOON
-    ierr = m_field.add_ents_to_field_by_TETs(root_set,"MESH_NODE_POSITIONS",2); CHKERRQ(ierr);
+    ierr = m_field.add_ents_to_field_by_type(root_set,MBTET,"MESH_NODE_POSITIONS"); CHKERRQ(ierr);
     #endif
     //add entities to finite element
-    ierr = m_field.add_ents_to_finite_element_by_TETs(root_set,"TEST_FE"); CHKERRQ(ierr);
+    ierr = m_field.add_ents_to_finite_element_by_type(root_set,MBTET,"TEST_FE"); CHKERRQ(ierr);
 
 
     //set app. order
@@ -231,7 +231,7 @@ int main(int argc, char *argv[]) {
 
       Range nodes;
       rval = moab.get_entities_by_type(0,MBVERTEX,nodes,true); CHKERRQ_MOAB(rval);
-      ublas::matrix<double> nodes_vals;
+      MatrixDouble nodes_vals;
       nodes_vals.resize(nodes.size(),3);
       rval = moab.tag_get_data(
         ent_method_field1_on_10nodeTet.th,nodes,&*nodes_vals.data().begin()); CHKERRQ_MOAB(rval);
@@ -241,7 +241,7 @@ int main(int argc, char *argv[]) {
         my_split.precision(3);
         my_split.setf(std::ios::fixed);
         for(
-          ublas::unbounded_array<double>::iterator it = nodes_vals.data().begin();
+          DoubleAllacator::iterator it = nodes_vals.data().begin();
           it!=nodes_vals.data().end();it++) {
             *it = fabs(*it)<eps ? 0.0 : *it;
           }
@@ -250,7 +250,7 @@ int main(int argc, char *argv[]) {
           const Problem *problemPtr;
           ierr = m_field.get_problem("TEST_PROBLEM",&problemPtr); CHKERRQ(ierr);
           std::map<EntityHandle,double> m0,m1,m2;
-          for(_IT_NUMEREDDOFMOFEMENTITY_ROW_FOR_LOOP_(problemPtr,dit)) {
+          for(_IT_NUMEREDDOF_ROW_FOR_LOOP_(problemPtr,dit)) {
 
             my_split.precision(3);
             my_split.setf(std::ios::fixed);

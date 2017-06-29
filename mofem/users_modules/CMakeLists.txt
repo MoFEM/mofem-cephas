@@ -15,7 +15,7 @@ project(MoFEM-UserModules C CXX)
 
 cmake_minimum_required(VERSION 2.8.7)
 
-find_package(MoFEM 0.5.12
+find_package(MoFEM 0.5.69
   REQUIRED HINTS ${MOFEM_DIR} ../ ../../ $ENV{MOFEM_DIR}
 )
 message(STATUS "MoFEM version ${MoFEM_VERSION}")
@@ -39,6 +39,32 @@ find_package(Git)
 # if(PYTHON_INCLUDE_DIRS)
 #   include_directories ( ${PYTHON_INCLUDE_DIRS} )
 # endif(PYTHON_INCLUDE_DIRS)
+
+# No need to add blas for unix like system, is added to project libs by core lib
+if(APPLE)
+  find_package(BLAS)
+  if(BLAS_FOUND)
+    set(CMAKE_EXE_LINKER_FLAGS "-framework Accelerate")
+  endif(BLAS_FOUND)
+endif(APPLE)
+message(STATUS BLAS found: ${BLAS_LIBRARIES})
+
+# Add boost directory
+if(NOT MoFEM_BOOST_DIR)
+  set(MoFEM_BOOST_DIR $ENV{MoFEM_BOOST_DIR})
+endif(NOT MoFEM_BOOST_DIR)
+find_path(
+  BOOST_INCLUDE_DIR
+  NAMES boost/multi_index_container.hpp
+  HINTS
+  ${MoFEM_BOOST_DIR}/include
+  ${MoFEM_PETSC_DIR}/${PETSC_ARCH}/include
+)
+message(STATUS "Boost include found: " ${BOOST_INCLUDE_DIR})
+if(NOT BOOST_INCLUDE_DIR)
+  message(FATAL_ERROR "boost program incoude dir not found")
+endif(NOT BOOST_INCLUDE_DIR)
+include_directories(${BOOST_INCLUDE_DIR})
 
 find_program(
   MBCONVERT NAMES mbconvert

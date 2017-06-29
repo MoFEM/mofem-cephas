@@ -91,8 +91,8 @@ struct NeummanForcesSurfaceComplexForLazy {
     int *dofs_X_indices;
 
 
-    ublas::vector<double> tLoc,tGlob;
-    ublas::matrix<double> tLocNodal,tGlobNodal;
+    VectorDouble tLoc,tGlob;
+    MatrixDouble tLocNodal,tGlobNodal;
     double *t_loc;
 
     ublas::vector<int> dOfs_x_indices,dOfs_x_face_indices;
@@ -100,25 +100,25 @@ struct NeummanForcesSurfaceComplexForLazy {
     ublas::vector<int> dOfs_X_indices,dOfs_X_face_indices;
     ublas::vector<ublas::vector<int> > dOfs_X_edge_indices;
 
-    ublas::vector<double> dOfs_x,dOfs_x_face;
-    ublas::vector<ublas::vector<double> > dOfs_x_edge;
-    ublas::vector<double> dOfs_X,dOfs_X_face;
-    ublas::vector<ublas::vector<double> > dOfs_X_edge;
+    VectorDouble dOfs_x,dOfs_x_face;
+    ublas::vector<VectorDouble > dOfs_x_edge;
+    VectorDouble dOfs_X,dOfs_X_face;
+    ublas::vector<VectorDouble > dOfs_X_edge;
 
-    ublas::vector<double> fExtNode,fExtFace;
-    ublas::vector<ublas::vector<double> > fExtEdge;
+    VectorDouble fExtNode,fExtFace;
+    ublas::vector<VectorDouble > fExtEdge;
     double *Fext_edge[3];
 
-    ublas::matrix<double> kExtNodeNode,kExtFaceNode;
-    ublas::vector<ublas::matrix<double> > kExtEdgeNode;
+    MatrixDouble kExtNodeNode,kExtFaceNode;
+    ublas::vector<MatrixDouble > kExtEdgeNode;
     double *Kext_edge_node[3];
 
-    ublas::matrix<double> kExtNodeFace,kExtFaceFace;
-    ublas::vector<ublas::matrix<double> > kExtEdgeFace;
+    MatrixDouble kExtNodeFace,kExtFaceFace;
+    ublas::vector<MatrixDouble > kExtEdgeFace;
     double *Kext_edge_face[3];
 
-    ublas::vector<ublas::matrix<double> > kExtFaceEdge,kExtNodeEdge;
-    ublas::matrix<ublas::matrix<double> > kExtEdgeEdge;
+    ublas::vector<MatrixDouble > kExtFaceEdge,kExtNodeEdge;
+    ublas::matrix<MatrixDouble > kExtEdgeEdge;
     double *Kext_node_edge[3];
     double *Kext_face_edge[3];
     double *Kext_edge_edge[3][3];
@@ -143,24 +143,24 @@ struct NeummanForcesSurfaceComplexForLazy {
       Range tRis;
     };
     map<int,bCPreassure> mapPreassure;
-    PetscErrorCode reBaseToFaceLoocalCoordSystem(ublas::matrix<double> &t_glob_nodal);
+    PetscErrorCode reBaseToFaceLoocalCoordSystem(MatrixDouble &t_glob_nodal);
 
     boost::ptr_vector<MethodForForceScaling> methodsOp;
 
   };
 
-  struct MyTriangleMaterialFE: public MyTriangleSpatialFE {
-
-    MyTriangleMaterialFE(MoFEM::Interface &_mField,Mat _Aij,Vec &_F,double *scale_lhs,double *scale_rhs);
-
-    PetscErrorCode rHs();
-    PetscErrorCode lHs();
-
-  };
+  // struct MyTriangleMaterialFE: public MyTriangleSpatialFE {
+  //
+  //   MyTriangleMaterialFE(MoFEM::Interface &_mField,Mat _Aij,Vec &_F,double *scale_lhs,double *scale_rhs);
+  //
+  //   PetscErrorCode rHs();
+  //   PetscErrorCode lHs();
+  //
+  // };
 
   MoFEM::Interface &mField;
   MyTriangleSpatialFE feSpatial;
-  MyTriangleMaterialFE feMaterial;
+  // MyTriangleMaterialFE feMaterial;
 
   Tag thScale;
 
@@ -172,7 +172,7 @@ struct NeummanForcesSurfaceComplexForLazy {
   }
 
   MyTriangleSpatialFE& getLoopSpatialFe() { return feSpatial; }
-  MyTriangleMaterialFE& getLoopMaterialFe() { return feMaterial; }
+  // MyTriangleMaterialFE& getLoopMaterialFe() { return feMaterial; }
 
   NeummanForcesSurfaceComplexForLazy(MoFEM::Interface &m_field,Mat _Aij,Vec _F,double *scale_lhs,double *scale_rhs);
   NeummanForcesSurfaceComplexForLazy(MoFEM::Interface &m_field,Mat _Aij,Vec _F);

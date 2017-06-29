@@ -109,7 +109,7 @@ struct PostPorcStress: public MoFEM::VolumeElementForcesAndSourcesCore::UserData
       SETERRQ1(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency, filed <%s> not found",rowFieldName.c_str());
     }
 
-    ublas::matrix<double> H,invH;
+    MatrixDouble3by3 H,invH;
     double detH;
 
     dAta.materialDoublePtr->commonDataPtr = &nonLinearElementCommonData;

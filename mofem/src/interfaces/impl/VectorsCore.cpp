@@ -135,7 +135,12 @@ PetscErrorCode Core::ISCreateProblemOrder(
   typedef Problem_multiIndex::index<Problem_mi_tag>::type ProblemsByName;
   const ProblemsByName &problems_set = pRoblems.get<Problem_mi_tag>();
   ProblemsByName::iterator p = problems_set.find(problem);
-  if(p==problems_set.end()) SETERRQ1(PETSC_COMM_SELF,1,"no such problem %s (top tip check spelling)",problem.c_str());
+  if(p==problems_set.end()) SETERRQ1(
+    PETSC_COMM_SELF,
+    MOFEM_DATA_INCONSISTENCY,
+    "no such problem %s (top tip check spelling)",
+    problem.c_str()
+  );
   typedef NumeredDofEntity_multiIndex::index<Composite_Part_And_Order_mi_tag>::type dofs_order;
   dofs_order::iterator it,hi_it;
   switch(rc) {

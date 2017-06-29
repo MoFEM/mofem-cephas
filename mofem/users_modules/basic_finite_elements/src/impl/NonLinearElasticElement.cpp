@@ -822,6 +822,8 @@ PetscErrorCode NonlinearElasticElement::OpEnergy::doWork(
         }
       }
 
+      int nb_active_variables = 0;
+      ierr = dAta.materialDoublePtr->setUserActiveVariables(nb_active_variables); CHKERRQ(ierr);
       ierr = dAta.materialDoublePtr->calculateElasticEnergy(dAta,getNumeredEntFiniteElementPtr()); CHKERRQ(ierr);
       ierr = VecSetValue(*Vptr,0,val*dAta.materialDoublePtr->eNergy,ADD_VALUES); CHKERRQ(ierr);
 
@@ -852,7 +854,7 @@ PetscErrorCode NonlinearElasticElement::OpLhsPiolaKirchhoff_dx::getJac(
   FTensor::Index<'i',3> i;
   FTensor::Index<'j',3> j;
   FTensor::Index<'k',3> k;
-  MatrixDouble &jac_stress = commonData.jacStress[gg];
+  MatrixDouble& jac_stress = commonData.jacStress[gg];
   int nb_col = col_data.getFieldData().size();
   double *diff_ptr = const_cast<double*>(&(col_data.getDiffN(gg,nb_col/3)(0,0)));
   // First two indices 'i','j' derivatives of 1st Piola-stress, third index 'k' is
@@ -1386,7 +1388,7 @@ PetscErrorCode NonlinearElasticElement::addElement(string element_name,
 
   std::map<int,BlockData>::iterator sit = setOfBlocks.begin();
   for(;sit!=setOfBlocks.end();sit++) {
-    ierr = mField.add_ents_to_finite_element_by_TETs(sit->second.tEts,element_name); CHKERRQ(ierr);
+    ierr = mField.add_ents_to_finite_element_by_type(sit->second.tEts,MBTET,element_name); CHKERRQ(ierr);
   }
 
   PetscFunctionReturn(0);

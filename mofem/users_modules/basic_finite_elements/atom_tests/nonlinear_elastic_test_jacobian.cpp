@@ -38,7 +38,7 @@ struct OpCheck: public MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperato
       const double eps = 1e-12;
       const int nb_gauss_pts = data.getN().size1();
       for(int gg = 0;gg!=nb_gauss_pts;gg++) {
-        MatrixDouble &str0 = commonData.sTress[gg];
+        MatrixDouble3by3 &str0 = commonData.sTress[gg];
         FTensor::Tensor2<double,3,3> t_stress_0(
           str0(0,0),str0(0,1),str0(0,2),
           str0(1,0),str0(1,1),str0(1,2),
@@ -119,7 +119,7 @@ int main(int argc, char *argv[]) {
     //Fields
     ierr = m_field.add_field("SPATIAL_POSITION",H1,AINSWORTH_LEGENDRE_BASE,3); CHKERRQ(ierr);
     //add entitities (by tets) to the field
-    ierr = m_field.add_ents_to_field_by_TETs(0,"SPATIAL_POSITION"); CHKERRQ(ierr);
+    ierr = m_field.add_ents_to_field_by_type(0,MBTET,"SPATIAL_POSITION"); CHKERRQ(ierr);
     //set app. order
     PetscInt order;
     ierr = PetscOptionsGetInt(PETSC_NULL,PETSC_NULL,"-my_order",&order,&flg); CHKERRQ(ierr);

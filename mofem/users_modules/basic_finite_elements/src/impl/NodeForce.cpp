@@ -117,7 +117,7 @@ NodalForce::OpNodalForce::OpNodalForce(const std::string field_name,Vec _F,bCFor
     }
   }
 
-  PetscErrorCode MetaNodalForces::TagForceScale::scaleNf(const FEMethod *fe,ublas::vector<FieldData> &Nf) {
+  PetscErrorCode MetaNodalForces::TagForceScale::scaleNf(const FEMethod *fe,VectorDouble &Nf) {
     PetscFunctionBegin;
     Nf *= *sCale;
     PetscFunctionReturn(0);

@@ -270,9 +270,11 @@ struct {
     }
   };
   \endcode
-  Explicitly specializing functions is never (almost never?) the right way. In
-  my work as a programmer, I've never explicitly specialized a function
-  template. Overloading and partial ordering is superior.
+  Explicitly specializing functions is never (almost never?) the right way.
+  Never explicitly specialized a function template. Overloading and partial
+  ordering is superior.
+
+
 
 
 

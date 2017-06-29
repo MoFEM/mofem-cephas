@@ -185,7 +185,7 @@ struct MagneticElement {
     //meshset consisting all entities in mesh
     EntityHandle root_set = mField.get_moab().get_root_set();
     //add entities to field
-    ierr = mField.add_ents_to_field_by_TETs(root_set,blockData.fieldName); CHKERRQ(ierr);
+    ierr = mField.add_ents_to_field_by_type(root_set,MBTET,blockData.fieldName); CHKERRQ(ierr);
 
     // // The higher-order gradients can be gauged by locally skipping the
     // // corresponding degrees of freedom and basis functions in the higher-order
@@ -208,7 +208,7 @@ struct MagneticElement {
     ierr = mField.set_field_order(root_set,MBEDGE,blockData.fieldName,blockData.oRder); CHKERRQ(ierr);
 
     // Set geometry approximation ordered
-    ierr = mField.add_ents_to_field_by_TETs(root_set,"MESH_NODE_POSITIONS"); CHKERRQ(ierr);
+    ierr = mField.add_ents_to_field_by_type(root_set,MBTET,"MESH_NODE_POSITIONS"); CHKERRQ(ierr);
     ierr = mField.set_field_order(root_set,MBTET,"MESH_NODE_POSITIONS",2); CHKERRQ(ierr);
     ierr = mField.set_field_order(root_set,MBTRI,"MESH_NODE_POSITIONS",2); CHKERRQ(ierr);
     ierr = mField.set_field_order(root_set,MBEDGE,"MESH_NODE_POSITIONS",2); CHKERRQ(ierr);
@@ -249,8 +249,8 @@ struct MagneticElement {
     ierr = mField.modify_finite_element_add_field_col(blockData.feNaturalBCName,blockData.fieldName); CHKERRQ(ierr);
     ierr = mField.modify_finite_element_add_field_data(blockData.feNaturalBCName,blockData.fieldName); CHKERRQ(ierr);
     ierr = mField.modify_finite_element_add_field_data(blockData.feNaturalBCName,"MESH_NODE_POSITIONS"); CHKERRQ(ierr);
-    ierr = mField.add_ents_to_finite_element_by_TETs(0,blockData.feName); CHKERRQ(ierr);
-    ierr = mField.add_ents_to_finite_element_by_TRIs(blockData.naturalBc,blockData.feNaturalBCName); CHKERRQ(ierr);
+    ierr = mField.add_ents_to_finite_element_by_type(0,MBTET,blockData.feName); CHKERRQ(ierr);
+    ierr = mField.add_ents_to_finite_element_by_type(blockData.naturalBc,MBTRI,blockData.feNaturalBCName); CHKERRQ(ierr);
     //build finite elemnts
     ierr = mField.build_finite_elements(); CHKERRQ(ierr);
     //build adjacencies
@@ -340,7 +340,7 @@ struct MagneticElement {
     const MoFEM::Problem *problem_ptr;
     ierr = DMMoFEMGetProblemPtr(blockData.dM,&problem_ptr); CHKERRQ(ierr);
     for(Range::iterator eit = blockData.essentialBc.begin();eit!=blockData.essentialBc.end();eit++) {
-      for(_IT_NUMEREDDOFMOFEMENTITY_ROW_BY_NAME_ENT_PART_FOR_LOOP_(
+      for(_IT_NUMEREDDOF_ROW_BY_NAME_ENT_PART_FOR_LOOP_(
         problem_ptr,blockData.fieldName,*eit,mField.get_comm_rank(),dof_ptr
       )) {
         std::bitset<8> pstatus(dof_ptr->get()->getPStatus());

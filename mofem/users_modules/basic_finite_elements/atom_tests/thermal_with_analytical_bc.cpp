@@ -45,9 +45,9 @@ static char help[] = "...\n\n";
 
 struct AnaliticalFunction {
 
-  std::vector<ublas::vector<double> > val;
+  std::vector<VectorDouble > val;
 
-  std::vector<ublas::vector<double> >& operator()(double x,double y,double z) {
+  std::vector<VectorDouble >& operator()(double x,double y,double z) {
     val.resize(1);
     val[0].resize(1);
     (val[0])[0] = pow(x,1);
@@ -110,14 +110,14 @@ int main(int argc, char *argv[]) {
     //meshset consisting all entities in mesh
     EntityHandle root_set = moab.get_root_set();
     ierr = m_field.add_field("MESH_NODE_POSITIONS",H1,AINSWORTH_LEGENDRE_BASE,3); CHKERRQ(ierr);
-    ierr = m_field.add_ents_to_field_by_TETs(root_set,"MESH_NODE_POSITIONS"); CHKERRQ(ierr);
+    ierr = m_field.add_ents_to_field_by_type(root_set,MBTET,"MESH_NODE_POSITIONS"); CHKERRQ(ierr);
     ierr = m_field.set_field_order(0,MBTET,"MESH_NODE_POSITIONS",2); CHKERRQ(ierr);
     ierr = m_field.set_field_order(0,MBTRI,"MESH_NODE_POSITIONS",2); CHKERRQ(ierr);
     ierr = m_field.set_field_order(0,MBEDGE,"MESH_NODE_POSITIONS",2); CHKERRQ(ierr);
     ierr = m_field.set_field_order(0,MBVERTEX,"MESH_NODE_POSITIONS",1); CHKERRQ(ierr);
 
     //add entities to field
-    ierr = m_field.add_ents_to_field_by_TETs(root_set,"TEMP"); CHKERRQ(ierr);
+    ierr = m_field.add_ents_to_field_by_type(root_set,MBTET,"TEMP"); CHKERRQ(ierr);
 
     //set app. order
     //see Hierarchic Finite Element Bases on Unstructured Tetrahedral Meshes (Mark Ainsworth & Joe Coyle)

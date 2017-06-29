@@ -1,5 +1,5 @@
-/** \file FieldBlas.cpp
- * \brief Mylti-index containers, data structures and other low-level functions
+/** \file FieldBlasCore.cpp
+ * \brief Implementation of field algebra
  */
 
 /* MoFEM is free software: you can redistribute it and/or modify it under

@@ -109,11 +109,11 @@ struct BasicEntity {
     const EntityHandle ent
   );
 
-  inline boost::shared_ptr<BasicEntityData> getBasicDataPtr() {
+  inline boost::shared_ptr<BasicEntityData>& getBasicDataPtr() {
     return basicDataPtr;
   }
 
-  inline const boost::shared_ptr<BasicEntityData> getBasicDataPtr() const {
+  inline const boost::shared_ptr<BasicEntityData>& getBasicDataPtr() const {
     return basicDataPtr;
   }
 
@@ -334,11 +334,11 @@ struct interface_RefEntity {
   interface_RefEntity(const interface_RefEntity<T> &interface):
   sPtr(interface.getRefEntityPtr()) {}
 
-  inline boost::shared_ptr<BasicEntityData> getBasicDataPtr() {
+  inline boost::shared_ptr<BasicEntityData>& getBasicDataPtr() {
     return this->sPtr->getBasicDataPtr();
   }
 
-  inline const boost::shared_ptr<BasicEntityData> getBasicDataPtr() const {
+  inline const boost::shared_ptr<BasicEntityData>& getBasicDataPtr() const {
     return this->sPtr->getBasicDataPtr();
   }
 
@@ -667,15 +667,15 @@ struct FieldEntity:
    */
   ApproximationOrder getMaxOrder() const;
 
-  GlobalUId global_uid; ///< Global unique id for this entity
+  UId globalUid; ///< Global unique id for this entity
 
   /**
    * \brief Get global unique id
    * @return Global UId
    */
-  const GlobalUId& getGlobalUniqueId() const { return global_uid; }
+  const UId& getGlobalUniqueId() const { return globalUid; }
 
-  static inline GlobalUId getGlobalUniqueIdCalculate(
+  static inline UId getGlobalUniqueIdCalculate(
     const int owner_proc,
     const char bit_number,
     const EntityHandle moab_owner_handle,
@@ -695,14 +695,14 @@ struct FieldEntity:
     }
   }
 
-  static inline GlobalUId getGlobalUniqueIdCalculate_Low_Proc(
+  static inline UId getGlobalUniqueIdCalculate_Low_Proc(
     const int owner_proc
   ) {
     return
     (UId)owner_proc << 5+8*sizeof(EntityHandle);
   }
 
-  static inline GlobalUId getGlobalUniqueIdCalculate_Hi_Proc(
+  static inline UId getGlobalUniqueIdCalculate_Hi_Proc(
     const int owner_proc
   ) {
     return
@@ -715,7 +715,7 @@ struct FieldEntity:
    * \brief Calculate global UId
    * @return Global UId
    */
-  inline GlobalUId getGlobalUniqueIdCalculate() const {
+  inline UId getGlobalUniqueIdCalculate() const {
     return getGlobalUniqueIdCalculate(
       sPtr->owner_proc,
       getBitNumber(),
@@ -768,8 +768,8 @@ private:
 
 };
 
-/// \deprecated use FieldEntity
-DEPRECATED typedef FieldEntity MoFEMEntity;
+// /// \deprecated use FieldEntity
+// DEPRECATED typedef FieldEntity MoFEMEntity;
 
 /**
  * \brief Interface to FieldEntity
@@ -807,7 +807,7 @@ interface_RefEntity<T> {
   inline ApproximationOrder getMaxOrder() const { return this->sPtr->getMaxOrder(); }
 
   /// @retun get entity UId
-  inline GlobalUId getGlobalUniqueId() const { return this->sPtr->getGlobalUniqueId(); }
+  inline UId getGlobalUniqueId() const { return this->sPtr->getGlobalUniqueId(); }
 
   /// @return return pointer to reference entity data structure
   inline boost::shared_ptr<RefEntity>& getRefEntityPtr() const { return this->sPtr->getRefEntityPtr(); }
@@ -818,10 +818,10 @@ interface_RefEntity<T> {
   /// @return get pointer to mofem entity data structure
   inline boost::shared_ptr<FieldEntity>& getFieldEntityPtr() const { return this->sPtr; };
 
-  /// \deprecated use getFieldEntityPtr instead
-  DEPRECATED inline boost::shared_ptr<FieldEntity>& getMoFEMEntityPtr() const {
-    return getFieldEntityPtr();
-  }
+  // /// \deprecated use getFieldEntityPtr instead
+  // DEPRECATED inline boost::shared_ptr<FieldEntity>& getMoFEMEntityPtr() const {
+  //   return getFieldEntityPtr();
+  // }
 
   /**
    * \brief get hash-map relating dof index on entity with its order
@@ -867,7 +867,7 @@ typedef multi_index_container<
   indexed_by<
     ordered_unique<
       tag<Unique_mi_tag>,
-      member<FieldEntity,GlobalUId,&FieldEntity::global_uid>
+      member<FieldEntity,UId,&FieldEntity::globalUid>
     >,
     ordered_non_unique<
       tag<FieldName_mi_tag>,
@@ -883,27 +883,29 @@ typedef multi_index_container<
       	FieldEntity,
       	const_mem_fun<FieldEntity::interface_type_Field,boost::string_ref,&FieldEntity::getNameRef>,
       	const_mem_fun<FieldEntity,EntityHandle,&FieldEntity::getEnt>
-      > >
-  > > FieldEntity_multiIndex;
-
-  /// \deprecated use FieldEntity_multiIndex
-  DEPRECATED typedef FieldEntity_multiIndex MoFEMEntity_multiIndex;
-
-  /** \brief Entity nulti index by field name
-    *
-    * \ingroup ent_multi_indices
-    */
-  typedef FieldEntity_multiIndex::index<FieldName_mi_tag>::type FieldEntityByFieldName;
-
-  typedef multi_index_container<
-    boost::shared_ptr<FieldEntity>,
-    indexed_by<
-      sequenced<>,
-      hashed_non_unique<
-        tag<Ent_mi_tag>, const_mem_fun<FieldEntity,EntityHandle,&FieldEntity::getEnt>
       >
     >
-  > FieldEntity_multiIndex_ent_view;
+  >
+> FieldEntity_multiIndex;
+
+// /// \deprecated use FieldEntity_multiIndex
+// DEPRECATED typedef FieldEntity_multiIndex MoFEMEntity_multiIndex;
+
+/** \brief Entity nulti index by field name
+  *
+  * \ingroup ent_multi_indices
+  */
+typedef FieldEntity_multiIndex::index<FieldName_mi_tag>::type FieldEntityByFieldName;
+
+typedef multi_index_container<
+  boost::shared_ptr<FieldEntity>,
+  indexed_by<
+    sequenced<>,
+    hashed_non_unique<
+      tag<Ent_mi_tag>, const_mem_fun<FieldEntity,EntityHandle,&FieldEntity::getEnt>
+    >
+  >
+> FieldEntity_multiIndex_ent_view;
 
 }
 

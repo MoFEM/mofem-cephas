@@ -48,9 +48,9 @@ struct CubitMeshSets {
    */
   inline int getMeshsetId() const { return *msId; }
 
-  /** \deprecated use getMeshsetId() instead
-  */
-  DEPRECATED inline int get_msId() const { return getMeshsetId(); }
+  // /** \deprecated use getMeshsetId() instead
+  // */
+  // DEPRECATED inline int get_msId() const { return getMeshsetId(); }
 
   /**
    * \brief get type of meshset
@@ -67,10 +67,10 @@ struct CubitMeshSets {
    */
   inline EntityHandle getMeshset() const { return meshset; }
 
-  /** \deprecated Use getMeshset() instead
-  */
-  DEPRECATED inline EntityHandle get_meshset() const { return getMeshset(); }
-  DEPRECATED inline EntityHandle getMeshSet() const { return getMeshset(); }
+  // /** \deprecated Use getMeshset() instead
+  // */
+  // DEPRECATED inline EntityHandle get_meshset() const { return getMeshset(); }
+  // DEPRECATED inline EntityHandle getMeshSet() const { return getMeshset(); }
 
   /**
    * \brief get bc meshset type
@@ -100,13 +100,13 @@ struct CubitMeshSets {
     Interface &moab,const int dimension,Range &entities,const bool recursive = false
   ) const;
 
-  /** \deprecated Use getMeshsetIdEntitiesByDimension() instead
-  */
-  DEPRECATED inline PetscErrorCode get_cubit_msId_entities_by_dimension(
-    Interface &moab,const int dimension,Range &entities,const bool recursive = false
-  ) const {
-    return getMeshsetIdEntitiesByDimension(moab,dimension,entities,recursive);
-  }
+  // /** \deprecated Use getMeshsetIdEntitiesByDimension() instead
+  // */
+  // DEPRECATED inline PetscErrorCode get_cubit_msId_entities_by_dimension(
+  //   Interface &moab,const int dimension,Range &entities,const bool recursive = false
+  // ) const {
+  //   return getMeshsetIdEntitiesByDimension(moab,dimension,entities,recursive);
+  // }
 
   /**
    * \brief get entities form meshset
@@ -123,13 +123,13 @@ struct CubitMeshSets {
     Interface &moab,Range &entities,const bool recursive = false
   )  const;
 
-  /** \deprecated Use getMeshsetIdEntitiesByDimension() instead
-  */
-  DEPRECATED inline PetscErrorCode get_cubit_msId_entities_by_dimension(
-    Interface &moab,Range &entities,const bool recursive = false
-  )  const {
-    return getMeshsetIdEntitiesByDimension(moab,entities,recursive);
-  }
+  // /** \deprecated Use getMeshsetIdEntitiesByDimension() instead
+  // */
+  // DEPRECATED inline PetscErrorCode get_cubit_msId_entities_by_dimension(
+  //   Interface &moab,Range &entities,const bool recursive = false
+  // )  const {
+  //   return getMeshsetIdEntitiesByDimension(moab,entities,recursive);
+  // }
 
   /**
    * \brief get entities by type
@@ -143,13 +143,13 @@ struct CubitMeshSets {
     Interface &moab,const EntityType type,Range &entities,const bool recursive = false
   ) const;
 
-  /** \deprecated Use getMeshsetIdEntitiesByType() instead
-  */
-  DEPRECATED inline PetscErrorCode get_cubit_msId_entities_by_type(
-    Interface &moab,const EntityType type,Range &entities,const bool recursive = false
-  ) const {
-    return getMeshsetIdEntitiesByType(moab,type,entities,recursive);
-  }
+  // /** \deprecated Use getMeshsetIdEntitiesByType() instead
+  // */
+  // DEPRECATED inline PetscErrorCode get_cubit_msId_entities_by_type(
+  //   Interface &moab,const EntityType type,Range &entities,const bool recursive = false
+  // ) const {
+  //   return getMeshsetIdEntitiesByType(moab,type,entities,recursive);
+  // }
 
   /**
    *  \brief Function that returns the CubitBCType type of the contents of bc_data
@@ -215,11 +215,11 @@ struct CubitMeshSets {
    */
   PetscErrorCode setAttributes(moab::Interface &moab,const std::vector<double> &attributes);
 
-  /** \deprecated Use getAttributes() instead
-  */
-  DEPRECATED inline PetscErrorCode get_attributes(std::vector<double> &attributes) const {
-    return getAttributes(attributes);
-  }
+  // /** \deprecated Use getAttributes() instead
+  // */
+  // DEPRECATED inline PetscErrorCode get_attributes(std::vector<double> &attributes) const {
+  //   return getAttributes(attributes);
+  // }
 
   /**
    * \brief print the attributes vector
@@ -261,9 +261,9 @@ struct CubitMeshSets {
    */
   std::string getName() const;
 
-  /** \deprecated Use getName() instead
-  */
-  DEPRECATED inline std::string get_name() const { return getName(); }
+  // /** \deprecated Use getName() instead
+  // */
+  // DEPRECATED inline std::string get_name() const { return getName(); }
 
   /**
    * \brief print name of block, sideset etc. (this is set in Cubit setting properties)
@@ -293,12 +293,12 @@ struct CubitMeshSets {
     PetscFunctionReturn(0);
   }
 
-  /** \deprecated Use getAttributeDataStructure() instead
-  */
-  template<class ATTRIBUTE_TYPE>
-  DEPRECATED inline PetscErrorCode get_attribute_data_structure(ATTRIBUTE_TYPE &data) const {
-    return getAttributeDataStructure(data);
-  }
+  // /** \deprecated Use getAttributeDataStructure() instead
+  // */
+  // template<class ATTRIBUTE_TYPE>
+  // DEPRECATED inline PetscErrorCode get_attribute_data_structure(ATTRIBUTE_TYPE &data) const {
+  //   return getAttributeDataStructure(data);
+  // }
 
   /**
    * \brief fill meshset data with data on structure
@@ -328,12 +328,12 @@ struct CubitMeshSets {
     PetscFunctionReturn(0);
   }
 
-  /** \deprecated Use getBcDataStructure() instead
-  */
-  template<class CUBIT_BC_DATA_TYPE>
-  DEPRECATED inline PetscErrorCode get_bc_data_structure(CUBIT_BC_DATA_TYPE& data) const {
-    return getBcDataStructure(data);
-  }
+  // /** \deprecated Use getBcDataStructure() instead
+  // */
+  // template<class CUBIT_BC_DATA_TYPE>
+  // DEPRECATED inline PetscErrorCode get_bc_data_structure(CUBIT_BC_DATA_TYPE& data) const {
+  //   return getBcDataStructure(data);
+  // }
 
   template<class CUBIT_BC_DATA_TYPE>
   PetscErrorCode setBcDataStructure(CUBIT_BC_DATA_TYPE& data) {
@@ -353,8 +353,35 @@ struct CubitMeshSets {
 };
 
 /**
- * @relates multi_index_container
- * \brief CubitMeshSet_multiIndex
+ * \typedef CubitMeshSet_multiIndex
+ * \brief Stores data about meshsets (see CubitMeshSets) storing data about boundary conditions, interfaces, sidesets, nodests, blocksets
+ *
+ *  \param Meshset_mi_tag  index by meshset handle
+ *  \param CubitMeshSets_mi_tag index by bc type, see CubitBC
+ *  \param CubitMeshSets_mask_meshset_mi_tag index by NODESET, SIDESET, BLOCKSET only
+ *  \param CubitMeshSets_name index by meshset name
+ *  \param Composite_Cubit_msId_And_MeshSetType_mi_tag index by meshset id and type NODESET, SIDESET or BLOCKSET
+ *
+ *  Example:
+ *  \code
+ *   MeshsetsManager *m_mng;
+ *   ierr = m_field.query_interface(m_mng); CHKERRQ(ierr);
+ *   CubitMeshSet_multiIndex &meshsets_index = m_mng->etMeshsetsMultindex();
+ *
+ *   CubitMeshSet_multiIndex::index<CubitMeshSets_mask_meshset_mi_tag>::type::iterator mit,hi_mit;
+ *   mit = meshsets_index.get<CubitMeshSets_mask_meshset_mi_tag>().lower_bound(BLOCKSET);
+ *   hi_mit = meshsets_index.get<CubitMeshSets_mask_meshset_mi_tag>().upper_bound(BLOCKSET);
+ *   // Make a loop over all BLOCKSET
+ *   for(;mit!=hi_mit;mit++) {
+ *     int id = mit->getMeshsetId();            // get blockset id
+ *     EntityHandle handle = mit->getMeshset(); // get block meshset
+ *     std::vector< double > attributes;
+ *     // get block attributes
+ *     ierr = mit->getAttributes(attributes); CHKERRQ(ierr);
+ *     // do something
+ *   }
+ *  \endcode
+ *
  */
 typedef multi_index_container<
   CubitMeshSets,
@@ -370,10 +397,13 @@ typedef multi_index_container<
     hashed_unique<
       tag<Composite_Cubit_msId_And_MeshSetType_mi_tag>,
       composite_key<
-	CubitMeshSets,
-	  const_mem_fun<CubitMeshSets,int,&CubitMeshSets::getMeshsetId>,
-	  const_mem_fun<CubitMeshSets,unsigned long int,&CubitMeshSets::getMaksedBcTypeULong> > >
-  > > CubitMeshSet_multiIndex;
+	     CubitMeshSets,
+	     const_mem_fun<CubitMeshSets,int,&CubitMeshSets::getMeshsetId>,
+	     const_mem_fun<CubitMeshSets,unsigned long int,&CubitMeshSets::getMaksedBcTypeULong>
+      >
+    >
+  >
+> CubitMeshSet_multiIndex;
 
 /** \brief change meshset type
 */

@@ -103,7 +103,7 @@ struct NeummanForcesSurface {
       bool ho_geometry = false
     );
 
-    ublas::vector<FieldData> Nf; //< Local force vector
+    VectorDouble Nf; //< Local force vector
 
     PetscErrorCode doWork(int side,EntityType type,DataForcesAndSurcesCore::EntData &data);
 
@@ -128,7 +128,7 @@ struct NeummanForcesSurface {
       bool ho_geometry = false
     );
 
-    ublas::vector<FieldData> Nf; //< Local force vector
+    VectorDouble Nf; //< Local force vector
 
     PetscErrorCode doWork(int side,EntityType type,DataForcesAndSurcesCore::EntData &data);
 
@@ -150,7 +150,7 @@ struct NeummanForcesSurface {
       bool ho_geometry = false
     );
 
-    ublas::vector<FieldData> Nf;
+    VectorDouble Nf;
 
     PetscErrorCode doWork(int side,EntityType type,DataForcesAndSurcesCore::EntData &data);
 
@@ -171,7 +171,7 @@ struct NeummanForcesSurface {
       bool ho_geometry
     );
 
-    ublas::vector<FieldData> Nf;
+    VectorDouble Nf;
 
     PetscErrorCode doWork(int side,EntityType type,DataForcesAndSurcesCore::EntData &data);
 
@@ -251,7 +251,7 @@ struct MetaNeummanForces {
       if(intersect_ptr) {
         tris = intersect(tris,*intersect_ptr);
       }
-      ierr = m_field.add_ents_to_finite_element_by_TRIs(tris,"FORCE_FE"); CHKERRQ(ierr);
+      ierr = m_field.add_ents_to_finite_element_by_type(tris,MBTRI,"FORCE_FE"); CHKERRQ(ierr);
     }
 
     ierr = m_field.add_finite_element("PRESSURE_FE",MF_ZERO); CHKERRQ(ierr);
@@ -268,7 +268,7 @@ struct MetaNeummanForces {
       if(intersect_ptr) {
         tris = intersect(tris,*intersect_ptr);
       }
-      ierr = m_field.add_ents_to_finite_element_by_TRIs(tris,"PRESSURE_FE"); CHKERRQ(ierr);
+      ierr = m_field.add_ents_to_finite_element_by_type(tris,MBTRI,"PRESSURE_FE"); CHKERRQ(ierr);
     }
 
     // Reading forces from BLOCKSET
@@ -279,7 +279,7 @@ struct MetaNeummanForces {
       if(it->getName().compare(0,block_set_force_name.length(),block_set_force_name) == 0) {
         std::vector<double> mydata;
         ierr = it->getAttributes(mydata); CHKERRQ(ierr);
-        ublas::vector<double> force(mydata.size());
+        VectorDouble force(mydata.size());
         for(unsigned int ii = 0;ii<mydata.size();ii++) {
           force[ii] = mydata[ii];
         }
@@ -291,7 +291,7 @@ struct MetaNeummanForces {
         if(intersect_ptr) {
           tris = intersect(tris,*intersect_ptr);
         }
-        ierr = m_field.add_ents_to_finite_element_by_TRIs(tris,"FORCE_FE"); CHKERRQ(ierr);
+        ierr = m_field.add_ents_to_finite_element_by_type(tris,MBTRI,"FORCE_FE"); CHKERRQ(ierr);
         //cerr << tris << endl;
       }
     }
@@ -301,7 +301,7 @@ struct MetaNeummanForces {
       if(it->getName().compare(0,block_set_pressure_name.length(),block_set_pressure_name) == 0) {
         std::vector<double> mydata;
         ierr = it->getAttributes(mydata); CHKERRQ(ierr);
-        ublas::vector<double> pressure(mydata.size());
+        VectorDouble pressure(mydata.size());
         for(unsigned int ii = 0;ii<mydata.size();ii++) {
           pressure[ii] = mydata[ii];
         }
@@ -314,7 +314,7 @@ struct MetaNeummanForces {
           tris = intersect(tris,*intersect_ptr);
         }
         // cerr << tris << endl;
-        ierr = m_field.add_ents_to_finite_element_by_TRIs(tris,"PRESSURE_FE"); CHKERRQ(ierr);
+        ierr = m_field.add_ents_to_finite_element_by_type(tris,MBTRI,"PRESSURE_FE"); CHKERRQ(ierr);
       }
     }
 
@@ -379,20 +379,20 @@ struct MetaNeummanForces {
     PetscFunctionReturn(0);
   }
 
-  /** \deprecated Use setMomentumFluxOperators() instead
-  */
-  DEPRECATED static PetscErrorCode setNeumannFiniteElementOperators(
-    MoFEM::Interface &m_field,
-    boost::ptr_map<std::string,NeummanForcesSurface> &neumann_forces,
-    Vec F,const std::string field_name,const std::string mesh_nodals_positions = "MESH_NODE_POSITIONS"
-  ) {
-    PetscErrorCode ierr;
-    PetscFunctionBegin;
-    ierr = setMomentumFluxOperators(
-      m_field,neumann_forces,F,field_name,mesh_nodals_positions
-    );  CHKERRQ(ierr);
-    PetscFunctionReturn(0);
-  }
+  // /** \deprecated Use setMomentumFluxOperators() instead
+  // */
+  // DEPRECATED static PetscErrorCode setNeumannFiniteElementOperators(
+  //   MoFEM::Interface &m_field,
+  //   boost::ptr_map<std::string,NeummanForcesSurface> &neumann_forces,
+  //   Vec F,const std::string field_name,const std::string mesh_nodals_positions = "MESH_NODE_POSITIONS"
+  // ) {
+  //   PetscErrorCode ierr;
+  //   PetscFunctionBegin;
+  //   ierr = setMomentumFluxOperators(
+  //     m_field,neumann_forces,F,field_name,mesh_nodals_positions
+  //   );  CHKERRQ(ierr);
+  //   PetscFunctionReturn(0);
+  // }
 
   static PetscErrorCode addNeumannFluxBCElements(
     MoFEM::Interface &m_field,
@@ -413,7 +413,7 @@ struct MetaNeummanForces {
     for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,SIDESET|PRESSURESET,it)) {
       Range tris;
       rval = m_field.get_moab().get_entities_by_type(it->meshset,MBTRI,tris,true); CHKERRQ_MOAB(rval);
-      ierr = m_field.add_ents_to_finite_element_by_TRIs(tris,"FLUX_FE"); CHKERRQ(ierr);
+      ierr = m_field.add_ents_to_finite_element_by_type(tris,MBTRI,"FLUX_FE"); CHKERRQ(ierr);
     }
 
     PetscFunctionReturn(0);
@@ -440,20 +440,20 @@ struct MetaNeummanForces {
     PetscFunctionReturn(0);
   }
 
-  /** \deprecated Use setMassFluxOperators() instead
-  */
-  DEPRECATED static PetscErrorCode setNeumannFluxFiniteElementOperators(
-    MoFEM::Interface &m_field,
-    boost::ptr_map<std::string,NeummanForcesSurface> &neumann_forces,
-    Vec F,const std::string field_name,const std::string mesh_nodals_positions = "MESH_NODE_POSITIONS"
-  ) {
-    PetscErrorCode ierr;
-    PetscFunctionBegin;
-    ierr = setMassFluxOperators(
-      m_field,neumann_forces,F,field_name,mesh_nodals_positions
-    ); CHKERRQ(ierr);
-    PetscFunctionReturn(0);
-  }
+  // /** \deprecated Use setMassFluxOperators() instead
+  // */
+  // DEPRECATED static PetscErrorCode setNeumannFluxFiniteElementOperators(
+  //   MoFEM::Interface &m_field,
+  //   boost::ptr_map<std::string,NeummanForcesSurface> &neumann_forces,
+  //   Vec F,const std::string field_name,const std::string mesh_nodals_positions = "MESH_NODE_POSITIONS"
+  // ) {
+  //   PetscErrorCode ierr;
+  //   PetscFunctionBegin;
+  //   ierr = setMassFluxOperators(
+  //     m_field,neumann_forces,F,field_name,mesh_nodals_positions
+  //   ); CHKERRQ(ierr);
+  //   PetscFunctionReturn(0);
+  // }
 
 
 };

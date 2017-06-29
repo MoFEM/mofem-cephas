@@ -40,8 +40,8 @@ namespace MoFEM {
 
     double aLpha;
 
-    boost::shared_ptr<ublas::matrix<double> > baseFunPtr;
-    boost::shared_ptr<ublas::matrix<double> > baseDiffFunPtr;
+    boost::shared_ptr<MatrixDouble > baseFunPtr;
+    boost::shared_ptr<MatrixDouble > baseDiffFunPtr;
 
     PetscErrorCode (*basePolynomialsType1)(
       int p,double alpha,
@@ -57,8 +57,8 @@ namespace MoFEM {
       double *diff_t,
       int dim,
       double alpha,
-      boost::shared_ptr<ublas::matrix<double> > base_fun_ptr,
-      boost::shared_ptr<ublas::matrix<double> > base_diff_fun_ptr
+      boost::shared_ptr<MatrixDouble > base_fun_ptr,
+      boost::shared_ptr<MatrixDouble > base_diff_fun_ptr
     ):
     P(p),
     diffX(diff_x),
@@ -85,8 +85,8 @@ namespace MoFEM {
     ~JacobiPolynomial() {}
 
     PetscErrorCode getValue(
-      ublas::matrix<double> &pts_x,
-      ublas::matrix<double> &pts_t,
+      MatrixDouble &pts_x,
+      MatrixDouble &pts_t,
       boost::shared_ptr<BaseFunctionCtx> ctx_ptr
     );
 

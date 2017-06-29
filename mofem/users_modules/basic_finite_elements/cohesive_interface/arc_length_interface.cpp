@@ -17,7 +17,6 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
-
 #include <BasicFiniteElements.hpp>
 using namespace MoFEM;
 
@@ -32,122 +31,137 @@ PetscErrorCode ierr;
 
 static char help[] = "...\n\n";
 
-//const double young_modulus = 1;
-//const double poisson_ratio = 0.0;
-
 #define DATAFILENAME "load_disp.txt"
 
-struct ArcLengthElement: public ArcLengthIntElemFEMethod {
-  MoFEM::Interface& mField;
-  Range PostProcNodes;
-  ArcLengthElement(MoFEM::Interface& m_field,ArcLengthCtx *arc_ptr):
-  ArcLengthIntElemFEMethod(m_field.get_moab(),arc_ptr),
-  mField(m_field) {
+namespace CohesiveElement {
 
-    for(_IT_CUBITMESHSETS_BY_NAME_FOR_LOOP_(mField,"LoadPath",cit)) {
-      EntityHandle meshset = cit->getMeshset();
-      Range nodes;
-      rval = mOab.get_entities_by_type(meshset,MBVERTEX,nodes,true); MOAB_THROW(rval);
-      PostProcNodes.merge(nodes);
+  struct ArcLengthElement: public ArcLengthIntElemFEMethod {
+    MoFEM::Interface& mField;
+    Range postProcNodes;
+    ArcLengthElement(MoFEM::Interface& m_field,ArcLengthCtx *arc_ptr):
+    ArcLengthIntElemFEMethod(m_field.get_moab(),arc_ptr),
+    mField(m_field) {
+
+      for(_IT_CUBITMESHSETS_BY_NAME_FOR_LOOP_(mField,"LoadPath",cit)) {
+        EntityHandle meshset = cit->getMeshset();
+        Range nodes;
+        rval = mOab.get_entities_by_type(meshset,MBVERTEX,nodes,true); MOAB_THROW(rval);
+        postProcNodes.merge(nodes);
+      }
+
+      PetscPrintf(PETSC_COMM_WORLD,"Nb. PostProcNodes %lu\n",postProcNodes.size());
+
+    };
+
+    PetscErrorCode postProcessLoadPath() {
+      PetscFunctionBegin;
+      FILE *datafile;
+      PetscFOpen(PETSC_COMM_SELF,DATAFILENAME,"a+",&datafile);
+      boost::shared_ptr<NumeredDofEntity_multiIndex> numered_dofs_rows = problemPtr->getNumeredDofsRows();
+      NumeredDofEntityByFieldName::iterator lit;
+      lit = numered_dofs_rows->get<FieldName_mi_tag>().find("LAMBDA");
+      if(lit == numered_dofs_rows->get<FieldName_mi_tag>().end()) {
+        fclose(datafile);
+        PetscFunctionReturn(0);
+      }
+      Range::iterator nit = postProcNodes.begin();
+      for(;nit!=postProcNodes.end();nit++) {
+        NumeredDofEntityByEnt::iterator dit,hi_dit;
+        dit = numered_dofs_rows->get<Ent_mi_tag>().lower_bound(*nit);
+        hi_dit = numered_dofs_rows->get<Ent_mi_tag>().upper_bound(*nit);
+        double coords[3];
+        rval = mOab.get_coords(&*nit,1,coords);  MOAB_THROW(rval);
+        for(;dit!=hi_dit;dit++) {
+          PetscPrintf(
+            PETSC_COMM_WORLD,"%s [ %d ] %6.4e -> ",
+            lit->get()->getName().c_str(),lit->get()->getDofCoeffIdx(),lit->get()->getFieldData()
+          );
+          PetscPrintf(
+            PETSC_COMM_WORLD,"%s [ %d ] %6.4e ",
+            dit->get()->getName().c_str(),dit->get()->getDofCoeffIdx(),dit->get()->getFieldData()
+          );
+          PetscPrintf(
+            PETSC_COMM_WORLD,"-> %3.4f %3.4f %3.4f\n",coords[0],coords[1],coords[2]
+          );
+          PetscFPrintf(
+            PETSC_COMM_WORLD,datafile,"%6.4e %6.4e ",dit->get()->getFieldData(),lit->get()->getFieldData()
+          );
+        }
+      }
+      PetscFPrintf(PETSC_COMM_WORLD,datafile,"\n");
+      fclose(datafile);
+      PetscFunctionReturn(0);
     }
-
-    PetscPrintf(PETSC_COMM_WORLD,"Nb. PostProcNodes %lu\n",PostProcNodes.size());
 
   };
 
-  PetscErrorCode postProcessLoadPath() {
-    PetscFunctionBegin;
-    FILE *datafile;
-    PetscFOpen(PETSC_COMM_SELF,DATAFILENAME,"a+",&datafile);
-    boost::shared_ptr<NumeredDofEntity_multiIndex> numered_dofs_rows = problemPtr->getNumeredDofsRows();
-    NumeredDofEntityByFieldName::iterator lit;
-    lit = numered_dofs_rows->get<FieldName_mi_tag>().find("LAMBDA");
-    if(lit == numered_dofs_rows->get<FieldName_mi_tag>().end()) PetscFunctionReturn(0);
-    Range::iterator nit = PostProcNodes.begin();
-    for(;nit!=PostProcNodes.end();nit++) {
-      NumeredDofEntityByEnt::iterator dit,hi_dit;
-      dit = numered_dofs_rows->get<Ent_mi_tag>().lower_bound(*nit);
-      hi_dit = numered_dofs_rows->get<Ent_mi_tag>().upper_bound(*nit);
-      double coords[3];
-      rval = mOab.get_coords(&*nit,1,coords);  MOAB_THROW(rval);
-      for(;dit!=hi_dit;dit++) {
-        PetscPrintf(PETSC_COMM_WORLD,"%s [ %d ] %6.4e -> ",lit->get()->getName().c_str(),lit->get()->getDofCoeffIdx(),lit->get()->getFieldData());
-        PetscPrintf(PETSC_COMM_WORLD,"%s [ %d ] %6.4e ",dit->get()->getName().c_str(),dit->get()->getDofCoeffIdx(),dit->get()->getFieldData());
-        PetscPrintf(PETSC_COMM_WORLD,"-> %3.4f %3.4f %3.4f\n",coords[0],coords[1],coords[2]);
-        if (dit->get()->getDofCoeffIdx()==0) {//print displacement and load factor in x-dir
-          PetscFPrintf(PETSC_COMM_WORLD,datafile,"%6.4e %6.4e ",dit->get()->getFieldData(),lit->get()->getFieldData());
+  struct AssembleRhsVectors: public FEMethod {
+
+    MoFEM::Interface& mField;
+    Vec &bodyForce;
+    ArcLengthCtx *arcPtr;
+
+    AssembleRhsVectors(
+      MoFEM::Interface& m_field,Vec &body_force,ArcLengthCtx *arc_ptr
+    ):
+    mField(m_field),
+    bodyForce(body_force),
+    arcPtr(arc_ptr) {
+    }
+
+    PetscErrorCode ierr;
+
+    PetscErrorCode preProcess() {
+      PetscFunctionBegin;
+
+      switch(snes_ctx) {
+        case CTX_SNESNONE: {}
+        break;
+        case CTX_SNESSETFUNCTION: {
+          ierr = VecZeroEntries(snes_f); CHKERRQ(ierr);
+          ierr = VecGhostUpdateBegin(snes_f,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+          ierr = VecGhostUpdateEnd(snes_f,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
         }
+        break;
+        default:
+        SETERRQ(PETSC_COMM_SELF,1,"not implemented");
       }
-    }
-    PetscFPrintf(PETSC_COMM_WORLD,datafile,"\n");
-    fclose(datafile);
-    PetscFunctionReturn(0);
-  }
-};
 
-struct AssembleRhsVectors: public FEMethod {
-
-  MoFEM::Interface& mField;
-  Vec &bodyForce;
-  ArcLengthCtx *arcPtr;
-
-  AssembleRhsVectors(
-    MoFEM::Interface& m_field,Vec &body_force,ArcLengthCtx *arc_ptr
-  ):
-  mField(m_field),
-  bodyForce(body_force),
-  arcPtr(arc_ptr) {
-  }
-
-  PetscErrorCode ierr;
-
-  PetscErrorCode preProcess() {
-    PetscFunctionBegin;
-
-    switch(snes_ctx) {
-      case CTX_SNESNONE: {}
-      break;
-      case CTX_SNESSETFUNCTION: {
-        ierr = VecZeroEntries(snes_f); CHKERRQ(ierr);
-        ierr = VecGhostUpdateBegin(snes_f,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-        ierr = VecGhostUpdateEnd(snes_f,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
-      }
-      break;
-      default:
-      SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+      PetscFunctionReturn(0);
     }
 
-    PetscFunctionReturn(0);
-  }
-
-  PetscErrorCode postProcess() {
-    PetscFunctionBegin;
-    switch(snes_ctx) {
-      case CTX_SNESNONE: {}
-      break;
-      case CTX_SNESSETFUNCTION: {
-        ierr = VecGhostUpdateBegin(snes_f,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-        ierr = VecGhostUpdateEnd(snes_f,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-        ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
-        ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
-        //add F_lambda
-        ierr = VecAXPY(snes_f,arcPtr->getFieldData(),arcPtr->F_lambda); CHKERRQ(ierr);
-        ierr = VecAXPY(snes_f,-1.,bodyForce); CHKERRQ(ierr);
-        PetscPrintf(PETSC_COMM_WORLD,"\tlambda = %6.4e\n",arcPtr->getFieldData());
-        //snes_f norm
-        double fnorm;
-        ierr = VecNorm(snes_f,NORM_2,&fnorm); CHKERRQ(ierr);
-        PetscPrintf(PETSC_COMM_WORLD,"\tfnorm = %6.4e\n",fnorm);
+    PetscErrorCode postProcess() {
+      PetscFunctionBegin;
+      switch(snes_ctx) {
+        case CTX_SNESNONE: {}
+        break;
+        case CTX_SNESSETFUNCTION: {
+          ierr = VecGhostUpdateBegin(snes_f,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+          ierr = VecGhostUpdateEnd(snes_f,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+          ierr = VecAssemblyBegin(snes_f); CHKERRQ(ierr);
+          ierr = VecAssemblyEnd(snes_f); CHKERRQ(ierr);
+          //add F_lambda
+          ierr = VecAXPY(snes_f,arcPtr->getFieldData(),arcPtr->F_lambda); CHKERRQ(ierr);
+          ierr = VecAXPY(snes_f,-1.,bodyForce); CHKERRQ(ierr);
+          PetscPrintf(PETSC_COMM_WORLD,"\tlambda = %6.4e\n",arcPtr->getFieldData());
+          //snes_f norm
+          double fnorm;
+          ierr = VecNorm(snes_f,NORM_2,&fnorm); CHKERRQ(ierr);
+          PetscPrintf(PETSC_COMM_WORLD,"\tfnorm = %6.4e\n",fnorm);
+        }
+        break;
+        default:
+        SETERRQ(PETSC_COMM_SELF,1,"not implemented");
       }
-      break;
-      default:
-      SETERRQ(PETSC_COMM_SELF,1,"not implemented");
+
+      PetscFunctionReturn(0);
     }
 
-    PetscFunctionReturn(0);
-  }
+  };
 
-};
+}
+
+using namespace CohesiveElement;
 
 int main(int argc, char *argv[]) {
 
@@ -204,7 +218,7 @@ int main(int argc, char *argv[]) {
     ParallelComm* pcomm = ParallelComm::get_pcomm(&moab,MYPCOMM_INDEX);
     if(pcomm == NULL) pcomm =  new ParallelComm(&moab,PETSC_COMM_WORLD);
 
-    //data stored on mesh for restart
+    //Data stored on mesh for restart
     Tag th_step_size,th_step;
     double def_step_size = 1;
     rval = moab.tag_get_handle("_STEPSIZE",1,MB_TYPE_DOUBLE,th_step_size,MB_TAG_CREAT|MB_TAG_MESH,&def_step_size);
@@ -224,7 +238,7 @@ int main(int argc, char *argv[]) {
     //end of data stored for restart
     ierr = PetscPrintf(PETSC_COMM_WORLD,"Start step %D and step_size = %6.4e\n",step,step_size); CHKERRQ(ierr);
 
-    //Create MoFEM (Joseph) database
+    //Create MoFEM 2database
     MoFEM::Core core(moab);
     MoFEM::Interface& m_field = core;
 
@@ -242,22 +256,27 @@ int main(int argc, char *argv[]) {
     BitRefLevel problem_bit_level = bit_level0;
 
     if(step == 1) {
+
       //ref meshset ref level 0
       ierr = m_field.seed_ref_level_3D(0,BitRefLevel().set(0)); CHKERRQ(ierr);
       std::vector<BitRefLevel> bit_levels;
       bit_levels.push_back(BitRefLevel().set(0));
 
       int ll = 1;
+
       for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,SIDESET|INTERFACESET,cit)) {
-        //for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(m_field,SIDESET,cit)) {
         ierr = PetscPrintf(PETSC_COMM_WORLD,"Insert Interface %d\n",cit->getMeshsetId()); CHKERRQ(ierr);
         EntityHandle cubit_meshset = cit->getMeshset();
         {
-          //get tet enties form back bit_level
+          //get tet entities form back bit_level
           EntityHandle ref_level_meshset = 0;
           rval = moab.create_meshset(MESHSET_SET,ref_level_meshset); CHKERRQ_MOAB(rval);
-          ierr = m_field.get_entities_by_type_and_ref_level(bit_levels.back(),BitRefLevel().set(),MBTET,ref_level_meshset); CHKERRQ(ierr);
-          ierr = m_field.get_entities_by_type_and_ref_level(bit_levels.back(),BitRefLevel().set(),MBPRISM,ref_level_meshset); CHKERRQ(ierr);
+          ierr = m_field.get_entities_by_type_and_ref_level(
+            bit_levels.back(),BitRefLevel().set(),MBTET,ref_level_meshset
+          ); CHKERRQ(ierr);
+          ierr = m_field.get_entities_by_type_and_ref_level(
+            bit_levels.back(),BitRefLevel().set(),MBPRISM,ref_level_meshset
+          ); CHKERRQ(ierr);
           Range ref_level_tets;
           rval = moab.get_entities_by_handle(ref_level_meshset,ref_level_tets,true); CHKERRQ_MOAB(rval);
           //get faces and test to split
@@ -269,7 +288,7 @@ int main(int argc, char *argv[]) {
           //clean meshsets
           rval = moab.delete_entities(&ref_level_meshset,1); CHKERRQ_MOAB(rval);
         }
-        //update cubit meshsets
+        // Update cubit meshsets
         for(_IT_CUBITMESHSETS_FOR_LOOP_(m_field,ciit)) {
           EntityHandle cubit_meshset = ciit->meshset;
           ierr = m_field.update_meshset_by_entities_children(cubit_meshset,bit_levels.back(),cubit_meshset,MBVERTEX,true); CHKERRQ(ierr);
@@ -334,12 +353,12 @@ int main(int argc, char *argv[]) {
       //Declare problem
 
       //add entitities (by tets) to the field
-      ierr = m_field.add_ents_to_field_by_TETs(0,"DISPLACEMENT"); CHKERRQ(ierr);
-      ierr = m_field.add_ents_to_field_by_TETs(0,"MESH_NODE_POSITIONS"); CHKERRQ(ierr);
+      ierr = m_field.add_ents_to_field_by_type(0,MBTET,"DISPLACEMENT"); CHKERRQ(ierr);
+      ierr = m_field.add_ents_to_field_by_type(0,MBTET,"MESH_NODE_POSITIONS"); CHKERRQ(ierr);
 
       //add finite elements entities
-      ierr = m_field.add_ents_to_finite_element_EntType_by_bit_ref(problem_bit_level,"ELASTIC",MBTET); CHKERRQ(ierr);
-      ierr = m_field.add_ents_to_finite_element_EntType_by_bit_ref(problem_bit_level,"INTERFACE",MBPRISM); CHKERRQ(ierr);
+      ierr = m_field.add_ents_to_finite_element_by_bit_ref(problem_bit_level,BitRefLevel().set(),"ELASTIC",MBTET); CHKERRQ(ierr);
+      ierr = m_field.add_ents_to_finite_element_by_bit_ref(problem_bit_level,BitRefLevel().set(),"INTERFACE",MBPRISM); CHKERRQ(ierr);
 
       // Setting up LAMBDA field and ARC_LENGTH interface
       {
@@ -406,8 +425,9 @@ int main(int argc, char *argv[]) {
       for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,BLOCKSET|BODYFORCESSET,it)) {
         Range tets;
         rval = m_field.get_moab().get_entities_by_type(it->meshset,MBTET,tets,true); CHKERRQ_MOAB(rval);
-        ierr = m_field.add_ents_to_finite_element_by_TETs(tets,"BODY_FORCE"); CHKERRQ(ierr);
+        ierr = m_field.add_ents_to_finite_element_by_type(tets,MBTET,"BODY_FORCE"); CHKERRQ(ierr);
       }
+
     }
 
     /****/

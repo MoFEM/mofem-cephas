@@ -47,7 +47,7 @@ struct UltraWeakTransportElement {
    * \brief definition of volume element
 
    * It is used to calculate volume integrals. On volume element we set-up
-   * operators to cal;ulcerate components of matrix and vector.
+   * operators to calculate components of matrix and vector.
 
    */
   struct MyVolumeFE: public MoFEM::VolumeElementForcesAndSourcesCore {
@@ -139,7 +139,7 @@ struct UltraWeakTransportElement {
   virtual PetscErrorCode getResistivity(
     const EntityHandle ent,
     const double x,const double y,const double z,
-    ublas::matrix<FieldData> &inv_k
+    MatrixDouble3by3& inv_k
   ) {
     PetscFunctionBegin;
     inv_k.clear();
@@ -213,8 +213,8 @@ struct UltraWeakTransportElement {
     //meshset consisting all entities in mesh
     EntityHandle root_set = mField.get_moab().get_root_set();
     //add entities to field
-    ierr = mField.add_ents_to_field_by_TETs(root_set,fluxes); CHKERRQ(ierr);
-    ierr = mField.add_ents_to_field_by_TETs(root_set,values); CHKERRQ(ierr);
+    ierr = mField.add_ents_to_field_by_type(root_set,MBTET,fluxes); CHKERRQ(ierr);
+    ierr = mField.add_ents_to_field_by_type(root_set,MBTET,values); CHKERRQ(ierr);
     ierr = mField.set_field_order(root_set,MBTET,fluxes,order+1); CHKERRQ(ierr);
     ierr = mField.set_field_order(root_set,MBTRI,fluxes,order+1); CHKERRQ(ierr);
     ierr = mField.set_field_order(root_set,MBTET,values,order); CHKERRQ(ierr);
@@ -279,16 +279,16 @@ struct UltraWeakTransportElement {
       rval = mField.get_moab().get_entities_by_type(
         it->meshset,MBTET,setOfBlocks[it->getMeshsetId()].tEts,true
       ); CHKERRQ_MOAB(rval);
-      ierr = mField.add_ents_to_finite_element_by_TETs(
-        setOfBlocks[it->getMeshsetId()].tEts,"ULTRAWEAK"
+      ierr = mField.add_ents_to_finite_element_by_type(
+        setOfBlocks[it->getMeshsetId()].tEts,MBTET,"ULTRAWEAK"
       ); CHKERRQ(ierr);
 
       Range skeleton;
       rval = mField.get_moab().get_adjacencies(
         setOfBlocks[it->getMeshsetId()].tEts,2,false,skeleton,moab::Interface::UNION
       );
-      ierr = mField.add_ents_to_finite_element_by_TRIs(
-        skeleton,"ULTRAWEAK_SKELETON"
+      ierr = mField.add_ents_to_finite_element_by_type(
+        skeleton,MBTRI,"ULTRAWEAK_SKELETON"
       ); CHKERRQ(ierr);
 
     }
@@ -747,7 +747,8 @@ struct UltraWeakTransportElement {
     }
 
     MatrixDouble matRowCurl,aveMatRowCurl;
-    MatrixDouble NN,transNN,invK;
+    MatrixDouble NN,transNN;
+    MatrixDouble3by3 invK;
     VectorDouble Nf;
 
     /**
@@ -1021,7 +1022,7 @@ struct UltraWeakTransportElement {
 
     }
 
-    ublas::matrix<FieldData> NN,transNN;
+    MatrixDouble NN,transNN;
     VectorDouble divVec,Nf;
 
     /**
@@ -1533,7 +1534,7 @@ struct UltraWeakTransportElement {
     virtual ~OpError() {}
 
     VectorDouble deltaFlux;
-    MatrixDouble invK;
+    MatrixDouble3by3 invK;
 
     PetscErrorCode doWork(
       int side,EntityType type,DataForcesAndSurcesCore::EntData &data

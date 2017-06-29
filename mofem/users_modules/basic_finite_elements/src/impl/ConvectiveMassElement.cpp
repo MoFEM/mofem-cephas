@@ -150,8 +150,8 @@ mField(m_field),tAg(tag) {
 }
 
 ConvectiveMassElement::OpGetDataAtGaussPts::OpGetDataAtGaussPts(const std::string field_name,
-  std::vector<ublas::vector<double> > &values_at_gauss_pts,
-  std::vector<ublas::matrix<double> > &gardient_at_gauss_pts
+  std::vector<VectorDouble > &values_at_gauss_pts,
+  std::vector<MatrixDouble > &gardient_at_gauss_pts
 ):
 VolumeElementForcesAndSourcesCore::UserDataOperator(field_name,ForcesAndSurcesCore::UserDataOperator::OPROW),
 valuesAtGaussPts(values_at_gauss_pts),gradientAtGaussPts(gardient_at_gauss_pts),
@@ -173,7 +173,7 @@ PetscErrorCode ConvectiveMassElement::OpGetDataAtGaussPts::doWork(
     int nb_base_functions = data.getN().size2();
 
     //initialize
-    // ublas::vector<double>& values = data.getFieldData();
+    // VectorDouble& values = data.getFieldData();
     valuesAtGaussPts.resize(nb_gauss_pts);
     gradientAtGaussPts.resize(nb_gauss_pts);
     for(int gg = 0;gg<nb_gauss_pts;gg++) {
@@ -222,8 +222,8 @@ PetscErrorCode ConvectiveMassElement::OpGetDataAtGaussPts::doWork(
     //std::cerr << valuesAtGaussPts[0] << " : ";
     //
     // for(int gg = 0;gg<nb_gauss_pts;gg++) {
-    //   ublas::vector<double> N = data.getN(gg,nb_dofs/3);
-    //   ublas::matrix<double> diffN = data.getDiffN(gg,nb_dofs/3);
+    //   VectorDouble N = data.getN(gg,nb_dofs/3);
+    //   MatrixDouble diffN = data.getDiffN(gg,nb_dofs/3);
     //   for(int dd = 0;dd<nb_dofs/3;dd++) {
     //     for(int rr1 = 0;rr1<3;rr1++) {
     //       valuesAtGaussPts[gg][rr1] += N[dd]*values[3*dd+rr1];
@@ -316,19 +316,19 @@ PetscErrorCode ConvectiveMassElement::OpMassJacobian::doWork(
     commonData.jacMassRowPtr.resize(nb_gauss_pts);
     commonData.jacMass.resize(nb_gauss_pts);
 
-    const std::vector<ublas::vector<double> > &dot_spacial_vel
+    const std::vector<VectorDouble > &dot_spacial_vel
     = commonData.dataAtGaussPts["DOT_"+commonData.spatialVelocities];
 
-    const std::vector<ublas::matrix<double> > &spatial_positions_grad =
+    const std::vector<MatrixDouble > &spatial_positions_grad =
     commonData.gradAtGaussPts[commonData.spatialPositions];
 
-    const std::vector<ublas::matrix<double> > &spatial_velocities_grad =
+    const std::vector<MatrixDouble > &spatial_velocities_grad =
     commonData.gradAtGaussPts[commonData.spatialVelocities];
 
-    const std::vector<ublas::vector<double> > &meshpos_vel =
+    const std::vector<VectorDouble > &meshpos_vel =
     commonData.dataAtGaussPts["DOT_"+commonData.meshPositions];
 
-    const std::vector<ublas::matrix<double> > &mesh_positions_val =
+    const std::vector<MatrixDouble > &mesh_positions_val =
     commonData.gradAtGaussPts[commonData.meshPositions];
 
     int nb_active_vars = 0;
@@ -381,7 +381,7 @@ PetscErrorCode ConvectiveMassElement::OpMassJacobian::doWork(
         ierr = iNvert(detH,H,invH); CHKERRQ(ierr);
         noalias(G) = prod(g,invH);
         double rho0 = dAta.rho0;
-        ublas::vector<double> a0 = dAta.a0;
+        VectorDouble a0 = dAta.a0;
         ierr = MethodForForceScaling::applyScale(getFEMethod(),methodsOp,a0); CHKERRQ(ierr);
         if(!lInear) {
           noalias(F) = prod(h,invH);
@@ -396,7 +396,7 @@ PetscErrorCode ConvectiveMassElement::OpMassJacobian::doWork(
         }
         noalias(a_res) = dp_dt*detH;
         //dependant
-        ublas::vector<double>& res = commonData.valMass[gg];
+        VectorDouble& res = commonData.valMass[gg];
         res.resize(3);
         for(int rr = 0;rr<3;rr++) {
           a_res[rr] >>= res[rr];
@@ -437,7 +437,7 @@ PetscErrorCode ConvectiveMassElement::OpMassJacobian::doWork(
       }
 
       if(!jAcobian) {
-        ublas::vector<double>& res = commonData.valMass[gg];
+        VectorDouble& res = commonData.valMass[gg];
         if(gg>0) {
           res.resize(3);
           int r;
@@ -527,7 +527,7 @@ PetscErrorCode ConvectiveMassElement::OpMassJacobian::doWork(
           ++base;
         }
 
-        // ublas::vector<double>& res = commonData.valMass[gg];
+        // VectorDouble& res = commonData.valMass[gg];
         // //std::cerr << res << std::endl;
         // for(int dd = 0;dd<nb_dofs/3;dd++) {
         //   for(int rr = 0;rr<3;rr++) {
@@ -629,7 +629,7 @@ PetscErrorCode ConvectiveMassElement::OpMassJacobian::doWork(
       }
       //std::cerr << commonData.jacMass[gg] << std::endl;
       //std::cerr << jac << std::endl;
-      // ublas::vector<double> N = col_data.getN(gg,nb_col/3);
+      // VectorDouble N = col_data.getN(gg,nb_col/3);
       // for(int dd = 0;dd<nb_col/3;dd++) {
       //   for(int nn = 0;nn<3;nn++) {
       //     jac(0,3*dd+nn) = commonData.jacMass[gg](0,nn)*N(dd)*getFEMethod()->ts_a;
@@ -638,7 +638,7 @@ PetscErrorCode ConvectiveMassElement::OpMassJacobian::doWork(
       //   }
       // }
       // if(commonData.dataAtGaussPts["DOT_"+commonData.meshPositions].size()>0) {
-      //   ublas::matrix<double> diffN = col_data.getDiffN(gg,nb_col/3);
+      //   MatrixDouble diffN = col_data.getDiffN(gg,nb_col/3);
       //   for(int dd = 0;dd<nb_col/3;dd++) {
       //     //h00 //h01 //h02
       //     jac(0,3*dd+0) += commonData.jacMass[gg](0,3+9+3*0+0)*diffN(dd,0);
@@ -736,7 +736,7 @@ PetscErrorCode ConvectiveMassElement::OpMassJacobian::doWork(
       }
 
       if(!forcesOnlyOnEntities.empty()) {
-        ublas::vector<DofIdx> indices = row_data.getIndices();
+        VectorInt indices = row_data.getIndices();
         VectorDofs& dofs = row_data.getFieldDofs();
         VectorDofs::iterator dit = dofs.begin();
         for(int ii = 0;dit!=dofs.end();dit++,ii++) {
@@ -811,7 +811,7 @@ PetscErrorCode ConvectiveMassElement::OpMassJacobian::doWork(
         ++diff;
         ++t_jac;
       }
-      // ublas::matrix<double> diffN = col_data.getDiffN(gg,nb_col/3);
+      // MatrixDouble diffN = col_data.getDiffN(gg,nb_col/3);
       // for(int dd = 0;dd<nb_col/3;dd++) {
       //   //h00 //h01 //h02
       //   jac(0,3*dd+0) += commonData.jacMass[gg](0,3+3*0+0)*diffN(dd,0);
@@ -894,7 +894,7 @@ PetscErrorCode ConvectiveMassElement::OpMassJacobian::doWork(
       }
       //std::cerr << commonData.jacVel[gg] << std::endl;
       //std::cerr << jac << std::endl;
-      // ublas::vector<double> N = col_data.getN(gg,nb_col/3);
+      // VectorDouble N = col_data.getN(gg,nb_col/3);
       // for(int dd = 0;dd<nb_col/3;dd++) {
       //   for(int nn = 0;nn<3;nn++) {
       //     jac(0,3*dd+nn) = commonData.jacMass[gg](0,3+9+9+nn)*N(dd)*getFEMethod()->ts_a;
@@ -902,7 +902,7 @@ PetscErrorCode ConvectiveMassElement::OpMassJacobian::doWork(
       //     jac(2,3*dd+nn) = commonData.jacMass[gg](2,3+9+9+nn)*N(dd)*getFEMethod()->ts_a;
       //   }
       // }
-      // ublas::matrix<double> diffN = col_data.getDiffN(gg,nb_col/3);
+      // MatrixDouble diffN = col_data.getDiffN(gg,nb_col/3);
       // for(int dd = 0;dd<nb_col/3;dd++) {
       //   //h00 //h01 //h02
       //   jac(0,3*dd+0) += commonData.jacMass[gg](0,3+9+9+3+3*0+0)*diffN(dd,0);
@@ -1097,7 +1097,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
           noalias(dot_u) = dot_w-prod(F,dot_W);
           noalias(a_res) = (v - dot_u)*detH;
           //dependant
-          ublas::vector<double>& res = commonData.valVel[gg];
+          VectorDouble& res = commonData.valVel[gg];
           res.resize(3);
           for(int rr = 0;rr<3;rr++) {
             a_res[rr] >>= res[rr];
@@ -1137,7 +1137,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
         }
 
         if(!jAcobian) {
-          ublas::vector<double>& res = commonData.valVel[gg];
+          VectorDouble& res = commonData.valVel[gg];
           if(gg>0) {
             res.resize(3);
             int r;
@@ -1228,7 +1228,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
         }
 
         // for(unsigned int gg = 0;gg<row_data.getN().size1();gg++) {
-        //   ublas::vector<double>& res = commonData.valVel[gg];
+        //   VectorDouble& res = commonData.valVel[gg];
         //   for(int dd = 0;dd<nb_dofs/3;dd++) {
         //     for(int rr = 0;rr<3;rr++) {
         //       nf[3*dd+rr] += row_data.getN()(gg,dd)*res[rr];
@@ -1284,7 +1284,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
         ++base_ptr;
         ++t_jac;
       }
-      // ublas::vector<double> N = col_data.getN(gg,nb_col/3);
+      // VectorDouble N = col_data.getN(gg,nb_col/3);
       // //std::cerr << commonData.jacVel[gg] << std::endl;
       // for(int dd = 0;dd<nb_col/3;dd++) {
       //   for(int nn = 0;nn<3;nn++) {
@@ -1366,7 +1366,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
       }
       //std::cerr << commonData.jacVel[gg] << std::endl;
       //std::cerr << jac << std::endl;
-      // ublas::vector<double> N = col_data.getN(gg,nb_col/3);
+      // VectorDouble N = col_data.getN(gg,nb_col/3);
       // for(int dd = 0;dd<nb_col/3;dd++) {
       //   for(int nn = 0;nn<3;nn++) {
       //     jac(0,3*dd+nn) = commonData.jacVel[gg](0,3+nn)*N(dd)*getFEMethod()->ts_a;
@@ -1375,7 +1375,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
       //   }
       // }
       // if(commonData.dataAtGaussPts["DOT_"+commonData.meshPositions].size()>0) {
-      //   ublas::matrix<double> diffN = col_data.getDiffN(gg,nb_col/3);
+      //   MatrixDouble diffN = col_data.getDiffN(gg,nb_col/3);
       //   for(int dd = 0;dd<nb_col/3;dd++) {
       //     //h00 //h01 //h02
       //     jac(0,3*dd+0) += commonData.jacVel[gg](0,3+3+3*0+0)*diffN(dd,0);
@@ -1455,7 +1455,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
       }
       //std::cerr << commonData.jacVel[gg] << std::endl;
       //std::cerr << jac << std::endl;
-      // ublas::vector<double> N = col_data.getN(gg,nb_col/3);
+      // VectorDouble N = col_data.getN(gg,nb_col/3);
       // for(int dd = 0;dd<nb_col/3;dd++) {
       //   for(int nn = 0;nn<3;nn++) {
       //     jac(0,3*dd+nn) = commonData.jacVel[gg](0,3+3+9+nn)*N(dd)*getFEMethod()->ts_a;
@@ -1463,7 +1463,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
       //     jac(2,3*dd+nn) = commonData.jacVel[gg](2,3+3+9+nn)*N(dd)*getFEMethod()->ts_a;
       //   }
       // }
-      // ublas::matrix<double> diffN = col_data.getDiffN(gg,nb_col/3);
+      // MatrixDouble diffN = col_data.getDiffN(gg,nb_col/3);
       // for(int dd = 0;dd<nb_col/3;dd++) {
       //   //h00 //h01 //h02
       //   jac(0,3*dd+0) += commonData.jacVel[gg](0,3+3+9+3+3*0+0)*diffN(dd,0);
@@ -1617,7 +1617,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
           }
 
           if(!jAcobian) {
-            ublas::vector<double>& res = commonData.valT[gg];
+            VectorDouble& res = commonData.valT[gg];
             if(gg>0) {
               res.resize(3);
               int r;
@@ -1710,7 +1710,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
         }
 
         // for(unsigned int gg = 0;gg<row_data.getN().size1();gg++) {
-        //   ublas::vector<double>& res = commonData.valT[gg];
+        //   VectorDouble& res = commonData.valT[gg];
         //   //std::cerr << res << std::endl;
         //   for(int dd = 0;dd<nb_dofs/3;dd++) {
         //     for(int rr = 0;rr<3;rr++) {
@@ -1723,7 +1723,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
           SETERRQ(PETSC_COMM_SELF,1,"data inconsistency");
         }
         if(!forcesOnlyOnEntities.empty()) {
-          ublas::vector<DofIdx> indices = row_data.getIndices();
+          VectorInt indices = row_data.getIndices();
           VectorDofs& dofs = row_data.getFieldDofs();
           VectorDofs::iterator dit = dofs.begin();
           for(int ii = 0;dit!=dofs.end();dit++,ii++) {
@@ -1813,7 +1813,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
       }
       //std::cerr << commonData.jacT[gg] << std::endl;
       //std::cerr << jac << std::endl;
-      // ublas::vector<double> N = col_data.getN(gg,nb_col/3);
+      // VectorDouble N = col_data.getN(gg,nb_col/3);
       // for(int dd = 0;dd<nb_col/3;dd++) {
       //   for(int nn = 0;nn<3;nn++) {
       //     jac(0,3*dd+nn) = commonData.jacT[gg](0,nn)*N(dd)*getFEMethod()->ts_a;
@@ -1828,7 +1828,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
       //     jac(2,3*dd+nn) += commonData.jacT[gg](2,3+nn)*N(dd);
       //   }
       // }
-      // ublas::matrix<double> diffN = col_data.getDiffN(gg,nb_col/3);
+      // MatrixDouble diffN = col_data.getDiffN(gg,nb_col/3);
       // for(int dd = 0;dd<nb_col/3;dd++) {
       //   //h00 //h01 //h02
       //   jac(0,3*dd+0) += commonData.jacT[gg](0,3+3+3*0+0)*diffN(dd,0);
@@ -1899,7 +1899,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
       }
       //std::cerr << commonData.jacT[gg] << std::endl;
       //std::cerr << jac << std::endl;
-      // ublas::matrix<double> diffN = col_data.getDiffN(gg,nb_col/3);
+      // MatrixDouble diffN = col_data.getDiffN(gg,nb_col/3);
       // for(int dd = 0;dd<nb_col/3;dd++) {
       //   //h00 //h01 //h02
       //   jac(0,3*dd+0) += commonData.jacT[gg](0,3+3+9+3*0+0)*diffN(dd,0);
@@ -1969,7 +1969,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
       }
       //std::cerr << commonData.jacT[gg] << std::endl;
       //std::cerr << jac << std::endl;
-      // ublas::matrix<double> diffN = col_data.getDiffN(gg,nb_col/3);
+      // MatrixDouble diffN = col_data.getDiffN(gg,nb_col/3);
       // for(int dd = 0;dd<nb_col/3;dd++) {
       //   //h00 //h01 //h02
       //   jac(0,3*dd+0) += commonData.jacT[gg](0,3+3+9+9+3*0+0)*diffN(dd,0);
@@ -2120,7 +2120,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
       if(!tets.empty()) {
         add_tets = intersect(add_tets,tets);
       }
-      ierr = mField.add_ents_to_finite_element_by_TETs(add_tets,element_name); CHKERRQ(ierr);
+      ierr = mField.add_ents_to_finite_element_by_type(add_tets,MBTET,element_name); CHKERRQ(ierr);
     }
 
     PetscFunctionReturn(0);
@@ -2163,7 +2163,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
         if(!tets.empty()) {
           add_tets = intersect(add_tets,tets);
         }
-        ierr = mField.add_ents_to_finite_element_by_TETs(add_tets,element_name); CHKERRQ(ierr);
+        ierr = mField.add_ents_to_finite_element_by_type(add_tets,MBTET,element_name); CHKERRQ(ierr);
       }
 
       PetscFunctionReturn(0);
@@ -2216,7 +2216,7 @@ PetscErrorCode ConvectiveMassElement::OpEnergy::doWork(
       if(!tets.empty()) {
         add_tets = intersect(add_tets,tets);
       }
-      ierr = mField.add_ents_to_finite_element_by_TETs(add_tets,element_name); CHKERRQ(ierr);
+      ierr = mField.add_ents_to_finite_element_by_type(add_tets,MBTET,element_name); CHKERRQ(ierr);
     }
 
     PetscFunctionReturn(0);
