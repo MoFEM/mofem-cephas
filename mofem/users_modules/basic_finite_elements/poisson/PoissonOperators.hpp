@@ -28,7 +28,7 @@ namespace PoissonOperators {
    *
    * Calculate
    * \f[
-   * A = (\nabla v, \nabla u)_\Omega = \int_\Omega \nabla v \cdot \nabla u \textrm{d}\Omega
+   * \mathbf{K}=\int_\Omega \nabla \boldsymbol\phi \cdot \nabla \boldsymbol\phi \textrm{d}\Omega
    * \f]
    * and assemble to global matrix.
    *
@@ -235,7 +235,7 @@ namespace PoissonOperators {
    * \brief Operator calculate source term,
    *
    * \f[
-   * \mathbf{F} = \int_\Omega v f(x,y,z) \textrm{d}\Omega
+   * \mathbf{F} = \int_\Omega \boldsymbol\phi f \textrm{d}\Omega
    * \f]
    *
    */
@@ -321,7 +321,7 @@ namespace PoissonOperators {
    * \brief Calculate constrains matrix
    *
    * \f[
-   * \mathbf{C} = \int_{\partial\Omega} \lambda u \textrm{d}\partial\Omega
+   * \mathbf{C} = \int_{\partial\Omega} \boldsymbol\psi \boldsymbol\phi \textrm{d}\partial\Omega
    * \f]
    * where \f$\lambda \f$ is base function on boundary
    *
@@ -444,7 +444,7 @@ namespace PoissonOperators {
    * \brief Assemble constrains vector
    *
    * \f[
-   * \mathbf{C} = \int_{\partial\Omega} \lambda \overline{u}(x,y,z) \textrm{d}\partial\Omega
+   * \mathbf{g} = \int_{\partial\Omega} \boldsymbol\psi \overline{u} \textrm{d}\partial\Omega
    * \f]
    *
    */
