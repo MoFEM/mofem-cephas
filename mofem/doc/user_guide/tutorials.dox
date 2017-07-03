@@ -5,6 +5,19 @@ general problem on particular examples.
 
 \tableofcontents
 
+\section poisson_problem The Poisson equation
+
+The Poisson equation is solved using MoFEM::Simple interface. The generic
+procedure is applied to one of the simples PDEs. In order to make problem
+iterating boundary conditions are enforced by Lagrange multipliers
+
+- \subpage poisson_tut1
+
+Tutorial focusses attention on implementation of finite element users operators,
+setting integration rule and using \ref ftensor.
+
+- \subpage poisson_tut2
+
 \section snes_nonlinear_tut Nonlinear problem
 
 Minimal surface area (soap film on the wire): Tutorial showing step by step

@@ -3,9 +3,9 @@
  * \ingroup mofem_simple_interface
  * \example analytical_poisson.cpp
  *
- * This is similar test to one form
- * <https://fenicsproject.org/pub/tutorial/html/._ftut1004.html#ch:fundamentals>,
- * but exploiting MoFEM capabilities.
+ * For more information and detailed explain of this
+ * example see \ref poisson_tut1
+ *
  *
  */
 
@@ -25,17 +25,16 @@
 
 #include <BasicFiniteElements.hpp>
 #include <PoissonOperators.hpp>
-using namespace PoissonOperators;
+#include <AuxPoissonFunctions.hpp>
 
 static char help[] = "...\n\n";
 
 /**
  * \brief Function
  *
- * This is exact function. Finite element method is used to find This
- * function in the body volume. If this function is given by polynomial
- * order "p" and order of approximation is "p" or higher, solution of
- * finite element method is exact (with numerical precision)
+ * This is prescribed exact function. If this function is given by polynomial
+ * order of "p" and order of approximation is "p" or higher, solution of
+ * finite element method is exact (with machine precision).
  *
  *  \f[
  *  u = 1+x^2+y^2+z^3
@@ -49,44 +48,33 @@ struct ExactFunction {
 };
 
 /**
- * \brief Laplacian of function
+ * \brief Exact gradient
+ */
+struct ExactFunctionGrad {
+  FTensor::Tensor1<double,3> operator()(const double x,const double y,const double z) const {
+    FTensor::Tensor1<double,3> grad;
+    grad(0) = 2*x;
+    grad(1) = 2*y;
+    grad(2) = 3*z*z;
+    return grad;
+  }
+};
+
+/**
+ * \brief Laplacian of function.
  *
- * This is laplacian of \f$u\f$
+ * This is Laplacian of \f$u\f$, it is calculated using formula
+ * \f[
+ * \nabla^2 u(x,y,z) = \nabla \cdot \nabla u
+ * \frac{\partial^2 u}{\partial x^2}+
+ * \frac{\partial^2 u}{\partial y^2}+
+ * \frac{\partial^2 u}{\partial z^2}
+ * \f]
  *
  */
 struct ExactLaplacianFunction {
   double operator()(const double x,const double y,const double z) const {
-    return 0+2+2+3*2*z;
-  }
-};
-
-/**
- * \brief Set integration rule to volume elements
- *
- * This rule is used to integrate \f$\nabla v \cdot \nabla u\f$, thus
- * if approximation field and testing field are polynomial order "p",
- * then rule for exact integration is 2*(p-1)
- *
- */
-struct VolRule {
-  int operator()(int,int,int p) const {
-    // cerr << p << endl;
-    return 2*p;
-  }
-};
-
-/**
- * \brief Set integration rule to boundary elements
- *
- * This is uses to integrate values on the face. Is used to integrate
- * \f$(\mathbf{n} \cdot \lambda) u\f$, where Lagrange multiplayer
- * is order "p_row" and approximate function is order "p_col".
- *
- */
-struct FaceRule {
-  int operator()(int p_row,int p_col,int p_data) const {
-    // cerr << p_row << " " << p_col << " " << p_data << endl;
-    return p_row+p_col;
+    return 4+6*z;
   }
 };
 
@@ -95,51 +83,33 @@ int main(int argc, char *argv[]) {
   ErrorCode rval;
   PetscErrorCode ierr;
 
-  // initialize petsc
+  // Initialize PETSc
   PetscInitialize(&argc,&argv,(char *)0,help);
+  // Create MoAB database
+  moab::Core moab_core;                   // create database
+  moab::Interface& moab = moab_core;      // create interface to database
 
   // Get command line options
-
   int order = 3;  // default approximation order
   PetscBool flg_test = PETSC_FALSE; // true check if error is numerical error
-  ierr = PetscOptionsBegin(
-    PETSC_COMM_WORLD,"",
-    "Poisson's problem options","none"
-  ); CHKERRQ(ierr);
+  ierr = PetscOptionsBegin(PETSC_COMM_WORLD,"", "Poisson's problem options","none"); CHKERRQ(ierr);
   // Set approximation order
-  ierr = PetscOptionsInt(
-    "-order","approximation order","",order,&order,PETSC_NULL
-  ); CHKERRQ(ierr);
-  // Set testing (used by ctest)
-  ierr = PetscOptionsBool(
-    "-test","if true is ctest","",flg_test,&flg_test,PETSC_NULL
-  ); CHKERRQ(ierr);
+  ierr = PetscOptionsInt("-order","approximation order","",order,&order,PETSC_NULL); CHKERRQ(ierr);
+  // Set testing (used by CTest)
+  ierr = PetscOptionsBool("-test","if true is ctest","",flg_test,&flg_test,PETSC_NULL); CHKERRQ(ierr);
   ierr = PetscOptionsEnd(); CHKERRQ(ierr);
 
   try {
 
-    // Create MoAB database
-    moab::Core moab_core; // create database
-    moab::Interface& moab = moab_core; // create interface to database
-
     // Create MoFEM database and link it to MoAB
-    MoFEM::Core mofem_core(moab); // create database
-    MoFEM::Interface& m_field = mofem_core; // create interface to database
-
+    MoFEM::Core mofem_core(moab);                      // create database
+    MoFEM::Interface& m_field = mofem_core;            // create interface to database
     // Register DM Manager
-    DMType dm_name = "DMMOFEM"; // name of new DM manager
-    ierr = DMRegister_MoFEM(dm_name); CHKERRQ(ierr); // register MoFEM DM in PETSc
+    ierr = DMRegister_MoFEM("DMMOFEM"); CHKERRQ(ierr); // register MoFEM DM in PETSc
 
-    // Create ghost vector to assemble errors from all element on distributed mesh.
-    // Ghost vector has size 1, where one element is owned by processor 0, other processor
-    // have one ghost element of zero element at processor 0.
-    int ghosts[] = { 0 };
+    // Create vector to store approximation global error
     Vec global_error;
-    ierr = VecCreateGhost(
-      PETSC_COMM_WORLD,m_field.get_comm_rank()==0?1:0,1,
-      m_field.get_comm_rank()==0?0:1,ghosts,&global_error
-    ); CHKERRQ(ierr);
-
+    ierr = PoissonExample::AuxFunctions(m_field).createGhostVec(&global_error); CHKERRQ(ierr);
 
     // First we crate elements, implementation of elements is problem independent,
     // we do not know yet what fields are present in the problem, or
@@ -147,7 +117,7 @@ int main(int argc, char *argv[]) {
     // are going to use. Implementation of element is free from
     // those constrains and can be used in different context.
 
-    // Elements tised by KSP & DM to assemble system of equations
+    // Elements used by KSP & DM to assemble system of equations
     boost::shared_ptr<ForcesAndSurcesCore> domain_lhs_fe;     ///< Volume element for the matrix
     boost::shared_ptr<ForcesAndSurcesCore> boundary_lhs_fe;   ///< Boundary element for the matrix
     boost::shared_ptr<ForcesAndSurcesCore> domain_rhs_fe;     ///< Volume element to assemble vector
@@ -156,16 +126,18 @@ int main(int argc, char *argv[]) {
     boost::shared_ptr<ForcesAndSurcesCore> post_proc_volume;  ///< Volume element to Post-process results
     boost::shared_ptr<ForcesAndSurcesCore> null;              ///< Null element do nothing
     {
-      ierr = CreateFiniteElementes().createFEToAssmbleMatrceAndVector(
-        m_field,
-        VolRule(),FaceRule(),
+      // Add problem specific operators the generic finite elements to calculate matrices and vectors.
+      ierr = PoissonExample::CreateFiniteElementes(m_field).createFEToAssmbleMatrceAndVector(
         ExactFunction(),ExactLaplacianFunction(),
         domain_lhs_fe,boundary_lhs_fe,domain_rhs_fe,boundary_rhs_fe
       ); CHKERRQ(ierr);
-      ierr = CreateFiniteElementes().createFEToEvaluateError(
-        m_field,VolRule(),ExactFunction(),global_error,domain_error
+      // Add problem specific operators the generic finite elements to calculate error on elements and global error
+      // in H1 norm
+      ierr = PoissonExample::CreateFiniteElementes(m_field).createFEToEvaluateError(
+        ExactFunction(),ExactFunctionGrad(),global_error,domain_error
       ); CHKERRQ(ierr);
-      ierr = CreateFiniteElementes().creatFEToPostProcessResults(m_field,post_proc_volume); CHKERRQ(ierr);
+      // Post-process results
+      ierr = PoissonExample::CreateFiniteElementes(m_field).creatFEToPostProcessResults(post_proc_volume); CHKERRQ(ierr);
     }
 
     // Get simple interface is simplified version enabling quick and
@@ -186,14 +158,21 @@ int main(int argc, char *argv[]) {
       // can be H1. Hcurl, Hdiv and L2, base can be AINSWORTH_LEGENDRE_BASE, DEMKOWICZ_JACOBI_BASE and more,
       // where rank is number of coefficients for dof.
       //
-      // Simple interface assumes that there are four types of field, woman feels, defined
-      // on body domain, boundary fields defined on body boundary, skeleton field defined
+      // Simple interface assumes that there are four types of field; 1) defined
+      // on body domain, 2) fields defined on body boundary, 3) skeleton field defined
       // on finite element skeleton. Finally data field is defined on body domain. Data field
-      // is not solved but used for Post-process or to keep material parameters, etc.
-      //
+      // is not solved but used for post-process or to keep material parameters, etc. Here
+      // we using it to calculate approximation error on elements.
+
+      // Add domain filed "U" in space H1 and Legendre base, Ainsworth recipe is used
+      // to construct base functions.
       ierr = simple_interface->addDomainField("U",H1,AINSWORTH_LEGENDRE_BASE,1); CHKERRQ(ierr);
+      // Add Lagrange multiplier field on body boundary
       ierr = simple_interface->addBoundaryField("L",H1,AINSWORTH_LEGENDRE_BASE,1); CHKERRQ(ierr);
-      // Add error (data) field
+      // Add error (data) field, we need only L2 norm. Later order is set to 0, so this
+      // is piecewise discontinuous constant approx., i.e. 1 DOF for element. You can use
+      // more DOFs and collate moments of error to drive anisotropic h/p-adaptivity, however
+      // this is beyond this example.
       ierr = simple_interface->addDataField("ERROR",L2,AINSWORTH_LEGENDRE_BASE,1); CHKERRQ(ierr);
 
       // Set fields order domain and boundary fields.
@@ -201,13 +180,18 @@ int main(int argc, char *argv[]) {
       ierr = simple_interface->setFieldOrder("L",order); CHKERRQ(ierr); // to Lagrange multiplayers
       ierr = simple_interface->setFieldOrder("ERROR",0); CHKERRQ(ierr); // approximation order for error
 
-      // Setup problem. At that point database is constructed.
+      // Setup problem. At that point database is constructed, i.e. fields, finite elements and
+      // problem data structures with local and global indexing.
       ierr = simple_interface->setUp(); CHKERRQ(ierr);
 
     }
 
     // Get access to PETSC-MoFEM DM manager.
     // or more derails see <http://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/DM/index.html>
+    // Form that point internal MoFEM data structures are linked with PETSc interface. If
+    // DM functions contains string MoFEM is is MoFEM specific DM interface function,
+    // otherwise DM function part of standard PETSc interface.
+
     DM dm;
     // Get dm
     ierr = simple_interface->getDM(&dm); CHKERRQ(ierr);
@@ -216,7 +200,7 @@ int main(int argc, char *argv[]) {
     // Calculations of matrices and vectors is executed by KSP solver. This part
     // of the code makes connection between implementation of finite elements and
     // data operators with finite element declarations in DM manager. From that
-    // point DM takes responsibility for executing elements. calculations of
+    // point DM takes responsibility for executing elements, calculations of
     // matrices and vectors, and solution of the problem.
     {
       // Set operators for KSP solver
@@ -235,7 +219,7 @@ int main(int argc, char *argv[]) {
       ); CHKERRQ(ierr);
     }
 
-    // Solve problem
+    // Solve problem, only PETEc interface here.
     {
 
       // Create the right hand side vector and vector of unknowns
@@ -270,34 +254,19 @@ int main(int argc, char *argv[]) {
     {
       // Loop over all elements in mesh, and run users operators on each element.
       ierr = DMoFEMLoopFiniteElements(dm,simple_interface->getDomainFEName(),domain_error); CHKERRQ(ierr);
-      // Assemble vector with globe error.
-      ierr = VecAssemblyEnd(global_error); CHKERRQ(ierr);
-      ierr = VecGhostUpdateBegin(global_error,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-      ierr = VecGhostUpdateEnd(global_error,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
-      // Print error
-      if(m_field.get_comm_rank()==0) {
-        double *e;
-        ierr = VecGetArray(global_error,&e); CHKERRQ(ierr);
-        cout << "Global errror " << e[0] << endl;
-        if(flg_test) {
-          // Check if error is zero, otherwise throw error
-          if(e[0]>1e-10||e[0]!=e[0]) {
-            SETERRQ(PETSC_COMM_SELF,MOFEM_ATOM_TEST_INVALID,"Test failed, error too big");
-          }
-        }
-        ierr = VecRestoreArray(global_error,&e); CHKERRQ(ierr);
+      ierr = PoissonExample::AuxFunctions(m_field).assembleGhostVector(global_error); CHKERRQ(ierr);
+      ierr = PoissonExample::AuxFunctions(m_field).printError(global_error); CHKERRQ(ierr);
+      if(flg_test == PETSC_TRUE) {
+        ierr = PoissonExample::AuxFunctions(m_field).testError(global_error); CHKERRQ(ierr);
       }
     }
 
     {
       // Loop over all elements in the mesh and for each execute post_proc_volume
       // element and operators on it.
-      ierr = DMoFEMLoopFiniteElements(
-        dm,simple_interface->getDomainFEName(),post_proc_volume
-      ); CHKERRQ(ierr);
+      ierr = DMoFEMLoopFiniteElements(dm,simple_interface->getDomainFEName(),post_proc_volume); CHKERRQ(ierr);
       // Write results
-      ierr = boost::static_pointer_cast<PostProcVolumeOnRefinedMesh>(post_proc_volume)->
-      writeFile("out_vol.h5m"); CHKERRQ(ierr);
+      ierr = boost::static_pointer_cast<PostProcVolumeOnRefinedMesh>(post_proc_volume)->writeFile("out_vol.h5m"); CHKERRQ(ierr);
     }
 
     // Destroy DM, no longer needed.

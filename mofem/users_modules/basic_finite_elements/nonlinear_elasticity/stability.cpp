@@ -40,8 +40,8 @@ struct MyMat_double: public NonlinearElasticElement::FunctionsToCalculatePiolaKi
   MyMat_double(): doAotherwiseB(true) {};
 
   MatrixDouble D_lambda,D_mu,D;
-  ublas::vector<TYPE> sTrain,sTrain0,sTress;
-  ublas::matrix<adouble> invF,CauchyStress;
+  ublas::vector<TYPE,ublas::bounded_array<TYPE,6> > sTrain,sTrain0,sTress;
+  ublas::matrix<adouble,ublas::row_major,ublas::bounded_array<adouble,9> > invF,CauchyStress;
 
   virtual PetscErrorCode calculateP_PiolaKirchhoffI(
     const NonlinearElasticElement::BlockData block_data,
@@ -528,8 +528,8 @@ int main(int argc, char *argv[]) {
   ierr = EPSGetIterationNumber(eps,&its); CHKERRQ(ierr);
   PetscPrintf(PETSC_COMM_WORLD," Number of iterations of the method: %D\n",its);
   ierr = EPSGetST(eps,&st); CHKERRQ(ierr);
-  ierr = STGetOperationCounters(st,NULL,&lits); CHKERRQ(ierr);
-  PetscPrintf(PETSC_COMM_WORLD," Number of linear iterations of the method: %D\n",lits);
+  //ierr = STGetOperationCounters(st,NULL,&lits); CHKERRQ(ierr);
+  //PetscPrintf(PETSC_COMM_WORLD," Number of linear iterations of the method: %D\n",lits);
   ierr = EPSGetType(eps,&type); CHKERRQ(ierr);
   PetscPrintf(PETSC_COMM_WORLD," Solution method: %s\n",type);
   ierr = EPSGetDimensions(eps,&nev,NULL,NULL); CHKERRQ(ierr);
