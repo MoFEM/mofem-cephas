@@ -1,65 +1,127 @@
 /*! \page poisson_tut2 Implementing operators for the Poisson equation
 
 In this tutorial, we focus only on setting up finite element and implementation
-of user data operator for the Poisson equation. All implementation presented
-here you can find in \ref PoissonOperators.hpp.
+of user data operator for the Poisson equation. It is next step after
+tutorial \ref poisson_tut1. Source for this tutorial is in \ref PoissonOperators.hpp.
 
-Two types of finite elements classes are used to solve the problem from tutorial
-\ref poisson_tut1, i.e. domain elements and boundary elements on a body surface.
-We using here generic finite element implementation, see \ref mofem_forces_and_sources.
+MoFEM is designed to work with various approximation spaces and it utilizing
+hierarchical and heterogenous approximation bases. MoFEM design is reflected in
+hierarchy of classes and how implementation of finite elements. Here we
+introduce users data operator, which provide core functionality for application
+developers.
 
-Each finite element instance is responsible for retrieving information from the
-database, calculation of base function and deliver basic functionality like
-calculation of a measure of element domain, i.e. volume, area or length. It
-delivers as well integration rules or enables a user to implement own
-integration shame. Finite element instances are called for finite element
-entities in the problem, and for each instance sequence of user's data operators
-is called.
+We distinguish between finite element structure (FES), finite element
+entity (FEE) and finite element class (FEC) and finite element object (FEO);
 
-In essence, users operators are called in sequence, in order pushed to finite
-element object. Each operator is iterated over base function on low dimension entities
-on finite element entity. We have to kinds of operators, those used to evaluate
-vectors and those used to evaluate matrices. The first kind is iterating on
-entities, the second kind is iterating on every unique pair of entities. When a
-symmetric operator is analysed two pairs with swapped entities are the same.
+- \b FES: Is structure declaring finite element, i.e. it name and on which
+fields it operates. It keep information on meshset tag, meshet contains all
+entities on which given FES is defined. Structure of finite element is
+implemented in MoFEM::FiniteElement. This class is transparent for application
+developer and used directly by core library developers.
 
-We start with an example of creating finite element instances. This is a
-procedure which is repeated practically for the very type of PDE in very similar
-way. We using smart pointers to allocate finite element objects and users data
-operators, if you are not family with this C++ technology, you can skip that
-part and jump int section about the implementation of users data operators \ref
-poisson_tut2_op_operators, and come back to the following section later.
+- \b FEE: Is particular entity on which FES is defined. This is implemented in
+MoFEM::EntFiniteElement and derived classes. On that structure data about DOFs
+on finite element are stored. This hierarchy of classes is transparent for
+application developer and used directly by core library developers.
+
+- \b FEC: FEC class is used to create FEO. FEC is set of methods operating on
+FEE. In MoFEM we have hierarchy of FEC classes managing complexities associated
+with finite elements calculations.
+
+- \b FEO: Is instance of FEC.
+
+Implementation of finite element class (FEC) is generic, does not depend on
+problem or PDE which is solved. The most generic FFC is derived  directly form
+MoFEM::FEMethod, this element deliver raw access to multi-index  structures on
+FEE, enabling to make various queries about DOFs, for example to iterate over
+DOFs on lower entity of specific type or DOFs associated with particular field
+and order, utilizing flexibility of multi-index containers. The
+MoFEM::ForcesAndSurcesCore finite element is derived form MoFEM::FEMethod. Form
+MoFEM::ForcesAndSurcesCore are derived range of elements associated with
+particular dimensions, MoFEM::VolumeElementForcesAndSourcesCore,
+MoFEM::FaceElementForcesAndSourcesCore and more or special elements for
+particular type of entity, e.g. MoFEM::FatPrismElementForcesAndSurcesCore. The
+MoFEM::ForcesAndSurcesCore provides simplified interface to access DOFs indices,
+calculation of base functions and other methods specific to finite element
+entity dimension or finite element entity type. Above comments and insight is
+not needed to develop application in MoFEM. However, it could help to understand
+unique capabilities. I you fill confused by number of names, don't
+worry, I would be confused as well on the first reading.
+
+Using MoFEM::Simple interface to FES structures are created, for managing
+elements in domain and boundary. All FEO are created using FEC derived from
+MoFEM::VolumeElementForcesAndSourcesCore and MoFEM::FaceElementForcesAndSourcesCore, for
+domain elements and boundary elements, respectively.
+
+The core functionality of domain finite element instances and boundary element
+instances are provided by MoFEM::ForcesAndSurcesCore. Application developer
+do not reimplement finite element, instead provides users data operators (UDO).
+Implementing finite element method, we can recognize outer loop over FEE, inner
+loop over lower dimension entities (LDE) on element, and finally most inner loop
+over loops over base functions on entities and integration points. Application
+developer focusses its attention on most inner loops, where the physical
+equations of the problem are implemented. Whereas outer loops on FEE and LDE are
+managed internally by MoFEM. For example UDO can be used to integrate bilinear
+form (calculate elements of matrices) and linear form  (elements of the right
+hand vector).
+
+UDO can be understood as a operator which executes job executed on FEE. UDO are
+added/pushed to the FEO and called in sequence (order in
+which are pushed to finite element instance). For example for vector or matrix
+assembly, finite elements entity (FEE) are iterated, then FEO is called for FEE.
+FEO get data from database about FEE, calculate base functions on integration
+points and other bookkeeping operations. FEO iterates over LDE and for each call
+sequence of UDO.
+
+Hierarchy of UDO classes reflect hierarchy of FEC, where
+MoFEM::ForcesAndSurcesCore::UserDataOperator is derived form
+MoFEM::DataOperator. MoFEM::DataOperator are used by core  library developers to
+do love level tasks on element, e.g. applying Piola Transform to base functions,
+etc. When application developer uses exclusively
+MoFEM::ForcesAndSurcesCore::UserDataOperator to implement his problem, then
+implementation is dimension independent. If dimension specific functionality,
+like recalculated volume of element, or normal of face is needed, then derived
+user operators can be used, e.g.
+MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator,
+MoFEM::FaceElementForcesAndSourcesCore::UserDataOperator and more, see \ref
+mofem_forces_and_sources.
+
+In this tutorial we start with an example of creating finite element instances,
+i.e. FEO. This is a procedure which is repeated practically for the every type of
+PDE in very similar way. We using smart pointers to allocate FEO and UDO. If you
+are not family with this C++ technology, you can skip that part and jump into
+section about the implementation of UDO \ref poisson_tut2_op_operators,
+and come back to the following section later.
 
 \tableofcontents
 
 \section poisson_tut2_op_volume Operators on volume elements
 
-Volume elements are used to integrate matrix, "domain_lhs_fe", the right-hand
-side "domain_rhs_fe" and error. In the case of first two, is only one operator
-is on the finite element. In the case of error integration, three operators are
-run in sequence as is shown in Figure 1. All three instances of finite element
-operates on the same finite element structure in the database, i.e. "dFE". Data
-structure "dFE" is created by MoFEM::Simple interface.
+In this example we using three finite elements instances to integrate fields in
+domain, i.e. \e domain_lhs_fe, \e domain_rhs_fe and \e domain_error, to
+integrate matrix, the right-hand vector and error. Implementation of those
+finite elements is exactly the same, but different operators are added to those
+elements. For first two, i.e. \e domain_lhs_fe and \e domain_rhs_fe, is only one
+operator is on the finite element. For \e domain_error three operators are run
+in sequence as is shown in figure 1.
 
 \image html poisson_tut1_fig2.png "Figure 1. Operators of volume finite element" width=700px
 
 \section poisson_tut2_op_volume_op_face Operators on face element
 
-Implementation of finite on faces in this case on the body surface is similar to
-one for volume elements. We have to instances of boundary element,
-"boundary_lhs_fe" and "boundary_rhs_fe", which operates on the same data
-structure in the database, i.e. "bFE".
+To integrate fields on body surface we have two finite element instances,
+\e boundary_lhs_fe and \e boundary_rhs_fe, see figure 2.
 
 \image html poisson_tut1_fig3.png "Figure 2. Operators of boundary finite element" width=400px
 
 \section poisson_tut2_op_set_up Set-up of finite element
 
-Set up of all elements used in the Poisson equation example is in class
-PoissonExample::CreateFiniteElementes, here we focus attention on finite element
-setup for calculation matrices and vectors, i.e.
+Set up of all elements used in the Poisson equation example is implemented in
+the class PoissonExample::CreateFiniteElementes, here we focus attention on
+finite element setup for calculation matrices and vectors, i.e.
 PoissonExample::CreateFiniteElementes::createFEToAssmbleMatrceAndVector.
 
-Let look at the code in PoissonExample::CreateFiniteElementes::createFEToAssmbleMatrceAndVector
+We will dissect code in PoissonExample::CreateFiniteElementes::createFEToAssmbleMatrceAndVector
 \code
 domain_lhs_fe = boost::shared_ptr<ForcesAndSurcesCore>(new VolumeElementForcesAndSourcesCore(mField));
 boundary_lhs_fe = boost::shared_ptr<ForcesAndSurcesCore>(new FaceElementForcesAndSourcesCore(mField));
@@ -83,43 +145,32 @@ boundary_lhs_fe->getOpPtrVector().push_back(new OpLU(true));
 boundary_rhs_fe->getOpPtrVector().push_back(new OpLU_exact(f_u));
 \endcode
 
-Implementing MoFEM we try to avoid using "raw" pointers, and instead using
+\note Implementing MoFEM we try to avoid using "raw" pointers, and instead using
 "smart" pointers like boost::shared_ptr. The main reason for using smart
-pointers is that make code less prone to bugs. You can not accidentally release
-memory/object used somewhere else, simplify implantation since you do not have
-to keep pointers explicitly but you can implicitly hide them in other objects,
-and finally you do not have memory leaks, which you allocated memory and forget
-about it.
+pointers is that make code less prone to bugs and make implementation simpler.
 
-We start with allocating finite element instance
+In first line we allocate finite element instances
 \code
 domain_lhs_fe = boost::shared_ptr<ForcesAndSurcesCore>(new VolumeElementForcesAndSourcesCore(mField));
 \endcode
-and similarly for other elements. Note that pointer is to
-MoFEM::ForcesAndSurcesCore, that is generic finite elements with can manage data
-users operators. Since linear solver and in particular DM need the only
-functionality of MoFEM::ForcesAndSurcesCore to be able to iterate over finite
-elements and assemble matrices and vectors. However actually constructed objet
-is MoFEM::VolumeElementForcesAndSourcesCore, since operators on that element
-need to have access to base function on 3d finite element and information about
-volume and integration quadrature points. For example boundary finite element
-\code
-boundary_lhs_fe = boost::shared_ptr<ForcesAndSurcesCore>(new FaceElementForcesAndSourcesCore(mField));
-\endcode
-is on the surface. For solver, whether the finite element is 0d, 1d, 2d, 3d is
-not distinguishable, however for user data operator iterating over integration
-points and evaluating base functions dimension of the element is essential (but
-not type of entity, i.e. triangle or quad in case of 2d). Thus in this case,
-since boundary element is on the surface of 3d body, instances of
-MoFEM::FaceElementForcesAndSourcesCore are created.
+and similarly for other elements. We have smart pointer of type
+MoFEM::ForcesAndSurcesCore, however allocated finite element instance is type of
+MoFEM::VolumeElementForcesAndSourcesCore. MoFEM::ForcesAndSurcesCore provides
+functionality to manage UDO. MoFEM::VolumeElementForcesAndSourcesCore in
+addition manages complexities associate with integration of volume elements,
+using that class developer is freed from the need of setting integration rule or
+calling functions to calculate approximation base on entities. Note for boundary
+elements, appropriately allocated instance is type of
+MoFEM::FaceElementForcesAndSourcesCore.
 
 Once we have instances of finite element created we need to choose quadrature
-order appropriately, for example, if we integrate term
+rule. For example to integrate term
 \f[
 \mathbf{K}=\int_\Omega \nabla \boldsymbol\phi \cdot \nabla \boldsymbol\phi \textrm{d}\Omega
 \f]
 where \f$\boldsymbol\phi\f$ is a base function of  polynomial order \f$p\f$, then the
-integrated term will be the order of \f$2(p-1)\f$ for term in the integral above.
+integrated term will be the order of \f$2(p-1)\f$, for term in the integral above.
+To set integrate rule we implement function
 \code
 struct VolRule {
   int operator()(int,int,int p) const { return 2*(p-1); }
@@ -134,8 +185,6 @@ domain_rhs_fe->getRuleHook = VolRule();
 boundary_lhs_fe->getRuleHook = FaceRule();
 boundary_rhs_fe->getRuleHook = FaceRule();
 \endcode
-Note that this is "smart" vector of pointers, and you do not have a
-responsibility to release memory when finite element object is no longer needed.
 
 \note Here we use a class with the overloaded operator to define an implicit
 function. This is done for convenience and future extensibility, equivalently
@@ -156,7 +205,7 @@ Dissecting the line, first we start with explicit code
 \code
 boost::ptr_vector<UserDataOperator>& sequence_of_operators = domain_lhs_fe->getOpPtrVector();
 \endcode
-You can see now getOpPtrVector return vector of pointers to operators acting on
+You can see now \e getOpPtrVector return vector of pointers to operators acting on
 finite element lower dimension entities. Now having vector of pointers, we going
 to push operator at the end of it
 \code
@@ -178,15 +227,19 @@ Dissecting above code, we start with creating matrix and vector and shared
 pointers to them so that passed to operators are not destroyed with the end of
 the scope of the function. Matrix and vector will be destroyed at the time when
 operators using them are destroyed. Smart pointer will do for us that job and we
-do not have to think about that. Next, we create operator
+do not have to think about that any more. Next, we create operator
 MoFEM::OpCalculateScalarFieldValues, it is one of the standard operators used in
 various implementations. It calculates field values at integration points and
 store those values in values_at_integation_ptr. The second operator, i.e.
 MoFEM::OpCalculateScalarFieldGradient is standard operator to calculate field
-gradients and store them in grad_at_integation_ptr. Once we have field values
+gradients and store them in grad_at_integation_ptr. Classes MoFEM::OpCalculateScalarFieldValues
+and MoFEM::OpCalculateScalarFieldGradient are derived from MoFEM::ForcesAndSurcesCore::UserDataOperator
+and can be used with volume and face elements. Once we have field values
 and field gradients, we create third operator PoissonExample::OpError, which
 takes arguments with pointers to exact function, exact function derivatives, and
-field gradients. With those data at hand, it calculates H1 error norm.
+field gradients. With those data at hand, it calculates H1 error norm. Class
+PoissonExample::OpError is derived form MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator
+and incense of it can be added only to object of MoFEM::VolumeElementForcesAndSourcesCore.
 
 \section poisson_tut2_op_operators Implementation of user data operators
 
@@ -253,10 +306,7 @@ MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator, which is a generic
 class to work on 3d finite element entities. Class
 MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator delivers methods get
 a volume of finite element and give access to the data structure of the 3d
-element, to its quadrature points, etc. Operator implemented like that is
-problem dependent, if operator derived from MoFEM::ForcesAndSurcesCore::UserDataOperator
-is implemented, is finite element dimension independent, see for example
-MoFEM::OpCalculateScalarFieldValues.
+element, to its quadrature points, etc.
 
 Constructor of operator is
 \code
@@ -298,9 +348,9 @@ The number of base functions on each of entities depends on approximation order
 and space, for example, see how it works for H-div and L2 space here \ref
 ultraweak_assmble_matrix. Since the last argument in the constructor is "true",
 it indicates that bilinear form is symmetric and iteration over entities is only
-for unique unordered pairs. The task of integration over entities is managed by
-MoFEM::ForcesAndSurcesCore finite element from which all entity finite elements
-are derived.
+for unique unordered pairs, i.e. pair is a set with two elements. The task of
+integration over entities is managed by MoFEM::ForcesAndSurcesCore finite
+element from which all entity finite elements are derived.
 
 Now we can dissect overloaded function
 \code
@@ -728,9 +778,9 @@ ierr = VecSetValue(globalError,0,data.getFieldData()[0],ADD_VALUES); CHKERRQ(ier
 
 \section poisson_tut2_exercise Exercise
 
-- Exercise 1: Can you change the Poisson equation to Darcy flow problem or Thermal problem?
+- Exercise 1: Change problem to the Darcy flow problem?
 
-- Exercise 2: Change how the error is calculated that you get error norm in L2 and semi norm of H1 for error.
+- Exercise 2: Calculate error L2 and semi norm H1 of the error.
 
 */
 
