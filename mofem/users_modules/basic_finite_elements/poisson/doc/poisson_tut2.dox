@@ -76,7 +76,7 @@ sequence of UDO.
 Hierarchy of UDO classes reflect hierarchy of FEC, where
 MoFEM::ForcesAndSurcesCore::UserDataOperator is derived form
 MoFEM::DataOperator. MoFEM::DataOperator are used by core  library developers to
-do love level tasks on element, e.g. applying Piola Transform to base functions,
+do low level tasks on element, e.g. applying Piola Transform to base functions,
 etc. When application developer uses exclusively
 MoFEM::ForcesAndSurcesCore::UserDataOperator to implement his problem, then
 implementation is dimension independent. If dimension specific functionality,
@@ -90,7 +90,7 @@ In this tutorial we start with an example of creating finite element instances,
 i.e. FEO. This is a procedure which is repeated practically for the every type of
 PDE in very similar way. We using smart pointers to allocate FEO and UDO. If you
 are not family with this C++ technology, you can skip that part and jump into
-section about the implementation of UDO \ref poisson_tut2_op_operators,
+section about the implementation of UDO (see \ref poisson_tut2_op_operators),
 and come back to the following section later.
 
 \tableofcontents
@@ -330,7 +330,7 @@ H1 space and for tetrahedra, we would iterate over entities
 \mathcal{E}_\textrm{row},\mathcal{E}_\textrm{col} =
 \{VERTICES,EDGES \times 6,TRIAGLES \times 4,TETRAHEDRA \}
 \f]
-and we have set of unique paris,
+and we have set of unique pairs,
 \f[
 \begin{array}{l}
 \mathcal{S} = \{
@@ -643,7 +643,7 @@ PetscErrorCode PoissonExample::OpVF::aSsemble(DataForcesAndSurcesCore::EntData &
 \endcode
 A similar approach is applied to integrate terms associated with Lagrange
 multipliers. The key advantage of presented approach is that difficult problem
-is broken into small parts, which can be tested and used for different problems
+is broken into small parts, which can be tested and reused for different problems
 and contexts.
 
 \subsection poisson_tut2_op_operators_error Error calculation
