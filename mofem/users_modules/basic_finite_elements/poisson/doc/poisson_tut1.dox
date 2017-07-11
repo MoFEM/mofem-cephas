@@ -479,8 +479,7 @@ ierr = boost::static_pointer_cast<PostProcVolumeOnRefinedMesh>(post_proc_volume)
 \section poisson_tut1_installation Installation
 
 The easiest installation is with Docker containers; pleas see youtube video how
-to run installation <a
-href=https://www.youtube.com/watch?v=6opfKER7JHA>link</a>. You can also look
+to run installation <a href=https://www.youtube.com/watch?v=6opfKER7JHA>link</a>. You can also look
 here \ref install_docker.
 \code
 // Clone source code, you moight like to make changes
@@ -691,7 +690,7 @@ mbconvert -l
 
 \section poisson_tut1_excercise Exercises
 
-- Excecise 1: Change approximate make it smaller that 3rd order or make it
+- Exercise 1: Change approximate make it smaller that 3rd order or make it
 large, what happens? Can you  explain this?
 
 - Exercise 2: Change exact displacement function, for example to trigonometric

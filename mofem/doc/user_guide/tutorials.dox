@@ -5,6 +5,13 @@ general problem on particular examples.
 
 \tableofcontents
 
+\section hello_word Hello world
+
+Introduces user to basic ideas of user operator and MoFEM::Simple interface and
+implementation of finite element with users data operators.
+
+- \subpage hello_word_tut1
+
 \section poisson_problem The Poisson equation
 
 The Poisson equation is solved using MoFEM::Simple interface. The generic
