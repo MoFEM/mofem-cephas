@@ -156,9 +156,10 @@ namespace MoFEM {
      * \brief Set field order
      * @param  std::field_name field name
      * @param  order           order
+     * @param  range of entities to which order is set (If null it sat to all entities)
      * @return                 error code
      */
-    PetscErrorCode setFieldOrder(const std::string field_name,const int order);
+    PetscErrorCode setFieldOrder(const std::string field_name,const int order,const Range* ents = NULL);
 
     /**
      * \brief Build fields
@@ -214,7 +215,7 @@ namespace MoFEM {
     std::vector<std::string> skeletonFields;  ///< fields on the skeleton
     std::vector<std::string> dataFields;      ///< Data fields
 
-    std::map<std::string,int> fieldsOrder;    ///< fields order
+    std::map<std::string,std::pair<int,Range> > fieldsOrder;    ///< fields order
 
     std::string domainFE;      ///< domain finite element
     std::string boundaryFE;     ///< boundary finite element
