@@ -476,31 +476,11 @@ ierr = DMoFEMLoopFiniteElements(dm,simple_interface->getDomainFEName(),post_proc
 ierr = boost::static_pointer_cast<PostProcVolumeOnRefinedMesh>(post_proc_volume)->writeFile("out_vol.h5m"); CHKERRQ(ierr);
 \endcode
 
-\section poisson_tut1_installation Installation
+\section poisson_tut1_running_program Running the program
 
 The easiest installation is with Docker containers; pleas see youtube video how
 to run installation <a href=https://www.youtube.com/watch?v=6opfKER7JHA>link</a>. You can also look
-here \ref install_docker.
-\code
-// Clone source code, you moight like to make changes
-cd $HOME
-git clone https://bitbucket.org/likask/mofem-cephas.git
-// Build docker container
-docker build -t mofem_build --force-rm=true --file=$HOME/mofem-cephas/Dockerfile-build $HOME/mofem-cephas
-// Create volume, where builds are made and preserved between docker runs
-docker run --name mofem_build mofem_build
-\endcode
-Now you can run docker container
-\code
-docker run --rm=true -it --volumes-from mofem_build  -v $HOME/mofem-cephas/mofem:/mofem -v $HOME:$HOME -e HOSTHOME=$HOME mofem_build /bin/bash
-\endcode
-
-You will need as well some text editor to edit files; you can use your favourite
-one or use Atom.io <a href=https://atom.io>link</a>.
-
-\section poisson_tut1_running_program Running the program
-
-Open terminal and run Docker container
+here \ref install_docker. Open terminal and run Docker container
 \code
 docker run --rm=true -it --volumes-from mofem_build  -v $HOME/mofem-cephas/mofem:/mofem -v $HOME:$HOME -e HOSTHOME=$HOME mofem_build /bin/bash
 \endcode
