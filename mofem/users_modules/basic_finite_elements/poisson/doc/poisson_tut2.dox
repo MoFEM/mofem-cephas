@@ -1,7 +1,7 @@
 /*! \page poisson_tut2 Implementing operators for the Poisson equation
 
 In this tutorial, we focus only on setting up finite element and implementation
-of user data operator for the Poisson equation. It is next step after
+of users data operator for the Poisson equation. It is next step after
 tutorial \ref poisson_tut1. Source for this tutorial is in \ref PoissonOperators.hpp.
 
 MoFEM is designed to work with various approximation spaces and it utilizing

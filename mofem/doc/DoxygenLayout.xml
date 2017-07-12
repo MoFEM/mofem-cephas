@@ -5,7 +5,7 @@
     <tab type="mainpage" visible="yes" title=""/>
     <tab type="usergroup" title="Documentation">
       <tab type="user" title="Installation" url="@ref installation" intro=""/>
-      <tab type="user" title="Basic design" url="@ref genral_data_structure" intro=""/>
+      <tab type="user" title="Basic design" url="@ref general_data_structure" intro=""/>
       <tab type="user" title="Developer tutorials" url="@ref tutorials" intro=""/>
       <tab type="examples" title="Developer examples" intro=""/>
       <tab type="user" title="Documentation of users modules" url="@ref mod_gallery" intro=""/>
