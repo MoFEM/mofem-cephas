@@ -76,14 +76,26 @@ struct DisplacementBCFEMethodPreAndPostProc: public MoFEM::FEMethod {
 struct SpatialPositionsBCFEMethodPreAndPostProc: public DisplacementBCFEMethodPreAndPostProc {
 
   SpatialPositionsBCFEMethodPreAndPostProc(
-    MoFEM::Interface& m_field,const std::string &field_name,Mat aij,Vec x,Vec f):
-    DisplacementBCFEMethodPreAndPostProc(m_field,field_name,aij,x,f) {}
+    MoFEM::Interface& m_field,
+    const std::string &field_name,
+    Mat aij,Vec x,Vec f,
+    const std::string material_positions = "MESH_NODE_POSITIONS"
+  ):
+  DisplacementBCFEMethodPreAndPostProc(m_field,field_name,aij,x,f),
+  materialPositions(material_positions) {
+  }
 
   SpatialPositionsBCFEMethodPreAndPostProc(
-    MoFEM::Interface& m_field,const std::string &field_name):
-    DisplacementBCFEMethodPreAndPostProc(m_field,field_name) {}
+    MoFEM::Interface& m_field,
+    const std::string &field_name,
+    const std::string material_positions = "MESH_NODE_POSITIONS"
+  ):
+  DisplacementBCFEMethodPreAndPostProc(m_field,field_name),
+  materialPositions(material_positions) {
+  }
 
-  std::vector<std::string> fixFields;
+  std::string materialPositions;        ///< name of the field with reference material positions
+  std::vector<std::string> fixFields;   ///<
 
   VectorDouble cOords;
   PetscErrorCode iNitalize();

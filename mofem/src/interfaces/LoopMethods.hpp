@@ -200,11 +200,11 @@ TSMethod {
 
   /** \brief get number of evaluated element in the loop
   */
-  inline int getNinTheLoop() { return nInTheLoop; }
+  inline int getNinTheLoop() const { return nInTheLoop; }
 
   /** \brief get loop size
   */
-  inline int getLoopSize() { return loopSize; }
+  inline int getLoopSize() const { return loopSize; }
 
   virtual PetscErrorCode preProcess() = 0;
   virtual PetscErrorCode operator()() = 0;

@@ -265,7 +265,7 @@ namespace MoFEM {
         ierr = m_field.modify_finite_element_add_field_col(skeletonFE,domainFields[ff]); CHKERRQ(ierr);
         ierr = m_field.modify_finite_element_add_field_data(skeletonFE,domainFields[ff]); CHKERRQ(ierr);
       }
-      for(unsigned int ff = 0;ff!=boundaryFE.size();ff++) {
+      for(unsigned int ff = 0;ff!=boundaryFields.size();ff++) {
         ierr = m_field.modify_finite_element_add_field_row(skeletonFE,boundaryFields[ff]); CHKERRQ(ierr);
         ierr = m_field.modify_finite_element_add_field_col(skeletonFE,boundaryFields[ff]); CHKERRQ(ierr);
         ierr = m_field.modify_finite_element_add_field_data(skeletonFE,boundaryFields[ff]); CHKERRQ(ierr);
@@ -303,9 +303,9 @@ namespace MoFEM {
     PetscFunctionReturn(0);
   }
 
-  PetscErrorCode Simple::setFieldOrder(const std::string field_name,const int order) {
+  PetscErrorCode Simple::setFieldOrder(const std::string field_name,const int order,const Range* ents) {
     PetscFunctionBegin;
-    fieldsOrder[field_name] = order;
+    fieldsOrder[field_name] = std::pair<int,Range>(order,ents==NULL?Range():Range(*ents));
     PetscFunctionReturn(0);
   }
 
@@ -380,7 +380,8 @@ namespace MoFEM {
       for(int dd = dds;dd<=dIm;dd++) {
         Range ents;
         ierr = m_field.get_field_entities_by_dimension(domainFields[ff],dd,ents); CHKERRQ(ierr);
-        ierr = m_field.set_field_order(ents,domainFields[ff],fieldsOrder.at(domainFields[ff])); CHKERRQ(ierr);
+        if(!fieldsOrder.at(domainFields[ff]).second.empty()) { ents = intersect(ents,fieldsOrder.at(domainFields[ff]).second); }
+        ierr = m_field.set_field_order(ents,domainFields[ff],fieldsOrder.at(domainFields[ff]).first); CHKERRQ(ierr);
       }
     }
     // Set order to data fiels
@@ -407,7 +408,7 @@ namespace MoFEM {
       for(int dd = dds;dd<=dIm;dd++) {
         Range ents;
         ierr = m_field.get_field_entities_by_dimension(dataFields[ff],dd,ents); CHKERRQ(ierr);
-        ierr = m_field.set_field_order(ents,dataFields[ff],fieldsOrder.at(dataFields[ff])); CHKERRQ(ierr);
+        ierr = m_field.set_field_order(ents,dataFields[ff],fieldsOrder.at(dataFields[ff]).first); CHKERRQ(ierr);
       }
     }
     // Set order to boundary
@@ -415,7 +416,7 @@ namespace MoFEM {
       if(fieldsOrder.find(boundaryFields[ff])==fieldsOrder.end()) {
         SETERRQ1(
           PETSC_COMM_WORLD,MOFEM_INVALID_DATA,
-          "Order for field not set %d",boundaryFields[ff].c_str()
+          "Order for field not set %s",boundaryFields[ff].c_str()
         );
       }
       int dds = 0;
@@ -434,7 +435,7 @@ namespace MoFEM {
       for(int dd = dds;dd<=dIm-1;dd++) {
         Range ents;
         ierr = m_field.get_field_entities_by_dimension(boundaryFields[ff],dd,ents); CHKERRQ(ierr);
-        ierr = m_field.set_field_order(ents,boundaryFields[ff],fieldsOrder.at(boundaryFields[ff])); CHKERRQ(ierr);
+        ierr = m_field.set_field_order(ents,boundaryFields[ff],fieldsOrder.at(boundaryFields[ff]).first); CHKERRQ(ierr);
       }
     }
     // Set order to skeleton
@@ -442,7 +443,7 @@ namespace MoFEM {
       if(fieldsOrder.find(skeletonFields[ff])==fieldsOrder.end()) {
         SETERRQ1(
           PETSC_COMM_WORLD,MOFEM_INVALID_DATA,
-          "Order for field not set %d",skeletonFields[ff].c_str()
+          "Order for field not set %s",skeletonFields[ff].c_str()
         );
       }
       int dds = 0;
@@ -461,7 +462,7 @@ namespace MoFEM {
       for(int dd = dds;dd<=dIm-1;dd++) {
         Range ents;
         ierr = m_field.get_field_entities_by_dimension(skeletonFields[ff],dd,ents); CHKERRQ(ierr);
-        ierr = m_field.set_field_order(ents,skeletonFields[ff],fieldsOrder.at(skeletonFields[ff])); CHKERRQ(ierr);
+        ierr = m_field.set_field_order(ents,skeletonFields[ff],fieldsOrder.at(skeletonFields[ff]).first); CHKERRQ(ierr);
       }
     }
     // Build fields
