@@ -470,7 +470,7 @@ struct ForcesAndSurcesCore: public FEMethod {
      * \brief Return finite element entity handle
      * @return Finite element entity handle
      */
-    inline EntityHandle getFEEntityHandle() { return getNumeredEntFiniteElementPtr()->getEnt(); }
+    inline EntityHandle getFEEntityHandle() const { return getNumeredEntFiniteElementPtr()->getEnt(); }
 
     /** \brief Get row indices
 
@@ -518,7 +518,7 @@ struct ForcesAndSurcesCore: public FEMethod {
 
     /** \brief Return raw pointer to Finite Element Method object
      */
-    inline const FEMethod* getFEMethod() { return ptrFE; }
+    inline const FEMethod* getFEMethod() const { return ptrFE; }
 
     /**
      * \brief Get operator types
@@ -536,6 +536,18 @@ struct ForcesAndSurcesCore: public FEMethod {
      * \brief Add operator type
      */
     inline void addOpType(const OpType type) { opType |= type; }
+
+    /**
+     * \brief get number of finite element in the loop
+     * @return number of finite element
+     */
+    inline int getNinTheLoop() const { return getFEMethod()->getNinTheLoop(); }
+
+    /**
+     * \brief get size of elements in the loop
+     * @return loop size
+     */
+    inline int getLoopSize() const { return getFEMethod()->getLoopSize(); }
 
   protected:
 

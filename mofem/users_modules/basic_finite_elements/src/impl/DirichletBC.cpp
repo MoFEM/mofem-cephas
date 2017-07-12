@@ -249,35 +249,64 @@ PetscErrorCode DisplacementBCFEMethodPreAndPostProc::postProcess() {
 PetscErrorCode SpatialPositionsBCFEMethodPreAndPostProc::iNitalize() {
   PetscFunctionBegin;
   if(mapZeroRows.empty() || !methodsOp.empty()) {
-    ParallelComm* pcomm = ParallelComm::get_pcomm(&mField.get_moab(),MYPCOMM_INDEX);
+    const DofEntity_multiIndex *dofs_ptr;
+    ierr = mField.get_dofs(&dofs_ptr); CHKERRQ(ierr);
+    VectorDouble scaled_values(3);
+    // Loop over meshsets with Dirichlet boundary condition on displacements
     for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NODESET|DISPLACEMENTSET,it)) {
+      // get data structure for boundary condition
       DisplacementCubitBcData mydata;
       ierr = it->getBcDataStructure(mydata); CHKERRQ(ierr);
-      VectorDouble scaled_values(3);
+      // set vector with prescribed displacements
       scaled_values[0] = mydata.data.value1;
       scaled_values[1] = mydata.data.value2;
       scaled_values[2] = mydata.data.value3;
+      // scale vector for given load step
       ierr = MethodForForceScaling::applyScale(this,methodsOp,scaled_values); CHKERRQ(ierr);
+      // get entities on meshset with boundary conditions
       for(int dim = 0;dim<3;dim++) {
         Range ents;
         ierr = it->getMeshsetIdEntitiesByDimension(mField.get_moab(),dim,ents,true); CHKERRQ(ierr);
         if(dim>1) {
-          Range _edges;
-          ierr = mField.get_moab().get_adjacencies(ents,1,false,_edges,moab::Interface::UNION); CHKERRQ(ierr);
-          ents.insert(_edges.begin(),_edges.end());
+          Range edges;
+          ierr = mField.get_moab().get_adjacencies(ents,1,false,edges,moab::Interface::UNION); CHKERRQ(ierr);
+          ents.insert(edges.begin(),edges.end());
         }
         if(dim>0) {
-          Range _nodes;
-          rval = mField.get_moab().get_connectivity(ents,_nodes,true); CHKERRQ_MOAB(rval);
-          ents.insert(_nodes.begin(),_nodes.end());
+          Range nodes;
+          rval = mField.get_moab().get_connectivity(ents,nodes,true); CHKERRQ_MOAB(rval);
+          ents.insert(nodes.begin(),nodes.end());
         }
+        // loop over entities in meshet
         for(Range::iterator eit = ents.begin();eit!=ents.end();eit++) {
-          for(_IT_NUMEREDDOF_ROW_BY_NAME_ENT_PART_FOR_LOOP_(problemPtr,fieldName,*eit,pcomm->rank(),dof_ptr)) {
-            NumeredDofEntity *dof = dof_ptr->get();
+          for(
+            _IT_NUMEREDDOF_ROW_BY_NAME_ENT_PART_FOR_LOOP_(
+              problemPtr,fieldName,*eit,mField.get_comm_rank(),dof_ptr
+            )
+          ) {
+            const boost::shared_ptr<NumeredDofEntity>& dof = *dof_ptr;
             if(dof->getEntType() == MBVERTEX) {
               EntityHandle node = dof->getEnt();
               cOords.resize(3);
-              rval = mField.get_moab().get_coords(&node,1,&*cOords.data().begin()); CHKERRQ_MOAB(rval);
+              // find material nodal positions,
+              DofEntity_multiIndex::index<Composite_Name_And_Ent_mi_tag>::type::iterator mdit,hi_mdit;
+              mdit = dofs_ptr->get<Composite_Name_And_Ent_mi_tag>().lower_bound(
+                boost::make_tuple(materialPositions,*eit)
+              );
+              hi_mdit = dofs_ptr->get<Composite_Name_And_Ent_mi_tag>().upper_bound(
+                boost::make_tuple(materialPositions,*eit)
+              );
+              if(mdit==hi_mdit) {
+                // set coordinates form coords in MoAB
+                rval = mField.get_moab().get_coords(
+                  &node,1,&*cOords.data().begin()
+                ); CHKERRQ_MOAB(rval);
+              } else {
+                // set coordinates from field values
+                for(;mdit!=hi_mdit;mdit++) {
+                  cOords[mdit->get()->getDofCoeffIdx()] = mdit->get()->getFieldData();
+                }
+              }
               if(dof->getDofCoeffIdx() == 0 && mydata.data.flag1) {
                 mapZeroRows[dof->getPetscGlobalDofIdx()] = cOords[0]+scaled_values[0];
               }
@@ -299,20 +328,25 @@ PetscErrorCode SpatialPositionsBCFEMethodPreAndPostProc::iNitalize() {
               }
             }
           }
+          // set boundary values to field data
           for(std::vector<std::string>::iterator fit = fixFields.begin();fit!=fixFields.end();fit++) {
-            for(_IT_NUMEREDDOF_ROW_BY_NAME_ENT_PART_FOR_LOOP_(problemPtr,*fit,*eit,pcomm->rank(),dof_ptr)) {
-              NumeredDofEntity *dof = dof_ptr->get();
+            for(
+              _IT_NUMEREDDOF_ROW_BY_NAME_ENT_PART_FOR_LOOP_(
+                problemPtr,*fit,*eit,mField.get_comm_rank(),dof_ptr
+              )
+            ) {
+              const boost::shared_ptr<NumeredDofEntity>& dof = *dof_ptr;
               mapZeroRows[dof->getPetscGlobalDofIdx()] = dof->getFieldData();
             }
           }
         }
       }
     }
+    // set vector of values and indices
     dofsIndices.resize(mapZeroRows.size());
     dofsValues.resize(mapZeroRows.size());
-    int ii = 0;
     std::map<DofIdx,FieldData>::iterator mit = mapZeroRows.begin();
-    for(;mit!=mapZeroRows.end();mit++,ii++) {
+    for(int ii = 0;mit!=mapZeroRows.end();mit++,ii++) {
       dofsIndices[ii] = mit->first;
       dofsValues[ii] = mit->second;
     }

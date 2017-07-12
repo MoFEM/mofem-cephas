@@ -1,0 +1,109 @@
+/**
+ * \file AuxPoissonFunctions.hpp
+ * \example AuxPoissonFunctions.hpp
+ *
+ */
+
+/* This file is part of MoFEM.
+* MoFEM is free software: you can redistribute it and/or modify it under
+* the terms of the GNU Lesser General Public License as published by the
+* Free Software Foundation, either version 3 of the License, or (at your
+* option) any later version.
+*
+* MoFEM is distributed in the hope that it will be useful, but WITHOUT
+* ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+* FITNESS FOR A PARTICULAR PURPOSE.  See the GNU Lesser General Public
+* License for more details.
+*
+* You should have received a copy of the GNU Lesser General Public
+* License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
+
+#ifndef ___AUX_FUNCTIONS_HPP__
+#define ___AUX_FUNCTIONS_HPP__
+
+namespace PoissonExample {
+
+  struct AuxFunctions {
+
+    AuxFunctions(const MoFEM::Interface &m_field):
+    cOmm(m_field.get_comm()),
+    rAnk(m_field.get_comm_rank()) {
+    }
+
+    /**
+     *  Create ghost vector to assemble errors from all element on distributed mesh.
+     *  Ghost vector has size 1, where one element is owned by processor 0, other processor
+     *  have one ghost element of zero element at processor 0.
+
+     * [createGhostVec description]
+     * @param  ghost_vec pointer to created ghost vector
+     * @return           error code
+     */
+    PetscErrorCode createGhostVec(Vec *ghost_vec) const {
+      PetscErrorCode ierr;
+      PetscFunctionBegin;
+      int ghosts[] = { 0 };
+      int nb_locals = rAnk==0?1:0;
+      int nb_ghosts = rAnk>0?1:0;
+      ierr = VecCreateGhost(cOmm,nb_locals,1,nb_ghosts,ghosts,ghost_vec); CHKERRQ(ierr);
+      PetscFunctionReturn(0);
+    }
+
+    /**
+     * \brief Assemble error vector
+     */
+    PetscErrorCode assembleGhostVector(Vec ghost_vec) const {
+      PetscErrorCode ierr;
+      PetscFunctionBegin;
+      ierr = VecAssemblyBegin(ghost_vec); CHKERRQ(ierr);
+      ierr = VecAssemblyEnd(ghost_vec); CHKERRQ(ierr);
+      // accumulate errors from processors
+      ierr = VecGhostUpdateBegin(ghost_vec,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+      ierr = VecGhostUpdateEnd(ghost_vec,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+      // scatter errors to all processors
+      ierr = VecGhostUpdateBegin(ghost_vec,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+      ierr = VecGhostUpdateEnd(ghost_vec,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
+      PetscFunctionReturn(0);
+    }
+
+    /**
+     * \brief Print error
+     */
+    PetscErrorCode printError(Vec ghost_vec) {
+      PetscErrorCode ierr;
+      PetscFunctionBegin;
+      double *e;
+      ierr = VecGetArray(ghost_vec,&e); CHKERRQ(ierr);
+      ierr = PetscPrintf(cOmm,"Approximation error %4.3e\n",sqrt(e[0])); CHKERRQ(ierr);
+      ierr = VecRestoreArray(ghost_vec,&e); CHKERRQ(ierr);
+      PetscFunctionReturn(0);
+    }
+
+    /**
+     * \brief Test error
+     */
+    PetscErrorCode testError(Vec ghost_vec) {
+      PetscErrorCode ierr;
+      PetscFunctionBegin;
+      double *e;
+      ierr = VecGetArray(ghost_vec,&e); CHKERRQ(ierr);
+      // Check if error is zero, otherwise throw error
+      if( (sqrt(e[0])>1e-10) || (!boost::math::isnormal(e[0]) )
+      ) {
+        SETERRQ(PETSC_COMM_SELF,MOFEM_ATOM_TEST_INVALID,"Test failed, error too big");
+      }
+      ierr = VecRestoreArray(ghost_vec,&e); CHKERRQ(ierr);
+      PetscFunctionReturn(0);
+    }
+
+  private:
+
+    MPI_Comm cOmm;
+    const int rAnk;
+
+
+  };
+
+}
+
+#endif //___AUX_FUNCTIONS_HPP__
