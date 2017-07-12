@@ -20,7 +20,6 @@ target_link_libraries(hello_world
 add_test(hello_world
   ${MoFEM_MPI_RUN} ${MPI_RUN_FLAGS} -np 1
   ${CMAKE_CURRENT_BINARY_DIR}/hello_world
-  -file_name cube.h5m
 )
 
 cm_export_file("mesh.h5m" export_files_hello_world)
