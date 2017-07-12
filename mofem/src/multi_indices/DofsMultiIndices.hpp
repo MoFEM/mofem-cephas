@@ -154,7 +154,7 @@ struct interface_DofEntity: public interface_FieldEntity<T> {
   /// @return return short id (used by data recorder)
   inline ShortId getNonNonuniqueShortId() const { return this->sPtr->getNonNonuniqueShortId(); }
 
-  /// @return return index of dof on the entuty
+  /// @return return index of dof on the entity
   inline DofIdx getEntDofIdx() const { return this->sPtr->getEntDofIdx(); }
 
   /// @return return data on dof
