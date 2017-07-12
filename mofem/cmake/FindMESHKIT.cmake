@@ -36,11 +36,13 @@ if(MESHKIT_VARIBLES_FILE)
     endif(NOT LINE MATCHES "^#.*")
   endforeach(LINE ${MESHKIT_VARIBLES})
 
-  # Add moab definitions
+  # Add meshkit definitions
   if(MESHKIT_DEFINITIONS)
     resolve_definitions(MESHKIT_DEFINITIONS ${MESHKIT_CPPFLAGS})
     message(STATUS ${MESHKIT_DEFINITIONS})
     add_definitions(${MESHKIT_DEFINITIONS})
   endif(MESHKIT_DEFINITIONS)
+
+  add_definitions(-DWITH_MESHKIT)
 
 endif(MESHKIT_VARIBLES_FILE)

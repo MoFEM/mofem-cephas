@@ -1,5 +1,5 @@
 /**
- * \file PoissonOperators.cpp
+ * \file PoissonOperators.hpp
  * \example PoissonOperators.hpp
  *
  */
@@ -21,14 +21,14 @@
 #ifndef __POISSONOPERATORS_HPP__
 #define __POISSONOPERATORS_HPP__
 
-namespace PoissonOperators {
+namespace PoissonExample {
 
   /**
    * \brief Calculate the grad-grad operator and assemble matrix
    *
    * Calculate
    * \f[
-   * A = (\nabla v, \nabla u)_\Omega = \int_\Omega \nabla v \cdot \nabla u \textrm{d}\Omega
+   * \mathbf{K}=\int_\Omega \nabla \boldsymbol\phi \cdot \nabla \boldsymbol\phi \textrm{d}\Omega
    * \f]
    * and assemble to global matrix.
    *
@@ -119,6 +119,7 @@ namespace PoissonOperators {
       for(int gg = 0;gg!=nbIntegrationPts;gg++) {
         // take into account Jacobean
         const double alpha = t_w*vol;
+        // noalias(locMat) += alpha*prod(row_data.getDiffN(gg),trans(col_data.getDiffN(gg)));
         // take fist element to local matrix
         FTensor::Tensor0<double*> a(&*locMat.data().begin());
         // loop over rows base functions
@@ -235,7 +236,7 @@ namespace PoissonOperators {
    * \brief Operator calculate source term,
    *
    * \f[
-   * \mathbf{F} = \int_\Omega v f(x,y,z) \textrm{d}\Omega
+   * \mathbf{F} = \int_\Omega \boldsymbol\phi f \textrm{d}\Omega
    * \f]
    *
    */
@@ -256,7 +257,6 @@ namespace PoissonOperators {
     FTensor::Number<2> NZ;
     FSource fSource;
 
-    Vec F;
     VectorDouble locVec;
 
     /**
@@ -321,7 +321,7 @@ namespace PoissonOperators {
    * \brief Calculate constrains matrix
    *
    * \f[
-   * \mathbf{C} = \int_{\partial\Omega} \lambda u \textrm{d}\partial\Omega
+   * \mathbf{C} = \int_{\partial\Omega} \boldsymbol\psi \boldsymbol\phi \textrm{d}\partial\Omega
    * \f]
    * where \f$\lambda \f$ is base function on boundary
    *
@@ -444,15 +444,15 @@ namespace PoissonOperators {
    * \brief Assemble constrains vector
    *
    * \f[
-   * \mathbf{C} = \int_{\partial\Omega} \lambda \overline{u}(x,y,z) \textrm{d}\partial\Omega
+   * \mathbf{g} = \int_{\partial\Omega} \boldsymbol\psi \overline{u} \textrm{d}\partial\Omega
    * \f]
    *
    */
-  struct OpLg: public OpBaseRhs<FaceElementForcesAndSourcesCore::UserDataOperator> {
+  struct OpLU_exact: public OpBaseRhs<FaceElementForcesAndSourcesCore::UserDataOperator> {
 
     typedef boost::function<double (const double,const double,const double)> FVal;
 
-    OpLg(FVal f_value):
+    OpLU_exact(FVal f_value):
     OpBaseRhs<FaceElementForcesAndSourcesCore::UserDataOperator>("L"),
     fValue(f_value) {
     }
@@ -519,17 +519,24 @@ namespace PoissonOperators {
   /**
    * \brief Evaluate error
    */
-  struct OpErrorL2: public OpBaseRhs<VolumeElementForcesAndSourcesCore::UserDataOperator> {
+  struct OpError: public OpBaseRhs<VolumeElementForcesAndSourcesCore::UserDataOperator> {
 
-    typedef boost::function<double (const double,const double,const double)> FVal;
+    typedef boost::function<double (const double,const double,const double)> UVal;
+    typedef boost::function<FTensor::Tensor1<double,3> (const double,const double,const double)> GVal;
 
-    OpErrorL2(
-      FVal f_value,boost::shared_ptr<VectorDouble>& field_vals,Vec global_error
+    OpError(
+      UVal u_value,
+      GVal g_value,
+      boost::shared_ptr<VectorDouble>& field_vals,
+      boost::shared_ptr<MatrixDouble>& grad_vals,
+      Vec global_error
     ):
     OpBaseRhs<VolumeElementForcesAndSourcesCore::UserDataOperator>("ERROR"),
     globalError(global_error),
-    fValue(f_value),
-    fieldVals(field_vals) {
+    uValue(u_value),
+    gValue(g_value),
+    fieldVals(field_vals),
+    gradVals(grad_vals) {
     }
 
     PetscErrorCode doWork(
@@ -552,9 +559,11 @@ namespace PoissonOperators {
     FTensor::Number<1> NY;
     FTensor::Number<2> NZ;
     FTensor::Index<'i',3> i;
-    FVal fValue;  ///< function with exact solution
+    UVal uValue;  ///< function with exact solution
+    GVal gValue;  ///< function with exact solution for gradient
 
     boost::shared_ptr<VectorDouble> fieldVals;
+    boost::shared_ptr<MatrixDouble> gradVals;
 
     /**
      * \brief Integrate error
@@ -569,23 +578,28 @@ namespace PoissonOperators {
       FTensor::Tensor0<double*> t_w = getFTensor0IntegrationWeight();
       // get solution at integration point
       FTensor::Tensor0<double*> t_u = getTensor0FormData(*fieldVals);
+      // get solution at integration point
+      FTensor::Tensor1<double*,3> t_grad = getTensor1FormData<3>(*gradVals);
       // get coordinates at integration point
       FTensor::Tensor1<double*,3> t_coords = getTensor1CoordsAtGaussPts();
-      // get error base function
-      FTensor::Tensor0<double*> t_e = data.getFTensor0N();
+      // keep exact gradient and error or gradient
+      FTensor::Tensor1<double,3> t_exact_grad,t_error_grad;
       // integrate over
       for(int gg = 0;gg!=nbIntegrationPts;gg++) {
         double alpha = vol*t_w;
-        FTensor::Tensor0<double*> t_a = data.getFTensor0FieldData();
+        // evalue exact value
+        double exact_u = uValue(t_coords(NX),t_coords(NY),t_coords(NZ));
+        // evalue exact hradient
+        t_exact_grad = gValue(t_coords(NX),t_coords(NY),t_coords(NZ));
+        // calculate gradient errro
+        t_error_grad(i) = t_grad(i)-t_exact_grad(i);
+        // error
+        double error = pow(t_u-exact_u,2)+t_error_grad(i)*t_error_grad(i);
         // iterate over base functions
-        for(int rr = 0;rr!=nbRows;rr++) {
-          // add error to dof
-          t_a += alpha*t_e*fabs(t_u-fValue(t_coords(NX),t_coords(NY),t_coords(NZ)));
-          ++t_a; // move to next dof (only one in this example)
-          ++t_e; // move to next base (only one base function in this example)
-        }
-        ++t_w; // move to next integration point
-        ++t_u; // next value of function at integration point
+        data.getFieldData()[0] += alpha*error;
+        ++t_w;      // move to next integration point
+        ++t_u;      // next value of function at integration point
+        ++t_grad;   // next gradient at integration point
         ++t_coords; // next coordinate at integration point
       }
       PetscFunctionReturn(0);
@@ -596,20 +610,49 @@ namespace PoissonOperators {
      */
     PetscErrorCode aSsemble(DataForcesAndSurcesCore::EntData &data) {
       PetscFunctionBegin;
-      FTensor::Tensor0<double*> t_a = data.getFTensor0FieldData();
-      for(int rr = 0;rr!=nbRows;rr++) {
-        // set error on mesh
-        data.getFieldDofs()[rr]->getFieldData() = t_a;
-        if(rr == 0) {
-          // assemble vector to global error
-          ierr = VecSetValue(globalError,0,t_a,ADD_VALUES); CHKERRQ(ierr);
-        }
-        ++t_a;
-      }
+      // set error on mesh
+      data.getFieldDofs()[0]->getFieldData() = sqrt(data.getFieldData()[0]);
+      // assemble vector to global error
+      ierr = VecSetValue(globalError,0,data.getFieldData()[0],ADD_VALUES); CHKERRQ(ierr);
       PetscFunctionReturn(0);
     }
 
   };
+
+  /**
+   * \brief Set integration rule to volume elements
+   *
+   * This rule is used to integrate \f$\nabla v \cdot \nabla u\f$, thus
+   * if approximation field and testing field are polynomial order "p",
+   * then rule for exact integration is 2*(p-1).
+   *
+   * Integration rule is order of polynomial which is calculated exactly. Finite element
+   * selects integration method based on return of this function.
+   *
+   */
+  struct VolRule {
+    int operator()(int,int,int p) const {
+      return 2*(p-1);
+    }
+  };
+
+  /**
+   * \brief Set integration rule to boundary elements
+   *
+   * This is uses to integrate values on the face. Is used to integrate
+   * \f$(\mathbf{n} \cdot \lambda) u\f$, where Lagrange multiplayer
+   * is order "p_row" and approximate function is order "p_col".
+   *
+   * Integration rule is order of polynomial which is calculated exactly. Finite element
+   * selects integration method based on return of this function.
+   *
+   */
+  struct FaceRule {
+    int operator()(int p_row,int p_col,int p_data) const {
+      return p_row+p_col;
+    }
+  };
+
 
   /**
    * \brief Create finite elements instances
@@ -619,13 +662,14 @@ namespace PoissonOperators {
    */
   struct CreateFiniteElementes {
 
+    CreateFiniteElementes(MoFEM::Interface &m_field):
+    mField(m_field) {
+    }
+
     /**
      * \brief Create finite element to calculate matrix and vectors
      */
     PetscErrorCode createFEToAssmbleMatrceAndVector(
-      MoFEM::Interface &m_field,
-      boost::function<int (int order_row,int order_col,int order_data)> vol_rule,
-      boost::function<int (int order_row,int order_col,int order_data)> boundary_rule,
       boost::function<double (const double,const double,const double)> f_u,
       boost::function<double (const double,const double,const double)> f_source,
       boost::shared_ptr<ForcesAndSurcesCore>& domain_lhs_fe,
@@ -636,16 +680,16 @@ namespace PoissonOperators {
       PetscFunctionBegin;
 
       // Create elements element instances
-      domain_lhs_fe = boost::shared_ptr<ForcesAndSurcesCore>(new VolumeElementForcesAndSourcesCore(m_field));
-      boundary_lhs_fe = boost::shared_ptr<ForcesAndSurcesCore>(new FaceElementForcesAndSourcesCore(m_field));
-      domain_rhs_fe = boost::shared_ptr<ForcesAndSurcesCore>(new VolumeElementForcesAndSourcesCore(m_field));
-      boundary_rhs_fe = boost::shared_ptr<ForcesAndSurcesCore>(new FaceElementForcesAndSourcesCore(m_field));
+      domain_lhs_fe = boost::shared_ptr<ForcesAndSurcesCore>(new VolumeElementForcesAndSourcesCore(mField));
+      boundary_lhs_fe = boost::shared_ptr<ForcesAndSurcesCore>(new FaceElementForcesAndSourcesCore(mField));
+      domain_rhs_fe = boost::shared_ptr<ForcesAndSurcesCore>(new VolumeElementForcesAndSourcesCore(mField));
+      boundary_rhs_fe = boost::shared_ptr<ForcesAndSurcesCore>(new FaceElementForcesAndSourcesCore(mField));
 
       // Set integration rule to elements instances
-      domain_lhs_fe->getRuleHook = vol_rule;
-      domain_rhs_fe->getRuleHook = vol_rule;
-      boundary_lhs_fe->getRuleHook = boundary_rule;
-      boundary_rhs_fe->getRuleHook = boundary_rule;
+      domain_lhs_fe->getRuleHook = VolRule();
+      domain_rhs_fe->getRuleHook = VolRule();
+      boundary_lhs_fe->getRuleHook = FaceRule();
+      boundary_rhs_fe->getRuleHook = FaceRule();
 
       // Ass operators to element instances
       // Add operator grad-grad for calualte matrix
@@ -655,7 +699,7 @@ namespace PoissonOperators {
       // Add operator calculating constrains matrix
       boundary_lhs_fe->getOpPtrVector().push_back(new OpLU(true));
       // Add operator calculating constrains vector
-      boundary_rhs_fe->getOpPtrVector().push_back(new OpLg(f_u));
+      boundary_rhs_fe->getOpPtrVector().push_back(new OpLU_exact(f_u));
 
       PetscFunctionReturn(0);
     }
@@ -664,26 +708,31 @@ namespace PoissonOperators {
      * \brief Create finite element to calculate error
      */
     PetscErrorCode createFEToEvaluateError(
-      MoFEM::Interface &m_field,
-      boost::function<int (int order_row,int order_col,int order_data)> vol_rule,
       boost::function<double (const double,const double,const double)> f_u,
+      boost::function<FTensor::Tensor1<double,3> (const double,const double,const double)> g_u,
       Vec global_error,
       boost::shared_ptr<ForcesAndSurcesCore>& domain_error
     ) const {
       PetscFunctionBegin;
       // Create finite element instance to calualte error
       domain_error = boost::shared_ptr<ForcesAndSurcesCore>(
-        new VolumeElementForcesAndSourcesCore(m_field)
+        new VolumeElementForcesAndSourcesCore(mField)
       );
-      domain_error->getRuleHook = vol_rule;
+      domain_error->getRuleHook = VolRule();
       // Set integration rule
       // Crate shared vector storing values of field "u" on integration points on element. element
       // is local and is used to exchange data between operators.
-      boost::shared_ptr<VectorDouble> values_at_integation_ptrs = boost::make_shared<VectorDouble>();
+      boost::shared_ptr<VectorDouble> values_at_integation_ptr = boost::make_shared<VectorDouble>();
+      // Storing gradients of field
+      boost::shared_ptr<MatrixDouble> grad_at_integation_ptr = boost::make_shared<MatrixDouble>();
       // Add default operator to calculate field values at integration points
-      domain_error->getOpPtrVector().push_back(new OpCalculateScalarFieldValues("U",values_at_integation_ptrs));
+      domain_error->getOpPtrVector().push_back(new OpCalculateScalarFieldValues("U",values_at_integation_ptr));
+      // Add default operator to calculate field gradient at integration points
+      domain_error->getOpPtrVector().push_back(new OpCalculateScalarFieldGradient<3>("U",grad_at_integation_ptr));
       // Add operator to integrate error element by element.
-      domain_error->getOpPtrVector().push_back(new OpErrorL2(f_u,values_at_integation_ptrs,global_error));
+      domain_error->getOpPtrVector().push_back(
+        new OpError(f_u,g_u,values_at_integation_ptr,grad_at_integation_ptr,global_error)
+      );
       PetscFunctionReturn(0);
     }
 
@@ -691,7 +740,6 @@ namespace PoissonOperators {
      * \brief Create finite element to post-process results
      */
     PetscErrorCode creatFEToPostProcessResults(
-      MoFEM::Interface &m_field,
       boost::shared_ptr<ForcesAndSurcesCore>& post_proc_volume
     ) const {
       PetscErrorCode ierr;
@@ -706,7 +754,7 @@ namespace PoissonOperators {
       // using simplified mechanism for post-processing finite element, we
       // add operators to save data from field on mesh tags for ParaView
       // visualization.
-      post_proc_volume = boost::shared_ptr<ForcesAndSurcesCore>(new PostProcVolumeOnRefinedMesh(m_field));
+      post_proc_volume = boost::shared_ptr<ForcesAndSurcesCore>(new PostProcVolumeOnRefinedMesh(mField));
       // Add operators to the elements, starting with some generic
       ierr = boost::static_pointer_cast<PostProcVolumeOnRefinedMesh>(post_proc_volume)->
       generateReferenceElementMesh(); CHKERRQ(ierr);
@@ -719,6 +767,10 @@ namespace PoissonOperators {
 
       PetscFunctionReturn(0);
     }
+
+  private:
+
+    MoFEM::Interface &mField;
 
   };
 
