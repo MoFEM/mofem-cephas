@@ -5,7 +5,7 @@ concepts in MoFEM and exploiting MoFEM::Simple interface to set-up problem. A
 procedure is applied to the Poisson problem but easily can be modified to other
 problems from elasticity, fluid mechanics, thermo-elasticity, electromagnetics,
 etc. Also, methodology from this tutorial can be applied to mix-problems,
-discontinuous galleria method or coupled problems.
+discontinuous Galerkin method or coupled problems.
 
 We introduce fundamentals of MoFEM::Interface and MoFEM::Simple interfaces and
 show how to link MoFEM data structures with PETSc discrete manager. Also, we
@@ -14,10 +14,10 @@ example is restricted to linear problem and body is subjected to inhomogeneous
 Dirichlet boundary conditions only. We do not explain here how to implement
 finite element data operator; this is part of tutorial \ref poisson_tut2.
 
-We don't know what type of person you are. When learning you like to see
-examples first, before seeing the big picture? Or you like to see big picture
-first and then look for the details after. If you are second kind, you would
-like to see this first \ref genral_data_structure before you start with
+Writing this tutorial we don't know what type of person you are? You like to
+see examples first, before seeing the big picture? Or you like to see big
+picture first and then look for the details after. If you are second kind, you
+would like to see this first \ref general_data_structure before you start with
 implementation. If you like to start from examples, skip the general details and
 go to code.
 
@@ -84,7 +84,7 @@ We solve the most basic of all PDEs, i.e. the Poisson equation,
 -\nabla^2 u(\mathbf{x}) = f(x),\quad \textrm{in}\,\Omega\\
 \f]
 where \f$u=u(\mathbf{x})\f$ is unknown function, \f$f(\mathbf{x})\f$ is given
-source term. The Poisson equation is in so-called \e strong from, it has to be
+source term. The Poisson equation is in so-called \e strong form, it has to be
 satisfied at every point of the body without boundary. To solve this PDE we need
 describe problem on the boundary, in this simple case for the purpose of
 tutorial we are self-restricted to Dirichlet boundary condition where functions
@@ -105,8 +105,8 @@ The Laplacian \f$\nabla^2\f$ in 3d space with Cartesian coordinates is
 The Poisson equation arises in many physical contexts, including heat
 conduction, electrostatics, diffusion of substances, twisting of elastic rods,
 and describes many other physical problems. In general PDE equation emerge form
-conservation law, e.g. conservation of mass, electric charge or energy, one of
-the fundamental laws of the universe.
+conservation law, e.g. conservation of mass, electric charge or energy, i.e. one
+of the fundamental laws of the universe.
 
 \section poisson_tut1_variational_formulation Finite element variational formulation
 
@@ -116,14 +116,15 @@ for finite element calculations. The Poisson equation is multiplied by function
 this procedure and enforcing constraints with Lagrange multiplier method we get
 \f[
 \mathcal{L}(u,\lambda) =
-\frac{1}{2}\int_\omega \left( \nabla u \right)^2 \textrm{d}\Omega
+\frac{1}{2}\int_\Omega \left( \nabla u \right)^2 \textrm{d}\Omega
 -
-\frac{1}{2}\int_\omega uf \textrm{d}\Omega
+\frac{1}{2}\int_\Omega uf \textrm{d}\Omega
 +
 \int_{\partial\Omega} \lambda (u-\overline{u}) \textrm{d}\partial\Omega
 \f]
-where \f$\lambda\f$ is Lagrange multiplayer. Unknown functions can be expressed
-in finite dimension approximation space, as follows
+where \f$\lambda=\lambda(\mathbf{x})\f$ is Lagrange multiplayer function on body boundary
+\f$\partial\Omega\f$. Unknown functions can be expressed in finite dimension
+approximation space, as follows
 \f[
 u^h = \sum_i^{n_u} \phi^i(\mathbf{x}) U_i = \boldsymbol\phi\cdot\mathbf{U}
 , \quad \mathbf{x} \in \Omega,\\
@@ -134,7 +135,7 @@ where \f$U_i\f$ and \f$L_i\f$ are unknown coefficients, called degrees freedom.
 The \f$\phi^u\f$ and \f$\psi^i\f$ are base functions for \f$u^h\f$ and
 \f$\lambda^h\f$, respectively. The stationary point of
 \f$\mathcal{L}(u^h,\lambda^h)\f$, obtained by minimalisation of Lagrangian gives
-Euler-Lagrange  equations
+Euler-Lagrange  equations for discretised problem
 \f[
 \left[
 \begin{array}{cc}
@@ -180,14 +181,17 @@ conditions exactly. For more information about
 spaces and deeper insight in the Poisson equation see
 \cite demkowicz2006computing, \cite brezzi2008mixed and \cite reddy2013introductory.
 
-Matrices and vectors are implemented using users data operators (UDO)
-- \f$\mathbf{K}\f$ is implemented in PoissonExample::OpGradGrad
-- \f$\mathbf{F}\f$ is implemented in PoissonExample::OpVF
-- \f$\mathbf{C}\f$ is implemented in PoissonExample::OpLU
-- \f$\mathbf{g}\f$ is implemented in PoissonExample::OpLU_exact
-We put light on implementation of those functions in tutorial  \ref poisson_tut2
-bellow we focus on generic problem set up and solver, you can have look
-at complete implementation here \ref PoissonOperators.hpp.
+Matrices and vectors are implemented using users data operators (UDO);
+
+- \f$\mathbf{K}\f$ is implemented in PoissonExample::OpGradGrad::iNtegrte
+- \f$\mathbf{F}\f$ is implemented in PoissonExample::OpVF::iNtegrte
+- \f$\mathbf{C}\f$ is implemented in PoissonExample::OpLU::iNtegrte
+- \f$\mathbf{g}\f$ is implemented in PoissonExample::OpLU_exact::iNtegrte
+
+We put light on the implementation of those functions in next tutorial  \ref poisson_tut2.
+Here, in following sections, we focus on the generic problem and
+solver set up. Complete implementation of UDO for this example is here \ref
+PoissonOperators.hpp.
 
 \section poisson_tut1_variational_verification Exact solution
 
@@ -198,7 +202,7 @@ polynomial, for example
 \f[
 \overline{u}(\mathbf{x}) = 1+x^2+y^2+z^3 \quad \textrm{in}\Omega
 \f]
-then applying Laplacian to analytical solution we can optain source term
+then applying Laplacian to analytical solution we can obtain source term
 \f[
 f(\mathbf{x}) = 4+6z.
 \f]
@@ -341,7 +345,7 @@ of specialised operators saving results on nodes and allows to refine mesh when
 ho-approximation is used. The result can be stored for example on 10-nodes
 tetrahedra if needed. More details about implementation of
 PoissonExample::CreateFiniteElementes and operators is in \ref poisson_tut2.
-Basic of user data operators are explained here \ref genral_data_structure.
+Basic of user data operators are explained here \ref general_data_structure.
 
 \image html poisson_tut1_fig2.png "Figure 2. Operators of volume finite element" width=700px
 \image html poisson_tut1_fig3.png "Figure 3. Operators of boundary finite element" width=400px
@@ -373,7 +377,7 @@ ierr = simple_interface->setFieldOrder("ERROR",0); CHKERRQ(ierr); // approximati
 Note that field of "U" and Lagrange multipliers "L" is in space H1, error field
 is in L2 space to store error on each element.
 
-- Finally, problem builds, by triggering set-up procedure
+- Finally, problem is build, by triggering set-up procedure
 \code
 ierr = simple_interface->setUp(); CHKERRQ(ierr);
 \endcode
@@ -443,10 +447,10 @@ ierr = DMoFEMMeshToGlobalVector(dm,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ier
 
 It is evident here the role of MoFEM, having topology (mesh) in MoAB database,
 MoFEM is used to manage complexities related to problem discretization and
-construction of algebraic systems of equations (linear in this case). From that
-point, PETSc manages complexities related to algebra and solution of the
-problem. For more details about the interaction of MoAB, MoFEM and PETSc see
-MoFEM software eccosystem.
+construction of algebraic systems of equations (linear in this case). While,
+PETSc manages complexities related to algebra and solution of the problem. For
+more details about the interaction of MoAB, MoFEM and PETSc see MoFEM software
+eccosystem (see \ref general_data_structure).
 
 Finally, we can evaluate error and verify correctness of solution
 \code
@@ -577,7 +581,7 @@ Nb. dofs 4746
 
 - Build finite elements (note output is listed twice for each process). Numbers
 at the end shows how many finite elements is on each processor. Distribution
-of finite elements depends on used graph pertaining method, here ParMetis has
+of finite elements depends on used graph partitioning method, here ParMetis has
 been used to partition mesh
 \verbatim
 Build Finite Elements dFE
@@ -663,14 +667,14 @@ STL           Stereo Lithography File (STL)   yes    yes     stl
 TETGEN        TetGen output files             yes     no     node ele face edge
 TEMPLATE      Template input files            yes    yes
 \endverbatim
-You can obtain that list executing from command linear
+You can obtain that list executing from the command line
 \code
 mbconvert -l
 \endcode
 
 \section poisson_tut1_excercise Exercises
 
-- Exercise 1: Change approximate make it smaller that 3rd order or make it
+- Exercise 1: Change approximate order. Make it smaller that 3rd order or make it
 large, what happens? Can you  explain this?
 
 - Exercise 2: Change exact displacement function, for example to trigonometric
@@ -680,8 +684,12 @@ u = sin(kx)
 \f]
 where \f$k\f$ is a small number.
 
-- Exercise 3: Do you know how to modify code to calculate L2 error norm or semi norm for
+- Exercise 3: Change code to calculate L2 error norm or semi norm for
 H1 space, see \ref poisson_tut2
+
+- Exercise 4: Calculate norm of the solution and exact function.
+
+- Exercise 5: Make convergence plots for polynomial and trigonometric exact functions.
 
 Pleas feel free to ask question on our Q&A form, see
 <a href=https://groups.google.com/forum/#!forum/mofem-group>link</a>.

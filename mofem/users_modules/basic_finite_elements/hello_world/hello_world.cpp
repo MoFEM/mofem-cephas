@@ -4,7 +4,7 @@
  * \example hello_world.cpp
  *
  * Prints basic information about users data operator.
- * See more details in \ref hello_word_tut1
+ * See more details in \ref hello_world_tut1
  *
  */
 
@@ -42,7 +42,7 @@ struct OpRow: public ForcesAndSurcesCore::UserDataOperator {
    }
    std::cout << "Hello Operator OpRow:"
    << " field name " << rowFieldName << " side " << side << " type " << type_name[type]
-   << " nb dofs on entuty " << data.getIndices().size()
+   << " nb dofs on entity " << data.getIndices().size()
    << std::endl;
    PetscFunctionReturn(0);
  }

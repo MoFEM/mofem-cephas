@@ -2,10 +2,10 @@ include_directories(
   ${UM_SOURCE_DIR}/basic_finite_elements/hello_world
 )
 
-bfe_add_executable(hello_word
+bfe_add_executable(hello_world
   ${CMAKE_CURRENT_SOURCE_DIR}/hello_world.cpp
 )
-target_link_libraries(hello_word
+target_link_libraries(hello_world
   users_modules
   mofem_finite_elements
   mofem_interfaces
@@ -17,9 +17,9 @@ target_link_libraries(hello_word
   ${MoFEM_PROJECT_LIBS}
 )
 
-add_test(hello_word
+add_test(hello_world
   ${MoFEM_MPI_RUN} ${MPI_RUN_FLAGS} -np 1
-  ${CMAKE_CURRENT_BINARY_DIR}/hello_word
+  ${CMAKE_CURRENT_BINARY_DIR}/hello_world
   -file_name cube.h5m
 )
 

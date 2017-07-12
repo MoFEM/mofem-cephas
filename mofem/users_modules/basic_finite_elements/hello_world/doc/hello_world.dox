@@ -1,4 +1,4 @@
-/*! \page hello_word_tut1 Hello world
+/*! \page hello_world_tut1 Hello world
 
 In this tutorial basic ideas about MoFEM::Simple interface and programming with
 user data operators (UDO) are presented.
@@ -24,13 +24,13 @@ of finite elements, in particular, UDO.
 
 \tableofcontents
 
-\section hello_word_code Hello world
+\section hello_world_code Hello world
 
 \include hello_world.cpp
 
-\section hello_word_code_dissection Code dissection
+\section hello_world_code_dissection Code dissection
 
-\subsection hello_word_initalization Initialization
+\subsection hello_world_initalization Initialization
 
 We initialize PETSc internal variables and register MoFEM discrete manager in
 PETSc. Next MoAB instance is created and interface to it. Similarly, MoFEM
@@ -70,7 +70,7 @@ git commit id 253b1dd833ada49fe779e7f5fb60e52236ba51a9
 \endverbatim
 where current MoFEM version and commit id is printed.
 
-\subsection hello_word_adding_fields Adding fields
+\subsection hello_world_adding_fields Adding fields
 
 We add fields to the database. In MoFEM::Simple interface three groups of fields
 can be declared. Fields defined in the domain, fields defined on boundary and
@@ -106,7 +106,7 @@ all entities to which field is set is printed. The effect of the setting of
 approximation order will be viable when fields are constructed during set-up
 stage.
 
-\subsection hello_word_set_up Set-up
+\subsection hello_world_set_up Set-up
 
 The fields, finite elements and problems and all other data structures
 are build with following code
@@ -164,6 +164,7 @@ Build Finite Elements sFE
 id 00000000000000000000000000000100 name sFE f_id_row 00000000000000000000000000000111 f_id_col 00000000000000000000000000000111 BitFEId_data 00000000000000000000000000000111 Nb. FEs 30
 \endverbatim
 
+- Finally problem is constructed, DOFs on problem indexed enabling to build matrices and vectors
 \verbatim
 Nb. entFEAdjacencies 918
 partition_problem: rank = 0 FEs row ghost dofs problem id 00000000000000000000000000000001 FiniteElement id 00000000000000000000000000000111 name SimpleProblem Nb. local dof 903 nb global row dofs 903
@@ -242,7 +243,7 @@ section. Finally, we add operator to skeleton face element itself
 skeleton_fe->getOpPtrVector().push_back(new OpFaceSide("S",side_fe));
 \endcode
 
-\subsection hello_word_dm Discrete manager
+\subsection hello_world_dm Discrete manager
 
 Following line gives access to the discrete manager (DM). DM is interface
 developed for PETSc to manage complexities associated with topology (mesh) and
@@ -265,7 +266,7 @@ to MoFEM. You can use DM interface in the same how you native PETSc interface,
 see \ref poisson_tut1 where is shown how to set up KSP solve and get the
 solution. That philosophy applies to MoAB functions as well.
 
-\subsection hello_word_loops Iterating finite elements
+\subsection hello_world_loops Iterating finite elements
 
 Finally, we get to the point when we can put our machine in motion, we iterate
 over finite elements and run sequences of users data operator for each of them.
@@ -277,9 +278,9 @@ as results we get
 \verbatim
 **** 0 ****
 **** Operators ****
-Hello Operator OpRow: field name U side 0 type Vertex nb dofs on entuty 12
+Hello Operator OpRow: field name U side 0 type Vertex nb dofs on entity 12
 ...
-Hello Operator OpRow: field name U side 0 type Tetrahedra nb dofs on entuty 3
+Hello Operator OpRow: field name U side 0 type Tetrahedra nb dofs on entity 3
 Hello Operator OpRowCol: row field name U row side 0 row type Vertex nb dofs on row entity12 :  col field name U col side 0 col type Vertex nb dofs on col entity12
 ...
 Hello Operator OpRowCol: row field name U row side 0 row type Tetrahedra nb dofs on row entity3 :  col field name U col side 0 col type Tetrahedra nb dofs on col entity3
@@ -314,22 +315,22 @@ We have thirty skeleton elements and output looks as follows
 \verbatim
 **** 0 ****
 **** Operators ****
-Hello Operator OpRow: field name S side 0 type Vertex nb dofs on entuty 9
-Hello Operator OpRow: field name S side 0 type Edge nb dofs on entuty 6
-Hello Operator OpRow: field name S side 1 type Edge nb dofs on entuty 6
-Hello Operator OpRow: field name S side 2 type Edge nb dofs on entuty 6
-Hello Operator OpRow: field name S side 0 type Triangle nb dofs on entuty 3
+Hello Operator OpRow: field name S side 0 type Vertex nb dofs on entity 9
+Hello Operator OpRow: field name S side 0 type Edge nb dofs on entity 6
+Hello Operator OpRow: field name S side 1 type Edge nb dofs on entity 6
+Hello Operator OpRow: field name S side 2 type Edge nb dofs on entity 6
+Hello Operator OpRow: field name S side 0 type Triangle nb dofs on entity 3
 Hello Operator OpSideFace
 Hello Operator OpVolumeSide: volume 0.0782402 normal [3](0,0,1)
 ...
 
 **** 13 ****
 **** Operators ****
-Hello Operator OpRow: field name S side 0 type Vertex nb dofs on entuty 9
-Hello Operator OpRow: field name S side 0 type Edge nb dofs on entuty 6
-Hello Operator OpRow: field name S side 1 type Edge nb dofs on entuty 0
-Hello Operator OpRow: field name S side 2 type Edge nb dofs on entuty 0
-Hello Operator OpRow: field name S side 0 type Triangle nb dofs on entuty 0
+Hello Operator OpRow: field name S side 0 type Vertex nb dofs on entity 9
+Hello Operator OpRow: field name S side 0 type Edge nb dofs on entity 6
+Hello Operator OpRow: field name S side 1 type Edge nb dofs on entity 0
+Hello Operator OpRow: field name S side 2 type Edge nb dofs on entity 0
+Hello Operator OpRow: field name S side 0 type Triangle nb dofs on entity 0
 Hello Operator OpSideFace
 Hello Operator OpVolumeSide: volume 0.0834851 normal [3](0,0.530559,-0.50091)
 Hello Operator OpVolumeSide: volume 0.0884264 normal [3](0,0.530559,-0.50091)
@@ -344,7 +345,7 @@ element has only one run of \e OpVolumeSide, since skeleton finite element "0"
 is on the body boundary, while skeleton finite element "13" is in body volume
 and it has two volume neighbours.
 
-\subsection hello_word_udo Implementation of users data operators
+\subsection hello_world_udo Implementation of users data operators
 
 Now we focus attention on the implementation of users data operator. The first
 operator has the structure
@@ -391,13 +392,13 @@ struct OpRowCol: public MoFEM::ForcesAndSurcesCore::UserDataOperator {
 This user data operator is of type OPROWCOL, which takes an additional parameter
 in construction, i.e. \e symm, which is used to set symmetry of operator.
 Operator of this type iterates over all unique pairs of entities. If a symmetric
-operator is set. pars are assumed to be sets of two elements, thus order does
-not count. If an operator is not symmetric, then pairs are the sequence of two
-elements and all variations  are considered. This type of operator is used to
-integrate matrices. Note that this time function is overloaded, which takes as
-argument data for rows and columns respectively.
+operator pair is set of two elements (i.e. entities), thus order of entities if not important. If an operator
+is not symmetric, then pairs are the sequence of two elements and all variations of entities pairs
+are considered. This type of operator is used to integrate matrices. Note that
+this time function is overloaded, which takes as argument data for rows and
+columns respectively.
 
-Doing calculations on entity of specific dimension additional data like
+Performing calculations on entity of specific dimension additional data like
 volume, normal need to be accused, for such case derived users data operator
 class can be used, e.g.
 \code
@@ -424,7 +425,7 @@ docker run --rm=true -it --volumes-from mofem_build  -v $HOME/mofem-cephas/mofem
 You are now in Docker container, go to directory where Poisson problem is
 located, and compile code
 \code
-cd /mofem_build/um/basic_finite_elements/hello_word/
+cd /mofem_build/um/basic_finite_elements/hello_world/
 make -j2
 \endcode
 It can take some time when you compile it first time since all essential
@@ -432,7 +433,7 @@ functionality is compiled
 
 Once code is compiled, we can run test
 \code
-./hello_word
+./hello_world
 \endcode
 
 \section Exercises
