@@ -41,6 +41,6 @@ independent approximation for fluxes and function values.  Also, is shown how to
 integrate over mesh skeleton to evaluate error and how to use a posterior error
 estimator to drive mesh adaptivity (h-adaptivity),
 
-- \subpage ultraw_weak
+- \subpage ultra_weak
 
 */
