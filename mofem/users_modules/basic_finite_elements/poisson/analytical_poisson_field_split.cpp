@@ -295,10 +295,8 @@ int main(int argc, char *argv[]) {
       PetscBool is_pcfs = PETSC_FALSE;
       PetscObjectTypeCompare((PetscObject)pc,PCFIELDSPLIT,&is_pcfs);
       if(is_pcfs) {
-        ierr = PCSetOperators(pc,A,A); CHKERRQ(ierr);
         ierr = PCFieldSplitSetIS(pc,NULL,nested_is[0]); CHKERRQ(ierr);
         ierr = PCFieldSplitSetIS(pc,NULL,nested_is[1]); CHKERRQ(ierr);
-        ierr = PCSetUp(pc); CHKERRQ(ierr);
       } else {
         SETERRQ(
           PETSC_COMM_WORLD,
