@@ -1,0 +1,265 @@
+/*! \page poisson_tut3 Using fieldsplit solver and DM sub problem.
+
+
+In this tutorial, we show how to create sub-problems using discrete manager (DM)
+and using sub-problems DMs create nested matrices and use them with field-split
+preconditioner. This example shows simplified use of field-split preconditioner,
+for more advanced example of use of sub discrete managers and field-split
+preconditioner, see \ref cell_forces.cpp
+
+The field-split preconditioner is a block solver where on a block of matrices we
+apply Jacoby or Gauss–Seidel iterations. Alternatively, if a matrix has 2x2
+blocks, a Schur complement can be approximated by preconditioner.  We do not
+intend to explain mathematical details of block solver but merely show how to
+use PETSc preconditioner, i.e. \e PCFIELDSPLIT (see
+<http://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/PC/PCFIELDSPLIT.html>).
+
+Block matrix is represented using nested matrix, see details MATNEST (see
+<http://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/Mat/MatCreateNest.html>).
+
+We change only small part of the code described in tutorial \ref poisson_tut1.
+
+\tableofcontents
+
+\section poisson_tut3_block_matrix Block matrix
+
+We solve the same problem to one shown in \ref poisson_tut1.  However, to remove
+some issues with field-split solver, we will make the upper diagonal block of
+matrix invertible, by adding stabilisation matrix, which in this case has the
+interpretation of the penalty;
+\f[
+\left[
+\begin{array}{cc}
+\mathbf{K}+\mathbf{S} & \mathbf{C}^\textrm{T}\\
+\mathbf{C} & \mathbf{0}
+\end{array}
+\right]
+\left\{
+\begin{array}{c}
+\mathbf{U}\\
+\mathbf{L}
+\end{array}
+\right\}
+=
+\left[
+\begin{array}{c}
+\mathbf{F}\\
+\mathbf{g}
+\end{array}
+\right],\\
+\mathbf{K}=
+\int_\Omega (\nabla \boldsymbol\phi)^\textrm{T} \nabla \boldsymbol\phi \textrm{d}\Omega,\quad
+\mathbf{C} = \int_{\partial\Omega} \boldsymbol\psi^\textrm{T} \boldsymbol\phi \textrm{d}\partial\Omega,\\
+\mathbf{F} = \int_\Omega \boldsymbol\phi^\textrm{T} f \textrm{d}\Omega,\quad
+\mathbf{g} = \int_{\partial\Omega} \boldsymbol\psi^\textrm{T} \overline{u} \textrm{d}\partial\Omega,\\
+\mathbf{S} = \int_{\partial\Omega} \boldsymbol\phi^\textrm{T} \boldsymbol\phi \textrm{d}\partial\Omega.
+\f]
+
+\section poisson_tut3_code_dissection Code dissection
+
+\include analytical_poisson_field_split.cpp
+
+\section poisson_tut3_adding_penalty Creating penalty finite element instance
+
+This code is largely the same what is used in \ref analytical_poisson.cpp, which
+only two places where we introduce changes. We will focus only on those parts.
+First we make pointer new penalty finite element instance,
+\code
+ boost::shared_ptr<ForcesAndSurcesCore> boundary_penalty_lhs_fe;
+\endcode
+and create finite element class instance itself
+\code
+boundary_penalty_lhs_fe = boost::shared_ptr<ForcesAndSurcesCore>(new FaceElementForcesAndSourcesCore(m_field));
+\endcode
+with that at hand we can add appropiate users data operators
+\code
+boundary_penalty_lhs_fe->getOpPtrVector().push_back(new PoissonExample::OpUU(beta));
+\endcode
+
+Implementation of penalty operator PoissonExample::OpUU is in file \ref
+PoissonOperators.hpp and do not differ to what was shown in \ref poisson_tut2.
+
+\section poisson_tut3_code_dissection Creation and assembly of sub-DM problems
+
+We will start with creation of data structure need for creation of nested
+matrix. Nested matrix is PETSc structure which is used to store block matrices
+and on which one can perform operations as on other matrices types.
+\code
+DM dm_sub_KK,dm_sub_LU;
+ublas::matrix<Mat> nested_matrices(2,2);
+ublas::vector<IS> nested_is(2);
+\endcode
+Vector of \e IS, we use to store global indices of block matrices.
+
+\subsection poisson_tut3_diagonal Assembly of K and S matrices
+
+- We create sub DM form DM
+\code
+ierr = DMCreate(PETSC_COMM_WORLD,&dm_sub_KK);CHKERRQ(ierr);
+ierr = DMSetType(dm_sub_KK,"DMMOFEM");CHKERRQ(ierr);
+ierr = DMMoFEMCreateSubDM(dm_sub_KK,dm,"SUB_KK"); CHKERRQ(ierr);
+\endcode
+
+- Configure and set-up DM
+\code
+ierr = DMMoFEMSetSquareProblem(dm_sub_KK,PETSC_TRUE); CHKERRQ(ierr);
+ierr = DMMoFEMAddSubFieldRow(dm_sub_KK,"U"); CHKERRQ(ierr);
+ierr = DMMoFEMAddSubFieldCol(dm_sub_KK,"U"); CHKERRQ(ierr);
+ierr = DMMoFEMAddElement(dm_sub_KK,simple_interface->getDomainFEName().c_str()); CHKERRQ(ierr);
+ierr = DMMoFEMAddElement(dm_sub_KK,simple_interface->getBoundaryFEName().c_str()); CHKERRQ(ierr);
+ierr = DMSetUp(dm_sub_KK); CHKERRQ(ierr);
+\endcode
+
+- Get global indices of DM for sub DM for the upper diagonal block
+\code
+ierr = DMMoFEMGetSubRowIS(dm_sub_KK,&nested_is[0]); CHKERRQ(ierr);
+\endcode
+
+- Create matrix and assemble matrix \f$\mathbf{K}\f$ and penalty matrix
+\f$\mathbf{S}\f$ by iteration over domain finite elements entities and
+boundary finite elements entities
+\code
+ierr = DMCreateMatrix(dm_sub_KK,&nested_matrices(0,0)); CHKERRQ(ierr);
+domain_lhs_fe->ksp_B = nested_matrices(0,0);
+ierr = DMoFEMLoopFiniteElements(dm_sub_KK,simple_interface->getDomainFEName(),domain_lhs_fe); CHKERRQ(ierr);
+boundary_penalty_lhs_fe->ksp_B = nested_matrices(0,0);
+ierr = DMoFEMLoopFiniteElements(dm_sub_KK,simple_interface->getBoundaryFEName(),boundary_penalty_lhs_fe); CHKERRQ(ierr);
+ierr = MatAssemblyBegin(nested_matrices(0,0),MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+ierr = MatAssemblyEnd(nested_matrices(0,0),MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+ierr = DMDestroy(&dm_sub_KK); CHKERRQ(ierr);
+\endcode
+
+\subsection poisson_tut3_off_diagonal Assembly of C matrix
+
+Assembly of off-diagonal blocks is similar to diagonal term, note that
+of diagonal block is not square matrix and integration is only over finite
+elements entities on boundary
+\code
+ierr = DMCreate(PETSC_COMM_WORLD,&dm_sub_LU);CHKERRQ(ierr);
+ierr = DMSetType(dm_sub_LU,"DMMOFEM");CHKERRQ(ierr);
+ierr = DMMoFEMCreateSubDM(dm_sub_LU,dm,"SUB_LU"); CHKERRQ(ierr);
+ierr = DMMoFEMSetSquareProblem(dm_sub_LU,PETSC_FALSE); CHKERRQ(ierr);
+ierr = DMMoFEMAddSubFieldRow(dm_sub_LU,"L"); CHKERRQ(ierr);
+ierr = DMMoFEMAddSubFieldCol(dm_sub_LU,"U"); CHKERRQ(ierr);
+ierr = DMMoFEMAddElement(dm_sub_LU,simple_interface->getBoundaryFEName().c_str()); CHKERRQ(ierr);
+ierr = DMSetUp(dm_sub_LU); CHKERRQ(ierr);
+ierr = DMMoFEMGetSubRowIS(dm_sub_LU,&nested_is[1]); CHKERRQ(ierr);
+ierr = DMCreateMatrix(dm_sub_LU,&nested_matrices(1,0)); CHKERRQ(ierr);
+boundary_lhs_fe->ksp_B = nested_matrices(1,0);
+ierr = DMoFEMLoopFiniteElements(dm_sub_LU,simple_interface->getBoundaryFEName(),boundary_lhs_fe); CHKERRQ(ierr);
+ierr = MatAssemblyBegin(nested_matrices(1,0),MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+ierr = MatAssemblyEnd(nested_matrices(1,0),MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+ierr = MatTranspose(nested_matrices(1,0),MAT_INITIAL_MATRIX,&nested_matrices(0,1)); CHKERRQ(ierr);
+ierr = DMDestroy(&dm_sub_LU); CHKERRQ(ierr);
+\endcode
+
+\subsection poisson_tut3_vector Assembly of the right hand side vector
+
+Now we assemble global the right hand side vector, in the usual way using global
+DM
+\code
+domain_rhs_fe->ksp_f = F;
+ierr = DMoFEMLoopFiniteElements(dm,simple_interface->getDomainFEName(),domain_rhs_fe); CHKERRQ(ierr);
+boundary_rhs_fe->ksp_f = F;
+ierr = DMoFEMLoopFiniteElements(dm,simple_interface->getBoundaryFEName(),boundary_rhs_fe); CHKERRQ(ierr);
+ierr = VecAssemblyBegin(F); CHKERRQ(ierr);
+ierr = VecAssemblyEnd(F); CHKERRQ(ierr);
+\endcode
+
+\subsection poisson_tut3_nested_matrix Creation of global nested matrix
+
+For details how to create nested matrix see PETSc manual
+(<http://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/Mat/MatCreateNest.html>)
+\code
+ierr = MatCreateNest(
+  PETSC_COMM_WORLD,
+  2,&nested_is[0],2,&nested_is[0],&nested_matrices(0,0),&A
+); CHKERRQ(ierr);
+\endcode
+
+\subsection poisson_tut3_solver Solving problem
+
+- Create solver instance, and set-up from command line
+\code
+// Create solver and link it to DM
+KSP solver;
+ierr = KSPCreate(PETSC_COMM_WORLD,&solver); CHKERRQ(ierr);
+ierr = KSPSetFromOptions(solver); CHKERRQ(ierr);
+// Set operators
+ierr = KSPSetOperators(solver,A,A); CHKERRQ(ierr);
+\endcode
+
+- Get access to solver pre-conditioner and set-up PCFIELDSPLIT
+(see <http://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/PC/PCFIELDSPLIT.html>)
+\code
+PC pc;
+ierr = KSPGetPC(solver,&pc); CHKERRQ(ierr);
+PetscBool is_pcfs = PETSC_FALSE;
+PetscObjectTypeCompare((PetscObject)pc,PCFIELDSPLIT,&is_pcfs);
+if(is_pcfs) {
+  ierr = PCSetOperators(pc,A,A); CHKERRQ(ierr);
+  ierr = PCFieldSplitSetIS(pc,NULL,nested_is[0]); CHKERRQ(ierr);
+  ierr = PCFieldSplitSetIS(pc,NULL,nested_is[1]); CHKERRQ(ierr);
+  ierr = PCSetUp(pc); CHKERRQ(ierr);
+} else {
+  SETERRQ(
+    PETSC_COMM_WORLD,
+    MOFEM_DATA_INCONSISTENCY,
+    "Only works with pre-conditioner PCFIELDSPLIT"
+  );
+}
+\endcode
+Note that we set nested matrix as operator for pre-conditioner, and
+using <a href="http://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/PC/PCFieldSplitSetIS.html">PCFieldSplitSetIS</a>
+we setting elements of the field to PCFIELDSPLIT pre-conditioner.
+
+- Finally set-up solver and solve system of equations
+\code
+// Set-up solver, is type of solver and pre-conditioners
+ierr = KSPSetUp(solver); CHKERRQ(ierr);
+// At solution process, KSP solver using DM creates matrices, Calculate
+// values of the left hand side and the right hand side vector. then
+// solves system of equations. Results are stored in vector D.
+ierr = KSPSolve(solver,F,D); CHKERRQ(ierr);
+\endcode
+
+\section poisson_tut3_running_program Running the program
+
+The easiest installation is with Docker containers; pleas see youtube video how
+to run installation <a href=https://www.youtube.com/watch?v=6opfKER7JHA>link</a>. You can also look
+here \ref install_docker. Open terminal and run Docker container
+\code
+docker run --rm=true -it --volumes-from mofem_build  -v $HOME/mofem-cephas/mofem:/mofem -v $HOME:$HOME -e HOSTHOME=$HOME mofem_build /bin/bash
+\endcode
+
+You are now in Docker container, go to directory where Poisson problem is
+located, and compile code
+\code
+cd /mofem_build/um/basic_finite_elements/poisson/
+make -j2
+\endcode
+It can take some time when you compile it first time since all essential
+functionality is compiled
+
+Once code is compiled, we can run test
+\code
+mpirun -np 2  ./analytical_poisson -file_name cube_2part.h5m -order 3 -pc_type fieldsplit
+\endcode
+where options in .petscrc file are
+\code
+-ksp_type fgmres
+-ksp_atol 1e-12
+-ksp_rtol 0
+-ksp_monitor ascii
+-pc_fieldsplit_type schur
+-pc_fieldsplit_schur_precondition self
+-fieldsplit_0_ksp_type preonly
+-fieldsplit_0_pc_type lu
+-fieldsplit_0_pc_factor_mat_solver_package mumps
+-fieldsplit_1_ksp_type preonly
+-fieldsplit_1_pc_type lsc
+-fieldsplit_1_lsc_pc_type lu
+-fieldsplit_1_lsc_pc_factor_mat_solver_package mumps
+\endcode
+
+*/

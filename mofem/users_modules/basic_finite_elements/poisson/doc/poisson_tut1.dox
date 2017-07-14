@@ -156,13 +156,11 @@ Euler-Lagrange  equations for discretised problem
 \mathbf{g}
 \end{array}
 \right],\\
-\begin{array}{l}
 \mathbf{K}=
-\int_\Omega \nabla \boldsymbol\phi \cdot \nabla \boldsymbol\phi \textrm{d}\Omega,\quad
-\mathbf{C} = \int_{\partial\Omega} \boldsymbol\psi \boldsymbol\phi \textrm{d}\partial\Omega,\\
-\mathbf{F} = \int_\Omega \boldsymbol\phi f \textrm{d}\Omega,\quad
-\mathbf{g} = \int_{\partial\Omega} \boldsymbol\psi \overline{u} \textrm{d}\partial\Omega.
-\end{array}
+\int_\Omega (\nabla \boldsymbol\phi)^\textrm{T} \nabla \boldsymbol\phi \textrm{d}\Omega,\quad
+\mathbf{C} = \int_{\partial\Omega} \boldsymbol\psi^\textrm{T} \boldsymbol\phi \textrm{d}\partial\Omega,\\
+\mathbf{F} = \int_\Omega \boldsymbol\phi^\textrm{T} f \textrm{d}\Omega,\quad
+\mathbf{g} = \int_{\partial\Omega} \boldsymbol\psi^\textrm{T} \overline{u} \textrm{d}\partial\Omega.
 \f]
 Applying this procedure we transformed essential boundary conditions (in this
 case Dirichlet boundary conditions),  into problems with natural boundary
