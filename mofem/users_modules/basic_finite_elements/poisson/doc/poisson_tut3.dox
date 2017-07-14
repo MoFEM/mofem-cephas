@@ -36,14 +36,14 @@ interpretation of the penalty;
 \right]
 \left\{
 \begin{array}{c}
-\mathbf{U}+\mathbf{S}\overline{U}\\
+\mathbf{U}\\
 \mathbf{L}
 \end{array}
 \right\}
 =
 \left[
 \begin{array}{c}
-\mathbf{F}\\
+\mathbf{F}+\mathbf{S}\overline{U}\\
 \mathbf{g}
 \end{array}
 \right],\\
