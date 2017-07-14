@@ -25,6 +25,11 @@ setting integration rule and using \ref ftensor.
 
 - \subpage poisson_tut2
 
+Using <a href="http://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/PC/PCFIELDSPLIT.html">PCFIELDSPLIT</a>
+pre-conditioner to solve problem with Lagrange multipliers
+
+- \subpage poisson_tut3
+
 \section snes_nonlinear_tut Nonlinear problem
 
 Minimal surface area (soap film on the wire): Tutorial showing step by step
@@ -41,6 +46,6 @@ independent approximation for fluxes and function values.  Also, is shown how to
 integrate over mesh skeleton to evaluate error and how to use a posterior error
 estimator to drive mesh adaptivity (h-adaptivity),
 
-- \subpage ultraw_weak
+- \subpage ultra_weak
 
 */

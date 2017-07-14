@@ -366,14 +366,14 @@ public:
 
 };
 
-class AAA {
-	void A() {
-		double d[9];
-		Tensor4_ddg<double*,3,3> t2(
-      &d[0],&d[1],&d[2],
-      &d[1],&d[2],&d[3],
-      &d[4],&d[5],&d[6]
-		);
-		++t2;
-	}
-};
+// class AAA {
+// 	void A() {
+// 		double d[9];
+// 		Tensor4_ddg<double*,3,3> t2(
+//       &d[0],&d[1],&d[2],
+//       &d[1],&d[2],&d[3],
+//       &d[4],&d[5],&d[6]
+// 		);
+// 		++t2;
+// 	}
+// };
