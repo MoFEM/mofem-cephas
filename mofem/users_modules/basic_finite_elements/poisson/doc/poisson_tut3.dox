@@ -36,7 +36,7 @@ interpretation of the penalty;
 \right]
 \left\{
 \begin{array}{c}
-\mathbf{U}\\
+\mathbf{U}+\mathbf{S}\overline{U}\\
 \mathbf{L}
 \end{array}
 \right\}
