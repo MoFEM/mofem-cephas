@@ -77,7 +77,9 @@ struct DofEntity: public interface_FieldEntity<FieldEntity> {
 
   /// @return get dof index on entity
   inline DofIdx getEntDofIdx() const {
-    return DOF_UID_MASK_ON_ENTITY&(*reinterpret_cast<const unsigned int*>(&globalUId));
+    DofIdx dof;
+    memcpy(&dof,&globalUId,2);
+    return DOF_UID_MASK_ON_ENTITY&dof;
   }
 
   /// @return get field data on dof

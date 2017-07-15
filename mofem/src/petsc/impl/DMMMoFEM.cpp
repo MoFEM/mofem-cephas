@@ -801,10 +801,19 @@ PetscErrorCode DMCreateMatrix_MoFEM(DM dm,Mat *M) {
     PetscInt *i;
     PetscInt *j;
     PetscScalar *v;
-    ierr = dm_field->mField_ptr->MatCreateSeqAIJWithArrays(
-      dm_field->problemName,M,&i,&j,&v
-    ); CHKERRQ(ierr);
-    ierr = MatConvert(*M,MATAIJ,MAT_INPLACE_MATRIX,M); CHKERRQ(ierr);
+    #if PETSC_VERSION_GE(3,7,0)
+      ierr = dm_field->mField_ptr->MatCreateSeqAIJWithArrays(
+        dm_field->problemName,M,&i,&j,&v
+      ); CHKERRQ(ierr);
+      ierr = MatConvert(*M,MATAIJ,MAT_INPLACE_MATRIX,M); CHKERRQ(ierr);
+    #else
+      Mat N;
+      ierr = dm_field->mField_ptr->MatCreateSeqAIJWithArrays(
+        dm_field->problemName,&N,&i,&j,&v
+      ); CHKERRQ(ierr);
+      ierr = MatConvert(N,MATAIJ,MAT_INITIAL_MATRIX,M); CHKERRQ(ierr);
+      ierr = MatDestroy(&N); CHKERRQ(ierr);
+    #endif
     ierr = PetscFree(i); CHKERRQ(ierr);
     ierr = PetscFree(j); CHKERRQ(ierr);
     ierr = PetscFree(v); CHKERRQ(ierr);
