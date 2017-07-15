@@ -927,16 +927,12 @@ namespace MoFEM {
         data_procs = rbuf_col;
       }
 
-      // IdxDataType *idx_data;
       UId uid;
-
       NumeredDofEntity_multiIndex::iterator dit;
       for(int kk=0; kk<nrecvs; kk++) {
         int len = olengths[kk];
         int *data_from_proc = data_procs[kk];
         for(int dd = 0;dd<len;dd+=data_block_size) {
-          // idx_data = (IdxDataType*)(&data_from_proc[dd]);
-          // bcopy(idx_data->uId,&uid,sizeof(UId));
           uid = IdxDataTypePtr(&data_from_proc[dd]).getUId();
           dit = numered_dofs_ptr[ss]->find(uid);
           if(dit == numered_dofs_ptr[ss]->end()) {
@@ -976,9 +972,7 @@ namespace MoFEM {
               PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"dof %s not found",zz.str().c_str()
             );
           }
-          // int global_idx = idx_data->globalDof;
           int global_idx = IdxDataTypePtr(&data_from_proc[dd]).getDofIdx();
-
           if(global_idx<0) {
             SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"received negative dof");
           }
