@@ -263,6 +263,40 @@ PetscErrorCode DMMoFEMGetIsSubDM(DM dm,PetscBool *is_sub_dm) {
   PetscFunctionReturn(0);
 }
 
+PetscErrorCode DMMoFEMGetSubRowIS(DM dm,IS *is) {
+  PetscErrorCode ierr;
+  PetscFunctionBegin;
+  PetscValidHeaderSpecific(dm,DM_CLASSID,1);
+  PetscFunctionBegin;
+  DMCtx *dm_field = (DMCtx*)dm->data;
+  if(dm_field->isSubDM!=PETSC_TRUE) {
+    SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"This DM is not created as a SubDM");
+  }
+  if(dm_field->isProblemBuild!=PETSC_TRUE) {
+    SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"Problem is not build");
+  }
+  boost::shared_ptr<Problem::SubProblemData> sub_data = dm_field->problemPtr->getSubData();
+  ierr = sub_data->getRowIs(is); CHKERRQ(ierr);
+  PetscFunctionReturn(0);
+}
+
+PetscErrorCode DMMoFEMGetSubColIS(DM dm,IS *is) {
+  PetscErrorCode ierr;
+  PetscFunctionBegin;
+  PetscValidHeaderSpecific(dm,DM_CLASSID,1);
+  PetscFunctionBegin;
+  DMCtx *dm_field = (DMCtx*)dm->data;
+  if(dm_field->isSubDM!=PETSC_TRUE) {
+    SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"This DM is not created as a SubDM");
+  }
+  if(dm_field->isProblemBuild!=PETSC_TRUE) {
+    SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"Problem is not build");
+  }
+  boost::shared_ptr<Problem::SubProblemData> sub_data = dm_field->problemPtr->getSubData();
+  ierr = sub_data->getColIs(is); CHKERRQ(ierr);
+  PetscFunctionReturn(0);
+}
+
 PetscErrorCode DMMoFEMAddRowCompositeProblem(DM dm,const char prb_name[]) {
   PetscValidHeaderSpecific(dm,DM_CLASSID,1);
   PetscFunctionBegin;
