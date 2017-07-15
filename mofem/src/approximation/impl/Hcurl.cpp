@@ -1564,9 +1564,9 @@ PetscErrorCode VTK_Hcurl_MBTET(const string file_name) {
   double diff_shape_fun[12];
   ierr = ShapeDiffMBTET(diff_shape_fun); CHKERRQ(ierr);
 
-  int edge_sense[6] = { 1,1,1, 1,1,1 };
+  //int edge_sense[6] = { 1,1,1, 1,1,1 };
   const int order = 5;
-  int edge_order[6] = { order,order,order, order,order,order };
+  //int edge_order[6] = { order,order,order, order,order,order };
   double def_val[] = { 0,0,0,0,0,0 };
   int faces_order[] = { order,order,order,order };
   int faces_nodes[] = { 0,1,3, 1,2,3, 0,2,3, 0,1,2 };

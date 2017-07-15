@@ -107,7 +107,7 @@ struct FaceRule { int operator()(int,int,int) const { return 4; } };
 
 int main(int argc, char *argv[]) {
 
-  ErrorCode rval;
+  //ErrorCode rval;
   PetscErrorCode ierr;
 
   // initialize petsc

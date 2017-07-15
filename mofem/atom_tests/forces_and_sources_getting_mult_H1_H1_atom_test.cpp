@@ -128,7 +128,7 @@ int main(int argc, char *argv[]) {
   //
   ProblemsManager *prb_mng_ptr;
   ierr = m_field.query_interface(prb_mng_ptr); CHKERRQ(ierr);
-    const Problem_multiIndex *problems_ptr;
+  //const Problem_multiIndex *problems_ptr;
   ierr = prb_mng_ptr->buildProblem("TEST_PROBLEM",true); CHKERRQ(ierr);
 
   /****/

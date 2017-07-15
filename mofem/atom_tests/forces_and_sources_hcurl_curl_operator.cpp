@@ -168,13 +168,13 @@ int main(int argc, char *argv[]) {
 
       if(data.getFieldData().size()==0) PetscFunctionReturn(0);
 
-      int nb_gauss_pts = data.getDiffHcurlN().size1();
-      int nb_dofs = data.getFieldData().size();
+      const unsigned int nb_gauss_pts = data.getDiffHcurlN().size1();
+      const unsigned int nb_dofs = data.getFieldData().size();
 
       MatrixDouble curl_mat;
       FTensor::Index<'i',3> i;
 
-      int gg = 0;
+      unsigned int gg = 0;
       for(;gg<nb_gauss_pts;gg++) {
         double w = getGaussPts()(3,gg)*getVolume();
         if(getHoGaussPtsDetJac().size()==nb_gauss_pts) {
@@ -183,7 +183,7 @@ int main(int argc, char *argv[]) {
         }
         ierr = getCurlOfHCurlBaseFunctions(side,type,data,gg,curl_mat); CHKERRQ(ierr);
         FTensor::Tensor1<double*,3> t_curl(&curl_mat(0,0),&curl_mat(0,1),&curl_mat(0,2),3);
-        for(int dd = 0;dd!=nb_dofs;dd++) {
+        for(unsigned int dd = 0;dd!=nb_dofs;dd++) {
           cUrl(i) += w*t_curl(i)*data.getFieldData()[dd];
           ++t_curl;
         }

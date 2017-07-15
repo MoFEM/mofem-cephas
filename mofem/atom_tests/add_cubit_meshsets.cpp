@@ -122,7 +122,7 @@ int main(int argc, char *argv[]) {
         std::vector<double> attributes;
         it->getAttributes(attributes);
         std::cout << "Attr: ";
-        for(int ii = 0;ii!=attributes.size();ii++) {
+        for(unsigned int ii = 0;ii!=attributes.size();ii++) {
           std::cout << attributes[ii] << " ";
         }
         std::cout << endl;

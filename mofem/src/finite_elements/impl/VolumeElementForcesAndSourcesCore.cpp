@@ -208,7 +208,7 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::calculateCoordinatesAtGaussPts
       &coordsAtGaussPts(0,0),&coordsAtGaussPts(0,1),&coordsAtGaussPts(0,2),3
     );
     FTensor::Tensor0<double*> t_shape_functions(shape_functions_ptr);
-    for(int gg = 0;gg<nbGaussPts;gg++) {
+    for(unsigned int gg = 0;gg<nbGaussPts;gg++) {
       FTensor::Tensor1<double*,3> t_coords(&coords[0],&coords[1],&coords[2],3);
       for(int bb = 0;bb<4;bb++) {
         t_coords_at_gauss_ptr(i) += t_coords(i)*t_shape_functions;
@@ -438,7 +438,7 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::calculateHoJacobian() {
       hoGaussPtsDetJac.resize(nbGaussPts,false);
       FTensor::Tensor0<double*> det(&hoGaussPtsDetJac[0]);
       // Calculate inverse and determinant
-      for(int gg = 0;gg!=nbGaussPts;gg++) {
+      for(unsigned int gg = 0;gg!=nbGaussPts;gg++) {
         ierr = determinantTensor3by3(jac,det); CHKERRQ(ierr);
         // if(det<0) {
         //   SETERRQ(mField.get_comm(),MOFEM_DATA_INCONSISTENCY,"Negative volume");
@@ -511,14 +511,14 @@ PetscErrorCode VolumeElementForcesAndSourcesCore::operator()() {
         FieldApproximationBase base = ApproximationBaseArray[b];
         DataForcesAndSurcesCore::EntData &data = dataH1.dataOnEntities[MBVERTEX][0];
         if((data.getDiffN(base).size1()==4)&&(data.getDiffN(base).size2()==3)) {
-          const int nb_base_functions = 4;
+          const unsigned int nb_base_functions = 4;
           new_diff_n.resize(nbGaussPts,3*nb_base_functions,false);
           double *new_diff_n_ptr = &*new_diff_n.data().begin();
           FTensor::Tensor1<double*,3> t_new_diff_n(
             new_diff_n_ptr,&new_diff_n_ptr[1],&new_diff_n_ptr[2],3
           );
           double *t_diff_n_ptr = &*data.getDiffN(base).data().begin();
-          for(unsigned int gg = 0;gg<nbGaussPts;gg++) {
+          for(unsigned int gg = 0;gg!=nbGaussPts;gg++) {
             FTensor::Tensor1<double*,3> t_diff_n(
               t_diff_n_ptr,&t_diff_n_ptr[1],&t_diff_n_ptr[2],3
             );

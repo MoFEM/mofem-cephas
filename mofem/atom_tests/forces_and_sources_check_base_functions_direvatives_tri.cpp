@@ -312,7 +312,7 @@ int main(int argc, char *argv[]) {
       gaussPts(0,4) = ksi;
       gaussPts(1,4) = eta;
 
-      for(int ii = 0;ii!=gaussPts.size2();ii++) {
+      for(unsigned int ii = 0;ii!=gaussPts.size2();ii++) {
         gaussPts(2,ii) = 1;
       }
 

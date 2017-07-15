@@ -292,7 +292,7 @@ struct VolumeElementForcesAndSourcesCore: public ForcesAndSurcesCore {
 
   };
 
-  int nbGaussPts; ///< Number of integration points
+  unsigned int nbGaussPts; ///< Number of integration points
 
   // Note that functions below could be overloaded by user to change default
   // behavior of the element.
