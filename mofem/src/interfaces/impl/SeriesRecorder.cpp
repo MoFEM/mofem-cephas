@@ -303,7 +303,7 @@ PetscErrorCode SeriesRecorder::finalize_series_recorder(const std::string& serie
 }
 
 PetscErrorCode SeriesRecorder::print_series_steps() {
-  PetscErrorCode ierr;
+  //PetscErrorCode ierr;
   MoFEM::Interface &m_field = cOre;
   PetscFunctionBegin;
   std::ostringstream ss;
