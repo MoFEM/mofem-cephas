@@ -651,10 +651,13 @@ namespace MoFEM {
     // set local and global indices on own dofs
     const size_t idx_data_type_size = sizeof(IdxDataType);
     const size_t data_block_size = idx_data_type_size/sizeof(int);
+
     if(sizeof(IdxDataType) % sizeof(int)) {
       SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
     }
-    std::vector<std::vector<IdxDataType> > ids_data_packed_rows(m_field.get_comm_size()),ids_data_packed_cols(m_field.get_comm_size());
+    std::vector<std::vector<IdxDataType> > ids_data_packed_rows(
+      m_field.get_comm_size()),ids_data_packed_cols(m_field.get_comm_size()
+    );
 
     // used to keep shared_ptr
     std::vector<boost::shared_ptr<NumeredDofEntity> > dofs_shared_array;
@@ -924,7 +927,7 @@ namespace MoFEM {
         data_procs = rbuf_col;
       }
 
-      IdxDataType *idx_data;
+      // IdxDataType *idx_data;
       UId uid;
 
       NumeredDofEntity_multiIndex::iterator dit;
@@ -932,8 +935,9 @@ namespace MoFEM {
         int len = olengths[kk];
         int *data_from_proc = data_procs[kk];
         for(int dd = 0;dd<len;dd+=data_block_size) {
-          idx_data = (IdxDataType*)(&data_from_proc[dd]);
-          bcopy(idx_data->uId,&uid,sizeof(UId));
+          // idx_data = (IdxDataType*)(&data_from_proc[dd]);
+          // bcopy(idx_data->uId,&uid,sizeof(UId));
+          uid = IdxDataTypePtr(&data_from_proc[dd]).getUId();
           dit = numered_dofs_ptr[ss]->find(uid);
           if(dit == numered_dofs_ptr[ss]->end()) {
             // Dof is shared to this processor, however there is no element which
@@ -972,7 +976,9 @@ namespace MoFEM {
               PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"dof %s not found",zz.str().c_str()
             );
           }
-          int global_idx = idx_data->globalDof;
+          // int global_idx = idx_data->globalDof;
+          int global_idx = IdxDataTypePtr(&data_from_proc[dd]).getDofIdx();
+
           if(global_idx<0) {
             SETERRQ(PETSC_COMM_SELF,MOFEM_OPERATION_UNSUCCESSFUL,"received negative dof");
           }

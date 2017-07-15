@@ -192,7 +192,7 @@ PetscErrorCode NodeMergerInterface::mergeNodes(
   }
 
   if(only_if_improve_quality) {
-    double coords[12];
+    //double coords[12];
     Range check_tests;
     if(move>0 || line_search) {
       check_tests = unite(father_tets,mother_tets);

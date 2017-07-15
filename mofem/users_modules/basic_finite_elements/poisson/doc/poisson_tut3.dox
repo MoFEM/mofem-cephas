@@ -43,7 +43,7 @@ interpretation of the penalty;
 =
 \left[
 \begin{array}{c}
-\mathbf{F}+\mathbf{S}\overline{U}\\
+\mathbf{F}+\mathbf{S}\overline{U} \\
 \mathbf{g}
 \end{array}
 \right],\\
