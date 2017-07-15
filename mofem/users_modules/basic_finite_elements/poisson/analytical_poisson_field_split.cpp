@@ -222,6 +222,7 @@ int main(int argc, char *argv[]) {
       ierr = DMCreate(PETSC_COMM_WORLD,&dm_sub_KK);CHKERRQ(ierr);
       ierr = DMSetType(dm_sub_KK,"DMMOFEM");CHKERRQ(ierr);
       ierr = DMMoFEMCreateSubDM(dm_sub_KK,dm,"SUB_KK"); CHKERRQ(ierr);
+      ierr = DMSetFromOptions(dm_sub_KK); CHKERRQ(ierr);
       ierr = DMMoFEMSetSquareProblem(dm_sub_KK,PETSC_TRUE); CHKERRQ(ierr);
       ierr = DMMoFEMAddSubFieldRow(dm_sub_KK,"U"); CHKERRQ(ierr);
       ierr = DMMoFEMAddSubFieldCol(dm_sub_KK,"U"); CHKERRQ(ierr);
@@ -241,6 +242,7 @@ int main(int argc, char *argv[]) {
       ierr = DMCreate(PETSC_COMM_WORLD,&dm_sub_LU);CHKERRQ(ierr);
       ierr = DMSetType(dm_sub_LU,"DMMOFEM");CHKERRQ(ierr);
       ierr = DMMoFEMCreateSubDM(dm_sub_LU,dm,"SUB_LU"); CHKERRQ(ierr);
+      ierr = DMSetFromOptions(dm_sub_LU); CHKERRQ(ierr);
       ierr = DMMoFEMSetSquareProblem(dm_sub_LU,PETSC_FALSE); CHKERRQ(ierr);
       ierr = DMMoFEMAddSubFieldRow(dm_sub_LU,"L"); CHKERRQ(ierr);
       ierr = DMMoFEMAddSubFieldCol(dm_sub_LU,"U"); CHKERRQ(ierr);
@@ -267,6 +269,13 @@ int main(int argc, char *argv[]) {
       nested_matrices(1,1) = PETSC_NULL;
 
       if(debug) {
+        MatType type;
+        MatGetType(nested_matrices(0,0),&type);
+        cerr << "K " << type << endl;
+        MatGetType(nested_matrices(1,0),&type);
+        cerr << "C " << type << endl;
+        MatGetType(nested_matrices(0,1),&type);
+        cerr << "CT " << type << endl;
         std::string wait;
         cerr << "UU" << endl;
         MatView(nested_matrices(0,0),PETSC_VIEWER_DRAW_WORLD);
