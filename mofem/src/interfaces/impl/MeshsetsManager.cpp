@@ -555,7 +555,7 @@ namespace MoFEM {
   PetscErrorCode MeshsetsManager::setMeshsetFromFile(const string file_name,bool clean_file_options) {
     PetscErrorCode ierr;
     MoFEM::Interface &m_field = cOre;
-    moab::Interface &moab = m_field.get_moab();
+    //moab::Interface &moab = m_field.get_moab();
     PetscFunctionBegin;
     try {
       std::ifstream ini_file(file_name.c_str(),std::ifstream::in);
@@ -973,7 +973,7 @@ namespace MoFEM {
   PetscErrorCode MeshsetsManager::setMeshsetFromFile() {
     PetscErrorCode ierr;
     MoFEM::Interface &m_field = cOre;
-    moab::Interface &moab = m_field.get_moab();
+    //moab::Interface &moab = m_field.get_moab();
     PetscBool flg_file;
     char meshset_file_name[255];
     PetscFunctionBegin;

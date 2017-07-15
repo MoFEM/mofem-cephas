@@ -1030,9 +1030,9 @@ PetscErrorCode MeshRefinement::refine_MESHSET(
   const EntityHandle meshset,const BitRefLevel &bit,const bool recursive,int verb
 ) {
   PetscErrorCode ierr;
-  MoABErrorCode rval;
+  //MoABErrorCode rval;
   MoFEM::Interface &m_field = cOre;
-  moab::Interface &moab = m_field.get_moab();
+  //moab::Interface &moab = m_field.get_moab();
   const RefEntity_multiIndex *refined_ents_ptr;
   PetscFunctionBegin;
   ierr = m_field.get_ref_ents(&refined_ents_ptr); CHKERRQ(ierr);
