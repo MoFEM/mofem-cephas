@@ -163,7 +163,7 @@ interface_RefEntity<RefEntity>(ref_ent_ptr),
 // tag_order_data(NULL),
 tag_FieldData(NULL),
 tag_FieldData_size(0) {
-  MoABErrorCode rval;
+  //MoABErrorCode rval;
   EntityHandle ent = getEnt();
   moab::Interface &moab = ref_ent_ptr->basicDataPtr->moab;
   rval = moab.tag_get_by_ptr(field_ptr->th_FieldData,&ent,1,(const void **)&tag_FieldData,&tag_FieldData_size);
@@ -195,7 +195,7 @@ std::ostream& operator<<(std::ostream& os,const FieldEntity& e) {
 void FieldEntity_change_order::operator()(FieldEntity *e) {
   MoABErrorCode rval;
   moab::Interface &moab = e->sPtr->basicDataPtr->moab;
-  int nb_dofs = e->getOrderNbDofs(order)*e->getNbOfCoeffs();
+  unsigned int nb_dofs = e->getOrderNbDofs(order)*e->getNbOfCoeffs();
   ApproximationOrder& ent_order = *(e->getMaxOrderPtr());
   ent_order = order;
   EntityHandle ent = e->getEnt();

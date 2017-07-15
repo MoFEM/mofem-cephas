@@ -1307,7 +1307,7 @@ PetscErrorCode OpGetCoordsAndNormalsOnFace::doWork(int side,EntityType type,Data
         SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"data inconsistency");
       }
       if(nb_dofs > 3*data.getN().size2()) {
-        int nn = 0;
+        unsigned int nn = 0;
         for(;nn!=nb_dofs;nn++) {
           if(!data.getFieldDofs()[nn]->getActive()) break;
         }
@@ -1519,7 +1519,7 @@ PetscErrorCode OpSetCovariantPiolaTransoformOnTriangle::doWork(
   FTensor::Index<'j',3> j;
   FTensor::Index<'k',2> k;
 
-  double zero = 0;
+  //double zero = 0;
   FTensor::Tensor2<const double*,3,3> t_m(
     &tAngent0[0],&tAngent1[0],&nOrmal[0],
     &tAngent0[1],&tAngent1[1],&nOrmal[1],
@@ -1766,9 +1766,9 @@ PetscErrorCode OpGetDataAndGradient<3,3>::calculateValAndGrad(
 ) {
   PetscFunctionBegin;
   if(data.getBase()==NOBASE) PetscFunctionReturn(0);
-  const int nb_gauss_pts = data.getN().size1();
-  const int nb_base_functions = data.getN().size2();
-  const int nb_dofs = data.getFieldData().size();
+  const unsigned int nb_gauss_pts = data.getN().size1();
+  const unsigned int nb_base_functions = data.getN().size2();
+  const unsigned int nb_dofs = data.getFieldData().size();
   if(!nb_dofs) PetscFunctionReturn(0);
   FTensor::Tensor0<double*> t_n = data.getFTensor0N();
   FTensor::Tensor1<double*,3> t_val = getValAtGaussPtsTensor<3>(dataAtGaussPts);
@@ -1782,7 +1782,7 @@ PetscErrorCode OpGetDataAndGradient<3,3>::calculateValAndGrad(
     for(unsigned int gg = 0;gg!=nb_gauss_pts;gg++) {
       FTensor::Tensor1<double*,3> t_data = data.getFTensor1FieldData<3>();
       FTensor::Tensor1<double*,3>  t_diff_n = data.getFTensor1DiffN<3>();
-      int bb = 0;
+      unsigned int bb = 0;
       for(;bb!=nb_dofs/3;bb++) {
         t_val(i) += t_data(i)*t_n;
         t_grad(i,j) += t_data(i)*t_diff_n(j);
@@ -1800,7 +1800,7 @@ PetscErrorCode OpGetDataAndGradient<3,3>::calculateValAndGrad(
     FTensor::Tensor1<double*,3> t_diff_n = data.getFTensor1DiffN<3>();
     for(unsigned int gg = 0;gg!=nb_gauss_pts;gg++) {
       FTensor::Tensor1<double*,3> t_data = data.getFTensor1FieldData<3>();
-      int bb = 0;
+      unsigned int bb = 0;
       for(;bb!=nb_dofs/3;bb++) {
         t_val(i) += t_data(i)*t_n;
         t_grad(i,j) += t_data(i)*t_diff_n(j);
@@ -1826,10 +1826,10 @@ PetscErrorCode OpGetDataAndGradient<1,3>::calculateValAndGrad(
   DataForcesAndSurcesCore::EntData &data
 ) {
   PetscFunctionBegin;
-  const int nb_gauss_pts = data.getN().size1();
-  const int nb_base_functions = data.getN().size2();
-  bool constant_diff = false;
-  const int nb_dofs = data.getFieldData().size();
+  const unsigned int nb_gauss_pts = data.getN().size1();
+  const unsigned int nb_base_functions = data.getN().size2();
+  //bool constant_diff = false;
+  const unsigned int nb_dofs = data.getFieldData().size();
   FTensor::Tensor0<double*> t_n = data.getFTensor0N();
   FTensor::Tensor0<double*> t_val = FTensor::Tensor0<double*>(&*dataAtGaussPts.data().begin(),1);
   double *ptr = &*dataGradAtGaussPts.data().begin();
@@ -1842,7 +1842,7 @@ PetscErrorCode OpGetDataAndGradient<1,3>::calculateValAndGrad(
     for(unsigned int gg = 0;gg!=nb_gauss_pts;gg++) {
       FTensor::Tensor0<double*> t_data = data.getFTensor0FieldData();
       FTensor::Tensor1<double*,3>  t_diff_n = data.getFTensor1DiffN<3>();
-      int bb = 0;
+      unsigned int bb = 0;
       for(;bb!=nb_dofs/3;bb++) {
         t_val += t_data*t_n;
         t_grad(i) += t_data*t_diff_n(i);
@@ -1860,9 +1860,9 @@ PetscErrorCode OpGetDataAndGradient<1,3>::calculateValAndGrad(
     FTensor::Tensor1<double*,3> t_diff_n = data.getFTensor1DiffN<3>();
     for(unsigned int gg = 0;gg!=nb_gauss_pts;gg++) {
       FTensor::Tensor0<double*> t_data = data.getFTensor0FieldData();
-      int bb = 0;
+      unsigned int bb = 0;
       for(;bb!=nb_dofs/3;bb++) {
-        t_val += t_data*t_n;
+        t_val = t_data*t_n;
         t_grad(i) += t_data*t_diff_n(i);
         ++t_n;
         ++t_diff_n;

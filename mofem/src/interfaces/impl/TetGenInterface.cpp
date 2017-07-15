@@ -467,7 +467,7 @@ PetscErrorCode TetGenInterface::outData(
   PetscFunctionBegin;
   PetscErrorCode ierr;
 
-  MoABErrorCode rval;
+  //MoABErrorCode rval;
   MoFEM::Interface& m_field = cOre;
 
   // ParallelComm* pcomm = ParallelComm::get_pcomm(&m_field.get_moab(),MYPCOMM_INDEX);

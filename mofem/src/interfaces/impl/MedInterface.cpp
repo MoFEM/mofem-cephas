@@ -514,7 +514,7 @@ namespace MoFEM {
     std::map<string,Range> &group_elem_map,
     int verb
   ) {
-    MoABErrorCode rval;
+    //MoABErrorCode rval;
     MoFEM::Interface &m_field = cOre;
     PetscFunctionBegin;
 
@@ -729,7 +729,7 @@ namespace MoFEM {
       MED_PENTA6, MED_PYRA5, MED_SEG3, MED_TRIA6, MED_QUAD9, MED_TETRA10,
       MED_HEXA27, MED_POINT1, MED_QUAD8, MED_HEXA20, MED_PENTA15, MED_PYRA13
     };
-    const int nodesPerEle[] = {0, 2, 3, 4, 4, 8, 6, 5, 3, 6, 9, 10, 27, 1, 8, 20, 15, 13};
+    //const int nodesPerEle[] = {0, 2, 3, 4, 4, 8, 6, 5, 3, 6, 9, 10, 27, 1, 8, 20, 15, 13};
 
     std::vector<std::pair<int, int> > pairs;
     for(unsigned int i = 0; i < sizeof(entType) / sizeof(entType[0]); i++){
@@ -796,13 +796,13 @@ namespace MoFEM {
 
         if(numVal <= 0) continue;
 
-        int mult = 1;
-        if(ent == MED_NODE_ELEMENT) {
-          mult = nodesPerEle[pairs[pair].second];
-        }
-        else if(ngauss != 1){
-          mult = ngauss;
-        }
+        //int mult = 1;
+        //if(ent == MED_NODE_ELEMENT) {
+        //  mult = nodesPerEle[pairs[pair].second];
+        //}
+        //else if(ngauss != 1){
+        //  mult = ngauss;
+        //}
 
         // read field data
         std::vector<double> val(numVal * num_comp);
@@ -911,12 +911,12 @@ namespace MoFEM {
     //   case MED_INT: os << "MED_INT"; break;
     // };
     os << " componentNames:";
-    for(int ff = 0;ff!=field_data.componentNames.size();ff++) {
+    for(unsigned int ff = 0;ff!=field_data.componentNames.size();ff++) {
       os << " " << field_data.componentNames[ff];
     }
     os << std::endl;
     os << " componentUnits:";
-    for(int ff = 0;ff!=field_data.componentUnits.size();ff++) {
+    for(unsigned int ff = 0;ff!=field_data.componentUnits.size();ff++) {
       os << " " << field_data.componentUnits[ff];
     }
     os << std::endl;

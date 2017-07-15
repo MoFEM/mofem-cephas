@@ -1171,12 +1171,15 @@ namespace MoFEM {
         hi_dit = out_problem_dofs[ss]->get<Idx_mi_tag>().end();
         for(;dit!=hi_dit;dit++) {
           int idx = -1; // if dof is not part of partition, set local index to -1
-          if(dit->get()->getPart()==m_field.get_comm_rank()) {
+          if(dit->get()->getPart()==(unsigned int)m_field.get_comm_rank()) {
             idx = (*nb_local_dofs[ss])++;
           }
           bool success = out_problem_dofs[ss]->modify(
             out_problem_dofs[ss]->project<0>(dit),NumeredDofEntity_local_idx_change(idx)
           );
+	  if(!success) {
+             SETERRQ(PETSC_COMM_WORLD,MOFEM_ATOM_TEST_INVALID,"operation unsuccesful");
+	  }
         };
       }
       // Set global indexes, compress global indices
@@ -1221,6 +1224,9 @@ namespace MoFEM {
               dit->get()->getPart(),*it,*it,dit->get()->getPetscLocalDofIdx()
             )
           );
+          if(!success) {
+            SETERRQ(PETSC_COMM_WORLD,MOFEM_ATOM_TEST_INVALID,"operation unsuccesful");
+	  }
         }
         // set global indices to nodes not on this part
         {
@@ -1245,6 +1251,9 @@ namespace MoFEM {
                 dit->get()->getPart(),dit->get()->getDofIdx(),*it,dit->get()->getPetscLocalDofIdx()
               )
             );
+            if(!success) {
+             SETERRQ(PETSC_COMM_WORLD,MOFEM_ATOM_TEST_INVALID,"operation unsuccesful");
+	    }
           }
         }
         ierr = AODestroy(&ao); CHKERRQ(ierr);
@@ -1314,10 +1323,10 @@ namespace MoFEM {
     std::vector<IS>* add_prb_is[] = {&cmp_prb_data->rowIs,&cmp_prb_data->colIs};
 
     // Get DOFs for row & columns for out problem,
-    boost::shared_ptr<NumeredDofEntity_multiIndex> out_problem_dofs[] = {
-      out_problem_it->numeredDofsRows,
-      out_problem_it->numeredDofsCols
-    };
+    //boost::shared_ptr<NumeredDofEntity_multiIndex> out_problem_dofs[] = {
+    //  out_problem_it->numeredDofsRows,
+    //  out_problem_it->numeredDofsCols
+    //};
     // Get local indices counter
     int* nb_local_dofs[] = {
       out_problem_it->tag_local_nbdof_data_row,
@@ -1401,7 +1410,7 @@ namespace MoFEM {
       NumeredDofEntity_multiIndex::index<PetscGlobalIdx_mi_tag>::type::iterator dit,hi_dit;
       int shift_glob = 0;
       int shift_loc = 0;
-      for(int pp = 0;pp!=add_prb_ptr[ss]->size();pp++) {
+      for(unsigned int pp = 0;pp!=add_prb_ptr[ss]->size();pp++) {
         PetscInt *dofs_out_idx_ptr;
         int nb_local_dofs = (*add_prb_ptr[ss])[pp]->getNbLocalDofsRow();
         ierr = PetscMalloc(nb_local_dofs*sizeof(int),&dofs_out_idx_ptr); CHKERRQ(ierr);
@@ -1509,7 +1518,7 @@ namespace MoFEM {
       std::vector<int> idx;
       idx.reserve(std::distance(dit,hi_dit));
       for(;dit!=hi_dit;dit++) {
-        if(dit->get()->getPart()==m_field.get_comm_rank()) {
+        if(dit->get()->getPart()==(unsigned int)m_field.get_comm_rank()) {
           bool success =
           dofs_ptr->get<PetscGlobalIdx_mi_tag>().modify(
             dit,NumeredDofEntity_local_idx_change((*nb_local_dofs[ss])++)
@@ -1546,7 +1555,7 @@ namespace MoFEM {
 
       AO ao;
       ierr = AOCreateMappingIS(is,PETSC_NULL,&ao); CHKERRQ(ierr);
-      for(int pp = 0;pp!=(*add_prb_is[ss]).size();pp++) {
+      for(unsigned int pp = 0;pp!=(*add_prb_is[ss]).size();pp++) {
         ierr = AOApplicationToPetscIS(ao,(*add_prb_is[ss])[pp]); CHKERRQ(ierr);
       }
       // Set DOFs numeration
@@ -2232,7 +2241,7 @@ namespace MoFEM {
     int verb
   ) {
     PetscErrorCode ierr;
-    MoABErrorCode rval;
+    //MoABErrorCode rval;
     MoFEM::Interface &m_field = cOre;
     const Problem_multiIndex *problems_ptr;
     const EntFiniteElement_multiIndex *fe_ent_ptr;
