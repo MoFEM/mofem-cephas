@@ -538,7 +538,7 @@ namespace MoFEM {
             // check approximation order
             if(mofem_ent_parent->getMaxOrder()==mofem_ent_child->getMaxOrder()) {
               // approximation order is equal, simply copy data
-              for(int dd = 0;dd!=mofem_ent_child->getEntFieldData().size();dd++) {
+              for(unsigned int dd = 0;dd!=mofem_ent_child->getEntFieldData().size();dd++) {
                 mofem_ent_child->getEntFieldData()[dd] = mofem_ent_parent->getEntFieldData()[dd];
               }
             } else {
@@ -547,7 +547,7 @@ namespace MoFEM {
               if(fcit==field_ents->end()) {
                 // entity not in database, set order and copy data
                 (FieldEntity_change_order(mofem_ent_parent->getMaxOrder()))(mofem_ent_child);
-                for(int dd = 0;dd!=mofem_ent_child->getEntFieldData().size();dd++) {
+                for(unsigned int dd = 0;dd!=mofem_ent_child->getEntFieldData().size();dd++) {
                   mofem_ent_child->getEntFieldData()[dd] = mofem_ent_parent->getEntFieldData()[dd];
                 }
               } else {
@@ -584,7 +584,7 @@ namespace MoFEM {
       const BitRefLevel bit,const BitRefLevel mask,const bool verify
     ) {
       MoFEM::Interface& m_field = cOre;
-      moab::Interface& moab = m_field.get_moab();
+      //moab::Interface& moab = m_field.get_moab();
       PetscFunctionBegin;
       Range ents;
       ierr = m_field.get_entities_by_ref_level(bit,mask,ents); CHKERRQ(ierr);

@@ -105,6 +105,7 @@ PetscErrorCode DMRegister_MoFEM(const char sname[]) {
 }
 
 PetscErrorCode DMSetOperators_MoFEM(DM dm) {
+  PetscErrorCode ierr;
   PetscValidHeaderSpecific(dm,DM_CLASSID,1);
   PetscFunctionBegin;
 
@@ -119,6 +120,9 @@ PetscErrorCode DMSetOperators_MoFEM(DM dm) {
   dm->ops->localtoglobalbegin       = DMLocalToGlobalBegin_MoFEM;
   dm->ops->localtoglobalend         = DMLocalToGlobalEnd_MoFEM;
   dm->ops->createfieldis            = DMCreateFieldIS_MoFEM;
+
+  // Default matrix type
+  ierr = DMSetMatType(dm,MATMPIAIJ); CHKERRQ(ierr);
 
   PetscFunctionReturn(0);
 }
@@ -791,7 +795,31 @@ PetscErrorCode DMCreateMatrix_MoFEM(DM dm,Mat *M) {
   PetscValidHeaderSpecific(dm,DM_CLASSID,1);
   PetscFunctionBegin;
   DMCtx *dm_field = (DMCtx*)dm->data;
-  ierr = dm_field->mField_ptr->MatCreateMPIAIJWithArrays(dm_field->problemName,M); CHKERRQ(ierr);
+  if(strcmp(dm->mattype,MATMPIAIJ)==0) {
+    ierr = dm_field->mField_ptr->MatCreateMPIAIJWithArrays(dm_field->problemName,M); CHKERRQ(ierr);
+  } else if(strcmp(dm->mattype,MATAIJ)==0) {
+    PetscInt *i;
+    PetscInt *j;
+    PetscScalar *v;
+    #if PETSC_VERSION_GE(3,7,0)
+      ierr = dm_field->mField_ptr->MatCreateSeqAIJWithArrays(
+        dm_field->problemName,M,&i,&j,&v
+      ); CHKERRQ(ierr);
+      ierr = MatConvert(*M,MATAIJ,MAT_INPLACE_MATRIX,M); CHKERRQ(ierr);
+    #else
+      Mat N;
+      ierr = dm_field->mField_ptr->MatCreateSeqAIJWithArrays(
+        dm_field->problemName,&N,&i,&j,&v
+      ); CHKERRQ(ierr);
+      ierr = MatConvert(N,MATAIJ,MAT_INITIAL_MATRIX,M); CHKERRQ(ierr);
+      ierr = MatDestroy(&N); CHKERRQ(ierr);
+    #endif
+    ierr = PetscFree(i); CHKERRQ(ierr);
+    ierr = PetscFree(j); CHKERRQ(ierr);
+    ierr = PetscFree(v); CHKERRQ(ierr);
+  } else {
+    SETERRQ(PETSC_COMM_SELF,MOFEM_NOT_IMPLEMENTED,"Matrix type not implemented");
+  }
   PetscFunctionReturn(0);
 }
 

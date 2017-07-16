@@ -259,5 +259,58 @@ where options in .petscrc file are
 -fieldsplit_1_lsc_pc_type lu
 -fieldsplit_1_lsc_pc_factor_mat_solver_package mumps
 \endcode
+as result of this we get
+\verbatim
+0 KSP Residual norm 8.033118850771e-01
+1 KSP Residual norm 6.976305465513e-01
+2 KSP Residual norm 1.607934185841e-01
+3 KSP Residual norm 3.770169528782e-02
+4 KSP Residual norm 6.956032053488e-03
+5 KSP Residual norm 2.909338614730e-03
+6 KSP Residual norm 1.005023961896e-03
+7 KSP Residual norm 2.282246238728e-04
+8 KSP Residual norm 8.489667759494e-05
+9 KSP Residual norm 2.947838587605e-05
+10 KSP Residual norm 9.958743352469e-06
+11 KSP Residual norm 3.371562925057e-06
+12 KSP Residual norm 1.098164149129e-06
+13 KSP Residual norm 3.193618936795e-07
+14 KSP Residual norm 9.389879470772e-08
+15 KSP Residual norm 3.982417334957e-08
+16 KSP Residual norm 1.441564356757e-08
+17 KSP Residual norm 3.803930712071e-09
+18 KSP Residual norm 1.257315120146e-09
+19 KSP Residual norm 3.877200351347e-10
+20 KSP Residual norm 1.173055871017e-10
+21 KSP Residual norm 4.580139122092e-11
+22 KSP Residual norm 3.440964436333e-11
+23 KSP Residual norm 2.903660158813e-11
+24 KSP Residual norm 9.918902879993e-12
+25 KSP Residual norm 3.014956589249e-12
+26 KSP Residual norm 1.196338950343e-12
+27 KSP Residual norm 3.347373367988e-13
+\endverbatim
+Note that KPS solver make 27 iterations to converge, since in this case,
+Schur complaint is approximated by pre-conditioner. If from other hand
+we use full Schur complement with direct solver
+\code
+mpirun -np 1 ./analytical_poisson_field_split \
+-file_name cube_1part.h5m -order 3 \
+-pc_type fieldsplit \
+-pc_fieldsplit_schur_precondition full \
+-fieldsplit_1_pc_type lu -fieldsplit_1_pc_factor_mat_solver_packag mumps \
+-dm_mat_type aij
+\endcode
+we will get
+\verbatim
+0 KSP Residual norm 8.033746248668e-01
+1 KSP Residual norm 6.498236020454e-01
+2 KSP Residual norm 9.691076621610e-12
+\endverbatim
+Note that we converged in three steps in that case.
+
+\section poisson_tut3_excercise Exercises
+
+- Use ILU pre-conditioner for two blocks and check how it change convergence
 
 */

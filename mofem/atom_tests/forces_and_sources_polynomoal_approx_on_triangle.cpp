@@ -143,7 +143,7 @@ struct OpValsDiffVals: public MoFEM::FaceElementForcesAndSourcesCore::UserDataOp
   PetscErrorCode	doWork(
     int side, EntityType type, DataForcesAndSurcesCore::EntData &data
   ) {
-    PetscErrorCode ierr;
+    //PetscErrorCode ierr;
     PetscFunctionBegin;
     const int nb_dofs = data.getIndices().size();
     if(nb_dofs==0) PetscFunctionReturn(0);
@@ -190,7 +190,7 @@ struct OpCheckValsDiffVals: public MoFEM::FaceElementForcesAndSourcesCore::UserD
   PetscErrorCode	doWork(
     int side, EntityType type, DataForcesAndSurcesCore::EntData &data
   ) {
-    PetscErrorCode ierr;
+    //PetscErrorCode ierr;
     PetscFunctionBegin;
     const double eps = 1e-6;
     if(type == MBEDGE && side == 0) {

@@ -41,7 +41,7 @@ int main(int argc, char *argv[]) {
   moab::Core mb_instance;
   moab::Interface& moab = mb_instance;
   MoFEM::Core core(moab);
-  MoFEM::Interface& m_field = core;
+  //MoFEM::Interface& m_field = core;
 
   enum bases {
     LEGENDREPOLYNOMIAL,
@@ -610,7 +610,7 @@ int main(int argc, char *argv[]) {
     ) {
       SETERRQ(PETSC_COMM_SELF,MOFEM_DATA_INCONSISTENCY,"Different pointers");
     }
-    double sum = 0,diff_sum = 0;
+    double sum = 0;//,diff_sum = 0;
     std::cout << "Edges\n";
     for(int ee = 0;ee<3;ee++) {
       std::cout << tri_data.dataOnEntities[MBEDGE][ee].getN(AINSWORTH_LEGENDRE_BASE) << std::endl;

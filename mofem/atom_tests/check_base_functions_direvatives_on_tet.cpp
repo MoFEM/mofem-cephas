@@ -373,7 +373,7 @@ int main(int argc, char *argv[]) {
       gaussPts(1,6) = eta;
       gaussPts(2,6) = zeta;
 
-      for(int ii = 0;ii!=gaussPts.size2();ii++) {
+      for(unsigned int ii = 0;ii!=gaussPts.size2();ii++) {
         gaussPts(3,ii) = 1;
       }
 

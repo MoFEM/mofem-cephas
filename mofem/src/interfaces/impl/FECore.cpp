@@ -636,7 +636,7 @@ namespace MoFEM {
             side_number_ptr = fe_it->lock().get()->getSideNumberPtr(dof_ent);
             data_dofs_array[fe_ent]->push_back(FEDofEntity(side_number_ptr,*dit));
             if(
-              data_dofs_array[fe_ent]->size()==data_dofs_size[fe_ent]
+              data_dofs_array[fe_ent]->size()==(unsigned int)data_dofs_size[fe_ent]
             ) {
               // That means that FEDofEntity vector is full, and can be added to
               // multi-index

@@ -149,7 +149,7 @@ void test_T4(
     } \
   }
 
-  int ii,jj,kk,ll;
+  int ii,jj,kk;//,ll;
 
   // jikl
   TESTING_ASSIGMENT(j,i,k,l, jj,ii,kk,ll);

@@ -289,7 +289,7 @@ static PetscErrorCode mofem_error_handler(
 }
 
 PetscErrorCode print_verison() {
-  PetscErrorCode ierr;
+  // PetscErrorCode ierr;
   PetscFunctionBegin;
   PetscFunctionReturn(0);
 }

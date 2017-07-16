@@ -704,7 +704,6 @@ PetscErrorCode CreateRowComressedADJMatrix::createMat(
   copy(i.begin(),i.end(),*_i);
   copy(j.begin(),j.end(),*_j);
 
-
   PetscInt nb_row_dofs = p_miit->getNbDofsRow();
   PetscInt nb_col_dofs = p_miit->getNbDofsCol();
 
@@ -715,20 +714,26 @@ PetscErrorCode CreateRowComressedADJMatrix::createMat(
     ierr = MatSetOption(*M,MAT_STRUCTURALLY_SYMMETRIC,PETSC_TRUE); CHKERRQ(ierr);
 
   } else if(strcmp(type,MATMPIAIJ)==0) {
-
+    if(_v!=PETSC_NULL) {
+      ierr = PetscMalloc(j.size()*sizeof(PetscScalar),_v); CHKERRQ(ierr);
+    }
+    PetscScalar *v = (_v!=PETSC_NULL) ? *_v : PETSC_NULL;
     // Compressed MPIADJ matrix
     PetscInt nb_local_dofs_row = p_miit->getNbLocalDofsRow();
     PetscInt nb_local_dofs_col = p_miit->getNbLocalDofsCol();
     ierr = ::MatCreateMPIAIJWithArrays(
-      cOmm,nb_local_dofs_row,nb_local_dofs_col,nb_row_dofs,nb_col_dofs,*_i,*_j,PETSC_NULL,M
+      cOmm,nb_local_dofs_row,nb_local_dofs_col,nb_row_dofs,nb_col_dofs,*_i,*_j,v,M
     ); CHKERRQ(ierr);
 
   } else if(strcmp(type,MATAIJ)==0) {
-
-    // Sequential compressed ADJ matrix
+    if(_v!=PETSC_NULL) {
+      ierr = PetscMalloc(j.size()*sizeof(PetscScalar),_v); CHKERRQ(ierr);
+    }
+    PetscScalar *v = (_v!=PETSC_NULL) ? *_v : PETSC_NULL;
+    // Sequential compressed AIJ matrix
     PetscInt nb_local_dofs_row = p_miit->getNbLocalDofsRow();
     PetscInt nb_local_dofs_col = p_miit->getNbLocalDofsCol();
-    ierr = ::MatCreateSeqAIJWithArrays(cOmm,nb_local_dofs_row,nb_local_dofs_col,*_i,*_j,PETSC_NULL,M); CHKERRQ(ierr);
+    ierr = ::MatCreateSeqAIJWithArrays(cOmm,nb_local_dofs_row,nb_local_dofs_col,*_i,*_j,v,M); CHKERRQ(ierr);
 
   } else {
 
