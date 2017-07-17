@@ -5,7 +5,7 @@ In this tutorial, we show how to create sub-problems using discrete manager (DM)
 and using sub-problems DMs create nested matrices and use them with field-split
 preconditioner. This example shows simplified use of field-split preconditioner,
 for more advanced example of use of sub discrete managers and field-split
-preconditioner, see \ref cell_forces.cpp
+preconditioner see \ref cell_forces.cpp
 
 The field-split preconditioner is a block solver where on a block of matrices we
 apply Jacoby or Gauss–Seidel iterations. Alternatively, if a matrix has 2x2
@@ -73,10 +73,10 @@ boundary_penalty_lhs_fe = boost::shared_ptr<ForcesAndSurcesCore>(new FaceElement
 \endcode
 with that at hand we can add appropiate users data operators
 \code
-boundary_penalty_lhs_fe->getOpPtrVector().push_back(new PoissonExample::OpUU(beta));
+boundary_penalty_lhs_fe->getOpPtrVector().push_back(new PoissonExample::OpS(beta));
 \endcode
 
-Implementation of penalty operator PoissonExample::OpUU is in file \ref
+Implementation of penalty operator PoissonExample::OpS is in file \ref
 PoissonOperators.hpp and do not differ to what was shown in \ref poisson_tut2.
 
 \section poisson_tut3_code_dissection Creation and assembly of sub-DM problems
@@ -241,7 +241,7 @@ functionality is compiled
 
 Once code is compiled, we can run test
 \code
-mpirun -np 2  ./analytical_poisson -file_name cube_2part.h5m -order 3 -pc_type fieldsplit
+mpirun -np 2  ./analytical_poisson_field_split -file_name cube_2part.h5m -order 3 -pc_type fieldsplit
 \endcode
 where options in .petscrc file are
 \code
@@ -251,13 +251,23 @@ where options in .petscrc file are
 -ksp_monitor ascii
 -pc_fieldsplit_type schur
 -pc_fieldsplit_schur_precondition self
--fieldsplit_0_ksp_type preonly
--fieldsplit_0_pc_type lu
--fieldsplit_0_pc_factor_mat_solver_package mumps
+-fieldsplit_0_ksp_type minres
+-fieldsplit_0_ksp_max_it 500
+-fieldsplit_0_ksp_rtol 1e-4
+-fieldsplit_0_pc_type hypre
+-fieldsplit_0_pc_hypre_type parasails
+-fieldsplit_0_pc_hypre_parasails_sym SPD
 -fieldsplit_1_ksp_type preonly
 -fieldsplit_1_pc_type lsc
--fieldsplit_1_lsc_pc_type lu
--fieldsplit_1_lsc_pc_factor_mat_solver_package mumps
+-fieldsplit_1_lsc_ksp_type minres
+-fieldsplit_1_lsc_ksp_rtol 1e-8
+-fieldsplit_1_lsc_ksp_max_it 500
+-fieldsplit_1_lsc_pc_type hypre
+-fieldsplit_1_lsc_pc_hypre_type parasails
+-fieldsplit_1_lsc_pc_hypre_parasails_sym SPD
+-fieldsplit_1_lsc_pc_hypre_parasails_nlevels 2
+-fieldsplit_1_lsc_pc_hypre_parasails_thresh 0.01
+-fieldsplit_1_lsc_pc_hypre_parasails_logging 1
 \endcode
 as result of this we get
 \verbatim

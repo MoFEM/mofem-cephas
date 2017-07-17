@@ -310,13 +310,15 @@ struct ForcesAndSurcesCore: public FEMethod {
     */
   virtual int getRule(int order) { return 2*order; }
 
+  typedef boost::function<int (int order_row,int order_col,int order_data)> RuleHookFun;
+
   /**
    * \brief Hook to get rule
    *
    * \todo check preferred format how works with gcc and clang,
    * see <http://www.boost.org/doc/libs/1_64_0/doc/html/function/tutorial.html#idp247873024>
    */
-  boost::function<int (int order_row,int order_col,int order_data)> getRuleHook;
+  RuleHookFun getRuleHook;
 
   /**
    * \brief another variant of getRule
