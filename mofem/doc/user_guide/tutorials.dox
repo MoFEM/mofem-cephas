@@ -25,6 +25,10 @@ setting integration rule and using \ref ftensor.
 
 - \subpage poisson_tut2
 
+Example of implementation of nonlinear Poisson equation using SNES (Newton) solver
+
+- \subpage poisson_tut4
+
 Using <a href="http://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/PC/PCFIELDSPLIT.html">PCFIELDSPLIT</a>
 pre-conditioner to solve problem with Lagrange multipliers
 
