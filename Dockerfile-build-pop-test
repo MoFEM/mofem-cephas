@@ -1,0 +1,13 @@
+FROM likask/mofem_build-pop-test-env:latest
+
+MAINTAINER Lukasz.Kaczmarczyk@glasgow.ac.uk
+
+ADD mofem /mofem
+RUN /mofem/scripts/docker_build_core_lib_script.sh
+RUN /mofem/scripts/docker_build_users_modules_script.sh
+
+WORKDIR $MOFEM_INSTALL_DIR/basic_finite_elements/poisson
+
+CMD make && \
+../../tools/mofem_part -my_file pop_test_mesh.cub -my_nparts 4 && \
+mpirun -np 4 ./analytical_poisson_field_split -file_name out.h5m -order 4 -pc_type fieldsplit -ksp_atol 1e-8
