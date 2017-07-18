@@ -88,7 +88,8 @@ namespace PoissonExample {
       double *e;
       ierr = VecGetArray(ghost_vec,&e); CHKERRQ(ierr);
       // Check if error is zero, otherwise throw error
-      if( (sqrt(e[0])>1e-10) || (!boost::math::isnormal(e[0]) )
+      const double eps = 1e-8;
+      if( (sqrt(e[0])>eps) || (!boost::math::isnormal(e[0]) )
       ) {
         SETERRQ(PETSC_COMM_SELF,MOFEM_ATOM_TEST_INVALID,"Test failed, error too big");
       }

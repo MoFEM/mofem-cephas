@@ -52,9 +52,15 @@ struct KspMethod: virtual public UnknownInterface  {
   enum KSPContext { CTX_SETFUNCTION, CTX_OPERATORS, CTX_KSPNONE };
 
   KspMethod():
-  ksp_ctx(CTX_KSPNONE) {
+  ksp_ctx(CTX_KSPNONE),
+  ksp(PETSC_NULL),
+  ksp_f(PETSC_NULL),
+  ksp_A(PETSC_NULL),
+  ksp_B(PETSC_NULL) {
   }
-  virtual ~KspMethod() {}
+  
+  virtual ~KspMethod() {
+  }
 
   /**
    * \brief set operator type
@@ -114,8 +120,16 @@ struct SnesMethod: virtual public UnknownInterface {
   enum SNESContext { CTX_SNESSETFUNCTION, CTX_SNESSETJACOBIAN, CTX_SNESNONE };
 
   SNESContext snes_ctx;
-  SnesMethod(): snes_ctx(CTX_SNESNONE) {};
-  virtual ~SnesMethod() {};
+  SnesMethod():
+  snes_ctx(CTX_SNESNONE),
+  snes_x(PETSC_NULL),
+  snes_f(PETSC_NULL),
+  snes_A(PETSC_NULL),
+  snes_B(PETSC_NULL) {
+  }
+
+  virtual ~SnesMethod() {
+  }
 
   PetscErrorCode set_snes_ctx(const SNESContext ctx_);
 
@@ -154,8 +168,20 @@ struct TSMethod: virtual public UnknownInterface  {
   };
 
   TSContext ts_ctx;
-  TSMethod(): ts_ctx(CTX_TSNONE),ts_a(0),ts_t(0) {};
-  virtual ~TSMethod() {};
+  TSMethod():
+  ts_ctx(CTX_TSNONE),
+  ts_u(PETSC_NULL),
+  ts_u_t(PETSC_NULL),
+  ts_F(PETSC_NULL),
+  ts_A(PETSC_NULL),
+  ts_B(PETSC_NULL),
+  ts_step(-1),
+  ts_a(0),
+  ts_t(0) {
+  }
+
+  virtual ~TSMethod() {
+  }
 
   PetscErrorCode set_ts_ctx(const TSContext ctx_);
 

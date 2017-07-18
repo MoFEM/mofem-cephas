@@ -79,9 +79,148 @@ struct ExactLaplacianFunction {
   }
 };
 
+struct OpS: public FaceElementForcesAndSourcesCore::UserDataOperator {
+
+  OpS(const bool beta = 1):
+  FaceElementForcesAndSourcesCore::UserDataOperator("U","U",OPROWCOL,true),
+  bEta(beta) {
+  }
+
+  /**
+   * \brief Do calculations for give operator
+   * @param  row_side row side number (local number) of entity on element
+   * @param  col_side column side number (local number) of entity on element
+   * @param  row_type type of row entity MBVERTEX, MBEDGE, MBTRI or MBTET
+   * @param  col_type type of column entity MBVERTEX, MBEDGE, MBTRI or MBTET
+   * @param  row_data data for row
+   * @param  col_data data for column
+   * @return          error code
+   */
+  PetscErrorCode doWork(
+    int row_side,int col_side,
+    EntityType row_type,EntityType col_type,
+    DataForcesAndSurcesCore::EntData &row_data,DataForcesAndSurcesCore::EntData &col_data
+  ) {
+    PetscFunctionBegin;
+    // get number of dofs on row
+    nbRows = row_data.getIndices().size();
+    // if no dofs on row, exit that work, nothing to do here
+    if(!nbRows) PetscFunctionReturn(0);
+    // get number of dofs on column
+    nbCols = col_data.getIndices().size();
+    // if no dofs on Columbia, exit nothing to do here
+    if(!nbCols) PetscFunctionReturn(0);
+    // get number of integration points
+    nbIntegrationPts = getGaussPts().size2();
+    // chekk if entity block is on matrix diagonal
+    if(
+      row_side==col_side&&
+      row_type==col_type
+    ) {
+      isDiag = true; // yes, it is
+    } else {
+      isDiag = false;
+    }
+    // integrate local matrix for entity block
+    ierr = iNtegrte(row_data,col_data); CHKERRQ(ierr);
+    // asseble local matrix
+    ierr = aSsemble(row_data,col_data); CHKERRQ(ierr);
+    PetscFunctionReturn(0);
+  }
+
+private:
+
+  const double bEta;
+
+  PetscErrorCode ierr;  ///< error code
+
+  int nbRows;           ///< number of dofs on rows
+  int nbCols;           ///< number if dof on column
+  int nbIntegrationPts; ///< number of integration points
+  bool isDiag;          ///< true if this block is on diagonal
+
+  FTensor::Index<'i',3> i;  ///< summit Index
+  MatrixDouble locMat;      ///< local entity block matrix
+
+  /**
+   * \brief Integrate grad-grad operator
+   * @param  row_data row data (consist base functions on row entity)
+   * @param  col_data column data (consist base functions on column entity)
+   * @return          error code
+   */
+  inline PetscErrorCode iNtegrte(
+    DataForcesAndSurcesCore::EntData &row_data,DataForcesAndSurcesCore::EntData &col_data
+  ) {
+    PetscFunctionBegin;
+    // set size of local entity bock
+    locMat.resize(nbRows,nbCols,false);
+    // clear matrux
+    locMat.clear();
+    // get element area
+    double area = getArea()*bEta;
+    // get integration weigths
+    FTensor::Tensor0<double*> t_w = getFTensor0IntegrationWeight();
+    // get base function gradient on rows
+    FTensor::Tensor0<double*> t_row_base = row_data.getFTensor0N();
+    // loop over integration points
+    for(int gg = 0;gg!=nbIntegrationPts;gg++) {
+      // take into account Jacobean
+      const double alpha = t_w*area;
+      // take fist element to local matrix
+      FTensor::Tensor0<double*> a(&*locMat.data().begin());
+      // loop over rows base functions
+      for(int rr = 0;rr!=nbRows;rr++) {
+        // get column base functions gradient at gauss point gg
+        FTensor::Tensor0<double*> t_col_base = col_data.getFTensor0N(gg,0);
+        // loop over columbs
+        for(int cc = 0;cc!=nbCols;cc++) {
+          // calculate element of loacl matrix
+          a += alpha*t_row_base*t_col_base;
+          ++t_col_base; // move to another gradient of base function on column
+          ++a;  // move to another element of local matrix in column
+        }
+        ++t_row_base; // move to another element of gradient of base function on row
+      }
+      ++t_w; // move to another integration weight
+    }
+    PetscFunctionReturn(0);
+  }
+
+  /**
+   * \brief Assemble local entity block matrix
+   * @param  row_data row data (consist base functions on row entity)
+   * @param  col_data column data (consist base functions on column entity)
+   * @return          error code
+   */
+  inline PetscErrorCode aSsemble(
+    DataForcesAndSurcesCore::EntData &row_data,DataForcesAndSurcesCore::EntData &col_data
+  ) {
+    PetscFunctionBegin;
+    // get pointer to first global index on row
+    const int* row_indices = &*row_data.getIndices().data().begin();
+    // get pointer to first global index on column
+    const int* col_indices = &*col_data.getIndices().data().begin();
+    Mat B = getFEMethod()->ksp_B!=PETSC_NULL? getFEMethod()->ksp_B : getFEMethod()->snes_B;
+    // assemble local matrix
+    ierr = MatSetValues(
+      B, nbRows,row_indices,nbCols,col_indices,&*locMat.data().begin(),ADD_VALUES
+    ); CHKERRQ(ierr);
+    if(!isDiag) {
+      // if not diagonal term and since global matrix is symmetric assemble
+      // transpose term.
+      locMat = trans(locMat);
+      ierr = MatSetValues(
+        B, nbCols,col_indices,nbRows,row_indices,&*locMat.data().begin(),ADD_VALUES
+      ); CHKERRQ(ierr);
+    }
+    PetscFunctionReturn(0);
+  }
+
+};
+
 int main(int argc, char *argv[]) {
 
-  ErrorCode rval;
+  // ErrorCode rval;
   PetscErrorCode ierr;
 
   // Initialize PETSc
@@ -144,8 +283,8 @@ int main(int argc, char *argv[]) {
       const double beta = 1;
       boundary_penalty_lhs_fe = boost::shared_ptr<ForcesAndSurcesCore>(new FaceElementForcesAndSourcesCore(m_field));
       boundary_penalty_lhs_fe->getRuleHook = PoissonExample::FaceRule();
-      boundary_penalty_lhs_fe->getOpPtrVector().push_back(new PoissonExample::OpUU(beta));
-      boundary_rhs_fe->getOpPtrVector().push_back(new PoissonExample::OpLU_exact(ExactFunction(),"U",beta));
+      boundary_penalty_lhs_fe->getOpPtrVector().push_back(new OpS(beta));
+      boundary_rhs_fe->getOpPtrVector().push_back(new PoissonExample::Op_g(ExactFunction(),"U",beta));
 
     }
 
@@ -186,7 +325,7 @@ int main(int argc, char *argv[]) {
 
       // Set fields order domain and boundary fields.
       ierr = simple_interface->setFieldOrder("U",order); CHKERRQ(ierr); // to approximate function
-      ierr = simple_interface->setFieldOrder("L",order); CHKERRQ(ierr); // to Lagrange multiplayers
+      ierr = simple_interface->setFieldOrder("L",order); CHKERRQ(ierr); // to Lagrange multiplaiers
       ierr = simple_interface->setFieldOrder("ERROR",0); CHKERRQ(ierr); // approximation order for error
 
       // Setup problem. At that point database is constructed, i.e. fields, finite elements and

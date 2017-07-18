@@ -49,9 +49,25 @@ target_link_libraries(analytical_poisson_field_split
   ${MoFEM_PROJECT_LIBS}
 )
 
+bfe_add_executable(analytical_nonlinear_poisson
+  ${CMAKE_CURRENT_SOURCE_DIR}/analytical_nonlinear_poisson.cpp
+)
+target_link_libraries(analytical_nonlinear_poisson
+  users_modules
+  mofem_finite_elements
+  mofem_interfaces
+  mofem_multi_indices
+  mofem_petsc
+  mofem_approx
+  mofem_third_party
+  mofem_cblas
+  ${MoFEM_PROJECT_LIBS}
+)
 
 cm_export_file("cube_1part.h5m" export_files_poisson)
 cm_export_file("cube_2part.h5m" export_files_poisson)
+cm_export_file("pop_test_mesh.cub" export_files_poisson)
+
 cm_export_file(".petscrc" export_files_poisson)
 
 add_test(analytical_poisson
@@ -60,9 +76,18 @@ add_test(analytical_poisson
   -file_name cube_2part.h5m -order 3
   -test 1
 )
+
 add_test(analytical_poisson_field_split
   ${MoFEM_MPI_RUN} ${MPI_RUN_FLAGS} -np 2
   ${CMAKE_CURRENT_BINARY_DIR}/analytical_poisson_field_split
   -file_name cube_2part.h5m -order 3 -pc_type fieldsplit
   -test 1
+)
+
+add_test(analytical_nonlinear_poisson
+  ${MoFEM_MPI_RUN} ${MPI_RUN_FLAGS} -np 2
+  ${CMAKE_CURRENT_BINARY_DIR}/analytical_nonlinear_poisson
+  -file_name cube_2part.h5m -order 3
+  -snes_monitor -snes_converged_reason
+  -snes_type newtonls -snes_linesearch_type basic -test 1
 )

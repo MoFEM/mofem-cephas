@@ -1,10 +1,10 @@
 /**
- * \file analytical_poisson.cpp
+ * \file analytical_nonlinear_poisson.cpp
  * \ingroup mofem_simple_interface
- * \example analytical_poisson.cpp
+ * \example analytical_nonlinear_poisson.cpp
  *
  * For more information and detailed explain of this
- * example see \ref poisson_tut1
+ * example see \ref poisson_tut4
  *
  *
  */
@@ -37,13 +37,13 @@ static char help[] = "...\n\n";
  * finite element method is exact (with machine precision).
  *
  *  \f[
- *  u = 1+x^2+y^2+z^3
+ *  u = 1+x+2y+3z
  *  \f]
  *
  */
 struct ExactFunction {
   double operator()(const double x,const double y,const double z) const {
-    return 1+x*x+y*y+z*z*z;
+    return 1+x+y+pow(z,3);
   }
 };
 
@@ -53,8 +53,8 @@ struct ExactFunction {
 struct ExactFunctionGrad {
   FTensor::Tensor1<double,3> operator()(const double x,const double y,const double z) const {
     FTensor::Tensor1<double,3> grad;
-    grad(0) = 2*x;
-    grad(1) = 2*y;
+    grad(0) = 1;
+    grad(1) = 1;
     grad(2) = 3*z*z;
     return grad;
   }
@@ -63,24 +63,37 @@ struct ExactFunctionGrad {
 /**
  * \brief Laplacian of function.
  *
- * This is Laplacian of \f$u\f$, it is calculated using formula
- * \f[
- * \nabla^2 u(x,y,z) = \nabla \cdot \nabla u
- * \frac{\partial^2 u}{\partial x^2}+
- * \frac{\partial^2 u}{\partial y^2}+
- * \frac{\partial^2 u}{\partial z^2}
- * \f]
- *
  */
 struct ExactLaplacianFunction {
   double operator()(const double x,const double y,const double z) const {
-    return 4+6*z;
+    return 0.4e1 + (double) (4 * x) + (double) (4 * y) + 0.4e1 * pow(z, 0.3e1) +
+    0.3e1 * (0.6e1 * z * z + 0.6e1 * (double) x * z * z +
+    0.6e1 * (double) y * z * z + 0.6e1 * pow(z, 0.5e1)) * z * z +
+    0.6e1 * (0.2e1 + (double) (2 * x) + (double) (2 * y) +
+    0.2e1 * pow(z, 0.3e1) + (double) (x * x) + (double) (2 * x * y) +
+    0.2e1 * (double) x * pow(z, 0.3e1) +
+    (double) (y * y) + 0.2e1 * (double) y * pow(z, 0.3e1) + pow(z, 0.6e1)) * z;
   }
 };
 
+struct A {
+  double operator()(const double u) { return 1+u*u; }
+};
+
+struct DiffA {
+  double operator()(const double u) { return 2*u; }
+};
+
+struct VolRuleNonlinear {
+  int operator()(int,int,int p) const {
+    return 2*(p+1);
+  }
+};
+
+
 int main(int argc, char *argv[]) {
 
-  ErrorCode rval;
+  // ErrorCode rval;
   PetscErrorCode ierr;
 
   // Initialize PETSc
@@ -127,9 +140,11 @@ int main(int argc, char *argv[]) {
     boost::shared_ptr<ForcesAndSurcesCore> null;              ///< Null element do nothing
     {
       // Add problem specific operators the generic finite elements to calculate matrices and vectors.
-      ierr = PoissonExample::CreateFiniteElementes(m_field).createFEToAssmbleMatrceAndVector(
+      ierr = PoissonExample::CreateFiniteElementes(m_field).createFEToAssmbleMatrceAndVectorForNonlinearProblem(
         ExactFunction(),ExactLaplacianFunction(),
-        domain_lhs_fe,boundary_lhs_fe,domain_rhs_fe,boundary_rhs_fe
+        A(),DiffA(),
+        domain_lhs_fe,boundary_lhs_fe,domain_rhs_fe,boundary_rhs_fe,
+        VolRuleNonlinear()
       ); CHKERRQ(ierr);
       // Add problem specific operators the generic finite elements to calculate error on elements and global error
       // in H1 norm
@@ -204,17 +219,17 @@ int main(int argc, char *argv[]) {
     // matrices and vectors, and solution of the problem.
     {
       // Set operators for KSP solver
-      ierr = DMMoFEMKSPSetComputeOperators(
+      ierr = DMMoFEMSNESSetJacobian(
         dm,simple_interface->getDomainFEName(),domain_lhs_fe,null,null
       ); CHKERRQ(ierr);
-      ierr = DMMoFEMKSPSetComputeOperators(
+      ierr = DMMoFEMSNESSetJacobian(
         dm,simple_interface->getBoundaryFEName(),boundary_lhs_fe,null,null
       ); CHKERRQ(ierr);
       // Set calculation of the right hand side vetor for KSP solver
-      ierr = DMMoFEMKSPSetComputeRHS(
+      ierr = DMMoFEMSNESSetFunction(
         dm,simple_interface->getDomainFEName(),domain_rhs_fe,null,null
       ); CHKERRQ(ierr);
-      ierr = DMMoFEMKSPSetComputeRHS(
+      ierr = DMMoFEMSNESSetFunction(
         dm,simple_interface->getBoundaryFEName(),boundary_rhs_fe,null,null
       ); CHKERRQ(ierr);
     }
@@ -230,22 +245,22 @@ int main(int argc, char *argv[]) {
       ierr = VecDuplicate(F,&D); CHKERRQ(ierr);
 
       // Create solver and link it to DM
-      KSP solver;
-      ierr = KSPCreate(PETSC_COMM_WORLD,&solver); CHKERRQ(ierr);
-      ierr = KSPSetFromOptions(solver); CHKERRQ(ierr);
-      ierr = KSPSetDM(solver,dm); CHKERRQ(ierr);
+      SNES solver;
+      ierr = SNESCreate(PETSC_COMM_WORLD,&solver); CHKERRQ(ierr);
+      ierr = SNESSetFromOptions(solver); CHKERRQ(ierr);
+      ierr = SNESSetDM(solver,dm); CHKERRQ(ierr);
       // Set-up solver, is type of solver and pre-conditioners
-      ierr = KSPSetUp(solver); CHKERRQ(ierr);
+      ierr = SNESSetUp(solver); CHKERRQ(ierr);
       // At solution process, KSP solver using DM creates matrices, Calculate
       // values of the left hand side and the right hand side vector. then
       // solves system of equations. Results are stored in vector D.
-      ierr = KSPSolve(solver,F,D); CHKERRQ(ierr);
+      ierr = SNESSolve(solver,F,D); CHKERRQ(ierr);
 
       // Scatter solution on the mesh. Stores unknown vector on field on the mesh.
       ierr = DMoFEMMeshToGlobalVector(dm,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 
       // Clean data. Solver and vector are not needed any more.
-      ierr = KSPDestroy(&solver); CHKERRQ(ierr);
+      ierr = SNESDestroy(&solver); CHKERRQ(ierr);
       ierr = VecDestroy(&D); CHKERRQ(ierr);
       ierr = VecDestroy(&F); CHKERRQ(ierr);
     }
