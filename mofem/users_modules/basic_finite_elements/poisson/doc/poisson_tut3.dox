@@ -76,8 +76,8 @@ with that at hand we can add appropiate users data operators
 boundary_penalty_lhs_fe->getOpPtrVector().push_back(new PoissonExample::OpS(beta));
 \endcode
 
-Implementation of penalty operator PoissonExample::OpS is in file \ref
-PoissonOperators.hpp and do not differ to what was shown in \ref poisson_tut2.
+Implementation of penalty operator \ref OpS::iNtegrte is in file \ref analytical_poisson_field_split.cpp
+and do not differ to what was shown in \ref poisson_tut2.
 
 \section poisson_tut3_code_dissection Creation and assembly of sub-DM problems
 
@@ -249,8 +249,6 @@ where options in .petscrc file are
 -ksp_atol 1e-12
 -ksp_rtol 0
 -ksp_monitor ascii
--pc_fieldsplit_type schur
--pc_fieldsplit_schur_precondition self
 -pc_fieldsplit_type schur
 -pc_fieldsplit_schur_precondition self
 -fieldsplit_0_ksp_type gmres

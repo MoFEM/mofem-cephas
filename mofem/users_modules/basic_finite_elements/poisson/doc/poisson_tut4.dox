@@ -1,8 +1,8 @@
 /*! \page poisson_tut4 A nonlinear Poisson equation
 
-In this tutorial, we show how to solve nonlinear Poisson equation.  We will show
-that structure of the main program remains almost unchanged compared to linear
-analysis shown in first Poisson tutorial, i.e. \ref poisson_tut1.
+In this tutorial, we show how to solve nonlinear Poisson equation.  Note that
+structure of the main program remains almost unchanged compared to linear the
+analysis is shown in first Poisson tutorial, i.e. \ref poisson_tut1.
 
 \tableofcontents
 
@@ -13,14 +13,15 @@ As a model problem for the solution of nonlinear PDEs, we take the following non
 -\nabla \cdot (A(u)\nabla u) = f
 \f]
 in \f$\Omega\f$ with \f$u=\overline{u}\f$ on boundary \f$\partial\Omega\f$. The
-source of nonlinearity is in the coefficient with is dependent on solution u,
-here we restrict ourself to the case
+source of nonlinearity is the coefficient \f$A(u)\f$ with is dependent on
+solution \f$u\f$, here we restrict ourself to the case
 \f[
 A(u) = 1+u^2
 \f]
-Note, code implementation is general and you can look at the alternative cases, at
-the beginning of \ref analytical_nonlinear_poisson.cpp example you can find two
-classes. You can modify those two functions to investigate alternative solutions
+Note, code implementation is general, and you can look at the alternative cases,
+at the beginning of \ref analytical_nonlinear_poisson.cpp example you can find
+two classes. Those functions can be modified to investigate alternative
+solutions
 \code
 struct A {
   double operator()(const double u) { return 1+u*u; }
@@ -29,10 +30,11 @@ struct DiffA {
   double operator()(const double u) { return 2*u; }
 };
 \endcode
+Note that second class has to be the exact derivative of \f$A(u)\f$.
 
 \subsection poisson_tut4_linearization Linearization
 
-With that at we can experts equation in the weak form, where residuals are
+With that at we can express equation in the weak form, where residuals are
 \f[
 \mathbf{r}=
 \left[
@@ -43,18 +45,18 @@ r_g
 \right]=
 \left\{
 \begin{array}{l}
-(\nabla v,(1+u^2)\nabla u)_\Omega-(v,f)_\Omega+(v,\lambda) = 0\\
+(\nabla v,(1+u^2)\nabla u)_\Omega-(v,f)_\Omega+(v,\lambda)_{\partial\Omega} = 0\\
 (\tau,u-\overline{u})_{\partial\Omega} = 0
 \end{array}
 \right.,\quad \forall u,v \in H^1(\Omega),\;\forall \tau,\lambda \in H^1(\partial\Omega).
 \f]
-This notation, suitable for problems with many terms in the variational formulations, requires some explanation.
-First, we use the short-hand notation
+This notation, suitable for problems with many terms in the variational
+formulations, requires some explanation. First, we use the shorthand notation
 \f[
 (v,u)_\Omega = \int_\Omega vu \textrm{d}\Omega,\quad (\lambda,u)_{\partial\Omega} = \int_\Omega \lambda u \textrm{d}\partial\Omega
 \f]
-With that at hand we expand residuals in Taylor series and truncate after second order
-term, as results we have
+With that at hand, we expand residuals in Taylor series and truncate after
+second order term, as results we have
 \f[
 \mathbf{r}^i +
 \frac{\partial \mathbf{r}^i}{\partial \{ u, \lambda \}}
@@ -67,17 +69,17 @@ term, as results we have
 \mathbf{0}
 \f]
 where \f$(\cdot)^i\f$ is quantity at Newton iteration \f$i\f$,
-\f$u^{i+1} = u^i + \delta u^i\f$ and \f$\lambda^{i+1} = \lambda^i + \delta \lambda^i\f$. Linearised
-system of equations take form
+\f$u^{i+1} = u^i + \delta u^i\f$ and \f$\lambda^{i+1} = \lambda^i + \delta \lambda^i\f$.
+The linearized system of equations take form
 \f[
 \left\{
 \begin{array}{l}
-\mathbf{r}^i_F
+r^i_F
 +
 (\nabla v,(1+(u^i)^2)\nabla \delta u)_\Omega+(\nabla v,(2u^i) \nabla u^i \delta u^{i+1})_\Omega+(v,\delta\lambda^{i+1})
 = 0
 \\
-\mathbf{r}^i_g+
+r^i_g+
 (\tau,\delta u^{i+1})_{\partial\Omega}=0
 \end{array}
 \right.
@@ -129,9 +131,9 @@ where
 
 \subsection poisson_tut4_analytical_solution Analytical solution
 
-In order to validate correctness of implementation we first presume exact solution
-to be polynomial, such that can be exactly represented on finite element approximation
-base, see function
+To validate correctness of implementation, we first presume exact solution to be
+polynomial, such that can be precisely represented by finite element
+approximation base, see function
 \code
 struct ExactFunction {
   double operator()(const double x,const double y,const double z) const {
@@ -139,7 +141,7 @@ struct ExactFunction {
   }
 };
 \endcode
-where gradient of that function is implemented here
+where the gradient of that function is implemented here
 \code
 struct ExactFunctionGrad {
   FTensor::Tensor1<double,3> operator()(const double x,const double y,const double z) const {
@@ -169,7 +171,7 @@ Note that source term has complex term and is obtained by from formula
 \f[
 f = \nabla \cdot \left( A(u)\nabla u \right)
 \f]
-For 3rd polynomial order, as above, results can be obtained after  tedious
+For 3rd polynomial order, as above, results can be obtained after tedious
 calculations, to avoid that you can use symbolic derivations from Mathematica,
 Matlab or free and open alternative Maxima <http://maxima.sourceforge.net>.
 
@@ -201,12 +203,13 @@ domain_lhs_fe->getOpPtrVector().push_back(new OpCalculateScalarFieldValues("U",v
 domain_lhs_fe->getOpPtrVector().push_back(new OpCalculateScalarFieldGradient<3>("U",grad_at_integation_ptr));
 domain_lhs_fe->getOpPtrVector().push_back(new OpKt(a,diff_a,values_at_integation_ptr,grad_at_integation_ptr));
 \endcode
-You can note that instances of vector and matrix is created to store values of
-function \f$u^h\f$ and function gradients at integration points respectively. next
-operators are added to evaluate function and function gradients at integration
-points, finally operator to calculate tangent matrix is added. Operator constructor
-takes arguments of pointers of previously created instances of vector and matrix. Similar
-procedure is applied to evaluate residuals by integration over domain and boundary.
+You can note that instances of vector and matrix are created to store values of
+function \f$u^h\f$ and function gradients at integration points respectively.
+Next operators are added to evaluate function and function gradients at
+integration points. Finally, operator to calculate tangent matrix is added.
+Operator constructor takes arguments of pointers of previously created instances
+of vector and matrix. The same procedure is applied to evaluate residuals by
+integration over domain and boundary.
 
 \image html poisson_tut4_fig1.png "Figure 2. Operators of volume finite element" width=700px
 
@@ -214,16 +217,16 @@ procedure is applied to evaluate residuals by integration over domain and bounda
 
 \include analytical_nonlinear_poisson.cpp
 
-Following code is practically the same which we have for linear elastic example,
-only this time we set-up SNES solver, first by adding finite elements instances
-to MoFEM SNES solver context
+Following code is practically the same which we used to linear Poisson example.
+In nonlinear case, instead of KSP solver,  we set-up SNES solver, first by
+adding finite elements instances to MoFEM SNES solver context
 \code
 ierr = DMMoFEMSNESSetJacobian(dm,simple_interface->getDomainFEName(),domain_lhs_fe,null,null); CHKERRQ(ierr);
 ierr = DMMoFEMSNESSetJacobian(dm,simple_interface->getBoundaryFEName(),boundary_lhs_fe,null,null); CHKERRQ(ierr);
 ierr = DMMoFEMSNESSetFunction(dm,simple_interface->getDomainFEName(),domain_rhs_fe,null,null); CHKERRQ(ierr);
 ierr = DMMoFEMSNESSetFunction(dm,simple_interface->getBoundaryFEName(),boundary_rhs_fe,null,null); CHKERRQ(ierr);
 \endcode
-Once we have done this we create solver instance and kick-start calculations
+Once we have done this, we create solver instance and kick-start calculations
 \code
 SNES solver;
 ierr = SNESCreate(PETSC_COMM_WORLD,&solver); CHKERRQ(ierr);
@@ -232,9 +235,10 @@ ierr = SNESSetDM(solver,dm); CHKERRQ(ierr);
 ierr = SNESSetUp(solver); CHKERRQ(ierr);
 ierr = SNESSolve(solver,F,D); CHKERRQ(ierr);
 \endcode
-Note that SNES solver controls DM, by query of DM to create necessarily matrices
-and assembly of tangent matrix and residual vectors. SNES solver can be configured
-see for details <http://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/SNES/SNESSetFromOptions.html>.
+Note that SNES solver controls DM, and implicitly query of DM to create
+necessarily matrices and assembly of the tangent matrix and residual vectors.
+SNES solver can be configured from a command line, see for details
+<http://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/SNES/SNESSetFromOptions.html>.
 
 \subsection poisson_tut4_main_running_code Running code
 
@@ -291,17 +295,10 @@ As result of above command we get
 Nonlinear solve converged due to CONVERGED_FNORM_RELATIVE iterations 5
 Approximation error 4.109e-10
 \endverbatim
-To obtain this solution we using Newton method with line-searcher, in this case
+Note fast convergence, after first two interactions, once iterative approximation
+approach exact solution. To obtain this solution, we using Newton method with line-searcher, in this case,
 we use critical point secant line search, see
-<http://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/SNES/SNESLINESEARCHCP.html>.
-Line-search method has several alternative types and can be set-up independently
-from solver, see
-<http://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/SNES/SNESLineSearchSetFromOptions.html>.
-
-
-
-
-
-
+<http://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/SNES/SNESLINESEARCHCP.html>. Line-search method has several alternative types and can be set-up independently
+from solver, see <http://www.mcs.anl.gov/petsc/petsc-current/docs/manualpages/SNES/SNESLineSearchSetFromOptions.html>.
 
 */
