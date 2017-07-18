@@ -52,15 +52,6 @@
 
 namespace MoFEM {
 
-struct __attribute__ ((__packed__)) IdxDataType {
-  int globalDof;
-  char uId[sizeof(UId)];
-  IdxDataType(const UId &uid,int global_dof):
-    globalDof(global_dof) {
-    bcopy(&uid,uId,sizeof(UId));
-  }
-};
-
 bool Core::check_problem(const string name) {
   Problem_multiIndex::index<Problem_mi_tag>::type::iterator pit;
   pit = pRoblems.get<Problem_mi_tag>().find(name);

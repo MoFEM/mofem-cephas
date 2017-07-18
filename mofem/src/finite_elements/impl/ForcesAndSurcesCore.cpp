@@ -426,7 +426,7 @@ PetscErrorCode ForcesAndSurcesCore::getColNodesIndices(DataForcesAndSurcesCore &
 PetscErrorCode ForcesAndSurcesCore::getTypeIndices(
   const boost::string_ref field_name,FENumeredDofEntity_multiIndex &dofs,EntityType type,int side_number,VectorInt &indices,VectorInt &local_indices
 ) const {
-  PetscErrorCode ierr;
+  //PetscErrorCode ierr;
   PetscFunctionBegin;
   FENumeredDofEntity_multiIndex::index<Composite_Name_Type_And_Side_Number_mi_tag>::type::iterator dit,hi_dit;
   dit = dofs.get<Composite_Name_Type_And_Side_Number_mi_tag>().lower_bound(boost::make_tuple(field_name,type,side_number));
@@ -627,7 +627,7 @@ PetscErrorCode ForcesAndSurcesCore::getPrismColIndices(DataForcesAndSurcesCore &
 PetscErrorCode ForcesAndSurcesCore::getNoFieldIndices(
   const std::string &field_name,FENumeredDofEntity_multiIndex &dofs,VectorInt &indices
 ) const {
-  PetscErrorCode ierr;
+  //PetscErrorCode ierr;
   PetscFunctionBegin;
   FENumeredDofEntityByFieldName::iterator dit,hi_dit;
   dit = dofs.get<FieldName_mi_tag>().lower_bound(field_name);
@@ -861,7 +861,7 @@ PetscErrorCode ForcesAndSurcesCore::getTypeFieldData(
   VectorDouble &ent_field_data,
   VectorDofs &ent_field_dofs
 ) const {
-  PetscErrorCode ierr;
+  //PetscErrorCode ierr;
   PetscFunctionBegin;
   FEDofEntity_multiIndex::index<Composite_Name_Type_And_Side_Number_mi_tag>::type::iterator dit,hi_dit;
   dit = dofs.get<Composite_Name_Type_And_Side_Number_mi_tag>().lower_bound(boost::make_tuple(field_name,type,side_number));
@@ -967,7 +967,7 @@ PetscErrorCode ForcesAndSurcesCore::getNoFieldFieldData(
   VectorDouble &ent_field_data,
   VectorDofs &ent_field_dofs
 ) const {
-  PetscErrorCode ierr;
+  //PetscErrorCode ierr;
   PetscFunctionBegin;
   FEDofEntityByFieldName::iterator dit,hi_dit;
   dit = dofs.get<FieldName_mi_tag>().lower_bound(field_name);
@@ -1066,7 +1066,7 @@ PetscErrorCode ForcesAndSurcesCore::getPrismFieldData(DataForcesAndSurcesCore &d
 // ** Face **
 
 PetscErrorCode ForcesAndSurcesCore::getFaceTriNodes(DataForcesAndSurcesCore &data) const {
-  PetscErrorCode ierr;
+  //PetscErrorCode ierr;
   PetscFunctionBegin;
   //PetscAttachDebugger();
   data.facesNodes.resize(4,3,false);
@@ -1121,7 +1121,7 @@ PetscErrorCode ForcesAndSurcesCore::getFaceTriNodes(DataForcesAndSurcesCore &dat
 // ** Space and Base **
 
 PetscErrorCode ForcesAndSurcesCore::getSpacesAndBaseOnEntities(DataForcesAndSurcesCore &data) const {
-  PetscErrorCode ierr;
+  //PetscErrorCode ierr;
   PetscFunctionBegin;
   try {
     if(nInTheLoop==0) {

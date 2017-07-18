@@ -74,7 +74,7 @@ int main(int argc, char *argv[]) {
     &output[0],&output[1],&output[2]
   );
 
-  int ret_jac = ::gradient(tag,3,&input[0],&output[0]);
+  /*int ret_jac =*/ ::gradient(tag,3,&input[0],&output[0]);
 
   std::cout << input << std::endl;
   std::cout << output << std::endl;
@@ -97,7 +97,7 @@ int main(int argc, char *argv[]) {
   for(int nn = 0;nn!=3;nn++) {
     H[nn] = &Hessian(nn,0);
   }
-  int ret_val_hessian = ::hessian(tag,3,&input[0],H);
+  /*int ret_val_hessian =*/ ::hessian(tag,3,&input[0],H);
   std::cout << Hessian << std::endl;
 
   FTensor::Tensor4_ddg<double*,2,2> t4(

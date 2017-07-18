@@ -35,10 +35,10 @@ namespace PoissonExample {
    * This operator is executed on element for each unique combination of entities.
    *
    */
-  struct OpGradGrad: public VolumeElementForcesAndSourcesCore::UserDataOperator {
+  struct OpK: public VolumeElementForcesAndSourcesCore::UserDataOperator {
 
-    OpGradGrad():
-    VolumeElementForcesAndSourcesCore::UserDataOperator("U","U",OPROWCOL,true) {
+    OpK(bool symm = true):
+    VolumeElementForcesAndSourcesCore::UserDataOperator("U","U",OPROWCOL,symm) {
     }
 
     /**
@@ -83,7 +83,7 @@ namespace PoissonExample {
       PetscFunctionReturn(0);
     }
 
-  private:
+  protected:
 
     PetscErrorCode ierr;  ///< error code
 
@@ -101,7 +101,7 @@ namespace PoissonExample {
      * @param  col_data column data (consist base functions on column entity)
      * @return          error code
      */
-    inline PetscErrorCode iNtegrte(
+    virtual PetscErrorCode iNtegrte(
       DataForcesAndSurcesCore::EntData &row_data,DataForcesAndSurcesCore::EntData &col_data
     ) {
       PetscFunctionBegin;
@@ -146,7 +146,7 @@ namespace PoissonExample {
      * @param  col_data column data (consist base functions on column entity)
      * @return          error code
      */
-    inline PetscErrorCode aSsemble(
+    virtual PetscErrorCode aSsemble(
       DataForcesAndSurcesCore::EntData &row_data,DataForcesAndSurcesCore::EntData &col_data
     ) {
       PetscFunctionBegin;
@@ -154,22 +154,17 @@ namespace PoissonExample {
       const int* row_indices = &*row_data.getIndices().data().begin();
       // get pointer to first global index on column
       const int* col_indices = &*col_data.getIndices().data().begin();
+      Mat B = getFEMethod()->ksp_B!=PETSC_NULL? getFEMethod()->ksp_B : getFEMethod()->snes_B;
       // assemble local matrix
       ierr = MatSetValues(
-        getFEMethod()->ksp_B,
-        nbRows,row_indices,
-        nbCols,col_indices,
-        &*locMat.data().begin(),ADD_VALUES
+        B, nbRows,row_indices,nbCols,col_indices,&*locMat.data().begin(),ADD_VALUES
       ); CHKERRQ(ierr);
-      if(!isDiag) {
+      if(!isDiag&&sYmm) {
         // if not diagonal term and since global matrix is symmetric assemble
         // transpose term.
         locMat = trans(locMat);
         ierr = MatSetValues(
-          getFEMethod()->ksp_B,
-          nbCols,col_indices,
-          nbRows,row_indices,
-          &*locMat.data().begin(),ADD_VALUES
+          B,nbCols,col_indices,nbRows,row_indices,&*locMat.data().begin(),ADD_VALUES
         ); CHKERRQ(ierr);
       }
       PetscFunctionReturn(0);
@@ -240,16 +235,16 @@ namespace PoissonExample {
    * \f]
    *
    */
-  struct OpVF: public OpBaseRhs<VolumeElementForcesAndSourcesCore::UserDataOperator> {
+  struct OpF: public OpBaseRhs<VolumeElementForcesAndSourcesCore::UserDataOperator> {
 
     typedef boost::function<double (const double,const double,const double)> FSource;
 
-    OpVF(FSource f_source):
+    OpF(FSource f_source):
     OpBaseRhs<VolumeElementForcesAndSourcesCore::UserDataOperator>("U"),
     fSource(f_source) {
     }
 
-  private:
+  protected:
 
     PetscErrorCode ierr;
     FTensor::Number<0> NX;
@@ -308,10 +303,9 @@ namespace PoissonExample {
       const int* indices = &*data.getIndices().data().begin();
       // get values from local vector
       const double* vals = &*locVec.data().begin();
+      Vec f = getFEMethod()->ksp_f!=PETSC_NULL ? getFEMethod()->ksp_f : getFEMethod()->snes_f;
       // assemble vector
-      ierr = VecSetValues(
-        getFEMethod()->ksp_f,nbRows,indices,vals,ADD_VALUES
-      ); CHKERRQ(ierr);
+      ierr = VecSetValues(f,nbRows,indices,vals,ADD_VALUES); CHKERRQ(ierr);
       PetscFunctionReturn(0);
     }
 
@@ -326,9 +320,9 @@ namespace PoissonExample {
    * where \f$\lambda \f$ is base function on boundary
    *
    */
-  struct OpLU: public FaceElementForcesAndSourcesCore::UserDataOperator {
+  struct OpC: public FaceElementForcesAndSourcesCore::UserDataOperator {
 
-    OpLU(const bool assemble_transpose):
+    OpC(const bool assemble_transpose):
     FaceElementForcesAndSourcesCore::UserDataOperator("L","U",OPROWCOL,false),
     assembleTraspose(assemble_transpose) {
     }
@@ -417,22 +411,17 @@ namespace PoissonExample {
       const int* row_indices = &*row_data.getIndices().data().begin();
       // get indices on column
       const int* col_indices = &*col_data.getIndices().data().begin();
+      Mat B = getFEMethod()->ksp_B!=PETSC_NULL? getFEMethod()->ksp_B : getFEMethod()->snes_B;
       // assemble local matrix
       ierr = MatSetValues(
-        getFEMethod()->ksp_B,
-        nbRows,row_indices,
-        nbCols,col_indices,
-        &*locMat.data().begin(),ADD_VALUES
+        B,nbRows,row_indices,nbCols,col_indices,&*locMat.data().begin(),ADD_VALUES
       ); CHKERRQ(ierr);
       // cerr << locMat << endl;
       if(assembleTraspose) {
         // assmble transpose of local matrix
         locMat = trans(locMat);
         ierr = MatSetValues(
-          getFEMethod()->ksp_B,
-          nbCols,col_indices,
-          nbRows,row_indices,
-          &*locMat.data().begin(),ADD_VALUES
+          B, nbCols,col_indices,nbRows,row_indices,&*locMat.data().begin(),ADD_VALUES
         ); CHKERRQ(ierr);
       }
       PetscFunctionReturn(0);
@@ -448,16 +437,17 @@ namespace PoissonExample {
    * \f]
    *
    */
-  struct OpLU_exact: public OpBaseRhs<FaceElementForcesAndSourcesCore::UserDataOperator> {
+  struct Op_g: public OpBaseRhs<FaceElementForcesAndSourcesCore::UserDataOperator> {
 
     typedef boost::function<double (const double,const double,const double)> FVal;
 
-    OpLU_exact(FVal f_value):
-    OpBaseRhs<FaceElementForcesAndSourcesCore::UserDataOperator>("L"),
-    fValue(f_value) {
+    Op_g(FVal f_value,const string field_name = "L",const double beta = 1):
+    OpBaseRhs<FaceElementForcesAndSourcesCore::UserDataOperator>(field_name),
+    fValue(f_value),
+    bEta(beta) {
     }
 
-  private:
+  protected:
 
     FTensor::Number<0> NX; ///< x-direction index
     FTensor::Number<1> NY; ///< y-direction index
@@ -465,6 +455,7 @@ namespace PoissonExample {
     FVal fValue;           ///< Function pointer evaluating values of "U" at the boundary
 
     VectorDouble locVec;
+    const double bEta;
 
     /**
      * \brief Integrate local constrains vector
@@ -476,7 +467,7 @@ namespace PoissonExample {
       // clear loacl vector
       locVec.clear();
       // get face area
-      const double area = getArea();
+      const double area = getArea()*bEta;
       // get integration wiegth
       FTensor::Tensor0<double*> t_w = getFTensor0IntegrationWeight();
       // get base function
@@ -508,9 +499,8 @@ namespace PoissonExample {
       PetscFunctionBegin;
       const int* indices = &*data.getIndices().data().begin();
       const double* vals = &*locVec.data().begin();
-      ierr = VecSetValues(
-        getFEMethod()->ksp_f,nbRows,indices,&*locVec.data().begin(),ADD_VALUES
-      ); CHKERRQ(ierr);
+      Vec f = getFEMethod()->ksp_f!=PETSC_NULL ? getFEMethod()->ksp_f : getFEMethod()->snes_f;
+      ierr = VecSetValues(f,nbRows,indices,&*vals,ADD_VALUES); CHKERRQ(ierr);
       PetscFunctionReturn(0);
     }
 
@@ -619,6 +609,265 @@ namespace PoissonExample {
 
   };
 
+
+
+  struct OpKt: public OpK {
+
+    OpKt(
+      boost::function<double (const double)> a,
+      boost::function<double (const double)> diff_a,
+      boost::shared_ptr<VectorDouble>& field_vals,
+      boost::shared_ptr<MatrixDouble>& grad_vals
+    ):
+    OpK(false),
+    A(a),
+    diffA(diff_a),
+    fieldVals(field_vals),
+    gradVals(grad_vals) {
+    }
+
+  protected:
+
+    /**
+     * \brief Integrate grad-grad operator
+     * @param  row_data row data (consist base functions on row entity)
+     * @param  col_data column data (consist base functions on column entity)
+     * @return          error code
+     */
+    inline PetscErrorCode iNtegrte(
+      DataForcesAndSurcesCore::EntData &row_data,DataForcesAndSurcesCore::EntData &col_data
+    ) {
+      PetscFunctionBegin;
+      // set size of local entity bock
+      locMat.resize(nbRows,nbCols,false);
+      // clear matrix
+      locMat.clear();
+      // get element volume
+      double vol = getVolume();
+      // get integration weights
+      FTensor::Tensor0<double*> t_w = getFTensor0IntegrationWeight();
+      // get solution at integration point
+      FTensor::Tensor0<double*> t_u = getTensor0FormData(*fieldVals);
+      // get solution at integration point
+      FTensor::Tensor1<double*,3> t_grad = getTensor1FormData<3>(*gradVals);
+      // get base function gradient on rows
+      FTensor::Tensor1<double*,3> t_row_grad = row_data.getFTensor1DiffN<3>();
+      // loop over integration points
+      for(int gg = 0;gg!=nbIntegrationPts;gg++) {
+        // take into account Jacobian
+        const double alpha = t_w*vol;
+        const double beta = alpha*A(t_u);
+        FTensor::Tensor1<double,3> t_gamma;
+        t_gamma(i) = (alpha*diffA(t_u))*t_grad(i);
+        // take fist element to local matrix
+        FTensor::Tensor0<double*> a(&*locMat.data().begin());
+        // loop over rows base functions
+        for(int rr = 0;rr!=nbRows;rr++) {
+          // get column base function
+          FTensor::Tensor0<double*> t_col = col_data.getFTensor0N(gg,0);
+          // get column base functions gradient at gauss point gg
+          FTensor::Tensor1<double*,3> t_col_grad = col_data.getFTensor1DiffN<3>(gg,0);
+          // loop over columns
+          for(int cc = 0;cc!=nbCols;cc++) {
+            // calculate element of local matrix
+            a += (t_row_grad(i)*beta)*t_col_grad(i)+t_row_grad(i)*(t_gamma(i)*t_col);
+            ++t_col;      // move to next base function
+            ++t_col_grad; // move to another gradient of base function on column
+            ++a;          // move to another element of local matrix in column
+          }
+          ++t_row_grad;   // move to another element of gradient of base function on row
+        }
+        ++t_w;    // move to another integration weight
+        ++t_u;    // move to next value at integration point
+        ++t_grad; // move to next gradient value
+      }
+      PetscFunctionReturn(0);
+    }
+
+    boost::function<double (const double)> A;
+    boost::function<double (const double)> diffA;
+    boost::shared_ptr<VectorDouble> fieldVals;
+    boost::shared_ptr<MatrixDouble> gradVals;
+
+  };
+
+  struct OpResF_Domain: public OpF {
+
+
+    OpResF_Domain(
+      FSource f_source,
+      boost::function<double (const double)> a,
+      boost::shared_ptr<VectorDouble>& field_vals,
+      boost::shared_ptr<MatrixDouble>& grad_vals
+    ):
+    OpF(f_source),
+    A(a),
+    fieldVals(field_vals),
+    gradVals(grad_vals) {
+    }
+
+  protected:
+
+    FTensor::Index<'i',3> i;
+
+    /**
+     * \brief Integrate local entity vector
+     * @param  data entity data on element row
+     * @return      error code
+     */
+    PetscErrorCode iNtegrte(DataForcesAndSurcesCore::EntData &data) {
+      PetscFunctionBegin;
+      // set size of local vector
+      locVec.resize(nbRows,false);
+      // clear local entity vector
+      locVec.clear();
+      // get finite element volume
+      double vol = getVolume();
+      // get integration weights
+      FTensor::Tensor0<double*> t_w = getFTensor0IntegrationWeight();
+      // get solution at integration point
+      FTensor::Tensor0<double*> t_u = getTensor0FormData(*fieldVals);
+      // get solution at integration point
+      FTensor::Tensor1<double*,3> t_grad = getTensor1FormData<3>(*gradVals);
+      // get base functions on entity
+      FTensor::Tensor0<double*> t_v = data.getFTensor0N();
+      // get base function gradient on rows
+      FTensor::Tensor1<double*,3> t_v_grad = data.getFTensor1DiffN<3>();
+      // get coordinates at integration points
+      FTensor::Tensor1<double*,3> t_coords = getTensor1CoordsAtGaussPts();
+      // loop over all integration points
+      for(int gg = 0;gg!=nbIntegrationPts;gg++) {
+        // evaluate constant term
+        const double alpha = vol*t_w;
+        const double source_term = alpha*fSource(t_coords(NX),t_coords(NY),t_coords(NZ));
+        FTensor::Tensor1<double,3> grad_term;
+        grad_term(i) = (alpha*A(t_u))*t_grad(i);
+        // get element of local vector
+        FTensor::Tensor0<double*> t_a(&*locVec.data().begin());
+        // loop over base functions
+        for(int rr = 0;rr!=nbRows;rr++) {
+          // add to local vector source term
+          t_a += t_v_grad(i)*grad_term(i)+t_v*source_term;
+          ++t_a;  // move to next element of local vector
+          ++t_v;  // move to next base function
+          ++t_v_grad; // move to next gradient of base function
+        }
+        ++t_w;  // move to next integration weights
+        ++t_u;  // move to next value
+        ++t_grad; // move to next gradient value
+        ++t_coords; // move to next physical coordinates at integration point
+      }
+      PetscFunctionReturn(0);
+    }
+
+    boost::function<double (const double)> A;
+    boost::shared_ptr<VectorDouble> fieldVals;
+    boost::shared_ptr<MatrixDouble> gradVals;
+
+  };
+
+  struct OpRes_g: public Op_g {
+
+    OpRes_g(
+      FVal f_value,
+      boost::shared_ptr<VectorDouble>& field_vals
+    ):
+    Op_g(f_value,"L",1),
+    fieldVals(field_vals) {
+    }
+
+  protected:
+
+    boost::shared_ptr<VectorDouble> fieldVals;
+
+    /**
+     * \brief Integrate local constrains vector
+     */
+    PetscErrorCode iNtegrte(DataForcesAndSurcesCore::EntData &data) {
+      PetscFunctionBegin;
+      // set size to local vector
+      locVec.resize(nbRows,false);
+      // clear loacl vector
+      locVec.clear();
+      // get face area
+      const double area = getArea()*bEta;
+      // get integration wiegth
+      FTensor::Tensor0<double*> t_w = getFTensor0IntegrationWeight();
+      // get base function
+      FTensor::Tensor0<double*> t_l = data.getFTensor0N();
+      // get solution at integration point
+      FTensor::Tensor0<double*> t_u = getTensor0FormData(*fieldVals);
+      // get coordinates at integration point
+      FTensor::Tensor1<double*,3> t_coords = getTensor1CoordsAtGaussPts();
+      // make loop over integration points
+      for(int gg = 0;gg!=nbIntegrationPts;gg++) {
+        // evalue function on boundary and scale it by area and integration weight
+        double alpha = area*t_w;
+        // get element of vector
+        FTensor::Tensor0<double*> t_a(&*locVec.data().begin());
+        for(int rr = 0;rr!=nbRows;rr++) {
+          t_a += alpha*t_l*(t_u-fValue(t_coords(NX),t_coords(NY),t_coords(NZ)));
+          ++t_a;
+          ++t_l;
+        }
+        ++t_w;
+        ++t_u;
+        ++t_coords;
+      }
+      PetscFunctionReturn(0);
+    }
+
+  };
+
+  struct OpResF_Boundary: public Op_g {
+
+    OpResF_Boundary(
+      boost::shared_ptr<VectorDouble>& lambda_vals
+    ):
+    Op_g(FVal(),"U",1),
+    lambdaVals(lambda_vals) {
+    }
+
+  protected:
+
+    boost::shared_ptr<VectorDouble> lambdaVals;
+
+    /**
+     * \brief Integrate local constrains vector
+     */
+    PetscErrorCode iNtegrte(DataForcesAndSurcesCore::EntData &data) {
+      PetscFunctionBegin;
+      // set size to local vector
+      locVec.resize(nbRows,false);
+      // clear loacl vector
+      locVec.clear();
+      // get face area
+      const double area = getArea()*bEta;
+      // get integration wiegth
+      FTensor::Tensor0<double*> t_w = getFTensor0IntegrationWeight();
+      // get base function
+      FTensor::Tensor0<double*> t_u = data.getFTensor0N();
+      // get solution at integration point
+      FTensor::Tensor0<double*> t_lambda = getTensor0FormData(*lambdaVals);
+      // make loop over integration points
+      for(int gg = 0;gg!=nbIntegrationPts;gg++) {
+        // evalue function on boundary and scale it by area and integration weight
+        double alpha = area*t_w;
+        // get element of vector
+        FTensor::Tensor0<double*> t_a(&*locVec.data().begin());
+        for(int rr = 0;rr!=nbRows;rr++) {
+          t_a += alpha*t_u*t_lambda;
+          ++t_a;
+          ++t_u;
+        }
+        ++t_w;
+        ++t_lambda;
+      }
+      PetscFunctionReturn(0);
+    }
+
+  };
+
   /**
    * \brief Set integration rule to volume elements
    *
@@ -649,10 +898,9 @@ namespace PoissonExample {
    */
   struct FaceRule {
     int operator()(int p_row,int p_col,int p_data) const {
-      return p_row+p_col;
+      return 2*p_data+1;
     }
   };
-
 
   /**
    * \brief Create finite elements instances
@@ -675,7 +923,8 @@ namespace PoissonExample {
       boost::shared_ptr<ForcesAndSurcesCore>& domain_lhs_fe,
       boost::shared_ptr<ForcesAndSurcesCore>& boundary_lhs_fe,
       boost::shared_ptr<ForcesAndSurcesCore>& domain_rhs_fe,
-      boost::shared_ptr<ForcesAndSurcesCore>& boundary_rhs_fe
+      boost::shared_ptr<ForcesAndSurcesCore>& boundary_rhs_fe,
+      bool trans = true
     ) const {
       PetscFunctionBegin;
 
@@ -691,15 +940,15 @@ namespace PoissonExample {
       boundary_lhs_fe->getRuleHook = FaceRule();
       boundary_rhs_fe->getRuleHook = FaceRule();
 
-      // Ass operators to element instances
-      // Add operator grad-grad for calualte matrix
-      domain_lhs_fe->getOpPtrVector().push_back(new OpGradGrad());
+      // Add operators to element instances
+      // Add operator grad-grad for calculaye matrix
+      domain_lhs_fe->getOpPtrVector().push_back(new OpK());
       // Add operator to calculate source terms
-      domain_rhs_fe->getOpPtrVector().push_back(new OpVF(f_source));
+      domain_rhs_fe->getOpPtrVector().push_back(new OpF(f_source));
       // Add operator calculating constrains matrix
-      boundary_lhs_fe->getOpPtrVector().push_back(new OpLU(true));
+      boundary_lhs_fe->getOpPtrVector().push_back(new OpC(trans));
       // Add operator calculating constrains vector
-      boundary_rhs_fe->getOpPtrVector().push_back(new OpLU_exact(f_u));
+      boundary_rhs_fe->getOpPtrVector().push_back(new Op_g(f_u));
 
       PetscFunctionReturn(0);
     }
@@ -714,7 +963,7 @@ namespace PoissonExample {
       boost::shared_ptr<ForcesAndSurcesCore>& domain_error
     ) const {
       PetscFunctionBegin;
-      // Create finite element instance to calualte error
+      // Create finite element instance to calculaye error
       domain_error = boost::shared_ptr<ForcesAndSurcesCore>(
         new VolumeElementForcesAndSourcesCore(mField)
       );
@@ -768,11 +1017,82 @@ namespace PoissonExample {
       PetscFunctionReturn(0);
     }
 
+
+    /**
+     * \brief Create finite element to calculate matrix and vectors
+     */
+    PetscErrorCode createFEToAssmbleMatrceAndVectorForNonlinearProblem(
+      boost::function<double (const double,const double,const double)> f_u,
+      boost::function<double (const double,const double,const double)> f_source,
+      boost::function<double (const double)> a,
+      boost::function<double (const double)> diff_a,
+      boost::shared_ptr<ForcesAndSurcesCore>& domain_lhs_fe,
+      boost::shared_ptr<ForcesAndSurcesCore>& boundary_lhs_fe,
+      boost::shared_ptr<ForcesAndSurcesCore>& domain_rhs_fe,
+      boost::shared_ptr<ForcesAndSurcesCore>& boundary_rhs_fe,
+      ForcesAndSurcesCore::RuleHookFun vol_rule,
+      ForcesAndSurcesCore::RuleHookFun face_rule = FaceRule(),
+      bool trans = true
+    ) const {
+      PetscFunctionBegin;
+
+      // Create elements element instances
+      domain_lhs_fe = boost::shared_ptr<ForcesAndSurcesCore>(new VolumeElementForcesAndSourcesCore(mField));
+      boundary_lhs_fe = boost::shared_ptr<ForcesAndSurcesCore>(new FaceElementForcesAndSourcesCore(mField));
+      domain_rhs_fe = boost::shared_ptr<ForcesAndSurcesCore>(new VolumeElementForcesAndSourcesCore(mField));
+      boundary_rhs_fe = boost::shared_ptr<ForcesAndSurcesCore>(new FaceElementForcesAndSourcesCore(mField));
+
+      // Set integration rule to elements instances
+      domain_lhs_fe->getRuleHook = vol_rule;
+      domain_rhs_fe->getRuleHook = vol_rule;
+      boundary_lhs_fe->getRuleHook = face_rule;
+      boundary_rhs_fe->getRuleHook = face_rule;
+
+      // Set integration rule
+      // Crate shared vector storing values of field "u" on integration points on element. element
+      // is local and is used to exchange data between operators.
+      boost::shared_ptr<VectorDouble> values_at_integation_ptr = boost::make_shared<VectorDouble>();
+      // Storing gradients of field
+      boost::shared_ptr<MatrixDouble> grad_at_integation_ptr = boost::make_shared<MatrixDouble>();
+      // multipliers values
+      boost::shared_ptr<VectorDouble> multiplier_at_integation_ptr = boost::make_shared<VectorDouble>();
+
+      // Add operators to element instances
+      // Add default operator to calculate field values at integration points
+      domain_lhs_fe->getOpPtrVector().push_back(new OpCalculateScalarFieldValues("U",values_at_integation_ptr));
+      // Add default operator to calculate field gradient at integration points
+      domain_lhs_fe->getOpPtrVector().push_back(new OpCalculateScalarFieldGradient<3>("U",grad_at_integation_ptr));
+      // Add operator grad-(1+u^2)grad for calculate matrix
+      domain_lhs_fe->getOpPtrVector().push_back(new OpKt(a,diff_a,values_at_integation_ptr,grad_at_integation_ptr));
+
+      // Add default operator to calculate field values at integration points
+      domain_rhs_fe->getOpPtrVector().push_back(new OpCalculateScalarFieldValues("U",values_at_integation_ptr));
+      // Add default operator to calculate field gradient at integration points
+      domain_rhs_fe->getOpPtrVector().push_back(new OpCalculateScalarFieldGradient<3>("U",grad_at_integation_ptr));
+      // Add operator to calculate source terms
+      domain_rhs_fe->getOpPtrVector().push_back(new OpResF_Domain(f_source,a,values_at_integation_ptr,grad_at_integation_ptr));
+
+      // Add operator calculating constrains matrix
+      boundary_lhs_fe->getOpPtrVector().push_back(new OpC(trans));
+
+      // Add default operator to calculate field values at integration points
+      boundary_rhs_fe->getOpPtrVector().push_back(new OpCalculateScalarFieldValues("U",values_at_integation_ptr));
+      // Add defualy operator to calculate values of Lagrange multipliers
+      boundary_rhs_fe->getOpPtrVector().push_back(new OpCalculateScalarFieldValues("L",multiplier_at_integation_ptr));
+      // Add operator calculating constrains vector
+      boundary_rhs_fe->getOpPtrVector().push_back(new OpRes_g(f_u,values_at_integation_ptr));
+      boundary_rhs_fe->getOpPtrVector().push_back(new OpResF_Boundary(multiplier_at_integation_ptr));
+
+      PetscFunctionReturn(0);
+    }
+
+
   private:
 
     MoFEM::Interface &mField;
 
   };
+
 
 
 }

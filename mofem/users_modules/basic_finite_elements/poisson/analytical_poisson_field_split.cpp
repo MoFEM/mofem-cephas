@@ -1,10 +1,10 @@
 /**
- * \file analytical_poisson.cpp
+ * \file analytical_poisson_field_split.cpp
  * \ingroup mofem_simple_interface
- * \example analytical_poisson.cpp
+ * \example analytical_poisson_field_split.cpp
  *
  * For more information and detailed explain of this
- * example see \ref poisson_tut1
+ * example see \ref poisson_tut3
  *
  *
  */
@@ -28,6 +28,7 @@
 #include <AuxPoissonFunctions.hpp>
 
 static char help[] = "...\n\n";
+static const bool debug = false;
 
 /**
  * \brief Function
@@ -78,9 +79,148 @@ struct ExactLaplacianFunction {
   }
 };
 
+struct OpS: public FaceElementForcesAndSourcesCore::UserDataOperator {
+
+  OpS(const bool beta = 1):
+  FaceElementForcesAndSourcesCore::UserDataOperator("U","U",OPROWCOL,true),
+  bEta(beta) {
+  }
+
+  /**
+   * \brief Do calculations for give operator
+   * @param  row_side row side number (local number) of entity on element
+   * @param  col_side column side number (local number) of entity on element
+   * @param  row_type type of row entity MBVERTEX, MBEDGE, MBTRI or MBTET
+   * @param  col_type type of column entity MBVERTEX, MBEDGE, MBTRI or MBTET
+   * @param  row_data data for row
+   * @param  col_data data for column
+   * @return          error code
+   */
+  PetscErrorCode doWork(
+    int row_side,int col_side,
+    EntityType row_type,EntityType col_type,
+    DataForcesAndSurcesCore::EntData &row_data,DataForcesAndSurcesCore::EntData &col_data
+  ) {
+    PetscFunctionBegin;
+    // get number of dofs on row
+    nbRows = row_data.getIndices().size();
+    // if no dofs on row, exit that work, nothing to do here
+    if(!nbRows) PetscFunctionReturn(0);
+    // get number of dofs on column
+    nbCols = col_data.getIndices().size();
+    // if no dofs on Columbia, exit nothing to do here
+    if(!nbCols) PetscFunctionReturn(0);
+    // get number of integration points
+    nbIntegrationPts = getGaussPts().size2();
+    // chekk if entity block is on matrix diagonal
+    if(
+      row_side==col_side&&
+      row_type==col_type
+    ) {
+      isDiag = true; // yes, it is
+    } else {
+      isDiag = false;
+    }
+    // integrate local matrix for entity block
+    ierr = iNtegrte(row_data,col_data); CHKERRQ(ierr);
+    // asseble local matrix
+    ierr = aSsemble(row_data,col_data); CHKERRQ(ierr);
+    PetscFunctionReturn(0);
+  }
+
+private:
+
+  const double bEta;
+
+  PetscErrorCode ierr;  ///< error code
+
+  int nbRows;           ///< number of dofs on rows
+  int nbCols;           ///< number if dof on column
+  int nbIntegrationPts; ///< number of integration points
+  bool isDiag;          ///< true if this block is on diagonal
+
+  FTensor::Index<'i',3> i;  ///< summit Index
+  MatrixDouble locMat;      ///< local entity block matrix
+
+  /**
+   * \brief Integrate grad-grad operator
+   * @param  row_data row data (consist base functions on row entity)
+   * @param  col_data column data (consist base functions on column entity)
+   * @return          error code
+   */
+  inline PetscErrorCode iNtegrte(
+    DataForcesAndSurcesCore::EntData &row_data,DataForcesAndSurcesCore::EntData &col_data
+  ) {
+    PetscFunctionBegin;
+    // set size of local entity bock
+    locMat.resize(nbRows,nbCols,false);
+    // clear matrux
+    locMat.clear();
+    // get element area
+    double area = getArea()*bEta;
+    // get integration weigths
+    FTensor::Tensor0<double*> t_w = getFTensor0IntegrationWeight();
+    // get base function gradient on rows
+    FTensor::Tensor0<double*> t_row_base = row_data.getFTensor0N();
+    // loop over integration points
+    for(int gg = 0;gg!=nbIntegrationPts;gg++) {
+      // take into account Jacobean
+      const double alpha = t_w*area;
+      // take fist element to local matrix
+      FTensor::Tensor0<double*> a(&*locMat.data().begin());
+      // loop over rows base functions
+      for(int rr = 0;rr!=nbRows;rr++) {
+        // get column base functions gradient at gauss point gg
+        FTensor::Tensor0<double*> t_col_base = col_data.getFTensor0N(gg,0);
+        // loop over columbs
+        for(int cc = 0;cc!=nbCols;cc++) {
+          // calculate element of loacl matrix
+          a += alpha*t_row_base*t_col_base;
+          ++t_col_base; // move to another gradient of base function on column
+          ++a;  // move to another element of local matrix in column
+        }
+        ++t_row_base; // move to another element of gradient of base function on row
+      }
+      ++t_w; // move to another integration weight
+    }
+    PetscFunctionReturn(0);
+  }
+
+  /**
+   * \brief Assemble local entity block matrix
+   * @param  row_data row data (consist base functions on row entity)
+   * @param  col_data column data (consist base functions on column entity)
+   * @return          error code
+   */
+  inline PetscErrorCode aSsemble(
+    DataForcesAndSurcesCore::EntData &row_data,DataForcesAndSurcesCore::EntData &col_data
+  ) {
+    PetscFunctionBegin;
+    // get pointer to first global index on row
+    const int* row_indices = &*row_data.getIndices().data().begin();
+    // get pointer to first global index on column
+    const int* col_indices = &*col_data.getIndices().data().begin();
+    Mat B = getFEMethod()->ksp_B!=PETSC_NULL? getFEMethod()->ksp_B : getFEMethod()->snes_B;
+    // assemble local matrix
+    ierr = MatSetValues(
+      B, nbRows,row_indices,nbCols,col_indices,&*locMat.data().begin(),ADD_VALUES
+    ); CHKERRQ(ierr);
+    if(!isDiag) {
+      // if not diagonal term and since global matrix is symmetric assemble
+      // transpose term.
+      locMat = trans(locMat);
+      ierr = MatSetValues(
+        B, nbCols,col_indices,nbRows,row_indices,&*locMat.data().begin(),ADD_VALUES
+      ); CHKERRQ(ierr);
+    }
+    PetscFunctionReturn(0);
+  }
+
+};
+
 int main(int argc, char *argv[]) {
 
-  ErrorCode rval;
+  // ErrorCode rval;
   PetscErrorCode ierr;
 
   // Initialize PETSc
@@ -125,11 +265,12 @@ int main(int argc, char *argv[]) {
     boost::shared_ptr<ForcesAndSurcesCore> domain_error;      ///< Volume element evaluate error
     boost::shared_ptr<ForcesAndSurcesCore> post_proc_volume;  ///< Volume element to Post-process results
     boost::shared_ptr<ForcesAndSurcesCore> null;              ///< Null element do nothing
+    boost::shared_ptr<ForcesAndSurcesCore> boundary_penalty_lhs_fe;
     {
       // Add problem specific operators the generic finite elements to calculate matrices and vectors.
       ierr = PoissonExample::CreateFiniteElementes(m_field).createFEToAssmbleMatrceAndVector(
         ExactFunction(),ExactLaplacianFunction(),
-        domain_lhs_fe,boundary_lhs_fe,domain_rhs_fe,boundary_rhs_fe
+        domain_lhs_fe,boundary_lhs_fe,domain_rhs_fe,boundary_rhs_fe,false
       ); CHKERRQ(ierr);
       // Add problem specific operators the generic finite elements to calculate error on elements and global error
       // in H1 norm
@@ -138,6 +279,13 @@ int main(int argc, char *argv[]) {
       ); CHKERRQ(ierr);
       // Post-process results
       ierr = PoissonExample::CreateFiniteElementes(m_field).creatFEToPostProcessResults(post_proc_volume); CHKERRQ(ierr);
+
+      const double beta = 1;
+      boundary_penalty_lhs_fe = boost::shared_ptr<ForcesAndSurcesCore>(new FaceElementForcesAndSourcesCore(m_field));
+      boundary_penalty_lhs_fe->getRuleHook = PoissonExample::FaceRule();
+      boundary_penalty_lhs_fe->getOpPtrVector().push_back(new OpS(beta));
+      boundary_rhs_fe->getOpPtrVector().push_back(new PoissonExample::Op_g(ExactFunction(),"U",beta));
+
     }
 
     // Get simple interface is simplified version enabling quick and
@@ -196,29 +344,6 @@ int main(int argc, char *argv[]) {
     // Get dm
     ierr = simple_interface->getDM(&dm); CHKERRQ(ierr);
 
-    // Set KSP context for DM. At that point only elements are added to DM operators.
-    // Calculations of matrices and vectors is executed by KSP solver. This part
-    // of the code makes connection between implementation of finite elements and
-    // data operators with finite element declarations in DM manager. From that
-    // point DM takes responsibility for executing elements, calculations of
-    // matrices and vectors, and solution of the problem.
-    {
-      // Set operators for KSP solver
-      ierr = DMMoFEMKSPSetComputeOperators(
-        dm,simple_interface->getDomainFEName(),domain_lhs_fe,null,null
-      ); CHKERRQ(ierr);
-      ierr = DMMoFEMKSPSetComputeOperators(
-        dm,simple_interface->getBoundaryFEName(),boundary_lhs_fe,null,null
-      ); CHKERRQ(ierr);
-      // Set calculation of the right hand side vetor for KSP solver
-      ierr = DMMoFEMKSPSetComputeRHS(
-        dm,simple_interface->getDomainFEName(),domain_rhs_fe,null,null
-      ); CHKERRQ(ierr);
-      ierr = DMMoFEMKSPSetComputeRHS(
-        dm,simple_interface->getBoundaryFEName(),boundary_rhs_fe,null,null
-      ); CHKERRQ(ierr);
-    }
-
     // Solve problem, only PETEc interface here.
     {
 
@@ -229,11 +354,104 @@ int main(int argc, char *argv[]) {
       // structure is duplicated no values.
       ierr = VecDuplicate(F,&D); CHKERRQ(ierr);
 
+      DM dm_sub_KK,dm_sub_LU;
+      ublas::matrix<Mat> nested_matrices(2,2);
+      ublas::vector<IS> nested_is(2);
+
+      ierr = DMCreate(PETSC_COMM_WORLD,&dm_sub_KK);CHKERRQ(ierr);
+      ierr = DMSetType(dm_sub_KK,"DMMOFEM");CHKERRQ(ierr);
+      ierr = DMMoFEMCreateSubDM(dm_sub_KK,dm,"SUB_KK"); CHKERRQ(ierr);
+      ierr = DMSetFromOptions(dm_sub_KK); CHKERRQ(ierr);
+      ierr = DMMoFEMSetSquareProblem(dm_sub_KK,PETSC_TRUE); CHKERRQ(ierr);
+      ierr = DMMoFEMAddSubFieldRow(dm_sub_KK,"U"); CHKERRQ(ierr);
+      ierr = DMMoFEMAddSubFieldCol(dm_sub_KK,"U"); CHKERRQ(ierr);
+      ierr = DMMoFEMAddElement(dm_sub_KK,simple_interface->getDomainFEName().c_str()); CHKERRQ(ierr);
+      ierr = DMMoFEMAddElement(dm_sub_KK,simple_interface->getBoundaryFEName().c_str()); CHKERRQ(ierr);
+      ierr = DMSetUp(dm_sub_KK); CHKERRQ(ierr);
+      ierr = DMMoFEMGetSubRowIS(dm_sub_KK,&nested_is[0]); CHKERRQ(ierr);
+      ierr = DMCreateMatrix(dm_sub_KK,&nested_matrices(0,0)); CHKERRQ(ierr);
+      domain_lhs_fe->ksp_B = nested_matrices(0,0);
+      ierr = DMoFEMLoopFiniteElements(dm_sub_KK,simple_interface->getDomainFEName(),domain_lhs_fe); CHKERRQ(ierr);
+      boundary_penalty_lhs_fe->ksp_B = nested_matrices(0,0);
+      ierr = DMoFEMLoopFiniteElements(dm_sub_KK,simple_interface->getBoundaryFEName(),boundary_penalty_lhs_fe); CHKERRQ(ierr);
+      ierr = MatAssemblyBegin(nested_matrices(0,0),MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+      ierr = MatAssemblyEnd(nested_matrices(0,0),MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+      ierr = DMDestroy(&dm_sub_KK); CHKERRQ(ierr);
+      //
+      ierr = DMCreate(PETSC_COMM_WORLD,&dm_sub_LU);CHKERRQ(ierr);
+      ierr = DMSetType(dm_sub_LU,"DMMOFEM");CHKERRQ(ierr);
+      ierr = DMMoFEMCreateSubDM(dm_sub_LU,dm,"SUB_LU"); CHKERRQ(ierr);
+      ierr = DMSetFromOptions(dm_sub_LU); CHKERRQ(ierr);
+      ierr = DMMoFEMSetSquareProblem(dm_sub_LU,PETSC_FALSE); CHKERRQ(ierr);
+      ierr = DMMoFEMAddSubFieldRow(dm_sub_LU,"L"); CHKERRQ(ierr);
+      ierr = DMMoFEMAddSubFieldCol(dm_sub_LU,"U"); CHKERRQ(ierr);
+      ierr = DMMoFEMAddElement(dm_sub_LU,simple_interface->getBoundaryFEName().c_str()); CHKERRQ(ierr);
+      ierr = DMSetUp(dm_sub_LU); CHKERRQ(ierr);
+      ierr = DMMoFEMGetSubRowIS(dm_sub_LU,&nested_is[1]); CHKERRQ(ierr);
+      ierr = DMCreateMatrix(dm_sub_LU,&nested_matrices(1,0)); CHKERRQ(ierr);
+      boundary_lhs_fe->ksp_B = nested_matrices(1,0);
+      ierr = DMoFEMLoopFiniteElements(dm_sub_LU,simple_interface->getBoundaryFEName(),boundary_lhs_fe); CHKERRQ(ierr);
+      ierr = MatAssemblyBegin(nested_matrices(1,0),MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+      ierr = MatAssemblyEnd(nested_matrices(1,0),MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
+      // ierr = MatCreateTranspose(nested_matrices(1,0),&nested_matrices(0,1)); CHKERRQ(ierr);
+      ierr = MatTranspose(nested_matrices(1,0),MAT_INITIAL_MATRIX,&nested_matrices(0,1)); CHKERRQ(ierr);
+      ierr = DMDestroy(&dm_sub_LU); CHKERRQ(ierr);
+
+      domain_rhs_fe->ksp_f = F;
+      ierr = DMoFEMLoopFiniteElements(dm,simple_interface->getDomainFEName(),domain_rhs_fe); CHKERRQ(ierr);
+      boundary_rhs_fe->ksp_f = F;
+      ierr = DMoFEMLoopFiniteElements(dm,simple_interface->getBoundaryFEName(),boundary_rhs_fe); CHKERRQ(ierr);
+      ierr = VecAssemblyBegin(F); CHKERRQ(ierr);
+      ierr = VecAssemblyEnd(F); CHKERRQ(ierr);
+
+      Mat A;
+      nested_matrices(1,1) = PETSC_NULL;
+
+      if(debug) {
+        MatType type;
+        MatGetType(nested_matrices(0,0),&type);
+        cerr << "K " << type << endl;
+        MatGetType(nested_matrices(1,0),&type);
+        cerr << "C " << type << endl;
+        MatGetType(nested_matrices(0,1),&type);
+        cerr << "CT " << type << endl;
+        std::string wait;
+        cerr << "UU" << endl;
+        MatView(nested_matrices(0,0),PETSC_VIEWER_DRAW_WORLD);
+        std::cin >> wait;
+        cerr << "LU" << endl;
+        MatView(nested_matrices(1,0),PETSC_VIEWER_DRAW_WORLD);
+        std::cin >> wait;
+        cerr << "UL" << endl;
+        MatView(nested_matrices(0,1),PETSC_VIEWER_DRAW_WORLD);
+        std::cin >> wait;
+      }
+
+      ierr = MatCreateNest(
+        PETSC_COMM_WORLD,
+        2,&nested_is[0],2,&nested_is[0],&nested_matrices(0,0),&A
+      ); CHKERRQ(ierr);
+
       // Create solver and link it to DM
       KSP solver;
       ierr = KSPCreate(PETSC_COMM_WORLD,&solver); CHKERRQ(ierr);
       ierr = KSPSetFromOptions(solver); CHKERRQ(ierr);
-      ierr = KSPSetDM(solver,dm); CHKERRQ(ierr);
+      // Set operators
+      ierr = KSPSetOperators(solver,A,A); CHKERRQ(ierr);
+      PC pc;
+      ierr = KSPGetPC(solver,&pc); CHKERRQ(ierr);
+      PetscBool is_pcfs = PETSC_FALSE;
+      PetscObjectTypeCompare((PetscObject)pc,PCFIELDSPLIT,&is_pcfs);
+      if(is_pcfs) {
+        ierr = PCFieldSplitSetIS(pc,NULL,nested_is[0]); CHKERRQ(ierr);
+        ierr = PCFieldSplitSetIS(pc,NULL,nested_is[1]); CHKERRQ(ierr);
+      } else {
+        SETERRQ(
+          PETSC_COMM_WORLD,
+          MOFEM_DATA_INCONSISTENCY,
+          "Only works with pre-conditioner PCFIELDSPLIT"
+        );
+      }
       // Set-up solver, is type of solver and pre-conditioners
       ierr = KSPSetUp(solver); CHKERRQ(ierr);
       // At solution process, KSP solver using DM creates matrices, Calculate
@@ -246,6 +464,13 @@ int main(int argc, char *argv[]) {
 
       // Clean data. Solver and vector are not needed any more.
       ierr = KSPDestroy(&solver); CHKERRQ(ierr);
+      for(int i = 0;i!=2;i++) {
+        ierr = ISDestroy(&nested_is[i]); CHKERRQ(ierr);
+        for(int j = 0;j!=2;j++) {
+          ierr = MatDestroy(&nested_matrices(i,j)); CHKERRQ(ierr);
+        }
+      }
+      ierr = MatDestroy(&A); CHKERRQ(ierr);
       ierr = VecDestroy(&D); CHKERRQ(ierr);
       ierr = VecDestroy(&F); CHKERRQ(ierr);
     }

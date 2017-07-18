@@ -156,13 +156,11 @@ Euler-Lagrange  equations for discretised problem
 \mathbf{g}
 \end{array}
 \right],\\
-\begin{array}{l}
 \mathbf{K}=
-\int_\Omega \nabla \boldsymbol\phi \cdot \nabla \boldsymbol\phi \textrm{d}\Omega,\quad
-\mathbf{C} = \int_{\partial\Omega} \boldsymbol\psi \boldsymbol\phi \textrm{d}\partial\Omega,\\
-\mathbf{F} = \int_\Omega \boldsymbol\phi f \textrm{d}\Omega,\quad
-\mathbf{g} = \int_{\partial\Omega} \boldsymbol\psi \overline{u} \textrm{d}\partial\Omega.
-\end{array}
+\int_\Omega (\nabla \boldsymbol\phi)^\textrm{T} \nabla \boldsymbol\phi \textrm{d}\Omega,\quad
+\mathbf{C} = \int_{\partial\Omega} \boldsymbol\psi^\textrm{T} \boldsymbol\phi \textrm{d}\partial\Omega,\\
+\mathbf{F} = \int_\Omega \boldsymbol\phi^\textrm{T} f \textrm{d}\Omega,\quad
+\mathbf{g} = \int_{\partial\Omega} \boldsymbol\psi^\textrm{T} \overline{u} \textrm{d}\partial\Omega.
 \f]
 Applying this procedure we transformed essential boundary conditions (in this
 case Dirichlet boundary conditions),  into problems with natural boundary
@@ -183,10 +181,10 @@ spaces and deeper insight in the Poisson equation see
 
 Matrices and vectors are implemented using users data operators (UDO);
 
-- \f$\mathbf{K}\f$ is implemented in PoissonExample::OpGradGrad::iNtegrte
-- \f$\mathbf{F}\f$ is implemented in PoissonExample::OpVF::iNtegrte
-- \f$\mathbf{C}\f$ is implemented in PoissonExample::OpLU::iNtegrte
-- \f$\mathbf{g}\f$ is implemented in PoissonExample::OpLU_exact::iNtegrte
+- \f$\mathbf{K}\f$ is implemented in PoissonExample::OpK::iNtegrte
+- \f$\mathbf{F}\f$ is implemented in PoissonExample::OpF::iNtegrte
+- \f$\mathbf{C}\f$ is implemented in PoissonExample::OpC::iNtegrte
+- \f$\mathbf{g}\f$ is implemented in PoissonExample::Op_g::iNtegrte
 
 We put light on the implementation of those functions in next tutorial  \ref poisson_tut2.
 Here, in following sections, we focus on the generic problem and
@@ -333,9 +331,9 @@ different problems context. To make that more visible, we create those elements
 before fields and problem are defined and build. The purpose of finite elements
 is shown in Figure 2 and Figure 3, by users data operators added to a finite
 element. Finite element "domain_lhs_fe" is used to calculate matrix by using
-PoissonExample::OpGradGrad, finite element "domain_rhs_fe" is used with
-PoissonExample::OpVF. Similarly for a boundary, operators PoissonExample::OpLU
-and PoissonExample::OpLU_exact are used to integrate matrices and right vector
+PoissonExample::OpK, finite element "domain_rhs_fe" is used with
+PoissonExample::OpF. Similarly for a boundary, operators PoissonExample::OpC
+and PoissonExample::Op_g are used to integrate matrices and right vector
 for Lagrange multipliers, with finite elements "boundary_lhs_fe" and
 "boundary_rhs_fe", respectively. The operators MoFEM::OpCalculateScalarFieldValues,
 MoFEM::OpCalculateScalarFieldGradient and PoissonExample::OpError are used to
@@ -371,7 +369,7 @@ ierr = simple_interface->addDomainField("U",H1,AINSWORTH_LEGENDRE_BASE,1); CHKER
 ierr = simple_interface->addBoundaryField("L",H1,AINSWORTH_LEGENDRE_BASE,1); CHKERRQ(ierr);
 ierr = simple_interface->addDataField("ERROR",L2,AINSWORTH_LEGENDRE_BASE,1); CHKERRQ(ierr);
 ierr = simple_interface->setFieldOrder("U",order); CHKERRQ(ierr); // to approximate function
-ierr = simple_interface->setFieldOrder("L",order); CHKERRQ(ierr); // to Lagrange multiplayers
+ierr = simple_interface->setFieldOrder("L",order); CHKERRQ(ierr); // to Lagrange multiplaiers
 ierr = simple_interface->setFieldOrder("ERROR",0); CHKERRQ(ierr); // approximation order for error
 \endcode
 Note that field of "U" and Lagrange multipliers "L" is in space H1, error field

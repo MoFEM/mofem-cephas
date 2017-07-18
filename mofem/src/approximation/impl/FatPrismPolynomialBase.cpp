@@ -422,15 +422,15 @@ PetscErrorCode FatPrismPolynomialBase::getValueH1(MatrixDouble &pts) {
           // << std::endl;
         }
         int order = data.dataOnEntities[MBQUAD][siit->get()->side_number].getDataOrder();
-        quad_order[siit->get()->side_number] = order;
+        quad_order[(int)siit->get()->side_number] = order;
         data.dataOnEntities[MBQUAD][siit->get()->side_number].getN(base).resize(nb_gauss_pts,NBFACEQUAD_H1(order),false);
         data.dataOnEntities[MBQUAD][siit->get()->side_number].getDiffN(base).resize(nb_gauss_pts,3*NBFACEQUAD_H1(order),false);
         if(data.dataOnEntities[MBQUAD][siit->get()->side_number].getN(base).size2()>0) {
-          quad_n[siit->get()->side_number] = &*data.dataOnEntities[MBQUAD][siit->get()->side_number].getN(base).data().begin();
-          diff_quad_n[siit->get()->side_number] = &*data.dataOnEntities[MBQUAD][siit->get()->side_number].getDiffN(base).data().begin();
+          quad_n[(int)siit->get()->side_number] = &*data.dataOnEntities[MBQUAD][siit->get()->side_number].getN(base).data().begin();
+          diff_quad_n[(int)siit->get()->side_number] = &*data.dataOnEntities[MBQUAD][siit->get()->side_number].getDiffN(base).data().begin();
         } else {
-          quad_n[siit->get()->side_number] = NULL;
-          diff_quad_n[siit->get()->side_number] = NULL;
+          quad_n[(int)siit->get()->side_number] = NULL;
+          diff_quad_n[(int)siit->get()->side_number] = NULL;
         }
       }
       if(quad_order[0]>0||quad_order[1]>0||quad_order[2]>0) {

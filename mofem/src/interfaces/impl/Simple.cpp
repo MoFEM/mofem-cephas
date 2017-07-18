@@ -346,15 +346,19 @@ namespace MoFEM {
     // Add entities to the fields
     for(unsigned int ff = 0;ff!=domainFields.size();ff++) {
       ierr = m_field.add_ents_to_field_by_dim(meshSet,dIm,domainFields[ff]); CHKERRQ(ierr);
+      ierr = m_field.synchronise_field_entities(domainFields[ff],0); CHKERRQ(ierr);
     }
     for(unsigned int ff = 0;ff!=dataFields.size();ff++) {
       ierr = m_field.add_ents_to_field_by_dim(meshSet,dIm,dataFields[ff]); CHKERRQ(ierr);
+      ierr = m_field.synchronise_field_entities(dataFields[ff],0); CHKERRQ(ierr);
     }
     for(unsigned int ff = 0;ff!=boundaryFields.size();ff++) {
       ierr = m_field.add_ents_to_field_by_dim(boundaryMeshset,dIm-1,boundaryFields[ff]); CHKERRQ(ierr);
+      ierr = m_field.synchronise_field_entities(boundaryFields[ff],0); CHKERRQ(ierr);
     }
     for(unsigned int ff = 0;ff!=skeletonFields.size();ff++) {
-      ierr = m_field.add_ents_to_field_by_dim(boundaryMeshset,dIm-1,skeletonFields[ff]); CHKERRQ(ierr);
+      ierr = m_field.add_ents_to_field_by_dim(meshSet,dIm-1,skeletonFields[ff]); CHKERRQ(ierr);
+      ierr = m_field.synchronise_field_entities(skeletonFields[ff],0); CHKERRQ(ierr);
     }
     // Set order
     for(unsigned int ff = 0;ff!=domainFields.size();ff++) {
@@ -430,7 +434,7 @@ namespace MoFEM {
         SETERRQ(PETSC_COMM_WORLD,MOFEM_DATA_INCONSISTENCY,"Huston we have a problem");
       }
       if(field->getSpace()==H1) {
-        ierr = m_field.set_field_order(boundaryMeshset,MBVERTEX,boundaryFields[ff],1); CHKERRQ(ierr);
+        ierr = m_field.set_field_order(meshSet,MBVERTEX,boundaryFields[ff],1); CHKERRQ(ierr);
       }
       for(int dd = dds;dd<=dIm-1;dd++) {
         Range ents;

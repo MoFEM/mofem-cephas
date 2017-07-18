@@ -66287,3 +66287,68 @@
    fun:_ZN5MoFEM4CoreC1ERN4moab9InterfaceEP19ompi_communicator_ti
    fun:main
 }
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Addr4
+   fun:H5_build_extpath
+   fun:H5F_open
+   fun:H5Fopen
+   fun:mhdf_openFileWithOpt
+   fun:_ZN4moab8ReadHDF511set_up_readEPKcRKNS_11FileOptionsE
+   fun:_ZN4moab8ReadHDF59load_fileEPKcPKmRKNS_11FileOptionsEPKNS_11ReaderIface10SubsetListEPKPNS_7TagInfoE
+   fun:_ZN4moab4Core16serial_load_fileEPKcPKmRKNS_11FileOptionsEPKNS_11ReaderIface10SubsetListEPKPNS_7TagInfoE
+   fun:_ZN4moab12ReadParallel9load_fileEPPKciPKmiRSsRSt6vectorIiSaIiEEbbSA_RKNS_11FileOptionsEPKNS_11ReaderIface10SubsetListEPKPNS_7TagInfoEibiiiiii
+   fun:_ZN4moab12ReadParallel9load_fileEPPKciPKmRKNS_11FileOptionsEPKNS_11ReaderIface10SubsetListEPKPNS_7TagInfoE
+   fun:_ZN4moab4Core9load_fileEPKcPKmS2_S2_PKii
+   fun:_ZN5MoFEM6Simple8loadFileEv
+   fun:main
+}
+
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   fun:malloc
+   fun:strdup
+   obj:/usr/lib/openmpi/lib/libopen-pal.so.0.0.0
+   fun:mca_base_param_reg_string
+   obj:*
+   fun:mca_base_components_open
+   fun:mca_io_base_open
+   fun:PMPI_File_open
+   fun:H5FD_mpio_open
+   fun:H5FD_open
+   fun:H5F_open
+   fun:H5Fopen
+   fun:mhdf_openFileWithOpt
+   fun:_ZN4moab8ReadHDF511set_up_readEPKcRKNS_11FileOptionsE
+   fun:_ZN4moab8ReadHDF59load_fileEPKcPKmRKNS_11FileOptionsEPKNS_11ReaderIface10SubsetListEPKPNS_7TagInfoE
+   fun:_ZN4moab4Core16serial_load_fileEPKcPKmRKNS_11FileOptionsEPKNS_11ReaderIface10SubsetListEPKPNS_7TagInfoE
+   fun:_ZN4moab12ReadParallel9load_fileEPPKciPKmiRSsRSt6vectorIiSaIiEEbbSA_RKNS_11FileOptionsEPKNS_11ReaderIface10SubsetListEPKPNS_7TagInfoEibiiiiii
+   fun:_ZN4moab12ReadParallel9load_fileEPPKciPKmRKNS_11FileOptionsEPKNS_11ReaderIface10SubsetListEPKPNS_7TagInfoE
+   fun:_ZN4moab4Core9load_fileEPKcPKmS2_S2_PKii
+   fun:_ZN5MoFEM6Simple8loadFileEv
+   fun:main
+}
+{
+   <insert_a_suppression_name_here>
+   Memcheck:Leak
+   fun:malloc
+   fun:strdup
+   obj:/usr/lib/openmpi/lib/libopen-pal.so.0.0.0
+   fun:mca_base_param_reg_int_name
+   fun:mca_io_base_open
+   fun:PMPI_File_open
+   fun:H5FD_mpio_open
+   fun:H5FD_open
+   fun:H5F_open
+   fun:H5Fopen
+   fun:mhdf_openFileWithOpt
+   fun:_ZN4moab8ReadHDF511set_up_readEPKcRKNS_11FileOptionsE
+   fun:_ZN4moab8ReadHDF59load_fileEPKcPKmRKNS_11FileOptionsEPKNS_11ReaderIface10SubsetListEPKPNS_7TagInfoE
+   fun:_ZN4moab4Core16serial_load_fileEPKcPKmRKNS_11FileOptionsEPKNS_11ReaderIface10SubsetListEPKPNS_7TagInfoE
+   fun:_ZN4moab12ReadParallel9load_fileEPPKciPKmiRSsRSt6vectorIiSaIiEEbbSA_RKNS_11FileOptionsEPKNS_11ReaderIface10SubsetListEPKPNS_7TagInfoEibiiiiii
+   fun:_ZN4moab12ReadParallel9load_fileEPPKciPKmRKNS_11FileOptionsEPKNS_11ReaderIface10SubsetListEPKPNS_7TagInfoE
+   fun:_ZN4moab4Core9load_fileEPKcPKmS2_S2_PKii
+   fun:_ZN5MoFEM6Simple8loadFileEv
+   fun:main
+}

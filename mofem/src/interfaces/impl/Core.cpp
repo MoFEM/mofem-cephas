@@ -289,15 +289,15 @@ static PetscErrorCode mofem_error_handler(
 }
 
 PetscErrorCode print_verison() {
-  PetscErrorCode ierr;
+  // PetscErrorCode ierr;
   PetscFunctionBegin;
   PetscFunctionReturn(0);
 }
 
 Core::Core(moab::Interface& moab,MPI_Comm comm,int verbose):
 moab(moab),
-cOmm(0),
-verbose(verbose) {
+verbose(verbose),
+cOmm(0) {
   if(!isGloballyInitialised) {
     PetscPushErrorHandler(mofem_error_handler,PETSC_NULL);
     isGloballyInitialised = true;

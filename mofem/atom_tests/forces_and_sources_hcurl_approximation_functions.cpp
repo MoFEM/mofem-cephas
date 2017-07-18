@@ -170,10 +170,10 @@ int main(int argc, char *argv[]) {
       mySplit.precision(5);
 
       const double eps = 1e-6;
-      for(int dd = 0;dd<data.getHcurlN().data().size();dd++) {
+      for(unsigned int dd = 0;dd<data.getHcurlN().data().size();dd++) {
         if(fabs(data.getHcurlN().data()[dd])<eps) data.getHcurlN().data()[dd] = 0;
       }
-      for(int dd = 0;dd<data.getDiffHdivN().data().size();dd++) {
+      for(unsigned int dd = 0;dd<data.getDiffHdivN().data().size();dd++) {
         if(fabs(data.getDiffHdivN().data()[dd])<eps) data.getDiffHdivN().data()[dd] = 0;
       }
 
@@ -213,7 +213,7 @@ int main(int argc, char *argv[]) {
       mySplit.precision(5);
 
       const double eps = 1e-6;
-      for(int dd = 0;dd<data.getHcurlN().data().size();dd++) {
+      for(unsigned int dd = 0;dd<data.getHcurlN().data().size();dd++) {
         if(fabs(data.getHcurlN().data()[dd])<eps) data.getHcurlN().data()[dd] = 0;
       }
 
@@ -254,7 +254,7 @@ int main(int argc, char *argv[]) {
       mySplit.precision(5);
 
       const double eps = 1e-6;
-      for(int dd = 0;dd<data.getHcurlN().data().size();dd++) {
+      for(unsigned int dd = 0;dd<data.getHcurlN().data().size();dd++) {
         if(fabs(data.getHcurlN().data()[dd])<eps) data.getHcurlN().data()[dd] = 0;
       }
 

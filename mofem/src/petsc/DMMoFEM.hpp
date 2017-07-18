@@ -522,6 +522,28 @@ PetscErrorCode DMMoFEMAddSubFieldCol(DM dm,const char field_name[]);
 PetscErrorCode DMMoFEMGetIsSubDM(DM dm,PetscBool *is_sub_dm);
 
 /**
+ * \brief get sub problem is
+ * @param  dm has to be created with DMMoFEMSetSquareProblem
+ * @param  is return is on the row
+ * @return    error code
+ *
+ * Returns IS with global indices of the DM used to create SubDM
+ *
+ */
+PetscErrorCode DMMoFEMGetSubRowIS(DM dm,IS *is);
+
+/**
+ * \brief get sub problem is
+ * @param  dm has to be created with DMMoFEMSetSquareProblem
+ * @param  is return is on the row
+ * @return    error code
+ *
+ * Returns IS with global indices of the DM used to create SubDM
+ *
+ */
+PetscErrorCode DMMoFEMGetSubColIS(DM dm,IS *is);
+
+/**
  * \brief Add problem to composite DM on row
   \ingroup dm
  *

@@ -136,13 +136,13 @@ boundary_rhs_fe->getRuleHook = FaceRule();
 
 // Ass operators to element instances
 // Add operator grad-grad for calualte matrix
-domain_lhs_fe->getOpPtrVector().push_back(new OpGradGrad());
+domain_lhs_fe->getOpPtrVector().push_back(new OpK());
 // Add operator to calculate source terms
-domain_rhs_fe->getOpPtrVector().push_back(new OpVF(f_source));
+domain_rhs_fe->getOpPtrVector().push_back(new OpF(f_source));
 // Add operator calculating constrains matrix
-boundary_lhs_fe->getOpPtrVector().push_back(new OpLU(true));
+boundary_lhs_fe->getOpPtrVector().push_back(new OpC(true));
 // Add operator calculating constrains vector
-boundary_rhs_fe->getOpPtrVector().push_back(new OpLU_exact(f_u));
+boundary_rhs_fe->getOpPtrVector().push_back(new Op_g(f_u));
 \endcode
 
 \note Implementing MoFEM we try to avoid using "raw" pointers, and instead using
@@ -199,7 +199,7 @@ domain_lhs_fe->getRuleHook = vol_rule;
 
 Now we add user data operators to finite element
 \code
-domain_lhs_fe->getOpPtrVector().push_back(new OpGradGrad());
+domain_lhs_fe->getOpPtrVector().push_back(new OpK());
 \endcode
 Dissecting the line, first we start with explicit code
 \code
@@ -209,7 +209,7 @@ You can see now \e getOpPtrVector return vector of pointers to operators acting 
 finite element lower dimension entities. Now having vector of pointers, we going
 to push operator at the end of it
 \code
-sequence_of_operators.push_back(new OpGradGrad());
+sequence_of_operators.push_back(new OpK());
 \endcode
 
 More interesting case is what happens in PoissonExample::CreateFiniteElementes::createFEToEvaluateError,
@@ -247,9 +247,9 @@ and incense of it can be added only to object of MoFEM::VolumeElementForcesAndSo
 
 Let start with implementation gard-grad operator
 \code
-struct PoissonExample::OpGradGrad: public VolumeElementForcesAndSourcesCore::UserDataOperator {
+struct PoissonExample::OpK: public VolumeElementForcesAndSourcesCore::UserDataOperator {
 
-  OpGradGrad(): VolumeElementForcesAndSourcesCore::UserDataOperator("U","U",OPROWCOL,true);
+  OpK(): VolumeElementForcesAndSourcesCore::UserDataOperator("U","U",OPROWCOL,true);
 
   /**
    * \brief Do calculations for give operator
@@ -301,7 +301,7 @@ private:
 
 };
 \endcode
-User data operator class PoissonExample::OpGradGrad is derived from class
+User data operator class PoissonExample::OpK is derived from class
 MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator, which is a generic
 class to work on 3d finite element entities. Class
 MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator delivers methods get
@@ -310,7 +310,7 @@ element, to its quadrature points, etc.
 
 Constructor of operator is
 \code
-PoissonExample::OpGradGrad(): MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator("U","U",OPROWCOL,true);
+PoissonExample::OpK(): MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator("U","U",OPROWCOL,true);
 \endcode
 
 User data operator is used to calculate bilinear form, discrete version of it, i.e. matrix
@@ -364,7 +364,7 @@ Now we can dissect overloaded function
  * @param  col_data data for column
  * @return          error code
  */
-PetscErrorCode PoissonExample::OpGradGrad::doWork(
+PetscErrorCode PoissonExample::OpK::doWork(
   int row_side,int col_side,
   EntityType row_type,EntityType col_type,
   DataForcesAndSurcesCore::EntData &row_data,DataForcesAndSurcesCore::EntData &col_data
@@ -430,7 +430,7 @@ ierr = iNtegrte(row_data,col_data); CHKERRQ(ierr);
 ierr = aSsemble(row_data,col_data); CHKERRQ(ierr);
 \endcode
 
-The PoissonExample::OpGradGrad::iNtegrte method
+The PoissonExample::OpK::iNtegrte method
 \code
 inline PetscErrorCode iNtegrte(
   DataForcesAndSurcesCore::EntData &row_data,DataForcesAndSurcesCore::EntData &col_data
@@ -485,9 +485,9 @@ a += alpha*(t_row_grad(i)*t_col_grad(i));
 \endcode
 where the grad-grad term is added to the local matrix.
 
-Finally, we assemble local matrix using PoissonExample::OpGradGrad::aSsemble
+Finally, we assemble local matrix using PoissonExample::OpK::aSsemble
 \code
-inline PetscErrorCode PoissonExample::OpGradGrad::aSsemble(
+inline PetscErrorCode PoissonExample::OpK::aSsemble(
   DataForcesAndSurcesCore::EntData &row_data,DataForcesAndSurcesCore::EntData &col_data
 ) {
   PetscFunctionBegin;
@@ -563,11 +563,11 @@ base functions and indices on rows only are needed.
 With generic operator PoissonExample::OpBaseRhs we can construct operator for
 the integration of source term
 \code
-struct PoissonExample::OpVF: public OpBaseRhs<VolumeElementForcesAndSourcesCore::UserDataOperator> {
+struct PoissonExample::OpF: public OpBaseRhs<VolumeElementForcesAndSourcesCore::UserDataOperator> {
 
   typedef boost::function<double (const double,const double,const double)> FSource;
 
-  OpVF(FSource f_source):
+  OpF(FSource f_source):
   OpBaseRhs<VolumeElementForcesAndSourcesCore::UserDataOperator>("U"),
   fSource(f_source) {
   }
@@ -593,7 +593,7 @@ private:
 The constructor of this operator takes as an argument pointer to function were
 Laplacian is defined. Then the local right-hand side vector is integrated
 \code
-PetscErrorCode PoissonExample::OpVF::iNtegrte(DataForcesAndSurcesCore::EntData &data) {
+PetscErrorCode PoissonExample::OpF::iNtegrte(DataForcesAndSurcesCore::EntData &data) {
   PetscFunctionBegin;
   // set size of local vector
   locVec.resize(nbRows,false);
@@ -628,7 +628,7 @@ PetscErrorCode PoissonExample::OpVF::iNtegrte(DataForcesAndSurcesCore::EntData &
 \endcode
 and assembled
 \code
-PetscErrorCode PoissonExample::OpVF::aSsemble(DataForcesAndSurcesCore::EntData &data) {
+PetscErrorCode PoissonExample::OpF::aSsemble(DataForcesAndSurcesCore::EntData &data) {
   PetscFunctionBegin;
   // get global indices of local vector
   const int* indices = &*data.getIndices().data().begin();
