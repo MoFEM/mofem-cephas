@@ -48,10 +48,13 @@ r_g
 (\nabla v,(1+u^2)\nabla u)_\Omega-(v,f)_\Omega+(v,\lambda)_{\partial\Omega} = 0\\
 (\tau,u-\overline{u})_{\partial\Omega} = 0
 \end{array}
-\right.,\quad \forall u,v \in H^1(\Omega),\;\forall \tau,\lambda \in H^1(\partial\Omega).
+\right.,\quad \forall v,\tau,\; u,v \in H^1(\Omega),\;\tau,\lambda \in H^1(\partial\Omega).
 \f]
-This notation, suitable for problems with many terms in the variational
-formulations, requires some explanation. First, we use the shorthand notation
+where \f$\overline{u}\f$ are given function on boundary, \f$f\f$ is a source
+term , \f$u,\lambda\f$ are unknown  functions and \f$v,\tau\f$ are test
+functions. This notation, suitable for problems with many terms in the
+variational formulations, requires some explanation. First, we use the shorthand
+notation
 \f[
 (v,u)_\Omega = \int_\Omega vu \textrm{d}\Omega,\quad (\lambda,u)_{\partial\Omega} = \int_\Omega \lambda u \textrm{d}\partial\Omega
 \f]
@@ -172,7 +175,7 @@ Note that source term has complex term and is obtained by from formula
 f = \nabla \cdot \left( A(u)\nabla u \right)
 \f]
 For 3rd polynomial order, as above, results can be obtained after tedious
-calculations, to avoid that you can use symbolic derivations from Mathematica,
+calculations, to avoid that you can use symbolic derivations from Mathematica, Maple,
 Matlab or free and open alternative Maxima <http://maxima.sourceforge.net>.
 
 \section poisson_tut4_code_dissection Code dissection
