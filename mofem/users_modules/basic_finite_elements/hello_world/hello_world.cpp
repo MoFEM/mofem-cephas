@@ -37,6 +37,7 @@ struct OpRow: public ForcesAndSurcesCore::UserDataOperator {
  PetscErrorCode doWork(int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
    PetscFunctionBegin;
    if(type == MBVERTEX) {
+     // get number of evaluated element in the loop
      std::cout << std::endl << "**** " << 	getNinTheLoop() << " **** " << std::endl;
      std::cout <<"**** Operators **** " << std::endl;
    }
