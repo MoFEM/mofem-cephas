@@ -44,9 +44,9 @@ add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/atom_tests)
 # directories.
 
 bfe_add_executable(
-  transport ${CMAKE_CURRENT_SOURCE_DIR}/transport.cpp
+  h_adaptive_transport ${CMAKE_CURRENT_SOURCE_DIR}/h_adaptive_transport.cpp
 )
-target_link_libraries(transport
+target_link_libraries(h_adaptive_transport
   users_modules
   mofem_finite_elements
   mofem_interfaces

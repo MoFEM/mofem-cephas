@@ -1,4 +1,4 @@
-/** \file transport.cpp
+/** \file h_adaptive_transport.cpp
 \brief Example implementation of transport problem using ultra-week formulation
 
 \todo Should be implemented and tested problem from this article
@@ -6,7 +6,7 @@ Demkowicz, Leszek, and Jayadeep Gopalakrishnan. "Analysis of the DPG method for
 the Poisson equation." SIAM Journal on Numerical Analysis 49.5 (2011):
 1788-1809.
 
-\ingroup mofem_ultra_weak_transport_elem
+\ingroup mofem_mix_transport_elem
 */
 
 /* This file is part of MoFEM.
@@ -24,9 +24,10 @@ the Poisson equation." SIAM Journal on Numerical Analysis 49.5 (2011):
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
 #include <BasicFiniteElements.hpp>
-#include <UltraWeakTransportElement.hpp>
+#include <MixTransportElement.hpp>
 
 using namespace MoFEM;
+using namespace MixTransport;
 
 static char help[] = "...\n\n";
 
@@ -41,25 +42,25 @@ struct BcFluxData {
 };
 typedef map<int,BcFluxData> BcFluxMap;
 
-/** \brief Application of ultraweak data structure
+/** \brief Application of mix transport data structure
   *
-  * UltraWeakTransportElement is a class collecting functions, operators and
+  * MixTransportElement is a class collecting functions, operators and
   * data for ultra week implementation of transport element. See there to
   * learn how elements are created or how operators look like.
   *
-  * Some methods in UltraWeakTransportElement are abstract, f.e. user need to
+  * Some methods in MixTransportElement are abstract, f.e. user need to
   * implement own source therm.
 
-  * \ingroup mofem_ultra_weak_transport_elem
+  * \ingroup mofem_mix_transport_elem
   */
-struct ExampleUltraWeak: public UltraWeakTransportElement {
+struct MyTransport: public MixTransportElement {
 
   BcFluxMap &bcFluxMap;
   EntityHandle lastEnt;
   double lastFlux;
 
-  ExampleUltraWeak(MoFEM::Interface &m_field,BcFluxMap &bc_flux_map):
-  UltraWeakTransportElement(m_field),
+  MyTransport(MoFEM::Interface &m_field,BcFluxMap &bc_flux_map):
+  MixTransportElement(m_field),
   bcFluxMap(bc_flux_map),
   lastEnt(0),
   lastFlux(0) {
@@ -135,7 +136,7 @@ struct ExampleUltraWeak: public UltraWeakTransportElement {
    \note It is assumed that user would like to something non-standard with boundary
    conditions, have a own type of data structures to pass to functions calculating
    values and fluxes on boundary. For example BcFluxMap. That way this function
-   is implemented here not in generic class UltraWeakTransportElement.
+   is implemented here not in generic class MixTransportElement.
 
    * @return           error code
    */
@@ -148,7 +149,7 @@ struct ExampleUltraWeak: public UltraWeakTransportElement {
     Skinner skin(&mField.get_moab());
     Range skin_faces; // skin faces from 3d ents
     rval = skin.find_skin(0,tets,false,skin_faces); CHKERRQ_MOAB(rval);
-    // note: what is essential (dirichlet) is natural (neumann) for ultra weak compared to classical FE
+    // note: what is essential (dirichlet) is natural (neumann) for mix-FE compared to classical FE
     Range natural_bc;
     for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,NODESET|TEMPERATURESET,it)) {
       Range tris;
@@ -172,9 +173,9 @@ struct ExampleUltraWeak: public UltraWeakTransportElement {
     ierr = mField.get_entities_by_type_and_ref_level(ref_level,BitRefLevel().set(),MBTRI,bit_tris);
     essential_bc = intersect(bit_tris,essential_bc);
     natural_bc = intersect(bit_tris,natural_bc);
-    ierr = mField.add_ents_to_finite_element_by_type(essential_bc,MBTRI,"ULTRAWEAK_BCFLUX"); CHKERRQ(ierr);
-    ierr = mField.add_ents_to_finite_element_by_type(natural_bc,MBTRI,"ULTRAWEAK_BCVALUE"); CHKERRQ(ierr);
-    // ierr = mField.add_ents_to_finite_element_by_type(skin_faces,MBTRI,"ULTRAWEAK_BCVALUE"); CHKERRQ(ierr);
+    ierr = mField.add_ents_to_finite_element_by_type(essential_bc,MBTRI,"MIX_BCFLUX"); CHKERRQ(ierr);
+    ierr = mField.add_ents_to_finite_element_by_type(natural_bc,MBTRI,"MIX_BCVALUE"); CHKERRQ(ierr);
+    // ierr = mField.add_ents_to_finite_element_by_type(skin_faces,MBTRI,"MIX_BCVALUE"); CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }
 
@@ -206,7 +207,7 @@ struct ExampleUltraWeak: public UltraWeakTransportElement {
 
    */
   PetscErrorCode refineMesh(
-    UltraWeakTransportElement &ufe,const int nb_levels,const int order
+    MixTransportElement &ufe,const int nb_levels,const int order
   ) {
     PetscErrorCode ierr;
     MoABErrorCode rval;
@@ -287,7 +288,7 @@ struct ExampleUltraWeak: public UltraWeakTransportElement {
         BitRefLevel().set(nb_levels),BitRefLevel().set(),MBTRI,ref_tris
       ); CHKERRQ(ierr);
       ierr = mField.add_ents_to_finite_element_by_type(
-        ref_tris,MBTRI,"ULTRAWEAK_SKELETON"
+        ref_tris,MBTRI,"MIX_SKELETON"
       ); CHKERRQ(ierr);
 
       //add entities to finite elements
@@ -298,7 +299,7 @@ struct ExampleUltraWeak: public UltraWeakTransportElement {
         setOfBlocks[it->getMeshsetId()].cApacity = temp_data.data.HeatCapacity;
         rval = mField.get_moab().get_entities_by_type(it->meshset,MBTET,setOfBlocks[it->getMeshsetId()].tEts,true); CHKERRQ_MOAB(rval);
         setOfBlocks[it->getMeshsetId()].tEts = intersect(ref_tets,setOfBlocks[it->getMeshsetId()].tEts);
-        ierr = mField.add_ents_to_finite_element_by_type(setOfBlocks[it->getMeshsetId()].tEts,MBTET,"ULTRAWEAK"); CHKERRQ(ierr);
+        ierr = mField.add_ents_to_finite_element_by_type(setOfBlocks[it->getMeshsetId()].tEts,MBTET,"MIX"); CHKERRQ(ierr);
       }
     }
     rval = mField.get_moab().delete_entities(&ref_meshset,1); CHKERRQ_MOAB(rval);
@@ -428,7 +429,7 @@ int main(int argc, char *argv[]) {
   //finite elements
 
   BcFluxMap bc_flux_map;
-  ExampleUltraWeak ufe(m_field,bc_flux_map);
+  MyTransport ufe(m_field,bc_flux_map);
 
   // Initially calculate problem on coarse mesh
 
@@ -438,7 +439,7 @@ int main(int argc, char *argv[]) {
   ierr = ufe.addBoundaryElements(ref_level);
   ierr = ufe.buildProblem(ref_level); CHKERRQ(ierr);
   ierr = ufe.createMatrices(); CHKERRQ(ierr);
-  ierr = ufe.solveProblem(); CHKERRQ(ierr);
+  ierr = ufe.solveLinearProblem(); CHKERRQ(ierr);
   ierr = ufe.calculateResidual(); CHKERRQ(ierr);
   ierr = ufe.evaluateError(); CHKERRQ(ierr);
   ierr = ufe.destroyMatrices(); CHKERRQ(ierr);
@@ -458,7 +459,7 @@ int main(int argc, char *argv[]) {
     ierr = ufe.addBoundaryElements(ref_level);
     ierr = ufe.buildProblem(ref_level); CHKERRQ(ierr);
     ierr = ufe.createMatrices(); CHKERRQ(ierr);
-    ierr = ufe.solveProblem(); CHKERRQ(ierr);
+    ierr = ufe.solveLinearProblem(); CHKERRQ(ierr);
     ierr = ufe.calculateResidual(); CHKERRQ(ierr);
     ierr = ufe.evaluateError(); CHKERRQ(ierr);
     ierr = ufe.destroyMatrices(); CHKERRQ(ierr);

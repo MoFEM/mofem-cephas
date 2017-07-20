@@ -1,7 +1,7 @@
-/** \file UltraWeakTransportElement.hpp
- * \brief Ultra weak implementation of transport element
+/** \file MixTransportElement.hpp
+ * \brief Mix implementation of transport element
  *
- * \ingroup mofem_ultra_weak_transport_elem
+ * \ingroup mofem_mix_transport_elem
  *
  */
 
@@ -20,11 +20,13 @@
  * You should have received a copy of the GNU Lesser General Public
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
-#ifndef __ULTRAWEAK_TARNSPORT_ELEMENT_HPP
-#define __ULTRAWEAK_TARNSPORT_ELEMENT_HPP
+#ifndef _MIX_TRANPORT_ELEMENT_HPP_
+#define _MIX_TRANPORT_ELEMENT_HPP_
 
-/** \brief Ultra weak transport problem
-  \ingroup mofem_ultra_weak_transport_elem
+namespace MixTransport {
+
+/** \brief Mix transport problem
+  \ingroup mofem_mix_transport_elem
 
   Note to solve this system you need to use direct solver or proper preconditioner
   for saddle problem.
@@ -39,7 +41,7 @@
   \f]
 
 */
-struct UltraWeakTransportElement {
+struct MixTransportElement {
 
   MoFEM::Interface &mField;
 
@@ -73,7 +75,7 @@ struct UltraWeakTransportElement {
   /**
    * \brief construction of this data structure
    */
-  UltraWeakTransportElement(MoFEM::Interface &m_field):
+  MixTransportElement(MoFEM::Interface &m_field):
   mField(m_field),
   feVol(m_field),
   feTri(m_field) {};
@@ -81,12 +83,12 @@ struct UltraWeakTransportElement {
   /**
    * \brief destructor
    */
-  virtual ~UltraWeakTransportElement() {}
+  virtual ~MixTransportElement() {}
 
   VectorDouble valuesAtGaussPts;                          ///< values at integration points on element
-  ublas::vector<VectorDouble > valuesGradientAtGaussPts;  ///< gradients at integration points on element
+  MatrixDouble valuesGradientAtGaussPts;                  ///< gradients at integration points on element
   VectorDouble divergenceAtGaussPts;                      ///< divergence at integration points on element
-  ublas::vector<VectorDouble > fluxesAtGaussPts;          ///< fluxes at integration points on element
+  MatrixDouble fluxesAtGaussPts;                          ///< fluxes at integration points on element
 
   set<int> bcIndices;
 
@@ -238,21 +240,21 @@ struct UltraWeakTransportElement {
     // of stiffness matrix & right hand side, in essence are used to do volume integrals over
     // tetrahedral in this case.
 
-    // Define element "ULTRAWEAK". Note that this element will work with fluxes_name and
+    // Define element "MIX". Note that this element will work with fluxes_name and
     // values_name. This reflect bilinear form for the problem
-    ierr = mField.add_finite_element("ULTRAWEAK",MF_ZERO); CHKERRQ(ierr);
-    ierr = mField.modify_finite_element_add_field_row("ULTRAWEAK",fluxes_name); CHKERRQ(ierr);
-    ierr = mField.modify_finite_element_add_field_col("ULTRAWEAK",fluxes_name); CHKERRQ(ierr);
-    ierr = mField.modify_finite_element_add_field_row("ULTRAWEAK",values_name); CHKERRQ(ierr);
-    ierr = mField.modify_finite_element_add_field_col("ULTRAWEAK",values_name); CHKERRQ(ierr);
-    ierr = mField.modify_finite_element_add_field_data("ULTRAWEAK",fluxes_name); CHKERRQ(ierr);
-    ierr = mField.modify_finite_element_add_field_data("ULTRAWEAK",values_name); CHKERRQ(ierr);
+    ierr = mField.add_finite_element("MIX",MF_ZERO); CHKERRQ(ierr);
+    ierr = mField.modify_finite_element_add_field_row("MIX",fluxes_name); CHKERRQ(ierr);
+    ierr = mField.modify_finite_element_add_field_col("MIX",fluxes_name); CHKERRQ(ierr);
+    ierr = mField.modify_finite_element_add_field_row("MIX",values_name); CHKERRQ(ierr);
+    ierr = mField.modify_finite_element_add_field_col("MIX",values_name); CHKERRQ(ierr);
+    ierr = mField.modify_finite_element_add_field_data("MIX",fluxes_name); CHKERRQ(ierr);
+    ierr = mField.modify_finite_element_add_field_data("MIX",values_name); CHKERRQ(ierr);
 
     // Define finite element to integrate over skeleton, we need that to evaluate error
-    ierr = mField.add_finite_element("ULTRAWEAK_SKELETON",MF_ZERO); CHKERRQ(ierr);
-    ierr = mField.modify_finite_element_add_field_row("ULTRAWEAK_SKELETON",fluxes_name); CHKERRQ(ierr);
-    ierr = mField.modify_finite_element_add_field_col("ULTRAWEAK_SKELETON",fluxes_name); CHKERRQ(ierr);
-    ierr = mField.modify_finite_element_add_field_data("ULTRAWEAK_SKELETON",fluxes_name); CHKERRQ(ierr);
+    ierr = mField.add_finite_element("MIX_SKELETON",MF_ZERO); CHKERRQ(ierr);
+    ierr = mField.modify_finite_element_add_field_row("MIX_SKELETON",fluxes_name); CHKERRQ(ierr);
+    ierr = mField.modify_finite_element_add_field_col("MIX_SKELETON",fluxes_name); CHKERRQ(ierr);
+    ierr = mField.modify_finite_element_add_field_data("MIX_SKELETON",fluxes_name); CHKERRQ(ierr);
 
     // In some cases you like to use HO geometry to describe shape of the bode, curved edges and faces, for
     // example body is a sphere. HO geometry is approximated by a field,  which can be hierarchical, so shape of
@@ -261,11 +263,11 @@ struct UltraWeakTransportElement {
     // Check if field "mesh_nodals_positions" is defined, and if it is add that field to data of finite
     // element. MoFEM will use that that to calculate Jacobian as result that geometry in nonlinear.
     if(mField.check_field(mesh_nodals_positions)) {
-      ierr = mField.modify_finite_element_add_field_data("ULTRAWEAK",mesh_nodals_positions); CHKERRQ(ierr);
-      ierr = mField.modify_finite_element_add_field_data("ULTRAWEAK_SKELETON",mesh_nodals_positions); CHKERRQ(ierr);
+      ierr = mField.modify_finite_element_add_field_data("MIX",mesh_nodals_positions); CHKERRQ(ierr);
+      ierr = mField.modify_finite_element_add_field_data("MIX_SKELETON",mesh_nodals_positions); CHKERRQ(ierr);
     }
     // Look for all BLOCKSET which are MAT_THERMALSET, takes entities from those BLOCKSETS
-    // and add them to "ULTRAWEAK" finite element. In addition get data form that meshset
+    // and add them to "MIX" finite element. In addition get data form that meshset
     // and set cOnductivity which is used to calculate fluxes from gradients of concentration
     // or gradient of temperature, depending how you interpret variables.
     for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(mField,BLOCKSET|MAT_THERMALSET,it)) {
@@ -280,7 +282,7 @@ struct UltraWeakTransportElement {
         it->meshset,MBTET,setOfBlocks[it->getMeshsetId()].tEts,true
       ); CHKERRQ_MOAB(rval);
       ierr = mField.add_ents_to_finite_element_by_type(
-        setOfBlocks[it->getMeshsetId()].tEts,MBTET,"ULTRAWEAK"
+        setOfBlocks[it->getMeshsetId()].tEts,MBTET,"MIX"
       ); CHKERRQ(ierr);
 
       Range skeleton;
@@ -288,29 +290,29 @@ struct UltraWeakTransportElement {
         setOfBlocks[it->getMeshsetId()].tEts,2,false,skeleton,moab::Interface::UNION
       );
       ierr = mField.add_ents_to_finite_element_by_type(
-        skeleton,MBTRI,"ULTRAWEAK_SKELETON"
+        skeleton,MBTRI,"MIX_SKELETON"
       ); CHKERRQ(ierr);
 
     }
 
     // Define element to integrate natural boundary conditions, i.e. set values.
-    ierr = mField.add_finite_element("ULTRAWEAK_BCVALUE",MF_ZERO); CHKERRQ(ierr);
-    ierr = mField.modify_finite_element_add_field_row("ULTRAWEAK_BCVALUE",fluxes_name); CHKERRQ(ierr);
-    ierr = mField.modify_finite_element_add_field_col("ULTRAWEAK_BCVALUE",fluxes_name); CHKERRQ(ierr);
-    ierr = mField.modify_finite_element_add_field_data("ULTRAWEAK_BCVALUE",fluxes_name); CHKERRQ(ierr);
-    ierr = mField.modify_finite_element_add_field_data("ULTRAWEAK_BCVALUE",values_name); CHKERRQ(ierr);
+    ierr = mField.add_finite_element("MIX_BCVALUE",MF_ZERO); CHKERRQ(ierr);
+    ierr = mField.modify_finite_element_add_field_row("MIX_BCVALUE",fluxes_name); CHKERRQ(ierr);
+    ierr = mField.modify_finite_element_add_field_col("MIX_BCVALUE",fluxes_name); CHKERRQ(ierr);
+    ierr = mField.modify_finite_element_add_field_data("MIX_BCVALUE",fluxes_name); CHKERRQ(ierr);
+    ierr = mField.modify_finite_element_add_field_data("MIX_BCVALUE",values_name); CHKERRQ(ierr);
     if(mField.check_field(mesh_nodals_positions)) {
-      ierr = mField.modify_finite_element_add_field_data("ULTRAWEAK_BCVALUE",mesh_nodals_positions); CHKERRQ(ierr);
+      ierr = mField.modify_finite_element_add_field_data("MIX_BCVALUE",mesh_nodals_positions); CHKERRQ(ierr);
     }
 
     // Define element to apply essential boundary conditions.
-    ierr = mField.add_finite_element("ULTRAWEAK_BCFLUX",MF_ZERO); CHKERRQ(ierr);
-    ierr = mField.modify_finite_element_add_field_row("ULTRAWEAK_BCFLUX",fluxes_name); CHKERRQ(ierr);
-    ierr = mField.modify_finite_element_add_field_col("ULTRAWEAK_BCFLUX",fluxes_name); CHKERRQ(ierr);
-    ierr = mField.modify_finite_element_add_field_data("ULTRAWEAK_BCFLUX",fluxes_name); CHKERRQ(ierr);
-    ierr = mField.modify_finite_element_add_field_data("ULTRAWEAK_BCFLUX",values_name); CHKERRQ(ierr);
+    ierr = mField.add_finite_element("MIX_BCFLUX",MF_ZERO); CHKERRQ(ierr);
+    ierr = mField.modify_finite_element_add_field_row("MIX_BCFLUX",fluxes_name); CHKERRQ(ierr);
+    ierr = mField.modify_finite_element_add_field_col("MIX_BCFLUX",fluxes_name); CHKERRQ(ierr);
+    ierr = mField.modify_finite_element_add_field_data("MIX_BCFLUX",fluxes_name); CHKERRQ(ierr);
+    ierr = mField.modify_finite_element_add_field_data("MIX_BCFLUX",values_name); CHKERRQ(ierr);
     if(mField.check_field(mesh_nodals_positions)) {
-      ierr = mField.modify_finite_element_add_field_data("ULTRAWEAK_BCFLUX",mesh_nodals_positions); CHKERRQ(ierr);
+      ierr = mField.modify_finite_element_add_field_data("MIX_BCFLUX",mesh_nodals_positions); CHKERRQ(ierr);
     }
 
     PetscFunctionReturn(0);
@@ -340,7 +342,7 @@ struct UltraWeakTransportElement {
       ref_level,BitRefLevel().set(),MBTET,ref_tets
     ); CHKERRQ(ierr);
     ref_tets = subtract(ref_tets,done_tets);
-    ierr = mField.build_finite_elements("ULTRAWEAK",&ref_tets,2); CHKERRQ(ierr);
+    ierr = mField.build_finite_elements("MIX",&ref_tets,2); CHKERRQ(ierr);
     // get triangles which has been build previously and now in so called garbage bit level
     Range done_faces;
     ierr = mField.get_entities_by_type_and_ref_level(
@@ -356,32 +358,32 @@ struct UltraWeakTransportElement {
     ); CHKERRQ(ierr);
     ref_faces = subtract(ref_faces,done_faces);
     //build finite elements structures
-    ierr = mField.build_finite_elements("ULTRAWEAK_BCFLUX",&ref_faces,2); CHKERRQ(ierr);
-    ierr = mField.build_finite_elements("ULTRAWEAK_BCVALUE",&ref_faces,2); CHKERRQ(ierr);
-    ierr = mField.build_finite_elements("ULTRAWEAK_SKELETON",&ref_faces,2); CHKERRQ(ierr);
+    ierr = mField.build_finite_elements("MIX_BCFLUX",&ref_faces,2); CHKERRQ(ierr);
+    ierr = mField.build_finite_elements("MIX_BCVALUE",&ref_faces,2); CHKERRQ(ierr);
+    ierr = mField.build_finite_elements("MIX_SKELETON",&ref_faces,2); CHKERRQ(ierr);
     //Build adjacencies of degrees of freedom and elements
     ierr = mField.build_adjacencies(ref_level); CHKERRQ(ierr);
     //Define problem
-    ierr = mField.add_problem("ULTRAWEAK",MF_ZERO); CHKERRQ(ierr);
+    ierr = mField.add_problem("MIX",MF_ZERO); CHKERRQ(ierr);
     //set refinement level for problem
-    ierr = mField.modify_problem_ref_level_set_bit("ULTRAWEAK",ref_level); CHKERRQ(ierr);
+    ierr = mField.modify_problem_ref_level_set_bit("MIX",ref_level); CHKERRQ(ierr);
     // Add element to problem
-    ierr = mField.modify_problem_add_finite_element("ULTRAWEAK","ULTRAWEAK"); CHKERRQ(ierr);
-    ierr = mField.modify_problem_add_finite_element("ULTRAWEAK","ULTRAWEAK_SKELETON"); CHKERRQ(ierr);
+    ierr = mField.modify_problem_add_finite_element("MIX","MIX"); CHKERRQ(ierr);
+    ierr = mField.modify_problem_add_finite_element("MIX","MIX_SKELETON"); CHKERRQ(ierr);
     // Boundary conditions
-    ierr = mField.modify_problem_add_finite_element("ULTRAWEAK","ULTRAWEAK_BCFLUX"); CHKERRQ(ierr);
-    ierr = mField.modify_problem_add_finite_element("ULTRAWEAK","ULTRAWEAK_BCVALUE"); CHKERRQ(ierr);
+    ierr = mField.modify_problem_add_finite_element("MIX","MIX_BCFLUX"); CHKERRQ(ierr);
+    ierr = mField.modify_problem_add_finite_element("MIX","MIX_BCVALUE"); CHKERRQ(ierr);
     //build problem
 
     ProblemsManager *prb_mng_ptr;
     ierr = mField.query_interface(prb_mng_ptr); CHKERRQ(ierr);
-    ierr = prb_mng_ptr->buildProblem("ULTRAWEAK",true); CHKERRQ(ierr);
+    ierr = prb_mng_ptr->buildProblem("MIX",true); CHKERRQ(ierr);
     //mesh partitioning
     //partition
-    ierr = prb_mng_ptr->partitionProblem("ULTRAWEAK"); CHKERRQ(ierr);
-    ierr = prb_mng_ptr->partitionFiniteElements("ULTRAWEAK"); CHKERRQ(ierr);
+    ierr = prb_mng_ptr->partitionProblem("MIX"); CHKERRQ(ierr);
+    ierr = prb_mng_ptr->partitionFiniteElements("MIX"); CHKERRQ(ierr);
     //what are ghost nodes, see Petsc Manual
-    ierr = prb_mng_ptr->partitionGhostDofs("ULTRAWEAK"); CHKERRQ(ierr);
+    ierr = prb_mng_ptr->partitionGhostDofs("MIX"); CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }
 
@@ -471,7 +473,7 @@ struct UltraWeakTransportElement {
     ierr = post_proc.addFieldValuesPostProc("FLUXES"); CHKERRQ(ierr);
     // ierr = post_proc.addHdivFunctionsPostProc("FLUXES"); CHKERRQ(ierr);
     post_proc.getOpPtrVector().push_back(new OpPostProc(post_proc.postProcMesh,post_proc.mapGaussPts));
-    ierr = mField.loop_finite_elements("ULTRAWEAK","ULTRAWEAK",post_proc);  CHKERRQ(ierr);
+    ierr = mField.loop_finite_elements("MIX","MIX",post_proc);  CHKERRQ(ierr);
     ierr = post_proc.writeFile(out_file.c_str()); CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }
@@ -483,10 +485,10 @@ struct UltraWeakTransportElement {
   PetscErrorCode createMatrices() {
     PetscErrorCode ierr;
     PetscFunctionBegin;
-    ierr = mField.MatCreateMPIAIJWithArrays("ULTRAWEAK",&Aij); CHKERRQ(ierr);
-    ierr = mField.VecCreateGhost("ULTRAWEAK",COL,&D); CHKERRQ(ierr);
-    ierr = mField.VecCreateGhost("ULTRAWEAK",COL,&D0); CHKERRQ(ierr);
-    ierr = mField.VecCreateGhost("ULTRAWEAK",ROW,&F); CHKERRQ(ierr);
+    ierr = mField.MatCreateMPIAIJWithArrays("MIX",&Aij); CHKERRQ(ierr);
+    ierr = mField.VecCreateGhost("MIX",COL,&D); CHKERRQ(ierr);
+    ierr = mField.VecCreateGhost("MIX",COL,&D0); CHKERRQ(ierr);
+    ierr = mField.VecCreateGhost("MIX",ROW,&F); CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }
 
@@ -494,7 +496,7 @@ struct UltraWeakTransportElement {
    * \brief solve problem
    * @return error code
    */
-  PetscErrorCode solveProblem() {
+  PetscErrorCode solveLinearProblem() {
     PetscErrorCode ierr;
     PetscFunctionBegin;
 
@@ -509,7 +511,7 @@ struct UltraWeakTransportElement {
     ierr = VecGhostUpdateBegin(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
     ierr = VecGhostUpdateEnd(D,INSERT_VALUES,SCATTER_FORWARD); CHKERRQ(ierr);
 
-    ierr = mField.set_global_ghost_vector("ULTRAWEAK",COL,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+    ierr = mField.set_global_ghost_vector("MIX",COL,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 
     // Calculate essential boundary conditions
 
@@ -519,7 +521,7 @@ struct UltraWeakTransportElement {
     feTri.getOpPtrVector().clear();
     // set operator to calculate essential boundary conditions
     feTri.getOpPtrVector().push_back(new OpEvaluateBcOnFluxes(*this,"FLUXES",D0));
-    ierr = mField.loop_finite_elements("ULTRAWEAK","ULTRAWEAK_BCFLUX",feTri); CHKERRQ(ierr);
+    ierr = mField.loop_finite_elements("MIX","MIX_BCFLUX",feTri); CHKERRQ(ierr);
     ierr = VecGhostUpdateBegin(D0,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
     ierr = VecGhostUpdateEnd(D0,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
     ierr = VecAssemblyBegin(D0); CHKERRQ(ierr);
@@ -530,15 +532,15 @@ struct UltraWeakTransportElement {
     feVol.getOpPtrVector().push_back(new OpL2Source(*this,"VALUES",F));
     feVol.getOpPtrVector().push_back(new OpFluxDivergenceAtGaussPts(*this,"FLUXES"));
     feVol.getOpPtrVector().push_back(new OpValuesAtGaussPts(*this,"VALUES"));
-    feVol.getOpPtrVector().push_back(new OpDivTauU_HdivL2(*this,"FLUXES","VALUES",Aij,F));
+    feVol.getOpPtrVector().push_back(new OpDivTauU_HdivL2(*this,"FLUXES","VALUES",F));
     feVol.getOpPtrVector().push_back(new OpTauDotSigma_HdivHdiv(*this,"FLUXES",Aij,F));
-    feVol.getOpPtrVector().push_back(new OpVDotDivSigma_L2Hdiv(*this,"VALUES","FLUXES",Aij,F));
-    ierr = mField.loop_finite_elements("ULTRAWEAK","ULTRAWEAK",feVol); CHKERRQ(ierr);
+    feVol.getOpPtrVector().push_back(new OpVDivSigma_L2Hdiv(*this,"VALUES","FLUXES",Aij,F));
+    ierr = mField.loop_finite_elements("MIX","MIX",feVol); CHKERRQ(ierr);
 
     // calculate right hand side for natural boundary conditions
     feTri.getOpPtrVector().clear();
     feTri.getOpPtrVector().push_back(new OpRhsBcOnValues(*this,"FLUXES",F));
-    ierr = mField.loop_finite_elements("ULTRAWEAK","ULTRAWEAK_BCVALUE",feTri); CHKERRQ(ierr);
+    ierr = mField.loop_finite_elements("MIX","MIX_BCVALUE",feTri); CHKERRQ(ierr);
 
     // assemble matrices
     ierr = MatAssemblyBegin(Aij,MAT_FINAL_ASSEMBLY); CHKERRQ(ierr);
@@ -604,7 +606,7 @@ struct UltraWeakTransportElement {
 
 
     // copy data form vector on mesh
-    ierr = mField.set_global_ghost_vector("ULTRAWEAK",COL,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
+    ierr = mField.set_global_ghost_vector("MIX",COL,D,INSERT_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
 
     PetscFunctionReturn(0);
   }
@@ -623,13 +625,13 @@ struct UltraWeakTransportElement {
     feVol.getOpPtrVector().push_back(new OpL2Source(*this,"VALUES",F));
     feVol.getOpPtrVector().push_back(new OpFluxDivergenceAtGaussPts(*this,"FLUXES"));
     feVol.getOpPtrVector().push_back(new OpValuesAtGaussPts(*this,"VALUES"));
-    feVol.getOpPtrVector().push_back(new OpDivTauU_HdivL2(*this,"FLUXES","VALUES",PETSC_NULL,F));
+    feVol.getOpPtrVector().push_back(new OpDivTauU_HdivL2(*this,"FLUXES","VALUES",F));
     feVol.getOpPtrVector().push_back(new OpTauDotSigma_HdivHdiv(*this,"FLUXES",PETSC_NULL,F));
-    feVol.getOpPtrVector().push_back(new OpVDotDivSigma_L2Hdiv(*this,"VALUES","FLUXES",PETSC_NULL,F));
-    ierr = mField.loop_finite_elements("ULTRAWEAK","ULTRAWEAK",feVol); CHKERRQ(ierr);
+    feVol.getOpPtrVector().push_back(new OpVDivSigma_L2Hdiv(*this,"VALUES","FLUXES",PETSC_NULL,F));
+    ierr = mField.loop_finite_elements("MIX","MIX",feVol); CHKERRQ(ierr);
     feTri.getOpPtrVector().clear();
     feTri.getOpPtrVector().push_back(new OpRhsBcOnValues(*this,"FLUXES",F));
-    ierr = mField.loop_finite_elements("ULTRAWEAK","ULTRAWEAK_BCVALUE",feTri); CHKERRQ(ierr);
+    ierr = mField.loop_finite_elements("MIX","MIX_BCVALUE",feTri); CHKERRQ(ierr);
     ierr = VecGhostUpdateBegin(F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
     ierr = VecGhostUpdateEnd(F,ADD_VALUES,SCATTER_REVERSE); CHKERRQ(ierr);
     ierr = VecAssemblyBegin(F); CHKERRQ(ierr);
@@ -671,14 +673,14 @@ struct UltraWeakTransportElement {
     sumErrorJump = 0;
     feTri.getOpPtrVector().clear();
     feTri.getOpPtrVector().push_back(new OpSkeleton(*this,"FLUXES"));
-    ierr = mField.loop_finite_elements("ULTRAWEAK","ULTRAWEAK_SKELETON",feTri,0,mField.get_comm_size()); CHKERRQ(ierr);
+    ierr = mField.loop_finite_elements("MIX","MIX_SKELETON",feTri,0,mField.get_comm_size()); CHKERRQ(ierr);
     feVol.getOpPtrVector().clear();
     feVol.getOpPtrVector().push_back(new OpFluxDivergenceAtGaussPts(*this,"FLUXES"));
     feVol.getOpPtrVector().push_back(new OpValuesGradientAtGaussPts(*this,"VALUES"));
     feVol.getOpPtrVector().push_back(new OpError(*this,"VALUES"));
-    ierr = mField.loop_finite_elements("ULTRAWEAK","ULTRAWEAK",feVol,0,mField.get_comm_size()); CHKERRQ(ierr);
+    ierr = mField.loop_finite_elements("MIX","MIX",feVol,0,mField.get_comm_size()); CHKERRQ(ierr);
     const Problem *problem_ptr;
-    ierr = mField.get_problem("ULTRAWEAK",&problem_ptr); CHKERRQ(ierr);
+    ierr = mField.get_problem("MIX",&problem_ptr); CHKERRQ(ierr);
     PetscPrintf(
       mField.get_comm(),
       "Nb dofs %d error flux^2 = %6.4e error div^2 = %6.4e error jump^2 = %6.4e error tot^2 = %6.4e\n",
@@ -703,19 +705,18 @@ struct UltraWeakTransportElement {
   /**
   \brief Assemble \f$\int_\mathcal{T} \mathbf{A} \boldsymbol\sigma \cdot \boldsymbol\tau \textrm{d}\mathcal{T}\f$
 
-  \ingroup mofem_ultra_weak_transport_elem
+  \ingroup mofem_mix_transport_elem
   */
   struct OpTauDotSigma_HdivHdiv: public MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator {
 
-    UltraWeakTransportElement &cTx;
+    MixTransportElement &cTx;
     Mat Aij;
     Vec F;
-    const double ePs;
 
     OpTauDotSigma_HdivHdiv(
-      UltraWeakTransportElement &ctx,
+      MixTransportElement &ctx,
       const std::string flux_name,
-      Mat aij,Vec f,const double eps = 1e-8
+      Mat aij,Vec f
     ):
     MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator(
       flux_name,flux_name,
@@ -723,30 +724,10 @@ struct UltraWeakTransportElement {
     ),
     cTx(ctx),
     Aij(aij),
-    F(f),
-    ePs(eps) {
+    F(f) {
       sYmm = true;
     }
 
-    OpTauDotSigma_HdivHdiv(
-      UltraWeakTransportElement &ctx,
-      const std::string row_flux_name,
-      const std::string col_flux_name,
-      Mat aij,Vec f,const double eps = 1e-8
-    ):
-    MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator(
-      row_flux_name,
-      col_flux_name,
-      UserDataOperator::OPROWCOL|UserDataOperator::OPCOL
-    ),
-    cTx(ctx),
-    Aij(aij),
-    F(f),
-    ePs(eps) {
-      sYmm = true;
-    }
-
-    MatrixDouble matRowCurl,aveMatRowCurl;
     MatrixDouble NN,transNN;
     MatrixDouble3by3 invK;
     VectorDouble Nf;
@@ -789,7 +770,6 @@ struct UltraWeakTransportElement {
         );
         // Get base functions
         FTensor::Tensor1<double*,3> t_n_hdiv_row = row_data.getFTensor1HdivN<3>();
-        double ave_diag = 0;
         double x,y,z;
         FTensor::Tensor1<double,3> t_row;
         int nb_gauss_pts = row_data.getHdivN().size1();
@@ -820,8 +800,9 @@ struct UltraWeakTransportElement {
             ++t_n_hdiv_row;
           }
         }
+        Mat a = (Aij!=PETSC_NULL) ? Aij : getFEMethod()->ts_B;
         ierr = MatSetValues(
-          Aij,
+          a,
           nb_row,&row_data.getIndices()[0],
           nb_col,&col_data.getIndices()[0],
           &NN(0,0),ADD_VALUES
@@ -831,14 +812,12 @@ struct UltraWeakTransportElement {
           transNN.resize(nb_col,nb_row);
           noalias(transNN) = trans(NN);
           ierr = MatSetValues(
-            Aij,
+            a,
             nb_col,&col_data.getIndices()[0],
             nb_row,&row_data.getIndices()[0],
             &transNN(0,0),ADD_VALUES
           ); CHKERRQ(ierr);
         }
-
-
       } catch (const std::exception& ex) {
         std::ostringstream ss;
         ss << "throw in method: " << ex.what() << std::endl;
@@ -882,8 +861,8 @@ struct UltraWeakTransportElement {
           &invK(2,0),&invK(2,1),&invK(2,2)
         );
         // get base functions
-        double ave_diag = 0;
         FTensor::Tensor1<double*,3> t_n_hdiv = data.getFTensor1HdivN<3>();
+        FTensor::Tensor1<double*,3> t_flux = getTensor1FormData<3>(cTx.fluxesAtGaussPts);
         int nb_gauss_pts = data.getHdivN().size1();
         for(int gg = 0;gg<nb_gauss_pts;gg++) {
           double w = getGaussPts()(3,gg)*getVolume();
@@ -894,17 +873,12 @@ struct UltraWeakTransportElement {
           const double y = getCoordsAtGaussPts()(gg,1);
           const double z = getCoordsAtGaussPts()(gg,2);
           ierr = cTx.getResistivity(fe_ent,x,y,z,invK); CHKERRQ(ierr);
-          FTensor::Tensor1<double*,3> t_flux(
-            &cTx.fluxesAtGaussPts[gg][0],
-            &cTx.fluxesAtGaussPts[gg][1],
-            &cTx.fluxesAtGaussPts[gg][2]
-          );
           for(int ll = 0;ll!=nb_row;ll++) {
             Nf[ll] += w*t_n_hdiv(i)*t_inv_k(i,j)*t_flux(j);
             ++t_n_hdiv;
           }
+          ++t_flux;
         }
-
         ierr = VecSetValues(
           F,nb_row,&data.getIndices()[0],&Nf[0],ADD_VALUES
         ); CHKERRQ(ierr);
@@ -930,20 +904,17 @@ struct UltraWeakTransportElement {
     */
   struct OpDivTauU_HdivL2: public MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator {
 
-    UltraWeakTransportElement &cTx;
-    Mat Aij;
+    MixTransportElement &cTx;
     Vec F;
 
     OpDivTauU_HdivL2(
-      UltraWeakTransportElement &ctx,
-      const std::string flux_name_row,string val_name_col,Mat aij,Vec f
+      MixTransportElement &ctx,
+      const std::string flux_name_row,string val_name_col,Vec f
     ):
     MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator(
-      flux_name_row,val_name_col,
-      UserDataOperator::OPROW
+      flux_name_row,val_name_col,UserDataOperator::OPROW
     ),
     cTx(ctx),
-    Aij(aij),
     F(f) {
       //this operator is not symmetric setting this variable makes element
       //operator to loop over element entities (subsimplicies) without
@@ -994,17 +965,17 @@ struct UltraWeakTransportElement {
 
   /** \brief \f$ \int_\mathcal{T} \textrm{div}[\boldsymbol\sigma] v \textrm{d}\mathcal{T} \f$
     */
-  struct OpVDotDivSigma_L2Hdiv: public MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator {
+  struct OpVDivSigma_L2Hdiv: public MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator {
 
-    UltraWeakTransportElement &cTx;
+    MixTransportElement &cTx;
     Mat Aij;
     Vec F;
 
     /**
      * \brief Constructor
      */
-    OpVDotDivSigma_L2Hdiv(
-      UltraWeakTransportElement &ctx,
+    OpVDivSigma_L2Hdiv(
+      MixTransportElement &ctx,
       const std::string val_name_row,string flux_name_col,Mat aij,Vec f
     ):
     MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator(
@@ -1063,8 +1034,9 @@ struct UltraWeakTransportElement {
           ); CHKERRQ(ierr);
           noalias(NN) += w*outer_prod(row_data.getN(gg),divVec);
         }
+        Mat a = (Aij!=PETSC_NULL) ? Aij : getFEMethod()->ts_B;
         ierr = MatSetValues(
-          Aij,
+          a,
           nb_row,&row_data.getIndices()[0],
           nb_col,&col_data.getIndices()[0],
           &NN(0,0),ADD_VALUES
@@ -1072,7 +1044,7 @@ struct UltraWeakTransportElement {
         transNN.resize(nb_col,nb_row);
         ublas::noalias(transNN) = -trans(NN);
         ierr = MatSetValues(
-          Aij,
+          a,
           nb_col,&col_data.getIndices()[0],
           nb_row,&row_data.getIndices()[0],
           &transNN(0,0),ADD_VALUES
@@ -1107,8 +1079,9 @@ struct UltraWeakTransportElement {
           }
           noalias(Nf) += w*data.getN(gg)*cTx.divergenceAtGaussPts[gg];
         }
+        Vec f = (F!=PETSC_NULL) ? F : getFEMethod()->ts_F;
         ierr = VecSetValues(
-          F,nb_row,&data.getIndices()[0],
+          f,nb_row,&data.getIndices()[0],
           &Nf[0],ADD_VALUES
         ); CHKERRQ(ierr);
       } catch (const std::exception& ex) {
@@ -1125,11 +1098,11 @@ struct UltraWeakTransportElement {
   */
   struct OpL2Source: public MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator {
 
-    UltraWeakTransportElement &cTx;
+    MixTransportElement &cTx;
     Vec F;
 
     OpL2Source(
-      UltraWeakTransportElement &ctx,
+      MixTransportElement &ctx,
       const std::string val_name,
       Vec f
     ):
@@ -1190,14 +1163,14 @@ struct UltraWeakTransportElement {
    */
   struct OpRhsBcOnValues: public MoFEM::FaceElementForcesAndSourcesCore::UserDataOperator {
 
-    UltraWeakTransportElement &cTx;
+    MixTransportElement &cTx;
     Vec F;
 
     /**
      * \brief Constructor
      */
     OpRhsBcOnValues(
-      UltraWeakTransportElement &ctx,const std::string fluxes_name,Vec f
+      MixTransportElement &ctx,const std::string fluxes_name,Vec f
     ):
     MoFEM::FaceElementForcesAndSourcesCore::UserDataOperator(fluxes_name,UserDataOperator::OPROW),
     cTx(ctx),
@@ -1243,8 +1216,12 @@ struct UltraWeakTransportElement {
             noalias(Nf) += w*prod(data.getHdivN(gg),getNormal())*value;
           }
         }
+        Vec f = (F!=PETSC_NULL) ? F : getFEMethod()->ts_F;
+        if(F==PETSC_NULL) {
+          Nf *= -1;
+        }
         ierr = VecSetValues(
-          F,data.getIndices().size(),&data.getIndices()[0],&Nf[0],ADD_VALUES
+          f,data.getIndices().size(),&data.getIndices()[0],&Nf[0],ADD_VALUES
         ); CHKERRQ(ierr);
       } catch (const std::exception& ex) {
         std::ostringstream ss;
@@ -1268,10 +1245,10 @@ struct UltraWeakTransportElement {
    *
    */
   struct OpEvaluateBcOnFluxes: public MoFEM::FaceElementForcesAndSourcesCore::UserDataOperator {
-    UltraWeakTransportElement &cTx;
+    MixTransportElement &cTx;
     Vec X;
     OpEvaluateBcOnFluxes(
-      UltraWeakTransportElement &ctx,const std::string flux_name,Vec x
+      MixTransportElement &ctx,const std::string flux_name,Vec x
     ):
     MoFEM::FaceElementForcesAndSourcesCore::UserDataOperator(flux_name,UserDataOperator::OPROW),
     cTx(ctx),
@@ -1394,10 +1371,10 @@ struct UltraWeakTransportElement {
    */
   struct OpValuesAtGaussPts: public MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator {
 
-    UltraWeakTransportElement &cTx;
+    MixTransportElement &cTx;
 
     OpValuesAtGaussPts(
-      UltraWeakTransportElement &ctx,
+      MixTransportElement &ctx,
       const std::string val_name = "VALUES"
     ):
     MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator(val_name,UserDataOperator::OPROW),
@@ -1434,10 +1411,10 @@ struct UltraWeakTransportElement {
    */
   struct OpValuesGradientAtGaussPts: public MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator {
 
-    UltraWeakTransportElement &cTx;
+    MixTransportElement &cTx;
 
     OpValuesGradientAtGaussPts(
-      UltraWeakTransportElement &ctx,
+      MixTransportElement &ctx,
       const std::string val_name = "VALUES"
     ):
     MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator(val_name,UserDataOperator::OPROW),
@@ -1450,10 +1427,10 @@ struct UltraWeakTransportElement {
         if(data.getFieldData().size() == 0)  PetscFunctionReturn(0);
         int nb_gauss_pts = data.getDiffN().size1();
         // cerr << data.getDiffN() << endl;
-        cTx.valuesGradientAtGaussPts.resize(nb_gauss_pts);
+        cTx.valuesGradientAtGaussPts.resize(3,nb_gauss_pts);
         for(int gg = 0;gg<nb_gauss_pts;gg++) {
-          cTx.valuesGradientAtGaussPts[gg].resize(3,false);
-          noalias(cTx.valuesGradientAtGaussPts[gg]) = prod( trans(data.getDiffN(gg)), data.getFieldData() );
+          ublas::matrix_column<MatrixDouble> values_grad_at_gaus_pts(cTx.valuesGradientAtGaussPts,gg);
+          noalias(values_grad_at_gaus_pts) = prod( trans(data.getDiffN(gg)), data.getFieldData() );
         }
       } catch (const std::exception& ex) {
         std::ostringstream ss;
@@ -1471,10 +1448,10 @@ struct UltraWeakTransportElement {
    */
   struct OpFluxDivergenceAtGaussPts: public MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator {
 
-    UltraWeakTransportElement &cTx;
+    MixTransportElement &cTx;
 
     OpFluxDivergenceAtGaussPts(
-      UltraWeakTransportElement &ctx,
+      MixTransportElement &ctx,
       const std::string field_name
     ):
     MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROW),
@@ -1490,20 +1467,18 @@ struct UltraWeakTransportElement {
         if(data.getFieldData().size() == 0)  PetscFunctionReturn(0);
         int nb_gauss_pts = data.getDiffN().size1();
         int nb_dofs = data.getFieldData().size();
-        cTx.fluxesAtGaussPts.resize(nb_gauss_pts);
+        cTx.fluxesAtGaussPts.resize(3,nb_gauss_pts);
         cTx.divergenceAtGaussPts.resize(nb_gauss_pts);
         if(type == MBTRI && side == 0) {
-          for(int gg = 0;gg<nb_gauss_pts;gg++) {
-            cTx.fluxesAtGaussPts[gg].resize(3,false);
-            cTx.fluxesAtGaussPts[gg].clear();
-          }
           cTx.divergenceAtGaussPts.clear();
+          cTx.fluxesAtGaussPts.clear();
         }
         divVec.resize(nb_dofs);
         for(int gg = 0;gg<nb_gauss_pts;gg++) {
           ierr = getDivergenceOfHDivBaseFunctions(side,type,data,gg,divVec); CHKERRQ(ierr);
           cTx.divergenceAtGaussPts[gg] += inner_prod(divVec,data.getFieldData());
-          noalias(cTx.fluxesAtGaussPts[gg]) += prod(trans(data.getHdivN(gg)),data.getFieldData());
+          ublas::matrix_column<MatrixDouble> flux_at_gauss_pt(cTx.fluxesAtGaussPts,gg);
+          flux_at_gauss_pt += prod(trans(data.getHdivN(gg)),data.getFieldData());
         }
       } catch (const std::exception& ex) {
         std::ostringstream ss;
@@ -1524,10 +1499,10 @@ struct UltraWeakTransportElement {
     */
   struct OpError: public MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator {
 
-    UltraWeakTransportElement &cTx;
+    MixTransportElement &cTx;
 
     OpError(
-      UltraWeakTransportElement &ctx,
+      MixTransportElement &ctx,
       const std::string field_name):
       MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator(field_name,UserDataOperator::OPROW),
       cTx(ctx) {}
@@ -1612,7 +1587,9 @@ struct UltraWeakTransportElement {
           ierr = cTx.getSource(fe_ent,x,y,z,flux); CHKERRQ(ierr);
           *error_div_ptr += w*pow(cTx.divergenceAtGaussPts[gg]-flux,2);
           ierr = cTx.getResistivity(fe_ent,x,y,z,invK); CHKERRQ(ierr);
-          noalias(deltaFlux) = prod(invK,cTx.fluxesAtGaussPts[gg])+cTx.valuesGradientAtGaussPts[gg];
+          ublas::matrix_column<MatrixDouble> flux_at_gauss_pt(cTx.fluxesAtGaussPts,gg);
+          ublas::matrix_column<MatrixDouble> values_grad_at_gaus_pts(cTx.valuesGradientAtGaussPts,gg);
+          noalias(deltaFlux) = prod(invK,flux_at_gauss_pt)+values_grad_at_gaus_pts;
           *error_flux_ptr += w*inner_prod(deltaFlux,deltaFlux);
         }
         *error_div_ptr = h*sqrt(*error_div_ptr);
@@ -1676,10 +1653,10 @@ struct UltraWeakTransportElement {
       }
     };
 
-    UltraWeakTransportElement &cTx;
+    MixTransportElement &cTx;
 
     OpSkeleton(
-      UltraWeakTransportElement &ctx,const std::string flux_name
+      MixTransportElement &ctx,const std::string flux_name
     ):
     MoFEM::FaceElementForcesAndSourcesCore::UserDataOperator(flux_name,UserDataOperator::OPROW),
     volSideFe(ctx.mField),
@@ -1708,7 +1685,7 @@ struct UltraWeakTransportElement {
           *error_jump_ptr = 0;
 
           // check if this is essential boundary condition
-          EntityHandle essential_bc_meshset = cTx.mField.get_finite_element_meshset("ULTRAWEAK_BCFLUX");
+          EntityHandle essential_bc_meshset = cTx.mField.get_finite_element_meshset("MIX_BCFLUX");
           if(cTx.mField.get_moab().contains_entities(essential_bc_meshset,&fe_ent,1)) {
             // essential bc, np jump then, exit and go to next face
             PetscFunctionReturn(0);
@@ -1716,7 +1693,7 @@ struct UltraWeakTransportElement {
 
           // calculate values form adjacent tets
           valMap.clear();
-          ierr = loopSideVolumes("ULTRAWEAK",volSideFe); CHKERRQ(ierr);
+          ierr = loopSideVolumes("MIX",volSideFe); CHKERRQ(ierr);
 
           int nb_gauss_pts = data.getHdivN().size1();
 
@@ -1781,12 +1758,13 @@ struct UltraWeakTransportElement {
 
   };
 
-
 };
 
-#endif //__ULTRAWEAK_TARNSPORT_ELEMENT_HPP
+}
+
+#endif //_MIX_TRANPORT_ELEMENT_HPP_
 
 /***************************************************************************//**
- * \defgroup mofem_ultra_weak_transport_elem Ultra weak transport element
+ * \defgroup mofem_mix_transport_elem Mix transport element
  * \ingroup user_modules
  ******************************************************************************/

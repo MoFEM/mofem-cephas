@@ -11,9 +11,9 @@
 # You should have received a copy of the GNU Lesser General Public
 # License along with MoFEM. If not, see <http://www.gnu.org/licenses/>
 
-# add test for ultra weak finite element
-bfe_add_executable(ultra_weak_transport ${CMAKE_CURRENT_SOURCE_DIR}/ultra_weak_transport.cpp)
-target_link_libraries(ultra_weak_transport
+# add test for mix transport finite element
+bfe_add_executable(mix_transport ${CMAKE_CURRENT_SOURCE_DIR}/mix_transport.cpp)
+target_link_libraries(mix_transport
   users_modules
   mofem_finite_elements
   mofem_interfaces
@@ -26,9 +26,9 @@ target_link_libraries(ultra_weak_transport
 )
 
 add_test(
-  basic_ultra_weak_transport_atom
+  basic_mix_transport_atom
   ${MoFEM_MPI_RUN} ${MPI_RUN_FLAGS} -np 1
-  ${CMAKE_CURRENT_BINARY_DIR}/ultra_weak_transport
+  ${CMAKE_CURRENT_BINARY_DIR}/mix_transport
   -my_file ${PROJECT_BINARY_DIR}/basic_finite_elements/atom_tests/simple_thermal_problem.h5m
   -ksp_type fgmres -pc_type bjacobi -ksp_monitor -ksp_atol 0 -ksp_rtol 1e-12
   -my_max_post_proc_ref_level 0 -my_order 0

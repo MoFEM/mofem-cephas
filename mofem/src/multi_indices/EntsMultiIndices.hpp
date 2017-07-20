@@ -280,7 +280,7 @@ struct RefEntity: public BasicEntity {
    * Every entity belongs to some refinement level or levels. Each level is marked
    * by bit set in BitRefLevel() (bitset) structure.
    *
-   * See \ref uw_mesh_refinement for explanation.
+   * See \ref mix_mesh_refinement for explanation.
 
    * @return Return pointer to tag.
    */
