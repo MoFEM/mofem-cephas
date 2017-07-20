@@ -32,14 +32,19 @@ file(
   DESTINATION ${CMAKE_CURRENT_BINARY_DIR}/
 )
 
+include_directories(
+  ${CMAKE_CURRENT_SOURCE_DIR}/src
+)
 
+# Add tests
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/atom_tests)
 
 # For convinience source files from MoFEM project are used. If user is
 # implementing independent application it will be using instead project
 # directories.
 
 bfe_add_executable(
-  transport ${UM_SOURCE_DIR}/basic_finite_elements/ultraweak/transport.cpp
+  transport ${CMAKE_CURRENT_SOURCE_DIR}/transport.cpp
 )
 target_link_libraries(transport
   users_modules

@@ -61,12 +61,7 @@ extern "C" {
 #include <ThermalElement.hpp>
 #include <ThermalStressElement.hpp>
 #include <TimeForceScale.hpp>
-#include <UltraWeakTransportElement.hpp>
-#include <MagneticElement.hpp>
 #include <VolumeCalculation.hpp>
 #include <AnalyticalDirichlet.hpp>
-#ifdef WITH_ADOL_C
-#endif
-
 
 #endif // __BASICFINITEELEMENTS_HPP__

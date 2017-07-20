@@ -13,6 +13,7 @@
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
 #include <BasicFiniteElements.hpp>
+#include <UltraWeakTransportElement.hpp>
 using namespace MoFEM;
 
 namespace bio = boost::iostreams;

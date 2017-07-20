@@ -163,27 +163,6 @@ add_test(
   -my_file elasticity_atom_test_thermal_expansion.h5m
 )
 
-# add test for ultra weak finite element
-bfe_add_executable(ultra_weak_transport ${UM_CURRENT_SOURCE_DIR}/ultra_weak_transport.cpp)
-target_link_libraries(ultra_weak_transport
-  users_modules
-  mofem_finite_elements
-  mofem_interfaces
-  mofem_multi_indices
-  mofem_petsc
-  mofem_approx
-  mofem_cblas
-  mofem_third_party
-  ${MoFEM_PROJECT_LIBS})
-
-add_test(
-  basic_ultra_weak_transport_atom
-  ${MoFEM_MPI_RUN} ${MPI_RUN_FLAGS} -np 1
-  ${CMAKE_CURRENT_BINARY_DIR}/ultra_weak_transport -my_file simple_thermal_problem.h5m
-  -ksp_type fgmres -pc_type bjacobi -ksp_monitor -ksp_atol 0 -ksp_rtol 1e-12
-  -my_max_post_proc_ref_level 0 -my_order 0
-)
-
 cm_export_file("sphere.jou" export_analytical_bc_atom_tests)
 cm_export_file("sphere.cub" export_analytical_bc_atom_tests)
 

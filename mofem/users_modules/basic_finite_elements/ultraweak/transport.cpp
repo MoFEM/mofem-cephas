@@ -24,6 +24,8 @@ the Poisson equation." SIAM Journal on Numerical Analysis 49.5 (2011):
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
 #include <BasicFiniteElements.hpp>
+#include <UltraWeakTransportElement.hpp>
+
 using namespace MoFEM;
 
 static char help[] = "...\n\n";
