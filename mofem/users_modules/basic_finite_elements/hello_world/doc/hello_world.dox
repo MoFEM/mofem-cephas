@@ -3,21 +3,21 @@
 In this tutorial basic ideas about MoFEM::Simple interface and programming with
 user data operators (UDO) are presented.
 
-MoFEM is designed to quick development of finite element application for
+MoFEM is designed for quick development of finite element application for
 multi-physics problems. We designed MoFEM to enable decomposition of the complex
-problem into small sub-problems, were each individual sub-problem can be
+problem into small sub-problems, wherein each individual sub-problem can be
 independently tested and debugged or used in different context. That is achieved
 by pipelines of users data operators (UDO), see figure 1.
 
-In MoFEM is a clear separation of declaration, definition and implementation of
+In MoFEM, there is a clear separation of declaration, definition and implementation of
 a field, finite element and problem. Such approach allows to use the same
-implementation in different problems, e.g. use the same implantation of an
+implementation in different problems, e.g. use the same implementation of an
 elastic finite element in a mechanical problem and thermo-mechanical problem
 without the need to introduce changes into a code and maximising code
-reusability. From the other hand for the same problem declaration and
+reusability. On the other hand for the same problem declaration and
 definition, one can test various formulations and implementations. In this
 example problem declaration and definition is managed by MoFEM::Simple
-interface, here we focus attention only on field declaration and implementation
+interface, in which we focus attention only on field declaration and implementation
 of finite elements, in particular, UDO.
 
 \image html hello_world_tut_fig1.png "Figure 1. Users data operators" width=800px
@@ -33,8 +33,8 @@ of finite elements, in particular, UDO.
 \subsection hello_world_initalization Initialization
 
 We initialize PETSc internal variables and register MoFEM discrete manager in
-PETSc. Next MoAB instance is created and interface to it. Similarly, MoFEM
-instance is created and interface to it. MoAB and MoFEM interfaces are abstract
+PETSc. Next MoAB instance is created and assigned to it. Similarly, MoFEM
+instance is created and assigned. MoAB and MoFEM interfaces are abstract
 classes used to access data in database.
 \code
 // Initialise PETSc
@@ -63,7 +63,7 @@ and get options from the command line and load mesh file. Default mesh file has
 name \e mesh.h5m. Particular name of file can be given in command line using
 option \e -file_name \e my_file.h5m
 
-The only indication that MoFEM database has been initialized is following on the terminal
+The only indication that MoFEM database has been initialized is the following on the terminal
 \verbatim
 lib version 0.5.76
 git commit id 253b1dd833ada49fe779e7f5fb60e52236ba51a9
@@ -72,7 +72,7 @@ where current MoFEM version and commit id is printed.
 
 \subsection hello_world_adding_fields Adding fields
 
-We add fields to the database. In MoFEM::Simple interface three groups of fields
+We add fields to the database. In MoFEM::Simple interface, three groups of fields
 can be declared. Fields defined in the domain, fields defined on boundary and
 fields defined on the skeleton. The same field can be defined on domain,
 boundary and skeleton. Fields are declared by giving its name, approximation
@@ -92,31 +92,31 @@ ierr = simple_interface->setFieldOrder("S",3); CHKERRQ(ierr);
 \endcode
 For more details see MoFEM::Simple::setFieldOrder. If needed function
 MoFEM::Simple::setFieldOrder can be supplemented by the additional parameter to
-set order to particular field entities, enabling to have heterogeneous
+set order to particular field entities, enabling heterogeneous
 approximation base.
 
-As result following is printed on terminal
+As result the following is printed on terminal
 \verbatim
 add: name U BitFieldId 1 bit number 1 space H1 approximation base AINSWORTH_LEGENDRE_BASE rank 3 meshset 12682136550675316768
 add: name L BitFieldId 2 bit number 2 space H1 approximation base AINSWORTH_LEGENDRE_BASE rank 3 meshset 12682136550675316769
 add: name S BitFieldId 4 bit number 3 space H1 approximation base AINSWORTH_LEGENDRE_BASE rank 3 meshset 12682136550675316770
 \endverbatim
-where at the end entity handle to meshset is printed. This meshest consisting
-all entities to which field is set is printed. The effect of the setting of
+where at the end entity handle to meshset is printed. This meshset consisting
+all entities to which field is set. The effect of the setting of
 approximation order will be viable when fields are constructed during set-up
 stage.
 
 \subsection hello_world_set_up Set-up
 
 The fields, finite elements and problems and all other data structures
-are build with following code
+are build with the following code
 \code
 ierr = simple_interface->setUp(); CHKERRQ(ierr);
 \endcode
 As results following lines are printed on the terminal
 - Three finite elements structures are added to the database, domain finite
 element structure, boundary finite element structure and skeleton boundary
-element structure. Those elements are added by default by MoFEM::Simple
+element structure. Those elements are added by default via MoFEM::Simple
 interface.
 
 \verbatim
@@ -132,7 +132,7 @@ interface
 add problem: SimpleProblem
 \endverbatim
 
-- In following lines degrees of freedom (DOFs) are constructed for each field. Number of DOFs
+- In the following lines degrees of freedom (DOFs) are constructed for each field. Number of DOFs
 on each field entity depends on approximation order and approximation space.
 \verbatim
 Build Field U (rank 0)
@@ -154,7 +154,7 @@ nb added dofs 168 (number of inactive dofs 0)
 Nb. dofs 903
 \endverbatim
 
-- In following lines, finite elements entities structures are constructed.
+- In the following lines, finite elements entities structures are constructed.
 \verbatim
 Build Finite Elements dFE
 id 00000000000000000000000000000001 name dFE f_id_row 00000000000000000000000000000001 f_id_col 00000000000000000000000000000001 BitFEId_data 00000000000000000000000000000001 Nb. FEs 12
@@ -164,7 +164,7 @@ Build Finite Elements sFE
 id 00000000000000000000000000000100 name sFE f_id_row 00000000000000000000000000000111 f_id_col 00000000000000000000000000000111 BitFEId_data 00000000000000000000000000000111 Nb. FEs 30
 \endverbatim
 
-- Finally problem is constructed, DOFs on problem indexed enabling to build matrices and vectors
+- Finally problem is constructed, indexed DOFs are enabling to build matrices and vectors
 \verbatim
 Nb. entFEAdjacencies 918
 partition_problem: rank = 0 FEs row ghost dofs problem id 00000000000000000000000000000001 FiniteElement id 00000000000000000000000000000111 name SimpleProblem Nb. local dof 903 nb global row dofs 903
@@ -176,12 +176,12 @@ partition_ghost_row_dofs: rank = 0 FEs row ghost dofs problem id 000000000000000
 
 \subsection hello_world_fe_instances Allocating finite element instances
 
-Once the problem is defined and set-up, we create finite element instances. We
+Once the problem is defined and set up, we create finite element instances. We are
 using generic implementation of finite elements which is tailored to the
 dimension of finite element entities. Note that in the following code we use
 MoFEM::VolumeElementForcesAndSourcesCore for domain elements and
 MoFEM::FaceElementForcesAndSourcesCore for boundary element and skeleton
-elements, since we use 3d mesh, which boundary and skeleton is 2d entities
+elements, since we use 3d mesh, which boundary and skeleton are 2d entities
 emerged in 3d space
 \code
 boost::shared_ptr<ForcesAndSurcesCore> domain_fe(new VolumeElementForcesAndSourcesCore(m_field));
@@ -189,7 +189,7 @@ boost::shared_ptr<ForcesAndSurcesCore> boundary_fe(new FaceElementForcesAndSourc
 boost::shared_ptr<ForcesAndSurcesCore> skeleton_fe(new FaceElementForcesAndSourcesCore(m_field));
 \endcode
 
-Once finite elements object is created we add operators to them according to
+Once finite elements objects are created we add operators to them according to
 figure 1. Starting from \e domain_fe
 \code
 domain_fe->getOpPtrVector().push_back(new OpRow("U"));
@@ -222,8 +222,8 @@ released.
 We have to discuss integration over the skeleton. This functionality is used for
 a class of Petrov-Discontinuous Galerkin methods, or when Nitsche method is
 applied. Those methods involve of integration of traces of approximation
-functions on faces. That enforces of evaluation of derivatives of base functions
-on finite elements adjacent to the face. In MoFEM that is realised in the way,
+functions on faces. That enforces the evaluation of derivatives of base functions
+on finite elements adjacent to the face. In MoFEM that is realised in a way,
 that generic element instance is iterated over adjacent entities to faces. We
 start with allocation memory for "side" finite element as before
 code
@@ -231,7 +231,7 @@ boost::shared_ptr<VolumeElementForcesAndSourcesCoreOnSide> side_fe(new VolumeEle
 \endcode
 Note that this time finite element class is of type
 MoFEM::VolumeElementForcesAndSourcesCoreOnSide, since this element has integration
-points with are associated with face adjacent face. Next, to that element we add
+points which are associated with face adjacent face. Next, to that element we add
 user data operators, in this particular case only one
 \code
 side_fe->getOpPtrVector().push_back(new OpVolumeSide("U"));
@@ -245,25 +245,25 @@ skeleton_fe->getOpPtrVector().push_back(new OpFaceSide("S",side_fe));
 
 \subsection hello_world_dm Discrete manager
 
-Following line gives access to the discrete manager (DM). DM is interface
+Following line gives access to the discrete manager (DM). DM is the interface
 developed for PETSc to manage complexities associated with topology (mesh) and
 algebra and several implementation of this interface are available in native
-PETSc library. Here we are using particular implementation developed for MoFEM.
-To get interface following lines of the code are needed
+PETSc library. Here we are using the particular implementation developed for MoFEM.
+To get interface the following lines of the code are needed
 \code
 DM dm;
 ierr = simple_interface->getDM(&dm); CHKERRQ(ierr);
 \endcode
-When DM interface is no longer needed need to be destroyed by user in standard
-way well know from PETSc interface
+When DM interface is no longer needed, it needs to be destroyed by user in the standard
+way well-known from PETSc interface
 \code
 ierr = DMDestroy(&dm); CHKERRQ(ierr);
 \endcode
 
-\note In MoFEM implementation, comparing to other finite element codes, we do
-not wrap PETSc library functions but extend PETSc interface by features native
-to MoFEM. You can use DM interface in the same how you native PETSc interface,
-see \ref poisson_tut1 where is shown how to set up KSP solve and get the
+\note In MoFEM implementation, in comparison to other finite element codes, we do
+not wrap PETSc library functions but extend PETSc interface with features native
+to MoFEM. You can use DM interface in the same way how you use native PETSc interface,
+see \ref poisson_tut1 it is shown how to set up KSP solver and get the
 solution. That philosophy applies to MoAB functions as well.
 
 \subsection hello_world_loops Iterating finite elements
@@ -295,16 +295,16 @@ Hello Operator OpVolume: volume 0.0834851
 ...
 \endverbatim
 where dots are added for the abbreviation of output. Note that operators are
-called in order we pushed them to finite element operators vector. Since we have
+called in the order we pushed them to finite element operators vector. Since we have
 twelve volume (Tetrahedra) elements, iteration ends on eleven, since in MoFEM we
-always counting from zero.
+always start counting from zero.
 
 To iterate over boundary element, analogically we do,
 \code
 ierr = DMoFEMLoopFiniteElements(dm,simple_interface->getBoundaryFEName(),boundary_fe); CHKERRQ(ierr);
 \endcode
-and we get similar output to one shown before, with one difference that the last
-operator does not print volume of the element but it's normal since entity of
+and we get similar output to the one shown before, with one difference being that the last
+operator does not print volume of the element but that is normal since entity of
 boundary finite element in this particular case is the triangle.
 
 The same procedure is applied to iterate over skeleton finite elements entities
@@ -337,9 +337,9 @@ Hello Operator OpVolumeSide: volume 0.0884264 normal [3](0,0.530559,-0.50091)
 ...
 \endverbatim
 Note that first operator is \e OpRow, the second operator is \e OpFaceSide, this
-operator prints its name and run integration over adjacent to given face
+operator prints its name and runs integration over adjacent to given face
 elements, which is \e side_fe. Once this element is run for each adjacent finite
-element entity users data operators are run on it, i.e. \e OpVolumeSide which
+element entity, users data operators are run on it, i.e. \e OpVolumeSide which
 prints volume of the adjacent entity and normal of the face. Note that first
 element has only one run of \e OpVolumeSide, since skeleton finite element "0"
 is on the body boundary, while skeleton finite element "13" is in body volume
@@ -359,13 +359,13 @@ struct OpRow: public MoFEM::ForcesAndSurcesCore::UserDataOperator {
 \endcode
 This users data operator class is derived from
 MoFEM::ForcesAndSurcesCore::UserDataOperator which can be used with any type of
-entity. It is the type of OPROW, which indicate that it only iterates lower
+entity. It is the type of OPROW, which indicates that it only iterates lower
 dimension entities on the element. On each lower entity overload method is
 called
 \code
 PetscErrorCode doWork(int side,EntityType type,DataForcesAndSurcesCore::EntData &data);
 \endcode
-which as arguments take entity side number (local entity number on the finite
+which as arguments takes entity side number (local entity number on the finite
 element), entity type (e.g. MBVERTEX, MBEDGE, MBTET) and reference to structure
 MoFEM::DataForcesAndSurcesCore::EntData, which keeps information on DOFs,
 approximation on given entity. This type of entity is usually used to integrate
@@ -390,16 +390,16 @@ struct OpRowCol: public MoFEM::ForcesAndSurcesCore::UserDataOperator {
 };
 \endcode
 This user data operator is of type OPROWCOL, which takes an additional parameter
-in construction, i.e. \e symm, which is used to set symmetry of operator.
+in constructor, i.e. \e symm, which is used to set symmetry of operator.
 Operator of this type iterates over all unique pairs of entities. If a symmetric
-operator pair is set of two elements (i.e. entities), thus order of entities if not important. If an operator
+operator pair is set of two elements (i.e. entities), thus order of entities is not important. If an operator
 is not symmetric, then pairs are the sequence of two elements and all variations of entities pairs
 are considered. This type of operator is used to integrate matrices. Note that
 this time function is overloaded, which takes as argument data for rows and
-columns respectively.
+columns, respectively.
 
 Performing calculations on entity of specific dimension additional data like
-volume, normal need to be accused, for such case derived users data operator
+volume, normal need to be attained, for such case derived users data operator
 class can be used, e.g.
 \code
 struct OpVolume: public MoFEM::VolumeElementForcesAndSourcesCore::UserDataOperator;
@@ -415,7 +415,7 @@ volume can be accessed.
 
 \section poisson_tut1_running_program Running the program
 
-The easiest installation is with Docker containers; pleas see youtube video how
+The easiest installation is with Docker containers; please see youtube video how
 to run installation <a href=https://www.youtube.com/watch?v=6opfKER7JHA>link</a>. You can also look
 here \ref install_docker. Open terminal and run Docker container
 \code
@@ -428,7 +428,7 @@ located, and compile code
 cd /mofem_build/um/basic_finite_elements/hello_world/
 make -j2
 \endcode
-It can take some time when you compile it first time since all essential
+It can take some time when you compile it for the first time since all essential
 functionality is compiled
 
 Once code is compiled, we can run test
