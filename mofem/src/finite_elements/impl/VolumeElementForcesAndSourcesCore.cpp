@@ -76,6 +76,8 @@ extern "C" {
 
 namespace MoFEM {
 
+PetscErrorCode ierr;
+
 VolumeElementForcesAndSourcesCore::VolumeElementForcesAndSourcesCore(
   Interface &m_field,const EntityType type
 ):

@@ -238,6 +238,7 @@ struct NitscheMethod {
     int getRule(int order) { return -1; };
 
     PetscErrorCode setGaussPts(int order) {
+      PetscErrorCode ierr;
       PetscFunctionBegin;
 
       gaussPts.resize(4,0,false);

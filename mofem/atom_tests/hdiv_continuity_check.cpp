@@ -269,6 +269,7 @@ int main(int argc, char *argv[]) {
 
     MatrixDouble N_tri;
     PetscErrorCode setGaussPts(int order) {
+      PetscErrorCode ierr;
       PetscFunctionBegin;
 
       try {

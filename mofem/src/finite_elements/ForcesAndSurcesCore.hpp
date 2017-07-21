@@ -35,8 +35,6 @@ namespace MoFEM {
   */
 struct ForcesAndSurcesCore: public FEMethod {
 
-  PetscErrorCode ierr;
-
   Interface& mField;
   ForcesAndSurcesCore(MoFEM::Interface& m_field):
   mField(m_field),
@@ -364,6 +362,7 @@ struct ForcesAndSurcesCore: public FEMethod {
 
     */
   virtual PetscErrorCode setGaussPts(int order_row,int order_col,int order_data) {
+    PetscErrorCode ierr;
     PetscFunctionBegin;
     ierr = setGaussPts(order_data); CHKERRQ(ierr);
     PetscFunctionReturn(0);

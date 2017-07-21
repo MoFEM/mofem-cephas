@@ -250,6 +250,7 @@ struct KelvinVoigtDamper {
     }
 
     PetscErrorCode preProcess() {
+      PetscErrorCode ierr;
       PetscFunctionBegin;
       ierr = MoFEM::VolumeElementForcesAndSourcesCore::preProcess(); CHKERRQ(ierr);
 
@@ -265,6 +266,7 @@ struct KelvinVoigtDamper {
     }
 
     PetscErrorCode postProcess() {
+      PetscErrorCode ierr;
       PetscFunctionBegin;
 
       ierr = MoFEM::VolumeElementForcesAndSourcesCore::postProcess(); CHKERRQ(ierr);
