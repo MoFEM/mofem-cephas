@@ -111,7 +111,7 @@ struct OpFaceSide: public FaceElementForcesAndSourcesCore::UserDataOperator {
  feSidePtr(fe_side_ptr) {
  }
  PetscErrorCode doWork(int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
-   PetscErrorCode ierr;
+   
    PetscFunctionBegin;
    if(type == MBVERTEX) {
      std::cout << "Hello Operator OpSideFace" << endl;
@@ -139,7 +139,7 @@ struct OpVolumeSide: public VolumeElementForcesAndSourcesCoreOnSide::UserDataOpe
 
 int main(int argc, char *argv[]) {
 
- PetscErrorCode ierr;
+ 
 
  type_name[MBVERTEX] = "Vertex";
  type_name[MBEDGE] = "Edge";

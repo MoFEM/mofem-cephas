@@ -282,7 +282,7 @@ struct FEMethod: public BasicMethod {
       *iface = dynamic_cast<FEMethod*>(this);
       PetscFunctionReturn(0);
     }
-    PetscErrorCode ierr;
+    
     ierr = queryInterface(uuid,iface); CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }
@@ -531,7 +531,7 @@ struct EntMethod: public BasicMethod {
       *iface = dynamic_cast<EntMethod*>(this);
       PetscFunctionReturn(0);
     }
-    PetscErrorCode ierr;
+    
     ierr = queryInterface(uuid,iface); CHKERRQ(ierr);
     PetscFunctionReturn(0);
   }

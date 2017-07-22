@@ -34,8 +34,8 @@ namespace po = boost::program_options;
 
 #define BLOCKED_PROBLEM
 
-ErrorCode rval;
-PetscErrorCode ierr;
+
+
 
 static char help[] = "...\n\n";
 
@@ -64,8 +64,8 @@ struct MonitorPostProc: public FEMethod {
   feKineticEnergy(fe_kinetic_energy),
   iNit(false) {
 
-    ErrorCode rval;
-    PetscErrorCode ierr;
+    
+    
     double def_t_val = 0;
     const EntityHandle root_meshset = mField.get_moab().get_root_set();
 
@@ -88,8 +88,8 @@ struct MonitorPostProc: public FEMethod {
 
   PetscErrorCode preProcess() {
     PetscFunctionBegin;
-    PetscErrorCode ierr;
-    ErrorCode rval;
+    
+    
 
     if(!iNit) {
       ierr = postProc.generateReferenceElementMesh(); CHKERRQ(ierr);
@@ -154,8 +154,8 @@ struct MonitorRestart: public FEMethod {
 
   MonitorRestart(MoFEM::Interface &m_field,TS ts): mField(m_field) {
 
-    PetscErrorCode ierr;
-    ErrorCode rval;
+    
+    
     double def_t_val = 0;
 
     const EntityHandle root_meshset = mField.get_moab().get_root_set();
@@ -190,8 +190,8 @@ struct MonitorRestart: public FEMethod {
   PetscErrorCode preProcess() {
     PetscFunctionBegin;
 
-    //PetscErrorCode ierr;
-    ErrorCode rval;
+    //
+    
     (*time) = ts_t;
     // if(pRT>0) {
     //   if((*step)%pRT==0) {

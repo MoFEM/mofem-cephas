@@ -26,8 +26,8 @@ static char help[] = "...\n\n";
 
 int main(int argc, char *argv[]) {
 
-  ErrorCode rval;
-  PetscErrorCode ierr;
+  
+  
 
   PetscInitialize(&argc,&argv,(char *)0,help);
 
@@ -278,7 +278,7 @@ int main(int argc, char *argv[]) {
       DataForcesAndSurcesCore::EntData &col_data
     ) {
       PetscFunctionBegin;
-      //PetscErrorCode ierr;
+      //
 
       const int nb_gauss_pts = row_data.getN().size1();
       const int nb_base_functions_row = row_data.getN().size2();

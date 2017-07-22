@@ -26,8 +26,8 @@ static char help[] = "...\n\n";
 
 int main(int argc, char *argv[]) {
 
-  ErrorCode rval;
-  PetscErrorCode ierr;
+  
+  
 
   PetscInitialize(&argc,&argv,(char *)0,help);
 

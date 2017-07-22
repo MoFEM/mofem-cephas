@@ -45,7 +45,7 @@ using namespace MoFEM;
 #include <FlatPrismPolynomialBase.hpp>
 
 PetscErrorCode FlatPrismPolynomialBaseCtx::queryInterface(const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface) {
-  PetscErrorCode ierr;
+  
   PetscFunctionBegin;
   *iface = NULL;
   if(
@@ -71,7 +71,7 @@ FlatPrismPolynomialBaseCtx::FlatPrismPolynomialBaseCtx(
 EntPolynomialBaseCtx(data,space,base,copy_node_base),
 mOab(moab),
 fePtr(fe_ptr) {
-  PetscErrorCode ierr;
+  
   ierr = setBase(); CHKERRABORT(PETSC_COMM_WORLD,ierr);
 }
 FlatPrismPolynomialBaseCtx::~FlatPrismPolynomialBaseCtx() {
@@ -80,7 +80,7 @@ FlatPrismPolynomialBaseCtx::~FlatPrismPolynomialBaseCtx() {
 PetscErrorCode FlatPrismPolynomialBase::queryInterface(
   const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface
 ) {
-  PetscErrorCode ierr;
+  
   PetscFunctionBegin;
   *iface = NULL;
   if(uuid == IDD_FLATPRISM_BASE_FUNCTION) {
@@ -100,7 +100,7 @@ PetscErrorCode FlatPrismPolynomialBase::getValue(
   MatrixDouble &pts,
   boost::shared_ptr<BaseFunctionCtx> ctx_ptr
 ) {
-  PetscErrorCode ierr;
+  
   PetscFunctionBegin;
 
   MoFEM::UnknownInterface *iface;
@@ -154,7 +154,7 @@ PetscErrorCode FlatPrismPolynomialBase::getValue(
   ierr = ShapeDiffMBTRI(&*diffN.data().begin()); CHKERRQ(ierr);
 
   // This is needed to have proper order of nodes on faces
-  MoABErrorCode rval;
+  
   rval = cTx->mOab.get_connectivity(cTx->fePtr->getEnt(),connPrism,numNodes,true); CHKERRQ_MOAB(rval);
   SideNumber_multiIndex& side_table = const_cast<SideNumber_multiIndex&>(cTx->fePtr->getSideNumberTable());
   SideNumber_multiIndex::nth_index<1>::type::iterator siit3 = side_table.get<1>().find(boost::make_tuple(MBTRI,3));
@@ -210,7 +210,7 @@ PetscErrorCode FlatPrismPolynomialBase::getValue(
 }
 
 PetscErrorCode FlatPrismPolynomialBase::getValueH1(MatrixDouble &pts) {
-  PetscErrorCode ierr;
+  
   PetscFunctionBegin;
 
   DataForcesAndSurcesCore& data = cTx->dAta;

@@ -115,7 +115,6 @@ struct MagneticElement {
    * @return      error code
    */
   PetscErrorCode getNaturalBc() {
-    MoABErrorCode rval;
     PetscFunctionBegin;
     for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BLOCKSET,bit)) {
       if(bit->getName().compare(0,9,"NATURALBC") == 0) {
@@ -136,7 +135,6 @@ struct MagneticElement {
    * @return      error code
    */
   PetscErrorCode getEssentialBc() {
-    MoABErrorCode rval;
     PetscFunctionBegin;
     for(_IT_CUBITMESHSETS_BY_SET_TYPE_FOR_LOOP_(mField,BLOCKSET,bit)) {
       if(bit->getName().compare(0,10,"ESSENTIALBC") == 0) {
@@ -169,8 +167,8 @@ struct MagneticElement {
    * @return error code
    */
   PetscErrorCode createFields() {
-    // MoABErrorCode rval;
-    PetscErrorCode ierr;
+    // MoAB
+
     PetscFunctionBegin;
 
     // Set entities bit level. each entity has bit level depending for example
@@ -236,7 +234,7 @@ struct MagneticElement {
    * @return error code
    */
   PetscErrorCode createElements() {
-    PetscErrorCode ierr;
+
     PetscFunctionBegin;
     // //Elements
     ierr = mField.add_finite_element(blockData.feName); CHKERRQ(ierr);
@@ -271,7 +269,7 @@ struct MagneticElement {
    * @return error code
    */
   PetscErrorCode createProblem() {
-    PetscErrorCode ierr;
+
     PetscFunctionBegin;
     // set up DM
     DMType dm_name = "MAGNETIC_PROBLEM";
@@ -295,7 +293,7 @@ struct MagneticElement {
    * @return [description]
    */
   PetscErrorCode destroyProblem() {
-    PetscErrorCode ierr;
+
     PetscFunctionBegin;
     ierr = DMDestroy(&blockData.dM); CHKERRQ(ierr);
     PetscFunctionReturn(0);
@@ -308,7 +306,7 @@ struct MagneticElement {
    *
    */
   PetscErrorCode solveProblem() {
-    PetscErrorCode ierr;
+
     PetscFunctionBegin;
     ierr = DMCreateMatrix(blockData.dM,&blockData.A); CHKERRQ(ierr);
     ierr = DMCreateGlobalVector(blockData.dM,&blockData.F); CHKERRQ(ierr);
@@ -387,7 +385,7 @@ struct MagneticElement {
    * @return [description]
    */
   PetscErrorCode postProcessResults() {
-    PetscErrorCode ierr;
+
     PetscFunctionBegin;
     PostProcVolumeOnRefinedMesh post_proc(mField);
     ierr = post_proc.generateReferenceElementMesh(); CHKERRQ(ierr);
@@ -444,7 +442,7 @@ struct MagneticElement {
       DataForcesAndSurcesCore::EntData &row_data,
       DataForcesAndSurcesCore::EntData &col_data
     ) {
-      PetscErrorCode ierr;
+
       PetscFunctionBegin;
 
       if(row_type==MBVERTEX) PetscFunctionReturn(0);
@@ -576,7 +574,7 @@ struct MagneticElement {
       DataForcesAndSurcesCore::EntData &row_data,
       DataForcesAndSurcesCore::EntData &col_data
     ) {
-      PetscErrorCode ierr;
+
       PetscFunctionBegin;
 
       if(row_type==MBVERTEX) PetscFunctionReturn(0);
@@ -707,7 +705,7 @@ struct MagneticElement {
     PetscErrorCode doWork(
       int row_side,EntityType row_type,DataForcesAndSurcesCore::EntData &row_data
     ) {
-      PetscErrorCode ierr;
+
       PetscFunctionBegin;
 
       if(row_type==MBVERTEX) PetscFunctionReturn(0);
@@ -797,8 +795,6 @@ struct MagneticElement {
     PetscErrorCode doWork(
       int row_side,EntityType row_type,DataForcesAndSurcesCore::EntData &row_data
     ) {
-      PetscErrorCode ierr;
-      MoABErrorCode rval;
       PetscFunctionBegin;
 
       if(row_type==MBVERTEX) PetscFunctionReturn(0);

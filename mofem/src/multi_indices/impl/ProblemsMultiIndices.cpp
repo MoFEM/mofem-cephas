@@ -40,44 +40,24 @@ Problem::Problem(Interface &moab,const EntityHandle meshset):
   meshset(meshset),
   numeredDofsRows(boost::shared_ptr<NumeredDofEntity_multiIndex>(new NumeredDofEntity_multiIndex())),
   numeredDofsCols(boost::shared_ptr<NumeredDofEntity_multiIndex>(new NumeredDofEntity_multiIndex())),
-  // numered_dofs_rows(numeredDofsRows), // this is deprecated
-  // numered_dofs_cols(numeredDofsCols), // this is deprecated
   sequenceRowDofContainer(boost::make_shared<SequenceDofContainer>()),
   sequenceColDofContainer(boost::make_shared<SequenceDofContainer>()) {
   ErrorCode rval;
   Tag th_ProblemId;
   rval = moab.tag_get_handle("_ProblemId",th_ProblemId); MOAB_THROW(rval);
-  rval = moab.tag_get_by_ptr(th_ProblemId,&meshset,1,(const void **)&tag_id_data); MOAB_THROW(rval);
+  rval = moab.tag_get_by_ptr(th_ProblemId,&meshset,1,(const void **)&tagId); MOAB_THROW(rval);
   Tag th_ProblemName;
   rval = moab.tag_get_handle("_ProblemName",th_ProblemName); MOAB_THROW(rval);
-  rval = moab.tag_get_by_ptr(th_ProblemName,&meshset,1,(const void **)&tag_name_data,&tag_name_size); MOAB_THROW(rval);
-  Tag th_ProblemNbDofsRow;
-  rval = moab.tag_get_handle("_ProblemNbDofsRow",th_ProblemNbDofsRow); MOAB_THROW(rval);
-  rval = moab.tag_get_by_ptr(th_ProblemNbDofsRow,&meshset,1,(const void **)&tag_nbdof_data_row); MOAB_THROW(rval);
-  Tag th_ProblemNbDofsCol;
-  rval = moab.tag_get_handle("_ProblemNbDofsCol",th_ProblemNbDofsCol); MOAB_THROW(rval);
-  rval = moab.tag_get_by_ptr(th_ProblemNbDofsCol,&meshset,1,(const void **)&tag_nbdof_data_col); MOAB_THROW(rval);
-  Tag th_ProblemLocalNbDofRow;
-  rval = moab.tag_get_handle("_ProblemLocalNbDofsRow",th_ProblemLocalNbDofRow); MOAB_THROW(rval);
-  rval = moab.tag_get_by_ptr(th_ProblemLocalNbDofRow,&meshset,1,(const void **)&tag_local_nbdof_data_row); MOAB_THROW(rval);
-  Tag th_ProblemGhostNbDofRow;
-  rval = moab.tag_get_handle("_ProblemGhostNbDofsRow",th_ProblemGhostNbDofRow); MOAB_THROW(rval);
-  rval = moab.tag_get_by_ptr(th_ProblemGhostNbDofRow,&meshset,1,(const void **)&tag_ghost_nbdof_data_row); MOAB_THROW(rval);
-  Tag th_ProblemLocalNbDofCol;
-  rval = moab.tag_get_handle("_ProblemLocalNbDofsCol",th_ProblemLocalNbDofCol); MOAB_THROW(rval);
-  rval = moab.tag_get_by_ptr(th_ProblemLocalNbDofCol,&meshset,1,(const void **)&tag_local_nbdof_data_col); MOAB_THROW(rval);
-  Tag th_ProblemGhostNbDofCol;
-  rval = moab.tag_get_handle("_ProblemGhostNbDofsCol",th_ProblemGhostNbDofCol); MOAB_THROW(rval);
-  rval = moab.tag_get_by_ptr(th_ProblemGhostNbDofCol,&meshset,1,(const void **)&tag_ghost_nbdof_data_col); MOAB_THROW(rval);
+  rval = moab.tag_get_by_ptr(th_ProblemName,&meshset,1,(const void **)&tagName,&tagNameSize); MOAB_THROW(rval);
   Tag th_ProblemFEId;
   rval = moab.tag_get_handle("_ProblemFEId",th_ProblemFEId); MOAB_THROW(rval);
-  rval = moab.tag_get_by_ptr(th_ProblemFEId,&meshset,1,(const void **)&tag_BitFEId_data); MOAB_THROW(rval);
+  rval = moab.tag_get_by_ptr(th_ProblemFEId,&meshset,1,(const void **)&tagBitFEId); MOAB_THROW(rval);
   Tag th_RefBitLevel;
   rval = moab.tag_get_handle("_RefBitLevel",th_RefBitLevel); MOAB_THROW(rval);
-  rval = moab.tag_get_by_ptr(th_RefBitLevel,&meshset,1,(const void **)&tag_BitRefLevel); MOAB_THROW(rval);
+  rval = moab.tag_get_by_ptr(th_RefBitLevel,&meshset,1,(const void **)&tagBitRefLevel); MOAB_THROW(rval);
   Tag th_RefBitLevel_Mask;
   rval = moab.tag_get_handle("_RefBitLevelMask",th_RefBitLevel_Mask); MOAB_THROW(rval);
-  rval = moab.tag_get_by_ptr(th_RefBitLevel_Mask,&meshset,1,(const void **)&tag_MaskBitRefLevel); MOAB_THROW(rval);
+  rval = moab.tag_get_by_ptr(th_RefBitLevel_Mask,&meshset,1,(const void **)&tagMaskBitRefLevel); MOAB_THROW(rval);
 }
 
 Problem::~Problem() {
@@ -91,7 +71,7 @@ std::ostream& operator<<(std::ostream& os,const Problem& e) {
 }
 
 BitFEId Problem::getBitFEId() const {
-  return *tag_BitFEId_data;
+  return *tagBitFEId;
 }
 
 PetscErrorCode Problem::getRowDofsByPetscGlobalDofIdx(DofIdx idx,const NumeredDofEntity **dof_ptr) const {
@@ -118,7 +98,6 @@ PetscErrorCode Problem::getColDofsByPetscGlobalDofIdx(DofIdx idx,const NumeredDo
 
 PetscErrorCode Problem::getNumberOfElementsByNameAndPart(MPI_Comm comm,const std::string name,PetscLayout *layout) const {
   PetscFunctionBegin;
-  PetscErrorCode ierr;
   int size, rank;
   MPI_Comm_size(comm,&size);
   MPI_Comm_rank(comm,&rank);
@@ -134,7 +113,6 @@ PetscErrorCode Problem::getNumberOfElementsByNameAndPart(MPI_Comm comm,const std
 
 PetscErrorCode Problem::getNumberOfElementsByPart(MPI_Comm comm,PetscLayout *layout) const {
   PetscFunctionBegin;
-  PetscErrorCode ierr;
   int size, rank;
   MPI_Comm_size(comm,&size);
   MPI_Comm_rank(comm,&rank);
@@ -194,21 +172,21 @@ PetscErrorCode Problem::getDofByNameEntAndEntDofIdx(
 
 
 void ProblemFiniteElementChangeBitAdd::operator()(Problem &p) {
-  *(p.tag_BitFEId_data) |= f_id;
+  *(p.tagBitFEId) |= f_id;
 }
 void ProblemFiniteElementChangeBitUnSet::operator()(Problem &p) {
-  *(p.tag_BitFEId_data) &= ~f_id;
+  *(p.tagBitFEId) &= ~f_id;
 }
 void ProblemZeroNbRowsChange::operator()(Problem &e) {
-  (*(DofIdx*)e.tag_nbdof_data_row) = 0;
-  (*(DofIdx*)e.tag_local_nbdof_data_row) = 0;
-  (*(DofIdx*)e.tag_ghost_nbdof_data_row) = 0;
+  e.nbDofsRow = 0;
+  e.nbLocDofsRow = 0;
+  e.nbGhostDofsRow = 0;
   e.numeredDofsRows->clear();
 }
 void ProblemZeroNbColsChange::operator()(Problem &e) {
-  (*(DofIdx*)e.tag_nbdof_data_col) = 0;
-  (*(DofIdx*)e.tag_local_nbdof_data_col) = 0;
-  (*(DofIdx*)e.tag_ghost_nbdof_data_col) = 0;
+  e.nbDofsCol = 0;
+  e.nbLocDofsCol = 0;
+  e.nbGhostDofsCol = 0;
   e.numeredDofsCols->clear();
 }
 void ProblemClearNumeredFiniteElementsChange::operator()(Problem &e) {

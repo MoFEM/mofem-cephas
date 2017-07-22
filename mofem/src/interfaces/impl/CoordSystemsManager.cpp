@@ -96,7 +96,7 @@ namespace MoFEM {
   CoordSystemsManager::~CoordSystemsManager() {}
 
   PetscErrorCode CoordSystemsManager::getTags(int verb) {
-    MoABErrorCode rval;
+    
     MoFEM::Interface &m_field = cOre;
     moab::Interface &moab = m_field.get_moab();
     PetscFunctionBegin;
@@ -125,7 +125,7 @@ namespace MoFEM {
 
 
   PetscErrorCode CoordSystemsManager::initialiseDatabseInformationFromMesh(int verb) {
-    MoABErrorCode rval;
+    
     MoFEM::Interface &m_field = cOre;
     moab::Interface &moab = m_field.get_moab();
     PetscFunctionBegin;
@@ -212,7 +212,7 @@ namespace MoFEM {
   }
 
   PetscErrorCode CoordSystemsManager::addCoordinateSystem(const int cs_dim[],const std::string name) {
-    MoABErrorCode rval;
+    
     MoFEM::Interface &m_field = cOre;
     moab::Interface &moab = m_field.get_moab();
     EntityHandle meshset;
@@ -235,7 +235,7 @@ namespace MoFEM {
   }
 
   PetscErrorCode CoordSystemsManager::setFieldCoordinateSystem(const std::string field_name,const std::string cs_name) {
-    PetscErrorCode ierr;
+    
     MoFEM::Interface &m_field = cOre;
     const Field_multiIndex *fields_ptr;
     PetscFunctionBegin;

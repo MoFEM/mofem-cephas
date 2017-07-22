@@ -41,7 +41,7 @@ namespace MoFEM {
  */
 struct FatPrismElementForcesAndSurcesCore: public MoFEM::VolumeElementForcesAndSourcesCore {
 
-  MoABErrorCode rval;
+  
   double aRea[2];
   VectorDouble normal;
 

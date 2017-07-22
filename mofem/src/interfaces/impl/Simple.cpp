@@ -88,14 +88,14 @@ namespace MoFEM {
     strcpy(meshFileName,"mesh.h5m");
   }
   Simple::~Simple() {
-    PetscErrorCode ierr;
+    
     if(dM!=PETSC_NULL) {
       ierr = DMDestroy(&dM); CHKERRABORT(PETSC_COMM_WORLD,ierr);
     }
   }
 
   PetscErrorCode Simple::getOptions() {
-    PetscErrorCode ierr;
+    
     PetscBool flg = PETSC_TRUE;
     PetscFunctionBegin;
     ierr = PetscOptionsBegin(
@@ -111,8 +111,8 @@ namespace MoFEM {
   }
 
   PetscErrorCode Simple::loadFile() {
-    MoABErrorCode rval;
-    PetscErrorCode ierr;
+    
+    
     MoFEM::Interface &m_field = cOre;
     PetscFunctionBegin;
     PetscLogEventBegin(USER_EVENT_SimpleLoadMesh,0,0,0,0);
@@ -158,7 +158,7 @@ namespace MoFEM {
     const enum MoFEMTypes bh,
     int verb
   ) {
-    PetscErrorCode ierr;
+    
     MoFEM::Interface &m_field = cOre;
     PetscFunctionBegin;
     ierr = m_field.add_field(
@@ -177,7 +177,7 @@ namespace MoFEM {
     const enum MoFEMTypes bh,
     int verb
   ) {
-    PetscErrorCode ierr;
+    
     MoFEM::Interface &m_field = cOre;
     PetscFunctionBegin;
     ierr = m_field.add_field(
@@ -196,7 +196,7 @@ namespace MoFEM {
     const enum MoFEMTypes bh,
     int verb
   ) {
-    PetscErrorCode ierr;
+    
     MoFEM::Interface &m_field = cOre;
     PetscFunctionBegin;
     ierr = m_field.add_field(
@@ -215,7 +215,7 @@ namespace MoFEM {
     const enum MoFEMTypes bh,
     int verb
   ) {
-    PetscErrorCode ierr;
+    
     MoFEM::Interface &m_field = cOre;
     PetscFunctionBegin;
     ierr = m_field.add_field(
@@ -227,7 +227,7 @@ namespace MoFEM {
 
 
   PetscErrorCode Simple::defineFiniteElements() {
-    PetscErrorCode ierr;
+    
     MoFEM::Interface &m_field = cOre;
     PetscFunctionBegin;
     // Define finite elements
@@ -280,7 +280,7 @@ namespace MoFEM {
   }
 
   PetscErrorCode Simple::defineProblem() {
-    PetscErrorCode ierr;
+    
     MoFEM::Interface &m_field = cOre;
     PetscFunctionBegin;
     if(dM!=PETSC_NULL) {
@@ -310,8 +310,8 @@ namespace MoFEM {
   }
 
   PetscErrorCode Simple::buildFields() {
-    PetscErrorCode ierr;
-    MoABErrorCode rval;
+    
+    
     MoFEM::Interface &m_field = cOre;
     PetscFunctionBegin;
     PetscLogEventBegin(USER_EVENT_SimpleBuildFields,0,0,0,0);
@@ -476,7 +476,7 @@ namespace MoFEM {
   }
 
   PetscErrorCode Simple::buildFiniteElements() {
-    PetscErrorCode ierr;
+    
     MoFEM::Interface &m_field = cOre;
     PetscFunctionBegin;
     PetscLogEventBegin(USER_EVENT_SimpleBuildFiniteElements,0,0,0,0);
@@ -496,7 +496,7 @@ namespace MoFEM {
   }
 
   PetscErrorCode Simple::buildProblem() {
-    PetscErrorCode ierr;
+    
     MoFEM::Interface &m_field = cOre;
     PetscFunctionBegin;
     PetscLogEventBegin(USER_EVENT_SimpleBuildProblem,0,0,0,0);
@@ -507,7 +507,7 @@ namespace MoFEM {
   }
 
   PetscErrorCode Simple::setUp() {
-    PetscErrorCode ierr;
+    
     PetscFunctionBegin;
     ierr = defineFiniteElements(); CHKERRQ(ierr);
     ierr = defineProblem(); CHKERRQ(ierr);

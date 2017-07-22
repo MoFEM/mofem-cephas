@@ -43,12 +43,12 @@ struct TimeForceScale: public MethodForForceScaling {
   debug(1),
   nAme(name),
   errorIfFileNotGiven(error_if_file_not_given) {
-    PetscErrorCode ierr;
+    
     ierr = timeData(); CHKERRABORT(PETSC_COMM_WORLD,ierr);
   }
 
-  ErrorCode rval;
-  PetscErrorCode ierr;
+  
+  
   PetscBool fLg;
 
   PetscErrorCode timeData() {
@@ -141,12 +141,12 @@ struct TimeAccelerogram: public MethodForForceScaling {
   readFile(0),
   debug(1),
   nAme(name) {
-    PetscErrorCode ierr;
+    
     ierr = timeData(); CHKERRABORT(PETSC_COMM_WORLD,ierr);
   }
 
-  ErrorCode rval;
-  PetscErrorCode ierr;
+  
+  
 
   PetscErrorCode timeData() {
     PetscFunctionBegin;

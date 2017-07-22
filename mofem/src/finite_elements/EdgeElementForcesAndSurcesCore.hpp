@@ -63,7 +63,7 @@ struct EdgeElementForcesAndSurcesCore: public ForcesAndSurcesCore {
   opCovariantTransoform(dIrection,tAngent_at_GaussPt) {
   }
 
-  MoABErrorCode rval;
+  
   double lEngth;;
   VectorDouble dIrection;
   VectorDouble cOords;

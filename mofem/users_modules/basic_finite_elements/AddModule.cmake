@@ -73,7 +73,7 @@ add_subdirectory(
 
 add_subdirectory(${PROJECT_SOURCE_DIR}/basic_finite_elements/elasticity)
 add_subdirectory(${PROJECT_SOURCE_DIR}/basic_finite_elements/nonlinear_elasticity)
-add_subdirectory(${PROJECT_SOURCE_DIR}/basic_finite_elements/ultraweak)
+add_subdirectory(${PROJECT_SOURCE_DIR}/basic_finite_elements/mix_transport)
 add_subdirectory(${PROJECT_SOURCE_DIR}/basic_finite_elements/thermal)
 add_subdirectory(${PROJECT_SOURCE_DIR}/basic_finite_elements/cohesive_interface)
 add_subdirectory(${PROJECT_SOURCE_DIR}/basic_finite_elements/magnetostatic)

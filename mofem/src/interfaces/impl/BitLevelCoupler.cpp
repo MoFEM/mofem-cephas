@@ -49,11 +49,6 @@
 
 #include <fem_tools.h>
 
-//static bool debug = true;
-
-static PetscErrorCode ierr;
-static ErrorCode rval;
-
 namespace MoFEM {
 
   PetscErrorCode BitLevelCoupler::queryInterface(const MOFEMuuid& uuid, UnknownInterface** iface) {

@@ -22,8 +22,8 @@
 
 using namespace MoFEM;
 
-ErrorCode rval;
-PetscErrorCode ierr;
+
+
 
 static char help[] = "...\n\n";
 

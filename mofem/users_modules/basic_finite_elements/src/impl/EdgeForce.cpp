@@ -46,7 +46,7 @@ PetscErrorCode EdgeForce::OpEdgeForce::doWork(int side,EntityType type,DataForce
     PetscFunctionReturn(0);
   }
 
-  PetscErrorCode ierr;
+  
 
   // Get pointer to DOF and its rank
   const FENumeredDofEntity *dof_ptr;
@@ -127,8 +127,8 @@ PetscErrorCode EdgeForce::OpEdgeForce::doWork(int side,EntityType type,DataForce
 }
 
 PetscErrorCode EdgeForce::addForce(const std::string field_name,Vec F,int ms_id,bool use_snes_f) {
-  PetscErrorCode ierr;
-  ErrorCode rval;
+  
+  
   const CubitMeshSets *cubit_meshset_ptr;
   MeshsetsManager *mmanager_ptr;
   PetscFunctionBegin;

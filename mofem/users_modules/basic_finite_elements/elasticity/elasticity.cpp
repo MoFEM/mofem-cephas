@@ -64,8 +64,8 @@ namespace po = boost::program_options;
 
 using namespace boost::numeric;
 
-ErrorCode rval;
-PetscErrorCode ierr;
+
+
 
 static char help[] =
   "-my_block_config set block data\n"
@@ -197,7 +197,6 @@ int main(int argc, char *argv[]) {
   // Set order of approximation of geometry.
   // Apply 2nd order only on skin (or in in whole body)
   {
-    MoABErrorCode rval;
     Skinner skin(&m_field.get_moab());
     Range faces,tets;
     rval = m_field.get_moab().get_entities_by_type(0,MBTET,tets); CHKERRQ_MOAB(rval);

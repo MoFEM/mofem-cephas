@@ -13,7 +13,9 @@
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
 #include <BasicFiniteElements.hpp>
+#include <MixTransportElement.hpp>
 using namespace MoFEM;
+using namespace MixTransport;
 
 namespace bio = boost::iostreams;
 using bio::tee_device;
@@ -23,17 +25,17 @@ static char help[] = "...\n\n";
 
 /** define sources and other stuff
   *
-  * UltraWeakTransportElement is a class collecting functions, operators and
+  * MixTransportElement is a class collecting functions, operators and
   * data for ultra week implementation of transport element. See there to
   * learn how elements are created or how operators look like.
   *
-  * Some methods in UltraWeakTransportElement are abstract, f.e. user need to
+  * Some methods in MixTransportElement are abstract, f.e. user need to
   * implement own source therm.
   *
   */
-struct MyUltraWeakFE: public UltraWeakTransportElement {
+struct MyTransport: public MixTransportElement {
 
-  MyUltraWeakFE(MoFEM::Interface &m_field): UltraWeakTransportElement(m_field) {};
+  MyTransport(MoFEM::Interface &m_field): MixTransportElement(m_field) {};
 
   PetscErrorCode getSource(EntityHandle ent,const double x,const double y,const double z,double &flux) {
     PetscFunctionBegin;
@@ -64,8 +66,8 @@ struct MyUltraWeakFE: public UltraWeakTransportElement {
 
 int main(int argc, char *argv[]) {
 
-  ErrorCode rval;
-  PetscErrorCode ierr;
+
+
 
   PetscInitialize(&argc,&argv,(char *)0,help);
 
@@ -110,7 +112,7 @@ int main(int argc, char *argv[]) {
     }
 
     //finite elements
-    MyUltraWeakFE ufe(m_field);
+    MyTransport ufe(m_field);
 
     ierr = ufe.addFields("VALUES","FLUXES",order); CHKERRQ(ierr);
     ierr = ufe.addFiniteElements("FLUXES","VALUES"); CHKERRQ(ierr);
@@ -121,11 +123,11 @@ int main(int argc, char *argv[]) {
     Skinner skin(&moab);
     Range skin_faces; // skin faces from 3d ents
     rval = skin.find_skin(0,tets,false,skin_faces); CHKERRQ_MOAB(rval);
-    ierr = m_field.add_ents_to_finite_element_by_type(skin_faces,MBTRI,"ULTRAWEAK_BCVALUE"); CHKERRQ(ierr);
+    ierr = m_field.add_ents_to_finite_element_by_type(skin_faces,MBTRI,"MIX_BCVALUE"); CHKERRQ(ierr);
 
     ierr = ufe.buildProblem(ref_level); CHKERRQ(ierr);
     ierr = ufe.createMatrices(); CHKERRQ(ierr);
-    ierr = ufe.solveProblem(); CHKERRQ(ierr);
+    ierr = ufe.solveLinearProblem(); CHKERRQ(ierr);
     ierr = ufe.calculateResidual(); CHKERRQ(ierr);
     ierr = ufe.evaluateError(); CHKERRQ(ierr);
 

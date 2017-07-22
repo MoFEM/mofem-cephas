@@ -26,8 +26,8 @@ using namespace MoFEM;
 
 using namespace boost::numeric;
 
-ErrorCode rval;
-PetscErrorCode ierr;
+
+
 
 static char help[] = "...\n\n";
 
@@ -109,7 +109,7 @@ namespace CohesiveElement {
     arcPtr(arc_ptr) {
     }
 
-    PetscErrorCode ierr;
+    
 
     PetscErrorCode preProcess() {
       PetscFunctionBegin;

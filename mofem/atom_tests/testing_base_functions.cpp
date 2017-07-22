@@ -17,8 +17,8 @@
 
 using namespace MoFEM;
 
-ErrorCode rval;
-PetscErrorCode ierr;
+
+
 
 static char help[] = "testing interface inserting algorithm\n\n";
 
@@ -84,7 +84,7 @@ int main(int argc, char *argv[]) {
     "h1fatprism"
   };
 
-  PetscErrorCode ierr;
+  
 
   PetscBool flg;
   PetscInt choise_value = LEGENDREPOLYNOMIAL;

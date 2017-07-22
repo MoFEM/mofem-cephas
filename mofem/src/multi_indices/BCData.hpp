@@ -28,7 +28,7 @@ namespace MoFEM {
  * \ingroup mofem_bc
  */
 struct GenericCubitBcData {
-    PetscErrorCode ierr;
+    
 
     /**
      * \brief get data from structure

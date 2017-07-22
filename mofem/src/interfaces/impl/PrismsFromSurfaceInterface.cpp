@@ -66,7 +66,7 @@ PetscErrorCode PrismsFromSurfaceInterface::queryInterface(const MOFEMuuid& uuid,
 
 PetscErrorCode PrismsFromSurfaceInterface::createPrisms(const Range &ents,Range &prisms,int verb) {
   PetscFunctionBegin;
-  MoABErrorCode rval;
+  
   MoFEM::Interface& m_field = cOre;
   Range tris = ents.subset_by_type(MBTRI);
   for(Range::iterator tit = tris.begin();tit!=tris.end();tit++) {
@@ -133,8 +133,8 @@ PetscErrorCode PrismsFromSurfaceInterface::createPrisms(const Range &ents,Range 
 
 PetscErrorCode PrismsFromSurfaceInterface::seedPrismsEntities(Range &prisms,const BitRefLevel &bit,int verb) {
   PetscFunctionBegin;
-  PetscErrorCode ierr;
-  MoABErrorCode rval;
+  
+  
   MoFEM::Interface& m_field = cOre;
   const RefEntity_multiIndex *const_refined_entities_ptr;
   ierr = m_field.get_ref_ents(&const_refined_entities_ptr); CHKERRQ(ierr);
@@ -167,8 +167,8 @@ PetscErrorCode PrismsFromSurfaceInterface::seedPrismsEntities(Range &prisms,cons
 }
 
 PetscErrorCode PrismsFromSurfaceInterface::createPrismsFromPrisms(const Range &prisms,bool from_down,Range &out_prisms,int verb) {
-  PetscErrorCode ierr;
-  MoABErrorCode rval;
+  
+  
   PetscFunctionBegin;
   MoFEM::Interface& m_field = cOre;
   Range tris;
@@ -186,7 +186,7 @@ PetscErrorCode PrismsFromSurfaceInterface::createPrismsFromPrisms(const Range &p
 }
 
 PetscErrorCode PrismsFromSurfaceInterface::setThickness(const Range &prisms,const double director3[],const double director4[]) {
-  MoABErrorCode rval;
+  
   PetscFunctionBegin;
   MoFEM::Interface& m_field = cOre;
   Range nodes_f3,nodes_f4;

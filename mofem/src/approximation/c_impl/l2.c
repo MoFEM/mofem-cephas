@@ -24,12 +24,14 @@
 #include <base_functions.h>
 #include <h1_hdiv_hcurl_l2.h>
 
+static PetscErrorCode ierr;
+
 PetscErrorCode L2_ShapeFunctions_MBTRI(
   int p,double *N,double *diffN,double *L2N,double *diff_L2N,int GDIM,
   PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
 ) {
   PetscFunctionBegin;
-  PetscErrorCode ierr;
+
   int P = NBFACETRI_L2(p);
   if(P==0) PetscFunctionReturn(0);
   double diff_ksiL01[2],diff_ksiL20[2];
@@ -77,7 +79,7 @@ PetscErrorCode L2_ShapeFunctions_MBTET(
   PetscErrorCode (*base_polynomials)(int p,double s,double *diff_s,double *L,double *diffL,const int dim)
 ) {
   PetscFunctionBegin;
-  PetscErrorCode ierr;
+
   int P = NBVOLUMETET_L2(p);
   if(P==0) PetscFunctionReturn(0);
   double diff_ksiL0[3],diff_ksiL1[3],diff_ksiL2[3];

@@ -27,7 +27,7 @@ namespace MoFEM {
 struct TsCtx {
 
   ErrorCode rval;
-  PetscErrorCode ierr;
+  
 
   MoFEM::Interface &mField;
   moab::Interface &moab;

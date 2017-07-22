@@ -50,7 +50,7 @@ struct Smoother {
     PetscErrorCode preProcess() {
       PetscFunctionBegin;
 
-      PetscErrorCode ierr;
+      
       ierr = VolumeElementForcesAndSourcesCore::preProcess(); CHKERRQ(ierr);
 
       if(A != PETSC_NULL) {
@@ -98,7 +98,7 @@ struct Smoother {
 
     PetscErrorCode postProcess() {
       PetscFunctionBegin;
-      PetscErrorCode ierr;
+      
 
       switch(snes_ctx) {
         case CTX_SNESSETFUNCTION: {
@@ -151,7 +151,7 @@ struct Smoother {
 
       try {
 
-        PetscErrorCode ierr;
+        
         ierr = dAta.materialAdoublePtr->calculateP_PiolaKirchhoffI(dAta,getNumeredEntFiniteElementPtr()); CHKERRQ(ierr);
 
         commonData.sTress[gg].resize(3,3,false);
@@ -194,7 +194,7 @@ struct Smoother {
     ) {
       PetscFunctionBegin;
 
-      PetscErrorCode ierr;
+      
       int nb_dofs = row_data.getIndices().size();
 
       int *indices_ptr = &row_data.getIndices()[0];
@@ -267,7 +267,7 @@ struct Smoother {
     ) {
       PetscFunctionBegin;
 
-      PetscErrorCode ierr;
+      
       int nb_row = row_data.getIndices().size();
       int nb_col = col_data.getIndices().size();
       int *row_indices_ptr = &row_data.getIndices()[0];

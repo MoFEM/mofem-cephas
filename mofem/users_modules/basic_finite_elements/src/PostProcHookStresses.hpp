@@ -102,8 +102,8 @@ struct PostPorcHookStress: public MoFEM::VolumeElementForcesAndSourcesCore::User
   PetscErrorCode getMatParameters(double *_lambda,double *_mu,int *_block_id) {
     PetscFunctionBegin;
 
-    PetscErrorCode ierr;
-    ErrorCode rval;
+    
+    
 
     *_lambda = 1;
     *_mu = 1;
@@ -153,8 +153,8 @@ struct PostPorcHookStress: public MoFEM::VolumeElementForcesAndSourcesCore::User
     if(type != MBVERTEX) PetscFunctionReturn(0);
     if(data.getFieldData().size()==0) PetscFunctionReturn(0);
 
-    ErrorCode rval;
-    PetscErrorCode ierr;
+    
+    
 
     //const MoFEM::FEDofEntity *dof_ptr = data.getFieldDofs()[0];
 

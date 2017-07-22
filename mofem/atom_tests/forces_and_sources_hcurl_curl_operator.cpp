@@ -24,8 +24,8 @@ static char help[] = "...\n\n";
 
 int main(int argc, char *argv[]) {
 
-  ErrorCode rval;
-  PetscErrorCode ierr;
+  
+  
 
   PetscInitialize(&argc,&argv,(char *)0,help);
 
@@ -164,7 +164,7 @@ int main(int argc, char *argv[]) {
       DataForcesAndSurcesCore::EntData &data) {
       PetscFunctionBegin;
 
-      PetscErrorCode ierr;
+      
 
       if(data.getFieldData().size()==0) PetscFunctionReturn(0);
 

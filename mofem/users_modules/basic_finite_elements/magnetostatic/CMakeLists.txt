@@ -19,13 +19,14 @@ file(
 cm_export_file("magnetic_coil.cub" export_files_magneto_static)
 cm_export_file("magnetic_coil.jou" export_files_magneto_static)
 
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/src)
 
 # For convinience source files from MoFEM project are used. If user is
 # implementing independent application it will be using instead project
 # directories.
 
 bfe_add_executable(
-  magnetostatic ${UM_SOURCE_DIR}/basic_finite_elements/magnetostatic/magnetostatic.cpp
+  magnetostatic ${CMAKE_CURRENT_SOURCE_DIR}/magnetostatic.cpp
 )
 target_link_libraries(magnetostatic
   users_modules

@@ -16,9 +16,6 @@
 
 using namespace MoFEM;
 
-ErrorCode rval;
-PetscErrorCode ierr;
-
 static char help[] = "teting interface inserting algorithm\n\n";
 
 int main(int argc, char *argv[]) {

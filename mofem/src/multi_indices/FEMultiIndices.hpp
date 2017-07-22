@@ -327,9 +327,9 @@ struct FiniteElement {
   // > SequenceFEContainer;
 
   EntityHandle meshset;     ///< meshset stores FE ents
-  BitFEId* tag_id_data;     ///< ptr to tag storing FE id
-  void* tag_name_data;      ///< ptr to tag storing FE name
-  int tag_name_size;        ///< numer of characters in FE name
+  BitFEId* tagId;     ///< ptr to tag storing FE id
+  void* tagName;      ///< ptr to tag storing FE name
+  int tagNameSize;        ///< numer of characters in FE name
   BitFieldId* tag_BitFieldId_col_data;  ///< tag stores col id_id for fields
   BitFieldId* tag_BitFieldId_row_data;  ///< tag stores row id_id for fields
   BitFieldId* tag_BitFieldId_data;      ///< tag stores data id_id for fields
@@ -339,7 +339,7 @@ struct FiniteElement {
    * \brief Get finite element id
    * @return Finite element Id
    */
-  inline BitFEId getId() const { return *tag_id_data; };
+  inline BitFEId getId() const { return *tagId; };
 
   /**
    * \brief Get meshset containing element entities
@@ -351,13 +351,13 @@ struct FiniteElement {
    * \brief Get finite element name
    * @return string_ref
    */
-  inline boost::string_ref getNameRef() const { return boost::string_ref((char *)tag_name_data,tag_name_size); }
+  inline boost::string_ref getNameRef() const { return boost::string_ref((char *)tagName,tagNameSize); }
 
   /**
    * \brief Get finite element name
    * @return string
    */
-  inline std::string getName() const { return std::string((char *)tag_name_data,tag_name_size); }
+  inline std::string getName() const { return std::string((char *)tagName,tagNameSize); }
 
   /**
    * \brief Get field ids on columns
@@ -385,7 +385,7 @@ struct FiniteElement {
    *
    * @return Bit number
    */
-  inline unsigned int getBitNumber() const { return ffsl(((BitFieldId*)tag_id_data)->to_ulong()); }
+  inline unsigned int getBitNumber() const { return ffsl(((BitFieldId*)tagId)->to_ulong()); }
 
   /**
    * \brief Table of functions retrieving adjacencies for finite element

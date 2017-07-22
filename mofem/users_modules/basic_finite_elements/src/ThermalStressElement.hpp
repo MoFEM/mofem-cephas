@@ -113,7 +113,7 @@ struct ThermalStressElement {
           if(data.getIndices().size()==0) PetscFunctionReturn(0);
           if(dAta.tEts.find(getNumeredEntFiniteElementPtr()->getEnt())==dAta.tEts.end()) PetscFunctionReturn(0);
 
-          PetscErrorCode ierr;
+          
 
           const FENumeredDofEntity *dof_ptr;
           ierr = getNumeredEntFiniteElementPtr()->getRowDofsByPetscGlobalDofIdx(data.getIndices()[0],&dof_ptr); CHKERRQ(ierr);
@@ -189,8 +189,8 @@ struct ThermalStressElement {
   ) {
     PetscFunctionBegin;
     if(mField.check_field(thermal_field_name)) {
-      PetscErrorCode ierr;
-      ErrorCode rval;
+      
+      
       ierr = mField.add_finite_element(fe_name,MF_ZERO); CHKERRQ(ierr);
       ierr = mField.modify_finite_element_add_field_row(fe_name,field_name); CHKERRQ(ierr);
       ierr = mField.modify_finite_element_add_field_col(fe_name,field_name); CHKERRQ(ierr);

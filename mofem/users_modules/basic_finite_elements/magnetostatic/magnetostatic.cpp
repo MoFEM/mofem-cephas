@@ -20,14 +20,15 @@
  * License along with MoFEM. If not, see <http://www.gnu.org/licenses/>. */
 
 #include <BasicFiniteElements.hpp>
+#include <MagneticElement.hpp>
 using namespace MoFEM;
 
 static char help[] = "...\n\n";
 
 int main(int argc, char *argv[]) {
 
-  ErrorCode rval;
-  PetscErrorCode ierr;
+  
+  
 
   PetscInitialize(&argc,&argv,(char *)0,help);
 
