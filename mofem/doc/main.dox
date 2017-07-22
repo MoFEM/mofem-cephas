@@ -88,7 +88,7 @@ MoFEM is implemented with the use of MoAB and deliver the great flexibility of
 managing meshes. We can manage range elements types, e.g. prisms, triangles,
 quads, bricks and more.
 
-- Unique and extremely flexible \e BitRef Levels (see \ref uw_mesh_refinement)
+- Unique and extremely flexible \e BitRef Levels (see \ref mix_mesh_refinement)
 
 - Conforming mesh refinement and through MoAB non-conforming mesh refinement.
 

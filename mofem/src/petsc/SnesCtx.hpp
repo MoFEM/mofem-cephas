@@ -27,7 +27,7 @@ namespace MoFEM {
   struct SnesCtx {
 
     ErrorCode rval;
-    PetscErrorCode ierr;
+    
 
     MoFEM::Interface &mField;   ///< database Interface
     moab::Interface &moab;      ///< moab Interface

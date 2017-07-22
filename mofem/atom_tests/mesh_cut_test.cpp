@@ -22,9 +22,6 @@
 
 using namespace MoFEM;
 
-ErrorCode rval;
-PetscErrorCode ierr;
-
 static char help[] = "testing mesh cut test\n\n";
 
 int main(int argc, char *argv[]) {

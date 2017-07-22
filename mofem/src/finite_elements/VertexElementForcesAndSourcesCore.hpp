@@ -53,7 +53,7 @@ struct VertexElementForcesAndSourcesCore: public ForcesAndSurcesCore {
     dataNoFieldCol(MBVERTEX)
   {};
 
-  MoABErrorCode rval;
+  
   VectorDouble coords;
 
   /** \brief default operator for VERTEX element

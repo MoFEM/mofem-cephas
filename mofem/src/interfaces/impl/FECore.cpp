@@ -244,7 +244,7 @@ namespace MoFEM {
   }
 
   PetscErrorCode Core::get_finite_element_entities_by_dimension(const std::string name,int dim,Range &ents) const {
-    MoABErrorCode rval;
+    
     PetscFunctionBegin;
     try {
       EntityHandle meshset = get_finite_element_meshset(name);
@@ -256,7 +256,7 @@ namespace MoFEM {
   }
 
   PetscErrorCode Core::get_finite_element_entities_by_type(const std::string name,EntityType type,Range &ents) const {
-    MoABErrorCode rval;
+    
     PetscFunctionBegin;
     try {
       EntityHandle meshset = get_finite_element_meshset(name);
@@ -268,7 +268,7 @@ namespace MoFEM {
   }
 
   PetscErrorCode Core::get_finite_element_entities_by_handle(const std::string name,Range &ents) const {
-    MoABErrorCode rval;
+    
     PetscFunctionBegin;
     try {
       EntityHandle meshset = get_finite_element_meshset(name);
@@ -906,7 +906,7 @@ namespace MoFEM {
       SETERRQ1(cOmm,1,"finite element not found < %s >",name.c_str());
     }
     EntityHandle meshset = (*it)->getMeshset();
-    MoABErrorCode rval;
+    
     int num_entities;
     rval = moab.get_number_entities_by_handle(meshset,num_entities); CHKERRQ_MOAB(rval);
     if(
@@ -924,7 +924,7 @@ namespace MoFEM {
     it = finiteElements.get<FiniteElement_name_mi_tag>().begin();
     for(;it!=finiteElements.get<FiniteElement_name_mi_tag>().end();it++) {
       EntityHandle meshset = (*it)->getMeshset();
-      MoABErrorCode rval;
+      
       int num_entities;
       rval = moab.get_number_entities_by_handle(meshset,num_entities); CHKERRQ_MOAB(rval);
       if(entsFiniteElements.get<FiniteElement_name_mi_tag>().count((*it)->getName().c_str())

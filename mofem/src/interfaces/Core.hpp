@@ -91,8 +91,8 @@ struct Core: public Interface {
   mutable int *buildMoFEM; ///< keeps flags/semaphores for different stages
 
   //Database
-  MoABErrorCode rval;
-  PetscErrorCode ierr;
+  
+  
 
   //Data and low level methods
   Tag th_Part;  ///< Tag for partition number

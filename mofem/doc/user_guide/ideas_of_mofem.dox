@@ -187,7 +187,7 @@ struct OpGradGrad: public MoFEM::VolumeElementForcesAndSourcesCore::UserDataOper
       // get integration weight scaled by volume
       double w = getGaussPts()(3,gg)*getVolume();
       // get direvatives of base functions on rows
-      FTensor::Tensor1<double*,Tensor_Dim> t_base_diff_row = row_data.getFTensor1DiffN();
+      FTensor::Tensor1<double*,3> t_base_diff_row = row_data.getFTensor1DiffN<3>();
       // loop rows
       for(int aa = 0;aa!=nb_row_dofs;aa++) {
         // take first element in row "aa"
@@ -195,7 +195,7 @@ struct OpGradGrad: public MoFEM::VolumeElementForcesAndSourcesCore::UserDataOper
           &entityLocalMatrix(aa,0),1
         );
         // get direvatives of base functions on columns
-        FTensor::Tensor1<double*,Tensor_Dim> t_base_diff_col = col_data.getFTensor1DiffN(gg,0);
+        FTensor::Tensor1<double*,3> t_base_diff_col = col_data.getFTensor1DiffN<3>(gg,0);
         // loop column
         for(int bb = 0;bb!=nb_col_dofs;bb++) {
           FTensor::Index<'i',3> i;

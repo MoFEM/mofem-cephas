@@ -46,7 +46,7 @@ using namespace MoFEM;
 #include <FatPrismPolynomialBase.hpp>
 
 PetscErrorCode FatPrismPolynomialBaseCtx::queryInterface(const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface) {
-  PetscErrorCode ierr;
+  
   PetscFunctionBegin;
   *iface = NULL;
   if(
@@ -80,7 +80,7 @@ gaussPtsTrianglesOnly(gauss_pts_triangles_only),
 gaussPtsThroughThickness(gauss_pts_through_thickness),
 mOab(moab),
 fePtr(fe_ptr) {
-  PetscErrorCode ierr;
+  
   ierr = setBase(); CHKERRABORT(PETSC_COMM_WORLD,ierr);
 }
 FatPrismPolynomialBaseCtx::~FatPrismPolynomialBaseCtx() {
@@ -89,7 +89,7 @@ FatPrismPolynomialBaseCtx::~FatPrismPolynomialBaseCtx() {
 PetscErrorCode FatPrismPolynomialBase::queryInterface(
   const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface
 ) {
-  PetscErrorCode ierr;
+  
   PetscFunctionBegin;
   *iface = NULL;
   if(uuid == IDD_FATPRISM_BASE_FUNCTION) {
@@ -109,7 +109,7 @@ PetscErrorCode FatPrismPolynomialBase::getValue(
   MatrixDouble &pts,
   boost::shared_ptr<BaseFunctionCtx> ctx_ptr
 ) {
-  PetscErrorCode ierr;
+  
   PetscFunctionBegin;
 
   MoFEM::UnknownInterface *iface;
@@ -184,7 +184,7 @@ PetscErrorCode FatPrismPolynomialBase::getValue(
 }
 
 PetscErrorCode FatPrismPolynomialBase::getValueH1TrianglesOnly() {
-  PetscErrorCode ierr;
+  
   PetscFunctionBegin;
 
   const FieldApproximationBase base = cTx->bAse;
@@ -205,7 +205,7 @@ PetscErrorCode FatPrismPolynomialBase::getValueH1TrianglesOnly() {
 }
 
 PetscErrorCode FatPrismPolynomialBase::getValueH1ThroughThickness() {
-  PetscErrorCode ierr;
+  
   PetscFunctionBegin;
 
   // DataForcesAndSurcesCore& data = cTx->dAta;
@@ -248,7 +248,7 @@ PetscErrorCode FatPrismPolynomialBase::getValueH1ThroughThickness() {
 }
 
 PetscErrorCode FatPrismPolynomialBase::getValueH1(MatrixDouble &pts) {
-  PetscErrorCode ierr;
+  
   PetscFunctionBegin;
 
   DataForcesAndSurcesCore& data = cTx->dAta;
@@ -388,7 +388,7 @@ PetscErrorCode FatPrismPolynomialBase::getValueH1(MatrixDouble &pts) {
     // quads
     // higher order edges and zeta
     {
-      MoABErrorCode rval;
+      
       int quads_nodes[3*4];
       int quad_order[3] = { 0, 0, 0};
       double *quad_n[3],*diff_quad_n[3];

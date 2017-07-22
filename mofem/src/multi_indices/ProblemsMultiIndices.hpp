@@ -76,40 +76,41 @@ struct ComposedProblemsData {
   * \ingroup problems_multi_indices
   *
   * This is low level structure with information about problem, what elements
-  * compose problem and what dofs are on rows and columns.
+  * compose problem and what DOFs are on rows and columns.
   *
-  * \todo fix names folloing name convention
+  * \todo fix names following name convention
   *
   */
 struct Problem {
 
-  EntityHandle meshset;               ///< Problem meshset (on thags of this meshset all data related to problem are strord)
-  BitProblemId* tag_id_data;          ///< Unique problem ID
-  const void* tag_name_data;          ///< Problem name
-  int tag_name_size;                  ///< Size of problem name
-  DofIdx* tag_nbdof_data_row;         ///< Global number of DOFs in  row
-  DofIdx* tag_nbdof_data_col;         ///< Global number of DOFs in col
-  DofIdx* tag_local_nbdof_data_row;   ///< Local number of DOFs in row
-  DofIdx* tag_local_nbdof_data_col;   ///< Local number of DOFs in colIs
-  DofIdx* tag_ghost_nbdof_data_row;   ///< Number of ghost DOFs in row
-  DofIdx* tag_ghost_nbdof_data_col;   ///< Nymber of ghost DOFs in col
-  BitFEId* tag_BitFEId_data;          ///< IDs of finite elements in problem
-  BitRefLevel* tag_BitRefLevel;       ///< BitRef level of finite elements in problem
-  BitRefLevel* tag_MaskBitRefLevel;   ///< BItRefMask of elements in problem
+  EntityHandle meshset;               ///< Problem meshset (on tag of this meshset all data related to problem are stored)
+  BitProblemId* tagId;                ///< Unique problem ID
+  const char* tagName;                ///< Problem name
+  int tagNameSize;                    ///< Size of problem name
+  BitFEId* tagBitFEId;          ///< IDs of finite elements in problem
+  BitRefLevel* tagBitRefLevel;       ///< BitRef level of finite elements in problem
+  BitRefLevel* tagMaskBitRefLevel;   ///< BItRefMask of elements in problem
 
-  mutable boost::shared_ptr<NumeredDofEntity_multiIndex> numeredDofsRows;     ///< store dofs on rows for this problem
-  mutable boost::shared_ptr<NumeredDofEntity_multiIndex> numeredDofsCols;     ///< store dofs on columns for this problem
+  mutable DofIdx nbDofsRow;          ///< Global number of DOFs in  row
+  mutable DofIdx nbDofsCol;          ///< Global number of DOFs in col
+  mutable DofIdx nbLocDofsRow;    ///< Local number of DOFs in row
+  mutable DofIdx nbLocDofsCol;    ///< Local number of DOFs in colIs
+  mutable DofIdx nbGhostDofsRow;    ///< Number of ghost DOFs in row
+  mutable DofIdx nbGhostDofsCol;    ///< Number of ghost DOFs in col
+
+  mutable boost::shared_ptr<NumeredDofEntity_multiIndex> numeredDofsRows;     ///< store DOFs on rows for this problem
+  mutable boost::shared_ptr<NumeredDofEntity_multiIndex> numeredDofsCols;     ///< store DOFs on columns for this problem
   mutable NumeredEntFiniteElement_multiIndex numeredFiniteElements;           ///< store finite elements
 
   /**
-   * \brief get access to numeredDofsRows storing dofs on rows
+   * \brief get access to numeredDofsRows storing DOFs on rows
    */
   const boost::shared_ptr<NumeredDofEntity_multiIndex>& getNumeredDofsRows() const {
     return numeredDofsRows;
   }
 
   /**
-   * \brief get access to numeredDofsCols storing dofs on cols
+   * \brief get access to numeredDofsCols storing DOFs on cols
    */
   const boost::shared_ptr<NumeredDofEntity_multiIndex>& getNumeredDofsCols() const {
     return numeredDofsCols;
@@ -121,14 +122,6 @@ struct Problem {
   const NumeredEntFiniteElement_multiIndex& getNumeredFiniteElements() const {
     return numeredFiniteElements;
   }
-
-
-
-  // /// \deprecated use numeredDofsRows instead
-  // DEPRECATED const boost::shared_ptr<NumeredDofEntity_multiIndex> &numered_dofs_rows; // FIXME name convention
-  //
-  // /// \deprecated use numeredDofsRows instead
-  // DEPRECATED const boost::shared_ptr<NumeredDofEntity_multiIndex> &numered_dofs_cols; // FIXME name convention
 
   /**
    * \brief Subproblem problem data
@@ -232,17 +225,17 @@ struct Problem {
   }
 
   /**
-   * \brief get dof from problem
+   * \brief get DOFs from problem
    *
-   * Note that \e ent_dof_idx is not coefficient number, is local number of dof on
-   * the entity. The coefficient number and local index of dof or entity are
+   * Note that \e ent_dof_idx is not coefficient number, is local number of DOFs on
+   * the entity. The coefficient number and local index of DOFs or entity are
    * the same on vertices and H1 approximation.
    *
    * @param  name       field name
    * @param  ent        entity handle
-   * @param  ent_dof_idx index of dof on entity
+   * @param  ent_dof_idx index of DOFs on entity
    * @param  row_or_col ROW or COL
-   * @param  dof_ptr    shared pointer to dof if found
+   * @param  dof_ptr    shared pointer to DOFs if found
    * @return            error code
    */
   PetscErrorCode getDofByNameEntAndEntDofIdx(
@@ -306,7 +299,7 @@ struct Problem {
   }
 
   /**
-  * \brief use with loops to iterate row dofs
+  * \brief use with loops to iterate row DOFs
   * \ingroup problems_multi_indices
   *
   * \code
@@ -325,7 +318,7 @@ struct Problem {
   _IT_NUMEREDDOF_ROW_FOR_LOOP_(PROBLEMPTR,IT)
 
   /**
-  * use with loops to iterate col dofs
+  * use with loops to iterate col DOFs
   * \ingroup problems_multi_indices
   *
   * \code
@@ -388,7 +381,7 @@ struct Problem {
   };
 
   /**
-  * \brief use with loops to iterate row dofs
+  * \brief use with loops to iterate row DOFs
   * \ingroup problems_multi_indices
   *
   * \code
@@ -407,7 +400,7 @@ struct Problem {
   _IT_NUMEREDDOF_ROW_BY_LOCIDX_FOR_LOOP_(PROBLEMPTR,IT)
 
   /**
-  * \brief use with loops to iterate col dofs
+  * \brief use with loops to iterate col DOFs
   *
   * \code
   * for(_IT_NUMEREDDOF_COL_BY_LOCIDX_FOR_LOOP_(PROBLEMPTR,IT)) {
@@ -441,7 +434,7 @@ struct Problem {
   { return numeredDofsCols->get<PetscLocalIdx_mi_tag>().upper_bound(locidx); }
 
   /**
-  * \brief use with loops to iterate row dofs
+  * \brief use with loops to iterate row DOFs
   * \ingroup problems_multi_indices
   *
   * \code
@@ -461,7 +454,7 @@ struct Problem {
   IT!=PROBLEMPTR->get_numeredDofsRows_by_ent_end(ENT); IT++
 
   /**
-  * \brief use with loops to iterate col dofs
+  * \brief use with loops to iterate col DOFs
   * \ingroup problems_multi_indices
   *
   * \code
@@ -496,7 +489,7 @@ struct Problem {
   { return numeredDofsCols->get<Ent_mi_tag>().upper_bound(ent); }
 
   /**
-  * use with loops to iterate row dofs
+  * use with loops to iterate row DOFs
   * \ingroup problems_multi_indices
   *
   * \code
@@ -515,7 +508,7 @@ struct Problem {
   _IT_NUMEREDDOF_ROW_BY_NAME_FOR_LOOP_(PROBLEMPTR,NAME,IT)
 
   /**
-  * \brief use with loops to iterate col dofs
+  * \brief use with loops to iterate col DOFs
   * \ingroup problems_multi_indices
   *
   * \code
@@ -550,7 +543,7 @@ struct Problem {
   { return numeredDofsCols->get<FieldName_mi_tag>().upper_bound(name); }
 
   /**
-  * \brief use with loops to iterate row dofs
+  * \brief use with loops to iterate row DOFs
   * \ingroup problems_multi_indices
   *
   * \code
@@ -569,7 +562,7 @@ struct Problem {
   _IT_NUMEREDDOF_ROW_BY_NAME_ENT_PART_FOR_LOOP_(PROBLEMPTR,NAME,ENT,PART,IT)
 
   /**
-  * use with loops to iterate col dofs
+  * use with loops to iterate col DOFs
   * \ingroup problems_multi_indices
   *
   * \code
@@ -684,19 +677,19 @@ struct Problem {
 
   virtual ~Problem();
 
-  inline BitProblemId getId() const { return *((BitProblemId*)tag_id_data); }
+  inline BitProblemId getId() const { return *((BitProblemId*)tagId); }
 
-  inline std::string getName() const { return std::string((char *)tag_name_data,tag_name_size); }
+  inline std::string getName() const { return std::string((char *)tagName,tagNameSize); }
 
-  inline DofIdx getNbDofsRow() const { return *((DofIdx*)tag_nbdof_data_row); }
-  inline DofIdx getNbDofsCol() const { return *((DofIdx*)tag_nbdof_data_col); }
-  inline DofIdx getNbLocalDofsRow() const { return *((DofIdx*)tag_local_nbdof_data_row); }
-  inline DofIdx getNbLocalDofsCol() const { return *((DofIdx*)tag_local_nbdof_data_col); }
-  inline DofIdx getNbGhostDofsRow() const { return *((DofIdx*)tag_ghost_nbdof_data_row); }
-  inline DofIdx getNbGhostDofsCol() const { return *((DofIdx*)tag_ghost_nbdof_data_col); }
+  inline DofIdx getNbDofsRow() const { return nbDofsRow; }
+  inline DofIdx getNbDofsCol() const { return nbDofsCol; }
+  inline DofIdx getNbLocalDofsRow() const { return nbLocDofsRow; }
+  inline DofIdx getNbLocalDofsCol() const { return nbLocDofsCol; }
+  inline DofIdx getNbGhostDofsRow() const { return nbGhostDofsRow; }
+  inline DofIdx getNbGhostDofsCol() const { return nbGhostDofsCol; }
 
-  inline BitRefLevel getBitRefLevel() const { return *tag_BitRefLevel; }
-  inline BitRefLevel getMaskBitRefLevel() const { return *tag_MaskBitRefLevel; }
+  inline BitRefLevel getBitRefLevel() const { return *tagBitRefLevel; }
+  inline BitRefLevel getMaskBitRefLevel() const { return *tagMaskBitRefLevel; }
 
   PetscErrorCode getRowDofsByPetscGlobalDofIdx(DofIdx idx,const NumeredDofEntity **dof_ptr) const;
   PetscErrorCode getColDofsByPetscGlobalDofIdx(DofIdx idx,const NumeredDofEntity **dof_ptr) const;
@@ -831,7 +824,7 @@ typedef multi_index_container<
 struct ProblemChangeRefLevelBitAdd {
   BitRefLevel bit;
   ProblemChangeRefLevelBitAdd(const BitRefLevel _bit): bit(_bit) {};
-  void operator()(Problem &p) { *(p.tag_BitRefLevel) |= bit; };
+  void operator()(Problem &p) { *(p.tagBitRefLevel) |= bit; };
 };
 
 /** \brief set ref level to problem
@@ -840,7 +833,7 @@ struct ProblemChangeRefLevelBitAdd {
 struct ProblemChangeRefLevelBitSet {
   BitRefLevel bit;
   ProblemChangeRefLevelBitSet(const BitRefLevel _bit): bit(_bit) {};
-  void operator()(Problem &p) { *(p.tag_BitRefLevel) = bit; };
+  void operator()(Problem &p) { *(p.tagBitRefLevel) = bit; };
 };
 
 /** \brief set prof dof bit ref mask
@@ -849,7 +842,7 @@ struct ProblemChangeRefLevelBitSet {
 struct ProblemChangeRefLevelBitDofMaskSet {
   BitRefLevel bit;
   ProblemChangeRefLevelBitDofMaskSet(const BitRefLevel _bit): bit(_bit) {};
-  void operator()(Problem &p) { *(p.tag_MaskBitRefLevel) = bit; };
+  void operator()(Problem &p) { *(p.tagMaskBitRefLevel) = bit; };
 };
 
 /** \brief add finite element to problem
@@ -870,14 +863,14 @@ struct ProblemFiniteElementChangeBitUnSet {
   void operator()(Problem &p);
 };
 
-/** \brief zero nb. of dofs in row
+/** \brief zero nb. of DOFs in row
   * \ingroup problems_multi_indices
   */
 struct ProblemZeroNbRowsChange {
   void operator()(Problem &e);
 };
 
-/** \brief zero nb. of dofs in col
+/** \brief zero nb. of DOFs in col
   * \ingroup problems_multi_indices
   */
 struct ProblemZeroNbColsChange {

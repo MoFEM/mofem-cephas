@@ -50,7 +50,7 @@ namespace MoFEM {
 // const static int debug = 1;
 
 PetscErrorCode Core::get_adjacencies_equality(const EntityHandle from_entiti,const int to_dimension,Range &adj_entities) const {
-  MoABErrorCode rval;
+  
   PetscFunctionBegin;
   RefEntity from_ref_entiti(basicEntityDataPtr,from_entiti);
   //std::cerr << "from:\n";
@@ -76,7 +76,7 @@ PetscErrorCode Core::get_adjacencies_equality(const EntityHandle from_entiti,con
   PetscFunctionReturn(0);
 }
 PetscErrorCode Core::get_adjacencies_any(const EntityHandle from_entiti,const int to_dimension,Range &adj_entities) const {
-  MoABErrorCode rval;
+  
   PetscFunctionBegin;
   RefEntity from_ref_entiti(basicEntityDataPtr,from_entiti);
   //std::cerr << "from:\n";
@@ -110,7 +110,7 @@ PetscErrorCode Core::get_adjacencies(
   const int operation_type,
   const int verb
 ) const {
-  PetscErrorCode ierr;
+  
   PetscFunctionBegin;
   BitRefLevel bit = problem_ptr->getBitRefLevel();
   ierr = get_adjacencies(bit,from_entities,num_netities,to_dimension,adj_entities,operation_type); CHKERRQ(ierr);
@@ -125,7 +125,7 @@ PetscErrorCode Core::get_adjacencies(
   const int operation_type,
   const int verb
 ) const {
-  MoABErrorCode rval;
+  
   PetscFunctionBegin;
   if(verb>0) {
     std::ostringstream ss;

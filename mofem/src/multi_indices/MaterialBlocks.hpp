@@ -28,7 +28,7 @@ namespace MoFEM {
  *  \brief Generic attribute data structure
  */
 struct GenericAttributeData {
-    PetscErrorCode ierr;
+    
 
     /**
      * \brief get data from structure

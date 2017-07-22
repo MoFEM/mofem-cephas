@@ -73,7 +73,7 @@ struct FieldApproximationH1 {
       if(row_data.getIndices().size()==0) PetscFunctionReturn(0);
       if(col_data.getIndices().size()==0) PetscFunctionReturn(0);
 
-      PetscErrorCode ierr;
+      
 
       const FENumeredDofEntity *dof_ptr;
       ierr = getNumeredEntFiniteElementPtr()->getRowDofsByPetscGlobalDofIdx(row_data.getIndices()[0],&dof_ptr); CHKERRQ(ierr);
@@ -177,7 +177,7 @@ struct FieldApproximationH1 {
 
       if(data.getIndices().size()==0) PetscFunctionReturn(0);
 
-      PetscErrorCode ierr;
+      
 
       //PetscAttachDebugger();
 
@@ -298,7 +298,7 @@ struct FieldApproximationH1 {
       if(A == PETSC_NULL) PetscFunctionReturn(0);
       if(row_data.getIndices().size()==0) PetscFunctionReturn(0);
       if(col_data.getIndices().size()==0) PetscFunctionReturn(0);
-      PetscErrorCode ierr;
+      
       const FENumeredDofEntity *dof_ptr;
       ierr = getNumeredEntFiniteElementPtr()->getRowDofsByPetscGlobalDofIdx(row_data.getIndices()[0],&dof_ptr); CHKERRQ(ierr);
       int rank = dof_ptr->getNbOfCoeffs();
@@ -385,7 +385,7 @@ struct FieldApproximationH1 {
       PetscFunctionBegin;
 
       if(data.getIndices().size()==0) PetscFunctionReturn(0);
-      PetscErrorCode ierr;
+      
 
       //PetscAttachDebugger();
       const FENumeredDofEntity *dof_ptr;
@@ -533,7 +533,7 @@ struct FieldApproximationH1 {
     FUNEVAL &function_evaluator
   ) {
     PetscFunctionBegin;
-    PetscErrorCode ierr;
+    
     ierr = setOperatorsVolume(field_name,A,vec_F,function_evaluator); CHKERRQ(ierr);
     if(A) {
       ierr = MatZeroEntries(A); CHKERRQ(ierr);
@@ -562,7 +562,7 @@ struct FieldApproximationH1 {
   //   FUNEVAL &function_evaluator
   // ) {
   //   PetscFunctionBegin;
-  //   PetscErrorCode ierr;
+  //   
   //   ierr = loopMatrixAndVectorVolume(
   //     problem_name,fe_name,field_name,A,vec_F,function_evaluator
   //   ); CHKERRQ(ierr);

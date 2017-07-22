@@ -170,7 +170,7 @@ struct NonlinearElasticElement {
       ublas::matrix<TYPE,ublas::row_major,ublas::bounded_array<TYPE,9> >& inv_a
     ) {
       PetscFunctionBegin;
-      //PetscErrorCode ierr;
+      //
       inv_a.resize(3,3);
       //http://www.cg.info.hiroshima-cu.ac.jp/~miyazaki/knowledge/teche23.html
       //http://mathworld.wolfram.com/MatrixInverse.html
@@ -256,7 +256,7 @@ struct NonlinearElasticElement {
       boost::shared_ptr<const NumeredEntFiniteElement> fe_ptr
     ) {
       PetscFunctionBegin;
-      PetscErrorCode ierr;
+      
       lambda = LAMBDA(block_data.E,block_data.PoissonRatio);
       mu = MU(block_data.E,block_data.PoissonRatio);
       ierr = calculateC_CauchyDefromationTensor(); CHKERRQ(ierr);
@@ -314,7 +314,7 @@ struct NonlinearElasticElement {
       boost::shared_ptr<const NumeredEntFiniteElement> fe_ptr
     ) {
       PetscFunctionBegin;
-      PetscErrorCode ierr;
+      
       lambda = LAMBDA(block_data.E,block_data.PoissonRatio);
       mu = MU(block_data.E,block_data.PoissonRatio);
       ierr = calculateC_CauchyDefromationTensor(); CHKERRQ(ierr);
@@ -339,7 +339,7 @@ struct NonlinearElasticElement {
       boost::shared_ptr<const NumeredEntFiniteElement> fe_ptr
     ) {
       PetscFunctionBegin;
-      PetscErrorCode ierr;
+      
       ierr = calculateP_PiolaKirchhoffI(block_data,fe_ptr); CHKERRQ(ierr);
       ierr = calculateElasticEnergy(block_data,fe_ptr); CHKERRQ(ierr);
       SiGma.resize(3,3,false);

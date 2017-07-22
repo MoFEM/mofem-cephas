@@ -78,8 +78,8 @@ struct EdgeForce {
     /// Add element taking information from NODESET
     static PetscErrorCode addElement(MoFEM::Interface &m_field,const std::string field_name,Range *intersect_ptr = NULL) {
       PetscFunctionBegin;
-      PetscErrorCode ierr;
-      ErrorCode rval;
+      
+      
       ierr = m_field.add_finite_element("FORCE_FE",MF_ZERO); CHKERRQ(ierr);
       ierr = m_field.modify_finite_element_add_field_row("FORCE_FE",field_name); CHKERRQ(ierr);
       ierr = m_field.modify_finite_element_add_field_col("FORCE_FE",field_name); CHKERRQ(ierr);
@@ -110,7 +110,7 @@ struct EdgeForce {
       Vec F,const std::string field_name
     ) {
       PetscFunctionBegin;
-      PetscErrorCode ierr;
+      
       string fe_name = "FORCE_FE";
       edge_forces.insert(fe_name,new EdgeForce(m_field));
       for(_IT_CUBITMESHSETS_BY_BCDATA_TYPE_FOR_LOOP_(m_field,NODESET|FORCESET,it)) {

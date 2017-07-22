@@ -25,8 +25,8 @@ static char help[] = "...\n\n";
 
 int main(int argc, char *argv[]) {
 
-  ErrorCode rval;
-  PetscErrorCode ierr;
+  
+  
 
   PetscInitialize(&argc,&argv,(char *)0,help);
 
@@ -151,7 +151,7 @@ int main(int argc, char *argv[]) {
     int getRule(int order) { return order; };
 
     PetscErrorCode doWork(int side,EntityType type,DataForcesAndSurcesCore::EntData &data) {
-      PetscErrorCode ierr;
+      
       PetscFunctionBegin;
       if(type == MBTRI && side == 0) {
         std::cout << "Face" << std::endl;

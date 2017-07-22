@@ -31,7 +31,7 @@ using namespace MoFEM;
 PetscErrorCode LegendrePolynomialCtx::queryInterface(
   const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface
 ) {
-  PetscErrorCode ierr;
+  
   PetscFunctionBegin;
   *iface = NULL;
   if(uuid == IDD_LEGENDRE_BASE_FUNCTION) {
@@ -47,7 +47,7 @@ PetscErrorCode LegendrePolynomialCtx::queryInterface(
 PetscErrorCode LegendrePolynomial::queryInterface(
   const MOFEMuuid& uuid,MoFEM::UnknownInterface** iface
 ) {
-  PetscErrorCode ierr;
+  
   PetscFunctionBegin;
   *iface = NULL;
   if(uuid == IDD_LEGENDRE_BASE_FUNCTION) {
@@ -64,7 +64,7 @@ PetscErrorCode LegendrePolynomial::getValue(
   MatrixDouble &pts,
   boost::shared_ptr<BaseFunctionCtx> ctx_ptr
 ) {
-  PetscErrorCode ierr;
+  
   PetscFunctionBegin;
   MoFEM::UnknownInterface *iface;
   ierr = ctx_ptr->queryInterface(IDD_LEGENDRE_BASE_FUNCTION,&iface); CHKERRQ(ierr);

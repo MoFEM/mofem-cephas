@@ -112,7 +112,7 @@ struct AnalyticalDirichletBC {
         int side,EntityType type,DataForcesAndSurcesCore::EntData &data
       ) {
         PetscFunctionBegin;
-        PetscErrorCode ierr;
+        
 
         try {
 

@@ -29,8 +29,8 @@ static const bool debug = false;
 
 int main(int argc, char *argv[]) {
 
-    ErrorCode rval;
-    PetscErrorCode ierr;
+    
+    
 
     //initialize petsc
     PetscInitialize(&argc,&argv,(char *)0,help);

@@ -34,13 +34,13 @@
 namespace MoFEM {
 
 FieldSeries::FieldSeries(Interface &moab,const EntityHandle _meshset):
-  meshset(_meshset),tag_name_data(NULL),tag_name_size(0),
+  meshset(_meshset),tagName(NULL),tagNameSize(0),
   record_begin(false),record_end(false) {
   ErrorCode rval;
 
   Tag th_SeriesName;
   rval = moab.tag_get_handle("_SeriesName",th_SeriesName); MOAB_THROW(rval);
-  rval = moab.tag_get_by_ptr(th_SeriesName,&meshset,1,(const void **)&tag_name_data,&tag_name_size); MOAB_THROW(rval);
+  rval = moab.tag_get_by_ptr(th_SeriesName,&meshset,1,(const void **)&tagName,&tagNameSize); MOAB_THROW(rval);
 
   const int def_val_len = 0;
 
@@ -230,7 +230,7 @@ PetscErrorCode FieldSeries::save(Interface &moab) const {
 
 FieldSeriesStep::FieldSeriesStep(Interface &moab,const FieldSeries *_FieldSeries_ptr,const int _step_number):
   interface_FieldSeries<FieldSeries>(_FieldSeries_ptr),step_number(_step_number) {
-  PetscErrorCode ierr;
+  
   ierr = get_time_init(moab); CHKERRABORT(PETSC_COMM_WORLD,ierr);
 }
 

@@ -68,7 +68,7 @@ namespace MoFEM {
 PetscErrorCode DataOperator::opLhs(
     DataForcesAndSurcesCore &row_data,DataForcesAndSurcesCore &col_data,bool symm) {
   PetscFunctionBegin;
-  PetscErrorCode ierr;
+  
 
   //nodes
   for(unsigned int nn = 0;nn!=row_data.dataOnEntities[MBVERTEX].size();nn++) {
@@ -487,7 +487,7 @@ PetscErrorCode invertTensor3by3<3,double,ublas::row_major,DoubleAllacator>(
   VectorDouble &det_data,
   MatrixDouble &inv_jac_data
 ) {
-  PetscErrorCode ierr;
+  
   PetscFunctionBegin;
   FTensor::Tensor2<double*,3,3> A = getTensor2FormData<3,3>(jac_data);
   int nb_gauss_pts = jac_data.size2();
@@ -516,7 +516,7 @@ PetscErrorCode DataOperator::opRhs(
   const bool error_if_no_base
 ) {
   PetscFunctionBegin;
-  PetscErrorCode ierr;
+  
 
   if(do_vertices) {
     for(unsigned int nn = 0;nn<data.dataOnEntities[MBVERTEX].size();nn++) {
@@ -661,7 +661,7 @@ PetscErrorCode OpSetInvJacH1::doWork(
   DataForcesAndSurcesCore::EntData &data
 ) {
   PetscFunctionBegin;
-  // PetscErrorCode ierr;
+  // 
 
   try {
 
@@ -1341,7 +1341,7 @@ PetscErrorCode OpGetCoordsAndNormalsOnFace::doWork(int side,EntityType type,Data
 
 PetscErrorCode OpGetCoordsAndNormalsOnFace::calculateNormals() {
   PetscFunctionBegin;
-  PetscErrorCode ierr;
+  
 
   sPin.resize(3,3);
   sPin.clear();
@@ -1430,7 +1430,7 @@ PetscErrorCode OpGetCoordsAndNormalsOnPrism::doWork(int side,EntityType type,Dat
 
 PetscErrorCode OpGetCoordsAndNormalsOnPrism::calculateNormals() {
   PetscFunctionBegin;
-  PetscErrorCode ierr;
+  
 
   try {
     sPin.resize(3,3);
@@ -1510,7 +1510,7 @@ PetscErrorCode OpSetCovariantPiolaTransoformOnTriangle::doWork(
   EntityType type,
   DataForcesAndSurcesCore::EntData &data
 ) {
-  PetscErrorCode ierr;
+  
   PetscFunctionBegin;
 
   if(type != MBEDGE && type != MBTRI) PetscFunctionReturn(0);

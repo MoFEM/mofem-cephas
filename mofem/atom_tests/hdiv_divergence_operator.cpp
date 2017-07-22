@@ -24,8 +24,8 @@ static char help[] = "...\n\n";
 
 int main(int argc, char *argv[]) {
 
-  ErrorCode rval;
-  PetscErrorCode ierr;
+  
+  
 
   PetscInitialize(&argc,&argv,(char *)0,help);
 
@@ -186,7 +186,7 @@ int main(int argc, char *argv[]) {
       if(type != MBTRI && type != MBTET) PetscFunctionReturn(0);
 
 
-      PetscErrorCode ierr;
+      
 
       if(data.getFieldData().size()==0) PetscFunctionReturn(0);
 

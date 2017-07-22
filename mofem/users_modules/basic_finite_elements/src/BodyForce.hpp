@@ -56,7 +56,7 @@ struct BodyFroceConstantField {
       if(data.getIndices().size()==0) PetscFunctionReturn(0);
       if(blockTets.find(getNumeredEntFiniteElementPtr()->getEnt())==blockTets.end()) PetscFunctionReturn(0);
 
-      PetscErrorCode ierr;
+      
 
       const FENumeredDofEntity *dof_ptr;
       ierr = getNumeredEntFiniteElementPtr()->getRowDofsByPetscGlobalDofIdx(
@@ -108,8 +108,8 @@ struct BodyFroceConstantField {
   };
 
   PetscErrorCode addBlock(const std::string field_name,Vec &F,int ms_id) {
-    PetscErrorCode ierr;
-    ErrorCode rval;
+    
+    
     const CubitMeshSets *cubit_meshset_ptr;
     MeshsetsManager *mmanager_ptr;
     PetscFunctionBegin;

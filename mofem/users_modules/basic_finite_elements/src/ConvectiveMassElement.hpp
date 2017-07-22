@@ -201,7 +201,7 @@ struct ConvectiveMassElement {
       ublas::matrix<TYPE,ublas::row_major,ublas::bounded_array<TYPE,9> >& inv_a
     ) {
       PetscFunctionBegin;
-      //PetscErrorCode ierr;
+      //
       inv_a.resize(3,3);
       //http://www.cg.info.hiroshima-cu.ac.jp/~miyazaki/knowledge/teche23.html
       //http://mathworld.wolfram.com/MatrixInverse.html
@@ -578,7 +578,7 @@ struct ConvectiveMassElement {
     */
   static PetscErrorCode MultOpA(Mat A,Vec x,Vec f) {
     PetscFunctionBegin;
-    PetscErrorCode ierr;
+    
     void *void_ctx;
     ierr = MatShellGetContext(A,&void_ctx); CHKERRQ(ierr);
     MatShellCtx *ctx = (MatShellCtx*)void_ctx;
@@ -611,7 +611,7 @@ struct ConvectiveMassElement {
 
   static PetscErrorCode ZeroEntriesOp(Mat A) {
     PetscFunctionBegin;
-    PetscErrorCode ierr;
+    
     void *void_ctx;
     ierr = MatShellGetContext(A,&void_ctx); CHKERRQ(ierr);
     MatShellCtx *ctx = (MatShellCtx*)void_ctx;
@@ -643,7 +643,7 @@ struct ConvectiveMassElement {
 
   static PetscErrorCode PCShellSetUpOp(PC pc) {
     PetscFunctionBegin;
-    PetscErrorCode ierr;
+    
     void *void_ctx;
     ierr = PCShellGetContext(pc,&void_ctx); CHKERRQ(ierr);
     PCShellCtx *ctx = (PCShellCtx*)void_ctx;
@@ -658,7 +658,7 @@ struct ConvectiveMassElement {
 
   static PetscErrorCode PCShellDestroy(PC pc) {
     PetscFunctionBegin;
-    PetscErrorCode ierr;
+    
     void *void_ctx;
     ierr = PCShellGetContext(pc,&void_ctx); CHKERRQ(ierr);
     PCShellCtx *ctx = (PCShellCtx*)void_ctx;
@@ -694,7 +694,7 @@ struct ConvectiveMassElement {
     */
   static PetscErrorCode PCShellApplyOp(PC pc,Vec f,Vec x) {
     PetscFunctionBegin;
-    PetscErrorCode ierr;
+    
     void *void_ctx;
     ierr = PCShellGetContext(pc,&void_ctx); CHKERRQ(ierr);
     PCShellCtx *ctx = (PCShellCtx*)void_ctx;

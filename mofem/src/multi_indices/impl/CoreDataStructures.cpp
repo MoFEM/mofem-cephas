@@ -53,11 +53,11 @@ Field::Field(
 moab(const_cast<Interface&>(moab)),
 meshSet(meshset),
 coordSysPtr(coord_sys_ptr),
-tag_id_data(NULL),
+tagId(NULL),
 tag_space_data(NULL),
 tag_nb_coeff_data(NULL),
-tag_name_data(NULL),
-tag_name_size(0),
+tagName(NULL),
+tagNameSize(0),
 sequenceEntContainer(
   boost::make_shared<SequenceEntContainer>()
 ),
@@ -69,7 +69,7 @@ sequenceDofContainer(
   //id
   Tag th_field_id;
   rval = moab.tag_get_handle("_FieldId",th_field_id); MOAB_THROW(rval);
-  rval = moab.tag_get_by_ptr(th_field_id,&meshSet,1,(const void **)&tag_id_data); MOAB_THROW(rval);
+  rval = moab.tag_get_by_ptr(th_field_id,&meshSet,1,(const void **)&tagId); MOAB_THROW(rval);
   //space
   Tag th_field_space;
   rval = moab.tag_get_handle("_FieldSpace",th_field_space); MOAB_THROW(rval);
@@ -81,7 +81,7 @@ sequenceDofContainer(
   //name
   Tag th_field_name;
   rval = moab.tag_get_handle("_FieldName",th_field_name); MOAB_THROW(rval);
-  rval = moab.tag_get_by_ptr(th_field_name,&meshSet,1,(const void **)&tag_name_data,&tag_name_size); MOAB_THROW(rval);
+  rval = moab.tag_get_by_ptr(th_field_name,&meshSet,1,(const void **)&tagName,&tagNameSize); MOAB_THROW(rval);
   //name prefix
   Tag th_field_name_data_name_prefix;
   rval = moab.tag_get_handle("_FieldName_DataNamePrefix",th_field_name_data_name_prefix); MOAB_THROW(rval);

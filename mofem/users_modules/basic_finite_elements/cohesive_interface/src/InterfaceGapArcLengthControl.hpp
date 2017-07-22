@@ -23,8 +23,8 @@ namespace CohesiveElement {
 
 struct ArcLengthIntElemFEMethod: public FEMethod {
   moab::Interface& mOab;
-  ErrorCode rval;
-  PetscErrorCode ierr;
+  
+  
 
   ArcLengthCtx* arcPtr;
   Vec GhostLambdaInt;

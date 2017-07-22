@@ -269,7 +269,7 @@ struct PoissonExample::OpK: public VolumeElementForcesAndSourcesCore::UserDataOp
 
 private:
 
-  PetscErrorCode ierr;  ///< error code
+    ///< error code
 
   int nbRows;           ///< number of dofs on rows
   int nbCols;           ///< number if dof on column
@@ -346,7 +346,7 @@ and we have set of unique pairs,
 \f]
 The number of base functions on each of entities depends on approximation order
 and space, for example, see how it works for H-div and L2 space here \ref
-ultraweak_assmble_matrix. Since the last argument in the constructor is "true",
+mixtransport_assmble_matrix. Since the last argument in the constructor is "true",
 it indicates that bilinear form is symmetric and iteration over entities is only
 for unique unordered pairs, i.e. pair is a set with two elements. The task of
 integration over entities is managed by MoFEM::ForcesAndSurcesCore finite
@@ -574,7 +574,7 @@ struct PoissonExample::OpF: public OpBaseRhs<VolumeElementForcesAndSourcesCore::
 
 private:
 
-  PetscErrorCode ierr;
+  
   FTensor::Number<0> NX;
   FTensor::Number<1> NY;
   FTensor::Number<2> NZ;

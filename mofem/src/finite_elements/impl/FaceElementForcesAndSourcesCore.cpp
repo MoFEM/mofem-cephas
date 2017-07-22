@@ -77,7 +77,7 @@ namespace MoFEM {
 PetscErrorCode FaceElementForcesAndSourcesCore::UserDataOperator::loopSideVolumes(
   const string &fe_name,VolumeElementForcesAndSourcesCoreOnSide &method
 ) {
-  PetscErrorCode ierr;
+  
   PetscFunctionBegin;
 
   const EntityHandle ent = getNumeredEntFiniteElementPtr()->getEnt();
@@ -678,7 +678,7 @@ PetscErrorCode OpCalculateInvJacForFace::doWork(
   EntityType type,
   DataForcesAndSurcesCore::EntData &data
 ) {
-  PetscErrorCode ierr;
+  
   PetscFunctionBegin;
 
   if(getNumeredEntFiniteElementPtr()->getEntType()!=MBTRI) {
@@ -734,7 +734,7 @@ PetscErrorCode OpSetInvJacH1ForFace::doWork(
   DataForcesAndSurcesCore::EntData &data
 ) {
   PetscFunctionBegin;
-  // PetscErrorCode ierr;
+  // 
 
   if(
     getNumeredEntFiniteElementPtr()->getEntType()!=MBTRI &&

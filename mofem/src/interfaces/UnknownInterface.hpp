@@ -96,7 +96,7 @@ struct UnknownInterface {
   * @return error code
   */
   virtual const PetscErrorCode getFileVersion(moab::Interface &moab,Version &version) const {
-    MoABErrorCode rval;
+    
     PetscFunctionBegin;
     const EntityHandle root_meshset = 0;
     const int def_version[] = {-1,-1,-1};

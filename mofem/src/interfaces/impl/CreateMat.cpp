@@ -800,7 +800,7 @@ PetscErrorCode Core::partition_check_matrix_fill_in(const std::string &problem_n
     Interface *mFieldPtr;
 
     Mat A;
-    PetscErrorCode ierr;
+    
     ErrorCode rval;
 
     int rowPrint,colPrint;
@@ -972,7 +972,7 @@ PetscErrorCode Core::partition_check_matrix_fill_in(const std::string &problem_n
 
     PetscErrorCode postProcess() {
       PetscFunctionBegin;
-      PetscErrorCode ierr;
+      
 
       // cerr << mFieldPtr->get_comm_rank() << endl;
       ierr = MatAssemblyBegin(A,MAT_FLUSH_ASSEMBLY); CHKERRQ(ierr);
